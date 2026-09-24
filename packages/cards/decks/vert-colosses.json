@@ -1,0 +1,25 @@
+{
+  "id": "vert-colosses",
+  "name": "Colosses de la forêt",
+  "description": "Mono-vert : élans de mana, grosses créatures et renforts.",
+  "colors": [
+    "G"
+  ],
+  "cover": "https://cards.scryfall.io/art_crop/front/b/c/bc1c518a-dcb4-407c-85be-ed5935a24198.jpg?1783908891",
+  "cards": [
+    [24, "Forest"],
+    [4, "Llanowar Elves"],
+    [2, "Druid of the Cowl"],
+    [4, "Bear Cub"],
+    [4, "Thornweald Archer"],
+    [4, "Magnigoth Sentry"],
+    [3, "Tajuru Pathwarden"],
+    [2, "Wildheart Invoker"],
+    [2, "Quakestrider Ceratops"],
+    [1, "Gigantosaurus"],
+    [4, "Giant Growth"],
+    [3, "Bite Down"],
+    [2, "Overrun"],
+    [1, "Primal Might"]
+  ]
+}

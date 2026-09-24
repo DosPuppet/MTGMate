@@ -1,0 +1,13 @@
+{
+  "name": "@mtgx/cards",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./decks": "./src/decks.ts"
+  },
+  "dependencies": {
+    "@mtgx/engine": "^0.1.0"
+  }
+}

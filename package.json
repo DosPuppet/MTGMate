@@ -1,0 +1,28 @@
+{
+  "name": "mtgx",
+  "private": true,
+  "type": "module",
+  "workspaces": [
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "npm run dev -w @mtgx/client",
+    "build": "npm run build -w @mtgx/client",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "typecheck": "tsc -p tsconfig.json",
+    "lint": "biome check .",
+    "format": "biome format --write .",
+    "fuzz": "tsx tools/fuzz.ts",
+    "import-cards": "tsx tools/import-scryfall.ts",
+    "ui-smoke": "tsx tools/ui-smoke.ts"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "^2.5.14",
+    "@types/node": "^26.6.2",
+    "playwright": "^1.63.0",
+    "tsx": "^4.23.15",
+    "typescript": "^7.0.2",
+    "vitest": "^5.0.1"
+  }
+}

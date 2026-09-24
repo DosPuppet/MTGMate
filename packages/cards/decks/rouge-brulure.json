@@ -1,0 +1,25 @@
+{
+  "id": "rouge-brulure",
+  "name": "Brûlure gobeline",
+  "description": "Mono-rouge : créatures rapides, sorts de dégâts et dragons.",
+  "colors": [
+    "R"
+  ],
+  "cover": "https://cards.scryfall.io/art_crop/front/1/f/1fcff1e0-2745-448d-a27b-e31719e222e9.jpg?1783909064",
+  "cards": [
+    [23, "Mountain"],
+    [4, "Fanatical Firebrand"],
+    [4, "Swab Goblin"],
+    [4, "Brazen Scourge"],
+    [3, "Raging Redcap"],
+    [2, "Skyraker Giant"],
+    [2, "Fire Elemental"],
+    [2, "Shivan Dragon"],
+    [4, "Burst Lightning"],
+    [3, "Boltwave"],
+    [3, "Abrade"],
+    [2, "Sure Strike"],
+    [2, "Kindled Fury"],
+    [2, "Dragon Fodder"]
+  ]
+}

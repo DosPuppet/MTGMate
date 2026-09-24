@@ -1,0 +1,268 @@
+/** Fenêtres de choix : réservées aux vraies décisions (mulligan, modes, X, kicker, défausse…). */
+import type { GameView } from "@mtgx/engine";
+import { useState } from "react";
+import { Card } from "../board/Card";
+import { faceName } from "../i18n";
+import { useGame } from "../store";
+
+function Modal({ title, children, wide }: { title: string; children: React.ReactNode; wide?: boolean }) {
+  return (
+    <div className="modal-backdrop">
+      <div className={`modal ${wide ? "wide" : ""}`} role="dialog" aria-label={title}>
+        <h2>{title}</h2>
+        {children}
+      </div>
+    </div>
+  );
+}
+
+function HandPicker({ view, selectable }: { view: GameView; selectable: boolean }) {
+  const selection = useGame((s) => s.selection);
+  const toggle = useGame((s) => s.toggleSelection);
+  return (
+    <div className="hand-picker">
+      {view.hand.map((c) => (
+        <Card
+          key={c.uid}
+          face={c}
+          obj={c}
+          width="var(--pick-w)"
+          glow={selection.includes(c.id) ? "selected" : null}
+          onClick={selectable ? () => toggle(c.id) : undefined}
+        />
+      ))}
+    </div>
+  );
+}
+
+function PendingPrompt({ view }: { view: GameView }) {
+  const decide = useGame((s) => s.decide);
+  const selection = useGame((s) => s.selection);
+  const p = view.pending;
+  if (!p || p.player !== view.viewer) return null;
+  switch (p.kind) {
+    case "mulligan":
+      return (
+        <Modal title={p.mulligans === 0 ? "Votre main de départ" : `Mulligan ${p.mulligans} — nouvelle main`} wide>
+          <HandPicker view={view} selectable={false} />
+          <p className="hint">
+            {p.mulligans > 0 && `Si vous gardez, vous placerez ${p.mulligans} carte(s) au-dessous de votre bibliothèque. `}
+            Vous commencez {view.turn.active === view.viewer ? "la partie" : "en second"}.
+          </p>
+          <div className="modal-actions">
+            <button type="button" className="btn" onClick={() => decide({ type: "mulligan" })}>
+              Mulligan
+            </button>
+            <button type="button" className="btn primary" onClick={() => decide({ type: "keep" })}>
+              Garder
+            </button>
+          </div>
+        </Modal>
+      );
+    case "bottomCards":
+    case "discard": {
+      const title =
+        p.kind === "discard"
+          ? `Défaussez ${p.count} carte(s) (taille de main maximale : 7)`
+          : `Choisissez ${p.count} carte(s) à placer au-dessous de votre bibliothèque`;
+      return (
+        <Modal title={title} wide>
+          <HandPicker view={view} selectable />
+          <div className="modal-actions">
+            <button
+              type="button"
+              className="btn primary"
+              disabled={selection.length !== p.count}
+              onClick={() =>
+                decide(p.kind === "discard" ? { type: "discard", cards: selection } : { type: "bottom", cards: selection })
+              }
+            >
+              Valider ({selection.length}/{p.count})
+            </button>
+          </div>
+        </Modal>
+      );
+    }
+    default:
+      return null;
+  }
+}
+
+function XPicker({ max }: { max: number }) {
+  const chooseX = useGame((s) => s.chooseX);
+  const cancel = useGame((s) => s.cancel);
+  const [x, setX] = useState(max);
+  return (
+    <Modal title="Choisissez la valeur de X">
+      <div className="x-picker">
+        <input type="range" min={0} max={max} value={x} onChange={(e) => setX(Number(e.target.value))} />
+        <span className="x-value">X = {x}</span>
+      </div>
+      <div className="modal-actions">
+        <button type="button" className="btn ghost" onClick={cancel}>
+          Annuler
+        </button>
+        <button type="button" className="btn primary" onClick={() => chooseX(x)}>
+          Valider
+        </button>
+      </div>
+    </Modal>
+  );
+}
+
+function CastingPrompt() {
+  const casting = useGame((s) => s.casting);
+  const chooseMode = useGame((s) => s.chooseMode);
+  const chooseKicker = useGame((s) => s.chooseKicker);
+  const cancel = useGame((s) => s.cancel);
+  if (!casting) return null;
+  const opt = casting.option;
+  if (casting.stage === "mode" && opt.type === "cast") {
+    return (
+      <Modal title="Choisissez un mode">
+        <div className="choice-list">
+          {opt.modes.map((m) => (
+            <button key={m.index} type="button" className="btn choice" onClick={() => chooseMode(m.index)}>
+              {m.label ?? `Mode ${m.index + 1}`}
+            </button>
+          ))}
+        </div>
+        <div className="modal-actions">
+          <button type="button" className="btn ghost" onClick={cancel}>
+            Annuler
+          </button>
+        </div>
+      </Modal>
+    );
+  }
+  if (casting.stage === "x" && opt.xMax !== null) return <XPicker max={opt.xMax} />;
+  if (casting.stage === "kicker") {
+    return (
+      <Modal title="Payer le kicker ?">
+        <div className="choice-list">
+          <button type="button" className="btn choice" onClick={() => chooseKicker(false)}>
+            Sans kicker
+          </button>
+          <button type="button" className="btn choice primary" onClick={() => chooseKicker(true)}>
+            Avec kicker
+          </button>
+        </div>
+        <div className="modal-actions">
+          <button type="button" className="btn ghost" onClick={cancel}>
+            Annuler
+          </button>
+        </div>
+      </Modal>
+    );
+  }
+  return null;
+}
+
+function AbilityMenu() {
+  const menu = useGame((s) => s.abilityMenu);
+  const view = useGame((s) => s.view);
+  const beginCasting = useGame((s) => s.beginCasting);
+  const decide = useGame((s) => s.decide);
+  const cancel = useGame((s) => s.cancel);
+  const lang = useGame((s) => s.lang);
+  if (!menu || !view) return null;
+  const source = view.battlefield.find((o) => o.id === menu.sourceId);
+  return (
+    <Modal title={faceName(source, lang)}>
+      <div className="choice-list">
+        {menu.options.map((o, i) => {
+          if (o.type === "activate") {
+            return (
+              <button key={i} type="button" className="btn choice" onClick={() => beginCasting(o, menu.sourceId)}>
+                {o.label ?? "Activer la capacité"}
+              </button>
+            );
+          }
+          if (o.type === "tapForMana") {
+            return o.colors.map((c) => (
+              <button
+                key={`${i}-${c}`}
+                type="button"
+                className="btn choice"
+                onClick={() => decide({ type: "tapForMana", source: o.source, ability: o.ability, color: c })}
+              >
+                Ajouter {`{${c}}`}
+              </button>
+            ));
+          }
+          return null;
+        })}
+      </div>
+      <div className="modal-actions">
+        <button type="button" className="btn ghost" onClick={cancel}>
+          Annuler
+        </button>
+      </div>
+    </Modal>
+  );
+}
+
+function GraveyardViewer() {
+  const open = useGame((s) => s.graveyardOpen);
+  const view = useGame((s) => s.view);
+  const close = useGame((s) => s.openGraveyard);
+  if (!open || !view) return null;
+  const player = view.players[open];
+  if (!player) return null;
+  return (
+    <div className="modal-backdrop" onClick={() => close(null)}>
+      <div className="modal wide" onClick={(e) => e.stopPropagation()}>
+        <h2>
+          Cimetière — {open === view.viewer ? "vous" : player.name} ({player.graveyard.length})
+        </h2>
+        <div className="hand-picker">
+          {player.graveyard.length === 0 && <p className="hint">Vide.</p>}
+          {[...player.graveyard].reverse().map((c) => (
+            <Card key={c.uid} face={c} obj={c} width="var(--pick-w)" />
+          ))}
+        </div>
+        <div className="modal-actions">
+          <button type="button" className="btn" onClick={() => close(null)}>
+            Fermer
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function GameOver({ view }: { view: GameView }) {
+  const backToLobby = useGame((s) => s.backToLobby);
+  if (!view.over) return null;
+  const won = view.winner === view.viewer;
+  return (
+    <div className="modal-backdrop soft">
+      <div className={`modal gameover ${won ? "won" : "lost"}`}>
+        <h2>{won ? "Victoire !" : view.winner ? "Défaite" : "Match nul"}</h2>
+        <p className="hint">
+          Tour {view.turn.number} · Vous {view.players[view.viewer]?.life} PV · {view.players[view.opponent]?.name}{" "}
+          {view.players[view.opponent]?.life} PV
+        </p>
+        <div className="modal-actions">
+          <button type="button" className="btn primary" onClick={backToLobby}>
+            Retour au menu
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+export function Prompts() {
+  const view = useGame((s) => s.view);
+  if (!view) return null;
+  return (
+    <>
+      <PendingPrompt view={view} />
+      <CastingPrompt />
+      <AbilityMenu />
+      <GraveyardViewer />
+      <GameOver view={view} />
+    </>
+  );
+}
