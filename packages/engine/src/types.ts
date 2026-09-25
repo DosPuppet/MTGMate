@@ -40,6 +40,8 @@ export type Keyword =
   | "hexproof"
   | "indestructible"
   | "prowess"
+  /** Garde (702.21) : la capacité déclenchée est générée à partir du coût lu dans le texte. */
+  | "ward"
   /** Restrictions (pas des mots-clés imprimés, mais gérées comme des capacités de couche 6). */
   | "cantBlock"
   | "cantAttack"
@@ -96,6 +98,10 @@ export interface CardDef {
   kicker?: ManaCost;
   /** Coût de flashback : peut être lancée depuis le cimetière, puis exilée (702.34). */
   flashback?: ManaCost;
+  /** « Ce sort ne peut pas être contrecarré. » */
+  cantBeCountered?: boolean;
+  /** Garde : coût à payer (mana ou points de vie). */
+  ward?: { mana?: ManaCost; life?: number };
   /** « En coût additionnel pour lancer ce sort, … » (601.2b, 601.2h). */
   additionalCost?: AdditionalCost;
   /** « Ce sort coûte {N} de moins à lancer [si…] » (601.2f). */
@@ -205,6 +211,8 @@ export interface TargetFilter {
   objects?: ObjectFilter;
   /** Cartes dans un cimetière (« carte de créature ciblée de votre cimetière »). */
   cards?: { filter: ObjectFilter; whose?: "you" | "opponent" | "any" };
+  /** Sorts sur la pile (« contrecarrez le sort de créature ciblé »). */
+  spells?: ObjectFilter;
 }
 
 export interface ObjectFilter {
@@ -273,7 +281,9 @@ export type TriggerSpec =
   /** « Chaque fois que des marqueurs sont placés sur … » */
   | { on: "countersPut"; who: "self" | ObjectFilter; kind?: string }
   /** Blessures infligées par une source (non de combat seulement si demandé), éventuellement à un adversaire. */
-  | { on: "dealsDamage"; who: "self" | ObjectFilter; noncombatOnly?: boolean; toOpponent?: boolean };
+  | { on: "dealsDamage"; who: "self" | ObjectFilter; noncombatOnly?: boolean; toOpponent?: boolean }
+  /** « Chaque fois que [cette créature] devient la cible d'un sort ou d'une capacité [qu'un adversaire contrôle] » */
+  | { on: "becomesTarget"; who: "self"; byOpponent?: boolean };
 
 /** Conditions (« if intermédiaire » 603.4, « tant que »…). */
 export type Condition =
@@ -509,6 +519,12 @@ export type Effect =
   | { op: "delayed"; at: "nextEndStep"; effects: Effect[]; bind?: Record<string, Ref> }
   /** Capacité déclenchée réflexive (« quand vous le faites, … ») : ses cibles sont choisies à sa mise sur la pile. */
   | { op: "reflexive"; targets: TargetSpec[]; effects: Effect[] }
+  /** Contrecarre un sort ou une capacité sur la pile (701.5). */
+  | { op: "counter"; what: Ref }
+  /** « … à moins que [joueur] ne paie X » : s'il paie, les `skip` effets suivants sont ignorés. */
+  | { op: "unlessPay"; who: Ref; mana?: ManaCost; life?: number; skip: number }
+  /** « Vous pouvez lancer [cette carte] depuis votre cimetière ce tour-ci. » */
+  | { op: "allowCastFromGraveyard"; what: Ref }
   /** Exile jusqu'à ce que la source quitte le champ de bataille (610.3). */
   | { op: "exileUntilLeaves"; what: Ref }
   /** Choisir des cartes (non ciblées) dans une zone du contrôleur et les déplacer. */
@@ -787,6 +803,8 @@ export interface GameState {
     creatureDied: boolean;
     /** Capacités « une fois par tour » déjà déclenchées (source:index). */
     onceFired: string[];
+    /** Cartes de cimetière qu'on peut lancer ce tour-ci (Zul Ashur). */
+    mayCastFromGraveyard?: ObjectId[];
     startingPlayer: PlayerId;
   };
   flow: Flow;
@@ -847,6 +865,7 @@ export type ChoiceIntent =
   | "pickCards"
   | "topOrBottom"
   | "punisher"
+  | "unlessPay"
   | "other";
 
 interface ChoiceBase {
@@ -975,6 +994,7 @@ export type GameEvent =
   | { type: "activate"; player: PlayerId; stackId: string; defId: string; targets: string[] }
   | { type: "resolve"; stackId: string; defId: string }
   | { type: "fizzle"; stackId: string; defId: string }
+  | { type: "countered"; stackId: string; defId: string; by: string }
   | { type: "damage"; sourceDefId: string; target: string; targetDefId?: string; amount: number; combat: boolean }
   | { type: "life"; player: PlayerId; delta: number; life: number }
   | { type: "dies"; objectId: ObjectId; defId: string; to: Zone }

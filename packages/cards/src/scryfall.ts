@@ -34,6 +34,7 @@ const KEYWORD_NAMES: Record<string, Keyword> = {
   menace: "menace",
   defender: "defender",
   prowess: "prowess",
+  ward: "ward",
   flash: "flash",
   hexproof: "hexproof",
   indestructible: "indestructible",
@@ -64,11 +65,23 @@ function stripReminder(text: string): string {
   return text.replace(/\([^)]*\)/g, "").trim();
 }
 
+/** Garde : « Ward {2} » ou « Ward—Pay 7 life. » */
+const WARD = /\bward(?: ((?:\{[^}]+\})+)|—pay (\d+) life\.?)/i;
+
+export function parseWard(text: string): CardDef["ward"] {
+  const m = WARD.exec(stripReminder(text));
+  if (!m) return undefined;
+  return m[1] ? { mana: parseManaCost(m[1]) } : { life: Number(m[2]) };
+}
+
 /** Le texte ne contient-il que des mots-clés gérés par le moteur (créature « vanilla » ou « french vanilla ») ? */
 export function onlyKeywords(text: string): boolean {
   const t = stripReminder(text);
   if (!t) return true;
-  return t.split("\n").every((line) => line.split(/,\s*/).every((k) => k.trim().toLowerCase() in KEYWORD_NAMES));
+  return t
+    .split("\n")
+    .map((line) => line.replace(new RegExp(WARD.source, "gi"), "ward").trim())
+    .every((line) => line.split(/,\s*/).every((k) => k.trim().toLowerCase() in KEYWORD_NAMES));
 }
 
 function parseInt0(v: string | undefined): number | undefined | null {
@@ -76,18 +89,33 @@ function parseInt0(v: string | undefined): number | undefined | null {
   return /^-?\d+$/.test(v) ? Number(v) : null;
 }
 
-/** Capacités déclenchées portées par un mot-clé (702.108 prouesse). */
-function intrinsicAbilities(keywords: Set<Keyword>): CardDef["abilities"] {
-  if (!keywords.has("prowess")) return [];
-  return [
-    {
+/** Capacités déclenchées portées par un mot-clé (702.108 prouesse, 702.21 garde). */
+function intrinsicAbilities(keywords: Set<Keyword>, ward: CardDef["ward"]): CardDef["abilities"] {
+  const out: CardDef["abilities"] = [];
+  if (keywords.has("prowess")) {
+    out.push({
       kind: "triggered",
       trigger: { on: "castSpell", by: "you", filter: { notTypes: ["Creature"] } },
       targets: [],
       effects: [{ op: "pump", what: { kind: "self" }, power: 1, toughness: 1 }],
       label: "Prouesse",
-    },
-  ];
+    });
+  }
+  if (ward) {
+    // « Chaque fois que ce permanent devient la cible d'un sort ou d'une capacité qu'un adversaire contrôle,
+    // contrecarrez-le à moins que ce joueur ne paie [coût]. »
+    out.push({
+      kind: "triggered",
+      trigger: { on: "becomesTarget", who: "self", byOpponent: true },
+      targets: [],
+      effects: [
+        { op: "unlessPay", who: { kind: "eventPlayer" }, mana: ward.mana, life: ward.life, skip: 1 },
+        { op: "counter", what: { kind: "eventObject" } },
+      ],
+      label: "Garde",
+    });
+  }
+  return out;
 }
 
 export function toCardDef(raw: RawCard, script?: CardScript, set = "FDN"): CardDef {
@@ -114,6 +142,8 @@ export function toCardDef(raw: RawCard, script?: CardScript, set = "FDN"): CardD
     if (kw) keywords.add(kw);
   }
   for (const k of script?.keywords ?? []) keywords.add(k);
+  const ward = parseWard(raw.oracleText);
+  if (ward) keywords.add("ward");
 
   return {
     id: slug(raw.name),
@@ -128,7 +158,9 @@ export function toCardDef(raw: RawCard, script?: CardScript, set = "FDN"): CardD
     power: power ?? undefined,
     toughness: toughness ?? undefined,
     keywords: [...keywords],
-    abilities: [...(script?.abilities ?? []), ...intrinsicAbilities(keywords)],
+    abilities: [...(script?.abilities ?? []), ...intrinsicAbilities(keywords, ward)],
+    ward,
+    cantBeCountered: script?.cantBeCountered,
     spell: script?.spell,
     kicker: script?.kicker ? parseManaCost(script.kicker) : undefined,
     flashback: script?.flashback ? parseManaCost(script.flashback) : undefined,

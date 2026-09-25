@@ -8,6 +8,7 @@ import {
   ELF_WARRIOR,
   fx,
   INSTANT_SORCERY,
+  KOMAS_COIL,
   manaAbility,
   mode,
   OTHER_CREATURE_YOU_CONTROL,
@@ -40,6 +41,10 @@ export const MULTI: Record<string, CardScript> = {
         label: "Raid : réanime une créature",
       }),
     ],
+  },
+  "Koma, World-Eater": {
+    cantBeCountered: true,
+    abilities: [triggered(when.combatDamageToPlayer, [fx.createTokens(KOMAS_COIL, 4)], { label: "quatre Koma's Coil 3/3" })],
   },
   "Anthem of Champions": { abilities: [staticAbility(CREATURE_YOU_CONTROL, { power: 1, toughness: 1 })] },
   "Ashroot Animist": {

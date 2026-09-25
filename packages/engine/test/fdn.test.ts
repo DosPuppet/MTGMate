@@ -236,3 +236,117 @@ describe("Foundations : coûts et mana", () => {
     expect(legalActions(s, "p1").some((a) => a.type === "activate" && a.source === lib)).toBe(false);
   });
 });
+
+describe("Foundations : la pile (contresorts et garde)", () => {
+  /** p1 lance un sort ; p2 reçoit la priorité avec le sort sur la pile. */
+  const withSpellOnStack = (p1Hand: string, p2Hand: string[], p2Lands = lands("Island", 3), p1Lands = lands("Forest", 7)) => {
+    let s = scenario({ p1: { battlefield: p1Lands, hand: [p1Hand] }, p2: { battlefield: p2Lands, hand: p2Hand } });
+    s = cast(s, "p1", p1Hand);
+    s = act(s, "p1", { type: "pass" });
+    return s;
+  };
+
+  it("Essence Scatter contrecarre un sort de créature, pas un autre sort", () => {
+    let s = withSpellOnStack("Pelakka Wurm", ["Essence Scatter"]);
+    const spell = s.stack[0]?.id as string;
+    const opt = legalActions(s, "p2").find((a) => a.type === "cast");
+    expect(opt?.type === "cast" && opt.modes[0]?.targets[0]?.legal).toEqual([spell]);
+    s = cast(s, "p2", "Essence Scatter", { targets: { t: [spell] } });
+    s = passBoth(s);
+    expect(s.stack).toHaveLength(0);
+    expect(idsOf(s, "p1", "graveyard", "Pelakka Wurm")).toHaveLength(1);
+    expect(idsOf(s, "p1", "battlefield", "Pelakka Wurm")).toHaveLength(0);
+
+    const s2 = withSpellOnStack("Dragon Fodder", ["Essence Scatter"], lands("Island", 3), lands("Mountain", 3));
+    expect(legalActions(s2, "p2").some((a) => a.type === "cast")).toBe(false);
+  });
+
+  it("An Offer You Can't Refuse : le lanceur du sort contrecarré reçoit deux Trésors", () => {
+    let s = withSpellOnStack("Overrun", ["An Offer You Can't Refuse"]);
+    s = cast(s, "p2", "An Offer You Can't Refuse", { targets: { t: [s.stack[0]?.id as string] } });
+    s = passBoth(s);
+    expect(idsOf(s, "p1", "graveyard", "Overrun")).toHaveLength(1);
+    expect(idsOf(s, "p1", "battlefield", "Treasure")).toHaveLength(2);
+  });
+
+  it("un sort lancé en flashback et contrecarré est exilé", () => {
+    let s = scenario({
+      p1: { battlefield: lands("Island", 3), graveyard: ["Think Twice"] },
+      p2: { battlefield: lands("Island", 3), hand: ["Refute"] },
+    });
+    s = act(s, "p1", { type: "cast", card: idOf(s, "p1", "graveyard", "Think Twice") });
+    s = act(s, "p1", { type: "pass" });
+    s = cast(s, "p2", "Refute", { targets: { t: [s.stack[0]?.id as string] } });
+    s = passAccepting(s, (x) => x.stack.length === 0);
+    expect(s.exile.map((id) => s.defs[s.objects[id]?.defId ?? ""]?.name)).toContain("Think Twice");
+  });
+
+  it("Koma ne peut pas être contrecarré", () => {
+    let s = withSpellOnStack("Koma, World-Eater", ["Refute"], lands("Island", 3), [...lands("Forest", 4), ...lands("Island", 3)]);
+    s = cast(s, "p2", "Refute", { targets: { t: [s.stack[0]?.id as string] } });
+    s = passAccepting(s, (x) => x.stack.length === 0 && idsOf(x, "p1", "battlefield", "Koma, World-Eater").length === 1);
+    expect(idsOf(s, "p1", "battlefield", "Koma, World-Eater")).toHaveLength(1);
+  });
+
+  it("garde {2} : le sort adverse est contrecarré si son contrôleur ne paie pas", () => {
+    const setup = (extraLands: number) =>
+      scenario({
+        p1: { battlefield: ["Cackling Prowler"] },
+        p2: { battlefield: lands("Swamp", 1 + extraLands), hand: ["Stab"] },
+        active: "p2",
+      });
+    // Sans mana pour payer : Stab est contrecarré.
+    let s = setup(0);
+    const prowler = idOf(s, "p1", "battlefield", "Cackling Prowler");
+    s = cast(s, "p2", "Stab", { targets: { t: [prowler] } });
+    expect(s.stack).toHaveLength(2); // Stab + déclenchement de garde
+    s = passAccepting(s, (x) => x.stack.length === 0);
+    expect(idsOf(s, "p2", "graveyard", "Stab")).toHaveLength(1);
+    expect(s.effects.some((e) => e.affected.includes(prowler))).toBe(false);
+    // Avec de quoi payer : le joueur paie {2} et Stab se résout.
+    s = setup(2);
+    s = cast(s, "p2", "Stab", { targets: { t: [prowler] } });
+    s = passAccepting(s, (x) => x.pending?.kind === "choice" && x.pending.request.intent === "unlessPay");
+    expect(s.pending?.player).toBe("p2");
+    s = choose(s, [1]);
+    s = passAccepting(s, (x) => x.stack.length === 0);
+    expect(s.effects.some((e) => e.affected.includes(prowler) && e.power === -2)).toBe(true);
+  });
+
+  it("garde — payer 7 PV (Sire of Seven Deaths)", () => {
+    let s = scenario({
+      p1: { battlefield: ["Sire of Seven Deaths"] },
+      p2: { battlefield: ["Swamp"], hand: ["Stab"] },
+      active: "p2",
+    });
+    s = cast(s, "p2", "Stab", { targets: { t: [idOf(s, "p1", "battlefield", "Sire of Seven Deaths")] } });
+    s = passAccepting(s, (x) => x.pending?.kind === "choice" && x.pending.request.intent === "unlessPay");
+    s = choose(s, [1]);
+    expect(s.players.p2?.life).toBe(13);
+  });
+
+  it("la garde ne se déclenche pas pour les sorts de son contrôleur", () => {
+    let s = scenario({ p1: { battlefield: ["Cackling Prowler", "Forest"], hand: ["Giant Growth"] } });
+    s = cast(s, "p1", "Giant Growth", { targets: { t: [idOf(s, "p1", "battlefield", "Cackling Prowler")] } });
+    expect(s.stack).toHaveLength(1);
+  });
+
+  it("Zul Ashur permet de lancer un Zombie du cimetière ce tour-ci", () => {
+    let s = scenario({
+      p1: { battlefield: ["Zul Ashur, Lich Lord", ...lands("Swamp", 3)], graveyard: ["Diregraf Ghoul", "Pelakka Wurm"] },
+    });
+    const ghoul = idOf(s, "p1", "graveyard", "Diregraf Ghoul");
+    expect(legalActions(s, "p1").some((a) => a.type === "cast" && a.card === ghoul)).toBe(false);
+    s = act(s, "p1", {
+      type: "activate",
+      source: idOf(s, "p1", "battlefield", "Zul Ashur, Lich Lord"),
+      ability: 0,
+      targets: { t: [ghoul] },
+    });
+    s = passBoth(s);
+    expect(legalActions(s, "p1").some((a) => a.type === "cast" && a.card === ghoul)).toBe(true);
+    s = act(s, "p1", { type: "cast", card: ghoul });
+    s = passBoth(s);
+    expect(idsOf(s, "p1", "battlefield", "Diregraf Ghoul")).toHaveLength(1);
+  });
+});

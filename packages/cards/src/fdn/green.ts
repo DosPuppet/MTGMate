@@ -168,6 +168,11 @@ export const GREEN: Record<string, CardScript> = {
       ]),
     ],
   },
+  "Cackling Prowler": {
+    abilities: [
+      triggered(when.yourEndStep, [fx.addCounters(ref.self, 1)], { condition: cond.morbid, label: "Morbide : marqueur +1/+1" }),
+    ],
+  },
   "Elvish Regrower": {
     abilities: [
       triggered(when.entersSelf, [fx.toHand(ref.target())], {

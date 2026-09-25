@@ -281,6 +281,7 @@ function startTurnOf(s: GameState, p: PlayerId): void {
     if (pl) pl.turnStats = emptyTurnStats();
   }
   s.turn.onceFired = [];
+  s.turn.mayCastFromGraveyard = [];
 }
 
 export function emptyCombat(): NonNullable<GameState["combat"]> {

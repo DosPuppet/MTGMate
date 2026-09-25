@@ -273,7 +273,11 @@ function PhaseBar() {
 
 function StackView() {
   const view = useGame((s) => s.view) as GameView;
+  const casting = useGame((s) => s.casting);
+  const pickTarget = useGame((s) => s.pickTarget);
+  const notify = useGame((s) => s.notify);
   if (view.stack.length === 0) return null;
+  const targeting = casting?.stage === "target" ? casting.spec : null;
   return (
     <div className="stack">
       <div className="stack-label">Pile</div>
@@ -292,7 +296,22 @@ function StackView() {
               width="var(--stack-w)"
               layoutId={item.kind === "spell" ? item.uid : undefined}
               oid={item.id}
-              glow={i === view.stack.length - 1 ? "selected" : null}
+              glow={
+                targeting
+                  ? casting?.picked?.includes(item.id)
+                    ? "selected"
+                    : targeting.legal.includes(item.id)
+                      ? "target"
+                      : null
+                  : i === view.stack.length - 1
+                    ? "selected"
+                    : null
+              }
+              onClick={
+                targeting
+                  ? () => (targeting.legal.includes(item.id) ? pickTarget(item.id) : notify("Cible invalide."))
+                  : undefined
+              }
             />
             {item.kind === "ability" && <div className="ability-tag">Capacité</div>}
             {item.kicked && <div className="ability-tag">Kické</div>}

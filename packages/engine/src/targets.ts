@@ -84,6 +84,11 @@ export function isLegalTarget(s: GameState, controller: PlayerId, spec: TargetSp
     return true;
   }
   const o = s.objects[id];
+  if (o && o.zone === "stack") {
+    // Sort sur la pile (l'identifiant de l'objet est celui de l'élément de pile).
+    const f = spec.filter.spells;
+    return !!f && s.stack.some((x) => x.id === id && x.kind === "spell") && matchesView(snapshot(s, id), f, controller, sourceId);
+  }
   if (o && o.zone === "graveyard") {
     const cards = spec.filter.cards;
     if (!cards) return false;
@@ -103,6 +108,8 @@ export function legalTargets(s: GameState, controller: PlayerId, spec: TargetSpe
   if (spec.filter.players) for (const p of s.playerOrder) if (ok(p)) out.push(p);
   if (spec.filter.objects) for (const id of s.battlefield) if (ok(id)) out.push(id);
   if (spec.filter.cards) for (const p of s.playerOrder) for (const id of s.players[p]?.graveyard ?? []) if (ok(id)) out.push(id);
+  if (spec.filter.spells)
+    for (const item of s.stack) if (item.kind === "spell" && item.id !== sourceId && ok(item.id)) out.push(item.id);
   return out;
 }
 

@@ -66,7 +66,7 @@ Les caractéristiques d'une carte (coût, types, F/E, mots-clés) viennent de Sc
 | 2. Noyau du moteur | tours et phases, priorité et pile, mana, combat et mots-clés, actions basées sur l'état, mulligan de Londres, X, kicker, sorts modaux, capacités activées, jetons | ✅ |
 | 3. Client contre l'IA | plateau, main en éventail, glisser-déposer, flèches, barre des phases et arrêts, autopilot, journal FR | ✅ |
 | 4a. Fondations du moteur | N joueurs, choix génériques, déclencheurs, couches, remplacements, coûts, performance | ✅ |
-| 4b. Couverture FDN | set principal (276 cartes) : cimetière, recherche, cibles multiples, exil lié… ; restent auras, équipements, planeswalkers, contresorts et ward, copie, contrôle | en cours : 219 / 276 cartes du set principal |
+| 4b. Couverture FDN | set principal (276 cartes) : cimetière, recherche, cibles multiples, exil lié, contresorts et garde… ; restent auras, équipements, planeswalkers, copie, contrôle | en cours : 227 / 276 cartes du set principal |
 | 5. IA | attaques par simulation, puis ISMCTS | à faire |
 | 6. JcJ en ligne | serveur Node `ws` réutilisant `GameHost` + `projectView` | à faire |
 | 7. Finitions | deckbuilder, import et export de decklists (MTGA, MTGO, noms FR) ✅ ; sons, replays (graine + décisions) | en cours |

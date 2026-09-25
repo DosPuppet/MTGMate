@@ -74,7 +74,9 @@ export function legalActions(s: GameState, player: PlayerId): ActionOption[] {
   const hand = s.players[player]?.hand ?? [];
 
   // Cartes en main, et cartes avec flashback dans le cimetière.
-  const graveyard = (s.players[player]?.graveyard ?? []).filter((id) => s.defs[obj(s, id).defId]?.flashback);
+  const graveyard = (s.players[player]?.graveyard ?? []).filter(
+    (id) => s.defs[obj(s, id).defId]?.flashback || s.turn.mayCastFromGraveyard?.includes(id),
+  );
   for (const card of [...hand, ...graveyard]) {
     const d = s.defs[obj(s, card).defId];
     if (!d) continue;
@@ -83,7 +85,8 @@ export function legalActions(s: GameState, player: PlayerId): ActionOption[] {
       continue;
     }
     if (!d.implemented || !canCastTiming(s, player, d)) continue;
-    const flashback = castSource(s, player, card) === "flashback";
+    const source = castSource(s, player, card);
+    const flashback = source === "flashback";
     const modes = modesOf(d)
       .map((m, index) => ({ index, label: m.label, targets: targetOptions(s, player, m.targets, card) }))
       .filter((m) => targetsAvailable(m.targets));
@@ -97,7 +100,7 @@ export function legalActions(s: GameState, player: PlayerId): ActionOption[] {
       modes,
       xMax: hasX ? maxXFor(s, player, (x) => spellCost(s, player, d, { x, flashback })) : null,
       kickerAffordable: !!d.kicker && !flashback && canPay(s, player, spellCost(s, player, d, { kicked: true })),
-      fromGraveyard: flashback || undefined,
+      fromGraveyard: source === "hand" ? undefined : true,
       additional: additional.discard || additional.sacrifice ? additional : undefined,
     });
   }

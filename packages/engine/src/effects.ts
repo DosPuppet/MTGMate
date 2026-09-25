@@ -15,8 +15,9 @@ import {
   removeFromCombat,
   sourceFromObject,
 } from "./actions";
-import { canPay, manaValue, payMana } from "./mana";
+import { canPay, costToText, manaValue, payMana } from "./mana";
 import { addReplacement } from "./replacement";
+import { counterItem } from "./stack";
 import {
   alivePlayers,
   bump,
@@ -117,7 +118,7 @@ export function resolveRef(s: GameState, ctx: EffectContext, ref: Ref): string[]
       const ev = ctx.event;
       if (!ev?.objectId) return [];
       // L'objet tel qu'il est encore, sinon ce qu'il est devenu après son changement de zone.
-      if (s.objects[ev.objectId]) return [ev.objectId];
+      if (s.objects[ev.objectId] || s.stack.some((x) => x.id === ev.objectId)) return [ev.objectId];
       return ev.newObjectId && s.objects[ev.newObjectId] ? [ev.newObjectId] : [];
     }
     case "eventPlayer":
@@ -127,6 +128,8 @@ export function resolveRef(s: GameState, ctx: EffectContext, ref: Ref): string[]
         if (isPlayer(s, id)) return [id];
         const o = s.objects[id];
         if (o) return [o.zone === "battlefield" || o.zone === "stack" ? o.controller : o.owner];
+        const item = s.stack.find((x) => x.id === id);
+        if (item) return [item.controller];
         return s.lki[id] ? [s.lki[id].controller] : [];
       });
     case "stored":
@@ -356,6 +359,44 @@ export function runEffect(s: GameState, r: Resolution, e: Effect): OpResult {
         resolveRef(s, ctx, e.what).filter((id) => onBattlefield(s, id)),
         newId(s, "r"),
       );
+      return;
+    }
+    case "counter": {
+      for (const id of resolveRef(s, ctx, e.what)) counterItem(s, id, ctx.sourceDefId);
+      return;
+    }
+    case "unlessPay": {
+      const p = resolveRef(s, ctx, e.who).find((x) => isPlayer(s, x));
+      if (!p) return;
+      const mana = e.mana;
+      const canDo = mana ? canPay(s, p, mana) : (s.players[p]?.life ?? 0) >= (e.life ?? 0);
+      if (!canDo) return;
+      const answer = r.vars[key("unless")];
+      if (!answer) {
+        const what = mana ? `payer ${costToText(mana)}` : `payer ${e.life} points de vie`;
+        return {
+          ask: {
+            player: p,
+            key: key("unless"),
+            request: {
+              type: "yesNo",
+              intent: "unlessPay",
+              prompt: `${nameOf(s, ctx.sourceId)} : ${what} pour l'éviter ?`,
+              suggested: [1],
+            },
+          },
+        };
+      }
+      if (answer[0] !== 1) return;
+      if (mana) {
+        if (!canPay(s, p, mana)) return;
+        payMana(s, p, mana);
+      } else loseLife(s, p, e.life ?? 0);
+      return { skip: e.skip };
+    }
+    case "allowCastFromGraveyard": {
+      const ids = resolveRef(s, ctx, e.what).filter((id) => s.objects[id]?.zone === "graveyard");
+      s.turn.mayCastFromGraveyard = [...(s.turn.mayCastFromGraveyard ?? []), ...ids];
       return;
     }
     case "doubleAllCounters": {

@@ -77,6 +77,8 @@ export function Effects() {
   const fx = useGame((s) => s.fx);
   const banner = useGame((s) => s.turnBanner);
   const spotlight = useGame((s) => s.spotlight);
+  // Pendant un ciblage, l'encart cacherait la pile (dont les sorts peuvent être des cibles).
+  const targeting = useGame((s) => s.casting?.stage === "target");
   const lang = useGame((s) => s.lang);
   const ref = useRef<HTMLDivElement>(null);
   const [origin, setOrigin] = useState({ x: 0, y: 0 });
@@ -104,7 +106,7 @@ export function Effects() {
         )}
       </AnimatePresence>
       <AnimatePresence mode="wait">
-        {spotlight && (
+        {spotlight && !targeting && (
           <motion.div
             key={spotlight.id}
             className="spotlight"

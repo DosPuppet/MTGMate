@@ -14,6 +14,7 @@ import {
   SCION_OF_THE_DEEP,
   spell,
   staticAbility,
+  TREASURE,
   target,
   targetObj,
   triggered,
@@ -156,5 +157,16 @@ export const BLUE: Record<string, CardScript> = {
     flashback: "{3}{U}",
     spell: spell([target.creature("t", { controller: "you" })], [fx.copyToken(ref.target())]),
   },
+  Refute: { spell: spell([target.spell()], [fx.counter(ref.target()), ...fx.loot(1)]) },
+  "Essence Scatter": {
+    spell: spell([target.spell("t", { types: ["Creature"] }, "sort de créature")], [fx.counter(ref.target())]),
+  },
+  "An Offer You Can't Refuse": {
+    spell: spell(
+      [target.spell("t", { notTypes: ["Creature"] }, "sort non-créature")],
+      [fx.counter(ref.target()), fx.createTokens(TREASURE, 2, ref.controllerOf(ref.target()))],
+    ),
+  },
+  "Tolarian Terror": { costReduction: { generic: amount.countIn("graveyard", INSTANT_SORCERY) } },
   "Spectral Sailor": { abilities: [activated({ mana: "{3}{U}", effects: [fx.draw(1)], label: "Piochez une carte" })] },
 };

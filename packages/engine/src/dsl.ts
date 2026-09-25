@@ -40,6 +40,8 @@ export interface CardScript {
   kicker?: string;
   /** Coût de flashback, ex. "{4}{R}{R}". */
   flashback?: string;
+  /** « Ce sort ne peut pas être contrecarré. » */
+  cantBeCountered?: boolean;
   additionalCost?: AdditionalCost;
   costReduction?: { generic: Amount; condition?: Condition };
   keywords?: Keyword[];
@@ -89,6 +91,8 @@ export const target = {
     label,
     filter: { objects: { nonland: true, ...extra } },
   }),
+  /** « sort ciblé » (sur la pile) */
+  spell: (id = "t", filter: ObjectFilter = {}, label = "sort"): TargetSpec => ({ id, label, filter: { spells: filter } }),
   creatureOrPlaneswalker: (id = "t", extra: ObjectFilter = {}): TargetSpec => ({
     id,
     label: "créature ou planeswalker",
@@ -202,6 +206,17 @@ export const fx = {
     const flat = effects.flat();
     return [{ op: "mayPay", cost: parseManaCost(cost), prompt, skip: flat.length }, ...flat];
   },
+  /** Contrecarre le sort ou la capacité désigné. */
+  counter: (what: Ref): Effect => ({ op: "counter", what }),
+  /** « Contrecarrez-le à moins que son contrôleur ne paie X » : le paiement annule les effets qui suivent. */
+  unlessPays: (who: Ref, cost: { mana?: string; life?: number }, ...effects: Effects): Effect[] => {
+    const flat = effects.flat();
+    return [
+      { op: "unlessPay", who, mana: cost.mana ? parseManaCost(cost.mana) : undefined, life: cost.life, skip: flat.length },
+      ...flat,
+    ];
+  },
+  allowCastFromGraveyard: (what: Ref): Effect => ({ op: "allowCastFromGraveyard", what }),
   tap: (what: Ref): Effect => ({ op: "tap", what }),
   untap: (what: Ref): Effect => ({ op: "tap", what, untap: true }),
   counters: (what: Ref, kind: string, n: Amount = 1): Effect => ({ op: "addCounters", what, amount: n, kind }),

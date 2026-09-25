@@ -243,5 +243,15 @@ export const BLACK: Record<string, CardScript> = {
       }),
     ],
   },
+  "Zul Ashur, Lich Lord": {
+    abilities: [
+      activated({
+        tap: true,
+        targets: [target.cardInGraveyard("t", { types: ["Creature"], subtype: "Zombie" }, "you", "carte de créature Zombie")],
+        effects: [fx.allowCastFromGraveyard(ref.target())],
+        label: "Permettre de lancer un Zombie du cimetière",
+      }),
+    ],
+  },
   Zombify: { spell: spell([target.cardInGraveyard("t", { types: ["Creature"] })], [fx.toBattlefield(ref.target())]) },
 };

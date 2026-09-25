@@ -10,7 +10,7 @@
  */
 import { ask } from "./choices";
 import { RulesError } from "./errors";
-import { apnapOrder, chars, emit, newId, obj, onBattlefield, opponentsOf, type RulesEvent, snapshot } from "./state";
+import { apnapOrder, chars, emit, newId, obj, onBattlefield, opponentsOf, type RulesEvent, rulesEvent, snapshot } from "./state";
 import { legalTargets, matchesObjectFilter, matchesView, validateTargets } from "./targets";
 import type {
   AbilityDef,
@@ -190,6 +190,10 @@ function matchTrigger(s: GameState, ev: RulesEvent, t: TriggerSpec, src: Source)
       return ev.e === "draw" && whose(t.whose, ev.player, me) && (t.nth === undefined || ev.nth === t.nth)
         ? { player: ev.player, amount: 1 }
         : null;
+    case "becomesTarget":
+      if (ev.e !== "targeted" || !ev.targets.includes(src.id)) return null;
+      if (t.byOpponent && ev.controller === me) return null;
+      return { objectId: ev.stackId, player: ev.controller };
     case "countersPut": {
       if (ev.e !== "counters" || (t.kind && ev.kind !== t.kind)) return null;
       const v = liveView(s, ev.objectId);
@@ -377,6 +381,8 @@ export function processTriggers(s: GameState): boolean {
       s.stack.push(item);
       s.priority.passes = 0;
       changed = true;
+      const all = Object.values(item.targets).flat();
+      if (all.length) rulesEvent(s, { e: "targeted", stackId: item.id, controller: item.controller, targets: all });
       emit({
         type: "trigger",
         player: t.controller,

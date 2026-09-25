@@ -49,6 +49,7 @@ export const KEYWORD_LABEL: Record<Keyword, string> = {
   hexproof: "Défense talismanique",
   indestructible: "Indestructible",
   prowess: "Prouesse",
+  ward: "Garde",
   cantBlock: "Ne peut pas bloquer",
   cantAttack: "Ne peut pas attaquer",
   unblockable: "Ne peut pas être bloquée",
@@ -99,7 +100,14 @@ export function describeEvents(
   const name = (defId?: string) => faceName(defId ? faces[defId] : undefined, lang);
   const targetName = (id: string) => {
     if (view.players[id]) return whom(id);
-    const o = view.battlefield.find((x) => x.id === id) ?? previous?.battlefield.find((x) => x.id === id);
+    const o =
+      view.battlefield.find((x) => x.id === id) ??
+      previous?.battlefield.find((x) => x.id === id) ??
+      view.stack.find((x) => x.id === id) ??
+      previous?.stack.find((x) => x.id === id) ??
+      Object.values(view.players)
+        .flatMap((p) => p.graveyard)
+        .find((x) => x.id === id);
     return o ? faceName(o, lang) : "une cible";
   };
   const out: LogLine[] = [];
@@ -140,6 +148,9 @@ export function describeEvents(
       }
       case "fizzle":
         add(`${name(e.defId)} ne se résout pas : cibles illégales.`, "info");
+        break;
+      case "countered":
+        add(`${name(e.defId)} est contrecarré par ${name(e.by)}.`, "info");
         break;
       case "damage":
         add(`${name(e.sourceDefId)} inflige ${e.amount} à ${e.targetDefId ? name(e.targetDefId) : whom(e.target)}.`, "info");

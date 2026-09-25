@@ -232,7 +232,7 @@ function CastingPrompt() {
   }
   if (casting.stage === "x" && opt.xMax !== null) return <XPicker max={opt.xMax} />;
   if (casting.stage === "target" && casting.spec && view) {
-    const onBoard = new Set([...view.battlefield.map((o) => o.id), ...Object.keys(view.players)]);
+    const onBoard = new Set([...view.battlefield.map((o) => o.id), ...Object.keys(view.players), ...view.stack.map((x) => x.id)]);
     if (casting.spec.legal.some((id) => !onBoard.has(id))) return <TargetCardPicker />;
   }
   if (casting.stage === "sacrifice" && opt.type === "activate" && opt.additional?.sacrifice) {

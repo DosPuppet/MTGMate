@@ -8,7 +8,7 @@ import { ask } from "./choices";
 import { evalAmount, runEffect } from "./effects";
 import { RulesError } from "./errors";
 import { payMana, totalCost } from "./mana";
-import { changeCounters, chars, emit, isSummoningSick, moveObject, newId, obj, rulesEvent } from "./state";
+import { changeCounters, chars, emit, isSummoningSick, moveObject, newId, obj, rulesEvent, snapshot } from "./state";
 import { isLegalTarget, matchesObjectFilter, matchesView, validateTargets } from "./targets";
 import { checkCondition, simultaneously } from "./triggers";
 import type {
@@ -130,10 +130,11 @@ export function spellCost(
 }
 
 /** D'où ce sort peut-il être lancé par ce joueur ? */
-export function castSource(s: GameState, player: PlayerId, card: ObjectId): "hand" | "flashback" | null {
+export function castSource(s: GameState, player: PlayerId, card: ObjectId): "hand" | "graveyard" | "flashback" | null {
   const o = s.objects[card];
   if (!o || o.owner !== player) return null;
   if (o.zone === "hand") return "hand";
+  if (o.zone === "graveyard" && s.turn.mayCastFromGraveyard?.includes(card)) return "graveyard";
   if (o.zone === "graveyard" && s.defs[o.defId]?.flashback) return "flashback";
   return null;
 }
@@ -227,6 +228,27 @@ export function castSpell(s: GameState, player: PlayerId, card: ObjectId, choice
   const caster = s.players[player];
   if (caster) caster.turnStats.spellsCast += 1;
   rulesEvent(s, { e: "cast", player, stackId });
+  announceTargets(s, stackId, player, targets);
+}
+
+/** Signale les cibles d'un élément mis sur la pile (garde, « devient la cible »). */
+export function announceTargets(s: GameState, stackId: string, controller: PlayerId, targets: Record<string, string[]>): void {
+  const all = flatTargets(targets);
+  if (all.length) rulesEvent(s, { e: "targeted", stackId, controller, targets: all });
+}
+
+/** 701.5 : contrecarre l'élément de pile ; un sort contrecarré va au cimetière (exil s'il a été lancé en flashback). */
+export function counterItem(s: GameState, id: string, by: string): boolean {
+  const i = s.stack.findIndex((x) => x.id === id);
+  const item = s.stack[i];
+  if (!item || s.resolving?.item.id === id) return false;
+  if (item.kind === "spell" && s.defs[item.sourceDefId]?.cantBeCountered) return false;
+  s.stack.splice(i, 1);
+  emit({ type: "countered", stackId: item.id, defId: item.sourceDefId, by });
+  // Dernières informations connues (« son contrôleur crée… »).
+  if (item.kind === "spell" && s.objects[item.sourceId]) s.lki[item.id] = snapshot(s, item.sourceId);
+  if (item.kind === "spell" && s.objects[item.sourceId]) moveObject(s, item.sourceId, item.flashback ? "exile" : "graveyard");
+  return true;
 }
 
 export function activatedAbility(s: GameState, source: ObjectId, index: number): ActivatedAbilityDef | null {
@@ -325,6 +347,7 @@ export function activateAbility(s: GameState, player: PlayerId, source: ObjectId
   if (ab.cost.sacrificeSelf) putIntoGraveyard(s, source);
   s.priority.passes = 0;
   emit({ type: "activate", player, stackId: item.id, defId: o.defId, targets: flatTargets(targets) });
+  announceTargets(s, item.id, player, targets);
 }
 
 function specsAndEffects(s: GameState, item: StackItem): { specs: TargetSpec[]; effects: Effect[] } {
