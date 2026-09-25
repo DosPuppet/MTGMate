@@ -1746,6 +1746,28 @@ button {
 .deck-line.soon .deck-line-name {
   color: #ffb36b;
 }
+.deck-line.illegal .deck-line-name {
+  color: #ff7b7b;
+  text-decoration: line-through;
+}
+.illegal-tag {
+  color: #ff7b7b;
+  border-color: #ff7b7b;
+}
+.format-badge {
+  margin: 0 8px 0 auto;
+  align-self: center;
+  padding: 1px 8px;
+  border-radius: 10px;
+  font-size: 12px;
+  border: 1px solid currentColor;
+}
+.format-badge.ok {
+  color: #8bf0a8;
+}
+.format-badge.ko {
+  color: #ff7b7b;
+}
 .deck-line-n {
   width: 20px;
   text-align: right;

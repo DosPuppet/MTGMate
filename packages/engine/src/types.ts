@@ -155,8 +155,14 @@ export interface CardDef {
   set?: string;
   number?: string;
   rarity?: string;
+  /** Légalité par format, d'après Scryfall au moment de l'import (« legal », « not_legal », « banned »…). */
+  legalities?: Partial<Record<Format, Legality>>;
   isToken?: boolean;
 }
+
+/** Formats de construction reconnus (seul le Standard est dans le périmètre). */
+export type Format = "standard";
+export type Legality = "legal" | "not_legal" | "banned" | "restricted";
 
 export interface SpellDef {
   /** Un seul mode = sort normal ; plusieurs = « Choisissez un — ». */

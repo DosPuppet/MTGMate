@@ -34,6 +34,7 @@ interface ScryfallCard {
   printed_type_line?: string;
   printed_text?: string;
   image_uris?: { small: string; normal: string; art_crop: string };
+  legalities: Record<string, string>;
   booster: boolean;
   promo: boolean;
 }
@@ -82,6 +83,8 @@ for (const c of sorted) {
     producedMana: c.produced_mana,
     image: c.image_uris.normal,
     artCrop: c.image_uris.art_crop,
+    // Seuls les formats du périmètre : à réimporter à chaque rotation ou annonce de bannissement.
+    legalities: { standard: c.legalities.standard },
     fr: f
       ? {
           name: f.printed_name,

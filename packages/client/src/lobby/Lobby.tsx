@@ -1,15 +1,16 @@
-import { CARDS, type DeckList, validateDeck } from "@mtgx/cards";
+import { CARDS, type DeckList, FORMAT_LABELS, validateDeck } from "@mtgx/cards";
 import { useState } from "react";
 import { ManaCost } from "../board/Card";
 import { deckCover, useAllDecks } from "../decks/store";
 import { useGame } from "../store";
 
-/** Un deck peut lancer une partie s'il respecte les règles et que toutes ses cartes sont jouables. */
-function deckStatus(d: DeckList): { ok: boolean; reason?: string } {
+/** Un deck peut lancer une partie s'il est légal dans le format et que toutes ses cartes sont jouables. */
+function deckStatus(d: DeckList): { ok: boolean; reason?: string; format: string } {
   const v = validateDeck(d, CARDS);
-  if (!v.legal) return { ok: false, reason: v.errors[0] };
-  if (!v.playable) return { ok: false, reason: "Contient des cartes pas encore jouables" };
-  return { ok: true };
+  const format = FORMAT_LABELS[v.format];
+  if (!v.legal) return { ok: false, reason: v.errors[0], format };
+  if (!v.playable) return { ok: false, reason: "Contient des cartes pas encore jouables", format };
+  return { ok: true, format };
 }
 
 function DeckChoice({ label, value, onChange }: { label: string; value: string; onChange: (id: string) => void }) {
@@ -37,6 +38,7 @@ function DeckChoice({ label, value, onChange }: { label: string; value: string; 
                   <div className="deck-desc">{d.description ?? (d.builtin ? "" : "Mon deck")}</div>
                   <div className="deck-count">
                     {d.main.reduce((n, [k]) => n + k, 0)} cartes
+                    {status.ok ? ` · ${status.format}` : ""}
                     {d.builtin ? " · préconstruit" : ""}
                     {!status.ok && <span className="deck-invalid"> · {status.reason}</span>}
                   </div>

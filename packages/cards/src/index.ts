@@ -7,10 +7,13 @@ import { type RawCard, toCardDef } from "./scryfall";
 export {
   CardIndex,
   DECK_RULES,
+  DEFAULT_FORMAT,
   type DeckEntries,
   type DeckIssue,
   type DeckValidation,
   deckColors,
+  FORMAT_LABELS,
+  legalityIssue,
   normalizeName,
   type ParsedDeck,
   parseDeckList,

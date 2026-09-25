@@ -148,3 +148,46 @@ describe("réserve", () => {
     expect(v.warnings[0]).toContain("(réserve)");
   });
 });
+
+describe("légalité en Standard", () => {
+  const withCard = (legalities: Record<string, string> | undefined) => {
+    const c = { ...CARDS["Shivan Dragon"]!, name: "Carte fictive", legalities } as (typeof CARDS)[string];
+    return { ...CARDS, [c.name]: c };
+  };
+  const deck = (where: "main" | "side") => ({
+    main: [
+      [where === "main" ? 1 : 0, "Carte fictive"],
+      [where === "main" ? 59 : 60, "Forest"],
+    ].filter(([n]) => (n as number) > 0) as [number, string][],
+    sideboard: where === "side" ? ([[1, "Carte fictive"]] as [number, string][]) : [],
+  });
+
+  it("les 517 cartes de Foundations sont légales en Standard (légalités Scryfall importées)", () => {
+    const cards = Object.values(CARDS).filter((c) => !c.isToken);
+    expect(cards).toHaveLength(517);
+    expect(cards.filter((c) => c.legalities?.standard !== "legal").map((c) => c.name)).toEqual([]);
+  });
+
+  it("une carte bannie rend le deck illégal, même en réserve", () => {
+    const cards = withCard({ standard: "banned" });
+    for (const where of ["main", "side"] as const) {
+      const v = validateDeck(deck(where), cards);
+      expect(v).toMatchObject({ format: "standard", legal: false, playable: false });
+      expect(v.errors).toEqual(["Carte fictive est bannie en Standard"]);
+    }
+  });
+
+  it("une carte hors Standard ou sans légalité connue rend le deck illégal", () => {
+    expect(validateDeck(deck("main"), withCard({ standard: "not_legal" })).errors).toEqual([
+      "Carte fictive n'est pas légale en Standard",
+    ]);
+    expect(validateDeck(deck("main"), withCard(undefined)).errors).toEqual(["Carte fictive : légalité en Standard inconnue"]);
+  });
+
+  it("l'import signale les cartes illégales", () => {
+    const cards = withCard({ standard: "banned" });
+    const d = parseDeckList("1 Carte fictive\n59 Forest", new CardIndex(cards));
+    expect(d.main).toHaveLength(2);
+    expect(d.issues.map((i) => [i.line, i.kind, i.message])).toEqual([[1, "illegal", "Carte fictive est bannie en Standard"]]);
+  });
+});

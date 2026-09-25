@@ -1,8 +1,18 @@
 /**
- * Deckbuilder : collection filtrable (set principal Foundations), deck et réserve, statistiques,
- * validation des règles de construction, import et export de decklists.
+ * Deckbuilder : collection filtrable (Foundations), deck et réserve, statistiques,
+ * validation des règles de construction et de la légalité en Standard, import et export de decklists.
  */
-import { CARDS, type DeckEntries, type DeckList, isMainSet, normalizeName, validateDeck } from "@mtgx/cards";
+import {
+  CARDS,
+  DEFAULT_FORMAT,
+  type DeckEntries,
+  type DeckList,
+  FORMAT_LABELS,
+  isMainSet,
+  legalityIssue,
+  normalizeName,
+  validateDeck,
+} from "@mtgx/cards";
 import { type CardDef, cardFace, manaValue } from "@mtgx/engine";
 import { useMemo, useState } from "react";
 import { Card, ManaCost } from "../board/Card";
@@ -43,6 +53,13 @@ function colorRank(c: CardDef): number {
 }
 
 const isBasic = (c: CardDef | undefined) => !!c?.supertypes.includes("Basic");
+const FORMAT = FORMAT_LABELS[DEFAULT_FORMAT];
+
+/** Étiquette courte d'une carte illégale dans le format (« bannie », « hors Standard »). */
+function legalityTag(c: CardDef): string | undefined {
+  if (!legalityIssue(c)) return undefined;
+  return c.legalities?.[DEFAULT_FORMAT] === "banned" ? "bannie" : `hors ${FORMAT}`;
+}
 const count = (entries: DeckEntries) => entries.reduce((a, [n]) => a + n, 0);
 
 function withCount(entries: DeckEntries, name: string, delta: number): DeckEntries {
@@ -64,12 +81,15 @@ interface Filters {
   rarity: string;
   query: string;
   playableOnly: boolean;
+  /** Cartes légales dans le format seulement (Standard). */
+  legalOnly: boolean;
   /** Set principal uniquement (sinon : aussi les réimpressions de Foundations). */
   mainOnly: boolean;
 }
 
 function matches(c: CardDef, f: Filters): boolean {
   if (f.playableOnly && !c.implemented) return false;
+  if (f.legalOnly && legalityIssue(c)) return false;
   if (f.mainOnly && !isMainSet(c)) return false;
   if (f.colors.length) {
     const want = new Set(f.colors);
@@ -99,6 +119,7 @@ function Collection({ deck, onChange }: { deck: DeckList; onChange: (name: strin
     rarity: "",
     query: "",
     playableOnly: true,
+    legalOnly: true,
     mainOnly: false,
   });
   const cards = useMemo(() => POOL.filter((c) => matches(c, f)), [f]);
@@ -155,6 +176,10 @@ function Collection({ deck, onChange }: { deck: DeckList; onChange: (name: strin
           <input type="checkbox" checked={f.playableOnly} onChange={(e) => setF({ ...f, playableOnly: e.target.checked })} />
           Jouables seulement
         </label>
+        <label className="toggle" title="Masquer les cartes bannies ou hors format">
+          <input type="checkbox" checked={f.legalOnly} onChange={(e) => setF({ ...f, legalOnly: e.target.checked })} />
+          Légales en {FORMAT}
+        </label>
         <label className="toggle" title="Cocher pour ne voir que le set principal (sans les réimpressions de Foundations)">
           <input type="checkbox" checked={f.mainOnly} onChange={(e) => setF({ ...f, mainOnly: e.target.checked })} />
           Set principal
@@ -166,6 +191,7 @@ function Collection({ deck, onChange }: { deck: DeckList; onChange: (name: strin
       <div className="collection-grid">
         {cards.map((c) => {
           const n = inDeck(c.name);
+          const illegal = legalityTag(c);
           return (
             <div
               key={c.id}
@@ -177,7 +203,11 @@ function Collection({ deck, onChange }: { deck: DeckList; onChange: (name: strin
             >
               <Card face={cardFace(c)} width="var(--collection-w)" onClick={() => onChange(c.name, 1)} dim={!c.implemented} />
               {n > 0 && <span className="copies">{n}</span>}
-              {!c.implemented && <span className="soon-tag">bientôt</span>}
+              {illegal ? (
+                <span className="soon-tag illegal-tag">{illegal}</span>
+              ) : (
+                !c.implemented && <span className="soon-tag">bientôt</span>
+              )}
             </div>
           );
         })}
@@ -227,8 +257,14 @@ function DeckLines({
             {lines.map(([n, name]) => {
               const c = CARDS[name] as CardDef;
               const face = cardFace(c);
+              const illegal = legalityIssue(c);
               return (
-                <div key={name} className={`deck-line ${c.implemented ? "" : "soon"}`} onMouseEnter={() => setHover({ face })}>
+                <div
+                  key={name}
+                  className={`deck-line ${c.implemented ? "" : "soon"} ${illegal ? "illegal" : ""}`}
+                  title={illegal}
+                  onMouseEnter={() => setHover({ face })}
+                >
                   <span className="deck-line-n">{n}</span>
                   <span className="deck-line-name">{faceName(face, lang)}</span>
                   <ManaCost cost={face.manaCost} size={13} />
@@ -418,6 +454,9 @@ export function DeckBuilder() {
             <button type="button" className={tab === "side" ? "on" : ""} onClick={() => setTab("side")}>
               Réserve <strong>{v.sideCount}</strong>/15
             </button>
+            <span className={`format-badge ${v.legal ? "ok" : "ko"}`} title={v.legal ? `Deck légal en ${FORMAT}` : v.errors[0]}>
+              {FORMAT} {v.legal ? "✓" : "✗"}
+            </span>
           </div>
           <Stats deck={deck} />
           <div className="deck-lines">
@@ -442,7 +481,7 @@ export function DeckBuilder() {
             {v.warnings.length > 5 && (
               <div className="v-warn">… et {v.warnings.length - 5} autres cartes pas encore jouables</div>
             )}
-            {v.playable && <div className="v-ok">Deck valide et jouable</div>}
+            {v.playable && <div className="v-ok">Deck légal en {FORMAT} et jouable</div>}
           </div>
         </section>
         <aside className="builder-preview">

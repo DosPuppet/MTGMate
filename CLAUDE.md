@@ -17,8 +17,8 @@ Ce fichier sert au suivi du projet entre les sessions. Le README présente le pr
 | Deckbuilder, decklists (import/export MTGA, MTGO, noms FR), validation 60/4/15 | ✅ |
 | FDN set principal (n° 1–281, 276 cartes) | ✅ **276 / 276** (lots A à F) |
 | FDN réimpressions (n° 282+, 241 cartes) | ✅ **517 / 517** pour tout FDN |
-| Légalité Standard dans le deckbuilder (légalités Scryfall, bannies) | **prochaine étape** |
-| Autres extensions Standard | à faire |
+| Légalité Standard dans le deckbuilder (légalités Scryfall, bannies) | ✅ |
+| Autres extensions Standard | **prochaine étape** |
 
 ### Lots du set principal FDN (tous terminés)
 
@@ -66,7 +66,7 @@ Réimpressions : défenses talismaniques contre une couleur, changelin, restrict
 - **Demonic Pact :** les modes déjà choisis sont mémorisés sur le permanent (perdus s'il change de zone, ce qui est conforme).
 - **Ordeal of Nylea :** sacrifiée directement, sans déclencheur séparé.
 - **Dégager jusqu'à N terrains :** les terrains sont choisis automatiquement.
-- **Légalité Standard et liste des bannies :** pas encore vérifiées par le deckbuilder.
+- **Légalité Standard :** instantané des légalités Scryfall au moment de l'import (`legalities.standard` dans `data/<set>.json`). Après une rotation ou une annonce de bannissement, réimporter les sets (`npm run import-cards -- <set>`).
 - **Jetons :** pas d'image (cadre texte).
 
 ## Conventions
@@ -83,7 +83,8 @@ Réimpressions : défenses talismaniques contre une couleur, changelin, restrict
   - un nouveau champ de `GameState` doit être initialisé dans `game.ts` et, si besoin, dans le helper de test `engine/test/helpers.ts`.
 - **Cartes :**
   - scripts dans `packages/cards/src/fdn/<couleur>.ts` ; jetons et filtres partagés dans `fdn/common.ts` ;
-  - ce qui se lit dans le texte Scryfall (mots-clés, prouesse, garde, « Équiper », loyauté) est déduit dans `cards/src/scryfall.ts`.
+  - ce qui se lit dans le texte Scryfall (mots-clés, prouesse, garde, « Équiper », loyauté) est déduit dans `cards/src/scryfall.ts` ;
+  - légalité : `validateDeck` (format `standard` par défaut) refuse les cartes bannies, hors format ou sans légalité connue, réserve comprise ; les decks illégaux ne lancent pas de partie.
 - **Données :**
   - `packages/cards/data/fdn.json` est indenté avec **1 espace** ; le réécrire à l'identique pour garder des diffs minimaux ;
   - réimport : `npm run import-cards -- fdn`.

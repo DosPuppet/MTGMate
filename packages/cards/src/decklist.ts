@@ -1,8 +1,9 @@
 /**
  * Decklists : lecture (formats MTGA et MTGO, noms anglais ou français), export et validation
- * des règles de construction (60 cartes minimum, 4 exemplaires maximum, réserve de 15).
+ * des règles de construction (60 cartes minimum, 4 exemplaires maximum, réserve de 15)
+ * et de la légalité dans le format (Standard).
  */
-import type { CardDef } from "@mtgx/engine";
+import type { CardDef, Format } from "@mtgx/engine";
 
 export type DeckEntries = [number, string][];
 
@@ -10,7 +11,7 @@ export interface DeckIssue {
   /** Numéro de ligne (1 = première ligne). */
   line: number;
   text: string;
-  kind: "unknown" | "syntax" | "ignored" | "unimplemented";
+  kind: "unknown" | "syntax" | "ignored" | "unimplemented" | "illegal";
   message: string;
   /** Nom anglais proposé pour une carte inconnue. */
   suggestion?: string;
@@ -24,7 +25,8 @@ export interface ParsedDeck {
 }
 
 export interface DeckValidation {
-  /** Respecte les règles de construction. */
+  format: Format;
+  /** Respecte les règles de construction et la légalité des cartes dans le format. */
   legal: boolean;
   /** Toutes les cartes sont gérées par le moteur. */
   playable: boolean;
@@ -35,6 +37,26 @@ export interface DeckValidation {
 }
 
 export const DECK_RULES = { minMain: 60, maxSide: 15, maxCopies: 4 } as const;
+
+export const FORMAT_LABELS: Record<Format, string> = { standard: "Standard" };
+
+/** Seul format du périmètre pour l'instant. */
+export const DEFAULT_FORMAT: Format = "standard";
+
+/** Problème de légalité d'une carte dans un format, ou undefined si elle y est légale. */
+export function legalityIssue(c: CardDef, format: Format = DEFAULT_FORMAT): string | undefined {
+  const label = FORMAT_LABELS[format];
+  switch (c.legalities?.[format]) {
+    case "legal":
+      return undefined;
+    case "banned":
+      return `${c.name} est bannie en ${label}`;
+    case undefined:
+      return `${c.name} : légalité en ${label} inconnue`;
+    default:
+      return `${c.name} n'est pas légale en ${label}`;
+  }
+}
 
 /** Forme comparable d'un nom : minuscules, sans accents ni ponctuation. */
 export function normalizeName(name: string): string {
@@ -172,7 +194,10 @@ export function parseDeckList(text: string, index: CardIndex): ParsedDeck {
     }
     const toSide = m[1] === "SB" || section === "side" || (!sawHeader && sawBlankAfterCards);
     add(toSide ? out.sideboard : out.main, count, name);
-    if (!index.cards[name]?.implemented) {
+    const c = index.cards[name];
+    const illegal = c && legalityIssue(c);
+    if (illegal) out.issues.push({ line: n, text: line, kind: "illegal", message: illegal });
+    if (!c?.implemented) {
       out.issues.push({ line: n, text: line, kind: "unimplemented", message: `${name} n'est pas encore jouable` });
     }
   });
@@ -209,10 +234,14 @@ const ANY_NUMBER = /A deck can have any number of cards named/;
 
 const count = (entries: DeckEntries) => entries.reduce((a, [n]) => a + n, 0);
 
-/** Règles de construction : 60 cartes minimum, 4 exemplaires maximum (sauf terrains de base), réserve de 15. */
+/**
+ * Règles de construction : 60 cartes minimum, 4 exemplaires maximum (sauf terrains de base), réserve de 15,
+ * cartes légales dans le format (réserve comprise), d'après les légalités Scryfall importées.
+ */
 export function validateDeck(
   deck: { main: DeckEntries; sideboard?: DeckEntries },
   cards: Record<string, CardDef>,
+  format: Format = DEFAULT_FORMAT,
 ): DeckValidation {
   const errors: string[] = [];
   const warnings: string[] = [];
@@ -235,13 +264,23 @@ export function validateDeck(
     if (n > DECK_RULES.maxCopies && !c.supertypes.includes("Basic") && !ANY_NUMBER.test(c.text ?? "")) {
       errors.push(`${name} : ${n} exemplaires (maximum ${DECK_RULES.maxCopies})`);
     }
+    const illegal = legalityIssue(c, format);
+    if (illegal) errors.push(illegal);
     if (!c.implemented) {
       // Seul le deck principal est joué : une carte non gérée en réserve n'empêche pas de jouer.
       if (inMain.has(name)) playable = false;
       warnings.push(`${name} n'est pas encore jouable${inMain.has(name) ? "" : " (réserve)"}`);
     }
   }
-  return { legal: errors.length === 0, playable: playable && errors.length === 0, mainCount, sideCount, errors, warnings };
+  return {
+    format,
+    legal: errors.length === 0,
+    playable: playable && errors.length === 0,
+    mainCount,
+    sideCount,
+    errors,
+    warnings,
+  };
 }
 
 /** Couleurs d'un deck (d'après ses sorts). */

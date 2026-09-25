@@ -19,6 +19,7 @@ export interface RawCard {
   producedMana?: string[];
   image: string;
   artCrop: string;
+  legalities?: CardDef["legalities"];
   fr?: { name?: string; typeLine?: string; text?: string; image?: string };
 }
 
@@ -230,5 +231,6 @@ export function toCardDef(raw: RawCard, script?: CardScript, set = "FDN"): CardD
     set,
     number: raw.number,
     rarity: raw.rarity,
+    legalities: raw.legalities,
   };
 }
