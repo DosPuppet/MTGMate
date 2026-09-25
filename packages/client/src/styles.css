@@ -1203,9 +1203,14 @@ button {
   background-clip: text;
   color: transparent;
 }
-.lobby-head p {
+.lobby-head .build-tag {
+  font-family: Inter, system-ui, sans-serif;
+  font-size: 18px;
+  font-weight: 500;
+  letter-spacing: 1px;
   color: var(--dim);
-  margin-top: 6px;
+  -webkit-text-fill-color: var(--dim);
+  vertical-align: middle;
 }
 .lobby-body {
   width: min(900px, 100%);

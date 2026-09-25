@@ -33,8 +33,9 @@ export function Lobby() {
   return (
     <div className="lobby">
       <header className="lobby-head">
-        <h1>MTGX</h1>
-        <p>Magic: The Gathering, fluide comme Arena — moteur de règles maison, cartes de Foundations.</p>
+        <h1>
+          MTG Mate <span className="build-tag">(alpha build)</span>
+        </h1>
       </header>
       <div className="lobby-body">
         <DeckChoice label="Votre deck" value={mine} onChange={setMine} />
