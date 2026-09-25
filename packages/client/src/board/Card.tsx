@@ -116,7 +116,7 @@ export function Card({
               </div>
             )}
             {obj.damage > 0 && <div className="dmg-badge">−{obj.damage}</div>}
-            {obj.counters.p1p1 > 0 && <div className="counter-badge">+{obj.counters.p1p1}</div>}
+            <CounterBadges counters={obj.counters} />
             {obj.sick && obj.types.includes("Creature") && (
               <div className="sick-badge" title="Mal d'invocation">
                 z
@@ -125,6 +125,24 @@ export function Card({
           </>
         )}
       </motion.div>
+    </div>
+  );
+}
+
+const COUNTER_LABEL: Record<string, string> = { stun: "Étourdi", loyalty: "Loyauté" };
+
+/** Pastilles de marqueurs : +N pour les +1/+1, -N pour les -1/-1, nom et nombre pour les autres. */
+function CounterBadges({ counters }: { counters: Record<string, number> }) {
+  const net = (counters["+1/+1"] ?? 0) - (counters["-1/-1"] ?? 0);
+  const others = Object.entries(counters).filter(([k, n]) => n > 0 && k !== "+1/+1" && k !== "-1/-1" && k !== "loyalty");
+  return (
+    <div className="counter-badges">
+      {net !== 0 && <span className={`counter-badge ${net < 0 ? "minus" : ""}`}>{net > 0 ? `+${net}` : net}</span>}
+      {others.map(([k, n]) => (
+        <span key={k} className="counter-badge other" title={COUNTER_LABEL[k] ?? k}>
+          {COUNTER_LABEL[k] ?? k} {n}
+        </span>
+      ))}
     </div>
   );
 }

@@ -33,6 +33,7 @@ const KEYWORD_NAMES: Record<string, Keyword> = {
   haste: "haste",
   menace: "menace",
   defender: "defender",
+  prowess: "prowess",
   flash: "flash",
   hexproof: "hexproof",
   indestructible: "indestructible",
@@ -75,7 +76,21 @@ function parseInt0(v: string | undefined): number | undefined | null {
   return /^-?\d+$/.test(v) ? Number(v) : null;
 }
 
-export function toCardDef(raw: RawCard, script?: CardScript): CardDef {
+/** Capacités déclenchées portées par un mot-clé (702.108 prouesse). */
+function intrinsicAbilities(keywords: Set<Keyword>): CardDef["abilities"] {
+  if (!keywords.has("prowess")) return [];
+  return [
+    {
+      kind: "triggered",
+      trigger: { on: "castSpell", by: "you", filter: { notTypes: ["Creature"] } },
+      targets: [],
+      effects: [{ op: "pump", what: { kind: "self" }, power: 1, toughness: 1 }],
+      label: "Prouesse",
+    },
+  ];
+}
+
+export function toCardDef(raw: RawCard, script?: CardScript, set = "FDN"): CardDef {
   const [left = "", right = ""] = raw.typeLine.split(" — ");
   const words = left.split(" ").filter(Boolean);
   const supertypes = words.filter((w) => SUPERTYPES.has(w));
@@ -113,7 +128,7 @@ export function toCardDef(raw: RawCard, script?: CardScript): CardDef {
     power: power ?? undefined,
     toughness: toughness ?? undefined,
     keywords: [...keywords],
-    abilities: script?.abilities ?? [],
+    abilities: [...(script?.abilities ?? []), ...intrinsicAbilities(keywords)],
     spell: script?.spell,
     kicker: script?.kicker ? parseManaCost(script.kicker) : undefined,
     flashback: script?.flashback ? parseManaCost(script.flashback) : undefined,
@@ -124,5 +139,8 @@ export function toCardDef(raw: RawCard, script?: CardScript): CardDef {
     image: raw.image,
     artCrop: raw.artCrop,
     implemented,
+    set,
+    number: raw.number,
+    rarity: raw.rarity,
   };
 }

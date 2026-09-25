@@ -23,7 +23,7 @@ export {
   opponentsOf,
 } from "./state";
 export { isLegalTarget, legalTargets } from "./targets";
-export { attackCandidates, blockCandidates, canAttack, canBlock, MAX_HAND_SIZE } from "./turn";
+export { attackCandidates, blockCandidates, canAttack, canBlock, forcedAttackers, MAX_HAND_SIZE } from "./turn";
 export * from "./types";
 export type { CardFace, GameView, ObjectView, PendingView, PlayerView, StackItemView } from "./view";
 export { cardFace, filterEvents, objectView, projectView } from "./view";

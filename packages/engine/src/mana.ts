@@ -3,6 +3,7 @@
  */
 import { putIntoGraveyard } from "./actions";
 import { defOf, isSummoningSick, obj } from "./state";
+import { matchesObjectFilter } from "./targets";
 import type { GameState, ManaAbilityDef, ManaCost, ManaType, ObjectId, PlayerId } from "./types";
 import { MANA_TYPES } from "./types";
 
@@ -95,6 +96,14 @@ function canActivateMana(s: GameState, id: ObjectId, ab: ManaAbilityDef): boolea
   return true;
 }
 
+/** Quantité produite (« {G} pour chaque Elfe que vous contrôlez »). */
+function manaAmount(s: GameState, id: ObjectId, ab: ManaAbilityDef): number {
+  if (!ab.amountPer) return ab.amount;
+  const f = ab.amountPer;
+  const controller = obj(s, id).controller;
+  return s.battlefield.filter((x) => matchesObjectFilter(s, controller, x, f, id)).length;
+}
+
 export function manaSources(s: GameState, player: PlayerId, exclude: ReadonlySet<ObjectId> = new Set()): ManaSource[] {
   const out: ManaSource[] = [];
   for (const id of s.battlefield) {
@@ -106,7 +115,7 @@ export function manaSources(s: GameState, player: PlayerId, exclude: ReadonlySet
         id,
         ability: i,
         colors: ab.produce,
-        amount: ab.amount,
+        amount: manaAmount(s, id, ab),
         isCreature: defOf(s, id).types.includes("Creature"),
         sacrifice: !!ab.cost.sacrificeSelf,
       });
@@ -127,7 +136,7 @@ export function activateManaAbility(s: GameState, player: PlayerId, id: ObjectId
   if (ab.cost.tap) o.tapped = true;
   if (ab.cost.sacrificeSelf) putIntoGraveyard(s, id);
   const pool = s.players[player]?.manaPool;
-  if (pool) pool[c] += ab.amount;
+  if (pool) pool[c] += manaAmount(s, id, ab);
 }
 
 // ---------------------------------------------------------------------------

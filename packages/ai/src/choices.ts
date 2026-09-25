@@ -20,7 +20,8 @@ export function keepValue(s: GameState, me: PlayerId, id: string): number {
   const lands = landCount(s, me);
   if (d.types.includes("Land")) return lands >= 5 ? 0.5 : 6;
   const cost = manaValue(d.manaCost);
-  if (o.zone === "battlefield" && d.types.includes("Creature")) return creatureValue(d, o.counters.p1p1 - o.counters.m1m1);
+  if (o.zone === "battlefield" && d.types.includes("Creature"))
+    return creatureValue(d, (o.counters["+1/+1"] ?? 0) - (o.counters["-1/-1"] ?? 0));
   return 5 - Math.max(0, cost - lands - 1);
 }
 
@@ -71,10 +72,15 @@ export function mulberryChoice(rand: () => number, req: ChoiceRequest): ChoiceVa
   switch (req.type) {
     case "pick": {
       const n = req.min + Math.floor(rand() * (req.max - req.min + 1));
-      const pool = [...req.options];
+      let pool = [...req.options];
       const out: string[] = [];
-      while (out.length < n && pool.length) out.push(pool.splice(Math.floor(rand() * pool.length), 1)[0] as string);
-      return out;
+      const g = req.group;
+      while (out.length < n && pool.length) {
+        const id = pool.splice(Math.floor(rand() * pool.length), 1)[0] as string;
+        out.push(id);
+        if (g) pool = pool.filter((x) => (g.kind === "same" ? g.holders[x] === g.holders[id] : g.holders[x] !== g.holders[id]));
+      }
+      return out.length >= req.min ? out : req.suggested.map(String);
     }
     case "number":
       return [req.min + Math.floor(rand() * (req.max - req.min + 1))];

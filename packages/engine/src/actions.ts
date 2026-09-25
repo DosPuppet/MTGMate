@@ -2,7 +2,7 @@
  * Actions de jeu élémentaires, partagées par les effets, le combat et les actions basées sur l'état.
  */
 
-import { preventsCombatDamage } from "./replacement";
+import { applyEntersReplacements, preventsCombatDamage } from "./replacement";
 import {
   bump,
   chars,
@@ -37,6 +37,8 @@ export function drawCard(s: GameState, p: PlayerId): void {
   }
   const id = moveObject(s, top, "hand");
   emit({ type: "draw", player: p, objectId: id ?? undefined, defId: s.objects[id ?? ""]?.defId });
+  player.turnStats.cardsDrawn += 1;
+  rulesEvent(s, { e: "draw", player: p, nth: player.turnStats.cardsDrawn });
 }
 
 export function gainLife(s: GameState, p: PlayerId, amount: number): void {
@@ -44,7 +46,9 @@ export function gainLife(s: GameState, p: PlayerId, amount: number): void {
   if (!player || amount <= 0) return;
   player.life += amount;
   emit({ type: "life", player: p, delta: amount, life: player.life });
-  rulesEvent(s, { e: "lifeGain", player: p, amount });
+  player.turnStats.lifeGained += amount;
+  player.turnStats.lifeGainEvents += 1;
+  rulesEvent(s, { e: "lifeGain", player: p, amount, first: player.turnStats.lifeGainEvents === 1 });
 }
 
 export function loseLife(s: GameState, p: PlayerId, amount: number): void {
@@ -52,6 +56,8 @@ export function loseLife(s: GameState, p: PlayerId, amount: number): void {
   if (!player || amount <= 0) return;
   player.life -= amount;
   emit({ type: "life", player: p, delta: -amount, life: player.life });
+  player.turnStats.lifeLost += amount;
+  rulesEvent(s, { e: "lifeLoss", player: p, amount });
 }
 
 /** Inflige des blessures à un joueur ou à une créature (règle 120). */
@@ -137,4 +143,14 @@ export function createTokens(s: GameState, controller: PlayerId, t: TokenSpec, c
     emit({ type: "token", objectId: o.id, defId, controller });
     rulesEvent(s, { e: "zone", oldId: null, newId: o.id, from: null, to: "battlefield", lki: null });
   }
+}
+
+/** Jeton copie d'une carte : mêmes valeurs copiables (sa définition), mais c'est un jeton (707.2). */
+export function createTokenCopy(s: GameState, controller: PlayerId, defId: string): ObjectId {
+  const o = createObject(s, defId, controller, "battlefield", { isToken: true });
+  o.timestamp = nextTimestamp(s);
+  applyEntersReplacements(s, o, {});
+  emit({ type: "token", objectId: o.id, defId, controller });
+  rulesEvent(s, { e: "zone", oldId: null, newId: o.id, from: null, to: "battlefield", lki: null });
+  return o.id;
 }

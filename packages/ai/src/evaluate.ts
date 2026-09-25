@@ -80,7 +80,7 @@ export function evaluate(s: GameState, me: PlayerId): number {
     if (!o || !d) continue;
     const sign = o.controller === me ? 1 : -w;
     let v = 0;
-    if (d.types.includes("Creature")) v = creatureValue(d, o.counters.p1p1 - o.counters.m1m1);
+    if (d.types.includes("Creature")) v = creatureValue(d, (o.counters["+1/+1"] ?? 0) - (o.counters["-1/-1"] ?? 0));
     else if (d.types.includes("Land")) v = 1;
     else v = 1;
     score += sign * v;

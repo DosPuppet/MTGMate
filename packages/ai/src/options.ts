@@ -3,6 +3,20 @@
  */
 import type { ActionOption, Decision, TargetOption } from "@mtgx/engine";
 
+/** Cibles multiples (« jusqu'à N ») : N cibles compatibles avec la contrainte de groupe, en suivant l'ordre donné. */
+export function multiTargets(o: TargetOption, order: string[] = o.legal): string[] {
+  const max = o.count ?? 1;
+  const out: string[] = [];
+  const g = o.group;
+  for (const id of order) {
+    if (out.length >= max) break;
+    if (g?.kind === "different" && out.some((x) => g.holders[x] === g.holders[id])) continue;
+    if (g?.kind === "same" && out.length > 0 && g.holders[out[0] as string] !== g.holders[id]) continue;
+    out.push(id);
+  }
+  return out;
+}
+
 /** Construit une décision en laissant `choose` sélectionner cibles et mode. */
 export function buildCastDecision(
   a: ActionOption,
@@ -12,6 +26,11 @@ export function buildCastDecision(
   const targetsFrom = (opts: TargetOption[]) => {
     const t: Record<string, string[]> = {};
     for (const o of opts) {
+      if (o.count) {
+        const order = [...o.legal].sort(() => rand() - 0.5);
+        t[o.id] = o.optional && rand() < 0.2 ? [] : multiTargets(o, order);
+        continue;
+      }
       const list = o.optional ? [null, ...o.legal] : o.legal;
       const v = choose(list as (string | null)[]);
       t[o.id] = v ? [v] : [];
@@ -65,9 +84,13 @@ export function enumerateDecisions(a: ActionOption, limit = 40, rank?: (ids: str
   const combos = (opts: TargetOption[]): Record<string, string[]>[] => {
     let acc: Record<string, string[]>[] = [{}];
     for (const o of opts) {
-      const values: (string | null)[] = o.optional ? [...o.legal, null] : o.legal;
+      // Plusieurs cibles : on essaie chaque cible « en tête », complétée par les suivantes.
+      const values: string[][] = o.count
+        ? o.legal.map((_, i) => multiTargets(o, [...o.legal.slice(i), ...o.legal.slice(0, i)]))
+        : o.legal.map((v) => [v]);
+      if (o.optional) values.push([]);
       const next: Record<string, string[]>[] = [];
-      for (const partial of acc) for (const v of values) next.push({ ...partial, [o.id]: v ? [v] : [] });
+      for (const partial of acc) for (const v of values) next.push({ ...partial, [o.id]: v });
       acc = next.slice(0, limit);
     }
     return acc;

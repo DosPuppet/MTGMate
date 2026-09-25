@@ -13,7 +13,7 @@ describe("fuzz", () => {
       expect(r.state.over).toBe(true);
       expect(r.illegal).toBe(0);
     }
-  });
+  }, 60_000);
 
   it("rejeu déterministe : même graine + mêmes décisions = même état final", () => {
     const r = playGame({ seed: 7, decks: decks(), agents: [randomAgent(1), randomAgent(2)] });

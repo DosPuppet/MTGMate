@@ -6,8 +6,8 @@ import { drawCard } from "./actions";
 import { divisionOf, validateChoice } from "./choices";
 import { activateManaAbility } from "./mana";
 import { activateAbility, answerResolutionChoice, castSpell, playLand, RulesError } from "./stack";
-import { cloneState, collectEvents, createObject, emit, emptyPool, opponentsOf, random, shuffle } from "./state";
-import { answerTriggerOrder, answerTriggerTarget } from "./triggers";
+import { cloneState, collectEvents, createObject, emit, emptyPool, emptyTurnStats, opponentsOf, random, shuffle } from "./state";
+import { answerTriggerMode, answerTriggerOrder, answerTriggerTarget } from "./triggers";
 import {
   advance,
   afterResolution,
@@ -66,6 +66,7 @@ export function createGame(opts: GameOptions): StepResult {
         landsPlayed: 0,
         attacked: false,
         creatureDied: false,
+        onceFired: [],
         startingPlayer: first.id,
       },
       flow: "mulligan",
@@ -77,6 +78,8 @@ export function createGame(opts: GameOptions): StepResult {
       resolving: null,
       replacements: [],
       triggers: [],
+      delayed: [],
+      linkedExile: [],
       lki: {},
       winner: null,
       over: false,
@@ -95,6 +98,8 @@ export function createGame(opts: GameOptions): StepResult {
         lost: false,
         mulligans: 0,
         lastTurnStarted: 0,
+        startingLife: opts.startingLife ?? 20,
+        turnStats: emptyTurnStats(),
       };
       for (const card of p.deck) {
         s.defs[card.id] ??= card;
@@ -182,6 +187,9 @@ function apply(s: GameState, player: PlayerId, d: Decision): void {
           return;
         case "triggerTarget":
           answerTriggerTarget(s, p.purpose.trigger, p.purpose.spec, d.values.map(String));
+          return;
+        case "triggerMode":
+          answerTriggerMode(s, p.purpose.trigger, Number(d.values[0]));
           return;
       }
       return;

@@ -9,6 +9,8 @@
  * (le choix du joueur affecté, 616.1, viendra avec des cartes qui en ont besoin).
  */
 import { boardAmount } from "./effects";
+import { changeCounters, moveObject, P1P1 } from "./state";
+import { matchesObjectFilter } from "./targets";
 import { checkCondition } from "./triggers";
 import type { Amount, GameObject, GameState, ObjectId, Zone } from "./types";
 
@@ -16,6 +18,8 @@ import type { Amount, GameObject, GameState, ObjectId, Zone } from "./types";
 export interface EntersContext {
   x?: number;
   kicked?: boolean;
+  /** Arrive depuis la résolution d'un sort (« si vous l'avez lancé »). */
+  cast?: boolean;
 }
 
 function amountAtEntry(s: GameState, a: Amount, o: GameObject, ctx: EntersContext): number {
@@ -36,14 +40,40 @@ export function replaceDestination(s: GameState, o: GameObject, to: Zone): Zone 
 
 /** 614.1c–d : effets qui modifient la façon dont un permanent arrive sur le champ de bataille. */
 export function applyEntersReplacements(s: GameState, o: GameObject, ctx: EntersContext): void {
+  if (ctx.kicked) o.kicked = true;
+  if (ctx.cast) o.cast = true;
+  // Remplacements portés par d'autres permanents (« les créatures de vos adversaires arrivent engagées »).
+  for (const id of s.battlefield) {
+    const src = s.objects[id];
+    if (!src || id === o.id) continue;
+    for (const ab of s.defs[src.defId]?.abilities ?? []) {
+      if (ab.kind !== "replacement" || !ab.affects) continue;
+      if (!matchesObjectFilter(s, src.controller, o.id, ab.affects, id)) continue;
+      if (ab.entersTapped) o.tapped = true;
+      if (ab.entersWithCounters !== undefined) changeCounters(s, o, P1P1, amountAtEntry(s, ab.entersWithCounters, src, ctx));
+    }
+  }
   for (const ab of s.defs[o.defId]?.abilities ?? []) {
-    if (ab.kind !== "replacement") continue;
+    if (ab.kind !== "replacement" || ab.affects) continue;
     if (ab.condition) {
       const ok = ab.condition.kind === "kicked" ? !!ctx.kicked : checkCondition(s, ab.condition, o.controller, o.id);
       if (!ok) continue;
     }
     if (ab.entersTapped) o.tapped = true;
-    if (ab.entersWithCounters !== undefined) o.counters.p1p1 += amountAtEntry(s, ab.entersWithCounters, o, ctx);
+    if (ab.entersWithCounters !== undefined) changeCounters(s, o, P1P1, amountAtEntry(s, ab.entersWithCounters, o, ctx));
+  }
+}
+
+/** 610.3 : la source d'un exil « jusqu'à ce que » quitte le champ de bataille : les cartes reviennent. */
+export function releaseLinkedExile(s: GameState, sourceId: ObjectId): void {
+  const links = s.linkedExile.filter((l) => l.sourceId === sourceId);
+  if (links.length === 0) return;
+  s.linkedExile = s.linkedExile.filter((l) => l.sourceId !== sourceId);
+  for (const l of links) {
+    for (const id of l.cards) {
+      const o = s.objects[id];
+      if (o?.zone === "exile") moveObject(s, id, "battlefield", { controller: o.owner });
+    }
   }
 }
 

@@ -57,8 +57,17 @@ export function ChoicePrompt({ view }: { view: GameView }) {
   let valid = true;
   switch (req.type) {
     case "pick": {
+      const g = req.group;
       const toggle = (id: string) =>
-        setValues((cur) => (cur.includes(id) ? cur.filter((x) => x !== id) : req.max === 1 ? [id] : [...cur, id]));
+        setValues((cur) => {
+          if (cur.includes(id)) return cur.filter((x) => x !== id);
+          if (req.max === 1) return [id];
+          // « d'un même cimetière » : changer de joueur recommence la sélection ;
+          // « de joueurs différents » : remplace l'option du même joueur.
+          if (g?.kind === "same" && cur.some((x) => g.holders[x] !== g.holders[id])) return [id];
+          const kept = g?.kind === "different" ? cur.filter((x) => g.holders[x] !== g.holders[id]) : cur;
+          return kept.length >= req.max ? kept : [...kept, id];
+        });
       valid = values.length >= req.min && values.length <= req.max;
       body = (
         <>

@@ -3,6 +3,8 @@
  * Le moteur reste strict ; c'est cette couche qui rend le jeu fluide.
  */
 import { meaningfulActions } from "./legal";
+import { opponentsOf } from "./state";
+import { forcedAttackers } from "./turn";
 import type { Decision, GameState, PlayerId, Step, TargetOption } from "./types";
 
 export interface AutopilotSettings {
@@ -28,12 +30,18 @@ export function autopilotDecision(s: GameState, player: PlayerId, settings: Auto
   if (!p || p.player !== player || s.over) return null;
   const passingTurn = settings.passUntilTurn === s.turn.number;
 
-  if (p.kind === "declareAttackers") return passingTurn ? { type: "declareAttackers", attackers: [] } : null;
+  if (p.kind === "declareAttackers") {
+    if (!passingTurn) return null;
+    // Même en passant le tour, les créatures obligées d'attaquer attaquent.
+    const defender = opponentsOf(s, player)[0];
+    return { type: "declareAttackers", attackers: defender ? forcedAttackers(s, player).map((id) => ({ id, defender })) : [] };
+  }
   if (p.kind === "choice")
     return p.request.autoOk && !settings.fullControl ? { type: "choose", values: p.request.suggested } : null;
-  if (p.kind !== "priority" || settings.fullControl) return null;
-
+  if (p.kind !== "priority") return null;
+  // « Fin du tour » est une demande explicite : elle vaut aussi en contrôle total.
   if (passingTurn) return { type: "pass" };
+  if (settings.fullControl) return null;
   // Rien à faire : on passe.
   if (meaningfulActions(s, player).length === 0) return { type: "pass" };
   const top = s.stack[s.stack.length - 1];
@@ -47,5 +55,5 @@ export function autopilotDecision(s: GameState, player: PlayerId, settings: Auto
 
 /** Choix automatique des cibles quand il n'y a qu'une seule possibilité (et que la cible n'est pas optionnelle). */
 export function autoTarget(t: TargetOption): string | null {
-  return !t.optional && t.legal.length === 1 ? (t.legal[0] as string) : null;
+  return !t.optional && !t.count && t.legal.length === 1 ? (t.legal[0] as string) : null;
 }

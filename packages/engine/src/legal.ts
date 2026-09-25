@@ -11,6 +11,7 @@ import {
   canPlayLand,
   castSource,
   modesOf,
+  sacrificeOptions,
   sorceryTiming,
   spellCost,
 } from "./stack";
@@ -18,12 +19,37 @@ import { obj } from "./state";
 import { legalTargets } from "./targets";
 import type { ActionOption, GameState, ManaCost, ObjectId, PlayerId, TargetOption, TargetSpec } from "./types";
 
-function targetOptions(s: GameState, player: PlayerId, specs: TargetSpec[]): TargetOption[] {
-  return specs.map((t) => ({ id: t.id, label: t.label, optional: !!t.optional, legal: legalTargets(s, player, t) }));
+function targetOptions(s: GameState, player: PlayerId, specs: TargetSpec[], sourceId?: ObjectId): TargetOption[] {
+  return specs.map((t) => {
+    const legal = legalTargets(s, player, t, sourceId);
+    const opt: TargetOption = {
+      id: t.id,
+      label: t.label,
+      optional: !!t.optional,
+      legal,
+      count: t.count && t.count > 1 ? t.count : undefined,
+      kickedCount: t.kickedCount,
+      otherThan: t.otherThan,
+    };
+    if (t.samePlayer || t.differentPlayers) {
+      const holders: Record<string, string> = {};
+      for (const id of legal) {
+        const o = s.objects[id];
+        holders[id] = o ? (o.zone === "battlefield" ? o.controller : o.owner) : id;
+      }
+      opt.group = { kind: t.samePlayer ? "same" : "different", holders };
+    }
+    return opt;
+  });
 }
 
 function targetsAvailable(opts: TargetOption[]): boolean {
-  return opts.every((t) => t.optional || t.legal.length > 0);
+  return opts.every((t) => {
+    if (t.optional) return true;
+    const need = t.count ?? 1;
+    if (t.group?.kind === "different") return new Set(Object.values(t.group.holders)).size >= need;
+    return t.legal.length >= need;
+  });
 }
 
 /** Plus grande valeur de X payable pour un coût qui dépend de X. */
@@ -59,7 +85,7 @@ export function legalActions(s: GameState, player: PlayerId): ActionOption[] {
     if (!d.implemented || !canCastTiming(s, player, d)) continue;
     const flashback = castSource(s, player, card) === "flashback";
     const modes = modesOf(d)
-      .map((m, index) => ({ index, label: m.label, targets: targetOptions(s, player, m.targets) }))
+      .map((m, index) => ({ index, label: m.label, targets: targetOptions(s, player, m.targets, card) }))
       .filter((m) => targetsAvailable(m.targets));
     if (modes.length === 0 || !canPay(s, player, spellCost(s, player, d, { flashback }))) continue;
     const additional = additionalOptions(s, player, card, d);
@@ -76,17 +102,20 @@ export function legalActions(s: GameState, player: PlayerId): ActionOption[] {
     });
   }
 
-  for (const id of s.battlefield) {
+  const ownGraveyard = (s.players[player]?.graveyard ?? []).filter((id) =>
+    s.defs[obj(s, id).defId]?.abilities.some((ab) => ab.kind === "activated" && ab.fromGraveyard),
+  );
+  for (const id of [...s.battlefield, ...ownGraveyard]) {
     const o = obj(s, id);
-    if (o.controller !== player) continue;
+    if (o.zone === "battlefield" ? o.controller !== player : o.owner !== player) continue;
     const d = s.defs[o.defId];
     d?.abilities.forEach((_, index) => {
       const ab = activatedAbility(s, id, index);
-      if (!ab || !canPayNonManaCost(s, id, ab)) return;
+      if (!ab || !!ab.fromGraveyard !== (o.zone === "graveyard") || !canPayNonManaCost(s, id, ab, index)) return;
       if (ab.sorcerySpeed && !sorceryTiming(s, player)) return;
       const exclude = ab.cost.tap ? new Set([id]) : undefined;
       if (ab.cost.mana && !canPay(s, player, totalCost(ab.cost.mana, 0), exclude)) return;
-      const targets = targetOptions(s, player, ab.targets);
+      const targets = targetOptions(s, player, ab.targets, id);
       if (!targetsAvailable(targets)) return;
       out.push({
         type: "activate",
@@ -95,6 +124,9 @@ export function legalActions(s: GameState, player: PlayerId): ActionOption[] {
         label: ab.label,
         targets,
         xMax: maxX(s, player, ab.cost.mana, exclude),
+        additional: ab.cost.sacrifice
+          ? { sacrifice: { count: ab.cost.sacrifice.count, options: sacrificeOptions(s, player, id, ab) } }
+          : undefined,
       });
     });
   }

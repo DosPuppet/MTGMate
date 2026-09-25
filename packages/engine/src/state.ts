@@ -2,7 +2,19 @@
  * Primitives de manipulation de l'état : identifiants, hasard déterministe,
  * événements, zones et caractéristiques calculées (couches).
  */
-import type { CardDef, GameEvent, GameObject, GameState, LkiSnapshot, ManaType, ObjectId, PlayerId, Step, Zone } from "./types";
+import type {
+  CardDef,
+  GameEvent,
+  GameObject,
+  GameState,
+  LkiSnapshot,
+  ManaType,
+  ObjectId,
+  PlayerId,
+  Step,
+  TurnStats,
+  Zone,
+} from "./types";
 
 // ---------------------------------------------------------------------------
 // Événements : le moteur est synchrone, un collecteur global suffit.
@@ -44,7 +56,13 @@ export type RulesEvent =
   | { e: "attack"; attacker: ObjectId; defender: PlayerId }
   | { e: "damage"; sourceId: ObjectId | null; target: string; amount: number; combat: boolean }
   | { e: "step"; step: Step; active: PlayerId }
-  | { e: "lifeGain"; player: PlayerId; amount: number };
+  /** `first` : première fois que ce joueur gagne des points de vie ce tour-ci. */
+  | { e: "lifeGain"; player: PlayerId; amount: number; first: boolean }
+  | { e: "lifeLoss"; player: PlayerId; amount: number }
+  /** `nth` : rang de cette carte parmi celles piochées par ce joueur ce tour-ci. */
+  | { e: "draw"; player: PlayerId; nth: number }
+  | { e: "attackWith"; player: PlayerId; count: number }
+  | { e: "counters"; objectId: ObjectId; kind: string; amount: number };
 
 /** Signale un événement de règles : les capacités déclenchées correspondantes sont mises en attente. */
 export function rulesEvent(s: GameState, ev: RulesEvent): void {
@@ -108,6 +126,10 @@ export function shuffle<T>(s: GameState, items: T[]): void {
   }
 }
 
+export function emptyTurnStats(): TurnStats {
+  return { lifeGained: 0, lifeGainEvents: 0, lifeLost: 0, cardsDrawn: 0, spellsCast: 0 };
+}
+
 export function emptyPool(): Record<ManaType, number> {
   return { W: 0, U: 0, B: 0, R: 0, G: 0, C: 0 };
 }
@@ -167,6 +189,33 @@ export function onBattlefield(s: GameState, id: ObjectId): boolean {
 }
 
 // ---------------------------------------------------------------------------
+// Marqueurs
+// ---------------------------------------------------------------------------
+
+export const P1P1 = "+1/+1";
+export const M1M1 = "-1/-1";
+
+export function counterCount(o: { counters: Record<string, number> }, kind: string): number {
+  return o.counters[kind] ?? 0;
+}
+
+/** Modification nette de F/E due aux marqueurs +1/+1 et -1/-1. */
+export function counterPT(o: { counters: Record<string, number> }): number {
+  return counterCount(o, P1P1) - counterCount(o, M1M1);
+}
+
+/** Ajoute (ou retire, si n < 0) des marqueurs ; renvoie le nombre réellement modifié. */
+export function changeCounters(s: GameState, o: GameObject, kind: string, n: number): number {
+  const before = counterCount(o, kind);
+  const after = Math.max(0, before + n);
+  if (after === 0) delete o.counters[kind];
+  else o.counters[kind] = after;
+  if (after !== before) bump(s);
+  if (after > before && o.zone === "battlefield") rulesEvent(s, { e: "counters", objectId: o.id, kind, amount: after - before });
+  return after - before;
+}
+
+// ---------------------------------------------------------------------------
 // Zones
 // ---------------------------------------------------------------------------
 
@@ -202,7 +251,7 @@ export function createObject(
     tapped: false,
     damage: 0,
     deathtouched: false,
-    counters: { p1p1: 0, m1m1: 0 },
+    counters: {},
     controlledSince: s.turn.number,
     timestamp: nextTimestamp(s),
     isToken: opts.isToken ?? false,
@@ -241,6 +290,7 @@ export function moveObject(
     bump(s);
     // Un jeton qui quitte le champ de bataille cesse d'exister, mais il « meurt » bien (déclencheurs).
     rulesEvent(s, { e: "zone", oldId: id, newId: null, from: from0, to, lki });
+    if (from0 === "battlefield") releaseLinkedExile(s, id);
     return null;
   }
 
@@ -258,6 +308,7 @@ export function moveObject(
   }
   if (to === "battlefield") applyEntersReplacements(s, moved, opts.enters ?? {});
   rulesEvent(s, { e: "zone", oldId: id, newId: moved.id, from: from0, to, lki });
+  if (from0 === "battlefield") releaseLinkedExile(s, id);
   return moved.id;
 }
 
@@ -266,7 +317,7 @@ export function moveObject(
 // ---------------------------------------------------------------------------
 
 import { bump, snapshot } from "./layers";
-import { applyEntersReplacements, type EntersContext, replaceDestination } from "./replacement";
+import { applyEntersReplacements, type EntersContext, releaseLinkedExile, replaceDestination } from "./replacement";
 import { detectTriggers } from "./triggers";
 
 export {

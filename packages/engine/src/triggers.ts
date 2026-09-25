@@ -5,22 +5,25 @@
  *   Les capacités « quitte le champ de bataille » regardent en arrière (603.10a) : pendant un lot
  *   d'événements simultanés (actions basées sur l'état, un effet), les sources sont celles présentes au début du lot.
  * - Mise sur la pile : juste avant qu'un joueur reçoive la priorité (603.3b), dans l'ordre APNAP ;
- *   chaque joueur ordonne ses déclenchements et choisit leurs cibles (603.3d) via les choix génériques.
+ *   chaque joueur ordonne ses déclenchements, choisit leur mode et leurs cibles (603.3c–d) via les choix génériques.
+ * - Capacités retardées (603.7) et réflexives (603.12) : créées par des effets, avec leurs propres effets et cibles.
  */
 import { ask } from "./choices";
 import { RulesError } from "./errors";
 import { apnapOrder, chars, emit, newId, obj, onBattlefield, opponentsOf, type RulesEvent, snapshot } from "./state";
-import { legalTargets, matchesObjectFilter, matchesView } from "./targets";
+import { legalTargets, matchesObjectFilter, matchesView, validateTargets } from "./targets";
 import type {
-  CardDef,
+  AbilityDef,
   Condition,
   GameState,
+  InlineAbility,
   LkiSnapshot,
   ObjectFilter,
   ObjectId,
   PendingTrigger,
   PlayerId,
   StackItem,
+  TargetSpec,
   TriggerEventData,
   TriggeredAbilityDef,
   TriggerSpec,
@@ -31,12 +34,16 @@ interface Source {
   view: LkiSnapshot;
 }
 
-const hasTriggers = (d: CardDef | undefined) => !!d?.abilities.some((a) => a.kind === "triggered");
+const hasTriggers = (abilities: AbilityDef[] | undefined) => !!abilities?.some((a) => a.kind === "triggered");
 
 function liveSources(s: GameState): Source[] {
   const out: Source[] = [];
+  const granted = s.effects.some((e) => e.addAbilities?.some((a) => a.kind === "triggered"));
   for (const id of s.battlefield) {
-    if (hasTriggers(s.defs[obj(s, id).defId])) out.push({ id, view: snapshot(s, id) });
+    // Filtre rapide sur les capacités imprimées, sauf si un effet accorde des capacités déclenchées.
+    if (!granted && !hasTriggers(s.defs[obj(s, id).defId]?.abilities)) continue;
+    const view = snapshot(s, id);
+    if (hasTriggers(view.abilities)) out.push({ id, view });
   }
   return out;
 }
@@ -77,7 +84,33 @@ export function checkCondition(s: GameState, c: Condition, controller: PlayerId,
     case "lifeAtLeast":
       return (s.players[controller]?.life ?? 0) >= c.amount;
     case "kicked":
-      return false; // évalué à l'arrivée (replacement.ts) ou à la résolution
+      // Permanent arrivé depuis un sort kické (sinon : évalué à l'arrivée ou à la résolution).
+      return !!(sourceId && s.objects[sourceId]?.kicked);
+    case "yourTurn":
+      return s.turn.active === controller;
+    case "opponentsTurn":
+      return s.turn.active !== controller;
+    case "threshold":
+      return (s.players[controller]?.graveyard.length ?? 0) >= 7;
+    case "counterAtLeast": {
+      const o = sourceId ? s.objects[sourceId] : undefined;
+      return !!o && (o.counters[c.counter] ?? 0) >= c.n;
+    }
+    case "lifeAboveStart": {
+      const p = s.players[controller];
+      return !!p && p.life >= p.startingLife + c.by;
+    }
+    case "opponentLostLifeThisTurn":
+      return opponentsOf(s, controller).some((q) => (s.players[q]?.turnStats.lifeLost ?? 0) > 0);
+    case "not":
+      return !checkCondition(s, c.cond, controller, sourceId);
+    case "all":
+      return c.of.every((x) => checkCondition(s, x, controller, sourceId));
+    case "wasCast":
+      return !!(sourceId && s.objects[sourceId]?.cast);
+    case "var":
+    case "refLife":
+      return false; // évalué pendant la résolution (effects.ts)
   }
 }
 
@@ -122,10 +155,16 @@ function matchTrigger(s: GameState, ev: RulesEvent, t: TriggerSpec, src: Source)
       const v = liveView(s, ev.attacker);
       return v && matchWho(t.who, v, src) ? { objectId: ev.attacker, player: ev.defender } : null;
     }
-    case "dealsCombatDamage": {
-      if (ev.e !== "damage" || !ev.combat || !ev.sourceId) return null;
+    case "attackWith":
+      return ev.e === "attackWith" && ev.player === me && ev.count >= (t.min ?? 1) ? { player: me, amount: ev.count } : null;
+    case "dealsCombatDamage":
+    case "dealsDamage": {
+      if (ev.e !== "damage" || !ev.sourceId) return null;
+      if (t.on === "dealsCombatDamage" && !ev.combat) return null;
+      if (t.on === "dealsDamage" && t.noncombatOnly && ev.combat) return null;
       const toPlayer = !!s.players[ev.target];
-      if (t.toPlayer && !toPlayer) return null;
+      if (t.on === "dealsCombatDamage" && t.toPlayer && !toPlayer) return null;
+      if (t.on === "dealsDamage" && t.toOpponent && (!toPlayer || ev.target === me)) return null;
       const v = liveView(s, ev.sourceId) ?? s.lki[ev.sourceId] ?? null;
       if (!v || !matchWho(t.who, v, src)) return null;
       return { objectId: ev.sourceId, player: toPlayer ? ev.target : undefined, amount: ev.amount };
@@ -144,7 +183,18 @@ function matchTrigger(s: GameState, ev: RulesEvent, t: TriggerSpec, src: Source)
       return v?.types.includes("Land") && v.controller === me ? { objectId: v.id, player: me } : null;
     }
     case "gainLife":
-      return ev.e === "lifeGain" && ev.player === me ? { player: me, amount: ev.amount } : null;
+      return ev.e === "lifeGain" && ev.player === me && (!t.first || ev.first) ? { player: me, amount: ev.amount } : null;
+    case "loseLife":
+      return ev.e === "lifeLoss" && whose(t.whose, ev.player, me) ? { player: ev.player, amount: ev.amount } : null;
+    case "draw":
+      return ev.e === "draw" && whose(t.whose, ev.player, me) && (t.nth === undefined || ev.nth === t.nth)
+        ? { player: ev.player, amount: 1 }
+        : null;
+    case "countersPut": {
+      if (ev.e !== "counters" || (t.kind && ev.kind !== t.kind)) return null;
+      const v = liveView(s, ev.objectId);
+      return v && matchWho(t.who, v, src) ? { objectId: ev.objectId, amount: ev.amount, player: v.controller } : null;
+    }
   }
 }
 
@@ -155,19 +205,23 @@ export function detectTriggers(s: GameState, ev: RulesEvent): void {
   if (leaving) {
     sources = batchBefore ?? liveSources(s);
     // L'objet qui part peut se déclencher lui-même (« quand cette créature meurt »).
-    if (ev.lki && hasTriggers(s.defs[ev.lki.defId]) && !sources.some((x) => x.id === ev.lki?.id)) {
+    if (ev.lki && hasTriggers(ev.lki.abilities) && !sources.some((x) => x.id === ev.lki?.id)) {
       sources = [...sources, { id: ev.lki.id, view: ev.lki }];
     }
   } else {
     sources = liveSources(s);
   }
   for (const src of sources) {
-    const d = s.defs[src.view.defId];
-    d?.abilities.forEach((ab, index) => {
+    (src.view.abilities ?? []).forEach((ab, index) => {
       if (ab.kind !== "triggered") return;
       const data = matchTrigger(s, ev, ab.trigger, src);
       if (!data) return;
       if (ab.condition && !checkCondition(s, ab.condition, src.view.controller, src.id)) return;
+      if (ab.oncePerTurn) {
+        const key = `${src.view.defId}:${src.id}:${index}`;
+        if (s.turn.onceFired.includes(key)) return;
+        s.turn.onceFired.push(key);
+      }
       s.triggers.push({
         id: newId(s, "t"),
         sourceId: src.id,
@@ -177,9 +231,69 @@ export function detectTriggers(s: GameState, ev: RulesEvent): void {
         sourceSnapshot: { keywords: src.view.keywords, power: src.view.power, controller: src.view.controller },
         event: data,
         targets: {},
+        // Capacité accordée (pas dans la définition) : on la transporte avec le déclenchement.
+        inline: (s.defs[src.view.defId]?.abilities[index] ?? null) === ab ? undefined : inlineOf(ab),
       });
     });
   }
+}
+
+function inlineOf(ab: TriggeredAbilityDef): InlineAbility {
+  return { targets: ab.targets, effects: ab.effects, label: ab.label };
+}
+
+// ---------------------------------------------------------------------------
+// Capacités retardées et réflexives
+// ---------------------------------------------------------------------------
+
+/** Crée une capacité retardée « au début de la prochaine étape de fin ». */
+export function createDelayed(
+  s: GameState,
+  controller: PlayerId,
+  sourceId: ObjectId,
+  sourceDefId: string,
+  ability: InlineAbility,
+): void {
+  const lateInTurn = s.turn.step === "end" || s.turn.step === "cleanup";
+  s.delayed.push({
+    id: newId(s, "d"),
+    controller,
+    sourceId,
+    sourceDefId,
+    at: "nextEndStep",
+    notBeforeTurn: lateInTurn ? s.turn.number + 1 : s.turn.number,
+    ability,
+  });
+}
+
+/** Au début de l'étape de fin : les capacités retardées dont c'est le moment se déclenchent. */
+export function releaseDelayedTriggers(s: GameState): void {
+  const due = s.delayed.filter((d) => d.notBeforeTurn <= s.turn.number);
+  if (due.length === 0) return;
+  s.delayed = s.delayed.filter((d) => !due.includes(d));
+  for (const d of due) pushInline(s, d.controller, d.sourceId, d.sourceDefId, d.ability);
+}
+
+/** Met en attente une capacité retardée ou réflexive (elle ira sur la pile à la prochaine priorité). */
+export function pushInline(
+  s: GameState,
+  controller: PlayerId,
+  sourceId: ObjectId,
+  sourceDefId: string,
+  ability: InlineAbility,
+  event: TriggerEventData = {},
+): void {
+  s.triggers.push({
+    id: newId(s, "t"),
+    sourceId,
+    sourceDefId,
+    abilityIndex: -1,
+    controller,
+    sourceSnapshot: { keywords: [], power: 0, controller },
+    event,
+    targets: { ...(ability.bound ?? {}) },
+    inline: ability,
+  });
 }
 
 // ---------------------------------------------------------------------------
@@ -191,9 +305,21 @@ export function triggeredAbility(s: GameState, t: { sourceDefId: string; ability
   return ab?.kind === "triggered" ? ab : null;
 }
 
-function triggerLabel(s: GameState, t: PendingTrigger): string {
+/** Cibles d'un déclenchement : celles de la capacité retardée/réflexive, du mode choisi, ou de la capacité. */
+export function triggerTargetSpecs(
+  s: GameState,
+  t: { sourceDefId: string; abilityIndex: number; mode?: number; inline?: InlineAbility },
+): TargetSpec[] {
+  if (t.inline) return t.inline.targets;
   const ab = triggeredAbility(s, t);
-  return `${s.defs[t.sourceDefId]?.name ?? "?"}${ab?.label ? ` — ${ab.label}` : ""}`;
+  if (!ab) return [];
+  if (ab.modes) return ab.modes[t.mode ?? 0]?.targets ?? [];
+  return ab.targets;
+}
+
+function triggerLabel(s: GameState, t: PendingTrigger): string {
+  const label = t.inline?.label ?? triggeredAbility(s, t)?.label;
+  return `${s.defs[t.sourceDefId]?.name ?? "?"}${label ? ` — ${label}` : ""}`;
 }
 
 /**
@@ -226,12 +352,13 @@ export function processTriggers(s: GameState): boolean {
     }
     // Dans l'ordre de résolution voulu, la dernière va sur la pile en premier.
     for (const t of [...mine].reverse()) {
-      if (!chooseTriggerTargets(s, t)) return true; // question posée
+      if (!chooseTriggerMode(s, t)) return true; // question posée
+      if (!chooseTriggerTargets(s, t)) return true;
       s.triggers = s.triggers.filter((x) => x.id !== t.id);
-      const ab = triggeredAbility(s, t);
-      if (!ab) continue;
+      const specs = triggerTargetSpecs(s, t);
+      if (!t.inline && !triggeredAbility(s, t)) continue;
       // 603.3d : une capacité sans cible légale pour une cible requise est retirée.
-      if (ab.targets.some((spec) => !spec.optional && (t.targets[spec.id]?.length ?? 0) === 0)) continue;
+      if (specs.some((spec) => !spec.optional && (t.targets[spec.id]?.length ?? 0) === 0)) continue;
       const item: StackItem = {
         id: newId(s, "a"),
         kind: "ability",
@@ -239,12 +366,13 @@ export function processTriggers(s: GameState): boolean {
         sourceId: t.sourceId,
         sourceDefId: t.sourceDefId,
         abilityIndex: t.abilityIndex,
-        mode: 0,
+        mode: t.mode ?? 0,
         targets: t.targets,
         x: 0,
         kicked: false,
         sourceSnapshot: t.sourceSnapshot,
         event: t.event,
+        inline: t.inline,
       };
       s.stack.push(item);
       s.priority.passes = 0;
@@ -254,27 +382,75 @@ export function processTriggers(s: GameState): boolean {
         player: t.controller,
         stackId: item.id,
         defId: t.sourceDefId,
-        targets: Object.values(t.targets).flat(),
+        targets: specs.flatMap((spec) => t.targets[spec.id] ?? []),
       });
     }
   }
   return changed;
 }
 
+/** Capacité modale : le contrôleur choisit le mode (603.3c). Renvoie false si une question a été posée. */
+function chooseTriggerMode(s: GameState, t: PendingTrigger): boolean {
+  if (t.inline || t.mode !== undefined) return true;
+  const modes = triggeredAbility(s, t)?.modes;
+  if (!modes) return true;
+  // Seuls les modes dont les cibles requises existent sont proposés.
+  const possible = modes
+    .map((m, i) => ({ m, i }))
+    .filter(({ m }) => m.targets.every((spec) => spec.optional || legalTargets(s, t.controller, spec).length > 0));
+  if (possible.length <= 1) {
+    t.mode = possible[0]?.i ?? 0;
+    return true;
+  }
+  ask(
+    s,
+    t.controller,
+    {
+      type: "pick",
+      intent: "triggerMode",
+      prompt: `${triggerLabel(s, t)} : choisissez un mode`,
+      options: possible.map(({ i }) => String(i)),
+      labels: Object.fromEntries(possible.map(({ m, i }) => [String(i), m.label ?? `Mode ${i + 1}`])),
+      min: 1,
+      max: 1,
+      suggested: [String(possible[0]?.i ?? 0)],
+    },
+    { kind: "triggerMode", trigger: t.id },
+  );
+  return false;
+}
+
 /** Choisit les cibles d'un déclenchement ; renvoie false si une question a été posée. */
 function chooseTriggerTargets(s: GameState, t: PendingTrigger): boolean {
-  const ab = triggeredAbility(s, t);
-  if (!ab) return true;
-  for (const spec of ab.targets) {
+  for (const spec of triggerTargetSpecs(s, t)) {
     if (t.targets[spec.id] !== undefined) continue;
-    const legal = legalTargets(s, t.controller, spec);
-    if (legal.length === 0) {
+    const taken = new Set((spec.otherThan ?? []).flatMap((o) => t.targets[o] ?? []));
+    const legal = legalTargets(s, t.controller, spec, t.sourceId).filter((id) => !taken.has(id));
+    const count = spec.count ?? 1;
+    if (legal.length === 0 || (!spec.optional && legal.length < count)) {
       t.targets[spec.id] = [];
       continue;
     }
-    if (legal.length === 1 && !spec.optional) {
+    if (legal.length === count && !spec.optional && !spec.samePlayer && !spec.differentPlayers) {
       t.targets[spec.id] = legal;
       continue;
+    }
+    const first = suggestTarget(s, t.controller, legal);
+    let group: { kind: "same" | "different"; holders: Record<string, string> } | undefined;
+    if (spec.samePlayer || spec.differentPlayers) {
+      const holders: Record<string, string> = {};
+      for (const id of legal) {
+        const o = s.objects[id];
+        holders[id] = o ? (o.zone === "battlefield" ? o.controller : o.owner) : id;
+      }
+      group = { kind: spec.samePlayer ? "same" : "different", holders };
+    }
+    const suggested: string[] = [];
+    for (const id of [first, ...legal.filter((x) => x !== first)]) {
+      if (suggested.length >= count) break;
+      if (group?.kind === "same" && suggested.length && group.holders[suggested[0] as string] !== group.holders[id]) continue;
+      if (group?.kind === "different" && suggested.some((x) => group?.holders[x] === group?.holders[id])) continue;
+      suggested.push(id);
     }
     ask(
       s,
@@ -282,11 +458,12 @@ function chooseTriggerTargets(s: GameState, t: PendingTrigger): boolean {
       {
         type: "pick",
         intent: "triggerTarget",
-        prompt: `${triggerLabel(s, t)} : choisissez ${spec.label ?? "une cible"}`,
+        prompt: `${triggerLabel(s, t)} : choisissez ${count > 1 ? `jusqu'à ${count} cibles — ` : ""}${spec.label ?? "une cible"}`,
         options: legal,
-        min: spec.optional ? 0 : 1,
-        max: 1,
-        suggested: [suggestTarget(s, t.controller, legal)],
+        min: spec.optional ? 0 : count,
+        max: count,
+        suggested,
+        group,
       },
       { kind: "triggerTarget", trigger: t.id, spec: spec.id },
     );
@@ -315,5 +492,24 @@ export function answerTriggerOrder(s: GameState, player: PlayerId, order: string
 export function answerTriggerTarget(s: GameState, triggerId: string, specId: string, values: string[]): void {
   const t = s.triggers.find((x) => x.id === triggerId);
   if (!t) throw new RulesError("Capacité déclenchée introuvable");
-  t.targets[specId] = values;
+  const spec = triggerTargetSpecs(s, t).find((x) => x.id === specId);
+  if (!spec) throw new RulesError("Cible inconnue");
+  try {
+    t.targets[specId] =
+      validateTargets(
+        s,
+        t.controller,
+        [{ ...spec, optional: true }],
+        { ...t.targets, [specId]: values },
+        { sourceId: t.sourceId },
+      )[specId] ?? [];
+  } catch (e) {
+    throw new RulesError((e as Error).message);
+  }
+}
+
+export function answerTriggerMode(s: GameState, triggerId: string, mode: number): void {
+  const t = s.triggers.find((x) => x.id === triggerId);
+  if (!t) throw new RulesError("Capacité déclenchée introuvable");
+  t.mode = mode;
 }

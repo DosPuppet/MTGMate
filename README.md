@@ -19,10 +19,11 @@ npm run dev          # http://localhost:5173
 
 | Commande | Rôle |
 |---|---|
-| `npm test` | Tests de règles et d'IA (Vitest) |
+| `npm test` | Tests de règles, d'IA et test de fumée de chaque carte du set principal (Vitest) |
 | `npm run fuzz -- --games 300 [--ai random\|heuristic\|mixed] [--players 4] [--pool all]` | Parties IA contre IA, invariants vérifiés à chaque décision (`--pool all` : decks aléatoires tirés de toutes les cartes gérées) |
 | `npm run bench` | Décisions par seconde du moteur et temps de décision de l'IA (cibles : ≥ 5 000 déc/s, IA < 50 ms) |
-| `npm run coverage` | Cartes FDN gérées et mécaniques manquantes (`-- --list <mécanique>`) |
+| `npm run coverage [-- --set main] [-- --missing] [-- --card "<nom>"]` | Cartes FDN gérées, mécaniques manquantes, texte Oracle et script d'une carte |
+| `npm run deck-smoke` | Deckbuilder de bout en bout : import, édition, export, persistance, partie (serveur de dev lancé) |
 | `npm run typecheck` / `npm run lint` | TypeScript strict / Biome |
 | `npm run import-cards -- fdn` | Réimporte un set depuis Scryfall (EN + FR) |
 | `npm run ui-smoke -- <dossier> [actions]` | Joue une partie dans Chromium via l'interface et prend des captures (serveur de dev lancé) |
@@ -32,7 +33,7 @@ npm run dev          # http://localhost:5173
 ```
 packages/
   engine/   moteur pur et déterministe : état JSON, décisions, règles, autopilot, vue filtrée, GameHost
-  cards/    données Scryfall (data/fdn.json), comportement des cartes (src/fdn.ts), decks (decks/*.json)
+  cards/    données Scryfall (data/fdn.json), scripts des cartes par couleur (src/fdn/*.ts), decklists, decks (decks/*.json)
   ai/       IA aléatoire (fuzz) et heuristique (simulation sur clones de l'état + évaluation)
   client/   React + Vite + Zustand + Motion ; la partie tourne dans un Web Worker
 tools/      import Scryfall, fuzz, test d'interface
@@ -51,7 +52,7 @@ tools/      import Scryfall, fuzz, test d'interface
 
 ## Ajouter une carte
 
-Les caractéristiques d'une carte (coût, types, F/E, mots-clés) viennent de Scryfall. Une créature « vanilla » ou « french vanilla » fonctionne donc sans script. Sinon, on décrit son comportement dans `packages/cards/src/fdn.ts` :
+Les caractéristiques d'une carte (coût, types, F/E, mots-clés) viennent de Scryfall. Une créature « vanilla » ou « french vanilla » fonctionne donc sans script. Sinon, on décrit son comportement dans `packages/cards/src/fdn/<couleur>.ts` :
 
 ```ts
 "Burst Lightning": { kicker: "{4}", spell: spell([target.any()], [fx.damage(amount.kicked(4, 2), ref.target())]) },
@@ -65,10 +66,10 @@ Les caractéristiques d'une carte (coût, types, F/E, mots-clés) viennent de Sc
 | 2. Noyau du moteur | tours et phases, priorité et pile, mana, combat et mots-clés, actions basées sur l'état, mulligan de Londres, X, kicker, sorts modaux, capacités activées, jetons | ✅ |
 | 3. Client contre l'IA | plateau, main en éventail, glisser-déposer, flèches, barre des phases et arrêts, autopilot, journal FR | ✅ |
 | 4a. Fondations du moteur | N joueurs, choix génériques, déclencheurs, couches, remplacements, coûts, performance | ✅ |
-| 4b. Couverture FDN | toutes les cartes du set (auras, équipements, ward, contresorts, recherche…) ; Limité (scellé, draft) | en cours : 83 / 517 cartes |
+| 4b. Couverture FDN | set principal (276 cartes) : cimetière, recherche, cibles multiples, exil lié… ; restent auras, équipements, planeswalkers, contresorts et ward, copie, contrôle | en cours : 219 / 276 cartes du set principal |
 | 5. IA | attaques par simulation, puis ISMCTS | à faire |
 | 6. JcJ en ligne | serveur Node `ws` réutilisant `GameHost` + `projectView` | à faire |
-| 7. Finitions | animations, sons, deckbuilder, replays (graine + décisions) | à faire |
+| 7. Finitions | deckbuilder, import et export de decklists (MTGA, MTGO, noms FR) ✅ ; sons, replays (graine + décisions) | en cours |
 
 ## Cadre légal
 

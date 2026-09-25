@@ -1,7 +1,9 @@
 import { useEffect } from "react";
 import { Board, useMainAction } from "./board/Board";
 import { Sidebar } from "./board/Sidebar";
+import { DeckBuilder } from "./decks/DeckBuilder";
 import { Lobby } from "./lobby/Lobby";
+
 import { Prompts } from "./prompts/Prompts";
 import { useGame } from "./store";
 
@@ -43,12 +45,16 @@ function GameScreen() {
       <Board />
       <Sidebar />
       <Prompts />
-      <Toast />
     </div>
   );
 }
 
 export function App() {
   const screen = useGame((s) => s.screen);
-  return screen === "lobby" ? <Lobby /> : <GameScreen />;
+  return (
+    <>
+      {screen === "decks" ? <DeckBuilder /> : screen === "lobby" ? <Lobby /> : <GameScreen />}
+      <Toast />
+    </>
+  );
 }

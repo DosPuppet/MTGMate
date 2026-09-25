@@ -6,6 +6,7 @@ import {
   attackCandidates,
   blockCandidates,
   type Decision,
+  forcedAttackers,
   type GameState,
   legalActions,
   opponentsOf,
@@ -51,7 +52,7 @@ export function randomAgent(seed: number, passChance = 0.4): Agent {
         return {
           type: "declareAttackers",
           attackers: attackCandidates(s, me)
-            .filter(() => rand() < 0.6)
+            .filter((id) => rand() < 0.6 || forcedAttackers(s, me).includes(id))
             .map((id) => ({ id, defender: pick(rand, opponentsOf(s, me)) as string })),
         };
       case "declareBlockers": {

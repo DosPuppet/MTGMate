@@ -2,6 +2,8 @@
  * État de l'interface et logique d'interaction (lancement de sorts, ciblage, attaque, blocage).
  * Le moteur reste la seule source de vérité : on n'envoie que des décisions tirées des options légales.
  */
+
+import type { DeckEntries } from "@mtgx/cards";
 import {
   type ActionOption,
   type AutopilotSettings,
@@ -36,6 +38,8 @@ export interface Casting {
   targets: Record<string, string[]>;
   stage: "mode" | "x" | "kicker" | "target" | "discard" | "sacrifice";
   spec: TargetOption | null;
+  /** Cibles déjà désignées pour `spec` quand il en accepte plusieurs. */
+  picked?: string[];
   /** Cible désignée par glisser-déposer, utilisée pour la première cible compatible. */
   preset?: string;
 }
@@ -59,7 +63,9 @@ export interface Hover {
 }
 
 interface Store {
-  screen: "lobby" | "game";
+  screen: "lobby" | "decks" | "game";
+  /** Deck ouvert dans le deckbuilder. */
+  editingDeck: string | null;
   session: LocalSession | null;
   view: GameView | null;
   faces: Record<string, CardFace>;
@@ -83,8 +89,9 @@ interface Store {
   turnBanner: { id: number; text: string; mine: boolean } | null;
   spotlight: { id: number; face: CardFace; who: string } | null;
 
-  startGame(playerDeck: string, aiDecks: string[]): void;
+  startGame(playerDeck: DeckEntries, aiDecks: DeckEntries[]): void;
   backToLobby(): void;
+  openDeckBuilder(deckId?: string | null): void;
   receive(msg: FromWorker): void;
   decide(d: Decision): void;
   notify(text: string): void;
@@ -97,6 +104,10 @@ interface Store {
   chooseX(x: number): void;
   chooseKicker(kicked: boolean): void;
   chooseNoTarget(): void;
+  /** Désigne une cible (ou la retire, pour un mot « cible » qui en accepte plusieurs). */
+  pickTarget(id: string): void;
+  /** Valide les cibles déjà désignées (« jusqu'à N »). */
+  confirmTargets(): void;
   chooseAdditional(kind: "discard" | "sacrifice", ids: string[]): void;
   cancel(): void;
   toggleAttacker(id: string): void;
@@ -140,7 +151,14 @@ function buildDecision(c: Casting): Decision {
       sacrifice: c.sacrifice ?? undefined,
     };
   }
-  return { type: "activate", source: c.option.source, ability: c.option.ability, targets: c.targets, x: c.x ?? undefined };
+  return {
+    type: "activate",
+    source: c.option.source,
+    ability: c.option.ability,
+    targets: c.targets,
+    x: c.x ?? undefined,
+    sacrifice: c.sacrifice ?? undefined,
+  };
 }
 
 let toastId = 0;
@@ -229,11 +247,13 @@ export const useGame = create<Store>((set, get) => {
         c.targets[spec.id] = [auto];
         continue;
       }
-      return set({ casting: { ...c, stage: "target", spec } });
+      const effective = c.kicked && spec.kickedCount ? { ...spec, count: spec.kickedCount } : spec;
+      return set({ casting: { ...c, stage: "target", spec: effective, picked: [] } });
     }
     // Coûts additionnels : choisis en dernier, une fois les cibles connues.
-    const extra = c.option.type === "cast" ? c.option.additional : undefined;
-    if (extra?.discard && c.discard === null) return set({ casting: { ...c, stage: "discard", spec: null } });
+    const extra = c.option.type === "cast" || c.option.type === "activate" ? c.option.additional : undefined;
+    if (extra && "discard" in extra && extra.discard && c.discard === null)
+      return set({ casting: { ...c, stage: "discard", spec: null } });
     if (extra?.sacrifice && c.sacrifice === null) return set({ casting: { ...c, stage: "sacrifice", spec: null } });
     get().decide(buildDecision(c));
   };
@@ -245,6 +265,7 @@ export const useGame = create<Store>((set, get) => {
 
   return {
     screen: "lobby",
+    editingDeck: null,
     session: null,
     view: null,
     faces: {},
@@ -275,6 +296,10 @@ export const useGame = create<Store>((set, get) => {
       session.send({ type: "settings", settings });
     },
 
+    openDeckBuilder(deckId) {
+      set({ screen: "decks", editingDeck: deckId ?? get().editingDeck });
+    },
+
     backToLobby() {
       get().session?.close();
       set({ screen: "lobby", session: null, view: null, casting: null, hover: null });
@@ -286,6 +311,12 @@ export const useGame = create<Store>((set, get) => {
       const lines = describeEvents(events, view, faces, get().lang, get().view);
       playEffects(view, events, faces);
       const changed = pendingKey(get().view) !== pendingKey(view);
+      // Créatures qui doivent attaquer : déjà sélectionnées (et impossibles à retirer côté moteur).
+      const p = view.pending;
+      const forced =
+        p?.kind === "declareAttackers" && p.player === view.viewer
+          ? (p.candidates ?? []).filter((id) => view.battlefield.find((o) => o.id === id)?.keywords.includes("mustAttack"))
+          : [];
       set((s) => ({
         view,
         faces,
@@ -294,7 +325,7 @@ export const useGame = create<Store>((set, get) => {
           ? {
               casting: null,
               abilityMenu: null,
-              attackers: [],
+              attackers: forced,
               attackTargets: {},
               blocks: {},
               selectedBlocker: null,
@@ -346,10 +377,7 @@ export const useGame = create<Store>((set, get) => {
       const { view, casting } = get();
       if (!view) return;
       if (casting?.stage === "target" && casting.spec) {
-        if (casting.spec.legal.includes(id)) {
-          const c = { ...casting, targets: { ...casting.targets, [casting.spec.id]: [id] } };
-          return continueCasting(c);
-        }
+        if (casting.spec.legal.includes(id)) return get().pickTarget(id);
         return get().notify("Cible invalide.");
       }
       const p = view.pending;
@@ -398,8 +426,7 @@ export const useGame = create<Store>((set, get) => {
         return set({ attackTarget: id });
       }
       if (casting?.stage === "target" && casting.spec) {
-        if (casting.spec.legal.includes(id))
-          return continueCasting({ ...casting, targets: { ...casting.targets, [casting.spec.id]: [id] } });
+        if (casting.spec.legal.includes(id)) return get().pickTarget(id);
         get().notify("Cible invalide.");
       }
     },
@@ -439,6 +466,29 @@ export const useGame = create<Store>((set, get) => {
     chooseAdditional(kind, ids) {
       const c = get().casting;
       if (c) continueCasting({ ...c, [kind]: ids });
+    },
+
+    pickTarget(id) {
+      const c = get().casting;
+      if (!c?.spec || c.stage !== "target") return;
+      const max = c.spec.count ?? 1;
+      if (max === 1) return continueCasting({ ...c, targets: { ...c.targets, [c.spec.id]: [id] } });
+      const cur = c.picked ?? [];
+      const g = c.spec.group;
+      let picked: string[];
+      if (cur.includes(id)) picked = cur.filter((x) => x !== id);
+      else if (g?.kind === "same" && cur.some((x) => g.holders[x] !== g.holders[id])) picked = [id];
+      else picked = [...(g?.kind === "different" ? cur.filter((x) => g.holders[x] !== g.holders[id]) : cur), id];
+      if (picked.length >= max) return continueCasting({ ...c, targets: { ...c.targets, [c.spec.id]: picked }, picked: [] });
+      set({ casting: { ...c, picked } });
+    },
+
+    confirmTargets() {
+      const c = get().casting;
+      if (!c?.spec) return;
+      const picked = c.picked ?? [];
+      if (picked.length === 0 && !c.spec.optional) return;
+      continueCasting({ ...c, targets: { ...c.targets, [c.spec.id]: picked }, picked: [] });
     },
 
     chooseNoTarget() {

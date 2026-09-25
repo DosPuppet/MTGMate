@@ -48,7 +48,7 @@ export interface ObjectView extends CardFace {
   colors: Color[];
   tapped: boolean;
   damage: number;
-  counters: { p1p1: number; m1m1: number };
+  counters: Record<string, number>;
   power?: number;
   toughness?: number;
   keywords: Keyword[];

@@ -8,22 +8,27 @@ import {
   alivePlayers,
   apnapOrder,
   bump,
+  changeCounters,
   chars,
+  counterCount,
   creaturesControlledBy,
   emit,
   emptyPool,
+  emptyTurnStats,
   hasKeyword,
   isCreature,
   isSummoningSick,
+  M1M1,
   moveObject,
   nextPlayer,
   obj,
   onBattlefield,
   opponentsOf,
+  P1P1,
   rulesEvent,
   shuffle,
 } from "./state";
-import { processTriggers, simultaneously } from "./triggers";
+import { processTriggers, releaseDelayedTriggers, simultaneously } from "./triggers";
 import type { GameState, ObjectId, PlayerId, Step } from "./types";
 import { STEPS } from "./types";
 
@@ -71,6 +76,7 @@ function givePriority(s: GameState): void {
 
 /** Début d'étape : déclenche les capacités « au début de… ». */
 function stepEvent(s: GameState): void {
+  if (s.turn.step === "end") releaseDelayedTriggers(s);
   rulesEvent(s, { e: "step", step: s.turn.step, active: s.turn.active });
 }
 
@@ -135,7 +141,11 @@ function beginStep(s: GameState): void {
     case "untap":
       for (const id of s.battlefield) {
         const o = obj(s, id);
-        if (o.controller === active) o.tapped = false;
+        if (o.controller !== active || !o.tapped) continue;
+        if (hasKeyword(s, id, "doesntUntap")) continue;
+        // 122.1d : un marqueur d'étourdissement est retiré à la place du dégagement.
+        if (counterCount(o, "stun") > 0) changeCounters(s, o, "stun", -1);
+        else o.tapped = false;
       }
       s.flow = "stepEnd"; // pas de priorité pendant l'étape de dégagement
       return;
@@ -265,6 +275,12 @@ export function afterResolution(s: GameState): void {
 function startTurnOf(s: GameState, p: PlayerId): void {
   const player = s.players[p];
   if (player) player.lastTurnStarted = s.turn.number;
+  // Les statistiques « ce tour-ci » repartent de zéro pour tout le monde.
+  for (const q of s.playerOrder) {
+    const pl = s.players[q];
+    if (pl) pl.turnStats = emptyTurnStats();
+  }
+  s.turn.onceFired = [];
 }
 
 export function emptyCombat(): NonNullable<GameState["combat"]> {
@@ -298,7 +314,12 @@ export function canAttack(s: GameState, id: ObjectId): boolean {
   const o = s.objects[id];
   if (o?.zone !== "battlefield" || !isCreature(s, id)) return false;
   if (o.controller !== s.turn.active || o.tapped || isSummoningSick(s, id)) return false;
-  return !hasKeyword(s, id, "defender");
+  return !hasKeyword(s, id, "defender") && !hasKeyword(s, id, "cantAttack");
+}
+
+/** Créatures qui « attaquent à chaque combat si possible » (508.1d). */
+export function forcedAttackers(s: GameState, player: PlayerId): ObjectId[] {
+  return attackCandidates(s, player).filter((id) => hasKeyword(s, id, "mustAttack"));
 }
 
 export function attackCandidates(s: GameState, player: PlayerId): ObjectId[] {
@@ -313,6 +334,9 @@ export function declareAttackers(s: GameState, player: PlayerId, attackers: { id
     if (!canAttack(s, a.id) || obj(s, a.id).controller !== player) throw new RulesError("Cette créature ne peut pas attaquer");
     if (!opponentsOf(s, player).includes(a.defender)) throw new RulesError("Joueur défenseur invalide");
   }
+  // 508.1d : les créatures qui « attaquent à chaque combat si possible » doivent être déclarées.
+  const forced = attackCandidates(s, player).filter((id) => hasKeyword(s, id, "mustAttack") && !seen.has(id));
+  if (forced.length > 0) throw new RulesError(`${chars(s, forced[0] as ObjectId).name} doit attaquer si elle le peut`);
   if (!s.combat) s.combat = emptyCombat();
   for (const a of attackers) {
     if (!hasKeyword(s, a.id, "vigilance")) obj(s, a.id).tapped = true;
@@ -320,6 +344,7 @@ export function declareAttackers(s: GameState, player: PlayerId, attackers: { id
   }
   bump(s);
   for (const a of attackers) rulesEvent(s, { e: "attack", attacker: a.id, defender: a.defender });
+  if (attackers.length > 0) rulesEvent(s, { e: "attackWith", player, count: attackers.length });
   s.turn.attacked = attackers.length > 0;
   if (attackers.length > 0) {
     emit({ type: "attack", player, attackers: attackers.map((a) => ({ id: a.id, defId: obj(s, a.id).defId })) });
@@ -332,7 +357,9 @@ export function canBlock(s: GameState, blocker: ObjectId, attacker: ObjectId): b
   if (b?.zone !== "battlefield" || !isCreature(s, blocker) || b.tapped) return false;
   const a = s.combat?.attackers.find((x) => x.id === attacker);
   if (!a || !onBattlefield(s, attacker) || b.controller !== a.defender) return false;
+  if (hasKeyword(s, blocker, "cantBlock") || hasKeyword(s, attacker, "unblockable")) return false;
   if (hasKeyword(s, attacker, "flying") && !hasKeyword(s, blocker, "flying") && !hasKeyword(s, blocker, "reach")) return false;
+  if (hasKeyword(s, attacker, "cantBeBlockedByWalls") && chars(s, blocker).subtypes.includes("Wall")) return false;
   return true;
 }
 
@@ -642,11 +669,10 @@ function stateBasedActionsOnce(s: GameState): void {
     for (const id of s.battlefield) {
       const o = obj(s, id);
       // 704.5q : les marqueurs +1/+1 et -1/-1 s'annulent.
-      const both = Math.min(o.counters.p1p1, o.counters.m1m1);
+      const both = Math.min(counterCount(o, P1P1), counterCount(o, M1M1));
       if (both > 0) {
-        o.counters.p1p1 -= both;
-        o.counters.m1m1 -= both;
-        bump(s);
+        changeCounters(s, o, P1P1, -both);
+        changeCounters(s, o, M1M1, -both);
         changed = true;
       }
       if (!isCreature(s, id)) continue;

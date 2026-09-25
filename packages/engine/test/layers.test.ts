@@ -42,7 +42,7 @@ describe("couches (613)", () => {
     const elves = idOf(s, "p1", "battlefield", "Llanowar Elves");
     s = {
       ...s,
-      objects: { ...s.objects, [elves]: { ...s.objects[elves]!, counters: { p1p1: 1, m1m1: 0 } } },
+      objects: { ...s.objects, [elves]: { ...s.objects[elves]!, counters: { "+1/+1": 1 } } },
       version: s.version + 1,
     };
     expect(chars(s, elves).power).toBe(3); // 1 + 1 marqueur + 1 seigneur

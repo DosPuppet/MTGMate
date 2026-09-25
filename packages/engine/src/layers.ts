@@ -11,7 +11,8 @@
  * pouvant affecter les caractéristiques (voir `bump`). Le fuzz vérifie que le cache ne diverge jamais.
  * Limites actuelles : pas de couche 1 (copie) ni 2 (changement de contrôle), pas de dépendances (613.8).
  */
-import { obj } from "./state";
+import { manaValue } from "./mana";
+import { counterPT, obj } from "./state";
 import { matchesView } from "./targets";
 import { checkCondition } from "./triggers";
 import type {
@@ -74,7 +75,7 @@ interface Applied {
 const cache = new WeakMap<GameState, { key: string; map: Map<ObjectId, Characteristics> }>();
 let computing = false;
 
-function view(id: ObjectId, c: Characteristics, o: GameObject, attacking: boolean): LkiSnapshot {
+function view(s: GameState, id: ObjectId, c: Characteristics, o: GameObject, attacking: boolean): LkiSnapshot {
   return {
     id,
     defId: o.defId,
@@ -89,6 +90,11 @@ function view(id: ObjectId, c: Characteristics, o: GameObject, attacking: boolea
     keywords: c.keywords,
     isToken: o.isToken,
     attacking,
+    name: c.name,
+    manaValue: manaValue(s.defs[o.defId]?.manaCost),
+    tapped: o.tapped,
+    blocking: !!s.combat?.blockers.some((b) => b.id === id),
+    counters: o.counters,
   };
 }
 
@@ -127,7 +133,7 @@ export function computeBattlefield(s: GameState): Map<ObjectId, Characteristics>
     if (filter === "self") return out.has(sourceId) ? [sourceId] : [];
     const ids: ObjectId[] = [];
     for (const [id, c] of out) {
-      if (matchesView(view(id, c, obj(s, id), attacking.has(id)), filter, controller, sourceId)) ids.push(id);
+      if (matchesView(view(s, id, c, obj(s, id), attacking.has(id)), filter, controller, sourceId)) ids.push(id);
     }
     return ids;
   };
@@ -163,7 +169,7 @@ export function computeBattlefield(s: GameState): Map<ObjectId, Characteristics>
   );
   // Couche 6 : capacités.
   layer(
-    (m) => !!(m.addKeywords?.length || m.removeKeywords?.length || m.loseAllAbilities),
+    (m) => !!(m.addKeywords?.length || m.removeKeywords?.length || m.loseAllAbilities || m.addAbilities?.length),
     (c, m) => {
       if (m.loseAllAbilities) {
         c.keywords = [];
@@ -171,6 +177,7 @@ export function computeBattlefield(s: GameState): Map<ObjectId, Characteristics>
       }
       for (const k of m.removeKeywords ?? []) c.keywords = c.keywords.filter((x) => x !== k);
       for (const k of m.addKeywords ?? []) if (!c.keywords.includes(k)) c.keywords.push(k);
+      if (m.addAbilities?.length) c.abilities = [...c.abilities, ...m.addAbilities];
     },
   );
   // Couche 7b : F/E fixées.
@@ -184,8 +191,8 @@ export function computeBattlefield(s: GameState): Map<ObjectId, Characteristics>
   // Couche 7c : marqueurs, puis modifications (tout est additif : l'ordre n'importe pas).
   for (const [id, c] of out) {
     const o = obj(s, id);
-    c.power += o.counters.p1p1 - o.counters.m1m1;
-    c.toughness += o.counters.p1p1 - o.counters.m1m1;
+    c.power += counterPT(o);
+    c.toughness += counterPT(o);
   }
   layer(
     (m) => !!(m.power || m.toughness),
@@ -250,5 +257,10 @@ export function creaturesControlledBy(s: GameState, p: PlayerId): ObjectId[] {
 /** Instantané des caractéristiques actuelles d'un objet (dernières informations connues). */
 export function snapshot(s: GameState, id: ObjectId): LkiSnapshot {
   const o = obj(s, id);
-  return view(id, chars(s, id), o, !!s.combat?.attackers.some((a) => a.id === id));
+  const c = chars(s, id);
+  return {
+    ...view(s, id, c, o, !!s.combat?.attackers.some((a) => a.id === id)),
+    abilities: c.abilities,
+    counters: { ...o.counters },
+  };
 }

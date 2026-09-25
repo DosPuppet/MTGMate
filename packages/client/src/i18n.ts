@@ -48,6 +48,13 @@ export const KEYWORD_LABEL: Record<Keyword, string> = {
   flash: "Flash",
   hexproof: "Défense talismanique",
   indestructible: "Indestructible",
+  prowess: "Prouesse",
+  cantBlock: "Ne peut pas bloquer",
+  cantAttack: "Ne peut pas attaquer",
+  unblockable: "Ne peut pas être bloquée",
+  mustAttack: "Attaque à chaque combat",
+  doesntUntap: "Ne se dégage pas",
+  cantBeBlockedByWalls: "Imblocable par les Murs",
 };
 
 export function faceName(face: CardFace | undefined, lang: Lang): string {

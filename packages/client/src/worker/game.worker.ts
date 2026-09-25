@@ -3,7 +3,7 @@
  * tournent ici, hors du thread de l'interface.
  */
 import { heuristicAgent } from "@mtgx/ai";
-import { buildDeck, deckById } from "@mtgx/cards";
+import { buildDeck } from "@mtgx/cards";
 import { type CardFace, cardFace, createGame, GameHost } from "@mtgx/engine";
 import type { FromWorker, ToWorker } from "../protocol";
 
@@ -26,11 +26,11 @@ self.onmessage = async (e: MessageEvent<ToWorker>) => {
       const { state, events } = createGame({
         seed: msg.seed,
         players: [
-          { id: HUMAN, name: msg.playerName, deck: buildDeck(deckById(msg.playerDeck)) },
+          { id: HUMAN, name: msg.playerName, deck: buildDeck({ main: msg.playerDeck }) },
           ...msg.aiDecks.map((deck, i) => ({
             id: `p${i + 2}`,
             name: msg.aiDecks.length > 1 ? `IA ${i + 1}` : "IA",
-            deck: buildDeck(deckById(deck)),
+            deck: buildDeck({ main: deck }),
           })),
         ],
       });

@@ -157,8 +157,56 @@ function AdditionalCostPicker({ kind, count, options }: { kind: "discard" | "sac
   );
 }
 
+/** Cibles hors du champ de bataille (cartes dans un cimetière) : choisies dans une fenêtre. */
+function TargetCardPicker() {
+  const view = useGame((s) => s.view);
+  const casting = useGame((s) => s.casting);
+  const pickTarget = useGame((s) => s.pickTarget);
+  const confirmTargets = useGame((s) => s.confirmTargets);
+  const chooseNoTarget = useGame((s) => s.chooseNoTarget);
+  const cancel = useGame((s) => s.cancel);
+  if (!view || !casting?.spec) return null;
+  const spec = casting.spec;
+  const cards = Object.values(view.players).flatMap((p) => p.graveyard);
+  const options = cards.filter((o) => spec.legal.includes(o.id));
+  const max = spec.count ?? 1;
+  const picked = casting.picked ?? [];
+  return (
+    <Modal title={`Choisissez ${max > 1 ? `jusqu'à ${max} cibles` : "une cible"} : ${spec.label ?? "carte"}`} wide>
+      <div className="hand-picker">
+        {options.map((o) => (
+          <Card
+            key={o.id}
+            face={o}
+            obj={o}
+            width="var(--pick-w)"
+            glow={picked.includes(o.id) ? "selected" : "target"}
+            onClick={() => pickTarget(o.id)}
+          />
+        ))}
+      </div>
+      <div className="modal-actions">
+        <button type="button" className="btn ghost" onClick={cancel}>
+          Annuler
+        </button>
+        {spec.optional && max === 1 && (
+          <button type="button" className="btn" onClick={chooseNoTarget}>
+            Aucune cible
+          </button>
+        )}
+        {max > 1 && (
+          <button type="button" className="btn primary" disabled={picked.length === 0 && !spec.optional} onClick={confirmTargets}>
+            Valider ({picked.length}/{max})
+          </button>
+        )}
+      </div>
+    </Modal>
+  );
+}
+
 function CastingPrompt() {
   const casting = useGame((s) => s.casting);
+  const view = useGame((s) => s.view);
   const chooseMode = useGame((s) => s.chooseMode);
   const chooseKicker = useGame((s) => s.chooseKicker);
   const cancel = useGame((s) => s.cancel);
@@ -183,6 +231,14 @@ function CastingPrompt() {
     );
   }
   if (casting.stage === "x" && opt.xMax !== null) return <XPicker max={opt.xMax} />;
+  if (casting.stage === "target" && casting.spec && view) {
+    const onBoard = new Set([...view.battlefield.map((o) => o.id), ...Object.keys(view.players)]);
+    if (casting.spec.legal.some((id) => !onBoard.has(id))) return <TargetCardPicker />;
+  }
+  if (casting.stage === "sacrifice" && opt.type === "activate" && opt.additional?.sacrifice) {
+    const spec = opt.additional.sacrifice;
+    return <AdditionalCostPicker kind="sacrifice" count={spec.count} options={spec.options} />;
+  }
   if ((casting.stage === "discard" || casting.stage === "sacrifice") && opt.type === "cast") {
     const spec = opt.additional?.[casting.stage];
     if (spec) return <AdditionalCostPicker kind={casting.stage} count={spec.count} options={spec.options} />;
@@ -259,10 +315,15 @@ function GraveyardViewer() {
   const close = useGame((s) => s.openGraveyard);
   const beginCasting = useGame((s) => s.beginCasting);
   // Flashback : sorts lançables depuis le cimetière.
-  const castable = myActions(view).filter((a): a is PlayableOption => a.type === "cast" && !!a.fromGraveyard);
-  const flashback = new Set(castable.map((a) => (a.type === "cast" ? a.card : "")));
+  // et capacités activées depuis le cimetière.
+  const graveIds = new Set((view && open ? view.players[open]?.graveyard : [])?.map((c) => c.id));
+  const castable = myActions(view).filter(
+    (a): a is PlayableOption => (a.type === "cast" && !!a.fromGraveyard) || (a.type === "activate" && graveIds.has(a.source)),
+  );
+  const idOf = (a: PlayableOption) => (a.type === "cast" ? a.card : a.source);
+  const flashback = new Set(castable.map(idOf));
   const castFromGraveyard = (id: string) => {
-    const opt = castable.find((a) => a.type === "cast" && a.card === id);
+    const opt = castable.find((a) => idOf(a) === id);
     if (!opt) return;
     close(null);
     beginCasting(opt, id);

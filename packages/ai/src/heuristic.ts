@@ -11,6 +11,7 @@ import {
   chars,
   creaturesControlledBy,
   type Decision,
+  forcedAttackers,
   type GameState,
   hasKeyword,
   legalActions,
@@ -39,7 +40,10 @@ function decide(s: GameState, me: PlayerId): Decision {
     case "declareAttackers":
       return {
         type: "declareAttackers",
-        attackers: chooseAttackers(s, me).map((id) => ({ id, defender: targetOpponent(s, me) })),
+        attackers: [...new Set([...chooseAttackers(s, me), ...forcedAttackers(s, me)])].map((id) => ({
+          id,
+          defender: targetOpponent(s, me),
+        })),
       };
     case "declareBlockers":
       return { type: "declareBlockers", blocks: chooseBlocks(s, me) };
@@ -239,7 +243,7 @@ function couldBlock(s: GameState, blocker: ObjectId, attacker: ObjectId): boolea
 function worth(s: GameState, id: ObjectId): number {
   const o = s.objects[id];
   const d = o && s.defs[o.defId];
-  return d ? creatureValue(d, o.counters.p1p1 - o.counters.m1m1) : 0;
+  return d ? creatureValue(d, (o.counters["+1/+1"] ?? 0) - (o.counters["-1/-1"] ?? 0)) : 0;
 }
 
 function chooseAttackers(s: GameState, me: PlayerId): ObjectId[] {

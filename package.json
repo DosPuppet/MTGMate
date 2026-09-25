@@ -17,7 +17,8 @@
     "import-cards": "tsx tools/import-scryfall.ts",
     "ui-smoke": "tsx tools/ui-smoke.ts",
     "bench": "tsx tools/bench.ts",
-    "coverage": "tsx tools/card-coverage.ts"
+    "coverage": "tsx tools/card-coverage.ts",
+    "deck-smoke": "tsx tools/deck-smoke.ts"
   },
   "devDependencies": {
     "@biomejs/biome": "^2.5.14",

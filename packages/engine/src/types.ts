@@ -38,7 +38,25 @@ export type Keyword =
   | "defender"
   | "flash"
   | "hexproof"
-  | "indestructible";
+  | "indestructible"
+  | "prowess"
+  /** Restrictions (pas des mots-clés imprimés, mais gérées comme des capacités de couche 6). */
+  | "cantBlock"
+  | "cantAttack"
+  | "unblockable"
+  | "mustAttack"
+  | "doesntUntap"
+  | "cantBeBlockedByWalls";
+
+/** Restrictions : affichées différemment des mots-clés. */
+export const RESTRICTIONS: readonly Keyword[] = [
+  "cantBlock",
+  "cantAttack",
+  "unblockable",
+  "mustAttack",
+  "doesntUntap",
+  "cantBeBlockedByWalls",
+];
 
 export const KEYWORDS: readonly Keyword[] = [
   "flying",
@@ -88,6 +106,10 @@ export interface CardDef {
   artCrop?: string;
   /** false si la carte a des capacités que le moteur ne sait pas encore gérer. */
   implemented: boolean;
+  /** Impression de référence (code de set, numéro de collection, rareté) : export des decklists, filtres. */
+  set?: string;
+  number?: string;
+  rarity?: string;
   isToken?: boolean;
 }
 
@@ -108,7 +130,8 @@ export type AbilityDef =
   | TriggeredAbilityDef
   | StaticAbilityDef
   | ReplacementAbilityDef
-  | CostReductionAbilityDef;
+  | CostReductionAbilityDef
+  | CastPermissionAbilityDef;
 
 export interface AdditionalCost {
   discard?: number;
@@ -129,6 +152,8 @@ export interface ManaAbilityDef {
   /** Le joueur choisit l'un de ces types. */
   produce: ManaType[];
   amount: number;
+  /** « {G} pour chaque Elfe que vous contrôlez » : le montant est le nombre de permanents correspondant. */
+  amountPer?: ObjectFilter;
 }
 
 export interface ActivatedAbilityDef {
@@ -138,12 +163,23 @@ export interface ActivatedAbilityDef {
   effects: Effect[];
   sorcerySpeed?: boolean;
   label?: string;
+  /** « N'activez cette capacité qu'une seule fois. » */
+  once?: boolean;
+  /** Capacité activée depuis le cimetière (« Renvoyez cette carte de votre cimetière… »). */
+  fromGraveyard?: boolean;
 }
 
 export interface CostDef {
   mana?: ManaCost;
   tap?: boolean;
   sacrificeSelf?: boolean;
+  /** Sacrifier d'autres permanents (choisis par le joueur). */
+  sacrifice?: { filter: ObjectFilter; count: number };
+  /** Retirer des marqueurs de la source. */
+  removeCounters?: { kind: string; n: number };
+  /** Engager d'autres permanents dégagés que vous contrôlez (choisis automatiquement). */
+  tapOthers?: { filter: ObjectFilter; count: number };
+  payLife?: number;
 }
 
 export interface TargetSpec {
@@ -152,11 +188,23 @@ export interface TargetSpec {
   /** « jusqu'à une cible » */
   optional?: boolean;
   label?: string;
+  /** Nombre de cibles pour ce mot « cible » (« jusqu'à deux créatures ciblées ») ; 1 par défaut. */
+  count?: number;
+  /** Toutes les cibles de ce mot « cible » appartiennent au même joueur (« d'un même cimetière »). */
+  samePlayer?: boolean;
+  /** Nombre de cibles si le sort est kické (« si ce sort a été kické, à la place n'importe quel nombre de cibles »). */
+  kickedCount?: number;
+  /** Ces cibles doivent être différentes de celles d'autres mots « cible » (« deux autres cibles »). */
+  otherThan?: string[];
+  /** Cibles contrôlées par des joueurs différents (« contrôlées par des joueurs différents »). */
+  differentPlayers?: boolean;
 }
 
 export interface TargetFilter {
   players?: "any" | "you" | "opponent";
   objects?: ObjectFilter;
+  /** Cartes dans un cimetière (« carte de créature ciblée de votre cimetière »). */
+  cards?: { filter: ObjectFilter; whose?: "you" | "opponent" | "any" };
 }
 
 export interface ObjectFilter {
@@ -170,11 +218,36 @@ export interface ObjectFilter {
   notKeyword?: Keyword;
   /** « un autre » : exclut la source de la capacité. */
   other?: boolean;
+  /** La source elle-même (« quand cette créature meurt, si ce n'était pas un Démon »). */
+  self?: boolean;
   nontoken?: boolean;
   /** Force minimale (« créature de force 4 ou plus »). */
   minPower?: number;
+  maxManaValue?: number;
+  manaValue?: number;
+  name?: string;
+  tapped?: boolean;
+  colors?: Color[];
+  /** Porte au moins un marqueur de ce type. */
+  withCounter?: string;
   /** Créature attaquante. */
   attacking?: boolean;
+  /** Créature attaquante ou bloqueuse. */
+  inCombat?: boolean;
+  /** Au moins un de ces sous-types (« Chat ou Chien »…). */
+  anySubtype?: string[];
+  notSubtype?: string;
+  minManaValue?: number;
+  maxPower?: number;
+  /** « de base » (terrain de base). */
+  basic?: boolean;
+  /** Carte permanente (hors pile) : artefact, créature, enchantement, terrain, planeswalker, bataille. */
+  permanent?: boolean;
+  nonland?: boolean;
+  /** Au moins un de ces filtres (« artefact, enchantement ou créature avec le vol »). */
+  anyOf?: ObjectFilter[];
+  /** Valeur de mana inférieure ou égale à la force de la source (« … inférieure ou égale à la force d'Alesha »). */
+  maxManaValueSourcePower?: boolean;
 }
 
 /**
@@ -190,7 +263,17 @@ export type TriggerSpec =
   | { on: "castSpell"; by: "you" | "opponent" | "any"; filter?: ObjectFilter }
   | { on: "step"; step: Step; whose: "you" | "opponent" | "any" }
   | { on: "landfall" }
-  | { on: "gainLife" };
+  /** « Chaque fois que vous gagnez des points de vie [pour la première fois ce tour] » */
+  | { on: "gainLife"; first?: boolean }
+  /** « Chaque fois que vous piochez [votre deuxième carte ce tour] » ; `whose` relatif au contrôleur. */
+  | { on: "draw"; whose: "you" | "opponent" | "any"; nth?: number }
+  | { on: "loseLife"; whose: "you" | "opponent" | "any" }
+  /** « Chaque fois que vous attaquez [avec au moins N créatures] » */
+  | { on: "attackWith"; min?: number }
+  /** « Chaque fois que des marqueurs sont placés sur … » */
+  | { on: "countersPut"; who: "self" | ObjectFilter; kind?: string }
+  /** Blessures infligées par une source (non de combat seulement si demandé), éventuellement à un adversaire. */
+  | { on: "dealsDamage"; who: "self" | ObjectFilter; noncombatOnly?: boolean; toOpponent?: boolean };
 
 /** Conditions (« if intermédiaire » 603.4, « tant que »…). */
 export type Condition =
@@ -199,10 +282,29 @@ export type Condition =
   | { kind: "controls"; filter: ObjectFilter; atLeast?: number }
   /** Le sort qui met l'objet en jeu a été kické. */
   | { kind: "kicked" }
-  | { kind: "lifeAtLeast"; amount: number };
+  | { kind: "lifeAtLeast"; amount: number }
+  | { kind: "yourTurn" }
+  | { kind: "opponentsTurn" }
+  /** Seuil : au moins 7 cartes dans votre cimetière. */
+  | { kind: "threshold" }
+  /** La source a au moins N marqueurs de ce type. */
+  | { kind: "counterAtLeast"; counter: string; n: number }
+  /** Votre total de vie dépasse votre total de départ d'au moins `by`. */
+  | { kind: "lifeAboveStart"; by: number }
+  | { kind: "opponentLostLifeThisTurn" }
+  | { kind: "not"; cond: Condition }
+  /** Valeur mémorisée pendant la résolution (« si vous le faites », « si une carte de créature a été exilée »). */
+  | { kind: "var"; name: string; atLeast?: number }
+  | { kind: "all"; of: Condition[] }
+  /** Le joueur désigné a exactement N points de vie (évalué pendant la résolution). */
+  | { kind: "refLife"; ref: Ref; equals: number }
+  /** Le permanent source est arrivé depuis un sort kické / lancé. */
+  | { kind: "wasCast" };
 
 /** Modifications apportées par un effet continu, rangées par couche (613). */
 export interface LayerMods {
+  /** Couche 6 : capacités (non mots-clés) accordées. */
+  addAbilities?: AbilityDef[];
   /** Couche 4 : types et sous-types ajoutés. */
   addTypes?: CardType[];
   addSubtypes?: string[];
@@ -230,6 +332,15 @@ export interface ReplacementAbilityDef {
   entersWithCounters?: Amount;
   /** Condition (raid, kicker…) évaluée au moment de l'arrivée. */
   condition?: Condition;
+  /** S'applique aux autres permanents correspondant au filtre (vus du contrôleur de la source), pas à la source. */
+  affects?: ObjectFilter;
+  label?: string;
+}
+
+/** « Vous pouvez lancer des sorts comme s'ils avaient le flash. » */
+export interface CastPermissionAbilityDef {
+  kind: "castPermission";
+  flash: true;
   label?: string;
 }
 
@@ -251,6 +362,10 @@ export interface TriggeredAbilityDef {
   condition?: Condition;
   targets: TargetSpec[];
   effects: Effect[];
+  /** Capacité modale (« choisissez un — ») : le mode est choisi à la mise sur la pile. */
+  modes?: ModeDef[];
+  /** « Cette capacité ne se déclenche qu'une fois par tour. » */
+  oncePerTurn?: boolean;
   label?: string;
 }
 
@@ -260,10 +375,15 @@ export type Ref =
   | { kind: "self" }
   | { kind: "you" }
   | { kind: "eachOpponent" }
+  | { kind: "eachPlayer" }
   /** L'objet de l'événement déclencheur (la créature qui arrive, meurt, attaque, le sort lancé…). */
   | { kind: "eventObject" }
   /** Le joueur de l'événement (joueur blessé, lanceur du sort…). */
-  | { kind: "eventPlayer" };
+  | { kind: "eventPlayer" }
+  /** Le contrôleur (ou, hors du champ de bataille, le dernier contrôleur connu) de l'objet désigné. */
+  | { kind: "controllerOf"; ref: Ref }
+  /** Objets déplacés plus tôt pendant la résolution (`store` d'un déplacement), sous leur nouvel identifiant. */
+  | { kind: "stored"; name: string };
 
 export type Amount =
   | number
@@ -272,10 +392,22 @@ export type Amount =
   | { kind: "powerOf"; ref: Ref }
   /** Quantité de l'événement (blessures infligées, vie gagnée…). */
   | { kind: "eventAmount" }
-  /** Nombre de permanents correspondant au filtre, vus du contrôleur. */
-  | { kind: "count"; filter: ObjectFilter }
+  /** Nombre d'objets correspondant au filtre, vus du contrôleur (sur le champ de bataille par défaut). */
+  | { kind: "count"; filter: ObjectFilter; zone?: "battlefield" | "graveyard" | "hand"; whose?: "you" | "opponents" | "all" }
+  /** Vie gagnée par le contrôleur ce tour-ci. */
+  | { kind: "lifeGainedThisTurn" }
+  /** Marqueurs d'un type sur un objet. */
+  | { kind: "countersOn"; ref: Ref; counter: string }
+  /** Nombre de valeurs de mana différentes parmi les permanents non-terrains du contrôleur. */
+  | { kind: "differentManaValues" }
+  | { kind: "sum"; of: Amount[] }
   /** Force totale des permanents correspondant au filtre, vus du contrôleur. */
-  | { kind: "totalPower"; filter: ObjectFilter };
+  | { kind: "totalPower"; filter: ObjectFilter }
+  /** Valeur mémorisée pendant la résolution (vie perdue de cette façon, blessures en excès…). */
+  | { kind: "var"; name: string }
+  | { kind: "lifeTotal" }
+  /** Nombre de cartes dans une zone du contrôleur. */
+  | { kind: "cardsIn"; zone: "hand" | "graveyard" | "library" };
 
 export interface TokenSpec {
   name: string;
@@ -287,10 +419,25 @@ export interface TokenSpec {
   keywords?: Keyword[];
   abilities?: AbilityDef[];
   text?: string;
+  legendary?: boolean;
+  tapped?: boolean;
+}
+
+/** Destination d'un déplacement d'objet. */
+export interface MoveSpec {
+  to: "hand" | "battlefield" | "graveyard" | "exile" | "libraryTop" | "libraryBottom";
+  tapped?: boolean;
+  /** Sur le champ de bataille : sous le contrôle du contrôleur de l'effet (sinon du propriétaire). */
+  underYourControl?: boolean;
+  counters?: { kind: string; n: number };
+  /** Types et sous-types ajoutés à l'objet (« c'est un Démon en plus de ses autres types »). */
+  addTypes?: CardType[];
+  addSubtypes?: string[];
+  addKeywords?: Keyword[];
 }
 
 export type Effect =
-  | { op: "damage"; amount: Amount; to: Ref; source?: Ref }
+  | { op: "damage"; amount: Amount; to: Ref; source?: Ref; storeExcess?: string }
   | { op: "fight"; a: Ref; b: Ref }
   | { op: "pump"; what: Ref; power: Amount; toughness: Amount; keywords?: Keyword[] }
   | { op: "pumpAll"; filter: ObjectFilter; power: Amount; toughness: Amount; keywords?: Keyword[] }
@@ -299,17 +446,21 @@ export type Effect =
   | { op: "destroy"; what: Ref }
   | { op: "draw"; who: Ref; amount: Amount }
   | { op: "gainLife"; who: Ref; amount: Amount }
-  | { op: "createTokens"; token: TokenSpec; count: Amount }
-  | { op: "addCounters"; what: Ref; amount: Amount }
-  | { op: "loseLife"; who: Ref; amount: Amount }
+  | { op: "createTokens"; token: TokenSpec; count: Amount; for?: Ref }
+  /** Marqueurs (par défaut +1/+1) ; un montant négatif en retire. */
+  | { op: "addCounters"; what: Ref; amount: Amount; kind?: string }
+  | { op: "loseLife"; who: Ref; amount: Amount; store?: string }
   | { op: "bounce"; what: Ref }
   | { op: "exile"; what: Ref }
   | { op: "mill"; who: Ref; amount: Amount }
   /** Effets avec choix pendant la résolution. */
   | { op: "scry"; amount: Amount }
   | { op: "surveil"; amount: Amount }
-  | { op: "discard"; who: Ref; amount: Amount }
-  | { op: "sacrifice"; who: Ref; filter: ObjectFilter; amount: Amount }
+  /** `chooser: "controller"` : le contrôleur de l'effet choisit dans la main révélée (« Pilfer »). */
+  | { op: "discard"; who: Ref; amount: Amount; filter?: ObjectFilter; chooser?: "controller"; optional?: boolean; store?: string }
+  | { op: "sacrifice"; who: Ref; filter: ObjectFilter; amount: Amount; optional?: boolean; store?: string }
+  /** « Vous pouvez payer {X}. Si vous le faites, … » : les `skip` effets suivants sont ignorés sinon. */
+  | { op: "mayPay"; cost: ManaCost; prompt: string; skip: number }
   /** « Vous pouvez » : si le contrôleur refuse, les `skip` effets suivants sont ignorés. */
   | { op: "may"; prompt: string; skip: number }
   /** « Si cette créature devait mourir ce tour-ci, exilez-la à la place. » */
@@ -317,7 +468,65 @@ export type Effect =
   /** « Prévenez toutes les blessures de combat qui devraient être infligées à … ce tour-ci. » */
   | { op: "preventCombatDamage"; what: Ref }
   /** Double le nombre de marqueurs +1/+1. */
-  | { op: "doubleCounters"; what: Ref };
+  | { op: "doubleCounters"; what: Ref }
+  | { op: "tap"; what: Ref; untap?: boolean }
+  /** Blessures à chaque créature correspondant au filtre (et éventuellement à des joueurs). */
+  | { op: "damageAll"; amount: Amount; filter?: ObjectFilter; players?: Ref }
+  | { op: "destroyAll"; filter: ObjectFilter }
+  | { op: "addCountersAll"; filter: ObjectFilter; amount: Amount; kind?: string }
+  /** Effet continu « jusqu'à la fin du tour » sur tous les permanents correspondant au filtre. */
+  | { op: "modifyAll"; filter: ObjectFilter; mods: LayerMods }
+  /** Sacrifier un objet précis (jeton temporaire, « sacrifiez-la »). */
+  | { op: "sacrificeIt"; what: Ref }
+  /** Déplace un objet (retour en main, exil, retour du cimetière sur le champ de bataille…). */
+  | { op: "moveTo"; what: Ref; spec: MoveSpec; store?: { name: string; filter?: ObjectFilter } }
+  /** Double les marqueurs de chaque type (ou d'un type donné). */
+  | { op: "doubleAllCounters"; what: Ref }
+  /** Déplace tous les objets d'une zone correspondant au filtre. */
+  | { op: "moveAll"; from: "battlefield" | "graveyard"; whose: Ref; filter: ObjectFilter; spec: MoveSpec }
+  /** Si la condition est fausse, les `skip` effets suivants sont ignorés. */
+  | { op: "if"; cond: Condition; skip: number }
+  /**
+   * Regarder les N cartes du dessus : en prendre jusqu'à `count` correspondant au filtre (vers `to`),
+   * le reste va au-dessous (ordre aléatoire) ou au cimetière.
+   */
+  | {
+      op: "lookAtTop";
+      n: Amount;
+      filter?: ObjectFilter;
+      count: Amount;
+      to: MoveSpec;
+      rest: "bottom" | "graveyard" | "top";
+      /** Valeur de mana maximale des cartes prises (évaluée à la résolution). */
+      maxManaValue?: Amount;
+    }
+  /** Chercher dans sa bibliothèque jusqu'à `count` cartes correspondant au filtre, puis mélanger. */
+  | { op: "search"; filter: ObjectFilter; count: Amount; to: MoveSpec }
+  | { op: "shuffle"; who: Ref }
+  /** Jeton copie d'un objet (valeurs copiables), avec d'éventuelles modifications. */
+  | { op: "copyToken"; of: Ref; count?: Amount; addKeywords?: Keyword[]; sacrificeAtEndStep?: boolean }
+  /** Capacité déclenchée retardée : « au début de la prochaine étape de fin, … ». Les références sont figées maintenant. */
+  | { op: "delayed"; at: "nextEndStep"; effects: Effect[]; bind?: Record<string, Ref> }
+  /** Capacité déclenchée réflexive (« quand vous le faites, … ») : ses cibles sont choisies à sa mise sur la pile. */
+  | { op: "reflexive"; targets: TargetSpec[]; effects: Effect[] }
+  /** Exile jusqu'à ce que la source quitte le champ de bataille (610.3). */
+  | { op: "exileUntilLeaves"; what: Ref }
+  /** Choisir des cartes (non ciblées) dans une zone du contrôleur et les déplacer. */
+  | {
+      op: "pickFromZone";
+      zone: "graveyard" | "hand";
+      filter: ObjectFilter;
+      count: Amount;
+      min?: number;
+      to: MoveSpec;
+      prompt?: string;
+    }
+  /** Le propriétaire met l'objet au-dessus ou au-dessous de sa bibliothèque. */
+  | { op: "libraryTopOrBottom"; what: Ref }
+  /** Chaque joueur désigné perd N points de vie à moins de défausser une carte ou de sacrifier un permanent. */
+  | { op: "punisher"; who: Ref; loseLife: number; discard?: boolean; sacrifice?: ObjectFilter }
+  /** Révéler jusqu'à une carte correspondant au filtre : elle va en main, le reste au-dessous dans un ordre aléatoire. */
+  | { op: "revealUntil"; filter: ObjectFilter; to: MoveSpec };
 
 // ---------------------------------------------------------------------------
 // État de partie
@@ -373,11 +582,17 @@ export interface GameObject {
   damage: number;
   /** A reçu des blessures d'une source avec le contact mortel depuis la dernière vérification. */
   deathtouched: boolean;
-  counters: { p1p1: number; m1m1: number };
+  /** Marqueurs par nom : "+1/+1", "-1/-1", "stun", "loyalty"… */
+  counters: Record<string, number>;
   /** Numéro du tour pendant lequel le contrôleur actuel en a pris le contrôle. */
   controlledSince: number;
   timestamp: number;
   isToken: boolean;
+  /** Capacités « une seule fois » déjà activées (indices). */
+  used?: number[];
+  /** Permanent arrivé depuis un sort kické / depuis un sort lancé. */
+  kicked?: boolean;
+  cast?: boolean;
 }
 
 export interface PlayerState {
@@ -394,6 +609,9 @@ export interface PlayerState {
   mulligans: number;
   /** Numéro du dernier tour commencé par ce joueur (0 s'il n'a pas encore joué). */
   lastTurnStarted: number;
+  /** Total de vie de départ (conditions « au-dessus de votre total de départ »). */
+  startingLife: number;
+  turnStats: TurnStats;
 }
 
 export interface StackItem {
@@ -415,6 +633,37 @@ export interface StackItem {
   event?: TriggerEventData;
   /** Lancé avec le flashback : exilé au lieu d'aller au cimetière. */
   flashback?: boolean;
+  /** Capacité retardée ou réflexive : ses effets et cibles propres. */
+  inline?: InlineAbility;
+}
+
+/** Capacité créée pendant la partie (retardée, réflexive) : pas d'index dans la définition de sa source. */
+export interface InlineAbility {
+  targets: TargetSpec[];
+  effects: Effect[];
+  /** Références figées à la création (ex. « cette créature » exilée). */
+  bound?: Record<string, string[]>;
+  label?: string;
+}
+
+export interface DelayedTrigger {
+  id: string;
+  controller: PlayerId;
+  sourceId: ObjectId;
+  sourceDefId: string;
+  at: "nextEndStep";
+  /** Créé pendant une étape de fin ou le nettoyage : ne se déclenche qu'à l'étape de fin du tour suivant. */
+  notBeforeTurn: number;
+  ability: InlineAbility;
+}
+
+/** Statistiques du tour en cours, par joueur (conditions et déclencheurs « pour la première fois »). */
+export interface TurnStats {
+  lifeGained: number;
+  lifeGainEvents: number;
+  lifeLost: number;
+  cardsDrawn: number;
+  spellsCast: number;
 }
 
 export interface CombatState {
@@ -459,6 +708,10 @@ export interface PendingTrigger {
   targets: Record<string, string[]>;
   /** Ordre de résolution déjà choisi par son contrôleur. */
   ordered?: boolean;
+  /** Capacité modale : mode choisi. */
+  mode?: number;
+  /** Capacité retardée ou réflexive. */
+  inline?: InlineAbility;
 }
 
 /** Caractéristiques d'un objet au moment où il a quitté le champ de bataille (dernières informations connues). */
@@ -476,6 +729,13 @@ export interface LkiSnapshot {
   keywords: Keyword[];
   isToken: boolean;
   attacking?: boolean;
+  blocking?: boolean;
+  name?: string;
+  manaValue?: number;
+  tapped?: boolean;
+  /** Capacités effectives (imprimées ou accordées) au moment de l'instantané. */
+  abilities?: AbilityDef[];
+  counters?: Record<string, number>;
 }
 
 /** Résolution en cours d'un sort ou d'une capacité, éventuellement suspendue sur un choix. */
@@ -525,6 +785,8 @@ export interface GameState {
     attacked: boolean;
     /** Une créature est morte ce tour-ci (morbide). */
     creatureDied: boolean;
+    /** Capacités « une fois par tour » déjà déclenchées (source:index). */
+    onceFired: string[];
     startingPlayer: PlayerId;
   };
   flow: Flow;
@@ -538,6 +800,10 @@ export interface GameState {
   replacements: CreatedReplacement[];
   /** Capacités déclenchées en attente d'être mises sur la pile. */
   triggers: PendingTrigger[];
+  /** Capacités déclenchées retardées en attente de leur moment. */
+  delayed: DelayedTrigger[];
+  /** Cartes exilées « jusqu'à ce que [la source] quitte le champ de bataille ». */
+  linkedExile: { sourceId: ObjectId; cards: ObjectId[] }[];
   /** Dernières informations connues, par ancien identifiant (purgées à la fin de chaque étape). */
   lki: Record<ObjectId, LkiSnapshot>;
   winner: PlayerId | null;
@@ -575,6 +841,12 @@ export type ChoiceIntent =
   | "legend"
   | "triggerOrder"
   | "triggerTarget"
+  | "triggerMode"
+  | "lookAtTop"
+  | "search"
+  | "pickCards"
+  | "topOrBottom"
+  | "punisher"
   | "other";
 
 interface ChoiceBase {
@@ -591,7 +863,14 @@ interface ChoiceBase {
 
 export type ChoiceRequest = ChoiceBase &
   (
-    | { type: "pick"; options: string[]; min: number; max: number }
+    | {
+        type: "pick";
+        options: string[];
+        min: number;
+        max: number;
+        /** Contrainte entre les options choisies : même joueur ou joueurs différents (joueur de chaque option). */
+        group?: { kind: "same" | "different"; holders: Record<string, string> };
+      }
     | { type: "number"; min: number; max: number }
     | { type: "order"; items: string[] }
     | { type: "yesNo" }
@@ -609,7 +888,8 @@ export type ChoicePurpose =
   | { kind: "combatDamage"; attacker: ObjectId }
   | { kind: "legend" }
   | { kind: "triggerOrder"; player: PlayerId }
-  | { kind: "triggerTarget"; trigger: string; spec: string };
+  | { kind: "triggerTarget"; trigger: string; spec: string }
+  | { kind: "triggerMode"; trigger: string };
 
 export interface CastChoices {
   mode?: number;
@@ -641,6 +921,12 @@ export interface TargetOption {
   label?: string;
   optional: boolean;
   legal: string[];
+  /** Nombre maximal de cibles pour ce mot « cible » (1 par défaut). */
+  count?: number;
+  /** Contrainte entre les cibles : même joueur, ou joueurs différents (avec le joueur de chaque cible). */
+  group?: { kind: "same" | "different"; holders: Record<string, string> };
+  kickedCount?: number;
+  otherThan?: string[];
 }
 
 export interface ModeOption {
@@ -662,7 +948,15 @@ export type ActionOption =
       fromGraveyard?: boolean;
       additional?: { discard?: { count: number; options: ObjectId[] }; sacrifice?: { count: number; options: ObjectId[] } };
     }
-  | { type: "activate"; source: ObjectId; ability: number; label?: string; targets: TargetOption[]; xMax: number | null }
+  | {
+      type: "activate";
+      source: ObjectId;
+      ability: number;
+      label?: string;
+      targets: TargetOption[];
+      xMax: number | null;
+      additional?: { sacrifice?: { count: number; options: ObjectId[] } };
+    }
   | { type: "tapForMana"; source: ObjectId; ability: number; colors: ManaType[] };
 
 // ---------------------------------------------------------------------------

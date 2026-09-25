@@ -3,7 +3,7 @@ import { faceImage, faceName, faceText, faceType, KEYWORD_LABEL } from "../i18n"
 import { useGame } from "../store";
 import { ManaCost } from "./Card";
 
-function Preview() {
+export function Preview() {
   const hover = useGame((s) => s.hover);
   const lang = useGame((s) => s.lang);
   if (!hover) return <div className="preview empty">Survolez une carte pour l'agrandir.</div>;
@@ -40,7 +40,14 @@ function Preview() {
               {obj.power}/{obj.toughness}
             </strong>
             {obj.damage > 0 && <span className="dmg"> · {obj.damage} blessure(s)</span>}
-            {obj.counters.p1p1 > 0 && <span> · {obj.counters.p1p1} marqueur(s) +1/+1</span>}
+            {Object.entries(obj.counters)
+              .filter(([, n]) => n > 0)
+              .map(([k, n]) => (
+                <span key={k}>
+                  {" "}
+                  · {n} marqueur(s) {k}
+                </span>
+              ))}
           </div>
         )}
         {baseKw.size > 0 && (

@@ -123,7 +123,10 @@ function usePermanentGlow(): (o: ObjectView) => Glow {
   const p = view.pending;
   const mine = p?.player === view.viewer;
   return (o) => {
-    if (casting?.stage === "target") return casting.spec?.legal.includes(o.id) ? "target" : null;
+    if (casting?.stage === "target") {
+      if (casting.picked?.includes(o.id)) return "selected";
+      return casting.spec?.legal.includes(o.id) ? "target" : null;
+    }
     if (mine && p?.kind === "declareAttackers") {
       if (attackers.includes(o.id)) return "attacking";
       return p.candidates?.includes(o.id) ? "selectable" : null;
@@ -306,6 +309,7 @@ function Banner() {
   const casting = useGame((s) => s.casting);
   const cancel = useGame((s) => s.cancel);
   const chooseNoTarget = useGame((s) => s.chooseNoTarget);
+  const confirmTargets = useGame((s) => s.confirmTargets);
   const allAttack = useGame((s) => s.allAttack);
   const attackTarget = useGame((s) => s.attackTarget);
   const setAttackTarget = useGame((s) => s.setAttackTarget);
@@ -317,10 +321,20 @@ function Banner() {
   let text: string;
   let extra: React.ReactNode = null;
   if (casting?.stage === "target" && casting.spec) {
-    text = `Choisissez une cible : ${casting.spec.label ?? "cible"}`;
+    const max = casting.spec.count ?? 1;
+    const n = casting.picked?.length ?? 0;
+    text =
+      max > 1
+        ? `Choisissez ${casting.spec.optional ? "jusqu'à " : ""}${max} cibles : ${casting.spec.label ?? "cible"} (${n}/${max})`
+        : `Choisissez une cible : ${casting.spec.label ?? "cible"}`;
     extra = (
       <>
-        {casting.spec.optional && (
+        {max > 1 && (n > 0 || casting.spec.optional) && (
+          <button type="button" className="btn small primary" onClick={confirmTargets}>
+            Valider ({n})
+          </button>
+        )}
+        {casting.spec.optional && max === 1 && (
           <button type="button" className="btn small" onClick={chooseNoTarget}>
             Aucune cible
           </button>

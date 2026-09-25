@@ -3,12 +3,12 @@
  * Côté moteur, un lancement est atomique : le client envoie d'un coup mode, cibles, X et kicker,
  * et le paiement du mana est résolu automatiquement (réserve d'abord, puis solveur).
  */
-import { putIntoGraveyard } from "./actions";
+import { loseLife, putIntoGraveyard } from "./actions";
 import { ask } from "./choices";
-import { boardAmount, runEffect } from "./effects";
+import { evalAmount, runEffect } from "./effects";
 import { RulesError } from "./errors";
 import { payMana, totalCost } from "./mana";
-import { chars, emit, isSummoningSick, moveObject, newId, obj, rulesEvent } from "./state";
+import { changeCounters, chars, emit, isSummoningSick, moveObject, newId, obj, rulesEvent } from "./state";
 import { isLegalTarget, matchesObjectFilter, matchesView, validateTargets } from "./targets";
 import { checkCondition, simultaneously } from "./triggers";
 import type {
@@ -44,7 +44,11 @@ export function sorceryTiming(s: GameState, player: PlayerId): boolean {
 
 export function canCastTiming(s: GameState, player: PlayerId, d: CardDef): boolean {
   if (d.types.includes("Instant") || d.keywords.includes("flash")) return true;
-  return sorceryTiming(s, player);
+  if (sorceryTiming(s, player)) return true;
+  // « Vous pouvez lancer des sorts comme s'ils avaient le flash. »
+  return s.battlefield.some(
+    (id) => obj(s, id).controller === player && chars(s, id).abilities.some((ab) => ab.kind === "castPermission" && ab.flash),
+  );
 }
 
 export function canPlayLand(s: GameState, player: PlayerId, card: ObjectId): boolean {
@@ -89,8 +93,19 @@ export function spellReduction(s: GameState, player: PlayerId, d: CardDef): numb
   let r = 0;
   const own = d.costReduction;
   if (own && (!own.condition || checkCondition(s, own.condition, player))) {
-    const g = own.generic;
-    r += typeof g === "number" ? g : g.kind === "count" || g.kind === "totalPower" ? boardAmount(s, g, player) : 0;
+    r += evalAmount(
+      s,
+      {
+        controller: player,
+        sourceId: "",
+        sourceDefId: d.id,
+        sourceSnapshot: { keywords: [], power: 0 },
+        targets: {},
+        x: 0,
+        kicked: false,
+      },
+      own.generic,
+    );
   }
   const view = spellView(d, player);
   for (const id of s.battlefield) {
@@ -160,7 +175,7 @@ export function castSpell(s: GameState, player: PlayerId, card: ObjectId, choice
   const modeIndex = choices.mode ?? 0;
   const mode = modes[modeIndex];
   if (!mode) throw new RulesError("Mode invalide");
-  const targets = validateTargets(s, player, mode.targets, choices.targets);
+  const targets = validateTargets(s, player, mode.targets, choices.targets, { kicked: !!choices.kicked, sourceId: card });
   const hasX = !!(flashback ? d.flashback?.x : d.manaCost?.x);
   const x = hasX ? Math.max(0, Math.floor(choices.x ?? 0)) : 0;
   const kicked = !!choices.kicked && !!d.kicker;
@@ -209,6 +224,8 @@ export function castSpell(s: GameState, player: PlayerId, card: ObjectId, choice
   for (const id of sacrifice) putIntoGraveyard(s, id);
   s.priority.passes = 0;
   emit({ type: "cast", player, stackId, defId: d.id, targets: flatTargets(targets) });
+  const caster = s.players[player];
+  if (caster) caster.turnStats.spellsCast += 1;
   rulesEvent(s, { e: "cast", player, stackId });
 }
 
@@ -218,27 +235,61 @@ export function activatedAbility(s: GameState, source: ObjectId, index: number):
   return ab?.kind === "activated" ? ab : null;
 }
 
+/** Permanents qui peuvent être sacrifiés pour le coût de la capacité (hors source). */
+export function sacrificeOptions(s: GameState, player: PlayerId, source: ObjectId, ab: ActivatedAbilityDef): ObjectId[] {
+  const f = ab.cost.sacrifice?.filter;
+  if (!f) return [];
+  return s.battlefield.filter(
+    (id) => id !== source && obj(s, id).controller === player && matchesObjectFilter(s, player, id, f, source),
+  );
+}
+
+function tapOthersOptions(s: GameState, player: PlayerId, source: ObjectId, ab: ActivatedAbilityDef): ObjectId[] {
+  const f = ab.cost.tapOthers?.filter;
+  if (!f) return [];
+  return s.battlefield.filter(
+    (id) =>
+      id !== source && obj(s, id).controller === player && !obj(s, id).tapped && matchesObjectFilter(s, player, id, f, source),
+  );
+}
+
 /** Les coûts non-mana de la capacité peuvent-ils être payés ? */
-export function canPayNonManaCost(s: GameState, source: ObjectId, ab: ActivatedAbilityDef): boolean {
+export function canPayNonManaCost(s: GameState, source: ObjectId, ab: ActivatedAbilityDef, index = -1): boolean {
   const o = s.objects[source];
-  if (o?.zone !== "battlefield") return false;
+  if (!o || o.zone !== (ab.fromGraveyard ? "graveyard" : "battlefield")) return false;
+  if (ab.once && o.used?.includes(index)) return false;
   if (ab.cost.tap && (o.tapped || isSummoningSick(s, source))) return false;
+  const player = ab.fromGraveyard ? o.owner : o.controller;
+  if (ab.cost.removeCounters && (o.counters[ab.cost.removeCounters.kind] ?? 0) < ab.cost.removeCounters.n) return false;
+  if (ab.cost.payLife && (s.players[player]?.life ?? 0) < ab.cost.payLife) return false;
+  if (ab.cost.sacrifice && sacrificeOptions(s, player, source, ab).length < ab.cost.sacrifice.count) return false;
+  if (ab.cost.tapOthers && tapOthersOptions(s, player, source, ab).length < ab.cost.tapOthers.count) return false;
   return true;
 }
 
 export function activateAbility(s: GameState, player: PlayerId, source: ObjectId, index: number, choices: CastChoices): void {
   const o = s.objects[source];
-  if (o?.zone !== "battlefield" || o.controller !== player) throw new RulesError("Vous ne contrôlez pas ce permanent");
   const ab = activatedAbility(s, source, index);
-  if (!ab) throw new RulesError("Capacité inconnue");
+  if (!ab || !o) throw new RulesError("Capacité inconnue");
+  if (ab.fromGraveyard ? o.zone !== "graveyard" || o.owner !== player : o.zone !== "battlefield" || o.controller !== player) {
+    throw new RulesError("Vous ne contrôlez pas ce permanent");
+  }
   if (
     ab.sorcerySpeed &&
     !(s.turn.active === player && (s.turn.step === "main1" || s.turn.step === "main2") && s.stack.length === 0)
   ) {
     throw new RulesError("Cette capacité s'active seulement en rituel");
   }
-  if (!canPayNonManaCost(s, source, ab)) throw new RulesError("Impossible de payer le coût");
-  const targets = validateTargets(s, player, ab.targets, choices.targets);
+  if (!canPayNonManaCost(s, source, ab, index)) throw new RulesError("Impossible de payer le coût");
+  let sacrificed: ObjectId[] = [];
+  if (ab.cost.sacrifice) {
+    const options = sacrificeOptions(s, player, source, ab);
+    sacrificed = choices.sacrifice ?? options.slice(0, ab.cost.sacrifice.count);
+    if (sacrificed.length !== ab.cost.sacrifice.count || sacrificed.some((id) => !options.includes(id))) {
+      throw new RulesError("Sacrifice invalide");
+    }
+  }
+  const targets = validateTargets(s, player, ab.targets, choices.targets, { sourceId: source });
   const x = ab.cost.mana?.x ? Math.max(0, Math.floor(choices.x ?? 0)) : 0;
   const c = chars(s, source);
   const item: StackItem = {
@@ -264,6 +315,13 @@ export function activateAbility(s: GameState, player: PlayerId, source: ObjectId
     }
   }
   if (ab.cost.tap) o.tapped = true;
+  if (ab.once) o.used = [...(o.used ?? []), index];
+  if (ab.cost.removeCounters) changeCounters(s, o, ab.cost.removeCounters.kind, -ab.cost.removeCounters.n);
+  if (ab.cost.payLife) loseLife(s, player, ab.cost.payLife);
+  if (ab.cost.tapOthers) {
+    for (const id of tapOthersOptions(s, player, source, ab).slice(0, ab.cost.tapOthers.count)) obj(s, id).tapped = true;
+  }
+  for (const id of sacrificed) putIntoGraveyard(s, id);
   if (ab.cost.sacrificeSelf) putIntoGraveyard(s, source);
   s.priority.passes = 0;
   emit({ type: "activate", player, stackId: item.id, defId: o.defId, targets: flatTargets(targets) });
@@ -276,10 +334,16 @@ function specsAndEffects(s: GameState, item: StackItem): { specs: TargetSpec[]; 
     const mode = modesOf(d)[item.mode];
     return { specs: mode?.targets ?? [], effects: mode?.effects ?? [] };
   }
+  // Capacité retardée, réflexive ou accordée : ses effets voyagent avec elle.
+  if (item.inline) return { specs: item.inline.targets, effects: item.inline.effects };
   const ab = d.abilities[item.abilityIndex];
   if (ab?.kind === "triggered") {
     // 603.4 : la condition d'une capacité « si… » est vérifiée à nouveau à la résolution.
     if (ab.condition && !checkCondition(s, ab.condition, item.controller, item.sourceId)) return { specs: [], effects: [] };
+    if (ab.modes) {
+      const mode = ab.modes[item.mode];
+      return { specs: mode?.targets ?? [], effects: mode?.effects ?? [] };
+    }
     return { specs: ab.targets, effects: ab.effects };
   }
   return ab?.kind === "activated" ? { specs: ab.targets, effects: ab.effects } : { specs: [], effects: [] };
@@ -302,7 +366,7 @@ export function resolveTop(s: GameState): boolean {
   for (const spec of specs) {
     const ids = item.targets[spec.id] ?? [];
     chosen += ids.length;
-    legal[spec.id] = ids.filter((id) => isLegalTarget(s, item.controller, spec, id));
+    legal[spec.id] = ids.filter((id) => isLegalTarget(s, item.controller, spec, id, item.sourceId));
     stillLegal += legal[spec.id]?.length ?? 0;
   }
   if (chosen > 0 && stillLegal === 0) {
@@ -353,7 +417,10 @@ function finishResolution(s: GameState, item: StackItem): void {
   if (item.kind === "spell" && s.objects[item.sourceId]) {
     const d = s.defs[item.sourceDefId];
     if (d && isPermanentCard(d)) {
-      moveObject(s, item.sourceId, "battlefield", { controller: item.controller, enters: { x: item.x, kicked: item.kicked } });
+      moveObject(s, item.sourceId, "battlefield", {
+        controller: item.controller,
+        enters: { x: item.x, kicked: item.kicked, cast: true },
+      });
     } else moveObject(s, item.sourceId, item.flashback ? "exile" : "graveyard");
   }
 }

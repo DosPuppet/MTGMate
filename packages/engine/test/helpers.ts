@@ -58,6 +58,7 @@ export function scenario(opts: ScenarioOptions): GameState {
       landsPlayed: 0,
       attacked: false,
       creatureDied: false,
+      onceFired: [],
       startingPlayer: "p1",
     };
     for (const p of ids) {
