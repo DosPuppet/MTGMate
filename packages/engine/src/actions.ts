@@ -1,10 +1,26 @@
 /**
  * Actions de jeu élémentaires, partagées par les effets, le combat et les actions basées sur l'état.
  */
-import { chars, createObject, emit, hasKeyword, isCreature, isPlayer, moveObject, nextTimestamp, obj } from "./state";
+
+import { preventsCombatDamage } from "./replacement";
+import {
+  bump,
+  chars,
+  createObject,
+  emit,
+  hasKeyword,
+  isCreature,
+  isPlayer,
+  moveObject,
+  nextTimestamp,
+  obj,
+  rulesEvent,
+} from "./state";
 import type { CardDef, GameState, Keyword, ObjectId, PlayerId, TokenSpec } from "./types";
 
 export interface DamageSource {
+  /** Objet source, s'il est identifiable (pour les déclencheurs « inflige des blessures »). */
+  id?: ObjectId;
   defId: string;
   controller: PlayerId;
   keywords: Keyword[];
@@ -28,6 +44,7 @@ export function gainLife(s: GameState, p: PlayerId, amount: number): void {
   if (!player || amount <= 0) return;
   player.life += amount;
   emit({ type: "life", player: p, delta: amount, life: player.life });
+  rulesEvent(s, { e: "lifeGain", player: p, amount });
 }
 
 export function loseLife(s: GameState, p: PlayerId, amount: number): void {
@@ -40,6 +57,7 @@ export function loseLife(s: GameState, p: PlayerId, amount: number): void {
 /** Inflige des blessures à un joueur ou à une créature (règle 120). */
 export function dealDamage(s: GameState, source: DamageSource, target: string, amount: number, combat: boolean): void {
   if (amount <= 0) return;
+  if (combat && preventsCombatDamage(s, target)) return;
   if (isPlayer(s, target)) {
     emit({ type: "damage", sourceDefId: source.defId, target, amount, combat });
     loseLife(s, target, amount);
@@ -51,11 +69,12 @@ export function dealDamage(s: GameState, source: DamageSource, target: string, a
     emit({ type: "damage", sourceDefId: source.defId, target, targetDefId: o.defId, amount, combat });
   }
   if (source.keywords.includes("lifelink")) gainLife(s, source.controller, amount);
+  rulesEvent(s, { e: "damage", sourceId: source.id ?? null, target, amount, combat });
 }
 
 export function sourceFromObject(s: GameState, id: ObjectId): DamageSource {
   const o = obj(s, id);
-  return { defId: o.defId, controller: o.controller, keywords: chars(s, id).keywords };
+  return { id, defId: o.defId, controller: o.controller, keywords: chars(s, id).keywords };
 }
 
 /** Détruit un permanent (sauf indestructible). Renvoie true s'il a quitté le champ de bataille. */
@@ -78,6 +97,7 @@ export function putIntoGraveyard(s: GameState, id: ObjectId): void {
 
 export function removeFromCombat(s: GameState, id: ObjectId): void {
   if (!s.combat) return;
+  bump(s);
   s.combat.attackers = s.combat.attackers.filter((a) => a.id !== id);
   s.combat.blockers = s.combat.blockers.filter((b) => b.id !== id);
   for (const a of s.combat.attackers) a.blockers = a.blockers.filter((b) => b !== id);
@@ -85,7 +105,7 @@ export function removeFromCombat(s: GameState, id: ObjectId): void {
 
 export function tokenDefId(t: TokenSpec): string {
   const kw = (t.keywords ?? []).join("-");
-  return `token:${t.name.toLowerCase().replace(/\W+/g, "-")}-${t.power}-${t.toughness}-${t.colors.join("")}${kw ? `-${kw}` : ""}`;
+  return `token:${t.name.toLowerCase().replace(/\W+/g, "-")}-${t.power ?? "x"}-${t.toughness ?? "x"}-${t.colors.join("")}${kw ? `-${kw}` : ""}`;
 }
 
 export function createTokens(s: GameState, controller: PlayerId, t: TokenSpec, count: number): void {
@@ -104,8 +124,8 @@ export function createTokens(s: GameState, controller: PlayerId, t: TokenSpec, c
       power: t.power,
       toughness: t.toughness,
       keywords: t.keywords ?? [],
-      abilities: [],
-      text: "",
+      abilities: t.abilities ?? [],
+      text: t.text ?? "",
       implemented: true,
       isToken: true,
     };
@@ -115,5 +135,6 @@ export function createTokens(s: GameState, controller: PlayerId, t: TokenSpec, c
     const o = createObject(s, defId, controller, "battlefield", { isToken: true });
     o.timestamp = nextTimestamp(s);
     emit({ type: "token", objectId: o.id, defId, controller });
+    rulesEvent(s, { e: "zone", oldId: null, newId: o.id, from: null, to: "battlefield", lki: null });
   }
 }

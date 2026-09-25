@@ -5,7 +5,7 @@ import { createGame, submit } from "../src/game";
 import { legalActions } from "../src/legal";
 import { solvePayment } from "../src/mana";
 import { chars } from "../src/state";
-import { act, customCard, idOf, idsOf, passBoth, passUntil, scenario } from "./helpers";
+import { act, customCard, idOf, idsOf, passAccepting, passBoth, passUntil, scenario } from "./helpers";
 
 const [green, red] = DECKS as [(typeof DECKS)[0], (typeof DECKS)[0]];
 
@@ -244,6 +244,13 @@ describe("combat", () => {
     s = act(s, "p1", { type: "declareAttackers", attackers: [{ id: t, defender: "p2" }] });
     s = passUntil(s, (x) => x.pending?.kind === "declareBlockers");
     s = act(s, "p2", { type: "declareBlockers", blocks: [{ blocker: bear, attacker: t }] });
+    s = passUntil(s, (x) => x.pending?.kind === "choice");
+    // Piétinement : l'attaquant répartit ses blessures (suggestion : 2 au bloqueur, 3 au joueur).
+    const p = s.pending;
+    expect(p?.kind === "choice" && p.request.type === "divide" && p.request.suggested).toEqual([2, 3]);
+    // Illégal : blesser le joueur sans blessures mortelles au bloqueur.
+    expect(() => act(s, "p1", { type: "choose", values: [1, 4] })).toThrow(/Piétinement/);
+    s = act(s, "p1", { type: "choose", values: [2, 3] });
     s = passUntil(s, (x) => x.turn.step === "main2");
     expect(s.players.p2?.life).toBe(17);
     expect(s.objects[bear]).toBeUndefined();
@@ -257,7 +264,7 @@ describe("combat", () => {
     s = act(s, "p1", { type: "declareAttackers", attackers: [{ id: w, defender: "p2" }] });
     s = passUntil(s, (x) => x.pending?.kind === "declareBlockers");
     s = act(s, "p2", { type: "declareBlockers", blocks: [{ blocker: fire, attacker: w }] });
-    s = passUntil(s, (x) => x.turn.step === "main2");
+    s = passAccepting(s, (x) => x.turn.step === "main2");
     expect(s.players.p2?.life).toBe(17);
     expect(s.objects[fire]).toBeUndefined();
   });
@@ -322,8 +329,13 @@ describe("combat", () => {
         { blocker: gob, attacker: b },
       ],
     });
+    // Deux bloqueurs : l'attaquant choisit la répartition (ici 3 à l'ours, 0 au gobelin).
+    s = passUntil(s, (x) => x.pending?.kind === "choice");
+    s = act(s, "p1", { type: "choose", values: [3, 0] });
     s = passUntil(s, (x) => x.turn.step === "main2");
     expect(s.objects[b]).toBeUndefined();
+    expect(idsOf(s, "p2", "battlefield", "Bear Cub")).toHaveLength(0);
+    expect(idsOf(s, "p2", "battlefield", "Swab Goblin")).toHaveLength(1);
   });
 });
 
@@ -362,6 +374,17 @@ describe("actions basées sur l'état et fin de partie", () => {
     s = passUntil(s, (x) => x.turn.active === "p2");
     expect(chars(s, bear).power).toBe(2);
     expect(s.objects[bear]?.damage).toBe(0);
+  });
+});
+
+describe("immuabilité", () => {
+  it("submit ne modifie jamais l'état reçu", () => {
+    const s = scenario({ p1: { battlefield: ["Forest", "Forest"], hand: ["Bear Cub"] } });
+    const before = JSON.stringify(s);
+    const next = act(s, "p1", { type: "cast", card: idOf(s, "p1", "hand", "Bear Cub") });
+    expect(JSON.stringify(s)).toBe(before);
+    expect(next).not.toBe(s);
+    expect(next.stack).toHaveLength(1);
   });
 });
 

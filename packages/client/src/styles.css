@@ -108,7 +108,7 @@ button {
 .board {
   position: relative;
   display: grid;
-  grid-template-rows: auto minmax(0, 1fr) auto minmax(0, 1fr) auto;
+  grid-template-rows: minmax(0, 1fr) auto minmax(0, 1fr) auto;
   background:
     radial-gradient(ellipse at 50% 50%, rgba(80, 110, 150, 0.18), transparent 65%),
     linear-gradient(180deg, var(--felt-2), var(--felt-1) 50%, var(--felt-2));
@@ -123,6 +123,40 @@ button {
   color: var(--dim);
 }
 
+.opponents {
+  display: flex;
+  min-height: 0;
+}
+.opp-zone {
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  /* Une zone adverse ne déborde jamais sur la bande centrale ni sur ses voisines. */
+  overflow: clip;
+}
+/* Plusieurs adversaires : cartes plus petites pour tenir dans les colonnes. */
+.opponents.n2 .opp-zone {
+  --card-w: clamp(46px, 8vh, 96px);
+  --land-w: calc(var(--card-w) * 0.8);
+}
+.opponents.n3 .opp-zone,
+.opponents.n4 .opp-zone,
+.opponents.n5 .opp-zone {
+  --card-w: clamp(40px, 6.6vh, 80px);
+  --land-w: calc(var(--card-w) * 0.8);
+}
+.opp-zone + .opp-zone {
+  border-left: 1px solid var(--line);
+}
+.opp-zone .battlefield {
+  flex: 1;
+}
+.opp-zone.eliminated {
+  opacity: 0.35;
+  filter: grayscale(1);
+}
 .top-row,
 .bottom-row {
   display: flex;
@@ -707,6 +741,68 @@ button {
   background: #d0cac4;
 }
 
+/* Symboles hybrides : disque coupé en diagonale */
+.mana-W-U {
+  background: linear-gradient(135deg, #f8f3d6 50%, #a9d0ef 50%);
+}
+.mana-W-B {
+  background: linear-gradient(135deg, #f8f3d6 50%, #b7ada8 50%);
+}
+.mana-W-R {
+  background: linear-gradient(135deg, #f8f3d6 50%, #f09a7c 50%);
+}
+.mana-W-G {
+  background: linear-gradient(135deg, #f8f3d6 50%, #99cc9a 50%);
+}
+.mana-U-W {
+  background: linear-gradient(135deg, #a9d0ef 50%, #f8f3d6 50%);
+}
+.mana-U-B {
+  background: linear-gradient(135deg, #a9d0ef 50%, #b7ada8 50%);
+}
+.mana-U-R {
+  background: linear-gradient(135deg, #a9d0ef 50%, #f09a7c 50%);
+}
+.mana-U-G {
+  background: linear-gradient(135deg, #a9d0ef 50%, #99cc9a 50%);
+}
+.mana-B-W {
+  background: linear-gradient(135deg, #b7ada8 50%, #f8f3d6 50%);
+}
+.mana-B-U {
+  background: linear-gradient(135deg, #b7ada8 50%, #a9d0ef 50%);
+}
+.mana-B-R {
+  background: linear-gradient(135deg, #b7ada8 50%, #f09a7c 50%);
+}
+.mana-B-G {
+  background: linear-gradient(135deg, #b7ada8 50%, #99cc9a 50%);
+}
+.mana-R-W {
+  background: linear-gradient(135deg, #f09a7c 50%, #f8f3d6 50%);
+}
+.mana-R-U {
+  background: linear-gradient(135deg, #f09a7c 50%, #a9d0ef 50%);
+}
+.mana-R-B {
+  background: linear-gradient(135deg, #f09a7c 50%, #b7ada8 50%);
+}
+.mana-R-G {
+  background: linear-gradient(135deg, #f09a7c 50%, #99cc9a 50%);
+}
+.mana-G-W {
+  background: linear-gradient(135deg, #99cc9a 50%, #f8f3d6 50%);
+}
+.mana-G-U {
+  background: linear-gradient(135deg, #99cc9a 50%, #a9d0ef 50%);
+}
+.mana-G-B {
+  background: linear-gradient(135deg, #99cc9a 50%, #b7ada8 50%);
+}
+.mana-G-R {
+  background: linear-gradient(135deg, #99cc9a 50%, #f09a7c 50%);
+}
+
 /* Flèches */
 .arrows {
   position: absolute;
@@ -955,6 +1051,51 @@ button {
   text-align: left;
   padding: 10px 14px;
 }
+.order-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  position: relative;
+}
+.order-rank {
+  position: absolute;
+  top: -8px;
+  left: -8px;
+  z-index: 2;
+  background: var(--gold);
+  color: #1d1406;
+  font-weight: 700;
+  border-radius: 50%;
+  width: 22px;
+  height: 22px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.order-moves {
+  display: flex;
+  gap: 6px;
+}
+.divide-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.divide-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.divide-name {
+  flex: 1;
+}
+.divide-value {
+  min-width: 28px;
+  text-align: center;
+  font-weight: 700;
+  font-size: 16px;
+}
 .x-picker {
   display: flex;
   gap: 14px;
@@ -1099,6 +1240,17 @@ button {
   color: var(--dim);
   font-size: 11px;
   margin-top: 6px;
+}
+.ai-count {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  justify-content: center;
+  color: var(--dim);
+}
+.ai-count .seg button {
+  padding: 4px 14px;
+  font-size: 14px;
 }
 .lobby-actions {
   display: flex;

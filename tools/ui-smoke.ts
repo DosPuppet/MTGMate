@@ -2,7 +2,7 @@
  * Test de bout en bout de l'interface : joue une partie complète contre l'IA en cliquant
  * comme un humain (cartes jouables, bouton principal, cibles), et prend des captures.
  *
- * Prérequis : `npm run dev` lancé. Usage : npx tsx tools/ui-smoke.ts [dossier-captures] [maxActions]
+ * Prérequis : `npm run dev` lancé. Usage : npx tsx tools/ui-smoke.ts [dossier-captures] [maxActions] [nombre d'IA]
  */
 import { mkdirSync } from "node:fs";
 import { join } from "node:path";
@@ -10,6 +10,7 @@ import { chromium } from "playwright";
 
 const OUT = process.argv[2] ?? "test-results/ui";
 const MAX = Number(process.argv[3] ?? 400);
+const AIS = Number(process.argv[4] ?? 1);
 mkdirSync(OUT, { recursive: true });
 
 const browser = await chromium.launch();
@@ -22,6 +23,7 @@ page.on("console", (m) => {
 
 await page.goto("http://localhost:5173/");
 await page.screenshot({ path: join(OUT, "01-lobby.png") });
+if (AIS > 1) await page.locator(".ai-count .seg button", { hasText: String(AIS) }).click();
 await page.getByRole("button", { name: "Jouer contre l'IA" }).click();
 await page.getByRole("dialog").waitFor({ timeout: 10_000 });
 await page.waitForTimeout(800);
@@ -73,6 +75,12 @@ for (let i = 0; i < MAX; i++) {
     await target.click({ force: true });
     continue;
   }
+  // Cible optionnelle : si rien n'est ciblable, « Aucune cible ».
+  const none = page.getByRole("button", { name: "Aucune cible" });
+  if (await none.count()) {
+    await none.click();
+    continue;
+  }
   const banner = await page
     .locator(".banner")
     .innerText()
@@ -99,9 +107,9 @@ for (let i = 0; i < MAX; i++) {
     // Bloquer avec la première créature proposée, si possible.
     const blocker = page.locator(".battlefield.me .glow-selectable").first();
     if (await blocker.count()) {
-      await blocker.click();
+      await blocker.click({ force: true });
       const att = page.locator(".battlefield.opp .glow-target").first();
-      if (await att.count()) await att.click();
+      if (await att.count()) await att.click({ force: true });
       await shot("blocage");
     }
     await page.locator(".main-button").click();
@@ -111,11 +119,20 @@ for (let i = 0; i < MAX; i++) {
   // Jouer une carte jouable de la main (terrain d'abord), sinon bouton principal.
   const playable = page.locator(".hand .glow-playable");
   if ((await playable.count()) && !/Résoudre/.test(label)) {
-    await playable.first().click();
+    await playable.first().click({ force: true });
     continue;
   }
   await main.click();
 }
 
+if (!(await page.locator(".gameover").count())) {
+  await shot("arret");
+  const dialog = await page
+    .getByRole("dialog")
+    .locator("h2")
+    .innerText()
+    .catch(() => "(aucune)");
+  console.log(`Arrêt sans fin de partie. Bouton : « ${await page.locator(".main-button").innerText()} », fenêtre : ${dialog}`);
+}
 console.log(errors.length ? `Erreurs :\n${errors.join("\n")}` : "Aucune erreur de page.");
 await browser.close();

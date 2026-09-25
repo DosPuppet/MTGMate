@@ -1,13 +1,14 @@
 /**
  * Mana : lecture des coûts, sources disponibles et solveur de paiement automatique.
  */
+import { putIntoGraveyard } from "./actions";
 import { defOf, isSummoningSick, obj } from "./state";
 import type { GameState, ManaAbilityDef, ManaCost, ManaType, ObjectId, PlayerId } from "./types";
 import { MANA_TYPES } from "./types";
 
 const SYMBOLS = new Set<string>(["W", "U", "B", "R", "G", "C"]);
 
-/** "{2}{G}{G}" → { generic: 2, colored: { G: 2 }, x: 0 }. Lève une erreur sur les symboles non gérés. */
+/** "{2}{G}{G/W}" → { generic: 2, colored: { G: 1 }, hybrid: [["G","W"]], x: 0 }. Lève une erreur sur les symboles non gérés. */
 export function parseManaCost(text: string): ManaCost {
   const cost: ManaCost = { generic: 0, colored: {}, x: 0 };
   for (const m of text.matchAll(/\{([^}]+)\}/g)) {
@@ -17,34 +18,45 @@ export function parseManaCost(text: string): ManaCost {
     else if (SYMBOLS.has(sym)) {
       const t = sym as ManaType;
       cost.colored[t] = (cost.colored[t] ?? 0) + 1;
+    } else if (/^[WUBRG]\/[WUBRG]$/.test(sym)) {
+      cost.hybrid = [...(cost.hybrid ?? []), sym.split("/") as [ManaType, ManaType]];
     } else throw new Error(`Symbole de mana non géré : {${sym}}`);
   }
   return cost;
 }
 
-export function manaValue(cost: ManaCost | null): number {
+export function manaValue(cost: ManaCost | null | undefined): number {
   if (!cost) return 0;
-  return cost.generic + Object.values(cost.colored).reduce((a, b) => a + (b ?? 0), 0);
+  return cost.generic + Object.values(cost.colored).reduce((a, b) => a + (b ?? 0), 0) + (cost.hybrid?.length ?? 0);
 }
 
 export function costToText(cost: ManaCost | null): string {
   if (!cost) return "";
   let t = "{X}".repeat(cost.x);
   if (cost.generic > 0 || (manaValue(cost) === 0 && cost.x === 0)) t += `{${cost.generic}}`;
+  for (const [a, b] of cost.hybrid ?? []) t += `{${a}/${b}}`;
   for (const m of MANA_TYPES) t += `{${m}}`.repeat(cost.colored[m] ?? 0);
   return t;
 }
 
-/** Coût total à payer : X remplacé par sa valeur, coûts additionnels ajoutés. */
-export function totalCost(base: ManaCost | null | undefined, x: number, extra?: ManaCost): ManaCost {
-  const cost: ManaCost = { generic: (base?.generic ?? 0) + x * (base?.x ?? 0), colored: { ...(base?.colored ?? {}) }, x: 0 };
+/** Coût total à payer : X remplacé par sa valeur, coûts additionnels ajoutés, réduction de générique. */
+export function totalCost(base: ManaCost | null | undefined, x: number, extra?: ManaCost, reduction = 0): ManaCost {
+  const cost: ManaCost = {
+    generic: (base?.generic ?? 0) + x * (base?.x ?? 0),
+    colored: { ...(base?.colored ?? {}) },
+    hybrid: [...(base?.hybrid ?? [])],
+    x: 0,
+  };
   if (extra) {
     cost.generic += extra.generic;
     for (const m of MANA_TYPES) {
       const n = extra.colored[m] ?? 0;
       if (n) cost.colored[m] = (cost.colored[m] ?? 0) + n;
     }
+    cost.hybrid = [...(cost.hybrid ?? []), ...(extra.hybrid ?? [])];
   }
+  // 601.2f : les réductions ne diminuent que le générique.
+  cost.generic = Math.max(0, cost.generic - reduction);
   return cost;
 }
 
@@ -58,6 +70,8 @@ export interface ManaSource {
   colors: ManaType[];
   amount: number;
   isCreature: boolean;
+  /** La source se sacrifie (Trésor) : utilisée en dernier recours. */
+  sacrifice: boolean;
 }
 
 /** Capacités de mana d'un objet, y compris celles intrinsèques aux types de terrain de base (305.6). */
@@ -73,10 +87,10 @@ export function manaAbilitiesOf(s: GameState, id: ObjectId): ManaAbilityDef[] {
   return list;
 }
 
-/** Une capacité de mana dont le seul coût est {T} peut-elle être activée maintenant ? */
-function canTapForMana(s: GameState, id: ObjectId, ab: ManaAbilityDef): boolean {
+/** Une capacité de mana sans coût de mana peut-elle être activée maintenant ? */
+function canActivateMana(s: GameState, id: ObjectId, ab: ManaAbilityDef): boolean {
   const o = obj(s, id);
-  if (ab.cost.mana || ab.cost.sacrificeSelf) return false;
+  if (ab.cost.mana) return false;
   if (ab.cost.tap && (o.tapped || isSummoningSick(s, id))) return false;
   return true;
 }
@@ -86,24 +100,32 @@ export function manaSources(s: GameState, player: PlayerId, exclude: ReadonlySet
   for (const id of s.battlefield) {
     const o = obj(s, id);
     if (o.controller !== player || exclude.has(id)) continue;
-    const abilities = manaAbilitiesOf(s, id);
-    abilities.forEach((ab, i) => {
-      if (!canTapForMana(s, id, ab)) return;
-      out.push({ id, ability: i, colors: ab.produce, amount: ab.amount, isCreature: defOf(s, id).types.includes("Creature") });
+    manaAbilitiesOf(s, id).forEach((ab, i) => {
+      if (!canActivateMana(s, id, ab)) return;
+      out.push({
+        id,
+        ability: i,
+        colors: ab.produce,
+        amount: ab.amount,
+        isCreature: defOf(s, id).types.includes("Creature"),
+        sacrifice: !!ab.cost.sacrificeSelf,
+      });
     });
   }
-  // Préférence : terrains avant créatures, sources les moins flexibles d'abord.
-  return out.sort((a, b) => Number(a.isCreature) - Number(b.isCreature) || a.colors.length - b.colors.length);
+  // Préférence : terrains, puis créatures, puis sources sacrifiées ; les moins flexibles d'abord.
+  const rank = (x: ManaSource) => (x.sacrifice ? 2 : x.isCreature ? 1 : 0);
+  return out.sort((a, b) => rank(a) - rank(b) || a.colors.length - b.colors.length);
 }
 
 export function activateManaAbility(s: GameState, player: PlayerId, id: ObjectId, ability: number, color?: ManaType): void {
   const o = obj(s, id);
   if (o.controller !== player) throw new Error("Vous ne contrôlez pas cette source");
   const ab = manaAbilitiesOf(s, id)[ability];
-  if (!ab || !canTapForMana(s, id, ab)) throw new Error("Capacité de mana indisponible");
+  if (!ab || !canActivateMana(s, id, ab)) throw new Error("Capacité de mana indisponible");
   const c = color ?? ab.produce[0];
   if (!c || !ab.produce.includes(c)) throw new Error("Couleur de mana invalide");
   if (ab.cost.tap) o.tapped = true;
+  if (ab.cost.sacrificeSelf) putIntoGraveyard(s, id);
   const pool = s.players[player]?.manaPool;
   if (pool) pool[c] += ab.amount;
 }
@@ -113,12 +135,17 @@ export function activateManaAbility(s: GameState, player: PlayerId, id: ObjectId
 // ---------------------------------------------------------------------------
 
 export interface PaymentPlan {
+  /** Capacités de mana à activer. */
   taps: { id: ObjectId; ability: number; color: ManaType }[];
+  /** Mana dépensé de la réserve, par type, une fois les capacités activées. */
+  spend: Record<ManaType, number>;
 }
 
+const zero = (): Record<ManaType, number> => ({ W: 0, U: 0, B: 0, R: 0, G: 0, C: 0 });
+
 /**
- * Cherche comment payer `cost` avec la réserve puis les sources non engagées.
- * Renvoie la liste des sources à engager, ou null si c'est impossible.
+ * Cherche comment payer `cost` avec la réserve puis les sources disponibles.
+ * Renvoie le plan de paiement, ou null si c'est impossible.
  */
 export function solvePayment(
   s: GameState,
@@ -126,60 +153,77 @@ export function solvePayment(
   cost: ManaCost,
   exclude: ReadonlySet<ObjectId> = new Set(),
 ): PaymentPlan | null {
-  const pool = { ...(s.players[player]?.manaPool ?? {}) } as Record<ManaType, number>;
-  const need: Record<ManaType, number> = { W: 0, U: 0, B: 0, R: 0, G: 0, C: 0 };
-  for (const m of MANA_TYPES) {
-    const req = cost.colored[m] ?? 0;
-    const fromPool = Math.min(pool[m], req);
-    pool[m] -= fromPool;
-    need[m] = req - fromPool;
-  }
+  const pool = { ...(s.players[player]?.manaPool ?? zero()) } as Record<ManaType, number>;
   const sources = manaSources(s, player, exclude);
-  const pips: ManaType[] = [];
-  for (const m of MANA_TYPES) for (let i = 0; i < need[m]; i++) pips.push(m);
-  // Les symboles les plus contraints d'abord.
-  const candidates = (m: ManaType) => sources.filter((src) => src.colors.includes(m)).length;
-  pips.sort((a, b) => candidates(a) - candidates(b));
+  // Symboles à payer : chacun accepte un ensemble de types (un seul pour un symbole coloré, deux pour un hybride).
+  const pips: ManaType[][] = [];
+  for (const m of MANA_TYPES) for (let i = 0; i < (cost.colored[m] ?? 0); i++) pips.push([m]);
+  for (const pair of cost.hybrid ?? []) pips.push([...pair]);
+  const supply = (colors: ManaType[]) =>
+    colors.reduce((n, m) => n + pool[m], 0) + sources.filter((x) => x.colors.some((c) => colors.includes(c))).length;
+  pips.sort((a, b) => supply(a) - supply(b));
 
   const used = new Set<number>();
   const taps: PaymentPlan["taps"] = [];
-  const extra: Record<ManaType, number> = { W: 0, U: 0, B: 0, R: 0, G: 0, C: 0 };
+  const extra = zero();
+  const spend = zero();
 
   const assign = (i: number): boolean => {
     if (i === pips.length) return true;
-    const m = pips[i] as ManaType;
-    if (extra[m] > 0) {
-      extra[m] -= 1;
-      if (assign(i + 1)) return true;
-      extra[m] += 1;
-      return false;
+    const allowed = pips[i] as ManaType[];
+    // 1. La réserve (gratuite), puis le surplus des sources qui produisent plusieurs mana.
+    for (const bucket of [pool, extra]) {
+      for (const m of allowed) {
+        if (bucket[m] <= 0) continue;
+        bucket[m] -= 1;
+        spend[m] += 1;
+        if (assign(i + 1)) return true;
+        bucket[m] += 1;
+        spend[m] -= 1;
+      }
     }
+    // 2. Une source non utilisée.
     for (let k = 0; k < sources.length; k++) {
       const src = sources[k] as ManaSource;
-      if (used.has(k) || !src.colors.includes(m)) continue;
-      used.add(k);
-      taps.push({ id: src.id, ability: src.ability, color: m });
-      extra[m] += src.amount - 1;
-      if (assign(i + 1)) return true;
-      extra[m] -= src.amount - 1;
-      taps.pop();
-      used.delete(k);
+      if (used.has(k)) continue;
+      for (const m of allowed) {
+        if (!src.colors.includes(m)) continue;
+        used.add(k);
+        taps.push({ id: src.id, ability: src.ability, color: m });
+        extra[m] += src.amount - 1;
+        spend[m] += 1;
+        if (assign(i + 1)) return true;
+        spend[m] -= 1;
+        extra[m] -= src.amount - 1;
+        taps.pop();
+        used.delete(k);
+      }
     }
     return false;
   };
   if (!assign(0)) return null;
 
+  // Générique : réserve (incolore d'abord), surplus, puis sources restantes dans l'ordre de préférence.
   let generic = cost.generic;
-  const leftover = MANA_TYPES.reduce((n, m) => n + pool[m] + extra[m], 0);
-  generic -= Math.min(generic, leftover);
+  for (const bucket of [pool, extra]) {
+    for (const m of ["C", ...MANA_TYPES.filter((x) => x !== "C")] as ManaType[]) {
+      const n = Math.min(generic, bucket[m]);
+      bucket[m] -= n;
+      spend[m] += n;
+      generic -= n;
+    }
+  }
   for (let k = 0; k < sources.length && generic > 0; k++) {
     if (used.has(k)) continue;
     const src = sources[k] as ManaSource;
+    const m = src.colors[0] as ManaType;
     used.add(k);
-    taps.push({ id: src.id, ability: src.ability, color: src.colors[0] as ManaType });
-    generic -= Math.min(generic, src.amount);
+    taps.push({ id: src.id, ability: src.ability, color: m });
+    const n = Math.min(generic, src.amount);
+    spend[m] += n;
+    generic -= n;
   }
-  return generic > 0 ? null : { taps };
+  return generic > 0 ? null : { taps, spend };
 }
 
 /** Quantité maximale de mana disponible (réserve + sources). */
@@ -193,7 +237,7 @@ export function canPay(s: GameState, player: PlayerId, cost: ManaCost, exclude?:
   return solvePayment(s, player, cost, exclude) !== null;
 }
 
-/** Engage les sources nécessaires puis retire le coût de la réserve. Lève une erreur si impossible. */
+/** Active les sources nécessaires puis retire le coût de la réserve. Lève une erreur si impossible. */
 export function payMana(s: GameState, player: PlayerId, cost: ManaCost, exclude?: ReadonlySet<ObjectId>): void {
   const plan = solvePayment(s, player, cost, exclude);
   if (!plan) throw new Error("Mana insuffisant");
@@ -201,16 +245,7 @@ export function payMana(s: GameState, player: PlayerId, cost: ManaCost, exclude?
   const pool = s.players[player]?.manaPool;
   if (!pool) throw new Error("Joueur inconnu");
   for (const m of MANA_TYPES) {
-    const n = cost.colored[m] ?? 0;
-    if (pool[m] < n) throw new Error("Mana insuffisant");
-    pool[m] -= n;
-  }
-  let generic = cost.generic;
-  // Payer le générique avec l'incolore d'abord, puis la couleur la plus abondante.
-  while (generic > 0) {
-    const m = pool.C > 0 ? "C" : [...MANA_TYPES].sort((a, b) => pool[b] - pool[a])[0];
-    if (!m || pool[m] <= 0) throw new Error("Mana insuffisant");
-    pool[m] -= 1;
-    generic -= 1;
+    if (pool[m] < plan.spend[m]) throw new Error("Mana insuffisant");
+    pool[m] -= plan.spend[m];
   }
 }

@@ -1,6 +1,6 @@
 # MTGX
 
-Plateforme pour jouer à Magic: The Gathering contre une IA (et bientôt contre un autre joueur). Elle repose sur un **moteur de règles maison en TypeScript** et une interface 2D pensée pour être aussi fluide que MTG Arena :
+Plateforme pour jouer à Magic: The Gathering contre une ou plusieurs IA (en duel ou en multijoueur), et bientôt contre d'autres joueurs. Elle repose sur un **moteur de règles maison en TypeScript** et une interface 2D pensée pour être aussi fluide que MTG Arena :
 
 - passage automatique de la priorité ;
 - paiement automatique du mana ;
@@ -20,7 +20,9 @@ npm run dev          # http://localhost:5173
 | Commande | Rôle |
 |---|---|
 | `npm test` | Tests de règles et d'IA (Vitest) |
-| `npm run fuzz -- --games 300 [--ai random\|heuristic\|mixed]` | Parties IA contre IA, invariants vérifiés à chaque décision |
+| `npm run fuzz -- --games 300 [--ai random\|heuristic\|mixed] [--players 4] [--pool all]` | Parties IA contre IA, invariants vérifiés à chaque décision (`--pool all` : decks aléatoires tirés de toutes les cartes gérées) |
+| `npm run bench` | Décisions par seconde du moteur et temps de décision de l'IA (cibles : ≥ 5 000 déc/s, IA < 50 ms) |
+| `npm run coverage` | Cartes FDN gérées et mécaniques manquantes (`-- --list <mécanique>`) |
 | `npm run typecheck` / `npm run lint` | TypeScript strict / Biome |
 | `npm run import-cards -- fdn` | Réimporte un set depuis Scryfall (EN + FR) |
 | `npm run ui-smoke -- <dossier> [actions]` | Joue une partie dans Chromium via l'interface et prend des captures (serveur de dev lancé) |
@@ -40,6 +42,12 @@ tools/      import Scryfall, fuzz, test d'interface
 - **Autopilot** (`engine/src/autopilot.ts`) : il répond aux décisions triviales. Le moteur, lui, reste strict. Le mode « contrôle total » désactive l'autopilot.
 - **Effets de cartes** : ce sont des données sérialisables (`engine/src/dsl.ts`), jamais du code stocké dans l'état.
 - **Règle 400.7** : un objet qui change de zone reçoit un nouvel identifiant (`id`). L'identifiant `uid`, lui, suit la carte physique pour les animations.
+- **N joueurs** : priorité en tour de table, ordre APNAP, un défenseur par attaquant, élimination d'un joueur (800.4a).
+- **Choix génériques** (`choices.ts`) : toute question passe par une `ChoiceRequest` (choisir, ordonner, oui/non, nombre, répartir) avec une réponse suggérée. Une résolution peut être suspendue sur un choix puis reprise.
+- **Capacités déclenchées** (`triggers.ts`) : détectées au moment de l'événement, avec regard en arrière pour les morts simultanées, puis mises sur la pile en APNAP. Les conditions « si… » sont revérifiées à la résolution.
+- **Couches** (`layers.ts`) : caractéristiques calculées couche par couche (4 à 7) avec capacités statiques. Elles sont mises en cache par version d'état, et le fuzz vérifie le cache.
+- **Remplacements et prévention** (`replacement.ts`) et **coûts** (`mana.ts`) : exil à la place de mourir, arrivée engagée ou avec marqueurs, prévention, hybride, coûts additionnels, flashback, réductions, Trésors.
+- **Performance** : `submit` copie l'état puis le mute (pas d'Immer) ; les simulations de l'IA utilisent `applyMutable` sur une copie de travail.
 
 ## Ajouter une carte
 
@@ -56,7 +64,8 @@ Les caractéristiques d'une carte (coût, types, F/E, mots-clés) viennent de Sc
 | 1. Fondations | monorepo, TS strict, Biome, Vitest, import Scryfall FDN | ✅ |
 | 2. Noyau du moteur | tours et phases, priorité et pile, mana, combat et mots-clés, actions basées sur l'état, mulligan de Londres, X, kicker, sorts modaux, capacités activées, jetons | ✅ |
 | 3. Client contre l'IA | plateau, main en éventail, glisser-déposer, flèches, barre des phases et arrêts, autopilot, journal FR | ✅ |
-| 4. Mécaniques du pool | capacités déclenchées, statiques et couches complètes, auras et équipements, remplacements, choix en cours de résolution → ~150 cartes, 8–10 decks | à faire |
+| 4a. Fondations du moteur | N joueurs, choix génériques, déclencheurs, couches, remplacements, coûts, performance | ✅ |
+| 4b. Couverture FDN | toutes les cartes du set (auras, équipements, ward, contresorts, recherche…) ; Limité (scellé, draft) | en cours : 83 / 517 cartes |
 | 5. IA | attaques par simulation, puis ISMCTS | à faire |
 | 6. JcJ en ligne | serveur Node `ws` réutilisant `GameHost` + `projectView` | à faire |
 | 7. Finitions | animations, sons, deckbuilder, replays (graine + décisions) | à faire |

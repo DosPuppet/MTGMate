@@ -8,9 +8,10 @@ import {
   type Decision,
   type GameState,
   legalActions,
-  opponentOf,
+  opponentsOf,
   type PlayerId,
 } from "@mtgx/engine";
+import { mulberryChoice } from "./choices";
 import { buildCastDecision } from "./options";
 
 export function mulberry32(seed: number): () => number {
@@ -51,7 +52,7 @@ export function randomAgent(seed: number, passChance = 0.4): Agent {
           type: "declareAttackers",
           attackers: attackCandidates(s, me)
             .filter(() => rand() < 0.6)
-            .map((id) => ({ id, defender: opponentOf(s, me) })),
+            .map((id) => ({ id, defender: pick(rand, opponentsOf(s, me)) as string })),
         };
       case "declareBlockers": {
         const blocks: { blocker: string; attacker: string }[] = [];
@@ -63,6 +64,8 @@ export function randomAgent(seed: number, passChance = 0.4): Agent {
         const menace = (a: string) => s.defs[s.objects[a]?.defId ?? ""]?.keywords.includes("menace");
         return { type: "declareBlockers", blocks: blocks.filter((b) => !(menace(b.attacker) && count(b.attacker) < 2)) };
       }
+      case "choice":
+        return { type: "choose", values: mulberryChoice(rand, p.request) };
       case "priority": {
         const actions = legalActions(s, me).filter((a) => a.type !== "pass");
         if (actions.length === 0 || rand() < passChance) return { type: "pass" };

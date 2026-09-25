@@ -1,12 +1,27 @@
 export { type AutopilotSettings, autopilotDecision, autoTarget, DEFAULT_AUTOPILOT } from "./autopilot";
+export { divisionOf, validateChoice } from "./choices";
 export type { CardScript } from "./dsl";
 export * as dsl from "./dsl";
-export { createGame, type GameOptions, type PlayerSetup, type StepResult, submit } from "./game";
+export { applyMutable, createGame, type GameOptions, type PlayerSetup, type StepResult, submit } from "./game";
 export { type Agent, fallbackDecision, GameHost, type HostOptions } from "./host";
+export { computeBattlefield } from "./layers";
 export { legalActions, meaningfulActions } from "./legal";
 export { availableMana, costToText, manaSources, manaValue, parseManaCost, solvePayment } from "./mana";
 export { isPermanentCard, modesOf, RulesError } from "./stack";
-export { type Characteristics, chars, creaturesControlledBy, hasKeyword, isCreature, isSummoningSick, opponentOf } from "./state";
+export {
+  alivePlayers,
+  apnapOrder,
+  type Characteristics,
+  chars,
+  cloneState,
+  creaturesControlledBy,
+  hasKeyword,
+  isAlive,
+  isCreature,
+  isSummoningSick,
+  nextPlayer,
+  opponentsOf,
+} from "./state";
 export { isLegalTarget, legalTargets } from "./targets";
 export { attackCandidates, blockCandidates, canAttack, canBlock, MAX_HAND_SIZE } from "./turn";
 export * from "./types";

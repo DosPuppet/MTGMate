@@ -37,6 +37,8 @@ export function fallbackDecision(s: GameState, p: PendingDecision): Decision {
       return { type: "declareBlockers", blocks: [] };
     case "priority":
       return { type: "pass" };
+    case "choice":
+      return { type: "choose", values: p.request.suggested };
   }
 }
 

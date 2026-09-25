@@ -16,10 +16,11 @@ import {
   legalActions,
   manaValue,
   type ObjectId,
-  opponentOf,
+  opponentsOf,
   type PlayerId,
 } from "@mtgx/engine";
-import { afterCombat, creatureValue, evaluate, rollout, stackEmpty, trySubmit } from "./evaluate";
+import { heuristicChoice, keepValue } from "./choices";
+import { afterCombat, creatureValue, evaluate, rollout, stackEmpty, targetOpponent, trySubmit } from "./evaluate";
 import { enumerateDecisions } from "./options";
 
 export function heuristicAgent(): Agent {
@@ -36,9 +37,14 @@ function decide(s: GameState, me: PlayerId): Decision {
     case "discard":
       return { type: "discard", cards: worstCards(s, me, p.count) };
     case "declareAttackers":
-      return { type: "declareAttackers", attackers: chooseAttackers(s, me).map((id) => ({ id, defender: opponentOf(s, me) })) };
+      return {
+        type: "declareAttackers",
+        attackers: chooseAttackers(s, me).map((id) => ({ id, defender: targetOpponent(s, me) })),
+      };
     case "declareBlockers":
       return { type: "declareBlockers", blocks: chooseBlocks(s, me) };
+    case "choice":
+      return { type: "choose", values: heuristicChoice(s, me, p.request) };
     case "priority":
       return choosePriority(s, me);
     default:
@@ -111,7 +117,9 @@ function choosePriority(s: GameState, me: PlayerId): Decision {
         continue;
       }
     }
-    for (const d of enumerateDecisions(a)) {
+    // Coûts additionnels : on se sépare d'abord de ce qui a le moins de valeur.
+    const rank = (ids: string[]) => [...ids].sort((x, y) => keepValue(s, me, x) - keepValue(s, me, y));
+    for (const d of enumerateDecisions(a, 40, rank)) {
       const next = trySubmit(s, me, d);
       if (!next) continue;
       const score = evaluate(rollout(next, until), me);
@@ -125,7 +133,7 @@ function choosePriority(s: GameState, me: PlayerId): Decision {
 }
 
 function overrunIsLethal(s: GameState, me: PlayerId): boolean {
-  const opp = opponentOf(s, me);
+  const opp = targetOpponent(s, me);
   const attackers = attackCandidates(s, me);
   if (attackers.length < 2) return false;
   const blockers = creaturesControlledBy(s, opp).filter((id) => !s.objects[id]?.tapped).length;
@@ -235,10 +243,11 @@ function worth(s: GameState, id: ObjectId): number {
 }
 
 function chooseAttackers(s: GameState, me: PlayerId): ObjectId[] {
-  const opp = opponentOf(s, me);
+  // On attaque l'adversaire visé ; la contre-attaque peut venir de n'importe quel adversaire.
+  const opp = targetOpponent(s, me);
   const cands = attackCandidates(s, me).filter((id) => chars(s, id).power > 0);
-  const oppCreatures = creaturesControlledBy(s, opp);
-  const blockers = oppCreatures.filter((id) => !s.objects[id]?.tapped);
+  const blockers = creaturesControlledBy(s, opp).filter((id) => !s.objects[id]?.tapped);
+  const oppCreatures = opponentsOf(s, me).flatMap((p) => creaturesControlledBy(s, p));
   const oppLife = s.players[opp]?.life ?? 20;
   const myLife = s.players[me]?.life ?? 20;
 

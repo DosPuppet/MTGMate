@@ -2,7 +2,7 @@
 import type { AutopilotSettings, CardFace, Decision, GameEvent, GameView } from "@mtgx/engine";
 
 export type ToWorker =
-  | { type: "start"; seed: number; playerName: string; playerDeck: string; aiDeck: string }
+  | { type: "start"; seed: number; playerName: string; playerDeck: string; aiDecks: string[] }
   | { type: "decision"; decision: Decision }
   | { type: "settings"; settings: Partial<AutopilotSettings> };
 

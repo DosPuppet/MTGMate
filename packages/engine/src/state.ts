@@ -2,19 +2,7 @@
  * Primitives de manipulation de l'état : identifiants, hasard déterministe,
  * événements, zones et caractéristiques calculées (couches).
  */
-import type {
-  CardDef,
-  CardType,
-  Color,
-  GameEvent,
-  GameObject,
-  GameState,
-  Keyword,
-  ManaType,
-  ObjectId,
-  PlayerId,
-  Zone,
-} from "./types";
+import type { CardDef, GameEvent, GameObject, GameState, LkiSnapshot, ManaType, ObjectId, PlayerId, Step, Zone } from "./types";
 
 // ---------------------------------------------------------------------------
 // Événements : le moteur est synchrone, un collecteur global suffit.
@@ -35,6 +23,59 @@ export function collectEvents<T>(fn: () => T): [T, GameEvent[]] {
 
 export function emit(event: GameEvent): void {
   sink?.push(event);
+}
+
+// ---------------------------------------------------------------------------
+// Événements de règles : écoutés par le module des déclencheurs (triggers.ts).
+// Distincts des GameEvent, qui ne servent qu'à l'affichage.
+// ---------------------------------------------------------------------------
+
+export type RulesEvent =
+  | {
+      e: "zone";
+      oldId: ObjectId | null;
+      newId: ObjectId | null;
+      from: Zone | null;
+      to: Zone;
+      /** Caractéristiques au moment du départ du champ de bataille. */
+      lki: LkiSnapshot | null;
+    }
+  | { e: "cast"; player: PlayerId; stackId: ObjectId }
+  | { e: "attack"; attacker: ObjectId; defender: PlayerId }
+  | { e: "damage"; sourceId: ObjectId | null; target: string; amount: number; combat: boolean }
+  | { e: "step"; step: Step; active: PlayerId }
+  | { e: "lifeGain"; player: PlayerId; amount: number };
+
+/** Signale un événement de règles : les capacités déclenchées correspondantes sont mises en attente. */
+export function rulesEvent(s: GameState, ev: RulesEvent): void {
+  detectTriggers(s, ev);
+}
+
+// ---------------------------------------------------------------------------
+// Copie de l'état : le moteur mute une copie, les états déjà renvoyés ne changent jamais.
+// ---------------------------------------------------------------------------
+
+function deepClone<T>(v: T): T {
+  if (v === null || typeof v !== "object") return v;
+  if (Array.isArray(v)) {
+    const out = new Array(v.length);
+    for (let i = 0; i < v.length; i++) out[i] = deepClone(v[i]);
+    return out as T;
+  }
+  const out: Record<string, unknown> = {};
+  for (const k in v) out[k] = deepClone((v as Record<string, unknown>)[k]);
+  return out as T;
+}
+
+/**
+ * Copie profonde de l'état, sauf les définitions de cartes (immuables, partagées).
+ * Beaucoup plus rapide qu'Immer pour notre usage (simulations de l'IA) : voir tools/bench.ts.
+ */
+export function cloneState(s: GameState): GameState {
+  const { defs, ...rest } = s;
+  const copy = deepClone(rest) as GameState;
+  copy.defs = { ...defs };
+  return copy;
 }
 
 // ---------------------------------------------------------------------------
@@ -91,10 +132,34 @@ export function isPlayer(s: GameState, id: string): boolean {
   return id in s.players;
 }
 
-export function opponentOf(s: GameState, p: PlayerId): PlayerId {
-  const other = s.playerOrder.find((q) => q !== p);
-  if (!other) throw new Error("Pas d'adversaire");
-  return other;
+// ---------------------------------------------------------------------------
+// Joueurs (N joueurs : duel, multijoueur, Commander)
+// ---------------------------------------------------------------------------
+
+export function isAlive(s: GameState, p: PlayerId): boolean {
+  return !!s.players[p] && !s.players[p]?.lost;
+}
+
+export function alivePlayers(s: GameState): PlayerId[] {
+  return s.playerOrder.filter((p) => isAlive(s, p));
+}
+
+/** Adversaires encore en jeu, dans l'ordre du tour à partir du joueur suivant. */
+export function opponentsOf(s: GameState, p: PlayerId): PlayerId[] {
+  const i = s.playerOrder.indexOf(p);
+  const rotated = [...s.playerOrder.slice(i + 1), ...s.playerOrder.slice(0, Math.max(0, i))];
+  return rotated.filter((q) => q !== p && isAlive(s, q));
+}
+
+/** Prochain joueur en jeu dans l'ordre du tour (le joueur lui-même s'il est seul). */
+export function nextPlayer(s: GameState, p: PlayerId): PlayerId {
+  return opponentsOf(s, p)[0] ?? p;
+}
+
+/** Ordre APNAP (101.4) : joueur actif d'abord, puis les autres dans l'ordre du tour. */
+export function apnapOrder(s: GameState): PlayerId[] {
+  const active = s.turn.active;
+  return [...(isAlive(s, active) ? [active] : []), ...opponentsOf(s, active)];
 }
 
 export function onBattlefield(s: GameState, id: ObjectId): boolean {
@@ -126,6 +191,7 @@ export function createObject(
   opts: { uid?: string; isToken?: boolean; controller?: PlayerId } = {},
 ): GameObject {
   const id = newId(s);
+  bump(s);
   const o: GameObject = {
     id,
     uid: opts.uid ?? `c${id}`,
@@ -155,16 +221,28 @@ export function moveObject(
   s: GameState,
   id: ObjectId,
   to: Zone,
-  opts: { controller?: PlayerId; position?: "top" | "bottom" } = {},
+  opts: { controller?: PlayerId; position?: "top" | "bottom"; enters?: EntersContext } = {},
 ): ObjectId | null {
   const o = obj(s, id);
+  to = replaceDestination(s, o, to);
   const from = zoneArray(s, o);
   if (from) {
     const i = from.indexOf(id);
     if (i >= 0) from.splice(i, 1);
   }
+  const lki = o.zone === "battlefield" ? snapshot(s, id) : null;
+  if (lki) {
+    s.lki[id] = lki;
+    if (to === "graveyard" && lki.types.includes("Creature")) s.turn.creatureDied = true;
+  }
+  const from0 = o.zone;
   delete s.objects[id];
-  if (o.isToken && to !== "battlefield") return null;
+  if (o.isToken && to !== "battlefield") {
+    bump(s);
+    // Un jeton qui quitte le champ de bataille cesse d'exister, mais il « meurt » bien (déclencheurs).
+    rulesEvent(s, { e: "zone", oldId: id, newId: null, from: from0, to, lki });
+    return null;
+  }
 
   const moved = createObject(s, o.defId, o.owner, to, {
     uid: o.uid,
@@ -178,81 +256,27 @@ export function moveObject(
       lib.unshift(moved.id);
     }
   }
+  if (to === "battlefield") applyEntersReplacements(s, moved, opts.enters ?? {});
+  rulesEvent(s, { e: "zone", oldId: id, newId: moved.id, from: from0, to, lki });
   return moved.id;
 }
 
 // ---------------------------------------------------------------------------
-// Caractéristiques calculées (système de couches simplifié : 6 et 7a–7c)
+// Caractéristiques calculées : voir layers.ts (réexportées ici pour commodité).
 // ---------------------------------------------------------------------------
 
-export interface Characteristics {
-  name: string;
-  types: CardType[];
-  subtypes: string[];
-  supertypes: string[];
-  colors: Color[];
-  power: number;
-  toughness: number;
-  keywords: Keyword[];
-}
+import { bump, snapshot } from "./layers";
+import { applyEntersReplacements, type EntersContext, replaceDestination } from "./replacement";
+import { detectTriggers } from "./triggers";
 
-export function chars(s: GameState, id: ObjectId): Characteristics {
-  const o = obj(s, id);
-  const d = defOf(s, id);
-  const keywords = new Set<Keyword>(d.keywords);
-  let power = d.power ?? 0;
-  let toughness = d.toughness ?? 0;
-  if (o.zone === "battlefield") {
-    // Couche 7c : marqueurs puis effets, dans l'ordre d'horodatage.
-    power += o.counters.p1p1 - o.counters.m1m1;
-    toughness += o.counters.p1p1 - o.counters.m1m1;
-    for (const e of s.effects) {
-      if (!e.affected.includes(id)) continue;
-      for (const k of e.addKeywords) keywords.add(k); // couche 6
-      power += e.power;
-      toughness += e.toughness;
-    }
-  }
-  return {
-    name: d.name,
-    types: d.types,
-    subtypes: d.subtypes,
-    supertypes: d.supertypes,
-    colors: d.colors,
-    power,
-    toughness,
-    keywords: [...keywords],
-  };
-}
-
-export function hasType(s: GameState, id: ObjectId, t: CardType): boolean {
-  return defOf(s, id).types.includes(t);
-}
-
-export function hasKeyword(s: GameState, id: ObjectId, k: Keyword): boolean {
-  return chars(s, id).keywords.includes(k);
-}
-
-export function isCreature(s: GameState, id: ObjectId): boolean {
-  return hasType(s, id, "Creature");
-}
-
-/** Numéro du tour le plus récent de ce joueur en duel (0 s'il n'a pas encore joué). */
-function mostRecentTurnOf(s: GameState, p: PlayerId): number {
-  return s.turn.active === p ? s.turn.number : s.turn.number - 1;
-}
-
-/**
- * Mal d'invocation (302.6) : une créature ne peut attaquer ni utiliser {T} que si son contrôleur
- * la contrôle sans interruption depuis le début de son tour le plus récent.
- */
-export function isSummoningSick(s: GameState, id: ObjectId): boolean {
-  const o = obj(s, id);
-  if (!isCreature(s, id) || hasKeyword(s, id, "haste")) return false;
-  const recent = mostRecentTurnOf(s, o.controller);
-  return !(recent >= 1 && o.controlledSince < recent);
-}
-
-export function creaturesControlledBy(s: GameState, p: PlayerId): ObjectId[] {
-  return s.battlefield.filter((id) => obj(s, id).controller === p && isCreature(s, id));
-}
+export {
+  bump,
+  type Characteristics,
+  chars,
+  creaturesControlledBy,
+  hasKeyword,
+  hasType,
+  isCreature,
+  isSummoningSick,
+  snapshot,
+} from "./layers";

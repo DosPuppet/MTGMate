@@ -54,7 +54,7 @@ function PlayerBar({ player, isMe }: { player: PlayerView; isMe: boolean }) {
         data-oid={player.id}
         onClick={() => clickPlayer(player.id)}
       >
-        <span className="avatar-initial">{isMe ? "V" : "IA"}</span>
+        <span className="avatar-initial">{isMe ? "V" : player.name.slice(0, 3)}</span>
         <span className={`life ${player.life <= 5 ? "low" : ""}`}>{player.life}</span>
       </button>
       <div className="player-info">
@@ -192,7 +192,7 @@ function PhaseBar() {
   return (
     <div className="phase-bar">
       <div className="phase-turn">
-        Tour {view.turn.number} · <strong>{myTurn ? "vous" : view.players[view.opponent]?.name}</strong>
+        Tour {view.turn.number} · <strong>{myTurn ? "vous" : view.players[view.turn.active]?.name}</strong>
       </div>
       <div className="phases">
         {PHASE_BAR.map(({ step, short }) => {
@@ -258,10 +258,12 @@ function Banner() {
   const cancel = useGame((s) => s.cancel);
   const chooseNoTarget = useGame((s) => s.chooseNoTarget);
   const allAttack = useGame((s) => s.allAttack);
+  const attackTarget = useGame((s) => s.attackTarget);
+  const setAttackTarget = useGame((s) => s.setAttackTarget);
   const lang = useGame((s) => s.lang);
   const p = view.pending;
   const mine = p?.player === view.viewer;
-  const opp = view.players[view.opponent]?.name ?? "L'adversaire";
+  const nameOf = (id: string | undefined) => (id && view.players[id]?.name) || "L'adversaire";
 
   let text: string;
   let extra: React.ReactNode = null;
@@ -286,25 +288,43 @@ function Banner() {
       declareAttackers: "déclare ses attaquants",
       declareBlockers: "déclare ses bloqueurs",
       mulligan: "choisit sa main",
+      choice: "fait un choix",
       bottomCards: "choisit sa main",
       discard: "se défausse",
     };
-    text = `${opp} ${what[p.kind] ?? "réfléchit"}…`;
+    text = `${nameOf(p.player)} ${what[p.kind] ?? "réfléchit"}…`;
   } else if (p.kind === "declareAttackers") {
-    text = "Cliquez sur les créatures qui attaquent";
+    const defenders = p.defenders ?? [];
+    text =
+      defenders.length > 1 ? "Choisissez qui attaquer, puis cliquez vos créatures" : "Cliquez sur les créatures qui attaquent";
     extra = (
-      <button type="button" className="btn small" onClick={allAttack}>
-        Tous attaquent
-      </button>
+      <>
+        {defenders.length > 1 &&
+          defenders.map((d) => (
+            <button
+              key={d}
+              type="button"
+              className={`btn small ${(attackTarget ?? defenders[0]) === d ? "primary" : ""}`}
+              onClick={() => setAttackTarget(d)}
+            >
+              → {nameOf(d)}
+            </button>
+          ))}
+        <button type="button" className="btn small" onClick={allAttack}>
+          Tous attaquent
+        </button>
+      </>
     );
   } else if (p.kind === "declareBlockers") {
     text = "Bloqueurs : cliquez une de vos créatures, puis l'attaquant à bloquer";
   } else if (p.kind === "priority" && view.stack.length > 0) {
     const top = view.stack[view.stack.length - 1];
     text =
-      top && top.controller !== view.viewer ? `${opp} lance ${faceName(top, lang)} — répondre ?` : "Votre sort va se résoudre";
+      top && top.controller !== view.viewer
+        ? `${nameOf(top.controller)} lance ${faceName(top, lang)} — répondre ?`
+        : "Votre sort va se résoudre";
   } else {
-    text = `${STEP_LABEL[view.turn.step]} — ${view.turn.active === view.viewer ? "à vous" : opp}`;
+    text = `${STEP_LABEL[view.turn.step]} — ${view.turn.active === view.viewer ? "à vous" : nameOf(view.turn.active)}`;
   }
   return (
     <div className={`banner ${mine ? "mine" : ""}`}>
@@ -435,7 +455,10 @@ export function useMainAction(): { label: string; run?: () => void; disabled?: b
         run: () =>
           s.decide({
             type: "declareAttackers",
-            attackers: s.attackers.map((id) => ({ id, defender: p.defender ?? v.opponent })),
+            attackers: s.attackers.map((id) => ({
+              id,
+              defender: s.attackTargets[id] ?? p.defenders?.[0] ?? (v.opponents[0] as string),
+            })),
           }),
       };
     }
@@ -487,14 +510,20 @@ export function Board() {
   const view = useGame((s) => s.view);
   if (!view) return <div className="board loading">Mélange des bibliothèques…</div>;
   const me = view.players[view.viewer] as PlayerView;
-  const opp = view.players[view.opponent] as PlayerView;
+  const opponents = view.opponents.map((id) => view.players[id]).filter((p): p is PlayerView => !!p);
   return (
     <div className="board" id="board">
-      <div className="top-row">
-        <PlayerBar player={opp} isMe={false} />
-        <OpponentHand count={opp.handCount} />
+      <div className={`opponents n${opponents.length}`}>
+        {opponents.map((opp) => (
+          <div key={opp.id} className={`opp-zone ${opp.lost ? "eliminated" : ""}`}>
+            <div className="top-row">
+              <PlayerBar player={opp} isMe={false} />
+              <OpponentHand count={opp.handCount} />
+            </div>
+            <Battlefield player={opp.id} isMe={false} />
+          </div>
+        ))}
       </div>
-      <Battlefield player={opp.id} isMe={false} />
       <CenterStrip />
       <Battlefield player={me.id} isMe={true} />
       <div className="bottom-row">

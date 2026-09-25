@@ -29,6 +29,7 @@ export function Lobby() {
   const startGame = useGame((s) => s.startGame);
   const [mine, setMine] = useState(DECKS[0]?.id ?? "");
   const [ai, setAi] = useState(DECKS[1]?.id ?? "");
+  const [aiCount, setAiCount] = useState(1);
   return (
     <div className="lobby">
       <header className="lobby-head">
@@ -38,8 +39,28 @@ export function Lobby() {
       <div className="lobby-body">
         <DeckChoice label="Votre deck" value={mine} onChange={setMine} />
         <DeckChoice label="Deck de l'IA" value={ai} onChange={setAi} />
+        <div className="ai-count">
+          <span>Adversaires IA</span>
+          <div className="seg">
+            {[1, 2, 3].map((n) => (
+              <button key={n} type="button" className={aiCount === n ? "on" : ""} onClick={() => setAiCount(n)}>
+                {n}
+              </button>
+            ))}
+          </div>
+          <span className="hint">{aiCount > 1 ? "Multijoueur chacun pour soi" : "Duel"}</span>
+        </div>
         <div className="lobby-actions">
-          <button type="button" className="btn primary big" onClick={() => startGame(mine, ai)}>
+          <button
+            type="button"
+            className="btn primary big"
+            onClick={() =>
+              startGame(
+                mine,
+                Array.from({ length: aiCount }, () => ai),
+              )
+            }
+          >
             Jouer contre l'IA
           </button>
           <button type="button" className="btn big" disabled title="Arrive à l'étape 6 de la feuille de route">

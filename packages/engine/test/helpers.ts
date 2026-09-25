@@ -2,10 +2,9 @@
  * Outils de test : construire une position de jeu précise et jouer des décisions.
  */
 import { card } from "@mtgx/cards";
-import { produce } from "immer";
 import { createGame, submit } from "../src/game";
-import { createObject } from "../src/state";
-import { advance } from "../src/turn";
+import { cloneState, createObject } from "../src/state";
+import { advance, emptyCombat } from "../src/turn";
 import type { CardDef, Decision, GameState, PlayerId, Step } from "../src/types";
 
 export interface Permanent {
@@ -26,16 +25,29 @@ export interface Side {
 
 const def = (c: string | CardDef): CardDef => (typeof c === "string" ? card(c) : c);
 
-export function scenario(opts: { p1?: Side; p2?: Side; active?: PlayerId; step?: Step; turn?: number }): GameState {
+const NAMES = ["Alice", "Bob", "Chloé", "David", "Emma", "Farid"];
+
+export interface ScenarioOptions {
+  p1?: Side;
+  p2?: Side;
+  p3?: Side;
+  p4?: Side;
+  /** Nombre de joueurs (2 par défaut) : p1, p2, p3… */
+  players?: number;
+  active?: PlayerId;
+  step?: Step;
+  turn?: number;
+}
+
+export function scenario(opts: ScenarioOptions): GameState {
+  const ids = Array.from({ length: opts.players ?? 2 }, (_, i) => `p${i + 1}`);
   const { state } = createGame({
     seed: 42,
     startingPlayer: "p1",
-    players: [
-      { id: "p1", name: "Alice", deck: [] },
-      { id: "p2", name: "Bob", deck: [] },
-    ],
+    players: ids.map((id, i) => ({ id, name: NAMES[i] ?? id, deck: [] })),
   });
-  return produce(state, (s) => {
+  const s = cloneState(state);
+  {
     const turn = opts.turn ?? 3;
     s.mulliganQueue = [];
     s.pending = null;
@@ -45,13 +57,16 @@ export function scenario(opts: { p1?: Side; p2?: Side; active?: PlayerId; step?:
       step: opts.step ?? "main1",
       landsPlayed: 0,
       attacked: false,
+      creatureDied: false,
       startingPlayer: "p1",
     };
-    for (const p of ["p1", "p2"] as const) {
-      const side = opts[p] ?? {};
+    for (const p of ids) {
+      const side = (opts as Record<string, Side | undefined>)[p] ?? {};
       const player = s.players[p];
       if (!player) continue;
       player.life = side.life ?? 20;
+      // Tout le monde a déjà joué un tour : les créatures présentes n'ont pas le mal d'invocation.
+      player.lastTurnStarted = p === s.turn.active ? turn : Math.max(1, turn - 1);
       player.drewFromEmptyLibrary = false;
       const add = (c: string | CardDef, zone: "hand" | "library" | "graveyard") => {
         const d = def(c);
@@ -72,12 +87,12 @@ export function scenario(opts: { p1?: Side; p2?: Side; active?: PlayerId; step?:
         o.damage = perm.damage ?? 0;
       }
     }
-    if (s.turn.step === "declareAttackers" || s.turn.step === "declareBlockers")
-      s.combat = { attackers: [], blockers: [], firstStrikers: [] };
+    if (s.turn.step === "declareAttackers" || s.turn.step === "declareBlockers") s.combat = emptyCombat();
     s.flow = "priority";
     s.priority = { holder: s.turn.active, passes: 0 };
     advance(s);
-  });
+  }
+  return s;
 }
 
 export function act(s: GameState, player: PlayerId, d: Decision): GameState {
@@ -89,6 +104,18 @@ export function passUntil(s: GameState, until: (s: GameState) => boolean): GameS
   let cur = s;
   for (let i = 0; i < 200 && !until(cur) && cur.pending?.kind === "priority"; i++) {
     cur = act(cur, cur.pending.player, { type: "pass" });
+  }
+  return cur;
+}
+
+/** Comme passUntil, mais accepte aussi la réponse suggérée aux choix (répartition des blessures…). */
+export function passAccepting(s: GameState, until: (s: GameState) => boolean): GameState {
+  let cur = s;
+  for (let i = 0; i < 300 && !until(cur); i++) {
+    const p = cur.pending;
+    if (p?.kind === "priority") cur = act(cur, p.player, { type: "pass" });
+    else if (p?.kind === "choice") cur = act(cur, p.player, { type: "choose", values: p.request.suggested });
+    else break;
   }
   return cur;
 }

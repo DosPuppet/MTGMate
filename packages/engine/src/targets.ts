@@ -1,20 +1,36 @@
 /**
  * Légalité des cibles (règle 115).
  */
-import { hasKeyword, obj } from "./state";
-import type { GameState, ObjectFilter, ObjectId, PlayerId, TargetSpec } from "./types";
+import { hasKeyword, snapshot } from "./layers";
+import { obj } from "./state";
+import type { GameState, LkiSnapshot, ObjectFilter, ObjectId, PlayerId, TargetSpec } from "./types";
 
-export function matchesObjectFilter(s: GameState, controller: PlayerId, id: ObjectId, f: ObjectFilter): boolean {
+/** Le filtre s'applique-t-il à ces caractéristiques (objet vivant ou dernières informations connues) ? */
+export function matchesView(v: LkiSnapshot, f: ObjectFilter, perspective: PlayerId, sourceId?: ObjectId): boolean {
+  if (f.types && !f.types.some((t) => v.types.includes(t))) return false;
+  if (f.notTypes?.some((t) => v.types.includes(t))) return false;
+  if (f.subtype && !v.subtypes.includes(f.subtype)) return false;
+  if (f.controller === "you" && v.controller !== perspective) return false;
+  if (f.controller === "opponent" && v.controller === perspective) return false;
+  if (f.keyword && !v.keywords.includes(f.keyword)) return false;
+  if (f.notKeyword && v.keywords.includes(f.notKeyword)) return false;
+  if (f.other && v.id === sourceId) return false;
+  if (f.nontoken && v.isToken) return false;
+  if (f.minPower !== undefined && v.power < f.minPower) return false;
+  if (f.attacking !== undefined && !!v.attacking !== f.attacking) return false;
+  return true;
+}
+
+export function matchesObjectFilter(
+  s: GameState,
+  controller: PlayerId,
+  id: ObjectId,
+  f: ObjectFilter,
+  sourceId?: ObjectId,
+): boolean {
   const o = s.objects[id];
   if (o?.zone !== "battlefield") return false;
-  const d = s.defs[o.defId];
-  if (!d) return false;
-  if (f.types && !f.types.some((t) => d.types.includes(t))) return false;
-  if (f.controller === "you" && o.controller !== controller) return false;
-  if (f.controller === "opponent" && o.controller === controller) return false;
-  if (f.keyword && !hasKeyword(s, id, f.keyword)) return false;
-  if (f.notKeyword && hasKeyword(s, id, f.notKeyword)) return false;
-  return true;
+  return matchesView(snapshot(s, id), f, controller, sourceId);
 }
 
 export function isLegalTarget(s: GameState, controller: PlayerId, spec: TargetSpec, id: string): boolean {

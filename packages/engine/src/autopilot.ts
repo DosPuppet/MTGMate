@@ -29,6 +29,8 @@ export function autopilotDecision(s: GameState, player: PlayerId, settings: Auto
   const passingTurn = settings.passUntilTurn === s.turn.number;
 
   if (p.kind === "declareAttackers") return passingTurn ? { type: "declareAttackers", attackers: [] } : null;
+  if (p.kind === "choice")
+    return p.request.autoOk && !settings.fullControl ? { type: "choose", values: p.request.suggested } : null;
   if (p.kind !== "priority" || settings.fullControl) return null;
 
   if (passingTurn) return { type: "pass" };

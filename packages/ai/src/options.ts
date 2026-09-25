@@ -28,6 +28,13 @@ export function buildCastDecision(
     case "cast": {
       const mode = choose(a.modes);
       if (!mode) return null;
+      const pickN = (spec?: { count: number; options: string[] }) => {
+        if (!spec) return undefined;
+        const pool = [...spec.options];
+        const out: string[] = [];
+        while (out.length < spec.count && pool.length) out.push(pool.splice(Math.floor(rand() * pool.length), 1)[0] as string);
+        return out;
+      };
       return {
         type: "cast",
         card: a.card,
@@ -35,6 +42,8 @@ export function buildCastDecision(
         targets: targetsFrom(mode.targets),
         x: a.xMax === null ? undefined : Math.floor(rand() * (a.xMax + 1)),
         kicked: a.kickerAffordable && rand() < 0.5,
+        discard: pickN(a.additional?.discard),
+        sacrifice: pickN(a.additional?.sacrifice),
       };
     }
     case "activate":
@@ -48,8 +57,11 @@ export function buildCastDecision(
   }
 }
 
-/** Toutes les variantes (mode × cibles × kicker) d'une option, bornées à `limit`. */
-export function enumerateDecisions(a: ActionOption, limit = 40): Decision[] {
+/**
+ * Toutes les variantes (mode × cibles × kicker) d'une option, bornées à `limit`.
+ * `rank` ordonne les options de coûts additionnels (les premières sont défaussées ou sacrifiées).
+ */
+export function enumerateDecisions(a: ActionOption, limit = 40, rank?: (ids: string[]) => string[]): Decision[] {
   const combos = (opts: TargetOption[]): Record<string, string[]>[] => {
     let acc: Record<string, string[]>[] = [{}];
     for (const o of opts) {
@@ -65,7 +77,17 @@ export function enumerateDecisions(a: ActionOption, limit = 40): Decision[] {
       const out: Decision[] = [];
       for (const m of a.modes) {
         for (const targets of combos(m.targets)) {
-          const base = { type: "cast" as const, card: a.card, mode: m.index, targets, x: a.xMax ?? undefined };
+          const pick = (spec?: { count: number; options: string[] }) =>
+            spec ? (rank ? rank(spec.options) : spec.options).slice(0, spec.count) : undefined;
+          const base = {
+            type: "cast" as const,
+            card: a.card,
+            mode: m.index,
+            targets,
+            x: a.xMax ?? undefined,
+            discard: pick(a.additional?.discard),
+            sacrifice: pick(a.additional?.sacrifice),
+          };
           out.push(base);
           if (a.kickerAffordable) out.push({ ...base, kicked: true });
         }

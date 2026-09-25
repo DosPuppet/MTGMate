@@ -3,7 +3,17 @@
  */
 
 import type { CardDef } from "@mtgx/engine";
-import { type Agent, createGame, type Decision, fallbackDecision, type GameState, RulesError, submit } from "@mtgx/engine";
+import {
+  type Agent,
+  chars,
+  computeBattlefield,
+  createGame,
+  type Decision,
+  fallbackDecision,
+  type GameState,
+  RulesError,
+  submit,
+} from "@mtgx/engine";
 
 export interface SelfPlayResult {
   state: GameState;
@@ -13,7 +23,7 @@ export interface SelfPlayResult {
 }
 
 /** Vérifie la cohérence de l'état ; renvoie la liste des violations. */
-export function checkInvariants(s: GameState, totalCards: number): string[] {
+export function checkInvariants(s: GameState, deckSizes: Record<string, number>): string[] {
   const errors: string[] = [];
   const seen = new Map<string, string>();
   const place = (id: string, where: string) => {
@@ -24,7 +34,7 @@ export function checkInvariants(s: GameState, totalCards: number): string[] {
   for (const p of s.playerOrder) {
     const pl = s.players[p];
     if (!pl) continue;
-    for (const z of ["library", "hand", "graveyard"] as const) for (const id of pl[z]) place(id, `${p}.${z}`);
+    for (const z of ["library", "hand", "graveyard", "command"] as const) for (const id of pl[z]) place(id, `${p}.${z}`);
   }
   for (const id of s.battlefield) place(id, "battlefield");
   for (const id of s.exile) place(id, "exile");
@@ -35,29 +45,41 @@ export function checkInvariants(s: GameState, totalCards: number): string[] {
     if (!where.endsWith(o.zone)) errors.push(`${id} : zone ${o.zone} mais rangé dans ${where}`);
     if (o.damage < 0) errors.push(`${id} : blessures négatives`);
   }
-  const cards = Object.values(s.objects).filter((o) => !o.isToken).length;
-  if (cards !== totalCards) errors.push(`nombre de cartes : ${cards} au lieu de ${totalCards}`);
+  // Les cartes des joueurs éliminés quittent la partie (800.4a) ; les autres sont conservées.
+  for (const p of s.playerOrder) {
+    const owned = Object.values(s.objects).filter((o) => o.owner === p && !o.isToken).length;
+    const size = deckSizes[p] ?? 0;
+    // Éliminé en cours de partie : 0 carte ; éliminé par le coup final : ses cartes restent.
+    const ok = s.players[p]?.lost ? owned === 0 || owned === size : owned === size;
+    if (!ok) errors.push(`${p} : ${owned} cartes au lieu de ${size}`);
+  }
+  // Le cache des couches ne doit jamais diverger d'un calcul à neuf.
+  const fresh = computeBattlefield(s);
+  for (const id of s.battlefield) {
+    if (JSON.stringify(chars(s, id)) !== JSON.stringify(fresh.get(id))) errors.push(`${id} : cache des caractéristiques périmé`);
+  }
   if (!s.over && !s.pending) errors.push("partie non terminée sans décision en attente");
   if (s.over && s.pending) errors.push("partie terminée avec une décision en attente");
   return errors;
 }
 
+/** Joue une partie entre IA (2 joueurs ou plus : un deck et un agent par joueur). */
 export function playGame(opts: {
   seed: number;
-  decks: [CardDef[], CardDef[]];
-  agents: [Agent, Agent];
+  decks: CardDef[][];
+  agents: Agent[];
   maxDecisions?: number;
   check?: boolean;
+  startingLife?: number;
 }): SelfPlayResult {
-  const total = opts.decks[0].length + opts.decks[1].length;
+  const ids = opts.decks.map((_, i) => `p${i + 1}`);
+  const deckSizes = Object.fromEntries(ids.map((id, i) => [id, opts.decks[i]?.length ?? 0]));
   let { state } = createGame({
     seed: opts.seed,
-    players: [
-      { id: "p1", name: "IA 1", deck: opts.decks[0] },
-      { id: "p2", name: "IA 2", deck: opts.decks[1] },
-    ],
+    startingLife: opts.startingLife,
+    players: ids.map((id, i) => ({ id, name: `IA ${i + 1}`, deck: opts.decks[i] ?? [] })),
   });
-  const agents: Record<string, Agent> = { p1: opts.agents[0], p2: opts.agents[1] };
+  const agents: Record<string, Agent> = Object.fromEntries(ids.map((id, i) => [id, opts.agents[i] as Agent]));
   const decisions: SelfPlayResult["decisions"] = [];
   let illegal = 0;
   const max = opts.maxDecisions ?? 5000;
@@ -74,7 +96,7 @@ export function playGame(opts: {
     }
     decisions.push({ player: p.player, decision: d });
     if (opts.check) {
-      const errors = checkInvariants(state, total);
+      const errors = checkInvariants(state, deckSizes);
       if (errors.length) throw new Error(`Invariants violés (seed ${opts.seed}, décision ${i}) :\n${errors.join("\n")}`);
     }
   }

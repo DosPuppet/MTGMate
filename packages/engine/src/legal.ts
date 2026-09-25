@@ -3,7 +3,17 @@
  * L'interface ne met en surbrillance que ces options ; l'IA et l'autopilot s'en servent aussi.
  */
 import { availableMana, canPay, manaAbilitiesOf, manaSources, manaValue, totalCost } from "./mana";
-import { activatedAbility, canCastTiming, canPayNonManaCost, canPlayLand, modesOf, sorceryTiming } from "./stack";
+import {
+  activatedAbility,
+  additionalOptions,
+  canCastTiming,
+  canPayNonManaCost,
+  canPlayLand,
+  castSource,
+  modesOf,
+  sorceryTiming,
+  spellCost,
+} from "./stack";
 import { obj } from "./state";
 import { legalTargets } from "./targets";
 import type { ActionOption, GameState, ManaCost, ObjectId, PlayerId, TargetOption, TargetSpec } from "./types";
@@ -14,6 +24,13 @@ function targetOptions(s: GameState, player: PlayerId, specs: TargetSpec[]): Tar
 
 function targetsAvailable(opts: TargetOption[]): boolean {
   return opts.every((t) => t.optional || t.legal.length > 0);
+}
+
+/** Plus grande valeur de X payable pour un coût qui dépend de X. */
+function maxXFor(s: GameState, player: PlayerId, costAt: (x: number) => ManaCost): number {
+  const upper = availableMana(s, player) - manaValue(costAt(0));
+  for (let x = upper; x > 0; x--) if (canPay(s, player, costAt(x))) return x;
+  return 0;
 }
 
 /** Plus grande valeur de X payable (null si le coût n'a pas de X). */
@@ -30,7 +47,9 @@ export function legalActions(s: GameState, player: PlayerId): ActionOption[] {
   const out: ActionOption[] = [{ type: "pass" }];
   const hand = s.players[player]?.hand ?? [];
 
-  for (const card of hand) {
+  // Cartes en main, et cartes avec flashback dans le cimetière.
+  const graveyard = (s.players[player]?.graveyard ?? []).filter((id) => s.defs[obj(s, id).defId]?.flashback);
+  for (const card of [...hand, ...graveyard]) {
     const d = s.defs[obj(s, card).defId];
     if (!d) continue;
     if (d.types.includes("Land")) {
@@ -38,16 +57,22 @@ export function legalActions(s: GameState, player: PlayerId): ActionOption[] {
       continue;
     }
     if (!d.implemented || !canCastTiming(s, player, d)) continue;
+    const flashback = castSource(s, player, card) === "flashback";
     const modes = modesOf(d)
       .map((m, index) => ({ index, label: m.label, targets: targetOptions(s, player, m.targets) }))
       .filter((m) => targetsAvailable(m.targets));
-    if (modes.length === 0 || !canPay(s, player, totalCost(d.manaCost, 0))) continue;
+    if (modes.length === 0 || !canPay(s, player, spellCost(s, player, d, { flashback }))) continue;
+    const additional = additionalOptions(s, player, card, d);
+    if (!additional) continue;
+    const hasX = !!(flashback ? d.flashback?.x : d.manaCost?.x);
     out.push({
       type: "cast",
       card,
       modes,
-      xMax: maxX(s, player, d.manaCost),
-      kickerAffordable: !!d.kicker && canPay(s, player, totalCost(d.manaCost, 0, d.kicker)),
+      xMax: hasX ? maxXFor(s, player, (x) => spellCost(s, player, d, { x, flashback })) : null,
+      kickerAffordable: !!d.kicker && !flashback && canPay(s, player, spellCost(s, player, d, { kicked: true })),
+      fromGraveyard: flashback || undefined,
+      additional: additional.discard || additional.sacrifice ? additional : undefined,
     });
   }
 

@@ -3,7 +3,8 @@ import type { GameView } from "@mtgx/engine";
 import { useState } from "react";
 import { Card } from "../board/Card";
 import { faceName } from "../i18n";
-import { useGame } from "../store";
+import { myActions, type PlayableOption, useGame } from "../store";
+import { ChoicePrompt } from "./ChoicePrompt";
 
 function Modal({ title, children, wide }: { title: string; children: React.ReactNode; wide?: boolean }) {
   return (
@@ -40,6 +41,7 @@ function PendingPrompt({ view }: { view: GameView }) {
   const selection = useGame((s) => s.selection);
   const p = view.pending;
   if (!p || p.player !== view.viewer) return null;
+  if (p.kind === "choice") return <ChoicePrompt view={view} />;
   switch (p.kind) {
     case "mulligan":
       return (
@@ -110,6 +112,51 @@ function XPicker({ max }: { max: number }) {
   );
 }
 
+function AdditionalCostPicker({ kind, count, options }: { kind: "discard" | "sacrifice"; count: number; options: string[] }) {
+  const view = useGame((s) => s.view);
+  const choose = useGame((s) => s.chooseAdditional);
+  const cancel = useGame((s) => s.cancel);
+  const [picked, setPicked] = useState<string[]>([]);
+  if (!view) return null;
+  const all = [...view.hand, ...view.battlefield];
+  const toggle = (id: string) =>
+    setPicked((cur) => (cur.includes(id) ? cur.filter((x) => x !== id) : cur.length < count ? [...cur, id] : cur));
+  return (
+    <Modal
+      title={
+        kind === "discard"
+          ? `Coût additionnel : défaussez ${count} carte(s)`
+          : `Coût additionnel : sacrifiez ${count} permanent(s)`
+      }
+      wide
+    >
+      <div className="hand-picker">
+        {options.map((id) => {
+          const o = all.find((x) => x.id === id);
+          return o ? (
+            <Card
+              key={id}
+              face={o}
+              obj={o}
+              width="var(--pick-w)"
+              glow={picked.includes(id) ? "selected" : null}
+              onClick={() => toggle(id)}
+            />
+          ) : null;
+        })}
+      </div>
+      <div className="modal-actions">
+        <button type="button" className="btn ghost" onClick={cancel}>
+          Annuler
+        </button>
+        <button type="button" className="btn primary" disabled={picked.length !== count} onClick={() => choose(kind, picked)}>
+          Valider ({picked.length}/{count})
+        </button>
+      </div>
+    </Modal>
+  );
+}
+
 function CastingPrompt() {
   const casting = useGame((s) => s.casting);
   const chooseMode = useGame((s) => s.chooseMode);
@@ -136,6 +183,10 @@ function CastingPrompt() {
     );
   }
   if (casting.stage === "x" && opt.xMax !== null) return <XPicker max={opt.xMax} />;
+  if ((casting.stage === "discard" || casting.stage === "sacrifice") && opt.type === "cast") {
+    const spec = opt.additional?.[casting.stage];
+    if (spec) return <AdditionalCostPicker kind={casting.stage} count={spec.count} options={spec.options} />;
+  }
   if (casting.stage === "kicker") {
     return (
       <Modal title="Payer le kicker ?">
@@ -206,6 +257,16 @@ function GraveyardViewer() {
   const open = useGame((s) => s.graveyardOpen);
   const view = useGame((s) => s.view);
   const close = useGame((s) => s.openGraveyard);
+  const beginCasting = useGame((s) => s.beginCasting);
+  // Flashback : sorts lançables depuis le cimetière.
+  const castable = myActions(view).filter((a): a is PlayableOption => a.type === "cast" && !!a.fromGraveyard);
+  const flashback = new Set(castable.map((a) => (a.type === "cast" ? a.card : "")));
+  const castFromGraveyard = (id: string) => {
+    const opt = castable.find((a) => a.type === "cast" && a.card === id);
+    if (!opt) return;
+    close(null);
+    beginCasting(opt, id);
+  };
   if (!open || !view) return null;
   const player = view.players[open];
   if (!player) return null;
@@ -218,7 +279,14 @@ function GraveyardViewer() {
         <div className="hand-picker">
           {player.graveyard.length === 0 && <p className="hint">Vide.</p>}
           {[...player.graveyard].reverse().map((c) => (
-            <Card key={c.uid} face={c} obj={c} width="var(--pick-w)" />
+            <Card
+              key={c.uid}
+              face={c}
+              obj={c}
+              width="var(--pick-w)"
+              glow={flashback.has(c.id) ? "playable" : null}
+              onClick={flashback.has(c.id) ? () => castFromGraveyard(c.id) : undefined}
+            />
           ))}
         </div>
         <div className="modal-actions">
@@ -240,8 +308,8 @@ function GameOver({ view }: { view: GameView }) {
       <div className={`modal gameover ${won ? "won" : "lost"}`}>
         <h2>{won ? "Victoire !" : view.winner ? "Défaite" : "Match nul"}</h2>
         <p className="hint">
-          Tour {view.turn.number} · Vous {view.players[view.viewer]?.life} PV · {view.players[view.opponent]?.name}{" "}
-          {view.players[view.opponent]?.life} PV
+          Tour {view.turn.number} · Vous {view.players[view.viewer]?.life} PV
+          {view.opponents.map((o) => ` · ${view.players[o]?.name} ${view.players[o]?.life} PV`).join("")}
         </p>
         <div className="modal-actions">
           <button type="button" className="btn primary" onClick={backToLobby}>

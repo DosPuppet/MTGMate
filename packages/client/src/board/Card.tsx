@@ -13,11 +13,15 @@ export function ManaCost({ cost, size = 16 }: { cost: string; size?: number }) {
   const symbols = [...cost.matchAll(/\{([^}]+)\}/g)].map((m) => m[1] as string);
   return (
     <span className="mana-cost" style={{ "--sym": `${size}px` } as CSSProperties}>
-      {symbols.map((s, i) => (
-        <span key={i} className={`mana-sym mana-${/^[WUBRGC]$/.test(s) ? s : "N"}`}>
-          {/^[WUBRGC]$/.test(s) ? "" : s}
-        </span>
-      ))}
+      {symbols.map((s, i) =>
+        /^[WUBRG]\/[WUBRG]$/.test(s) ? (
+          <span key={i} className={`mana-sym hybrid mana-${s[0]}-${s[2]}`} title={`{${s}}`} />
+        ) : (
+          <span key={i} className={`mana-sym mana-${/^[WUBRGC]$/.test(s) ? s : "N"}`}>
+            {/^[WUBRGC]$/.test(s) ? "" : s}
+          </span>
+        ),
+      )}
     </span>
   );
 }

@@ -1,0 +1,254 @@
+/**
+ * Système de couches (613) : caractéristiques calculées des objets.
+ *
+ * Toutes les caractéristiques du champ de bataille sont calculées en une passe, couche par couche,
+ * les effets de chaque couche étant appliqués par ordre d'horodatage :
+ *   4 types · 5 couleurs · 6 capacités · 7b F/E fixées · 7c modifications et marqueurs · 7d échange.
+ * Les effets viennent de deux sources : les effets continus issus de résolutions (s.effects, ensemble
+ * d'objets verrouillé) et les capacités statiques des permanents (ensemble réévalué à chaque calcul).
+ *
+ * Le résultat est mis en cache par état et par `s.version`, que le moteur incrémente à chaque changement
+ * pouvant affecter les caractéristiques (voir `bump`). Le fuzz vérifie que le cache ne diverge jamais.
+ * Limites actuelles : pas de couche 1 (copie) ni 2 (changement de contrôle), pas de dépendances (613.8).
+ */
+import { obj } from "./state";
+import { matchesView } from "./targets";
+import { checkCondition } from "./triggers";
+import type {
+  AbilityDef,
+  CardType,
+  Color,
+  GameObject,
+  GameState,
+  Keyword,
+  LayerMods,
+  LkiSnapshot,
+  ObjectFilter,
+  ObjectId,
+  PlayerId,
+} from "./types";
+
+export interface Characteristics {
+  name: string;
+  types: CardType[];
+  subtypes: string[];
+  supertypes: string[];
+  colors: Color[];
+  power: number;
+  toughness: number;
+  keywords: Keyword[];
+  /** Capacités non-mot-clé effectives (vides si l'objet a perdu toutes ses capacités). */
+  abilities: AbilityDef[];
+  controller: PlayerId;
+}
+
+/** Invalide le cache des caractéristiques. */
+export function bump(s: GameState): void {
+  s.version += 1;
+}
+
+function base(s: GameState, o: GameObject): Characteristics {
+  const d = s.defs[o.defId];
+  if (!d) throw new Error(`Définition inconnue : ${o.defId}`);
+  return {
+    name: d.name,
+    types: [...d.types],
+    subtypes: [...d.subtypes],
+    supertypes: [...d.supertypes],
+    colors: [...d.colors],
+    power: d.power ?? 0,
+    toughness: d.toughness ?? 0,
+    keywords: [...d.keywords],
+    abilities: d.abilities,
+    controller: o.controller,
+  };
+}
+
+interface Applied {
+  timestamp: number;
+  mods: LayerMods;
+  /** Objets concernés : fixés (résolution) ou déterminés au moment de la couche (statique). */
+  affected: ObjectId[] | { sourceId: ObjectId; controller: PlayerId; filter: "self" | ObjectFilter };
+}
+
+const cache = new WeakMap<GameState, { key: string; map: Map<ObjectId, Characteristics> }>();
+let computing = false;
+
+function view(id: ObjectId, c: Characteristics, o: GameObject, attacking: boolean): LkiSnapshot {
+  return {
+    id,
+    defId: o.defId,
+    owner: o.owner,
+    controller: c.controller,
+    types: c.types,
+    subtypes: c.subtypes,
+    supertypes: c.supertypes,
+    colors: c.colors,
+    power: c.power,
+    toughness: c.toughness,
+    keywords: c.keywords,
+    isToken: o.isToken,
+    attacking,
+  };
+}
+
+/** Calcule, sans cache, les caractéristiques de tous les objets du champ de bataille. */
+export function computeBattlefield(s: GameState): Map<ObjectId, Characteristics> {
+  const out = new Map<ObjectId, Characteristics>();
+  const attacking = new Set(s.combat?.attackers.map((a) => a.id) ?? []);
+  for (const id of s.battlefield) out.set(id, base(s, obj(s, id)));
+
+  const applied: Applied[] = s.effects.map((e) => ({ timestamp: e.timestamp, mods: e, affected: e.affected }));
+  // Capacités statiques des permanents (celles que leur source possède encore après la couche 6 sont
+  // appliquées ; approximation : on se fonde sur les capacités imprimées).
+  const prev = computing;
+  computing = true;
+  try {
+    for (const id of s.battlefield) {
+      const o = obj(s, id);
+      for (const ab of s.defs[o.defId]?.abilities ?? []) {
+        if (ab.kind !== "static") continue;
+        if (ab.condition && !checkCondition(s, ab.condition, o.controller, id)) continue;
+        applied.push({
+          timestamp: o.timestamp,
+          mods: ab.mods,
+          affected: { sourceId: id, controller: o.controller, filter: ab.affects },
+        });
+      }
+    }
+  } finally {
+    computing = prev;
+  }
+  applied.sort((a, b) => a.timestamp - b.timestamp);
+
+  const targets = (a: Applied): ObjectId[] => {
+    if (Array.isArray(a.affected)) return a.affected.filter((id) => out.has(id));
+    const { sourceId, controller, filter } = a.affected;
+    if (filter === "self") return out.has(sourceId) ? [sourceId] : [];
+    const ids: ObjectId[] = [];
+    for (const [id, c] of out) {
+      if (matchesView(view(id, c, obj(s, id), attacking.has(id)), filter, controller, sourceId)) ids.push(id);
+    }
+    return ids;
+  };
+  // Les ensembles des capacités statiques sont déterminés au moment où leur couche s'applique (613.6) :
+  // on les fige à la première couche où l'effet agit.
+  const fixed = new Map<Applied, ObjectId[]>();
+  const affectedBy = (a: Applied) => {
+    let ids = fixed.get(a);
+    if (!ids) {
+      ids = targets(a);
+      fixed.set(a, ids);
+    }
+    return ids;
+  };
+  const layer = (has: (m: LayerMods) => boolean, apply: (c: Characteristics, m: LayerMods) => void) => {
+    for (const a of applied) if (has(a.mods)) for (const id of affectedBy(a)) apply(out.get(id) as Characteristics, a.mods);
+  };
+
+  // Couche 4 : types.
+  layer(
+    (m) => !!(m.addTypes || m.addSubtypes),
+    (c, m) => {
+      for (const t of m.addTypes ?? []) if (!c.types.includes(t)) c.types.push(t);
+      for (const t of m.addSubtypes ?? []) if (!c.subtypes.includes(t)) c.subtypes.push(t);
+    },
+  );
+  // Couche 5 : couleurs.
+  layer(
+    (m) => !!m.setColors,
+    (c, m) => {
+      c.colors = [...(m.setColors ?? [])];
+    },
+  );
+  // Couche 6 : capacités.
+  layer(
+    (m) => !!(m.addKeywords?.length || m.removeKeywords?.length || m.loseAllAbilities),
+    (c, m) => {
+      if (m.loseAllAbilities) {
+        c.keywords = [];
+        c.abilities = [];
+      }
+      for (const k of m.removeKeywords ?? []) c.keywords = c.keywords.filter((x) => x !== k);
+      for (const k of m.addKeywords ?? []) if (!c.keywords.includes(k)) c.keywords.push(k);
+    },
+  );
+  // Couche 7b : F/E fixées.
+  layer(
+    (m) => m.setPower !== undefined || m.setToughness !== undefined,
+    (c, m) => {
+      if (m.setPower !== undefined) c.power = m.setPower;
+      if (m.setToughness !== undefined) c.toughness = m.setToughness;
+    },
+  );
+  // Couche 7c : marqueurs, puis modifications (tout est additif : l'ordre n'importe pas).
+  for (const [id, c] of out) {
+    const o = obj(s, id);
+    c.power += o.counters.p1p1 - o.counters.m1m1;
+    c.toughness += o.counters.p1p1 - o.counters.m1m1;
+  }
+  layer(
+    (m) => !!(m.power || m.toughness),
+    (c, m) => {
+      c.power += m.power ?? 0;
+      c.toughness += m.toughness ?? 0;
+    },
+  );
+  // Couche 7d : échange.
+  layer(
+    (m) => !!m.switchPT,
+    (c) => {
+      [c.power, c.toughness] = [c.toughness, c.power];
+    },
+  );
+  return out;
+}
+
+function battlefieldChars(s: GameState): Map<ObjectId, Characteristics> {
+  const key = `${s.version}|${s.turn.number}|${s.turn.active}|${s.turn.step}`;
+  const hit = cache.get(s);
+  if (hit && hit.key === key) return hit.map;
+  const map = computeBattlefield(s);
+  cache.set(s, { key, map });
+  return map;
+}
+
+export function chars(s: GameState, id: ObjectId): Characteristics {
+  const o = obj(s, id);
+  // Pendant le calcul (conditions des capacités statiques), on lit les caractéristiques de base.
+  if (o.zone !== "battlefield" || computing) return base(s, o);
+  return battlefieldChars(s).get(id) ?? base(s, o);
+}
+
+export function hasType(s: GameState, id: ObjectId, t: CardType): boolean {
+  return chars(s, id).types.includes(t);
+}
+
+export function hasKeyword(s: GameState, id: ObjectId, k: Keyword): boolean {
+  return chars(s, id).keywords.includes(k);
+}
+
+export function isCreature(s: GameState, id: ObjectId): boolean {
+  return hasType(s, id, "Creature");
+}
+
+/**
+ * Mal d'invocation (302.6) : une créature ne peut attaquer ni utiliser {T} que si son contrôleur
+ * la contrôle sans interruption depuis le début de son tour le plus récent.
+ */
+export function isSummoningSick(s: GameState, id: ObjectId): boolean {
+  const o = obj(s, id);
+  if (!isCreature(s, id) || hasKeyword(s, id, "haste")) return false;
+  const recent = s.players[o.controller]?.lastTurnStarted ?? 0;
+  return !(recent >= 1 && o.controlledSince < recent);
+}
+
+export function creaturesControlledBy(s: GameState, p: PlayerId): ObjectId[] {
+  return s.battlefield.filter((id) => obj(s, id).controller === p && isCreature(s, id));
+}
+
+/** Instantané des caractéristiques actuelles d'un objet (dernières informations connues). */
+export function snapshot(s: GameState, id: ObjectId): LkiSnapshot {
+  const o = obj(s, id);
+  return view(id, chars(s, id), o, !!s.combat?.attackers.some((a) => a.id === id));
+}

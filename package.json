@@ -15,7 +15,9 @@
     "format": "biome format --write .",
     "fuzz": "tsx tools/fuzz.ts",
     "import-cards": "tsx tools/import-scryfall.ts",
-    "ui-smoke": "tsx tools/ui-smoke.ts"
+    "ui-smoke": "tsx tools/ui-smoke.ts",
+    "bench": "tsx tools/bench.ts",
+    "coverage": "tsx tools/card-coverage.ts"
   },
   "devDependencies": {
     "@biomejs/biome": "^2.5.14",

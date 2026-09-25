@@ -4,12 +4,14 @@
  */
 import { legalActions } from "./legal";
 import { costToText } from "./mana";
-import { chars, isSummoningSick, obj, opponentOf } from "./state";
+import { chars, isSummoningSick, obj, opponentsOf } from "./state";
 import { attackCandidates, blockCandidates } from "./turn";
 import type {
   ActionOption,
   CardDef,
   CardType,
+  ChoicePurpose,
+  ChoiceRequest,
   Color,
   GameEvent,
   GameState,
@@ -82,13 +84,23 @@ export type PendingView =
   | { kind: "mulligan"; player: PlayerId; mulligans: number }
   | { kind: "bottomCards"; player: PlayerId; count: number }
   | { kind: "priority"; player: PlayerId; actions?: ActionOption[] }
-  | { kind: "declareAttackers"; player: PlayerId; candidates?: ObjectId[]; defender?: PlayerId }
+  | { kind: "declareAttackers"; player: PlayerId; candidates?: ObjectId[]; defenders?: PlayerId[] }
   | { kind: "declareBlockers"; player: PlayerId; candidates?: { blocker: ObjectId; attackers: ObjectId[] }[] }
-  | { kind: "discard"; player: PlayerId; count: number };
+  | { kind: "discard"; player: PlayerId; count: number }
+  | {
+      kind: "choice";
+      player: PlayerId;
+      /** Présents seulement pour le joueur qui choisit. */
+      request?: ChoiceRequest;
+      purpose?: ChoicePurpose;
+      /** Objets mentionnés par la demande (y compris cachés, ex. dessus de bibliothèque pour un regard). */
+      objects?: ObjectView[];
+    };
 
 export interface GameView {
   viewer: PlayerId;
-  opponent: PlayerId;
+  /** Tous les autres joueurs (y compris éliminés), dans l'ordre du tour à partir du suivant. */
+  opponents: PlayerId[];
   turn: { number: number; active: PlayerId; step: Step; landsPlayed: number };
   players: Record<PlayerId, PlayerView>;
   hand: ObjectView[];
@@ -190,11 +202,21 @@ export function projectView(s: GameState, viewer: PlayerId): GameView {
         pending = mine ? { ...p, actions: legalActions(s, viewer) } : { ...p };
         break;
       case "declareAttackers":
-        pending = mine ? { ...p, candidates: attackCandidates(s, viewer), defender: opponentOf(s, viewer) } : { ...p };
+        pending = mine ? { ...p, candidates: attackCandidates(s, viewer), defenders: opponentsOf(s, viewer) } : { ...p };
         break;
       case "declareBlockers":
         pending = mine ? { ...p, candidates: blockCandidates(s, viewer) } : { ...p };
         break;
+      case "choice": {
+        if (!mine) {
+          pending = { kind: "choice", player: p.player };
+          break;
+        }
+        const r = p.request;
+        const ids = r.type === "pick" ? r.options : r.type === "order" ? r.items : r.type === "divide" ? r.among : [];
+        pending = { ...p, objects: ids.filter((id) => s.objects[id]).map((id) => objectView(s, id)) };
+        break;
+      }
       default:
         pending = { ...p };
     }
@@ -202,7 +224,10 @@ export function projectView(s: GameState, viewer: PlayerId): GameView {
 
   return {
     viewer,
-    opponent: opponentOf(s, viewer),
+    opponents: (() => {
+      const i = s.playerOrder.indexOf(viewer);
+      return [...s.playerOrder.slice(i + 1), ...s.playerOrder.slice(0, Math.max(0, i))];
+    })(),
     turn: { number: s.turn.number, active: s.turn.active, step: s.turn.step, landsPlayed: s.turn.landsPlayed },
     players,
     hand: (s.players[viewer]?.hand ?? []).map((id) => objectView(s, id)),

@@ -8,7 +8,6 @@ import { type CardFace, cardFace, createGame, GameHost } from "@mtgx/engine";
 import type { FromWorker, ToWorker } from "../protocol";
 
 const HUMAN = "p1";
-const AI = "p2";
 let host: GameHost | null = null;
 
 const post = (msg: FromWorker) => (self as unknown as Worker).postMessage(msg);
@@ -28,13 +27,17 @@ self.onmessage = async (e: MessageEvent<ToWorker>) => {
         seed: msg.seed,
         players: [
           { id: HUMAN, name: msg.playerName, deck: buildDeck(deckById(msg.playerDeck)) },
-          { id: AI, name: "IA", deck: buildDeck(deckById(msg.aiDeck)) },
+          ...msg.aiDecks.map((deck, i) => ({
+            id: `p${i + 2}`,
+            name: msg.aiDecks.length > 1 ? `IA ${i + 1}` : "IA",
+            deck: buildDeck(deckById(deck)),
+          })),
         ],
       });
       host = new GameHost(
         state,
         {
-          agents: { [AI]: heuristicAgent() },
+          agents: Object.fromEntries(msg.aiDecks.map((_, i) => [`p${i + 2}`, heuristicAgent()])),
           aiDelay: 650,
           sleep,
           onUpdate: (_p, view, evts) => post({ type: "update", view, events: evts, faces: faces() }),

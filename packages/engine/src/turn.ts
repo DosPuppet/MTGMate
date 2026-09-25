@@ -2,8 +2,12 @@
  * Structure du tour (500–514), priorité (117), combat (506–511) et actions basées sur l'état (704).
  */
 import { type DamageSource, dealDamage, destroy, drawCard, putIntoGraveyard, sourceFromObject } from "./actions";
+import { ask } from "./choices";
 import { RulesError, resolveTop } from "./stack";
 import {
+  alivePlayers,
+  apnapOrder,
+  bump,
   chars,
   creaturesControlledBy,
   emit,
@@ -12,11 +16,14 @@ import {
   isCreature,
   isSummoningSick,
   moveObject,
+  nextPlayer,
   obj,
   onBattlefield,
-  opponentOf,
+  opponentsOf,
+  rulesEvent,
   shuffle,
 } from "./state";
+import { processTriggers, simultaneously } from "./triggers";
 import type { GameState, ObjectId, PlayerId, Step } from "./types";
 import { STEPS } from "./types";
 
@@ -38,14 +45,19 @@ export function advance(s: GameState): void {
         beginStep(s);
         break;
       case "priority":
+        // 117.5 : actions basées sur l'état, puis capacités déclenchées, jusqu'à stabilité ;
+        // l'une ou l'autre peut poser une question (règle des légendes, cibles…).
         stateBasedActions(s);
-        if (!s.over) s.pending = { kind: "priority", player: s.priority.holder };
+        if (s.over || s.pending) break;
+        if (processTriggers(s)) break;
+        s.pending = { kind: "priority", player: s.priority.holder };
         break;
       case "stepEnd":
         endStep(s);
         break;
       case "tba":
-        throw new Error("Action de tour en attente sans décision");
+      case "resolving":
+        throw new Error(`Décision attendue (${s.flow}) mais aucune n'est posée`);
       case "over":
         return;
     }
@@ -55,6 +67,11 @@ export function advance(s: GameState): void {
 function givePriority(s: GameState): void {
   s.priority = { holder: s.turn.active, passes: 0 };
   s.flow = "priority";
+}
+
+/** Début d'étape : déclenche les capacités « au début de… ». */
+function stepEvent(s: GameState): void {
+  rulesEvent(s, { e: "step", step: s.turn.step, active: s.turn.active });
 }
 
 // ---------------------------------------------------------------------------
@@ -67,6 +84,7 @@ function nextMulligan(s: GameState): void {
     s.turn.number = 1;
     s.turn.active = s.turn.startingPlayer;
     s.turn.step = "untap";
+    startTurnOf(s, s.turn.active);
     emit({ type: "turnStart", turn: 1, player: s.turn.active });
     s.flow = "stepStart";
     return;
@@ -112,6 +130,7 @@ export function bottomCards(s: GameState, p: PlayerId, cards: ObjectId[], count:
 
 function beginStep(s: GameState): void {
   const active = s.turn.active;
+  if (s.turn.step !== "untap" && s.turn.step !== "cleanup") stepEvent(s);
   switch (s.turn.step) {
     case "untap":
       for (const id of s.battlefield) {
@@ -121,12 +140,13 @@ function beginStep(s: GameState): void {
       s.flow = "stepEnd"; // pas de priorité pendant l'étape de dégagement
       return;
     case "draw":
-      // 103.8a : le joueur qui commence ne pioche pas lors de son premier tour.
-      if (s.turn.number > 1) drawCard(s, active);
+      // 103.8a : en duel, le joueur qui commence ne pioche pas lors de son premier tour
+      // (103.8c : en multijoueur, personne ne saute sa pioche).
+      if (s.turn.number > 1 || s.playerOrder.length > 2) drawCard(s, active);
       givePriority(s);
       return;
     case "beginCombat":
-      s.combat = { attackers: [], blockers: [], firstStrikers: [] };
+      s.combat = emptyCombat();
       givePriority(s);
       return;
     case "declareAttackers":
@@ -136,20 +156,21 @@ function beginStep(s: GameState): void {
       } else givePriority(s);
       return;
     case "declareBlockers": {
-      const defender = opponentOf(s, active);
-      if (hasAnyLegalBlock(s, defender)) {
-        s.pending = { kind: "declareBlockers", player: defender };
-        s.flow = "tba";
-      } else givePriority(s);
+      // Chaque joueur attaqué déclare ses bloqueurs, dans l'ordre APNAP.
+      // (Les règles les veulent simultanés ; l'ordre séquentiel est une simplification assumée.)
+      const c = s.combat ?? emptyCombat();
+      s.combat = c;
+      c.blockQueue = apnapOrder(s).filter(
+        (p) => p !== active && c.attackers.some((a) => a.defender === p) && hasAnyLegalBlock(s, p),
+      );
+      nextBlockingPlayer(s);
       return;
     }
     case "firstStrikeDamage":
-      combatDamage(s, true);
-      givePriority(s);
+      startCombatDamage(s, true);
       return;
     case "combatDamage":
-      combatDamage(s, false);
-      givePriority(s);
+      startCombatDamage(s, false);
       return;
     case "cleanup": {
       const excess = (s.players[active]?.hand.length ?? 0) - MAX_HAND_SIZE;
@@ -186,6 +207,8 @@ function finishCleanup(s: GameState): void {
     o.deathtouched = false;
   }
   s.effects = s.effects.filter((e) => e.duration !== "endOfTurn");
+  s.replacements = [];
+  bump(s);
   s.flow = "stepEnd";
 }
 
@@ -206,17 +229,24 @@ function endStep(s: GameState): void {
     const player = s.players[p];
     if (player) player.manaPool = emptyPool();
   }
-  if (s.turn.step === "endCombat") s.combat = null;
+  if (s.turn.step === "endCombat") {
+    s.combat = null;
+    bump(s);
+  }
+  // Dernières informations connues : plus nécessaires une fois la pile vide et l'étape finie.
+  s.lki = {};
   const next = nextStep(s);
   if (next) {
     s.turn.step = next;
     emit({ type: "step", step: next });
   } else {
     s.turn.number += 1;
-    s.turn.active = opponentOf(s, s.turn.active);
+    s.turn.active = nextPlayer(s, s.turn.active);
     s.turn.step = "untap";
+    startTurnOf(s, s.turn.active);
     s.turn.landsPlayed = 0;
     s.turn.attacked = false;
+    s.turn.creatureDied = false;
     emit({ type: "turnStart", turn: s.turn.number, player: s.turn.active });
   }
   s.flow = "stepStart";
@@ -226,18 +256,32 @@ function endStep(s: GameState): void {
 // Priorité
 // ---------------------------------------------------------------------------
 
+/** 117.3b : après la résolution, le joueur actif reçoit la priorité. */
+export function afterResolution(s: GameState): void {
+  s.priority = { holder: s.turn.active, passes: 0 };
+  s.flow = "priority";
+}
+
+function startTurnOf(s: GameState, p: PlayerId): void {
+  const player = s.players[p];
+  if (player) player.lastTurnStarted = s.turn.number;
+}
+
+export function emptyCombat(): NonNullable<GameState["combat"]> {
+  return { attackers: [], blockers: [], firstStrikers: [], blockQueue: [], damageStep: null, assignQueue: [], assignments: {} };
+}
+
+/** 117.3d : la priorité passe au joueur suivant ; si tous passent à la suite, la pile se résout ou l'étape se termine. */
 export function passPriority(s: GameState, player: PlayerId): void {
   s.priority.passes += 1;
-  const alive = s.playerOrder.filter((p) => !s.players[p]?.lost);
-  if (s.priority.passes >= alive.length) {
+  if (s.priority.passes >= alivePlayers(s).length) {
     if (s.stack.length > 0) {
-      resolveTop(s);
-      s.priority = { holder: s.turn.active, passes: 0 };
+      if (resolveTop(s)) afterResolution(s);
     } else {
       s.flow = "stepEnd";
     }
   } else {
-    s.priority.holder = opponentOf(s, player);
+    s.priority.holder = nextPlayer(s, player);
   }
 }
 
@@ -267,13 +311,15 @@ export function declareAttackers(s: GameState, player: PlayerId, attackers: { id
     if (seen.has(a.id)) throw new RulesError("Créature déclarée deux fois");
     seen.add(a.id);
     if (!canAttack(s, a.id) || obj(s, a.id).controller !== player) throw new RulesError("Cette créature ne peut pas attaquer");
-    if (a.defender !== opponentOf(s, player)) throw new RulesError("Joueur défenseur invalide");
+    if (!opponentsOf(s, player).includes(a.defender)) throw new RulesError("Joueur défenseur invalide");
   }
-  if (!s.combat) s.combat = { attackers: [], blockers: [], firstStrikers: [] };
+  if (!s.combat) s.combat = emptyCombat();
   for (const a of attackers) {
     if (!hasKeyword(s, a.id, "vigilance")) obj(s, a.id).tapped = true;
     s.combat.attackers.push({ id: a.id, defender: a.defender, blockers: [], blocked: false });
   }
+  bump(s);
+  for (const a of attackers) rulesEvent(s, { e: "attack", attacker: a.id, defender: a.defender });
   s.turn.attacked = attackers.length > 0;
   if (attackers.length > 0) {
     emit({ type: "attack", player, attackers: attackers.map((a) => ({ id: a.id, defId: obj(s, a.id).defId })) });
@@ -322,8 +368,9 @@ export function declareBlockers(s: GameState, player: PlayerId, blocks: { blocke
     if (n === 1 && hasKeyword(s, a.id, "menace"))
       throw new RulesError("Une créature avec la menace doit être bloquée par au moins deux créatures");
   }
-  c.blockers = blocks.map((b) => ({ id: b.blocker, attacker: b.attacker }));
+  c.blockers.push(...blocks.map((b) => ({ id: b.blocker, attacker: b.attacker })));
   for (const a of c.attackers) {
+    if (a.defender !== player) continue;
     a.blockers = blocks.filter((b) => b.attacker === a.id).map((b) => b.blocker);
     a.blocked = a.blockers.length > 0;
   }
@@ -334,7 +381,15 @@ export function declareBlockers(s: GameState, player: PlayerId, blocks: { blocke
       blocks: blocks.map((b) => ({ ...b, blockerDefId: obj(s, b.blocker).defId, attackerDefId: obj(s, b.attacker).defId })),
     });
   }
-  givePriority(s);
+  nextBlockingPlayer(s);
+}
+
+function nextBlockingPlayer(s: GameState): void {
+  const p = s.combat?.blockQueue.shift();
+  if (p) {
+    s.pending = { kind: "declareBlockers", player: p };
+    s.flow = "tba";
+  } else givePriority(s);
 }
 
 /** Blessures mortelles restantes pour une créature (702.2c : 1 suffit avec le contact mortel). */
@@ -343,19 +398,116 @@ function lethalFor(s: GameState, id: ObjectId, deathtouch: boolean): number {
   return deathtouch ? Math.min(1, remaining) : remaining;
 }
 
+function dealsDamageNow(s: GameState, id: ObjectId, firstStrikeStep: boolean): boolean {
+  const kw = chars(s, id).keywords;
+  if (firstStrikeStep) return kw.includes("firstStrike") || kw.includes("doubleStrike");
+  return !s.combat?.firstStrikers.includes(id) || kw.includes("doubleStrike");
+}
+
+/** Répartition par défaut : tuer le plus de bloqueurs possible, le reste au joueur si piétinement. */
+function defaultAssignment(s: GameState, attacker: ObjectId): Record<string, number> {
+  const a = s.combat?.attackers.find((x) => x.id === attacker);
+  const out: Record<string, number> = {};
+  if (!a) return out;
+  const src = sourceFromObject(s, attacker);
+  const deathtouch = src.keywords.includes("deathtouch");
+  const trample = src.keywords.includes("trample");
+  const blockers = a.blockers.filter((b) => onBattlefield(s, b));
+  const order = [...blockers].sort((x, y) => lethalFor(s, x, deathtouch) - lethalFor(s, y, deathtouch));
+  let remaining = Math.max(0, chars(s, attacker).power);
+  for (const b of order) {
+    const amount = Math.min(remaining, lethalFor(s, b, deathtouch));
+    out[b] = amount;
+    remaining -= amount;
+  }
+  if (remaining > 0) {
+    if (trample) out[a.defender] = remaining;
+    else if (order[0]) out[order[0]] = (out[order[0]] ?? 0) + remaining;
+  }
+  return out;
+}
+
+/**
+ * 510.1 : chaque attaquant bloqué répartit ses blessures. Un vrai choix n'existe que s'il y a plusieurs
+ * bloqueurs, ou un bloqueur et le piétinement : on pose alors la question au contrôleur de l'attaquant.
+ */
+function startCombatDamage(s: GameState, firstStrikeStep: boolean): void {
+  const c = s.combat;
+  if (!c) {
+    givePriority(s);
+    return;
+  }
+  c.damageStep = firstStrikeStep ? "first" : "regular";
+  c.assignments = {};
+  c.assignQueue = c.attackers
+    .filter((a) => {
+      if (!a.blocked || !onBattlefield(s, a.id) || !dealsDamageNow(s, a.id, firstStrikeStep)) return false;
+      if (chars(s, a.id).power <= 0) return false;
+      const alive = a.blockers.filter((b) => onBattlefield(s, b)).length;
+      return alive >= 2 || (alive === 1 && hasKeyword(s, a.id, "trample"));
+    })
+    .map((a) => a.id);
+  nextCombatAssignment(s);
+}
+
+function nextCombatAssignment(s: GameState): void {
+  const c = s.combat;
+  if (!c) {
+    givePriority(s);
+    return;
+  }
+  const attacker = c.assignQueue.shift();
+  if (!attacker) {
+    combatDamage(s, c.damageStep === "first");
+    c.damageStep = null;
+    givePriority(s);
+    return;
+  }
+  const a = c.attackers.find((x) => x.id === attacker);
+  if (!a) {
+    nextCombatAssignment(s);
+    return;
+  }
+  const src = sourceFromObject(s, attacker);
+  const deathtouch = src.keywords.includes("deathtouch");
+  const trample = src.keywords.includes("trample");
+  const blockers = a.blockers.filter((b) => onBattlefield(s, b));
+  const among = trample ? [...blockers, a.defender] : blockers;
+  const suggestedMap = defaultAssignment(s, attacker);
+  ask(
+    s,
+    obj(s, attacker).controller,
+    {
+      type: "divide",
+      intent: "combatDamage",
+      prompt: `Répartissez les ${chars(s, attacker).power} blessures de ${s.defs[obj(s, attacker).defId]?.name ?? "l'attaquant"}`,
+      among,
+      total: chars(s, attacker).power,
+      lethal: trample
+        ? { player: a.defender, needs: Object.fromEntries(blockers.map((b) => [b, lethalFor(s, b, deathtouch)])) }
+        : undefined,
+      suggested: among.map((id) => suggestedMap[id] ?? 0),
+      autoOk: true,
+    },
+    { kind: "combatDamage", attacker },
+  );
+  s.flow = "tba";
+}
+
+export function answerCombatAssignment(s: GameState, attacker: ObjectId, division: Record<string, number>): void {
+  if (!s.combat) throw new RulesError("Pas de combat en cours");
+  s.combat.assignments[attacker] = division;
+  nextCombatAssignment(s);
+}
+
 function combatDamage(s: GameState, firstStrikeStep: boolean): void {
   const c = s.combat;
   if (!c) return;
-  const dealsNow = (id: ObjectId) => {
-    const kw = chars(s, id).keywords;
-    if (firstStrikeStep) return kw.includes("firstStrike") || kw.includes("doubleStrike");
-    return !c.firstStrikers.includes(id) || kw.includes("doubleStrike");
-  };
   const assignments: { src: DamageSource; target: string; amount: number }[] = [];
   const dealt: ObjectId[] = [];
 
   for (const a of c.attackers) {
-    if (!onBattlefield(s, a.id) || !dealsNow(a.id)) continue;
+    if (!onBattlefield(s, a.id) || !dealsDamageNow(s, a.id, firstStrikeStep)) continue;
     const power = chars(s, a.id).power;
     if (power <= 0) continue;
     dealt.push(a.id);
@@ -371,28 +523,12 @@ function combatDamage(s: GameState, firstStrikeStep: boolean): void {
       if (trample) assignments.push({ src, target: a.defender, amount: power });
       continue;
     }
-    // Répartition automatique : tuer le plus de bloqueurs possible, le reste au joueur si piétinement.
-    const deathtouch = src.keywords.includes("deathtouch");
-    const order = [...blockers].sort((x, y) => lethalFor(s, x, deathtouch) - lethalFor(s, y, deathtouch));
-    let remaining = power;
-    const perBlocker = new Map<ObjectId, number>();
-    for (const b of order) {
-      const amount = Math.min(remaining, lethalFor(s, b, deathtouch));
-      perBlocker.set(b, amount);
-      remaining -= amount;
-    }
-    if (remaining > 0) {
-      if (trample) assignments.push({ src, target: a.defender, amount: remaining });
-      else {
-        const first = order[0] as ObjectId;
-        perBlocker.set(first, (perBlocker.get(first) ?? 0) + remaining);
-      }
-    }
-    for (const [b, amount] of perBlocker) if (amount > 0) assignments.push({ src, target: b, amount });
+    const division = c.assignments[a.id] ?? defaultAssignment(s, a.id);
+    for (const [target, amount] of Object.entries(division)) if (amount > 0) assignments.push({ src, target, amount });
   }
 
   for (const b of c.blockers) {
-    if (!onBattlefield(s, b.id) || !onBattlefield(s, b.attacker) || !dealsNow(b.id)) continue;
+    if (!onBattlefield(s, b.id) || !onBattlefield(s, b.attacker) || !dealsDamageNow(s, b.id, firstStrikeStep)) continue;
     const power = chars(s, b.id).power;
     if (power <= 0) continue;
     dealt.push(b.id);
@@ -401,7 +537,9 @@ function combatDamage(s: GameState, firstStrikeStep: boolean): void {
 
   if (firstStrikeStep) c.firstStrikers = dealt;
   // 510.2 : toutes les blessures de combat sont infligées simultanément.
-  for (const x of assignments) dealDamage(s, x.src, x.target, x.amount, true);
+  simultaneously(s, () => {
+    for (const x of assignments) dealDamage(s, x.src, x.target, x.amount, true);
+  });
 }
 
 // ---------------------------------------------------------------------------
@@ -409,25 +547,91 @@ function combatDamage(s: GameState, firstStrikeStep: boolean): void {
 // ---------------------------------------------------------------------------
 
 export function checkGameOver(s: GameState): void {
+  const losers: PlayerId[] = [];
   for (const p of s.playerOrder) {
     const player = s.players[p];
     if (!player || player.lost) continue;
     if (player.life <= 0 || player.drewFromEmptyLibrary) {
-      player.lost = true;
+      losers.push(p);
       emit({ type: "lose", player: p, reason: player.life <= 0 ? "life" : "draw" });
     }
   }
-  const alive = s.playerOrder.filter((p) => !s.players[p]?.lost);
-  if (alive.length < s.playerOrder.length && alive.length <= 1) {
+  eliminate(s, losers);
+}
+
+/**
+ * Élimine des joueurs. Si au plus un joueur reste, la partie se termine ; sinon (800.4a)
+ * leurs objets quittent la partie et le jeu continue sans eux.
+ */
+export function eliminate(s: GameState, losers: PlayerId[]): void {
+  if (losers.length === 0) return;
+  const holderLeaving = losers.includes(s.priority.holder);
+  const activeLeaving = losers.includes(s.turn.active);
+  for (const p of losers) {
+    const player = s.players[p];
+    if (player) player.lost = true;
+  }
+  const alive = alivePlayers(s);
+  if (alive.length <= 1) {
     s.over = true;
     s.winner = alive[0] ?? null;
     s.flow = "over";
     s.pending = null;
     emit({ type: "gameOver", winner: s.winner });
+    return;
+  }
+  for (const p of losers) removePlayerObjects(s, p);
+  s.mulliganQueue = s.mulliganQueue.filter((q) => !losers.includes(q));
+  const pendingLeaving = !!s.pending && losers.includes(s.pending.player);
+  if (pendingLeaving) s.pending = null;
+  if (s.flow === "mulligan") return;
+  if (activeLeaving) {
+    // Simplification : le tour d'un joueur qui quitte la partie s'arrête immédiatement.
+    s.combat = null;
+    bump(s);
+    s.turn.step = "cleanup";
+    s.flow = "stepEnd";
+  } else if (pendingLeaving && s.flow === "tba") {
+    nextBlockingPlayer(s); // seul cas où un joueur non actif doit une action de tour
+  } else if (holderLeaving) {
+    s.priority = { holder: nextPlayer(s, s.priority.holder), passes: 0 };
   }
 }
 
+function removePlayerObjects(s: GameState, p: PlayerId): void {
+  const player = s.players[p];
+  if (!player) return;
+  bump(s);
+  for (const o of Object.values(s.objects)) {
+    if (o.owner !== p && o.controller === p && o.zone === "battlefield") moveObject(s, o.id, "exile");
+  }
+  const gone = new Set(
+    Object.values(s.objects)
+      .filter((o) => o.owner === p)
+      .map((o) => o.id),
+  );
+  for (const id of gone) delete s.objects[id];
+  player.library = [];
+  player.hand = [];
+  player.graveyard = [];
+  player.command = [];
+  s.battlefield = s.battlefield.filter((id) => !gone.has(id));
+  s.exile = s.exile.filter((id) => !gone.has(id));
+  s.stack = s.stack.filter((item) => item.controller !== p && (item.kind === "ability" || !gone.has(item.sourceId)));
+  if (s.combat) {
+    s.combat.attackers = s.combat.attackers.filter((a) => !gone.has(a.id) && a.defender !== p);
+    s.combat.blockers = s.combat.blockers.filter((b) => !gone.has(b.id));
+    s.combat.blockQueue = s.combat.blockQueue.filter((q) => q !== p);
+    for (const a of s.combat.attackers) a.blockers = a.blockers.filter((b) => !gone.has(b));
+  }
+  s.effects = s.effects.filter((e) => e.affected.some((id) => !gone.has(id)));
+}
+
 export function stateBasedActions(s: GameState): void {
+  simultaneously(s, () => stateBasedActionsOnce(s));
+}
+
+function stateBasedActionsOnce(s: GameState): void {
   for (let guard = 0; guard < 100; guard++) {
     checkGameOver(s);
     if (s.over) return;
@@ -442,6 +646,7 @@ export function stateBasedActions(s: GameState): void {
       if (both > 0) {
         o.counters.p1p1 -= both;
         o.counters.m1m1 -= both;
+        bump(s);
         changed = true;
       }
       if (!isCreature(s, id)) continue;
@@ -460,10 +665,10 @@ export function stateBasedActions(s: GameState): void {
       const key = `${o.controller}|${d.name}`;
       legends.set(key, [...(legends.get(key) ?? []), id]);
     }
+    let legendChoice: { player: PlayerId; ids: ObjectId[] } | null = null;
     for (const ids of legends.values()) {
       if (ids.length < 2) continue;
-      const sorted = [...ids].sort((a, b) => obj(s, b).timestamp - obj(s, a).timestamp);
-      toGraveyard.push(...sorted.slice(1));
+      legendChoice ??= { player: obj(s, ids[0] as ObjectId).controller, ids };
     }
 
     for (const id of new Set(toGraveyard)) {
@@ -476,6 +681,29 @@ export function stateBasedActions(s: GameState): void {
       if (onBattlefield(s, id) && destroy(s, id)) changed = true;
     }
     for (const id of s.battlefield) obj(s, id).deathtouched = false;
-    if (!changed) return;
+    if (changed) continue;
+    if (legendChoice) {
+      // 704.5j : le joueur choisit la légende qu'il garde ; les autres vont au cimetière.
+      const newest = [...legendChoice.ids].sort((x, y) => obj(s, y).timestamp - obj(s, x).timestamp)[0] as ObjectId;
+      ask(
+        s,
+        legendChoice.player,
+        {
+          type: "pick",
+          intent: "legend",
+          prompt: `Règle des légendes : choisissez le ${s.defs[obj(s, newest).defId]?.name ?? "permanent"} à garder`,
+          options: legendChoice.ids,
+          min: 1,
+          max: 1,
+          suggested: [newest],
+        },
+        { kind: "legend" },
+      );
+    }
+    return;
   }
+}
+
+export function answerLegendChoice(s: GameState, keep: ObjectId, options: ObjectId[]): void {
+  for (const id of options) if (id !== keep && onBattlefield(s, id)) putIntoGraveyard(s, id);
 }

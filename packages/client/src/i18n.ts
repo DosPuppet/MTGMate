@@ -119,6 +119,11 @@ export function describeEvents(events: GameEvent[], view: GameView, faces: Recor
         add(`${who(e.player)} ${verb} ${name(e.defId)}${t}.`, kind(e.player));
         break;
       }
+      case "trigger": {
+        const t = e.targets.length ? ` → ${e.targets.map(targetName).join(", ")}` : "";
+        add(`Capacité déclenchée : ${name(e.defId)}${t}.`, kind(e.player));
+        break;
+      }
       case "fizzle":
         add(`${name(e.defId)} ne se résout pas : cibles illégales.`, "info");
         break;
@@ -150,6 +155,21 @@ export function describeEvents(events: GameEvent[], view: GameView, faces: Recor
       case "lose":
         add(
           `${who(e.player)} ${e.player === me ? "perdez" : "perd"}${e.reason === "concede" ? " (abandon)" : ""}.`,
+          kind(e.player),
+        );
+        break;
+      case "moved": {
+        const where: Record<string, string> = {
+          hand: "retourne dans la main de son propriétaire",
+          exile: "est exilé",
+          graveyard: "va au cimetière",
+        };
+        add(`${name(e.defId)} ${where[e.to] ?? `va en ${e.to}`}.`, "info");
+        break;
+      }
+      case "scry":
+        add(
+          `${who(e.player)} ${e.player === me ? "regardez" : "regarde"} : ${e.top} au-dessus, ${e.bottom} au-dessous.`,
           kind(e.player),
         );
         break;
