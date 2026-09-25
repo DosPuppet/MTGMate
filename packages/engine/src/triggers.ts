@@ -45,6 +45,12 @@ function liveSources(s: GameState): Source[] {
     const view = snapshot(s, id);
     if (hasTriggers(view.abilities)) out.push({ id, view });
   }
+  // Emblèmes (zone de commandement).
+  for (const p of s.playerOrder) {
+    for (const id of s.players[p]?.command ?? []) {
+      if (hasTriggers(s.defs[obj(s, id).defId]?.abilities)) out.push({ id, view: snapshot(s, id) });
+    }
+  }
   return out;
 }
 

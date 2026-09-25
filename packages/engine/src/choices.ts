@@ -44,6 +44,9 @@ export function validateChoice(req: ChoiceRequest, values: ChoiceValue[]): void 
         throw new RulesError("Répartition invalide");
       const sum = (values as number[]).reduce((a, b) => a + b, 0);
       if (sum !== req.total) throw new RulesError(`Répartissez exactement ${req.total}`);
+      if (req.minEach && values.some((v) => (v as number) < (req.minEach as number))) {
+        throw new RulesError(`Au moins ${req.minEach} pour chacun`);
+      }
       if (req.lethal) {
         const lethal = req.lethal;
         const toPlayer = values[req.among.indexOf(lethal.player)] as number | undefined;

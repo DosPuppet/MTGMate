@@ -86,6 +86,7 @@ export function scenario(opts: ScenarioOptions): GameState {
         o.controlledSince = perm.sick ? turn : 0;
         o.tapped = !!perm.tapped;
         o.damage = perm.damage ?? 0;
+        if (d.loyalty) o.counters.loyalty = d.loyalty;
       }
     }
     if (s.turn.step === "declareAttackers" || s.turn.step === "declareBlockers") s.combat = emptyCombat();

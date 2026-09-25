@@ -13,6 +13,7 @@ export interface RawCard {
   oracleText: string;
   power?: string;
   toughness?: string;
+  loyalty?: string;
   colors: string[];
   keywords: string[];
   producedMana?: string[];
@@ -177,6 +178,7 @@ export function toCardDef(raw: RawCard, script?: CardScript, set = "FDN"): CardD
     keywords: [...keywords],
     abilities: [...(script?.abilities ?? []), ...intrinsicAbilities(keywords, ward, parseEquip(raw.oracleText))],
     enchant: script?.enchant,
+    loyalty: raw.loyalty ? Number(raw.loyalty) : undefined,
     leyline: script?.leyline,
     ward,
     cantBeCountered: script?.cantBeCountered,

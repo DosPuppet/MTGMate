@@ -1047,7 +1047,8 @@
    "typeLine": "Planeswalker légendaire — Kaito",
    "text": "À chaque fois qu'une créature que vous contrôlez inflige des blessures de combat à un joueur, mettez un marqueur « loyauté » sur Kaito.\n+1: Jusqu'à une créature ciblée que vous contrôlez ne peut pas être bloquée ce tour-ci. Piochez une carte, puis défaussez-vous d'une carte.\n−2: Créez un jeton de créature 2/1 bleue Ninja.\n−9: Vous gagnez un emblème avec « À chaque fois qu'un joueur lance un sort, vous créez un jeton de créature 2/1 bleue Ninja. »",
    "image": "https://cards.scryfall.io/normal/front/6/9/69fbc9c3-6c97-4ccf-85c1-8649df979d23.jpg?1782783595"
-  }
+  },
+  "loyalty": "3"
  },
  {
   "name": "Kiora, the Rising Tide",
@@ -1928,7 +1929,8 @@
    "typeLine": "Planeswalker légendaire — Chandra",
    "text": "+2 : Ajoutez {R}{R}{R}. Exilez les trois cartes du dessus de votre bibliothèque. Choisissez-en une. Vous pouvez jouer cette carte ce tour-ci.\n+1: Créez un jeton qui est une copie d'une créature ciblée que vous contrôlez, excepté qu'il a la célérité et « Au début de l'étape de fin, sacrifiez ce jeton. »\n−4: Chandra inflige 8 blessures réparties comme vous le désirez entre n'importe quel nombre de cibles, créatures et/ou planeswalkers.",
    "image": "https://cards.scryfall.io/normal/front/b/f/bf686a2a-3d20-4ae6-be27-66b5e21b44db.jpg?1782783434"
-  }
+  },
+  "loyalty": "6"
  },
  {
   "name": "Courageous Goblin",
@@ -3190,7 +3192,8 @@
    "typeLine": "Planeswalker légendaire — Ajani",
    "text": "+1: Ciblez jusqu'à une créature. Mettez un marqueur +1/+1 sur elle.\n-3: Une créature ciblée acquiert le vol et la double initiative jusqu'à la fin du tour.\n-8: Créez X jetons de créature 2/2 blanche Chat, X étant votre total de points de vie.",
    "image": "https://cards.scryfall.io/normal/front/2/8/28e16ad5-34e3-4fc1-9659-693e2ea9a693.jpg?1782783223"
-  }
+  },
+  "loyalty": "4"
  },
  {
   "name": "Ajani's Pridemate",
@@ -4173,7 +4176,8 @@
    "typeLine": "Planeswalker légendaire — Liliana",
    "text": "À chaque fois qu'une créature que vous contrôlez meurt, piochez une carte.\n+1: Créez un jeton de créature 2/2 noire Zombie.\n-4: Chaque joueur sacrifie deux créatures de son choix.\n-9: Chaque adversaire choisit un permanent qu'il contrôle de chaque type de permanent et sacrifie le reste.",
    "image": "https://cards.scryfall.io/normal/front/8/c/8c884a54-46a8-4234-9847-23eeb6ec08fd.jpg?1782783042"
-  }
+  },
+  "loyalty": "6"
  },
  {
   "name": "Macabre Waltz",
@@ -5513,7 +5517,8 @@
    "typeLine": "Planeswalker légendaire — Vivien",
    "text": "+1: Regardez les quatre cartes du dessus de votre bibliothèque. Vous pouvez révéler une carte de créature ou de terrain parmi elles et la mettre dans votre main. Mettez le reste au-dessous de votre bibliothèque dans un ordre aléatoire.\n-3: Détruisez une cible, artefact, enchantement ou créature avec le vol.\n-8: Vous gagnez un emblème avec « Les créatures que vous contrôlez gagnent +2/+2 et ont la vigilance, le piétinement et l'indestructible. »",
    "image": "https://cards.scryfall.io/normal/front/f/e/fe69e4bc-192f-47be-896f-0404e1dfff8d.jpg?1782782816"
-  }
+  },
+  "loyalty": "5"
  },
  {
   "name": "Wary Thespian",

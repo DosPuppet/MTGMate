@@ -214,7 +214,7 @@ function beginStep(s: GameState): void {
       const c = s.combat ?? emptyCombat();
       s.combat = c;
       c.blockQueue = apnapOrder(s).filter(
-        (p) => p !== active && c.attackers.some((a) => a.defender === p) && hasAnyLegalBlock(s, p),
+        (p) => p !== active && c.attackers.some((a) => defendingPlayer(s, a.defender) === p) && hasAnyLegalBlock(s, p),
       );
       nextBlockingPlayer(s);
       return;
@@ -325,6 +325,7 @@ function startTurnOf(s: GameState, p: PlayerId): void {
   }
   s.turn.onceFired = [];
   s.turn.mayCastFromGraveyard = [];
+  s.turn.mayPlayFromExile = [];
 }
 
 export function emptyCombat(): NonNullable<GameState["combat"]> {
@@ -370,13 +371,27 @@ export function attackCandidates(s: GameState, player: PlayerId): ObjectId[] {
   return creaturesControlledBy(s, player).filter((id) => canAttack(s, id));
 }
 
-export function declareAttackers(s: GameState, player: PlayerId, attackers: { id: ObjectId; defender: PlayerId }[]): void {
+/** Joueur défenseur d'une attaque : le joueur attaqué, ou le contrôleur du planeswalker attaqué (dernier connu s'il est parti). */
+export function defendingPlayer(s: GameState, defender: string): PlayerId {
+  if (s.players[defender]) return defender;
+  return s.objects[defender]?.controller ?? s.lki[defender]?.controller ?? defender;
+}
+
+/** Ce qu'un joueur peut attaquer : ses adversaires et leurs planeswalkers (506.2). */
+export function attackableDefenders(s: GameState, player: PlayerId): string[] {
+  const opps = opponentsOf(s, player);
+  const walkers = s.battlefield.filter((id) => opps.includes(obj(s, id).controller) && hasType(s, id, "Planeswalker"));
+  return [...opps, ...walkers];
+}
+
+export function declareAttackers(s: GameState, player: PlayerId, attackers: { id: ObjectId; defender: string }[]): void {
   const seen = new Set<ObjectId>();
+  const defenders = attackableDefenders(s, player);
   for (const a of attackers) {
     if (seen.has(a.id)) throw new RulesError("Créature déclarée deux fois");
     seen.add(a.id);
     if (!canAttack(s, a.id) || obj(s, a.id).controller !== player) throw new RulesError("Cette créature ne peut pas attaquer");
-    if (!opponentsOf(s, player).includes(a.defender)) throw new RulesError("Joueur défenseur invalide");
+    if (!defenders.includes(a.defender)) throw new RulesError("Joueur ou planeswalker défenseur invalide");
   }
   // 508.1d : les créatures qui « attaquent à chaque combat si possible » doivent être déclarées.
   const forced = attackCandidates(s, player).filter((id) => hasKeyword(s, id, "mustAttack") && !seen.has(id));
@@ -400,7 +415,7 @@ export function canBlock(s: GameState, blocker: ObjectId, attacker: ObjectId): b
   const b = s.objects[blocker];
   if (b?.zone !== "battlefield" || !isCreature(s, blocker) || b.tapped) return false;
   const a = s.combat?.attackers.find((x) => x.id === attacker);
-  if (!a || !onBattlefield(s, attacker) || b.controller !== a.defender) return false;
+  if (!a || !onBattlefield(s, attacker) || b.controller !== defendingPlayer(s, a.defender)) return false;
   if (hasKeyword(s, blocker, "cantBlock") || hasKeyword(s, attacker, "unblockable")) return false;
   if (hasKeyword(s, attacker, "flying") && !hasKeyword(s, blocker, "flying") && !hasKeyword(s, blocker, "reach")) return false;
   if (hasKeyword(s, attacker, "cantBeBlockedByWalls") && chars(s, blocker).subtypes.includes("Wall")) return false;
@@ -441,7 +456,7 @@ export function declareBlockers(s: GameState, player: PlayerId, blocks: { blocke
   }
   c.blockers.push(...blocks.map((b) => ({ id: b.blocker, attacker: b.attacker })));
   for (const a of c.attackers) {
-    if (a.defender !== player) continue;
+    if (defendingPlayer(s, a.defender) !== player) continue;
     a.blockers = blocks.filter((b) => b.attacker === a.id).map((b) => b.blocker);
     a.blocked = a.blockers.length > 0;
   }
@@ -690,7 +705,7 @@ function removePlayerObjects(s: GameState, p: PlayerId): void {
   s.exile = s.exile.filter((id) => !gone.has(id));
   s.stack = s.stack.filter((item) => item.controller !== p && (item.kind === "ability" || !gone.has(item.sourceId)));
   if (s.combat) {
-    s.combat.attackers = s.combat.attackers.filter((a) => !gone.has(a.id) && a.defender !== p);
+    s.combat.attackers = s.combat.attackers.filter((a) => !gone.has(a.id) && defendingPlayer(s, a.defender) !== p);
     s.combat.blockers = s.combat.blockers.filter((b) => !gone.has(b.id));
     s.combat.blockQueue = s.combat.blockQueue.filter((q) => q !== p);
     for (const a of s.combat.attackers) a.blockers = a.blockers.filter((b) => !gone.has(b));
@@ -718,6 +733,11 @@ function stateBasedActionsOnce(s: GameState): void {
         changeCounters(s, o, P1P1, -both);
         changeCounters(s, o, M1M1, -both);
         changed = true;
+      }
+      // 704.5i : un planeswalker sans marqueur de loyauté va au cimetière.
+      if (hasType(s, id, "Planeswalker") && counterCount(o, "loyalty") <= 0) {
+        toGraveyard.push(id);
+        continue;
       }
       if (!isCreature(s, id)) continue;
       const c = chars(s, id);

@@ -79,7 +79,10 @@ export function legalActions(s: GameState, player: PlayerId): ActionOption[] {
   const graveyard = (s.players[player]?.graveyard ?? []).filter(
     (id) => s.defs[obj(s, id).defId]?.flashback || s.turn.mayCastFromGraveyard?.includes(id),
   );
-  for (const card of [...hand, ...graveyard]) {
+  const exiled = (s.turn.mayPlayFromExile ?? []).filter(
+    (id) => s.objects[id]?.zone === "exile" && s.objects[id]?.owner === player,
+  );
+  for (const card of [...hand, ...graveyard, ...exiled]) {
     const d = s.defs[obj(s, card).defId];
     if (!d) continue;
     if (d.types.includes("Land")) {
@@ -102,7 +105,8 @@ export function legalActions(s: GameState, player: PlayerId): ActionOption[] {
       modes,
       xMax: hasX ? maxXFor(s, player, (x) => spellCost(s, player, d, { x, flashback })) : null,
       kickerAffordable: !!d.kicker && !flashback && canPay(s, player, spellCost(s, player, d, { kicked: true })),
-      fromGraveyard: source === "hand" ? undefined : true,
+      fromGraveyard: source === "graveyard" || source === "flashback" ? true : undefined,
+      fromExile: source === "exile" ? true : undefined,
       additional: additional.discard || additional.sacrifice ? additional : undefined,
     });
   }

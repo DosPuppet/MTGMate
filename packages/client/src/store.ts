@@ -395,7 +395,11 @@ export const useGame = create<Store>((set, get) => {
       }
       const p = view.pending;
       if (!p || p.player !== view.viewer) return;
-      if (p.kind === "declareAttackers") return get().toggleAttacker(id);
+      if (p.kind === "declareAttackers") {
+        // Clic sur un planeswalker adverse : il devient la cible des prochains attaquants.
+        if (p.defenders?.includes(id)) return set({ attackTarget: id });
+        return get().toggleAttacker(id);
+      }
       if (p.kind === "declareBlockers") {
         const cands = p.candidates ?? [];
         const mine = cands.find((c) => c.blocker === id);

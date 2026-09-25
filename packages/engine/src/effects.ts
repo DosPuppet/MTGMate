@@ -24,6 +24,7 @@ import {
   changeCounters,
   chars,
   counterCount,
+  createObject,
   emit,
   isCreature,
   isPlayer,
@@ -423,6 +424,139 @@ export function runEffect(s: GameState, r: Resolution, e: Effect): OpResult {
       const what = resolveRef(s, ctx, e.what)[0];
       const to = resolveRef(s, ctx, e.to)[0];
       if (what && to) attach(s, what, to);
+      return;
+    }
+    case "addMana": {
+      const pool = s.players[ctx.controller]?.manaPool;
+      if (pool) for (const m of e.mana) pool[m] += 1;
+      return;
+    }
+    case "impulse": {
+      const player = s.players[ctx.controller];
+      if (!player) return;
+      let exiled = r.vars[key("impulse")]?.map(String);
+      if (!exiled) {
+        exiled = [];
+        for (const id of player.library.slice(0, e.n)) {
+          const n = moveWithSpec(s, ctx.controller, id, { to: "exile" });
+          if (n) exiled.push(n);
+        }
+        r.vars[key("impulse")] = exiled;
+      }
+      if (exiled.length === 0) return;
+      const chosen = exiled.length === 1 ? exiled : r.vars[key("impulsePick")]?.map(String);
+      if (!chosen) {
+        return {
+          ask: {
+            player: ctx.controller,
+            key: key("impulsePick"),
+            request: {
+              type: "pick",
+              intent: "impulse",
+              prompt: "Choisissez la carte exilée que vous pourrez jouer ce tour-ci",
+              options: exiled,
+              min: 1,
+              max: 1,
+              suggested: [exiled[0] as string],
+            },
+          },
+        };
+      }
+      s.turn.mayPlayFromExile = [...(s.turn.mayPlayFromExile ?? []), ...chosen];
+      return;
+    }
+    case "damageDivided": {
+      const src = damageSource(s, ctx);
+      if (!src) return;
+      const total = evalAmount(s, ctx, e.total);
+      const among = resolveRef(s, ctx, e.to).filter((id) => onBattlefield(s, id) || isPlayer(s, id));
+      if (among.length === 0 || total <= 0) return;
+      let split: number[];
+      if (among.length === 1) split = [total];
+      else {
+        const answer = r.vars[key("divide")];
+        if (!answer) {
+          const each = Math.floor(total / among.length);
+          const suggested = among.map((_, i) => each + (i < total - each * among.length ? 1 : 0));
+          return {
+            ask: {
+              player: ctx.controller,
+              key: key("divide"),
+              request: {
+                type: "divide",
+                intent: "divideDamage",
+                prompt: `Répartissez ${total} blessures entre les cibles`,
+                among,
+                total,
+                minEach: total >= among.length ? 1 : 0,
+                suggested,
+              },
+            },
+          };
+        }
+        split = answer.map(Number);
+      }
+      among.forEach((id, i) => dealDamage(s, src, id, split[i] ?? 0, false));
+      return;
+    }
+    case "keepOnePerType": {
+      const TYPES = ["Artifact", "Creature", "Enchantment", "Land", "Planeswalker", "Battle"] as const;
+      for (const p of resolveRef(s, ctx, e.who)) {
+        if (!isPlayer(s, p) || r.vars[key(`kdone-${p}`)]) continue;
+        const mine = s.battlefield.filter((id) => s.objects[id]?.controller === p);
+        const kept = new Set<string>();
+        for (const t of TYPES) {
+          const ofType = mine.filter((id) => chars(s, id).types.includes(t));
+          if (ofType.length === 0) continue;
+          if (ofType.length === 1) {
+            kept.add(ofType[0] as string);
+            continue;
+          }
+          const answer = r.vars[key(`keep-${p}-${t}`)];
+          if (!answer) {
+            return {
+              ask: {
+                player: p,
+                key: key(`keep-${p}-${t}`),
+                request: {
+                  type: "pick",
+                  intent: "keepPerType",
+                  prompt: `Choisissez le permanent de type ${t} que vous gardez`,
+                  options: ofType,
+                  min: 1,
+                  max: 1,
+                  suggested: [ofType[0] as string],
+                },
+              },
+            };
+          }
+          kept.add(String(answer[0]));
+        }
+        r.vars[key(`kdone-${p}`)] = [1];
+        for (const id of mine) if (!kept.has(id) && onBattlefield(s, id)) putIntoGraveyard(s, id);
+      }
+      return;
+    }
+    case "emblem": {
+      const defId = `emblem:${e.name.toLowerCase().replace(/[^a-z0-9]+/g, "-")}`;
+      s.defs[defId] ??= {
+        id: defId,
+        name: e.name,
+        typeLine: "Emblème",
+        manaCost: null,
+        manaCostText: "",
+        colors: [],
+        supertypes: [],
+        types: [],
+        subtypes: [],
+        keywords: [],
+        abilities: e.abilities,
+        text: e.text,
+        implemented: true,
+        isToken: true,
+      };
+      createObject(s, defId, ctx.controller, "command", { isToken: true });
+      bump(s);
       return;
     }
     case "allowCastFromGraveyard": {

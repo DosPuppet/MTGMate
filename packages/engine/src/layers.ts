@@ -125,8 +125,10 @@ export function computeBattlefield(s: GameState): Map<ObjectId, Characteristics>
   }
   const prev = computing;
   computing = true;
+  // Sources de capacités statiques : permanents, puis emblèmes (zone de commandement).
+  const emblems = s.playerOrder.flatMap((p) => s.players[p]?.command ?? []);
   try {
-    for (const id of s.battlefield) {
+    for (const id of [...s.battlefield, ...emblems]) {
       if (lost.has(id)) continue;
       const o = obj(s, id);
       for (const ab of s.defs[o.defId]?.abilities ?? []) {

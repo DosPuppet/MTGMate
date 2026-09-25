@@ -1,4 +1,4 @@
-# MTGX
+# MTGX — MTG Mate
 
 Plateforme pour jouer à Magic: The Gathering contre une ou plusieurs IA (en duel ou en multijoueur), et bientôt contre d'autres joueurs. Elle repose sur un **moteur de règles maison en TypeScript** et une interface 2D pensée pour être aussi fluide que MTG Arena :
 
@@ -7,6 +7,53 @@ Plateforme pour jouer à Magic: The Gathering contre une ou plusieurs IA (en due
 - arrêts configurables ;
 - cible choisie automatiquement quand elle est unique ;
 - glisser-déposer.
+
+## Périmètre : le Standard
+
+Le périmètre visé avant toute extension est le **format Standard** : construit, 60 cartes minimum, 4 exemplaires maximum (sauf terrains de base et cartes « n'importe quel nombre »), réserve de 15 cartes.
+
+Les cartes sont couvertes extension par extension, en commençant par **Foundations (FDN)**. D'après Scryfall au 25/09/2026, les 517 cartes de FDN sont toutes légales en Standard (aucune bannie) : tout le set est dans le périmètre.
+
+**Extensions légales en Standard au 25/09/2026** (source : Scryfall, à revérifier à chaque rotation) :
+
+- Wilds of Eldraine (WOE)
+- The Lost Caverns of Ixalan (LCI)
+- Murders at Karlov Manor (MKM)
+- Outlaws of Thunder Junction (OTJ) et The Big Score (BIG)
+- Bloomburrow (BLB)
+- Duskmourn (DSK)
+- **Foundations (FDN)**
+- Aetherdrift (DFT)
+- Tarkir: Dragonstorm (TDM)
+- Final Fantasy (FIN)
+- Edge of Eternities (EOE)
+- Marvel's Spider-Man (SPM)
+- Avatar: The Last Airbender (TLA)
+- Lorwyn Eclipsed (ECL)
+- Teenage Mutant Ninja Turtles (TMT)
+- Secrets of Strixhaven (SOS)
+- Marvel Super Heroes (MSH)
+- The Hobbit (HOB)
+
+Soit environ 4 900 cartes uniques. Quelques réimpressions d'extensions plus anciennes sont aussi légales parce qu'elles figurent dans ces sets.
+
+**Cartes bannies en Standard** (13) :
+
+- Abuelo's Awakening
+- Badgermole Cub
+- Cori-Steel Cutter
+- Gran-Gran
+- Heartfire Hero
+- Hopeless Nightmare
+- Monstrous Rage
+- Proft's Eidetic Memory
+- Screaming Nemesis
+- Stormchaser's Talent
+- This Town Ain't Big Enough
+- Up the Beanstalk
+- Vivi Ornitier
+
+**Hors périmètre pour l'instant :** Commander, Limité (scellé, draft), formats éternels, cartes numériques d'Alchemy. L'architecture reste prête pour N joueurs.
 
 ## Démarrer
 
@@ -19,44 +66,58 @@ npm run dev          # http://localhost:5173
 
 | Commande | Rôle |
 |---|---|
-| `npm test` | Tests de règles, d'IA et test de fumée de chaque carte du set principal (Vitest) |
-| `npm run fuzz -- --games 300 [--ai random\|heuristic\|mixed] [--players 4] [--pool all]` | Parties IA contre IA, invariants vérifiés à chaque décision (`--pool all` : decks aléatoires tirés de toutes les cartes gérées) |
+| `npm test` | Tests de règles, d'IA et test de fumée de chaque carte gérée du set principal (Vitest) |
+| `npm run fuzz -- --games 300 [--ai random\|heuristic\|mixed] [--players 4] [--pool all] [--seed N]` | Parties IA contre IA, invariants vérifiés à chaque décision (`--pool all` : decks aléatoires tirés de toutes les cartes gérées) |
 | `npm run bench` | Décisions par seconde du moteur et temps de décision de l'IA (cibles : ≥ 5 000 déc/s, IA < 50 ms) |
-| `npm run coverage [-- --set main] [-- --missing] [-- --card "<nom>"]` | Cartes FDN gérées, mécaniques manquantes, texte Oracle et script d'une carte |
+| `npm run coverage [-- --set main] [-- --missing] [-- --card "<nom>"]` | Cartes gérées, mécaniques manquantes, texte Oracle et script d'une carte |
 | `npm run deck-smoke` | Deckbuilder de bout en bout : import, édition, export, persistance, partie (serveur de dev lancé) |
-| `npm run typecheck` / `npm run lint` | TypeScript strict / Biome |
-| `npm run import-cards -- fdn` | Réimporte un set depuis Scryfall (EN + FR) |
 | `npm run ui-smoke -- <dossier> [actions]` | Joue une partie dans Chromium via l'interface et prend des captures (serveur de dev lancé) |
+| `npm run typecheck` / `npm run lint` | TypeScript strict / Biome |
+| `npm run import-cards -- fdn` | Réimporte un set depuis Scryfall (EN + FR, loyauté comprise) |
 
 ## Architecture
 
 ```
 packages/
   engine/   moteur pur et déterministe : état JSON, décisions, règles, autopilot, vue filtrée, GameHost
-  cards/    données Scryfall (data/fdn.json), scripts des cartes par couleur (src/fdn/*.ts), decklists, decks (decks/*.json)
+  cards/    données Scryfall (data/fdn.json), scripts des cartes (src/fdn/<couleur>.ts), decklists, decks (decks/*.json)
   ai/       IA aléatoire (fuzz) et heuristique (simulation sur clones de l'état + évaluation)
-  client/   React + Vite + Zustand + Motion ; la partie tourne dans un Web Worker
-tools/      import Scryfall, fuzz, test d'interface
+  client/   React + Vite + Zustand + Motion ; la partie tourne dans un Web Worker ; deckbuilder
+tools/      import Scryfall, fuzz, bench, couverture, tests d'interface
 ```
 
 - **`submit(state, joueur, décision) → { state, events }`** : le moteur avance tout seul jusqu'à la prochaine décision. Il donne ensuite la liste exhaustive des options légales (`legalActions`), dont se servent l'interface, l'IA et l'autopilot.
-- **Autopilot** (`engine/src/autopilot.ts`) : il répond aux décisions triviales. Le moteur, lui, reste strict. Le mode « contrôle total » désactive l'autopilot.
+- **Autopilot** (`engine/src/autopilot.ts`) : il répond aux décisions triviales. Le moteur, lui, reste strict. Le mode « contrôle total » désactive l'autopilot, sauf « Fin du tour », qui reste une demande explicite.
 - **Effets de cartes** : ce sont des données sérialisables (`engine/src/dsl.ts`), jamais du code stocké dans l'état.
 - **Règle 400.7** : un objet qui change de zone reçoit un nouvel identifiant (`id`). L'identifiant `uid`, lui, suit la carte physique pour les animations.
-- **N joueurs** : priorité en tour de table, ordre APNAP, un défenseur par attaquant, élimination d'un joueur (800.4a).
-- **Choix génériques** (`choices.ts`) : toute question passe par une `ChoiceRequest` (choisir, ordonner, oui/non, nombre, répartir) avec une réponse suggérée. Une résolution peut être suspendue sur un choix puis reprise.
-- **Capacités déclenchées** (`triggers.ts`) : détectées au moment de l'événement, avec regard en arrière pour les morts simultanées, puis mises sur la pile en APNAP. Les conditions « si… » sont revérifiées à la résolution.
-- **Couches** (`layers.ts`) : caractéristiques calculées couche par couche (4 à 7) avec capacités statiques. Elles sont mises en cache par version d'état, et le fuzz vérifie le cache.
-- **Remplacements et prévention** (`replacement.ts`) et **coûts** (`mana.ts`) : exil à la place de mourir, arrivée engagée ou avec marqueurs, prévention, hybride, coûts additionnels, flashback, réductions, Trésors.
+- **N joueurs** : priorité en tour de table, ordre APNAP, un défenseur par attaquant (joueur ou planeswalker), élimination d'un joueur (800.4a).
+- **Choix génériques** (`choices.ts`) : toute question passe par une `ChoiceRequest` (choisir, ordonner, oui/non, nombre, répartir) avec une réponse suggérée. Une résolution peut être suspendue sur un choix puis reprise ; les valeurs intermédiaires (« si vous le faites ») sont mémorisées dans la résolution.
+- **Capacités déclenchées** (`triggers.ts`) :
+  - détectées au moment de l'événement, avec regard en arrière pour les morts simultanées ;
+  - mises sur la pile en APNAP ;
+  - les conditions « si… » sont revérifiées à la résolution ;
+  - sont aussi gérées : les capacités modales, « une fois par tour », les capacités retardées et réflexives, et les emblèmes.
+- **Couches** (`layers.ts`) :
+  - caractéristiques calculées couche par couche (4 à 7) : types, couleurs, capacités accordées ou perdues, F/E ;
+  - capacités statiques, y compris sur « la créature équipée ou enchantée » ;
+  - résultat mis en cache par version d'état ; le fuzz vérifie le cache.
+- **Pile** : sorts et capacités ciblables, contresorts, garde (ward), « ne peut pas être contrecarré ».
+- **Attachements** : Auras (ciblées au lancement), Équipements (« Équiper » lu dans le texte), actions basées sur l'état 704.5m–n.
+- **Planeswalkers** : loyauté, capacités de loyauté (une par tour), attaque des planeswalkers, emblèmes.
+- **Remplacements et prévention** (`replacement.ts`) et **coûts** (`mana.ts`, `stack.ts`) :
+  - remplacements : exil à la place de mourir, arrivée engagée ou avec marqueurs (y compris imposée par un autre permanent), prévention ;
+  - coûts : hybride, coûts additionnels, flashback, réductions, sacrifice ou marqueurs comme coût, activation depuis le cimetière.
 - **Performance** : `submit` copie l'état puis le mute (pas d'Immer) ; les simulations de l'IA utilisent `applyMutable` sur une copie de travail.
 
 ## Ajouter une carte
 
-Les caractéristiques d'une carte (coût, types, F/E, mots-clés) viennent de Scryfall. Une créature « vanilla » ou « french vanilla » fonctionne donc sans script. Sinon, on décrit son comportement dans `packages/cards/src/fdn/<couleur>.ts` :
+Les caractéristiques d'une carte (coût, types, F/E, mots-clés, loyauté, garde, « Équiper ») viennent de Scryfall. Une créature « vanilla » ou « french vanilla » fonctionne donc sans script. Sinon, on décrit son comportement dans `packages/cards/src/fdn/<couleur>.ts` :
 
 ```ts
 "Burst Lightning": { kicker: "{4}", spell: spell([target.any()], [fx.damage(amount.kicked(4, 2), ref.target())]) },
 ```
+
+Chaque carte gérée est automatiquement jouée par le test de fumée (`packages/ai/test/cards-smoke.test.ts`) ; les mécaniques nouvelles ont en plus un test de règles (`packages/engine/test/fdn.test.ts`).
 
 ## État
 
@@ -66,10 +127,16 @@ Les caractéristiques d'une carte (coût, types, F/E, mots-clés) viennent de Sc
 | 2. Noyau du moteur | tours et phases, priorité et pile, mana, combat et mots-clés, actions basées sur l'état, mulligan de Londres, X, kicker, sorts modaux, capacités activées, jetons | ✅ |
 | 3. Client contre l'IA | plateau, main en éventail, glisser-déposer, flèches, barre des phases et arrêts, autopilot, journal FR | ✅ |
 | 4a. Fondations du moteur | N joueurs, choix génériques, déclencheurs, couches, remplacements, coûts, performance | ✅ |
-| 4b. Couverture FDN | set principal (276 cartes) : cimetière, recherche, cibles multiples, exil lié, contresorts et garde, auras et équipements… ; restent planeswalkers, copie, contrôle, cas particuliers | en cours : 239 / 276 cartes du set principal |
+| 4b. Deckbuilder | collection filtrable, deck et réserve, validation 60/4/15, import et export de decklists (MTGA, MTGO, noms FR), persistance | ✅ |
+| 4c. FDN, set principal (n° 1 à 281) | lots A (longue traîne) à E (planeswalkers) faits ; reste le lot F : copie, contrôle, protection, doublement, cartes uniques | en cours : **244 / 276** |
+| 4d. FDN, réimpressions (n° 282 et plus) | cartes des decks d'initiation et de la Starter Collection | à faire |
+| 4e. Légalité Standard | légalités Scryfall importées, liste des bannies, validation du format dans le deckbuilder | à faire |
+| 4f. Autres extensions Standard | une extension à la fois, par ordre de sortie décroissant (les plus récentes restent légales le plus longtemps) | à faire |
 | 5. IA | attaques par simulation, puis ISMCTS | à faire |
 | 6. JcJ en ligne | serveur Node `ws` réutilisant `GameHost` + `projectView` | à faire |
-| 7. Finitions | deckbuilder, import et export de decklists (MTGA, MTGO, noms FR) ✅ ; sons, replays (graine + décisions) | en cours |
+| 7. Finitions | sons, replays (graine + décisions), images des jetons | à faire |
+
+Le suivi détaillé (cartes restantes, approximations connues, conventions) est dans [CLAUDE.md](CLAUDE.md).
 
 ## Cadre légal
 

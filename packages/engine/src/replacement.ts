@@ -45,6 +45,9 @@ export function applyEntersReplacements(s: GameState, o: GameObject, ctx: Enters
   if (ctx.kicked) o.kicked = true;
   if (ctx.cast) o.cast = true;
   if (ctx.attachTo) o.attachedTo = ctx.attachTo;
+  // 306.5b : un planeswalker arrive avec sa loyauté imprimée.
+  const loyalty = s.defs[o.defId]?.loyalty;
+  if (loyalty) changeCounters(s, o, "loyalty", loyalty);
   // Remplacements portés par d'autres permanents (« les créatures de vos adversaires arrivent engagées »).
   for (const id of s.battlefield) {
     const src = s.objects[id];

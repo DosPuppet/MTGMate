@@ -71,7 +71,9 @@ export function canCastTiming(s: GameState, player: PlayerId, d: CardDef): boole
 
 export function canPlayLand(s: GameState, player: PlayerId, card: ObjectId): boolean {
   const o = s.objects[card];
-  if (o?.zone !== "hand" || o.owner !== player) return false;
+  if (!o || o.owner !== player) return false;
+  const fromExile = o.zone === "exile" && !!s.turn.mayPlayFromExile?.includes(card);
+  if (o.zone !== "hand" && !fromExile) return false;
   const d = s.defs[o.defId];
   return !!d?.types.includes("Land") && sorceryTiming(s, player) && s.turn.landsPlayed < 1;
 }
@@ -148,11 +150,12 @@ export function spellCost(
 }
 
 /** D'où ce sort peut-il être lancé par ce joueur ? */
-export function castSource(s: GameState, player: PlayerId, card: ObjectId): "hand" | "graveyard" | "flashback" | null {
+export function castSource(s: GameState, player: PlayerId, card: ObjectId): "hand" | "graveyard" | "exile" | "flashback" | null {
   const o = s.objects[card];
   if (!o || o.owner !== player) return null;
   if (o.zone === "hand") return "hand";
   if (o.zone === "graveyard" && s.turn.mayCastFromGraveyard?.includes(card)) return "graveyard";
+  if (o.zone === "exile" && s.turn.mayPlayFromExile?.includes(card)) return "exile";
   if (o.zone === "graveyard" && s.defs[o.defId]?.flashback) return "flashback";
   return null;
 }
@@ -305,6 +308,11 @@ export function canPayNonManaCost(s: GameState, source: ObjectId, ab: ActivatedA
   if (!o || o.zone !== (ab.fromGraveyard ? "graveyard" : "battlefield")) return false;
   if (ab.once && o.used?.includes(index)) return false;
   if (ab.cost.tap && (o.tapped || isSummoningSick(s, source))) return false;
+  // 606.3 : une seule capacité de loyauté par planeswalker et par tour ; on ne peut pas retirer plus que sa loyauté.
+  if (ab.cost.loyalty !== undefined) {
+    if (o.loyaltyTurn === s.turn.number) return false;
+    if (ab.cost.loyalty < 0 && (o.counters.loyalty ?? 0) < -ab.cost.loyalty) return false;
+  }
   if (ab.cost.tapAttached) {
     const host = o.attachedTo;
     if (!host || !onBattlefield(s, host) || obj(s, host).tapped || isSummoningSick(s, host)) return false;
@@ -368,6 +376,10 @@ export function activateAbility(s: GameState, player: PlayerId, source: ObjectId
   }
   if (ab.cost.tap) o.tapped = true;
   if (ab.cost.tapAttached && o.attachedTo) obj(s, o.attachedTo).tapped = true;
+  if (ab.cost.loyalty !== undefined) {
+    o.loyaltyTurn = s.turn.number;
+    if (ab.cost.loyalty !== 0) changeCounters(s, o, "loyalty", ab.cost.loyalty);
+  }
   if (ab.once) o.used = [...(o.used ?? []), index];
   if (ab.cost.removeCounters) changeCounters(s, o, ab.cost.removeCounters.kind, -ab.cost.removeCounters.n);
   if (ab.cost.payLife) loseLife(s, player, ab.cost.payLife);

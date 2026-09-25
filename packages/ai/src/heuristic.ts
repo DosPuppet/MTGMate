@@ -6,6 +6,7 @@
  */
 import {
   type Agent,
+  attackableDefenders,
   attackCandidates,
   blockCandidates,
   chars,
@@ -40,10 +41,7 @@ function decide(s: GameState, me: PlayerId): Decision {
     case "declareAttackers":
       return {
         type: "declareAttackers",
-        attackers: [...new Set([...chooseAttackers(s, me), ...forcedAttackers(s, me)])].map((id) => ({
-          id,
-          defender: targetOpponent(s, me),
-        })),
+        attackers: chooseDefenders(s, me, [...new Set([...chooseAttackers(s, me), ...forcedAttackers(s, me)])]),
       };
     case "declareBlockers":
       return { type: "declareBlockers", blocks: chooseBlocks(s, me) };
@@ -54,6 +52,35 @@ function decide(s: GameState, me: PlayerId): Decision {
     default:
       return { type: "pass" };
   }
+}
+
+/**
+ * Répartition des attaquants : on envoie sur chaque planeswalker adverse (le plus chargé d'abord) juste assez
+ * de force pour l'abattre, en commençant par les créatures évasives ; le reste attaque le joueur.
+ * Si les attaquants suffisent à tuer le joueur, tout va sur le joueur.
+ */
+function chooseDefenders(s: GameState, me: PlayerId, attackers: string[]): { id: string; defender: string }[] {
+  const opp = targetOpponent(s, me);
+  const power = (id: string) => Math.max(0, chars(s, id).power);
+  const total = attackers.reduce((n, id) => n + power(id), 0);
+  const out = new Map(attackers.map((id) => [id, opp as string]));
+  if (total < (s.players[opp]?.life ?? 0)) {
+    const walkers = attackableDefenders(s, me)
+      .filter((d) => !s.players[d])
+      .sort((a, b) => (s.objects[b]?.counters.loyalty ?? 0) - (s.objects[a]?.counters.loyalty ?? 0));
+    const free = [...attackers].sort(
+      (a, b) => Number(hasKeyword(s, b, "flying")) - Number(hasKeyword(s, a, "flying")) || power(b) - power(a),
+    );
+    for (const w of walkers) {
+      let need = s.objects[w]?.counters.loyalty ?? 0;
+      while (need > 0 && free.length) {
+        const id = free.shift() as string;
+        out.set(id, w);
+        need -= power(id);
+      }
+    }
+  }
+  return attackers.map((id) => ({ id, defender: out.get(id) as string }));
 }
 
 // ---------------------------------------------------------------------------

@@ -21,6 +21,7 @@ export const {
   entersWith,
   costReducer,
   flashForAll,
+  loyalty,
 } = dsl;
 
 /** Cible quelconque décrite par un filtre d'objets. */
@@ -66,6 +67,9 @@ export const RAT = creature("Rat", ["B"], ["Rat"], 1, 1);
 export const INSECT = creature("Insect", ["B", "G"], ["Insect"], 1, 1, { keywords: ["flying"] });
 export const KOMAS_COIL = creature("Koma's Coil", ["U"], ["Serpent"], 3, 3);
 export const FISH = creature("Fish", ["U"], ["Fish"], 1, 1);
+export const NINJA = creature("Ninja", ["U"], ["Ninja"], 2, 1);
+export const ZOMBIE = creature("Zombie", ["B"], ["Zombie"], 2, 2);
+export const CAT_2 = creature("Cat", ["W"], ["Cat"], 2, 2);
 export const RACCOON = creature("Raccoon", ["G"], ["Raccoon"], 3, 3);
 
 export const TREASURE: TokenSpec = {

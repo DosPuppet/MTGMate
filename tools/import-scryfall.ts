@@ -26,6 +26,7 @@ interface ScryfallCard {
   oracle_text?: string;
   power?: string;
   toughness?: string;
+  loyalty?: string;
   colors?: string[];
   keywords: string[];
   produced_mana?: string[];
@@ -75,6 +76,7 @@ for (const c of sorted) {
     oracleText: c.oracle_text ?? "",
     power: c.power,
     toughness: c.toughness,
+    loyalty: c.loyalty,
     colors: c.colors ?? [],
     keywords: c.keywords,
     producedMana: c.produced_mana,

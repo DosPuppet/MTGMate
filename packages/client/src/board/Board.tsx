@@ -102,6 +102,11 @@ function PlayerBar({ player, isMe }: { player: PlayerView; isMe: boolean }) {
             <Icon d={ICONS.grave} /> {player.graveyard.length}
             {top && <span className="gy-top">{faceName(top, lang)}</span>}
           </button>
+          {player.emblems.map((e, i) => (
+            <span key={`${e.name}-${i}`} className="emblem-chip" title={e.text}>
+              ✦ {e.name}
+            </span>
+          ))}
         </div>
       </div>
       <ManaPool pool={player.manaPool} />
@@ -119,6 +124,7 @@ function usePermanentGlow(): (o: ObjectView) => Glow {
   const attackers = useGame((s) => s.attackers);
   const blocks = useGame((s) => s.blocks);
   const selectedBlocker = useGame((s) => s.selectedBlocker);
+  const attackTarget = useGame((s) => s.attackTarget);
   const acts = myActions(view);
   const p = view.pending;
   const mine = p?.player === view.viewer;
@@ -126,6 +132,10 @@ function usePermanentGlow(): (o: ObjectView) => Glow {
     if (casting?.stage === "target") {
       if (casting.picked?.includes(o.id)) return "selected";
       return casting.spec?.legal.includes(o.id) ? "target" : null;
+    }
+    // Planeswalker adverse attaquable : désigné comme cible d'attaque.
+    if (mine && p?.kind === "declareAttackers" && p.defenders?.includes(o.id)) {
+      return attackTarget === o.id ? "selected" : "target";
     }
     if (mine && p?.kind === "declareAttackers") {
       if (attackers.includes(o.id)) return "attacking";
@@ -373,7 +383,9 @@ function Banner() {
   const lang = useGame((s) => s.lang);
   const p = view.pending;
   const mine = p?.player === view.viewer;
-  const nameOf = (id: string | undefined) => (id && view.players[id]?.name) || "L'adversaire";
+  const nameOf = (id: string | undefined) =>
+    (id && (view.players[id]?.name ?? faceNameOf(view.battlefield.find((o) => o.id === id)))) || "L'adversaire";
+  const faceNameOf = (o: ObjectView | undefined) => (o ? faceName(o, lang) : undefined);
 
   let text: string;
   let extra: React.ReactNode = null;
@@ -481,16 +493,19 @@ function Hand() {
   const dragged = useRef(false);
   const acts = myActions(view);
   const playable = new Set(acts.flatMap((a) => (a.type === "cast" || a.type === "playLand" ? [a.card] : [])));
-  const n = view.hand.length;
+  // Cartes exilées jouables ce tour-ci (Chandra) : présentées au bout de la main.
+  const cards = [...view.hand, ...view.playableExile];
+  const exiled = new Set(view.playableExile.map((c) => c.id));
+  const n = cards.length;
   return (
     <div className="hand" ref={handRef}>
-      {view.hand.map((c, i) => {
+      {cards.map((c, i) => {
         const angle = n > 1 ? (i - (n - 1) / 2) * Math.min(4, 24 / n) : 0;
         const lift = Math.abs(i - (n - 1) / 2) * Math.min(6, 30 / n);
         return (
           <motion.div
             key={c.uid}
-            className="hand-card"
+            className={`hand-card ${exiled.has(c.id) ? "from-exile" : ""}`}
             style={{ zIndex: i }}
             animate={{ rotate: angle, y: lift }}
             drag

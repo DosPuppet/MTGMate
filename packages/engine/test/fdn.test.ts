@@ -475,3 +475,170 @@ describe("Foundations : Auras et Équipements", () => {
     expect(s.turn.number).toBe(1);
   });
 });
+
+describe("Foundations : planeswalkers", () => {
+  const walker = (s: S, name: string, p = "p1") => idOf(s, p, "battlefield", name);
+  const loyaltyOf = (s: S, id: string) => s.objects[id]?.counters.loyalty ?? 0;
+  const activate = (s: S, source: string, label: string, targets?: Record<string, string[]>) => {
+    const a = legalActions(s, "p1").find((x) => x.type === "activate" && x.source === source && x.label?.startsWith(label));
+    if (a?.type !== "activate") throw new Error(`capacité ${label} indisponible`);
+    return act(s, "p1", { type: "activate", source, ability: a.ability, targets });
+  };
+
+  it("arrive avec sa loyauté ; une capacité de loyauté par tour ; −N impossible sans assez de loyauté", () => {
+    let s = scenario({ p1: { battlefield: [...lands("Plains", 3), "Llanowar Elves"], hand: ["Ajani, Caller of the Pride"] } });
+    s = cast(s, "p1", "Ajani, Caller of the Pride");
+    s = passBoth(s);
+    const ajani = walker(s, "Ajani, Caller of the Pride");
+    expect(loyaltyOf(s, ajani)).toBe(4);
+    const labels = legalActions(s, "p1").flatMap((a) => (a.type === "activate" && a.source === ajani ? [a.label] : []));
+    expect(labels.map((l) => l?.split(" ")[0])).toEqual(["+1", "−3"]); // −8 : pas assez de loyauté
+    s = activate(s, ajani, "+1", { t: [] });
+    expect(loyaltyOf(s, ajani)).toBe(5);
+    s = passBoth(s);
+    expect(legalActions(s, "p1").some((a) => a.type === "activate" && a.source === ajani)).toBe(false);
+  });
+
+  it("les blessures retirent de la loyauté ; à 0, le planeswalker va au cimetière", () => {
+    let s = scenario({
+      active: "p2",
+      p1: { battlefield: ["Vivien Reid"] },
+      p2: { battlefield: lands("Mountain", 1), hand: ["Burst Lightning"] },
+    });
+    const vivien = walker(s, "Vivien Reid");
+    (s.objects[vivien] as { counters: Record<string, number> }).counters.loyalty = 5;
+    s = act(s, "p2", { type: "cast", card: idOf(s, "p2", "hand", "Burst Lightning"), targets: { t: [vivien] } });
+    s = passBoth(s);
+    expect(loyaltyOf(s, vivien)).toBe(3);
+    (s.objects[vivien] as { counters: Record<string, number> }).counters.loyalty = 0;
+    s = act(s, s.pending?.player ?? "p2", { type: "pass" });
+    expect(idsOf(s, "p1", "graveyard", "Vivien Reid")).toHaveLength(1);
+  });
+
+  it("attaquer un planeswalker : bloqué par son contrôleur, sinon blessures en loyauté", () => {
+    let s = scenario({
+      step: "beginCombat",
+      p1: { battlefield: ["Shivan Dragon", "Llanowar Elves"] },
+      p2: { battlefield: ["Liliana, Dreadhorde General", "Prideful Parent"] },
+    });
+    const lili = walker(s, "Liliana, Dreadhorde General", "p2");
+    (s.objects[lili] as { counters: Record<string, number> }).counters.loyalty = 6;
+    s = passAccepting(s, (x) => x.pending?.kind === "declareAttackers");
+    const view = legalActions; // (legalActions ne sert qu'à la priorité)
+    void view;
+    const dragon = walker(s, "Shivan Dragon");
+    const elf = walker(s, "Llanowar Elves");
+    s = act(s, "p1", {
+      type: "declareAttackers",
+      attackers: [
+        { id: dragon, defender: lili },
+        { id: elf, defender: lili },
+      ],
+    });
+    s = passAccepting(s, (x) => x.pending?.kind === "declareBlockers");
+    expect(s.pending?.player).toBe("p2");
+    // Le Chat bloque l'Elfe ; le Dragon (5) touche Liliana.
+    s = act(s, "p2", {
+      type: "declareBlockers",
+      blocks: [{ blocker: idOf(s, "p2", "battlefield", "Prideful Parent"), attacker: elf }],
+    });
+    s = passAccepting(s, (x) => x.turn.step === "main2");
+    expect(loyaltyOf(s, lili)).toBe(1);
+    expect(s.players.p2?.life).toBe(20);
+  });
+
+  it("Kaito : marqueur quand une créature blesse un joueur ; emblème qui crée des Ninjas", () => {
+    let s = scenario({
+      step: "beginCombat",
+      p1: { battlefield: ["Kaito, Cunning Infiltrator", "Llanowar Elves"] },
+    });
+    const kaito = walker(s, "Kaito, Cunning Infiltrator");
+    (s.objects[kaito] as { counters: Record<string, number> }).counters.loyalty = 9;
+    s = passAccepting(s, (x) => x.pending?.kind === "declareAttackers");
+    s = act(s, "p1", { type: "declareAttackers", attackers: [{ id: walker(s, "Llanowar Elves"), defender: "p2" }] });
+    s = passAccepting(s, (x) => x.turn.step === "main2");
+    expect(loyaltyOf(s, kaito)).toBe(10);
+    s = activate(s, kaito, "−9");
+    s = passBoth(s);
+    expect(s.players.p1?.command).toHaveLength(1);
+    expect(onBattlefield(s, kaito)).toBe(true); // 10 − 9 = 1
+
+    // L'emblème : chaque sort lancé, par n'importe quel joueur, crée un Ninja 2/1.
+    let t = scenario({ p1: { battlefield: ["Kaito, Cunning Infiltrator", "Island"], hand: ["Opt"] } });
+    const k = walker(t, "Kaito, Cunning Infiltrator");
+    (t.objects[k] as { counters: Record<string, number> }).counters.loyalty = 9;
+    t = activate(t, k, "−9");
+    t = passBoth(t);
+    t = cast(t, "p1", "Opt");
+    t = passAccepting(t, (x) => x.stack.length === 0);
+    expect(idsOf(t, "p1", "battlefield", "Ninja")).toHaveLength(1);
+  });
+
+  it("emblème de Vivien : +2/+2, vigilance, piétinement, indestructible", () => {
+    let s = scenario({ p1: { battlefield: ["Vivien Reid", "Llanowar Elves"] } });
+    const vivien = walker(s, "Vivien Reid");
+    (s.objects[vivien] as { counters: Record<string, number> }).counters.loyalty = 8;
+    s = activate(s, vivien, "−8");
+    s = passBoth(s);
+    const elf = walker(s, "Llanowar Elves");
+    expect([chars(s, elf).power, chars(s, elf).toughness]).toEqual([3, 3]);
+    expect(chars(s, elf).keywords).toEqual(expect.arrayContaining(["vigilance", "trample", "indestructible"]));
+    expect(onBattlefield(s, vivien)).toBe(false); // 0 loyauté
+  });
+
+  it("Chandra +2 : {R}{R}{R} et une carte exilée jouable ce tour-ci ; −4 : 8 blessures réparties", () => {
+    let s = scenario({
+      p1: {
+        battlefield: ["Chandra, Flameshaper", ...lands("Mountain", 3)],
+        library: ["Shivan Dragon", "Forest", "Opt", "Forest"],
+      },
+      p2: { battlefield: ["Pelakka Wurm", "Llanowar Elves"] },
+    });
+    const chandra = walker(s, "Chandra, Flameshaper");
+    (s.objects[chandra] as { counters: Record<string, number> }).counters.loyalty = 6;
+    s = activate(s, chandra, "+2");
+    s = passBoth(s);
+    expect(s.players.p1?.manaPool.R).toBe(3);
+    expect(s.pending?.kind === "choice" && s.pending.request.intent).toBe("impulse");
+    const dragon = s.exile.find((id) => s.defs[s.objects[id]?.defId ?? ""]?.name === "Shivan Dragon") as string;
+    s = choose(s, [dragon]);
+    const cast0 = legalActions(s, "p1").find((a) => a.type === "cast" && a.card === dragon);
+    expect(cast0?.type === "cast" && cast0.fromExile).toBe(true);
+
+    // −4 l'autre tour : 8 blessures réparties entre deux créatures.
+    s = scenario({ p1: { battlefield: ["Chandra, Flameshaper"] }, p2: { battlefield: ["Pelakka Wurm", "Llanowar Elves"] } });
+    const ch = walker(s, "Chandra, Flameshaper");
+    (s.objects[ch] as { counters: Record<string, number> }).counters.loyalty = 6;
+    const wurm = walker(s, "Pelakka Wurm", "p2");
+    const elf = walker(s, "Llanowar Elves", "p2");
+    s = activate(s, ch, "−4", { t: [wurm, elf] });
+    s = passBoth(s);
+    expect(s.pending?.kind === "choice" && s.pending.request.type).toBe("divide");
+    expect(() => choose(s, [8, 0])).toThrow(); // au moins 1 par cible
+    s = choose(s, [7, 1]);
+    expect(idsOf(s, "p2", "graveyard", "Pelakka Wurm")).toHaveLength(1);
+    expect(idsOf(s, "p2", "graveyard", "Llanowar Elves")).toHaveLength(1);
+  });
+
+  it("Liliana −9 : l'adversaire garde un permanent de chaque type", () => {
+    let s = scenario({
+      p1: { battlefield: ["Liliana, Dreadhorde General"] },
+      p2: { battlefield: ["Forest", "Island", "Llanowar Elves", "Shivan Dragon", "Anthem of Champions"] },
+    });
+    const lili = walker(s, "Liliana, Dreadhorde General");
+    (s.objects[lili] as { counters: Record<string, number> }).counters.loyalty = 9;
+    s = activate(s, lili, "−9");
+    s = passBoth(s);
+    // Créature : garder le Dragon ; terrain : garder l'Île.
+    for (let i = 0; i < 3 && s.pending?.kind === "choice"; i++) {
+      const req = s.pending.request;
+      if (req.type !== "pick") break;
+      const want = req.options.find((id) => ["Shivan Dragon", "Island"].includes(s.defs[s.objects[id]?.defId ?? ""]?.name ?? ""));
+      s = choose(s, [want ?? (req.options[0] as string)]);
+    }
+    const names = s.battlefield
+      .filter((id) => s.objects[id]?.controller === "p2")
+      .map((id) => s.defs[s.objects[id]?.defId ?? ""]?.name);
+    expect(names.sort()).toEqual(["Anthem of Champions", "Island", "Shivan Dragon"]);
+  });
+});

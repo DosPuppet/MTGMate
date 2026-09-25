@@ -81,10 +81,15 @@ export function evaluate(s: GameState, me: PlayerId): number {
     const sign = o.controller === me ? 1 : -w;
     let v = 0;
     if (d.types.includes("Creature")) v = creatureValue(d, (o.counters["+1/+1"] ?? 0) - (o.counters["-1/-1"] ?? 0));
+    // Planeswalker : vaut d'autant plus qu'il a de loyauté (source d'avantage à chaque tour).
+    else if (d.types.includes("Planeswalker")) v = 3 + (o.counters.loyalty ?? 0) * 0.9;
     else if (d.types.includes("Land")) v = 1;
     else v = 1;
     score += sign * v;
   }
+  // Emblèmes : avantage permanent.
+  score += mine.command.length * 8;
+  for (const p of opps) score -= w * (s.players[p]?.command.length ?? 0) * 8;
   for (const id of mine.hand) {
     const d = s.defs[s.objects[id]?.defId ?? ""];
     if (d) score += handCardValue(d);

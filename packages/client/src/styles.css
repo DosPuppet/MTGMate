@@ -636,6 +636,33 @@ button {
   border-radius: 8px;
   border: 1px solid rgba(255, 255, 255, 0.25);
 }
+.emblem-chip {
+  font-size: 11px;
+  padding: 1px 7px;
+  border-radius: 10px;
+  background: rgba(160, 120, 255, 0.18);
+  border: 1px solid rgba(160, 120, 255, 0.5);
+  color: #e3d8ff;
+  cursor: help;
+}
+.loyalty-badge {
+  position: absolute;
+  left: 50%;
+  bottom: -4px;
+  translate: -50% 0;
+  min-width: 26px;
+  text-align: center;
+  background: linear-gradient(#2b2f38, #14161b);
+  color: #fff;
+  font-weight: 800;
+  font-size: 13px;
+  padding: 2px 7px 4px;
+  border: 1px solid rgba(255, 255, 255, 0.45);
+  clip-path: polygon(0 0, 100% 0, 100% 70%, 50% 100%, 0 70%);
+}
+.hand-card.from-exile .card {
+  outline: 2px dashed rgba(255, 170, 90, 0.9);
+}
 .pt-badge.buffed {
   color: #8bf0a8;
 }

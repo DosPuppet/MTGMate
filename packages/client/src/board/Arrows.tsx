@@ -18,9 +18,21 @@ function useArrowSpecs(): ArrowSpec[] {
   const view = useGame((s) => s.view);
   const blocks = useGame((s) => s.blocks);
   const casting = useGame((s) => s.casting);
+  const attackers = useGame((s) => s.attackers);
+  const attackTargets = useGame((s) => s.attackTargets);
   return useMemo(() => {
     const out: ArrowSpec[] = [];
     if (!view) return out;
+    // Attaques contre un planeswalker (déclarées, ou en cours de sélection).
+    for (const a of view.combat?.attackers ?? []) {
+      if (!view.players[a.defender]) out.push({ key: `a-${a.id}`, from: a.id, to: a.defender, kind: "target" });
+    }
+    if (view.pending?.kind === "declareAttackers") {
+      for (const id of attackers) {
+        const d = attackTargets[id];
+        if (d && !view.players[d]) out.push({ key: `pa-${id}`, from: id, to: d, kind: "pending-block" });
+      }
+    }
     for (const item of view.stack) {
       for (const t of item.targets) out.push({ key: `t-${item.id}-${t}`, from: item.id, to: t, kind: "target" });
     }
@@ -35,7 +47,7 @@ function useArrowSpecs(): ArrowSpec[] {
       if (casting.stage === "target") out.push({ key: "aim", from: casting.sourceId, to: MOUSE, kind: "aim" });
     }
     return out;
-  }, [view, blocks, casting]);
+  }, [view, blocks, casting, attackers, attackTargets]);
 }
 
 function center(id: string): { x: number; y: number } | null {

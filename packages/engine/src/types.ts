@@ -100,6 +100,8 @@ export interface CardDef {
   flashback?: ManaCost;
   /** « Ce sort ne peut pas être contrecarré. » */
   cantBeCountered?: boolean;
+  /** Planeswalker : loyauté de départ (306.5b). */
+  loyalty?: number;
   /** Aura : ce qu'elle peut enchanter (cible du sort d'Aura, puis légalité de l'attachement). */
   enchant?: { filter: ObjectFilter; label: string };
   /** « Si cette carte est dans votre main de départ, vous pouvez commencer la partie avec elle sur le champ de bataille. » */
@@ -191,6 +193,8 @@ export interface CostDef {
   tapOthers?: { filter: ObjectFilter; count: number };
   /** Engager la créature à laquelle la source est attachée (elle doit pouvoir utiliser {T}). */
   tapAttached?: boolean;
+  /** Capacité de loyauté (606) : marqueurs de loyauté ajoutés (+N) ou retirés (−N). */
+  loyalty?: number;
   payLife?: number;
 }
 
@@ -551,6 +555,16 @@ export type Effect =
   | { op: "allowCastFromGraveyard"; what: Ref }
   /** Attache une Aura ou un Équipement à un permanent (701.3). */
   | { op: "attach"; what: Ref; to: Ref }
+  /** Ajoute du mana à la réserve du contrôleur. */
+  | { op: "addMana"; mana: ManaType[] }
+  /** Exile les N cartes du dessus ; le contrôleur en choisit une qu'il peut jouer ce tour-ci. */
+  | { op: "impulse"; n: number }
+  /** Blessures réparties comme le contrôleur le désire entre les cibles (au moins 1 chacune). */
+  | { op: "damageDivided"; total: Amount; to: Ref }
+  /** Chaque joueur désigné garde un permanent de chaque type et sacrifie le reste. */
+  | { op: "keepOnePerType"; who: Ref }
+  /** Le contrôleur reçoit un emblème (114) portant ces capacités. */
+  | { op: "emblem"; name: string; abilities: AbilityDef[]; text: string }
   /** Exile jusqu'à ce que la source quitte le champ de bataille (610.3). */
   | { op: "exileUntilLeaves"; what: Ref }
   /** Choisir des cartes (non ciblées) dans une zone du contrôleur et les déplacer. */
@@ -637,6 +651,8 @@ export interface GameObject {
   cast?: boolean;
   /** Aura ou Équipement : le permanent auquel il est attaché (301.5, 303.4). */
   attachedTo?: ObjectId;
+  /** Tour de la dernière activation d'une capacité de loyauté (606.3 : une par tour). */
+  loyaltyTurn?: number;
 }
 
 export interface PlayerState {
@@ -711,7 +727,8 @@ export interface TurnStats {
 }
 
 export interface CombatState {
-  attackers: { id: ObjectId; defender: PlayerId; blockers: ObjectId[]; blocked: boolean }[];
+  /** `defender` : joueur attaqué, ou planeswalker attaqué (identifiant d'objet, 506.2). */
+  attackers: { id: ObjectId; defender: string; blockers: ObjectId[]; blocked: boolean }[];
   blockers: { id: ObjectId; attacker: ObjectId }[];
   /** Créatures ayant infligé des blessures lors de l'étape de blessures d'initiative. */
   firstStrikers: ObjectId[];
@@ -834,6 +851,8 @@ export interface GameState {
     onceFired: string[];
     /** Cartes de cimetière qu'on peut lancer ce tour-ci (Zul Ashur). */
     mayCastFromGraveyard?: ObjectId[];
+    /** Cartes exilées qu'on peut jouer ce tour-ci (Chandra). */
+    mayPlayFromExile?: ObjectId[];
     startingPlayer: PlayerId;
   };
   flow: Flow;
@@ -898,6 +917,9 @@ export type ChoiceIntent =
   | "punisher"
   | "unlessPay"
   | "leyline"
+  | "impulse"
+  | "divideDamage"
+  | "keepPerType"
   | "other";
 
 interface ChoiceBase {
@@ -931,6 +953,8 @@ export type ChoiceRequest = ChoiceBase &
         total: number;
         /** Contrainte de piétinement : le joueur ne reçoit des blessures que si chaque bloqueur a reçu ses blessures mortelles. */
         lethal?: { player: string; needs: Record<string, number> };
+        /** Minimum par destinataire (601.2d : au moins 1 par cible). */
+        minEach?: number;
       }
   );
 
@@ -999,6 +1023,8 @@ export type ActionOption =
       kickerAffordable: boolean;
       /** Lancée depuis le cimetière grâce au flashback. */
       fromGraveyard?: boolean;
+      /** Carte exilée jouable ce tour-ci (Chandra). */
+      fromExile?: boolean;
       additional?: { discard?: { count: number; options: ObjectId[] }; sacrifice?: { count: number; options: ObjectId[] } };
     }
   | {

@@ -116,6 +116,11 @@ export function Card({
               </div>
             )}
             {obj.damage > 0 && <div className="dmg-badge">−{obj.damage}</div>}
+            {obj.types.includes("Planeswalker") && (
+              <div className="loyalty-badge" title="Loyauté">
+                {obj.counters.loyalty ?? 0}
+              </div>
+            )}
             <CounterBadges counters={obj.counters} />
             {obj.sick && obj.types.includes("Creature") && (
               <div className="sick-badge" title="Mal d'invocation">

@@ -10,6 +10,7 @@ import { BLUE } from "./blue";
 import { GREEN } from "./green";
 import { LANDS } from "./lands";
 import { MULTI } from "./multi";
+import { PLANESWALKERS } from "./planeswalkers";
 import { RED } from "./red";
 import { WHITE } from "./white";
 
@@ -22,4 +23,5 @@ export const FDN_SCRIPTS: Record<string, CardScript> = {
   ...MULTI,
   ...ARTIFACTS,
   ...LANDS,
+  ...PLANESWALKERS,
 };

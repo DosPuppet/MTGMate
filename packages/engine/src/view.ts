@@ -5,7 +5,7 @@
 import { legalActions } from "./legal";
 import { costToText } from "./mana";
 import { chars, isSummoningSick, obj, opponentsOf } from "./state";
-import { attackCandidates, blockCandidates } from "./turn";
+import { attackableDefenders, attackCandidates, blockCandidates } from "./turn";
 import type {
   ActionOption,
   CardDef,
@@ -80,13 +80,16 @@ export interface PlayerView {
   graveyard: ObjectView[];
   manaPool: Record<ManaType, number>;
   lost: boolean;
+  /** Emblèmes (zone de commandement). */
+  emblems: { name: string; text: string }[];
 }
 
 export type PendingView =
   | { kind: "mulligan"; player: PlayerId; mulligans: number }
   | { kind: "bottomCards"; player: PlayerId; count: number }
   | { kind: "priority"; player: PlayerId; actions?: ActionOption[] }
-  | { kind: "declareAttackers"; player: PlayerId; candidates?: ObjectId[]; defenders?: PlayerId[] }
+  /** `defenders` : adversaires et planeswalkers adverses attaquables. */
+  | { kind: "declareAttackers"; player: PlayerId; candidates?: ObjectId[]; defenders?: string[] }
   | { kind: "declareBlockers"; player: PlayerId; candidates?: { blocker: ObjectId; attackers: ObjectId[] }[] }
   | { kind: "discard"; player: PlayerId; count: number }
   | {
@@ -109,7 +112,9 @@ export interface GameView {
   battlefield: ObjectView[];
   stack: StackItemView[];
   exile: ObjectView[];
-  combat: { attackers: { id: ObjectId; defender: PlayerId; blockers: ObjectId[] }[] } | null;
+  /** Cartes exilées que le spectateur peut jouer ce tour-ci. */
+  playableExile: ObjectView[];
+  combat: { attackers: { id: ObjectId; defender: string; blockers: ObjectId[] }[] } | null;
   pending: PendingView | null;
   /** Nombre de créatures du spectateur qui pourraient attaquer ce tour-ci (pour l'interface). */
   potentialAttackers: number;
@@ -178,6 +183,10 @@ export function projectView(s: GameState, viewer: PlayerId): GameView {
       graveyard: pl.graveyard.map((id) => objectView(s, id)),
       manaPool: { ...pl.manaPool },
       lost: pl.lost,
+      emblems: pl.command.map((id) => {
+        const d = s.defs[obj(s, id).defId];
+        return { name: d?.name ?? "Emblème", text: d?.text ?? "" };
+      }),
     };
   }
 
@@ -206,7 +215,7 @@ export function projectView(s: GameState, viewer: PlayerId): GameView {
         pending = mine ? { ...p, actions: legalActions(s, viewer) } : { ...p };
         break;
       case "declareAttackers":
-        pending = mine ? { ...p, candidates: attackCandidates(s, viewer), defenders: opponentsOf(s, viewer) } : { ...p };
+        pending = mine ? { ...p, candidates: attackCandidates(s, viewer), defenders: attackableDefenders(s, viewer) } : { ...p };
         break;
       case "declareBlockers":
         pending = mine ? { ...p, candidates: blockCandidates(s, viewer) } : { ...p };
@@ -238,6 +247,9 @@ export function projectView(s: GameState, viewer: PlayerId): GameView {
     battlefield: s.battlefield.map((id) => objectView(s, id)),
     stack,
     exile: s.exile.map((id) => objectView(s, id)),
+    playableExile: (s.turn.mayPlayFromExile ?? [])
+      .filter((id) => s.objects[id]?.zone === "exile" && s.objects[id]?.owner === viewer)
+      .map((id) => objectView(s, id)),
     combat: s.combat
       ? { attackers: s.combat.attackers.map((a) => ({ id: a.id, defender: a.defender, blockers: [...a.blockers] })) }
       : null,

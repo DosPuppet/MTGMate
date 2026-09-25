@@ -223,6 +223,14 @@ export const fx = {
     ];
   },
   allowCastFromGraveyard: (what: Ref): Effect => ({ op: "allowCastFromGraveyard", what }),
+  addMana: (...mana: ManaType[]): Effect => ({ op: "addMana", mana }),
+  /** « Exilez les N cartes du dessus. Choisissez-en une. Vous pouvez la jouer ce tour-ci. » */
+  impulse: (n: number): Effect => ({ op: "impulse", n }),
+  /** Blessures réparties entre les cibles désignées. */
+  damageDivided: (total: Amount, to: Ref): Effect => ({ op: "damageDivided", total, to }),
+  keepOnePerType: (who: Ref): Effect => ({ op: "keepOnePerType", who }),
+  /** « Vous obtenez un emblème avec … » */
+  emblem: (name: string, text: string, abilities: AbilityDef[]): Effect => ({ op: "emblem", name, text, abilities }),
   /** Attache une Aura ou un Équipement (par défaut la source) au permanent désigné. */
   attach: (to: Ref, what: Ref = ref.self): Effect => ({ op: "attach", what, to }),
   tap: (what: Ref): Effect => ({ op: "tap", what }),
@@ -403,6 +411,18 @@ export function activated(opts: {
     once: opts.once,
     fromGraveyard: opts.fromGraveyard,
     label: opts.label,
+  };
+}
+
+/** Capacité de loyauté (606) : « +1 : … », « −3 : … » ; en rituel, une par tour et par planeswalker. */
+export function loyalty(n: number, opts: { targets?: TargetSpec[]; effects: Effects; label: string }): ActivatedAbilityDef {
+  return {
+    kind: "activated",
+    cost: { loyalty: n },
+    targets: opts.targets ?? [],
+    effects: opts.effects.flat(),
+    sorcerySpeed: true,
+    label: `${n > 0 ? `+${n}` : n === 0 ? "0" : `−${-n}`} : ${opts.label}`,
   };
 }
 

@@ -5,10 +5,12 @@
 import { applyEntersReplacements, preventsCombatDamage } from "./replacement";
 import {
   bump,
+  changeCounters,
   chars,
   createObject,
   emit,
   hasKeyword,
+  hasType,
   isCreature,
   isPlayer,
   moveObject,
@@ -69,9 +71,17 @@ export function dealDamage(s: GameState, source: DamageSource, target: string, a
     loseLife(s, target, amount);
   } else {
     const o = s.objects[target];
-    if (o?.zone !== "battlefield" || !isCreature(s, target)) return;
-    o.damage += amount;
-    if (source.keywords.includes("deathtouch")) o.deathtouched = true;
+    // 506.4 : un planeswalker attaqué qui a quitté le champ de bataille ne reçoit pas de blessures.
+    if (o?.zone !== "battlefield") return;
+    const creature = isCreature(s, target);
+    const walker = hasType(s, target, "Planeswalker");
+    if (!creature && !walker) return;
+    // 120.3c : les blessures infligées à un planeswalker lui retirent autant de marqueurs de loyauté.
+    if (walker) changeCounters(s, o, "loyalty", -Math.min(amount, o.counters.loyalty ?? 0));
+    if (creature) {
+      o.damage += amount;
+      if (source.keywords.includes("deathtouch")) o.deathtouched = true;
+    }
     emit({ type: "damage", sourceDefId: source.defId, target, targetDefId: o.defId, amount, combat });
   }
   if (source.keywords.includes("lifelink")) gainLife(s, source.controller, amount);
