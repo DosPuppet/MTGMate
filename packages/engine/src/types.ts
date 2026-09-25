@@ -100,6 +100,10 @@ export interface CardDef {
   flashback?: ManaCost;
   /** « Ce sort ne peut pas être contrecarré. » */
   cantBeCountered?: boolean;
+  /** Aura : ce qu'elle peut enchanter (cible du sort d'Aura, puis légalité de l'attachement). */
+  enchant?: { filter: ObjectFilter; label: string };
+  /** « Si cette carte est dans votre main de départ, vous pouvez commencer la partie avec elle sur le champ de bataille. » */
+  leyline?: boolean;
   /** Garde : coût à payer (mana ou points de vie). */
   ward?: { mana?: ManaCost; life?: number };
   /** « En coût additionnel pour lancer ce sort, … » (601.2b, 601.2h). */
@@ -185,6 +189,8 @@ export interface CostDef {
   removeCounters?: { kind: string; n: number };
   /** Engager d'autres permanents dégagés que vous contrôlez (choisis automatiquement). */
   tapOthers?: { filter: ObjectFilter; count: number };
+  /** Engager la créature à laquelle la source est attachée (elle doit pouvoir utiliser {T}). */
+  tapAttached?: boolean;
   payLife?: number;
 }
 
@@ -202,6 +208,8 @@ export interface TargetSpec {
   kickedCount?: number;
   /** Ces cibles doivent être différentes de celles d'autres mots « cible » (« deux autres cibles »). */
   otherThan?: string[];
+  /** Chaque cible doit être attachée à une cible d'un autre mot « cible » (« Équipement attaché à cette créature »). */
+  attachedToTarget?: string;
   /** Cibles contrôlées par des joueurs différents (« contrôlées par des joueurs différents »). */
   differentPlayers?: boolean;
 }
@@ -228,6 +236,8 @@ export interface ObjectFilter {
   other?: boolean;
   /** La source elle-même (« quand cette créature meurt, si ce n'était pas un Démon »). */
   self?: boolean;
+  /** Le permanent auquel la source est attachée (« la créature équipée »). */
+  attachedToSource?: boolean;
   nontoken?: boolean;
   /** Force minimale (« créature de force 4 ou plus »). */
   minPower?: number;
@@ -283,7 +293,9 @@ export type TriggerSpec =
   /** Blessures infligées par une source (non de combat seulement si demandé), éventuellement à un adversaire. */
   | { on: "dealsDamage"; who: "self" | ObjectFilter; noncombatOnly?: boolean; toOpponent?: boolean }
   /** « Chaque fois que [cette créature] devient la cible d'un sort ou d'une capacité [qu'un adversaire contrôle] » */
-  | { on: "becomesTarget"; who: "self"; byOpponent?: boolean };
+  | { on: "becomesTarget"; who: "self"; byOpponent?: boolean }
+  /** « Chaque fois que [la créature équipée] se dégage » */
+  | { on: "untaps"; who: "self" | ObjectFilter };
 
 /** Conditions (« if intermédiaire » 603.4, « tant que »…). */
 export type Condition =
@@ -318,6 +330,11 @@ export interface LayerMods {
   /** Couche 4 : types et sous-types ajoutés. */
   addTypes?: CardType[];
   addSubtypes?: string[];
+  /** Couche 4 : types remplacés (« est un terrain et perd tous ses autres types »), sous-types remplacés. */
+  setTypes?: CardType[];
+  setSubtypes?: string[];
+  /** Nom remplacé (Witness Protection). */
+  setName?: string;
   /** Couche 5 : couleurs. */
   setColors?: Color[];
   /** Couche 6 : capacités (mots-clés) ajoutées ou retirées. */
@@ -357,11 +374,16 @@ export interface CastPermissionAbilityDef {
 /** Capacité statique : génère un effet continu tant que la source est sur le champ de bataille (604, 611.3). */
 export interface StaticAbilityDef {
   kind: "static";
-  /** « self » : la source elle-même ; sinon les permanents correspondant au filtre (vus du contrôleur). */
-  affects: "self" | ObjectFilter;
+  /**
+   * « self » : la source elle-même ; « attached » : le permanent auquel la source est attachée
+   * (« la créature équipée / enchantée ») ; sinon les permanents correspondant au filtre (vus du contrôleur).
+   */
+  affects: "self" | "attached" | ObjectFilter;
   /** « tant que… » */
   condition?: Condition;
   mods: LayerMods;
+  /** F/E multipliées par le nombre de permanents correspondant (« +1/+1 pour chaque Forêt que vous contrôlez »). */
+  per?: ObjectFilter;
   label?: string;
 }
 
@@ -388,6 +410,8 @@ export type Ref =
   | { kind: "eachPlayer" }
   /** L'objet de l'événement déclencheur (la créature qui arrive, meurt, attaque, le sort lancé…). */
   | { kind: "eventObject" }
+  /** Le permanent auquel la source est attachée (« la créature équipée / enchantée »). */
+  | { kind: "attached" }
   /** Le joueur de l'événement (joueur blessé, lanceur du sort…). */
   | { kind: "eventPlayer" }
   /** Le contrôleur (ou, hors du champ de bataille, le dernier contrôleur connu) de l'objet désigné. */
@@ -525,6 +549,8 @@ export type Effect =
   | { op: "unlessPay"; who: Ref; mana?: ManaCost; life?: number; skip: number }
   /** « Vous pouvez lancer [cette carte] depuis votre cimetière ce tour-ci. » */
   | { op: "allowCastFromGraveyard"; what: Ref }
+  /** Attache une Aura ou un Équipement à un permanent (701.3). */
+  | { op: "attach"; what: Ref; to: Ref }
   /** Exile jusqu'à ce que la source quitte le champ de bataille (610.3). */
   | { op: "exileUntilLeaves"; what: Ref }
   /** Choisir des cartes (non ciblées) dans une zone du contrôleur et les déplacer. */
@@ -609,6 +635,8 @@ export interface GameObject {
   /** Permanent arrivé depuis un sort kické / depuis un sort lancé. */
   kicked?: boolean;
   cast?: boolean;
+  /** Aura ou Équipement : le permanent auquel il est attaché (301.5, 303.4). */
+  attachedTo?: ObjectId;
 }
 
 export interface PlayerState {
@@ -746,6 +774,7 @@ export interface LkiSnapshot {
   isToken: boolean;
   attacking?: boolean;
   blocking?: boolean;
+  attachedTo?: ObjectId;
   name?: string;
   manaValue?: number;
   tapped?: boolean;
@@ -820,6 +849,8 @@ export interface GameState {
   triggers: PendingTrigger[];
   /** Capacités déclenchées retardées en attente de leur moment. */
   delayed: DelayedTrigger[];
+  /** Joueurs à qui l'on a proposé leurs cartes « leyline » en début de partie. */
+  leylineAsked?: PlayerId[];
   /** Cartes exilées « jusqu'à ce que [la source] quitte le champ de bataille ». */
   linkedExile: { sourceId: ObjectId; cards: ObjectId[] }[];
   /** Dernières informations connues, par ancien identifiant (purgées à la fin de chaque étape). */
@@ -866,6 +897,7 @@ export type ChoiceIntent =
   | "topOrBottom"
   | "punisher"
   | "unlessPay"
+  | "leyline"
   | "other";
 
 interface ChoiceBase {
@@ -908,7 +940,8 @@ export type ChoicePurpose =
   | { kind: "legend" }
   | { kind: "triggerOrder"; player: PlayerId }
   | { kind: "triggerTarget"; trigger: string; spec: string }
-  | { kind: "triggerMode"; trigger: string };
+  | { kind: "triggerMode"; trigger: string }
+  | { kind: "leyline"; player: PlayerId };
 
 export interface CastChoices {
   mode?: number;
@@ -946,6 +979,7 @@ export interface TargetOption {
   group?: { kind: "same" | "different"; holders: Record<string, string> };
   kickedCount?: number;
   otherThan?: string[];
+  attachedToTarget?: string;
 }
 
 export interface ModeOption {
@@ -995,6 +1029,7 @@ export type GameEvent =
   | { type: "resolve"; stackId: string; defId: string }
   | { type: "fizzle"; stackId: string; defId: string }
   | { type: "countered"; stackId: string; defId: string; by: string }
+  | { type: "attach"; objectId: ObjectId; defId: string; to: ObjectId; toDefId: string }
   | { type: "damage"; sourceDefId: string; target: string; targetDefId?: string; amount: number; combat: boolean }
   | { type: "life"; player: PlayerId; delta: number; life: number }
   | { type: "dies"; objectId: ObjectId; defId: string; to: Zone }

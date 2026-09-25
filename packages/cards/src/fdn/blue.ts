@@ -10,6 +10,7 @@ import {
   flashForAll,
   fx,
   INSTANT_SORCERY,
+  manaAbility,
   ref,
   SCION_OF_THE_DEEP,
   spell,
@@ -168,5 +169,36 @@ export const BLUE: Record<string, CardScript> = {
     ),
   },
   "Tolarian Terror": { costReduction: { generic: amount.countIn("graveyard", INSTANT_SORCERY) } },
+  "Imprisoned in the Moon": {
+    enchant: {
+      filter: { anyOf: [{ types: ["Creature"] }, { types: ["Land"] }, { types: ["Planeswalker"] }] },
+      label: "créature, terrain ou planeswalker",
+    },
+    abilities: [
+      staticAbility(
+        "attached",
+        { setTypes: ["Land"], setSubtypes: [], setColors: [], loseAllAbilities: true, addAbilities: [manaAbility("C")] },
+        { label: "Terrain incolore « {T} : ajoutez {C} »" },
+      ),
+    ],
+  },
+  "Witness Protection": {
+    enchant: { filter: { types: ["Creature"] }, label: "créature" },
+    abilities: [
+      staticAbility(
+        "attached",
+        {
+          loseAllAbilities: true,
+          setTypes: ["Creature"],
+          setSubtypes: ["Citizen"],
+          setColors: ["G", "W"],
+          setPower: 1,
+          setToughness: 1,
+          setName: "Legitimate Businessperson",
+        },
+        { label: "Citoyen 1/1 sans capacités" },
+      ),
+    ],
+  },
   "Spectral Sailor": { abilities: [activated({ mana: "{3}{U}", effects: [fx.draw(1)], label: "Piochez une carte" })] },
 };

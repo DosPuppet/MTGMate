@@ -1,7 +1,69 @@
 /** Foundations — artefacts incolores. */
-import { activated, amount, BASIC_LAND, type CardScript, fx, ref, TREASURE, target, triggered, when } from "./common";
+import {
+  activated,
+  amount,
+  BASIC_LAND,
+  type CardScript,
+  cond,
+  FISH,
+  fx,
+  ref,
+  staticAbility,
+  TREASURE,
+  target,
+  triggered,
+  when,
+} from "./common";
 
 export const ARTIFACTS: Record<string, CardScript> = {
+  // --- Équipements (« Équiper {N} » est lu dans le texte) ---
+  "Fishing Pole": {
+    abilities: [
+      activated({
+        mana: "{1}",
+        tap: true,
+        tapAttached: true,
+        effects: [fx.counters(ref.self, "bait", 1)],
+        label: "Engager la créature équipée : marqueur d'appât",
+      }),
+      triggered(
+        when.attachedUntaps,
+        [...fx.when(cond.counterAtLeast("bait", 1), fx.counters(ref.self, "bait", -1), fx.createTokens(FISH))],
+        { label: "retire un appât : Poisson 1/1" },
+      ),
+    ],
+  },
+  "Leyline Axe": {
+    leyline: true,
+    abilities: [
+      staticAbility(
+        "attached",
+        { power: 1, toughness: 1, addKeywords: ["doubleStrike", "trample"] },
+        { label: "+1/+1, double initiative, piétinement" },
+      ),
+    ],
+  },
+  "Quick-Draw Katana": {
+    abilities: [
+      staticAbility(
+        "attached",
+        { power: 2, addKeywords: ["firstStrike"] },
+        { condition: cond.yourTurn, label: "Pendant votre tour : +2/+0, initiative" },
+      ),
+    ],
+  },
+  "Adventuring Gear": {
+    abilities: [triggered(when.landfall, [fx.pump(ref.attached, 2, 2)], { label: "créature équipée +2/+2" })],
+  },
+  "Goldvein Pick": {
+    abilities: [
+      staticAbility("attached", { power: 1, toughness: 1 }),
+      triggered(when.attachedDealsCombatDamageToPlayer, [fx.createTokens(TREASURE)], { label: "Trésor" }),
+    ],
+  },
+  "Swiftfoot Boots": {
+    abilities: [staticAbility("attached", { addKeywords: ["hexproof", "haste"] }, { label: "Défense talismanique et célérité" })],
+  },
   "Ravenous Amulet": {
     abilities: [
       activated({

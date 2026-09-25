@@ -13,6 +13,7 @@ import {
   afterResolution,
   answerCombatAssignment,
   answerLegendChoice,
+  answerLeylines,
   bottomCards,
   declareAttackers,
   declareBlockers,
@@ -190,6 +191,9 @@ function apply(s: GameState, player: PlayerId, d: Decision): void {
           return;
         case "triggerMode":
           answerTriggerMode(s, p.purpose.trigger, Number(d.values[0]));
+          return;
+        case "leyline":
+          answerLeylines(s, p.purpose.player, d.values.map(String));
           return;
       }
       return;

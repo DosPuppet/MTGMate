@@ -33,6 +33,7 @@ import {
   onBattlefield,
   opponentsOf,
   P1P1,
+  rulesEvent,
   shuffle,
 } from "./state";
 import { matchesCard, matchesObjectFilter } from "./targets";
@@ -134,6 +135,10 @@ export function resolveRef(s: GameState, ctx: EffectContext, ref: Ref): string[]
       });
     case "stored":
       return (ctx.vars?.[`$ids:${ref.name}`] ?? []).map(String).filter((id) => !!s.objects[id]);
+    case "attached": {
+      const host = s.objects[ctx.sourceId]?.attachedTo ?? s.lki[ctx.sourceId]?.attachedTo;
+      return host && onBattlefield(s, host) ? [host] : [];
+    }
   }
 }
 
@@ -288,6 +293,26 @@ export function moveWithSpec(s: GameState, controller: PlayerId, id: ObjectId, s
   return newId_;
 }
 
+/** Peut-on attacher cette Aura ou cet Équipement à ce permanent ? (301.5c, 303.4d) */
+export function canAttach(s: GameState, what: ObjectId, to: ObjectId): boolean {
+  const a = s.objects[what];
+  if (!a || a.zone !== "battlefield" || !onBattlefield(s, to) || what === to) return false;
+  const d = s.defs[a.defId];
+  if (d?.enchant) return matchesObjectFilter(s, a.controller, to, d.enchant.filter, what);
+  if (chars(s, what).subtypes.includes("Equipment")) return isCreature(s, to);
+  return false;
+}
+
+/** 701.3 : attache l'objet ; sans effet si c'est impossible ou s'il y est déjà attaché. */
+export function attach(s: GameState, what: ObjectId, to: ObjectId): void {
+  const a = s.objects[what];
+  if (!a || a.attachedTo === to || !canAttach(s, what, to)) return;
+  a.attachedTo = to;
+  a.timestamp = nextTimestamp(s); // 613.7e : nouvel horodatage
+  bump(s);
+  emit({ type: "attach", objectId: what, defId: a.defId, to, toDefId: s.objects[to]?.defId ?? "" });
+}
+
 /** Cartes d'une zone appartenant à des joueurs donnés. */
 function zoneCards(s: GameState, players: string[], zone: "graveyard" | "library" | "hand"): ObjectId[] {
   return players.flatMap((p) => s.players[p]?.[zone] ?? []);
@@ -393,6 +418,12 @@ export function runEffect(s: GameState, r: Resolution, e: Effect): OpResult {
         payMana(s, p, mana);
       } else loseLife(s, p, e.life ?? 0);
       return { skip: e.skip };
+    }
+    case "attach": {
+      const what = resolveRef(s, ctx, e.what)[0];
+      const to = resolveRef(s, ctx, e.to)[0];
+      if (what && to) attach(s, what, to);
+      return;
     }
     case "allowCastFromGraveyard": {
       const ids = resolveRef(s, ctx, e.what).filter((id) => s.objects[id]?.zone === "graveyard");
@@ -755,7 +786,10 @@ export function runEffect(s: GameState, r: Resolution, e: Effect): OpResult {
     case "tap": {
       for (const id of resolveRef(s, ctx, e.what)) {
         const o = s.objects[id];
-        if (o?.zone === "battlefield") o.tapped = !e.untap;
+        if (o?.zone !== "battlefield") continue;
+        const wasTapped = o.tapped;
+        o.tapped = !e.untap;
+        if (wasTapped && e.untap) rulesEvent(s, { e: "untap", objectId: id });
       }
       return;
     }

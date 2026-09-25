@@ -55,6 +55,8 @@ export interface ObjectView extends CardFace {
   sick: boolean;
   attacking: boolean;
   blocking: ObjectId | null;
+  /** Aura ou Équipement : le permanent auquel il est attaché. */
+  attachedTo: ObjectId | null;
 }
 
 export interface StackItemView extends CardFace {
@@ -157,6 +159,8 @@ export function objectView(s: GameState, id: ObjectId): ObjectView {
     sick: o.zone === "battlefield" && isSummoningSick(s, id),
     attacking,
     blocking,
+    attachedTo: o.attachedTo ?? null,
+    name: c.name,
   };
 }
 

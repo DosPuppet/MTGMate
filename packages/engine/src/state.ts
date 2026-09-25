@@ -64,7 +64,8 @@ export type RulesEvent =
   | { e: "attackWith"; player: PlayerId; count: number }
   | { e: "counters"; objectId: ObjectId; kind: string; amount: number }
   /** Un sort ou une capacité vient d'être mis sur la pile avec ces cibles (identifiant d'élément de pile). */
-  | { e: "targeted"; stackId: string; controller: PlayerId; targets: string[] };
+  | { e: "targeted"; stackId: string; controller: PlayerId; targets: string[] }
+  | { e: "untap"; objectId: ObjectId };
 
 /** Signale un événement de règles : les capacités déclenchées correspondantes sont mises en attente. */
 export function rulesEvent(s: GameState, ev: RulesEvent): void {

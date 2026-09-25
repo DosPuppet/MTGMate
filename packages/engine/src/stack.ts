@@ -8,7 +8,18 @@ import { ask } from "./choices";
 import { evalAmount, runEffect } from "./effects";
 import { RulesError } from "./errors";
 import { payMana, totalCost } from "./mana";
-import { changeCounters, chars, emit, isSummoningSick, moveObject, newId, obj, rulesEvent, snapshot } from "./state";
+import {
+  changeCounters,
+  chars,
+  emit,
+  isSummoningSick,
+  moveObject,
+  newId,
+  obj,
+  onBattlefield,
+  rulesEvent,
+  snapshot,
+} from "./state";
 import { isLegalTarget, matchesObjectFilter, matchesView, validateTargets } from "./targets";
 import { checkCondition, simultaneously } from "./triggers";
 import type {
@@ -33,9 +44,16 @@ export function isPermanentCard(d: CardDef): boolean {
   return !d.types.includes("Instant") && !d.types.includes("Sorcery");
 }
 
-/** Modes d'un sort ; un permanent sans cible a un unique mode vide. */
+/** Mot « cible » d'un sort d'Aura (303.4a). */
+export const ENCHANT_SPEC = "enchant";
+
+/** Modes d'un sort ; un permanent sans cible a un unique mode vide, une Aura cible ce qu'elle enchantera. */
 export function modesOf(d: CardDef): ModeDef[] {
-  return d.spell?.modes ?? [{ targets: [], effects: [] }];
+  if (d.spell) return d.spell.modes;
+  if (d.enchant) {
+    return [{ targets: [{ id: ENCHANT_SPEC, label: d.enchant.label, filter: { objects: d.enchant.filter } }], effects: [] }];
+  }
+  return [{ targets: [], effects: [] }];
 }
 
 export function sorceryTiming(s: GameState, player: PlayerId): boolean {
@@ -251,9 +269,15 @@ export function counterItem(s: GameState, id: string, by: string): boolean {
   return true;
 }
 
+/** Capacités d'un objet : calculées par les couches sur le champ de bataille (accordées, perdues), imprimées ailleurs. */
+export function abilitiesOf(s: GameState, id: ObjectId): CardDef["abilities"] {
+  const o = s.objects[id];
+  if (!o) return [];
+  return o.zone === "battlefield" ? chars(s, id).abilities : (s.defs[o.defId]?.abilities ?? []);
+}
+
 export function activatedAbility(s: GameState, source: ObjectId, index: number): ActivatedAbilityDef | null {
-  const d = s.defs[s.objects[source]?.defId ?? ""];
-  const ab = d?.abilities[index];
+  const ab = abilitiesOf(s, source)[index];
   return ab?.kind === "activated" ? ab : null;
 }
 
@@ -281,6 +305,10 @@ export function canPayNonManaCost(s: GameState, source: ObjectId, ab: ActivatedA
   if (!o || o.zone !== (ab.fromGraveyard ? "graveyard" : "battlefield")) return false;
   if (ab.once && o.used?.includes(index)) return false;
   if (ab.cost.tap && (o.tapped || isSummoningSick(s, source))) return false;
+  if (ab.cost.tapAttached) {
+    const host = o.attachedTo;
+    if (!host || !onBattlefield(s, host) || obj(s, host).tapped || isSummoningSick(s, host)) return false;
+  }
   const player = ab.fromGraveyard ? o.owner : o.controller;
   if (ab.cost.removeCounters && (o.counters[ab.cost.removeCounters.kind] ?? 0) < ab.cost.removeCounters.n) return false;
   if (ab.cost.payLife && (s.players[player]?.life ?? 0) < ab.cost.payLife) return false;
@@ -326,6 +354,8 @@ export function activateAbility(s: GameState, player: PlayerId, source: ObjectId
     x,
     kicked: false,
     sourceSnapshot: { keywords: c.keywords, power: c.power, controller: player },
+    // Capacité accordée (pas dans la définition imprimée) : ses effets voyagent avec elle.
+    inline: s.defs[o.defId]?.abilities[index] === ab ? undefined : { targets: ab.targets, effects: ab.effects, label: ab.label },
   };
   s.stack.push(item);
   // Coûts : mana (sans engager la source si elle doit s'engager pour le coût), puis {T}, puis sacrifice.
@@ -337,6 +367,7 @@ export function activateAbility(s: GameState, player: PlayerId, source: ObjectId
     }
   }
   if (ab.cost.tap) o.tapped = true;
+  if (ab.cost.tapAttached && o.attachedTo) obj(s, o.attachedTo).tapped = true;
   if (ab.once) o.used = [...(o.used ?? []), index];
   if (ab.cost.removeCounters) changeCounters(s, o, ab.cost.removeCounters.kind, -ab.cost.removeCounters.n);
   if (ab.cost.payLife) loseLife(s, player, ab.cost.payLife);
@@ -420,7 +451,7 @@ export function continueResolution(s: GameState): boolean {
     if (result && "skip" in result) r.pc += result.skip;
     r.pc += 1;
   }
-  finishResolution(s, r.item);
+  finishResolution(s, r.item, r.targets);
   s.resolving = null;
   return true;
 }
@@ -434,15 +465,16 @@ export function answerResolutionChoice(s: GameState, values: ChoiceValue[]): boo
   return continueResolution(s);
 }
 
-function finishResolution(s: GameState, item: StackItem): void {
+function finishResolution(s: GameState, item: StackItem, targets: Record<string, string[]>): void {
   const i = s.stack.findIndex((x) => x.id === item.id);
   if (i >= 0) s.stack.splice(i, 1);
   if (item.kind === "spell" && s.objects[item.sourceId]) {
     const d = s.defs[item.sourceDefId];
     if (d && isPermanentCard(d)) {
+      // 303.4f : une Aura arrive attachée à l'objet qu'elle ciblait.
       moveObject(s, item.sourceId, "battlefield", {
         controller: item.controller,
-        enters: { x: item.x, kicked: item.kicked, cast: true },
+        enters: { x: item.x, kicked: item.kicked, cast: true, attachTo: d.enchant ? targets[ENCHANT_SPEC]?.[0] : undefined },
       });
     } else moveObject(s, item.sourceId, item.flashback ? "exile" : "graveyard");
   }

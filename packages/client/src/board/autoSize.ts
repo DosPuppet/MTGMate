@@ -9,14 +9,16 @@ export const CARD_RATIO = 1.395;
 export const LAND_SCALE = 0.72;
 const LAND_OVERLAP = 0.74; // recouvrement des terrains identiques empilés (voir .perm-group.stacked)
 const MIN_W = 36;
+/** Part de la hauteur d'une carte qui dépasse au-dessus de son hôte, par Aura ou Équipement attaché. */
+export const ATTACH_PEEK = 0.2;
 const MAX_W = 160;
 
-/** Terrains identiques regroupés en piles (même définition, même état engagé). */
-export function landGroups(lands: ObjectView[]): ObjectView[][] {
+/** Terrains identiques regroupés en piles (même définition, même état engagé) ; ceux de `solo` restent seuls. */
+export function landGroups(lands: ObjectView[], solo?: ReadonlySet<string>): ObjectView[][] {
   const groups: ObjectView[][] = [];
   const byKey = new Map<string, ObjectView[]>();
   for (const o of lands) {
-    const key = `${o.defId}|${o.tapped}`;
+    const key = solo?.has(o.id) ? o.id : `${o.defId}|${o.tapped}`;
     let g = byKey.get(key);
     if (!g) {
       g = [];
@@ -29,11 +31,19 @@ export function landGroups(lands: ObjectView[]): ObjectView[][] {
 }
 
 /** Largeur de carte maximale pour une zone de `width` × `height` pixels. */
-export function fitCardWidth(width: number, height: number, others: ObjectView[], lands: ObjectView[]): number {
+export function fitCardWidth(
+  width: number,
+  height: number,
+  others: ObjectView[],
+  lands: ObjectView[],
+  /** Nombre maximal d'Auras et d'Équipements attachés à une même créature. */
+  attachDepth = 0,
+): number {
   const padX = 28;
   const gap = 10;
-  // Hauteur : rangée des créatures (+10 de marge, +16 pour l'avancée en attaque) + rangée des terrains + espacements.
-  const byHeight = (height - 10 - 16 - 6 - 8) / (CARD_RATIO * (1 + LAND_SCALE));
+  // Hauteur : rangée des créatures (+10 de marge, +16 pour l'avancée en attaque, + attachements qui dépassent)
+  // + rangée des terrains + espacements.
+  const byHeight = (height - 10 - 16 - 6 - 8) / (CARD_RATIO * (1 + LAND_SCALE + ATTACH_PEEK * attachDepth));
 
   // Largeur, rangée des créatures : une carte engagée occupe sa hauteur.
   const tapped = others.filter((o) => o.tapped).length;

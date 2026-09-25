@@ -42,6 +42,10 @@ export interface CardScript {
   flashback?: string;
   /** « Ce sort ne peut pas être contrecarré. » */
   cantBeCountered?: boolean;
+  /** Aura : « Enchanter [filtre] ». */
+  enchant?: { filter: ObjectFilter; label: string };
+  /** Peut commencer la partie sur le champ de bataille (Leyline). */
+  leyline?: boolean;
   additionalCost?: AdditionalCost;
   costReduction?: { generic: Amount; condition?: Condition };
   keywords?: Keyword[];
@@ -109,6 +113,8 @@ export const ref = {
   you: { kind: "you" } as Ref,
   eachOpponent: { kind: "eachOpponent" } as Ref,
   eachPlayer: { kind: "eachPlayer" } as Ref,
+  /** Le permanent auquel la source est attachée (« la créature équipée / enchantée »). */
+  attached: { kind: "attached" } as Ref,
   controllerOf: (r: Ref): Ref => ({ kind: "controllerOf", ref: r }),
   stored: (name: string): Ref => ({ kind: "stored", name }),
 };
@@ -217,6 +223,8 @@ export const fx = {
     ];
   },
   allowCastFromGraveyard: (what: Ref): Effect => ({ op: "allowCastFromGraveyard", what }),
+  /** Attache une Aura ou un Équipement (par défaut la source) au permanent désigné. */
+  attach: (to: Ref, what: Ref = ref.self): Effect => ({ op: "attach", what, to }),
   tap: (what: Ref): Effect => ({ op: "tap", what }),
   untap: (what: Ref): Effect => ({ op: "tap", what, untap: true }),
   counters: (what: Ref, kind: string, n: Amount = 1): Effect => ({ op: "addCounters", what, amount: n, kind }),
@@ -367,6 +375,8 @@ export function activated(opts: {
   sacrificeOther?: { filter: ObjectFilter; count?: number };
   removeCounters?: { kind: string; n: number };
   tapOthers?: { filter: ObjectFilter; count: number };
+  /** Engager la créature équipée (« {T} » de la créature, pour une capacité portée par l'Équipement). */
+  tapAttached?: boolean;
   payLife?: number;
   targets?: TargetSpec[];
   effects: Effects;
@@ -384,6 +394,7 @@ export function activated(opts: {
       sacrifice: opts.sacrificeOther ? { filter: opts.sacrificeOther.filter, count: opts.sacrificeOther.count ?? 1 } : undefined,
       removeCounters: opts.removeCounters,
       tapOthers: opts.tapOthers,
+      tapAttached: opts.tapAttached,
       payLife: opts.payLife,
     },
     targets: opts.targets ?? [],
@@ -430,6 +441,10 @@ export const when = {
   }),
   combatDamage: (who: "self" | ObjectFilter, toPlayer = false): TriggerSpec => ({ on: "dealsCombatDamage", who, toPlayer }),
   step: (step: Step, whose: "you" | "opponent" | "any" = "you"): TriggerSpec => ({ on: "step", step, whose }),
+  /** « Chaque fois que la créature équipée inflige des blessures de combat à un joueur » */
+  attachedDealsCombatDamageToPlayer: { on: "dealsCombatDamage", who: { attachedToSource: true }, toPlayer: true } as TriggerSpec,
+  /** « Chaque fois que la créature équipée se dégage » */
+  attachedUntaps: { on: "untaps", who: { attachedToSource: true } } as TriggerSpec,
 };
 
 /** Conditions courantes (raid, morbide…). */
@@ -461,11 +476,11 @@ export function flashForAll(label?: string): CastPermissionAbilityDef {
 
 /** Capacité statique : « Les autres Elfes que vous contrôlez gagnent +1/+1 », « a le vol tant que… ». */
 export function staticAbility(
-  affects: "self" | ObjectFilter,
+  affects: "self" | "attached" | ObjectFilter,
   mods: LayerMods,
-  opts: { condition?: Condition; label?: string } = {},
+  opts: { condition?: Condition; label?: string; per?: ObjectFilter } = {},
 ): StaticAbilityDef {
-  return { kind: "static", affects, mods, condition: opts.condition, label: opts.label };
+  return { kind: "static", affects, mods, condition: opts.condition, label: opts.label, per: opts.per };
 }
 
 /** « Arrive engagé » / « arrive avec N marqueurs +1/+1 » (éventuellement sous condition : raid, kicker). */

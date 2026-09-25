@@ -145,14 +145,25 @@ function usePermanentGlow(): (o: ObjectView) => Glow {
   };
 }
 
-function PermanentRow({ perms, kind, isMe }: { perms: ObjectView[]; kind: "lands" | "others"; isMe: boolean }) {
+function PermanentRow({
+  perms,
+  kind,
+  isMe,
+  attachments,
+}: {
+  perms: ObjectView[];
+  kind: "lands" | "others";
+  isMe: boolean;
+  /** Auras et Équipements, par permanent hôte. */
+  attachments: Map<string, ObjectView[]>;
+}) {
   const glowOf = usePermanentGlow();
   const clickPermanent = useGame((s) => s.clickPermanent);
   const attackers = useGame((s) => s.attackers);
   const width = kind === "lands" ? "var(--land-w)" : "var(--card-w)";
 
-  // Terrains identiques regroupés (comme sur Arena).
-  const groups = kind === "lands" ? landGroups(perms) : perms.map((o) => [o]);
+  // Terrains identiques regroupés (comme sur Arena), sauf ceux qui portent une Aura.
+  const groups = kind === "lands" ? landGroups(perms, new Set(attachments.keys())) : perms.map((o) => [o]);
 
   return (
     <div className={`perm-row ${kind}`}>
@@ -160,8 +171,27 @@ function PermanentRow({ perms, kind, isMe }: { perms: ObjectView[]; kind: "lands
         <div key={g[0]?.uid} className={`perm-group ${g.length > 1 ? "stacked" : ""}`}>
           {g.map((o) => {
             const attacking = o.attacking || attackers.includes(o.id);
+            const attached = attachments.get(o.id) ?? [];
             return (
-              <div key={o.uid} className={`perm ${attacking ? (isMe ? "advance-up" : "advance-down") : ""}`}>
+              <div
+                key={o.uid}
+                className={`perm ${attacking ? (isMe ? "advance-up" : "advance-down") : ""} ${attached.length ? "has-attach" : ""}`}
+                style={attached.length ? ({ "--attach-n": attached.length } as CSSProperties) : undefined}
+              >
+                {attached.map((a, i) => (
+                  <div key={a.uid} className="attachment" style={{ "--attach-i": attached.length - 1 - i } as CSSProperties}>
+                    <Card
+                      face={a}
+                      obj={a}
+                      width={width}
+                      layoutId={a.uid}
+                      tapped={a.tapped}
+                      glow={glowOf(a)}
+                      onClick={() => clickPermanent(a.id)}
+                      oid={a.id}
+                    />
+                  </div>
+                ))}
                 <Card
                   face={o}
                   obj={o}
@@ -197,16 +227,24 @@ function Battlefield({
 }) {
   const view = useGame((s) => s.view) as GameView;
   const ref = useRef<HTMLDivElement>(null);
-  const perms = view.battlefield.filter((o) => o.controller === player);
+  // Auras et Équipements s'affichent sous leur hôte (quel que soit leur contrôleur).
+  const onField = new Set(view.battlefield.map((o) => o.id));
+  const isAttached = (o: ObjectView) => !!o.attachedTo && onField.has(o.attachedTo);
+  const attachments = new Map<string, ObjectView[]>();
+  for (const o of view.battlefield) {
+    if (isAttached(o)) attachments.set(o.attachedTo as string, [...(attachments.get(o.attachedTo as string) ?? []), o]);
+  }
+  const perms = view.battlefield.filter((o) => o.controller === player && !isAttached(o));
   const lands = perms.filter((o) => o.types.includes("Land"));
   const others = perms.filter((o) => !o.types.includes("Land"));
-  const signature = perms.map((o) => `${o.id}${o.tapped ? "t" : ""}`).join(",");
+  const depth = Math.max(0, ...perms.map((o) => attachments.get(o.id)?.length ?? 0));
+  const signature = `${perms.map((o) => `${o.id}${o.tapped ? "t" : ""}`).join(",")}|${depth}`;
 
   // biome-ignore lint/correctness/useExhaustiveDependencies: recalcul quand les permanents changent (signature)
   useLayoutEffect(() => {
     const el = ref.current;
     if (!el) return;
-    const measure = () => onFit(player, fitCardWidth(el.clientWidth, el.clientHeight, others, lands));
+    const measure = () => onFit(player, fitCardWidth(el.clientWidth, el.clientHeight, others, lands, depth));
     measure();
     const ro = new ResizeObserver(measure);
     ro.observe(el);
@@ -214,8 +252,8 @@ function Battlefield({
   }, [signature, player, onFit]);
 
   const rows = [
-    <PermanentRow key="o" perms={others} kind="others" isMe={isMe} />,
-    <PermanentRow key="l" perms={lands} kind="lands" isMe={isMe} />,
+    <PermanentRow key="o" perms={others} kind="others" isMe={isMe} attachments={attachments} />,
+    <PermanentRow key="l" perms={lands} kind="lands" isMe={isMe} attachments={attachments} />,
   ];
   const style = cardW ? ({ "--card-w": `${cardW}px`, "--land-w": `${cardW * LAND_SCALE}px` } as CSSProperties) : undefined;
   return (

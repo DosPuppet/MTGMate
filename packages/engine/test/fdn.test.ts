@@ -2,10 +2,14 @@
  * Cartes de Foundations : vérifie les primitives ajoutées pour le set principal
  * (cibles dans le cimetière, cibles multiples, exil lié, variables de résolution, coûts…).
  */
+
+import { card } from "@mtgx/cards";
 import { describe, expect, it } from "vitest";
 import { destroy } from "../src/actions";
+import { createGame } from "../src/game";
 import { legalActions } from "../src/legal";
-import { counterCount } from "../src/state";
+import { manaAbilitiesOf } from "../src/mana";
+import { chars, counterCount, onBattlefield } from "../src/state";
 import { act, idOf, idsOf, passAccepting, passBoth, scenario } from "./helpers";
 
 type S = ReturnType<typeof scenario>;
@@ -348,5 +352,126 @@ describe("Foundations : la pile (contresorts et garde)", () => {
     s = act(s, "p1", { type: "cast", card: ghoul });
     s = passBoth(s);
     expect(idsOf(s, "p1", "battlefield", "Diregraf Ghoul")).toHaveLength(1);
+  });
+});
+
+describe("Foundations : Auras et Équipements", () => {
+  it("une Aura cible au lancement et arrive attachée ; elle va au cimetière si l'hôte part", () => {
+    let s = scenario({
+      p1: { battlefield: ["Llanowar Elves", ...lands("Forest", 3)], hand: ["Blanchwood Armor"] },
+    });
+    const elf = idOf(s, "p1", "battlefield", "Llanowar Elves");
+    s = cast(s, "p1", "Blanchwood Armor", { targets: { enchant: [elf] } });
+    s = passBoth(s);
+    const armor = idOf(s, "p1", "battlefield", "Blanchwood Armor");
+    expect(s.objects[armor]?.attachedTo).toBe(elf);
+    // +1/+1 par Forêt (3) : l'Elfe 1/1 devient 4/4.
+    expect(chars(s, elf).power).toBe(4);
+    destroy(s, elf);
+    s = act(s, "p1", { type: "pass" }); // les actions basées sur l'état sont vérifiées
+    expect(idsOf(s, "p1", "graveyard", "Blanchwood Armor")).toHaveLength(1);
+  });
+
+  it("Équiper : en rituel, attache l'Équipement ; il reste en jeu quand la créature part", () => {
+    let s = scenario({ p1: { battlefield: ["Swiftfoot Boots", "Llanowar Elves", "Forest"] } });
+    const boots = idOf(s, "p1", "battlefield", "Swiftfoot Boots");
+    const elf = idOf(s, "p1", "battlefield", "Llanowar Elves");
+    const equip = legalActions(s, "p1").find((a) => a.type === "activate" && a.source === boots);
+    expect(equip?.type === "activate" && equip.label).toBe("Équiper {1}");
+    if (equip?.type !== "activate") return;
+    s = act(s, "p1", { type: "activate", source: boots, ability: equip.ability, targets: { t: [elf] } });
+    s = passBoth(s);
+    expect(s.objects[boots]?.attachedTo).toBe(elf);
+    expect(chars(s, elf).keywords).toEqual(expect.arrayContaining(["hexproof", "haste"]));
+    destroy(s, elf);
+    s = act(s, "p1", { type: "pass" }); // les actions basées sur l'état sont vérifiées
+    expect(onBattlefield(s, boots)).toBe(true);
+    expect(s.objects[boots]?.attachedTo).toBeUndefined();
+  });
+
+  it("Imprisoned in the Moon : la créature devient un terrain incolore qui produit {C}", () => {
+    let s = scenario({
+      p1: { battlefield: lands("Island", 3), hand: ["Imprisoned in the Moon"] },
+      p2: { battlefield: ["Elvish Archdruid"] },
+    });
+    const druid = idOf(s, "p2", "battlefield", "Elvish Archdruid");
+    s = cast(s, "p1", "Imprisoned in the Moon", { targets: { enchant: [druid] } });
+    s = passBoth(s);
+    const c = chars(s, druid);
+    expect(c.types).toEqual(["Land"]);
+    expect(c.colors).toEqual([]);
+    expect(c.subtypes).toEqual([]);
+    const mana = manaAbilitiesOf(s, druid);
+    expect(mana.map((m) => m.produce)).toEqual([["C"]]);
+  });
+
+  it("Witness Protection : Citoyen 1/1 sans capacités nommé Legitimate Businessperson", () => {
+    let s = scenario({
+      p1: { battlefield: ["Island"], hand: ["Witness Protection"] },
+      p2: { battlefield: ["Shivan Dragon", "Anthem of Champions"] },
+    });
+    const dragon = idOf(s, "p2", "battlefield", "Shivan Dragon");
+    s = cast(s, "p1", "Witness Protection", { targets: { enchant: [dragon] } });
+    s = passBoth(s);
+    const c = chars(s, dragon);
+    expect(c.name).toBe("Legitimate Businessperson");
+    expect(c.keywords).toEqual([]);
+    expect(c.subtypes).toEqual(["Citizen"]);
+    // 1/1 de base, +1/+1 de l'Anthem adverse.
+    expect([c.power, c.toughness]).toEqual([2, 2]);
+    expect(legalActions(s, "p2").some((a) => a.type === "activate")).toBe(false);
+  });
+
+  it("Fiery Annihilation n'exile qu'un Équipement attaché à la créature ciblée", () => {
+    let s = scenario({
+      p1: { battlefield: lands("Mountain", 3), hand: ["Fiery Annihilation"] },
+      p2: { battlefield: ["Shivan Dragon", "Llanowar Elves", "Goldvein Pick", "Swiftfoot Boots"] },
+    });
+    const dragon = idOf(s, "p2", "battlefield", "Shivan Dragon");
+    const pick = idOf(s, "p2", "battlefield", "Goldvein Pick");
+    const boots = idOf(s, "p2", "battlefield", "Swiftfoot Boots");
+    (s.objects[pick] as { attachedTo?: string }).attachedTo = dragon;
+    (s.objects[boots] as { attachedTo?: string }).attachedTo = idOf(s, "p2", "battlefield", "Llanowar Elves");
+    expect(() => cast(s, "p1", "Fiery Annihilation", { targets: { t: [dragon], e: [boots] } })).toThrow();
+    s = cast(s, "p1", "Fiery Annihilation", { targets: { t: [dragon], e: [pick] } });
+    s = passAccepting(s, (x) => x.stack.length === 0);
+    expect(s.exile.map((id) => s.defs[s.objects[id]?.defId ?? ""]?.name).sort()).toEqual(["Goldvein Pick", "Shivan Dragon"]);
+  });
+
+  it("Fishing Pole : appât en engageant la créature, Poisson quand elle se dégage", () => {
+    let s = scenario({ p1: { battlefield: ["Fishing Pole", "Llanowar Elves", "Forest"] } });
+    const pole = idOf(s, "p1", "battlefield", "Fishing Pole");
+    const elf = idOf(s, "p1", "battlefield", "Llanowar Elves");
+    (s.objects[pole] as { attachedTo?: string }).attachedTo = elf;
+    s = act(s, "p1", { type: "activate", source: pole, ability: 0 });
+    s = passBoth(s);
+    expect(s.objects[pole]?.counters.bait).toBe(1);
+    expect(s.objects[elf]?.tapped).toBe(true);
+    // Tour suivant de p1 : l'Elfe se dégage, un Poisson est créé.
+    s = passAccepting(s, (x) => x.turn.active === "p1" && x.turn.step === "main1" && x.turn.number > 3);
+    expect(idsOf(s, "p1", "battlefield", "Fish")).toHaveLength(1);
+    expect(s.objects[pole]?.counters.bait ?? 0).toBe(0);
+  });
+
+  it("Leyline Axe : proposée en début de partie depuis la main de départ", () => {
+    const deck = (extra: string) => [extra, ...Array(59).fill("Forest")].map((n) => card(n));
+    // Une graine où la Hache est dans la main de départ de p1.
+    let s!: S;
+    for (let seed = 1; seed < 200; seed++) {
+      s = createGame({
+        seed,
+        startingPlayer: "p1",
+        players: [
+          { id: "p1", name: "A", deck: deck("Leyline Axe") },
+          { id: "p2", name: "B", deck: deck("Forest") },
+        ],
+      }).state;
+      if (idsOf(s, "p1", "hand", "Leyline Axe").length) break;
+    }
+    for (let i = 0; i < 4 && s.pending?.kind === "mulligan"; i++) s = act(s, s.pending.player, { type: "keep" });
+    expect(s.pending?.kind === "choice" && s.pending.request.intent).toBe("leyline");
+    s = choose(s, idsOf(s, "p1", "hand", "Leyline Axe"));
+    expect(idsOf(s, "p1", "battlefield", "Leyline Axe")).toHaveLength(1);
+    expect(s.turn.number).toBe(1);
   });
 });

@@ -4,6 +4,7 @@
  */
 import { availableMana, canPay, manaAbilitiesOf, manaSources, manaValue, totalCost } from "./mana";
 import {
+  abilitiesOf,
   activatedAbility,
   additionalOptions,
   canCastTiming,
@@ -30,6 +31,7 @@ function targetOptions(s: GameState, player: PlayerId, specs: TargetSpec[], sour
       count: t.count && t.count > 1 ? t.count : undefined,
       kickedCount: t.kickedCount,
       otherThan: t.otherThan,
+      attachedToTarget: t.attachedToTarget,
     };
     if (t.samePlayer || t.differentPlayers) {
       const holders: Record<string, string> = {};
@@ -111,8 +113,7 @@ export function legalActions(s: GameState, player: PlayerId): ActionOption[] {
   for (const id of [...s.battlefield, ...ownGraveyard]) {
     const o = obj(s, id);
     if (o.zone === "battlefield" ? o.controller !== player : o.owner !== player) continue;
-    const d = s.defs[o.defId];
-    d?.abilities.forEach((_, index) => {
+    abilitiesOf(s, id).forEach((_, index) => {
       const ab = activatedAbility(s, id, index);
       if (!ab || !!ab.fromGraveyard !== (o.zone === "graveyard") || !canPayNonManaCost(s, id, ab, index)) return;
       if (ab.sorcerySpeed && !sorceryTiming(s, player)) return;

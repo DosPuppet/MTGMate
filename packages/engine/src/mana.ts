@@ -2,7 +2,7 @@
  * Mana : lecture des coûts, sources disponibles et solveur de paiement automatique.
  */
 import { putIntoGraveyard } from "./actions";
-import { defOf, isSummoningSick, obj } from "./state";
+import { chars, defOf, isSummoningSick, obj } from "./state";
 import { matchesObjectFilter } from "./targets";
 import type { GameState, ManaAbilityDef, ManaCost, ManaType, ObjectId, PlayerId } from "./types";
 import { MANA_TYPES } from "./types";
@@ -77,14 +77,16 @@ export interface ManaSource {
 
 /** Capacités de mana d'un objet, y compris celles intrinsèques aux types de terrain de base (305.6). */
 export function manaAbilitiesOf(s: GameState, id: ObjectId): ManaAbilityDef[] {
-  const d = defOf(s, id);
+  // Sur le champ de bataille, types et capacités viennent des couches (Imprisoned in the Moon…).
+  const o = obj(s, id);
+  const c = o.zone === "battlefield" ? chars(s, id) : { subtypes: defOf(s, id).subtypes, abilities: defOf(s, id).abilities };
   const list: ManaAbilityDef[] = [];
   const basic: Record<string, ManaType> = { Plains: "W", Island: "U", Swamp: "B", Mountain: "R", Forest: "G" };
-  for (const sub of d.subtypes) {
-    const c = basic[sub];
-    if (c) list.push({ kind: "mana", cost: { tap: true }, produce: [c], amount: 1 });
+  for (const sub of c.subtypes) {
+    const m = basic[sub];
+    if (m) list.push({ kind: "mana", cost: { tap: true }, produce: [m], amount: 1 });
   }
-  for (const a of d.abilities) if (a.kind === "mana") list.push(a);
+  for (const a of c.abilities) if (a.kind === "mana") list.push(a);
   return list;
 }
 

@@ -20,6 +20,8 @@ export interface EntersContext {
   kicked?: boolean;
   /** Arrive depuis la résolution d'un sort (« si vous l'avez lancé »). */
   cast?: boolean;
+  /** Aura : l'objet auquel elle arrive attachée. */
+  attachTo?: string;
 }
 
 function amountAtEntry(s: GameState, a: Amount, o: GameObject, ctx: EntersContext): number {
@@ -42,6 +44,7 @@ export function replaceDestination(s: GameState, o: GameObject, to: Zone): Zone 
 export function applyEntersReplacements(s: GameState, o: GameObject, ctx: EntersContext): void {
   if (ctx.kicked) o.kicked = true;
   if (ctx.cast) o.cast = true;
+  if (ctx.attachTo) o.attachedTo = ctx.attachTo;
   // Remplacements portés par d'autres permanents (« les créatures de vos adversaires arrivent engagées »).
   for (const id of s.battlefield) {
     const src = s.objects[id];

@@ -149,6 +149,9 @@ export function describeEvents(
       case "fizzle":
         add(`${name(e.defId)} ne se résout pas : cibles illégales.`, "info");
         break;
+      case "attach":
+        add(`${name(e.defId)} est attaché à ${name(e.toDefId)}.`, "info");
+        break;
       case "countered":
         add(`${name(e.defId)} est contrecarré par ${name(e.by)}.`, "info");
         break;

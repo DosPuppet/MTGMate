@@ -226,6 +226,16 @@ export const GREEN: Record<string, CardScript> = {
       }),
     ],
   },
+  "Blanchwood Armor": {
+    enchant: { filter: { types: ["Creature"] }, label: "créature" },
+    abilities: [
+      staticAbility(
+        "attached",
+        { power: 1, toughness: 1 },
+        { per: { subtype: "Forest", controller: "you" }, label: "+1/+1 par Forêt" },
+      ),
+    ],
+  },
   "Broken Wings": {
     spell: spell([targetObj("t", ART_ENCH_OR_FLYER, "artefact, enchantement ou créature volante")], [fx.destroy(ref.target())]),
   },

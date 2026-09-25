@@ -119,7 +119,10 @@ export function checkCondition(s: GameState, c: Condition, controller: PlayerId,
 // ---------------------------------------------------------------------------
 
 function matchWho(who: "self" | ObjectFilter, v: LkiSnapshot, src: Source): boolean {
-  return who === "self" ? v.id === src.id : matchesView(v, who, src.view.controller, src.id);
+  if (who === "self") return v.id === src.id;
+  // « la créature équipée / enchantée »
+  if (who.attachedToSource && v.id !== src.view.attachedTo) return false;
+  return matchesView(v, who, src.view.controller, src.id);
 }
 
 function whose(rel: "you" | "opponent" | "any", player: PlayerId, controller: PlayerId): boolean {
@@ -190,6 +193,11 @@ function matchTrigger(s: GameState, ev: RulesEvent, t: TriggerSpec, src: Source)
       return ev.e === "draw" && whose(t.whose, ev.player, me) && (t.nth === undefined || ev.nth === t.nth)
         ? { player: ev.player, amount: 1 }
         : null;
+    case "untaps": {
+      if (ev.e !== "untap") return null;
+      const v = liveView(s, ev.objectId);
+      return v && matchWho(t.who, v, src) ? { objectId: ev.objectId, player: v.controller } : null;
+    }
     case "becomesTarget":
       if (ev.e !== "targeted" || !ev.targets.includes(src.id)) return null;
       if (t.byOpponent && ev.controller === me) return null;

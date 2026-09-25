@@ -247,7 +247,20 @@ export const useGame = create<Store>((set, get) => {
         c.targets[spec.id] = [auto];
         continue;
       }
-      const effective = c.kicked && spec.kickedCount ? { ...spec, count: spec.kickedCount } : spec;
+      let effective = c.kicked && spec.kickedCount ? { ...spec, count: spec.kickedCount } : spec;
+      // « Équipement attaché à cette créature » : seules les options attachées à la cible déjà choisie.
+      const host = spec.attachedToTarget;
+      if (host) {
+        const hosts = c.targets[host] ?? [];
+        const legal = spec.legal.filter((id) =>
+          hosts.includes(get().view?.battlefield.find((o) => o.id === id)?.attachedTo ?? ""),
+        );
+        effective = { ...effective, legal };
+        if (legal.length === 0 && spec.optional) {
+          c.targets[spec.id] = [];
+          continue;
+        }
+      }
       return set({ casting: { ...c, stage: "target", spec: effective, picked: [] } });
     }
     // Coûts additionnels : choisis en dernier, une fois les cibles connues.

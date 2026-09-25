@@ -65,6 +65,7 @@ export const SCION_OF_THE_DEEP = creature("Scion of the Deep", ["U"], ["Octopus"
 export const RAT = creature("Rat", ["B"], ["Rat"], 1, 1);
 export const INSECT = creature("Insect", ["B", "G"], ["Insect"], 1, 1, { keywords: ["flying"] });
 export const KOMAS_COIL = creature("Koma's Coil", ["U"], ["Serpent"], 3, 3);
+export const FISH = creature("Fish", ["U"], ["Fish"], 1, 1);
 export const RACCOON = creature("Raccoon", ["G"], ["Raccoon"], 3, 3);
 
 export const TREASURE: TokenSpec = {

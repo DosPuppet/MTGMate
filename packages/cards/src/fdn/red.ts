@@ -19,6 +19,7 @@ import {
   staticAbility,
   TREASURE,
   target,
+  targetObj,
   triggered,
   when,
 } from "./common";
@@ -157,6 +158,18 @@ export const RED: Record<string, CardScript> = {
     spell: spell(
       [target.creature("t", { controller: "you" })],
       [fx.copyToken(ref.target(), { addKeywords: ["haste"], sacrificeAtEndStep: true })],
+    ),
+  },
+  "Fiery Annihilation": {
+    spell: spell(
+      [
+        target.creature(),
+        {
+          ...target.optional(targetObj("e", { subtype: "Equipment" }, "Équipement attaché à cette créature")),
+          attachedToTarget: "t",
+        },
+      ],
+      [fx.exileIfDies(ref.target()), fx.damage(5, ref.target()), fx.exileCard(ref.target("e"))],
     ),
   },
   "Goblin Negotiation": {

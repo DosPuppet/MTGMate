@@ -68,6 +68,11 @@ function stripReminder(text: string): string {
 /** Garde : « Ward {2} » ou « Ward—Pay 7 life. » */
 const WARD = /\bward(?: ((?:\{[^}]+\})+)|—pay (\d+) life\.?)/i;
 
+/** « Equip {3}{W} » (702.6) : capacité activée en rituel, cible une créature que vous contrôlez. */
+export function parseEquip(text: string): string | undefined {
+  return /^Equip ((?:\{[^}]+\})+)/m.exec(stripReminder(text))?.[1];
+}
+
 export function parseWard(text: string): CardDef["ward"] {
   const m = WARD.exec(stripReminder(text));
   if (!m) return undefined;
@@ -90,7 +95,7 @@ function parseInt0(v: string | undefined): number | undefined | null {
 }
 
 /** Capacités déclenchées portées par un mot-clé (702.108 prouesse, 702.21 garde). */
-function intrinsicAbilities(keywords: Set<Keyword>, ward: CardDef["ward"]): CardDef["abilities"] {
+function intrinsicAbilities(keywords: Set<Keyword>, ward: CardDef["ward"], equip?: string): CardDef["abilities"] {
   const out: CardDef["abilities"] = [];
   if (keywords.has("prowess")) {
     out.push({
@@ -99,6 +104,18 @@ function intrinsicAbilities(keywords: Set<Keyword>, ward: CardDef["ward"]): Card
       targets: [],
       effects: [{ op: "pump", what: { kind: "self" }, power: 1, toughness: 1 }],
       label: "Prouesse",
+    });
+  }
+  if (equip) {
+    out.push({
+      kind: "activated",
+      cost: { mana: parseManaCost(equip) },
+      targets: [
+        { id: "t", label: "créature que vous contrôlez", filter: { objects: { types: ["Creature"], controller: "you" } } },
+      ],
+      effects: [{ op: "attach", what: { kind: "self" }, to: { kind: "target", id: "t" } }],
+      sorcerySpeed: true,
+      label: `Équiper ${equip}`,
     });
   }
   if (ward) {
@@ -158,7 +175,9 @@ export function toCardDef(raw: RawCard, script?: CardScript, set = "FDN"): CardD
     power: power ?? undefined,
     toughness: toughness ?? undefined,
     keywords: [...keywords],
-    abilities: [...(script?.abilities ?? []), ...intrinsicAbilities(keywords, ward)],
+    abilities: [...(script?.abilities ?? []), ...intrinsicAbilities(keywords, ward, parseEquip(raw.oracleText))],
+    enchant: script?.enchant,
+    leyline: script?.leyline,
     ward,
     cantBeCountered: script?.cantBeCountered,
     spell: script?.spell,

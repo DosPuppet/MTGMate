@@ -69,7 +69,7 @@ interface Applied {
   timestamp: number;
   mods: LayerMods;
   /** Objets concernés : fixés (résolution) ou déterminés au moment de la couche (statique). */
-  affected: ObjectId[] | { sourceId: ObjectId; controller: PlayerId; filter: "self" | ObjectFilter };
+  affected: ObjectId[] | { sourceId: ObjectId; controller: PlayerId; filter: "self" | "attached" | ObjectFilter };
 }
 
 const cache = new WeakMap<GameState, { key: string; map: Map<ObjectId, Characteristics> }>();
@@ -93,9 +93,16 @@ function view(s: GameState, id: ObjectId, c: Characteristics, o: GameObject, att
     name: c.name,
     manaValue: manaValue(s.defs[o.defId]?.manaCost),
     tapped: o.tapped,
+    attachedTo: o.attachedTo,
     blocking: !!s.combat?.blockers.some((b) => b.id === id),
     counters: o.counters,
   };
+}
+
+/** Vue d'un objet à partir de ses caractéristiques imprimées (pendant le calcul des couches). */
+function snapshotBase(s: GameState, id: ObjectId): LkiSnapshot {
+  const o = obj(s, id);
+  return view(s, id, base(s, o), o, false);
 }
 
 /** Calcule, sans cache, les caractéristiques de tous les objets du champ de bataille. */
@@ -105,19 +112,35 @@ export function computeBattlefield(s: GameState): Map<ObjectId, Characteristics>
   for (const id of s.battlefield) out.set(id, base(s, obj(s, id)));
 
   const applied: Applied[] = s.effects.map((e) => ({ timestamp: e.timestamp, mods: e, affected: e.affected }));
-  // Capacités statiques des permanents (celles que leur source possède encore après la couche 6 sont
-  // appliquées ; approximation : on se fonde sur les capacités imprimées).
+  // Capacités statiques des permanents. Une source qui perd toutes ses capacités (Witness Protection,
+  // effet « perd toutes ses capacités ») n'applique plus les siennes ; approximation de 613.8 à un niveau.
+  const lost = new Set<ObjectId>();
+  for (const e of s.effects) if (e.loseAllAbilities) for (const id of e.affected) lost.add(id);
+  for (const id of s.battlefield) {
+    const o = obj(s, id);
+    if (!o.attachedTo) continue;
+    for (const ab of s.defs[o.defId]?.abilities ?? []) {
+      if (ab.kind === "static" && ab.affects === "attached" && ab.mods.loseAllAbilities) lost.add(o.attachedTo);
+    }
+  }
   const prev = computing;
   computing = true;
   try {
     for (const id of s.battlefield) {
+      if (lost.has(id)) continue;
       const o = obj(s, id);
       for (const ab of s.defs[o.defId]?.abilities ?? []) {
         if (ab.kind !== "static") continue;
         if (ab.condition && !checkCondition(s, ab.condition, o.controller, id)) continue;
+        let mods = ab.mods;
+        if (ab.per) {
+          const f = ab.per;
+          const n = s.battlefield.filter((x) => matchesView(snapshotBase(s, x), f, o.controller, id)).length;
+          mods = { ...mods, power: (mods.power ?? 0) * n, toughness: (mods.toughness ?? 0) * n };
+        }
         applied.push({
           timestamp: o.timestamp,
-          mods: ab.mods,
+          mods,
           affected: { sourceId: id, controller: o.controller, filter: ab.affects },
         });
       }
@@ -131,6 +154,10 @@ export function computeBattlefield(s: GameState): Map<ObjectId, Characteristics>
     if (Array.isArray(a.affected)) return a.affected.filter((id) => out.has(id));
     const { sourceId, controller, filter } = a.affected;
     if (filter === "self") return out.has(sourceId) ? [sourceId] : [];
+    if (filter === "attached") {
+      const host = obj(s, sourceId).attachedTo;
+      return host && out.has(host) ? [host] : [];
+    }
     const ids: ObjectId[] = [];
     for (const [id, c] of out) {
       if (matchesView(view(s, id, c, obj(s, id), attacking.has(id)), filter, controller, sourceId)) ids.push(id);
@@ -152,10 +179,15 @@ export function computeBattlefield(s: GameState): Map<ObjectId, Characteristics>
     for (const a of applied) if (has(a.mods)) for (const id of affectedBy(a)) apply(out.get(id) as Characteristics, a.mods);
   };
 
-  // Couche 4 : types.
+  // Couche 4 : types (et nom, pour Witness Protection).
   layer(
-    (m) => !!(m.addTypes || m.addSubtypes),
+    (m) => !!(m.addTypes || m.addSubtypes || m.setTypes || m.setSubtypes || m.setName),
     (c, m) => {
+      if (m.setTypes) {
+        c.types = [...m.setTypes];
+        c.subtypes = [...(m.setSubtypes ?? [])];
+      } else if (m.setSubtypes) c.subtypes = [...m.setSubtypes];
+      if (m.setName) c.name = m.setName;
       for (const t of m.addTypes ?? []) if (!c.types.includes(t)) c.types.push(t);
       for (const t of m.addSubtypes ?? []) if (!c.subtypes.includes(t)) c.subtypes.push(t);
     },

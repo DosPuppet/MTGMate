@@ -316,6 +316,30 @@ button {
 .perm {
   transition: transform 0.25s ease;
 }
+/* Auras et Équipements : empilés derrière leur hôte, leur haut dépasse (ATTACH_PEEK dans autoSize.ts). */
+.perm.has-attach {
+  position: relative;
+  padding-top: calc(var(--card-w) * 1.395 * 0.2 * var(--attach-n));
+}
+.perm-row.lands .perm.has-attach {
+  padding-top: calc(var(--land-w) * 1.395 * 0.2 * var(--attach-n));
+}
+.perm > .card-slot {
+  position: relative;
+  z-index: 1;
+}
+.attachment {
+  position: absolute;
+  left: 0;
+  top: calc(var(--card-w) * 1.395 * 0.2 * var(--attach-i));
+  z-index: 0;
+}
+.perm-row.lands .attachment {
+  top: calc(var(--land-w) * 1.395 * 0.2 * var(--attach-i));
+}
+.attachment .card-slot {
+  position: relative;
+}
 .perm.advance-up {
   transform: translateY(-16px);
 }

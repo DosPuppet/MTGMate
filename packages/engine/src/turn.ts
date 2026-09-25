@@ -16,6 +16,7 @@ import {
   emptyPool,
   emptyTurnStats,
   hasKeyword,
+  hasType,
   isCreature,
   isSummoningSick,
   M1M1,
@@ -28,6 +29,7 @@ import {
   rulesEvent,
   shuffle,
 } from "./state";
+import { matchesObjectFilter } from "./targets";
 import { processTriggers, releaseDelayedTriggers, simultaneously } from "./triggers";
 import type { GameState, ObjectId, PlayerId, Step } from "./types";
 import { STEPS } from "./types";
@@ -87,6 +89,7 @@ function stepEvent(s: GameState): void {
 function nextMulligan(s: GameState): void {
   const p = s.mulliganQueue[0];
   if (!p) {
+    if (askLeylines(s)) return;
     s.turn.number = 1;
     s.turn.active = s.turn.startingPlayer;
     s.turn.step = "untap";
@@ -96,6 +99,43 @@ function nextMulligan(s: GameState): void {
     return;
   }
   s.pending = { kind: "mulligan", player: p, mulligans: s.players[p]?.mulligans ?? 0 };
+}
+
+/** Cartes « leyline » de la main de départ (103.6), proposées dans l'ordre de jeu. Renvoie true si une question est posée. */
+function askLeylines(s: GameState): boolean {
+  const asked = (s.leylineAsked ??= []);
+  const start = s.playerOrder.indexOf(s.turn.startingPlayer);
+  const order = s.playerOrder.map((_, i) => s.playerOrder[(start + i) % s.playerOrder.length] as PlayerId);
+  for (const p of order) {
+    if (asked.includes(p)) continue;
+    asked.push(p);
+    const cards = (s.players[p]?.hand ?? []).filter((id) => s.defs[obj(s, id).defId]?.leyline);
+    if (cards.length === 0) continue;
+    ask(
+      s,
+      p,
+      {
+        type: "pick",
+        intent: "leyline",
+        prompt: "Cartes de votre main de départ que vous pouvez mettre sur le champ de bataille",
+        options: cards,
+        min: 0,
+        max: cards.length,
+        suggested: cards,
+      },
+      { kind: "leyline", player: p },
+    );
+    return true;
+  }
+  return false;
+}
+
+export function answerLeylines(s: GameState, player: PlayerId, cards: ObjectId[]): void {
+  for (const id of cards) {
+    const o = s.objects[id];
+    if (o?.zone === "hand" && o.owner === player && s.defs[o.defId]?.leyline) moveObject(s, id, "battlefield");
+  }
+  s.flow = "mulligan";
 }
 
 export function takeMulligan(s: GameState, p: PlayerId): void {
@@ -145,7 +185,10 @@ function beginStep(s: GameState): void {
         if (hasKeyword(s, id, "doesntUntap")) continue;
         // 122.1d : un marqueur d'étourdissement est retiré à la place du dégagement.
         if (counterCount(o, "stun") > 0) changeCounters(s, o, "stun", -1);
-        else o.tapped = false;
+        else {
+          o.tapped = false;
+          rulesEvent(s, { e: "untap", objectId: id });
+        }
       }
       s.flow = "stepEnd"; // pas de priorité pendant l'étape de dégagement
       return;
@@ -681,6 +724,22 @@ function stateBasedActionsOnce(s: GameState): void {
       if (c.toughness <= 0)
         toGraveyard.push(id); // 704.5f
       else if (o.damage >= c.toughness || (o.deathtouched && o.damage > 0)) toDestroy.push(id); // 704.5g–h
+    }
+
+    // 704.5m–n : Auras attachées illégalement (cimetière), Équipements attachés illégalement (détachés).
+    for (const id of s.battlefield) {
+      const o = obj(s, id);
+      const d = s.defs[o.defId];
+      if (d?.enchant) {
+        const host = o.attachedTo;
+        const legal =
+          !!host && host !== id && onBattlefield(s, host) && matchesObjectFilter(s, o.controller, host, d.enchant.filter, id);
+        if (!legal) toGraveyard.push(id);
+      } else if (o.attachedTo && !(onBattlefield(s, o.attachedTo) && isCreature(s, o.attachedTo) && hasType(s, id, "Artifact"))) {
+        o.attachedTo = undefined;
+        bump(s);
+        changed = true;
+      }
     }
 
     // 704.5j : règle des légendes (v1 : on garde automatiquement le plus récent).

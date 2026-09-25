@@ -1,6 +1,7 @@
 /**
  * Légalité des cibles (règle 115).
  */
+import { RulesError } from "./errors";
 import { chars, hasKeyword, snapshot } from "./layers";
 import { obj } from "./state";
 import type { CardType, GameState, LkiSnapshot, ObjectFilter, ObjectId, PlayerId, TargetSpec } from "./types";
@@ -125,18 +126,23 @@ export function validateTargets(
   for (const spec of specs) {
     const ids = chosen[spec.id] ?? [];
     const max = (opts.kicked && spec.kickedCount) || spec.count || 1;
-    for (const other of spec.otherThan ?? []) {
-      if (ids.some((id) => (chosen[other] ?? []).includes(id))) throw new Error("Ces cibles doivent être différentes");
+    const hostSpec = spec.attachedToTarget;
+    if (hostSpec && ids.some((id) => !(chosen[hostSpec] ?? []).includes(s.objects[id]?.attachedTo ?? ""))) {
+      throw new RulesError("La cible doit être attachée à l'autre cible");
     }
-    if (ids.length > max) throw new Error(max === 1 ? "Une seule cible par mot « cible »" : `${max} cibles au maximum`);
-    if (new Set(ids).size !== ids.length) throw new Error("Même cible choisie deux fois");
-    if (ids.length === 0 && !spec.optional) throw new Error(`Cible manquante : ${spec.label ?? spec.id}`);
-    if (!spec.optional && !spec.kickedCount && ids.length < max) throw new Error(`${max} cibles requises`);
-    for (const id of ids) if (!isLegalTarget(s, controller, spec, id, opts.sourceId)) throw new Error(`Cible illégale : ${id}`);
+    for (const other of spec.otherThan ?? []) {
+      if (ids.some((id) => (chosen[other] ?? []).includes(id))) throw new RulesError("Ces cibles doivent être différentes");
+    }
+    if (ids.length > max) throw new RulesError(max === 1 ? "Une seule cible par mot « cible »" : `${max} cibles au maximum`);
+    if (new Set(ids).size !== ids.length) throw new RulesError("Même cible choisie deux fois");
+    if (ids.length === 0 && !spec.optional) throw new RulesError(`Cible manquante : ${spec.label ?? spec.id}`);
+    if (!spec.optional && !spec.kickedCount && ids.length < max) throw new RulesError(`${max} cibles requises`);
+    for (const id of ids)
+      if (!isLegalTarget(s, controller, spec, id, opts.sourceId)) throw new RulesError(`Cible illégale : ${id}`);
     const holders = ids.map((id) => s.objects[id]?.[s.objects[id]?.zone === "battlefield" ? "controller" : "owner"] ?? id);
-    if (spec.samePlayer && new Set(holders).size > 1) throw new Error("Les cibles doivent appartenir au même joueur");
+    if (spec.samePlayer && new Set(holders).size > 1) throw new RulesError("Les cibles doivent appartenir au même joueur");
     if (spec.differentPlayers && new Set(holders).size !== holders.length)
-      throw new Error("Les cibles doivent être contrôlées par des joueurs différents");
+      throw new RulesError("Les cibles doivent être contrôlées par des joueurs différents");
     result[spec.id] = ids;
   }
   return result;

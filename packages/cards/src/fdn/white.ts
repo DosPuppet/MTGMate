@@ -26,6 +26,19 @@ import {
 } from "./common";
 
 export const WHITE: Record<string, CardScript> = {
+  "Celestial Armor": {
+    abilities: [
+      triggered(when.entersSelf, [fx.attach(ref.target()), fx.pump(ref.target(), 0, 0, ["hexproof", "indestructible"])], {
+        targets: [target.creature("t", { controller: "you" })],
+        label: "s'attache, défense talismanique et indestructible",
+      }),
+      staticAbility("attached", { power: 2, addKeywords: ["flying"] }, { label: "Créature équipée : +2/+0 et vol" }),
+    ],
+  },
+  "Twinblade Blessing": {
+    enchant: { filter: { types: ["Creature"] }, label: "créature" },
+    abilities: [staticAbility("attached", { addKeywords: ["doubleStrike"] }, { label: "Double initiative" })],
+  },
   "Fleeting Flight": {
     spell: spell(
       [target.creature()],
