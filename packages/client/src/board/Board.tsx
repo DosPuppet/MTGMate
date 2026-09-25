@@ -1,10 +1,12 @@
 import type { GameView, ObjectView, PlayerView } from "@mtgx/engine";
 import { motion } from "motion/react";
-import { useRef } from "react";
+import { type CSSProperties, useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { faceName, PHASE_BAR, STEP_LABEL } from "../i18n";
 import { myActions, useGame } from "../store";
 import { Arrows } from "./Arrows";
+import { fitCardWidth, LAND_SCALE, landGroups } from "./autoSize";
 import { Card, CardBack, type Glow, ManaCost } from "./Card";
+import { Effects } from "./Effects";
 
 // ---------------------------------------------------------------------------
 // Joueurs
@@ -36,6 +38,26 @@ function Icon({ d }: { d: string }) {
   );
 }
 
+/** Points de vie : grossissent et changent de couleur à chaque variation. */
+function LifeTotal({ life }: { life: number }) {
+  const prev = useRef(life);
+  const delta = life - prev.current;
+  useEffect(() => {
+    prev.current = life;
+  }, [life]);
+  return (
+    <motion.span
+      key={life}
+      className={`life ${life <= 5 ? "low" : ""}`}
+      initial={delta ? { scale: 1.7, color: delta < 0 ? "#ff5a4f" : "#6ee7a0" } : false}
+      animate={{ scale: 1, color: life <= 5 ? "#ff7a6b" : "#e9edf2" }}
+      transition={{ duration: 0.6, ease: "easeOut" }}
+    >
+      {life}
+    </motion.span>
+  );
+}
+
 function PlayerBar({ player, isMe }: { player: PlayerView; isMe: boolean }) {
   const view = useGame((s) => s.view) as GameView;
   const casting = useGame((s) => s.casting);
@@ -55,7 +77,7 @@ function PlayerBar({ player, isMe }: { player: PlayerView; isMe: boolean }) {
         onClick={() => clickPlayer(player.id)}
       >
         <span className="avatar-initial">{isMe ? "V" : player.name.slice(0, 3)}</span>
-        <span className={`life ${player.life <= 5 ? "low" : ""}`}>{player.life}</span>
+        <LifeTotal life={player.life} />
       </button>
       <div className="player-info">
         <div className="player-name">
@@ -127,18 +149,7 @@ function PermanentRow({ perms, kind, isMe }: { perms: ObjectView[]; kind: "lands
   const width = kind === "lands" ? "var(--land-w)" : "var(--card-w)";
 
   // Terrains identiques regroupés (comme sur Arena).
-  const groups: ObjectView[][] = [];
-  if (kind === "lands") {
-    const byKey = new Map<string, ObjectView[]>();
-    for (const o of perms) {
-      const key = `${o.defId}|${o.tapped}`;
-      if (!byKey.has(key)) {
-        byKey.set(key, []);
-        groups.push(byKey.get(key) as ObjectView[]);
-      }
-      byKey.get(key)?.push(o);
-    }
-  } else for (const o of perms) groups.push([o]);
+  const groups = kind === "lands" ? landGroups(perms) : perms.map((o) => [o]);
 
   return (
     <div className={`perm-row ${kind}`}>
@@ -168,16 +179,47 @@ function PermanentRow({ perms, kind, isMe }: { perms: ObjectView[]; kind: "lands
   );
 }
 
-function Battlefield({ player, isMe }: { player: string; isMe: boolean }) {
+function Battlefield({
+  player,
+  isMe,
+  cardW,
+  onFit,
+}: {
+  player: string;
+  isMe: boolean;
+  /** Largeur de carte décidée par le plateau (identique pour les deux camps en duel). */
+  cardW?: number;
+  /** Signale la plus grande largeur de carte qui tient dans cette zone. */
+  onFit: (player: string, w: number) => void;
+}) {
   const view = useGame((s) => s.view) as GameView;
+  const ref = useRef<HTMLDivElement>(null);
   const perms = view.battlefield.filter((o) => o.controller === player);
   const lands = perms.filter((o) => o.types.includes("Land"));
   const others = perms.filter((o) => !o.types.includes("Land"));
+  const signature = perms.map((o) => `${o.id}${o.tapped ? "t" : ""}`).join(",");
+
+  // biome-ignore lint/correctness/useExhaustiveDependencies: recalcul quand les permanents changent (signature)
+  useLayoutEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const measure = () => onFit(player, fitCardWidth(el.clientWidth, el.clientHeight, others, lands));
+    measure();
+    const ro = new ResizeObserver(measure);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [signature, player, onFit]);
+
   const rows = [
     <PermanentRow key="o" perms={others} kind="others" isMe={isMe} />,
     <PermanentRow key="l" perms={lands} kind="lands" isMe={isMe} />,
   ];
-  return <div className={`battlefield ${isMe ? "me" : "opp"}`}>{isMe ? rows : rows.reverse()}</div>;
+  const style = cardW ? ({ "--card-w": `${cardW}px`, "--land-w": `${cardW * LAND_SCALE}px` } as CSSProperties) : undefined;
+  return (
+    <div ref={ref} className={`battlefield ${isMe ? "me" : "opp"}`} style={style}>
+      {isMe ? rows : rows.reverse()}
+    </div>
+  );
 }
 
 // ---------------------------------------------------------------------------
@@ -234,7 +276,14 @@ function StackView() {
       <div className="stack-label">Pile</div>
       <div className="stack-items">
         {view.stack.map((item, i) => (
-          <div key={item.id} className={`stack-item ${item.controller === view.viewer ? "me" : "opp"}`} style={{ zIndex: i }}>
+          <motion.div
+            key={item.id}
+            className={`stack-item ${item.controller === view.viewer ? "me" : "opp"}`}
+            style={{ zIndex: i }}
+            initial={{ scale: 0.6, opacity: 0, y: -20 }}
+            animate={{ scale: 1, opacity: 1, y: 0 }}
+            transition={{ type: "spring", stiffness: 380, damping: 24 }}
+          >
             <Card
               face={item}
               width="var(--stack-w)"
@@ -245,7 +294,7 @@ function StackView() {
             {item.kind === "ability" && <div className="ability-tag">Capacité</div>}
             {item.kicked && <div className="ability-tag">Kické</div>}
             {item.x > 0 && <div className="ability-tag">X = {item.x}</div>}
-          </div>
+          </motion.div>
         ))}
       </div>
     </div>
@@ -508,30 +557,51 @@ function ActionPanel() {
 
 export function Board() {
   const view = useGame((s) => s.view);
+  const [fits, setFits] = useState<Record<string, number>>({});
+  const onFit = useCallback((player: string, w: number) => {
+    setFits((cur) => (cur[player] === w ? cur : { ...cur, [player]: w }));
+  }, []);
   if (!view) return <div className="board loading">Mélange des bibliothèques…</div>;
   const me = view.players[view.viewer] as PlayerView;
   const opponents = view.opponents.map((id) => view.players[id]).filter((p): p is PlayerView => !!p);
+  // Taille commune : en duel, les deux camps ont la même taille de cartes (plateau symétrique) ;
+  // en multijoueur, tous les adversaires partagent la leur.
+  const known = (ids: string[]) => ids.map((id) => fits[id]).filter((w): w is number => w !== undefined);
+  const oppW = known(opponents.map((o) => o.id));
+  const oppSize = oppW.length ? Math.min(...oppW) : undefined;
+  const mySize =
+    fits[me.id] === undefined
+      ? undefined
+      : opponents.length === 1 && oppSize
+        ? Math.min(fits[me.id] as number, oppSize)
+        : fits[me.id];
+  const opponentSize = opponents.length === 1 && oppSize && mySize ? Math.min(oppSize, mySize) : oppSize;
   return (
     <div className="board" id="board">
+      <div className={`opp-bars n${opponents.length}`}>
+        {opponents.map((opp) => (
+          <div key={opp.id} className={`top-row ${opp.lost ? "eliminated" : ""}`}>
+            <PlayerBar player={opp} isMe={false} />
+            <OpponentHand count={opp.handCount} />
+          </div>
+        ))}
+      </div>
       <div className={`opponents n${opponents.length}`}>
         {opponents.map((opp) => (
           <div key={opp.id} className={`opp-zone ${opp.lost ? "eliminated" : ""}`}>
-            <div className="top-row">
-              <PlayerBar player={opp} isMe={false} />
-              <OpponentHand count={opp.handCount} />
-            </div>
-            <Battlefield player={opp.id} isMe={false} />
+            <Battlefield player={opp.id} isMe={false} cardW={opponentSize} onFit={onFit} />
           </div>
         ))}
       </div>
       <CenterStrip />
-      <Battlefield player={me.id} isMe={true} />
+      <Battlefield player={me.id} isMe={true} cardW={mySize} onFit={onFit} />
       <div className="bottom-row">
         <PlayerBar player={me} isMe={true} />
         <Hand />
         <ActionPanel />
       </div>
       <Arrows />
+      <Effects />
     </div>
   );
 }

@@ -15,7 +15,16 @@ function Preview() {
       {src ? (
         <img className="preview-img" src={src} alt={faceName(face, lang)} />
       ) : (
-        <div className="preview-img token">{faceName(face, lang)}</div>
+        <div className={`preview-img token frame-${obj?.colors[0] ?? "C"}`}>
+          <div className="token-name">{faceName(face, lang)}</div>
+          <div className="token-type">{faceType(face, lang)}</div>
+          <div className="token-text">{faceText(face, lang)}</div>
+          {obj?.power !== undefined && (
+            <div className="token-pt">
+              {obj.power}/{obj.toughness}
+            </div>
+          )}
+        </div>
       )}
       <div className="preview-info">
         <div className="preview-title">

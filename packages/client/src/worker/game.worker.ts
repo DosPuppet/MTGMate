@@ -38,7 +38,7 @@ self.onmessage = async (e: MessageEvent<ToWorker>) => {
         state,
         {
           agents: Object.fromEntries(msg.aiDecks.map((_, i) => [`p${i + 2}`, heuristicAgent()])),
-          aiDelay: 650,
+          aiDelay: 900,
           sleep,
           onUpdate: (_p, view, evts) => post({ type: "update", view, events: evts, faces: faces() }),
         },

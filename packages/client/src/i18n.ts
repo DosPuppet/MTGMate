@@ -77,7 +77,14 @@ export interface LogLine {
 let nextLine = 1;
 
 /** Transforme les événements du moteur en lignes de journal lisibles. */
-export function describeEvents(events: GameEvent[], view: GameView, faces: Record<string, CardFace>, lang: Lang): LogLine[] {
+export function describeEvents(
+  events: GameEvent[],
+  view: GameView,
+  faces: Record<string, CardFace>,
+  lang: Lang,
+  /** Vue précédente : permet de nommer les cibles mortes entre-temps. */
+  previous?: GameView | null,
+): LogLine[] {
   const me = view.viewer;
   const who = (p: string) => (p === me ? "Vous" : (view.players[p]?.name ?? "L'adversaire"));
   const whom = (p: string) => (p === me ? "vous" : (view.players[p]?.name ?? "l'adversaire"));
@@ -85,7 +92,7 @@ export function describeEvents(events: GameEvent[], view: GameView, faces: Recor
   const name = (defId?: string) => faceName(defId ? faces[defId] : undefined, lang);
   const targetName = (id: string) => {
     if (view.players[id]) return whom(id);
-    const o = view.battlefield.find((x) => x.id === id);
+    const o = view.battlefield.find((x) => x.id === id) ?? previous?.battlefield.find((x) => x.id === id);
     return o ? faceName(o, lang) : "une cible";
   };
   const out: LogLine[] = [];

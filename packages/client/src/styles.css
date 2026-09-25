@@ -16,12 +16,14 @@
   --me: #62c48a;
   --opp: #e0795b;
 
-  --card-w: clamp(56px, 10vh, 120px);
-  --land-w: calc(var(--card-w) * 0.8);
-  --hand-w: clamp(84px, 11.5vh, 132px);
-  --stack-w: clamp(66px, 8.6vh, 104px);
+  --card-w: clamp(64px, 12.5vh, 150px);
+  --land-w: calc(var(--card-w) * 0.72);
+  --hand-w: clamp(96px, 14.5vh, 172px);
+  --stack-w: clamp(80px, 11vh, 140px);
+  --spotlight-w: clamp(150px, 26vh, 260px);
+  --sidebar-w: 340px;
   --back-w: 24px;
-  --pick-w: clamp(96px, 14vh, 156px);
+  --pick-w: clamp(120px, 18vh, 210px);
   color-scheme: dark;
 }
 
@@ -99,7 +101,7 @@ button {
 
 .game {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 300px;
+  grid-template-columns: minmax(0, 1fr) var(--sidebar-w);
   grid-template-rows: minmax(0, 1fr);
   height: 100vh;
   overflow: clip;
@@ -108,7 +110,8 @@ button {
 .board {
   position: relative;
   display: grid;
-  grid-template-rows: minmax(0, 1fr) auto minmax(0, 1fr) auto;
+  /* Barres adverses · champs adverses · bande centrale · votre champ · votre main : les deux champs ont la même hauteur. */
+  grid-template-rows: auto minmax(0, 1fr) auto minmax(0, 1fr) auto;
   background:
     radial-gradient(ellipse at 50% 50%, rgba(80, 110, 150, 0.18), transparent 65%),
     linear-gradient(180deg, var(--felt-2), var(--felt-1) 50%, var(--felt-2));
@@ -123,9 +126,21 @@ button {
   color: var(--dim);
 }
 
-.opponents {
+.opponents,
+.opp-bars {
   display: flex;
   min-height: 0;
+}
+.opp-bars > .top-row {
+  flex: 1;
+  min-width: 0;
+}
+.opp-bars > .top-row + .top-row {
+  border-left: 1px solid var(--line);
+}
+.opp-bars > .top-row.eliminated {
+  opacity: 0.35;
+  filter: grayscale(1);
 }
 .opp-zone {
   flex: 1;
@@ -136,22 +151,12 @@ button {
   /* Une zone adverse ne déborde jamais sur la bande centrale ni sur ses voisines. */
   overflow: clip;
 }
-/* Plusieurs adversaires : cartes plus petites pour tenir dans les colonnes. */
-.opponents.n2 .opp-zone {
-  --card-w: clamp(46px, 8vh, 96px);
-  --land-w: calc(var(--card-w) * 0.8);
-}
-.opponents.n3 .opp-zone,
-.opponents.n4 .opp-zone,
-.opponents.n5 .opp-zone {
-  --card-w: clamp(40px, 6.6vh, 80px);
-  --land-w: calc(var(--card-w) * 0.8);
-}
 .opp-zone + .opp-zone {
   border-left: 1px solid var(--line);
 }
 .opp-zone .battlefield {
   flex: 1;
+  min-height: 0;
 }
 .opp-zone.eliminated {
   opacity: 0.35;
@@ -292,7 +297,8 @@ button {
   gap: 10px;
   justify-content: center;
   align-items: center;
-  flex-wrap: wrap;
+  /* Pas de retour à la ligne : la taille des cartes s'adapte à la place (autoSize.ts). */
+  flex-wrap: nowrap;
 }
 .perm-row.others {
   min-height: calc(var(--card-w) * 1.395 + 10px);
@@ -902,11 +908,34 @@ button {
 .preview-img.token {
   aspect-ratio: 488 / 680;
   display: flex;
-  align-items: center;
-  justify-content: center;
-  background: #cfc9c2;
-  color: #222;
+  flex-direction: column;
+  gap: 10px;
+  padding: 18px;
+  border: 8px solid #1a1a1a;
+  color: #1a1a1a;
+}
+.token-name {
+  font-family: Cinzel, serif;
   font-weight: 700;
+  font-size: 22px;
+}
+.token-type {
+  font-style: italic;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.3);
+  padding-bottom: 6px;
+}
+.token-text {
+  flex: 1;
+  font-size: 14px;
+  white-space: pre-line;
+}
+.token-pt {
+  align-self: flex-end;
+  font-weight: 700;
+  font-size: 26px;
+  background: rgba(255, 255, 255, 0.6);
+  border-radius: 10px;
+  padding: 2px 12px;
 }
 .preview-info {
   margin-top: 8px;
@@ -995,7 +1024,8 @@ button {
 
 .modal-backdrop {
   position: fixed;
-  inset: 0;
+  /* Le plateau seulement : la barre latérale (aperçu des cartes, journal) reste nette et lisible. */
+  inset: 0 var(--sidebar-w) 0 0;
   background: rgba(3, 5, 8, 0.6);
   backdrop-filter: blur(3px);
   display: flex;
@@ -1277,10 +1307,100 @@ button {
   .game {
     grid-template-columns: 1fr;
   }
+  .modal-backdrop {
+    inset: 0;
+  }
   .sidebar {
     display: none;
   }
   .phase-label {
     display: none;
   }
+}
+
+/* ------------------------------------------------------------------------ */
+/* Effets visuels                                                            */
+/* ------------------------------------------------------------------------ */
+
+.fx-layer {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 40;
+  overflow: visible;
+}
+.fx-number {
+  position: absolute;
+  z-index: 2;
+  font-family: Cinzel, serif;
+  font-weight: 700;
+  font-size: 42px;
+  letter-spacing: 1px;
+  pointer-events: none;
+  white-space: nowrap;
+  -webkit-text-stroke: 1.5px rgba(20, 0, 0, 0.9);
+  paint-order: stroke fill;
+}
+.fx-number.damage {
+  color: #ff5a4f;
+  text-shadow:
+    0 0 8px rgba(0, 0, 0, 0.9),
+    0 0 18px rgba(255, 60, 40, 0.8);
+}
+.fx-number.heal {
+  color: #6ee7a0;
+  text-shadow:
+    0 0 8px rgba(0, 0, 0, 0.9),
+    0 0 18px rgba(60, 220, 120, 0.8);
+}
+.fx-ghost {
+  position: absolute;
+  z-index: 1;
+  border-radius: 8px;
+  background: radial-gradient(circle, rgba(255, 90, 60, 0.35), rgba(40, 0, 0, 0.45));
+  box-shadow: 0 0 24px 6px rgba(255, 70, 40, 0.6);
+}
+.turn-banner {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  translate: -50% -50%;
+  padding: 14px 42px;
+  border-radius: 40px;
+  font-family: Cinzel, serif;
+  font-size: 30px;
+  font-weight: 700;
+  color: #ffe2d8;
+  background: linear-gradient(90deg, rgba(224, 121, 91, 0), rgba(120, 40, 20, 0.85), rgba(224, 121, 91, 0));
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.8);
+  white-space: nowrap;
+}
+.turn-banner.mine {
+  color: #fff3d6;
+  background: linear-gradient(90deg, rgba(240, 184, 74, 0), rgba(120, 80, 10, 0.85), rgba(240, 184, 74, 0));
+}
+.spotlight {
+  position: absolute;
+  right: 1.5%;
+  top: 44%;
+  translate: 0 -50%;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  align-items: center;
+  filter: drop-shadow(0 12px 30px rgba(0, 0, 0, 0.8));
+}
+.spotlight-label {
+  background: rgba(10, 14, 20, 0.9);
+  border: 1px solid rgba(224, 121, 91, 0.6);
+  border-radius: 16px;
+  padding: 4px 12px;
+  font-size: 13px;
+  color: #ffe2d8;
+}
+.spotlight .card {
+  outline: 3px solid rgba(224, 121, 91, 0.8);
+}
+.life {
+  display: inline-block;
 }

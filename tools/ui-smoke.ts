@@ -119,6 +119,9 @@ for (let i = 0; i < MAX; i++) {
   // Jouer une carte jouable de la main (terrain d'abord), sinon bouton principal.
   const playable = page.locator(".hand .glow-playable");
   if ((await playable.count()) && !/Résoudre/.test(label)) {
+    // Survoler d'abord : la carte passe au premier plan de l'éventail (comme pour un joueur).
+    await playable.first().hover({ force: true });
+    await page.waitForTimeout(200);
     await playable.first().click({ force: true });
     continue;
   }

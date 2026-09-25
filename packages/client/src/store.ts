@@ -9,6 +9,7 @@ import {
   type CardFace,
   DEFAULT_AUTOPILOT,
   type Decision,
+  type GameEvent,
   type GameView,
   type ObjectView,
   type Step,
@@ -39,6 +40,19 @@ export interface Casting {
   preset?: string;
 }
 
+/** Effet visuel éphémère : chiffre de dégâts/soin, silhouette d'une créature qui meurt. */
+export interface Fx {
+  id: number;
+  kind: "damage" | "heal" | "death";
+  /** Objet ou joueur visé (data-oid). */
+  target: string;
+  amount: number;
+  /** Décalage (s) pour échelonner les effets d'un même lot. */
+  delay: number;
+  /** Position capturée avant la mise à jour de l'écran (utile si l'objet disparaît). */
+  rect: { x: number; y: number; w: number; h: number } | null;
+}
+
 export interface Hover {
   face: CardFace;
   obj?: ObjectView;
@@ -65,6 +79,9 @@ interface Store {
   selection: string[];
   hover: Hover | null;
   graveyardOpen: string | null;
+  fx: Fx[];
+  turnBanner: { id: number; text: string; mine: boolean } | null;
+  spotlight: { id: number; face: CardFace; who: string } | null;
 
   startGame(playerDeck: string, aiDecks: string[]): void;
   backToLobby(): void;
@@ -127,6 +144,58 @@ function buildDecision(c: Casting): Decision {
 }
 
 let toastId = 0;
+let fxId = 0;
+
+/** Position d'un élément du plateau (avant qu'il ne disparaisse de l'écran). */
+function rectOf(id: string): Fx["rect"] {
+  const el = document.querySelector(`[data-oid="${CSS.escape(id)}"]`);
+  if (!el) return null;
+  const r = el.getBoundingClientRect();
+  return { x: r.left, y: r.top, w: r.width, h: r.height };
+}
+
+/** Transforme les événements d'une mise à jour en effets visuels échelonnés. */
+function playEffects(view: GameView, events: GameEvent[], faces: Record<string, CardFace>): void {
+  const store = useGame;
+  const fresh: Fx[] = [];
+  let step = 0;
+  const push = (kind: Fx["kind"], target: string, amount: number) => {
+    fresh.push({ id: ++fxId, kind, target, amount, delay: Math.min(step * 0.22, 2.2), rect: rectOf(target) });
+    step += 1;
+  };
+  let banner: Store["turnBanner"] = null;
+  let spotlight: Store["spotlight"] = null;
+  for (const e of events) {
+    if (e.type === "damage" && !e.targetDefId && !view.players[e.target]) continue;
+    if (e.type === "damage" && e.targetDefId) push("damage", e.target, e.amount);
+    else if (e.type === "life") push(e.delta < 0 ? "damage" : "heal", e.player, Math.abs(e.delta));
+    else if (e.type === "dies") push("death", e.objectId, 0);
+    else if (e.type === "turnStart") {
+      const mine = e.player === view.viewer;
+      banner = { id: ++fxId, mine, text: mine ? "À vous de jouer" : `Tour de ${view.players[e.player]?.name ?? "l'adversaire"}` };
+    } else if ((e.type === "cast" || e.type === "activate" || e.type === "trigger") && e.player !== view.viewer) {
+      const face = faces[e.defId];
+      if (face) spotlight = { id: ++fxId, face, who: view.players[e.player]?.name ?? "L'adversaire" };
+    }
+  }
+  if (!fresh.length && !banner && !spotlight) return;
+  store.setState((s) => ({
+    fx: [...s.fx, ...fresh],
+    ...(banner ? { turnBanner: banner } : {}),
+    ...(spotlight ? { spotlight } : {}),
+  }));
+  const ids = new Set(fresh.map((f) => f.id));
+  const longest = fresh.reduce((m, f) => Math.max(m, f.delay), 0);
+  setTimeout(() => store.setState((s) => ({ fx: s.fx.filter((f) => !ids.has(f.id)) })), (longest + 1.8) * 1000);
+  if (banner) {
+    const id = banner.id;
+    setTimeout(() => store.getState().turnBanner?.id === id && store.setState({ turnBanner: null }), 1400);
+  }
+  if (spotlight) {
+    const id = spotlight.id;
+    setTimeout(() => store.getState().spotlight?.id === id && store.setState({ spotlight: null }), 1500);
+  }
+}
 
 export const useGame = create<Store>((set, get) => {
   /** Avance dans les choix d'un lancement ; envoie la décision quand tout est choisi. */
@@ -193,6 +262,9 @@ export const useGame = create<Store>((set, get) => {
     selection: [],
     hover: null,
     graveyardOpen: null,
+    fx: [],
+    turnBanner: null,
+    spotlight: null,
 
     startGame(playerDeck, aiDecks) {
       get().session?.close();
@@ -211,7 +283,8 @@ export const useGame = create<Store>((set, get) => {
     receive(msg) {
       if (msg.type === "error") return get().notify(msg.message);
       const { view, events, faces } = msg;
-      const lines = describeEvents(events, view, faces, get().lang);
+      const lines = describeEvents(events, view, faces, get().lang, get().view);
+      playEffects(view, events, faces);
       const changed = pendingKey(get().view) !== pendingKey(view);
       set((s) => ({
         view,
