@@ -42,6 +42,19 @@ export type Keyword =
   | "prowess"
   /** Garde (702.21) : la capacité déclenchée est générée à partir du coût lu dans le texte. */
   | "ward"
+  /** Protection contre tout (702.16j) : ni ciblée, ni bloquée, ni blessée, ni enchantée/équipée. */
+  | "protectionFromEverything"
+  /** Défense talismanique contre les éphémères (702.11d). */
+  | "hexproofFromInstants"
+  | "hexproofFromBlack"
+  | "hexproofFromWhite"
+  /** Changelin (702.73) : a tous les types de créature, dans toutes les zones. */
+  | "changeling"
+  | "cantBeBlockedByHumans"
+  /** « Ne peut pas être bloquée par des créatures de force 2 ou moins. » */
+  | "cantBeBlockedByPowerLE2"
+  /** « Doit être bloquée si possible » (509.1c). */
+  | "mustBeBlocked"
   /** Restrictions (pas des mots-clés imprimés, mais gérées comme des capacités de couche 6). */
   | "cantBlock"
   | "cantAttack"
@@ -112,6 +125,26 @@ export interface CardDef {
   additionalCost?: AdditionalCost;
   /** « Ce sort coûte {N} de moins à lancer [si…] » (601.2f). */
   costReduction?: { generic: Amount; condition?: Condition };
+  /** Coût alternatif (« vous pouvez payer {B} plutôt que le coût de mana de ce sort si… »). */
+  altCost?: { mana: ManaCost; condition: Condition; label: string };
+  /** F/E définies par une capacité (604.3, couche 7a), ex. cartes dans les cimetières adverses. */
+  cdaPT?: Amount;
+  /** « En arrivant, choisissez un type de créature / une couleur » (614.12). */
+  chooseOnEnter?: "creatureType" | "color" | "cardName";
+  /** « Si cette carte devait être mise dans un cimetière de n'importe où, mélangez-la dans la bibliothèque à la place. » */
+  shuffleIntoLibrary?: boolean;
+  /** Peut être lancée depuis le cimetière en retirant N marqueurs parmi vos créatures (Quilled Greatwurm). */
+  graveyardCastRemoveCounters?: number;
+  /** Seule la force est définie par une capacité (Enigma Drake). */
+  cdaPower?: Amount;
+  /** « Vous pouvez lancer ce sort comme s'il avait le flash si vous payez {2} de plus. » */
+  flashExtraCost?: ManaCost;
+  /** Aura : « Vous contrôlez le permanent enchanté » (Confiscate). */
+  controlsEnchanted?: boolean;
+  /** Wilt-Leaf Liege : défaussée par un sort ou une capacité adverse, va sur le champ de bataille. */
+  opponentDiscardToBattlefield?: boolean;
+  /** Équipage N (Véhicule). */
+  crew?: number;
   text: string;
   fr?: { name?: string; typeLine?: string; text?: string; image?: string };
   image?: string;
@@ -143,11 +176,15 @@ export type AbilityDef =
   | StaticAbilityDef
   | ReplacementAbilityDef
   | CostReductionAbilityDef
-  | CastPermissionAbilityDef;
+  | CastPermissionAbilityDef
+  | PlayerStaticAbilityDef
+  | PreventionAbilityDef
+  | DoublerAbilityDef;
 
 export interface AdditionalCost {
   discard?: number;
-  sacrifice?: { filter: ObjectFilter; count: number };
+  /** `orPay` : « sacrifiez une créature ou payez {3}{B} » (sans sacrifice, ce mana s'ajoute au coût). */
+  sacrifice?: { filter: ObjectFilter; count: number; orPay?: ManaCost };
 }
 
 /** « Les sorts de [filtre] que vous lancez coûtent {N} de moins. » */
@@ -163,6 +200,12 @@ export interface ManaAbilityDef {
   cost: CostDef;
   /** Le joueur choisit l'un de ces types. */
   produce: ManaType[];
+  /** Produit la couleur choisie en arrivant (Heraldic Banner). */
+  produceChosen?: boolean;
+  /** Mana dépensable seulement pour un sort (ou une capacité d'une créature source) correspondant au filtre. */
+  restriction?: { spell?: ObjectFilter; abilityOfCreature?: ObjectFilter };
+  /** Effet si ce mana sert à lancer un sort correspondant (Carnelian Orb : célérité ; Pyromancer's Goggles : copie). */
+  rider?: { spell: ObjectFilter; effect: "haste" | "copy" };
   amount: number;
   /** « {G} pour chaque Elfe que vous contrôlez » : le montant est le nombre de permanents correspondant. */
   amountPer?: ObjectFilter;
@@ -179,6 +222,10 @@ export interface ActivatedAbilityDef {
   once?: boolean;
   /** Capacité activée depuis le cimetière (« Renvoyez cette carte de votre cimetière… »). */
   fromGraveyard?: boolean;
+  /** « N'activez qu'une fois par tour. » */
+  oncePerTurn?: boolean;
+  /** « N'activez que si… » / « … que pendant votre tour ». */
+  activationCondition?: Condition;
 }
 
 export interface CostDef {
@@ -195,6 +242,14 @@ export interface CostDef {
   tapAttached?: boolean;
   /** Capacité de loyauté (606) : marqueurs de loyauté ajoutés (+N) ou retirés (−N). */
   loyalty?: number;
+  /** Exiler la source (depuis le champ de bataille ou le cimetière). */
+  exileSelf?: boolean;
+  /** Renvoyer la source dans la main de son propriétaire (Maze's End). */
+  bounceSelf?: boolean;
+  /** Mettre des marqueurs sur la source (Mazemind Tome : marqueur de page). */
+  addCounters?: { kind: string; n: number };
+  /** Équipage N (702.122) : engager des créatures dégagées de force totale N ou plus (choisies automatiquement). */
+  crew?: number;
   payLife?: number;
 }
 
@@ -225,6 +280,8 @@ export interface TargetFilter {
   cards?: { filter: ObjectFilter; whose?: "you" | "opponent" | "any" };
   /** Sorts sur la pile (« contrecarrez le sort de créature ciblé »). */
   spells?: ObjectFilter;
+  /** Sorts ou capacités sur la pile à cible unique (Bolt Bend). */
+  stackItems?: { singleTarget?: boolean };
 }
 
 export interface ObjectFilter {
@@ -268,6 +325,18 @@ export interface ObjectFilter {
   nonland?: boolean;
   /** Au moins un de ces filtres (« artefact, enchantement ou créature avec le vol »). */
   anyOf?: ObjectFilter[];
+  /** Jeton seulement. */
+  token?: boolean;
+  minToughness?: number;
+  /** Non de base (« terrain non de base »). */
+  nonbasic?: boolean;
+  /** A reçu des blessures de la source ce tour-ci (Predator Ooze). */
+  damagedBySource?: boolean;
+  /** Du type de créature / de la couleur choisis par la source en arrivant. */
+  subtypeChosen?: boolean;
+  colorChosen?: boolean;
+  /** Mise dans sa zone actuelle ce tour-ci (« carte mise dans un cimetière ce tour-ci »). */
+  enteredThisTurn?: boolean;
   /** Valeur de mana inférieure ou égale à la force de la source (« … inférieure ou égale à la force d'Alesha »). */
   maxManaValueSourcePower?: boolean;
 }
@@ -295,11 +364,22 @@ export type TriggerSpec =
   /** « Chaque fois que des marqueurs sont placés sur … » */
   | { on: "countersPut"; who: "self" | ObjectFilter; kind?: string }
   /** Blessures infligées par une source (non de combat seulement si demandé), éventuellement à un adversaire. */
-  | { on: "dealsDamage"; who: "self" | ObjectFilter; noncombatOnly?: boolean; toOpponent?: boolean }
+  /** `anySourceYouControl` : toute source (sort compris) contrôlée par le contrôleur de la capacité (Niv-Mizzet). */
+  | {
+      on: "dealsDamage";
+      who: "self" | ObjectFilter;
+      noncombatOnly?: boolean;
+      toOpponent?: boolean;
+      anySourceYouControl?: boolean;
+    }
+  /** « Chaque fois qu'un adversaire défausse une carte » */
+  | { on: "discard"; whose: "you" | "opponent" | "any" }
   /** « Chaque fois que [cette créature] devient la cible d'un sort ou d'une capacité [qu'un adversaire contrôle] » */
-  | { on: "becomesTarget"; who: "self"; byOpponent?: boolean }
+  | { on: "becomesTarget"; who: "self"; byOpponent?: boolean; bySpellYouControl?: boolean }
   /** « Chaque fois que [la créature équipée] se dégage » */
-  | { on: "untaps"; who: "self" | ObjectFilter };
+  | { on: "untaps"; who: "self" | ObjectFilter }
+  /** « Chaque fois que [cette créature] devient engagée » */
+  | { on: "taps"; who: "self" | ObjectFilter };
 
 /** Conditions (« if intermédiaire » 603.4, « tant que »…). */
 export type Condition =
@@ -325,7 +405,24 @@ export type Condition =
   /** Le joueur désigné a exactement N points de vie (évalué pendant la résolution). */
   | { kind: "refLife"; ref: Ref; equals: number }
   /** Le permanent source est arrivé depuis un sort kické / lancé. */
-  | { kind: "wasCast" };
+  | { kind: "wasCast" }
+  /** … depuis un sort lancé depuis la main (Myojin). */
+  | { kind: "castFromHand" }
+  /** Au moins N permanents correspondant au filtre sur tout le champ de bataille (Blasphemous Edict). */
+  | { kind: "battlefieldCount"; filter: ObjectFilter; atLeast: number }
+  /** La source correspond au filtre (« si Kellan est un Éclaireur »). */
+  | { kind: "sourceMatches"; filter: ObjectFilter }
+  /** Réduction de coût : une cible de ce mot « cible » correspond au filtre (Luminous Rebuke). */
+  | { kind: "targetMatches"; spec: string; filter: ObjectFilter }
+  /** Pendant la résolution : l'objet désigné correspond au filtre (« si c'est un Chat »). */
+  | { kind: "refMatches"; ref: Ref; filter: ObjectFilter }
+  /** L'objet de l'événement (dernières informations connues) correspond au filtre (« s'il attaquait »). */
+  | { kind: "eventObjectMatches"; filter: ObjectFilter }
+  | { kind: "lifeGainedAtLeast"; n: number }
+  /** Un montant évalué du point de vue du contrôleur atteint N (« force totale 8 ou plus »). */
+  | { kind: "amountAtLeast"; amount: Amount; n: number }
+  /** X du sort qui se résout. */
+  | { kind: "xAtLeast"; n: number };
 
 /** Modifications apportées par un effet continu, rangées par couche (613). */
 export interface LayerMods {
@@ -341,6 +438,10 @@ export interface LayerMods {
   setName?: string;
   /** Couche 5 : couleurs. */
   setColors?: Color[];
+  /** Couche 4 : a tous les types de créature (Soulstone Sanctuary, changelin). */
+  allCreatureTypes?: boolean;
+  /** Couche 4 : a en plus le type de créature choisi par la source (Adaptive Automaton). */
+  addChosenSubtype?: boolean;
   /** Couche 6 : capacités (mots-clés) ajoutées ou retirées. */
   addKeywords?: Keyword[];
   removeKeywords?: Keyword[];
@@ -363,6 +464,8 @@ export interface ReplacementAbilityDef {
   entersWithCounters?: Amount;
   /** Condition (raid, kicker…) évaluée au moment de l'arrivée. */
   condition?: Condition;
+  /** Type des marqueurs (+1/+1 par défaut) : « revival », « fellowship »… */
+  counterKind?: string;
   /** S'applique aux autres permanents correspondant au filtre (vus du contrôleur de la source), pas à la source. */
   affects?: ObjectFilter;
   label?: string;
@@ -371,7 +474,61 @@ export interface ReplacementAbilityDef {
 /** « Vous pouvez lancer des sorts comme s'ils avaient le flash. » */
 export interface CastPermissionAbilityDef {
   kind: "castPermission";
-  flash: true;
+  /** « Vous pouvez lancer des sorts comme s'ils avaient le flash. » */
+  flash?: true;
+  /** Omniscience : sorts de votre main sans payer leur coût de mana. */
+  freeFromHand?: true;
+  /** Tinybones : pendant votre tour, jouer les cartes exilées avec un marqueur de butin que vous ne possédez pas (mana de n'importe quel type). */
+  stash?: true;
+  /** Muldrotha : pendant votre tour, un terrain et un sort de permanent de chaque type depuis votre cimetière. */
+  graveyardPermanentTypes?: true;
+  label?: string;
+}
+
+/** Capacité statique qui s'applique à des joueurs (défense talismanique, « ne peut pas perdre »…). */
+export interface PlayerStaticAbilityDef {
+  kind: "playerStatic";
+  /** « Vous avez la défense talismanique. » */
+  hexproof?: boolean;
+  /** « Vous ne pouvez pas perdre la partie et vos adversaires ne peuvent pas la gagner. » */
+  cantLose?: boolean;
+  /** « Vous n'avez pas de taille de main maximale. » */
+  noMaxHandSize?: boolean;
+  /** « Vous pouvez jouer un terrain supplémentaire lors de chacun de vos tours. » */
+  extraLands?: number;
+  /** « Si vous deviez gagner des points de vie, vous en gagnez autant plus N à la place. » */
+  lifeGainBonus?: number;
+  /** « Les joueurs ne peuvent pas gagner de points de vie » (s'applique à tous les joueurs). */
+  noLifeGainForAll?: boolean;
+  /** « Les éphémères et rituels que vous contrôlez ne peuvent pas être contrecarrés. » */
+  protectSpells?: boolean;
+  /** Dryad Militant : les éphémères et rituels qui iraient au cimetière (de n'importe qui) sont exilés. */
+  exileInstantsSorceries?: boolean;
+  /** Vizier of the Menagerie : lancer des créatures du dessus de sa bibliothèque (mana de n'importe quel type). */
+  castCreaturesFromTop?: boolean;
+  label?: string;
+}
+
+/** Prévention statique : « prévenez toutes les blessures [non de combat] qui devraient être infligées à [filtre]. » */
+export interface PreventionAbilityDef {
+  kind: "prevention";
+  filter: ObjectFilter;
+  noncombatOnly?: boolean;
+  combatOnly?: boolean;
+  /** Prévient aussi les blessures infligées PAR la source (Fog Bank). */
+  bySource?: boolean;
+  label?: string;
+}
+
+/** Remplacements qui doublent (614.1a) : jetons, marqueurs, blessures infligées aux adversaires. */
+export interface DoublerAbilityDef {
+  kind: "doubler";
+  tokens?: boolean;
+  counters?: boolean;
+  /** Blessures d'une source que vous contrôlez à un adversaire ou à un permanent adverse. */
+  damageToOpponents?: boolean;
+  /** Blessures infligées par une créature que vous contrôlez, à n'importe quoi (Gratuitous Violence). */
+  creatureDamage?: boolean;
   label?: string;
 }
 
@@ -388,6 +545,8 @@ export interface StaticAbilityDef {
   mods: LayerMods;
   /** F/E multipliées par le nombre de permanents correspondant (« +1/+1 pour chaque Forêt que vous contrôlez »). */
   per?: ObjectFilter;
+  /** F/E multipliées par le nombre de marqueurs de ce type sur la source (Banner of Kinship). */
+  perCounter?: string;
   label?: string;
 }
 
@@ -402,6 +561,10 @@ export interface TriggeredAbilityDef {
   modes?: ModeDef[];
   /** « Cette capacité ne se déclenche qu'une fois par tour. » */
   oncePerTurn?: boolean;
+  /** Se déclenche depuis le cimetière de son propriétaire (Flamewake Phoenix). */
+  fromGraveyard?: boolean;
+  /** « Choisissez un mode qui n'a pas déjà été choisi » (Demonic Pact). */
+  uniqueModes?: boolean;
   label?: string;
 }
 
@@ -416,6 +579,12 @@ export type Ref =
   | { kind: "eventObject" }
   /** Le permanent auquel la source est attachée (« la créature équipée / enchantée »). */
   | { kind: "attached" }
+  /** « Cette carte », où qu'elle soit maintenant (suit l'identité physique : Angelic Destiny). */
+  | { kind: "selfCard" }
+  /** Cartes liées à la source (Hoarding Dragon). */
+  | { kind: "linked" }
+  /** Permanents sacrifiés pour payer le coût de la capacité (Ayli). */
+  | { kind: "costSacrificed" }
   /** Le joueur de l'événement (joueur blessé, lanceur du sort…). */
   | { kind: "eventPlayer" }
   /** Le contrôleur (ou, hors du champ de bataille, le dernier contrôleur connu) de l'objet désigné. */
@@ -444,6 +613,16 @@ export type Amount =
   /** Valeur mémorisée pendant la résolution (vie perdue de cette façon, blessures en excès…). */
   | { kind: "var"; name: string }
   | { kind: "lifeTotal" }
+  /** Marqueurs d'un type sur la source, d'après ses dernières informations connues (« si elle avait un marqueur… »). */
+  | { kind: "lkiCounters"; counter: string }
+  | { kind: "manaValueOf"; ref: Ref }
+  | { kind: "toughnessOf"; ref: Ref }
+  /** Nombre de couleurs de l'objet (Ramos). */
+  | { kind: "colorsOf"; ref: Ref }
+  /** Plus grande force parmi les permanents correspondants. */
+  | { kind: "maxPower"; filter: ObjectFilter }
+  /** Nombre de noms différents parmi les permanents correspondants (Maze's End). */
+  | { kind: "distinctNames"; filter: ObjectFilter }
   /** Nombre de cartes dans une zone du contrôleur. */
   | { kind: "cardsIn"; zone: "hand" | "graveyard" | "library" };
 
@@ -484,13 +663,13 @@ export type Effect =
   | { op: "destroy"; what: Ref }
   | { op: "draw"; who: Ref; amount: Amount }
   | { op: "gainLife"; who: Ref; amount: Amount }
-  | { op: "createTokens"; token: TokenSpec; count: Amount; for?: Ref }
+  | { op: "createTokens"; token: TokenSpec; count: Amount; for?: Ref; store?: string }
   /** Marqueurs (par défaut +1/+1) ; un montant négatif en retire. */
   | { op: "addCounters"; what: Ref; amount: Amount; kind?: string }
   | { op: "loseLife"; who: Ref; amount: Amount; store?: string }
   | { op: "bounce"; what: Ref }
   | { op: "exile"; what: Ref }
-  | { op: "mill"; who: Ref; amount: Amount }
+  | { op: "mill"; who: Ref; amount: Amount; store?: { name: string; filter?: ObjectFilter } }
   /** Effets avec choix pendant la résolution. */
   | { op: "scry"; amount: Amount }
   | { op: "surveil"; amount: Amount }
@@ -498,7 +677,7 @@ export type Effect =
   | { op: "discard"; who: Ref; amount: Amount; filter?: ObjectFilter; chooser?: "controller"; optional?: boolean; store?: string }
   | { op: "sacrifice"; who: Ref; filter: ObjectFilter; amount: Amount; optional?: boolean; store?: string }
   /** « Vous pouvez payer {X}. Si vous le faites, … » : les `skip` effets suivants sont ignorés sinon. */
-  | { op: "mayPay"; cost: ManaCost; prompt: string; skip: number }
+  | { op: "mayPay"; cost: ManaCost; prompt: string; skip: number; life?: number }
   /** « Vous pouvez » : si le contrôleur refuse, les `skip` effets suivants sont ignorés. */
   | { op: "may"; prompt: string; skip: number }
   /** « Si cette créature devait mourir ce tour-ci, exilez-la à la place. » */
@@ -510,7 +689,7 @@ export type Effect =
   | { op: "tap"; what: Ref; untap?: boolean }
   /** Blessures à chaque créature correspondant au filtre (et éventuellement à des joueurs). */
   | { op: "damageAll"; amount: Amount; filter?: ObjectFilter; players?: Ref }
-  | { op: "destroyAll"; filter: ObjectFilter }
+  | { op: "destroyAll"; filter: ObjectFilter; store?: string }
   | { op: "addCountersAll"; filter: ObjectFilter; amount: Amount; kind?: string }
   /** Effet continu « jusqu'à la fin du tour » sur tous les permanents correspondant au filtre. */
   | { op: "modifyAll"; filter: ObjectFilter; mods: LayerMods }
@@ -539,12 +718,20 @@ export type Effect =
       maxManaValue?: Amount;
     }
   /** Chercher dans sa bibliothèque jusqu'à `count` cartes correspondant au filtre, puis mélanger. */
-  | { op: "search"; filter: ObjectFilter; count: Amount; to: MoveSpec }
+  | { op: "search"; filter: ObjectFilter; count: Amount; to: MoveSpec; who?: Ref; optional?: boolean; store?: string }
   | { op: "shuffle"; who: Ref }
   /** Jeton copie d'un objet (valeurs copiables), avec d'éventuelles modifications. */
-  | { op: "copyToken"; of: Ref; count?: Amount; addKeywords?: Keyword[]; sacrificeAtEndStep?: boolean }
+  | {
+      op: "copyToken";
+      of: Ref;
+      count?: Amount;
+      addKeywords?: Keyword[];
+      /** « … excepté que c'est un Cauchemar en plus de ses autres types » */
+      addSubtypes?: string[];
+      sacrificeAtEndStep?: boolean;
+    }
   /** Capacité déclenchée retardée : « au début de la prochaine étape de fin, … ». Les références sont figées maintenant. */
-  | { op: "delayed"; at: "nextEndStep"; effects: Effect[]; bind?: Record<string, Ref> }
+  | { op: "delayed"; at: "nextEndStep"; effects: Effect[]; bind?: Record<string, Ref>; vars?: Record<string, Amount> }
   /** Capacité déclenchée réflexive (« quand vous le faites, … ») : ses cibles sont choisies à sa mise sur la pile. */
   | { op: "reflexive"; targets: TargetSpec[]; effects: Effect[] }
   /** Contrecarre un sort ou une capacité sur la pile (701.5). */
@@ -553,12 +740,63 @@ export type Effect =
   | { op: "unlessPay"; who: Ref; mana?: ManaCost; life?: number; skip: number }
   /** « Vous pouvez lancer [cette carte] depuis votre cimetière ce tour-ci. » */
   | { op: "allowCastFromGraveyard"; what: Ref }
+  /** « En arrivant, choisissez un type de créature / une couleur » (sort de permanent qui se résout). */
+  | { op: "chooseOnEnter"; kind: "creatureType" | "color" | "cardName" }
+  /** Le contrôleur sépare les N cartes du dessus en deux piles, un adversaire en choisit une (en main), l'autre au cimetière. */
+  | { op: "piles"; n: number }
+  /** Carte de cimetière qui gagne le flashback jusqu'à la fin du tour (coût : son coût de mana). */
+  | { op: "grantFlashback"; what: Ref }
+  /** « Terminez le tour » (723). */
+  | { op: "endTurn" }
+  /** Le contrôleur de l'effet prend le contrôle de l'objet jusqu'à la fin du tour. */
+  | { op: "gainControl"; what: Ref }
+  /** Copies d'un sort sur la pile (mêmes cibles). */
+  | { op: "copySpell"; what: Ref; count: Amount }
+  /** Chaque joueur désigné révèle des cartes jusqu'à une carte correspondant au filtre, puis les met toutes au cimetière. */
+  | { op: "millUntil"; who: Ref; filter: ObjectFilter }
+  /** Exile les N cartes du dessus de la bibliothèque de chaque joueur désigné (mémorisées sous `store`). */
+  | { op: "exileTop"; who: Ref; n: number; store: string }
+  /** Permet au contrôleur de jouer ces cartes exilées ce tour-ci. `spellsOnly` : lancer seulement, sans timing, gratuitement. */
+  | { op: "grantPlay"; what: Ref; free?: boolean; anyTime?: boolean }
+  /** Donne le contrôle de l'objet à un joueur, sans limite de durée (Harmless Offering). */
+  | { op: "giveControl"; what: Ref; to: Ref }
+  /** Dégage jusqu'à N permanents engagés du contrôleur correspondant au filtre (choisis automatiquement). */
+  | { op: "untapUpTo"; filter: ObjectFilter; n: number }
+  /** Le sort qui se résout est exilé au lieu d'aller au cimetière (« Exilez Finale of Revelation »). */
+  | { op: "exileOnResolve" }
+  /** Marqueurs poison (122.1f) ; 10 ou plus : le joueur perd. */
+  | { op: "poison"; who: Ref; n: Amount }
+  /** Détruit l'objet et tous les autres permanents du même nom (Maelstrom Pulse). */
+  | { op: "destroySameName"; what: Ref }
+  /** Marqueurs +1/+1 répartis entre les cibles (au moins 1 chacune). */
+  | { op: "countersDivided"; total: number; to: Ref }
+  /** Choisir X, puis payer {X} ; mémorisé sous `store` (Wildborn Preserver). */
+  | { op: "payX"; prompt: string; store: string }
+  /** Change la cible d'un sort ou d'une capacité à cible unique (Bolt Bend). */
+  | { op: "changeTarget"; what: Ref }
+  /** Combat supplémentaire après celui-ci (Aurelia). */
+  | { op: "extraCombat" }
+  /** Le mana ajouté ne se vide pas avant la fin du tour (Savage Ventmaw). */
+  | { op: "addManaUntilEndOfTurn"; mana: ManaType[] }
+  /** Au prochain éphémère ou rituel lancé ce tour-ci par le contrôleur : copie (Teach by Example). */
+  | { op: "copyNextSpell" }
+  /** Le contrôleur gagne la partie (Maze's End). */
+  | { op: "winGame" }
+  | { op: "loseGame" }
+  /** Compte les résolutions de cette capacité ce tour-ci, mémorisé sous `store` (Venom Connoisseur). */
+  | { op: "countResolution"; store: string }
+  /** Détruit les permanents non-terrains de valeur X des joueurs blessés au combat par la source ce tour-ci. */
+  | { op: "hellkite" }
+  /** Lie des cartes à la source (Hoarding Dragon). */
+  | { op: "link"; what: Ref }
   /** Attache une Aura ou un Équipement à un permanent (701.3). */
   | { op: "attach"; what: Ref; to: Ref }
   /** Ajoute du mana à la réserve du contrôleur. */
   | { op: "addMana"; mana: ManaType[] }
+  /** Ajoute N mana d'une couleur choisie par le contrôleur. */
+  | { op: "addManaChoice"; n: number }
   /** Exile les N cartes du dessus ; le contrôleur en choisit une qu'il peut jouer ce tour-ci. */
-  | { op: "impulse"; n: number }
+  | { op: "impulse"; n: number; until?: "thisTurn" | "yourNextTurn" }
   /** Blessures réparties comme le contrôleur le désire entre les cibles (au moins 1 chacune). */
   | { op: "damageDivided"; total: Amount; to: Ref }
   /** Chaque joueur désigné garde un permanent de chaque type et sacrifie le reste. */
@@ -576,6 +814,8 @@ export type Effect =
       min?: number;
       to: MoveSpec;
       prompt?: string;
+      /** Exclut les objets mémorisés sous ce nom (« une autre carte de permanent »). */
+      excludeStored?: string;
     }
   /** Le propriétaire met l'objet au-dessus ou au-dessous de sa bibliothèque. */
   | { op: "libraryTopOrBottom"; what: Ref }
@@ -653,6 +893,20 @@ export interface GameObject {
   attachedTo?: ObjectId;
   /** Tour de la dernière activation d'une capacité de loyauté (606.3 : une par tour). */
   loyaltyTurn?: number;
+  /** Choix faits en arrivant (type de créature, couleur, nom de carte). */
+  chosen?: { creatureType?: string; color?: Color; cardName?: string };
+  /** Arrivé depuis un sort lancé depuis la main (Myojin). */
+  castFromHand?: boolean;
+  /** Cartes liées (exilées par cette carte, Hoarding Dragon). */
+  linked?: ObjectId[];
+  /** Sources qui lui ont infligé des blessures ce tour-ci (Predator Ooze). */
+  damagedBy?: ObjectId[];
+  /** Joueurs à qui il a infligé des blessures de combat ce tour-ci (Steel Hellkite). */
+  combatDamagedPlayers?: PlayerId[];
+  /** Tour de la dernière activation « une fois par tour », par indice de capacité. */
+  activatedTurn?: Record<number, number>;
+  /** Modes déjà choisis (Demonic Pact). */
+  usedModes?: number[];
 }
 
 export interface PlayerState {
@@ -672,6 +926,10 @@ export interface PlayerState {
   /** Total de vie de départ (conditions « au-dessus de votre total de départ »). */
   startingLife: number;
   turnStats: TurnStats;
+  /** Marqueurs poison (104.3d : 10 ou plus, le joueur perd). */
+  poison?: number;
+  /** Mana qui ne se vide pas avant la fin du tour (Savage Ventmaw). */
+  manaKeep?: Partial<Record<ManaType, number>>;
 }
 
 export interface StackItem {
@@ -695,6 +953,14 @@ export interface StackItem {
   flashback?: boolean;
   /** Capacité retardée ou réflexive : ses effets et cibles propres. */
   inline?: InlineAbility;
+  /** Copie d'un sort (707.10) : pas de carte associée. */
+  copy?: boolean;
+  /** Permanents sacrifiés pour le coût (dernières informations connues disponibles). */
+  sacrificed?: ObjectId[];
+  /** Effets de mana dépensé (Carnelian Orb, Pyromancer's Goggles). */
+  riders?: ("haste" | "copy")[];
+  /** Sort lancé depuis la main. */
+  fromHand?: boolean;
 }
 
 /** Capacité créée pendant la partie (retardée, réflexive) : pas d'index dans la définition de sa source. */
@@ -703,6 +969,9 @@ export interface InlineAbility {
   effects: Effect[];
   /** Références figées à la création (ex. « cette créature » exilée). */
   bound?: Record<string, string[]>;
+  /** Valeurs figées à la création (ex. nombre de marqueurs de la créature morte). */
+  vars?: Record<string, ChoiceValue[]>;
+
   label?: string;
 }
 
@@ -724,6 +993,8 @@ export interface TurnStats {
   lifeLost: number;
   cardsDrawn: number;
   spellsCast: number;
+  /** Éphémères et rituels lancés ce tour-ci (Thousand-Year Storm). */
+  instantSorceryCast: number;
 }
 
 export interface CombatState {
@@ -792,6 +1063,10 @@ export interface LkiSnapshot {
   attacking?: boolean;
   blocking?: boolean;
   attachedTo?: ObjectId;
+  /** Identité physique (suit la carte d'une zone à l'autre). */
+  uid?: string;
+  linked?: ObjectId[];
+  damagedBy?: ObjectId[];
   name?: string;
   manaValue?: number;
   tapped?: boolean;
@@ -851,8 +1126,14 @@ export interface GameState {
     onceFired: string[];
     /** Cartes de cimetière qu'on peut lancer ce tour-ci (Zul Ashur). */
     mayCastFromGraveyard?: ObjectId[];
-    /** Cartes exilées qu'on peut jouer ce tour-ci (Chandra). */
-    mayPlayFromExile?: ObjectId[];
+    /** Muldrotha : types de permanents déjà joués depuis le cimetière ce tour-ci. */
+    graveyardTypesUsed?: string[];
+    /** Cartes du cimetière qui ont le flashback ce tour-ci (Sphinx of Forgotten Lore). */
+    flashbackGranted?: ObjectId[];
+    /** Combats supplémentaires à venir ce tour-ci (Aurelia). */
+    extraCombats?: number;
+    /** Nombre de résolutions par capacité ce tour-ci (Venom Connoisseur). */
+    resolutionCounts?: Record<string, number>;
     startingPlayer: PlayerId;
   };
   flow: Flow;
@@ -868,6 +1149,16 @@ export interface GameState {
   triggers: PendingTrigger[];
   /** Capacités déclenchées retardées en attente de leur moment. */
   delayed: DelayedTrigger[];
+  /** Cartes qu'un joueur peut jouer depuis l'exil jusqu'à la fin du tour `until` (impulsion, Etali…). */
+  playPermissions?: { card: ObjectId; player: PlayerId; until: number; free?: boolean; anyTime?: boolean }[];
+  /** Contrôle donné par une Aura (Confiscate) : contrôleur d'origine à rétablir quand l'Aura part. */
+  auraControl?: { host: ObjectId; aura: ObjectId; original: PlayerId }[];
+  /** Changements de contrôle « jusqu'à la fin du tour » (contrôleur d'origine à rétablir). */
+  controlChanges?: { id: ObjectId; original: PlayerId }[];
+  /** « Au prochain éphémère ou rituel que vous lancez ce tour-ci, copiez-le » (Teach by Example). */
+  nextSpellCopies?: { player: PlayerId; turn: number }[];
+  /** « Terminez le tour » (Time Stop) : le tour passe directement à l'étape de nettoyage. */
+  endTurnRequested?: boolean;
   /** Joueurs à qui l'on a proposé leurs cartes « leyline » en début de partie. */
   leylineAsked?: PlayerId[];
   /** Cartes exilées « jusqu'à ce que [la source] quitte le champ de bataille ». */
@@ -916,6 +1207,12 @@ export type ChoiceIntent =
   | "topOrBottom"
   | "punisher"
   | "unlessPay"
+  | "chooseOnEnter"
+  | "piles"
+  | "divideCounters"
+  | "manaColor"
+  | "payX"
+  | "changeTarget"
   | "leyline"
   | "impulse"
   | "divideDamage"
@@ -968,6 +1265,10 @@ export type ChoicePurpose =
   | { kind: "leyline"; player: PlayerId };
 
 export interface CastChoices {
+  /** Sans payer le coût de mana (Omniscience). */
+  free?: boolean;
+  /** Coût alternatif de la carte. */
+  alternative?: boolean;
   mode?: number;
   targets?: Record<string, string[]>;
   x?: number;
@@ -1023,9 +1324,21 @@ export type ActionOption =
       kickerAffordable: boolean;
       /** Lancée depuis le cimetière grâce au flashback. */
       fromGraveyard?: boolean;
-      /** Carte exilée jouable ce tour-ci (Chandra). */
+      /** Carte exilée jouable (impulsion, Etali, Tinybones). */
       fromExile?: boolean;
-      additional?: { discard?: { count: number; options: ObjectId[] }; sacrifice?: { count: number; options: ObjectId[] } };
+      /** Doit être lancée sans payer son coût de mana (Etali). */
+      free?: boolean;
+      /** Peut être lancée sans payer son coût de mana (Omniscience). */
+      freeAvailable?: boolean;
+      /** Coût alternatif payable (Blasphemous Edict). */
+      altAvailable?: boolean;
+      /** Coût normal payable. */
+      normalAvailable?: boolean;
+      additional?: {
+        discard?: { count: number; options: ObjectId[] };
+        /** `orPay` : on peut payer ce mana au lieu de sacrifier (Eaten Alive). */
+        sacrifice?: { count: number; options: ObjectId[]; orPay?: ManaCost; orPayAffordable?: boolean };
+      };
     }
   | {
       type: "activate";
@@ -1054,6 +1367,9 @@ export type GameEvent =
   | { type: "activate"; player: PlayerId; stackId: string; defId: string; targets: string[] }
   | { type: "resolve"; stackId: string; defId: string }
   | { type: "fizzle"; stackId: string; defId: string }
+  | { type: "copy"; stackId: string; defId: string; player: PlayerId }
+  | { type: "poison"; player: PlayerId; amount: number; total: number }
+  | { type: "endTurn"; player: PlayerId }
   | { type: "countered"; stackId: string; defId: string; by: string }
   | { type: "attach"; objectId: ObjectId; defId: string; to: ObjectId; toDefId: string }
   | { type: "damage"; sourceDefId: string; target: string; targetDefId?: string; amount: number; combat: boolean }

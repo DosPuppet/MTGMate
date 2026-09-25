@@ -99,13 +99,12 @@ function Collection({ deck, onChange }: { deck: DeckList; onChange: (name: strin
     rarity: "",
     query: "",
     playableOnly: true,
-    mainOnly: true,
+    mainOnly: false,
   });
   const cards = useMemo(() => POOL.filter((c) => matches(c, f)), [f]);
   const inDeck = (name: string) =>
     (deck.main.find((e) => e[1] === name)?.[0] ?? 0) + (deck.sideboard?.find((e) => e[1] === name)?.[0] ?? 0);
-  const main = POOL.filter(isMainSet);
-  const playable = main.filter((c) => c.implemented).length;
+  const playable = POOL.filter((c) => c.implemented).length;
   const toggleColor = (c: string) =>
     setF((x) => ({ ...x, colors: x.colors.includes(c) ? x.colors.filter((y) => y !== c) : [...x.colors, c] }));
   return (
@@ -156,12 +155,12 @@ function Collection({ deck, onChange }: { deck: DeckList; onChange: (name: strin
           <input type="checkbox" checked={f.playableOnly} onChange={(e) => setF({ ...f, playableOnly: e.target.checked })} />
           Jouables seulement
         </label>
-        <label className="toggle" title="Décocher pour voir aussi les réimpressions de Foundations (Starter Collection…)">
+        <label className="toggle" title="Cocher pour ne voir que le set principal (sans les réimpressions de Foundations)">
           <input type="checkbox" checked={f.mainOnly} onChange={(e) => setF({ ...f, mainOnly: e.target.checked })} />
           Set principal
         </label>
         <span className="hint">
-          {cards.length} cartes · set principal : {playable}/{main.length} jouables
+          {cards.length} cartes · Foundations : {playable}/{POOL.length} jouables
         </span>
       </div>
       <div className="collection-grid">

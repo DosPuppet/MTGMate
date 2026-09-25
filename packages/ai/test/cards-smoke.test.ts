@@ -1,10 +1,10 @@
 /**
- * Test de fumée de toutes les cartes gérées du set principal : chaque carte est jouée dans une position
+ * Test de fumée de toutes les cartes gérées de Foundations : chaque carte est jouée dans une position
  * préparée (mana de toutes les couleurs, cibles de chaque sorte, cimetières garnis), puis chacune de ses
  * capacités activées est utilisée ; la partie continue quelques tours. Aucune exception inattendue ni
  * violation d'invariant n'est tolérée.
  */
-import { CARDS, isMainSet } from "@mtgx/cards";
+import { CARDS } from "@mtgx/cards";
 import {
   type Agent,
   type CardDef,
@@ -106,9 +106,10 @@ function play(c: CardDef, seed: number): { state: GameState; illegal: number; pl
   return { state, illegal, played };
 }
 
-const cards = Object.values(CARDS).filter((c) => isMainSet(c) && c.implemented && !c.supertypes.includes("Basic"));
+// Toutes les cartes de Foundations (set principal et réimpressions), sauf les terrains de base.
+const cards = Object.values(CARDS).filter((c) => !c.isToken && c.implemented && !c.supertypes.includes("Basic"));
 
-describe("test de fumée des cartes du set principal", () => {
+describe("test de fumée des cartes de Foundations", () => {
   it.each(cards.map((c) => [c.name, c] as const))("%s", (_, c) => {
     let playedOnce = false;
     for (const seed of [1, 2, 3]) {

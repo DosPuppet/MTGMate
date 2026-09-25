@@ -62,7 +62,9 @@ export function buildCastDecision(
         x: a.xMax === null ? undefined : Math.floor(rand() * (a.xMax + 1)),
         kicked: a.kickerAffordable && rand() < 0.5,
         discard: pickN(a.additional?.discard),
-        sacrifice: pickN(a.additional?.sacrifice),
+        sacrifice: a.additional?.sacrifice?.orPay && rand() < 0.5 ? [] : pickN(a.additional?.sacrifice),
+        free: a.freeAvailable && (!a.normalAvailable || rand() < 0.7) ? true : undefined,
+        alternative: !a.freeAvailable && a.altAvailable && (!a.normalAvailable || rand() < 0.5) ? true : undefined,
       };
     }
     case "activate":
@@ -111,8 +113,17 @@ export function enumerateDecisions(a: ActionOption, limit = 40, rank?: (ids: str
             discard: pick(a.additional?.discard),
             sacrifice: pick(a.additional?.sacrifice),
           };
-          out.push(base);
-          if (a.kickerAffordable) out.push({ ...base, kicked: true });
+          // Façons de payer : sans payer (Omniscience), coût alternatif, « sacrifiez ou payez ».
+          const variants = [
+            ...(a.normalAvailable || a.free ? [base] : []),
+            ...(a.freeAvailable ? [{ ...base, free: true, x: 0 }] : []),
+            ...(a.altAvailable ? [{ ...base, alternative: true }] : []),
+            ...(a.additional?.sacrifice?.orPay ? [{ ...base, sacrifice: [] }] : []),
+          ];
+          for (const v of variants) {
+            out.push(v);
+            if (a.kickerAffordable) out.push({ ...v, kicked: true });
+          }
         }
       }
       return out.slice(0, limit);

@@ -50,6 +50,14 @@ export const KEYWORD_LABEL: Record<Keyword, string> = {
   indestructible: "Indestructible",
   prowess: "Prouesse",
   ward: "Garde",
+  protectionFromEverything: "Protection contre tout",
+  hexproofFromInstants: "Défense talismanique contre les éphémères",
+  hexproofFromBlack: "Défense talismanique contre le noir",
+  hexproofFromWhite: "Défense talismanique contre le blanc",
+  changeling: "Changelin",
+  cantBeBlockedByHumans: "Imblocable par les Humains",
+  cantBeBlockedByPowerLE2: "Imblocable par les créatures de force 2 ou moins",
+  mustBeBlocked: "Doit être bloquée",
   cantBlock: "Ne peut pas bloquer",
   cantAttack: "Ne peut pas attaquer",
   unblockable: "Ne peut pas être bloquée",
@@ -148,6 +156,12 @@ export function describeEvents(
       }
       case "fizzle":
         add(`${name(e.defId)} ne se résout pas : cibles illégales.`, "info");
+        break;
+      case "copy":
+        add(`${name(e.defId)} est copié.`, kind(e.player));
+        break;
+      case "endTurn":
+        add("Le tour se termine.", "info");
         break;
       case "attach":
         add(`${name(e.defId)} est attaché à ${name(e.toDefId)}.`, "info");

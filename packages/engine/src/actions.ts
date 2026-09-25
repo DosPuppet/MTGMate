@@ -18,6 +18,8 @@ import {
   obj,
   rulesEvent,
 } from "./state";
+import { controlledAbilitiesWithSource, doublers, playerStatic, preventions } from "./statics";
+import { matchesObjectFilter } from "./targets";
 import type { CardDef, GameState, Keyword, ObjectId, PlayerId, TokenSpec } from "./types";
 
 export interface DamageSource {
@@ -46,7 +48,15 @@ export function drawCard(s: GameState, p: PlayerId): void {
 export function gainLife(s: GameState, p: PlayerId, amount: number): void {
   const player = s.players[p];
   if (!player || amount <= 0) return;
+  // Giant Cindermaw : « les joueurs ne peuvent pas gagner de points de vie ».
+  if (s.playerOrder.some((q) => playerStatic(s, q, "noLifeGainForAll"))) return;
+  // Angel of Vitality : « vous gagnez autant plus 1 à la place ».
+  amount += controlledAbilitiesWithSource(s, p).reduce(
+    (n, { ab }) => n + (ab.kind === "playerStatic" ? (ab.lifeGainBonus ?? 0) : 0),
+    0,
+  );
   player.life += amount;
+  bump(s); // des caractéristiques peuvent dépendre des points de vie (Elenda)
   emit({ type: "life", player: p, delta: amount, life: player.life });
   player.turnStats.lifeGained += amount;
   player.turnStats.lifeGainEvents += 1;
@@ -57,6 +67,7 @@ export function loseLife(s: GameState, p: PlayerId, amount: number): void {
   const player = s.players[p];
   if (!player || amount <= 0) return;
   player.life -= amount;
+  bump(s);
   emit({ type: "life", player: p, delta: -amount, life: player.life });
   player.turnStats.lifeLost += amount;
   rulesEvent(s, { e: "lifeLoss", player: p, amount });
@@ -66,7 +77,34 @@ export function loseLife(s: GameState, p: PlayerId, amount: number): void {
 export function dealDamage(s: GameState, source: DamageSource, target: string, amount: number, combat: boolean): void {
   if (amount <= 0) return;
   if (combat && preventsCombatDamage(s, target)) return;
+  const targetObj = s.objects[target];
+  if (targetObj?.zone === "battlefield") {
+    // 702.16e : protection contre tout — les blessures sont prévenues.
+    if (hasKeyword(s, target, "protectionFromEverything")) return;
+  }
+  // Préventions statiques : blessures reçues (Crystal Barricade, Fog Bank) ou infligées par la source (Fog Bank).
+  for (const p of preventions(s)) {
+    if (p.ab.noncombatOnly && combat) continue;
+    if (p.ab.combatOnly && !combat) continue;
+    if (p.ab.bySource) {
+      if (source.id === p.sourceId) return;
+      continue;
+    }
+    if (targetObj?.zone === "battlefield" && matchesObjectFilter(s, p.controller, target, p.ab.filter, p.sourceId)) return;
+  }
+  // Twinflame Tyrant : blessures d'une source que vous contrôlez à un adversaire ou à un permanent adverse, doublées.
+  const victim = isPlayer(s, target) ? target : targetObj?.controller;
+  if (victim && victim !== source.controller) amount *= 2 ** doublers(s, source.controller, "damageToOpponents");
+  // Gratuitous Violence : blessures d'une créature que vous contrôlez, doublées.
+  if (source.id && s.objects[source.id]?.zone === "battlefield" && isCreature(s, source.id)) {
+    amount *= 2 ** doublers(s, source.controller, "creatureDamage");
+  }
   if (isPlayer(s, target)) {
+    // Suivi des joueurs blessés au combat par cette source ce tour-ci (Steel Hellkite).
+    const src = source.id ? s.objects[source.id] : undefined;
+    if (combat && src && !src.combatDamagedPlayers?.includes(target)) {
+      src.combatDamagedPlayers = [...(src.combatDamagedPlayers ?? []), target];
+    }
     emit({ type: "damage", sourceDefId: source.defId, target, amount, combat });
     loseLife(s, target, amount);
   } else {
@@ -81,11 +119,13 @@ export function dealDamage(s: GameState, source: DamageSource, target: string, a
     if (creature) {
       o.damage += amount;
       if (source.keywords.includes("deathtouch")) o.deathtouched = true;
+      // Suivi « blessée par cette créature ce tour-ci » (Predator Ooze).
+      if (source.id && !o.damagedBy?.includes(source.id)) o.damagedBy = [...(o.damagedBy ?? []), source.id];
     }
     emit({ type: "damage", sourceDefId: source.defId, target, targetDefId: o.defId, amount, combat });
   }
   if (source.keywords.includes("lifelink")) gainLife(s, source.controller, amount);
-  rulesEvent(s, { e: "damage", sourceId: source.id ?? null, target, amount, combat });
+  rulesEvent(s, { e: "damage", sourceId: source.id ?? null, sourceController: source.controller, target, amount, combat });
 }
 
 export function sourceFromObject(s: GameState, id: ObjectId): DamageSource {
@@ -124,7 +164,8 @@ export function tokenDefId(t: TokenSpec): string {
   return `token:${t.name.toLowerCase().replace(/\W+/g, "-")}-${t.power ?? "x"}-${t.toughness ?? "x"}-${t.colors.join("")}${kw ? `-${kw}` : ""}`;
 }
 
-export function createTokens(s: GameState, controller: PlayerId, t: TokenSpec, count: number): void {
+export function createTokens(s: GameState, controller: PlayerId, t: TokenSpec, count: number): ObjectId[] {
+  const created: ObjectId[] = [];
   const defId = tokenDefId(t);
   if (!s.defs[defId]) {
     const def: CardDef = {
@@ -147,12 +188,16 @@ export function createTokens(s: GameState, controller: PlayerId, t: TokenSpec, c
     };
     s.defs[defId] = def;
   }
-  for (let i = 0; i < count; i++) {
+  // Doubling Season : « crée deux fois plus de ces jetons ».
+  const n = count * 2 ** doublers(s, controller, "tokens");
+  for (let i = 0; i < n; i++) {
     const o = createObject(s, defId, controller, "battlefield", { isToken: true });
     o.timestamp = nextTimestamp(s);
     emit({ type: "token", objectId: o.id, defId, controller });
     rulesEvent(s, { e: "zone", oldId: null, newId: o.id, from: null, to: "battlefield", lki: null });
+    created.push(o.id);
   }
+  return created;
 }
 
 /** Jeton copie d'une carte : mêmes valeurs copiables (sa définition), mais c'est un jeton (707.2). */

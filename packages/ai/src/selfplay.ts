@@ -38,7 +38,8 @@ export function checkInvariants(s: GameState, deckSizes: Record<string, number>)
   }
   for (const id of s.battlefield) place(id, "battlefield");
   for (const id of s.exile) place(id, "exile");
-  for (const item of s.stack) if (item.kind === "spell") place(item.sourceId, "stack");
+  // Une copie de sort (707.10) n'a pas de carte associée.
+  for (const item of s.stack) if (item.kind === "spell" && !item.copy) place(item.sourceId, "stack");
   for (const [id, o] of Object.entries(s.objects)) {
     if (!seen.has(id)) errors.push(`${id} (${o.defId}) n'est dans aucune zone`);
     const where = seen.get(id) ?? "";

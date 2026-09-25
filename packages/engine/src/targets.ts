@@ -4,7 +4,8 @@
 import { RulesError } from "./errors";
 import { chars, hasKeyword, snapshot } from "./layers";
 import { obj } from "./state";
-import type { CardType, GameState, LkiSnapshot, ObjectFilter, ObjectId, PlayerId, TargetSpec } from "./types";
+import { playerStatic } from "./statics";
+import type { CardType, Color, GameState, LkiSnapshot, ObjectFilter, ObjectId, PlayerId, TargetSpec } from "./types";
 
 const PERMANENT_TYPES: readonly CardType[] = ["Artifact", "Creature", "Enchantment", "Land", "Planeswalker", "Battle"];
 
@@ -12,7 +13,7 @@ const PERMANENT_TYPES: readonly CardType[] = ["Artifact", "Creature", "Enchantme
 export function matchesView(v: LkiSnapshot, f: ObjectFilter, perspective: PlayerId, sourceId?: ObjectId): boolean {
   if (f.types && !f.types.some((t) => v.types.includes(t))) return false;
   if (f.notTypes?.some((t) => v.types.includes(t))) return false;
-  if (f.subtype && !v.subtypes.includes(f.subtype)) return false;
+  if (f.subtype && !hasSubtype(v, f.subtype)) return false;
   if (f.controller === "you" && v.controller !== perspective) return false;
   if (f.controller === "opponent" && v.controller === perspective) return false;
   if (f.keyword && !v.keywords.includes(f.keyword)) return false;
@@ -29,8 +30,12 @@ export function matchesView(v: LkiSnapshot, f: ObjectFilter, perspective: Player
   if (f.colors && !f.colors.some((c) => v.colors.includes(c))) return false;
   if (f.withCounter && !((v.counters?.[f.withCounter] ?? 0) > 0)) return false;
   if (f.inCombat && !v.attacking && !v.blocking) return false;
-  if (f.anySubtype && !f.anySubtype.some((t) => v.subtypes.includes(t))) return false;
-  if (f.notSubtype && v.subtypes.includes(f.notSubtype)) return false;
+  if (f.anySubtype && !f.anySubtype.some((t) => hasSubtype(v, t))) return false;
+  if (f.notSubtype && hasSubtype(v, f.notSubtype)) return false;
+  if (f.token !== undefined && v.isToken !== f.token) return false;
+  if (f.minToughness !== undefined && v.toughness < f.minToughness) return false;
+  if (f.nonbasic && v.supertypes.includes("Basic")) return false;
+  if (f.damagedBySource && !(sourceId && v.damagedBy?.includes(sourceId))) return false;
   if (f.minManaValue !== undefined && (v.manaValue ?? 0) < f.minManaValue) return false;
   if (f.maxPower !== undefined && v.power > f.maxPower) return false;
   if (f.basic && !v.supertypes.includes("Basic")) return false;
@@ -38,6 +43,45 @@ export function matchesView(v: LkiSnapshot, f: ObjectFilter, perspective: Player
   if (f.nonland && v.types.includes("Land")) return false;
   if (f.anyOf && !f.anyOf.some((g) => matchesView(v, g, perspective, sourceId))) return false;
   return true;
+}
+
+/** Marqueur de sous-type : « a tous les types de créature » (Soulstone Sanctuary). */
+export const ALL_CREATURE_TYPES = "*";
+
+/** Sous-types qui ne sont pas des types de créature (terrains, artefacts, enchantements). */
+const NON_CREATURE_SUBTYPES = new Set([
+  "Plains",
+  "Island",
+  "Swamp",
+  "Mountain",
+  "Forest",
+  "Equipment",
+  "Aura",
+  "Treasure",
+  "Food",
+  "Clue",
+  "Saga",
+  "Vehicle",
+]);
+
+function hasSubtype(v: LkiSnapshot, t: string): boolean {
+  if (v.subtypes.includes(t)) return true;
+  // Changelin : tous les types de créature, dans toutes les zones (702.73a).
+  if (v.keywords.includes("changeling") && !NON_CREATURE_SUBTYPES.has(t)) return true;
+  return v.subtypes.includes(ALL_CREATURE_TYPES) && v.types.includes("Creature") && !NON_CREATURE_SUBTYPES.has(t);
+}
+
+/** Remplace « du type / de la couleur choisis » par le choix fait par la source en arrivant. */
+export function withChosen(
+  f: ObjectFilter,
+  source: { chosen?: { creatureType?: string; color?: Color } } | undefined,
+): ObjectFilter {
+  if (!f.subtypeChosen && !f.colorChosen) return f;
+  const out: ObjectFilter = { ...f, subtypeChosen: undefined, colorChosen: undefined };
+  // Sans choix (arrivée sans résolution), rien ne correspond.
+  if (f.subtypeChosen) out.subtype = source?.chosen?.creatureType ?? "—";
+  if (f.colorChosen) out.colors = source?.chosen?.color ? [source.chosen.color] : [];
+  return out;
 }
 
 /** Force de la source (vivante, sinon dernière information connue). */
@@ -58,6 +102,8 @@ export function matchesCard(s: GameState, controller: PlayerId, id: ObjectId, f:
   const o = s.objects[id];
   if (!o) return false;
   f = resolveFilter(s, f, sourceId);
+  // « mise dans un cimetière ce tour-ci » : l'objet a été créé dans sa zone pendant ce tour.
+  if (f.enteredThisTurn && o.controlledSince !== s.turn.number) return false;
   return (
     matchesView(snapshot(s, id), { ...f, controller: undefined }, controller, sourceId) &&
     (f.controller === undefined || (f.controller === "you" ? o.owner === controller : o.owner !== controller))
@@ -80,9 +126,17 @@ export function isLegalTarget(s: GameState, controller: PlayerId, spec: TargetSp
   const player = s.players[id];
   if (player) {
     if (player.lost || !spec.filter.players) return false;
+    // « Vous avez la défense talismanique » (Crystal Barricade).
+    if (id !== controller && playerStatic(s, id, "hexproof")) return false;
     if (spec.filter.players === "you") return id === controller;
     if (spec.filter.players === "opponent") return id !== controller;
     return true;
+  }
+  // Sort ou capacité sur la pile (« sort ou capacité ciblé avec une seule cible »).
+  const stackItem = s.stack.find((x) => x.id === id);
+  if (stackItem && spec.filter.stackItems) {
+    const n = Object.values(stackItem.targets).flat().length;
+    return !spec.filter.stackItems.singleTarget || n === 1;
   }
   const o = s.objects[id];
   if (o && o.zone === "stack") {
@@ -100,6 +154,17 @@ export function isLegalTarget(s: GameState, controller: PlayerId, spec: TargetSp
   if (!spec.filter.objects || !matchesObjectFilter(s, controller, id, spec.filter.objects, sourceId)) return false;
   // Défense talismanique : ne peut pas être la cible de sorts ou capacités adverses.
   if (obj(s, id).controller !== controller && hasKeyword(s, id, "hexproof")) return false;
+  // Protection contre tout : ne peut être la cible de rien (702.16b).
+  if (hasKeyword(s, id, "protectionFromEverything")) return false;
+  // Défense talismanique contre les éphémères / le noir / le blanc : selon la source adverse.
+  if (obj(s, id).controller !== controller && sourceId) {
+    const src = s.objects[sourceId];
+    const d = src ? s.defs[src.defId] : undefined;
+    const colors = src ? chars(s, sourceId).colors : [];
+    if (hasKeyword(s, id, "hexproofFromInstants") && d?.types.includes("Instant")) return false;
+    if (hasKeyword(s, id, "hexproofFromBlack") && colors.includes("B")) return false;
+    if (hasKeyword(s, id, "hexproofFromWhite") && colors.includes("W")) return false;
+  }
   return true;
 }
 
@@ -111,6 +176,8 @@ export function legalTargets(s: GameState, controller: PlayerId, spec: TargetSpe
   if (spec.filter.cards) for (const p of s.playerOrder) for (const id of s.players[p]?.graveyard ?? []) if (ok(id)) out.push(id);
   if (spec.filter.spells)
     for (const item of s.stack) if (item.kind === "spell" && item.id !== sourceId && ok(item.id)) out.push(item.id);
+  if (spec.filter.stackItems)
+    for (const item of s.stack) if (item.id !== sourceId && !out.includes(item.id) && ok(item.id)) out.push(item.id);
   return out;
 }
 

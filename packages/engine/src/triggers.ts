@@ -9,9 +9,10 @@
  * - Capacités retardées (603.7) et réflexives (603.12) : créées par des effets, avec leurs propres effets et cibles.
  */
 import { ask } from "./choices";
+import { boardAmount } from "./effects";
 import { RulesError } from "./errors";
 import { apnapOrder, chars, emit, newId, obj, onBattlefield, opponentsOf, type RulesEvent, rulesEvent, snapshot } from "./state";
-import { legalTargets, matchesObjectFilter, matchesView, validateTargets } from "./targets";
+import { legalTargets, matchesObjectFilter, matchesView, validateTargets, withChosen } from "./targets";
 import type {
   AbilityDef,
   Condition,
@@ -44,6 +45,13 @@ function liveSources(s: GameState): Source[] {
     if (!granted && !hasTriggers(s.defs[obj(s, id).defId]?.abilities)) continue;
     const view = snapshot(s, id);
     if (hasTriggers(view.abilities)) out.push({ id, view });
+  }
+  // Cartes dont une capacité se déclenche depuis le cimetière (Flamewake Phoenix).
+  for (const p of s.playerOrder) {
+    for (const id of s.players[p]?.graveyard ?? []) {
+      const abs = s.defs[obj(s, id).defId]?.abilities;
+      if (abs?.some((a) => a.kind === "triggered" && a.fromGraveyard)) out.push({ id, view: snapshot(s, id) });
+    }
   }
   // Emblèmes (zone de commandement).
   for (const p of s.playerOrder) {
@@ -99,8 +107,9 @@ export function checkCondition(s: GameState, c: Condition, controller: PlayerId,
     case "threshold":
       return (s.players[controller]?.graveyard.length ?? 0) >= 7;
     case "counterAtLeast": {
-      const o = sourceId ? s.objects[sourceId] : undefined;
-      return !!o && (o.counters[c.counter] ?? 0) >= c.n;
+      // La source, ou ses dernières informations connues (« si elle avait un marqueur… » en mourant).
+      const counters = sourceId ? (s.objects[sourceId]?.counters ?? s.lki[sourceId]?.counters) : undefined;
+      return !!counters && (counters[c.counter] ?? 0) >= c.n;
     }
     case "lifeAboveStart": {
       const p = s.players[controller];
@@ -114,6 +123,34 @@ export function checkCondition(s: GameState, c: Condition, controller: PlayerId,
       return c.of.every((x) => checkCondition(s, x, controller, sourceId));
     case "wasCast":
       return !!(sourceId && s.objects[sourceId]?.cast);
+    case "castFromHand":
+      return !!(sourceId && s.objects[sourceId]?.castFromHand);
+    case "battlefieldCount":
+      return s.battlefield.filter((id) => matchesView(snapshot(s, id), c.filter, controller, sourceId)).length >= c.atLeast;
+    case "sourceMatches":
+      return !!sourceId && onBattlefield(s, sourceId) && matchesObjectFilter(s, controller, sourceId, c.filter, sourceId);
+    case "targetMatches":
+    case "refMatches":
+    case "eventObjectMatches":
+    case "xAtLeast":
+      return false; // évalués au lancement (stack.ts) ou pendant la résolution (effects.ts)
+    case "lifeGainedAtLeast":
+      return (s.players[controller]?.turnStats.lifeGained ?? 0) >= c.n;
+    case "amountAtLeast": {
+      const a = c.amount;
+      if (typeof a === "number") return a >= c.n;
+      if (a.kind === "count" && a.zone && a.zone !== "battlefield") {
+        // Cartes d'une zone (« deux éphémères ou rituels ou plus dans votre cimetière »).
+        const zone = a.zone;
+        const players = a.whose === "all" ? s.playerOrder : a.whose === "opponents" ? opponentsOf(s, controller) : [controller];
+        const n = players
+          .flatMap((p) => s.players[p]?.[zone] ?? [])
+          .filter((id) => matchesView(snapshot(s, id), { ...a.filter, controller: undefined }, controller, sourceId)).length;
+        return n >= c.n;
+      }
+      if (a.kind === "count" || a.kind === "totalPower") return boardAmount(s, a, controller, sourceId) >= c.n;
+      return false;
+    }
     case "var":
     case "refLife":
       return false; // évalué pendant la résolution (effects.ts)
@@ -168,7 +205,14 @@ function matchTrigger(s: GameState, ev: RulesEvent, t: TriggerSpec, src: Source)
       return ev.e === "attackWith" && ev.player === me && ev.count >= (t.min ?? 1) ? { player: me, amount: ev.count } : null;
     case "dealsCombatDamage":
     case "dealsDamage": {
-      if (ev.e !== "damage" || !ev.sourceId) return null;
+      if (ev.e !== "damage") return null;
+      if (t.on === "dealsDamage" && t.anySourceYouControl) {
+        if (ev.sourceController !== me || (t.noncombatOnly && ev.combat)) return null;
+        const toOpp = !!s.players[ev.target] && ev.target !== me;
+        if (t.toOpponent && !toOpp) return null;
+        return { objectId: ev.sourceId ?? undefined, player: toOpp ? ev.target : undefined, amount: ev.amount };
+      }
+      if (!ev.sourceId) return null;
       if (t.on === "dealsCombatDamage" && !ev.combat) return null;
       if (t.on === "dealsDamage" && t.noncombatOnly && ev.combat) return null;
       const toPlayer = !!s.players[ev.target];
@@ -181,9 +225,14 @@ function matchTrigger(s: GameState, ev: RulesEvent, t: TriggerSpec, src: Source)
     case "castSpell": {
       if (ev.e !== "cast" || !whose(t.by, ev.player, me)) return null;
       const v = liveView(s, ev.stackId);
-      if (t.filter && (!v || !matchesView(v, t.filter, me, src.id))) return null;
-      return { objectId: ev.stackId, player: ev.player };
+      // « un sort de la couleur choisie » (Diamond Mare) : le choix de la source.
+      const f = t.filter ? withChosen(t.filter, s.objects[src.id]) : undefined;
+      if (f && (!v || !matchesView(v, f, me, src.id))) return null;
+      // `amount` : éphémères et rituels déjà lancés ce tour-ci (Thousand-Year Storm).
+      return { objectId: ev.stackId, player: ev.player, amount: ev.instantSorceryBefore };
     }
+    case "discard":
+      return ev.e === "discard" && whose(t.whose, ev.player, me) ? { objectId: ev.cards[0], player: ev.player } : null;
     case "step":
       return ev.e === "step" && ev.step === t.step && whose(t.whose, ev.active, me) ? { player: ev.active } : null;
     case "landfall": {
@@ -199,6 +248,11 @@ function matchTrigger(s: GameState, ev: RulesEvent, t: TriggerSpec, src: Source)
       return ev.e === "draw" && whose(t.whose, ev.player, me) && (t.nth === undefined || ev.nth === t.nth)
         ? { player: ev.player, amount: 1 }
         : null;
+    case "taps": {
+      if (ev.e !== "tap") return null;
+      const v = liveView(s, ev.objectId);
+      return v && matchWho(t.who, v, src) ? { objectId: ev.objectId, player: v.controller } : null;
+    }
     case "untaps": {
       if (ev.e !== "untap") return null;
       const v = liveView(s, ev.objectId);
@@ -207,6 +261,9 @@ function matchTrigger(s: GameState, ev: RulesEvent, t: TriggerSpec, src: Source)
     case "becomesTarget":
       if (ev.e !== "targeted" || !ev.targets.includes(src.id)) return null;
       if (t.byOpponent && ev.controller === me) return null;
+      // « Chaque fois que vous lancez un sort qui cible cette créature »
+      if (t.bySpellYouControl && (ev.controller !== me || s.stack.find((x) => x.id === ev.stackId)?.kind !== "spell"))
+        return null;
       return { objectId: ev.stackId, player: ev.controller };
     case "countersPut": {
       if (ev.e !== "counters" || (t.kind && ev.kind !== t.kind)) return null;
@@ -232,6 +289,8 @@ export function detectTriggers(s: GameState, ev: RulesEvent): void {
   for (const src of sources) {
     (src.view.abilities ?? []).forEach((ab, index) => {
       if (ab.kind !== "triggered") return;
+      // Une capacité « depuis le cimetière » ne se déclenche que là, les autres jamais depuis le cimetière.
+      if (!!ab.fromGraveyard !== (s.objects[src.id]?.zone === "graveyard")) return;
       const data = matchTrigger(s, ev, ab.trigger, src);
       if (!data) return;
       if (ab.condition && !checkCondition(s, ab.condition, src.view.controller, src.id)) return;
@@ -414,12 +473,16 @@ function chooseTriggerMode(s: GameState, t: PendingTrigger): boolean {
   if (t.inline || t.mode !== undefined) return true;
   const modes = triggeredAbility(s, t)?.modes;
   if (!modes) return true;
-  // Seuls les modes dont les cibles requises existent sont proposés.
+  // Seuls les modes dont les cibles requises existent sont proposés (et, pour Demonic Pact, pas encore choisis).
+  const ab = triggeredAbility(s, t);
+  const used = ab?.uniqueModes ? (s.objects[t.sourceId]?.usedModes ?? []) : [];
   const possible = modes
     .map((m, i) => ({ m, i }))
+    .filter(({ i }) => !used.includes(i))
     .filter(({ m }) => m.targets.every((spec) => spec.optional || legalTargets(s, t.controller, spec).length > 0));
   if (possible.length <= 1) {
-    t.mode = possible[0]?.i ?? 0;
+    t.mode = possible[0]?.i ?? modes.findIndex((_, i) => !used.includes(i));
+    markModeUsed(s, t);
     return true;
   }
   ask(
@@ -532,4 +595,12 @@ export function answerTriggerMode(s: GameState, triggerId: string, mode: number)
   const t = s.triggers.find((x) => x.id === triggerId);
   if (!t) throw new RulesError("Capacité déclenchée introuvable");
   t.mode = mode;
+  markModeUsed(s, t);
+}
+
+/** « Choisissez un mode qui n'a pas déjà été choisi » : on retient le mode sur la source. */
+function markModeUsed(s: GameState, t: PendingTrigger): void {
+  if (t.mode === undefined || t.mode < 0 || !triggeredAbility(s, t)?.uniqueModes) return;
+  const o = s.objects[t.sourceId];
+  if (o) o.usedModes = [...(o.usedModes ?? []), t.mode];
 }

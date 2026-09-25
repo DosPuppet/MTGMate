@@ -122,7 +122,7 @@ describe("règles de construction", () => {
   });
 
   it("une carte pas encore gérée rend le deck non jouable, sans le rendre illégal", () => {
-    const unimplemented = Object.values(CARDS).find((c) => !c.implemented && !c.isToken)!;
+    const unimplemented = { ...CARDS["Shivan Dragon"]!, name: "Carte fictive", implemented: false };
     const v = validateDeck(
       {
         main: [
@@ -130,7 +130,7 @@ describe("règles de construction", () => {
           [59, "Forest"],
         ],
       },
-      CARDS,
+      { ...CARDS, [unimplemented.name]: unimplemented },
     );
     expect(v).toMatchObject({ legal: true, playable: false });
     expect(v.warnings).toHaveLength(1);
@@ -139,8 +139,11 @@ describe("règles de construction", () => {
 
 describe("réserve", () => {
   it("une carte non gérée en réserve n'empêche pas de jouer", () => {
-    const unimplemented = Object.values(CARDS).find((c) => !c.implemented && !c.isToken)!;
-    const v = validateDeck({ main: [[60, "Forest"]], sideboard: [[1, unimplemented.name]] }, CARDS);
+    const unimplemented = { ...CARDS["Shivan Dragon"]!, name: "Carte fictive", implemented: false };
+    const v = validateDeck(
+      { main: [[60, "Forest"]], sideboard: [[1, unimplemented.name]] },
+      { ...CARDS, [unimplemented.name]: unimplemented },
+    );
     expect(v).toMatchObject({ legal: true, playable: true });
     expect(v.warnings[0]).toContain("(réserve)");
   });

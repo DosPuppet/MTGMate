@@ -3,9 +3,11 @@
  * l'IA du joueur, puis l'autopilot, puis l'humain. Le même hôte tourne dans un Web Worker
  * (partie contre l'IA) ou dans un serveur Node (partie en ligne).
  */
+
 import { type AutopilotSettings, autopilotDecision, DEFAULT_AUTOPILOT } from "./autopilot";
 import { submit } from "./game";
 import { RulesError } from "./stack";
+import { requiredBlocks } from "./turn";
 import type { Decision, GameEvent, GameState, PendingDecision, PlayerId } from "./types";
 import { filterEvents, type GameView, projectView } from "./view";
 
@@ -34,7 +36,7 @@ export function fallbackDecision(s: GameState, p: PendingDecision): Decision {
     case "declareAttackers":
       return { type: "declareAttackers", attackers: [] };
     case "declareBlockers":
-      return { type: "declareBlockers", blocks: [] };
+      return { type: "declareBlockers", blocks: requiredBlocks(s, p.player) };
     case "priority":
       return { type: "pass" };
     case "choice":

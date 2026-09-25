@@ -32,6 +32,8 @@ export {
   defendingPlayer,
   forcedAttackers,
   MAX_HAND_SIZE,
+  requiredBlocks,
+  unmetBlockRequirement,
 } from "./turn";
 export * from "./types";
 export type { CardFace, GameView, ObjectView, PendingView, PlayerView, StackItemView } from "./view";

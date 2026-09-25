@@ -66,7 +66,7 @@ npm run dev          # http://localhost:5173
 
 | Commande | Rôle |
 |---|---|
-| `npm test` | Tests de règles, d'IA et test de fumée de chaque carte gérée du set principal (Vitest) |
+| `npm test` | Tests de règles, d'IA et test de fumée de chaque carte gérée (Vitest) |
 | `npm run fuzz -- --games 300 [--ai random\|heuristic\|mixed] [--players 4] [--pool all] [--seed N]` | Parties IA contre IA, invariants vérifiés à chaque décision (`--pool all` : decks aléatoires tirés de toutes les cartes gérées) |
 | `npm run bench` | Décisions par seconde du moteur et temps de décision de l'IA (cibles : ≥ 5 000 déc/s, IA < 50 ms) |
 | `npm run coverage [-- --set main] [-- --missing] [-- --card "<nom>"]` | Cartes gérées, mécaniques manquantes, texte Oracle et script d'une carte |
@@ -128,8 +128,8 @@ Chaque carte gérée est automatiquement jouée par le test de fumée (`packages
 | 3. Client contre l'IA | plateau, main en éventail, glisser-déposer, flèches, barre des phases et arrêts, autopilot, journal FR | ✅ |
 | 4a. Fondations du moteur | N joueurs, choix génériques, déclencheurs, couches, remplacements, coûts, performance | ✅ |
 | 4b. Deckbuilder | collection filtrable, deck et réserve, validation 60/4/15, import et export de decklists (MTGA, MTGO, noms FR), persistance | ✅ |
-| 4c. FDN, set principal (n° 1 à 281) | lots A (longue traîne) à E (planeswalkers) faits ; reste le lot F : copie, contrôle, protection, doublement, cartes uniques | en cours : **244 / 276** |
-| 4d. FDN, réimpressions (n° 282 et plus) | cartes des decks d'initiation et de la Starter Collection | à faire |
+| 4c. FDN, set principal (n° 1 à 281) | lots A (longue traîne) à F (mécaniques uniques : permissions de lancement, doublements, protection, choix en arrivant, mana restreint, copie de sorts…) | ✅ **276 / 276** |
+| 4d. FDN, réimpressions (n° 282 et plus) | cartes des decks d'initiation et de la Starter Collection | ✅ **241 / 241** (517 / 517 pour tout FDN) |
 | 4e. Légalité Standard | légalités Scryfall importées, liste des bannies, validation du format dans le deckbuilder | à faire |
 | 4f. Autres extensions Standard | une extension à la fois, par ordre de sortie décroissant (les plus récentes restent légales le plus longtemps) | à faire |
 | 5. IA | attaques par simulation, puis ISMCTS | à faire |

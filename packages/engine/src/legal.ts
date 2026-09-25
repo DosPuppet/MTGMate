@@ -10,14 +10,16 @@ import {
   canCastTiming,
   canPayNonManaCost,
   canPlayLand,
-  castSource,
+  castTerms,
   modesOf,
   sacrificeOptions,
   sorceryTiming,
   spellCost,
+  spellView,
 } from "./stack";
 import { obj } from "./state";
 import { legalTargets } from "./targets";
+import { checkCondition } from "./triggers";
 import type { ActionOption, GameState, ManaCost, ObjectId, PlayerId, TargetOption, TargetSpec } from "./types";
 
 function targetOptions(s: GameState, player: PlayerId, specs: TargetSpec[], sourceId?: ObjectId): TargetOption[] {
@@ -75,13 +77,12 @@ export function legalActions(s: GameState, player: PlayerId): ActionOption[] {
   const out: ActionOption[] = [{ type: "pass" }];
   const hand = s.players[player]?.hand ?? [];
 
-  // Cartes en main, et cartes avec flashback dans le cimetière.
-  const graveyard = (s.players[player]?.graveyard ?? []).filter(
-    (id) => s.defs[obj(s, id).defId]?.flashback || s.turn.mayCastFromGraveyard?.includes(id),
-  );
-  const exiled = (s.turn.mayPlayFromExile ?? []).filter(
-    (id) => s.objects[id]?.zone === "exile" && s.objects[id]?.owner === player,
-  );
+  // Cartes jouables : main, cimetière (flashback, Muldrotha, Zul Ashur…) et exil (impulsion, Etali, Tinybones).
+  const graveyard = (s.players[player]?.graveyard ?? []).filter((id) => castTerms(s, player, id) || canPlayLand(s, player, id));
+  const exiled = s.exile.filter((id) => castTerms(s, player, id) || canPlayLand(s, player, id));
+  // Dessus de la bibliothèque (Vizier of the Menagerie).
+  const top = s.players[player]?.library[0];
+  if (top && castTerms(s, player, top)) exiled.push(top);
   for (const card of [...hand, ...graveyard, ...exiled]) {
     const d = s.defs[obj(s, card).defId];
     if (!d) continue;
@@ -89,24 +90,56 @@ export function legalActions(s: GameState, player: PlayerId): ActionOption[] {
       if (canPlayLand(s, player, card)) out.push({ type: "playLand", card });
       continue;
     }
-    if (!d.implemented || !canCastTiming(s, player, d)) continue;
-    const source = castSource(s, player, card);
-    const flashback = source === "flashback";
+    const terms = castTerms(s, player, card);
+    if (!terms || !d.implemented) continue;
+    // Timing : normal, ignoré (Etali), ou flash moyennant un surcoût (Harbinger of the Tides).
+    const onTime = terms.anyTime || canCastTiming(s, player, d);
+    if (!onTime && !d.flashExtraCost) continue;
+    const timingExtra = onTime ? undefined : d.flashExtraCost;
+    const flashback = terms.source === "flashback";
     const modes = modesOf(d)
       .map((m, index) => ({ index, label: m.label, targets: targetOptions(s, player, m.targets, card) }))
       .filter((m) => targetsAvailable(m.targets));
-    if (modes.length === 0 || !canPay(s, player, spellCost(s, player, d, { flashback }))) continue;
+    if (modes.length === 0) continue;
     const additional = additionalOptions(s, player, card, d);
     if (!additional) continue;
-    const hasX = !!(flashback ? d.flashback?.x : d.manaCost?.x);
+    const purpose = { spell: spellView(d, player) };
+    const base = { flashback, anyMana: terms.anyMana };
+    // « Sacrifiez une créature ou payez {3}{B} » : sans créature à sacrifier, le mana s'ajoute au coût.
+    const sac = additional.sacrifice;
+    const mustPayInstead = !!sac?.orPay && sac.options.length < sac.count;
+    const withExtra = (c: ManaCost) => {
+      const a = mustPayInstead && sac?.orPay ? totalCost(c, 0, sac.orPay) : c;
+      return timingExtra ? totalCost(a, 0, timingExtra) : a;
+    };
+    const normal = !terms.free && canPay(s, player, withExtra(spellCost(s, player, d, base)), undefined, purpose);
+    const freeAvailable = !!terms.freeOptional;
+    const altAvailable =
+      !terms.free &&
+      !!d.altCost &&
+      checkCondition(s, d.altCost.condition, player) &&
+      canPay(s, player, withExtra(spellCost(s, player, d, { ...base, alternative: true })), undefined, purpose);
+    if (!terms.free && !normal && !freeAvailable && !altAvailable) continue;
+    // Le mana à payer à la place du sacrifice est-il disponible ?
+    if (sac?.orPay) {
+      sac.orPayAffordable = canPay(s, player, totalCost(spellCost(s, player, d, base), 0, sac.orPay), undefined, purpose);
+    }
+    const hasX = !terms.free && !!(flashback ? (d.flashback ?? d.manaCost)?.x : d.manaCost?.x);
     out.push({
       type: "cast",
       card,
       modes,
-      xMax: hasX ? maxXFor(s, player, (x) => spellCost(s, player, d, { x, flashback })) : null,
-      kickerAffordable: !!d.kicker && !flashback && canPay(s, player, spellCost(s, player, d, { kicked: true })),
-      fromGraveyard: source === "graveyard" || source === "flashback" ? true : undefined,
-      fromExile: source === "exile" ? true : undefined,
+      xMax: hasX && normal ? maxXFor(s, player, (x) => withExtra(spellCost(s, player, d, { ...base, x }))) : null,
+      kickerAffordable:
+        !!d.kicker &&
+        !flashback &&
+        canPay(s, player, withExtra(spellCost(s, player, d, { ...base, kicked: true, free: terms.free })), undefined, purpose),
+      fromGraveyard: terms.source === "graveyard" || terms.source === "flashback" ? true : undefined,
+      fromExile: terms.source === "exile" ? true : undefined,
+      free: terms.free || undefined,
+      freeAvailable: freeAvailable || undefined,
+      altAvailable: altAvailable || undefined,
+      normalAvailable: normal || undefined,
       additional: additional.discard || additional.sacrifice ? additional : undefined,
     });
   }
@@ -122,7 +155,7 @@ export function legalActions(s: GameState, player: PlayerId): ActionOption[] {
       if (!ab || !!ab.fromGraveyard !== (o.zone === "graveyard") || !canPayNonManaCost(s, id, ab, index)) return;
       if (ab.sorcerySpeed && !sorceryTiming(s, player)) return;
       const exclude = ab.cost.tap ? new Set([id]) : undefined;
-      if (ab.cost.mana && !canPay(s, player, totalCost(ab.cost.mana, 0), exclude)) return;
+      if (ab.cost.mana && !canPay(s, player, totalCost(ab.cost.mana, 0), exclude, { abilitySource: id })) return;
       const targets = targetOptions(s, player, ab.targets, id);
       if (!targetsAvailable(targets)) return;
       out.push({

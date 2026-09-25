@@ -13,10 +13,11 @@
  */
 import { manaValue } from "./mana";
 import { counterPT, obj } from "./state";
-import { matchesView } from "./targets";
+import { ALL_CREATURE_TYPES, matchesView, withChosen } from "./targets";
 import { checkCondition } from "./triggers";
 import type {
   AbilityDef,
+  Amount,
   CardType,
   Color,
   GameObject,
@@ -48,17 +49,46 @@ export function bump(s: GameState): void {
   s.version += 1;
 }
 
+/** 604.3 / 613.4a : F/E définies par une capacité (« égales au nombre de cartes dans les cimetières adverses »). */
+function cdaValue(s: GameState, o: GameObject, a: Amount): number {
+  if (typeof a === "number") return a;
+  if (a.kind !== "count") return 0;
+  if (!a.zone || a.zone === "battlefield") {
+    // « égales au nombre de créatures que vous contrôlez » (types imprimés : pas de récursion dans les couches).
+    const types = a.filter.types;
+    return s.battlefield.filter((id) => {
+      const x = obj(s, id);
+      if (a.filter.controller === "you" && x.controller !== o.controller) return false;
+      return !types || types.some((t) => s.defs[x.defId]?.types.includes(t));
+    }).length;
+  }
+  const zone = a.zone;
+  const players =
+    a.whose === "all"
+      ? s.playerOrder
+      : a.whose === "opponents"
+        ? s.playerOrder.filter((p) => p !== o.controller)
+        : [o.controller];
+  const types = a.filter.types;
+  return players
+    .filter((p) => !s.players[p]?.lost)
+    .flatMap((p) => s.players[p]?.[zone] ?? [])
+    .filter((id) => !types || types.some((t) => s.defs[obj(s, id).defId]?.types.includes(t))).length;
+}
+
 function base(s: GameState, o: GameObject): Characteristics {
   const d = s.defs[o.defId];
   if (!d) throw new Error(`Définition inconnue : ${o.defId}`);
+  const cda = d.cdaPT === undefined ? undefined : cdaValue(s, o, d.cdaPT);
+  const cdaPower = d.cdaPower === undefined ? undefined : cdaValue(s, o, d.cdaPower);
   return {
     name: d.name,
     types: [...d.types],
     subtypes: [...d.subtypes],
     supertypes: [...d.supertypes],
     colors: [...d.colors],
-    power: d.power ?? 0,
-    toughness: d.toughness ?? 0,
+    power: cdaPower ?? cda ?? d.power ?? 0,
+    toughness: cda ?? d.toughness ?? 0,
     keywords: [...d.keywords],
     abilities: d.abilities,
     controller: o.controller,
@@ -93,6 +123,9 @@ function view(s: GameState, id: ObjectId, c: Characteristics, o: GameObject, att
     name: c.name,
     manaValue: manaValue(s.defs[o.defId]?.manaCost),
     tapped: o.tapped,
+    uid: o.uid,
+    linked: o.linked,
+    damagedBy: o.damagedBy,
     attachedTo: o.attachedTo,
     blocking: !!s.combat?.blockers.some((b) => b.id === id),
     counters: o.counters,
@@ -135,15 +168,22 @@ export function computeBattlefield(s: GameState): Map<ObjectId, Characteristics>
         if (ab.kind !== "static") continue;
         if (ab.condition && !checkCondition(s, ab.condition, o.controller, id)) continue;
         let mods = ab.mods;
-        if (ab.per) {
-          const f = ab.per;
-          const n = s.battlefield.filter((x) => matchesView(snapshotBase(s, x), f, o.controller, id)).length;
+        if (ab.per || ab.perCounter) {
+          // « +1/+1 pour chaque Forêt » / « pour chaque marqueur de camaraderie sur cet artefact ».
+          const f = ab.per ? withChosen(ab.per, o) : null;
+          const n = f
+            ? s.battlefield.filter((x) => matchesView(snapshotBase(s, x), f, o.controller, id)).length
+            : (o.counters[ab.perCounter as string] ?? 0);
           mods = { ...mods, power: (mods.power ?? 0) * n, toughness: (mods.toughness ?? 0) * n };
+        }
+        const affects = typeof ab.affects === "string" ? ab.affects : withChosen(ab.affects, o);
+        if (mods.addChosenSubtype && o.chosen?.creatureType) {
+          mods = { ...mods, addSubtypes: [...(mods.addSubtypes ?? []), o.chosen.creatureType] };
         }
         applied.push({
           timestamp: o.timestamp,
           mods,
-          affected: { sourceId: id, controller: o.controller, filter: ab.affects },
+          affected: { sourceId: id, controller: o.controller, filter: affects },
         });
       }
     }
@@ -183,13 +223,14 @@ export function computeBattlefield(s: GameState): Map<ObjectId, Characteristics>
 
   // Couche 4 : types (et nom, pour Witness Protection).
   layer(
-    (m) => !!(m.addTypes || m.addSubtypes || m.setTypes || m.setSubtypes || m.setName),
+    (m) => !!(m.addTypes || m.addSubtypes || m.setTypes || m.setSubtypes || m.setName || m.allCreatureTypes),
     (c, m) => {
       if (m.setTypes) {
         c.types = [...m.setTypes];
         c.subtypes = [...(m.setSubtypes ?? [])];
       } else if (m.setSubtypes) c.subtypes = [...m.setSubtypes];
       if (m.setName) c.name = m.setName;
+      if (m.allCreatureTypes && !c.subtypes.includes(ALL_CREATURE_TYPES)) c.subtypes.push(ALL_CREATURE_TYPES);
       for (const t of m.addTypes ?? []) if (!c.types.includes(t)) c.types.push(t);
       for (const t of m.addSubtypes ?? []) if (!c.subtypes.includes(t)) c.subtypes.push(t);
     },

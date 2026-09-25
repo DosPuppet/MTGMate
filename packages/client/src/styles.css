@@ -636,6 +636,35 @@ button {
   border-radius: 8px;
   border: 1px solid rgba(255, 255, 255, 0.25);
 }
+.choice-search {
+  width: 100%;
+  margin-bottom: 10px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: rgba(0, 0, 0, 0.3);
+  color: inherit;
+  font: inherit;
+}
+.hand-picker.long {
+  max-height: 40vh;
+  overflow-y: auto;
+}
+.chosen-badge {
+  position: absolute;
+  left: 3px;
+  top: 22%;
+  max-width: calc(100% - 6px);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 10px;
+  padding: 1px 5px;
+  border-radius: 6px;
+  background: rgba(20, 24, 32, 0.9);
+  border: 1px solid rgba(255, 210, 120, 0.6);
+  color: #ffe6b0;
+}
 .emblem-chip {
   font-size: 11px;
   padding: 1px 7px;

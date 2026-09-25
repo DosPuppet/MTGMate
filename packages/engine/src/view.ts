@@ -4,7 +4,9 @@
  */
 import { legalActions } from "./legal";
 import { costToText } from "./mana";
-import { chars, isSummoningSick, obj, opponentsOf } from "./state";
+import { canPlayLand, castTerms } from "./stack";
+import { chars, isSummoningSick, obj } from "./state";
+import { playerStatic } from "./statics";
 import { attackableDefenders, attackCandidates, blockCandidates } from "./turn";
 import type {
   ActionOption,
@@ -57,6 +59,8 @@ export interface ObjectView extends CardFace {
   blocking: ObjectId | null;
   /** Aura ou Équipement : le permanent auquel il est attaché. */
   attachedTo: ObjectId | null;
+  /** Choix fait en arrivant (type de créature, couleur). */
+  chosen: { creatureType?: string; color?: Color } | null;
 }
 
 export interface StackItemView extends CardFace {
@@ -69,6 +73,8 @@ export interface StackItemView extends CardFace {
   x: number;
   kicked: boolean;
   mode: number;
+  /** Copie d'un sort (Thousand-Year Storm). */
+  copy: boolean;
 }
 
 export interface PlayerView {
@@ -165,6 +171,7 @@ export function objectView(s: GameState, id: ObjectId): ObjectView {
     attacking,
     blocking,
     attachedTo: o.attachedTo ?? null,
+    chosen: o.chosen ?? null,
     name: c.name,
   };
 }
@@ -203,6 +210,7 @@ export function projectView(s: GameState, viewer: PlayerId): GameView {
       x: item.x,
       kicked: item.kicked,
       mode: item.mode,
+      copy: item.copy ?? false,
     };
   });
 
@@ -247,9 +255,13 @@ export function projectView(s: GameState, viewer: PlayerId): GameView {
     battlefield: s.battlefield.map((id) => objectView(s, id)),
     stack,
     exile: s.exile.map((id) => objectView(s, id)),
-    playableExile: (s.turn.mayPlayFromExile ?? [])
-      .filter((id) => s.objects[id]?.zone === "exile" && s.objects[id]?.owner === viewer)
-      .map((id) => objectView(s, id)),
+    playableExile: [
+      ...s.exile.filter((id) => castTerms(s, viewer, id) || canPlayLand(s, viewer, id)),
+      // Vizier of the Menagerie : « vous pouvez regarder la carte du dessus de votre bibliothèque à tout moment ».
+      ...(playerStatic(s, viewer, "castCreaturesFromTop") && s.players[viewer]?.library[0]
+        ? [s.players[viewer]?.library[0] as string]
+        : []),
+    ].map((id) => objectView(s, id)),
     combat: s.combat
       ? { attackers: s.combat.attackers.map((a) => ({ id: a.id, defender: a.defender, blockers: [...a.blockers] })) }
       : null,

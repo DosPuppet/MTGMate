@@ -47,8 +47,12 @@ export function ChoicePrompt({ view }: { view: GameView }) {
   const p = view.pending as ChoiceView;
   const req = p.request;
   const [values, setValues] = useState<ChoiceValue[]>(req?.suggested ?? []);
+  const [query, setQuery] = useState("");
   // Nouvelle question : on repart de la suggestion du moteur.
-  useEffect(() => setValues(req?.suggested ?? []), [req]);
+  useEffect(() => {
+    setValues(req?.suggested ?? []);
+    setQuery("");
+  }, [req]);
   if (!req) return null;
   const objects = p.objects ?? [];
   const send = (v: ChoiceValue[]) => decide({ type: "choose", values: v });
@@ -69,10 +73,33 @@ export function ChoicePrompt({ view }: { view: GameView }) {
           return kept.length >= req.max ? kept : [...kept, id];
         });
       valid = values.length >= req.min && values.length <= req.max;
+      // Longues listes (types de créature…) : recherche, et la suggestion en tête.
+      const long = req.options.length > 20;
+      const norm = (t: string) =>
+        t
+          .toLowerCase()
+          .normalize("NFD")
+          .replace(/[\u0300-\u036f]/g, "");
+      const shown = long
+        ? [
+            ...req.options.filter((id) => values.includes(id)),
+            ...req.options.filter((id) => !values.includes(id) && norm(req.labels?.[id] ?? id).includes(norm(query))),
+          ].slice(0, 60)
+        : req.options;
       body = (
         <>
-          <div className="hand-picker">
-            {req.options.map((id) => (
+          {long && (
+            <input
+              className="choice-search"
+              placeholder="Rechercher…"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              // biome-ignore lint/a11y/noAutofocus: la recherche est l'action principale de cette fenêtre
+              autoFocus
+            />
+          )}
+          <div className={`hand-picker ${long ? "long" : ""}`}>
+            {shown.map((id) => (
               <Option key={id} id={id} objects={objects} view={view} selected={values.includes(id)} onClick={() => toggle(id)} />
             ))}
           </div>

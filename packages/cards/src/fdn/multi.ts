@@ -4,14 +4,19 @@ import {
   amount,
   type CardScript,
   CREATURE_YOU_CONTROL,
+  castPermission,
   cond,
   ELF_WARRIOR,
+  entersWith,
   fx,
   INSTANT_SORCERY,
   KOMAS_COIL,
   manaAbility,
+  modal,
   mode,
   OTHER_CREATURE_YOU_CONTROL,
+  PHYREXIAN_GOBLIN,
+  playerStatic,
   ref,
   SOLDIER,
   SPIRIT,
@@ -165,5 +170,217 @@ export const MULTI: Record<string, CardScript> = {
   },
   "Tatyova, Benthic Druid": {
     abilities: [triggered(when.landfall, [fx.gainLife(1), fx.draw(1)], { label: "+1 PV, piochez" })],
+  },
+  "Elenda, Saint of Dusk": {
+    keywords: ["hexproofFromInstants"],
+    abilities: [
+      staticAbility(
+        "self",
+        { power: 1, toughness: 1, addKeywords: ["menace"] },
+        { condition: cond.lifeAboveStart(1), label: "+1/+1 et menace" },
+      ),
+      staticAbility("self", { power: 5, toughness: 5 }, { condition: cond.lifeAboveStart(10), label: "+5/+5" }),
+    ],
+  },
+  "Niv-Mizzet, Visionary": {
+    abilities: [
+      playerStatic({ noMaxHandSize: true, label: "Pas de taille de main maximale" }),
+      triggered(
+        when.dealsDamage({}, { anySourceYouControl: true, noncombatOnly: true, toOpponent: true }),
+        [fx.draw(amount.eventAmount)],
+        { label: "piochez autant de cartes" },
+      ),
+    ],
+  },
+  "Consuming Aberration": {
+    cdaPT: amount.countIn("graveyard", {}, "opponents"),
+    abilities: [
+      triggered(when.castSpell("you"), [fx.millUntil(ref.eachOpponent, { types: ["Land"] })], {
+        label: "chaque adversaire meule jusqu'à un terrain",
+      }),
+    ],
+  },
+  "Muldrotha, the Gravetide": {
+    abilities: [castPermission({ graveyardPermanentTypes: true, label: "Un permanent de chaque type depuis le cimetière" })],
+  },
+  Progenitus: {
+    keywords: ["protectionFromEverything"],
+    shuffleIntoLibrary: true,
+  },
+  "Thousand-Year Storm": {
+    abilities: [
+      triggered(when.castSpell("you", INSTANT_SORCERY), [fx.copySpell(ref.eventObject, amount.eventAmount)], {
+        label: "copie le sort",
+      }),
+    ],
+  },
+
+  // --- Réimpressions ---
+  "Aurelia, the Warleader": {
+    abilities: [
+      triggered(when.attacksSelf, [fx.untapUpTo({ types: ["Creature"] }, 99), fx.extraCombat], {
+        oncePerTurn: true,
+        label: "dégage vos créatures, combat supplémentaire",
+      }),
+    ],
+  },
+  "Ayli, Eternal Pilgrim": {
+    abilities: [
+      activated({
+        mana: "{1}",
+        sacrificeOther: { filter: { types: ["Creature"] } },
+        effects: [fx.gainLife(amount.toughnessOf(ref.costSacrificed))],
+        label: "Sacrifier une créature : PV égaux à son endurance",
+      }),
+      activated({
+        mana: "{1}{W}{B}",
+        sacrificeOther: { filter: { types: ["Creature"] } },
+        activationCondition: cond.lifeAboveStart(10),
+        targets: [target.nonland()],
+        effects: [fx.exileCard(ref.target())],
+        label: "Sacrifier une créature : exiler un permanent",
+      }),
+    ],
+  },
+  "Boros Charm": {
+    spell: modal(
+      mode(
+        "4 blessures à un joueur ou planeswalker",
+        [{ id: "t", label: "joueur ou planeswalker", filter: { players: "any", objects: { types: ["Planeswalker"] } } }],
+        [fx.damage(4, ref.target())],
+      ),
+      mode("Vos permanents sont indestructibles", [], [fx.modifyAll({ controller: "you" }, { addKeywords: ["indestructible"] })]),
+      mode("Double initiative", [target.creature()], [fx.pump(ref.target(), 0, 0, ["doubleStrike"])]),
+    ),
+  },
+  Cloudblazer: { abilities: [triggered(when.entersSelf, [fx.gainLife(2), fx.draw(2)], { label: "+2 PV, piochez deux cartes" })] },
+  "Deadly Brew": {
+    spell: spell(
+      [],
+      [
+        fx.sacrifice(ref.you, { types: ["Creature", "Planeswalker"] }, 1, { store: "mine" }),
+        fx.sacrifice(ref.eachOpponent, { types: ["Creature", "Planeswalker"] }),
+        ...fx.when(
+          cond.v("mine"),
+          fx.may(
+            "Renvoyer une autre carte de permanent de votre cimetière en main ?",
+            fx.pickFromZone("graveyard", { permanent: true }, { to: "hand" }, { excludeStored: "mine" }),
+          ),
+        ),
+      ],
+    ),
+  },
+  "Drogskol Reaver": { abilities: [triggered(when.gainLife, [fx.draw(1)], { label: "piochez une carte" })] },
+  "Dryad Militant": {
+    abilities: [playerStatic({ exileInstantsSorceries: true, label: "Éphémères et rituels exilés au lieu du cimetière" })],
+  },
+  "Enigma Drake": { cdaPower: amount.countIn("graveyard", INSTANT_SORCERY) },
+  "Garna, Bloodfist of Keld": {
+    abilities: [
+      triggered(
+        when.dies({ ...CREATURE_YOU_CONTROL, other: true }),
+        [
+          ...fx.when(cond.eventObjectMatches({ attacking: true }), fx.draw(1)),
+          ...fx.when(cond.not(cond.eventObjectMatches({ attacking: true })), fx.damage(1, ref.eachOpponent, ref.self)),
+        ],
+        { label: "attaquante : piochez ; sinon 1 blessure" },
+      ),
+    ],
+  },
+  "Halana and Alena, Partners": {
+    abilities: [
+      triggered(
+        when.yourCombat,
+        [fx.addCounters(ref.target(), amount.powerOf(ref.self)), fx.pump(ref.target(), 0, 0, ["haste"])],
+        {
+          targets: [target.creature("t", { controller: "you", other: true })],
+          label: "X marqueurs et célérité",
+        },
+      ),
+    ],
+  },
+  "Immersturm Predator": {
+    abilities: [
+      triggered(when.tapsSelf, [fx.exileCard(ref.target()), fx.addCounters(ref.self, 1)], {
+        targets: [target.optional(target.cardInGraveyard("t", {}, "any"))],
+        label: "exile une carte, marqueur +1/+1",
+      }),
+      activated({
+        sacrificeOther: { filter: { types: ["Creature"] } },
+        effects: [fx.pump(ref.self, 0, 0, ["indestructible"]), fx.tap(ref.self)],
+        label: "Sacrifier une créature : indestructible, engagé",
+      }),
+    ],
+  },
+  "Maelstrom Pulse": { spell: spell([target.nonland()], [fx.destroySameName(ref.target())]) },
+  Mortify: {
+    spell: spell(
+      [targetObj("t", { types: ["Creature", "Enchantment"] }, "créature ou enchantement")],
+      [fx.destroy(ref.target())],
+    ),
+  },
+  "Ovika, Enigma Goliath": {
+    abilities: [
+      triggered(
+        when.castSpell("you", { notTypes: ["Creature"] }),
+        [
+          fx.createTokens(PHYREXIAN_GOBLIN, amount.manaValueOf(ref.eventObject), undefined, "g"),
+          fx.pump(ref.stored("g"), 0, 0, ["haste"]),
+        ],
+        { label: "X Gobelins phyrexians avec la célérité" },
+      ),
+    ],
+  },
+  "Prime Speaker Zegana": {
+    abilities: [
+      entersWith({
+        counters: amount.maxPower({ types: ["Creature"], controller: "you" }),
+        label: "Marqueurs : plus grande force",
+      }),
+      triggered(when.entersSelf, [fx.draw(amount.powerOf(ref.self))], { label: "piochez autant que sa force" }),
+    ],
+  },
+  "Savage Ventmaw": {
+    abilities: [
+      triggered(when.attacksSelf, [fx.addManaUntilEndOfTurn("R", "R", "R", "G", "G", "G")], { label: "{R}{R}{R}{G}{G}{G}" }),
+    ],
+  },
+  "Teach by Example": { spell: spell([], [fx.copyNextSpell]) },
+  "Trygon Predator": {
+    abilities: [
+      triggered(when.combatDamageToPlayer, fx.may("Détruire l'artefact ou l'enchantement ciblé ?", fx.destroy(ref.target())), {
+        targets: [
+          target.optional(
+            target.permanent("t", ["Artifact", "Enchantment"], { controller: "opponent" }, "artefact ou enchantement adverse"),
+          ),
+        ],
+        label: "détruit un artefact ou un enchantement",
+      }),
+    ],
+  },
+  "Unflinching Courage": {
+    enchant: { filter: { types: ["Creature"] }, label: "créature" },
+    abilities: [
+      staticAbility(
+        "attached",
+        { power: 2, toughness: 2, addKeywords: ["trample", "lifelink"] },
+        { label: "+2/+2, piétinement, lien de vie" },
+      ),
+    ],
+  },
+  "Wilt-Leaf Liege": {
+    opponentDiscardToBattlefield: true,
+    abilities: [
+      staticAbility(
+        { ...CREATURE_YOU_CONTROL, other: true, colors: ["G"] },
+        { power: 1, toughness: 1 },
+        { label: "Autres créatures vertes +1/+1" },
+      ),
+      staticAbility(
+        { ...CREATURE_YOU_CONTROL, other: true, colors: ["W"] },
+        { power: 1, toughness: 1 },
+        { label: "Autres créatures blanches +1/+1" },
+      ),
+    ],
   },
 };

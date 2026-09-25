@@ -8,12 +8,16 @@ import {
   costReducer,
   DRAGON,
   DRAGON_5,
+  doubler,
   entersWith,
   fx,
   GOBLIN,
   INSTANT_SORCERY,
+  manaAbility,
   modal,
   mode,
+  playerStatic,
+  RAT_NO_BLOCK,
   ref,
   spell,
   staticAbility,
@@ -279,5 +283,246 @@ export const RED: Record<string, CardScript> = {
       mode("3 blessures à chaque créature", [], [fx.damageAll(3, {})]),
       mode("3 blessures à chaque joueur", [], [fx.damageAll(3, undefined, ref.eachPlayer)]),
     ),
+  },
+  "Kellan, Planar Trailblazer": {
+    abilities: [
+      activated({
+        mana: "{1}{R}",
+        effects: [
+          ...fx.when(
+            cond.sourceMatches({ subtype: "Scout" }),
+            fx.modify(
+              ref.self,
+              {
+                setSubtypes: ["Human", "Faerie", "Detective"],
+                addAbilities: [
+                  triggered(when.combatDamageToPlayer, [fx.impulse(1)], {
+                    label: "exile la carte du dessus, jouable ce tour-ci",
+                  }),
+                ],
+              },
+              "permanent",
+            ),
+          ),
+        ],
+        label: "Devient Détective",
+      }),
+      activated({
+        mana: "{2}{R}",
+        effects: [
+          ...fx.when(
+            cond.sourceMatches({ subtype: "Detective" }),
+            fx.modify(
+              ref.self,
+              { setSubtypes: ["Human", "Faerie", "Rogue"], setPower: 3, setToughness: 2, addKeywords: ["doubleStrike"] },
+              "permanent",
+            ),
+          ),
+        ],
+        label: "Devient Voleur 3/2 double initiative",
+      }),
+    ],
+  },
+  "Strongbox Raider": {
+    abilities: [
+      triggered(when.entersSelf, [fx.impulse(2, "yourNextTurn")], {
+        condition: cond.raid,
+        label: "Raid : exile 2 cartes, jouez-en une",
+      }),
+    ],
+  },
+  "Twinflame Tyrant": {
+    abilities: [doubler({ damageToOpponents: true, label: "Blessures aux adversaires doublées" })],
+  },
+  "Etali, Primal Storm": {
+    abilities: [
+      triggered(
+        when.attacksSelf,
+        [fx.exileTop(ref.eachPlayer, 1, "etali"), fx.grantPlay(ref.stored("etali"), { free: true, anyTime: true })],
+        { label: "exile le dessus de chaque bibliothèque, lancez gratuitement" },
+      ),
+    ],
+  },
+  "Flamewake Phoenix": {
+    keywords: ["mustAttack"],
+    abilities: [
+      triggered(when.yourCombat, fx.mayPay("{R}", "Payer {R} pour revenir du cimetière ?", fx.toBattlefield(ref.self)), {
+        condition: cond.ferocious,
+        fromGraveyard: true,
+        label: "Férocité : revient du cimetière",
+      }),
+    ],
+  },
+  "Involuntary Employment": {
+    spell: spell(
+      [target.creature()],
+      [fx.gainControl(ref.target()), fx.untap(ref.target()), fx.pump(ref.target(), 0, 0, ["haste"]), fx.createTokens(TREASURE)],
+    ),
+  },
+
+  // --- Réimpressions ---
+  "Ball Lightning": {
+    abilities: [triggered(when.eachEndStep, [fx.sacrificeIt(ref.self)], { label: "se sacrifie" })],
+  },
+  "Bolt Bend": {
+    costReduction: { generic: 3, condition: cond.ferocious },
+    spell: spell([target.stackItemSingleTarget()], [fx.changeTarget(ref.target())]),
+  },
+  "Carnelian Orb of Dragonkind": {
+    abilities: [manaAbility("R", 1, { rider: { spell: { types: ["Creature"], subtype: "Dragon" }, effect: "haste" } })],
+  },
+  "Crash Through": {
+    spell: spell([], [fx.modifyAll({ types: ["Creature"], controller: "you" }, { addKeywords: ["trample"] }), fx.draw(1)]),
+  },
+  "Dragon Mage": {
+    abilities: [
+      triggered(when.combatDamageToPlayer, [fx.discard(99, ref.eachPlayer), fx.draw(7, ref.eachPlayer)], {
+        label: "chaque joueur défausse sa main et pioche sept cartes",
+      }),
+    ],
+  },
+  "Dragonmaster Outcast": {
+    abilities: [
+      triggered(when.yourUpkeep, [fx.createTokens(DRAGON_5)], {
+        condition: cond.controls({ types: ["Land"] }, 6),
+        label: "Dragon 5/5 volant",
+      }),
+    ],
+  },
+  "Dropkick Bomber": {
+    abilities: [
+      staticAbility(
+        { types: ["Creature"], subtype: "Goblin", controller: "you", other: true },
+        { power: 1, toughness: 1 },
+        {
+          label: "Autres Gobelins +1/+1",
+        },
+      ),
+      activated({
+        mana: "{R}",
+        targets: [target.creature("t", { subtype: "Goblin", controller: "you", other: true })],
+        effects: [
+          fx.modify(ref.target(), {
+            addKeywords: ["flying"],
+            addAbilities: [triggered(when.combatDamage("self"), [fx.sacrificeIt(ref.self)], { label: "se sacrifie" })],
+          }),
+        ],
+        label: "Un Gobelin vole (puis se sacrifie)",
+      }),
+    ],
+  },
+  "Ghitu Lavarunner": {
+    abilities: [
+      staticAbility(
+        "self",
+        { power: 1, addKeywords: ["haste"] },
+        {
+          condition: cond.amountAtLeast(amount.countIn("graveyard", INSTANT_SORCERY), 2),
+          label: "+1/+0 et célérité",
+        },
+      ),
+    ],
+  },
+  "Giant Cindermaw": { abilities: [playerStatic({ noLifeGainForAll: true, label: "Les joueurs ne peuvent pas gagner de PV" })] },
+  "Goblin Smuggler": {
+    abilities: [
+      activated({
+        tap: true,
+        targets: [target.creature("t", { maxPower: 2, other: true })],
+        effects: [fx.modify(ref.target(), { addKeywords: ["unblockable"] })],
+        label: "Une créature de force 2 ou moins est imblocable",
+      }),
+    ],
+  },
+  "Gratuitous Violence": { abilities: [doubler({ creatureDamage: true, label: "Blessures de vos créatures doublées" })] },
+  "Harmless Offering": {
+    spell: spell(
+      [target.player("a", "opponent"), targetObj("b", { controller: "you" }, "permanent que vous contrôlez")],
+      [fx.giveControl(ref.target("b"), ref.target("a"))],
+    ),
+  },
+  "Hoarding Dragon": {
+    abilities: [
+      triggered(
+        when.entersSelf,
+        fx.may(
+          "Chercher un artefact et l'exiler ?",
+          fx.search({ types: ["Artifact"] }, { to: "exile" }, 1, undefined, "art"),
+          fx.link(ref.stored("art")),
+        ),
+        { label: "exile un artefact" },
+      ),
+      triggered(when.diesSelf, fx.may("Mettre l'artefact exilé dans votre main ?", fx.toHand(ref.linked)), {
+        label: "récupère l'artefact exilé",
+      }),
+    ],
+  },
+  "Lathliss, Dragon Queen": {
+    abilities: [
+      triggered(
+        when.enters({ types: ["Creature"], subtype: "Dragon", controller: "you", nontoken: true, other: true }),
+        [fx.createTokens(DRAGON_5)],
+        {
+          label: "Dragon 5/5 volant",
+        },
+      ),
+      activated({
+        mana: "{1}{R}",
+        effects: [fx.pumpAll({ subtype: "Dragon", controller: "you" }, 1, 0)],
+        label: "Dragons +1/+0",
+      }),
+    ],
+  },
+  Mindsparker: {
+    abilities: [
+      triggered(
+        when.castSpell("opponent", { types: ["Instant", "Sorcery"], colors: ["W", "U"] }),
+        [fx.damage(2, ref.eventPlayer, ref.self)],
+        { label: "2 blessures" },
+      ),
+    ],
+  },
+  "Ravenous Giant": {
+    abilities: [triggered(when.yourUpkeep, [fx.damage(1, ref.you, ref.self)], { label: "1 blessure à vous" })],
+  },
+  "Redcap Gutter-Dweller": {
+    abilities: [
+      triggered(when.entersSelf, [fx.createTokens(RAT_NO_BLOCK, 2)], { label: "deux Rats 1/1" }),
+      triggered(
+        when.yourUpkeep,
+        [
+          fx.sacrifice(ref.you, { types: ["Creature"], other: true }, 1, { optional: true, store: "sac" }),
+          ...fx.when(cond.v("sac"), fx.addCounters(ref.self, 1), fx.impulse(1)),
+        ],
+        { label: "sacrifice possible : marqueur, exil jouable" },
+      ),
+    ],
+  },
+  "Stromkirk Noble": {
+    keywords: ["cantBeBlockedByHumans"],
+    abilities: [triggered(when.combatDamageToPlayer, [fx.addCounters(ref.self, 1)], { label: "marqueur +1/+1" })],
+  },
+  "Taurean Mauler": {
+    keywords: ["changeling"],
+    abilities: [
+      triggered(when.castSpell("opponent"), fx.may("Mettre un marqueur +1/+1 ?", fx.addCounters(ref.self, 1)), {
+        label: "marqueur +1/+1",
+      }),
+    ],
+  },
+  "Terror of Mount Velus": {
+    abilities: [
+      triggered(when.entersSelf, [fx.modifyAll({ types: ["Creature"], controller: "you" }, { addKeywords: ["doubleStrike"] })], {
+        label: "double initiative",
+      }),
+    ],
+  },
+  "Volley Veteran": {
+    abilities: [
+      triggered(when.entersSelf, [fx.damage(amount.count({ subtype: "Goblin", controller: "you" }), ref.target(), ref.self)], {
+        targets: [target.creature("t", { controller: "opponent" })],
+        label: "blessures égales au nombre de Gobelins",
+      }),
+    ],
   },
 };

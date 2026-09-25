@@ -362,6 +362,7 @@ function StackView() {
               }
             />
             {item.kind === "ability" && <div className="ability-tag">Capacité</div>}
+            {item.copy && <div className="ability-tag">Copie</div>}
             {item.kicked && <div className="ability-tag">Kické</div>}
             {item.x > 0 && <div className="ability-tag">X = {item.x}</div>}
           </motion.div>

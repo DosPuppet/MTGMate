@@ -10,7 +10,6 @@ import {
   forcedAttackers,
   type GameState,
   legalActions,
-  opponentsOf,
   type PlayerId,
 } from "@mtgx/engine";
 import { mulberryChoice } from "./choices";

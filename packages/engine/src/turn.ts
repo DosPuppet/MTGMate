@@ -3,6 +3,7 @@
  */
 import { type DamageSource, dealDamage, destroy, drawCard, putIntoGraveyard, sourceFromObject } from "./actions";
 import { ask } from "./choices";
+import { announceDiscard } from "./effects";
 import { RulesError, resolveTop } from "./stack";
 import {
   alivePlayers,
@@ -28,10 +29,12 @@ import {
   P1P1,
   rulesEvent,
   shuffle,
+  tapObject,
 } from "./state";
+import { playerStatic } from "./statics";
 import { matchesObjectFilter } from "./targets";
 import { processTriggers, releaseDelayedTriggers, simultaneously } from "./triggers";
-import type { GameState, ObjectId, PlayerId, Step } from "./types";
+import type { GameState, ManaType, ObjectId, PlayerId, StackItem, Step } from "./types";
 import { STEPS } from "./types";
 
 export const MAX_HAND_SIZE = 7;
@@ -103,7 +106,8 @@ function nextMulligan(s: GameState): void {
 
 /** Cartes « leyline » de la main de départ (103.6), proposées dans l'ordre de jeu. Renvoie true si une question est posée. */
 function askLeylines(s: GameState): boolean {
-  const asked = (s.leylineAsked ??= []);
+  s.leylineAsked ??= [];
+  const asked = s.leylineAsked;
   const start = s.playerOrder.indexOf(s.turn.startingPlayer);
   const order = s.playerOrder.map((_, i) => s.playerOrder[(start + i) % s.playerOrder.length] as PlayerId);
   for (const p of order) {
@@ -226,7 +230,8 @@ function beginStep(s: GameState): void {
       startCombatDamage(s, false);
       return;
     case "cleanup": {
-      const excess = (s.players[active]?.hand.length ?? 0) - MAX_HAND_SIZE;
+      // 402.2 : taille de main maximale (sauf « vous n'avez pas de taille de main maximale »).
+      const excess = playerStatic(s, active, "noMaxHandSize") ? 0 : (s.players[active]?.hand.length ?? 0) - MAX_HAND_SIZE;
       if (excess > 0) {
         s.pending = { kind: "discard", player: active, count: excess };
         s.flow = "tba";
@@ -247,7 +252,7 @@ export function discardToHandSize(s: GameState, p: PlayerId, cards: ObjectId[], 
     throw new RulesError(`Défaussez exactement ${count} carte(s)`);
   }
   const defIds = cards.map((c) => obj(s, c).defId);
-  for (const c of cards) moveObject(s, c, "graveyard");
+  for (const c of cards) announceDiscard(s, p, moveObject(s, c, "graveyard"));
   emit({ type: "discard", player: p, defIds });
   finishCleanup(s);
 }
@@ -258,9 +263,24 @@ function finishCleanup(s: GameState): void {
     const o = obj(s, id);
     o.damage = 0;
     o.deathtouched = false;
+    o.damagedBy = undefined;
+    o.combatDamagedPlayers = undefined;
   }
   s.effects = s.effects.filter((e) => e.duration !== "endOfTurn");
   s.replacements = [];
+  // Fin des changements de contrôle « jusqu'à la fin du tour » (Involuntary Employment).
+  for (const c of s.controlChanges ?? []) {
+    const o = s.objects[c.id];
+    if (o?.zone === "battlefield") {
+      o.controller = c.original;
+      o.controlledSince = s.turn.number;
+    }
+  }
+  s.controlChanges = [];
+  for (const p of s.playerOrder) {
+    const pl = s.players[p];
+    if (pl) pl.manaKeep = undefined;
+  }
   bump(s);
   s.flow = "stepEnd";
 }
@@ -280,15 +300,32 @@ function endStep(s: GameState): void {
   // 500.4 : les réserves de mana se vident à la fin de chaque étape et phase.
   for (const p of s.playerOrder) {
     const player = s.players[p];
-    if (player) player.manaPool = emptyPool();
+    if (!player) continue;
+    // Savage Ventmaw : le mana gardé jusqu'à la fin du tour (et pas encore dépensé) reste dans la réserve.
+    const keep = player.manaKeep;
+    const pool = emptyPool();
+    if (keep) {
+      for (const m of Object.keys(keep) as ManaType[]) {
+        const k = Math.min(keep[m] ?? 0, player.manaPool[m]);
+        pool[m] = k;
+        keep[m] = k;
+      }
+    }
+    player.manaPool = pool;
   }
   if (s.turn.step === "endCombat") {
     s.combat = null;
     bump(s);
   }
+
   // Dernières informations connues : plus nécessaires une fois la pile vide et l'étape finie.
   s.lki = {};
-  const next = nextStep(s);
+  let next = nextStep(s);
+  // Aurelia : « après cette phase, il y a une phase de combat supplémentaire ».
+  if (s.turn.step === "endCombat" && (s.turn.extraCombats ?? 0) > 0) {
+    s.turn.extraCombats = (s.turn.extraCombats ?? 1) - 1;
+    next = "beginCombat";
+  }
   if (next) {
     s.turn.step = next;
     emit({ type: "step", step: next });
@@ -311,8 +348,38 @@ function endStep(s: GameState): void {
 
 /** 117.3b : après la résolution, le joueur actif reçoit la priorité. */
 export function afterResolution(s: GameState): void {
+  if (s.endTurnRequested) {
+    // 723.1 : le tour passe directement à l'étape de nettoyage.
+    s.endTurnRequested = false;
+    s.turn.step = "cleanup";
+    emit({ type: "step", step: "cleanup" });
+    s.flow = "stepStart";
+    return;
+  }
   s.priority = { holder: s.turn.active, passes: 0 };
   s.flow = "priority";
+}
+
+/**
+ * 723 : « Terminez le tour ». Tout ce qui est sur la pile est exilé (le sort qui se résout compris),
+ * les capacités en attente disparaissent, le combat s'arrête, puis on passe au nettoyage.
+ */
+export function endTheTurn(s: GameState, r: { item: StackItem }): void {
+  for (const item of s.stack) {
+    if (item.id === r.item.id) continue;
+    if (item.kind === "spell" && s.objects[item.sourceId]) moveObject(s, item.sourceId, "exile");
+  }
+  s.stack = s.stack.filter((x) => x.id === r.item.id);
+  r.item.flashback = true; // le sort qui se résout est exilé à la fin de sa résolution
+  s.triggers = [];
+  s.combat = null;
+  for (const p of s.playerOrder) {
+    const pl = s.players[p];
+    if (pl) pl.manaPool = emptyPool();
+  }
+  s.endTurnRequested = true;
+  bump(s);
+  emit({ type: "endTurn", player: r.item.controller });
 }
 
 function startTurnOf(s: GameState, p: PlayerId): void {
@@ -325,7 +392,10 @@ function startTurnOf(s: GameState, p: PlayerId): void {
   }
   s.turn.onceFired = [];
   s.turn.mayCastFromGraveyard = [];
-  s.turn.mayPlayFromExile = [];
+  s.turn.graveyardTypesUsed = [];
+  s.turn.flashbackGranted = [];
+  // Permissions de jouer depuis l'exil : celles qui ont expiré disparaissent.
+  if (s.playPermissions) s.playPermissions = s.playPermissions.filter((p) => p.until >= s.turn.number);
 }
 
 export function emptyCombat(): NonNullable<GameState["combat"]> {
@@ -398,7 +468,7 @@ export function declareAttackers(s: GameState, player: PlayerId, attackers: { id
   if (forced.length > 0) throw new RulesError(`${chars(s, forced[0] as ObjectId).name} doit attaquer si elle le peut`);
   if (!s.combat) s.combat = emptyCombat();
   for (const a of attackers) {
-    if (!hasKeyword(s, a.id, "vigilance")) obj(s, a.id).tapped = true;
+    if (!hasKeyword(s, a.id, "vigilance")) tapObject(s, obj(s, a.id));
     s.combat.attackers.push({ id: a.id, defender: a.defender, blockers: [], blocked: false });
   }
   bump(s);
@@ -417,6 +487,10 @@ export function canBlock(s: GameState, blocker: ObjectId, attacker: ObjectId): b
   const a = s.combat?.attackers.find((x) => x.id === attacker);
   if (!a || !onBattlefield(s, attacker) || b.controller !== defendingPlayer(s, a.defender)) return false;
   if (hasKeyword(s, blocker, "cantBlock") || hasKeyword(s, attacker, "unblockable")) return false;
+  // 702.16f : une créature avec la protection contre tout ne peut pas être bloquée.
+  if (hasKeyword(s, attacker, "protectionFromEverything")) return false;
+  if (hasKeyword(s, attacker, "cantBeBlockedByHumans") && chars(s, blocker).subtypes.includes("Human")) return false;
+  if (hasKeyword(s, attacker, "cantBeBlockedByPowerLE2") && chars(s, blocker).power <= 2) return false;
   if (hasKeyword(s, attacker, "flying") && !hasKeyword(s, blocker, "flying") && !hasKeyword(s, blocker, "reach")) return false;
   if (hasKeyword(s, attacker, "cantBeBlockedByWalls") && chars(s, blocker).subtypes.includes("Wall")) return false;
   return true;
@@ -438,6 +512,42 @@ function hasAnyLegalBlock(s: GameState, player: PlayerId): boolean {
   });
 }
 
+/**
+ * 509.1c : attaquant « qui doit être bloqué si possible » laissé sans bloqueur alors qu'une créature
+ * pouvait le bloquer sans renoncer à une autre exigence. Renvoie cet attaquant, ou null.
+ */
+export function unmetBlockRequirement(
+  s: GameState,
+  player: PlayerId,
+  blocks: { blocker: ObjectId; attacker: ObjectId }[],
+): ObjectId | null {
+  const required = (s.combat?.attackers ?? []).filter(
+    (a) => defendingPlayer(s, a.defender) === player && hasKeyword(s, a.id, "mustBeBlocked"),
+  );
+  const blockingRequired = new Set(blocks.filter((b) => required.some((a) => a.id === b.attacker)).map((b) => b.blocker));
+  for (const a of required) {
+    if (blocks.some((b) => b.attacker === a.id)) continue;
+    const able = creaturesControlledBy(s, player).find((id) => canBlock(s, id, a.id) && !blockingRequired.has(id));
+    if (able) return a.id;
+  }
+  return null;
+}
+
+/** Blocages qui respectent les exigences « doit être bloquée » (déclaration par défaut). */
+export function requiredBlocks(s: GameState, player: PlayerId): { blocker: ObjectId; attacker: ObjectId }[] {
+  const out: { blocker: ObjectId; attacker: ObjectId }[] = [];
+  const used = new Set<ObjectId>();
+  for (const a of s.combat?.attackers ?? []) {
+    if (defendingPlayer(s, a.defender) !== player || !hasKeyword(s, a.id, "mustBeBlocked")) continue;
+    const b = creaturesControlledBy(s, player).find((id) => !used.has(id) && canBlock(s, id, a.id));
+    if (b) {
+      used.add(b);
+      out.push({ blocker: b, attacker: a.id });
+    }
+  }
+  return out;
+}
+
 export function declareBlockers(s: GameState, player: PlayerId, blocks: { blocker: ObjectId; attacker: ObjectId }[]): void {
   const c = s.combat;
   if (!c) throw new RulesError("Pas de combat en cours");
@@ -449,6 +559,8 @@ export function declareBlockers(s: GameState, player: PlayerId, blocks: { blocke
       throw new RulesError("Blocage illégal");
     }
   }
+  const unmet = unmetBlockRequirement(s, player, blocks);
+  if (unmet) throw new RulesError(`${chars(s, unmet).name} doit être bloquée si possible`);
   for (const a of c.attackers) {
     const n = blocks.filter((b) => b.attacker === a.id).length;
     if (n === 1 && hasKeyword(s, a.id, "menace"))
@@ -637,7 +749,8 @@ export function checkGameOver(s: GameState): void {
   for (const p of s.playerOrder) {
     const player = s.players[p];
     if (!player || player.lost) continue;
-    if (player.life <= 0 || player.drewFromEmptyLibrary) {
+    // Herald of Eternal Dawn : « vous ne pouvez pas perdre la partie ». 704.5c : 10 marqueurs poison ou plus.
+    if ((player.life <= 0 || player.drewFromEmptyLibrary || (player.poison ?? 0) >= 10) && !playerStatic(s, p, "cantLose")) {
       losers.push(p);
       emit({ type: "lose", player: p, reason: player.life <= 0 ? "life" : "draw" });
     }
@@ -651,6 +764,7 @@ export function checkGameOver(s: GameState): void {
  */
 export function eliminate(s: GameState, losers: PlayerId[]): void {
   if (losers.length === 0) return;
+  bump(s); // des caractéristiques peuvent dépendre des joueurs encore en jeu
   const holderLeaving = losers.includes(s.priority.holder);
   const activeLeaving = losers.includes(s.turn.active);
   for (const p of losers) {
@@ -746,6 +860,9 @@ function stateBasedActionsOnce(s: GameState): void {
       else if (o.damage >= c.toughness || (o.deathtouched && o.damage > 0)) toDestroy.push(id); // 704.5g–h
     }
 
+    // Confiscate : le contrôleur de l'Aura contrôle le permanent enchanté (et le rend quand l'Aura part).
+    if (applyAuraControl(s)) changed = true;
+
     // 704.5m–n : Auras attachées illégalement (cimetière), Équipements attachés illégalement (détachés).
     for (const id of s.battlefield) {
       const o = obj(s, id);
@@ -753,9 +870,21 @@ function stateBasedActionsOnce(s: GameState): void {
       if (d?.enchant) {
         const host = o.attachedTo;
         const legal =
-          !!host && host !== id && onBattlefield(s, host) && matchesObjectFilter(s, o.controller, host, d.enchant.filter, id);
+          !!host &&
+          host !== id &&
+          onBattlefield(s, host) &&
+          !hasKeyword(s, host, "protectionFromEverything") &&
+          matchesObjectFilter(s, o.controller, host, d.enchant.filter, id);
         if (!legal) toGraveyard.push(id);
-      } else if (o.attachedTo && !(onBattlefield(s, o.attachedTo) && isCreature(s, o.attachedTo) && hasType(s, id, "Artifact"))) {
+      } else if (
+        o.attachedTo &&
+        !(
+          onBattlefield(s, o.attachedTo) &&
+          isCreature(s, o.attachedTo) &&
+          hasType(s, id, "Artifact") &&
+          !hasKeyword(s, o.attachedTo, "protectionFromEverything")
+        )
+      ) {
         o.attachedTo = undefined;
         bump(s);
         changed = true;
@@ -808,6 +937,46 @@ function stateBasedActionsOnce(s: GameState): void {
     }
     return;
   }
+}
+
+/** Contrôle par une Aura (Confiscate). Renvoie true si un contrôleur a changé. */
+function applyAuraControl(s: GameState): boolean {
+  let changed = false;
+  // Aura partie ou détachée : le contrôleur d'origine récupère le permanent.
+  for (const c of [...(s.auraControl ?? [])]) {
+    const aura = s.objects[c.aura];
+    if (aura?.zone === "battlefield" && aura.attachedTo === c.host) continue;
+    s.auraControl = (s.auraControl ?? []).filter((x) => x !== c);
+    const host = s.objects[c.host];
+    if (host?.zone === "battlefield" && host.controller !== c.original) {
+      removeFromCombatOf(s, c.host);
+      host.controller = c.original;
+      host.controlledSince = s.turn.number;
+      changed = true;
+    }
+  }
+  for (const id of s.battlefield) {
+    const aura = obj(s, id);
+    const host = aura.attachedTo ? s.objects[aura.attachedTo] : undefined;
+    if (host?.zone !== "battlefield" || !s.defs[aura.defId]?.controlsEnchanted) continue;
+    if (host.controller === aura.controller) continue;
+    if (!(s.auraControl ?? []).some((c) => c.host === host.id && c.aura === id)) {
+      s.auraControl = [...(s.auraControl ?? []), { host: host.id, aura: id, original: host.controller }];
+    }
+    removeFromCombatOf(s, host.id);
+    host.controller = aura.controller;
+    host.controlledSince = s.turn.number;
+    changed = true;
+  }
+  if (changed) bump(s);
+  return changed;
+}
+
+function removeFromCombatOf(s: GameState, id: ObjectId): void {
+  if (!s.combat) return;
+  s.combat.attackers = s.combat.attackers.filter((a) => a.id !== id);
+  s.combat.blockers = s.combat.blockers.filter((b) => b.id !== id);
+  for (const a of s.combat.attackers) a.blockers = a.blockers.filter((b) => b !== id);
 }
 
 export function answerLegendChoice(s: GameState, keep: ObjectId, options: ObjectId[]): void {

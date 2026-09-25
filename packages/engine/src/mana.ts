@@ -2,9 +2,9 @@
  * Mana : lecture des coûts, sources disponibles et solveur de paiement automatique.
  */
 import { putIntoGraveyard } from "./actions";
-import { chars, defOf, isSummoningSick, obj } from "./state";
-import { matchesObjectFilter } from "./targets";
-import type { GameState, ManaAbilityDef, ManaCost, ManaType, ObjectId, PlayerId } from "./types";
+import { chars, defOf, isCreature, isSummoningSick, obj, snapshot, tapObject } from "./state";
+import { matchesObjectFilter, matchesView, withChosen } from "./targets";
+import type { GameState, LkiSnapshot, ManaAbilityDef, ManaCost, ManaType, ObjectId, PlayerId } from "./types";
 import { MANA_TYPES } from "./types";
 
 const SYMBOLS = new Set<string>(["W", "U", "B", "R", "G", "C"]);
@@ -86,7 +86,11 @@ export function manaAbilitiesOf(s: GameState, id: ObjectId): ManaAbilityDef[] {
     const m = basic[sub];
     if (m) list.push({ kind: "mana", cost: { tap: true }, produce: [m], amount: 1 });
   }
-  for (const a of c.abilities) if (a.kind === "mana") list.push(a);
+  for (const a of c.abilities) {
+    if (a.kind !== "mana") continue;
+    // « Ajoutez un mana de la couleur choisie » (Heraldic Banner).
+    list.push(a.produceChosen ? { ...a, produce: o.chosen?.color ? [o.chosen.color] : a.produce } : a);
+  }
   return list;
 }
 
@@ -106,13 +110,46 @@ function manaAmount(s: GameState, id: ObjectId, ab: ManaAbilityDef): number {
   return s.battlefield.filter((x) => matchesObjectFilter(s, controller, x, f, id)).length;
 }
 
-export function manaSources(s: GameState, player: PlayerId, exclude: ReadonlySet<ObjectId> = new Set()): ManaSource[] {
+/** À quoi le mana est destiné (mana restreint : « dépensez ce mana uniquement pour lancer un sort d'Ange »). */
+export interface ManaPurpose {
+  spell?: LkiSnapshot;
+  /** Capacité activée : sa source. */
+  abilitySource?: ObjectId;
+}
+
+function restrictionAllows(
+  s: GameState,
+  sourceId: ObjectId,
+  ab: ManaAbilityDef,
+  player: PlayerId,
+  purpose?: ManaPurpose,
+): boolean {
+  const r = ab.restriction;
+  if (!r) return true;
+  if (!purpose) return false;
+  const o = obj(s, sourceId);
+  if (r.spell && purpose.spell && matchesView(purpose.spell, withChosen(r.spell, o), player, sourceId)) return true;
+  const src = purpose.abilitySource;
+  if (r.abilityOfCreature && src && s.objects[src] && isCreature(s, src)) {
+    return matchesView(snapshot(s, src), withChosen(r.abilityOfCreature, o), player, sourceId);
+  }
+  return false;
+}
+
+export function manaSources(
+  s: GameState,
+  player: PlayerId,
+  exclude: ReadonlySet<ObjectId> = new Set(),
+  purpose?: ManaPurpose,
+): ManaSource[] {
   const out: ManaSource[] = [];
   for (const id of s.battlefield) {
     const o = obj(s, id);
     if (o.controller !== player || exclude.has(id)) continue;
     manaAbilitiesOf(s, id).forEach((ab, i) => {
       if (!canActivateMana(s, id, ab)) return;
+      // Mana restreint : seulement utilisable par le solveur pour un paiement autorisé.
+      if (!restrictionAllows(s, id, ab, player, purpose)) return;
       out.push({
         id,
         ability: i,
@@ -135,7 +172,7 @@ export function activateManaAbility(s: GameState, player: PlayerId, id: ObjectId
   if (!ab || !canActivateMana(s, id, ab)) throw new Error("Capacité de mana indisponible");
   const c = color ?? ab.produce[0];
   if (!c || !ab.produce.includes(c)) throw new Error("Couleur de mana invalide");
-  if (ab.cost.tap) o.tapped = true;
+  if (ab.cost.tap) tapObject(s, o);
   if (ab.cost.sacrificeSelf) putIntoGraveyard(s, id);
   const pool = s.players[player]?.manaPool;
   if (pool) pool[c] += manaAmount(s, id, ab);
@@ -163,9 +200,10 @@ export function solvePayment(
   player: PlayerId,
   cost: ManaCost,
   exclude: ReadonlySet<ObjectId> = new Set(),
+  purpose?: ManaPurpose,
 ): PaymentPlan | null {
   const pool = { ...(s.players[player]?.manaPool ?? zero()) } as Record<ManaType, number>;
-  const sources = manaSources(s, player, exclude);
+  const sources = manaSources(s, player, exclude, purpose);
   // Symboles à payer : chacun accepte un ensemble de types (un seul pour un symbole coloré, deux pour un hybride).
   const pips: ManaType[][] = [];
   for (const m of MANA_TYPES) for (let i = 0; i < (cost.colored[m] ?? 0); i++) pips.push([m]);
@@ -238,20 +276,39 @@ export function solvePayment(
 }
 
 /** Quantité maximale de mana disponible (réserve + sources). */
-export function availableMana(s: GameState, player: PlayerId, exclude: ReadonlySet<ObjectId> = new Set()): number {
+export function availableMana(
+  s: GameState,
+  player: PlayerId,
+  exclude: ReadonlySet<ObjectId> = new Set(),
+  purpose?: ManaPurpose,
+): number {
   const pool = s.players[player]?.manaPool;
   const inPool = pool ? MANA_TYPES.reduce((n, m) => n + pool[m], 0) : 0;
-  return inPool + manaSources(s, player, exclude).reduce((n, src) => n + src.amount, 0);
+  return inPool + manaSources(s, player, exclude, purpose).reduce((n, src) => n + src.amount, 0);
 }
 
-export function canPay(s: GameState, player: PlayerId, cost: ManaCost, exclude?: ReadonlySet<ObjectId>): boolean {
-  return solvePayment(s, player, cost, exclude) !== null;
+export function canPay(
+  s: GameState,
+  player: PlayerId,
+  cost: ManaCost,
+  exclude?: ReadonlySet<ObjectId>,
+  purpose?: ManaPurpose,
+): boolean {
+  return solvePayment(s, player, cost, exclude, purpose) !== null;
 }
 
 /** Active les sources nécessaires puis retire le coût de la réserve. Lève une erreur si impossible. */
-export function payMana(s: GameState, player: PlayerId, cost: ManaCost, exclude?: ReadonlySet<ObjectId>): void {
-  const plan = solvePayment(s, player, cost, exclude);
+export function payMana(
+  s: GameState,
+  player: PlayerId,
+  cost: ManaCost,
+  exclude?: ReadonlySet<ObjectId>,
+  purpose?: ManaPurpose,
+): ManaAbilityDef[] {
+  const plan = solvePayment(s, player, cost, exclude, purpose);
   if (!plan) throw new Error("Mana insuffisant");
+  // Capacités de mana utilisées (effets associés au mana dépensé : Carnelian Orb…).
+  const used = plan.taps.map((t) => manaAbilitiesOf(s, t.id)[t.ability]).filter((a): a is ManaAbilityDef => !!a);
   for (const t of plan.taps) activateManaAbility(s, player, t.id, t.ability, t.color);
   const pool = s.players[player]?.manaPool;
   if (!pool) throw new Error("Joueur inconnu");
@@ -259,4 +316,5 @@ export function payMana(s: GameState, player: PlayerId, cost: ManaCost, exclude?
     if (pool[m] < plan.spend[m]) throw new Error("Mana insuffisant");
     pool[m] -= plan.spend[m];
   }
+  return used;
 }

@@ -20,6 +20,8 @@ import {
   type ObjectId,
   opponentsOf,
   type PlayerId,
+  requiredBlocks,
+  unmetBlockRequirement,
 } from "@mtgx/engine";
 import { heuristicChoice, keepValue } from "./choices";
 import { afterCombat, creatureValue, evaluate, rollout, stackEmpty, targetOpponent, trySubmit } from "./evaluate";
@@ -44,7 +46,7 @@ function decide(s: GameState, me: PlayerId): Decision {
         attackers: chooseDefenders(s, me, [...new Set([...chooseAttackers(s, me), ...forcedAttackers(s, me)])]),
       };
     case "declareBlockers":
-      return { type: "declareBlockers", blocks: chooseBlocks(s, me) };
+      return { type: "declareBlockers", blocks: withRequiredBlocks(s, me, chooseBlocks(s, me)) };
     case "choice":
       return { type: "choose", values: heuristicChoice(s, me, p.request) };
     case "priority":
@@ -81,6 +83,18 @@ function chooseDefenders(s: GameState, me: PlayerId, attackers: string[]): { id:
     }
   }
   return attackers.map((id) => ({ id, defender: out.get(id) as string }));
+}
+
+/** Complète les blocages pour respecter les exigences « doit être bloquée si possible ». */
+export function withRequiredBlocks(
+  s: GameState,
+  me: PlayerId,
+  blocks: { blocker: string; attacker: string }[],
+): { blocker: string; attacker: string }[] {
+  if (!unmetBlockRequirement(s, me, blocks)) return blocks;
+  const req = requiredBlocks(s, me);
+  const kept = blocks.filter((b) => !req.some((r) => r.blocker === b.blocker));
+  return [...kept, ...req];
 }
 
 // ---------------------------------------------------------------------------

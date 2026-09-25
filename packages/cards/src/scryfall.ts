@@ -66,8 +66,8 @@ function stripReminder(text: string): string {
   return text.replace(/\([^)]*\)/g, "").trim();
 }
 
-/** Garde : « Ward {2} » ou « Ward—Pay 7 life. » */
-const WARD = /\bward(?: ((?:\{[^}]+\})+)|—pay (\d+) life\.?)/i;
+/** Garde : « Ward {2} », « Ward—Pay 7 life. » ou « Ward—{3}, Pay 3 life. » */
+const WARD = /\bward(?: ((?:\{[^}]+\})+)|—(?:((?:\{[^}]+\})+), )?pay (\d+) life\.?)/i;
 
 /** « Equip {3}{W} » (702.6) : capacité activée en rituel, cible une créature que vous contrôlez. */
 export function parseEquip(text: string): string | undefined {
@@ -77,7 +77,14 @@ export function parseEquip(text: string): string | undefined {
 export function parseWard(text: string): CardDef["ward"] {
   const m = WARD.exec(stripReminder(text));
   if (!m) return undefined;
-  return m[1] ? { mana: parseManaCost(m[1]) } : { life: Number(m[2]) };
+  if (m[1]) return { mana: parseManaCost(m[1]) };
+  return { mana: m[2] ? parseManaCost(m[2]) : undefined, life: Number(m[3]) };
+}
+
+/** Équipage N (Véhicules). */
+export function parseCrew(text: string): number | undefined {
+  const m = /^Crew (\d+)/m.exec(stripReminder(text));
+  return m ? Number(m[1]) : undefined;
 }
 
 /** Le texte ne contient-il que des mots-clés gérés par le moteur (créature « vanilla » ou « french vanilla ») ? */
@@ -96,7 +103,7 @@ function parseInt0(v: string | undefined): number | undefined | null {
 }
 
 /** Capacités déclenchées portées par un mot-clé (702.108 prouesse, 702.21 garde). */
-function intrinsicAbilities(keywords: Set<Keyword>, ward: CardDef["ward"], equip?: string): CardDef["abilities"] {
+function intrinsicAbilities(keywords: Set<Keyword>, ward: CardDef["ward"], equip?: string, crew?: number): CardDef["abilities"] {
   const out: CardDef["abilities"] = [];
   if (keywords.has("prowess")) {
     out.push({
@@ -105,6 +112,16 @@ function intrinsicAbilities(keywords: Set<Keyword>, ward: CardDef["ward"], equip
       targets: [],
       effects: [{ op: "pump", what: { kind: "self" }, power: 1, toughness: 1 }],
       label: "Prouesse",
+    });
+  }
+  if (crew !== undefined) {
+    // 702.122 : « Équipage N : engagez des créatures de force totale N ou plus : ce Véhicule devient une créature-artefact. »
+    out.push({
+      kind: "activated",
+      cost: { crew },
+      targets: [],
+      effects: [{ op: "modify", what: { kind: "self" }, mods: { addTypes: ["Artifact", "Creature"] }, duration: "endOfTurn" }],
+      label: `Équipage ${crew}`,
     });
   }
   if (equip) {
@@ -152,12 +169,16 @@ export function toCardDef(raw: RawCard, script?: CardScript, set = "FDN"): CardD
   }
   const power = parseInt0(raw.power);
   const toughness = parseInt0(raw.toughness);
-  if (power === null || toughness === null) implemented = false; // F/E variables (*) : pas encore géré
+  // F/E variables (*) : seulement si le script les définit (capacité de définition de caractéristiques).
+  if ((power === null || toughness === null) && script?.cdaPT === undefined && script?.cdaPower === undefined)
+    implemented = false;
 
   const keywords = new Set<Keyword>();
+  // « Hexproof from X » n'est pas la défense talismanique complète (Scryfall liste aussi « Hexproof »).
+  const partialHexproof = raw.keywords.includes("Hexproof from");
   for (const k of raw.keywords) {
     const kw = KEYWORD_NAMES[k.toLowerCase()];
-    if (kw) keywords.add(kw);
+    if (kw && !(kw === "hexproof" && partialHexproof)) keywords.add(kw);
   }
   for (const k of script?.keywords ?? []) keywords.add(k);
   const ward = parseWard(raw.oracleText);
@@ -176,10 +197,24 @@ export function toCardDef(raw: RawCard, script?: CardScript, set = "FDN"): CardD
     power: power ?? undefined,
     toughness: toughness ?? undefined,
     keywords: [...keywords],
-    abilities: [...(script?.abilities ?? []), ...intrinsicAbilities(keywords, ward, parseEquip(raw.oracleText))],
+    abilities: [
+      ...(script?.abilities ?? []),
+      ...intrinsicAbilities(keywords, ward, parseEquip(raw.oracleText), parseCrew(raw.oracleText)),
+    ],
+    cdaPower: script?.cdaPower,
+    flashExtraCost: script?.flashExtraCost ? parseManaCost(script.flashExtraCost) : undefined,
+    opponentDiscardToBattlefield: script?.opponentDiscardToBattlefield,
+    controlsEnchanted: script?.controlsEnchanted,
     enchant: script?.enchant,
     loyalty: raw.loyalty ? Number(raw.loyalty) : undefined,
     leyline: script?.leyline,
+    altCost: script?.altCost
+      ? { mana: parseManaCost(script.altCost.mana), condition: script.altCost.condition, label: script.altCost.label }
+      : undefined,
+    cdaPT: script?.cdaPT,
+    chooseOnEnter: script?.chooseOnEnter,
+    shuffleIntoLibrary: script?.shuffleIntoLibrary,
+    graveyardCastRemoveCounters: script?.graveyardCastRemoveCounters,
     ward,
     cantBeCountered: script?.cantBeCountered,
     spell: script?.spell,

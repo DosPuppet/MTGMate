@@ -5,9 +5,11 @@ import {
   amount,
   BASIC_LAND,
   BEAST,
+  BEAST_3,
   type CardScript,
   CREATURE_YOU_CONTROL,
   cond,
+  doubler,
   ELF_WARRIOR,
   entersWith,
   FOOD,
@@ -15,6 +17,8 @@ import {
   manaAbility,
   modal,
   mode,
+  OTHER_CREATURE_YOU_CONTROL,
+  playerStatic,
   RACCOON,
   ref,
   spell,
@@ -327,6 +331,198 @@ export const GREEN: Record<string, CardScript> = {
         when.countersPut({ types: ["Creature"], controller: "you", other: true, notSubtype: "Hydra" }, "+1/+1"),
         [fx.addCounters(ref.self, 1)],
         { label: "marqueur +1/+1" },
+      ),
+    ],
+  },
+  "Loot, Exuberant Explorer": {
+    abilities: [
+      playerStatic({ extraLands: 1, label: "Un terrain supplémentaire par tour" }),
+      activated({
+        mana: "{4}{G}{G}",
+        tap: true,
+        effects: [
+          fx.lookAtTop(6, {
+            filter: { types: ["Creature"] },
+            maxManaValue: amount.count({ types: ["Land"], controller: "you" }),
+            to: { to: "battlefield" },
+            rest: "bottom",
+          }),
+        ],
+        label: "Regarder 6 cartes, mettre une créature en jeu",
+      }),
+    ],
+  },
+  "Quilled Greatwurm": {
+    graveyardCastRemoveCounters: 6,
+    abilities: [
+      triggered(when.combatDamage(CREATURE_YOU_CONTROL), [fx.addCounters(ref.eventObject, amount.eventAmount)], {
+        condition: cond.yourTurn,
+        label: "autant de marqueurs +1/+1",
+      }),
+    ],
+  },
+  "Doubling Season": {
+    abilities: [doubler({ tokens: true, counters: true, label: "Jetons et marqueurs doublés" })],
+  },
+
+  // --- Réimpressions ---
+  "Biogenic Upgrade": {
+    spell: spell([target.upTo(3, target.creature())], [fx.countersDivided(3, ref.target()), fx.doubleCounters(ref.target())]),
+  },
+  "Circuitous Route": {
+    spell: spell([], [fx.search({ anyOf: [BASIC_LAND, { subtype: "Gate" }] }, { to: "battlefield", tapped: true }, 2)]),
+  },
+  "Fierce Empath": {
+    abilities: [
+      triggered(
+        when.entersSelf,
+        fx.may("Chercher une créature de valeur 6 ou plus ?", fx.search({ types: ["Creature"], minManaValue: 6 })),
+        {
+          label: "cherche une grosse créature",
+        },
+      ),
+    ],
+  },
+  "Fynn, the Fangbearer": {
+    abilities: [
+      triggered(
+        when.combatDamage({ types: ["Creature"], controller: "you", keyword: "deathtouch" }, true),
+        [fx.poison(ref.eventPlayer, 2)],
+        { label: "deux marqueurs poison" },
+      ),
+    ],
+  },
+  "Gnarlback Rhino": {
+    abilities: [triggered(when.targetedBySpellYouCast, [fx.draw(1)], { label: "piochez une carte" })],
+  },
+  "Joraga Invocation": {
+    spell: spell(
+      [],
+      [
+        fx.pumpAll({ controller: "you" }, 3, 3),
+        fx.modifyAll({ types: ["Creature"], controller: "you" }, { addKeywords: ["mustBeBlocked"] }),
+      ],
+    ),
+  },
+  "Mold Adder": {
+    abilities: [
+      triggered(
+        when.castSpell("opponent", { colors: ["U", "B"] }),
+        fx.may("Mettre un marqueur +1/+1 ?", fx.addCounters(ref.self, 1)),
+        {
+          label: "marqueur +1/+1",
+        },
+      ),
+    ],
+  },
+  "New Horizons": {
+    enchant: { filter: { types: ["Land"] }, label: "terrain" },
+    abilities: [
+      triggered(when.entersSelf, [fx.addCounters(ref.target(), 1)], {
+        targets: [target.creature("t", { controller: "you" })],
+        label: "marqueur +1/+1",
+      }),
+      staticAbility(
+        "attached",
+        { addAbilities: [manaAbility(["W", "U", "B", "R", "G"], 2)] },
+        {
+          label: "« {T} : deux mana d'une même couleur »",
+        },
+      ),
+    ],
+  },
+  "Ordeal of Nylea": {
+    enchant: { filter: { types: ["Creature"] }, label: "créature" },
+    abilities: [
+      triggered(
+        when.attacks({ attachedToSource: true }),
+        [
+          fx.addCounters(ref.attached, 1),
+          ...fx.when(
+            cond.amountAtLeast(amount.countersOn(ref.attached), 3),
+            fx.sacrificeIt(ref.self),
+            fx.search(BASIC_LAND, { to: "battlefield", tapped: true }, 2),
+          ),
+        ],
+        { label: "marqueur ; à 3, deux terrains de base" },
+      ),
+    ],
+  },
+  "Predator Ooze": {
+    abilities: [
+      triggered(when.attacksSelf, [fx.addCounters(ref.self, 1)], { label: "marqueur +1/+1" }),
+      triggered(when.dies({ types: ["Creature"], damagedBySource: true }), [fx.addCounters(ref.self, 1)], {
+        label: "marqueur +1/+1",
+      }),
+    ],
+  },
+  "Primeval Bounty": {
+    abilities: [
+      triggered(when.castSpell("you", { types: ["Creature"] }), [fx.createTokens(BEAST_3)], { label: "Bête 3/3" }),
+      triggered(when.castSpell("you", { notTypes: ["Creature"] }), [fx.addCounters(ref.target(), 3)], {
+        targets: [target.creature("t", { controller: "you" })],
+        label: "trois marqueurs +1/+1",
+      }),
+      triggered(when.landfall, [fx.gainLife(3)], { label: "+3 PV" }),
+    ],
+  },
+  "Springbloom Druid": {
+    abilities: [
+      triggered(
+        when.entersSelf,
+        [
+          fx.sacrifice(ref.you, { types: ["Land"] }, 1, { optional: true, store: "land" }),
+          ...fx.when(cond.v("land"), fx.search(BASIC_LAND, { to: "battlefield", tapped: true }, 2)),
+        ],
+        { label: "sacrifice un terrain : deux terrains de base" },
+      ),
+    ],
+  },
+  "Surrak, the Hunt Caller": {
+    abilities: [
+      triggered(when.yourCombat, [fx.pump(ref.target(), 0, 0, ["haste"])], {
+        targets: [target.creature("t", { controller: "you" })],
+        condition: cond.amountAtLeast(amount.totalPower({ types: ["Creature"], controller: "you" }), 8),
+        label: "Formidable : célérité",
+      }),
+    ],
+  },
+  "Thrashing Brontodon": {
+    abilities: [
+      activated({
+        mana: "{1}",
+        sacrifice: true,
+        targets: [target.permanent("t", ["Artifact", "Enchantment"], {}, "artefact ou enchantement")],
+        effects: [fx.destroy(ref.target())],
+        label: "Détruire un artefact ou un enchantement",
+      }),
+    ],
+  },
+  "Venom Connoisseur": {
+    abilities: [
+      triggered(
+        when.enters(OTHER_CREATURE_YOU_CONTROL),
+        [
+          fx.pump(ref.self, 0, 0, ["deathtouch"]),
+          fx.countResolution("n"),
+          ...fx.when(
+            cond.all(cond.v("n", 2), cond.not(cond.v("n", 3))),
+            fx.modifyAll({ types: ["Creature"], controller: "you" }, { addKeywords: ["deathtouch"] }),
+          ),
+        ],
+        { label: "Alliance : contact mortel" },
+      ),
+    ],
+  },
+  "Vizier of the Menagerie": {
+    abilities: [playerStatic({ castCreaturesFromTop: true, label: "Créatures du dessus de votre bibliothèque" })],
+  },
+  "Wildborn Preserver": {
+    abilities: [
+      triggered(
+        when.enters({ ...OTHER_CREATURE_YOU_CONTROL, notSubtype: "Human" }),
+        [fx.payX("payer X pour X marqueurs +1/+1 ?", "x"), fx.addCounters(ref.self, amount.v("x"))],
+        { label: "payer X : X marqueurs" },
       ),
     ],
   },

@@ -15,9 +15,9 @@ import {
   removeFromCombat,
   sourceFromObject,
 } from "./actions";
-import { canPay, costToText, manaValue, payMana } from "./mana";
+import { availableMana, canPay, costToText, manaValue, payMana } from "./mana";
 import { addReplacement } from "./replacement";
-import { counterItem } from "./stack";
+import { copySpellItem, counterItem, stackItemSpecs } from "./stack";
 import {
   alivePlayers,
   bump,
@@ -26,6 +26,7 @@ import {
   counterCount,
   createObject,
   emit,
+  hasKeyword,
   isCreature,
   isPlayer,
   moveObject,
@@ -36,9 +37,13 @@ import {
   P1P1,
   rulesEvent,
   shuffle,
+  snapshot,
+  tapObject,
 } from "./state";
-import { matchesCard, matchesObjectFilter } from "./targets";
+import { doublers } from "./statics";
+import { legalTargets, matchesCard, matchesObjectFilter, matchesView } from "./targets";
 import { checkCondition, createDelayed, pushInline } from "./triggers";
+import { eliminate, endTheTurn } from "./turn";
 import type {
   Amount,
   ChoiceRequest,
@@ -48,6 +53,8 @@ import type {
   GameState,
   Keyword,
   LayerMods,
+  LkiSnapshot,
+  ManaType,
   MoveSpec,
   ObjectId,
   PlayerId,
@@ -72,6 +79,14 @@ export interface EffectContext {
   event?: TriggerEventData;
   /** Valeurs mémorisées pendant la résolution (voir `store`). */
   vars?: Record<string, ChoiceValue[]>;
+  /** Permanents sacrifiés pour le coût de la capacité. */
+  sacrificed?: ObjectId[];
+}
+
+/** Caractéristiques d'un objet vivant, ou ses dernières informations connues. */
+function viewOf(s: GameState, id: string): LkiSnapshot | undefined {
+  if (s.objects[id]) return snapshot(s, id);
+  return s.lki[id];
 }
 
 /** Mémorise une valeur de résolution (« si vous le faites », « la vie perdue de cette façon »). */
@@ -99,6 +114,20 @@ export function evalCondition(s: GameState, ctx: EffectContext, c: Condition): b
       const p = resolveRef(s, ctx, c.ref)[0];
       return !!p && s.players[p]?.life === c.equals;
     }
+    case "refMatches":
+      return resolveRef(s, ctx, c.ref).some((id) => {
+        const v = viewOf(s, id);
+        return !!v && matchesView(v, c.filter, ctx.controller, ctx.sourceId);
+      });
+    case "eventObjectMatches": {
+      const id = ctx.event?.objectId;
+      const v = id ? (s.lki[id] ?? viewOf(s, id)) : undefined;
+      return !!v && matchesView(v, c.filter, ctx.controller, ctx.sourceId);
+    }
+    case "xAtLeast":
+      return ctx.x >= c.n;
+    case "amountAtLeast":
+      return evalAmount(s, ctx, c.amount) >= c.n;
     default:
       return checkCondition(s, c, ctx.controller, ctx.sourceId);
   }
@@ -135,7 +164,21 @@ export function resolveRef(s: GameState, ctx: EffectContext, ref: Ref): string[]
         return s.lki[id] ? [s.lki[id].controller] : [];
       });
     case "stored":
-      return (ctx.vars?.[`$ids:${ref.name}`] ?? []).map(String).filter((id) => !!s.objects[id]);
+      // Objets mémorisés, encore présents ou connus par leurs dernières informations (sacrifiés…).
+      return (ctx.vars?.[`$ids:${ref.name}`] ?? []).map(String).filter((id) => !!s.objects[id] || !!s.lki[id]);
+    case "selfCard": {
+      // « Cette carte » : l'objet qui porte la même identité physique que la source, où qu'il soit.
+      const uid = s.objects[ctx.sourceId]?.uid ?? s.lki[ctx.sourceId]?.uid;
+      if (!uid) return [];
+      const found = Object.values(s.objects).find((o) => o.uid === uid);
+      return found ? [found.id] : [];
+    }
+    case "linked": {
+      const linked = s.objects[ctx.sourceId]?.linked ?? s.lki[ctx.sourceId]?.linked ?? [];
+      return linked.filter((id) => !!s.objects[id]);
+    }
+    case "costSacrificed":
+      return ctx.sacrificed ?? [];
     case "attached": {
       const host = s.objects[ctx.sourceId]?.attachedTo ?? s.lki[ctx.sourceId]?.attachedTo;
       return host && onBattlefield(s, host) ? [host] : [];
@@ -192,6 +235,35 @@ export function evalAmount(s: GameState, ctx: EffectContext, a: Amount): number 
       return readVar(ctx, a.name);
     case "lifeTotal":
       return Math.max(0, s.players[ctx.controller]?.life ?? 0);
+    case "manaValueOf": {
+      const id = resolveRef(s, ctx, a.ref)[0];
+      return id ? (viewOf(s, id)?.manaValue ?? manaValue(s.defs[s.objects[id]?.defId ?? ""]?.manaCost)) : 0;
+    }
+    case "toughnessOf": {
+      const id = resolveRef(s, ctx, a.ref)[0];
+      return id ? Math.max(0, viewOf(s, id)?.toughness ?? 0) : 0;
+    }
+    case "colorsOf": {
+      const id = resolveRef(s, ctx, a.ref)[0];
+      return id ? (viewOf(s, id)?.colors.length ?? 0) : 0;
+    }
+    case "maxPower":
+      return Math.max(
+        0,
+        ...s.battlefield
+          .filter((id) => matchesObjectFilter(s, ctx.controller, id, a.filter, ctx.sourceId))
+          .map((id) => chars(s, id).power),
+      );
+    case "distinctNames":
+      return new Set(
+        s.battlefield
+          .filter((id) => matchesObjectFilter(s, ctx.controller, id, a.filter, ctx.sourceId))
+          .map((id) => chars(s, id).name),
+      ).size;
+    case "lkiCounters": {
+      const counters = s.objects[ctx.sourceId]?.counters ?? s.lki[ctx.sourceId]?.counters ?? {};
+      return counters[a.counter] ?? 0;
+    }
     case "cardsIn":
       return s.players[ctx.controller]?.[a.zone].length ?? 0;
   }
@@ -246,6 +318,7 @@ export function contextOf(r: Resolution): EffectContext {
     kicked: r.item.kicked,
     event: r.item.event,
     vars: r.vars,
+    sacrificed: r.item.sacrificed,
   };
 }
 
@@ -280,6 +353,8 @@ export function moveWithSpec(s: GameState, controller: PlayerId, id: ObjectId, s
     position: spec.to === "libraryBottom" ? "bottom" : "top",
   });
   const moved = newId_ ? s.objects[newId_] : undefined;
+  // Marqueurs sur une carte exilée (« exilez-la avec un marqueur de butin », Tinybones).
+  if (moved && zone === "exile" && spec.counters) changeCounters(s, moved, spec.counters.kind, spec.counters.n);
   if (!moved || zone !== "battlefield") return newId_;
   if (spec.tapped) moved.tapped = true;
   if (spec.counters) changeCounters(s, moved, spec.counters.kind, spec.counters.n);
@@ -297,8 +372,10 @@ export function moveWithSpec(s: GameState, controller: PlayerId, id: ObjectId, s
 /** Peut-on attacher cette Aura ou cet Équipement à ce permanent ? (301.5c, 303.4d) */
 export function canAttach(s: GameState, what: ObjectId, to: ObjectId): boolean {
   const a = s.objects[what];
-  if (!a || a.zone !== "battlefield" || !onBattlefield(s, to) || what === to) return false;
+  if (a?.zone !== "battlefield" || !onBattlefield(s, to) || what === to) return false;
   const d = s.defs[a.defId];
+  // 702.16c : protection contre tout — ni enchantée, ni équipée.
+  if (hasKeyword(s, to, "protectionFromEverything")) return false;
   if (d?.enchant) return matchesObjectFilter(s, a.controller, to, d.enchant.filter, what);
   if (chars(s, what).subtypes.includes("Equipment")) return isCreature(s, to);
   return false;
@@ -312,6 +389,31 @@ export function attach(s: GameState, what: ObjectId, to: ObjectId): void {
   a.timestamp = nextTimestamp(s); // 613.7e : nouvel horodatage
   bump(s);
   emit({ type: "attach", objectId: what, defId: a.defId, to, toDefId: s.objects[to]?.defId ?? "" });
+}
+
+/** Signale une carte défaussée (déclencheurs « chaque fois qu'un adversaire défausse une carte »). */
+export function announceDiscard(s: GameState, player: PlayerId, card: ObjectId | null): void {
+  if (card) rulesEvent(s, { e: "discard", player, cards: [card] });
+}
+
+/** Numéro du prochain tour de ce joueur (tour en cours exclu). */
+function nextTurnOf(s: GameState, player: PlayerId): number {
+  const alive = s.playerOrder.filter((p) => !s.players[p]?.lost);
+  const i = alive.indexOf(s.turn.active);
+  for (let k = 1; k <= alive.length; k++) if (alive[(i + k) % alive.length] === player) return s.turn.number + k;
+  return s.turn.number + alive.length;
+}
+
+/** Permet à un joueur de jouer ces cartes exilées jusqu'à la fin de ce tour, ou de son prochain tour. */
+export function grantPlay(
+  s: GameState,
+  player: PlayerId,
+  cards: ObjectId[],
+  until: "thisTurn" | "yourNextTurn",
+  opts: { free?: boolean; anyTime?: boolean },
+): void {
+  const last = until === "thisTurn" ? s.turn.number : nextTurnOf(s, player);
+  s.playPermissions = [...(s.playPermissions ?? []), ...cards.map((card) => ({ card, player, until: last, ...opts }))];
 }
 
 /** Cartes d'une zone appartenant à des joueurs donnés. */
@@ -395,11 +497,12 @@ export function runEffect(s: GameState, r: Resolution, e: Effect): OpResult {
       const p = resolveRef(s, ctx, e.who).find((x) => isPlayer(s, x));
       if (!p) return;
       const mana = e.mana;
-      const canDo = mana ? canPay(s, p, mana) : (s.players[p]?.life ?? 0) >= (e.life ?? 0);
+      // Garde à coût composé (Ovika : {3} et 3 PV) : les deux parties doivent être payables.
+      const canDo = (!mana || canPay(s, p, mana)) && (s.players[p]?.life ?? 0) >= (e.life ?? 0);
       if (!canDo) return;
       const answer = r.vars[key("unless")];
       if (!answer) {
-        const what = mana ? `payer ${costToText(mana)}` : `payer ${e.life} points de vie`;
+        const what = [mana ? costToText(mana) : "", e.life ? `${e.life} points de vie` : ""].filter(Boolean).join(" et ");
         return {
           ask: {
             player: p,
@@ -407,7 +510,7 @@ export function runEffect(s: GameState, r: Resolution, e: Effect): OpResult {
             request: {
               type: "yesNo",
               intent: "unlessPay",
-              prompt: `${nameOf(s, ctx.sourceId)} : ${what} pour l'éviter ?`,
+              prompt: `${nameOf(s, ctx.sourceId)} : payer ${what} pour l'éviter ?`,
               suggested: [1],
             },
           },
@@ -417,7 +520,8 @@ export function runEffect(s: GameState, r: Resolution, e: Effect): OpResult {
       if (mana) {
         if (!canPay(s, p, mana)) return;
         payMana(s, p, mana);
-      } else loseLife(s, p, e.life ?? 0);
+      }
+      if (e.life) loseLife(s, p, e.life);
       return { skip: e.skip };
     }
     case "attach": {
@@ -429,6 +533,30 @@ export function runEffect(s: GameState, r: Resolution, e: Effect): OpResult {
     case "addMana": {
       const pool = s.players[ctx.controller]?.manaPool;
       if (pool) for (const m of e.mana) pool[m] += 1;
+      return;
+    }
+    case "addManaChoice": {
+      const answer = r.vars[key("color")];
+      if (!answer) {
+        return {
+          ask: {
+            player: ctx.controller,
+            key: key("color"),
+            request: {
+              type: "pick",
+              intent: "manaColor",
+              prompt: "Choisissez la couleur du mana",
+              options: ["W", "U", "B", "R", "G"],
+              labels: { W: "Blanc", U: "Bleu", B: "Noir", R: "Rouge", G: "Vert" },
+              min: 1,
+              max: 1,
+              suggested: ["G"],
+            },
+          },
+        };
+      }
+      const pool = s.players[ctx.controller]?.manaPool;
+      if (pool) pool[String(answer[0]) as ManaType] += e.n;
       return;
     }
     case "impulse": {
@@ -462,7 +590,7 @@ export function runEffect(s: GameState, r: Resolution, e: Effect): OpResult {
           },
         };
       }
-      s.turn.mayPlayFromExile = [...(s.turn.mayPlayFromExile ?? []), ...chosen];
+      grantPlay(s, ctx.controller, chosen, e.until === "yourNextTurn" ? "yourNextTurn" : "thisTurn", {});
       return;
     }
     case "damageDivided": {
@@ -496,7 +624,9 @@ export function runEffect(s: GameState, r: Resolution, e: Effect): OpResult {
         }
         split = answer.map(Number);
       }
-      among.forEach((id, i) => dealDamage(s, src, id, split[i] ?? 0, false));
+      among.forEach((id, i) => {
+        dealDamage(s, src, id, split[i] ?? 0, false);
+      });
       return;
     }
     case "keepOnePerType": {
@@ -585,8 +715,13 @@ export function runEffect(s: GameState, r: Resolution, e: Effect): OpResult {
       return;
     }
     case "pickFromZone": {
-      const pool = (s.players[ctx.controller]?.[e.zone] ?? []).filter((id) =>
-        matchesCard(s, ctx.controller, id, { ...e.filter, controller: undefined }, ctx.sourceId),
+      // « une autre carte » : les objets mémorisés, reconnus par leur identité physique (ils ont changé de zone).
+      const stored = (e.excludeStored ? r.vars[`$ids:${e.excludeStored}`] : undefined)?.map(String) ?? [];
+      const excludedUids = new Set(stored.map((id) => s.objects[id]?.uid ?? s.lki[id]?.uid).filter(Boolean));
+      const pool = (s.players[ctx.controller]?.[e.zone] ?? []).filter(
+        (id) =>
+          !excludedUids.has(s.objects[id]?.uid) &&
+          matchesCard(s, ctx.controller, id, { ...e.filter, controller: undefined }, ctx.sourceId),
       );
       const count = Math.min(evalAmount(s, ctx, e.count), pool.length);
       if (count <= 0) return;
@@ -698,7 +833,7 @@ export function runEffect(s: GameState, r: Resolution, e: Effect): OpResult {
         for (const id of picked) {
           if (choice === "discard") {
             emit({ type: "discard", player: p, defIds: [s.objects[id]?.defId ?? ""] });
-            moveObject(s, id, "graveyard");
+            announceDiscard(s, p, moveObject(s, id, "graveyard"));
           } else if (onBattlefield(s, id)) putIntoGraveyard(s, id);
         }
       }
@@ -747,8 +882,10 @@ export function runEffect(s: GameState, r: Resolution, e: Effect): OpResult {
     }
     case "createTokens": {
       const n = evalAmount(s, ctx, e.count);
+      const created: string[] = [];
       for (const p of e.for ? resolveRef(s, ctx, e.for).filter((x) => isPlayer(s, x)) : [ctx.controller])
-        createTokens(s, p, e.token, n);
+        created.push(...createTokens(s, p, e.token, n));
+      if (e.store) r.vars[`$ids:${e.store}`] = created;
       return;
     }
     case "addCounters": {
@@ -769,9 +906,15 @@ export function runEffect(s: GameState, r: Resolution, e: Effect): OpResult {
     }
     case "mill": {
       const n = evalAmount(s, ctx, e.amount);
+      let matching = 0;
+      const f = e.store?.filter;
       for (const p of resolveRef(s, ctx, e.who)) {
-        for (const id of (s.players[p]?.library ?? []).slice(0, n)) moveAndLog(s, id, "graveyard");
+        for (const id of (s.players[p]?.library ?? []).slice(0, n)) {
+          if (f && matchesCard(s, ctx.controller, id, { ...f, controller: undefined })) matching++;
+          moveAndLog(s, id, "graveyard");
+        }
       }
+      if (e.store) store(r, e.store.name, f ? matching : n);
       return;
     }
     case "scry":
@@ -875,7 +1018,12 @@ export function runEffect(s: GameState, r: Resolution, e: Effect): OpResult {
         store(r, e.store, readVar(ctx, e.store ?? "") + chosen.length);
         if (chosen.length === 0) continue;
         emit({ type: "discard", player: p, defIds: chosen.map((id) => s.objects[id]?.defId ?? "") });
-        for (const id of chosen) moveObject(s, id, "graveyard");
+        for (const id of chosen) {
+          // Wilt-Leaf Liege : défaussée par un effet adverse, elle va sur le champ de bataille.
+          const toField = p !== ctx.controller && !!s.defs[s.objects[id]?.defId ?? ""]?.opponentDiscardToBattlefield;
+          if (toField) moveObject(s, id, "battlefield");
+          else announceDiscard(s, p, moveObject(s, id, "graveyard"));
+        }
       }
       return;
     }
@@ -913,6 +1061,7 @@ export function runEffect(s: GameState, r: Resolution, e: Effect): OpResult {
         }
         r.vars[key(`done-${p}`)] = [1];
         store(r, e.store, readVar(ctx, e.store ?? "") + chosen.length);
+        if (e.store) r.vars[`$ids:${e.store}`] = [...(r.vars[`$ids:${e.store}`] ?? []), ...chosen];
         for (const id of chosen) if (onBattlefield(s, id)) putIntoGraveyard(s, id);
       }
       return;
@@ -922,8 +1071,10 @@ export function runEffect(s: GameState, r: Resolution, e: Effect): OpResult {
         const o = s.objects[id];
         if (o?.zone !== "battlefield") continue;
         const wasTapped = o.tapped;
-        o.tapped = !e.untap;
-        if (wasTapped && e.untap) rulesEvent(s, { e: "untap", objectId: id });
+        if (e.untap) {
+          o.tapped = false;
+          if (wasTapped) rulesEvent(s, { e: "untap", objectId: id });
+        } else tapObject(s, o);
       }
       return;
     }
@@ -943,8 +1094,11 @@ export function runEffect(s: GameState, r: Resolution, e: Effect): OpResult {
       return;
     }
     case "destroyAll": {
-      for (const id of s.battlefield.filter((x) => matchesObjectFilter(s, ctx.controller, x, e.filter, ctx.sourceId)))
-        destroy(s, id);
+      let destroyed = 0;
+      for (const id of s.battlefield.filter((x) => matchesObjectFilter(s, ctx.controller, x, e.filter, ctx.sourceId))) {
+        if (destroy(s, id)) destroyed++;
+      }
+      store(r, e.store, destroyed);
       return;
     }
     case "addCountersAll": {
@@ -994,7 +1148,9 @@ export function runEffect(s: GameState, r: Resolution, e: Effect): OpResult {
         };
       }
       if (answer[0] !== 1 || !canPay(s, ctx.controller, e.cost)) return { skip: e.skip };
+      if (e.life && (s.players[ctx.controller]?.life ?? 0) < e.life) return { skip: e.skip };
       payMana(s, ctx.controller, e.cost);
+      if (e.life) loseLife(s, ctx.controller, e.life);
       return;
     }
     case "moveAll": {
@@ -1066,41 +1222,51 @@ export function runEffect(s: GameState, r: Resolution, e: Effect): OpResult {
       return;
     }
     case "search": {
-      const player = s.players[ctx.controller];
-      if (!player) return;
-      const count = evalAmount(s, ctx, e.count);
-      const options = player.library.filter((id) => matchesCard(s, ctx.controller, id, e.filter, ctx.sourceId));
-      let picked: string[] = [];
-      if (options.length > 0 && count > 0) {
-        const answer = r.vars[key("search")];
-        if (!answer) {
-          return {
-            ask: {
-              player: ctx.controller,
-              key: key("search"),
-              request: {
-                type: "pick",
-                intent: "search",
-                prompt: `Cherchez dans votre bibliothèque : jusqu'à ${count} carte(s)`,
-                options,
-                min: 0,
-                max: Math.min(count, options.length),
-                suggested: options.slice(0, Math.min(count, options.length)),
+      // Chaque joueur désigné cherche dans SA bibliothèque (Demolition Field) ; par défaut, le contrôleur.
+      for (const p of e.who ? resolveRef(s, ctx, e.who).filter((x) => isPlayer(s, x)) : [ctx.controller]) {
+        if (r.vars[key(`sdone-${p}`)]) continue;
+        const player = s.players[p];
+        if (!player) continue;
+        const count = evalAmount(s, ctx, e.count);
+        const options = player.library.filter((id) => matchesCard(s, p, id, e.filter, ctx.sourceId));
+        let picked: string[] = [];
+        if (options.length > 0 && count > 0) {
+          const answer = r.vars[key(`search-${p}`)];
+          if (!answer) {
+            return {
+              ask: {
+                player: p,
+                key: key(`search-${p}`),
+                request: {
+                  type: "pick",
+                  intent: "search",
+                  prompt: `Cherchez dans votre bibliothèque : jusqu'à ${count} carte(s)`,
+                  options,
+                  min: 0,
+                  max: Math.min(count, options.length),
+                  suggested: options.slice(0, Math.min(count, options.length)),
+                },
               },
-            },
-          };
+            };
+          }
+          picked = answer.map(String);
         }
-        picked = answer.map(String);
+        r.vars[key(`sdone-${p}`)] = [1];
+        // 701.23 : on mélange après la recherche ; « sur le dessus » s'applique après le mélange.
+        const toTop = e.to.to === "libraryTop";
+        for (const id of picked) {
+          if (toTop) continue;
+          const moved = moveWithSpec(s, p, id, e.to);
+          if (e.store && moved) r.vars[`$ids:${e.store}`] = [...(r.vars[`$ids:${e.store}`] ?? []), moved];
+        }
+        shuffle(s, player.library);
+        if (toTop) for (const id of picked) player.library = [id, ...player.library.filter((x) => x !== id)];
       }
-      // 701.23 : on mélange après la recherche ; « sur le dessus » s'applique après le mélange.
-      const toTop = e.to.to === "libraryTop";
-      for (const id of picked) if (!toTop) moveWithSpec(s, ctx.controller, id, e.to);
-      shuffle(s, player.library);
-      if (toTop) for (const id of picked) player.library = [id, ...player.library.filter((x) => x !== id)];
       return;
     }
     case "copyToken": {
-      const n = e.count === undefined ? 1 : evalAmount(s, ctx, e.count);
+      // Doubling Season s'applique aussi aux jetons copies.
+      const n = (e.count === undefined ? 1 : evalAmount(s, ctx, e.count)) * 2 ** doublers(s, ctx.controller, "tokens");
       for (const id of resolveRef(s, ctx, e.of)) {
         const model = s.objects[id] ?? undefined;
         const defId = model?.defId ?? s.lki[id]?.defId;
@@ -1108,6 +1274,7 @@ export function runEffect(s: GameState, r: Resolution, e: Effect): OpResult {
         for (let i = 0; i < n; i++) {
           const token = createTokenCopy(s, ctx.controller, defId);
           if (e.addKeywords?.length) addEffect(s, [token], { addKeywords: e.addKeywords }, "permanent");
+          if (e.addSubtypes?.length) addEffect(s, [token], { addSubtypes: e.addSubtypes }, "permanent");
           if (e.sacrificeAtEndStep) {
             createDelayed(s, ctx.controller, ctx.sourceId, ctx.sourceDefId, {
               targets: [],
@@ -1123,7 +1290,373 @@ export function runEffect(s: GameState, r: Resolution, e: Effect): OpResult {
     case "delayed": {
       const bound: Record<string, string[]> = {};
       for (const [k, ref] of Object.entries(e.bind ?? {})) bound[k] = resolveRef(s, ctx, ref);
-      createDelayed(s, ctx.controller, ctx.sourceId, ctx.sourceDefId, { targets: [], effects: e.effects, bound });
+      // Valeurs figées maintenant (« avec un marqueur de moins »), lues ensuite avec amount.v(nom).
+      const vars: Record<string, ChoiceValue[]> = {};
+      for (const [k, a] of Object.entries(e.vars ?? {})) vars[`$${k}`] = [evalAmount(s, ctx, a)];
+      createDelayed(s, ctx.controller, ctx.sourceId, ctx.sourceDefId, { targets: [], effects: e.effects, bound, vars });
+      return;
+    }
+    case "chooseOnEnter": {
+      if (r.vars.$chosen) return;
+      const answer = r.vars[key("chosen")];
+      const kind = e.kind;
+      if (!answer) {
+        let options: string[];
+        if (kind === "color") options = ["W", "U", "B", "R", "G"];
+        else if (kind === "cardName") {
+          // Sorcerous Spyglass : on regarde la main d'un adversaire (ses cartes d'abord), puis on nomme une carte.
+          const opp = opponentsOf(s, ctx.controller)[0];
+          const inHand = (opp ? (s.players[opp]?.hand ?? []) : []).map((id) => s.defs[s.objects[id]?.defId ?? ""]?.name ?? "");
+          const all = Object.values(s.defs)
+            .filter((d) => !d.isToken)
+            .map((d) => d.name);
+          options = [...new Set([...inHand.filter(Boolean), ...s.battlefield.map((id) => chars(s, id).name), ...all.sort()])];
+        } else {
+          const set = new Set<string>();
+          for (const d of Object.values(s.defs))
+            if (d.types.includes("Creature") && !d.isToken) for (const t of d.subtypes) set.add(t);
+          options = [...set].sort();
+        }
+        // Suggestion : le type ou la couleur les plus présents chez le contrôleur.
+        const tally = new Map<string, number>();
+        const pl = s.players[ctx.controller];
+        for (const id of [
+          ...s.battlefield.filter((x) => s.objects[x]?.controller === ctx.controller),
+          ...(pl?.hand ?? []),
+          ...(pl?.library ?? []),
+        ]) {
+          const d = s.defs[s.objects[id]?.defId ?? ""];
+          const keys = kind === "color" ? (d?.colors ?? []) : d?.types.includes("Creature") ? d.subtypes : [];
+          for (const k of keys) tally.set(k, (tally.get(k) ?? 0) + 1);
+        }
+        const best =
+          kind === "cardName"
+            ? options[0]
+            : ([...tally.entries()].sort((a, b) => b[1] - a[1]).find(([k]) => options.includes(k))?.[0] ?? options[0]);
+        const COLOR: Record<string, string> = { W: "Blanc", U: "Bleu", B: "Noir", R: "Rouge", G: "Vert" };
+        return {
+          ask: {
+            player: ctx.controller,
+            key: key("chosen"),
+            request: {
+              type: "pick",
+              intent: "chooseOnEnter",
+              prompt:
+                kind === "color"
+                  ? "Choisissez une couleur"
+                  : kind === "cardName"
+                    ? "Choisissez un nom de carte (les cartes de la main adverse sont en tête)"
+                    : "Choisissez un type de créature",
+              options,
+              labels: kind === "color" ? COLOR : Object.fromEntries(options.map((o) => [o, o])),
+              min: 1,
+              max: 1,
+              suggested: [best as string],
+            },
+          },
+        };
+      }
+      r.vars.$chosen = [kind, String(answer[0])];
+      return;
+    }
+    case "piles": {
+      const player = s.players[ctx.controller];
+      if (!player) return;
+      const top = player.library.slice(0, e.n);
+      if (top.length === 0) return;
+      const down = r.vars[key("down")];
+      if (!down) {
+        return {
+          ask: {
+            player: ctx.controller,
+            key: key("down"),
+            request: {
+              type: "pick",
+              intent: "piles",
+              prompt: "Choisissez les cartes de la pile face cachée (les autres forment la pile face visible)",
+              options: top,
+              min: 0,
+              max: top.length,
+              suggested: top.slice(0, Math.ceil(top.length / 2)),
+            },
+          },
+        };
+      }
+      const faceDown = down.map(String);
+      const faceUp = top.filter((id) => !faceDown.includes(id));
+      const opp = opponentsOf(s, ctx.controller)[0];
+      let pick = r.vars[key("pile")]?.[0];
+      if (pick === undefined && opp) {
+        const names = faceUp.map((id) => nameOf(s, id)).join(", ") || "aucune carte";
+        return {
+          ask: {
+            player: opp,
+            key: key("pile"),
+            request: {
+              type: "pick",
+              intent: "piles",
+              prompt: `${nameOf(s, ctx.sourceId)} : choisissez la pile que l'adversaire met dans sa main (l'autre va au cimetière)`,
+              options: ["down", "up"],
+              labels: { down: `Pile face cachée (${faceDown.length} carte(s))`, up: `Pile face visible : ${names}` },
+              min: 1,
+              max: 1,
+              suggested: [faceDown.length >= faceUp.length ? "up" : "down"],
+            },
+          },
+        };
+      }
+      pick ??= "down";
+      const toHand = pick === "down" ? faceDown : faceUp;
+      for (const id of top) moveWithSpec(s, ctx.controller, id, { to: toHand.includes(id) ? "hand" : "graveyard" });
+      return;
+    }
+    case "grantFlashback": {
+      const ids = resolveRef(s, ctx, e.what).filter((id) => s.objects[id]?.zone === "graveyard");
+      s.turn.flashbackGranted = [...(s.turn.flashbackGranted ?? []), ...ids];
+      return;
+    }
+    case "endTurn": {
+      endTheTurn(s, r);
+      return;
+    }
+    case "gainControl": {
+      for (const id of resolveRef(s, ctx, e.what)) {
+        const o = s.objects[id];
+        if (o?.zone !== "battlefield" || o.controller === ctx.controller) continue;
+        s.controlChanges = [...(s.controlChanges ?? []), { id, original: o.controller }];
+        removeFromCombat(s, id);
+        o.controller = ctx.controller;
+        o.controlledSince = s.turn.number;
+        bump(s);
+      }
+      return;
+    }
+    case "copySpell": {
+      const n = evalAmount(s, ctx, e.count);
+      for (const id of resolveRef(s, ctx, e.what)) {
+        const item = s.stack.find((x) => x.id === id && x.kind === "spell");
+        if (!item) continue;
+        for (let i = 0; i < n; i++) copySpellItem(s, item, ctx.controller);
+      }
+      return;
+    }
+    case "millUntil": {
+      for (const p of resolveRef(s, ctx, e.who)) {
+        const pl = s.players[p];
+        if (!pl) continue;
+        const i = pl.library.findIndex((id) => matchesCard(s, ctx.controller, id, { ...e.filter, controller: undefined }));
+        const cards = i < 0 ? [...pl.library] : pl.library.slice(0, i + 1);
+        for (const id of cards) moveAndLog(s, id, "graveyard");
+      }
+      return;
+    }
+    case "exileTop": {
+      const exiled: string[] = [];
+      for (const p of resolveRef(s, ctx, e.who)) {
+        for (const id of (s.players[p]?.library ?? []).slice(0, e.n)) {
+          const n = moveWithSpec(s, ctx.controller, id, { to: "exile" });
+          if (n) exiled.push(n);
+        }
+      }
+      r.vars[`$ids:${e.store}`] = exiled;
+      return;
+    }
+    case "giveControl": {
+      const to = resolveRef(s, ctx, e.to).find((x) => isPlayer(s, x));
+      if (!to) return;
+      for (const id of resolveRef(s, ctx, e.what)) {
+        const o = s.objects[id];
+        if (o?.zone !== "battlefield" || o.controller === to) continue;
+        removeFromCombat(s, id);
+        o.controller = to;
+        o.controlledSince = s.turn.number;
+        bump(s);
+      }
+      return;
+    }
+    case "untapUpTo": {
+      const ids = s.battlefield.filter(
+        (id) =>
+          s.objects[id]?.controller === ctx.controller &&
+          s.objects[id]?.tapped &&
+          matchesObjectFilter(s, ctx.controller, id, e.filter),
+      );
+      for (const id of ids.slice(0, e.n)) {
+        const o = s.objects[id];
+        if (!o) continue;
+        o.tapped = false;
+        rulesEvent(s, { e: "untap", objectId: id });
+      }
+      return;
+    }
+    case "exileOnResolve": {
+      r.item.flashback = true;
+      return;
+    }
+    case "poison": {
+      const n = evalAmount(s, ctx, e.n);
+      for (const p of resolveRef(s, ctx, e.who)) {
+        const pl = s.players[p];
+        if (!pl || n <= 0) continue;
+        pl.poison = (pl.poison ?? 0) + n;
+        emit({ type: "poison", player: p, amount: n, total: pl.poison });
+      }
+      return;
+    }
+    case "destroySameName": {
+      for (const id of resolveRef(s, ctx, e.what)) {
+        if (!onBattlefield(s, id)) continue;
+        const name = chars(s, id).name;
+        const all = s.battlefield.filter((x) => chars(s, x).name === name);
+        for (const x of all) destroy(s, x);
+      }
+      return;
+    }
+    case "countersDivided": {
+      const among = resolveRef(s, ctx, e.to).filter((id) => onBattlefield(s, id));
+      if (among.length === 0) return;
+      let split: number[];
+      if (among.length === 1) split = [e.total];
+      else {
+        const answer = r.vars[key("cdivide")];
+        if (!answer) {
+          const each = Math.floor(e.total / among.length);
+          return {
+            ask: {
+              player: ctx.controller,
+              key: key("cdivide"),
+              request: {
+                type: "divide",
+                intent: "divideCounters",
+                prompt: `Répartissez ${e.total} marqueurs +1/+1 entre les cibles`,
+                among,
+                total: e.total,
+                minEach: 1,
+                suggested: among.map((_, i) => each + (i < e.total - each * among.length ? 1 : 0)),
+              },
+            },
+          };
+        }
+        split = answer.map(Number);
+      }
+      among.forEach((id, i) => {
+        const o = s.objects[id];
+        if (o) changeCounters(s, o, P1P1, split[i] ?? 0);
+      });
+      return;
+    }
+    case "payX": {
+      if (r.vars[`$${e.store}`]) return;
+      const max = availableMana(s, ctx.controller);
+      const answer = r.vars[key("payx")];
+      if (!answer) {
+        return {
+          ask: {
+            player: ctx.controller,
+            key: key("payx"),
+            request: {
+              type: "number",
+              intent: "payX",
+              prompt: `${nameOf(s, ctx.sourceId)} : ${e.prompt}`,
+              min: 0,
+              max,
+              suggested: [max],
+            },
+          },
+        };
+      }
+      const x = Math.min(Number(answer[0]), max);
+      if (x > 0 && canPay(s, ctx.controller, { generic: x, colored: {}, x: 0 })) {
+        payMana(s, ctx.controller, { generic: x, colored: {}, x: 0 });
+        store(r, e.store, x);
+      } else store(r, e.store, 0);
+      return;
+    }
+    case "changeTarget": {
+      for (const id of resolveRef(s, ctx, e.what)) {
+        const item = s.stack.find((x) => x.id === id);
+        if (!item) continue;
+        const entries = Object.entries(item.targets).filter(([, ids]) => ids.length > 0);
+        const [specId, current] = entries[0] ?? [];
+        if (entries.length !== 1 || !specId || current?.length !== 1) continue;
+        const spec = stackItemSpecs(s, item).find((x) => x.id === specId);
+        if (!spec) continue;
+        const options = legalTargets(s, item.controller, spec, item.sourceId).filter((x) => x !== current[0] && x !== item.id);
+        if (options.length === 0) continue;
+        const answer = r.vars[key(`ct-${id}`)];
+        if (!answer) {
+          return {
+            ask: {
+              player: ctx.controller,
+              key: key(`ct-${id}`),
+              request: {
+                type: "pick",
+                intent: "changeTarget",
+                prompt: "Choisissez la nouvelle cible",
+                options,
+                min: 0,
+                max: 1,
+                suggested: [options[0] as string],
+              },
+            },
+          };
+        }
+        if (answer[0] !== undefined) item.targets = { ...item.targets, [specId]: [String(answer[0])] };
+      }
+      return;
+    }
+    case "extraCombat": {
+      s.turn.extraCombats = (s.turn.extraCombats ?? 0) + 1;
+      return;
+    }
+    case "addManaUntilEndOfTurn": {
+      const pl = s.players[ctx.controller];
+      if (!pl) return;
+      pl.manaKeep ??= {};
+      for (const m of e.mana) {
+        pl.manaPool[m] += 1;
+        pl.manaKeep[m] = (pl.manaKeep[m] ?? 0) + 1;
+      }
+      return;
+    }
+    case "copyNextSpell": {
+      s.nextSpellCopies = [...(s.nextSpellCopies ?? []), { player: ctx.controller, turn: s.turn.number }];
+      return;
+    }
+    case "winGame": {
+      eliminate(s, opponentsOf(s, ctx.controller));
+      return;
+    }
+    case "loseGame": {
+      eliminate(s, [ctx.controller]);
+      return;
+    }
+    case "countResolution": {
+      const k = `${ctx.sourceId}:${ctx.sourceDefId}`;
+      s.turn.resolutionCounts = { ...(s.turn.resolutionCounts ?? {}), [k]: (s.turn.resolutionCounts?.[k] ?? 0) + 1 };
+      store(r, e.store, s.turn.resolutionCounts[k] ?? 0);
+      return;
+    }
+    case "hellkite": {
+      const victims = s.objects[ctx.sourceId]?.combatDamagedPlayers ?? [];
+      for (const id of s.battlefield.filter((x) => {
+        const o = s.objects[x];
+        return (
+          !!o && victims.includes(o.controller) && !chars(s, x).types.includes("Land") && (viewOf(s, x)?.manaValue ?? 0) === ctx.x
+        );
+      })) {
+        destroy(s, id);
+      }
+      return;
+    }
+    case "link": {
+      const o = s.objects[ctx.sourceId];
+      if (o) o.linked = [...(o.linked ?? []), ...resolveRef(s, ctx, e.what)];
+      return;
+    }
+    case "grantPlay": {
+      const ids = resolveRef(s, ctx, e.what).filter((id) => s.objects[id]?.zone === "exile");
+      grantPlay(s, ctx.controller, ids, "thisTurn", { free: e.free, anyTime: e.anyTime });
       return;
     }
     case "reflexive": {

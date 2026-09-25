@@ -35,8 +35,10 @@ export interface Casting {
   /** Coûts additionnels choisis (cartes défaussées, permanents sacrifiés). */
   discard: string[] | null;
   sacrifice: string[] | null;
+  /** Façon de payer le sort : coût normal, sans payer (Omniscience, Etali), coût alternatif. */
+  payMode: "normal" | "free" | "alt" | null;
   targets: Record<string, string[]>;
-  stage: "mode" | "x" | "kicker" | "target" | "discard" | "sacrifice";
+  stage: "mode" | "pay" | "x" | "kicker" | "target" | "discard" | "sacrifice";
   spec: TargetOption | null;
   /** Cibles déjà désignées pour `spec` quand il en accepte plusieurs. */
   picked?: string[];
@@ -104,6 +106,7 @@ interface Store {
   chooseX(x: number): void;
   chooseKicker(kicked: boolean): void;
   chooseNoTarget(): void;
+  choosePayMode(mode: "normal" | "free" | "alt"): void;
   /** Désigne une cible (ou la retire, pour un mot « cible » qui en accepte plusieurs). */
   pickTarget(id: string): void;
   /** Valide les cibles déjà désignées (« jusqu'à N »). */
@@ -149,6 +152,8 @@ function buildDecision(c: Casting): Decision {
       kicked: c.kicked ?? false,
       discard: c.discard ?? undefined,
       sacrifice: c.sacrifice ?? undefined,
+      free: c.payMode === "free" && !c.option.free ? true : undefined,
+      alternative: c.payMode === "alt" ? true : undefined,
     };
   }
   return {
@@ -222,9 +227,23 @@ export const useGame = create<Store>((set, get) => {
       if (c.option.modes.length > 1) return set({ casting: { ...c, stage: "mode" } });
       c.mode = c.option.modes[0]?.index ?? 0;
     }
+    if (c.option.type === "cast" && c.payMode === null) {
+      const o = c.option;
+      const modes = o.free
+        ? (["free"] as const)
+        : ([o.normalAvailable && "normal", o.freeAvailable && "free", o.altAvailable && "alt"].filter(Boolean) as (
+            | "normal"
+            | "free"
+            | "alt"
+          )[]);
+      // Sans payer est toujours le meilleur choix, sauf pour un sort à X (X vaut alors 0).
+      if (modes.length === 1 || (modes.includes("free") && o.xMax === null))
+        c.payMode = modes.includes("free") ? "free" : (modes[0] ?? "normal");
+      else return set({ casting: { ...c, stage: "pay" } });
+    }
     if (c.x === null) {
-      if (c.option.xMax !== null && c.option.xMax > 0) return set({ casting: { ...c, stage: "x" } });
-      c.x = c.option.xMax ?? 0;
+      if (c.payMode !== "free" && c.option.xMax !== null && c.option.xMax > 0) return set({ casting: { ...c, stage: "x" } });
+      c.x = c.payMode === "free" ? 0 : (c.option.xMax ?? 0);
     }
     if (c.option.type === "cast" && c.kicked === null) {
       if (c.option.kickerAffordable) return set({ casting: { ...c, stage: "kicker" } });
@@ -458,6 +477,7 @@ export const useGame = create<Store>((set, get) => {
         kicked: null,
         discard: null,
         sacrifice: null,
+        payMode: null,
         targets: {},
         stage: "mode",
         spec: null,
@@ -468,6 +488,11 @@ export const useGame = create<Store>((set, get) => {
     chooseMode(index) {
       const c = get().casting;
       if (c) continueCasting({ ...c, mode: index });
+    },
+
+    choosePayMode(payMode) {
+      const c = get().casting;
+      if (c) continueCasting({ ...c, payMode });
     },
 
     chooseX(x) {

@@ -1,5 +1,5 @@
 /** Fenêtres de choix : réservées aux vraies décisions (mulligan, modes, X, kicker, défausse…). */
-import type { GameView } from "@mtgx/engine";
+import { costToText, type GameView } from "@mtgx/engine";
 import { useState } from "react";
 import { Card } from "../board/Card";
 import { faceName } from "../i18n";
@@ -112,7 +112,18 @@ function XPicker({ max }: { max: number }) {
   );
 }
 
-function AdditionalCostPicker({ kind, count, options }: { kind: "discard" | "sacrifice"; count: number; options: string[] }) {
+function AdditionalCostPicker({
+  kind,
+  count,
+  options,
+  orPay,
+}: {
+  kind: "discard" | "sacrifice";
+  count: number;
+  options: string[];
+  /** « … ou payez {3}{B} » : on peut payer ce mana à la place. */
+  orPay?: string;
+}) {
   const view = useGame((s) => s.view);
   const choose = useGame((s) => s.chooseAdditional);
   const cancel = useGame((s) => s.cancel);
@@ -149,6 +160,11 @@ function AdditionalCostPicker({ kind, count, options }: { kind: "discard" | "sac
         <button type="button" className="btn ghost" onClick={cancel}>
           Annuler
         </button>
+        {orPay && (
+          <button type="button" className="btn" onClick={() => choose(kind, [])}>
+            Payer {orPay} à la place
+          </button>
+        )}
         <button type="button" className="btn primary" disabled={picked.length !== count} onClick={() => choose(kind, picked)}>
           Valider ({picked.length}/{count})
         </button>
@@ -209,6 +225,7 @@ function CastingPrompt() {
   const view = useGame((s) => s.view);
   const chooseMode = useGame((s) => s.chooseMode);
   const chooseKicker = useGame((s) => s.chooseKicker);
+  const choosePayMode = useGame((s) => s.choosePayMode);
   const cancel = useGame((s) => s.cancel);
   if (!casting) return null;
   const opt = casting.option;
@@ -241,7 +258,46 @@ function CastingPrompt() {
   }
   if ((casting.stage === "discard" || casting.stage === "sacrifice") && opt.type === "cast") {
     const spec = opt.additional?.[casting.stage];
-    if (spec) return <AdditionalCostPicker kind={casting.stage} count={spec.count} options={spec.options} />;
+    const sac = opt.additional?.sacrifice;
+    const orPay = casting.stage === "sacrifice" && sac?.orPayAffordable && sac.orPay;
+    if (spec) {
+      return (
+        <AdditionalCostPicker
+          kind={casting.stage}
+          count={spec.count}
+          options={spec.options}
+          orPay={orPay ? costToText(orPay) : undefined}
+        />
+      );
+    }
+  }
+  if (casting.stage === "pay" && opt.type === "cast") {
+    return (
+      <Modal title="Comment payer ce sort ?">
+        <div className="choice-list">
+          {opt.normalAvailable && (
+            <button type="button" className="btn choice" onClick={() => choosePayMode("normal")}>
+              Payer son coût de mana
+            </button>
+          )}
+          {(opt.freeAvailable || opt.free) && (
+            <button type="button" className="btn choice primary" onClick={() => choosePayMode("free")}>
+              Sans payer son coût de mana{opt.xMax !== null ? " (X = 0)" : ""}
+            </button>
+          )}
+          {opt.altAvailable && (
+            <button type="button" className="btn choice" onClick={() => choosePayMode("alt")}>
+              Coût alternatif
+            </button>
+          )}
+        </div>
+        <div className="modal-actions">
+          <button type="button" className="btn ghost" onClick={cancel}>
+            Annuler
+          </button>
+        </div>
+      </Modal>
+    );
   }
   if (casting.stage === "kicker") {
     return (

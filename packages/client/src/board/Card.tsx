@@ -116,6 +116,11 @@ export function Card({
               </div>
             )}
             {obj.damage > 0 && <div className="dmg-badge">−{obj.damage}</div>}
+            {obj.chosen && (
+              <div className="chosen-badge" title="Choix fait en arrivant">
+                {obj.chosen.creatureType ?? COLOR_NAME[obj.chosen.color ?? ""] ?? ""}
+              </div>
+            )}
             {obj.types.includes("Planeswalker") && (
               <div className="loyalty-badge" title="Loyauté">
                 {obj.counters.loyalty ?? 0}
@@ -134,7 +139,17 @@ export function Card({
   );
 }
 
-const COUNTER_LABEL: Record<string, string> = { stun: "Étourdi", loyalty: "Loyauté" };
+const COUNTER_LABEL: Record<string, string> = {
+  stun: "Étourdi",
+  loyalty: "Loyauté",
+  revival: "Résurrection",
+  fellowship: "Camaraderie",
+  bait: "Appât",
+  incubation: "Incubation",
+  soul: "Âme",
+  stash: "Butin",
+};
+const COLOR_NAME: Record<string, string> = { W: "Blanc", U: "Bleu", B: "Noir", R: "Rouge", G: "Vert" };
 
 /** Pastilles de marqueurs : +N pour les +1/+1, -N pour les -1/-1, nom et nombre pour les autres. */
 function CounterBadges({ counters }: { counters: Record<string, number> }) {

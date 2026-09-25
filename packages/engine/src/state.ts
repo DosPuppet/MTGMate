@@ -52,9 +52,12 @@ export type RulesEvent =
       /** Caractéristiques au moment du départ du champ de bataille. */
       lki: LkiSnapshot | null;
     }
-  | { e: "cast"; player: PlayerId; stackId: ObjectId }
+  /** `instantSorceryBefore` : éphémères et rituels déjà lancés ce tour-ci par ce joueur (pour un éphémère ou un rituel). */
+  | { e: "cast"; player: PlayerId; stackId: ObjectId; instantSorceryBefore?: number }
+  /** Cartes défaussées (nouveaux identifiants, dans le cimetière). */
+  | { e: "discard"; player: PlayerId; cards: ObjectId[] }
   | { e: "attack"; attacker: ObjectId; defender: PlayerId }
-  | { e: "damage"; sourceId: ObjectId | null; target: string; amount: number; combat: boolean }
+  | { e: "damage"; sourceId: ObjectId | null; sourceController?: PlayerId; target: string; amount: number; combat: boolean }
   | { e: "step"; step: Step; active: PlayerId }
   /** `first` : première fois que ce joueur gagne des points de vie ce tour-ci. */
   | { e: "lifeGain"; player: PlayerId; amount: number; first: boolean }
@@ -65,7 +68,8 @@ export type RulesEvent =
   | { e: "counters"; objectId: ObjectId; kind: string; amount: number }
   /** Un sort ou une capacité vient d'être mis sur la pile avec ces cibles (identifiant d'élément de pile). */
   | { e: "targeted"; stackId: string; controller: PlayerId; targets: string[] }
-  | { e: "untap"; objectId: ObjectId };
+  | { e: "untap"; objectId: ObjectId }
+  | { e: "tap"; objectId: ObjectId };
 
 /** Signale un événement de règles : les capacités déclenchées correspondantes sont mises en attente. */
 export function rulesEvent(s: GameState, ev: RulesEvent): void {
@@ -130,7 +134,7 @@ export function shuffle<T>(s: GameState, items: T[]): void {
 }
 
 export function emptyTurnStats(): TurnStats {
-  return { lifeGained: 0, lifeGainEvents: 0, lifeLost: 0, cardsDrawn: 0, spellsCast: 0 };
+  return { lifeGained: 0, lifeGainEvents: 0, lifeLost: 0, cardsDrawn: 0, spellsCast: 0, instantSorceryCast: 0 };
 }
 
 export function emptyPool(): Record<ManaType, number> {
@@ -207,8 +211,17 @@ export function counterPT(o: { counters: Record<string, number> }): number {
   return counterCount(o, P1P1) - counterCount(o, M1M1);
 }
 
+/** Engage un permanent (« chaque fois qu'il devient engagé »). */
+export function tapObject(s: GameState, o: GameObject): void {
+  if (o.tapped) return;
+  o.tapped = true;
+  rulesEvent(s, { e: "tap", objectId: o.id });
+}
+
 /** Ajoute (ou retire, si n < 0) des marqueurs ; renvoie le nombre réellement modifié. */
 export function changeCounters(s: GameState, o: GameObject, kind: string, n: number): number {
+  // Doubling Season : des marqueurs mis sur un permanent que vous contrôlez sont doublés (y compris en arrivant).
+  if (n > 0 && o.zone === "battlefield") n *= 2 ** doublers(s, o.controller, "counters");
   const before = counterCount(o, kind);
   const after = Math.max(0, before + n);
   if (after === 0) delete o.counters[kind];
@@ -277,6 +290,18 @@ export function moveObject(
 ): ObjectId | null {
   const o = obj(s, id);
   to = replaceDestination(s, o, to);
+  // Progenitus : « si elle devait être mise dans un cimetière de n'importe où, mélangez-la dans la bibliothèque ».
+  const shuffleIn = to === "graveyard" && !o.isToken && !!s.defs[o.defId]?.shuffleIntoLibrary;
+  if (shuffleIn) to = "library";
+  // Dryad Militant : un éphémère ou un rituel qui irait au cimetière est exilé à la place.
+  const dt = s.defs[o.defId]?.types ?? [];
+  if (
+    to === "graveyard" &&
+    (dt.includes("Instant") || dt.includes("Sorcery")) &&
+    s.playerOrder.some((p) => playerStatic(s, p, "exileInstantsSorceries"))
+  ) {
+    to = "exile";
+  }
   const from = zoneArray(s, o);
   if (from) {
     const i = from.indexOf(id);
@@ -309,6 +334,7 @@ export function moveObject(
       lib.unshift(moved.id);
     }
   }
+  if (shuffleIn) shuffle(s, s.players[o.owner]?.library ?? []);
   if (to === "battlefield") applyEntersReplacements(s, moved, opts.enters ?? {});
   rulesEvent(s, { e: "zone", oldId: id, newId: moved.id, from: from0, to, lki });
   if (from0 === "battlefield") releaseLinkedExile(s, id);
@@ -321,6 +347,7 @@ export function moveObject(
 
 import { bump, snapshot } from "./layers";
 import { applyEntersReplacements, type EntersContext, releaseLinkedExile, replaceDestination } from "./replacement";
+import { doublers, playerStatic } from "./statics";
 import { detectTriggers } from "./triggers";
 
 export {

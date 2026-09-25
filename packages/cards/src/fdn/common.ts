@@ -22,6 +22,11 @@ export const {
   costReducer,
   flashForAll,
   loyalty,
+  castPermission,
+  playerStatic,
+  prevention,
+  doubler,
+  cost,
 } = dsl;
 
 /** Cible quelconque décrite par un filtre d'objets. */
@@ -70,6 +75,15 @@ export const FISH = creature("Fish", ["U"], ["Fish"], 1, 1);
 export const NINJA = creature("Ninja", ["U"], ["Ninja"], 2, 1);
 export const ZOMBIE = creature("Zombie", ["B"], ["Zombie"], 2, 2);
 export const CAT_2 = creature("Cat", ["W"], ["Cat"], 2, 2);
+export const CAT_BEAST = creature("Cat Beast", ["W"], ["Cat", "Beast"], 2, 2);
+export const CAT_LIFELINK = creature("Cat", ["W"], ["Cat"], 1, 1, { keywords: ["lifelink"] });
+export const DOG = creature("Dog", ["W"], ["Dog"], 1, 1);
+export const RAT_NO_BLOCK = creature("Rat", ["B"], ["Rat"], 1, 1, {
+  keywords: ["cantBlock"],
+  text: "This creature can't block.",
+});
+export const PHYREXIAN_GOBLIN = creature("Phyrexian Goblin", ["R"], ["Phyrexian", "Goblin"], 1, 1);
+export const BEAST_3 = creature("Beast", ["G"], ["Beast"], 3, 3);
 export const RACCOON = creature("Raccoon", ["G"], ["Raccoon"], 3, 3);
 
 export const TREASURE: TokenSpec = {
