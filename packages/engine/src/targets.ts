@@ -44,6 +44,8 @@ export function matchesView(v: LkiSnapshot, f: ObjectFilter, perspective: Player
   if (f.anyOf && !f.anyOf.some((g) => matchesView(v, g, perspective, sourceId))) return false;
   if (f.legendary !== undefined && v.supertypes.includes("Legendary") !== f.legendary) return false;
   if (f.maxToughness !== undefined && v.toughness > f.maxToughness) return false;
+  if (f.preparedSpell !== undefined && !!v.preparedSpell !== f.preparedSpell) return false;
+  if (f.prepared !== undefined && !!v.prepared !== f.prepared) return false;
   return true;
 }
 
@@ -121,6 +123,7 @@ export function matchesObjectFilter(
 ): boolean {
   const o = s.objects[id];
   if (o?.zone !== "battlefield") return false;
+  if (f.attackedThisTurn && o.attackedTurn !== s.turn.number) return false;
   return matchesView(snapshot(s, id), resolveFilter(s, f, sourceId), controller, sourceId);
 }
 

@@ -13,6 +13,7 @@ import {
   mode,
   OTHER_CREATURE_YOU_CONTROL,
   ref,
+  SEED_SUTURE,
   spell,
   staticAbility,
   THOPTER,
@@ -175,4 +176,5 @@ export const WHITE: Record<string, CardScript> = {
       }),
     ],
   },
+  "Blossom-Blessed Angel": { prepareSpell: SEED_SUTURE, abilities: [entersWith({ prepared: true })] },
 };

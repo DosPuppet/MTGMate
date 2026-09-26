@@ -301,6 +301,13 @@ export function moveObject(
   opts: { controller?: PlayerId; position?: "top" | "bottom"; enters?: EntersContext } = {},
 ): ObjectId | null {
   const o = obj(s, id);
+  // Copie d'un sort préparé : elle ne quitte l'exil que pour la pile ; ailleurs, elle cesse d'exister.
+  if (o.preparedFor && to !== "stack") {
+    removeObject(s, id);
+    return null;
+  }
+  // Un permanent préparé qui quitte le champ de bataille : la copie de son sort cesse d'exister.
+  if (o.preparedCopy && o.zone === "battlefield") setPrepared(s, o, false);
   to = replaceDestination(s, o, to);
   // Marqueur de finalité : un permanent qui en porte un et devrait mourir est exilé à la place.
   if (to === "graveyard" && o.zone === "battlefield" && (o.counters.finality ?? 0) > 0) to = "exile";
@@ -344,6 +351,7 @@ export function moveObject(
     isToken: o.isToken,
     controller: to === "battlefield" || to === "stack" ? (opts.controller ?? o.controller) : o.owner,
   });
+  if (o.preparedFor) moved.preparedFor = o.preparedFor;
   if (to === "library" && opts.position !== "bottom") {
     const lib = s.players[o.owner]?.library;
     if (lib) {
@@ -356,6 +364,34 @@ export function moveObject(
   rulesEvent(s, { e: "zone", oldId: id, newId: moved.id, from: from0, to, lki });
   if (from0 === "battlefield") releaseLinkedExile(s, id);
   return moved.id;
+}
+
+/** Retire un objet du jeu sans passer par une zone (copie de sort qui cesse d'exister). */
+function removeObject(s: GameState, id: ObjectId): void {
+  const o = s.objects[id];
+  if (!o) return;
+  const arr = zoneArray(s, o);
+  const i = arr?.indexOf(id) ?? -1;
+  if (arr && i >= 0) arr.splice(i, 1);
+  delete s.objects[id];
+}
+
+/**
+ * Reality Fracture : un permanent qui a un sort préparé devient préparé (une copie de ce sort est créée en
+ * exil, que son contrôleur peut lancer) ou dé-préparé (la copie cesse d'exister). Sans sort préparé, rien.
+ */
+export function setPrepared(s: GameState, o: GameObject, on: boolean): void {
+  if (!on) {
+    if (o.preparedCopy) removeObject(s, o.preparedCopy);
+    delete o.preparedCopy;
+    return;
+  }
+  const spell = s.defs[o.defId]?.prepareSpell;
+  if (!spell || o.zone !== "battlefield" || (o.preparedCopy && s.objects[o.preparedCopy])) return;
+  s.defs[spell.id] ??= spell;
+  const copy = createObject(s, spell.id, o.controller, "exile");
+  copy.preparedFor = o.id;
+  o.preparedCopy = copy.id;
 }
 
 // ---------------------------------------------------------------------------

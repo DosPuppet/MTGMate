@@ -119,6 +119,8 @@ export interface ManaPurpose {
   abilitySource?: ObjectId;
   /** Convocation (702.51) : les créatures dégagées peuvent payer {1} ou un mana de leur couleur. */
   convoke?: boolean;
+  /** Sort lancé depuis la main. */
+  fromHand?: boolean;
 }
 
 /** Pseudo-capacité de mana d'une créature engagée pour la convocation. */
@@ -135,6 +137,7 @@ function restrictionAllows(
   if (!r) return true;
   if (!purpose) return false;
   const o = obj(s, sourceId);
+  if (r.notSpellFromHand) return !!purpose.abilitySource || (!!purpose.spell && !purpose.fromHand);
   if (r.spell && purpose.spell && matchesView(purpose.spell, withChosen(r.spell, o), player, sourceId)) return true;
   const src = purpose.abilitySource;
   if (r.abilityOfCreature && src && s.objects[src] && isCreature(s, src)) {

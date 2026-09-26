@@ -6,9 +6,11 @@ import {
   type CardScript,
   cond,
   costReducer,
+  entersWith,
   fx,
   modal,
   mode,
+  PEER_REVIEW,
   playerStatic,
   ref,
   spell,
@@ -150,5 +152,31 @@ export const BLUE: Record<string, CardScript> = {
   },
   "Samut, Tyrant of Naktamun": {
     abilities: [playerStatic({ splitSecondInstantsSorceries: true, label: "Vos éphémères et rituels ont le second partagé" })],
+  },
+  "Diviner of Victory": {
+    prepareSpell: spell(
+      [target.creature("t", { controller: "opponent", maxManaValue: 3 })],
+      [fx.bounce(ref.target()), fx.surveil(1)],
+    ),
+    abilities: [entersWith({ prepared: true }), triggered(when.scryOrSurveil, [fx.pump(ref.self, 1, 1)], { label: "+1/+1" })],
+  },
+  "Infinite Coursework": {
+    enchant: { filter: { types: ["Creature"] }, label: "créature" },
+    abilities: [
+      triggered(when.entersSelf, [fx.tap(ref.attached), fx.prepare(ref.attached, false)], {
+        label: "engage et dé-prépare la créature",
+      }),
+      staticAbility(
+        "attached",
+        { loseAllAbilities: true, addKeywords: ["doesntUntap"] },
+        {
+          label: "Perd toutes ses capacités, ne se dégage pas",
+        },
+      ),
+    ],
+  },
+  "Semester Foreseer": {
+    prepareSpell: PEER_REVIEW,
+    abilities: [entersWith({ prepared: true }), triggered(when.entersSelf, [fx.surveil(1)], { label: "surveillance 1" })],
   },
 };

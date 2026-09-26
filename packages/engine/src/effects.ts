@@ -36,6 +36,7 @@ import {
   opponentsOf,
   P1P1,
   rulesEvent,
+  setPrepared,
   shuffle,
   snapshot,
   tapObject,
@@ -897,6 +898,19 @@ export function runEffect(s: GameState, r: Resolution, e: Effect): OpResult {
       for (const p of e.for ? resolveRef(s, ctx, e.for).filter((x) => isPlayer(s, x)) : [ctx.controller])
         created.push(...createTokens(s, p, e.token, n));
       if (e.store) r.vars[`$ids:${e.store}`] = created;
+      return;
+    }
+    case "prepare": {
+      const f = e.filter;
+      const ids = f
+        ? s.battlefield.filter((id) => matchesObjectFilter(s, ctx.controller, id, f, ctx.sourceId))
+        : e.what
+          ? resolveRef(s, ctx, e.what)
+          : [];
+      for (const id of ids) {
+        const o = s.objects[id];
+        if (o?.zone === "battlefield") setPrepared(s, o, e.value);
+      }
       return;
     }
     case "addCounters": {

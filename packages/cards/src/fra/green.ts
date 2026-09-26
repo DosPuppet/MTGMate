@@ -8,12 +8,15 @@ import {
   type CardScript,
   CREATURE_YOU_CONTROL,
   cond,
+  entersWith,
   FOREST_TENTACLE,
   fx,
   HEARTWOOD,
   MOWU,
+  manaAbility,
   mode,
   ref,
+  SOUL_TETHER,
   spell,
   staticAbility,
   target,
@@ -220,5 +223,19 @@ export const GREEN: Record<string, CardScript> = {
       triggered(when.gainLife, [fx.addCounters(ref.self, 2)], { label: "deux marqueurs +1/+1" }),
       triggered(when.discardSelf, [fx.gainLife(3)], { fromGraveyard: true, label: "défaussée : +3 PV" }),
     ],
+  },
+  "Carnivorous Cultivator": {
+    prepareSpell: spell([], [fx.search({ types: ["Land"] }, { to: "graveyard" })]),
+    abilities: [
+      entersWith({ prepared: true }),
+      triggered(when.combatDamageToPlayer, [fx.toHand(ref.target())], {
+        targets: [target.cardInGraveyard("t", { types: ["Land"] }, "you", "carte de terrain de votre cimetière")],
+        label: "récupère un terrain",
+      }),
+    ],
+  },
+  "Heartwood Crafter": {
+    prepareSpell: SOUL_TETHER,
+    abilities: [entersWith({ prepared: true }), manaAbility("C", 1, { restriction: { notSpellFromHand: true } })],
   },
 };

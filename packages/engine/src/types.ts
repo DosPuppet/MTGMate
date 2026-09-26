@@ -155,6 +155,8 @@ export interface CardDef {
   artCrop?: string;
   /** Carte « à préparer » (Reality Fracture) : le sort attaché à la créature (seconde face). */
   prepareFace?: PrepareFace;
+  /** Définition du sort préparé (copiée en exil quand la créature devient préparée). */
+  prepareSpell?: CardDef;
   /** false si la carte a des capacités que le moteur ne sait pas encore gérer. */
   implemented: boolean;
   /** Impression de référence (code de set, numéro de collection, rareté) : export des decklists, filtres. */
@@ -223,7 +225,8 @@ export interface ManaAbilityDef {
   /** Produit la couleur choisie en arrivant (Heraldic Banner). */
   produceChosen?: boolean;
   /** Mana dépensable seulement pour un sort (ou une capacité d'une créature source) correspondant au filtre. */
-  restriction?: { spell?: ObjectFilter; abilityOfCreature?: ObjectFilter };
+  /** `notSpellFromHand` : « ce mana ne peut pas servir à lancer des sorts depuis votre main » (Heartwood Crafter). */
+  restriction?: { spell?: ObjectFilter; abilityOfCreature?: ObjectFilter; notSpellFromHand?: boolean };
   /** Effet si ce mana sert à lancer un sort correspondant (Carnelian Orb : célérité ; Pyromancer's Goggles : copie). */
   rider?: { spell: ObjectFilter; effect: "haste" | "copy" };
   amount: number;
@@ -365,6 +368,12 @@ export interface ObjectFilter {
   maxManaValueSourcePower?: boolean;
   /** Légendaire (true) ou non légendaire (false). */
   legendary?: boolean;
+  /** Sort préparé (copie lancée depuis l'exil, Codie). */
+  preparedSpell?: boolean;
+  /** Permanent préparé. */
+  prepared?: boolean;
+  /** A attaqué ce tour-ci. */
+  attackedThisTurn?: boolean;
   maxToughness?: number;
 }
 
@@ -463,7 +472,9 @@ export type Condition =
   /** Le contrôleur a pioché au moins N cartes ce tour-ci. */
   | { kind: "drewAtLeast"; n: number }
   /** Le contrôleur a lancé au moins N sorts [non-créature] ce tour-ci. */
-  | { kind: "castThisTurn"; n: number; noncreature?: boolean };
+  | { kind: "castThisTurn"; n: number; noncreature?: boolean }
+  /** La source est préparée. */
+  | { kind: "prepared" };
 
 /** Modifications apportées par un effet continu, rangées par couche (613). */
 export interface LayerMods {
@@ -501,6 +512,8 @@ export interface LayerMods {
 export interface ReplacementAbilityDef {
   kind: "replacement";
   entersTapped?: boolean;
+  /** « Cette créature arrive préparée. » */
+  entersPrepared?: boolean;
   /** Nombre de marqueurs +1/+1 à l'arrivée (X du sort compris). */
   entersWithCounters?: Amount;
   /** Condition (raid, kicker…) évaluée au moment de l'arrivée. */
@@ -702,6 +715,8 @@ export interface MoveSpec {
 }
 
 export type Effect =
+  /** Devient préparé / dé-préparé (Reality Fracture). */
+  | { op: "prepare"; what?: Ref; filter?: ObjectFilter; value: boolean }
   | { op: "damage"; amount: Amount; to: Ref; source?: Ref; storeExcess?: string }
   | { op: "fight"; a: Ref; b: Ref }
   | { op: "pump"; what: Ref; power: Amount; toughness: Amount; keywords?: Keyword[] }
@@ -955,6 +970,12 @@ export interface GameObject {
   chosen?: { creatureType?: string; color?: Color; cardName?: string };
   /** Arrivé depuis un sort lancé depuis la main (Myojin). */
   castFromHand?: boolean;
+  /** Préparé (Reality Fracture) : identifiant de la copie de son sort, en exil. */
+  preparedCopy?: ObjectId;
+  /** Copie d'un sort préparé (en exil puis sur la pile) : le permanent qui l'a préparée. Cesse d'exister hors de ces zones. */
+  preparedFor?: ObjectId;
+  /** Tour de sa dernière attaque (« créature qui a attaqué ce tour-ci »). */
+  attackedTurn?: number;
   /** Cartes liées (exilées par cette carte, Hoarding Dragon). */
   linked?: ObjectId[];
   /** Sources qui lui ont infligé des blessures ce tour-ci (Predator Ooze). */
@@ -1136,6 +1157,10 @@ export interface LkiSnapshot {
   /** Capacités effectives (imprimées ou accordées) au moment de l'instantané. */
   abilities?: AbilityDef[];
   counters?: Record<string, number>;
+  /** Copie d'un sort préparé. */
+  preparedSpell?: boolean;
+  prepared?: boolean;
+  attackedTurn?: number;
 }
 
 /** Résolution en cours d'un sort ou d'une capacité, éventuellement suspendue sur un choix. */

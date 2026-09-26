@@ -471,6 +471,7 @@ export function declareAttackers(s: GameState, player: PlayerId, attackers: { id
   for (const a of attackers) {
     if (!hasKeyword(s, a.id, "vigilance")) tapObject(s, obj(s, a.id));
     s.combat.attackers.push({ id: a.id, defender: a.defender, blockers: [], blocked: false });
+    obj(s, a.id).attackedTurn = s.turn.number;
   }
   bump(s);
   for (const a of attackers) rulesEvent(s, { e: "attack", attacker: a.id, defender: a.defender });

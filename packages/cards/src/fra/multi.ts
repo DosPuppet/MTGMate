@@ -6,13 +6,18 @@ import {
   type CardScript,
   CREATURE_YOU_CONTROL,
   cond,
+  entersWith,
   fx,
   HEARTWOOD,
   LOTUS,
   modal,
   mode,
+  OMIT_VARIABLES,
+  PEER_REVIEW,
   ref,
   SCULPTURE_TREASURE,
+  SEED_SUTURE,
+  SOUL_TETHER,
   spell,
   staticAbility,
   THOPTER,
@@ -20,6 +25,7 @@ import {
   target,
   targetObj,
   triggered,
+  VICIOUS_VERSE,
   when,
 } from "./common";
 
@@ -270,6 +276,77 @@ export const MULTI: Record<string, CardScript> = {
         condition: cond.controls({ types: ["Land"] }, 6),
         label: "six terrains : détruire un permanent",
       }),
+    ],
+  },
+  "Emergency Phytomedic": { prepareSpell: SEED_SUTURE, abilities: [entersWith({ prepared: true })] },
+  "Fatehold Chronologist": { prepareSpell: PEER_REVIEW, abilities: [entersWith({ prepared: true })] },
+  "Konstrari Improviser": { prepareSpell: SOUL_TETHER, abilities: [entersWith({ prepared: true })] },
+  "Paradox Shaper": {
+    prepareSpell: OMIT_VARIABLES,
+    abilities: [
+      triggered(when.yourUpkeep, [fx.prepare(ref.self)], { condition: cond.not(cond.prepared), label: "devient préparée" }),
+      activated({
+        mana: "{2}",
+        targets: [target.cardInGraveyard("t", {}, "you")],
+        effects: [fx.moveTo(ref.target(), { to: "libraryBottom" })],
+        label: "Carte du cimetière au-dessous de la bibliothèque",
+      }),
+    ],
+  },
+  "Prudent Fateseer": {
+    prepareSpell: PEER_REVIEW,
+    abilities: [
+      entersWith({ prepared: true }),
+      triggered(when.scryOrSurveil, [fx.pumpAll(CREATURE_YOU_CONTROL, 1, 0)], {
+        oncePerTurn: true,
+        label: "vos créatures +1/+0",
+      }),
+    ],
+  },
+  "Stingerquill Voxmancer": {
+    prepareSpell: VICIOUS_VERSE,
+    abilities: [
+      triggered(when.yourUpkeep, [fx.prepare(ref.self)], { condition: cond.not(cond.prepared), label: "devient préparée" }),
+    ],
+  },
+  "Theorix Metamage": {
+    prepareSpell: OMIT_VARIABLES,
+    abilities: [
+      entersWith({ prepared: true }),
+      staticAbility("self", { power: 1, addKeywords: ["flying"] }, { condition: cond.threshold, label: "Seuil : +1/+0 et vol" }),
+    ],
+  },
+  "Vigorbloom Vanguard": {
+    prepareSpell: SEED_SUTURE,
+    abilities: [
+      entersWith({ prepared: true }),
+      staticAbility(
+        { types: ["Creature"], controller: "you", withCounter: "+1/+1" },
+        { addKeywords: ["vigilance"] },
+        {
+          label: "Vigilance (avec un marqueur +1/+1)",
+        },
+      ),
+    ],
+  },
+  "Whiplash Wordsmith": {
+    prepareSpell: VICIOUS_VERSE,
+    abilities: [
+      entersWith({ prepared: true }),
+      staticAbility(
+        "self",
+        { addKeywords: ["flying", "haste"] },
+        {
+          condition: cond.opponentDealtNoncombatDamage,
+          label: "Vol et célérité (blessures non de combat)",
+        },
+      ),
+    ],
+  },
+  "Woodwork Prodigy": {
+    prepareSpell: SOUL_TETHER,
+    abilities: [
+      triggered(when.yourUpkeep, [fx.prepare(ref.self)], { condition: cond.not(cond.prepared), label: "devient préparée" }),
     ],
   },
 };

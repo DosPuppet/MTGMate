@@ -22,7 +22,7 @@ Ce fichier sert au suivi du projet entre les sessions. Le README présente le pr
 | Effets sonores (échantillons Kenney CC0, volume, muet avec M) | ✅ |
 | Jeu en ligne : duel Standard à 2 (serveur local, code de salon, corde, reconnexion, revanche) | ✅ |
 | Déploiement : pm2 derrière nginx sur un VPS (`docs/deploiement.md`, `deploy/`) | ✅ documenté et testé en local (pm2, nginx) |
-| **Reality Fracture (FRA, « Réalité fracturée »)** | **131 / 279** (lots 0, A et B faits ; `npm run coverage -- --set fra --missing`) |
+| **Reality Fracture (FRA, « Réalité fracturée »)** | **153 / 279** (lots 0, A, B et C faits ; `npm run coverage -- --set fra --missing`) |
 | Autres extensions Standard | à faire |
 
 ### Reality Fracture (FRA)
@@ -30,6 +30,12 @@ Ce fichier sert au suivi du projet entre les sessions. Le README présente le pr
 - 285 cartes selon Scryfall, dont 6 réimpressions de FDN (terrains de base, Unsummon), donc 279 cartes propres. Toutes sont légales en Standard.
 - **Sortie le 2 octobre 2026 : pas encore de textes français.** Réimporter après la sortie (`npm run import-cards -- fra`), puis vérifier les noms français dans le deckbuilder.
 - Lot 0 (infrastructure multi-extensions) et lot A (cartes faisables avec le moteur, jetons Cadet, Heartwood, Lotus, Forêt Tentacule et Thopter, terrains lents) : ✅.
+- Lot C (**préparé**) : ✅, fidèle aux notes de version officielles :
+  - devenir préparé crée une **copie du sort en exil** (`GameObject.preparedCopy` / `preparedFor`), lançable par le contrôleur actuel du permanent, au timing de son type, en payant son coût ;
+  - lancer la copie dé-prépare le permanent ; un effet qui dé-prépare, ou le départ du permanent, fait disparaître la copie ;
+  - la copie cesse d'exister en quittant la pile. Elle n'est pas une carte : l'invariant de décompte l'exclut ;
+  - dans l'interface, la copie apparaît au bout de la main (comme les cartes jouables depuis l'exil), et une pastille « Préparée » s'affiche sur la créature ;
+  - Pyre Rhymer (mana supplémentaire en engageant une Montagne) et Variable Chaser (« chaque joueur peut défausser sa main ») passent au lot F.
 - Lot B : ✅. Il couvre :
   - les capacités activées depuis la main (`fromHand` et le coût `discardSelf`), avec un menu « Lancer / Cycle » quand une carte en main a plusieurs options ;
   - le cycle, le cycle de terrain et le cycle de type, lus dans le texte ;
@@ -38,10 +44,6 @@ Ce fichier sert au suivi du projet entre les sessions. Le README présente le pr
   
   Les cartes Jace du lot B (Hexhaven Battalion, Countersculpt, Theorist's Sanctum) passent au lot D, Tam au lot E et Emrakul au lot F.
 - Lots suivants :
-  - **C.** **Préparé** (24 cartes) :
-    - état « préparé » ;
-    - lancer une copie du sort de la créature ;
-    - Codie.
   - **D.** **Empower Jace** (35 cartes) : jeton planeswalker Jace (−1 : surveillez 1 ; −3 : piochez une carte).
   - **E.** Planeswalkers (8) et cartes qui en parlent.
   - **F.** Cartes restantes :
@@ -98,6 +100,8 @@ Réimpressions : défenses talismaniques contre une couleur, changelin, restrict
 - **Demonic Pact :** les modes déjà choisis sont mémorisés sur le permanent (perdus s'il change de zone, ce qui est conforme).
 - **Ordeal of Nylea :** sacrifiée directement, sans déclencheur séparé.
 - **Dégager jusqu'à N terrains :** les terrains sont choisis automatiquement.
+- **Codie, Ravenous Codex :** la copie du sort préparé garde ses cibles (pas de nouveau choix).
+- **Hallway Heckler :** la défausse est faite à la résolution, et non comme coût.
 - **Convocation :** une créature qui a une capacité de mana ne sert pas à la convocation (elle paie par sa capacité de mana).
 - **Master of Barbs :** seules les blessures non de combat infligées par vos sources (sorts compris) comptent, pas celles d'une source adverse.
 - **Something Worth Saving :** les quatre cartes sont regardées puis mises au cimetière, ce qui n'est pas une meule au sens strict (pas de déclencheur de meule).

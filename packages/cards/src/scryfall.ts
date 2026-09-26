@@ -203,6 +203,41 @@ function intrinsicAbilities(keywords: Set<Keyword>, ward: CardDef["ward"], equip
   return out;
 }
 
+/** Définition du sort préparé d'une carte « à préparer » (copiée en exil quand la créature devient préparée). */
+function prepareSpellDef(raw: RawCard, spell: NonNullable<CardScript["prepareSpell"]>, set: string): CardDef {
+  const p = raw.prepare as NonNullable<RawCard["prepare"]>;
+  const types =
+    p.typeLine
+      .split(" — ")[0]
+      ?.split(" ")
+      .filter((w): w is CardType => CARD_TYPES.has(w as CardType)) ?? [];
+  const manaCost = p.manaCost ? parseManaCost(p.manaCost) : null;
+  const colors = (["W", "U", "B", "R", "G"] as Color[]).filter((c) => p.manaCost.includes(c));
+  return {
+    id: `${slug(raw.name)}--${slug(p.name)}`,
+    name: p.name,
+    typeLine: p.typeLine,
+    manaCost,
+    manaCostText: p.manaCost,
+    colors,
+    supertypes: [],
+    types,
+    subtypes: [],
+    keywords: [],
+    abilities: [],
+    spell,
+    text: p.oracleText,
+    fr: p.fr ? { name: p.fr.name, typeLine: p.fr.typeLine, text: p.fr.text } : undefined,
+    image: raw.image,
+    artCrop: raw.artCrop,
+    implemented: true,
+    set,
+    number: raw.number,
+    rarity: raw.rarity,
+    legalities: raw.legalities,
+  };
+}
+
 export function toCardDef(raw: RawCard, script: CardScript | undefined, set: string): CardDef {
   const [left = "", right = ""] = raw.typeLine.split(" — ");
   const words = left.split(" ").filter(Boolean);
@@ -211,8 +246,8 @@ export function toCardDef(raw: RawCard, script: CardScript | undefined, set: str
   const subtypes = right.split(" ").filter(Boolean);
 
   let implemented = !!script || onlyKeywords(raw.oracleText);
-  // Cartes « à préparer » : mécanique pas encore gérée (lot C de Reality Fracture).
-  if (raw.prepare) implemented = false;
+  // Cartes « à préparer » : jouables seulement si le script décrit leur sort.
+  if (raw.prepare && !script?.prepareSpell) implemented = false;
   let manaCost = null;
   try {
     manaCost = raw.manaCost ? parseManaCost(raw.manaCost) : null;
@@ -280,6 +315,7 @@ export function toCardDef(raw: RawCard, script: CardScript | undefined, set: str
     fr: raw.fr,
     image: raw.image,
     artCrop: raw.artCrop,
+    prepareSpell: raw.prepare && script?.prepareSpell ? prepareSpellDef(raw, script.prepareSpell, set) : undefined,
     prepareFace: raw.prepare
       ? {
           name: raw.prepare.name,

@@ -9,7 +9,7 @@
  * (le choix du joueur affecté, 616.1, viendra avec des cartes qui en ont besoin).
  */
 import { boardAmount } from "./effects";
-import { changeCounters, chars, moveObject, P1P1 } from "./state";
+import { changeCounters, chars, moveObject, P1P1, setPrepared } from "./state";
 import { matchesObjectFilter, withChosen } from "./targets";
 import { checkCondition } from "./triggers";
 import type { Amount, Color, GameObject, GameState, ObjectId, Zone } from "./types";
@@ -124,6 +124,7 @@ export function applyEntersReplacements(s: GameState, o: GameObject, ctx: Enters
       if (!ok) continue;
     }
     if (ab.entersTapped) o.tapped = true;
+    if (ab.entersPrepared) setPrepared(s, o, true);
     if (ab.entersWithCounters !== undefined)
       changeCounters(s, o, ab.counterKind ?? P1P1, amountAtEntry(s, ab.entersWithCounters, o, ctx));
   }

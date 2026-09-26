@@ -282,6 +282,13 @@ export function castTerms(s: GameState, player: PlayerId, card: ObjectId): CastT
     return null;
   }
   if (o.zone === "exile") {
+    // Reality Fracture : la copie du sort d'un permanent préparé, lançable par le contrôleur actuel de ce permanent.
+    if (o.preparedFor) {
+      const perm = s.objects[o.preparedFor];
+      return perm?.zone === "battlefield" && perm.controller === player && perm.preparedCopy === card
+        ? { source: "exile" }
+        : null;
+    }
     const perm = exilePermission(s, player, card);
     if (perm) return { source: "exile", free: perm.free, anyTime: perm.anyTime };
     // Tinybones : cartes d'adversaires exilées avec un marqueur de butin, pendant votre tour.
@@ -410,6 +417,9 @@ export function castSpell(s: GameState, player: PlayerId, card: ObjectId, choice
   if (terms.graveyardType) s.turn.graveyardTypesUsed = [...(s.turn.graveyardTypesUsed ?? []), terms.graveyardType];
   if (terms.removeCounters) removeCountersAmongCreatures(s, player, terms.removeCounters);
   const view = spellView(d, player);
+  // Lancer la copie d'un sort préparé dé-prépare son permanent (même si le sort est ensuite contrecarré).
+  const preparedFor = o.preparedFor ? s.objects[o.preparedFor] : undefined;
+  if (preparedFor?.preparedCopy === card) delete preparedFor.preparedCopy;
   const stackId = moveObject(s, card, "stack", { controller: player }) as string;
   const item: StackItem = {
     id: stackId,
@@ -428,7 +438,11 @@ export function castSpell(s: GameState, player: PlayerId, card: ObjectId, choice
   };
   s.stack.push(item);
   try {
-    const used = payMana(s, player, cost, undefined, { spell: view, convoke: d.keywords.includes("convoke") });
+    const used = payMana(s, player, cost, undefined, {
+      spell: view,
+      convoke: d.keywords.includes("convoke"),
+      fromHand: terms.source === "hand",
+    });
     // Effets associés au mana dépensé, si ce sort correspond (Carnelian Orb, Pyromancer's Goggles).
     const riders = used.flatMap((ab) => (ab.rider && matchesView(view, ab.rider.spell, player) ? [ab.rider.effect] : []));
     if (riders.length) item.riders = riders;

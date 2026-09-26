@@ -48,7 +48,8 @@ export function checkInvariants(s: GameState, deckSizes: Record<string, number>)
   }
   // Les cartes des joueurs éliminés quittent la partie (800.4a) ; les autres sont conservées.
   for (const p of s.playerOrder) {
-    const owned = Object.values(s.objects).filter((o) => o.owner === p && !o.isToken).length;
+    // Ni les jetons, ni les copies de sorts préparés (Reality Fracture) ne sont des cartes.
+    const owned = Object.values(s.objects).filter((o) => o.owner === p && !o.isToken && !o.preparedFor).length;
     const size = deckSizes[p] ?? 0;
     // Éliminé en cours de partie : 0 carte ; éliminé par le coup final : ses cartes restent.
     const ok = s.players[p]?.lost ? owned === 0 || owned === size : owned === size;

@@ -5,11 +5,14 @@ import {
   type CardScript,
   CREATURE_YOU_CONTROL,
   cond,
+  entersWith,
   fx,
   modal,
   mode,
+  OMIT_VARIABLES,
   ref,
   spell,
+  staticAbility,
   target,
   triggered,
   when,
@@ -114,6 +117,22 @@ export const BLACK: Record<string, CardScript> = {
         effects: [fx.toBattlefield(ref.target()), fx.addCounters(ref.self, 1)],
         label: "Épuisement : réanimer",
       }),
+    ],
+  },
+  "Bloodline Recollector": {
+    prepareSpell: spell([target.player("t")], [fx.draw(3, ref.target()), fx.loseLife(3, ref.target())]),
+    abilities: [
+      triggered(when.eachEndStep, [fx.prepare(ref.self)], {
+        condition: cond.creaturesDied(3),
+        label: "trois créatures mortes : préparée",
+      }),
+    ],
+  },
+  "Void Extrapolator": {
+    prepareSpell: OMIT_VARIABLES,
+    abilities: [
+      entersWith({ prepared: true }),
+      staticAbility("self", { power: 1, toughness: 1 }, { condition: cond.threshold, label: "Seuil : +1/+1" }),
     ],
   },
 };

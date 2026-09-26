@@ -6,7 +6,7 @@
 import { describe, expect, it } from "vitest";
 import { dealDamage, destroy, sourceFromObject } from "../src/actions";
 import { legalActions } from "../src/legal";
-import { chars } from "../src/state";
+import { chars, setPrepared } from "../src/state";
 import type { GameState } from "../src/types";
 import { act, idOf, passBoth, scenario } from "./helpers";
 
@@ -185,5 +185,81 @@ describe("Reality Fracture, lot B", () => {
       else s = passBoth(s);
     }
     expect(s.players.p1?.life).toBe(23);
+  });
+});
+
+describe("Reality Fracture, lot C : préparé", () => {
+  const exileNames = (s: S) => s.exile.map((id) => s.defs[s.objects[id]?.defId ?? ""]?.name);
+  const castPrepared = (s: S, p: string, spellName: string, extra: Record<string, unknown> = {}) => {
+    const copy = s.exile.find((id) => s.defs[s.objects[id]?.defId ?? ""]?.name === spellName) as string;
+    return act(s, p, { type: "cast", card: copy, ...extra });
+  };
+
+  it("arrive préparée : une copie du sort en exil, lançable par son contrôleur ; la lancer dé-prépare", () => {
+    let s = scenario({ p1: { hand: ["Emergency Phytomedic"], battlefield: lands("Forest", 3) } });
+    s = cast(s, "p1", "Emergency Phytomedic");
+    s = passBoth(s);
+    const medic = idOf(s, "p1", "battlefield", "Emergency Phytomedic");
+    expect(exileNames(s)).toEqual(["Seed Suture"]);
+    const copy = s.exile[0] as string;
+    expect(legalActions(s, "p1").some((a) => a.type === "cast" && a.card === copy)).toBe(true);
+    expect(legalActions(s, "p2").length).toBe(0); // l'adversaire n'a pas la priorité ; et la copie n'est pas à lui
+    s = castPrepared(s, "p1", "Seed Suture", { targets: { t: [medic] } });
+    expect(s.objects[medic]?.preparedCopy).toBeUndefined();
+    s = passBoth(s);
+    expect(s.objects[medic]?.counters["+1/+1"]).toBe(1);
+    expect(s.players.p1?.life).toBe(21);
+    // La copie a cessé d'exister : ni en exil, ni au cimetière.
+    expect(exileNames(s)).toEqual([]);
+    expect(s.players.p1?.graveyard).toHaveLength(0);
+  });
+
+  it("dé-préparée par un effet (Infinite Coursework) ou en quittant le champ de bataille : la copie disparaît", () => {
+    let s = scenario({
+      p1: { hand: ["Infinite Coursework"], battlefield: lands("Island", 3) },
+      p2: { battlefield: ["Void Extrapolator", "Theorix Metamage"] },
+    });
+    const vx = idOf(s, "p2", "battlefield", "Void Extrapolator");
+    const tm = idOf(s, "p2", "battlefield", "Theorix Metamage");
+    for (const id of [vx, tm]) setPrepared(s, s.objects[id] as NonNullable<S["objects"][string]>, true);
+    expect(exileNames(s)).toEqual(["Omit Variables", "Omit Variables"]);
+    s = cast(s, "p1", "Infinite Coursework", { targets: { enchant: [vx] } });
+    s = passBoth(s); // l'Aura arrive
+    s = passBoth(s); // son déclencheur : engage et dé-prépare
+    expect(s.objects[vx]?.tapped).toBe(true);
+    expect(s.objects[vx]?.preparedCopy).toBeUndefined();
+    expect(exileNames(s)).toEqual(["Omit Variables"]);
+    destroy(s, tm);
+    expect(exileNames(s)).toEqual([]);
+  });
+
+  it("« au début de votre entretien, si elle n'est pas préparée, elle devient préparée »", () => {
+    let s = scenario({ step: "end", active: "p2", p1: { battlefield: ["Stingerquill Voxmancer"] } });
+    expect(exileNames(s)).toEqual([]);
+    for (let i = 0; i < 12 && !(s.turn.active === "p1" && s.turn.step === "main1"); i++) s = passBoth(s);
+    expect(exileNames(s)).toEqual(["Vicious Verse"]);
+  });
+
+  it("Codie copie le sort préparé lancé", () => {
+    let s = scenario({
+      p1: { hand: ["Stingerquill Voxmancer"], battlefield: ["Codie, Ravenous Codex", ...lands("Swamp", 3)] },
+    });
+    const vox = { type: "cast", card: idOf(s, "p1", "hand", "Stingerquill Voxmancer") } as const;
+    s = act(s, "p1", vox);
+    s = passBoth(s);
+    const v = idOf(s, "p1", "battlefield", "Stingerquill Voxmancer");
+    // Préparée par un effet (comme celui de Codie) : aide du moteur.
+    setPrepared(s, s.objects[v] as NonNullable<S["objects"][string]>, true);
+    s = castPrepared(s, "p1", "Vicious Verse", { targets: { t: ["p2"] } });
+    s = passBoth(s); // déclencheur de Codie : copie
+    for (let i = 0; i < 4 && s.stack.length; i++) s = passBoth(s);
+    expect(s.players.p2?.life).toBe(18);
+  });
+
+  it("Heartwood Crafter : son mana ne paie pas un sort lancé depuis la main", () => {
+    const s = scenario({ p1: { hand: ["Llanowar Elves"], battlefield: ["Heartwood Crafter"] } });
+    expect(legalActions(s, "p1").some((a) => a.type === "cast" && a.card === idOf(s, "p1", "hand", "Llanowar Elves"))).toBe(
+      false,
+    );
   });
 });

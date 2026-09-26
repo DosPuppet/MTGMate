@@ -127,6 +127,11 @@ export function Card({
               </div>
             )}
             <CounterBadges counters={obj.counters} />
+            {obj.prepared && (
+              <div className="prepared-badge" title="Préparée : son sort peut être lancé (au bout de votre main)">
+                Préparée
+              </div>
+            )}
             {obj.sick && obj.types.includes("Creature") && (
               <div className="sick-badge" title="Mal d'invocation">
                 z

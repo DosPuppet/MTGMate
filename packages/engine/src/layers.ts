@@ -140,6 +140,9 @@ function view(s: GameState, id: ObjectId, c: Characteristics, o: GameObject, att
     attachedTo: o.attachedTo,
     blocking: !!s.combat?.blockers.some((b) => b.id === id),
     counters: o.counters,
+    preparedSpell: !!o.preparedFor || undefined,
+    prepared: !!o.preparedCopy || undefined,
+    attackedTurn: o.attackedTurn,
   };
 }
 

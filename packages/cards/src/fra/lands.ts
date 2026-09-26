@@ -47,4 +47,24 @@ export const LANDS: Record<string, CardScript> = {
       }),
     ],
   },
+  "Hexhaven Dueling Arena": {
+    abilities: [
+      manaAbility("C"),
+      activated({
+        mana: "{2}",
+        tap: true,
+        sorcerySpeed: true,
+        targets: [target.creature("t", { attackedThisTurn: true })],
+        effects: [fx.prepare(ref.target())],
+        label: "Une créature qui a attaqué devient préparée",
+      }),
+      activated({
+        mana: "{4}",
+        tap: true,
+        targets: [target.creature("t")],
+        effects: [fx.prepare(ref.target())],
+        label: "Une créature devient préparée",
+      }),
+    ],
+  },
 };

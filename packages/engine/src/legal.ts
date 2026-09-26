@@ -105,7 +105,7 @@ export function legalActions(s: GameState, player: PlayerId): ActionOption[] {
     if (modes.length === 0) continue;
     const additional = additionalOptions(s, player, card, d);
     if (!additional) continue;
-    const purpose = { spell: spellView(d, player), convoke: d.keywords.includes("convoke") };
+    const purpose = { spell: spellView(d, player), convoke: d.keywords.includes("convoke"), fromHand: terms.source === "hand" };
     const base = { flashback, anyMana: terms.anyMana };
     // « Sacrifiez une créature ou payez {3}{B} » : sans créature à sacrifier, le mana s'ajoute au coût.
     const sac = additional.sacrifice;

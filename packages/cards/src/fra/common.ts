@@ -2,7 +2,7 @@
  * Éléments propres à Reality Fracture : jetons (Cadet, Heartwood, Lotus…) et filtres.
  * Le DSL et les filtres génériques viennent de Foundations (fdn/common.ts).
  */
-import type { TokenSpec } from "@mtgx/engine";
+import { dsl, type TokenSpec } from "@mtgx/engine";
 import { manaAbility } from "../fdn/common";
 
 export * from "../fdn/common";
@@ -76,3 +76,20 @@ export const SCULPTURE_TREASURE: TokenSpec = {
 export const BEAST_TRAMPLE = creature("Beast", ["G"], ["Beast"], 4, 4, { keywords: ["trample"] });
 export const ANGEL_3 = creature("Angel", ["U"], ["Angel"], 3, 3, { keywords: ["flying"] });
 export const MOWU = creature("Mowu", ["G"], ["Dog"], 3, 3, { legendary: true });
+
+// ---------------------------------------------------------------------------
+// Sorts préparés partagés (plusieurs créatures ont le même sort)
+// ---------------------------------------------------------------------------
+
+const { spell: spellOf, fx: fxs, ref: refs, target: targets } = dsl;
+
+/** Seed Suture : « Mettez un marqueur +1/+1 sur une créature ciblée. Vous gagnez 1 point de vie. » */
+export const SEED_SUTURE = spellOf([targets.creature("t")], [fxs.addCounters(refs.target(), 1), fxs.gainLife(1)]);
+/** Peer Review : « Créez un jeton Cadet. Surveillez 1. » */
+export const PEER_REVIEW = spellOf([], [fxs.createTokens(CADET), fxs.surveil(1)]);
+/** Omit Variables : « Meulez trois cartes. » */
+export const OMIT_VARIABLES = spellOf([], [fxs.mill(3)]);
+/** Vicious Verse : « 1 blessure à un adversaire ciblé. » */
+export const VICIOUS_VERSE = spellOf([targets.player("t", "opponent")], [fxs.damage(1, refs.target())]);
+/** Soul Tether : « Créez un jeton Heartwood. » */
+export const SOUL_TETHER = spellOf([], [fxs.createTokens(HEARTWOOD)]);

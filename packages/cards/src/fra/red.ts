@@ -7,6 +7,7 @@ import {
   CREATURE_YOU_CONTROL,
   cond,
   DRAGON_5,
+  entersWith,
   fx,
   ref,
   spell,
@@ -14,6 +15,7 @@ import {
   THOPTER,
   target,
   triggered,
+  VICIOUS_VERSE,
   when,
 } from "./common";
 
@@ -178,5 +180,21 @@ export const RED: Record<string, CardScript> = {
         label: "vos créatures +1/+0",
       }),
     ],
+  },
+  "Hallway Heckler": {
+    prepareSpell: VICIOUS_VERSE,
+    abilities: [
+      entersWith({ prepared: true }),
+      // Approximation : la défausse est faite à la résolution (pas comme coût).
+      activated({
+        tap: true,
+        effects: [fx.discard(1, ref.you, { store: "d" }), ...fx.when(cond.v("d"), fx.draw(1))],
+        label: "Défaussez puis piochez",
+      }),
+    ],
+  },
+  "Pompous Battlemage": {
+    prepareSpell: spell([], [fx.discard(1, ref.you, { optional: true, store: "d" }), ...fx.when(cond.v("d"), fx.draw(1))]),
+    abilities: [entersWith({ prepared: true })],
   },
 };

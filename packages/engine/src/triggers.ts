@@ -101,6 +101,10 @@ export function checkCondition(s: GameState, c: Condition, controller: PlayerId,
       const st = s.players[controller]?.turnStats;
       return ((c.noncreature ? st?.noncreatureCast : st?.spellsCast) ?? 0) >= c.n;
     }
+    case "prepared": {
+      const src = sourceId ? s.objects[sourceId] : undefined;
+      return !!src?.preparedCopy && !!s.objects[src.preparedCopy];
+    }
     case "controls": {
       const n = s.battlefield.filter((id) =>
         matchesObjectFilter(s, controller, id, { ...c.filter, controller: "you" }, sourceId),

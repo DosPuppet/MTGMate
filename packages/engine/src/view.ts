@@ -63,6 +63,8 @@ export interface ObjectView extends CardFace {
   attachedTo: ObjectId | null;
   /** Choix fait en arrivant (type de créature, couleur). */
   chosen: { creatureType?: string; color?: Color } | null;
+  /** Reality Fracture : permanent préparé (son sort peut être lancé depuis l'exil). */
+  prepared?: boolean;
 }
 
 export interface StackItemView extends CardFace {
@@ -176,6 +178,7 @@ export function objectView(s: GameState, id: ObjectId): ObjectView {
     attachedTo: o.attachedTo ?? null,
     chosen: o.chosen ?? null,
     name: c.name,
+    ...(o.preparedCopy && s.objects[o.preparedCopy] ? { prepared: true } : {}),
   };
 }
 

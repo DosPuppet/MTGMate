@@ -69,6 +69,8 @@ export interface CardScript {
   keywords?: Keyword[];
   /** « Vous ne pouvez pas lancer ce sort à moins que… » */
   castCondition?: Condition;
+  /** Reality Fracture : effet du sort préparé (le coût et le type viennent de Scryfall). */
+  prepareSpell?: SpellDef;
 }
 
 export const target = {
@@ -312,6 +314,9 @@ export const fx = {
   emblem: (name: string, text: string, abilities: AbilityDef[]): Effect => ({ op: "emblem", name, text, abilities }),
   /** Attache une Aura ou un Équipement (par défaut la source) au permanent désigné. */
   attach: (to: Ref, what: Ref = ref.self): Effect => ({ op: "attach", what, to }),
+  /** « … devient préparé » / « … devient dé-préparé » (Reality Fracture). */
+  prepare: (what: Ref, value = true): Effect => ({ op: "prepare", what, value }),
+  prepareAll: (filter: ObjectFilter, value = true): Effect => ({ op: "prepare", filter, value }),
   tap: (what: Ref): Effect => ({ op: "tap", what }),
   untap: (what: Ref): Effect => ({ op: "tap", what, untap: true }),
   counters: (what: Ref, kind: string, n: Amount = 1): Effect => ({ op: "addCounters", what, amount: n, kind }),
@@ -631,6 +636,8 @@ export const cond = {
   opponentDealtNoncombatDamage: { kind: "opponentDealtNoncombatDamage" } as Condition,
   drewAtLeast: (n: number): Condition => ({ kind: "drewAtLeast", n }),
   castThisTurn: (n: number, noncreature = false): Condition => ({ kind: "castThisTurn", n, noncreature }),
+  /** La source est préparée. */
+  prepared: { kind: "prepared" } as Condition,
 };
 
 /** « Vous pouvez lancer des sorts comme s'ils avaient le flash. » */
@@ -691,10 +698,13 @@ export function entersWith(opts: {
   label?: string;
   /** Autres permanents concernés (« les créatures de vos adversaires arrivent engagées »). */
   affects?: ObjectFilter;
+  /** « Cette créature arrive préparée. » */
+  prepared?: boolean;
 }): ReplacementAbilityDef {
   return {
     kind: "replacement",
     entersTapped: opts.tapped,
+    entersPrepared: opts.prepared,
     entersWithCounters: opts.counters,
     counterKind: opts.counterKind,
     condition: opts.condition,
