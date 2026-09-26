@@ -116,7 +116,8 @@ export function applyEntersReplacements(s: GameState, o: GameObject, ctx: Enters
   for (const id of s.battlefield) {
     const src = s.objects[id];
     if (!src || id === o.id) continue;
-    for (const ab of s.defs[src.defId]?.abilities ?? []) {
+    // Capacités calculées : porte déverrouillée d'une Salle, verso, copie.
+    for (const ab of chars(s, id).abilities) {
       if (ab.kind !== "replacement" || !ab.affects) continue;
       if (!matchesObjectFilter(s, src.controller, o.id, ab.affects, id)) continue;
       if (ab.entersTapped) o.tapped = true;

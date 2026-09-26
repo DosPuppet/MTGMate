@@ -24,6 +24,7 @@ import {
   shuffle,
   snapshot,
   tapObject,
+  unlockDoor,
 } from "./state";
 import { controlledAbilitiesWithSource, playerStatic } from "./statics";
 import { isLegalTarget, legalTargets, matchesCard, matchesObjectFilter, matchesView, validateTargets } from "./targets";
@@ -182,7 +183,7 @@ export function spellReduction(s: GameState, player: PlayerId, d: CardDef, targe
   const view = spellView(d, player);
   for (const id of s.battlefield) {
     const o = obj(s, id);
-    for (const ab of s.defs[o.defId]?.abilities ?? []) {
+    for (const ab of chars(s, id).abilities) {
       if (ab.kind !== "costReduction") continue;
       // Réductions de vos permanents ; taxes des permanents adverses sur vos sorts (Thalia, the Survivor).
       const applies = ab.opponents ? o.controller !== player : o.controller === player;
@@ -275,6 +276,12 @@ export function castableFaces(s: GameState, card: ObjectId, d: CardDef): [number
     return [
       [undefined, d],
       [1, adventure],
+    ];
+  // Carte scindée (709.3) : l'une ou l'autre moitié se lance (portes d'une Salle comprises).
+  if (d.layout === "split" && d.faceDefs?.length === 2)
+    return [
+      [0, d.faceDefs[0] as CardDef],
+      [1, d.faceDefs[1] as CardDef],
     ];
   // Carte recto-verso modale (712.12) : l'une ou l'autre face se lance.
   const back = d.layout === "modal_dfc" ? d.faceDefs?.[1] : undefined;
@@ -756,6 +763,19 @@ export function activateAbility(s: GameState, player: PlayerId, source: ObjectId
   const x = ab.cost.mana?.x || ab.cost.loyaltyX ? Math.max(0, Math.floor(choices.x ?? 0)) : 0;
   if (ab.cost.loyaltyX && x > (o.counters.loyalty ?? 0)) throw new RulesError("Pas assez de marqueurs de loyauté");
   const c = chars(s, source);
+  // Action spéciale (116.2, déverrouiller une porte) : les coûts sont payés, les effets s'appliquent sans la pile.
+  if (ab.specialAction) {
+    if (ab.cost.mana) {
+      try {
+        payMana(s, player, totalCost(ab.cost.mana, 0), undefined, { abilitySource: source });
+      } catch {
+        throw new RulesError("Mana insuffisant");
+      }
+    }
+    for (const e of ab.effects) if (e.op === "unlockDoor") unlockDoor(s, source, e.door);
+    s.priority.passes = 0;
+    return;
+  }
   const item: StackItem = {
     id: newId(s, "a"),
     kind: "ability",
@@ -951,7 +971,12 @@ function finishResolution(
         },
       });
       const arrived = enteredId ? s.objects[enteredId] : undefined;
-      if (face && arrived) {
+      const card = arrived ? s.defs[arrived.defId] : undefined;
+      if (face && arrived && card?.layout === "split") {
+        // Salle (709.5d) : la porte lancée est déverrouillée à l'arrivée.
+        const door = card.faceDefs?.findIndex((f) => f.id === face) ?? -1;
+        if (door >= 0) unlockDoor(s, arrived.id, door);
+      } else if (face && arrived) {
         arrived.faceDefId = face;
         bump(s);
       }

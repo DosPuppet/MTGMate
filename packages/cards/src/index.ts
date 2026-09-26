@@ -20,7 +20,7 @@ export {
   validateDeck,
 } from "./decklist";
 export { DECKS, type DeckList } from "./decks";
-export { onlyKeywords, type RawCard, slug, toCardDef } from "./scryfall";
+export { HANDLED_LAYOUTS, onlyKeywords, type RawCard, type RawFace, slug, toCardDef } from "./scryfall";
 export { type CardSet, isMainSet, SET_BY_CODE, SETS } from "./sets";
 export { TOKEN_SPECS } from "./tokens";
 

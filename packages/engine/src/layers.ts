@@ -19,6 +19,7 @@ import { checkCondition } from "./triggers";
 import type {
   AbilityDef,
   Amount,
+  CardDef,
   CardType,
   Color,
   GameObject,
@@ -111,6 +112,7 @@ export function copiedDefId(s: GameState, id: ObjectId): string {
 function base(s: GameState, o: GameObject, defId = o.defId): Characteristics {
   const d = s.defs[defId];
   if (!d) throw new Error(`Définition inconnue : ${o.defId}`);
+  if (o.zone === "battlefield" && d.layout === "split" && d.faceDefs) return roomBase(o, d);
   const cda = d.cdaPT === undefined ? undefined : cdaValue(s, o, d.cdaPT);
   const cdaPower = d.cdaPower === undefined ? undefined : cdaValue(s, o, d.cdaPower);
   const cdaToughness = d.cdaToughness === undefined ? undefined : cdaValue(s, o, d.cdaToughness);
@@ -124,6 +126,26 @@ function base(s: GameState, o: GameObject, defId = o.defId): Characteristics {
     toughness: cdaToughness ?? cda ?? d.toughness ?? 0,
     keywords: [...d.keywords],
     abilities: d.abilities,
+    controller: o.controller,
+  };
+}
+
+/**
+ * Salle sur le champ de bataille (709.5c) : nom, couleurs et capacités de ses portes déverrouillées ; les
+ * capacités « déverrouiller » de la carte restent (actions spéciales).
+ */
+function roomBase(o: GameObject, d: CardDef): Characteristics {
+  const open = (d.faceDefs ?? []).filter((_, i) => o.unlocked?.includes(i));
+  return {
+    name: open.map((f) => f.name).join(" // "),
+    types: [...d.types],
+    subtypes: [...new Set([...d.subtypes, ...open.flatMap((f) => f.subtypes)])],
+    supertypes: [...d.supertypes],
+    colors: [...new Set(open.flatMap((f) => f.colors))],
+    power: 0,
+    toughness: 0,
+    keywords: [...new Set(open.flatMap((f) => f.keywords))],
+    abilities: [...d.abilities, ...open.flatMap((f) => f.abilities)],
     controller: o.controller,
   };
 }
@@ -204,7 +226,13 @@ export function computeBattlefield(s: GameState): Map<ObjectId, Characteristics>
       if (lost.has(id)) continue;
       const o = obj(s, id);
       const own = o.zone === "battlefield" ? defOfId(id) : o.defId;
-      for (const ab of s.defs[own]?.abilities ?? []) {
+      const ownDef = s.defs[own];
+      // Salle : capacités de ses portes déverrouillées.
+      const abilities =
+        o.zone === "battlefield" && ownDef?.layout === "split" && ownDef.faceDefs
+          ? roomBase(o, ownDef).abilities
+          : ownDef?.abilities;
+      for (const ab of abilities ?? []) {
         if (ab.kind !== "static") continue;
         if (ab.condition && !checkCondition(s, ab.condition, o.controller, id)) continue;
         let mods = ab.mods;

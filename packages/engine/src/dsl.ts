@@ -705,6 +705,8 @@ export const when = {
   discardSelf: { on: "discardSelf" } as TriggerSpec,
   /** « Quand vous lancez ce sort » */
   castSelf: { on: "castSelf" } as TriggerSpec,
+  /** « Quand vous déverrouillez cette porte » (Salle ; la porte est fixée à l'import). */
+  unlockThisDoor: { on: "unlockDoor" } as TriggerSpec,
   /** « Chaque fois que vous activez une capacité de loyauté [en retirant au moins N marqueurs] » */
   loyaltyActivated: (minRemoved?: number, byOpponent?: boolean): TriggerSpec => ({
     on: "loyaltyActivated",
@@ -758,6 +760,8 @@ export const cond = {
   activatedLoyalty: { kind: "activatedLoyaltyThisTurn" } as Condition,
   /** La source est préparée. */
   prepared: { kind: "prepared" } as Condition,
+  /** Salle : toutes ses portes sont déverrouillées. */
+  fullyUnlocked: { kind: "fullyUnlocked" } as Condition,
   /** Une seule créature attaque, et elle attaque un joueur. */
   attackingAlone: { kind: "attackingAlone" } as Condition,
   opponentDealtNoncombatDamageLastTurn: { kind: "opponentDealtNoncombatDamageLastTurn" } as Condition,

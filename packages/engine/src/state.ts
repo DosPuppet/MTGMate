@@ -75,7 +75,9 @@ export type RulesEvent =
   /** Capacité de loyauté activée (`cost` : variation de loyauté, négative si des marqueurs sont retirés). */
   | { e: "loyalty"; player: PlayerId; sourceId: ObjectId; cost: number }
   /** Une créature bloque. */
-  | { e: "block"; blocker: ObjectId; attacker: ObjectId };
+  | { e: "block"; blocker: ObjectId; attacker: ObjectId }
+  /** Une porte de Salle est déverrouillée. */
+  | { e: "unlock"; objectId: ObjectId; door: number; player: PlayerId };
 
 /** Signale un événement de règles : les capacités déclenchées correspondantes sont mises en attente. */
 export function rulesEvent(s: GameState, ev: RulesEvent): void {
@@ -399,6 +401,20 @@ export function moveObject(
   rulesEvent(s, { e: "zone", oldId: id, newId: moved.id, from: from0, to, lki });
   if (from0 === "battlefield") releaseLinkedExile(s, id);
   return moved.id;
+}
+
+/** Salle : déverrouille une porte (709.5e) ; « quand vous déverrouillez cette porte » se déclenche. */
+export function unlockDoor(s: GameState, id: ObjectId, door: number): void {
+  const o = s.objects[id];
+  if (o?.zone !== "battlefield" || o.unlocked?.includes(door)) return;
+  o.unlocked = [...(o.unlocked ?? []), door].sort();
+  bump(s);
+  rulesEvent(s, { e: "unlock", objectId: id, door, player: o.controller });
+}
+
+/** Salle : carte scindée dont les moitiés sont des enchantements (portes). */
+export function isRoom(d: CardDef | undefined): boolean {
+  return d?.layout === "split" && !!d.faceDefs?.every((f) => f.subtypes.includes("Room"));
 }
 
 /** Enregistre une définition de carte dans la partie, avec les définitions de ses faces. */

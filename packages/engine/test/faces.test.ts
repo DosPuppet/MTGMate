@@ -1,10 +1,11 @@
 /**
  * Cartes à plusieurs faces (branche Standard, lots 0.3 à 0.6) : aventures et présages.
  */
+import { type RawCard, type RawFace, toCardDef } from "@mtgx/cards";
 import { describe, expect, it } from "vitest";
-import { fx, ref, spell, target } from "../src/dsl";
+import { fx, ref, spell, target, triggered, when } from "../src/dsl";
 import { legalActions } from "../src/legal";
-import { parseManaCost } from "../src/mana";
+import { manaValue, parseManaCost } from "../src/mana";
 import { chars } from "../src/state";
 import type { CardDef, GameState } from "../src/types";
 import { act, customCard, idOf, passBoth, scenario } from "./helpers";
@@ -235,5 +236,89 @@ describe("assemblage (701.42)", () => {
     expect(s.exile).toHaveLength(0);
     destroy(s, melded);
     expect(s.players.p1?.graveyard.map((g) => s.objects[g]?.defId).sort()).toEqual([left.id, right.id].sort());
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Cartes scindées et Salles (709) : construites comme à l'import (toCardDef).
+// ---------------------------------------------------------------------------
+
+const rawSplit = (name: string, faces: RawFace[], typeLine: string): RawCard => ({
+  name,
+  number: "1",
+  rarity: "common",
+  manaCost: faces[0]?.manaCost ?? "",
+  cmc: 0,
+  typeLine,
+  oracleText: "",
+  colors: [],
+  keywords: [],
+  image: "",
+  artCrop: "",
+  legalities: { standard: "legal" },
+  layout: "split",
+  faces,
+});
+const face = (name: string, manaCost: string, typeLine: string): RawFace => ({ name, manaCost, typeLine, oracleText: "" });
+
+const FIRE_ICE = toCardDef(
+  rawSplit("Chaud // Froid", [face("Chaud", "{R}", "Instant"), face("Froid", "{1}{U}", "Instant")], "Instant // Instant"),
+  undefined,
+  "TST",
+  {
+    Chaud: { spell: spell([target.any()], [fx.damage(2, ref.target())]) },
+    Froid: { spell: spell([], [fx.draw(1)]) },
+  },
+);
+
+const ROOM = toCardDef(
+  rawSplit(
+    "Salle rouge // Salle bleue",
+    [face("Salle rouge", "{R}", "Enchantment — Room"), face("Salle bleue", "{2}{U}", "Enchantment — Room")],
+    "Enchantment — Room // Enchantment — Room",
+  ),
+  undefined,
+  "TST",
+  {
+    "Salle rouge": { abilities: [triggered(when.unlockThisDoor, [fx.damage(1, ref.eachOpponent)], { label: "1 blessure" })] },
+    "Salle bleue": { abilities: [triggered(when.unlockThisDoor, [fx.draw(1)], { label: "piochez" })] },
+  },
+);
+
+describe("cartes scindées (709)", () => {
+  it("chaque moitié se lance à part ; hors de la pile, la carte a les deux moitiés", () => {
+    expect(FIRE_ICE.implemented).toBe(true);
+    expect(manaValue(FIRE_ICE.manaCost)).toBe(3);
+    let s = scenario({ p1: { battlefield: ["Mountain"], hand: [FIRE_ICE] } });
+    const card = idOf(s, "p1", "hand", FIRE_ICE.name);
+    expect(castOptions(s, card).map((o) => (o.type === "cast" ? o.faceName : ""))).toEqual(["Chaud"]); // Froid : pas assez de mana
+    s = act(s, "p1", { type: "cast", card, face: 0, targets: { t: ["p2"] } });
+    expect(chars(s, s.stack[0]?.sourceId as string).name).toBe("Chaud");
+    s = passBoth(s);
+    expect(s.players.p2?.life).toBe(18);
+    expect(idOf(s, "p1", "graveyard", FIRE_ICE.name)).toBeDefined();
+  });
+});
+
+describe("Salles (709.5)", () => {
+  it("la porte lancée est déverrouillée à l'arrivée et se déclenche ; l'autre se déverrouille en rituel, sans la pile", () => {
+    let s = scenario({ p1: { battlefield: ["Mountain", "Island", "Island", "Island"], hand: [ROOM] } });
+    s = act(s, "p1", { type: "cast", card: idOf(s, "p1", "hand", ROOM.name), face: 0 });
+    s = passBoth(s); // la Salle arrive, porte rouge déverrouillée
+    s = passBoth(s); // « quand vous déverrouillez cette porte » : 1 blessure
+    expect(s.players.p2?.life).toBe(19);
+    const room = idOf(s, "p1", "battlefield", ROOM.name);
+    expect(chars(s, room).name).toBe("Salle rouge");
+    expect(chars(s, room).colors).toEqual(["R"]);
+    // Déverrouiller la porte bleue : action spéciale (rien sur la pile), puis son déclencheur.
+    const unlock = legalActions(s, "p1").find((a) => a.type === "activate" && a.source === room);
+    expect(unlock?.type === "activate" && unlock.label).toBe("Déverrouiller Salle bleue");
+    const hand = s.players.p1?.hand.length ?? 0;
+    s = act(s, "p1", { type: "activate", source: room, ability: unlock?.type === "activate" ? unlock.ability : -1 });
+    expect(s.stack.map((x) => x.kind)).toEqual(["ability"]); // le déclencheur, pas l'action
+    s = passBoth(s);
+    expect(s.players.p1?.hand.length).toBe(hand + 1);
+    expect(chars(s, room).name).toBe("Salle rouge // Salle bleue");
+    expect(legalActions(s, "p1").some((a) => a.type === "activate" && a.source === room)).toBe(false);
   });
 });

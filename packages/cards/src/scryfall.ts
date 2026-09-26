@@ -278,7 +278,7 @@ function prepareSpellDef(raw: RawCard, spell: NonNullable<CardScript["prepareSpe
 }
 
 /** Dispositions à plusieurs faces que le moteur sait jouer (complété lot par lot : aventures, recto-verso…). */
-export const HANDLED_LAYOUTS = new Set<string>(["adventure", "transform", "modal_dfc", "meld"]);
+export const HANDLED_LAYOUTS = new Set<string>(["adventure", "transform", "modal_dfc", "meld", "split"]);
 
 /**
  * Définition d'une carte. Pour une carte à plusieurs faces, chaque face a sa propre définition (script cherché par
@@ -337,6 +337,28 @@ export function toCardDef(
     card.colors = [...new Set(halves.flatMap((h) => h.colors))];
     card.types = [...new Set(halves.flatMap((h) => h.types))];
     card.typeLine = halves.map((h) => h.typeLine).join(" // ");
+    card.subtypes = [...new Set(halves.flatMap((h) => h.subtypes))];
+    card.keywords = [];
+    // Salle (709.5) : la carte n'a que les actions spéciales « déverrouiller » ; chaque porte garde ses capacités,
+    // et « quand vous déverrouillez cette porte » vise sa propre porte.
+    const room = halves.every((h) => h.subtypes.includes("Room"));
+    halves.forEach((h, door) => {
+      h.abilities = h.abilities.map((ab) =>
+        ab.kind === "triggered" && ab.trigger.on === "unlockDoor" ? { ...ab, trigger: { on: "unlockDoor", door } } : ab,
+      );
+    });
+    card.abilities = room
+      ? halves.map((h, door) => ({
+          kind: "activated" as const,
+          cost: { mana: h.manaCost ?? undefined },
+          targets: [],
+          effects: [{ op: "unlockDoor" as const, what: { kind: "self" as const }, door }],
+          sorcerySpeed: true,
+          specialAction: true,
+          activationCondition: { kind: "doorLocked" as const, door },
+          label: `Déverrouiller ${h.name}`,
+        }))
+      : [];
   }
   return card;
 }

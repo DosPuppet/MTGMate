@@ -44,6 +44,7 @@ import {
   shuffle,
   snapshot,
   tapObject,
+  unlockDoor,
 } from "./state";
 import { doublers } from "./statics";
 import { legalTargets, matchesCard, matchesObjectFilter, matchesView } from "./targets";
@@ -2101,6 +2102,10 @@ export function runEffect(s: GameState, r: Resolution, e: Effect): OpResult {
       bump(s);
       emit({ type: "token", objectId: melded.id, defId: result.id, controller: ctx.controller });
       rulesEvent(s, { e: "zone", oldId: exiled[0] ?? null, newId: melded.id, from: "exile", to: "battlefield", lki: null });
+      return;
+    }
+    case "unlockDoor": {
+      for (const id of resolveRef(s, ctx, e.what)) unlockDoor(s, id, e.door);
       return;
     }
     case "noLegendRuleThisTurn": {

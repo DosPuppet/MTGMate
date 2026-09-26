@@ -45,7 +45,9 @@ function liveSources(s: GameState): Source[] {
   for (const id of s.battlefield) {
     // Filtre rapide sur les capacités imprimées, sauf si un effet accorde des capacités déclenchées.
     const o = obj(s, id);
-    if (!granted && !hasTriggers(s.defs[o.faceDefId ?? o.defId]?.abilities)) continue;
+    const d = s.defs[o.faceDefId ?? o.defId];
+    // Salle : les capacités déclenchées sont portées par ses portes.
+    if (!granted && !hasTriggers(d?.abilities) && !d?.faceDefs?.some((f) => hasTriggers(f.abilities))) continue;
     const view = snapshot(s, id);
     if (hasTriggers(view.abilities)) out.push({ id, view });
   }
@@ -122,6 +124,12 @@ export function checkCondition(s: GameState, c: Condition, controller: PlayerId,
       return !!s.resolving?.item.fromHand;
     case "spellCastFromGraveyard":
       return !!s.resolving?.item.flashback;
+    case "doorLocked":
+      return !!sourceId && !s.objects[sourceId]?.unlocked?.includes(c.door);
+    case "fullyUnlocked": {
+      const faces = sourceId ? (s.defs[s.objects[sourceId]?.defId ?? ""]?.faceDefs?.length ?? 0) : 0;
+      return faces > 0 && (s.objects[sourceId ?? ""]?.unlocked?.length ?? 0) >= faces;
+    }
     case "sourceDealtCombatDamage":
       return !!(sourceId && s.objects[sourceId]?.dealtCombatDamage);
     case "activatedLoyaltyThisTurn":
@@ -319,6 +327,10 @@ function matchTrigger(s: GameState, ev: RulesEvent, t: TriggerSpec, src: Source)
       const v = liveView(s, ev.blocker);
       return v && matchWho(t.who, v, src) ? { objectId: ev.blocker, player: v.controller } : null;
     }
+    case "unlockDoor":
+      return ev.e === "unlock" && ev.objectId === src.id && (t.door === undefined || t.door === ev.door)
+        ? { objectId: src.id, player: ev.player }
+        : null;
     case "castSelf":
       return ev.e === "cast" && ev.stackId === src.id ? { objectId: src.id, player: me } : null;
     case "discardSelf":

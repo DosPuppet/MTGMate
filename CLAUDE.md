@@ -35,7 +35,7 @@ Objectif : les 18 extensions Standard restantes (environ 4 360 cartes), **100 % 
   - 0.3 cartes à plusieurs faces ✅ (modèle) ;
   - 0.4 aventures et présages ✅ ;
   - 0.5 transformation, cartes recto-verso modales, assemblage ✅ ;
-  - 0.6 cartes scindées et Salles ;
+  - 0.6 cartes scindées et Salles ✅ ;
   - 0.7 Sagas, Classes, Affaires ;
   - 0.8 cartes face cachée ;
   - 0.9 mots-clés communs ;
@@ -84,6 +84,15 @@ Lot 0.5 (recto-verso et assemblage) :
   - la carte assemblée ne se met pas dans un deck (légalité, deckbuilder, test de fumée) ;
   - l'invariant de décompte compte deux cartes pour un permanent assemblé ;
 - importeur : reprise automatique sur l'erreur 429 de Scryfall ; la disposition des cartes simples non normales (saga, class, case, meld) est conservée.
+
+Lot 0.6 (cartes scindées et Salles) :
+- carte scindée (709) : chaque moitié se lance à part (faces 0 et 1) ; hors de la pile, la carte réunit les deux moitiés ;
+- Salle (709.5) :
+  - sur le champ de bataille, la Salle a le nom, les couleurs et les capacités de ses portes déverrouillées (`GameObject.unlocked`, `roomBase` dans layers.ts) ;
+  - la porte lancée est déverrouillée à l'arrivée ; une Salle mise en jeu autrement arrive verrouillée ;
+  - déverrouiller une porte est une action spéciale en rituel (`ActivatedAbilityDef.specialAction` : coût payé, pas de pile), générée par `toCardDef` pour chaque porte ;
+  - « quand vous déverrouillez cette porte » (`when.unlockThisDoor`) : la porte est fixée à l'import ; condition `cond.fullyUnlocked` ;
+- capacités calculées (Salle, verso, copie) dans les boucles des remplacements, des réductions de coût, des statiques et du filtre des déclencheurs.
 
 ### Reality Fracture (FRA)
 

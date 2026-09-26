@@ -287,6 +287,8 @@ export interface ActivatedAbilityDef {
   activationCondition?: Condition;
   /** « Coûte {1} de moins pour chaque marqueur +1/+1 sur la créature ciblée » (Warrior's Blades). */
   reduceByTargetCounters?: boolean;
+  /** Action spéciale (116) : pas de pile, effets immédiats (déverrouiller une porte de Salle). */
+  specialAction?: boolean;
 }
 
 export interface CostDef {
@@ -470,6 +472,8 @@ export type TriggerSpec =
   | { on: "discardSelf" }
   /** « Quand vous lancez ce sort » (la source est le sort sur la pile). */
   | { on: "castSelf" }
+  /** « Quand vous déverrouillez cette porte » (Salle : `door` est fixé à l'import d'après la face). */
+  | { on: "unlockDoor"; door?: number }
   /** « Chaque fois que cette créature subit des blessures » */
   | { on: "isDealtDamage"; who: "self" }
   /** « Chaque fois qu'une [créature] bloque » */
@@ -543,7 +547,10 @@ export type Condition =
   | { kind: "spellCastFromHand" }
   | { kind: "spellCastFromGraveyard" }
   /** La source a déjà infligé des blessures de combat (Ruric Thar, Magecrusher). */
-  | { kind: "sourceDealtCombatDamage" };
+  | { kind: "sourceDealtCombatDamage" }
+  /** Salle (709.5) : la porte N de la source est verrouillée ; toutes ses portes sont déverrouillées. */
+  | { kind: "doorLocked"; door: number }
+  | { kind: "fullyUnlocked" };
 
 /** Modifications apportées par un effet continu, rangées par couche (613). */
 export interface LayerMods {
@@ -998,6 +1005,8 @@ export type Effect =
   | { op: "transform"; what: Ref }
   /** « Exilez-les, puis assemblez-les en [carte] » : la source et un permanent du nom donné (701.42). */
   | { op: "meld"; with: string }
+  /** Déverrouille la porte N d'une Salle (709.5e). */
+  | { op: "unlockDoor"; what: Ref; door: number }
   /** « [Ce permanent] devient une copie de [la cible] jusqu'à la fin du tour » (couche 1). */
   | { op: "becomeCopy"; what: Ref; of: Ref; duration: "endOfTurn" | "permanent" }
   /** Donne le contrôle de l'objet à un joueur, sans limite de durée (Harmless Offering). */
@@ -1157,6 +1166,8 @@ export interface GameObject {
   preparedFor?: ObjectId;
   /** Face active d'une carte à plusieurs faces (aventure lancée, verso…) : ses caractéristiques remplacent celles de la carte. */
   faceDefId?: string;
+  /** Salle (709.5) : portes déverrouillées (indices des faces). */
+  unlocked?: number[];
   /** Permanent assemblé (701.42) : les deux cartes qui le forment ; il redevient ces cartes en quittant le champ de bataille. */
   melded?: { defId: string; uid: string }[];
   /** Carte « en aventure » (715.4) : exilée après la résolution de son aventure ; son propriétaire peut lancer la créature. */
