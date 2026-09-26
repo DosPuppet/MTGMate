@@ -47,7 +47,7 @@ import {
   turnFaceUp,
   unlockDoor,
 } from "./state";
-import { doublers } from "./statics";
+import { doublers, playerStatic } from "./statics";
 import { legalTargets, matchesCard, matchesObjectFilter, matchesView } from "./targets";
 import { checkCondition, createDelayed, pushInline } from "./triggers";
 import { eliminate, endTheTurn } from "./turn";
@@ -88,6 +88,7 @@ export interface EffectContext {
   vars?: Record<string, ChoiceValue[]>;
   /** Permanents sacrifiés pour le coût de la capacité. */
   sacrificed?: ObjectId[];
+  tappedForCost?: ObjectId[];
 }
 
 /** Caractéristiques d'un objet vivant, ou ses dernières informations connues. */
@@ -383,6 +384,7 @@ export function contextOf(r: Resolution): EffectContext {
     event: r.item.event,
     vars: r.vars,
     sacrificed: r.item.sacrificed,
+    tappedForCost: r.item.tappedForCost,
   };
 }
 
@@ -1486,6 +1488,7 @@ export function runEffect(s: GameState, r: Resolution, e: Effect): OpResult {
         const wasTapped = o.tapped;
         if (e.untap) {
           o.tapped = false;
+          bump(s);
           if (wasTapped) rulesEvent(s, { e: "untap", objectId: id });
         } else tapObject(s, o);
       }
@@ -1623,6 +1626,7 @@ export function runEffect(s: GameState, r: Resolution, e: Effect): OpResult {
         picked = answer.map(String);
       }
       const rest = top.filter((id) => !picked.includes(id));
+      store(r, e.store, picked.length);
       for (const id of picked) moveWithSpec(s, ctx.controller, id, e.to);
       if (e.rest === "graveyard") for (const id of rest) moveWithSpec(s, ctx.controller, id, { to: "graveyard" });
       else if (e.rest === "bottom") {
@@ -1698,6 +1702,7 @@ export function runEffect(s: GameState, r: Resolution, e: Effect): OpResult {
           const token = createTokenCopy(s, ctx.controller, defId);
           if (e.addKeywords?.length) addEffect(s, [token], { addKeywords: e.addKeywords }, "permanent");
           if (e.addSubtypes?.length) addEffect(s, [token], { addSubtypes: e.addSubtypes }, "permanent");
+          if (e.legendary) addEffect(s, [token], { addSupertypes: ["Legendary"] }, "permanent");
           if (e.addAbilities?.length) addEffect(s, [token], { addAbilities: e.addAbilities }, "permanent");
           if (e.sacrificeAtEndStep) {
             createDelayed(s, ctx.controller, ctx.sourceId, ctx.sourceDefId, {
@@ -1909,6 +1914,7 @@ export function runEffect(s: GameState, r: Resolution, e: Effect): OpResult {
         const o = s.objects[id];
         if (!o) continue;
         o.tapped = false;
+        bump(s);
         rulesEvent(s, { e: "untap", objectId: id });
       }
       return;
@@ -2286,6 +2292,19 @@ export function runEffect(s: GameState, r: Resolution, e: Effect): OpResult {
         const o = exiled ? s.objects[exiled] : undefined;
         if (o) o.warpExiledTurn = s.turn.number;
       }
+      return;
+    }
+    case "station": {
+      // 702.184a : des marqueurs de charge égaux à la force de la créature engagée (Tapestry Warden : son endurance si
+      // elle est plus grande).
+      const o = s.objects[ctx.sourceId];
+      const tapped = ctx.tappedForCost?.[0];
+      if (o?.zone !== "battlefield" || !tapped) return;
+      const c = s.objects[tapped] ? chars(s, tapped) : s.lki[tapped];
+      if (!c) return;
+      const byToughness = playerStatic(s, ctx.controller, "stationByToughness") && c.toughness > c.power;
+      const n = Math.max(0, byToughness ? c.toughness : c.power);
+      if (n > 0) changeCounters(s, o, "charge", n);
       return;
     }
     case "setClassLevel": {

@@ -75,6 +75,8 @@ export interface CardScript {
   castCondition?: Condition;
   /** Reality Fracture : effet du sort préparé (le coût et le type viennent de Scryfall). */
   prepareSpell?: SpellDef;
+  /** Station (702.184) : capacités non-mots-clés de chaque palier « N+ » (les mots-clés sont lus dans le texte). */
+  stationAbilities?: Record<number, AbilityDef[]>;
   /** Classe (716) : capacités ajoutées aux niveaux 2, 3… (les coûts de niveau sont lus dans le texte). */
   classLevels?: AbilityDef[][];
   /** Affaire (719) : « Pour résoudre — [condition] » et capacités « Résolue — … ». */
@@ -465,6 +467,7 @@ export const fx = {
       to?: MoveSpec;
       rest?: "bottom" | "graveyard" | "top";
       maxManaValue?: Amount;
+      store?: string;
     } = {},
   ): Effect => ({
     op: "lookAtTop",
@@ -474,6 +477,7 @@ export const fx = {
     to: opts.to ?? { to: "hand" },
     rest: opts.rest ?? "bottom",
     maxManaValue: opts.maxManaValue,
+    store: opts.store,
   }),
   exileUntilLeaves: (what: Ref): Effect => ({ op: "exileUntilLeaves", what }),
   /** Choisir (sans cibler) des cartes de votre cimetière ou de votre main. */
@@ -518,6 +522,7 @@ export const fx = {
       addSubtypes?: string[];
       sacrificeAtEndStep?: boolean;
       addAbilities?: AbilityDef[];
+      legendary?: boolean;
     } = {},
   ): Effect => ({
     op: "copyToken",

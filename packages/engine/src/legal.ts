@@ -21,6 +21,7 @@ import {
   spellCost,
   spellView,
   splitSecondOnStack,
+  tapOthersOptions,
 } from "./stack";
 import { obj } from "./state";
 import { legalTargets } from "./targets";
@@ -204,9 +205,18 @@ export function legalActions(s: GameState, player: PlayerId): ActionOption[] {
         label: ab.label,
         targets,
         xMax: ab.cost.loyaltyX ? (o.counters.loyalty ?? 0) : maxX(s, player, ab.cost.mana, exclude),
-        additional: ab.cost.sacrifice
-          ? { sacrifice: { count: ab.cost.sacrifice.count, options: sacrificeOptions(s, player, id, ab) } }
-          : undefined,
+        additional:
+          ab.cost.sacrifice || ab.cost.tapOthers
+            ? {
+                ...(ab.cost.sacrifice
+                  ? { sacrifice: { count: ab.cost.sacrifice.count, options: sacrificeOptions(s, player, id, ab) } }
+                  : {}),
+                // Station : le joueur choisit la créature à engager.
+                ...(ab.cost.tapOthers
+                  ? { tap: { count: ab.cost.tapOthers.count, options: tapOthersOptions(s, player, id, ab) } }
+                  : {}),
+              }
+            : undefined,
       });
     });
   }

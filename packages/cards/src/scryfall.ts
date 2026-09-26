@@ -434,6 +434,7 @@ function sagaClassCase(
     }));
     return { layout: "class", classLevels: levels, extraAbilities: levelUps };
   }
+  if (/^Station \(/m.test(raw.oracleText)) return parseStation(raw, script);
   if (raw.layout === "case") {
     const solve: CardDef["abilities"][number] = {
       kind: "triggered",
@@ -454,6 +455,50 @@ function sagaClassCase(
     };
   }
   return {};
+}
+
+/**
+ * Station (702.184) : « Station (…) » puis des paliers « N+ | … » (les lignes suivantes appartiennent au dernier palier).
+ * Les mots-clés d'un palier sont lus ; ses autres capacités viennent du script (`stationAbilities[N]`), sans quoi la
+ * carte reste non gérée. La capacité « Station » (engager une autre créature, en rituel) est générée.
+ */
+function parseStation(
+  raw: RawCard,
+  script: CardScript | undefined,
+): Partial<CardDef> & { extraAbilities?: CardDef["abilities"]; stationIncomplete?: boolean } {
+  const creatureAt = /It's an artifact creature at (\d+)\+/.exec(raw.oracleText);
+  const lines = stripReminder(raw.oracleText).split("\n");
+  const start = lines.findIndex((l) => /^Station\b/.test(l.trim()));
+  const thresholds: { n: number; parts: string[] }[] = [];
+  for (const line of lines.slice(start + 1)) {
+    const m = /^(\d+)\+ \| (.*)$/.exec(line.trim());
+    if (m) thresholds.push({ n: Number(m[1]), parts: [m[2] as string] });
+    else if (thresholds.length && line.trim()) thresholds[thresholds.length - 1]?.parts.push(line.trim());
+  }
+  let incomplete = false;
+  const station = {
+    creatureAt: creatureAt ? Number(creatureAt[1]) : undefined,
+    thresholds: thresholds.map((t) => {
+      const keywordParts = t.parts.filter((p) => p.split(/,\s*/).every((k) => k.trim().toLowerCase() in KEYWORD_NAMES));
+      const others = t.parts.length - keywordParts.length;
+      const abilities = script?.stationAbilities?.[t.n] ?? [];
+      if (others > 0 && !script?.stationAbilities?.[t.n]) incomplete = true;
+      return {
+        n: t.n,
+        keywords: keywordParts.flatMap((p) => p.split(/,\s*/).map((k) => KEYWORD_NAMES[k.trim().toLowerCase()] as Keyword)),
+        abilities,
+      };
+    }),
+  };
+  const stationAbility: CardDef["abilities"][number] = {
+    kind: "activated",
+    cost: { tapOthers: { filter: { types: ["Creature"] }, count: 1 } },
+    targets: [],
+    effects: [{ op: "station" }],
+    sorcerySpeed: true,
+    label: "Station",
+  };
+  return { station, extraAbilities: [stationAbility], stationIncomplete: incomplete };
 }
 
 /** Somme de deux coûts de mana (valeur de mana d'une carte scindée). */
@@ -533,7 +578,13 @@ function singleDef(raw: RawCard, script: CardScript | undefined, set: string): C
   const ward = parseWard(raw.oracleText);
   if (ward) keywords.add("ward");
 
-  const { extraAbilities = [], ...levelFields } = sagaClassCase(raw, script);
+  const {
+    extraAbilities = [],
+    stationIncomplete,
+    ...levelFields
+  } = sagaClassCase(raw, script) as ReturnType<typeof sagaClassCase> & { stationIncomplete?: boolean };
+  // Station : un palier dont les capacités (autres que des mots-clés) ne sont pas scriptées rend la carte non gérée.
+  if (stationIncomplete) implemented = false;
   return {
     id: slug(raw.name),
     name: raw.name,

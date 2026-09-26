@@ -255,6 +255,7 @@ export function counterPT(o: { counters: Record<string, number> }): number {
 export function tapObject(s: GameState, o: GameObject): void {
   if (o.tapped) return;
   o.tapped = true;
+  bump(s); // des capacités statiques peuvent en dépendre (« vos créatures légendaires engagées »)
   rulesEvent(s, { e: "tap", objectId: o.id });
 }
 

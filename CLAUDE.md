@@ -158,7 +158,11 @@ Lot 0.10 (performances, pool complet de 5 174 cartes) :
   - jetons engagés ou attaquants (`fx.createTappedTokens`) ; « s'il paie » (`unlessPays` avec `paidStore`) ; filtres `blocking` et `damaged` ;
   - restrictions de blocage `canBlockOnlyFlyers` (Drone) et `cantBeBlockedByMoreThanOne` ;
   - terrains choc : deux options « jouer ce terrain » (payer 2 PV, dégagé ; ou engagé).
-- Lot B : station et Vaisseaux, Planètes, cartes liées (Drill Too Deep, Systems Override, Tapestry Warden…).
+- Lot B ✅ (201/260) : station (702.184).
+  - Les paliers « N+ | … » et le seuil de créature sont lus dans le texte (`CardDef.station`). Les mots-clés d'un palier sont automatiques ; ses autres capacités viennent du script (`stationAbilities`), sans quoi la carte reste non gérée ;
+  - la capacité « Station » est générée : le joueur choisit la créature à engager (`ActionOption.additional.tap`, `CastChoices.tap`), puis l'effet `station` met autant de marqueurs de charge que sa force (Tapestry Warden : l'endurance) ;
+  - Planètes ; mana égal aux marqueurs (`amountCounters`) ; copies légendaires ; filtre `multicolored` ;
+  - engager ou dégager un permanent fait avancer la version d'état (statiques « créatures engagées », détecté par le fuzz).
 - Lot C : cartes uniques (Tezzeret, The Endstone, The Dominion Bracelet, Starfield Vocalist, Weftwalking, Quantum Riddler, Mm'menon, Sothera, Lightstall Inquisitor, Pinnacle Starcage…).
 - Test de fumée : l'adversaire du scénario a un Goblin Firebomb en main (cible des contresorts d'artefact).
 
@@ -289,6 +293,7 @@ Réimpressions : défenses talismaniques contre une couleur, changelin, restrict
 - **Warrior's Blades :** la légalité de l'Équiper suppose la meilleure réduction possible ; le coût payé dépend de la cible choisie.
 - **Uldaros Theorix :** les copies choisies (valeur de mana totale 6 ou moins) se lancent gratuitement après la résolution du déclencheur, à tout moment ce tour-ci, et non pendant la résolution (comme Etali).
 - **Emrakul, the Exigent Doom :** la capacité accordée au terrain cesse dès que la carte quitte l'exil, de quelque façon que ce soit (et pas seulement quand elle est lancée).
+- **Evendo, Uthros (Planètes 12+) :** leurs capacités de mana à coût ({G}, {T}) passent par la pile (comme Ramos).
 - **Terrains choc mis en jeu par un effet** (et non joués) : ils arrivent engagés, sans proposer de payer 2 points de vie.
 - **Blessures de combat groupées** (« une ou plusieurs créatures… ») : une fois par étape de blessures et par joueur blessé.
 - **Légalité Standard :** instantané des légalités Scryfall au moment de l'import (`legalities.standard` dans `data/<set>.json`). Après une rotation ou une annonce de bannissement, réimporter les sets (`npm run import-cards -- <set>`).

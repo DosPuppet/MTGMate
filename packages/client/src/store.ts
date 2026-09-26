@@ -50,10 +50,12 @@ export interface Casting {
   /** Coûts additionnels choisis (cartes défaussées, permanents sacrifiés). */
   discard: string[] | null;
   sacrifice: string[] | null;
+  /** Permanents à engager pour le coût (station). */
+  tap: string[] | null;
   /** Façon de payer le sort : coût normal, sans payer (Omniscience, Etali), coût alternatif. */
   payMode: "normal" | "free" | "alt" | null;
   targets: Record<string, string[]>;
-  stage: "mode" | "pay" | "x" | "kicker" | "target" | "discard" | "sacrifice";
+  stage: "mode" | "pay" | "x" | "kicker" | "target" | "discard" | "sacrifice" | "tap";
   spec: TargetOption | null;
   /** Cibles déjà désignées pour `spec` quand il en accepte plusieurs. */
   picked?: string[];
@@ -150,7 +152,7 @@ interface Store {
   pickTarget(id: string): void;
   /** Valide les cibles déjà désignées (« jusqu'à N »). */
   confirmTargets(): void;
-  chooseAdditional(kind: "discard" | "sacrifice", ids: string[]): void;
+  chooseAdditional(kind: "discard" | "sacrifice" | "tap", ids: string[]): void;
   cancel(): void;
   toggleAttacker(id: string): void;
   setAttackTarget(player: string): void;
@@ -205,6 +207,7 @@ function buildDecision(c: Casting): Decision {
     targets: c.targets,
     x: c.x ?? undefined,
     sacrifice: c.sacrifice ?? undefined,
+    tap: c.tap ?? undefined,
   };
 }
 
@@ -408,6 +411,7 @@ export const useGame = create<Store>((set, get) => {
     if (extra && "discard" in extra && extra.discard && c.discard === null)
       return set({ casting: { ...c, stage: "discard", spec: null } });
     if (extra?.sacrifice && c.sacrifice === null) return set({ casting: { ...c, stage: "sacrifice", spec: null } });
+    if (extra && "tap" in extra && extra.tap && c.tap === null) return set({ casting: { ...c, stage: "tap", spec: null } });
     get().decide(buildDecision(c));
   };
 
@@ -720,6 +724,7 @@ export const useGame = create<Store>((set, get) => {
         kicked: null,
         discard: null,
         sacrifice: null,
+        tap: null,
         payMode: null,
         targets: {},
         stage: "mode",

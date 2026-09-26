@@ -117,15 +117,16 @@ function base(s: GameState, o: GameObject, defId = o.defId): Characteristics {
   const cda = d.cdaPT === undefined ? undefined : cdaValue(s, o, d.cdaPT);
   const cdaPower = d.cdaPower === undefined ? undefined : cdaValue(s, o, d.cdaPower);
   const cdaToughness = d.cdaToughness === undefined ? undefined : cdaValue(s, o, d.cdaToughness);
+  const station = stationTraits(o, d);
   return {
     name: d.name,
-    types: [...d.types],
+    types: station.creature && !d.types.includes("Creature") ? [...d.types, "Creature"] : [...d.types],
     subtypes: [...d.subtypes],
     supertypes: [...d.supertypes],
     colors: [...d.colors],
     power: cdaPower ?? cda ?? d.power ?? 0,
     toughness: cdaToughness ?? cda ?? d.toughness ?? 0,
-    keywords: [...d.keywords],
+    keywords: [...new Set([...d.keywords, ...station.keywords])],
     abilities: levelAbilities(o, d),
     controller: o.controller,
   };
@@ -133,9 +134,23 @@ function base(s: GameState, o: GameObject, defId = o.defId): Characteristics {
 
 /** Capacités imprimées d'un permanent : niveaux atteints d'une Classe (716), capacités « Résolue » d'une Affaire (719). */
 export function levelAbilities(o: GameObject, d: CardDef): AbilityDef[] {
-  if (o.zone !== "battlefield" || (!d.classLevels && !d.caseSolved)) return d.abilities;
+  if (o.zone !== "battlefield" || (!d.classLevels && !d.caseSolved && !d.station)) return d.abilities;
   const levels = (d.classLevels ?? []).slice(0, Math.max(0, (o.classLevel ?? 1) - 1)).flatMap((l) => l.abilities);
-  return [...d.abilities, ...levels, ...(o.solved ? (d.caseSolved ?? []) : [])];
+  // Station (702.184) : capacités des paliers atteints par les marqueurs de charge.
+  const charge = o.counters.charge ?? 0;
+  const station = (d.station?.thresholds ?? []).filter((t) => charge >= t.n).flatMap((t) => t.abilities);
+  return [...d.abilities, ...levels, ...station, ...(o.solved ? (d.caseSolved ?? []) : [])];
+}
+
+/** Station : un Vaisseau devient une créature-artefact à son seuil ; mots-clés des paliers atteints. */
+function stationTraits(o: GameObject, d: CardDef): { creature: boolean; keywords: Keyword[] } {
+  const charge = o.counters.charge ?? 0;
+  const st = d.station;
+  if (!st || o.zone !== "battlefield") return { creature: false, keywords: [] };
+  return {
+    creature: st.creatureAt !== undefined && charge >= st.creatureAt,
+    keywords: st.thresholds.filter((t) => charge >= t.n).flatMap((t) => t.keywords),
+  };
 }
 
 /** Garde {2} des permanents face cachée par déguisement ou cape (702.168b, 701.58a). */
@@ -353,13 +368,14 @@ export function computeBattlefield(s: GameState): Map<ObjectId, Characteristics>
 
   // Couche 4 : types (et nom, pour Witness Protection).
   layer(
-    (m) => !!(m.addTypes || m.addSubtypes || m.setTypes || m.setSubtypes || m.setName || m.allCreatureTypes),
+    (m) => !!(m.addTypes || m.addSubtypes || m.setTypes || m.setSubtypes || m.setName || m.allCreatureTypes || m.addSupertypes),
     (c, m) => {
       if (m.setTypes) {
         c.types = [...m.setTypes];
         c.subtypes = [...(m.setSubtypes ?? [])];
       } else if (m.setSubtypes) c.subtypes = [...m.setSubtypes];
       if (m.setName) c.name = m.setName;
+      for (const t of m.addSupertypes ?? []) if (!c.supertypes.includes(t)) c.supertypes.push(t);
       if (m.allCreatureTypes && !c.subtypes.includes(ALL_CREATURE_TYPES)) c.subtypes.push(ALL_CREATURE_TYPES);
       for (const t of m.addTypes ?? []) if (!c.types.includes(t)) c.types.push(t);
       for (const t of m.addSubtypes ?? []) if (!c.subtypes.includes(t)) c.subtypes.push(t);

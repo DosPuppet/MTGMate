@@ -118,7 +118,7 @@ function AdditionalCostPicker({
   options,
   orPay,
 }: {
-  kind: "discard" | "sacrifice";
+  kind: "discard" | "sacrifice" | "tap";
   count: number;
   options: string[];
   /** « … ou payez {3}{B} » : on peut payer ce mana à la place. */
@@ -137,7 +137,9 @@ function AdditionalCostPicker({
       title={
         kind === "discard"
           ? `Coût additionnel : défaussez ${count} carte(s)`
-          : `Coût additionnel : sacrifiez ${count} permanent(s)`
+          : kind === "tap"
+            ? `Coût : engagez ${count} créature(s)`
+            : `Coût additionnel : sacrifiez ${count} permanent(s)`
       }
       wide
     >
@@ -251,6 +253,10 @@ function CastingPrompt() {
   if (casting.stage === "target" && casting.spec && view) {
     const onBoard = new Set([...view.battlefield.map((o) => o.id), ...Object.keys(view.players), ...view.stack.map((x) => x.id)]);
     if (casting.spec.legal.some((id) => !onBoard.has(id))) return <TargetCardPicker />;
+  }
+  if (casting.stage === "tap" && opt.type === "activate" && opt.additional?.tap) {
+    const spec = opt.additional.tap;
+    return <AdditionalCostPicker kind="tap" count={spec.count} options={spec.options} />;
   }
   if (casting.stage === "sacrifice" && opt.type === "activate" && opt.additional?.sacrifice) {
     const spec = opt.additional.sacrifice;

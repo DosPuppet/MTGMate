@@ -138,3 +138,61 @@ describe("mécaniques d'Edge of Eternities", () => {
     expect(unpaid.objects[idOf(unpaid, "p1", "battlefield", "Stomping Ground")]?.tapped).toBe(true);
   });
 });
+
+describe("station (702.184)", () => {
+  const stationIndex = (s: S, id: string) =>
+    chars(s, id).abilities.findIndex((a) => a.kind === "activated" && a.label === "Station");
+
+  it("engager une autre créature (choisie) : des marqueurs de charge égaux à sa force ; créature et mots-clés au seuil", () => {
+    let s = scenario({ p1: { battlefield: ["Galvanizing Sawship", "Serra Angel", "Bear Cub"] } });
+    const ship = idOf(s, "p1", "battlefield", "Galvanizing Sawship");
+    const angel = idOf(s, "p1", "battlefield", "Serra Angel");
+    expect(chars(s, ship).types).toEqual(["Artifact"]);
+    const opt = legalActions(s, "p1").find((a) => a.type === "activate" && a.source === ship);
+    expect(opt?.type === "activate" && opt.additional?.tap?.options.length).toBe(2);
+    s = act(s, "p1", { type: "activate", source: ship, ability: stationIndex(s, ship), tap: [angel] });
+    expect(s.objects[angel]?.tapped).toBe(true);
+    s = passBoth(s);
+    expect(s.objects[ship]?.counters.charge).toBe(4);
+    expect(chars(s, ship).types).toContain("Creature");
+    expect(chars(s, ship).keywords).toEqual(expect.arrayContaining(["flying", "haste"]));
+  });
+
+  it("Tapestry Warden : station selon l'endurance si elle dépasse la force", () => {
+    let s = scenario({ p1: { battlefield: ["Galvanizing Sawship", "Tapestry Warden", "Gleaming Barrier"] } });
+    const ship = idOf(s, "p1", "battlefield", "Galvanizing Sawship");
+    const wall = idOf(s, "p1", "battlefield", "Gleaming Barrier");
+    s = act(s, "p1", { type: "activate", source: ship, ability: stationIndex(s, ship), tap: [wall] });
+    s = passBoth(s);
+    expect(s.objects[ship]?.counters.charge).toBe(chars(s, wall).toughness);
+  });
+
+  it("capacités de palier : seulement à partir de N marqueurs (Lumen-Class Frigate, 2+)", () => {
+    let s = scenario({ p1: { battlefield: ["Lumen-Class Frigate", "Llanowar Elves", "Bear Cub"] } });
+    const frigate = idOf(s, "p1", "battlefield", "Lumen-Class Frigate");
+    const bear = idOf(s, "p1", "battlefield", "Bear Cub");
+    expect(chars(s, bear).power).toBe(2);
+    s = act(s, "p1", {
+      type: "activate",
+      source: frigate,
+      ability: stationIndex(s, frigate),
+      tap: [idOf(s, "p1", "battlefield", "Llanowar Elves")],
+    });
+    s = passBoth(s);
+    expect(chars(s, bear).power).toBe(2); // 1 marqueur
+    s.objects[frigate]!.counters.charge = 2;
+    s.version += 1;
+    expect(chars(s, bear).power).toBe(3);
+  });
+
+  it("The Eternity Elevator : autant de mana que de marqueurs de charge (palier 20+)", () => {
+    let s = scenario({ p1: { battlefield: ["The Eternity Elevator"] } });
+    const elevator = idOf(s, "p1", "battlefield", "The Eternity Elevator");
+    s.objects[elevator]!.counters.charge = 20;
+    s.version += 1;
+    const opts = legalActions(s, "p1").filter((a) => a.type === "tapForMana" && a.source === elevator);
+    const any = opts.find((a) => a.type === "tapForMana" && a.colors.includes("G"));
+    s = act(s, "p1", { type: "tapForMana", source: elevator, ability: any?.type === "tapForMana" ? any.ability : 0, color: "G" });
+    expect(s.players.p1?.manaPool.G).toBe(20);
+  });
+});

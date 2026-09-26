@@ -7,6 +7,7 @@ import { BLUE } from "./blue";
 import { GREEN } from "./green";
 import { MULTI } from "./multi";
 import { RED } from "./red";
+import { STATION } from "./station";
 import { WHITE } from "./white";
 
-export const EOE_SCRIPTS: Record<string, CardScript> = { ...WHITE, ...BLUE, ...BLACK, ...RED, ...GREEN, ...MULTI };
+export const EOE_SCRIPTS: Record<string, CardScript> = { ...WHITE, ...BLUE, ...BLACK, ...RED, ...GREEN, ...MULTI, ...STATION };

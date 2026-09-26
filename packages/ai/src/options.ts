@@ -70,14 +70,22 @@ export function buildCastDecision(
         alternative: !a.freeAvailable && a.altAvailable && (!a.normalAvailable || rand() < 0.5) ? true : undefined,
       };
     }
-    case "activate":
+    case "activate": {
+      // Station : une créature engagée au hasard parmi celles possibles.
+      const tap = a.additional?.tap;
+      const pool = tap ? [...tap.options] : [];
+      const picked: string[] = [];
+      while (tap && picked.length < tap.count && pool.length)
+        picked.push(pool.splice(Math.floor(rand() * pool.length), 1)[0] as string);
       return {
         type: "activate",
         source: a.source,
         ability: a.ability,
         targets: targetsFrom(a.targets),
         x: a.xMax === null ? undefined : Math.floor(rand() * (a.xMax + 1)),
+        tap: tap ? picked : undefined,
       };
+    }
   }
 }
 
@@ -134,10 +142,19 @@ export function enumerateDecisions(a: ActionOption, limit = 40, rank?: (ids: str
       }
       return out.slice(0, limit);
     }
-    case "activate":
-      return combos(a.targets)
-        .map((targets) => ({ type: "activate" as const, source: a.source, ability: a.ability, targets, x: a.xMax ?? undefined }))
-        .slice(0, limit);
+    case "activate": {
+      const base = combos(a.targets).map((targets) => ({
+        type: "activate" as const,
+        source: a.source,
+        ability: a.ability,
+        targets,
+        x: a.xMax ?? undefined,
+      }));
+      // Station : la plus forte créature (choix par défaut du moteur), ou celle qui a le moins de valeur.
+      const tap = a.additional?.tap;
+      const cheap = tap && rank ? rank(tap.options).slice(0, tap.count) : undefined;
+      return [...base, ...(cheap ? base.map((d) => ({ ...d, tap: cheap })) : [])].slice(0, limit);
+    }
     case "playLand":
       return [{ type: "playLand", card: a.card, payLife: a.payLife }];
     default:

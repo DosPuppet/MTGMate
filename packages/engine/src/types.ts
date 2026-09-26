@@ -181,6 +181,11 @@ export interface CardDef {
   shockLand?: number;
   /** Distorsion (702.185) : coût, points de vie en plus, et lançable aussi depuis le cimetière (Timeline Culler). */
   warp?: { cost: ManaCost; life?: number; fromGraveyard?: boolean };
+  /**
+   * Station (702.184) : paliers « N+ | … » (mots-clés lus dans le texte, autres capacités dans le script) et seuil où le
+   * Vaisseau devient une créature-artefact.
+   */
+  station?: { creatureAt?: number; thresholds: { n: number; keywords: Keyword[]; abilities: AbilityDef[] }[] };
   /** Déguisement (702.168) : coût pour retourner face visible une carte lancée face cachée pour {3}. */
   disguise?: ManaCost;
   /** Saga (714) : numéro du dernier chapitre (lu dans le texte). */
@@ -280,6 +285,8 @@ export interface ManaAbilityDef {
   amount: number;
   /** « {G} pour chaque Elfe que vous contrôlez » : le montant est le nombre de permanents correspondant. */
   amountPer?: ObjectFilter;
+  /** The Eternity Elevator : autant de mana que de marqueurs de ce type sur la source. */
+  amountCounters?: string;
   /** Loot, the Nexus : un mana pour chaque force différente parmi les créatures que vous contrôlez. */
   amountDistinctPowers?: boolean;
 }
@@ -398,6 +405,8 @@ export interface ObjectFilter {
   attacking?: boolean;
   /** Bloqueuse. */
   blocking?: boolean;
+  /** Multicolore (au moins deux couleurs). */
+  multicolored?: boolean;
   /** A subi des blessures ce tour-ci. */
   damaged?: boolean;
   /** Créature attaquante ou bloqueuse. */
@@ -605,6 +614,8 @@ export interface LayerMods {
   /** Couche 4 : types et sous-types ajoutés. */
   addTypes?: CardType[];
   addSubtypes?: string[];
+  /** Couche 4 : surtypes ajoutés (« sauf que c'est légendaire »). */
+  addSupertypes?: string[];
   /** Couche 4 : types remplacés (« est un terrain et perd tous ses autres types »), sous-types remplacés. */
   setTypes?: CardType[];
   setSubtypes?: string[];
@@ -697,6 +708,8 @@ export interface PlayerStaticAbilityDef {
   noEntersTriggers?: boolean;
   /** Yuriko, Blade of the Mighty (s'applique à tous) : pendant le combat, ni sorts ni capacités (hors mana). */
   noSpellsDuringCombat?: boolean;
+  /** Tapestry Warden : vos créatures dont l'endurance dépasse la force stationnent selon leur endurance. */
+  stationByToughness?: boolean;
   /** Tomik, Orzhov Lawmage : au plus une créature peut attaquer chacun de vos planeswalkers à chaque combat. */
   walkersMaxOneAttacker?: boolean;
   /** Garruk, Veiled Butcher : les créatures adverses qui devraient mourir sont exilées. */
@@ -989,6 +1002,8 @@ export type Effect =
       rest: "bottom" | "graveyard" | "top";
       /** Valeur de mana maximale des cartes prises (évaluée à la résolution). */
       maxManaValue?: Amount;
+      /** Mémorise le nombre de cartes prises (« si vous n'avez pas mis de carte dans votre main ainsi »). */
+      store?: string;
     }
   /** Chercher dans sa bibliothèque jusqu'à `count` cartes correspondant au filtre, puis mélanger. */
   | {
@@ -1012,6 +1027,8 @@ export type Effect =
       /** « … excepté que c'est un Cauchemar en plus de ses autres types » */
       addSubtypes?: string[];
       sacrificeAtEndStep?: boolean;
+      /** « … sauf que c'est légendaire » (Adagia, Windswept Bastion). */
+      legendary?: boolean;
       /** Capacités ajoutées à la copie (Face Yourself). */
       addAbilities?: AbilityDef[];
     }
@@ -1075,6 +1092,8 @@ export type Effect =
   | { op: "turnFaceUp"; what: Ref }
   /** Distorsion : exile le permanent à la prochaine étape de fin (il pourra être lancé depuis l'exil un tour suivant). */
   | { op: "warpExile"; what: Ref }
+  /** Station (702.184a) : des marqueurs de charge égaux à la force de la créature engagée pour le coût. */
+  | { op: "station" }
   /** La Classe source passe au niveau N (716.2a). */
   | { op: "setClassLevel"; level: number }
   /** L'Affaire source devient résolue (719.2). */
@@ -1346,6 +1365,8 @@ export interface StackItem {
   uncounterable?: boolean;
   /** Permanents sacrifiés pour le coût (dernières informations connues disponibles). */
   sacrificed?: ObjectId[];
+  /** Permanents engagés pour payer le coût (station). */
+  tappedForCost?: ObjectId[];
   /** Effets de mana dépensé (Carnelian Orb, Pyromancer's Goggles). */
   riders?: ("haste" | "copy")[];
   /** Sort lancé depuis la main. */
@@ -1693,6 +1714,8 @@ export interface CastChoices {
   /** Coûts additionnels : cartes défaussées, permanents sacrifiés. */
   discard?: ObjectId[];
   sacrifice?: ObjectId[];
+  /** Permanents engagés pour le coût (station), choisis par le joueur. */
+  tap?: ObjectId[];
   /** Face lancée d'une carte à plusieurs faces (1 : l'aventure) ; absente : la carte elle-même (recto). */
   face?: number;
   /** Lancée face cachée pour {3} (déguisement). */
@@ -1777,7 +1800,7 @@ export type ActionOption =
       label?: string;
       targets: TargetOption[];
       xMax: number | null;
-      additional?: { sacrifice?: { count: number; options: ObjectId[] } };
+      additional?: { sacrifice?: { count: number; options: ObjectId[] }; tap?: { count: number; options: ObjectId[] } };
     }
   | { type: "tapForMana"; source: ObjectId; ability: number; colors: ManaType[] };
 

@@ -683,7 +683,7 @@ export function sacrificeOptions(s: GameState, player: PlayerId, source: ObjectI
   );
 }
 
-function tapOthersOptions(s: GameState, player: PlayerId, source: ObjectId, ab: ActivatedAbilityDef): ObjectId[] {
+export function tapOthersOptions(s: GameState, player: PlayerId, source: ObjectId, ab: ActivatedAbilityDef): ObjectId[] {
   const f = ab.cost.tapOthers?.filter;
   if (!f) return [];
   return s.battlefield.filter(
@@ -833,7 +833,21 @@ export function activateAbility(s: GameState, player: PlayerId, source: ObjectId
   s.stack.push(item);
   // Coûts : mana (sans engager la source si elle doit s'engager pour le coût), puis {T}, puis sacrifice.
   // Les permanents choisis pour d'autres coûts (sacrifier, engager, équipage) ne servent pas à payer le mana.
-  const tapOthers = ab.cost.tapOthers ? tapOthersOptions(s, player, source, ab).slice(0, ab.cost.tapOthers.count) : [];
+  // Permanents à engager : choisis par le joueur (station), sinon automatiquement.
+  const tapOptions = ab.cost.tapOthers ? tapOthersOptions(s, player, source, ab) : [];
+  const tapOthers = ab.cost.tapOthers
+    ? choices.tap?.length
+      ? choices.tap
+      : [...tapOptions].sort((a, b) => chars(s, b).power - chars(s, a).power).slice(0, ab.cost.tapOthers.count)
+    : [];
+  if (
+    ab.cost.tapOthers &&
+    (tapOthers.length !== ab.cost.tapOthers.count ||
+      new Set(tapOthers).size !== tapOthers.length ||
+      tapOthers.some((id) => !tapOptions.includes(id)))
+  ) {
+    throw new RulesError("Permanents à engager invalides");
+  }
   const crew = ab.cost.crew !== undefined ? (crewOptions(s, player, source, ab.cost.crew) ?? []) : [];
   if (ab.cost.mana) {
     const reserved = new Set([...sacrificed, ...tapOthers, ...crew, ...(ab.cost.tap ? [source] : [])]);
@@ -865,6 +879,7 @@ export function activateAbility(s: GameState, player: PlayerId, source: ObjectId
   for (const id of tapOthers) tapObject(s, obj(s, id));
   // Les permanents sacrifiés restent consultables (dernières informations connues : « sa endurance »).
   item.sacrificed = sacrificed.length ? [...sacrificed] : undefined;
+  item.tappedForCost = tapOthers.length ? [...tapOthers] : undefined;
   for (const id of sacrificed) sacrificePermanent(s, id);
   if (ab.cost.sacrificeSelf) sacrificePermanent(s, source);
   // La source quitte sa zone pour payer le coût : on garde ses dernières informations (« cette carte », où qu'elle soit).

@@ -191,6 +191,7 @@ function beginStep(s: GameState): void {
         if (counterCount(o, "stun") > 0) changeCounters(s, o, "stun", -1);
         else {
           o.tapped = false;
+          bump(s);
           rulesEvent(s, { e: "untap", objectId: id });
         }
       }
