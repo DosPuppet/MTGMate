@@ -10,6 +10,8 @@ import {
   splitLines,
   TOKEN_GROUP_MIN,
   tokenSlots,
+  WALKER_MIN_PEEK,
+  walkerStep,
 } from "../src/board/layout";
 
 let next = 0;
@@ -60,8 +62,9 @@ describe("rangées du champ de bataille", () => {
     expect(rows.walkers).toEqual([walker]);
     expect(rows.lands).toEqual([forest]);
     expect(rows.support).toEqual([vehicle, aura]);
-    const { front, back } = battlefieldSlots(rows);
-    expect(front.map((s) => s.objs[0]?.name)).toEqual(["Bear", "Sanctuary", "Ajani"]);
+    const { front, back, walkers } = battlefieldSlots(rows);
+    expect(front.map((s) => s.objs[0]?.name)).toEqual(["Bear", "Sanctuary"]);
+    expect(walkers.map((s) => s.objs[0]?.name)).toEqual(["Ajani"]);
     expect(back.map((s) => [s.objs[0]?.name, s.block])).toEqual([
       ["Forest", "lands"],
       ["Caravan", "support"],
@@ -120,24 +123,24 @@ describe("lignes et taille des cartes", () => {
   });
 
   it("une seule ligne tant que les cartes tiennent en grand", () => {
-    const fit = fitBattlefield(1600, 360, singles(5), singles(5));
+    const fit = fitBattlefield(1600, 360, singles(5), singles(5), []);
     expect(fit).toMatchObject({ frontLines: 1, backLines: 1 });
     expect(fit.cardW).toBeGreaterThan(100);
   });
 
   it("passe sur 2 lignes quand cela donne des cartes plus grandes, puis rétrécit", () => {
-    const one = fitBattlefield(1600, 360, singles(40), singles(2));
+    const one = fitBattlefield(1600, 360, singles(40), singles(2), []);
     expect(one.frontLines).toBe(2);
     const oneLineW = (1600 - 28 - 10 * 39) / 40;
     expect(one.cardW).toBeGreaterThan(oneLineW);
-    const more = fitBattlefield(1600, 360, singles(60), singles(2));
+    const more = fitBattlefield(1600, 360, singles(60), singles(2), []);
     expect(more.frontLines).toBeGreaterThanOrEqual(2);
     expect(more.cardW).toBeLessThan(one.cardW);
     expect(more.cardW).toBeGreaterThanOrEqual(MIN_W);
   });
 
   it("dans une zone étroite (multijoueur), va au-delà de 2 lignes plutôt que de déborder", () => {
-    const fit = fitBattlefield(420, 330, singles(30), singles(4));
+    const fit = fitBattlefield(420, 330, singles(30), singles(4), []);
     expect(fit.frontLines).toBeGreaterThan(2);
     const perLine = Math.ceil(30 / fit.frontLines);
     expect(perLine * fit.cardW + 10 * (perLine - 1)).toBeLessThanOrEqual(420 - 28);
@@ -146,5 +149,50 @@ describe("lignes et taille des cartes", () => {
   it("une pile de jetons occupe à peine plus d'une carte", () => {
     const [stack] = tokenSlots(n(12, () => token("Goblin")));
     expect(slotUnits(stack as Slot)).toBeLessThan(1.2);
+  });
+});
+
+describe("zone des planeswalkers (comme sur MTGA)", () => {
+  const walker = (over: Partial<ObjectView> = {}) => obj({ name: "Ajani", types: ["Planeswalker"], ...over });
+  const singles = (k: number): Slot[] => n(k, () => creature()).map((o) => ({ kind: "single", objs: [o] }));
+
+  it("planeswalkers et batailles ne sont jamais parmi les créatures, même sur plusieurs lignes", () => {
+    const perms = [...n(15, () => creature()), walker(), ...n(15, () => creature()), obj({ name: "Siege", types: ["Battle"] })];
+    const { front, walkers } = battlefieldSlots(battlefieldRows(perms));
+    expect(walkers.map((s) => s.objs[0]?.name)).toEqual(["Ajani", "Siege"]);
+    for (const line of splitLines(front, 3)) expect(line.every((s) => s.objs[0]?.types.includes("Creature"))).toBe(true);
+  });
+
+  it("un planeswalker devenu créature rejoint les créatures", () => {
+    const { front, walkers } = battlefieldSlots(battlefieldRows([walker({ types: ["Planeswalker", "Creature"] })]));
+    expect(front).toHaveLength(1);
+    expect(walkers).toHaveLength(0);
+  });
+
+  it("la colonne des planeswalkers réduit la place des rangées, et n'existe pas sans eux", () => {
+    const without = fitBattlefield(150, 2000, singles(1), singles(1), []);
+    const withWalker = fitBattlefield(150, 2000, singles(1), singles(1), [{ kind: "single", objs: [walker()] }]);
+    expect(withWalker.cardW).toBeLessThan(without.cardW);
+    expect(without.walkerStep).toBeGreaterThan(0);
+  });
+
+  it("plusieurs planeswalkers s'empilent, puis se recouvrent sans cacher leur nom", () => {
+    const h = 100 * 1.395;
+    expect(walkerStep(2, 100, 400)).toBeGreaterThanOrEqual(h);
+    const step = walkerStep(5, 100, 400);
+    expect(step).toBeLessThan(h);
+    expect(step).toBeGreaterThanOrEqual(h * WALKER_MIN_PEEK);
+    expect(walkerStep(40, 100, 400)).toBeCloseTo(h * WALKER_MIN_PEEK);
+  });
+
+  it("rangée arrière : terrains, puis artefacts, puis enchantements", () => {
+    const perms = [
+      obj({ name: "Omniscience", types: ["Enchantment"] }),
+      obj({ name: "Forest", types: ["Land"] }),
+      obj({ name: "Fishing Pole", types: ["Artifact"] }),
+      obj({ name: "Banner", types: ["Artifact"] }),
+    ];
+    const { back } = battlefieldSlots(battlefieldRows(perms));
+    expect(back.map((s) => s.objs[0]?.name)).toEqual(["Forest", "Fishing Pole", "Banner", "Omniscience"]);
   });
 });

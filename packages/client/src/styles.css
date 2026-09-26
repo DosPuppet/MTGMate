@@ -286,17 +286,44 @@ button {
 }
 
 /* Champ de bataille (disposition calculée dans board/layout.ts) :
-   rangée de devant = créatures, puis planeswalkers ; rangée arrière = terrains, puis artefacts et enchantements. */
+   rangée de devant = créatures ; rangée arrière = terrains, puis artefacts et enchantements ;
+   zone des planeswalkers tout à droite. */
 .battlefield {
   display: flex;
-  flex-direction: column;
-  justify-content: center;
-  gap: 6px;
+  gap: 0;
   padding: 4px 14px;
   min-height: 0;
   min-width: 0;
   overflow-x: hidden;
   overflow-y: auto;
+}
+/* Rangées (créatures, terrains et artefacts), à gauche de la zone des planeswalkers. */
+.bf-rows {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 6px;
+}
+/* Zone des planeswalkers (et batailles) : colonne à part, tout à droite (SEPARATOR = marge + retrait). */
+.walker-zone {
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  margin-left: 12px;
+  padding-left: 14px;
+  border-left: 1px solid var(--line);
+}
+.walker {
+  position: relative;
+  z-index: var(--walker-z, 1);
+  transition: margin-top 0.2s ease;
+}
+/* Planeswalker survolé : au premier plan, même s'il est recouvert. */
+.walker:hover {
+  z-index: 50;
 }
 .perm-row {
   display: flex;

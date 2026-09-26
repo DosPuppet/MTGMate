@@ -10,6 +10,7 @@ import {
   type BattlefieldFit,
   battlefieldRows,
   battlefieldSlots,
+  CARD_RATIO,
   fitBattlefield,
   LAND_SCALE,
   type Slot,
@@ -298,7 +299,7 @@ function Battlefield({ player, isMe }: { player: string; isMe: boolean }) {
   const blocks = useGame((s) => s.blocks);
   const attackTargets = useGame((s) => s.attackTargets);
   const ref = useRef<HTMLDivElement>(null);
-  const [fit, setFit] = useState<BattlefieldFit>({ cardW: 0, frontLines: 1, backLines: 1 });
+  const [fit, setFit] = useState<BattlefieldFit>({ cardW: 0, frontLines: 1, backLines: 1, walkerStep: 0 });
   // Auras et Équipements s'affichent sous leur hôte (quel que soit leur contrôleur).
   const onField = new Set(view.battlefield.map((o) => o.id));
   const isAttached = (o: ObjectView) => !!o.attachedTo && onField.has(o.attachedTo);
@@ -310,19 +311,26 @@ function Battlefield({ player, isMe }: { player: string; isMe: boolean }) {
   // Les jetons dont l'état d'interface diffère (lueur, attaquant bloqué, joueur attaqué) ne sont pas regroupés.
   const blocked = new Set(Object.values(blocks));
   const uiKey = (o: ObjectView) => `${glow(o) ?? ""}|${blocked.has(o.id) ? "b" : ""}|${attackTargets[o.id] ?? ""}`;
-  const { front, back } = battlefieldSlots(battlefieldRows(perms), new Set(attachments.keys()), uiKey);
+  const { front, back, walkers } = battlefieldSlots(battlefieldRows(perms), new Set(attachments.keys()), uiKey);
   const depth = Math.max(0, ...perms.map((o) => attachments.get(o.id)?.length ?? 0));
   const layoutKey = (slots: Slot[]) =>
     slots.map((s) => `${s.kind}:${s.objs.map((o) => `${o.id}${o.tapped ? "t" : ""}`).join("+")}`);
-  const signature = `${layoutKey(front).join(",")}|${layoutKey(back).join(",")}|${depth}`;
+  const signature = `${layoutKey(front).join(",")}|${layoutKey(back).join(",")}|${layoutKey(walkers).join(",")}|${depth}`;
 
   // biome-ignore lint/correctness/useExhaustiveDependencies: recalcul quand les permanents changent (signature)
   useLayoutEffect(() => {
     const el = ref.current;
     if (!el) return;
     const measure = () => {
-      const f = fitBattlefield(el.clientWidth, el.clientHeight, front, back, depth);
-      setFit((cur) => (cur.cardW === f.cardW && cur.frontLines === f.frontLines && cur.backLines === f.backLines ? cur : f));
+      const f = fitBattlefield(el.clientWidth, el.clientHeight, front, back, walkers, depth);
+      setFit((cur) =>
+        cur.cardW === f.cardW &&
+        cur.frontLines === f.frontLines &&
+        cur.backLines === f.backLines &&
+        cur.walkerStep === f.walkerStep
+          ? cur
+          : f,
+      );
     };
     measure();
     const ro = new ResizeObserver(measure);
@@ -330,7 +338,7 @@ function Battlefield({ player, isMe }: { player: string; isMe: boolean }) {
     return () => ro.disconnect();
   }, [signature]);
 
-  const { cardW, frontLines, backLines } = fit;
+  const { cardW, frontLines, backLines, walkerStep } = fit;
   const lines = (slots: Slot[], n: number, row: "front" | "back") => {
     const ls = splitLines(slots, n);
     return (isMe ? ls : ls.reverse()).map((l, i) => (
@@ -346,9 +354,24 @@ function Battlefield({ player, isMe }: { player: string; isMe: boolean }) {
     </div>,
   ];
   const style = cardW ? ({ "--card-w": `${cardW}px`, "--land-w": `${cardW * LAND_SCALE}px` } as CSSProperties) : undefined;
+  // Recouvrement des planeswalkers quand ils ne tiennent pas en hauteur (le haut de chaque carte reste visible).
+  const overlap = cardW ? Math.min(0, walkerStep - cardW * CARD_RATIO) : 0;
   return (
     <div ref={ref} className={`battlefield ${isMe ? "me" : "opp"}`} style={style}>
-      {isMe ? rows : rows.reverse()}
+      <div className="bf-rows">{isMe ? rows : rows.reverse()}</div>
+      {walkers.length > 0 && (
+        // Zone des planeswalkers (et batailles), tout à droite comme sur MTGA.
+        <div className="walker-zone">
+          {walkers.map((slot, i) => {
+            const o = slot.objs[0] as ObjectView;
+            return (
+              <div key={o.uid} className="walker" style={{ marginTop: i ? overlap : 0, "--walker-z": i + 1 } as CSSProperties}>
+                <Permanent o={o} width="var(--card-w)" isMe={isMe} attached={attachments.get(o.id) ?? []} glow={glow} showStats />
+              </div>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 }

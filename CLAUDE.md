@@ -18,7 +18,7 @@ Ce fichier sert au suivi du projet entre les sessions. Le README présente le pr
 | FDN set principal (n° 1–281, 276 cartes) | ✅ **276 / 276** (lots A à F) |
 | FDN réimpressions (n° 282+, 241 cartes) | ✅ **517 / 517** pour tout FDN |
 | Légalité Standard dans le deckbuilder (légalités Scryfall, bannies) | ✅ |
-| Champ de bataille façon MTGA (rangées, piles de jetons, lignes multiples, redimensionnement) | ✅ |
+| Champ de bataille façon MTGA (rangées, zone des planeswalkers, piles de jetons, lignes multiples, redimensionnement) | ✅ |
 | Effets sonores (échantillons Kenney CC0, volume, muet avec M) | ✅ |
 | Jeu en ligne : duel Standard à 2 (serveur local, code de salon, corde, reconnexion, revanche) | ✅ |
 | Déploiement : pm2 derrière nginx sur un VPS (`docs/deploiement.md`, `deploy/`) | ✅ documenté et testé en local (pm2, nginx) |
@@ -121,6 +121,8 @@ Réimpressions : défenses talismaniques contre une couleur, changelin, restrict
 - **Champ de bataille (`client/src/board/layout.ts`) :**
   - la disposition est calculée en pur TypeScript et testée (`client/test/layout.test.ts`) ; les lignes sont découpées explicitement, pas par `flex-wrap` ;
   - chaque camp est dimensionné indépendamment (comme sur MTGA) : un adversaire très chargé ne rapetisse pas vos cartes ;
+  - placement par type, d'après MTGA : créatures devant ; terrains, puis artefacts, puis enchantements derrière ; planeswalkers et batailles dans une zone à part tout à droite (recouvrement vertical s'ils sont nombreux) ; Auras et Équipements attachés rendus avec leur hôte ; `battlefield-smoke` vérifie ce rangement ;
+  - batailles : placées chez leur contrôleur (MTGA les met chez le protecteur, que le moteur ne modélise pas encore) ;
   - les constantes d'espacement de `layout.ts` (GAP, SEPARATOR, TOKEN_OFFSET…) doivent rester alignées avec `styles.css` ;
   - la colonne du plateau est bornée (`grid-template-columns: minmax(0, 1fr)`) : sans cela, le contenu élargit la zone mesurée et la taille des cartes ne se réduit plus ;
   - les jetons d'une pile n'ont pas tous d'élément : chercher un objet à l'écran avec `findObjectEl` (et non `[data-oid]`).

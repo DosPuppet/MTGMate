@@ -6,7 +6,15 @@ import type { AutopilotSettings, CardFace, Decision, GameEvent, GameView } from 
  * Bac à sable (mode dev, tests d'interface) : permanents et jetons mis en jeu au début de la partie,
  * par joueur ("p1" = vous, "p2"… = IA).
  */
-export type Sandbox = Record<string, { cards?: string[]; tokens?: [number, string][] }>;
+export type Sandbox = Record<
+  string,
+  {
+    cards?: string[];
+    tokens?: [number, string][];
+    /** Aura ou Équipement de ce joueur, attaché à une créature (nom) de `hostPlayer` (ce joueur par défaut). */
+    attach?: [card: string, host: string, hostPlayer?: string][];
+  }
+>;
 
 export type ToWorker =
   | {

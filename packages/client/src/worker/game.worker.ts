@@ -33,6 +33,24 @@ function applySandbox(s: GameState, sandbox: Sandbox): void {
       }
     }
   }
+  // Attachements ensuite : l'hôte peut appartenir à un autre joueur (Aura sur une créature adverse).
+  for (const [player, side] of Object.entries(sandbox)) {
+    for (const [name, hostName, hostPlayer] of side.attach ?? []) {
+      const def = card(name);
+      const host = Object.values(s.objects).find(
+        (o) =>
+          o.zone === "battlefield" &&
+          o.controller === (hostPlayer ?? player) &&
+          s.defs[o.defId]?.name === hostName &&
+          !o.attachedTo,
+      );
+      if (!host || !s.players[player]) continue;
+      s.defs[def.id] ??= def;
+      const o = createObject(s, def.id, player, "battlefield");
+      o.controlledSince = 0;
+      o.attachedTo = host.id;
+    }
+  }
 }
 
 self.onmessage = async (e: MessageEvent<ToWorker>) => {

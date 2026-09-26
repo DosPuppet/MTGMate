@@ -12,7 +12,7 @@ import { chromium, type Page } from "playwright";
 const OUT = "test-results/battlefield";
 mkdirSync(OUT, { recursive: true });
 
-type Side = { cards?: string[]; tokens?: [number, string][] };
+type Side = { cards?: string[]; tokens?: [number, string][]; attach?: [string, string, string?][] };
 /** Accès au store exposé en mode dev (client/src/main.tsx). */
 type DevWindow = {
   __mtgx: {
@@ -21,7 +21,7 @@ type DevWindow = {
       view: {
         viewer: string;
         pending: { kind: string; player: string } | null;
-        battlefield: { id: string; types: string[] }[];
+        battlefield: { id: string; types: string[]; attachedTo: string | null; controller: string }[];
       } | null;
     };
   };
@@ -37,11 +37,14 @@ const ME: Side = {
     "Savannah Lions",
     "Elvish Archdruid",
     "Gigantosaurus",
+    // Enchantements avant les artefacts : l'affichage doit quand même les ranger après.
     "Omniscience",
     "Thousand-Year Storm",
     "Fishing Pole",
     "Cultivator's Caravan",
     "Ajani, Caller of the Pride",
+    "Chandra, Flameshaper",
+    "Kaito, Cunning Infiltrator",
     ...repeat(5, "Forest"),
     ...repeat(3, "Plains"),
   ],
@@ -49,6 +52,11 @@ const ME: Side = {
     [12, "Rabbit"],
     [3, "Goblin"],
     [5, "Treasure"],
+  ],
+  // Équipement attaché, et Aura posée sur une créature adverse.
+  attach: [
+    ["Swiftfoot Boots", "Serra Angel"],
+    ["Pacifism", "Brazen Scourge", "p2"],
   ],
 };
 const CROWDED: Side = {
@@ -59,6 +67,7 @@ const CROWDED: Side = {
     ...repeat(4, "Dwynen's Elite"),
     ...repeat(4, "Brazen Scourge"),
     "Vivien Reid",
+    "Liliana, Dreadhorde General",
     "Banner of Kinship",
     ...repeat(7, "Forest"),
   ],
@@ -66,6 +75,7 @@ const CROWDED: Side = {
     [6, "Soldier"],
     [4, "Food"],
   ],
+  attach: [["Quick-Draw Katana", "Savannah Lions"]],
 };
 const LIGHT: Side = {
   cards: [...repeat(6, "Llanowar Elves"), "Omniscience", "Fishing Pole", ...repeat(5, "Forest")],
@@ -110,18 +120,57 @@ async function audit(page: Page, label: string) {
       }),
       stacks: [...document.querySelectorAll(".battlefield.me .token-count")].map((e) => e.textContent),
       lines: zones.map((bf) => [...bf.querySelectorAll(".perm-row")].map((row) => row.querySelectorAll(".perm-line").length)),
-      /** Permanents mal rangés : non-créature devant (hors planeswalkers), créature derrière. */
-      misplaced: (() => {
+      /** Rangement selon l'audit MTGA (voir le plan) : créatures devant, rien de vivant derrière, planeswalkers à part. */
+      placement: (() => {
         const view = (window as unknown as DevWindow).__mtgx.getState().view;
-        const types = new Map(view?.battlefield.map((o) => [o.id, o.types]) ?? []);
+        const objs = new Map(view?.battlefield.map((o) => [o.id, o]) ?? []);
+        const problems: string[] = [];
         // Pas de fonction nommée ici : tsx y injecterait __name, inconnu dans la page.
-        const front = [...document.querySelectorAll(".perm-row.front .perm > [data-oid]")]
-          .map((e) => (e as HTMLElement).dataset.oid ?? "")
-          .filter((id) => !types.get(id)?.some((t) => t === "Creature" || t === "Planeswalker"));
-        const back = [...document.querySelectorAll(".perm-row.back .perm > [data-oid]")]
-          .map((e) => (e as HTMLElement).dataset.oid ?? "")
-          .filter((id) => types.get(id)?.includes("Creature"));
-        return [...front, ...back].length;
+        for (const el of document.querySelectorAll(".perm-row.front .perm > [data-oid]"))
+          if (!(objs.get((el as HTMLElement).dataset.oid ?? "")?.types ?? []).includes("Creature"))
+            problems.push(`devant : ${(objs.get((el as HTMLElement).dataset.oid ?? "")?.types ?? []).join(" ")}`);
+        for (const el of document.querySelectorAll(".perm-row.back .perm > [data-oid]"))
+          if (
+            (objs.get((el as HTMLElement).dataset.oid ?? "")?.types ?? []).includes("Creature") ||
+            (objs.get((el as HTMLElement).dataset.oid ?? "")?.types ?? []).includes("Planeswalker")
+          )
+            problems.push(`derrière : ${(objs.get((el as HTMLElement).dataset.oid ?? "")?.types ?? []).join(" ")}`);
+        // Planeswalkers : dans la zone dédiée, à droite de toutes les rangées de leur camp.
+        for (const bf of document.querySelectorAll(".battlefield")) {
+          const rowsRight = Math.max(
+            0,
+            ...[...bf.querySelectorAll(".bf-rows .perm > .card-slot")].map((e) => e.getBoundingClientRect().right),
+          );
+          for (const el of bf.querySelectorAll(".perm > [data-oid]")) {
+            if (
+              !(objs.get((el as HTMLElement).dataset.oid ?? "")?.types ?? []).includes("Planeswalker") ||
+              (objs.get((el as HTMLElement).dataset.oid ?? "")?.types ?? []).includes("Creature")
+            )
+              continue;
+            if (!el.closest(".walker-zone")) problems.push("planeswalker hors de sa zone");
+            else if (el.getBoundingClientRect().left < rowsRight) problems.push("planeswalker pas à droite des rangées");
+          }
+        }
+        // Rangée arrière : terrains, puis artefacts, puis enchantements.
+        for (const bf of document.querySelectorAll(".battlefield")) {
+          const ranks = [...bf.querySelectorAll(".perm-row.back .perm > [data-oid]")].map((el) =>
+            (objs.get((el as HTMLElement).dataset.oid ?? "")?.types ?? []).includes("Land")
+              ? 0
+              : (objs.get((el as HTMLElement).dataset.oid ?? "")?.types ?? []).includes("Artifact")
+                ? 1
+                : (objs.get((el as HTMLElement).dataset.oid ?? "")?.types ?? []).includes("Enchantment")
+                  ? 2
+                  : 3,
+          );
+          if (ranks.some((r, k) => k > 0 && r < (ranks[k - 1] as number))) problems.push(`ordre arrière ${ranks.join("")}`);
+        }
+        // Objets attachés : rendus avec leur hôte, jamais dans une rangée.
+        for (const o of view?.battlefield ?? []) {
+          if (!o.attachedTo) continue;
+          const el = document.querySelector(`[data-oid="${o.id}"]`);
+          if (!el?.closest(".attachment")) problems.push(`attaché hors de son hôte : ${o.id}`);
+        }
+        return problems;
       })(),
       /** Largeur des cartes de la rangée de devant, par zone (hauteur / 1,395 : insensible à l'engagement). */
       frontW: zones.map((bf) =>
@@ -131,6 +180,11 @@ async function audit(page: Page, label: string) {
     };
   });
   console.log(label, JSON.stringify(r));
+  check(
+    r.placement.length === 0,
+    `${label} : rangement MTGA (créatures devant ; terrains, artefacts puis enchantements ; planeswalkers à droite ; attachements sur leur hôte)`,
+    r.placement,
+  );
   check(
     r.clipped.every((n) => n === 0),
     `${label} : aucune carte rognée`,
@@ -146,7 +200,7 @@ let r = await audit(page, "duel 1600");
 check(r.stacks.includes("×12") && r.stacks.includes("×5"), "jetons identiques regroupés (×12, ×5)", r.stacks);
 check(!r.stacks.includes("×3"), "3 jetons identiques ne sont pas regroupés", r.stacks);
 check(r.supportInBack === 1, "artefacts et enchantements dans la rangée arrière, séparés des terrains", r.supportInBack);
-check(r.misplaced === 0, "créatures et planeswalkers devant, aucun artefact ou enchantement non-créature", r.misplaced);
+
 check((r.lines[0]?.[1] ?? 0) >= 2, "l'adversaire chargé passe sur plusieurs lignes", r.lines);
 check(
   (r.frontW[1] ?? 0) > (r.frontW[0] ?? 0) + 10,
@@ -166,6 +220,10 @@ for (let i = 0; i < 80 && (await pending()) !== "declareAttackers|true"; i++) {
   await page.waitForTimeout(300);
 }
 check((await pending()) === "declareAttackers|true", "déclaration des attaquants atteinte");
+check(
+  (await page.locator(".battlefield.opp .walker-zone .glow-target").count()) > 0,
+  "les planeswalkers adverses, dans leur zone, se désignent comme cible d'attaque",
+);
 const stackTop = (n: number) =>
   page.locator(".battlefield.me .token-stack", { hasText: `×${n}` }).locator(":scope > .perm .card");
 await stackTop(12).click();
