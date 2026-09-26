@@ -44,7 +44,8 @@ function liveSources(s: GameState): Source[] {
   const granted = s.effects.some((e) => e.copyOf || e.addAbilities?.some((a) => a.kind === "triggered"));
   for (const id of s.battlefield) {
     // Filtre rapide sur les capacités imprimées, sauf si un effet accorde des capacités déclenchées.
-    if (!granted && !hasTriggers(s.defs[obj(s, id).defId]?.abilities)) continue;
+    const o = obj(s, id);
+    if (!granted && !hasTriggers(s.defs[o.faceDefId ?? o.defId]?.abilities)) continue;
     const view = snapshot(s, id);
     if (hasTriggers(view.abilities)) out.push({ id, view });
   }

@@ -107,7 +107,7 @@ function play(c: CardDef, seed: number): { state: GameState; illegal: number; pl
 }
 
 // Toutes les cartes gérées, sauf les terrains de base, regroupées par extension.
-const cards = Object.values(CARDS).filter((c) => !c.isToken && c.implemented && !c.supertypes.includes("Basic"));
+const cards = Object.values(CARDS).filter((c) => !c.isToken && c.implemented && !c.meldResult && !c.supertypes.includes("Basic"));
 
 describe.each(SETS.map((s) => [s.name, s.code] as const).filter(([, code]) => cards.some((c) => c.set === code)))(
   "test de fumée des cartes : %s",

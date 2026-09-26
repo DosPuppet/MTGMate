@@ -71,6 +71,8 @@ interface ScryfallCard {
     image_uris?: { small: string; normal: string; art_crop: string };
   }[];
   legalities: Record<string, string>;
+  /** Cartes liées (assemblage : les deux parties et la carte assemblée). */
+  all_parts?: { component: string; name: string }[];
   booster: boolean;
   promo: boolean;
 }
@@ -81,7 +83,13 @@ async function search(query: string): Promise<ScryfallCard[]> {
   const cards: ScryfallCard[] = [];
   let url: string | null = `https://api.scryfall.com/cards/search?unique=prints&order=set&q=${encodeURIComponent(query)}`;
   while (url) {
-    const res = await fetch(url, { headers: HEADERS });
+    let res = await fetch(url, { headers: HEADERS });
+    // Trop de requêtes : Scryfall demande d'attendre avant de réessayer.
+    for (let wait = 5000; res.status === 429 && wait <= 80000; wait *= 2) {
+      console.log(`Scryfall 429 : nouvel essai dans ${wait / 1000} s`);
+      await sleep(wait);
+      res = await fetch(url, { headers: HEADERS });
+    }
     if (res.status === 404) return cards; // aucune carte
     if (!res.ok) throw new Error(`Scryfall ${res.status} sur ${url}`);
     const page = (await res.json()) as { data: ScryfallCard[]; has_more: boolean; next_page?: string };
@@ -93,9 +101,9 @@ async function search(query: string): Promise<ScryfallCard[]> {
 }
 
 /** Dispositions à une face (une image) : cartes simples, « à préparer » (créature + sort), Sagas, Classes, Affaires. */
-const SINGLE = new Set(["normal", "prepare", "saga", "class", "case"]);
+const SINGLE = new Set(["normal", "prepare", "saga", "class", "case", "meld"]);
 /** Dispositions à plusieurs faces : gardées telles quelles (faces), gérées par le moteur aux lots 0.3 à 0.6. */
-const MULTI = new Set(["adventure", "split", "transform", "modal_dfc", "meld"]);
+const MULTI = new Set(["adventure", "split", "transform", "modal_dfc"]);
 
 for (const set of ARG === "all" ? STANDARD : [ARG]) await importSet(set);
 
@@ -141,6 +149,15 @@ async function importSet(SET: string): Promise<void> {
       artCrop: image.art_crop,
       // Seuls les formats du périmètre : à réimporter à chaque rotation ou annonce de bannissement.
       legalities: { standard: c.legalities.standard },
+      // Saga, Classe, Affaire, assemblage : la disposition sert au moteur.
+      layout: c.layout === "normal" || c.layout === "prepare" ? undefined : c.layout,
+      meld:
+        c.layout === "meld"
+          ? {
+              parts: (c.all_parts ?? []).filter((p) => p.component === "meld_part").map((p) => p.name),
+              result: c.all_parts?.find((p) => p.component === "meld_result")?.name,
+            }
+          : undefined,
       prepare: spell
         ? {
             name: spell.name,

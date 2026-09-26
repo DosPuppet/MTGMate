@@ -18,6 +18,7 @@
   "legalities": {
    "standard": "legal"
   },
+  "layout": "saga",
   "fr": {
    "name": "Invocation : Bahamut",
    "text": "(Au moment où cette saga arrive et après votre étape de pioche, ajoutez un marqueur « sapience ». Sacrifiez après IV.)\nI, II — Détruisez jusqu'à un permanent non-terrain ciblé.\nIII — Piochez deux cartes.\nIV — Méga-fission — Cette créature inflige à chaque adversaire un nombre de blessures égal à la valeur de mana totale des autres permanents que vous contrôlez.\n//\nVol",
@@ -1016,6 +1017,7 @@
   "legalities": {
    "standard": "legal"
   },
+  "layout": "saga",
   "fr": {
    "name": "Invocation : Choco & mog",
    "text": "(Au moment où cette saga arrive et après votre étape de pioche, ajoutez un marqueur « sapience ». Sacrifiez après IV.)\nI, II, III, IV — Choco-Ruée — Les autres créatures que vous contrôlez gagnent +1/+0 jusqu'à la fin du tour.",
@@ -1043,6 +1045,7 @@
   "legalities": {
    "standard": "legal"
   },
+  "layout": "saga",
   "fr": {
    "name": "Invocation: Chevaliers de la Table ronde",
    "text": "(Au moment où cette saga arrive et après votre étape de pioche, ajoutez un marqueur « sapience ». Sacrifiez après V.)\nI, II, III, IV — Créez trois jetons de créature 2/2 blanche Chevalier.\nV — Fin ultime — Les autres créatures que vous contrôlez gagnent +2/+2 jusqu'à la fin du tour. Mettez un marqueur « Indestructible » sur chacune d'elles.\n//\nIndestructible",
@@ -1070,6 +1073,7 @@
   "legalities": {
    "standard": "legal"
   },
+  "layout": "saga",
   "fr": {
    "name": "Invocation : Garuda, Primordiale",
    "text": "(Au moment où cette saga arrive et après votre étape de pioche, ajoutez un marqueur « sapience ». Sacrifiez après III.)\nI — Rafale aérienne — Cette créature inflige 4 blessures à une créature engagée ciblée qu'un adversaire contrôle.\nII, III — Sillage — Une autre créature ciblée que vous contrôlez gagne +1/+0 et acquiert le vol jusqu'à la fin du tour.\n//\nVol",
@@ -2212,6 +2216,7 @@
   "legalities": {
    "standard": "legal"
   },
+  "layout": "saga",
   "fr": {
    "name": "Invocation : Léviathan",
    "text": "(Au moment où cette saga arrive et après votre étape de pioche, ajoutez un marqueur « sapience ». Sacrifiez après III.)\nI — Renvoyez chaque créature qui n'est pas un kraken, un léviathan, un ondin, une pieuvre ou un grand serpent dans la main de son propriétaire.\nII, III — Jusqu'à la fin du tour, à chaque fois qu'un kraken, un léviathan, un ondin, une pieuvre ou un grand serpent attaque, piochez une carte.\n//\nParade {2}",
@@ -2237,6 +2242,7 @@
   "legalities": {
    "standard": "legal"
   },
+  "layout": "saga",
   "fr": {
    "name": "Invocation : Shiva",
    "text": "(Au moment où cette saga arrive et après votre étape de pioche, ajoutez un marqueur « sapience ». Sacrifiez après III.)\nI, II — Céleste — Engagez une créature ciblée qu'un adversaire contrôle. Mettez un marqueur « étourdissement » sur elle. (Si un permanent avec un marqueur « étourdissement » devait devenir dégagé, retirez-lui en un à la place.)\nIII — Poussière de diamant — une carte pour chaque créature engagée que vos adversaires contrôlent.",
@@ -2796,11 +2802,12 @@
   "name": "Fang, Fearless l'Cie",
   "number": "99",
   "rarity": "uncommon",
-  "layout": "meld",
-  "manaCost": "",
+  "manaCost": "{2}{B}",
   "cmc": 3,
   "typeLine": "Legendary Creature — Human Warrior",
-  "oracleText": "",
+  "oracleText": "Whenever one or more cards leave your graveyard, you draw a card and you lose 1 life. This ability triggers only once each turn.\n(Melds with Vanille, Cheerful l'Cie.)",
+  "power": "2",
+  "toughness": "3",
   "colors": [
    "B"
   ],
@@ -2810,7 +2817,14 @@
   "legalities": {
    "standard": "legal"
   },
-  "faces": [],
+  "layout": "meld",
+  "meld": {
+   "parts": [
+    "Fang, Fearless l'Cie",
+    "Vanille, Cheerful l'Cie"
+   ],
+   "result": "Ragnarok, Divine Deliverance"
+  },
   "fr": {
    "name": "Fang, Fearless l'Cie",
    "text": "À chaque fois qu'au moins une carte quitte votre cimetière, vous piochez une carte et vous perdez 1 point de vie. Cette capacité ne se déclenche qu'une seule fois par tour.\n(Assimiler avec Vanille, l'Cie enthousiaste.)",
@@ -2821,11 +2835,12 @@
   "name": "Ragnarok, Divine Deliverance",
   "number": "99b",
   "rarity": "uncommon",
-  "layout": "meld",
   "manaCost": "",
   "cmc": 7,
   "typeLine": "Legendary Creature — Beast Avatar",
-  "oracleText": "",
+  "oracleText": "Reach, vigilance, menace, trample, haste\nWhen Ragnarok dies, destroy target permanent and return target nonlegendary permanent card from your graveyard to the battlefield.",
+  "power": "7",
+  "toughness": "6",
   "colors": [
    "B",
    "G"
@@ -2842,7 +2857,14 @@
   "legalities": {
    "standard": "legal"
   },
-  "faces": [],
+  "layout": "meld",
+  "meld": {
+   "parts": [
+    "Fang, Fearless l'Cie",
+    "Vanille, Cheerful l'Cie"
+   ],
+   "result": "Ragnarok, Divine Deliverance"
+  },
   "fr": {
    "name": "Ragnarok, Divine Deliverance",
    "text": "Vigilance, menace, piétinement, portée, célérité\nQuand Ragnarok meurt, détruisez un permanent ciblé et renvoyez sur le champ de bataille une carte de permanent non-légendaire ciblée depuis votre cimetière.",
@@ -3499,6 +3521,7 @@
   "legalities": {
    "standard": "legal"
   },
+  "layout": "saga",
   "fr": {
    "name": "Invocation : Anima",
    "text": "(Au moment où cette saga arrive et après votre étape de pioche, ajoutez un marqueur « sapience ». Sacrifiez après IV.)\nI, II, III — Lamento — Vous piochez une carte et vous perdez 1 point de vie.\nIV — Chaos — Chaque adversaire sacrifie une créature de son choix et perd 3 points de vie.\n//\nMenace",
@@ -3524,6 +3547,7 @@
   "legalities": {
    "standard": "legal"
   },
+  "layout": "saga",
   "fr": {
    "name": "Invocation : Odin, Primordial",
    "text": "(Au moment où cette saga arrive et après votre étape de pioche, ajoutez un marqueur « sapience ». Sacrifiez après III.)\nI — Gungnir — Détruisez une créature ciblée qu'un adversaire contrôle.\nII — Zantetsuken — Cette créature acquiert « À chaque fois que cette créature inflige des blessures de combat à un joueur, ce joueur perd la partie. »\nIII — Hall du chagrin — Piochez deux cartes. Chaque joueur perd 2 points de vie.",
@@ -4708,6 +4732,7 @@
   "legalities": {
    "standard": "legal"
   },
+  "layout": "saga",
   "fr": {
    "name": "Invocation : Brynhildr",
    "text": "(Au moment où cette saga arrive et après votre étape de pioche, ajoutez un marqueur « sapience ». Sacrifiez après III.)\nI — Combos — Exilez la carte du dessus de votre bibliothèque. Pendant chaque tour où vous avez mis un marqueur « sapience » sur cette saga, vous pouvez jouer cette carte.\nII, III — Symbiose — Quand vous lancez pour la prochaine fois un sort de créature ce tour-ci, il acquiert la célérité jusqu'à la fin du tour.",
@@ -4733,6 +4758,7 @@
   "legalities": {
    "standard": "legal"
   },
+  "layout": "saga",
   "fr": {
    "name": "Invocation : Ramuh",
    "text": "(Au moment où cette saga arrive et après votre étape de pioche, ajoutez un marqueur « sapience ». Sacrifiez après III.)\nI — Éclair du jugement — Cette créature inflige un nombre de blessures égal au nombre de cartes non-créature, non-terrain dans votre cimetière à une créature ciblée qu'un adversaire contrôle.\nII, III — Les sorciers que vous contrôlez gagnent +1/+0 jusqu'à la fin du tour.",
@@ -4761,6 +4787,7 @@
   "legalities": {
    "standard": "legal"
   },
+  "layout": "saga",
   "fr": {
    "name": "Invocation : Cerbère",
    "text": "(Au moment où cette saga arrive et après votre étape de pioche, ajoutez un marqueur « sapience ». Sacrifiez après III.)\nI — Surveillez 1. (Regardez la carte du dessus de votre bibliothèque. Vous pouvez la mettre dans votre cimetière.)\nII — Double sort — Quand vous lancez pour la prochaine fois ce tour-ci un sort d'éphémère ou de rituel, copiez-le. Vous pouvez choisir de nouvelles cibles pour cette copie.\nIII — Triple sort — Quand vous lancez pour la prochaine fois ce tour-ci un sort d'éphémère ou de rituel, copiez-le deux fois. Vous pouvez choisir de nouvelles cibles pour ces copies.",
@@ -4789,6 +4816,7 @@
   "legalities": {
    "standard": "legal"
   },
+  "layout": "saga",
   "fr": {
    "name": "Invocation : Ifrit",
    "text": "(Au moment où cette saga arrive et après votre étape de pioche, ajoutez un marqueur « sapience ». Sacrifiez après IV.)\nI, II— Vous pouvez vous défausser d'une carte. Si vous faites ainsi, piochez une carte.\nIII, IV — Ajoutez {R}.",
@@ -5862,6 +5890,7 @@
   "legalities": {
    "standard": "legal"
   },
+  "layout": "saga",
   "fr": {
    "name": "Invocation : Gros chocobo",
    "text": "(Au moment où cette saga arrive et après votre étape de pioche, ajoutez un marqueur « sapience ». Sacrifiez après IV.)\nI — Kwé —Créez un jeton de créature 2/2 verte Oiseau avec « À chaque fois qu'un terrain que vous contrôlez arrive, ce jeton gagne +1/+0 jusqu'à la fin du tour. »\nII, III, IV — Choco-Largage — Les créatures que vous contrôlez acquièrent le piétinement jusqu'à la fin du tour.",
@@ -5887,6 +5916,7 @@
   "legalities": {
    "standard": "legal"
   },
+  "layout": "saga",
   "fr": {
    "name": "Invocation : Fenrir",
    "text": "(Au moment où cette saga arrive et après votre étape de pioche, ajoutez un marqueur « sapience ». Sacrifiez après III.)\nI — Croc sélénité — Cherchez dans votre bibliothèque une carte de terrain de base, mettez-la sur le champ de bataille engagée, puis mélangez.\nII — Hurlée au ciel — Quand vous lancez pour la prochaine fois un sort de créature ce tour-ci, cette créature arrive avec un marqueur +1/+1 supplémentaire sur elle.\nIII — Grogne écliptique — Piochez une carte si vous contrôlez la créature avec la force la plus élevée ou qui partage la force la plus élevée.",
@@ -5916,6 +5946,7 @@
   "legalities": {
    "standard": "legal"
   },
+  "layout": "saga",
   "fr": {
    "name": "Invocation : Titan",
    "text": "(Au moment où cette saga arrive et après votre étape de pioche, ajoutez un marqueur « sapience ». Sacrifiez après III.)\nI — Meulez cinq cartes.\nII— Renvoyez sur le champ de bataille, engagées, toutes les cartes de terrain depuis votre cimetière.\nIII — Jusqu'à la fin du tour, une autre créature ciblée que vous contrôlez acquiert le piétinement et gagne +X/+X, X étant le nombre de terrains que vous contrôlez.\n//\nPortée, piétinement",
@@ -6096,11 +6127,12 @@
   "name": "Vanille, Cheerful l'Cie",
   "number": "211",
   "rarity": "uncommon",
-  "layout": "meld",
-  "manaCost": "",
+  "manaCost": "{3}{G}",
   "cmc": 4,
   "typeLine": "Legendary Creature — Human Cleric",
-  "oracleText": "",
+  "oracleText": "When Vanille enters, mill two cards, then return a permanent card from your graveyard to your hand.\nAt the beginning of your first main phase, if you both own and control Vanille and a creature named Fang, Fearless l'Cie, you may pay {3}{B}{G}. If you do, exile them, then meld them into Ragnarok, Divine Deliverance.",
+  "power": "3",
+  "toughness": "2",
   "colors": [
    "G"
   ],
@@ -6113,7 +6145,14 @@
   "legalities": {
    "standard": "legal"
   },
-  "faces": [],
+  "layout": "meld",
+  "meld": {
+   "parts": [
+    "Fang, Fearless l'Cie",
+    "Vanille, Cheerful l'Cie"
+   ],
+   "result": "Ragnarok, Divine Deliverance"
+  },
   "fr": {
    "name": "Vanille, Cheerful l'Cie",
    "text": "Quand Vanille arrive, meulez deux cartes, puis renvoyez une carte de permanent depuis votre cimetière dans votre main.\nAu début de votre première phase principale, si vous possédez et contrôlez Vanille et une créature appelée Fang, l'Cie intrépide, vous pouvez payer {3}{B}{G}. Si vous faites ainsi, exilez-les, puis assimilez-les en Ragnarok, délivrance divine.",

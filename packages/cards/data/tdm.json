@@ -4805,6 +4805,7 @@
   "legalities": {
    "standard": "legal"
   },
+  "layout": "saga",
   "fr": {
    "name": "Éveiller les morts honorés",
    "typeLine": "Enchantement — saga",
@@ -6138,6 +6139,7 @@
   "legalities": {
    "standard": "legal"
   },
+  "layout": "saga",
   "fr": {
    "name": "Redécouvrir la Voie",
    "typeLine": "Enchantement — saga",
@@ -6222,6 +6224,7 @@
   "legalities": {
    "standard": "legal"
   },
+  "layout": "saga",
   "fr": {
    "name": "Renaissance des ancêtres",
    "typeLine": "Enchantement — saga",
@@ -6276,6 +6279,7 @@
   "legalities": {
    "standard": "legal"
   },
+  "layout": "saga",
   "fr": {
    "name": "Rugissement du Chant sans fin",
    "typeLine": "Enchantement — saga",
@@ -6624,6 +6628,7 @@
   "legalities": {
    "standard": "legal"
   },
+  "layout": "saga",
   "fr": {
    "name": "Tonnerre de l'unité",
    "typeLine": "Enchantement — saga",

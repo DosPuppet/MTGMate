@@ -46,6 +46,8 @@ export const DEFAULT_FORMAT: Format = "standard";
 /** Problème de légalité d'une carte dans un format, ou undefined si elle y est légale. */
 export function legalityIssue(c: CardDef, format: Format = DEFAULT_FORMAT): string | undefined {
   const label = FORMAT_LABELS[format];
+  // Carte assemblée (verso commun de deux cartes à assemblage) : elle n'existe pas seule.
+  if (c.meldResult) return `${c.name} est une carte assemblée : elle ne se met pas dans un deck`;
   switch (c.legalities?.[format]) {
     case "legal":
       return undefined;

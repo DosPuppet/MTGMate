@@ -42,7 +42,7 @@ const RARITIES: [string, string][] = [
 ];
 
 const POOL: CardDef[] = Object.values(CARDS)
-  .filter((c) => !c.isToken)
+  .filter((c) => !c.isToken && !c.meldResult)
   .sort((a, b) => colorRank(a) - colorRank(b) || manaValue(a.manaCost) - manaValue(b.manaCost) || a.name.localeCompare(b.name));
 
 /** « Standard 836/5174 jouables » ou, pour une extension, « Foundations 517/517 jouables ». */

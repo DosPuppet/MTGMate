@@ -356,6 +356,17 @@ export function moveObject(
     if (owner) owner.turnStats.milled += 1;
   }
   delete s.objects[id];
+  // Permanent assemblé : il redevient ses deux cartes dans la zone de destination (701.42c).
+  if (o.melded) {
+    const parts = o.melded.map((p) =>
+      createObject(s, p.defId, o.owner, to, { uid: p.uid, controller: to === "battlefield" ? o.controller : o.owner }),
+    );
+    if (to === "library") shuffle(s, s.players[o.owner]?.library ?? []);
+    bump(s);
+    rulesEvent(s, { e: "zone", oldId: id, newId: parts[0]?.id ?? null, from: from0, to, lki });
+    if (from0 === "battlefield") releaseLinkedExile(s, id);
+    return parts[0]?.id ?? null;
+  }
   // Emrakul : les effets « jusqu'à ce que cette carte soit lancée depuis l'exil » cessent.
   if (from0 === "exile" && s.effects.some((e) => e.untilExiledUid === o.uid)) {
     s.effects = s.effects.filter((e) => e.untilExiledUid !== o.uid);
@@ -394,9 +405,14 @@ export function moveObject(
 export function registerDef(s: GameState, d: CardDef): void {
   s.defs[d.id] ??= d;
   for (const f of d.faceDefs ?? []) s.defs[f.id] ??= f;
+  if (d.meldResultDef) registerDef(s, d.meldResultDef);
 }
 
-/** Retire un objet du jeu sans passer par une zone (copie de sort qui cesse d'exister). */
+/** Retire un objet du jeu sans passer par une zone (copie de sort qui cesse d'exister, carte assemblée). */
+export function removeFromGame(s: GameState, id: ObjectId): void {
+  removeObject(s, id);
+}
+
 function removeObject(s: GameState, id: ObjectId): void {
   const o = s.objects[id];
   if (!o) return;

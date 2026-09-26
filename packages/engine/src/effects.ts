@@ -37,6 +37,8 @@ import {
   onBattlefield,
   opponentsOf,
   P1P1,
+  registerDef,
+  removeFromGame,
   rulesEvent,
   setPrepared,
   shuffle,
@@ -417,6 +419,12 @@ export function moveWithSpec(s: GameState, controller: PlayerId, id: ObjectId, s
   if (moved && zone === "exile" && spec.counters) changeCounters(s, moved, spec.counters.kind, spec.counters.n);
   if (!moved || zone !== "battlefield") return newId_;
   if (spec.tapped) moved.tapped = true;
+  // « … sur le champ de bataille transformée » : le verso d'une carte recto-verso transformable.
+  const back = s.defs[moved.defId]?.layout === "transform" ? s.defs[moved.defId]?.faceDefs?.[1] : undefined;
+  if (spec.transformed && back) {
+    moved.faceDefId = back.id;
+    bump(s);
+  }
   if (spec.counters) changeCounters(s, moved, spec.counters.kind, spec.counters.n);
   if (spec.addTypes || spec.addSubtypes || spec.addKeywords) {
     addEffect(
@@ -2057,6 +2065,42 @@ export function runEffect(s: GameState, r: Resolution, e: Effect): OpResult {
         duration: e.duration,
         copyOf: copiedDefId(s, model),
       });
+      return;
+    }
+    case "transform": {
+      for (const id of resolveRef(s, ctx, e.what)) {
+        const o = s.objects[id];
+        const d = o ? s.defs[o.defId] : undefined;
+        const back = d?.layout === "transform" ? d.faceDefs?.[1] : undefined;
+        if (o?.zone !== "battlefield" || !back) continue;
+        o.faceDefId = o.faceDefId === back.id ? undefined : back.id;
+        bump(s);
+        emit({ type: "transform", objectId: id, defId: o.faceDefId ?? o.defId });
+      }
+      return;
+    }
+    case "meld": {
+      // 701.42a : il faut posséder et contrôler les deux permanents.
+      const src = s.objects[ctx.sourceId];
+      const result = src ? s.defs[src.defId]?.meldResultDef : undefined;
+      const partner = s.battlefield.find(
+        (id) =>
+          id !== ctx.sourceId &&
+          s.objects[id]?.owner === ctx.controller &&
+          s.objects[id]?.controller === ctx.controller &&
+          chars(s, id).name === e.with,
+      );
+      if (src?.zone !== "battlefield" || src.owner !== ctx.controller || !partner || !result) return;
+      registerDef(s, result);
+      const parts = [src, s.objects[partner]].map((o) => ({ defId: o?.defId ?? "", uid: o?.uid ?? "" }));
+      const exiled = [ctx.sourceId, partner].map((id) => moveObject(s, id, "exile"));
+      for (const id of exiled) if (id) removeFromGame(s, id);
+      const melded = createObject(s, result.id, ctx.controller, "battlefield");
+      melded.melded = parts;
+      melded.timestamp = nextTimestamp(s);
+      bump(s);
+      emit({ type: "token", objectId: melded.id, defId: result.id, controller: ctx.controller });
+      rulesEvent(s, { e: "zone", oldId: exiled[0] ?? null, newId: melded.id, from: "exile", to: "battlefield", lki: null });
       return;
     }
     case "noLegendRuleThisTurn": {

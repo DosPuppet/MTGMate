@@ -595,6 +595,7 @@
   "legalities": {
    "standard": "legal"
   },
+  "layout": "saga",
   "fr": {
    "name": "Le retour du Roi des montagnes",
    "text": "(Au moment où cette saga arrive et après votre étape de pioche, ajoutez un marqueur « sapience ». Sacrifiez après III.)\nI - Recrutez. (Piochez une carte, puis défaussez-vous d'une carte. Si vous vous êtes défaussé d'une carte non-terrain, créez un jeton de créature 1/1 blanche Humain et Soldat.)\nII - Renvoyez sur le champ de bataille, depuis votre cimetière, une carte de créature ciblée avec une valeur de mana inférieure ou égale à 3.\nIII - Mettez un marqueur +1/+1 sur jusqu'à une créature ciblée.",
@@ -672,6 +673,7 @@
   "legalities": {
    "standard": "legal"
   },
+  "layout": "saga",
   "fr": {
    "name": "La route se poursuit toujours",
    "text": "(Au moment où cette saga arrive et après votre étape de pioche, ajoutez un marqueur « sapience ». Sacrifiez après IV.)\nI - Cherchez dans votre bibliothèque jusqu'à deux cartes de plaine de base, exilez-les, puis mélangez. Vous gagnez 2 points de vie.\nII, III - Mettez une carte exilée par cette saga dans la main de son propriétaire.\nIV - À chaque fois que vous attaquez ce tour-ci, une créature ciblée que vous contrôlez gagne +1/+1 jusqu'à la fin du tour pour chaque plaine que vous contrôlez.",
@@ -1442,6 +1444,7 @@
   "legalities": {
    "standard": "legal"
   },
+  "layout": "saga",
   "fr": {
    "name": "La vieille grosse araignée ne me voit pas",
    "text": "(Au moment où cette saga arrive et après votre étape de pioche, ajoutez un marqueur « sapience ». Sacrifiez après IV.)\nI - Une créature ciblée que vous contrôlez acquiert la défense talismanique tant que cette saga reste sur le champ de bataille.\nII - Prévenez toutes les blessures qui devraient être infligées à jusqu'à une créature ciblée tant que cette saga reste sur le champ de bataille.\nIII, IV - Piochez une carte.",
@@ -1540,6 +1543,7 @@
   "legalities": {
    "standard": "legal"
   },
+  "layout": "saga",
   "fr": {
    "name": "Roule, roule, roule",
    "text": "(Au moment où cette saga arrive et après votre étape de pioche, ajoutez un marqueur « sapience ». Sacrifiez après IV.)\nI, II, III, IV - Exilez jusqu'à une cible que vous contrôlez, créature ou terrain. Si vous faites ainsi, renvoyez-la sur le champ de bataille sous le contrôle de son propriétaire au début de la prochaine étape de fin.",
@@ -1809,6 +1813,7 @@
   "legalities": {
    "standard": "legal"
   },
+  "layout": "saga",
   "fr": {
    "name": "File, file ! À Gobelin-ville",
    "text": "(Au moment où cette saga arrive et après votre étape de pioche, ajoutez un marqueur « sapience ». Sacrifiez après IV.)\nI - Un adversaire ciblé révèle sa main. Vous y choisissez une carte non-terrain. Ce joueur se défausse de cette carte.\nII - Amassez des gobelins 1. (Mettez un marqueur +1/+1 sur une armée que vous contrôlez. C'est aussi un gobelin. Si vous ne contrôlez pas d'armée, créez d'abord un jeton de créature 0/0 noire Gobelin et Armée.)\nIII, IV - Un adversaire ciblé perd 1 point de vie et vous gagnez 1 point de vie.",
@@ -2500,6 +2505,7 @@
   "legalities": {
    "standard": "legal"
   },
+  "layout": "saga",
   "fr": {
    "name": "Brûle, brûle, arbre, plante",
    "text": "(Au moment où cette saga arrive et après votre étape de pioche, ajoutez un marqueur « sapience ». Sacrifiez après IV.)\nI - Cette saga inflige 6 blessures à une créature ciblée qu'un adversaire contrôle.\nII - Détruisez un artefact ciblé qu'un adversaire contrôle.\nIII, IV - Ajoutez {R}.",
@@ -2928,6 +2934,7 @@
   "legalities": {
    "standard": "legal"
   },
+  "layout": "saga",
   "fr": {
    "name": "Monts brumeux, cimes glacées",
    "text": "(Au moment où cette saga arrive et après votre étape de pioche, ajoutez un marqueur « sapience ». Sacrifiez après IV.)\nI, II, III, IV - Créez un jeton Trésor. Puis, si vous contrôlez au moins quatre trésors, sacrifiez cette saga. Si vous faites ainsi, créez un jeton de créature 6/6 rouge Dragon avec le vol. (Un jeton Trésor est un artefact avec « {T}, sacrifiez ce jeton : Ajoutez un mana de la couleur de votre choix. »)",
@@ -3502,6 +3509,7 @@
   "legalities": {
    "standard": "legal"
   },
+  "layout": "saga",
   "fr": {
    "name": "Ici dans la vallée",
    "text": "(Au moment où cette saga arrive et après votre étape de pioche, ajoutez un marqueur « sapience ». Sacrifiez après IV.)\nI - Cherchez dans votre bibliothèque une carte de terrain de base, révélez-la, mettez-la dans votre main, puis mélangez.\nII - Cette saga acquiert « Toucheterre - À chaque fois qu'un terrain que vous contrôlez arrive, créez un jeton de créature 1/1 verte Elfe. »\nIII, IV - Les elfes que vous contrôlez gagnent +1/+0 et acquièrent la vigilance jusqu'à la fin du tour.",

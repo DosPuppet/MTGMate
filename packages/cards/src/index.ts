@@ -29,6 +29,10 @@ export const CARDS: Record<string, CardDef> = {};
 for (const set of SETS) {
   for (const raw of set.data) CARDS[raw.name] ??= toCardDef(raw, set.scripts[raw.name], set.code, set.scripts);
 }
+// Assemblage : chaque partie embarque la définition de la carte assemblée (enregistrée avec elle dans la partie).
+for (const c of Object.values(CARDS)) {
+  if (c.meld?.result && !c.meldResult) c.meldResultDef = CARDS[c.meld.result];
+}
 
 export function card(name: string): CardDef {
   const c = CARDS[name];

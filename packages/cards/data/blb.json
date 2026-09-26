@@ -123,6 +123,7 @@
   "legalities": {
    "standard": "legal"
   },
+  "layout": "class",
   "fr": {
    "name": "Talent du constructeur",
    "typeLine": "Enchantement — classe",
@@ -147,6 +148,7 @@
   "legalities": {
    "standard": "legal"
   },
+  "layout": "class",
   "fr": {
    "name": "Talent du pourvoyeur",
    "typeLine": "Enchantement — classe",
@@ -1344,6 +1346,7 @@
   "legalities": {
    "standard": "legal"
   },
+  "layout": "class",
   "fr": {
    "name": "Talent de la commère",
    "typeLine": "Enchantement — classe",
@@ -1982,6 +1985,7 @@
   "legalities": {
    "standard": "banned"
   },
+  "layout": "class",
   "fr": {
    "name": "Talent du chassorage",
    "typeLine": "Enchantement — classe",
@@ -2193,6 +2197,7 @@
   "legalities": {
    "standard": "legal"
   },
+  "layout": "class",
   "fr": {
    "name": "Talent du bandit",
    "typeLine": "Enchantement — classe",
@@ -2946,6 +2951,7 @@
   "legalities": {
    "standard": "legal"
   },
+  "layout": "class",
   "fr": {
    "name": "Talent du charognard",
    "typeLine": "Enchantement — classe",
@@ -3288,6 +3294,7 @@
   "legalities": {
    "standard": "legal"
   },
+  "layout": "class",
   "fr": {
    "name": "Talent de l'artiste",
    "typeLine": "Enchantement — classe",
@@ -3312,6 +3319,7 @@
   "legalities": {
    "standard": "legal"
   },
+  "layout": "class",
   "fr": {
    "name": "Talent du ferronnier",
    "typeLine": "Enchantement — classe",
@@ -4768,6 +4776,7 @@
   "legalities": {
    "standard": "legal"
   },
+  "layout": "class",
   "fr": {
    "name": "Talent du chasseur",
    "typeLine": "Enchantement — classe",
@@ -4792,6 +4801,7 @@
   "legalities": {
    "standard": "legal"
   },
+  "layout": "class",
   "fr": {
    "name": "Talent de l'aubergiste",
    "typeLine": "Enchantement — classe",

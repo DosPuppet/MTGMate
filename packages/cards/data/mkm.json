@@ -16,6 +16,7 @@
   "legalities": {
    "standard": "legal"
   },
+  "layout": "case",
   "fr": {
    "name": "Affaire du Pacte fracassé",
    "typeLine": "Enchantement — affaire",
@@ -202,6 +203,7 @@
   "legalities": {
    "standard": "legal"
   },
+  "layout": "case",
   "fr": {
    "name": "Affaire du Porte-Express",
    "typeLine": "Enchantement — affaire",
@@ -228,6 +230,7 @@
   "legalities": {
    "standard": "legal"
   },
+  "layout": "case",
   "fr": {
    "name": "Affaire de la preuve chipée",
    "typeLine": "Enchantement — affaire",
@@ -254,6 +257,7 @@
   "legalities": {
    "standard": "legal"
   },
+  "layout": "case",
   "fr": {
    "name": "Affaire du festin délaissé",
    "typeLine": "Enchantement — affaire",
@@ -1158,6 +1162,7 @@
   "legalities": {
    "standard": "legal"
   },
+  "layout": "case",
   "fr": {
    "name": "Affaire du Faucon subtilisé",
    "typeLine": "Enchantement — affaire",
@@ -1184,6 +1189,7 @@
   "legalities": {
    "standard": "legal"
   },
+  "layout": "case",
   "fr": {
    "name": "Affaire du laboratoire pillé",
    "typeLine": "Enchantement — affaire",
@@ -2104,6 +2110,7 @@
   "legalities": {
    "standard": "legal"
   },
+  "layout": "case",
   "fr": {
    "name": "Affaire du baiser de la gorgone",
    "typeLine": "Enchantement — affaire",
@@ -2131,6 +2138,7 @@
   "legalities": {
    "standard": "legal"
   },
+  "layout": "case",
   "fr": {
    "name": "Affaire du squelette caché",
    "typeLine": "Enchantement — affaire",
@@ -3000,6 +3008,7 @@
   "legalities": {
    "standard": "legal"
   },
+  "layout": "case",
   "fr": {
    "name": "Affaire des masques brûlants",
    "typeLine": "Enchantement — affaire",
@@ -3026,6 +3035,7 @@
   "legalities": {
    "standard": "legal"
   },
+  "layout": "case",
   "fr": {
    "name": "Affaire de la pulsation pourpre",
    "typeLine": "Enchantement — affaire",
@@ -4119,6 +4129,7 @@
   "legalities": {
    "standard": "legal"
   },
+  "layout": "case",
   "fr": {
    "name": "Affaire de la serre verrouillée",
    "typeLine": "Enchantement — affaire",
@@ -4145,6 +4156,7 @@
   "legalities": {
    "standard": "legal"
   },
+  "layout": "case",
   "fr": {
    "name": "Affaire du jardin piétiné",
    "typeLine": "Enchantement — affaire",

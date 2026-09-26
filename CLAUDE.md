@@ -34,7 +34,7 @@ Objectif : les 18 extensions Standard restantes (environ 4 360 cartes), **100 % 
   - 0.2 import de tout le Standard ✅ ;
   - 0.3 cartes à plusieurs faces ✅ (modèle) ;
   - 0.4 aventures et présages ✅ ;
-  - 0.5 transformation, cartes recto-verso modales, assemblage ;
+  - 0.5 transformation, cartes recto-verso modales, assemblage ✅ ;
   - 0.6 cartes scindées et Salles ;
   - 0.7 Sagas, Classes, Affaires ;
   - 0.8 cartes face cachée ;
@@ -73,6 +73,17 @@ Lot 0.4 (aventures et présages) :
 - une Aventure résolue part en exil « en aventure » (`onAdventure`), d'où son propriétaire peut lancer la créature. Contrecarrée, elle va au cimetière ;
 - un présage (sous-type Omen, même disposition Scryfall que l'aventure) résolu est mélangé dans la bibliothèque ;
 - interface : le menu de la carte en main propose « Lancer [créature] » et « Lancer [aventure] ». Tests dans `engine/test/faces.test.ts`.
+
+Lot 0.5 (recto-verso et assemblage) :
+- transformation (712) : effet `transform` (`fx.transform`), `MoveSpec.transformed` (arrive transformée). Le verso donne les caractéristiques via `faceDefId` (couches, déclencheurs, capacités, vue) ; la valeur de mana du verso est celle du recto (712.8e) ; événement `transform` dans le journal ;
+- cartes recto-verso modales : l'une ou l'autre face se lance (`castableFaces`), et le permanent arrive avec la face lancée ;
+- assemblage (701.42) :
+  - l'importeur garde les cartes à assemblage comme des cartes simples, avec `meld: { parts, result }` ;
+  - chaque partie embarque la définition de la carte assemblée (`meldResultDef`) ;
+  - l'effet `meld` exile les deux cartes et crée un seul permanent (`GameObject.melded`), qui redevient ses deux cartes en quittant le champ de bataille ;
+  - la carte assemblée ne se met pas dans un deck (légalité, deckbuilder, test de fumée) ;
+  - l'invariant de décompte compte deux cartes pour un permanent assemblé ;
+- importeur : reprise automatique sur l'erreur 429 de Scryfall ; la disposition des cartes simples non normales (saga, class, case, meld) est conservée.
 
 ### Reality Fracture (FRA)
 

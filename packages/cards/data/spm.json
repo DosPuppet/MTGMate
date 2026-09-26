@@ -226,6 +226,7 @@
   "legalities": {
    "standard": "legal"
   },
+  "layout": "saga",
   "fr": {
    "name": "Origine de Spider-Man",
    "text": "(Au moment où cette saga arrive et après votre étape de pioche, ajoutez un marqueur « sapience ». Sacrifiez après III.)\nI - Créez un jeton de créature 2/1 verte Araignée avec la portée.\nII - Mettez un marqueur +1/+1 sur une créature ciblée que vous contrôlez. Elle devient une araignée et héros légendaire en plus de ses autres types.\nIII - Une créature ciblée que vous contrôlez acquiert la double initiative jusqu'à la fin du tour.",
@@ -744,6 +745,7 @@
   "legalities": {
    "standard": "legal"
   },
+  "layout": "saga",
   "fr": {
    "name": "Saga du clone",
    "text": "(Au moment où cette saga arrive et après votre étape de pioche, ajoutez un marqueur « sapience ». Sacrifiez après III.)\nI - Surveillez 3.\nII - Quand vous lancez pour la prochaine fois un sort de créature ce tour-ci, copiez-le, excepté que la copie n'est pas légendaire.\nIII - Choisissez un nom de carte. À chaque fois qu'une créature avec le nom choisi inflige des blessures de combat à un joueur ce tour-ci, piochez une carte.",
@@ -1459,6 +1461,7 @@
   "legalities": {
    "standard": "legal"
   },
+  "layout": "saga",
   "fr": {
    "name": "La mort de Gwen Stacy",
    "text": "(Au moment où cette saga arrive et après votre étape de pioche, ajoutez un marqueur « sapience ». Sacrifiez après III.)\nI - Détruisez une créature ciblée.\nII - Chaque joueur peut se défausser d'une carte. Chaque joueur qui ne le fait pas perd 3 points de vie.\nIII - Exilez les cimetières de n'importe quel nombre de joueurs ciblés.",
@@ -2304,6 +2307,7 @@
   "legalities": {
    "standard": "legal"
   },
+  "layout": "saga",
   "fr": {
    "name": "Carnage maximum",
    "text": "(Au moment où cette saga arrive et après votre étape de pioche, ajoutez un marqueur « sapience ». Sacrifiez après III.)\nI - Jusqu'à votre prochain tour, chaque créature attaque à chaque combat si possible et attaque un joueur autre que vous si possible.\nII - Ajoutez {R}{R}{R}.\nIII - Cette saga inflige 5 blessures à chaque adversaire.",
@@ -2875,6 +2879,7 @@
   "legalities": {
    "standard": "legal"
   },
+  "layout": "saga",
   "fr": {
    "name": "La dernière chasse de Kraven",
    "text": "(Au moment où cette saga arrive et après votre étape de pioche, ajoutez un marqueur « sapience ». Sacrifiez après III.)\nI - Meulez cinq cartes. Quand vous faites ainsi, cette saga inflige à une créature ciblée un nombre de blessures égal à la force la plus élevée parmi les cartes de créature dans votre cimetière.\nII - Une créature ciblée que vous contrôlez gagne +2/+2 jusqu'à la fin du tour.\nIII - Renvoyez une carte de créature ciblée depuis votre cimetière dans votre main.",

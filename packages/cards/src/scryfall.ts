@@ -37,6 +37,8 @@ export interface RawCard {
     fr?: { name?: string; typeLine?: string; text?: string };
   };
   fr?: { name?: string; typeLine?: string; text?: string; image?: string };
+  /** Assemblage : les deux parties et la carte assemblée. */
+  meld?: { parts: string[]; result?: string };
   /** Disposition Scryfall quand elle n'est pas « normal » (saga, class, case, adventure, transform…). */
   layout?: string;
   /** Cartes à plusieurs faces (aventure, scindée, recto-verso, assemblage) : toutes les faces. */
@@ -276,7 +278,7 @@ function prepareSpellDef(raw: RawCard, spell: NonNullable<CardScript["prepareSpe
 }
 
 /** Dispositions à plusieurs faces que le moteur sait jouer (complété lot par lot : aventures, recto-verso…). */
-export const HANDLED_LAYOUTS = new Set<string>(["adventure"]);
+export const HANDLED_LAYOUTS = new Set<string>(["adventure", "transform", "modal_dfc", "meld"]);
 
 /**
  * Définition d'une carte. Pour une carte à plusieurs faces, chaque face a sa propre définition (script cherché par
@@ -293,6 +295,11 @@ export function toCardDef(
     const d = singleDef(raw, script, set);
     // Assemblage (meld) : chaque carte est importée seule ; jouable quand le moteur gère la disposition.
     if (raw.layout === "meld" && !HANDLED_LAYOUTS.has("meld")) d.implemented = false;
+    if (raw.meld) {
+      d.layout = "meld";
+      d.meld = { parts: raw.meld.parts, result: raw.meld.result };
+      d.meldResult = raw.name === raw.meld.result;
+    }
     return d;
   }
   const faceDefs = raw.faces.map((f, i) => ({
@@ -300,6 +307,9 @@ export function toCardDef(
     id: `${slug(raw.name)}__${i}`,
   }));
   const front = faceDefs[0] as CardDef;
+  // 712.8e : la valeur de mana du verso d'une carte transformable est celle de son recto.
+  const back = faceDefs[1];
+  if (raw.layout === "transform" && back && !back.manaCost) back.manaCost = front.manaCost;
   // La carte hors du jeu a les caractéristiques et le comportement de son recto (script du recto).
   const base = singleDef(
     { ...faceRaw(raw, raw.faces[0] as RawFace), name: raw.name, image: raw.image, fr: raw.fr },

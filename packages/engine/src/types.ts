@@ -174,6 +174,12 @@ export interface CardDef {
    * porte les caractéristiques hors du jeu : celles du recto, ou la réunion des deux moitiés d'une carte scindée.
    */
   faceDefs?: CardDef[];
+  /** Assemblage (701.42) : les deux parties et la carte assemblée, par nom. */
+  meld?: { parts: string[]; result?: string };
+  /** Carte assemblée (verso commun de deux cartes) : elle ne se met pas dans un deck. */
+  meldResult?: boolean;
+  /** Définition de la carte assemblée, enregistrée dans la partie avec la carte (partie d'un assemblage). */
+  meldResultDef?: CardDef;
   /** Définition du sort préparé (copiée en exil quand la créature devient préparée). */
   prepareSpell?: CardDef;
   /** false si la carte a des capacités que le moteur ne sait pas encore gérer. */
@@ -187,7 +193,7 @@ export interface CardDef {
   isToken?: boolean;
 }
 
-export type MultiFaceLayout = "adventure" | "split" | "transform" | "modal_dfc" | "meld";
+export type MultiFaceLayout = "adventure" | "split" | "transform" | "modal_dfc" | "meld" | "saga" | "class" | "case";
 
 /** Une face affichable (sort préparé, autre face d'une carte à plusieurs faces). */
 export interface PrepareFace {
@@ -819,6 +825,8 @@ export interface MoveSpec {
   addTypes?: CardType[];
   addSubtypes?: string[];
   addKeywords?: Keyword[];
+  /** Arrive transformé (verso d'une carte recto-verso). */
+  transformed?: boolean;
 }
 
 export type Effect =
@@ -986,6 +994,10 @@ export type Effect =
   | { op: "castCopiesFree"; what: Ref[]; maxTotalManaValue: number }
   /** « La règle des légendes ne s'applique pas aux permanents que vous contrôlez ce tour-ci. » */
   | { op: "noLegendRuleThisTurn" }
+  /** Transforme les permanents recto-verso désignés (712.10 : recto ↔ verso). */
+  | { op: "transform"; what: Ref }
+  /** « Exilez-les, puis assemblez-les en [carte] » : la source et un permanent du nom donné (701.42). */
+  | { op: "meld"; with: string }
   /** « [Ce permanent] devient une copie de [la cible] jusqu'à la fin du tour » (couche 1). */
   | { op: "becomeCopy"; what: Ref; of: Ref; duration: "endOfTurn" | "permanent" }
   /** Donne le contrôle de l'objet à un joueur, sans limite de durée (Harmless Offering). */
@@ -1145,6 +1157,8 @@ export interface GameObject {
   preparedFor?: ObjectId;
   /** Face active d'une carte à plusieurs faces (aventure lancée, verso…) : ses caractéristiques remplacent celles de la carte. */
   faceDefId?: string;
+  /** Permanent assemblé (701.42) : les deux cartes qui le forment ; il redevient ces cartes en quittant le champ de bataille. */
+  melded?: { defId: string; uid: string }[];
   /** Carte « en aventure » (715.4) : exilée après la résolution de son aventure ; son propriétaire peut lancer la créature. */
   onAdventure?: boolean;
   /** Copie d'une carte (Uldaros) : quitte l'exil seulement pour la pile ; devient un jeton sur le champ de bataille. */
@@ -1677,6 +1691,8 @@ export type GameEvent =
   | { type: "dies"; objectId: ObjectId; defId: string; to: Zone }
   | { type: "destroy"; objectId: ObjectId; defId: string }
   | { type: "token"; objectId: ObjectId; defId: string; controller: PlayerId }
+  /** Un permanent recto-verso se transforme (`defId` : la face désormais visible). */
+  | { type: "transform"; objectId: ObjectId; defId: string }
   | { type: "attack"; player: PlayerId; attackers: { id: ObjectId; defId: string }[] }
   | {
       type: "block";

@@ -276,6 +276,13 @@ export function castableFaces(s: GameState, card: ObjectId, d: CardDef): [number
       [undefined, d],
       [1, adventure],
     ];
+  // Carte recto-verso modale (712.12) : l'une ou l'autre face se lance.
+  const back = d.layout === "modal_dfc" ? d.faceDefs?.[1] : undefined;
+  if (back && !back.types.includes("Land"))
+    return [
+      [undefined, d],
+      [1, back],
+    ];
   return [[undefined, d]];
 }
 
@@ -929,8 +936,10 @@ function finishResolution(
   if (item.kind === "spell" && s.objects[item.sourceId]) {
     const d = s.defs[item.sourceDefId];
     if (d && isPermanentCard(d)) {
+      // Verso d'une carte recto-verso modale lancé : le permanent arrive avec cette face.
+      const face = s.objects[item.sourceId]?.faceDefId;
       // 303.4f : une Aura arrive attachée à l'objet qu'elle ciblait.
-      moveObject(s, item.sourceId, "battlefield", {
+      const enteredId = moveObject(s, item.sourceId, "battlefield", {
         controller: item.controller,
         enters: {
           x: item.x,
@@ -941,6 +950,11 @@ function finishResolution(
           chosen: chosenFrom(vars),
         },
       });
+      const arrived = enteredId ? s.objects[enteredId] : undefined;
+      if (face && arrived) {
+        arrived.faceDefId = face;
+        bump(s);
+      }
       // Carnelian Orb : « il acquiert la célérité jusqu'à la fin du tour ».
       const entered = s.battlefield[s.battlefield.length - 1];
       if (item.riders?.includes("haste") && entered) {

@@ -828,6 +828,7 @@
   "legalities": {
    "standard": "legal"
   },
+  "layout": "saga",
   "fr": {
    "name": "Origine des Vengeurs",
    "text": "(Au moment où cette saga arrive et après votre étape de pioche, ajoutez un marqueur « sapience ». Sacrifiez après III.)\nI - Regard 2.\nII - Vous pouvez mettre sur le champ de bataille une carte de créature Héros avec une valeur de mana inférieure ou égale à 3 depuis votre main. Si vous ne le faites pas, piochez une carte.\nIII - Mettez un marqueur +1/+1 sur chaque créature que vous contrôlez.",
@@ -5339,6 +5340,7 @@
   "legalities": {
    "standard": "legal"
   },
+  "layout": "saga",
   "fr": {
    "name": "Hulk : Guerre Mondiale",
    "text": "(Au moment où cette saga arrive et après votre étape de pioche, ajoutez un marqueur « sapience ». Sacrifiez après III.)\nI - Le prochain sort de créature rouge ou vert que vous lancez ce tour-ci peut être lancé sans payer son coût de mana.\nII - Mettez trois marqueurs +1/+1 sur une créature ciblée que vous contrôlez.\nIII - Choisissez une créature ciblée que vous contrôlez. Jusqu'à la fin du tour, doublez sa force et son endurance et elle acquiert le piétinement.",
@@ -5497,6 +5499,7 @@
   "legalities": {
    "standard": "legal"
   },
+  "layout": "saga",
   "fr": {
    "name": "La guerre des armures",
    "text": "(Au moment où cette saga arrive et après votre étape de pioche, ajoutez un marqueur « sapience ». Sacrifiez après III.)\nI - Vous pouvez piocher une carte pour chaque artefact que vous contrôlez. Si vous faites ainsi, chaque adversaire pioche une carte.\nII - Les sorts d'artefact que vous lancez ce tour-ci coûtent {1} de moins à lancer.\nIII - Cette saga inflige X blessures à un adversaire ciblé, X étant la valeur de mana la plus élevée parmi les artefacts que vous contrôlez.",
@@ -5549,6 +5552,7 @@
   "legalities": {
    "standard": "legal"
   },
+  "layout": "saga",
   "fr": {
    "name": "Vengeurs : état de siège",
    "text": "(Au moment où cette saga arrive et après votre étape de pioche, ajoutez un marqueur « sapience ». Sacrifiez après III.)\nI - Créez deux jetons de créature 2/1 noire Méchant avec la menace.\nII - Cette saga inflige 2 blessures à chaque créature non-Méchant et à chaque adversaire.\nIII - Créez un jeton Trésor pour chaque méchant que vous contrôlez.",
@@ -5738,6 +5742,7 @@
   "legalities": {
    "standard": "legal"
   },
+  "layout": "saga",
   "fr": {
    "name": "L'arrivée de Galactus",
    "text": "(Au moment où cette saga arrive et après votre étape de pioche, ajoutez un marqueur « sapience ». Sacrifiez après IV.)\nI - Détruisez jusqu'à un permanent non-terrain ciblé.\nII, III - Chaque adversaire perd 2 points de vie.\nIV - Créez Galactus, un jeton de créature légendaire 16/16 Ancêtre et Extraterrestre avec le vol, le piétinement et « À chaque fois que Galactus attaque, détruisez un terrain ciblé. »",
@@ -6307,6 +6312,7 @@
   "legalities": {
    "standard": "legal"
   },
+  "layout": "saga",
   "fr": {
    "name": "Civil War : les super-héros",
    "text": "(Au moment où cette saga arrive et après votre étape de pioche, ajoutez un marqueur « sapience ». Sacrifiez après III.)\nI - Acquérez le contrôle de jusqu'à deux créatures ciblées avec une valeur de mana totale inférieure ou égale à 6 tant que cette saga reste sur le champ de bataille.\nII - Les créatures que vous contrôlez gagnent +1/+1 et acquièrent la vigilance jusqu'à la fin du tour.\nIII - Une créature ciblée que vous contrôlez se bat contre jusqu'à une autre créature ciblée.",

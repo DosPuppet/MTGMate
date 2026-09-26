@@ -126,3 +126,114 @@ describe("présage à deux faces (disposition « adventure » chez Scryfall)", (
     expect(s.exile).toHaveLength(0);
   });
 });
+
+/** Carte transformable de test : « Loup-garou timide » 1/1 {1}{R} // « Loup-garou furieux » 4/4 piétinement. */
+const shy = customCard({
+  name: "Loup-garou timide",
+  manaCost: parseManaCost("{1}{R}"),
+  manaCostText: "{1}{R}",
+  power: 1,
+  toughness: 1,
+});
+const fierce = customCard({
+  name: "Loup-garou furieux",
+  manaCost: parseManaCost("{1}{R}"), // 712.8e : valeur de mana du recto
+  manaCostText: "",
+  power: 4,
+  toughness: 4,
+  keywords: ["trample"],
+});
+const WEREWOLF: CardDef = {
+  ...shy,
+  id: "test-loup-garou",
+  name: "Loup-garou timide // Loup-garou furieux",
+  layout: "transform",
+  faceDefs: [
+    { ...shy, id: "test-loup-garou__0" },
+    { ...fierce, id: "test-loup-garou__1" },
+  ],
+};
+
+describe("cartes transformables (712)", () => {
+  it("effet transform et arrivée transformée", async () => {
+    const { runEffect } = await import("../src/effects");
+    const { moveWithSpec } = await import("../src/effects");
+    const s = scenario({ p1: { battlefield: [WEREWOLF], graveyard: [WEREWOLF] } });
+    const id = idOf(s, "p1", "battlefield", WEREWOLF.name);
+    const res = {
+      item: { id: "x", controller: "p1", sourceId: id, sourceDefId: WEREWOLF.id, targets: {} },
+      controller: "p1",
+      targets: {},
+      vars: {},
+      pc: 0,
+    };
+    runEffect(s, res as never, { op: "transform", what: { kind: "self" } });
+    expect(chars(s, id).power).toBe(4);
+    runEffect(s, res as never, { op: "transform", what: { kind: "self" } });
+    expect(chars(s, id).power).toBe(1);
+    const inYard = idOf(s, "p1", "graveyard", WEREWOLF.name);
+    const back = moveWithSpec(s, "p1", inYard, { to: "battlefield", transformed: true }) as string;
+    expect(chars(s, back).name).toBe("Loup-garou furieux");
+  });
+});
+
+/** Carte modale de test : « Savant » 1/1 {U} // « Héros » 3/3 {2}{U}. */
+const savant = customCard({ name: "Savant", manaCost: parseManaCost("{U}"), manaCostText: "{U}", power: 1, toughness: 1 });
+const hero = customCard({ name: "Héros", manaCost: parseManaCost("{2}{U}"), manaCostText: "{2}{U}", power: 3, toughness: 3 });
+const MDFC: CardDef = {
+  ...savant,
+  id: "test-savant",
+  name: "Savant // Héros",
+  layout: "modal_dfc",
+  faceDefs: [
+    { ...savant, id: "test-savant__0" },
+    { ...hero, id: "test-savant__1" },
+  ],
+};
+
+describe("cartes recto-verso modales (712.12)", () => {
+  it("le verso se lance avec son propre coût et arrive avec cette face", () => {
+    let s = scenario({ p1: { battlefield: ["Island", "Island", "Island"], hand: [MDFC] } });
+    const card = idOf(s, "p1", "hand", MDFC.name);
+    expect(castOptions(s, card)).toHaveLength(2);
+    s = act(s, "p1", { type: "cast", card, face: 1 });
+    s = passBoth(s);
+    const id = idOf(s, "p1", "battlefield", MDFC.name);
+    expect(chars(s, id).name).toBe("Héros");
+    expect(chars(s, id).power).toBe(3);
+  });
+});
+
+/** Assemblage de test : « Gauche » et « Droite » s'assemblent en « Colosse » 9/9 ; « Gauche » porte l'effet. */
+const colossus = customCard({ name: "Colosse", power: 9, toughness: 9, meldResult: true, manaCost: null, manaCostText: "" });
+const right = customCard({ name: "Droite", power: 1, toughness: 1, meld: { parts: ["Gauche", "Droite"], result: "Colosse" } });
+const left: CardDef = customCard({
+  name: "Gauche",
+  power: 1,
+  toughness: 1,
+  meld: { parts: ["Gauche", "Droite"], result: "Colosse" },
+  meldResultDef: colossus,
+});
+
+describe("assemblage (701.42)", () => {
+  it("les deux cartes deviennent un seul permanent, qui redevient deux cartes en mourant", async () => {
+    const { runEffect } = await import("../src/effects");
+    const { destroy } = await import("../src/actions");
+    const s = scenario({ p1: { battlefield: [left, right] } });
+    const id = idOf(s, "p1", "battlefield", "Gauche");
+    const res = {
+      item: { id: "x", controller: "p1", sourceId: id, sourceDefId: left.id, targets: {} },
+      controller: "p1",
+      targets: {},
+      vars: {},
+      pc: 0,
+    };
+    runEffect(s, res as never, { op: "meld", with: "Droite" });
+    const melded = idOf(s, "p1", "battlefield", "Colosse");
+    expect(s.battlefield).toHaveLength(1);
+    expect(chars(s, melded).power).toBe(9);
+    expect(s.exile).toHaveLength(0);
+    destroy(s, melded);
+    expect(s.players.p1?.graveyard.map((g) => s.objects[g]?.defId).sort()).toEqual([left.id, right.id].sort());
+  });
+});

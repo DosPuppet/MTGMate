@@ -322,6 +322,10 @@ export const fx = {
   }),
   castCopiesFree: (what: Ref[], maxTotalManaValue: number): Effect => ({ op: "castCopiesFree", what, maxTotalManaValue }),
   noLegendRuleThisTurn: { op: "noLegendRuleThisTurn" } as Effect,
+  /** « Transformez [ce permanent] » (recto ↔ verso). */
+  transform: (what: Ref = ref.self): Effect => ({ op: "transform", what }),
+  /** « Exilez-les, puis assemblez-les » : la source et un permanent nommé `with`, en sa carte assemblée. */
+  meld: (withName: string): Effect => ({ op: "meld", with: withName }),
   becomeCopy: (what: Ref, of: Ref, duration: "endOfTurn" | "permanent" = "endOfTurn"): Effect => ({
     op: "becomeCopy",
     what,

@@ -3343,6 +3343,7 @@
   "legalities": {
    "standard": "legal"
   },
+  "layout": "saga",
   "fr": {
    "name": "La Grotte des amoureux",
    "text": "(Au moment où cette saga arrive et après votre étape de pioche, ajoutez un marqueur « sapience ». Sacrifiez après III.)\nI - Créez deux jetons de créature 1/1 blanche Allié.\nII - Cherchez dans votre bibliothèque une carte de montagne ou de caverne, révélez-la, mettez-la dans votre main, puis mélangez.\nIII - Maîtrisez la Terre 3. (Un terrain ciblé que vous contrôlez devient une créature 0/0 avec la célérité qui est toujours un terrain. Mettez trois marqueurs +1/+1 sur lui. Quand il meurt ou qu'il est exilé, renvoyez-le sur le champ de bataille engagé.)",
@@ -4935,6 +4936,7 @@
   "legalities": {
    "standard": "legal"
   },
+  "layout": "saga",
   "fr": {
    "name": "Les feuilles de vigne",
    "text": "(Au moment où cette saga arrive et après votre étape de pioche, ajoutez un marqueur « sapience ». Sacrifiez après III.)\nI - Meulez trois cartes, puis créez un jeton Nourriture. (C'est un artefact avec « {2}, {T}, sacrifiez ce jeton : Vous gagnez 3 points de vie. »)\nII - Ciblez jusqu'à deux créatures que vous contrôlez. Mettez un marqueur +1/+1 sur chacune d'elles.\nIII - Piochez une carte s'il y a au moins une carte de créature ou de leçon dans votre cimetière.",

@@ -335,6 +335,7 @@
   "legalities": {
    "standard": "legal"
   },
+  "layout": "class",
   "fr": {
    "name": "Talent du chef",
    "text": "(Acquérez le prochain niveau lorsque vous pourriez lancer un rituel pour ajouter sa capacité.)\nÀ chaque fois que vous attaquez, mettez un marqueur +1/+1 sur une créature attaquante ciblée.\n{2W} : Niveau 2",
@@ -879,6 +880,7 @@
   "legalities": {
    "standard": "legal"
   },
+  "layout": "class",
   "fr": {
    "name": "Invente des machines",
    "text": "(Acquérez le prochain niveau lorsque vous pourriez lancer un rituel pour ajouter sa capacité.)\nQuand cette classe arrive, meulez deux cartes, piochez deux cartes, puis défaussez-vous de deux cartes.\n{1U} : Niveau 2",
@@ -1543,6 +1545,7 @@
   "legalities": {
    "standard": "legal"
   },
+  "layout": "saga",
   "fr": {
    "name": "Le clonage de Shredder",
    "text": "(Au moment où cette saga arrive et après votre étape de pioche, ajoutez un marqueur « sapience ». Sacrifiez après III.)\nI - Exilez une carte de créature ciblée de votre cimetière. Créez un jeton qui en est une copie, excepté qu'il n'est pas légendaire et que c'est un mutant en plus de ses autres types.\nII, III - Créez un jeton qui est une copie d'une carte exilée par cette saga, excepté qu'il n'est pas légendaire et que c'est un mutant en plus de ses autres types.",
@@ -1729,6 +1732,7 @@
   "legalities": {
    "standard": "legal"
   },
+  "layout": "class",
   "fr": {
    "name": "Ado ninja",
    "text": "(Acquérez le prochain niveau lorsque vous pourriez lancer un rituel pour ajouter sa capacité.)\nÀ chaque fois qu'une créature que vous contrôlez quitte le champ de bataille, chaque adversaire perd 1 point de vie.\n{1B} : Niveau 2",
@@ -2294,6 +2298,7 @@
   "legalities": {
    "standard": "legal"
   },
+  "layout": "class",
   "fr": {
    "name": "Sympa mais malpoli",
    "text": "(Acquérez le prochain niveau lorsque vous pourriez lancer un rituel pour ajouter sa capacité.)\nÀ chaque fois que vous attaquez, vous pouvez vous défausser d'une carte. Si vous faites ainsi, piochez une carte.\n{1R} : Niveau 2",
@@ -3322,6 +3327,7 @@
   "legalities": {
    "standard": "legal"
   },
+  "layout": "class",
   "fr": {
    "name": "Fêtard",
    "text": "(Acquérez le prochain niveau lorsque vous pourriez lancer un rituel pour ajouter sa capacité.)\nQuand cette classe arrive, chaque joueur crée un jeton Nourriture.\n{1G} : Niveau 2",
@@ -4016,6 +4022,7 @@
   "legalities": {
    "standard": "legal"
   },
+  "layout": "saga",
   "fr": {
    "name": "Le dernier rônin",
    "text": "(Au moment où cette saga arrive et après votre étape de pioche, ajoutez un marqueur « sapience ». Sacrifiez après III.)\nI - Détruisez toutes les créatures.\nII - Meulez quatre cartes. Quand vous faites ainsi, renvoyez une carte de créature ciblée depuis votre cimetière dans votre main.\nIII - À chaque fois qu'une créature que vous contrôlez attaque seule ce tour-ci, mettez trois marqueurs +1/+1 sur elle. Elle acquiert le piétinement, le lien de vie et l'indestructible jusqu'à la fin du tour.",

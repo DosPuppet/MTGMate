@@ -186,6 +186,9 @@ export function describeEvents(
       case "token":
         add(`${who(e.controller)} ${e.controller === me ? "créez" : "crée"} un ${name(e.defId)}.`, kind(e.controller));
         break;
+      case "transform":
+        add(`Transformation : ${name(e.defId)}.`, "info");
+        break;
       case "attack":
         add(
           `${who(e.player)} ${e.player === me ? "attaquez" : "attaque"} avec ${e.attackers.map((a) => name(a.defId)).join(", ")}.`,

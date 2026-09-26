@@ -2207,6 +2207,7 @@
   "legalities": {
    "standard": "legal"
   },
+  "layout": "saga",
   "fr": {
    "name": "Le conte de Tamiyo",
    "typeLine": "Enchantement légendaire — saga",
