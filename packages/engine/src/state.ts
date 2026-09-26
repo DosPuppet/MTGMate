@@ -73,10 +73,16 @@ export type RulesEvent =
   /** Un joueur vient de regarder (scry) ou de surveiller. */
   | { e: "scry"; player: PlayerId }
   /** Capacité de loyauté activée (`cost` : variation de loyauté, négative si des marqueurs sont retirés). */
-  | { e: "loyalty"; player: PlayerId; sourceId: ObjectId; cost: number };
+  | { e: "loyalty"; player: PlayerId; sourceId: ObjectId; cost: number }
+  /** Une créature bloque. */
+  | { e: "block"; blocker: ObjectId; attacker: ObjectId };
 
 /** Signale un événement de règles : les capacités déclenchées correspondantes sont mises en attente. */
 export function rulesEvent(s: GameState, ev: RulesEvent): void {
+  if (ev.e === "discard") {
+    const pl = s.players[ev.player];
+    if (pl) pl.turnStats.cardsDiscarded += ev.cards.length;
+  }
   detectTriggers(s, ev);
 }
 
@@ -149,6 +155,8 @@ export function emptyTurnStats(): TurnStats {
     scried: 0,
     noncombatDamageTaken: 0,
     loyaltyActivations: 0,
+    milled: 0,
+    cardsDiscarded: 0,
   };
 }
 
@@ -237,6 +245,8 @@ export function tapObject(s: GameState, o: GameObject): void {
 export function changeCounters(s: GameState, o: GameObject, kind: string, n: number): number {
   // Doubling Season : des marqueurs mis sur un permanent que vous contrôlez sont doublés (y compris en arrivant).
   if (n > 0 && o.zone === "battlefield") n *= 2 ** doublers(s, o.controller, "counters");
+  // Yoshimaru, Beloved Companion : un marqueur +1/+1 de plus sur vos créatures.
+  if (n > 0 && kind === "+1/+1" && o.zone === "battlefield" && playerStatic(s, o.controller, "plusOneCounterBonus")) n += 1;
   const before = counterCount(o, kind);
   const after = Math.max(0, before + n);
   if (after === 0) delete o.counters[kind];
@@ -340,6 +350,10 @@ export function moveObject(
     }
   }
   const from0 = o.zone;
+  if (from0 === "library" && to === "graveyard") {
+    const owner = s.players[o.owner];
+    if (owner) owner.turnStats.milled += 1;
+  }
   delete s.objects[id];
   if (o.isToken && to !== "battlefield") {
     bump(s);

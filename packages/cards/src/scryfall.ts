@@ -85,7 +85,7 @@ function stripReminder(text: string): string {
 }
 
 /** Garde : « Ward {2} », « Ward—Pay 7 life. » ou « Ward—{3}, Pay 3 life. » */
-const WARD = /\bward(?: ((?:\{[^}]+\})+)|—(?:((?:\{[^}]+\})+), )?pay (\d+) life\.?)/i;
+const WARD = /\bward(?: ((?:\{[^}]+\})+)|—(?:((?:\{[^}]+\})+), )?pay (\d+) life\.?|—discard a card\.?)/i;
 
 /** « Equip {3}{W} » (702.6) : capacité activée en rituel, cible une créature que vous contrôlez. */
 export function parseEquip(text: string): string | undefined {
@@ -96,6 +96,8 @@ export function parseWard(text: string): CardDef["ward"] {
   const m = WARD.exec(stripReminder(text));
   if (!m) return undefined;
   if (m[1]) return { mana: parseManaCost(m[1]) };
+  // « Ward—Discard a card. » (Gideon the Oathless)
+  if (!m[3]) return { discard: true };
   return { mana: m[2] ? parseManaCost(m[2]) : undefined, life: Number(m[3]) };
 }
 
@@ -153,7 +155,13 @@ function parseInt0(v: string | undefined): number | undefined | null {
 }
 
 /** Capacités déclenchées portées par un mot-clé (702.108 prouesse, 702.21 garde). */
-function intrinsicAbilities(keywords: Set<Keyword>, ward: CardDef["ward"], equip?: string, crew?: number): CardDef["abilities"] {
+function intrinsicAbilities(
+  keywords: Set<Keyword>,
+  ward: CardDef["ward"],
+  equip?: string,
+  crew?: number,
+  equipReduced?: boolean,
+): CardDef["abilities"] {
   const out: CardDef["abilities"] = [];
   if (keywords.has("prowess")) {
     out.push({
@@ -183,6 +191,7 @@ function intrinsicAbilities(keywords: Set<Keyword>, ward: CardDef["ward"], equip
       ],
       effects: [{ op: "attach", what: { kind: "self" }, to: { kind: "target", id: "t" } }],
       sorcerySpeed: true,
+      reduceByTargetCounters: equipReduced || undefined,
       label: `Équiper ${equip}`,
     });
   }
@@ -194,7 +203,7 @@ function intrinsicAbilities(keywords: Set<Keyword>, ward: CardDef["ward"], equip
       trigger: { on: "becomesTarget", who: "self", byOpponent: true },
       targets: [],
       effects: [
-        { op: "unlessPay", who: { kind: "eventPlayer" }, mana: ward.mana, life: ward.life, skip: 1 },
+        { op: "unlessPay", who: { kind: "eventPlayer" }, mana: ward.mana, life: ward.life, discard: ward.discard, skip: 1 },
         { op: "counter", what: { kind: "eventObject" } },
       ],
       label: "Garde",
@@ -257,7 +266,12 @@ export function toCardDef(raw: RawCard, script: CardScript | undefined, set: str
   const power = parseInt0(raw.power);
   const toughness = parseInt0(raw.toughness);
   // F/E variables (*) : seulement si le script les définit (capacité de définition de caractéristiques).
-  if ((power === null || toughness === null) && script?.cdaPT === undefined && script?.cdaPower === undefined)
+  if (
+    (power === null || toughness === null) &&
+    script?.cdaPT === undefined &&
+    script?.cdaPower === undefined &&
+    script?.cdaToughness === undefined
+  )
     implemented = false;
 
   const keywords = new Set<Keyword>();
@@ -286,10 +300,17 @@ export function toCardDef(raw: RawCard, script: CardScript | undefined, set: str
     keywords: [...keywords],
     abilities: [
       ...(script?.abilities ?? []),
-      ...intrinsicAbilities(keywords, ward, parseEquip(raw.oracleText), parseCrew(raw.oracleText)),
+      ...intrinsicAbilities(
+        keywords,
+        ward,
+        parseEquip(raw.oracleText),
+        parseCrew(raw.oracleText),
+        /costs \{1\} less to activate for each \+1\/\+1 counter on the creature it targets/.test(raw.oracleText),
+      ),
       ...(parseCycling(raw.oracleText) ? [parseCycling(raw.oracleText) as CardDef["abilities"][number]] : []),
     ],
     cdaPower: script?.cdaPower,
+    cdaToughness: script?.cdaToughness,
     castCondition: script?.castCondition,
     flashExtraCost: script?.flashExtraCost ? parseManaCost(script.flashExtraCost) : undefined,
     opponentDiscardToBattlefield: script?.opponentDiscardToBattlefield,
@@ -309,6 +330,7 @@ export function toCardDef(raw: RawCard, script: CardScript | undefined, set: str
     spell: script?.spell,
     kicker: script?.kicker ? parseManaCost(script.kicker) : undefined,
     flashback: script?.flashback ? parseManaCost(script.flashback) : undefined,
+    flashbackDiscard: script?.flashbackDiscard,
     additionalCost: script?.additionalCost,
     costReduction: script?.costReduction,
     text: raw.oracleText,

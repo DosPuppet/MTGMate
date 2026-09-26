@@ -10,6 +10,7 @@
  */
 import { boardAmount } from "./effects";
 import { changeCounters, chars, moveObject, P1P1, setPrepared } from "./state";
+import { playerStatic } from "./statics";
 import { matchesObjectFilter, withChosen } from "./targets";
 import { checkCondition } from "./triggers";
 import type { Amount, Color, GameObject, GameState, ObjectId, Zone } from "./types";
@@ -88,6 +89,13 @@ function defaultChoice(
 export function replaceDestination(s: GameState, o: GameObject, to: Zone): Zone {
   if (o.zone === "battlefield" && to === "graveyard") {
     if (s.replacements.some((r) => r.kind === "exileIfDies" && r.objects.includes(o.id))) return "exile";
+    // Garruk, Veiled Butcher : « si une créature qu'un adversaire contrôle devait mourir, exilez-la à la place ».
+    if (
+      chars(s, o.id).types.includes("Creature") &&
+      s.playerOrder.some((p) => p !== o.controller && playerStatic(s, p, "opponentCreaturesDieToExile"))
+    ) {
+      return "exile";
+    }
   }
   return to;
 }

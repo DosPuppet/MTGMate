@@ -65,6 +65,9 @@ export const KEYWORD_LABEL: Record<Keyword, string> = {
   doesntUntap: "Ne se dégage pas",
   cantBeBlockedByWalls: "Imblocable par les Murs",
   convoke: "Convocation",
+  assignsToughness: "Blesse selon son endurance",
+  absolutePowerDamage: "Blesse selon la valeur absolue de sa force",
+  attacksDespiteDefender: "Attaque malgré le défenseur",
 };
 
 export function faceName(face: CardFace | undefined, lang: Lang): string {

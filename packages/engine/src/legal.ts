@@ -104,7 +104,7 @@ export function legalActions(s: GameState, player: PlayerId): ActionOption[] {
       .map((m, index) => ({ index, label: m.label, targets: targetOptions(s, player, m.targets, card) }))
       .filter((m) => targetsAvailable(m.targets));
     if (modes.length === 0) continue;
-    const additional = additionalOptions(s, player, card, d);
+    const additional = additionalOptions(s, player, card, d, terms.source === "flashback");
     if (!additional) continue;
     const purpose = { spell: spellView(d, player), convoke: d.keywords.includes("convoke"), fromHand: terms.source === "hand" };
     const base = { flashback, anyMana: terms.anyMana };
@@ -159,7 +159,15 @@ export function legalActions(s: GameState, player: PlayerId): ActionOption[] {
       if (!ab || abilityZone(ab) !== o.zone || !canPayNonManaCost(s, id, ab, index)) return;
       if (ab.sorcerySpeed && !instantLoyalty(s, player, id, ab) && !sorceryTiming(s, player)) return;
       const exclude = ab.cost.tap ? new Set([id]) : undefined;
-      if (ab.cost.mana && !canPay(s, player, totalCost(ab.cost.mana, 0), exclude, { abilitySource: id })) return;
+      // Warrior's Blades : au mieux, la créature qui porte le plus de marqueurs +1/+1.
+      const reduction = ab.reduceByTargetCounters
+        ? Math.max(
+            0,
+            ...s.battlefield.filter((c) => obj(s, c).controller === player).map((c) => obj(s, c).counters["+1/+1"] ?? 0),
+          )
+        : 0;
+      if (ab.cost.mana && !canPay(s, player, totalCost(ab.cost.mana, 0, undefined, reduction), exclude, { abilitySource: id }))
+        return;
       const targets = targetOptions(s, player, ab.targets, id);
       if (!targetsAvailable(targets)) return;
       out.push({
@@ -168,7 +176,7 @@ export function legalActions(s: GameState, player: PlayerId): ActionOption[] {
         ability: index,
         label: ab.label,
         targets,
-        xMax: maxX(s, player, ab.cost.mana, exclude),
+        xMax: ab.cost.loyaltyX ? (o.counters.loyalty ?? 0) : maxX(s, player, ab.cost.mana, exclude),
         additional: ab.cost.sacrifice
           ? { sacrifice: { count: ab.cost.sacrifice.count, options: sacrificeOptions(s, player, id, ab) } }
           : undefined,

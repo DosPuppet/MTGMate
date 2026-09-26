@@ -12,6 +12,7 @@ import { ask } from "./choices";
 import { boardAmount } from "./effects";
 import { RulesError } from "./errors";
 import { apnapOrder, chars, emit, newId, obj, onBattlefield, opponentsOf, type RulesEvent, rulesEvent, snapshot } from "./state";
+import { playerStatic } from "./statics";
 import { legalTargets, matchesObjectFilter, matchesView, validateTargets, withChosen } from "./targets";
 import type {
   AbilityDef,
@@ -102,6 +103,18 @@ export function checkCondition(s: GameState, c: Condition, controller: PlayerId,
       const n = (c.noncreature ? st?.noncreatureCast : st?.spellsCast) ?? 0;
       return c.exactly ? n === c.n : n >= c.n;
     }
+    case "attackingAlone": {
+      const atk = s.combat?.attackers ?? [];
+      return atk.length === 1 && !!s.players[atk[0]?.defender ?? ""];
+    }
+    case "opponentDealtNoncombatDamageLastTurn":
+      return opponentsOf(s, controller).some((q) => (s.players[q]?.noncombatDamageLastTurn ?? 0) > 0);
+    case "spellCastFromHand":
+      return !!s.resolving?.item.fromHand;
+    case "spellCastFromGraveyard":
+      return !!s.resolving?.item.flashback;
+    case "sourceDealtCombatDamage":
+      return !!(sourceId && s.objects[sourceId]?.dealtCombatDamage);
     case "activatedLoyaltyThisTurn":
       return (s.players[controller]?.turnStats.loyaltyActivations ?? 0) > 0;
     case "beholdJace": {
@@ -210,6 +223,13 @@ function matchTrigger(s: GameState, ev: RulesEvent, t: TriggerSpec, src: Source)
     case "enters": {
       if (ev.e !== "zone" || ev.to !== "battlefield") return null;
       const v = liveView(s, ev.newId);
+      // Karn, Argent Defender : l'arrivée d'artefacts et de créatures ne déclenche rien.
+      if (
+        v &&
+        (v.types.includes("Artifact") || v.types.includes("Creature")) &&
+        s.playerOrder.some((p) => playerStatic(s, p, "noEntersTriggers"))
+      )
+        return null;
       return v && matchWho(t.who, v, src) ? { objectId: v.id, player: v.controller } : null;
     }
     case "dies": {
@@ -226,7 +246,10 @@ function matchTrigger(s: GameState, ev: RulesEvent, t: TriggerSpec, src: Source)
     case "attacks": {
       if (ev.e !== "attack") return null;
       const v = liveView(s, ev.attacker);
-      return v && matchWho(t.who, v, src) ? { objectId: ev.attacker, player: ev.defender } : null;
+      if (!v || !matchWho(t.who, v, src)) return null;
+      // « … vous attaque ou attaque un planeswalker que vous contrôlez » (Jace, Reality Sculptor).
+      if (t.defending === "you" && ev.defender !== me && s.objects[ev.defender]?.controller !== me) return null;
+      return { objectId: ev.attacker, player: ev.defender };
     }
     case "attackWith":
       return ev.e === "attackWith" && ev.player === me && ev.count >= (t.min ?? 1) ? { player: me, amount: ev.count } : null;
@@ -254,7 +277,19 @@ function matchTrigger(s: GameState, ev: RulesEvent, t: TriggerSpec, src: Source)
       const v = liveView(s, ev.stackId);
       // « un sort de la couleur choisie » (Diamond Mare) : le choix de la source.
       const f = t.filter ? withChosen(t.filter, s.objects[src.id]) : undefined;
-      if (f && (!v || !matchesView(v, f, me, src.id))) return null;
+      const filterOk = !f || (!!v && matchesView(v, f, me, src.id));
+      if (!filterOk && !t.targeting?.orFilter) return null;
+      // « un sort qui cible une créature que vous contrôlez / un adversaire » (Danitha).
+      if (t.targeting) {
+        const item = s.stack.find((x) => x.id === ev.stackId);
+        const targets = item ? Object.values(item.targets).flat() : [];
+        const tg = t.targeting;
+        const ok = targets.some((id) =>
+          s.players[id] ? !!tg.opponent && id !== me : !!tg.objects && matchesObjectFilter(s, me, id, tg.objects, src.id),
+        );
+        // Danitha, Sword of Hope : « un sort d'Équipement ou un sort qui cible… ».
+        if (!ok && !(t.targeting.orFilter && f && filterOk)) return null;
+      }
       // `amount` : éphémères et rituels déjà lancés ce tour-ci (Thousand-Year Storm).
       return { objectId: ev.stackId, player: ev.player, amount: ev.instantSorceryBefore };
     }
@@ -265,6 +300,15 @@ function matchTrigger(s: GameState, ev: RulesEvent, t: TriggerSpec, src: Source)
       if (t.byOpponent ? ev.player === me : ev.player !== me) return null;
       if (t.minRemoved !== undefined && -ev.cost < t.minRemoved) return null;
       return { objectId: ev.sourceId, player: ev.player };
+    }
+    case "isDealtDamage":
+      return ev.e === "damage" && ev.target === src.id && ev.amount > 0
+        ? { objectId: src.id, amount: ev.amount, player: me }
+        : null;
+    case "blocks": {
+      if (ev.e !== "block") return null;
+      const v = liveView(s, ev.blocker);
+      return v && matchWho(t.who, v, src) ? { objectId: ev.blocker, player: v.controller } : null;
     }
     case "discardSelf":
       return ev.e === "discard" && ev.cards.includes(src.id) ? { objectId: src.id, player: ev.player } : null;

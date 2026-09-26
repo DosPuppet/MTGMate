@@ -52,6 +52,13 @@ export function bump(s: GameState): void {
 /** 604.3 / 613.4a : F/E définies par une capacité (« égales au nombre de cartes dans les cimetières adverses »). */
 function cdaValue(s: GameState, o: GameObject, a: Amount): number {
   if (typeof a === "number") return a;
+  if (a.kind === "sum") return a.of.reduce<number>((n, x) => n + cdaValue(s, o, x), 0);
+  if (a.kind === "cardTypesInGraveyards") {
+    const types = new Set<string>();
+    for (const p of s.playerOrder)
+      for (const id of s.players[p]?.graveyard ?? []) for (const t of s.defs[obj(s, id).defId]?.types ?? []) types.add(t);
+    return types.size;
+  }
   if (a.kind === "basicLandTypes") {
     // Domaine : sous-types imprimés des terrains du contrôleur (pas de récursion dans les couches).
     const subtypes = new Set(
@@ -92,6 +99,7 @@ function base(s: GameState, o: GameObject): Characteristics {
   if (!d) throw new Error(`Définition inconnue : ${o.defId}`);
   const cda = d.cdaPT === undefined ? undefined : cdaValue(s, o, d.cdaPT);
   const cdaPower = d.cdaPower === undefined ? undefined : cdaValue(s, o, d.cdaPower);
+  const cdaToughness = d.cdaToughness === undefined ? undefined : cdaValue(s, o, d.cdaToughness);
   return {
     name: d.name,
     types: [...d.types],
@@ -99,7 +107,7 @@ function base(s: GameState, o: GameObject): Characteristics {
     supertypes: [...d.supertypes],
     colors: [...d.colors],
     power: cdaPower ?? cda ?? d.power ?? 0,
-    toughness: cda ?? d.toughness ?? 0,
+    toughness: cdaToughness ?? cda ?? d.toughness ?? 0,
     keywords: [...d.keywords],
     abilities: d.abilities,
     controller: o.controller,

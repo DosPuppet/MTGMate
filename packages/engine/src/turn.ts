@@ -386,12 +386,22 @@ export function endTheTurn(s: GameState, r: { item: StackItem }): void {
 function startTurnOf(s: GameState, p: PlayerId): void {
   const player = s.players[p];
   if (player) player.lastTurnStarted = s.turn.number;
-  // Les statistiques « ce tour-ci » repartent de zéro pour tout le monde.
+  // Les statistiques « ce tour-ci » repartent de zéro pour tout le monde (on garde les blessures non de combat du tour passé).
   for (const q of s.playerOrder) {
     const pl = s.players[q];
-    if (pl) pl.turnStats = emptyTurnStats();
+    if (!pl) continue;
+    pl.noncombatDamageLastTurn = pl.turnStats.noncombatDamageTaken;
+    pl.turnStats = emptyTurnStats();
   }
   s.turn.onceFired = [];
+  // « Jusqu'à votre prochain tour » : effets et emblèmes temporaires de ce joueur.
+  const before = s.effects.length;
+  s.effects = s.effects.filter((e) => !(e.duration === "untilYourNextTurn" && e.until === p));
+  if (s.effects.length !== before) bump(s);
+  for (const pl of s.playerOrder) {
+    const cmd = s.players[pl]?.command ?? [];
+    for (const id of [...cmd]) if (s.objects[id]?.expiresAtTurnOf === p) moveObject(s, id, "exile");
+  }
   s.turn.mayCastFromGraveyard = [];
   s.turn.graveyardTypesUsed = [];
   s.turn.flashbackGranted = [];
@@ -426,11 +436,24 @@ function combatants(s: GameState): ObjectId[] {
   return [...s.combat.attackers.map((a) => a.id), ...s.combat.blockers.map((b) => b.id)].filter((id) => onBattlefield(s, id));
 }
 
+/**
+ * Blessures de combat qu'une créature assigne : sa force, ou son endurance si elle est plus grande (Ghalta),
+ * ou la valeur absolue d'une force négative (Loot, the Anomaly).
+ */
+export function combatPower(s: GameState, id: ObjectId): number {
+  const c = chars(s, id);
+  let power = c.power;
+  if (power < 0 && c.keywords.includes("absolutePowerDamage")) power = -power;
+  if (c.keywords.includes("assignsToughness") && c.toughness > power) power = c.toughness;
+  return power;
+}
+
 export function canAttack(s: GameState, id: ObjectId): boolean {
   const o = s.objects[id];
   if (o?.zone !== "battlefield" || !isCreature(s, id)) return false;
   if (o.controller !== s.turn.active || o.tapped || isSummoningSick(s, id)) return false;
-  return !hasKeyword(s, id, "defender") && !hasKeyword(s, id, "cantAttack");
+  const defender = hasKeyword(s, id, "defender") && !hasKeyword(s, id, "attacksDespiteDefender");
+  return !defender && !hasKeyword(s, id, "cantAttack");
 }
 
 /** Créatures qui « attaquent à chaque combat si possible » (508.1d). */
@@ -463,6 +486,14 @@ export function declareAttackers(s: GameState, player: PlayerId, attackers: { id
     seen.add(a.id);
     if (!canAttack(s, a.id) || obj(s, a.id).controller !== player) throw new RulesError("Cette créature ne peut pas attaquer");
     if (!defenders.includes(a.defender)) throw new RulesError("Joueur ou planeswalker défenseur invalide");
+  }
+  // Tomik, Orzhov Lawmage : au plus une créature attaque chacun des planeswalkers de son contrôleur.
+  for (const w of new Set(attackers.map((a) => a.defender))) {
+    const walker = s.objects[w];
+    if (!walker || !playerStatic(s, walker.controller, "walkersMaxOneAttacker")) continue;
+    if (attackers.filter((a) => a.defender === w).length > 1) {
+      throw new RulesError(`Une seule créature peut attaquer ${chars(s, w).name}`);
+    }
   }
   // 508.1d : les créatures qui « attaquent à chaque combat si possible » doivent être déclarées.
   const forced = attackCandidates(s, player).filter((id) => hasKeyword(s, id, "mustAttack") && !seen.has(id));
@@ -569,6 +600,7 @@ export function declareBlockers(s: GameState, player: PlayerId, blocks: { blocke
       throw new RulesError("Une créature avec la menace doit être bloquée par au moins deux créatures");
   }
   c.blockers.push(...blocks.map((b) => ({ id: b.blocker, attacker: b.attacker })));
+  for (const b of blocks) rulesEvent(s, { e: "block", blocker: b.blocker, attacker: b.attacker });
   for (const a of c.attackers) {
     if (defendingPlayer(s, a.defender) !== player) continue;
     a.blockers = blocks.filter((b) => b.attacker === a.id).map((b) => b.blocker);
@@ -614,7 +646,7 @@ function defaultAssignment(s: GameState, attacker: ObjectId): Record<string, num
   const trample = src.keywords.includes("trample");
   const blockers = a.blockers.filter((b) => onBattlefield(s, b));
   const order = [...blockers].sort((x, y) => lethalFor(s, x, deathtouch) - lethalFor(s, y, deathtouch));
-  let remaining = Math.max(0, chars(s, attacker).power);
+  let remaining = Math.max(0, combatPower(s, attacker));
   for (const b of order) {
     const amount = Math.min(remaining, lethalFor(s, b, deathtouch));
     out[b] = amount;
@@ -642,7 +674,7 @@ function startCombatDamage(s: GameState, firstStrikeStep: boolean): void {
   c.assignQueue = c.attackers
     .filter((a) => {
       if (!a.blocked || !onBattlefield(s, a.id) || !dealsDamageNow(s, a.id, firstStrikeStep)) return false;
-      if (chars(s, a.id).power <= 0) return false;
+      if (combatPower(s, a.id) <= 0) return false;
       const alive = a.blockers.filter((b) => onBattlefield(s, b)).length;
       return alive >= 2 || (alive === 1 && hasKeyword(s, a.id, "trample"));
     })
@@ -680,9 +712,9 @@ function nextCombatAssignment(s: GameState): void {
     {
       type: "divide",
       intent: "combatDamage",
-      prompt: `Répartissez les ${chars(s, attacker).power} blessures de ${s.defs[obj(s, attacker).defId]?.name ?? "l'attaquant"}`,
+      prompt: `Répartissez les ${combatPower(s, attacker)} blessures de ${s.defs[obj(s, attacker).defId]?.name ?? "l'attaquant"}`,
       among,
-      total: chars(s, attacker).power,
+      total: combatPower(s, attacker),
       lethal: trample
         ? { player: a.defender, needs: Object.fromEntries(blockers.map((b) => [b, lethalFor(s, b, deathtouch)])) }
         : undefined,
@@ -708,7 +740,7 @@ function combatDamage(s: GameState, firstStrikeStep: boolean): void {
 
   for (const a of c.attackers) {
     if (!onBattlefield(s, a.id) || !dealsDamageNow(s, a.id, firstStrikeStep)) continue;
-    const power = chars(s, a.id).power;
+    const power = combatPower(s, a.id);
     if (power <= 0) continue;
     dealt.push(a.id);
     const src = sourceFromObject(s, a.id);
@@ -729,7 +761,7 @@ function combatDamage(s: GameState, firstStrikeStep: boolean): void {
 
   for (const b of c.blockers) {
     if (!onBattlefield(s, b.id) || !onBattlefield(s, b.attacker) || !dealsDamageNow(s, b.id, firstStrikeStep)) continue;
-    const power = chars(s, b.id).power;
+    const power = combatPower(s, b.id);
     if (power <= 0) continue;
     dealt.push(b.id);
     assignments.push({ src: sourceFromObject(s, b.id), target: b.attacker, amount: power });

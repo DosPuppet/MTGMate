@@ -92,8 +92,17 @@ export function dealDamage(s: GameState, source: DamageSource, target: string, a
     }
     if (targetObj?.zone === "battlefield" && matchesObjectFilter(s, p.controller, target, p.ab.filter, p.sourceId)) return;
   }
+  // Ruric Thar, Magecrusher : « tant qu'il n'a pas encore infligé de blessures de combat ».
+  const dealer = combat && source.id ? s.objects[source.id] : undefined;
+  if (dealer && !dealer.dealtCombatDamage) {
+    dealer.dealtCombatDamage = true;
+    bump(s);
+  }
   // Twinflame Tyrant : blessures d'une source que vous contrôlez à un adversaire ou à un permanent adverse, doublées.
   const victim = isPlayer(s, target) ? target : targetObj?.controller;
+  // Tomik, Izzet Sparkmage : blessures non de combat à un adversaire ou à ses permanents, +1.
+  if (!combat && victim && victim !== source.controller && playerStatic(s, source.controller, "noncombatDamageBonus"))
+    amount += 1;
   if (victim && victim !== source.controller) amount *= 2 ** doublers(s, source.controller, "damageToOpponents");
   // Gratuitous Violence : blessures d'une créature que vous contrôlez, doublées.
   if (source.id && s.objects[source.id]?.zone === "battlefield" && isCreature(s, source.id)) {
@@ -167,6 +176,13 @@ export function tokenDefId(t: TokenSpec): string {
 }
 
 export function createTokens(s: GameState, controller: PlayerId, t: TokenSpec, count: number): ObjectId[] {
+  // Draconic Visitor : les jetons d'artefact deviennent des Dragons 5/5 volants.
+  if (t.types.includes("Artifact")) {
+    const replacement = controlledAbilitiesWithSource(s, controller).find(
+      ({ ab }) => ab.kind === "playerStatic" && !!ab.replaceArtifactTokens,
+    )?.ab;
+    if (replacement?.kind === "playerStatic" && replacement.replaceArtifactTokens) t = replacement.replaceArtifactTokens;
+  }
   const created: ObjectId[] = [];
   const defId = tokenDefId(t);
   if (!s.defs[defId]) {

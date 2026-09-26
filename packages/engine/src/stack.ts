@@ -7,7 +7,7 @@ import { loseLife, putIntoGraveyard } from "./actions";
 import { ask } from "./choices";
 import { announceDiscard, evalAmount, runEffect } from "./effects";
 import { RulesError } from "./errors";
-import { payMana, totalCost } from "./mana";
+import { manaValue, payMana, totalCost } from "./mana";
 import {
   bump,
   changeCounters,
@@ -25,7 +25,7 @@ import {
   tapObject,
 } from "./state";
 import { controlledAbilitiesWithSource, playerStatic } from "./statics";
-import { isLegalTarget, legalTargets, matchesObjectFilter, matchesView, validateTargets } from "./targets";
+import { isLegalTarget, legalTargets, matchesCard, matchesObjectFilter, matchesView, validateTargets } from "./targets";
 import { checkCondition, simultaneously } from "./triggers";
 import type {
   ActivatedAbilityDef,
@@ -181,9 +181,11 @@ export function spellReduction(s: GameState, player: PlayerId, d: CardDef, targe
   const view = spellView(d, player);
   for (const id of s.battlefield) {
     const o = obj(s, id);
-    if (o.controller !== player) continue;
     for (const ab of s.defs[o.defId]?.abilities ?? []) {
-      if (ab.kind === "costReduction" && matchesView(view, ab.filter, player)) r += ab.generic;
+      if (ab.kind !== "costReduction") continue;
+      // Réductions de vos permanents ; taxes des permanents adverses sur vos sorts (Thalia, the Survivor).
+      const applies = ab.opponents ? o.controller !== player : o.controller === player;
+      if (applies && matchesView(view, ab.filter, player)) r += ab.generic;
     }
   }
   return r;
@@ -223,7 +225,10 @@ export function spellCost(
     opts.free ? 0 : spellReduction(s, player, d, opts.targets),
   );
   if (!opts.anyMana) return cost;
-  const colored = Object.values(cost.colored).reduce<number>((n, k) => n + (k ?? 0), 0) + (cost.hybrid?.length ?? 0);
+  const colored =
+    Object.values(cost.colored).reduce<number>((n, k) => n + (k ?? 0), 0) +
+    (cost.hybrid?.length ?? 0) +
+    (cost.twoHybrid?.length ?? 0);
   return { generic: cost.generic + colored, colored: {}, x: 0 };
 }
 
@@ -247,6 +252,9 @@ export interface CastTerms {
 /** D'où, et à quelles conditions, ce joueur peut-il lancer cette carte ? */
 /** 702.61 : un sort avec le second partagé est sur la pile — seules les capacités de mana restent possibles. */
 export function splitSecondOnStack(s: GameState): boolean {
+  // Yuriko, Blade of the Mighty : « pendant le combat, les joueurs ne peuvent ni lancer de sorts ni activer de capacités (hors mana) ».
+  const combatSteps = ["beginCombat", "declareAttackers", "declareBlockers", "firstStrikeDamage", "combatDamage", "endCombat"];
+  if (combatSteps.includes(s.turn.step) && s.playerOrder.some((p) => playerStatic(s, p, "noSpellsDuringCombat"))) return true;
   return s.stack.some((item) => {
     if (item.kind !== "spell") return false;
     const d = s.defs[item.sourceDefId];
@@ -263,7 +271,14 @@ export function castTerms(s: GameState, player: PlayerId, card: ObjectId): CastT
   if (d.castCondition && !checkCondition(s, d.castCondition, player, card)) return null;
   if (o.zone === "hand") {
     if (o.owner !== player) return null;
-    const free = controlledAbilities(s, player).some((ab) => ab.kind === "castPermission" && ab.freeFromHand);
+    // Omnipresence : seulement si la valeur de mana ne dépasse pas le nombre de créatures que vous contrôlez.
+    const creatures = () => s.battlefield.filter((id) => obj(s, id).controller === player && isCreature(s, id)).length;
+    const free = controlledAbilities(s, player).some(
+      (ab) =>
+        ab.kind === "castPermission" &&
+        ab.freeFromHand &&
+        (!ab.freeMaxManaValueCreatures || manaValue(d.manaCost) <= creatures()),
+    );
     return { source: "hand", freeOptional: free || undefined };
   }
   if (o.zone === "graveyard") {
@@ -292,6 +307,15 @@ export function castTerms(s: GameState, player: PlayerId, card: ObjectId): CastT
       return perm?.zone === "battlefield" && perm.controller === player && perm.preparedCopy === card
         ? { source: "exile" }
         : null;
+    }
+    // Null Summoner : la carte exilée et liée, lançable sous condition, avec du mana de n'importe quel type.
+    for (const id of s.battlefield) {
+      const src = obj(s, id);
+      if (src.controller !== player || !src.linked?.includes(card)) continue;
+      const ab = chars(s, id).abilities.find((a) => a.kind === "castPermission" && a.linkedCards);
+      if (ab?.kind === "castPermission" && (!ab.condition || checkCondition(s, ab.condition, player, id))) {
+        return { source: "exile", anyMana: true };
+      }
     }
     const perm = exilePermission(s, player, card);
     if (perm) return { source: "exile", free: perm.free, anyTime: perm.anyTime };
@@ -349,11 +373,13 @@ export function additionalOptions(
   player: PlayerId,
   card: ObjectId,
   d: CardDef,
+  flashback = false,
 ): {
   discard?: { count: number; options: ObjectId[] };
   sacrifice?: { count: number; options: ObjectId[]; orPay?: ManaCost; orPayAffordable?: boolean };
 } | null {
-  const add = d.additionalCost;
+  // Twinned Vision : « Flashback—{1}{U/R}{U/R}, défaussez une carte ».
+  const add = flashback && d.flashbackDiscard ? { ...d.additionalCost, discard: d.flashbackDiscard } : d.additionalCost;
   if (!add) return {};
   const out: ReturnType<typeof additionalOptions> = {};
   if (add.discard) {
@@ -378,7 +404,7 @@ export function castSpell(s: GameState, player: PlayerId, card: ObjectId, choice
   const d = s.defs[o.defId];
   if (!d || d.types.includes("Land")) throw new RulesError("Ce n'est pas un sort");
   if (!d.implemented) throw new RulesError(`${d.name} n'est pas encore géré par le moteur`);
-  if (splitSecondOnStack(s)) throw new RulesError("Un sort avec le second partagé est sur la pile");
+  if (splitSecondOnStack(s)) throw new RulesError("Aucun sort ni capacité maintenant (second partagé ou combat)");
   // Harbinger of the Tides : « comme s'il avait le flash si vous payez {2} de plus ».
   const flashExtra = !terms.anyTime && !canCastTiming(s, player, d) ? d.flashExtraCost : undefined;
   if (!terms.anyTime && !canCastTiming(s, player, d) && !flashExtra)
@@ -400,7 +426,7 @@ export function castSpell(s: GameState, player: PlayerId, card: ObjectId, choice
   const kicked = !!choices.kicked && !!d.kicker;
 
   // Coûts additionnels : vérifiés avant tout changement d'état.
-  const opts = additionalOptions(s, player, card, d);
+  const opts = additionalOptions(s, player, card, d, flashback);
   if (!opts) throw new RulesError("Impossible de payer le coût additionnel");
   const discard = choices.discard ?? [];
   const sacrifice = choices.sacrifice ?? [];
@@ -504,7 +530,13 @@ export function copySpellItem(s: GameState, item: StackItem, controller: PlayerI
 function addCosts(a: ManaCost, b: ManaCost): ManaCost {
   const colored = { ...a.colored };
   for (const [k, n] of Object.entries(b.colored)) colored[k as ManaType] = (colored[k as ManaType] ?? 0) + (n ?? 0);
-  return { generic: a.generic + b.generic, colored, x: a.x, hybrid: [...(a.hybrid ?? []), ...(b.hybrid ?? [])] };
+  return {
+    generic: a.generic + b.generic,
+    colored,
+    x: a.x,
+    hybrid: [...(a.hybrid ?? []), ...(b.hybrid ?? [])],
+    twoHybrid: [...(a.twoHybrid ?? []), ...(b.twoHybrid ?? [])],
+  };
 }
 
 /** Choix « en arrivant » fait pendant la résolution (voir l'effet chooseOnEnter). */
@@ -542,6 +574,16 @@ export function counterItem(s: GameState, id: string, by: string): boolean {
   if (item.kind === "spell" && s.objects[item.sourceId]) s.lki[item.id] = snapshot(s, item.sourceId);
   if (item.kind === "spell" && s.objects[item.sourceId]) moveObject(s, item.sourceId, item.flashback ? "exile" : "graveyard");
   return true;
+}
+
+/** « Renvoyez le sort ciblé dans la main de son propriétaire » : une copie cesse d'exister. */
+export function bounceSpell(s: GameState, id: string): void {
+  const i = s.stack.findIndex((x) => x.id === id);
+  const item = s.stack[i];
+  if (item?.kind !== "spell" || s.resolving?.item.id === id) return;
+  s.stack.splice(i, 1);
+  if (s.objects[item.sourceId]) moveObject(s, item.sourceId, "hand");
+  bump(s);
 }
 
 /** Capacités d'un objet : calculées par les couches sur le champ de bataille (accordées, perdues), imprimées ailleurs. */
@@ -607,6 +649,16 @@ export function instantLoyalty(s: GameState, player: PlayerId, source: ObjectId,
   );
 }
 
+/** Cartes de votre cimetière exilables pour le coût (« exilez une autre carte de créature de votre cimetière ») : les moins chères d'abord. */
+function graveyardExileOptions(s: GameState, source: ObjectId, ab: ActivatedAbilityDef): ObjectId[] {
+  const f = ab.cost.exileFromGraveyard;
+  const o = s.objects[source];
+  if (!f || !o) return [];
+  return (s.players[o.owner]?.graveyard ?? [])
+    .filter((id) => id !== source && matchesCard(s, o.owner, id, { ...f.filter, controller: undefined }))
+    .sort((a, b) => manaValue(s.defs[obj(s, a).defId]?.manaCost) - manaValue(s.defs[obj(s, b).defId]?.manaCost));
+}
+
 /** Zone d'où s'active une capacité : champ de bataille, cimetière ou main. */
 export function abilityZone(ab: ActivatedAbilityDef): "battlefield" | "graveyard" | "hand" {
   return ab.fromGraveyard ? "graveyard" : ab.fromHand ? "hand" : "battlefield";
@@ -629,6 +681,7 @@ export function canPayNonManaCost(s: GameState, source: ObjectId, ab: ActivatedA
     if (o.loyaltyTurn === s.turn.number) return false;
     if (ab.cost.loyalty < 0 && (o.counters.loyalty ?? 0) < -ab.cost.loyalty) return false;
   }
+  if (ab.cost.exileFromGraveyard && graveyardExileOptions(s, source, ab).length < ab.cost.exileFromGraveyard.count) return false;
   if (ab.cost.tapAttached) {
     const host = o.attachedTo;
     if (!host || !onBattlefield(s, host) || obj(s, host).tapped || isSummoningSick(s, host)) return false;
@@ -657,7 +710,7 @@ export function activateAbility(s: GameState, player: PlayerId, source: ObjectId
     throw new RulesError("Cette capacité s'active seulement en rituel");
   }
   if (!canPayNonManaCost(s, source, ab, index)) throw new RulesError("Impossible de payer le coût");
-  if (splitSecondOnStack(s)) throw new RulesError("Un sort avec le second partagé est sur la pile");
+  if (splitSecondOnStack(s)) throw new RulesError("Aucun sort ni capacité maintenant (second partagé ou combat)");
   let sacrificed: ObjectId[] = [];
   if (ab.cost.sacrifice) {
     const options = sacrificeOptions(s, player, source, ab);
@@ -667,7 +720,8 @@ export function activateAbility(s: GameState, player: PlayerId, source: ObjectId
     }
   }
   const targets = validateTargets(s, player, ab.targets, choices.targets, { sourceId: source });
-  const x = ab.cost.mana?.x ? Math.max(0, Math.floor(choices.x ?? 0)) : 0;
+  const x = ab.cost.mana?.x || ab.cost.loyaltyX ? Math.max(0, Math.floor(choices.x ?? 0)) : 0;
+  if (ab.cost.loyaltyX && x > (o.counters.loyalty ?? 0)) throw new RulesError("Pas assez de marqueurs de loyauté");
   const c = chars(s, source);
   const item: StackItem = {
     id: newId(s, "a"),
@@ -692,7 +746,10 @@ export function activateAbility(s: GameState, player: PlayerId, source: ObjectId
   if (ab.cost.mana) {
     const reserved = new Set([...sacrificed, ...tapOthers, ...crew, ...(ab.cost.tap ? [source] : [])]);
     try {
-      payMana(s, player, totalCost(ab.cost.mana, x), reserved, { abilitySource: source });
+      // Warrior's Blades : {1} de moins par marqueur +1/+1 sur la créature ciblée.
+      const t = ab.reduceByTargetCounters ? targets.t?.[0] : undefined;
+      const reduction = t ? (s.objects[t]?.counters["+1/+1"] ?? 0) : 0;
+      payMana(s, player, totalCost(ab.cost.mana, x, undefined, reduction), reserved, { abilitySource: source });
     } catch {
       throw new RulesError("Mana insuffisant");
     }
@@ -701,10 +758,11 @@ export function activateAbility(s: GameState, player: PlayerId, source: ObjectId
   if (ab.cost.tapAttached && o.attachedTo) tapObject(s, obj(s, o.attachedTo));
   if (ab.cost.loyalty !== undefined) {
     o.loyaltyTurn = s.turn.number;
-    if (ab.cost.loyalty !== 0) changeCounters(s, o, "loyalty", ab.cost.loyalty);
+    const cost = ab.cost.loyaltyX ? -x : ab.cost.loyalty;
+    if (cost !== 0) changeCounters(s, o, "loyalty", cost);
     const pl = s.players[player];
     if (pl) pl.turnStats.loyaltyActivations += 1;
-    rulesEvent(s, { e: "loyalty", player, sourceId: source, cost: ab.cost.loyalty });
+    rulesEvent(s, { e: "loyalty", player, sourceId: source, cost });
   }
   if (ab.once) o.used = [...(o.used ?? []), index];
   if (ab.oncePerTurn) o.activatedTurn = { ...(o.activatedTurn ?? {}), [index]: s.turn.number };
@@ -717,6 +775,9 @@ export function activateAbility(s: GameState, player: PlayerId, source: ObjectId
   item.sacrificed = sacrificed.length ? [...sacrificed] : undefined;
   for (const id of sacrificed) putIntoGraveyard(s, id);
   if (ab.cost.sacrificeSelf) putIntoGraveyard(s, source);
+  if (ab.cost.exileFromGraveyard) {
+    for (const id of graveyardExileOptions(s, source, ab).slice(0, ab.cost.exileFromGraveyard.count)) moveObject(s, id, "exile");
+  }
   if (ab.cost.exileSelf) moveObject(s, source, "exile");
   if (ab.cost.discardSelf) announceDiscard(s, player, moveObject(s, source, "graveyard"));
   if (ab.cost.bounceSelf) moveObject(s, source, "hand");

@@ -20,6 +20,8 @@ export interface ManaCost {
   x: number;
   /** Symboles hybrides : chacun se paie avec l'un des deux types. */
   hybrid?: [ManaType, ManaType][];
+  /** Hybrides monocolores {2/W} : un mana de cette couleur ou deux mana génériques. */
+  twoHybrid?: ManaType[];
 }
 
 export type CardType = "Land" | "Creature" | "Artifact" | "Enchantment" | "Instant" | "Sorcery" | "Planeswalker" | "Battle";
@@ -63,7 +65,13 @@ export type Keyword =
   | "doesntUntap"
   | "cantBeBlockedByWalls"
   /** Convocation (702.51) : les créatures peuvent aider à payer le sort. */
-  | "convoke";
+  | "convoke"
+  /** Ghalta the Immovable : si son endurance dépasse sa force, elle inflige ses blessures de combat selon son endurance. */
+  | "assignsToughness"
+  /** Loot, the Anomaly : une force négative inflige ses blessures de combat comme si elle était positive. */
+  | "absolutePowerDamage"
+  /** Ghalta the Immovable : peut attaquer comme si elle n'avait pas le défenseur. */
+  | "attacksDespiteDefender";
 
 /** Restrictions : affichées différemment des mots-clés. */
 export const RESTRICTIONS: readonly Keyword[] = [
@@ -122,7 +130,9 @@ export interface CardDef {
   /** « Si cette carte est dans votre main de départ, vous pouvez commencer la partie avec elle sur le champ de bataille. » */
   leyline?: boolean;
   /** Garde : coût à payer (mana ou points de vie). */
-  ward?: { mana?: ManaCost; life?: number };
+  ward?: { mana?: ManaCost; life?: number; discard?: boolean };
+  /** Flashback avec « défaussez une carte » en plus (Twinned Vision). */
+  flashbackDiscard?: number;
   /** « En coût additionnel pour lancer ce sort, … » (601.2b, 601.2h). */
   additionalCost?: AdditionalCost;
   /** « Ce sort coûte {N} de moins à lancer [si…] » (601.2f). */
@@ -139,6 +149,8 @@ export interface CardDef {
   graveyardCastRemoveCounters?: number;
   /** « Vous ne pouvez pas lancer ce sort à moins que… » (Proft, Sinister Mastermind : seuil). */
   castCondition?: Condition;
+  /** Seule l'endurance est définie par une capacité (Tarmogoyf, avec `cdaPower`). */
+  cdaToughness?: Amount;
   /** Seule la force est définie par une capacité (Enigma Drake). */
   cdaPower?: Amount;
   /** « Vous pouvez lancer ce sort comme s'il avait le flash si vous payez {2} de plus. » */
@@ -214,6 +226,8 @@ export interface CostReductionAbilityDef {
   kind: "costReduction";
   filter: ObjectFilter;
   generic: number;
+  /** S'applique aux sorts des adversaires (Thalia, the Survivor : générique négatif = taxe). */
+  opponents?: boolean;
   label?: string;
 }
 
@@ -232,6 +246,8 @@ export interface ManaAbilityDef {
   amount: number;
   /** « {G} pour chaque Elfe que vous contrôlez » : le montant est le nombre de permanents correspondant. */
   amountPer?: ObjectFilter;
+  /** Loot, the Nexus : un mana pour chaque force différente parmi les créatures que vous contrôlez. */
+  amountDistinctPowers?: boolean;
 }
 
 export interface ActivatedAbilityDef {
@@ -251,6 +267,8 @@ export interface ActivatedAbilityDef {
   oncePerTurn?: boolean;
   /** « N'activez que si… » / « … que pendant votre tour ». */
   activationCondition?: Condition;
+  /** « Coûte {1} de moins pour chaque marqueur +1/+1 sur la créature ciblée » (Warrior's Blades). */
+  reduceByTargetCounters?: boolean;
 }
 
 export interface CostDef {
@@ -267,6 +285,10 @@ export interface CostDef {
   tapAttached?: boolean;
   /** Capacité de loyauté (606) : marqueurs de loyauté ajoutés (+N) ou retirés (−N). */
   loyalty?: number;
+  /** « −X » : X marqueurs de loyauté retirés (X choisi à l'activation). */
+  loyaltyX?: boolean;
+  /** Exiler d'autres cartes de votre cimetière (choisies automatiquement : Gallia). */
+  exileFromGraveyard?: { filter: ObjectFilter; count: number };
   /** Exiler la source (depuis le champ de bataille ou le cimetière). */
   exileSelf?: boolean;
   /** « Défaussez cette carte » (capacité activée depuis la main). */
@@ -385,9 +407,17 @@ export type TriggerSpec =
   | { on: "enters"; who: "self" | ObjectFilter }
   | { on: "dies"; who: "self" | ObjectFilter }
   | { on: "leaves"; who: "self" }
-  | { on: "attacks"; who: "self" | ObjectFilter }
+  /** `defending: "you"` : elle attaque le contrôleur ou un planeswalker qu'il contrôle. */
+  | { on: "attacks"; who: "self" | ObjectFilter; defending?: "you" }
   | { on: "dealsCombatDamage"; who: "self" | ObjectFilter; toPlayer?: boolean }
-  | { on: "castSpell"; by: "you" | "opponent" | "any"; filter?: ObjectFilter }
+  /** `targeting` : le sort cible un objet correspondant, ou un adversaire (`opponent`). */
+  | {
+      on: "castSpell";
+      by: "you" | "opponent" | "any";
+      filter?: ObjectFilter;
+      /** `orFilter` : le sort correspond au filtre OU cible ce qui est indiqué (Danitha, Sword of Hope). */
+      targeting?: { objects?: ObjectFilter; opponent?: boolean; orFilter?: boolean };
+    }
   | { on: "step"; step: Step; whose: "you" | "opponent" | "any" }
   | { on: "landfall" }
   /** « Chaque fois que vous gagnez des points de vie [pour la première fois ce tour] » */
@@ -420,6 +450,10 @@ export type TriggerSpec =
   | { on: "scryOrSurveil" }
   /** « Quand vous défaussez cette carte » (se déclenche depuis le cimetière). */
   | { on: "discardSelf" }
+  /** « Chaque fois que cette créature subit des blessures » */
+  | { on: "isDealtDamage"; who: "self" }
+  /** « Chaque fois qu'une [créature] bloque » */
+  | { on: "blocks"; who: "self" | ObjectFilter }
   /** « Chaque fois que vous activez une capacité de loyauté [en retirant au moins N marqueurs] » ; `byOpponent` : un adversaire l'active. */
   | { on: "loyaltyActivated"; minRemoved?: number; byOpponent?: boolean };
 
@@ -480,7 +514,16 @@ export type Condition =
   /** « Contempler un Jace » : vous contrôlez un Jace ou vous avez une carte de Jace en main. */
   | { kind: "beholdJace" }
   /** Le contrôleur a activé une capacité de loyauté ce tour-ci. */
-  | { kind: "activatedLoyaltyThisTurn" };
+  | { kind: "activatedLoyaltyThisTurn" }
+  /** Une seule créature attaque, et elle attaque un joueur (« attaque seule un joueur »). */
+  | { kind: "attackingAlone" }
+  /** Un adversaire a subi des blessures non de combat au tour précédent (Command the Stage). */
+  | { kind: "opponentDealtNoncombatDamageLastTurn" }
+  /** Le sort qui se résout a été lancé depuis la main / en flashback. */
+  | { kind: "spellCastFromHand" }
+  | { kind: "spellCastFromGraveyard" }
+  /** La source a déjà infligé des blessures de combat (Ruric Thar, Magecrusher). */
+  | { kind: "sourceDealtCombatDamage" };
 
 /** Modifications apportées par un effet continu, rangées par couche (613). */
 export interface LayerMods {
@@ -538,6 +581,11 @@ export interface CastPermissionAbilityDef {
   flash?: true;
   /** Omniscience : sorts de votre main sans payer leur coût de mana. */
   freeFromHand?: true;
+  /** Omnipresence : seulement les sorts de valeur de mana ≤ nombre de créatures que vous contrôlez. */
+  freeMaxManaValueCreatures?: true;
+  /** Null Summoner : lancer les cartes liées exilées (mana de n'importe quel type), sous condition. */
+  linkedCards?: true;
+  condition?: Condition;
   /** Tinybones : pendant votre tour, jouer les cartes exilées avec un marqueur de butin que vous ne possédez pas (mana de n'importe quel type). */
   stash?: true;
   /** Muldrotha : pendant votre tour, un terrain et un sort de permanent de chaque type depuis votre cimetière. */
@@ -566,6 +614,20 @@ export interface PlayerStaticAbilityDef {
   exileInstantsSorceries?: boolean;
   /** Vizier of the Menagerie : lancer des créatures du dessus de sa bibliothèque (mana de n'importe quel type). */
   castCreaturesFromTop?: boolean;
+  /** Yoshimaru : des marqueurs +1/+1 mis sur vos créatures : un de plus. */
+  plusOneCounterBonus?: boolean;
+  /** Tomik, Izzet Sparkmage : blessures non de combat de vos sources à un adversaire ou à ses permanents : +1. */
+  noncombatDamageBonus?: boolean;
+  /** Karn, Argent Defender (s'applique à tous) : l'arrivée d'artefacts et de créatures ne déclenche rien. */
+  noEntersTriggers?: boolean;
+  /** Yuriko, Blade of the Mighty (s'applique à tous) : pendant le combat, ni sorts ni capacités (hors mana). */
+  noSpellsDuringCombat?: boolean;
+  /** Tomik, Orzhov Lawmage : au plus une créature peut attaquer chacun de vos planeswalkers à chaque combat. */
+  walkersMaxOneAttacker?: boolean;
+  /** Garruk, Veiled Butcher : les créatures adverses qui devraient mourir sont exilées. */
+  opponentCreaturesDieToExile?: boolean;
+  /** Draconic Visitor : les jetons d'artefact que vous devriez créer sont remplacés par ce jeton. */
+  replaceArtifactTokens?: TokenSpec;
   /** Samut, Tyrant of Naktamun : « les éphémères et rituels que vous contrôlez ont le second partagé ». */
   splitSecondInstantsSorceries?: boolean;
   /** Sanctum Lurker : vos planeswalkers ne vont pas au cimetière faute de loyauté. */
@@ -658,7 +720,9 @@ export type Ref =
   /** Le contrôleur (ou, hors du champ de bataille, le dernier contrôleur connu) de l'objet désigné. */
   | { kind: "controllerOf"; ref: Ref }
   /** Objets déplacés plus tôt pendant la résolution (`store` d'un déplacement), sous leur nouvel identifiant. */
-  | { kind: "stored"; name: string };
+  | { kind: "stored"; name: string }
+  /** Permanents correspondants contrôlés par le joueur désigné (« chaque créature que le joueur ciblé contrôle »). */
+  | { kind: "permanentsOf"; player: Ref; filter: ObjectFilter };
 
 export type Amount =
   | number
@@ -698,6 +762,19 @@ export type Amount =
   | { kind: "cardsIn"; zone: "hand" | "graveyard" | "library" }
   /** Domaine : types de terrains de base parmi les terrains du contrôleur. */
   | { kind: "basicLandTypes" }
+  /** Marqueurs d'un type parmi les permanents correspondants (« marqueurs de loyauté parmi les Jace »). */
+  | { kind: "countersAmong"; filter: ObjectFilter; counter: string }
+  /** Tarmogoyf : types de cartes parmi les cartes de tous les cimetières. */
+  | { kind: "cardTypesInGraveyards" }
+  /** Cartes mises de sa bibliothèque au cimetière ce tour-ci, par le joueur désigné. */
+  | { kind: "milledThisTurn"; who: Ref }
+  | { kind: "cardsDiscardedThisTurn" }
+  /** Plus grande endurance parmi les permanents correspondants (Ghalta the Immovable). */
+  | { kind: "maxToughness"; filter: ObjectFilter }
+  /** Plus grande valeur de mana parmi les cartes de votre cimetière (Hapatra). */
+  | { kind: "maxManaValueInGraveyard" }
+  /** Couleurs différentes parmi les permanents correspondants (Karn, Gilded Guardian). */
+  | { kind: "distinctColors"; filter: ObjectFilter }
   /** Nombre de sous-types différents parmi les permanents correspondants (« types de planeswalker », Tam). */
   | { kind: "distinctSubtypes"; filter: ObjectFilter };
 
@@ -748,7 +825,7 @@ export type Effect =
   | { op: "pump"; what: Ref; power: Amount; toughness: Amount; keywords?: Keyword[] }
   | { op: "pumpAll"; filter: ObjectFilter; power: Amount; toughness: Amount; keywords?: Keyword[] }
   /** Effet continu quelconque sur des objets (couches 4 à 7) : « devient 0/1 et perd toutes ses capacités »… */
-  | { op: "modify"; what: Ref; mods: LayerMods; duration: "endOfTurn" | "permanent" }
+  | { op: "modify"; what: Ref; mods: LayerMods; duration: "endOfTurn" | "permanent" | "untilYourNextTurn" }
   | { op: "destroy"; what: Ref }
   | { op: "draw"; who: Ref; amount: Amount }
   | { op: "gainLife"; who: Ref; amount: Amount }
@@ -761,10 +838,32 @@ export type Effect =
   | { op: "mill"; who: Ref; amount: Amount; store?: { name: string; filter?: ObjectFilter } }
   /** Effets avec choix pendant la résolution. */
   | { op: "scry"; amount: Amount }
-  | { op: "surveil"; amount: Amount }
+  /** `toHand` : les cartes ainsi mises au cimetière et correspondantes vont ensuite en main (Enlightened Confidant). */
+  | { op: "surveil"; amount: Amount; toHand?: { filter?: ObjectFilter; maxManaValue?: Amount } }
   /** `chooser: "controller"` : le contrôleur de l'effet choisit dans la main révélée (« Pilfer »). */
-  | { op: "discard"; who: Ref; amount: Amount; filter?: ObjectFilter; chooser?: "controller"; optional?: boolean; store?: string }
-  | { op: "sacrifice"; who: Ref; filter: ObjectFilter; amount: Amount; optional?: boolean; store?: string }
+  | {
+      op: "discard";
+      who: Ref;
+      amount: Amount;
+      filter?: ObjectFilter;
+      chooser?: "controller";
+      optional?: boolean;
+      store?: string;
+      /** « … au hasard » */
+      random?: boolean;
+      /** Mémorise, sous `store`, seulement le nombre de cartes défaussées correspondant à ce filtre (« cartes non-terrain »). */
+      storeFilter?: ObjectFilter;
+    }
+  | {
+      op: "sacrifice";
+      who: Ref;
+      filter: ObjectFilter;
+      amount: Amount;
+      optional?: boolean;
+      store?: string;
+      /** « … avec la plus grande valeur de mana parmi … » (Break Under Pressure). */
+      greatestManaValue?: boolean;
+    }
   /** « Vous pouvez payer {X}. Si vous le faites, … » : les `skip` effets suivants sont ignorés sinon. */
   | { op: "mayPay"; cost: ManaCost; prompt: string; skip: number; life?: number }
   /** « Vous pouvez » : si le contrôleur refuse, les `skip` effets suivants sont ignorés. */
@@ -828,6 +927,8 @@ export type Effect =
       /** « … excepté que c'est un Cauchemar en plus de ses autres types » */
       addSubtypes?: string[];
       sacrificeAtEndStep?: boolean;
+      /** Capacités ajoutées à la copie (Face Yourself). */
+      addAbilities?: AbilityDef[];
     }
   /** Capacité déclenchée retardée : « au début de la prochaine étape de fin, … ». Les références sont figées maintenant. */
   | { op: "delayed"; at: "nextEndStep"; effects: Effect[]; bind?: Record<string, Ref>; vars?: Record<string, Amount> }
@@ -836,7 +937,7 @@ export type Effect =
   /** Contrecarre un sort ou une capacité sur la pile (701.5). */
   | { op: "counter"; what: Ref }
   /** « … à moins que [joueur] ne paie X » : s'il paie, les `skip` effets suivants sont ignorés. */
-  | { op: "unlessPay"; who: Ref; mana?: ManaCost; life?: number; skip: number }
+  | { op: "unlessPay"; discard?: boolean; who: Ref; mana?: ManaCost; life?: number; skip: number }
   /** « Vous pouvez lancer [cette carte] depuis votre cimetière ce tour-ci. » */
   | { op: "allowCastFromGraveyard"; what: Ref }
   /** « En arrivant, choisissez un type de créature / une couleur » (sort de permanent qui se résout). */
@@ -891,7 +992,18 @@ export type Effect =
   /** Attache une Aura ou un Équipement à un permanent (701.3). */
   | { op: "attach"; what: Ref; to: Ref }
   /** Ajoute du mana à la réserve du contrôleur. */
-  | { op: "addMana"; mana: ManaType[] }
+  /** `times` : chaque mana est ajouté autant de fois (« {G} pour chaque marqueur »). */
+  | { op: "addMana"; mana: ManaType[]; times?: Amount }
+  /** Molten Tide : jusqu'à la fin du tour, chaque Montagne engagée pour du mana produit {R} de plus. */
+  | { op: "extraMountainMana" }
+  /** Chaque joueur peut défausser sa main et piocher sept cartes (Arc of Fortune). */
+  | { op: "mayWheel" }
+  /** « Choisissez un type de créature. Détruisez toutes les créatures qui ne sont pas du type choisi. » */
+  | { op: "destroyAllButChosenType" }
+  /** Le joueur désigné révèle sa main ; le contrôleur y choisit une carte correspondante, exilée et liée à la source. */
+  | { op: "exileFromHandLinked"; who: Ref; filter: ObjectFilter }
+  /** « Exilez toutes les cartes de la bibliothèque de chaque adversaire, sauf celle du dessous. » */
+  | { op: "exileLibraryButBottom"; who: Ref }
   /** Ajoute N mana d'une couleur choisie par le contrôleur. */
   | { op: "addManaChoice"; n: number }
   /** Exile les N cartes du dessus ; le contrôleur en choisit une qu'il peut jouer ce tour-ci. */
@@ -901,7 +1013,7 @@ export type Effect =
   /** Chaque joueur désigné garde un permanent de chaque type et sacrifie le reste. */
   | { op: "keepOnePerType"; who: Ref }
   /** Le contrôleur reçoit un emblème (114) portant ces capacités. */
-  | { op: "emblem"; name: string; abilities: AbilityDef[]; text: string }
+  | { op: "emblem"; name: string; abilities: AbilityDef[]; text: string; untilYourNextTurn?: boolean }
   /** Exile jusqu'à ce que la source quitte le champ de bataille (610.3). */
   | { op: "exileUntilLeaves"; what: Ref }
   /** Choisir des cartes (non ciblées) dans une zone du contrôleur et les déplacer. */
@@ -917,7 +1029,8 @@ export type Effect =
       excludeStored?: string;
     }
   /** Le propriétaire met l'objet au-dessus ou au-dessous de sa bibliothèque. */
-  | { op: "libraryTopOrBottom"; what: Ref }
+  /** `topDamage` : si le propriétaire la met au-dessus, la source lui inflige N blessures (Clash of Elements). */
+  | { op: "libraryTopOrBottom"; what: Ref; topDamage?: number }
   /** Chaque joueur désigné perd N points de vie à moins de défausser une carte ou de sacrifier un permanent. */
   | { op: "punisher"; who: Ref; loseLife: number; discard?: boolean; sacrifice?: ObjectFilter }
   /** Révéler jusqu'à une carte correspondant au filtre : elle va en main, le reste au-dessous dans un ordre aléatoire. */
@@ -1000,6 +1113,10 @@ export interface GameObject {
   preparedCopy?: ObjectId;
   /** Copie d'un sort préparé (en exil puis sur la pile) : le permanent qui l'a préparée. Cesse d'exister hors de ces zones. */
   preparedFor?: ObjectId;
+  /** Emblème temporaire : disparaît au début du prochain tour de ce joueur. */
+  expiresAtTurnOf?: PlayerId;
+  /** A déjà infligé des blessures de combat (Ruric Thar). */
+  dealtCombatDamage?: boolean;
   /** Tour de sa dernière attaque (« créature qui a attaqué ce tour-ci »). */
   attackedTurn?: number;
   /** Cartes liées (exilées par cette carte, Hoarding Dragon). */
@@ -1018,6 +1135,10 @@ export interface PlayerState {
   id: PlayerId;
   name: string;
   life: number;
+  /** Molten Tide : ce tour-ci, chaque Montagne engagée pour du mana produit N {R} de plus. */
+  extraMountainMana?: { turn: number; n: number };
+  /** Blessures non de combat subies au tour précédent (Command the Stage). */
+  noncombatDamageLastTurn?: number;
   /** Jace's Machinations : capacités de loyauté des Jace à vitesse d'éphémère pendant ce tour. */
   jaceInstantTurn?: number;
   /** Terrains supplémentaires ce tour-ci (Way of the Paradox). */
@@ -1115,6 +1236,10 @@ export interface TurnStats {
   noncombatDamageTaken: number;
   /** Capacités de loyauté activées ce tour-ci. */
   loyaltyActivations: number;
+  /** Cartes mises de la bibliothèque au cimetière ce tour-ci (Cruel Calculations). */
+  milled: number;
+  /** Cartes défaussées ce tour-ci (Jiang Yanggu, Alone). */
+  cardsDiscarded: number;
 }
 
 export interface CombatState {
@@ -1219,8 +1344,10 @@ export interface ContinuousEffect extends LayerMods {
   timestamp: number;
   /** Ensemble d'objets verrouillé à la résolution (règle 611.2c). */
   affected: ObjectId[];
-  /** « jusqu'à la fin du tour », ou tant que les objets restent sur le champ de bataille. */
-  duration: "endOfTurn" | "permanent";
+  /** « jusqu'à la fin du tour », tant que les objets restent sur le champ de bataille, ou « jusqu'à votre prochain tour ». */
+  duration: "endOfTurn" | "permanent" | "untilYourNextTurn";
+  /** Pour « jusqu'à votre prochain tour » : le joueur dont le prochain tour met fin à l'effet. */
+  until?: PlayerId;
 }
 
 export type Flow = "mulligan" | "stepStart" | "tba" | "priority" | "resolving" | "stepEnd" | "over";

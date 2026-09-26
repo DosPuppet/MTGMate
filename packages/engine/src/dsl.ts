@@ -44,6 +44,8 @@ export interface CardScript {
   kicker?: string;
   /** Coût de flashback, ex. "{4}{R}{R}". */
   flashback?: string;
+  /** « Flashback—[coût], défaussez N cartes. » */
+  flashbackDiscard?: number;
   /** « Ce sort ne peut pas être contrecarré. » */
   cantBeCountered?: boolean;
   /** Aura : « Enchanter [filtre] ». */
@@ -59,6 +61,8 @@ export interface CardScript {
   graveyardCastRemoveCounters?: number;
   /** Seule la force est variable (Enigma Drake). */
   cdaPower?: Amount;
+  /** Seule l'endurance est variable (Tarmogoyf, avec `cdaPower`). */
+  cdaToughness?: Amount;
   /** « … comme s'il avait le flash si vous payez {2} de plus » */
   flashExtraCost?: string;
   opponentDiscardToBattlefield?: boolean;
@@ -149,6 +153,8 @@ export const ref = {
   linked: { kind: "linked" } as Ref,
   costSacrificed: { kind: "costSacrificed" } as Ref,
   stored: (name: string): Ref => ({ kind: "stored", name }),
+  /** « chaque [créature] que [le joueur désigné] contrôle » */
+  permanentsOf: (player: Ref, filter: ObjectFilter): Ref => ({ kind: "permanentsOf", player, filter }),
 };
 
 export const amount = {
@@ -185,6 +191,13 @@ export const amount = {
   basicLandTypes: { kind: "basicLandTypes" } as Amount,
   distinctSubtypes: (filter: ObjectFilter): Amount => ({ kind: "distinctSubtypes", filter }),
   v: (name: string): Amount => ({ kind: "var", name }),
+  cardTypesInGraveyards: { kind: "cardTypesInGraveyards" } as Amount,
+  milledThisTurn: (who: Ref): Amount => ({ kind: "milledThisTurn", who }),
+  cardsDiscardedThisTurn: { kind: "cardsDiscardedThisTurn" } as Amount,
+  maxToughness: (filter: ObjectFilter): Amount => ({ kind: "maxToughness", filter }),
+  maxManaValueInGraveyard: { kind: "maxManaValueInGraveyard" } as Amount,
+  distinctColors: (filter: ObjectFilter): Amount => ({ kind: "distinctColors", filter }),
+  countersAmong: (filter: ObjectFilter, counter: string): Amount => ({ kind: "countersAmong", filter, counter }),
 };
 
 export const fx = {
@@ -205,7 +218,7 @@ export const fx = {
     keywords,
   }),
   destroy: (what: Ref): Effect => ({ op: "destroy", what }),
-  modify: (what: Ref, mods: LayerMods, duration: "endOfTurn" | "permanent" = "endOfTurn"): Effect => ({
+  modify: (what: Ref, mods: LayerMods, duration: "endOfTurn" | "permanent" | "untilYourNextTurn" = "endOfTurn"): Effect => ({
     op: "modify",
     what,
     mods,
@@ -232,13 +245,29 @@ export const fx = {
     store,
   }),
   scry: (n: Amount): Effect => ({ op: "scry", amount: n }),
-  surveil: (n: Amount): Effect => ({ op: "surveil", amount: n }),
+  surveil: (n: Amount, toHand?: { filter?: ObjectFilter; maxManaValue?: Amount }): Effect => ({
+    op: "surveil",
+    amount: n,
+    toHand,
+  }),
   discard: (
     n: Amount,
     who: Ref = ref.you,
-    opts: { filter?: ObjectFilter; chooser?: "controller"; optional?: boolean; store?: string } = {},
+    opts: {
+      filter?: ObjectFilter;
+      chooser?: "controller";
+      optional?: boolean;
+      store?: string;
+      random?: boolean;
+      storeFilter?: ObjectFilter;
+    } = {},
   ): Effect => ({ op: "discard", who, amount: n, ...opts }),
-  sacrifice: (who: Ref, filter: ObjectFilter, n: Amount = 1, opts: { optional?: boolean; store?: string } = {}): Effect => ({
+  sacrifice: (
+    who: Ref,
+    filter: ObjectFilter,
+    n: Amount = 1,
+    opts: { optional?: boolean; store?: string; greatestManaValue?: boolean } = {},
+  ): Effect => ({
     op: "sacrifice",
     who,
     filter,
@@ -312,7 +341,19 @@ export const fx = {
   damageDivided: (total: Amount, to: Ref): Effect => ({ op: "damageDivided", total, to }),
   keepOnePerType: (who: Ref): Effect => ({ op: "keepOnePerType", who }),
   /** « Vous obtenez un emblème avec … » */
-  emblem: (name: string, text: string, abilities: AbilityDef[]): Effect => ({ op: "emblem", name, text, abilities }),
+  emblem: (name: string, text: string, abilities: AbilityDef[], untilYourNextTurn?: boolean): Effect => ({
+    op: "emblem",
+    name,
+    text,
+    abilities,
+    untilYourNextTurn,
+  }),
+  addManaTimes: (times: Amount, ...mana: ManaType[]): Effect => ({ op: "addMana", mana, times }),
+  extraMountainMana: { op: "extraMountainMana" } as Effect,
+  mayWheel: { op: "mayWheel" } as Effect,
+  destroyAllButChosenType: { op: "destroyAllButChosenType" } as Effect,
+  exileFromHandLinked: (who: Ref, filter: ObjectFilter): Effect => ({ op: "exileFromHandLinked", who, filter }),
+  exileLibraryButBottom: (who: Ref): Effect => ({ op: "exileLibraryButBottom", who }),
   /** Attache une Aura ou un Équipement (par défaut la source) au permanent désigné. */
   attach: (to: Ref, what: Ref = ref.self): Effect => ({ op: "attach", what, to }),
   /** « … devient préparé » / « … devient dé-préparé » (Reality Fracture). */
@@ -399,7 +440,7 @@ export const fx = {
     prompt: opts.prompt,
     excludeStored: opts.excludeStored,
   }),
-  topOrBottom: (what: Ref): Effect => ({ op: "libraryTopOrBottom", what }),
+  topOrBottom: (what: Ref, topDamage?: number): Effect => ({ op: "libraryTopOrBottom", what, topDamage }),
   /** « … perd N points de vie à moins de défausser une carte / sacrifier un permanent » */
   punisher: (who: Ref, loseLife: number, opts: { discard?: boolean; sacrifice?: ObjectFilter } = {}): Effect => ({
     op: "punisher",
@@ -419,7 +460,13 @@ export const fx = {
   }),
   copyToken: (
     of: Ref,
-    opts: { count?: Amount; addKeywords?: Keyword[]; addSubtypes?: string[]; sacrificeAtEndStep?: boolean } = {},
+    opts: {
+      count?: Amount;
+      addKeywords?: Keyword[];
+      addSubtypes?: string[];
+      sacrificeAtEndStep?: boolean;
+      addAbilities?: AbilityDef[];
+    } = {},
   ): Effect => ({
     op: "copyToken",
     of,
@@ -469,6 +516,7 @@ export function manaAbility(
     restriction?: ManaAbilityDef["restriction"];
     produceChosen?: boolean;
     rider?: ManaAbilityDef["rider"];
+    distinctPowers?: boolean;
   } = {},
 ): ManaAbilityDef {
   return {
@@ -480,6 +528,7 @@ export function manaAbility(
     restriction: opts.restriction,
     produceChosen: opts.produceChosen,
     rider: opts.rider,
+    amountDistinctPowers: opts.distinctPowers,
   };
 }
 
@@ -513,6 +562,7 @@ export function activated(opts: {
   discardSelf?: boolean;
   bounceSelf?: boolean;
   addCounters?: { kind: string; n: number };
+  exileFromGraveyard?: { filter: ObjectFilter; count?: number };
   label?: string;
 }): ActivatedAbilityDef {
   return {
@@ -530,6 +580,9 @@ export function activated(opts: {
       discardSelf: opts.discardSelf,
       bounceSelf: opts.bounceSelf,
       addCounters: opts.addCounters,
+      exileFromGraveyard: opts.exileFromGraveyard
+        ? { filter: opts.exileFromGraveyard.filter, count: opts.exileFromGraveyard.count ?? 1 }
+        : undefined,
     },
     targets: opts.targets ?? [],
     effects: opts.effects.flat(),
@@ -555,6 +608,18 @@ export function loyalty(n: number, opts: { targets?: TargetSpec[]; effects: Effe
   };
 }
 
+/** Capacité de loyauté « −X » : X est choisi à l'activation (lu avec `amount.x`). */
+export function loyaltyX(opts: { targets?: TargetSpec[]; effects: Effects; label: string }): ActivatedAbilityDef {
+  return {
+    kind: "activated",
+    cost: { loyalty: 0, loyaltyX: true },
+    targets: opts.targets ?? [],
+    effects: opts.effects.flat(),
+    sorcerySpeed: true,
+    label: `−X : ${opts.label}`,
+  };
+}
+
 /** Déclencheurs courants. */
 export const when = {
   /** « Quand cette créature arrive sur le champ de bataille » */
@@ -566,9 +631,18 @@ export const when = {
   leavesSelf: { on: "leaves", who: "self" } as TriggerSpec,
   attacksSelf: { on: "attacks", who: "self" } as TriggerSpec,
   attacks: (filter: ObjectFilter): TriggerSpec => ({ on: "attacks", who: filter }),
+  /** « Chaque fois qu'une [créature] vous attaque ou attaque un planeswalker que vous contrôlez » */
+  attacksYou: (filter: ObjectFilter): TriggerSpec => ({ on: "attacks", who: filter, defending: "you" }),
   /** « Chaque fois que cette créature inflige des blessures de combat à un joueur » */
   combatDamageToPlayer: { on: "dealsCombatDamage", who: "self", toPlayer: true } as TriggerSpec,
-  castSpell: (by: "you" | "opponent" | "any" = "you", filter?: ObjectFilter): TriggerSpec => ({ on: "castSpell", by, filter }),
+  castSpell: (
+    by: "you" | "opponent" | "any" = "you",
+    filter?: ObjectFilter,
+    targeting?: { objects?: ObjectFilter; opponent?: boolean; orFilter?: boolean },
+  ): TriggerSpec => ({ on: "castSpell", by, filter, targeting }),
+  /** « Chaque fois que cette créature subit des blessures » */
+  isDealtDamage: { on: "isDealtDamage", who: "self" } as TriggerSpec,
+  blocks: (who: "self" | ObjectFilter): TriggerSpec => ({ on: "blocks", who }),
   yourUpkeep: { on: "step", step: "upkeep", whose: "you" } as TriggerSpec,
   yourEndStep: { on: "step", step: "end", whose: "you" } as TriggerSpec,
   eachEndStep: { on: "step", step: "end", whose: "any" } as TriggerSpec,
@@ -658,6 +732,12 @@ export const cond = {
   activatedLoyalty: { kind: "activatedLoyaltyThisTurn" } as Condition,
   /** La source est préparée. */
   prepared: { kind: "prepared" } as Condition,
+  /** Une seule créature attaque, et elle attaque un joueur. */
+  attackingAlone: { kind: "attackingAlone" } as Condition,
+  opponentDealtNoncombatDamageLastTurn: { kind: "opponentDealtNoncombatDamageLastTurn" } as Condition,
+  spellCastFromHand: { kind: "spellCastFromHand" } as Condition,
+  spellCastFromGraveyard: { kind: "spellCastFromGraveyard" } as Condition,
+  sourceDealtCombatDamage: { kind: "sourceDealtCombatDamage" } as Condition,
 };
 
 /** « Vous pouvez lancer des sorts comme s'ils avaient le flash. » */

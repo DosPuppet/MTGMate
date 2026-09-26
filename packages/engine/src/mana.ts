@@ -19,6 +19,8 @@ export function parseManaCost(text: string): ManaCost {
     else if (SYMBOLS.has(sym)) {
       const t = sym as ManaType;
       cost.colored[t] = (cost.colored[t] ?? 0) + 1;
+    } else if (/^2\/[WUBRG]$/.test(sym)) {
+      cost.twoHybrid = [...(cost.twoHybrid ?? []), sym[2] as ManaType];
     } else if (/^[WUBRG]\/[WUBRG]$/.test(sym)) {
       cost.hybrid = [...(cost.hybrid ?? []), sym.split("/") as [ManaType, ManaType]];
     } else throw new Error(`Symbole de mana non géré : {${sym}}`);
@@ -28,7 +30,12 @@ export function parseManaCost(text: string): ManaCost {
 
 export function manaValue(cost: ManaCost | null | undefined): number {
   if (!cost) return 0;
-  return cost.generic + Object.values(cost.colored).reduce((a, b) => a + (b ?? 0), 0) + (cost.hybrid?.length ?? 0);
+  return (
+    cost.generic +
+    Object.values(cost.colored).reduce((a, b) => a + (b ?? 0), 0) +
+    (cost.hybrid?.length ?? 0) +
+    2 * (cost.twoHybrid?.length ?? 0)
+  );
 }
 
 export function costToText(cost: ManaCost | null): string {
@@ -36,6 +43,7 @@ export function costToText(cost: ManaCost | null): string {
   let t = "{X}".repeat(cost.x);
   if (cost.generic > 0 || (manaValue(cost) === 0 && cost.x === 0)) t += `{${cost.generic}}`;
   for (const [a, b] of cost.hybrid ?? []) t += `{${a}/${b}}`;
+  for (const m of cost.twoHybrid ?? []) t += `{2/${m}}`;
   for (const m of MANA_TYPES) t += `{${m}}`.repeat(cost.colored[m] ?? 0);
   return t;
 }
@@ -46,6 +54,7 @@ export function totalCost(base: ManaCost | null | undefined, x: number, extra?: 
     generic: (base?.generic ?? 0) + x * (base?.x ?? 0),
     colored: { ...(base?.colored ?? {}) },
     hybrid: [...(base?.hybrid ?? [])],
+    twoHybrid: [...(base?.twoHybrid ?? []), ...(extra?.twoHybrid ?? [])],
     x: 0,
   };
   if (extra) {
@@ -106,10 +115,23 @@ function canActivateMana(s: GameState, id: ObjectId, ab: ManaAbilityDef): boolea
 
 /** Quantité produite (« {G} pour chaque Elfe que vous contrôlez »). */
 function manaAmount(s: GameState, id: ObjectId, ab: ManaAbilityDef): number {
-  if (!ab.amountPer) return ab.amount;
+  // Source déjà sacrifiée pour payer le coût (Trésor) : quantité imprimée.
+  const o = s.objects[id];
+  if (!o) return ab.amount;
+  const controller = o.controller;
+  // Molten Tide : « chaque fois que vous engagez une Montagne pour du mana, ajoutez {R} de plus ».
+  const tide = s.players[controller]?.extraMountainMana;
+  const extra = tide?.turn === s.turn.number && ab.cost.tap && chars(s, id).subtypes.includes("Mountain") ? tide.n : 0;
+  // Loot, the Nexus : un mana pour chaque force différente parmi vos créatures.
+  if (ab.amountDistinctPowers) {
+    const powers = s.battlefield
+      .filter((x) => obj(s, x).controller === controller && isCreature(s, x))
+      .map((x) => chars(s, x).power);
+    return new Set(powers).size + extra;
+  }
+  if (!ab.amountPer) return ab.amount + extra;
   const f = ab.amountPer;
-  const controller = obj(s, id).controller;
-  return s.battlefield.filter((x) => matchesObjectFilter(s, controller, x, f, id)).length;
+  return s.battlefield.filter((x) => matchesObjectFilter(s, controller, x, f, id)).length + extra;
 }
 
 /** À quoi le mana est destiné (mana restreint : « dépensez ce mana uniquement pour lancer un sort d'Ange »). */
@@ -222,6 +244,21 @@ export function solvePayment(
   exclude: ReadonlySet<ObjectId> = new Set(),
   purpose?: ManaPurpose,
 ): PaymentPlan | null {
+  // Hybrides monocolores {2/W} : on essaie d'abord de tout payer en couleur, puis avec de plus en plus de génériques.
+  const two = cost.twoHybrid ?? [];
+  if (two.length > 0) {
+    const masks = [...Array(1 << two.length).keys()].sort((a, b) => bitCount(a) - bitCount(b));
+    for (const mask of masks) {
+      const c: ManaCost = { ...cost, colored: { ...cost.colored }, twoHybrid: [] };
+      two.forEach((m, i) => {
+        if (mask & (1 << i)) c.generic += 2;
+        else c.colored[m] = (c.colored[m] ?? 0) + 1;
+      });
+      const plan = solvePayment(s, player, c, exclude, purpose);
+      if (plan) return plan;
+    }
+    return null;
+  }
   const pool = { ...(s.players[player]?.manaPool ?? zero()) } as Record<ManaType, number>;
   const sources = manaSources(s, player, exclude, purpose);
   // Symboles à payer : chacun accepte un ensemble de types (un seul pour un symbole coloré, deux pour un hybride).
@@ -293,6 +330,12 @@ export function solvePayment(
     generic -= n;
   }
   return generic > 0 ? null : { taps, spend };
+}
+
+function bitCount(n: number): number {
+  let c = 0;
+  for (let x = n; x; x >>= 1) c += x & 1;
+  return c;
 }
 
 /** Quantité maximale de mana disponible (réserve + sources). */

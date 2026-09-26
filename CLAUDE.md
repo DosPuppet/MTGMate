@@ -22,7 +22,7 @@ Ce fichier sert au suivi du projet entre les sessions. Le README présente le pr
 | Effets sonores (échantillons Kenney CC0, volume, muet avec M) | ✅ |
 | Jeu en ligne : duel Standard à 2 (serveur local, code de salon, corde, reconnexion, revanche) | ✅ |
 | Déploiement : pm2 derrière nginx sur un VPS (`docs/deploiement.md`, `deploy/`) | ✅ documenté et testé en local (pm2, nginx) |
-| **Reality Fracture (FRA, « Réalité fracturée »)** | **226 / 279** (lots 0 à E faits ; `npm run coverage -- --set fra --missing`) |
+| **Reality Fracture (FRA, « Réalité fracturée »)** | **276 / 279** (lots 0 à F faits ; hors Emrakul, Uldaros Theorix, Hall of Echoes) |
 | Autres extensions Standard | à faire |
 
 ### Reality Fracture (FRA)
@@ -30,6 +30,16 @@ Ce fichier sert au suivi du projet entre les sessions. Le README présente le pr
 - 285 cartes selon Scryfall, dont 6 réimpressions de FDN (terrains de base, Unsummon), donc 279 cartes propres. Toutes sont légales en Standard.
 - **Sortie le 2 octobre 2026 : pas encore de textes français.** Réimporter après la sortie (`npm run import-cards -- fra`), puis vérifier les noms français dans le deckbuilder.
 - Lot 0 (infrastructure multi-extensions) et lot A (cartes faisables avec le moteur, jetons Cadet, Heartwood, Lotus, Forêt Tentacule et Thopter, terrains lents) : ✅.
+- Lot F (**cartes uniques**) : ✅, 50 cartes. Le moteur gagne :
+  - durée « jusqu'à votre prochain tour » (`modify`, `untilYourNextTurn`) et emblèmes temporaires (`expiresAtTurnOf`) ;
+  - déclencheurs « subit des blessures », « bloque », « vous attaque » (`defending: "you"`), « lance un sort qui cible… » (`targeting`, `orFilter`) ;
+  - hybride monocolore {2/W} (`ManaCost.twoHybrid`), loyauté −X (`loyaltyX`), coût « exilez une autre carte de votre cimetière » ;
+  - garde « défaussez une carte », flashback avec défausse (`flashbackDiscard`), Équiper réduit par les marqueurs +1/+1 ;
+  - combat : blessures selon l'endurance (Ghalta), valeur absolue d'une force négative (Loot), attaque malgré le défenseur, un seul attaquant par planeswalker (Tomik) ;
+  - statiques de joueur : taxe adverse (Thalia), +1 marqueur (Yoshimaru), +1 blessure non de combat (Tomik), pas de déclencheur d'arrivée (Karn), pas de sorts en combat (Yuriko), jetons d'artefact → Dragons, créatures adverses exilées au lieu de mourir ;
+  - Tarmogoyf (`cdaToughness`), Omnipresence, Null Summoner (carte liée lançable), sorts renvoyés en main, Molten Tide, « chaque joueur peut défausser sa main et piocher sept cartes », Kindred Judgment.
+  
+  Non gérées : **Emrakul, the Exigent Doom** (terrain qui gagne une capacité jusqu'au lancement depuis l'exil, garde « sacrifiez trois permanents »), **Uldaros Theorix** (copies de cartes de chaque type lancées gratuitement), **Hall of Echoes** (terrain qui devient la copie d'une créature, règle de légende suspendue).
 - Lot E (**planeswalkers**) : ✅. Il couvre :
   - The Theorist, Jace Beleren ; Ajani Resolute ; Ajani Unrelenting ;
   - les sorts « créature ou planeswalker » ;
@@ -64,12 +74,6 @@ Ce fichier sert au suivi du projet entre les sessions. Le README présente le pr
   
   Les cartes Jace du lot B (Hexhaven Battalion, Countersculpt, Theorist's Sanctum) passent au lot D, Tam au lot E et Emrakul au lot F.
 - Lots suivants :
-  - **F.** Cartes restantes :
-    - Tarmogoyf, Emrakul, Omnipresence, Hall of Echoes, Face Yourself, Uldaros, Draconic Visitor, Extrapolate the Impossible ;
-    - Kindred Judgment, Enlightened Confidant, Cruel Calculations, Seasoned Cryomancer, Sphinx's Approach, Dark Matter Manipulator, Command the Stage, Curse-Marred Demon ;
-    - Gardenize, Hexhaven Invigorator, Clash of Elements, Null Summoner, Recursive Recruitment, Twinned Vision, Twisted Fates, Warrior's Blades ;
-    - Danitha (×2), Ghalta the Immovable, Thalia, Yoshimaru, Beloved Companion, Yuriko, Blade of the Mighty, Fblthp, Gallia, Tragic Host, Jiang Yanggu, Alone ;
-    - Tetsuko Umezawa, Pursuer, Tomik, Loot, Ruric Thar, Magecrusher, Titanbones, Hapatra, the Desert Fang, Karn, Gilded Guardian.
   - **G.** 4 decks préconstruits FRA.
 
 ### Lots du set principal FDN (tous terminés)
@@ -129,6 +133,17 @@ Réimpressions : défenses talismaniques contre une couleur, changelin, restrict
 - **Master of Barbs :** seules les blessures non de combat infligées par vos sources (sorts compris) comptent, pas celles d'une source adverse.
 - **Something Worth Saving :** les quatre cartes sont regardées puis mises au cimetière, ce qui n'est pas une meule au sens strict (pas de déclencheur de meule).
 - **Solitary Cell, Murmuring Volume :** la carte défaussée l'est à la résolution, et non comme coût d'activation.
+- **Extrapolate the Impossible :** ne fait rien, comme sur Arena en BO1 (pas de cartes « hors du jeu »).
+- **Chandra, Torch of Defiance +1 :** la carte exilée est lançable ce tour-ci (et non immédiatement) ; les 2 blessures ne sont infligées que si c'est un terrain.
+- **Chandra, Chill of Compliance +1 ({U}) :** mana sans restriction (pas de réserve de mana restreint).
+- **Fblthp, Impossibly Lost :** une seule fois par tour (et non une fois par étape de blessures de combat).
+- **Garruk, Veiled Butcher −3 :** pioche si le total de cartes non-terrain défaussées est inférieur à deux (exact à 2 joueurs, approché en multijoueur).
+- **Garruk, Curse Breaker −4, Jace, Reality Sculptor −3 :** emblèmes temporaires ; Garruk utilise « chaque fois que vous attaquez ».
+- **Hapatra, the Desert Fang :** une seule cible adverse, même en multijoueur.
+- **Seasoned Cryomancer :** le nombre de cibles est choisi d'après les cartes non-terrain défaussées (1 ou 2), via deux déclencheurs réflexifs exclusifs.
+- **Gallia, Tragic Host :** la carte exilée du cimetière est choisie automatiquement (la moins chère).
+- **Molten Tide :** le {R} supplémentaire s'ajoute à toute capacité de mana « {T} » d'une Montagne, quelle que soit la couleur produite.
+- **Warrior's Blades :** la légalité de l'Équiper suppose la meilleure réduction possible ; le coût payé dépend de la cible choisie.
 - **Légalité Standard :** instantané des légalités Scryfall au moment de l'import (`legalities.standard` dans `data/<set>.json`). Après une rotation ou une annonce de bannissement, réimporter les sets (`npm run import-cards -- <set>`).
 - **Jetons :** pas d'image (cadre texte).
 

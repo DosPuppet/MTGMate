@@ -22,6 +22,7 @@ export const {
   costReducer,
   flashForAll,
   loyalty,
+  loyaltyX,
   castPermission,
   playerStatic,
   prevention,

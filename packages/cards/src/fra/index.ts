@@ -11,6 +11,7 @@ import { GREEN } from "./green";
 import { LANDS } from "./lands";
 import { MULTI } from "./multi";
 import { RED } from "./red";
+import { UNIQUE } from "./unique";
 import { WHITE } from "./white";
 
 export const FRA_SCRIPTS: Record<string, CardScript> = {
@@ -22,4 +23,5 @@ export const FRA_SCRIPTS: Record<string, CardScript> = {
   ...MULTI,
   ...ARTIFACTS,
   ...LANDS,
+  ...UNIQUE,
 };
