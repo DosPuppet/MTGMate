@@ -129,6 +129,8 @@ export function checkCondition(s: GameState, c: Condition, controller: PlayerId,
       return (s.objects[sourceId ?? ""]?.classLevel ?? 1) === c.level;
     case "saddled":
       return s.objects[sourceId ?? ""]?.saddledTurn === s.turn.number;
+    case "void":
+      return !!s.turn.nonlandLeft || !!s.turn.spellWarped;
     case "solved":
       return !!s.objects[sourceId ?? ""]?.solved;
     case "doorLocked":
@@ -258,13 +260,16 @@ function matchTrigger(s: GameState, ev: RulesEvent, t: TriggerSpec, src: Source)
     }
     case "dies": {
       if (ev.e !== "zone" || ev.from !== "battlefield" || ev.to !== "graveyard" || !ev.lki) return null;
-      if (!ev.lki.types.includes("Creature")) return null;
+      // « Meurt » : une créature, sauf si le filtre nomme d'autres types (« une créature ou un artefact meurt », Edge of Eternities).
+      const typed = t.who !== "self" && (!!t.who.types || !!t.who.anyOf);
+      if (!typed && !ev.lki.types.includes("Creature")) return null;
       return matchWho(t.who, ev.lki, src)
         ? { objectId: ev.lki.id, newObjectId: ev.newId ?? undefined, player: ev.lki.controller }
         : null;
     }
     case "leaves": {
       if (ev.e !== "zone" || ev.from !== "battlefield" || !ev.lki) return null;
+      if (t.to && ev.to !== t.to) return null;
       return ev.lki.id === src.id ? { objectId: ev.lki.id, newObjectId: ev.newId ?? undefined } : null;
     }
     case "attacks": {
@@ -314,6 +319,8 @@ function matchTrigger(s: GameState, ev: RulesEvent, t: TriggerSpec, src: Source)
         // Danitha, Sword of Hope : « un sort d'Équipement ou un sort qui cible… ».
         if (!ok && !(t.targeting.orFilter && f && filterOk)) return null;
       }
+      // « votre deuxième sort de chaque tour ».
+      if (t.nth !== undefined && s.players[ev.player]?.turnStats.spellsCast !== t.nth) return null;
       // `amount` : éphémères et rituels déjà lancés ce tour-ci (Thousand-Year Storm).
       return { objectId: ev.stackId, player: ev.player, amount: ev.instantSorceryBefore };
     }
@@ -325,10 +332,13 @@ function matchTrigger(s: GameState, ev: RulesEvent, t: TriggerSpec, src: Source)
       if (t.minRemoved !== undefined && -ev.cost < t.minRemoved) return null;
       return { objectId: ev.sourceId, player: ev.player };
     }
-    case "isDealtDamage":
-      return ev.e === "damage" && ev.target === src.id && ev.amount > 0
-        ? { objectId: src.id, amount: ev.amount, player: me }
+    case "isDealtDamage": {
+      // La créature enchantée ou équipée (Cryoshatter, Pain for All), ou la source elle-même.
+      const who = t.who === "attached" ? src.view.attachedTo : src.id;
+      return ev.e === "damage" && who && ev.target === who && ev.amount > 0
+        ? { objectId: who, amount: ev.amount, player: me }
         : null;
+    }
     case "blocks": {
       if (ev.e !== "block") return null;
       const v = liveView(s, ev.blocker);
@@ -349,6 +359,19 @@ function matchTrigger(s: GameState, ev: RulesEvent, t: TriggerSpec, src: Source)
       if (ev.e !== "explore" || (t.land !== undefined && t.land !== ev.land)) return null;
       const v = liveView(s, ev.objectId);
       return v && matchWho(t.who, v, src) ? { objectId: ev.objectId, player: v.controller } : null;
+    }
+    case "combatDamageBatch": {
+      if (ev.e !== "combatDamageBatch") return null;
+      const ok = ev.sources.some((id) => {
+        const v = liveView(s, id) ?? s.lki[id];
+        return !!v && matchesView(v, t.who, me, src.id);
+      });
+      return ok ? { player: ev.player } : null;
+    }
+    case "sacrifice": {
+      if (ev.e !== "sacrifice" || ev.player !== me) return null;
+      const v = liveView(s, ev.objectId);
+      return v && matchWho(t.who, v, src) ? { objectId: ev.objectId, player: me } : null;
     }
     case "saddled":
       return ev.e === "saddled" && ev.objectId === src.id ? { objectId: src.id, player: src.view.controller } : null;

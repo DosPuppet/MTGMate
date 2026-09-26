@@ -27,6 +27,8 @@ export interface EntersContext {
   castFromHand?: boolean;
   /** Choix fait pendant la résolution (« en arrivant, choisissez… »). */
   chosen?: GameObject["chosen"];
+  /** Terrain choc : les points de vie ont été payés (sinon il arrive engagé). */
+  shockPaid?: boolean;
 }
 
 /**
@@ -109,6 +111,8 @@ export function applyEntersReplacements(s: GameState, o: GameObject, ctx: Enters
   // 614.12 : « en arrivant, choisissez… » (le choix vient de la résolution, sinon choix par défaut).
   const choose = s.defs[o.defId]?.chooseOnEnter;
   if (choose) o.chosen = ctx.chosen ?? defaultChoice(s, o, choose);
+  // Terrain choc : engagé, sauf si les points de vie ont été payés en le jouant (mis en jeu par un effet : engagé).
+  if (s.defs[o.defId]?.shockLand && !ctx.shockPaid) o.tapped = true;
   // 714.3a : une Saga arrive avec un marqueur de savoir.
   if (s.defs[o.defId]?.saga) changeCounters(s, o, "lore", 1);
   // 306.5b : un planeswalker arrive avec sa loyauté imprimée.

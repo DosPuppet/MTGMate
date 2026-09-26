@@ -346,6 +346,8 @@ function endStep(s: GameState): void {
     s.turn.attacked = false;
     s.turn.creatureDied = false;
     s.turn.creaturesDied = 0;
+    s.turn.nonlandLeft = false;
+    s.turn.spellWarped = false;
     emit({ type: "turnStart", turn: s.turn.number, player: s.turn.active });
   }
   s.flow = "stepStart";
@@ -528,6 +530,8 @@ export function canBlock(s: GameState, blocker: ObjectId, attacker: ObjectId): b
   const a = s.combat?.attackers.find((x) => x.id === attacker);
   if (!a || !onBattlefield(s, attacker) || b.controller !== defendingPlayer(s, a.defender)) return false;
   if (hasKeyword(s, blocker, "cantBlock") || hasKeyword(s, attacker, "unblockable")) return false;
+  // Drone : « ne peut bloquer que des créatures avec le vol ».
+  if (hasKeyword(s, blocker, "canBlockOnlyFlyers") && !hasKeyword(s, attacker, "flying")) return false;
   // 702.16f : une créature avec la protection contre tout ne peut pas être bloquée.
   if (hasKeyword(s, attacker, "protectionFromEverything")) return false;
   if (hasKeyword(s, attacker, "cantBeBlockedByHumans") && chars(s, blocker).subtypes.includes("Human")) return false;
@@ -606,6 +610,8 @@ export function declareBlockers(s: GameState, player: PlayerId, blocks: { blocke
     const n = blocks.filter((b) => b.attacker === a.id).length;
     if (n === 1 && hasKeyword(s, a.id, "menace"))
       throw new RulesError("Une créature avec la menace doit être bloquée par au moins deux créatures");
+    if (n > 1 && hasKeyword(s, a.id, "cantBeBlockedByMoreThanOne"))
+      throw new RulesError("Cette créature ne peut pas être bloquée par plus d'une créature");
   }
   c.blockers.push(...blocks.map((b) => ({ id: b.blocker, attacker: b.attacker })));
   for (const b of blocks) rulesEvent(s, { e: "block", blocker: b.blocker, attacker: b.attacker });
@@ -779,6 +785,13 @@ function combatDamage(s: GameState, firstStrikeStep: boolean): void {
   // 510.2 : toutes les blessures de combat sont infligées simultanément.
   simultaneously(s, () => {
     for (const x of assignments) dealDamage(s, x.src, x.target, x.amount, true);
+    // « Chaque fois qu'une ou plusieurs créatures … infligent des blessures de combat à un joueur » : une fois par joueur.
+    const byPlayer = new Map<PlayerId, ObjectId[]>();
+    for (const x of assignments) {
+      if (!s.players[x.target] || x.amount <= 0 || !x.src.id) continue;
+      byPlayer.set(x.target, [...(byPlayer.get(x.target) ?? []), x.src.id]);
+    }
+    for (const [player, sources] of byPlayer) rulesEvent(s, { e: "combatDamageBatch", player, sources });
   });
 }
 

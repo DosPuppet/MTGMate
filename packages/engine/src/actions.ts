@@ -162,6 +162,14 @@ export function putIntoGraveyard(s: GameState, id: ObjectId): void {
   removeFromCombat(s, id);
 }
 
+/** Sacrifier (701.21) : le contrôleur met le permanent au cimetière ; « chaque fois que vous sacrifiez… » se déclenche. */
+export function sacrifice(s: GameState, id: ObjectId): void {
+  const o = s.objects[id];
+  if (o?.zone !== "battlefield") return;
+  rulesEvent(s, { e: "sacrifice", objectId: id, player: o.controller });
+  putIntoGraveyard(s, id);
+}
+
 export function removeFromCombat(s: GameState, id: ObjectId): void {
   if (!s.combat) return;
   bump(s);

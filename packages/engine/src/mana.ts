@@ -1,7 +1,7 @@
 /**
  * Mana : lecture des coûts, sources disponibles et solveur de paiement automatique.
  */
-import { putIntoGraveyard } from "./actions";
+import { sacrifice } from "./actions";
 import { chars, defOf, isCreature, isSummoningSick, obj, snapshot, tapObject } from "./state";
 import { matchesObjectFilter, matchesView, withChosen } from "./targets";
 import type { GameState, LkiSnapshot, ManaAbilityDef, ManaCost, ManaType, ObjectId, PlayerId } from "./types";
@@ -215,7 +215,7 @@ export function activateManaAbility(s: GameState, player: PlayerId, id: ObjectId
   const c = color ?? ab.produce[0];
   if (!c || !ab.produce.includes(c)) throw new Error("Couleur de mana invalide");
   if (ab.cost.tap) tapObject(s, o);
-  if (ab.cost.sacrificeSelf) putIntoGraveyard(s, id);
+  if (ab.cost.sacrificeSelf) sacrifice(s, id);
   const pool = s.players[player]?.manaPool;
   if (pool) pool[c] += manaAmount(s, id, ab);
 }

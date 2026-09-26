@@ -46,6 +46,9 @@ export function matchesView(v: LkiSnapshot, f: ObjectFilter, perspective: Player
   if (f.maxToughness !== undefined && v.toughness > f.maxToughness) return false;
   if (f.preparedSpell !== undefined && !!v.preparedSpell !== f.preparedSpell) return false;
   if (f.prepared !== undefined && !!v.prepared !== f.prepared) return false;
+  if (f.warped !== undefined && !!v.warped !== f.warped) return false;
+  if (f.blocking !== undefined && !!v.blocking !== f.blocking) return false;
+  if (f.damaged !== undefined && !!v.damaged !== f.damaged) return false;
   return true;
 }
 

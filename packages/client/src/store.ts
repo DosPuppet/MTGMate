@@ -187,6 +187,7 @@ function buildDecision(c: Casting): Decision {
       card: c.option.card,
       face: c.option.face,
       faceDown: c.option.faceDown,
+      warp: c.option.warp,
       mode: c.mode ?? 0,
       targets: c.targets,
       x: c.x ?? undefined,
@@ -622,8 +623,10 @@ export const useGame = create<Store>((set, get) => {
       const p = view.pending;
       if ((p?.kind === "discard" || p?.kind === "bottomCards") && p.player === view.viewer) return get().toggleSelection(id);
       const acts = myActions(view);
-      const land = acts.find((a) => a.type === "playLand" && a.card === id);
-      if (land) return get().decide({ type: "playLand", card: id });
+      const lands = acts.filter((a) => a.type === "playLand" && a.card === id);
+      // Terrain choc : payer les points de vie (dégagé) ou non (engagé).
+      if (lands.length > 1) return set({ abilityMenu: { sourceId: id, options: lands } });
+      if (lands.length === 1) return get().decide({ type: "playLand", card: id });
       const casts = acts.filter((a): a is CastOption => a.type === "cast" && a.card === id);
       const cast = casts[0];
       // Capacités activées depuis la main (cycle, « défaussez cette carte : … »), ou plusieurs faces (aventure).

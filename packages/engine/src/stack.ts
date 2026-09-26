@@ -3,7 +3,7 @@
  * Côté moteur, un lancement est atomique : le client envoie d'un coup mode, cibles, X et kicker,
  * et le paiement du mana est résolu automatiquement (réserve d'abord, puis solveur).
  */
-import { loseLife, putIntoGraveyard } from "./actions";
+import { loseLife, sacrifice as sacrificePermanent } from "./actions";
 import { ask } from "./choices";
 import { announceDiscard, evalAmount, runEffect } from "./effects";
 import { RulesError } from "./errors";
@@ -31,7 +31,7 @@ import {
 } from "./state";
 import { controlledAbilitiesWithSource, playerStatic } from "./statics";
 import { isLegalTarget, legalTargets, matchesCard, matchesObjectFilter, matchesView, validateTargets } from "./targets";
-import { checkCondition, simultaneously } from "./triggers";
+import { checkCondition, createDelayed, simultaneously } from "./triggers";
 import type {
   ActivatedAbilityDef,
   CardDef,
@@ -124,12 +124,16 @@ export function canPlayLand(s: GameState, player: PlayerId, card: ObjectId): boo
   return allowed && sorceryTiming(s, player) && s.turn.landsPlayed < landsAllowed(s, player);
 }
 
-export function playLand(s: GameState, player: PlayerId, card: ObjectId): void {
+export function playLand(s: GameState, player: PlayerId, card: ObjectId, payLife = false): void {
   if (!canPlayLand(s, player, card)) throw new RulesError("Vous ne pouvez pas jouer ce terrain maintenant");
   const o = obj(s, card);
+  // Terrains choc : « vous pouvez payer 2 points de vie ; sinon, il arrive engagé ».
+  const shock = s.defs[o.defId]?.shockLand;
+  if (payLife && !shock) throw new RulesError("Ce terrain ne demande pas de points de vie");
+  if (payLife && shock) loseLife(s, player, shock);
   if (o.zone === "graveyard") s.turn.graveyardTypesUsed = [...(s.turn.graveyardTypesUsed ?? []), "Land"];
   const defId = o.defId;
-  const id = moveObject(s, card, "battlefield", { controller: player });
+  const id = moveObject(s, card, "battlefield", { controller: player, enters: { shockPaid: payLife } });
   s.turn.landsPlayed += 1;
   emit({ type: "playLand", player, objectId: id as string, defId });
 }
@@ -239,6 +243,8 @@ export function spellCost(
 
 /** Conditions de lancement d'une carte depuis sa zone actuelle. */
 export interface CastTerms {
+  /** Lançable d'ici seulement avec la distorsion (Timeline Culler, depuis le cimetière). */
+  warpOnly?: boolean;
   source: "hand" | "graveyard" | "exile" | "flashback" | "library";
   /** Doit être lancée sans payer son coût de mana (Etali). */
   free?: boolean;
@@ -320,6 +326,8 @@ export function castTerms(s: GameState, player: PlayerId, card: ObjectId): CastT
   if (o.zone === "graveyard") {
     if (o.owner !== player) return null;
     if (s.turn.mayCastFromGraveyard?.includes(card)) return { source: "graveyard" };
+    // Timeline Culler : « vous pouvez lancer cette carte depuis votre cimetière avec sa distorsion ».
+    if (d.warp?.fromGraveyard) return { source: "graveyard", warpOnly: true };
     if (d.flashback || s.turn.flashbackGranted?.includes(card)) return { source: "flashback" };
     const t = graveyardTypeAvailable(s, player, card);
     if (t && t !== "Land") return { source: "graveyard", graveyardType: t };
@@ -355,6 +363,8 @@ export function castTerms(s: GameState, player: PlayerId, card: ObjectId): CastT
     }
     // 715.4 : la carte « en aventure » : son propriétaire peut lancer la créature.
     if (o.onAdventure && o.owner === player) return { source: "exile" };
+    // 702.185a : exilée par la distorsion, lançable depuis l'exil à partir du tour suivant.
+    if (o.warpExiledTurn !== undefined && o.owner === player && s.turn.number > o.warpExiledTurn) return { source: "exile" };
     const perm = exilePermission(s, player, card);
     if (perm) return { source: "exile", free: perm.free, anyTime: perm.anyTime };
     // Tinybones : cartes d'adversaires exilées avec un marqueur de butin, pendant votre tour.
@@ -447,7 +457,14 @@ export function castSpell(s: GameState, player: PlayerId, card: ObjectId, choice
   if (!face) throw new RulesError("Cette face ne peut pas être lancée");
   // Déguisement (702.168a) : lancée face cachée comme une créature 2/2 sans nom pour {3}.
   if (choices.faceDown && !cardDef.disguise) throw new RulesError("Cette carte ne peut pas être lancée face cachée");
-  const d = choices.faceDown ? FACE_DOWN_SPELL : face[1];
+  // Distorsion (702.185) : depuis la main (ou le cimetière si la carte le permet), pour son coût de distorsion.
+  const warp = choices.warp ? cardDef.warp : undefined;
+  if (choices.warp && (!warp || (terms.source !== "hand" && !(terms.source === "graveyard" && warp.fromGraveyard)))) {
+    throw new RulesError("Cette carte ne peut pas être lancée avec la distorsion");
+  }
+  if (terms.warpOnly && !choices.warp) throw new RulesError("Cette carte ne se lance d'ici qu'avec la distorsion");
+  if (warp?.life && (s.players[player]?.life ?? 0) < warp.life) throw new RulesError("Pas assez de points de vie");
+  const d = choices.faceDown ? FACE_DOWN_SPELL : warp ? { ...face[1], manaCost: warp.cost } : face[1];
   if (splitSecondOnStack(s)) throw new RulesError("Aucun sort ni capacité maintenant (second partagé ou combat)");
   // Harbinger of the Tides : « comme s'il avait le flash si vous payez {2} de plus ».
   const flashExtra = !terms.anyTime && !canCastTiming(s, player, d) ? d.flashExtraCost : undefined;
@@ -522,6 +539,7 @@ export function castSpell(s: GameState, player: PlayerId, card: ObjectId, choice
     sourceSnapshot: { keywords: d.keywords, power: d.power ?? 0, controller: player },
     flashback,
     adventure: adventure || undefined,
+    warped: warp ? true : undefined,
     fromHand: terms.source === "hand" || undefined,
     uncounterable: uncounterable || undefined,
   };
@@ -538,6 +556,8 @@ export function castSpell(s: GameState, player: PlayerId, card: ObjectId, choice
   } catch {
     throw new RulesError("Mana insuffisant");
   }
+  // Distorsion « Warp—{B}, Pay 2 life » : les points de vie font partie du coût.
+  if (warp?.life) loseLife(s, player, warp.life);
   // Pyromancer's Goggles : « copiez ce sort ».
   for (const r of item.riders ?? []) if (r === "copy") copySpellItem(s, item, player);
   // Teach by Example : « la prochaine fois que vous lancez un éphémère ou un rituel ce tour-ci, copiez-le ».
@@ -550,7 +570,7 @@ export function castSpell(s: GameState, player: PlayerId, card: ObjectId, choice
     emit({ type: "discard", player, defIds: discard.map((id) => obj(s, id).defId) });
     for (const id of discard) announceDiscard(s, player, moveObject(s, id, "graveyard"));
   }
-  for (const id of sacrifice) putIntoGraveyard(s, id);
+  for (const id of sacrifice) sacrificePermanent(s, id);
   s.priority.passes = 0;
   emit({ type: "cast", player, stackId, defId: d.id, targets: flatTargets(targets) });
   const caster = s.players[player];
@@ -558,6 +578,8 @@ export function castSpell(s: GameState, player: PlayerId, card: ObjectId, choice
   const before = caster?.turnStats.instantSorceryCast ?? 0;
   if (caster) {
     caster.turnStats.spellsCast += 1;
+    bump(s); // des capacités statiques en dépendent (« si vous avez lancé deux sorts ce tour-ci »)
+    if (warp) s.turn.spellWarped = true;
     if (instantOrSorcery) caster.turnStats.instantSorceryCast += 1;
     if (!d.types.includes("Creature")) caster.turnStats.noncreatureCast += 1;
   }
@@ -843,8 +865,8 @@ export function activateAbility(s: GameState, player: PlayerId, source: ObjectId
   for (const id of tapOthers) tapObject(s, obj(s, id));
   // Les permanents sacrifiés restent consultables (dernières informations connues : « sa endurance »).
   item.sacrificed = sacrificed.length ? [...sacrificed] : undefined;
-  for (const id of sacrificed) putIntoGraveyard(s, id);
-  if (ab.cost.sacrificeSelf) putIntoGraveyard(s, source);
+  for (const id of sacrificed) sacrificePermanent(s, id);
+  if (ab.cost.sacrificeSelf) sacrificePermanent(s, source);
   // La source quitte sa zone pour payer le coût : on garde ses dernières informations (« cette carte », où qu'elle soit).
   if (ab.cost.exileSelf || ab.cost.discardSelf || ab.cost.bounceSelf) s.lki[source] ??= snapshot(s, source);
   if (ab.cost.exileFromGraveyard) {
@@ -988,6 +1010,16 @@ function finishResolution(
         },
       });
       const arrived = enteredId ? s.objects[enteredId] : undefined;
+      // Distorsion : exilé au début de la prochaine étape de fin.
+      if (item.warped && arrived) {
+        arrived.warped = true;
+        createDelayed(s, item.controller, arrived.id, arrived.defId, {
+          targets: [],
+          effects: [{ op: "warpExile", what: { kind: "target", id: "w" } }],
+          bound: { w: [arrived.id] },
+          label: "Distorsion : exilez-le",
+        });
+      }
       const card = arrived ? s.defs[arrived.defId] : undefined;
       if (face && arrived && card?.layout === "split") {
         // Salle (709.5d) : la porte lancée est déverrouillée à l'arrivée.

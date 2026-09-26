@@ -239,6 +239,14 @@ export const fx = {
     for: forWho,
     store,
   }),
+  /** Jetons engagés (et attaquants si `attacking`). */
+  createTappedTokens: (token: TokenSpec, count: Amount = 1, opts: { attacking?: boolean; store?: string } = {}): Effect => ({
+    op: "createTokens",
+    token,
+    count,
+    tapped: true,
+    ...opts,
+  }),
   addCounters: (what: Ref, n: Amount): Effect => ({ op: "addCounters", what, amount: n }),
   loseLife: (n: Amount, who: Ref = ref.you, store?: string): Effect => ({ op: "loseLife", who, amount: n, store }),
   bounce: (what: Ref): Effect => ({ op: "bounce", what }),
@@ -301,10 +309,17 @@ export const fx = {
   /** Contrecarre le sort ou la capacité désigné. */
   counter: (what: Ref): Effect => ({ op: "counter", what }),
   /** « Contrecarrez-le à moins que son contrôleur ne paie X » : le paiement annule les effets qui suivent. */
-  unlessPays: (who: Ref, cost: { mana?: string; life?: number }, ...effects: Effects): Effect[] => {
+  unlessPays: (who: Ref, cost: { mana?: string; life?: number; paidStore?: string }, ...effects: Effects): Effect[] => {
     const flat = effects.flat();
     return [
-      { op: "unlessPay", who, mana: cost.mana ? parseManaCost(cost.mana) : undefined, life: cost.life, skip: flat.length },
+      {
+        op: "unlessPay",
+        who,
+        mana: cost.mana ? parseManaCost(cost.mana) : undefined,
+        life: cost.life,
+        paidStore: cost.paidStore,
+        skip: flat.length,
+      },
       ...flat,
     ];
   },
@@ -677,8 +692,16 @@ export const when = {
     filter?: ObjectFilter,
     targeting?: { objects?: ObjectFilter; opponent?: boolean; orFilter?: boolean },
   ): TriggerSpec => ({ on: "castSpell", by, filter, targeting }),
+  /** « Chaque fois que vous lancez votre N-ième sort de chaque tour » */
+  castNthSpell: (nth: number): TriggerSpec => ({ on: "castSpell", by: "you", nth }),
   /** « Chaque fois que cette créature subit des blessures » */
   isDealtDamage: { on: "isDealtDamage", who: "self" } as TriggerSpec,
+  /** « Chaque fois que la créature enchantée (ou équipée) subit des blessures » */
+  attachedIsDealtDamage: { on: "isDealtDamage", who: "attached" } as TriggerSpec,
+  /** « Chaque fois qu'une ou plusieurs [créatures] infligent des blessures de combat à un joueur » */
+  combatDamageBatch: (who: ObjectFilter): TriggerSpec => ({ on: "combatDamageBatch", who }),
+  /** « Quand ce permanent est mis dans un cimetière depuis le champ de bataille » */
+  putIntoGraveyardSelf: { on: "leaves", who: "self", to: "graveyard" } as TriggerSpec,
   blocks: (who: "self" | ObjectFilter): TriggerSpec => ({ on: "blocks", who }),
   yourUpkeep: { on: "step", step: "upkeep", whose: "you" } as TriggerSpec,
   yourEndStep: { on: "step", step: "end", whose: "you" } as TriggerSpec,
@@ -722,6 +745,8 @@ export const when = {
   turnedFaceUp: { on: "turnedFaceUp" } as TriggerSpec,
   /** « Chaque fois qu'une [créature] explore [une carte de terrain / non-terrain] » */
   explores: (who: "self" | ObjectFilter, land?: boolean): TriggerSpec => ({ on: "explores", who, land }),
+  /** « Chaque fois que vous sacrifiez [un permanent] » */
+  sacrifice: (who: ObjectFilter): TriggerSpec => ({ on: "sacrifice", who }),
   /** « Chaque fois que cette Monture devient montée » */
   saddled: { on: "saddled" } as TriggerSpec,
   /** « Quand cette Classe atteint le niveau N » */
@@ -781,6 +806,8 @@ export const cond = {
   activatedLoyalty: { kind: "activatedLoyaltyThisTurn" } as Condition,
   /** La source est préparée. */
   prepared: { kind: "prepared" } as Condition,
+  /** Vide (Edge of Eternities) : un permanent non-terrain a quitté le champ de bataille ou un sort a été lancé avec la distorsion ce tour-ci. */
+  void: { kind: "void" } as Condition,
   /** Classe : exactement à ce niveau ; Affaire : résolue. */
   classLevel: (level: number): Condition => ({ kind: "classLevel", level }),
   solved: { kind: "solved" } as Condition,

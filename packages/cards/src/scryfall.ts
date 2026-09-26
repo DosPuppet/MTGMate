@@ -123,6 +123,18 @@ export function parseWard(text: string): CardDef["ward"] {
   return { mana: m[2] ? parseManaCost(m[2]) : undefined, life: Number(m[3]) };
 }
 
+/** Distorsion (702.185) : « Warp {1}{W} » ou « Warp—{B}, Pay 2 life. » ; « …depuis votre cimetière avec sa distorsion ». */
+export function parseWarp(text: string): CardDef["warp"] {
+  const t = stripReminder(text);
+  const m = /^Warp(?: |—)((?:\{[^}]+\})+)(?:, [Pp]ay (\d+) life)?/m.exec(t);
+  if (!m) return undefined;
+  return {
+    cost: parseManaCost(m[1] as string),
+    life: m[2] ? Number(m[2]) : undefined,
+    fromGraveyard: /You may cast this card from your graveyard using its warp ability/.test(t) || undefined,
+  };
+}
+
 /** Déguisement (702.168) : « Disguise {1}{W} ». */
 export function parseDisguise(text: string): CardDef["disguise"] {
   const m = /^Disguise ((?:\{[^}]+\})+)/m.exec(stripReminder(text));
@@ -572,6 +584,10 @@ function singleDef(raw: RawCard, script: CardScript | undefined, set: string): C
     flashback: script?.flashback ? parseManaCost(script.flashback) : undefined,
     flashbackDiscard: script?.flashbackDiscard,
     disguise: parseDisguise(raw.oracleText),
+    warp: parseWarp(raw.oracleText),
+    shockLand: /As this land enters, you may pay (\d+) life\. If you don't, it enters tapped\./.exec(raw.oracleText)
+      ? Number(/you may pay (\d+) life/.exec(raw.oracleText)?.[1])
+      : undefined,
     additionalCost: script?.additionalCost,
     costReduction: script?.costReduction,
     text: raw.oracleText,

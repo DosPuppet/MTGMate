@@ -23,6 +23,7 @@ import tdmData from "../data/tdm.json";
 import tlaData from "../data/tla.json";
 import tmtData from "../data/tmt.json";
 import woeData from "../data/woe.json";
+import { EOE_SCRIPTS } from "./eoe/index";
 import { FDN_SCRIPTS } from "./fdn/index";
 import { FRA_SCRIPTS } from "./fra/index";
 import type { RawCard } from "./scryfall";
@@ -54,7 +55,7 @@ export const SETS: CardSet[] = [
     nameFr: "Aux confins de l'éternité",
     mainMax: 276,
     data: eoeData as RawCard[],
-    scripts: {},
+    scripts: EOE_SCRIPTS,
   },
   { code: "DFT", name: "Aetherdrift", nameFr: "Aetherdrift", mainMax: 291, data: dftData as RawCard[], scripts: {} },
   {

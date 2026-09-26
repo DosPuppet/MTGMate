@@ -62,7 +62,12 @@ for (let i = 0; i < MAX; i++) {
       for (let k = 0; k < n; k++) await cards.nth(k).click();
       await dialog.getByRole("button", { name: /Valider/ }).click();
     } else if (/X/.test(title)) await dialog.getByRole("button", { name: "Valider" }).click();
-    else await dialog.locator(".btn.choice").first().click();
+    else
+      await dialog
+        .locator(".btn.choice")
+        .first()
+        .click({ timeout: 3000 })
+        .catch(() => {});
     continue;
   }
 
@@ -103,7 +108,7 @@ for (let i = 0; i < MAX; i++) {
       await all.click();
       await shot("attaque");
     }
-    await main.click();
+    await main.click({ timeout: 3000 }).catch(() => {});
     continue;
   }
   if (label === "Pas de blocage") {
@@ -115,7 +120,10 @@ for (let i = 0; i < MAX; i++) {
       if (await att.count()) await att.click({ force: true });
       await shot("blocage");
     }
-    await page.locator(".main-button").click();
+    await page
+      .locator(".main-button")
+      .click({ timeout: 3000 })
+      .catch(() => {});
     continue;
   }
 
@@ -128,7 +136,8 @@ for (let i = 0; i < MAX; i++) {
     await playable.first().click({ force: true });
     continue;
   }
-  await main.click();
+  // L'IA peut agir entre la vérification et le clic : un clic manqué est simplement retenté au tour de boucle suivant.
+  await main.click({ timeout: 3000 }).catch(() => {});
 }
 
 if (!(await page.locator(".gameover").count())) {

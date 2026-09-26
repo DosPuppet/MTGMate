@@ -51,7 +51,7 @@ function setup(c: CardDef): GameState {
     },
     p2: {
       battlefield: [...LANDS.slice(0, 6), "Shivan Dragon", "Llanowar Elves", "Gleaming Barrier", "Anthem of Champions"],
-      hand: ["Giant Growth", "Opt", "Forest", "Llanowar Elves", "Helpful Hunter"],
+      hand: ["Giant Growth", "Opt", "Forest", "Llanowar Elves", "Helpful Hunter", "Goblin Firebomb"],
       graveyard: ["Pelakka Wurm", "Think Twice"],
       library: LIBRARY,
     },

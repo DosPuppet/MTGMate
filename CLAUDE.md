@@ -130,6 +130,38 @@ Lot 0.10 (performances, pool complet de 5 174 cartes) :
   - rendu progressif de la collection (pages de 120 cartes, suivantes à l'approche du bas de la grille) : toutes les cartes s'affichent en 164 ms au lieu de 2 084 ms ;
   - filtres différés (`useDeferredValue`) : une recherche prend 167 ms au lieu de 474 ms, sans bloquer la saisie.
 
+### Edge of Eternities (EOE, 260 cartes)
+
+| Mécanique | Cartes | Lot |
+|---|---:|---|
+| distorsion (warp) | 32 | A |
+| station (Vaisseaux, Planètes) | 27 | B |
+| vide (void) | 14 | A |
+| jetons Lander, Robot, Drone, Munitions | ~40 | A |
+| « votre deuxième sort de chaque tour » | 6 | A |
+| « deux créatures engagées ou plus » | 6 | A |
+| terrains choc | 5 | A |
+
+- Lot A ✅ (170/260). Il couvre :
+  - distorsion (702.185) :
+    - option de lancement « (distorsion) » depuis la main (`CardDef.warp`, lue dans le texte, points de vie compris) ;
+    - le permanent est exilé à la prochaine étape de fin, puis relançable depuis l'exil un tour suivant (`warpExiledTurn`) ;
+    - Timeline Culler : depuis le cimetière ; filtre `warped` ;
+  - vide : condition `cond.void` (un permanent non-terrain a quitté le champ de bataille ou un sort a été lancé avec la distorsion ce tour-ci) ;
+  - déclencheurs et outils génériques :
+    - `when.castNthSpell(2)` ;
+    - « chaque fois que vous sacrifiez » (`when.sacrifice`, fonction `sacrifice` du moteur) ;
+    - blessures de combat groupées (`when.combatDamageBatch`) ;
+    - « la créature enchantée subit des blessures » ;
+    - « mis au cimetière depuis le champ de bataille » (`when.putIntoGraveyardSelf`) ;
+    - « meurt » pour des artefacts quand le filtre les nomme ;
+  - jetons engagés ou attaquants (`fx.createTappedTokens`) ; « s'il paie » (`unlessPays` avec `paidStore`) ; filtres `blocking` et `damaged` ;
+  - restrictions de blocage `canBlockOnlyFlyers` (Drone) et `cantBeBlockedByMoreThanOne` ;
+  - terrains choc : deux options « jouer ce terrain » (payer 2 PV, dégagé ; ou engagé).
+- Lot B : station et Vaisseaux, Planètes, cartes liées (Drill Too Deep, Systems Override, Tapestry Warden…).
+- Lot C : cartes uniques (Tezzeret, The Endstone, The Dominion Bracelet, Starfield Vocalist, Weftwalking, Quantum Riddler, Mm'menon, Sothera, Lightstall Inquisitor, Pinnacle Starcage…).
+- Test de fumée : l'adversaire du scénario a un Goblin Firebomb en main (cible des contresorts d'artefact).
+
 ### Reality Fracture (FRA)
 
 - 285 cartes selon Scryfall, dont 6 réimpressions de FDN (terrains de base, Unsummon), donc 279 cartes propres. Toutes sont légales en Standard.
@@ -257,6 +289,8 @@ Réimpressions : défenses talismaniques contre une couleur, changelin, restrict
 - **Warrior's Blades :** la légalité de l'Équiper suppose la meilleure réduction possible ; le coût payé dépend de la cible choisie.
 - **Uldaros Theorix :** les copies choisies (valeur de mana totale 6 ou moins) se lancent gratuitement après la résolution du déclencheur, à tout moment ce tour-ci, et non pendant la résolution (comme Etali).
 - **Emrakul, the Exigent Doom :** la capacité accordée au terrain cesse dès que la carte quitte l'exil, de quelque façon que ce soit (et pas seulement quand elle est lancée).
+- **Terrains choc mis en jeu par un effet** (et non joués) : ils arrivent engagés, sans proposer de payer 2 points de vie.
+- **Blessures de combat groupées** (« une ou plusieurs créatures… ») : une fois par étape de blessures et par joueur blessé.
 - **Légalité Standard :** instantané des légalités Scryfall au moment de l'import (`legalities.standard` dans `data/<set>.json`). Après une rotation ou une annonce de bannissement, réimporter les sets (`npm run import-cards -- <set>`).
 - **Jetons :** pas d'image (cadre texte).
 

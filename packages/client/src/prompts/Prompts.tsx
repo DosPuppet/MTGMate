@@ -346,6 +346,7 @@ function AbilityMenu() {
             return (
               <button key={i} type="button" className="btn choice" onClick={() => beginCasting(o, menu.sourceId)}>
                 Lancer {faceLabel(source, o.faceName, lang)}
+                {o.warp ? " (distorsion)" : ""}
               </button>
             );
           }
@@ -353,6 +354,18 @@ function AbilityMenu() {
             return (
               <button key={i} type="button" className="btn choice" onClick={() => beginCasting(o, menu.sourceId)}>
                 {o.label ?? "Activer la capacité"}
+              </button>
+            );
+          }
+          if (o.type === "playLand") {
+            return (
+              <button
+                key={i}
+                type="button"
+                className="btn choice"
+                onClick={() => decide({ type: "playLand", card: o.card, payLife: o.payLife })}
+              >
+                {o.payLife ? "Jouer ce terrain en payant 2 points de vie (dégagé)" : "Jouer ce terrain engagé"}
               </button>
             );
           }

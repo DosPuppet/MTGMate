@@ -145,7 +145,7 @@ function choosePriority(s: GameState, me: PlayerId): Decision {
 
   // Jouer un terrain d'abord.
   const land = actions.find((a) => a.type === "playLand");
-  if (land && land.type === "playLand") return { type: "playLand", card: land.card };
+  if (land && land.type === "playLand") return { type: "playLand", card: land.card, payLife: land.payLife };
 
   const until = combatWindow ? afterCombat(s.turn.number) : stackEmpty;
   const afterPass = trySubmit(s, me, pass);

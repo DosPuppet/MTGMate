@@ -62,6 +62,8 @@ export type Keyword =
   | "cantAttack"
   | "unblockable"
   | "mustAttack"
+  | "canBlockOnlyFlyers"
+  | "cantBeBlockedByMoreThanOne"
   | "doesntUntap"
   | "cantBeBlockedByWalls"
   /** Convocation (702.51) : les créatures peuvent aider à payer le sort. */
@@ -76,6 +78,7 @@ export type Keyword =
 /** Restrictions : affichées différemment des mots-clés. */
 export const RESTRICTIONS: readonly Keyword[] = [
   "cantBlock",
+  "canBlockOnlyFlyers",
   "cantAttack",
   "unblockable",
   "mustAttack",
@@ -174,6 +177,10 @@ export interface CardDef {
    * porte les caractéristiques hors du jeu : celles du recto, ou la réunion des deux moitiés d'une carte scindée.
    */
   faceDefs?: CardDef[];
+  /** « En arrivant, vous pouvez payer N points de vie ; sinon, il arrive engagé » (terrains choc). */
+  shockLand?: number;
+  /** Distorsion (702.185) : coût, points de vie en plus, et lançable aussi depuis le cimetière (Timeline Culler). */
+  warp?: { cost: ManaCost; life?: number; fromGraveyard?: boolean };
   /** Déguisement (702.168) : coût pour retourner face visible une carte lancée face cachée pour {3}. */
   disguise?: ManaCost;
   /** Saga (714) : numéro du dernier chapitre (lu dans le texte). */
@@ -389,6 +396,10 @@ export interface ObjectFilter {
   withCounter?: string;
   /** Créature attaquante. */
   attacking?: boolean;
+  /** Bloqueuse. */
+  blocking?: boolean;
+  /** A subi des blessures ce tour-ci. */
+  damaged?: boolean;
   /** Créature attaquante ou bloqueuse. */
   inCombat?: boolean;
   /** Au moins un de ces sous-types (« Chat ou Chien »…). */
@@ -421,6 +432,8 @@ export interface ObjectFilter {
   legendary?: boolean;
   /** Sort préparé (copie lancée depuis l'exil, Codie). */
   preparedSpell?: boolean;
+  /** Lancé pour son coût de distorsion. */
+  warped?: boolean;
   /** Permanent préparé. */
   prepared?: boolean;
   /** A attaqué ce tour-ci. */
@@ -435,7 +448,8 @@ export interface ObjectFilter {
 export type TriggerSpec =
   | { on: "enters"; who: "self" | ObjectFilter }
   | { on: "dies"; who: "self" | ObjectFilter }
-  | { on: "leaves"; who: "self" }
+  /** `to` : seulement vers cette zone (« quand cet artefact est mis au cimetière depuis le champ de bataille »). */
+  | { on: "leaves"; who: "self"; to?: Zone }
   /** `defending: "you"` : elle attaque le contrôleur ou un planeswalker qu'il contrôle. */
   | { on: "attacks"; who: "self" | ObjectFilter; defending?: "you" }
   | { on: "dealsCombatDamage"; who: "self" | ObjectFilter; toPlayer?: boolean }
@@ -446,6 +460,8 @@ export type TriggerSpec =
       filter?: ObjectFilter;
       /** `orFilter` : le sort correspond au filtre OU cible ce qui est indiqué (Danitha, Sword of Hope). */
       targeting?: { objects?: ObjectFilter; opponent?: boolean; orFilter?: boolean };
+      /** « votre deuxième sort de chaque tour » : le N-ième sort lancé par ce joueur ce tour-ci. */
+      nth?: number;
     }
   | { on: "step"; step: Step; whose: "you" | "opponent" | "any" }
   | { on: "landfall" }
@@ -487,14 +503,18 @@ export type TriggerSpec =
   | { on: "classLevel"; level: number }
   /** « Chaque fois qu'une [créature] explore [une carte de terrain / non-terrain] » (701.44). */
   | { on: "explores"; who: "self" | ObjectFilter; land?: boolean }
+  /** « Chaque fois que vous sacrifiez [un permanent] » */
+  | { on: "sacrifice"; who: ObjectFilter }
   /** « Chaque fois que cette Monture devient montée » (702.171). */
   | { on: "saddled" }
   /** « Quand cette créature est retournée face visible » */
   | { on: "turnedFaceUp" }
   /** « Quand vous déverrouillez cette porte » (Salle : `door` est fixé à l'import d'après la face). */
   | { on: "unlockDoor"; door?: number }
-  /** « Chaque fois que cette créature subit des blessures » */
-  | { on: "isDealtDamage"; who: "self" }
+  /** « Chaque fois que cette créature (ou la créature enchantée/équipée) subit des blessures » */
+  | { on: "isDealtDamage"; who: "self" | "attached" }
+  /** « Chaque fois qu'une ou plusieurs [créatures] infligent des blessures de combat à un joueur » : une fois par étape et par joueur. */
+  | { on: "combatDamageBatch"; who: ObjectFilter }
   /** « Chaque fois qu'une [créature] bloque » */
   | { on: "blocks"; who: "self" | ObjectFilter }
   /** « Chaque fois que vous activez une capacité de loyauté [en retirant au moins N marqueurs] » ; `byOpponent` : un adversaire l'active. */
@@ -573,6 +593,8 @@ export type Condition =
   | { kind: "classLevel"; level: number }
   /** Monture : la source a été montée ce tour-ci. */
   | { kind: "saddled" }
+  /** Vide : un permanent non-terrain a quitté le champ de bataille ou un sort a été lancé avec la distorsion ce tour-ci. */
+  | { kind: "void" }
   | { kind: "solved" }
   | { kind: "fullyUnlocked" };
 
@@ -891,7 +913,8 @@ export type Effect =
   | { op: "destroy"; what: Ref }
   | { op: "draw"; who: Ref; amount: Amount }
   | { op: "gainLife"; who: Ref; amount: Amount }
-  | { op: "createTokens"; token: TokenSpec; count: Amount; for?: Ref; store?: string }
+  /** `tapped` : jetons engagés ; `attacking` : engagés et attaquants (le même défenseur que la source, sinon le premier adversaire). */
+  | { op: "createTokens"; token: TokenSpec; count: Amount; for?: Ref; store?: string; tapped?: boolean; attacking?: boolean }
   /** Marqueurs (par défaut +1/+1) ; un montant négatif en retire. */
   | { op: "addCounters"; what: Ref; amount: Amount; kind?: string }
   | { op: "loseLife"; who: Ref; amount: Amount; store?: string }
@@ -999,7 +1022,16 @@ export type Effect =
   /** Contrecarre un sort ou une capacité sur la pile (701.5). */
   | { op: "counter"; what: Ref }
   /** « … à moins que [joueur] ne paie X » : s'il paie, les `skip` effets suivants sont ignorés. */
-  | { op: "unlessPay"; discard?: boolean; sacrifice?: number; who: Ref; mana?: ManaCost; life?: number; skip: number }
+  | {
+      op: "unlessPay";
+      paidStore?: string;
+      discard?: boolean;
+      sacrifice?: number;
+      who: Ref;
+      mana?: ManaCost;
+      life?: number;
+      skip: number;
+    }
   /** « Vous pouvez lancer [cette carte] depuis votre cimetière ce tour-ci. » */
   | { op: "allowCastFromGraveyard"; what: Ref }
   /** « En arrivant, choisissez un type de créature / une couleur » (sort de permanent qui se résout). */
@@ -1041,6 +1073,8 @@ export type Effect =
   | { op: "manifestDread" }
   /** Retourne face visible les permanents désignés (sans payer de coût). */
   | { op: "turnFaceUp"; what: Ref }
+  /** Distorsion : exile le permanent à la prochaine étape de fin (il pourra être lancé depuis l'exil un tour suivant). */
+  | { op: "warpExile"; what: Ref }
   /** La Classe source passe au niveau N (716.2a). */
   | { op: "setClassLevel"; level: number }
   /** L'Affaire source devient résolue (719.2). */
@@ -1211,6 +1245,9 @@ export interface GameObject {
    * la garde {2} (déguisement, cape) et les coûts pour la retourner face visible sont gardés ici.
    */
   faceDown?: { card: string; ward: boolean; upCosts: ManaCost[] };
+  /** Distorsion : le permanent a été lancé pour son coût de distorsion ; carte exilée par la distorsion (tour de l'exil). */
+  warped?: boolean;
+  warpExiledTurn?: number;
   /** Monture (702.171) : tour pendant lequel elle a été montée (« sellée »). */
   saddledTurn?: number;
   /** Classe (716) : niveau actuel (1 par défaut). */
@@ -1299,6 +1336,8 @@ export interface StackItem {
   flashback?: boolean;
   /** Aventure lancée : exilée « en aventure » après sa résolution. */
   adventure?: boolean;
+  /** Lancé pour son coût de distorsion : le permanent sera exilé à la prochaine étape de fin. */
+  warped?: boolean;
   /** Capacité retardée ou réflexive : ses effets et cibles propres. */
   inline?: InlineAbility;
   /** Copie d'un sort (707.10) : pas de carte associée. */
@@ -1438,6 +1477,10 @@ export interface LkiSnapshot {
   preparedSpell?: boolean;
   prepared?: boolean;
   attackedTurn?: number;
+  /** Lancé pour son coût de distorsion. */
+  warped?: boolean;
+  /** A subi des blessures ce tour-ci. */
+  damaged?: boolean;
 }
 
 /** Résolution en cours d'un sort ou d'une capacité, éventuellement suspendue sur un choix. */
@@ -1493,6 +1536,9 @@ export interface GameState {
     creatureDied: boolean;
     /** Nombre de créatures mortes ce tour-ci. */
     creaturesDied?: number;
+    /** Vide (Edge of Eternities) : un permanent non-terrain a quitté le champ de bataille ce tour-ci ; un sort a été lancé avec la distorsion. */
+    nonlandLeft?: boolean;
+    spellWarped?: boolean;
     /** Capacités « une fois par tour » déjà déclenchées (source:index). */
     onceFired: string[];
     /** Cartes de cimetière qu'on peut lancer ce tour-ci (Zul Ashur). */
@@ -1651,6 +1697,8 @@ export interface CastChoices {
   face?: number;
   /** Lancée face cachée pour {3} (déguisement). */
   faceDown?: boolean;
+  /** Lancée pour son coût de distorsion (702.185). */
+  warp?: boolean;
 }
 
 export type Decision =
@@ -1658,7 +1706,7 @@ export type Decision =
   | { type: "mulligan" }
   | { type: "bottom"; cards: ObjectId[] }
   | { type: "pass" }
-  | { type: "playLand"; card: ObjectId }
+  | { type: "playLand"; card: ObjectId; payLife?: boolean }
   | ({ type: "cast"; card: ObjectId } & CastChoices)
   | ({ type: "activate"; source: ObjectId; ability: number } & CastChoices)
   | { type: "tapForMana"; source: ObjectId; ability: number; color?: ManaType }
@@ -1690,7 +1738,7 @@ export interface ModeOption {
 
 export type ActionOption =
   | { type: "pass" }
-  | { type: "playLand"; card: ObjectId }
+  | { type: "playLand"; card: ObjectId; payLife?: boolean }
   | {
       type: "cast";
       card: ObjectId;
@@ -1699,6 +1747,8 @@ export type ActionOption =
       faceName?: string;
       /** Lancée face cachée pour {3} (déguisement). */
       faceDown?: boolean;
+      /** Lancée pour son coût de distorsion. */
+      warp?: boolean;
       modes: ModeOption[];
       xMax: number | null;
       kickerAffordable: boolean;

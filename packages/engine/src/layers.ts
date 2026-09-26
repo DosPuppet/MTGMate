@@ -235,9 +235,11 @@ function view(s: GameState, id: ObjectId, c: Characteristics, o: GameObject, att
     damagedBy: o.damagedBy,
     attachedTo: o.attachedTo,
     blocking: !!s.combat?.blockers.some((b) => b.id === id),
+    damaged: o.damage > 0 || undefined,
     counters: o.counters,
     preparedSpell: !!o.preparedFor || undefined,
     prepared: !!o.preparedCopy || undefined,
+    warped: o.warped || undefined,
     attackedTurn: o.attackedTurn,
   };
 }

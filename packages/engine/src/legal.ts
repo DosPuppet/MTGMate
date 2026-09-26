@@ -92,14 +92,24 @@ export function legalActions(s: GameState, player: PlayerId): ActionOption[] {
     const d = s.defs[obj(s, card).defId];
     if (!d) continue;
     if (d.types.includes("Land")) {
-      if (canPlayLand(s, player, card)) out.push({ type: "playLand", card });
+      if (canPlayLand(s, player, card)) {
+        // Terrain choc : payer les points de vie (dégagé) ou non (engagé).
+        if (d.shockLand && (s.players[player]?.life ?? 0) >= d.shockLand) out.push({ type: "playLand", card, payLife: true });
+        out.push({ type: "playLand", card });
+      }
       continue;
     }
     const terms = castTerms(s, player, card);
     if (!terms || !d.implemented) continue;
     // Chaque face lançable (la carte, son aventure) donne une option distincte ; le déguisement, face cachée.
-    for (const [face, faceDef] of castableFaces(s, card, d)) castOption(card, face, faceDef, terms);
-    if (d.disguise) castOption(card, undefined, FACE_DOWN_SPELL, terms, true);
+    if (!terms.warpOnly) for (const [face, faceDef] of castableFaces(s, card, d)) castOption(card, face, faceDef, terms);
+    if (d.disguise) castOption(card, undefined, FACE_DOWN_SPELL, terms, "faceDown");
+    // Distorsion (702.185) : depuis la main, ou le cimetière si la carte le permet.
+    const warp = d.warp;
+    const life = s.players[player]?.life ?? 0;
+    if (warp && (terms.source === "hand" || terms.warpOnly) && life >= (warp.life ?? 0)) {
+      castOption(card, undefined, { ...d, manaCost: warp.cost }, terms, "warp");
+    }
   }
 
   function castOption(
@@ -107,7 +117,7 @@ export function legalActions(s: GameState, player: PlayerId): ActionOption[] {
     face: number | undefined,
     d: CardDef,
     terms: NonNullable<ReturnType<typeof castTerms>>,
-    faceDown = false,
+    variant?: "faceDown" | "warp",
   ) {
     // Timing : normal, ignoré (Etali), ou flash moyennant un surcoût (Harbinger of the Tides).
     const onTime = terms.anyTime || canCastTiming(s, player, d);
@@ -146,7 +156,8 @@ export function legalActions(s: GameState, player: PlayerId): ActionOption[] {
       type: "cast",
       card,
       ...(face !== undefined ? { face, faceName: d.name } : {}),
-      ...(faceDown ? { faceDown: true, faceName: "Face cachée" } : {}),
+      ...(variant === "faceDown" ? { faceDown: true, faceName: "Face cachée" } : {}),
+      ...(variant === "warp" ? { warp: true } : {}),
       modes,
       xMax: hasX && normal ? maxXFor(s, player, (x) => withExtra(spellCost(s, player, d, { ...base, x }))) : null,
       kickerAffordable:

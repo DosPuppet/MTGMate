@@ -11,8 +11,8 @@ import {
   drawCard,
   gainLife,
   loseLife,
-  putIntoGraveyard,
   removeFromCombat,
+  sacrifice,
   sourceFromObject,
 } from "./actions";
 import { copiedDefId } from "./layers";
@@ -682,13 +682,15 @@ export function runEffect(s: GameState, r: Resolution, e: Effect): OpResult {
         }
         const ids = chosen.map(String).filter((id) => perms.includes(id));
         if (ids.length < e.sacrifice) return;
-        for (const id of ids) putIntoGraveyard(s, id);
+        for (const id of ids) sacrifice(s, id);
       }
       if (mana) {
         if (!canPay(s, p, mana)) return;
         payMana(s, p, mana);
       }
       if (e.life) loseLife(s, p, e.life);
+      // « S'il le fait, … » (Divert Disaster).
+      store(r, e.paidStore, 1);
       return { skip: e.skip };
     }
     case "attach": {
@@ -948,7 +950,7 @@ export function runEffect(s: GameState, r: Resolution, e: Effect): OpResult {
           kept.add(String(answer[0]));
         }
         r.vars[key(`kdone-${p}`)] = [1];
-        for (const id of mine) if (!kept.has(id) && onBattlefield(s, id)) putIntoGraveyard(s, id);
+        for (const id of mine) if (!kept.has(id) && onBattlefield(s, id)) sacrifice(s, id);
       }
       return;
     }
@@ -1124,7 +1126,7 @@ export function runEffect(s: GameState, r: Resolution, e: Effect): OpResult {
           if (choice === "discard") {
             emit({ type: "discard", player: p, defIds: [s.objects[id]?.defId ?? ""] });
             announceDiscard(s, p, moveObject(s, id, "graveyard"));
-          } else if (onBattlefield(s, id)) putIntoGraveyard(s, id);
+          } else if (onBattlefield(s, id)) sacrifice(s, id);
         }
       }
       return;
@@ -1175,6 +1177,19 @@ export function runEffect(s: GameState, r: Resolution, e: Effect): OpResult {
       const created: string[] = [];
       for (const p of e.for ? resolveRef(s, ctx, e.for).filter((x) => isPlayer(s, x)) : [ctx.controller])
         created.push(...createTokens(s, p, e.token, n));
+      if (e.tapped || e.attacking) {
+        for (const id of created) {
+          const o = s.objects[id];
+          if (o) o.tapped = true;
+        }
+        bump(s);
+      }
+      if (e.attacking && s.combat) {
+        // 508.4 : ils attaquent sans avoir été déclarés (pas de déclencheur « attaque »).
+        const defender =
+          s.combat.attackers.find((a) => a.id === ctx.sourceId)?.defender ?? opponentsOf(s, ctx.controller)[0] ?? "";
+        for (const id of created) s.combat.attackers.push({ id, defender, blockers: [], blocked: false });
+      }
       if (e.store) r.vars[`$ids:${e.store}`] = created;
       return;
     }
@@ -1460,7 +1475,7 @@ export function runEffect(s: GameState, r: Resolution, e: Effect): OpResult {
         r.vars[key(`done-${p}`)] = [1];
         store(r, e.store, readVar(ctx, e.store ?? "") + chosen.length);
         if (e.store) r.vars[`$ids:${e.store}`] = [...(r.vars[`$ids:${e.store}`] ?? []), ...chosen];
-        for (const id of chosen) if (onBattlefield(s, id)) putIntoGraveyard(s, id);
+        for (const id of chosen) if (onBattlefield(s, id)) sacrifice(s, id);
       }
       return;
     }
@@ -1513,7 +1528,7 @@ export function runEffect(s: GameState, r: Resolution, e: Effect): OpResult {
       return;
     }
     case "sacrificeIt": {
-      for (const id of resolveRef(s, ctx, e.what)) if (onBattlefield(s, id)) putIntoGraveyard(s, id);
+      for (const id of resolveRef(s, ctx, e.what)) if (onBattlefield(s, id)) sacrifice(s, id);
       return;
     }
     case "moveTo": {
@@ -2262,6 +2277,15 @@ export function runEffect(s: GameState, r: Resolution, e: Effect): OpResult {
     }
     case "turnFaceUp": {
       for (const id of resolveRef(s, ctx, e.what)) turnFaceUp(s, id);
+      return;
+    }
+    case "warpExile": {
+      for (const id of resolveRef(s, ctx, e.what)) {
+        if (!onBattlefield(s, id)) continue;
+        const exiled = moveWithSpec(s, ctx.controller, id, { to: "exile" });
+        const o = exiled ? s.objects[exiled] : undefined;
+        if (o) o.warpExiledTurn = s.turn.number;
+      }
       return;
     }
     case "setClassLevel": {

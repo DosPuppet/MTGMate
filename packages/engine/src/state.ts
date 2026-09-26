@@ -77,6 +77,10 @@ export type RulesEvent =
   | { e: "loyalty"; player: PlayerId; sourceId: ObjectId; cost: number }
   /** Une créature bloque. */
   | { e: "block"; blocker: ObjectId; attacker: ObjectId }
+  /** Des créatures ont infligé des blessures de combat à ce joueur (une étape de blessures). */
+  | { e: "combatDamageBatch"; player: PlayerId; sources: ObjectId[] }
+  /** Un permanent est sacrifié (par son contrôleur). */
+  | { e: "sacrifice"; objectId: ObjectId; player: PlayerId }
   /** Une créature explore (701.44), en révélant une carte de terrain ou non. */
   | { e: "explore"; objectId: ObjectId; land: boolean }
   /** Une Monture devient montée. */
@@ -364,6 +368,8 @@ export function moveObject(
   const lki = o.zone === "battlefield" ? snapshot(s, id) : null;
   if (lki) {
     s.lki[id] = lki;
+    // Vide (Edge of Eternities) : un permanent non-terrain a quitté le champ de bataille ce tour-ci.
+    if (!lki.types.includes("Land")) s.turn.nonlandLeft = true;
     if (to === "graveyard" && lki.types.includes("Creature")) {
       s.turn.creatureDied = true;
       s.turn.creaturesDied = (s.turn.creaturesDied ?? 0) + 1;
