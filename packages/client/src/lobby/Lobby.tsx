@@ -1,5 +1,6 @@
 import { CARDS, type DeckList, FORMAT_LABELS, validateDeck } from "@mtgx/cards";
 import { useState } from "react";
+import { SoundControl } from "../audio/SoundControl";
 import { ManaCost } from "../board/Card";
 import { deckCover, useAllDecks } from "../decks/store";
 import { useGame } from "../store";
@@ -76,6 +77,9 @@ export function Lobby() {
   return (
     <div className="lobby">
       <header className="lobby-head">
+        <div className="lobby-sound">
+          <SoundControl />
+        </div>
         <h1>
           MTG Mate <span className="build-tag">(alpha build)</span>
         </h1>
@@ -118,9 +122,9 @@ export function Lobby() {
           </button>
         </div>
         <div className="lobby-help">
-          <strong>Raccourcis :</strong> Espace = bouton principal · Entrée = passer le tour · Échap = annuler. Glissez une carte
-          vers le champ de bataille (ou sur sa cible) pour la jouer. Les petits points sous la barre des phases règlent vos
-          arrêts.
+          <strong>Raccourcis :</strong> Espace = bouton principal · Entrée = passer le tour · Échap = annuler · M = couper le son.
+          Glissez une carte vers le champ de bataille (ou sur sa cible) pour la jouer. Les petits points sous la barre des phases
+          règlent vos arrêts.
         </div>
       </div>
       <footer className="lobby-foot">

@@ -17,6 +17,9 @@ const browser = await chromium.launch();
 const page = await browser.newPage({ viewport: { width: 1600, height: 900 } });
 const errors: string[] = [];
 page.on("pageerror", (e) => errors.push(`pageerror: ${e.message}`));
+page.on("response", (r) => {
+  if (r.url().includes("/sounds/") && !r.ok()) errors.push(`son introuvable : ${r.url()} (${r.status()})`);
+});
 page.on("console", (m) => {
   if (m.type() === "error") errors.push(`console: ${m.text()}`);
 });
@@ -137,5 +140,12 @@ if (!(await page.locator(".gameover").count())) {
     .catch(() => "(aucune)");
   console.log(`Arrêt sans fin de partie. Bouton : « ${await page.locator(".main-button").innerText()} », fenêtre : ${dialog}`);
 }
+// Effets sonores joués pendant la partie (journal du mode dev, audio/sfx.ts).
+const played = new Set(await page.evaluate(() => (window as unknown as { __sfxLog?: string[] }).__sfxLog ?? []));
+const expected = ["shuffle", "draw", "land", "cast", "attack", "click"];
+const silent = expected.filter((k) => !played.has(k));
+console.log(`Sons joués : ${[...played].sort().join(", ")}`);
+if (silent.length) errors.push(`sons jamais joués : ${silent.join(", ")}`);
 console.log(errors.length ? `Erreurs :\n${errors.join("\n")}` : "Aucune erreur de page.");
 await browser.close();
+if (errors.length) process.exit(1);

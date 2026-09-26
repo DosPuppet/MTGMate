@@ -1,4 +1,5 @@
 import { useEffect, useRef } from "react";
+import { SoundControl } from "../audio/SoundControl";
 import { faceImage, faceName, faceText, faceType, KEYWORD_LABEL } from "../i18n";
 import { useGame } from "../store";
 import { ManaCost } from "./Card";
@@ -102,6 +103,7 @@ function Settings() {
           EN
         </button>
       </div>
+      <SoundControl />
       <label className="toggle" title="Recevoir la priorité à chaque étape, sans automatisme">
         <input type="checkbox" checked={settings.fullControl} onChange={(e) => setFullControl(e.target.checked)} />
         Contrôle total

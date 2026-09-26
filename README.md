@@ -83,7 +83,7 @@ packages/
   engine/   moteur pur et déterministe : état JSON, décisions, règles, autopilot, vue filtrée, GameHost
   cards/    données Scryfall (data/fdn.json), scripts des cartes (src/fdn/<couleur>.ts), decklists, decks (decks/*.json)
   ai/       IA aléatoire (fuzz) et heuristique (simulation sur clones de l'état + évaluation)
-  client/   React + Vite + Zustand + Motion ; la partie tourne dans un Web Worker ; deckbuilder ; disposition du plateau façon MTGA (board/layout.ts)
+  client/   React + Vite + Zustand + Motion ; la partie tourne dans un Web Worker ; deckbuilder ; disposition du plateau façon MTGA (board/layout.ts) ; effets sonores (audio/)
 tools/      import Scryfall, fuzz, bench, couverture, tests d'interface
 ```
 
@@ -135,10 +135,10 @@ Chaque carte gérée est automatiquement jouée par le test de fumée (`packages
 | 4f. Autres extensions Standard | une extension à la fois, par ordre de sortie décroissant (les plus récentes restent légales le plus longtemps) | à faire |
 | 5. IA | attaques par simulation, puis ISMCTS | à faire |
 | 6. JcJ en ligne | serveur Node `ws` réutilisant `GameHost` + `projectView` | à faire |
-| 7. Finitions | sons, replays (graine + décisions), images des jetons | à faire |
+| 7. Finitions | effets sonores ✅ ; replays (graine + décisions), images des jetons, musique | en cours |
 
 Le suivi détaillé (cartes restantes, approximations connues, conventions) est dans [CLAUDE.md](CLAUDE.md).
 
 ## Cadre légal
 
-Projet de fan gratuit et non commercial ([Fan Content Policy](https://company.wizards.com/fancontentpolicy) de Wizards of the Coast). Les images restent hébergées par Scryfall et ne sont pas copiées dans le dépôt.
+Projet de fan gratuit et non commercial ([Fan Content Policy](https://company.wizards.com/fancontentpolicy) de Wizards of the Coast). Les images restent hébergées par Scryfall et ne sont pas copiées dans le dépôt. Les effets sonores sont des packs de [Kenney](https://www.kenney.nl) sous licence CC0 (`packages/client/public/sounds/LICENSE-kenney.txt`).

@@ -2,6 +2,7 @@ import { LayoutGroup } from "motion/react";
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import { App } from "./App";
+import { playSound, unlockAudio, useAudio } from "./audio/sfx";
 import { useGame } from "./store";
 import "./styles.css";
 
@@ -18,3 +19,20 @@ if (root) {
     </StrictMode>,
   );
 }
+
+// Son : déverrouillé au premier geste (politique d'autoplay des navigateurs), clic des boutons, M = muet.
+document.addEventListener("pointerdown", unlockAudio, { capture: true });
+document.addEventListener(
+  "click",
+  (e) => {
+    const btn = (e.target as HTMLElement | null)?.closest?.("button.btn, .main-button");
+    if (btn && !(btn as HTMLButtonElement).disabled) playSound("click");
+  },
+  { capture: true },
+);
+document.addEventListener("keydown", (e) => {
+  const t = e.target as HTMLElement | null;
+  if (e.key.toLowerCase() !== "m" || e.ctrlKey || e.metaKey || e.altKey) return;
+  if (t && (t.tagName === "INPUT" || t.tagName === "TEXTAREA" || t.isContentEditable)) return;
+  useAudio.getState().toggleMute();
+});

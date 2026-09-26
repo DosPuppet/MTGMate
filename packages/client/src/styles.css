@@ -1337,6 +1337,38 @@ button {
 }
 .lobby-head {
   text-align: center;
+  position: relative;
+}
+.lobby-sound {
+  position: fixed;
+  top: 14px;
+  right: 18px;
+}
+
+/* Réglage du son */
+.sound-control {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.sound-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 8px;
+  border: 1px solid var(--line);
+  background: none;
+  color: var(--text, #e8edf2);
+  cursor: pointer;
+}
+.sound-toggle:hover {
+  border-color: var(--gold);
+}
+.sound-control input[type="range"] {
+  width: 80px;
+  accent-color: var(--gold);
 }
 .lobby-head h1 {
   font-family: Cinzel, serif;

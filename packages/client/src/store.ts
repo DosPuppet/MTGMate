@@ -18,6 +18,8 @@ import {
   type TargetOption,
 } from "@mtgx/engine";
 import { create } from "zustand";
+import { soundsFor } from "./audio/eventSounds";
+import { playSound, preloadSounds } from "./audio/sfx";
 import { findObjectEl } from "./board/layout";
 import { describeEvents, type Lang, type LogLine } from "./i18n";
 import type { FromWorker, Sandbox } from "./protocol";
@@ -322,6 +324,7 @@ export const useGame = create<Store>((set, get) => {
 
     startGame(playerDeck, aiDecks, sandbox) {
       get().session?.close();
+      preloadSounds();
       const session = new LocalSession((m) => get().receive(m));
       const settings = { ...get().settings, passUntilTurn: null };
       set({ screen: "game", session, view: null, log: [], casting: null, attackers: [], blocks: {}, selection: [], settings });
@@ -346,9 +349,13 @@ export const useGame = create<Store>((set, get) => {
     },
 
     receive(msg) {
-      if (msg.type === "error") return get().notify(msg.message);
+      if (msg.type === "error") {
+        playSound("error");
+        return get().notify(msg.message);
+      }
       const { view, events, faces } = msg;
       const lines = describeEvents(events, view, faces, get().lang, get().view);
+      for (const cue of soundsFor(events, view, get().view, faces)) playSound(cue.key, cue);
       playEffects(view, events, faces);
       const changed = pendingKey(get().view) !== pendingKey(view);
       // Créatures qui doivent attaquer : déjà sélectionnées (et impossibles à retirer côté moteur).

@@ -1,0 +1,8 @@
+Effets sonores de MTG Mate : packs de Kenney Vleugels (www.kenney.nl)
+- Casino Audio, Impact Sounds, Interface Sounds, RPG Audio, Digital Audio, Music Jingles
+
+Licence : Creative Commons Zero (CC0) — http://creativecommons.org/publicdomain/zero/1.0/
+« You may use these assets in personal and commercial projects.
+  Credit (Kenney or www.kenney.nl) would be nice but is not mandatory. »
+
+Fichiers renommés : win.ogg = jingles_STEEL02.ogg, lose.ogg = jingles_STEEL00.ogg.
