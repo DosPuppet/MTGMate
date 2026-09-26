@@ -183,6 +183,7 @@ export const amount = {
   cardsIn: (zone: "hand" | "graveyard" | "library"): Amount => ({ kind: "cardsIn", zone }),
   /** Domaine : nombre de types de terrains de base parmi vos terrains. */
   basicLandTypes: { kind: "basicLandTypes" } as Amount,
+  distinctSubtypes: (filter: ObjectFilter): Amount => ({ kind: "distinctSubtypes", filter }),
   v: (name: string): Amount => ({ kind: "var", name }),
 };
 
@@ -318,6 +319,8 @@ export const fx = {
   prepare: (what: Ref, value = true): Effect => ({ op: "prepare", what, value }),
   prepareAll: (filter: ObjectFilter, value = true): Effect => ({ op: "prepare", filter, value }),
   instantJaceLoyalty: { op: "instantJaceLoyalty" } as Effect,
+  proliferate: (times: Amount = 1): Effect => ({ op: "proliferate", times }),
+  removeCounters: (what: Ref, n: number): Effect => ({ op: "removeCounters", what, n }),
   extraLandThisTurn: { op: "extraLandThisTurn" } as Effect,
   nextSpellUncounterable: { op: "nextSpellUncounterable" } as Effect,
   tap: (what: Ref): Effect => ({ op: "tap", what }),
@@ -652,6 +655,7 @@ export const cond = {
   }),
   /** « si vous contemplez un Jace » : vous contrôlez un Jace ou vous avez une carte de Jace en main. */
   beholdJace: { kind: "beholdJace" } as Condition,
+  activatedLoyalty: { kind: "activatedLoyaltyThisTurn" } as Condition,
   /** La source est préparée. */
   prepared: { kind: "prepared" } as Condition,
 };
@@ -691,7 +695,14 @@ export function cost(text: string): ManaCost {
 export function staticAbility(
   affects: "self" | "attached" | ObjectFilter,
   mods: LayerMods,
-  opts: { condition?: Condition; label?: string; per?: ObjectFilter; perCounter?: string } = {},
+  opts: {
+    condition?: Condition;
+    label?: string;
+    per?: ObjectFilter;
+    perCounter?: string;
+    perGraveyard?: ObjectFilter;
+    perDivisor?: number;
+  } = {},
 ): StaticAbilityDef {
   return {
     kind: "static",
@@ -701,6 +712,8 @@ export function staticAbility(
     label: opts.label,
     per: opts.per,
     perCounter: opts.perCounter,
+    perGraveyard: opts.perGraveyard,
+    perDivisor: opts.perDivisor,
   };
 }
 

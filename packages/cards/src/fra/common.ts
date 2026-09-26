@@ -76,6 +76,13 @@ export const SCULPTURE_TREASURE: TokenSpec = {
 export const BEAST_TRAMPLE = creature("Beast", ["G"], ["Beast"], 4, 4, { keywords: ["trample"] });
 export const ANGEL_3 = creature("Angel", ["U"], ["Angel"], 3, 3, { keywords: ["flying"] });
 export const MOWU = creature("Mowu", ["G"], ["Dog"], 3, 3, { legendary: true });
+export const ILLUSION = creature("Illusion", ["U"], ["Illusion"], 1, 1);
+export const LEVIATHAN = creature("Leviathan", ["U"], ["Leviathan"], 8, 8, { keywords: ["hexproof"] });
+/** Ajani's Pridemate : Chat Soldat blanc 2/2 avec « chaque fois que vous gagnez des PV, marqueur +1/+1 ». */
+export const AJANIS_PRIDEMATE = creature("Ajani's Pridemate", ["W"], ["Cat", "Soldier"], 2, 2, {
+  abilities: [dsl.triggered(dsl.when.gainLife, [dsl.fx.addCounters(dsl.ref.self, 1)], { label: "marqueur +1/+1" })],
+  text: "Whenever you gain life, put a +1/+1 counter on this token.",
+});
 
 // ---------------------------------------------------------------------------
 // Sorts préparés partagés (plusieurs créatures ont le même sort)

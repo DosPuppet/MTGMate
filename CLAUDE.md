@@ -22,7 +22,7 @@ Ce fichier sert au suivi du projet entre les sessions. Le README présente le pr
 | Effets sonores (échantillons Kenney CC0, volume, muet avec M) | ✅ |
 | Jeu en ligne : duel Standard à 2 (serveur local, code de salon, corde, reconnexion, revanche) | ✅ |
 | Déploiement : pm2 derrière nginx sur un VPS (`docs/deploiement.md`, `deploy/`) | ✅ documenté et testé en local (pm2, nginx) |
-| **Reality Fracture (FRA, « Réalité fracturée »)** | **187 / 279** (lots 0 à D faits ; `npm run coverage -- --set fra --missing`) |
+| **Reality Fracture (FRA, « Réalité fracturée »)** | **226 / 279** (lots 0 à E faits ; `npm run coverage -- --set fra --missing`) |
 | Autres extensions Standard | à faire |
 
 ### Reality Fracture (FRA)
@@ -30,6 +30,18 @@ Ce fichier sert au suivi du projet entre les sessions. Le README présente le pr
 - 285 cartes selon Scryfall, dont 6 réimpressions de FDN (terrains de base, Unsummon), donc 279 cartes propres. Toutes sont légales en Standard.
 - **Sortie le 2 octobre 2026 : pas encore de textes français.** Réimporter après la sortie (`npm run import-cards -- fra`), puis vérifier les noms français dans le deckbuilder.
 - Lot 0 (infrastructure multi-extensions) et lot A (cartes faisables avec le moteur, jetons Cadet, Heartwood, Lotus, Forêt Tentacule et Thopter, terrains lents) : ✅.
+- Lot E (**planeswalkers**) : ✅. Il couvre :
+  - The Theorist, Jace Beleren ; Ajani Resolute ; Ajani Unrelenting ;
+  - les sorts « créature ou planeswalker » ;
+  - les 10 terrains Commons/Annex (« arrive engagé sauf si vous contrôlez un planeswalker ») ;
+  - Tam (prolifération, choix automatique) ; Kiora (condition « capacité de loyauté activée ce tour-ci ») ;
+  - Mabel (retirer jusqu'à trois marqueurs, choix automatique) ; Winter et Dark Matter Manipulator (bonus par carte du cimetière, `perGraveyard` et `perDivisor`) ;
+  - Craftwork Crusher (« choisissez deux », sous forme des trois paires possibles).
+  
+  Passent au lot F :
+  - Face Yourself, Identity Echo, Loot, the Anomaly, Tomik, Orzhov Lawmage ;
+  - les deux Chandra, les deux Garruk, Jace, Reality Sculptor ;
+  - Gideon the Oathless (garde « défaussez une carte ») et Break Under Pressure.
 - Lot D (**Empower Jace**) : ✅. Il couvre :
   - l'effet `empowerJace` (aide `empower(n)` dans `fra/common.ts`) : N marqueurs de loyauté sur votre jeton Jace, créé d'abord s'il n'existe pas (−1 : surveillance 1 ; −3 : piochez) ;
   - les Ways, qui accordent des capacités de loyauté à vos planeswalkers (aide `walkersHave`) ;
@@ -52,7 +64,6 @@ Ce fichier sert au suivi du projet entre les sessions. Le README présente le pr
   
   Les cartes Jace du lot B (Hexhaven Battalion, Countersculpt, Theorist's Sanctum) passent au lot D, Tam au lot E et Emrakul au lot F.
 - Lots suivants :
-  - **E.** Planeswalkers (8) et cartes qui en parlent.
   - **F.** Cartes restantes :
     - Tarmogoyf, Emrakul, Omnipresence, Hall of Echoes, Face Yourself, Uldaros, Draconic Visitor, Extrapolate the Impossible ;
     - Kindred Judgment, Enlightened Confidant, Cruel Calculations, Seasoned Cryomancer, Sphinx's Approach, Dark Matter Manipulator, Command the Stage, Curse-Marred Demon ;
@@ -107,6 +118,9 @@ Réimpressions : défenses talismaniques contre une couleur, changelin, restrict
 - **Demonic Pact :** les modes déjà choisis sont mémorisés sur le permanent (perdus s'il change de zone, ce qui est conforme).
 - **Ordeal of Nylea :** sacrifiée directement, sans déclencheur séparé.
 - **Dégager jusqu'à N terrains :** les terrains sont choisis automatiquement.
+- **Prolifération (Tam) :** choix automatique. Tous les marqueurs de vos permanents ; chez les adversaires, seulement les marqueurs -1/-1, d'étourdissement et de poison.
+- **Mabel, Bitter Recluse :** les marqueurs retirés sont choisis automatiquement (loyauté, puis +1/+1, puis les autres).
+- **Liliana the Faultless, Massacre Girl :** mêmes approximations que plus haut (défausse à la résolution ; blessures non de combat de vos seules sources).
 - **Empower Jace avec plusieurs jetons Jace :** les marqueurs vont sur le premier jeton (pas de choix).
 - **Contempler un Jace :** toujours fait quand c'est possible (Countersculpt, Theorist's Sanctum), sans révéler la carte.
 - **Codie, Ravenous Codex :** la copie du sort préparé garde ses cibles (pas de nouveau choix).

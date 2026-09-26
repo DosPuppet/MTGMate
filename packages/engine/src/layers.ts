@@ -182,12 +182,17 @@ export function computeBattlefield(s: GameState): Map<ObjectId, Characteristics>
         if (ab.kind !== "static") continue;
         if (ab.condition && !checkCondition(s, ab.condition, o.controller, id)) continue;
         let mods = ab.mods;
-        if (ab.per || ab.perCounter) {
-          // « +1/+1 pour chaque Forêt » / « pour chaque marqueur de camaraderie sur cet artefact ».
+        if (ab.per || ab.perCounter || ab.perGraveyard) {
+          // « +1/+1 pour chaque Forêt » / « pour chaque marqueur de camaraderie » / « pour chaque carte de créature de votre cimetière ».
           const f = ab.per ? withChosen(ab.per, o) : null;
-          const n = f
-            ? s.battlefield.filter((x) => matchesView(snapshotBase(s, x), f, o.controller, id)).length
-            : (o.counters[ab.perCounter as string] ?? 0);
+          const g = ab.perGraveyard;
+          const raw = g
+            ? (s.players[o.controller]?.graveyard ?? []).filter((x) => matchesView(snapshotBase(s, x), g, o.controller, id))
+                .length
+            : f
+              ? s.battlefield.filter((x) => matchesView(snapshotBase(s, x), f, o.controller, id)).length
+              : (o.counters[ab.perCounter as string] ?? 0);
+          const n = ab.perDivisor ? Math.floor(raw / ab.perDivisor) : raw;
           mods = { ...mods, power: (mods.power ?? 0) * n, toughness: (mods.toughness ?? 0) * n };
         }
         const affects = typeof ab.affects === "string" ? ab.affects : withChosen(ab.affects, o);

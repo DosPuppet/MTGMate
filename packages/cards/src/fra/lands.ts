@@ -14,6 +14,18 @@ const slowLand = (a: ManaType, b: ManaType): CardScript => ({
   ],
 });
 
+/** « Arrive engagé, sauf si vous contrôlez un planeswalker. » */
+const walkerLand = (a: ManaType, b: ManaType): CardScript => ({
+  abilities: [
+    entersWith({
+      tapped: true,
+      condition: cond.not(cond.controls({ types: ["Planeswalker"] })),
+      label: "Engagé, sauf avec un planeswalker",
+    }),
+    manaAbility([a, b]),
+  ],
+});
+
 export const LANDS: Record<string, CardScript> = {
   "Deserted Beach": slowLand("W", "U"),
   "Haunted Ridge": slowLand("B", "R"),
@@ -73,4 +85,14 @@ export const LANDS: Record<string, CardScript> = {
       activated({ mana: "{2}{U}", tap: true, effects: [empower(2)], label: "Renforcez Jace 2" }),
     ],
   },
+  "Dedicated Commons": walkerLand("R", "W"),
+  "Fatehold Annex": walkerLand("W", "U"),
+  "Formidable Commons": walkerLand("B", "G"),
+  "Innovative Commons": walkerLand("U", "R"),
+  "Konstrari Annex": walkerLand("R", "G"),
+  "Meticulous Commons": walkerLand("W", "B"),
+  "Stingerquill Annex": walkerLand("B", "R"),
+  "Theorix Annex": walkerLand("U", "B"),
+  "Transformative Commons": walkerLand("G", "U"),
+  "Vigorbloom Annex": walkerLand("G", "W"),
 };

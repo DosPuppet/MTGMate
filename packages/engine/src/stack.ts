@@ -702,6 +702,8 @@ export function activateAbility(s: GameState, player: PlayerId, source: ObjectId
   if (ab.cost.loyalty !== undefined) {
     o.loyaltyTurn = s.turn.number;
     if (ab.cost.loyalty !== 0) changeCounters(s, o, "loyalty", ab.cost.loyalty);
+    const pl = s.players[player];
+    if (pl) pl.turnStats.loyaltyActivations += 1;
     rulesEvent(s, { e: "loyalty", player, sourceId: source, cost: ab.cost.loyalty });
   }
   if (ab.once) o.used = [...(o.used ?? []), index];

@@ -1,5 +1,6 @@
 /** Reality Fracture — cartes blanches. */
 import {
+  AJANIS_PRIDEMATE,
   activated,
   amount,
   CADET,
@@ -207,6 +208,64 @@ export const WHITE: Record<string, CardScript> = {
       triggered(when.gainLife, [fx.addCountersAll({ types: ["Planeswalker"], controller: "you" }, 1, "loyalty")], {
         label: "loyauté sur chaque planeswalker",
       }),
+    ],
+  },
+  "Loyal Tutor": { spell: spell([], [fx.search({ types: ["Planeswalker"] }, { to: "libraryTop" })]) },
+  "Refute Destiny": {
+    spell: spell([target.creatureOrPlaneswalker("t", { colors: ["G", "U"] })], [fx.exileCard(ref.target()), fx.surveil(1)]),
+  },
+  "Your Fate Ends Here": {
+    spell: spell([target.creatureOrPlaneswalker("t", { minManaValue: 3 })], [fx.destroy(ref.target()), fx.surveil(1)]),
+  },
+  "Ajani Resolute": {
+    abilities: [
+      triggered(when.gainLife, [fx.counters(ref.self, "loyalty", 1)], { label: "marqueur de loyauté" }),
+      loyalty(0, { effects: [fx.gainLife(1)], label: "Vous gagnez 1 PV" }),
+      loyalty(-4, { effects: [fx.createTokens(AJANIS_PRIDEMATE)], label: "Ajani's Pridemate" }),
+      loyalty(-10, {
+        effects: [
+          fx.emblem("Emblème d'Ajani", "Les créatures que vous contrôlez gagnent +2/+2.", [
+            staticAbility(CREATURE_YOU_CONTROL, { power: 2, toughness: 2 }, { label: "+2/+2" }),
+          ]),
+        ],
+        label: "emblème",
+      }),
+    ],
+  },
+  "Liliana the Faultless": {
+    abilities: [
+      triggered(
+        when.enters({ ...{ anyOf: [{ types: ["Creature"] }, { types: ["Planeswalker"] }] }, controller: "you", other: true }),
+        [fx.gainLife(1)],
+        { label: "+1 PV" },
+      ),
+      // Approximation : la défausse est faite à la résolution (pas comme coût).
+      activated({
+        mana: "{1}",
+        tap: true,
+        targets: [target.creatureOrPlaneswalker("t", { controller: "you", other: true })],
+        effects: [
+          fx.discard(1, ref.you, { store: "d" }),
+          ...fx.when(cond.v("d"), fx.modify(ref.target(), { addKeywords: ["hexproof"] })),
+        ],
+        label: "Défausser : défense talismanique",
+      }),
+    ],
+  },
+  "Teyo, Lightshield Expert": {
+    abilities: [
+      triggered(
+        when.entersSelf,
+        [
+          fx.modify(ref.target(), { addKeywords: ["hexproof"] }),
+          ...fx.when(cond.refMatches(ref.target(), { types: ["Creature"] }), fx.addCounters(ref.target(), 1)),
+          ...fx.when(cond.refMatches(ref.target(), { types: ["Planeswalker"] }), fx.counters(ref.target(), "loyalty", 1)),
+        ],
+        {
+          targets: [targetObj("t", { permanent: true, controller: "you" }, "permanent que vous contrôlez")],
+          label: "défense talismanique",
+        },
+      ),
     ],
   },
 };

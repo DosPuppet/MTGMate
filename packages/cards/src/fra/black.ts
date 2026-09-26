@@ -6,6 +6,7 @@ import {
   type CardScript,
   CREATURE_YOU_CONTROL,
   cond,
+  cost,
   empower,
   entersWith,
   fx,
@@ -18,6 +19,7 @@ import {
   spell,
   staticAbility,
   target,
+  targetObj,
   triggered,
   walkersHave,
   when,
@@ -213,6 +215,111 @@ export const BLACK: Record<string, CardScript> = {
         {
           label: "loyauté sur chaque planeswalker",
         },
+      ),
+    ],
+  },
+  "Extended Absence": {
+    spell: spell(
+      [target.creatureOrPlaneswalker("t")],
+      [fx.exileCard(ref.target()), fx.damage(1, ref.eachOpponent), fx.gainLife(1)],
+    ),
+  },
+  "Lich's Relic": {
+    abilities: [
+      triggered(
+        when.entersSelf,
+        fx.mayPay("{2}", "Payer {2} pour détruire une créature ou un planeswalker adverse ?", [
+          fx.reflexive(
+            [target.upTo(1, target.creatureOrPlaneswalker("t", { controller: "opponent" }))],
+            [fx.destroy(ref.target())],
+          ),
+        ]),
+        { label: "payer {2} : détruire" },
+      ),
+      staticAbility("attached", { power: 2, toughness: 1 }, { label: "+2/+1" }),
+    ],
+  },
+  "Silence the Echo": {
+    additionalCost: {
+      sacrifice: { filter: { anyOf: [{ types: ["Creature"] }, { types: ["Planeswalker"] }] }, count: 1, orPay: cost("{3}") },
+    },
+    spell: spell([target.creatureOrPlaneswalker("t")], [fx.destroy(ref.target())]),
+  },
+  "Terminal Criticism": {
+    spell: spell([target.creatureOrPlaneswalker("t", { colors: ["U", "R"] })], [fx.destroy(ref.target()), fx.gainLife(1)]),
+  },
+  "Mabel, Bitter Recluse": {
+    abilities: [
+      triggered(when.entersSelf, [fx.removeCounters(ref.target(), 3)], {
+        targets: [target.creatureOrPlaneswalker("t", { other: true })],
+        label: "retire jusqu'à trois marqueurs",
+      }),
+    ],
+  },
+  "Massacre Girl, Most Wanted": {
+    abilities: [
+      triggered(
+        when.dies({ ...{ anyOf: [{ types: ["Creature"] }, { types: ["Planeswalker"] }] }, controller: "you", other: true }),
+        [fx.damage(1, ref.target()), fx.gainLife(1)],
+        {
+          targets: [target.player("t", "opponent")],
+          label: "1 blessure, +1 PV",
+        },
+      ),
+      // Approximation : les blessures non de combat infligées par vos sources.
+      triggered(
+        when.dealsDamage("self", { noncombatOnly: true, toOpponent: true, anySourceYouControl: true }),
+        [fx.addCounters(ref.self, 1)],
+        { label: "marqueur +1/+1" },
+      ),
+    ],
+  },
+  "Teyo, Diamondblade Mage": {
+    abilities: [
+      triggered(
+        when.entersSelf,
+        [
+          fx.modify(ref.target(), { addKeywords: ["deathtouch"] }),
+          ...fx.when(cond.refMatches(ref.target(), { types: ["Creature"] }), fx.addCounters(ref.target(), 1)),
+          ...fx.when(cond.refMatches(ref.target(), { types: ["Planeswalker"] }), fx.counters(ref.target(), "loyalty", 1)),
+        ],
+        {
+          targets: [targetObj("t", { permanent: true, controller: "you" }, "permanent que vous contrôlez")],
+          label: "contact mortel",
+        },
+      ),
+    ],
+  },
+  "Winter, Tormented Loner": {
+    abilities: [
+      triggered(
+        when.entersSelf,
+        [
+          fx.sacrifice(ref.you, { anyOf: [{ types: ["Creature"] }, { types: ["Planeswalker"] }] }, 1, {
+            optional: true,
+            store: "s",
+          }),
+          ...fx.when(cond.v("s"), fx.sacrifice(ref.eachOpponent, { types: ["Creature"] })),
+        ],
+        { label: "sacrifier : chaque adversaire sacrifie une créature" },
+      ),
+      staticAbility(
+        "self",
+        { power: 1 },
+        {
+          perGraveyard: { anyOf: [{ types: ["Creature"] }, { types: ["Planeswalker"] }] },
+          label: "+1/+0 par créature ou planeswalker au cimetière",
+        },
+      ),
+    ],
+  },
+  "Dark Matter Manipulator": {
+    abilities: [
+      triggered(when.entersSelf, [fx.mill(3)], { label: "meule 3" }),
+      staticAbility(
+        "self",
+        { power: 2 },
+        { perGraveyard: {}, perDivisor: 7, label: "+2/+0 par tranche de sept cartes au cimetière" },
       ),
     ],
   },

@@ -102,6 +102,8 @@ export function checkCondition(s: GameState, c: Condition, controller: PlayerId,
       const n = (c.noncreature ? st?.noncreatureCast : st?.spellsCast) ?? 0;
       return c.exactly ? n === c.n : n >= c.n;
     }
+    case "activatedLoyaltyThisTurn":
+      return (s.players[controller]?.turnStats.loyaltyActivations ?? 0) > 0;
     case "beholdJace": {
       const pl = s.players[controller];
       const jaceHere = s.battlefield.some(

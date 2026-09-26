@@ -11,6 +11,8 @@ import {
   entersWith,
   fx,
   loyalty,
+  modal,
+  mode,
   ref,
   spell,
   staticAbility,
@@ -224,6 +226,40 @@ export const RED: Record<string, CardScript> = {
         }),
         "Planeswalkers : [−4]",
       ),
+    ],
+  },
+  "Essence Burn": {
+    spell: spell(
+      [target.creatureOrPlaneswalker("t", { colors: ["B", "G"] })],
+      [fx.exileIfDies(ref.target()), fx.damage(5, ref.target())],
+    ),
+  },
+  "Fulminous Forte": {
+    spell: modal(
+      mode(
+        "1 blessure à chaque créature et planeswalker adverse",
+        [],
+        [fx.damageAll(1, { ...{ anyOf: [{ types: ["Creature"] }, { types: ["Planeswalker"] }] }, controller: "opponent" })],
+      ),
+      mode("5 blessures à une créature ou un planeswalker", [target.creatureOrPlaneswalker("t")], [fx.damage(5, ref.target())]),
+    ),
+  },
+  "Wrath of the Bloodmane": {
+    costReduction: { generic: 1, condition: cond.controls({ types: ["Creature"], legendary: true }) },
+    spell: spell([target.creatureOrPlaneswalker("t")], [fx.damage(4, ref.target())]),
+  },
+  "Ajani Unrelenting": {
+    abilities: [
+      triggered(when.loyaltyActivated(), [fx.createTokens(CADET)], { label: "Cadet" }),
+      loyalty(1, { effects: [fx.pumpAll(CREATURE_YOU_CONTROL, 1, 0, ["haste"])], label: "Vos créatures +1/+0 et célérité" }),
+      loyalty(-2, {
+        effects: [fx.discard(amount.cardsIn("hand")), fx.draw(amount.count(CREATURE_YOU_CONTROL))],
+        label: "Défaussez votre main, piochez par créature",
+      }),
+      loyalty(-3, {
+        effects: [fx.damageAll(4, { types: ["Creature"], anyOf: [{ controller: "opponent" }, { token: false }] })],
+        label: "4 blessures à chaque créature, sauf vos jetons",
+      }),
     ],
   },
 };

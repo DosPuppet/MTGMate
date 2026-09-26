@@ -259,6 +259,12 @@ export function evalAmount(s: GameState, ctx: EffectContext, a: Amount): number 
           .filter((id) => matchesObjectFilter(s, ctx.controller, id, a.filter, ctx.sourceId))
           .map((id) => chars(s, id).power),
       );
+    case "distinctSubtypes":
+      return new Set(
+        s.battlefield
+          .filter((id) => matchesObjectFilter(s, ctx.controller, id, a.filter, ctx.sourceId))
+          .flatMap((id) => chars(s, id).subtypes),
+      ).size;
     case "basicLandTypes": {
       const basics = ["Plains", "Island", "Swamp", "Mountain", "Forest"];
       const lands = s.battlefield.filter(
@@ -912,6 +918,39 @@ export function runEffect(s: GameState, r: Resolution, e: Effect): OpResult {
       if (!jace) jace = createTokens(s, ctx.controller, e.token, 1)[0];
       const o = jace ? s.objects[jace] : undefined;
       if (o && n > 0) changeCounters(s, o, "loyalty", n);
+      return;
+    }
+    case "proliferate": {
+      const times = evalAmount(s, ctx, e.times);
+      const bad = new Set(["-1/-1", "stun"]);
+      for (let t = 0; t < times; t++) {
+        for (const id of [...s.battlefield]) {
+          const o = s.objects[id];
+          if (!o) continue;
+          const mine = o.controller === ctx.controller;
+          for (const [kind, n] of Object.entries(o.counters)) {
+            if (n > 0 && (mine ? !bad.has(kind) : bad.has(kind))) changeCounters(s, o, kind, 1);
+          }
+        }
+        for (const p of opponentsOf(s, ctx.controller)) {
+          const pl = s.players[p];
+          if (pl && (pl.poison ?? 0) > 0) pl.poison = (pl.poison ?? 0) + 1;
+        }
+      }
+      return;
+    }
+    case "removeCounters": {
+      for (const id of resolveRef(s, ctx, e.what)) {
+        const o = s.objects[id];
+        if (o?.zone !== "battlefield") continue;
+        let left = e.n;
+        const order = ["loyalty", "+1/+1", ...Object.keys(o.counters).filter((k) => k !== "loyalty" && k !== "+1/+1")];
+        for (const kind of order) {
+          const take = Math.min(left, o.counters[kind] ?? 0);
+          if (take > 0) changeCounters(s, o, kind, -take);
+          left -= take;
+        }
+      }
       return;
     }
     case "instantJaceLoyalty": {

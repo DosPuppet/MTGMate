@@ -348,3 +348,78 @@ describe("Reality Fracture, lot D : Empower Jace", () => {
     expect(loyaltyOf(s, jaces(s)[0] as string)).toBe(5);
   });
 });
+
+describe("Reality Fracture, lot E : planeswalkers", () => {
+  it("terrains « engagé sauf si vous contrôlez un planeswalker »", () => {
+    let s = scenario({ p1: { hand: ["Fatehold Annex"] } });
+    s = act(s, "p1", { type: "playLand", card: idOf(s, "p1", "hand", "Fatehold Annex") });
+    expect(s.objects[idOf(s, "p1", "battlefield", "Fatehold Annex")]?.tapped).toBe(true);
+    let t = scenario({ p1: { hand: ["Fatehold Annex"], battlefield: ["Ajani Resolute"] } });
+    t = act(t, "p1", { type: "playLand", card: idOf(t, "p1", "hand", "Fatehold Annex") });
+    expect(t.objects[idOf(t, "p1", "battlefield", "Fatehold Annex")]?.tapped).toBe(false);
+  });
+
+  it("Ajani Resolute : un marqueur de loyauté à chaque gain de PV, et la capacité 0", () => {
+    let s = scenario({ p1: { battlefield: ["Ajani Resolute"] } });
+    const ajani = idOf(s, "p1", "battlefield", "Ajani Resolute");
+    expect(s.objects[ajani]?.counters.loyalty).toBe(2);
+    const zero = legalActions(s, "p1").find((a) => a.type === "activate" && a.source === ajani && a.label?.startsWith("0"));
+    s = act(s, "p1", { type: "activate", source: ajani, ability: (zero as { ability: number }).ability });
+    s = passBoth(s); // +1 PV
+    s = passBoth(s); // déclencheur : loyauté
+    expect(s.players.p1?.life).toBe(21);
+    expect(s.objects[ajani]?.counters.loyalty).toBe(3);
+  });
+
+  it("Ajani Unrelenting : « chaque fois que vous activez une capacité de loyauté », un Cadet ; Kiora voit l'activation", () => {
+    let s = scenario({ p1: { battlefield: ["Ajani Unrelenting"] } });
+    const ajani = idOf(s, "p1", "battlefield", "Ajani Unrelenting");
+    const plus = legalActions(s, "p1").find((a) => a.type === "activate" && a.source === ajani && a.label?.startsWith("+1"));
+    s = act(s, "p1", { type: "activate", source: ajani, ability: (plus as { ability: number }).ability });
+    expect(s.players.p1?.turnStats.loyaltyActivations).toBe(1);
+    for (let i = 0; i < 4 && s.stack.length; i++) s = passBoth(s);
+    expect(s.battlefield.some((id) => s.defs[s.objects[id]?.defId ?? ""]?.name === "Cadet")).toBe(true);
+  });
+
+  it("Tam : prolifère autant de fois que de types de planeswalker", () => {
+    let s = scenario({
+      p1: {
+        battlefield: [
+          "Tam, the Possibility",
+          "Ajani Resolute",
+          "The Theorist, Jace Beleren",
+          "Plains",
+          "Island",
+          "Swamp",
+          "Mountain",
+          "Forest",
+        ],
+      },
+    });
+    const tam = idOf(s, "p1", "battlefield", "Tam, the Possibility");
+    s = act(s, "p1", { type: "activate", source: tam, ability: 1 });
+    s = passBoth(s);
+    expect(s.objects[idOf(s, "p1", "battlefield", "Ajani Resolute")]?.counters.loyalty).toBe(4); // 2 + 2
+    expect(s.objects[idOf(s, "p1", "battlefield", "The Theorist, Jace Beleren")]?.counters.loyalty).toBe(5);
+  });
+
+  it("Winter, Tormented Loner : +1/+0 par carte de créature ou de planeswalker au cimetière", () => {
+    const s = scenario({
+      p1: { battlefield: ["Winter, Tormented Loner"], graveyard: ["Savannah Lions", "Ajani Resolute", "Plains"] },
+    });
+    const w = idOf(s, "p1", "battlefield", "Winter, Tormented Loner");
+    expect(chars(s, w).power).toBe((s.defs[s.objects[w]?.defId ?? ""]?.power ?? 0) + 2);
+  });
+
+  it("Mabel, Bitter Recluse : retire jusqu'à trois marqueurs", () => {
+    let s = scenario({
+      p1: { hand: ["Mabel, Bitter Recluse"], battlefield: ["Swamp"] },
+      p2: { battlefield: ["Ajani Unrelenting"] },
+    });
+    const ajani = idOf(s, "p2", "battlefield", "Ajani Unrelenting");
+    s = cast(s, "p1", "Mabel, Bitter Recluse");
+    s = passBoth(s);
+    s = passBoth(s);
+    expect(s.objects[ajani]?.counters.loyalty).toBe(2); // 5 - 3
+  });
+});

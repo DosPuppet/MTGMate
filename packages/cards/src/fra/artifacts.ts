@@ -108,4 +108,15 @@ export const ARTIFACTS: Record<string, CardScript> = {
     ],
   },
   "Keeper of the Quiet Hour": { abilities: [triggered(when.entersSelf, [empower(2)], { label: "Renforcez Jace 2" })] },
+  "Living Library": {
+    abilities: [
+      activated({
+        mana: "{6}",
+        sacrifice: true,
+        targets: [target.creatureOrPlaneswalker("t", { controller: "opponent" })],
+        effects: [fx.moveTo(ref.target(), { to: "libraryTop" }), fx.shuffle(ref.eachOpponent)],
+        label: "Mélanger dans la bibliothèque",
+      }),
+    ],
+  },
 };

@@ -16,6 +16,7 @@ import {
   loyalty,
   MOWU,
   manaAbility,
+  modal,
   mode,
   ref,
   SOUL_TETHER,
@@ -261,5 +262,34 @@ export const GREEN: Record<string, CardScript> = {
       triggered(when.entersSelf, [empower(7)], { label: "Renforcez Jace 7" }),
       walkersHave(loyalty(-4, { effects: [fx.createTokens(BEAST_TRAMPLE)], label: "Bête 4/4" }), "Planeswalkers : [−4] Bête"),
     ],
+  },
+  "Compel Brutality": {
+    spell: modal(
+      mode(
+        "Votre créature inflige des blessures égales à sa force",
+        [target.creature("a", { controller: "you" }), target.creatureOrPlaneswalker("b", { controller: "opponent" })],
+        [fx.damage(amount.powerOf(ref.target("a")), ref.target("b"), ref.target("a"))],
+      ),
+      mode(
+        "Votre planeswalker inflige des blessures égales à sa loyauté",
+        [
+          targetObj("a", { types: ["Planeswalker"], controller: "you" }, "planeswalker que vous contrôlez"),
+          target.creatureOrPlaneswalker("b", { controller: "opponent" }),
+        ],
+        [fx.damage(amount.countersOn(ref.target("a"), "loyalty"), ref.target("b"), ref.target("a"))],
+      ),
+    ),
+  },
+  "Flourishing Grapple": {
+    spell: spell(
+      [
+        target.creatureOrPlaneswalker("b", { controller: "opponent", colors: ["R", "W"] }),
+        target.creature("a", { controller: "you" }),
+      ],
+      [
+        fx.modify(ref.target("b"), { loseAllAbilities: true }),
+        fx.damage(amount.powerOf(ref.target("a")), ref.target("b"), ref.target("a")),
+      ],
+    ),
   },
 };

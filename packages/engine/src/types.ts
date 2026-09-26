@@ -478,7 +478,9 @@ export type Condition =
   /** La source est préparée. */
   | { kind: "prepared" }
   /** « Contempler un Jace » : vous contrôlez un Jace ou vous avez une carte de Jace en main. */
-  | { kind: "beholdJace" };
+  | { kind: "beholdJace" }
+  /** Le contrôleur a activé une capacité de loyauté ce tour-ci. */
+  | { kind: "activatedLoyaltyThisTurn" };
 
 /** Modifications apportées par un effet continu, rangées par couche (613). */
 export interface LayerMods {
@@ -609,6 +611,10 @@ export interface StaticAbilityDef {
   per?: ObjectFilter;
   /** F/E multipliées par le nombre de marqueurs de ce type sur la source (Banner of Kinship). */
   perCounter?: string;
+  /** F/E multipliées par le nombre de cartes du cimetière du contrôleur correspondant au filtre (Winter). */
+  perGraveyard?: ObjectFilter;
+  /** … par tranche de N cartes (Dark Matter Manipulator : « pour chaque tranche de sept cartes »). */
+  perDivisor?: number;
   label?: string;
 }
 
@@ -691,7 +697,9 @@ export type Amount =
   /** Nombre de cartes dans une zone du contrôleur. */
   | { kind: "cardsIn"; zone: "hand" | "graveyard" | "library" }
   /** Domaine : types de terrains de base parmi les terrains du contrôleur. */
-  | { kind: "basicLandTypes" };
+  | { kind: "basicLandTypes" }
+  /** Nombre de sous-types différents parmi les permanents correspondants (« types de planeswalker », Tam). */
+  | { kind: "distinctSubtypes"; filter: ObjectFilter };
 
 export interface TokenSpec {
   name: string;
@@ -721,6 +729,10 @@ export interface MoveSpec {
 }
 
 export type Effect =
+  /** Proliférer N fois (701.34), choix automatique : vos permanents qui ont des marqueurs, et chez les adversaires marqueurs -1/-1, d'étourdissement et de poison. */
+  | { op: "proliferate"; times: Amount }
+  /** « Retirez jusqu'à N marqueurs » (choix automatique : loyauté, +1/+1, puis les autres). */
+  | { op: "removeCounters"; what: Ref; n: number }
   /** « Renforcez Jace N » : N marqueurs de loyauté sur un jeton Jace (créé s'il n'y en a pas). */
   | { op: "empowerJace"; amount: Amount; token: TokenSpec }
   /** Jace's Machinations : loyauté des Jace à vitesse d'éphémère ce tour-ci. */
@@ -1101,6 +1113,8 @@ export interface TurnStats {
   scried: number;
   /** Blessures non de combat subies ce tour-ci. */
   noncombatDamageTaken: number;
+  /** Capacités de loyauté activées ce tour-ci. */
+  loyaltyActivations: number;
 }
 
 export interface CombatState {

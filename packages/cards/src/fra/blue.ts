@@ -4,11 +4,13 @@ import {
   activated,
   amount,
   type CardScript,
+  CREATURE_YOU_CONTROL,
   cond,
   costReducer,
   empower,
   entersWith,
   fx,
+  ILLUSION,
   loyalty,
   modal,
   mode,
@@ -18,6 +20,7 @@ import {
   spell,
   staticAbility,
   target,
+  targetObj,
   triggered,
   triggeredModal,
   walkersHave,
@@ -223,6 +226,30 @@ export const BLUE: Record<string, CardScript> = {
     abilities: [
       triggered(when.entersSelf, [empower(5)], { label: "Renforcez Jace 5" }),
       triggered(when.loyaltyActivated(2), [fx.draw(1)], { label: "deux marqueurs retirés : piochez" }),
+    ],
+  },
+  "The Theorist, Jace Beleren": {
+    abilities: [
+      triggered(when.step("draw", "opponent"), [fx.draw(1)], { label: "piochez une carte" }),
+      loyalty(1, { effects: [fx.createTokens(ILLUSION)], label: "Illusion 1/1" }),
+      loyalty(-2, {
+        targets: [
+          target.upTo(
+            1,
+            targetObj(
+              "t",
+              { anyOf: [{ types: ["Artifact"] }, { types: ["Creature"] }], controller: "opponent" },
+              "artefact ou créature adverse",
+            ),
+          ),
+        ],
+        effects: [fx.bounce(ref.target())],
+        label: "Renvoyer un artefact ou une créature",
+      }),
+      loyalty(-6, {
+        effects: [fx.draw(3), fx.addCountersAll(CREATURE_YOU_CONTROL, amount.cardsIn("hand"))],
+        label: "Piochez trois cartes, marqueurs",
+      }),
     ],
   },
 };

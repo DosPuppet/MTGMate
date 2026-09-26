@@ -148,6 +148,7 @@ export function emptyTurnStats(): TurnStats {
     noncreatureCast: 0,
     scried: 0,
     noncombatDamageTaken: 0,
+    loyaltyActivations: 0,
   };
 }
 

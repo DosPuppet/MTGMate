@@ -6,10 +6,12 @@ import {
   type CardScript,
   CREATURE_YOU_CONTROL,
   cond,
+  costReducer,
   empower,
   entersWith,
   fx,
   HEARTWOOD,
+  LEVIATHAN,
   LOTUS,
   loyalty,
   modal,
@@ -27,6 +29,7 @@ import {
   target,
   targetObj,
   triggered,
+  triggeredModal,
   VICIOUS_VERSE,
   walkersHave,
   when,
@@ -386,5 +389,82 @@ export const MULTI: Record<string, CardScript> = {
       [target.upTo(1, target.creature("t"))],
       [fx.addCounters(ref.target(), 1), fx.modify(ref.target(), { addKeywords: ["vigilance"] }), empower(4)],
     ),
+  },
+  "Craftwork Crusher": {
+    // « Choisissez deux — » : les trois paires possibles.
+    abilities: [
+      triggeredModal(when.entersSelf, [
+        mode(
+          "4 blessures et un Cadet",
+          [target.creatureOrPlaneswalker("t")],
+          [fx.damage(4, ref.target()), fx.createTokens(CADET)],
+        ),
+        mode("4 blessures et piochez", [target.creatureOrPlaneswalker("t")], [fx.damage(4, ref.target()), fx.draw(1)]),
+        mode("Un Cadet et piochez", [], [fx.createTokens(CADET), fx.draw(1)]),
+      ]),
+    ],
+  },
+  "Entrust the Spark": {
+    spell: spell(
+      [],
+      [
+        fx.sacrifice(ref.you, { types: ["Planeswalker"] }, 1, { optional: true, store: "s" }),
+        ...fx.when(cond.v("s"), fx.search({ types: ["Planeswalker"] }, { to: "battlefield" })),
+      ],
+    ),
+  },
+  "Vindictive Triumph": {
+    spell: spell(
+      [target.creatureOrPlaneswalker("t")],
+      [
+        fx.exileCard(ref.target(), { name: "x", filter: { maxManaValue: 3 } }),
+        ...fx.when(
+          cond.v("x"),
+          fx.moveTo(ref.stored("x"), { to: "battlefield", tapped: true, underYourControl: true }, { name: "y" }),
+          fx.delayed([fx.exile(ref.target("y"))], { y: ref.stored("y") }),
+        ),
+      ],
+    ),
+  },
+  "Edgar, Ancient Bloodlord": {
+    abilities: [
+      triggered(
+        when.dies({ ...{ anyOf: [{ types: ["Creature"] }, { types: ["Planeswalker"] }] }, controller: "you", other: true }),
+        [fx.gainLife(1)],
+        { label: "+1 PV" },
+      ),
+      activated({
+        mana: "{2}",
+        sacrificeOther: {
+          filter: { ...{ anyOf: [{ types: ["Creature"] }, { types: ["Planeswalker"] }] }, controller: "you", other: true },
+        },
+        effects: [fx.addCounters(ref.self, 1), fx.modify(ref.self, { addKeywords: ["menace"] })],
+        label: "Marqueur +1/+1 et menace",
+      }),
+    ],
+  },
+  "Kiora of Salt and Sand": {
+    abilities: [
+      triggered(when.attackWith(), [fx.untap(ref.target()), fx.modify(ref.target(), { addKeywords: ["unblockable"] })], {
+        targets: [target.creature("t", { attacking: true })],
+        condition: cond.activatedLoyalty,
+        label: "dégage un attaquant, imblocable",
+      }),
+      walkersHave(
+        loyalty(-8, { effects: [fx.createTokens(LEVIATHAN)], label: "Léviathan 8/8" }),
+        "Planeswalkers : [−8] Léviathan",
+      ),
+    ],
+  },
+  "Tam, the Possibility": {
+    abilities: [
+      costReducer({ types: ["Planeswalker"] }, 1, "Planeswalkers : {1} de moins"),
+      activated({
+        mana: "{W}{U}{B}{R}{G}",
+        tap: true,
+        effects: [fx.proliferate(amount.distinctSubtypes({ types: ["Planeswalker"], controller: "you" }))],
+        label: "Proliférez X fois",
+      }),
+    ],
   },
 };
