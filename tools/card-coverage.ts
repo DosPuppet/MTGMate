@@ -2,9 +2,9 @@
  * Couverture des cartes : combien de cartes d'un set sont gérées, et quelles mécaniques manquent
  * (pour prioriser le travail de l'étape 4b).
  *
- * Usage : npm run coverage [-- --set main] [-- --list <mécanique>] [-- --missing] [-- --card "<nom>"]
+ * Usage : npm run coverage [-- --set main|fdn|fra] [-- --list <mécanique>] [-- --missing] [-- --card "<nom>"]
  */
-import { CARDS, isMainSet } from "@mtgx/cards";
+import { CARDS, isMainSet, SET_BY_CODE } from "@mtgx/cards";
 
 const MECHANICS: [string, RegExp][] = [
   ["aura", /^Enchant (creature|land|permanent)/m],
@@ -62,12 +62,13 @@ if (cardName !== undefined) {
   process.exit(0);
 }
 
-const main = arg("--set") === "main";
-const all = Object.values(CARDS).filter((c) => !c.isToken && (!main || isMainSet(c)));
+// --set main : sets principaux ; --set fdn|fra : une extension (toutes ses cartes) ; sans option : tout.
+const setArg = (arg("--set") ?? "").toUpperCase();
+const main = setArg === "MAIN";
+const all = Object.values(CARDS).filter((c) => !c.isToken && (!main || isMainSet(c)) && (!setArg || main || c.set === setArg));
 const done = all.filter((c) => c.implemented);
-console.log(
-  `FDN${main ? " (set principal)" : ""} : ${done.length} / ${all.length} cartes gérées (${Math.round((done.length / all.length) * 100)} %)`,
-);
+const label = main ? "sets principaux" : setArg ? (SET_BY_CODE[setArg]?.name ?? setArg) : "toutes extensions";
+console.log(`${label} : ${done.length} / ${all.length} cartes gérées (${Math.round((done.length / all.length) * 100)} %)`);
 
 const missing = all.filter((c) => !c.implemented);
 const byMechanic = new Map<string, string[]>();

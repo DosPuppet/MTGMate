@@ -42,6 +42,8 @@ export function matchesView(v: LkiSnapshot, f: ObjectFilter, perspective: Player
   if (f.permanent && !v.types.some((t) => PERMANENT_TYPES.includes(t))) return false;
   if (f.nonland && v.types.includes("Land")) return false;
   if (f.anyOf && !f.anyOf.some((g) => matchesView(v, g, perspective, sourceId))) return false;
+  if (f.legendary !== undefined && v.supertypes.includes("Legendary") !== f.legendary) return false;
+  if (f.maxToughness !== undefined && v.toughness > f.maxToughness) return false;
   return true;
 }
 

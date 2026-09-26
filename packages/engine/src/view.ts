@@ -37,6 +37,8 @@ export interface CardFace {
   baseToughness?: number;
   implemented: boolean;
   isToken: boolean;
+  /** Sort attaché d'une carte « à préparer » (affiché dans l'aperçu). */
+  prepareFace?: CardDef["prepareFace"];
 }
 
 export interface ObjectView extends CardFace {
@@ -141,6 +143,7 @@ export function cardFace(d: CardDef): CardFace {
     baseToughness: d.toughness,
     implemented: d.implemented,
     isToken: !!d.isToken,
+    ...(d.prepareFace ? { prepareFace: d.prepareFace } : {}),
   };
 }
 

@@ -94,6 +94,8 @@ export class CardIndex {
       if (c.isToken) continue;
       this.byName.set(normalizeName(c.name), c.name);
       if (c.fr?.name) this.byName.set(normalizeName(c.fr.name), c.name);
+      // Carte « à préparer » : certains exports écrivent « Créature // Sort ».
+      if (c.prepareFace) this.byName.set(normalizeName(`${c.name} // ${c.prepareFace.name}`), c.name);
     }
   }
 

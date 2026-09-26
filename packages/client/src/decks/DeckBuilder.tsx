@@ -8,9 +8,9 @@ import {
   type DeckEntries,
   type DeckList,
   FORMAT_LABELS,
-  isMainSet,
   legalityIssue,
   normalizeName,
+  SETS,
   validateDeck,
 } from "@mtgx/cards";
 import { type CardDef, cardFace, manaValue } from "@mtgx/engine";
@@ -83,14 +83,14 @@ interface Filters {
   playableOnly: boolean;
   /** Cartes légales dans le format seulement (Standard). */
   legalOnly: boolean;
-  /** Set principal uniquement (sinon : aussi les réimpressions de Foundations). */
-  mainOnly: boolean;
+  /** Extension (code de set), ou "" pour toutes. */
+  set: string;
 }
 
 function matches(c: CardDef, f: Filters): boolean {
   if (f.playableOnly && !c.implemented) return false;
   if (f.legalOnly && legalityIssue(c)) return false;
-  if (f.mainOnly && !isMainSet(c)) return false;
+  if (f.set && c.set !== f.set) return false;
   if (f.colors.length) {
     const want = new Set(f.colors);
     const colorless = c.colors.length === 0;
@@ -105,7 +105,9 @@ function matches(c: CardDef, f: Filters): boolean {
   if (f.rarity && c.rarity !== f.rarity) return false;
   if (f.query) {
     const q = normalizeName(f.query);
-    const hay = normalizeName([c.name, c.fr?.name, c.typeLine, c.fr?.typeLine, c.text, c.fr?.text].join(" "));
+    const hay = normalizeName(
+      [c.name, c.fr?.name, c.typeLine, c.fr?.typeLine, c.text, c.fr?.text, c.prepareFace?.name, c.prepareFace?.text].join(" "),
+    );
     if (!hay.includes(q)) return false;
   }
   return true;
@@ -120,12 +122,11 @@ function Collection({ deck, onChange }: { deck: DeckList; onChange: (name: strin
     query: "",
     playableOnly: true,
     legalOnly: true,
-    mainOnly: false,
+    set: "",
   });
   const cards = useMemo(() => POOL.filter((c) => matches(c, f)), [f]);
   const inDeck = (name: string) =>
     (deck.main.find((e) => e[1] === name)?.[0] ?? 0) + (deck.sideboard?.find((e) => e[1] === name)?.[0] ?? 0);
-  const playable = POOL.filter((c) => c.implemented).length;
   const toggleColor = (c: string) =>
     setF((x) => ({ ...x, colors: x.colors.includes(c) ? x.colors.filter((y) => y !== c) : [...x.colors, c] }));
   return (
@@ -180,12 +181,21 @@ function Collection({ deck, onChange }: { deck: DeckList; onChange: (name: strin
           <input type="checkbox" checked={f.legalOnly} onChange={(e) => setF({ ...f, legalOnly: e.target.checked })} />
           Légales en {FORMAT}
         </label>
-        <label className="toggle" title="Cocher pour ne voir que le set principal (sans les réimpressions de Foundations)">
-          <input type="checkbox" checked={f.mainOnly} onChange={(e) => setF({ ...f, mainOnly: e.target.checked })} />
-          Set principal
-        </label>
+        <select value={f.set} onChange={(e) => setF({ ...f, set: e.target.value })} aria-label="Extension">
+          <option value="">Toutes les extensions</option>
+          {SETS.map((s) => (
+            <option key={s.code} value={s.code}>
+              {s.nameFr}
+            </option>
+          ))}
+        </select>
         <span className="hint">
-          {cards.length} cartes · Foundations : {playable}/{POOL.length} jouables
+          {cards.length} cartes ·{" "}
+          {SETS.map((s) => {
+            const inSet = POOL.filter((c) => c.set === s.code);
+            return `${s.nameFr} ${inSet.filter((c) => c.implemented).length}/${inSet.length}`;
+          }).join(" · ")}{" "}
+          jouables
         </span>
       </div>
       <div className="collection-grid">

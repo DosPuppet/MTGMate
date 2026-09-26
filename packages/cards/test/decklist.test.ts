@@ -162,10 +162,20 @@ describe("légalité en Standard", () => {
     sideboard: where === "side" ? ([[1, "Carte fictive"]] as [number, string][]) : [],
   });
 
-  it("les 517 cartes de Foundations sont légales en Standard (légalités Scryfall importées)", () => {
+  it("toutes les cartes des extensions couvertes sont légales en Standard (légalités Scryfall importées)", () => {
     const cards = Object.values(CARDS).filter((c) => !c.isToken);
-    expect(cards).toHaveLength(517);
+    expect(cards.filter((c) => c.set === "FDN")).toHaveLength(517);
+    // Reality Fracture : 285 cartes, dont 6 réimpressions de Foundations (terrains de base, Unsummon).
+    expect(cards.filter((c) => c.set === "FRA")).toHaveLength(279);
     expect(cards.filter((c) => c.legalities?.standard !== "legal").map((c) => c.name)).toEqual([]);
+  });
+
+  it("carte à préparer : la créature et son sort, et le nom « Créature // Sort » à l'import", () => {
+    const angel = CARDS["Blossom-Blessed Angel"];
+    expect(angel?.prepareFace).toMatchObject({ name: "Seed Suture", typeLine: "Sorcery", manaCost: "{G/W}" });
+    expect(angel?.types).toEqual(["Creature"]);
+    const d = parseDeckList("2 Blossom-Blessed Angel // Seed Suture", new CardIndex(CARDS));
+    expect(d.main).toEqual([[2, "Blossom-Blessed Angel"]]);
   });
 
   it("une carte bannie rend le deck illégal, même en réserve", () => {

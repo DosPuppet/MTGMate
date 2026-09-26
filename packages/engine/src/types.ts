@@ -149,6 +149,8 @@ export interface CardDef {
   fr?: { name?: string; typeLine?: string; text?: string; image?: string };
   image?: string;
   artCrop?: string;
+  /** Carte « à préparer » (Reality Fracture) : le sort attaché à la créature (seconde face). */
+  prepareFace?: PrepareFace;
   /** false si la carte a des capacités que le moteur ne sait pas encore gérer. */
   implemented: boolean;
   /** Impression de référence (code de set, numéro de collection, rareté) : export des decklists, filtres. */
@@ -158,6 +160,14 @@ export interface CardDef {
   /** Légalité par format, d'après Scryfall au moment de l'import (« legal », « not_legal », « banned »…). */
   legalities?: Partial<Record<Format, Legality>>;
   isToken?: boolean;
+}
+
+export interface PrepareFace {
+  name: string;
+  manaCost: string;
+  typeLine: string;
+  text: string;
+  fr?: { name?: string; typeLine?: string; text?: string };
 }
 
 /** Formats de construction reconnus (seul le Standard est dans le périmètre). */
@@ -345,6 +355,9 @@ export interface ObjectFilter {
   enteredThisTurn?: boolean;
   /** Valeur de mana inférieure ou égale à la force de la source (« … inférieure ou égale à la force d'Alesha »). */
   maxManaValueSourcePower?: boolean;
+  /** Légendaire (true) ou non légendaire (false). */
+  legendary?: boolean;
+  maxToughness?: number;
 }
 
 /**
@@ -385,7 +398,9 @@ export type TriggerSpec =
   /** « Chaque fois que [la créature équipée] se dégage » */
   | { on: "untaps"; who: "self" | ObjectFilter }
   /** « Chaque fois que [cette créature] devient engagée » */
-  | { on: "taps"; who: "self" | ObjectFilter };
+  | { on: "taps"; who: "self" | ObjectFilter }
+  /** « Chaque fois que vous regardez (scry) ou surveillez » (Reality Fracture). */
+  | { on: "scryOrSurveil" };
 
 /** Conditions (« if intermédiaire » 603.4, « tant que »…). */
 export type Condition =
@@ -428,7 +443,17 @@ export type Condition =
   /** Un montant évalué du point de vue du contrôleur atteint N (« force totale 8 ou plus »). */
   | { kind: "amountAtLeast"; amount: Amount; n: number }
   /** X du sort qui se résout. */
-  | { kind: "xAtLeast"; n: number };
+  | { kind: "xAtLeast"; n: number }
+  /** Le contrôleur a regardé (scry) ou surveillé ce tour-ci. */
+  | { kind: "scriedThisTurn" }
+  /** Au moins N créatures sont mortes ce tour-ci. */
+  | { kind: "creaturesDiedAtLeast"; n: number }
+  /** Un adversaire a subi des blessures non de combat ce tour-ci. */
+  | { kind: "opponentDealtNoncombatDamage" }
+  /** Le contrôleur a pioché au moins N cartes ce tour-ci. */
+  | { kind: "drewAtLeast"; n: number }
+  /** Le contrôleur a lancé au moins N sorts [non-créature] ce tour-ci. */
+  | { kind: "castThisTurn"; n: number; noncreature?: boolean };
 
 /** Modifications apportées par un effet continu, rangées par couche (613). */
 export interface LayerMods {
@@ -614,6 +639,9 @@ export type Amount =
   /** Nombre de valeurs de mana différentes parmi les permanents non-terrains du contrôleur. */
   | { kind: "differentManaValues" }
   | { kind: "sum"; of: Amount[] }
+  /** Opposé (« -X/-0 ») et division entière (« pour chaque tranche de sept cartes »). */
+  | { kind: "neg"; of: Amount }
+  | { kind: "div"; of: Amount; by: number }
   /** Force totale des permanents correspondant au filtre, vus du contrôleur. */
   | { kind: "totalPower"; filter: ObjectFilter }
   /** Valeur mémorisée pendant la résolution (vie perdue de cette façon, blessures en excès…). */
@@ -1001,6 +1029,11 @@ export interface TurnStats {
   spellsCast: number;
   /** Éphémères et rituels lancés ce tour-ci (Thousand-Year Storm). */
   instantSorceryCast: number;
+  noncreatureCast: number;
+  /** Regards (scry) et surveillances effectués ce tour-ci. */
+  scried: number;
+  /** Blessures non de combat subies ce tour-ci. */
+  noncombatDamageTaken: number;
 }
 
 export interface CombatState {
@@ -1128,6 +1161,8 @@ export interface GameState {
     attacked: boolean;
     /** Une créature est morte ce tour-ci (morbide). */
     creatureDied: boolean;
+    /** Nombre de créatures mortes ce tour-ci. */
+    creaturesDied?: number;
     /** Capacités « une fois par tour » déjà déclenchées (source:index). */
     onceFired: string[];
     /** Cartes de cimetière qu'on peut lancer ce tour-ci (Zul Ashur). */

@@ -12,7 +12,7 @@ Plateforme pour jouer à Magic: The Gathering contre une ou plusieurs IA (en due
 
 Le périmètre visé avant toute extension est le **format Standard** : construit, 60 cartes minimum, 4 exemplaires maximum (sauf terrains de base et cartes « n'importe quel nombre »), réserve de 15 cartes.
 
-Les cartes sont couvertes extension par extension, en commençant par **Foundations (FDN)**. D'après Scryfall au 25/09/2026, les 517 cartes de FDN sont toutes légales en Standard (aucune bannie) : tout le set est dans le périmètre.
+Les cartes sont couvertes extension par extension : **Foundations (FDN)**, complète, puis **Reality Fracture (FRA, « Réalité fracturée »)**, en cours. D'après Scryfall au 25/09/2026, les 517 cartes de FDN sont toutes légales en Standard (aucune bannie) : tout le set est dans le périmètre.
 
 **Extensions légales en Standard au 25/09/2026** (source : Scryfall, à revérifier à chaque rotation) :
 
@@ -81,14 +81,14 @@ npm run dev          # http://localhost:5173
 | `npm test` | Tests de règles, d'IA et test de fumée de chaque carte gérée (Vitest) |
 | `npm run fuzz -- --games 300 [--ai random\|heuristic\|mixed] [--players 4] [--pool all] [--seed N]` | Parties IA contre IA, invariants vérifiés à chaque décision (`--pool all` : decks aléatoires tirés de toutes les cartes gérées) |
 | `npm run bench` | Décisions par seconde du moteur et temps de décision de l'IA (cibles : ≥ 5 000 déc/s, IA < 50 ms) |
-| `npm run coverage [-- --set main] [-- --missing] [-- --card "<nom>"]` | Cartes gérées, mécaniques manquantes, texte Oracle et script d'une carte |
+| `npm run coverage [-- --set main\|fdn\|fra] [-- --missing] [-- --card "<nom>"]` | Cartes gérées, mécaniques manquantes, texte Oracle et script d'une carte |
 | `npm run server` | Serveur de parties en ligne (WebSocket `/ws`, sert aussi `packages/client/dist`) |
 | `npm run online-smoke [-- --base <url>]` | Duel en ligne entre deux navigateurs : salon, lien d'invitation, corde, reprise après rechargement, revanche (serveur de dev par défaut, ou `--base` vers un serveur de production ou nginx) |
 | `npm run battlefield-smoke` | Plateaux chargés (jetons, 2e ligne, 4 joueurs) mis en jeu par le bac à sable du mode dev : rangées, piles de jetons, aucune carte rognée (serveur de dev lancé) |
 | `npm run deck-smoke` | Deckbuilder de bout en bout : import, édition, export, persistance, partie (serveur de dev lancé) |
 | `npm run ui-smoke -- <dossier> [actions]` | Joue une partie dans Chromium via l'interface et prend des captures (serveur de dev lancé) |
 | `npm run typecheck` / `npm run lint` | TypeScript strict / Biome |
-| `npm run import-cards -- fdn` | Réimporte un set depuis Scryfall (EN + FR, loyauté et légalité en Standard comprises) |
+| `npm run import-cards -- fdn` (ou `fra`) | Réimporte un set depuis Scryfall (EN + FR, loyauté et légalité en Standard comprises) |
 
 ## Architecture
 
@@ -147,7 +147,7 @@ Chaque carte gérée est automatiquement jouée par le test de fumée (`packages
 | 4c. FDN, set principal (n° 1 à 281) | lots A (longue traîne) à F (mécaniques uniques : permissions de lancement, doublements, protection, choix en arrivant, mana restreint, copie de sorts…) | ✅ **276 / 276** |
 | 4d. FDN, réimpressions (n° 282 et plus) | cartes des decks d'initiation et de la Starter Collection | ✅ **241 / 241** (517 / 517 pour tout FDN) |
 | 4e. Légalité Standard | légalités Scryfall importées, liste des bannies, validation du format dans le deckbuilder | ✅ |
-| 4f. Autres extensions Standard | une extension à la fois, par ordre de sortie décroissant (les plus récentes restent légales le plus longtemps) | à faire |
+| 4f. Autres extensions Standard | une extension à la fois ; Reality Fracture d'abord (lots 0 et A : 119/279) | en cours |
 | 5. IA | attaques par simulation, puis ISMCTS | à faire |
 | 6. JcJ en ligne | duel Standard : serveur Node `ws` (`GameHost`, vues et faces filtrées), code de salon, corde, reconnexion, revanche | ✅ duel ; déploiement pm2 + nginx documenté |
 | 7. Finitions | effets sonores ✅ ; replays (graine + décisions), images des jetons, musique | en cours |

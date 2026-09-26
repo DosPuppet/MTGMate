@@ -69,7 +69,9 @@ export type RulesEvent =
   /** Un sort ou une capacité vient d'être mis sur la pile avec ces cibles (identifiant d'élément de pile). */
   | { e: "targeted"; stackId: string; controller: PlayerId; targets: string[] }
   | { e: "untap"; objectId: ObjectId }
-  | { e: "tap"; objectId: ObjectId };
+  | { e: "tap"; objectId: ObjectId }
+  /** Un joueur vient de regarder (scry) ou de surveiller. */
+  | { e: "scry"; player: PlayerId };
 
 /** Signale un événement de règles : les capacités déclenchées correspondantes sont mises en attente. */
 export function rulesEvent(s: GameState, ev: RulesEvent): void {
@@ -134,7 +136,17 @@ export function shuffle<T>(s: GameState, items: T[]): void {
 }
 
 export function emptyTurnStats(): TurnStats {
-  return { lifeGained: 0, lifeGainEvents: 0, lifeLost: 0, cardsDrawn: 0, spellsCast: 0, instantSorceryCast: 0 };
+  return {
+    lifeGained: 0,
+    lifeGainEvents: 0,
+    lifeLost: 0,
+    cardsDrawn: 0,
+    spellsCast: 0,
+    instantSorceryCast: 0,
+    noncreatureCast: 0,
+    scried: 0,
+    noncombatDamageTaken: 0,
+  };
 }
 
 export function emptyPool(): Record<ManaType, number> {
@@ -290,6 +302,8 @@ export function moveObject(
 ): ObjectId | null {
   const o = obj(s, id);
   to = replaceDestination(s, o, to);
+  // Marqueur de finalité : un permanent qui en porte un et devrait mourir est exilé à la place.
+  if (to === "graveyard" && o.zone === "battlefield" && (o.counters.finality ?? 0) > 0) to = "exile";
   // Progenitus : « si elle devait être mise dans un cimetière de n'importe où, mélangez-la dans la bibliothèque ».
   const shuffleIn = to === "graveyard" && !o.isToken && !!s.defs[o.defId]?.shuffleIntoLibrary;
   if (shuffleIn) to = "library";
@@ -310,7 +324,10 @@ export function moveObject(
   const lki = o.zone === "battlefield" ? snapshot(s, id) : null;
   if (lki) {
     s.lki[id] = lki;
-    if (to === "graveyard" && lki.types.includes("Creature")) s.turn.creatureDied = true;
+    if (to === "graveyard" && lki.types.includes("Creature")) {
+      s.turn.creatureDied = true;
+      s.turn.creaturesDied = (s.turn.creaturesDied ?? 0) + 1;
+    }
   }
   const from0 = o.zone;
   delete s.objects[id];

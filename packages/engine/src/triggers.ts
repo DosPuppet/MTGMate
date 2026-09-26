@@ -89,6 +89,18 @@ export function checkCondition(s: GameState, c: Condition, controller: PlayerId,
       return s.turn.attacked && s.turn.active === controller;
     case "creatureDiedThisTurn":
       return s.turn.creatureDied;
+    case "creaturesDiedAtLeast":
+      return (s.turn.creaturesDied ?? 0) >= c.n;
+    case "scriedThisTurn":
+      return (s.players[controller]?.turnStats.scried ?? 0) > 0;
+    case "opponentDealtNoncombatDamage":
+      return opponentsOf(s, controller).some((q) => (s.players[q]?.turnStats.noncombatDamageTaken ?? 0) > 0);
+    case "drewAtLeast":
+      return (s.players[controller]?.turnStats.cardsDrawn ?? 0) >= c.n;
+    case "castThisTurn": {
+      const st = s.players[controller]?.turnStats;
+      return ((c.noncreature ? st?.noncreatureCast : st?.spellsCast) ?? 0) >= c.n;
+    }
     case "controls": {
       const n = s.battlefield.filter((id) =>
         matchesObjectFilter(s, controller, id, { ...c.filter, controller: "you" }, sourceId),
@@ -242,6 +254,8 @@ function matchTrigger(s: GameState, ev: RulesEvent, t: TriggerSpec, src: Source)
     }
     case "gainLife":
       return ev.e === "lifeGain" && ev.player === me && (!t.first || ev.first) ? { player: me, amount: ev.amount } : null;
+    case "scryOrSurveil":
+      return ev.e === "scry" && ev.player === me ? { player: me } : null;
     case "loseLife":
       return ev.e === "lifeLoss" && whose(t.whose, ev.player, me) ? { player: ev.player, amount: ev.amount } : null;
     case "draw":

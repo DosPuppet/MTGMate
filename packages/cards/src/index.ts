@@ -1,8 +1,7 @@
 import type { CardDef, TokenSpec } from "@mtgx/engine";
-import fdnData from "../data/fdn.json";
 import { DECKS, type DeckList } from "./decks";
-import { FDN_SCRIPTS } from "./fdn/index";
-import { type RawCard, toCardDef } from "./scryfall";
+import { toCardDef } from "./scryfall";
+import { SETS } from "./sets";
 
 export {
   CardIndex,
@@ -21,6 +20,7 @@ export {
   validateDeck,
 } from "./decklist";
 export { DECKS, type DeckList } from "./decks";
+export { type CardSet, isMainSet, SET_BY_CODE, SETS } from "./sets";
 
 import { CAT, DOG, FOOD, GOBLIN, RABBIT, SOLDIER, SPIRIT, TREASURE } from "./fdn/common";
 
@@ -37,9 +37,11 @@ export const TOKEN_SPECS: Record<string, TokenSpec> = {
 };
 export { onlyKeywords, type RawCard, slug, toCardDef } from "./scryfall";
 
-/** Toutes les cartes connues, indexées par nom anglais. */
+/** Toutes les cartes connues, indexées par nom anglais (toutes extensions ; une réimpression garde la première). */
 export const CARDS: Record<string, CardDef> = {};
-for (const raw of fdnData as RawCard[]) CARDS[raw.name] = toCardDef(raw, FDN_SCRIPTS[raw.name]);
+for (const set of SETS) {
+  for (const raw of set.data) CARDS[raw.name] ??= toCardDef(raw, set.scripts[raw.name], set.code);
+}
 
 export function card(name: string): CardDef {
   const c = CARDS[name];
@@ -64,8 +66,3 @@ export function deckById(id: string): DeckList {
 }
 
 export const implementedCards = (): CardDef[] => Object.values(CARDS).filter((c) => c.implemented);
-
-/** Cartes du set principal Foundations (numéros 1 à 281, terrains de base compris). */
-export function isMainSet(c: CardDef): boolean {
-  return !c.isToken && c.set === "FDN" && Number.parseInt(c.number ?? "999", 10) <= 281;
-}

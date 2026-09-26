@@ -34,6 +34,20 @@ export function Preview() {
         </div>
         <div className="preview-type">{faceType(face, lang)}</div>
         {!src && <div className="preview-text">{faceText(face, lang)}</div>}
+        {face.prepareFace && (
+          // Carte « à préparer » : le sort attaché à la créature.
+          <div className="preview-prepare">
+            <div className="preview-title">
+              <span>
+                {(lang === "fr" && face.prepareFace.fr?.name) || face.prepareFace.name}{" "}
+                <span className="hint">(sort préparé)</span>
+              </span>
+              <ManaCost cost={face.prepareFace.manaCost} size={14} />
+            </div>
+            <div className="preview-type">{(lang === "fr" && face.prepareFace.fr?.typeLine) || face.prepareFace.typeLine}</div>
+            <div className="preview-text">{(lang === "fr" && face.prepareFace.fr?.text) || face.prepareFace.text}</div>
+          </div>
+        )}
         {obj?.power !== undefined && (
           <div className="preview-stats">
             Force/Endurance :{" "}

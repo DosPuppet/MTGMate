@@ -168,6 +168,9 @@ export const amount = {
   /** Marqueurs sur la source d'après ses dernières informations connues (capacité « quand elle meurt »). */
   lkiCounters: (counter: string): Amount => ({ kind: "lkiCounters", counter }),
   plus: (...of: Amount[]): Amount => ({ kind: "sum", of }),
+  neg: (of: Amount): Amount => ({ kind: "neg", of }),
+  /** Division entière : « pour chaque tranche de N ». */
+  per: (of: Amount, by: number): Amount => ({ kind: "div", of, by }),
   manaValueOf: (r: Ref): Amount => ({ kind: "manaValueOf", ref: r }),
   toughnessOf: (r: Ref): Amount => ({ kind: "toughnessOf", ref: r }),
   colorsOf: (r: Ref): Amount => ({ kind: "colorsOf", ref: r }),
@@ -578,6 +581,8 @@ export const when = {
   tapsSelf: { on: "taps", who: "self" } as TriggerSpec,
   /** « Chaque fois que vous lancez un sort qui cible cette créature » */
   targetedBySpellYouCast: { on: "becomesTarget", who: "self", bySpellYouControl: true } as TriggerSpec,
+  /** « Chaque fois que vous regardez ou surveillez » */
+  scryOrSurveil: { on: "scryOrSurveil" } as TriggerSpec,
 };
 
 /** Conditions courantes (raid, morbide…). */
@@ -609,6 +614,12 @@ export const cond = {
   xAtLeast: (n: number): Condition => ({ kind: "xAtLeast", n }),
   castFromHand: { kind: "castFromHand" } as Condition,
   wasCast: { kind: "wasCast" } as Condition,
+  /** « si vous avez regardé ou surveillé ce tour-ci » */
+  scried: { kind: "scriedThisTurn" } as Condition,
+  creaturesDied: (n: number): Condition => ({ kind: "creaturesDiedAtLeast", n }),
+  opponentDealtNoncombatDamage: { kind: "opponentDealtNoncombatDamage" } as Condition,
+  drewAtLeast: (n: number): Condition => ({ kind: "drewAtLeast", n }),
+  castThisTurn: (n: number, noncreature = false): Condition => ({ kind: "castThisTurn", n, noncreature }),
 };
 
 /** « Vous pouvez lancer des sorts comme s'ils avaient le flash. » */

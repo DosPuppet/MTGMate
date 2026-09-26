@@ -231,6 +231,10 @@ export function evalAmount(s: GameState, ctx: EffectContext, a: Amount): number 
     }
     case "sum":
       return a.of.reduce<number>((n, x) => n + evalAmount(s, ctx, x), 0);
+    case "neg":
+      return -evalAmount(s, ctx, a.of);
+    case "div":
+      return Math.floor(evalAmount(s, ctx, a.of) / a.by);
     case "var":
       return readVar(ctx, a.name);
     case "lifeTotal":
@@ -967,6 +971,10 @@ export function runEffect(s: GameState, r: Resolution, e: Effect): OpResult {
       const player = s.players[ctx.controller];
       if (!player) return;
       const rest = player.library.slice(top.length);
+      // « Chaque fois que vous regardez ou surveillez » (Reality Fracture).
+      player.turnStats.scried += 1;
+      bump(s); // des capacités statiques en dépendent (Surveillance Phantasm)
+      rulesEvent(s, { e: "scry", player: ctx.controller });
       if (scry) {
         player.library = [...order, ...rest, ...picked.map(String)];
         emit({ type: "scry", player: ctx.controller, top: order.length, bottom: picked.length });

@@ -106,6 +106,8 @@ export function dealDamage(s: GameState, source: DamageSource, target: string, a
       src.combatDamagedPlayers = [...(src.combatDamagedPlayers ?? []), target];
     }
     emit({ type: "damage", sourceDefId: source.defId, target, amount, combat });
+    const hurt = s.players[target];
+    if (hurt && !combat && amount > 0) hurt.turnStats.noncombatDamageTaken += amount;
     loseLife(s, target, amount);
   } else {
     const o = s.objects[target];

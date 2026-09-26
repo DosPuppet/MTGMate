@@ -444,6 +444,7 @@ export function castSpell(s: GameState, player: PlayerId, card: ObjectId, choice
   if (caster) {
     caster.turnStats.spellsCast += 1;
     if (instantOrSorcery) caster.turnStats.instantSorceryCast += 1;
+    if (!d.types.includes("Creature")) caster.turnStats.noncreatureCast += 1;
   }
   rulesEvent(s, { e: "cast", player, stackId, instantSorceryBefore: instantOrSorcery ? before : undefined });
   announceTargets(s, stackId, player, targets);

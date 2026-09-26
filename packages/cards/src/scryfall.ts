@@ -20,6 +20,14 @@ export interface RawCard {
   image: string;
   artCrop: string;
   legalities?: CardDef["legalities"];
+  /** Disposition « prepare » : le sort attaché à la créature. */
+  prepare?: {
+    name: string;
+    manaCost: string;
+    typeLine: string;
+    oracleText: string;
+    fr?: { name?: string; typeLine?: string; text?: string };
+  };
   fr?: { name?: string; typeLine?: string; text?: string; image?: string };
 }
 
@@ -154,7 +162,7 @@ function intrinsicAbilities(keywords: Set<Keyword>, ward: CardDef["ward"], equip
   return out;
 }
 
-export function toCardDef(raw: RawCard, script?: CardScript, set = "FDN"): CardDef {
+export function toCardDef(raw: RawCard, script: CardScript | undefined, set: string): CardDef {
   const [left = "", right = ""] = raw.typeLine.split(" — ");
   const words = left.split(" ").filter(Boolean);
   const supertypes = words.filter((w) => SUPERTYPES.has(w));
@@ -162,6 +170,8 @@ export function toCardDef(raw: RawCard, script?: CardScript, set = "FDN"): CardD
   const subtypes = right.split(" ").filter(Boolean);
 
   let implemented = !!script || onlyKeywords(raw.oracleText);
+  // Cartes « à préparer » : mécanique pas encore gérée (lot C de Reality Fracture).
+  if (raw.prepare) implemented = false;
   let manaCost = null;
   try {
     manaCost = raw.manaCost ? parseManaCost(raw.manaCost) : null;
@@ -227,6 +237,15 @@ export function toCardDef(raw: RawCard, script?: CardScript, set = "FDN"): CardD
     fr: raw.fr,
     image: raw.image,
     artCrop: raw.artCrop,
+    prepareFace: raw.prepare
+      ? {
+          name: raw.prepare.name,
+          manaCost: raw.prepare.manaCost,
+          typeLine: raw.prepare.typeLine,
+          text: raw.prepare.oracleText,
+          fr: raw.prepare.fr,
+        }
+      : undefined,
     implemented,
     set,
     number: raw.number,

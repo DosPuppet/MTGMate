@@ -22,7 +22,32 @@ Ce fichier sert au suivi du projet entre les sessions. Le README présente le pr
 | Effets sonores (échantillons Kenney CC0, volume, muet avec M) | ✅ |
 | Jeu en ligne : duel Standard à 2 (serveur local, code de salon, corde, reconnexion, revanche) | ✅ |
 | Déploiement : pm2 derrière nginx sur un VPS (`docs/deploiement.md`, `deploy/`) | ✅ documenté et testé en local (pm2, nginx) |
-| Autres extensions Standard | **prochaine étape** |
+| **Reality Fracture (FRA, « Réalité fracturée »)** | **119 / 279** (lot 0 et lot A faits ; `npm run coverage -- --set fra --missing`) |
+| Autres extensions Standard | à faire |
+
+### Reality Fracture (FRA)
+
+- 285 cartes selon Scryfall, dont 6 réimpressions de FDN (terrains de base, Unsummon), donc 279 cartes propres. Toutes sont légales en Standard.
+- **Sortie le 2 octobre 2026 : pas encore de textes français.** Réimporter après la sortie (`npm run import-cards -- fra`), puis vérifier les noms français dans le deckbuilder.
+- Lot 0 (infrastructure multi-extensions) et lot A (cartes faisables avec le moteur, jetons Cadet, Heartwood, Lotus, Forêt Tentacule et Thopter, terrains lents) : ✅.
+- Lots suivants :
+  - **B.** Activations depuis la main :
+    - cycle, cycle de terrain, cycle de type ;
+    - Sureshot Sower, Proft, Sinister Mastermind ;
+    - contempler (*behold*), exhaust, convocation, domaine, prolifération, second partagé.
+  - **C.** **Préparé** (24 cartes) :
+    - état « préparé » ;
+    - lancer une copie du sort de la créature ;
+    - Codie.
+  - **D.** **Empower Jace** (35 cartes) : jeton planeswalker Jace (−1 : surveillez 1 ; −3 : piochez une carte).
+  - **E.** Planeswalkers (8) et cartes qui en parlent.
+  - **F.** Cartes restantes :
+    - Tarmogoyf, Emrakul, Omnipresence, Hall of Echoes, Face Yourself, Uldaros, Draconic Visitor, Extrapolate the Impossible ;
+    - Kindred Judgment, Enlightened Confidant, Cruel Calculations, Seasoned Cryomancer, Sphinx's Approach, Dark Matter Manipulator, Command the Stage, Curse-Marred Demon ;
+    - Gardenize, Hexhaven Invigorator, Clash of Elements, Null Summoner, Recursive Recruitment, Twinned Vision, Twisted Fates, Warrior's Blades ;
+    - Danitha (×2), Ghalta the Immovable, Thalia, Yoshimaru, Beloved Companion, Yuriko, Blade of the Mighty, Fblthp, Gallia, Tragic Host, Jiang Yanggu, Alone ;
+    - Tetsuko Umezawa, Pursuer, Tomik, Loot, Ruric Thar, Magecrusher, Titanbones, Hapatra, the Desert Fang, Karn, Gilded Guardian.
+  - **G.** 4 decks préconstruits FRA.
 
 ### Lots du set principal FDN (tous terminés)
 
@@ -70,6 +95,9 @@ Réimpressions : défenses talismaniques contre une couleur, changelin, restrict
 - **Demonic Pact :** les modes déjà choisis sont mémorisés sur le permanent (perdus s'il change de zone, ce qui est conforme).
 - **Ordeal of Nylea :** sacrifiée directement, sans déclencheur séparé.
 - **Dégager jusqu'à N terrains :** les terrains sont choisis automatiquement.
+- **Master of Barbs :** seules les blessures non de combat infligées par vos sources (sorts compris) comptent, pas celles d'une source adverse.
+- **Something Worth Saving :** les quatre cartes sont regardées puis mises au cimetière, ce qui n'est pas une meule au sens strict (pas de déclencheur de meule).
+- **Solitary Cell, Murmuring Volume :** la carte défaussée l'est à la résolution, et non comme coût d'activation.
 - **Légalité Standard :** instantané des légalités Scryfall au moment de l'import (`legalities.standard` dans `data/<set>.json`). Après une rotation ou une annonce de bannissement, réimporter les sets (`npm run import-cards -- <set>`).
 - **Jetons :** pas d'image (cadre texte).
 
@@ -86,7 +114,9 @@ Réimpressions : défenses talismaniques contre une couleur, changelin, restrict
   - toute modification pouvant changer des caractéristiques appelle `bump(s)` (cache des couches) ;
   - un nouveau champ de `GameState` doit être initialisé dans `game.ts` et, si besoin, dans le helper de test `engine/test/helpers.ts`.
 - **Cartes :**
-  - scripts dans `packages/cards/src/fdn/<couleur>.ts` ; jetons et filtres partagés dans `fdn/common.ts` ;
+  - extensions déclarées dans `packages/cards/src/sets.ts` (données `data/<set>.json`, scripts, dernier numéro du set principal). Une réimpression garde la définition de la première extension ;
+  - scripts dans `packages/cards/src/<set>/<couleur>.ts` ; le DSL et les jetons génériques sont dans `fdn/common.ts`, que `fra/common.ts` réexporte en y ajoutant ses propres jetons ;
+  - disposition Scryfall `prepare` (FRA) : la face 0 est la carte, et la face 1 (le sort) va dans `CardDef.prepareFace`. La carte reste « non gérée » tant que le lot C n'est pas fait ;
   - ce qui se lit dans le texte Scryfall (mots-clés, prouesse, garde, « Équiper », loyauté) est déduit dans `cards/src/scryfall.ts` ;
   - légalité : `validateDeck` (format `standard` par défaut) refuse les cartes bannies, hors format ou sans légalité connue, réserve comprise ; les decks illégaux ne lancent pas de partie.
 - **Jeu en ligne (`packages/server`) :**
@@ -96,7 +126,7 @@ Réimpressions : défenses talismaniques contre une couleur, changelin, restrict
   - le protocole est dans `server/src/protocol.ts`, que le client importe en `import type`.
 - **Données :**
   - `packages/cards/data/fdn.json` est indenté avec **1 espace** ; le réécrire à l'identique pour garder des diffs minimaux ;
-  - réimport : `npm run import-cards -- fdn`.
+  - réimport : `npm run import-cards -- fdn` ou `-- fra`.
 - **Commits :**
   - uniquement quand l'utilisateur le demande ;
   - message en anglais, terminé par `Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>` ;

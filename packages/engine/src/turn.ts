@@ -337,6 +337,7 @@ function endStep(s: GameState): void {
     s.turn.landsPlayed = 0;
     s.turn.attacked = false;
     s.turn.creatureDied = false;
+    s.turn.creaturesDied = 0;
     emit({ type: "turnStart", turn: s.turn.number, player: s.turn.active });
   }
   s.flow = "stepStart";

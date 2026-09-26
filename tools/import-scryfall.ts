@@ -34,6 +34,18 @@ interface ScryfallCard {
   printed_type_line?: string;
   printed_text?: string;
   image_uris?: { small: string; normal: string; art_crop: string };
+  /** Cartes à deux faces logiques (disposition « prepare » : la créature et son sort). */
+  card_faces?: {
+    name: string;
+    mana_cost?: string;
+    type_line: string;
+    oracle_text?: string;
+    power?: string;
+    toughness?: string;
+    printed_name?: string;
+    printed_type_line?: string;
+    printed_text?: string;
+  }[];
   legalities: Record<string, string>;
   booster: boolean;
   promo: boolean;
@@ -60,23 +72,30 @@ const en = await search(`set:${SET} lang:en`);
 const fr = await search(`set:${SET} lang:fr`);
 const frByNumber = new Map(fr.map((c) => [c.collector_number, c]));
 
+/** Dispositions importées : cartes simples, et cartes « à préparer » (créature + sort, une seule image). */
+const LAYOUTS = new Set(["normal", "prepare"]);
+
 // Une seule entrée par nom : la première impression « normale » (numéro le plus bas).
 const byName = new Map<string, Record<string, unknown>>();
 const sorted = [...en].sort((a, b) => Number.parseInt(a.collector_number, 10) - Number.parseInt(b.collector_number, 10));
 for (const c of sorted) {
-  if (c.layout !== "normal" || c.promo || !c.image_uris) continue;
-  if (byName.has(c.name)) continue;
+  if (!LAYOUTS.has(c.layout) || c.promo || !c.image_uris) continue;
+  // Carte à préparer : la face 0 (la créature) donne la carte, la face 1 est le sort qu'elle prépare.
+  const [main, spell] = c.layout === "prepare" ? (c.card_faces ?? []) : [];
+  const name = main?.name ?? c.name;
+  if (byName.has(name)) continue;
   const f = frByNumber.get(c.collector_number);
-  byName.set(c.name, {
-    name: c.name,
+  const [frMain, frSpell] = f?.card_faces ?? [];
+  byName.set(name, {
+    name,
     number: c.collector_number,
     rarity: c.rarity,
-    manaCost: c.mana_cost ?? "",
+    manaCost: main ? (main.mana_cost ?? "") : (c.mana_cost ?? ""),
     cmc: c.cmc,
-    typeLine: c.type_line,
-    oracleText: c.oracle_text ?? "",
-    power: c.power,
-    toughness: c.toughness,
+    typeLine: main?.type_line ?? c.type_line,
+    oracleText: main ? (main.oracle_text ?? "") : (c.oracle_text ?? ""),
+    power: main?.power ?? c.power,
+    toughness: main?.toughness ?? c.toughness,
     loyalty: c.loyalty,
     colors: c.colors ?? [],
     keywords: c.keywords,
@@ -85,11 +104,22 @@ for (const c of sorted) {
     artCrop: c.image_uris.art_crop,
     // Seuls les formats du périmètre : à réimporter à chaque rotation ou annonce de bannissement.
     legalities: { standard: c.legalities.standard },
+    prepare: spell
+      ? {
+          name: spell.name,
+          manaCost: spell.mana_cost ?? "",
+          typeLine: spell.type_line,
+          oracleText: spell.oracle_text ?? "",
+          fr: frSpell
+            ? { name: frSpell.printed_name, typeLine: frSpell.printed_type_line, text: frSpell.printed_text }
+            : undefined,
+        }
+      : undefined,
     fr: f
       ? {
-          name: f.printed_name,
-          typeLine: f.printed_type_line,
-          text: f.printed_text,
+          name: frMain?.printed_name ?? f.printed_name,
+          typeLine: frMain?.printed_type_line ?? f.printed_type_line,
+          text: frMain?.printed_text ?? f.printed_text,
           image: f.image_uris?.normal,
         }
       : undefined,
