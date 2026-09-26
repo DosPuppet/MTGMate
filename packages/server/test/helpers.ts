@@ -8,8 +8,11 @@ import { type RunningServer, startServer } from "../src/index";
 export const GREEN: DeckEntries = (DECKS.find((d) => d.colors.join("") === "G") ?? DECKS[0])?.main ?? [];
 export const RED: DeckEntries = (DECKS.find((d) => d.colors.join("") === "R") ?? DECKS[1])?.main ?? [];
 
-export function server(config: Partial<RoomConfig> = {}): Promise<RunningServer> {
-  return startServer({ port: 0, host: "127.0.0.1", config });
+export function server(
+  config: Partial<RoomConfig> = {},
+  opts: { maxPerIp?: number; pingMs?: number } = {},
+): Promise<RunningServer> {
+  return startServer({ port: 0, host: "127.0.0.1", config, ...opts });
 }
 
 export class Client {

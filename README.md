@@ -65,13 +65,14 @@ npm run dev          # http://localhost:5173
 ### Jouer en ligne contre un joueur (duel Standard)
 
 - **En développement :** `npm run server` (serveur de parties, port 8787) et `npm run dev`. Ouvrez deux onglets, puis « Contre un joueur » : l'un crée la partie, l'autre la rejoint avec le code ou le lien.
-- **En réseau local :** `npm run build` puis `npm run server`. Le serveur sert aussi l'interface : votre adversaire ouvre l'adresse « réseau » affichée (`http://<ip>:8787`). Pour jouer par Internet, exposez ce port (tunnel, redirection de port).
+- **En réseau local :** `npm run build` puis `npm run server`. Le serveur sert aussi l'interface : votre adversaire ouvre l'adresse « réseau » affichée (`http://<ip>:8787`).
+- **Sur un serveur (Internet, HTTPS) :** Node + pm2 derrière nginx, avec un sous-domaine. La notice pas à pas est dans [docs/deploiement.md](docs/deploiement.md) ; les fichiers sont dans `deploy/` (configuration pm2, site nginx, script de mise à jour).
 - **Règles du salon :**
   - 60 s par décision, avec une corde affichée pendant les 20 dernières ;
   - à l'expiration, une décision par défaut est jouée ; 3 expirations valent une défaite ;
   - après une déconnexion, 60 s pour revenir (en rechargeant la page), sinon défaite ;
   - revanche possible dans le même salon.
-- **Variables d'environnement :** `PORT`, `MTGX_DECISION_MS`, `MTGX_GRACE_MS`.
+- **Variables d'environnement :** `PORT`, `HOST` (`127.0.0.1` derrière nginx), `MTGX_DECISION_MS`, `MTGX_GRACE_MS`, `MTGX_MAX_ROOMS`. `/healthz` indique l'état du serveur.
 
 ## Commandes
 
@@ -82,7 +83,7 @@ npm run dev          # http://localhost:5173
 | `npm run bench` | Décisions par seconde du moteur et temps de décision de l'IA (cibles : ≥ 5 000 déc/s, IA < 50 ms) |
 | `npm run coverage [-- --set main] [-- --missing] [-- --card "<nom>"]` | Cartes gérées, mécaniques manquantes, texte Oracle et script d'une carte |
 | `npm run server` | Serveur de parties en ligne (WebSocket `/ws`, sert aussi `packages/client/dist`) |
-| `npm run online-smoke` | Duel en ligne entre deux navigateurs : salon, lien d'invitation, corde, reprise après rechargement, revanche (serveur et dev lancés) |
+| `npm run online-smoke [-- --base <url>]` | Duel en ligne entre deux navigateurs : salon, lien d'invitation, corde, reprise après rechargement, revanche (serveur de dev par défaut, ou `--base` vers un serveur de production ou nginx) |
 | `npm run battlefield-smoke` | Plateaux chargés (jetons, 2e ligne, 4 joueurs) mis en jeu par le bac à sable du mode dev : rangées, piles de jetons, aucune carte rognée (serveur de dev lancé) |
 | `npm run deck-smoke` | Deckbuilder de bout en bout : import, édition, export, persistance, partie (serveur de dev lancé) |
 | `npm run ui-smoke -- <dossier> [actions]` | Joue une partie dans Chromium via l'interface et prend des captures (serveur de dev lancé) |
@@ -148,7 +149,7 @@ Chaque carte gérée est automatiquement jouée par le test de fumée (`packages
 | 4e. Légalité Standard | légalités Scryfall importées, liste des bannies, validation du format dans le deckbuilder | ✅ |
 | 4f. Autres extensions Standard | une extension à la fois, par ordre de sortie décroissant (les plus récentes restent légales le plus longtemps) | à faire |
 | 5. IA | attaques par simulation, puis ISMCTS | à faire |
-| 6. JcJ en ligne | duel Standard : serveur Node `ws` (`GameHost`, vues et faces filtrées), code de salon, corde, reconnexion, revanche | ✅ duel en local (déploiement à faire) |
+| 6. JcJ en ligne | duel Standard : serveur Node `ws` (`GameHost`, vues et faces filtrées), code de salon, corde, reconnexion, revanche | ✅ duel ; déploiement pm2 + nginx documenté |
 | 7. Finitions | effets sonores ✅ ; replays (graine + décisions), images des jetons, musique | en cours |
 
 Le suivi détaillé (cartes restantes, approximations connues, conventions) est dans [CLAUDE.md](CLAUDE.md).

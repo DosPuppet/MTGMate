@@ -41,7 +41,8 @@ export type ClientMessage =
   | { type: "settings"; settings: Partial<AutopilotSettings> }
   | { type: "rematch" };
 
-export type ErrorCode = "deck" | "name" | "room" | "full" | "token" | "rules" | "state";
+/** `busy` : serveur complet ; `closed` : salon fermé par le serveur (attente trop longue). */
+export type ErrorCode = "deck" | "name" | "room" | "full" | "busy" | "closed" | "token" | "rules" | "state";
 
 export type ServerMessage =
   | { type: "room"; room: RoomInfo }

@@ -4,13 +4,17 @@
  * la reprise après rechargement de la page, la fin de partie et la revanche. Captures dans test-results/online/.
  *
  * Prérequis : `npm run server` (MTGX_DECISION_MS=45000 conseillé) et `npm run dev` lancés.
- * Usage : npm run online-smoke -- [maxTours]
+ * Usage : npm run online-smoke -- [maxTours] [--base http://127.0.0.1:8787]
  */
 import { mkdirSync } from "node:fs";
 import { type Browser, chromium, type Page } from "playwright";
 
 const OUT = "test-results/online";
-const MAX_ROUNDS = Number(process.argv[2] ?? 600);
+const args = process.argv.slice(2);
+const baseIdx = args.indexOf("--base");
+/** URL de l'appli : serveur de dev (défaut) ou serveur de production, éventuellement derrière nginx. */
+const BASE = (baseIdx >= 0 ? args.splice(baseIdx, 2)[1] : undefined) ?? "http://localhost:5173";
+const MAX_ROUNDS = Number(args[0] ?? 600);
 mkdirSync(OUT, { recursive: true });
 
 const failures: string[] = [];
@@ -94,7 +98,7 @@ async function step(page: Page): Promise<void> {
 const over = (page: Page) => page.locator(".gameover").count();
 
 const browser = await chromium.launch();
-const a = await open(browser, "A", "http://localhost:5173/");
+const a = await open(browser, "A", `${BASE}/`);
 await a.getByRole("button", { name: "Contre un joueur" }).click();
 await a.getByPlaceholder("Pseudo visible par votre adversaire").fill("Alice");
 await a.getByRole("button", { name: "Créer", exact: true }).click();
@@ -102,7 +106,7 @@ const code = (await a.getByTestId("room-code").innerText({ timeout: 10_000 })).t
 check(/^[A-Z0-9]{6}$/.test(code), `salon créé (code ${code})`);
 await a.screenshot({ path: `${OUT}/1-attente.png` });
 
-const b = await open(browser, "B", `http://localhost:5173/?room=${code}`);
+const b = await open(browser, "B", `${BASE}/?room=${code}`);
 await b.getByPlaceholder("Pseudo visible par votre adversaire").fill("Bob");
 check((await b.getByLabel("Code du salon").inputValue()) === code, "le lien d'invitation pré-remplit le code");
 await b.getByRole("button", { name: "Rejoindre" }).click();
@@ -136,12 +140,8 @@ for (let i = 0; i < 8 && !(await over(a)); i++) {
 }
 
 // Corde : on laisse le joueur qui doit décider réfléchir jusqu'à la corde (fin des 45 s).
-const waiting = await a.evaluate(() => {
-  const s = (
-    window as unknown as { __mtgx: { getState(): { view: { pending: { player: string } | null; viewer: string } | null } } }
-  ).__mtgx.getState();
-  return s.view?.pending?.player === s.view?.viewer ? "A" : "B";
-});
+// Qui doit décider : l'adversaire « réfléchit… » (indicateur visible, aussi en production).
+const waiting = (await a.locator(".player-bar.opp .thinking").count()) ? "B" : "A";
 if (!(await over(a))) {
   await a.waitForTimeout(27_000);
   check(

@@ -20,7 +20,8 @@ Ce fichier sert au suivi du projet entre les sessions. Le README présente le pr
 | Légalité Standard dans le deckbuilder (légalités Scryfall, bannies) | ✅ |
 | Champ de bataille façon MTGA (rangées, piles de jetons, lignes multiples, redimensionnement) | ✅ |
 | Effets sonores (échantillons Kenney CC0, volume, muet avec M) | ✅ |
-| Jeu en ligne : duel Standard à 2 (serveur local, code de salon, corde, reconnexion, revanche) | ✅ (déploiement à faire) |
+| Jeu en ligne : duel Standard à 2 (serveur local, code de salon, corde, reconnexion, revanche) | ✅ |
+| Déploiement : pm2 derrière nginx sur un VPS (`docs/deploiement.md`, `deploy/`) | ✅ documenté et testé en local (pm2, nginx) |
 | Autres extensions Standard | **prochaine étape** |
 
 ### Lots du set principal FDN (tous terminés)
@@ -129,6 +130,8 @@ Réimpressions : défenses talismaniques contre une couleur, changelin, restrict
   - un nouveau type d'événement moteur n'a pas de son tant qu'il n'est pas ajouté à `soundsFor` ;
   - en mode dev, `window.__sfxLog` liste les sons joués (vérifié par `ui-smoke`).
 - **Serveur de parties :** `npm run server` charge le moteur au démarrage ; le relancer après toute modification du moteur ou des cartes. Il sert `packages/client/dist` : relancer `npm run build` pour y voir les changements du client (en dev, Vite redirige `/ws` vers le port 8787).
+- **Déploiement (VPS de l'utilisateur) :** machine partagée avec d'autres applis, nginx existant devant, **ni Docker ni Caddy ni unité systemd** : pm2 (`deploy/ecosystem.config.cjs`), serveur sur `127.0.0.1`. Une mise à jour (`deploy/update.sh`) redémarre le serveur et **coupe les parties en cours** (salons en mémoire).
+- **Mode dev seulement :** `window.__mtgx` (bac à sable) et `window.__sfxLog` n'existent pas dans le build de production ; les scripts qui visent la production (`online-smoke --base`) ne doivent pas s'en servir.
 - **Mulligans :** ils se décident l'un après l'autre (le premier joueur d'abord) ; un script de test ne doit pas supposer l'ordre.
 - **Bac à sable (mode dev) :** `window.__mtgx` expose le store ; `startGame(deck, decksIA, { p1: { cards, tokens }, p2: … })` met des permanents en jeu dès le début (voir `battlefield-smoke`). Dans `page.evaluate`, pas de fonction nommée (tsx injecte `__name`).
 - **`pgrep -f` / `pkill -f` :** avec un motif présent dans la ligne de commande, ils peuvent tuer le shell courant.

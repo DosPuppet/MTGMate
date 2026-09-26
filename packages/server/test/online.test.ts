@@ -1,5 +1,6 @@
 import { CARDS } from "@mtgx/cards";
 import { afterEach, describe, expect, it } from "vitest";
+import { WebSocket } from "ws";
 import type { RunningServer } from "../src/index";
 import { Client, duel, GREEN, server } from "./helpers";
 
@@ -10,8 +11,8 @@ afterEach(async () => {
   await srv?.close();
   srv = null;
 });
-async function start(config = {}) {
-  srv = await server(config);
+async function start(config = {}, opts: { maxPerIp?: number; pingMs?: number } = {}) {
+  srv = await server(config, opts);
   return srv.port;
 }
 async function pair(port: number, bots = true) {
@@ -163,5 +164,73 @@ describe("minuteur et déconnexions", () => {
     await b.close();
     const end = await a.next("update", (m) => m.view.over, 5_000);
     expect(end.view.winner).toBe("p1");
+  });
+});
+
+describe("exposition à Internet", () => {
+  it("/healthz répond avec le nombre de salons", async () => {
+    const port = await start();
+    await pair(port, false);
+    const res = await fetch(`http://127.0.0.1:${port}/healthz`);
+    expect(res.status).toBe(200);
+    expect(await res.text()).toMatch(/^ok 1 salon/);
+  });
+
+  it("refuse de nouveaux salons au-delà de la limite", async () => {
+    const port = await start({ maxRooms: 1 });
+    const a = await Client.connect(port);
+    const b = await Client.connect(port);
+    clients.push(a, b);
+    a.send({ type: "create", name: "A", deck: GREEN });
+    await a.next("room");
+    b.send({ type: "create", name: "B", deck: GREEN });
+    expect((await b.next("error")).code).toBe("busy");
+  });
+
+  it("limite les connexions simultanées par adresse (nginx : X-Forwarded-For)", async () => {
+    const port = await start({}, { maxPerIp: 2 });
+    const open = (ip: string) =>
+      new Promise<{ ws: WebSocket; code: number | null }>((ok) => {
+        const ws = new WebSocket(`ws://127.0.0.1:${port}/ws`, { headers: { "X-Forwarded-For": ip } });
+        let settled = false;
+        ws.once("close", (code) => {
+          if (!settled) ok({ ws, code });
+          settled = true;
+        });
+        ws.once("open", () =>
+          setTimeout(() => {
+            if (!settled) ok({ ws, code: null });
+            settled = true;
+          }, 150),
+        );
+      });
+    const conns = [await open("10.0.0.1"), await open("10.0.0.1"), await open("10.0.0.1"), await open("10.0.0.2")];
+    expect(conns.map((c) => c.code)).toEqual([null, null, 1013, null]);
+    for (const c of conns) c.ws.terminate();
+  });
+
+  it("une connexion qui ne répond plus aux pings est fermée (délai de retour normal)", async () => {
+    const port = await start({ graceMs: 10_000 }, { pingMs: 100 });
+    const a = await Client.connect(port);
+    clients.push(a);
+    a.send({ type: "create", name: "Alice", deck: GREEN });
+    const { room } = await a.next("room");
+    // Client « mort » : il ne répond pas aux pings.
+    const dead = new WebSocket(`ws://127.0.0.1:${port}/ws`, { autoPong: false });
+    await new Promise((ok) => dead.once("open", ok));
+    dead.send(JSON.stringify({ type: "join", code: room.code, name: "Bob", deck: GREEN }));
+    const off = await a.next("opponent", (m) => !m.connected, 3_000);
+    expect(off.remainingMs).toBeGreaterThan(0);
+    dead.terminate();
+  });
+
+  it("un salon resté sans adversaire est fermé", async () => {
+    const port = await start({ waitingMs: 150 });
+    const a = await Client.connect(port);
+    clients.push(a);
+    a.send({ type: "create", name: "Alice", deck: GREEN });
+    await a.next("room");
+    expect((await a.next("error", () => true, 3_000)).code).toBe("closed");
+    expect(srv?.rooms.size).toBe(0);
   });
 });

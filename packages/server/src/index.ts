@@ -15,7 +15,12 @@ export { DEFAULT_CONFIG, type RoomConfig } from "./rooms";
 
 export interface ServerOptions {
   port?: number;
+  /** Adresse d'écoute : 0.0.0.0 (réseau local) ou 127.0.0.1 (derrière nginx). */
   host?: string;
+  /** Connexions WebSocket simultanées par adresse IP. */
+  maxPerIp?: number;
+  /** Intervalle des pings WebSocket (ms) : détecte les connexions mortes, évite les coupures d'inactivité. */
+  pingMs?: number;
   /** Dossier du client construit (packages/client/dist), servi en statique. */
   staticDir?: string;
   config?: Partial<RoomConfig>;
@@ -28,6 +33,15 @@ export interface RunningServer {
 }
 
 const MAX_MESSAGE = 64 * 1024;
+const LOOPBACK = new Set(["127.0.0.1", "::1", "::ffff:127.0.0.1"]);
+
+/** Adresse du client : celle transmise par nginx (X-Forwarded-For) si la connexion vient de la machine elle-même. */
+function clientIp(req: IncomingMessage): string {
+  const direct = req.socket.remoteAddress ?? "";
+  const forwarded = req.headers["x-forwarded-for"];
+  if (LOOPBACK.has(direct) && typeof forwarded === "string") return forwarded.split(",")[0]?.trim() || direct;
+  return direct;
+}
 const MIME: Record<string, string> = {
   ".html": "text/html; charset=utf-8",
   ".js": "text/javascript; charset=utf-8",
@@ -74,10 +88,39 @@ function parse(data: WebSocket.RawData): ClientMessage | null {
 export function startServer(opts: ServerOptions = {}): Promise<RunningServer> {
   const rooms = new RoomManager({ ...DEFAULT_CONFIG, ...opts.config });
   const root = opts.staticDir && existsSync(opts.staticDir) ? resolve(opts.staticDir) : undefined;
-  const http = createHttpServer((req, res) => serveStatic(root, req, res));
+  const http = createHttpServer((req, res) => {
+    if (req.url === "/healthz") {
+      res.writeHead(200, { "Content-Type": "text/plain; charset=utf-8" }).end(`ok ${rooms.size} salon(s)\n`);
+      return;
+    }
+    serveStatic(root, req, res);
+  });
   const wss = new WebSocketServer({ server: http, path: "/ws", maxPayload: MAX_MESSAGE });
+  const perIp = new Map<string, number>();
+  const maxPerIp = opts.maxPerIp ?? 8;
+  const alive = new WeakSet<WebSocket>();
+  const pinger = setInterval(() => {
+    for (const c of wss.clients) {
+      if (!alive.has(c)) {
+        c.terminate(); // pas de réponse au ping précédent : connexion morte
+        continue;
+      }
+      alive.delete(c);
+      c.ping();
+    }
+  }, opts.pingMs ?? 25_000);
+  pinger.unref();
 
-  wss.on("connection", (ws) => {
+  wss.on("connection", (ws, req) => {
+    const ip = clientIp(req);
+    const count = (perIp.get(ip) ?? 0) + 1;
+    if (count > maxPerIp) {
+      ws.close(1013, "Trop de connexions depuis cette adresse");
+      return;
+    }
+    perIp.set(ip, count);
+    alive.add(ws);
+    ws.on("pong", () => alive.add(ws));
     const peer: Peer = {
       send(msg: ServerMessage) {
         if (ws.readyState === WebSocket.OPEN) ws.send(JSON.stringify(msg));
@@ -138,6 +181,9 @@ export function startServer(opts: ServerOptions = {}): Promise<RunningServer> {
     });
 
     ws.on("close", () => {
+      const left = (perIp.get(ip) ?? 1) - 1;
+      if (left > 0) perIp.set(ip, left);
+      else perIp.delete(ip);
       if (current && current.seat.peer === peer) current.room.disconnect(current.seat);
       current = null;
     });
@@ -150,6 +196,7 @@ export function startServer(opts: ServerOptions = {}): Promise<RunningServer> {
         rooms,
         close: () =>
           new Promise<void>((done) => {
+            clearInterval(pinger);
             rooms.closeAll();
             for (const c of wss.clients) c.terminate();
             wss.close();

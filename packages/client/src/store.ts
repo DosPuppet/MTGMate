@@ -534,8 +534,9 @@ export const useGame = create<Store>((set, get) => {
           }
           playSound("error");
           set({ online: { ...online, error: msg.message, status: online.code ? online.status : "connecting" } });
-          if (!online.code) {
-            // Création ou arrivée refusée : pas de salon, on ferme la connexion.
+          if (!online.code || msg.code === "closed") {
+            // Création ou arrivée refusée, ou salon fermé par le serveur : on ferme la connexion.
+            if (msg.code === "closed") saveToken(null);
             get().session?.close();
             set({ session: null, online: { ...online, error: msg.message, status: "connecting" } });
           }

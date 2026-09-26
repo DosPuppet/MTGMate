@@ -23,6 +23,10 @@ export interface RoomConfig {
   graceMs: number;
   /** Suppression d'un salon vide ou terminé et abandonné (ms). */
   cleanupMs: number;
+  /** Fermeture d'un salon resté sans adversaire (ms). */
+  waitingMs: number;
+  /** Nombre maximal de salons ouverts sur le serveur. */
+  maxRooms: number;
 }
 
 export const DEFAULT_CONFIG: RoomConfig = {
@@ -31,6 +35,8 @@ export const DEFAULT_CONFIG: RoomConfig = {
   maxTimeouts: 3,
   graceMs: 60_000,
   cleanupMs: 5 * 60_000,
+  waitingMs: 30 * 60_000,
+  maxRooms: 200,
 };
 
 /** Erreur destinée au client (message en français). */
@@ -102,11 +108,22 @@ export class Room {
   /** File des actions : une seule à la fois modifie la partie. */
   private queue: Promise<void> = Promise.resolve();
 
+  private waitingTimer: ReturnType<typeof setTimeout> | null = null;
+
   constructor(
     readonly code: string,
     private readonly config: RoomConfig,
     private readonly onClose: (room: Room) => void,
-  ) {}
+  ) {
+    // Personne ne rejoint : le salon est fermé et son créateur prévenu.
+    this.waitingTimer = setTimeout(() => {
+      if (this.status !== "waiting") return;
+      for (const s of this.seats)
+        s.peer?.send({ type: "error", code: "closed", message: "Salon fermé : aucun adversaire ne l'a rejoint à temps." });
+      this.close();
+    }, config.waitingMs);
+    this.waitingTimer.unref?.();
+  }
 
   seatOf(token: string): SeatState | undefined {
     return this.seats.find((s) => s.token === token);
@@ -137,6 +154,8 @@ export class Room {
   // -------------------------------------------------------------------------
 
   private async start(): Promise<void> {
+    if (this.waitingTimer) clearTimeout(this.waitingTimer);
+    this.waitingTimer = null;
     for (const s of this.seats) {
       s.timeouts = 0;
       s.rematch = false;
@@ -335,6 +354,7 @@ export class Room {
   close(): void {
     this.stopClock();
     this.cancelCleanup();
+    if (this.waitingTimer) clearTimeout(this.waitingTimer);
     for (const s of this.seats) if (s.graceTimer) clearTimeout(s.graceTimer);
     this.onClose(this);
   }
@@ -395,6 +415,7 @@ export class RoomManager {
   create(name: unknown, deck: unknown, peer: Peer): { room: Room; seat: SeatState } {
     const n = cleanName(name);
     const d = checkDeck(deck);
+    if (this.rooms.size >= this.config.maxRooms) throw new ClientError("busy", "Serveur complet, réessayez plus tard.");
     const room = new Room(this.newCode(), this.config, (r) => this.rooms.delete(r.code));
     this.rooms.set(room.code, room);
     return { room, seat: room.addPlayer(n, d, peer) };
