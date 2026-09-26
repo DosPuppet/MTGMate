@@ -18,6 +18,7 @@ Ce fichier sert au suivi du projet entre les sessions. Le README présente le pr
 | FDN set principal (n° 1–281, 276 cartes) | ✅ **276 / 276** (lots A à F) |
 | FDN réimpressions (n° 282+, 241 cartes) | ✅ **517 / 517** pour tout FDN |
 | Légalité Standard dans le deckbuilder (légalités Scryfall, bannies) | ✅ |
+| Champ de bataille façon MTGA (rangées, piles de jetons, lignes multiples, redimensionnement) | ✅ |
 | Autres extensions Standard | **prochaine étape** |
 
 ### Lots du set principal FDN (tous terminés)
@@ -103,12 +104,19 @@ Réimpressions : défenses talismaniques contre une couleur, changelin, restrict
    - `--ai mixed`.
 4. `npm run bench` : cibles atteintes.
 5. Interface :
-   - `npm run deck-smoke` et `npm run ui-smoke` ;
+   - `npm run deck-smoke`, `npm run ui-smoke` et `npm run battlefield-smoke` (plateaux chargés via le bac à sable) ;
    - pour une nouvelle mécanique visible, un script Playwright ponctuel avec captures dans `test-results/`.
 
 ## Pièges connus
 
 - **Serveur Vite sous WSL :** il peut servir une version périmée d'un module du moteur après modification. Redémarrer `npm run dev` avant tout test dans le navigateur, ou vérifier avec `curl http://localhost:5173/@fs/<chemin absolu> | grep <nouveau code>`.
+- **Champ de bataille (`client/src/board/layout.ts`) :**
+  - la disposition est calculée en pur TypeScript et testée (`client/test/layout.test.ts`) ; les lignes sont découpées explicitement, pas par `flex-wrap` ;
+  - chaque camp est dimensionné indépendamment (comme sur MTGA) : un adversaire très chargé ne rapetisse pas vos cartes ;
+  - les constantes d'espacement de `layout.ts` (GAP, SEPARATOR, TOKEN_OFFSET…) doivent rester alignées avec `styles.css` ;
+  - la colonne du plateau est bornée (`grid-template-columns: minmax(0, 1fr)`) : sans cela, le contenu élargit la zone mesurée et la taille des cartes ne se réduit plus ;
+  - les jetons d'une pile n'ont pas tous d'élément : chercher un objet à l'écran avec `findObjectEl` (et non `[data-oid]`).
+- **Bac à sable (mode dev) :** `window.__mtgx` expose le store ; `startGame(deck, decksIA, { p1: { cards, tokens }, p2: … })` met des permanents en jeu dès le début (voir `battlefield-smoke`). Dans `page.evaluate`, pas de fonction nommée (tsx injecte `__name`).
 - **`pgrep -f` / `pkill -f` :** avec un motif présent dans la ligne de commande, ils peuvent tuer le shell courant.
 - **Test de fumée (`ai/test/cards-smoke.test.ts`) :** une carte qui n'a pas pu être jouée fait échouer le test. Pour les cartes réactives (contresorts), l'adversaire doit avoir de quoi lancer des sorts.
 - **Cache des caractéristiques :** tout ce dont une capacité statique ou une F/E variable dépend doit faire avancer la version d'état (`bump`). Les points de vie et l'élimination d'un joueur le font désormais. Le fuzz détecte les oublis (« cache des caractéristiques périmé »).

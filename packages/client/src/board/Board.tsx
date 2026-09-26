@@ -1,12 +1,21 @@
 import type { GameView, ObjectView, PlayerView } from "@mtgx/engine";
 import { motion } from "motion/react";
-import { type CSSProperties, useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
+import { type CSSProperties, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { faceName, PHASE_BAR, STEP_LABEL } from "../i18n";
 import { myActions, useGame } from "../store";
 import { Arrows } from "./Arrows";
-import { fitCardWidth, LAND_SCALE, landGroups } from "./autoSize";
 import { Card, CardBack, type Glow, ManaCost } from "./Card";
 import { Effects } from "./Effects";
+import {
+  type BattlefieldFit,
+  battlefieldRows,
+  battlefieldSlots,
+  fitBattlefield,
+  LAND_SCALE,
+  type Slot,
+  splitLines,
+  TOKEN_SHADOWS,
+} from "./layout";
 
 // ---------------------------------------------------------------------------
 // Joueurs
@@ -155,88 +164,141 @@ function usePermanentGlow(): (o: ObjectView) => Glow {
   };
 }
 
-function PermanentRow({
-  perms,
-  kind,
+/** Un permanent, avec ses Auras et Équipements empilés derrière lui. */
+function Permanent({
+  o,
+  width,
   isMe,
-  attachments,
+  attached,
+  glow,
+  showStats,
 }: {
-  perms: ObjectView[];
-  kind: "lands" | "others";
+  o: ObjectView;
+  width: string;
   isMe: boolean;
-  /** Auras et Équipements, par permanent hôte. */
-  attachments: Map<string, ObjectView[]>;
+  attached: ObjectView[];
+  glow: (o: ObjectView) => Glow;
+  showStats: boolean;
 }) {
-  const glowOf = usePermanentGlow();
   const clickPermanent = useGame((s) => s.clickPermanent);
   const attackers = useGame((s) => s.attackers);
-  const width = kind === "lands" ? "var(--land-w)" : "var(--card-w)";
-
-  // Terrains identiques regroupés (comme sur Arena), sauf ceux qui portent une Aura.
-  const groups = kind === "lands" ? landGroups(perms, new Set(attachments.keys())) : perms.map((o) => [o]);
-
+  const attacking = o.attacking || attackers.includes(o.id);
   return (
-    <div className={`perm-row ${kind}`}>
-      {groups.map((g) => (
-        <div key={g[0]?.uid} className={`perm-group ${g.length > 1 ? "stacked" : ""}`}>
-          {g.map((o) => {
-            const attacking = o.attacking || attackers.includes(o.id);
-            const attached = attachments.get(o.id) ?? [];
-            return (
-              <div
-                key={o.uid}
-                className={`perm ${attacking ? (isMe ? "advance-up" : "advance-down") : ""} ${attached.length ? "has-attach" : ""}`}
-                style={attached.length ? ({ "--attach-n": attached.length } as CSSProperties) : undefined}
-              >
-                {attached.map((a, i) => (
-                  <div key={a.uid} className="attachment" style={{ "--attach-i": attached.length - 1 - i } as CSSProperties}>
-                    <Card
-                      face={a}
-                      obj={a}
-                      width={width}
-                      layoutId={a.uid}
-                      tapped={a.tapped}
-                      glow={glowOf(a)}
-                      onClick={() => clickPermanent(a.id)}
-                      oid={a.id}
-                    />
-                  </div>
-                ))}
-                <Card
-                  face={o}
-                  obj={o}
-                  width={width}
-                  layoutId={o.uid}
-                  tapped={o.tapped}
-                  glow={glowOf(o)}
-                  showStats={kind === "others"}
-                  onClick={() => clickPermanent(o.id)}
-                  oid={o.id}
-                />
-              </div>
-            );
-          })}
+    <div
+      className={`perm ${attacking ? (isMe ? "advance-up" : "advance-down") : ""} ${attached.length ? "has-attach" : ""}`}
+      style={attached.length ? ({ "--attach-n": attached.length } as CSSProperties) : undefined}
+    >
+      {attached.map((a, i) => (
+        <div key={a.uid} className="attachment" style={{ "--attach-i": attached.length - 1 - i } as CSSProperties}>
+          <Card
+            face={a}
+            obj={a}
+            width={width}
+            layoutId={a.uid}
+            tapped={a.tapped}
+            glow={glow(a)}
+            onClick={() => clickPermanent(a.id)}
+            oid={a.id}
+          />
         </div>
       ))}
+      <Card
+        face={o}
+        obj={o}
+        width={width}
+        layoutId={o.uid}
+        tapped={o.tapped}
+        glow={glow(o)}
+        showStats={showStats}
+        onClick={() => clickPermanent(o.id)}
+        oid={o.id}
+      />
     </div>
   );
 }
 
-function Battlefield({
-  player,
+/**
+ * Pile de jetons identiques (comme sur MTGA) : la carte du dessus, quelques cartes décalées derrière
+ * et le nombre. Un clic agit sur le premier jeton ; comme les jetons dans des états différents ne sont
+ * pas regroupés, faire attaquer un jeton le sort de la pile.
+ */
+function TokenStack({ slot, width, isMe, glow }: { slot: Slot; width: string; isMe: boolean; glow: (o: ObjectView) => Glow }) {
+  const top = slot.objs[0] as ObjectView;
+  const shadows = Math.min(TOKEN_SHADOWS, slot.objs.length - 1);
+  return (
+    <div
+      className="perm-group token-stack"
+      data-oids={slot.objs.map((o) => o.id).join(" ")}
+      style={{ "--shadows": shadows } as CSSProperties}
+      title={`${slot.objs.length} jetons ${top.name}`}
+    >
+      {slot.objs.slice(1, 1 + shadows).map((o, i) => (
+        <div key={o.uid} className="token-shadow" style={{ "--shadow-i": shadows - i } as CSSProperties}>
+          <Card face={o} obj={o} width={width} tapped={o.tapped} hoverable={false} />
+        </div>
+      ))}
+      <Permanent o={top} width={width} isMe={isMe} attached={[]} glow={glow} showStats />
+      <span className="token-count">×{slot.objs.length}</span>
+    </div>
+  );
+}
+
+function PermanentLine({
+  slots,
+  row,
   isMe,
-  cardW,
-  onFit,
+  attachments,
+  glow,
 }: {
-  player: string;
+  slots: Slot[];
+  row: "front" | "back";
   isMe: boolean;
-  /** Largeur de carte décidée par le plateau (identique pour les deux camps en duel). */
-  cardW?: number;
-  /** Signale la plus grande largeur de carte qui tient dans cette zone. */
-  onFit: (player: string, w: number) => void;
+  /** Auras et Équipements, par permanent hôte. */
+  attachments: Map<string, ObjectView[]>;
+  glow: (o: ObjectView) => Glow;
 }) {
+  const width = row === "back" ? "var(--land-w)" : "var(--card-w)";
+  return (
+    <div className="perm-line">
+      {slots.map((slot, i) => {
+        const first = slot.objs[0] as ObjectView;
+        // Rangée arrière : espace plus large entre les terrains et les artefacts ou enchantements.
+        const blockStart = i > 0 && slot.block !== slots[i - 1]?.block ? "block-start" : "";
+        if (slot.kind === "tokens") {
+          return (
+            <div key={first.uid} className={`slot ${blockStart}`}>
+              <TokenStack slot={slot} width={width} isMe={isMe} glow={glow} />
+            </div>
+          );
+        }
+        return (
+          <div key={first.uid} className={`slot perm-group ${slot.kind === "pile" ? "stacked" : ""} ${blockStart}`}>
+            {slot.objs.map((o) => (
+              <Permanent
+                key={o.uid}
+                o={o}
+                width={width}
+                isMe={isMe}
+                attached={attachments.get(o.id) ?? []}
+                glow={glow}
+                showStats={slot.block !== "lands"}
+              />
+            ))}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+/** Champ de bataille d'un joueur : la taille des cartes dépend de sa seule zone (comme sur MTGA). */
+function Battlefield({ player, isMe }: { player: string; isMe: boolean }) {
   const view = useGame((s) => s.view) as GameView;
+  const glow = usePermanentGlow();
+  const blocks = useGame((s) => s.blocks);
+  const attackTargets = useGame((s) => s.attackTargets);
   const ref = useRef<HTMLDivElement>(null);
+  const [fit, setFit] = useState<BattlefieldFit>({ cardW: 0, frontLines: 1, backLines: 1 });
   // Auras et Équipements s'affichent sous leur hôte (quel que soit leur contrôleur).
   const onField = new Set(view.battlefield.map((o) => o.id));
   const isAttached = (o: ObjectView) => !!o.attachedTo && onField.has(o.attachedTo);
@@ -245,25 +307,43 @@ function Battlefield({
     if (isAttached(o)) attachments.set(o.attachedTo as string, [...(attachments.get(o.attachedTo as string) ?? []), o]);
   }
   const perms = view.battlefield.filter((o) => o.controller === player && !isAttached(o));
-  const lands = perms.filter((o) => o.types.includes("Land"));
-  const others = perms.filter((o) => !o.types.includes("Land"));
+  // Les jetons dont l'état d'interface diffère (lueur, attaquant bloqué, joueur attaqué) ne sont pas regroupés.
+  const blocked = new Set(Object.values(blocks));
+  const uiKey = (o: ObjectView) => `${glow(o) ?? ""}|${blocked.has(o.id) ? "b" : ""}|${attackTargets[o.id] ?? ""}`;
+  const { front, back } = battlefieldSlots(battlefieldRows(perms), new Set(attachments.keys()), uiKey);
   const depth = Math.max(0, ...perms.map((o) => attachments.get(o.id)?.length ?? 0));
-  const signature = `${perms.map((o) => `${o.id}${o.tapped ? "t" : ""}`).join(",")}|${depth}`;
+  const layoutKey = (slots: Slot[]) =>
+    slots.map((s) => `${s.kind}:${s.objs.map((o) => `${o.id}${o.tapped ? "t" : ""}`).join("+")}`);
+  const signature = `${layoutKey(front).join(",")}|${layoutKey(back).join(",")}|${depth}`;
 
   // biome-ignore lint/correctness/useExhaustiveDependencies: recalcul quand les permanents changent (signature)
   useLayoutEffect(() => {
     const el = ref.current;
     if (!el) return;
-    const measure = () => onFit(player, fitCardWidth(el.clientWidth, el.clientHeight, others, lands, depth));
+    const measure = () => {
+      const f = fitBattlefield(el.clientWidth, el.clientHeight, front, back, depth);
+      setFit((cur) => (cur.cardW === f.cardW && cur.frontLines === f.frontLines && cur.backLines === f.backLines ? cur : f));
+    };
     measure();
     const ro = new ResizeObserver(measure);
     ro.observe(el);
     return () => ro.disconnect();
-  }, [signature, player, onFit]);
+  }, [signature]);
 
+  const { cardW, frontLines, backLines } = fit;
+  const lines = (slots: Slot[], n: number, row: "front" | "back") => {
+    const ls = splitLines(slots, n);
+    return (isMe ? ls : ls.reverse()).map((l, i) => (
+      <PermanentLine key={`${row}${i}`} slots={l} row={row} isMe={isMe} attachments={attachments} glow={glow} />
+    ));
+  };
   const rows = [
-    <PermanentRow key="o" perms={others} kind="others" isMe={isMe} attachments={attachments} />,
-    <PermanentRow key="l" perms={lands} kind="lands" isMe={isMe} attachments={attachments} />,
+    <div key="f" className="perm-row front">
+      {lines(front, frontLines, "front")}
+    </div>,
+    <div key="b" className="perm-row back">
+      {lines(back, backLines, "back")}
+    </div>,
   ];
   const style = cardW ? ({ "--card-w": `${cardW}px`, "--land-w": `${cardW * LAND_SCALE}px` } as CSSProperties) : undefined;
   return (
@@ -644,25 +724,9 @@ function ActionPanel() {
 
 export function Board() {
   const view = useGame((s) => s.view);
-  const [fits, setFits] = useState<Record<string, number>>({});
-  const onFit = useCallback((player: string, w: number) => {
-    setFits((cur) => (cur[player] === w ? cur : { ...cur, [player]: w }));
-  }, []);
   if (!view) return <div className="board loading">Mélange des bibliothèques…</div>;
   const me = view.players[view.viewer] as PlayerView;
   const opponents = view.opponents.map((id) => view.players[id]).filter((p): p is PlayerView => !!p);
-  // Taille commune : en duel, les deux camps ont la même taille de cartes (plateau symétrique) ;
-  // en multijoueur, tous les adversaires partagent la leur.
-  const known = (ids: string[]) => ids.map((id) => fits[id]).filter((w): w is number => w !== undefined);
-  const oppW = known(opponents.map((o) => o.id));
-  const oppSize = oppW.length ? Math.min(...oppW) : undefined;
-  const mySize =
-    fits[me.id] === undefined
-      ? undefined
-      : opponents.length === 1 && oppSize
-        ? Math.min(fits[me.id] as number, oppSize)
-        : fits[me.id];
-  const opponentSize = opponents.length === 1 && oppSize && mySize ? Math.min(oppSize, mySize) : oppSize;
   return (
     <div className="board" id="board">
       <div className={`opp-bars n${opponents.length}`}>
@@ -676,12 +740,12 @@ export function Board() {
       <div className={`opponents n${opponents.length}`}>
         {opponents.map((opp) => (
           <div key={opp.id} className={`opp-zone ${opp.lost ? "eliminated" : ""}`}>
-            <Battlefield player={opp.id} isMe={false} cardW={opponentSize} onFit={onFit} />
+            <Battlefield player={opp.id} isMe={false} />
           </div>
         ))}
       </div>
       <CenterStrip />
-      <Battlefield player={me.id} isMe={true} cardW={mySize} onFit={onFit} />
+      <Battlefield player={me.id} isMe={true} />
       <div className="bottom-row">
         <PlayerBar player={me} isMe={true} />
         <Hand />

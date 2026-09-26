@@ -1,3 +1,4 @@
+export { createTokens } from "./actions";
 export { type AutopilotSettings, autopilotDecision, autoTarget, DEFAULT_AUTOPILOT } from "./autopilot";
 export { divisionOf, validateChoice } from "./choices";
 export type { CardScript } from "./dsl";
@@ -14,6 +15,7 @@ export {
   type Characteristics,
   chars,
   cloneState,
+  createObject,
   creaturesControlledBy,
   hasKeyword,
   isAlive,

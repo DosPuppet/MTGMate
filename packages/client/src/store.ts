@@ -18,8 +18,9 @@ import {
   type TargetOption,
 } from "@mtgx/engine";
 import { create } from "zustand";
+import { findObjectEl } from "./board/layout";
 import { describeEvents, type Lang, type LogLine } from "./i18n";
-import type { FromWorker } from "./protocol";
+import type { FromWorker, Sandbox } from "./protocol";
 import { LocalSession } from "./session";
 
 type CastOption = Extract<ActionOption, { type: "cast" }>;
@@ -91,7 +92,7 @@ interface Store {
   turnBanner: { id: number; text: string; mine: boolean } | null;
   spotlight: { id: number; face: CardFace; who: string } | null;
 
-  startGame(playerDeck: DeckEntries, aiDecks: DeckEntries[]): void;
+  startGame(playerDeck: DeckEntries, aiDecks: DeckEntries[], sandbox?: Sandbox): void;
   backToLobby(): void;
   openDeckBuilder(deckId?: string | null): void;
   receive(msg: FromWorker): void;
@@ -171,7 +172,7 @@ let fxId = 0;
 
 /** Position d'un élément du plateau (avant qu'il ne disparaisse de l'écran). */
 function rectOf(id: string): Fx["rect"] {
-  const el = document.querySelector(`[data-oid="${CSS.escape(id)}"]`);
+  const el = findObjectEl(id);
   if (!el) return null;
   const r = el.getBoundingClientRect();
   return { x: r.left, y: r.top, w: r.width, h: r.height };
@@ -319,12 +320,19 @@ export const useGame = create<Store>((set, get) => {
     turnBanner: null,
     spotlight: null,
 
-    startGame(playerDeck, aiDecks) {
+    startGame(playerDeck, aiDecks, sandbox) {
       get().session?.close();
       const session = new LocalSession((m) => get().receive(m));
       const settings = { ...get().settings, passUntilTurn: null };
       set({ screen: "game", session, view: null, log: [], casting: null, attackers: [], blocks: {}, selection: [], settings });
-      session.send({ type: "start", seed: Math.floor(Math.random() * 2 ** 31), playerName: "Vous", playerDeck, aiDecks });
+      session.send({
+        type: "start",
+        seed: Math.floor(Math.random() * 2 ** 31),
+        playerName: "Vous",
+        playerDeck,
+        aiDecks,
+        sandbox,
+      });
       session.send({ type: "settings", settings });
     },
 

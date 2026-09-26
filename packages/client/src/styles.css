@@ -112,6 +112,8 @@ button {
   display: grid;
   /* Barres adverses · champs adverses · bande centrale · votre champ · votre main : les deux champs ont la même hauteur. */
   grid-template-rows: auto minmax(0, 1fr) auto minmax(0, 1fr) auto;
+  /* Colonne bornée : le contenu du champ de bataille ne doit jamais élargir le plateau (layout.ts mesure cette largeur). */
+  grid-template-columns: minmax(0, 1fr);
   background:
     radial-gradient(ellipse at 50% 50%, rgba(80, 110, 150, 0.18), transparent 65%),
     linear-gradient(180deg, var(--felt-2), var(--felt-1) 50%, var(--felt-2));
@@ -283,7 +285,8 @@ button {
   margin-left: calc(var(--back-w) * -0.45);
 }
 
-/* Champ de bataille */
+/* Champ de bataille (disposition calculée dans board/layout.ts) :
+   rangée de devant = créatures, puis planeswalkers ; rangée arrière = terrains, puis artefacts et enchantements. */
 .battlefield {
   display: flex;
   flex-direction: column;
@@ -291,20 +294,34 @@ button {
   gap: 6px;
   padding: 4px 14px;
   min-height: 0;
+  min-width: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
 }
 .perm-row {
   display: flex;
-  gap: 10px;
+  flex-direction: column;
+  gap: 6px;
+}
+.perm-row.front {
+  min-height: calc(var(--card-w) * 1.395 + 10px);
+  justify-content: center;
+}
+.perm-row.back {
+  min-height: calc(var(--land-w) * 1.395);
+  justify-content: center;
+}
+/* Pas de retour à la ligne automatique : les lignes sont découpées par splitLines (layout.ts). */
+.perm-line {
+  display: flex;
+  gap: 10px; /* GAP */
   justify-content: center;
   align-items: center;
-  /* Pas de retour à la ligne : la taille des cartes s'adapte à la place (autoSize.ts). */
   flex-wrap: nowrap;
 }
-.perm-row.others {
-  min-height: calc(var(--card-w) * 1.395 + 10px);
-}
-.perm-row.lands {
-  min-height: calc(var(--land-w) * 1.395);
+/* Séparation entre les terrains et les artefacts ou enchantements (SEPARATOR). */
+.perm-line .slot.block-start {
+  margin-left: 18px;
 }
 .perm-group {
   display: flex;
@@ -316,12 +333,47 @@ button {
 .perm {
   transition: transform 0.25s ease;
 }
-/* Auras et Équipements : empilés derrière leur hôte, leur haut dépasse (ATTACH_PEEK dans autoSize.ts). */
+/* Pile de jetons identiques : cartes décalées derrière (TOKEN_OFFSET) et nombre. */
+.token-stack {
+  position: relative;
+  padding-left: calc(var(--slot-w, var(--card-w)) * 0.08 * var(--shadows));
+}
+.perm-row.back .token-stack {
+  --slot-w: var(--land-w);
+}
+.token-shadow {
+  position: absolute;
+  left: calc(var(--slot-w, var(--card-w)) * 0.08 * (var(--shadows) - var(--shadow-i)));
+  top: calc(var(--slot-w, var(--card-w)) * -0.03 * var(--shadow-i));
+  filter: brightness(0.7);
+  pointer-events: none;
+}
+.token-stack > .perm {
+  position: relative;
+  z-index: 1;
+}
+.token-count {
+  position: absolute;
+  z-index: 3;
+  top: -8px;
+  right: -8px;
+  min-width: 26px;
+  padding: 1px 7px;
+  border-radius: 12px;
+  background: var(--gold);
+  color: #1d1406;
+  font-weight: 800;
+  font-size: 13px;
+  text-align: center;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.6);
+  pointer-events: none;
+}
+/* Auras et Équipements : empilés derrière leur hôte, leur haut dépasse (ATTACH_PEEK dans layout.ts). */
 .perm.has-attach {
   position: relative;
   padding-top: calc(var(--card-w) * 1.395 * 0.2 * var(--attach-n));
 }
-.perm-row.lands .perm.has-attach {
+.perm-row.back .perm.has-attach {
   padding-top: calc(var(--land-w) * 1.395 * 0.2 * var(--attach-n));
 }
 .perm > .card-slot {
@@ -334,7 +386,7 @@ button {
   top: calc(var(--card-w) * 1.395 * 0.2 * var(--attach-i));
   z-index: 0;
 }
-.perm-row.lands .attachment {
+.perm-row.back .attachment {
   top: calc(var(--land-w) * 1.395 * 0.2 * var(--attach-i));
 }
 .attachment .card-slot {

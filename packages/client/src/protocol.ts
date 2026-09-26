@@ -2,8 +2,21 @@
 import type { DeckEntries } from "@mtgx/cards";
 import type { AutopilotSettings, CardFace, Decision, GameEvent, GameView } from "@mtgx/engine";
 
+/**
+ * Bac à sable (mode dev, tests d'interface) : permanents et jetons mis en jeu au début de la partie,
+ * par joueur ("p1" = vous, "p2"… = IA).
+ */
+export type Sandbox = Record<string, { cards?: string[]; tokens?: [number, string][] }>;
+
 export type ToWorker =
-  | { type: "start"; seed: number; playerName: string; playerDeck: DeckEntries; aiDecks: DeckEntries[] }
+  | {
+      type: "start";
+      seed: number;
+      playerName: string;
+      playerDeck: DeckEntries;
+      aiDecks: DeckEntries[];
+      sandbox?: Sandbox;
+    }
   | { type: "decision"; decision: Decision }
   | { type: "settings"; settings: Partial<AutopilotSettings> };
 

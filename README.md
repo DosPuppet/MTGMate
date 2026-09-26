@@ -70,6 +70,7 @@ npm run dev          # http://localhost:5173
 | `npm run fuzz -- --games 300 [--ai random\|heuristic\|mixed] [--players 4] [--pool all] [--seed N]` | Parties IA contre IA, invariants vérifiés à chaque décision (`--pool all` : decks aléatoires tirés de toutes les cartes gérées) |
 | `npm run bench` | Décisions par seconde du moteur et temps de décision de l'IA (cibles : ≥ 5 000 déc/s, IA < 50 ms) |
 | `npm run coverage [-- --set main] [-- --missing] [-- --card "<nom>"]` | Cartes gérées, mécaniques manquantes, texte Oracle et script d'une carte |
+| `npm run battlefield-smoke` | Plateaux chargés (jetons, 2e ligne, 4 joueurs) mis en jeu par le bac à sable du mode dev : rangées, piles de jetons, aucune carte rognée (serveur de dev lancé) |
 | `npm run deck-smoke` | Deckbuilder de bout en bout : import, édition, export, persistance, partie (serveur de dev lancé) |
 | `npm run ui-smoke -- <dossier> [actions]` | Joue une partie dans Chromium via l'interface et prend des captures (serveur de dev lancé) |
 | `npm run typecheck` / `npm run lint` | TypeScript strict / Biome |
@@ -82,7 +83,7 @@ packages/
   engine/   moteur pur et déterministe : état JSON, décisions, règles, autopilot, vue filtrée, GameHost
   cards/    données Scryfall (data/fdn.json), scripts des cartes (src/fdn/<couleur>.ts), decklists, decks (decks/*.json)
   ai/       IA aléatoire (fuzz) et heuristique (simulation sur clones de l'état + évaluation)
-  client/   React + Vite + Zustand + Motion ; la partie tourne dans un Web Worker ; deckbuilder
+  client/   React + Vite + Zustand + Motion ; la partie tourne dans un Web Worker ; deckbuilder ; disposition du plateau façon MTGA (board/layout.ts)
 tools/      import Scryfall, fuzz, bench, couverture, tests d'interface
 ```
 
@@ -125,7 +126,7 @@ Chaque carte gérée est automatiquement jouée par le test de fumée (`packages
 |---|---|---|
 | 1. Fondations | monorepo, TS strict, Biome, Vitest, import Scryfall FDN | ✅ |
 | 2. Noyau du moteur | tours et phases, priorité et pile, mana, combat et mots-clés, actions basées sur l'état, mulligan de Londres, X, kicker, sorts modaux, capacités activées, jetons | ✅ |
-| 3. Client contre l'IA | plateau, main en éventail, glisser-déposer, flèches, barre des phases et arrêts, autopilot, journal FR | ✅ |
+| 3. Client contre l'IA | plateau façon MTGA (créatures devant, terrains puis artefacts et enchantements derrière, piles de jetons « ×N », lignes multiples et taille des cartes adaptées à la place), main en éventail, glisser-déposer, flèches, barre des phases et arrêts, autopilot, journal FR | ✅ |
 | 4a. Fondations du moteur | N joueurs, choix génériques, déclencheurs, couches, remplacements, coûts, performance | ✅ |
 | 4b. Deckbuilder | collection filtrable, deck et réserve, validation 60/4/15, import et export de decklists (MTGA, MTGO, noms FR), persistance | ✅ |
 | 4c. FDN, set principal (n° 1 à 281) | lots A (longue traîne) à F (mécaniques uniques : permissions de lancement, doublements, protection, choix en arrivant, mana restreint, copie de sorts…) | ✅ **276 / 276** |

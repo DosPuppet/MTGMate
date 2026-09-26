@@ -3,9 +3,9 @@
  * tournent ici, hors du thread de l'interface.
  */
 import { heuristicAgent } from "@mtgx/ai";
-import { buildDeck } from "@mtgx/cards";
-import { type CardFace, cardFace, createGame, GameHost } from "@mtgx/engine";
-import type { FromWorker, ToWorker } from "../protocol";
+import { buildDeck, card, TOKEN_SPECS } from "@mtgx/cards";
+import { type CardFace, cardFace, createGame, createObject, createTokens, GameHost, type GameState } from "@mtgx/engine";
+import type { FromWorker, Sandbox, ToWorker } from "../protocol";
 
 const HUMAN = "p1";
 let host: GameHost | null = null;
@@ -17,6 +17,28 @@ function faces(): Record<string, CardFace> {
   const out: Record<string, CardFace> = {};
   for (const [id, def] of Object.entries(host?.state.defs ?? {})) out[id] = cardFace(def);
   return out;
+}
+
+/** Met en jeu les permanents du bac à sable, sans mal d'invocation. */
+function applySandbox(s: GameState, sandbox: Sandbox): void {
+  for (const [player, side] of Object.entries(sandbox)) {
+    if (!s.players[player]) continue;
+    for (const name of side.cards ?? []) {
+      const def = card(name);
+      s.defs[def.id] ??= def;
+      const o = createObject(s, def.id, player, "battlefield");
+      o.controlledSince = 0;
+      if (def.loyalty) o.counters.loyalty = def.loyalty;
+    }
+    for (const [n, name] of side.tokens ?? []) {
+      const spec = TOKEN_SPECS[name];
+      if (!spec) continue;
+      for (const id of createTokens(s, player, spec, n)) {
+        const o = s.objects[id];
+        if (o) o.controlledSince = 0;
+      }
+    }
+  }
 }
 
 self.onmessage = async (e: MessageEvent<ToWorker>) => {
@@ -34,6 +56,7 @@ self.onmessage = async (e: MessageEvent<ToWorker>) => {
           })),
         ],
       });
+      if (msg.sandbox && import.meta.env.DEV) applySandbox(state, msg.sandbox);
       host = new GameHost(
         state,
         {

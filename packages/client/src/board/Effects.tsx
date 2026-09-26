@@ -8,10 +8,11 @@ import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { faceName } from "../i18n";
 import { type Fx, useGame } from "../store";
 import { Card } from "./Card";
+import { findObjectEl } from "./layout";
 
 function targetRect(fx: Fx): Fx["rect"] {
   if (fx.rect) return fx.rect;
-  const el = document.querySelector(`[data-oid="${CSS.escape(fx.target)}"]`);
+  const el = findObjectEl(fx.target);
   if (!el) return null;
   const r = el.getBoundingClientRect();
   return { x: r.left, y: r.top, w: r.width, h: r.height };
@@ -22,7 +23,7 @@ function useImpact(fx: Fx) {
   useEffect(() => {
     if (fx.kind === "death") return;
     const t = setTimeout(() => {
-      const el = document.querySelector(`[data-oid="${CSS.escape(fx.target)}"]`) as HTMLElement | null;
+      const el = findObjectEl(fx.target) as HTMLElement | null;
       if (!el) return;
       const hurt = fx.kind === "damage";
       el.animate(

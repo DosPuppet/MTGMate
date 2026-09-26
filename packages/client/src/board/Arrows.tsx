@@ -4,6 +4,7 @@
  */
 import { useEffect, useMemo, useRef } from "react";
 import { useGame } from "../store";
+import { findObjectEl } from "./layout";
 
 interface ArrowSpec {
   key: string;
@@ -51,7 +52,7 @@ function useArrowSpecs(): ArrowSpec[] {
 }
 
 function center(id: string): { x: number; y: number } | null {
-  const el = document.querySelector(`[data-oid="${CSS.escape(id)}"]`);
+  const el = findObjectEl(id);
   if (!el) return null;
   const r = el.getBoundingClientRect();
   return { x: r.left + r.width / 2, y: r.top + r.height / 2 };
