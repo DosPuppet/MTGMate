@@ -127,6 +127,8 @@ export function checkCondition(s: GameState, c: Condition, controller: PlayerId,
       return !!s.resolving?.item.flashback;
     case "classLevel":
       return (s.objects[sourceId ?? ""]?.classLevel ?? 1) === c.level;
+    case "saddled":
+      return s.objects[sourceId ?? ""]?.saddledTurn === s.turn.number;
     case "solved":
       return !!s.objects[sourceId ?? ""]?.solved;
     case "doorLocked":
@@ -343,6 +345,13 @@ function matchTrigger(s: GameState, ev: RulesEvent, t: TriggerSpec, src: Source)
       return ev.e === "classLevel" && ev.objectId === src.id && ev.level === t.level
         ? { objectId: src.id, player: src.view.controller }
         : null;
+    case "explores": {
+      if (ev.e !== "explore" || (t.land !== undefined && t.land !== ev.land)) return null;
+      const v = liveView(s, ev.objectId);
+      return v && matchWho(t.who, v, src) ? { objectId: ev.objectId, player: v.controller } : null;
+    }
+    case "saddled":
+      return ev.e === "saddled" && ev.objectId === src.id ? { objectId: src.id, player: src.view.controller } : null;
     case "turnedFaceUp":
       return ev.e === "turnedFaceUp" && ev.objectId === src.id ? { objectId: src.id, player: src.view.controller } : null;
     case "unlockDoor":

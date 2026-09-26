@@ -330,6 +330,10 @@ export const fx = {
   /** Manifester (sans garde) ou envelopper d'une cape (`ward`) les cartes désignées. */
   putFaceDown: (what: Ref, ward = false): Effect => ({ op: "putFaceDown", what, ward }),
   manifestDread: { op: "manifestDread" } as Effect,
+  /** « [créature] explore » (701.44), `times` fois. */
+  explore: (what: Ref = ref.self, times?: Amount): Effect => ({ op: "explore", what, times }),
+  /** « [créature] a la connivence » (701.50). */
+  connive: (what: Ref = ref.self): Effect => ({ op: "connive", what }),
   turnFaceUp: (what: Ref): Effect => ({ op: "turnFaceUp", what }),
   /** « Transformez [ce permanent] » (recto ↔ verso). */
   transform: (what: Ref = ref.self): Effect => ({ op: "transform", what }),
@@ -716,6 +720,10 @@ export const when = {
   castSelf: { on: "castSelf" } as TriggerSpec,
   /** « Quand cette créature est retournée face visible » */
   turnedFaceUp: { on: "turnedFaceUp" } as TriggerSpec,
+  /** « Chaque fois qu'une [créature] explore [une carte de terrain / non-terrain] » */
+  explores: (who: "self" | ObjectFilter, land?: boolean): TriggerSpec => ({ on: "explores", who, land }),
+  /** « Chaque fois que cette Monture devient montée » */
+  saddled: { on: "saddled" } as TriggerSpec,
   /** « Quand cette Classe atteint le niveau N » */
   classLevel: (level: number): TriggerSpec => ({ on: "classLevel", level }),
   /** « Quand vous déverrouillez cette porte » (Salle ; la porte est fixée à l'import). */
@@ -776,6 +784,8 @@ export const cond = {
   /** Classe : exactement à ce niveau ; Affaire : résolue. */
   classLevel: (level: number): Condition => ({ kind: "classLevel", level }),
   solved: { kind: "solved" } as Condition,
+  /** Monture : montée ce tour-ci. */
+  saddled: { kind: "saddled" } as Condition,
   /** Salle : toutes ses portes sont déverrouillées. */
   fullyUnlocked: { kind: "fullyUnlocked" } as Condition,
   /** Une seule créature attaque, et elle attaque un joueur. */

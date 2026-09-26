@@ -2118,6 +2118,110 @@ export function runEffect(s: GameState, r: Resolution, e: Effect): OpResult {
       rulesEvent(s, { e: "zone", oldId: exiled[0] ?? null, newId: melded.id, from: "exile", to: "battlefield", lki: null });
       return;
     }
+    case "explore": {
+      // 701.44a : révéler la carte du dessus ; un terrain va en main ; sinon, un marqueur +1/+1 sur la créature et
+      // son contrôleur peut mettre la carte au cimetière.
+      const times = e.times === undefined ? 1 : evalAmount(s, ctx, e.times);
+      const ids = resolveRef(s, ctx, e.what).filter((id) => onBattlefield(s, id));
+      for (const id of ids) {
+        for (let n = 0; n < times; n++) {
+          const k = `explore-${id}-${n}`;
+          if (r.vars[key(`${k}-done`)]) continue;
+          const o = s.objects[id];
+          const p = o?.controller;
+          const lib = p ? (s.players[p]?.library ?? []) : [];
+          const top = lib[0];
+          if (!o || !p || !top) {
+            r.vars[key(`${k}-done`)] = [1];
+            if (o) rulesEvent(s, { e: "explore", objectId: id, land: false });
+            continue;
+          }
+          const land = !!s.defs[s.objects[top]?.defId ?? ""]?.types.includes("Land");
+          if (!land) {
+            const answer = r.vars[key(k)];
+            if (!answer) {
+              return {
+                ask: {
+                  player: p,
+                  key: key(k),
+                  request: {
+                    type: "yesNo",
+                    intent: "may",
+                    prompt: `Exploration : mettre ${nameOf(s, top)} dans votre cimetière ?`,
+                    suggested: [0],
+                  },
+                },
+              };
+            }
+            r.vars[key(`${k}-done`)] = [1];
+            emit({ type: "reveal", player: p, defIds: [s.objects[top]?.defId ?? ""] });
+            changeCounters(s, o, P1P1, 1);
+            if (answer[0] === 1) moveAndLog(s, top, "graveyard");
+          } else {
+            r.vars[key(`${k}-done`)] = [1];
+            emit({ type: "reveal", player: p, defIds: [s.objects[top]?.defId ?? ""] });
+            moveAndLog(s, top, "hand");
+          }
+          rulesEvent(s, { e: "explore", objectId: id, land });
+        }
+      }
+      return;
+    }
+    case "connive": {
+      // 701.50a : piocher, défausser ; si une carte non-terrain est défaussée, un marqueur +1/+1 sur la créature.
+      for (const id of resolveRef(s, ctx, e.what)) {
+        const o = s.objects[id];
+        const p = o?.controller;
+        if (!o || !p || r.vars[key(`connive-${id}-done`)]) continue;
+        if (!r.vars[key(`connive-${id}-drew`)]) {
+          drawCard(s, p);
+          r.vars[key(`connive-${id}-drew`)] = [1];
+        }
+        const hand = s.players[p]?.hand ?? [];
+        if (hand.length === 0) {
+          r.vars[key(`connive-${id}-done`)] = [1];
+          continue;
+        }
+        const answer = r.vars[key(`connive-${id}`)];
+        if (!answer) {
+          const cheapest = [...hand].sort(
+            (a, b) =>
+              manaValue(s.defs[s.objects[a]?.defId ?? ""]?.manaCost) - manaValue(s.defs[s.objects[b]?.defId ?? ""]?.manaCost),
+          );
+          return {
+            ask: {
+              player: p,
+              key: key(`connive-${id}`),
+              request: {
+                type: "pick",
+                intent: "discard",
+                prompt: "Connivence : choisissez la carte à défausser",
+                options: [...hand],
+                min: 1,
+                max: 1,
+                suggested: cheapest.slice(0, 1),
+              },
+            },
+          };
+        }
+        r.vars[key(`connive-${id}-done`)] = [1];
+        const card = String(answer[0]);
+        if (!hand.includes(card)) continue;
+        const nonland = !s.defs[s.objects[card]?.defId ?? ""]?.types.includes("Land");
+        emit({ type: "discard", player: p, defIds: [s.objects[card]?.defId ?? ""] });
+        announceDiscard(s, p, moveObject(s, card, "graveyard"));
+        if (nonland && onBattlefield(s, id)) changeCounters(s, o, P1P1, 1);
+      }
+      return;
+    }
+    case "saddle": {
+      const o = s.objects[ctx.sourceId];
+      if (o?.zone !== "battlefield") return;
+      o.saddledTurn = s.turn.number;
+      bump(s);
+      rulesEvent(s, { e: "saddled", objectId: o.id });
+      return;
+    }
     case "putFaceDown": {
       // Manifester (701.34) / cape (701.58) : face cachée, sous le contrôle du contrôleur de l'effet.
       for (const id of resolveRef(s, ctx, e.what)) putFaceDown(s, ctx.controller, id, e.ward);

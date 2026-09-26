@@ -485,6 +485,10 @@ export type TriggerSpec =
   | { on: "chapter"; chapters: number[] }
   /** « Quand cette Classe atteint le niveau N » (716). */
   | { on: "classLevel"; level: number }
+  /** « Chaque fois qu'une [créature] explore [une carte de terrain / non-terrain] » (701.44). */
+  | { on: "explores"; who: "self" | ObjectFilter; land?: boolean }
+  /** « Chaque fois que cette Monture devient montée » (702.171). */
+  | { on: "saddled" }
   /** « Quand cette créature est retournée face visible » */
   | { on: "turnedFaceUp" }
   /** « Quand vous déverrouillez cette porte » (Salle : `door` est fixé à l'import d'après la face). */
@@ -567,6 +571,8 @@ export type Condition =
   | { kind: "doorLocked"; door: number }
   /** Classe : la source est exactement à ce niveau. Affaire : la source est résolue. */
   | { kind: "classLevel"; level: number }
+  /** Monture : la source a été montée ce tour-ci. */
+  | { kind: "saddled" }
   | { kind: "solved" }
   | { kind: "fullyUnlocked" };
 
@@ -1023,6 +1029,12 @@ export type Effect =
   | { op: "transform"; what: Ref }
   /** « Exilez-les, puis assemblez-les en [carte] » : la source et un permanent du nom donné (701.42). */
   | { op: "meld"; with: string }
+  /** Les créatures désignées explorent (701.44), `times` fois. */
+  | { op: "explore"; what: Ref; times?: Amount }
+  /** Les créatures désignées ont la connivence (701.50) : leur contrôleur pioche, défausse ; non-terrain : marqueur +1/+1. */
+  | { op: "connive"; what: Ref }
+  /** La Monture source devient montée jusqu'à la fin du tour (702.171a). */
+  | { op: "saddle" }
   /** Met les cartes désignées sur le champ de bataille face cachée (manifester ; `ward` : cape). */
   | { op: "putFaceDown"; what: Ref; ward: boolean }
   /** Manifestation effroyable (701.62) : regarder les deux cartes du dessus, en manifester une, l'autre au cimetière. */
@@ -1199,6 +1211,8 @@ export interface GameObject {
    * la garde {2} (déguisement, cape) et les coûts pour la retourner face visible sont gardés ici.
    */
   faceDown?: { card: string; ward: boolean; upCosts: ManaCost[] };
+  /** Monture (702.171) : tour pendant lequel elle a été montée (« sellée »). */
+  saddledTurn?: number;
   /** Classe (716) : niveau actuel (1 par défaut). */
   classLevel?: number;
   /** Affaire (719) : résolue. */
@@ -1743,6 +1757,8 @@ export type GameEvent =
   | { type: "dies"; objectId: ObjectId; defId: string; to: Zone }
   | { type: "destroy"; objectId: ObjectId; defId: string }
   | { type: "token"; objectId: ObjectId; defId: string; controller: PlayerId }
+  /** Cartes révélées à tous (dessus de la bibliothèque qui explore…). */
+  | { type: "reveal"; player: PlayerId; defIds: string[] }
   /** Un permanent face cachée est retourné face visible (la carte est révélée). */
   | { type: "turnedFaceUp"; objectId: ObjectId; defId: string }
   /** Un permanent recto-verso se transforme (`defId` : la face désormais visible). */

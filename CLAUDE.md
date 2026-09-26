@@ -38,7 +38,7 @@ Objectif : les 18 extensions Standard restantes (environ 4 360 cartes), **100 % 
   - 0.6 cartes scindées et Salles ✅ ;
   - 0.7 Sagas, Classes, Affaires ✅ ;
   - 0.8 cartes face cachée ✅ ;
-  - 0.9 mots-clés communs ;
+  - 0.9 mots-clés communs ✅ ;
   - 0.10 performances.
 - **Phase 1, extensions** (lots A/B/C, D pour FIN) : EOE, DFT, OTJ+BIG, BLB, TDM, WOE, SOS, ECL, TLA, SPM, MSH, TMT, HOB, MKM, DSK, LCI, FIN.
 - **Phase 2 :** decks Standard multi-extensions, puis clôture (5 158 / 5 158).
@@ -112,6 +112,14 @@ Lot 0.8 (cartes face cachée, 708) :
 - retourner face visible : action spéciale pour chaque coût possible (déguisement, ou coût de mana d'une carte de créature), effet `fx.turnFaceUp`, déclencheur `when.turnedFaceUp` ;
 - la carte est révélée en quittant le champ de bataille ; un sort lancé face cachée arrive face cachée ;
 - seul le contrôleur voit la vraie carte (`ObjectView.faceDownCard`, affichée dans l'aperçu). L'audit `hidden-info` joue des parties avec des cartes déguisées et vérifie que l'adversaire ne les voit jamais.
+
+Lot 0.9 (mécaniques communes à plusieurs extensions) :
+- jetons Indice (`CLUE`, aide `investigate(n)`) et Carte (`MAP`) dans `fdn/common.ts`, disponibles aussi dans le bac à sable ;
+- explorer (701.44) : `fx.explore(ref, times)` révèle la carte du dessus (événement `reveal`, public) ; déclencheur `when.explores(who, land?)` ;
+- connivence (701.50) : `fx.connive(ref)` ;
+- monture (702.171) : « Saddle N » lu dans le texte (même choix automatique que l'équipage), condition `cond.saddled`, déclencheur `when.saddled` ;
+- les autres mécaniques (protections particulières, cascade, channel, don, rejeton, contempler…) sont traitées dans les lots de leur extension ;
+- l'audit des informations cachées compte les cartes révélées (`reveal`) comme publiques.
 
 ### Reality Fracture (FRA)
 

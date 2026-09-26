@@ -77,6 +77,10 @@ export type RulesEvent =
   | { e: "loyalty"; player: PlayerId; sourceId: ObjectId; cost: number }
   /** Une créature bloque. */
   | { e: "block"; blocker: ObjectId; attacker: ObjectId }
+  /** Une créature explore (701.44), en révélant une carte de terrain ou non. */
+  | { e: "explore"; objectId: ObjectId; land: boolean }
+  /** Une Monture devient montée. */
+  | { e: "saddled"; objectId: ObjectId }
   /** Un joueur manifeste avec effroi (déclencheurs « chaque fois que vous manifestez avec effroi »). */
   | { e: "manifestDread"; player: PlayerId }
   /** Un permanent face cachée est retourné face visible. */

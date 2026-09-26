@@ -72,6 +72,8 @@ function auditGame(seed: number): string[] {
     for (const item of s.stack) publicSeen.add(item.sourceDefId);
     // Une carte passée par une zone publique pendant la décision (surveillée au cimetière puis reprise en main) a été vue.
     for (const ev of events) if (ev.type === "moved" && ev.defId && PUBLIC_ZONES.has(ev.to)) publicSeen.add(ev.defId);
+    // Cartes révélées à tous (exploration…).
+    for (const ev of events) if (ev.type === "reveal") for (const d of ev.defIds) publicSeen.add(d);
     for (const v of players) {
       const view = projectView(s, v);
       if (view.pending?.kind === "choice") for (const o of view.pending.objects ?? []) known[v]?.add(o.defId);

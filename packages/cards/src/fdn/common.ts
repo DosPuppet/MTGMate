@@ -1,7 +1,7 @@
 /**
  * Éléments partagés par les scripts de Foundations : DSL, jetons, filtres courants.
  */
-import { dsl, type ObjectFilter, type TargetSpec, type TokenSpec } from "@mtgx/engine";
+import { type Amount, dsl, type Effect, type ObjectFilter, type TargetSpec, type TokenSpec } from "@mtgx/engine";
 
 export const {
   target,
@@ -103,5 +103,35 @@ export const FOOD: TokenSpec = {
   abilities: [activated({ mana: "{2}", tap: true, sacrifice: true, effects: [fx.gainLife(3)], label: "+3 PV" })],
   text: "{2}, {T}, Sacrifice this artifact: You gain 3 life.",
 };
+/** Indice (enquêter, 701.16) : « {2}, sacrifiez cet artefact : piochez une carte. » */
+export const CLUE: TokenSpec = {
+  name: "Clue",
+  colors: [],
+  types: ["Artifact"],
+  subtypes: ["Clue"],
+  abilities: [activated({ mana: "{2}", sacrifice: true, effects: [fx.draw(1)], label: "Piochez une carte" })],
+  text: "{2}, Sacrifice this artifact: Draw a card.",
+};
+/** Carte (Ixalan) : « {1}, {T}, sacrifiez cet artefact : une créature ciblée que vous contrôlez explore. Rituel. » */
+export const MAP: TokenSpec = {
+  name: "Map",
+  colors: [],
+  types: ["Artifact"],
+  subtypes: ["Map"],
+  abilities: [
+    activated({
+      mana: "{1}",
+      tap: true,
+      sacrifice: true,
+      sorcerySpeed: true,
+      targets: [target.creature("t", { controller: "you" })],
+      effects: [fx.explore(ref.target())],
+      label: "Une créature explore",
+    }),
+  ],
+  text: "{1}, {T}, Sacrifice this artifact: Target creature you control explores. Activate only as a sorcery.",
+};
+/** « Enquêtez » (701.16) : créez un jeton Indice. */
+export const investigate = (n: Amount = 1): Effect => fx.createTokens(CLUE, n);
 
 export type { CardScript } from "@mtgx/engine";

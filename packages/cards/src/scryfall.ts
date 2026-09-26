@@ -129,6 +129,12 @@ export function parseDisguise(text: string): CardDef["disguise"] {
   return m ? parseManaCost(m[1] as string) : undefined;
 }
 
+/** Monture (702.171) : « Saddle N ». */
+export function parseSaddle(text: string): number | undefined {
+  const m = /^Saddle (\d+)/m.exec(stripReminder(text));
+  return m ? Number(m[1]) : undefined;
+}
+
 /** Équipage N (Véhicules). */
 export function parseCrew(text: string): number | undefined {
   const m = /^Crew (\d+)/m.exec(stripReminder(text));
@@ -189,6 +195,7 @@ function intrinsicAbilities(
   equip?: string,
   crew?: number,
   equipReduced?: boolean,
+  saddle?: number,
 ): CardDef["abilities"] {
   const out: CardDef["abilities"] = [];
   if (keywords.has("prowess")) {
@@ -198,6 +205,17 @@ function intrinsicAbilities(
       targets: [],
       effects: [{ op: "pump", what: { kind: "self" }, power: 1, toughness: 1 }],
       label: "Prouesse",
+    });
+  }
+  if (saddle !== undefined) {
+    // 702.171a : « Monture N : engagez des créatures de force totale N ou plus : cette Monture devient montée. Rituel. »
+    out.push({
+      kind: "activated",
+      cost: { crew: saddle },
+      targets: [],
+      effects: [{ op: "saddle" }],
+      sorcerySpeed: true,
+      label: `Monture ${saddle}`,
     });
   }
   if (crew !== undefined) {
@@ -525,6 +543,7 @@ function singleDef(raw: RawCard, script: CardScript | undefined, set: string): C
         parseEquip(raw.oracleText),
         parseCrew(raw.oracleText),
         /costs \{1\} less to activate for each \+1\/\+1 counter on the creature it targets/.test(raw.oracleText),
+        parseSaddle(raw.oracleText),
       ),
       ...(parseCycling(raw.oracleText) ? [parseCycling(raw.oracleText) as CardDef["abilities"][number]] : []),
       ...extraAbilities,
