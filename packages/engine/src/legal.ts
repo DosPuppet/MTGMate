@@ -11,6 +11,7 @@ import {
   canCastTiming,
   canPayNonManaCost,
   canPlayLand,
+  castableFaces,
   castTerms,
   instantLoyalty,
   modesOf,
@@ -23,7 +24,7 @@ import {
 import { obj } from "./state";
 import { legalTargets } from "./targets";
 import { checkCondition } from "./triggers";
-import type { ActionOption, GameState, ManaCost, ObjectId, PlayerId, TargetOption, TargetSpec } from "./types";
+import type { ActionOption, CardDef, GameState, ManaCost, ObjectId, PlayerId, TargetOption, TargetSpec } from "./types";
 
 function targetOptions(s: GameState, player: PlayerId, specs: TargetSpec[], sourceId?: ObjectId): TargetOption[] {
   return specs.map((t) => {
@@ -95,17 +96,22 @@ export function legalActions(s: GameState, player: PlayerId): ActionOption[] {
     }
     const terms = castTerms(s, player, card);
     if (!terms || !d.implemented) continue;
+    // Chaque face lançable (la carte, son aventure) donne une option distincte.
+    for (const [face, faceDef] of castableFaces(s, card, d)) castOption(card, face, faceDef, terms);
+  }
+
+  function castOption(card: ObjectId, face: number | undefined, d: CardDef, terms: NonNullable<ReturnType<typeof castTerms>>) {
     // Timing : normal, ignoré (Etali), ou flash moyennant un surcoût (Harbinger of the Tides).
     const onTime = terms.anyTime || canCastTiming(s, player, d);
-    if (!onTime && !d.flashExtraCost) continue;
+    if (!onTime && !d.flashExtraCost) return;
     const timingExtra = onTime ? undefined : d.flashExtraCost;
     const flashback = terms.source === "flashback";
     const modes = modesOf(d)
       .map((m, index) => ({ index, label: m.label, targets: targetOptions(s, player, m.targets, card) }))
       .filter((m) => targetsAvailable(m.targets));
-    if (modes.length === 0) continue;
+    if (modes.length === 0) return;
     const additional = additionalOptions(s, player, card, d, terms.source === "flashback");
-    if (!additional) continue;
+    if (!additional) return;
     const purpose = { spell: spellView(d, player), convoke: d.keywords.includes("convoke"), fromHand: terms.source === "hand" };
     const base = { flashback, anyMana: terms.anyMana };
     // « Sacrifiez une créature ou payez {3}{B} » : sans créature à sacrifier, le mana s'ajoute au coût.
@@ -122,7 +128,7 @@ export function legalActions(s: GameState, player: PlayerId): ActionOption[] {
       !!d.altCost &&
       checkCondition(s, d.altCost.condition, player) &&
       canPay(s, player, withExtra(spellCost(s, player, d, { ...base, alternative: true })), undefined, purpose);
-    if (!terms.free && !normal && !freeAvailable && !altAvailable) continue;
+    if (!terms.free && !normal && !freeAvailable && !altAvailable) return;
     // Le mana à payer à la place du sacrifice est-il disponible ?
     if (sac?.orPay) {
       sac.orPayAffordable = canPay(s, player, totalCost(spellCost(s, player, d, base), 0, sac.orPay), undefined, purpose);
@@ -131,6 +137,7 @@ export function legalActions(s: GameState, player: PlayerId): ActionOption[] {
     out.push({
       type: "cast",
       card,
+      ...(face !== undefined ? { face, faceName: d.name } : {}),
       modes,
       xMax: hasX && normal ? maxXFor(s, player, (x) => withExtra(spellCost(s, player, d, { ...base, x }))) : null,
       kickerAffordable:

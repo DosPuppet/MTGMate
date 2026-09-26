@@ -33,7 +33,7 @@ Objectif : les 18 extensions Standard restantes (environ 4 360 cartes), **100 % 
   - 0.1 FRA à 100 % ✅ ;
   - 0.2 import de tout le Standard ✅ ;
   - 0.3 cartes à plusieurs faces ✅ (modèle) ;
-  - 0.4 aventures et présages ;
+  - 0.4 aventures et présages ✅ ;
   - 0.5 transformation, cartes recto-verso modales, assemblage ;
   - 0.6 cartes scindées et Salles ;
   - 0.7 Sagas, Classes, Affaires ;
@@ -66,6 +66,13 @@ Lot 0.3 (modèle des cartes à plusieurs faces) :
 - une carte à plusieurs faces reste non gérée tant que sa disposition n'est pas dans `HANDLED_LAYOUTS` (`cards/src/scryfall.ts`) et que toutes ses faces ne sont pas gérées ; les cartes d'assemblage (meld) aussi ;
 - decklists : le recto seul (MTGA), « A/B » (MTGO) et le nom français du recto sont reconnus. L'export donne le recto seul, sauf pour une carte scindée (« A // B ») ;
 - interface : les autres faces sont affichées dans l'aperçu (`CardFace.otherFaces`), avec un bouton « Voir le verso » (touche F) pour une carte recto-verso ; le deckbuilder cherche dans toutes les faces.
+
+Lot 0.4 (aventures et présages) :
+- `castableFaces` (stack.ts) : la carte et son aventure sont deux options de lancement (`ActionOption.face`, `CastChoices.face`). Une carte « en aventure » ne propose que la créature ;
+- sur la pile, la face lancée donne les caractéristiques (`GameObject.faceDefId`, lu par `chars` et par la vue) ;
+- une Aventure résolue part en exil « en aventure » (`onAdventure`), d'où son propriétaire peut lancer la créature. Contrecarrée, elle va au cimetière ;
+- un présage (sous-type Omen, même disposition Scryfall que l'aventure) résolu est mélangé dans la bibliothèque ;
+- interface : le menu de la carte en main propose « Lancer [créature] » et « Lancer [aventure] ». Tests dans `engine/test/faces.test.ts`.
 
 ### Reality Fracture (FRA)
 

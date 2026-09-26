@@ -21,6 +21,7 @@ import {
   obj,
   onBattlefield,
   rulesEvent,
+  shuffle,
   snapshot,
   tapObject,
 } from "./state";
@@ -263,6 +264,21 @@ export function splitSecondOnStack(s: GameState): boolean {
   });
 }
 
+/**
+ * Faces lançables d'une carte : la carte elle-même (recto) et, pour une aventure, l'aventure (face 1), sauf si la
+ * carte est déjà « en aventure » (on ne peut alors lancer que la créature).
+ */
+export function castableFaces(s: GameState, card: ObjectId, d: CardDef): [number | undefined, CardDef][] {
+  const o = s.objects[card];
+  const adventure = d.layout === "adventure" ? d.faceDefs?.[1] : undefined;
+  if (adventure && !o?.onAdventure)
+    return [
+      [undefined, d],
+      [1, adventure],
+    ];
+  return [[undefined, d]];
+}
+
 export function castTerms(s: GameState, player: PlayerId, card: ObjectId): CastTerms | null {
   const o = s.objects[card];
   if (!o) return null;
@@ -317,6 +333,8 @@ export function castTerms(s: GameState, player: PlayerId, card: ObjectId): CastT
         return { source: "exile", anyMana: true };
       }
     }
+    // 715.4 : la carte « en aventure » : son propriétaire peut lancer la créature.
+    if (o.onAdventure && o.owner === player) return { source: "exile" };
     const perm = exilePermission(s, player, card);
     if (perm) return { source: "exile", free: perm.free, anyTime: perm.anyTime };
     // Tinybones : cartes d'adversaires exilées avec un marqueur de butin, pendant votre tour.
@@ -401,9 +419,13 @@ export function castSpell(s: GameState, player: PlayerId, card: ObjectId, choice
   const terms = castTerms(s, player, card);
   if (!terms) throw new RulesError("Vous ne pouvez pas lancer cette carte d'ici");
   const o = obj(s, card);
-  const d = s.defs[o.defId];
-  if (!d || d.types.includes("Land")) throw new RulesError("Ce n'est pas un sort");
-  if (!d.implemented) throw new RulesError(`${d.name} n'est pas encore géré par le moteur`);
+  const cardDef = s.defs[o.defId];
+  if (!cardDef || cardDef.types.includes("Land")) throw new RulesError("Ce n'est pas un sort");
+  if (!cardDef.implemented) throw new RulesError(`${cardDef.name} n'est pas encore géré par le moteur`);
+  // Face lancée : la carte elle-même, ou son aventure (715.3).
+  const face = castableFaces(s, card, cardDef).find(([f]) => f === choices.face);
+  if (!face) throw new RulesError("Cette face ne peut pas être lancée");
+  const d = face[1];
   if (splitSecondOnStack(s)) throw new RulesError("Aucun sort ni capacité maintenant (second partagé ou combat)");
   // Harbinger of the Tides : « comme s'il avait le flash si vous payez {2} de plus ».
   const flashExtra = !terms.anyTime && !canCastTiming(s, player, d) ? d.flashExtraCost : undefined;
@@ -451,6 +473,9 @@ export function castSpell(s: GameState, player: PlayerId, card: ObjectId, choice
   const preparedFor = o.preparedFor ? s.objects[o.preparedFor] : undefined;
   if (preparedFor?.preparedCopy === card) delete preparedFor.preparedCopy;
   const stackId = moveObject(s, card, "stack", { controller: player }) as string;
+  // Seule une Aventure part « en aventure » ; un présage (même disposition Scryfall) est mélangé dans la bibliothèque.
+  const adventure = choices.face !== undefined && cardDef.layout === "adventure" && d.subtypes.includes("Adventure");
+  if (choices.face !== undefined) obj(s, stackId).faceDefId = d.id;
   // Theorist's Proxy : « le prochain sort que vous lancez ce tour-ci ne peut pas être contrecarré ».
   const caster0 = s.players[player];
   const uncounterable = caster0?.nextSpellUncounterableTurn === s.turn.number;
@@ -468,6 +493,7 @@ export function castSpell(s: GameState, player: PlayerId, card: ObjectId, choice
     kicked,
     sourceSnapshot: { keywords: d.keywords, power: d.power ?? 0, controller: player },
     flashback,
+    adventure: adventure || undefined,
     fromHand: terms.source === "hand" || undefined,
     uncounterable: uncounterable || undefined,
   };
@@ -927,6 +953,26 @@ function finishResolution(
           duration: "endOfTurn",
         });
       }
-    } else moveObject(s, item.sourceId, item.flashback ? "exile" : "graveyard");
+    } else resolvedSpellAway(s, item, d);
   }
+}
+
+/**
+ * Destination d'un éphémère ou d'un rituel qui a fini de se résoudre : cimetière ; exil pour un flashback ;
+ * exil « en aventure » pour une aventure (715.4) ; bibliothèque mélangée pour un présage.
+ */
+function resolvedSpellAway(s: GameState, item: StackItem, d: CardDef | undefined): void {
+  if (item.adventure && !item.flashback) {
+    const id = moveObject(s, item.sourceId, "exile");
+    const o = id ? s.objects[id] : undefined;
+    if (o) o.onAdventure = true;
+    return;
+  }
+  if (!item.flashback && d?.subtypes.includes("Omen")) {
+    const id = moveObject(s, item.sourceId, "library");
+    const owner = id ? s.objects[id]?.owner : undefined;
+    if (owner) shuffle(s, s.players[owner]?.library ?? []);
+    return;
+  }
+  moveObject(s, item.sourceId, item.flashback ? "exile" : "graveyard");
 }

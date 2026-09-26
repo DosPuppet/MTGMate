@@ -176,7 +176,7 @@ function otherFaces(d: CardDef): NonNullable<CardFace["otherFaces"]> {
 export function objectView(s: GameState, id: ObjectId): ObjectView {
   const o = obj(s, id);
   // Une copie (couche 1) s'affiche avec la face de ce qu'elle copie.
-  const d = s.defs[o.zone === "battlefield" ? copiedDefId(s, id) : o.defId] as CardDef;
+  const d = s.defs[o.zone === "battlefield" ? copiedDefId(s, id) : (o.faceDefId ?? o.defId)] as CardDef;
   const c = chars(s, id);
   const isCreature = c.types.includes("Creature");
   const attacking = !!s.combat?.attackers.some((a) => a.id === id);

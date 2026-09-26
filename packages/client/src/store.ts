@@ -185,6 +185,7 @@ function buildDecision(c: Casting): Decision {
     return {
       type: "cast",
       card: c.option.card,
+      face: c.option.face,
       mode: c.mode ?? 0,
       targets: c.targets,
       x: c.x ?? undefined,
@@ -622,11 +623,11 @@ export const useGame = create<Store>((set, get) => {
       const acts = myActions(view);
       const land = acts.find((a) => a.type === "playLand" && a.card === id);
       if (land) return get().decide({ type: "playLand", card: id });
-      const cast = acts.find((a): a is CastOption => a.type === "cast" && a.card === id);
-      // Capacités activées depuis la main (cycle, « défaussez cette carte : … »).
+      const casts = acts.filter((a): a is CastOption => a.type === "cast" && a.card === id);
+      const cast = casts[0];
+      // Capacités activées depuis la main (cycle, « défaussez cette carte : … »), ou plusieurs faces (aventure).
       const fromHand = acts.filter((a): a is ActivateOption => a.type === "activate" && a.source === id);
-      if (fromHand.length && (cast || fromHand.length > 1))
-        return set({ abilityMenu: { sourceId: id, options: [...(cast ? [cast] : []), ...fromHand] } });
+      if (casts.length + fromHand.length > 1) return set({ abilityMenu: { sourceId: id, options: [...casts, ...fromHand] } });
       if (fromHand[0] && !cast) return get().beginCasting(fromHand[0], id);
       if (cast) return get().beginCasting(cast, id);
       if (p?.kind === "priority" && p.player === view.viewer) {

@@ -1143,6 +1143,10 @@ export interface GameObject {
   preparedCopy?: ObjectId;
   /** Copie d'un sort préparé (en exil puis sur la pile) : le permanent qui l'a préparée. Cesse d'exister hors de ces zones. */
   preparedFor?: ObjectId;
+  /** Face active d'une carte à plusieurs faces (aventure lancée, verso…) : ses caractéristiques remplacent celles de la carte. */
+  faceDefId?: string;
+  /** Carte « en aventure » (715.4) : exilée après la résolution de son aventure ; son propriétaire peut lancer la créature. */
+  onAdventure?: boolean;
   /** Copie d'une carte (Uldaros) : quitte l'exil seulement pour la pile ; devient un jeton sur le champ de bataille. */
   cardCopy?: boolean;
   /** Emblème temporaire : disparaît au début du prochain tour de ce joueur. */
@@ -1217,6 +1221,8 @@ export interface StackItem {
   event?: TriggerEventData;
   /** Lancé avec le flashback : exilé au lieu d'aller au cimetière. */
   flashback?: boolean;
+  /** Aventure lancée : exilée « en aventure » après sa résolution. */
+  adventure?: boolean;
   /** Capacité retardée ou réflexive : ses effets et cibles propres. */
   inline?: InlineAbility;
   /** Copie d'un sort (707.10) : pas de carte associée. */
@@ -1565,6 +1571,8 @@ export interface CastChoices {
   /** Coûts additionnels : cartes défaussées, permanents sacrifiés. */
   discard?: ObjectId[];
   sacrifice?: ObjectId[];
+  /** Face lancée d'une carte à plusieurs faces (1 : l'aventure) ; absente : la carte elle-même (recto). */
+  face?: number;
 }
 
 export type Decision =
@@ -1608,6 +1616,9 @@ export type ActionOption =
   | {
       type: "cast";
       card: ObjectId;
+      /** Face lancée (aventure…) et son nom, pour l'interface. */
+      face?: number;
+      faceName?: string;
       modes: ModeOption[];
       xMax: number | null;
       kickerAffordable: boolean;

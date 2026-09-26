@@ -1,8 +1,8 @@
 /** Fenêtres de choix : réservées aux vraies décisions (mulligan, modes, X, kicker, défausse…). */
-import { costToText, type GameView } from "@mtgx/engine";
+import { costToText, type GameView, type ObjectView } from "@mtgx/engine";
 import { useState } from "react";
 import { Card } from "../board/Card";
-import { faceName } from "../i18n";
+import { faceName, type Lang } from "../i18n";
 import { myActions, type PlayableOption, useGame } from "../store";
 import { ChoicePrompt } from "./ChoicePrompt";
 
@@ -321,6 +321,14 @@ function CastingPrompt() {
   return null;
 }
 
+/** Nom de la face lancée : l'aventure (ou autre face), sinon le recto de la carte (« A // B » → « A »). */
+function faceLabel(source: ObjectView | undefined, face: string | undefined, lang: Lang): string {
+  if (!source) return "";
+  if (!face) return lang === "fr" && source.fr?.name ? source.fr.name : (source.name.split(" // ")[0] ?? source.name);
+  const f = source.otherFaces?.find((x) => x?.name === face);
+  return (lang === "fr" && f?.fr?.name) || face;
+}
+
 function AbilityMenu() {
   const menu = useGame((s) => s.abilityMenu);
   const view = useGame((s) => s.view);
@@ -337,7 +345,7 @@ function AbilityMenu() {
           if (o.type === "cast") {
             return (
               <button key={i} type="button" className="btn choice" onClick={() => beginCasting(o, menu.sourceId)}>
-                Lancer {faceName(source, lang)}
+                Lancer {faceLabel(source, o.faceName, lang)}
               </button>
             );
           }

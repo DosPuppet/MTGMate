@@ -57,6 +57,7 @@ export function buildCastDecision(
       return {
         type: "cast",
         card: a.card,
+        face: a.face,
         mode: mode.index,
         targets: targetsFrom(mode.targets),
         x: a.xMax === null ? undefined : Math.floor(rand() * (a.xMax + 1)),
@@ -107,6 +108,7 @@ export function enumerateDecisions(a: ActionOption, limit = 40, rank?: (ids: str
           const base = {
             type: "cast" as const,
             card: a.card,
+            face: a.face,
             mode: m.index,
             targets,
             x: a.xMax ?? undefined,

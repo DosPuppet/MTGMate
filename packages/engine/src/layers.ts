@@ -95,13 +95,17 @@ function cdaValue(s: GameState, o: GameObject, a: Amount): number {
     .filter((id) => !types || types.some((t) => s.defs[obj(s, id).defId]?.types.includes(t))).length;
 }
 
-/** Définition effective d'un permanent : celle qu'il copie (couche 1, effet le plus récent), sinon la sienne. */
+/**
+ * Définition effective d'un objet : celle qu'il copie (couche 1, effet le plus récent), sinon sa face active
+ * (aventure lancée, verso), sinon la sienne.
+ */
 export function copiedDefId(s: GameState, id: ObjectId): string {
   let best: { t: number; def: string } | null = null;
   for (const e of s.effects) {
     if (e.copyOf && e.affected.includes(id) && (!best || e.timestamp > best.t)) best = { t: e.timestamp, def: e.copyOf };
   }
-  return best?.def ?? obj(s, id).defId;
+  const o = obj(s, id);
+  return best?.def ?? o.faceDefId ?? o.defId;
 }
 
 function base(s: GameState, o: GameObject, defId = o.defId): Characteristics {
@@ -175,7 +179,7 @@ export function computeBattlefield(s: GameState): Map<ObjectId, Characteristics>
   const out = new Map<ObjectId, Characteristics>();
   const attacking = new Set(s.combat?.attackers.map((a) => a.id) ?? []);
   const copying = s.effects.some((e) => e.copyOf);
-  const defOfId = (id: ObjectId) => (copying ? copiedDefId(s, id) : obj(s, id).defId);
+  const defOfId = (id: ObjectId) => (copying ? copiedDefId(s, id) : (obj(s, id).faceDefId ?? obj(s, id).defId));
   // Couche 1 : copie (valeurs copiables de la définition copiée).
   for (const id of s.battlefield) out.set(id, base(s, obj(s, id), defOfId(id)));
 
@@ -339,7 +343,7 @@ function battlefieldChars(s: GameState): Map<ObjectId, Characteristics> {
 export function chars(s: GameState, id: ObjectId): Characteristics {
   const o = obj(s, id);
   // Pendant le calcul (conditions des capacités statiques), on lit les caractéristiques de base.
-  if (o.zone !== "battlefield" || computing) return base(s, o);
+  if (o.zone !== "battlefield" || computing) return base(s, o, o.faceDefId ?? o.defId);
   return battlefieldChars(s).get(id) ?? base(s, o);
 }
 

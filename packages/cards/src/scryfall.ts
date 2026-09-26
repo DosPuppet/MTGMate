@@ -276,7 +276,7 @@ function prepareSpellDef(raw: RawCard, spell: NonNullable<CardScript["prepareSpe
 }
 
 /** Dispositions à plusieurs faces que le moteur sait jouer (complété lot par lot : aventures, recto-verso…). */
-export const HANDLED_LAYOUTS = new Set<string>();
+export const HANDLED_LAYOUTS = new Set<string>(["adventure"]);
 
 /**
  * Définition d'une carte. Pour une carte à plusieurs faces, chaque face a sa propre définition (script cherché par
@@ -300,7 +300,12 @@ export function toCardDef(
     id: `${slug(raw.name)}__${i}`,
   }));
   const front = faceDefs[0] as CardDef;
-  const base = singleDef({ ...faceRaw(raw, raw.faces[0] as RawFace), name: raw.name, image: raw.image, fr: raw.fr }, script, set);
+  // La carte hors du jeu a les caractéristiques et le comportement de son recto (script du recto).
+  const base = singleDef(
+    { ...faceRaw(raw, raw.faces[0] as RawFace), name: raw.name, image: raw.image, fr: raw.fr },
+    script ?? scripts[raw.faces[0]?.name ?? ""],
+    set,
+  );
   const layout = raw.layout as CardDef["layout"];
   const card: CardDef = {
     ...base,
