@@ -47,7 +47,8 @@ function liveSources(s: GameState): Source[] {
     const o = obj(s, id);
     const d = s.defs[o.faceDefId ?? o.defId];
     // Salle : les capacités déclenchées sont portées par ses portes.
-    if (!granted && !hasTriggers(d?.abilities) && !d?.faceDefs?.some((f) => hasTriggers(f.abilities))) continue;
+    const levels = !!d?.classLevels || !!d?.caseSolved;
+    if (!granted && !levels && !hasTriggers(d?.abilities) && !d?.faceDefs?.some((f) => hasTriggers(f.abilities))) continue;
     const view = snapshot(s, id);
     if (hasTriggers(view.abilities)) out.push({ id, view });
   }
@@ -124,6 +125,10 @@ export function checkCondition(s: GameState, c: Condition, controller: PlayerId,
       return !!s.resolving?.item.fromHand;
     case "spellCastFromGraveyard":
       return !!s.resolving?.item.flashback;
+    case "classLevel":
+      return (s.objects[sourceId ?? ""]?.classLevel ?? 1) === c.level;
+    case "solved":
+      return !!s.objects[sourceId ?? ""]?.solved;
     case "doorLocked":
       return !!sourceId && !s.objects[sourceId]?.unlocked?.includes(c.door);
     case "fullyUnlocked": {
@@ -327,6 +332,17 @@ function matchTrigger(s: GameState, ev: RulesEvent, t: TriggerSpec, src: Source)
       const v = liveView(s, ev.blocker);
       return v && matchWho(t.who, v, src) ? { objectId: ev.blocker, player: v.controller } : null;
     }
+    case "chapter": {
+      // 714.2b : chaque chapitre atteint ou dépassé par les marqueurs de savoir posés.
+      if (ev.e !== "counters" || ev.kind !== "lore" || ev.objectId !== src.id) return null;
+      const after = s.objects[src.id]?.counters.lore ?? 0;
+      const before = after - ev.amount;
+      return t.chapters.some((n) => before < n && n <= after) ? { objectId: src.id, player: src.view.controller } : null;
+    }
+    case "classLevel":
+      return ev.e === "classLevel" && ev.objectId === src.id && ev.level === t.level
+        ? { objectId: src.id, player: src.view.controller }
+        : null;
     case "unlockDoor":
       return ev.e === "unlock" && ev.objectId === src.id && (t.door === undefined || t.door === ev.door)
         ? { objectId: src.id, player: ev.player }

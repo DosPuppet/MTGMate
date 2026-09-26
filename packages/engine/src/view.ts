@@ -67,9 +67,15 @@ export interface ObjectView extends CardFace {
   /** Aura ou Équipement : le permanent auquel il est attaché. */
   attachedTo: ObjectId | null;
   /** Choix fait en arrivant (type de créature, couleur). */
-  chosen: { creatureType?: string; color?: Color } | null;
+  chosen: {
+    creatureType?: string;
+    color?: Color;
+  } | null;
   /** Reality Fracture : permanent préparé (son sort peut être lancé depuis l'exil). */
   prepared?: boolean;
+  /** Classe : niveau atteint (au-delà de 1) ; Affaire : résolue. */
+  classLevel?: number;
+  solved?: boolean;
 }
 
 export interface StackItemView extends CardFace {
@@ -204,6 +210,8 @@ export function objectView(s: GameState, id: ObjectId): ObjectView {
     chosen: o.chosen ?? null,
     name: c.name,
     ...(o.preparedCopy && s.objects[o.preparedCopy] ? { prepared: true } : {}),
+    ...(o.classLevel && o.classLevel > 1 ? { classLevel: o.classLevel } : {}),
+    ...(o.solved ? { solved: true } : {}),
   };
 }
 

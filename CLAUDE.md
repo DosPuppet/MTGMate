@@ -36,7 +36,7 @@ Objectif : les 18 extensions Standard restantes (environ 4 360 cartes), **100 % 
   - 0.4 aventures et présages ✅ ;
   - 0.5 transformation, cartes recto-verso modales, assemblage ✅ ;
   - 0.6 cartes scindées et Salles ✅ ;
-  - 0.7 Sagas, Classes, Affaires ;
+  - 0.7 Sagas, Classes, Affaires ✅ ;
   - 0.8 cartes face cachée ;
   - 0.9 mots-clés communs ;
   - 0.10 performances.
@@ -93,6 +93,17 @@ Lot 0.6 (cartes scindées et Salles) :
   - déverrouiller une porte est une action spéciale en rituel (`ActivatedAbilityDef.specialAction` : coût payé, pas de pile), générée par `toCardDef` pour chaque porte ;
   - « quand vous déverrouillez cette porte » (`when.unlockThisDoor`) : la porte est fixée à l'import ; condition `cond.fullyUnlocked` ;
 - capacités calculées (Salle, verso, copie) dans les boucles des remplacements, des réductions de coût, des statiques et du filtre des déclencheurs.
+
+Lot 0.7 (Sagas, Classes, Affaires) :
+- Saga (714) :
+  - dernier chapitre lu dans le texte (`CardDef.saga.chapters`) ;
+  - un marqueur de savoir à l'arrivée et au début de la première phase principale (action de tour) ;
+  - chapitres écrits avec `chapter([1, 2], effets)` (déclencheur `chapter`) ;
+  - sacrifiée (action basée sur l'état) quand le dernier chapitre est atteint et qu'aucun chapitre n'attend ;
+- Classe (716) : capacités de niveau dans le script (`classLevels`), coûts « {W}: Level 2 » lus dans le texte, capacités « Niveau N » générées (rituel, depuis le niveau N−1), déclencheur `when.classLevel(n)` ;
+- Affaire (719) : `caseToSolve` (condition) et `caseSolved` (capacités) dans le script ; le déclencheur « au début de votre étape de fin, si elle n'est pas résolue et que la condition est remplie, elle est résolue » est généré ;
+- `levelAbilities` (layers.ts) ajoute les capacités des niveaux atteints et les capacités « Résolue » ; l'aperçu affiche le niveau ou « Affaire résolue » ;
+- tests : `engine/test/levels.test.ts`. Le helper `advanceUntil` avance la partie en passant les attaques, les blocages et les choix.
 
 ### Reality Fracture (FRA)
 

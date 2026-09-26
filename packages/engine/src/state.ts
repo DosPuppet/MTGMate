@@ -76,6 +76,8 @@ export type RulesEvent =
   | { e: "loyalty"; player: PlayerId; sourceId: ObjectId; cost: number }
   /** Une créature bloque. */
   | { e: "block"; blocker: ObjectId; attacker: ObjectId }
+  /** Une Classe atteint un niveau. */
+  | { e: "classLevel"; objectId: ObjectId; level: number }
   /** Une porte de Salle est déverrouillée. */
   | { e: "unlock"; objectId: ObjectId; door: number; player: PlayerId };
 

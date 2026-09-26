@@ -160,3 +160,24 @@ export function customCard(partial: Partial<CardDef> & { name: string }): CardDe
     ...partial,
   };
 }
+
+/**
+ * Avance la partie jusqu'à la condition : passe la priorité, n'attaque ni ne bloque, défausse l'excédent et
+ * accepte les choix suggérés.
+ */
+export function advanceUntil(s: GameState, until: (s: GameState) => boolean, max = 600): GameState {
+  let cur = s;
+  for (let i = 0; i < max && !until(cur); i++) {
+    const p = cur.pending;
+    if (!p) break;
+    if (p.kind === "priority") cur = act(cur, p.player, { type: "pass" });
+    else if (p.kind === "declareAttackers") cur = act(cur, p.player, { type: "declareAttackers", attackers: [] });
+    else if (p.kind === "declareBlockers") cur = act(cur, p.player, { type: "declareBlockers", blocks: [] });
+    else if (p.kind === "discard") {
+      const hand = cur.players[p.player]?.hand ?? [];
+      cur = act(cur, p.player, { type: "discard", cards: hand.slice(0, Math.max(0, hand.length - 7)) });
+    } else if (p.kind === "choice") cur = act(cur, p.player, { type: "choose", values: p.request.suggested });
+    else break;
+  }
+  return cur;
+}

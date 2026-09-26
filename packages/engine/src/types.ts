@@ -174,6 +174,13 @@ export interface CardDef {
    * porte les caractéristiques hors du jeu : celles du recto, ou la réunion des deux moitiés d'une carte scindée.
    */
   faceDefs?: CardDef[];
+  /** Saga (714) : numéro du dernier chapitre (lu dans le texte). */
+  saga?: { chapters: number };
+  /** Classe (716) : capacités des niveaux 2, 3… (coût du niveau et capacités ajoutées). */
+  classLevels?: { cost: ManaCost | null; abilities: AbilityDef[] }[];
+  /** Affaire (719) : condition « Pour résoudre » et capacités « Résolue ». */
+  caseToSolve?: Condition;
+  caseSolved?: AbilityDef[];
   /** Assemblage (701.42) : les deux parties et la carte assemblée, par nom. */
   meld?: { parts: string[]; result?: string };
   /** Carte assemblée (verso commun de deux cartes) : elle ne se met pas dans un deck. */
@@ -472,6 +479,10 @@ export type TriggerSpec =
   | { on: "discardSelf" }
   /** « Quand vous lancez ce sort » (la source est le sort sur la pile). */
   | { on: "castSelf" }
+  /** Chapitre de Saga (714.2) : un marqueur de savoir fait atteindre ou dépasser l'un de ces chapitres. */
+  | { on: "chapter"; chapters: number[] }
+  /** « Quand cette Classe atteint le niveau N » (716). */
+  | { on: "classLevel"; level: number }
   /** « Quand vous déverrouillez cette porte » (Salle : `door` est fixé à l'import d'après la face). */
   | { on: "unlockDoor"; door?: number }
   /** « Chaque fois que cette créature subit des blessures » */
@@ -550,6 +561,9 @@ export type Condition =
   | { kind: "sourceDealtCombatDamage" }
   /** Salle (709.5) : la porte N de la source est verrouillée ; toutes ses portes sont déverrouillées. */
   | { kind: "doorLocked"; door: number }
+  /** Classe : la source est exactement à ce niveau. Affaire : la source est résolue. */
+  | { kind: "classLevel"; level: number }
+  | { kind: "solved" }
   | { kind: "fullyUnlocked" };
 
 /** Modifications apportées par un effet continu, rangées par couche (613). */
@@ -1005,6 +1019,10 @@ export type Effect =
   | { op: "transform"; what: Ref }
   /** « Exilez-les, puis assemblez-les en [carte] » : la source et un permanent du nom donné (701.42). */
   | { op: "meld"; with: string }
+  /** La Classe source passe au niveau N (716.2a). */
+  | { op: "setClassLevel"; level: number }
+  /** L'Affaire source devient résolue (719.2). */
+  | { op: "solveCase" }
   /** Déverrouille la porte N d'une Salle (709.5e). */
   | { op: "unlockDoor"; what: Ref; door: number }
   /** « [Ce permanent] devient une copie de [la cible] jusqu'à la fin du tour » (couche 1). */
@@ -1166,6 +1184,10 @@ export interface GameObject {
   preparedFor?: ObjectId;
   /** Face active d'une carte à plusieurs faces (aventure lancée, verso…) : ses caractéristiques remplacent celles de la carte. */
   faceDefId?: string;
+  /** Classe (716) : niveau actuel (1 par défaut). */
+  classLevel?: number;
+  /** Affaire (719) : résolue. */
+  solved?: boolean;
   /** Salle (709.5) : portes déverrouillées (indices des faces). */
   unlocked?: number[];
   /** Permanent assemblé (701.42) : les deux cartes qui le forment ; il redevient ces cartes en quittant le champ de bataille. */

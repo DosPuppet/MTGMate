@@ -363,6 +363,63 @@ export function toCardDef(
   return card;
 }
 
+const ROMAN: Record<string, number> = { I: 1, II: 2, III: 3, IV: 4, V: 5, VI: 6 };
+
+/**
+ * Saga (714) : dernier chapitre lu dans le texte. Classe (716) : coûts des niveaux lus dans le texte (« {W}: Level 2 »),
+ * capacités de niveau prises dans le script, et capacités « Niveau N » générées (rituel, depuis le niveau N−1).
+ * Affaire (719) : déclencheur « au début de votre étape de fin, si [condition], elle est résolue » généré.
+ */
+function sagaClassCase(
+  raw: RawCard,
+  script: CardScript | undefined,
+): Partial<CardDef> & { extraAbilities?: CardDef["abilities"] } {
+  const text = stripReminder(raw.oracleText);
+  if (raw.layout === "saga") {
+    const chapters = [...text.matchAll(/^([IVX]+(?:, [IVX]+)*) —/gm)].flatMap((m) =>
+      (m[1] ?? "").split(", ").map((r) => ROMAN[r] ?? 0),
+    );
+    return { layout: "saga", saga: { chapters: Math.max(0, ...chapters) } };
+  }
+  if (raw.layout === "class") {
+    const costs = [...text.matchAll(/^((?:\{[^}]+\})+): Level (\d+)/gm)].map((m) => ({
+      cost: parseManaCost(m[1] ?? ""),
+      level: Number(m[2]),
+    }));
+    const levels = costs.map((c, i) => ({ cost: c.cost, abilities: script?.classLevels?.[i] ?? [] }));
+    const levelUps: CardDef["abilities"] = costs.map((c) => ({
+      kind: "activated",
+      cost: { mana: c.cost },
+      targets: [],
+      effects: [{ op: "setClassLevel", level: c.level }],
+      sorcerySpeed: true,
+      activationCondition: { kind: "classLevel", level: c.level - 1 },
+      label: `Niveau ${c.level}`,
+    }));
+    return { layout: "class", classLevels: levels, extraAbilities: levelUps };
+  }
+  if (raw.layout === "case") {
+    const solve: CardDef["abilities"][number] = {
+      kind: "triggered",
+      trigger: { on: "step", step: "end", whose: "you" },
+      targets: [],
+      effects: [{ op: "solveCase" }],
+      condition: {
+        kind: "all",
+        of: [{ kind: "not", cond: { kind: "solved" } }, script?.caseToSolve ?? { kind: "not", cond: { kind: "yourTurn" } }],
+      },
+      label: "Pour résoudre",
+    };
+    return {
+      layout: "case",
+      caseToSolve: script?.caseToSolve,
+      caseSolved: script?.caseSolved ?? [],
+      extraAbilities: [solve],
+    };
+  }
+  return {};
+}
+
 /** Somme de deux coûts de mana (valeur de mana d'une carte scindée). */
 function addManaCosts(
   a: NonNullable<CardDef["manaCost"]>,
@@ -440,6 +497,7 @@ function singleDef(raw: RawCard, script: CardScript | undefined, set: string): C
   const ward = parseWard(raw.oracleText);
   if (ward) keywords.add("ward");
 
+  const { extraAbilities = [], ...levelFields } = sagaClassCase(raw, script);
   return {
     id: slug(raw.name),
     name: raw.name,
@@ -463,7 +521,9 @@ function singleDef(raw: RawCard, script: CardScript | undefined, set: string): C
         /costs \{1\} less to activate for each \+1\/\+1 counter on the creature it targets/.test(raw.oracleText),
       ),
       ...(parseCycling(raw.oracleText) ? [parseCycling(raw.oracleText) as CardDef["abilities"][number]] : []),
+      ...extraAbilities,
     ],
+    ...levelFields,
     cdaPower: script?.cdaPower,
     cdaToughness: script?.cdaToughness,
     castCondition: script?.castCondition,

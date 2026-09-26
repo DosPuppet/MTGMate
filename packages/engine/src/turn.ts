@@ -202,6 +202,14 @@ function beginStep(s: GameState): void {
       if (s.turn.number > 1 || s.playerOrder.length > 2) drawCard(s, active);
       givePriority(s);
       return;
+    case "main1":
+      // 714.3b : au début de la première phase principale, un marqueur de savoir sur chaque Saga du joueur actif.
+      for (const id of s.battlefield) {
+        const o = obj(s, id);
+        if (o.controller === active && s.defs[o.defId]?.saga) changeCounters(s, o, "lore", 1);
+      }
+      givePriority(s);
+      return;
     case "beginCombat":
       s.combat = emptyCombat();
       givePriority(s);
@@ -887,6 +895,17 @@ function stateBasedActionsOnce(s: GameState): void {
         hasType(s, id, "Planeswalker") &&
         counterCount(o, "loyalty") <= 0 &&
         !playerStatic(s, o.controller, "walkersSurviveZeroLoyalty")
+      ) {
+        toGraveyard.push(id);
+        continue;
+      }
+      // 714.4 : une Saga dont le dernier chapitre est atteint, et dont aucun chapitre n'attend, est sacrifiée.
+      const saga = s.defs[o.defId]?.saga;
+      if (
+        saga &&
+        counterCount(o, "lore") >= saga.chapters &&
+        !s.stack.some((x) => x.kind === "ability" && x.sourceId === id) &&
+        !s.triggers.some((t) => t.sourceId === id)
       ) {
         toGraveyard.push(id);
         continue;

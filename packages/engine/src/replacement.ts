@@ -109,6 +109,8 @@ export function applyEntersReplacements(s: GameState, o: GameObject, ctx: Enters
   // 614.12 : « en arrivant, choisissez… » (le choix vient de la résolution, sinon choix par défaut).
   const choose = s.defs[o.defId]?.chooseOnEnter;
   if (choose) o.chosen = ctx.chosen ?? defaultChoice(s, o, choose);
+  // 714.3a : une Saga arrive avec un marqueur de savoir.
+  if (s.defs[o.defId]?.saga) changeCounters(s, o, "lore", 1);
   // 306.5b : un planeswalker arrive avec sa loyauté imprimée.
   const loyalty = s.defs[o.defId]?.loyalty;
   if (loyalty) changeCounters(s, o, "loyalty", loyalty);

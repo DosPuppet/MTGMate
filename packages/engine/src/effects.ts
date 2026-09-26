@@ -2104,6 +2104,21 @@ export function runEffect(s: GameState, r: Resolution, e: Effect): OpResult {
       rulesEvent(s, { e: "zone", oldId: exiled[0] ?? null, newId: melded.id, from: "exile", to: "battlefield", lki: null });
       return;
     }
+    case "setClassLevel": {
+      const o = s.objects[ctx.sourceId];
+      if (o?.zone !== "battlefield" || (o.classLevel ?? 1) >= e.level) return;
+      o.classLevel = e.level;
+      bump(s);
+      rulesEvent(s, { e: "classLevel", objectId: o.id, level: e.level });
+      return;
+    }
+    case "solveCase": {
+      const o = s.objects[ctx.sourceId];
+      if (o?.zone !== "battlefield" || o.solved) return;
+      o.solved = true;
+      bump(s);
+      return;
+    }
     case "unlockDoor": {
       for (const id of resolveRef(s, ctx, e.what)) unlockDoor(s, id, e.door);
       return;

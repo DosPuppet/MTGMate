@@ -79,6 +79,9 @@ export function Preview() {
             <div className="preview-text">{(lang === "fr" && face.prepareFace.fr?.text) || face.prepareFace.text}</div>
           </div>
         )}
+        {(obj?.classLevel || obj?.solved) && (
+          <div className="preview-stats">{obj.solved ? "Affaire résolue" : `Classe de niveau ${obj.classLevel}`}</div>
+        )}
         {obj?.power !== undefined && (
           <div className="preview-stats">
             Force/Endurance :{" "}

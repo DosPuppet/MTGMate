@@ -75,6 +75,11 @@ export interface CardScript {
   castCondition?: Condition;
   /** Reality Fracture : effet du sort préparé (le coût et le type viennent de Scryfall). */
   prepareSpell?: SpellDef;
+  /** Classe (716) : capacités ajoutées aux niveaux 2, 3… (les coûts de niveau sont lus dans le texte). */
+  classLevels?: AbilityDef[][];
+  /** Affaire (719) : « Pour résoudre — [condition] » et capacités « Résolue — … ». */
+  caseToSolve?: Condition;
+  caseSolved?: AbilityDef[];
 }
 
 export const target = {
@@ -705,6 +710,8 @@ export const when = {
   discardSelf: { on: "discardSelf" } as TriggerSpec,
   /** « Quand vous lancez ce sort » */
   castSelf: { on: "castSelf" } as TriggerSpec,
+  /** « Quand cette Classe atteint le niveau N » */
+  classLevel: (level: number): TriggerSpec => ({ on: "classLevel", level }),
   /** « Quand vous déverrouillez cette porte » (Salle ; la porte est fixée à l'import). */
   unlockThisDoor: { on: "unlockDoor" } as TriggerSpec,
   /** « Chaque fois que vous activez une capacité de loyauté [en retirant au moins N marqueurs] » */
@@ -760,6 +767,9 @@ export const cond = {
   activatedLoyalty: { kind: "activatedLoyaltyThisTurn" } as Condition,
   /** La source est préparée. */
   prepared: { kind: "prepared" } as Condition,
+  /** Classe : exactement à ce niveau ; Affaire : résolue. */
+  classLevel: (level: number): Condition => ({ kind: "classLevel", level }),
+  solved: { kind: "solved" } as Condition,
   /** Salle : toutes ses portes sont déverrouillées. */
   fullyUnlocked: { kind: "fullyUnlocked" } as Condition,
   /** Une seule créature attaque, et elle attaque un joueur. */
@@ -875,6 +885,23 @@ export function triggered(
     fromGraveyard: opts.fromGraveyard,
   };
 }
+
+/** Chapitre(s) de Saga (714.2) : « I, II — [effets] ». */
+export function chapter(
+  chapters: number[],
+  effects: Effects,
+  opts: { targets?: TargetSpec[]; label?: string } = {},
+): TriggeredAbilityDef {
+  return {
+    kind: "triggered",
+    trigger: { on: "chapter", chapters },
+    effects: effects.flat(),
+    targets: opts.targets ?? [],
+    label: opts.label ?? `Chapitre ${chapters.map(roman).join(", ")}`,
+  };
+}
+
+const roman = (n: number): string => ["", "I", "II", "III", "IV", "V", "VI"][n] ?? String(n);
 
 /** Capacité déclenchée modale (« choisissez un — »). */
 export function triggeredModal(

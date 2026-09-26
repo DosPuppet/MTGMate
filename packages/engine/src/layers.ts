@@ -125,9 +125,16 @@ function base(s: GameState, o: GameObject, defId = o.defId): Characteristics {
     power: cdaPower ?? cda ?? d.power ?? 0,
     toughness: cdaToughness ?? cda ?? d.toughness ?? 0,
     keywords: [...d.keywords],
-    abilities: d.abilities,
+    abilities: levelAbilities(o, d),
     controller: o.controller,
   };
+}
+
+/** Capacités imprimées d'un permanent : niveaux atteints d'une Classe (716), capacités « Résolue » d'une Affaire (719). */
+export function levelAbilities(o: GameObject, d: CardDef): AbilityDef[] {
+  if (o.zone !== "battlefield" || (!d.classLevels && !d.caseSolved)) return d.abilities;
+  const levels = (d.classLevels ?? []).slice(0, Math.max(0, (o.classLevel ?? 1) - 1)).flatMap((l) => l.abilities);
+  return [...d.abilities, ...levels, ...(o.solved ? (d.caseSolved ?? []) : [])];
 }
 
 /**
@@ -231,7 +238,9 @@ export function computeBattlefield(s: GameState): Map<ObjectId, Characteristics>
       const abilities =
         o.zone === "battlefield" && ownDef?.layout === "split" && ownDef.faceDefs
           ? roomBase(o, ownDef).abilities
-          : ownDef?.abilities;
+          : ownDef
+            ? levelAbilities(o, ownDef)
+            : [];
       for (const ab of abilities ?? []) {
         if (ab.kind !== "static") continue;
         if (ab.condition && !checkCondition(s, ab.condition, o.controller, id)) continue;
