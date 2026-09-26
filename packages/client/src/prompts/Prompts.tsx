@@ -329,11 +329,18 @@ function AbilityMenu() {
   const cancel = useGame((s) => s.cancel);
   const lang = useGame((s) => s.lang);
   if (!menu || !view) return null;
-  const source = view.battlefield.find((o) => o.id === menu.sourceId);
+  const source = [...view.battlefield, ...view.hand].find((o) => o.id === menu.sourceId);
   return (
     <Modal title={faceName(source, lang)}>
       <div className="choice-list">
         {menu.options.map((o, i) => {
+          if (o.type === "cast") {
+            return (
+              <button key={i} type="button" className="btn choice" onClick={() => beginCasting(o, menu.sourceId)}>
+                Lancer {faceName(source, lang)}
+              </button>
+            );
+          }
           if (o.type === "activate") {
             return (
               <button key={i} type="button" className="btn choice" onClick={() => beginCasting(o, menu.sourceId)}>

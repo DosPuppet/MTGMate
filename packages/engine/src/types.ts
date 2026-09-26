@@ -61,7 +61,9 @@ export type Keyword =
   | "unblockable"
   | "mustAttack"
   | "doesntUntap"
-  | "cantBeBlockedByWalls";
+  | "cantBeBlockedByWalls"
+  /** Convocation (702.51) : les créatures peuvent aider à payer le sort. */
+  | "convoke";
 
 /** Restrictions : affichées différemment des mots-clés. */
 export const RESTRICTIONS: readonly Keyword[] = [
@@ -135,6 +137,8 @@ export interface CardDef {
   shuffleIntoLibrary?: boolean;
   /** Peut être lancée depuis le cimetière en retirant N marqueurs parmi vos créatures (Quilled Greatwurm). */
   graveyardCastRemoveCounters?: number;
+  /** « Vous ne pouvez pas lancer ce sort à moins que… » (Proft, Sinister Mastermind : seuil). */
+  castCondition?: Condition;
   /** Seule la force est définie par une capacité (Enigma Drake). */
   cdaPower?: Amount;
   /** « Vous pouvez lancer ce sort comme s'il avait le flash si vous payez {2} de plus. » */
@@ -238,6 +242,8 @@ export interface ActivatedAbilityDef {
   once?: boolean;
   /** Capacité activée depuis le cimetière (« Renvoyez cette carte de votre cimetière… »). */
   fromGraveyard?: boolean;
+  /** Capacité activée depuis la main (cycle, « défaussez cette carte : … »). */
+  fromHand?: boolean;
   /** « N'activez qu'une fois par tour. » */
   oncePerTurn?: boolean;
   /** « N'activez que si… » / « … que pendant votre tour ». */
@@ -260,6 +266,8 @@ export interface CostDef {
   loyalty?: number;
   /** Exiler la source (depuis le champ de bataille ou le cimetière). */
   exileSelf?: boolean;
+  /** « Défaussez cette carte » (capacité activée depuis la main). */
+  discardSelf?: boolean;
   /** Renvoyer la source dans la main de son propriétaire (Maze's End). */
   bounceSelf?: boolean;
   /** Mettre des marqueurs sur la source (Mazemind Tome : marqueur de page). */
@@ -400,7 +408,9 @@ export type TriggerSpec =
   /** « Chaque fois que [cette créature] devient engagée » */
   | { on: "taps"; who: "self" | ObjectFilter }
   /** « Chaque fois que vous regardez (scry) ou surveillez » (Reality Fracture). */
-  | { on: "scryOrSurveil" };
+  | { on: "scryOrSurveil" }
+  /** « Quand vous défaussez cette carte » (se déclenche depuis le cimetière). */
+  | { on: "discardSelf" };
 
 /** Conditions (« if intermédiaire » 603.4, « tant que »…). */
 export type Condition =
@@ -537,6 +547,8 @@ export interface PlayerStaticAbilityDef {
   exileInstantsSorceries?: boolean;
   /** Vizier of the Menagerie : lancer des créatures du dessus de sa bibliothèque (mana de n'importe quel type). */
   castCreaturesFromTop?: boolean;
+  /** Samut, Tyrant of Naktamun : « les éphémères et rituels que vous contrôlez ont le second partagé ». */
+  splitSecondInstantsSorceries?: boolean;
   label?: string;
 }
 
@@ -658,7 +670,9 @@ export type Amount =
   /** Nombre de noms différents parmi les permanents correspondants (Maze's End). */
   | { kind: "distinctNames"; filter: ObjectFilter }
   /** Nombre de cartes dans une zone du contrôleur. */
-  | { kind: "cardsIn"; zone: "hand" | "graveyard" | "library" };
+  | { kind: "cardsIn"; zone: "hand" | "graveyard" | "library" }
+  /** Domaine : types de terrains de base parmi les terrains du contrôleur. */
+  | { kind: "basicLandTypes" };
 
 export interface TokenSpec {
   name: string;
@@ -752,7 +766,17 @@ export type Effect =
       maxManaValue?: Amount;
     }
   /** Chercher dans sa bibliothèque jusqu'à `count` cartes correspondant au filtre, puis mélanger. */
-  | { op: "search"; filter: ObjectFilter; count: Amount; to: MoveSpec; who?: Ref; optional?: boolean; store?: string }
+  | {
+      op: "search";
+      filter: ObjectFilter;
+      count: Amount;
+      to: MoveSpec;
+      who?: Ref;
+      optional?: boolean;
+      store?: string;
+      /** « … cartes de terrain de base avec des noms différents » */
+      distinctNames?: boolean;
+    }
   | { op: "shuffle"; who: Ref }
   /** Jeton copie d'un objet (valeurs copiables), avec d'éventuelles modifications. */
   | {

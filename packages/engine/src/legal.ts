@@ -5,6 +5,7 @@
 import { availableMana, canPay, manaAbilitiesOf, manaSources, manaValue, totalCost } from "./mana";
 import {
   abilitiesOf,
+  abilityZone,
   activatedAbility,
   additionalOptions,
   canCastTiming,
@@ -16,6 +17,7 @@ import {
   sorceryTiming,
   spellCost,
   spellView,
+  splitSecondOnStack,
 } from "./stack";
 import { obj } from "./state";
 import { legalTargets } from "./targets";
@@ -103,7 +105,7 @@ export function legalActions(s: GameState, player: PlayerId): ActionOption[] {
     if (modes.length === 0) continue;
     const additional = additionalOptions(s, player, card, d);
     if (!additional) continue;
-    const purpose = { spell: spellView(d, player) };
+    const purpose = { spell: spellView(d, player), convoke: d.keywords.includes("convoke") };
     const base = { flashback, anyMana: terms.anyMana };
     // « Sacrifiez une créature ou payez {3}{B} » : sans créature à sacrifier, le mana s'ajoute au coût.
     const sac = additional.sacrifice;
@@ -144,15 +146,16 @@ export function legalActions(s: GameState, player: PlayerId): ActionOption[] {
     });
   }
 
-  const ownGraveyard = (s.players[player]?.graveyard ?? []).filter((id) =>
-    s.defs[obj(s, id).defId]?.abilities.some((ab) => ab.kind === "activated" && ab.fromGraveyard),
-  );
-  for (const id of [...s.battlefield, ...ownGraveyard]) {
+  const offField = (zone: "graveyard" | "hand", flag: "fromGraveyard" | "fromHand") =>
+    (s.players[player]?.[zone] ?? []).filter((id) =>
+      s.defs[obj(s, id).defId]?.abilities.some((ab) => ab.kind === "activated" && ab[flag]),
+    );
+  for (const id of [...s.battlefield, ...offField("graveyard", "fromGraveyard"), ...offField("hand", "fromHand")]) {
     const o = obj(s, id);
     if (o.zone === "battlefield" ? o.controller !== player : o.owner !== player) continue;
     abilitiesOf(s, id).forEach((_, index) => {
       const ab = activatedAbility(s, id, index);
-      if (!ab || !!ab.fromGraveyard !== (o.zone === "graveyard") || !canPayNonManaCost(s, id, ab, index)) return;
+      if (!ab || abilityZone(ab) !== o.zone || !canPayNonManaCost(s, id, ab, index)) return;
       if (ab.sorcerySpeed && !sorceryTiming(s, player)) return;
       const exclude = ab.cost.tap ? new Set([id]) : undefined;
       if (ab.cost.mana && !canPay(s, player, totalCost(ab.cost.mana, 0), exclude, { abilitySource: id })) return;
@@ -176,6 +179,8 @@ export function legalActions(s: GameState, player: PlayerId): ActionOption[] {
     const ab = manaAbilitiesOf(s, src.id)[src.ability];
     if (ab) out.push({ type: "tapForMana", source: src.id, ability: src.ability, colors: ab.produce });
   }
+  // 702.61 : second partagé — ni sorts ni capacités (hors mana) tant que le sort est sur la pile.
+  if (splitSecondOnStack(s)) return out.filter((a) => a.type === "pass" || a.type === "tapForMana");
   return out;
 }
 

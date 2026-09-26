@@ -1,7 +1,15 @@
 /**
  * Conversion des données Scryfall (data/*.json) en définitions de cartes du moteur.
  */
-import { type CardDef, type CardScript, type CardType, type Color, type Keyword, parseManaCost } from "@mtgx/engine";
+import {
+  type CardDef,
+  type CardScript,
+  type CardType,
+  type Color,
+  type Keyword,
+  type ObjectFilter,
+  parseManaCost,
+} from "@mtgx/engine";
 
 export interface RawCard {
   name: string;
@@ -48,6 +56,7 @@ const KEYWORD_NAMES: Record<string, Keyword> = {
   flash: "flash",
   hexproof: "hexproof",
   indestructible: "indestructible",
+  convoke: "convoke",
 };
 
 const CARD_TYPES = new Set<CardType>([
@@ -97,11 +106,43 @@ export function parseCrew(text: string): number | undefined {
 }
 
 /** Le texte ne contient-il que des mots-clés gérés par le moteur (créature « vanilla » ou « french vanilla ») ? */
+/** Cycle (702.29) : « Cycling {2} », « Basic landcycling {2} », « Islandcycling {2} », « Wizardcycling {1} »… */
+const CYCLING = /^(Basic land|[A-Z][a-z]+)?cycling ((?:\{[^}]+\})+)/im;
+
+/**
+ * Capacité de cycle lue dans le texte : « [coût], défaussez cette carte : piochez une carte » ou, pour un
+ * cycle de type, « cherchez une carte [du type], révélez-la, mettez-la dans votre main ».
+ */
+export function parseCycling(text: string): CardDef["abilities"][number] | undefined {
+  const m = CYCLING.exec(stripReminder(text));
+  if (!m) return undefined;
+  const kind = m[1];
+  const filter: ObjectFilter | undefined =
+    kind === "Basic land"
+      ? { types: ["Land"], basic: true }
+      : kind === "Land"
+        ? { types: ["Land"] }
+        : kind
+          ? { subtype: kind }
+          : undefined;
+  return {
+    kind: "activated",
+    cost: { mana: parseManaCost(m[2] as string), discardSelf: true },
+    targets: [],
+    effects: filter
+      ? [{ op: "search", filter, count: 1, to: { to: "hand" } }]
+      : [{ op: "draw", who: { kind: "you" }, amount: 1 }],
+    fromHand: true,
+    label: kind ? `Cycle de ${kind === "Basic land" ? "terrain de base" : kind === "Land" ? "terrain" : kind}` : "Cycle",
+  };
+}
+
 export function onlyKeywords(text: string): boolean {
   const t = stripReminder(text);
   if (!t) return true;
   return t
     .split("\n")
+    .filter((line) => !CYCLING.test(line.trim()))
     .map((line) => line.replace(new RegExp(WARD.source, "gi"), "ward").trim())
     .every((line) => line.split(/,\s*/).every((k) => k.trim().toLowerCase() in KEYWORD_NAMES));
 }
@@ -211,8 +252,10 @@ export function toCardDef(raw: RawCard, script: CardScript | undefined, set: str
     abilities: [
       ...(script?.abilities ?? []),
       ...intrinsicAbilities(keywords, ward, parseEquip(raw.oracleText), parseCrew(raw.oracleText)),
+      ...(parseCycling(raw.oracleText) ? [parseCycling(raw.oracleText) as CardDef["abilities"][number]] : []),
     ],
     cdaPower: script?.cdaPower,
+    castCondition: script?.castCondition,
     flashExtraCost: script?.flashExtraCost ? parseManaCost(script.flashExtraCost) : undefined,
     opponentDiscardToBattlefield: script?.opponentDiscardToBattlefield,
     controlsEnchanted: script?.controlsEnchanted,

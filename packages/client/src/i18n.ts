@@ -64,6 +64,7 @@ export const KEYWORD_LABEL: Record<Keyword, string> = {
   mustAttack: "Attaque à chaque combat",
   doesntUntap: "Ne se dégage pas",
   cantBeBlockedByWalls: "Imblocable par les Murs",
+  convoke: "Convocation",
 };
 
 export function faceName(face: CardFace | undefined, lang: Lang): string {

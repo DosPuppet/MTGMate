@@ -52,6 +52,17 @@ export function bump(s: GameState): void {
 /** 604.3 / 613.4a : F/E définies par une capacité (« égales au nombre de cartes dans les cimetières adverses »). */
 function cdaValue(s: GameState, o: GameObject, a: Amount): number {
   if (typeof a === "number") return a;
+  if (a.kind === "basicLandTypes") {
+    // Domaine : sous-types imprimés des terrains du contrôleur (pas de récursion dans les couches).
+    const subtypes = new Set(
+      s.battlefield.flatMap((id) => {
+        const x = obj(s, id);
+        const d = s.defs[x.defId];
+        return x.controller === o.controller && d?.types.includes("Land") ? d.subtypes : [];
+      }),
+    );
+    return ["Plains", "Island", "Swamp", "Mountain", "Forest"].filter((t) => subtypes.has(t)).length;
+  }
   if (a.kind !== "count") return 0;
   if (!a.zone || a.zone === "battlefield") {
     // « égales au nombre de créatures que vous contrôlez » (types imprimés : pas de récursion dans les couches).

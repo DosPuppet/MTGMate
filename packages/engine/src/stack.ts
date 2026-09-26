@@ -241,11 +241,22 @@ export interface CastTerms {
 }
 
 /** D'où, et à quelles conditions, ce joueur peut-il lancer cette carte ? */
+/** 702.61 : un sort avec le second partagé est sur la pile — seules les capacités de mana restent possibles. */
+export function splitSecondOnStack(s: GameState): boolean {
+  return s.stack.some((item) => {
+    if (item.kind !== "spell") return false;
+    const d = s.defs[item.sourceDefId];
+    const instantOrSorcery = !!d && (d.types.includes("Instant") || d.types.includes("Sorcery"));
+    return instantOrSorcery && playerStatic(s, item.controller, "splitSecondInstantsSorceries");
+  });
+}
+
 export function castTerms(s: GameState, player: PlayerId, card: ObjectId): CastTerms | null {
   const o = s.objects[card];
   if (!o) return null;
   const d = s.defs[o.defId];
   if (!d) return null;
+  if (d.castCondition && !checkCondition(s, d.castCondition, player, card)) return null;
   if (o.zone === "hand") {
     if (o.owner !== player) return null;
     const free = controlledAbilities(s, player).some((ab) => ab.kind === "castPermission" && ab.freeFromHand);
@@ -356,6 +367,7 @@ export function castSpell(s: GameState, player: PlayerId, card: ObjectId, choice
   const d = s.defs[o.defId];
   if (!d || d.types.includes("Land")) throw new RulesError("Ce n'est pas un sort");
   if (!d.implemented) throw new RulesError(`${d.name} n'est pas encore géré par le moteur`);
+  if (splitSecondOnStack(s)) throw new RulesError("Un sort avec le second partagé est sur la pile");
   // Harbinger of the Tides : « comme s'il avait le flash si vous payez {2} de plus ».
   const flashExtra = !terms.anyTime && !canCastTiming(s, player, d) ? d.flashExtraCost : undefined;
   if (!terms.anyTime && !canCastTiming(s, player, d) && !flashExtra)
@@ -416,7 +428,7 @@ export function castSpell(s: GameState, player: PlayerId, card: ObjectId, choice
   };
   s.stack.push(item);
   try {
-    const used = payMana(s, player, cost, undefined, { spell: view });
+    const used = payMana(s, player, cost, undefined, { spell: view, convoke: d.keywords.includes("convoke") });
     // Effets associés au mana dépensé, si ce sort correspond (Carnelian Orb, Pyromancer's Goggles).
     const riders = used.flatMap((ab) => (ab.rider && matchesView(view, ab.rider.spell, player) ? [ab.rider.effect] : []));
     if (riders.length) item.riders = riders;
@@ -563,13 +575,18 @@ function spyglassed(s: GameState, source: ObjectId): boolean {
   });
 }
 
+/** Zone d'où s'active une capacité : champ de bataille, cimetière ou main. */
+export function abilityZone(ab: ActivatedAbilityDef): "battlefield" | "graveyard" | "hand" {
+  return ab.fromGraveyard ? "graveyard" : ab.fromHand ? "hand" : "battlefield";
+}
+
 /** Les coûts non-mana de la capacité peuvent-ils être payés ? */
 export function canPayNonManaCost(s: GameState, source: ObjectId, ab: ActivatedAbilityDef, index = -1): boolean {
   const o = s.objects[source];
-  if (!o || o.zone !== (ab.fromGraveyard ? "graveyard" : "battlefield")) return false;
+  if (!o || o.zone !== abilityZone(ab)) return false;
   if (ab.once && o.used?.includes(index)) return false;
   if (ab.oncePerTurn && o.activatedTurn?.[index] === s.turn.number) return false;
-  const who = ab.fromGraveyard ? o.owner : o.controller;
+  const who = abilityZone(ab) !== "battlefield" ? o.owner : o.controller;
   if (ab.activationCondition && !checkCondition(s, ab.activationCondition, who, source)) return false;
   // Sorcerous Spyglass : les capacités (non de mana) des sources du nom choisi ne peuvent pas être activées.
   if (spyglassed(s, source)) return false;
@@ -584,7 +601,7 @@ export function canPayNonManaCost(s: GameState, source: ObjectId, ab: ActivatedA
     const host = o.attachedTo;
     if (!host || !onBattlefield(s, host) || obj(s, host).tapped || isSummoningSick(s, host)) return false;
   }
-  const player = ab.fromGraveyard ? o.owner : o.controller;
+  const player = abilityZone(ab) !== "battlefield" ? o.owner : o.controller;
   if (ab.cost.removeCounters && (o.counters[ab.cost.removeCounters.kind] ?? 0) < ab.cost.removeCounters.n) return false;
   if (ab.cost.payLife && (s.players[player]?.life ?? 0) < ab.cost.payLife) return false;
   if (ab.cost.sacrifice && sacrificeOptions(s, player, source, ab).length < ab.cost.sacrifice.count) return false;
@@ -596,7 +613,8 @@ export function activateAbility(s: GameState, player: PlayerId, source: ObjectId
   const o = s.objects[source];
   const ab = activatedAbility(s, source, index);
   if (!ab || !o) throw new RulesError("Capacité inconnue");
-  if (ab.fromGraveyard ? o.zone !== "graveyard" || o.owner !== player : o.zone !== "battlefield" || o.controller !== player) {
+  const zone = abilityZone(ab);
+  if (o.zone !== zone || (zone === "battlefield" ? o.controller : o.owner) !== player) {
     throw new RulesError("Vous ne contrôlez pas ce permanent");
   }
   if (
@@ -606,6 +624,7 @@ export function activateAbility(s: GameState, player: PlayerId, source: ObjectId
     throw new RulesError("Cette capacité s'active seulement en rituel");
   }
   if (!canPayNonManaCost(s, source, ab, index)) throw new RulesError("Impossible de payer le coût");
+  if (splitSecondOnStack(s)) throw new RulesError("Un sort avec le second partagé est sur la pile");
   let sacrificed: ObjectId[] = [];
   if (ab.cost.sacrifice) {
     const options = sacrificeOptions(s, player, source, ab);
@@ -634,9 +653,13 @@ export function activateAbility(s: GameState, player: PlayerId, source: ObjectId
   };
   s.stack.push(item);
   // Coûts : mana (sans engager la source si elle doit s'engager pour le coût), puis {T}, puis sacrifice.
+  // Les permanents choisis pour d'autres coûts (sacrifier, engager, équipage) ne servent pas à payer le mana.
+  const tapOthers = ab.cost.tapOthers ? tapOthersOptions(s, player, source, ab).slice(0, ab.cost.tapOthers.count) : [];
+  const crew = ab.cost.crew !== undefined ? (crewOptions(s, player, source, ab.cost.crew) ?? []) : [];
   if (ab.cost.mana) {
+    const reserved = new Set([...sacrificed, ...tapOthers, ...crew, ...(ab.cost.tap ? [source] : [])]);
     try {
-      payMana(s, player, totalCost(ab.cost.mana, x), ab.cost.tap ? new Set([source]) : undefined, { abilitySource: source });
+      payMana(s, player, totalCost(ab.cost.mana, x), reserved, { abilitySource: source });
     } catch {
       throw new RulesError("Mana insuffisant");
     }
@@ -650,17 +673,16 @@ export function activateAbility(s: GameState, player: PlayerId, source: ObjectId
   if (ab.once) o.used = [...(o.used ?? []), index];
   if (ab.oncePerTurn) o.activatedTurn = { ...(o.activatedTurn ?? {}), [index]: s.turn.number };
   if (ab.cost.addCounters) changeCounters(s, o, ab.cost.addCounters.kind, ab.cost.addCounters.n);
-  if (ab.cost.crew !== undefined) for (const id of crewOptions(s, player, source, ab.cost.crew) ?? []) tapObject(s, obj(s, id));
+  for (const id of crew) tapObject(s, obj(s, id));
   if (ab.cost.removeCounters) changeCounters(s, o, ab.cost.removeCounters.kind, -ab.cost.removeCounters.n);
   if (ab.cost.payLife) loseLife(s, player, ab.cost.payLife);
-  if (ab.cost.tapOthers) {
-    for (const id of tapOthersOptions(s, player, source, ab).slice(0, ab.cost.tapOthers.count)) tapObject(s, obj(s, id));
-  }
+  for (const id of tapOthers) tapObject(s, obj(s, id));
   // Les permanents sacrifiés restent consultables (dernières informations connues : « sa endurance »).
   item.sacrificed = sacrificed.length ? [...sacrificed] : undefined;
   for (const id of sacrificed) putIntoGraveyard(s, id);
   if (ab.cost.sacrificeSelf) putIntoGraveyard(s, source);
   if (ab.cost.exileSelf) moveObject(s, source, "exile");
+  if (ab.cost.discardSelf) announceDiscard(s, player, moveObject(s, source, "graveyard"));
   if (ab.cost.bounceSelf) moveObject(s, source, "hand");
   s.priority.passes = 0;
   emit({ type: "activate", player, stackId: item.id, defId: o.defId, targets: flatTargets(targets) });

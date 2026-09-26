@@ -67,6 +67,8 @@ export interface CardScript {
   additionalCost?: AdditionalCost;
   costReduction?: { generic: Amount; condition?: Condition };
   keywords?: Keyword[];
+  /** « Vous ne pouvez pas lancer ce sort à moins que… » */
+  castCondition?: Condition;
 }
 
 export const target = {
@@ -177,6 +179,8 @@ export const amount = {
   maxPower: (filter: ObjectFilter): Amount => ({ kind: "maxPower", filter }),
   distinctNames: (filter: ObjectFilter): Amount => ({ kind: "distinctNames", filter }),
   cardsIn: (zone: "hand" | "graveyard" | "library"): Amount => ({ kind: "cardsIn", zone }),
+  /** Domaine : nombre de types de terrains de base parmi vos terrains. */
+  basicLandTypes: { kind: "basicLandTypes" } as Amount,
   v: (name: string): Amount => ({ kind: "var", name }),
 };
 
@@ -492,7 +496,10 @@ export function activated(opts: {
   oncePerTurn?: boolean;
   activationCondition?: Condition;
   fromGraveyard?: boolean;
+  /** Activée depuis la main (cycle, « défaussez cette carte : … »). */
+  fromHand?: boolean;
   exileSelf?: boolean;
+  discardSelf?: boolean;
   bounceSelf?: boolean;
   addCounters?: { kind: string; n: number };
   label?: string;
@@ -509,6 +516,7 @@ export function activated(opts: {
       tapAttached: opts.tapAttached,
       payLife: opts.payLife,
       exileSelf: opts.exileSelf,
+      discardSelf: opts.discardSelf,
       bounceSelf: opts.bounceSelf,
       addCounters: opts.addCounters,
     },
@@ -519,6 +527,7 @@ export function activated(opts: {
     oncePerTurn: opts.oncePerTurn,
     activationCondition: opts.activationCondition,
     fromGraveyard: opts.fromGraveyard,
+    fromHand: opts.fromHand,
     label: opts.label,
   };
 }
@@ -583,6 +592,8 @@ export const when = {
   targetedBySpellYouCast: { on: "becomesTarget", who: "self", bySpellYouControl: true } as TriggerSpec,
   /** « Chaque fois que vous regardez ou surveillez » */
   scryOrSurveil: { on: "scryOrSurveil" } as TriggerSpec,
+  /** « Quand vous défaussez cette carte » (avec `fromGraveyard`). */
+  discardSelf: { on: "discardSelf" } as TriggerSpec,
 };
 
 /** Conditions courantes (raid, morbide…). */

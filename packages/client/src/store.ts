@@ -611,6 +611,11 @@ export const useGame = create<Store>((set, get) => {
       const land = acts.find((a) => a.type === "playLand" && a.card === id);
       if (land) return get().decide({ type: "playLand", card: id });
       const cast = acts.find((a): a is CastOption => a.type === "cast" && a.card === id);
+      // Capacités activées depuis la main (cycle, « défaussez cette carte : … »).
+      const fromHand = acts.filter((a): a is ActivateOption => a.type === "activate" && a.source === id);
+      if (fromHand.length && (cast || fromHand.length > 1))
+        return set({ abilityMenu: { sourceId: id, options: [...(cast ? [cast] : []), ...fromHand] } });
+      if (fromHand[0] && !cast) return get().beginCasting(fromHand[0], id);
       if (cast) return get().beginCasting(cast, id);
       if (p?.kind === "priority" && p.player === view.viewer) {
         const card = view.hand.find((c) => c.id === id);

@@ -258,6 +258,13 @@ export function evalAmount(s: GameState, ctx: EffectContext, a: Amount): number 
           .filter((id) => matchesObjectFilter(s, ctx.controller, id, a.filter, ctx.sourceId))
           .map((id) => chars(s, id).power),
       );
+    case "basicLandTypes": {
+      const basics = ["Plains", "Island", "Swamp", "Mountain", "Forest"];
+      const lands = s.battlefield.filter(
+        (id) => s.objects[id]?.controller === ctx.controller && chars(s, id).types.includes("Land"),
+      );
+      return basics.filter((t) => lands.some((id) => chars(s, id).subtypes.includes(t))).length;
+    }
     case "distinctNames":
       return new Set(
         s.battlefield
@@ -1258,6 +1265,16 @@ export function runEffect(s: GameState, r: Resolution, e: Effect): OpResult {
             };
           }
           picked = answer.map(String);
+          // « avec des noms différents » : un seul exemplaire de chaque nom.
+          if (e.distinctNames) {
+            const names = new Set<string>();
+            picked = picked.filter((id) => {
+              const n = s.defs[s.objects[id]?.defId ?? ""]?.name ?? id;
+              if (names.has(n)) return false;
+              names.add(n);
+              return true;
+            });
+          }
         }
         r.vars[key(`sdone-${p}`)] = [1];
         // 701.23 : on mélange après la recherche ; « sur le dessus » s'applique après le mélange.

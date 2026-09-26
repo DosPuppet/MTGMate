@@ -163,4 +163,20 @@ export const RED: Record<string, CardScript> = {
       ),
     ],
   },
+  "Awaken the Inferno": {
+    spell: spell(
+      [
+        target.creatureOrPlaneswalker("t", { controller: "opponent" }),
+        target.upTo(1, target.creature("c", { controller: "you" })),
+      ],
+      [fx.damage(6, ref.target()), fx.addCounters(ref.target("c"), 1)],
+    ),
+  },
+  "Winter, Team Player": {
+    abilities: [
+      triggered(when.castSpell("you", { notTypes: ["Creature"] }), [fx.pumpAll(CREATURE_YOU_CONTROL, 1, 0)], {
+        label: "vos créatures +1/+0",
+      }),
+    ],
+  },
 };

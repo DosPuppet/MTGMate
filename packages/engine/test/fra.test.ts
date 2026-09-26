@@ -90,3 +90,100 @@ describe("Reality Fracture, lot A", () => {
     expect(chars(s, angel).power).toBe(0); // 4 - 4 cartes au cimetière
   });
 });
+
+describe("Reality Fracture, lot B", () => {
+  const activate = (s: S, p: string, source: string, ability = 0, extra: Record<string, unknown> = {}) =>
+    act(s, p, { type: "activate", source, ability, ...extra });
+  const handNames = (s: S, p: string) => (s.players[p]?.hand ?? []).map((id) => s.defs[s.objects[id]?.defId ?? ""]?.name);
+
+  it("cycle de terrain de base : depuis la main, défausse la carte et cherche un terrain de base", () => {
+    let s = scenario({
+      p1: { hand: ["Apex Witchstalker"], battlefield: lands("Swamp", 2), library: ["Plains", "Swamp", "Swamp"] },
+    });
+    const witch = idOf(s, "p1", "hand", "Apex Witchstalker");
+    const opt = legalActions(s, "p1").find((a) => a.type === "activate" && a.source === witch);
+    expect(opt).toBeDefined();
+    s = activate(s, "p1", witch, (opt as { ability: number }).ability);
+    expect(s.players.p1?.graveyard.map((id) => s.defs[s.objects[id]?.defId ?? ""]?.name)).toContain("Apex Witchstalker");
+    s = passBoth(s);
+    if (s.pending?.kind === "choice") s = act(s, "p1", { type: "choose", values: s.pending.request.suggested });
+    expect(handNames(s, "p1")).toContain("Plains");
+  });
+
+  it("Proft, Sinister Mastermind : ne se lance qu'avec le seuil ; « défaussez cette carte » depuis la main", () => {
+    const s = scenario({
+      p1: { hand: ["Proft, Sinister Mastermind"], battlefield: lands("Swamp", 3) },
+      p2: { battlefield: ["Savannah Lions"] },
+    });
+    const proft = idOf(s, "p1", "hand", "Proft, Sinister Mastermind");
+    const acts = legalActions(s, "p1");
+    expect(acts.some((a) => a.type === "cast" && a.card === proft)).toBe(false);
+    expect(acts.some((a) => a.type === "activate" && a.source === proft)).toBe(true);
+    const t = scenario({
+      p1: { hand: ["Proft, Sinister Mastermind"], battlefield: lands("Swamp", 3), graveyard: lands("Swamp", 7) },
+    });
+    expect(
+      legalActions(t, "p1").some((a) => a.type === "cast" && a.card === idOf(t, "p1", "hand", "Proft, Sinister Mastermind")),
+    ).toBe(true);
+  });
+
+  it("Samut : un éphémère sur la pile a le second partagé — l'adversaire ne peut que passer ou produire du mana", () => {
+    let s = scenario({
+      p1: { hand: ["Last Gasp"], battlefield: ["Samut, Tyrant of Naktamun", ...lands("Swamp", 2)] },
+      p2: { hand: ["Unsummon"], battlefield: ["Island", "Serra Angel"] },
+    });
+    s = cast(s, "p1", "Last Gasp", { targets: { t: [idOf(s, "p2", "battlefield", "Serra Angel")] } });
+    s = act(s, "p1", { type: "pass" });
+    expect(s.pending?.player).toBe("p2");
+    expect(legalActions(s, "p2").every((a) => a.type === "pass" || a.type === "tapForMana")).toBe(true);
+  });
+
+  it("convocation : Winter se paie en engageant des créatures", () => {
+    const s = scenario({
+      p1: {
+        hand: ["Winter, Team Player"],
+        battlefield: ["Mountain", "Mountain", "Savannah Lions", "Savannah Lions", "Serra Angel"],
+      },
+    });
+    const winter = idOf(s, "p1", "hand", "Winter, Team Player");
+    expect(legalActions(s, "p1").some((a) => a.type === "cast" && a.card === winter)).toBe(true);
+    const t = act(s, "p1", { type: "cast", card: winter });
+    const tapped = t.battlefield.filter((id) => t.objects[id]?.tapped).length;
+    expect(tapped).toBe(5); // 2 terrains + 3 créatures pour {4}{R}
+  });
+
+  it("exhaust : Liliana the Repentant ne s'active qu'une seule fois", () => {
+    let s = scenario({
+      p1: { battlefield: ["Liliana the Repentant", ...lands("Swamp", 12)], graveyard: ["Serra Angel", "Savannah Lions"] },
+    });
+    const lili = idOf(s, "p1", "battlefield", "Liliana the Repentant");
+    const can = (x: S) => legalActions(x, "p1").some((a) => a.type === "activate" && a.source === lili);
+    expect(can(s)).toBe(true);
+    s = activate(s, "p1", lili, 1, { targets: { t: [idOf(s, "p1", "graveyard", "Serra Angel")] } });
+    s = passBoth(s);
+    expect(can(s)).toBe(false);
+  });
+
+  it("domaine et recherche de noms différents : Fblthp, Knows the Way", () => {
+    const s = scenario({ p1: { battlefield: ["Fblthp, Knows the Way", "Plains", "Island", "Island"] } });
+    expect(chars(s, idOf(s, "p1", "battlefield", "Fblthp, Knows the Way")).power).toBe(2);
+  });
+
+  it("Titanbones : « quand vous défaussez cette carte », vous gagnez 3 PV", () => {
+    // Titanbones est défaussée par l'effet de Rank Rat adverse.
+    let s = scenario({
+      p1: { hand: ["Titanbones, Towering Heart"] },
+      p2: { hand: ["Rank Rat"], battlefield: lands("Swamp", 2) },
+      active: "p2",
+    });
+    s = act(s, "p2", { type: "cast", card: idOf(s, "p2", "hand", "Rank Rat") });
+    for (let i = 0; i < 6 && s.players.p1?.life === 20; i++) {
+      if (s.pending?.kind === "discard")
+        s = act(s, s.pending.player, { type: "discard", cards: s.players.p1?.hand.slice(0, 1) ?? [] });
+      else if (s.pending?.kind === "choice")
+        s = act(s, s.pending.player, { type: "choose", values: s.pending.request.suggested });
+      else s = passBoth(s);
+    }
+    expect(s.players.p1?.life).toBe(23);
+  });
+});

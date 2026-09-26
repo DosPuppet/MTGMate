@@ -73,6 +73,8 @@ export interface ManaSource {
   isCreature: boolean;
   /** La source se sacrifie (Trésor) : utilisée en dernier recours. */
   sacrifice: boolean;
+  /** Créature engagée pour la convocation. */
+  convoke?: boolean;
 }
 
 /** Capacités de mana d'un objet, y compris celles intrinsèques aux types de terrain de base (305.6). */
@@ -115,7 +117,12 @@ export interface ManaPurpose {
   spell?: LkiSnapshot;
   /** Capacité activée : sa source. */
   abilitySource?: ObjectId;
+  /** Convocation (702.51) : les créatures dégagées peuvent payer {1} ou un mana de leur couleur. */
+  convoke?: boolean;
 }
+
+/** Pseudo-capacité de mana d'une créature engagée pour la convocation. */
+export const CONVOKE = -1;
 
 function restrictionAllows(
   s: GameState,
@@ -160,8 +167,18 @@ export function manaSources(
       });
     });
   }
-  // Préférence : terrains, puis créatures, puis sources sacrifiées ; les moins flexibles d'abord.
-  const rank = (x: ManaSource) => (x.sacrifice ? 2 : x.isCreature ? 1 : 0);
+  // Convocation : chaque créature dégagée sans capacité de mana paie {1} ou un mana de sa couleur (utilisée en dernier).
+  if (purpose?.convoke) {
+    for (const id of s.battlefield) {
+      const o = obj(s, id);
+      if (o.controller !== player || exclude.has(id) || o.tapped || !isCreature(s, id)) continue;
+      if (manaAbilitiesOf(s, id).length) continue;
+      const colors = chars(s, id).colors;
+      out.push({ id, ability: CONVOKE, colors: [...colors, "C"], amount: 1, isCreature: true, sacrifice: false, convoke: true });
+    }
+  }
+  // Préférence : terrains, puis créatures, puis sources sacrifiées, puis convocation ; les moins flexibles d'abord.
+  const rank = (x: ManaSource) => (x.convoke ? 3 : x.sacrifice ? 2 : x.isCreature ? 1 : 0);
   return out.sort((a, b) => rank(a) - rank(b) || a.colors.length - b.colors.length);
 }
 
@@ -309,9 +326,15 @@ export function payMana(
   if (!plan) throw new Error("Mana insuffisant");
   // Capacités de mana utilisées (effets associés au mana dépensé : Carnelian Orb…).
   const used = plan.taps.map((t) => manaAbilitiesOf(s, t.id)[t.ability]).filter((a): a is ManaAbilityDef => !!a);
-  for (const t of plan.taps) activateManaAbility(s, player, t.id, t.ability, t.color);
   const pool = s.players[player]?.manaPool;
   if (!pool) throw new Error("Joueur inconnu");
+  for (const t of plan.taps) {
+    if (t.ability === CONVOKE) {
+      // La créature engagée paie un mana de sa couleur (ou {1}).
+      tapObject(s, obj(s, t.id));
+      pool[t.color] += 1;
+    } else activateManaAbility(s, player, t.id, t.ability, t.color);
+  }
   for (const m of MANA_TYPES) {
     if (pool[m] < plan.spend[m]) throw new Error("Mana insuffisant");
     pool[m] -= plan.spend[m];

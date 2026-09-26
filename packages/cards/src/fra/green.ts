@@ -1,3 +1,4 @@
+import type { Effect } from "@mtgx/engine";
 /** Reality Fracture — cartes vertes. */
 import {
   activated,
@@ -184,6 +185,40 @@ export const GREEN: Record<string, CardScript> = {
         effects: [fx.addCounters(ref.target(), 1)],
         label: "Marqueur sur une créature non légendaire",
       }),
+    ],
+  },
+  "Vinelasher Adept": {
+    abilities: [
+      triggered(when.entersSelf, [fx.addCounters(ref.target(), 3)], {
+        targets: [target.creature("t")],
+        label: "trois marqueurs",
+      }),
+    ],
+  },
+  "Sureshot Sower": {
+    abilities: [
+      activated({
+        mana: "{3}{G}",
+        fromHand: true,
+        discardSelf: true,
+        targets: [target.creature("t", { keyword: "flying" })],
+        effects: [fx.destroy(ref.target())],
+        label: "Défaussez : détruire une créature volante",
+      }),
+    ],
+  },
+  "Fblthp, Knows the Way": {
+    cdaPower: amount.basicLandTypes,
+    abilities: [
+      triggered(when.entersSelf, [{ ...fx.search(BASIC_LAND, { to: "hand" }, amount.x), distinctNames: true } as Effect], {
+        label: "jusqu'à X terrains de base de noms différents",
+      }),
+    ],
+  },
+  "Titanbones, Towering Heart": {
+    abilities: [
+      triggered(when.gainLife, [fx.addCounters(ref.self, 2)], { label: "deux marqueurs +1/+1" }),
+      triggered(when.discardSelf, [fx.gainLife(3)], { fromGraveyard: true, label: "défaussée : +3 PV" }),
     ],
   },
 };

@@ -72,4 +72,48 @@ export const BLACK: Record<string, CardScript> = {
       triggered(when.discard("any"), [fx.damage(1, ref.eachOpponent)], { label: "défausse : 1 blessure" }),
     ],
   },
+  "Apex Witchstalker": {
+    abilities: [
+      triggered(when.entersSelf, [fx.gainLife(2)], { label: "+2 PV" }),
+      triggered(when.diesSelf, [fx.gainLife(2)], { label: "+2 PV" }),
+    ],
+  },
+  "Proft, Sinister Mastermind": {
+    castCondition: cond.threshold,
+    abilities: [
+      activated({
+        mana: "{B}",
+        fromHand: true,
+        discardSelf: true,
+        targets: [target.creature("t")],
+        effects: [fx.pump(ref.target(), -3, -1)],
+        label: "Défaussez : -3/-1",
+      }),
+    ],
+  },
+  "Liliana the Repentant": {
+    abilities: [
+      triggered(
+        when.enters({ anyOf: [{ types: ["Creature"] }, { types: ["Planeswalker"] }], controller: "you", other: true }),
+        [fx.mill(2)],
+        { label: "meule 2" },
+      ),
+      // Exhaust : une seule activation.
+      activated({
+        mana: "{5}{B}",
+        once: true,
+        sorcerySpeed: true,
+        targets: [
+          target.cardInGraveyard(
+            "t",
+            { anyOf: [{ types: ["Creature"] }, { types: ["Planeswalker"] }] },
+            "you",
+            "carte de créature ou de planeswalker de votre cimetière",
+          ),
+        ],
+        effects: [fx.toBattlefield(ref.target()), fx.addCounters(ref.self, 1)],
+        label: "Épuisement : réanimer",
+      }),
+    ],
+  },
 };

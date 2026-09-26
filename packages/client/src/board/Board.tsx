@@ -645,7 +645,9 @@ function Hand() {
   // Un glisser se termine aussi par un « tap » : on l'ignore pour ne pas envoyer deux décisions.
   const dragged = useRef(false);
   const acts = myActions(view);
-  const playable = new Set(acts.flatMap((a) => (a.type === "cast" || a.type === "playLand" ? [a.card] : [])));
+  const playable = new Set(
+    acts.flatMap((a) => (a.type === "cast" || a.type === "playLand" ? [a.card] : a.type === "activate" ? [a.source] : [])),
+  );
   // Cartes exilées jouables ce tour-ci (Chandra) : présentées au bout de la main.
   const cards = [...view.hand, ...view.playableExile];
   const exiled = new Set(view.playableExile.map((c) => c.id));

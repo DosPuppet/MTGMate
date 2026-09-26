@@ -9,6 +9,7 @@ import {
   fx,
   modal,
   mode,
+  playerStatic,
   ref,
   spell,
   staticAbility,
@@ -143,5 +144,11 @@ export const BLUE: Record<string, CardScript> = {
         mode("Surveillance 2", [], [fx.surveil(2)]),
       ]),
     ],
+  },
+  "Undulating Witness": {
+    abilities: [activated({ mana: "{2}", effects: [fx.pump(ref.self, 1, -1)], label: "+1/-1" })],
+  },
+  "Samut, Tyrant of Naktamun": {
+    abilities: [playerStatic({ splitSecondInstantsSorceries: true, label: "Vos éphémères et rituels ont le second partagé" })],
   },
 };

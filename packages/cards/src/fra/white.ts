@@ -8,11 +8,13 @@ import {
   cond,
   entersWith,
   fx,
+  manaAbility,
   modal,
   mode,
   OTHER_CREATURE_YOU_CONTROL,
   ref,
   spell,
+  staticAbility,
   THOPTER,
   target,
   targetObj,
@@ -151,6 +153,26 @@ export const WHITE: Record<string, CardScript> = {
   "Saheeli, Consul of Oversight": {
     abilities: [
       triggered(when.scryOrSurveil, [fx.createTokens(THOPTER)], { oncePerTurn: true, label: "Regard/surveillance : Thopter" }),
+    ],
+  },
+  "Gideon's Memorial": {
+    abilities: [
+      staticAbility(
+        { types: ["Creature"], controller: "you", token: true },
+        { power: 1, addKeywords: ["vigilance"] },
+        {
+          label: "Jetons de créature : +1/+0 et vigilance",
+        },
+      ),
+      manaAbility(["W", "U", "B", "R", "G"], 1, { restriction: { spell: { types: ["Planeswalker"] } } }),
+      activated({
+        mana: "{1}{W}",
+        fromHand: true,
+        discardSelf: true,
+        targets: [target.creature("t", { inCombat: true })],
+        effects: [fx.damage(4, ref.target())],
+        label: "Défaussez : 4 blessures à une créature attaquante ou bloqueuse",
+      }),
     ],
   },
 };
