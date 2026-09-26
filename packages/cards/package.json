@@ -5,7 +5,8 @@
   "type": "module",
   "exports": {
     ".": "./src/index.ts",
-    "./decks": "./src/decks.ts"
+    "./decks": "./src/decks.ts",
+    "./tokens": "./src/tokens.ts"
   },
   "dependencies": {
     "@mtgx/engine": "^0.1.0"

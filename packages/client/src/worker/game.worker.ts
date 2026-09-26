@@ -3,12 +3,25 @@
  * tournent ici, hors du thread de l'interface.
  */
 import { heuristicAgent } from "@mtgx/ai";
-import { buildDeck, card, TOKEN_SPECS } from "@mtgx/cards";
-import { createGame, createObject, createTokens, GameHost, type GameState, visibleFaces } from "@mtgx/engine";
+import type { DeckEntries } from "@mtgx/cards";
+import { TOKEN_SPECS } from "@mtgx/cards/tokens";
+import { type CardDef, createGame, createObject, createTokens, GameHost, type GameState, visibleFaces } from "@mtgx/engine";
 import type { FromWorker, Sandbox, ToWorker } from "../protocol";
 
 const HUMAN = "p1";
 let host: GameHost | null = null;
+/** Définitions reçues avec le message « start » (par nom). */
+let defs: Record<string, CardDef> = {};
+
+function card(name: string): CardDef {
+  const d = defs[name];
+  if (!d) throw new Error(`Carte inconnue : ${name}`);
+  return d;
+}
+
+function buildDeck(entries: DeckEntries): CardDef[] {
+  return entries.flatMap(([n, name]) => Array.from({ length: n }, () => card(name)));
+}
 
 const post = (msg: FromWorker) => (self as unknown as Worker).postMessage(msg);
 const sleep = (ms: number) => new Promise<void>((r) => setTimeout(r, ms));
@@ -57,14 +70,15 @@ self.onmessage = async (e: MessageEvent<ToWorker>) => {
   const msg = e.data;
   switch (msg.type) {
     case "start": {
+      defs = msg.defs;
       const { state, events } = createGame({
         seed: msg.seed,
         players: [
-          { id: HUMAN, name: msg.playerName, deck: buildDeck({ main: msg.playerDeck }) },
+          { id: HUMAN, name: msg.playerName, deck: buildDeck(msg.playerDeck) },
           ...msg.aiDecks.map((deck, i) => ({
             id: `p${i + 2}`,
             name: msg.aiDecks.length > 1 ? `IA ${i + 1}` : "IA",
-            deck: buildDeck({ main: deck }),
+            deck: buildDeck(deck),
           })),
         ],
       });

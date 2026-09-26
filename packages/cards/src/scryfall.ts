@@ -37,6 +37,23 @@ export interface RawCard {
     fr?: { name?: string; typeLine?: string; text?: string };
   };
   fr?: { name?: string; typeLine?: string; text?: string; image?: string };
+  /** Disposition Scryfall quand elle n'est pas « normal » (saga, class, case, adventure, transform…). */
+  layout?: string;
+  /** Cartes à plusieurs faces (aventure, scindée, recto-verso, assemblage) : toutes les faces. */
+  faces?: RawFace[];
+}
+
+export interface RawFace {
+  name: string;
+  manaCost: string;
+  typeLine: string;
+  oracleText: string;
+  power?: string;
+  toughness?: string;
+  loyalty?: string;
+  colors?: string[];
+  image?: string;
+  fr?: { name?: string; typeLine?: string; text?: string; image?: string };
 }
 
 const KEYWORD_NAMES: Record<string, Keyword> = {
@@ -268,6 +285,8 @@ export function toCardDef(raw: RawCard, script: CardScript | undefined, set: str
   let implemented = !!script || onlyKeywords(raw.oracleText);
   // Cartes « à préparer » : jouables seulement si le script décrit leur sort.
   if (raw.prepare && !script?.prepareSpell) implemented = false;
+  // Cartes à plusieurs faces : pas encore gérées par le moteur (lots 0.3 à 0.6 de la branche Standard).
+  if (raw.faces) implemented = false;
   let manaCost = null;
   try {
     manaCost = raw.manaCost ? parseManaCost(raw.manaCost) : null;

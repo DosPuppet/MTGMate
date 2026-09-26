@@ -3,11 +3,12 @@
  * Le moteur reste la seule source de vérité : on n'envoie que des décisions tirées des options légales.
  */
 
-import type { DeckEntries } from "@mtgx/cards";
+import { card, type DeckEntries } from "@mtgx/cards";
 import {
   type ActionOption,
   type AutopilotSettings,
   autoTarget,
+  type CardDef,
   type CardFace,
   DEFAULT_AUTOPILOT,
   type Decision,
@@ -25,6 +26,16 @@ import { findObjectEl } from "./board/layout";
 import { describeEvents, type Lang, type LogLine } from "./i18n";
 import type { FromWorker, Sandbox } from "./protocol";
 import { LocalSession, RemoteSession, type Session } from "./session";
+
+/** Définitions des cartes des decks (et du bac à sable), envoyées au worker de partie. */
+function defsFor(decks: DeckEntries[], sandbox?: Sandbox): Record<string, CardDef> {
+  const names = new Set<string>(decks.flatMap((d) => d.map(([, name]) => name)));
+  for (const side of Object.values(sandbox ?? {})) {
+    for (const n of side.cards ?? []) names.add(n);
+    for (const [n] of side.attach ?? []) names.add(n);
+  }
+  return Object.fromEntries([...names].map((n) => [n, card(n)]));
+}
 
 type CastOption = Extract<ActionOption, { type: "cast" }>;
 type ActivateOption = Extract<ActionOption, { type: "activate" }>;
@@ -440,6 +451,7 @@ export const useGame = create<Store>((set, get) => {
         playerName: "Vous",
         playerDeck,
         aiDecks,
+        defs: defsFor([playerDeck, ...aiDecks], sandbox),
         sandbox,
       });
       session.send({ type: "settings", settings });

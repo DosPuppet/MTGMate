@@ -4,7 +4,7 @@
  * capacités activées est utilisée ; la partie continue quelques tours. Aucune exception inattendue ni
  * violation d'invariant n'est tolérée.
  */
-import { CARDS } from "@mtgx/cards";
+import { CARDS, SETS } from "@mtgx/cards";
 import {
   type Agent,
   type CardDef,
@@ -106,18 +106,21 @@ function play(c: CardDef, seed: number): { state: GameState; illegal: number; pl
   return { state, illegal, played };
 }
 
-// Toutes les cartes de Foundations (set principal et réimpressions), sauf les terrains de base.
+// Toutes les cartes gérées, sauf les terrains de base, regroupées par extension.
 const cards = Object.values(CARDS).filter((c) => !c.isToken && c.implemented && !c.supertypes.includes("Basic"));
 
-describe("test de fumée des cartes de Foundations", () => {
-  it.each(cards.map((c) => [c.name, c] as const))("%s", (_, c) => {
-    let playedOnce = false;
-    for (const seed of [1, 2, 3]) {
-      const { state, played } = play(c, seed);
-      expect(state.pending || state.over).toBeTruthy();
-      playedOnce ||= played;
-    }
-    // La carte a bien été jouée (lancée ou posée) au moins une fois.
-    expect(playedOnce, `${c.name} n'a pas pu être jouée`).toBe(true);
-  });
-});
+describe.each(SETS.map((s) => [s.name, s.code] as const).filter(([, code]) => cards.some((c) => c.set === code)))(
+  "test de fumée des cartes : %s",
+  (_, code) => {
+    it.each(cards.filter((c) => c.set === code).map((c) => [c.name, c] as const))("%s", (_, c) => {
+      let playedOnce = false;
+      for (const seed of [1, 2, 3]) {
+        const { state, played } = play(c, seed);
+        expect(state.pending || state.over).toBeTruthy();
+        playedOnce ||= played;
+      }
+      // La carte a bien été jouée (lancée ou posée) au moins une fois.
+      expect(playedOnce, `${c.name} n'a pas pu être jouée`).toBe(true);
+    });
+  },
+);

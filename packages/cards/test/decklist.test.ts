@@ -162,12 +162,33 @@ describe("légalité en Standard", () => {
     sideboard: where === "side" ? ([[1, "Carte fictive"]] as [number, string][]) : [],
   });
 
-  it("toutes les cartes des extensions couvertes sont légales en Standard (légalités Scryfall importées)", () => {
+  it("les cartes des extensions couvertes sont légales en Standard, sauf les 13 bannies (légalités Scryfall)", () => {
     const cards = Object.values(CARDS).filter((c) => !c.isToken);
     expect(cards.filter((c) => c.set === "FDN")).toHaveLength(517);
     // Reality Fracture : 285 cartes, dont 6 réimpressions de Foundations (terrains de base, Unsummon).
     expect(cards.filter((c) => c.set === "FRA")).toHaveLength(279);
-    expect(cards.filter((c) => c.legalities?.standard !== "legal").map((c) => c.name)).toEqual([]);
+    // Hors Standard : exactement les 13 cartes bannies (à revérifier à chaque annonce de bannissement).
+    expect(cards.filter((c) => c.legalities?.standard !== "legal" && c.legalities?.standard !== "banned")).toEqual([]);
+    expect(
+      cards
+        .filter((c) => c.legalities?.standard === "banned")
+        .map((c) => c.name)
+        .sort(),
+    ).toEqual([
+      "Abuelo's Awakening",
+      "Badgermole Cub",
+      "Cori-Steel Cutter",
+      "Gran-Gran",
+      "Heartfire Hero",
+      "Hopeless Nightmare",
+      "Monstrous Rage",
+      "Proft's Eidetic Memory",
+      "Screaming Nemesis",
+      "Stormchaser's Talent",
+      "This Town Ain't Big Enough",
+      "Up the Beanstalk",
+      "Vivi Ornitier",
+    ]);
   });
 
   it("carte à préparer : la créature et son sort, et le nom « Créature // Sort » à l'import", () => {

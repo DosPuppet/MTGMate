@@ -31,7 +31,7 @@ Objectif : les 18 extensions Standard restantes (environ 4 360 cartes), **100 % 
 
 - **Phase 0, socle transverse :**
   - 0.1 FRA à 100 % ✅ ;
-  - 0.2 import de tout le Standard ;
+  - 0.2 import de tout le Standard ✅ ;
   - 0.3 cartes à plusieurs faces ;
   - 0.4 aventures et présages ;
   - 0.5 transformation, cartes recto-verso modales, assemblage ;
@@ -50,6 +50,15 @@ Lot 0.1 : le moteur gagne :
 - les effets qui durent tant qu'une carte reste en exil (`untilExiledUid`) et la permission de lancer « tant qu'elle reste exilée » (`grantPlay` avec `forever`) ;
 - les copies de cartes (`GameObject.cardCopy` : elles quittent l'exil seulement pour la pile et deviennent des jetons en arrivant) ;
 - la règle des légendes suspendue pour le tour (`noLegendRuleThisTurn`).
+
+Lot 0.2 :
+- les 18 extensions sont importées : 5 174 cartes au total, dont 836 gérées (FDN, FRA et une quarantaine de créatures « à mots-clés seuls ») ;
+- `npm run import-cards -- all` importe toutes les extensions sauf FDN et FRA ;
+- les dispositions multi-faces (aventure, carte scindée, recto-verso, assemblage) gardent toutes leurs faces (`RawCard.faces`), et restent non gérées jusqu'aux lots 0.3 à 0.6 ;
+- `npm run coverage -- --set all` donne le détail par extension, et `--set standard` se limite aux cartes légales ;
+- le test de fumée est groupé par extension, et le test de légalité vérifie la liste exacte des 13 bannies ;
+- le worker de partie reçoit les définitions des cartes des decks avec le message `start`, au lieu d'embarquer toute la base (6 Mo → 163 Ko). Les jetons du bac à sable viennent de `@mtgx/cards/tokens`, un module léger ;
+- l'interface embarque toujours toutes les données : 6,3 Mo, 1,3 Mo compressé.
 
 ### Reality Fracture (FRA)
 
@@ -227,6 +236,7 @@ Réimpressions : défenses talismaniques contre une couleur, changelin, restrict
 
 ## Pièges connus
 
+- **Bundle de l'interface :** toutes les cartes sont dans le bundle principal (6,3 Mo). Le worker ne doit pas importer `@mtgx/cards` (il reçoit ses définitions dans `start`) ; seul `@mtgx/cards/tokens` est permis. Le premier chargement en dev est lent (compilation des JSON) : relancer un test d'interface qui échoue par délai dépassé juste après un redémarrage de Vite.
 - **Serveur Vite sous WSL :** il peut servir une version périmée d'un module du moteur après modification. Redémarrer `npm run dev` avant tout test dans le navigateur, ou vérifier avec `curl http://localhost:5173/@fs/<chemin absolu> | grep <nouveau code>`.
 - **Champ de bataille (`client/src/board/layout.ts`) :**
   - la disposition est calculée en pur TypeScript et testée (`client/test/layout.test.ts`) ; les lignes sont découpées explicitement, pas par `flex-wrap` ;

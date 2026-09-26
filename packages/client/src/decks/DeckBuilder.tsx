@@ -45,6 +45,13 @@ const POOL: CardDef[] = Object.values(CARDS)
   .filter((c) => !c.isToken)
   .sort((a, b) => colorRank(a) - colorRank(b) || manaValue(a.manaCost) - manaValue(b.manaCost) || a.name.localeCompare(b.name));
 
+/** « Standard 836/5174 jouables » ou, pour une extension, « Foundations 517/517 jouables ». */
+function coverageHint(set: string): string {
+  const inSet = set ? POOL.filter((c) => c.set === set) : POOL;
+  const label = set ? (SETS.find((s) => s.code === set)?.nameFr ?? set) : "Standard";
+  return `${label} ${inSet.filter((c) => c.implemented).length}/${inSet.length} jouables`;
+}
+
 function colorRank(c: CardDef): number {
   if (c.types.includes("Land")) return 7;
   if (c.colors.length === 0) return 6;
@@ -190,12 +197,7 @@ function Collection({ deck, onChange }: { deck: DeckList; onChange: (name: strin
           ))}
         </select>
         <span className="hint">
-          {cards.length} cartes ·{" "}
-          {SETS.map((s) => {
-            const inSet = POOL.filter((c) => c.set === s.code);
-            return `${s.nameFr} ${inSet.filter((c) => c.implemented).length}/${inSet.length}`;
-          }).join(" · ")}{" "}
-          jouables
+          {cards.length} cartes · {coverageHint(f.set)}
         </span>
       </div>
       <div className="collection-grid">

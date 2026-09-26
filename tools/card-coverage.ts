@@ -2,9 +2,9 @@
  * Couverture des cartes : combien de cartes d'un set sont gérées, et quelles mécaniques manquent
  * (pour prioriser le travail de l'étape 4b).
  *
- * Usage : npm run coverage [-- --set main|fdn|fra] [-- --list <mécanique>] [-- --missing] [-- --card "<nom>"]
+ * Usage : npm run coverage [-- --set all|standard|main|<set>] [-- --list <mécanique>] [-- --missing] [-- --card "<nom>"]
  */
-import { CARDS, isMainSet, SET_BY_CODE } from "@mtgx/cards";
+import { CARDS, isMainSet, SET_BY_CODE, SETS } from "@mtgx/cards";
 
 const MECHANICS: [string, RegExp][] = [
   ["aura", /^Enchant (creature|land|permanent)/m],
@@ -62,13 +62,34 @@ if (cardName !== undefined) {
   process.exit(0);
 }
 
-// --set main : sets principaux ; --set fdn|fra : une extension (toutes ses cartes) ; sans option : tout.
-const setArg = (arg("--set") ?? "").toUpperCase();
+// --set main : sets principaux ; --set fdn|fra|… : une extension (toutes ses cartes) ;
+// --set all (ou sans option) : tout, avec le détail par extension ; --set standard : cartes légales en Standard.
+const setArg0 = (arg("--set") ?? "").toUpperCase();
+const setArg = setArg0 === "ALL" ? "" : setArg0;
 const main = setArg === "MAIN";
-const all = Object.values(CARDS).filter((c) => !c.isToken && (!main || isMainSet(c)) && (!setArg || main || c.set === setArg));
+const standard = setArg === "STANDARD";
+const all = Object.values(CARDS).filter(
+  (c) =>
+    !c.isToken &&
+    (!main || isMainSet(c)) &&
+    (!standard || c.legalities?.standard === "legal") &&
+    (!setArg || main || standard || c.set === setArg),
+);
 const done = all.filter((c) => c.implemented);
-const label = main ? "sets principaux" : setArg ? (SET_BY_CODE[setArg]?.name ?? setArg) : "toutes extensions";
+const label = main
+  ? "sets principaux"
+  : standard
+    ? "Standard (cartes légales)"
+    : setArg
+      ? (SET_BY_CODE[setArg]?.name ?? setArg)
+      : "toutes extensions";
 console.log(`${label} : ${done.length} / ${all.length} cartes gérées (${Math.round((done.length / all.length) * 100)} %)`);
+if (!setArg) {
+  for (const s of SETS) {
+    const inSet = all.filter((c) => c.set === s.code);
+    console.log(`  ${s.code.padEnd(4)} ${s.name.padEnd(30)} ${inSet.filter((c) => c.implemented).length} / ${inSet.length}`);
+  }
+}
 
 const missing = all.filter((c) => !c.implemented);
 const byMechanic = new Map<string, string[]>();

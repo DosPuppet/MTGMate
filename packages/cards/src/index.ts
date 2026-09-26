@@ -1,4 +1,4 @@
-import type { CardDef, TokenSpec } from "@mtgx/engine";
+import type { CardDef } from "@mtgx/engine";
 import { DECKS, type DeckList } from "./decks";
 import { toCardDef } from "./scryfall";
 import { SETS } from "./sets";
@@ -20,22 +20,9 @@ export {
   validateDeck,
 } from "./decklist";
 export { DECKS, type DeckList } from "./decks";
-export { type CardSet, isMainSet, SET_BY_CODE, SETS } from "./sets";
-
-import { CAT, DOG, FOOD, GOBLIN, RABBIT, SOLDIER, SPIRIT, TREASURE } from "./fdn/common";
-
-/** Jetons courants, par nom : bac à sable de l'interface (mode dev) et tests. */
-export const TOKEN_SPECS: Record<string, TokenSpec> = {
-  Cat: CAT,
-  Dog: DOG,
-  Food: FOOD,
-  Goblin: GOBLIN,
-  Rabbit: RABBIT,
-  Soldier: SOLDIER,
-  Spirit: SPIRIT,
-  Treasure: TREASURE,
-};
 export { onlyKeywords, type RawCard, slug, toCardDef } from "./scryfall";
+export { type CardSet, isMainSet, SET_BY_CODE, SETS } from "./sets";
+export { TOKEN_SPECS } from "./tokens";
 
 /** Toutes les cartes connues, indexées par nom anglais (toutes extensions ; une réimpression garde la première). */
 export const CARDS: Record<string, CardDef> = {};

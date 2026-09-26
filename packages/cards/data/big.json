@@ -1,0 +1,784 @@
+[
+ {
+  "name": "Collector's Cage",
+  "number": "1",
+  "rarity": "mythic",
+  "manaCost": "{1}{W}",
+  "cmc": 2,
+  "typeLine": "Artifact",
+  "oracleText": "Hideaway 5 (When this artifact enters, look at the top five cards of your library, exile one face down, then put the rest on the bottom in a random order.)\n{1}, {T}: Put a +1/+1 counter on target creature you control. Then if you control three or more creatures with different powers, you may play the exiled card without paying its mana cost.",
+  "colors": [
+   "W"
+  ],
+  "keywords": [
+   "Hideaway"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/a/3/a33703bb-51c0-4d57-9d06-1148507ddc4f.jpg?1783912004",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/a/3/a33703bb-51c0-4d57-9d06-1148507ddc4f.jpg?1783912004",
+  "legalities": {
+   "standard": "legal"
+  },
+  "fr": {
+   "name": "Cage du collectionneur",
+   "typeLine": "Artefact",
+   "text": "Cachette 5 (Quand cet artefact arrive sur le champ de bataille, regardez les cinq cartes du dessus de votre bibliothèque, exilez-en une face cachée, puis mettez le reste au-dessous de votre bibliothèque dans un ordre aléatoire.)\n{1}, {T} : Mettez un marqueur +1/+1 sur une créature ciblée que vous contrôlez. Puis, si vous contrôlez au moins trois créatures avec des forces différentes, vous pouvez jouer la carte exilée sans payer son coût de mana.",
+   "image": "https://cards.scryfall.io/normal/front/f/5/f5b814e1-2f2f-464b-aa73-41d1df22674e.jpg?1782799169"
+  }
+ },
+ {
+  "name": "Grand Abolisher",
+  "number": "2",
+  "rarity": "mythic",
+  "manaCost": "{W}{W}",
+  "cmc": 2,
+  "typeLine": "Creature — Human Cleric",
+  "oracleText": "During your turn, your opponents can't cast spells or activate abilities of artifacts, creatures, or enchantments.",
+  "power": "2",
+  "toughness": "2",
+  "colors": [
+   "W"
+  ],
+  "keywords": [],
+  "image": "https://cards.scryfall.io/normal/front/e/e/ee793ed2-7d59-4640-8868-ad486600df2c.jpg?1783912003",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/e/e/ee793ed2-7d59-4640-8868-ad486600df2c.jpg?1783912003",
+  "legalities": {
+   "standard": "legal"
+  },
+  "fr": {
+   "name": "Grand abolisseur",
+   "typeLine": "Créature — humain et clerc",
+   "text": "Pendant votre tour, vos adversaires ne peuvent pas lancer de sorts ou activer des capacités d'artefacts, de créatures ou d'enchantements.",
+   "image": "https://cards.scryfall.io/normal/front/0/2/022082d7-4283-4401-bfac-5bc333eab125.jpg?1782799165"
+  }
+ },
+ {
+  "name": "Oltec Matterweaver",
+  "number": "3",
+  "rarity": "mythic",
+  "manaCost": "{2}{W}",
+  "cmc": 3,
+  "typeLine": "Creature — Human Artificer",
+  "oracleText": "Whenever you cast a creature spell, choose one —\n• Create a 1/1 colorless Gnome artifact creature token.\n• Create a token that's a copy of target artifact token you control.",
+  "power": "2",
+  "toughness": "4",
+  "colors": [
+   "W"
+  ],
+  "keywords": [],
+  "image": "https://cards.scryfall.io/normal/front/f/4/f4f2a818-9fd1-41db-967e-7d2c9b4e4c2f.jpg?1783912005",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/f/4/f4f2a818-9fd1-41db-967e-7d2c9b4e4c2f.jpg?1783912005",
+  "legalities": {
+   "standard": "legal"
+  },
+  "fr": {
+   "name": "Tisseur de matière oltèque",
+   "typeLine": "Créature — humain et artificier",
+   "text": "À chaque fois que vous lancez un sort de créature, choisissez l'un —\n• Créez un jeton de créature-artefact 1/1 incolore Gnome.\n• Créez un jeton qui est une copie d'un jeton d'artefact ciblé que vous contrôlez.",
+   "image": "https://cards.scryfall.io/normal/front/5/9/594895ff-06f1-4af0-a4ed-b5019ff2fa47.jpg?1782799160"
+  }
+ },
+ {
+  "name": "Rest in Peace",
+  "number": "4",
+  "rarity": "mythic",
+  "manaCost": "{1}{W}",
+  "cmc": 2,
+  "typeLine": "Enchantment",
+  "oracleText": "When this enchantment enters, exile all graveyards.\nIf a card or token would be put into a graveyard from anywhere, exile it instead.",
+  "colors": [
+   "W"
+  ],
+  "keywords": [],
+  "image": "https://cards.scryfall.io/normal/front/d/1/d108c2b1-236e-4b8d-8445-d9749ccc4fea.jpg?1783912003",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/d/1/d108c2b1-236e-4b8d-8445-d9749ccc4fea.jpg?1783912003",
+  "legalities": {
+   "standard": "legal"
+  },
+  "fr": {
+   "name": "Repose en paix",
+   "typeLine": "Enchantement",
+   "text": "Quand Repose en paix arrive sur le champ de bataille, exilez tous les cimetières.\nSi une carte ou un jeton devait être mis dans un cimetière d'où qu'il vienne, exilez-le à la place.",
+   "image": "https://cards.scryfall.io/normal/front/5/c/5c405ea4-733a-43fa-8f4e-0f80947137fc.jpg?1782799156"
+  }
+ },
+ {
+  "name": "Esoteric Duplicator",
+  "number": "5",
+  "rarity": "mythic",
+  "manaCost": "{2}{U}",
+  "cmc": 3,
+  "typeLine": "Artifact — Clue",
+  "oracleText": "Whenever you sacrifice this artifact or another artifact, you may pay {2}. If you do, at the beginning of the next end step, create a token that's a copy of that artifact.\n{2}, Sacrifice this artifact: Draw a card.",
+  "colors": [
+   "U"
+  ],
+  "keywords": [],
+  "image": "https://cards.scryfall.io/normal/front/3/d/3dbb2755-97d9-492e-8697-5548160678c8.jpg?1783912002",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/3/d/3dbb2755-97d9-492e-8697-5548160678c8.jpg?1783912002",
+  "legalities": {
+   "standard": "legal"
+  },
+  "fr": {
+   "name": "Réplicateur ésotérique",
+   "typeLine": "Artefact — indice",
+   "text": "À chaque fois que vous sacrifiez le Réplicateur ésotérique ou un autre artefact, vous pouvez payer {2}. Si vous faites ainsi, au début de la prochaine étape de fin, créez un jeton qui est une copie de cet artefact.\n{2}, sacrifiez le Réplicateur ésotérique : Piochez une carte.",
+   "image": "https://cards.scryfall.io/normal/front/c/a/ca10217c-e66a-4979-bcd1-6f5fb1cdb906.jpg?1782799150"
+  }
+ },
+ {
+  "name": "Simulacrum Synthesizer",
+  "number": "6",
+  "rarity": "mythic",
+  "manaCost": "{2}{U}",
+  "cmc": 3,
+  "typeLine": "Artifact",
+  "oracleText": "When this artifact enters, scry 2.\nWhenever another artifact you control with mana value 3 or greater enters, create a 0/0 colorless Construct artifact creature token with \"This token gets +1/+1 for each artifact you control.\"",
+  "colors": [
+   "U"
+  ],
+  "keywords": [
+   "Scry"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/a/a/aaa05ad1-5cda-4edd-b6bf-562ae3e5011a.jpg?1783912002",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/a/a/aaa05ad1-5cda-4edd-b6bf-562ae3e5011a.jpg?1783912002",
+  "legalities": {
+   "standard": "legal"
+  },
+  "fr": {
+   "name": "Synthétiseur de simulacre",
+   "typeLine": "Artefact",
+   "text": "Quand le Synthétiseur de simulacre arrive sur le champ de bataille, regard 2.\nÀ chaque fois qu'un autre artefact avec une valeur de mana supérieure ou égale à 3 arrive sur le champ de bataille sous votre contrôle, créez un jeton de créature-artefact 0/0 incolore Construction avec « Cette créature gagne +1/+1 pour chaque artefact que vous contrôlez. »",
+   "image": "https://cards.scryfall.io/normal/front/6/a/6afe9790-513a-4a4e-a790-4ab74bdc32ea.jpg?1782799146"
+  }
+ },
+ {
+  "name": "Worldwalker Helm",
+  "number": "7",
+  "rarity": "mythic",
+  "manaCost": "{2}{U}",
+  "cmc": 3,
+  "typeLine": "Artifact",
+  "oracleText": "If you would create one or more artifact tokens, instead create those tokens plus an additional Map token. (It's an artifact with \"{1}, {T}, Sacrifice this token: Target creature you control explores. Activate only as a sorcery.\")\n{1}{U}, {T}: Create a token that's a copy of target artifact token you control.",
+  "colors": [
+   "U"
+  ],
+  "keywords": [
+   "Explore"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/b/7/b74ad496-05bc-4c5a-9027-b14df9c387ab.jpg?1783912001",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/b/7/b74ad496-05bc-4c5a-9027-b14df9c387ab.jpg?1783912001",
+  "legalities": {
+   "standard": "legal"
+  },
+  "fr": {
+   "name": "Heaume du marche-monde",
+   "typeLine": "Artefact",
+   "text": "Si vous deviez créer au moins un jeton d'artefact, à la place créez ces jetons plus un jeton Carte supplémentaire. (C'est un artefact avec « {1}, {T}, sacrifiez cet artefact : Une créature ciblée que vous contrôlez explore. N'activez que lorsque vous pourriez lancer un rituel. »)\n{1}{U}, {T} : Créez un jeton qui est une copie d'un jeton d'artefact ciblé que vous contrôlez.",
+   "image": "https://cards.scryfall.io/normal/front/b/c/bc4b10f5-d8a8-4053-a73e-2b718931361c.jpg?1782799140"
+  }
+ },
+ {
+  "name": "Greed's Gambit",
+  "number": "8",
+  "rarity": "mythic",
+  "manaCost": "{3}{B}",
+  "cmc": 4,
+  "typeLine": "Enchantment",
+  "oracleText": "When this enchantment enters, you draw three cards, gain 6 life, and create three 2/1 black Bat creature tokens with flying.\nAt the beginning of your end step, you discard a card, lose 2 life, and sacrifice a creature.\nWhen this enchantment leaves the battlefield, you discard three cards, lose 6 life, and sacrifice three creatures.",
+  "colors": [
+   "B"
+  ],
+  "keywords": [],
+  "image": "https://cards.scryfall.io/normal/front/5/b/5b60a1a6-b2ca-4dc2-a6d9-eff97092079a.jpg?1783912002",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/5/b/5b60a1a6-b2ca-4dc2-a6d9-eff97092079a.jpg?1783912002",
+  "legalities": {
+   "standard": "legal"
+  },
+  "fr": {
+   "name": "Pari d'avidité",
+   "typeLine": "Enchantement",
+   "text": "Quand le Pari d'avidité arrive sur le champ de bataille, vous piochez trois cartes, vous gagnez 6 points de vie et créez trois jetons de créature 2/1 noire Chauve-souris avec le vol.\nAu début de votre étape de fin, vous vous défaussez d'une carte, vous perdez 2 points de vie et sacrifiez une créature.\nQuand le Pari d'avidité quitte le champ de bataille, vous vous défaussez de trois cartes, vous perdez 6 points de vie et sacrifiez trois créatures.",
+   "image": "https://cards.scryfall.io/normal/front/8/2/82aa2d2e-1a81-449d-9c3d-e2be0a2c7332.jpg?1782799136"
+  }
+ },
+ {
+  "name": "Harvester of Misery",
+  "number": "9",
+  "rarity": "mythic",
+  "manaCost": "{3}{B}{B}",
+  "cmc": 5,
+  "typeLine": "Creature — Spirit",
+  "oracleText": "Menace\nWhen this creature enters, other creatures get -2/-2 until end of turn.\n{1}{B}, Discard this card: Target creature gets -2/-2 until end of turn.",
+  "power": "5",
+  "toughness": "4",
+  "colors": [
+   "B"
+  ],
+  "keywords": [
+   "Menace"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/a/3/a3012af9-621d-4fae-b00d-079a89ae35fe.jpg?1783912001",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/a/3/a3012af9-621d-4fae-b00d-079a89ae35fe.jpg?1783912001",
+  "legalities": {
+   "standard": "legal"
+  },
+  "fr": {
+   "name": "Moissonneur de misère",
+   "typeLine": "Créature — esprit",
+   "text": "Menace\nQuand le Moissonneur de misère arrive sur le champ de bataille, les autres créatures gagnent -2/-2 jusqu'à la fin du tour.\n{1}{B}, défaussez-vous du Moissonneur de misère : Une créature ciblée gagne -2/-2 jusqu'à la fin du tour.",
+   "image": "https://cards.scryfall.io/normal/front/b/6/b6d61413-a3c4-41d2-b30e-76674fbd1c3d.jpg?1782799132"
+  }
+ },
+ {
+  "name": "Hostile Investigator",
+  "number": "10",
+  "rarity": "mythic",
+  "manaCost": "{3}{B}",
+  "cmc": 4,
+  "typeLine": "Creature — Ogre Rogue Detective",
+  "oracleText": "When this creature enters, target opponent discards a card.\nWhenever one or more players discard one or more cards, investigate. This ability triggers only once each turn. (Create a Clue token. It's an artifact with \"{2}, Sacrifice this token: Draw a card.\")",
+  "power": "4",
+  "toughness": "3",
+  "colors": [
+   "B"
+  ],
+  "keywords": [
+   "Investigate"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/1/5/158c000e-7960-4518-b034-a529622b7bf1.jpg?1783912001",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/1/5/158c000e-7960-4518-b034-a529622b7bf1.jpg?1783912001",
+  "legalities": {
+   "standard": "legal"
+  },
+  "fr": {
+   "name": "Enquêteur hostile",
+   "typeLine": "Créature — ogre et gredin et détective",
+   "text": "Quand l'Enquêteur hostile arrive sur le champ de bataille, un adversaire ciblé se défausse d'une carte.\nÀ chaque fois qu'au moins un joueur se défausse d'au moins une carte, enquêtez. Cette capacité ne se déclenche qu'une seule fois par tour. (Créez un jeton Indice. C'est un artefact avec « {2}, sacrifiez cet artefact : Piochez une carte. »)",
+   "image": "https://cards.scryfall.io/normal/front/f/7/f7027c6f-c6ac-4a49-a3e0-3141e0814db3.jpg?1782799124"
+  }
+ },
+ {
+  "name": "Generous Plunderer",
+  "number": "11",
+  "rarity": "mythic",
+  "manaCost": "{1}{R}",
+  "cmc": 2,
+  "typeLine": "Creature — Human Rogue",
+  "oracleText": "Menace\nAt the beginning of your upkeep, you may create a Treasure token. When you do, target opponent creates a tapped Treasure token.\nWhenever this creature attacks, it deals damage to defending player equal to the number of artifacts they control.",
+  "power": "2",
+  "toughness": "2",
+  "colors": [
+   "R"
+  ],
+  "keywords": [
+   "Treasure",
+   "Menace"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/4/c/4c6cf93a-d073-48ac-88db-c46bf3e10beb.jpg?1783912000",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/4/c/4c6cf93a-d073-48ac-88db-c46bf3e10beb.jpg?1783912000",
+  "legalities": {
+   "standard": "legal"
+  },
+  "fr": {
+   "name": "Saccageur généreux",
+   "typeLine": "Créature — humain et gredin",
+   "text": "Menace\nAu début de votre entretien, vous pouvez créer un jeton Trésor. Quand vous faites ainsi, un adversaire ciblé crée un jeton Trésor engagé.\nÀ chaque fois que le Saccageur généreux attaque, il inflige au joueur défenseur un nombre de blessures égal au nombre d'artefacts qu'il contrôle.",
+   "image": "https://cards.scryfall.io/normal/front/f/3/f3a01c6e-1bfb-40a2-a752-b9122a3e4930.jpg?1782799122"
+  }
+ },
+ {
+  "name": "Legion Extruder",
+  "number": "12",
+  "rarity": "mythic",
+  "manaCost": "{1}{R}",
+  "cmc": 2,
+  "typeLine": "Artifact",
+  "oracleText": "When this artifact enters, it deals 2 damage to any target.\n{2}, {T}, Sacrifice another artifact: Create a 3/3 colorless Golem artifact creature token.",
+  "colors": [
+   "R"
+  ],
+  "keywords": [],
+  "image": "https://cards.scryfall.io/normal/front/5/a/5a077de0-1893-40d0-a499-ee2e6e2258f1.jpg?1783912001",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/5/a/5a077de0-1893-40d0-a499-ee2e6e2258f1.jpg?1783912001",
+  "legalities": {
+   "standard": "legal"
+  },
+  "fr": {
+   "name": "Extrudeur de légion",
+   "typeLine": "Artefact",
+   "text": "Quand l'Extrudeur de légion arrive sur le champ de bataille, il inflige 2 blessures à n'importe quelle cible.\n{2}, {T}, sacrifiez un autre artefact : Créez un jeton de créature-artefact 3/3 incolore Golem.",
+   "image": "https://cards.scryfall.io/normal/front/1/5/15b0e661-2439-45ed-acde-ebce8313c15b.jpg?1782799115"
+  }
+ },
+ {
+  "name": "Memory Vessel",
+  "number": "13",
+  "rarity": "mythic",
+  "manaCost": "{3}{R}{R}",
+  "cmc": 5,
+  "typeLine": "Artifact",
+  "oracleText": "{T}, Exile this artifact: Each player exiles the top seven cards of their library. Until your next turn, players may play cards they exiled this way, and they can't play cards from their hand. Activate only as a sorcery.",
+  "colors": [
+   "R"
+  ],
+  "keywords": [],
+  "image": "https://cards.scryfall.io/normal/front/2/e/2e37a5cd-887d-4b41-97f7-ae0bba85436b.jpg?1783911999",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/2/e/2e37a5cd-887d-4b41-97f7-ae0bba85436b.jpg?1783911999",
+  "legalities": {
+   "standard": "legal"
+  },
+  "fr": {
+   "name": "Réceptacle de mémoire",
+   "typeLine": "Artefact",
+   "text": "{T}, exilez le Réceptacle de mémoire : Chaque joueur exile les sept cartes du dessus de sa bibliothèque. Jusqu'à votre prochain tour, les joueurs peuvent jouer les cartes qu'ils ont exilées de cette manière, et ils ne peuvent pas jouer de cartes depuis leur main. N'activez que lorsque vous pourriez lancer un rituel.",
+   "image": "https://cards.scryfall.io/normal/front/1/3/13c2a2ee-6a6b-43ee-926d-93c98cdc5a34.jpg?1782799110"
+  }
+ },
+ {
+  "name": "Molten Duplication",
+  "number": "14",
+  "rarity": "mythic",
+  "manaCost": "{1}{R}",
+  "cmc": 2,
+  "typeLine": "Sorcery",
+  "oracleText": "Create a token that's a copy of target artifact or creature you control, except it's an artifact in addition to its other types. It gains haste until end of turn. Sacrifice it at the beginning of the next end step.",
+  "colors": [
+   "R"
+  ],
+  "keywords": [],
+  "image": "https://cards.scryfall.io/normal/front/f/d/fdbe1ac1-461f-4746-a8d8-6c8dea2c97c6.jpg?1783912001",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/f/d/fdbe1ac1-461f-4746-a8d8-6c8dea2c97c6.jpg?1783912001",
+  "legalities": {
+   "standard": "legal"
+  },
+  "fr": {
+   "name": "Duplication en fusion",
+   "typeLine": "Rituel",
+   "text": "Créez un jeton qui est une copie d'une cible, artefact ou créature, que vous contrôlez, excepté que c'est un artefact en plus de ses autres types. Il acquiert la célérité jusqu'à la fin du tour. Sacrifiez-le au début de la prochaine étape de fin.",
+   "image": "https://cards.scryfall.io/normal/front/9/0/90205555-5d4f-4df8-b9d3-add35fc2029e.jpg?1782799106"
+  }
+ },
+ {
+  "name": "Territory Forge",
+  "number": "15",
+  "rarity": "mythic",
+  "manaCost": "{4}{R}",
+  "cmc": 5,
+  "typeLine": "Artifact",
+  "oracleText": "When this artifact enters, if you cast it, exile target artifact or land.\nThis artifact has all activated abilities of the exiled card.",
+  "colors": [
+   "R"
+  ],
+  "keywords": [],
+  "image": "https://cards.scryfall.io/normal/front/7/1/71059bc8-f63a-4d9c-9d08-2e995e74cc59.jpg?1783912000",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/7/1/71059bc8-f63a-4d9c-9d08-2e995e74cc59.jpg?1783912000",
+  "legalities": {
+   "standard": "legal"
+  },
+  "fr": {
+   "name": "Forge de territoire",
+   "typeLine": "Artefact",
+   "text": "Quand la Forge de territoire arrive sur le champ de bataille, si vous l'avez lancée, exilez une cible, artefact ou terrain.\nLa Forge de territoire a toutes les capacités activées de la carte exilée.",
+   "image": "https://cards.scryfall.io/normal/front/0/b/0b0f255d-60d7-4788-92b3-7f3015604f27.jpg?1782799099"
+  }
+ },
+ {
+  "name": "Ancient Cornucopia",
+  "number": "16",
+  "rarity": "mythic",
+  "manaCost": "{2}{G}",
+  "cmc": 3,
+  "typeLine": "Artifact",
+  "oracleText": "Whenever you cast a spell that's one or more colors, you may gain 1 life for each of that spell's colors. Do this only once each turn.\n{T}: Add one mana of any color.",
+  "colors": [
+   "G"
+  ],
+  "keywords": [],
+  "producedMana": [
+   "B",
+   "G",
+   "R",
+   "U",
+   "W"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/f/9/f977975d-0439-4731-b129-270cc4cdbb23.jpg?1783912000",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/f/9/f977975d-0439-4731-b129-270cc4cdbb23.jpg?1783912000",
+  "legalities": {
+   "standard": "legal"
+  },
+  "fr": {
+   "name": "Cornucopée ancienne",
+   "typeLine": "Artefact",
+   "text": "À chaque fois que vous lancez un sort qui a au moins une couleur, vous pouvez gagner 1 point de vie pour chaque couleur de ce sort. Ne faites ceci qu'une seule fois par tour.\n{T} : Ajoutez un mana de la couleur de votre choix.",
+   "image": "https://cards.scryfall.io/normal/front/1/5/15189dbe-bc65-49bd-83ae-653d0f9fd4d3.jpg?1782799097"
+  }
+ },
+ {
+  "name": "Bristlebud Farmer",
+  "number": "17",
+  "rarity": "mythic",
+  "manaCost": "{2}{G}{G}",
+  "cmc": 4,
+  "typeLine": "Creature — Plant Druid",
+  "oracleText": "Trample\nWhen this creature enters, create two Food tokens. (They're artifacts with \"{2}, {T}, Sacrifice this token: You gain 3 life.\")\nWhenever this creature attacks, you may sacrifice a Food. If you do, mill three cards. You may put a permanent card from among them into your hand.",
+  "power": "5",
+  "toughness": "5",
+  "colors": [
+   "G"
+  ],
+  "keywords": [
+   "Food",
+   "Trample",
+   "Mill"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/d/4/d498c4de-5e80-4baa-9fcb-70f164880c84.jpg?1783911998",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/d/4/d498c4de-5e80-4baa-9fcb-70f164880c84.jpg?1783911998",
+  "legalities": {
+   "standard": "legal"
+  },
+  "fr": {
+   "name": "Fermier bourgépine",
+   "typeLine": "Créature — plante et druide",
+   "text": "Piétinement\nQuand le Fermier bourgépine arrive sur le champ de bataille, créez deux jetons Nourriture. (Ce sont des artefacts avec « {2}, {T}, sacrifiez cet artefact : Vous gagnez 3 points de vie. »)\nÀ chaque fois que le Fermier bourgépine attaque, vous pouvez sacrifier une nourriture. Si vous faites ainsi, meulez trois cartes. Vous pouvez mettre une carte de permanent parmi elles dans votre main.",
+   "image": "https://cards.scryfall.io/normal/front/f/c/fc46973e-c848-4faa-b9a0-719a510c7e3b.jpg?1782799090"
+  }
+ },
+ {
+  "name": "Omenpath Journey",
+  "number": "18",
+  "rarity": "mythic",
+  "manaCost": "{3}{G}",
+  "cmc": 4,
+  "typeLine": "Enchantment",
+  "oracleText": "When this enchantment enters, search your library for up to five land cards that have different names, exile them, then shuffle.\nAt the beginning of your end step, choose a card at random exiled with this enchantment and put it onto the battlefield tapped.",
+  "colors": [
+   "G"
+  ],
+  "keywords": [],
+  "image": "https://cards.scryfall.io/normal/front/c/4/c49c9b72-61c0-4e3a-a3a6-994b149398a9.jpg?1783911999",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/c/4/c49c9b72-61c0-4e3a-a3a6-994b149398a9.jpg?1783911999",
+  "legalities": {
+   "standard": "legal"
+  },
+  "fr": {
+   "name": "Traversée de la percée de présage",
+   "typeLine": "Enchantement",
+   "text": "Quand la Traversée de la percée de présage arrive sur le champ de bataille, cherchez dans votre bibliothèque jusqu'à cinq cartes de terrain avec des noms différents, exilez-les, puis mélangez.\nAu début de votre étape de fin, choisissez une carte au hasard exilée par la Traversée de la percée de présage et mettez-la sur le champ de bataille engagée.",
+   "image": "https://cards.scryfall.io/normal/front/0/8/088c3c6e-b994-4e1f-942d-5c9fe0eef533.jpg?1782799085"
+  }
+ },
+ {
+  "name": "Sandstorm Salvager",
+  "number": "19",
+  "rarity": "mythic",
+  "manaCost": "{2}{G}",
+  "cmc": 3,
+  "typeLine": "Creature — Human Artificer",
+  "oracleText": "When this creature enters, create a 3/3 colorless Golem artifact creature token.\n{2}, {T}: Put a +1/+1 counter on each creature token you control. They gain trample until end of turn.",
+  "power": "1",
+  "toughness": "1",
+  "colors": [
+   "G"
+  ],
+  "keywords": [],
+  "image": "https://cards.scryfall.io/normal/front/1/3/13b0f27c-a359-4702-833a-82fec161eeec.jpg?1783911997",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/1/3/13b0f27c-a359-4702-833a-82fec161eeec.jpg?1783911997",
+  "legalities": {
+   "standard": "legal"
+  },
+  "fr": {
+   "name": "Récupératrice de la tempête de sable",
+   "typeLine": "Créature — humain et artificier",
+   "text": "Quand la Récupératrice de la tempête de sable arrive sur le champ de bataille, créez un jeton de créature-artefact 3/3 incolore Golem.\n{2}, {T} : Mettez un marqueur +1/+1 sur chaque jeton de créature que vous contrôlez. Il acquiert le piétinement jusqu'à la fin du tour.",
+   "image": "https://cards.scryfall.io/normal/front/5/c/5c440d1a-acab-43cb-9220-5efb3b4dbdd6.jpg?1782799080"
+  }
+ },
+ {
+  "name": "Vaultborn Tyrant",
+  "number": "20",
+  "rarity": "mythic",
+  "manaCost": "{5}{G}{G}",
+  "cmc": 7,
+  "typeLine": "Creature — Dinosaur",
+  "oracleText": "Trample\nWhenever this creature or another creature you control with power 4 or greater enters, you gain 3 life and draw a card.\nWhen this creature dies, if it's not a token, create a token that's a copy of it, except it's an artifact in addition to its other types.",
+  "power": "6",
+  "toughness": "6",
+  "colors": [
+   "G"
+  ],
+  "keywords": [
+   "Trample"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/6/2/62b3f560-262b-4bc3-9aef-535fd7082c28.jpg?1784634289",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/6/2/62b3f560-262b-4bc3-9aef-535fd7082c28.jpg?1784634289",
+  "legalities": {
+   "standard": "legal"
+  },
+  "fr": {
+   "name": "Tyran né du coffre-fort",
+   "typeLine": "Créature — dinosaure",
+   "text": "Piétinement\nÀ chaque fois que le Tyran né du coffre-fort ou une autre créature avec une force supérieure ou égale à 4 arrive sur le champ de bataille sous votre contrôle, vous gagnez 3 points de vie et vous piochez une carte.\nQuand le Tyran né du coffre-fort meurt, si ce n'est pas un jeton, créez un jeton qui en est une copie, excepté que c'est un artefact en plus de ses autres types.",
+   "image": "https://cards.scryfall.io/normal/front/b/e/be37540c-10d5-4265-b14b-5a7a06435d43.jpg?1782799075"
+  }
+ },
+ {
+  "name": "Loot, the Key to Everything",
+  "number": "21",
+  "rarity": "mythic",
+  "manaCost": "{G}{U}{R}",
+  "cmc": 3,
+  "typeLine": "Legendary Creature — Beast Noble",
+  "oracleText": "Ward {1}\nAt the beginning of your upkeep, exile the top X cards of your library, where X is the number of card types among other nonland permanents you control. You may play those cards this turn.",
+  "power": "1",
+  "toughness": "2",
+  "colors": [
+   "G",
+   "R",
+   "U"
+  ],
+  "keywords": [
+   "Ward"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/f/b/fb169fa2-c92e-45f7-89a2-0ca0e3910a1c.jpg?1783911998",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/f/b/fb169fa2-c92e-45f7-89a2-0ca0e3910a1c.jpg?1783911998",
+  "legalities": {
+   "standard": "legal"
+  },
+  "fr": {
+   "name": "Rapine, la clé qui ouvre tout",
+   "typeLine": "Créature légendaire — bête et noble",
+   "text": "Parade {1}\nAu début de votre entretien, exilez les X cartes du dessus de votre bibliothèque, X étant le nombre de types de carte parmi les autres permanents non-terrain que vous contrôlez. Vous pouvez jouer ces cartes ce tour-ci.",
+   "image": "https://cards.scryfall.io/normal/front/f/b/fbaf93b9-332e-4c26-acfd-eb1fd597febf.jpg?1782799071"
+  }
+ },
+ {
+  "name": "Pest Control",
+  "number": "22",
+  "rarity": "mythic",
+  "manaCost": "{W}{B}",
+  "cmc": 2,
+  "typeLine": "Sorcery",
+  "oracleText": "Destroy all nonland permanents with mana value 1 or less.\nCycling {2} ({2}, Discard this card: Draw a card.)",
+  "colors": [
+   "B",
+   "W"
+  ],
+  "keywords": [
+   "Cycling"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/a/4/a4a01b92-dafb-4ea6-8eff-29f881f6be24.jpg?1783911996",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/a/4/a4a01b92-dafb-4ea6-8eff-29f881f6be24.jpg?1783911996",
+  "legalities": {
+   "standard": "legal"
+  },
+  "fr": {
+   "name": "Lutte antiparasitaire",
+   "typeLine": "Rituel",
+   "text": "Détruisez tous les permanents non-terrain avec une valeur de mana inférieure ou égale à 1.\nRecyclage {2} ({2}, défaussez-vous de cette carte : Piochez une carte.)",
+   "image": "https://cards.scryfall.io/normal/front/2/1/217c7adc-b618-4a8e-ad5f-4f19e84bae3c.jpg?1782799064"
+  }
+ },
+ {
+  "name": "Lost Jitte",
+  "number": "23",
+  "rarity": "mythic",
+  "manaCost": "{1}",
+  "cmc": 1,
+  "typeLine": "Legendary Artifact — Equipment",
+  "oracleText": "Whenever equipped creature deals combat damage, put a charge counter on Lost Jitte.\nRemove a charge counter from Lost Jitte: Choose one —\n• Untap target land.\n• Target creature can't block this turn.\n• Put a +1/+1 counter on equipped creature.\nEquip {1}",
+  "colors": [],
+  "keywords": [
+   "Equip"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/c/9/c936504c-4e90-408f-ba98-0fb8c0378471.jpg?1783911996",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/c/9/c936504c-4e90-408f-ba98-0fb8c0378471.jpg?1783911996",
+  "legalities": {
+   "standard": "legal"
+  },
+  "fr": {
+   "name": "Jitte perdu",
+   "typeLine": "Artefact légendaire — équipement",
+   "text": "À chaque fois que la créature équipée inflige des blessures de combat, mettez un marqueur « charge » sur le Jitte perdu.\nRetirez un marqueur « charge » du Jitte perdu : choisissez l'un —\n• Dégagez un terrain ciblé.\n• Une créature ciblée ne peut pas bloquer ce tour-ci.\n• Mettez un marqueur +1/+1 sur la créature équipée.\nÉquipement {1}",
+   "image": "https://cards.scryfall.io/normal/front/e/e/eeb8d311-6ab9-4080-8f51-f577a6573d20.jpg?1782799062"
+  }
+ },
+ {
+  "name": "Lotus Ring",
+  "number": "24",
+  "rarity": "mythic",
+  "manaCost": "{3}",
+  "cmc": 3,
+  "typeLine": "Artifact — Equipment",
+  "oracleText": "Indestructible\nEquipped creature gets +3/+3 and has vigilance and \"{T}, Sacrifice this creature: Add three mana of any one color.\"\nEquip {3}",
+  "colors": [],
+  "keywords": [
+   "Indestructible",
+   "Equip"
+  ],
+  "producedMana": [
+   "B",
+   "G",
+   "R",
+   "U",
+   "W"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/0/2/02267717-66e0-41f7-8009-75586a4aa4be.jpg?1783911995",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/0/2/02267717-66e0-41f7-8009-75586a4aa4be.jpg?1783911995",
+  "legalities": {
+   "standard": "legal"
+  },
+  "fr": {
+   "name": "Anneau de lotus",
+   "typeLine": "Artefact — équipement",
+   "text": "Indestructible\nLa créature équipée gagne +3/+3 et a la vigilance et « {T}, sacrifiez cette créature : Ajoutez trois manas d'une seule couleur de votre choix. »\nÉquipement {3}",
+   "image": "https://cards.scryfall.io/normal/front/2/e/2e1623bd-6f78-4489-a0d5-231e4bac92cf.jpg?1782799055"
+  }
+ },
+ {
+  "name": "Nexus of Becoming",
+  "number": "25",
+  "rarity": "mythic",
+  "manaCost": "{6}",
+  "cmc": 6,
+  "typeLine": "Artifact",
+  "oracleText": "At the beginning of combat on your turn, draw a card. Then you may exile an artifact or creature card from your hand. If you do, create a token that's a copy of the exiled card, except it's a 3/3 Golem artifact creature in addition to its other types.",
+  "colors": [],
+  "keywords": [],
+  "image": "https://cards.scryfall.io/normal/front/b/0/b0f61742-522c-4b36-97db-41d0c412a072.jpg?1783911995",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/b/0/b0f61742-522c-4b36-97db-41d0c412a072.jpg?1783911995",
+  "legalities": {
+   "standard": "legal"
+  },
+  "fr": {
+   "name": "Nexus de conversion",
+   "typeLine": "Artefact",
+   "text": "Au début du combat pendant votre tour, piochez une carte. Puis vous pouvez exiler une carte d'artefact ou de créature de votre main. Si vous faites ainsi, créez un jeton qui est une copie de la carte exilée, excepté que c'est une créature-artefact 3/3 Golem en plus de ses autres types.",
+   "image": "https://cards.scryfall.io/normal/front/9/8/981834f8-6c94-4708-b2b1-64a3a4ea41b1.jpg?1782799050"
+  }
+ },
+ {
+  "name": "Sword of Wealth and Power",
+  "number": "26",
+  "rarity": "mythic",
+  "manaCost": "{3}",
+  "cmc": 3,
+  "typeLine": "Artifact — Equipment",
+  "oracleText": "Equipped creature gets +2/+2 and has protection from instants and from sorceries.\nWhenever equipped creature deals combat damage to a player, create a Treasure token. When you next cast an instant or sorcery spell this turn, copy that spell. You may choose new targets for the copy.\nEquip {2}",
+  "colors": [],
+  "keywords": [
+   "Treasure",
+   "Equip"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/e/d/ed9e5041-3c05-4a8a-9f00-081b01685d0c.jpg?1784634311",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/e/d/ed9e5041-3c05-4a8a-9f00-081b01685d0c.jpg?1784634311",
+  "legalities": {
+   "standard": "legal"
+  },
+  "fr": {
+   "name": "Épée de Richesse et de Puissance",
+   "typeLine": "Artefact — équipement",
+   "text": "La créature équipée gagne +2/+2 et a la protection contre les éphémères et contre les rituels.\nÀ chaque fois que la créature équipée inflige des blessures de combat à un joueur, créez un jeton Trésor. Quand vous lancez pour la prochaine fois ce tour-ci un sort d'éphémère ou de rituel, copiez ce sort. Vous pouvez choisir de nouvelles cibles pour cette copie.\nÉquipement {2}",
+   "image": "https://cards.scryfall.io/normal/front/4/4/4497b637-a23d-4e9a-a26d-e602c00753aa.jpg?1782799045"
+  }
+ },
+ {
+  "name": "Torpor Orb",
+  "number": "27",
+  "rarity": "mythic",
+  "manaCost": "{2}",
+  "cmc": 2,
+  "typeLine": "Artifact",
+  "oracleText": "Creatures entering don't cause abilities to trigger.",
+  "colors": [],
+  "keywords": [],
+  "image": "https://cards.scryfall.io/normal/front/d/b/dbf02a38-d10d-463e-ab99-e7fd848a1bd3.jpg?1784634333",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/d/b/dbf02a38-d10d-463e-ab99-e7fd848a1bd3.jpg?1784634333",
+  "legalities": {
+   "standard": "legal"
+  },
+  "fr": {
+   "name": "Orbe de torpeur",
+   "typeLine": "Artefact",
+   "text": "Les créatures qui arrivent sur le champ de bataille ne provoquent pas le déclenchement des capacités.",
+   "image": "https://cards.scryfall.io/normal/front/3/7/3765d00c-1839-4443-bd31-388ff31a8761.jpg?1782799039"
+  }
+ },
+ {
+  "name": "Transmutation Font",
+  "number": "28",
+  "rarity": "mythic",
+  "manaCost": "{5}",
+  "cmc": 5,
+  "typeLine": "Artifact",
+  "oracleText": "{T}: Create your choice of a Blood token, a Clue token, or a Food token.\n{3}, {T}, Sacrifice three artifact tokens with different names: Search your library for an artifact card, put it onto the battlefield, then shuffle. Activate only as a sorcery.",
+  "colors": [],
+  "keywords": [
+   "Food"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/e/6/e6cfe673-d688-499a-882b-4fe5418739e3.jpg?1783911996",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/e/6/e6cfe673-d688-499a-882b-4fe5418739e3.jpg?1783911996",
+  "legalities": {
+   "standard": "legal"
+  },
+  "fr": {
+   "name": "Fontaine de transmutation",
+   "typeLine": "Artefact",
+   "text": "{T} : Créez, selon votre choix, un jeton Sang, un jeton Indice ou un jeton Nourriture.\n{3}, {T}, sacrifiez trois jetons d'artefact avec des noms différents : Cherchez dans votre bibliothèque une carte d'artefact, mettez-la sur le champ de bataille, puis mélangez. N'activez que lorsque vous pourriez lancer un rituel.",
+   "image": "https://cards.scryfall.io/normal/front/5/e/5e81c872-cb5d-40a6-aec6-6f14fa6a6d40.jpg?1782799037"
+  }
+ },
+ {
+  "name": "Fomori Vault",
+  "number": "29",
+  "rarity": "mythic",
+  "manaCost": "",
+  "cmc": 0,
+  "typeLine": "Land",
+  "oracleText": "{T}: Add {C}.\n{3}, {T}, Discard a card: Look at the top X cards of your library, where X is the number of artifacts you control. Put one of those cards into your hand and the rest on the bottom of your library in a random order.",
+  "colors": [],
+  "keywords": [],
+  "producedMana": [
+   "C"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/a/5/a5433b98-4657-4bbe-9e72-d3c94c6aa8ef.jpg?1783911995",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/a/5/a5433b98-4657-4bbe-9e72-d3c94c6aa8ef.jpg?1783911995",
+  "legalities": {
+   "standard": "legal"
+  },
+  "fr": {
+   "name": "Chambre forte fomori",
+   "typeLine": "Terrain",
+   "text": "{T} : Ajoutez {C}.\n{3}, {T}, défaussez-vous d'une carte : Regardez les X cartes du dessus de votre bibliothèque, X étant le nombre d'artefacts que vous contrôlez. Mettez l'une de ces cartes dans votre main et le reste au-dessous de votre bibliothèque, dans un ordre aléatoire.",
+   "image": "https://cards.scryfall.io/normal/front/7/e/7e321594-31da-4725-a9c7-de20cb43b9f5.jpg?1782799030"
+  }
+ },
+ {
+  "name": "Tarnation Vista",
+  "number": "30",
+  "rarity": "mythic",
+  "manaCost": "",
+  "cmc": 0,
+  "typeLine": "Land",
+  "oracleText": "This land enters tapped. As it enters, choose a color.\n{T}: Add one mana of the chosen color.\n{1}, {T}: For each color among monocolored permanents you control, add one mana of that color.",
+  "colors": [],
+  "keywords": [],
+  "producedMana": [
+   "B",
+   "G",
+   "R",
+   "U",
+   "W"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/9/6/962552a1-ec34-49e2-a23d-85dfb405d5e0.jpg?1783911995",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/9/6/962552a1-ec34-49e2-a23d-85dfb405d5e0.jpg?1783911995",
+  "legalities": {
+   "standard": "legal"
+  },
+  "fr": {
+   "name": "Vue de Damnation",
+   "typeLine": "Terrain",
+   "text": "La Vue de Damnation arrive sur le champ de bataille engagée. Au moment où elle arrive, choisissez une couleur.\n{T} : Ajoutez un mana de la couleur choisie.\n{1}, {T} : Pour chaque couleur parmi les permanents monochromes que vous contrôlez, ajoutez un mana de cette couleur.",
+   "image": "https://cards.scryfall.io/normal/front/3/6/36a31f92-34f1-413b-9896-0496c07d7491.jpg?1782799026"
+  }
+ }
+]
