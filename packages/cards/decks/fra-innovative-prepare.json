@@ -1,0 +1,31 @@
+{
+  "id": "fra-innovative-prepare",
+  "name": "Innovative : sorts préparés",
+  "description": "Bleu-rouge : créatures préparées, prouesse et sorts de dégâts, avec des volants pour finir.",
+  "colors": [
+    "U",
+    "R"
+  ],
+  "cover": "https://cards.scryfall.io/art_crop/front/2/b/2b0ebea0-86de-4da4-9fe8-dacc1e75c161.jpg?1789470850",
+  "main": [
+    [11, "Mountain"],
+    [10, "Island"],
+    [3, "Innovative Commons"],
+    [3, "Hallway Heckler"],
+    [3, "Pyre Rhymer"],
+    [2, "Variable Chaser"],
+    [3, "Chandra's Emberling"],
+    [2, "Stingcaster Mage"],
+    [2, "Saheeli, Jewel of Avishkar"],
+    [2, "Sphinx of False Conclusions"],
+    [2, "Curse-Marred Demon"],
+    [2, "Tether Technician"],
+    [2, "Cryotheory Adept"],
+    [4, "No Admittance"],
+    [2, "Twinned Vision"],
+    [3, "Wrath of the Bloodmane"],
+    [2, "Fulminous Forte"],
+    [1, "Chandra, Torch of Defiance"],
+    [1, "Clash of Elements"]
+  ]
+}

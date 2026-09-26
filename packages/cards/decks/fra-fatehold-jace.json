@@ -1,0 +1,31 @@
+{
+  "id": "fra-fatehold-jace",
+  "name": "Fatehold : Jace renforcé",
+  "description": "Blanc-bleu : surveillance, jetons Jace renforcés et Cadets volants. Le deck contrôle la partie puis écrase avec ses planeswalkers.",
+  "colors": [
+    "W",
+    "U"
+  ],
+  "cover": "https://cards.scryfall.io/art_crop/front/9/8/986f9e98-9d8d-428b-9187-860745cf3269.jpg?1788878215",
+  "main": [
+    [8, "Plains"],
+    [8, "Island"],
+    [4, "Deserted Beach"],
+    [3, "Fatehold Annex"],
+    [1, "Theorist's Sanctum"],
+    [4, "Fatehold Chronologist"],
+    [3, "Proctor of Potential"],
+    [4, "Mindseeker Oculus"],
+    [3, "Theorist's Proxy"],
+    [3, "Prudent Fateseer"],
+    [2, "Denzilore Fatehold"],
+    [2, "Desperate Futurescribe"],
+    [2, "Semester Foreseer"],
+    [4, "Fatehold Charm"],
+    [3, "Academic Ascent"],
+    [2, "Your Fate Ends Here"],
+    [2, "Prophesied End"],
+    [1, "The Theorist, Jace Beleren"],
+    [1, "Jace, Reality Sculptor"]
+  ]
+}

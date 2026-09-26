@@ -1,0 +1,30 @@
+{
+  "id": "fra-dedicated-cadets",
+  "name": "Dedicated : Cadets en armes",
+  "description": "Rouge-blanc : attaque rapide, jetons Cadet, Équipements et dégâts directs.",
+  "colors": [
+    "R",
+    "W"
+  ],
+  "cover": "https://cards.scryfall.io/art_crop/front/d/5/d5cb9810-3c2d-4ae4-b8b6-0155ca3f47ad.jpg?1789127178",
+  "main": [
+    [11, "Mountain"],
+    [10, "Plains"],
+    [2, "Dedicated Commons"],
+    [4, "Skilled Battlecarver"],
+    [3, "Campus Crier"],
+    [3, "Unflinching Hortimancer"],
+    [3, "Heartstring Puller"],
+    [2, "Repurposed Enforcer"],
+    [3, "Shatterwing Pegasus"],
+    [2, "Danitha, Sword of Hope"],
+    [2, "Master of Barbs"],
+    [2, "Samut, Hazoret's Champion"],
+    [3, "Command the Stage"],
+    [2, "Warrior's Blades"],
+    [2, "Prophesied End"],
+    [3, "No Admittance"],
+    [2, "Wrath of the Bloodmane"],
+    [1, "Chandra, Torch of Defiance"]
+  ]
+}

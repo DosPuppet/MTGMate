@@ -1,0 +1,31 @@
+{
+  "id": "fra-formidable-cimetiere",
+  "name": "Formidable : cimetière",
+  "description": "Noir-vert : meule, seuil et contact mortel ; Tarmogoyf et les Witchstalkers profitent d'un cimetière bien rempli.",
+  "colors": [
+    "B",
+    "G"
+  ],
+  "cover": "https://cards.scryfall.io/art_crop/front/8/b/8be5ee47-8f8a-4e3c-b1a1-9ca0e1fdec7f.jpg?1789127270",
+  "main": [
+    [11, "Swamp"],
+    [10, "Forest"],
+    [3, "Formidable Commons"],
+    [4, "Void Extrapolator"],
+    [2, "Dark Matter Manipulator"],
+    [3, "Primal Witchstalker"],
+    [3, "Arcane Amphisbaena"],
+    [2, "Tarmogoyf"],
+    [3, "Rampart Hunter"],
+    [2, "Theoretical Necromancer"],
+    [2, "Carnivorous Cultivator"],
+    [2, "Hapatra, the Desert Fang"],
+    [1, "Vraska, the Cutting Glare"],
+    [2, "Apex Witchstalker"],
+    [3, "Last Gasp"],
+    [2, "Something Worth Saving"],
+    [2, "Silence the Echo"],
+    [2, "Restore with Empathy"],
+    [1, "Garruk, Veiled Butcher"]
+  ]
+}

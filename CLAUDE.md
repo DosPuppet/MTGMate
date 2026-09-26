@@ -22,7 +22,7 @@ Ce fichier sert au suivi du projet entre les sessions. Le README présente le pr
 | Effets sonores (échantillons Kenney CC0, volume, muet avec M) | ✅ |
 | Jeu en ligne : duel Standard à 2 (serveur local, code de salon, corde, reconnexion, revanche) | ✅ |
 | Déploiement : pm2 derrière nginx sur un VPS (`docs/deploiement.md`, `deploy/`) | ✅ documenté et testé en local (pm2, nginx) |
-| **Reality Fracture (FRA, « Réalité fracturée »)** | **276 / 279** (lots 0 à F faits ; hors Emrakul, Uldaros Theorix, Hall of Echoes) |
+| **Reality Fracture (FRA, « Réalité fracturée »)** | **276 / 279** (lots 0 à G faits, dont 4 decks préconstruits ; hors Emrakul, Uldaros Theorix, Hall of Echoes) |
 | Autres extensions Standard | à faire |
 
 ### Reality Fracture (FRA)
@@ -73,8 +73,14 @@ Ce fichier sert au suivi du projet entre les sessions. Le README présente le pr
   - le domaine (`basicLandTypes`), la recherche « de noms différents » et « quand vous défaussez cette carte ».
   
   Les cartes Jace du lot B (Hexhaven Battalion, Countersculpt, Theorist's Sanctum) passent au lot D, Tam au lot E et Emrakul au lot F.
-- Lots suivants :
-  - **G.** 4 decks préconstruits FRA.
+- Lot G (**decks préconstruits**) : ✅. Quatre decks bicolores en cartes FRA seules (`packages/cards/decks/fra-*.json`), un par faction :
+  - Fatehold : Jace renforcé (W/U) ;
+  - Innovative : sorts préparés (U/R) ;
+  - Formidable : cimetière (B/G) ;
+  - Dedicated : Cadets en armes (R/W).
+  
+  Ils sont ajoutés après les deux decks FDN dans `DECKS` (les tests et le bench utilisent les deux premiers). Équilibrage vérifié par un tournoi toutes rondes entre IA heuristiques, 10 parties par affrontement : tous les decks gagnent entre 38 et 59 % de leurs parties.
+- Reste pour FRA : Emrakul, Uldaros Theorix et Hall of Echoes, puis le réimport des textes français après le 2 octobre.
 
 ### Lots du set principal FDN (tous terminés)
 

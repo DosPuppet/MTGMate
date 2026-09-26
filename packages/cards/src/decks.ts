@@ -1,4 +1,8 @@
 /** Listes de decks seules (sans les données de cartes) : utilisable côté interface sans alourdir le bundle. */
+import fraDedicatedCadets from "../decks/fra-dedicated-cadets.json";
+import fraFateholdJace from "../decks/fra-fatehold-jace.json";
+import fraFormidableCimetiere from "../decks/fra-formidable-cimetiere.json";
+import fraInnovativePrepare from "../decks/fra-innovative-prepare.json";
 import rougeBrulure from "../decks/rouge-brulure.json";
 import vertColosses from "../decks/vert-colosses.json";
 
@@ -15,4 +19,12 @@ export interface DeckList {
   builtin?: boolean;
 }
 
-export const DECKS: DeckList[] = [vertColosses, rougeBrulure].map((d) => ({ ...(d as DeckList), builtin: true }));
+/** Foundations d'abord (les tests et le bench utilisent les deux premiers), puis Reality Fracture. */
+export const DECKS: DeckList[] = [
+  vertColosses,
+  rougeBrulure,
+  fraFateholdJace,
+  fraInnovativePrepare,
+  fraFormidableCimetiere,
+  fraDedicatedCadets,
+].map((d) => ({ ...(d as DeckList), builtin: true }));
