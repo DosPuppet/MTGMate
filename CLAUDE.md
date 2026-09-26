@@ -39,7 +39,8 @@ Objectif : les 18 extensions Standard restantes (environ 4 360 cartes), **100 % 
   - 0.7 Sagas, Classes, Affaires ✅ ;
   - 0.8 cartes face cachée ✅ ;
   - 0.9 mots-clés communs ✅ ;
-  - 0.10 performances.
+  - 0.10 performances ✅.
+- **Phase 0 terminée.**
 - **Phase 1, extensions** (lots A/B/C, D pour FIN) : EOE, DFT, OTJ+BIG, BLB, TDM, WOE, SOS, ECL, TLA, SPM, MSH, TMT, HOB, MKM, DSK, LCI, FIN.
 - **Phase 2 :** decks Standard multi-extensions, puis clôture (5 158 / 5 158).
 
@@ -120,6 +121,14 @@ Lot 0.9 (mécaniques communes à plusieurs extensions) :
 - monture (702.171) : « Saddle N » lu dans le texte (même choix automatique que l'équipage), condition `cond.saddled`, déclencheur `when.saddled` ;
 - les autres mécaniques (protections particulières, cascade, channel, don, rejeton, contempler…) sont traitées dans les lots de leur extension ;
 - l'audit des informations cachées compte les cartes révélées (`reveal`) comme publiques.
+
+Lot 0.10 (performances, pool complet de 5 174 cartes) :
+- moteur :
+  - chargement de `@mtgx/cards` en 212 ms ;
+  - au profil du fuzz, la copie d'état (25 %) et les invariants du fuzz (21 %) dominent. L'état recopié reste petit (environ 30 Ko d'objets ; les définitions sont partagées), et le bench n'a pas régressé ;
+- deckbuilder :
+  - rendu progressif de la collection (pages de 120 cartes, suivantes à l'approche du bas de la grille) : toutes les cartes s'affichent en 164 ms au lieu de 2 084 ms ;
+  - filtres différés (`useDeferredValue`) : une recherche prend 167 ms au lieu de 474 ms, sans bloquer la saisie.
 
 ### Reality Fracture (FRA)
 

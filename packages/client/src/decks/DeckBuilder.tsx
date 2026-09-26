@@ -14,7 +14,7 @@ import {
   validateDeck,
 } from "@mtgx/cards";
 import { type CardDef, cardFace, manaValue } from "@mtgx/engine";
-import { useMemo, useState } from "react";
+import { useDeferredValue, useEffect, useMemo, useRef, useState } from "react";
 import { Card, ManaCost } from "../board/Card";
 import { Preview } from "../board/Sidebar";
 import { faceName } from "../i18n";
@@ -142,7 +142,29 @@ function Collection({ deck, onChange }: { deck: DeckList; onChange: (name: strin
     legalOnly: true,
     set: "",
   });
-  const cards = useMemo(() => POOL.filter((c) => matches(c, f)), [f]);
+  // Filtres différés : la saisie reste fluide pendant que la grille se recalcule.
+  const deferred = useDeferredValue(f);
+  const cards = useMemo(() => POOL.filter((c) => matches(c, deferred)), [deferred]);
+  // Rendu progressif (plus de 5 000 cartes) : une page, puis la suivante à l'approche du bas de la grille.
+  // Le nombre de cartes affichées est lié à la liste filtrée : un nouveau filtre repart d'une page.
+  const [more, setMore] = useState<{ of: CardDef[]; n: number }>({ of: cards, n: PAGE });
+  const shown = more.of === cards ? more.n : PAGE;
+  const current = useRef(cards);
+  current.current = cards;
+  const sentinel = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const el = sentinel.current;
+    if (!el) return;
+    const io = new IntersectionObserver(
+      (entries) => {
+        if (!entries.some((e) => e.isIntersecting)) return;
+        setMore((m) => ({ of: current.current, n: (m.of === current.current ? m.n : PAGE) + PAGE }));
+      },
+      { rootMargin: "600px" },
+    );
+    io.observe(el);
+    return () => io.disconnect();
+  }, []);
   const inDeck = (name: string) =>
     (deck.main.find((e) => e[1] === name)?.[0] ?? 0) + (deck.sideboard?.find((e) => e[1] === name)?.[0] ?? 0);
   const toggleColor = (c: string) =>
@@ -212,7 +234,7 @@ function Collection({ deck, onChange }: { deck: DeckList; onChange: (name: strin
         </span>
       </div>
       <div className="collection-grid">
-        {cards.map((c) => {
+        {cards.slice(0, shown).map((c) => {
           const n = inDeck(c.name);
           const illegal = legalityTag(c);
           return (
@@ -234,10 +256,14 @@ function Collection({ deck, onChange }: { deck: DeckList; onChange: (name: strin
             </div>
           );
         })}
+        <div ref={sentinel} className="collection-sentinel" />
       </div>
     </section>
   );
 }
+
+/** Cartes affichées par page dans la collection (rendu progressif). */
+const PAGE = 120;
 
 // ---------------------------------------------------------------------------
 // Deck
