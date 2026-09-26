@@ -3,6 +3,7 @@ import { Board, useMainAction } from "./board/Board";
 import { Sidebar } from "./board/Sidebar";
 import { DeckBuilder } from "./decks/DeckBuilder";
 import { Lobby } from "./lobby/Lobby";
+import { Online } from "./lobby/Online";
 
 import { Prompts } from "./prompts/Prompts";
 import { useGame } from "./store";
@@ -53,7 +54,7 @@ export function App() {
   const screen = useGame((s) => s.screen);
   return (
     <>
-      {screen === "decks" ? <DeckBuilder /> : screen === "lobby" ? <Lobby /> : <GameScreen />}
+      {screen === "decks" ? <DeckBuilder /> : screen === "lobby" ? <Lobby /> : screen === "online" ? <Online /> : <GameScreen />}
       <Toast />
     </>
   );

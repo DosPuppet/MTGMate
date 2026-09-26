@@ -206,6 +206,11 @@ export function describeEvents(
           exile: "est exilé",
           graveyard: "va au cimetière",
         };
+        if (!e.defId) {
+          // Carte cachée d'un autre joueur (recherche vers la main, remise dans la bibliothèque…).
+          add(`${who(e.owner)} met une carte ${e.to === "hand" ? "dans sa main" : "dans sa bibliothèque"}.`, "opp");
+          break;
+        }
         add(`${name(e.defId)} ${where[e.to] ?? `va en ${e.to}`}.`, "info");
         break;
       }

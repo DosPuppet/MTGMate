@@ -4,7 +4,7 @@
  */
 import { heuristicAgent } from "@mtgx/ai";
 import { buildDeck, card, TOKEN_SPECS } from "@mtgx/cards";
-import { type CardFace, cardFace, createGame, createObject, createTokens, GameHost, type GameState } from "@mtgx/engine";
+import { createGame, createObject, createTokens, GameHost, type GameState, visibleFaces } from "@mtgx/engine";
 import type { FromWorker, Sandbox, ToWorker } from "../protocol";
 
 const HUMAN = "p1";
@@ -12,12 +12,6 @@ let host: GameHost | null = null;
 
 const post = (msg: FromWorker) => (self as unknown as Worker).postMessage(msg);
 const sleep = (ms: number) => new Promise<void>((r) => setTimeout(r, ms));
-
-function faces(): Record<string, CardFace> {
-  const out: Record<string, CardFace> = {};
-  for (const [id, def] of Object.entries(host?.state.defs ?? {})) out[id] = cardFace(def);
-  return out;
-}
 
 /** Met en jeu les permanents du bac à sable, sans mal d'invocation. */
 function applySandbox(s: GameState, sandbox: Sandbox): void {
@@ -63,7 +57,9 @@ self.onmessage = async (e: MessageEvent<ToWorker>) => {
           agents: Object.fromEntries(msg.aiDecks.map((_, i) => [`p${i + 2}`, heuristicAgent()])),
           aiDelay: 900,
           sleep,
-          onUpdate: (_p, view, evts) => post({ type: "update", view, events: evts, faces: faces() }),
+          // Mêmes faces qu'en ligne : seulement les cartes connues du joueur (pas la decklist adverse).
+          onUpdate: (_p, view, evts) =>
+            post({ type: "update", view, events: evts, faces: host ? visibleFaces(host.state, view, evts) : {} }),
         },
         events,
       );

@@ -418,7 +418,11 @@ function GraveyardViewer() {
 
 function GameOver({ view }: { view: GameView }) {
   const backToLobby = useGame((s) => s.backToLobby);
+  const online = useGame((s) => s.online);
+  const rematch = useGame((s) => s.rematch);
   if (!view.over) return null;
+  const me = online?.players.find((p) => p.seat === online.seat);
+  const opp = online?.players.find((p) => p.seat !== online.seat);
   const won = view.winner === view.viewer;
   return (
     <div className="modal-backdrop soft">
@@ -428,9 +432,21 @@ function GameOver({ view }: { view: GameView }) {
           Tour {view.turn.number} · Vous {view.players[view.viewer]?.life} PV
           {view.opponents.map((o) => ` · ${view.players[o]?.name} ${view.players[o]?.life} PV`).join("")}
         </p>
+        {online && opp?.rematch && !me?.rematch && <p className="hint">{opp.name} propose une revanche.</p>}
         <div className="modal-actions">
-          <button type="button" className="btn primary" onClick={backToLobby}>
-            Retour au menu
+          {online && (
+            <button
+              type="button"
+              className="btn primary"
+              disabled={!!me?.rematch || !opp?.connected}
+              onClick={rematch}
+              title={!opp?.connected ? "Votre adversaire a quitté la partie" : undefined}
+            >
+              {me?.rematch ? `En attente de ${opp?.name ?? "l'adversaire"}…` : "Revanche"}
+            </button>
+          )}
+          <button type="button" className={`btn ${online ? "" : "primary"}`} onClick={backToLobby}>
+            {online ? "Quitter" : "Retour au menu"}
           </button>
         </div>
       </div>

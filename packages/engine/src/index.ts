@@ -39,4 +39,4 @@ export {
 } from "./turn";
 export * from "./types";
 export type { CardFace, GameView, ObjectView, PendingView, PlayerView, StackItemView } from "./view";
-export { cardFace, filterEvents, objectView, projectView } from "./view";
+export { cardFace, filterEvents, objectView, projectView, visibleFaces } from "./view";

@@ -93,6 +93,7 @@ function Settings() {
   const decide = useGame((s) => s.decide);
   const backToLobby = useGame((s) => s.backToLobby);
   const over = useGame((s) => s.view?.over);
+  const online = useGame((s) => !!s.online);
   return (
     <div className="settings">
       <div className="seg">
@@ -113,7 +114,15 @@ function Settings() {
           Abandonner
         </button>
       )}
-      <button type="button" className="btn small ghost" onClick={backToLobby}>
+      <button
+        type="button"
+        className="btn small ghost"
+        onClick={() => {
+          // En ligne, quitter une partie en cours vaut abandon.
+          if (online && !over && !window.confirm("Quitter la partie en ligne ? Elle sera comptée comme un abandon.")) return;
+          backToLobby();
+        }}
+      >
         Menu
       </button>
     </div>

@@ -1390,7 +1390,8 @@ export type GameEvent =
       blocks: { blocker: ObjectId; attacker: ObjectId; blockerDefId: string; attackerDefId: string }[];
     }
   | { type: "discard"; player: PlayerId; defIds: string[] }
-  | { type: "moved"; objectId: ObjectId; defId: string; from: Zone; to: Zone }
+  /** `objectId` et `defId` sont retirés (filterEvents) pour un déplacement caché → caché d'une carte adverse. */
+  | { type: "moved"; owner: PlayerId; objectId?: ObjectId; defId?: string; from: Zone; to: Zone }
   | { type: "scry"; player: PlayerId; top: number; bottom: number }
   | { type: "choice"; player: PlayerId; intent: ChoiceIntent }
   | { type: "trigger"; player: PlayerId; stackId: string; defId: string; targets: string[] }

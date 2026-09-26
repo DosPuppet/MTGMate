@@ -401,6 +401,7 @@ button {
 
 /* Bande centrale */
 .center-strip {
+  position: relative;
   display: grid;
   grid-template-columns: auto minmax(0, 1fr);
   align-items: center;
@@ -1470,6 +1471,114 @@ button {
   justify-content: center;
   flex-wrap: wrap;
 }
+/* Jeu en ligne */
+.lobby.online h1 {
+  font-size: 40px;
+}
+.online-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.online-actions {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 16px;
+}
+.online-card {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  align-items: flex-start;
+  padding: 16px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.03);
+}
+.online-card h3 {
+  margin: 0;
+}
+.code-input {
+  width: 9ch;
+  font-size: 20px;
+  letter-spacing: 4px;
+  text-transform: uppercase;
+}
+.online-error {
+  text-align: center;
+}
+.online-waiting {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  text-align: center;
+}
+.room-code {
+  font-family: Cinzel, serif;
+  font-size: 56px;
+  letter-spacing: 12px;
+  color: var(--gold);
+}
+.waiting-dots::after {
+  content: "…";
+  animation: blink 1.2s steps(2) infinite;
+}
+@keyframes blink {
+  50% {
+    opacity: 0.2;
+  }
+}
+/* Corde : fin du temps de la décision en cours (bas de la bande centrale). */
+.rope {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -1px;
+  height: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+}
+.rope-bar {
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  height: 4px;
+  background: #9aa6b2;
+  transition: width 0.25s linear;
+}
+.rope.mine .rope-bar {
+  background: linear-gradient(90deg, #ff7a3d, var(--gold));
+  box-shadow: 0 0 8px rgba(255, 150, 60, 0.7);
+}
+.rope-text {
+  position: relative;
+  font-size: 11px;
+  color: var(--dim);
+  background: rgba(10, 14, 20, 0.85);
+  padding: 0 8px;
+  border-radius: 8px;
+}
+.rope.mine .rope-text {
+  color: #ffb36b;
+}
+.net-banner {
+  position: absolute;
+  left: 50%;
+  top: -18px;
+  translate: -50% 0;
+  z-index: 5;
+  padding: 4px 14px;
+  border-radius: 12px;
+  background: rgba(120, 30, 30, 0.92);
+  border: 1px solid #ff7b7b;
+  color: #ffe0e0;
+  font-size: 13px;
+  white-space: nowrap;
+}
+
 .lobby-help {
   color: var(--dim);
   font-size: 13px;

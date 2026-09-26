@@ -17,13 +17,14 @@ import {
   type Step,
   type TargetOption,
 } from "@mtgx/engine";
+import type { Clock, RoomInfo, Seat, ServerMessage } from "@mtgx/server/protocol";
 import { create } from "zustand";
 import { soundsFor } from "./audio/eventSounds";
 import { playSound, preloadSounds } from "./audio/sfx";
 import { findObjectEl } from "./board/layout";
 import { describeEvents, type Lang, type LogLine } from "./i18n";
 import type { FromWorker, Sandbox } from "./protocol";
-import { LocalSession } from "./session";
+import { LocalSession, RemoteSession, type Session } from "./session";
 
 type CastOption = Extract<ActionOption, { type: "cast" }>;
 type ActivateOption = Extract<ActionOption, { type: "activate" }>;
@@ -67,11 +68,27 @@ export interface Hover {
   obj?: ObjectView;
 }
 
+/** Partie en ligne (salon sur le serveur). */
+export interface OnlineState {
+  status: "connecting" | RoomInfo["status"];
+  code: string | null;
+  seat: Seat | null;
+  players: RoomInfo["players"];
+  /** Adversaire déconnecté : échéance de son retour (Date.now()). */
+  opponent: { connected: boolean; deadline: number | null };
+  /** Minuteur de la décision en cours ; `deadline` en Date.now(). */
+  clock: (Clock & { deadline: number }) | null;
+  error: string | null;
+  /** Connexion au serveur perdue : reconnexion en cours. */
+  reconnecting: boolean;
+}
+
 interface Store {
-  screen: "lobby" | "decks" | "game";
+  screen: "lobby" | "decks" | "game" | "online";
   /** Deck ouvert dans le deckbuilder. */
   editingDeck: string | null;
-  session: LocalSession | null;
+  session: Session | null;
+  online: OnlineState | null;
   view: GameView | null;
   faces: Record<string, CardFace>;
   log: LogLine[];
@@ -95,6 +112,14 @@ interface Store {
   spotlight: { id: number; face: CardFace; who: string } | null;
 
   startGame(playerDeck: DeckEntries, aiDecks: DeckEntries[], sandbox?: Sandbox): void;
+  openOnline(): void;
+  createRoom(name: string, deck: DeckEntries): void;
+  joinRoom(code: string, name: string, deck: DeckEntries): void;
+  /** Reprend la partie en ligne de cet onglet (jeton de reconnexion), au chargement ou après une coupure. */
+  resumeOnline(): void;
+  leaveRoom(): void;
+  rematch(): void;
+  receiveOnline(msg: ServerMessage): void;
   backToLobby(): void;
   openDeckBuilder(deckId?: string | null): void;
   receive(msg: FromWorker): void;
@@ -223,6 +248,85 @@ function playEffects(view: GameView, events: GameEvent[], faces: Record<string, 
   }
 }
 
+// ---------------------------------------------------------------------------
+// Jeu en ligne : jeton de reconnexion (propre à l'onglet) et pseudo (retenu)
+// ---------------------------------------------------------------------------
+
+const TOKEN_KEY = "mtgmate.online";
+const NAME_KEY = "mtgmate.name";
+
+function loadToken(): string | null {
+  try {
+    return sessionStorage.getItem(TOKEN_KEY);
+  } catch {
+    return null;
+  }
+}
+
+function saveToken(token: string | null): void {
+  try {
+    if (token) sessionStorage.setItem(TOKEN_KEY, token);
+    else sessionStorage.removeItem(TOKEN_KEY);
+  } catch {
+    // stockage indisponible : pas de reconnexion automatique
+  }
+}
+
+export function loadName(): string {
+  try {
+    return localStorage.getItem(NAME_KEY) ?? "";
+  } catch {
+    return "";
+  }
+}
+
+function saveName(name: string): void {
+  try {
+    localStorage.setItem(NAME_KEY, name);
+  } catch {
+    // réglage non conservé
+  }
+}
+
+const EMPTY_ONLINE: OnlineState = {
+  status: "connecting",
+  code: null,
+  seat: null,
+  players: [],
+  opponent: { connected: true, deadline: null },
+  clock: null,
+  error: null,
+  reconnecting: false,
+};
+
+/** Délai entre deux tentatives de reconnexion, et nombre de tentatives (≈ délai de retour du serveur). */
+const RETRY_MS = 2000;
+const MAX_RETRIES = 30;
+let retries = 0;
+
+/**
+ * Ouvre une connexion au serveur (en fermant la session précédente). En cas de coupure pendant
+ * une partie, on retente la reconnexion avec le jeton de l'onglet.
+ */
+function connectRemote(keep?: OnlineState | null): RemoteSession {
+  const store = useGame;
+  store.getState().session?.close();
+  const session: RemoteSession = new RemoteSession(
+    (m) => {
+      retries = 0;
+      store.getState().receiveOnline(m);
+    },
+    () => {
+      const { online, session: current } = store.getState();
+      if (current !== session || !online || !loadToken()) return;
+      store.setState({ online: { ...online, reconnecting: true } });
+      if (retries++ < MAX_RETRIES) setTimeout(() => store.getState().resumeOnline(), RETRY_MS);
+    },
+  );
+  store.setState({ session, online: keep ? { ...keep, error: null } : { ...EMPTY_ONLINE } });
+  return session;
+}
+
 export const useGame = create<Store>((set, get) => {
   /** Avance dans les choix d'un lancement ; envoie la décision quand tout est choisi. */
   const continueCasting = (c: Casting) => {
@@ -302,6 +406,7 @@ export const useGame = create<Store>((set, get) => {
     screen: "lobby",
     editingDeck: null,
     session: null,
+    online: null,
     view: null,
     faces: {},
     log: [],
@@ -324,6 +429,7 @@ export const useGame = create<Store>((set, get) => {
 
     startGame(playerDeck, aiDecks, sandbox) {
       get().session?.close();
+      set({ online: null });
       preloadSounds();
       const session = new LocalSession((m) => get().receive(m));
       const settings = { ...get().settings, passUntilTurn: null };
@@ -339,11 +445,110 @@ export const useGame = create<Store>((set, get) => {
       session.send({ type: "settings", settings });
     },
 
+    openOnline() {
+      set({ screen: "online" });
+    },
+
+    createRoom(name, deck) {
+      connectRemote().raw({ type: "create", name, deck });
+      saveName(name);
+    },
+
+    joinRoom(code, name, deck) {
+      connectRemote().raw({ type: "join", code, name, deck });
+      saveName(name);
+    },
+
+    resumeOnline() {
+      const token = loadToken();
+      if (!token) return;
+      connectRemote(get().online?.status === "connecting" ? undefined : get().online).raw({ type: "rejoin", token });
+    },
+
+    leaveRoom() {
+      const session = get().session;
+      if (session instanceof RemoteSession) session.raw({ type: "leave" });
+      session?.close();
+      saveToken(null);
+      set({ online: null, session: null, screen: "lobby", view: null, casting: null, hover: null });
+    },
+
+    rematch() {
+      const session = get().session;
+      if (session instanceof RemoteSession) session.raw({ type: "rematch" });
+    },
+
+    receiveOnline(msg) {
+      const online = get().online;
+      if (!online) return;
+      switch (msg.type) {
+        case "room": {
+          const r = msg.room;
+          saveToken(r.token);
+          const starting = r.status === "playing" && online.status !== "playing";
+          set({
+            online: {
+              ...online,
+              status: r.status,
+              code: r.code,
+              seat: r.seat,
+              players: r.players,
+              error: null,
+              reconnecting: false,
+            },
+            ...(starting
+              ? { screen: "game", view: null, log: [], casting: null, attackers: [], blocks: {}, selection: [], fx: [] }
+              : r.status === "waiting"
+                ? { screen: "online" }
+                : {}),
+          });
+          if (starting) {
+            preloadSounds();
+            get().session?.send({ type: "settings", settings: get().settings });
+          }
+          return;
+        }
+        case "update":
+          set({
+            online: { ...online, clock: msg.clock ? { ...msg.clock, deadline: Date.now() + msg.clock.remainingMs } : null },
+            ...(get().screen !== "game" ? { screen: "game" } : {}),
+          });
+          get().receive({ type: "update", view: msg.view, events: msg.events, faces: msg.faces });
+          return;
+        case "opponent":
+          set({
+            online: {
+              ...online,
+              opponent: { connected: msg.connected, deadline: msg.remainingMs === null ? null : Date.now() + msg.remainingMs },
+            },
+          });
+          return;
+        case "error":
+          if (msg.code === "rules") return get().receive({ type: "error", message: msg.message });
+          if (msg.code === "token") {
+            // La partie de cet onglet n'existe plus.
+            saveToken(null);
+            get().session?.close();
+            set({ online: null, session: null, ...(get().screen === "game" ? { screen: "lobby", view: null } : {}) });
+            return;
+          }
+          playSound("error");
+          set({ online: { ...online, error: msg.message, status: online.code ? online.status : "connecting" } });
+          if (!online.code) {
+            // Création ou arrivée refusée : pas de salon, on ferme la connexion.
+            get().session?.close();
+            set({ session: null, online: { ...online, error: msg.message, status: "connecting" } });
+          }
+          return;
+      }
+    },
+
     openDeckBuilder(deckId) {
       set({ screen: "decks", editingDeck: deckId ?? get().editingDeck });
     },
 
     backToLobby() {
+      if (get().online) return get().leaveRoom();
       get().session?.close();
       set({ screen: "lobby", session: null, view: null, casting: null, hover: null });
     },

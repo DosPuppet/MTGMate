@@ -329,7 +329,7 @@ function nameOf(s: GameState, id: string): string {
 function moveAndLog(s: GameState, id: ObjectId, to: "hand" | "exile" | "graveyard"): void {
   const o = s.objects[id];
   if (!o) return;
-  emit({ type: "moved", objectId: id, defId: o.defId, from: o.zone, to });
+  emit({ type: "moved", owner: o.owner, objectId: id, defId: o.defId, from: o.zone, to });
   if (o.zone === "battlefield") removeFromCombat(s, id);
   moveObject(s, id, to);
 }
@@ -346,7 +346,7 @@ export function moveWithSpec(s: GameState, controller: PlayerId, id: ObjectId, s
   const o = s.objects[id];
   if (!o) return null;
   const zone: Zone = spec.to === "libraryTop" || spec.to === "libraryBottom" ? "library" : (spec.to as Zone);
-  emit({ type: "moved", objectId: id, defId: o.defId, from: o.zone, to: zone });
+  emit({ type: "moved", owner: o.owner, objectId: id, defId: o.defId, from: o.zone, to: zone });
   if (o.zone === "battlefield") removeFromCombat(s, id);
   const newId_ = moveObject(s, id, zone, {
     controller: spec.to === "battlefield" ? (spec.underYourControl ? controller : o.owner) : undefined,

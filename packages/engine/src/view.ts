@@ -272,7 +272,54 @@ export function projectView(s: GameState, viewer: PlayerId): GameView {
   };
 }
 
-/** Retire des événements les informations cachées au spectateur. */
+const HIDDEN_ZONES: ReadonlySet<Zone> = new Set(["hand", "library"]);
+
+/**
+ * Retire des événements les informations cachées au spectateur : cartes piochées par un autre joueur,
+ * cartes d'un autre joueur déplacées d'une zone cachée à une autre (recherche vers la main, remise
+ * dans la bibliothèque…).
+ */
 export function filterEvents(events: GameEvent[], viewer: PlayerId): GameEvent[] {
-  return events.map((e) => (e.type === "draw" && e.player !== viewer ? { type: "draw", player: e.player } : e));
+  return events.map((e) => {
+    if (e.type === "draw" && e.player !== viewer) return { type: "draw", player: e.player };
+    if (e.type === "moved" && e.owner !== viewer && HIDDEN_ZONES.has(e.from) && HIDDEN_ZONES.has(e.to)) {
+      return { type: "moved", owner: e.owner, from: e.from, to: e.to };
+    }
+    return e;
+  });
+}
+
+const DEF_KEYS = new Set(["defId", "sourceDefId", "targetDefId", "attackerDefId", "blockerDefId", "toDefId"]);
+
+/** Identifiants de définitions cités dans une valeur JSON (vue, événements). */
+function collectDefIds(value: unknown, out: Set<string>): void {
+  if (Array.isArray(value)) {
+    for (const v of value) collectDefIds(v, out);
+  } else if (value && typeof value === "object") {
+    for (const [k, v] of Object.entries(value)) {
+      if (DEF_KEYS.has(k) && typeof v === "string") {
+        out.add(v);
+      } else if (k === "defIds" && Array.isArray(v)) {
+        for (const d of v) if (typeof d === "string") out.add(d);
+      } else {
+        collectDefIds(v, out);
+      }
+    }
+  }
+}
+
+/**
+ * Faces des cartes que le spectateur a le droit de connaître : celles citées par sa vue et ses
+ * événements filtrés (jamais la decklist adverse entière).
+ */
+export function visibleFaces(s: GameState, view: GameView, events: GameEvent[]): Record<string, CardFace> {
+  const ids = new Set<string>();
+  collectDefIds(view, ids);
+  collectDefIds(events, ids);
+  const out: Record<string, CardFace> = {};
+  for (const id of ids) {
+    const d = s.defs[id];
+    if (d) out[id] = cardFace(d);
+  }
+  return out;
 }

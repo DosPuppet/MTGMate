@@ -19,7 +19,9 @@
     "bench": "tsx tools/bench.ts",
     "coverage": "tsx tools/card-coverage.ts",
     "deck-smoke": "tsx tools/deck-smoke.ts",
-    "battlefield-smoke": "tsx tools/battlefield-smoke.ts"
+    "battlefield-smoke": "tsx tools/battlefield-smoke.ts",
+    "server": "tsx packages/server/src/main.ts",
+    "online-smoke": "tsx tools/online-smoke.ts"
   },
   "devDependencies": {
     "@biomejs/biome": "^2.5.14",

@@ -36,3 +36,7 @@ document.addEventListener("keydown", (e) => {
   if (t && (t.tagName === "INPUT" || t.tagName === "TEXTAREA" || t.isContentEditable)) return;
   useAudio.getState().toggleMute();
 });
+
+// Jeu en ligne : reprise de la partie de cet onglet (rechargement de la page), lien d'invitation ?room=CODE.
+useGame.getState().resumeOnline();
+if (new URLSearchParams(location.search).has("room") && !useGame.getState().online) useGame.getState().openOnline();

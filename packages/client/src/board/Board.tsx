@@ -547,6 +547,53 @@ function Banner() {
   );
 }
 
+/** Temps restant avant `deadline` (Date.now()), rafraîchi plusieurs fois par seconde. */
+function useRemaining(deadline: number | null | undefined): number | null {
+  const [now, setNow] = useState(Date.now);
+  useEffect(() => {
+    if (!deadline) return;
+    const t = setInterval(() => setNow(Date.now()), 250);
+    return () => clearInterval(t);
+  }, [deadline]);
+  return deadline ? Math.max(0, deadline - now) : null;
+}
+
+/** Corde (jeu en ligne) : la fin du temps de la décision en cours, comme sur MTGA. */
+function Rope() {
+  const clock = useGame((s) => s.online?.clock);
+  const view = useGame((s) => s.view);
+  const remaining = useRemaining(clock?.deadline);
+  if (!clock || remaining === null || !view || view.over || remaining > clock.ropeMs) return null;
+  const mine = clock.player === view.viewer;
+  const who = mine ? "Vous" : (view.players[clock.player]?.name ?? "L'adversaire");
+  return (
+    <div className={`rope ${mine ? "mine" : ""}`} role="timer" aria-live="polite">
+      <div className="rope-bar" style={{ width: `${(remaining / clock.ropeMs) * 100}%` }} />
+      <span className="rope-text">
+        {who} · {Math.ceil(remaining / 1000)} s
+        {clock.timeouts[clock.player] ? ` · temps écoulé ${clock.timeouts[clock.player]}/${clock.maxTimeouts}` : ""}
+      </span>
+    </div>
+  );
+}
+
+/** Bandeau réseau (jeu en ligne) : adversaire déconnecté, ou votre connexion perdue. */
+function NetBanner() {
+  const online = useGame((s) => s.online);
+  const view = useGame((s) => s.view);
+  const remaining = useRemaining(online?.opponent.deadline);
+  if (!online || !view || view.over) return null;
+  if (online.reconnecting) return <div className="net-banner">Connexion au serveur perdue — reconnexion…</div>;
+  if (online.opponent.connected) return null;
+  const opp = view.players[view.opponents[0] ?? ""]?.name ?? "L'adversaire";
+  return (
+    <div className="net-banner">
+      {opp} s'est déconnecté
+      {remaining !== null ? ` — victoire par abandon dans ${Math.ceil(remaining / 1000)} s s'il ne revient pas` : ""}
+    </div>
+  );
+}
+
 function CenterStrip() {
   return (
     <div className="center-strip">
@@ -555,6 +602,8 @@ function CenterStrip() {
         <Banner />
         <StackView />
       </div>
+      <Rope />
+      <NetBanner />
     </div>
   );
 }

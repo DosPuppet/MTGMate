@@ -6,7 +6,7 @@ import { deckCover, useAllDecks } from "../decks/store";
 import { useGame } from "../store";
 
 /** Un deck peut lancer une partie s'il est légal dans le format et que toutes ses cartes sont jouables. */
-function deckStatus(d: DeckList): { ok: boolean; reason?: string; format: string } {
+export function deckStatus(d: DeckList): { ok: boolean; reason?: string; format: string } {
   const v = validateDeck(d, CARDS);
   const format = FORMAT_LABELS[v.format];
   if (!v.legal) return { ok: false, reason: v.errors[0], format };
@@ -14,7 +14,7 @@ function deckStatus(d: DeckList): { ok: boolean; reason?: string; format: string
   return { ok: true, format };
 }
 
-function DeckChoice({ label, value, onChange }: { label: string; value: string; onChange: (id: string) => void }) {
+export function DeckChoice({ label, value, onChange }: { label: string; value: string; onChange: (id: string) => void }) {
   const decks = useAllDecks();
   const openDeckBuilder = useGame((s) => s.openDeckBuilder);
   return (
@@ -66,6 +66,7 @@ function DeckChoice({ label, value, onChange }: { label: string; value: string; 
 export function Lobby() {
   const startGame = useGame((s) => s.startGame);
   const openDeckBuilder = useGame((s) => s.openDeckBuilder);
+  const openOnline = useGame((s) => s.openOnline);
   const decks = useAllDecks();
   const [mine, setMine] = useState(decks[0]?.id ?? "");
   const [ai, setAi] = useState(decks[1]?.id ?? "");
@@ -117,8 +118,8 @@ export function Lobby() {
           <button type="button" className="btn big" onClick={() => openDeckBuilder(null)}>
             Mes decks
           </button>
-          <button type="button" className="btn big" disabled title="Arrive à l'étape 6 de la feuille de route">
-            Contre un joueur — bientôt
+          <button type="button" className="btn big" onClick={openOnline}>
+            Contre un joueur
           </button>
         </div>
         <div className="lobby-help">

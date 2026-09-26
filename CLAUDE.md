@@ -20,6 +20,7 @@ Ce fichier sert au suivi du projet entre les sessions. Le README présente le pr
 | Légalité Standard dans le deckbuilder (légalités Scryfall, bannies) | ✅ |
 | Champ de bataille façon MTGA (rangées, piles de jetons, lignes multiples, redimensionnement) | ✅ |
 | Effets sonores (échantillons Kenney CC0, volume, muet avec M) | ✅ |
+| Jeu en ligne : duel Standard à 2 (serveur local, code de salon, corde, reconnexion, revanche) | ✅ (déploiement à faire) |
 | Autres extensions Standard | **prochaine étape** |
 
 ### Lots du set principal FDN (tous terminés)
@@ -87,6 +88,11 @@ Réimpressions : défenses talismaniques contre une couleur, changelin, restrict
   - scripts dans `packages/cards/src/fdn/<couleur>.ts` ; jetons et filtres partagés dans `fdn/common.ts` ;
   - ce qui se lit dans le texte Scryfall (mots-clés, prouesse, garde, « Équiper », loyauté) est déduit dans `cards/src/scryfall.ts` ;
   - légalité : `validateDeck` (format `standard` par défaut) refuse les cartes bannies, hors format ou sans légalité connue, réserve comprise ; les decks illégaux ne lancent pas de partie.
+- **Jeu en ligne (`packages/server`) :**
+  - le serveur fait autorité : il valide le deck (`validateDeck`, légal et jouable) et chaque décision (`RulesError` renvoyée au client) ;
+  - un joueur ne reçoit que sa vue (`projectView`), ses événements filtrés (`filterEvents`) et les faces qu'il connaît (`visibleFaces`), jamais la decklist adverse ;
+  - tout nouvel événement ou champ de vue qui peut citer une carte cachée doit être filtré ; l'audit `ai/test/hidden-info.test.ts` le vérifie ;
+  - le protocole est dans `server/src/protocol.ts`, que le client importe en `import type`.
 - **Données :**
   - `packages/cards/data/fdn.json` est indenté avec **1 espace** ; le réécrire à l'identique pour garder des diffs minimaux ;
   - réimport : `npm run import-cards -- fdn`.
@@ -122,6 +128,8 @@ Réimpressions : défenses talismaniques contre une couleur, changelin, restrict
   - les navigateurs bloquent le son avant le premier geste : `unlockAudio` au premier `pointerdown` (main.tsx) ;
   - un nouveau type d'événement moteur n'a pas de son tant qu'il n'est pas ajouté à `soundsFor` ;
   - en mode dev, `window.__sfxLog` liste les sons joués (vérifié par `ui-smoke`).
+- **Serveur de parties :** `npm run server` charge le moteur au démarrage ; le relancer après toute modification du moteur ou des cartes. Il sert `packages/client/dist` : relancer `npm run build` pour y voir les changements du client (en dev, Vite redirige `/ws` vers le port 8787).
+- **Mulligans :** ils se décident l'un après l'autre (le premier joueur d'abord) ; un script de test ne doit pas supposer l'ordre.
 - **Bac à sable (mode dev) :** `window.__mtgx` expose le store ; `startGame(deck, decksIA, { p1: { cards, tokens }, p2: … })` met des permanents en jeu dès le début (voir `battlefield-smoke`). Dans `page.evaluate`, pas de fonction nommée (tsx injecte `__name`).
 - **`pgrep -f` / `pkill -f` :** avec un motif présent dans la ligne de commande, ils peuvent tuer le shell courant.
 - **Test de fumée (`ai/test/cards-smoke.test.ts`) :** une carte qui n'a pas pu être jouée fait échouer le test. Pour les cartes réactives (contresorts), l'adversaire doit avoir de quoi lancer des sorts.
