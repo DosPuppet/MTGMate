@@ -327,6 +327,10 @@ export const fx = {
   }),
   castCopiesFree: (what: Ref[], maxTotalManaValue: number): Effect => ({ op: "castCopiesFree", what, maxTotalManaValue }),
   noLegendRuleThisTurn: { op: "noLegendRuleThisTurn" } as Effect,
+  /** Manifester (sans garde) ou envelopper d'une cape (`ward`) les cartes désignées. */
+  putFaceDown: (what: Ref, ward = false): Effect => ({ op: "putFaceDown", what, ward }),
+  manifestDread: { op: "manifestDread" } as Effect,
+  turnFaceUp: (what: Ref): Effect => ({ op: "turnFaceUp", what }),
   /** « Transformez [ce permanent] » (recto ↔ verso). */
   transform: (what: Ref = ref.self): Effect => ({ op: "transform", what }),
   /** « Exilez-les, puis assemblez-les » : la source et un permanent nommé `with`, en sa carte assemblée. */
@@ -710,6 +714,8 @@ export const when = {
   discardSelf: { on: "discardSelf" } as TriggerSpec,
   /** « Quand vous lancez ce sort » */
   castSelf: { on: "castSelf" } as TriggerSpec,
+  /** « Quand cette créature est retournée face visible » */
+  turnedFaceUp: { on: "turnedFaceUp" } as TriggerSpec,
   /** « Quand cette Classe atteint le niveau N » */
   classLevel: (level: number): TriggerSpec => ({ on: "classLevel", level }),
   /** « Quand vous déverrouillez cette porte » (Salle ; la porte est fixée à l'import). */

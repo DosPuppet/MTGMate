@@ -8,6 +8,7 @@ import type {
   GameObject,
   GameState,
   LkiSnapshot,
+  ManaCost,
   ManaType,
   ObjectId,
   PlayerId,
@@ -76,6 +77,10 @@ export type RulesEvent =
   | { e: "loyalty"; player: PlayerId; sourceId: ObjectId; cost: number }
   /** Une créature bloque. */
   | { e: "block"; blocker: ObjectId; attacker: ObjectId }
+  /** Un joueur manifeste avec effroi (déclencheurs « chaque fois que vous manifestez avec effroi »). */
+  | { e: "manifestDread"; player: PlayerId }
+  /** Un permanent face cachée est retourné face visible. */
+  | { e: "turnedFaceUp"; objectId: ObjectId }
   /** Une Classe atteint un niveau. */
   | { e: "classLevel"; objectId: ObjectId; level: number }
   /** Une porte de Salle est déverrouillée. */
@@ -315,7 +320,13 @@ export function moveObject(
   s: GameState,
   id: ObjectId,
   to: Zone,
-  opts: { controller?: PlayerId; position?: "top" | "bottom"; enters?: EntersContext } = {},
+  opts: {
+    controller?: PlayerId;
+    position?: "top" | "bottom";
+    enters?: EntersContext;
+    /** Arrive face cachée (manifester, cape) : la vraie carte reste cachée, sans remplacements ni déclencheurs d'arrivée. */
+    faceDown?: { ward: boolean; upCosts: ManaCost[] };
+  } = {},
 ): ObjectId | null {
   const o = obj(s, id);
   // Copie d'un sort préparé ou d'une carte (Uldaros) : elle ne quitte l'exil que pour la pile ; ailleurs,
@@ -384,13 +395,20 @@ export function moveObject(
     return null;
   }
 
-  const moved = createObject(s, o.defId, o.owner, to, {
+  // Face cachée : la carte est révélée en quittant le champ de bataille ; un sort lancé face cachée arrive face cachée.
+  const staysFaceDown = !!o.faceDown && o.zone === "stack" && to === "battlefield";
+  const cardId = o.faceDown && !staysFaceDown ? o.faceDown.card : o.defId;
+  const hide = to === "battlefield" && !!opts.faceDown;
+  if (hide) s.defs[FACE_DOWN_ID] ??= FACE_DOWN_DEF;
+  const moved = createObject(s, hide ? FACE_DOWN_ID : cardId, o.owner, to, {
     uid: o.uid,
     isToken: o.isToken || (!!o.cardCopy && to === "battlefield"),
     controller: to === "battlefield" || to === "stack" ? (opts.controller ?? o.controller) : o.owner,
   });
   if (o.preparedFor) moved.preparedFor = o.preparedFor;
   if (o.cardCopy && to === "stack") moved.cardCopy = true;
+  if (staysFaceDown) moved.faceDown = o.faceDown;
+  if (hide && opts.faceDown) moved.faceDown = { card: cardId, ...opts.faceDown };
   if (to === "library" && opts.position !== "bottom") {
     const lib = s.players[o.owner]?.library;
     if (lib) {
@@ -403,6 +421,39 @@ export function moveObject(
   rulesEvent(s, { e: "zone", oldId: id, newId: moved.id, from: from0, to, lki });
   if (from0 === "battlefield") releaseLinkedExile(s, id);
   return moved.id;
+}
+
+/** Identifiant de la définition générique d'un objet face cachée (708.2). */
+export const FACE_DOWN_ID = "face-down";
+
+/** Définition générique d'un objet face cachée : créature 2/2 sans nom, sans coût ni capacités (708.2). */
+export const FACE_DOWN_DEF: CardDef = {
+  id: FACE_DOWN_ID,
+  name: "",
+  typeLine: "Créature face cachée",
+  manaCost: null,
+  manaCostText: "",
+  colors: [],
+  supertypes: [],
+  types: ["Creature"],
+  subtypes: [],
+  power: 2,
+  toughness: 2,
+  keywords: [],
+  abilities: [],
+  text: "",
+  implemented: true,
+};
+
+/** Retourne face visible un permanent face cachée (702.168d, 701.58c) ; ses capacités « retournée » se déclenchent. */
+export function turnFaceUp(s: GameState, id: ObjectId): void {
+  const o = s.objects[id];
+  if (o?.zone !== "battlefield" || !o.faceDown) return;
+  o.defId = o.faceDown.card;
+  delete o.faceDown;
+  bump(s);
+  emit({ type: "turnedFaceUp", objectId: id, defId: o.defId });
+  rulesEvent(s, { e: "turnedFaceUp", objectId: id });
 }
 
 /** Salle : déverrouille une porte (709.5e) ; « quand vous déverrouillez cette porte » se déclenche. */

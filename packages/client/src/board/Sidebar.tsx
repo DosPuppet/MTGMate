@@ -21,7 +21,9 @@ export function Preview() {
   if (!hover) return <div className="preview empty">Survolez une carte pour l'agrandir.</div>;
   const { face, obj } = hover;
   const back = flipped && backImage ? (lang === "fr" && backImage.fr?.image) || backImage.image : undefined;
-  const src = back ?? faceImage(face, lang);
+  // Votre carte face cachée : vous seul voyez de quelle carte il s'agit.
+  const hidden = obj?.faceDownCard;
+  const src = back ?? (hidden ? faceImage(hidden, lang) : undefined) ?? faceImage(face, lang);
   const baseKw = new Set(obj?.keywords ?? []);
   return (
     <div className="preview">

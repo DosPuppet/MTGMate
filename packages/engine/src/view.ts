@@ -76,6 +76,8 @@ export interface ObjectView extends CardFace {
   /** Classe : niveau atteint (au-delà de 1) ; Affaire : résolue. */
   classLevel?: number;
   solved?: boolean;
+  /** Permanent (ou sort) face cachée du spectateur : la vraie carte, que lui seul connaît (708.5). */
+  faceDownCard?: CardFace;
 }
 
 export interface StackItemView extends CardFace {
@@ -215,6 +217,13 @@ export function objectView(s: GameState, id: ObjectId): ObjectView {
   };
 }
 
+/** 708.5 : le contrôleur d'un permanent face cachée peut le regarder ; les autres joueurs non. */
+function withFaceDownCard(s: GameState, v: ObjectView, viewer: PlayerId): ObjectView {
+  const o = s.objects[v.id];
+  const card = o?.faceDown && o.controller === viewer ? s.defs[o.faceDown.card] : undefined;
+  return card ? { ...v, faceDownCard: cardFace(card) } : v;
+}
+
 export function projectView(s: GameState, viewer: PlayerId): GameView {
   const players: Record<PlayerId, PlayerView> = {};
   for (const p of s.playerOrder) {
@@ -291,7 +300,7 @@ export function projectView(s: GameState, viewer: PlayerId): GameView {
     turn: { number: s.turn.number, active: s.turn.active, step: s.turn.step, landsPlayed: s.turn.landsPlayed },
     players,
     hand: (s.players[viewer]?.hand ?? []).map((id) => objectView(s, id)),
-    battlefield: s.battlefield.map((id) => objectView(s, id)),
+    battlefield: s.battlefield.map((id) => withFaceDownCard(s, objectView(s, id), viewer)),
     stack,
     exile: s.exile.map((id) => objectView(s, id)),
     playableExile: [

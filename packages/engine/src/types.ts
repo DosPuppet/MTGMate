@@ -174,6 +174,8 @@ export interface CardDef {
    * porte les caractéristiques hors du jeu : celles du recto, ou la réunion des deux moitiés d'une carte scindée.
    */
   faceDefs?: CardDef[];
+  /** Déguisement (702.168) : coût pour retourner face visible une carte lancée face cachée pour {3}. */
+  disguise?: ManaCost;
   /** Saga (714) : numéro du dernier chapitre (lu dans le texte). */
   saga?: { chapters: number };
   /** Classe (716) : capacités des niveaux 2, 3… (coût du niveau et capacités ajoutées). */
@@ -483,6 +485,8 @@ export type TriggerSpec =
   | { on: "chapter"; chapters: number[] }
   /** « Quand cette Classe atteint le niveau N » (716). */
   | { on: "classLevel"; level: number }
+  /** « Quand cette créature est retournée face visible » */
+  | { on: "turnedFaceUp" }
   /** « Quand vous déverrouillez cette porte » (Salle : `door` est fixé à l'import d'après la face). */
   | { on: "unlockDoor"; door?: number }
   /** « Chaque fois que cette créature subit des blessures » */
@@ -1019,6 +1023,12 @@ export type Effect =
   | { op: "transform"; what: Ref }
   /** « Exilez-les, puis assemblez-les en [carte] » : la source et un permanent du nom donné (701.42). */
   | { op: "meld"; with: string }
+  /** Met les cartes désignées sur le champ de bataille face cachée (manifester ; `ward` : cape). */
+  | { op: "putFaceDown"; what: Ref; ward: boolean }
+  /** Manifestation effroyable (701.62) : regarder les deux cartes du dessus, en manifester une, l'autre au cimetière. */
+  | { op: "manifestDread" }
+  /** Retourne face visible les permanents désignés (sans payer de coût). */
+  | { op: "turnFaceUp"; what: Ref }
   /** La Classe source passe au niveau N (716.2a). */
   | { op: "setClassLevel"; level: number }
   /** L'Affaire source devient résolue (719.2). */
@@ -1184,6 +1194,11 @@ export interface GameObject {
   preparedFor?: ObjectId;
   /** Face active d'une carte à plusieurs faces (aventure lancée, verso…) : ses caractéristiques remplacent celles de la carte. */
   faceDefId?: string;
+  /**
+   * Face cachée (708) : l'objet a la définition générique « face cachée » (créature 2/2 sans nom) ; la vraie carte,
+   * la garde {2} (déguisement, cape) et les coûts pour la retourner face visible sont gardés ici.
+   */
+  faceDown?: { card: string; ward: boolean; upCosts: ManaCost[] };
   /** Classe (716) : niveau actuel (1 par défaut). */
   classLevel?: number;
   /** Affaire (719) : résolue. */
@@ -1620,6 +1635,8 @@ export interface CastChoices {
   sacrifice?: ObjectId[];
   /** Face lancée d'une carte à plusieurs faces (1 : l'aventure) ; absente : la carte elle-même (recto). */
   face?: number;
+  /** Lancée face cachée pour {3} (déguisement). */
+  faceDown?: boolean;
 }
 
 export type Decision =
@@ -1666,6 +1683,8 @@ export type ActionOption =
       /** Face lancée (aventure…) et son nom, pour l'interface. */
       face?: number;
       faceName?: string;
+      /** Lancée face cachée pour {3} (déguisement). */
+      faceDown?: boolean;
       modes: ModeOption[];
       xMax: number | null;
       kickerAffordable: boolean;
@@ -1724,6 +1743,8 @@ export type GameEvent =
   | { type: "dies"; objectId: ObjectId; defId: string; to: Zone }
   | { type: "destroy"; objectId: ObjectId; defId: string }
   | { type: "token"; objectId: ObjectId; defId: string; controller: PlayerId }
+  /** Un permanent face cachée est retourné face visible (la carte est révélée). */
+  | { type: "turnedFaceUp"; objectId: ObjectId; defId: string }
   /** Un permanent recto-verso se transforme (`defId` : la face désormais visible). */
   | { type: "transform"; objectId: ObjectId; defId: string }
   | { type: "attack"; player: PlayerId; attackers: { id: ObjectId; defId: string }[] }

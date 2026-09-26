@@ -186,6 +186,7 @@ function buildDecision(c: Casting): Decision {
       type: "cast",
       card: c.option.card,
       face: c.option.face,
+      faceDown: c.option.faceDown,
       mode: c.mode ?? 0,
       targets: c.targets,
       x: c.x ?? undefined,

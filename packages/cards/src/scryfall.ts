@@ -123,6 +123,12 @@ export function parseWard(text: string): CardDef["ward"] {
   return { mana: m[2] ? parseManaCost(m[2]) : undefined, life: Number(m[3]) };
 }
 
+/** Déguisement (702.168) : « Disguise {1}{W} ». */
+export function parseDisguise(text: string): CardDef["disguise"] {
+  const m = /^Disguise ((?:\{[^}]+\})+)/m.exec(stripReminder(text));
+  return m ? parseManaCost(m[1] as string) : undefined;
+}
+
 /** Équipage N (Véhicules). */
 export function parseCrew(text: string): number | undefined {
   const m = /^Crew (\d+)/m.exec(stripReminder(text));
@@ -546,6 +552,7 @@ function singleDef(raw: RawCard, script: CardScript | undefined, set: string): C
     kicker: script?.kicker ? parseManaCost(script.kicker) : undefined,
     flashback: script?.flashback ? parseManaCost(script.flashback) : undefined,
     flashbackDiscard: script?.flashbackDiscard,
+    disguise: parseDisguise(raw.oracleText),
     additionalCost: script?.additionalCost,
     costReduction: script?.costReduction,
     text: raw.oracleText,

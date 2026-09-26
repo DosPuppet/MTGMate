@@ -113,6 +113,7 @@ function base(s: GameState, o: GameObject, defId = o.defId): Characteristics {
   const d = s.defs[defId];
   if (!d) throw new Error(`Définition inconnue : ${o.defId}`);
   if (o.zone === "battlefield" && d.layout === "split" && d.faceDefs) return roomBase(o, d);
+  if (o.faceDown) return faceDownBase(o);
   const cda = d.cdaPT === undefined ? undefined : cdaValue(s, o, d.cdaPT);
   const cdaPower = d.cdaPower === undefined ? undefined : cdaValue(s, o, d.cdaPower);
   const cdaToughness = d.cdaToughness === undefined ? undefined : cdaValue(s, o, d.cdaToughness);
@@ -135,6 +136,50 @@ export function levelAbilities(o: GameObject, d: CardDef): AbilityDef[] {
   if (o.zone !== "battlefield" || (!d.classLevels && !d.caseSolved)) return d.abilities;
   const levels = (d.classLevels ?? []).slice(0, Math.max(0, (o.classLevel ?? 1) - 1)).flatMap((l) => l.abilities);
   return [...d.abilities, ...levels, ...(o.solved ? (d.caseSolved ?? []) : [])];
+}
+
+/** Garde {2} des permanents face cachée par déguisement ou cape (702.168b, 701.58a). */
+const FACE_DOWN_WARD: AbilityDef = {
+  kind: "triggered",
+  trigger: { on: "becomesTarget", who: "self", byOpponent: true },
+  targets: [],
+  effects: [
+    { op: "unlessPay", who: { kind: "eventPlayer" }, mana: { generic: 2, colored: {}, x: 0 }, skip: 1 },
+    { op: "counter", what: { kind: "eventObject" } },
+  ],
+  label: "Garde {2}",
+};
+
+/**
+ * Face cachée (708.2) : créature 2/2 sans nom, sans couleur ni sous-type ; garde {2} s'il y a lieu, et l'action
+ * spéciale « retourner face visible » pour chaque coût possible (déguisement, coût de mana d'une carte de créature).
+ */
+function faceDownBase(o: GameObject): Characteristics {
+  const fd = o.faceDown as NonNullable<GameObject["faceDown"]>;
+  return {
+    name: "",
+    types: ["Creature"],
+    subtypes: [],
+    supertypes: [],
+    colors: [],
+    power: 2,
+    toughness: 2,
+    keywords: fd.ward ? ["ward"] : [],
+    abilities: [
+      ...(fd.ward ? [FACE_DOWN_WARD] : []),
+      ...fd.upCosts.map(
+        (cost): AbilityDef => ({
+          kind: "activated",
+          cost: { mana: cost },
+          targets: [],
+          effects: [{ op: "turnFaceUp", what: { kind: "self" } }],
+          specialAction: true,
+          label: "Retourner face visible",
+        }),
+      ),
+    ],
+    controller: o.controller,
+  };
 }
 
 /**
@@ -234,9 +279,10 @@ export function computeBattlefield(s: GameState): Map<ObjectId, Characteristics>
       const o = obj(s, id);
       const own = o.zone === "battlefield" ? defOfId(id) : o.defId;
       const ownDef = s.defs[own];
-      // Salle : capacités de ses portes déverrouillées.
-      const abilities =
-        o.zone === "battlefield" && ownDef?.layout === "split" && ownDef.faceDefs
+      // Salle : capacités de ses portes déverrouillées. Face cachée : aucune capacité statique.
+      const abilities = o.faceDown
+        ? []
+        : o.zone === "battlefield" && ownDef?.layout === "split" && ownDef.faceDefs
           ? roomBase(o, ownDef).abilities
           : ownDef
             ? levelAbilities(o, ownDef)

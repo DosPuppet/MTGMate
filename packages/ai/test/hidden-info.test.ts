@@ -3,7 +3,7 @@
  * que reçoit un joueur (vue, événements filtrés, faces) ne doit citer une carte qui n'existe que dans la
  * main ou la bibliothèque d'un adversaire et qui n'a jamais été rendue publique ni révélée à ce joueur.
  */
-import { implementedCards } from "@mtgx/cards";
+import { implementedCards, toCardDef } from "@mtgx/cards";
 import {
   type CardDef,
   type Color,
@@ -108,5 +108,69 @@ describe("informations cachées", () => {
     const leaks: string[] = [];
     for (let seed = 1; seed <= 20; seed++) leaks.push(...auditGame(seed));
     expect(leaks.slice(0, 10)).toEqual([]);
+  }, 120_000);
+});
+
+/** Carte à déguisement de test : lancée face cachée, elle ne doit pas être révélée à l'adversaire. */
+const DISGUISED = toCardDef(
+  {
+    name: "Espion d'audit",
+    number: "1",
+    rarity: "common",
+    // Coûts hors d'atteinte : la carte n'est jouée que face cachée (et n'est pas retournée).
+    manaCost: "{12}{W}",
+    cmc: 13,
+    typeLine: "Creature — Human Rogue",
+    oracleText: "Disguise {12}{W}",
+    power: "3",
+    toughness: "3",
+    colors: ["W"],
+    keywords: ["Disguise"],
+    image: "",
+    artCrop: "",
+    legalities: { standard: "legal" },
+  },
+  { abilities: [] },
+  "TST",
+);
+
+describe("informations cachées : cartes face cachée (708)", () => {
+  it("l'adversaire ne voit pas la carte d'un permanent face cachée tant qu'elle n'est pas révélée", () => {
+    const plains = ALL.find((c) => c.name === "Plains") as CardDef;
+    let leaks = 0;
+    let faceDownSeen = 0;
+    for (let seed = 1; seed <= 15; seed++) {
+      const deck = [...Array(24).fill(DISGUISED), ...Array(36).fill(plains)] as CardDef[];
+      let { state } = createGame({
+        seed,
+        players: [
+          { id: "p1", name: "p1", deck },
+          { id: "p2", name: "p2", deck: randomDeck(seed) },
+        ],
+      });
+      const agents = { p1: randomAgent(seed * 3), p2: randomAgent(seed * 5) };
+      let revealed = false;
+      for (let i = 0; i < 2500 && state.pending && !state.over; i++) {
+        const p = state.pending;
+        let r: ReturnType<typeof submit>;
+        try {
+          r = submit(state, p.player, agents[p.player as "p1" | "p2"](state, p.player));
+        } catch (e) {
+          if (!(e instanceof RulesError)) throw e;
+          r = submit(state, p.player, fallbackDecision(state, p));
+        }
+        state = r.state;
+        if (r.events.some((e) => e.type === "turnedFaceUp")) revealed = true;
+        if (Object.values(state.objects).some((o) => o.defId === DISGUISED.id && PUBLIC_ZONES.has(o.zone))) revealed = true;
+        if (state.battlefield.some((id) => state.objects[id]?.faceDown)) faceDownSeen++;
+        if (revealed) break;
+        const view = projectView(state, "p2");
+        const evs = filterEvents(r.events, "p2");
+        const seen = defIdsIn([view, evs, Object.keys(visibleFaces(state, view, evs)).map((defId) => ({ defId }))]);
+        if (seen.has(DISGUISED.id)) leaks++;
+      }
+    }
+    expect(faceDownSeen).toBeGreaterThan(0);
+    expect(leaks).toBe(0);
   }, 120_000);
 });

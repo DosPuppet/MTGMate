@@ -13,6 +13,8 @@ import {
   changeCounters,
   chars,
   emit,
+  FACE_DOWN_DEF,
+  FACE_DOWN_ID,
   isCreature,
   isSummoningSick,
   moveObject,
@@ -24,6 +26,7 @@ import {
   shuffle,
   snapshot,
   tapObject,
+  turnFaceUp,
   unlockDoor,
 } from "./state";
 import { controlledAbilitiesWithSource, playerStatic } from "./statics";
@@ -265,6 +268,9 @@ export function splitSecondOnStack(s: GameState): boolean {
   });
 }
 
+/** Sort face cachée (déguisement) : la définition « face cachée », au coût de {3} (702.168a). */
+export const FACE_DOWN_SPELL: CardDef = { ...FACE_DOWN_DEF, manaCost: { generic: 3, colored: {}, x: 0 }, manaCostText: "{3}" };
+
 /**
  * Faces lançables d'une carte : la carte elle-même (recto) et, pour une aventure, l'aventure (face 1), sauf si la
  * carte est déjà « en aventure » (on ne peut alors lancer que la créature).
@@ -439,7 +445,9 @@ export function castSpell(s: GameState, player: PlayerId, card: ObjectId, choice
   // Face lancée : la carte elle-même, ou son aventure (715.3).
   const face = castableFaces(s, card, cardDef).find(([f]) => f === choices.face);
   if (!face) throw new RulesError("Cette face ne peut pas être lancée");
-  const d = face[1];
+  // Déguisement (702.168a) : lancée face cachée comme une créature 2/2 sans nom pour {3}.
+  if (choices.faceDown && !cardDef.disguise) throw new RulesError("Cette carte ne peut pas être lancée face cachée");
+  const d = choices.faceDown ? FACE_DOWN_SPELL : face[1];
   if (splitSecondOnStack(s)) throw new RulesError("Aucun sort ni capacité maintenant (second partagé ou combat)");
   // Harbinger of the Tides : « comme s'il avait le flash si vous payez {2} de plus ».
   const flashExtra = !terms.anyTime && !canCastTiming(s, player, d) ? d.flashExtraCost : undefined;
@@ -490,6 +498,12 @@ export function castSpell(s: GameState, player: PlayerId, card: ObjectId, choice
   // Seule une Aventure part « en aventure » ; un présage (même disposition Scryfall) est mélangé dans la bibliothèque.
   const adventure = choices.face !== undefined && cardDef.layout === "adventure" && d.subtypes.includes("Adventure");
   if (choices.face !== undefined) obj(s, stackId).faceDefId = d.id;
+  if (choices.faceDown && cardDef.disguise) {
+    const spellObj = obj(s, stackId);
+    s.defs[FACE_DOWN_ID] ??= FACE_DOWN_DEF;
+    spellObj.faceDown = { card: spellObj.defId, ward: true, upCosts: [cardDef.disguise] };
+    spellObj.defId = FACE_DOWN_ID;
+  }
   // Theorist's Proxy : « le prochain sort que vous lancez ce tour-ci ne peut pas être contrecarré ».
   const caster0 = s.players[player];
   const uncounterable = caster0?.nextSpellUncounterableTurn === s.turn.number;
@@ -772,7 +786,10 @@ export function activateAbility(s: GameState, player: PlayerId, source: ObjectId
         throw new RulesError("Mana insuffisant");
       }
     }
-    for (const e of ab.effects) if (e.op === "unlockDoor") unlockDoor(s, source, e.door);
+    for (const e of ab.effects) {
+      if (e.op === "unlockDoor") unlockDoor(s, source, e.door);
+      if (e.op === "turnFaceUp") turnFaceUp(s, source);
+    }
     s.priority.passes = 0;
     return;
   }

@@ -44,6 +44,7 @@ import {
   shuffle,
   snapshot,
   tapObject,
+  turnFaceUp,
   unlockDoor,
 } from "./state";
 import { doublers } from "./statics";
@@ -489,6 +490,19 @@ export function grantPlay(
 function exiledUid(s: GameState, ctx: EffectContext, ref: Ref): string | undefined {
   const id = resolveRef(s, ctx, ref)[0];
   return id ? s.objects[id]?.uid : undefined;
+}
+
+/**
+ * Met une carte sur le champ de bataille face cachée sous le contrôle de `controller`. Elle pourra être retournée
+ * pour son coût de mana si c'est une carte de créature, ou pour son coût de déguisement (701.34c, 701.58c).
+ */
+export function putFaceDown(s: GameState, controller: PlayerId, id: ObjectId, ward: boolean): ObjectId | null {
+  const o = s.objects[id];
+  if (!o || o.zone === "battlefield") return null;
+  const d = s.defs[o.defId];
+  const upCosts = [...(d?.disguise ? [d.disguise] : []), ...(d?.types.includes("Creature") && d.manaCost ? [d.manaCost] : [])];
+  emit({ type: "moved", owner: o.owner, from: o.zone, to: "battlefield" });
+  return moveObject(s, id, "battlefield", { controller, faceDown: { ward, upCosts } });
 }
 
 /** Cartes d'une zone appartenant à des joueurs donnés. */
@@ -2102,6 +2116,48 @@ export function runEffect(s: GameState, r: Resolution, e: Effect): OpResult {
       bump(s);
       emit({ type: "token", objectId: melded.id, defId: result.id, controller: ctx.controller });
       rulesEvent(s, { e: "zone", oldId: exiled[0] ?? null, newId: melded.id, from: "exile", to: "battlefield", lki: null });
+      return;
+    }
+    case "putFaceDown": {
+      // Manifester (701.34) / cape (701.58) : face cachée, sous le contrôle du contrôleur de l'effet.
+      for (const id of resolveRef(s, ctx, e.what)) putFaceDown(s, ctx.controller, id, e.ward);
+      return;
+    }
+    case "manifestDread": {
+      const library = s.players[ctx.controller]?.library ?? [];
+      const top = library.slice(0, 2);
+      if (top.length === 0) return;
+      let chosen = top[0] as string;
+      if (top.length === 2) {
+        const answer = r.vars[key("dread")];
+        if (!answer) {
+          const creature = top.find((id) => s.defs[s.objects[id]?.defId ?? ""]?.types.includes("Creature"));
+          return {
+            ask: {
+              player: ctx.controller,
+              key: key("dread"),
+              request: {
+                type: "pick",
+                intent: "pickCards",
+                prompt: "Manifestation effroyable : la carte à manifester (l'autre va au cimetière)",
+                options: top,
+                min: 1,
+                max: 1,
+                suggested: [creature ?? (top[0] as string)],
+              },
+            },
+          };
+        }
+        chosen = String(answer[0]);
+      }
+      const rest = top.filter((id) => id !== chosen);
+      putFaceDown(s, ctx.controller, chosen, false);
+      for (const id of rest) moveAndLog(s, id, "graveyard");
+      rulesEvent(s, { e: "manifestDread", player: ctx.controller });
+      return;
+    }
+    case "turnFaceUp": {
+      for (const id of resolveRef(s, ctx, e.what)) turnFaceUp(s, id);
       return;
     }
     case "setClassLevel": {

@@ -343,6 +343,8 @@ function matchTrigger(s: GameState, ev: RulesEvent, t: TriggerSpec, src: Source)
       return ev.e === "classLevel" && ev.objectId === src.id && ev.level === t.level
         ? { objectId: src.id, player: src.view.controller }
         : null;
+    case "turnedFaceUp":
+      return ev.e === "turnedFaceUp" && ev.objectId === src.id ? { objectId: src.id, player: src.view.controller } : null;
     case "unlockDoor":
       return ev.e === "unlock" && ev.objectId === src.id && (t.door === undefined || t.door === ev.door)
         ? { objectId: src.id, player: ev.player }

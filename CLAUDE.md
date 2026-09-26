@@ -37,7 +37,7 @@ Objectif : les 18 extensions Standard restantes (environ 4 360 cartes), **100 % 
   - 0.5 transformation, cartes recto-verso modales, assemblage ✅ ;
   - 0.6 cartes scindées et Salles ✅ ;
   - 0.7 Sagas, Classes, Affaires ✅ ;
-  - 0.8 cartes face cachée ;
+  - 0.8 cartes face cachée ✅ ;
   - 0.9 mots-clés communs ;
   - 0.10 performances.
 - **Phase 1, extensions** (lots A/B/C, D pour FIN) : EOE, DFT, OTJ+BIG, BLB, TDM, WOE, SOS, ECL, TLA, SPM, MSH, TMT, HOB, MKM, DSK, LCI, FIN.
@@ -104,6 +104,14 @@ Lot 0.7 (Sagas, Classes, Affaires) :
 - Affaire (719) : `caseToSolve` (condition) et `caseSolved` (capacités) dans le script ; le déclencheur « au début de votre étape de fin, si elle n'est pas résolue et que la condition est remplie, elle est résolue » est généré ;
 - `levelAbilities` (layers.ts) ajoute les capacités des niveaux atteints et les capacités « Résolue » ; l'aperçu affiche le niveau ou « Affaire résolue » ;
 - tests : `engine/test/levels.test.ts`. Le helper `advanceUntil` avance la partie en passant les attaques, les blocages et les choix.
+
+Lot 0.8 (cartes face cachée, 708) :
+- un objet face cachée prend la définition générique `FACE_DOWN_DEF` (créature 2/2 sans nom, valeur de mana 0) ; la vraie carte, la garde et les coûts pour le retourner sont dans `GameObject.faceDown`. Vues, événements, couches et déclencheurs cachent donc la carte sans traitement particulier ;
+- déguisement : `CardDef.disguise` lu dans le texte ; option de lancement `faceDown` pour {3} (`FACE_DOWN_SPELL`) ; garde {2} ;
+- manifester et cape (`fx.putFaceDown(ref, ward)`), manifestation effroyable (`fx.manifestDread`, événement de règles `manifestDread`) ;
+- retourner face visible : action spéciale pour chaque coût possible (déguisement, ou coût de mana d'une carte de créature), effet `fx.turnFaceUp`, déclencheur `when.turnedFaceUp` ;
+- la carte est révélée en quittant le champ de bataille ; un sort lancé face cachée arrive face cachée ;
+- seul le contrôleur voit la vraie carte (`ObjectView.faceDownCard`, affichée dans l'aperçu). L'audit `hidden-info` joue des parties avec des cartes déguisées et vérifie que l'adversaire ne les voit jamais.
 
 ### Reality Fracture (FRA)
 

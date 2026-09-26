@@ -13,6 +13,7 @@ import {
   canPlayLand,
   castableFaces,
   castTerms,
+  FACE_DOWN_SPELL,
   instantLoyalty,
   modesOf,
   sacrificeOptions,
@@ -96,11 +97,18 @@ export function legalActions(s: GameState, player: PlayerId): ActionOption[] {
     }
     const terms = castTerms(s, player, card);
     if (!terms || !d.implemented) continue;
-    // Chaque face lançable (la carte, son aventure) donne une option distincte.
+    // Chaque face lançable (la carte, son aventure) donne une option distincte ; le déguisement, face cachée.
     for (const [face, faceDef] of castableFaces(s, card, d)) castOption(card, face, faceDef, terms);
+    if (d.disguise) castOption(card, undefined, FACE_DOWN_SPELL, terms, true);
   }
 
-  function castOption(card: ObjectId, face: number | undefined, d: CardDef, terms: NonNullable<ReturnType<typeof castTerms>>) {
+  function castOption(
+    card: ObjectId,
+    face: number | undefined,
+    d: CardDef,
+    terms: NonNullable<ReturnType<typeof castTerms>>,
+    faceDown = false,
+  ) {
     // Timing : normal, ignoré (Etali), ou flash moyennant un surcoût (Harbinger of the Tides).
     const onTime = terms.anyTime || canCastTiming(s, player, d);
     if (!onTime && !d.flashExtraCost) return;
@@ -138,6 +146,7 @@ export function legalActions(s: GameState, player: PlayerId): ActionOption[] {
       type: "cast",
       card,
       ...(face !== undefined ? { face, faceName: d.name } : {}),
+      ...(faceDown ? { faceDown: true, faceName: "Face cachée" } : {}),
       modes,
       xMax: hasX && normal ? maxXFor(s, player, (x) => withExtra(spellCost(s, player, d, { ...base, x }))) : null,
       kickerAffordable:

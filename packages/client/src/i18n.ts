@@ -72,6 +72,7 @@ export const KEYWORD_LABEL: Record<Keyword, string> = {
 
 export function faceName(face: CardFace | undefined, lang: Lang): string {
   if (!face) return "?";
+  if (face.defId === "face-down") return lang === "fr" ? "Carte face cachée" : "Face-down card";
   if (face.isToken) return `jeton ${face.name}`;
   return (lang === "fr" && face.fr?.name) || face.name;
 }
