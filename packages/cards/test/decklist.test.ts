@@ -222,3 +222,38 @@ describe("légalité en Standard", () => {
     expect(d.issues.map((i) => [i.line, i.kind, i.message])).toEqual([[1, "illegal", "Carte fictive est bannie en Standard"]]);
   });
 });
+
+describe("cartes à plusieurs faces (lot 0.3)", () => {
+  it("chaque face a sa définition ; la carte porte le recto, ou la réunion des moitiés d'une carte scindée", () => {
+    const adventure = CARDS["Riling Dawnbreaker // Signaling Roar"];
+    expect(adventure?.layout).toBe("adventure");
+    expect(adventure?.faceDefs?.map((f) => [f.name, f.types])).toEqual([
+      ["Riling Dawnbreaker", ["Creature"]],
+      ["Signaling Roar", ["Sorcery"]],
+    ]);
+    expect(adventure?.types).toEqual(["Creature"]);
+    const split = CARDS["Cease // Desist"];
+    expect(split?.types).toEqual(["Instant", "Sorcery"]);
+    expect(split?.colors.sort()).toEqual(["B", "G", "W"]);
+    const dfc = CARDS["Aang, at the Crossroads // Aang, Destined Savior"];
+    expect(dfc?.faceDefs?.[1]?.image).toMatch(/^https:/);
+    expect(dfc?.faceDefs?.[1]?.image).not.toBe(dfc?.image);
+  });
+
+  it("decklists : le recto seul (MTGA) ou « A/B » (MTGO) ; export du recto, nom complet pour une carte scindée", () => {
+    const index = new CardIndex(CARDS);
+    expect(index.find("Riling Dawnbreaker")).toBe("Riling Dawnbreaker // Signaling Roar");
+    expect(index.find("Cease/Desist")).toBe("Cease // Desist");
+    const text = serializeDeckList(
+      {
+        main: [
+          [2, "Riling Dawnbreaker // Signaling Roar"],
+          [1, "Cease // Desist"],
+        ],
+      },
+      CARDS,
+    );
+    expect(text).toContain("2 Riling Dawnbreaker (TDM)");
+    expect(text).toContain("1 Cease // Desist (MKM)");
+  });
+});

@@ -89,7 +89,6 @@ npm run dev          # http://localhost:5173
 | `npm run deck-smoke` | Deckbuilder de bout en bout : import, édition, export, persistance, partie (serveur de dev lancé) |
 | `npm run ui-smoke -- <dossier> [actions]` | Joue une partie dans Chromium via l'interface et prend des captures (serveur de dev lancé) |
 | `npm run typecheck` / `npm run lint` | TypeScript strict / Biome |
-| `npm run import-cards -- fdn` (ou `fra`) | Réimporte un set depuis Scryfall (EN + FR, loyauté et légalité en Standard comprises) |
 
 ## Architecture
 

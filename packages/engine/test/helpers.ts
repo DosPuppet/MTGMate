@@ -3,7 +3,7 @@
  */
 import { card } from "@mtgx/cards";
 import { createGame, submit } from "../src/game";
-import { cloneState, createObject } from "../src/state";
+import { cloneState, createObject, registerDef } from "../src/state";
 import { advance, emptyCombat } from "../src/turn";
 import type { CardDef, Decision, GameState, PlayerId, Step } from "../src/types";
 
@@ -71,7 +71,7 @@ export function scenario(opts: ScenarioOptions): GameState {
       player.drewFromEmptyLibrary = false;
       const add = (c: string | CardDef, zone: "hand" | "library" | "graveyard") => {
         const d = def(c);
-        s.defs[d.id] ??= d;
+        registerDef(s, d);
         createObject(s, d.id, p, zone);
       };
       for (const c of side.hand ?? []) add(c, "hand");
@@ -81,7 +81,7 @@ export function scenario(opts: ScenarioOptions): GameState {
         const perm: Permanent =
           typeof entry === "object" && "name" in entry && !("types" in entry) ? entry : { name: entry as string | CardDef };
         const d = def(perm.name);
-        s.defs[d.id] ??= d;
+        registerDef(s, d);
         const o = createObject(s, d.id, p, "battlefield");
         o.controlledSince = perm.sick ? turn : 0;
         o.tapped = !!perm.tapped;

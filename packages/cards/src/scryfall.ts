@@ -275,7 +275,97 @@ function prepareSpellDef(raw: RawCard, spell: NonNullable<CardScript["prepareSpe
   };
 }
 
-export function toCardDef(raw: RawCard, script: CardScript | undefined, set: string): CardDef {
+/** Dispositions à plusieurs faces que le moteur sait jouer (complété lot par lot : aventures, recto-verso…). */
+export const HANDLED_LAYOUTS = new Set<string>();
+
+/**
+ * Définition d'une carte. Pour une carte à plusieurs faces, chaque face a sa propre définition (script cherché par
+ * le nom de la face dans `scripts`), et la carte porte les caractéristiques hors du jeu : le recto, ou la réunion
+ * des deux moitiés d'une carte scindée.
+ */
+export function toCardDef(
+  raw: RawCard,
+  script: CardScript | undefined,
+  set: string,
+  scripts: Record<string, CardScript> = {},
+): CardDef {
+  if (!raw.faces?.length) {
+    const d = singleDef(raw, script, set);
+    // Assemblage (meld) : chaque carte est importée seule ; jouable quand le moteur gère la disposition.
+    if (raw.layout === "meld" && !HANDLED_LAYOUTS.has("meld")) d.implemented = false;
+    return d;
+  }
+  const faceDefs = raw.faces.map((f, i) => ({
+    ...singleDef(faceRaw(raw, f), scripts[f.name], set),
+    id: `${slug(raw.name)}__${i}`,
+  }));
+  const front = faceDefs[0] as CardDef;
+  const base = singleDef({ ...faceRaw(raw, raw.faces[0] as RawFace), name: raw.name, image: raw.image, fr: raw.fr }, script, set);
+  const layout = raw.layout as CardDef["layout"];
+  const card: CardDef = {
+    ...base,
+    id: slug(raw.name),
+    name: raw.name,
+    layout,
+    faceDefs,
+    // Le texte de la carte est celui du recto ; les autres faces sont affichées à part (aperçu).
+    text: layout === "split" ? "" : front.text,
+    legalities: raw.legalities,
+    implemented: !!layout && HANDLED_LAYOUTS.has(layout) && faceDefs.every((f) => f.implemented),
+  };
+  if (layout === "split") {
+    // 709.4 : hors de la pile, une carte scindée a les caractéristiques combinées de ses deux moitiés.
+    const halves = faceDefs.slice(0, 2);
+    const costs = halves.map((h) => h.manaCost).filter((c): c is NonNullable<typeof c> => !!c);
+    card.manaCost = costs.length ? costs.reduce((a, b) => addManaCosts(a, b)) : front.manaCost;
+    card.manaCostText = halves.map((h) => h.manaCostText).join(" // ");
+    card.colors = [...new Set(halves.flatMap((h) => h.colors))];
+    card.types = [...new Set(halves.flatMap((h) => h.types))];
+    card.typeLine = halves.map((h) => h.typeLine).join(" // ");
+  }
+  return card;
+}
+
+/** Somme de deux coûts de mana (valeur de mana d'une carte scindée). */
+function addManaCosts(
+  a: NonNullable<CardDef["manaCost"]>,
+  b: NonNullable<CardDef["manaCost"]>,
+): NonNullable<CardDef["manaCost"]> {
+  const colored = { ...a.colored };
+  for (const [m, n] of Object.entries(b.colored))
+    colored[m as keyof typeof colored] = (colored[m as keyof typeof colored] ?? 0) + (n ?? 0);
+  return {
+    generic: a.generic + b.generic,
+    colored,
+    x: a.x + b.x,
+    hybrid: [...(a.hybrid ?? []), ...(b.hybrid ?? [])],
+    twoHybrid: [...(a.twoHybrid ?? []), ...(b.twoHybrid ?? [])],
+  };
+}
+
+/** Données brutes d'une face, au format d'une carte simple. */
+function faceRaw(raw: RawCard, f: RawFace): RawCard {
+  const text = f.oracleText.toLowerCase();
+  return {
+    ...raw,
+    name: f.name,
+    manaCost: f.manaCost,
+    typeLine: f.typeLine,
+    oracleText: f.oracleText,
+    power: f.power,
+    toughness: f.toughness,
+    loyalty: f.loyalty,
+    // Couleurs : celles de la face (recto-verso), sinon celles de son coût (aventure, moitié de carte scindée).
+    colors: f.colors ?? (["W", "U", "B", "R", "G"] as const).filter((c) => f.manaCost.includes(c)),
+    keywords: raw.keywords.filter((k) => text.includes(k.toLowerCase())),
+    image: f.image ?? raw.image,
+    fr: f.fr,
+    faces: undefined,
+    layout: undefined,
+  };
+}
+
+function singleDef(raw: RawCard, script: CardScript | undefined, set: string): CardDef {
   const [left = "", right = ""] = raw.typeLine.split(" — ");
   const words = left.split(" ").filter(Boolean);
   const supertypes = words.filter((w) => SUPERTYPES.has(w));
@@ -285,8 +375,6 @@ export function toCardDef(raw: RawCard, script: CardScript | undefined, set: str
   let implemented = !!script || onlyKeywords(raw.oracleText);
   // Cartes « à préparer » : jouables seulement si le script décrit leur sort.
   if (raw.prepare && !script?.prepareSpell) implemented = false;
-  // Cartes à plusieurs faces : pas encore gérées par le moteur (lots 0.3 à 0.6 de la branche Standard).
-  if (raw.faces) implemented = false;
   let manaCost = null;
   try {
     manaCost = raw.manaCost ? parseManaCost(raw.manaCost) : null;

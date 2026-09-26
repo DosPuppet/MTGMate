@@ -23,6 +23,7 @@ export {
   isSummoningSick,
   nextPlayer,
   opponentsOf,
+  registerDef,
 } from "./state";
 export { isLegalTarget, legalTargets } from "./targets";
 export {

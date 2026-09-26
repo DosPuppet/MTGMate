@@ -32,7 +32,7 @@ Objectif : les 18 extensions Standard restantes (environ 4 360 cartes), **100 % 
 - **Phase 0, socle transverse :**
   - 0.1 FRA à 100 % ✅ ;
   - 0.2 import de tout le Standard ✅ ;
-  - 0.3 cartes à plusieurs faces ;
+  - 0.3 cartes à plusieurs faces ✅ (modèle) ;
   - 0.4 aventures et présages ;
   - 0.5 transformation, cartes recto-verso modales, assemblage ;
   - 0.6 cartes scindées et Salles ;
@@ -59,6 +59,13 @@ Lot 0.2 :
 - le test de fumée est groupé par extension, et le test de légalité vérifie la liste exacte des 13 bannies ;
 - le worker de partie reçoit les définitions des cartes des decks avec le message `start`, au lieu d'embarquer toute la base (6 Mo → 163 Ko). Les jetons du bac à sable viennent de `@mtgx/cards/tokens`, un module léger ;
 - l'interface embarque toujours toutes les données : 6,3 Mo, 1,3 Mo compressé.
+
+Lot 0.3 (modèle des cartes à plusieurs faces) :
+- `CardDef.layout` et `CardDef.faceDefs` : une définition complète par face, construite par `toCardDef` avec le script cherché au nom de la face. La carte porte le recto, ou la réunion des deux moitiés d'une carte scindée (709.4 : valeur de mana additionnée, couleurs et types réunis) ;
+- `registerDef` enregistre une carte et ses faces dans la partie (création de partie, bac à sable, tests) ;
+- une carte à plusieurs faces reste non gérée tant que sa disposition n'est pas dans `HANDLED_LAYOUTS` (`cards/src/scryfall.ts`) et que toutes ses faces ne sont pas gérées ; les cartes d'assemblage (meld) aussi ;
+- decklists : le recto seul (MTGA), « A/B » (MTGO) et le nom français du recto sont reconnus. L'export donne le recto seul, sauf pour une carte scindée (« A // B ») ;
+- interface : les autres faces sont affichées dans l'aperçu (`CardFace.otherFaces`), avec un bouton « Voir le verso » (touche F) pour une carte recto-verso ; le deckbuilder cherche dans toutes les faces.
 
 ### Reality Fracture (FRA)
 

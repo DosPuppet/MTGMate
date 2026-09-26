@@ -41,6 +41,9 @@ export interface CardFace {
   isToken: boolean;
   /** Sort attaché d'une carte « à préparer » (affiché dans l'aperçu). */
   prepareFace?: CardDef["prepareFace"];
+  /** Carte à plusieurs faces : sa disposition et ses autres faces (verso, aventure, autre moitié). */
+  layout?: CardDef["layout"];
+  otherFaces?: CardDef["prepareFace"][];
 }
 
 export interface ObjectView extends CardFace {
@@ -148,7 +151,26 @@ export function cardFace(d: CardDef): CardFace {
     implemented: d.implemented,
     isToken: !!d.isToken,
     ...(d.prepareFace ? { prepareFace: d.prepareFace } : {}),
+    ...(d.layout ? { layout: d.layout, otherFaces: otherFaces(d) } : {}),
   };
+}
+
+/**
+ * Les faces autres que celle affichée (pour l'aperçu) : le verso, l'aventure, ou les deux moitiés d'une carte
+ * scindée. Une face n'a sa propre image que si elle est imprimée à part (verso d'une carte recto-verso).
+ */
+function otherFaces(d: CardDef): NonNullable<CardFace["otherFaces"]> {
+  const faces = d.faceDefs ?? [];
+  return (d.layout === "split" ? faces : faces.slice(1)).map((f) => ({
+    name: f.name,
+    manaCost: f.manaCostText,
+    typeLine: f.typeLine,
+    text: f.text,
+    image: f.image !== d.image ? f.image : undefined,
+    fr: f.fr
+      ? { name: f.fr.name, typeLine: f.fr.typeLine, text: f.fr.text, image: f.fr.image !== d.fr?.image ? f.fr.image : undefined }
+      : undefined,
+  }));
 }
 
 export function objectView(s: GameState, id: ObjectId): ObjectView {

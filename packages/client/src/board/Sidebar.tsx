@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { SoundControl } from "../audio/SoundControl";
 import { faceImage, faceName, faceText, faceType, KEYWORD_LABEL } from "../i18n";
 import { useGame } from "../store";
@@ -7,9 +7,21 @@ import { ManaCost } from "./Card";
 export function Preview() {
   const hover = useGame((s) => s.hover);
   const lang = useGame((s) => s.lang);
+  // Carte recto-verso : afficher le verso (touche F ou bouton).
+  const [flipped, setFlipped] = useState(false);
+  const backImage = hover?.face.otherFaces?.find((f) => f?.image);
+  useEffect(() => {
+    if (!backImage) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "f" || e.key === "F") setFlipped((x) => !x);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [backImage]);
   if (!hover) return <div className="preview empty">Survolez une carte pour l'agrandir.</div>;
   const { face, obj } = hover;
-  const src = faceImage(face, lang);
+  const back = flipped && backImage ? (lang === "fr" && backImage.fr?.image) || backImage.image : undefined;
+  const src = back ?? faceImage(face, lang);
   const baseKw = new Set(obj?.keywords ?? []);
   return (
     <div className="preview">
@@ -34,6 +46,25 @@ export function Preview() {
         </div>
         <div className="preview-type">{faceType(face, lang)}</div>
         {!src && <div className="preview-text">{faceText(face, lang)}</div>}
+        {backImage && (
+          <button type="button" className="btn small ghost preview-flip" onClick={() => setFlipped((x) => !x)}>
+            {flipped ? "Voir le recto" : "Voir le verso"} (F)
+          </button>
+        )}
+        {face.otherFaces?.map(
+          (f) =>
+            f && (
+              // Autre face : verso, aventure, autre moitié d'une carte scindée.
+              <div key={f.name} className="preview-prepare">
+                <div className="preview-title">
+                  <span>{(lang === "fr" && f.fr?.name) || f.name}</span>
+                  {f.manaCost && <ManaCost cost={f.manaCost} size={14} />}
+                </div>
+                <div className="preview-type">{(lang === "fr" && f.fr?.typeLine) || f.typeLine}</div>
+                <div className="preview-text">{(lang === "fr" && f.fr?.text) || f.text}</div>
+              </div>
+            ),
+        )}
         {face.prepareFace && (
           // Carte « à préparer » : le sort attaché à la créature.
           <div className="preview-prepare">

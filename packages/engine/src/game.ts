@@ -6,7 +6,18 @@ import { drawCard } from "./actions";
 import { divisionOf, validateChoice } from "./choices";
 import { activateManaAbility } from "./mana";
 import { activateAbility, answerResolutionChoice, castSpell, playLand, RulesError } from "./stack";
-import { cloneState, collectEvents, createObject, emit, emptyPool, emptyTurnStats, opponentsOf, random, shuffle } from "./state";
+import {
+  cloneState,
+  collectEvents,
+  createObject,
+  emit,
+  emptyPool,
+  emptyTurnStats,
+  opponentsOf,
+  random,
+  registerDef,
+  shuffle,
+} from "./state";
 import { answerTriggerMode, answerTriggerOrder, answerTriggerTarget } from "./triggers";
 import {
   advance,
@@ -103,7 +114,7 @@ export function createGame(opts: GameOptions): StepResult {
         turnStats: emptyTurnStats(),
       };
       for (const card of p.deck) {
-        s.defs[card.id] ??= card;
+        registerDef(s, card);
         createObject(s, card.id, p.id, "library");
       }
       shuffle(s, s.players[p.id]?.library ?? []);

@@ -390,6 +390,12 @@ export function moveObject(
   return moved.id;
 }
 
+/** Enregistre une définition de carte dans la partie, avec les définitions de ses faces. */
+export function registerDef(s: GameState, d: CardDef): void {
+  s.defs[d.id] ??= d;
+  for (const f of d.faceDefs ?? []) s.defs[f.id] ??= f;
+}
+
 /** Retire un objet du jeu sans passer par une zone (copie de sort qui cesse d'exister). */
 function removeObject(s: GameState, id: ObjectId): void {
   const o = s.objects[id];

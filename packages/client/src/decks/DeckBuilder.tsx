@@ -113,7 +113,18 @@ function matches(c: CardDef, f: Filters): boolean {
   if (f.query) {
     const q = normalizeName(f.query);
     const hay = normalizeName(
-      [c.name, c.fr?.name, c.typeLine, c.fr?.typeLine, c.text, c.fr?.text, c.prepareFace?.name, c.prepareFace?.text].join(" "),
+      [
+        c.name,
+        c.fr?.name,
+        c.typeLine,
+        c.fr?.typeLine,
+        c.text,
+        c.fr?.text,
+        c.prepareFace?.name,
+        c.prepareFace?.text,
+        // Toutes les faces d'une carte à plusieurs faces (verso, aventure, autre moitié).
+        ...(c.faceDefs ?? []).flatMap((x) => [x.name, x.fr?.name, x.typeLine, x.fr?.text]),
+      ].join(" "),
     );
     if (!hay.includes(q)) return false;
   }

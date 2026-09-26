@@ -27,7 +27,7 @@ export { TOKEN_SPECS } from "./tokens";
 /** Toutes les cartes connues, indexées par nom anglais (toutes extensions ; une réimpression garde la première). */
 export const CARDS: Record<string, CardDef> = {};
 for (const set of SETS) {
-  for (const raw of set.data) CARDS[raw.name] ??= toCardDef(raw, set.scripts[raw.name], set.code);
+  for (const raw of set.data) CARDS[raw.name] ??= toCardDef(raw, set.scripts[raw.name], set.code, set.scripts);
 }
 
 export function card(name: string): CardDef {

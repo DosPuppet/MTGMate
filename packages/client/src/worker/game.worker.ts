@@ -5,7 +5,16 @@
 import { heuristicAgent } from "@mtgx/ai";
 import type { DeckEntries } from "@mtgx/cards";
 import { TOKEN_SPECS } from "@mtgx/cards/tokens";
-import { type CardDef, createGame, createObject, createTokens, GameHost, type GameState, visibleFaces } from "@mtgx/engine";
+import {
+  type CardDef,
+  createGame,
+  createObject,
+  createTokens,
+  GameHost,
+  type GameState,
+  registerDef,
+  visibleFaces,
+} from "@mtgx/engine";
 import type { FromWorker, Sandbox, ToWorker } from "../protocol";
 
 const HUMAN = "p1";
@@ -32,7 +41,7 @@ function applySandbox(s: GameState, sandbox: Sandbox): void {
     if (!s.players[player]) continue;
     for (const name of side.cards ?? []) {
       const def = card(name);
-      s.defs[def.id] ??= def;
+      registerDef(s, def);
       const o = createObject(s, def.id, player, "battlefield");
       o.controlledSince = 0;
       if (def.loyalty) o.counters.loyalty = def.loyalty;
@@ -58,7 +67,7 @@ function applySandbox(s: GameState, sandbox: Sandbox): void {
           !o.attachedTo,
       );
       if (!host || !s.players[player]) continue;
-      s.defs[def.id] ??= def;
+      registerDef(s, def);
       const o = createObject(s, def.id, player, "battlefield");
       o.controlledSince = 0;
       o.attachedTo = host.id;

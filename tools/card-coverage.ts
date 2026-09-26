@@ -41,7 +41,7 @@ if (cardName !== undefined) {
     process.exit(1);
   }
   console.log(`${c.name} ${c.manaCostText} — ${c.typeLine}${c.power !== undefined ? ` ${c.power}/${c.toughness}` : ""}`);
-  console.log(`${c.text}\n`);
+  console.log(`${[c.text, ...(c.faceDefs ?? []).map((f) => `// ${f.name}\n${f.text}`)].join("\n")}\n`);
   console.log(`Gérée : ${c.implemented ? "oui" : "non"}`);
   const { text: _t, fr: _f, image: _i, artCrop: _a, ...script } = c;
   console.log(
@@ -94,7 +94,8 @@ if (!setArg) {
 const missing = all.filter((c) => !c.implemented);
 const byMechanic = new Map<string, string[]>();
 for (const c of missing) {
-  const tags = MECHANICS.filter(([, re]) => re.test(c.text)).map(([n]) => n);
+  const text = [c.text, ...(c.faceDefs ?? []).map((f) => f.text)].join("\n");
+  const tags = MECHANICS.filter(([, re]) => re.test(text)).map(([n]) => n);
   for (const t of tags.length ? tags : ["sans mécanique bloquante détectée"])
     byMechanic.set(t, [...(byMechanic.get(t) ?? []), c.name]);
 }

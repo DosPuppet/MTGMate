@@ -167,6 +167,13 @@ export interface CardDef {
   artCrop?: string;
   /** Carte « à préparer » (Reality Fracture) : le sort attaché à la créature (seconde face). */
   prepareFace?: PrepareFace;
+  /** Disposition à plusieurs faces (aventure, carte scindée, recto-verso transformable ou modal, assemblage). */
+  layout?: MultiFaceLayout;
+  /**
+   * Définitions complètes de chaque face (0 : recto, créature d'une aventure, moitié gauche). La carte elle-même
+   * porte les caractéristiques hors du jeu : celles du recto, ou la réunion des deux moitiés d'une carte scindée.
+   */
+  faceDefs?: CardDef[];
   /** Définition du sort préparé (copiée en exil quand la créature devient préparée). */
   prepareSpell?: CardDef;
   /** false si la carte a des capacités que le moteur ne sait pas encore gérer. */
@@ -180,12 +187,17 @@ export interface CardDef {
   isToken?: boolean;
 }
 
+export type MultiFaceLayout = "adventure" | "split" | "transform" | "modal_dfc" | "meld";
+
+/** Une face affichable (sort préparé, autre face d'une carte à plusieurs faces). */
 export interface PrepareFace {
   name: string;
   manaCost: string;
   typeLine: string;
   text: string;
-  fr?: { name?: string; typeLine?: string; text?: string };
+  fr?: { name?: string; typeLine?: string; text?: string; image?: string };
+  /** Image propre à cette face (verso d'une carte recto-verso). */
+  image?: string;
 }
 
 /** Formats de construction reconnus (seul le Standard est dans le périmètre). */
