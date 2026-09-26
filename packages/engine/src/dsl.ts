@@ -315,7 +315,27 @@ export const fx = {
   copySpell: (what: Ref, count: Amount): Effect => ({ op: "copySpell", what, count }),
   millUntil: (who: Ref, filter: ObjectFilter): Effect => ({ op: "millUntil", who, filter }),
   exileTop: (who: Ref, n: number, store: string): Effect => ({ op: "exileTop", who, n, store }),
-  grantPlay: (what: Ref, opts: { free?: boolean; anyTime?: boolean } = {}): Effect => ({ op: "grantPlay", what, ...opts }),
+  grantPlay: (what: Ref, opts: { free?: boolean; anyTime?: boolean; forever?: boolean } = {}): Effect => ({
+    op: "grantPlay",
+    what,
+    ...opts,
+  }),
+  castCopiesFree: (what: Ref[], maxTotalManaValue: number): Effect => ({ op: "castCopiesFree", what, maxTotalManaValue }),
+  noLegendRuleThisTurn: { op: "noLegendRuleThisTurn" } as Effect,
+  becomeCopy: (what: Ref, of: Ref, duration: "endOfTurn" | "permanent" = "endOfTurn"): Effect => ({
+    op: "becomeCopy",
+    what,
+    of,
+    duration,
+  }),
+  /** Effet continu qui cesse quand la carte désignée quitte l'exil (« jusqu'à ce que cette carte soit lancée depuis l'exil »). */
+  modifyWhileExiled: (what: Ref, mods: LayerMods, card: Ref): Effect => ({
+    op: "modify",
+    what,
+    mods,
+    duration: "permanent",
+    untilLeavesExile: card,
+  }),
   giveControl: (what: Ref, to: Ref): Effect => ({ op: "giveControl", what, to }),
   untapUpTo: (filter: ObjectFilter, n: number): Effect => ({ op: "untapUpTo", filter, n }),
   exileOnResolve: { op: "exileOnResolve" } as Effect,
@@ -679,6 +699,8 @@ export const when = {
   scryOrSurveil: { on: "scryOrSurveil" } as TriggerSpec,
   /** « Quand vous défaussez cette carte » (avec `fromGraveyard`). */
   discardSelf: { on: "discardSelf" } as TriggerSpec,
+  /** « Quand vous lancez ce sort » */
+  castSelf: { on: "castSelf" } as TriggerSpec,
   /** « Chaque fois que vous activez une capacité de loyauté [en retirant au moins N marqueurs] » */
   loyaltyActivated: (minRemoved?: number, byOpponent?: boolean): TriggerSpec => ({
     on: "loyaltyActivated",

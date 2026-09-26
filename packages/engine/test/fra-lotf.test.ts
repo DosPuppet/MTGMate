@@ -8,9 +8,10 @@ import { createTokens, dealDamage, destroy, sourceFromObject } from "../src/acti
 import { legalActions } from "../src/legal";
 import { canPay, manaValue, parseManaCost } from "../src/mana";
 import { spellCost } from "../src/stack";
-import { chars } from "../src/state";
+import { chars, moveObject } from "../src/state";
 import { combatPower, declareAttackers } from "../src/turn";
 import type { GameState } from "../src/types";
+import { objectView } from "../src/view";
 import { act, idOf, idsOf, passBoth, scenario } from "./helpers";
 
 type S = GameState;
@@ -247,3 +248,87 @@ function passUntilTurn(s: S, p: string): S {
   }
   return cur;
 }
+
+describe("Reality Fracture, lot 0.1 (Standard) : Emrakul, Uldaros Theorix, Hall of Echoes", () => {
+  it("Emrakul : « quand vous lancez ce sort, dégagez tous vos terrains »", () => {
+    let s = scenario({ p1: { battlefield: lands("Forest", 10), hand: ["Emrakul, the Exigent Doom"] } });
+    s = cast(s, "p1", "Emrakul, the Exigent Doom");
+    expect(idsOf(s, "p1", "battlefield", "Forest").every((id) => s.objects[id]?.tapped)).toBe(true);
+    s = act(s, "p1", { type: "pass" });
+    s = act(s, "p2", { type: "pass" }); // le déclencheur se résout
+    expect(idsOf(s, "p1", "battlefield", "Forest").every((id) => !s.objects[id]?.tapped)).toBe(true);
+    expect(s.stack).toHaveLength(1);
+  });
+
+  it("Emrakul : garde « sacrifiez trois permanents » lue dans le texte", () => {
+    expect(card("Emrakul, the Exigent Doom").ward).toEqual({ sacrifice: 3 });
+  });
+
+  it("Emrakul depuis la main : le terrain gagne {C}{C} tant que la carte reste exilée, lançable depuis l'exil", () => {
+    let s = scenario({ p1: { battlefield: lands("Forest", 3), hand: ["Emrakul, the Exigent Doom"] } });
+    const emrakul = idOf(s, "p1", "hand", "Emrakul, the Exigent Doom");
+    const land = idsOf(s, "p1", "battlefield", "Forest")[0] as string;
+    const index = card("Emrakul, the Exigent Doom").abilities.findIndex((a) => a.kind === "activated" && a.fromHand);
+    s = act(s, "p1", { type: "activate", source: emrakul, ability: index, targets: { t: [land] } });
+    s = passBoth(s);
+    const exiled = s.exile.find((id) => s.objects[id]?.defId === card("Emrakul, the Exigent Doom").id) as string;
+    expect(exiled).toBeDefined();
+    expect(chars(s, land).abilities.some((a) => a.kind === "mana" && a.amount === 2)).toBe(true);
+    expect(s.playPermissions?.some((p) => p.card === exiled && p.until > 1000)).toBe(true);
+    // Quand la carte quitte l'exil, le terrain perd la capacité.
+    moveObject(s, exiled, "stack");
+    expect(chars(s, land).abilities.some((a) => a.kind === "mana" && a.amount === 2)).toBe(false);
+  });
+
+  it("Uldaros Theorix : exile et copie, les copies se lancent gratuitement et deviennent des jetons", () => {
+    let s = scenario({
+      p1: {
+        battlefield: [...lands("Island", 3), ...lands("Swamp", 4)],
+        hand: ["Uldaros Theorix"],
+        graveyard: ["Bear Cub", "Giant Growth", "Serra Angel"],
+      },
+    });
+    s = cast(s, "p1", "Uldaros Theorix");
+    s = passBoth(s); // Uldaros arrive ; son déclencheur demande ses cibles
+    const bear = idOf(s, "p1", "graveyard", "Bear Cub");
+    const growth = idOf(s, "p1", "graveyard", "Giant Growth");
+    while (s.pending?.kind === "choice") {
+      const req = s.pending.request;
+      if (req.intent === "triggerTarget") {
+        const want = (req as { options: string[] }).options.find((o) => o === bear || o === growth);
+        s = act(s, "p1", { type: "choose", values: want ? [want] : [] });
+      } else break;
+    }
+    s = passBoth(s);
+    expect(s.pending?.kind === "choice" && s.pending.request.intent).toBe("pickCards");
+    s = act(s, "p1", {
+      type: "choose",
+      values: s.pending?.kind === "choice" ? (s.pending.request as { options: string[] }).options : [],
+    });
+    const copies = s.exile.filter((id) => s.objects[id]?.cardCopy);
+    expect(copies).toHaveLength(2);
+    const bearCopy = copies.find((id) => s.defs[s.objects[id]?.defId ?? ""]?.name === "Bear Cub") as string;
+    s = act(s, "p1", { type: "cast", card: bearCopy, free: true });
+    s = passBoth(s);
+    const tokens = idsOf(s, "p1", "battlefield", "Bear Cub");
+    expect(tokens).toHaveLength(1);
+    expect(s.objects[tokens[0] as string]?.isToken).toBe(true);
+  });
+
+  it("Hall of Echoes : devient une copie jusqu'à la fin du tour ; pas de règle des légendes", () => {
+    let s = scenario({ p1: { battlefield: ["Hall of Echoes", ...lands("Plains", 5), "Thalia, the Survivor"] } });
+    const hall = idOf(s, "p1", "battlefield", "Hall of Echoes");
+    const thalia = idOf(s, "p1", "battlefield", "Thalia, the Survivor");
+    s = act(s, "p1", { type: "activate", source: hall, ability: 1, targets: { t: [thalia] } });
+    s = passBoth(s);
+    expect(chars(s, hall).name).toBe("Thalia, the Survivor");
+    expect(chars(s, hall).types).toEqual(["Creature"]);
+    expect(chars(s, hall).power).toBe(3);
+    expect(chars(s, hall).keywords).toContain("lifelink");
+    // Deux Thalia : la règle des légendes ne s'applique pas ce tour-ci.
+    expect(s.pending?.kind).toBe("priority");
+    expect(idsOf(s, "p1", "battlefield", "Hall of Echoes")).toHaveLength(1);
+    // L'interface affiche la face copiée.
+    expect(objectView(s, hall).defId).toBe(card("Thalia, the Survivor").id);
+  });
+});

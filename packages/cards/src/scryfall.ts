@@ -85,7 +85,8 @@ function stripReminder(text: string): string {
 }
 
 /** Garde : « Ward {2} », « Ward—Pay 7 life. » ou « Ward—{3}, Pay 3 life. » */
-const WARD = /\bward(?: ((?:\{[^}]+\})+)|—(?:((?:\{[^}]+\})+), )?pay (\d+) life\.?|—discard a card\.?)/i;
+const WARD =
+  /\bward(?: ((?:\{[^}]+\})+)|—(?:((?:\{[^}]+\})+), )?pay (\d+) life\.?|—discard a card\.?|—sacrifice (two|three|four) permanents\.?)/i;
 
 /** « Equip {3}{W} » (702.6) : capacité activée en rituel, cible une créature que vous contrôlez. */
 export function parseEquip(text: string): string | undefined {
@@ -96,6 +97,8 @@ export function parseWard(text: string): CardDef["ward"] {
   const m = WARD.exec(stripReminder(text));
   if (!m) return undefined;
   if (m[1]) return { mana: parseManaCost(m[1]) };
+  // « Ward—Sacrifice three permanents. » (Emrakul, the Exigent Doom)
+  if (m[4]) return { sacrifice: { two: 2, three: 3, four: 4 }[m[4].toLowerCase()] };
   // « Ward—Discard a card. » (Gideon the Oathless)
   if (!m[3]) return { discard: true };
   return { mana: m[2] ? parseManaCost(m[2]) : undefined, life: Number(m[3]) };
@@ -203,7 +206,15 @@ function intrinsicAbilities(
       trigger: { on: "becomesTarget", who: "self", byOpponent: true },
       targets: [],
       effects: [
-        { op: "unlessPay", who: { kind: "eventPlayer" }, mana: ward.mana, life: ward.life, discard: ward.discard, skip: 1 },
+        {
+          op: "unlessPay",
+          who: { kind: "eventPlayer" },
+          mana: ward.mana,
+          life: ward.life,
+          discard: ward.discard,
+          sacrifice: ward.sacrifice,
+          skip: 1,
+        },
         { op: "counter", what: { kind: "eventObject" } },
       ],
       label: "Garde",

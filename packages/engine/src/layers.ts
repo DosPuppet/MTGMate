@@ -9,7 +9,8 @@
  *
  * Le résultat est mis en cache par état et par `s.version`, que le moteur incrémente à chaque changement
  * pouvant affecter les caractéristiques (voir `bump`). Le fuzz vérifie que le cache ne diverge jamais.
- * Limites actuelles : pas de couche 1 (copie) ni 2 (changement de contrôle), pas de dépendances (613.8).
+ * Couche 1 : copie d'une définition (`copyOf`), pour une durée. Limites : pas de couche 2 (changement de
+ * contrôle par effet continu), pas de dépendances (613.8).
  */
 import { manaValue } from "./mana";
 import { counterPT, obj } from "./state";
@@ -94,8 +95,17 @@ function cdaValue(s: GameState, o: GameObject, a: Amount): number {
     .filter((id) => !types || types.some((t) => s.defs[obj(s, id).defId]?.types.includes(t))).length;
 }
 
-function base(s: GameState, o: GameObject): Characteristics {
-  const d = s.defs[o.defId];
+/** Définition effective d'un permanent : celle qu'il copie (couche 1, effet le plus récent), sinon la sienne. */
+export function copiedDefId(s: GameState, id: ObjectId): string {
+  let best: { t: number; def: string } | null = null;
+  for (const e of s.effects) {
+    if (e.copyOf && e.affected.includes(id) && (!best || e.timestamp > best.t)) best = { t: e.timestamp, def: e.copyOf };
+  }
+  return best?.def ?? obj(s, id).defId;
+}
+
+function base(s: GameState, o: GameObject, defId = o.defId): Characteristics {
+  const d = s.defs[defId];
   if (!d) throw new Error(`Définition inconnue : ${o.defId}`);
   const cda = d.cdaPT === undefined ? undefined : cdaValue(s, o, d.cdaPT);
   const cdaPower = d.cdaPower === undefined ? undefined : cdaValue(s, o, d.cdaPower);
@@ -164,7 +174,10 @@ function snapshotBase(s: GameState, id: ObjectId): LkiSnapshot {
 export function computeBattlefield(s: GameState): Map<ObjectId, Characteristics> {
   const out = new Map<ObjectId, Characteristics>();
   const attacking = new Set(s.combat?.attackers.map((a) => a.id) ?? []);
-  for (const id of s.battlefield) out.set(id, base(s, obj(s, id)));
+  const copying = s.effects.some((e) => e.copyOf);
+  const defOfId = (id: ObjectId) => (copying ? copiedDefId(s, id) : obj(s, id).defId);
+  // Couche 1 : copie (valeurs copiables de la définition copiée).
+  for (const id of s.battlefield) out.set(id, base(s, obj(s, id), defOfId(id)));
 
   const applied: Applied[] = s.effects.map((e) => ({ timestamp: e.timestamp, mods: e, affected: e.affected }));
   // Capacités statiques des permanents. Une source qui perd toutes ses capacités (Witness Protection,
@@ -174,7 +187,7 @@ export function computeBattlefield(s: GameState): Map<ObjectId, Characteristics>
   for (const id of s.battlefield) {
     const o = obj(s, id);
     if (!o.attachedTo) continue;
-    for (const ab of s.defs[o.defId]?.abilities ?? []) {
+    for (const ab of s.defs[defOfId(id)]?.abilities ?? []) {
       if (ab.kind === "static" && ab.affects === "attached" && ab.mods.loseAllAbilities) lost.add(o.attachedTo);
     }
   }
@@ -186,7 +199,8 @@ export function computeBattlefield(s: GameState): Map<ObjectId, Characteristics>
     for (const id of [...s.battlefield, ...emblems]) {
       if (lost.has(id)) continue;
       const o = obj(s, id);
-      for (const ab of s.defs[o.defId]?.abilities ?? []) {
+      const own = o.zone === "battlefield" ? defOfId(id) : o.defId;
+      for (const ab of s.defs[own]?.abilities ?? []) {
         if (ab.kind !== "static") continue;
         if (ab.condition && !checkCondition(s, ab.condition, o.controller, id)) continue;
         let mods = ab.mods;

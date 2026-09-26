@@ -775,6 +775,8 @@ export function activateAbility(s: GameState, player: PlayerId, source: ObjectId
   item.sacrificed = sacrificed.length ? [...sacrificed] : undefined;
   for (const id of sacrificed) putIntoGraveyard(s, id);
   if (ab.cost.sacrificeSelf) putIntoGraveyard(s, source);
+  // La source quitte sa zone pour payer le coût : on garde ses dernières informations (« cette carte », où qu'elle soit).
+  if (ab.cost.exileSelf || ab.cost.discardSelf || ab.cost.bounceSelf) s.lki[source] ??= snapshot(s, source);
   if (ab.cost.exileFromGraveyard) {
     for (const id of graveyardExileOptions(s, source, ab).slice(0, ab.cost.exileFromGraveyard.count)) moveObject(s, id, "exile");
   }

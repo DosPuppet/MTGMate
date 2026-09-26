@@ -933,9 +933,11 @@ function stateBasedActionsOnce(s: GameState): void {
     const legends = new Map<string, ObjectId[]>();
     for (const id of s.battlefield) {
       const o = obj(s, id);
-      const d = s.defs[o.defId];
-      if (!d?.supertypes.includes("Legendary")) continue;
-      const key = `${o.controller}|${d.name}`;
+      // Caractéristiques calculées : une copie (Hall of Echoes) porte le nom et le supertype copiés.
+      const c = chars(s, id);
+      if (!c.supertypes.includes("Legendary")) continue;
+      if (s.players[o.controller]?.noLegendRuleTurn === s.turn.number) continue;
+      const key = `${o.controller}|${c.name}`;
       legends.set(key, [...(legends.get(key) ?? []), id]);
     }
     let legendChoice: { player: PlayerId; ids: ObjectId[] } | null = null;

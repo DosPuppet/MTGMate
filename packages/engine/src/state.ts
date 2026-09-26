@@ -314,8 +314,9 @@ export function moveObject(
   opts: { controller?: PlayerId; position?: "top" | "bottom"; enters?: EntersContext } = {},
 ): ObjectId | null {
   const o = obj(s, id);
-  // Copie d'un sort préparé : elle ne quitte l'exil que pour la pile ; ailleurs, elle cesse d'exister.
-  if (o.preparedFor && to !== "stack") {
+  // Copie d'un sort préparé ou d'une carte (Uldaros) : elle ne quitte l'exil que pour la pile ; ailleurs,
+  // elle cesse d'exister (une copie de sort de permanent qui se résout devient un jeton).
+  if ((o.preparedFor || o.cardCopy) && to !== "stack" && !(o.cardCopy && o.zone === "stack" && to === "battlefield")) {
     removeObject(s, id);
     return null;
   }
@@ -355,6 +356,11 @@ export function moveObject(
     if (owner) owner.turnStats.milled += 1;
   }
   delete s.objects[id];
+  // Emrakul : les effets « jusqu'à ce que cette carte soit lancée depuis l'exil » cessent.
+  if (from0 === "exile" && s.effects.some((e) => e.untilExiledUid === o.uid)) {
+    s.effects = s.effects.filter((e) => e.untilExiledUid !== o.uid);
+    bump(s);
+  }
   if (o.isToken && to !== "battlefield") {
     bump(s);
     // Un jeton qui quitte le champ de bataille cesse d'exister, mais il « meurt » bien (déclencheurs).
@@ -365,10 +371,11 @@ export function moveObject(
 
   const moved = createObject(s, o.defId, o.owner, to, {
     uid: o.uid,
-    isToken: o.isToken,
+    isToken: o.isToken || (!!o.cardCopy && to === "battlefield"),
     controller: to === "battlefield" || to === "stack" ? (opts.controller ?? o.controller) : o.owner,
   });
   if (o.preparedFor) moved.preparedFor = o.preparedFor;
+  if (o.cardCopy && to === "stack") moved.cardCopy = true;
   if (to === "library" && opts.position !== "bottom") {
     const lib = s.players[o.owner]?.library;
     if (lib) {

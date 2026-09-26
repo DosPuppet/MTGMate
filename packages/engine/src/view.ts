@@ -2,6 +2,8 @@
  * Vue d'un joueur : tout ce qui est public + sa propre main + les options de sa décision.
  * Les informations cachées (main adverse, bibliothèques) ne sortent jamais du moteur.
  */
+
+import { copiedDefId } from "./layers";
 import { legalActions } from "./legal";
 import { costToText } from "./mana";
 import { canPlayLand, castTerms } from "./stack";
@@ -151,7 +153,8 @@ export function cardFace(d: CardDef): CardFace {
 
 export function objectView(s: GameState, id: ObjectId): ObjectView {
   const o = obj(s, id);
-  const d = s.defs[o.defId] as CardDef;
+  // Une copie (couche 1) s'affiche avec la face de ce qu'elle copie.
+  const d = s.defs[o.zone === "battlefield" ? copiedDefId(s, id) : o.defId] as CardDef;
   const c = chars(s, id);
   const isCreature = c.types.includes("Creature");
   const attacking = !!s.combat?.attackers.some((a) => a.id === id);

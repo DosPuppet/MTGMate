@@ -40,7 +40,8 @@ const hasTriggers = (abilities: AbilityDef[] | undefined) => !!abilities?.some((
 
 function liveSources(s: GameState): Source[] {
   const out: Source[] = [];
-  const granted = s.effects.some((e) => e.addAbilities?.some((a) => a.kind === "triggered"));
+  // Capacités déclenchées accordées, ou copiées (couche 1) : on ne peut pas se fier aux capacités imprimées.
+  const granted = s.effects.some((e) => e.copyOf || e.addAbilities?.some((a) => a.kind === "triggered"));
   for (const id of s.battlefield) {
     // Filtre rapide sur les capacités imprimées, sauf si un effet accorde des capacités déclenchées.
     if (!granted && !hasTriggers(s.defs[obj(s, id).defId]?.abilities)) continue;
@@ -53,6 +54,13 @@ function liveSources(s: GameState): Source[] {
       const abs = s.defs[obj(s, id).defId]?.abilities;
       if (abs?.some((a) => a.kind === "triggered" && a.fromGraveyard)) out.push({ id, view: snapshot(s, id) });
     }
+  }
+  // « Quand vous lancez ce sort » : le sort sur la pile (Emrakul, the Exigent Doom).
+  for (const item of s.stack) {
+    if (item.kind !== "spell" || !s.objects[item.id]) continue;
+    const abs = s.defs[item.sourceDefId]?.abilities;
+    if (abs?.some((a) => a.kind === "triggered" && a.trigger.on === "castSelf"))
+      out.push({ id: item.id, view: snapshot(s, item.id) });
   }
   // Emblèmes (zone de commandement).
   for (const p of s.playerOrder) {
@@ -310,6 +318,8 @@ function matchTrigger(s: GameState, ev: RulesEvent, t: TriggerSpec, src: Source)
       const v = liveView(s, ev.blocker);
       return v && matchWho(t.who, v, src) ? { objectId: ev.blocker, player: v.controller } : null;
     }
+    case "castSelf":
+      return ev.e === "cast" && ev.stackId === src.id ? { objectId: src.id, player: me } : null;
     case "discardSelf":
       return ev.e === "discard" && ev.cards.includes(src.id) ? { objectId: src.id, player: ev.player } : null;
     case "step":

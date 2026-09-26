@@ -22,8 +22,34 @@ Ce fichier sert au suivi du projet entre les sessions. Le README présente le pr
 | Effets sonores (échantillons Kenney CC0, volume, muet avec M) | ✅ |
 | Jeu en ligne : duel Standard à 2 (serveur local, code de salon, corde, reconnexion, revanche) | ✅ |
 | Déploiement : pm2 derrière nginx sur un VPS (`docs/deploiement.md`, `deploy/`) | ✅ documenté et testé en local (pm2, nginx) |
-| **Reality Fracture (FRA, « Réalité fracturée »)** | **276 / 279** (lots 0 à G faits, dont 4 decks préconstruits ; hors Emrakul, Uldaros Theorix, Hall of Echoes) |
-| Autres extensions Standard | à faire |
+| **Reality Fracture (FRA, « Réalité fracturée »)** | ✅ **279 / 279** (lots 0 à G, dont 4 decks préconstruits ; les 3 dernières cartes au lot 0.1 de la branche `standard`) |
+| Autres extensions Standard | branche `standard`, plan par lots ci-dessous |
+
+### Branche `standard` : tout le Standard
+
+Objectif : les 18 extensions Standard restantes (environ 4 360 cartes), **100 % des cartes, sans exclusion**, un commit par lot. Plan détaillé : `~/.claude/plans/je-voudrais-faire-une-velvet-kitten.md`.
+
+- **Phase 0, socle transverse :**
+  - 0.1 FRA à 100 % ✅ ;
+  - 0.2 import de tout le Standard ;
+  - 0.3 cartes à plusieurs faces ;
+  - 0.4 aventures et présages ;
+  - 0.5 transformation, cartes recto-verso modales, assemblage ;
+  - 0.6 cartes scindées et Salles ;
+  - 0.7 Sagas, Classes, Affaires ;
+  - 0.8 cartes face cachée ;
+  - 0.9 mots-clés communs ;
+  - 0.10 performances.
+- **Phase 1, extensions** (lots A/B/C, D pour FIN) : EOE, DFT, OTJ+BIG, BLB, TDM, WOE, SOS, ECL, TLA, SPM, MSH, TMT, HOB, MKM, DSK, LCI, FIN.
+- **Phase 2 :** decks Standard multi-extensions, puis clôture (5 158 / 5 158).
+
+Lot 0.1 : le moteur gagne :
+- la **couche 1** (`LayerMods.copyOf`, effet `becomeCopy`, `copiedDefId`) : copie pour une durée, statiques et déclencheurs de la définition copiée, face copiée dans l'interface ;
+- le déclencheur « quand vous lancez ce sort » (`castSelf`, source sur la pile) ;
+- la garde « sacrifiez N permanents » ;
+- les effets qui durent tant qu'une carte reste en exil (`untilExiledUid`) et la permission de lancer « tant qu'elle reste exilée » (`grantPlay` avec `forever`) ;
+- les copies de cartes (`GameObject.cardCopy` : elles quittent l'exil seulement pour la pile et deviennent des jetons en arrivant) ;
+- la règle des légendes suspendue pour le tour (`noLegendRuleThisTurn`).
 
 ### Reality Fracture (FRA)
 
@@ -150,6 +176,8 @@ Réimpressions : défenses talismaniques contre une couleur, changelin, restrict
 - **Gallia, Tragic Host :** la carte exilée du cimetière est choisie automatiquement (la moins chère).
 - **Molten Tide :** le {R} supplémentaire s'ajoute à toute capacité de mana « {T} » d'une Montagne, quelle que soit la couleur produite.
 - **Warrior's Blades :** la légalité de l'Équiper suppose la meilleure réduction possible ; le coût payé dépend de la cible choisie.
+- **Uldaros Theorix :** les copies choisies (valeur de mana totale 6 ou moins) se lancent gratuitement après la résolution du déclencheur, à tout moment ce tour-ci, et non pendant la résolution (comme Etali).
+- **Emrakul, the Exigent Doom :** la capacité accordée au terrain cesse dès que la carte quitte l'exil, de quelque façon que ce soit (et pas seulement quand elle est lancée).
 - **Légalité Standard :** instantané des légalités Scryfall au moment de l'import (`legalities.standard` dans `data/<set>.json`). Après une rotation ou une annonce de bannissement, réimporter les sets (`npm run import-cards -- <set>`).
 - **Jetons :** pas d'image (cadre texte).
 

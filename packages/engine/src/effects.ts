@@ -15,6 +15,7 @@ import {
   removeFromCombat,
   sourceFromObject,
 } from "./actions";
+import { copiedDefId } from "./layers";
 import { availableMana, canPay, costToText, manaValue, payMana } from "./mana";
 import { addReplacement } from "./replacement";
 import { bounceSpell, copySpellItem, counterItem, stackItemSpecs } from "./stack";
@@ -468,11 +469,17 @@ export function grantPlay(
   s: GameState,
   player: PlayerId,
   cards: ObjectId[],
-  until: "thisTurn" | "yourNextTurn",
+  until: "thisTurn" | "yourNextTurn" | "forever",
   opts: { free?: boolean; anyTime?: boolean },
 ): void {
-  const last = until === "thisTurn" ? s.turn.number : nextTurnOf(s, player);
+  const last = until === "forever" ? Number.MAX_SAFE_INTEGER : until === "thisTurn" ? s.turn.number : nextTurnOf(s, player);
   s.playPermissions = [...(s.playPermissions ?? []), ...cards.map((card) => ({ card, player, until: last, ...opts }))];
+}
+
+/** Identité physique de la carte désignée (pour un effet qui dure tant qu'elle reste exilée). */
+function exiledUid(s: GameState, ctx: EffectContext, ref: Ref): string | undefined {
+  const id = resolveRef(s, ctx, ref)[0];
+  return id ? s.objects[id]?.uid : undefined;
 }
 
 /** Cartes d'une zone appartenant à des joueurs donnés. */
@@ -537,6 +544,7 @@ export function runEffect(s: GameState, r: Resolution, e: Effect): OpResult {
         affected: ids,
         duration: e.duration,
         ...(e.duration === "untilYourNextTurn" ? { until: ctx.controller } : {}),
+        ...(e.untilLeavesExile ? { untilExiledUid: exiledUid(s, ctx, e.untilLeavesExile) } : {}),
         ...e.mods,
       });
       return;
@@ -566,7 +574,10 @@ export function runEffect(s: GameState, r: Resolution, e: Effect): OpResult {
       // Garde à coût composé (Ovika : {3} et 3 PV) : les deux parties doivent être payables.
       const hand = s.players[p]?.hand ?? [];
       const canDo =
-        (!mana || canPay(s, p, mana)) && (s.players[p]?.life ?? 0) >= (e.life ?? 0) && (!e.discard || hand.length > 0);
+        (!mana || canPay(s, p, mana)) &&
+        (s.players[p]?.life ?? 0) >= (e.life ?? 0) &&
+        (!e.discard || hand.length > 0) &&
+        s.battlefield.filter((id) => s.objects[id]?.controller === p).length >= (e.sacrifice ?? 0);
       if (!canDo) return;
       const answer = r.vars[key("unless")];
       if (!answer) {
@@ -574,6 +585,7 @@ export function runEffect(s: GameState, r: Resolution, e: Effect): OpResult {
           mana ? costToText(mana) : "",
           e.life ? `${e.life} points de vie` : "",
           e.discard ? "défausser une carte" : "",
+          e.sacrifice ? `sacrifier ${e.sacrifice} permanents` : "",
         ]
           .filter(Boolean)
           .join(" et ");
@@ -619,6 +631,35 @@ export function runEffect(s: GameState, r: Resolution, e: Effect): OpResult {
         if (!hand.includes(id)) return;
         emit({ type: "discard", player: p, defIds: [s.objects[id]?.defId ?? ""] });
         announceDiscard(s, p, moveObject(s, id, "graveyard"));
+      }
+      // Garde « sacrifiez trois permanents » (Emrakul, the Exigent Doom).
+      if (e.sacrifice) {
+        const perms = s.battlefield.filter((id) => s.objects[id]?.controller === p);
+        const chosen = r.vars[key("unlessSac")];
+        if (!chosen) {
+          const cheapest = [...perms].sort(
+            (a, b) =>
+              manaValue(s.defs[s.objects[a]?.defId ?? ""]?.manaCost) - manaValue(s.defs[s.objects[b]?.defId ?? ""]?.manaCost),
+          );
+          return {
+            ask: {
+              player: p,
+              key: key("unlessSac"),
+              request: {
+                type: "pick",
+                intent: "sacrifice",
+                prompt: `Sacrifiez ${e.sacrifice} permanents`,
+                options: perms,
+                min: e.sacrifice,
+                max: e.sacrifice,
+                suggested: cheapest.slice(0, e.sacrifice),
+              },
+            },
+          };
+        }
+        const ids = chosen.map(String).filter((id) => perms.includes(id));
+        if (ids.length < e.sacrifice) return;
+        for (const id of ids) putIntoGraveyard(s, id);
       }
       if (mana) {
         if (!canPay(s, p, mana)) return;
@@ -2001,7 +2042,70 @@ export function runEffect(s: GameState, r: Resolution, e: Effect): OpResult {
     }
     case "grantPlay": {
       const ids = resolveRef(s, ctx, e.what).filter((id) => s.objects[id]?.zone === "exile");
-      grantPlay(s, ctx.controller, ids, "thisTurn", { free: e.free, anyTime: e.anyTime });
+      grantPlay(s, ctx.controller, ids, e.forever ? "forever" : "thisTurn", { free: e.free, anyTime: e.anyTime });
+      return;
+    }
+    case "becomeCopy": {
+      const model = resolveRef(s, ctx, e.of).find((id) => onBattlefield(s, id));
+      const ids = resolveRef(s, ctx, e.what).filter((id) => onBattlefield(s, id));
+      if (!model || ids.length === 0) return;
+      bump(s);
+      s.effects.push({
+        id: newId(s, "e"),
+        timestamp: nextTimestamp(s),
+        affected: ids,
+        duration: e.duration,
+        copyOf: copiedDefId(s, model),
+      });
+      return;
+    }
+    case "noLegendRuleThisTurn": {
+      const pl = s.players[ctx.controller];
+      if (pl) pl.noLegendRuleTurn = s.turn.number;
+      return;
+    }
+    case "castCopiesFree": {
+      // Uldaros Theorix : les cartes exilées sont copiées ; le joueur choisit lesquelles lancer (valeur de mana
+      // totale limitée). Approximation : les copies choisies se lancent gratuitement ce tour-ci, à tout moment.
+      const cards = [...new Set(e.what.flatMap((w) => resolveRef(s, ctx, w)))].filter((id) => !!s.objects[id]);
+      if (cards.length === 0) return;
+      const mv = (id: string) => manaValue(s.defs[s.objects[id]?.defId ?? ""]?.manaCost);
+      const answer = r.vars[key("copies")];
+      if (!answer) {
+        const suggested: string[] = [];
+        let total = 0;
+        for (const id of [...cards].sort((a, b) => mv(b) - mv(a))) {
+          if (total + mv(id) > e.maxTotalManaValue) continue;
+          suggested.push(id);
+          total += mv(id);
+        }
+        return {
+          ask: {
+            player: ctx.controller,
+            key: key("copies"),
+            request: {
+              type: "pick",
+              intent: "pickCards",
+              prompt: `Copies à lancer gratuitement (valeur de mana totale ${e.maxTotalManaValue} ou moins)`,
+              options: cards,
+              min: 0,
+              max: cards.length,
+              suggested,
+            },
+          },
+        };
+      }
+      let total = 0;
+      const copies: string[] = [];
+      for (const id of answer.map(String)) {
+        const o = s.objects[id];
+        if (!o || !cards.includes(id) || total + mv(id) > e.maxTotalManaValue) continue;
+        total += mv(id);
+        const copy = createObject(s, o.defId, ctx.controller, "exile");
+        copy.cardCopy = true;
+        copies.push(copy.id);
+      }
+      grantPlay(s, ctx.controller, copies, "thisTurn", { free: true, anyTime: true });
       return;
     }
     case "reflexive": {

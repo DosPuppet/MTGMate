@@ -130,7 +130,7 @@ export interface CardDef {
   /** « Si cette carte est dans votre main de départ, vous pouvez commencer la partie avec elle sur le champ de bataille. » */
   leyline?: boolean;
   /** Garde : coût à payer (mana ou points de vie). */
-  ward?: { mana?: ManaCost; life?: number; discard?: boolean };
+  ward?: { mana?: ManaCost; life?: number; discard?: boolean; sacrifice?: number };
   /** Flashback avec « défaussez une carte » en plus (Twinned Vision). */
   flashbackDiscard?: number;
   /** « En coût additionnel pour lancer ce sort, … » (601.2b, 601.2h). */
@@ -450,6 +450,8 @@ export type TriggerSpec =
   | { on: "scryOrSurveil" }
   /** « Quand vous défaussez cette carte » (se déclenche depuis le cimetière). */
   | { on: "discardSelf" }
+  /** « Quand vous lancez ce sort » (la source est le sort sur la pile). */
+  | { on: "castSelf" }
   /** « Chaque fois que cette créature subit des blessures » */
   | { on: "isDealtDamage"; who: "self" }
   /** « Chaque fois qu'une [créature] bloque » */
@@ -547,6 +549,8 @@ export interface LayerMods {
   addKeywords?: Keyword[];
   removeKeywords?: Keyword[];
   loseAllAbilities?: boolean;
+  /** Couche 1 : devient une copie de cette définition (valeurs copiables ; Hall of Echoes). */
+  copyOf?: string;
   /** Couche 7b : F/E fixées. */
   setPower?: number;
   setToughness?: number;
@@ -825,7 +829,14 @@ export type Effect =
   | { op: "pump"; what: Ref; power: Amount; toughness: Amount; keywords?: Keyword[] }
   | { op: "pumpAll"; filter: ObjectFilter; power: Amount; toughness: Amount; keywords?: Keyword[] }
   /** Effet continu quelconque sur des objets (couches 4 à 7) : « devient 0/1 et perd toutes ses capacités »… */
-  | { op: "modify"; what: Ref; mods: LayerMods; duration: "endOfTurn" | "permanent" | "untilYourNextTurn" }
+  /** `untilLeavesExile` : l'effet cesse quand cette carte quitte l'exil (Emrakul). */
+  | {
+      op: "modify";
+      what: Ref;
+      mods: LayerMods;
+      duration: "endOfTurn" | "permanent" | "untilYourNextTurn";
+      untilLeavesExile?: Ref;
+    }
   | { op: "destroy"; what: Ref }
   | { op: "draw"; who: Ref; amount: Amount }
   | { op: "gainLife"; who: Ref; amount: Amount }
@@ -937,7 +948,7 @@ export type Effect =
   /** Contrecarre un sort ou une capacité sur la pile (701.5). */
   | { op: "counter"; what: Ref }
   /** « … à moins que [joueur] ne paie X » : s'il paie, les `skip` effets suivants sont ignorés. */
-  | { op: "unlessPay"; discard?: boolean; who: Ref; mana?: ManaCost; life?: number; skip: number }
+  | { op: "unlessPay"; discard?: boolean; sacrifice?: number; who: Ref; mana?: ManaCost; life?: number; skip: number }
   /** « Vous pouvez lancer [cette carte] depuis votre cimetière ce tour-ci. » */
   | { op: "allowCastFromGraveyard"; what: Ref }
   /** « En arrivant, choisissez un type de créature / une couleur » (sort de permanent qui se résout). */
@@ -957,7 +968,14 @@ export type Effect =
   /** Exile les N cartes du dessus de la bibliothèque de chaque joueur désigné (mémorisées sous `store`). */
   | { op: "exileTop"; who: Ref; n: number; store: string }
   /** Permet au contrôleur de jouer ces cartes exilées ce tour-ci. `spellsOnly` : lancer seulement, sans timing, gratuitement. */
-  | { op: "grantPlay"; what: Ref; free?: boolean; anyTime?: boolean }
+  /** `forever` : « tant qu'elle reste exilée » (Emrakul). */
+  | { op: "grantPlay"; what: Ref; free?: boolean; anyTime?: boolean; forever?: boolean }
+  /** Copie les cartes désignées et permet d'en lancer gratuitement, pour une valeur de mana totale limitée (Uldaros). */
+  | { op: "castCopiesFree"; what: Ref[]; maxTotalManaValue: number }
+  /** « La règle des légendes ne s'applique pas aux permanents que vous contrôlez ce tour-ci. » */
+  | { op: "noLegendRuleThisTurn" }
+  /** « [Ce permanent] devient une copie de [la cible] jusqu'à la fin du tour » (couche 1). */
+  | { op: "becomeCopy"; what: Ref; of: Ref; duration: "endOfTurn" | "permanent" }
   /** Donne le contrôle de l'objet à un joueur, sans limite de durée (Harmless Offering). */
   | { op: "giveControl"; what: Ref; to: Ref }
   /** Dégage jusqu'à N permanents engagés du contrôleur correspondant au filtre (choisis automatiquement). */
@@ -1113,6 +1131,8 @@ export interface GameObject {
   preparedCopy?: ObjectId;
   /** Copie d'un sort préparé (en exil puis sur la pile) : le permanent qui l'a préparée. Cesse d'exister hors de ces zones. */
   preparedFor?: ObjectId;
+  /** Copie d'une carte (Uldaros) : quitte l'exil seulement pour la pile ; devient un jeton sur le champ de bataille. */
+  cardCopy?: boolean;
   /** Emblème temporaire : disparaît au début du prochain tour de ce joueur. */
   expiresAtTurnOf?: PlayerId;
   /** A déjà infligé des blessures de combat (Ruric Thar). */
@@ -1141,6 +1161,8 @@ export interface PlayerState {
   noncombatDamageLastTurn?: number;
   /** Jace's Machinations : capacités de loyauté des Jace à vitesse d'éphémère pendant ce tour. */
   jaceInstantTurn?: number;
+  /** Hall of Echoes : tour pendant lequel la règle des légendes ne s'applique pas à ses permanents. */
+  noLegendRuleTurn?: number;
   /** Terrains supplémentaires ce tour-ci (Way of the Paradox). */
   extraLandsTurn?: { turn: number; n: number };
   /** Theorist's Proxy : le prochain sort lancé ce tour-ci ne peut pas être contrecarré. */
@@ -1348,6 +1370,8 @@ export interface ContinuousEffect extends LayerMods {
   duration: "endOfTurn" | "permanent" | "untilYourNextTurn";
   /** Pour « jusqu'à votre prochain tour » : le joueur dont le prochain tour met fin à l'effet. */
   until?: PlayerId;
+  /** L'effet cesse quand la carte de cette identité physique quitte l'exil. */
+  untilExiledUid?: string;
 }
 
 export type Flow = "mulligan" | "stepStart" | "tba" | "priority" | "resolving" | "stepEnd" | "over";
