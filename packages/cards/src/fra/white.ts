@@ -6,8 +6,10 @@ import {
   type CardScript,
   CREATURE_YOU_CONTROL,
   cond,
+  empower,
   entersWith,
   fx,
+  loyalty,
   manaAbility,
   modal,
   mode,
@@ -21,6 +23,7 @@ import {
   targetObj,
   triggered,
   triggeredModal,
+  walkersHave,
   when,
 } from "./common";
 
@@ -177,4 +180,33 @@ export const WHITE: Record<string, CardScript> = {
     ],
   },
   "Blossom-Blessed Angel": { prepareSpell: SEED_SUTURE, abilities: [entersWith({ prepared: true })] },
+  "Academic Ascent": {
+    spell: spell([target.creature("t")], [fx.pump(ref.target(), 2, 2, ["flying"]), empower(2)]),
+  },
+  "Campus Crier": {
+    abilities: [
+      activated({ mana: "{1}", fromGraveyard: true, exileSelf: true, effects: [empower(2)], label: "Renforcez Jace 2" }),
+    ],
+  },
+  "Hexhaven Battalion": { spell: spell([], [fx.createTokens(CADET, 3), empower(2)]) },
+  "Repurposed Enforcer": {
+    abilities: [triggered(when.attacksSelf, [empower(amount.count(CREATURE_YOU_CONTROL))], { label: "Renforcez Jace X" })],
+  },
+  "Way of the Healer": {
+    abilities: [
+      triggered(when.entersSelf, [empower(5)], { label: "Renforcez Jace 5" }),
+      walkersHave(
+        loyalty(-2, { effects: [fx.createTokens(CADET), fx.surveil(1)], label: "Cadet, surveillance 1" }),
+        "Planeswalkers : [−2] Cadet",
+      ),
+    ],
+  },
+  "Way of the Mentor": {
+    abilities: [
+      triggered(when.entersSelf, [empower(5)], { label: "Renforcez Jace 5" }),
+      triggered(when.gainLife, [fx.addCountersAll({ types: ["Planeswalker"], controller: "you" }, 1, "loyalty")], {
+        label: "loyauté sur chaque planeswalker",
+      }),
+    ],
+  },
 };

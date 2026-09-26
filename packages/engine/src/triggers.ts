@@ -99,7 +99,16 @@ export function checkCondition(s: GameState, c: Condition, controller: PlayerId,
       return (s.players[controller]?.turnStats.cardsDrawn ?? 0) >= c.n;
     case "castThisTurn": {
       const st = s.players[controller]?.turnStats;
-      return ((c.noncreature ? st?.noncreatureCast : st?.spellsCast) ?? 0) >= c.n;
+      const n = (c.noncreature ? st?.noncreatureCast : st?.spellsCast) ?? 0;
+      return c.exactly ? n === c.n : n >= c.n;
+    }
+    case "beholdJace": {
+      const pl = s.players[controller];
+      const jaceHere = s.battlefield.some(
+        (id) => s.objects[id]?.controller === controller && chars(s, id).subtypes.includes("Jace"),
+      );
+      const jaceInHand = (pl?.hand ?? []).some((id) => s.defs[s.objects[id]?.defId ?? ""]?.subtypes.includes("Jace"));
+      return jaceHere || jaceInHand;
     }
     case "prepared": {
       const src = sourceId ? s.objects[sourceId] : undefined;
@@ -249,6 +258,12 @@ function matchTrigger(s: GameState, ev: RulesEvent, t: TriggerSpec, src: Source)
     }
     case "discard":
       return ev.e === "discard" && whose(t.whose, ev.player, me) ? { objectId: ev.cards[0], player: ev.player } : null;
+    case "loyaltyActivated": {
+      if (ev.e !== "loyalty") return null;
+      if (t.byOpponent ? ev.player === me : ev.player !== me) return null;
+      if (t.minRemoved !== undefined && -ev.cost < t.minRemoved) return null;
+      return { objectId: ev.sourceId, player: ev.player };
+    }
     case "discardSelf":
       return ev.e === "discard" && ev.cards.includes(src.id) ? { objectId: src.id, player: ev.player } : null;
     case "step":

@@ -900,6 +900,37 @@ export function runEffect(s: GameState, r: Resolution, e: Effect): OpResult {
       if (e.store) r.vars[`$ids:${e.store}`] = created;
       return;
     }
+    case "empowerJace": {
+      // « Mettez N marqueurs de loyauté sur un jeton Jace que vous contrôlez ; si vous n'en contrôlez pas, créez-en un d'abord. »
+      const n = Math.max(0, evalAmount(s, ctx, e.amount));
+      const isJaceToken = (id: string) => {
+        const o = s.objects[id];
+        const c = chars(s, id);
+        return !!o?.isToken && o.controller === ctx.controller && c.types.includes("Planeswalker") && c.subtypes.includes("Jace");
+      };
+      let jace = s.battlefield.find(isJaceToken);
+      if (!jace) jace = createTokens(s, ctx.controller, e.token, 1)[0];
+      const o = jace ? s.objects[jace] : undefined;
+      if (o && n > 0) changeCounters(s, o, "loyalty", n);
+      return;
+    }
+    case "instantJaceLoyalty": {
+      const p = s.players[ctx.controller];
+      if (p) p.jaceInstantTurn = s.turn.number;
+      return;
+    }
+    case "extraLandThisTurn": {
+      const p = s.players[ctx.controller];
+      if (!p) return;
+      const cur = p.extraLandsTurn?.turn === s.turn.number ? p.extraLandsTurn.n : 0;
+      p.extraLandsTurn = { turn: s.turn.number, n: cur + 1 };
+      return;
+    }
+    case "nextSpellUncounterable": {
+      const p = s.players[ctx.controller];
+      if (p) p.nextSpellUncounterableTurn = s.turn.number;
+      return;
+    }
     case "prepare": {
       const f = e.filter;
       const ids = f

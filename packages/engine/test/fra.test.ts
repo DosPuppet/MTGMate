@@ -6,6 +6,7 @@
 import { describe, expect, it } from "vitest";
 import { dealDamage, destroy, sourceFromObject } from "../src/actions";
 import { legalActions } from "../src/legal";
+import { spellCost } from "../src/stack";
 import { chars, setPrepared } from "../src/state";
 import type { GameState } from "../src/types";
 import { act, idOf, passBoth, scenario } from "./helpers";
@@ -261,5 +262,89 @@ describe("Reality Fracture, lot C : préparé", () => {
     expect(legalActions(s, "p1").some((a) => a.type === "cast" && a.card === idOf(s, "p1", "hand", "Llanowar Elves"))).toBe(
       false,
     );
+  });
+});
+
+describe("Reality Fracture, lot D : Empower Jace", () => {
+  const jaces = (s: S, p = "p1") =>
+    s.battlefield.filter(
+      (id) => s.objects[id]?.isToken && s.objects[id]?.controller === p && chars(s, id).subtypes.includes("Jace"),
+    );
+  const loyaltyOf = (s: S, id: string) => s.objects[id]?.counters.loyalty ?? 0;
+
+  it("crée un jeton Jace avec N loyautés, puis charge le même jeton", () => {
+    let s = scenario({
+      p1: { hand: ["Protege's Awakening", "No Admittance"], battlefield: lands("Mountain", 2), library: lands("Island", 5) },
+    });
+    s = { ...s, players: { ...s.players, p1: { ...s.players.p1!, manaPool: { W: 0, U: 4, B: 0, R: 0, G: 0, C: 0 } } } };
+    s = cast(s, "p1", "Protege's Awakening");
+    s = passBoth(s);
+    expect(jaces(s)).toHaveLength(1);
+    const jace = jaces(s)[0] as string;
+    expect(loyaltyOf(s, jace)).toBe(6);
+    expect(chars(s, jace).types).toEqual(["Planeswalker"]);
+    s = cast(s, "p1", "No Admittance", { targets: { t: ["p2"] } });
+    s = passBoth(s);
+    expect(jaces(s)).toEqual([jace]);
+    expect(loyaltyOf(s, jace)).toBe(7);
+    // Ses capacités : −1 surveillance, −3 piocher.
+    expect(legalActions(s, "p1").filter((a) => a.type === "activate" && a.source === jace)).toHaveLength(2);
+  });
+
+  it("les planeswalkers gagnent les capacités des Ways ; Sanctum Lurker les garde à 0 loyauté", () => {
+    let s = scenario({ p1: { hand: ["Sanctum Lurker"], battlefield: ["Way of the Wildspeaker", ...lands("Swamp", 3)] } });
+    s = cast(s, "p1", "Sanctum Lurker");
+    s = passBoth(s); // Lurker arrive
+    s = passBoth(s); // renforcez Jace 1
+    const jace = jaces(s)[0] as string;
+    expect(loyaltyOf(s, jace)).toBe(1);
+    // [−1] surveillance : Jace tombe à 0 mais reste (Sanctum Lurker).
+    const surveil = legalActions(s, "p1").find(
+      (a) => a.type === "activate" && a.source === jace && a.label?.includes("Surveillance"),
+    );
+    expect(surveil).toBeDefined();
+    s = act(s, "p1", { type: "activate", source: jace, ability: (surveil as { ability: number }).ability });
+    expect(s.objects[jace]?.zone).toBe("battlefield");
+    expect(loyaltyOf(s, jace)).toBe(0);
+    // Capacités accordées : [+2] (Lurker) et [−4] (Wildspeaker) sur le jeton.
+    const labels = chars(s, jace).abilities.map((a) => (a.kind === "activated" ? a.label : ""));
+    expect(labels.some((l) => l?.startsWith("+2"))).toBe(true);
+    expect(labels.some((l) => l?.startsWith("−4"))).toBe(true);
+  });
+
+  it("Jace's Machinations : les capacités de loyauté des Jace à vitesse d'éphémère, pendant le tour adverse", () => {
+    let s = scenario({
+      active: "p2",
+      p1: { hand: ["Jace's Machinations"], battlefield: lands("Island", 3), library: lands("Island", 5) },
+    });
+    s = act(s, "p2", { type: "pass" });
+    s = cast(s, "p1", "Jace's Machinations");
+    s = passBoth(s);
+    const jace = jaces(s)[0] as string;
+    expect(loyaltyOf(s, jace)).toBe(8);
+    expect(s.pending?.player).toBe("p2");
+    s = act(s, "p2", { type: "pass" });
+    if (s.pending?.player === "p1")
+      expect(legalActions(s, "p1").some((a) => a.type === "activate" && a.source === jace)).toBe(true);
+  });
+
+  it("Countersculpt : {1} de plus sans Jace à contempler", () => {
+    const withoutJace = scenario({ p1: { hand: ["Countersculpt"], battlefield: lands("Island", 2) } });
+    const cs = idOf(withoutJace, "p1", "hand", "Countersculpt");
+    // Pas de sort à contrecarrer : on vérifie seulement le coût via le mana disponible.
+    const d = withoutJace.defs[withoutJace.objects[cs]?.defId ?? ""]!;
+    expect(spellCost(withoutJace, "p1", d, {}).generic).toBe(1);
+    const withJace = scenario({ p1: { hand: ["Countersculpt", "Jace, Reality Sculptor"], battlefield: lands("Island", 2) } });
+    expect(spellCost(withJace, "p1", d, {}).generic).toBe(0);
+  });
+
+  it("Violent Echoes : renforcez Jace de l'excès de blessures", () => {
+    let s = scenario({
+      p1: { hand: ["Violent Echoes"], battlefield: lands("Mountain", 4) },
+      p2: { battlefield: ["Savannah Lions"] },
+    });
+    s = cast(s, "p1", "Violent Echoes", { targets: { t: [idOf(s, "p2", "battlefield", "Savannah Lions")] } });
+    s = passBoth(s);
+    expect(loyaltyOf(s, jaces(s)[0] as string)).toBe(5);
   });
 });

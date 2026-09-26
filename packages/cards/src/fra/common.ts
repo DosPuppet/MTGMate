@@ -2,7 +2,7 @@
  * Éléments propres à Reality Fracture : jetons (Cadet, Heartwood, Lotus…) et filtres.
  * Le DSL et les filtres génériques viennent de Foundations (fdn/common.ts).
  */
-import { dsl, type TokenSpec } from "@mtgx/engine";
+import { type Amount, dsl, type Effect, type TokenSpec } from "@mtgx/engine";
 import { manaAbility } from "../fdn/common";
 
 export * from "../fdn/common";
@@ -47,7 +47,7 @@ export const FOREST_TENTACLE: TokenSpec = {
   subtypes: ["Forest", "Tentacle"],
   power: 3,
   toughness: 3,
-  abilities: [manaAbility("G")],
+  // « {T} : ajoutez {G} » vient du type Forêt (305.6).
   text: "{T}: Add {G}.",
 };
 
@@ -93,3 +93,27 @@ export const OMIT_VARIABLES = spellOf([], [fxs.mill(3)]);
 export const VICIOUS_VERSE = spellOf([targets.player("t", "opponent")], [fxs.damage(1, refs.target())]);
 /** Soul Tether : « Créez un jeton Heartwood. » */
 export const SOUL_TETHER = spellOf([], [fxs.createTokens(HEARTWOOD)]);
+
+// ---------------------------------------------------------------------------
+// Empower Jace
+// ---------------------------------------------------------------------------
+
+/** « jeton de planeswalker Jace bleu avec "[−1] : Surveillez 1." et "[−3] : Piochez une carte." » */
+export const JACE_TOKEN: TokenSpec = {
+  name: "Jace",
+  colors: ["U"],
+  types: ["Planeswalker"],
+  subtypes: ["Jace"],
+  abilities: [
+    dsl.loyalty(-1, { effects: [fxs.surveil(1)], label: "Surveillance 1" }),
+    dsl.loyalty(-3, { effects: [fxs.draw(1)], label: "Piochez une carte" }),
+  ],
+  text: "[−1]: Surveil 1.\n[−3]: Draw a card.",
+};
+
+/** « Renforcez Jace N » : N marqueurs de loyauté sur votre jeton Jace (créé s'il n'y en a pas). */
+export const empower = (n: Amount): Effect => ({ op: "empowerJace", amount: n, token: JACE_TOKEN });
+
+/** « Les planeswalkers que vous contrôlez ont "[capacité de loyauté]". » */
+export const walkersHave = (ability: ReturnType<typeof dsl.loyalty>, label: string) =>
+  dsl.staticAbility({ types: ["Planeswalker"], controller: "you" }, { addAbilities: [ability] }, { label });

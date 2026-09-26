@@ -851,7 +851,11 @@ function stateBasedActionsOnce(s: GameState): void {
         changed = true;
       }
       // 704.5i : un planeswalker sans marqueur de loyauté va au cimetière.
-      if (hasType(s, id, "Planeswalker") && counterCount(o, "loyalty") <= 0) {
+      if (
+        hasType(s, id, "Planeswalker") &&
+        counterCount(o, "loyalty") <= 0 &&
+        !playerStatic(s, o.controller, "walkersSurviveZeroLoyalty")
+      ) {
         toGraveyard.push(id);
         continue;
       }

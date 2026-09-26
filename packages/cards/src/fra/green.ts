@@ -8,10 +8,12 @@ import {
   type CardScript,
   CREATURE_YOU_CONTROL,
   cond,
+  empower,
   entersWith,
   FOREST_TENTACLE,
   fx,
   HEARTWOOD,
+  loyalty,
   MOWU,
   manaAbility,
   mode,
@@ -23,6 +25,7 @@ import {
   targetObj,
   triggered,
   triggeredModal,
+  walkersHave,
   when,
 } from "./common";
 
@@ -237,5 +240,26 @@ export const GREEN: Record<string, CardScript> = {
   "Heartwood Crafter": {
     prepareSpell: SOUL_TETHER,
     abilities: [entersWith({ prepared: true }), manaAbility("C", 1, { restriction: { notSpellFromHand: true } })],
+  },
+  "Arcane Amphisbaena": { abilities: [triggered(when.entersSelf, [empower(2)], { label: "Renforcez Jace 2" })] },
+  "Inspired Tethermage": {
+    abilities: [
+      triggered(when.countersPut({ types: ["Planeswalker"], controller: "you" }, "loyalty"), [fx.addCounters(ref.self, 1)], {
+        label: "marqueur +1/+1",
+      }),
+      activated({ mana: "{6}", effects: [empower(2)], label: "Renforcez Jace 2" }),
+    ],
+  },
+  "Way of the Paradox": {
+    abilities: [
+      triggered(when.entersSelf, [empower(5)], { label: "Renforcez Jace 5" }),
+      triggered(when.loyaltyActivated(), [fx.gainLife(1), fx.extraLandThisTurn], { label: "+1 PV, terrain supplémentaire" }),
+    ],
+  },
+  "Way of the Wildspeaker": {
+    abilities: [
+      triggered(when.entersSelf, [empower(7)], { label: "Renforcez Jace 7" }),
+      walkersHave(loyalty(-4, { effects: [fx.createTokens(BEAST_TRAMPLE)], label: "Bête 4/4" }), "Planeswalkers : [−4] Bête"),
+    ],
   },
 };

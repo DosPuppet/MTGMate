@@ -84,7 +84,11 @@ function controlledAbilities(s: GameState, player: PlayerId): CardDef["abilities
 
 /** Nombre de terrains que le joueur peut jouer ce tour-ci (305.2 : 1, plus les effets comme Loot). */
 export function landsAllowed(s: GameState, player: PlayerId): number {
-  return 1 + controlledAbilities(s, player).reduce((n, ab) => n + (ab.kind === "playerStatic" ? (ab.extraLands ?? 0) : 0), 0);
+  const turnExtra = s.players[player]?.extraLandsTurn;
+  const extra = turnExtra?.turn === s.turn.number ? turnExtra.n : 0;
+  return (
+    1 + extra + controlledAbilities(s, player).reduce((n, ab) => n + (ab.kind === "playerStatic" ? (ab.extraLands ?? 0) : 0), 0)
+  );
 }
 
 /** Permission de jouer une carte exilée (impulsion, Etali…) encore valable. */
@@ -421,6 +425,10 @@ export function castSpell(s: GameState, player: PlayerId, card: ObjectId, choice
   const preparedFor = o.preparedFor ? s.objects[o.preparedFor] : undefined;
   if (preparedFor?.preparedCopy === card) delete preparedFor.preparedCopy;
   const stackId = moveObject(s, card, "stack", { controller: player }) as string;
+  // Theorist's Proxy : « le prochain sort que vous lancez ce tour-ci ne peut pas être contrecarré ».
+  const caster0 = s.players[player];
+  const uncounterable = caster0?.nextSpellUncounterableTurn === s.turn.number;
+  if (caster0 && uncounterable) delete caster0.nextSpellUncounterableTurn;
   const item: StackItem = {
     id: stackId,
     kind: "spell",
@@ -435,6 +443,7 @@ export function castSpell(s: GameState, player: PlayerId, card: ObjectId, choice
     sourceSnapshot: { keywords: d.keywords, power: d.power ?? 0, controller: player },
     flashback,
     fromHand: terms.source === "hand" || undefined,
+    uncounterable: uncounterable || undefined,
   };
   s.stack.push(item);
   try {
@@ -517,7 +526,7 @@ export function counterItem(s: GameState, id: string, by: string): boolean {
   const i = s.stack.findIndex((x) => x.id === id);
   const item = s.stack[i];
   if (!item || s.resolving?.item.id === id) return false;
-  if (item.kind === "spell" && s.defs[item.sourceDefId]?.cantBeCountered) return false;
+  if (item.kind === "spell" && (s.defs[item.sourceDefId]?.cantBeCountered || item.uncounterable)) return false;
   // Sphinx of the Final Word : « les éphémères et rituels que vous contrôlez ne peuvent pas être contrecarrés ».
   const types = s.defs[item.sourceDefId]?.types ?? [];
   if (
@@ -589,6 +598,15 @@ function spyglassed(s: GameState, source: ObjectId): boolean {
   });
 }
 
+/** Jace's Machinations : capacité de loyauté d'un Jace activable à vitesse d'éphémère ce tour-ci. */
+export function instantLoyalty(s: GameState, player: PlayerId, source: ObjectId, ab: ActivatedAbilityDef): boolean {
+  return (
+    ab.cost.loyalty !== undefined &&
+    s.players[player]?.jaceInstantTurn === s.turn.number &&
+    chars(s, source).subtypes.includes("Jace")
+  );
+}
+
 /** Zone d'où s'active une capacité : champ de bataille, cimetière ou main. */
 export function abilityZone(ab: ActivatedAbilityDef): "battlefield" | "graveyard" | "hand" {
   return ab.fromGraveyard ? "graveyard" : ab.fromHand ? "hand" : "battlefield";
@@ -633,6 +651,7 @@ export function activateAbility(s: GameState, player: PlayerId, source: ObjectId
   }
   if (
     ab.sorcerySpeed &&
+    !instantLoyalty(s, player, source, ab) &&
     !(s.turn.active === player && (s.turn.step === "main1" || s.turn.step === "main2") && s.stack.length === 0)
   ) {
     throw new RulesError("Cette capacité s'active seulement en rituel");
@@ -683,6 +702,7 @@ export function activateAbility(s: GameState, player: PlayerId, source: ObjectId
   if (ab.cost.loyalty !== undefined) {
     o.loyaltyTurn = s.turn.number;
     if (ab.cost.loyalty !== 0) changeCounters(s, o, "loyalty", ab.cost.loyalty);
+    rulesEvent(s, { e: "loyalty", player, sourceId: source, cost: ab.cost.loyalty });
   }
   if (ab.once) o.used = [...(o.used ?? []), index];
   if (ab.oncePerTurn) o.activatedTurn = { ...(o.activatedTurn ?? {}), [index]: s.turn.number };

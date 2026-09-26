@@ -2,19 +2,24 @@
 import {
   activated,
   amount,
+  BEAST_TRAMPLE,
   type CardScript,
   CREATURE_YOU_CONTROL,
   cond,
+  empower,
   entersWith,
   fx,
+  loyalty,
   modal,
   mode,
   OMIT_VARIABLES,
+  playerStatic,
   ref,
   spell,
   staticAbility,
   target,
   triggered,
+  walkersHave,
   when,
 } from "./common";
 
@@ -133,6 +138,82 @@ export const BLACK: Record<string, CardScript> = {
     abilities: [
       entersWith({ prepared: true }),
       staticAbility("self", { power: 1, toughness: 1 }, { condition: cond.threshold, label: "Seuil : +1/+1" }),
+    ],
+  },
+  "Overwrite the Multiverse": {
+    // X est compté avant l'exil (même nombre : l'exil ne peut pas échouer).
+    spell: spell(
+      [],
+      [
+        empower(amount.count({ types: ["Creature"] })),
+        fx.moveAll("battlefield", ref.eachPlayer, { types: ["Creature"] }, { to: "exile" }),
+      ],
+    ),
+  },
+  "Rewrite Regrets": {
+    spell: spell(
+      [
+        target.cardInGraveyard(
+          "t",
+          { anyOf: [{ types: ["Creature"] }, { types: ["Planeswalker"] }], maxManaValue: 6 },
+          "you",
+          "carte de créature ou de planeswalker (VM 6 ou moins)",
+        ),
+      ],
+      [fx.toBattlefield(ref.target()), empower(2)],
+    ),
+  },
+  "Sanctum Lurker": {
+    abilities: [
+      triggered(when.entersSelf, [empower(1)], { label: "Renforcez Jace 1" }),
+      playerStatic({ walkersSurviveZeroLoyalty: true, label: "Vos planeswalkers survivent à 0 loyauté" }),
+      walkersHave(
+        loyalty(2, { effects: [fx.damage(1, ref.eachOpponent), fx.gainLife(1)], label: "1 blessure à chaque adversaire, +1 PV" }),
+        "Planeswalkers : [+2]",
+      ),
+    ],
+  },
+  "Solve for Disappointment": {
+    spell: spell(
+      [target.player("t", "opponent")],
+      [fx.discard(1, ref.target(), { filter: { permanent: true, nonland: true }, chooser: "controller" }), empower(1)],
+    ),
+  },
+  "Vraska's Final Mercy": {
+    spell: modal(
+      mode(
+        "Perdez 2 PV, détruisez une créature ou un planeswalker",
+        [target.creatureOrPlaneswalker("t")],
+        [fx.loseLife(2), fx.destroy(ref.target())],
+      ),
+      mode("Perdez 2 PV, renforcez Jace 6", [], [fx.loseLife(2), empower(6)]),
+    ),
+  },
+  "Way of the Deathbringer": {
+    abilities: [
+      triggered(when.entersSelf, [empower(5)], { label: "Renforcez Jace 5" }),
+      walkersHave(
+        loyalty(-2, {
+          effects: [
+            fx.sacrifice(ref.you, { types: ["Creature"] }, 1, { optional: true, store: "s" }),
+            ...fx.when(cond.v("s"), fx.createTokens(BEAST_TRAMPLE)),
+          ],
+          label: "Sacrifier une créature : Bête 4/4",
+        }),
+        "Planeswalkers : [−2] Bête",
+      ),
+    ],
+  },
+  "Way of the Necromancer": {
+    abilities: [
+      triggered(when.entersSelf, [empower(2)], { label: "Renforcez Jace 2" }),
+      triggered(
+        when.dies(CREATURE_YOU_CONTROL),
+        [fx.addCountersAll({ types: ["Planeswalker"], controller: "you" }, 1, "loyalty")],
+        {
+          label: "loyauté sur chaque planeswalker",
+        },
+      ),
     ],
   },
 };

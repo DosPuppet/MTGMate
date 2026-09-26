@@ -7,8 +7,10 @@ import {
   CREATURE_YOU_CONTROL,
   cond,
   DRAGON_5,
+  empower,
   entersWith,
   fx,
+  loyalty,
   ref,
   spell,
   staticAbility,
@@ -16,6 +18,7 @@ import {
   target,
   triggered,
   VICIOUS_VERSE,
+  walkersHave,
   when,
 } from "./common";
 
@@ -196,5 +199,31 @@ export const RED: Record<string, CardScript> = {
   "Pompous Battlemage": {
     prepareSpell: spell([], [fx.discard(1, ref.you, { optional: true, store: "d" }), ...fx.when(cond.v("d"), fx.draw(1))]),
     abilities: [entersWith({ prepared: true })],
+  },
+  "No Admittance": { spell: spell([target.any()], [fx.damage(3, ref.target()), empower(1)]) },
+  "Violent Echoes": {
+    spell: spell(
+      [target.creatureOrPlaneswalker("t")],
+      [fx.damageStoringExcess(6, ref.target(), "excess"), empower(amount.v("excess"))],
+    ),
+  },
+  "Way of the Pyromancer": {
+    abilities: [
+      triggered(when.entersSelf, [empower(2)], { label: "Renforcez Jace 2" }),
+      walkersHave(loyalty(1, { effects: [fx.addMana("R")], label: "Ajoutez {R}" }), "Planeswalkers : [+1] {R}"),
+    ],
+  },
+  "Way of the Warlord": {
+    abilities: [
+      triggered(when.entersSelf, [empower(5)], { label: "Renforcez Jace 5" }),
+      walkersHave(
+        loyalty(-4, {
+          targets: [target.upTo(1, target.creatureOrPlaneswalker("c")), target.player("p")],
+          effects: [fx.damage(2, ref.target("c")), fx.damage(2, ref.target("p"))],
+          label: "2 blessures à une créature ou un planeswalker et 2 à un joueur",
+        }),
+        "Planeswalkers : [−4]",
+      ),
+    ],
   },
 };

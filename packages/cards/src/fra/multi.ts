@@ -6,10 +6,12 @@ import {
   type CardScript,
   CREATURE_YOU_CONTROL,
   cond,
+  empower,
   entersWith,
   fx,
   HEARTWOOD,
   LOTUS,
+  loyalty,
   modal,
   mode,
   OMIT_VARIABLES,
@@ -26,6 +28,7 @@ import {
   targetObj,
   triggered,
   VICIOUS_VERSE,
+  walkersHave,
   when,
 } from "./common";
 
@@ -348,5 +351,40 @@ export const MULTI: Record<string, CardScript> = {
     abilities: [
       triggered(when.yourUpkeep, [fx.prepare(ref.self)], { condition: cond.not(cond.prepared), label: "devient préparée" }),
     ],
+  },
+  "Avatar of Burgeoning Echoes": {
+    abilities: [
+      triggered(when.landfall, [empower(2)], { label: "Landfall : renforcez Jace 2" }),
+      walkersHave(
+        loyalty(-10, {
+          targets: [target.creature("t")],
+          effects: [fx.addCounters(ref.target(), amount.count({ types: ["Land"], controller: "you" }))],
+          label: "Un marqueur par terrain",
+        }),
+        "Planeswalkers : [−10]",
+      ),
+    ],
+  },
+  "Mind Meanderer": {
+    abilities: [
+      staticAbility(
+        "self",
+        { addKeywords: ["vigilance"] },
+        {
+          condition: cond.controls({ types: ["Planeswalker"], subtype: "Jace" }),
+          label: "Vigilance (avec un Jace)",
+        },
+      ),
+      triggered(when.entersSelf, [fx.fight(ref.self, ref.target())], {
+        targets: [target.upTo(1, target.creature("t", { controller: "opponent" }))],
+        label: "combat",
+      }),
+    ],
+  },
+  "Tam's Resistance": {
+    spell: spell(
+      [target.upTo(1, target.creature("t"))],
+      [fx.addCounters(ref.target(), 1), fx.modify(ref.target(), { addKeywords: ["vigilance"] }), empower(4)],
+    ),
   },
 };

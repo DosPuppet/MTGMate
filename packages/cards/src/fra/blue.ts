@@ -6,8 +6,10 @@ import {
   type CardScript,
   cond,
   costReducer,
+  empower,
   entersWith,
   fx,
+  loyalty,
   modal,
   mode,
   PEER_REVIEW,
@@ -18,6 +20,7 @@ import {
   target,
   triggered,
   triggeredModal,
+  walkersHave,
   when,
 } from "./common";
 
@@ -178,5 +181,48 @@ export const BLUE: Record<string, CardScript> = {
   "Semester Foreseer": {
     prepareSpell: PEER_REVIEW,
     abilities: [entersWith({ prepared: true }), triggered(when.entersSelf, [fx.surveil(1)], { label: "surveillance 1" })],
+  },
+  Countersculpt: {
+    // « Coût additionnel : contemplez un Jace ou payez {1}. »
+    costReduction: { generic: -1, condition: cond.not(cond.beholdJace) },
+    spell: spell([target.spell("t")], [fx.counter(ref.target()), empower(1)]),
+  },
+  "Jace's Machinations": { spell: spell([], [fx.instantJaceLoyalty, empower(8)]) },
+  "Mindseeker Oculus": {
+    abilities: [triggered(when.entersSelf, [empower(4)], { label: "Renforcez Jace 4" })],
+  },
+  "Plan for All Outcomes": {
+    abilities: [
+      triggered(when.entersSelf, [fx.topOrBottom(ref.target())], {
+        targets: [target.upTo(1, target.nonland("t", { other: true }, "autre permanent non-terrain"))],
+        label: "au-dessus ou au-dessous de la bibliothèque",
+      }),
+      triggered(when.castSpell("you", { notTypes: ["Creature"] }), [empower(1)], {
+        condition: cond.castThisTurn(1, true, true),
+        label: "premier sort non-créature : renforcez Jace 1",
+      }),
+    ],
+  },
+  "Protege's Awakening": { spell: spell([], [empower(6), fx.draw(1)]) },
+  "Theorist's Proxy": {
+    abilities: [
+      triggered(when.entersSelf, [empower(3)], { label: "Renforcez Jace 3" }),
+      activated({ mana: "{U}", sacrifice: true, effects: [fx.nextSpellUncounterable], label: "Prochain sort incontrecarrable" }),
+    ],
+  },
+  "Way of the Cryomancer": {
+    abilities: [
+      triggered(when.entersSelf, [empower(5)], { label: "Renforcez Jace 5" }),
+      walkersHave(
+        loyalty(-3, { effects: [fx.copyNextSpell], label: "Copier le prochain éphémère ou rituel" }),
+        "Planeswalkers : [−3] copie",
+      ),
+    ],
+  },
+  "Way of the Mind Sculptor": {
+    abilities: [
+      triggered(when.entersSelf, [empower(5)], { label: "Renforcez Jace 5" }),
+      triggered(when.loyaltyActivated(2), [fx.draw(1)], { label: "deux marqueurs retirés : piochez" }),
+    ],
   },
 };

@@ -12,6 +12,7 @@ import {
   canPayNonManaCost,
   canPlayLand,
   castTerms,
+  instantLoyalty,
   modesOf,
   sacrificeOptions,
   sorceryTiming,
@@ -156,7 +157,7 @@ export function legalActions(s: GameState, player: PlayerId): ActionOption[] {
     abilitiesOf(s, id).forEach((_, index) => {
       const ab = activatedAbility(s, id, index);
       if (!ab || abilityZone(ab) !== o.zone || !canPayNonManaCost(s, id, ab, index)) return;
-      if (ab.sorcerySpeed && !sorceryTiming(s, player)) return;
+      if (ab.sorcerySpeed && !instantLoyalty(s, player, id, ab) && !sorceryTiming(s, player)) return;
       const exclude = ab.cost.tap ? new Set([id]) : undefined;
       if (ab.cost.mana && !canPay(s, player, totalCost(ab.cost.mana, 0), exclude, { abilitySource: id })) return;
       const targets = targetOptions(s, player, ab.targets, id);

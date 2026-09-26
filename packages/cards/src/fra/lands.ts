@@ -1,6 +1,6 @@
 /** Reality Fracture — terrains non de base. */
 import type { ManaType } from "@mtgx/engine";
-import { activated, type CardScript, cond, entersWith, fx, manaAbility, ref, target, triggered, when } from "./common";
+import { activated, type CardScript, cond, empower, entersWith, fx, manaAbility, ref, target, triggered, when } from "./common";
 
 /** Terrains lents : « arrive engagé, sauf si vous contrôlez au moins deux autres terrains ». */
 const slowLand = (a: ManaType, b: ManaType): CardScript => ({
@@ -65,6 +65,12 @@ export const LANDS: Record<string, CardScript> = {
         effects: [fx.prepare(ref.target())],
         label: "Une créature devient préparée",
       }),
+    ],
+  },
+  "Theorist's Sanctum": {
+    abilities: [
+      entersWith({ tapped: true, condition: cond.not(cond.beholdJace), label: "Engagé, sauf en contemplant un Jace" }),
+      activated({ mana: "{2}{U}", tap: true, effects: [empower(2)], label: "Renforcez Jace 2" }),
     ],
   },
 };

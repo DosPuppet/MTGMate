@@ -419,7 +419,9 @@ export type TriggerSpec =
   /** « Chaque fois que vous regardez (scry) ou surveillez » (Reality Fracture). */
   | { on: "scryOrSurveil" }
   /** « Quand vous défaussez cette carte » (se déclenche depuis le cimetière). */
-  | { on: "discardSelf" };
+  | { on: "discardSelf" }
+  /** « Chaque fois que vous activez une capacité de loyauté [en retirant au moins N marqueurs] » ; `byOpponent` : un adversaire l'active. */
+  | { on: "loyaltyActivated"; minRemoved?: number; byOpponent?: boolean };
 
 /** Conditions (« if intermédiaire » 603.4, « tant que »…). */
 export type Condition =
@@ -472,9 +474,11 @@ export type Condition =
   /** Le contrôleur a pioché au moins N cartes ce tour-ci. */
   | { kind: "drewAtLeast"; n: number }
   /** Le contrôleur a lancé au moins N sorts [non-créature] ce tour-ci. */
-  | { kind: "castThisTurn"; n: number; noncreature?: boolean }
+  | { kind: "castThisTurn"; n: number; noncreature?: boolean; exactly?: boolean }
   /** La source est préparée. */
-  | { kind: "prepared" };
+  | { kind: "prepared" }
+  /** « Contempler un Jace » : vous contrôlez un Jace ou vous avez une carte de Jace en main. */
+  | { kind: "beholdJace" };
 
 /** Modifications apportées par un effet continu, rangées par couche (613). */
 export interface LayerMods {
@@ -562,6 +566,8 @@ export interface PlayerStaticAbilityDef {
   castCreaturesFromTop?: boolean;
   /** Samut, Tyrant of Naktamun : « les éphémères et rituels que vous contrôlez ont le second partagé ». */
   splitSecondInstantsSorceries?: boolean;
+  /** Sanctum Lurker : vos planeswalkers ne vont pas au cimetière faute de loyauté. */
+  walkersSurviveZeroLoyalty?: boolean;
   label?: string;
 }
 
@@ -715,6 +721,14 @@ export interface MoveSpec {
 }
 
 export type Effect =
+  /** « Renforcez Jace N » : N marqueurs de loyauté sur un jeton Jace (créé s'il n'y en a pas). */
+  | { op: "empowerJace"; amount: Amount; token: TokenSpec }
+  /** Jace's Machinations : loyauté des Jace à vitesse d'éphémère ce tour-ci. */
+  | { op: "instantJaceLoyalty" }
+  /** « Vous pouvez jouer un terrain supplémentaire ce tour-ci. » */
+  | { op: "extraLandThisTurn" }
+  /** « Le prochain sort que vous lancez ce tour-ci ne peut pas être contrecarré. » */
+  | { op: "nextSpellUncounterable" }
   /** Devient préparé / dé-préparé (Reality Fracture). */
   | { op: "prepare"; what?: Ref; filter?: ObjectFilter; value: boolean }
   | { op: "damage"; amount: Amount; to: Ref; source?: Ref; storeExcess?: string }
@@ -992,6 +1006,12 @@ export interface PlayerState {
   id: PlayerId;
   name: string;
   life: number;
+  /** Jace's Machinations : capacités de loyauté des Jace à vitesse d'éphémère pendant ce tour. */
+  jaceInstantTurn?: number;
+  /** Terrains supplémentaires ce tour-ci (Way of the Paradox). */
+  extraLandsTurn?: { turn: number; n: number };
+  /** Theorist's Proxy : le prochain sort lancé ce tour-ci ne peut pas être contrecarré. */
+  nextSpellUncounterableTurn?: number;
   library: ObjectId[];
   hand: ObjectId[];
   graveyard: ObjectId[];
@@ -1034,6 +1054,8 @@ export interface StackItem {
   inline?: InlineAbility;
   /** Copie d'un sort (707.10) : pas de carte associée. */
   copy?: boolean;
+  /** « Ce sort ne peut pas être contrecarré » (accordé au lancement). */
+  uncounterable?: boolean;
   /** Permanents sacrifiés pour le coût (dernières informations connues disponibles). */
   sacrificed?: ObjectId[];
   /** Effets de mana dépensé (Carnelian Orb, Pyromancer's Goggles). */

@@ -317,6 +317,9 @@ export const fx = {
   /** « … devient préparé » / « … devient dé-préparé » (Reality Fracture). */
   prepare: (what: Ref, value = true): Effect => ({ op: "prepare", what, value }),
   prepareAll: (filter: ObjectFilter, value = true): Effect => ({ op: "prepare", filter, value }),
+  instantJaceLoyalty: { op: "instantJaceLoyalty" } as Effect,
+  extraLandThisTurn: { op: "extraLandThisTurn" } as Effect,
+  nextSpellUncounterable: { op: "nextSpellUncounterable" } as Effect,
   tap: (what: Ref): Effect => ({ op: "tap", what }),
   untap: (what: Ref): Effect => ({ op: "tap", what, untap: true }),
   counters: (what: Ref, kind: string, n: Amount = 1): Effect => ({ op: "addCounters", what, amount: n, kind }),
@@ -599,6 +602,12 @@ export const when = {
   scryOrSurveil: { on: "scryOrSurveil" } as TriggerSpec,
   /** « Quand vous défaussez cette carte » (avec `fromGraveyard`). */
   discardSelf: { on: "discardSelf" } as TriggerSpec,
+  /** « Chaque fois que vous activez une capacité de loyauté [en retirant au moins N marqueurs] » */
+  loyaltyActivated: (minRemoved?: number, byOpponent?: boolean): TriggerSpec => ({
+    on: "loyaltyActivated",
+    minRemoved,
+    byOpponent,
+  }),
 };
 
 /** Conditions courantes (raid, morbide…). */
@@ -635,7 +644,14 @@ export const cond = {
   creaturesDied: (n: number): Condition => ({ kind: "creaturesDiedAtLeast", n }),
   opponentDealtNoncombatDamage: { kind: "opponentDealtNoncombatDamage" } as Condition,
   drewAtLeast: (n: number): Condition => ({ kind: "drewAtLeast", n }),
-  castThisTurn: (n: number, noncreature = false): Condition => ({ kind: "castThisTurn", n, noncreature }),
+  castThisTurn: (n: number, noncreature = false, exactly = false): Condition => ({
+    kind: "castThisTurn",
+    n,
+    noncreature,
+    exactly,
+  }),
+  /** « si vous contemplez un Jace » : vous contrôlez un Jace ou vous avez une carte de Jace en main. */
+  beholdJace: { kind: "beholdJace" } as Condition,
   /** La source est préparée. */
   prepared: { kind: "prepared" } as Condition,
 };

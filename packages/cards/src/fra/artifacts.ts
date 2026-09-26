@@ -3,6 +3,7 @@ import {
   activated,
   type CardScript,
   cond,
+  empower,
   fx,
   manaAbility,
   mode,
@@ -106,4 +107,5 @@ export const ARTIFACTS: Record<string, CardScript> = {
       }),
     ],
   },
+  "Keeper of the Quiet Hour": { abilities: [triggered(when.entersSelf, [empower(2)], { label: "Renforcez Jace 2" })] },
 };

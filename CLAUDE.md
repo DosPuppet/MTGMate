@@ -22,7 +22,7 @@ Ce fichier sert au suivi du projet entre les sessions. Le README présente le pr
 | Effets sonores (échantillons Kenney CC0, volume, muet avec M) | ✅ |
 | Jeu en ligne : duel Standard à 2 (serveur local, code de salon, corde, reconnexion, revanche) | ✅ |
 | Déploiement : pm2 derrière nginx sur un VPS (`docs/deploiement.md`, `deploy/`) | ✅ documenté et testé en local (pm2, nginx) |
-| **Reality Fracture (FRA, « Réalité fracturée »)** | **153 / 279** (lots 0, A, B et C faits ; `npm run coverage -- --set fra --missing`) |
+| **Reality Fracture (FRA, « Réalité fracturée »)** | **187 / 279** (lots 0 à D faits ; `npm run coverage -- --set fra --missing`) |
 | Autres extensions Standard | à faire |
 
 ### Reality Fracture (FRA)
@@ -30,6 +30,14 @@ Ce fichier sert au suivi du projet entre les sessions. Le README présente le pr
 - 285 cartes selon Scryfall, dont 6 réimpressions de FDN (terrains de base, Unsummon), donc 279 cartes propres. Toutes sont légales en Standard.
 - **Sortie le 2 octobre 2026 : pas encore de textes français.** Réimporter après la sortie (`npm run import-cards -- fra`), puis vérifier les noms français dans le deckbuilder.
 - Lot 0 (infrastructure multi-extensions) et lot A (cartes faisables avec le moteur, jetons Cadet, Heartwood, Lotus, Forêt Tentacule et Thopter, terrains lents) : ✅.
+- Lot D (**Empower Jace**) : ✅. Il couvre :
+  - l'effet `empowerJace` (aide `empower(n)` dans `fra/common.ts`) : N marqueurs de loyauté sur votre jeton Jace, créé d'abord s'il n'existe pas (−1 : surveillance 1 ; −3 : piochez) ;
+  - les Ways, qui accordent des capacités de loyauté à vos planeswalkers (aide `walkersHave`) ;
+  - le déclencheur « quand vous activez une capacité de loyauté » (`loyaltyActivated`) ;
+  - la loyauté des Jace à vitesse d'éphémère (Jace's Machinations) et les planeswalkers qui survivent à 0 (Sanctum Lurker) ;
+  - « contempler un Jace » (condition `beholdJace`), un terrain supplémentaire ce tour-ci, « le prochain sort ne peut pas être contrecarré ».
+  
+  Fatehold Charm (renvoyer un sort de la pile en main) et Jace, Reality Sculptor passent aux lots E et F.
 - Lot C (**préparé**) : ✅, fidèle aux notes de version officielles :
   - devenir préparé crée une **copie du sort en exil** (`GameObject.preparedCopy` / `preparedFor`), lançable par le contrôleur actuel du permanent, au timing de son type, en payant son coût ;
   - lancer la copie dé-prépare le permanent ; un effet qui dé-prépare, ou le départ du permanent, fait disparaître la copie ;
@@ -44,7 +52,6 @@ Ce fichier sert au suivi du projet entre les sessions. Le README présente le pr
   
   Les cartes Jace du lot B (Hexhaven Battalion, Countersculpt, Theorist's Sanctum) passent au lot D, Tam au lot E et Emrakul au lot F.
 - Lots suivants :
-  - **D.** **Empower Jace** (35 cartes) : jeton planeswalker Jace (−1 : surveillez 1 ; −3 : piochez une carte).
   - **E.** Planeswalkers (8) et cartes qui en parlent.
   - **F.** Cartes restantes :
     - Tarmogoyf, Emrakul, Omnipresence, Hall of Echoes, Face Yourself, Uldaros, Draconic Visitor, Extrapolate the Impossible ;
@@ -100,6 +107,8 @@ Réimpressions : défenses talismaniques contre une couleur, changelin, restrict
 - **Demonic Pact :** les modes déjà choisis sont mémorisés sur le permanent (perdus s'il change de zone, ce qui est conforme).
 - **Ordeal of Nylea :** sacrifiée directement, sans déclencheur séparé.
 - **Dégager jusqu'à N terrains :** les terrains sont choisis automatiquement.
+- **Empower Jace avec plusieurs jetons Jace :** les marqueurs vont sur le premier jeton (pas de choix).
+- **Contempler un Jace :** toujours fait quand c'est possible (Countersculpt, Theorist's Sanctum), sans révéler la carte.
 - **Codie, Ravenous Codex :** la copie du sort préparé garde ses cibles (pas de nouveau choix).
 - **Hallway Heckler :** la défausse est faite à la résolution, et non comme coût.
 - **Convocation :** une créature qui a une capacité de mana ne sert pas à la convocation (elle paie par sa capacité de mana).

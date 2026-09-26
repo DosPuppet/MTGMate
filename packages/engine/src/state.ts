@@ -71,7 +71,9 @@ export type RulesEvent =
   | { e: "untap"; objectId: ObjectId }
   | { e: "tap"; objectId: ObjectId }
   /** Un joueur vient de regarder (scry) ou de surveiller. */
-  | { e: "scry"; player: PlayerId };
+  | { e: "scry"; player: PlayerId }
+  /** Capacité de loyauté activée (`cost` : variation de loyauté, négative si des marqueurs sont retirés). */
+  | { e: "loyalty"; player: PlayerId; sourceId: ObjectId; cost: number };
 
 /** Signale un événement de règles : les capacités déclenchées correspondantes sont mises en attente. */
 export function rulesEvent(s: GameState, ev: RulesEvent): void {
