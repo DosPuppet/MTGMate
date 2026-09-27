@@ -984,6 +984,7 @@ export function abilityZone(ab: ActivatedAbilityDef): "battlefield" | "graveyard
 export function canPayNonManaCost(s: GameState, source: ObjectId, ab: ActivatedAbilityDef, index = -1): boolean {
   const o = s.objects[source];
   if (!o || o.zone !== abilityZone(ab)) return false;
+  if (o.zone === "battlefield" && !ab.specialAction && chars(s, source).keywords.includes("noActivatedAbilities")) return false;
   if (ab.once && o.used?.includes(index) && !exhaustReusable(s, o.controller, ab)) return false;
   if (
     o.zone === "battlefield" &&

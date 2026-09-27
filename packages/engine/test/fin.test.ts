@@ -145,6 +145,43 @@ describe("Final Fantasy", () => {
     expect(idsOf(s, "p1", "battlefield", "Ragnarok, Divine Deliverance")).toHaveLength(1);
   });
 
+  it("Cristaux : gains de PV doublés (Wind), meule adverse +4 (Water)", () => {
+    let s = scenario({
+      p1: {
+        battlefield: ["The Wind Crystal", "The Water Crystal", "Dazzling Angel", ...lands("Plains", 3)],
+        hand: ["Healer's Hawk"],
+      },
+    });
+    s = act(s, "p1", { type: "cast", card: idOf(s, "p1", "hand", "Healer's Hawk") });
+    s = settle(s);
+    expect(s.players.p1?.life).toBe(22);
+    let t = scenario({
+      p1: { battlefield: ["The Water Crystal", ...lands("Island", 6)], hand: ["Jidoor, Aristocratic Capital // Overture"] },
+    });
+    const lib = t.players.p2?.library.length ?? 0;
+    t = act(t, "p1", {
+      type: "cast",
+      card: idOf(t, "p1", "hand", "Jidoor, Aristocratic Capital // Overture"),
+      face: 1,
+      targets: { t: ["p2"] },
+    });
+    t = settle(t);
+    expect(t.players.p2?.graveyard.length).toBe(Math.floor(lib / 2) + 4);
+  });
+
+  it("Stuck in Summoner's Sanctum : les capacités activées ne peuvent plus être activées", () => {
+    let s = scenario({
+      p1: { battlefield: lands("Island", 3), hand: ["Stuck in Summoner's Sanctum"] },
+      p2: { battlefield: ["Llanowar Elves"] },
+    });
+    const elves = idOf(s, "p2", "battlefield", "Llanowar Elves");
+    s = act(s, "p1", { type: "cast", card: idOf(s, "p1", "hand", "Stuck in Summoner's Sanctum"), targets: { enchant: [elves] } });
+    s = settle(s);
+    expect(s.objects[elves]?.tapped).toBe(true);
+    s.objects[elves]!.tapped = false;
+    expect(legalActions(s, "p2").some((a) => a.type === "tapForMana" && a.source === elves)).toBe(false);
+  });
+
   it("PuPu UFO : seule la force de base devient le nombre de Villes", () => {
     let s = scenario({ p1: { battlefield: ["PuPu UFO", "Adventurer's Inn", "Capital City", ...lands("Island", 3)] } });
     const ufo = idOf(s, "p1", "battlefield", "PuPu UFO");

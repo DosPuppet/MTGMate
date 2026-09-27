@@ -66,6 +66,8 @@ export type Keyword =
   | "cantBeBlockedByMoreThanOne"
   | "doesntUntap"
   | "cantBeBlockedByWalls"
+  /** Stuck in Summoner's Sanctum : « ses capacités activées ne peuvent pas être activées ». */
+  | "noActivatedAbilities"
   /** Convocation (702.51) : les créatures peuvent aider à payer le sort. */
   | "convoke"
   /** Ghalta the Immovable : si son endurance dépasse sa force, elle inflige ses blessures de combat selon son endurance. */
@@ -92,6 +94,7 @@ export const RESTRICTIONS: readonly Keyword[] = [
   "mustAttack",
   "doesntUntap",
   "cantBeBlockedByWalls",
+  "noActivatedAbilities",
 ];
 
 export const KEYWORDS: readonly Keyword[] = [
@@ -443,7 +446,7 @@ export interface TargetFilter {
   /** Sorts sur la pile (« contrecarrez le sort de créature ciblé »). */
   spells?: ObjectFilter;
   /** Sorts ou capacités sur la pile à cible unique (Bolt Bend). */
-  stackItems?: { singleTarget?: boolean };
+  stackItems?: { singleTarget?: boolean; abilitiesOnly?: boolean };
 }
 
 export interface ObjectFilter {
@@ -461,6 +464,8 @@ export interface ObjectFilter {
   self?: boolean;
   /** Le permanent auquel la source est attachée (« la créature équipée »). */
   attachedToSource?: boolean;
+  /** Créature équipée (au moins un Équipement attaché). */
+  equipped?: boolean;
   nontoken?: boolean;
   /** Force minimale (« créature de force 4 ou plus »). */
   minPower?: number;
@@ -837,6 +842,10 @@ export interface PlayerStaticAbilityDef {
   extraLands?: number;
   /** « Si vous deviez gagner des points de vie, vous en gagnez autant plus N à la place. » */
   lifeGainBonus?: number;
+  /** « La première fois que vous lancez des pièces chaque tour, vous gagnez ces lancers » (Edgar, King of Figaro). */
+  winFirstCoinFlips?: boolean;
+  /** « Si un adversaire devait meuler des cartes, il en meule autant plus N à la place » (The Water Crystal). */
+  opponentMillExtra?: number;
   /** « Les joueurs ne peuvent pas gagner de points de vie » (s'applique à tous les joueurs). */
   noLifeGainForAll?: boolean;
   /** « Les éphémères et rituels que vous contrôlez ne peuvent pas être contrecarrés. » */
@@ -941,6 +950,8 @@ export interface DoublerAbilityDef {
   damageToOpponents?: boolean;
   /** Blessures infligées par une créature que vous contrôlez, à n'importe quoi (Gratuitous Violence). */
   creatureDamage?: boolean;
+  /** « Si vous deviez gagner des points de vie, vous en gagnez le double à la place » (The Wind Crystal). */
+  lifeGain?: boolean;
   /** Marqueurs doublés seulement sur les permanents correspondants (Loading Zone). */
   countersFilter?: ObjectFilter;
   label?: string;
@@ -1259,7 +1270,7 @@ export type Effect =
   | { op: "doubleCounters"; what: Ref }
   | { op: "tap"; what: Ref; untap?: boolean }
   /** Blessures à chaque créature correspondant au filtre (et éventuellement à des joueurs). */
-  | { op: "damageAll"; amount: Amount; filter?: ObjectFilter; players?: Ref }
+  | { op: "damageAll"; amount: Amount; filter?: ObjectFilter; players?: Ref; source?: Ref }
   | { op: "destroyAll"; filter: ObjectFilter; store?: string }
   | { op: "addCountersAll"; filter: ObjectFilter; amount: Amount; kind?: string }
   /** Effet continu « jusqu'à la fin du tour » sur tous les permanents correspondant au filtre. */
@@ -1385,6 +1396,8 @@ export type Effect =
       sacrifice?: number;
       who: Ref;
       mana?: ManaCost;
+      /** {1} pour chaque… (Swallowed by Leviathan). */
+      genericAmount?: Amount;
       life?: number;
       skip: number;
     }
@@ -1504,7 +1517,7 @@ export type Effect =
   | { op: "copyNextSpell" }
   /** Le contrôleur gagne la partie (Maze's End). */
   | { op: "winGame" }
-  | { op: "loseGame" }
+  | { op: "loseGame"; who?: Ref }
   /** Compte les résolutions de cette capacité ce tour-ci, mémorisé sous `store` (Venom Connoisseur). */
   | { op: "countResolution"; store: string }
   /** Détruit les permanents non-terrains de valeur X des joueurs blessés au combat par la source ce tour-ci. */
@@ -1833,6 +1846,8 @@ export interface TurnStats {
   milled: number;
   /** Cartes défaussées ce tour-ci (Jiang Yanggu, Alone). */
   cardsDiscarded: number;
+  /** Lancers de pièce de ce joueur ce tour-ci (Edgar). */
+  coinFlips?: number;
   /** Créatures mortes sous le contrôle de ce joueur ce tour-ci. */
   creaturesLost?: number;
   /** Capacités d'exhaust activées ce tour-ci (Elvish Refueler). */
@@ -1923,6 +1938,8 @@ export interface LkiSnapshot {
   preparedSpell?: boolean;
   prepared?: boolean;
   attackedTurn?: number;
+  /** Un Équipement lui est attaché. */
+  equipped?: boolean;
   /** Lancé pour son coût de distorsion. */
   warped?: boolean;
   /** A subi des blessures ce tour-ci. */

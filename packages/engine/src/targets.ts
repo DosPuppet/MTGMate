@@ -27,6 +27,7 @@ export function matchesView(v: LkiSnapshot, f: ObjectFilter, perspective: Player
   if (f.manaValue !== undefined && (v.manaValue ?? 0) !== f.manaValue) return false;
   if (f.name && v.name !== f.name) return false;
   if (f.tapped !== undefined && !!v.tapped !== f.tapped) return false;
+  if (f.equipped !== undefined && !!v.equipped !== f.equipped) return false;
   if (f.colors && !f.colors.some((c) => v.colors.includes(c))) return false;
   // « avec un marqueur » : `any` accepte n'importe quel type de marqueur.
   if (f.withCounter === "any" && !Object.values(v.counters ?? {}).some((n) => n > 0)) return false;
@@ -164,7 +165,8 @@ export function isLegalTarget(s: GameState, controller: PlayerId, spec: TargetSp
   }
   // Sort ou capacité sur la pile (« sort ou capacité ciblé avec une seule cible »).
   const stackItem = s.stack.find((x) => x.id === id);
-  if (stackItem && spec.filter.stackItems) {
+  // « capacité activée ou déclenchée ciblée » : les sorts relèvent du filtre `spells` (Louisoix's Sacrifice).
+  if (stackItem && spec.filter.stackItems && !(spec.filter.stackItems.abilitiesOnly && stackItem.kind === "spell")) {
     const n = Object.values(stackItem.targets).flat().length;
     return !spec.filter.stackItems.singleTarget || n === 1;
   }

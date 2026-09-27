@@ -373,13 +373,18 @@ export const fx = {
   /** « Contrecarrez-le ; exilez-le au lieu de le mettre au cimetière » (Syncopate). */
   counterExile: (what: Ref): Effect => ({ op: "counter", what, exile: true }),
   /** « Contrecarrez-le à moins que son contrôleur ne paie X » : le paiement annule les effets qui suivent. */
-  unlessPays: (who: Ref, cost: { mana?: string; life?: number; paidStore?: string }, ...effects: Effects): Effect[] => {
+  unlessPays: (
+    who: Ref,
+    cost: { mana?: string; life?: number; paidStore?: string; genericAmount?: Amount },
+    ...effects: Effects
+  ): Effect[] => {
     const flat = effects.flat();
     return [
       {
         op: "unlessPay",
         who,
         mana: cost.mana ? parseManaCost(cost.mana) : undefined,
+        genericAmount: cost.genericAmount,
         life: cost.life,
         paidStore: cost.paidStore,
         skip: flat.length,
@@ -498,6 +503,8 @@ export const fx = {
   copyNextSpell: { op: "copyNextSpell" } as Effect,
   winGame: { op: "winGame" } as Effect,
   loseGame: { op: "loseGame" } as Effect,
+  /** « Ce joueur perd la partie » (Summon: Primal Odin). */
+  playerLoses: (who: Ref): Effect => ({ op: "loseGame", who }),
   countResolution: (store: string): Effect => ({ op: "countResolution", store }),
   hellkite: { op: "hellkite" } as Effect,
   link: (what: Ref): Effect => ({ op: "link", what }),
@@ -537,7 +544,13 @@ export const fx = {
   tap: (what: Ref): Effect => ({ op: "tap", what }),
   untap: (what: Ref): Effect => ({ op: "tap", what, untap: true }),
   counters: (what: Ref, kind: string, n: Amount = 1): Effect => ({ op: "addCounters", what, amount: n, kind }),
-  damageAll: (n: Amount, filter?: ObjectFilter, players?: Ref): Effect => ({ op: "damageAll", amount: n, filter, players }),
+  damageAll: (n: Amount, filter?: ObjectFilter, players?: Ref, source?: Ref): Effect => ({
+    op: "damageAll",
+    amount: n,
+    filter,
+    players,
+    source,
+  }),
   destroyAll: (filter: ObjectFilter, store?: string): Effect => ({ op: "destroyAll", filter, store }),
   addCountersAll: (filter: ObjectFilter, n: Amount = 1, kind?: string): Effect => ({
     op: "addCountersAll",

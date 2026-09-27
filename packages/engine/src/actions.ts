@@ -56,6 +56,8 @@ export function gainLife(s: GameState, p: PlayerId, amount: number): void {
     (n, { ab }) => n + (ab.kind === "playerStatic" ? (ab.lifeGainBonus ?? 0) : 0),
     0,
   );
+  // The Wind Crystal : « vous en gagnez le double à la place » (616.1 : les doublements se cumulent).
+  amount *= 2 ** doublers(s, p, "lifeGain");
   player.life += amount;
   bump(s); // des caractéristiques peuvent dépendre des points de vie (Elenda)
   emit({ type: "life", player: p, delta: amount, life: player.life });

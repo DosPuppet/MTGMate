@@ -26,7 +26,7 @@ Ce fichier sert au suivi du projet entre les sessions. Le README présente le pr
 | **Edge of Eternities (EOE)** | ✅ **260 / 260** (lots A à D, branche `standard`) |
 | **Aetherdrift (DFT)** | ✅ **260 / 260** (lots A à C, branche `standard`) |
 | **Outlaws of Thunder Junction + The Big Score (OTJ, BIG)** | ✅ **269 / 269 + 30 / 30** (lots A à C, branche `standard`) |
-| **Final Fantasy (FIN)** | 🚧 **217 / 307** (lots A à C, branche `standard`) |
+| **Final Fantasy (FIN)** | 🚧 **242 / 307** (lots A à D1, branche `standard`) |
 | Autres extensions Standard | branche `standard`, plan par lots ci-dessous |
 
 ### Branche `standard` : tout le Standard
@@ -284,7 +284,14 @@ Demandée par l'utilisateur le 27/09/2026.
   - aides `flipOut` / `flipBack` (« exilez-la, puis renvoyez-la [transformée] ») ;
   - la condition « une créature est morte sous le contrôle d'un adversaire ce tour-ci » (`cond.creaturesDied(n, true)`, `turnStats.creaturesLost`) ;
   - 11 cartes des decks de démarrage (`fin/starter.ts`, numéros hors du set principal), avec le montant `creaturesDiedThisTurn` et l'effet `attach` qui attache plusieurs Équipements à la fois (Beatrix).
-- Lot D : cartes restantes (légendaires, rares, transformables complexes : Clive, Terra, Sephiroth, Zenos, Kefka, Kuja, Serah, Ultimecia, Emet-Selch, Esper Origins, Crystal Fragments, Play Blitzball…).
+- Lot D1 ✅ (242/307) : 25 légendaires, Cristaux et cartes uniques (`fin/legends.ts`). Le moteur gagne :
+  - le filtre `equipped` (créature équipée, calculé dans la vue) ;
+  - la cible « capacité activée ou déclenchée, ou sort non-créature » (`stackItems.abilitiesOnly`, Louisoix's Sacrifice) ;
+  - « à moins de payer {1} pour chaque… » (`unlessPays` avec `genericAmount`), « ce joueur perd la partie » (`fx.playerLoses`) ;
+  - des blessures infligées par une autre source à chaque créature (`damageAll` avec `source`, Nibelheim Aflame) ;
+  - les gains de PV doublés (`doubler({ lifeGain })`), la meule adverse augmentée (`opponentMillExtra`), la première pièce gagnée chaque tour (`winFirstCoinFlips`) ;
+  - la restriction `noActivatedAbilities` (capacités activées et de mana).
+- Lot D2 et suivants : cartes restantes (légendaires, rares, transformables complexes : Clive, Terra, Sephiroth, Zenos, Kefka, Kuja, Serah, Ultimecia, Emet-Selch, Esper Origins, Crystal Fragments, Play Blitzball…).
 
 ### Reality Fracture (FRA)
 
@@ -458,6 +465,9 @@ Réimpressions : défenses talismaniques contre une couleur, changelin, restrict
 - **Haste Magic, Opera Love Song :** les cartes exilées sont jouables jusqu'à la fin de votre prochain tour (et non jusqu'à votre prochaine étape de fin).
 - **Freya Crescent :** son mana sert à toute capacité d'un Équipement, pas seulement à Équiper.
 - **Sorceress's Schemes :** seulement une carte d'éphémère ou de rituel du cimetière (pas une carte exilée avec flashback).
+- **Zell Dincht :** le terrain renvoyé est ciblé (comme Arid Archway).
+- **The Earth Crystal :** tous les marqueurs mis sur vos créatures sont doublés, pas seulement les marqueurs +1/+1.
+- **Rydia, Summoner of Mist :** la Saga ciblée a une valeur de mana d'au plus X (et non exactement X).
 - **Beatrix, Loyal General :** tous vos Équipements ou aucun (pas de choix un par un).
 - **Lightning, Security Sergeant :** la carte reste jouable tant que vous contrôlez une créature nommée Lightning, Security Sergeant.
 - **Sidequest: Raise a Chocobo :** la recherche de terrain de Black Chocobo (« quand il se transforme ») est faite par l'effet qui le transforme.

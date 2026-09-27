@@ -295,6 +295,12 @@ function view(s: GameState, id: ObjectId, c: Characteristics, o: GameObject, att
     // Sort sur la pile : le mana dépensé est porté par l'élément de pile (Unravel).
     manaSpent: o.manaSpent ?? (o.zone === "stack" ? s.stack.find((x) => x.id === id)?.manaSpent : undefined),
     attackedTurn: o.attackedTurn,
+    equipped:
+      (o.zone === "battlefield" &&
+        s.battlefield.some(
+          (x) => s.objects[x]?.attachedTo === id && s.defs[s.objects[x]?.defId ?? ""]?.subtypes.includes("Equipment"),
+        )) ||
+      undefined,
   };
 }
 

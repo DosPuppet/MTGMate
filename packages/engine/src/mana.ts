@@ -111,6 +111,7 @@ export function manaAbilitiesOf(s: GameState, id: ObjectId): ManaAbilityDef[] {
 function canActivateMana(s: GameState, id: ObjectId, ab: ManaAbilityDef): boolean {
   const o = obj(s, id);
   if (ab.cost.mana) return false;
+  if (chars(s, id).keywords.includes("noActivatedAbilities")) return false;
   if (ab.cost.tap && (o.tapped || isSummoningSick(s, id))) return false;
   if (ab.tapAnother && !otherToTap(s, id)) return false;
   if (ab.condition && !checkCondition(s, ab.condition, o.controller, id)) return false;

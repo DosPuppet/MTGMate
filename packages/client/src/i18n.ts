@@ -70,6 +70,7 @@ export const KEYWORD_LABEL: Record<Keyword, string> = {
   mustAttack: "Attaque à chaque combat",
   doesntUntap: "Ne se dégage pas",
   cantBeBlockedByWalls: "Imblocable par les Murs",
+  noActivatedAbilities: "Capacités activées bloquées",
   convoke: "Convocation",
   assignsToughness: "Blesse selon son endurance",
   absolutePowerDamage: "Blesse selon la valeur absolue de sa force",

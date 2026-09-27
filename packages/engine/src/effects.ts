@@ -49,7 +49,7 @@ import {
   turnFaceUp,
   unlockDoor,
 } from "./state";
-import { doublers, playerStatic } from "./statics";
+import { controlledAbilitiesWithSource, doublers, playerStatic } from "./statics";
 import { legalTargets, matchesCard, matchesObjectFilter, matchesView } from "./targets";
 import { checkCondition, createDelayed, pushInline } from "./triggers";
 import { eliminate, endTheTurn } from "./turn";
@@ -709,7 +709,9 @@ export function runEffect(s: GameState, r: Resolution, e: Effect): OpResult {
       const p = resolveRef(s, ctx, e.who).find((x) => isPlayer(s, x));
       if (!p) return;
       // « à moins que son contrôleur ne paie {X} » (Syncopate) : X est celui du sort.
-      const mana = e.mana?.x ? { ...e.mana, x: 0, generic: e.mana.generic + e.mana.x * ctx.x } : e.mana;
+      const extra = e.genericAmount ? evalAmount(s, ctx, e.genericAmount) : 0;
+      const base = e.mana ?? (e.genericAmount ? { generic: 0, colored: {}, x: 0 } : undefined);
+      const mana = base ? { ...base, x: 0, generic: base.generic + (base.x ?? 0) * ctx.x + extra } : undefined;
       // Garde à coût composé (Ovika : {3} et 3 PV) : les deux parties doivent être payables.
       const hand = s.players[p]?.hand ?? [];
       const canDo =
@@ -1435,11 +1437,18 @@ export function runEffect(s: GameState, r: Resolution, e: Effect): OpResult {
       const f = e.store?.filter;
       for (const p of resolveRef(s, ctx, e.who)) {
         const library = s.players[p]?.library ?? [];
-        const count = e.halfLibrary
-          ? Math.floor(library.length / 2)
-          : e.graveyardSize
-            ? (s.players[p]?.graveyard.length ?? 0)
-            : n;
+        // The Water Crystal : « il en meule autant plus quatre » (pour chaque adversaire de ce joueur qui en contrôle un).
+        const extra = opponentsOf(s, p).reduce(
+          (m, q) =>
+            m +
+            controlledAbilitiesWithSource(s, q).reduce(
+              (k, { ab }) => k + (ab.kind === "playerStatic" ? (ab.opponentMillExtra ?? 0) : 0),
+              0,
+            ),
+          0,
+        );
+        const base = e.halfLibrary ? Math.floor(library.length / 2) : e.graveyardSize ? (s.players[p]?.graveyard.length ?? 0) : n;
+        const count = base > 0 ? base + extra : 0;
         for (const id of library.slice(0, count)) {
           if (f && matchesCard(s, ctx.controller, id, { ...f, controller: undefined })) matching++;
           const uid = s.objects[id]?.uid;
@@ -1688,13 +1697,15 @@ export function runEffect(s: GameState, r: Resolution, e: Effect): OpResult {
       return;
     }
     case "damageAll": {
-      const src = damageSource(s, ctx);
+      // Nibelheim Aflame : « [la créature ciblée] inflige N blessures à chaque autre créature ».
+      const from = e.source ? resolveRef(s, ctx, e.source)[0] : undefined;
+      const src = from ? (onBattlefield(s, from) ? sourceFromObject(s, from) : undefined) : damageSource(s, ctx);
       if (!src) return;
       const amount = evalAmount(s, ctx, e.amount);
       if (e.filter) {
         const f = e.filter;
         for (const id of s.battlefield.filter(
-          (x) => isCreature(s, x) && matchesObjectFilter(s, ctx.controller, x, f, ctx.sourceId),
+          (x) => x !== from && isCreature(s, x) && matchesObjectFilter(s, ctx.controller, x, f, ctx.sourceId),
         )) {
           dealDamage(s, src, id, amount, false);
         }
@@ -2440,7 +2451,11 @@ export function runEffect(s: GameState, r: Resolution, e: Effect): OpResult {
       return;
     }
     case "coinFlip": {
-      const won = random(s) < 0.5;
+      const stats = s.players[ctx.controller]?.turnStats;
+      // Edgar, King of Figaro : la première fois chaque tour, la pièce tombe sur pile et le lancer est gagné.
+      const rigged = !stats?.coinFlips && playerStatic(s, ctx.controller, "winFirstCoinFlips");
+      if (stats) stats.coinFlips = (stats.coinFlips ?? 0) + 1;
+      const won = rigged || random(s) < 0.5;
       emit({ type: "coinFlip", player: ctx.controller, won });
       store(r, e.store, won ? 1 : 0);
       return;
@@ -2688,7 +2703,7 @@ export function runEffect(s: GameState, r: Resolution, e: Effect): OpResult {
       return;
     }
     case "loseGame": {
-      eliminate(s, [ctx.controller]);
+      eliminate(s, e.who ? resolveRef(s, ctx, e.who).filter((p) => isPlayer(s, p)) : [ctx.controller]);
       return;
     }
     case "countResolution": {
