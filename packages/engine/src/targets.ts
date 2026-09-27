@@ -47,6 +47,8 @@ export function matchesView(v: LkiSnapshot, f: ObjectFilter, perspective: Player
   if (f.legendary !== undefined && v.supertypes.includes("Legendary") !== f.legendary) return false;
   if (f.maxToughness !== undefined && v.toughness > f.maxToughness) return false;
   if (f.manaValueParity && ((v.manaValue ?? 0) % 2 === 0) !== (f.manaValueParity === "even")) return false;
+  if (f.noManaSpent && (v.manaSpent ?? 0) > 0) return false;
+  if (f.notOwned && v.owner === v.controller) return false;
   if (f.noneOfSubtypes && (v.subtypes.includes(ALL_CREATURE_TYPES) || f.noneOfSubtypes.some((t) => v.subtypes.includes(t))))
     return false;
   if (f.preparedSpell !== undefined && !!v.preparedSpell !== f.preparedSpell) return false;
@@ -146,6 +148,7 @@ export function matchesObjectFilter(
   if (f.attackedThisTurn && o.attackedTurn !== s.turn.number) return false;
   // « arrivé sous votre contrôle ce tour-ci » (Cloudspire Coordinator).
   if (f.enteredThisTurn && o.controlledSince !== s.turn.number) return false;
+  if (f.notOwned && o.owner === o.controller) return false;
   return matchesView(snapshot(s, id), resolveFilter(s, f, sourceId), controller, sourceId);
 }
 

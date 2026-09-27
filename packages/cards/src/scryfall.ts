@@ -183,6 +183,11 @@ export function parseSaddle(text: string): number | undefined {
 }
 
 /** Équipage N (Véhicules). */
+/** « Crew 1. Activate only once each turn. » (Luxurious Locomotive) */
+export function crewOncePerTurn(text: string): boolean {
+  return /^Crew \d+\. Activate only once each turn\./m.test(stripReminder(text));
+}
+
 export function parseCrew(text: string): number | undefined {
   const m = /^Crew (\d+)/m.exec(stripReminder(text));
   return m ? Number(m[1]) : undefined;
@@ -244,6 +249,7 @@ function intrinsicAbilities(
   crew?: number,
   equipReduced?: boolean,
   saddle?: number,
+  crewOnce?: boolean,
 ): CardDef["abilities"] {
   const out: CardDef["abilities"] = [];
   if (keywords.has("prowess")) {
@@ -256,7 +262,7 @@ function intrinsicAbilities(
     });
   }
   if (saddle !== undefined) out.push(dsl.saddleAbility(saddle));
-  if (crew !== undefined) out.push(dsl.crewAbility(crew));
+  if (crew !== undefined) out.push(dsl.crewAbility(crew, crewOnce));
   if (equip) {
     out.push({
       kind: "activated",
@@ -604,6 +610,7 @@ function singleDef(raw: RawCard, script: CardScript | undefined, set: string): C
         parseCrew(raw.oracleText),
         /costs \{1\} less to activate for each \+1\/\+1 counter on the creature it targets/.test(raw.oracleText),
         parseSaddle(raw.oracleText),
+        crewOncePerTurn(raw.oracleText),
       ),
       ...plotAbility(raw.oracleText),
       ...(parseCycling(raw.oracleText) ? [parseCycling(raw.oracleText) as CardDef["abilities"][number]] : []),
@@ -628,6 +635,8 @@ function singleDef(raw: RawCard, script: CardScript | undefined, set: string): C
     graveyardCastRemoveCounters: script?.graveyardCastRemoveCounters,
     castFromGraveyard: script?.castFromGraveyard,
     flashIf: script?.flashIf,
+    exileOnResolve: script?.exileOnResolve,
+    entersAsCopyAddSubtypes: script?.entersAsCopyAddSubtypes,
     chosenNameTax: script?.chosenNameTax,
     ward,
     cantBeCountered: script?.cantBeCountered,

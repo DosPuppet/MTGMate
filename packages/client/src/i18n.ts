@@ -64,6 +64,7 @@ export const KEYWORD_LABEL: Record<Keyword, string> = {
   crewPlus2: "Monte et équipe avec 2 de force en plus",
   crewWithToughness: "Monte et équipe avec son endurance",
   startYourEngines: "Start your engines!",
+  cantBeBlockedExceptByHaste: "Ne peut être bloquée que par des créatures avec la célérité",
   cantAttack: "Ne peut pas attaquer",
   unblockable: "Ne peut pas être bloquée",
   mustAttack: "Attaque à chaque combat",

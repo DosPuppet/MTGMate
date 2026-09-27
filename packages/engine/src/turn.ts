@@ -4,6 +4,7 @@
 import { type DamageSource, dealDamage, destroy, drawCard, putIntoGraveyard, setSpeed, sourceFromObject } from "./actions";
 import { ask } from "./choices";
 import { announceDiscard, announceDiscardBatch, drawBonus } from "./effects";
+import { manaValue, payMana } from "./mana";
 import { RulesError, resolveTop } from "./stack";
 import {
   alivePlayers,
@@ -288,6 +289,10 @@ function finishCleanup(s: GameState): void {
   }
   s.effects = s.effects.filter((e) => e.duration !== "endOfTurn");
   s.replacements = [];
+  // Emblèmes « jusqu'à la fin du tour » (Jace Reawakened −6, Prairie Dog).
+  for (const p of s.playerOrder) {
+    for (const id of [...(s.players[p]?.command ?? [])]) if (s.objects[id]?.expiresEndOfTurn) moveObject(s, id, "exile");
+  }
   // Fin des changements de contrôle « jusqu'à la fin du tour » (Involuntary Employment).
   for (const c of s.controlChanges ?? []) {
     const o = s.objects[c.id];
@@ -415,7 +420,10 @@ function startTurnOf(s: GameState, p: PlayerId): void {
     emit({ type: "turnControl", player: p, by: s.turnControl.by });
   }
   const player = s.players[p];
-  if (player) player.lastTurnStarted = s.turn.number;
+  if (player) {
+    player.lastTurnStarted = s.turn.number;
+    player.turnsTaken = (player.turnsTaken ?? 0) + 1;
+  }
   // Les statistiques « ce tour-ci » repartent de zéro pour tout le monde (on garde les blessures non de combat du tour passé).
   for (const q of s.playerOrder) {
     const pl = s.players[q];
@@ -531,6 +539,18 @@ export function declareAttackers(s: GameState, player: PlayerId, attackers: { id
   // 508.1d : les créatures qui « attaquent à chaque combat si possible » doivent être déclarées.
   const forced = attackCandidates(s, player).filter((id) => hasKeyword(s, id, "mustAttack") && !seen.has(id));
   if (forced.length > 0) throw new RulesError(`${chars(s, forced[0] as ObjectId).name} doit attaquer si elle le peut`);
+  // Archangel of Tithes : {1} pour chaque créature qui attaque un joueur protégé (ou ses planeswalkers).
+  const tax = attackers.reduce((n, a) => {
+    const defender = defendingPlayer(s, a.defender);
+    return n + (defender && playerStatic(s, defender, "attackTax") ? 1 : 0);
+  }, 0);
+  if (tax > 0) {
+    try {
+      payMana(s, player, { generic: tax, colored: {}, x: 0 });
+    } catch {
+      throw new RulesError(`Il faut payer {${tax}} pour attaquer`);
+    }
+  }
   if (!s.combat) s.combat = emptyCombat();
   for (const a of attackers) {
     if (!hasKeyword(s, a.id, "vigilance")) tapObject(s, obj(s, a.id));
@@ -563,6 +583,7 @@ export function canBlock(s: GameState, blocker: ObjectId, attacker: ObjectId): b
   if (hasKeyword(s, attacker, "cantBeBlockedByPowerLE2") && chars(s, blocker).power <= 2) return false;
   if (hasKeyword(s, attacker, "flying") && !hasKeyword(s, blocker, "flying") && !hasKeyword(s, blocker, "reach")) return false;
   if (hasKeyword(s, attacker, "cantBeBlockedByWalls") && chars(s, blocker).subtypes.includes("Wall")) return false;
+  if (hasKeyword(s, attacker, "cantBeBlockedExceptByHaste") && !hasKeyword(s, blocker, "haste")) return false;
   return true;
 }
 
@@ -631,6 +652,14 @@ export function declareBlockers(s: GameState, player: PlayerId, blocks: { blocke
   }
   const unmet = unmetBlockRequirement(s, player, blocks);
   if (unmet) throw new RulesError(`${chars(s, unmet).name} doit être bloquée si possible`);
+  // Archangel of Tithes (attaquant) : {1} par créature qui bloque.
+  if (blocks.length && s.playerOrder.some((p) => p !== player && playerStatic(s, p, "blockTax"))) {
+    try {
+      payMana(s, player, { generic: blocks.length, colored: {}, x: 0 });
+    } catch {
+      throw new RulesError(`Il faut payer {${blocks.length}} pour bloquer`);
+    }
+  }
   for (const a of c.attackers) {
     const n = blocks.filter((b) => b.attacker === a.id).length;
     if (n === 1 && hasKeyword(s, a.id, "menace"))
@@ -1064,7 +1093,15 @@ function applyAuraControl(s: GameState): boolean {
   for (const id of s.battlefield) {
     const aura = obj(s, id);
     const host = aura.attachedTo ? s.objects[aura.attachedTo] : undefined;
-    if (host?.zone !== "battlefield" || !s.defs[aura.defId]?.controlsEnchanted) continue;
+    // Eriette, the Beguiler : une Aura attachée à un permanent non-terrain adverse de VM inférieure ou égale.
+    const steals =
+      host?.zone === "battlefield" &&
+      host.controller !== aura.controller &&
+      !chars(s, host.id).types.includes("Land") &&
+      manaValue(s.defs[host.defId]?.manaCost) <= manaValue(s.defs[aura.defId]?.manaCost) &&
+      !!s.defs[aura.defId]?.subtypes.includes("Aura") &&
+      playerStatic(s, aura.controller, "auraStealsCheaper");
+    if (host?.zone !== "battlefield" || !(s.defs[aura.defId]?.controlsEnchanted || steals)) continue;
     if (host.controller === aura.controller) continue;
     if (!(s.auraControl ?? []).some((c) => c.host === host.id && c.aura === id)) {
       s.auraControl = [...(s.auraControl ?? []), { host: host.id, aura: id, original: host.controller }];

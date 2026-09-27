@@ -3,6 +3,7 @@
  */
 import { sacrifice } from "./actions";
 import { chars, defOf, isCreature, isSummoningSick, obj, snapshot, tapObject } from "./state";
+import { playerStatic } from "./statics";
 import { matchesObjectFilter, matchesView, withChosen } from "./targets";
 import { checkCondition } from "./triggers";
 import type { GameState, LkiSnapshot, ManaAbilityDef, ManaCost, ManaType, ObjectId, PlayerId } from "./types";
@@ -138,6 +139,14 @@ function manaAmount(s: GameState, id: ObjectId, ab: ManaAbilityDef): number {
   // The Eternity Elevator : autant de mana que de marqueurs de charge.
   if (ab.amountCounters) return (o.counters[ab.amountCounters] ?? 0) + extra;
   if (ab.amountSelfPower) return Math.max(0, chars(s, id).power) + extra;
+  // Roxanne, Starfall Savant : un jeton d'artefact engagé pour du mana en produit un de plus.
+  if (
+    o.isToken &&
+    ab.cost.tap &&
+    chars(s, id).types.includes("Artifact") &&
+    playerStatic(s, controller, "artifactTokenManaBonus")
+  )
+    return ab.amount + extra + 1;
   // Loot, the Nexus : un mana pour chaque force différente parmi vos créatures.
   if (ab.amountDistinctPowers) {
     const powers = s.battlefield

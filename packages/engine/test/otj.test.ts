@@ -5,6 +5,7 @@
 import { describe, expect, it } from "vitest";
 import { legalActions } from "../src/legal";
 import { chars } from "../src/state";
+import { declareAttackers } from "../src/turn";
 import type { GameState } from "../src/types";
 import { act, advanceUntil, idOf, idsOf, passAccepting, passBoth, scenario } from "./helpers";
 
@@ -100,5 +101,67 @@ describe("Outlaws of Thunder Junction", () => {
     s = act(s, "p1", { type: "activate", source: card, ability: abilityIndex(s, card, "Complot") });
     s = passAccepting(s, (x) => x.stack.length === 0 && x.triggers.length === 0 && x.pending?.kind === "priority");
     expect(s.players.p2?.life).toBe(18);
+  });
+
+  it("Archangel of Tithes : attaquer coûte {1} par créature", () => {
+    const s = scenario({
+      p1: { battlefield: ["Bear Cub", "Serra Angel"] },
+      p2: { battlefield: ["Archangel of Tithes"] },
+      step: "declareAttackers",
+    });
+    const bear = idOf(s, "p1", "battlefield", "Bear Cub");
+    expect(() => declareAttackers(s, "p1", [{ id: bear, defender: "p2" }])).toThrow();
+    const t = scenario({
+      p1: { battlefield: ["Bear Cub", "Plains"] },
+      p2: { battlefield: ["Archangel of Tithes"] },
+      step: "declareAttackers",
+    });
+    declareAttackers(t, "p1", [{ id: idOf(t, "p1", "battlefield", "Bear Cub"), defender: "p2" }]);
+    expect(t.objects[idOf(t, "p1", "battlefield", "Plains")]?.tapped).toBe(true);
+  });
+
+  it("High Noon : un seul sort par joueur et par tour", () => {
+    let s = scenario({
+      p1: { battlefield: ["High Noon", ...lands("Mountain", 4)], hand: ["Scorching Shot", "Lightning Strike"] },
+      p2: { battlefield: ["Bear Cub"] },
+    });
+    s = act(s, "p1", { type: "cast", card: idOf(s, "p1", "hand", "Lightning Strike"), targets: { t: ["p2"] } });
+    s = passBoth(s);
+    expect(legalActions(s, "p1").some((a) => a.type === "cast")).toBe(false);
+  });
+
+  it("Double Down : la copie d'un sort de créature hors-la-loi devient un jeton", () => {
+    let s = scenario({ p1: { battlefield: ["Double Down", ...lands("Swamp", 3)], hand: ["Vault Plunderer"] } });
+    s = act(s, "p1", { type: "cast", card: idOf(s, "p1", "hand", "Vault Plunderer") });
+    s = passAccepting(s, (x) => x.stack.length === 0 && x.triggers.length === 0 && x.pending?.kind === "priority");
+    expect(idsOf(s, "p1", "battlefield", "Vault Plunderer")).toHaveLength(2);
+    expect(s.battlefield.filter((id) => s.objects[id]?.isToken)).toHaveLength(1);
+  });
+
+  it("Terror of the Peaks : un sort adverse qui la cible coûte 3 PV de plus", () => {
+    let s = scenario({
+      p1: { battlefield: lands("Mountain", 2), hand: ["Lightning Strike"] },
+      p2: { battlefield: ["Terror of the Peaks"] },
+    });
+    s = act(s, "p1", {
+      type: "cast",
+      card: idOf(s, "p1", "hand", "Lightning Strike"),
+      targets: { t: [idOf(s, "p2", "battlefield", "Terror of the Peaks")] },
+    });
+    expect(s.players.p1?.life).toBe(17);
+  });
+
+  it("Step Between Worlds est exilé en se résolvant ; Magebane Lizard blesse le lanceur", () => {
+    let s = scenario({ p1: { battlefield: lands("Island", 6), hand: ["Step Between Worlds"] } });
+    s = act(s, "p1", { type: "cast", card: idOf(s, "p1", "hand", "Step Between Worlds") });
+    s = passAccepting(s, (x) => x.stack.length === 0 && x.pending?.kind === "priority");
+    expect(s.exile.some((id) => s.defs[s.objects[id]?.defId ?? ""]?.name === "Step Between Worlds")).toBe(true);
+    let t = scenario({
+      p1: { battlefield: lands("Mountain", 2), hand: ["Lightning Strike"] },
+      p2: { battlefield: ["Magebane Lizard"] },
+    });
+    t = act(t, "p1", { type: "cast", card: idOf(t, "p1", "hand", "Lightning Strike"), targets: { t: ["p2"] } });
+    t = passAccepting(t, (x) => x.stack.length === 0 && x.triggers.length === 0 && x.pending?.kind === "priority");
+    expect(t.players.p1?.life).toBe(19);
   });
 });

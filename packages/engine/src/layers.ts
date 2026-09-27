@@ -347,6 +347,11 @@ export function computeBattlefield(s: GameState): Map<ObjectId, Characteristics>
         if (ab.kind !== "static") continue;
         if (ab.condition && !checkCondition(s, ab.condition, o.controller, id)) continue;
         let mods = ab.mods;
+        if (mods.copyLinkedExile) {
+          const card = s.linkedExile.find((l) => l.sourceId === id)?.cards.find((c) => s.objects[c]?.zone === "exile");
+          const defId = card ? s.objects[card]?.defId : undefined;
+          mods = defId ? { ...mods, copyOf: defId, copyLinkedExile: undefined } : { ...mods, copyLinkedExile: undefined };
+        }
         if (ab.perSpeed || ab.perLife || ab.perHand) {
           const pl = s.players[o.controller];
           const n = ab.perSpeed ? (pl?.speed ?? 0) : ab.perHand ? (pl?.hand.length ?? 0) : Math.max(0, pl?.life ?? 0);

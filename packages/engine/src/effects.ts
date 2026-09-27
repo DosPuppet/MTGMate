@@ -38,6 +38,7 @@ import {
   onBattlefield,
   opponentsOf,
   P1P1,
+  random,
   registerDef,
   removeFromGame,
   rulesEvent,
@@ -194,6 +195,21 @@ export function resolveRef(s: GameState, ctx: EffectContext, ref: Ref): string[]
     }
     case "costSacrificed":
       return ctx.sacrificed ?? [];
+    case "libraryTop":
+      return resolveRef(s, ctx, ref.who).flatMap((p) => (s.players[p]?.library[0] ? [s.players[p]?.library[0] as string] : []));
+    case "exiledCardsOf": {
+      const players = resolveRef(s, ctx, ref.who);
+      return s.exile.filter((id) => {
+        const o = s.objects[id];
+        return !!o && players.includes(o.owner) && !o.faceDown && !o.cardCopy && !o.preparedFor;
+      });
+    }
+    case "allGraveyards":
+      return s.playerOrder.flatMap((p) => s.players[p]?.graveyard ?? []);
+    case "crewedBy": {
+      const c = s.objects[ctx.sourceId]?.crewedBy;
+      return c && c.turn === s.turn.number ? c.ids.filter((id) => onBattlefield(s, id)) : [];
+    }
     case "playersWithoutMaxSpeed":
       return s.playerOrder.filter((p) => !s.players[p]?.lost && (s.players[p]?.speed ?? 0) < 4);
     case "exiledWith":
@@ -307,6 +323,12 @@ export function evalAmount(s: GameState, ctx: EffectContext, a: Amount): number 
       return s.players[ctx.controller]?.turnStats.spellsCast ?? 0;
     case "cardsDrawnThisTurn":
       return s.players[ctx.controller]?.turnStats.cardsDrawn ?? 0;
+    case "refCount":
+      return resolveRef(s, ctx, a.ref).length;
+    case "noncreatureCastBy": {
+      const p = resolveRef(s, ctx, a.who).find((x) => isPlayer(s, x));
+      return p ? (s.players[p]?.turnStats.noncreatureCast ?? 0) : 0;
+    }
     case "maxManaValue":
       return Math.max(
         0,
@@ -551,6 +573,7 @@ export function grantPlay(
     source?: ObjectId;
     extraCost?: number;
     landsTapped?: boolean;
+    anyMana?: boolean;
   },
 ): void {
   const last = until === "forever" ? Number.MAX_SAFE_INTEGER : until === "thisTurn" ? s.turn.number : nextTurnOf(s, player);
@@ -1062,6 +1085,7 @@ export function runEffect(s: GameState, r: Resolution, e: Effect): OpResult {
       };
       const emblem = createObject(s, defId, ctx.controller, "command", { isToken: true });
       if (e.untilYourNextTurn) emblem.expiresAtTurnOf = ctx.controller;
+      if (e.thisTurn) emblem.expiresEndOfTurn = true;
       bump(s);
       return;
     }
@@ -1873,8 +1897,10 @@ export function runEffect(s: GameState, r: Resolution, e: Effect): OpResult {
       }
       const rest = top.filter((id) => !picked.includes(id));
       store(r, e.store, picked.length);
-      for (const id of picked) moveWithSpec(s, ctx.controller, id, e.to);
+      const taken = picked.map((id) => moveWithSpec(s, ctx.controller, id, e.to)).filter((x): x is string => !!x);
+      if (e.store) r.vars[`$ids:${e.store}`] = taken;
       if (e.rest === "graveyard") for (const id of rest) moveWithSpec(s, ctx.controller, id, { to: "graveyard" });
+      else if (e.rest === "hand") for (const id of rest) moveWithSpec(s, ctx.controller, id, { to: "hand" });
       else if (e.rest === "bottom") {
         // Ordre aléatoire (« dans un ordre aléatoire »).
         const lib = player.library.filter((id) => !rest.includes(id));
@@ -1949,10 +1975,23 @@ export function runEffect(s: GameState, r: Resolution, e: Effect): OpResult {
         if (!defId) continue;
         for (let i = 0; i < n; i++) {
           const token = createTokenCopy(s, ctx.controller, defId);
+          const tok = s.objects[token];
+          if (e.tapped && tok) tapObject(s, tok);
+          if (e.addTypes?.length) addEffect(s, [token], { addTypes: e.addTypes }, "permanent");
           if (e.addKeywords?.length) addEffect(s, [token], { addKeywords: e.addKeywords }, "permanent");
           if (e.addSubtypes?.length) addEffect(s, [token], { addSubtypes: e.addSubtypes }, "permanent");
           if (e.legendary) addEffect(s, [token], { addSupertypes: ["Legendary"] }, "permanent");
           if (e.addAbilities?.length) addEffect(s, [token], { addAbilities: e.addAbilities }, "permanent");
+          if (e.attacking && s.combat) {
+            // Calamity : « engagé et attaquant » (il attaque ce qu'attaque une de vos créatures).
+            const tok = s.objects[token];
+            if (tok) tok.tapped = true;
+            const defender =
+              s.combat.attackers.find((a) => s.objects[a.id]?.controller === ctx.controller)?.defender ??
+              opponentsOf(s, ctx.controller)[0] ??
+              "";
+            s.combat.attackers.push({ id: token, defender, blockers: [], blocked: false });
+          }
           if (e.sacrificeAtEndStep) {
             createDelayed(s, ctx.controller, ctx.sourceId, ctx.sourceDefId, {
               targets: [],
@@ -2249,6 +2288,7 @@ export function runEffect(s: GameState, r: Resolution, e: Effect): OpResult {
     case "grantFlashback": {
       const ids = resolveRef(s, ctx, e.what).filter((id) => s.objects[id]?.zone === "graveyard");
       s.turn.flashbackGranted = [...(s.turn.flashbackGranted ?? []), ...ids];
+      if (e.free) s.turn.freeFlashbackGranted = [...(s.turn.freeFlashbackGranted ?? []), ...ids];
       return;
     }
     case "endTurn": {
@@ -2325,9 +2365,104 @@ export function runEffect(s: GameState, r: Resolution, e: Effect): OpResult {
     case "copySpell": {
       const n = evalAmount(s, ctx, e.count);
       for (const id of resolveRef(s, ctx, e.what)) {
-        const item = s.stack.find((x) => x.id === id && x.kind === "spell");
+        const item = s.stack.find((x) => x.id === id);
         if (!item) continue;
-        for (let i = 0; i < n; i++) copySpellItem(s, item, ctx.controller);
+        for (let i = 0; i < n; i++) {
+          if (item.kind === "spell") copySpellItem(s, item, ctx.controller);
+          // Copie d'une capacité activée ou déclenchée (Return the Favor, Ertha Jo) : mêmes cibles.
+          else
+            s.stack.push({ ...item, id: newId(s, "copy"), controller: ctx.controller, copy: true, targets: { ...item.targets } });
+        }
+      }
+      return;
+    }
+    case "mayShuffleHandGraveyardDraw": {
+      for (const p of apnapOrder(s)) {
+        if (r.vars[key(`shuf-${p}`)] === undefined) {
+          const answer = r.vars[key(`shufq-${p}`)];
+          if (!answer) {
+            return {
+              ask: {
+                player: p,
+                key: key(`shufq-${p}`),
+                request: {
+                  type: "yesNo",
+                  intent: "may",
+                  prompt: `${nameOf(s, ctx.sourceId)} : mélanger main et cimetière dans la bibliothèque et piocher ${e.n} cartes ?`,
+                  suggested: [(s.players[p]?.hand.length ?? 0) < 4 ? 1 : 0],
+                },
+              },
+            };
+          }
+          r.vars[key(`shuf-${p}`)] = [answer[0] === 1 ? 1 : 0];
+        }
+      }
+      for (const p of apnapOrder(s)) {
+        if (r.vars[key(`shuf-${p}`)]?.[0] !== 1) continue;
+        const pl = s.players[p];
+        if (!pl) continue;
+        for (const id of [...pl.hand, ...pl.graveyard]) moveObject(s, id, "library");
+        shuffle(s, pl.library);
+        for (let i = 0; i < e.n; i++) drawCard(s, p);
+      }
+      return;
+    }
+    case "coinFlip": {
+      const won = random(s) < 0.5;
+      emit({ type: "coinFlip", player: ctx.controller, won });
+      store(r, e.store, won ? 1 : 0);
+      return;
+    }
+    case "extraUpkeeps": {
+      const n = evalAmount(s, ctx, e.amount);
+      for (let i = 0; i < n; i++) rulesEvent(s, { e: "step", step: "upkeep", active: s.turn.active });
+      return;
+    }
+    case "plotOnResolve": {
+      for (const id of resolveRef(s, ctx, e.what)) {
+        const item = s.stack.find((x) => x.id === id && x.kind === "spell");
+        if (item) item.plotOnResolve = true;
+      }
+      return;
+    }
+    case "noncombatBonusThisTurn": {
+      const pl = s.players[ctx.controller];
+      if (!pl) return;
+      const n = evalAmount(s, ctx, e.amount);
+      const cur = pl.noncombatBonusTurn?.turn === s.turn.number ? pl.noncombatBonusTurn.n : 0;
+      pl.noncombatBonusTurn = { turn: s.turn.number, n: cur + n };
+      return;
+    }
+    case "flickerChosen": {
+      const options = s.battlefield.filter(
+        (id) =>
+          s.objects[id]?.controller === ctx.controller && matchesObjectFilter(s, ctx.controller, id, e.filter, ctx.sourceId),
+      );
+      const answer = options.length ? r.vars[key("flicker")] : [];
+      if (!answer) {
+        return {
+          ask: {
+            player: ctx.controller,
+            key: key("flicker"),
+            request: {
+              type: "pick",
+              intent: "pickCards",
+              prompt: `${nameOf(s, ctx.sourceId)} : choisissez les permanents à exiler puis renvoyer`,
+              options,
+              min: 0,
+              max: options.length,
+              suggested: options,
+            },
+          },
+        };
+      }
+      let ids = answer.map(String).filter((id) => options.includes(id));
+      const times = Math.max(1, evalAmount(s, ctx, e.times));
+      for (let t = 0; t < times; t++) {
+        const exiled = ids.map((id) => moveObject(s, id, "exile")).filter((x): x is string => !!x);
+        ids = exiled
+          .map((id) => moveObject(s, id, "battlefield", { controller: s.objects[id]?.owner }))
+          .filter((x): x is string => !!x);
       }
       return;
     }
@@ -2548,7 +2683,9 @@ export function runEffect(s: GameState, r: Resolution, e: Effect): OpResult {
       return;
     }
     case "grantPlay": {
-      const ids = resolveRef(s, ctx, e.what).filter((id) => s.objects[id]?.zone === "exile");
+      const ids = resolveRef(s, ctx, e.what).filter(
+        (id) => s.objects[id]?.zone === "exile" || s.objects[id]?.zone === "graveyard",
+      );
       if (e.forOwner) {
         for (const id of ids) {
           const owner = s.objects[id]?.owner ?? ctx.controller;
@@ -2564,6 +2701,7 @@ export function runEffect(s: GameState, r: Resolution, e: Effect): OpResult {
       grantPlay(s, ctx.controller, ids, e.forever ? "forever" : e.untilYourNextTurn ? "yourNextTurn" : "thisTurn", {
         free: e.free,
         anyTime: e.anyTime,
+        anyMana: e.anyMana,
         condition: e.condition,
         source: ctx.sourceId,
       });

@@ -316,7 +316,9 @@ export function projectView(s: GameState, viewer: PlayerId): GameView {
     playableExile: [
       ...s.exile.filter((id) => castTerms(s, viewer, id) || canPlayLand(s, viewer, id)),
       // Vizier of the Menagerie : « vous pouvez regarder la carte du dessus de votre bibliothèque à tout moment ».
-      ...((playerStatic(s, viewer, "castCreaturesFromTop") || playerStatic(s, viewer, "castArtifactsFromTop")) &&
+      ...((playerStatic(s, viewer, "castCreaturesFromTop") ||
+        playerStatic(s, viewer, "castArtifactsFromTop") ||
+        playerStatic(s, viewer, "lookAtTopCard")) &&
       s.players[viewer]?.library[0]
         ? [s.players[viewer]?.library[0] as string]
         : []),

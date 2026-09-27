@@ -113,6 +113,8 @@ export function checkCondition(s: GameState, c: Condition, controller: PlayerId,
   switch (c.kind) {
     case "castFromHandThisTurn":
       return (s.players[controller]?.turnStats.handSpells ?? 0) > 0;
+    case "turnsTakenAtLeast":
+      return (s.players[controller]?.turnsTaken ?? 0) >= c.n;
     case "crimeThisTurn":
       return (s.players[controller]?.turnStats.crimes ?? 0) > 0;
     case "exileAtLeast":
@@ -330,6 +332,11 @@ function matchTrigger(s: GameState, ev: RulesEvent, t: TriggerSpec, src: Source)
         if (ev.sourceController !== me || (t.noncombatOnly && ev.combat)) return null;
         const toOpp = !!s.players[ev.target] && ev.target !== me;
         if (t.toOpponent && !toOpp) return null;
+        if (t.exactToughness) {
+          const victim = s.objects[ev.target];
+          if (victim?.zone !== "battlefield" || !isCreature(s, ev.target) || chars(s, ev.target).toughness !== ev.amount)
+            return null;
+        }
         return { objectId: ev.sourceId ?? undefined, player: toOpp ? ev.target : undefined, amount: ev.amount };
       }
       if (!ev.sourceId) return null;
@@ -365,6 +372,11 @@ function matchTrigger(s: GameState, ev: RulesEvent, t: TriggerSpec, src: Source)
       // « votre deuxième sort de chaque tour ».
       if (t.nth !== undefined && s.players[ev.player]?.turnStats.spellsCast !== t.nth) return null;
       if (t.notTheirTurn && s.turn.active === ev.player) return null;
+      if (t.modal) {
+        const d = s.defs[s.objects[ev.stackId]?.defId ?? ""];
+        if ((d?.spell?.modes?.length ?? 0) < 2) return null;
+      }
+      if (t.notFromHand && s.stack.find((x) => x.id === ev.stackId)?.fromHand) return null;
       if (t.notOwned && s.objects[ev.stackId]?.owner === ev.player) return null;
       // `amount` : éphémères et rituels déjà lancés ce tour-ci (Thousand-Year Storm).
       return { objectId: ev.stackId, player: ev.player, amount: ev.instantSorceryBefore };
@@ -461,6 +473,14 @@ function matchTrigger(s: GameState, ev: RulesEvent, t: TriggerSpec, src: Source)
     }
     case "crime":
       return ev.e === "crime" && ev.player === me ? { player: me } : null;
+    case "activateTargeting": {
+      if (ev.e !== "targeted" || ev.controller !== me) return null;
+      const item = s.stack.find((x) => x.id === ev.stackId);
+      if (item?.kind !== "ability" || item.inline || item.copy) return null;
+      if (s.defs[item.sourceDefId]?.abilities[item.abilityIndex]?.kind !== "activated") return null;
+      const ok = ev.targets.some((id) => !!s.players[id] || (s.objects[id]?.zone === "battlefield" && isCreature(s, id)));
+      return ok ? { objectId: item.id, player: me } : null;
+    }
     case "plottedSelf":
       return ev.e === "plotted" && ev.card === src.id ? { objectId: src.id, player: me } : null;
     case "exhaustActivated":
@@ -540,8 +560,14 @@ export function detectTriggers(s: GameState, ev: RulesEvent): void {
         s.turn.onceFired.push(key);
       }
       // Starfield Vocalist : une arrivée fait se déclencher une fois de plus les capacités de vos permanents.
+      // Annie Joins Up : les capacités déclenchées de vos créatures légendaires se déclenchent une fois de plus.
+      const legendary =
+        src.view.types.includes("Creature") &&
+        src.view.supertypes.includes("Legendary") &&
+        playerStatic(s, src.view.controller, "doubleLegendaryTriggers");
       const again =
-        ev.e === "zone" && ev.to === "battlefield" && playerStatic(s, src.view.controller, "doubleEnterTriggers") ? 2 : 1;
+        (ev.e === "zone" && ev.to === "battlefield" && playerStatic(s, src.view.controller, "doubleEnterTriggers") ? 2 : 1) +
+        (legendary ? 1 : 0);
       for (let k = 0; k < again; k++) {
         s.triggers.push({
           id: newId(s, "t"),

@@ -119,6 +119,9 @@ export function dealDamage(s: GameState, source: DamageSource, target: string, a
   // Twinflame Tyrant : blessures d'une source que vous contrôlez à un adversaire ou à un permanent adverse, doublées.
   const victim = isPlayer(s, target) ? target : targetObj?.controller;
   // Tomik, Izzet Sparkmage : blessures non de combat à un adversaire ou à ses permanents, +1.
+  // Taii Wakeen : ce tour-ci, les blessures non de combat de vos sources sont augmentées de X.
+  const taii = s.players[source.controller]?.noncombatBonusTurn;
+  if (!combat && taii?.turn === s.turn.number) amount += taii.n;
   if (!combat && victim && victim !== source.controller && playerStatic(s, source.controller, "noncombatDamageBonus"))
     amount += 1;
   // Far Fortune (vitesse maximale) : toute blessure de vos sources à un adversaire ou à ses permanents, +1.
@@ -239,11 +242,12 @@ export function createTokens(s: GameState, controller: PlayerId, t: TokenSpec, c
       manaCost: null,
       manaCostText: "",
       colors: t.colors,
-      supertypes: [],
+      supertypes: t.legendary ? ["Legendary"] : [],
       types: t.types,
       subtypes: t.subtypes,
       power: t.power,
       toughness: t.toughness,
+      cdaPT: t.cdaPT,
       keywords: t.keywords ?? [],
       abilities: t.abilities ?? [],
       text: t.text ?? "",

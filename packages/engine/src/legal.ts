@@ -167,7 +167,7 @@ export function legalActions(s: GameState, player: PlayerId): ActionOption[] {
     const additional = additionalOptions(s, player, card, d, terms.source === "flashback");
     if (!additional) return;
     const purpose = { spell: spellView(d, player), convoke: d.keywords.includes("convoke"), fromHand: terms.source === "hand" };
-    const base = { flashback, anyMana: terms.anyMana };
+    const base = { flashback, anyMana: terms.anyMana, fromZone: terms.source };
     // « Sacrifiez une créature ou payez {3}{B} » : sans créature à sacrifier, le mana s'ajoute au coût.
     const sac = additional.sacrifice;
     const mustPayInstead = !!sac?.orPay && sac.options.length < sac.count;

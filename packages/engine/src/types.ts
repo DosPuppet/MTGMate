@@ -74,6 +74,8 @@ export type Keyword =
   | "absolutePowerDamage"
   /** Ghalta the Immovable : peut attaquer comme si elle n'avait pas le défenseur. */
   | "attacksDespiteDefender"
+  /** Resilient Roadrunner : ne peut être bloquée que par des créatures avec la célérité. */
+  | "cantBeBlockedExceptByHaste"
   /** Pilote (Aetherdrift) : monte et équipe comme si sa force était supérieure de 2. */
   | "crewPlus2"
   /** Interface Ace : monte et équipe avec son endurance plutôt que sa force. */
@@ -165,6 +167,10 @@ export interface CardDef {
   graveyardCastRemoveCounters?: number;
   /** « [Cette carte] a le flash tant que … » (Take for a Ride, Colossal Rattlewurm). */
   flashIf?: Condition;
+  /** « Exilez [ce sort] » à la résolution, au lieu du cimetière (Step Between Worlds). */
+  exileOnResolve?: boolean;
+  /** Visage Bandit : sous-types ajoutés quand elle arrive comme copie. */
+  entersAsCopyAddSubtypes?: string[];
   /** Plot (702.170) : coût de l'action spéciale « complotez cette carte » (lu dans le texte). */
   plot?: ManaCost;
   /** Skyseer's Chariot : les capacités activées des sources du nom choisi coûtent {N} de plus (au lieu d'être interdites). */
@@ -294,6 +300,8 @@ export interface CostReductionAbilityDef {
   genericAmount?: Amount;
   /** Seulement si la condition est remplie (Uthros Psionicist : « le deuxième sort que vous lancez chaque tour »). */
   condition?: Condition;
+  /** Seulement pour les sorts lancés depuis ces zones (Aven Interrupter, Doc Aurlock : cimetière ou exil). */
+  fromZones?: ("graveyard" | "exile")[];
   label?: string;
 }
 
@@ -516,6 +524,12 @@ export interface ObjectFilter {
   maxToughness?: number;
   /** Valeur de mana au plus égale au X du sort qui a mis la source en jeu (Dune Drifter). */
   maxManaValueX?: boolean;
+  /** Contrôlé mais pas possédé (Laughing Jasper Flint). */
+  notOwned?: boolean;
+  /** Sort modal (Riku of Many Paths). */
+  modal?: boolean;
+  /** Aucun mana n'a été dépensé pour le lancer (ou il n'a pas été lancé) : Satoru. */
+  noManaSpent?: boolean;
   /** Aucun de ces sous-types (« non-hors-la-loi » : Shoot the Sheriff). */
   noneOfSubtypes?: string[];
   /** Carte sans capacité (Fang-Druid Summoner, Rise from the Wreck). */
@@ -549,6 +563,10 @@ export type TriggerSpec =
       nth?: number;
       /** « …, si ce n'est pas son tour » (Adrenaline Jockey, March of the World Ooze). */
       notTheirTurn?: boolean;
+      /** Sort modal (Riku of Many Paths). */
+      modal?: boolean;
+      /** Lancé depuis ailleurs que la main (Kellan, the Kid). */
+      notFromHand?: boolean;
       /** « un sort qu'il ne possède pas » (Gonti, Night Minister). */
       notOwned?: boolean;
     }
@@ -571,6 +589,8 @@ export type TriggerSpec =
       noncombatOnly?: boolean;
       toOpponent?: boolean;
       anySourceYouControl?: boolean;
+      /** Taii Wakeen : des blessures égales à l'endurance de la créature blessée. */
+      exactToughness?: boolean;
     }
   /** « Chaque fois qu'un adversaire défausse une carte » */
   | { on: "discard"; whose: "you" | "opponent" | "any" }
@@ -622,6 +642,8 @@ export type TriggerSpec =
   | { on: "crime" }
   /** « Quand cette carte devient complotée » */
   | { on: "plottedSelf" }
+  /** « Chaque fois que vous activez une capacité qui cible une créature ou un joueur » (Ertha Jo). */
+  | { on: "activateTargeting" }
   /**
    * Une carte change de zone (Ketramose : « mises en exil depuis les cimetières et/ou le champ de bataille » ;
    * Dredger's Insight : « quittent votre cimetière »). `whose` : le propriétaire de la carte.
@@ -719,6 +741,8 @@ export type Condition =
   | { kind: "evenCounters" }
   /** Vous avez commis un crime ce tour-ci. */
   | { kind: "crimeThisTurn" }
+  /** C'est au moins votre N-ième tour (Jace Reawakened : « pas pendant vos trois premiers tours »). */
+  | { kind: "turnsTakenAtLeast"; n: number }
   /** Vous avez lancé un sort depuis votre main ce tour-ci. */
   | { kind: "castFromHandThisTurn" };
 
@@ -748,6 +772,8 @@ export interface LayerMods {
   loseAllAbilities?: boolean;
   /** Couche 1 : devient une copie de cette définition (valeurs copiables ; Hall of Echoes). */
   copyOf?: string;
+  /** Assimilation Aegis : copie de la carte exilée par la source (liée par « exilez jusqu'à ce que »). */
+  copyLinkedExile?: boolean;
   /** Couche 7b : F/E fixées. */
   setPower?: number;
   setToughness?: number;
@@ -856,6 +882,24 @@ export interface PlayerStaticAbilityDef {
   drawDouble?: boolean;
   /** Far Fortune : les blessures de vos sources à un adversaire ou à ses permanents : +1. */
   damagePlusOneToOpponents?: boolean;
+  /** Fblthp, Lost on the Range : vous pouvez regarder la carte du dessus de votre bibliothèque à tout moment. */
+  lookAtTopCard?: boolean;
+  /** Archangel of Tithes : les créatures ne peuvent vous attaquer que si leur contrôleur paie {1} pour chacune. */
+  attackTax?: number;
+  /** Archangel of Tithes (attaquant) : les créatures adverses ne bloquent que si leur contrôleur paie {1} pour chacune. */
+  blockTax?: number;
+  /** High Noon (tous les joueurs) : un seul sort par joueur et par tour. */
+  oneSpellPerTurn?: boolean;
+  /** Doc Aurlock : comploter des cartes de votre main coûte {N} de moins. */
+  plotReduction?: number;
+  /** Annie Joins Up : les capacités déclenchées de vos créatures légendaires se déclenchent une fois de plus. */
+  doubleLegendaryTriggers?: boolean;
+  /** Terror of the Peaks : les sorts adverses qui ciblent cette créature coûtent N PV de plus. */
+  targetLifeTax?: number;
+  /** Eriette, the Beguiler : vos Auras attachées à un permanent non-terrain adverse de VM inférieure ou égale en prennent le contrôle. */
+  auraStealsCheaper?: boolean;
+  /** Roxanne : quand vous engagez un jeton d'artefact pour du mana, un mana de plus de ce type. */
+  artifactTokenManaBonus?: boolean;
   /** Boom Scholar : les capacités d'exhaust de vos autres permanents coûtent {N} de moins. */
   exhaustReduction?: number;
   /** Elvish Refueler : pendant votre tour, tant qu'aucune capacité d'exhaust n'a été activée, elles sont réactivables. */
@@ -957,6 +1001,14 @@ export type Ref =
   | { kind: "exiledWith" }
   /** Les joueurs (encore en partie) qui n'ont pas la vitesse maximale (Outpace Oblivion). */
   | { kind: "playersWithoutMaxSpeed" }
+  /** Carte du dessus de la bibliothèque de chaque joueur désigné. */
+  | { kind: "libraryTop"; who: Ref }
+  /** Cartes exilées face visible appartenant aux joueurs désignés (Binding Negotiation). */
+  | { kind: "exiledCardsOf"; who: Ref }
+  /** Toutes les cartes des cimetières (Lazav). */
+  | { kind: "allGraveyards" }
+  /** Créatures qui ont monté ou équipé la source ce tour-ci (Fortune, Calamity, The Gitrog, Luxurious Locomotive). */
+  | { kind: "crewedBy" }
   /** Permanents sacrifiés pour payer le coût de la capacité (Ayli). */
   | { kind: "costSacrificed" }
   /** Le joueur de l'événement (joueur blessé, lanceur du sort…). */
@@ -1025,6 +1077,10 @@ export type Amount =
   | { kind: "spellsCastThisTurn" }
   /** Cartes que vous avez piochées ce tour-ci (Duelist of the Mind). */
   | { kind: "cardsDrawnThisTurn" }
+  /** Sorts non-créature lancés ce tour-ci par le joueur désigné (Magebane Lizard). */
+  | { kind: "noncreatureCastBy"; who: Ref }
+  /** Nombre d'objets désignés (Luxurious Locomotive : les créatures qui l'ont équipé). */
+  | { kind: "refCount"; ref: Ref }
   /** Plus grande valeur de mana parmi les permanents correspondants (Emissary Escort). */
   | { kind: "maxManaValue"; filter: ObjectFilter }
   /** Tarmogoyf : types de cartes parmi les cartes de tous les cimetières. */
@@ -1053,6 +1109,8 @@ export interface TokenSpec {
   text?: string;
   legendary?: boolean;
   tapped?: boolean;
+  /** F/E définies par une capacité (Beau : le nombre de terrains que vous contrôlez). */
+  cdaPT?: Amount;
 }
 
 /** Destination d'un déplacement d'objet. */
@@ -1216,7 +1274,7 @@ export type Effect =
       filter?: ObjectFilter;
       count: Amount;
       to: MoveSpec;
-      rest: "bottom" | "graveyard" | "top";
+      rest: "bottom" | "graveyard" | "top" | "hand";
       /** Valeur de mana maximale des cartes prises (évaluée à la résolution). */
       maxManaValue?: Amount;
       /** Mémorise le nombre de cartes prises (« si vous n'avez pas mis de carte dans votre main ainsi »). */
@@ -1247,6 +1305,18 @@ export type Effect =
   | { op: "copyNextExhaust" }
   /** La carte (ou le sort) est exilée et devient complotée (702.170). */
   | { op: "plot"; what: Ref }
+  /** Chaque joueur peut mélanger sa main et son cimetière dans sa bibliothèque, puis pioche N cartes (Step Between Worlds). */
+  | { op: "mayShuffleHandGraveyardDraw"; n: number }
+  /** 705 : pile ou face ; `store` vaut 1 si le contrôleur gagne. */
+  | { op: "coinFlip"; store: string }
+  /** Obeka : N étapes d'entretien supplémentaires (approximation : les déclencheurs « au début de votre entretien »). */
+  | { op: "extraUpkeeps"; amount: Amount }
+  /** Lilah : le sort (sur la pile) sera exilé et comploté au lieu d'aller au cimetière. */
+  | { op: "plotOnResolve"; what: Ref }
+  /** Taii Wakeen : ce tour-ci, vos blessures non de combat sont augmentées de N. */
+  | { op: "noncombatBonusThisTurn"; amount: Amount }
+  /** Another Round : choisir des permanents que vous contrôlez, les exiler et les renvoyer, N fois. */
+  | { op: "flickerChosen"; filter: ObjectFilter; times: Amount }
   /** Choisir un nom de carte (sans voir de carte cachée), mémorisé pour `exileNamed` (Ancient Vendetta). */
   | { op: "chooseCardName" }
   /** Exile jusqu'à N cartes du nom choisi du cimetière, de la main et de la bibliothèque du joueur, qui mélange. */
@@ -1266,6 +1336,12 @@ export type Effect =
       legendary?: boolean;
       /** Capacités ajoutées à la copie (Face Yourself). */
       addAbilities?: AbilityDef[];
+      /** Copie engagée (Kambal). */
+      tapped?: boolean;
+      /** Engagée et attaquante (Calamity, Galloping Inferno). */
+      attacking?: boolean;
+      /** « … sauf que c'est un artefact en plus » (Molten Duplication, Vaultborn Tyrant). */
+      addTypes?: CardType[];
     }
   /** Capacité déclenchée retardée : « au début de la prochaine étape de fin, … ». Les références sont figées maintenant. */
   | {
@@ -1306,7 +1382,8 @@ export type Effect =
   /** Le contrôleur sépare les N cartes du dessus en deux piles, un adversaire en choisit une (en main), l'autre au cimetière. */
   | { op: "piles"; n: number }
   /** Carte de cimetière qui gagne le flashback jusqu'à la fin du tour (coût : son coût de mana). */
-  | { op: "grantFlashback"; what: Ref }
+  /** `free` : flashback {0} (Archmage's Newt montée). */
+  | { op: "grantFlashback"; what: Ref; free?: boolean }
   /** « Terminez le tour » (723). */
   | { op: "endTurn" }
   /** Le contrôleur de l'effet prend le contrôle de l'objet jusqu'à la fin du tour. */
@@ -1334,6 +1411,8 @@ export type Effect =
       forOwner?: boolean;
       extraCost?: number;
       landsTapped?: boolean;
+      /** Du mana de n'importe quel type peut être dépensé (Tinybones, Laughing Jasper Flint). */
+      anyMana?: boolean;
     }
   /** Exile les cartes du dessus jusqu'à une carte correspondante (mémorisée) : Territorial Bruntar. */
   | { op: "exileUntil"; filter: ObjectFilter; store: string }
@@ -1435,7 +1514,7 @@ export type Effect =
   /** Chaque joueur désigné garde un permanent de chaque type et sacrifie le reste. */
   | { op: "keepOnePerType"; who: Ref }
   /** Le contrôleur reçoit un emblème (114) portant ces capacités. */
-  | { op: "emblem"; name: string; abilities: AbilityDef[]; text: string; untilYourNextTurn?: boolean }
+  | { op: "emblem"; name: string; abilities: AbilityDef[]; text: string; untilYourNextTurn?: boolean; thisTurn?: boolean }
   /** Exile jusqu'à ce que la source quitte le champ de bataille (610.3). */
   | { op: "exileUntilLeaves"; what: Ref }
   /** Choisir des cartes (non ciblées) dans une zone du contrôleur et les déplacer. */
@@ -1571,6 +1650,8 @@ export interface GameObject {
   cardCopy?: boolean;
   /** Emblème temporaire : disparaît au début du prochain tour de ce joueur. */
   expiresAtTurnOf?: PlayerId;
+  /** Emblème qui disparaît à la fin du tour. */
+  expiresEndOfTurn?: boolean;
   /** A déjà infligé des blessures de combat (Ruric Thar). */
   dealtCombatDamage?: boolean;
   /** Tour de sa dernière attaque (« créature qui a attaqué ce tour-ci »). */
@@ -1581,6 +1662,8 @@ export interface GameObject {
   castX?: number;
   /** Plot : tour où la carte est devenue « complotée » (exilée face visible, lançable gratuitement plus tard). */
   plottedTurn?: number;
+  /** Créatures qui ont monté ou équipé ce permanent (coût payé ce tour-ci). */
+  crewedBy?: { turn: number; ids: ObjectId[] };
   /** Sources qui lui ont infligé des blessures ce tour-ci (Predator Ooze). */
   damagedBy?: ObjectId[];
   /** Joueurs à qui il a infligé des blessures de combat ce tour-ci (Steel Hellkite). */
@@ -1626,6 +1709,10 @@ export interface PlayerState {
   poison?: number;
   /** Pit Automaton : la prochaine capacité d'exhaust activée pendant ce tour est copiée. */
   copyNextExhaustTurn?: number;
+  /** Nombre de tours commencés par ce joueur (Jace Reawakened). */
+  turnsTaken?: number;
+  /** Taii Wakeen : ce tour-ci, les blessures non de combat de vos sources sont augmentées de N. */
+  noncombatBonusTurn?: { turn: number; n: number };
   /** Vitesse (702.179) : absente tant qu'aucun « Start your engines! » ne l'a démarrée ; 4 = vitesse maximale. */
   speed?: number;
   /** Mana qui ne se vide pas avant la fin du tour (Savage Ventmaw). */
@@ -1657,6 +1744,8 @@ export interface StackItem {
   warped?: boolean;
   /** Mana dépensé pour le lancer. */
   manaSpent?: number;
+  /** Lilah : exilé et comploté au lieu d'aller au cimetière. */
+  plotOnResolve?: boolean;
   /** Capacité retardée ou réflexive : ses effets et cibles propres. */
   inline?: InlineAbility;
   /** Copie d'un sort (707.10) : pas de carte associée. */
@@ -1887,6 +1976,8 @@ export interface GameState {
     graveyardTypesUsed?: string[];
     /** Cartes du cimetière qui ont le flashback ce tour-ci (Sphinx of Forgotten Lore). */
     flashbackGranted?: ObjectId[];
+    /** Flashback {0} accordé ce tour-ci. */
+    freeFlashbackGranted?: ObjectId[];
     /** Combats supplémentaires à venir ce tour-ci (Aurelia). */
     extraCombats?: number;
     /** Nombre de résolutions par capacité ce tour-ci (Venom Connoisseur). */
@@ -1921,6 +2012,7 @@ export interface GameState {
     source?: ObjectId;
     extraCost?: number;
     landsTapped?: boolean;
+    anyMana?: boolean;
   }[];
   /** Contrôle donné par une Aura (Confiscate) : contrôleur d'origine à rétablir quand l'Aura part. */
   /** `by` : contrôle tant que ce joueur contrôle la source (Possession Engine), et non tant que l'Aura est attachée. */
@@ -2175,6 +2267,8 @@ export type GameEvent =
   | { type: "turnedFaceUp"; objectId: ObjectId; defId: string }
   /** 702.170 : la carte devient complotée. */
   | { type: "plotted"; player: PlayerId; defId: string }
+  /** 705 : pile ou face. */
+  | { type: "coinFlip"; player: PlayerId; won: boolean }
   /** 702.179 : nouvelle vitesse du joueur. */
   | { type: "speed"; player: PlayerId; speed: number }
   /** 722 : `by` contrôle le tour de `player`. */

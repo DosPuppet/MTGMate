@@ -69,6 +69,8 @@ export interface CardScript {
   entersAsCopyOf?: ObjectFilter;
   /** « [Cette carte] a le flash tant que … » */
   flashIf?: Condition;
+  exileOnResolve?: boolean;
+  entersAsCopyAddSubtypes?: string[];
   /** « Vous pouvez lancer cette carte depuis votre cimetière [si…] » */
   castFromGraveyard?: { condition?: Condition; payLife?: number; sacrifice?: ObjectFilter };
   /** Seule la force est variable (Enigma Drake). */
@@ -174,6 +176,10 @@ export const ref = {
   /** Cartes exilées par la source « jusqu'à ce qu'elle quitte le champ de bataille ». */
   exiledWith: { kind: "exiledWith" } as Ref,
   playersWithoutMaxSpeed: { kind: "playersWithoutMaxSpeed" } as Ref,
+  libraryTop: (who: Ref): Ref => ({ kind: "libraryTop", who }),
+  exiledCardsOf: (who: Ref): Ref => ({ kind: "exiledCardsOf", who }),
+  allGraveyards: { kind: "allGraveyards" } as Ref,
+  crewedBy: { kind: "crewedBy" } as Ref,
   stored: (name: string): Ref => ({ kind: "stored", name }),
   /** « chaque [créature] que [le joueur désigné] contrôle » */
   permanentsOf: (player: Ref, filter: ObjectFilter): Ref => ({ kind: "permanentsOf", player, filter }),
@@ -227,6 +233,8 @@ export const amount = {
   speed: { kind: "speed" } as Amount,
   spellsCastThisTurn: { kind: "spellsCastThisTurn" } as Amount,
   cardsDrawnThisTurn: { kind: "cardsDrawnThisTurn" } as Amount,
+  noncreatureCastBy: (who: Ref): Amount => ({ kind: "noncreatureCastBy", who }),
+  refCount: (r: Ref): Amount => ({ kind: "refCount", ref: r }),
   maxManaValue: (filter: ObjectFilter): Amount => ({ kind: "maxManaValue", filter }),
 };
 
@@ -393,6 +401,7 @@ export const fx = {
     opts: {
       free?: boolean;
       anyTime?: boolean;
+      anyMana?: boolean;
       forever?: boolean;
       untilYourNextTurn?: boolean;
       condition?: Condition;
@@ -413,6 +422,12 @@ export const fx = {
   controlNextTurn: (who: Ref): Effect => ({ op: "controlNextTurn", who }),
   /** La carte ou le sort est exilé et devient comploté. */
   plot: (what: Ref): Effect => ({ op: "plot", what }),
+  mayShuffleHandGraveyardDraw: (n = 7): Effect => ({ op: "mayShuffleHandGraveyardDraw", n }),
+  coinFlip: (store: string): Effect => ({ op: "coinFlip", store }),
+  extraUpkeeps: (amount: Amount): Effect => ({ op: "extraUpkeeps", amount }),
+  plotOnResolve: (what: Ref): Effect => ({ op: "plotOnResolve", what }),
+  noncombatBonusThisTurn: (amount: Amount): Effect => ({ op: "noncombatBonusThisTurn", amount }),
+  flickerChosen: (filter: ObjectFilter, times: Amount): Effect => ({ op: "flickerChosen", filter, times }),
   exchangeControl: (a: Ref, b: Ref): Effect => ({ op: "exchangeControl", a, b }),
   gainControlWhileSource: (what: Ref, restrict = false): Effect => ({ op: "gainControlWhileSource", what, restrict }),
   setBasePTAll: (filter: ObjectFilter, amount: Amount): Effect => ({ op: "setBasePTAll", filter, amount }),
@@ -483,12 +498,13 @@ export const fx = {
   damageDivided: (total: Amount, to: Ref): Effect => ({ op: "damageDivided", total, to }),
   keepOnePerType: (who: Ref): Effect => ({ op: "keepOnePerType", who }),
   /** « Vous obtenez un emblème avec … » */
-  emblem: (name: string, text: string, abilities: AbilityDef[], untilYourNextTurn?: boolean): Effect => ({
+  emblem: (name: string, text: string, abilities: AbilityDef[], untilYourNextTurn?: boolean, thisTurn?: boolean): Effect => ({
     op: "emblem",
     name,
     text,
     abilities,
     untilYourNextTurn,
+    thisTurn,
   }),
   addManaTimes: (times: Amount, ...mana: ManaType[]): Effect => ({ op: "addMana", mana, times }),
   extraMountainMana: { op: "extraMountainMana" } as Effect,
@@ -560,7 +576,7 @@ export const fx = {
       filter?: ObjectFilter;
       count?: Amount;
       to?: MoveSpec;
-      rest?: "bottom" | "graveyard" | "top";
+      rest?: "bottom" | "graveyard" | "top" | "hand";
       maxManaValue?: Amount;
       store?: string;
     } = {},
@@ -637,6 +653,9 @@ export const fx = {
       sacrificeAtEndStep?: boolean;
       addAbilities?: AbilityDef[];
       legendary?: boolean;
+      tapped?: boolean;
+      attacking?: boolean;
+      addTypes?: CardType[];
     } = {},
   ): Effect => ({
     op: "copyToken",
@@ -888,6 +907,8 @@ export const when = {
   crime: { on: "crime" } as TriggerSpec,
   /** « Quand cette carte devient complotée » */
   plottedSelf: { on: "plottedSelf" } as TriggerSpec,
+  /** « Chaque fois que vous activez une capacité qui cible une créature ou un joueur » */
+  activateTargeting: { on: "activateTargeting" } as TriggerSpec,
   /** Une carte change de zone (voir TriggerSpec `zoneChange`). */
   zoneChange: (from: Zone[], opts: { to?: Zone[]; filter?: ObjectFilter; whose?: "you" | "any" } = {}): TriggerSpec => ({
     on: "zoneChange",
@@ -1047,6 +1068,7 @@ export const cond = {
   crime: { kind: "crimeThisTurn" } as Condition,
   /** « si vous avez lancé un sort depuis votre main ce tour-ci » */
   handSpellThisTurn: { kind: "castFromHandThisTurn" } as Condition,
+  turnsTakenAtLeast: (n: number): Condition => ({ kind: "turnsTakenAtLeast", n }),
   opponentDealtNoncombatDamageLastTurn: { kind: "opponentDealtNoncombatDamageLastTurn" } as Condition,
   spellCastFromHand: { kind: "spellCastFromHand" } as Condition,
   spellCastFromGraveyard: { kind: "spellCastFromGraveyard" } as Condition,
@@ -1054,12 +1076,13 @@ export const cond = {
 };
 
 /** Équipage N (702.122) : « engagez des créatures de force totale N ou plus : ce Véhicule devient une créature-artefact ». */
-export function crewAbility(n: number): ActivatedAbilityDef {
+export function crewAbility(n: number, oncePerTurn = false): ActivatedAbilityDef {
   return {
     kind: "activated",
     cost: { crew: n },
     targets: [],
     effects: [{ op: "modify", what: { kind: "self" }, mods: { addTypes: ["Artifact", "Creature"] }, duration: "endOfTurn" }],
+    oncePerTurn: oncePerTurn || undefined,
     label: `Équipage ${n}`,
   };
 }

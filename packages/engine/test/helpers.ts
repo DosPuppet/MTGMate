@@ -68,6 +68,8 @@ export function scenario(opts: ScenarioOptions): GameState {
       player.life = side.life ?? 20;
       // Tout le monde a déjà joué un tour : les créatures présentes n'ont pas le mal d'invocation.
       player.lastTurnStarted = p === s.turn.active ? turn : Math.max(1, turn - 1);
+      // Tours déjà commencés par ce joueur (Jace Reawakened) : un tour sur deux à deux joueurs.
+      player.turnsTaken = Math.ceil(turn / 2);
       player.drewFromEmptyLibrary = false;
       const add = (c: string | CardDef, zone: "hand" | "library" | "graveyard") => {
         const d = def(c);

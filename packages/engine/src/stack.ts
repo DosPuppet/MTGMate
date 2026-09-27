@@ -3,7 +3,7 @@
  * Côté moteur, un lancement est atomique : le client envoie d'un coup mode, cibles, X et kicker,
  * et le paiement du mana est résolu automatiquement (réserve d'abord, puis solveur).
  */
-import { loseLife, sacrifice as sacrificePermanent } from "./actions";
+import { createTokenCopy, loseLife, sacrifice as sacrificePermanent } from "./actions";
 import { ask } from "./choices";
 import { announceDiscard, announceDiscardBatch, evalAmount, runEffect } from "./effects";
 import { RulesError } from "./errors";
@@ -179,7 +179,13 @@ export function spellView(d: CardDef, player: PlayerId): LkiSnapshot {
 }
 
 /** Réduction de coût générique applicable à ce sort (601.2f). */
-export function spellReduction(s: GameState, player: PlayerId, d: CardDef, targets?: Record<string, string[]>): number {
+export function spellReduction(
+  s: GameState,
+  player: PlayerId,
+  d: CardDef,
+  targets?: Record<string, string[]>,
+  fromZone?: CastTerms["source"],
+): number {
   let r = 0;
   const own = d.costReduction;
   const cond = own?.condition;
@@ -214,6 +220,9 @@ export function spellReduction(s: GameState, player: PlayerId, d: CardDef, targe
       const applies = ab.opponents ? o.controller !== player : o.controller === player;
       if (!applies || !matchesView(view, ab.filter, player)) continue;
       if (ab.condition && !checkCondition(s, ab.condition, o.controller, id)) continue;
+      // « Les sorts lancés depuis un cimetière ou depuis l'exil » (Aven Interrupter, Doc Aurlock).
+      const zone = fromZone === "flashback" ? "graveyard" : fromZone;
+      if (ab.fromZones && !(zone === "graveyard" || zone === "exile" ? ab.fromZones.includes(zone) : false)) continue;
       r += ab.generic;
       if (ab.genericAmount !== undefined) r += evalAmount(s, reductionContext(o.controller, id, o.defId), ab.genericAmount);
     }
@@ -238,6 +247,8 @@ export function spellCost(
     anyMana?: boolean;
     /** Cibles choisies (réduction « si ce sort cible… ») ; absentes : on suppose la cible la plus favorable. */
     targets?: Record<string, string[]>;
+    /** Zone d'où le sort est lancé (réductions et taxes « depuis un cimetière ou l'exil »). */
+    fromZone?: CastTerms["source"];
   },
 ): ManaCost {
   const empty: ManaCost = { generic: 0, colored: {}, x: 0 };
@@ -252,7 +263,7 @@ export function spellCost(
     base,
     opts.free ? 0 : (opts.x ?? 0),
     opts.kicked ? d.kicker : undefined,
-    opts.free ? 0 : spellReduction(s, player, d, opts.targets),
+    opts.free ? 0 : spellReduction(s, player, d, opts.targets, opts.fromZone),
   );
   if (!opts.anyMana) return cost;
   const colored =
@@ -413,6 +424,9 @@ export function castableFaces(s: GameState, card: ObjectId, d: CardDef): [number
 }
 
 export function castTerms(s: GameState, player: PlayerId, card: ObjectId): CastTerms | null {
+  // High Noon : « chaque joueur ne peut pas lancer plus d'un sort à chaque tour ».
+  if ((s.players[player]?.turnStats.spellsCast ?? 0) >= 1 && s.playerOrder.some((p) => playerStatic(s, p, "oneSpellPerTurn")))
+    return null;
   const terms = baseCastTerms(s, player, card);
   // Weftwalking : « le premier sort que chaque joueur lance pendant chacun de ses tours peut être lancé sans payer ».
   if (
@@ -446,10 +460,15 @@ function baseCastTerms(s: GameState, player: PlayerId, card: ObjectId): CastTerm
     return { source: "hand", freeOptional: free || undefined };
   }
   if (o.zone === "graveyard") {
+    // Tinybones, the Pickpocket : une carte d'un autre cimetière, lançable avec du mana de n'importe quel type.
+    const gyPerm = exilePermission(s, player, card);
+    if (gyPerm) return { source: "graveyard", anyMana: gyPerm.anyMana, free: gyPerm.free };
     if (o.owner !== player) return null;
     if (s.turn.mayCastFromGraveyard?.includes(card)) return { source: "graveyard" };
     // Timeline Culler : « vous pouvez lancer cette carte depuis votre cimetière avec sa distorsion ».
     if (d.warp?.fromGraveyard) return { source: "graveyard", warpOnly: true };
+    // Archmage's Newt : flashback {0}.
+    if (s.turn.freeFlashbackGranted?.includes(card)) return { source: "flashback", free: true };
     if (d.flashback || s.turn.flashbackGranted?.includes(card)) return { source: "flashback" };
     const t = graveyardTypeAvailable(s, player, card);
     if (t && t !== "Land") return { source: "graveyard", graveyardType: t };
@@ -502,7 +521,8 @@ function baseCastTerms(s: GameState, player: PlayerId, card: ObjectId): CastTerm
     // 702.185a : exilée par la distorsion, lançable depuis l'exil à partir du tour suivant.
     if (o.warpExiledTurn !== undefined && o.owner === player && s.turn.number > o.warpExiledTurn) return { source: "exile" };
     const perm = exilePermission(s, player, card);
-    if (perm) return { source: "exile", free: perm.free, anyTime: perm.anyTime, extraCost: perm.extraCost };
+    if (perm)
+      return { source: "exile", free: perm.free, anyTime: perm.anyTime, extraCost: perm.extraCost, anyMana: perm.anyMana };
     // Tinybones : cartes d'adversaires exilées avec un marqueur de butin, pendant votre tour.
     if (
       o.owner !== player &&
@@ -640,7 +660,23 @@ export function castSpell(s: GameState, player: PlayerId, card: ObjectId, choice
   };
   check(discard, opts.discard);
   check(sacrifice, opts.sacrifice);
-  let cost = spellCost(s, player, d, { x, kicked, flashback, free, alternative, anyMana: terms.anyMana, targets });
+  let cost = spellCost(s, player, d, {
+    x,
+    kicked,
+    flashback,
+    free,
+    alternative,
+    anyMana: terms.anyMana,
+    targets,
+    fromZone: terms.source,
+  });
+  // Terror of the Peaks : « les sorts de vos adversaires qui ciblent cette créature coûtent 3 PV de plus ».
+  const lifeTax = flatTargets(targets).reduce((n, id) => {
+    const t = s.objects[id];
+    if (t?.zone !== "battlefield" || t.controller === player) return n;
+    return n + chars(s, id).abilities.reduce((m, ab) => m + (ab.kind === "playerStatic" ? (ab.targetLifeTax ?? 0) : 0), 0);
+  }, 0);
+  if (lifeTax > (s.players[player]?.life ?? 0)) throw new RulesError("Pas assez de points de vie");
   // Spree : les coûts supplémentaires des modes choisis (payés même si le sort est gratuit).
   if (mode.extraCost) cost = addCosts(cost, mode.extraCost);
   if (opts.sacrifice?.orPay && sacrifice.length === 0) cost = addCosts(cost, opts.sacrifice.orPay);
@@ -705,6 +741,7 @@ export function castSpell(s: GameState, player: PlayerId, card: ObjectId, choice
   // Distorsion « Warp—{B}, Pay 2 life » : les points de vie font partie du coût.
   if (warp?.life) loseLife(s, player, warp.life);
   if (terms.payLife) loseLife(s, player, terms.payLife);
+  if (lifeTax) loseLife(s, player, lifeTax);
   // Pyromancer's Goggles : « copiez ce sort ».
   for (const r of item.riders ?? []) if (r === "copy") copySpellItem(s, item, player);
   // Teach by Example : « la prochaine fois que vous lancez un éphémère ou un rituel ce tour-ci, copiez-le ».
@@ -997,8 +1034,15 @@ export function activateAbility(s: GameState, player: PlayerId, source: ObjectId
   // Action spéciale (116.2, déverrouiller une porte) : les coûts sont payés, les effets s'appliquent sans la pile.
   if (ab.specialAction) {
     if (ab.cost.mana) {
+      // Doc Aurlock : comploter depuis la main coûte {2} de moins.
+      const plotReduction = ab.effects.some((e) => e.op === "plot")
+        ? controlledAbilitiesWithSource(s, player).reduce(
+            (n, { ab: x }) => n + (x.kind === "playerStatic" ? (x.plotReduction ?? 0) : 0),
+            0,
+          )
+        : 0;
       try {
-        payMana(s, player, totalCost(ab.cost.mana, 0), undefined, { abilitySource: source });
+        payMana(s, player, totalCost(ab.cost.mana, 0, undefined, plotReduction), undefined, { abilitySource: source });
       } catch {
         throw new RulesError("Mana insuffisant");
       }
@@ -1081,7 +1125,10 @@ export function activateAbility(s: GameState, player: PlayerId, source: ObjectId
   if (ab.oncePerTurn) o.activatedTurn = { ...(o.activatedTurn ?? {}), [index]: s.turn.number };
   if (ab.cost.addCounters) changeCounters(s, o, ab.cost.addCounters.kind, ab.cost.addCounters.n);
   for (const id of crew) tapObject(s, obj(s, id));
-  if (crew.length) rulesEvent(s, { e: "crewed", vehicle: source, crew: [...crew] });
+  if (crew.length) {
+    o.crewedBy = { turn: s.turn.number, ids: [...crew] };
+    rulesEvent(s, { e: "crewed", vehicle: source, crew: [...crew] });
+  }
   if (ab.cost.exertSelf) o.exerted = true;
   if (ab.cost.removeCounters) changeCounters(s, o, ab.cost.removeCounters.kind, -ab.cost.removeCounters.n);
   if (ab.cost.payLife) loseLife(s, player, ab.cost.payLife);
@@ -1260,6 +1307,12 @@ function finishResolution(
 ): void {
   const i = s.stack.findIndex((x) => x.id === item.id);
   if (i >= 0) s.stack.splice(i, 1);
+  // 707.10 : la copie d'un sort de permanent devient un jeton en se résolvant (Double Down).
+  if (item.kind === "spell" && item.copy && !s.objects[item.sourceId]) {
+    const d = s.defs[item.sourceDefId];
+    if (d && isPermanentCard(d)) createTokenCopy(s, item.controller, d.id);
+    return;
+  }
   if (item.kind === "spell" && s.objects[item.sourceId]) {
     const d = s.defs[item.sourceDefId];
     if (d && isPermanentCard(d)) {
@@ -1326,6 +1379,16 @@ function finishResolution(
  * exil « en aventure » pour une aventure (715.4) ; bibliothèque mélangée pour un présage.
  */
 function resolvedSpellAway(s: GameState, item: StackItem, d: CardDef | undefined): void {
+  // Lilah : exilé et comploté au lieu d'aller au cimetière.
+  if (item.plotOnResolve && !item.flashback) {
+    plotCard(s, item.sourceId);
+    return;
+  }
+  // « Exilez [ce sort] » (Step Between Worlds).
+  if (d?.exileOnResolve) {
+    moveObject(s, item.sourceId, "exile");
+    return;
+  }
   if (item.adventure && !item.flashback) {
     const id = moveObject(s, item.sourceId, "exile");
     const o = id ? s.objects[id] : undefined;
