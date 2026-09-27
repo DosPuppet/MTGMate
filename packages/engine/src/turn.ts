@@ -897,8 +897,10 @@ export function eliminate(s: GameState, losers: PlayerId[]): void {
   for (const p of losers) {
     const player = s.players[p];
     if (player) player.lost = true;
-    rulesEvent(s, { e: "playerLost", player: p });
   }
+  // Tous les perdants sont marqués avant que les déclencheurs ne relisent les caractéristiques.
+  bump(s);
+  for (const p of losers) rulesEvent(s, { e: "playerLost", player: p });
   const alive = alivePlayers(s);
   if (alive.length <= 1) {
     s.over = true;
@@ -947,6 +949,8 @@ function removePlayerObjects(s: GameState, p: PlayerId): void {
   s.exile = s.exile.filter((id) => !gone.has(id));
   s.stack = s.stack.filter((item) => item.controller !== p && (item.kind === "ability" || !gone.has(item.sourceId)));
   if (s.combat) {
+    // Des créatures cessent d'attaquer : des statiques « créatures attaquantes » en dépendent.
+    bump(s);
     s.combat.attackers = s.combat.attackers.filter((a) => !gone.has(a.id) && defendingPlayer(s, a.defender) !== p);
     s.combat.blockers = s.combat.blockers.filter((b) => !gone.has(b.id));
     s.combat.blockQueue = s.combat.blockQueue.filter((q) => q !== p);
@@ -1136,6 +1140,7 @@ function applyAuraControl(s: GameState): boolean {
 
 function removeFromCombatOf(s: GameState, id: ObjectId): void {
   if (!s.combat) return;
+  bump(s);
   s.combat.attackers = s.combat.attackers.filter((a) => a.id !== id);
   s.combat.blockers = s.combat.blockers.filter((b) => b.id !== id);
   for (const a of s.combat.attackers) a.blockers = a.blockers.filter((b) => b !== id);

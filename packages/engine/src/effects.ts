@@ -557,6 +557,7 @@ export function moveWithSpec(s: GameState, controller: PlayerId, id: ObjectId, s
       opponentsOf(s, moved.controller)[0] ??
       "";
     s.combat.attackers.push({ id: moved.id, defender, blockers: [], blocked: false });
+    bump(s); // statiques « créatures attaquantes »
   }
   // « … sur le champ de bataille transformée » : le verso d'une carte recto-verso transformable.
   const back = s.defs[moved.defId]?.layout === "transform" ? s.defs[moved.defId]?.faceDefs?.[1] : undefined;
@@ -1381,6 +1382,7 @@ export function runEffect(s: GameState, r: Resolution, e: Effect): OpResult {
         const defender =
           s.combat.attackers.find((a) => a.id === ctx.sourceId)?.defender ?? opponentsOf(s, ctx.controller)[0] ?? "";
         for (const id of created) s.combat.attackers.push({ id, defender, blockers: [], blocked: false });
+        bump(s);
       }
       if (e.store) r.vars[`$ids:${e.store}`] = created;
       return;
@@ -2116,6 +2118,7 @@ export function runEffect(s: GameState, r: Resolution, e: Effect): OpResult {
               opponentsOf(s, ctx.controller)[0] ??
               "";
             s.combat.attackers.push({ id: token, defender, blockers: [], blocked: false });
+            bump(s);
           }
           if (e.sacrificeAtEndStep) {
             createDelayed(s, ctx.controller, ctx.sourceId, ctx.sourceDefId, {
