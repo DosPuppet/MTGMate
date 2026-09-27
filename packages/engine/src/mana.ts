@@ -137,6 +137,7 @@ function manaAmount(s: GameState, id: ObjectId, ab: ManaAbilityDef): number {
   const extra = tide?.turn === s.turn.number && ab.cost.tap && chars(s, id).subtypes.includes("Mountain") ? tide.n : 0;
   // The Eternity Elevator : autant de mana que de marqueurs de charge.
   if (ab.amountCounters) return (o.counters[ab.amountCounters] ?? 0) + extra;
+  if (ab.amountSelfPower) return Math.max(0, chars(s, id).power) + extra;
   // Loot, the Nexus : un mana pour chaque force différente parmi vos créatures.
   if (ab.amountDistinctPowers) {
     const powers = s.battlefield

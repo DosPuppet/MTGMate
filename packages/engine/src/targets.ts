@@ -105,6 +105,10 @@ function sourcePower(s: GameState, sourceId?: ObjectId): number {
 
 /** Remplace les bornes dynamiques du filtre par leur valeur actuelle. */
 function resolveFilter(s: GameState, f: ObjectFilter, sourceId?: ObjectId): ObjectFilter {
+  if (f.maxManaValueX) {
+    const x = (sourceId && s.objects[sourceId]?.castX) || 0;
+    return { ...f, maxManaValueX: undefined, maxManaValue: x };
+  }
   if (f.maxManaValueManaSpent) {
     const spent = (sourceId && (s.objects[sourceId]?.manaSpent ?? s.lki[sourceId]?.manaSpent)) || 0;
     return { ...f, maxManaValueManaSpent: undefined, maxManaValue: spent };
@@ -120,6 +124,8 @@ export function matchesCard(s: GameState, controller: PlayerId, id: ObjectId, f:
   f = resolveFilter(s, f, sourceId);
   // « mise dans un cimetière ce tour-ci » : l'objet a été créé dans sa zone pendant ce tour.
   if (f.enteredThisTurn && o.controlledSince !== s.turn.number) return false;
+  // « carte de créature sans capacité » : pas de texte de règles.
+  if (f.noAbilities && (s.defs[o.defId]?.text ?? "").trim()) return false;
   return (
     matchesView(snapshot(s, id), { ...f, controller: undefined }, controller, sourceId) &&
     (f.controller === undefined || (f.controller === "you" ? o.owner === controller : o.owner !== controller))
@@ -136,6 +142,8 @@ export function matchesObjectFilter(
   const o = s.objects[id];
   if (o?.zone !== "battlefield") return false;
   if (f.attackedThisTurn && o.attackedTurn !== s.turn.number) return false;
+  // « arrivé sous votre contrôle ce tour-ci » (Cloudspire Coordinator).
+  if (f.enteredThisTurn && o.controlledSince !== s.turn.number) return false;
   return matchesView(snapshot(s, id), resolveFilter(s, f, sourceId), controller, sourceId);
 }
 
@@ -166,6 +174,7 @@ export function isLegalTarget(s: GameState, controller: PlayerId, spec: TargetSp
     if (!ex || o.faceDown || o.cardCopy || o.preparedFor) return false;
     if (ex.withWarp && !s.defs[o.defId]?.warp) return false;
     if (ex.own && o.owner !== controller) return false;
+    if (ex.linked && !(sourceId && (s.objects[sourceId]?.linked ?? []).includes(id))) return false;
     return !ex.filter || matchesCard(s, controller, id, { ...ex.filter, controller: undefined }, sourceId);
   }
   if (o && o.zone === "graveyard") {

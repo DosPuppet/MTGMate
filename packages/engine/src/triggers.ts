@@ -111,6 +111,12 @@ export function simultaneously<T>(s: GameState, fn: () => T): T {
 
 export function checkCondition(s: GameState, c: Condition, controller: PlayerId, sourceId?: ObjectId): boolean {
   switch (c.kind) {
+    case "exileAtLeast":
+      return s.exile.length >= c.n;
+    case "evenCounters": {
+      const o = sourceId ? s.objects[sourceId] : undefined;
+      return !!o && Object.values(o.counters).reduce((n, x) => n + x, 0) % 2 === 0;
+    }
     case "maxSpeed":
       return (s.players[controller]?.speed ?? 0) >= 4;
     case "opponentLifeAtMost":
@@ -317,6 +323,8 @@ function matchTrigger(s: GameState, ev: RulesEvent, t: TriggerSpec, src: Source)
       if (t.on === "dealsDamage" && t.noncombatOnly && ev.combat) return null;
       const toPlayer = !!s.players[ev.target];
       if (t.on === "dealsCombatDamage" && t.toPlayer && !toPlayer) return null;
+      // « … à l'un de vos adversaires » (Gonti, Night Minister).
+      if (t.on === "dealsCombatDamage" && t.toOpponent && (!toPlayer || ev.target === me)) return null;
       if (t.on === "dealsDamage" && t.toOpponent && (!toPlayer || ev.target === me)) return null;
       const v = liveView(s, ev.sourceId) ?? s.lki[ev.sourceId] ?? null;
       if (!v || !matchWho(t.who, v, src)) return null;
@@ -343,6 +351,7 @@ function matchTrigger(s: GameState, ev: RulesEvent, t: TriggerSpec, src: Source)
       // « votre deuxième sort de chaque tour ».
       if (t.nth !== undefined && s.players[ev.player]?.turnStats.spellsCast !== t.nth) return null;
       if (t.notTheirTurn && s.turn.active === ev.player) return null;
+      if (t.notOwned && s.objects[ev.stackId]?.owner === ev.player) return null;
       // `amount` : éphémères et rituels déjà lancés ce tour-ci (Thousand-Year Storm).
       return { objectId: ev.stackId, player: ev.player, amount: ev.instantSorceryBefore };
     }
@@ -425,6 +434,17 @@ function matchTrigger(s: GameState, ev: RulesEvent, t: TriggerSpec, src: Source)
       return ev.e === "playLand" && ev.player === me ? { objectId: ev.objectId, player: me } : null;
     case "castSelf":
       return ev.e === "cast" && ev.stackId === src.id ? { objectId: src.id, player: me } : null;
+    case "zoneChange": {
+      if (ev.e !== "zone" || !ev.from || !t.from.includes(ev.from) || (t.to && !t.to.includes(ev.to))) return null;
+      const card = (ev.newId && s.objects[ev.newId]) || undefined;
+      const owner = card?.owner ?? ev.lki?.owner;
+      if (t.whose === "you" && owner !== me) return null;
+      if (t.filter) {
+        const d = s.defs[card?.defId ?? ev.lki?.defId ?? ""];
+        if (!d || (t.filter.types && !t.filter.types.some((x) => d.types.includes(x)))) return null;
+      }
+      return { objectId: ev.newId ?? undefined, player: owner ?? me };
+    }
     case "exhaustActivated":
       return ev.e === "exhaust" && ev.player === me ? { objectId: ev.source, player: me } : null;
     case "cycleSelf":
@@ -494,6 +514,8 @@ export function detectTriggers(s: GameState, ev: RulesEvent): void {
       const data = matchTrigger(s, ev, ab.trigger, src);
       if (!data) return;
       if (ab.condition && !checkCondition(s, ab.condition, src.view.controller, src.id)) return;
+      // « une ou plusieurs … » : un seul déclenchement en attente pour ce lot d'événements.
+      if (ab.batched && s.triggers.some((t) => t.sourceId === src.id && t.abilityIndex === index)) return;
       if (ab.oncePerTurn) {
         const key = `${src.view.defId}:${src.id}:${index}`;
         if (s.turn.onceFired.includes(key)) return;
@@ -538,6 +560,7 @@ export function createDelayed(
   at: DelayedTiming = "nextEndStep",
 ): void {
   const lateInTurn = s.turn.step === "end" || s.turn.step === "cleanup";
+  // « à votre prochaine étape de fin » : celle de ce tour si c'est le vôtre et qu'elle n'est pas passée.
   s.delayed.push({
     id: newId(s, "d"),
     controller,
@@ -557,7 +580,7 @@ export function releaseDelayedTriggers(s: GameState, moment: "end" | "endCombat"
     if (moment === "endCombat") return d.at === "endOfCombat";
     if (d.at === "endOfCombat") return false;
     // « … de votre prochain tour » : seulement pendant un tour de son contrôleur.
-    return d.at !== "yourNextEndStep" || s.turn.active === d.controller;
+    return (d.at !== "yourNextEndStep" && d.at !== "yourEndStep") || s.turn.active === d.controller;
   });
   if (due.length === 0) return;
   s.delayed = s.delayed.filter((d) => !due.includes(d));
@@ -688,7 +711,14 @@ function chooseTriggerMode(s: GameState, t: PendingTrigger): boolean {
   if (!modes) return true;
   // Seuls les modes dont les cibles requises existent sont proposés (et, pour Demonic Pact, pas encore choisis).
   const ab = triggeredAbility(s, t);
-  const used = ab?.uniqueModes ? (s.objects[t.sourceId]?.usedModes ?? []) : [];
+  const o = s.objects[t.sourceId];
+  const used = !ab?.uniqueModes
+    ? []
+    : ab.uniqueModes === "turn"
+      ? o?.usedModesTurn === s.turn.number
+        ? (o?.usedModes ?? [])
+        : []
+      : (o?.usedModes ?? []);
   const possible = modes
     .map((m, i) => ({ m, i }))
     .filter(({ i }) => !used.includes(i))
@@ -815,5 +845,11 @@ export function answerTriggerMode(s: GameState, triggerId: string, mode: number)
 function markModeUsed(s: GameState, t: PendingTrigger): void {
   if (t.mode === undefined || t.mode < 0 || !triggeredAbility(s, t)?.uniqueModes) return;
   const o = s.objects[t.sourceId];
-  if (o) o.usedModes = [...(o.usedModes ?? []), t.mode];
+  if (!o) return;
+  // « … ce tour-ci » : la liste repart de zéro à chaque tour.
+  if (triggeredAbility(s, t)?.uniqueModes === "turn" && o.usedModesTurn !== s.turn.number) {
+    o.usedModes = [];
+    o.usedModesTurn = s.turn.number;
+  }
+  o.usedModes = [...(o.usedModes ?? []), t.mode];
 }

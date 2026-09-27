@@ -280,6 +280,8 @@ export interface CastTerms {
   graveyardType?: string;
   /** Quilled Greatwurm : marqueurs à retirer parmi vos créatures. */
   removeCounters?: number;
+  /** Points de vie payés en plus (Wickerfolk Indomitable, depuis le cimetière). */
+  payLife?: number;
 }
 
 /** D'où, et à quelles conditions, ce joueur peut-il lancer cette carte ? */
@@ -319,9 +321,12 @@ export function abilityReduction(s: GameState, player: PlayerId, source: ObjectI
       )
     : 0;
   const red = ab.reduction;
-  if (!red) return exhaust;
+  const tax = chosenNameTax(s, source);
+  if (!red) return exhaust - tax;
   if (red.condition && !checkCondition(s, red.condition, player, source)) return 0;
-  return exhaust + Math.max(0, evalAmount(s, reductionContext(player, source, s.objects[source]?.defId ?? ""), red.generic));
+  return (
+    exhaust - tax + Math.max(0, evalAmount(s, reductionContext(player, source, s.objects[source]?.defId ?? ""), red.generic))
+  );
 }
 
 /** Elvish Refueler : pendant votre tour, tant qu'aucune capacité d'exhaust n'a été activée ce tour-ci. */
@@ -423,7 +428,11 @@ function baseCastTerms(s: GameState, player: PlayerId, card: ObjectId): CastTerm
     const t = graveyardTypeAvailable(s, player, card);
     if (t && t !== "Land") return { source: "graveyard", graveyardType: t };
     const fromGy = d.castFromGraveyard;
-    if (fromGy && (!fromGy.condition || checkCondition(s, fromGy.condition, player, card))) return { source: "graveyard" };
+    if (fromGy && (!fromGy.condition || checkCondition(s, fromGy.condition, player, card))) {
+      // Wickerfolk Indomitable : « en payant 2 PV et en sacrifiant un artefact ou une créature en plus ».
+      if (fromGy.payLife && (s.players[player]?.life ?? 0) < fromGy.payLife) return null;
+      return { source: "graveyard", payLife: fromGy.payLife };
+    }
     if (d.graveyardCastRemoveCounters && countersAmongCreatures(s, player) >= d.graveyardCastRemoveCounters) {
       return { source: "graveyard", removeCounters: d.graveyardCastRemoveCounters };
     }
@@ -524,7 +533,10 @@ export function additionalOptions(
   sacrifice?: { count: number; options: ObjectId[]; orPay?: ManaCost; orPayAffordable?: boolean };
 } | null {
   // Twinned Vision : « Flashback—{1}{U/R}{U/R}, défaussez une carte ».
-  const add = flashback && d.flashbackDiscard ? { ...d.additionalCost, discard: d.flashbackDiscard } : d.additionalCost;
+  let add = flashback && d.flashbackDiscard ? { ...d.additionalCost, discard: d.flashbackDiscard } : d.additionalCost;
+  // Wickerfolk Indomitable : sacrifice supplémentaire quand elle est lancée depuis le cimetière.
+  const gySac = s.objects[card]?.zone === "graveyard" ? d.castFromGraveyard?.sacrifice : undefined;
+  if (gySac) add = { ...add, sacrifice: { filter: gySac, count: 1 } };
   if (!add) return {};
   const out: ReturnType<typeof additionalOptions> = {};
   if (add.discard) {
@@ -659,6 +671,7 @@ export function castSpell(s: GameState, player: PlayerId, card: ObjectId, choice
   }
   // Distorsion « Warp—{B}, Pay 2 life » : les points de vie font partie du coût.
   if (warp?.life) loseLife(s, player, warp.life);
+  if (terms.payLife) loseLife(s, player, terms.payLife);
   // Pyromancer's Goggles : « copiez ce sort ».
   for (const r of item.riders ?? []) if (r === "copy") copySpellItem(s, item, player);
   // Teach by Example : « la prochaine fois que vous lancez un éphémère ou un rituel ce tour-ci, copiez-le ».
@@ -828,8 +841,19 @@ function spyglassed(s: GameState, source: ObjectId): boolean {
   const name = s.objects[source] && chars(s, source).name;
   return s.battlefield.some((id) => {
     const o = obj(s, id);
-    return o.chosen?.cardName === name && s.defs[o.defId]?.chooseOnEnter === "cardName";
+    const d = s.defs[o.defId];
+    return o.chosen?.cardName === name && d?.chooseOnEnter === "cardName" && !d.chosenNameTax;
   });
+}
+
+/** Skyseer's Chariot : {N} de plus pour les capacités activées des sources du nom choisi. */
+function chosenNameTax(s: GameState, source: ObjectId): number {
+  const name = s.objects[source] && chars(s, source).name;
+  return s.battlefield.reduce((n, id) => {
+    const o = obj(s, id);
+    const tax = s.defs[o.defId]?.chosenNameTax ?? 0;
+    return n + (tax && o.chosen?.cardName === name ? tax : 0);
+  }, 0);
 }
 
 /** Jace's Machinations : capacité de loyauté d'un Jace activable à vitesse d'éphémère ce tour-ci. */
@@ -928,7 +952,11 @@ export function activateAbility(s: GameState, player: PlayerId, source: ObjectId
     }
   }
   const targets = validateTargets(s, player, ab.targets, choices.targets, { sourceId: source });
-  const x = ab.cost.mana?.x || ab.cost.loyaltyX || ab.cost.tapX ? Math.max(0, Math.floor(choices.x ?? 0)) : 0;
+  const x =
+    ab.cost.mana?.x || ab.cost.loyaltyX || ab.cost.tapX || ab.cost.exileFromGraveyardX || ab.cost.sacrificeX
+      ? Math.max(0, Math.floor(choices.x ?? 0))
+      : 0;
+  if (ab.cost.sacrificeX && x < 1) throw new RulesError("Sacrifiez au moins un permanent");
   if (ab.cost.loyaltyX && x > (o.counters.loyalty ?? 0)) throw new RulesError("Pas assez de marqueurs de loyauté");
   const c = chars(s, source);
   // Action spéciale (116.2, déverrouiller une porte) : les coûts sont payés, les effets s'appliquent sans la pile.
@@ -1004,9 +1032,15 @@ export function activateAbility(s: GameState, player: PlayerId, source: ObjectId
   }
   if (ab.once && !o.used?.includes(index)) o.used = [...(o.used ?? []), index];
   if (ab.exhaust) {
-    const stats = s.players[player]?.turnStats;
+    const pl = s.players[player];
+    const stats = pl?.turnStats;
     if (stats) stats.exhaustActivated = (stats.exhaustActivated ?? 0) + 1;
     rulesEvent(s, { e: "exhaust", player, source });
+    // Pit Automaton : la prochaine capacité d'exhaust de ce tour est copiée (mêmes cibles).
+    if (pl?.copyNextExhaustTurn === s.turn.number) {
+      pl.copyNextExhaustTurn = undefined;
+      s.stack.push({ ...item, id: newId(s, "copy"), copy: true, targets: { ...item.targets } });
+    }
   }
   if (ab.oncePerTurn) o.activatedTurn = { ...(o.activatedTurn ?? {}), [index]: s.turn.number };
   if (ab.cost.addCounters) changeCounters(s, o, ab.cost.addCounters.kind, ab.cost.addCounters.n);
@@ -1041,6 +1075,23 @@ export function activateAbility(s: GameState, player: PlayerId, source: ObjectId
       throw new RulesError("Pas assez de permanents à engager");
     for (const id of chosen) tapObject(s, obj(s, id));
   }
+  // Winter, Cursed Rider : « exilez X cartes d'artefact de votre cimetière » (choisies automatiquement).
+  if (ab.cost.exileFromGraveyardX) {
+    const f = ab.cost.exileFromGraveyardX;
+    const options = (s.players[player]?.graveyard ?? []).filter((id) => id !== source && matchesCard(s, player, id, f, source));
+    if (options.length < x) throw new RulesError("Pas assez de cartes à exiler");
+    for (const id of options.slice(0, x)) moveObject(s, id, "exile");
+  }
+  // Radiant Lotus : « sacrifiez un ou plusieurs artefacts » (les autres d'abord, la source en dernier).
+  if (ab.cost.sacrificeX) {
+    const f = ab.cost.sacrificeX;
+    const options = s.battlefield
+      .filter((id) => obj(s, id).controller === player && matchesObjectFilter(s, player, id, f, source))
+      .sort((a, b) => (a === source ? 1 : 0) - (b === source ? 1 : 0));
+    if (options.length < x) throw new RulesError("Pas assez de permanents à sacrifier");
+    item.sacrificed = options.slice(0, x);
+    for (const id of options.slice(0, x)) sacrificePermanent(s, id);
+  }
   if (ab.cost.exileSelf) moveObject(s, source, "exile");
   if (ab.cost.discardSelf) {
     const card = moveObject(s, source, "graveyard");
@@ -1070,7 +1121,11 @@ function specsAndEffects(s: GameState, item: StackItem): { specs: TargetSpec[]; 
       return { specs: mode?.targets ?? [], effects: [...effects, { op: "chooseOnEnter", kind: d.chooseOnEnter }] };
     }
     if (d.devour && isPermanentCard(d)) {
-      return { specs: mode?.targets ?? [], effects: [...effects, { op: "devour", filter: d.devour.filter }] };
+      const op: Effect = { op: "devour", filter: d.devour.filter, graveyardUpToX: d.devour.graveyardUpToX };
+      return { specs: mode?.targets ?? [], effects: [...effects, op] };
+    }
+    if (d.entersAsCopyOf && isPermanentCard(d) && !item.copy) {
+      return { specs: mode?.targets ?? [], effects: [...effects, { op: "chooseCopy", filter: d.entersAsCopyOf }] };
     }
     return { specs: mode?.targets ?? [], effects };
   }
@@ -1186,10 +1241,15 @@ function finishResolution(
           chosen: chosenFrom(vars),
           manaSpent: item.manaSpent,
           devoured: Number(vars.$devoured?.[0] ?? 0),
+          copyOf: vars.$copyOf?.[0] !== undefined ? String(vars.$copyOf[0]) : undefined,
         },
       });
       const arrived = enteredId ? s.objects[enteredId] : undefined;
       if (arrived && item.manaSpent !== undefined) arrived.manaSpent = item.manaSpent;
+      if (arrived && item.x) arrived.castX = item.x;
+      // Mimeoplasm : les cartes exilées en arrivant sont liées au permanent.
+      if (arrived && vars["$ids:devoured"]?.length)
+        arrived.linked = [...(arrived.linked ?? []), ...vars["$ids:devoured"].map(String)];
       // Distorsion : exilé au début de la prochaine étape de fin.
       if (item.warped && arrived) {
         arrived.warped = true;

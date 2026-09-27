@@ -504,7 +504,10 @@ export function defendingPlayer(s: GameState, defender: string): PlayerId {
 /** Ce qu'un joueur peut attaquer : ses adversaires et leurs planeswalkers (506.2). */
 export function attackableDefenders(s: GameState, player: PlayerId): string[] {
   const opps = opponentsOf(s, player);
-  const walkers = s.battlefield.filter((id) => opps.includes(obj(s, id).controller) && hasType(s, id, "Planeswalker"));
+  // The Aetherspark : « tant qu'il est attaché à une créature, il ne peut pas être attaqué ».
+  const walkers = s.battlefield.filter(
+    (id) => opps.includes(obj(s, id).controller) && hasType(s, id, "Planeswalker") && !obj(s, id).attachedTo,
+  );
   return [...opps, ...walkers];
 }
 
@@ -1044,7 +1047,11 @@ function applyAuraControl(s: GameState): boolean {
   // Aura partie ou détachée : le contrôleur d'origine récupère le permanent.
   for (const c of [...(s.auraControl ?? [])]) {
     const aura = s.objects[c.aura];
-    if (aura?.zone === "battlefield" && aura.attachedTo === c.host) continue;
+    // Possession Engine : tant que ce joueur contrôle la source (et non tant que l'Aura est attachée).
+    if (
+      c.by ? aura?.zone === "battlefield" && aura.controller === c.by : aura?.zone === "battlefield" && aura.attachedTo === c.host
+    )
+      continue;
     s.auraControl = (s.auraControl ?? []).filter((x) => x !== c);
     const host = s.objects[c.host];
     if (host?.zone === "battlefield" && host.controller !== c.original) {

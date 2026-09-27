@@ -401,6 +401,11 @@ export function moveObject(
     if (from0 === "battlefield") releaseLinkedExile(s, id);
     return parts[0]?.id ?? null;
   }
+  // Possession Engine : les effets qui durent « tant que vous contrôlez [la source] » cessent.
+  if (from0 === "battlefield" && s.effects.some((e) => e.whileSource === id)) {
+    s.effects = s.effects.filter((e) => e.whileSource !== id);
+    bump(s);
+  }
   // Emrakul : les effets « jusqu'à ce que cette carte soit lancée depuis l'exil » cessent.
   if (from0 === "exile" && s.effects.some((e) => e.untilExiledUid === o.uid)) {
     s.effects = s.effects.filter((e) => e.untilExiledUid !== o.uid);

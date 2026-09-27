@@ -25,7 +25,17 @@ import {
   tapOthersOptions,
   warpOf,
 } from "./stack";
-import { matchesObjectFilter } from "./targets";
+import { matchesCard, matchesObjectFilter } from "./targets";
+
+/** Winter, Cursed Rider : nombre de cartes exilables pour « exilez X cartes … de votre cimetière ». */
+function graveyardXOptions(s: GameState, player: PlayerId, source: ObjectId, f: ObjectFilter): number {
+  return (s.players[player]?.graveyard ?? []).filter((id) => id !== source && matchesCard(s, player, id, f, source)).length;
+}
+
+/** Radiant Lotus : nombre de permanents sacrifiables pour « sacrifiez un ou plusieurs … ». */
+function sacrificeXOptions(s: GameState, player: PlayerId, source: ObjectId, f: ObjectFilter): number {
+  return s.battlefield.filter((id) => obj(s, id).controller === player && matchesObjectFilter(s, player, id, f, source)).length;
+}
 
 /** Secluded Starforge : nombre de permanents dégagés engageables pour « engagez X … ». */
 function tapXOptions(s: GameState, player: PlayerId, source: ObjectId, f: ObjectFilter): number {
@@ -230,7 +240,11 @@ export function legalActions(s: GameState, player: PlayerId): ActionOption[] {
           ? (o.counters.loyalty ?? 0)
           : ab.cost.tapX
             ? tapXOptions(s, player, id, ab.cost.tapX)
-            : maxX(s, player, ab.cost.mana, exclude),
+            : ab.cost.exileFromGraveyardX
+              ? graveyardXOptions(s, player, id, ab.cost.exileFromGraveyardX)
+              : ab.cost.sacrificeX
+                ? sacrificeXOptions(s, player, id, ab.cost.sacrificeX)
+                : maxX(s, player, ab.cost.mana, exclude),
         additional:
           ab.cost.sacrifice || ab.cost.tapOthers
             ? {

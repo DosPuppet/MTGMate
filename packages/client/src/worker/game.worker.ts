@@ -71,6 +71,8 @@ function applySandbox(s: GameState, sandbox: Sandbox): void {
       const o = createObject(s, def.id, player, "battlefield");
       o.controlledSince = 0;
       o.attachedTo = host.id;
+      // The Aetherspark : un planeswalker-Équipement arrive avec sa loyauté.
+      if (def.loyalty) o.counters.loyalty = def.loyalty;
     }
   }
 }

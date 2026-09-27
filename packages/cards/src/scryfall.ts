@@ -601,6 +601,7 @@ function singleDef(raw: RawCard, script: CardScript | undefined, set: string): C
     shuffleIntoLibrary: script?.shuffleIntoLibrary,
     graveyardCastRemoveCounters: script?.graveyardCastRemoveCounters,
     castFromGraveyard: script?.castFromGraveyard,
+    chosenNameTax: script?.chosenNameTax,
     ward,
     cantBeCountered: script?.cantBeCountered,
     spell: script?.spell,
@@ -609,7 +610,8 @@ function singleDef(raw: RawCard, script: CardScript | undefined, set: string): C
     flashbackDiscard: script?.flashbackDiscard,
     disguise: parseDisguise(raw.oracleText),
     warp: parseWarp(raw.oracleText),
-    devour: parseDevour(raw.oracleText),
+    devour: script?.devour ?? parseDevour(raw.oracleText),
+    entersAsCopyOf: script?.entersAsCopyOf,
     shockLand: /As this land enters, you may pay (\d+) life\. If you don't, it enters tapped\./.exec(raw.oracleText)
       ? Number(/you may pay (\d+) life/.exec(raw.oracleText)?.[1])
       : undefined,

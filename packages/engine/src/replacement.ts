@@ -9,7 +9,7 @@
  * (le choix du joueur affecté, 616.1, viendra avec des cartes qui en ont besoin).
  */
 import { boardAmount } from "./effects";
-import { changeCounters, chars, moveObject, P1P1, setPrepared } from "./state";
+import { changeCounters, chars, moveObject, newId, nextTimestamp, P1P1, setPrepared } from "./state";
 import { playerStatic } from "./statics";
 import { matchesObjectFilter, withChosen } from "./targets";
 import { checkCondition } from "./triggers";
@@ -33,6 +33,8 @@ export interface EntersContext {
   manaSpent?: number;
   /** Dévorer : nombre de permanents sacrifiés en arrivant. */
   devoured?: number;
+  /** Waxen Shapethief : définition copiée en arrivant (couche 1). */
+  copyOf?: string;
 }
 
 /**
@@ -118,6 +120,17 @@ export function applyEntersReplacements(s: GameState, o: GameObject, ctx: Enters
   // 614.12 : « en arrivant, choisissez… » (le choix vient de la résolution, sinon choix par défaut).
   const choose = s.defs[o.defId]?.chooseOnEnter;
   if (choose) o.chosen = ctx.chosen ?? defaultChoice(s, o, choose);
+  // 707.9 : « arrive comme copie de … » (Waxen Shapethief).
+  if (ctx.copyOf) {
+    s.effects.push({
+      id: newId(s, "e"),
+      timestamp: nextTimestamp(s),
+      affected: [o.id],
+      duration: "permanent",
+      copyOf: ctx.copyOf,
+    });
+    s.version += 1; // cache des couches
+  }
   // 702.82 : dévorer N (les permanents ont été sacrifiés pendant la résolution).
   const devour = s.defs[o.defId]?.devour;
   if (devour && ctx.devoured) changeCounters(s, o, P1P1, devour.n * ctx.devoured);

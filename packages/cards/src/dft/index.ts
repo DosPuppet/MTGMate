@@ -8,6 +8,16 @@ import { GREEN } from "./green";
 import { MULTI } from "./multi";
 import { RED } from "./red";
 import { SPEED } from "./speed";
+import { UNIQUE } from "./unique";
 import { WHITE } from "./white";
 
-export const DFT_SCRIPTS: Record<string, CardScript> = { ...WHITE, ...BLUE, ...BLACK, ...RED, ...GREEN, ...MULTI, ...SPEED };
+export const DFT_SCRIPTS: Record<string, CardScript> = {
+  ...WHITE,
+  ...BLUE,
+  ...BLACK,
+  ...RED,
+  ...GREEN,
+  ...MULTI,
+  ...SPEED,
+  ...UNIQUE,
+};

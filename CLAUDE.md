@@ -24,6 +24,7 @@ Ce fichier sert au suivi du projet entre les sessions. Le README présente le pr
 | Déploiement : pm2 derrière nginx sur un VPS (`docs/deploiement.md`, `deploy/`) | ✅ documenté et testé en local (pm2, nginx) |
 | **Reality Fracture (FRA, « Réalité fracturée »)** | ✅ **279 / 279** (lots 0 à G, dont 4 decks préconstruits ; les 3 dernières cartes au lot 0.1 de la branche `standard`) |
 | **Edge of Eternities (EOE)** | ✅ **260 / 260** (lots A à D, branche `standard`) |
+| **Aetherdrift (DFT)** | ✅ **260 / 260** (lots A à C, branche `standard`) |
 | Autres extensions Standard | branche `standard`, plan par lots ci-dessous |
 
 ### Branche `standard` : tout le Standard
@@ -42,7 +43,7 @@ Objectif : les 18 extensions Standard restantes (environ 4 360 cartes), **100 % 
   - 0.9 mots-clés communs ✅ ;
   - 0.10 performances ✅.
 - **Phase 0 terminée.**
-- **Phase 1, extensions** (lots A/B/C, D pour FIN) : EOE ✅, DFT (A, B ✅), OTJ+BIG, BLB, TDM, WOE, SOS, ECL, TLA, SPM, MSH, TMT, HOB, MKM, DSK, LCI, FIN.
+- **Phase 1, extensions** (lots A/B/C, D pour FIN) : EOE ✅, DFT ✅, OTJ+BIG, BLB, TDM, WOE, SOS, ECL, TLA, SPM, MSH, TMT, HOB, MKM, DSK, LCI, FIN.
 - **Phase 2 :** decks Standard multi-extensions, puis clôture (5 158 / 5 158).
 
 Lot 0.1 : le moteur gagne :
@@ -209,7 +210,14 @@ Lot 0.10 (performances, pool complet de 5 174 cartes) :
   - interface : pastille « ⚡ N » près du nom du joueur (dorée à la vitesse maximale) et ligne de journal ;
   - exhaust (702.177) : aide `exhaust({...})` (une seule activation), déclencheur `when.exhaustActivated`, réduction de Boom Scholar (`exhaustReduction`), réactivation d'Elvish Refueler (`exhaustReuse`) ;
   - aussi : « lancer depuis votre cimetière [si…] » (`castFromGraveyard`), pioche doublée (Vnwxt), +1 blessure aux adversaires (Far Fortune), « si ce n'est pas son tour » (`when.castSpellOffTurn`), « sacrifie, sinon défausse » (Momentum Breaker), meule égale au cimetière.
-- Lot C : cartes uniques (The Aetherspark, Mimeoplasm, Radiant Lotus, Gonti, Possession Engine, Trade the Helm, Waxen Shapethief, Skyseer's Chariot…).
+- Lot C ✅ (**260/260**) : 42 cartes uniques (`dft/unique.ts`). Le moteur gagne :
+  - le contrôle « tant que vous contrôlez [la source] » (`gainControlWhileSource`, effets `whileSource`) et l'échange de contrôle ;
+  - « arrive comme copie de … » (`entersAsCopyOf`, choix pendant la résolution) ; Mimeoplasm (dévorer depuis le cimetière avec cartes liées, copie 0/0 qui garde ses capacités activées) ;
+  - nommer une carte sans information cachée (`chooseCardName`, `exileNamed`) ; payer le coût de mana d'une carte (`payCostOf`) ;
+  - les coûts « exilez X cartes de votre cimetière » et « sacrifiez un ou plusieurs artefacts » (`exileFromGraveyardX`, `sacrificeX`) ;
+  - les déclencheurs groupés « une ou plusieurs … » (`batched`), « une carte change de zone » (`when.zoneChange`), « un sort qu'il ne possède pas », « blessures de combat à l'un de vos adversaires » ;
+  - Skyseer's Chariot (taxe sur le nom choisi, `chosenNameTax`), The Aetherspark (planeswalker-Équipement, pas attaquable quand il est attaché), Pit Automaton (copie de la prochaine capacité d'exhaust), modes uniques « ce tour-ci » ;
+  - « lancer depuis votre cimetière » avec PV et sacrifice en plus (Wickerfolk), X du sort mémorisé sur le permanent (`castX`), « N-ième depuis le dessus de la bibliothèque », « révélez jusqu'à N terrains ».
 
 ### Reality Fracture (FRA)
 
@@ -360,6 +368,13 @@ Réimpressions : défenses talismaniques contre une couleur, changelin, restrict
 - **Boommobile :** les quatre mana ne sont pas restreints aux capacités.
 - **Loot, the Pathfinder :** sa capacité d'exhaust de mana passe par la pile (comme Ramos).
 - **Thunderhead Gunner, Avishkar Raceway :** la carte est défaussée à la résolution, et non comme coût (comme Solitary Cell).
+- **Cursecloth Wrappings :** l'embaumement accordé est payé tout de suite (en rituel) et le jeton garde les couleurs de la carte.
+- **Gonti, Night Minister :** la carte est exilée face visible, jouable par le contrôleur de Gonti, sans mana de n'importe quel type.
+- **Radiant Lotus :** c'est son contrôleur qui ajoute le mana (pas de joueur ciblé) ; les artefacts sacrifiés sont choisis automatiquement (la source en dernier).
+- **Winter, Cursed Rider :** les X cartes d'artefact exilées sont choisies automatiquement.
+- **Full Throttle :** deux combats supplémentaires après le combat normal (et non juste après la phase principale).
+- **Oviya :** le piétinement vaut pour vos créatures attaquantes (quel que soit le joueur attaqué).
+- **Déclencheurs « une ou plusieurs … » (Ketramose, Dredger's Insight) :** fusionnés tant qu'une occurrence attend d'être mise sur la pile.
 - **Blessures de combat groupées** (« une ou plusieurs créatures… ») : une fois par étape de blessures et par joueur blessé.
 - **Légalité Standard :** instantané des légalités Scryfall au moment de l'import (`legalities.standard` dans `data/<set>.json`). Après une rotation ou une annonce de bannissement, réimporter les sets (`npm run import-cards -- <set>`).
 - **Jetons :** pas d'image (cadre texte).

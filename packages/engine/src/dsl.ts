@@ -35,6 +35,7 @@ import type {
   TokenSpec,
   TriggeredAbilityDef,
   TriggerSpec,
+  Zone,
 } from "./types";
 
 /** Comportement d'une carte, fusionné avec ses caractéristiques (issues de Scryfall). */
@@ -60,8 +61,14 @@ export interface CardScript {
   chooseOnEnter?: "creatureType" | "color" | "cardName";
   shuffleIntoLibrary?: boolean;
   graveyardCastRemoveCounters?: number;
+  /** Skyseer's Chariot : les capacités activées des sources du nom choisi coûtent {N} de plus. */
+  chosenNameTax?: number;
+  /** Dévorer écrit dans le script (Mimeoplasm : « exilez jusqu'à X cartes de créature de votre cimetière »). */
+  devour?: { filter: ObjectFilter; n: number; graveyardUpToX?: boolean };
+  /** « Vous pouvez faire arriver cette créature comme copie d'un [permanent] que vous contrôlez ». */
+  entersAsCopyOf?: ObjectFilter;
   /** « Vous pouvez lancer cette carte depuis votre cimetière [si…] » */
-  castFromGraveyard?: { condition?: Condition };
+  castFromGraveyard?: { condition?: Condition; payLife?: number; sacrifice?: ObjectFilter };
   /** Seule la force est variable (Enigma Drake). */
   cdaPower?: Amount;
   /** Seule l'endurance est variable (Tarmogoyf, avec `cdaPower`). */
@@ -300,6 +307,7 @@ export const fx = {
       random?: boolean;
       storeFilter?: ObjectFilter;
       unlessFilter?: ObjectFilter;
+      exile?: boolean;
     } = {},
   ): Effect => ({ op: "discard", who, amount: n, ...opts }),
   sacrifice: (
@@ -362,7 +370,9 @@ export const fx = {
   },
   allowCastFromGraveyard: (what: Ref): Effect => ({ op: "allowCastFromGraveyard", what }),
   addMana: (...mana: ManaType[]): Effect => ({ op: "addMana", mana }),
-  addManaChoice: (n = 1): Effect => ({ op: "addManaChoice", n }),
+  addManaChoice: (n: Amount = 1): Effect => ({ op: "addManaChoice", n }),
+  revealUntilN: (filter: ObjectFilter, n: number, to: MoveSpec): Effect => ({ op: "revealUntilN", filter, n, to }),
+  becomeCopyKeepAbilities: (what: Ref): Effect => ({ op: "becomeCopyKeepAbilities", what }),
   /** « Exilez les N cartes du dessus. Choisissez-en une. Vous pouvez la jouer ce tour-ci (ou jusqu'à la fin de votre prochain tour). » */
   impulse: (n: number, until: "thisTurn" | "yourNextTurn" = "thisTurn"): Effect => ({ op: "impulse", n, until }),
   piles: (n: number): Effect => ({ op: "piles", n }),
@@ -394,6 +404,13 @@ export const fx = {
   setLife: (amount: Amount, who: Ref = ref.you): Effect => ({ op: "setLife", who, amount }),
   /** « Vous contrôlez [le joueur] pendant son prochain tour » (722). */
   controlNextTurn: (who: Ref): Effect => ({ op: "controlNextTurn", who }),
+  exchangeControl: (a: Ref, b: Ref): Effect => ({ op: "exchangeControl", a, b }),
+  gainControlWhileSource: (what: Ref, restrict = false): Effect => ({ op: "gainControlWhileSource", what, restrict }),
+  setBasePTAll: (filter: ObjectFilter, amount: Amount): Effect => ({ op: "setBasePTAll", filter, amount }),
+  copyNextExhaust: { op: "copyNextExhaust" } as Effect,
+  chooseCardName: { op: "chooseCardName" } as Effect,
+  exileNamed: (who: Ref, max: number): Effect => ({ op: "exileNamed", who, max }),
+  payCostOf: (what: Ref, store: string, prompt: string): Effect => ({ op: "payCostOf", what, store, prompt }),
   reduceSpeed: (who: Ref): Effect => ({ op: "reduceSpeed", who }),
   /** « [Cette Monture] devient montée jusqu'à la fin du tour ». */
   saddle: (what: Ref = ref.self): Effect => ({ op: "saddle", what }),
@@ -513,7 +530,14 @@ export const fx = {
     spec: { to: "exile" },
     store,
   }),
-  moveAll: (from: "battlefield" | "graveyard" | "hand", whose: Ref, filter: ObjectFilter, spec: MoveSpec): Effect => ({
+  moveAll: (
+    from: "battlefield" | "graveyard" | "hand",
+    whose: Ref,
+    filter: ObjectFilter,
+    spec: MoveSpec,
+    store?: string,
+  ): Effect => ({
+    store,
     op: "moveAll",
     from,
     whose,
@@ -579,13 +603,21 @@ export const fx = {
   }),
   revealUntil: (filter: ObjectFilter, to: MoveSpec = { to: "hand" }): Effect => ({ op: "revealUntil", filter, to }),
   doubleAllCounters: (what: Ref): Effect => ({ op: "doubleAllCounters", what }),
-  search: (filter: ObjectFilter, to: MoveSpec = { to: "hand" }, count: Amount = 1, who?: Ref, store?: string): Effect => ({
+  search: (
+    filter: ObjectFilter,
+    to: MoveSpec = { to: "hand" },
+    count: Amount = 1,
+    who?: Ref,
+    store?: string,
+    manaValue?: Amount,
+  ): Effect => ({
     op: "search",
     filter,
     count,
     to,
     who,
     store,
+    manaValue,
   }),
   copyToken: (
     of: Ref,
@@ -611,7 +643,7 @@ export const fx = {
     vars,
   }),
   /** Capacité retardée à un autre moment : étape de fin de votre prochain tour, fin du combat. */
-  delayedAt: (at: "yourNextEndStep" | "endOfCombat", effects: Effects, bind?: Record<string, Ref>): Effect => ({
+  delayedAt: (at: "yourNextEndStep" | "yourEndStep" | "endOfCombat", effects: Effects, bind?: Record<string, Ref>): Effect => ({
     op: "delayed",
     at,
     effects: effects.flat(),
@@ -656,6 +688,8 @@ export function manaAbility(
     distinctPowers?: boolean;
     tapAnother?: boolean;
     condition?: Condition;
+    /** Autant de mana que la force de la source. */
+    selfPower?: boolean;
   } = {},
 ): ManaAbilityDef {
   return {
@@ -670,6 +704,7 @@ export function manaAbility(
     amountDistinctPowers: opts.distinctPowers,
     tapAnother: opts.tapAnother,
     condition: opts.condition,
+    amountSelfPower: opts.selfPower,
   };
 }
 
@@ -717,6 +752,10 @@ export function activated(opts: {
   removeCounterFrom?: { filter: ObjectFilter; kind: string };
   /** « Engagez X [artefacts] dégagés que vous contrôlez ». */
   tapX?: ObjectFilter;
+  /** « Exilez X cartes [d'artefact] de votre cimetière ». */
+  exileFromGraveyardX?: ObjectFilter;
+  /** « Sacrifiez un ou plusieurs [artefacts] » (X ≥ 1). */
+  sacrificeX?: ObjectFilter;
   label?: string;
 }): ActivatedAbilityDef {
   return {
@@ -740,6 +779,8 @@ export function activated(opts: {
         : undefined,
       removeCounterFrom: opts.removeCounterFrom,
       tapX: opts.tapX,
+      exileFromGraveyardX: opts.exileFromGraveyardX,
+      sacrificeX: opts.sacrificeX,
     },
     reduction: opts.reduction,
     targets: opts.targets ?? [],
@@ -807,6 +848,14 @@ export const when = {
   castNthSpell: (nth: number): TriggerSpec => ({ on: "castSpell", by: "you", nth }),
   /** « Chaque fois qu'un joueur lance un sort, si ce n'est pas son tour » */
   castSpellOffTurn: (by: "you" | "opponent" | "any" = "any"): TriggerSpec => ({ on: "castSpell", by, notTheirTurn: true }),
+  /** « Chaque fois qu'un joueur lance un sort qu'il ne possède pas » */
+  castSpellNotOwned: { on: "castSpell", by: "any", notOwned: true } as TriggerSpec,
+  /** Une carte change de zone (voir TriggerSpec `zoneChange`). */
+  zoneChange: (from: Zone[], opts: { to?: Zone[]; filter?: ObjectFilter; whose?: "you" | "any" } = {}): TriggerSpec => ({
+    on: "zoneChange",
+    from,
+    ...opts,
+  }),
   /** « Chaque fois que cette créature subit des blessures » */
   isDealtDamage: { on: "isDealtDamage", who: "self" } as TriggerSpec,
   /** « Chaque fois que la créature enchantée (ou équipée) subit des blessures » */
@@ -845,6 +894,13 @@ export const when = {
     ...opts,
   }),
   combatDamage: (who: "self" | ObjectFilter, toPlayer = false): TriggerSpec => ({ on: "dealsCombatDamage", who, toPlayer }),
+  /** « Chaque fois qu'une [créature] inflige des blessures de combat à l'un de vos adversaires » */
+  combatDamageToOpponent: (who: "self" | ObjectFilter): TriggerSpec => ({
+    on: "dealsCombatDamage",
+    who,
+    toPlayer: true,
+    toOpponent: true,
+  }),
   step: (step: Step, whose: "you" | "opponent" | "any" = "you"): TriggerSpec => ({ on: "step", step, whose }),
   /** « Chaque fois que la créature équipée inflige des blessures de combat à un joueur » */
   attachedDealsCombatDamageToPlayer: { on: "dealsCombatDamage", who: { attachedToSource: true }, toPlayer: true } as TriggerSpec,
@@ -947,6 +1003,8 @@ export const cond = {
   opponentLifeAtMost: (n: number): Condition => ({ kind: "opponentLifeAtMost", n }),
   /** « Max speed » : vous avez la vitesse maximale (4). */
   maxSpeed: { kind: "maxSpeed" } as Condition,
+  exileAtLeast: (n: number): Condition => ({ kind: "exileAtLeast", n }),
+  evenCounters: { kind: "evenCounters" } as Condition,
   opponentDealtNoncombatDamageLastTurn: { kind: "opponentDealtNoncombatDamageLastTurn" } as Condition,
   spellCastFromHand: { kind: "spellCastFromHand" } as Condition,
   spellCastFromGraveyard: { kind: "spellCastFromGraveyard" } as Condition,
@@ -1045,6 +1103,7 @@ export function staticAbility(
     perGraveyard?: ObjectFilter;
     perDivisor?: number;
     perSpeed?: boolean;
+    perLife?: boolean;
   } = {},
 ): StaticAbilityDef {
   return {
@@ -1058,6 +1117,7 @@ export function staticAbility(
     perGraveyard: opts.perGraveyard,
     perDivisor: opts.perDivisor,
     perSpeed: opts.perSpeed,
+    perLife: opts.perLife,
   };
 }
 
@@ -1096,6 +1156,8 @@ export function triggered(
     oncePerTurn?: boolean;
     /** Se déclenche depuis le cimetière (Flamewake Phoenix). */
     fromGraveyard?: boolean;
+    /** « une ou plusieurs … » : un seul déclenchement par lot d'événements. */
+    batched?: boolean;
   } = {},
 ): TriggeredAbilityDef {
   return {
@@ -1107,6 +1169,7 @@ export function triggered(
     label: opts.label,
     oncePerTurn: opts.oncePerTurn,
     fromGraveyard: opts.fromGraveyard,
+    batched: opts.batched,
   };
 }
 
@@ -1131,7 +1194,7 @@ const roman = (n: number): string => ["", "I", "II", "III", "IV", "V", "VI"][n] 
 export function triggeredModal(
   trigger: TriggerSpec,
   modes: ModeDef[],
-  opts: { condition?: Condition; label?: string; uniqueModes?: boolean; oncePerTurn?: boolean } = {},
+  opts: { condition?: Condition; label?: string; uniqueModes?: boolean | "turn"; oncePerTurn?: boolean } = {},
 ): TriggeredAbilityDef {
   return {
     kind: "triggered",

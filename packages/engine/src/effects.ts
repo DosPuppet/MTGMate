@@ -455,6 +455,14 @@ export function moveWithSpec(s: GameState, controller: PlayerId, id: ObjectId, s
     controller: spec.to === "battlefield" ? (spec.underYourControl ? controller : o.owner) : undefined,
     position: spec.to === "libraryBottom" ? "bottom" : "top",
   });
+  // « … N-ième depuis le dessus de la bibliothèque » (Riptide Gearhulk).
+  if (newId_ && spec.to === "libraryTop" && spec.fromTop && spec.fromTop > 1) {
+    const lib = s.players[o.owner]?.library;
+    if (lib && lib[0] === newId_) {
+      lib.shift();
+      lib.splice(Math.min(spec.fromTop - 1, lib.length), 0, newId_);
+    }
+  }
   const moved = newId_ ? s.objects[newId_] : undefined;
   // Marqueurs sur une carte exilée (« exilez-la avec un marqueur de butin », Tinybones).
   if (moved && zone === "exile" && spec.counters) changeCounters(s, moved, spec.counters.kind, spec.counters.n);
@@ -919,7 +927,7 @@ export function runEffect(s: GameState, r: Resolution, e: Effect): OpResult {
         };
       }
       const pool = s.players[ctx.controller]?.manaPool;
-      if (pool) pool[String(answer[0]) as ManaType] += e.n;
+      if (pool) pool[String(answer[0]) as ManaType] += evalAmount(s, ctx, e.n);
       return;
     }
     case "impulse": {
@@ -1116,6 +1124,7 @@ export function runEffect(s: GameState, r: Resolution, e: Effect): OpResult {
       }
       const moved = picked.map((id) => moveWithSpec(s, ctx.controller, id, e.to)).filter((x): x is string => !!x);
       if (e.store) r.vars[`$ids:${e.store}`] = moved;
+      store(r, e.store, moved.length);
       return;
     }
     case "libraryTopOrBottom": {
@@ -1385,7 +1394,12 @@ export function runEffect(s: GameState, r: Resolution, e: Effect): OpResult {
             : n;
         for (const id of library.slice(0, count)) {
           if (f && matchesCard(s, ctx.controller, id, { ...f, controller: undefined })) matching++;
+          const uid = s.objects[id]?.uid;
           moveAndLog(s, id, "graveyard");
+          // Les cartes meulées sont mémorisées (Dredger's Insight : « parmi les cartes meulées »).
+          const gy = s.players[p]?.graveyard ?? [];
+          const now = gy.find((x) => s.objects[x]?.uid === uid);
+          if (e.store && now) r.vars[`$ids:${e.store.name}`] = [...(r.vars[`$ids:${e.store.name}`] ?? []), now];
         }
       }
       if (e.store) store(r, e.store.name, f ? matching : n);
@@ -1541,6 +1555,11 @@ export function runEffect(s: GameState, r: Resolution, e: Effect): OpResult {
           : chosen.length;
         store(r, e.store, readVar(ctx, e.store ?? "") + counted);
         if (chosen.length === 0) continue;
+        if (e.exile) {
+          // Intimidation Tactics : la carte choisie est exilée (ce n'est pas une défausse).
+          for (const id of chosen) moveObject(s, id, "exile");
+          continue;
+        }
         emit({ type: "discard", player: p, defIds: chosen.map((id) => s.objects[id]?.defId ?? "") });
         for (const id of chosen) {
           // Wilt-Leaf Liege : défaussée par un effet adverse, elle va sur le champ de bataille.
@@ -1702,6 +1721,75 @@ export function runEffect(s: GameState, r: Resolution, e: Effect): OpResult {
       if (e.store) r.vars[`$ids:${e.store.name}`] = moved;
       return;
     }
+    case "payCostOf": {
+      const id = resolveRef(s, ctx, e.what)[0];
+      const cost = s.defs[s.objects[id ?? ""]?.defId ?? ""]?.manaCost;
+      store(r, e.store, 0);
+      if (!id || !cost || !canPay(s, ctx.controller, cost)) return;
+      const answer = r.vars[key("paycost")];
+      if (!answer) {
+        return {
+          ask: {
+            player: ctx.controller,
+            key: key("paycost"),
+            request: { type: "yesNo", intent: "may", prompt: `${nameOf(s, ctx.sourceId)} : ${e.prompt}`, suggested: [1] },
+          },
+        };
+      }
+      if (answer[0] !== 1 || !canPay(s, ctx.controller, cost)) return;
+      payMana(s, ctx.controller, cost);
+      store(r, e.store, 1);
+      return;
+    }
+    case "chooseCardName": {
+      if (r.vars.$name) return;
+      const answer = r.vars[key("name")];
+      if (!answer) {
+        // Pas d'information cachée : les noms sont triés, la suggestion vient des cimetières (publics).
+        const names = [
+          ...new Set(
+            Object.values(s.defs)
+              .filter((d) => !d.isToken && !d.meldResult)
+              .map((d) => d.name),
+          ),
+        ].sort();
+        const opp = opponentsOf(s, ctx.controller)[0];
+        const seen = (opp ? (s.players[opp]?.graveyard ?? []) : []).map((x) => s.defs[s.objects[x]?.defId ?? ""]?.name ?? "");
+        const suggested = seen.find((n) => names.includes(n)) ?? names[0] ?? "";
+        return {
+          ask: {
+            player: ctx.controller,
+            key: key("name"),
+            request: {
+              type: "pick",
+              intent: "chooseOnEnter",
+              prompt: "Choisissez un nom de carte",
+              options: names,
+              labels: Object.fromEntries(names.map((n) => [n, n])),
+              min: 1,
+              max: 1,
+              suggested: [suggested],
+            },
+          },
+        };
+      }
+      r.vars.$name = [String(answer[0])];
+      return;
+    }
+    case "exileNamed": {
+      const name = String(r.vars.$name?.[0] ?? "");
+      if (!name) return;
+      for (const p of resolveRef(s, ctx, e.who).filter((x) => isPlayer(s, x))) {
+        const pl = s.players[p];
+        if (!pl) continue;
+        const named = [...pl.graveyard, ...pl.hand, ...pl.library].filter(
+          (x) => s.defs[s.objects[x]?.defId ?? ""]?.name === name,
+        );
+        for (const x of named.slice(0, e.max)) moveObject(s, x, "exile");
+        shuffle(s, pl.library);
+      }
+      return;
+    }
     case "mayPay": {
       if (!canPay(s, ctx.controller, e.cost)) return { skip: e.skip };
       const answer = r.vars[key("pay")];
@@ -1732,7 +1820,8 @@ export function runEffect(s: GameState, r: Resolution, e: Effect): OpResult {
           : zoneCards(s, players, e.from).filter((id) =>
               matchesCard(s, ctx.controller, id, { ...e.filter, controller: undefined }, ctx.sourceId),
             );
-      for (const id of ids) moveWithSpec(s, ctx.controller, id, e.spec);
+      const moved = ids.map((id) => moveWithSpec(s, ctx.controller, id, e.spec)).filter((x): x is string => !!x);
+      if (e.store) r.vars[`$ids:${e.store}`] = moved;
       return;
     }
     case "if": {
@@ -1796,7 +1885,10 @@ export function runEffect(s: GameState, r: Resolution, e: Effect): OpResult {
         const player = s.players[p];
         if (!player) continue;
         const count = evalAmount(s, ctx, e.count);
-        const options = player.library.filter((id) => matchesCard(s, p, id, e.filter, ctx.sourceId));
+        const exactMv = e.manaValue !== undefined ? evalAmount(s, ctx, e.manaValue) : undefined;
+        const options = player.library.filter((id) =>
+          matchesCard(s, p, id, exactMv === undefined ? e.filter : { ...e.filter, manaValue: exactMv }, ctx.sourceId),
+        );
         let picked: string[] = [];
         if (options.length > 0 && count > 0) {
           const answer = r.vars[key(`search-${p}`)];
@@ -1940,10 +2032,14 @@ export function runEffect(s: GameState, r: Resolution, e: Effect): OpResult {
     }
     case "devour": {
       if (r.vars.$devoured) return;
-      const options = s.battlefield.filter(
-        (id) =>
-          s.objects[id]?.controller === ctx.controller && matchesObjectFilter(s, ctx.controller, id, e.filter, ctx.sourceId),
-      );
+      const fromGy = !!e.graveyardUpToX;
+      const options = fromGy
+        ? (s.players[ctx.controller]?.graveyard ?? []).filter((id) => matchesCard(s, ctx.controller, id, e.filter, ctx.sourceId))
+        : s.battlefield.filter(
+            (id) =>
+              s.objects[id]?.controller === ctx.controller && matchesObjectFilter(s, ctx.controller, id, e.filter, ctx.sourceId),
+          );
+      const max = fromGy ? Math.min(ctx.x, options.length) : options.length;
       const answer = options.length ? r.vars[key("devour")] : [];
       if (!answer) {
         return {
@@ -1953,18 +2049,81 @@ export function runEffect(s: GameState, r: Resolution, e: Effect): OpResult {
             request: {
               type: "pick",
               intent: "sacrifice",
-              prompt: `${nameOf(s, ctx.sourceId)} : dévorer (sacrifiez autant de permanents que vous voulez)`,
+              prompt: fromGy
+                ? `${nameOf(s, ctx.sourceId)} : exilez jusqu'à ${max} carte(s) de votre cimetière`
+                : `${nameOf(s, ctx.sourceId)} : dévorer (sacrifiez autant de permanents que vous voulez)`,
               options,
               min: 0,
-              max: options.length,
-              suggested: [],
+              max,
+              suggested: fromGy ? options.slice(0, max) : [],
             },
           },
         };
       }
-      const chosen = answer.map(String).filter((id) => options.includes(id));
-      for (const id of chosen) sacrifice(s, id);
+      const chosen = answer
+        .map(String)
+        .filter((id) => options.includes(id))
+        .slice(0, max);
+      if (fromGy) {
+        r.vars["$ids:devoured"] = chosen.map((id) => moveObject(s, id, "exile")).filter((x): x is string => !!x);
+      } else for (const id of chosen) sacrifice(s, id);
       r.vars.$devoured = [chosen.length];
+      return;
+    }
+    case "chooseCopy": {
+      if (r.vars.$copyOf) return;
+      const options = s.battlefield.filter(
+        (id) =>
+          s.objects[id]?.controller === ctx.controller && matchesObjectFilter(s, ctx.controller, id, e.filter, ctx.sourceId),
+      );
+      const answer = options.length ? r.vars[key("copy")] : [];
+      if (!answer) {
+        return {
+          ask: {
+            player: ctx.controller,
+            key: key("copy"),
+            request: {
+              type: "pick",
+              intent: "pickCards",
+              prompt: `${nameOf(s, ctx.sourceId)} : vous pouvez la faire arriver comme copie d'un permanent`,
+              options,
+              min: 0,
+              max: 1,
+              suggested: options.slice(0, 1),
+            },
+          },
+        };
+      }
+      const picked = answer.map(String).find((id) => options.includes(id));
+      r.vars.$copyOf = picked ? [copiedDefId(s, picked)] : [];
+      return;
+    }
+    case "becomeCopyKeepAbilities": {
+      const card = resolveRef(s, ctx, e.what)[0];
+      const self = s.objects[ctx.sourceId];
+      const d = s.defs[s.objects[card ?? ""]?.defId ?? ""];
+      if (!card || !d || self?.zone !== "battlefield") return;
+      // « … sauf qu'elle est 0/0 et a cette capacité » : ses capacités activées imprimées sont conservées.
+      const own = (s.defs[self.defId]?.abilities ?? []).filter((a) => a.kind === "activated");
+      addEffect(s, [self.id], { copyOf: d.id, setPower: 0, setToughness: 0, addAbilities: own }, "permanent");
+      return;
+    }
+    case "revealUntilN": {
+      const player = s.players[ctx.controller];
+      if (!player) return;
+      const found: string[] = [];
+      let i = 0;
+      for (; i < player.library.length && found.length < e.n; i++) {
+        const id = player.library[i] as string;
+        if (matchesCard(s, ctx.controller, id, { ...e.filter, controller: undefined })) found.push(id);
+      }
+      const revealed = player.library.slice(0, i);
+      emit({ type: "reveal", player: ctx.controller, defIds: revealed.map((id) => s.objects[id]?.defId ?? "") });
+      const rest = revealed.filter((id) => !found.includes(id));
+      for (const id of found) moveWithSpec(s, ctx.controller, id, e.to);
+      const lib = player.library.filter((id) => !rest.includes(id));
+      shuffle(s, rest);
+      player.library = [...lib, ...rest];
       return;
     }
     case "chooseOnEnter": {
@@ -2088,6 +2247,57 @@ export function runEffect(s: GameState, r: Resolution, e: Effect): OpResult {
     }
     case "endTurn": {
       endTheTurn(s, r);
+      return;
+    }
+    case "exchangeControl": {
+      const a = resolveRef(s, ctx, e.a)[0];
+      const b = resolveRef(s, ctx, e.b)[0];
+      const oa = a ? s.objects[a] : undefined;
+      const ob = b ? s.objects[b] : undefined;
+      // 701.10 : l'échange n'a lieu que si les deux permanents sont encore là.
+      if (oa?.zone !== "battlefield" || ob?.zone !== "battlefield" || oa.controller === ob.controller) return;
+      const [ca, cb] = [oa.controller, ob.controller];
+      removeFromCombat(s, oa.id);
+      removeFromCombat(s, ob.id);
+      oa.controller = cb;
+      ob.controller = ca;
+      oa.controlledSince = s.turn.number;
+      ob.controlledSince = s.turn.number;
+      bump(s);
+      return;
+    }
+    case "gainControlWhileSource": {
+      if (!onBattlefield(s, ctx.sourceId)) return;
+      for (const id of resolveRef(s, ctx, e.what)) {
+        const o = s.objects[id];
+        if (o?.zone !== "battlefield" || o.controller === ctx.controller) continue;
+        s.auraControl = [...(s.auraControl ?? []), { host: id, aura: ctx.sourceId, original: o.controller, by: ctx.controller }];
+        removeFromCombat(s, id);
+        o.controller = ctx.controller;
+        o.controlledSince = s.turn.number;
+        if (e.restrict) {
+          s.effects.push({
+            id: newId(s, "e"),
+            timestamp: nextTimestamp(s),
+            affected: [id],
+            duration: "permanent",
+            addKeywords: ["cantAttack", "cantBlock"],
+            whileSource: ctx.sourceId,
+          });
+        }
+        bump(s);
+      }
+      return;
+    }
+    case "setBasePTAll": {
+      const n = evalAmount(s, ctx, e.amount);
+      const ids = s.battlefield.filter((x) => matchesObjectFilter(s, ctx.controller, x, e.filter, ctx.sourceId));
+      addEffect(s, ids, { setPower: n, setToughness: n }, "endOfTurn");
+      return;
+    }
+    case "copyNextExhaust": {
+      const pl = s.players[ctx.controller];
+      if (pl) pl.copyNextExhaustTurn = s.turn.number;
       return;
     }
     case "gainControl": {

@@ -152,14 +152,21 @@ export interface CardDef {
   cdaPT?: Amount;
   /** « En arrivant, choisissez un type de créature / une couleur » (614.12). */
   chooseOnEnter?: "creatureType" | "color" | "cardName";
-  /** Dévorer (702.82) : « en arrivant, sacrifiez des [terrains] ; N marqueurs +1/+1 par permanent sacrifié ». */
-  devour?: { filter: ObjectFilter; n: number };
+  /**
+   * Dévorer (702.82) : « en arrivant, sacrifiez des [terrains] ; N marqueurs +1/+1 par permanent sacrifié ».
+   * `graveyardUpToX` : « exilez jusqu'à X cartes de votre cimetière » à la place (Mimeoplasm, cartes liées).
+   */
+  devour?: { filter: ObjectFilter; n: number; graveyardUpToX?: boolean };
+  /** « Vous pouvez faire arriver cette créature comme copie d'un [permanent] que vous contrôlez » (Waxen Shapethief). */
+  entersAsCopyOf?: ObjectFilter;
   /** « Si cette carte devait être mise dans un cimetière de n'importe où, mélangez-la dans la bibliothèque à la place. » */
   shuffleIntoLibrary?: boolean;
   /** Peut être lancée depuis le cimetière en retirant N marqueurs parmi vos créatures (Quilled Greatwurm). */
   graveyardCastRemoveCounters?: number;
+  /** Skyseer's Chariot : les capacités activées des sources du nom choisi coûtent {N} de plus (au lieu d'être interdites). */
+  chosenNameTax?: number;
   /** « Vous pouvez lancer cette carte depuis votre cimetière [si…] » (Lightwheel Enhancements : vitesse maximale). */
-  castFromGraveyard?: { condition?: Condition };
+  castFromGraveyard?: { condition?: Condition; payLife?: number; sacrifice?: ObjectFilter };
   /** « Vous ne pouvez pas lancer ce sort à moins que… » (Proft, Sinister Mastermind : seuil). */
   castCondition?: Condition;
   /** Seule l'endurance est définie par une capacité (Tarmogoyf, avec `cdaPower`). */
@@ -313,6 +320,8 @@ export interface ManaAbilityDef {
   amountPer?: ObjectFilter;
   /** The Eternity Elevator : autant de mana que de marqueurs de ce type sur la source. */
   amountCounters?: string;
+  /** Redshift : autant de mana que la force de la source. */
+  amountSelfPower?: boolean;
   /** Loot, the Nexus : un mana pour chaque force différente parmi les créatures que vous contrôlez. */
   amountDistinctPowers?: boolean;
 }
@@ -368,6 +377,10 @@ export interface CostDef {
   removeCounterFrom?: { filter: ObjectFilter; kind: string };
   /** Engager X permanents dégagés que vous contrôlez (X choisi à l'activation : Secluded Starforge). */
   tapX?: ObjectFilter;
+  /** Exiler X cartes correspondantes de votre cimetière (X choisi à l'activation, cartes choisies automatiquement : Winter). */
+  exileFromGraveyardX?: ObjectFilter;
+  /** Sacrifier X permanents correspondants, X ≥ 1 (Radiant Lotus ; choisis automatiquement, la source en dernier). */
+  sacrificeX?: ObjectFilter;
   /** Exiler d'autres cartes de votre cimetière (choisies automatiquement : Gallia). */
   exileFromGraveyard?: { filter: ObjectFilter; count: number };
   /** Exiler la source (depuis le champ de bataille ou le cimetière). */
@@ -411,7 +424,8 @@ export interface TargetFilter {
   /** Cartes dans un cimetière (« carte de créature ciblée de votre cimetière »). */
   cards?: { filter: ObjectFilter; whose?: "you" | "opponent" | "any" };
   /** Cartes exilées face visible (Blade of the Swarm : « carte exilée ciblée avec la distorsion »). */
-  exiled?: { filter?: ObjectFilter; withWarp?: boolean; own?: boolean };
+  /** `linked` : exilées « avec » la source (Mimeoplasm). */
+  exiled?: { filter?: ObjectFilter; withWarp?: boolean; own?: boolean; linked?: boolean };
   /** Sorts sur la pile (« contrecarrez le sort de créature ciblé »). */
   spells?: ObjectFilter;
   /** Sorts ou capacités sur la pile à cible unique (Bolt Bend). */
@@ -494,6 +508,10 @@ export interface ObjectFilter {
   /** A attaqué ce tour-ci. */
   attackedThisTurn?: boolean;
   maxToughness?: number;
+  /** Valeur de mana au plus égale au X du sort qui a mis la source en jeu (Dune Drifter). */
+  maxManaValueX?: boolean;
+  /** Carte sans capacité (Fang-Druid Summoner, Rise from the Wreck). */
+  noAbilities?: boolean;
   /** Valeur de mana paire ou impaire (Mutinous Massacre ; 0 est pair). */
   manaValueParity?: "odd" | "even";
   /** Endurance au plus égale au X du sort (Zero Point Ballad), résolue pendant la résolution. */
@@ -511,7 +529,7 @@ export type TriggerSpec =
   | { on: "leaves"; who: "self"; to?: Zone }
   /** `defending: "you"` : elle attaque le contrôleur ou un planeswalker qu'il contrôle. */
   | { on: "attacks"; who: "self" | ObjectFilter; defending?: "you" }
-  | { on: "dealsCombatDamage"; who: "self" | ObjectFilter; toPlayer?: boolean }
+  | { on: "dealsCombatDamage"; who: "self" | ObjectFilter; toPlayer?: boolean; toOpponent?: boolean }
   /** `targeting` : le sort cible un objet correspondant, ou un adversaire (`opponent`). */
   | {
       on: "castSpell";
@@ -523,6 +541,8 @@ export type TriggerSpec =
       nth?: number;
       /** « …, si ce n'est pas son tour » (Adrenaline Jockey, March of the World Ooze). */
       notTheirTurn?: boolean;
+      /** « un sort qu'il ne possède pas » (Gonti, Night Minister). */
+      notOwned?: boolean;
     }
   | { on: "step"; step: Step; whose: "you" | "opponent" | "any" }
   | { on: "landfall" }
@@ -590,6 +610,11 @@ export type TriggerSpec =
   | { on: "cycleSelf" }
   /** « Chaque fois que vous activez une capacité d'exhaust » */
   | { on: "exhaustActivated" }
+  /**
+   * Une carte change de zone (Ketramose : « mises en exil depuis les cimetières et/ou le champ de bataille » ;
+   * Dredger's Insight : « quittent votre cimetière »). `whose` : le propriétaire de la carte.
+   */
+  | { on: "zoneChange"; from: Zone[]; to?: Zone[]; filter?: ObjectFilter; whose?: "you" | "any" }
   /** « Chaque fois que vous activez une capacité de loyauté [en retirant au moins N marqueurs] » ; `byOpponent` : un adversaire l'active. */
   | { on: "loyaltyActivated"; minRemoved?: number; byOpponent?: boolean };
 
@@ -675,7 +700,11 @@ export type Condition =
   /** Un adversaire a N points de vie ou moins (Bloodghast). */
   | { kind: "opponentLifeAtMost"; n: number }
   /** Vitesse maximale (4) ; `not` pour « un joueur qui n'a pas la vitesse maximale ». */
-  | { kind: "maxSpeed" };
+  | { kind: "maxSpeed" }
+  /** Au moins N cartes en exil (Ketramose). */
+  | { kind: "exileAtLeast"; n: number }
+  /** Nombre total de marqueurs sur la source pair (Sab-Sunen). */
+  | { kind: "evenCounters" };
 
 /** Modifications apportées par un effet continu, rangées par couche (613). */
 export interface LayerMods {
@@ -866,6 +895,8 @@ export interface StaticAbilityDef {
   perDivisor?: number;
   /** F/E multipliées par la vitesse du contrôleur (Samut, the Driving Force). */
   perSpeed?: boolean;
+  /** F/E multipliées par les points de vie du contrôleur (The Last Ride). */
+  perLife?: boolean;
   label?: string;
 }
 
@@ -882,8 +913,10 @@ export interface TriggeredAbilityDef {
   oncePerTurn?: boolean;
   /** Se déclenche depuis le cimetière de son propriétaire (Flamewake Phoenix). */
   fromGraveyard?: boolean;
-  /** « Choisissez un mode qui n'a pas déjà été choisi » (Demonic Pact). */
-  uniqueModes?: boolean;
+  /** « Choisissez un mode qui n'a pas déjà été choisi » (Demonic Pact) ; `turn` : ce tour-ci (Monument to Endurance). */
+  uniqueModes?: boolean | "turn";
+  /** « une ou plusieurs … » : une seule occurrence en attente à la fois (même lot d'événements). */
+  batched?: boolean;
   label?: string;
 }
 
@@ -1015,6 +1048,8 @@ export interface MoveSpec {
   transformed?: boolean;
   /** Engagé et attaquant (Chorale of the Void) : il attaque le joueur qu'attaque une de vos créatures. */
   attacking?: boolean;
+  /** Avec `libraryTop` : N-ième depuis le dessus (Riptide Gearhulk : 3). */
+  fromTop?: number;
 }
 
 export type Effect =
@@ -1090,6 +1125,8 @@ export type Effect =
       storeFilter?: ObjectFilter;
       /** « … à moins de défausser une carte [de ce type] » (Alpharael, Dreaming Acolyte). */
       unlessFilter?: ObjectFilter;
+      /** La carte choisie est exilée au lieu d'être défaussée (Intimidation Tactics). */
+      exile?: boolean;
     }
   | {
       op: "sacrifice";
@@ -1127,7 +1164,14 @@ export type Effect =
   /** Double les marqueurs de chaque type (ou d'un type donné). */
   | { op: "doubleAllCounters"; what: Ref }
   /** Déplace tous les objets d'une zone correspondant au filtre. */
-  | { op: "moveAll"; from: "battlefield" | "graveyard" | "hand"; whose: Ref; filter: ObjectFilter; spec: MoveSpec }
+  | {
+      op: "moveAll";
+      from: "battlefield" | "graveyard" | "hand";
+      whose: Ref;
+      filter: ObjectFilter;
+      spec: MoveSpec;
+      store?: string;
+    }
   /** Si la condition est fausse, les `skip` effets suivants sont ignorés. */
   | { op: "if"; cond: Condition; skip: number }
   /**
@@ -1157,8 +1201,24 @@ export type Effect =
       store?: string;
       /** « … cartes de terrain de base avec des noms différents » */
       distinctNames?: boolean;
+      /** Valeur de mana exacte (Repurposing Bay : 1 + celle de l'artefact sacrifié). */
+      manaValue?: Amount;
     }
   | { op: "shuffle"; who: Ref }
+  /** Échange le contrôle de deux permanents (Trade the Helm). */
+  | { op: "exchangeControl"; a: Ref; b: Ref }
+  /** Gagne le contrôle tant que vous contrôlez la source ; `restrict` : il ne peut ni attaquer ni bloquer (Possession Engine). */
+  | { op: "gainControlWhileSource"; what: Ref; restrict?: boolean }
+  /** Base de F/E de chaque permanent correspondant égale au montant, jusqu'à la fin du tour (Sita Varma). */
+  | { op: "setBasePTAll"; filter: ObjectFilter; amount: Amount }
+  /** Pit Automaton : la prochaine capacité d'exhaust (non de mana) activée ce tour-ci est copiée. */
+  | { op: "copyNextExhaust" }
+  /** Choisir un nom de carte (sans voir de carte cachée), mémorisé pour `exileNamed` (Ancient Vendetta). */
+  | { op: "chooseCardName" }
+  /** Exile jusqu'à N cartes du nom choisi du cimetière, de la main et de la bibliothèque du joueur, qui mélange. */
+  | { op: "exileNamed"; who: Ref; max: number }
+  /** « Vous pouvez payer le coût de mana de [cette carte] » (paiement automatique) ; `store` : 1 si payé. */
+  | { op: "payCostOf"; what: Ref; store: string; prompt: string }
   /** Jeton copie d'un objet (valeurs copiables), avec d'éventuelles modifications. */
   | {
       op: "copyToken";
@@ -1202,7 +1262,13 @@ export type Effect =
   /** « En arrivant, choisissez un type de créature / une couleur » (sort de permanent qui se résout). */
   | { op: "chooseOnEnter"; kind: "creatureType" | "color" | "cardName" }
   /** Dévorer : pendant la résolution du sort de permanent, sacrifier des permanents (nombre mémorisé). */
-  | { op: "devour"; filter: ObjectFilter }
+  | { op: "devour"; filter: ObjectFilter; graveyardUpToX?: boolean }
+  /** Pendant la résolution d'un sort de permanent : choisir le permanent à copier en arrivant. */
+  | { op: "chooseCopy"; filter: ObjectFilter }
+  /** Mimeoplasm : la source devient une copie de la carte, 0/0, en gardant ses capacités activées. */
+  | { op: "becomeCopyKeepAbilities"; what: Ref }
+  /** Révèle des cartes jusqu'à N cartes correspondantes ; celles-ci vont selon `to`, le reste dessous au hasard. */
+  | { op: "revealUntilN"; filter: ObjectFilter; n: number; to: MoveSpec }
   /** Le contrôleur sépare les N cartes du dessus en deux piles, un adversaire en choisit une (en main), l'autre au cimetière. */
   | { op: "piles"; n: number }
   /** Carte de cimetière qui gagne le flashback jusqu'à la fin du tour (coût : son coût de mana). */
@@ -1325,7 +1391,7 @@ export type Effect =
   /** « Exilez toutes les cartes de la bibliothèque de chaque adversaire, sauf celle du dessous. » */
   | { op: "exileLibraryButBottom"; who: Ref }
   /** Ajoute N mana d'une couleur choisie par le contrôleur. */
-  | { op: "addManaChoice"; n: number }
+  | { op: "addManaChoice"; n: Amount }
   /** Exile les N cartes du dessus ; le contrôleur en choisit une qu'il peut jouer ce tour-ci. */
   | { op: "impulse"; n: number; until?: "thisTurn" | "yourNextTurn" }
   /** Blessures réparties comme le contrôleur le désire entre les cibles (au moins 1 chacune). */
@@ -1475,6 +1541,8 @@ export interface GameObject {
   attackedTurn?: number;
   /** Cartes liées (exilées par cette carte, Hoarding Dragon). */
   linked?: ObjectId[];
+  /** X du sort qui a mis ce permanent sur le champ de bataille (Dune Drifter). */
+  castX?: number;
   /** Sources qui lui ont infligé des blessures ce tour-ci (Predator Ooze). */
   damagedBy?: ObjectId[];
   /** Joueurs à qui il a infligé des blessures de combat ce tour-ci (Steel Hellkite). */
@@ -1483,6 +1551,8 @@ export interface GameObject {
   activatedTurn?: Record<number, number>;
   /** Modes déjà choisis (Demonic Pact). */
   usedModes?: number[];
+  /** Tour auquel se rapportent `usedModes` pour les modes uniques « ce tour-ci ». */
+  usedModesTurn?: number;
 }
 
 export interface PlayerState {
@@ -1516,6 +1586,8 @@ export interface PlayerState {
   turnStats: TurnStats;
   /** Marqueurs poison (104.3d : 10 ou plus, le joueur perd). */
   poison?: number;
+  /** Pit Automaton : la prochaine capacité d'exhaust activée pendant ce tour est copiée. */
+  copyNextExhaustTurn?: number;
   /** Vitesse (702.179) : absente tant qu'aucun « Start your engines! » ne l'a démarrée ; 4 = vitesse maximale. */
   speed?: number;
   /** Mana qui ne se vide pas avant la fin du tour (Savage Ventmaw). */
@@ -1576,7 +1648,7 @@ export interface InlineAbility {
 }
 
 /** Moment d'une capacité retardée : prochaine étape de fin, étape de fin de votre prochain tour, fin du combat. */
-export type DelayedTiming = "nextEndStep" | "yourNextEndStep" | "endOfCombat";
+export type DelayedTiming = "nextEndStep" | "yourNextEndStep" | "yourEndStep" | "endOfCombat";
 
 export interface DelayedTrigger {
   id: string;
@@ -1729,6 +1801,8 @@ export interface ContinuousEffect extends LayerMods {
   until?: PlayerId;
   /** L'effet cesse quand la carte de cette identité physique quitte l'exil. */
   untilExiledUid?: string;
+  /** L'effet cesse quand cette source quitte le champ de bataille (Possession Engine). */
+  whileSource?: ObjectId;
 }
 
 export type Flow = "mulligan" | "stepStart" | "tba" | "priority" | "resolving" | "stepEnd" | "over";
@@ -1807,7 +1881,8 @@ export interface GameState {
     landsTapped?: boolean;
   }[];
   /** Contrôle donné par une Aura (Confiscate) : contrôleur d'origine à rétablir quand l'Aura part. */
-  auraControl?: { host: ObjectId; aura: ObjectId; original: PlayerId }[];
+  /** `by` : contrôle tant que ce joueur contrôle la source (Possession Engine), et non tant que l'Aura est attachée. */
+  auraControl?: { host: ObjectId; aura: ObjectId; original: PlayerId; by?: PlayerId }[];
   /** Changements de contrôle « jusqu'à la fin du tour » (contrôleur d'origine à rétablir). */
   controlChanges?: { id: ObjectId; original: PlayerId }[];
   /**
