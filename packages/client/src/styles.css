@@ -201,11 +201,61 @@ button {
     box-shadow 0.2s,
     border-color 0.2s;
 }
-.player-bar.me .avatar.active {
-  border-color: var(--me);
+/* Joueur dont c'est le tour : anneau tournant, halo pulsé et étiquette « Votre tour » / « Son tour ». */
+.player-bar.me {
+  --turn: var(--me);
+  --turn-glow: rgba(98, 196, 138, 0.55);
 }
-.player-bar.opp .avatar.active {
-  border-color: var(--opp);
+.player-bar.opp {
+  --turn: var(--opp);
+  --turn-glow: rgba(224, 121, 91, 0.55);
+}
+.avatar.active {
+  border: 3px solid var(--turn);
+  animation: turn-glow 2s ease-in-out infinite;
+}
+.avatar.active::before {
+  content: "";
+  position: absolute;
+  inset: -9px;
+  border-radius: 50%;
+  background: conic-gradient(from 0deg, transparent 0 55%, var(--turn) 75%, #fff 80%, var(--turn) 85%, transparent 100%);
+  mask: radial-gradient(farthest-side, transparent calc(100% - 4px), #000 calc(100% - 3px));
+  animation: turn-spin 2.4s linear infinite;
+  pointer-events: none;
+}
+@keyframes turn-glow {
+  0%,
+  100% {
+    box-shadow:
+      0 0 0 2px var(--turn-glow),
+      0 0 14px 3px var(--turn-glow);
+  }
+  50% {
+    box-shadow:
+      0 0 0 4px var(--turn-glow),
+      0 0 30px 10px var(--turn-glow);
+  }
+}
+@keyframes turn-spin {
+  to {
+    transform: rotate(1turn);
+  }
+}
+.turn-chip {
+  margin-left: 8px;
+  padding: 1px 8px;
+  border-radius: 9px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  color: #0e1117;
+  background: var(--turn);
+  box-shadow: 0 0 10px var(--turn-glow);
+  vertical-align: middle;
+}
+.player-bar.active-turn .player-name {
+  color: #fff;
 }
 .avatar-initial {
   position: absolute;
@@ -890,6 +940,10 @@ button {
 }
 .avatar.glow-target {
   border-color: var(--target);
+}
+/* Joueur ciblable pendant son tour : le ciblage reste prioritaire. */
+.avatar.active.glow-target {
+  animation: pulse 1s ease-in-out infinite;
 }
 
 @keyframes pulse {

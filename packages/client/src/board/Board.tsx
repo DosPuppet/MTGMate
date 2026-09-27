@@ -80,7 +80,7 @@ function PlayerBar({ player, isMe }: { player: PlayerView; isMe: boolean }) {
   const active = view.turn.active === player.id;
   const top = player.graveyard[player.graveyard.length - 1];
   return (
-    <div className={`player-bar ${isMe ? "me" : "opp"}`}>
+    <div className={`player-bar ${isMe ? "me" : "opp"} ${active ? "active-turn" : ""}`}>
       <button
         type="button"
         className={`avatar ${isTarget ? "glow-target" : ""} ${active ? "active" : ""}`}
@@ -93,6 +93,7 @@ function PlayerBar({ player, isMe }: { player: PlayerView; isMe: boolean }) {
       <div className="player-info">
         <div className="player-name">
           {player.name}
+          {active && <span className="turn-chip">{isMe ? "Votre tour" : "Son tour"}</span>}
           {thinking && <span className="thinking">réfléchit…</span>}
         </div>
         <div className="player-counts">
