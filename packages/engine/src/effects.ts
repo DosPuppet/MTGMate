@@ -698,13 +698,14 @@ export function runEffect(s: GameState, r: Resolution, e: Effect): OpResult {
       return;
     }
     case "counter": {
-      for (const id of resolveRef(s, ctx, e.what)) counterItem(s, id, ctx.sourceDefId);
+      for (const id of resolveRef(s, ctx, e.what)) counterItem(s, id, ctx.sourceDefId, e.exile);
       return;
     }
     case "unlessPay": {
       const p = resolveRef(s, ctx, e.who).find((x) => isPlayer(s, x));
       if (!p) return;
-      const mana = e.mana;
+      // « à moins que son contrôleur ne paie {X} » (Syncopate) : X est celui du sort.
+      const mana = e.mana?.x ? { ...e.mana, x: 0, generic: e.mana.generic + e.mana.x * ctx.x } : e.mana;
       // Garde à coût composé (Ovika : {3} et 3 PV) : les deux parties doivent être payables.
       const hand = s.players[p]?.hand ?? [];
       const canDo =
@@ -2352,7 +2353,7 @@ export function runEffect(s: GameState, r: Resolution, e: Effect): OpResult {
     case "setBasePTAll": {
       const n = evalAmount(s, ctx, e.amount);
       const ids = s.battlefield.filter((x) => matchesObjectFilter(s, ctx.controller, x, e.filter, ctx.sourceId));
-      addEffect(s, ids, { setPower: n, setToughness: n }, "endOfTurn");
+      addEffect(s, ids, e.powerOnly ? { setPower: n } : { setPower: n, setToughness: n }, "endOfTurn");
       return;
     }
     case "addManaColorsAmong": {

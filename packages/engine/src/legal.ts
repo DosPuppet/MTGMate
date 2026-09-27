@@ -130,7 +130,8 @@ export function legalActions(s: GameState, player: PlayerId): ActionOption[] {
         if (d.shockLand && (s.players[player]?.life ?? 0) >= d.shockLand) out.push({ type: "playLand", card, payLife: true });
         out.push({ type: "playLand", card });
       }
-      continue;
+      // Ville à aventure : l'Aventure reste lançable.
+      if (d.layout !== "adventure") continue;
     }
     const terms = castTerms(s, player, card);
     if (!terms || !d.implemented) continue;

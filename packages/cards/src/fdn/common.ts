@@ -31,6 +31,7 @@ export const {
   wardAbility,
   exhaust,
   spree,
+  tiered,
 } = dsl;
 
 /** Cible quelconque décrite par un filtre d'objets. */

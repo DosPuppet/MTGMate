@@ -379,6 +379,8 @@ function matchTrigger(s: GameState, ev: RulesEvent, t: TriggerSpec, src: Source)
         if ((d?.spell?.modes?.length ?? 0) < 2) return null;
       }
       if (t.notFromHand && s.stack.find((x) => x.id === ev.stackId)?.fromHand) return null;
+      if (t.minManaSpent !== undefined && (s.stack.find((x) => x.id === ev.stackId)?.manaSpent ?? 0) < t.minManaSpent)
+        return null;
       if (t.notOwned && s.objects[ev.stackId]?.owner === ev.player) return null;
       // `amount` : éphémères et rituels déjà lancés ce tour-ci (Thousand-Year Storm).
       return { objectId: ev.stackId, player: ev.player, amount: ev.instantSorceryBefore };

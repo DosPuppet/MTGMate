@@ -628,10 +628,11 @@ export const useGame = create<Store>((set, get) => {
       if ((p?.kind === "discard" || p?.kind === "bottomCards") && p.player === view.viewer) return get().toggleSelection(id);
       const acts = myActions(view);
       const lands = acts.filter((a) => a.type === "playLand" && a.card === id);
-      // Terrain choc : payer les points de vie (dégagé) ou non (engagé).
-      if (lands.length > 1) return set({ abilityMenu: { sourceId: id, options: lands } });
-      if (lands.length === 1) return get().decide({ type: "playLand", card: id });
       const casts = acts.filter((a): a is CastOption => a.type === "cast" && a.card === id);
+      // Terrain choc : payer les points de vie (dégagé) ou non (engagé) ; Ville à aventure : jouer le terrain ou lancer l'Aventure.
+      if (lands.length > 1 || (lands.length === 1 && casts.length > 0))
+        return set({ abilityMenu: { sourceId: id, options: [...lands, ...casts] } });
+      if (lands.length === 1) return get().decide({ type: "playLand", card: id });
       const cast = casts[0];
       // Capacités activées depuis la main (cycle, « défaussez cette carte : … »), ou plusieurs faces (aventure).
       const fromHand = acts.filter((a): a is ActivateOption => a.type === "activate" && a.source === id);

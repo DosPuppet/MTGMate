@@ -111,8 +111,29 @@ const WARD =
   /\bward(?: ((?:\{[^}]+\})+)|—(?:((?:\{[^}]+\})+), )?pay (\d+) life\.?|—discard a card( at random)?\.?|—sacrifice (two|three|four) permanents\.?)/i;
 
 /** « Equip {3}{W} » (702.6) : capacité activée en rituel, cible une créature que vous contrôlez. */
+/** « Equip {2} » ou, avec un nom de capacité, « Gae Bolg — Equip {4} ». */
 export function parseEquip(text: string): string | undefined {
-  return /^Equip ((?:\{[^}]+\})+)/m.exec(stripReminder(text))?.[1];
+  return /^(?:[^\n—]+ — )?Equip ((?:\{[^}]+\})+)/m.exec(stripReminder(text))?.[1];
+}
+
+/** Héros : créature incolore 1/1 (Job select). */
+const HERO_TOKEN = { name: "Hero", colors: [], types: ["Creature" as const], subtypes: ["Hero"], power: 1, toughness: 1 };
+
+/** Job select : « quand cet Équipement arrive, créez un jeton Héros 1/1, puis attachez-lui cet Équipement ». */
+function jobSelectAbility(keywords: string[]): CardDef["abilities"] {
+  if (!keywords.some((k) => k.toLowerCase() === "job select")) return [];
+  return [
+    {
+      kind: "triggered",
+      trigger: { on: "enters", who: "self" },
+      targets: [],
+      effects: [
+        { op: "createTokens", token: HERO_TOKEN, count: 1, store: "hero" },
+        { op: "attach", what: { kind: "self" }, to: { kind: "stored", name: "hero" } },
+      ],
+      label: "Job select : Héros 1/1 équipé",
+    },
+  ];
 }
 
 export function parseWard(text: string): CardDef["ward"] {
@@ -613,6 +634,7 @@ function singleDef(raw: RawCard, script: CardScript | undefined, set: string): C
         crewOncePerTurn(raw.oracleText),
       ),
       ...plotAbility(raw.oracleText),
+      ...jobSelectAbility(raw.keywords),
       ...(parseCycling(raw.oracleText) ? [parseCycling(raw.oracleText) as CardDef["abilities"][number]] : []),
       ...extraAbilities,
     ],

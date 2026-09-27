@@ -26,6 +26,7 @@ Ce fichier sert au suivi du projet entre les sessions. Le README présente le pr
 | **Edge of Eternities (EOE)** | ✅ **260 / 260** (lots A à D, branche `standard`) |
 | **Aetherdrift (DFT)** | ✅ **260 / 260** (lots A à C, branche `standard`) |
 | **Outlaws of Thunder Junction + The Big Score (OTJ, BIG)** | ✅ **269 / 269 + 30 / 30** (lots A à C, branche `standard`) |
+| **Final Fantasy (FIN)** | 🚧 **166 / 307** (lot A, branche `standard`) |
 | Autres extensions Standard | branche `standard`, plan par lots ci-dessous |
 
 ### Branche `standard` : tout le Standard
@@ -250,6 +251,29 @@ Lot 0.10 (performances, pool complet de 5 174 cartes) :
   - le helper de test initialise le nombre de tours joués (`turnsTaken`, pour Jace Reawakened).
 - Lot C ✅ (**BIG 30/30**, `big/index.ts`) : hideaway (Collector's Cage, carte liée), Grand Abolisher (`lockOpponentsOnYourTurn`), Rest in Peace (`graveyardToExile`), Torpor Orb, Worldwalker Helm (jeton Carte en plus), Territory Forge (capacités activées de la carte liée, `gainLinkedActivated`), tirage au hasard parmi des cartes liées (Omenpath Journey), jetons copies 3/3 (Nexus of Becoming), montants « forces différentes » et « types de carte parmi ».
 
+### Final Fantasy (FIN, 307 cartes dont 2 cartes assemblées)
+
+Demandée par l'utilisateur le 27/09/2026.
+
+| Mécanique | Lot |
+|---|---|
+| Villes (terrains engagés, Villes à aventure) | A |
+| tiered | A |
+| « si au moins quatre mana ont été dépensés » | A |
+| job select et Équipements | A (simples), B |
+| créatures-Sagas « Summon » | B |
+| transformation (dont Sagas au verso), assemblage | C |
+| légendaires et rares restants | D |
+
+- Lot A ✅ (166/307). Il couvre :
+  - job select (lu dans le texte) : à l'arrivée, un jeton Héros 1/1 est créé et l'Équipement s'y attache ; « Nom — Equip {N} » est lu comme Équiper ; aide `jobGear(type, F, E, mots-clés)` ;
+  - tiered (aide `tiered(...)`, comme spree mais un seul palier) ; déclencheur `when.castNoncreatureWithMana(n)` (`minManaSpent`) ;
+  - Villes à aventure (Lindblum, Midgar…) : seule l'Aventure se lance depuis la main ; la carte « en aventure » se joue comme terrain depuis l'exil ; l'interface propose « Jouer ce terrain » ou « Lancer [Aventure] » ;
+  - `fx.counterExile` (Syncopate) et « à moins de payer {X} » (X du sort) ; `setBasePTAll` avec la force seule (PuPu UFO) ;
+  - jetons Héros, Chevalier, Mog, Horreur, Grenouille, Robot Guerrier, Chocobo (Oiseau 2/2 avec landfall), Sorcier 0/1 (`fin/common.ts`) ;
+  - IA : l'énumération des cibles écarte les combinaisons qui violent « une autre cible » (`otherThan`).
+- Lots B à D : Équipements restants, Summons, transformation et assemblage, légendaires.
+
 ### Reality Fracture (FRA)
 
 - 285 cartes selon Scryfall, dont 6 réimpressions de FDN (terrains de base, Unsummon), donc 279 cartes propres. Toutes sont légales en Standard.
@@ -418,6 +442,11 @@ Réimpressions : défenses talismaniques contre une couleur, changelin, restrict
 - **Great Train Heist :** le combat supplémentaire a lieu après le combat normal ; les Trésors viennent des blessures infligées à n'importe quel adversaire.
 - **Collector's Cage (hideaway) :** la carte est exilée face visible. **Memory Vessel :** on peut encore jouer les cartes de sa main. **Sword of Wealth and Power :** la protection devient une défense talismanique contre les éphémères. **Transmutation Font :** les trois jetons sacrifiés n'ont pas à avoir des noms différents. **Grand Abolisher :** les capacités de mana ne sont pas bloquées.
 - **Blessures de combat groupées** (« une ou plusieurs créatures… ») : une fois par étape de blessures et par joueur blessé.
+- **Demon Wall :** « a un marqueur » est lu comme « a un marqueur +1/+1 ».
+- **Haste Magic, Opera Love Song :** les cartes exilées sont jouables jusqu'à la fin de votre prochain tour (et non jusqu'à votre prochaine étape de fin).
+- **Freya Crescent :** son mana sert à toute capacité d'un Équipement, pas seulement à Équiper.
+- **Sorceress's Schemes :** seulement une carte d'éphémère ou de rituel du cimetière (pas une carte exilée avec flashback).
+- **Capital City, Starting Town :** leurs capacités de mana à coût (mana ou PV) passent par la pile (comme Ramos).
 - **Légalité Standard :** instantané des légalités Scryfall au moment de l'import (`legalities.standard` dans `data/<set>.json`). Après une rotation ou une annonce de bannissement, réimporter les sets (`npm run import-cards -- <set>`).
 - **Jetons :** pas d'image (cadre texte).
 

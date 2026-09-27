@@ -27,6 +27,7 @@ import { BIG_SCRIPTS } from "./big/index";
 import { DFT_SCRIPTS } from "./dft/index";
 import { EOE_SCRIPTS } from "./eoe/index";
 import { FDN_SCRIPTS } from "./fdn/index";
+import { FIN_SCRIPTS } from "./fin/index";
 import { FRA_SCRIPTS } from "./fra/index";
 import { OTJ_SCRIPTS } from "./otj/index";
 import type { RawCard } from "./scryfall";
@@ -153,7 +154,7 @@ export const SETS: CardSet[] = [
     data: lciData as RawCard[],
     scripts: {},
   },
-  { code: "FIN", name: "Final Fantasy", nameFr: "Final Fantasy", mainMax: 309, data: finData as RawCard[], scripts: {} },
+  { code: "FIN", name: "Final Fantasy", nameFr: "Final Fantasy", mainMax: 309, data: finData as RawCard[], scripts: FIN_SCRIPTS },
 ];
 
 export const SET_BY_CODE: Record<string, CardSet> = Object.fromEntries(SETS.map((s) => [s.code, s]));

@@ -372,7 +372,11 @@ function AbilityMenu() {
                 className="btn choice"
                 onClick={() => decide({ type: "playLand", card: o.card, payLife: o.payLife })}
               >
-                {o.payLife ? "Jouer ce terrain en payant 2 points de vie (dégagé)" : "Jouer ce terrain engagé"}
+                {o.payLife
+                  ? "Jouer ce terrain en payant 2 points de vie (dégagé)"
+                  : menu.options.some((x) => x.type === "playLand" && x.payLife)
+                    ? "Jouer ce terrain engagé"
+                    : "Jouer ce terrain"}
               </button>
             );
           }

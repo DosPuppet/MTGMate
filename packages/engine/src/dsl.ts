@@ -369,6 +369,8 @@ export const fx = {
   },
   /** Contrecarre le sort ou la capacité désigné. */
   counter: (what: Ref): Effect => ({ op: "counter", what }),
+  /** « Contrecarrez-le ; exilez-le au lieu de le mettre au cimetière » (Syncopate). */
+  counterExile: (what: Ref): Effect => ({ op: "counter", what, exile: true }),
   /** « Contrecarrez-le à moins que son contrôleur ne paie X » : le paiement annule les effets qui suivent. */
   unlessPays: (who: Ref, cost: { mana?: string; life?: number; paidStore?: string }, ...effects: Effects): Effect[] => {
     const flat = effects.flat();
@@ -433,7 +435,13 @@ export const fx = {
   flickerChosen: (filter: ObjectFilter, times: Amount): Effect => ({ op: "flickerChosen", filter, times }),
   exchangeControl: (a: Ref, b: Ref): Effect => ({ op: "exchangeControl", a, b }),
   gainControlWhileSource: (what: Ref, restrict = false): Effect => ({ op: "gainControlWhileSource", what, restrict }),
-  setBasePTAll: (filter: ObjectFilter, amount: Amount): Effect => ({ op: "setBasePTAll", filter, amount }),
+  /** « La F/E de base de … devient N » ; `powerOnly` : seulement la force de base (PuPu UFO). */
+  setBasePTAll: (filter: ObjectFilter, amount: Amount, powerOnly?: boolean): Effect => ({
+    op: "setBasePTAll",
+    filter,
+    amount,
+    powerOnly,
+  }),
   copyNextExhaust: { op: "copyNextExhaust" } as Effect,
   chooseCardName: { op: "chooseCardName" } as Effect,
   exileNamed: (who: Ref, max: number): Effect => ({ op: "exileNamed", who, max }),
@@ -731,6 +739,18 @@ export function spree(...modes: { cost: string; label: string; targets?: TargetS
   return { modes: out };
 }
 
+/** Tiered (Final Fantasy) : « choisissez un coût supplémentaire » — un seul mode, chacun avec son coût. */
+export function tiered(...modes: { cost: string; label: string; targets?: TargetSpec[]; effects: Effects }[]): SpellDef {
+  return {
+    modes: modes.map((m) => ({
+      label: m.label,
+      targets: m.targets ?? [],
+      effects: m.effects.flat(),
+      extraCost: parseManaCost(m.cost),
+    })),
+  };
+}
+
 export function mode(label: string, targets: TargetSpec[], effects: Effects): ModeDef {
   return { label, targets, effects: effects.flat() };
 }
@@ -909,6 +929,13 @@ export const when = {
   castSpellOffTurn: (by: "you" | "opponent" | "any" = "any"): TriggerSpec => ({ on: "castSpell", by, notTheirTurn: true }),
   /** « Chaque fois qu'un joueur lance un sort qu'il ne possède pas » */
   castSpellNotOwned: { on: "castSpell", by: "any", notOwned: true } as TriggerSpec,
+  /** « Chaque fois que vous lancez un sort non-créature, si au moins N mana a été dépensé pour le lancer » */
+  castNoncreatureWithMana: (n: number): TriggerSpec => ({
+    on: "castSpell",
+    by: "you",
+    filter: { notTypes: ["Creature"] },
+    minManaSpent: n,
+  }),
   /** « Chaque fois que vous commettez un crime » */
   crime: { on: "crime" } as TriggerSpec,
   /** « Quand cette carte devient complotée » */

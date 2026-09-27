@@ -128,6 +128,8 @@ export function canPlayLand(s: GameState, player: PlayerId, card: ObjectId): boo
   const allowed =
     (o.zone === "hand" && o.owner === player) ||
     (o.zone === "exile" && !!exilePermission(s, player, card) && !exilePermission(s, player, card)?.anyTime) ||
+    // Ville à aventure (FIN) : la carte « en aventure » se joue comme terrain depuis l'exil (715.4).
+    (o.zone === "exile" && !!o.onAdventure && o.owner === player) ||
     (o.zone === "graveyard" &&
       o.owner === player &&
       (graveyardTypeAvailable(s, player, card) === "Land" || playerStatic(s, player, "playLandsFromGraveyard")));
@@ -402,6 +404,8 @@ export const FACE_DOWN_SPELL: CardDef = { ...FACE_DOWN_DEF, manaCost: { generic:
 export function castableFaces(s: GameState, card: ObjectId, d: CardDef): [number | undefined, CardDef][] {
   const o = s.objects[card];
   const adventure = d.layout === "adventure" ? d.faceDefs?.[1] : undefined;
+  // Carte de terrain à aventure (Villes de FIN) : seule l'Aventure se lance.
+  if (d.types.includes("Land")) return adventure && !o?.onAdventure ? [[1, adventure]] : [];
   if (adventure && !o?.onAdventure)
     return [
       [undefined, d],
@@ -616,7 +620,8 @@ export function castSpell(s: GameState, player: PlayerId, card: ObjectId, choice
   if (!terms) throw new RulesError("Vous ne pouvez pas lancer cette carte d'ici");
   const o = obj(s, card);
   const cardDef = s.defs[o.defId];
-  if (!cardDef || cardDef.types.includes("Land")) throw new RulesError("Ce n'est pas un sort");
+  if (!cardDef || (cardDef.types.includes("Land") && cardDef.layout !== "adventure"))
+    throw new RulesError("Ce n'est pas un sort");
   if (!cardDef.implemented) throw new RulesError(`${cardDef.name} n'est pas encore géré par le moteur`);
   // Face lancée : la carte elle-même, ou son aventure (715.3).
   const face = castableFaces(s, card, cardDef).find(([f]) => f === choices.face);
@@ -824,7 +829,7 @@ export function announceTargets(s: GameState, stackId: string, controller: Playe
 }
 
 /** 701.5 : contrecarre l'élément de pile ; un sort contrecarré va au cimetière (exil s'il a été lancé en flashback). */
-export function counterItem(s: GameState, id: string, by: string): boolean {
+export function counterItem(s: GameState, id: string, by: string, exile = false): boolean {
   const i = s.stack.findIndex((x) => x.id === id);
   const item = s.stack[i];
   if (!item || s.resolving?.item.id === id) return false;
@@ -850,7 +855,8 @@ export function counterItem(s: GameState, id: string, by: string): boolean {
   emit({ type: "countered", stackId: item.id, defId: item.sourceDefId, by });
   // Dernières informations connues (« son contrôleur crée… »).
   if (item.kind === "spell" && s.objects[item.sourceId]) s.lki[item.id] = snapshot(s, item.sourceId);
-  if (item.kind === "spell" && s.objects[item.sourceId]) moveObject(s, item.sourceId, item.flashback ? "exile" : "graveyard");
+  if (item.kind === "spell" && s.objects[item.sourceId])
+    moveObject(s, item.sourceId, item.flashback || exile ? "exile" : "graveyard");
   return true;
 }
 

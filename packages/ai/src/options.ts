@@ -103,7 +103,12 @@ export function enumerateDecisions(a: ActionOption, limit = 40, rank?: (ids: str
         : o.legal.map((v) => [v]);
       if (o.optional) values.push([]);
       const next: Record<string, string[]>[] = [];
-      for (const partial of acc) for (const v of values) next.push({ ...partial, [o.id]: v });
+      for (const partial of acc)
+        for (const v of values) {
+          // « une autre cible » : pas de combinaison qui reprend une cible d'un autre mot « cible ».
+          if (o.otherThan?.some((k) => v.some((id) => partial[k]?.includes(id)))) continue;
+          next.push({ ...partial, [o.id]: v });
+        }
       acc = next.slice(0, limit);
     }
     return acc;

@@ -567,6 +567,8 @@ export type TriggerSpec =
       modal?: boolean;
       /** Lancé depuis ailleurs que la main (Kellan, the Kid). */
       notFromHand?: boolean;
+      /** « …, si au moins N mana a été dépensé pour le lancer » (Final Fantasy). */
+      minManaSpent?: number;
       /** « un sort qu'il ne possède pas » (Gonti, Night Minister). */
       notOwned?: boolean;
     }
@@ -1314,7 +1316,7 @@ export type Effect =
   /** Gagne le contrôle tant que vous contrôlez la source ; `restrict` : il ne peut ni attaquer ni bloquer (Possession Engine). */
   | { op: "gainControlWhileSource"; what: Ref; restrict?: boolean }
   /** Base de F/E de chaque permanent correspondant égale au montant, jusqu'à la fin du tour (Sita Varma). */
-  | { op: "setBasePTAll"; filter: ObjectFilter; amount: Amount }
+  | { op: "setBasePTAll"; filter: ObjectFilter; amount: Amount; powerOnly?: boolean }
   /** Pit Automaton : la prochaine capacité d'exhaust (non de mana) activée ce tour-ci est copiée. */
   | { op: "copyNextExhaust" }
   /** La carte (ou le sort) est exilée et devient complotée (702.170). */
@@ -1372,7 +1374,7 @@ export type Effect =
   /** Capacité déclenchée réflexive (« quand vous le faites, … ») : ses cibles sont choisies à sa mise sur la pile. */
   | { op: "reflexive"; targets: TargetSpec[]; effects: Effect[] }
   /** Contrecarre un sort ou une capacité sur la pile (701.5). */
-  | { op: "counter"; what: Ref }
+  | { op: "counter"; what: Ref; exile?: boolean }
   /** « … à moins que [joueur] ne paie X » : s'il paie, les `skip` effets suivants sont ignorés. */
   | {
       op: "unlessPay";
