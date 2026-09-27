@@ -350,6 +350,7 @@ export function computeBattlefield(s: GameState): Map<ObjectId, Characteristics>
         if (mods.gainLinkedActivated) {
           // Territory Forge : les capacités activées (et de mana) des cartes liées.
           const extra = (o.linked ?? [])
+            .filter((c) => s.objects[c]?.zone === "exile")
             .flatMap((c) => s.defs[s.objects[c]?.defId ?? ""]?.abilities ?? [])
             .filter((a) => a.kind === "activated" || a.kind === "mana");
           mods = { ...mods, gainLinkedActivated: undefined, addAbilities: [...(mods.addAbilities ?? []), ...extra] };

@@ -61,7 +61,13 @@ export function checkInvariants(s: GameState, deckSizes: Record<string, number>)
   // Le cache des couches ne doit jamais diverger d'un calcul à neuf.
   const fresh = computeBattlefield(s);
   for (const id of s.battlefield) {
-    if (JSON.stringify(chars(s, id)) !== JSON.stringify(fresh.get(id))) errors.push(`${id} : cache des caractéristiques périmé`);
+    const cached = chars(s, id) as unknown as Record<string, unknown>;
+    const now = fresh.get(id) as unknown as Record<string, unknown> | undefined;
+    if (JSON.stringify(cached) !== JSON.stringify(now)) {
+      // Champs divergents, pour trouver le `bump` manquant.
+      const diff = Object.keys({ ...cached, ...now }).filter((k) => JSON.stringify(cached[k]) !== JSON.stringify(now?.[k]));
+      errors.push(`${id} (${s.objects[id]?.defId}) : cache des caractéristiques périmé (${diff.join(", ")})`);
+    }
   }
   if (!s.over && !s.pending) errors.push("partie non terminée sans décision en attente");
   if (s.over && s.pending) errors.push("partie terminée avec une décision en attente");

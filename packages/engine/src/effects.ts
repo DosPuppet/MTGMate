@@ -1608,8 +1608,10 @@ export function runEffect(s: GameState, r: Resolution, e: Effect): OpResult {
         for (const id of chosen) {
           // Wilt-Leaf Liege : défaussée par un effet adverse, elle va sur le champ de bataille.
           const toField = p !== ctx.controller && !!s.defs[s.objects[id]?.defId ?? ""]?.opponentDiscardToBattlefield;
-          if (toField) moveObject(s, id, "battlefield");
-          else announceDiscard(s, p, moveObject(s, id, "graveyard"));
+          const moved = toField ? moveObject(s, id, "battlefield") : moveObject(s, id, "graveyard");
+          if (!toField) announceDiscard(s, p, moved);
+          // Les cartes défaussées, pour `ref.stored` (Ninja's Blades : « la valeur de mana de la carte défaussée »).
+          if (e.store && moved) r.vars[`$ids:${e.store}`] = [...(r.vars[`$ids:${e.store}`] ?? []), moved];
         }
         announceDiscardBatch(s, p, chosen.length);
       }
@@ -2706,6 +2708,8 @@ export function runEffect(s: GameState, r: Resolution, e: Effect): OpResult {
     case "link": {
       const o = s.objects[ctx.sourceId];
       if (o) o.linked = [...(o.linked ?? []), ...resolveRef(s, ctx, e.what)];
+      // Territory Forge : les capacités de la source dépendent des cartes liées.
+      bump(s);
       return;
     }
     case "grantPlay": {

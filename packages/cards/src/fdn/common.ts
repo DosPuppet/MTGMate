@@ -15,6 +15,7 @@ export const {
   activated,
   triggered,
   triggeredModal,
+  chapter,
   when,
   cond,
   staticAbility,

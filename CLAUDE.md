@@ -26,7 +26,7 @@ Ce fichier sert au suivi du projet entre les sessions. Le README présente le pr
 | **Edge of Eternities (EOE)** | ✅ **260 / 260** (lots A à D, branche `standard`) |
 | **Aetherdrift (DFT)** | ✅ **260 / 260** (lots A à C, branche `standard`) |
 | **Outlaws of Thunder Junction + The Big Score (OTJ, BIG)** | ✅ **269 / 269 + 30 / 30** (lots A à C, branche `standard`) |
-| **Final Fantasy (FIN)** | 🚧 **166 / 307** (lot A, branche `standard`) |
+| **Final Fantasy (FIN)** | 🚧 **188 / 307** (lots A et B, branche `standard`) |
 | Autres extensions Standard | branche `standard`, plan par lots ci-dessous |
 
 ### Branche `standard` : tout le Standard
@@ -272,7 +272,14 @@ Demandée par l'utilisateur le 27/09/2026.
   - `fx.counterExile` (Syncopate) et « à moins de payer {X} » (X du sort) ; `setBasePTAll` avec la force seule (PuPu UFO) ;
   - jetons Héros, Chevalier, Mog, Horreur, Grenouille, Robot Guerrier, Chocobo (Oiseau 2/2 avec landfall), Sorcier 0/1 (`fin/common.ts`) ;
   - IA : l'énumération des cibles écarte les combinaisons qui violent « une autre cible » (`otherThan`).
-- Lots B à D : Équipements restants, Summons, transformation et assemblage, légendaires.
+- Lot B ✅ (188/307) : 11 Équipements (`fin/gear.ts`) et 11 Summons (`fin/summons.ts`, créatures-Sagas écrites avec `chapter`). Le moteur gagne :
+  - `fx.discard` mémorise les cartes défaussées (`ref.stored`, Ninja's Blades) ;
+  - Équiper « payez 3 points de vie, une fois par tour » écrit dans le script (Dark Knight's Greatsword) ;
+  - `chapter` est exporté par `fdn/common.ts` ;
+  - correctif : Territory Forge fait avancer la version d'état en liant la carte, et ne garde que les capacités d'une carte encore exilée ; l'invariant de cache du fuzz nomme la carte et les champs divergents.
+  
+  Passent au lot D : Summon: Primal Odin (« ce joueur perd la partie »), Summon: Brynhildr, Summon: Fenrir, Summon: Bahamut (valeur de mana totale), Aettir and Priwen, Buster Sword, Genji Glove, The Masamune.
+- Lots C et D : transformation et assemblage, légendaires et cartes restantes.
 
 ### Reality Fracture (FRA)
 
@@ -446,6 +453,7 @@ Réimpressions : défenses talismaniques contre une couleur, changelin, restrict
 - **Haste Magic, Opera Love Song :** les cartes exilées sont jouables jusqu'à la fin de votre prochain tour (et non jusqu'à votre prochaine étape de fin).
 - **Freya Crescent :** son mana sert à toute capacité d'un Équipement, pas seulement à Équiper.
 - **Sorceress's Schemes :** seulement une carte d'éphémère ou de rituel du cimetière (pas une carte exilée avec flashback).
+- **Summoner's Grimoire :** le joueur choisit d'abord parmi les cartes de créature non-enchantement ; s'il n'en prend aucune, il peut mettre une créature-enchantement engagée et attaquante.
 - **Capital City, Starting Town :** leurs capacités de mana à coût (mana ou PV) passent par la pile (comme Ramos).
 - **Légalité Standard :** instantané des légalités Scryfall au moment de l'import (`legalities.standard` dans `data/<set>.json`). Après une rotation ou une annonce de bannissement, réimporter les sets (`npm run import-cards -- <set>`).
 - **Jetons :** pas d'image (cadre texte).

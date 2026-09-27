@@ -5,7 +5,7 @@ import { describe, expect, it } from "vitest";
 import { legalActions } from "../src/legal";
 import { chars } from "../src/state";
 import type { GameState } from "../src/types";
-import { act, idOf, idsOf, passAccepting, passBoth, scenario } from "./helpers";
+import { act, advanceUntil, idOf, idsOf, passAccepting, passBoth, scenario } from "./helpers";
 
 type S = GameState;
 const lands = (name: string, n: number) => Array(n).fill(name) as string[];
@@ -71,6 +71,42 @@ describe("Final Fantasy", () => {
     expect(s.exile.map((id) => s.defs[s.objects[id]?.defId ?? ""]?.name)).toContain("Burst Lightning");
     expect(s.objects[shock]).toBeUndefined();
     expect(s.players.p2?.life).toBe(20);
+  });
+
+  it("Summon : créature-Saga, chapitre I à l'arrivée, sacrifiée après le dernier chapitre", () => {
+    let s = scenario({
+      p1: { battlefield: lands("Island", 5), hand: ["Summon: Shiva"] },
+      p2: { battlefield: ["Bear Cub"] },
+    });
+    const bear = idOf(s, "p2", "battlefield", "Bear Cub");
+    s = act(s, "p1", { type: "cast", card: idOf(s, "p1", "hand", "Summon: Shiva") });
+    s = settle(s);
+    const shiva = idOf(s, "p1", "battlefield", "Summon: Shiva");
+    expect(s.objects[shiva]?.counters.lore).toBe(1);
+    expect(chars(s, shiva).types).toEqual(expect.arrayContaining(["Enchantment", "Creature"]));
+    expect(s.objects[bear]?.tapped).toBe(true);
+    expect(s.objects[bear]?.counters.stun).toBe(1);
+    s = advanceUntil(s, (x) => !x.battlefield.includes(shiva));
+    expect(idsOf(s, "p1", "graveyard", "Summon: Shiva")).toHaveLength(1);
+  });
+
+  it("Excalibur II : un marqueur de charge par gain de PV, +1/+1 par marqueur", () => {
+    let s = scenario({
+      p1: { battlefield: ["Excalibur II", "Bear Cub", "Dazzling Angel", ...lands("Plains", 4)], hand: ["Healer's Hawk"] },
+    });
+    const sword = idOf(s, "p1", "battlefield", "Excalibur II");
+    const bear = idOf(s, "p1", "battlefield", "Bear Cub");
+    const equip = (s.defs[s.objects[sword]?.defId ?? ""]?.abilities ?? []).findIndex(
+      (a) => a.kind === "activated" && a.label?.startsWith("Équiper"),
+    );
+    s = act(s, "p1", { type: "activate", source: sword, ability: equip, targets: { t: [bear] } });
+    s = passBoth(s);
+    expect(chars(s, bear).power).toBe(2);
+    s = act(s, "p1", { type: "cast", card: idOf(s, "p1", "hand", "Healer's Hawk") });
+    s = settle(s);
+    // Dazzling Angel : +1 PV à l'arrivée du Faucon, donc un marqueur de charge.
+    expect(s.objects[sword]?.counters.charge).toBe(1);
+    expect(chars(s, bear).power).toBe(3);
   });
 
   it("PuPu UFO : seule la force de base devient le nombre de Villes", () => {

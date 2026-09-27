@@ -6,10 +6,12 @@ import type { CardScript } from "@mtgx/engine";
 import { ARTIFACTS } from "./artifacts";
 import { BLACK } from "./black";
 import { BLUE } from "./blue";
+import { GEAR } from "./gear";
 import { GREEN } from "./green";
 import { LANDS } from "./lands";
 import { MULTI } from "./multi";
 import { RED } from "./red";
+import { SUMMONS } from "./summons";
 import { WHITE } from "./white";
 
 export const FIN_SCRIPTS: Record<string, CardScript> = {
@@ -21,4 +23,6 @@ export const FIN_SCRIPTS: Record<string, CardScript> = {
   ...LANDS,
   ...ARTIFACTS,
   ...MULTI,
+  ...GEAR,
+  ...SUMMONS,
 };
