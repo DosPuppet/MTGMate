@@ -12,30 +12,21 @@ Plateforme pour jouer à Magic: The Gathering contre une ou plusieurs IA (en due
 
 Le périmètre visé avant toute extension est le **format Standard** : construit, 60 cartes minimum, 4 exemplaires maximum (sauf terrains de base et cartes « n'importe quel nombre »), réserve de 15 cartes.
 
-Les cartes sont couvertes extension par extension : **Foundations (FDN)**, complète, puis **Reality Fracture (FRA, « Réalité fracturée »)**, en cours. D'après Scryfall au 25/09/2026, les 517 cartes de FDN sont toutes légales en Standard (aucune bannie) : tout le set est dans le périmètre.
+Les cartes sont couvertes **extension par extension, à 100 % avant de passer à la suivante**. Toutes les extensions Standard sont importées (textes, légalités, faces), mais une carte n'est jouable que lorsqu'elle est gérée par le moteur. Les autres apparaissent grisées dans le deckbuilder, avec la mention « bientôt » (un filtre n'affiche que les cartes jouables).
 
 **Extensions légales en Standard au 25/09/2026** (source : Scryfall, à revérifier à chaque rotation) :
 
-- Wilds of Eldraine (WOE)
-- The Lost Caverns of Ixalan (LCI)
-- Murders at Karlov Manor (MKM)
-- Outlaws of Thunder Junction (OTJ) et The Big Score (BIG)
-- Bloomburrow (BLB)
-- Duskmourn (DSK)
-- **Foundations (FDN)**
-- Aetherdrift (DFT)
-- Tarkir: Dragonstorm (TDM)
-- Final Fantasy (FIN)
-- Edge of Eternities (EOE)
-- Marvel's Spider-Man (SPM)
-- Avatar: The Last Airbender (TLA)
-- Lorwyn Eclipsed (ECL)
-- Teenage Mutant Ninja Turtles (TMT)
-- Secrets of Strixhaven (SOS)
-- Marvel Super Heroes (MSH)
-- The Hobbit (HOB)
+| Extension | Cartes gérées |
+|---|---|
+| **Foundations (FDN)** | ✅ 517 / 517 |
+| **Reality Fracture (FRA, « Réalité fracturée »)** | ✅ 279 / 279 |
+| **Edge of Eternities (EOE)** | ✅ 260 / 260 |
+| **Aetherdrift (DFT)** | ✅ 260 / 260 |
+| **Outlaws of Thunder Junction (OTJ) et The Big Score (BIG)** | ✅ 269 / 269 et 30 / 30 |
+| **Final Fantasy (FIN)** | ✅ 307 / 307 |
+| Bloomburrow (BLB), Tarkir: Dragonstorm (TDM), Wilds of Eldraine (WOE), Secrets of Strixhaven (SOS), Lorwyn Eclipsed (ECL), Avatar: The Last Airbender (TLA), Marvel's Spider-Man (SPM), Marvel Super Heroes (MSH), Teenage Mutant Ninja Turtles (TMT), The Hobbit (HOB), Murders at Karlov Manor (MKM), Duskmourn (DSK), The Lost Caverns of Ixalan (LCI) | à venir (seules quelques créatures à mots-clés sont déjà jouables) |
 
-Soit environ 4 900 cartes uniques. Quelques réimpressions d'extensions plus anciennes sont aussi légales parce qu'elles figurent dans ces sets.
+Au total, **environ 1 950 cartes jouables** sur 5 161 cartes légales en Standard. Quelques réimpressions d'extensions plus anciennes sont aussi légales parce qu'elles figurent dans ces sets.
 
 **Cartes bannies en Standard** (13) :
 
@@ -78,10 +69,12 @@ npm run dev          # http://localhost:5173
 
 | Commande | Rôle |
 |---|---|
-| `npm test` | Tests de règles, d'IA et test de fumée de chaque carte gérée (Vitest) |
-| `npm run fuzz -- --games 300 [--ai random\|heuristic\|mixed] [--players 4] [--pool all] [--seed N]` | Parties IA contre IA, invariants vérifiés à chaque décision (`--pool all` : decks aléatoires tirés de toutes les cartes gérées) |
-| `npm run bench` | Décisions par seconde du moteur et temps de décision de l'IA (cibles : ≥ 5 000 déc/s, IA < 50 ms) |
-| `npm run coverage [-- --set main\|fdn\|fra] [-- --missing] [-- --card "<nom>"]` | Cartes gérées, mécaniques manquantes, texte Oracle et script d'une carte |
+| `npm run verify -- --set <EXT>` | Vérification d'un lot, parallélisée (~70 s) : types, Biome, couverture, tous les tests, fuzz ciblé sur l'extension à 2, 3 et 4 joueurs ; tests d'interface si le client a changé |
+| `npm run verify -- --full` | Vérification complète (~3 min) : fuzz sur tout le pool, bench et tests d'interface. Durée de chaque étape affichée, journaux dans `test-results/verify/` |
+| `npm test` | Tests de règles, d'IA, et test de fumée de chaque carte gérée (Vitest, un fichier par extension) |
+| `npm run fuzz -- --games 300 [--pool decks\|all\|<EXT>] [--players 4] [--ai random\|heuristic\|mixed] [--seed N] [--jobs 10]` | Parties IA contre IA, invariants vérifiés à chaque décision. `--pool FIN` : decks tirés surtout de cette extension. `--jobs` : parties réparties sur plusieurs processus, mêmes résultats à graine égale |
+| `npm run bench` | Décisions par seconde du moteur et temps de décision de l'IA (cibles : ≥ 5 000 déc/s, IA < 50 ms ; à mesurer sur secteur) |
+| `npm run coverage [-- --set all\|standard\|<EXT>] [-- --text [--color W]] [-- --card "<nom>"]` | Cartes gérées par extension, textes Oracle des cartes restantes, texte et script d'une carte |
 | `npm run server` | Serveur de parties en ligne (WebSocket `/ws`, sert aussi `packages/client/dist`) |
 | `npm run online-smoke [-- --base <url>]` | Duel en ligne entre deux navigateurs : salon, lien d'invitation, corde, reprise après rechargement, revanche (serveur de dev par défaut, ou `--base` vers un serveur de production ou nginx) |
 | `npm run battlefield-smoke` | Plateaux chargés (jetons, 2e ligne, 4 joueurs) mis en jeu par le bac à sable du mode dev : rangées, piles de jetons, aucune carte rognée (serveur de dev lancé) |
@@ -95,11 +88,14 @@ npm run dev          # http://localhost:5173
 ```
 packages/
   engine/   moteur pur et déterministe : état JSON, décisions, règles, autopilot, vue filtrée, GameHost
-  cards/    données Scryfall (data/<set>.json, 20 extensions), scripts des cartes (src/fdn/<couleur>.ts), decklists, decks préconstruits (decks/*.json : 2 FDN, 4 FRA)
+            src/model/ (types), src/ops/ (traitements des effets par domaine) ; guide : docs/moteur.md
+  cards/    données Scryfall (data/<set>.json, 20 extensions), scripts des cartes (src/<ext>/*.ts), lecture du texte
+            Scryfall (src/scryfall.ts), decklists, decks préconstruits (decks/*.json : 2 FDN, 4 FRA)
   ai/       IA aléatoire (fuzz) et heuristique (simulation sur clones de l'état + évaluation)
   server/   jeu en ligne : salons, GameHost côté serveur (fait autorité), minuteur, reconnexion ; protocole partagé
   client/   React + Vite + Zustand + Motion ; la partie tourne dans un Web Worker ; deckbuilder ; disposition du plateau façon MTGA (board/layout.ts) ; effets sonores (audio/)
-tools/      import Scryfall, fuzz, bench, couverture, tests d'interface
+tools/      import Scryfall, vérification, fuzz, bench, couverture, tests d'interface
+docs/       guide du moteur, approximations connues, détail des extensions, déploiement
 ```
 
 - **`submit(state, joueur, décision) → { state, events }`** : le moteur avance tout seul jusqu'à la prochaine décision. Il donne ensuite la liste exhaustive des options légales (`legalActions`), dont se servent l'interface, l'IA et l'autopilot.
@@ -123,17 +119,24 @@ tools/      import Scryfall, fuzz, bench, couverture, tests d'interface
 - **Remplacements et prévention** (`replacement.ts`) et **coûts** (`mana.ts`, `stack.ts`) :
   - remplacements : exil à la place de mourir, arrivée engagée ou avec marqueurs (y compris imposée par un autre permanent), prévention ;
   - coûts : hybride, coûts additionnels, flashback, réductions, sacrifice ou marqueurs comme coût, activation depuis le cimetière.
+- **Cartes à plusieurs faces** : aventures et présages, recto-verso (transformation, faces modales, Sagas au verso), cartes scindées et Salles, assemblage ; Sagas, Classes et Affaires ; cartes face cachée (déguisement, cape, manifestation), invisibles pour l'adversaire.
+- **Mécaniques d'extensions** : entre autres, préparé (FRA), distorsion et station (EOE), vitesse, exhaust et Véhicules (DFT), plot, spree et crimes (OTJ), job select et tiered (FIN). Le détail par extension est dans `docs/extensions/`.
 - **Performance** : `submit` copie l'état puis le mute (pas d'Immer) ; les simulations de l'IA utilisent `applyMutable` sur une copie de travail.
 
 ## Ajouter une carte
 
-Les caractéristiques d'une carte (coût, types, F/E, mots-clés, loyauté, garde, « Équiper ») viennent de Scryfall. Une créature « vanilla » ou « french vanilla » fonctionne donc sans script. Sinon, on décrit son comportement dans `packages/cards/src/fdn/<couleur>.ts` :
+Les caractéristiques d'une carte (coût, types, F/E, mots-clés, loyauté, garde, « Équiper », cycle, chapitres de Saga…) viennent de Scryfall. Une créature « vanilla » ou « french vanilla » fonctionne donc sans script. Sinon, on décrit son comportement dans `packages/cards/src/<ext>/*.ts` :
 
 ```ts
 "Burst Lightning": { kicker: "{4}", spell: spell([target.any()], [fx.damage(amount.kicked(4, 2), ref.target())]) },
 ```
 
-Chaque carte gérée est automatiquement jouée par le test de fumée (`packages/ai/test/smoke/`, un fichier par extension) ; les mécaniques nouvelles ont en plus un test de règles (`packages/engine/test/fdn.test.ts`).
+Chaque carte gérée est automatiquement jouée par le test de fumée (`packages/ai/test/smoke/`, un fichier par extension). Les mécaniques nouvelles ont en plus un test de règles (`packages/engine/test/<ext>.test.ts`). Pour une mécanique qui manque au moteur, `docs/moteur.md` indique où toucher.
+
+**Ajouter une extension :**
+1. `npm run coverage -- --set <EXT> --text` donne les textes des cartes restantes.
+2. Écrire les scripts par lots (A : cartes simples ; B : mécaniques phares ; C et suivants : cartes uniques), avec `npm run verify -- --set <EXT>` puis un commit par lot.
+3. Terminer par `npm run verify -- --full`.
 
 ## État
 
@@ -147,12 +150,13 @@ Chaque carte gérée est automatiquement jouée par le test de fumée (`packages
 | 4c. FDN, set principal (n° 1 à 281) | lots A (longue traîne) à F (mécaniques uniques : permissions de lancement, doublements, protection, choix en arrivant, mana restreint, copie de sorts…) | ✅ **276 / 276** |
 | 4d. FDN, réimpressions (n° 282 et plus) | cartes des decks d'initiation et de la Starter Collection | ✅ **241 / 241** (517 / 517 pour tout FDN) |
 | 4e. Légalité Standard | légalités Scryfall importées, liste des bannies, validation du format dans le deckbuilder | ✅ |
-| 4f. Autres extensions Standard | une extension à la fois : Reality Fracture ✅ (279/279, 4 decks préconstruits), Edge of Eternities ✅, Aetherdrift ✅, Outlaws of Thunder Junction + The Big Score ✅, Final Fantasy ✅ ; les suivantes à la demande | en cours |
+| 4f. Cartes à plusieurs faces | aventures, recto-verso, cartes scindées et Salles, Sagas, Classes, Affaires, face cachée, assemblage | ✅ |
+| 4g. Autres extensions Standard | une extension à la fois : Reality Fracture ✅ (4 decks préconstruits), Edge of Eternities ✅, Aetherdrift ✅, Outlaws of Thunder Junction + The Big Score ✅, Final Fantasy ✅ ; les suivantes à la demande | en cours |
 | 5. IA | attaques par simulation, puis ISMCTS | à faire |
 | 6. JcJ en ligne | duel Standard : serveur Node `ws` (`GameHost`, vues et faces filtrées), code de salon, corde, reconnexion, revanche | ✅ duel ; déploiement pm2 + nginx documenté |
 | 7. Finitions | effets sonores ✅ ; replays (graine + décisions), images des jetons, musique | en cours |
 
-Le suivi détaillé (cartes restantes, approximations connues, conventions) est dans [CLAUDE.md](CLAUDE.md).
+Le suivi (avancement, conventions, pièges) est dans [CLAUDE.md](CLAUDE.md). Les approximations connues sont dans [docs/approximations.md](docs/approximations.md), et le détail de chaque extension dans [docs/extensions/](docs/extensions/).
 
 ## Cadre légal
 
