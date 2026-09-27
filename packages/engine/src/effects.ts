@@ -323,6 +323,8 @@ export function evalAmount(s: GameState, ctx: EffectContext, a: Amount): number 
       return s.players[ctx.controller]?.turnStats.spellsCast ?? 0;
     case "cardsDrawnThisTurn":
       return s.players[ctx.controller]?.turnStats.cardsDrawn ?? 0;
+    case "creaturesDiedThisTurn":
+      return s.turn.creaturesDied ?? 0;
     case "distinctPowers": {
       const ids = s.battlefield.filter((id) => matchesObjectFilter(s, ctx.controller, id, a.filter, ctx.sourceId));
       return new Set(ids.map((id) => chars(s, id).power)).size;
@@ -514,6 +516,8 @@ export function moveWithSpec(s: GameState, controller: PlayerId, id: ObjectId, s
   const back = s.defs[moved.defId]?.layout === "transform" ? s.defs[moved.defId]?.faceDefs?.[1] : undefined;
   if (spec.transformed && back) {
     moved.faceDefId = back.id;
+    // 714.3a : une Saga au verso (FIN) arrive avec un marqueur de savoir ; les remplacements d'arrivée ont lu le recto.
+    if (back.saga) changeCounters(s, moved, "lore", 1);
     bump(s);
   }
   if (spec.counters) changeCounters(s, moved, spec.counters.kind, spec.counters.n);
@@ -813,9 +817,9 @@ export function runEffect(s: GameState, r: Resolution, e: Effect): OpResult {
       return { skip: e.skip };
     }
     case "attach": {
-      const what = resolveRef(s, ctx, e.what)[0];
+      // Plusieurs Équipements vers une même créature (Beatrix, Loyal General).
       const to = resolveRef(s, ctx, e.to)[0];
-      if (what && to) attach(s, what, to);
+      if (to) for (const what of resolveRef(s, ctx, e.what)) attach(s, what, to);
       return;
     }
     case "addMana": {

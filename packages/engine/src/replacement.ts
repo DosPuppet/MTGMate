@@ -141,7 +141,7 @@ export function applyEntersReplacements(s: GameState, o: GameObject, ctx: Enters
   // Terrain choc : engagé, sauf si les points de vie ont été payés en le jouant (mis en jeu par un effet : engagé).
   if (s.defs[o.defId]?.shockLand && !ctx.shockPaid) o.tapped = true;
   // 714.3a : une Saga arrive avec un marqueur de savoir.
-  if (s.defs[o.defId]?.saga) changeCounters(s, o, "lore", 1);
+  if (s.defs[o.faceDefId ?? o.defId]?.saga) changeCounters(s, o, "lore", 1);
   // 306.5b : un planeswalker arrive avec sa loyauté imprimée.
   const loyalty = s.defs[o.defId]?.loyalty;
   if (loyalty) changeCounters(s, o, "loyalty", loyalty);

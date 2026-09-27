@@ -109,6 +109,42 @@ describe("Final Fantasy", () => {
     expect(chars(s, bear).power).toBe(3);
   });
 
+  it("transformation vers une Saga : marqueur de savoir, chapitres, puis retour au recto (Jill // Shiva)", () => {
+    let s = scenario({
+      p1: { battlefield: ["Jill, Shiva's Dominant // Shiva, Warden of Ice", ...lands("Island", 5)] },
+      p2: { battlefield: ["Bear Cub", "Forest"] },
+    });
+    const jill = idOf(s, "p1", "battlefield", "Jill, Shiva's Dominant // Shiva, Warden of Ice");
+    const index = (s.defs[s.objects[jill]?.defId ?? ""]?.abilities ?? []).findIndex(
+      (a) => a.kind === "activated" && a.label?.startsWith("Exilez-la"),
+    );
+    s = act(s, "p1", { type: "activate", source: jill, ability: index });
+    s = settle(s);
+    const shiva = idOf(s, "p1", "battlefield", "Jill, Shiva's Dominant // Shiva, Warden of Ice");
+    expect(chars(s, shiva).name).toBe("Shiva, Warden of Ice");
+    expect(s.objects[shiva]?.counters.lore).toBe(1);
+    // Chapitre III : les terrains adverses sont engagés, puis Shiva revient sur son recto (sans être sacrifiée).
+    s = advanceUntil(s, (x) => !x.battlefield.includes(shiva) && x.stack.length === 0);
+    expect(s.objects[idOf(s, "p2", "battlefield", "Forest")]?.tapped).toBe(true);
+    const back = idsOf(s, "p1", "battlefield", "Jill, Shiva's Dominant // Shiva, Warden of Ice");
+    expect(back).toHaveLength(1);
+    expect(chars(s, back[0] as string).name).not.toBe("Shiva, Warden of Ice");
+    expect(s.objects[back[0] as string]?.counters.lore).toBeUndefined();
+  });
+
+  it("assemblage : Vanille et Fang deviennent Ragnarok en payant {3}{B}{G}", () => {
+    let s = scenario({
+      turn: 2,
+      p1: {
+        battlefield: ["Vanille, Cheerful l'Cie", "Fang, Fearless l'Cie", "Swamp", "Forest", ...lands("Plains", 3)],
+      },
+    });
+    s = advanceUntil(s, (x) =>
+      x.battlefield.some((id) => x.defs[x.objects[id]?.defId ?? ""]?.name === "Ragnarok, Divine Deliverance"),
+    );
+    expect(idsOf(s, "p1", "battlefield", "Ragnarok, Divine Deliverance")).toHaveLength(1);
+  });
+
   it("PuPu UFO : seule la force de base devient le nombre de Villes", () => {
     let s = scenario({ p1: { battlefield: ["PuPu UFO", "Adventurer's Inn", "Capital City", ...lands("Island", 3)] } });
     const ufo = idOf(s, "p1", "battlefield", "PuPu UFO");

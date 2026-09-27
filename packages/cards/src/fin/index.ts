@@ -11,7 +11,9 @@ import { GREEN } from "./green";
 import { LANDS } from "./lands";
 import { MULTI } from "./multi";
 import { RED } from "./red";
+import { STARTER } from "./starter";
 import { SUMMONS } from "./summons";
+import { TRANSFORM } from "./transform";
 import { WHITE } from "./white";
 
 export const FIN_SCRIPTS: Record<string, CardScript> = {
@@ -25,4 +27,6 @@ export const FIN_SCRIPTS: Record<string, CardScript> = {
   ...MULTI,
   ...GEAR,
   ...SUMMONS,
+  ...TRANSFORM,
+  ...STARTER,
 };

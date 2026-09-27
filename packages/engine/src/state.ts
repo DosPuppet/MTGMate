@@ -386,6 +386,9 @@ export function moveObject(
     if (to === "graveyard" && lki.types.includes("Creature")) {
       s.turn.creatureDied = true;
       s.turn.creaturesDied = (s.turn.creaturesDied ?? 0) + 1;
+      // Sidequest: Hunt the Mark : « si une créature est morte sous le contrôle d'un adversaire ce tour-ci ».
+      const stats = s.players[lki.controller]?.turnStats;
+      if (stats) stats.creaturesLost = (stats.creaturesLost ?? 0) + 1;
     }
   }
   const from0 = o.zone;

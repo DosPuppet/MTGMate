@@ -233,6 +233,7 @@ export const amount = {
   speed: { kind: "speed" } as Amount,
   spellsCastThisTurn: { kind: "spellsCastThisTurn" } as Amount,
   cardsDrawnThisTurn: { kind: "cardsDrawnThisTurn" } as Amount,
+  creaturesDiedThisTurn: { kind: "creaturesDiedThisTurn" } as Amount,
   noncreatureCastBy: (who: Ref): Amount => ({ kind: "noncreatureCastBy", who }),
   refCount: (r: Ref): Amount => ({ kind: "refCount", ref: r }),
   distinctPowers: (filter: ObjectFilter): Amount => ({ kind: "distinctPowers", filter }),
@@ -1066,7 +1067,7 @@ export const cond = {
   wasCast: { kind: "wasCast" } as Condition,
   /** « si vous avez regardé ou surveillé ce tour-ci » */
   scried: { kind: "scriedThisTurn" } as Condition,
-  creaturesDied: (n: number): Condition => ({ kind: "creaturesDiedAtLeast", n }),
+  creaturesDied: (n: number, underOpponent?: boolean): Condition => ({ kind: "creaturesDiedAtLeast", n, underOpponent }),
   opponentDealtNoncombatDamage: { kind: "opponentDealtNoncombatDamage" } as Condition,
   drewAtLeast: (n: number): Condition => ({ kind: "drewAtLeast", n }),
   castThisTurn: (n: number, noncreature = false, exactly = false): Condition => ({

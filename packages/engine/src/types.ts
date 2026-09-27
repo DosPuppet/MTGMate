@@ -699,7 +699,7 @@ export type Condition =
   /** Le contrôleur a regardé (scry) ou surveillé ce tour-ci. */
   | { kind: "scriedThisTurn" }
   /** Au moins N créatures sont mortes ce tour-ci. */
-  | { kind: "creaturesDiedAtLeast"; n: number }
+  | { kind: "creaturesDiedAtLeast"; n: number; underOpponent?: boolean }
   /** Un adversaire a subi des blessures non de combat ce tour-ci. */
   | { kind: "opponentDealtNoncombatDamage" }
   /** Le contrôleur a pioché au moins N cartes ce tour-ci. */
@@ -1089,6 +1089,7 @@ export type Amount =
   | { kind: "spellsCastThisTurn" }
   /** Cartes que vous avez piochées ce tour-ci (Duelist of the Mind). */
   | { kind: "cardsDrawnThisTurn" }
+  | { kind: "creaturesDiedThisTurn" }
   /** Sorts non-créature lancés ce tour-ci par le joueur désigné (Magebane Lizard). */
   | { kind: "noncreatureCastBy"; who: Ref }
   /** Nombre d'objets désignés (Luxurious Locomotive : les créatures qui l'ont équipé). */
@@ -1832,6 +1833,8 @@ export interface TurnStats {
   milled: number;
   /** Cartes défaussées ce tour-ci (Jiang Yanggu, Alone). */
   cardsDiscarded: number;
+  /** Créatures mortes sous le contrôle de ce joueur ce tour-ci. */
+  creaturesLost?: number;
   /** Capacités d'exhaust activées ce tour-ci (Elvish Refueler). */
   exhaustActivated?: number;
   /** Crimes commis ce tour-ci (700.13). */

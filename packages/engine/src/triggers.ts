@@ -136,6 +136,8 @@ export function checkCondition(s: GameState, c: Condition, controller: PlayerId,
     case "creatureDiedThisTurn":
       return s.turn.creatureDied;
     case "creaturesDiedAtLeast":
+      if (c.underOpponent)
+        return opponentsOf(s, controller).reduce((n, q) => n + (s.players[q]?.turnStats.creaturesLost ?? 0), 0) >= c.n;
       return (s.turn.creaturesDied ?? 0) >= c.n;
     case "scriedThisTurn":
       return (s.players[controller]?.turnStats.scried ?? 0) > 0;

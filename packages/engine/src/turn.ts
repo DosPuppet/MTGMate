@@ -4,6 +4,7 @@
 import { type DamageSource, dealDamage, destroy, drawCard, putIntoGraveyard, setSpeed, sourceFromObject } from "./actions";
 import { ask } from "./choices";
 import { announceDiscard, announceDiscardBatch, drawBonus } from "./effects";
+import { copiedDefId } from "./layers";
 import { manaValue, payMana } from "./mana";
 import { RulesError, resolveTop } from "./stack";
 import {
@@ -218,7 +219,7 @@ function beginStep(s: GameState): void {
       // 714.3b : au début de la première phase principale, un marqueur de savoir sur chaque Saga du joueur actif.
       for (const id of s.battlefield) {
         const o = obj(s, id);
-        if (o.controller === active && s.defs[o.defId]?.saga) changeCounters(s, o, "lore", 1);
+        if (o.controller === active && s.defs[copiedDefId(s, id)]?.saga) changeCounters(s, o, "lore", 1);
       }
       givePriority(s);
       return;
@@ -972,7 +973,8 @@ function stateBasedActionsOnce(s: GameState): void {
         continue;
       }
       // 714.4 : une Saga dont le dernier chapitre est atteint, et dont aucun chapitre n'attend, est sacrifiée.
-      const saga = s.defs[o.defId]?.saga;
+      // Face active : une Saga au verso (Summons de FIN) ; une Saga retournée au recto n'en est plus une.
+      const saga = s.defs[copiedDefId(s, id)]?.saga;
       if (
         saga &&
         counterCount(o, "lore") >= saga.chapters &&

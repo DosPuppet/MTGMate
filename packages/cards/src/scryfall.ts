@@ -434,11 +434,13 @@ function sagaClassCase(
   script: CardScript | undefined,
 ): Partial<CardDef> & { extraAbilities?: CardDef["abilities"] } {
   const text = stripReminder(raw.oracleText);
-  if (raw.layout === "saga") {
+  // Saga au verso d'une carte transformable (Summons de FIN) : la face n'a pas la disposition « saga ».
+  if (raw.layout === "saga" || (!raw.faces?.length && /\bSaga\b/.test(raw.typeLine))) {
     const chapters = [...text.matchAll(/^([IVX]+(?:, [IVX]+)*) —/gm)].flatMap((m) =>
       (m[1] ?? "").split(", ").map((r) => ROMAN[r] ?? 0),
     );
-    return { layout: "saga", saga: { chapters: Math.max(0, ...chapters) } };
+    const saga = { chapters: Math.max(0, ...chapters) };
+    return raw.layout === "saga" ? { layout: "saga", saga } : { saga };
   }
   if (raw.layout === "class") {
     const costs = [...text.matchAll(/^((?:\{[^}]+\})+): Level (\d+)/gm)].map((m) => ({

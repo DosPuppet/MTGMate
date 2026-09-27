@@ -26,7 +26,7 @@ Ce fichier sert au suivi du projet entre les sessions. Le README présente le pr
 | **Edge of Eternities (EOE)** | ✅ **260 / 260** (lots A à D, branche `standard`) |
 | **Aetherdrift (DFT)** | ✅ **260 / 260** (lots A à C, branche `standard`) |
 | **Outlaws of Thunder Junction + The Big Score (OTJ, BIG)** | ✅ **269 / 269 + 30 / 30** (lots A à C, branche `standard`) |
-| **Final Fantasy (FIN)** | 🚧 **188 / 307** (lots A et B, branche `standard`) |
+| **Final Fantasy (FIN)** | 🚧 **217 / 307** (lots A à C, branche `standard`) |
 | Autres extensions Standard | branche `standard`, plan par lots ci-dessous |
 
 ### Branche `standard` : tout le Standard
@@ -279,7 +279,12 @@ Demandée par l'utilisateur le 27/09/2026.
   - correctif : Territory Forge fait avancer la version d'état en liant la carte, et ne garde que les capacités d'une carte encore exilée ; l'invariant de cache du fuzz nomme la carte et les champs divergents.
   
   Passent au lot D : Summon: Primal Odin (« ce joueur perd la partie »), Summon: Brynhildr, Summon: Fenrir, Summon: Bahamut (valeur de mana totale), Aettir and Priwen, Buster Sword, Genji Glove, The Masamune.
-- Lots C et D : transformation et assemblage, légendaires et cartes restantes.
+- Lot C ✅ (217/307) : 18 cartes transformables et l'assemblage Vanille + Fang = Ragnarok (`fin/transform.ts`, scripts par nom de face). Le moteur gagne :
+  - les Sagas au verso : la face est reconnue comme Saga à l'import (ligne de type), elle arrive transformée avec un marqueur de savoir, et le marqueur de la phase principale et le sacrifice (714.4) lisent la face active (`copiedDefId`) ; une Saga renvoyée sur son recto n'est plus une Saga ;
+  - aides `flipOut` / `flipBack` (« exilez-la, puis renvoyez-la [transformée] ») ;
+  - la condition « une créature est morte sous le contrôle d'un adversaire ce tour-ci » (`cond.creaturesDied(n, true)`, `turnStats.creaturesLost`) ;
+  - 11 cartes des decks de démarrage (`fin/starter.ts`, numéros hors du set principal), avec le montant `creaturesDiedThisTurn` et l'effet `attach` qui attache plusieurs Équipements à la fois (Beatrix).
+- Lot D : cartes restantes (légendaires, rares, transformables complexes : Clive, Terra, Sephiroth, Zenos, Kefka, Kuja, Serah, Ultimecia, Emet-Selch, Esper Origins, Crystal Fragments, Play Blitzball…).
 
 ### Reality Fracture (FRA)
 
@@ -453,6 +458,9 @@ Réimpressions : défenses talismaniques contre une couleur, changelin, restrict
 - **Haste Magic, Opera Love Song :** les cartes exilées sont jouables jusqu'à la fin de votre prochain tour (et non jusqu'à votre prochaine étape de fin).
 - **Freya Crescent :** son mana sert à toute capacité d'un Équipement, pas seulement à Équiper.
 - **Sorceress's Schemes :** seulement une carte d'éphémère ou de rituel du cimetière (pas une carte exilée avec flashback).
+- **Beatrix, Loyal General :** tous vos Équipements ou aucun (pas de choix un par un).
+- **Lightning, Security Sergeant :** la carte reste jouable tant que vous contrôlez une créature nommée Lightning, Security Sergeant.
+- **Sidequest: Raise a Chocobo :** la recherche de terrain de Black Chocobo (« quand il se transforme ») est faite par l'effet qui le transforme.
 - **Summoner's Grimoire :** le joueur choisit d'abord parmi les cartes de créature non-enchantement ; s'il n'en prend aucune, il peut mettre une créature-enchantement engagée et attaquante.
 - **Capital City, Starting Town :** leurs capacités de mana à coût (mana ou PV) passent par la pile (comme Ramos).
 - **Légalité Standard :** instantané des légalités Scryfall au moment de l'import (`legalities.standard` dans `data/<set>.json`). Après une rotation ou une annonce de bannissement, réimporter les sets (`npm run import-cards -- <set>`).
