@@ -113,8 +113,8 @@ interface Store {
   attackers: string[];
   /** Défenseur choisi pour chaque attaquant (multijoueur). */
   attackTargets: Record<string, string>;
-  /** Défenseur appliqué aux prochaines créatures sélectionnées. */
-  attackTarget: string | null;
+  /** Attaquant « en visée » (plusieurs défenseurs possibles) : on clique ensuite sa cible, joueur ou planeswalker. */
+  aimingAttacker: string | null;
   blocks: Record<string, string>;
   selectedBlocker: string | null;
   selection: string[];
@@ -155,7 +155,8 @@ interface Store {
   chooseAdditional(kind: "discard" | "sacrifice" | "tap", ids: string[]): void;
   cancel(): void;
   toggleAttacker(id: string): void;
-  setAttackTarget(player: string): void;
+  /** Cible choisie pour l'attaquant en visée. */
+  aimAttackAt(defender: string): void;
   allAttack(): void;
   endTurn(): void;
   toggleStop(side: "own" | "opponent", step: Step): void;
@@ -435,7 +436,7 @@ export const useGame = create<Store>((set, get) => {
     abilityMenu: null,
     attackers: [],
     attackTargets: {},
-    attackTarget: null,
+    aimingAttacker: null,
     blocks: {},
     selectedBlocker: null,
     selection: [],
@@ -599,6 +600,7 @@ export const useGame = create<Store>((set, get) => {
               abilityMenu: null,
               attackers: forced,
               attackTargets: {},
+              aimingAttacker: null,
               blocks: {},
               selectedBlocker: null,
               selection: [],
@@ -663,8 +665,8 @@ export const useGame = create<Store>((set, get) => {
       const p = view.pending;
       if (!p || p.player !== view.viewer) return;
       if (p.kind === "declareAttackers") {
-        // Clic sur un planeswalker adverse : il devient la cible des prochains attaquants.
-        if (p.defenders?.includes(id)) return set({ attackTarget: id });
+        // Planeswalker attaquable : cible de l'attaquant en visée.
+        if (p.defenders?.includes(id)) return get().aimAttackAt(id);
         return get().toggleAttacker(id);
       }
       if (p.kind === "declareBlockers") {
@@ -707,7 +709,7 @@ export const useGame = create<Store>((set, get) => {
       const { casting, view } = get();
       const p = view?.pending;
       if (p?.kind === "declareAttackers" && p.player === view?.viewer && p.defenders?.includes(id)) {
-        return set({ attackTarget: id });
+        return get().aimAttackAt(id);
       }
       if (casting?.stage === "target" && casting.spec) {
         if (casting.spec.legal.includes(id)) return get().pickTarget(id);
@@ -788,26 +790,37 @@ export const useGame = create<Store>((set, get) => {
     },
 
     cancel() {
-      set({ casting: null, abilityMenu: null, selectedBlocker: null });
+      set({ casting: null, abilityMenu: null, selectedBlocker: null, aimingAttacker: null });
     },
 
     toggleAttacker(id) {
       const p = get().view?.pending;
       if (p?.kind !== "declareAttackers" || !p.candidates?.includes(id)) return;
       const cur = get().attackers;
-      if (cur.includes(id)) return set({ attackers: cur.filter((a) => a !== id) });
-      const target = get().attackTarget ?? p.defenders?.[0];
+      // Créature déjà attaquante : elle n'attaque plus.
+      if (cur.includes(id)) return set({ attackers: cur.filter((a) => a !== id), aimingAttacker: null });
+      const defenders = p.defenders ?? [];
+      // Plusieurs cibles possibles (façon MTGA) : la créature est « en visée », on clique ensuite sa cible.
+      if (defenders.length > 1) return set({ aimingAttacker: get().aimingAttacker === id ? null : id });
+      const target = defenders[0];
       set({ attackers: [...cur, id], attackTargets: target ? { ...get().attackTargets, [id]: target } : get().attackTargets });
     },
 
-    setAttackTarget(player) {
-      set({ attackTarget: player });
+    aimAttackAt(defender) {
+      const aiming = get().aimingAttacker;
+      if (!aiming) return get().notify("Cliquez d'abord la créature qui attaque, puis sa cible.");
+      set({
+        attackers: get().attackers.includes(aiming) ? get().attackers : [...get().attackers, aiming],
+        attackTargets: { ...get().attackTargets, [aiming]: defender },
+        aimingAttacker: null,
+      });
     },
 
     allAttack() {
       const p = get().view?.pending;
       if (p?.kind !== "declareAttackers") return;
-      const target = get().attackTarget ?? p.defenders?.[0];
+      // Tous attaquent le premier adversaire, sauf ceux dont la cible est déjà choisie.
+      const target = p.defenders?.[0];
       const ids = p.candidates ?? [];
       set({
         attackers: [...ids],

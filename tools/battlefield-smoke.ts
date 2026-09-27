@@ -220,15 +220,25 @@ for (let i = 0; i < 80 && (await pending()) !== "declareAttackers|true"; i++) {
   await page.waitForTimeout(300);
 }
 check((await pending()) === "declareAttackers|true", "déclaration des attaquants atteinte");
+// Plusieurs cibles d'attaque (joueur et planeswalkers) : façon MTGA, on clique la créature, puis sa cible.
 check(
-  (await page.locator(".battlefield.opp .walker-zone .glow-target").count()) > 0,
-  "les planeswalkers adverses, dans leur zone, se désignent comme cible d'attaque",
+  (await page.locator(".battlefield.opp .walker-zone .glow-target").count()) === 0,
+  "sans attaquant en visée, les planeswalkers adverses ne sont pas en surbrillance",
 );
 const stackTop = (n: number) =>
   page.locator(".battlefield.me .token-stack", { hasText: `×${n}` }).locator(":scope > .perm .card");
 await stackTop(12).click();
 await page.waitForTimeout(400);
+check(
+  (await page.locator(".battlefield.opp .walker-zone .glow-target").count()) > 0 &&
+    (await page.locator(".player-bar.opp .avatar.glow-target").count()) > 0,
+  "attaquant en visée : planeswalkers et avatar adverses en surbrillance",
+);
+await page.locator(".player-bar.opp .avatar").first().click();
+await page.waitForTimeout(400);
 await stackTop(11).click();
+await page.waitForTimeout(400);
+await page.locator(".battlefield.opp .walker-zone .glow-target").first().click();
 await page.waitForTimeout(400);
 const after = await page.locator(".battlefield.me .token-count").allInnerTexts();
 check(after.includes("×10"), "deux clics sur la pile font attaquer deux jetons (×12 → ×10)", after);

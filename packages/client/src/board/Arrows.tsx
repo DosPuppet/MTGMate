@@ -21,6 +21,7 @@ function useArrowSpecs(): ArrowSpec[] {
   const casting = useGame((s) => s.casting);
   const attackers = useGame((s) => s.attackers);
   const attackTargets = useGame((s) => s.attackTargets);
+  const aiming = useGame((s) => s.aimingAttacker);
   return useMemo(() => {
     const out: ArrowSpec[] = [];
     if (!view) return out;
@@ -29,10 +30,14 @@ function useArrowSpecs(): ArrowSpec[] {
       if (!view.players[a.defender]) out.push({ key: `a-${a.id}`, from: a.id, to: a.defender, kind: "target" });
     }
     if (view.pending?.kind === "declareAttackers") {
+      // Plusieurs cibles possibles : chaque attaquant montre sa cible (joueur compris) ; sinon, seulement un planeswalker.
+      const several = (view.pending.defenders?.length ?? 0) > 1;
       for (const id of attackers) {
         const d = attackTargets[id];
-        if (d && !view.players[d]) out.push({ key: `pa-${id}`, from: id, to: d, kind: "pending-block" });
+        if (d && (several || !view.players[d])) out.push({ key: `pa-${id}`, from: id, to: d, kind: "pending-block" });
       }
+      // Attaquant en visée : la flèche suit la souris jusqu'à ce qu'on clique sa cible.
+      if (aiming) out.push({ key: "aim-attack", from: aiming, to: MOUSE, kind: "aim" });
     }
     for (const item of view.stack) {
       for (const t of item.targets) out.push({ key: `t-${item.id}-${t}`, from: item.id, to: t, kind: "target" });
@@ -48,7 +53,7 @@ function useArrowSpecs(): ArrowSpec[] {
       if (casting.stage === "target") out.push({ key: "aim", from: casting.sourceId, to: MOUSE, kind: "aim" });
     }
     return out;
-  }, [view, blocks, casting, attackers, attackTargets]);
+  }, [view, blocks, casting, attackers, attackTargets, aiming]);
 }
 
 function center(id: string): { x: number; y: number } | null {

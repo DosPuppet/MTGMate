@@ -75,7 +75,12 @@ function PlayerBar({ player, isMe }: { player: PlayerView; isMe: boolean }) {
   const clickPlayer = useGame((s) => s.clickPlayer);
   const openGraveyard = useGame((s) => s.openGraveyard);
   const lang = useGame((s) => s.lang);
-  const isTarget = casting?.stage === "target" && casting.spec?.legal.includes(player.id);
+  const aiming = useGame((s) => s.aimingAttacker);
+  const p = view.pending;
+  // Ciblage d'un sort, ou cible possible de l'attaquant en visée.
+  const isTarget =
+    (casting?.stage === "target" && casting.spec?.legal.includes(player.id)) ||
+    (!!aiming && p?.kind === "declareAttackers" && !!p.defenders?.includes(player.id));
   const thinking = view.pending?.player === player.id && !isMe;
   const active = view.turn.active === player.id;
   const top = player.graveyard[player.graveyard.length - 1];
@@ -141,7 +146,7 @@ function usePermanentGlow(): (o: ObjectView) => Glow {
   const attackers = useGame((s) => s.attackers);
   const blocks = useGame((s) => s.blocks);
   const selectedBlocker = useGame((s) => s.selectedBlocker);
-  const attackTarget = useGame((s) => s.attackTarget);
+  const aiming = useGame((s) => s.aimingAttacker);
   const acts = myActions(view);
   const p = view.pending;
   const mine = p?.player === view.viewer;
@@ -150,11 +155,12 @@ function usePermanentGlow(): (o: ObjectView) => Glow {
       if (casting.picked?.includes(o.id)) return "selected";
       return casting.spec?.legal.includes(o.id) ? "target" : null;
     }
-    // Planeswalker adverse attaquable : désigné comme cible d'attaque.
+    // Planeswalker attaquable : en surbrillance quand un attaquant est en visée.
     if (mine && p?.kind === "declareAttackers" && p.defenders?.includes(o.id)) {
-      return attackTarget === o.id ? "selected" : "target";
+      return aiming ? "target" : null;
     }
     if (mine && p?.kind === "declareAttackers") {
+      if (aiming === o.id) return "selected";
       if (attackers.includes(o.id)) return "attacking";
       return p.candidates?.includes(o.id) ? "selectable" : null;
     }
@@ -489,8 +495,7 @@ function Banner() {
   const chooseNoTarget = useGame((s) => s.chooseNoTarget);
   const confirmTargets = useGame((s) => s.confirmTargets);
   const allAttack = useGame((s) => s.allAttack);
-  const attackTarget = useGame((s) => s.attackTarget);
-  const setAttackTarget = useGame((s) => s.setAttackTarget);
+  const aiming = useGame((s) => s.aimingAttacker);
   const lang = useGame((s) => s.lang);
   const p = view.pending;
   const mine = p?.player === view.viewer;
@@ -539,24 +544,15 @@ function Banner() {
   } else if (p.kind === "declareAttackers") {
     const defenders = p.defenders ?? [];
     text =
-      defenders.length > 1 ? "Choisissez qui attaquer, puis cliquez vos créatures" : "Cliquez sur les créatures qui attaquent";
+      defenders.length <= 1
+        ? "Cliquez sur les créatures qui attaquent"
+        : aiming
+          ? `${nameOf(aiming)} attaque… cliquez sa cible (en surbrillance) — Échap pour annuler`
+          : "Cliquez une créature, puis le joueur ou le planeswalker qu'elle attaque";
     extra = (
-      <>
-        {defenders.length > 1 &&
-          defenders.map((d) => (
-            <button
-              key={d}
-              type="button"
-              className={`btn small ${(attackTarget ?? defenders[0]) === d ? "primary" : ""}`}
-              onClick={() => setAttackTarget(d)}
-            >
-              → {nameOf(d)}
-            </button>
-          ))}
-        <button type="button" className="btn small" onClick={allAttack}>
-          Tous attaquent
-        </button>
-      </>
+      <button type="button" className="btn small" onClick={allAttack}>
+        Tous attaquent
+      </button>
     );
   } else if (p.kind === "declareBlockers") {
     text = "Bloqueurs : cliquez une de vos créatures, puis l'attaquant à bloquer";
