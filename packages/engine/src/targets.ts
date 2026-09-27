@@ -49,6 +49,7 @@ export function matchesView(v: LkiSnapshot, f: ObjectFilter, perspective: Player
   if (f.warped !== undefined && !!v.warped !== f.warped) return false;
   if (f.blocking !== undefined && !!v.blocking !== f.blocking) return false;
   if (f.multicolored !== undefined && v.colors.length >= 2 !== f.multicolored) return false;
+  if (f.manaSpentBelowValue && !((v.manaSpent ?? 0) < (v.manaValue ?? 0))) return false;
   if (f.damaged !== undefined && !!v.damaged !== f.damaged) return false;
   return true;
 }
@@ -101,6 +102,10 @@ function sourcePower(s: GameState, sourceId?: ObjectId): number {
 
 /** Remplace les bornes dynamiques du filtre par leur valeur actuelle. */
 function resolveFilter(s: GameState, f: ObjectFilter, sourceId?: ObjectId): ObjectFilter {
+  if (f.maxManaValueManaSpent) {
+    const spent = (sourceId && (s.objects[sourceId]?.manaSpent ?? s.lki[sourceId]?.manaSpent)) || 0;
+    return { ...f, maxManaValueManaSpent: undefined, maxManaValue: spent };
+  }
   if (!f.maxManaValueSourcePower) return f;
   return { ...f, maxManaValueSourcePower: undefined, maxManaValue: sourcePower(s, sourceId) };
 }
@@ -153,6 +158,12 @@ export function isLegalTarget(s: GameState, controller: PlayerId, spec: TargetSp
     const f = spec.filter.spells;
     return !!f && s.stack.some((x) => x.id === id && x.kind === "spell") && matchesView(snapshot(s, id), f, controller, sourceId);
   }
+  if (o && o.zone === "exile") {
+    const ex = spec.filter.exiled;
+    if (!ex || o.faceDown || o.cardCopy || o.preparedFor) return false;
+    if (ex.withWarp && !s.defs[o.defId]?.warp) return false;
+    return !ex.filter || matchesCard(s, controller, id, { ...ex.filter, controller: undefined }, sourceId);
+  }
   if (o && o.zone === "graveyard") {
     const cards = spec.filter.cards;
     if (!cards) return false;
@@ -183,6 +194,7 @@ export function legalTargets(s: GameState, controller: PlayerId, spec: TargetSpe
   if (spec.filter.players) for (const p of s.playerOrder) if (ok(p)) out.push(p);
   if (spec.filter.objects) for (const id of s.battlefield) if (ok(id)) out.push(id);
   if (spec.filter.cards) for (const p of s.playerOrder) for (const id of s.players[p]?.graveyard ?? []) if (ok(id)) out.push(id);
+  if (spec.filter.exiled) for (const id of s.exile) if (ok(id)) out.push(id);
   if (spec.filter.spells)
     for (const item of s.stack) if (item.kind === "spell" && item.id !== sourceId && ok(item.id)) out.push(item.id);
   if (spec.filter.stackItems)

@@ -72,7 +72,26 @@ function cdaValue(s: GameState, o: GameObject, a: Amount): number {
     );
     return ["Plains", "Island", "Swamp", "Mountain", "Forest"].filter((t) => subtypes.has(t)).length;
   }
+  if (a.kind === "maxManaValue") {
+    // Emissary Escort : plus grande valeur de mana parmi vos autres artefacts (types imprimés).
+    return Math.max(
+      0,
+      ...s.battlefield
+        .filter((id) => {
+          const x = obj(s, id);
+          const d = s.defs[x.defId];
+          if (a.filter.other && id === o.id) return false;
+          if (a.filter.controller === "you" && x.controller !== o.controller) return false;
+          return !a.filter.types || a.filter.types.some((t) => d?.types.includes(t));
+        })
+        .map((id) => manaValue(s.defs[obj(s, id).defId]?.manaCost)),
+    );
+  }
   if (a.kind !== "count") return 0;
+  if (a.zone === "exile") {
+    // Cosmogoyf : cartes que vous possédez en exil.
+    return s.exile.filter((id) => obj(s, id).owner === o.controller).length;
+  }
   if (!a.zone || a.zone === "battlefield") {
     // « égales au nombre de créatures que vous contrôlez » (types imprimés : pas de récursion dans les couches).
     const types = a.filter.types;
@@ -255,6 +274,8 @@ function view(s: GameState, id: ObjectId, c: Characteristics, o: GameObject, att
     preparedSpell: !!o.preparedFor || undefined,
     prepared: !!o.preparedCopy || undefined,
     warped: o.warped || undefined,
+    // Sort sur la pile : le mana dépensé est porté par l'élément de pile (Unravel).
+    manaSpent: o.manaSpent ?? (o.zone === "stack" ? s.stack.find((x) => x.id === id)?.manaSpent : undefined),
     attackedTurn: o.attackedTurn,
   };
 }

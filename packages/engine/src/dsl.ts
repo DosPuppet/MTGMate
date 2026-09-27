@@ -9,6 +9,7 @@ import type {
   ActivatedAbilityDef,
   AdditionalCost,
   Amount,
+  CardDef,
   CardType,
   CastPermissionAbilityDef,
   Condition,
@@ -205,6 +206,10 @@ export const amount = {
   maxManaValueInGraveyard: { kind: "maxManaValueInGraveyard" } as Amount,
   distinctColors: (filter: ObjectFilter): Amount => ({ kind: "distinctColors", filter }),
   countersAmong: (filter: ObjectFilter, counter: string): Amount => ({ kind: "countersAmong", filter, counter }),
+  halfLife: (who: Ref): Amount => ({ kind: "halfLife", who }),
+  landsEnteredThisTurn: { kind: "landsEnteredThisTurn" } as Amount,
+  manaSpent: { kind: "manaSpent" } as Amount,
+  maxManaValue: (filter: ObjectFilter): Amount => ({ kind: "maxManaValue", filter }),
 };
 
 export const fx = {
@@ -298,6 +303,16 @@ export const fx = {
     const flat = effects.flat();
     return [{ op: "may", prompt, skip: flat.length }, ...flat];
   },
+  /** « [Ce joueur] peut … » : la question est posée à un autre joueur (un adversaire ciblé…). */
+  mayFor: (who: Ref, prompt: string, ...effects: Effects): Effect[] => {
+    const flat = effects.flat();
+    return [{ op: "may", prompt, skip: flat.length, who }, ...flat];
+  },
+  /** Comme `mayFor`, en mémorisant la réponse (1 = oui) pour un « Si [il] ne le fait pas, … ». */
+  mayForStore: (who: Ref, prompt: string, storeAs: string, ...effects: Effects): Effect[] => {
+    const flat = effects.flat();
+    return [{ op: "may", prompt, skip: flat.length, who, store: storeAs }, ...flat];
+  },
   /** « Si [condition], … » : les effets ne s'appliquent que si la condition est vraie à la résolution. */
   when: (c: Condition, ...effects: Effects): Effect[] => {
     const flat = effects.flat();
@@ -336,14 +351,29 @@ export const fx = {
   gainControl: (what: Ref): Effect => ({ op: "gainControl", what }),
   copySpell: (what: Ref, count: Amount): Effect => ({ op: "copySpell", what, count }),
   millUntil: (who: Ref, filter: ObjectFilter): Effect => ({ op: "millUntil", who, filter }),
-  exileTop: (who: Ref, n: number, store: string): Effect => ({ op: "exileTop", who, n, store }),
-  grantPlay: (what: Ref, opts: { free?: boolean; anyTime?: boolean; forever?: boolean } = {}): Effect => ({
+  exileTop: (who: Ref, n: Amount, store: string): Effect => ({ op: "exileTop", who, n, store }),
+  grantPlay: (
+    what: Ref,
+    opts: {
+      free?: boolean;
+      anyTime?: boolean;
+      forever?: boolean;
+      condition?: Condition;
+      forOwner?: boolean;
+      extraCost?: number;
+      landsTapped?: boolean;
+    } = {},
+  ): Effect => ({
     op: "grantPlay",
     what,
     ...opts,
   }),
   castCopiesFree: (what: Ref[], maxTotalManaValue: number): Effect => ({ op: "castCopiesFree", what, maxTotalManaValue }),
   noLegendRuleThisTurn: { op: "noLegendRuleThisTurn" } as Effect,
+  exileUntil: (filter: ObjectFilter, store: string): Effect => ({ op: "exileUntil", filter, store }),
+  setLife: (amount: Amount, who: Ref = ref.you): Effect => ({ op: "setLife", who, amount }),
+  exileFromOwnHand: (who: Ref, store: string): Effect => ({ op: "exileFromOwnHand", who, store }),
+  tapOrSacrifice: { op: "tapOrSacrifice" } as Effect,
   /** Manifester (sans garde) ou envelopper d'une cape (`ward`) les cartes désignées. */
   putFaceDown: (what: Ref, ward = false): Effect => ({ op: "putFaceDown", what, ward }),
   manifestDread: { op: "manifestDread" } as Effect,
@@ -451,7 +481,7 @@ export const fx = {
     spec: { to: "exile" },
     store,
   }),
-  moveAll: (from: "battlefield" | "graveyard", whose: Ref, filter: ObjectFilter, spec: MoveSpec): Effect => ({
+  moveAll: (from: "battlefield" | "graveyard" | "hand", whose: Ref, filter: ObjectFilter, spec: MoveSpec): Effect => ({
     op: "moveAll",
     from,
     whose,
@@ -537,6 +567,13 @@ export const fx = {
     bind,
     vars,
   }),
+  /** Capacité retardée à un autre moment : étape de fin de votre prochain tour, fin du combat. */
+  delayedAt: (at: "yourNextEndStep" | "endOfCombat", effects: Effects, bind?: Record<string, Ref>): Effect => ({
+    op: "delayed",
+    at,
+    effects: effects.flat(),
+    bind,
+  }),
   reflexive: (targets: TargetSpec[], effects: Effects): Effect => ({ op: "reflexive", targets, effects: effects.flat() }),
   /** « Piochez N cartes, puis défaussez N cartes. » */
   loot: (n = 1): Effect[] => [
@@ -574,6 +611,7 @@ export function manaAbility(
     produceChosen?: boolean;
     rider?: ManaAbilityDef["rider"];
     distinctPowers?: boolean;
+    tapAnother?: boolean;
   } = {},
 ): ManaAbilityDef {
   return {
@@ -586,12 +624,18 @@ export function manaAbility(
     produceChosen: opts.produceChosen,
     rider: opts.rider,
     amountDistinctPowers: opts.distinctPowers,
+    tapAnother: opts.tapAnother,
   };
 }
 
 /** « Les sorts de [filtre] que vous lancez coûtent {N} de moins. » */
-export function costReducer(filter: ObjectFilter, generic: number, label?: string): CostReductionAbilityDef {
-  return { kind: "costReduction", filter, generic, label };
+export function costReducer(
+  filter: ObjectFilter,
+  generic: number,
+  label?: string,
+  opts: { condition?: Condition; genericAmount?: Amount; opponents?: boolean } = {},
+): CostReductionAbilityDef {
+  return { kind: "costReduction", filter, generic, label, ...opts };
 }
 
 export function activated(opts: {
@@ -620,6 +664,12 @@ export function activated(opts: {
   bounceSelf?: boolean;
   addCounters?: { kind: string; n: number };
   exileFromGraveyard?: { filter: ObjectFilter; count?: number };
+  /** « Cette capacité coûte {N} de moins [si …] ». */
+  reduction?: { generic: Amount; condition?: Condition };
+  /** « Retirez un marqueur [+1/+1] d'une créature que vous contrôlez ». */
+  removeCounterFrom?: { filter: ObjectFilter; kind: string };
+  /** « Engagez X [artefacts] dégagés que vous contrôlez ». */
+  tapX?: ObjectFilter;
   label?: string;
 }): ActivatedAbilityDef {
   return {
@@ -640,7 +690,10 @@ export function activated(opts: {
       exileFromGraveyard: opts.exileFromGraveyard
         ? { filter: opts.exileFromGraveyard.filter, count: opts.exileFromGraveyard.count ?? 1 }
         : undefined,
+      removeCounterFrom: opts.removeCounterFrom,
+      tapX: opts.tapX,
     },
+    reduction: opts.reduction,
     targets: opts.targets ?? [],
     effects: opts.effects.flat(),
     sorcerySpeed: opts.sorcerySpeed,
@@ -707,7 +760,11 @@ export const when = {
   combatDamageBatch: (who: ObjectFilter): TriggerSpec => ({ on: "combatDamageBatch", who }),
   /** « Quand ce permanent est mis dans un cimetière depuis le champ de bataille » */
   putIntoGraveyardSelf: { on: "leaves", who: "self", to: "graveyard" } as TriggerSpec,
-  blocks: (who: "self" | ObjectFilter): TriggerSpec => ({ on: "blocks", who }),
+  blocks: (who: "self" | ObjectFilter, attacker?: ObjectFilter): TriggerSpec => ({ on: "blocks", who, attacker }),
+  /** « Chaque fois que [créature] meurt ou est exilée » */
+  diesOrExiled: (who: "self" | ObjectFilter, minPower?: number): TriggerSpec => ({ on: "diesOrExiled", who, minPower }),
+  /** « Chaque fois que vous jouez un terrain » */
+  playLand: { on: "playLand" } as TriggerSpec,
   yourUpkeep: { on: "step", step: "upkeep", whose: "you" } as TriggerSpec,
   yourEndStep: { on: "step", step: "end", whose: "you" } as TriggerSpec,
   eachEndStep: { on: "step", step: "end", whose: "any" } as TriggerSpec,
@@ -769,6 +826,7 @@ export const when = {
 /** Conditions courantes (raid, morbide…). */
 export const cond = {
   raid: { kind: "attackedThisTurn" } as Condition,
+  attackedWith: (subtype: string): Condition => ({ kind: "attackedThisTurn", subtype }),
   morbid: { kind: "creatureDiedThisTurn" } as Condition,
   kicked: { kind: "kicked" } as Condition,
   controls: (filter: ObjectFilter, atLeast = 1): Condition => ({ kind: "controls", filter, atLeast }),
@@ -827,6 +885,32 @@ export const cond = {
   spellCastFromGraveyard: { kind: "spellCastFromGraveyard" } as Condition,
   sourceDealtCombatDamage: { kind: "sourceDealtCombatDamage" } as Condition,
 };
+
+/**
+ * Garde (702.21) : « Chaque fois que ce permanent devient la cible d'un sort ou d'une capacité qu'un adversaire
+ * contrôle, contrecarrez-le à moins que ce joueur ne paie [coût]. » (accordée : Hardlight Containment).
+ */
+export function wardAbility(ward: NonNullable<CardDef["ward"]>): TriggeredAbilityDef {
+  return {
+    kind: "triggered",
+    trigger: { on: "becomesTarget", who: "self", byOpponent: true },
+    targets: [],
+    effects: [
+      {
+        op: "unlessPay",
+        who: { kind: "eventPlayer" },
+        mana: ward.mana,
+        life: ward.life,
+        discard: ward.discard,
+        discardRandom: ward.discardRandom,
+        sacrifice: ward.sacrifice,
+        skip: 1,
+      },
+      { op: "counter", what: { kind: "eventObject" } },
+    ],
+    label: "Garde",
+  };
+}
 
 /** « Vous pouvez lancer des sorts comme s'ils avaient le flash. » */
 export function flashForAll(label?: string): CastPermissionAbilityDef {

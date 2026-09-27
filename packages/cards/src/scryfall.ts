@@ -6,6 +6,7 @@ import {
   type CardScript,
   type CardType,
   type Color,
+  dsl,
   type Keyword,
   type ObjectFilter,
   parseManaCost,
@@ -105,7 +106,7 @@ function stripReminder(text: string): string {
 
 /** Garde : « Ward {2} », « Ward—Pay 7 life. » ou « Ward—{3}, Pay 3 life. » */
 const WARD =
-  /\bward(?: ((?:\{[^}]+\})+)|—(?:((?:\{[^}]+\})+), )?pay (\d+) life\.?|—discard a card\.?|—sacrifice (two|three|four) permanents\.?)/i;
+  /\bward(?: ((?:\{[^}]+\})+)|—(?:((?:\{[^}]+\})+), )?pay (\d+) life\.?|—discard a card( at random)?\.?|—sacrifice (two|three|four) permanents\.?)/i;
 
 /** « Equip {3}{W} » (702.6) : capacité activée en rituel, cible une créature que vous contrôlez. */
 export function parseEquip(text: string): string | undefined {
@@ -117,9 +118,9 @@ export function parseWard(text: string): CardDef["ward"] {
   if (!m) return undefined;
   if (m[1]) return { mana: parseManaCost(m[1]) };
   // « Ward—Sacrifice three permanents. » (Emrakul, the Exigent Doom)
-  if (m[4]) return { sacrifice: { two: 2, three: 3, four: 4 }[m[4].toLowerCase()] };
-  // « Ward—Discard a card. » (Gideon the Oathless)
-  if (!m[3]) return { discard: true };
+  if (m[5]) return { sacrifice: { two: 2, three: 3, four: 4 }[m[5].toLowerCase()] };
+  // « Ward—Discard a card [at random]. » (Gideon the Oathless, Alpharael, Stonechosen)
+  if (!m[3]) return m[4] ? { discard: true, discardRandom: true } : { discard: true };
   return { mana: m[2] ? parseManaCost(m[2]) : undefined, life: Number(m[3]) };
 }
 
@@ -253,28 +254,7 @@ function intrinsicAbilities(
       label: `Équiper ${equip}`,
     });
   }
-  if (ward) {
-    // « Chaque fois que ce permanent devient la cible d'un sort ou d'une capacité qu'un adversaire contrôle,
-    // contrecarrez-le à moins que ce joueur ne paie [coût]. »
-    out.push({
-      kind: "triggered",
-      trigger: { on: "becomesTarget", who: "self", byOpponent: true },
-      targets: [],
-      effects: [
-        {
-          op: "unlessPay",
-          who: { kind: "eventPlayer" },
-          mana: ward.mana,
-          life: ward.life,
-          discard: ward.discard,
-          sacrifice: ward.sacrifice,
-          skip: 1,
-        },
-        { op: "counter", what: { kind: "eventObject" } },
-      ],
-      label: "Garde",
-    });
-  }
+  if (ward) out.push(dsl.wardAbility(ward));
   return out;
 }
 
@@ -575,7 +555,8 @@ function singleDef(raw: RawCard, script: CardScript | undefined, set: string): C
     if (kw && !(kw === "hexproof" && partialHexproof)) keywords.add(kw);
   }
   for (const k of script?.keywords ?? []) keywords.add(k);
-  const ward = parseWard(raw.oracleText);
+  // « Enchanted permanent has ward {1} » (Hardlight Containment) : garde accordée, pas celle de la carte.
+  const ward = raw.keywords.some((k) => k.toLowerCase() === "ward") ? parseWard(raw.oracleText) : undefined;
   if (ward) keywords.add("ward");
 
   const {

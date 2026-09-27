@@ -9,7 +9,7 @@ import { legalActions } from "../src/legal";
 import { chars } from "../src/state";
 import { canBlock, declareBlockers } from "../src/turn";
 import type { GameState, TokenSpec } from "../src/types";
-import { act, advanceUntil, idOf, idsOf, passBoth, scenario } from "./helpers";
+import { act, advanceUntil, idOf, idsOf, passAccepting, passBoth, passUntil, scenario } from "./helpers";
 
 type S = GameState;
 const cast = (s: S, p: string, name: string, extra: Record<string, unknown> = {}) =>
@@ -194,5 +194,158 @@ describe("station (702.184)", () => {
     const any = opts.find((a) => a.type === "tapForMana" && a.colors.includes("G"));
     s = act(s, "p1", { type: "tapForMana", source: elevator, ability: any?.type === "tapForMana" ? any.ability : 0, color: "G" });
     expect(s.players.p1?.manaPool.G).toBe(20);
+  });
+});
+
+describe("Edge of Eternities, lot C", () => {
+  it("Unravel : piochez seulement si le mana dépensé est inférieur à la valeur de mana (distorsion)", () => {
+    const setup = () =>
+      scenario({
+        p1: { battlefield: lands("Mountain", 5), hand: ["Red Tiger Mechan"] },
+        p2: { battlefield: lands("Island", 3), hand: ["Unravel"] },
+      });
+    const counterIt = (s: S) => {
+      let t = act(s, "p1", { type: "pass" });
+      const spell = t.stack[0]?.id as string;
+      t = cast(t, "p2", "Unravel", { targets: { t: [spell] } });
+      return passBoth(t);
+    };
+    const warped = counterIt(cast(setup(), "p1", "Red Tiger Mechan", { warp: true }));
+    expect(warped.players.p2?.hand).toHaveLength(1);
+    const full = counterIt(cast(setup(), "p1", "Red Tiger Mechan"));
+    expect(full.players.p2?.hand).toHaveLength(0);
+    expect(full.battlefield.some((id) => full.objects[id]?.defId === card("Red Tiger Mechan").id)).toBe(false);
+  });
+
+  it("Memorial Vault : exile 1 + la valeur de mana de l'artefact sacrifié, jouables ce tour-ci", () => {
+    let s = scenario({ p1: { battlefield: ["Memorial Vault", "Thaumaton Torpedo"] } });
+    const vault = idOf(s, "p1", "battlefield", "Memorial Vault");
+    s = act(s, "p1", {
+      type: "activate",
+      source: vault,
+      ability: 0,
+      sacrifice: [idOf(s, "p1", "battlefield", "Thaumaton Torpedo")],
+    });
+    s = passBoth(s);
+    expect(s.exile.filter((id) => s.objects[id]?.owner === "p1")).toHaveLength(2);
+    expect(legalActions(s, "p1").filter((a) => a.type === "playLand")).not.toHaveLength(0);
+  });
+
+  it("Thaumaton Torpedo : coûte {3} de moins si vous avez attaqué avec un Vaisseau", () => {
+    const s = scenario({
+      p1: { battlefield: ["Thaumaton Torpedo", ...lands("Plains", 3)] },
+      p2: { battlefield: ["Bear Cub"] },
+    });
+    const torpedo = idOf(s, "p1", "battlefield", "Thaumaton Torpedo");
+    expect(legalActions(s, "p1").some((a) => a.type === "activate" && a.source === torpedo)).toBe(false);
+    s.turn.attacked = true;
+    s.turn.attackerSubtypes = ["Spacecraft"];
+    s.version += 1;
+    expect(legalActions(s, "p1").some((a) => a.type === "activate" && a.source === torpedo)).toBe(true);
+  });
+
+  it("Gene Pollinator : engage en plus un autre permanent, de préférence sans capacité de mana", () => {
+    let s = scenario({ p1: { battlefield: ["Gene Pollinator", "Bear Cub", "Forest"] } });
+    const gp = idOf(s, "p1", "battlefield", "Gene Pollinator");
+    s = act(s, "p1", { type: "tapForMana", source: gp, ability: 0, color: "U" });
+    expect(s.players.p1?.manaPool.U).toBe(1);
+    expect(s.objects[idOf(s, "p1", "battlefield", "Bear Cub")]?.tapped).toBe(true);
+    expect(s.objects[idOf(s, "p1", "battlefield", "Forest")]?.tapped).toBe(false);
+  });
+
+  it("Terrapact Intimidator : l'adversaire refuse les Landers, la créature reçoit deux marqueurs", () => {
+    let s = scenario({ p1: { battlefield: lands("Mountain", 2), hand: ["Terrapact Intimidator"] } });
+    s = cast(s, "p1", "Terrapact Intimidator");
+    s = passBoth(s);
+    s = passUntil(s, (x) => x.pending?.kind === "choice");
+    expect(s.pending?.kind === "choice" && s.pending.player).toBe("p2");
+    s = act(s, "p2", { type: "choose", values: [0] });
+    expect(s.objects[idOf(s, "p1", "battlefield", "Terrapact Intimidator")]?.counters["+1/+1"]).toBe(2);
+  });
+
+  it("Hardlight Containment : exile une créature adverse et donne la garde {1} à l'artefact enchanté", () => {
+    let s = scenario({
+      p1: { battlefield: ["Plains", "Thaumaton Torpedo"], hand: ["Hardlight Containment"] },
+      p2: { battlefield: ["Bear Cub"] },
+    });
+    const torpedo = idOf(s, "p1", "battlefield", "Thaumaton Torpedo");
+    s = cast(s, "p1", "Hardlight Containment", { targets: { enchant: [torpedo] } });
+    s = passAccepting(s, (x) => x.stack.length === 0 && !x.battlefield.some((id) => x.objects[id]?.controller === "p2"));
+    expect(idsOf(s, "p2", "battlefield", "Bear Cub")).toHaveLength(0);
+    expect(chars(s, torpedo).abilities.some((a) => a.kind === "triggered" && a.label === "Garde")).toBe(true);
+  });
+
+  it("Syr Vondam, Sunstar Exemplar : grandit quand une autre créature meurt ; détruit en mourant avec 4 de force", () => {
+    let s = scenario({
+      p1: { battlefield: ["Syr Vondam, Sunstar Exemplar", "Bear Cub", ...lands("Swamp", 10)], hand: ["Vote Out", "Vote Out"] },
+      p2: { battlefield: ["Llanowar Elves"] },
+    });
+    const vondam = idOf(s, "p1", "battlefield", "Syr Vondam, Sunstar Exemplar");
+    s.objects[vondam]!.counters["+1/+1"] = 1;
+    s.version += 1;
+    s = cast(s, "p1", "Vote Out", { targets: { t: [idOf(s, "p1", "battlefield", "Bear Cub")] } });
+    s = passAccepting(s, (x) => x.stack.length === 0 && x.players.p1?.life === 21);
+    expect(s.objects[vondam]?.counters["+1/+1"]).toBe(2);
+    expect(chars(s, vondam).power).toBe(4);
+    s = cast(s, "p1", "Vote Out", { targets: { t: [vondam] } });
+    s = passAccepting(s, (x) => idsOf(x, "p2", "battlefield", "Llanowar Elves").length === 0);
+    expect(idsOf(s, "p2", "battlefield", "Llanowar Elves")).toHaveLength(0);
+  });
+
+  it("Blade of the Swarm : cible une carte exilée avec la distorsion (pas une autre carte exilée)", () => {
+    let s = scenario({
+      p1: { battlefield: lands("Swamp", 4), hand: ["Blade of the Swarm"] },
+      p2: { graveyard: ["Red Tiger Mechan", "Bear Cub"] },
+    });
+    for (const id of [...(s.players.p2?.graveyard ?? [])]) {
+      s.players.p2!.graveyard = s.players.p2!.graveyard.filter((x) => x !== id);
+      s.objects[id]!.zone = "exile";
+      s.exile.push(id);
+    }
+    const tiger = s.exile.find((id) => s.objects[id]?.defId === card("Red Tiger Mechan").id) as string;
+    s = cast(s, "p1", "Blade of the Swarm");
+    s = passBoth(s);
+    s = passUntil(s, (x) => x.pending?.kind === "choice");
+    const req = s.pending?.kind === "choice" ? s.pending.request : undefined;
+    expect(req?.type === "pick" && req.intent).toBe("triggerMode");
+    s = act(s, "p1", { type: "choose", values: ["1"] });
+    // Seule cible légale (Bear Cub, sans distorsion, ne l'est pas) : choisie automatiquement.
+    s = passBoth(s);
+    expect(s.exile).not.toContain(tiger);
+    const lib = s.players.p2?.library ?? [];
+    expect(s.objects[lib[lib.length - 1] as string]?.defId).toBe(card("Red Tiger Mechan").id);
+  });
+
+  it("Kav Landseeker : le Lander est sacrifié à l'étape de fin de votre prochain tour", () => {
+    let s = scenario({ p1: { battlefield: lands("Mountain", 4), hand: ["Kav Landseeker"] } });
+    s = cast(s, "p1", "Kav Landseeker");
+    s = passAccepting(s, (x) => x.stack.length === 0 && idsOf(x, "p1", "battlefield", "Lander").length === 1);
+    expect(idsOf(s, "p1", "battlefield", "Lander")).toHaveLength(1);
+    s = advanceUntil(s, (x) => x.turn.active === "p2" && x.turn.step === "main1");
+    expect(idsOf(s, "p1", "battlefield", "Lander")).toHaveLength(1);
+    s = advanceUntil(s, (x) => x.turn.active === "p1" && x.turn.step === "cleanup");
+    expect(idsOf(s, "p1", "battlefield", "Lander")).toHaveLength(0);
+  });
+
+  it("Weftwalking : le premier sort de chaque joueur pendant son tour peut être lancé sans payer", () => {
+    const s = scenario({ p1: { battlefield: ["Weftwalking"], hand: ["Serra Angel", "Bear Cub"] } });
+    const casts = legalActions(s, "p1").filter((a) => a.type === "cast");
+    expect(casts.length).toBeGreaterThanOrEqual(2);
+    const t = cast(s, "p1", "Serra Angel", { free: true });
+    expect(t.stack).toHaveLength(1);
+    expect(legalActions(passBoth(t), "p1").some((a) => a.type === "cast")).toBe(false);
+  });
+
+  it("Astelli Reclaimer : VM au plus égale au mana dépensé (distorsion : 3)", () => {
+    const setup = () =>
+      scenario({
+        p1: { battlefield: lands("Plains", 5), hand: ["Astelli Reclaimer"], graveyard: ["Memorial Vault", "Thaumaton Torpedo"] },
+      });
+    const returned = (s: S) => {
+      const t = passAccepting(passBoth(s), (x) => x.stack.length === 0 && x.pending?.kind === "priority");
+      return ["Memorial Vault", "Thaumaton Torpedo"].filter((n) => idsOf(t, "p1", "battlefield", n).length > 0);
+    };
+    expect(returned(cast(setup(), "p1", "Astelli Reclaimer", { warp: true }))).toEqual(["Thaumaton Torpedo"]);
+    expect(returned(cast(setup(), "p1", "Astelli Reclaimer"))).toHaveLength(1);
   });
 });

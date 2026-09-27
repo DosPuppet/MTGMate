@@ -76,14 +76,16 @@ export function loseLife(s: GameState, p: PlayerId, amount: number): void {
 /** Inflige des blessures à un joueur ou à une créature (règle 120). */
 export function dealDamage(s: GameState, source: DamageSource, target: string, amount: number, combat: boolean): void {
   if (amount <= 0) return;
-  if (combat && preventsCombatDamage(s, target)) return;
+  // Frenzied Baloth : « les blessures de combat ne peuvent pas être prévenues ».
+  const unpreventable = combat && s.playerOrder.some((p) => playerStatic(s, p, "combatDamageUnpreventable"));
+  if (combat && !unpreventable && preventsCombatDamage(s, target)) return;
   const targetObj = s.objects[target];
   if (targetObj?.zone === "battlefield") {
     // 702.16e : protection contre tout — les blessures sont prévenues.
     if (hasKeyword(s, target, "protectionFromEverything")) return;
   }
   // Préventions statiques : blessures reçues (Crystal Barricade, Fog Bank) ou infligées par la source (Fog Bank).
-  for (const p of preventions(s)) {
+  for (const p of unpreventable ? [] : preventions(s)) {
     if (p.ab.noncombatOnly && combat) continue;
     if (p.ab.combatOnly && !combat) continue;
     if (p.ab.bySource) {

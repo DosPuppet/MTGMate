@@ -91,6 +91,8 @@ export type RulesEvent =
   | { e: "turnedFaceUp"; objectId: ObjectId }
   /** Une Classe atteint un niveau. */
   | { e: "classLevel"; objectId: ObjectId; level: number }
+  /** Un joueur joue un terrain. */
+  | { e: "playLand"; player: PlayerId; objectId: ObjectId }
   /** Une porte de Salle est déverrouillée. */
   | { e: "unlock"; objectId: ObjectId; door: number; player: PlayerId };
 
@@ -169,6 +171,7 @@ export function emptyTurnStats(): TurnStats {
     spellsCast: 0,
     instantSorceryCast: 0,
     noncreatureCast: 0,
+    landsEntered: 0,
     scried: 0,
     noncombatDamageTaken: 0,
     loyaltyActivations: 0,
@@ -429,6 +432,11 @@ export function moveObject(
   }
   if (shuffleIn) shuffle(s, s.players[o.owner]?.library ?? []);
   if (to === "battlefield") applyEntersReplacements(s, moved, opts.enters ?? {});
+  // Bioengineered Future : terrains arrivés sous votre contrôle ce tour-ci.
+  if (to === "battlefield" && s.defs[moved.defId]?.types.includes("Land")) {
+    const ctrl = s.players[moved.controller];
+    if (ctrl) ctrl.turnStats.landsEntered += 1;
+  }
   rulesEvent(s, { e: "zone", oldId: id, newId: moved.id, from: from0, to, lki });
   if (from0 === "battlefield") releaseLinkedExile(s, id);
   return moved.id;

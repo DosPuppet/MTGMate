@@ -28,6 +28,7 @@ export const {
   prevention,
   doubler,
   cost,
+  wardAbility,
 } = dsl;
 
 /** Cible quelconque décrite par un filtre d'objets. */

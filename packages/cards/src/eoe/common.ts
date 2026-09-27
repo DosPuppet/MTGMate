@@ -36,6 +36,16 @@ export const ROBOT: TokenSpec = {
   toughness: 2,
 };
 
+/** Sliver : créature incolore 1/1 (Thrumming Hivepool). */
+export const SLIVER: TokenSpec = {
+  name: "Sliver",
+  colors: [],
+  types: ["Creature"],
+  subtypes: ["Sliver"],
+  power: 1,
+  toughness: 1,
+};
+
 /** Drone : créature-artefact incolore 1/1 avec le vol, « ne peut bloquer que des créatures avec le vol ». */
 export const DRONE: TokenSpec = {
   name: "Drone",

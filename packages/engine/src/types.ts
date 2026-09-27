@@ -133,7 +133,7 @@ export interface CardDef {
   /** « Si cette carte est dans votre main de départ, vous pouvez commencer la partie avec elle sur le champ de bataille. » */
   leyline?: boolean;
   /** Garde : coût à payer (mana ou points de vie). */
-  ward?: { mana?: ManaCost; life?: number; discard?: boolean; sacrifice?: number };
+  ward?: { mana?: ManaCost; life?: number; discard?: boolean; discardRandom?: boolean; sacrifice?: number };
   /** Flashback avec « défaussez une carte » en plus (Twinned Vision). */
   flashbackDiscard?: number;
   /** « En coût additionnel pour lancer ce sort, … » (601.2b, 601.2h). */
@@ -267,6 +267,10 @@ export interface CostReductionAbilityDef {
   generic: number;
   /** S'applique aux sorts des adversaires (Thalia, the Survivor : générique négatif = taxe). */
   opponents?: boolean;
+  /** Réduction variable (affinité pour les artefacts : Sami, Wildcat Captain), ajoutée à `generic`. */
+  genericAmount?: Amount;
+  /** Seulement si la condition est remplie (Uthros Psionicist : « le deuxième sort que vous lancez chaque tour »). */
+  condition?: Condition;
   label?: string;
 }
 
@@ -279,7 +283,17 @@ export interface ManaAbilityDef {
   produceChosen?: boolean;
   /** Mana dépensable seulement pour un sort (ou une capacité d'une créature source) correspondant au filtre. */
   /** `notSpellFromHand` : « ce mana ne peut pas servir à lancer des sorts depuis votre main » (Heartwood Crafter). */
-  restriction?: { spell?: ObjectFilter; abilityOfCreature?: ObjectFilter; notSpellFromHand?: boolean };
+  /** `abilityOfSource` : capacité d'une source quelconque correspondant au filtre (Steelswarm Operator) ; */
+  /** `spellNotFromHand` : « seulement pour lancer un sort depuis ailleurs que votre main » (Mm'menon, the Right Hand). */
+  restriction?: {
+    spell?: ObjectFilter;
+    abilityOfCreature?: ObjectFilter;
+    abilityOfSource?: ObjectFilter;
+    notSpellFromHand?: boolean;
+    spellNotFromHand?: boolean;
+  };
+  /** Gene Pollinator : « engagez un permanent dégagé que vous contrôlez » en plus de {T} (choisi automatiquement). */
+  tapAnother?: boolean;
   /** Effet si ce mana sert à lancer un sort correspondant (Carnelian Orb : célérité ; Pyromancer's Goggles : copie). */
   rider?: { spell: ObjectFilter; effect: "haste" | "copy" };
   amount: number;
@@ -312,6 +326,8 @@ export interface ActivatedAbilityDef {
   reduceByTargetCounters?: boolean;
   /** Action spéciale (116) : pas de pile, effets immédiats (déverrouiller une porte de Salle). */
   specialAction?: boolean;
+  /** « Cette capacité coûte {N} de moins à activer [si …] » (N évalué à l'activation). */
+  reduction?: { generic: Amount; condition?: Condition };
 }
 
 export interface CostDef {
@@ -330,6 +346,10 @@ export interface CostDef {
   loyalty?: number;
   /** « −X » : X marqueurs de loyauté retirés (X choisi à l'activation). */
   loyaltyX?: boolean;
+  /** Retirer un marqueur d'un permanent que vous contrôlez (choisi automatiquement : Sunstar Chaplain). */
+  removeCounterFrom?: { filter: ObjectFilter; kind: string };
+  /** Engager X permanents dégagés que vous contrôlez (X choisi à l'activation : Secluded Starforge). */
+  tapX?: ObjectFilter;
   /** Exiler d'autres cartes de votre cimetière (choisies automatiquement : Gallia). */
   exileFromGraveyard?: { filter: ObjectFilter; count: number };
   /** Exiler la source (depuis le champ de bataille ou le cimetière). */
@@ -370,6 +390,8 @@ export interface TargetFilter {
   objects?: ObjectFilter;
   /** Cartes dans un cimetière (« carte de créature ciblée de votre cimetière »). */
   cards?: { filter: ObjectFilter; whose?: "you" | "opponent" | "any" };
+  /** Cartes exilées face visible (Blade of the Swarm : « carte exilée ciblée avec la distorsion »). */
+  exiled?: { filter?: ObjectFilter; withWarp?: boolean };
   /** Sorts sur la pile (« contrecarrez le sort de créature ciblé »). */
   spells?: ObjectFilter;
   /** Sorts ou capacités sur la pile à cible unique (Bolt Bend). */
@@ -407,6 +429,8 @@ export interface ObjectFilter {
   blocking?: boolean;
   /** Multicolore (au moins deux couleurs). */
   multicolored?: boolean;
+  /** Sort dont le mana dépensé est inférieur à sa valeur de mana (Unravel). */
+  manaSpentBelowValue?: boolean;
   /** A subi des blessures ce tour-ci. */
   damaged?: boolean;
   /** Créature attaquante ou bloqueuse. */
@@ -437,6 +461,8 @@ export interface ObjectFilter {
   enteredThisTurn?: boolean;
   /** Valeur de mana inférieure ou égale à la force de la source (« … inférieure ou égale à la force d'Alesha »). */
   maxManaValueSourcePower?: boolean;
+  /** Valeur de mana au plus égale au mana dépensé pour lancer la source (Astelli Reclaimer). */
+  maxManaValueManaSpent?: boolean;
   /** Légendaire (true) ou non légendaire (false). */
   legendary?: boolean;
   /** Sort préparé (copie lancée depuis l'exil, Codie). */
@@ -525,13 +551,17 @@ export type TriggerSpec =
   /** « Chaque fois qu'une ou plusieurs [créatures] infligent des blessures de combat à un joueur » : une fois par étape et par joueur. */
   | { on: "combatDamageBatch"; who: ObjectFilter }
   /** « Chaque fois qu'une [créature] bloque » */
-  | { on: "blocks"; who: "self" | ObjectFilter }
+  | { on: "blocks"; who: "self" | ObjectFilter; attacker?: ObjectFilter }
+  /** « Chaque fois que [créature] meurt ou est exilée » (depuis le champ de bataille). */
+  | { on: "diesOrExiled"; who: "self" | ObjectFilter; minPower?: number }
+  /** « Chaque fois que vous jouez un terrain » */
+  | { on: "playLand" }
   /** « Chaque fois que vous activez une capacité de loyauté [en retirant au moins N marqueurs] » ; `byOpponent` : un adversaire l'active. */
   | { on: "loyaltyActivated"; minRemoved?: number; byOpponent?: boolean };
 
 /** Conditions (« if intermédiaire » 603.4, « tant que »…). */
 export type Condition =
-  | { kind: "attackedThisTurn" }
+  | { kind: "attackedThisTurn"; subtype?: string }
   | { kind: "creatureDiedThisTurn" }
   | { kind: "controls"; filter: ObjectFilter; atLeast?: number }
   /** Le sort qui met l'objet en jeu a été kické. */
@@ -708,6 +738,21 @@ export interface PlayerStaticAbilityDef {
   noEntersTriggers?: boolean;
   /** Yuriko, Blade of the Mighty (s'applique à tous) : pendant le combat, ni sorts ni capacités (hors mana). */
   noSpellsDuringCombat?: boolean;
+  /** Starfield Vocalist : les capacités déclenchées de vos permanents par une arrivée se déclenchent une fois de plus. */
+  doubleEnterTriggers?: boolean;
+  /** Quantum Riddler : avec une carte en main ou moins, vous piochez une carte de plus. */
+  drawPlusOneWhenHandSmall?: boolean;
+  /** Mm'menon, the Right Hand : regarder la carte du dessus et lancer des sorts d'artefact depuis le dessus. */
+  castArtifactsFromTop?: boolean;
+  /** Weftwalking (s'applique à tous) : le premier sort de chaque joueur pendant son tour peut être lancé sans payer. */
+  firstSpellFree?: boolean;
+  /** Frenzied Baloth : vos sorts de créature ne peuvent pas être contrecarrés ; les blessures de combat ne peuvent pas être prévenues (tous). */
+  protectCreatureSpells?: boolean;
+  combatDamageUnpreventable?: boolean;
+  /** Icetill Explorer : jouer des terrains depuis votre cimetière. */
+  playLandsFromGraveyard?: boolean;
+  /** Tannuk, Steadfast Second : les cartes de votre main correspondant au filtre ont la distorsion à ce coût. */
+  grantWarp?: { filter: ObjectFilter; cost: ManaCost };
   /** Tapestry Warden : vos créatures dont l'endurance dépasse la force stationnent selon leur endurance. */
   stationByToughness?: boolean;
   /** Tomik, Orzhov Lawmage : au plus une créature peut attaquer chacun de vos planeswalkers à chaque combat. */
@@ -820,7 +865,12 @@ export type Amount =
   /** Quantité de l'événement (blessures infligées, vie gagnée…). */
   | { kind: "eventAmount" }
   /** Nombre d'objets correspondant au filtre, vus du contrôleur (sur le champ de bataille par défaut). */
-  | { kind: "count"; filter: ObjectFilter; zone?: "battlefield" | "graveyard" | "hand"; whose?: "you" | "opponents" | "all" }
+  | {
+      kind: "count";
+      filter: ObjectFilter;
+      zone?: "battlefield" | "graveyard" | "hand" | "exile";
+      whose?: "you" | "opponents" | "all";
+    }
   /** Vie gagnée par le contrôleur ce tour-ci. */
   | { kind: "lifeGainedThisTurn" }
   /** Marqueurs d'un type sur un objet. */
@@ -852,6 +902,14 @@ export type Amount =
   | { kind: "basicLandTypes" }
   /** Marqueurs d'un type parmi les permanents correspondants (« marqueurs de loyauté parmi les Jace »). */
   | { kind: "countersAmong"; filter: ObjectFilter; counter: string }
+  /** La moitié des points de vie du joueur désigné, arrondie à l'unité supérieure (Alpharael). */
+  | { kind: "halfLife"; who: Ref }
+  /** Terrains arrivés sous votre contrôle ce tour-ci (Bioengineered Future). */
+  | { kind: "landsEnteredThisTurn" }
+  /** Mana dépensé pour lancer la source (Astelli Reclaimer, Dyadrine). */
+  | { kind: "manaSpent" }
+  /** Plus grande valeur de mana parmi les permanents correspondants (Emissary Escort). */
+  | { kind: "maxManaValue"; filter: ObjectFilter }
   /** Tarmogoyf : types de cartes parmi les cartes de tous les cimetières. */
   | { kind: "cardTypesInGraveyards" }
   /** Cartes mises de sa bibliothèque au cimetière ce tour-ci, par le joueur désigné. */
@@ -965,7 +1023,7 @@ export type Effect =
   /** « Vous pouvez payer {X}. Si vous le faites, … » : les `skip` effets suivants sont ignorés sinon. */
   | { op: "mayPay"; cost: ManaCost; prompt: string; skip: number; life?: number }
   /** « Vous pouvez » : si le contrôleur refuse, les `skip` effets suivants sont ignorés. */
-  | { op: "may"; prompt: string; skip: number }
+  | { op: "may"; prompt: string; skip: number; who?: Ref; store?: string }
   /** « Si cette créature devait mourir ce tour-ci, exilez-la à la place. » */
   | { op: "exileIfDies"; what: Ref }
   /** « Prévenez toutes les blessures de combat qui devraient être infligées à … ce tour-ci. » */
@@ -986,7 +1044,7 @@ export type Effect =
   /** Double les marqueurs de chaque type (ou d'un type donné). */
   | { op: "doubleAllCounters"; what: Ref }
   /** Déplace tous les objets d'une zone correspondant au filtre. */
-  | { op: "moveAll"; from: "battlefield" | "graveyard"; whose: Ref; filter: ObjectFilter; spec: MoveSpec }
+  | { op: "moveAll"; from: "battlefield" | "graveyard" | "hand"; whose: Ref; filter: ObjectFilter; spec: MoveSpec }
   /** Si la condition est fausse, les `skip` effets suivants sont ignorés. */
   | { op: "if"; cond: Condition; skip: number }
   /**
@@ -1033,7 +1091,13 @@ export type Effect =
       addAbilities?: AbilityDef[];
     }
   /** Capacité déclenchée retardée : « au début de la prochaine étape de fin, … ». Les références sont figées maintenant. */
-  | { op: "delayed"; at: "nextEndStep"; effects: Effect[]; bind?: Record<string, Ref>; vars?: Record<string, Amount> }
+  | {
+      op: "delayed";
+      at: DelayedTiming;
+      effects: Effect[];
+      bind?: Record<string, Ref>;
+      vars?: Record<string, Amount>;
+    }
   /** Capacité déclenchée réflexive (« quand vous le faites, … ») : ses cibles sont choisies à sa mise sur la pile. */
   | { op: "reflexive"; targets: TargetSpec[]; effects: Effect[] }
   /** Contrecarre un sort ou une capacité sur la pile (701.5). */
@@ -1043,6 +1107,7 @@ export type Effect =
       op: "unlessPay";
       paidStore?: string;
       discard?: boolean;
+      discardRandom?: boolean;
       sacrifice?: number;
       who: Ref;
       mana?: ManaCost;
@@ -1066,10 +1131,31 @@ export type Effect =
   /** Chaque joueur désigné révèle des cartes jusqu'à une carte correspondant au filtre, puis les met toutes au cimetière. */
   | { op: "millUntil"; who: Ref; filter: ObjectFilter }
   /** Exile les N cartes du dessus de la bibliothèque de chaque joueur désigné (mémorisées sous `store`). */
-  | { op: "exileTop"; who: Ref; n: number; store: string }
+  | { op: "exileTop"; who: Ref; n: Amount; store: string }
   /** Permet au contrôleur de jouer ces cartes exilées ce tour-ci. `spellsOnly` : lancer seulement, sans timing, gratuitement. */
-  /** `forever` : « tant qu'elle reste exilée » (Emrakul). */
-  | { op: "grantPlay"; what: Ref; free?: boolean; anyTime?: boolean; forever?: boolean }
+  /**
+   * `forever` : « tant qu'elle reste exilée » (Emrakul) ; `condition` : seulement tant qu'elle est remplie ;
+   * `forOwner` : le propriétaire de la carte peut la jouer (Lightstall Inquisitor), `extraCost` et `landsTapped`.
+   */
+  | {
+      op: "grantPlay";
+      what: Ref;
+      free?: boolean;
+      anyTime?: boolean;
+      forever?: boolean;
+      condition?: Condition;
+      forOwner?: boolean;
+      extraCost?: number;
+      landsTapped?: boolean;
+    }
+  /** Exile les cartes du dessus jusqu'à une carte correspondante (mémorisée) : Territorial Bruntar. */
+  | { op: "exileUntil"; filter: ObjectFilter; store: string }
+  /** « Votre total de points de vie devient N » (The Endstone). */
+  | { op: "setLife"; who: Ref; amount: Amount }
+  /** Chaque joueur désigné exile une carte de sa main (à son choix), mémorisée (Lightstall Inquisitor). */
+  | { op: "exileFromOwnHand"; who: Ref; store: string }
+  /** « Sacrifiez-le à moins d'engager un permanent dégagé que vous contrôlez » (Command Bridge). */
+  | { op: "tapOrSacrifice" }
   /** Copie les cartes désignées et permet d'en lancer gratuitement, pour une valeur de mana totale limitée (Uldaros). */
   | { op: "castCopiesFree"; what: Ref[]; maxTotalManaValue: number }
   /** « La règle des légendes ne s'applique pas aux permanents que vous contrôlez ce tour-ci. » */
@@ -1267,6 +1353,8 @@ export interface GameObject {
   /** Distorsion : le permanent a été lancé pour son coût de distorsion ; carte exilée par la distorsion (tour de l'exil). */
   warped?: boolean;
   warpExiledTurn?: number;
+  /** Mana dépensé pour lancer ce sort ou ce permanent (Astelli Reclaimer, Unravel). */
+  manaSpent?: number;
   /** Monture (702.171) : tour pendant lequel elle a été montée (« sellée »). */
   saddledTurn?: number;
   /** Classe (716) : niveau actuel (1 par défaut). */
@@ -1357,6 +1445,8 @@ export interface StackItem {
   adventure?: boolean;
   /** Lancé pour son coût de distorsion : le permanent sera exilé à la prochaine étape de fin. */
   warped?: boolean;
+  /** Mana dépensé pour le lancer. */
+  manaSpent?: number;
   /** Capacité retardée ou réflexive : ses effets et cibles propres. */
   inline?: InlineAbility;
   /** Copie d'un sort (707.10) : pas de carte associée. */
@@ -1385,12 +1475,15 @@ export interface InlineAbility {
   label?: string;
 }
 
+/** Moment d'une capacité retardée : prochaine étape de fin, étape de fin de votre prochain tour, fin du combat. */
+export type DelayedTiming = "nextEndStep" | "yourNextEndStep" | "endOfCombat";
+
 export interface DelayedTrigger {
   id: string;
   controller: PlayerId;
   sourceId: ObjectId;
   sourceDefId: string;
-  at: "nextEndStep";
+  at: DelayedTiming;
   /** Créé pendant une étape de fin ou le nettoyage : ne se déclenche qu'à l'étape de fin du tour suivant. */
   notBeforeTurn: number;
   ability: InlineAbility;
@@ -1406,6 +1499,8 @@ export interface TurnStats {
   /** Éphémères et rituels lancés ce tour-ci (Thousand-Year Storm). */
   instantSorceryCast: number;
   noncreatureCast: number;
+  /** Terrains arrivés sous le contrôle de ce joueur ce tour-ci. */
+  landsEntered: number;
   /** Regards (scry) et surveillances effectués ce tour-ci. */
   scried: number;
   /** Blessures non de combat subies ce tour-ci. */
@@ -1502,6 +1597,8 @@ export interface LkiSnapshot {
   warped?: boolean;
   /** A subi des blessures ce tour-ci. */
   damaged?: boolean;
+  /** Mana dépensé pour le lancer (sort sur la pile). */
+  manaSpent?: number;
 }
 
 /** Résolution en cours d'un sort ou d'une capacité, éventuellement suspendue sur un choix. */
@@ -1560,6 +1657,8 @@ export interface GameState {
     /** Vide (Edge of Eternities) : un permanent non-terrain a quitté le champ de bataille ce tour-ci ; un sort a été lancé avec la distorsion. */
     nonlandLeft?: boolean;
     spellWarped?: boolean;
+    /** Sous-types des créatures qui ont attaqué ce tour-ci (Thaumaton Torpedo : « si vous avez attaqué avec un Vaisseau »). */
+    attackerSubtypes?: string[];
     /** Capacités « une fois par tour » déjà déclenchées (source:index). */
     onceFired: string[];
     /** Cartes de cimetière qu'on peut lancer ce tour-ci (Zul Ashur). */
@@ -1588,7 +1687,21 @@ export interface GameState {
   /** Capacités déclenchées retardées en attente de leur moment. */
   delayed: DelayedTrigger[];
   /** Cartes qu'un joueur peut jouer depuis l'exil jusqu'à la fin du tour `until` (impulsion, Etali…). */
-  playPermissions?: { card: ObjectId; player: PlayerId; until: number; free?: boolean; anyTime?: boolean }[];
+  /**
+   * Cartes exilées jouables. `condition` : seulement tant qu'elle est remplie (Possibility Technician) ; `extraCost` :
+   * {N} de plus ; `landsTapped` : un terrain joué ainsi arrive engagé (Lightstall Inquisitor).
+   */
+  playPermissions?: {
+    card: ObjectId;
+    player: PlayerId;
+    until: number;
+    free?: boolean;
+    anyTime?: boolean;
+    condition?: Condition;
+    source?: ObjectId;
+    extraCost?: number;
+    landsTapped?: boolean;
+  }[];
   /** Contrôle donné par une Aura (Confiscate) : contrôleur d'origine à rétablir quand l'Aura part. */
   auraControl?: { host: ObjectId; aura: ObjectId; original: PlayerId }[];
   /** Changements de contrôle « jusqu'à la fin du tour » (contrôleur d'origine à rétablir). */

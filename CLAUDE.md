@@ -163,7 +163,17 @@ Lot 0.10 (performances, pool complet de 5 174 cartes) :
   - la capacité « Station » est générée : le joueur choisit la créature à engager (`ActionOption.additional.tap`, `CastChoices.tap`), puis l'effet `station` met autant de marqueurs de charge que sa force (Tapestry Warden : l'endurance) ;
   - Planètes ; mana égal aux marqueurs (`amountCounters`) ; copies légendaires ; filtre `multicolored` ;
   - engager ou dégager un permanent fait avancer la version d'état (statiques « créatures engagées », détecté par le fuzz).
-- Lot C : cartes uniques (Tezzeret, The Endstone, The Dominion Bracelet, Starfield Vocalist, Weftwalking, Quantum Riddler, Mm'menon, Sothera, Lightstall Inquisitor, Pinnacle Starcage…).
+- Lot C ✅ (241/260) : 40 rares, mythiques et cartes uniques (`eoe/rares.ts`). Le moteur gagne :
+  - le mana dépensé pour lancer (`manaSpent` sur le sort et le permanent ; Amount `manaSpent`, filtres `manaSpentBelowValue` et `maxManaValueManaSpent`) ;
+  - les coûts d'activation réduits (`reduction`, avec condition), « retirez un marqueur d'une créature », « engagez X artefacts » (`tapX`) ;
+  - des statiques de joueur : déclencheurs d'arrivée doublés, +1 carte avec une petite main, sorts d'artefact du dessus de la bibliothèque, premier sort gratuit, sorts de créature incontrecarrables, blessures de combat imprévenables, terrains depuis le cimetière, distorsion accordée ;
+  - les réductions de coût conditionnelles ou variables (affinité pour les artefacts, deuxième sort du tour) ;
+  - le mana restreint aux capacités d'artefacts ou aux sorts lancés hors de la main, et la capacité de mana qui engage un autre permanent (Gene Pollinator) ;
+  - les cartes exilées jouables sous condition, par leur propriétaire, avec un surcoût, terrains engagés (`grantPlay`) ; « exilez jusqu'à une carte non-terrain » ;
+  - une cible « carte exilée » (`TargetFilter.exiled`), la garde accordée (`wardAbility`, la garde de la carte n'est lue que si Scryfall la donne en mot-clé) ;
+  - des capacités retardées à l'étape de fin de votre prochain tour et à la fin du combat (`fx.delayedAt`) ;
+  - « [ce joueur] peut… ; s'il ne le fait pas » (`fx.mayForStore`), « votre total de points de vie devient N », « meurt ou est exilée » (avec force minimale), la condition « vous avez attaqué avec un Vaisseau » (`cond.attackedWith`).
+- Lot D (19 cartes) : Anticausal Vestige, Tezzeret, Cruel Captain, Pinnacle Starcage, Scout for Survivors, Moonlit Meditation, Chorale of the Void, Sothera, the Supervoid, Xu-Ifit, Zero Point Ballad, Terminal Velocity, Close Encounter, Famished Worldsire, Loading Zone, Alpharael, Dreaming Acolyte, Dyadrine, Mutinous Massacre, Ragost, Singularity Rupture, The Dominion Bracelet.
 - Test de fumée : l'adversaire du scénario a un Goblin Firebomb en main (cible des contresorts d'artefact).
 
 ### Reality Fracture (FRA)
@@ -295,6 +305,12 @@ Réimpressions : défenses talismaniques contre une couleur, changelin, restrict
 - **Emrakul, the Exigent Doom :** la capacité accordée au terrain cesse dès que la carte quitte l'exil, de quelque façon que ce soit (et pas seulement quand elle est lancée).
 - **Evendo, Uthros (Planètes 12+) :** leurs capacités de mana à coût ({G}, {T}) passent par la pile (comme Ramos).
 - **Terrains choc mis en jeu par un effet** (et non joués) : ils arrivent engagés, sans proposer de payer 2 points de vie.
+- **Gene Pollinator :** le permanent engagé en plus est choisi automatiquement (d'abord un permanent sans capacité de mana).
+- **Emissary Escort :** le bonus « +X/+0 » est une force de base variable (un effet qui fixe la force l'écrase).
+- **Terrasymbiosis :** se déclenche au plus une fois par tour (même si l'on refuse de piocher), pour tout marqueur +1/+1 mis sur vos créatures, qu'importe qui le met.
+- **Roving Actuator :** la copie se lance après la résolution, à tout moment ce tour-ci (comme Uldaros Theorix).
+- **Syr Vondam, Sunstar Exemplar :** « tant que sa force est de 4 ou plus » est lu dans ses dernières informations connues.
+- **The Endstone :** « la moitié de vos points de vie de départ » vaut 10 (Standard, 20 PV).
 - **Blessures de combat groupées** (« une ou plusieurs créatures… ») : une fois par étape de blessures et par joueur blessé.
 - **Légalité Standard :** instantané des légalités Scryfall au moment de l'import (`legalities.standard` dans `data/<set>.json`). Après une rotation ou une annonce de bannissement, réimporter les sets (`npm run import-cards -- <set>`).
 - **Jetons :** pas d'image (cadre texte).

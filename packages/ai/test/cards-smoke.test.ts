@@ -40,11 +40,21 @@ const LIBRARY = [
   "Plains",
 ];
 
+/** Permanents supplémentaires du joueur 1 pour les cartes qui en exigent (« Enchant artifact you control »). */
+const EXTRA_P1: Record<string, string[]> = { "Hardlight Containment": ["Nutrient Block"] };
+
 function setup(c: CardDef): GameState {
   return scenario({
     turn: 3,
     p1: {
-      battlefield: [...LANDS, "Llanowar Elves", "Prideful Parent", "Sanguine Syphoner", "Diregraf Ghoul"],
+      battlefield: [
+        ...LANDS,
+        "Llanowar Elves",
+        "Prideful Parent",
+        "Sanguine Syphoner",
+        "Diregraf Ghoul",
+        ...(EXTRA_P1[c.name] ?? []),
+      ],
       hand: [c, "Forest"],
       graveyard: ["Opt", "Stab", "Helpful Hunter", "Llanowar Elves", "Forest", "Bake into a Pie", "Giant Growth", "Zombify"],
       library: LIBRARY,

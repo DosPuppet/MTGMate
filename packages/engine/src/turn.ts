@@ -3,7 +3,7 @@
  */
 import { type DamageSource, dealDamage, destroy, drawCard, putIntoGraveyard, sourceFromObject } from "./actions";
 import { ask } from "./choices";
-import { announceDiscard } from "./effects";
+import { announceDiscard, drawBonus } from "./effects";
 import { RulesError, resolveTop } from "./stack";
 import {
   alivePlayers,
@@ -82,6 +82,7 @@ function givePriority(s: GameState): void {
 /** Début d'étape : déclenche les capacités « au début de… ». */
 function stepEvent(s: GameState): void {
   if (s.turn.step === "end") releaseDelayedTriggers(s);
+  if (s.turn.step === "endCombat") releaseDelayedTriggers(s, "endCombat");
   rulesEvent(s, { e: "step", step: s.turn.step, active: s.turn.active });
 }
 
@@ -200,7 +201,10 @@ function beginStep(s: GameState): void {
     case "draw":
       // 103.8a : en duel, le joueur qui commence ne pioche pas lors de son premier tour
       // (103.8c : en multijoueur, personne ne saute sa pioche).
-      if (s.turn.number > 1 || s.playerOrder.length > 2) drawCard(s, active);
+      if (s.turn.number > 1 || s.playerOrder.length > 2) {
+        const extra = drawBonus(s, active, 1);
+        for (let i = 0; i < 1 + extra; i++) drawCard(s, active);
+      }
       givePriority(s);
       return;
     case "main1":
@@ -349,6 +353,7 @@ function endStep(s: GameState): void {
     s.turn.creaturesDied = 0;
     s.turn.nonlandLeft = false;
     s.turn.spellWarped = false;
+    s.turn.attackerSubtypes = [];
     emit({ type: "turnStart", turn: s.turn.number, player: s.turn.active });
   }
   s.flow = "stepStart";
@@ -518,7 +523,9 @@ export function declareAttackers(s: GameState, player: PlayerId, attackers: { id
   bump(s);
   for (const a of attackers) rulesEvent(s, { e: "attack", attacker: a.id, defender: a.defender });
   if (attackers.length > 0) rulesEvent(s, { e: "attackWith", player, count: attackers.length });
-  s.turn.attacked = attackers.length > 0;
+  if (attackers.length > 0) s.turn.attacked = true;
+  const subtypes = new Set([...(s.turn.attackerSubtypes ?? []), ...attackers.flatMap((a) => chars(s, a.id).subtypes)]);
+  s.turn.attackerSubtypes = [...subtypes];
   if (attackers.length > 0) {
     emit({ type: "attack", player, attackers: attackers.map((a) => ({ id: a.id, defId: obj(s, a.id).defId })) });
   }

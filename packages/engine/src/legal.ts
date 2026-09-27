@@ -5,6 +5,7 @@
 import { availableMana, canPay, manaAbilitiesOf, manaSources, manaValue, totalCost } from "./mana";
 import {
   abilitiesOf,
+  abilityReduction,
   abilityZone,
   activatedAbility,
   additionalOptions,
@@ -22,11 +23,32 @@ import {
   spellView,
   splitSecondOnStack,
   tapOthersOptions,
+  warpOf,
 } from "./stack";
+import { matchesObjectFilter } from "./targets";
+
+/** Secluded Starforge : nombre de permanents dégagés engageables pour « engagez X … ». */
+function tapXOptions(s: GameState, player: PlayerId, source: ObjectId, f: ObjectFilter): number {
+  return s.battlefield.filter(
+    (id) =>
+      id !== source && obj(s, id).controller === player && !obj(s, id).tapped && matchesObjectFilter(s, player, id, f, source),
+  ).length;
+}
+
 import { obj } from "./state";
 import { legalTargets } from "./targets";
 import { checkCondition } from "./triggers";
-import type { ActionOption, CardDef, GameState, ManaCost, ObjectId, PlayerId, TargetOption, TargetSpec } from "./types";
+import type {
+  ActionOption,
+  CardDef,
+  GameState,
+  ManaCost,
+  ObjectFilter,
+  ObjectId,
+  PlayerId,
+  TargetOption,
+  TargetSpec,
+} from "./types";
 
 function targetOptions(s: GameState, player: PlayerId, specs: TargetSpec[], sourceId?: ObjectId): TargetOption[] {
   return specs.map((t) => {
@@ -106,7 +128,7 @@ export function legalActions(s: GameState, player: PlayerId): ActionOption[] {
     if (!terms.warpOnly) for (const [face, faceDef] of castableFaces(s, card, d)) castOption(card, face, faceDef, terms);
     if (d.disguise) castOption(card, undefined, FACE_DOWN_SPELL, terms, "faceDown");
     // Distorsion (702.185) : depuis la main, ou le cimetière si la carte le permet.
-    const warp = d.warp;
+    const warp = warpOf(s, player, card, d);
     const life = s.players[player]?.life ?? 0;
     if (warp && (terms.source === "hand" || terms.warpOnly) && life >= (warp.life ?? 0)) {
       castOption(card, undefined, { ...d, manaCost: warp.cost }, terms, "warp");
@@ -193,7 +215,7 @@ export function legalActions(s: GameState, player: PlayerId): ActionOption[] {
             0,
             ...s.battlefield.filter((c) => obj(s, c).controller === player).map((c) => obj(s, c).counters["+1/+1"] ?? 0),
           )
-        : 0;
+        : abilityReduction(s, player, id, ab);
       if (ab.cost.mana && !canPay(s, player, totalCost(ab.cost.mana, 0, undefined, reduction), exclude, { abilitySource: id }))
         return;
       const targets = targetOptions(s, player, ab.targets, id);
@@ -204,7 +226,11 @@ export function legalActions(s: GameState, player: PlayerId): ActionOption[] {
         ability: index,
         label: ab.label,
         targets,
-        xMax: ab.cost.loyaltyX ? (o.counters.loyalty ?? 0) : maxX(s, player, ab.cost.mana, exclude),
+        xMax: ab.cost.loyaltyX
+          ? (o.counters.loyalty ?? 0)
+          : ab.cost.tapX
+            ? tapXOptions(s, player, id, ab.cost.tapX)
+            : maxX(s, player, ab.cost.mana, exclude),
         additional:
           ab.cost.sacrifice || ab.cost.tapOthers
             ? {

@@ -17,6 +17,7 @@ import { legalTargets, matchesObjectFilter, matchesView, validateTargets, withCh
 import type {
   AbilityDef,
   Condition,
+  DelayedTiming,
   GameState,
   InlineAbility,
   LkiSnapshot,
@@ -99,7 +100,7 @@ export function simultaneously<T>(s: GameState, fn: () => T): T {
 export function checkCondition(s: GameState, c: Condition, controller: PlayerId, sourceId?: ObjectId): boolean {
   switch (c.kind) {
     case "attackedThisTurn":
-      return s.turn.attacked && s.turn.active === controller;
+      return s.turn.attacked && s.turn.active === controller && (!c.subtype || !!s.turn.attackerSubtypes?.includes(c.subtype));
     case "creatureDiedThisTurn":
       return s.turn.creatureDied;
     case "creaturesDiedAtLeast":
@@ -210,7 +211,7 @@ export function checkCondition(s: GameState, c: Condition, controller: PlayerId,
         const zone = a.zone;
         const players = a.whose === "all" ? s.playerOrder : a.whose === "opponents" ? opponentsOf(s, controller) : [controller];
         const n = players
-          .flatMap((p) => s.players[p]?.[zone] ?? [])
+          .flatMap((p) => (zone === "exile" ? s.exile.filter((id) => s.objects[id]?.owner === p) : (s.players[p]?.[zone] ?? [])))
           .filter((id) => matchesView(snapshot(s, id), { ...a.filter, controller: undefined }, controller, sourceId)).length;
         return n >= c.n;
       }
@@ -342,7 +343,11 @@ function matchTrigger(s: GameState, ev: RulesEvent, t: TriggerSpec, src: Source)
     case "blocks": {
       if (ev.e !== "block") return null;
       const v = liveView(s, ev.blocker);
-      return v && matchWho(t.who, v, src) ? { objectId: ev.blocker, player: v.controller } : null;
+      if (!v || !matchWho(t.who, v, src)) return null;
+      // « … bloque une créature avec le vol » (Skystinger).
+      const a = liveView(s, ev.attacker);
+      if (t.attacker && (!a || !matchesView(a, t.attacker, me, src.id))) return null;
+      return { objectId: ev.blocker, player: v.controller };
     }
     case "chapter": {
       // 714.2b : chaque chapitre atteint ou dépassé par les marqueurs de savoir posés.
@@ -381,6 +386,15 @@ function matchTrigger(s: GameState, ev: RulesEvent, t: TriggerSpec, src: Source)
       return ev.e === "unlock" && ev.objectId === src.id && (t.door === undefined || t.door === ev.door)
         ? { objectId: src.id, player: ev.player }
         : null;
+    case "diesOrExiled": {
+      if (ev.e !== "zone" || ev.from !== "battlefield" || (ev.to !== "graveyard" && ev.to !== "exile") || !ev.lki) return null;
+      if (!ev.lki.types.includes("Creature") || (t.minPower !== undefined && ev.lki.power < t.minPower)) return null;
+      return matchWho(t.who, ev.lki, src)
+        ? { objectId: ev.lki.id, newObjectId: ev.newId ?? undefined, player: ev.lki.controller }
+        : null;
+    }
+    case "playLand":
+      return ev.e === "playLand" && ev.player === me ? { objectId: ev.objectId, player: me } : null;
     case "castSelf":
       return ev.e === "cast" && ev.stackId === src.id ? { objectId: src.id, player: me } : null;
     case "discardSelf":
@@ -453,18 +467,23 @@ export function detectTriggers(s: GameState, ev: RulesEvent): void {
         if (s.turn.onceFired.includes(key)) return;
         s.turn.onceFired.push(key);
       }
-      s.triggers.push({
-        id: newId(s, "t"),
-        sourceId: src.id,
-        sourceDefId: src.view.defId,
-        abilityIndex: index,
-        controller: src.view.controller,
-        sourceSnapshot: { keywords: src.view.keywords, power: src.view.power, controller: src.view.controller },
-        event: data,
-        targets: {},
-        // Capacité accordée (pas dans la définition) : on la transporte avec le déclenchement.
-        inline: (s.defs[src.view.defId]?.abilities[index] ?? null) === ab ? undefined : inlineOf(ab),
-      });
+      // Starfield Vocalist : une arrivée fait se déclencher une fois de plus les capacités de vos permanents.
+      const again =
+        ev.e === "zone" && ev.to === "battlefield" && playerStatic(s, src.view.controller, "doubleEnterTriggers") ? 2 : 1;
+      for (let k = 0; k < again; k++) {
+        s.triggers.push({
+          id: newId(s, "t"),
+          sourceId: src.id,
+          sourceDefId: src.view.defId,
+          abilityIndex: index,
+          controller: src.view.controller,
+          sourceSnapshot: { keywords: src.view.keywords, power: src.view.power, controller: src.view.controller },
+          event: data,
+          targets: {},
+          // Capacité accordée (pas dans la définition) : on la transporte avec le déclenchement.
+          inline: (s.defs[src.view.defId]?.abilities[index] ?? null) === ab ? undefined : inlineOf(ab),
+        });
+      }
     });
   }
 }
@@ -484,6 +503,7 @@ export function createDelayed(
   sourceId: ObjectId,
   sourceDefId: string,
   ability: InlineAbility,
+  at: DelayedTiming = "nextEndStep",
 ): void {
   const lateInTurn = s.turn.step === "end" || s.turn.step === "cleanup";
   s.delayed.push({
@@ -491,15 +511,22 @@ export function createDelayed(
     controller,
     sourceId,
     sourceDefId,
-    at: "nextEndStep",
-    notBeforeTurn: lateInTurn ? s.turn.number + 1 : s.turn.number,
+    at,
+    // « à l'étape de fin de votre prochain tour » : pas ce tour-ci.
+    notBeforeTurn: at === "yourNextEndStep" || lateInTurn ? s.turn.number + 1 : s.turn.number,
     ability,
   });
 }
 
-/** Au début de l'étape de fin : les capacités retardées dont c'est le moment se déclenchent. */
-export function releaseDelayedTriggers(s: GameState): void {
-  const due = s.delayed.filter((d) => d.notBeforeTurn <= s.turn.number);
+/** Au début de l'étape de fin (ou à la fin du combat) : les capacités retardées dont c'est le moment se déclenchent. */
+export function releaseDelayedTriggers(s: GameState, moment: "end" | "endCombat" = "end"): void {
+  const due = s.delayed.filter((d) => {
+    if (d.notBeforeTurn > s.turn.number) return false;
+    if (moment === "endCombat") return d.at === "endOfCombat";
+    if (d.at === "endOfCombat") return false;
+    // « … de votre prochain tour » : seulement pendant un tour de son contrôleur.
+    return d.at !== "yourNextEndStep" || s.turn.active === d.controller;
+  });
   if (due.length === 0) return;
   s.delayed = s.delayed.filter((d) => !due.includes(d));
   for (const d of due) pushInline(s, d.controller, d.sourceId, d.sourceDefId, d.ability);

@@ -175,7 +175,7 @@ function AdditionalCostPicker({
   );
 }
 
-/** Cibles hors du champ de bataille (cartes dans un cimetière) : choisies dans une fenêtre. */
+/** Cibles hors du champ de bataille (cartes dans un cimetière ou en exil) : choisies dans une fenêtre. */
 function TargetCardPicker() {
   const view = useGame((s) => s.view);
   const casting = useGame((s) => s.casting);
@@ -185,7 +185,8 @@ function TargetCardPicker() {
   const cancel = useGame((s) => s.cancel);
   if (!view || !casting?.spec) return null;
   const spec = casting.spec;
-  const cards = Object.values(view.players).flatMap((p) => p.graveyard);
+  // Cartes d'un cimetière, ou exilées (Blade of the Swarm : « carte exilée avec la distorsion »).
+  const cards = [...Object.values(view.players).flatMap((p) => p.graveyard), ...view.exile];
   const options = cards.filter((o) => spec.legal.includes(o.id));
   const max = spec.count ?? 1;
   const picked = casting.picked ?? [];
