@@ -42,7 +42,7 @@ Objectif : les 18 extensions Standard restantes (environ 4 360 cartes), **100 % 
   - 0.9 mots-clés communs ✅ ;
   - 0.10 performances ✅.
 - **Phase 0 terminée.**
-- **Phase 1, extensions** (lots A/B/C, D pour FIN) : EOE ✅, DFT (A ✅), OTJ+BIG, BLB, TDM, WOE, SOS, ECL, TLA, SPM, MSH, TMT, HOB, MKM, DSK, LCI, FIN.
+- **Phase 1, extensions** (lots A/B/C, D pour FIN) : EOE ✅, DFT (A, B ✅), OTJ+BIG, BLB, TDM, WOE, SOS, ECL, TLA, SPM, MSH, TMT, HOB, MKM, DSK, LCI, FIN.
 - **Phase 2 :** decks Standard multi-extensions, puis clôture (5 158 / 5 158).
 
 Lot 0.1 : le moteur gagne :
@@ -203,7 +203,13 @@ Lot 0.10 (performances, pool complet de 5 174 cartes) :
   - épuiser (`exert`), les Verges (capacité de mana sous condition), les Roads, Bloodghast (« un adversaire a 10 PV ou moins ») ;
   - jetons Pilote, Servo, Éléphant, Véhicule 3/2 (équipage 1), Dinosaure Dragon (`dft/common.ts`, aussi dans le bac à sable) ;
   - le test de fumée peut ajouter des cartes au cimetière du joueur 1 (`EXTRA_P1_GRAVEYARD`).
-- Lot B : vitesse et exhaust. Lot C : cartes uniques (The Aetherspark, Mimeoplasm, Radiant Lotus, Gonti, Possession Engine, Trade the Helm, Waxen Shapethief, Skyseer's Chariot…).
+- Lot B ✅ (218/260) : vitesse et exhaust.
+  - vitesse (702.179) : `PlayerState.speed` (absente au départ). « Start your engines! » est un mot-clé lu dans le texte : un joueur sans vitesse qui contrôle un tel permanent passe à 1 (action basée sur l'état). Quand un adversaire perd des PV pendant votre tour, votre vitesse augmente de 1, une fois par tour (`setSpeed`, événement `speed`) ;
+  - « Max speed — [capacité] » : condition `cond.maxSpeed` sur la capacité (statique, déclenchée, activée, de mana ou de joueur : `PlayerStaticAbilityDef.condition`) ; `amount.speed`, `perSpeed` (Samut), `fx.reduceSpeed` (Spikeshell Harrier), `ref.playersWithoutMaxSpeed` ;
+  - interface : pastille « ⚡ N » près du nom du joueur (dorée à la vitesse maximale) et ligne de journal ;
+  - exhaust (702.177) : aide `exhaust({...})` (une seule activation), déclencheur `when.exhaustActivated`, réduction de Boom Scholar (`exhaustReduction`), réactivation d'Elvish Refueler (`exhaustReuse`) ;
+  - aussi : « lancer depuis votre cimetière [si…] » (`castFromGraveyard`), pioche doublée (Vnwxt), +1 blessure aux adversaires (Far Fortune), « si ce n'est pas son tour » (`when.castSpellOffTurn`), « sacrifie, sinon défausse » (Momentum Breaker), meule égale au cimetière.
+- Lot C : cartes uniques (The Aetherspark, Mimeoplasm, Radiant Lotus, Gonti, Possession Engine, Trade the Helm, Waxen Shapethief, Skyseer's Chariot…).
 
 ### Reality Fracture (FRA)
 
@@ -350,6 +356,10 @@ Réimpressions : défenses talismaniques contre une couleur, changelin, restrict
 - **Pyrewood Gearhulk :** « les blessures ne peuvent pas être prévenues ce tour-ci » n'est pas modélisé.
 - **Webstrike Elite :** la cible est un artefact ou enchantement quelconque, détruit seulement si sa valeur de mana vaut X.
 - **Chorale, Grim Javelineer :** « quand cette créature meurt ce tour-ci » est une capacité accordée jusqu'à la fin du tour.
+- **Vitesse :** l'augmentation (« quand un adversaire perd des PV pendant votre tour ») est immédiate, sans passer par la pile.
+- **Boommobile :** les quatre mana ne sont pas restreints aux capacités.
+- **Loot, the Pathfinder :** sa capacité d'exhaust de mana passe par la pile (comme Ramos).
+- **Thunderhead Gunner, Avishkar Raceway :** la carte est défaussée à la résolution, et non comme coût (comme Solitary Cell).
 - **Blessures de combat groupées** (« une ou plusieurs créatures… ») : une fois par étape de blessures et par joueur blessé.
 - **Légalité Standard :** instantané des légalités Scryfall au moment de l'import (`legalities.standard` dans `data/<set>.json`). Après une rotation ou une annonce de bannissement, réimporter les sets (`npm run import-cards -- <set>`).
 - **Jetons :** pas d'image (cadre texte).

@@ -59,6 +59,7 @@ export type RulesEvent =
   | { e: "discard"; player: PlayerId; cards: ObjectId[] }
   | { e: "discardBatch"; player: PlayerId; count: number }
   | { e: "cycled"; player: PlayerId; card: ObjectId; x: number }
+  | { e: "exhaust"; player: PlayerId; source: ObjectId }
   | { e: "attack"; attacker: ObjectId; defender: PlayerId }
   | { e: "damage"; sourceId: ObjectId | null; sourceController?: PlayerId; target: string; amount: number; combat: boolean }
   | { e: "step"; step: Step; active: PlayerId }

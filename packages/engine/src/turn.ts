@@ -1,7 +1,7 @@
 /**
  * Structure du tour (500–514), priorité (117), combat (506–511) et actions basées sur l'état (704).
  */
-import { type DamageSource, dealDamage, destroy, drawCard, putIntoGraveyard, sourceFromObject } from "./actions";
+import { type DamageSource, dealDamage, destroy, drawCard, putIntoGraveyard, setSpeed, sourceFromObject } from "./actions";
 import { ask } from "./choices";
 import { announceDiscard, announceDiscardBatch, drawBonus } from "./effects";
 import { RulesError, resolveTop } from "./stack";
@@ -360,6 +360,7 @@ function endStep(s: GameState): void {
     s.turn.creaturesDied = 0;
     s.turn.nonlandLeft = false;
     s.turn.spellWarped = false;
+    s.turn.speedRaised = false;
     s.turn.attackerSubtypes = [];
     emit({ type: "turnStart", turn: s.turn.number, player: s.turn.active });
   }
@@ -911,6 +912,11 @@ function stateBasedActionsOnce(s: GameState): void {
   for (let guard = 0; guard < 100; guard++) {
     checkGameOver(s);
     if (s.over) return;
+    // 702.179a : « Start your engines! » — un joueur sans vitesse qui contrôle un tel permanent a la vitesse 1.
+    for (const id of s.battlefield) {
+      const c = s.players[obj(s, id).controller];
+      if (c && c.speed === undefined && hasKeyword(s, id, "startYourEngines")) setSpeed(s, c.id, 1);
+    }
     const toGraveyard: ObjectId[] = [];
     const toDestroy: ObjectId[] = [];
     let changed = false;

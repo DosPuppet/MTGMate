@@ -29,6 +29,7 @@ export const {
   doubler,
   cost,
   wardAbility,
+  exhaust,
 } = dsl;
 
 /** Cible quelconque décrite par un filtre d'objets. */

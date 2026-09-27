@@ -77,6 +77,7 @@ const KEYWORD_NAMES: Record<string, Keyword> = {
   hexproof: "hexproof",
   indestructible: "indestructible",
   convoke: "convoke",
+  "start your engines!": "startYourEngines",
 };
 
 const CARD_TYPES = new Set<CardType>([
@@ -599,6 +600,7 @@ function singleDef(raw: RawCard, script: CardScript | undefined, set: string): C
     chooseOnEnter: script?.chooseOnEnter,
     shuffleIntoLibrary: script?.shuffleIntoLibrary,
     graveyardCastRemoveCounters: script?.graveyardCastRemoveCounters,
+    castFromGraveyard: script?.castFromGraveyard,
     ward,
     cantBeCountered: script?.cantBeCountered,
     spell: script?.spell,

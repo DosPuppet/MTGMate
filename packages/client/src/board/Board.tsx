@@ -112,6 +112,11 @@ function PlayerBar({ player, isMe }: { player: PlayerView; isMe: boolean }) {
             <Icon d={ICONS.grave} /> {player.graveyard.length}
             {top && <span className="gy-top">{faceName(top, lang)}</span>}
           </button>
+          {player.speed !== undefined && (
+            <span className={`speed-chip ${player.speed >= 4 ? "max" : ""}`} title="Vitesse (4 : vitesse maximale)">
+              ⚡ {player.speed}
+            </span>
+          )}
           {player.emblems.map((e, i) => (
             <span key={`${e.name}-${i}`} className="emblem-chip" title={e.text}>
               ✦ {e.name}

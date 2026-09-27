@@ -77,7 +77,9 @@ export type Keyword =
   /** Pilote (Aetherdrift) : monte et équipe comme si sa force était supérieure de 2. */
   | "crewPlus2"
   /** Interface Ace : monte et équipe avec son endurance plutôt que sa force. */
-  | "crewWithToughness";
+  | "crewWithToughness"
+  /** « Start your engines! » (702.179) : si vous n'avez pas de vitesse, elle démarre à 1. */
+  | "startYourEngines";
 
 /** Restrictions : affichées différemment des mots-clés. */
 export const RESTRICTIONS: readonly Keyword[] = [
@@ -156,6 +158,8 @@ export interface CardDef {
   shuffleIntoLibrary?: boolean;
   /** Peut être lancée depuis le cimetière en retirant N marqueurs parmi vos créatures (Quilled Greatwurm). */
   graveyardCastRemoveCounters?: number;
+  /** « Vous pouvez lancer cette carte depuis votre cimetière [si…] » (Lightwheel Enhancements : vitesse maximale). */
+  castFromGraveyard?: { condition?: Condition };
   /** « Vous ne pouvez pas lancer ce sort à moins que… » (Proft, Sinister Mastermind : seuil). */
   castCondition?: Condition;
   /** Seule l'endurance est définie par une capacité (Tarmogoyf, avec `cdaPower`). */
@@ -328,6 +332,8 @@ export interface ActivatedAbilityDef {
   fromHand?: boolean;
   /** Capacité de cycle (702.29) : déclencheurs « quand vous cyclez cette carte ». */
   cycling?: boolean;
+  /** Exhaust (702.177) : une seule activation ; déclencheurs « chaque fois que vous activez une capacité d'exhaust ». */
+  exhaust?: boolean;
   /** « N'activez qu'une fois par tour. » */
   oncePerTurn?: boolean;
   /** « N'activez que si… » / « … que pendant votre tour ». */
@@ -515,6 +521,8 @@ export type TriggerSpec =
       targeting?: { objects?: ObjectFilter; opponent?: boolean; orFilter?: boolean };
       /** « votre deuxième sort de chaque tour » : le N-ième sort lancé par ce joueur ce tour-ci. */
       nth?: number;
+      /** « …, si ce n'est pas son tour » (Adrenaline Jockey, March of the World Ooze). */
+      notTheirTurn?: boolean;
     }
   | { on: "step"; step: Step; whose: "you" | "opponent" | "any" }
   | { on: "landfall" }
@@ -580,6 +588,8 @@ export type TriggerSpec =
   | { on: "discardBatch"; whose: "you" | "opponent" | "any" }
   /** « Quand vous cyclez cette carte » (depuis le cimetière ; montant : le X du coût de cycle). */
   | { on: "cycleSelf" }
+  /** « Chaque fois que vous activez une capacité d'exhaust » */
+  | { on: "exhaustActivated" }
   /** « Chaque fois que vous activez une capacité de loyauté [en retirant au moins N marqueurs] » ; `byOpponent` : un adversaire l'active. */
   | { on: "loyaltyActivated"; minRemoved?: number; byOpponent?: boolean };
 
@@ -663,7 +673,9 @@ export type Condition =
   /** Un joueur (encore en partie) ne contrôle aucune créature (Sothera, the Supervoid). */
   | { kind: "playerWithoutCreatures" }
   /** Un adversaire a N points de vie ou moins (Bloodghast). */
-  | { kind: "opponentLifeAtMost"; n: number };
+  | { kind: "opponentLifeAtMost"; n: number }
+  /** Vitesse maximale (4) ; `not` pour « un joueur qui n'a pas la vitesse maximale ». */
+  | { kind: "maxSpeed" };
 
 /** Modifications apportées par un effet continu, rangées par couche (613). */
 export interface LayerMods {
@@ -793,6 +805,16 @@ export interface PlayerStaticAbilityDef {
   splitSecondInstantsSorceries?: boolean;
   /** Moonlit Meditation : la première fois de chaque tour, vos jetons sont des copies du permanent enchanté. */
   tokensAsCopiesOfAttached?: boolean;
+  /** « Max speed — … » : la capacité ne s'applique que si la condition est remplie. */
+  condition?: Condition;
+  /** Vnwxt, Verbose Host : « si vous deviez piocher une carte, piochez-en deux à la place ». */
+  drawDouble?: boolean;
+  /** Far Fortune : les blessures de vos sources à un adversaire ou à ses permanents : +1. */
+  damagePlusOneToOpponents?: boolean;
+  /** Boom Scholar : les capacités d'exhaust de vos autres permanents coûtent {N} de moins. */
+  exhaustReduction?: number;
+  /** Elvish Refueler : pendant votre tour, tant qu'aucune capacité d'exhaust n'a été activée, elles sont réactivables. */
+  exhaustReuse?: boolean;
   /** Sanctum Lurker : vos planeswalkers ne vont pas au cimetière faute de loyauté. */
   walkersSurviveZeroLoyalty?: boolean;
   label?: string;
@@ -842,6 +864,8 @@ export interface StaticAbilityDef {
   perGraveyard?: ObjectFilter;
   /** … par tranche de N cartes (Dark Matter Manipulator : « pour chaque tranche de sept cartes »). */
   perDivisor?: number;
+  /** F/E multipliées par la vitesse du contrôleur (Samut, the Driving Force). */
+  perSpeed?: boolean;
   label?: string;
 }
 
@@ -880,6 +904,8 @@ export type Ref =
   | { kind: "linked" }
   /** Cartes exilées « jusqu'à ce que » la source quitte le champ de bataille (Pinnacle Starcage). */
   | { kind: "exiledWith" }
+  /** Les joueurs (encore en partie) qui n'ont pas la vitesse maximale (Outpace Oblivion). */
+  | { kind: "playersWithoutMaxSpeed" }
   /** Permanents sacrifiés pour payer le coût de la capacité (Ayli). */
   | { kind: "costSacrificed" }
   /** Le joueur de l'événement (joueur blessé, lanceur du sort…). */
@@ -942,6 +968,8 @@ export type Amount =
   | { kind: "landsEnteredThisTurn" }
   /** Mana dépensé pour lancer la source (Astelli Reclaimer, Dyadrine). */
   | { kind: "manaSpent" }
+  /** Votre vitesse (0 si vous n'en avez pas). */
+  | { kind: "speed" }
   /** Plus grande valeur de mana parmi les permanents correspondants (Emissary Escort). */
   | { kind: "maxManaValue"; filter: ObjectFilter }
   /** Tarmogoyf : types de cartes parmi les cartes de tous les cimetières. */
@@ -1027,8 +1055,20 @@ export type Effect =
   | { op: "loseLife"; who: Ref; amount: Amount; store?: string }
   | { op: "bounce"; what: Ref }
   | { op: "exile"; what: Ref }
-  /** `halfLibrary` : chaque joueur meule la moitié de sa bibliothèque, arrondie à l'inférieur (Singularity Rupture). */
-  | { op: "mill"; who: Ref; amount: Amount; store?: { name: string; filter?: ObjectFilter }; halfLibrary?: boolean }
+  /**
+   * `halfLibrary` : chaque joueur meule la moitié de sa bibliothèque, arrondie à l'inférieur (Singularity Rupture) ;
+   * `graveyardSize` : autant de cartes qu'il y en a dans son cimetière (Riverchurn Monument).
+   */
+  | {
+      op: "mill";
+      who: Ref;
+      amount: Amount;
+      store?: { name: string; filter?: ObjectFilter };
+      halfLibrary?: boolean;
+      graveyardSize?: boolean;
+    }
+  /** Chaque joueur désigné sacrifie un permanent correspondant ; celui qui ne peut pas défausse une carte (Momentum Breaker). */
+  | { op: "sacrificeElseDiscard"; who: Ref; filter: ObjectFilter }
   /** Retire un marqueur de chacun de N permanents correspondants (choisis automatiquement) ; `store` : 1 si fait. */
   | { op: "removeCounterFromEach"; filter: ObjectFilter; n: number; kind: string; store?: string }
   /** Effets avec choix pendant la résolution. */
@@ -1195,6 +1235,8 @@ export type Effect =
     }
   /** Exile les cartes du dessus jusqu'à une carte correspondante (mémorisée) : Territorial Bruntar. */
   | { op: "exileUntil"; filter: ObjectFilter; store: string }
+  /** Spikeshell Harrier : si sa vitesse dépasse celle de chaque autre joueur, elle baisse de 1 (pas sous 1). */
+  | { op: "reduceSpeed"; who: Ref }
   /** « Vous contrôlez [le joueur ciblé] pendant son prochain tour » (The Dominion Bracelet). */
   | { op: "controlNextTurn"; who: Ref }
   /** « Votre total de points de vie devient N » (The Endstone). */
@@ -1474,6 +1516,8 @@ export interface PlayerState {
   turnStats: TurnStats;
   /** Marqueurs poison (104.3d : 10 ou plus, le joueur perd). */
   poison?: number;
+  /** Vitesse (702.179) : absente tant qu'aucun « Start your engines! » ne l'a démarrée ; 4 = vitesse maximale. */
+  speed?: number;
   /** Mana qui ne se vide pas avant la fin du tour (Savage Ventmaw). */
   manaKeep?: Partial<Record<ManaType, number>>;
 }
@@ -1567,6 +1611,8 @@ export interface TurnStats {
   milled: number;
   /** Cartes défaussées ce tour-ci (Jiang Yanggu, Alone). */
   cardsDiscarded: number;
+  /** Capacités d'exhaust activées ce tour-ci (Elvish Refueler). */
+  exhaustActivated?: number;
 }
 
 export interface CombatState {
@@ -1713,6 +1759,8 @@ export interface GameState {
     /** Vide (Edge of Eternities) : un permanent non-terrain a quitté le champ de bataille ce tour-ci ; un sort a été lancé avec la distorsion. */
     nonlandLeft?: boolean;
     spellWarped?: boolean;
+    /** La vitesse du joueur actif a déjà augmenté ce tour-ci. */
+    speedRaised?: boolean;
     /** Sous-types des créatures qui ont attaqué ce tour-ci (Thaumaton Torpedo : « si vous avez attaqué avec un Vaisseau »). */
     attackerSubtypes?: string[];
     /** Capacités « une fois par tour » déjà déclenchées (source:index). */
@@ -2008,6 +2056,8 @@ export type GameEvent =
   | { type: "reveal"; player: PlayerId; defIds: string[] }
   /** Un permanent face cachée est retourné face visible (la carte est révélée). */
   | { type: "turnedFaceUp"; objectId: ObjectId; defId: string }
+  /** 702.179 : nouvelle vitesse du joueur. */
+  | { type: "speed"; player: PlayerId; speed: number }
   /** 722 : `by` contrôle le tour de `player`. */
   | { type: "turnControl"; player: PlayerId; by: PlayerId }
   /** Un permanent recto-verso se transforme (`defId` : la face désormais visible). */

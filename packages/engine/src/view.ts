@@ -105,6 +105,8 @@ export interface PlayerView {
   lost: boolean;
   /** Emblèmes (zone de commandement). */
   emblems: { name: string; text: string }[];
+  /** Vitesse (702.179), absente tant qu'elle n'a pas démarré. */
+  speed?: number;
 }
 
 export type PendingView =
@@ -237,6 +239,7 @@ export function projectView(s: GameState, viewer: PlayerId): GameView {
       life: pl.life,
       libraryCount: pl.library.length,
       handCount: pl.hand.length,
+      speed: pl.speed,
       graveyard: pl.graveyard.map((id) => objectView(s, id)),
       manaPool: { ...pl.manaPool },
       lost: pl.lost,

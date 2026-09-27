@@ -71,6 +71,21 @@ export function loseLife(s: GameState, p: PlayerId, amount: number): void {
   emit({ type: "life", player: p, delta: -amount, life: player.life });
   player.turnStats.lifeLost += amount;
   rulesEvent(s, { e: "lifeLoss", player: p, amount });
+  // 702.179 : une fois par tour, quand un adversaire perd des points de vie pendant votre tour, votre vitesse augmente.
+  const active = s.players[s.turn.active];
+  if (p !== s.turn.active && active?.speed !== undefined && active.speed < 4 && !s.turn.speedRaised) {
+    s.turn.speedRaised = true;
+    setSpeed(s, s.turn.active, active.speed + 1);
+  }
+}
+
+/** Fixe la vitesse d'un joueur (702.179). */
+export function setSpeed(s: GameState, p: PlayerId, speed: number): void {
+  const player = s.players[p];
+  if (!player || player.speed === speed) return;
+  player.speed = speed;
+  bump(s);
+  emit({ type: "speed", player: p, speed });
 }
 
 /** Inflige des blessures à un joueur ou à une créature (règle 120). */
@@ -105,6 +120,8 @@ export function dealDamage(s: GameState, source: DamageSource, target: string, a
   // Tomik, Izzet Sparkmage : blessures non de combat à un adversaire ou à ses permanents, +1.
   if (!combat && victim && victim !== source.controller && playerStatic(s, source.controller, "noncombatDamageBonus"))
     amount += 1;
+  // Far Fortune (vitesse maximale) : toute blessure de vos sources à un adversaire ou à ses permanents, +1.
+  if (victim && victim !== source.controller && playerStatic(s, source.controller, "damagePlusOneToOpponents")) amount += 1;
   if (victim && victim !== source.controller) amount *= 2 ** doublers(s, source.controller, "damageToOpponents");
   // Gratuitous Violence : blessures d'une créature que vous contrôlez, doublées.
   if (source.id && s.objects[source.id]?.zone === "battlefield" && isCreature(s, source.id)) {

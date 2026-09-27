@@ -102,3 +102,77 @@ describe("Aetherdrift : Véhicules et Montures", () => {
     expect(s.objects[idOf(s, "p1", "battlefield", "Plains")]?.tapped).toBe(false);
   });
 });
+
+describe("Aetherdrift : vitesse (702.179) et exhaust (702.177)", () => {
+  it("« Start your engines! » démarre la vitesse à 1 ; elle augmente une fois par tour quand un adversaire perd des PV", () => {
+    let s = scenario({
+      p1: { battlefield: ["Walking Sarcophagus", ...lands("Mountain", 4)], hand: ["Lightning Strike", "Lightning Strike"] },
+    });
+    s = act(s, "p1", { type: "cast", card: idOf(s, "p1", "hand", "Lightning Strike"), targets: { t: ["p2"] } });
+    expect(s.players.p1?.speed).toBe(1); // actions basées sur l'état avant la priorité
+    s = passBoth(s);
+    expect(s.players.p1?.speed).toBe(2);
+    s = act(s, "p1", { type: "cast", card: idOf(s, "p1", "hand", "Lightning Strike"), targets: { t: ["p2"] } });
+    s = passBoth(s);
+    expect(s.players.p1?.speed).toBe(2); // une seule fois par tour
+  });
+
+  it("vitesse maximale : Walking Sarcophagus +1/+2 ; Spikeshell Harrier fait baisser la vitesse du plus rapide", () => {
+    const s = scenario({ p1: { battlefield: ["Walking Sarcophagus"] }, p2: { battlefield: ["Walking Sarcophagus"] } });
+    s.players.p1!.speed = 4;
+    s.version += 1;
+    const mine = idOf(s, "p1", "battlefield", "Walking Sarcophagus");
+    expect(chars(s, mine).power).toBe(3);
+    expect(chars(s, idOf(s, "p2", "battlefield", "Walking Sarcophagus")).power).toBe(2);
+    let t = scenario({
+      p1: { battlefield: ["Walking Sarcophagus"] },
+      p2: { battlefield: [...lands("Island", 5)], hand: ["Spikeshell Harrier"] },
+      active: "p2",
+    });
+    t.players.p1!.speed = 4;
+    t.players.p2!.speed = 1;
+    t = act(t, "p2", { type: "cast", card: idOf(t, "p2", "hand", "Spikeshell Harrier") });
+    t = passAccepting(t, (x) => x.stack.length === 0 && x.pending?.kind === "priority");
+    expect(t.players.p1?.speed).toBe(3);
+  });
+
+  it("exhaust : une seule activation, déclencheurs « quand vous activez une capacité d'exhaust »", () => {
+    let s = scenario({ p1: { battlefield: ["Prowcatcher Specialist", "Rangers' Refueler", ...lands("Mountain", 8)] } });
+    const pro = idOf(s, "p1", "battlefield", "Prowcatcher Specialist");
+    const hand = s.players.p1?.hand.length ?? 0;
+    s = act(s, "p1", { type: "activate", source: pro, ability: abilityIndex(s, pro, "Exhaust") });
+    s = passAccepting(s, (x) => x.stack.length === 0 && x.pending?.kind === "priority");
+    expect(s.objects[pro]?.counters["+1/+1"]).toBe(2);
+    expect(s.players.p1?.hand.length).toBe(hand + 1); // Rangers' Refueler
+    expect(legalActions(s, "p1").some((a) => a.type === "activate" && a.source === pro)).toBe(false);
+  });
+
+  it("Elvish Refueler : une capacité d'exhaust réactivable pendant votre tour tant qu'aucune n'a été activée", () => {
+    let s = scenario({
+      p1: { battlefield: ["Elvish Refueler", "Skystreak Engineer", ...lands("Island", 5), ...lands("Forest", 5)] },
+    });
+    const eng = idOf(s, "p1", "battlefield", "Skystreak Engineer");
+    s.objects[eng]!.used = [abilityIndex(s, eng, "Exhaust")];
+    s.version += 1;
+    expect(legalActions(s, "p1").some((a) => a.type === "activate" && a.source === eng)).toBe(true);
+    s = act(s, "p1", { type: "activate", source: eng, ability: abilityIndex(s, eng, "Exhaust") });
+    s = passBoth(s);
+    const ref = idOf(s, "p1", "battlefield", "Elvish Refueler");
+    expect(legalActions(s, "p1").some((a) => a.type === "activate" && a.source === ref)).toBe(true);
+    expect(legalActions(s, "p1").some((a) => a.type === "activate" && a.source === eng)).toBe(false);
+  });
+
+  it("Samut : +X/+0 aux autres créatures (X = vitesse) ; Vnwxt à vitesse max pioche le double", () => {
+    const s = scenario({ p1: { battlefield: ["Samut, the Driving Force", "Bear Cub"] } });
+    s.players.p1!.speed = 3;
+    s.version += 1;
+    expect(chars(s, idOf(s, "p1", "battlefield", "Bear Cub")).power).toBe(5);
+    let t = scenario({ p1: { battlefield: ["Vnwxt, Verbose Host", ...lands("Island", 3)], hand: ["Stock Up"] } });
+    t.players.p1!.speed = 4;
+    t.version += 1;
+    const before = t.players.p1?.hand.length ?? 0;
+    t = advanceUntil(t, (x) => x.turn.active === "p1" && x.turn.step === "main1" && x.turn.number > 3);
+    // Pioche de l'étape de pioche : deux cartes.
+    expect((t.players.p1?.hand.length ?? 0) - before).toBeGreaterThanOrEqual(2);
+  });
+});

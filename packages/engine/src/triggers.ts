@@ -111,6 +111,8 @@ export function simultaneously<T>(s: GameState, fn: () => T): T {
 
 export function checkCondition(s: GameState, c: Condition, controller: PlayerId, sourceId?: ObjectId): boolean {
   switch (c.kind) {
+    case "maxSpeed":
+      return (s.players[controller]?.speed ?? 0) >= 4;
     case "opponentLifeAtMost":
       return opponentsOf(s, controller).some((p) => (s.players[p]?.life ?? 0) <= c.n);
     case "playerWithoutCreatures":
@@ -340,6 +342,7 @@ function matchTrigger(s: GameState, ev: RulesEvent, t: TriggerSpec, src: Source)
       }
       // « votre deuxième sort de chaque tour ».
       if (t.nth !== undefined && s.players[ev.player]?.turnStats.spellsCast !== t.nth) return null;
+      if (t.notTheirTurn && s.turn.active === ev.player) return null;
       // `amount` : éphémères et rituels déjà lancés ce tour-ci (Thousand-Year Storm).
       return { objectId: ev.stackId, player: ev.player, amount: ev.instantSorceryBefore };
     }
@@ -422,6 +425,8 @@ function matchTrigger(s: GameState, ev: RulesEvent, t: TriggerSpec, src: Source)
       return ev.e === "playLand" && ev.player === me ? { objectId: ev.objectId, player: me } : null;
     case "castSelf":
       return ev.e === "cast" && ev.stackId === src.id ? { objectId: src.id, player: me } : null;
+    case "exhaustActivated":
+      return ev.e === "exhaust" && ev.player === me ? { objectId: ev.source, player: me } : null;
     case "cycleSelf":
       return ev.e === "cycled" && ev.card === src.id ? { objectId: src.id, player: ev.player, amount: ev.x } : null;
     case "discardSelf":

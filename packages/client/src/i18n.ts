@@ -63,6 +63,7 @@ export const KEYWORD_LABEL: Record<Keyword, string> = {
   cantBeBlockedByMoreThanOne: "Bloquée par une seule créature au plus",
   crewPlus2: "Monte et équipe avec 2 de force en plus",
   crewWithToughness: "Monte et équipe avec son endurance",
+  startYourEngines: "Start your engines!",
   cantAttack: "Ne peut pas attaquer",
   unblockable: "Ne peut pas être bloquée",
   mustAttack: "Attaque à chaque combat",
@@ -171,6 +172,12 @@ export function describeEvents(
         break;
       case "endTurn":
         add("Le tour se termine.", "info");
+        break;
+      case "speed":
+        add(
+          `${who(e.player)} ${e.player === me ? "passez" : "passe"} à la vitesse ${e.speed}${e.speed >= 4 ? " (maximale)" : ""}.`,
+          kind(e.player),
+        );
         break;
       case "turnControl":
         add(`${who(e.by)} ${e.by === me ? "contrôlez" : "contrôle"} le tour de ${whom(e.player)}.`, "info");

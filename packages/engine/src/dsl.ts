@@ -60,6 +60,8 @@ export interface CardScript {
   chooseOnEnter?: "creatureType" | "color" | "cardName";
   shuffleIntoLibrary?: boolean;
   graveyardCastRemoveCounters?: number;
+  /** « Vous pouvez lancer cette carte depuis votre cimetière [si…] » */
+  castFromGraveyard?: { condition?: Condition };
   /** Seule la force est variable (Enigma Drake). */
   cdaPower?: Amount;
   /** Seule l'endurance est variable (Tarmogoyf, avec `cdaPower`). */
@@ -162,6 +164,7 @@ export const ref = {
   costSacrificed: { kind: "costSacrificed" } as Ref,
   /** Cartes exilées par la source « jusqu'à ce qu'elle quitte le champ de bataille ». */
   exiledWith: { kind: "exiledWith" } as Ref,
+  playersWithoutMaxSpeed: { kind: "playersWithoutMaxSpeed" } as Ref,
   stored: (name: string): Ref => ({ kind: "stored", name }),
   /** « chaque [créature] que [le joueur désigné] contrôle » */
   permanentsOf: (player: Ref, filter: ObjectFilter): Ref => ({ kind: "permanentsOf", player, filter }),
@@ -211,6 +214,8 @@ export const amount = {
   halfLife: (who: Ref): Amount => ({ kind: "halfLife", who }),
   landsEnteredThisTurn: { kind: "landsEnteredThisTurn" } as Amount,
   manaSpent: { kind: "manaSpent" } as Amount,
+  /** Votre vitesse. */
+  speed: { kind: "speed" } as Amount,
   maxManaValue: (filter: ObjectFilter): Amount => ({ kind: "maxManaValue", filter }),
 };
 
@@ -268,6 +273,9 @@ export const fx = {
   }),
   /** Chaque joueur désigné meule la moitié de sa bibliothèque, arrondie à l'inférieur. */
   millHalf: (who: Ref): Effect => ({ op: "mill", who, amount: 0, halfLibrary: true }),
+  /** Chaque joueur désigné meule autant de cartes qu'il y en a dans son cimetière. */
+  millGraveyardSize: (who: Ref): Effect => ({ op: "mill", who, amount: 0, graveyardSize: true }),
+  sacrificeElseDiscard: (who: Ref, filter: ObjectFilter): Effect => ({ op: "sacrificeElseDiscard", who, filter }),
   removeCounterFromEach: (filter: ObjectFilter, n: number, store?: string, kind = "+1/+1"): Effect => ({
     op: "removeCounterFromEach",
     filter,
@@ -386,6 +394,7 @@ export const fx = {
   setLife: (amount: Amount, who: Ref = ref.you): Effect => ({ op: "setLife", who, amount }),
   /** « Vous contrôlez [le joueur] pendant son prochain tour » (722). */
   controlNextTurn: (who: Ref): Effect => ({ op: "controlNextTurn", who }),
+  reduceSpeed: (who: Ref): Effect => ({ op: "reduceSpeed", who }),
   /** « [Cette Monture] devient montée jusqu'à la fin du tour ». */
   saddle: (what: Ref = ref.self): Effect => ({ op: "saddle", what }),
   /** « [Ce Véhicule] devient une créature-artefact jusqu'à la fin du tour ». */
@@ -746,6 +755,11 @@ export function activated(opts: {
 }
 
 /** Capacité de loyauté (606) : « +1 : … », « −3 : … » ; en rituel, une par tour et par planeswalker. */
+/** Exhaust (702.177) : « Exhaust — [coût] : [effet] » (une seule activation). */
+export function exhaust(opts: Parameters<typeof activated>[0]): ActivatedAbilityDef {
+  return { ...activated({ ...opts, once: true }), exhaust: true, label: `Exhaust — ${opts.label ?? ""}`.trim() };
+}
+
 export function loyalty(n: number, opts: { targets?: TargetSpec[]; effects: Effects; label: string }): ActivatedAbilityDef {
   return {
     kind: "activated",
@@ -791,6 +805,8 @@ export const when = {
   ): TriggerSpec => ({ on: "castSpell", by, filter, targeting }),
   /** « Chaque fois que vous lancez votre N-ième sort de chaque tour » */
   castNthSpell: (nth: number): TriggerSpec => ({ on: "castSpell", by: "you", nth }),
+  /** « Chaque fois qu'un joueur lance un sort, si ce n'est pas son tour » */
+  castSpellOffTurn: (by: "you" | "opponent" | "any" = "any"): TriggerSpec => ({ on: "castSpell", by, notTheirTurn: true }),
   /** « Chaque fois que cette créature subit des blessures » */
   isDealtDamage: { on: "isDealtDamage", who: "self" } as TriggerSpec,
   /** « Chaque fois que la créature enchantée (ou équipée) subit des blessures » */
@@ -844,6 +860,8 @@ export const when = {
   discardSelf: { on: "discardSelf" } as TriggerSpec,
   /** « Quand vous cyclez cette carte » (avec `fromGraveyard` ; `amount.eventAmount` : le X du coût). */
   cycleSelf: { on: "cycleSelf" } as TriggerSpec,
+  /** « Chaque fois que vous activez une capacité d'exhaust » */
+  exhaustActivated: { on: "exhaustActivated" } as TriggerSpec,
   /** « Quand vous lancez ce sort » */
   castSelf: { on: "castSelf" } as TriggerSpec,
   /** « Quand cette créature est retournée face visible » */
@@ -927,6 +945,8 @@ export const cond = {
   attackingAlone: { kind: "attackingAlone" } as Condition,
   playerWithoutCreatures: { kind: "playerWithoutCreatures" } as Condition,
   opponentLifeAtMost: (n: number): Condition => ({ kind: "opponentLifeAtMost", n }),
+  /** « Max speed » : vous avez la vitesse maximale (4). */
+  maxSpeed: { kind: "maxSpeed" } as Condition,
   opponentDealtNoncombatDamageLastTurn: { kind: "opponentDealtNoncombatDamageLastTurn" } as Condition,
   spellCastFromHand: { kind: "spellCastFromHand" } as Condition,
   spellCastFromGraveyard: { kind: "spellCastFromGraveyard" } as Condition,
@@ -1024,6 +1044,7 @@ export function staticAbility(
     perCounter?: string;
     perGraveyard?: ObjectFilter;
     perDivisor?: number;
+    perSpeed?: boolean;
   } = {},
 ): StaticAbilityDef {
   return {
@@ -1036,6 +1057,7 @@ export function staticAbility(
     perCounter: opts.perCounter,
     perGraveyard: opts.perGraveyard,
     perDivisor: opts.perDivisor,
+    perSpeed: opts.perSpeed,
   };
 }
 

@@ -13,6 +13,7 @@ import {
   loseLife,
   removeFromCombat,
   sacrifice,
+  setSpeed,
   sourceFromObject,
 } from "./actions";
 import { copiedDefId } from "./layers";
@@ -193,6 +194,8 @@ export function resolveRef(s: GameState, ctx: EffectContext, ref: Ref): string[]
     }
     case "costSacrificed":
       return ctx.sacrificed ?? [];
+    case "playersWithoutMaxSpeed":
+      return s.playerOrder.filter((p) => !s.players[p]?.lost && (s.players[p]?.speed ?? 0) < 4);
     case "exiledWith":
       return s.linkedExile
         .filter((l) => l.sourceId === ctx.sourceId)
@@ -298,6 +301,8 @@ export function evalAmount(s: GameState, ctx: EffectContext, a: Amount): number 
       return s.players[ctx.controller]?.turnStats.landsEntered ?? 0;
     case "manaSpent":
       return s.objects[ctx.sourceId]?.manaSpent ?? 0;
+    case "speed":
+      return s.players[ctx.controller]?.speed ?? 0;
     case "maxManaValue":
       return Math.max(
         0,
@@ -561,8 +566,11 @@ export function putFaceDown(s: GameState, controller: PlayerId, id: ObjectId, wa
 
 /** Quantum Riddler : avec une carte en main ou moins, « si vous deviez piocher, vous piochez une carte de plus ». */
 export function drawBonus(s: GameState, player: PlayerId, n: number): number {
-  if (n <= 0 || (s.players[player]?.hand.length ?? 0) > 1) return 0;
-  return playerStatic(s, player, "drawPlusOneWhenHandSmall") ? 1 : 0;
+  if (n <= 0) return 0;
+  // Vnwxt, Verbose Host : chaque pioche est doublée.
+  const double = playerStatic(s, player, "drawDouble") ? n : 0;
+  if ((s.players[player]?.hand.length ?? 0) > 1) return double;
+  return double + (playerStatic(s, player, "drawPlusOneWhenHandSmall") ? 1 : 0);
 }
 
 /** Cartes d'une zone appartenant à des joueurs donnés. */
@@ -1370,7 +1378,12 @@ export function runEffect(s: GameState, r: Resolution, e: Effect): OpResult {
       const f = e.store?.filter;
       for (const p of resolveRef(s, ctx, e.who)) {
         const library = s.players[p]?.library ?? [];
-        for (const id of library.slice(0, e.halfLibrary ? Math.floor(library.length / 2) : n)) {
+        const count = e.halfLibrary
+          ? Math.floor(library.length / 2)
+          : e.graveyardSize
+            ? (s.players[p]?.graveyard.length ?? 0)
+            : n;
+        for (const id of library.slice(0, count)) {
           if (f && matchesCard(s, ctx.controller, id, { ...f, controller: undefined })) matching++;
           moveAndLog(s, id, "graveyard");
         }
@@ -1861,6 +1874,63 @@ export function runEffect(s: GameState, r: Resolution, e: Effect): OpResult {
       const vars: Record<string, ChoiceValue[]> = {};
       for (const [k, a] of Object.entries(e.vars ?? {})) vars[`$${k}`] = [evalAmount(s, ctx, a)];
       createDelayed(s, ctx.controller, ctx.sourceId, ctx.sourceDefId, { targets: [], effects: e.effects, bound, vars }, e.at);
+      return;
+    }
+    case "reduceSpeed": {
+      for (const p of resolveRef(s, ctx, e.who).filter((x) => isPlayer(s, x))) {
+        const speed = s.players[p]?.speed ?? 0;
+        const others = s.playerOrder.filter((q) => q !== p && !s.players[q]?.lost).map((q) => s.players[q]?.speed ?? 0);
+        if (speed > 1 && others.every((o) => speed > o)) setSpeed(s, p, speed - 1);
+      }
+      return;
+    }
+    case "sacrificeElseDiscard": {
+      for (const p of resolveRef(s, ctx, e.who).filter((x) => isPlayer(s, x))) {
+        if (r.vars[key(`sed-${p}`)]) continue;
+        const candidates = s.battlefield.filter(
+          (id) => s.objects[id]?.controller === p && matchesObjectFilter(s, p, id, e.filter, ctx.sourceId),
+        );
+        const hand = s.players[p]?.hand ?? [];
+        const pool = candidates.length ? candidates : hand;
+        if (pool.length === 0) {
+          r.vars[key(`sed-${p}`)] = [1];
+          continue;
+        }
+        let chosen = pool.length === 1 ? [pool[0] as string] : null;
+        if (!chosen) {
+          const answer = r.vars[key(`sedpick-${p}`)];
+          if (!answer) {
+            return {
+              ask: {
+                player: p,
+                key: key(`sedpick-${p}`),
+                request: {
+                  type: "pick",
+                  intent: candidates.length ? "sacrifice" : "discard",
+                  prompt: candidates.length ? "Sacrifiez un permanent" : "Défaussez une carte",
+                  options: pool,
+                  min: 1,
+                  max: 1,
+                  suggested: [pool[0] as string],
+                },
+              },
+            };
+          }
+          chosen = answer
+            .map(String)
+            .filter((id) => pool.includes(id))
+            .slice(0, 1);
+          if (chosen.length === 0) chosen = [pool[0] as string];
+        }
+        r.vars[key(`sed-${p}`)] = [1];
+        const id = chosen[0] as string;
+        if (candidates.length) sacrifice(s, id);
+        else {
+          emit({ type: "discard", player: p, defIds: [s.objects[id]?.defId ?? ""] });
+          announceDiscard(s, p, moveObject(s, id, "graveyard"));
+          announceDiscardBatch(s, p, 1);
+        }
+      }
       return;
     }
     case "controlNextTurn": {

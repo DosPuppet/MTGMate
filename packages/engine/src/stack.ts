@@ -311,10 +311,27 @@ function reductionContext(controller: PlayerId, sourceId: string, sourceDefId: s
 
 /** « Cette capacité coûte {N} de moins à activer » (Starport Security, Survey Mechan, The Dominion Bracelet). */
 export function abilityReduction(s: GameState, player: PlayerId, source: ObjectId, ab: ActivatedAbilityDef): number {
+  // Boom Scholar : les capacités d'exhaust de vos autres permanents coûtent moins.
+  const exhaust = ab.exhaust
+    ? controlledAbilitiesWithSource(s, player).reduce(
+        (n, { id, ab: x }) => n + (x.kind === "playerStatic" && id !== source ? (x.exhaustReduction ?? 0) : 0),
+        0,
+      )
+    : 0;
   const red = ab.reduction;
-  if (!red) return 0;
+  if (!red) return exhaust;
   if (red.condition && !checkCondition(s, red.condition, player, source)) return 0;
-  return Math.max(0, evalAmount(s, reductionContext(player, source, s.objects[source]?.defId ?? ""), red.generic));
+  return exhaust + Math.max(0, evalAmount(s, reductionContext(player, source, s.objects[source]?.defId ?? ""), red.generic));
+}
+
+/** Elvish Refueler : pendant votre tour, tant qu'aucune capacité d'exhaust n'a été activée ce tour-ci. */
+function exhaustReusable(s: GameState, player: PlayerId, ab: ActivatedAbilityDef): boolean {
+  return (
+    !!ab.exhaust &&
+    s.turn.active === player &&
+    !(s.players[player]?.turnStats.exhaustActivated ?? 0) &&
+    playerStatic(s, player, "exhaustReuse")
+  );
 }
 
 /**
@@ -405,6 +422,8 @@ function baseCastTerms(s: GameState, player: PlayerId, card: ObjectId): CastTerm
     if (d.flashback || s.turn.flashbackGranted?.includes(card)) return { source: "flashback" };
     const t = graveyardTypeAvailable(s, player, card);
     if (t && t !== "Land") return { source: "graveyard", graveyardType: t };
+    const fromGy = d.castFromGraveyard;
+    if (fromGy && (!fromGy.condition || checkCondition(s, fromGy.condition, player, card))) return { source: "graveyard" };
     if (d.graveyardCastRemoveCounters && countersAmongCreatures(s, player) >= d.graveyardCastRemoveCounters) {
       return { source: "graveyard", removeCounters: d.graveyardCastRemoveCounters };
     }
@@ -856,7 +875,7 @@ export function abilityZone(ab: ActivatedAbilityDef): "battlefield" | "graveyard
 export function canPayNonManaCost(s: GameState, source: ObjectId, ab: ActivatedAbilityDef, index = -1): boolean {
   const o = s.objects[source];
   if (!o || o.zone !== abilityZone(ab)) return false;
-  if (ab.once && o.used?.includes(index)) return false;
+  if (ab.once && o.used?.includes(index) && !exhaustReusable(s, o.controller, ab)) return false;
   if (ab.oncePerTurn && o.activatedTurn?.[index] === s.turn.number) return false;
   const who = abilityZone(ab) !== "battlefield" ? o.owner : o.controller;
   if (ab.activationCondition && !checkCondition(s, ab.activationCondition, who, source)) return false;
@@ -983,7 +1002,12 @@ export function activateAbility(s: GameState, player: PlayerId, source: ObjectId
     if (pl) pl.turnStats.loyaltyActivations += 1;
     rulesEvent(s, { e: "loyalty", player, sourceId: source, cost });
   }
-  if (ab.once) o.used = [...(o.used ?? []), index];
+  if (ab.once && !o.used?.includes(index)) o.used = [...(o.used ?? []), index];
+  if (ab.exhaust) {
+    const stats = s.players[player]?.turnStats;
+    if (stats) stats.exhaustActivated = (stats.exhaustActivated ?? 0) + 1;
+    rulesEvent(s, { e: "exhaust", player, source });
+  }
   if (ab.oncePerTurn) o.activatedTurn = { ...(o.activatedTurn ?? {}), [index]: s.turn.number };
   if (ab.cost.addCounters) changeCounters(s, o, ab.cost.addCounters.kind, ab.cost.addCounters.n);
   for (const id of crew) tapObject(s, obj(s, id));

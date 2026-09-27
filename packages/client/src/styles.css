@@ -580,6 +580,19 @@ button {
 }
 
 /* Actions */
+.speed-chip {
+  padding: 0 6px;
+  border-radius: 8px;
+  background: var(--panel-2);
+  color: var(--gold);
+  font-weight: 600;
+}
+
+.speed-chip.max {
+  background: var(--gold);
+  color: #111;
+}
+
 .control-banner {
   padding: 4px 10px;
   border-radius: 6px;
