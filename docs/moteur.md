@@ -8,7 +8,8 @@ Moteur pur et déterministe (`packages/engine/src`). L'état est sérialisable ;
 |---|---|
 | `types.ts` | Tous les types : `GameState`, `GameObject`, `CardDef`, `Effect` (union `op`), `TriggerSpec` (union `on`), `Condition`, `Amount`, `Ref`, `ObjectFilter`, `TargetSpec`, statiques de joueur, `Keyword`… |
 | `dsl.ts` | Constructeurs pour les scripts de cartes : `fx.*`, `when.*`, `cond.*`, `amount.*`, `ref.*`, `target.*`, `activated`, `triggered`, `staticAbility`, `playerStatic`, `manaAbility`, `chapter`, `spree`, `tiered`… Plus `CardScript` (champs du script d'une carte). |
-| `effects.ts` | `runEffect` : un grand `switch (e.op)` ; `evalAmount` (`switch (a.kind)`) ; `resolveRef` ; `moveWithSpec`, `grantPlay`, `addEffect`. |
+| `effects.ts` | `runEffect` : aiguillage vers la table `op → traitement` ; `evalAmount` (`switch (a.kind)`) ; `resolveRef` ; `evalCondition` ; aides partagées (`store`, `damageSource`, `moveWithSpec`, `grantPlay`, `addEffect`…). |
+| `ops/*.ts` | Les traitements des effets, par domaine : `damage`, `players`, `counters`, `zones`, `spells` (pile, permissions de lancer), `permanents` (modifications, contrôle, copies, jetons), `mana`, `flow` (si, peut, réflexif, retardé). Chaque fichier exporte `HANDLERS: OpHandlers`. |
 | `triggers.ts` | Détection des déclencheurs (`switch (t.on)` sur les `RulesEvent`), doublements de déclenchements, `checkCondition` (`switch (c.kind)`), capacités retardées. |
 | `stack.ts` | Lancer (`castTerms`, `castableFaces`, `castSpell`), coûts, activer (`activateAbility`, `canPayNonManaCost`), résoudre, contrecarrer, jouer un terrain. |
 | `legal.ts` | `legalActions` : options proposées aux joueurs et à l'IA (doit refléter `stack.ts`). |
@@ -24,7 +25,7 @@ Moteur pur et déterministe (`packages/engine/src`). L'état est sérialisable ;
 
 ## Recettes
 
-- **Nouvel effet :** ajouter la variante `{ op: "…" }` à `Effect` (`types.ts`), son `case` dans `runEffect` (`effects.ts`) et son constructeur `fx.…` (`dsl.ts`). Si l'effet change des caractéristiques, appeler `bump(s)`.
+- **Nouvel effet :** ajouter la variante `{ op: "…" }` à `Effect` (`types.ts`), son traitement `op(s, r, e, ctx, key) { … }` dans le `HANDLERS` du bon fichier `ops/<domaine>.ts` (`e` y est typé selon `op` ; `r` et `key` servent aux choix et aux variables mémorisées), puis son constructeur `fx.…` (`dsl.ts`). Si l'effet change des caractéristiques, appeler `bump(s)`.
 - **Nouveau déclencheur :** une variante de `TriggerSpec`, un `case` dans `triggers.ts` (renvoyer `{ objectId, player, amount }` pour `ref.eventObject`, `ref.eventPlayer` et `amount.eventAmount`), puis `when.…`. Si l'événement n'existe pas, ajouter un `RulesEvent` (`state.ts`) et l'émettre avec `rulesEvent(s, …)`.
 - **Nouvelle condition ou nouveau montant :** `Condition` + `checkCondition` + `cond.…` ; `Amount` + `evalAmount` + `amount.…`.
 - **Filtre d'objet :** un champ de `ObjectFilter`, calculé dans `view()` (`layers.ts`) si besoin, et testé dans `matchesView` (`targets.ts`).
