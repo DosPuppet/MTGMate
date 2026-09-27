@@ -260,6 +260,70 @@ describe("Final Fantasy", () => {
     expect(s.players.p2?.life).toBe(14);
   });
 
+  it("The Darkness Crystal : la créature adverse est exilée (liée) au lieu de mourir, +2 PV, puis revient chez vous", () => {
+    let s = scenario({
+      p1: { battlefield: ["The Darkness Crystal", ...lands("Mountain", 1), ...lands("Swamp", 6)], hand: ["Burst Lightning"] },
+      p2: { battlefield: ["Bear Cub"] },
+    });
+    s = act(s, "p1", {
+      type: "cast",
+      card: idOf(s, "p1", "hand", "Burst Lightning"),
+      targets: { t: [idOf(s, "p2", "battlefield", "Bear Cub")] },
+    });
+    s = settle(s);
+    expect(s.players.p1?.life).toBe(22);
+    const exiled = s.exile.find((id) => s.defs[s.objects[id]?.defId ?? ""]?.name === "Bear Cub") as string;
+    expect(exiled).toBeDefined();
+    const crystal = idOf(s, "p1", "battlefield", "The Darkness Crystal");
+    const index = (s.defs[s.objects[crystal]?.defId ?? ""]?.abilities ?? []).findIndex((a) => a.kind === "activated");
+    s = act(s, "p1", { type: "activate", source: crystal, ability: index, targets: { t: [exiled] } });
+    s = passBoth(s);
+    const bear = idOf(s, "p1", "battlefield", "Bear Cub");
+    expect(s.objects[bear]?.counters["+1/+1"]).toBe(2);
+  });
+
+  it("Ancient Adamantoise encaisse les blessures infligées à son contrôleur et à ses autres permanents", () => {
+    let s = scenario({
+      p1: { battlefield: lands("Mountain", 2), hand: ["Burst Lightning", "Burst Lightning"] },
+      p2: { battlefield: ["Ancient Adamantoise", "Bear Cub"] },
+    });
+    const [a, b] = idsOf(s, "p1", "hand", "Burst Lightning") as [string, string];
+    s = act(s, "p1", { type: "cast", card: a, targets: { t: ["p2"] } });
+    s = settle(s);
+    s = act(s, "p1", { type: "cast", card: b, targets: { t: [idOf(s, "p2", "battlefield", "Bear Cub")] } });
+    s = settle(s);
+    expect(s.players.p2?.life).toBe(20);
+    expect(idsOf(s, "p2", "battlefield", "Bear Cub")).toHaveLength(1);
+    expect(s.objects[idOf(s, "p2", "battlefield", "Ancient Adamantoise")]?.damage).toBe(4);
+  });
+
+  it("Absolute Virtue : son contrôleur ne peut pas être ciblé ni blessé par ses adversaires", () => {
+    const s = scenario({
+      p1: { battlefield: lands("Mountain", 1), hand: ["Burst Lightning"] },
+      p2: { battlefield: ["Absolute Virtue"] },
+    });
+    const opt = legalActions(s, "p1").find((a) => a.type === "cast");
+    const legal = opt?.type === "cast" ? (opt.modes[0]?.targets[0]?.legal ?? []) : [];
+    expect(legal).not.toContain("p2");
+  });
+
+  it("Zidane : un Trésor quand un adversaire prend le contrôle d'un de vos permanents", () => {
+    let s = scenario({
+      p1: { battlefield: ["Stiltzkin, Moogle Merchant", "Zidane, Tantalus Thief", "Bear Cub", ...lands("Plains", 2)] },
+    });
+    const stiltzkin = idOf(s, "p1", "battlefield", "Stiltzkin, Moogle Merchant");
+    const index = (s.defs[s.objects[stiltzkin]?.defId ?? ""]?.abilities ?? []).findIndex((a) => a.kind === "activated");
+    s = act(s, "p1", {
+      type: "activate",
+      source: stiltzkin,
+      ability: index,
+      targets: { p: ["p2"], t: [idOf(s, "p1", "battlefield", "Bear Cub")] },
+    });
+    s = settle(s);
+    expect(idsOf(s, "p2", "battlefield", "Bear Cub")).toHaveLength(1);
+    expect(idsOf(s, "p1", "battlefield", "Treasure")).toHaveLength(1);
+  });
+
   it("PuPu UFO : seule la force de base devient le nombre de Villes", () => {
     let s = scenario({ p1: { battlefield: ["PuPu UFO", "Adventurer's Inn", "Capital City", ...lands("Island", 3)] } });
     const ufo = idOf(s, "p1", "battlefield", "PuPu UFO");

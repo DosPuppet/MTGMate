@@ -45,6 +45,8 @@ const EXTRA_P1: Record<string, string[]> = {
   "Hardlight Containment": ["Nutrient Block"],
   // {B}{B}{B}{B}{B} : trois Marais ne suffisent pas.
   "Zodiark, Umbral God": ["Swamp", "Swamp"],
+  // « un Équipement ciblé ».
+  "Stolen Uniform": ["Monk's Fist"],
 };
 /** Cartes supplémentaires dans le cimetière du joueur 1 (« carte d'artefact ciblée de votre cimetière »). */
 const EXTRA_P1_GRAVEYARD: Record<string, string[]> = { "Tune Up": ["Nutrient Block"] };

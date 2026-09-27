@@ -68,6 +68,10 @@ export type Keyword =
   | "cantBeBlockedByWalls"
   /** Stuck in Summoner's Sanctum : « ses capacités activées ne peuvent pas être activées ». */
   | "noActivatedAbilities"
+  /** Ancient Adamantoise : « les blessures ne sont pas retirées de cette créature pendant l'étape de nettoyage ». */
+  | "keepsDamage"
+  /** Ancient Adamantoise : les blessures infligées à son contrôleur et à ses autres permanents lui sont infligées à la place. */
+  | "absorbsDamage"
   /** Relentless X-ATM092 : « ne peut être bloquée que par trois créatures ou plus ». */
   | "minThreeBlockers"
   /** Diamond Weapon : « prévenez toutes les blessures de combat qui devraient lui être infligées ». */
@@ -100,6 +104,8 @@ export const RESTRICTIONS: readonly Keyword[] = [
   "cantBeBlockedByWalls",
   "noActivatedAbilities",
   "minThreeBlockers",
+  "keepsDamage",
+  "absorbsDamage",
   "combatDamageImmune",
 ];
 
@@ -152,7 +158,7 @@ export interface CardDef {
   /** « Si cette carte est dans votre main de départ, vous pouvez commencer la partie avec elle sur le champ de bataille. » */
   leyline?: boolean;
   /** Garde : coût à payer (mana ou points de vie). */
-  ward?: { mana?: ManaCost; life?: number; discard?: boolean; discardRandom?: boolean; sacrifice?: number };
+  ward?: { mana?: ManaCost; life?: number; lifePower?: boolean; discard?: boolean; discardRandom?: boolean; sacrifice?: number };
   /** Flashback avec « défaussez une carte » en plus (Twinned Vision). */
   flashbackDiscard?: number;
   /** « En coût additionnel pour lancer ce sort, … » (601.2b, 601.2h). */
@@ -170,6 +176,8 @@ export interface CardDef {
    * `graveyardUpToX` : « exilez jusqu'à X cartes de votre cimetière » à la place (Mimeoplasm, cartes liées).
    */
   devour?: { filter: ObjectFilter; n: number; graveyardUpToX?: boolean };
+  /** The Masamune : les capacités déclenchées par une mort, de la créature équipée ou de vos emblèmes, se déclenchent une fois de plus. */
+  doubleDeathTriggersForEquipped?: boolean;
   /** Cloud, Planet's Champion : « les capacités d'équipement que vous activez qui la ciblent coûtent {N} de moins ». */
   equipDiscountWhenTargeted?: number;
   /** Cloud, Midgar Mercenary : tant qu'elle est équipée, ses capacités déclenchées et celles de ses Équipements se déclenchent une fois de plus. */
@@ -480,6 +488,8 @@ export interface ObjectFilter {
   attachedToSource?: boolean;
   /** Créature équipée (au moins un Équipement attaché). */
   equipped?: boolean;
+  /** Était attaché à la source quand celle-ci a quitté le champ de bataille (Zack Fair). */
+  wasAttachedToSource?: boolean;
   /** Véhicule équipé par la source ce tour-ci (Balthier and Fran). */
   crewedBySource?: boolean;
   nontoken?: boolean;
@@ -569,8 +579,12 @@ export type TriggerSpec =
   | { on: "enters"; who: "self" | ObjectFilter }
   | { on: "dies"; who: "self" | ObjectFilter }
   /** `to` : seulement vers cette zone (« quand cet artefact est mis au cimetière depuis le champ de bataille »). */
-  | { on: "leaves"; who: "self"; to?: Zone }
+  | { on: "leaves"; who: "self" | "linked"; to?: Zone }
+  /** « Quand un adversaire perd la partie » (Shinryu). */
+  | { on: "playerLoses"; whose: "opponent" | "any" }
   /** `defending: "you"` : elle attaque le contrôleur ou un planeswalker qu'il contrôle. */
+  /** « Chaque fois qu'un adversaire acquiert le contrôle d'un permanent qui était à vous » (Zidane). */
+  | { on: "controlChange" }
   /** `alone` : « chaque fois qu'une créature que vous contrôlez attaque seule » (Squall, Seifer). */
   | { on: "attacks"; who: "self" | ObjectFilter; defending?: "you"; alone?: boolean }
   | { on: "dealsCombatDamage"; who: "self" | ObjectFilter; toPlayer?: boolean; toOpponent?: boolean }
@@ -881,6 +895,16 @@ export interface PlayerStaticAbilityDef {
   landsEnterUntapped?: boolean;
   /** « Vous pouvez jouer la carte du dessus de votre bibliothèque » (The Lunar Whale, avec `condition`). */
   playTopCard?: boolean;
+  /** The Darkness Crystal : une créature non-jeton adverse qui devrait mourir est exilée, liée à la source, et vous gagnez N PV. */
+  opponentNontokenDiesToExileLife?: number;
+  /** « Chaque fois que vous engagez un terrain pour {C}, ajoutez {C} de plus » (Ultima, Origin of Oblivion). */
+  extraColorlessFromLands?: boolean;
+  /** « Vous avez la protection contre chacun de vos adversaires » (702.16j, Absolute Virtue). */
+  protectionFromOpponents?: boolean;
+  /** Seulement les cartes correspondantes (Traveling Chocobo : terrains et Oiseaux). */
+  playTopFilter?: ObjectFilter;
+  /** Traveling Chocobo : l'arrivée d'un de ces permanents fait se déclencher vos capacités une fois de plus. */
+  doubleEnterTriggersFor?: ObjectFilter;
   /** « Ces jetons plus un jeton [X] sont créés à la place » (Quina, Qu Gourmet). */
   extraToken?: TokenSpec;
   /** « La première fois que vous lancez des pièces chaque tour, vous gagnez ces lancers » (Edgar, King of Figaro). */
@@ -1084,7 +1108,9 @@ export type Ref =
   /** Objets déplacés plus tôt pendant la résolution (`store` d'un déplacement), sous leur nouvel identifiant. */
   | { kind: "stored"; name: string }
   /** Permanents correspondants contrôlés par le joueur désigné (« chaque créature que le joueur ciblé contrôle »). */
-  | { kind: "permanentsOf"; player: Ref; filter: ObjectFilter };
+  | { kind: "permanentsOf"; player: Ref; filter: ObjectFilter }
+  /** Cartes en main d'un joueur, de valeur de mana au plus `maxManaValue` (Buster Sword). */
+  | { kind: "handOf"; player: Ref; filter: ObjectFilter; maxManaValue?: Amount };
 
 export type Amount =
   | number
@@ -1425,6 +1451,9 @@ export type Effect =
       attacking?: boolean;
       /** F/E de base fixées (Nexus of Becoming : 3/3). */
       pt?: number;
+      /** « … sauf que ses capacités d'équipement coûtent {N} de moins » (Firion) ; `sacrificeAtNextUpkeep` en plus. */
+      equipDiscount?: number;
+      sacrificeAtNextUpkeep?: boolean;
       /** « … sauf que c'est un Démon noir » (Ardyn, the Usurper) : couleurs et sous-types remplacés. */
       setColors?: Color[];
       setSubtypes?: string[];
@@ -1454,6 +1483,8 @@ export type Effect =
       mana?: ManaCost;
       /** {1} pour chaque… (Swallowed by Leviathan). */
       genericAmount?: Amount;
+      /** Points de vie variables (Raubahn : sa force). */
+      lifeAmount?: Amount;
       life?: number;
       skip: number;
     }
@@ -1505,6 +1536,8 @@ export type Effect =
       anyMana?: boolean;
       /** Le sort est exilé au lieu d'aller au cimetière (Quistis Trepe). */
       exileAfter?: boolean;
+      /** Une seule des cartes désignées peut être lancée (Buster Sword). */
+      oneOf?: boolean;
     }
   /** Exile les cartes du dessus jusqu'à une carte correspondante (mémorisée) : Territorial Bruntar. */
   | { op: "exileUntil"; filter: ObjectFilter; store: string }
@@ -1578,6 +1611,10 @@ export type Effect =
   | { op: "loseGame"; who?: Ref }
   /** « Faites un tour supplémentaire après celui-ci » (Ultimecia, Omnipotent). */
   | { op: "extraTurn" }
+  /** Triple Triad : chaque joueur exile sa carte du dessus ; la vôtre et celles de valeur de mana inférieure sont jouables gratuitement ce tour-ci. */
+  | { op: "tripleTriad" }
+  /** « Détachez-le » (Stolen Uniform, Unexpected Request) ; `ifAttachedTo` : seulement s'il est attaché à ce permanent. */
+  | { op: "unattach"; what: Ref; ifAttachedTo?: Ref }
   /** « Exilez-le, puis mettez-le sur le champ de bataille transformé avec un marqueur de finalité » (Esper Origins). */
   | { op: "resolveToBattlefieldTransformed" }
   /** « Jusqu'à votre prochain tour, les blessures infligées à ce joueur ou à ses permanents sont doublées » (Lightning). */
@@ -1698,6 +1735,10 @@ export interface GameObject {
   /** Change à chaque changement de zone (règle 400.7). */
   id: ObjectId;
   /** Identité physique de la carte, stable entre les zones. Sert uniquement à l'affichage. */
+  /** Cartes liées par leur identité physique (The Darkness Crystal : « exilée avec »). */
+  linkedUids?: string[];
+  /** Hôte auquel il était attaché avant d'être détaché par une action basée sur l'état (Zack Fair). */
+  lastAttachedTo?: ObjectId;
   uid: string;
   defId: string;
   owner: PlayerId;
@@ -1891,7 +1932,7 @@ export interface InlineAbility {
 }
 
 /** Moment d'une capacité retardée : prochaine étape de fin, étape de fin de votre prochain tour, fin du combat. */
-export type DelayedTiming = "nextEndStep" | "yourNextEndStep" | "yourEndStep" | "endOfCombat";
+export type DelayedTiming = "nextEndStep" | "yourNextEndStep" | "yourEndStep" | "endOfCombat" | "nextUpkeep";
 
 export interface DelayedTrigger {
   id: string;
@@ -2026,6 +2067,7 @@ export interface LkiSnapshot {
   attackedTurn?: number;
   /** Un Équipement lui est attaché. */
   equipped?: boolean;
+  lastAttachedTo?: ObjectId;
   /** Créatures qui l'ont monté ou équipé ce tour-ci. */
   crewedByThisTurn?: ObjectId[];
   /** Lancé pour son coût de distorsion. */
@@ -2152,6 +2194,8 @@ export interface GameState {
     anyMana?: boolean;
     /** « S'il devait être mis dans un cimetière, exilez-le à la place » (Quistis Trepe). */
     exileAfter?: boolean;
+    /** Une seule carte du groupe peut être lancée (Buster Sword : « un sort de votre main »). */
+    group?: string;
   }[];
   /** Contrôle donné par une Aura (Confiscate) : contrôleur d'origine à rétablir quand l'Aura part. */
   /** `by` : contrôle tant que ce joueur contrôle la source (Possession Engine), et non tant que l'Aura est attachée. */

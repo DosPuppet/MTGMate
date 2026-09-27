@@ -129,10 +129,7 @@ export function canPlayLand(s: GameState, player: PlayerId, card: ObjectId): boo
   const allowed =
     (o.zone === "hand" && o.owner === player) ||
     (o.zone === "exile" && !!exilePermission(s, player, card) && !exilePermission(s, player, card)?.anyTime) ||
-    (o.zone === "library" &&
-      o.owner === player &&
-      s.players[player]?.library[0] === card &&
-      playerStatic(s, player, "playTopCard")) ||
+    (o.zone === "library" && o.owner === player && s.players[player]?.library[0] === card && topCardPlayable(s, player, card)) ||
     // Ville à aventure (FIN) : la carte « en aventure » se joue comme terrain depuis l'exil (715.4).
     (o.zone === "exile" && !!o.onAdventure && o.owner === player) ||
     (o.zone === "graveyard" &&
@@ -258,6 +255,17 @@ function arrivalFor(s: GameState, player: PlayerId, d: CardDef, terms: CastTerms
 export function equipDiscount(s: GameState, player: PlayerId, ab: ActivatedAbilityDef, target: ObjectId | undefined): number {
   if (!target || !ab.label?.startsWith("Équiper") || s.objects[target]?.controller !== player) return 0;
   return s.defs[copiedDefId(s, target)]?.equipDiscountWhenTargeted ?? 0;
+}
+
+/** The Lunar Whale, Traveling Chocobo : la carte du dessus de la bibliothèque peut être jouée. */
+function topCardPlayable(s: GameState, player: PlayerId, card: ObjectId): boolean {
+  return controlledAbilitiesWithSource(s, player).some(
+    ({ id, ab }) =>
+      ab.kind === "playerStatic" &&
+      !!ab.playTopCard &&
+      (!ab.condition || checkCondition(s, ab.condition, player, id)) &&
+      (!ab.playTopFilter || matchesCard(s, player, card, { ...ab.playTopFilter, controller: undefined }, id)),
+  );
 }
 
 /** Kicker sans mana (FIN) : le permanent choisi automatiquement pour le payer, s'il y en a un. */
@@ -514,6 +522,9 @@ function baseCastTerms(s: GameState, player: PlayerId, card: ObjectId): CastTerm
   if (d.castCondition && !checkCondition(s, d.castCondition, player, card)) return null;
   if (o.zone === "hand") {
     if (o.owner !== player) return null;
+    // Buster Sword : un sort de votre main sans payer son coût de mana, ce tour-ci.
+    const handPerm = exilePermission(s, player, card);
+    if (handPerm) return { source: "hand", free: handPerm.free, anyTime: handPerm.anyTime };
     // Omnipresence : seulement si la valeur de mana ne dépasse pas le nombre de créatures que vous contrôlez.
     const creatures = () => s.battlefield.filter((id) => obj(s, id).controller === player && isCreature(s, id)).length;
     const free = controlledAbilities(s, player).some(
@@ -566,7 +577,7 @@ function baseCastTerms(s: GameState, player: PlayerId, card: ObjectId): CastTerm
       return { source: "library", anyMana: true };
     }
     // The Lunar Whale : « vous pouvez jouer la carte du dessus de votre bibliothèque » (si elle a attaqué ce tour-ci).
-    if (o.owner === player && top === card && playerStatic(s, player, "playTopCard")) return { source: "library" };
+    if (o.owner === player && top === card && topCardPlayable(s, player, card)) return { source: "library" };
     // Mm'menon, the Right Hand : « vous pouvez lancer des sorts d'artefact depuis le dessus de votre bibliothèque ».
     if (o.owner === player && top === card && d.types.includes("Artifact") && playerStatic(s, player, "castArtifactsFromTop")) {
       return { source: "library" };
@@ -772,6 +783,9 @@ export function castSpell(s: GameState, player: PlayerId, card: ObjectId, choice
   // Lancer la copie d'un sort préparé dé-prépare son permanent (même si le sort est ensuite contrecarré).
   const preparedFor = o.preparedFor ? s.objects[o.preparedFor] : undefined;
   if (preparedFor?.preparedCopy === card) delete preparedFor.preparedCopy;
+  // Permission à usage unique (Buster Sword) : les autres cartes du groupe la perdent.
+  const group = exilePermission(s, player, card)?.group;
+  if (group) s.playPermissions = (s.playPermissions ?? []).filter((p) => p.group !== group);
   const stackId = moveObject(s, card, "stack", { controller: player }) as string;
   // Seule une Aventure part « en aventure » ; un présage (même disposition Scryfall) est mélangé dans la bibliothèque.
   const adventure = choices.face !== undefined && cardDef.layout === "adventure" && d.subtypes.includes("Adventure");

@@ -94,6 +94,18 @@ export function setSpeed(s: GameState, p: PlayerId, speed: number): void {
 /** Inflige des blessures à un joueur ou à une créature (règle 120). */
 export function dealDamage(s: GameState, source: DamageSource, target: string, amount: number, combat: boolean): void {
   if (amount <= 0) return;
+  // Ancient Adamantoise : les blessures à son contrôleur et à ses autres permanents lui sont infligées à la place.
+  const owner = isPlayer(s, target)
+    ? target
+    : s.objects[target]?.zone === "battlefield"
+      ? s.objects[target]?.controller
+      : undefined;
+  const absorber = owner
+    ? s.battlefield.find(
+        (id) => id !== target && s.objects[id]?.controller === owner && isCreature(s, id) && hasKeyword(s, id, "absorbsDamage"),
+      )
+    : undefined;
+  if (absorber) target = absorber;
   // Frenzied Baloth : « les blessures de combat ne peuvent pas être prévenues ».
   const unpreventable = combat && s.playerOrder.some((p) => playerStatic(s, p, "combatDamageUnpreventable"));
   if (combat && !unpreventable && preventsCombatDamage(s, target)) return;
@@ -103,6 +115,9 @@ export function dealDamage(s: GameState, source: DamageSource, target: string, a
     s.objects[target]?.zone === "battlefield" &&
     chars(s, target).keywords.includes("combatDamageImmune")
   )
+    return;
+  // Absolute Virtue : les blessures des sources adverses à ce joueur sont prévenues.
+  if (!unpreventable && isPlayer(s, target) && source.controller !== target && playerStatic(s, target, "protectionFromOpponents"))
     return;
   const targetObj = s.objects[target];
   if (targetObj?.zone === "battlefield") {

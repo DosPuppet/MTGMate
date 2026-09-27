@@ -550,6 +550,37 @@ export const TRANSFORM: Record<string, CardScript> = {
       }),
     ],
   },
+  "Zenos yae Galvus": {
+    abilities: [
+      // Approximation : la créature « choisie » est une cible.
+      triggered(
+        when.entersSelf,
+        [fx.link(ref.target()), fx.pumpAll({ types: ["Creature"], other: true }, -2, -2), fx.pump(ref.target(), 2, 2)],
+        { targets: [target.creature("t", { controller: "opponent" })], label: "Mon premier ami" },
+      ),
+      triggered(when.linkedLeaves, [fx.transform()], { label: "La créature choisie part : transformez" }),
+    ],
+  },
+  "Shinryu, Transcendent Rival": {
+    // Approximation : l'adversaire « choisi » est le premier adversaire qui perd la partie.
+    abilities: [triggered(when.opponentLoses, [fx.winGame], { label: "Chaînes ardentes" })],
+  },
+  "Sidequest: Play Blitzball": {
+    abilities: [
+      triggered(when.yourCombat, [fx.pump(ref.target(), 2, 0)], {
+        targets: [target.creature("t", { controller: "you" })],
+        label: "+2/+0",
+      }),
+      triggered(
+        when.step("endCombat"),
+        [fx.transform(), fx.reflexive([target.creature("c", { controller: "you" })], [fx.attach(ref.target("c"))])],
+        { condition: cond.playerCombatDamageAtLeast(6), label: "Six blessures de combat : transformez, attachez" },
+      ),
+    ],
+  },
+  "World Champion, Celestial Weapon": {
+    abilities: [staticAbility("attached", { power: 2, addKeywords: ["doubleStrike"] }, { label: "+2/+0, double initiative" })],
+  },
   "Balamb Garden, SeeD Academy": {
     abilities: [
       entersWith({ tapped: true }),

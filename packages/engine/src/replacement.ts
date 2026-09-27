@@ -8,9 +8,10 @@
  * Limite actuelle : si plusieurs remplacements s'appliquent au même événement, le premier l'emporte
  * (le choix du joueur affecté, 616.1, viendra avec des cartes qui en ont besoin).
  */
+import { gainLife } from "./actions";
 import { boardAmount } from "./effects";
 import { changeCounters, chars, moveObject, newId, nextTimestamp, P1P1, setPrepared } from "./state";
-import { playerStatic } from "./statics";
+import { controlledAbilitiesWithSource, playerStatic } from "./statics";
 import { matchesObjectFilter, withChosen } from "./targets";
 import { checkCondition } from "./triggers";
 import type { Amount, Color, GameObject, GameState, ObjectId, Zone } from "./types";
@@ -106,6 +107,20 @@ export function replaceDestination(s: GameState, o: GameObject, to: Zone): Zone 
       s.playerOrder.some((p) => p !== o.controller && playerStatic(s, p, "opponentCreaturesDieToExile"))
     ) {
       return "exile";
+    }
+    // The Darkness Crystal : exilée à la place, liée au Cristal, et son contrôleur gagne des PV.
+    if (!o.isToken && chars(s, o.id).types.includes("Creature")) {
+      for (const p of s.playerOrder) {
+        if (p === o.controller) continue;
+        const crystal = controlledAbilitiesWithSource(s, p).find(
+          ({ ab }) => ab.kind === "playerStatic" && !!ab.opponentNontokenDiesToExileLife,
+        );
+        if (crystal?.ab.kind !== "playerStatic") continue;
+        const src = s.objects[crystal.id];
+        if (src) src.linkedUids = [...(src.linkedUids ?? []), o.uid];
+        gainLife(s, p, crystal.ab.opponentNontokenDiesToExileLife ?? 0);
+        return "exile";
+      }
     }
   }
   return to;

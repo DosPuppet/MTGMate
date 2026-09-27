@@ -25,7 +25,7 @@ import {
   rulesEvent,
   snapshot,
 } from "./state";
-import { playerStatic } from "./statics";
+import { controlledAbilitiesWithSource, playerStatic } from "./statics";
 import { legalTargets, matchesObjectFilter, matchesView, validateTargets, withChosen } from "./targets";
 import type {
   AbilityDef,
@@ -330,9 +330,19 @@ function matchTrigger(s: GameState, ev: RulesEvent, t: TriggerSpec, src: Source)
         ? { objectId: ev.lki.id, newObjectId: ev.newId ?? undefined, player: ev.lki.controller }
         : null;
     }
+    case "playerLoses":
+      return ev.e === "playerLost" &&
+        ev.player !== me &&
+        (t.whose === "any" || opponentsOf(s, me).includes(ev.player) || s.players[ev.player]?.lost)
+        ? { player: ev.player }
+        : null;
+    case "controlChange":
+      return ev.e === "controlChange" && ev.from === me && ev.to !== me ? { objectId: ev.objectId, player: ev.to } : null;
     case "leaves": {
       if (ev.e !== "zone" || ev.from !== "battlefield" || !ev.lki) return null;
       if (t.to && ev.to !== t.to) return null;
+      // Zenos yae Galvus : « quand la créature choisie quitte le champ de bataille » (liée à la source).
+      if (t.who === "linked") return s.objects[src.id]?.linked?.includes(ev.lki.id) ? { objectId: ev.lki.id } : null;
       return ev.lki.id === src.id ? { objectId: ev.lki.id, newObjectId: ev.newId ?? undefined } : null;
     }
     case "attacks": {
@@ -596,7 +606,11 @@ export function detectTriggers(s: GameState, ev: RulesEvent): void {
       const again =
         (ev.e === "zone" && ev.to === "battlefield" && playerStatic(s, src.view.controller, "doubleEnterTriggers") ? 2 : 1) +
         (legendary ? 1 : 0) +
-        (equippedCloud ? 1 : 0);
+        (equippedCloud ? 1 : 0) +
+        (ev.e === "zone" && ev.to === "battlefield" && ev.newId ? enterDoublers(s, src.view.controller, ev.newId) : 0) +
+        (ev.e === "zone" && ev.from === "battlefield" && ev.to === "graveyard" && ev.lki?.types.includes("Creature")
+          ? masamunes(s, src.id, src.view.controller)
+          : 0);
       for (let k = 0; k < again; k++) {
         s.triggers.push({
           id: newId(s, "t"),
@@ -641,17 +655,41 @@ export function createDelayed(
     sourceDefId,
     at,
     // « à l'étape de fin de votre prochain tour » : pas ce tour-ci.
-    notBeforeTurn: at === "yourNextEndStep" || lateInTurn ? s.turn.number + 1 : s.turn.number,
+    notBeforeTurn: at === "yourNextEndStep" || at === "nextUpkeep" || lateInTurn ? s.turn.number + 1 : s.turn.number,
     ability,
   });
 }
 
+/** The Masamune : Équipements « doubleurs de morts » attachés à la source, ou (pour un emblème) à une créature de son propriétaire. */
+function masamunes(s: GameState, sourceId: ObjectId, player: PlayerId): number {
+  const flagged = (id: ObjectId) => !!s.defs[s.objects[id]?.defId ?? ""]?.doubleDeathTriggersForEquipped;
+  const emblem = s.objects[sourceId]?.zone === "command";
+  return s.battlefield.filter((id) => {
+    const host = s.objects[id]?.attachedTo;
+    if (!host || !flagged(id)) return false;
+    return emblem ? s.objects[host]?.controller === player : host === sourceId;
+  }).length;
+}
+
+/** Traveling Chocobo : un terrain ou un Oiseau que vous contrôlez arrive, vos capacités se déclenchent une fois de plus. */
+function enterDoublers(s: GameState, player: PlayerId, entered: ObjectId): number {
+  if (s.objects[entered]?.controller !== player) return 0;
+  return controlledAbilitiesWithSource(s, player).filter(
+    ({ id, ab }) =>
+      ab.kind === "playerStatic" &&
+      !!ab.doubleEnterTriggersFor &&
+      matchesObjectFilter(s, player, entered, ab.doubleEnterTriggersFor, id),
+  ).length;
+}
+
 /** Au début de l'étape de fin (ou à la fin du combat) : les capacités retardées dont c'est le moment se déclenchent. */
-export function releaseDelayedTriggers(s: GameState, moment: "end" | "endCombat" = "end"): void {
+export function releaseDelayedTriggers(s: GameState, moment: "end" | "endCombat" | "upkeep" = "end"): void {
   const due = s.delayed.filter((d) => {
     if (d.notBeforeTurn > s.turn.number) return false;
     if (moment === "endCombat") return d.at === "endOfCombat";
-    if (d.at === "endOfCombat") return false;
+    // Firion : « au début du prochain entretien ».
+    if (moment === "upkeep") return d.at === "nextUpkeep";
+    if (d.at === "endOfCombat" || d.at === "nextUpkeep") return false;
     // « … de votre prochain tour » : seulement pendant un tour de son contrôleur.
     return (d.at !== "yourNextEndStep" && d.at !== "yourEndStep") || s.turn.active === d.controller;
   });

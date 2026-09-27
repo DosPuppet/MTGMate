@@ -3,7 +3,7 @@
  */
 import { sacrifice } from "./actions";
 import { chars, defOf, isCreature, isSummoningSick, obj, snapshot, tapObject } from "./state";
-import { playerStatic } from "./statics";
+import { controlledAbilitiesWithSource, playerStatic } from "./statics";
 import { matchesObjectFilter, matchesView, withChosen } from "./targets";
 import { checkCondition } from "./triggers";
 import type { GameState, LkiSnapshot, ManaAbilityDef, ManaCost, ManaType, ObjectId, PlayerId } from "./types";
@@ -252,6 +252,12 @@ export function activateManaAbility(s: GameState, player: PlayerId, id: ObjectId
   if (ab.cost.sacrificeSelf) sacrifice(s, id);
   const pool = s.players[player]?.manaPool;
   if (pool) pool[c] += manaAmount(s, id, ab);
+  // Ultima, Origin of Oblivion : un terrain engagé pour {C} en ajoute un de plus.
+  if (pool && c === "C" && ab.cost.tap && chars(s, id).types.includes("Land")) {
+    pool.C += controlledAbilitiesWithSource(s, player).filter(
+      ({ ab: x }) => x.kind === "playerStatic" && !!x.extraColorlessFromLands,
+    ).length;
+  }
 }
 
 // ---------------------------------------------------------------------------

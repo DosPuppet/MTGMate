@@ -69,6 +69,7 @@ export interface CardScript {
   /** Dévorer écrit dans le script (Mimeoplasm : « exilez jusqu'à X cartes de créature de votre cimetière »). */
   devour?: { filter: ObjectFilter; n: number; graveyardUpToX?: boolean };
   equipDiscountWhenTargeted?: number;
+  doubleDeathTriggersForEquipped?: boolean;
   /** Cloud, Midgar Mercenary : déclencheurs doublés tant qu'elle est équipée. */
   doubleTriggersWhenEquipped?: boolean;
   /** « Vous pouvez faire arriver cette créature comme copie d'un [permanent] que vous contrôlez ». */
@@ -189,6 +190,12 @@ export const ref = {
   stored: (name: string): Ref => ({ kind: "stored", name }),
   /** « chaque [créature] que [le joueur désigné] contrôle » */
   permanentsOf: (player: Ref, filter: ObjectFilter): Ref => ({ kind: "permanentsOf", player, filter }),
+  handOf: (player: Ref, filter: ObjectFilter = {}, maxManaValue?: Amount): Ref => ({
+    kind: "handOf",
+    player,
+    filter,
+    maxManaValue,
+  }),
 };
 
 export const amount = {
@@ -429,6 +436,7 @@ export const fx = {
       extraCost?: number;
       landsTapped?: boolean;
       exileAfter?: boolean;
+      oneOf?: boolean;
     } = {},
   ): Effect => ({
     op: "grantPlay",
@@ -511,6 +519,8 @@ export const fx = {
   changeTarget: (what: Ref): Effect => ({ op: "changeTarget", what }),
   extraCombat: { op: "extraCombat" } as Effect,
   extraTurn: { op: "extraTurn" } as Effect,
+  tripleTriad: { op: "tripleTriad" } as Effect,
+  unattach: (what: Ref, ifAttachedTo?: Ref): Effect => ({ op: "unattach", what, ifAttachedTo }),
   resolveToBattlefieldTransformed: { op: "resolveToBattlefieldTransformed" } as Effect,
   nextCreatureSpell: (opts: { counters?: number; haste?: boolean }): Effect => ({ op: "nextCreatureSpell", ...opts }),
   spellArrivalCounters: (what: Ref, amount: Amount): Effect => ({ op: "spellArrivalCounters", what, amount }),
@@ -711,6 +721,8 @@ export const fx = {
       pt?: number;
       setColors?: Color[];
       setSubtypes?: string[];
+      equipDiscount?: number;
+      sacrificeAtNextUpkeep?: boolean;
     } = {},
   ): Effect => ({
     op: "copyToken",
@@ -726,7 +738,11 @@ export const fx = {
     vars,
   }),
   /** Capacité retardée à un autre moment : étape de fin de votre prochain tour, fin du combat. */
-  delayedAt: (at: "yourNextEndStep" | "yourEndStep" | "endOfCombat", effects: Effects, bind?: Record<string, Ref>): Effect => ({
+  delayedAt: (
+    at: "yourNextEndStep" | "yourEndStep" | "endOfCombat" | "nextUpkeep",
+    effects: Effects,
+    bind?: Record<string, Ref>,
+  ): Effect => ({
     op: "delayed",
     at,
     effects: effects.flat(),
@@ -957,8 +973,13 @@ export const when = {
   diesSelf: { on: "dies", who: "self" } as TriggerSpec,
   dies: (filter: ObjectFilter): TriggerSpec => ({ on: "dies", who: filter }),
   leavesSelf: { on: "leaves", who: "self" } as TriggerSpec,
+  /** « Quand l'objet lié (choisi) quitte le champ de bataille » */
+  linkedLeaves: { on: "leaves", who: "linked" } as TriggerSpec,
+  opponentLoses: { on: "playerLoses", whose: "opponent" } as TriggerSpec,
   attacksSelf: { on: "attacks", who: "self" } as TriggerSpec,
   attacks: (filter: ObjectFilter): TriggerSpec => ({ on: "attacks", who: filter }),
+  /** « Chaque fois qu'un adversaire acquiert le contrôle d'un permanent qui était à vous » */
+  opponentGainsControl: { on: "controlChange" } as TriggerSpec,
   /** « Chaque fois qu'une créature [filtre] attaque seule » */
   attacksAlone: (filter: ObjectFilter): TriggerSpec => ({ on: "attacks", who: filter, alone: true }),
   /** « Chaque fois qu'une [créature] vous attaque ou attaque un planeswalker que vous contrôlez » */
@@ -1200,6 +1221,7 @@ export function wardAbility(ward: NonNullable<CardDef["ward"]>): TriggeredAbilit
         who: { kind: "eventPlayer" },
         mana: ward.mana,
         life: ward.life,
+        lifeAmount: ward.lifePower ? { kind: "powerOf", ref: { kind: "self" } } : undefined,
         discard: ward.discard,
         discardRandom: ward.discardRandom,
         sacrifice: ward.sacrifice,

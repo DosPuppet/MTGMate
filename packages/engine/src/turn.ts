@@ -30,6 +30,7 @@ import {
   opponentsOf,
   P1P1,
   rulesEvent,
+  setController,
   shuffle,
   tapObject,
 } from "./state";
@@ -85,6 +86,7 @@ function givePriority(s: GameState): void {
 function stepEvent(s: GameState): void {
   if (s.turn.step === "end") releaseDelayedTriggers(s);
   if (s.turn.step === "endCombat") releaseDelayedTriggers(s, "endCombat");
+  if (s.turn.step === "upkeep") releaseDelayedTriggers(s, "upkeep");
   rulesEvent(s, { e: "step", step: s.turn.step, active: s.turn.active });
 }
 
@@ -284,7 +286,8 @@ function finishCleanup(s: GameState): void {
   // 514.2 : les blessures sont retirées et les effets « jusqu'à la fin du tour » prennent fin.
   for (const id of s.battlefield) {
     const o = obj(s, id);
-    o.damage = 0;
+    // Ancient Adamantoise : ses blessures restent.
+    if (!hasKeyword(s, id, "keepsDamage")) o.damage = 0;
     o.deathtouched = false;
     o.damagedBy = undefined;
     o.combatDamagedPlayers = undefined;
@@ -299,8 +302,7 @@ function finishCleanup(s: GameState): void {
   for (const c of s.controlChanges ?? []) {
     const o = s.objects[c.id];
     if (o?.zone === "battlefield") {
-      o.controller = c.original;
-      o.controlledSince = s.turn.number;
+      setController(s, o, c.original);
     }
   }
   s.controlChanges = [];
@@ -895,6 +897,7 @@ export function eliminate(s: GameState, losers: PlayerId[]): void {
   for (const p of losers) {
     const player = s.players[p];
     if (player) player.lost = true;
+    rulesEvent(s, { e: "playerLost", player: p });
   }
   const alive = alivePlayers(s);
   if (alive.length <= 1) {
@@ -1031,6 +1034,7 @@ function stateBasedActionsOnce(s: GameState): void {
           !hasKeyword(s, o.attachedTo, "protectionFromEverything")
         )
       ) {
+        o.lastAttachedTo = o.attachedTo;
         o.attachedTo = undefined;
         bump(s);
         changed = true;
@@ -1102,8 +1106,7 @@ function applyAuraControl(s: GameState): boolean {
     const host = s.objects[c.host];
     if (host?.zone === "battlefield" && host.controller !== c.original) {
       removeFromCombatOf(s, c.host);
-      host.controller = c.original;
-      host.controlledSince = s.turn.number;
+      setController(s, host, c.original);
       changed = true;
     }
   }
@@ -1124,8 +1127,7 @@ function applyAuraControl(s: GameState): boolean {
       s.auraControl = [...(s.auraControl ?? []), { host: host.id, aura: id, original: host.controller }];
     }
     removeFromCombatOf(s, host.id);
-    host.controller = aura.controller;
-    host.controlledSince = s.turn.number;
+    setController(s, host, aura.controller);
     changed = true;
   }
   if (changed) bump(s);

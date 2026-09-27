@@ -26,7 +26,7 @@ Ce fichier sert au suivi du projet entre les sessions. Le README présente le pr
 | **Edge of Eternities (EOE)** | ✅ **260 / 260** (lots A à D, branche `standard`) |
 | **Aetherdrift (DFT)** | ✅ **260 / 260** (lots A à C, branche `standard`) |
 | **Outlaws of Thunder Junction + The Big Score (OTJ, BIG)** | ✅ **269 / 269 + 30 / 30** (lots A à C, branche `standard`) |
-| **Final Fantasy (FIN)** | 🚧 **288 / 307** (lots A à D3, branche `standard`) |
+| **Final Fantasy (FIN)** | ✅ **307 / 307** (lots A à D4, branche `standard`) |
 | Autres extensions Standard | branche `standard`, plan par lots ci-dessous |
 
 ### Branche `standard` : tout le Standard
@@ -305,7 +305,15 @@ Demandée par l'utilisateur le 27/09/2026.
   - **correctif** : les blessures d'une capacité d'un permanent ont ce permanent pour source (lien de vie, contact mortel, doublements) ;
   - le compteur de phases de combat (`cond.firstCombat`), les conditions « un adversaire blessé par une créature légendaire », « un joueur a subi N blessures de combat », « premier sort de créature légendaire du tour », « la créature de plus grande force » ;
   - le sort résolu qui arrive transformé (`fx.resolveToBattlefieldTransformed`, Esper Origins), jouer depuis son cimetière et exiler son propre cimetière (Hades), F/E de base égales aux PV (Aettir and Priwen), capacité de mana sans {T} une fois par tour (Vivi), réduction d'Équiper sur une cible (`equipDiscountWhenTargeted`), filtre `crewedBySource`, montant `cardTypesOf`, `removeCounters` d'un type avec mémorisation.
-- Lot D4 : les 19 dernières cartes (légendaires, rares, transformables complexes : Clive, Terra, Sephiroth, Zenos, Kefka, Kuja, Serah, Ultimecia, Emet-Selch, Esper Origins, Crystal Fragments, Play Blitzball…).
+- Lot D4 ✅ (**307/307**) : les 19 dernières cartes (`fin/legends4.ts`, et Zenos, Play Blitzball dans `fin/transform.ts`). Le moteur gagne :
+  - `setController` (state.ts) : tout changement de contrôle passe par là et émet l'événement `controlChange` (déclencheur `when.opponentGainsControl`, Zidane) ;
+  - `fx.unattach`, la garde « payez des PV égaux à sa force » (`ward.lifePower`), les capacités retardées « au prochain entretien » (`nextUpkeep`) ;
+  - les copies-jetons avec Équiper réduit et sacrifiées au prochain entretien (Firion) ; Triple Triad (`fx.tripleTriad`) ;
+  - Ancient Adamantoise (mots-clés `keepsDamage`, `absorbsDamage`), la protection du joueur contre ses adversaires (`protectionFromOpponents`) ;
+  - `playTopCard` filtré et les déclencheurs d'arrivée doublés filtrés (Traveling Chocobo), les déclencheurs de mort doublés (The Masamune) ;
+  - la permission gratuite depuis la main à usage unique (`ref.handOf`, `grantPlay` avec `oneOf`, Buster Sword) ;
+  - l'exil « au lieu de mourir » lié par identité physique (`linkedUids`, The Darkness Crystal) ;
+  - les déclencheurs « l'objet lié quitte le champ de bataille » et « un adversaire perd la partie » (Zenos, Shinryu) ; le {C} supplémentaire des terrains (Ultima) ; `lastAttachedTo` (Zack Fair). (légendaires, rares, transformables complexes : Clive, Terra, Sephiroth, Zenos, Kefka, Kuja, Serah, Ultimecia, Emet-Selch, Esper Origins, Crystal Fragments, Play Blitzball…).
 
 ### Reality Fracture (FRA)
 
@@ -490,6 +498,12 @@ Réimpressions : défenses talismaniques contre une couleur, changelin, restrict
 - **Memories Returning :** vous choisissez les trois cartes gardées (l'adversaire ne choisit pas celles du dessous).
 - **Esper Terra :** trois marqueurs de savoir sur la copie de Saga, ou aucun.
 - **Sin, Spira's Punishment :** six copies au plus par déclenchement.
+- **Zack Fair :** tous les Équipements qui lui étaient attachés sont déplacés (et non un seul).
+- **Stolen Uniform, Unexpected Request :** l'Équipement est détaché à l'étape de fin ; pour Unexpected Request, il est ciblé au lancement.
+- **Vaan, Buster Sword :** on décide tout de suite, et la carte se lance ensuite, à tout moment ce tour-ci. Avec Buster Sword, la carte choisie est gratuite (et non « peut être » gratuite).
+- **Ultima, Origin of Oblivion :** l'effet sur les terrains avec un marqueur de fléau cesse si Ultima quitte le champ de bataille.
+- **Zenos, Shinryu :** la créature choisie est une cible ; l'adversaire choisi est le premier qui perd la partie.
+- **Traveling Chocobo, The Lunar Whale :** la carte du dessus n'est pas montée à leur contrôleur.
 - **Zell Dincht :** le terrain renvoyé est ciblé (comme Arid Archway).
 - **The Earth Crystal :** tous les marqueurs mis sur vos créatures sont doublés, pas seulement les marqueurs +1/+1.
 - **Rydia, Summoner of Mist :** la Saga ciblée a une valeur de mana d'au plus X (et non exactement X).

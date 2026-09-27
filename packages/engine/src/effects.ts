@@ -42,6 +42,7 @@ import {
   registerDef,
   removeFromGame,
   rulesEvent,
+  setController,
   setPrepared,
   shuffle,
   snapshot,
@@ -217,6 +218,16 @@ export function resolveRef(s: GameState, ctx: EffectContext, ref: Ref): string[]
         .filter((l) => l.sourceId === ctx.sourceId)
         .flatMap((l) => l.cards)
         .filter((id) => s.objects[id]?.zone === "exile");
+    case "handOf": {
+      const max = ref.maxManaValue !== undefined ? evalAmount(s, ctx, ref.maxManaValue) : Number.POSITIVE_INFINITY;
+      return resolveRef(s, ctx, ref.player).flatMap((p) =>
+        (s.players[p]?.hand ?? []).filter(
+          (id) =>
+            matchesCard(s, ctx.controller, id, { ...ref.filter, controller: undefined }, ctx.sourceId) &&
+            manaValue(s.defs[s.objects[id]?.defId ?? ""]?.manaCost) <= max,
+        ),
+      );
+    }
     case "permanentsOf": {
       const players = resolveRef(s, ctx, ref.player);
       const f = { ...ref.filter, controller: undefined };
@@ -622,6 +633,7 @@ export function grantPlay(
     landsTapped?: boolean;
     anyMana?: boolean;
     exileAfter?: boolean;
+    group?: string;
   },
 ): void {
   const last = until === "forever" ? Number.MAX_SAFE_INTEGER : until === "thisTurn" ? s.turn.number : nextTurnOf(s, player);
@@ -748,11 +760,13 @@ export function runEffect(s: GameState, r: Resolution, e: Effect): OpResult {
       const extra = e.genericAmount ? evalAmount(s, ctx, e.genericAmount) : 0;
       const base = e.mana ?? (e.genericAmount ? { generic: 0, colored: {}, x: 0 } : undefined);
       const mana = base ? { ...base, x: 0, generic: base.generic + (base.x ?? 0) * ctx.x + extra } : undefined;
+      // Raubahn : « Garde — payez des PV égaux à sa force ».
+      const life = e.lifeAmount ? evalAmount(s, ctx, e.lifeAmount) : e.life;
       // Garde à coût composé (Ovika : {3} et 3 PV) : les deux parties doivent être payables.
       const hand = s.players[p]?.hand ?? [];
       const canDo =
         (!mana || canPay(s, p, mana)) &&
-        (s.players[p]?.life ?? 0) >= (e.life ?? 0) &&
+        (s.players[p]?.life ?? 0) >= (life ?? 0) &&
         (!e.discard || hand.length > 0) &&
         s.battlefield.filter((id) => s.objects[id]?.controller === p).length >= (e.sacrifice ?? 0);
       if (!canDo) return;
@@ -760,7 +774,7 @@ export function runEffect(s: GameState, r: Resolution, e: Effect): OpResult {
       if (!answer) {
         const what = [
           mana ? costToText(mana) : "",
-          e.life ? `${e.life} points de vie` : "",
+          life ? `${life} points de vie` : "",
           e.discard ? "défausser une carte" : "",
           e.sacrifice ? `sacrifier ${e.sacrifice} permanents` : "",
         ]
@@ -849,7 +863,7 @@ export function runEffect(s: GameState, r: Resolution, e: Effect): OpResult {
         if (!canPay(s, p, mana)) return;
         payMana(s, p, mana);
       }
-      if (e.life) loseLife(s, p, e.life);
+      if (life) loseLife(s, p, life);
       // « S'il le fait, … » (Divert Disaster).
       store(r, e.paidStore, 1);
       return { skip: e.skip };
@@ -2062,6 +2076,34 @@ export function runEffect(s: GameState, r: Resolution, e: Effect): OpResult {
           if (e.legendary) addEffect(s, [token], { addSupertypes: ["Legendary"] }, "permanent");
           if (e.addAbilities?.length) addEffect(s, [token], { addAbilities: e.addAbilities }, "permanent");
           if (e.pt !== undefined) addEffect(s, [token], { setPower: e.pt, setToughness: e.pt }, "permanent");
+          // Firion : des capacités d'Équiper moins chères (ajoutées ; la moins chère sera utilisée).
+          if (e.equipDiscount) {
+            const equips = (s.defs[defId]?.abilities ?? []).flatMap((ab) =>
+              ab.kind === "activated" && ab.label?.startsWith("Équiper") && ab.cost.mana
+                ? [
+                    {
+                      ...ab,
+                      cost: {
+                        ...ab.cost,
+                        mana: { ...ab.cost.mana, generic: Math.max(0, ab.cost.mana.generic - (e.equipDiscount ?? 0)) },
+                      },
+                      label: `${ab.label} (réduit)`,
+                    },
+                  ]
+                : [],
+            );
+            if (equips.length) addEffect(s, [token], { addAbilities: equips }, "permanent");
+          }
+          if (e.sacrificeAtNextUpkeep) {
+            createDelayed(
+              s,
+              ctx.controller,
+              token,
+              s.objects[token]?.defId ?? defId,
+              { targets: [], effects: [{ op: "sacrificeIt", what: { kind: "target", id: "c" } }], bound: { c: [token] } },
+              "nextUpkeep",
+            );
+          }
           if (e.setColors || e.setSubtypes) {
             addEffect(s, [token], { setColors: e.setColors, setSubtypes: e.setSubtypes }, "permanent");
           }
@@ -2388,10 +2430,8 @@ export function runEffect(s: GameState, r: Resolution, e: Effect): OpResult {
       const [ca, cb] = [oa.controller, ob.controller];
       removeFromCombat(s, oa.id);
       removeFromCombat(s, ob.id);
-      oa.controller = cb;
-      ob.controller = ca;
-      oa.controlledSince = s.turn.number;
-      ob.controlledSince = s.turn.number;
+      setController(s, oa, cb);
+      setController(s, ob, ca);
       bump(s);
       return;
     }
@@ -2402,8 +2442,7 @@ export function runEffect(s: GameState, r: Resolution, e: Effect): OpResult {
         if (o?.zone !== "battlefield" || o.controller === ctx.controller) continue;
         s.auraControl = [...(s.auraControl ?? []), { host: id, aura: ctx.sourceId, original: o.controller, by: ctx.controller }];
         removeFromCombat(s, id);
-        o.controller = ctx.controller;
-        o.controlledSince = s.turn.number;
+        setController(s, o, ctx.controller);
         if (e.restrict) {
           s.effects.push({
             id: newId(s, "e"),
@@ -2450,8 +2489,7 @@ export function runEffect(s: GameState, r: Resolution, e: Effect): OpResult {
         if (o?.zone !== "battlefield" || o.controller === ctx.controller) continue;
         s.controlChanges = [...(s.controlChanges ?? []), { id, original: o.controller }];
         removeFromCombat(s, id);
-        o.controller = ctx.controller;
-        o.controlledSince = s.turn.number;
+        setController(s, o, ctx.controller);
         bump(s);
       }
       return;
@@ -2593,8 +2631,7 @@ export function runEffect(s: GameState, r: Resolution, e: Effect): OpResult {
         const o = s.objects[id];
         if (o?.zone !== "battlefield" || o.controller === to) continue;
         removeFromCombat(s, id);
-        o.controller = to;
-        o.controlledSince = s.turn.number;
+        setController(s, o, to);
         bump(s);
       }
       return;
@@ -2768,6 +2805,33 @@ export function runEffect(s: GameState, r: Resolution, e: Effect): OpResult {
       s.turn.preventCreatureDamageFor = [...(s.turn.preventCreatureDamageFor ?? []), ctx.controller];
       return;
     }
+    case "unattach": {
+      const hosts = e.ifAttachedTo ? resolveRef(s, ctx, e.ifAttachedTo) : undefined;
+      for (const id of resolveRef(s, ctx, e.what)) {
+        const o = s.objects[id];
+        if (o?.zone !== "battlefield" || !o.attachedTo) continue;
+        if (hosts && !hosts.includes(o.attachedTo)) continue;
+        o.attachedTo = undefined;
+        bump(s);
+      }
+      return;
+    }
+    case "tripleTriad": {
+      const exiled: ObjectId[] = [];
+      for (const p of apnapOrder(s)) {
+        const top = s.players[p]?.library[0];
+        if (!top) continue;
+        const id = moveObject(s, top, "exile");
+        if (id) exiled.push(id);
+      }
+      emit({ type: "reveal", player: ctx.controller, defIds: exiled.map((id) => s.objects[id]?.defId ?? "") });
+      const mine = exiled.find((id) => s.objects[id]?.owner === ctx.controller);
+      if (!mine) return;
+      const mv = (id: ObjectId) => manaValue(s.defs[s.objects[id]?.defId ?? ""]?.manaCost);
+      const playable = [mine, ...exiled.filter((id) => id !== mine && mv(id) < mv(mine))];
+      grantPlay(s, ctx.controller, playable, "thisTurn", { free: true });
+      return;
+    }
     case "extraTurn": {
       s.extraTurns = [...(s.extraTurns ?? []), ctx.controller];
       return;
@@ -2833,7 +2897,7 @@ export function runEffect(s: GameState, r: Resolution, e: Effect): OpResult {
     }
     case "grantPlay": {
       const ids = resolveRef(s, ctx, e.what).filter(
-        (id) => s.objects[id]?.zone === "exile" || s.objects[id]?.zone === "graveyard",
+        (id) => s.objects[id]?.zone === "exile" || s.objects[id]?.zone === "graveyard" || s.objects[id]?.zone === "hand",
       );
       if (e.forOwner) {
         for (const id of ids) {
@@ -2854,6 +2918,7 @@ export function runEffect(s: GameState, r: Resolution, e: Effect): OpResult {
         condition: e.condition,
         source: ctx.sourceId,
         exileAfter: e.exileAfter,
+        group: e.oneOf ? newId(s, "g") : undefined,
       });
       return;
     }

@@ -28,6 +28,7 @@ export function matchesView(v: LkiSnapshot, f: ObjectFilter, perspective: Player
   if (f.name && v.name !== f.name) return false;
   if (f.tapped !== undefined && !!v.tapped !== f.tapped) return false;
   if (f.equipped !== undefined && !!v.equipped !== f.equipped) return false;
+  if (f.wasAttachedToSource && !(sourceId && v.lastAttachedTo === sourceId && !v.attachedTo)) return false;
   if (f.crewedBySource && !(sourceId && v.crewedByThisTurn?.includes(sourceId))) return false;
   if (f.colors && !f.colors.some((c) => v.colors.includes(c))) return false;
   // « avec un marqueur » : `any` accepte n'importe quel type de marqueur.
@@ -160,6 +161,7 @@ export function isLegalTarget(s: GameState, controller: PlayerId, spec: TargetSp
     if (player.lost || !spec.filter.players) return false;
     // « Vous avez la défense talismanique » (Crystal Barricade).
     if (id !== controller && playerStatic(s, id, "hexproof")) return false;
+    if (id !== controller && playerStatic(s, id, "protectionFromOpponents")) return false;
     if (spec.filter.players === "you") return id === controller;
     if (spec.filter.players === "opponent") return id !== controller;
     return true;
@@ -182,7 +184,11 @@ export function isLegalTarget(s: GameState, controller: PlayerId, spec: TargetSp
     if (!ex || o.faceDown || o.cardCopy || o.preparedFor) return false;
     if (ex.withWarp && !s.defs[o.defId]?.warp) return false;
     if (ex.own && o.owner !== controller) return false;
-    if (ex.linked && !(sourceId && (s.objects[sourceId]?.linked ?? []).includes(id))) return false;
+    if (
+      ex.linked &&
+      !(sourceId && ((s.objects[sourceId]?.linked ?? []).includes(id) || s.objects[sourceId]?.linkedUids?.includes(o.uid)))
+    )
+      return false;
     return !ex.filter || matchesCard(s, controller, id, { ...ex.filter, controller: undefined }, sourceId);
   }
   if (o && o.zone === "graveyard") {

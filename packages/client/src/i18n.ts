@@ -73,6 +73,8 @@ export const KEYWORD_LABEL: Record<Keyword, string> = {
   noActivatedAbilities: "Capacités activées bloquées",
   minThreeBlockers: "Bloquée par trois créatures ou plus",
   combatDamageImmune: "Blessures de combat prévenues",
+  keepsDamage: "Blessures conservées",
+  absorbsDamage: "Encaisse les blessures",
   convoke: "Convocation",
   assignsToughness: "Blesse selon son endurance",
   absolutePowerDamage: "Blesse selon la valeur absolue de sa force",

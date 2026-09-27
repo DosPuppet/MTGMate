@@ -86,6 +86,10 @@ export type RulesEvent =
   | { e: "combatDamageBatch"; player: PlayerId; sources: ObjectId[] }
   /** Un permanent est sacrifié (par son contrôleur). */
   | { e: "sacrifice"; objectId: ObjectId; player: PlayerId }
+  /** Un joueur perd la partie. */
+  | { e: "playerLost"; player: PlayerId }
+  /** Un permanent change de contrôleur (Zidane, Tantalus Thief). */
+  | { e: "controlChange"; objectId: ObjectId; from: PlayerId; to: PlayerId }
   /** Une créature explore (701.44), en révélant une carte de terrain ou non. */
   | { e: "explore"; objectId: ObjectId; land: boolean }
   /** Une Monture devient montée. */
@@ -194,6 +198,14 @@ export function emptyPool(): Record<ManaType, number> {
 // ---------------------------------------------------------------------------
 // Accès
 // ---------------------------------------------------------------------------
+
+/** Change le contrôleur d'un permanent (horodatage de contrôle, événement de règles). */
+export function setController(s: GameState, o: GameObject, to: PlayerId): void {
+  const from = o.controller;
+  o.controller = to;
+  o.controlledSince = s.turn.number;
+  if (from !== to) rulesEvent(s, { e: "controlChange", objectId: o.id, from, to });
+}
 
 export function obj(s: GameState, id: ObjectId): GameObject {
   const o = s.objects[id];
