@@ -225,6 +225,7 @@ function beginStep(s: GameState): void {
       return;
     case "beginCombat":
       s.combat = emptyCombat();
+      s.turn.combats = (s.turn.combats ?? 0) + 1;
       givePriority(s);
       return;
     case "declareAttackers":
@@ -368,6 +369,8 @@ function endStep(s: GameState): void {
     s.turn.active = extra && s.players[extra] && !s.players[extra]?.lost ? extra : nextPlayer(s, s.turn.active);
     s.turn.endSteps = 0;
     s.turn.extraEndSteps = 0;
+    s.turn.preventCreatureDamageFor = undefined;
+    s.turn.combats = 0;
     s.turn.step = "untap";
     startTurnOf(s, s.turn.active);
     s.turn.landsPlayed = 0;

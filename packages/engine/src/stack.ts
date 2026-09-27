@@ -5,8 +5,9 @@
  */
 import { createTokenCopy, loseLife, sacrifice as sacrificePermanent } from "./actions";
 import { ask } from "./choices";
-import { announceDiscard, announceDiscardBatch, evalAmount, runEffect } from "./effects";
+import { addEffect, announceDiscard, announceDiscardBatch, evalAmount, moveWithSpec, runEffect } from "./effects";
 import { RulesError } from "./errors";
+import { copiedDefId } from "./layers";
 import { manaValue, payMana, totalCost } from "./mana";
 import {
   bump,
@@ -136,7 +137,9 @@ export function canPlayLand(s: GameState, player: PlayerId, card: ObjectId): boo
     (o.zone === "exile" && !!o.onAdventure && o.owner === player) ||
     (o.zone === "graveyard" &&
       o.owner === player &&
-      (graveyardTypeAvailable(s, player, card) === "Land" || playerStatic(s, player, "playLandsFromGraveyard")));
+      (graveyardTypeAvailable(s, player, card) === "Land" ||
+        playerStatic(s, player, "playLandsFromGraveyard") ||
+        playerStatic(s, player, "playFromGraveyard")));
   return allowed && sorceryTiming(s, player) && s.turn.landsPlayed < landsAllowed(s, player);
 }
 
@@ -236,6 +239,27 @@ export function spellReduction(
   return r;
 }
 
+/** Modifications à l'arrivée d'un sort (Noctis ; prochain sort de créature : Summon: Fenrir, Summon: Brynhildr). */
+function arrivalFor(s: GameState, player: PlayerId, d: CardDef, terms: CastTerms): StackItem["arrival"] {
+  const counters: { kind: string; n: number }[] = terms.finality ? [{ kind: "finality", n: 1 }] : [];
+  let haste = false;
+  if (d.types.includes("Creature")) {
+    const pending = (s.nextCreatureSpell ?? []).filter((x) => x.player === player && x.turn === s.turn.number);
+    for (const p of pending) {
+      if (p.counters) counters.push({ kind: "+1/+1", n: p.counters });
+      if (p.haste) haste = true;
+    }
+    if (pending.length) s.nextCreatureSpell = (s.nextCreatureSpell ?? []).filter((x) => !pending.includes(x));
+  }
+  return counters.length || haste ? { counters, haste: haste || undefined } : undefined;
+}
+
+/** Cloud, Planet's Champion : réduction d'une capacité d'Équiper qui cible la créature. */
+export function equipDiscount(s: GameState, player: PlayerId, ab: ActivatedAbilityDef, target: ObjectId | undefined): number {
+  if (!target || !ab.label?.startsWith("Équiper") || s.objects[target]?.controller !== player) return 0;
+  return s.defs[copiedDefId(s, target)]?.equipDiscountWhenTargeted ?? 0;
+}
+
 /** Kicker sans mana (FIN) : le permanent choisi automatiquement pour le payer, s'il y en a un. */
 export function kickerCostPermanent(
   s: GameState,
@@ -326,6 +350,8 @@ export interface CastTerms {
   sorceryTiming?: boolean;
   /** Exilé au lieu d'aller au cimetière (Quistis Trepe). */
   exileAfter?: boolean;
+  /** Le permanent arrive avec un marqueur de finalité (Noctis). */
+  finality?: boolean;
 }
 
 /** 702.170 : la carte (depuis la main ou la pile) est exilée face visible et devient complotée. */
@@ -511,6 +537,17 @@ function baseCastTerms(s: GameState, player: PlayerId, card: ObjectId): CastTerm
     if (d.flashback || s.turn.flashbackGranted?.includes(card)) return { source: "flashback" };
     const t = graveyardTypeAvailable(s, player, card);
     if (t && t !== "Land") return { source: "graveyard", graveyardType: t };
+    // Hades, Sorcerer of Eld : « pendant votre tour, vous pouvez jouer des cartes depuis votre cimetière ».
+    if (playerStatic(s, player, "playFromGraveyard")) return { source: "graveyard" };
+    // Noctis, Prince of Lucis : les sorts d'artefact, en payant des PV en plus, avec un marqueur de finalité.
+    const noctis = d.types.includes("Artifact")
+      ? controlledAbilitiesWithSource(s, player).find(({ ab }) => ab.kind === "playerStatic" && !!ab.artifactsFromGraveyardLife)
+          ?.ab
+      : undefined;
+    if (noctis?.kind === "playerStatic" && noctis.artifactsFromGraveyardLife) {
+      if ((s.players[player]?.life ?? 0) < noctis.artifactsFromGraveyardLife) return null;
+      return { source: "graveyard", payLife: noctis.artifactsFromGraveyardLife, finality: true };
+    }
     const fromGy = d.castFromGraveyard;
     if (fromGy && (!fromGy.condition || checkCondition(s, fromGy.condition, player, card))) {
       // Wickerfolk Indomitable : « en payant 2 PV et en sacrifiant un artefact ou une créature en plus ».
@@ -763,6 +800,7 @@ export function castSpell(s: GameState, player: PlayerId, card: ObjectId, choice
     sourceSnapshot: { keywords: d.keywords, power: d.power ?? 0, controller: player },
     // Quistis Trepe : exilé en quittant la pile, comme un flashback.
     flashback: flashback || !!terms.exileAfter,
+    arrival: arrivalFor(s, player, d, terms),
     adventure: adventure || undefined,
     warped: warp ? true : undefined,
     manaSpent: free ? 0 : manaValue(cost),
@@ -811,6 +849,8 @@ export function castSpell(s: GameState, player: PlayerId, card: ObjectId, choice
   const before = caster?.turnStats.instantSorceryCast ?? 0;
   if (caster) {
     caster.turnStats.spellsCast += 1;
+    if (d.types.includes("Creature") && d.supertypes.includes("Legendary"))
+      caster.turnStats.legendaryCreatureSpells = (caster.turnStats.legendaryCreatureSpells ?? 0) + 1;
     if (terms.source === "hand") caster.turnStats.handSpells = (caster.turnStats.handSpells ?? 0) + 1;
     bump(s); // des capacités statiques en dépendent (« si vous avez lancé deux sorts ce tour-ci »)
     if (warp) s.turn.spellWarped = true;
@@ -1150,7 +1190,10 @@ export function activateAbility(s: GameState, player: PlayerId, source: ObjectId
     try {
       // Warrior's Blades : {1} de moins par marqueur +1/+1 sur la créature ciblée.
       const t = ab.reduceByTargetCounters ? targets.t?.[0] : undefined;
-      const reduction = (t ? (s.objects[t]?.counters["+1/+1"] ?? 0) : 0) + abilityReduction(s, player, source, ab);
+      const reduction =
+        (t ? (s.objects[t]?.counters["+1/+1"] ?? 0) : 0) +
+        abilityReduction(s, player, source, ab) +
+        equipDiscount(s, player, ab, targets.t?.[0]);
       payMana(s, player, totalCost(ab.cost.mana, x, undefined, reduction), reserved, { abilitySource: source });
     } catch {
       throw new RulesError("Mana insuffisant");
@@ -1391,6 +1434,11 @@ function finishResolution(
       });
       const arrived = enteredId ? s.objects[enteredId] : undefined;
       if (arrived && item.manaSpent !== undefined) arrived.manaSpent = item.manaSpent;
+      // Marqueurs et célérité à l'arrivée (Torgal, Summon: Fenrir, Summon: Brynhildr, Noctis).
+      if (arrived && item.arrival) {
+        for (const c of item.arrival.counters ?? []) changeCounters(s, arrived, c.kind, c.n);
+        if (item.arrival.haste) addEffect(s, [arrived.id], { addKeywords: ["haste"] }, "endOfTurn");
+      }
       if (arrived && item.x) arrived.castX = item.x;
       // Mimeoplasm : les cartes exilées en arrivant sont liées au permanent.
       if (arrived && vars["$ids:devoured"]?.length)
@@ -1435,6 +1483,13 @@ function finishResolution(
  * exil « en aventure » pour une aventure (715.4) ; bibliothèque mélangée pour un présage.
  */
 function resolvedSpellAway(s: GameState, item: StackItem, d: CardDef | undefined): void {
+  // Esper Origins : exilé, puis sur le champ de bataille transformé avec un marqueur de finalité.
+  if (item.toBattlefieldTransformed) {
+    const exiled = moveObject(s, item.sourceId, "exile");
+    if (exiled)
+      moveWithSpec(s, item.controller, exiled, { to: "battlefield", transformed: true, counters: { kind: "finality", n: 1 } });
+    return;
+  }
   // Lilah : exilé et comploté au lieu d'aller au cimetière.
   if (item.plotOnResolve && !item.flashback) {
     plotCard(s, item.sourceId);

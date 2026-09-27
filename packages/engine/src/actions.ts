@@ -108,6 +108,8 @@ export function dealDamage(s: GameState, source: DamageSource, target: string, a
   if (targetObj?.zone === "battlefield") {
     // 702.16e : protection contre tout — les blessures sont prévenues.
     if (hasKeyword(s, target, "protectionFromEverything")) return;
+    // Summon: Alexander : « prévenez toutes les blessures infligées aux créatures que vous contrôlez ce tour-ci ».
+    if (!unpreventable && s.turn.preventCreatureDamageFor?.includes(targetObj.controller) && isCreature(s, target)) return;
   }
   // Préventions statiques : blessures reçues (Crystal Barricade, Fog Bank) ou infligées par la source (Fog Bank).
   for (const p of unpreventable ? [] : preventions(s)) {
@@ -140,6 +142,18 @@ export function dealDamage(s: GameState, source: DamageSource, target: string, a
   if (source.id && s.objects[source.id]?.zone === "battlefield" && isCreature(s, source.id)) {
     amount *= 2 ** doublers(s, source.controller, "creatureDamage");
   }
+  // Trance Kuja : « si un Sorcier que vous contrôlez devait infliger des blessures, il en inflige le double ».
+  if (source.id && s.objects[source.id]?.zone === "battlefield") {
+    const id = source.id;
+    const n = controlledAbilitiesWithSource(s, source.controller).filter(
+      ({ id: from, ab }) =>
+        ab.kind === "doubler" && !!ab.damageFilter && matchesObjectFilter(s, source.controller, id, ab.damageFilter, from),
+    ).length;
+    amount *= 2 ** n;
+  }
+  // Lightning, Army of One : blessures à ce joueur ou à ses permanents doublées jusqu'au prochain tour de Lightning.
+  const marked = victim ? (s.players[victim]?.damageDoubled?.filter((d) => s.turn.number < d.until).length ?? 0) : 0;
+  amount *= 2 ** marked;
   if (isPlayer(s, target)) {
     // Suivi des joueurs blessés au combat par cette source ce tour-ci (Steel Hellkite).
     const src = source.id ? s.objects[source.id] : undefined;
@@ -149,6 +163,11 @@ export function dealDamage(s: GameState, source: DamageSource, target: string, a
     emit({ type: "damage", sourceDefId: source.defId, target, amount, combat });
     const hurt = s.players[target];
     if (hurt && !combat && amount > 0) hurt.turnStats.noncombatDamageTaken += amount;
+    if (hurt && combat && amount > 0) {
+      hurt.turnStats.combatDamageTaken = (hurt.turnStats.combatDamageTaken ?? 0) + amount;
+      if (src && chars(s, src.id).supertypes.includes("Legendary") && isCreature(s, src.id))
+        hurt.turnStats.damagedByLegendary = true;
+    }
     loseLife(s, target, amount);
   } else {
     const o = s.objects[target];

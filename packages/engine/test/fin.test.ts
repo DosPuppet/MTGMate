@@ -2,6 +2,7 @@
  * Final Fantasy, lot A : job select, tiered, « si au moins quatre mana ont été dépensés », Syncopate, Villes à aventure.
  */
 import { describe, expect, it } from "vitest";
+import { bump } from "../src/layers";
 import { legalActions } from "../src/legal";
 import { chars } from "../src/state";
 import type { GameState } from "../src/types";
@@ -220,6 +221,43 @@ describe("Final Fantasy", () => {
     expect(idsOf(t, "p1", "battlefield", "Hero")).toHaveLength(1);
     // Une seule Grenouille : le jeton ajouté ne déclenche pas le remplacement.
     expect(idsOf(t, "p1", "battlefield", "Frog")).toHaveLength(1);
+  });
+
+  it("Torgal : le premier sort de créature Humain arrive avec un marqueur par Chien ou Loup", () => {
+    let t = scenario({ p1: { battlefield: ["Torgal, A Fine Hound", ...lands("Plains", 4)], hand: ["Adelbert Steiner"] } });
+    const card = idOf(t, "p1", "hand", "Adelbert Steiner");
+    t = act(t, "p1", { type: "cast", card });
+    t = settle(t);
+    // Adelbert Steiner est un Humain : un marqueur par Chien ou Loup (Torgal).
+    expect(t.objects[idOf(t, "p1", "battlefield", "Adelbert Steiner")]?.counters["+1/+1"]).toBe(1);
+  });
+
+  it("Esper Origins : lancée en flashback, elle arrive transformée avec un marqueur de finalité", () => {
+    let s = scenario({ p1: { battlefield: lands("Forest", 4), graveyard: ["Esper Origins // Summon: Esper Maduin"] } });
+    const card = s.players.p1?.graveyard[0] as string;
+    s = act(s, "p1", { type: "cast", card });
+    s = settle(s);
+    const [perm] = idsOf(s, "p1", "battlefield", "Esper Origins // Summon: Esper Maduin");
+    expect(perm).toBeDefined();
+    expect(chars(s, perm as string).name).toBe("Summon: Esper Maduin");
+    expect(s.objects[perm as string]?.counters.finality).toBe(1);
+    expect(s.objects[perm as string]?.counters.lore).toBe(1);
+  });
+
+  it("Trance Kuja : les blessures d'un Sorcier que vous contrôlez sont doublées", () => {
+    let s = scenario({
+      p1: {
+        battlefield: ["Kuja, Genome Sorcerer // Trance Kuja, Fate Defied", "Black Waltz No. 3", ...lands("Mountain", 1)],
+        hand: ["Burst Lightning"],
+      },
+    });
+    const kuja = idOf(s, "p1", "battlefield", "Kuja, Genome Sorcerer // Trance Kuja, Fate Defied");
+    s.objects[kuja]!.faceDefId = s.defs[s.objects[kuja]!.defId]!.faceDefs![1]!.id;
+    bump(s);
+    s = act(s, "p1", { type: "cast", card: idOf(s, "p1", "hand", "Burst Lightning"), targets: { t: ["p2"] } });
+    s = settle(s);
+    // Black Waltz No. 3 (Sorcier) : 2 blessures doublées = 4 ; Burst Lightning (sort) : 2.
+    expect(s.players.p2?.life).toBe(14);
   });
 
   it("PuPu UFO : seule la force de base devient le nombre de Villes", () => {

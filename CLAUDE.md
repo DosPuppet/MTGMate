@@ -26,7 +26,7 @@ Ce fichier sert au suivi du projet entre les sessions. Le README présente le pr
 | **Edge of Eternities (EOE)** | ✅ **260 / 260** (lots A à D, branche `standard`) |
 | **Aetherdrift (DFT)** | ✅ **260 / 260** (lots A à C, branche `standard`) |
 | **Outlaws of Thunder Junction + The Big Score (OTJ, BIG)** | ✅ **269 / 269 + 30 / 30** (lots A à C, branche `standard`) |
-| **Final Fantasy (FIN)** | 🚧 **264 / 307** (lots A à D2, branche `standard`) |
+| **Final Fantasy (FIN)** | 🚧 **288 / 307** (lots A à D3, branche `standard`) |
 | Autres extensions Standard | branche `standard`, plan par lots ci-dessous |
 
 ### Branche `standard` : tout le Standard
@@ -299,7 +299,13 @@ Demandée par l'utilisateur le 27/09/2026.
   - les statiques de joueur `landsEnterUntapped`, `playTopCard` (avec condition), `extraToken` (Quina) ;
   - les restrictions `minThreeBlockers` et `combatDamageImmune` ; les copies de jeton « sauf que c'est un Démon noir » (`setColors`, `setSubtypes`) ;
   - Cloud, Midgar Mercenary (`doubleTriggersWhenEquipped`) ; les permissions de lancer qui exilent le sort ensuite (`grantPlay` avec `exileAfter`).
-- Lot D3 : cartes restantes (légendaires, rares, transformables complexes : Clive, Terra, Sephiroth, Zenos, Kefka, Kuja, Serah, Ultimecia, Emet-Selch, Esper Origins, Crystal Fragments, Play Blitzball…).
+- Lot D3 ✅ (288/307) : 24 cartes (`fin/legends3.ts`, et Kuja, Kefka, Serah, Esper Origins, Emet-Selch, Crystal Fragments, Terra dans `fin/transform.ts`). Le moteur gagne :
+  - les modifications à l'arrivée d'un sort (`StackItem.arrival`) : prochain sort de créature du tour (`fx.nextCreatureSpell`, Fenrir, Brynhildr), marqueurs ajoutés à un sort sur la pile (`fx.spellArrivalCounters`, Torgal), artefacts lancés du cimetière avec finalité (`artifactsFromGraveyardLife`, Noctis) ;
+  - les blessures doublées par une source filtrée (`doubler({ damageFilter })`, Trance Kuja) ou reçues par un joueur jusqu'au prochain tour (`fx.doubleDamageTo`, Lightning) ; la prévention des blessures à vos créatures ce tour-ci (Summon: Alexander) ;
+  - **correctif** : les blessures d'une capacité d'un permanent ont ce permanent pour source (lien de vie, contact mortel, doublements) ;
+  - le compteur de phases de combat (`cond.firstCombat`), les conditions « un adversaire blessé par une créature légendaire », « un joueur a subi N blessures de combat », « premier sort de créature légendaire du tour », « la créature de plus grande force » ;
+  - le sort résolu qui arrive transformé (`fx.resolveToBattlefieldTransformed`, Esper Origins), jouer depuis son cimetière et exiler son propre cimetière (Hades), F/E de base égales aux PV (Aettir and Priwen), capacité de mana sans {T} une fois par tour (Vivi), réduction d'Équiper sur une cible (`equipDiscountWhenTargeted`), filtre `crewedBySource`, montant `cardTypesOf`, `removeCounters` d'un type avec mémorisation.
+- Lot D4 : les 19 dernières cartes (légendaires, rares, transformables complexes : Clive, Terra, Sephiroth, Zenos, Kefka, Kuja, Serah, Ultimecia, Emet-Selch, Esper Origins, Crystal Fragments, Play Blitzball…).
 
 ### Reality Fracture (FRA)
 
@@ -478,6 +484,12 @@ Réimpressions : défenses talismaniques contre une couleur, changelin, restrict
 - **The Lunar Whale :** « regarder la carte du dessus à tout moment » n'est pas affiché.
 - **Tellah, Great Sage :** trois déclenchements séparés (Héros, pioche, sacrifice). **Ultimecia, Sidequest: Raise a Chocobo :** l'effet « quand elle se transforme » est fait par l'effet qui la transforme.
 - **Quina, Qu Gourmet :** pas de Grenouille pour les jetons copies.
+- **Vivi Ornitier :** le mana est d'une seule couleur ({U} ou {R}), pas une combinaison.
+- **Garnet, Princess of Alexandria :** un marqueur de savoir de chacune de vos Sagas, ou d'aucune.
+- **Choco, Seeker of Paradise :** les cartes regardées sont meulées, puis une va en main et les terrains sur le champ de bataille.
+- **Memories Returning :** vous choisissez les trois cartes gardées (l'adversaire ne choisit pas celles du dessous).
+- **Esper Terra :** trois marqueurs de savoir sur la copie de Saga, ou aucun.
+- **Sin, Spira's Punishment :** six copies au plus par déclenchement.
 - **Zell Dincht :** le terrain renvoyé est ciblé (comme Arid Archway).
 - **The Earth Crystal :** tous les marqueurs mis sur vos créatures sont doublés, pas seulement les marqueurs +1/+1.
 - **Rydia, Summoner of Mist :** la Saga ciblée a une valeur de mana d'au plus X (et non exactement X).

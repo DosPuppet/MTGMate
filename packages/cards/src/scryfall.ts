@@ -675,6 +675,7 @@ function singleDef(raw: RawCard, script: CardScript | undefined, set: string): C
     devour: script?.devour ?? parseDevour(raw.oracleText),
     entersAsCopyOf: script?.entersAsCopyOf,
     doubleTriggersWhenEquipped: script?.doubleTriggersWhenEquipped,
+    equipDiscountWhenTargeted: script?.equipDiscountWhenTargeted,
     shockLand: /As this land enters, you may pay (\d+) life\. If you don't, it enters tapped\./.exec(raw.oracleText)
       ? Number(/you may pay (\d+) life/.exec(raw.oracleText)?.[1])
       : undefined,

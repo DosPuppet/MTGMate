@@ -170,6 +170,8 @@ export interface CardDef {
    * `graveyardUpToX` : « exilez jusqu'à X cartes de votre cimetière » à la place (Mimeoplasm, cartes liées).
    */
   devour?: { filter: ObjectFilter; n: number; graveyardUpToX?: boolean };
+  /** Cloud, Planet's Champion : « les capacités d'équipement que vous activez qui la ciblent coûtent {N} de moins ». */
+  equipDiscountWhenTargeted?: number;
   /** Cloud, Midgar Mercenary : tant qu'elle est équipée, ses capacités déclenchées et celles de ses Équipements se déclenchent une fois de plus. */
   doubleTriggersWhenEquipped?: boolean;
   /** « Vous pouvez faire arriver cette créature comme copie d'un [permanent] que vous contrôlez » (Waxen Shapethief). */
@@ -340,6 +342,8 @@ export interface ManaAbilityDef {
   tapAnother?: boolean;
   /** « N'activez que si vous contrôlez… » (Verges d'Aetherdrift). */
   condition?: Condition;
+  /** « Une seule fois par tour » (Vivi Ornitier). */
+  oncePerTurn?: boolean;
   /** Effet si ce mana sert à lancer un sort correspondant (Carnelian Orb : célérité ; Pyromancer's Goggles : copie). */
   rider?: { spell: ObjectFilter; effect: "haste" | "copy" };
   amount: number;
@@ -476,6 +480,8 @@ export interface ObjectFilter {
   attachedToSource?: boolean;
   /** Créature équipée (au moins un Équipement attaché). */
   equipped?: boolean;
+  /** Véhicule équipé par la source ce tour-ci (Balthier and Fran). */
+  crewedBySource?: boolean;
   nontoken?: boolean;
   /** Force minimale (« créature de force 4 ou plus »). */
   minPower?: number;
@@ -718,6 +724,16 @@ export type Condition =
   | { kind: "creaturesDiedAtLeast"; n: number; underOpponent?: boolean }
   /** C'est la première étape de fin de ce tour (Y'shtola Rhul). */
   | { kind: "firstEndStep" }
+  /** C'est la première phase de combat du tour (Genji Glove). */
+  | { kind: "firstCombat" }
+  /** Un adversaire a subi des blessures de combat d'une créature légendaire ce tour-ci (Blitzball). */
+  | { kind: "opponentDamagedByLegendary" }
+  /** Un joueur a subi au moins N blessures de combat ce tour-ci (Sidequest: Play Blitzball). */
+  | { kind: "playerCombatDamageAtLeast"; n: number }
+  /** Aucun sort de créature légendaire lancé par vous ce tour-ci (Serah Farron). */
+  | { kind: "noLegendaryCreatureCastThisTurn" }
+  /** Vous contrôlez une créature de force la plus grande ou à égalité (Summon: Fenrir). */
+  | { kind: "controlsGreatestPower" }
   /** Un adversaire a subi des blessures non de combat ce tour-ci. */
   | { kind: "opponentDealtNoncombatDamage" }
   /** Le contrôleur a pioché au moins N cartes ce tour-ci. */
@@ -855,6 +871,12 @@ export interface PlayerStaticAbilityDef {
   extraLands?: number;
   /** « Si vous deviez gagner des points de vie, vous en gagnez autant plus N à la place. » */
   lifeGainBonus?: number;
+  /** « Vous pouvez lancer des sorts d'artefact depuis votre cimetière en payant N PV en plus ; ils arrivent avec un marqueur de finalité » (Noctis). */
+  artifactsFromGraveyardLife?: number;
+  /** « Vous pouvez jouer des cartes depuis votre cimetière » (Hades, Sorcerer of Eld, avec `condition`). */
+  playFromGraveyard?: boolean;
+  /** « Si une carte ou un jeton devait être mis dans votre cimetière, exilez-le à la place » (Hades). */
+  ownGraveyardToExile?: boolean;
   /** « Les terrains que vous contrôlez arrivent dégagés » (The Wandering Minstrel). */
   landsEnterUntapped?: boolean;
   /** « Vous pouvez jouer la carte du dessus de votre bibliothèque » (The Lunar Whale, avec `condition`). */
@@ -971,6 +993,8 @@ export interface DoublerAbilityDef {
   creatureDamage?: boolean;
   /** « Si vous deviez gagner des points de vie, vous en gagnez le double à la place » (The Wind Crystal). */
   lifeGain?: boolean;
+  /** Blessures infligées par une source correspondante que vous contrôlez, doublées (Trance Kuja : vos Sorciers). */
+  damageFilter?: ObjectFilter;
   /** Marqueurs doublés seulement sur les permanents correspondants (Loading Zone). */
   countersFilter?: ObjectFilter;
   label?: string;
@@ -1124,6 +1148,8 @@ export type Amount =
   | { kind: "totalManaValue"; filter: ObjectFilter }
   /** Mana dépensé pour lancer le sort de l'événement (Shantotto, Tellah). */
   | { kind: "eventManaSpent" }
+  /** Types de carte différents parmi les objets désignés (Kefka : « parmi les cartes défaussées »). */
+  | { kind: "cardTypesOf"; ref: Ref }
   /** Dévotion à une couleur (700.5) : symboles de cette couleur dans les coûts de mana de vos permanents. */
   | { kind: "devotion"; color: Color }
   /** Sorts non-créature lancés ce tour-ci par le joueur désigné (Magebane Lizard). */
@@ -1189,7 +1215,7 @@ export type Effect =
   /** Proliférer N fois (701.34), choix automatique : vos permanents qui ont des marqueurs, et chez les adversaires marqueurs -1/-1, d'étourdissement et de poison. */
   | { op: "proliferate"; times: Amount }
   /** « Retirez jusqu'à N marqueurs » (choix automatique : loyauté, +1/+1, puis les autres). */
-  | { op: "removeCounters"; what: Ref; n: number }
+  | { op: "removeCounters"; what: Ref; n: number; kind?: string; store?: string }
   /** « Renforcez Jace N » : N marqueurs de loyauté sur un jeton Jace (créé s'il n'y en a pas). */
   | { op: "empowerJace"; amount: Amount; token: TokenSpec }
   /** Jace's Machinations : loyauté des Jace à vitesse d'éphémère ce tour-ci. */
@@ -1552,6 +1578,16 @@ export type Effect =
   | { op: "loseGame"; who?: Ref }
   /** « Faites un tour supplémentaire après celui-ci » (Ultimecia, Omnipotent). */
   | { op: "extraTurn" }
+  /** « Exilez-le, puis mettez-le sur le champ de bataille transformé avec un marqueur de finalité » (Esper Origins). */
+  | { op: "resolveToBattlefieldTransformed" }
+  /** « Jusqu'à votre prochain tour, les blessures infligées à ce joueur ou à ses permanents sont doublées » (Lightning). */
+  | { op: "doubleDamageTo"; who: Ref }
+  /** « Prévenez toutes les blessures infligées aux créatures que vous contrôlez ce tour-ci » (Summon: Alexander). */
+  | { op: "preventDamageToYourCreatures" }
+  /** Le prochain sort de créature lancé ce tour-ci arrive avec des marqueurs +1/+1 ou la célérité. */
+  | { op: "nextCreatureSpell"; counters?: number; haste?: boolean }
+  /** Le sort désigné (sur la pile) arrive avec N marqueurs +1/+1 de plus (Torgal). */
+  | { op: "spellArrivalCounters"; what: Ref; amount: Amount }
   /** « Il y a une étape de fin supplémentaire après celle-ci » (Y'shtola Rhul). */
   | { op: "extraEndStep" }
   /** « Chaque [créature] inflige des blessures égales à sa force à [cible] » (Bartz and Boko). */
@@ -1791,11 +1827,17 @@ export interface PlayerState {
   speed?: number;
   /** Mana qui ne se vide pas avant la fin du tour (Savage Ventmaw). */
   manaKeep?: Partial<Record<ManaType, number>>;
+  /** Lightning, Army of One : blessures reçues doublées tant que le tour `until` n'a pas commencé. */
+  damageDoubled?: { by: PlayerId; until: number }[];
 }
 
 export interface StackItem {
   /** Pour un sort : id de l'objet carte sur la pile. Pour une capacité : id propre. */
   id: string;
+  /** Esper Origins : après la résolution, exilé puis mis sur le champ de bataille transformé avec un marqueur de finalité. */
+  toBattlefieldTransformed?: boolean;
+  /** Modifications à l'arrivée du permanent (Torgal, Summon: Fenrir, Summon: Brynhildr, Noctis). */
+  arrival?: { counters?: { kind: string; n: number }[]; haste?: boolean };
   kind: "spell" | "ability";
   controller: PlayerId;
   /** Sort : l'objet sur la pile. Capacité : le permanent source (peut avoir disparu). */
@@ -1884,6 +1926,12 @@ export interface TurnStats {
   milled: number;
   /** Cartes défaussées ce tour-ci (Jiang Yanggu, Alone). */
   cardsDiscarded: number;
+  /** Sorts de créature légendaire lancés ce tour-ci (Serah Farron). */
+  legendaryCreatureSpells?: number;
+  /** Blessures de combat subies ce tour-ci (Sidequest: Play Blitzball). */
+  combatDamageTaken?: number;
+  /** A subi des blessures de combat d'une créature légendaire ce tour-ci (Blitzball). */
+  damagedByLegendary?: boolean;
   /** Lancers de pièce de ce joueur ce tour-ci (Edgar). */
   coinFlips?: number;
   /** Créatures mortes sous le contrôle de ce joueur ce tour-ci. */
@@ -1978,6 +2026,8 @@ export interface LkiSnapshot {
   attackedTurn?: number;
   /** Un Équipement lui est attaché. */
   equipped?: boolean;
+  /** Créatures qui l'ont monté ou équipé ce tour-ci. */
+  crewedByThisTurn?: ObjectId[];
   /** Lancé pour son coût de distorsion. */
   warped?: boolean;
   /** A subi des blessures ce tour-ci. */
@@ -2060,6 +2110,10 @@ export interface GameState {
     freeFlashbackGranted?: ObjectId[];
     /** Combats supplémentaires à venir ce tour-ci (Aurelia). */
     extraCombats?: number;
+    /** Phases de combat commencées ce tour-ci (Genji Glove : « si c'est la première phase de combat du tour »). */
+    combats?: number;
+    /** Joueurs dont les créatures ne subissent pas de blessures ce tour-ci (Summon: Alexander). */
+    preventCreatureDamageFor?: PlayerId[];
     /** Étapes de fin supplémentaires à venir (Y'shtola Rhul) et étapes de fin déjà commencées ce tour-ci. */
     extraEndSteps?: number;
     endSteps?: number;
@@ -2109,6 +2163,8 @@ export interface GameState {
    * de ce tour ; pendant ce tour, les décisions de `player` sont prises par `by`.
    */
   turnControl?: { player: PlayerId; by: PlayerId; turn?: number };
+  /** « Quand vous lancerez votre prochain sort de créature ce tour-ci, il arrive avec… » (Summon: Fenrir, Summon: Brynhildr). */
+  nextCreatureSpell?: { player: PlayerId; turn: number; counters?: number; haste?: boolean }[];
   /** Tours supplémentaires à venir (500.7 : le plus récent d'abord). */
   extraTurns?: PlayerId[];
   /** « Au prochain éphémère ou rituel que vous lancez ce tour-ci, copiez-le » (Teach by Example). */

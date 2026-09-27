@@ -373,6 +373,8 @@ export function moveObject(
   }
   // Rest in Peace : tout ce qui irait au cimetière est exilé à la place.
   if (to === "graveyard" && s.playerOrder.some((p) => playerStatic(s, p, "graveyardToExile"))) to = "exile";
+  // Hades, Sorcerer of Eld : seulement le cimetière de son contrôleur.
+  if (to === "graveyard" && playerStatic(s, o.isToken ? o.controller : o.owner, "ownGraveyardToExile")) to = "exile";
   const from = zoneArray(s, o);
   if (from) {
     const i = from.indexOf(id);

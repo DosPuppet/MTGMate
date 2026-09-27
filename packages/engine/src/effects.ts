@@ -340,6 +340,10 @@ export function evalAmount(s: GameState, ctx: EffectContext, a: Amount): number 
       }
       return n;
     }
+    case "cardTypesOf": {
+      const types = new Set(resolveRef(s, ctx, a.ref).flatMap((id) => s.defs[s.objects[id]?.defId ?? ""]?.types ?? []));
+      return types.size;
+    }
     case "eventManaSpent": {
       const id = ctx.event?.objectId;
       return (id ? s.stack.find((x) => x.id === id)?.manaSpent : undefined) ?? 0;
@@ -440,6 +444,10 @@ export function boardAmount(
 
 function damageSource(s: GameState, ctx: EffectContext, ref?: Ref): DamageSource | null {
   if (!ref || (ref.kind === "self" && !onBattlefield(s, ctx.sourceId))) {
+    // 120.3 : une capacité d'un permanent inflige ses blessures avec ce permanent pour source (Trance Kuja).
+    if (!ref && onBattlefield(s, ctx.sourceId) && s.objects[ctx.sourceId]?.defId === ctx.sourceDefId) {
+      return sourceFromObject(s, ctx.sourceId);
+    }
     return { defId: ctx.sourceDefId, controller: ctx.controller, keywords: ctx.sourceSnapshot.keywords };
   }
   const id = resolveRef(s, ctx, ref)[0];
@@ -493,7 +501,7 @@ function moveAndLog(s: GameState, id: ObjectId, to: "hand" | "exile" | "graveyar
 }
 
 /** Ajoute un effet continu (couches) à des objets. */
-function addEffect(s: GameState, ids: ObjectId[], mods: LayerMods, duration: "endOfTurn" | "permanent"): void {
+export function addEffect(s: GameState, ids: ObjectId[], mods: LayerMods, duration: "endOfTurn" | "permanent"): void {
   if (ids.length === 0) return;
   bump(s);
   s.effects.push({ id: newId(s, "e"), timestamp: nextTimestamp(s), affected: ids, duration, ...mods });
@@ -1397,17 +1405,23 @@ export function runEffect(s: GameState, r: Resolution, e: Effect): OpResult {
       return;
     }
     case "removeCounters": {
+      let removed = 0;
       for (const id of resolveRef(s, ctx, e.what)) {
         const o = s.objects[id];
         if (o?.zone !== "battlefield") continue;
         let left = e.n;
-        const order = ["loyalty", "+1/+1", ...Object.keys(o.counters).filter((k) => k !== "loyalty" && k !== "+1/+1")];
+        const order = e.kind
+          ? [e.kind]
+          : ["loyalty", "+1/+1", ...Object.keys(o.counters).filter((k) => k !== "loyalty" && k !== "+1/+1")];
         for (const kind of order) {
           const take = Math.min(left, o.counters[kind] ?? 0);
           if (take > 0) changeCounters(s, o, kind, -take);
           left -= take;
+          removed += take;
         }
       }
+      // Garnet : « un marqueur +1/+1 pour chaque marqueur de savoir retiré ainsi ».
+      store(r, e.store, removed);
       return;
     }
     case "instantJaceLoyalty": {
@@ -2605,6 +2619,10 @@ export function runEffect(s: GameState, r: Resolution, e: Effect): OpResult {
       r.item.flashback = true;
       return;
     }
+    case "resolveToBattlefieldTransformed": {
+      r.item.toBattlefieldTransformed = true;
+      return;
+    }
     case "poison": {
       const n = evalAmount(s, ctx, e.n);
       for (const p of resolveRef(s, ctx, e.who)) {
@@ -2719,6 +2737,35 @@ export function runEffect(s: GameState, r: Resolution, e: Effect): OpResult {
     }
     case "extraCombat": {
       s.turn.extraCombats = (s.turn.extraCombats ?? 0) + 1;
+      return;
+    }
+    case "nextCreatureSpell": {
+      s.nextCreatureSpell = [
+        ...(s.nextCreatureSpell ?? []),
+        { player: ctx.controller, turn: s.turn.number, counters: e.counters, haste: e.haste },
+      ];
+      return;
+    }
+    case "spellArrivalCounters": {
+      const n = evalAmount(s, ctx, e.amount);
+      for (const id of resolveRef(s, ctx, e.what)) {
+        const item = s.stack.find((x) => x.id === id && x.kind === "spell");
+        if (item && n > 0)
+          item.arrival = { ...item.arrival, counters: [...(item.arrival?.counters ?? []), { kind: "+1/+1", n }] };
+      }
+      return;
+    }
+    case "doubleDamageTo": {
+      const until = nextTurnOf(s, ctx.controller);
+      for (const p of resolveRef(s, ctx, e.who).filter((x) => isPlayer(s, x))) {
+        const pl = s.players[p];
+        if (pl)
+          pl.damageDoubled = [...(pl.damageDoubled ?? []).filter((d) => s.turn.number < d.until), { by: ctx.controller, until }];
+      }
+      return;
+    }
+    case "preventDamageToYourCreatures": {
+      s.turn.preventCreatureDamageFor = [...(s.turn.preventCreatureDamageFor ?? []), ctx.controller];
       return;
     }
     case "extraTurn": {

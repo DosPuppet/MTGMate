@@ -68,6 +68,7 @@ export interface CardScript {
   chosenNameTax?: number;
   /** Dévorer écrit dans le script (Mimeoplasm : « exilez jusqu'à X cartes de créature de votre cimetière »). */
   devour?: { filter: ObjectFilter; n: number; graveyardUpToX?: boolean };
+  equipDiscountWhenTargeted?: number;
   /** Cloud, Midgar Mercenary : déclencheurs doublés tant qu'elle est équipée. */
   doubleTriggersWhenEquipped?: boolean;
   /** « Vous pouvez faire arriver cette créature comme copie d'un [permanent] que vous contrôlez ». */
@@ -241,6 +242,7 @@ export const amount = {
   creaturesDiedThisTurn: { kind: "creaturesDiedThisTurn" } as Amount,
   totalManaValue: (filter: ObjectFilter): Amount => ({ kind: "totalManaValue", filter }),
   eventManaSpent: { kind: "eventManaSpent" } as Amount,
+  cardTypesOf: (r: Ref): Amount => ({ kind: "cardTypesOf", ref: r }),
   devotion: (color: Color): Amount => ({ kind: "devotion", color }),
   noncreatureCastBy: (who: Ref): Amount => ({ kind: "noncreatureCastBy", who }),
   refCount: (r: Ref): Amount => ({ kind: "refCount", ref: r }),
@@ -509,6 +511,11 @@ export const fx = {
   changeTarget: (what: Ref): Effect => ({ op: "changeTarget", what }),
   extraCombat: { op: "extraCombat" } as Effect,
   extraTurn: { op: "extraTurn" } as Effect,
+  resolveToBattlefieldTransformed: { op: "resolveToBattlefieldTransformed" } as Effect,
+  nextCreatureSpell: (opts: { counters?: number; haste?: boolean }): Effect => ({ op: "nextCreatureSpell", ...opts }),
+  spellArrivalCounters: (what: Ref, amount: Amount): Effect => ({ op: "spellArrivalCounters", what, amount }),
+  doubleDamageTo: (who: Ref): Effect => ({ op: "doubleDamageTo", who }),
+  preventDamageToYourCreatures: { op: "preventDamageToYourCreatures" } as Effect,
   extraEndStep: { op: "extraEndStep" } as Effect,
   eachDealsDamage: (filter: ObjectFilter, to: Ref): Effect => ({ op: "eachDealsDamage", filter, to }),
   addManaUntilEndOfTurn: (...mana: ManaType[]): Effect => ({ op: "addManaUntilEndOfTurn", mana }),
@@ -550,7 +557,13 @@ export const fx = {
   prepareAll: (filter: ObjectFilter, value = true): Effect => ({ op: "prepare", filter, value }),
   instantJaceLoyalty: { op: "instantJaceLoyalty" } as Effect,
   proliferate: (times: Amount = 1): Effect => ({ op: "proliferate", times }),
-  removeCounters: (what: Ref, n: number): Effect => ({ op: "removeCounters", what, n }),
+  removeCounters: (what: Ref, n: number, kind?: string, store?: string): Effect => ({
+    op: "removeCounters",
+    what,
+    n,
+    kind,
+    store,
+  }),
   extraLandThisTurn: { op: "extraLandThisTurn" } as Effect,
   nextSpellUncounterable: { op: "nextSpellUncounterable" } as Effect,
   tap: (what: Ref): Effect => ({ op: "tap", what }),
@@ -797,11 +810,15 @@ export function manaAbility(
     condition?: Condition;
     /** Autant de mana que la force de la source. */
     selfPower?: boolean;
+    /** Sans {T} (Vivi Ornitier : « {0} : … »). */
+    noTap?: boolean;
+    oncePerTurn?: boolean;
   } = {},
 ): ManaAbilityDef {
   return {
     kind: "mana",
-    cost: { tap: true, sacrificeSelf: opts.sacrifice },
+    cost: { tap: !opts.noTap, sacrificeSelf: opts.sacrifice },
+    oncePerTurn: opts.oncePerTurn,
     produce: Array.isArray(produce) ? produce : [produce],
     amount: amountProduced,
     amountPer: opts.per,
@@ -1097,6 +1114,11 @@ export const cond = {
   /** « si vous avez regardé ou surveillé ce tour-ci » */
   scried: { kind: "scriedThisTurn" } as Condition,
   firstEndStep: { kind: "firstEndStep" } as Condition,
+  firstCombat: { kind: "firstCombat" } as Condition,
+  opponentDamagedByLegendary: { kind: "opponentDamagedByLegendary" } as Condition,
+  playerCombatDamageAtLeast: (n: number): Condition => ({ kind: "playerCombatDamageAtLeast", n }),
+  noLegendaryCreatureCastThisTurn: { kind: "noLegendaryCreatureCastThisTurn" } as Condition,
+  controlsGreatestPower: { kind: "controlsGreatestPower" } as Condition,
   creaturesDied: (n: number, underOpponent?: boolean): Condition => ({ kind: "creaturesDiedAtLeast", n, underOpponent }),
   opponentDealtNoncombatDamage: { kind: "opponentDealtNoncombatDamage" } as Condition,
   drewAtLeast: (n: number): Condition => ({ kind: "drewAtLeast", n }),

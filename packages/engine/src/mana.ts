@@ -115,6 +115,7 @@ function canActivateMana(s: GameState, id: ObjectId, ab: ManaAbilityDef): boolea
   if (ab.cost.tap && (o.tapped || isSummoningSick(s, id))) return false;
   if (ab.tapAnother && !otherToTap(s, id)) return false;
   if (ab.condition && !checkCondition(s, ab.condition, o.controller, id)) return false;
+  if (ab.oncePerTurn && s.turn.onceFired.includes(`mana:${id}`)) return false;
   return true;
 }
 
@@ -246,6 +247,7 @@ export function activateManaAbility(s: GameState, player: PlayerId, id: ObjectId
   const c = color ?? ab.produce[0];
   if (!c || !ab.produce.includes(c)) throw new Error("Couleur de mana invalide");
   if (ab.cost.tap) tapObject(s, o);
+  if (ab.oncePerTurn) s.turn.onceFired.push(`mana:${id}`);
   if (ab.tapAnother) tapObject(s, obj(s, otherToTap(s, id) as ObjectId));
   if (ab.cost.sacrificeSelf) sacrifice(s, id);
   const pool = s.players[player]?.manaPool;

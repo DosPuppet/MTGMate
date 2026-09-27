@@ -6,11 +6,14 @@ import {
   chapter,
   chocobo,
   cond,
+  costReducer,
+  doubler,
   entersWith,
   FOOD,
   fx,
   KNIGHT_2,
   manaAbility,
+  playerStatic,
   ref,
   staticAbility,
   TOWN,
@@ -18,6 +21,7 @@ import {
   target,
   targetObj,
   triggered,
+  WIZARD_0_1,
   when,
 } from "./common";
 
@@ -392,6 +396,158 @@ export const TRANSFORM: Record<string, CardScript> = {
         [fx.sacrifice(ref.you, { types: ["Creature"], other: true }, 99, { optional: true, store: "s" }), fx.draw(amount.v("s"))],
         { label: "Sacrifiez des créatures : piochez autant" },
       ),
+    ],
+  },
+  "Kuja, Genome Sorcerer": {
+    abilities: [
+      triggered(
+        when.yourEndStep,
+        [
+          fx.createTappedTokens(WIZARD_0_1, 1),
+          fx.when(cond.controls({ types: ["Creature"], subtype: "Wizard" }, 4), fx.transform()),
+        ],
+        { label: "Sorcier engagé, puis transformez (quatre Sorciers)" },
+      ),
+    ],
+  },
+  "Trance Kuja, Fate Defied": {
+    abilities: [
+      doubler({
+        damageFilter: { types: ["Creature"], subtype: "Wizard" },
+        label: "Flare Star : blessures de vos Sorciers doublées",
+      }),
+    ],
+  },
+  "Kefka, Court Mage": {
+    abilities: [
+      ...[when.entersSelf, when.attacksSelf].map((t) =>
+        triggered(t, [fx.discard(1, ref.eachPlayer, { store: "k" }), fx.draw(amount.cardTypesOf(ref.stored("k")))], {
+          label: "Chaque joueur défausse ; piochez par type de carte",
+        }),
+      ),
+      activated({
+        mana: "{8}",
+        sorcerySpeed: true,
+        effects: [fx.sacrifice(ref.eachOpponent, { permanent: true }), fx.transform()],
+        label: "Chaque adversaire sacrifie un permanent ; transformez",
+      }),
+    ],
+  },
+  "Kefka, Ruler of Ruin": {
+    abilities: [
+      triggered(when.loseLife("opponent"), [fx.draw(amount.eventAmount)], {
+        condition: cond.yourTurn,
+        label: "Piochez autant de cartes",
+      }),
+    ],
+  },
+  "Serah Farron": {
+    abilities: [
+      costReducer({ types: ["Creature"], legendary: true }, 2, "Premier sort de créature légendaire : {2} de moins", {
+        condition: cond.noLegendaryCreatureCastThisTurn,
+      }),
+      triggered(when.yourCombat, [fx.may("Transformer Serah Farron ?", fx.transform())], {
+        condition: cond.controls({ types: ["Creature"], legendary: true, other: true }, 2),
+        label: "Transformez (deux autres créatures légendaires)",
+      }),
+    ],
+  },
+  "Crystallized Serah": {
+    abilities: [
+      costReducer({ types: ["Creature"], legendary: true }, 2, "Premier sort de créature légendaire : {2} de moins", {
+        condition: cond.noLegendaryCreatureCastThisTurn,
+      }),
+      staticAbility({ ...YOURS, legendary: true }, { power: 2, toughness: 2 }, { label: "Vos créatures légendaires : +2/+2" }),
+    ],
+  },
+  "Esper Origins": {
+    flashback: "{3}{G}",
+    spell: {
+      modes: [
+        {
+          targets: [],
+          effects: [fx.surveil(2), fx.gainLife(2), ...fx.when(cond.spellCastFromGraveyard, fx.resolveToBattlefieldTransformed)],
+        },
+      ],
+    },
+  },
+  "Summon: Esper Maduin": {
+    abilities: [
+      chapter([1], [fx.when(cond.refMatches(ref.libraryTop(ref.you), PERMANENT_CARD), fx.toHand(ref.libraryTop(ref.you)))], {
+        label: "Carte du dessus : un permanent en main",
+      }),
+      chapter([2], [fx.addMana("G", "G")], { label: "Ajoutez {G}{G}" }),
+      chapter([3], [fx.pumpAll(OTHERS, 2, 2, ["trample"])], { label: "Vos autres créatures : +2/+2, piétinement" }),
+    ],
+  },
+  "Emet-Selch, Unsundered": {
+    abilities: [
+      ...[when.entersSelf, when.attacksSelf].map((t) => triggered(t, fx.loot(1), { label: "Piochez, défaussez" })),
+      triggered(when.yourUpkeep, [fx.may("Transformer Emet-Selch ?", fx.transform())], {
+        condition: cond.amountAtLeast(amount.countIn("graveyard"), 14),
+        label: "Transformez (quatorze cartes au cimetière)",
+      }),
+    ],
+  },
+  "Hades, Sorcerer of Eld": {
+    abilities: [
+      playerStatic({
+        playFromGraveyard: true,
+        condition: cond.yourTurn,
+        label: "Écho des disparus : jouez depuis votre cimetière",
+      }),
+      playerStatic({ ownGraveyardToExile: true, label: "Votre cimetière est exilé" }),
+    ],
+  },
+  "Crystal Fragments": {
+    abilities: [staticAbility("attached", { power: 1, toughness: 1 }, { label: "+1/+1" }), transformAbility("{5}{W}{W}")],
+  },
+  "Summon: Alexander": {
+    abilities: [
+      chapter([1, 2], [fx.preventDamageToYourCreatures], { label: "Blessures à vos créatures prévenues ce tour-ci" }),
+      chapter([3], [fx.tap(ref.permanentsOf(ref.eachOpponent, { types: ["Creature"] }))], {
+        label: "Engagez les créatures adverses",
+      }),
+    ],
+  },
+  "Terra, Magical Adept": {
+    abilities: [
+      triggered(
+        when.entersSelf,
+        [
+          fx.mill(5, ref.you, { name: "t" }),
+          fx.pickFromZone("graveyard", { types: ["Enchantment"] }, { to: "hand" }, { pool: ref.stored("t"), min: 0 }),
+        ],
+        { label: "Meulez cinq, un enchantement en main" },
+      ),
+      transformAbility("{4}{R}{G}", "Transe : exilez-la, puis renvoyez-la transformée"),
+    ],
+  },
+  "Esper Terra": {
+    abilities: [
+      chapter(
+        [1, 2, 3],
+        [
+          fx.copyToken(ref.target(), { addKeywords: ["haste"], sacrificeAtEndStep: true }),
+          // Approximation : jusqu'à trois marqueurs → trois marqueurs si c'est une Saga, au choix (tous ou aucun).
+          fx.when(
+            cond.targetMatches("t", { subtype: "Saga" }),
+            fx.may(
+              "Mettre trois marqueurs de savoir sur la copie ?",
+              fx.counters(ref.permanentsOf(ref.you, { token: true, enteredThisTurn: true, subtype: "Saga" }), "lore", 3),
+            ),
+          ),
+        ],
+        {
+          targets: [
+            targetObj("t", { types: ["Enchantment"], legendary: false, controller: "you" }, "enchantement non légendaire"),
+          ],
+          label: "Copie d'un enchantement",
+        },
+      ),
+      chapter([4], [fx.addMana("W", "W", "U", "U", "B", "B", "R", "R", "G", "G"), ...flipBack()], {
+        label: "Ajoutez deux mana de chaque couleur",
+      }),
     ],
   },
   "Balamb Garden, SeeD Academy": {

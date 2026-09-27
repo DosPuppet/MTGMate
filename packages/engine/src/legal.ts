@@ -14,6 +14,7 @@ import {
   canPlayLand,
   castableFaces,
   castTerms,
+  equipDiscount,
   FACE_DOWN_SPELL,
   instantLoyalty,
   kickerCostPermanent,
@@ -231,7 +232,7 @@ export function legalActions(s: GameState, player: PlayerId): ActionOption[] {
             0,
             ...s.battlefield.filter((c) => obj(s, c).controller === player).map((c) => obj(s, c).counters["+1/+1"] ?? 0),
           )
-        : abilityReduction(s, player, id, ab);
+        : abilityReduction(s, player, id, ab) + Math.max(0, ...s.battlefield.map((c) => equipDiscount(s, player, ab, c)));
       if (ab.cost.mana && !canPay(s, player, totalCost(ab.cost.mana, 0, undefined, reduction), exclude, { abilitySource: id }))
         return;
       const targets = targetOptions(s, player, ab.targets, id);

@@ -295,6 +295,7 @@ function view(s: GameState, id: ObjectId, c: Characteristics, o: GameObject, att
     // Sort sur la pile : le mana dépensé est porté par l'élément de pile (Unravel).
     manaSpent: o.manaSpent ?? (o.zone === "stack" ? s.stack.find((x) => x.id === id)?.manaSpent : undefined),
     attackedTurn: o.attackedTurn,
+    crewedByThisTurn: o.crewedBy?.turn === s.turn.number ? o.crewedBy.ids : undefined,
     equipped:
       (o.zone === "battlefield" &&
         s.battlefield.some(
@@ -370,6 +371,9 @@ export function computeBattlefield(s: GameState): Map<ObjectId, Characteristics>
           const pl = s.players[o.controller];
           const n = ab.perSpeed ? (pl?.speed ?? 0) : ab.perHand ? (pl?.hand.length ?? 0) : Math.max(0, pl?.life ?? 0);
           mods = { ...mods, power: (mods.power ?? 0) * n, toughness: (mods.toughness ?? 0) * n };
+          // Aettir and Priwen : « F/E de base X/X, où X est votre total de points de vie ».
+          if (mods.setPower !== undefined) mods = { ...mods, setPower: mods.setPower * n };
+          if (mods.setToughness !== undefined) mods = { ...mods, setToughness: mods.setToughness * n };
         } else if (ab.per || ab.perCounter || ab.perGraveyard) {
           // « +1/+1 pour chaque Forêt » / « pour chaque marqueur de camaraderie » / « pour chaque carte de créature de votre cimetière ».
           const f = ab.per ? withChosen(ab.per, o) : null;

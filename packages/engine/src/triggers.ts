@@ -138,6 +138,19 @@ export function checkCondition(s: GameState, c: Condition, controller: PlayerId,
       return s.turn.creatureDied;
     case "firstEndStep":
       return (s.turn.endSteps ?? 0) <= 1;
+    case "firstCombat":
+      return (s.turn.combats ?? 0) <= 1;
+    case "opponentDamagedByLegendary":
+      return opponentsOf(s, controller).some((q) => s.players[q]?.turnStats.damagedByLegendary);
+    case "playerCombatDamageAtLeast":
+      return s.playerOrder.some((q) => (s.players[q]?.turnStats.combatDamageTaken ?? 0) >= c.n);
+    case "noLegendaryCreatureCastThisTurn":
+      return !s.players[controller]?.turnStats.legendaryCreatureSpells;
+    case "controlsGreatestPower": {
+      const creatures = s.battlefield.filter((id) => isCreature(s, id));
+      const best = Math.max(-Infinity, ...creatures.map((id) => chars(s, id).power));
+      return creatures.some((id) => s.objects[id]?.controller === controller && chars(s, id).power === best);
+    }
     case "creaturesDiedAtLeast":
       if (c.underOpponent)
         return opponentsOf(s, controller).reduce((n, q) => n + (s.players[q]?.turnStats.creaturesLost ?? 0), 0) >= c.n;

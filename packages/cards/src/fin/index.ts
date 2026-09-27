@@ -11,6 +11,7 @@ import { GREEN } from "./green";
 import { LANDS } from "./lands";
 import { LEGENDS } from "./legends";
 import { LEGENDS2 } from "./legends2";
+import { LEGENDS3 } from "./legends3";
 import { MULTI } from "./multi";
 import { RED } from "./red";
 import { STARTER } from "./starter";
@@ -33,4 +34,5 @@ export const FIN_SCRIPTS: Record<string, CardScript> = {
   ...STARTER,
   ...LEGENDS,
   ...LEGENDS2,
+  ...LEGENDS3,
 };

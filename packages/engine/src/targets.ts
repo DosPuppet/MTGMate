@@ -28,6 +28,7 @@ export function matchesView(v: LkiSnapshot, f: ObjectFilter, perspective: Player
   if (f.name && v.name !== f.name) return false;
   if (f.tapped !== undefined && !!v.tapped !== f.tapped) return false;
   if (f.equipped !== undefined && !!v.equipped !== f.equipped) return false;
+  if (f.crewedBySource && !(sourceId && v.crewedByThisTurn?.includes(sourceId))) return false;
   if (f.colors && !f.colors.some((c) => v.colors.includes(c))) return false;
   // « avec un marqueur » : `any` accepte n'importe quel type de marqueur.
   if (f.withCounter === "any" && !Object.values(v.counters ?? {}).some((n) => n > 0)) return false;
