@@ -9,7 +9,7 @@ import { faceName } from "../i18n";
 import { type Fx, useGame } from "../store";
 import { Card } from "./Card";
 import { findObjectEl } from "./layout";
-import { useRevealActive } from "./StackReveal";
+import { EffectFrame, useRevealActive } from "./StackReveal";
 
 function targetRect(fx: Fx): Fx["rect"] {
   if (fx.rect) return fx.rect;
@@ -83,6 +83,10 @@ export function Effects() {
   const targeting = useGame((s) => s.casting?.stage === "target");
   // Le panneau de la pile (StackReveal) montre déjà le sort adverse.
   const revealing = useRevealActive();
+  // L'effet joué par l'objet montré (le plus récent de la pile venant de cette carte).
+  const spotEffect = useGame((s) =>
+    s.spotlight ? [...(s.view?.stack ?? [])].reverse().find((i) => i.defId === s.spotlight?.face.defId && i.effect) : undefined,
+  );
   const lang = useGame((s) => s.lang);
   const ref = useRef<HTMLDivElement>(null);
   const [origin, setOrigin] = useState({ x: 0, y: 0 });
@@ -123,6 +127,7 @@ export function Effects() {
               {spotlight.who} joue <strong>{faceName(spotlight.face, lang)}</strong>
             </div>
             <Card face={spotlight.face} width="var(--spotlight-w)" hoverable={false} />
+            {spotEffect && <EffectFrame text={spotEffect.effect as string} ability={spotEffect.kind === "ability"} />}
           </motion.div>
         )}
       </AnimatePresence>

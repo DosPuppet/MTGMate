@@ -477,7 +477,12 @@ function StackView() {
                   : undefined
               }
             />
-            {item.kind === "ability" && <div className="ability-tag">Capacité</div>}
+            {item.kind === "ability" && !item.effect && <div className="ability-tag">Capacité</div>}
+            {item.effect && i === view.stack.length - 1 && (
+              <div className="stack-effect" title={item.effect}>
+                {item.effect}
+              </div>
+            )}
             {item.copy && <div className="ability-tag">Copie</div>}
             {item.kicked && <div className="ability-tag">Kické</div>}
             {item.x > 0 && <div className="ability-tag">X = {item.x}</div>}
@@ -562,7 +567,7 @@ function Banner() {
     const canRespond = myActions(view).some((a) => a.type !== "pass" && a.type !== "tapForMana");
     text =
       top && top.controller !== view.viewer
-        ? `${nameOf(top.controller)} lance ${faceName(top, lang)}${canRespond ? " — répondre ?" : ""}`
+        ? `${nameOf(top.controller)} ${top.kind === "ability" ? "active" : "lance"} ${faceName(top, lang)}${canRespond ? " — répondre ?" : ""}`
         : "Votre sort va se résoudre";
   } else {
     text = `${STEP_LABEL[view.turn.step]} — ${view.turn.active === view.viewer ? "à vous" : nameOf(view.turn.active)}`;

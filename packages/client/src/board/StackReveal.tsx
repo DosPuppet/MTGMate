@@ -65,6 +65,7 @@ export function StackReveal() {
             <strong>{faceName(top, lang)}</strong>
           </div>
           <Card face={top} width="var(--spotlight-w)" hoverable />
+          {top.effect && <EffectFrame text={top.effect} ability={top.kind === "ability"} />}
           {top.targets.length > 0 && (
             <div className="stack-reveal-targets">
               {top.targets.length > 1 ? "Cibles" : "Cible"} : {top.targets.map(nameOf).join(", ")}
@@ -79,6 +80,16 @@ export function StackReveal() {
         </motion.div>
       )}
     </AnimatePresence>
+  );
+}
+
+/** L'effet joué (mode d'un sort modal, capacité d'un permanent), encadré en bleu sous la carte montrée. */
+export function EffectFrame({ text, ability }: { text: string; ability?: boolean }) {
+  return (
+    <div className="effect-frame">
+      <span className="effect-frame-kind">{ability ? "Capacité" : "Mode choisi"}</span>
+      {text}
+    </div>
   );
 }
 

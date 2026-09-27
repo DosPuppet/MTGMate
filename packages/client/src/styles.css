@@ -2320,3 +2320,44 @@ button {
     transform: scaleX(0);
   }
 }
+
+/* Effet joué (mode choisi, capacité) encadré en bleu sous la carte montrée. */
+.effect-frame {
+  max-width: var(--spotlight-w);
+  padding: 6px 10px;
+  border: 2px solid #4da3ff;
+  border-radius: 8px;
+  background: rgba(20, 50, 90, 0.85);
+  box-shadow:
+    0 0 0 1px rgba(77, 163, 255, 0.3),
+    0 0 14px rgba(77, 163, 255, 0.45);
+  color: #e6f1ff;
+  font-size: 13px;
+  line-height: 1.35;
+  text-align: center;
+}
+.effect-frame-kind {
+  display: block;
+  margin-bottom: 2px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #8cc4ff;
+}
+.stack-effect {
+  max-width: calc(var(--stack-w) * 1.6);
+  margin-top: 4px;
+  padding: 2px 6px;
+  border: 1.5px solid #4da3ff;
+  border-radius: 6px;
+  background: rgba(20, 50, 90, 0.9);
+  color: #e6f1ff;
+  font-size: 11px;
+  line-height: 1.25;
+  text-align: center;
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}

@@ -6,7 +6,7 @@
 import { copiedDefId } from "./layers";
 import { legalActions } from "./legal";
 import { costToText } from "./mana";
-import { canPlayLand, castTerms } from "./stack";
+import { canPlayLand, castTerms, modesOf } from "./stack";
 import { chars, decider, isSummoningSick, obj } from "./state";
 import { playerStatic } from "./statics";
 import { attackableDefenders, attackCandidates, blockCandidates } from "./turn";
@@ -94,6 +94,8 @@ export interface StackItemView extends CardFace {
   mode: number;
   /** Copie d'un sort (Thousand-Year Storm). */
   copy: boolean;
+  /** L'effet joué, quand la carte en a plusieurs : mode choisi d'un sort modal, ou capacité (activée, déclenchée). */
+  effect?: string;
 }
 
 export interface PlayerView {
@@ -149,6 +151,25 @@ export interface GameView {
   potentialAttackers: number;
   over: boolean;
   winner: PlayerId | null;
+}
+
+/** Libellé de l'effet joué : mode d'un sort modal (spree, tiered…), ou capacité d'un permanent. */
+function playedEffect(s: GameState, item: GameState["stack"][number]): string | undefined {
+  const d = s.defs[item.sourceDefId];
+  if (!d) return undefined;
+  if (item.kind === "spell") {
+    const modes = modesOf(d);
+    return modes.length > 1 ? modes[item.mode]?.label : undefined;
+  }
+  if (item.inline) return item.inline.label ?? "Capacité";
+  const ab = d.abilities[item.abilityIndex];
+  if (ab?.kind === "triggered" && ab.modes) {
+    const mode = ab.modes[item.mode]?.label;
+    return [ab.label, mode].filter(Boolean).join(" — ") || "Capacité déclenchée";
+  }
+  if (ab?.kind === "triggered") return ab.label ?? "Capacité déclenchée";
+  if (ab?.kind === "activated") return ab.label ?? "Capacité activée";
+  return "Capacité";
 }
 
 export function cardFace(d: CardDef): CardFace {
@@ -285,6 +306,7 @@ export function projectView(s: GameState, viewer: PlayerId): GameView {
       kicked: item.kicked,
       mode: item.mode,
       copy: item.copy ?? false,
+      ...(playedEffect(s, item) ? { effect: playedEffect(s, item) } : {}),
     };
   });
 

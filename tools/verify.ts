@@ -142,12 +142,13 @@ const changed = await changedFiles();
 const uiTouched = changed.some((f) => /packages\/client\/|engine\/src\/view\.ts|server\/src\/protocol\.ts/.test(f));
 if (!flag("no-ui") && (full || flag("ui") || uiTouched)) {
   if (await viteUp()) {
-    ok =
-      (await group([
-        { name: "deck-smoke", cmd: "npx tsx tools/deck-smoke.ts", show: /^ok : partie lancée.*$/ },
-        { name: "ui-smoke", cmd: "npx tsx tools/ui-smoke.ts", show: /^Aucune erreur de page\.$/ },
-        { name: "battlefield-smoke", cmd: "npx tsx tools/battlefield-smoke.ts", show: /^ok : aucune erreur de page$/ },
-      ])) && ok;
+    // L'un après l'autre : en parallèle, les parties jouées dans le navigateur manquent de temps sous la charge.
+    for (const step of [
+      { name: "deck-smoke", cmd: "npx tsx tools/deck-smoke.ts", show: /^ok : partie lancée.*$/ },
+      { name: "ui-smoke", cmd: "npx tsx tools/ui-smoke.ts", show: /^Aucune erreur de page\.$/ },
+      { name: "battlefield-smoke", cmd: "npx tsx tools/battlefield-smoke.ts", show: /^ok : aucune erreur de page$/ },
+    ])
+      ok = (await group([step])) && ok;
   } else {
     console.log("⚠️  tests d'interface sautés : Vite ne répond pas sur http://localhost:5173 (lancer npm run dev)");
     ok = false;
