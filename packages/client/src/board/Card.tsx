@@ -3,6 +3,7 @@ import { motion } from "motion/react";
 import { type CSSProperties, useState } from "react";
 import { faceImage, faceName, faceText, faceType } from "../i18n";
 import { useGame } from "../store";
+import { KeywordBadges } from "./Keywords";
 
 export type Glow = "playable" | "target" | "selectable" | "selected" | "attacking" | "blocking" | "activatable" | null;
 
@@ -127,6 +128,7 @@ export function Card({
               </div>
             )}
             <CounterBadges counters={obj.counters} />
+            {obj.zone === "battlefield" && <KeywordBadges obj={obj} />}
             {obj.prepared && (
               <div className="prepared-badge" title="Préparée : son sort peut être lancé (au bout de votre main)">
                 Préparée

@@ -2154,3 +2154,60 @@ button {
     display: none;
   }
 }
+
+/* Pastilles des capacités actives (vol, portée, garde…), façon MTGA ; détail au survol (.kw-tip). */
+.kw-badges {
+  position: absolute;
+  left: 3%;
+  top: 26%;
+  display: flex;
+  flex-direction: column;
+  gap: 3%;
+  width: 19%;
+  z-index: 2;
+}
+.kw-badge {
+  display: grid;
+  place-items: center;
+  width: 100%;
+  aspect-ratio: 1;
+  min-width: 13px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 30%, #3a4150, #15181e 75%);
+  border: 1px solid rgba(232, 204, 120, 0.85);
+  color: #f3e3b0;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.7);
+  cursor: help;
+}
+.kw-badge svg {
+  width: 72%;
+  height: 72%;
+}
+.kw-badge.restriction {
+  border-color: rgba(255, 120, 110, 0.9);
+  color: #ffb3ab;
+}
+.kw-badge:hover {
+  filter: brightness(1.3);
+}
+.kw-tip {
+  position: fixed;
+  z-index: 1000;
+  translate: 0 -50%;
+  max-width: 260px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding: 6px 9px;
+  border-radius: 7px;
+  background: rgba(14, 16, 22, 0.96);
+  border: 1px solid rgba(232, 204, 120, 0.6);
+  color: #e9edf5;
+  font-size: 12px;
+  line-height: 1.35;
+  pointer-events: none;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.6);
+}
+.kw-tip strong {
+  color: #f3e3b0;
+}

@@ -78,6 +78,8 @@ export interface ObjectView extends CardFace {
   solved?: boolean;
   /** Permanent (ou sort) face cachée du spectateur : la vraie carte, que lui seul connaît (708.5). */
   faceDownCard?: CardFace;
+  /** Coût de sa garde (imprimée ou accordée), pour l'affichage : « {2} », « 3 PV »… */
+  ward?: string;
 }
 
 export interface StackItemView extends CardFace {
@@ -218,7 +220,26 @@ export function objectView(s: GameState, id: ObjectId): ObjectView {
     ...(o.preparedCopy && s.objects[o.preparedCopy] ? { prepared: true } : {}),
     ...(o.classLevel && o.classLevel > 1 ? { classLevel: o.classLevel } : {}),
     ...(o.solved ? { solved: true } : {}),
+    ...(c.keywords.includes("ward") ? { ward: wardCost(c.abilities) } : {}),
   };
+}
+
+/** Coût de la garde (702.21) lu dans sa capacité déclenchée : « à moins de payer … ». */
+function wardCost(abilities: CardDef["abilities"]): string | undefined {
+  const costs = abilities.flatMap((ab) => {
+    if (ab.kind !== "triggered" || ab.trigger.on !== "becomesTarget" || ab.label !== "Garde") return [];
+    const pay = ab.effects[0];
+    if (pay?.op !== "unlessPay") return [];
+    const parts = [
+      pay.mana ? costToText(pay.mana) : "",
+      pay.life ? `${pay.life} PV` : "",
+      pay.lifeAmount ? "PV égaux à sa force" : "",
+      pay.discard ? (pay.discardRandom ? "une carte au hasard" : "défausser une carte") : "",
+      pay.sacrifice ? `sacrifier ${pay.sacrifice} permanents` : "",
+    ].filter(Boolean);
+    return parts.length ? [parts.join(" et ")] : [];
+  });
+  return costs.length ? costs.join(", ") : undefined;
 }
 
 /** 708.5 : le contrôleur d'un permanent face cachée peut le regarder ; les autres joueurs non. */
