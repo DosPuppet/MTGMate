@@ -56,6 +56,7 @@ Ce fichier sert au suivi du projet entre les sessions : où on en est, les règl
 
 - **Langue :**
   - interface, journal, commentaires et documents en **français** ;
+  - l'interface **vouvoie** le joueur (« Votre tour », « À vous de jouer »), jamais de tutoiement ;
   - identifiants de code en anglais ;
   - l'utilisateur écrit en français.
 - **Moteur :**
