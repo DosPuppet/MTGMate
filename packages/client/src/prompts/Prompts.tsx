@@ -493,6 +493,34 @@ function GameOver({ view }: { view: GameView }) {
   );
 }
 
+/** Règle des légendaires : confirmation avant de lancer un légendaire dont vous contrôlez déjà un exemplaire. */
+function LegendConfirm() {
+  const pending = useGame((s) => s.legendConfirm);
+  const confirm = useGame((s) => s.confirmLegend);
+  const cancel = useGame((s) => s.cancelLegend);
+  const view = useGame((s) => s.view);
+  const lang = useGame((s) => s.lang);
+  if (!pending || !view) return null;
+  const existing = view.battlefield.find((o) => o.controller === view.viewer && o.name === pending.name);
+  const shown = existing ? faceName(existing, lang) : pending.name;
+  return (
+    <Modal title="Règle des légendaires">
+      <p className="legend-warning">
+        Vous contrôlez déjà <strong>{shown}</strong>. Si vous lancez ce sort, vous devrez choisir lequel garder : l'autre ira au
+        cimetière.
+      </p>
+      <div className="modal-actions">
+        <button type="button" className="btn" onClick={cancel}>
+          Annuler
+        </button>
+        <button type="button" className="btn primary" onClick={confirm}>
+          Lancer quand même
+        </button>
+      </div>
+    </Modal>
+  );
+}
+
 export function Prompts() {
   const view = useGame((s) => s.view);
   if (!view) return null;
@@ -501,6 +529,7 @@ export function Prompts() {
       <PendingPrompt view={view} />
       <CastingPrompt />
       <AbilityMenu />
+      <LegendConfirm />
       <GraveyardViewer />
       <GameOver view={view} />
     </>

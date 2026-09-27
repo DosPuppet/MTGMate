@@ -143,6 +143,10 @@ interface Store {
   clickPermanent(id: string): void;
   clickPlayer(id: string): void;
   beginCasting(option: PlayableOption, sourceId: string, preset?: string): void;
+  /** Lancement d'un légendaire dont vous contrôlez déjà un exemplaire : en attente de confirmation. */
+  legendConfirm: { option: PlayableOption; sourceId: string; preset?: string; name: string } | null;
+  confirmLegend(): void;
+  cancelLegend(): void;
   chooseMode(index: number): void;
   chooseX(x: number): void;
   chooseKicker(kicked: boolean): void;
@@ -165,6 +169,23 @@ interface Store {
   setHover(h: Hover | null): void;
   toggleSelection(id: string): void;
   openGraveyard(player: string | null): void;
+}
+
+/**
+ * Nom du légendaire en double si l'on lance ce sort : un permanent légendaire du même nom que vous contrôlez déjà
+ * (sinon null). Seulement pour un vrai lancement de la carte (pas une capacité, ni face cachée).
+ */
+function legendDuplicate(view: GameView | null, option: PlayableOption, sourceId: string): string | null {
+  if (!view || option.type !== "cast" || option.faceDown) return null;
+  const card = [...view.hand, ...view.playableExile, ...(view.players[view.viewer]?.graveyard ?? [])].find(
+    (c) => c.id === sourceId,
+  );
+  if (!card) return null;
+  const name = option.faceName ?? card.name;
+  const typeLine = option.faceName ? (card.otherFaces?.find((f) => f?.name === option.faceName)?.typeLine ?? "") : card.typeLine;
+  if (!/\bLegendary\b/.test(typeLine)) return null;
+  const mine = view.battlefield.some((o) => o.controller === view.viewer && o.name === name && /\bLegendary\b/.test(o.typeLine));
+  return mine ? name : null;
 }
 
 export function myActions(view: GameView | null): ActionOption[] {
@@ -601,6 +622,7 @@ export const useGame = create<Store>((set, get) => {
               attackers: forced,
               attackTargets: {},
               aimingAttacker: null,
+              legendConfirm: null,
               blocks: {},
               selectedBlocker: null,
               selection: [],
@@ -719,6 +741,12 @@ export const useGame = create<Store>((set, get) => {
 
     beginCasting(option, sourceId, preset) {
       set({ abilityMenu: null });
+      // Règle des légendaires (704.5j) : prévenir avant de lancer un doublon (on ne peut plus annuler ensuite).
+      const dup = legendDuplicate(get().view, option, sourceId);
+      if (dup && get().legendConfirm?.sourceId !== sourceId) {
+        return set({ legendConfirm: { option, sourceId, preset, name: dup } });
+      }
+      set({ legendConfirm: null });
       continueCasting({
         option,
         sourceId,
@@ -734,6 +762,17 @@ export const useGame = create<Store>((set, get) => {
         spec: null,
         preset,
       });
+    },
+
+    legendConfirm: null,
+
+    confirmLegend() {
+      const c = get().legendConfirm;
+      if (c) get().beginCasting(c.option, c.sourceId, c.preset);
+    },
+
+    cancelLegend() {
+      set({ legendConfirm: null });
     },
 
     chooseMode(index) {
@@ -790,7 +829,7 @@ export const useGame = create<Store>((set, get) => {
     },
 
     cancel() {
-      set({ casting: null, abilityMenu: null, selectedBlocker: null, aimingAttacker: null });
+      set({ casting: null, abilityMenu: null, selectedBlocker: null, aimingAttacker: null, legendConfirm: null });
     },
 
     toggleAttacker(id) {

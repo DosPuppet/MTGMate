@@ -2367,3 +2367,9 @@ button {
   border-color: rgba(255, 255, 255, 0.25);
   opacity: 0.9;
 }
+
+/* Confirmation de la règle des légendaires (prompts/Prompts.tsx). */
+.legend-warning {
+  max-width: 420px;
+  line-height: 1.45;
+}
