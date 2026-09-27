@@ -50,7 +50,7 @@ Ce fichier sert au suivi du projet entre les sessions : où on en est, les règl
   
   **Le détail d'un nouveau lot va là**, et CLAUDE.md ne reçoit qu'une ligne d'avancement.
 - `docs/deploiement.md` : mise en production (pm2, nginx).
-- Textes Oracle des cartes à faire : `npm run coverage -- --set <ext> --missing`, puis `--card "<nom>"`.
+- Textes Oracle des cartes à faire : `npm run coverage -- --set <ext> --text [--color W|U|B|R|G|M|C|L]` ; une carte : `--card "<nom>"`.
 
 ## Conventions
 

@@ -3,6 +3,10 @@
  * (pour prioriser le travail de l'étape 4b).
  *
  * Usage : npm run coverage [-- --set all|standard|main|<set>] [-- --list <mécanique>] [-- --missing] [-- --card "<nom>"]
+ *         npm run coverage -- --set FIN --text [--color W|U|B|R|G|M|C|L]
+ *
+ * --text : textes Oracle des cartes non gérées (toutes faces), pour préparer un lot ; --color filtre par couleur
+ * (M = multicolore, C = incolore, L = terrain).
  */
 import { CARDS, isMainSet, SET_BY_CODE, SETS } from "@mtgx/cards";
 
@@ -108,6 +112,28 @@ const i = process.argv.indexOf("--list");
 if (i >= 0) {
   const m = process.argv[i + 1] ?? "sans mécanique bloquante détectée";
   console.log(`\n${m} :\n  ${(byMechanic.get(m) ?? []).join("\n  ")}`);
+}
+
+if (process.argv.includes("--text")) {
+  const color = arg("--color")?.toUpperCase();
+  const col = (c: (typeof missing)[number]) =>
+    c.types.includes("Land") && !c.types.includes("Creature")
+      ? "L"
+      : c.colors.length === 0
+        ? "C"
+        : c.colors.length > 1
+          ? "M"
+          : (c.colors[0] as string);
+  for (const c of missing.filter((x) => !color || col(x) === color)) {
+    const pt = c.power !== undefined ? ` ${c.power}/${c.toughness}` : "";
+    console.log(`\n## ${c.name} ${c.manaCostText ?? ""} — ${c.typeLine}${pt}${c.layout ? ` {${c.layout}}` : ""}`);
+    if (c.faceDefs?.length) {
+      for (const f of c.faceDefs) {
+        const fpt = f.power !== undefined ? ` ${f.power}/${f.toughness}` : "";
+        console.log(`[${f.name} — ${f.typeLine}${fpt}]\n${f.text}`);
+      }
+    } else console.log(c.text);
+  }
 }
 
 if (process.argv.includes("--missing")) {

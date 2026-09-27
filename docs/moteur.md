@@ -41,4 +41,4 @@ Moteur pur et déterministe (`packages/engine/src`). L'état est sérialisable ;
   - réutiliser les doublements (`doubler`, multiplicateurs de déclenchements dans `triggers.ts`) ;
   - réutiliser les permissions de lancer (`grantPlay`, `castTerms`) et les modifications à l'arrivée (`StackItem.arrival`).
 - Une capacité d'un permanent inflige ses blessures avec ce permanent pour source (`damageSource`).
-- Les scripts de cartes vont dans `packages/cards/src/<ext>/`. Les textes des cartes manquantes s'obtiennent avec `npm run coverage -- --set <ext> --missing`.
+- Les scripts de cartes vont dans `packages/cards/src/<ext>/`. Les textes des cartes manquantes s'obtiennent avec `npm run coverage -- --set <ext> --text`.
