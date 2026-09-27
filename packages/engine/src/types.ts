@@ -73,7 +73,11 @@ export type Keyword =
   /** Loot, the Anomaly : une force négative inflige ses blessures de combat comme si elle était positive. */
   | "absolutePowerDamage"
   /** Ghalta the Immovable : peut attaquer comme si elle n'avait pas le défenseur. */
-  | "attacksDespiteDefender";
+  | "attacksDespiteDefender"
+  /** Pilote (Aetherdrift) : monte et équipe comme si sa force était supérieure de 2. */
+  | "crewPlus2"
+  /** Interface Ace : monte et équipe avec son endurance plutôt que sa force. */
+  | "crewWithToughness";
 
 /** Restrictions : affichées différemment des mots-clés. */
 export const RESTRICTIONS: readonly Keyword[] = [
@@ -296,6 +300,8 @@ export interface ManaAbilityDef {
   };
   /** Gene Pollinator : « engagez un permanent dégagé que vous contrôlez » en plus de {T} (choisi automatiquement). */
   tapAnother?: boolean;
+  /** « N'activez que si vous contrôlez… » (Verges d'Aetherdrift). */
+  condition?: Condition;
   /** Effet si ce mana sert à lancer un sort correspondant (Carnelian Orb : célérité ; Pyromancer's Goggles : copie). */
   rider?: { spell: ObjectFilter; effect: "haste" | "copy" };
   amount: number;
@@ -320,6 +326,8 @@ export interface ActivatedAbilityDef {
   fromGraveyard?: boolean;
   /** Capacité activée depuis la main (cycle, « défaussez cette carte : … »). */
   fromHand?: boolean;
+  /** Capacité de cycle (702.29) : déclencheurs « quand vous cyclez cette carte ». */
+  cycling?: boolean;
   /** « N'activez qu'une fois par tour. » */
   oncePerTurn?: boolean;
   /** « N'activez que si… » / « … que pendant votre tour ». */
@@ -344,6 +352,8 @@ export interface CostDef {
   tapOthers?: { filter: ObjectFilter; count: number };
   /** Engager la créature à laquelle la source est attachée (elle doit pouvoir utiliser {T}). */
   tapAttached?: boolean;
+  /** Épuiser la source (701.43) : elle ne se dégagera pas lors de la prochaine étape de dégagement de son contrôleur. */
+  exertSelf?: boolean;
   /** Capacité de loyauté (606) : marqueurs de loyauté ajoutés (+N) ou retirés (−N). */
   loyalty?: number;
   /** « −X » : X marqueurs de loyauté retirés (X choisi à l'activation). */
@@ -550,6 +560,8 @@ export type TriggerSpec =
   | { on: "sacrifice"; who: ObjectFilter }
   /** « Chaque fois que cette Monture devient montée » (702.171). */
   | { on: "saddled" }
+  /** « Chaque fois que cette créature monte une Monture ou équipe un Véhicule [pendant votre phase principale] » ; l'objet de l'événement est la Monture ou le Véhicule. */
+  | { on: "crews"; mainPhase?: boolean }
   /** « Quand cette créature est retournée face visible » */
   | { on: "turnedFaceUp" }
   /** « Quand vous déverrouillez cette porte » (Salle : `door` est fixé à l'import d'après la face). */
@@ -564,6 +576,10 @@ export type TriggerSpec =
   | { on: "diesOrExiled"; who: "self" | ObjectFilter; minPower?: number }
   /** « Chaque fois que vous jouez un terrain » */
   | { on: "playLand" }
+  /** « Chaque fois que [vous] défaussez une ou plusieurs cartes » (montant : leur nombre). */
+  | { on: "discardBatch"; whose: "you" | "opponent" | "any" }
+  /** « Quand vous cyclez cette carte » (depuis le cimetière ; montant : le X du coût de cycle). */
+  | { on: "cycleSelf" }
   /** « Chaque fois que vous activez une capacité de loyauté [en retirant au moins N marqueurs] » ; `byOpponent` : un adversaire l'active. */
   | { on: "loyaltyActivated"; minRemoved?: number; byOpponent?: boolean };
 
@@ -645,7 +661,9 @@ export type Condition =
   | { kind: "solved" }
   | { kind: "fullyUnlocked" }
   /** Un joueur (encore en partie) ne contrôle aucune créature (Sothera, the Supervoid). */
-  | { kind: "playerWithoutCreatures" };
+  | { kind: "playerWithoutCreatures" }
+  /** Un adversaire a N points de vie ou moins (Bloodghast). */
+  | { kind: "opponentLifeAtMost"; n: number };
 
 /** Modifications apportées par un effet continu, rangées par couche (613). */
 export interface LayerMods {
@@ -1198,7 +1216,8 @@ export type Effect =
   /** Les créatures désignées ont la connivence (701.50) : leur contrôleur pioche, défausse ; non-terrain : marqueur +1/+1. */
   | { op: "connive"; what: Ref }
   /** La Monture source devient montée jusqu'à la fin du tour (702.171a). */
-  | { op: "saddle" }
+  /** La source (ou le permanent désigné) devient montée jusqu'à la fin du tour. */
+  | { op: "saddle"; what?: Ref }
   /** Met les cartes désignées sur le champ de bataille face cachée (manifester ; `ward` : cape). */
   | { op: "putFaceDown"; what: Ref; ward: boolean }
   /** Manifestation effroyable (701.62) : regarder les deux cartes du dessus, en manifester une, l'autre au cimetière. */
@@ -1392,6 +1411,8 @@ export interface GameObject {
   manaSpent?: number;
   /** Monture (702.171) : tour pendant lequel elle a été montée (« sellée »). */
   saddledTurn?: number;
+  /** Épuisé : ne se dégage pas lors de la prochaine étape de dégagement de son contrôleur. */
+  exerted?: boolean;
   /** Classe (716) : niveau actuel (1 par défaut). */
   classLevel?: number;
   /** Affaire (719) : résolue. */

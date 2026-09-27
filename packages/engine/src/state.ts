@@ -57,6 +57,8 @@ export type RulesEvent =
   | { e: "cast"; player: PlayerId; stackId: ObjectId; instantSorceryBefore?: number }
   /** Cartes défaussées (nouveaux identifiants, dans le cimetière). */
   | { e: "discard"; player: PlayerId; cards: ObjectId[] }
+  | { e: "discardBatch"; player: PlayerId; count: number }
+  | { e: "cycled"; player: PlayerId; card: ObjectId; x: number }
   | { e: "attack"; attacker: ObjectId; defender: PlayerId }
   | { e: "damage"; sourceId: ObjectId | null; sourceController?: PlayerId; target: string; amount: number; combat: boolean }
   | { e: "step"; step: Step; active: PlayerId }
@@ -85,6 +87,8 @@ export type RulesEvent =
   | { e: "explore"; objectId: ObjectId; land: boolean }
   /** Une Monture devient montée. */
   | { e: "saddled"; objectId: ObjectId }
+  /** Des créatures ont monté une Monture ou équipé un Véhicule (coût payé). */
+  | { e: "crewed"; vehicle: ObjectId; crew: ObjectId[] }
   /** Un joueur manifeste avec effroi (déclencheurs « chaque fois que vous manifestez avec effroi »). */
   | { e: "manifestDread"; player: PlayerId }
   /** Un permanent face cachée est retourné face visible. */

@@ -190,6 +190,7 @@ export function parseCycling(text: string): CardDef["abilities"][number] | undef
       ? [{ op: "search", filter, count: 1, to: { to: "hand" } }]
       : [{ op: "draw", who: { kind: "you" }, amount: 1 }],
     fromHand: true,
+    cycling: true,
     label: kind ? `Cycle de ${kind === "Basic land" ? "terrain de base" : kind === "Land" ? "terrain" : kind}` : "Cycle",
   };
 }
@@ -228,27 +229,8 @@ function intrinsicAbilities(
       label: "Prouesse",
     });
   }
-  if (saddle !== undefined) {
-    // 702.171a : « Monture N : engagez des créatures de force totale N ou plus : cette Monture devient montée. Rituel. »
-    out.push({
-      kind: "activated",
-      cost: { crew: saddle },
-      targets: [],
-      effects: [{ op: "saddle" }],
-      sorcerySpeed: true,
-      label: `Monture ${saddle}`,
-    });
-  }
-  if (crew !== undefined) {
-    // 702.122 : « Équipage N : engagez des créatures de force totale N ou plus : ce Véhicule devient une créature-artefact. »
-    out.push({
-      kind: "activated",
-      cost: { crew },
-      targets: [],
-      effects: [{ op: "modify", what: { kind: "self" }, mods: { addTypes: ["Artifact", "Creature"] }, duration: "endOfTurn" }],
-      label: `Équipage ${crew}`,
-    });
-  }
+  if (saddle !== undefined) out.push(dsl.saddleAbility(saddle));
+  if (crew !== undefined) out.push(dsl.crewAbility(crew));
   if (equip) {
     out.push({
       kind: "activated",

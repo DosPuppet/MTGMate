@@ -386,6 +386,15 @@ export const fx = {
   setLife: (amount: Amount, who: Ref = ref.you): Effect => ({ op: "setLife", who, amount }),
   /** « Vous contrôlez [le joueur] pendant son prochain tour » (722). */
   controlNextTurn: (who: Ref): Effect => ({ op: "controlNextTurn", who }),
+  /** « [Cette Monture] devient montée jusqu'à la fin du tour ». */
+  saddle: (what: Ref = ref.self): Effect => ({ op: "saddle", what }),
+  /** « [Ce Véhicule] devient une créature-artefact jusqu'à la fin du tour ». */
+  animateVehicle: (what: Ref = ref.self): Effect => ({
+    op: "modify",
+    what,
+    mods: { addTypes: ["Artifact", "Creature"] },
+    duration: "endOfTurn",
+  }),
   exileFromOwnHand: (who: Ref, store: string): Effect => ({ op: "exileFromOwnHand", who, store }),
   tapOrSacrifice: { op: "tapOrSacrifice" } as Effect,
   /** Manifester (sans garde) ou envelopper d'une cape (`ward`) les cartes désignées. */
@@ -637,6 +646,7 @@ export function manaAbility(
     rider?: ManaAbilityDef["rider"];
     distinctPowers?: boolean;
     tapAnother?: boolean;
+    condition?: Condition;
   } = {},
 ): ManaAbilityDef {
   return {
@@ -650,6 +660,7 @@ export function manaAbility(
     rider: opts.rider,
     amountDistinctPowers: opts.distinctPowers,
     tapAnother: opts.tapAnother,
+    condition: opts.condition,
   };
 }
 
@@ -674,6 +685,8 @@ export function activated(opts: {
   tapOthers?: { filter: ObjectFilter; count: number };
   /** Engager la créature équipée (« {T} » de la créature, pour une capacité portée par l'Équipement). */
   tapAttached?: boolean;
+  /** Épuiser la source (« Exert »). */
+  exert?: boolean;
   payLife?: number;
   targets?: TargetSpec[];
   effects: Effects;
@@ -707,6 +720,7 @@ export function activated(opts: {
       removeCounters: opts.removeCounters,
       tapOthers: opts.tapOthers,
       tapAttached: opts.tapAttached,
+      exertSelf: opts.exert,
       payLife: opts.payLife,
       exileSelf: opts.exileSelf,
       discardSelf: opts.discardSelf,
@@ -790,6 +804,8 @@ export const when = {
   diesOrExiled: (who: "self" | ObjectFilter, minPower?: number): TriggerSpec => ({ on: "diesOrExiled", who, minPower }),
   /** « Chaque fois que vous jouez un terrain » */
   playLand: { on: "playLand" } as TriggerSpec,
+  /** « Chaque fois que vous défaussez une ou plusieurs cartes » (`amount.eventAmount` : leur nombre). */
+  discardBatch: (whose: "you" | "opponent" | "any" = "you"): TriggerSpec => ({ on: "discardBatch", whose }),
   yourUpkeep: { on: "step", step: "upkeep", whose: "you" } as TriggerSpec,
   yourEndStep: { on: "step", step: "end", whose: "you" } as TriggerSpec,
   eachEndStep: { on: "step", step: "end", whose: "any" } as TriggerSpec,
@@ -826,6 +842,8 @@ export const when = {
   scryOrSurveil: { on: "scryOrSurveil" } as TriggerSpec,
   /** « Quand vous défaussez cette carte » (avec `fromGraveyard`). */
   discardSelf: { on: "discardSelf" } as TriggerSpec,
+  /** « Quand vous cyclez cette carte » (avec `fromGraveyard` ; `amount.eventAmount` : le X du coût). */
+  cycleSelf: { on: "cycleSelf" } as TriggerSpec,
   /** « Quand vous lancez ce sort » */
   castSelf: { on: "castSelf" } as TriggerSpec,
   /** « Quand cette créature est retournée face visible » */
@@ -836,6 +854,8 @@ export const when = {
   sacrifice: (who: ObjectFilter): TriggerSpec => ({ on: "sacrifice", who }),
   /** « Chaque fois que cette Monture devient montée » */
   saddled: { on: "saddled" } as TriggerSpec,
+  /** « Chaque fois que cette créature monte une Monture ou équipe un Véhicule [pendant votre phase principale] » */
+  crews: (mainPhase = false): TriggerSpec => ({ on: "crews", mainPhase }),
   /** « Quand cette Classe atteint le niveau N » */
   classLevel: (level: number): TriggerSpec => ({ on: "classLevel", level }),
   /** « Quand vous déverrouillez cette porte » (Salle ; la porte est fixée à l'import). */
@@ -906,11 +926,35 @@ export const cond = {
   /** Une seule créature attaque, et elle attaque un joueur. */
   attackingAlone: { kind: "attackingAlone" } as Condition,
   playerWithoutCreatures: { kind: "playerWithoutCreatures" } as Condition,
+  opponentLifeAtMost: (n: number): Condition => ({ kind: "opponentLifeAtMost", n }),
   opponentDealtNoncombatDamageLastTurn: { kind: "opponentDealtNoncombatDamageLastTurn" } as Condition,
   spellCastFromHand: { kind: "spellCastFromHand" } as Condition,
   spellCastFromGraveyard: { kind: "spellCastFromGraveyard" } as Condition,
   sourceDealtCombatDamage: { kind: "sourceDealtCombatDamage" } as Condition,
 };
+
+/** Équipage N (702.122) : « engagez des créatures de force totale N ou plus : ce Véhicule devient une créature-artefact ». */
+export function crewAbility(n: number): ActivatedAbilityDef {
+  return {
+    kind: "activated",
+    cost: { crew: n },
+    targets: [],
+    effects: [{ op: "modify", what: { kind: "self" }, mods: { addTypes: ["Artifact", "Creature"] }, duration: "endOfTurn" }],
+    label: `Équipage ${n}`,
+  };
+}
+
+/** Monture N (702.171) : « engagez des créatures de force totale N ou plus : cette Monture devient montée. Rituel. » */
+export function saddleAbility(n: number): ActivatedAbilityDef {
+  return {
+    kind: "activated",
+    cost: { crew: n },
+    targets: [],
+    effects: [{ op: "saddle" }],
+    sorcerySpeed: true,
+    label: `Monture ${n}`,
+  };
+}
 
 /**
  * Garde (702.21) : « Chaque fois que ce permanent devient la cible d'un sort ou d'une capacité qu'un adversaire

@@ -3,7 +3,7 @@
  */
 import { type DamageSource, dealDamage, destroy, drawCard, putIntoGraveyard, sourceFromObject } from "./actions";
 import { ask } from "./choices";
-import { announceDiscard, drawBonus } from "./effects";
+import { announceDiscard, announceDiscardBatch, drawBonus } from "./effects";
 import { RulesError, resolveTop } from "./stack";
 import {
   alivePlayers,
@@ -186,7 +186,13 @@ function beginStep(s: GameState): void {
     case "untap":
       for (const id of s.battlefield) {
         const o = obj(s, id);
-        if (o.controller !== active || !o.tapped) continue;
+        if (o.controller !== active) continue;
+        // 701.43 : un permanent épuisé ne se dégage pas lors de la prochaine étape de dégagement.
+        if (o.exerted) {
+          o.exerted = undefined;
+          continue;
+        }
+        if (!o.tapped) continue;
         if (hasKeyword(s, id, "doesntUntap")) continue;
         // 122.1d : un marqueur d'étourdissement est retiré à la place du dégagement.
         if (counterCount(o, "stun") > 0) changeCounters(s, o, "stun", -1);
@@ -266,6 +272,7 @@ export function discardToHandSize(s: GameState, p: PlayerId, cards: ObjectId[], 
   }
   const defIds = cards.map((c) => obj(s, c).defId);
   for (const c of cards) announceDiscard(s, p, moveObject(s, c, "graveyard"));
+  announceDiscardBatch(s, p, cards.length);
   emit({ type: "discard", player: p, defIds });
   finishCleanup(s);
 }

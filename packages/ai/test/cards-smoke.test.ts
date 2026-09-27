@@ -42,6 +42,8 @@ const LIBRARY = [
 
 /** Permanents supplémentaires du joueur 1 pour les cartes qui en exigent (« Enchant artifact you control »). */
 const EXTRA_P1: Record<string, string[]> = { "Hardlight Containment": ["Nutrient Block"] };
+/** Cartes supplémentaires dans le cimetière du joueur 1 (« carte d'artefact ciblée de votre cimetière »). */
+const EXTRA_P1_GRAVEYARD: Record<string, string[]> = { "Tune Up": ["Nutrient Block"] };
 
 function setup(c: CardDef): GameState {
   return scenario({
@@ -56,7 +58,17 @@ function setup(c: CardDef): GameState {
         ...(EXTRA_P1[c.name] ?? []),
       ],
       hand: [c, "Forest"],
-      graveyard: ["Opt", "Stab", "Helpful Hunter", "Llanowar Elves", "Forest", "Bake into a Pie", "Giant Growth", "Zombify"],
+      graveyard: [
+        "Opt",
+        "Stab",
+        "Helpful Hunter",
+        "Llanowar Elves",
+        "Forest",
+        "Bake into a Pie",
+        "Giant Growth",
+        "Zombify",
+        ...(EXTRA_P1_GRAVEYARD[c.name] ?? []),
+      ],
       library: LIBRARY,
     },
     p2: {

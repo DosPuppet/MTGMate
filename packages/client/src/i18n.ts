@@ -61,6 +61,8 @@ export const KEYWORD_LABEL: Record<Keyword, string> = {
   cantBlock: "Ne peut pas bloquer",
   canBlockOnlyFlyers: "Ne bloque que les créatures volantes",
   cantBeBlockedByMoreThanOne: "Bloquée par une seule créature au plus",
+  crewPlus2: "Monte et équipe avec 2 de force en plus",
+  crewWithToughness: "Monte et équipe avec son endurance",
   cantAttack: "Ne peut pas attaquer",
   unblockable: "Ne peut pas être bloquée",
   mustAttack: "Attaque à chaque combat",

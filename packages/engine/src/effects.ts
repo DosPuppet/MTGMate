@@ -508,6 +508,11 @@ export function announceDiscard(s: GameState, player: PlayerId, card: ObjectId |
   if (card) rulesEvent(s, { e: "discard", player, cards: [card] });
 }
 
+/** Fin d'une défausse : « chaque fois que vous défaussez une ou plusieurs cartes » (une fois, avec leur nombre). */
+export function announceDiscardBatch(s: GameState, player: PlayerId, count: number): void {
+  if (count > 0) rulesEvent(s, { e: "discardBatch", player, count });
+}
+
 /** Numéro du prochain tour de ce joueur (tour en cours exclu). */
 function nextTurnOf(s: GameState, player: PlayerId): number {
   const alive = s.playerOrder.filter((p) => !s.players[p]?.lost);
@@ -715,6 +720,7 @@ export function runEffect(s: GameState, r: Resolution, e: Effect): OpResult {
         if (!hand.includes(id)) return;
         emit({ type: "discard", player: p, defIds: [s.objects[id]?.defId ?? ""] });
         announceDiscard(s, p, moveObject(s, id, "graveyard"));
+        announceDiscardBatch(s, p, 1);
       }
       // Garde « sacrifiez trois permanents » (Emrakul, the Exigent Doom).
       if (e.sacrifice) {
@@ -800,6 +806,7 @@ export function runEffect(s: GameState, r: Resolution, e: Effect): OpResult {
         if (hand.length === 0) continue;
         emit({ type: "discard", player: p, defIds: hand.map((id) => s.objects[id]?.defId ?? "") });
         for (const id of hand) announceDiscard(s, p, moveObject(s, id, "graveyard"));
+        announceDiscardBatch(s, p, hand.length);
       }
       for (const p of yes) for (let i = 0; i < 7; i++) drawCard(s, p);
       return;
@@ -1192,6 +1199,7 @@ export function runEffect(s: GameState, r: Resolution, e: Effect): OpResult {
             announceDiscard(s, p, moveObject(s, id, "graveyard"));
           } else if (onBattlefield(s, id)) sacrifice(s, id);
         }
+        if (choice === "discard") announceDiscardBatch(s, p, picked.length);
       }
       return;
     }
@@ -1527,6 +1535,7 @@ export function runEffect(s: GameState, r: Resolution, e: Effect): OpResult {
           if (toField) moveObject(s, id, "battlefield");
           else announceDiscard(s, p, moveObject(s, id, "graveyard"));
         }
+        announceDiscardBatch(s, p, chosen.length);
       }
       return;
     }
@@ -2496,16 +2505,19 @@ export function runEffect(s: GameState, r: Resolution, e: Effect): OpResult {
         const nonland = !s.defs[s.objects[card]?.defId ?? ""]?.types.includes("Land");
         emit({ type: "discard", player: p, defIds: [s.objects[card]?.defId ?? ""] });
         announceDiscard(s, p, moveObject(s, card, "graveyard"));
+        announceDiscardBatch(s, p, 1);
         if (nonland && onBattlefield(s, id)) changeCounters(s, o, P1P1, 1);
       }
       return;
     }
     case "saddle": {
-      const o = s.objects[ctx.sourceId];
-      if (o?.zone !== "battlefield") return;
-      o.saddledTurn = s.turn.number;
-      bump(s);
-      rulesEvent(s, { e: "saddled", objectId: o.id });
+      for (const id of e.what ? resolveRef(s, ctx, e.what) : [ctx.sourceId]) {
+        const o = s.objects[id];
+        if (o?.zone !== "battlefield") continue;
+        o.saddledTurn = s.turn.number;
+        bump(s);
+        rulesEvent(s, { e: "saddled", objectId: o.id });
+      }
       return;
     }
     case "putFaceDown": {

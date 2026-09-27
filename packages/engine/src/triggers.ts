@@ -111,6 +111,8 @@ export function simultaneously<T>(s: GameState, fn: () => T): T {
 
 export function checkCondition(s: GameState, c: Condition, controller: PlayerId, sourceId?: ObjectId): boolean {
   switch (c.kind) {
+    case "opponentLifeAtMost":
+      return opponentsOf(s, controller).some((p) => (s.players[p]?.life ?? 0) <= c.n);
     case "playerWithoutCreatures":
       return s.playerOrder.some(
         (p) => !s.players[p]?.lost && !s.battlefield.some((id) => s.objects[id]?.controller === p && isCreature(s, id)),
@@ -343,6 +345,8 @@ function matchTrigger(s: GameState, ev: RulesEvent, t: TriggerSpec, src: Source)
     }
     case "discard":
       return ev.e === "discard" && whose(t.whose, ev.player, me) ? { objectId: ev.cards[0], player: ev.player } : null;
+    case "discardBatch":
+      return ev.e === "discardBatch" && whose(t.whose, ev.player, me) ? { player: ev.player, amount: ev.count } : null;
     case "loyaltyActivated": {
       if (ev.e !== "loyalty") return null;
       if (t.byOpponent ? ev.player === me : ev.player !== me) return null;
@@ -396,6 +400,11 @@ function matchTrigger(s: GameState, ev: RulesEvent, t: TriggerSpec, src: Source)
     }
     case "saddled":
       return ev.e === "saddled" && ev.objectId === src.id ? { objectId: src.id, player: src.view.controller } : null;
+    case "crews": {
+      if (ev.e !== "crewed" || !ev.crew.includes(src.id)) return null;
+      if (t.mainPhase && (s.turn.active !== me || (s.turn.step !== "main1" && s.turn.step !== "main2"))) return null;
+      return { objectId: ev.vehicle, player: me };
+    }
     case "turnedFaceUp":
       return ev.e === "turnedFaceUp" && ev.objectId === src.id ? { objectId: src.id, player: src.view.controller } : null;
     case "unlockDoor":
@@ -413,6 +422,8 @@ function matchTrigger(s: GameState, ev: RulesEvent, t: TriggerSpec, src: Source)
       return ev.e === "playLand" && ev.player === me ? { objectId: ev.objectId, player: me } : null;
     case "castSelf":
       return ev.e === "cast" && ev.stackId === src.id ? { objectId: src.id, player: me } : null;
+    case "cycleSelf":
+      return ev.e === "cycled" && ev.card === src.id ? { objectId: src.id, player: ev.player, amount: ev.x } : null;
     case "discardSelf":
       return ev.e === "discard" && ev.cards.includes(src.id) ? { objectId: src.id, player: ev.player } : null;
     case "step":

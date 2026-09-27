@@ -23,6 +23,7 @@ import tdmData from "../data/tdm.json";
 import tlaData from "../data/tla.json";
 import tmtData from "../data/tmt.json";
 import woeData from "../data/woe.json";
+import { DFT_SCRIPTS } from "./dft/index";
 import { EOE_SCRIPTS } from "./eoe/index";
 import { FDN_SCRIPTS } from "./fdn/index";
 import { FRA_SCRIPTS } from "./fra/index";
@@ -57,7 +58,7 @@ export const SETS: CardSet[] = [
     data: eoeData as RawCard[],
     scripts: EOE_SCRIPTS,
   },
-  { code: "DFT", name: "Aetherdrift", nameFr: "Aetherdrift", mainMax: 291, data: dftData as RawCard[], scripts: {} },
+  { code: "DFT", name: "Aetherdrift", nameFr: "Aetherdrift", mainMax: 291, data: dftData as RawCard[], scripts: DFT_SCRIPTS },
   {
     code: "OTJ",
     name: "Outlaws of Thunder Junction",

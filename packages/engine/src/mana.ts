@@ -4,6 +4,7 @@
 import { sacrifice } from "./actions";
 import { chars, defOf, isCreature, isSummoningSick, obj, snapshot, tapObject } from "./state";
 import { matchesObjectFilter, matchesView, withChosen } from "./targets";
+import { checkCondition } from "./triggers";
 import type { GameState, LkiSnapshot, ManaAbilityDef, ManaCost, ManaType, ObjectId, PlayerId } from "./types";
 import { MANA_TYPES } from "./types";
 
@@ -111,6 +112,7 @@ function canActivateMana(s: GameState, id: ObjectId, ab: ManaAbilityDef): boolea
   if (ab.cost.mana) return false;
   if (ab.cost.tap && (o.tapped || isSummoningSick(s, id))) return false;
   if (ab.tapAnother && !otherToTap(s, id)) return false;
+  if (ab.condition && !checkCondition(s, ab.condition, o.controller, id)) return false;
   return true;
 }
 

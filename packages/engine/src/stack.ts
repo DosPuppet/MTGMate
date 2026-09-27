@@ -5,7 +5,7 @@
  */
 import { loseLife, sacrifice as sacrificePermanent } from "./actions";
 import { ask } from "./choices";
-import { announceDiscard, evalAmount, runEffect } from "./effects";
+import { announceDiscard, announceDiscardBatch, evalAmount, runEffect } from "./effects";
 import { RulesError } from "./errors";
 import { manaValue, payMana, totalCost } from "./mana";
 import {
@@ -621,6 +621,8 @@ export function castSpell(s: GameState, player: PlayerId, card: ObjectId, choice
     warped: warp ? true : undefined,
     manaSpent: free ? 0 : manaValue(cost),
     fromHand: terms.source === "hand" || undefined,
+    // Permanents sacrifiés comme coût additionnel (« si le permanent sacrifié était un Véhicule »).
+    sacrificed: sacrifice.length ? [...sacrifice] : undefined,
     uncounterable: uncounterable || undefined,
   };
   s.stack.push(item);
@@ -649,6 +651,7 @@ export function castSpell(s: GameState, player: PlayerId, card: ObjectId, choice
   if (discard.length) {
     emit({ type: "discard", player, defIds: discard.map((id) => obj(s, id).defId) });
     for (const id of discard) announceDiscard(s, player, moveObject(s, id, "graveyard"));
+    announceDiscardBatch(s, player, discard.length);
   }
   for (const id of sacrifice) sacrificePermanent(s, id);
   s.priority.passes = 0;
@@ -784,15 +787,21 @@ export function tapOthersOptions(s: GameState, player: PlayerId, source: ObjectI
 function crewOptions(s: GameState, player: PlayerId, source: ObjectId, n: number): ObjectId[] | null {
   const ids = s.battlefield
     .filter((id) => id !== source && obj(s, id).controller === player && !obj(s, id).tapped && isCreature(s, id))
-    .sort((a, b) => chars(s, a).power - chars(s, b).power);
+    .sort((a, b) => crewPower(s, a) - crewPower(s, b));
   const out: ObjectId[] = [];
   let total = 0;
   for (const id of ids) {
     if (total >= n) break;
     out.push(id);
-    total += Math.max(0, chars(s, id).power);
+    total += Math.max(0, crewPower(s, id));
   }
   return total >= n ? out : null;
+}
+
+/** Force comptée pour monter et équiper : endurance (Interface Ace), +2 pour les pilotes. */
+function crewPower(s: GameState, id: ObjectId): number {
+  const c = chars(s, id);
+  return (c.keywords.includes("crewWithToughness") ? c.toughness : c.power) + (c.keywords.includes("crewPlus2") ? 2 : 0);
 }
 
 /** Une source dont le nom a été choisi par un Sorcerous Spyglass. */
@@ -978,6 +987,8 @@ export function activateAbility(s: GameState, player: PlayerId, source: ObjectId
   if (ab.oncePerTurn) o.activatedTurn = { ...(o.activatedTurn ?? {}), [index]: s.turn.number };
   if (ab.cost.addCounters) changeCounters(s, o, ab.cost.addCounters.kind, ab.cost.addCounters.n);
   for (const id of crew) tapObject(s, obj(s, id));
+  if (crew.length) rulesEvent(s, { e: "crewed", vehicle: source, crew: [...crew] });
+  if (ab.cost.exertSelf) o.exerted = true;
   if (ab.cost.removeCounters) changeCounters(s, o, ab.cost.removeCounters.kind, -ab.cost.removeCounters.n);
   if (ab.cost.payLife) loseLife(s, player, ab.cost.payLife);
   for (const id of tapOthers) tapObject(s, obj(s, id));
@@ -1007,7 +1018,12 @@ export function activateAbility(s: GameState, player: PlayerId, source: ObjectId
     for (const id of chosen) tapObject(s, obj(s, id));
   }
   if (ab.cost.exileSelf) moveObject(s, source, "exile");
-  if (ab.cost.discardSelf) announceDiscard(s, player, moveObject(s, source, "graveyard"));
+  if (ab.cost.discardSelf) {
+    const card = moveObject(s, source, "graveyard");
+    announceDiscard(s, player, card);
+    announceDiscardBatch(s, player, 1);
+    if (ab.cycling && card) rulesEvent(s, { e: "cycled", player, card, x });
+  }
   if (ab.cost.bounceSelf) moveObject(s, source, "hand");
   s.priority.passes = 0;
   emit({ type: "activate", player, stackId: item.id, defId: o.defId, targets: flatTargets(targets) });

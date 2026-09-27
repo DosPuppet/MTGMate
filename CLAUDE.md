@@ -42,7 +42,7 @@ Objectif : les 18 extensions Standard restantes (environ 4 360 cartes), **100 % 
   - 0.9 mots-clés communs ✅ ;
   - 0.10 performances ✅.
 - **Phase 0 terminée.**
-- **Phase 1, extensions** (lots A/B/C, D pour FIN) : EOE ✅, DFT, OTJ+BIG, BLB, TDM, WOE, SOS, ECL, TLA, SPM, MSH, TMT, HOB, MKM, DSK, LCI, FIN.
+- **Phase 1, extensions** (lots A/B/C, D pour FIN) : EOE ✅, DFT (A ✅), OTJ+BIG, BLB, TDM, WOE, SOS, ECL, TLA, SPM, MSH, TMT, HOB, MKM, DSK, LCI, FIN.
 - **Phase 2 :** decks Standard multi-extensions, puis clôture (5 158 / 5 158).
 
 Lot 0.1 : le moteur gagne :
@@ -186,6 +186,25 @@ Lot 0.10 (performances, pool complet de 5 174 cartes) :
   - les remplacements d'arrivée s'appliquent aussi aux jetons créés, et savent lire le mana dépensé et les terrains arrivés ce tour-ci.
 - Test de fumée : l'adversaire du scénario a un Goblin Firebomb en main (cible des contresorts d'artefact).
 
+### Aetherdrift (DFT, 260 cartes)
+
+| Mécanique | Cartes | Lot |
+|---|---:|---|
+| Véhicules (équipage) | 43 | A |
+| Montures (« attaque en étant montée ») | 32 | A |
+| cycle (« quand vous cyclez cette carte ») | 28 | A |
+| vitesse (« Start your engines! », « Max speed ») | 40 | B |
+| exhaust | 29 | B |
+
+- Lot A ✅ (152/260). Il couvre :
+  - les pilotes (mot-clé `crewPlus2` : « monte et équipe comme si sa force était supérieure de 2 ») et Interface Ace (`crewWithToughness`) ;
+  - « chaque fois que cette créature monte une Monture ou équipe un Véhicule » (`when.crews`, événement `crewed` ; l'objet de l'événement est le Véhicule) ; « devient montée » (`fx.saddle(ref)`) et « devient une créature-artefact » (`fx.animateVehicle`) ;
+  - « quand vous cyclez cette carte » (`when.cycleSelf`, avec le X du coût de cycle) ; « chaque fois que vous défaussez une ou plusieurs cartes » (`when.discardBatch`, une fois par défausse) ;
+  - épuiser (`exert`), les Verges (capacité de mana sous condition), les Roads, Bloodghast (« un adversaire a 10 PV ou moins ») ;
+  - jetons Pilote, Servo, Éléphant, Véhicule 3/2 (équipage 1), Dinosaure Dragon (`dft/common.ts`, aussi dans le bac à sable) ;
+  - le test de fumée peut ajouter des cartes au cimetière du joueur 1 (`EXTRA_P1_GRAVEYARD`).
+- Lot B : vitesse et exhaust. Lot C : cartes uniques (The Aetherspark, Mimeoplasm, Radiant Lotus, Gonti, Possession Engine, Trade the Helm, Waxen Shapethief, Skyseer's Chariot…).
+
 ### Reality Fracture (FRA)
 
 - 285 cartes selon Scryfall, dont 6 réimpressions de FDN (terrains de base, Unsummon), donc 279 cartes propres. Toutes sont légales en Standard.
@@ -326,6 +345,11 @@ Réimpressions : défenses talismaniques contre une couleur, changelin, restrict
 - **Chorale of the Void :** la carte vient du cimetière d'un adversaire quelconque (pas forcément du joueur défenseur en multijoueur).
 - **Moonlit Meditation :** les copies sont toujours créées (pas de choix « vous pouvez »).
 - **Dyadrine, Synthesis Amalgam :** les deux créatures dont on retire un marqueur sont choisies automatiquement (celles qui en ont le plus).
+- **Molt Tender :** sa capacité de mana à coût « exilez une carte de votre cimetière » passe par la pile (comme Ramos).
+- **Caradora, Heart of Alacria :** le marqueur supplémentaire ne vaut que pour vos créatures (Véhicules animés compris).
+- **Pyrewood Gearhulk :** « les blessures ne peuvent pas être prévenues ce tour-ci » n'est pas modélisé.
+- **Webstrike Elite :** la cible est un artefact ou enchantement quelconque, détruit seulement si sa valeur de mana vaut X.
+- **Chorale, Grim Javelineer :** « quand cette créature meurt ce tour-ci » est une capacité accordée jusqu'à la fin du tour.
 - **Blessures de combat groupées** (« une ou plusieurs créatures… ») : une fois par étape de blessures et par joueur blessé.
 - **Légalité Standard :** instantané des légalités Scryfall au moment de l'import (`legalities.standard` dans `data/<set>.json`). Après une rotation ou une annonce de bannissement, réimporter les sets (`npm run import-cards -- <set>`).
 - **Jetons :** pas d'image (cadre texte).
