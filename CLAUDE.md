@@ -22,17 +22,17 @@ Ce fichier sert au suivi du projet entre les sessions : où on en est, les règl
 | Effets sonores (échantillons Kenney CC0, volume, muet avec M) | ✅ |
 | Jeu en ligne : duel Standard à 2 (serveur local, code de salon, corde, reconnexion, revanche) | ✅ |
 | Déploiement : pm2 derrière nginx sur un VPS (`docs/deploiement.md`, `deploy/`) | ✅ documenté et testé en local (pm2, nginx) |
-| **Reality Fracture (FRA, « Réalité fracturée »)** | ✅ **279 / 279** (lots 0 à G, dont 4 decks préconstruits ; les 3 dernières cartes au lot 0.1 de la branche `standard`) |
-| **Edge of Eternities (EOE)** | ✅ **260 / 260** (lots A à D, branche `standard`) |
-| **Aetherdrift (DFT)** | ✅ **260 / 260** (lots A à C, branche `standard`) |
-| **Outlaws of Thunder Junction + The Big Score (OTJ, BIG)** | ✅ **269 / 269 + 30 / 30** (lots A à C, branche `standard`) |
-| **Final Fantasy (FIN)** | ✅ **307 / 307** (lots A à D4, branche `standard`) |
+| **Reality Fracture (FRA, « Réalité fracturée »)** | ✅ **279 / 279** (lots 0 à G, dont 4 decks préconstruits ; les 3 dernières au lot 0.1 du socle multi-extensions) |
+| **Edge of Eternities (EOE)** | ✅ **260 / 260** (lots A à D) |
+| **Aetherdrift (DFT)** | ✅ **260 / 260** (lots A à C) |
+| **Outlaws of Thunder Junction + The Big Score (OTJ, BIG)** | ✅ **269 / 269 + 30 / 30** (lots A à C) |
+| **Final Fantasy (FIN)** | ✅ **307 / 307** (lots A à D4) |
 | Autres extensions Standard | à la demande de l'utilisateur, une à la fois |
 
 
 ### Suite du travail
 
-- **27/09/2026 : l'intégration de tout le Standard d'un coup est abandonnée.** On finit l'optimisation du flux de travail sur la branche `standard`, puis on la fusionne dans `master` (avec l'accord de l'utilisateur).
+- **27/09/2026 :** l'intégration de tout le Standard d'un coup est abandonnée. La branche `standard` (socle multi-extensions, EOE, DFT, OTJ+BIG, FIN, vérification parallélisée) est fusionnée dans `master`.
 - Ensuite : **une extension à la fois, sur `master`, seulement quand l'utilisateur la nomme.**
 - Découpage habituel d'une extension :
   - lot A : cartes faisables avec le moteur, jetons et terrains ;
