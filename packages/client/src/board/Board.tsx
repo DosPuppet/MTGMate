@@ -17,6 +17,7 @@ import {
   splitLines,
   TOKEN_SHADOWS,
 } from "./layout";
+import { StackReveal } from "./StackReveal";
 
 // ---------------------------------------------------------------------------
 // Joueurs
@@ -560,9 +561,11 @@ function Banner() {
     text = "Bloqueurs : cliquez une de vos créatures, puis l'attaquant à bloquer";
   } else if (p.kind === "priority" && view.stack.length > 0) {
     const top = view.stack[view.stack.length - 1];
+    // « répondre ? » seulement si une réponse est possible (sinon le panneau StackReveal le montre).
+    const canRespond = myActions(view).some((a) => a.type !== "pass" && a.type !== "tapForMana");
     text =
       top && top.controller !== view.viewer
-        ? `${nameOf(top.controller)} lance ${faceName(top, lang)} — répondre ?`
+        ? `${nameOf(top.controller)} lance ${faceName(top, lang)}${canRespond ? " — répondre ?" : ""}`
         : "Votre sort va se résoudre";
   } else {
     text = `${STEP_LABEL[view.turn.step]} — ${view.turn.active === view.viewer ? "à vous" : nameOf(view.turn.active)}`;
@@ -835,6 +838,7 @@ export function Board() {
       </div>
       <Arrows />
       <Effects />
+      <StackReveal />
     </div>
   );
 }

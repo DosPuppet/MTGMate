@@ -407,8 +407,13 @@ describe("autopilot", () => {
     s = act(s, "p1", { type: "cast", card: idsOf(s, "p1", "hand", "Burst Lightning")[0] as string, targets: { t: ["p2"] } });
     expect(autopilotDecision(s, "p1", DEFAULT_AUTOPILOT)).toEqual({ type: "pass" });
     s = act(s, "p1", { type: "pass" });
-    // p2 peut lancer Giant Growth ? Non : aucune créature. Il passe automatiquement.
-    expect(autopilotDecision(s, "p2", DEFAULT_AUTOPILOT)).toEqual({ type: "pass" });
+    // p2 n'a aucune réponse (Giant Growth sans créature), mais le sort adverse lui est montré :
+    // l'autopilot lui rend la main (l'interface passe seule après quelques secondes).
+    expect(autopilotDecision(s, "p2", DEFAULT_AUTOPILOT)).toBeNull();
+    // Sans cette révélation, il passe automatiquement.
+    expect(autopilotDecision(s, "p2", { ...DEFAULT_AUTOPILOT, revealOpponentStack: false })).toEqual({ type: "pass" });
+    // « Fin du tour » explicite : on passe aussi.
+    expect(autopilotDecision(s, "p2", { ...DEFAULT_AUTOPILOT, passUntilTurn: s.turn.number })).toEqual({ type: "pass" });
   });
 
   it("« fin du tour » : ne déclare aucun attaquant et passe tout", () => {

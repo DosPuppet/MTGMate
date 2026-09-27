@@ -9,6 +9,7 @@ import { faceName } from "../i18n";
 import { type Fx, useGame } from "../store";
 import { Card } from "./Card";
 import { findObjectEl } from "./layout";
+import { useRevealActive } from "./StackReveal";
 
 function targetRect(fx: Fx): Fx["rect"] {
   if (fx.rect) return fx.rect;
@@ -80,6 +81,8 @@ export function Effects() {
   const spotlight = useGame((s) => s.spotlight);
   // Pendant un ciblage, l'encart cacherait la pile (dont les sorts peuvent être des cibles).
   const targeting = useGame((s) => s.casting?.stage === "target");
+  // Le panneau de la pile (StackReveal) montre déjà le sort adverse.
+  const revealing = useRevealActive();
   const lang = useGame((s) => s.lang);
   const ref = useRef<HTMLDivElement>(null);
   const [origin, setOrigin] = useState({ x: 0, y: 0 });
@@ -107,7 +110,7 @@ export function Effects() {
         )}
       </AnimatePresence>
       <AnimatePresence mode="wait">
-        {spotlight && !targeting && (
+        {spotlight && !targeting && !revealing && (
           <motion.div
             key={spotlight.id}
             className="spotlight"

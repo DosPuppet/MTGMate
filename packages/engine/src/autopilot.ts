@@ -14,6 +14,11 @@ export interface AutopilotSettings {
   stops: { own: Step[]; opponent: Step[] };
   /** « Fin du tour » : passer toutes les priorités jusqu'à la fin du tour indiqué. */
   passUntilTurn: number | null;
+  /**
+   * Sort ou capacité adverse sur la pile : rendre la main au joueur même s'il n'a aucune réponse,
+   * pour que l'interface le lui montre (elle passe seule après quelques secondes).
+   */
+  revealOpponentStack?: boolean;
 }
 
 export const DEFAULT_AUTOPILOT: AutopilotSettings = {
@@ -23,6 +28,7 @@ export const DEFAULT_AUTOPILOT: AutopilotSettings = {
     opponent: ["declareAttackers", "declareBlockers"],
   },
   passUntilTurn: null,
+  revealOpponentStack: true,
 };
 
 export function autopilotDecision(s: GameState, player: PlayerId, settings: AutopilotSettings): Decision | null {
@@ -42,9 +48,11 @@ export function autopilotDecision(s: GameState, player: PlayerId, settings: Auto
   // « Fin du tour » est une demande explicite : elle vaut aussi en contrôle total.
   if (passingTurn) return { type: "pass" };
   if (settings.fullControl) return null;
+  const top = s.stack[s.stack.length - 1];
+  // Sort ou capacité adverse : le joueur doit le voir, même sans réponse possible (l'interface passe seule).
+  if (top && top.controller !== player && settings.revealOpponentStack) return null;
   // Rien à faire : on passe.
   if (meaningfulActions(s, player).length === 0) return { type: "pass" };
-  const top = s.stack[s.stack.length - 1];
   if (top) {
     // Son propre sort : on le laisse se résoudre. Sort adverse : fenêtre de réponse.
     return top.controller === player ? { type: "pass" } : null;
