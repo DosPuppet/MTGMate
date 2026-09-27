@@ -67,6 +67,8 @@ export interface CardScript {
   devour?: { filter: ObjectFilter; n: number; graveyardUpToX?: boolean };
   /** « Vous pouvez faire arriver cette créature comme copie d'un [permanent] que vous contrôlez ». */
   entersAsCopyOf?: ObjectFilter;
+  /** « [Cette carte] a le flash tant que … » */
+  flashIf?: Condition;
   /** « Vous pouvez lancer cette carte depuis votre cimetière [si…] » */
   castFromGraveyard?: { condition?: Condition; payLife?: number; sacrifice?: ObjectFilter };
   /** Seule la force est variable (Enigma Drake). */
@@ -223,6 +225,8 @@ export const amount = {
   manaSpent: { kind: "manaSpent" } as Amount,
   /** Votre vitesse. */
   speed: { kind: "speed" } as Amount,
+  spellsCastThisTurn: { kind: "spellsCastThisTurn" } as Amount,
+  cardsDrawnThisTurn: { kind: "cardsDrawnThisTurn" } as Amount,
   maxManaValue: (filter: ObjectFilter): Amount => ({ kind: "maxManaValue", filter }),
 };
 
@@ -261,6 +265,8 @@ export const fx = {
     store,
   }),
   /** Jetons engagés (et attaquants si `attacking`). */
+  /** Jeton X/X : force et endurance égales au montant. */
+  createXXToken: (token: TokenSpec, pt: Amount, count: Amount = 1): Effect => ({ op: "createTokens", token, count, pt }),
   createTappedTokens: (token: TokenSpec, count: Amount = 1, opts: { attacking?: boolean; store?: string } = {}): Effect => ({
     op: "createTokens",
     token,
@@ -388,6 +394,7 @@ export const fx = {
       free?: boolean;
       anyTime?: boolean;
       forever?: boolean;
+      untilYourNextTurn?: boolean;
       condition?: Condition;
       forOwner?: boolean;
       extraCost?: number;
@@ -404,6 +411,8 @@ export const fx = {
   setLife: (amount: Amount, who: Ref = ref.you): Effect => ({ op: "setLife", who, amount }),
   /** « Vous contrôlez [le joueur] pendant son prochain tour » (722). */
   controlNextTurn: (who: Ref): Effect => ({ op: "controlNextTurn", who }),
+  /** La carte ou le sort est exilé et devient comploté. */
+  plot: (what: Ref): Effect => ({ op: "plot", what }),
   exchangeControl: (a: Ref, b: Ref): Effect => ({ op: "exchangeControl", a, b }),
   gainControlWhileSource: (what: Ref, restrict = false): Effect => ({ op: "gainControlWhileSource", what, restrict }),
   setBasePTAll: (filter: ObjectFilter, amount: Amount): Effect => ({ op: "setBasePTAll", filter, amount }),
@@ -672,6 +681,31 @@ export function modal(...modes: ModeDef[]): SpellDef {
   return { modes };
 }
 
+/**
+ * Spree (702.172) : « choisissez un ou plusieurs modes, + [coût] chacun ». Toutes les combinaisons sont générées
+ * (les identifiants de cibles doivent être distincts d'un mode à l'autre).
+ */
+export function spree(...modes: { cost: string; label: string; targets?: TargetSpec[]; effects: Effects }[]): SpellDef {
+  const out: ModeDef[] = [];
+  for (let mask = 1; mask < 1 << modes.length; mask++) {
+    const chosen = modes.filter((_, i) => mask & (1 << i));
+    const costs = chosen.map((m) => parseManaCost(m.cost));
+    const extra: ManaCost = { generic: 0, colored: {}, x: 0 };
+    for (const c of costs) {
+      extra.generic += c.generic;
+      for (const [k, n] of Object.entries(c.colored))
+        extra.colored[k as ManaType] = (extra.colored[k as ManaType] ?? 0) + (n ?? 0);
+    }
+    out.push({
+      label: chosen.map((m) => m.label).join(" + "),
+      targets: chosen.flatMap((m) => m.targets ?? []),
+      effects: chosen.flatMap((m) => m.effects.flat()),
+      extraCost: extra,
+    });
+  }
+  return { modes: out };
+}
+
 export function mode(label: string, targets: TargetSpec[], effects: Effects): ModeDef {
   return { label, targets, effects: effects.flat() };
 }
@@ -850,6 +884,10 @@ export const when = {
   castSpellOffTurn: (by: "you" | "opponent" | "any" = "any"): TriggerSpec => ({ on: "castSpell", by, notTheirTurn: true }),
   /** « Chaque fois qu'un joueur lance un sort qu'il ne possède pas » */
   castSpellNotOwned: { on: "castSpell", by: "any", notOwned: true } as TriggerSpec,
+  /** « Chaque fois que vous commettez un crime » */
+  crime: { on: "crime" } as TriggerSpec,
+  /** « Quand cette carte devient complotée » */
+  plottedSelf: { on: "plottedSelf" } as TriggerSpec,
   /** Une carte change de zone (voir TriggerSpec `zoneChange`). */
   zoneChange: (from: Zone[], opts: { to?: Zone[]; filter?: ObjectFilter; whose?: "you" | "any" } = {}): TriggerSpec => ({
     on: "zoneChange",
@@ -1005,6 +1043,10 @@ export const cond = {
   maxSpeed: { kind: "maxSpeed" } as Condition,
   exileAtLeast: (n: number): Condition => ({ kind: "exileAtLeast", n }),
   evenCounters: { kind: "evenCounters" } as Condition,
+  /** « si vous avez commis un crime ce tour-ci » */
+  crime: { kind: "crimeThisTurn" } as Condition,
+  /** « si vous avez lancé un sort depuis votre main ce tour-ci » */
+  handSpellThisTurn: { kind: "castFromHandThisTurn" } as Condition,
   opponentDealtNoncombatDamageLastTurn: { kind: "opponentDealtNoncombatDamageLastTurn" } as Condition,
   spellCastFromHand: { kind: "spellCastFromHand" } as Condition,
   spellCastFromGraveyard: { kind: "spellCastFromGraveyard" } as Condition,
@@ -1104,6 +1146,7 @@ export function staticAbility(
     perDivisor?: number;
     perSpeed?: boolean;
     perLife?: boolean;
+    perHand?: boolean;
   } = {},
 ): StaticAbilityDef {
   return {
@@ -1118,6 +1161,7 @@ export function staticAbility(
     perDivisor: opts.perDivisor,
     perSpeed: opts.perSpeed,
     perLife: opts.perLife,
+    perHand: opts.perHand,
   };
 }
 

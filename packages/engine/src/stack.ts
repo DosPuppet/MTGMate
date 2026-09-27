@@ -31,7 +31,7 @@ import {
 } from "./state";
 import { controlledAbilitiesWithSource, playerStatic } from "./statics";
 import { isLegalTarget, legalTargets, matchesCard, matchesObjectFilter, matchesView, validateTargets } from "./targets";
-import { checkCondition, createDelayed, simultaneously } from "./triggers";
+import { checkCondition, checkCrime, createDelayed, pushInline, simultaneously } from "./triggers";
 import type {
   ActivatedAbilityDef,
   CardDef,
@@ -75,6 +75,7 @@ export function sorceryTiming(s: GameState, player: PlayerId): boolean {
 
 export function canCastTiming(s: GameState, player: PlayerId, d: CardDef): boolean {
   if (d.types.includes("Instant") || d.keywords.includes("flash")) return true;
+  if (d.flashIf && checkCondition(s, d.flashIf, player)) return true;
   if (sorceryTiming(s, player)) return true;
   // « Vous pouvez lancer des sorts comme s'ils avaient le flash. »
   return s.battlefield.some(
@@ -282,6 +283,31 @@ export interface CastTerms {
   removeCounters?: number;
   /** Points de vie payés en plus (Wickerfolk Indomitable, depuis le cimetière). */
   payLife?: number;
+  /** Seulement au moment où l'on pourrait lancer un rituel (carte complotée). */
+  sorceryTiming?: boolean;
+}
+
+/** 702.170 : la carte (depuis la main ou la pile) est exilée face visible et devient complotée. */
+export function plotCard(s: GameState, id: ObjectId): ObjectId | null {
+  const o = s.objects[id];
+  if (!o) return null;
+  const player = o.owner;
+  const onStack = s.stack.findIndex((x) => x.id === id);
+  if (onStack >= 0) s.stack.splice(onStack, 1);
+  // Déjà exilée (Kellan Joins Up : « exilez une carte de votre main ; elle devient complotée ») : elle reste là.
+  const exiled = o.zone === "exile" ? id : moveObject(s, id, "exile");
+  const card = exiled ? s.objects[exiled] : undefined;
+  if (!card) return null;
+  card.plottedTurn = s.turn.number;
+  emit({ type: "plotted", player, defId: card.defId });
+  rulesEvent(s, { e: "plotted", card: card.id });
+  // « Quand cette carte devient complotée » : la carte est en exil, la capacité se déclenche de là.
+  for (const ab of s.defs[card.defId]?.abilities ?? []) {
+    if (ab.kind === "triggered" && ab.trigger.on === "plottedSelf") {
+      pushInline(s, player, card.id, card.defId, { targets: ab.targets, effects: ab.effects, label: ab.label });
+    }
+  }
+  return card.id;
 }
 
 /** D'où, et à quelles conditions, ce joueur peut-il lancer cette carte ? */
@@ -451,6 +477,10 @@ function baseCastTerms(s: GameState, player: PlayerId, card: ObjectId): CastTerm
     return null;
   }
   if (o.zone === "exile") {
+    // 702.170d : une carte complotée se lance sans payer son coût, à un tour ultérieur, au moment d'un rituel.
+    if (o.plottedTurn !== undefined) {
+      return o.owner === player && o.plottedTurn < s.turn.number ? { source: "exile", free: true, sorceryTiming: true } : null;
+    }
     // Reality Fracture : la copie du sort d'un permanent préparé, lançable par le contrôleur actuel de ce permanent.
     if (o.preparedFor) {
       const perm = s.objects[o.preparedFor];
@@ -579,6 +609,7 @@ export function castSpell(s: GameState, player: PlayerId, card: ObjectId, choice
   const flashExtra = !terms.anyTime && !canCastTiming(s, player, d) ? d.flashExtraCost : undefined;
   if (!terms.anyTime && !canCastTiming(s, player, d) && !flashExtra)
     throw new RulesError("Vous ne pouvez pas lancer ce sort maintenant");
+  if (terms.sorceryTiming && !sorceryTiming(s, player)) throw new RulesError("Seulement au moment d'un rituel");
   const flashback = terms.source === "flashback";
   const free = !!terms.free || (!!choices.free && !!terms.freeOptional);
   if (choices.free && !free) throw new RulesError("Ce sort ne peut pas être lancé sans payer son coût");
@@ -610,6 +641,8 @@ export function castSpell(s: GameState, player: PlayerId, card: ObjectId, choice
   check(discard, opts.discard);
   check(sacrifice, opts.sacrifice);
   let cost = spellCost(s, player, d, { x, kicked, flashback, free, alternative, anyMana: terms.anyMana, targets });
+  // Spree : les coûts supplémentaires des modes choisis (payés même si le sort est gratuit).
+  if (mode.extraCost) cost = addCosts(cost, mode.extraCost);
   if (opts.sacrifice?.orPay && sacrifice.length === 0) cost = addCosts(cost, opts.sacrifice.orPay);
   if (flashExtra) cost = addCosts(cost, flashExtra);
   if (terms.extraCost) cost = addCosts(cost, { generic: terms.extraCost, colored: {}, x: 0 });
@@ -693,6 +726,7 @@ export function castSpell(s: GameState, player: PlayerId, card: ObjectId, choice
   const before = caster?.turnStats.instantSorceryCast ?? 0;
   if (caster) {
     caster.turnStats.spellsCast += 1;
+    if (terms.source === "hand") caster.turnStats.handSpells = (caster.turnStats.handSpells ?? 0) + 1;
     bump(s); // des capacités statiques en dépendent (« si vous avez lancé deux sorts ce tour-ci »)
     if (warp) s.turn.spellWarped = true;
     if (instantOrSorcery) caster.turnStats.instantSorceryCast += 1;
@@ -742,6 +776,7 @@ function chosenFrom(vars: Record<string, ChoiceValue[]>): GameObject["chosen"] {
 export function announceTargets(s: GameState, stackId: string, controller: PlayerId, targets: Record<string, string[]>): void {
   const all = flatTargets(targets);
   if (all.length) rulesEvent(s, { e: "targeted", stackId, controller, targets: all });
+  checkCrime(s, controller, all);
 }
 
 /** 701.5 : contrecarre l'élément de pile ; un sort contrecarré va au cimetière (exil s'il a été lancé en flashback). */
@@ -971,6 +1006,7 @@ export function activateAbility(s: GameState, player: PlayerId, source: ObjectId
     for (const e of ab.effects) {
       if (e.op === "unlockDoor") unlockDoor(s, source, e.door);
       if (e.op === "turnFaceUp") turnFaceUp(s, source);
+      if (e.op === "plot") plotCard(s, source);
     }
     s.priority.passes = 0;
     return;

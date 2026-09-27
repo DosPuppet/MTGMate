@@ -19,7 +19,7 @@ import {
 import { copiedDefId } from "./layers";
 import { availableMana, canPay, costToText, manaValue, payMana } from "./mana";
 import { addReplacement } from "./replacement";
-import { bounceSpell, copySpellItem, counterItem, stackItemSpecs } from "./stack";
+import { bounceSpell, copySpellItem, counterItem, plotCard, stackItemSpecs } from "./stack";
 import {
   alivePlayers,
   apnapOrder,
@@ -303,6 +303,10 @@ export function evalAmount(s: GameState, ctx: EffectContext, a: Amount): number 
       return s.objects[ctx.sourceId]?.manaSpent ?? 0;
     case "speed":
       return s.players[ctx.controller]?.speed ?? 0;
+    case "spellsCastThisTurn":
+      return s.players[ctx.controller]?.turnStats.spellsCast ?? 0;
+    case "cardsDrawnThisTurn":
+      return s.players[ctx.controller]?.turnStats.cardsDrawn ?? 0;
     case "maxManaValue":
       return Math.max(
         0,
@@ -1267,8 +1271,10 @@ export function runEffect(s: GameState, r: Resolution, e: Effect): OpResult {
     case "createTokens": {
       const n = evalAmount(s, ctx, e.count);
       const created: string[] = [];
+      const pt = e.pt !== undefined ? evalAmount(s, ctx, e.pt) : undefined;
+      const token = pt === undefined ? e.token : { ...e.token, power: pt, toughness: pt };
       for (const p of e.for ? resolveRef(s, ctx, e.for).filter((x) => isPlayer(s, x)) : [ctx.controller])
-        created.push(...createTokens(s, p, e.token, n));
+        created.push(...createTokens(s, p, token, n));
       if (e.tapped || e.attacking) {
         for (const id of created) {
           const o = s.objects[id];
@@ -2295,6 +2301,10 @@ export function runEffect(s: GameState, r: Resolution, e: Effect): OpResult {
       addEffect(s, ids, { setPower: n, setToughness: n }, "endOfTurn");
       return;
     }
+    case "plot": {
+      for (const id of resolveRef(s, ctx, e.what)) plotCard(s, id);
+      return;
+    }
     case "copyNextExhaust": {
       const pl = s.players[ctx.controller];
       if (pl) pl.copyNextExhaustTurn = s.turn.number;
@@ -2551,7 +2561,7 @@ export function runEffect(s: GameState, r: Resolution, e: Effect): OpResult {
         }
         return;
       }
-      grantPlay(s, ctx.controller, ids, e.forever ? "forever" : "thisTurn", {
+      grantPlay(s, ctx.controller, ids, e.forever ? "forever" : e.untilYourNextTurn ? "yourNextTurn" : "thisTurn", {
         free: e.free,
         anyTime: e.anyTime,
         condition: e.condition,

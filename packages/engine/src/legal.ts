@@ -153,13 +153,16 @@ export function legalActions(s: GameState, player: PlayerId): ActionOption[] {
     variant?: "faceDown" | "warp",
   ) {
     // Timing : normal, ignoré (Etali), ou flash moyennant un surcoût (Harbinger of the Tides).
-    const onTime = terms.anyTime || canCastTiming(s, player, d);
+    const onTime = terms.anyTime || (terms.sorceryTiming ? sorceryTiming(s, player) : canCastTiming(s, player, d));
     if (!onTime && !d.flashExtraCost) return;
     const timingExtra = onTime ? undefined : d.flashExtraCost;
     const flashback = terms.source === "flashback";
     const modes = modesOf(d)
-      .map((m, index) => ({ index, label: m.label, targets: targetOptions(s, player, m.targets, card) }))
-      .filter((m) => targetsAvailable(m.targets));
+      .map((m, index) => ({ index, label: m.label, targets: targetOptions(s, player, m.targets, card), extra: m.extraCost }))
+      .filter((m) => targetsAvailable(m.targets))
+      // Spree : le coût supplémentaire du mode doit être payable.
+      .filter((m) => !m.extra || canPay(s, player, totalCost(spellCost(s, player, d, { free: terms.free }), 0, m.extra)))
+      .map(({ extra: _, ...m }) => m);
     if (modes.length === 0) return;
     const additional = additionalOptions(s, player, card, d, terms.source === "flashback");
     if (!additional) return;

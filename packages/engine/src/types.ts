@@ -163,6 +163,10 @@ export interface CardDef {
   shuffleIntoLibrary?: boolean;
   /** Peut être lancée depuis le cimetière en retirant N marqueurs parmi vos créatures (Quilled Greatwurm). */
   graveyardCastRemoveCounters?: number;
+  /** « [Cette carte] a le flash tant que … » (Take for a Ride, Colossal Rattlewurm). */
+  flashIf?: Condition;
+  /** Plot (702.170) : coût de l'action spéciale « complotez cette carte » (lu dans le texte). */
+  plot?: ManaCost;
   /** Skyseer's Chariot : les capacités activées des sources du nom choisi coûtent {N} de plus (au lieu d'être interdites). */
   chosenNameTax?: number;
   /** « Vous pouvez lancer cette carte depuis votre cimetière [si…] » (Lightwheel Enhancements : vitesse maximale). */
@@ -257,6 +261,8 @@ export interface ModeDef {
   label?: string;
   targets: TargetSpec[];
   effects: Effect[];
+  /** Spree (702.172) : coût supplémentaire de ce mode (les modes combinés additionnent les leurs). */
+  extraCost?: ManaCost;
 }
 
 export type AbilityDef =
@@ -510,6 +516,8 @@ export interface ObjectFilter {
   maxToughness?: number;
   /** Valeur de mana au plus égale au X du sort qui a mis la source en jeu (Dune Drifter). */
   maxManaValueX?: boolean;
+  /** Aucun de ces sous-types (« non-hors-la-loi » : Shoot the Sheriff). */
+  noneOfSubtypes?: string[];
   /** Carte sans capacité (Fang-Druid Summoner, Rise from the Wreck). */
   noAbilities?: boolean;
   /** Valeur de mana paire ou impaire (Mutinous Massacre ; 0 est pair). */
@@ -610,6 +618,10 @@ export type TriggerSpec =
   | { on: "cycleSelf" }
   /** « Chaque fois que vous activez une capacité d'exhaust » */
   | { on: "exhaustActivated" }
+  /** « Chaque fois que vous commettez un crime » (700.13) */
+  | { on: "crime" }
+  /** « Quand cette carte devient complotée » */
+  | { on: "plottedSelf" }
   /**
    * Une carte change de zone (Ketramose : « mises en exil depuis les cimetières et/ou le champ de bataille » ;
    * Dredger's Insight : « quittent votre cimetière »). `whose` : le propriétaire de la carte.
@@ -704,7 +716,11 @@ export type Condition =
   /** Au moins N cartes en exil (Ketramose). */
   | { kind: "exileAtLeast"; n: number }
   /** Nombre total de marqueurs sur la source pair (Sab-Sunen). */
-  | { kind: "evenCounters" };
+  | { kind: "evenCounters" }
+  /** Vous avez commis un crime ce tour-ci. */
+  | { kind: "crimeThisTurn" }
+  /** Vous avez lancé un sort depuis votre main ce tour-ci. */
+  | { kind: "castFromHandThisTurn" };
 
 /** Modifications apportées par un effet continu, rangées par couche (613). */
 export interface LayerMods {
@@ -897,6 +913,8 @@ export interface StaticAbilityDef {
   perSpeed?: boolean;
   /** F/E multipliées par les points de vie du contrôleur (The Last Ride). */
   perLife?: boolean;
+  /** F/E multipliées par le nombre de cartes dans la main du contrôleur (Stingerback Terror). */
+  perHand?: boolean;
   label?: string;
 }
 
@@ -1003,6 +1021,10 @@ export type Amount =
   | { kind: "manaSpent" }
   /** Votre vitesse (0 si vous n'en avez pas). */
   | { kind: "speed" }
+  /** Sorts que vous avez lancés ce tour-ci. */
+  | { kind: "spellsCastThisTurn" }
+  /** Cartes que vous avez piochées ce tour-ci (Duelist of the Mind). */
+  | { kind: "cardsDrawnThisTurn" }
   /** Plus grande valeur de mana parmi les permanents correspondants (Emissary Escort). */
   | { kind: "maxManaValue"; filter: ObjectFilter }
   /** Tarmogoyf : types de cartes parmi les cartes de tous les cimetières. */
@@ -1084,7 +1106,17 @@ export type Effect =
   | { op: "draw"; who: Ref; amount: Amount }
   | { op: "gainLife"; who: Ref; amount: Amount }
   /** `tapped` : jetons engagés ; `attacking` : engagés et attaquants (le même défenseur que la source, sinon le premier adversaire). */
-  | { op: "createTokens"; token: TokenSpec; count: Amount; for?: Ref; store?: string; tapped?: boolean; attacking?: boolean }
+  /** `pt` : jeton X/X (force et endurance égales au montant, Dance of the Tumbleweeds). */
+  | {
+      op: "createTokens";
+      token: TokenSpec;
+      count: Amount;
+      for?: Ref;
+      store?: string;
+      tapped?: boolean;
+      attacking?: boolean;
+      pt?: Amount;
+    }
   /** Marqueurs (par défaut +1/+1) ; un montant négatif en retire. */
   | { op: "addCounters"; what: Ref; amount: Amount; kind?: string }
   | { op: "loseLife"; who: Ref; amount: Amount; store?: string }
@@ -1213,6 +1245,8 @@ export type Effect =
   | { op: "setBasePTAll"; filter: ObjectFilter; amount: Amount }
   /** Pit Automaton : la prochaine capacité d'exhaust (non de mana) activée ce tour-ci est copiée. */
   | { op: "copyNextExhaust" }
+  /** La carte (ou le sort) est exilée et devient complotée (702.170). */
+  | { op: "plot"; what: Ref }
   /** Choisir un nom de carte (sans voir de carte cachée), mémorisé pour `exileNamed` (Ancient Vendetta). */
   | { op: "chooseCardName" }
   /** Exile jusqu'à N cartes du nom choisi du cimetière, de la main et de la bibliothèque du joueur, qui mélange. */
@@ -1291,6 +1325,8 @@ export type Effect =
   | {
       op: "grantPlay";
       what: Ref;
+      /** « jusqu'à la fin de votre prochain tour » */
+      untilYourNextTurn?: boolean;
       free?: boolean;
       anyTime?: boolean;
       forever?: boolean;
@@ -1543,6 +1579,8 @@ export interface GameObject {
   linked?: ObjectId[];
   /** X du sort qui a mis ce permanent sur le champ de bataille (Dune Drifter). */
   castX?: number;
+  /** Plot : tour où la carte est devenue « complotée » (exilée face visible, lançable gratuitement plus tard). */
+  plottedTurn?: number;
   /** Sources qui lui ont infligé des blessures ce tour-ci (Predator Ooze). */
   damagedBy?: ObjectId[];
   /** Joueurs à qui il a infligé des blessures de combat ce tour-ci (Steel Hellkite). */
@@ -1685,6 +1723,10 @@ export interface TurnStats {
   cardsDiscarded: number;
   /** Capacités d'exhaust activées ce tour-ci (Elvish Refueler). */
   exhaustActivated?: number;
+  /** Crimes commis ce tour-ci (700.13). */
+  crimes?: number;
+  /** Sorts lancés depuis la main ce tour-ci (« si vous n'avez pas lancé de sort depuis votre main ce tour-ci »). */
+  handSpells?: number;
 }
 
 export interface CombatState {
@@ -2131,6 +2173,8 @@ export type GameEvent =
   | { type: "reveal"; player: PlayerId; defIds: string[] }
   /** Un permanent face cachée est retourné face visible (la carte est révélée). */
   | { type: "turnedFaceUp"; objectId: ObjectId; defId: string }
+  /** 702.170 : la carte devient complotée. */
+  | { type: "plotted"; player: PlayerId; defId: string }
   /** 702.179 : nouvelle vitesse du joueur. */
   | { type: "speed"; player: PlayerId; speed: number }
   /** 722 : `by` contrôle le tour de `player`. */

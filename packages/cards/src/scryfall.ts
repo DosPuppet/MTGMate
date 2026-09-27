@@ -8,6 +8,7 @@ import {
   type Color,
   dsl,
   type Keyword,
+  type ManaCost,
   type ObjectFilter,
   parseManaCost,
 } from "@mtgx/engine";
@@ -123,6 +124,30 @@ export function parseWard(text: string): CardDef["ward"] {
   // « Ward—Discard a card [at random]. » (Gideon the Oathless, Alpharael, Stonechosen)
   if (!m[3]) return m[4] ? { discard: true, discardRandom: true } : { discard: true };
   return { mana: m[2] ? parseManaCost(m[2]) : undefined, life: Number(m[3]) };
+}
+
+/** Plot (702.170) : « Plot {1}{W} ». */
+export function parsePlot(text: string): ManaCost | undefined {
+  const m = /^Plot ((?:\{[^}]+\})+)/m.exec(stripReminder(text));
+  return m ? parseManaCost(m[1] as string) : undefined;
+}
+
+/** Action spéciale de plot : depuis la main, au moment d'un rituel, la carte est exilée et devient complotée. */
+function plotAbility(text: string): CardDef["abilities"] {
+  const cost = parsePlot(text);
+  if (!cost) return [];
+  return [
+    {
+      kind: "activated",
+      cost: { mana: cost },
+      targets: [],
+      effects: [{ op: "plot", what: { kind: "self" } }],
+      fromHand: true,
+      sorcerySpeed: true,
+      specialAction: true,
+      label: "Complot",
+    },
+  ];
 }
 
 /** Dévorer (702.82) : « Devour 2 », « Devour land 3 », « Devour artifact 1 ». */
@@ -580,6 +605,7 @@ function singleDef(raw: RawCard, script: CardScript | undefined, set: string): C
         /costs \{1\} less to activate for each \+1\/\+1 counter on the creature it targets/.test(raw.oracleText),
         parseSaddle(raw.oracleText),
       ),
+      ...plotAbility(raw.oracleText),
       ...(parseCycling(raw.oracleText) ? [parseCycling(raw.oracleText) as CardDef["abilities"][number]] : []),
       ...extraAbilities,
     ],
@@ -601,6 +627,7 @@ function singleDef(raw: RawCard, script: CardScript | undefined, set: string): C
     shuffleIntoLibrary: script?.shuffleIntoLibrary,
     graveyardCastRemoveCounters: script?.graveyardCastRemoveCounters,
     castFromGraveyard: script?.castFromGraveyard,
+    flashIf: script?.flashIf,
     chosenNameTax: script?.chosenNameTax,
     ward,
     cantBeCountered: script?.cantBeCountered,
@@ -610,6 +637,7 @@ function singleDef(raw: RawCard, script: CardScript | undefined, set: string): C
     flashbackDiscard: script?.flashbackDiscard,
     disguise: parseDisguise(raw.oracleText),
     warp: parseWarp(raw.oracleText),
+    plot: parsePlot(raw.oracleText),
     devour: script?.devour ?? parseDevour(raw.oracleText),
     entersAsCopyOf: script?.entersAsCopyOf,
     shockLand: /As this land enters, you may pay (\d+) life\. If you don't, it enters tapped\./.exec(raw.oracleText)

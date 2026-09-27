@@ -46,6 +46,22 @@ export interface Characteristics {
   controller: PlayerId;
 }
 
+/** 122.1b : marqueurs qui donnent un mot-clé (le nom du marqueur est celui du mot-clé du moteur). */
+const KEYWORD_COUNTERS: Record<string, Keyword> = {
+  flying: "flying",
+  firstStrike: "firstStrike",
+  doubleStrike: "doubleStrike",
+  deathtouch: "deathtouch",
+  hexproof: "hexproof",
+  indestructible: "indestructible",
+  lifelink: "lifelink",
+  menace: "menace",
+  reach: "reach",
+  trample: "trample",
+  vigilance: "vigilance",
+  haste: "haste",
+};
+
 /** Invalide le cache des caractéristiques. */
 export function bump(s: GameState): void {
   s.version += 1;
@@ -72,6 +88,8 @@ function cdaValue(s: GameState, o: GameObject, a: Amount): number {
     );
     return ["Plains", "Island", "Swamp", "Mountain", "Forest"].filter((t) => subtypes.has(t)).length;
   }
+  // Duelist of the Mind : cartes piochées ce tour-ci.
+  if (a.kind === "cardsDrawnThisTurn") return s.players[o.controller]?.turnStats.cardsDrawn ?? 0;
   if (a.kind === "maxManaValue") {
     // Emissary Escort : plus grande valeur de mana parmi vos autres artefacts (types imprimés).
     return Math.max(
@@ -329,9 +347,9 @@ export function computeBattlefield(s: GameState): Map<ObjectId, Characteristics>
         if (ab.kind !== "static") continue;
         if (ab.condition && !checkCondition(s, ab.condition, o.controller, id)) continue;
         let mods = ab.mods;
-        if (ab.perSpeed || ab.perLife) {
+        if (ab.perSpeed || ab.perLife || ab.perHand) {
           const pl = s.players[o.controller];
-          const n = ab.perSpeed ? (pl?.speed ?? 0) : Math.max(0, pl?.life ?? 0);
+          const n = ab.perSpeed ? (pl?.speed ?? 0) : ab.perHand ? (pl?.hand.length ?? 0) : Math.max(0, pl?.life ?? 0);
           mods = { ...mods, power: (mods.power ?? 0) * n, toughness: (mods.toughness ?? 0) * n };
         } else if (ab.per || ab.perCounter || ab.perGraveyard) {
           // « +1/+1 pour chaque Forêt » / « pour chaque marqueur de camaraderie » / « pour chaque carte de créature de votre cimetière ».
@@ -426,6 +444,13 @@ export function computeBattlefield(s: GameState): Map<ObjectId, Characteristics>
       if (m.addAbilities?.length) c.abilities = [...c.abilities, ...m.addAbilities];
     },
   );
+  // 122.1b : marqueurs de capacité (vol, lien de vie, contact mortel…), appliqués après les autres effets de couche 6.
+  for (const [id, c] of out) {
+    for (const [kind, n] of Object.entries(obj(s, id).counters)) {
+      const k = KEYWORD_COUNTERS[kind];
+      if (k && n > 0 && !c.keywords.includes(k)) c.keywords.push(k);
+    }
+  }
   // Couche 7b : F/E fixées.
   layer(
     (m) => m.setPower !== undefined || m.setToughness !== undefined,

@@ -43,7 +43,7 @@ Objectif : les 18 extensions Standard restantes (environ 4 360 cartes), **100 % 
   - 0.9 mots-clés communs ✅ ;
   - 0.10 performances ✅.
 - **Phase 0 terminée.**
-- **Phase 1, extensions** (lots A/B/C, D pour FIN) : EOE ✅, DFT ✅, OTJ+BIG, BLB, TDM, WOE, SOS, ECL, TLA, SPM, MSH, TMT, HOB, MKM, DSK, LCI, FIN.
+- **Phase 1, extensions** (lots A/B/C, D pour FIN) : EOE ✅, DFT ✅, OTJ+BIG (A ✅), OTJ+BIG, BLB, TDM, WOE, SOS, ECL, TLA, SPM, MSH, TMT, HOB, MKM, DSK, LCI, FIN.
 - **Phase 2 :** decks Standard multi-extensions, puis clôture (5 158 / 5 158).
 
 Lot 0.1 : le moteur gagne :
@@ -219,6 +219,26 @@ Lot 0.10 (performances, pool complet de 5 174 cartes) :
   - Skyseer's Chariot (taxe sur le nom choisi, `chosenNameTax`), The Aetherspark (planeswalker-Équipement, pas attaquable quand il est attaché), Pit Automaton (copie de la prochaine capacité d'exhaust), modes uniques « ce tour-ci » ;
   - « lancer depuis votre cimetière » avec PV et sacrifice en plus (Wickerfolk), X du sort mémorisé sur le permanent (`castX`), « N-ième depuis le dessus de la bibliothèque », « révélez jusqu'à N terrains ».
 
+### Outlaws of Thunder Junction + The Big Score (OTJ 269 cartes, BIG 30)
+
+| Mécanique | Cartes | Lot |
+|---|---:|---|
+| plot | 32 | A |
+| spree | 21 | A |
+| crimes (« chaque fois que vous commettez un crime ») | 26 | A |
+| hors-la-loi (Assassin, Mercenaire, Pirate, Voleur, Sorcier) | 13 | A |
+| monture | 17 | A (moteur de DFT) |
+| hideaway (BIG) | 1 | C |
+
+- Lot A ✅ (OTJ 221/269). Il couvre :
+  - plot (702.170) : « Plot {coût} » est lu dans le texte ; action spéciale depuis la main au moment d'un rituel (`plotCard`, `GameObject.plottedTurn`) ; la carte complotée se lance gratuitement depuis l'exil à un tour ultérieur, au moment d'un rituel (`CastTerms.sorceryTiming`) ; `fx.plot` (Aven Interrupter, Kellan Joins Up) et « quand cette carte devient complotée » (déclenché depuis l'exil) ;
+  - spree (702.172) : aide `spree(...)`, qui génère toutes les combinaisons de modes (`ModeDef.extraCost` additionnés, payés même si le sort est gratuit ; un mode trop cher n'est pas proposé) ;
+  - crimes (700.13) : cibler un adversaire, un objet qu'il contrôle ou une carte de son cimetière (`checkCrime` à la mise sur la pile des sorts, capacités et déclencheurs) ; `when.crime`, `cond.crime` ;
+  - marqueurs de capacité (122.1b : vol, lien de vie, contact mortel…), « si vous n'avez pas lancé de sort depuis votre main ce tour-ci », flash sous condition (`flashIf`), jetons X/X (`fx.createXXToken`), `perHand`, « jusqu'à la fin de votre prochain tour » pour les cartes exilées jouables ;
+  - `checkCondition` évalue désormais n'importe quel montant (sommes, force d'un objet…), et plus seulement les décomptes ;
+  - la pioche fait avancer la version d'état (Duelist of the Mind).
+- Lots B et C : cartes restantes (Fblthp, Double Down, The Key to the Vault, Archangel of Tithes, Oko, Kellan, Riku…) et BIG.
+
 ### Reality Fracture (FRA)
 
 - 285 cartes selon Scryfall, dont 6 réimpressions de FDN (terrains de base, Unsummon), donc 279 cartes propres. Toutes sont légales en Standard.
@@ -375,6 +395,10 @@ Réimpressions : défenses talismaniques contre une couleur, changelin, restrict
 - **Full Throttle :** deux combats supplémentaires après le combat normal (et non juste après la phase principale).
 - **Oviya :** le piétinement vaut pour vos créatures attaquantes (quel que soit le joueur attaqué).
 - **Déclencheurs « une ou plusieurs … » (Ketramose, Dredger's Insight) :** fusionnés tant qu'une occurrence attend d'être mise sur la pile.
+- **Hollow Marauder :** une carte piochée si au moins un adversaire ciblé n'a pas défaussé de carte de VM 4 ou plus.
+- **Giant Beaver, Rambling Possum :** la créature qui reçoit le marqueur est ciblée parmi les vôtres ; Rambling Possum ne renvoie pas les créatures qui l'ont montée.
+- **Arid Archway :** le terrain renvoyé est ciblé. **Conduit Pylons :** la capacité de mana à coût passe par la pile.
+- **Marqueurs de capacité :** ils s'appliquent après les autres effets de couche 6.
 - **Blessures de combat groupées** (« une ou plusieurs créatures… ») : une fois par étape de blessures et par joueur blessé.
 - **Légalité Standard :** instantané des légalités Scryfall au moment de l'import (`legalities.standard` dans `data/<set>.json`). Après une rotation ou une annonce de bannissement, réimporter les sets (`npm run import-cards -- <set>`).
 - **Jetons :** pas d'image (cadre texte).

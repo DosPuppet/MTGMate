@@ -116,6 +116,8 @@ export function applyEntersReplacements(s: GameState, o: GameObject, ctx: Enters
   if (ctx.kicked) o.kicked = true;
   if (ctx.cast) o.cast = true;
   if (ctx.castFromHand) o.castFromHand = true;
+  // Mana dépensé, connu dès l'arrivée (« si aucun mana n'a été dépensé pour la lancer »).
+  if (ctx.manaSpent !== undefined) o.manaSpent = ctx.manaSpent;
   if (ctx.attachTo) o.attachedTo = ctx.attachTo;
   // 614.12 : « en arrivant, choisissez… » (le choix vient de la résolution, sinon choix par défaut).
   const choose = s.defs[o.defId]?.chooseOnEnter;

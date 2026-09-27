@@ -27,6 +27,7 @@ import { DFT_SCRIPTS } from "./dft/index";
 import { EOE_SCRIPTS } from "./eoe/index";
 import { FDN_SCRIPTS } from "./fdn/index";
 import { FRA_SCRIPTS } from "./fra/index";
+import { OTJ_SCRIPTS } from "./otj/index";
 import type { RawCard } from "./scryfall";
 
 export interface CardSet {
@@ -65,7 +66,7 @@ export const SETS: CardSet[] = [
     nameFr: "Les hors-la-loi de Croisetonnerre",
     mainMax: 286,
     data: otjData as RawCard[],
-    scripts: {},
+    scripts: OTJ_SCRIPTS,
   },
   { code: "BIG", name: "The Big Score", nameFr: "Le gros coup", mainMax: 30, data: bigData as RawCard[], scripts: {} },
   { code: "BLB", name: "Bloomburrow", nameFr: "Bloomburrow", mainMax: 281, data: blbData as RawCard[], scripts: {} },

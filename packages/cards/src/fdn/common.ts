@@ -30,6 +30,7 @@ export const {
   cost,
   wardAbility,
   exhaust,
+  spree,
 } = dsl;
 
 /** Cible quelconque décrite par un filtre d'objets. */

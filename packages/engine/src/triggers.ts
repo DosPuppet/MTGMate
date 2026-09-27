@@ -9,7 +9,7 @@
  * - Capacités retardées (603.7) et réflexives (603.12) : créées par des effets, avec leurs propres effets et cibles.
  */
 import { ask } from "./choices";
-import { boardAmount } from "./effects";
+import { boardAmount, evalAmount } from "./effects";
 import { RulesError } from "./errors";
 import {
   apnapOrder,
@@ -111,6 +111,10 @@ export function simultaneously<T>(s: GameState, fn: () => T): T {
 
 export function checkCondition(s: GameState, c: Condition, controller: PlayerId, sourceId?: ObjectId): boolean {
   switch (c.kind) {
+    case "castFromHandThisTurn":
+      return (s.players[controller]?.turnStats.handSpells ?? 0) > 0;
+    case "crimeThisTurn":
+      return (s.players[controller]?.turnStats.crimes ?? 0) > 0;
     case "exileAtLeast":
       return s.exile.length >= c.n;
     case "evenCounters": {
@@ -242,7 +246,17 @@ export function checkCondition(s: GameState, c: Condition, controller: PlayerId,
         return n >= c.n;
       }
       if (a.kind === "count" || a.kind === "totalPower") return boardAmount(s, a, controller, sourceId) >= c.n;
-      return false;
+      // Autres montants (sommes, force d'un objet, vitesse…) : évalués comme pendant une résolution, sans cible.
+      const ctx = {
+        controller,
+        sourceId: sourceId ?? "",
+        sourceDefId: (sourceId && s.objects[sourceId]?.defId) || "",
+        sourceSnapshot: { keywords: [], power: 0 },
+        targets: {},
+        x: 0,
+        kicked: false,
+      };
+      return evalAmount(s, ctx, a) >= c.n;
     }
     case "var":
     case "refLife":
@@ -445,6 +459,10 @@ function matchTrigger(s: GameState, ev: RulesEvent, t: TriggerSpec, src: Source)
       }
       return { objectId: ev.newId ?? undefined, player: owner ?? me };
     }
+    case "crime":
+      return ev.e === "crime" && ev.player === me ? { player: me } : null;
+    case "plottedSelf":
+      return ev.e === "plotted" && ev.card === src.id ? { objectId: src.id, player: me } : null;
     case "exhaustActivated":
       return ev.e === "exhaust" && ev.player === me ? { objectId: ev.source, player: me } : null;
     case "cycleSelf":
@@ -692,6 +710,7 @@ export function processTriggers(s: GameState): boolean {
       changed = true;
       const all = Object.values(item.targets).flat();
       if (all.length) rulesEvent(s, { e: "targeted", stackId: item.id, controller: item.controller, targets: all });
+      checkCrime(s, item.controller, all);
       emit({
         type: "trigger",
         player: t.controller,
@@ -852,4 +871,25 @@ function markModeUsed(s: GameState, t: PendingTrigger): void {
     o.usedModesTurn = s.turn.number;
   }
   o.usedModes = [...(o.usedModes ?? []), t.mode];
+}
+
+/**
+ * 700.13 : commettre un crime — cibler un adversaire, un objet qu'il contrôle (permanent, sort, capacité)
+ * ou une carte de son cimetière.
+ */
+export function checkCrime(s: GameState, player: PlayerId, targets: string[]): void {
+  const opponent = (p: PlayerId | undefined) => !!p && p !== player && !!s.players[p];
+  const crime = targets.some((id) => {
+    if (s.players[id]) return opponent(id);
+    const o = s.objects[id];
+    if (o?.zone === "battlefield") return opponent(o.controller);
+    if (o?.zone === "graveyard") return opponent(o.owner);
+    const item = s.stack.find((x) => x.id === id);
+    return opponent(item?.controller);
+  });
+  if (!crime) return;
+  const stats = s.players[player]?.turnStats;
+  if (stats) stats.crimes = (stats.crimes ?? 0) + 1;
+  s.version += 1; // conditions « si vous avez commis un crime ce tour-ci »
+  rulesEvent(s, { e: "crime", player });
 }
