@@ -215,6 +215,12 @@ export function createTokens(s: GameState, controller: PlayerId, t: TokenSpec, c
     if (replacement?.kind === "playerStatic" && replacement.replaceArtifactTokens) t = replacement.replaceArtifactTokens;
   }
   const created: ObjectId[] = [];
+  // Worldwalker Helm : « ces jetons plus un jeton Carte supplémentaire » (la Carte elle-même n'en ajoute pas).
+  const helm =
+    t.types.includes("Artifact") && t.name !== "Map"
+      ? controlledAbilitiesWithSource(s, controller).find(({ ab }) => ab.kind === "playerStatic" && !!ab.extraMapToken)?.ab
+      : undefined;
+  const extraMap = helm?.kind === "playerStatic" ? helm.extraMapToken : undefined;
   // Moonlit Meditation : la première fois de chaque tour, des copies du permanent enchanté à la place.
   const meditation = controlledAbilitiesWithSource(s, controller).find(
     ({ id, ab }) =>
@@ -267,6 +273,7 @@ export function createTokens(s: GameState, controller: PlayerId, t: TokenSpec, c
     rulesEvent(s, { e: "zone", oldId: null, newId: o.id, from: null, to: "battlefield", lki: null });
     created.push(o.id);
   }
+  if (extraMap) created.push(...createTokens(s, controller, extraMap, 1));
   return created;
 }
 

@@ -323,6 +323,14 @@ export function evalAmount(s: GameState, ctx: EffectContext, a: Amount): number 
       return s.players[ctx.controller]?.turnStats.spellsCast ?? 0;
     case "cardsDrawnThisTurn":
       return s.players[ctx.controller]?.turnStats.cardsDrawn ?? 0;
+    case "distinctPowers": {
+      const ids = s.battlefield.filter((id) => matchesObjectFilter(s, ctx.controller, id, a.filter, ctx.sourceId));
+      return new Set(ids.map((id) => chars(s, id).power)).size;
+    }
+    case "cardTypesAmong": {
+      const ids = s.battlefield.filter((id) => matchesObjectFilter(s, ctx.controller, id, a.filter, ctx.sourceId));
+      return new Set(ids.flatMap((id) => chars(s, id).types)).size;
+    }
     case "refCount":
       return resolveRef(s, ctx, a.ref).length;
     case "noncreatureCastBy": {
@@ -1129,6 +1137,11 @@ export function runEffect(s: GameState, r: Resolution, e: Effect): OpResult {
       if (count <= 0) return;
       const min = Math.min(e.min ?? count, count);
       let picked = pool.length === count && min === count ? pool : null;
+      if (!picked && e.random) {
+        const shuffled = [...pool];
+        shuffle(s, shuffled);
+        picked = shuffled.slice(0, count);
+      }
       if (!picked) {
         const answer = r.vars[key("pickZone")];
         if (!answer) {
@@ -1982,6 +1995,7 @@ export function runEffect(s: GameState, r: Resolution, e: Effect): OpResult {
           if (e.addSubtypes?.length) addEffect(s, [token], { addSubtypes: e.addSubtypes }, "permanent");
           if (e.legendary) addEffect(s, [token], { addSupertypes: ["Legendary"] }, "permanent");
           if (e.addAbilities?.length) addEffect(s, [token], { addAbilities: e.addAbilities }, "permanent");
+          if (e.pt !== undefined) addEffect(s, [token], { setPower: e.pt, setToughness: e.pt }, "permanent");
           if (e.attacking && s.combat) {
             // Calamity : « engagé et attaquant » (il attaque ce qu'attaque une de vos créatures).
             const tok = s.objects[token];
@@ -2339,6 +2353,17 @@ export function runEffect(s: GameState, r: Resolution, e: Effect): OpResult {
       const n = evalAmount(s, ctx, e.amount);
       const ids = s.battlefield.filter((x) => matchesObjectFilter(s, ctx.controller, x, e.filter, ctx.sourceId));
       addEffect(s, ids, { setPower: n, setToughness: n }, "endOfTurn");
+      return;
+    }
+    case "addManaColorsAmong": {
+      const pool = s.players[ctx.controller]?.manaPool;
+      if (!pool) return;
+      const colors = new Set(
+        s.battlefield
+          .filter((id) => matchesObjectFilter(s, ctx.controller, id, e.filter, ctx.sourceId))
+          .flatMap((id) => chars(s, id).colors),
+      );
+      for (const c of colors) pool[c] += 1;
       return;
     }
     case "plot": {

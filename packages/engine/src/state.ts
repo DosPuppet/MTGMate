@@ -371,6 +371,8 @@ export function moveObject(
   ) {
     to = "exile";
   }
+  // Rest in Peace : tout ce qui irait au cimetière est exilé à la place.
+  if (to === "graveyard" && s.playerOrder.some((p) => playerStatic(s, p, "graveyardToExile"))) to = "exile";
   const from = zoneArray(s, o);
   if (from) {
     const i = from.indexOf(id);

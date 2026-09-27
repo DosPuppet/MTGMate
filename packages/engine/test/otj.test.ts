@@ -164,4 +164,37 @@ describe("Outlaws of Thunder Junction", () => {
     t = passAccepting(t, (x) => x.stack.length === 0 && x.triggers.length === 0 && x.pending?.kind === "priority");
     expect(t.players.p1?.life).toBe(19);
   });
+
+  it("The Big Score : Rest in Peace, Grand Abolisher, Torpor Orb, Worldwalker Helm", () => {
+    let s = scenario({
+      p1: { battlefield: ["Rest in Peace", ...lands("Mountain", 2)], hand: ["Lightning Strike"] },
+      p2: { battlefield: ["Bear Cub"] },
+    });
+    s = act(s, "p1", {
+      type: "cast",
+      card: idOf(s, "p1", "hand", "Lightning Strike"),
+      targets: { t: [idOf(s, "p2", "battlefield", "Bear Cub")] },
+    });
+    s = passBoth(s);
+    expect(s.players.p2?.graveyard).toHaveLength(0);
+    expect(s.players.p1?.graveyard).toHaveLength(0);
+    // Grand Abolisher : pendant le tour de p1, p2 ne lance rien.
+    const t = scenario({
+      p1: { battlefield: ["Grand Abolisher"] },
+      p2: { battlefield: lands("Mountain", 2), hand: ["Lightning Strike"] },
+    });
+    expect(legalActions(t, "p2").some((a) => a.type === "cast")).toBe(false);
+    // Torpor Orb : l'arrivée d'une créature ne déclenche rien.
+    let u = scenario({ p1: { battlefield: ["Torpor Orb", ...lands("Plains", 3)], hand: ["Holy Cow"] } });
+    u = act(u, "p1", { type: "cast", card: idOf(u, "p1", "hand", "Holy Cow") });
+    u = passBoth(u);
+    expect(u.players.p1?.life).toBe(20);
+    // Worldwalker Helm : un Trésor s'accompagne d'une Carte.
+    let v = scenario({ p1: { battlefield: ["Worldwalker Helm", "Treasure Dredger", ...lands("Swamp", 1)] } });
+    const dredger = idOf(v, "p1", "battlefield", "Treasure Dredger");
+    v = act(v, "p1", { type: "activate", source: dredger, ability: 0 });
+    v = passBoth(v);
+    expect(idsOf(v, "p1", "battlefield", "Treasure")).toHaveLength(1);
+    expect(idsOf(v, "p1", "battlefield", "Map")).toHaveLength(1);
+  });
 });

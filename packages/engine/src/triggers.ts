@@ -299,6 +299,8 @@ function matchTrigger(s: GameState, ev: RulesEvent, t: TriggerSpec, src: Source)
         s.playerOrder.some((p) => playerStatic(s, p, "noEntersTriggers"))
       )
         return null;
+      // Torpor Orb : l'arrivée de créatures ne déclenche rien.
+      if (v?.types.includes("Creature") && s.playerOrder.some((p) => playerStatic(s, p, "noCreatureEntersTriggers"))) return null;
       return v && matchWho(t.who, v, src) ? { objectId: v.id, player: v.controller } : null;
     }
     case "dies": {

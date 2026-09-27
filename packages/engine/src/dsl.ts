@@ -235,6 +235,8 @@ export const amount = {
   cardsDrawnThisTurn: { kind: "cardsDrawnThisTurn" } as Amount,
   noncreatureCastBy: (who: Ref): Amount => ({ kind: "noncreatureCastBy", who }),
   refCount: (r: Ref): Amount => ({ kind: "refCount", ref: r }),
+  distinctPowers: (filter: ObjectFilter): Amount => ({ kind: "distinctPowers", filter }),
+  cardTypesAmong: (filter: ObjectFilter): Amount => ({ kind: "cardTypesAmong", filter }),
   maxManaValue: (filter: ObjectFilter): Amount => ({ kind: "maxManaValue", filter }),
 };
 
@@ -422,6 +424,7 @@ export const fx = {
   controlNextTurn: (who: Ref): Effect => ({ op: "controlNextTurn", who }),
   /** La carte ou le sort est exilé et devient comploté. */
   plot: (what: Ref): Effect => ({ op: "plot", what }),
+  addManaColorsAmong: (filter: ObjectFilter): Effect => ({ op: "addManaColorsAmong", filter }),
   mayShuffleHandGraveyardDraw: (n = 7): Effect => ({ op: "mayShuffleHandGraveyardDraw", n }),
   coinFlip: (store: string): Effect => ({ op: "coinFlip", store }),
   extraUpkeeps: (amount: Amount): Effect => ({ op: "extraUpkeeps", amount }),
@@ -604,6 +607,7 @@ export const fx = {
       maxManaValue?: Amount;
       store?: string;
       pool?: Ref;
+      random?: boolean;
     } = {},
   ): Effect => ({
     op: "pickFromZone",
@@ -617,6 +621,7 @@ export const fx = {
     maxManaValue: opts.maxManaValue,
     store: opts.store,
     pool: opts.pool,
+    random: opts.random,
   }),
   topOrBottom: (what: Ref, topDamage?: number): Effect => ({ op: "libraryTopOrBottom", what, topDamage }),
   /** « … perd N points de vie à moins de défausser une carte / sacrifier un permanent » */
@@ -656,6 +661,7 @@ export const fx = {
       tapped?: boolean;
       attacking?: boolean;
       addTypes?: CardType[];
+      pt?: number;
     } = {},
   ): Effect => ({
     op: "copyToken",

@@ -347,6 +347,13 @@ export function computeBattlefield(s: GameState): Map<ObjectId, Characteristics>
         if (ab.kind !== "static") continue;
         if (ab.condition && !checkCondition(s, ab.condition, o.controller, id)) continue;
         let mods = ab.mods;
+        if (mods.gainLinkedActivated) {
+          // Territory Forge : les capacités activées (et de mana) des cartes liées.
+          const extra = (o.linked ?? [])
+            .flatMap((c) => s.defs[s.objects[c]?.defId ?? ""]?.abilities ?? [])
+            .filter((a) => a.kind === "activated" || a.kind === "mana");
+          mods = { ...mods, gainLinkedActivated: undefined, addAbilities: [...(mods.addAbilities ?? []), ...extra] };
+        }
         if (mods.copyLinkedExile) {
           const card = s.linkedExile.find((l) => l.sourceId === id)?.cards.find((c) => s.objects[c]?.zone === "exile");
           const defId = card ? s.objects[card]?.defId : undefined;

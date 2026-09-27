@@ -423,7 +423,14 @@ export function castableFaces(s: GameState, card: ObjectId, d: CardDef): [number
   return [[undefined, d]];
 }
 
+/** Grand Abolisher : le joueur actif empêche ses adversaires de lancer des sorts ou d'activer ces capacités. */
+function lockedOut(s: GameState, player: PlayerId): boolean {
+  const active = s.turn.active;
+  return active !== player && playerStatic(s, active, "lockOpponentsOnYourTurn");
+}
+
 export function castTerms(s: GameState, player: PlayerId, card: ObjectId): CastTerms | null {
+  if (lockedOut(s, player)) return null;
   // High Noon : « chaque joueur ne peut pas lancer plus d'un sort à chaque tour ».
   if ((s.players[player]?.turnStats.spellsCast ?? 0) >= 1 && s.playerOrder.some((p) => playerStatic(s, p, "oneSpellPerTurn")))
     return null;
@@ -972,6 +979,12 @@ export function canPayNonManaCost(s: GameState, source: ObjectId, ab: ActivatedA
   const o = s.objects[source];
   if (!o || o.zone !== abilityZone(ab)) return false;
   if (ab.once && o.used?.includes(index) && !exhaustReusable(s, o.controller, ab)) return false;
+  if (
+    o.zone === "battlefield" &&
+    lockedOut(s, o.controller) &&
+    chars(s, source).types.some((t) => t === "Artifact" || t === "Creature" || t === "Enchantment")
+  )
+    return false;
   if (ab.oncePerTurn && o.activatedTurn?.[index] === s.turn.number) return false;
   const who = abilityZone(ab) !== "battlefield" ? o.owner : o.controller;
   if (ab.activationCondition && !checkCondition(s, ab.activationCondition, who, source)) return false;

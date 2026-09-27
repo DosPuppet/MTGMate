@@ -774,6 +774,8 @@ export interface LayerMods {
   copyOf?: string;
   /** Assimilation Aegis : copie de la carte exilée par la source (liée par « exilez jusqu'à ce que »). */
   copyLinkedExile?: boolean;
+  /** Territory Forge : a les capacités activées des cartes liées à la source. */
+  gainLinkedActivated?: boolean;
   /** Couche 7b : F/E fixées. */
   setPower?: number;
   setToughness?: number;
@@ -882,6 +884,14 @@ export interface PlayerStaticAbilityDef {
   drawDouble?: boolean;
   /** Far Fortune : les blessures de vos sources à un adversaire ou à ses permanents : +1. */
   damagePlusOneToOpponents?: boolean;
+  /** Grand Abolisher : pendant votre tour, vos adversaires ne lancent pas de sorts ni n'activent de capacités d'artefacts, de créatures ou d'enchantements. */
+  lockOpponentsOnYourTurn?: boolean;
+  /** Rest in Peace (tous) : ce qui irait au cimetière est exilé à la place. */
+  graveyardToExile?: boolean;
+  /** Worldwalker Helm : vos jetons d'artefact sont accompagnés d'un jeton Carte. */
+  extraMapToken?: TokenSpec;
+  /** Torpor Orb (tous) : l'arrivée de créatures ne déclenche rien. */
+  noCreatureEntersTriggers?: boolean;
   /** Fblthp, Lost on the Range : vous pouvez regarder la carte du dessus de votre bibliothèque à tout moment. */
   lookAtTopCard?: boolean;
   /** Archangel of Tithes : les créatures ne peuvent vous attaquer que si leur contrôleur paie {1} pour chacune. */
@@ -1081,6 +1091,10 @@ export type Amount =
   | { kind: "noncreatureCastBy"; who: Ref }
   /** Nombre d'objets désignés (Luxurious Locomotive : les créatures qui l'ont équipé). */
   | { kind: "refCount"; ref: Ref }
+  /** Forces différentes parmi les créatures correspondantes (Collector's Cage). */
+  | { kind: "distinctPowers"; filter: ObjectFilter }
+  /** Types de carte différents parmi les permanents correspondants (Loot, the Key to Everything). */
+  | { kind: "cardTypesAmong"; filter: ObjectFilter }
   /** Plus grande valeur de mana parmi les permanents correspondants (Emissary Escort). */
   | { kind: "maxManaValue"; filter: ObjectFilter }
   /** Tarmogoyf : types de cartes parmi les cartes de tous les cimetières. */
@@ -1305,6 +1319,8 @@ export type Effect =
   | { op: "copyNextExhaust" }
   /** La carte (ou le sort) est exilée et devient complotée (702.170). */
   | { op: "plot"; what: Ref }
+  /** Tarnation Vista : un mana de chaque couleur présente parmi les permanents correspondants. */
+  | { op: "addManaColorsAmong"; filter: ObjectFilter }
   /** Chaque joueur peut mélanger sa main et son cimetière dans sa bibliothèque, puis pioche N cartes (Step Between Worlds). */
   | { op: "mayShuffleHandGraveyardDraw"; n: number }
   /** 705 : pile ou face ; `store` vaut 1 si le contrôleur gagne. */
@@ -1340,6 +1356,8 @@ export type Effect =
       tapped?: boolean;
       /** Engagée et attaquante (Calamity, Galloping Inferno). */
       attacking?: boolean;
+      /** F/E de base fixées (Nexus of Becoming : 3/3). */
+      pt?: number;
       /** « … sauf que c'est un artefact en plus » (Molten Duplication, Vaultborn Tyrant). */
       addTypes?: CardType[];
     }
@@ -1524,6 +1542,8 @@ export type Effect =
       filter: ObjectFilter;
       count: Amount;
       min?: number;
+      /** Choix au hasard (Omenpath Journey). */
+      random?: boolean;
       to: MoveSpec;
       prompt?: string;
       /** Exclut les objets mémorisés sous ce nom (« une autre carte de permanent »). */

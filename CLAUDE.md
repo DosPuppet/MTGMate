@@ -25,6 +25,7 @@ Ce fichier sert au suivi du projet entre les sessions. Le README présente le pr
 | **Reality Fracture (FRA, « Réalité fracturée »)** | ✅ **279 / 279** (lots 0 à G, dont 4 decks préconstruits ; les 3 dernières cartes au lot 0.1 de la branche `standard`) |
 | **Edge of Eternities (EOE)** | ✅ **260 / 260** (lots A à D, branche `standard`) |
 | **Aetherdrift (DFT)** | ✅ **260 / 260** (lots A à C, branche `standard`) |
+| **Outlaws of Thunder Junction + The Big Score (OTJ, BIG)** | ✅ **269 / 269 + 30 / 30** (lots A à C, branche `standard`) |
 | Autres extensions Standard | branche `standard`, plan par lots ci-dessous |
 
 ### Branche `standard` : tout le Standard
@@ -43,8 +44,9 @@ Objectif : les 18 extensions Standard restantes (environ 4 360 cartes), **100 % 
   - 0.9 mots-clés communs ✅ ;
   - 0.10 performances ✅.
 - **Phase 0 terminée.**
-- **Phase 1, extensions** (lots A/B/C, D pour FIN) : EOE ✅, DFT ✅, OTJ+BIG (A ✅), OTJ+BIG, BLB, TDM, WOE, SOS, ECL, TLA, SPM, MSH, TMT, HOB, MKM, DSK, LCI, FIN.
+- **Phase 1, extensions** (lots A/B/C, D pour FIN) : EOE ✅, DFT ✅, OTJ+BIG ✅, BLB, TDM, WOE, SOS, ECL, TLA, SPM, MSH, TMT, HOB, MKM, DSK, LCI, FIN.
 - **Phase 2 :** decks Standard multi-extensions, puis clôture (5 158 / 5 158).
+- **Consigne de l'utilisateur (27/09/2026) :** après OTJ+BIG, ne plus enchaîner les extensions du plan ; l'utilisateur dira laquelle implémenter ensuite.
 
 Lot 0.1 : le moteur gagne :
 - la **couche 1** (`LayerMods.copyOf`, effet `becomeCopy`, `copiedDefId`) : copie pour une durée, statiques et déclencheurs de la définition copiée, face copiée dans l'interface ;
@@ -246,7 +248,7 @@ Lot 0.10 (performances, pool complet de 5 174 cartes) :
   - les déclencheurs de légendaires doublés, les Auras qui volent les permanents moins chers (Eriette), le mana supplémentaire des jetons d'artefact (Roxanne), le bonus de blessures non de combat du tour (Taii Wakeen) ;
   - les références à la carte du dessus d'une bibliothèque, aux cartes exilées d'un joueur, à tous les cimetières ; la copie liée à une carte exilée (Assimilation Aegis) ; les jetons légendaires et à F/E variables (Beau) ;
   - le helper de test initialise le nombre de tours joués (`turnsTaken`, pour Jace Reawakened).
-- Lot C : The Big Score (BIG, 30 cartes).
+- Lot C ✅ (**BIG 30/30**, `big/index.ts`) : hideaway (Collector's Cage, carte liée), Grand Abolisher (`lockOpponentsOnYourTurn`), Rest in Peace (`graveyardToExile`), Torpor Orb, Worldwalker Helm (jeton Carte en plus), Territory Forge (capacités activées de la carte liée, `gainLinkedActivated`), tirage au hasard parmi des cartes liées (Omenpath Journey), jetons copies 3/3 (Nexus of Becoming), montants « forces différentes » et « types de carte parmi ».
 
 ### Reality Fracture (FRA)
 
@@ -414,6 +416,7 @@ Réimpressions : défenses talismaniques contre une couleur, changelin, restrict
 - **Obeka :** les étapes d'entretien supplémentaires ne font que déclencher les capacités « au début de votre entretien ».
 - **Riku of Many Paths :** un seul mode, quel que soit le nombre de modes du sort. **Resilient Roadrunner :** pas de protection contre les Coyotes.
 - **Great Train Heist :** le combat supplémentaire a lieu après le combat normal ; les Trésors viennent des blessures infligées à n'importe quel adversaire.
+- **Collector's Cage (hideaway) :** la carte est exilée face visible. **Memory Vessel :** on peut encore jouer les cartes de sa main. **Sword of Wealth and Power :** la protection devient une défense talismanique contre les éphémères. **Transmutation Font :** les trois jetons sacrifiés n'ont pas à avoir des noms différents. **Grand Abolisher :** les capacités de mana ne sont pas bloquées.
 - **Blessures de combat groupées** (« une ou plusieurs créatures… ») : une fois par étape de blessures et par joueur blessé.
 - **Légalité Standard :** instantané des légalités Scryfall au moment de l'import (`legalities.standard` dans `data/<set>.json`). Après une rotation ou une annonce de bannissement, réimporter les sets (`npm run import-cards -- <set>`).
 - **Jetons :** pas d'image (cadre texte).
