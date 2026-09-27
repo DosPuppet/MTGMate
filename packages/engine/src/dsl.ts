@@ -12,6 +12,7 @@ import type {
   CardDef,
   CardType,
   CastPermissionAbilityDef,
+  Color,
   Condition,
   CostReductionAbilityDef,
   DoublerAbilityDef,
@@ -44,6 +45,8 @@ export interface CardScript {
   spell?: SpellDef;
   /** Coût de kicker, ex. "{4}". */
   kicker?: string;
+  /** Kicker sans mana (avec `kicker: "{0}"`) : permanent sacrifié ou renvoyé, choisi automatiquement. */
+  kickerCost?: { sacrifice?: ObjectFilter; bounce?: ObjectFilter };
   /** Coût de flashback, ex. "{4}{R}{R}". */
   flashback?: string;
   /** « Flashback—[coût], défaussez N cartes. » */
@@ -65,6 +68,8 @@ export interface CardScript {
   chosenNameTax?: number;
   /** Dévorer écrit dans le script (Mimeoplasm : « exilez jusqu'à X cartes de créature de votre cimetière »). */
   devour?: { filter: ObjectFilter; n: number; graveyardUpToX?: boolean };
+  /** Cloud, Midgar Mercenary : déclencheurs doublés tant qu'elle est équipée. */
+  doubleTriggersWhenEquipped?: boolean;
   /** « Vous pouvez faire arriver cette créature comme copie d'un [permanent] que vous contrôlez ». */
   entersAsCopyOf?: ObjectFilter;
   /** « [Cette carte] a le flash tant que … » */
@@ -234,6 +239,9 @@ export const amount = {
   spellsCastThisTurn: { kind: "spellsCastThisTurn" } as Amount,
   cardsDrawnThisTurn: { kind: "cardsDrawnThisTurn" } as Amount,
   creaturesDiedThisTurn: { kind: "creaturesDiedThisTurn" } as Amount,
+  totalManaValue: (filter: ObjectFilter): Amount => ({ kind: "totalManaValue", filter }),
+  eventManaSpent: { kind: "eventManaSpent" } as Amount,
+  devotion: (color: Color): Amount => ({ kind: "devotion", color }),
   noncreatureCastBy: (who: Ref): Amount => ({ kind: "noncreatureCastBy", who }),
   refCount: (r: Ref): Amount => ({ kind: "refCount", ref: r }),
   distinctPowers: (filter: ObjectFilter): Amount => ({ kind: "distinctPowers", filter }),
@@ -331,7 +339,7 @@ export const fx = {
     who: Ref,
     filter: ObjectFilter,
     n: Amount = 1,
-    opts: { optional?: boolean; store?: string; greatestManaValue?: boolean; exile?: boolean } = {},
+    opts: { optional?: boolean; store?: string; greatestManaValue?: boolean; exile?: boolean; half?: boolean } = {},
   ): Effect => ({
     op: "sacrifice",
     who,
@@ -418,6 +426,7 @@ export const fx = {
       forOwner?: boolean;
       extraCost?: number;
       landsTapped?: boolean;
+      exileAfter?: boolean;
     } = {},
   ): Effect => ({
     op: "grantPlay",
@@ -499,6 +508,9 @@ export const fx = {
   payX: (prompt: string, store: string): Effect => ({ op: "payX", prompt, store }),
   changeTarget: (what: Ref): Effect => ({ op: "changeTarget", what }),
   extraCombat: { op: "extraCombat" } as Effect,
+  extraTurn: { op: "extraTurn" } as Effect,
+  extraEndStep: { op: "extraEndStep" } as Effect,
+  eachDealsDamage: (filter: ObjectFilter, to: Ref): Effect => ({ op: "eachDealsDamage", filter, to }),
   addManaUntilEndOfTurn: (...mana: ManaType[]): Effect => ({ op: "addManaUntilEndOfTurn", mana }),
   copyNextSpell: { op: "copyNextSpell" } as Effect,
   winGame: { op: "winGame" } as Effect,
@@ -684,6 +696,8 @@ export const fx = {
       attacking?: boolean;
       addTypes?: CardType[];
       pt?: number;
+      setColors?: Color[];
+      setSubtypes?: string[];
     } = {},
   ): Effect => ({
     op: "copyToken",
@@ -928,6 +942,8 @@ export const when = {
   leavesSelf: { on: "leaves", who: "self" } as TriggerSpec,
   attacksSelf: { on: "attacks", who: "self" } as TriggerSpec,
   attacks: (filter: ObjectFilter): TriggerSpec => ({ on: "attacks", who: filter }),
+  /** « Chaque fois qu'une créature [filtre] attaque seule » */
+  attacksAlone: (filter: ObjectFilter): TriggerSpec => ({ on: "attacks", who: filter, alone: true }),
   /** « Chaque fois qu'une [créature] vous attaque ou attaque un planeswalker que vous contrôlez » */
   attacksYou: (filter: ObjectFilter): TriggerSpec => ({ on: "attacks", who: filter, defending: "you" }),
   /** « Chaque fois que cette créature inflige des blessures de combat à un joueur » */
@@ -1031,7 +1047,7 @@ export const when = {
   /** « Chaque fois qu'une [créature] explore [une carte de terrain / non-terrain] » */
   explores: (who: "self" | ObjectFilter, land?: boolean): TriggerSpec => ({ on: "explores", who, land }),
   /** « Chaque fois que vous sacrifiez [un permanent] » */
-  sacrifice: (who: ObjectFilter): TriggerSpec => ({ on: "sacrifice", who }),
+  sacrifice: (who: ObjectFilter, anyPlayer?: boolean): TriggerSpec => ({ on: "sacrifice", who, anyPlayer }),
   /** « Chaque fois que cette Monture devient montée » */
   saddled: { on: "saddled" } as TriggerSpec,
   /** « Chaque fois que cette créature monte une Monture ou équipe un Véhicule [pendant votre phase principale] » */
@@ -1080,6 +1096,7 @@ export const cond = {
   wasCast: { kind: "wasCast" } as Condition,
   /** « si vous avez regardé ou surveillé ce tour-ci » */
   scried: { kind: "scriedThisTurn" } as Condition,
+  firstEndStep: { kind: "firstEndStep" } as Condition,
   creaturesDied: (n: number, underOpponent?: boolean): Condition => ({ kind: "creaturesDiedAtLeast", n, underOpponent }),
   opponentDealtNoncombatDamage: { kind: "opponentDealtNoncombatDamage" } as Condition,
   drewAtLeast: (n: number): Condition => ({ kind: "drewAtLeast", n }),

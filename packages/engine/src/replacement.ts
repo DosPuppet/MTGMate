@@ -170,6 +170,9 @@ export function applyEntersReplacements(s: GameState, o: GameObject, ctx: Enters
     if (ab.entersWithCounters !== undefined)
       changeCounters(s, o, ab.counterKind ?? P1P1, amountAtEntry(s, ab.entersWithCounters, o, ctx));
   }
+  // The Wandering Minstrel : « les terrains que vous contrôlez arrivent dégagés ».
+  if (o.tapped && s.defs[o.defId]?.types.includes("Land") && playerStatic(s, o.controller, "landsEnterUntapped"))
+    o.tapped = false;
 }
 
 /** 610.3 : la source d'un exil « jusqu'à ce que » quitte le champ de bataille : les cartes reviennent. */

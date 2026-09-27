@@ -26,7 +26,7 @@ Ce fichier sert au suivi du projet entre les sessions. Le README présente le pr
 | **Edge of Eternities (EOE)** | ✅ **260 / 260** (lots A à D, branche `standard`) |
 | **Aetherdrift (DFT)** | ✅ **260 / 260** (lots A à C, branche `standard`) |
 | **Outlaws of Thunder Junction + The Big Score (OTJ, BIG)** | ✅ **269 / 269 + 30 / 30** (lots A à C, branche `standard`) |
-| **Final Fantasy (FIN)** | 🚧 **242 / 307** (lots A à D1, branche `standard`) |
+| **Final Fantasy (FIN)** | 🚧 **264 / 307** (lots A à D2, branche `standard`) |
 | Autres extensions Standard | branche `standard`, plan par lots ci-dessous |
 
 ### Branche `standard` : tout le Standard
@@ -291,7 +291,15 @@ Demandée par l'utilisateur le 27/09/2026.
   - des blessures infligées par une autre source à chaque créature (`damageAll` avec `source`, Nibelheim Aflame) ;
   - les gains de PV doublés (`doubler({ lifeGain })`), la meule adverse augmentée (`opponentMillExtra`), la première pièce gagnée chaque tour (`winFirstCoinFlips`) ;
   - la restriction `noActivatedAbilities` (capacités activées et de mana).
-- Lot D2 et suivants : cartes restantes (légendaires, rares, transformables complexes : Clive, Terra, Sephiroth, Zenos, Kefka, Kuja, Serah, Ultimecia, Emet-Selch, Esper Origins, Crystal Fragments, Play Blitzball…).
+- Lot D2 ✅ (264/307) : 22 cartes (`fin/legends2.ts`, et Clive, Ultimecia, Sephiroth dans `fin/transform.ts`). Le moteur gagne :
+  - le kicker sans mana (`kickerCost` : sacrifier ou renvoyer un permanent, choisi automatiquement, jamais une cible du sort) ;
+  - les tours supplémentaires (`GameState.extraTurns`, `fx.extraTurn`) et les étapes de fin supplémentaires (`fx.extraEndStep`, `cond.firstEndStep`) ;
+  - le déclencheur « attaque seule » (`when.attacksAlone`), « un joueur sacrifie » (`when.sacrifice(filtre, true)`) ;
+  - les montants `totalManaValue`, `eventManaSpent`, `devotion` ; l'effet `eachDealsDamage` ; le sacrifice de la moitié (`half`) ;
+  - les statiques de joueur `landsEnterUntapped`, `playTopCard` (avec condition), `extraToken` (Quina) ;
+  - les restrictions `minThreeBlockers` et `combatDamageImmune` ; les copies de jeton « sauf que c'est un Démon noir » (`setColors`, `setSubtypes`) ;
+  - Cloud, Midgar Mercenary (`doubleTriggersWhenEquipped`) ; les permissions de lancer qui exilent le sort ensuite (`grantPlay` avec `exileAfter`).
+- Lot D3 : cartes restantes (légendaires, rares, transformables complexes : Clive, Terra, Sephiroth, Zenos, Kefka, Kuja, Serah, Ultimecia, Emet-Selch, Esper Origins, Crystal Fragments, Play Blitzball…).
 
 ### Reality Fracture (FRA)
 
@@ -465,6 +473,11 @@ Réimpressions : défenses talismaniques contre une couleur, changelin, restrict
 - **Haste Magic, Opera Love Song :** les cartes exilées sont jouables jusqu'à la fin de votre prochain tour (et non jusqu'à votre prochaine étape de fin).
 - **Freya Crescent :** son mana sert à toute capacité d'un Équipement, pas seulement à Équiper.
 - **Sorceress's Schemes :** seulement une carte d'éphémère ou de rituel du cimetière (pas une carte exilée avec flashback).
+- **Vayne's Treachery, Chocobo Kick :** le permanent du kicker est choisi automatiquement (le moins cher, jeton d'abord).
+- **Quistis Trepe, Seifer Almasy :** le sort se lance après la résolution, à tout moment ce tour-ci (comme Etali).
+- **The Lunar Whale :** « regarder la carte du dessus à tout moment » n'est pas affiché.
+- **Tellah, Great Sage :** trois déclenchements séparés (Héros, pioche, sacrifice). **Ultimecia, Sidequest: Raise a Chocobo :** l'effet « quand elle se transforme » est fait par l'effet qui la transforme.
+- **Quina, Qu Gourmet :** pas de Grenouille pour les jetons copies.
 - **Zell Dincht :** le terrain renvoyé est ciblé (comme Arid Archway).
 - **The Earth Crystal :** tous les marqueurs mis sur vos créatures sont doublés, pas seulement les marqueurs +1/+1.
 - **Rydia, Summoner of Mist :** la Saga ciblée a une valeur de mana d'au plus X (et non exactement X).

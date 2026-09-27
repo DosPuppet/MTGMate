@@ -325,6 +325,25 @@ export function evalAmount(s: GameState, ctx: EffectContext, a: Amount): number 
       return s.players[ctx.controller]?.turnStats.cardsDrawn ?? 0;
     case "creaturesDiedThisTurn":
       return s.turn.creaturesDied ?? 0;
+    case "totalManaValue":
+      return s.battlefield
+        .filter((id) => matchesObjectFilter(s, ctx.controller, id, a.filter, ctx.sourceId))
+        .reduce((n, id) => n + (snapshot(s, id).manaValue ?? 0), 0);
+    case "devotion": {
+      let n = 0;
+      for (const id of s.battlefield) {
+        if (s.objects[id]?.controller !== ctx.controller) continue;
+        const cost = s.defs[copiedDefId(s, id)]?.manaCost;
+        n += cost?.colored[a.color] ?? 0;
+        n += (cost?.hybrid ?? []).filter((h) => h.includes(a.color)).length;
+        n += (cost?.twoHybrid ?? []).filter((c) => c === a.color).length;
+      }
+      return n;
+    }
+    case "eventManaSpent": {
+      const id = ctx.event?.objectId;
+      return (id ? s.stack.find((x) => x.id === id)?.manaSpent : undefined) ?? 0;
+    }
     case "distinctPowers": {
       const ids = s.battlefield.filter((id) => matchesObjectFilter(s, ctx.controller, id, a.filter, ctx.sourceId));
       return new Set(ids.map((id) => chars(s, id).power)).size;
@@ -504,6 +523,14 @@ export function moveWithSpec(s: GameState, controller: PlayerId, id: ObjectId, s
   if (moved && zone === "exile" && spec.counters) changeCounters(s, moved, spec.counters.kind, spec.counters.n);
   if (!moved || zone !== "battlefield") return newId_;
   if (spec.tapped || spec.attacking) moved.tapped = true;
+  // The Wandering Minstrel : les terrains arrivent dégagés, même mis en jeu engagés par un effet.
+  if (
+    moved.tapped &&
+    !spec.attacking &&
+    s.defs[moved.defId]?.types.includes("Land") &&
+    playerStatic(s, moved.controller, "landsEnterUntapped")
+  )
+    moved.tapped = false;
   if (spec.attacking && s.combat) {
     // 508.4 : il attaque sans avoir été déclaré ; il attaque ce qu'attaque une créature de son contrôleur.
     const defender =
@@ -586,6 +613,7 @@ export function grantPlay(
     extraCost?: number;
     landsTapped?: boolean;
     anyMana?: boolean;
+    exileAfter?: boolean;
   },
 ): void {
   const last = until === "forever" ? Number.MAX_SAFE_INTEGER : until === "thisTurn" ? s.turn.number : nextTurnOf(s, player);
@@ -1631,12 +1659,18 @@ export function runEffect(s: GameState, r: Resolution, e: Effect): OpResult {
       return;
     }
     case "sacrifice": {
-      const n = evalAmount(s, ctx, e.amount);
+      const all = evalAmount(s, ctx, e.amount);
       for (const p of resolveRef(s, ctx, e.who)) {
         if (r.vars[key(`done-${p}`)]) continue;
         let candidates = s.battlefield.filter(
           (id) => s.objects[id]?.controller === p && matchesObjectFilter(s, p, id, e.filter, ctx.sourceId),
         );
+        // Zodiark : « la moitié des créatures qu'il contrôle, arrondie à l'inférieur ».
+        const n = e.half ? Math.floor(candidates.length / 2) : all;
+        if (n <= 0) {
+          r.vars[key(`done-${p}`)] = [1];
+          continue;
+        }
         if (e.greatestManaValue && candidates.length) {
           const mv = (id: string) => manaValue(s.defs[s.objects[id]?.defId ?? ""]?.manaCost);
           const max = Math.max(...candidates.map(mv));
@@ -2014,6 +2048,9 @@ export function runEffect(s: GameState, r: Resolution, e: Effect): OpResult {
           if (e.legendary) addEffect(s, [token], { addSupertypes: ["Legendary"] }, "permanent");
           if (e.addAbilities?.length) addEffect(s, [token], { addAbilities: e.addAbilities }, "permanent");
           if (e.pt !== undefined) addEffect(s, [token], { setPower: e.pt, setToughness: e.pt }, "permanent");
+          if (e.setColors || e.setSubtypes) {
+            addEffect(s, [token], { setColors: e.setColors, setSubtypes: e.setSubtypes }, "permanent");
+          }
           if (e.attacking && s.combat) {
             // Calamity : « engagé et attaquant » (il attaque ce qu'attaque une de vos créatures).
             const tok = s.objects[token];
@@ -2684,6 +2721,22 @@ export function runEffect(s: GameState, r: Resolution, e: Effect): OpResult {
       s.turn.extraCombats = (s.turn.extraCombats ?? 0) + 1;
       return;
     }
+    case "extraTurn": {
+      s.extraTurns = [...(s.extraTurns ?? []), ctx.controller];
+      return;
+    }
+    case "extraEndStep": {
+      s.turn.extraEndSteps = (s.turn.extraEndSteps ?? 0) + 1;
+      return;
+    }
+    case "eachDealsDamage": {
+      const to = resolveRef(s, ctx, e.to);
+      for (const id of s.battlefield.filter((x) => matchesObjectFilter(s, ctx.controller, x, e.filter, ctx.sourceId))) {
+        const src = sourceFromObject(s, id);
+        for (const t of to) dealDamage(s, src, t, Math.max(0, chars(s, id).power), false);
+      }
+      return;
+    }
     case "addManaUntilEndOfTurn": {
       const pl = s.players[ctx.controller];
       if (!pl) return;
@@ -2753,6 +2806,7 @@ export function runEffect(s: GameState, r: Resolution, e: Effect): OpResult {
         anyMana: e.anyMana,
         condition: e.condition,
         source: ctx.sourceId,
+        exileAfter: e.exileAfter,
       });
       return;
     }

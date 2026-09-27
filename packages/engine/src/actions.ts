@@ -97,6 +97,13 @@ export function dealDamage(s: GameState, source: DamageSource, target: string, a
   // Frenzied Baloth : « les blessures de combat ne peuvent pas être prévenues ».
   const unpreventable = combat && s.playerOrder.some((p) => playerStatic(s, p, "combatDamageUnpreventable"));
   if (combat && !unpreventable && preventsCombatDamage(s, target)) return;
+  if (
+    combat &&
+    !unpreventable &&
+    s.objects[target]?.zone === "battlefield" &&
+    chars(s, target).keywords.includes("combatDamageImmune")
+  )
+    return;
   const targetObj = s.objects[target];
   if (targetObj?.zone === "battlefield") {
     // 702.16e : protection contre tout — les blessures sont prévenues.
@@ -208,7 +215,7 @@ export function tokenDefId(t: TokenSpec): string {
   return `token:${t.name.toLowerCase().replace(/\W+/g, "-")}-${t.power ?? "x"}-${t.toughness ?? "x"}-${t.colors.join("")}${kw ? `-${kw}` : ""}`;
 }
 
-export function createTokens(s: GameState, controller: PlayerId, t: TokenSpec, count: number): ObjectId[] {
+export function createTokens(s: GameState, controller: PlayerId, t: TokenSpec, count: number, extras = true): ObjectId[] {
   // Draconic Visitor : les jetons d'artefact deviennent des Dragons 5/5 volants.
   if (t.types.includes("Artifact")) {
     const replacement = controlledAbilitiesWithSource(s, controller).find(
@@ -276,6 +283,12 @@ export function createTokens(s: GameState, controller: PlayerId, t: TokenSpec, c
     created.push(o.id);
   }
   if (extraMap) created.push(...createTokens(s, controller, extraMap, 1));
+  // Quina, Qu Gourmet : « ces jetons plus un jeton Grenouille 1/1 » (le jeton ajouté ne déclenche pas le remplacement).
+  if (extras && count > 0) {
+    for (const { ab } of controlledAbilitiesWithSource(s, controller)) {
+      if (ab.kind === "playerStatic" && ab.extraToken) created.push(...createTokens(s, controller, ab.extraToken, 1, false));
+    }
+  }
   return created;
 }
 

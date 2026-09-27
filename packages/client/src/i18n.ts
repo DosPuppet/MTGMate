@@ -71,6 +71,8 @@ export const KEYWORD_LABEL: Record<Keyword, string> = {
   doesntUntap: "Ne se dégage pas",
   cantBeBlockedByWalls: "Imblocable par les Murs",
   noActivatedAbilities: "Capacités activées bloquées",
+  minThreeBlockers: "Bloquée par trois créatures ou plus",
+  combatDamageImmune: "Blessures de combat prévenues",
   convoke: "Convocation",
   assignsToughness: "Blesse selon son endurance",
   absolutePowerDamage: "Blesse selon la valeur absolue de sa force",

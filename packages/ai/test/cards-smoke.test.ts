@@ -41,7 +41,11 @@ const LIBRARY = [
 ];
 
 /** Permanents supplémentaires du joueur 1 pour les cartes qui en exigent (« Enchant artifact you control »). */
-const EXTRA_P1: Record<string, string[]> = { "Hardlight Containment": ["Nutrient Block"] };
+const EXTRA_P1: Record<string, string[]> = {
+  "Hardlight Containment": ["Nutrient Block"],
+  // {B}{B}{B}{B}{B} : trois Marais ne suffisent pas.
+  "Zodiark, Umbral God": ["Swamp", "Swamp"],
+};
 /** Cartes supplémentaires dans le cimetière du joueur 1 (« carte d'artefact ciblée de votre cimetière »). */
 const EXTRA_P1_GRAVEYARD: Record<string, string[]> = { "Tune Up": ["Nutrient Block"] };
 

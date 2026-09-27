@@ -304,6 +304,96 @@ export const TRANSFORM: Record<string, CardScript> = {
   },
 
   // --- Terrain ----------------------------------------------------------------
+  "Clive, Ifrit's Dominant": {
+    abilities: [
+      triggered(
+        when.entersSelf,
+        [
+          fx.may(
+            "Défausser votre main pour piocher selon votre dévotion au rouge ?",
+            fx.discard(amount.cardsIn("hand")),
+            fx.draw(amount.devotion("R")),
+          ),
+        ],
+        { label: "Défaussez votre main, piochez selon la dévotion" },
+      ),
+      transformAbility("{4}{R}{R}"),
+    ],
+  },
+  "Ifrit, Warden of Inferno": {
+    abilities: [
+      chapter([1], [fx.fight(ref.self, ref.target())], {
+        targets: [target.upTo(1, target.creature("t", { other: true }))],
+        label: "Assaut : combat",
+      }),
+      chapter([2, 3], [fx.addMana("R", "R", "R", "R"), fx.when(cond.counterAtLeast("lore", 3), ...flipBack())], {
+        label: "Soufre : {R}{R}{R}{R}",
+      }),
+    ],
+  },
+  "Ultimecia, Time Sorceress": {
+    abilities: [
+      ...[when.entersSelf, when.attacksSelf].map((t) => triggered(t, [fx.surveil(2)], { label: "Surveillance 2" })),
+      // Approximation : le tour supplémentaire d'Ultimecia, Omnipotent (« quand elle se transforme ») est donné par le même effet.
+      triggered(
+        when.yourEndStep,
+        fx.mayPay(
+          "{4}{U}{U}{B}{B}",
+          "Payer {4}{U}{U}{B}{B} et exiler huit cartes de votre cimetière ?",
+          fx.pickFromZone("graveyard", {}, { to: "exile" }, { count: 8, min: 8, prompt: "Exilez huit cartes" }),
+          fx.transform(),
+          fx.extraTurn,
+        ),
+        { condition: cond.amountAtLeast(amount.countIn("graveyard"), 8), label: "Compression temporelle" },
+      ),
+    ],
+  },
+  "Ultimecia, Omnipotent": {},
+  "Sephiroth, Fabled SOLDIER": {
+    abilities: [
+      ...[when.entersSelf, when.attacksSelf].map((t) =>
+        triggered(
+          t,
+          [
+            fx.sacrifice(ref.you, { types: ["Creature"], other: true }, 1, { optional: true, store: "s" }),
+            fx.when(cond.v("s"), fx.draw(1)),
+          ],
+          { label: "Sacrifiez une créature : piochez" },
+        ),
+      ),
+      triggered(
+        when.dies({ types: ["Creature"], other: true }),
+        [
+          ...fx.drain(1, ref.target()),
+          fx.countResolution("n"),
+          fx.when(
+            cond.all(cond.v("n", 4), cond.not(cond.v("n", 5))),
+            fx.emblem(
+              "Sephiroth, One-Winged Angel",
+              "Whenever a creature dies, target opponent loses 1 life and you gain 1 life.",
+              [
+                triggered(when.dies({ types: ["Creature"] }), fx.drain(1, ref.target()), {
+                  targets: [target.player("t", "opponent")],
+                  label: "Drain 1",
+                }),
+              ],
+            ),
+            fx.transform(),
+          ),
+        ],
+        { targets: [target.player("t", "opponent")], label: "Drain 1 ; quatrième fois : transformez" },
+      ),
+    ],
+  },
+  "Sephiroth, One-Winged Angel": {
+    abilities: [
+      triggered(
+        when.attacksSelf,
+        [fx.sacrifice(ref.you, { types: ["Creature"], other: true }, 99, { optional: true, store: "s" }), fx.draw(amount.v("s"))],
+        { label: "Sacrifiez des créatures : piochez autant" },
+      ),
+    ],
+  },
   "Balamb Garden, SeeD Academy": {
     abilities: [
       entersWith({ tapped: true }),

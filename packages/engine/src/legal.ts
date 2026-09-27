@@ -16,6 +16,7 @@ import {
   castTerms,
   FACE_DOWN_SPELL,
   instantLoyalty,
+  kickerCostPermanent,
   modesOf,
   sacrificeOptions,
   sorceryTiming,
@@ -200,6 +201,7 @@ export function legalActions(s: GameState, player: PlayerId): ActionOption[] {
       kickerAffordable:
         !!d.kicker &&
         !flashback &&
+        (!d.kickerCost || !!kickerCostPermanent(s, player, card, d)) &&
         canPay(s, player, withExtra(spellCost(s, player, d, { ...base, kicked: true, free: terms.free })), undefined, purpose),
       fromGraveyard: terms.source === "graveyard" || terms.source === "flashback" ? true : undefined,
       fromExile: terms.source === "exile" ? true : undefined,

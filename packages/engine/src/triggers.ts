@@ -11,6 +11,7 @@
 import { ask } from "./choices";
 import { boardAmount, evalAmount } from "./effects";
 import { RulesError } from "./errors";
+import { copiedDefId } from "./layers";
 import {
   apnapOrder,
   chars,
@@ -135,6 +136,8 @@ export function checkCondition(s: GameState, c: Condition, controller: PlayerId,
       return s.turn.attacked && s.turn.active === controller && (!c.subtype || !!s.turn.attackerSubtypes?.includes(c.subtype));
     case "creatureDiedThisTurn":
       return s.turn.creatureDied;
+    case "firstEndStep":
+      return (s.turn.endSteps ?? 0) <= 1;
     case "creaturesDiedAtLeast":
       if (c.underOpponent)
         return opponentsOf(s, controller).reduce((n, q) => n + (s.players[q]?.turnStats.creaturesLost ?? 0), 0) >= c.n;
@@ -325,6 +328,7 @@ function matchTrigger(s: GameState, ev: RulesEvent, t: TriggerSpec, src: Source)
       if (!v || !matchWho(t.who, v, src)) return null;
       // « … vous attaque ou attaque un planeswalker que vous contrôlez » (Jace, Reality Sculptor).
       if (t.defending === "you" && ev.defender !== me && s.objects[ev.defender]?.controller !== me) return null;
+      if (t.alone && (s.combat?.attackers.length ?? 0) !== 1) return null;
       return { objectId: ev.attacker, player: ev.defender };
     }
     case "attackWith":
@@ -438,9 +442,9 @@ function matchTrigger(s: GameState, ev: RulesEvent, t: TriggerSpec, src: Source)
       return ok ? { player: ev.player } : null;
     }
     case "sacrifice": {
-      if (ev.e !== "sacrifice" || ev.player !== me) return null;
+      if (ev.e !== "sacrifice" || (ev.player !== me && !t.anyPlayer)) return null;
       const v = liveView(s, ev.objectId);
-      return v && matchWho(t.who, v, src) ? { objectId: ev.objectId, player: me } : null;
+      return v && matchWho(t.who, v, src) ? { objectId: ev.objectId, player: ev.player } : null;
     }
     case "saddled":
       return ev.e === "saddled" && ev.objectId === src.id ? { objectId: src.id, player: src.view.controller } : null;
@@ -571,9 +575,15 @@ export function detectTriggers(s: GameState, ev: RulesEvent): void {
         src.view.types.includes("Creature") &&
         src.view.supertypes.includes("Legendary") &&
         playerStatic(s, src.view.controller, "doubleLegendaryTriggers");
+      // Cloud, Midgar Mercenary : Cloud équipé, ou un Équipement attaché à Cloud.
+      const cloud = (id: string | undefined) =>
+        !!id && onBattlefield(s, id) && !!s.defs[copiedDefId(s, id)]?.doubleTriggersWhenEquipped && !!snapshot(s, id).equipped;
+      const equippedCloud =
+        (src.view.equipped && cloud(src.id)) || (src.view.subtypes.includes("Equipment") && cloud(src.view.attachedTo));
       const again =
         (ev.e === "zone" && ev.to === "battlefield" && playerStatic(s, src.view.controller, "doubleEnterTriggers") ? 2 : 1) +
-        (legendary ? 1 : 0);
+        (legendary ? 1 : 0) +
+        (equippedCloud ? 1 : 0);
       for (let k = 0; k < again; k++) {
         s.triggers.push({
           id: newId(s, "t"),

@@ -68,6 +68,10 @@ export type Keyword =
   | "cantBeBlockedByWalls"
   /** Stuck in Summoner's Sanctum : « ses capacités activées ne peuvent pas être activées ». */
   | "noActivatedAbilities"
+  /** Relentless X-ATM092 : « ne peut être bloquée que par trois créatures ou plus ». */
+  | "minThreeBlockers"
+  /** Diamond Weapon : « prévenez toutes les blessures de combat qui devraient lui être infligées ». */
+  | "combatDamageImmune"
   /** Convocation (702.51) : les créatures peuvent aider à payer le sort. */
   | "convoke"
   /** Ghalta the Immovable : si son endurance dépasse sa force, elle inflige ses blessures de combat selon son endurance. */
@@ -95,6 +99,8 @@ export const RESTRICTIONS: readonly Keyword[] = [
   "doesntUntap",
   "cantBeBlockedByWalls",
   "noActivatedAbilities",
+  "minThreeBlockers",
+  "combatDamageImmune",
 ];
 
 export const KEYWORDS: readonly Keyword[] = [
@@ -133,6 +139,8 @@ export interface CardDef {
   /** Effet à la résolution d'un éphémère ou d'un rituel. */
   spell?: SpellDef;
   kicker?: ManaCost;
+  /** Kicker sans mana (FIN) : « sacrifiez un artefact ou une créature », « renvoyez un terrain que vous contrôlez ». */
+  kickerCost?: { sacrifice?: ObjectFilter; bounce?: ObjectFilter };
   /** Coût de flashback : peut être lancée depuis le cimetière, puis exilée (702.34). */
   flashback?: ManaCost;
   /** « Ce sort ne peut pas être contrecarré. » */
@@ -162,6 +170,8 @@ export interface CardDef {
    * `graveyardUpToX` : « exilez jusqu'à X cartes de votre cimetière » à la place (Mimeoplasm, cartes liées).
    */
   devour?: { filter: ObjectFilter; n: number; graveyardUpToX?: boolean };
+  /** Cloud, Midgar Mercenary : tant qu'elle est équipée, ses capacités déclenchées et celles de ses Équipements se déclenchent une fois de plus. */
+  doubleTriggersWhenEquipped?: boolean;
   /** « Vous pouvez faire arriver cette créature comme copie d'un [permanent] que vous contrôlez » (Waxen Shapethief). */
   entersAsCopyOf?: ObjectFilter;
   /** « Si cette carte devait être mise dans un cimetière de n'importe où, mélangez-la dans la bibliothèque à la place. » */
@@ -555,7 +565,8 @@ export type TriggerSpec =
   /** `to` : seulement vers cette zone (« quand cet artefact est mis au cimetière depuis le champ de bataille »). */
   | { on: "leaves"; who: "self"; to?: Zone }
   /** `defending: "you"` : elle attaque le contrôleur ou un planeswalker qu'il contrôle. */
-  | { on: "attacks"; who: "self" | ObjectFilter; defending?: "you" }
+  /** `alone` : « chaque fois qu'une créature que vous contrôlez attaque seule » (Squall, Seifer). */
+  | { on: "attacks"; who: "self" | ObjectFilter; defending?: "you"; alone?: boolean }
   | { on: "dealsCombatDamage"; who: "self" | ObjectFilter; toPlayer?: boolean; toOpponent?: boolean }
   /** `targeting` : le sort cible un objet correspondant, ou un adversaire (`opponent`). */
   | {
@@ -620,7 +631,7 @@ export type TriggerSpec =
   /** « Chaque fois qu'une [créature] explore [une carte de terrain / non-terrain] » (701.44). */
   | { on: "explores"; who: "self" | ObjectFilter; land?: boolean }
   /** « Chaque fois que vous sacrifiez [un permanent] » */
-  | { on: "sacrifice"; who: ObjectFilter }
+  | { on: "sacrifice"; anyPlayer?: boolean; who: ObjectFilter }
   /** « Chaque fois que cette Monture devient montée » (702.171). */
   | { on: "saddled" }
   /** « Chaque fois que cette créature monte une Monture ou équipe un Véhicule [pendant votre phase principale] » ; l'objet de l'événement est la Monture ou le Véhicule. */
@@ -705,6 +716,8 @@ export type Condition =
   | { kind: "scriedThisTurn" }
   /** Au moins N créatures sont mortes ce tour-ci. */
   | { kind: "creaturesDiedAtLeast"; n: number; underOpponent?: boolean }
+  /** C'est la première étape de fin de ce tour (Y'shtola Rhul). */
+  | { kind: "firstEndStep" }
   /** Un adversaire a subi des blessures non de combat ce tour-ci. */
   | { kind: "opponentDealtNoncombatDamage" }
   /** Le contrôleur a pioché au moins N cartes ce tour-ci. */
@@ -842,6 +855,12 @@ export interface PlayerStaticAbilityDef {
   extraLands?: number;
   /** « Si vous deviez gagner des points de vie, vous en gagnez autant plus N à la place. » */
   lifeGainBonus?: number;
+  /** « Les terrains que vous contrôlez arrivent dégagés » (The Wandering Minstrel). */
+  landsEnterUntapped?: boolean;
+  /** « Vous pouvez jouer la carte du dessus de votre bibliothèque » (The Lunar Whale, avec `condition`). */
+  playTopCard?: boolean;
+  /** « Ces jetons plus un jeton [X] sont créés à la place » (Quina, Qu Gourmet). */
+  extraToken?: TokenSpec;
   /** « La première fois que vous lancez des pièces chaque tour, vous gagnez ces lancers » (Edgar, King of Figaro). */
   winFirstCoinFlips?: boolean;
   /** « Si un adversaire devait meuler des cartes, il en meule autant plus N à la place » (The Water Crystal). */
@@ -1101,6 +1120,12 @@ export type Amount =
   /** Cartes que vous avez piochées ce tour-ci (Duelist of the Mind). */
   | { kind: "cardsDrawnThisTurn" }
   | { kind: "creaturesDiedThisTurn" }
+  /** Somme des valeurs de mana des permanents correspondants (Summon: Bahamut). */
+  | { kind: "totalManaValue"; filter: ObjectFilter }
+  /** Mana dépensé pour lancer le sort de l'événement (Shantotto, Tellah). */
+  | { kind: "eventManaSpent" }
+  /** Dévotion à une couleur (700.5) : symboles de cette couleur dans les coûts de mana de vos permanents. */
+  | { kind: "devotion"; color: Color }
   /** Sorts non-créature lancés ce tour-ci par le joueur désigné (Magebane Lizard). */
   | { kind: "noncreatureCastBy"; who: Ref }
   /** Nombre d'objets désignés (Luxurious Locomotive : les créatures qui l'ont équipé). */
@@ -1257,6 +1282,8 @@ export type Effect =
       greatestManaValue?: boolean;
       /** « … choisit une créature qu'il contrôle et l'exile » (Sothera) : `store` mémorise les cartes exilées. */
       exile?: boolean;
+      /** La moitié des permanents correspondants, arrondie à l'inférieur (Zodiark). */
+      half?: boolean;
     }
   /** « Vous pouvez payer {X}. Si vous le faites, … » : les `skip` effets suivants sont ignorés sinon. */
   | { op: "mayPay"; cost: ManaCost; prompt: string; skip: number; life?: number }
@@ -1372,6 +1399,9 @@ export type Effect =
       attacking?: boolean;
       /** F/E de base fixées (Nexus of Becoming : 3/3). */
       pt?: number;
+      /** « … sauf que c'est un Démon noir » (Ardyn, the Usurper) : couleurs et sous-types remplacés. */
+      setColors?: Color[];
+      setSubtypes?: string[];
       /** « … sauf que c'est un artefact en plus » (Molten Duplication, Vaultborn Tyrant). */
       addTypes?: CardType[];
     }
@@ -1447,6 +1477,8 @@ export type Effect =
       landsTapped?: boolean;
       /** Du mana de n'importe quel type peut être dépensé (Tinybones, Laughing Jasper Flint). */
       anyMana?: boolean;
+      /** Le sort est exilé au lieu d'aller au cimetière (Quistis Trepe). */
+      exileAfter?: boolean;
     }
   /** Exile les cartes du dessus jusqu'à une carte correspondante (mémorisée) : Territorial Bruntar. */
   | { op: "exileUntil"; filter: ObjectFilter; store: string }
@@ -1518,6 +1550,12 @@ export type Effect =
   /** Le contrôleur gagne la partie (Maze's End). */
   | { op: "winGame" }
   | { op: "loseGame"; who?: Ref }
+  /** « Faites un tour supplémentaire après celui-ci » (Ultimecia, Omnipotent). */
+  | { op: "extraTurn" }
+  /** « Il y a une étape de fin supplémentaire après celle-ci » (Y'shtola Rhul). */
+  | { op: "extraEndStep" }
+  /** « Chaque [créature] inflige des blessures égales à sa force à [cible] » (Bartz and Boko). */
+  | { op: "eachDealsDamage"; filter: ObjectFilter; to: Ref }
   /** Compte les résolutions de cette capacité ce tour-ci, mémorisé sous `store` (Venom Connoisseur). */
   | { op: "countResolution"; store: string }
   /** Détruit les permanents non-terrains de valeur X des joueurs blessés au combat par la source ce tour-ci. */
@@ -2022,6 +2060,9 @@ export interface GameState {
     freeFlashbackGranted?: ObjectId[];
     /** Combats supplémentaires à venir ce tour-ci (Aurelia). */
     extraCombats?: number;
+    /** Étapes de fin supplémentaires à venir (Y'shtola Rhul) et étapes de fin déjà commencées ce tour-ci. */
+    extraEndSteps?: number;
+    endSteps?: number;
     /** Nombre de résolutions par capacité ce tour-ci (Venom Connoisseur). */
     resolutionCounts?: Record<string, number>;
     startingPlayer: PlayerId;
@@ -2055,6 +2096,8 @@ export interface GameState {
     extraCost?: number;
     landsTapped?: boolean;
     anyMana?: boolean;
+    /** « S'il devait être mis dans un cimetière, exilez-le à la place » (Quistis Trepe). */
+    exileAfter?: boolean;
   }[];
   /** Contrôle donné par une Aura (Confiscate) : contrôleur d'origine à rétablir quand l'Aura part. */
   /** `by` : contrôle tant que ce joueur contrôle la source (Possession Engine), et non tant que l'Aura est attachée. */
@@ -2066,6 +2109,8 @@ export interface GameState {
    * de ce tour ; pendant ce tour, les décisions de `player` sont prises par `by`.
    */
   turnControl?: { player: PlayerId; by: PlayerId; turn?: number };
+  /** Tours supplémentaires à venir (500.7 : le plus récent d'abord). */
+  extraTurns?: PlayerId[];
   /** « Au prochain éphémère ou rituel que vous lancez ce tour-ci, copiez-le » (Teach by Example). */
   nextSpellCopies?: { player: PlayerId; turn: number }[];
   /** « Terminez le tour » (Time Stop) : le tour passe directement à l'étape de nettoyage. */

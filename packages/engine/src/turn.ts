@@ -352,12 +352,22 @@ function endStep(s: GameState): void {
     s.turn.extraCombats = (s.turn.extraCombats ?? 1) - 1;
     next = "beginCombat";
   }
+  // Y'shtola Rhul : « il y a une étape de fin supplémentaire après celle-ci ».
+  if (s.turn.step === "end" && (s.turn.extraEndSteps ?? 0) > 0) {
+    s.turn.extraEndSteps = (s.turn.extraEndSteps ?? 1) - 1;
+    next = "end";
+  }
   if (next) {
     s.turn.step = next;
+    if (next === "end") s.turn.endSteps = (s.turn.endSteps ?? 0) + 1;
     emit({ type: "step", step: next });
   } else {
     s.turn.number += 1;
-    s.turn.active = nextPlayer(s, s.turn.active);
+    // 500.7 : un tour supplémentaire (le dernier créé d'abord), sinon le joueur suivant.
+    const extra = s.extraTurns?.pop();
+    s.turn.active = extra && s.players[extra] && !s.players[extra]?.lost ? extra : nextPlayer(s, s.turn.active);
+    s.turn.endSteps = 0;
+    s.turn.extraEndSteps = 0;
     s.turn.step = "untap";
     startTurnOf(s, s.turn.active);
     s.turn.landsPlayed = 0;
@@ -600,7 +610,7 @@ function hasAnyLegalBlock(s: GameState, player: PlayerId): boolean {
   const cands = blockCandidates(s, player);
   return (s.combat?.attackers ?? []).some((a) => {
     const n = cands.filter((c) => c.attackers.includes(a.id)).length;
-    return hasKeyword(s, a.id, "menace") ? n >= 2 : n >= 1;
+    return hasKeyword(s, a.id, "minThreeBlockers") ? n >= 3 : hasKeyword(s, a.id, "menace") ? n >= 2 : n >= 1;
   });
 }
 
@@ -665,6 +675,8 @@ export function declareBlockers(s: GameState, player: PlayerId, blocks: { blocke
     const n = blocks.filter((b) => b.attacker === a.id).length;
     if (n === 1 && hasKeyword(s, a.id, "menace"))
       throw new RulesError("Une créature avec la menace doit être bloquée par au moins deux créatures");
+    if (n > 0 && n < 3 && hasKeyword(s, a.id, "minThreeBlockers"))
+      throw new RulesError("Cette créature ne peut être bloquée que par trois créatures ou plus");
     if (n > 1 && hasKeyword(s, a.id, "cantBeBlockedByMoreThanOne"))
       throw new RulesError("Cette créature ne peut pas être bloquée par plus d'une créature");
   }

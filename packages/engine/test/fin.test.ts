@@ -182,6 +182,46 @@ describe("Final Fantasy", () => {
     expect(legalActions(s, "p2").some((a) => a.type === "tapForMana" && a.source === elves)).toBe(false);
   });
 
+  it("kicker sans mana : Vayne's Treachery sacrifie une créature (pas sa cible) et donne -6/-6", () => {
+    let s = scenario({
+      p1: { battlefield: ["Bear Cub", ...lands("Swamp", 2)], hand: ["Vayne's Treachery"] },
+      p2: { battlefield: ["Shivan Dragon"] },
+    });
+    const dragon = idOf(s, "p2", "battlefield", "Shivan Dragon");
+    const card = idOf(s, "p1", "hand", "Vayne's Treachery");
+    const opt = legalActions(s, "p1").find((a) => a.type === "cast" && a.card === card);
+    expect(opt?.type === "cast" && opt.kickerAffordable).toBe(true);
+    s = act(s, "p1", { type: "cast", card, kicked: true, targets: { t: [dragon] } });
+    expect(idsOf(s, "p1", "graveyard", "Bear Cub")).toHaveLength(1);
+    s = settle(s);
+    expect(idsOf(s, "p2", "graveyard", "Shivan Dragon")).toHaveLength(1);
+  });
+
+  it("Zodiark : chaque joueur sacrifie la moitié de ses créatures non-Dieu, et Zodiark grandit", () => {
+    let s = scenario({
+      p1: { battlefield: ["Bear Cub", "Bear Cub", ...lands("Swamp", 5)], hand: ["Zodiark, Umbral God"] },
+      p2: { battlefield: ["Bear Cub", "Bear Cub", "Bear Cub"] },
+    });
+    s = act(s, "p1", { type: "cast", card: idOf(s, "p1", "hand", "Zodiark, Umbral God") });
+    s = settle(s);
+    expect(idsOf(s, "p1", "battlefield", "Bear Cub")).toHaveLength(1);
+    expect(idsOf(s, "p2", "battlefield", "Bear Cub")).toHaveLength(2);
+    expect(s.objects[idOf(s, "p1", "battlefield", "Zodiark, Umbral God")]?.counters["+1/+1"]).toBe(2);
+  });
+
+  it("The Wandering Minstrel et Quina : terrains dégagés, Grenouille en plus des jetons", () => {
+    let s = scenario({ p1: { battlefield: ["The Wandering Minstrel", "Quina, Qu Gourmet"], hand: ["Baron, Airship Kingdom"] } });
+    const town = idOf(s, "p1", "hand", "Baron, Airship Kingdom");
+    s = act(s, "p1", { type: "playLand", card: town });
+    expect(s.objects[idOf(s, "p1", "battlefield", "Baron, Airship Kingdom")]?.tapped).toBe(false);
+    let t = scenario({ p1: { battlefield: ["Quina, Qu Gourmet", ...lands("Island", 3)], hand: ["Dragoon's Wyvern"] } });
+    t = act(t, "p1", { type: "cast", card: idOf(t, "p1", "hand", "Dragoon's Wyvern") });
+    t = settle(t);
+    expect(idsOf(t, "p1", "battlefield", "Hero")).toHaveLength(1);
+    // Une seule Grenouille : le jeton ajouté ne déclenche pas le remplacement.
+    expect(idsOf(t, "p1", "battlefield", "Frog")).toHaveLength(1);
+  });
+
   it("PuPu UFO : seule la force de base devient le nombre de Villes", () => {
     let s = scenario({ p1: { battlefield: ["PuPu UFO", "Adventurer's Inn", "Capital City", ...lands("Island", 3)] } });
     const ufo = idOf(s, "p1", "battlefield", "PuPu UFO");

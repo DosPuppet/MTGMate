@@ -666,6 +666,7 @@ function singleDef(raw: RawCard, script: CardScript | undefined, set: string): C
     cantBeCountered: script?.cantBeCountered,
     spell: script?.spell,
     kicker: script?.kicker ? parseManaCost(script.kicker) : undefined,
+    kickerCost: script?.kickerCost,
     flashback: script?.flashback ? parseManaCost(script.flashback) : undefined,
     flashbackDiscard: script?.flashbackDiscard,
     disguise: parseDisguise(raw.oracleText),
@@ -673,6 +674,7 @@ function singleDef(raw: RawCard, script: CardScript | undefined, set: string): C
     plot: parsePlot(raw.oracleText),
     devour: script?.devour ?? parseDevour(raw.oracleText),
     entersAsCopyOf: script?.entersAsCopyOf,
+    doubleTriggersWhenEquipped: script?.doubleTriggersWhenEquipped,
     shockLand: /As this land enters, you may pay (\d+) life\. If you don't, it enters tapped\./.exec(raw.oracleText)
       ? Number(/you may pay (\d+) life/.exec(raw.oracleText)?.[1])
       : undefined,

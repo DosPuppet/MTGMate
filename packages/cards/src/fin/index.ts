@@ -10,6 +10,7 @@ import { GEAR } from "./gear";
 import { GREEN } from "./green";
 import { LANDS } from "./lands";
 import { LEGENDS } from "./legends";
+import { LEGENDS2 } from "./legends2";
 import { MULTI } from "./multi";
 import { RED } from "./red";
 import { STARTER } from "./starter";
@@ -31,4 +32,5 @@ export const FIN_SCRIPTS: Record<string, CardScript> = {
   ...TRANSFORM,
   ...STARTER,
   ...LEGENDS,
+  ...LEGENDS2,
 };

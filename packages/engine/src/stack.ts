@@ -128,6 +128,10 @@ export function canPlayLand(s: GameState, player: PlayerId, card: ObjectId): boo
   const allowed =
     (o.zone === "hand" && o.owner === player) ||
     (o.zone === "exile" && !!exilePermission(s, player, card) && !exilePermission(s, player, card)?.anyTime) ||
+    (o.zone === "library" &&
+      o.owner === player &&
+      s.players[player]?.library[0] === card &&
+      playerStatic(s, player, "playTopCard")) ||
     // Ville à aventure (FIN) : la carte « en aventure » se joue comme terrain depuis l'exil (715.4).
     (o.zone === "exile" && !!o.onAdventure && o.owner === player) ||
     (o.zone === "graveyard" &&
@@ -232,6 +236,28 @@ export function spellReduction(
   return r;
 }
 
+/** Kicker sans mana (FIN) : le permanent choisi automatiquement pour le payer, s'il y en a un. */
+export function kickerCostPermanent(
+  s: GameState,
+  player: PlayerId,
+  card: ObjectId,
+  d: CardDef,
+  exclude: ObjectId[] = [],
+): ObjectId | undefined {
+  const f = d.kickerCost?.sacrifice ?? d.kickerCost?.bounce;
+  if (!f) return undefined;
+  const mv = (id: ObjectId) => (s.objects[id]?.isToken ? -1 : manaValue(s.defs[s.objects[id]?.defId ?? ""]?.manaCost));
+  return s.battlefield
+    .filter(
+      (id) =>
+        id !== card &&
+        !exclude.includes(id) &&
+        s.objects[id]?.controller === player &&
+        matchesObjectFilter(s, player, id, f, card),
+    )
+    .sort((a, b) => mv(a) - mv(b))[0];
+}
+
 /** Coût total d'un sort : coût de base, de flashback ou alternatif (ou rien), X, kicker, réductions. */
 export function spellCost(
   s: GameState,
@@ -298,6 +324,8 @@ export interface CastTerms {
   payLife?: number;
   /** Seulement au moment où l'on pourrait lancer un rituel (carte complotée). */
   sorceryTiming?: boolean;
+  /** Exilé au lieu d'aller au cimetière (Quistis Trepe). */
+  exileAfter?: boolean;
 }
 
 /** 702.170 : la carte (depuis la main ou la pile) est exilée face visible et devient complotée. */
@@ -473,7 +501,7 @@ function baseCastTerms(s: GameState, player: PlayerId, card: ObjectId): CastTerm
   if (o.zone === "graveyard") {
     // Tinybones, the Pickpocket : une carte d'un autre cimetière, lançable avec du mana de n'importe quel type.
     const gyPerm = exilePermission(s, player, card);
-    if (gyPerm) return { source: "graveyard", anyMana: gyPerm.anyMana, free: gyPerm.free };
+    if (gyPerm) return { source: "graveyard", anyMana: gyPerm.anyMana, free: gyPerm.free, exileAfter: gyPerm.exileAfter };
     if (o.owner !== player) return null;
     if (s.turn.mayCastFromGraveyard?.includes(card)) return { source: "graveyard" };
     // Timeline Culler : « vous pouvez lancer cette carte depuis votre cimetière avec sa distorsion ».
@@ -500,6 +528,8 @@ function baseCastTerms(s: GameState, player: PlayerId, card: ObjectId): CastTerm
     if (o.owner === player && top === card && d.types.includes("Creature") && playerStatic(s, player, "castCreaturesFromTop")) {
       return { source: "library", anyMana: true };
     }
+    // The Lunar Whale : « vous pouvez jouer la carte du dessus de votre bibliothèque » (si elle a attaqué ce tour-ci).
+    if (o.owner === player && top === card && playerStatic(s, player, "playTopCard")) return { source: "library" };
     // Mm'menon, the Right Hand : « vous pouvez lancer des sorts d'artefact depuis le dessus de votre bibliothèque ».
     if (o.owner === player && top === card && d.types.includes("Artifact") && playerStatic(s, player, "castArtifactsFromTop")) {
       return { source: "library" };
@@ -657,6 +687,9 @@ export function castSpell(s: GameState, player: PlayerId, card: ObjectId, choice
   const hasX = !free && !!(flashback ? (d.flashback ?? d.manaCost)?.x : d.manaCost?.x);
   const x = hasX ? Math.max(0, Math.floor(choices.x ?? 0)) : 0;
   const kicked = !!choices.kicked && !!d.kicker;
+  // Kicker sans mana : le permanent à sacrifier ou à renvoyer (choisi automatiquement : le moins cher, jeton d'abord).
+  const kickerPermanent = kicked && d.kickerCost ? kickerCostPermanent(s, player, card, d, flatTargets(targets)) : undefined;
+  if (kicked && d.kickerCost && !kickerPermanent) throw new RulesError("Impossible de payer le kicker");
 
   // Coûts additionnels : vérifiés avant tout changement d'état.
   const opts = additionalOptions(s, player, card, d, flashback);
@@ -728,7 +761,8 @@ export function castSpell(s: GameState, player: PlayerId, card: ObjectId, choice
     x,
     kicked,
     sourceSnapshot: { keywords: d.keywords, power: d.power ?? 0, controller: player },
-    flashback,
+    // Quistis Trepe : exilé en quittant la pile, comme un flashback.
+    flashback: flashback || !!terms.exileAfter,
     adventure: adventure || undefined,
     warped: warp ? true : undefined,
     manaSpent: free ? 0 : manaValue(cost),
@@ -768,6 +802,8 @@ export function castSpell(s: GameState, player: PlayerId, card: ObjectId, choice
     announceDiscardBatch(s, player, discard.length);
   }
   for (const id of sacrifice) sacrificePermanent(s, id);
+  if (kickerPermanent && d.kickerCost?.sacrifice) sacrificePermanent(s, kickerPermanent);
+  else if (kickerPermanent) moveObject(s, kickerPermanent, "hand");
   s.priority.passes = 0;
   emit({ type: "cast", player, stackId, defId: d.id, targets: flatTargets(targets) });
   const caster = s.players[player];
