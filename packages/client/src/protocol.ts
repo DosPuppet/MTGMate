@@ -1,6 +1,6 @@
 /** Messages échangés entre l'interface et le Web Worker qui fait tourner la partie. */
 import type { DeckEntries } from "@mtgx/cards";
-import type { AutopilotSettings, CardFace, Decision, GameEvent, GameView } from "@mtgx/engine";
+import type { AutopilotSettings, CardDef, CardFace, Decision, GameEvent, GameView } from "@mtgx/engine";
 
 /**
  * Bac à sable (mode dev, tests d'interface) : permanents et jetons mis en jeu au début de la partie,
@@ -23,6 +23,8 @@ export type ToWorker =
       playerName: string;
       playerDeck: DeckEntries;
       aiDecks: DeckEntries[];
+      /** Définitions des cartes utilisées (par nom) : le worker n'embarque pas toute la base de cartes. */
+      defs: Record<string, CardDef>;
       sandbox?: Sandbox;
     }
   | { type: "decision"; decision: Decision }

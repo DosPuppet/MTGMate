@@ -1,9 +1,11 @@
 /**
  * Structure du tour (500–514), priorité (117), combat (506–511) et actions basées sur l'état (704).
  */
-import { type DamageSource, dealDamage, destroy, drawCard, putIntoGraveyard, sourceFromObject } from "./actions";
+import { type DamageSource, dealDamage, destroy, drawCard, putIntoGraveyard, setSpeed, sourceFromObject } from "./actions";
 import { ask } from "./choices";
-import { announceDiscard } from "./effects";
+import { announceDiscard, announceDiscardBatch, drawBonus } from "./effects";
+import { copiedDefId } from "./layers";
+import { manaValue, payMana } from "./mana";
 import { RulesError, resolveTop } from "./stack";
 import {
   alivePlayers,
@@ -28,6 +30,7 @@ import {
   opponentsOf,
   P1P1,
   rulesEvent,
+  setController,
   shuffle,
   tapObject,
 } from "./state";
@@ -82,6 +85,8 @@ function givePriority(s: GameState): void {
 /** Début d'étape : déclenche les capacités « au début de… ». */
 function stepEvent(s: GameState): void {
   if (s.turn.step === "end") releaseDelayedTriggers(s);
+  if (s.turn.step === "endCombat") releaseDelayedTriggers(s, "endCombat");
+  if (s.turn.step === "upkeep") releaseDelayedTriggers(s, "upkeep");
   rulesEvent(s, { e: "step", step: s.turn.step, active: s.turn.active });
 }
 
@@ -185,12 +190,19 @@ function beginStep(s: GameState): void {
     case "untap":
       for (const id of s.battlefield) {
         const o = obj(s, id);
-        if (o.controller !== active || !o.tapped) continue;
+        if (o.controller !== active) continue;
+        // 701.43 : un permanent épuisé ne se dégage pas lors de la prochaine étape de dégagement.
+        if (o.exerted) {
+          o.exerted = undefined;
+          continue;
+        }
+        if (!o.tapped) continue;
         if (hasKeyword(s, id, "doesntUntap")) continue;
         // 122.1d : un marqueur d'étourdissement est retiré à la place du dégagement.
         if (counterCount(o, "stun") > 0) changeCounters(s, o, "stun", -1);
         else {
           o.tapped = false;
+          bump(s);
           rulesEvent(s, { e: "untap", objectId: id });
         }
       }
@@ -199,11 +211,23 @@ function beginStep(s: GameState): void {
     case "draw":
       // 103.8a : en duel, le joueur qui commence ne pioche pas lors de son premier tour
       // (103.8c : en multijoueur, personne ne saute sa pioche).
-      if (s.turn.number > 1 || s.playerOrder.length > 2) drawCard(s, active);
+      if (s.turn.number > 1 || s.playerOrder.length > 2) {
+        const extra = drawBonus(s, active, 1);
+        for (let i = 0; i < 1 + extra; i++) drawCard(s, active);
+      }
+      givePriority(s);
+      return;
+    case "main1":
+      // 714.3b : au début de la première phase principale, un marqueur de savoir sur chaque Saga du joueur actif.
+      for (const id of s.battlefield) {
+        const o = obj(s, id);
+        if (o.controller === active && s.defs[copiedDefId(s, id)]?.saga) changeCounters(s, o, "lore", 1);
+      }
       givePriority(s);
       return;
     case "beginCombat":
       s.combat = emptyCombat();
+      s.turn.combats = (s.turn.combats ?? 0) + 1;
       givePriority(s);
       return;
     case "declareAttackers":
@@ -253,6 +277,7 @@ export function discardToHandSize(s: GameState, p: PlayerId, cards: ObjectId[], 
   }
   const defIds = cards.map((c) => obj(s, c).defId);
   for (const c of cards) announceDiscard(s, p, moveObject(s, c, "graveyard"));
+  announceDiscardBatch(s, p, cards.length);
   emit({ type: "discard", player: p, defIds });
   finishCleanup(s);
 }
@@ -261,19 +286,23 @@ function finishCleanup(s: GameState): void {
   // 514.2 : les blessures sont retirées et les effets « jusqu'à la fin du tour » prennent fin.
   for (const id of s.battlefield) {
     const o = obj(s, id);
-    o.damage = 0;
+    // Ancient Adamantoise : ses blessures restent.
+    if (!hasKeyword(s, id, "keepsDamage")) o.damage = 0;
     o.deathtouched = false;
     o.damagedBy = undefined;
     o.combatDamagedPlayers = undefined;
   }
   s.effects = s.effects.filter((e) => e.duration !== "endOfTurn");
   s.replacements = [];
+  // Emblèmes « jusqu'à la fin du tour » (Jace Reawakened −6, Prairie Dog).
+  for (const p of s.playerOrder) {
+    for (const id of [...(s.players[p]?.command ?? [])]) if (s.objects[id]?.expiresEndOfTurn) moveObject(s, id, "exile");
+  }
   // Fin des changements de contrôle « jusqu'à la fin du tour » (Involuntary Employment).
   for (const c of s.controlChanges ?? []) {
     const o = s.objects[c.id];
     if (o?.zone === "battlefield") {
-      o.controller = c.original;
-      o.controlledSince = s.turn.number;
+      setController(s, o, c.original);
     }
   }
   s.controlChanges = [];
@@ -326,18 +355,34 @@ function endStep(s: GameState): void {
     s.turn.extraCombats = (s.turn.extraCombats ?? 1) - 1;
     next = "beginCombat";
   }
+  // Y'shtola Rhul : « il y a une étape de fin supplémentaire après celle-ci ».
+  if (s.turn.step === "end" && (s.turn.extraEndSteps ?? 0) > 0) {
+    s.turn.extraEndSteps = (s.turn.extraEndSteps ?? 1) - 1;
+    next = "end";
+  }
   if (next) {
     s.turn.step = next;
+    if (next === "end") s.turn.endSteps = (s.turn.endSteps ?? 0) + 1;
     emit({ type: "step", step: next });
   } else {
     s.turn.number += 1;
-    s.turn.active = nextPlayer(s, s.turn.active);
+    // 500.7 : un tour supplémentaire (le dernier créé d'abord), sinon le joueur suivant.
+    const extra = s.extraTurns?.pop();
+    s.turn.active = extra && s.players[extra] && !s.players[extra]?.lost ? extra : nextPlayer(s, s.turn.active);
+    s.turn.endSteps = 0;
+    s.turn.extraEndSteps = 0;
+    s.turn.preventCreatureDamageFor = undefined;
+    s.turn.combats = 0;
     s.turn.step = "untap";
     startTurnOf(s, s.turn.active);
     s.turn.landsPlayed = 0;
     s.turn.attacked = false;
     s.turn.creatureDied = false;
     s.turn.creaturesDied = 0;
+    s.turn.nonlandLeft = false;
+    s.turn.spellWarped = false;
+    s.turn.speedRaised = false;
+    s.turn.attackerSubtypes = [];
     emit({ type: "turnStart", turn: s.turn.number, player: s.turn.active });
   }
   s.flow = "stepStart";
@@ -384,8 +429,17 @@ export function endTheTurn(s: GameState, r: { item: StackItem }): void {
 }
 
 function startTurnOf(s: GameState, p: PlayerId): void {
+  // 722 : le tour contrôlé commence (ou le contrôle précédent se termine).
+  if (s.turnControl?.turn !== undefined && s.turnControl.turn !== s.turn.number) s.turnControl = undefined;
+  if (s.turnControl && s.turnControl.turn === undefined && s.turnControl.player === p) {
+    s.turnControl.turn = s.turn.number;
+    emit({ type: "turnControl", player: p, by: s.turnControl.by });
+  }
   const player = s.players[p];
-  if (player) player.lastTurnStarted = s.turn.number;
+  if (player) {
+    player.lastTurnStarted = s.turn.number;
+    player.turnsTaken = (player.turnsTaken ?? 0) + 1;
+  }
   // Les statistiques « ce tour-ci » repartent de zéro pour tout le monde (on garde les blessures non de combat du tour passé).
   for (const q of s.playerOrder) {
     const pl = s.players[q];
@@ -474,7 +528,10 @@ export function defendingPlayer(s: GameState, defender: string): PlayerId {
 /** Ce qu'un joueur peut attaquer : ses adversaires et leurs planeswalkers (506.2). */
 export function attackableDefenders(s: GameState, player: PlayerId): string[] {
   const opps = opponentsOf(s, player);
-  const walkers = s.battlefield.filter((id) => opps.includes(obj(s, id).controller) && hasType(s, id, "Planeswalker"));
+  // The Aetherspark : « tant qu'il est attaché à une créature, il ne peut pas être attaqué ».
+  const walkers = s.battlefield.filter(
+    (id) => opps.includes(obj(s, id).controller) && hasType(s, id, "Planeswalker") && !obj(s, id).attachedTo,
+  );
   return [...opps, ...walkers];
 }
 
@@ -498,6 +555,18 @@ export function declareAttackers(s: GameState, player: PlayerId, attackers: { id
   // 508.1d : les créatures qui « attaquent à chaque combat si possible » doivent être déclarées.
   const forced = attackCandidates(s, player).filter((id) => hasKeyword(s, id, "mustAttack") && !seen.has(id));
   if (forced.length > 0) throw new RulesError(`${chars(s, forced[0] as ObjectId).name} doit attaquer si elle le peut`);
+  // Archangel of Tithes : {1} pour chaque créature qui attaque un joueur protégé (ou ses planeswalkers).
+  const tax = attackers.reduce((n, a) => {
+    const defender = defendingPlayer(s, a.defender);
+    return n + (defender && playerStatic(s, defender, "attackTax") ? 1 : 0);
+  }, 0);
+  if (tax > 0) {
+    try {
+      payMana(s, player, { generic: tax, colored: {}, x: 0 });
+    } catch {
+      throw new RulesError(`Il faut payer {${tax}} pour attaquer`);
+    }
+  }
   if (!s.combat) s.combat = emptyCombat();
   for (const a of attackers) {
     if (!hasKeyword(s, a.id, "vigilance")) tapObject(s, obj(s, a.id));
@@ -507,7 +576,9 @@ export function declareAttackers(s: GameState, player: PlayerId, attackers: { id
   bump(s);
   for (const a of attackers) rulesEvent(s, { e: "attack", attacker: a.id, defender: a.defender });
   if (attackers.length > 0) rulesEvent(s, { e: "attackWith", player, count: attackers.length });
-  s.turn.attacked = attackers.length > 0;
+  if (attackers.length > 0) s.turn.attacked = true;
+  const subtypes = new Set([...(s.turn.attackerSubtypes ?? []), ...attackers.flatMap((a) => chars(s, a.id).subtypes)]);
+  s.turn.attackerSubtypes = [...subtypes];
   if (attackers.length > 0) {
     emit({ type: "attack", player, attackers: attackers.map((a) => ({ id: a.id, defId: obj(s, a.id).defId })) });
   }
@@ -520,12 +591,15 @@ export function canBlock(s: GameState, blocker: ObjectId, attacker: ObjectId): b
   const a = s.combat?.attackers.find((x) => x.id === attacker);
   if (!a || !onBattlefield(s, attacker) || b.controller !== defendingPlayer(s, a.defender)) return false;
   if (hasKeyword(s, blocker, "cantBlock") || hasKeyword(s, attacker, "unblockable")) return false;
+  // Drone : « ne peut bloquer que des créatures avec le vol ».
+  if (hasKeyword(s, blocker, "canBlockOnlyFlyers") && !hasKeyword(s, attacker, "flying")) return false;
   // 702.16f : une créature avec la protection contre tout ne peut pas être bloquée.
   if (hasKeyword(s, attacker, "protectionFromEverything")) return false;
   if (hasKeyword(s, attacker, "cantBeBlockedByHumans") && chars(s, blocker).subtypes.includes("Human")) return false;
   if (hasKeyword(s, attacker, "cantBeBlockedByPowerLE2") && chars(s, blocker).power <= 2) return false;
   if (hasKeyword(s, attacker, "flying") && !hasKeyword(s, blocker, "flying") && !hasKeyword(s, blocker, "reach")) return false;
   if (hasKeyword(s, attacker, "cantBeBlockedByWalls") && chars(s, blocker).subtypes.includes("Wall")) return false;
+  if (hasKeyword(s, attacker, "cantBeBlockedExceptByHaste") && !hasKeyword(s, blocker, "haste")) return false;
   return true;
 }
 
@@ -541,7 +615,7 @@ function hasAnyLegalBlock(s: GameState, player: PlayerId): boolean {
   const cands = blockCandidates(s, player);
   return (s.combat?.attackers ?? []).some((a) => {
     const n = cands.filter((c) => c.attackers.includes(a.id)).length;
-    return hasKeyword(s, a.id, "menace") ? n >= 2 : n >= 1;
+    return hasKeyword(s, a.id, "minThreeBlockers") ? n >= 3 : hasKeyword(s, a.id, "menace") ? n >= 2 : n >= 1;
   });
 }
 
@@ -594,10 +668,22 @@ export function declareBlockers(s: GameState, player: PlayerId, blocks: { blocke
   }
   const unmet = unmetBlockRequirement(s, player, blocks);
   if (unmet) throw new RulesError(`${chars(s, unmet).name} doit être bloquée si possible`);
+  // Archangel of Tithes (attaquant) : {1} par créature qui bloque.
+  if (blocks.length && s.playerOrder.some((p) => p !== player && playerStatic(s, p, "blockTax"))) {
+    try {
+      payMana(s, player, { generic: blocks.length, colored: {}, x: 0 });
+    } catch {
+      throw new RulesError(`Il faut payer {${blocks.length}} pour bloquer`);
+    }
+  }
   for (const a of c.attackers) {
     const n = blocks.filter((b) => b.attacker === a.id).length;
     if (n === 1 && hasKeyword(s, a.id, "menace"))
       throw new RulesError("Une créature avec la menace doit être bloquée par au moins deux créatures");
+    if (n > 0 && n < 3 && hasKeyword(s, a.id, "minThreeBlockers"))
+      throw new RulesError("Cette créature ne peut être bloquée que par trois créatures ou plus");
+    if (n > 1 && hasKeyword(s, a.id, "cantBeBlockedByMoreThanOne"))
+      throw new RulesError("Cette créature ne peut pas être bloquée par plus d'une créature");
   }
   c.blockers.push(...blocks.map((b) => ({ id: b.blocker, attacker: b.attacker })));
   for (const b of blocks) rulesEvent(s, { e: "block", blocker: b.blocker, attacker: b.attacker });
@@ -771,6 +857,13 @@ function combatDamage(s: GameState, firstStrikeStep: boolean): void {
   // 510.2 : toutes les blessures de combat sont infligées simultanément.
   simultaneously(s, () => {
     for (const x of assignments) dealDamage(s, x.src, x.target, x.amount, true);
+    // « Chaque fois qu'une ou plusieurs créatures … infligent des blessures de combat à un joueur » : une fois par joueur.
+    const byPlayer = new Map<PlayerId, ObjectId[]>();
+    for (const x of assignments) {
+      if (!s.players[x.target] || x.amount <= 0 || !x.src.id) continue;
+      byPlayer.set(x.target, [...(byPlayer.get(x.target) ?? []), x.src.id]);
+    }
+    for (const [player, sources] of byPlayer) rulesEvent(s, { e: "combatDamageBatch", player, sources });
   });
 }
 
@@ -805,6 +898,9 @@ export function eliminate(s: GameState, losers: PlayerId[]): void {
     const player = s.players[p];
     if (player) player.lost = true;
   }
+  // Tous les perdants sont marqués avant que les déclencheurs ne relisent les caractéristiques.
+  bump(s);
+  for (const p of losers) rulesEvent(s, { e: "playerLost", player: p });
   const alive = alivePlayers(s);
   if (alive.length <= 1) {
     s.over = true;
@@ -853,6 +949,8 @@ function removePlayerObjects(s: GameState, p: PlayerId): void {
   s.exile = s.exile.filter((id) => !gone.has(id));
   s.stack = s.stack.filter((item) => item.controller !== p && (item.kind === "ability" || !gone.has(item.sourceId)));
   if (s.combat) {
+    // Des créatures cessent d'attaquer : des statiques « créatures attaquantes » en dépendent.
+    bump(s);
     s.combat.attackers = s.combat.attackers.filter((a) => !gone.has(a.id) && defendingPlayer(s, a.defender) !== p);
     s.combat.blockers = s.combat.blockers.filter((b) => !gone.has(b.id));
     s.combat.blockQueue = s.combat.blockQueue.filter((q) => q !== p);
@@ -869,6 +967,11 @@ function stateBasedActionsOnce(s: GameState): void {
   for (let guard = 0; guard < 100; guard++) {
     checkGameOver(s);
     if (s.over) return;
+    // 702.179a : « Start your engines! » — un joueur sans vitesse qui contrôle un tel permanent a la vitesse 1.
+    for (const id of s.battlefield) {
+      const c = s.players[obj(s, id).controller];
+      if (c && c.speed === undefined && hasKeyword(s, id, "startYourEngines")) setSpeed(s, c.id, 1);
+    }
     const toGraveyard: ObjectId[] = [];
     const toDestroy: ObjectId[] = [];
     let changed = false;
@@ -887,6 +990,18 @@ function stateBasedActionsOnce(s: GameState): void {
         hasType(s, id, "Planeswalker") &&
         counterCount(o, "loyalty") <= 0 &&
         !playerStatic(s, o.controller, "walkersSurviveZeroLoyalty")
+      ) {
+        toGraveyard.push(id);
+        continue;
+      }
+      // 714.4 : une Saga dont le dernier chapitre est atteint, et dont aucun chapitre n'attend, est sacrifiée.
+      // Face active : une Saga au verso (Summons de FIN) ; une Saga retournée au recto n'en est plus une.
+      const saga = s.defs[copiedDefId(s, id)]?.saga;
+      if (
+        saga &&
+        counterCount(o, "lore") >= saga.chapters &&
+        !s.stack.some((x) => x.kind === "ability" && x.sourceId === id) &&
+        !s.triggers.some((t) => t.sourceId === id)
       ) {
         toGraveyard.push(id);
         continue;
@@ -923,6 +1038,7 @@ function stateBasedActionsOnce(s: GameState): void {
           !hasKeyword(s, o.attachedTo, "protectionFromEverything")
         )
       ) {
+        o.lastAttachedTo = o.attachedTo;
         o.attachedTo = undefined;
         bump(s);
         changed = true;
@@ -933,9 +1049,11 @@ function stateBasedActionsOnce(s: GameState): void {
     const legends = new Map<string, ObjectId[]>();
     for (const id of s.battlefield) {
       const o = obj(s, id);
-      const d = s.defs[o.defId];
-      if (!d?.supertypes.includes("Legendary")) continue;
-      const key = `${o.controller}|${d.name}`;
+      // Caractéristiques calculées : une copie (Hall of Echoes) porte le nom et le supertype copiés.
+      const c = chars(s, id);
+      if (!c.supertypes.includes("Legendary")) continue;
+      if (s.players[o.controller]?.noLegendRuleTurn === s.turn.number) continue;
+      const key = `${o.controller}|${c.name}`;
       legends.set(key, [...(legends.get(key) ?? []), id]);
     }
     let legendChoice: { player: PlayerId; ids: ObjectId[] } | null = null;
@@ -983,27 +1101,37 @@ function applyAuraControl(s: GameState): boolean {
   // Aura partie ou détachée : le contrôleur d'origine récupère le permanent.
   for (const c of [...(s.auraControl ?? [])]) {
     const aura = s.objects[c.aura];
-    if (aura?.zone === "battlefield" && aura.attachedTo === c.host) continue;
+    // Possession Engine : tant que ce joueur contrôle la source (et non tant que l'Aura est attachée).
+    if (
+      c.by ? aura?.zone === "battlefield" && aura.controller === c.by : aura?.zone === "battlefield" && aura.attachedTo === c.host
+    )
+      continue;
     s.auraControl = (s.auraControl ?? []).filter((x) => x !== c);
     const host = s.objects[c.host];
     if (host?.zone === "battlefield" && host.controller !== c.original) {
       removeFromCombatOf(s, c.host);
-      host.controller = c.original;
-      host.controlledSince = s.turn.number;
+      setController(s, host, c.original);
       changed = true;
     }
   }
   for (const id of s.battlefield) {
     const aura = obj(s, id);
     const host = aura.attachedTo ? s.objects[aura.attachedTo] : undefined;
-    if (host?.zone !== "battlefield" || !s.defs[aura.defId]?.controlsEnchanted) continue;
+    // Eriette, the Beguiler : une Aura attachée à un permanent non-terrain adverse de VM inférieure ou égale.
+    const steals =
+      host?.zone === "battlefield" &&
+      host.controller !== aura.controller &&
+      !chars(s, host.id).types.includes("Land") &&
+      manaValue(s.defs[host.defId]?.manaCost) <= manaValue(s.defs[aura.defId]?.manaCost) &&
+      !!s.defs[aura.defId]?.subtypes.includes("Aura") &&
+      playerStatic(s, aura.controller, "auraStealsCheaper");
+    if (host?.zone !== "battlefield" || !(s.defs[aura.defId]?.controlsEnchanted || steals)) continue;
     if (host.controller === aura.controller) continue;
     if (!(s.auraControl ?? []).some((c) => c.host === host.id && c.aura === id)) {
       s.auraControl = [...(s.auraControl ?? []), { host: host.id, aura: id, original: host.controller }];
     }
     removeFromCombatOf(s, host.id);
-    host.controller = aura.controller;
-    host.controlledSince = s.turn.number;
+    setController(s, host, aura.controller);
     changed = true;
   }
   if (changed) bump(s);
@@ -1012,6 +1140,7 @@ function applyAuraControl(s: GameState): boolean {
 
 function removeFromCombatOf(s: GameState, id: ObjectId): void {
   if (!s.combat) return;
+  bump(s);
   s.combat.attackers = s.combat.attackers.filter((a) => a.id !== id);
   s.combat.blockers = s.combat.blockers.filter((b) => b.id !== id);
   for (const a of s.combat.attackers) a.blockers = a.blockers.filter((b) => b !== id);

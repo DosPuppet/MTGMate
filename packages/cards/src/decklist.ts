@@ -46,6 +46,8 @@ export const DEFAULT_FORMAT: Format = "standard";
 /** Problème de légalité d'une carte dans un format, ou undefined si elle y est légale. */
 export function legalityIssue(c: CardDef, format: Format = DEFAULT_FORMAT): string | undefined {
   const label = FORMAT_LABELS[format];
+  // Carte assemblée (verso commun de deux cartes à assemblage) : elle n'existe pas seule.
+  if (c.meldResult) return `${c.name} est une carte assemblée : elle ne se met pas dans un deck`;
   switch (c.legalities?.[format]) {
     case "legal":
       return undefined;
@@ -96,6 +98,20 @@ export class CardIndex {
       if (c.fr?.name) this.byName.set(normalizeName(c.fr.name), c.name);
       // Carte « à préparer » : certains exports écrivent « Créature // Sort ».
       if (c.prepareFace) this.byName.set(normalizeName(`${c.name} // ${c.prepareFace.name}`), c.name);
+    }
+    // Cartes à plusieurs faces : le recto seul (MTGA), « A/B » (MTGO) et le nom français du recto,
+    // sans écraser le nom d'une autre carte.
+    for (const c of Object.values(cards)) {
+      const [front, back] = c.faceDefs ?? [];
+      if (c.isToken || !front) continue;
+      const alias = (n: string | undefined) => {
+        const key = n ? normalizeName(n) : "";
+        if (key && !this.byName.has(key)) this.byName.set(key, c.name);
+      };
+      alias(front.name);
+      alias(front.fr?.name);
+      if (back) alias(`${front.name}/${back.name}`);
+      if (back && front.fr?.name && back.fr?.name) alias(`${front.fr.name} // ${back.fr.name}`);
     }
   }
 
@@ -219,7 +235,7 @@ export function serializeDeckList(
   const format = opts.format ?? "mtga";
   const line = ([n, name]: [number, string]) => {
     const c = cards[name];
-    if (format === "mtga") return `${n} ${name}${c?.set && c.number ? ` (${c.set}) ${c.number}` : ""}`;
+    if (format === "mtga") return `${n} ${exportName(c, name)}${c?.set && c.number ? ` (${c.set}) ${c.number}` : ""}`;
     return `${n} ${(opts.lang === "fr" && c?.fr?.name) || name}`;
   };
   const side = deck.sideboard ?? [];
@@ -229,6 +245,12 @@ export function serializeDeckList(
     return `${parts.join("\n")}\n`;
   }
   return `${[...deck.main.map(line), ...(side.length ? ["", ...side.map(line)] : [])].join("\n")}\n`;
+}
+
+/** Nom exporté : le nom complet « A // B » pour une carte scindée, le recto seul pour les autres cartes à plusieurs faces. */
+function exportName(c: CardDef | undefined, name: string): string {
+  if (!c?.faceDefs?.length || c.layout === "split") return name;
+  return c.faceDefs[0]?.name ?? name;
 }
 
 /** « Un deck peut contenir n'importe quel nombre de cartes appelées … » (Hare Apparent, Relentless Rats…). */

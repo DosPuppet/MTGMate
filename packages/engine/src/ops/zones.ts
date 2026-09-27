@@ -1,0 +1,1229 @@
+/** Effets du moteur : déplacements entre zones (détruire, exiler, sacrifier, chercher, meuler, défausser…). Chaque clé est un `op` d'`Effect` (voir `runEffect`, effects.ts). */
+import { dealDamage, destroy, drawCard, sacrifice } from "../actions";
+import type { EffectContext, OpHandlers, OpResult } from "../effects";
+import {
+  announceDiscard,
+  announceDiscardBatch,
+  damageSource,
+  evalAmount,
+  moveAndLog,
+  moveWithSpec,
+  nameOf,
+  putFaceDown,
+  readVar,
+  resolveRef,
+  store,
+  zoneCards,
+} from "../effects";
+import { manaValue } from "../mana";
+import { bounceSpell } from "../stack";
+import {
+  bump,
+  changeCounters,
+  chars,
+  createObject,
+  emit,
+  isCreature,
+  isPlayer,
+  moveObject,
+  nextTimestamp,
+  onBattlefield,
+  opponentsOf,
+  P1P1,
+  registerDef,
+  removeFromGame,
+  rulesEvent,
+  shuffle,
+  tapObject,
+  turnFaceUp,
+} from "../state";
+import { controlledAbilitiesWithSource } from "../statics";
+import { matchesCard, matchesObjectFilter } from "../targets";
+import type { Effect, GameState, Resolution } from "../types";
+
+export const HANDLERS: OpHandlers = {
+  destroy(s, _r, e, ctx) {
+    for (const id of resolveRef(s, ctx, e.what)) destroy(s, id);
+    return;
+  },
+  destroyAllButChosenType(s, r, _e, ctx, key) {
+    const creatures = s.battlefield.filter((id) => isCreature(s, id));
+    const tally = new Map<string, number>();
+    for (const id of creatures) {
+      const mine = s.objects[id]?.controller === ctx.controller;
+      for (const t of chars(s, id).subtypes) tally.set(t, (tally.get(t) ?? 0) + (mine ? 1 : -1));
+    }
+    const options = [...tally.keys()].sort();
+    let chosen: string | undefined;
+    if (options.length > 0) {
+      const answer = r.vars[key("type")];
+      if (!answer) {
+        const best = [...tally.entries()].sort((a, b) => b[1] - a[1])[0]?.[0] ?? options[0];
+        return {
+          ask: {
+            player: ctx.controller,
+            key: key("type"),
+            request: {
+              type: "pick",
+              intent: "chooseOnEnter",
+              prompt: "Choisissez un type de créature (les autres créatures seront détruites)",
+              options,
+              labels: Object.fromEntries(options.map((o) => [o, o])),
+              min: 1,
+              max: 1,
+              suggested: [best as string],
+            },
+          },
+        };
+      }
+      chosen = String(answer[0]);
+    }
+    const kept = chosen;
+    const doomed = creatures.filter((id) => !kept || !matchesObjectFilter(s, ctx.controller, id, { subtype: kept }));
+    for (const id of doomed) destroy(s, id);
+    return;
+  },
+  exileFromHandLinked(s, r, e, ctx, key) {
+    const p = resolveRef(s, ctx, e.who).find((x) => isPlayer(s, x));
+    if (!p) return;
+    const hand = s.players[p]?.hand ?? [];
+    const options = hand.filter((id) => matchesCard(s, p, id, { ...e.filter, controller: undefined }));
+    if (options.length === 0) return;
+    const answer = r.vars[key("pick")];
+    if (!answer) {
+      const best = [...options].sort(
+        (a, b) => manaValue(s.defs[s.objects[b]?.defId ?? ""]?.manaCost) - manaValue(s.defs[s.objects[a]?.defId ?? ""]?.manaCost),
+      );
+      return {
+        ask: {
+          player: ctx.controller,
+          key: key("pick"),
+          request: {
+            type: "pick",
+            intent: "pickCards",
+            prompt: "Choisissez la carte à exiler",
+            options,
+            min: 1,
+            max: 1,
+            suggested: best.slice(0, 1),
+          },
+        },
+      };
+    }
+    const id = String(answer[0]);
+    if (!options.includes(id)) return;
+    const moved = moveObject(s, id, "exile");
+    const src = s.objects[ctx.sourceId];
+    if (moved && src) src.linked = [...(src.linked ?? []), moved];
+    return;
+  },
+  exileLibraryButBottom(s, _r, e, ctx) {
+    for (const p of resolveRef(s, ctx, e.who)) {
+      const lib = s.players[p]?.library ?? [];
+      for (const id of lib.slice(0, Math.max(0, lib.length - 1))) moveObject(s, id, "exile");
+    }
+    return;
+  },
+  keepOnePerType(s, r, e, ctx, key) {
+    const TYPES = ["Artifact", "Creature", "Enchantment", "Land", "Planeswalker", "Battle"] as const;
+    for (const p of resolveRef(s, ctx, e.who)) {
+      if (!isPlayer(s, p) || r.vars[key(`kdone-${p}`)]) continue;
+      const mine = s.battlefield.filter((id) => s.objects[id]?.controller === p);
+      const kept = new Set<string>();
+      for (const t of TYPES) {
+        const ofType = mine.filter((id) => chars(s, id).types.includes(t));
+        if (ofType.length === 0) continue;
+        if (ofType.length === 1) {
+          kept.add(ofType[0] as string);
+          continue;
+        }
+        const answer = r.vars[key(`keep-${p}-${t}`)];
+        if (!answer) {
+          return {
+            ask: {
+              player: p,
+              key: key(`keep-${p}-${t}`),
+              request: {
+                type: "pick",
+                intent: "keepPerType",
+                prompt: `Choisissez le permanent de type ${t} que vous gardez`,
+                options: ofType,
+                min: 1,
+                max: 1,
+                suggested: [ofType[0] as string],
+              },
+            },
+          };
+        }
+        kept.add(String(answer[0]));
+      }
+      r.vars[key(`kdone-${p}`)] = [1];
+      for (const id of mine) if (!kept.has(id) && onBattlefield(s, id)) sacrifice(s, id);
+    }
+    return;
+  },
+  exileUntilLeaves(s, _r, e, ctx) {
+    // 610.3c : si la source a déjà quitté le champ de bataille, rien n'est exilé.
+    if (!onBattlefield(s, ctx.sourceId)) return;
+    const cards: string[] = [];
+    for (const id of resolveRef(s, ctx, e.what)) {
+      if (!onBattlefield(s, id)) continue;
+      const n = moveWithSpec(s, ctx.controller, id, { to: "exile" });
+      if (n) cards.push(n);
+    }
+    if (cards.length) s.linkedExile.push({ sourceId: ctx.sourceId, cards });
+    return;
+  },
+  pickFromZone(s, r, e, ctx, key) {
+    // « une autre carte » : les objets mémorisés, reconnus par leur identité physique (ils ont changé de zone).
+    const stored = (e.excludeStored ? r.vars[`$ids:${e.excludeStored}`] : undefined)?.map(String) ?? [];
+    const excludedUids = new Set(stored.map((id) => s.objects[id]?.uid ?? s.lki[id]?.uid).filter(Boolean));
+    const maxMv = e.maxManaValue !== undefined ? evalAmount(s, ctx, e.maxManaValue) : undefined;
+    const pool = (e.pool ? resolveRef(s, ctx, e.pool) : (s.players[ctx.controller]?.[e.zone] ?? [])).filter(
+      (id) =>
+        !!s.objects[id] &&
+        !excludedUids.has(s.objects[id]?.uid) &&
+        matchesCard(s, ctx.controller, id, { ...e.filter, controller: undefined, maxManaValue: maxMv }, ctx.sourceId),
+    );
+    const count = Math.min(evalAmount(s, ctx, e.count), pool.length);
+    if (count <= 0) return;
+    const min = Math.min(e.min ?? count, count);
+    let picked = pool.length === count && min === count ? pool : null;
+    if (!picked && e.random) {
+      const shuffled = [...pool];
+      shuffle(s, shuffled);
+      picked = shuffled.slice(0, count);
+    }
+    if (!picked) {
+      const answer = r.vars[key("pickZone")];
+      if (!answer) {
+        return {
+          ask: {
+            player: ctx.controller,
+            key: key("pickZone"),
+            request: {
+              type: "pick",
+              intent: "pickCards",
+              prompt: e.prompt ?? `Choisissez ${count} carte(s)`,
+              options: pool,
+              min,
+              max: count,
+              suggested: pool.slice(0, count),
+            },
+          },
+        };
+      }
+      picked = answer.map(String);
+    }
+    const moved = picked.map((id) => moveWithSpec(s, ctx.controller, id, e.to)).filter((x): x is string => !!x);
+    if (e.store) r.vars[`$ids:${e.store}`] = moved;
+    store(r, e.store, moved.length);
+    return;
+  },
+  libraryTopOrBottom(s, r, e, ctx, key) {
+    for (const id of resolveRef(s, ctx, e.what)) {
+      const o = s.objects[id];
+      if (o?.zone !== "battlefield") continue;
+      const answer = r.vars[key(`tb-${id}`)];
+      if (!answer) {
+        return {
+          ask: {
+            player: o.owner,
+            key: key(`tb-${id}`),
+            request: {
+              type: "pick",
+              intent: "topOrBottom",
+              prompt: `${nameOf(s, id)} : au-dessus ou au-dessous de votre bibliothèque ?`,
+              options: ["top", "bottom"],
+              labels: { top: "Au-dessus", bottom: "Au-dessous" },
+              min: 1,
+              max: 1,
+              suggested: [o.controller === ctx.controller ? "top" : "bottom"],
+            },
+          },
+        };
+      }
+      const owner = o.owner;
+      moveWithSpec(s, ctx.controller, id, { to: answer[0] === "top" ? "libraryTop" : "libraryBottom" });
+      // Clash of Elements : « si il le fait, [la source] lui inflige 2 blessures ».
+      const src = e.topDamage && answer[0] === "top" ? damageSource(s, ctx) : null;
+      if (src && e.topDamage) dealDamage(s, src, owner, e.topDamage, false);
+    }
+    return;
+  },
+  revealUntil(s, _r, e, ctx) {
+    const player = s.players[ctx.controller];
+    if (!player) return;
+    const i = player.library.findIndex((id) => matchesCard(s, ctx.controller, id, { ...e.filter, controller: undefined }));
+    const revealed = i < 0 ? [...player.library] : player.library.slice(0, i + 1);
+    const found = i < 0 ? null : (player.library[i] as string);
+    const rest = revealed.filter((id) => id !== found);
+    if (found) moveWithSpec(s, ctx.controller, found, e.to);
+    const lib = player.library.filter((id) => !rest.includes(id));
+    shuffle(s, rest);
+    player.library = [...lib, ...rest];
+    return;
+  },
+  bounce(s, _r, e, ctx) {
+    for (const id of resolveRef(s, ctx, e.what)) {
+      if (onBattlefield(s, id)) moveAndLog(s, id, "hand");
+      else if (s.stack.some((x) => x.id === id && x.kind === "spell")) bounceSpell(s, id);
+    }
+    return;
+  },
+  exile(s, _r, e, ctx) {
+    for (const id of resolveRef(s, ctx, e.what)) if (onBattlefield(s, id)) moveAndLog(s, id, "exile");
+    return;
+  },
+  mill(s, r, e, ctx) {
+    const n = evalAmount(s, ctx, e.amount);
+    let matching = 0;
+    const f = e.store?.filter;
+    for (const p of resolveRef(s, ctx, e.who)) {
+      const library = s.players[p]?.library ?? [];
+      // The Water Crystal : « il en meule autant plus quatre » (pour chaque adversaire de ce joueur qui en contrôle un).
+      const extra = opponentsOf(s, p).reduce(
+        (m, q) =>
+          m +
+          controlledAbilitiesWithSource(s, q).reduce(
+            (k, { ab }) => k + (ab.kind === "playerStatic" ? (ab.opponentMillExtra ?? 0) : 0),
+            0,
+          ),
+        0,
+      );
+      const base = e.halfLibrary ? Math.floor(library.length / 2) : e.graveyardSize ? (s.players[p]?.graveyard.length ?? 0) : n;
+      const count = base > 0 ? base + extra : 0;
+      for (const id of library.slice(0, count)) {
+        if (f && matchesCard(s, ctx.controller, id, { ...f, controller: undefined })) matching++;
+        const uid = s.objects[id]?.uid;
+        moveAndLog(s, id, "graveyard");
+        // Les cartes meulées sont mémorisées (Dredger's Insight : « parmi les cartes meulées »).
+        const gy = s.players[p]?.graveyard ?? [];
+        const now = gy.find((x) => s.objects[x]?.uid === uid);
+        if (e.store && now) r.vars[`$ids:${e.store.name}`] = [...(r.vars[`$ids:${e.store.name}`] ?? []), now];
+      }
+    }
+    if (e.store) store(r, e.store.name, f ? matching : n);
+    return;
+  },
+  scry: scryOrSurveil,
+  surveil: scryOrSurveil,
+  discard(s, r, e, ctx, key) {
+    const n = evalAmount(s, ctx, e.amount);
+    const f = e.filter;
+    for (const p of resolveRef(s, ctx, e.who)) {
+      if (r.vars[key(`done-${p}`)]) continue;
+      const hand = (s.players[p]?.hand ?? []).filter((id) => !f || matchesCard(s, p, id, { ...f, controller: undefined }));
+      const chooser = e.chooser === "controller" ? ctx.controller : p;
+      let chosen: string[];
+      const unless = e.unlessFilter;
+      const exempt = unless ? hand.filter((id) => matchesCard(s, p, id, { ...unless, controller: undefined })) : [];
+      if (unless && exempt.length > 0) {
+        // « Défaussez deux cartes à moins de défausser une carte d'artefact » : une carte d'artefact, ou deux cartes.
+        const answer = r.vars[key(`discard-${p}`)];
+        if (!answer) {
+          return {
+            ask: {
+              player: p,
+              key: key(`discard-${p}`),
+              request: {
+                type: "pick",
+                intent: "discard",
+                prompt: `Défaussez ${n} cartes, ou une seule carte correspondante`,
+                options: [...hand],
+                min: 1,
+                max: Math.min(n, hand.length),
+                suggested: [exempt[0] as string],
+              },
+            },
+          };
+        }
+        chosen = answer.map(String);
+        // Une seule carte qui ne correspond pas : il faut en défausser une autre.
+        if (chosen.length < n && !chosen.some((id) => exempt.includes(id))) {
+          chosen = [...chosen, ...hand.filter((id) => !chosen.includes(id)).slice(0, n - chosen.length)];
+        }
+      } else if (hand.length <= n && !e.optional && !e.chooser) chosen = [...hand];
+      else if (hand.length === 0) chosen = [];
+      else if (e.random) {
+        // « … au hasard »
+        const pool = [...hand];
+        shuffle(s, pool);
+        chosen = pool.slice(0, n);
+      } else {
+        const answer = r.vars[key(`discard-${p}`)];
+        if (!answer) {
+          const max = Math.min(n, hand.length);
+          return {
+            ask: {
+              player: chooser,
+              key: key(`discard-${p}`),
+              request: {
+                type: "pick",
+                intent: "discard",
+                prompt:
+                  chooser === p
+                    ? `${e.optional ? "Vous pouvez défausser" : "Défaussez"} ${n} carte(s)`
+                    : `Choisissez ${max} carte(s) que ce joueur défausse`,
+                options: [...hand],
+                min: e.optional ? 0 : max,
+                max,
+                suggested: e.optional ? [] : hand.slice(0, max),
+              },
+            },
+          };
+        }
+        chosen = answer.map(String);
+      }
+      r.vars[key(`done-${p}`)] = [1];
+      const sf = e.storeFilter;
+      const counted = sf ? chosen.filter((id) => matchesCard(s, p, id, { ...sf, controller: undefined })).length : chosen.length;
+      store(r, e.store, readVar(ctx, e.store ?? "") + counted);
+      if (chosen.length === 0) continue;
+      if (e.exile) {
+        // Intimidation Tactics : la carte choisie est exilée (ce n'est pas une défausse).
+        for (const id of chosen) moveObject(s, id, "exile");
+        continue;
+      }
+      emit({ type: "discard", player: p, defIds: chosen.map((id) => s.objects[id]?.defId ?? "") });
+      for (const id of chosen) {
+        // Wilt-Leaf Liege : défaussée par un effet adverse, elle va sur le champ de bataille.
+        const toField = p !== ctx.controller && !!s.defs[s.objects[id]?.defId ?? ""]?.opponentDiscardToBattlefield;
+        const moved = toField ? moveObject(s, id, "battlefield") : moveObject(s, id, "graveyard");
+        if (!toField) announceDiscard(s, p, moved);
+        // Les cartes défaussées, pour `ref.stored` (Ninja's Blades : « la valeur de mana de la carte défaussée »).
+        if (e.store && moved) r.vars[`$ids:${e.store}`] = [...(r.vars[`$ids:${e.store}`] ?? []), moved];
+      }
+      announceDiscardBatch(s, p, chosen.length);
+    }
+    return;
+  },
+  sacrifice(s, r, e, ctx, key) {
+    const all = evalAmount(s, ctx, e.amount);
+    for (const p of resolveRef(s, ctx, e.who)) {
+      if (r.vars[key(`done-${p}`)]) continue;
+      let candidates = s.battlefield.filter(
+        (id) => s.objects[id]?.controller === p && matchesObjectFilter(s, p, id, e.filter, ctx.sourceId),
+      );
+      // Zodiark : « la moitié des créatures qu'il contrôle, arrondie à l'inférieur ».
+      const n = e.half ? Math.floor(candidates.length / 2) : all;
+      if (n <= 0) {
+        r.vars[key(`done-${p}`)] = [1];
+        continue;
+      }
+      if (e.greatestManaValue && candidates.length) {
+        const mv = (id: string) => manaValue(s.defs[s.objects[id]?.defId ?? ""]?.manaCost);
+        const max = Math.max(...candidates.map(mv));
+        candidates = candidates.filter((id) => mv(id) === max);
+      }
+      let chosen: string[];
+      if (candidates.length <= n && !e.optional) chosen = candidates;
+      else if (candidates.length === 0) chosen = [];
+      else {
+        const answer = r.vars[key(`sac-${p}`)];
+        if (!answer) {
+          const max = Math.min(n, candidates.length);
+          return {
+            ask: {
+              player: p,
+              key: key(`sac-${p}`),
+              request: {
+                type: "pick",
+                intent: "sacrifice",
+                prompt: `${e.optional ? "Vous pouvez sacrifier" : "Sacrifiez"} ${n} permanent(s)`,
+                options: candidates,
+                min: e.optional ? 0 : max,
+                max,
+                suggested: e.optional ? [] : candidates.slice(0, max),
+              },
+            },
+          };
+        }
+        chosen = answer.map(String);
+      }
+      r.vars[key(`done-${p}`)] = [1];
+      store(r, e.store, readVar(ctx, e.store ?? "") + chosen.length);
+      if (e.exile) {
+        // « … l'exile » : les cartes exilées sont mémorisées (pour les lier à la source).
+        const exiled = chosen
+          .filter((id) => onBattlefield(s, id))
+          .map((id) => moveWithSpec(s, ctx.controller, id, { to: "exile" }))
+          .filter((x): x is string => !!x);
+        if (e.store) r.vars[`$ids:${e.store}`] = [...(r.vars[`$ids:${e.store}`] ?? []), ...exiled];
+        continue;
+      }
+      if (e.store) r.vars[`$ids:${e.store}`] = [...(r.vars[`$ids:${e.store}`] ?? []), ...chosen];
+      for (const id of chosen) if (onBattlefield(s, id)) sacrifice(s, id);
+    }
+    return;
+  },
+  tap(s, _r, e, ctx) {
+    for (const id of resolveRef(s, ctx, e.what)) {
+      const o = s.objects[id];
+      if (o?.zone !== "battlefield") continue;
+      const wasTapped = o.tapped;
+      if (e.untap) {
+        o.tapped = false;
+        bump(s);
+        if (wasTapped) rulesEvent(s, { e: "untap", objectId: id });
+      } else tapObject(s, o);
+    }
+    return;
+  },
+  destroyAll(s, r, e, ctx) {
+    let destroyed = 0;
+    const f = e.filter.maxToughnessX ? { ...e.filter, maxToughnessX: undefined, maxToughness: ctx.x } : e.filter;
+    const uids = new Set<string>();
+    for (const id of s.battlefield.filter((x) => matchesObjectFilter(s, ctx.controller, x, f, ctx.sourceId))) {
+      const uid = s.objects[id]?.uid;
+      if (destroy(s, id)) {
+        destroyed++;
+        if (uid !== undefined) uids.add(uid);
+      }
+    }
+    store(r, e.store, destroyed);
+    // Les cartes « mises au cimetière de cette façon » (Zero Point Ballad).
+    if (e.store) {
+      r.vars[`$ids:${e.store}`] = s.playerOrder.flatMap((p) =>
+        (s.players[p]?.graveyard ?? []).filter((id) => uids.has(s.objects[id]?.uid ?? "")),
+      );
+    }
+    return;
+  },
+  sacrificeIt(s, _r, e, ctx) {
+    for (const id of resolveRef(s, ctx, e.what)) if (onBattlefield(s, id)) sacrifice(s, id);
+    return;
+  },
+  moveTo(s, r, e, ctx) {
+    const ids = resolveRef(s, ctx, e.what);
+    const f = e.store?.filter;
+    if (e.store)
+      store(
+        r,
+        e.store.name,
+        ids.filter((id) => !f || matchesCard(s, ctx.controller, id, { ...f, controller: undefined })).length,
+      );
+    const moved: string[] = [];
+    for (const id of ids) {
+      const n = moveWithSpec(s, ctx.controller, id, e.spec);
+      if (n) moved.push(n);
+    }
+    if (e.store) r.vars[`$ids:${e.store.name}`] = moved;
+    return;
+  },
+  exileNamed(s, r, e, ctx) {
+    const name = String(r.vars.$name?.[0] ?? "");
+    if (!name) return;
+    for (const p of resolveRef(s, ctx, e.who).filter((x) => isPlayer(s, x))) {
+      const pl = s.players[p];
+      if (!pl) continue;
+      const named = [...pl.graveyard, ...pl.hand, ...pl.library].filter((x) => s.defs[s.objects[x]?.defId ?? ""]?.name === name);
+      for (const x of named.slice(0, e.max)) moveObject(s, x, "exile");
+      shuffle(s, pl.library);
+    }
+    return;
+  },
+  moveAll(s, r, e, ctx) {
+    const players = resolveRef(s, ctx, e.whose).filter((p) => isPlayer(s, p));
+    const ids =
+      e.from === "battlefield"
+        ? s.battlefield.filter(
+            (id) =>
+              players.includes(s.objects[id]?.controller ?? "") &&
+              matchesObjectFilter(s, ctx.controller, id, { ...e.filter, controller: undefined }, ctx.sourceId),
+          )
+        : zoneCards(s, players, e.from).filter((id) =>
+            matchesCard(s, ctx.controller, id, { ...e.filter, controller: undefined }, ctx.sourceId),
+          );
+    const moved = ids.map((id) => moveWithSpec(s, ctx.controller, id, e.spec)).filter((x): x is string => !!x);
+    if (e.store) r.vars[`$ids:${e.store}`] = moved;
+    return;
+  },
+  shuffle(s, _r, e, ctx) {
+    for (const p of resolveRef(s, ctx, e.who)) {
+      const pl = s.players[p];
+      if (pl) shuffle(s, pl.library);
+    }
+    return;
+  },
+  lookAtTop(s, r, e, ctx, key) {
+    const player = s.players[ctx.controller];
+    if (!player) return;
+    const top = player.library.slice(0, evalAmount(s, ctx, e.n));
+    if (top.length === 0) return;
+    const maxMv = e.maxManaValue === undefined ? undefined : evalAmount(s, ctx, e.maxManaValue);
+    const filter = maxMv === undefined ? e.filter : { ...e.filter, maxManaValue: maxMv };
+    const options = top.filter((id) => !filter || matchesCard(s, ctx.controller, id, filter, ctx.sourceId));
+    const count = evalAmount(s, ctx, e.count);
+    let picked: string[] = [];
+    if (options.length > 0 && count > 0) {
+      const answer = r.vars[key("look")];
+      if (!answer) {
+        return {
+          ask: {
+            player: ctx.controller,
+            key: key("look"),
+            request: {
+              type: "pick",
+              intent: "lookAtTop",
+              prompt: `Vous regardez les ${top.length} cartes du dessus : choisissez-en jusqu'à ${count}`,
+              options,
+              min: 0,
+              max: Math.min(count, options.length),
+              suggested: options.slice(0, Math.min(count, options.length)),
+            },
+          },
+        };
+      }
+      picked = answer.map(String);
+    }
+    const rest = top.filter((id) => !picked.includes(id));
+    store(r, e.store, picked.length);
+    const taken = picked.map((id) => moveWithSpec(s, ctx.controller, id, e.to)).filter((x): x is string => !!x);
+    if (e.store) r.vars[`$ids:${e.store}`] = taken;
+    if (e.rest === "graveyard") for (const id of rest) moveWithSpec(s, ctx.controller, id, { to: "graveyard" });
+    else if (e.rest === "hand") for (const id of rest) moveWithSpec(s, ctx.controller, id, { to: "hand" });
+    else if (e.rest === "bottom") {
+      // Ordre aléatoire (« dans un ordre aléatoire »).
+      const lib = player.library.filter((id) => !rest.includes(id));
+      const shuffled = [...rest];
+      shuffle(s, shuffled);
+      player.library = [...lib, ...shuffled];
+    }
+    return;
+  },
+  search(s, r, e, ctx, key) {
+    // Chaque joueur désigné cherche dans SA bibliothèque (Demolition Field) ; par défaut, le contrôleur.
+    for (const p of e.who ? resolveRef(s, ctx, e.who).filter((x) => isPlayer(s, x)) : [ctx.controller]) {
+      if (r.vars[key(`sdone-${p}`)]) continue;
+      const player = s.players[p];
+      if (!player) continue;
+      const count = evalAmount(s, ctx, e.count);
+      const exactMv = e.manaValue !== undefined ? evalAmount(s, ctx, e.manaValue) : undefined;
+      const options = player.library.filter((id) =>
+        matchesCard(s, p, id, exactMv === undefined ? e.filter : { ...e.filter, manaValue: exactMv }, ctx.sourceId),
+      );
+      let picked: string[] = [];
+      if (options.length > 0 && count > 0) {
+        const answer = r.vars[key(`search-${p}`)];
+        if (!answer) {
+          return {
+            ask: {
+              player: p,
+              key: key(`search-${p}`),
+              request: {
+                type: "pick",
+                intent: "search",
+                prompt: `Cherchez dans votre bibliothèque : jusqu'à ${count} carte(s)`,
+                options,
+                min: 0,
+                max: Math.min(count, options.length),
+                suggested: options.slice(0, Math.min(count, options.length)),
+              },
+            },
+          };
+        }
+        picked = answer.map(String);
+        // « avec des noms différents » : un seul exemplaire de chaque nom.
+        if (e.distinctNames) {
+          const names = new Set<string>();
+          picked = picked.filter((id) => {
+            const n = s.defs[s.objects[id]?.defId ?? ""]?.name ?? id;
+            if (names.has(n)) return false;
+            names.add(n);
+            return true;
+          });
+        }
+      }
+      r.vars[key(`sdone-${p}`)] = [1];
+      // 701.23 : on mélange après la recherche ; « sur le dessus » s'applique après le mélange.
+      const toTop = e.to.to === "libraryTop";
+      for (const id of picked) {
+        if (toTop) continue;
+        const moved = moveWithSpec(s, p, id, e.to);
+        if (e.store && moved) r.vars[`$ids:${e.store}`] = [...(r.vars[`$ids:${e.store}`] ?? []), moved];
+      }
+      shuffle(s, player.library);
+      if (toTop) for (const id of picked) player.library = [id, ...player.library.filter((x) => x !== id)];
+    }
+    return;
+  },
+  sacrificeElseDiscard(s, r, e, ctx, key) {
+    for (const p of resolveRef(s, ctx, e.who).filter((x) => isPlayer(s, x))) {
+      if (r.vars[key(`sed-${p}`)]) continue;
+      const candidates = s.battlefield.filter(
+        (id) => s.objects[id]?.controller === p && matchesObjectFilter(s, p, id, e.filter, ctx.sourceId),
+      );
+      const hand = s.players[p]?.hand ?? [];
+      const pool = candidates.length ? candidates : hand;
+      if (pool.length === 0) {
+        r.vars[key(`sed-${p}`)] = [1];
+        continue;
+      }
+      let chosen = pool.length === 1 ? [pool[0] as string] : null;
+      if (!chosen) {
+        const answer = r.vars[key(`sedpick-${p}`)];
+        if (!answer) {
+          return {
+            ask: {
+              player: p,
+              key: key(`sedpick-${p}`),
+              request: {
+                type: "pick",
+                intent: candidates.length ? "sacrifice" : "discard",
+                prompt: candidates.length ? "Sacrifiez un permanent" : "Défaussez une carte",
+                options: pool,
+                min: 1,
+                max: 1,
+                suggested: [pool[0] as string],
+              },
+            },
+          };
+        }
+        chosen = answer
+          .map(String)
+          .filter((id) => pool.includes(id))
+          .slice(0, 1);
+        if (chosen.length === 0) chosen = [pool[0] as string];
+      }
+      r.vars[key(`sed-${p}`)] = [1];
+      const id = chosen[0] as string;
+      if (candidates.length) sacrifice(s, id);
+      else {
+        emit({ type: "discard", player: p, defIds: [s.objects[id]?.defId ?? ""] });
+        announceDiscard(s, p, moveObject(s, id, "graveyard"));
+        announceDiscardBatch(s, p, 1);
+      }
+    }
+    return;
+  },
+  devour(s, r, e, ctx, key) {
+    if (r.vars.$devoured) return;
+    const fromGy = !!e.graveyardUpToX;
+    const options = fromGy
+      ? (s.players[ctx.controller]?.graveyard ?? []).filter((id) => matchesCard(s, ctx.controller, id, e.filter, ctx.sourceId))
+      : s.battlefield.filter(
+          (id) =>
+            s.objects[id]?.controller === ctx.controller && matchesObjectFilter(s, ctx.controller, id, e.filter, ctx.sourceId),
+        );
+    const max = fromGy ? Math.min(ctx.x, options.length) : options.length;
+    const answer = options.length ? r.vars[key("devour")] : [];
+    if (!answer) {
+      return {
+        ask: {
+          player: ctx.controller,
+          key: key("devour"),
+          request: {
+            type: "pick",
+            intent: "sacrifice",
+            prompt: fromGy
+              ? `${nameOf(s, ctx.sourceId)} : exilez jusqu'à ${max} carte(s) de votre cimetière`
+              : `${nameOf(s, ctx.sourceId)} : dévorer (sacrifiez autant de permanents que vous voulez)`,
+            options,
+            min: 0,
+            max,
+            suggested: fromGy ? options.slice(0, max) : [],
+          },
+        },
+      };
+    }
+    const chosen = answer
+      .map(String)
+      .filter((id) => options.includes(id))
+      .slice(0, max);
+    if (fromGy) {
+      r.vars["$ids:devoured"] = chosen.map((id) => moveObject(s, id, "exile")).filter((x): x is string => !!x);
+    } else for (const id of chosen) sacrifice(s, id);
+    r.vars.$devoured = [chosen.length];
+    return;
+  },
+  revealUntilN(s, _r, e, ctx) {
+    const player = s.players[ctx.controller];
+    if (!player) return;
+    const found: string[] = [];
+    let i = 0;
+    for (; i < player.library.length && found.length < e.n; i++) {
+      const id = player.library[i] as string;
+      if (matchesCard(s, ctx.controller, id, { ...e.filter, controller: undefined })) found.push(id);
+    }
+    const revealed = player.library.slice(0, i);
+    emit({ type: "reveal", player: ctx.controller, defIds: revealed.map((id) => s.objects[id]?.defId ?? "") });
+    const rest = revealed.filter((id) => !found.includes(id));
+    for (const id of found) moveWithSpec(s, ctx.controller, id, e.to);
+    const lib = player.library.filter((id) => !rest.includes(id));
+    shuffle(s, rest);
+    player.library = [...lib, ...rest];
+    return;
+  },
+  piles(s, r, e, ctx, key) {
+    const player = s.players[ctx.controller];
+    if (!player) return;
+    const top = player.library.slice(0, e.n);
+    if (top.length === 0) return;
+    const down = r.vars[key("down")];
+    if (!down) {
+      return {
+        ask: {
+          player: ctx.controller,
+          key: key("down"),
+          request: {
+            type: "pick",
+            intent: "piles",
+            prompt: "Choisissez les cartes de la pile face cachée (les autres forment la pile face visible)",
+            options: top,
+            min: 0,
+            max: top.length,
+            suggested: top.slice(0, Math.ceil(top.length / 2)),
+          },
+        },
+      };
+    }
+    const faceDown = down.map(String);
+    const faceUp = top.filter((id) => !faceDown.includes(id));
+    const opp = opponentsOf(s, ctx.controller)[0];
+    let pick = r.vars[key("pile")]?.[0];
+    if (pick === undefined && opp) {
+      const names = faceUp.map((id) => nameOf(s, id)).join(", ") || "aucune carte";
+      return {
+        ask: {
+          player: opp,
+          key: key("pile"),
+          request: {
+            type: "pick",
+            intent: "piles",
+            prompt: `${nameOf(s, ctx.sourceId)} : choisissez la pile que l'adversaire met dans sa main (l'autre va au cimetière)`,
+            options: ["down", "up"],
+            labels: { down: `Pile face cachée (${faceDown.length} carte(s))`, up: `Pile face visible : ${names}` },
+            min: 1,
+            max: 1,
+            suggested: [faceDown.length >= faceUp.length ? "up" : "down"],
+          },
+        },
+      };
+    }
+    pick ??= "down";
+    const toHand = pick === "down" ? faceDown : faceUp;
+    for (const id of top) moveWithSpec(s, ctx.controller, id, { to: toHand.includes(id) ? "hand" : "graveyard" });
+    return;
+  },
+  flickerChosen(s, r, e, ctx, key) {
+    const options = s.battlefield.filter(
+      (id) => s.objects[id]?.controller === ctx.controller && matchesObjectFilter(s, ctx.controller, id, e.filter, ctx.sourceId),
+    );
+    const answer = options.length ? r.vars[key("flicker")] : [];
+    if (!answer) {
+      return {
+        ask: {
+          player: ctx.controller,
+          key: key("flicker"),
+          request: {
+            type: "pick",
+            intent: "pickCards",
+            prompt: `${nameOf(s, ctx.sourceId)} : choisissez les permanents à exiler puis renvoyer`,
+            options,
+            min: 0,
+            max: options.length,
+            suggested: options,
+          },
+        },
+      };
+    }
+    let ids = answer.map(String).filter((id) => options.includes(id));
+    const times = Math.max(1, evalAmount(s, ctx, e.times));
+    for (let t = 0; t < times; t++) {
+      const exiled = ids.map((id) => moveObject(s, id, "exile")).filter((x): x is string => !!x);
+      ids = exiled
+        .map((id) => moveObject(s, id, "battlefield", { controller: s.objects[id]?.owner }))
+        .filter((x): x is string => !!x);
+    }
+    return;
+  },
+  millUntil(s, _r, e, ctx) {
+    for (const p of resolveRef(s, ctx, e.who)) {
+      const pl = s.players[p];
+      if (!pl) continue;
+      const i = pl.library.findIndex((id) => matchesCard(s, ctx.controller, id, { ...e.filter, controller: undefined }));
+      const cards = i < 0 ? [...pl.library] : pl.library.slice(0, i + 1);
+      for (const id of cards) moveAndLog(s, id, "graveyard");
+    }
+    return;
+  },
+  exileTop(s, r, e, ctx) {
+    const exiled: string[] = [];
+    for (const p of resolveRef(s, ctx, e.who)) {
+      const n = evalAmount(s, ctx, e.n);
+      for (const id of (s.players[p]?.library ?? []).slice(0, n)) {
+        const n = moveWithSpec(s, ctx.controller, id, { to: "exile" });
+        if (n) exiled.push(n);
+      }
+    }
+    r.vars[`$ids:${e.store}`] = exiled;
+    return;
+  },
+  untapUpTo(s, _r, e, ctx) {
+    const ids = s.battlefield.filter(
+      (id) =>
+        s.objects[id]?.controller === ctx.controller &&
+        s.objects[id]?.tapped &&
+        matchesObjectFilter(s, ctx.controller, id, e.filter),
+    );
+    for (const id of ids.slice(0, e.n)) {
+      const o = s.objects[id];
+      if (!o) continue;
+      o.tapped = false;
+      bump(s);
+      rulesEvent(s, { e: "untap", objectId: id });
+    }
+    return;
+  },
+  destroySameName(s, _r, e, ctx) {
+    for (const id of resolveRef(s, ctx, e.what)) {
+      if (!onBattlefield(s, id)) continue;
+      const name = chars(s, id).name;
+      const all = s.battlefield.filter((x) => chars(s, x).name === name);
+      for (const x of all) destroy(s, x);
+    }
+    return;
+  },
+  exileUntil(s, r, e, ctx) {
+    // Exiler depuis le dessus jusqu'à une carte correspondante ; seule cette dernière est mémorisée.
+    const lib = s.players[ctx.controller]?.library ?? [];
+    let found: string | null = null;
+    while (lib.length && !found) {
+      const top = lib[0] as string;
+      const match = matchesCard(s, ctx.controller, top, { ...e.filter, controller: undefined });
+      const moved = moveWithSpec(s, ctx.controller, top, { to: "exile" });
+      if (match) found = moved;
+    }
+    r.vars[`$ids:${e.store}`] = found ? [found] : [];
+    return;
+  },
+  exileFromOwnHand(s, r, e, ctx, key) {
+    for (const p of resolveRef(s, ctx, e.who)) {
+      if (!isPlayer(s, p) || r.vars[key(`xh-${p}-done`)]) continue;
+      const hand = s.players[p]?.hand ?? [];
+      if (hand.length === 0) continue;
+      const answer = r.vars[key(`xh-${p}`)];
+      if (!answer) {
+        return {
+          ask: {
+            player: p,
+            key: key(`xh-${p}`),
+            request: {
+              type: "pick",
+              intent: "pickCards",
+              prompt: "Exilez une carte de votre main",
+              options: [...hand],
+              min: 1,
+              max: 1,
+              suggested: hand.slice(0, 1),
+            },
+          },
+        };
+      }
+      r.vars[key(`xh-${p}-done`)] = [1];
+      const id = String(answer[0]);
+      if (!hand.includes(id)) continue;
+      const moved = moveWithSpec(s, p, id, { to: "exile" });
+      if (moved) r.vars[`$ids:${e.store}`] = [...(r.vars[`$ids:${e.store}`] ?? []), moved];
+    }
+    return;
+  },
+  tapOrSacrifice(s, r, _e, ctx, key) {
+    // Command Bridge : engager un permanent dégagé (au choix), sinon sacrifier la source.
+    const src = s.objects[ctx.sourceId];
+    if (src?.zone !== "battlefield") return;
+    const untapped = s.battlefield.filter(
+      (id) => id !== src.id && s.objects[id]?.controller === ctx.controller && !s.objects[id]?.tapped,
+    );
+    const answer = untapped.length ? r.vars[key("tapOrSac")] : [];
+    if (!answer) {
+      return {
+        ask: {
+          player: ctx.controller,
+          key: key("tapOrSac"),
+          request: {
+            type: "pick",
+            intent: "pickCards",
+            prompt: `${nameOf(s, ctx.sourceId)} : engagez un permanent dégagé (sinon il est sacrifié)`,
+            options: untapped,
+            min: 0,
+            max: 1,
+            suggested: untapped.slice(0, 1),
+          },
+        },
+      };
+    }
+    const picked = answer.map(String).find((id) => untapped.includes(id));
+    if (picked) tapObject(s, s.objects[picked] as NonNullable<(typeof s.objects)[string]>);
+    else sacrifice(s, src.id);
+    return;
+  },
+  transform(s, _r, e, ctx) {
+    for (const id of resolveRef(s, ctx, e.what)) {
+      const o = s.objects[id];
+      const d = o ? s.defs[o.defId] : undefined;
+      const back = d?.layout === "transform" ? d.faceDefs?.[1] : undefined;
+      if (o?.zone !== "battlefield" || !back) continue;
+      o.faceDefId = o.faceDefId === back.id ? undefined : back.id;
+      bump(s);
+      emit({ type: "transform", objectId: id, defId: o.faceDefId ?? o.defId });
+    }
+    return;
+  },
+  meld(s, _r, e, ctx) {
+    // 701.42a : il faut posséder et contrôler les deux permanents.
+    const src = s.objects[ctx.sourceId];
+    const result = src ? s.defs[src.defId]?.meldResultDef : undefined;
+    const partner = s.battlefield.find(
+      (id) =>
+        id !== ctx.sourceId &&
+        s.objects[id]?.owner === ctx.controller &&
+        s.objects[id]?.controller === ctx.controller &&
+        chars(s, id).name === e.with,
+    );
+    if (src?.zone !== "battlefield" || src.owner !== ctx.controller || !partner || !result) return;
+    registerDef(s, result);
+    const parts = [src, s.objects[partner]].map((o) => ({ defId: o?.defId ?? "", uid: o?.uid ?? "" }));
+    const exiled = [ctx.sourceId, partner].map((id) => moveObject(s, id, "exile"));
+    for (const id of exiled) if (id) removeFromGame(s, id);
+    const melded = createObject(s, result.id, ctx.controller, "battlefield");
+    melded.melded = parts;
+    melded.timestamp = nextTimestamp(s);
+    bump(s);
+    emit({ type: "token", objectId: melded.id, defId: result.id, controller: ctx.controller });
+    rulesEvent(s, { e: "zone", oldId: exiled[0] ?? null, newId: melded.id, from: "exile", to: "battlefield", lki: null });
+    return;
+  },
+  explore(s, r, e, ctx, key) {
+    // 701.44a : révéler la carte du dessus ; un terrain va en main ; sinon, un marqueur +1/+1 sur la créature et
+    // son contrôleur peut mettre la carte au cimetière.
+    const times = e.times === undefined ? 1 : evalAmount(s, ctx, e.times);
+    const ids = resolveRef(s, ctx, e.what).filter((id) => onBattlefield(s, id));
+    for (const id of ids) {
+      for (let n = 0; n < times; n++) {
+        const k = `explore-${id}-${n}`;
+        if (r.vars[key(`${k}-done`)]) continue;
+        const o = s.objects[id];
+        const p = o?.controller;
+        const lib = p ? (s.players[p]?.library ?? []) : [];
+        const top = lib[0];
+        if (!o || !p || !top) {
+          r.vars[key(`${k}-done`)] = [1];
+          if (o) rulesEvent(s, { e: "explore", objectId: id, land: false });
+          continue;
+        }
+        const land = !!s.defs[s.objects[top]?.defId ?? ""]?.types.includes("Land");
+        if (!land) {
+          const answer = r.vars[key(k)];
+          if (!answer) {
+            return {
+              ask: {
+                player: p,
+                key: key(k),
+                request: {
+                  type: "yesNo",
+                  intent: "may",
+                  prompt: `Exploration : mettre ${nameOf(s, top)} dans votre cimetière ?`,
+                  suggested: [0],
+                },
+              },
+            };
+          }
+          r.vars[key(`${k}-done`)] = [1];
+          emit({ type: "reveal", player: p, defIds: [s.objects[top]?.defId ?? ""] });
+          changeCounters(s, o, P1P1, 1);
+          if (answer[0] === 1) moveAndLog(s, top, "graveyard");
+        } else {
+          r.vars[key(`${k}-done`)] = [1];
+          emit({ type: "reveal", player: p, defIds: [s.objects[top]?.defId ?? ""] });
+          moveAndLog(s, top, "hand");
+        }
+        rulesEvent(s, { e: "explore", objectId: id, land });
+      }
+    }
+    return;
+  },
+  connive(s, r, e, ctx, key) {
+    // 701.50a : piocher, défausser ; si une carte non-terrain est défaussée, un marqueur +1/+1 sur la créature.
+    for (const id of resolveRef(s, ctx, e.what)) {
+      const o = s.objects[id];
+      const p = o?.controller;
+      if (!o || !p || r.vars[key(`connive-${id}-done`)]) continue;
+      if (!r.vars[key(`connive-${id}-drew`)]) {
+        drawCard(s, p);
+        r.vars[key(`connive-${id}-drew`)] = [1];
+      }
+      const hand = s.players[p]?.hand ?? [];
+      if (hand.length === 0) {
+        r.vars[key(`connive-${id}-done`)] = [1];
+        continue;
+      }
+      const answer = r.vars[key(`connive-${id}`)];
+      if (!answer) {
+        const cheapest = [...hand].sort(
+          (a, b) =>
+            manaValue(s.defs[s.objects[a]?.defId ?? ""]?.manaCost) - manaValue(s.defs[s.objects[b]?.defId ?? ""]?.manaCost),
+        );
+        return {
+          ask: {
+            player: p,
+            key: key(`connive-${id}`),
+            request: {
+              type: "pick",
+              intent: "discard",
+              prompt: "Connivence : choisissez la carte à défausser",
+              options: [...hand],
+              min: 1,
+              max: 1,
+              suggested: cheapest.slice(0, 1),
+            },
+          },
+        };
+      }
+      r.vars[key(`connive-${id}-done`)] = [1];
+      const card = String(answer[0]);
+      if (!hand.includes(card)) continue;
+      const nonland = !s.defs[s.objects[card]?.defId ?? ""]?.types.includes("Land");
+      emit({ type: "discard", player: p, defIds: [s.objects[card]?.defId ?? ""] });
+      announceDiscard(s, p, moveObject(s, card, "graveyard"));
+      announceDiscardBatch(s, p, 1);
+      if (nonland && onBattlefield(s, id)) changeCounters(s, o, P1P1, 1);
+    }
+    return;
+  },
+  putFaceDown(s, _r, e, ctx) {
+    // Manifester (701.34) / cape (701.58) : face cachée, sous le contrôle du contrôleur de l'effet.
+    for (const id of resolveRef(s, ctx, e.what)) putFaceDown(s, ctx.controller, id, e.ward);
+    return;
+  },
+  manifestDread(s, r, _e, ctx, key) {
+    const library = s.players[ctx.controller]?.library ?? [];
+    const top = library.slice(0, 2);
+    if (top.length === 0) return;
+    let chosen = top[0] as string;
+    if (top.length === 2) {
+      const answer = r.vars[key("dread")];
+      if (!answer) {
+        const creature = top.find((id) => s.defs[s.objects[id]?.defId ?? ""]?.types.includes("Creature"));
+        return {
+          ask: {
+            player: ctx.controller,
+            key: key("dread"),
+            request: {
+              type: "pick",
+              intent: "pickCards",
+              prompt: "Manifestation effroyable : la carte à manifester (l'autre va au cimetière)",
+              options: top,
+              min: 1,
+              max: 1,
+              suggested: [creature ?? (top[0] as string)],
+            },
+          },
+        };
+      }
+      chosen = String(answer[0]);
+    }
+    const rest = top.filter((id) => id !== chosen);
+    putFaceDown(s, ctx.controller, chosen, false);
+    for (const id of rest) moveAndLog(s, id, "graveyard");
+    rulesEvent(s, { e: "manifestDread", player: ctx.controller });
+    return;
+  },
+  turnFaceUp(s, _r, e, ctx) {
+    for (const id of resolveRef(s, ctx, e.what)) turnFaceUp(s, id);
+    return;
+  },
+  warpExile(s, _r, e, ctx) {
+    for (const id of resolveRef(s, ctx, e.what)) {
+      if (!onBattlefield(s, id)) continue;
+      const exiled = moveWithSpec(s, ctx.controller, id, { to: "exile" });
+      const o = exiled ? s.objects[exiled] : undefined;
+      if (o) o.warpExiledTurn = s.turn.number;
+    }
+    return;
+  },
+};
+
+/** « Regard » et « surveillance » (même traitement, selon `e.op`). */
+function scryOrSurveil(
+  s: GameState,
+  r: Resolution,
+  e: Extract<Effect, { op: "scry" | "surveil" }>,
+  ctx: EffectContext,
+  key: (suffix: string) => string,
+): OpResult {
+  const library = s.players[ctx.controller]?.library ?? [];
+  const top = library.slice(0, evalAmount(s, ctx, e.amount));
+  if (top.length === 0) return;
+  const scry = e.op === "scry";
+  const picked = r.vars[key("pick")];
+  if (!picked) {
+    return {
+      ask: {
+        player: ctx.controller,
+        key: key("pick"),
+        request: {
+          type: "pick",
+          intent: scry ? "scryBottom" : "surveilGraveyard",
+          prompt: scry
+            ? `Regard ${top.length} : choisissez les cartes à mettre au-dessous de votre bibliothèque`
+            : `Surveillance ${top.length} : choisissez les cartes à mettre dans votre cimetière`,
+          options: top,
+          min: 0,
+          max: top.length,
+          suggested: [],
+        },
+      },
+    };
+  }
+  const keep = top.filter((id) => !picked.includes(id));
+  let order = keep;
+  if (keep.length > 1) {
+    const answer = r.vars[key("order")];
+    if (!answer) {
+      return {
+        ask: {
+          player: ctx.controller,
+          key: key("order"),
+          request: {
+            type: "order",
+            intent: "scryOrder",
+            prompt: "Ordre des cartes remises au-dessus (la première sera piochée en premier)",
+            items: keep,
+            suggested: keep,
+          },
+        },
+      };
+    }
+    order = answer.map(String);
+  }
+  const player = s.players[ctx.controller];
+  if (!player) return;
+  const rest = player.library.slice(top.length);
+  // « Chaque fois que vous regardez ou surveillez » (Reality Fracture).
+  player.turnStats.scried += 1;
+  bump(s); // des capacités statiques en dépendent (Surveillance Phantasm)
+  rulesEvent(s, { e: "scry", player: ctx.controller });
+  if (scry) {
+    player.library = [...order, ...rest, ...picked.map(String)];
+    emit({ type: "scry", player: ctx.controller, top: order.length, bottom: picked.length });
+  } else {
+    player.library = [...order, ...rest];
+    // Enlightened Confidant, Chandra : certaines des cartes ainsi mises au cimetière vont ensuite en main.
+    const toHand = e.op === "surveil" ? e.toHand : undefined;
+    const maxMv = toHand?.maxManaValue !== undefined ? evalAmount(s, ctx, toHand.maxManaValue) : Number.POSITIVE_INFINITY;
+    for (const id of picked.map(String)) {
+      const back =
+        !!toHand &&
+        manaValue(s.defs[s.objects[id]?.defId ?? ""]?.manaCost) <= maxMv &&
+        (!toHand.filter || matchesCard(s, ctx.controller, id, { ...toHand.filter, controller: undefined }));
+      const uid = s.objects[id]?.uid;
+      player.library.push(id); // temporaire : moveAndLog le retire de la bibliothèque
+      moveAndLog(s, id, "graveyard");
+      const now = back ? player.graveyard.find((g) => s.objects[g]?.uid === uid) : undefined;
+      if (now) moveAndLog(s, now, "hand");
+    }
+  }
+  return;
+}

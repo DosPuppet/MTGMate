@@ -17,12 +17,14 @@ export {
   cloneState,
   createObject,
   creaturesControlledBy,
+  decider,
   hasKeyword,
   isAlive,
   isCreature,
   isSummoningSick,
   nextPlayer,
   opponentsOf,
+  registerDef,
 } from "./state";
 export { isLegalTarget, legalTargets } from "./targets";
 export {

@@ -49,7 +49,10 @@ export function checkInvariants(s: GameState, deckSizes: Record<string, number>)
   // Les cartes des joueurs éliminés quittent la partie (800.4a) ; les autres sont conservées.
   for (const p of s.playerOrder) {
     // Ni les jetons, ni les copies de sorts préparés (Reality Fracture) ne sont des cartes.
-    const owned = Object.values(s.objects).filter((o) => o.owner === p && !o.isToken && !o.preparedFor).length;
+    // Un permanent assemblé représente ses deux cartes.
+    const owned = Object.values(s.objects)
+      .filter((o) => o.owner === p && !o.isToken && !o.preparedFor && !o.cardCopy)
+      .reduce((n, o) => n + (o.melded?.length ?? 1), 0);
     const size = deckSizes[p] ?? 0;
     // Éliminé en cours de partie : 0 carte ; éliminé par le coup final : ses cartes restent.
     const ok = s.players[p]?.lost ? owned === 0 || owned === size : owned === size;
@@ -58,7 +61,13 @@ export function checkInvariants(s: GameState, deckSizes: Record<string, number>)
   // Le cache des couches ne doit jamais diverger d'un calcul à neuf.
   const fresh = computeBattlefield(s);
   for (const id of s.battlefield) {
-    if (JSON.stringify(chars(s, id)) !== JSON.stringify(fresh.get(id))) errors.push(`${id} : cache des caractéristiques périmé`);
+    const cached = chars(s, id) as unknown as Record<string, unknown>;
+    const now = fresh.get(id) as unknown as Record<string, unknown> | undefined;
+    if (JSON.stringify(cached) !== JSON.stringify(now)) {
+      // Champs divergents, pour trouver le `bump` manquant.
+      const diff = Object.keys({ ...cached, ...now }).filter((k) => JSON.stringify(cached[k]) !== JSON.stringify(now?.[k]));
+      errors.push(`${id} (${s.objects[id]?.defId}) : cache des caractéristiques périmé (${diff.join(", ")})`);
+    }
   }
   if (!s.over && !s.pending) errors.push("partie non terminée sans décision en attente");
   if (s.over && s.pending) errors.push("partie terminée avec une décision en attente");

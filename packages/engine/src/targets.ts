@@ -27,8 +27,13 @@ export function matchesView(v: LkiSnapshot, f: ObjectFilter, perspective: Player
   if (f.manaValue !== undefined && (v.manaValue ?? 0) !== f.manaValue) return false;
   if (f.name && v.name !== f.name) return false;
   if (f.tapped !== undefined && !!v.tapped !== f.tapped) return false;
+  if (f.equipped !== undefined && !!v.equipped !== f.equipped) return false;
+  if (f.wasAttachedToSource && !(sourceId && v.lastAttachedTo === sourceId && !v.attachedTo)) return false;
+  if (f.crewedBySource && !(sourceId && v.crewedByThisTurn?.includes(sourceId))) return false;
   if (f.colors && !f.colors.some((c) => v.colors.includes(c))) return false;
-  if (f.withCounter && !((v.counters?.[f.withCounter] ?? 0) > 0)) return false;
+  // « avec un marqueur » : `any` accepte n'importe quel type de marqueur.
+  if (f.withCounter === "any" && !Object.values(v.counters ?? {}).some((n) => n > 0)) return false;
+  if (f.withCounter && f.withCounter !== "any" && !((v.counters?.[f.withCounter] ?? 0) > 0)) return false;
   if (f.inCombat && !v.attacking && !v.blocking) return false;
   if (f.anySubtype && !f.anySubtype.some((t) => hasSubtype(v, t))) return false;
   if (f.notSubtype && hasSubtype(v, f.notSubtype)) return false;
@@ -44,8 +49,18 @@ export function matchesView(v: LkiSnapshot, f: ObjectFilter, perspective: Player
   if (f.anyOf && !f.anyOf.some((g) => matchesView(v, g, perspective, sourceId))) return false;
   if (f.legendary !== undefined && v.supertypes.includes("Legendary") !== f.legendary) return false;
   if (f.maxToughness !== undefined && v.toughness > f.maxToughness) return false;
+  if (f.manaValueParity && ((v.manaValue ?? 0) % 2 === 0) !== (f.manaValueParity === "even")) return false;
+  if (f.noManaSpent && (v.manaSpent ?? 0) > 0) return false;
+  if (f.notOwned && v.owner === v.controller) return false;
+  if (f.noneOfSubtypes && (v.subtypes.includes(ALL_CREATURE_TYPES) || f.noneOfSubtypes.some((t) => v.subtypes.includes(t))))
+    return false;
   if (f.preparedSpell !== undefined && !!v.preparedSpell !== f.preparedSpell) return false;
   if (f.prepared !== undefined && !!v.prepared !== f.prepared) return false;
+  if (f.warped !== undefined && !!v.warped !== f.warped) return false;
+  if (f.blocking !== undefined && !!v.blocking !== f.blocking) return false;
+  if (f.multicolored !== undefined && v.colors.length >= 2 !== f.multicolored) return false;
+  if (f.manaSpentBelowValue && !((v.manaSpent ?? 0) < (v.manaValue ?? 0))) return false;
+  if (f.damaged !== undefined && !!v.damaged !== f.damaged) return false;
   return true;
 }
 
@@ -97,6 +112,14 @@ function sourcePower(s: GameState, sourceId?: ObjectId): number {
 
 /** Remplace les bornes dynamiques du filtre par leur valeur actuelle. */
 function resolveFilter(s: GameState, f: ObjectFilter, sourceId?: ObjectId): ObjectFilter {
+  if (f.maxManaValueX) {
+    const x = (sourceId && s.objects[sourceId]?.castX) || 0;
+    return { ...f, maxManaValueX: undefined, maxManaValue: x };
+  }
+  if (f.maxManaValueManaSpent) {
+    const spent = (sourceId && (s.objects[sourceId]?.manaSpent ?? s.lki[sourceId]?.manaSpent)) || 0;
+    return { ...f, maxManaValueManaSpent: undefined, maxManaValue: spent };
+  }
   if (!f.maxManaValueSourcePower) return f;
   return { ...f, maxManaValueSourcePower: undefined, maxManaValue: sourcePower(s, sourceId) };
 }
@@ -108,6 +131,8 @@ export function matchesCard(s: GameState, controller: PlayerId, id: ObjectId, f:
   f = resolveFilter(s, f, sourceId);
   // « mise dans un cimetière ce tour-ci » : l'objet a été créé dans sa zone pendant ce tour.
   if (f.enteredThisTurn && o.controlledSince !== s.turn.number) return false;
+  // « carte de créature sans capacité » : pas de texte de règles.
+  if (f.noAbilities && (s.defs[o.defId]?.text ?? "").trim()) return false;
   return (
     matchesView(snapshot(s, id), { ...f, controller: undefined }, controller, sourceId) &&
     (f.controller === undefined || (f.controller === "you" ? o.owner === controller : o.owner !== controller))
@@ -124,6 +149,9 @@ export function matchesObjectFilter(
   const o = s.objects[id];
   if (o?.zone !== "battlefield") return false;
   if (f.attackedThisTurn && o.attackedTurn !== s.turn.number) return false;
+  // « arrivé sous votre contrôle ce tour-ci » (Cloudspire Coordinator).
+  if (f.enteredThisTurn && o.controlledSince !== s.turn.number) return false;
+  if (f.notOwned && o.owner === o.controller) return false;
   return matchesView(snapshot(s, id), resolveFilter(s, f, sourceId), controller, sourceId);
 }
 
@@ -133,13 +161,15 @@ export function isLegalTarget(s: GameState, controller: PlayerId, spec: TargetSp
     if (player.lost || !spec.filter.players) return false;
     // « Vous avez la défense talismanique » (Crystal Barricade).
     if (id !== controller && playerStatic(s, id, "hexproof")) return false;
+    if (id !== controller && playerStatic(s, id, "protectionFromOpponents")) return false;
     if (spec.filter.players === "you") return id === controller;
     if (spec.filter.players === "opponent") return id !== controller;
     return true;
   }
   // Sort ou capacité sur la pile (« sort ou capacité ciblé avec une seule cible »).
   const stackItem = s.stack.find((x) => x.id === id);
-  if (stackItem && spec.filter.stackItems) {
+  // « capacité activée ou déclenchée ciblée » : les sorts relèvent du filtre `spells` (Louisoix's Sacrifice).
+  if (stackItem && spec.filter.stackItems && !(spec.filter.stackItems.abilitiesOnly && stackItem.kind === "spell")) {
     const n = Object.values(stackItem.targets).flat().length;
     return !spec.filter.stackItems.singleTarget || n === 1;
   }
@@ -148,6 +178,18 @@ export function isLegalTarget(s: GameState, controller: PlayerId, spec: TargetSp
     // Sort sur la pile (l'identifiant de l'objet est celui de l'élément de pile).
     const f = spec.filter.spells;
     return !!f && s.stack.some((x) => x.id === id && x.kind === "spell") && matchesView(snapshot(s, id), f, controller, sourceId);
+  }
+  if (o && o.zone === "exile") {
+    const ex = spec.filter.exiled;
+    if (!ex || o.faceDown || o.cardCopy || o.preparedFor) return false;
+    if (ex.withWarp && !s.defs[o.defId]?.warp) return false;
+    if (ex.own && o.owner !== controller) return false;
+    if (
+      ex.linked &&
+      !(sourceId && ((s.objects[sourceId]?.linked ?? []).includes(id) || s.objects[sourceId]?.linkedUids?.includes(o.uid)))
+    )
+      return false;
+    return !ex.filter || matchesCard(s, controller, id, { ...ex.filter, controller: undefined }, sourceId);
   }
   if (o && o.zone === "graveyard") {
     const cards = spec.filter.cards;
@@ -179,6 +221,7 @@ export function legalTargets(s: GameState, controller: PlayerId, spec: TargetSpe
   if (spec.filter.players) for (const p of s.playerOrder) if (ok(p)) out.push(p);
   if (spec.filter.objects) for (const id of s.battlefield) if (ok(id)) out.push(id);
   if (spec.filter.cards) for (const p of s.playerOrder) for (const id of s.players[p]?.graveyard ?? []) if (ok(id)) out.push(id);
+  if (spec.filter.exiled) for (const id of s.exile) if (ok(id)) out.push(id);
   if (spec.filter.spells)
     for (const item of s.stack) if (item.kind === "spell" && item.id !== sourceId && ok(item.id)) out.push(item.id);
   if (spec.filter.stackItems)
@@ -215,6 +258,10 @@ export function validateTargets(
     if (spec.samePlayer && new Set(holders).size > 1) throw new RulesError("Les cibles doivent appartenir au même joueur");
     if (spec.differentPlayers && new Set(holders).size !== holders.length)
       throw new RulesError("Les cibles doivent être contrôlées par des joueurs différents");
+    if (spec.maxTotalManaValue !== undefined) {
+      const total = ids.reduce((n, id) => n + (snapshot(s, id).manaValue ?? 0), 0);
+      if (total > spec.maxTotalManaValue) throw new RulesError(`Valeur de mana totale supérieure à ${spec.maxTotalManaValue}`);
+    }
     result[spec.id] = ids;
   }
   return result;

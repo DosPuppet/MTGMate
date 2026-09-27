@@ -3,11 +3,12 @@
  * Le moteur reste la seule source de vérité : on n'envoie que des décisions tirées des options légales.
  */
 
-import type { DeckEntries } from "@mtgx/cards";
+import { card, type DeckEntries } from "@mtgx/cards";
 import {
   type ActionOption,
   type AutopilotSettings,
   autoTarget,
+  type CardDef,
   type CardFace,
   DEFAULT_AUTOPILOT,
   type Decision,
@@ -26,6 +27,16 @@ import { describeEvents, type Lang, type LogLine } from "./i18n";
 import type { FromWorker, Sandbox } from "./protocol";
 import { LocalSession, RemoteSession, type Session } from "./session";
 
+/** Définitions des cartes des decks (et du bac à sable), envoyées au worker de partie. */
+function defsFor(decks: DeckEntries[], sandbox?: Sandbox): Record<string, CardDef> {
+  const names = new Set<string>(decks.flatMap((d) => d.map(([, name]) => name)));
+  for (const side of Object.values(sandbox ?? {})) {
+    for (const n of side.cards ?? []) names.add(n);
+    for (const [n] of side.attach ?? []) names.add(n);
+  }
+  return Object.fromEntries([...names].map((n) => [n, card(n)]));
+}
+
 type CastOption = Extract<ActionOption, { type: "cast" }>;
 type ActivateOption = Extract<ActionOption, { type: "activate" }>;
 export type PlayableOption = CastOption | ActivateOption;
@@ -39,10 +50,12 @@ export interface Casting {
   /** Coûts additionnels choisis (cartes défaussées, permanents sacrifiés). */
   discard: string[] | null;
   sacrifice: string[] | null;
+  /** Permanents à engager pour le coût (station). */
+  tap: string[] | null;
   /** Façon de payer le sort : coût normal, sans payer (Omniscience, Etali), coût alternatif. */
   payMode: "normal" | "free" | "alt" | null;
   targets: Record<string, string[]>;
-  stage: "mode" | "pay" | "x" | "kicker" | "target" | "discard" | "sacrifice";
+  stage: "mode" | "pay" | "x" | "kicker" | "target" | "discard" | "sacrifice" | "tap";
   spec: TargetOption | null;
   /** Cibles déjà désignées pour `spec` quand il en accepte plusieurs. */
   picked?: string[];
@@ -139,7 +152,7 @@ interface Store {
   pickTarget(id: string): void;
   /** Valide les cibles déjà désignées (« jusqu'à N »). */
   confirmTargets(): void;
-  chooseAdditional(kind: "discard" | "sacrifice", ids: string[]): void;
+  chooseAdditional(kind: "discard" | "sacrifice" | "tap", ids: string[]): void;
   cancel(): void;
   toggleAttacker(id: string): void;
   setAttackTarget(player: string): void;
@@ -174,6 +187,9 @@ function buildDecision(c: Casting): Decision {
     return {
       type: "cast",
       card: c.option.card,
+      face: c.option.face,
+      faceDown: c.option.faceDown,
+      warp: c.option.warp,
       mode: c.mode ?? 0,
       targets: c.targets,
       x: c.x ?? undefined,
@@ -191,6 +207,7 @@ function buildDecision(c: Casting): Decision {
     targets: c.targets,
     x: c.x ?? undefined,
     sacrifice: c.sacrifice ?? undefined,
+    tap: c.tap ?? undefined,
   };
 }
 
@@ -394,6 +411,7 @@ export const useGame = create<Store>((set, get) => {
     if (extra && "discard" in extra && extra.discard && c.discard === null)
       return set({ casting: { ...c, stage: "discard", spec: null } });
     if (extra?.sacrifice && c.sacrifice === null) return set({ casting: { ...c, stage: "sacrifice", spec: null } });
+    if (extra && "tap" in extra && extra.tap && c.tap === null) return set({ casting: { ...c, stage: "tap", spec: null } });
     get().decide(buildDecision(c));
   };
 
@@ -440,6 +458,7 @@ export const useGame = create<Store>((set, get) => {
         playerName: "Vous",
         playerDeck,
         aiDecks,
+        defs: defsFor([playerDeck, ...aiDecks], sandbox),
         sandbox,
       });
       session.send({ type: "settings", settings });
@@ -608,13 +627,16 @@ export const useGame = create<Store>((set, get) => {
       const p = view.pending;
       if ((p?.kind === "discard" || p?.kind === "bottomCards") && p.player === view.viewer) return get().toggleSelection(id);
       const acts = myActions(view);
-      const land = acts.find((a) => a.type === "playLand" && a.card === id);
-      if (land) return get().decide({ type: "playLand", card: id });
-      const cast = acts.find((a): a is CastOption => a.type === "cast" && a.card === id);
-      // Capacités activées depuis la main (cycle, « défaussez cette carte : … »).
+      const lands = acts.filter((a) => a.type === "playLand" && a.card === id);
+      const casts = acts.filter((a): a is CastOption => a.type === "cast" && a.card === id);
+      // Terrain choc : payer les points de vie (dégagé) ou non (engagé) ; Ville à aventure : jouer le terrain ou lancer l'Aventure.
+      if (lands.length > 1 || (lands.length === 1 && casts.length > 0))
+        return set({ abilityMenu: { sourceId: id, options: [...lands, ...casts] } });
+      if (lands.length === 1) return get().decide({ type: "playLand", card: id });
+      const cast = casts[0];
+      // Capacités activées depuis la main (cycle, « défaussez cette carte : … »), ou plusieurs faces (aventure).
       const fromHand = acts.filter((a): a is ActivateOption => a.type === "activate" && a.source === id);
-      if (fromHand.length && (cast || fromHand.length > 1))
-        return set({ abilityMenu: { sourceId: id, options: [...(cast ? [cast] : []), ...fromHand] } });
+      if (casts.length + fromHand.length > 1) return set({ abilityMenu: { sourceId: id, options: [...casts, ...fromHand] } });
       if (fromHand[0] && !cast) return get().beginCasting(fromHand[0], id);
       if (cast) return get().beginCasting(cast, id);
       if (p?.kind === "priority" && p.player === view.viewer) {
@@ -703,6 +725,7 @@ export const useGame = create<Store>((set, get) => {
         kicked: null,
         discard: null,
         sacrifice: null,
+        tap: null,
         payMode: null,
         targets: {},
         stage: "mode",

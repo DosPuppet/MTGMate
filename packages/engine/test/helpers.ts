@@ -3,7 +3,7 @@
  */
 import { card } from "@mtgx/cards";
 import { createGame, submit } from "../src/game";
-import { cloneState, createObject } from "../src/state";
+import { cloneState, createObject, registerDef } from "../src/state";
 import { advance, emptyCombat } from "../src/turn";
 import type { CardDef, Decision, GameState, PlayerId, Step } from "../src/types";
 
@@ -68,10 +68,12 @@ export function scenario(opts: ScenarioOptions): GameState {
       player.life = side.life ?? 20;
       // Tout le monde a déjà joué un tour : les créatures présentes n'ont pas le mal d'invocation.
       player.lastTurnStarted = p === s.turn.active ? turn : Math.max(1, turn - 1);
+      // Tours déjà commencés par ce joueur (Jace Reawakened) : un tour sur deux à deux joueurs.
+      player.turnsTaken = Math.ceil(turn / 2);
       player.drewFromEmptyLibrary = false;
       const add = (c: string | CardDef, zone: "hand" | "library" | "graveyard") => {
         const d = def(c);
-        s.defs[d.id] ??= d;
+        registerDef(s, d);
         createObject(s, d.id, p, zone);
       };
       for (const c of side.hand ?? []) add(c, "hand");
@@ -81,7 +83,7 @@ export function scenario(opts: ScenarioOptions): GameState {
         const perm: Permanent =
           typeof entry === "object" && "name" in entry && !("types" in entry) ? entry : { name: entry as string | CardDef };
         const d = def(perm.name);
-        s.defs[d.id] ??= d;
+        registerDef(s, d);
         const o = createObject(s, d.id, p, "battlefield");
         o.controlledSince = perm.sick ? turn : 0;
         o.tapped = !!perm.tapped;
@@ -159,4 +161,25 @@ export function customCard(partial: Partial<CardDef> & { name: string }): CardDe
     implemented: true,
     ...partial,
   };
+}
+
+/**
+ * Avance la partie jusqu'à la condition : passe la priorité, n'attaque ni ne bloque, défausse l'excédent et
+ * accepte les choix suggérés.
+ */
+export function advanceUntil(s: GameState, until: (s: GameState) => boolean, max = 600): GameState {
+  let cur = s;
+  for (let i = 0; i < max && !until(cur); i++) {
+    const p = cur.pending;
+    if (!p) break;
+    if (p.kind === "priority") cur = act(cur, p.player, { type: "pass" });
+    else if (p.kind === "declareAttackers") cur = act(cur, p.player, { type: "declareAttackers", attackers: [] });
+    else if (p.kind === "declareBlockers") cur = act(cur, p.player, { type: "declareBlockers", blocks: [] });
+    else if (p.kind === "discard") {
+      const hand = cur.players[p.player]?.hand ?? [];
+      cur = act(cur, p.player, { type: "discard", cards: hand.slice(0, Math.max(0, hand.length - 7)) });
+    } else if (p.kind === "choice") cur = act(cur, p.player, { type: "choose", values: p.request.suggested });
+    else break;
+  }
+  return cur;
 }

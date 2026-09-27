@@ -4,7 +4,16 @@
  */
 import { randomBytes, randomInt, randomUUID } from "node:crypto";
 import { buildDeck, CARDS, type DeckEntries, validateDeck } from "@mtgx/cards";
-import { createGame, type Decision, fallbackDecision, type GameEvent, GameHost, type GameView, visibleFaces } from "@mtgx/engine";
+import {
+  createGame,
+  type Decision,
+  decider,
+  fallbackDecision,
+  type GameEvent,
+  GameHost,
+  type GameView,
+  visibleFaces,
+} from "@mtgx/engine";
 import type { Clock, ErrorCode, RoomInfo, Seat, ServerMessage } from "./protocol";
 
 /** Connexion d'un joueur (WebSocket en production, faux client dans les tests). */
@@ -191,7 +200,8 @@ export class Room {
       this.scheduleCleanupIfIdle();
     } else if (s.pending) {
       // Chaque nouvelle décision a son temps plein (comme sur MTGA) ; une décision refusée ne relance rien.
-      this.armClock(s.pending.player as Seat);
+      // 722 : pendant un tour contrôlé, c'est le contrôleur qui décide.
+      this.armClock((decider(s) ?? s.pending.player) as Seat);
     }
     for (const [p, u] of this.outbox)
       this.sendTo(p, { type: "update", ...u, faces: visibleFaces(s, u.view, u.events), clock: this.clockInfo() });
@@ -227,7 +237,7 @@ export class Room {
     const host = this.host;
     const seat = this.seats.find((s) => s.seat === player);
     const p = host?.state.pending;
-    if (!host || !seat || host.state.over || p?.player !== player) return;
+    if (!host || !seat || host.state.over || !p || decider(host.state) !== player) return;
     seat.timeouts += 1;
     if (seat.timeouts >= this.config.maxTimeouts) {
       await host.submitHuman(player, { type: "concede" });

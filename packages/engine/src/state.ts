@@ -8,6 +8,7 @@ import type {
   GameObject,
   GameState,
   LkiSnapshot,
+  ManaCost,
   ManaType,
   ObjectId,
   PlayerId,
@@ -56,6 +57,11 @@ export type RulesEvent =
   | { e: "cast"; player: PlayerId; stackId: ObjectId; instantSorceryBefore?: number }
   /** Cartes défaussées (nouveaux identifiants, dans le cimetière). */
   | { e: "discard"; player: PlayerId; cards: ObjectId[] }
+  | { e: "discardBatch"; player: PlayerId; count: number }
+  | { e: "cycled"; player: PlayerId; card: ObjectId; x: number }
+  | { e: "exhaust"; player: PlayerId; source: ObjectId }
+  | { e: "crime"; player: PlayerId }
+  | { e: "plotted"; card: ObjectId }
   | { e: "attack"; attacker: ObjectId; defender: PlayerId }
   | { e: "damage"; sourceId: ObjectId | null; sourceController?: PlayerId; target: string; amount: number; combat: boolean }
   | { e: "step"; step: Step; active: PlayerId }
@@ -75,7 +81,31 @@ export type RulesEvent =
   /** Capacité de loyauté activée (`cost` : variation de loyauté, négative si des marqueurs sont retirés). */
   | { e: "loyalty"; player: PlayerId; sourceId: ObjectId; cost: number }
   /** Une créature bloque. */
-  | { e: "block"; blocker: ObjectId; attacker: ObjectId };
+  | { e: "block"; blocker: ObjectId; attacker: ObjectId }
+  /** Des créatures ont infligé des blessures de combat à ce joueur (une étape de blessures). */
+  | { e: "combatDamageBatch"; player: PlayerId; sources: ObjectId[] }
+  /** Un permanent est sacrifié (par son contrôleur). */
+  | { e: "sacrifice"; objectId: ObjectId; player: PlayerId }
+  /** Un joueur perd la partie. */
+  | { e: "playerLost"; player: PlayerId }
+  /** Un permanent change de contrôleur (Zidane, Tantalus Thief). */
+  | { e: "controlChange"; objectId: ObjectId; from: PlayerId; to: PlayerId }
+  /** Une créature explore (701.44), en révélant une carte de terrain ou non. */
+  | { e: "explore"; objectId: ObjectId; land: boolean }
+  /** Une Monture devient montée. */
+  | { e: "saddled"; objectId: ObjectId }
+  /** Des créatures ont monté une Monture ou équipé un Véhicule (coût payé). */
+  | { e: "crewed"; vehicle: ObjectId; crew: ObjectId[] }
+  /** Un joueur manifeste avec effroi (déclencheurs « chaque fois que vous manifestez avec effroi »). */
+  | { e: "manifestDread"; player: PlayerId }
+  /** Un permanent face cachée est retourné face visible. */
+  | { e: "turnedFaceUp"; objectId: ObjectId }
+  /** Une Classe atteint un niveau. */
+  | { e: "classLevel"; objectId: ObjectId; level: number }
+  /** Un joueur joue un terrain. */
+  | { e: "playLand"; player: PlayerId; objectId: ObjectId }
+  /** Une porte de Salle est déverrouillée. */
+  | { e: "unlock"; objectId: ObjectId; door: number; player: PlayerId };
 
 /** Signale un événement de règles : les capacités déclenchées correspondantes sont mises en attente. */
 export function rulesEvent(s: GameState, ev: RulesEvent): void {
@@ -152,6 +182,7 @@ export function emptyTurnStats(): TurnStats {
     spellsCast: 0,
     instantSorceryCast: 0,
     noncreatureCast: 0,
+    landsEntered: 0,
     scried: 0,
     noncombatDamageTaken: 0,
     loyaltyActivations: 0,
@@ -167,6 +198,14 @@ export function emptyPool(): Record<ManaType, number> {
 // ---------------------------------------------------------------------------
 // Accès
 // ---------------------------------------------------------------------------
+
+/** Change le contrôleur d'un permanent (horodatage de contrôle, événement de règles). */
+export function setController(s: GameState, o: GameObject, to: PlayerId): void {
+  const from = o.controller;
+  o.controller = to;
+  o.controlledSince = s.turn.number;
+  if (from !== to) rulesEvent(s, { e: "controlChange", objectId: o.id, from, to });
+}
 
 export function obj(s: GameState, id: ObjectId): GameObject {
   const o = s.objects[id];
@@ -238,13 +277,14 @@ export function counterPT(o: { counters: Record<string, number> }): number {
 export function tapObject(s: GameState, o: GameObject): void {
   if (o.tapped) return;
   o.tapped = true;
+  bump(s); // des capacités statiques peuvent en dépendre (« vos créatures légendaires engagées »)
   rulesEvent(s, { e: "tap", objectId: o.id });
 }
 
 /** Ajoute (ou retire, si n < 0) des marqueurs ; renvoie le nombre réellement modifié. */
 export function changeCounters(s: GameState, o: GameObject, kind: string, n: number): number {
   // Doubling Season : des marqueurs mis sur un permanent que vous contrôlez sont doublés (y compris en arrivant).
-  if (n > 0 && o.zone === "battlefield") n *= 2 ** doublers(s, o.controller, "counters");
+  if (n > 0 && o.zone === "battlefield") n *= 2 ** counterDoublers(s, o);
   // Yoshimaru, Beloved Companion : un marqueur +1/+1 de plus sur vos créatures.
   if (n > 0 && kind === "+1/+1" && o.zone === "battlefield" && playerStatic(s, o.controller, "plusOneCounterBonus")) n += 1;
   const before = counterCount(o, kind);
@@ -311,11 +351,18 @@ export function moveObject(
   s: GameState,
   id: ObjectId,
   to: Zone,
-  opts: { controller?: PlayerId; position?: "top" | "bottom"; enters?: EntersContext } = {},
+  opts: {
+    controller?: PlayerId;
+    position?: "top" | "bottom";
+    enters?: EntersContext;
+    /** Arrive face cachée (manifester, cape) : la vraie carte reste cachée, sans remplacements ni déclencheurs d'arrivée. */
+    faceDown?: { ward: boolean; upCosts: ManaCost[] };
+  } = {},
 ): ObjectId | null {
   const o = obj(s, id);
-  // Copie d'un sort préparé : elle ne quitte l'exil que pour la pile ; ailleurs, elle cesse d'exister.
-  if (o.preparedFor && to !== "stack") {
+  // Copie d'un sort préparé ou d'une carte (Uldaros) : elle ne quitte l'exil que pour la pile ; ailleurs,
+  // elle cesse d'exister (une copie de sort de permanent qui se résout devient un jeton).
+  if ((o.preparedFor || o.cardCopy) && to !== "stack" && !(o.cardCopy && o.zone === "stack" && to === "battlefield")) {
     removeObject(s, id);
     return null;
   }
@@ -336,6 +383,10 @@ export function moveObject(
   ) {
     to = "exile";
   }
+  // Rest in Peace : tout ce qui irait au cimetière est exilé à la place.
+  if (to === "graveyard" && s.playerOrder.some((p) => playerStatic(s, p, "graveyardToExile"))) to = "exile";
+  // Hades, Sorcerer of Eld : seulement le cimetière de son contrôleur.
+  if (to === "graveyard" && playerStatic(s, o.isToken ? o.controller : o.owner, "ownGraveyardToExile")) to = "exile";
   const from = zoneArray(s, o);
   if (from) {
     const i = from.indexOf(id);
@@ -344,9 +395,14 @@ export function moveObject(
   const lki = o.zone === "battlefield" ? snapshot(s, id) : null;
   if (lki) {
     s.lki[id] = lki;
+    // Vide (Edge of Eternities) : un permanent non-terrain a quitté le champ de bataille ce tour-ci.
+    if (!lki.types.includes("Land")) s.turn.nonlandLeft = true;
     if (to === "graveyard" && lki.types.includes("Creature")) {
       s.turn.creatureDied = true;
       s.turn.creaturesDied = (s.turn.creaturesDied ?? 0) + 1;
+      // Sidequest: Hunt the Mark : « si une créature est morte sous le contrôle d'un adversaire ce tour-ci ».
+      const stats = s.players[lki.controller]?.turnStats;
+      if (stats) stats.creaturesLost = (stats.creaturesLost ?? 0) + 1;
     }
   }
   const from0 = o.zone;
@@ -355,6 +411,27 @@ export function moveObject(
     if (owner) owner.turnStats.milled += 1;
   }
   delete s.objects[id];
+  // Permanent assemblé : il redevient ses deux cartes dans la zone de destination (701.42c).
+  if (o.melded) {
+    const parts = o.melded.map((p) =>
+      createObject(s, p.defId, o.owner, to, { uid: p.uid, controller: to === "battlefield" ? o.controller : o.owner }),
+    );
+    if (to === "library") shuffle(s, s.players[o.owner]?.library ?? []);
+    bump(s);
+    rulesEvent(s, { e: "zone", oldId: id, newId: parts[0]?.id ?? null, from: from0, to, lki });
+    if (from0 === "battlefield") releaseLinkedExile(s, id);
+    return parts[0]?.id ?? null;
+  }
+  // Possession Engine : les effets qui durent « tant que vous contrôlez [la source] » cessent.
+  if (from0 === "battlefield" && s.effects.some((e) => e.whileSource === id)) {
+    s.effects = s.effects.filter((e) => e.whileSource !== id);
+    bump(s);
+  }
+  // Emrakul : les effets « jusqu'à ce que cette carte soit lancée depuis l'exil » cessent.
+  if (from0 === "exile" && s.effects.some((e) => e.untilExiledUid === o.uid)) {
+    s.effects = s.effects.filter((e) => e.untilExiledUid !== o.uid);
+    bump(s);
+  }
   if (o.isToken && to !== "battlefield") {
     bump(s);
     // Un jeton qui quitte le champ de bataille cesse d'exister, mais il « meurt » bien (déclencheurs).
@@ -363,12 +440,20 @@ export function moveObject(
     return null;
   }
 
-  const moved = createObject(s, o.defId, o.owner, to, {
+  // Face cachée : la carte est révélée en quittant le champ de bataille ; un sort lancé face cachée arrive face cachée.
+  const staysFaceDown = !!o.faceDown && o.zone === "stack" && to === "battlefield";
+  const cardId = o.faceDown && !staysFaceDown ? o.faceDown.card : o.defId;
+  const hide = to === "battlefield" && !!opts.faceDown;
+  if (hide) s.defs[FACE_DOWN_ID] ??= FACE_DOWN_DEF;
+  const moved = createObject(s, hide ? FACE_DOWN_ID : cardId, o.owner, to, {
     uid: o.uid,
-    isToken: o.isToken,
+    isToken: o.isToken || (!!o.cardCopy && to === "battlefield"),
     controller: to === "battlefield" || to === "stack" ? (opts.controller ?? o.controller) : o.owner,
   });
   if (o.preparedFor) moved.preparedFor = o.preparedFor;
+  if (o.cardCopy && to === "stack") moved.cardCopy = true;
+  if (staysFaceDown) moved.faceDown = o.faceDown;
+  if (hide && opts.faceDown) moved.faceDown = { card: cardId, ...opts.faceDown };
   if (to === "library" && opts.position !== "bottom") {
     const lib = s.players[o.owner]?.library;
     if (lib) {
@@ -378,12 +463,84 @@ export function moveObject(
   }
   if (shuffleIn) shuffle(s, s.players[o.owner]?.library ?? []);
   if (to === "battlefield") applyEntersReplacements(s, moved, opts.enters ?? {});
+  // Bioengineered Future : terrains arrivés sous votre contrôle ce tour-ci.
+  if (to === "battlefield" && s.defs[moved.defId]?.types.includes("Land")) {
+    const ctrl = s.players[moved.controller];
+    if (ctrl) ctrl.turnStats.landsEntered += 1;
+  }
   rulesEvent(s, { e: "zone", oldId: id, newId: moved.id, from: from0, to, lki });
   if (from0 === "battlefield") releaseLinkedExile(s, id);
   return moved.id;
 }
 
-/** Retire un objet du jeu sans passer par une zone (copie de sort qui cesse d'exister). */
+/** Identifiant de la définition générique d'un objet face cachée (708.2). */
+export const FACE_DOWN_ID = "face-down";
+
+/** Définition générique d'un objet face cachée : créature 2/2 sans nom, sans coût ni capacités (708.2). */
+export const FACE_DOWN_DEF: CardDef = {
+  id: FACE_DOWN_ID,
+  name: "",
+  typeLine: "Créature face cachée",
+  manaCost: null,
+  manaCostText: "",
+  colors: [],
+  supertypes: [],
+  types: ["Creature"],
+  subtypes: [],
+  power: 2,
+  toughness: 2,
+  keywords: [],
+  abilities: [],
+  text: "",
+  implemented: true,
+};
+
+/** Retourne face visible un permanent face cachée (702.168d, 701.58c) ; ses capacités « retournée » se déclenchent. */
+export function turnFaceUp(s: GameState, id: ObjectId): void {
+  const o = s.objects[id];
+  if (o?.zone !== "battlefield" || !o.faceDown) return;
+  o.defId = o.faceDown.card;
+  delete o.faceDown;
+  bump(s);
+  emit({ type: "turnedFaceUp", objectId: id, defId: o.defId });
+  rulesEvent(s, { e: "turnedFaceUp", objectId: id });
+}
+
+/** Salle : déverrouille une porte (709.5e) ; « quand vous déverrouillez cette porte » se déclenche. */
+export function unlockDoor(s: GameState, id: ObjectId, door: number): void {
+  const o = s.objects[id];
+  if (o?.zone !== "battlefield" || o.unlocked?.includes(door)) return;
+  o.unlocked = [...(o.unlocked ?? []), door].sort();
+  bump(s);
+  rulesEvent(s, { e: "unlock", objectId: id, door, player: o.controller });
+}
+
+/** Salle : carte scindée dont les moitiés sont des enchantements (portes). */
+/** 722 : le joueur qui prend la décision en attente (le contrôleur du tour, s'il y en a un). */
+export function decider(s: GameState): PlayerId | undefined {
+  const p = s.pending;
+  if (!p) return undefined;
+  const tc = s.turnControl;
+  if (tc && tc.turn === s.turn.number && p.player === tc.player && !s.players[tc.by]?.lost) return tc.by;
+  return p.player;
+}
+
+export function isRoom(d: CardDef | undefined): boolean {
+  return d?.layout === "split" && !!d.faceDefs?.every((f) => f.subtypes.includes("Room"));
+}
+
+/** Enregistre une définition de carte dans la partie, avec les définitions de ses faces. */
+export function registerDef(s: GameState, d: CardDef): void {
+  s.defs[d.id] ??= d;
+  for (const f of d.faceDefs ?? []) s.defs[f.id] ??= f;
+  if (d.meldResultDef) registerDef(s, d.meldResultDef);
+}
+
+/** Retire un objet du jeu sans passer par une zone (copie de sort qui cesse d'exister, carte assemblée). */
+export function removeFromGame(s: GameState, id: ObjectId): void {
+  removeObject(s, id);
+}
+
 function removeObject(s: GameState, id: ObjectId): void {
   const o = s.objects[id];
   if (!o) return;
@@ -417,7 +574,7 @@ export function setPrepared(s: GameState, o: GameObject, on: boolean): void {
 
 import { bump, snapshot } from "./layers";
 import { applyEntersReplacements, type EntersContext, releaseLinkedExile, replaceDestination } from "./replacement";
-import { doublers, playerStatic } from "./statics";
+import { counterDoublers, playerStatic } from "./statics";
 import { detectTriggers } from "./triggers";
 
 export {

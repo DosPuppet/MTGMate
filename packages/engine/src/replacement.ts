@@ -8,9 +8,10 @@
  * Limite actuelle : si plusieurs remplacements s'appliquent au même événement, le premier l'emporte
  * (le choix du joueur affecté, 616.1, viendra avec des cartes qui en ont besoin).
  */
+import { gainLife } from "./actions";
 import { boardAmount } from "./effects";
-import { changeCounters, chars, moveObject, P1P1, setPrepared } from "./state";
-import { playerStatic } from "./statics";
+import { changeCounters, chars, moveObject, newId, nextTimestamp, P1P1, setPrepared } from "./state";
+import { controlledAbilitiesWithSource, playerStatic } from "./statics";
 import { matchesObjectFilter, withChosen } from "./targets";
 import { checkCondition } from "./triggers";
 import type { Amount, Color, GameObject, GameState, ObjectId, Zone } from "./types";
@@ -27,6 +28,14 @@ export interface EntersContext {
   castFromHand?: boolean;
   /** Choix fait pendant la résolution (« en arrivant, choisissez… »). */
   chosen?: GameObject["chosen"];
+  /** Terrain choc : les points de vie ont été payés (sinon il arrive engagé). */
+  shockPaid?: boolean;
+  /** Mana dépensé pour le lancer (Dyadrine). */
+  manaSpent?: number;
+  /** Dévorer : nombre de permanents sacrifiés en arrivant. */
+  devoured?: number;
+  /** Waxen Shapethief : définition copiée en arrivant (couche 1). */
+  copyOf?: string;
 }
 
 /**
@@ -37,6 +46,9 @@ function amountAtEntry(s: GameState, a: Amount, o: GameObject, ctx: EntersContex
   if (typeof a === "number") return a;
   if (a.kind === "x") return ctx.x ?? 0;
   if (a.kind === "kicked") return ctx.kicked ? a.yes : a.no;
+  if (a.kind === "manaSpent") return ctx.manaSpent ?? 0;
+  // Bioengineered Future : terrains arrivés ce tour-ci sous le contrôle de la source.
+  if (a.kind === "landsEnteredThisTurn") return s.players[o.controller]?.turnStats.landsEntered ?? 0;
   if (a.kind === "maxPower") {
     // « la plus grande force parmi les autres créatures que vous contrôlez » (Prime Speaker Zegana)
     const f = withChosen(a.filter, o);
@@ -96,6 +108,20 @@ export function replaceDestination(s: GameState, o: GameObject, to: Zone): Zone 
     ) {
       return "exile";
     }
+    // The Darkness Crystal : exilée à la place, liée au Cristal, et son contrôleur gagne des PV.
+    if (!o.isToken && chars(s, o.id).types.includes("Creature")) {
+      for (const p of s.playerOrder) {
+        if (p === o.controller) continue;
+        const crystal = controlledAbilitiesWithSource(s, p).find(
+          ({ ab }) => ab.kind === "playerStatic" && !!ab.opponentNontokenDiesToExileLife,
+        );
+        if (crystal?.ab.kind !== "playerStatic") continue;
+        const src = s.objects[crystal.id];
+        if (src) src.linkedUids = [...(src.linkedUids ?? []), o.uid];
+        gainLife(s, p, crystal.ab.opponentNontokenDiesToExileLife ?? 0);
+        return "exile";
+      }
+    }
   }
   return to;
 }
@@ -105,10 +131,32 @@ export function applyEntersReplacements(s: GameState, o: GameObject, ctx: Enters
   if (ctx.kicked) o.kicked = true;
   if (ctx.cast) o.cast = true;
   if (ctx.castFromHand) o.castFromHand = true;
+  // Mana dépensé, connu dès l'arrivée (« si aucun mana n'a été dépensé pour la lancer »).
+  if (ctx.manaSpent !== undefined) o.manaSpent = ctx.manaSpent;
   if (ctx.attachTo) o.attachedTo = ctx.attachTo;
   // 614.12 : « en arrivant, choisissez… » (le choix vient de la résolution, sinon choix par défaut).
   const choose = s.defs[o.defId]?.chooseOnEnter;
   if (choose) o.chosen = ctx.chosen ?? defaultChoice(s, o, choose);
+  // 707.9 : « arrive comme copie de … » (Waxen Shapethief).
+  if (ctx.copyOf) {
+    s.effects.push({
+      id: newId(s, "e"),
+      timestamp: nextTimestamp(s),
+      affected: [o.id],
+      duration: "permanent",
+      copyOf: ctx.copyOf,
+      // Visage Bandit : « sauf que c'est un Métamorphe Voleur en plus de ses autres types ».
+      addSubtypes: s.defs[o.defId]?.entersAsCopyAddSubtypes,
+    });
+    s.version += 1; // cache des couches
+  }
+  // 702.82 : dévorer N (les permanents ont été sacrifiés pendant la résolution).
+  const devour = s.defs[o.defId]?.devour;
+  if (devour && ctx.devoured) changeCounters(s, o, P1P1, devour.n * ctx.devoured);
+  // Terrain choc : engagé, sauf si les points de vie ont été payés en le jouant (mis en jeu par un effet : engagé).
+  if (s.defs[o.defId]?.shockLand && !ctx.shockPaid) o.tapped = true;
+  // 714.3a : une Saga arrive avec un marqueur de savoir.
+  if (s.defs[o.faceDefId ?? o.defId]?.saga) changeCounters(s, o, "lore", 1);
   // 306.5b : un planeswalker arrive avec sa loyauté imprimée.
   const loyalty = s.defs[o.defId]?.loyalty;
   if (loyalty) changeCounters(s, o, "loyalty", loyalty);
@@ -116,7 +164,8 @@ export function applyEntersReplacements(s: GameState, o: GameObject, ctx: Enters
   for (const id of s.battlefield) {
     const src = s.objects[id];
     if (!src || id === o.id) continue;
-    for (const ab of s.defs[src.defId]?.abilities ?? []) {
+    // Capacités calculées : porte déverrouillée d'une Salle, verso, copie.
+    for (const ab of chars(s, id).abilities) {
       if (ab.kind !== "replacement" || !ab.affects) continue;
       if (!matchesObjectFilter(s, src.controller, o.id, ab.affects, id)) continue;
       if (ab.entersTapped) o.tapped = true;
@@ -136,6 +185,9 @@ export function applyEntersReplacements(s: GameState, o: GameObject, ctx: Enters
     if (ab.entersWithCounters !== undefined)
       changeCounters(s, o, ab.counterKind ?? P1P1, amountAtEntry(s, ab.entersWithCounters, o, ctx));
   }
+  // The Wandering Minstrel : « les terrains que vous contrôlez arrivent dégagés ».
+  if (o.tapped && s.defs[o.defId]?.types.includes("Land") && playerStatic(s, o.controller, "landsEnterUntapped"))
+    o.tapped = false;
 }
 
 /** 610.3 : la source d'un exil « jusqu'à ce que » quitte le champ de bataille : les cartes reviennent. */

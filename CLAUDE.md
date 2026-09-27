@@ -1,6 +1,6 @@
 # CLAUDE.md — suivi et conventions de MTGX (MTG Mate)
 
-Ce fichier sert au suivi du projet entre les sessions. Le README présente le projet ; ici, on trouve où on en est, ce qui reste à faire, les approximations connues et les règles de travail.
+Ce fichier sert au suivi du projet entre les sessions : où on en est, les règles de travail et les pièges. Le README présente le projet ; le détail des extensions, les approximations et la carte du moteur sont dans `docs/` (voir « Documents »).
 
 ## Objectif et périmètre
 
@@ -22,136 +22,35 @@ Ce fichier sert au suivi du projet entre les sessions. Le README présente le pr
 | Effets sonores (échantillons Kenney CC0, volume, muet avec M) | ✅ |
 | Jeu en ligne : duel Standard à 2 (serveur local, code de salon, corde, reconnexion, revanche) | ✅ |
 | Déploiement : pm2 derrière nginx sur un VPS (`docs/deploiement.md`, `deploy/`) | ✅ documenté et testé en local (pm2, nginx) |
-| **Reality Fracture (FRA, « Réalité fracturée »)** | **276 / 279** (lots 0 à G faits, dont 4 decks préconstruits ; hors Emrakul, Uldaros Theorix, Hall of Echoes) |
-| Autres extensions Standard | à faire |
+| **Reality Fracture (FRA, « Réalité fracturée »)** | ✅ **279 / 279** (lots 0 à G, dont 4 decks préconstruits ; les 3 dernières cartes au lot 0.1 de la branche `standard`) |
+| **Edge of Eternities (EOE)** | ✅ **260 / 260** (lots A à D, branche `standard`) |
+| **Aetherdrift (DFT)** | ✅ **260 / 260** (lots A à C, branche `standard`) |
+| **Outlaws of Thunder Junction + The Big Score (OTJ, BIG)** | ✅ **269 / 269 + 30 / 30** (lots A à C, branche `standard`) |
+| **Final Fantasy (FIN)** | ✅ **307 / 307** (lots A à D4, branche `standard`) |
+| Autres extensions Standard | à la demande de l'utilisateur, une à la fois |
 
-### Reality Fracture (FRA)
 
-- 285 cartes selon Scryfall, dont 6 réimpressions de FDN (terrains de base, Unsummon), donc 279 cartes propres. Toutes sont légales en Standard.
-- **Sortie le 2 octobre 2026 : pas encore de textes français.** Réimporter après la sortie (`npm run import-cards -- fra`), puis vérifier les noms français dans le deckbuilder.
-- Lot 0 (infrastructure multi-extensions) et lot A (cartes faisables avec le moteur, jetons Cadet, Heartwood, Lotus, Forêt Tentacule et Thopter, terrains lents) : ✅.
-- Lot F (**cartes uniques**) : ✅, 50 cartes. Le moteur gagne :
-  - durée « jusqu'à votre prochain tour » (`modify`, `untilYourNextTurn`) et emblèmes temporaires (`expiresAtTurnOf`) ;
-  - déclencheurs « subit des blessures », « bloque », « vous attaque » (`defending: "you"`), « lance un sort qui cible… » (`targeting`, `orFilter`) ;
-  - hybride monocolore {2/W} (`ManaCost.twoHybrid`), loyauté −X (`loyaltyX`), coût « exilez une autre carte de votre cimetière » ;
-  - garde « défaussez une carte », flashback avec défausse (`flashbackDiscard`), Équiper réduit par les marqueurs +1/+1 ;
-  - combat : blessures selon l'endurance (Ghalta), valeur absolue d'une force négative (Loot), attaque malgré le défenseur, un seul attaquant par planeswalker (Tomik) ;
-  - statiques de joueur : taxe adverse (Thalia), +1 marqueur (Yoshimaru), +1 blessure non de combat (Tomik), pas de déclencheur d'arrivée (Karn), pas de sorts en combat (Yuriko), jetons d'artefact → Dragons, créatures adverses exilées au lieu de mourir ;
-  - Tarmogoyf (`cdaToughness`), Omnipresence, Null Summoner (carte liée lançable), sorts renvoyés en main, Molten Tide, « chaque joueur peut défausser sa main et piocher sept cartes », Kindred Judgment.
+### Suite du travail
+
+- **27/09/2026 : l'intégration de tout le Standard d'un coup est abandonnée.** On finit l'optimisation du flux de travail sur la branche `standard`, puis on la fusionne dans `master` (avec l'accord de l'utilisateur).
+- Ensuite : **une extension à la fois, sur `master`, seulement quand l'utilisateur la nomme.**
+- Découpage habituel d'une extension :
+  - lot A : cartes faisables avec le moteur, jetons et terrains ;
+  - lot B : mécaniques phares ;
+  - lots C et suivants : légendaires et cartes uniques, jusqu'à 100 % ;
+  - un commit par lot.
+
+## Documents
+
+- `docs/moteur.md` : **à lire avant d'ajouter une mécanique**. Carte des fichiers du moteur, et où toucher pour un effet, un déclencheur, une condition, un filtre, un statique de joueur ou un mot-clé.
+- `docs/approximations.md` : approximations connues, générales puis carte par carte (à lever si une carte l'exige). **Toute nouvelle approximation y est ajoutée.**
+- `docs/extensions/<ext>.md` : mécaniques et détail des lots de chaque extension :
+  - `fdn`, `fra`, `eoe`, `dft`, `otj-big`, `fin` ;
+  - `socle` pour les lots transverses (faces multiples, Sagas, face cachée…).
   
-  Non gérées : **Emrakul, the Exigent Doom** (terrain qui gagne une capacité jusqu'au lancement depuis l'exil, garde « sacrifiez trois permanents »), **Uldaros Theorix** (copies de cartes de chaque type lancées gratuitement), **Hall of Echoes** (terrain qui devient la copie d'une créature, règle de légende suspendue).
-- Lot E (**planeswalkers**) : ✅. Il couvre :
-  - The Theorist, Jace Beleren ; Ajani Resolute ; Ajani Unrelenting ;
-  - les sorts « créature ou planeswalker » ;
-  - les 10 terrains Commons/Annex (« arrive engagé sauf si vous contrôlez un planeswalker ») ;
-  - Tam (prolifération, choix automatique) ; Kiora (condition « capacité de loyauté activée ce tour-ci ») ;
-  - Mabel (retirer jusqu'à trois marqueurs, choix automatique) ; Winter et Dark Matter Manipulator (bonus par carte du cimetière, `perGraveyard` et `perDivisor`) ;
-  - Craftwork Crusher (« choisissez deux », sous forme des trois paires possibles).
-  
-  Passent au lot F :
-  - Face Yourself, Identity Echo, Loot, the Anomaly, Tomik, Orzhov Lawmage ;
-  - les deux Chandra, les deux Garruk, Jace, Reality Sculptor ;
-  - Gideon the Oathless (garde « défaussez une carte ») et Break Under Pressure.
-- Lot D (**Empower Jace**) : ✅. Il couvre :
-  - l'effet `empowerJace` (aide `empower(n)` dans `fra/common.ts`) : N marqueurs de loyauté sur votre jeton Jace, créé d'abord s'il n'existe pas (−1 : surveillance 1 ; −3 : piochez) ;
-  - les Ways, qui accordent des capacités de loyauté à vos planeswalkers (aide `walkersHave`) ;
-  - le déclencheur « quand vous activez une capacité de loyauté » (`loyaltyActivated`) ;
-  - la loyauté des Jace à vitesse d'éphémère (Jace's Machinations) et les planeswalkers qui survivent à 0 (Sanctum Lurker) ;
-  - « contempler un Jace » (condition `beholdJace`), un terrain supplémentaire ce tour-ci, « le prochain sort ne peut pas être contrecarré ».
-  
-  Fatehold Charm (renvoyer un sort de la pile en main) et Jace, Reality Sculptor passent aux lots E et F.
-- Lot C (**préparé**) : ✅, fidèle aux notes de version officielles :
-  - devenir préparé crée une **copie du sort en exil** (`GameObject.preparedCopy` / `preparedFor`), lançable par le contrôleur actuel du permanent, au timing de son type, en payant son coût ;
-  - lancer la copie dé-prépare le permanent ; un effet qui dé-prépare, ou le départ du permanent, fait disparaître la copie ;
-  - la copie cesse d'exister en quittant la pile. Elle n'est pas une carte : l'invariant de décompte l'exclut ;
-  - dans l'interface, la copie apparaît au bout de la main (comme les cartes jouables depuis l'exil), et une pastille « Préparée » s'affiche sur la créature ;
-  - Pyre Rhymer (mana supplémentaire en engageant une Montagne) et Variable Chaser (« chaque joueur peut défausser sa main ») passent au lot F.
-- Lot B : ✅. Il couvre :
-  - les capacités activées depuis la main (`fromHand` et le coût `discardSelf`), avec un menu « Lancer / Cycle » quand une carte en main a plusieurs options ;
-  - le cycle, le cycle de terrain et le cycle de type, lus dans le texte ;
-  - la condition de lancement (`castCondition`), le second partagé (Samut), la convocation, l'exhaust (`once`) ;
-  - le domaine (`basicLandTypes`), la recherche « de noms différents » et « quand vous défaussez cette carte ».
-  
-  Les cartes Jace du lot B (Hexhaven Battalion, Countersculpt, Theorist's Sanctum) passent au lot D, Tam au lot E et Emrakul au lot F.
-- Lot G (**decks préconstruits**) : ✅. Quatre decks bicolores en cartes FRA seules (`packages/cards/decks/fra-*.json`), un par faction :
-  - Fatehold : Jace renforcé (W/U) ;
-  - Innovative : sorts préparés (U/R) ;
-  - Formidable : cimetière (B/G) ;
-  - Dedicated : Cadets en armes (R/W).
-  
-  Ils sont ajoutés après les deux decks FDN dans `DECKS` (les tests et le bench utilisent les deux premiers). Équilibrage vérifié par un tournoi toutes rondes entre IA heuristiques, 10 parties par affrontement : tous les decks gagnent entre 38 et 59 % de leurs parties.
-- Reste pour FRA : Emrakul, Uldaros Theorix et Hall of Echoes, puis le réimport des textes français après le 2 octobre.
-
-### Lots du set principal FDN (tous terminés)
-
-- A. Longue traîne (primitives du DSL, terrains bicolores)
-- B. Bibliothèque et cimetière (cibles au cimetière, recherche, retour)
-- C. Pile : contresorts, garde, sorts de la pile ciblables
-- D. Auras et Équipements
-- E. Planeswalkers et emblèmes
-- F. Mécaniques uniques :
-  - permissions de lancement (Omniscience, Etali, Muldrotha, Tinybones, impulsion, flashback accordé, lancer depuis le cimetière) ;
-  - coûts alternatifs et « sacrifiez ou payez » ;
-  - doublements (jetons, marqueurs, blessures) ;
-  - protection contre tout et défense talismanique contre les éphémères ;
-  - statiques de joueur ;
-  - choix en arrivant et mana restreint ;
-  - copie de sorts, changement de contrôle, fin du tour, F/E variables, déclencheurs depuis le cimetière.
-
-Réimpressions : défenses talismaniques contre une couleur, changelin, restrictions de blocage (« doit être bloquée », « ne peut pas être bloquée par… »), Équipage, coûts d'activation (exil, retour en main, marqueurs, une fois par tour), marqueurs de poison, combats supplémentaires, mana conservé jusqu'à la fin du tour, sorts copiés par le mana dépensé, changement de cible, victoire et défaite par effet, Auras « vous contrôlez la créature enchantée ».
-
-## Approximations connues (à lever si une carte l'exige)
-
-- **Blocages :** ils sont déclarés joueur par joueur en ordre APNAP, et non simultanément.
-- **Remplacements multiples (616.1) :** le premier s'applique, sans choix du joueur affecté.
-- **Dépendances de couches (613.8) :** seulement une approximation à un niveau, du type « une source qui perd toutes ses capacités n'applique plus ses statiques ».
-- **Blessures « réparties » (Chandra −4) :** la répartition est choisie à la résolution, et non au lancement (601.2d).
-- **Aura mise en jeu sans être lancée :** elle va au cimetière, faute du choix de l'objet enchanté (303.4f).
-- **Fishing Pole :** la capacité accordée à la créature équipée est portée par l'Équipement (coût « engager la créature équipée »).
-- **« Au début de l'étape de fin, sacrifiez ce jeton » :** modélisé par une capacité retardée plutôt que par une capacité du jeton.
-- **Etali :** les cartes exilées se lancent gratuitement, sans restriction de timing, après la résolution du déclencheur (et non pendant), jusqu'à la fin du tour.
-- **Thousand-Year Storm :** les copies gardent les cibles du sort d'origine (pas de nouveau choix de cibles).
-- **Coûts retirés automatiquement :**
-  - Quilled Greatwurm : les six marqueurs sont retirés d'abord des créatures qui en ont le plus ;
-  - Lathril : les Elfes à engager sont choisis automatiquement.
-- **Mana restreint (Giada, Secluded Courtyard) :** utilisé seulement par le paiement automatique, pour un sort ou une capacité autorisés ; ces sources ne se tapent pas à la main.
-- **Muldrotha :** une carte à plusieurs types de permanent utilise automatiquement le premier type encore libre.
-- **Abyssal Harvester :** les autres jetons Cauchemar sont exilés avant la création de la copie (même résultat).
-- **Choix « en arrivant » sans résolution** (permanent remis en jeu par un effet) : choix par défaut, le type ou la couleur les plus présents chez le contrôleur.
-- **Curator of Destinies :** en multijoueur, c'est l'adversaire suivant qui choisit la pile.
-- **Tinybones :** seuls les sorts avec un marqueur de butin sont jouables, pas les terrains.
-- **Soulstone Sanctuary** (« tous les types de créature ») : tout sous-type sauf ceux de terrain, d'artefact et d'enchantement connus.
-- **Équipage :** les créatures engagées sont choisies automatiquement.
-- **Ramos, Three Tree Mascot :** leurs capacités de mana sont des capacités activées qui passent par la pile.
-- **Mana « déclencheur » (haste, copie du sort) :** appliqué seulement quand ce mana est dépensé par le paiement automatique.
-- **Bolt Bend :** la nouvelle cible est choisie à la résolution.
-- **Demonic Pact :** les modes déjà choisis sont mémorisés sur le permanent (perdus s'il change de zone, ce qui est conforme).
-- **Ordeal of Nylea :** sacrifiée directement, sans déclencheur séparé.
-- **Dégager jusqu'à N terrains :** les terrains sont choisis automatiquement.
-- **Prolifération (Tam) :** choix automatique. Tous les marqueurs de vos permanents ; chez les adversaires, seulement les marqueurs -1/-1, d'étourdissement et de poison.
-- **Mabel, Bitter Recluse :** les marqueurs retirés sont choisis automatiquement (loyauté, puis +1/+1, puis les autres).
-- **Liliana the Faultless, Massacre Girl :** mêmes approximations que plus haut (défausse à la résolution ; blessures non de combat de vos seules sources).
-- **Empower Jace avec plusieurs jetons Jace :** les marqueurs vont sur le premier jeton (pas de choix).
-- **Contempler un Jace :** toujours fait quand c'est possible (Countersculpt, Theorist's Sanctum), sans révéler la carte.
-- **Codie, Ravenous Codex :** la copie du sort préparé garde ses cibles (pas de nouveau choix).
-- **Hallway Heckler :** la défausse est faite à la résolution, et non comme coût.
-- **Convocation :** une créature qui a une capacité de mana ne sert pas à la convocation (elle paie par sa capacité de mana).
-- **Master of Barbs :** seules les blessures non de combat infligées par vos sources (sorts compris) comptent, pas celles d'une source adverse.
-- **Something Worth Saving :** les quatre cartes sont regardées puis mises au cimetière, ce qui n'est pas une meule au sens strict (pas de déclencheur de meule).
-- **Solitary Cell, Murmuring Volume :** la carte défaussée l'est à la résolution, et non comme coût d'activation.
-- **Extrapolate the Impossible :** ne fait rien, comme sur Arena en BO1 (pas de cartes « hors du jeu »).
-- **Chandra, Torch of Defiance +1 :** la carte exilée est lançable ce tour-ci (et non immédiatement) ; les 2 blessures ne sont infligées que si c'est un terrain.
-- **Chandra, Chill of Compliance +1 ({U}) :** mana sans restriction (pas de réserve de mana restreint).
-- **Fblthp, Impossibly Lost :** une seule fois par tour (et non une fois par étape de blessures de combat).
-- **Garruk, Veiled Butcher −3 :** pioche si le total de cartes non-terrain défaussées est inférieur à deux (exact à 2 joueurs, approché en multijoueur).
-- **Garruk, Curse Breaker −4, Jace, Reality Sculptor −3 :** emblèmes temporaires ; Garruk utilise « chaque fois que vous attaquez ».
-- **Hapatra, the Desert Fang :** une seule cible adverse, même en multijoueur.
-- **Seasoned Cryomancer :** le nombre de cibles est choisi d'après les cartes non-terrain défaussées (1 ou 2), via deux déclencheurs réflexifs exclusifs.
-- **Gallia, Tragic Host :** la carte exilée du cimetière est choisie automatiquement (la moins chère).
-- **Molten Tide :** le {R} supplémentaire s'ajoute à toute capacité de mana « {T} » d'une Montagne, quelle que soit la couleur produite.
-- **Warrior's Blades :** la légalité de l'Équiper suppose la meilleure réduction possible ; le coût payé dépend de la cible choisie.
-- **Légalité Standard :** instantané des légalités Scryfall au moment de l'import (`legalities.standard` dans `data/<set>.json`). Après une rotation ou une annonce de bannissement, réimporter les sets (`npm run import-cards -- <set>`).
-- **Jetons :** pas d'image (cadre texte).
+  **Le détail d'un nouveau lot va là**, et CLAUDE.md ne reçoit qu'une ligne d'avancement.
+- `docs/deploiement.md` : mise en production (pm2, nginx).
+- Textes Oracle des cartes à faire : `npm run coverage -- --set <ext> --text [--color W|U|B|R|G|M|C|L]` ; une carte : `--card "<nom>"`.
 
 ## Conventions
 
@@ -186,19 +85,24 @@ Réimpressions : défenses talismaniques contre une couleur, changelin, restrict
 
 ## Vérifications avant de rendre un lot
 
-1. `npx tsc -p tsconfig.json`, `npx biome check .` : Biome réordonne les imports, donc relire un fichier avant de le patcher par recherche/remplacement.
-2. `npx vitest run` : règles, IA, test de fumée de chaque carte, decklists.
-3. Fuzz sur toutes les cartes gérées :
-   - `npm run fuzz -- --games 300 --pool all` (plusieurs `--seed`) ;
-   - `--players 3` et `--players 4` ;
-   - `--ai mixed`.
-4. `npm run bench` : cibles atteintes.
-5. Interface :
-   - `npm run deck-smoke`, `npm run ui-smoke` et `npm run battlefield-smoke` (plateaux chargés via le bac à sable) ;
-   - pour une nouvelle mécanique visible, un script Playwright ponctuel avec captures dans `test-results/`.
+- **Par lot :** `npm run verify -- --set <EXT>` (environ 70 s). Il lance :
+  - `tsc`, Biome et la couverture ;
+  - `vitest`, où le test de fumée est découpé en un fichier par extension (tous les cœurs) ;
+  - le fuzz ciblé sur l'extension (`--pool <EXT>`, à 2, 3 et 4 joueurs, et en IA mixte) ;
+  - un fuzz sur tout le pool ;
+  - les tests d'interface seulement si le client, `view.ts` ou le protocole ont changé (`--ui` pour les forcer). Vite doit tourner.
+- **En fin d'extension ou avant une fusion :** `npm run verify -- --full` (environ 3 min). Il lance :
+  - trois graines sur tout le pool, puis 3 et 4 joueurs, et l'IA mixte ;
+  - le bench ;
+  - les trois tests d'interface.
+- **Résultat :** une ligne par étape, avec sa durée. Le détail n'est affiché qu'en cas d'échec ; tous les journaux sont dans `test-results/verify/`.
+- **Fuzz à la main :** `npm run fuzz -- --games 300 --pool FIN --jobs 10`. Les résultats sont identiques à graine égale, quel que soit `--jobs`.
+- **Bench :** il n'est fiable que sur secteur (le mode éco du CPU fausse les mesures). On juge une régression en comparant avant et après.
+- **Nouvelle mécanique visible :** un script Playwright ponctuel, avec captures dans `test-results/`.
 
 ## Pièges connus
 
+- **Bundle de l'interface :** toutes les cartes sont dans le bundle principal (6,3 Mo). Le worker ne doit pas importer `@mtgx/cards` (il reçoit ses définitions dans `start`) ; seul `@mtgx/cards/tokens` est permis. Le premier chargement en dev est lent (compilation des JSON) : relancer un test d'interface qui échoue par délai dépassé juste après un redémarrage de Vite.
 - **Serveur Vite sous WSL :** il peut servir une version périmée d'un module du moteur après modification. Redémarrer `npm run dev` avant tout test dans le navigateur, ou vérifier avec `curl http://localhost:5173/@fs/<chemin absolu> | grep <nouveau code>`.
 - **Champ de bataille (`client/src/board/layout.ts`) :**
   - la disposition est calculée en pur TypeScript et testée (`client/test/layout.test.ts`) ; les lignes sont découpées explicitement, pas par `flex-wrap` ;
@@ -219,7 +123,7 @@ Réimpressions : défenses talismaniques contre une couleur, changelin, restrict
 - **Mulligans :** ils se décident l'un après l'autre (le premier joueur d'abord) ; un script de test ne doit pas supposer l'ordre.
 - **Bac à sable (mode dev) :** `window.__mtgx` expose le store ; `startGame(deck, decksIA, { p1: { cards, tokens }, p2: … })` met des permanents en jeu dès le début (voir `battlefield-smoke`). Dans `page.evaluate`, pas de fonction nommée (tsx injecte `__name`).
 - **`pgrep -f` / `pkill -f` :** avec un motif présent dans la ligne de commande, ils peuvent tuer le shell courant.
-- **Test de fumée (`ai/test/cards-smoke.test.ts`) :** une carte qui n'a pas pu être jouée fait échouer le test. Pour les cartes réactives (contresorts), l'adversaire doit avoir de quoi lancer des sorts.
+- **Test de fumée (`ai/test/smoke/`, un fichier par extension, harnais `harness.ts`) :** une carte qui n'a pas pu être jouée fait échouer le test. Une nouvelle extension gérée reçoit son fichier et entre dans `OWN_FILES`. On arrête 80 décisions après que la carte a été jouée, et on passe aux graines 2 et 3 seulement si elle ne l'a pas été. Pour les cartes réactives (contresorts), l'adversaire doit avoir de quoi lancer des sorts.
 - **Cache des caractéristiques :** tout ce dont une capacité statique ou une F/E variable dépend doit faire avancer la version d'état (`bump`). Les points de vie et l'élimination d'un joueur le font désormais. Le fuzz détecte les oublis (« cache des caractéristiques périmé »).
 - **Biome :**
   - `npx biome check . | tail -1` cache les erreurs : lire toute la sortie, ou grep « Found » ;

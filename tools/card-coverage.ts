@@ -2,9 +2,13 @@
  * Couverture des cartes : combien de cartes d'un set sont gérées, et quelles mécaniques manquent
  * (pour prioriser le travail de l'étape 4b).
  *
- * Usage : npm run coverage [-- --set main|fdn|fra] [-- --list <mécanique>] [-- --missing] [-- --card "<nom>"]
+ * Usage : npm run coverage [-- --set all|standard|main|<set>] [-- --list <mécanique>] [-- --missing] [-- --card "<nom>"]
+ *         npm run coverage -- --set FIN --text [--color W|U|B|R|G|M|C|L]
+ *
+ * --text : textes Oracle des cartes non gérées (toutes faces), pour préparer un lot ; --color filtre par couleur
+ * (M = multicolore, C = incolore, L = terrain).
  */
-import { CARDS, isMainSet, SET_BY_CODE } from "@mtgx/cards";
+import { CARDS, isMainSet, SET_BY_CODE, SETS } from "@mtgx/cards";
 
 const MECHANICS: [string, RegExp][] = [
   ["aura", /^Enchant (creature|land|permanent)/m],
@@ -41,7 +45,7 @@ if (cardName !== undefined) {
     process.exit(1);
   }
   console.log(`${c.name} ${c.manaCostText} — ${c.typeLine}${c.power !== undefined ? ` ${c.power}/${c.toughness}` : ""}`);
-  console.log(`${c.text}\n`);
+  console.log(`${[c.text, ...(c.faceDefs ?? []).map((f) => `// ${f.name}\n${f.text}`)].join("\n")}\n`);
   console.log(`Gérée : ${c.implemented ? "oui" : "non"}`);
   const { text: _t, fr: _f, image: _i, artCrop: _a, ...script } = c;
   console.log(
@@ -62,18 +66,40 @@ if (cardName !== undefined) {
   process.exit(0);
 }
 
-// --set main : sets principaux ; --set fdn|fra : une extension (toutes ses cartes) ; sans option : tout.
-const setArg = (arg("--set") ?? "").toUpperCase();
+// --set main : sets principaux ; --set fdn|fra|… : une extension (toutes ses cartes) ;
+// --set all (ou sans option) : tout, avec le détail par extension ; --set standard : cartes légales en Standard.
+const setArg0 = (arg("--set") ?? "").toUpperCase();
+const setArg = setArg0 === "ALL" ? "" : setArg0;
 const main = setArg === "MAIN";
-const all = Object.values(CARDS).filter((c) => !c.isToken && (!main || isMainSet(c)) && (!setArg || main || c.set === setArg));
+const standard = setArg === "STANDARD";
+const all = Object.values(CARDS).filter(
+  (c) =>
+    !c.isToken &&
+    (!main || isMainSet(c)) &&
+    (!standard || c.legalities?.standard === "legal") &&
+    (!setArg || main || standard || c.set === setArg),
+);
 const done = all.filter((c) => c.implemented);
-const label = main ? "sets principaux" : setArg ? (SET_BY_CODE[setArg]?.name ?? setArg) : "toutes extensions";
+const label = main
+  ? "sets principaux"
+  : standard
+    ? "Standard (cartes légales)"
+    : setArg
+      ? (SET_BY_CODE[setArg]?.name ?? setArg)
+      : "toutes extensions";
 console.log(`${label} : ${done.length} / ${all.length} cartes gérées (${Math.round((done.length / all.length) * 100)} %)`);
+if (!setArg) {
+  for (const s of SETS) {
+    const inSet = all.filter((c) => c.set === s.code);
+    console.log(`  ${s.code.padEnd(4)} ${s.name.padEnd(30)} ${inSet.filter((c) => c.implemented).length} / ${inSet.length}`);
+  }
+}
 
 const missing = all.filter((c) => !c.implemented);
 const byMechanic = new Map<string, string[]>();
 for (const c of missing) {
-  const tags = MECHANICS.filter(([, re]) => re.test(c.text)).map(([n]) => n);
+  const text = [c.text, ...(c.faceDefs ?? []).map((f) => f.text)].join("\n");
+  const tags = MECHANICS.filter(([, re]) => re.test(text)).map(([n]) => n);
   for (const t of tags.length ? tags : ["sans mécanique bloquante détectée"])
     byMechanic.set(t, [...(byMechanic.get(t) ?? []), c.name]);
 }
@@ -86,6 +112,28 @@ const i = process.argv.indexOf("--list");
 if (i >= 0) {
   const m = process.argv[i + 1] ?? "sans mécanique bloquante détectée";
   console.log(`\n${m} :\n  ${(byMechanic.get(m) ?? []).join("\n  ")}`);
+}
+
+if (process.argv.includes("--text")) {
+  const color = arg("--color")?.toUpperCase();
+  const col = (c: (typeof missing)[number]) =>
+    c.types.includes("Land") && !c.types.includes("Creature")
+      ? "L"
+      : c.colors.length === 0
+        ? "C"
+        : c.colors.length > 1
+          ? "M"
+          : (c.colors[0] as string);
+  for (const c of missing.filter((x) => !color || col(x) === color)) {
+    const pt = c.power !== undefined ? ` ${c.power}/${c.toughness}` : "";
+    console.log(`\n## ${c.name} ${c.manaCostText ?? ""} — ${c.typeLine}${pt}${c.layout ? ` {${c.layout}}` : ""}`);
+    if (c.faceDefs?.length) {
+      for (const f of c.faceDefs) {
+        const fpt = f.power !== undefined ? ` ${f.power}/${f.toughness}` : "";
+        console.log(`[${f.name} — ${f.typeLine}${fpt}]\n${f.text}`);
+      }
+    } else console.log(c.text);
+  }
 }
 
 if (process.argv.includes("--missing")) {

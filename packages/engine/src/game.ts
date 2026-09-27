@@ -6,7 +6,19 @@ import { drawCard } from "./actions";
 import { divisionOf, validateChoice } from "./choices";
 import { activateManaAbility } from "./mana";
 import { activateAbility, answerResolutionChoice, castSpell, playLand, RulesError } from "./stack";
-import { cloneState, collectEvents, createObject, emit, emptyPool, emptyTurnStats, opponentsOf, random, shuffle } from "./state";
+import {
+  cloneState,
+  collectEvents,
+  createObject,
+  decider,
+  emit,
+  emptyPool,
+  emptyTurnStats,
+  opponentsOf,
+  random,
+  registerDef,
+  shuffle,
+} from "./state";
 import { answerTriggerMode, answerTriggerOrder, answerTriggerTarget } from "./triggers";
 import {
   advance,
@@ -103,7 +115,7 @@ export function createGame(opts: GameOptions): StepResult {
         turnStats: emptyTurnStats(),
       };
       for (const card of p.deck) {
-        s.defs[card.id] ??= card;
+        registerDef(s, card);
         createObject(s, card.id, p.id, "library");
       }
       shuffle(s, s.players[p.id]?.library ?? []);
@@ -124,8 +136,9 @@ function expect<T extends Decision["type"]>(d: Decision, ...types: T[]): asserts
   if (!types.includes(d.type as T)) throw new RulesError(`Décision inattendue : ${d.type}`);
 }
 
-function apply(s: GameState, player: PlayerId, d: Decision): void {
+function apply(s: GameState, submitter: PlayerId, d: Decision): void {
   if (d.type === "concede") {
+    const player = submitter;
     const pl = s.players[player];
     if (pl && !pl.lost) {
       emit({ type: "lose", player, reason: "concede" });
@@ -135,7 +148,9 @@ function apply(s: GameState, player: PlayerId, d: Decision): void {
   }
   const p = s.pending;
   if (s.over || !p) throw new RulesError("Aucune décision attendue");
-  if (p.player !== player) throw new RulesError("Ce n'est pas à vous de décider");
+  // 722 : le joueur qui contrôle ce tour décide à la place du joueur contrôlé (la décision reste celle du joueur contrôlé).
+  if (p.player !== submitter && decider(s) !== submitter) throw new RulesError("Ce n'est pas à vous de décider");
+  const player = p.player;
 
   // La décision en attente est consommée avant d'appliquer la réponse : le gestionnaire
   // peut lui-même poser la décision suivante (défenseur suivant, cartes à remettre…).
@@ -205,7 +220,7 @@ function apply(s: GameState, player: PlayerId, d: Decision): void {
           passPriority(s, player);
           break;
         case "playLand":
-          playLand(s, player, d.card);
+          playLand(s, player, d.card, !!d.payLife);
           s.priority.passes = 0;
           break;
         case "cast":

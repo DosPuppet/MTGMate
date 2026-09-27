@@ -41,7 +41,7 @@ export function buildCastDecision(
     case "pass":
       return { type: "pass" };
     case "playLand":
-      return { type: "playLand", card: a.card };
+      return { type: "playLand", card: a.card, payLife: a.payLife };
     case "tapForMana":
       return { type: "tapForMana", source: a.source, ability: a.ability, color: a.colors[0] };
     case "cast": {
@@ -57,6 +57,9 @@ export function buildCastDecision(
       return {
         type: "cast",
         card: a.card,
+        face: a.face,
+        faceDown: a.faceDown,
+        warp: a.warp,
         mode: mode.index,
         targets: targetsFrom(mode.targets),
         x: a.xMax === null ? undefined : Math.floor(rand() * (a.xMax + 1)),
@@ -67,14 +70,22 @@ export function buildCastDecision(
         alternative: !a.freeAvailable && a.altAvailable && (!a.normalAvailable || rand() < 0.5) ? true : undefined,
       };
     }
-    case "activate":
+    case "activate": {
+      // Station : une créature engagée au hasard parmi celles possibles.
+      const tap = a.additional?.tap;
+      const pool = tap ? [...tap.options] : [];
+      const picked: string[] = [];
+      while (tap && picked.length < tap.count && pool.length)
+        picked.push(pool.splice(Math.floor(rand() * pool.length), 1)[0] as string);
       return {
         type: "activate",
         source: a.source,
         ability: a.ability,
         targets: targetsFrom(a.targets),
         x: a.xMax === null ? undefined : Math.floor(rand() * (a.xMax + 1)),
+        tap: tap ? picked : undefined,
       };
+    }
   }
 }
 
@@ -92,7 +103,12 @@ export function enumerateDecisions(a: ActionOption, limit = 40, rank?: (ids: str
         : o.legal.map((v) => [v]);
       if (o.optional) values.push([]);
       const next: Record<string, string[]>[] = [];
-      for (const partial of acc) for (const v of values) next.push({ ...partial, [o.id]: v });
+      for (const partial of acc)
+        for (const v of values) {
+          // « une autre cible » : pas de combinaison qui reprend une cible d'un autre mot « cible ».
+          if (o.otherThan?.some((k) => v.some((id) => partial[k]?.includes(id)))) continue;
+          next.push({ ...partial, [o.id]: v });
+        }
       acc = next.slice(0, limit);
     }
     return acc;
@@ -107,6 +123,9 @@ export function enumerateDecisions(a: ActionOption, limit = 40, rank?: (ids: str
           const base = {
             type: "cast" as const,
             card: a.card,
+            face: a.face,
+            faceDown: a.faceDown,
+            warp: a.warp,
             mode: m.index,
             targets,
             x: a.xMax ?? undefined,
@@ -128,12 +147,21 @@ export function enumerateDecisions(a: ActionOption, limit = 40, rank?: (ids: str
       }
       return out.slice(0, limit);
     }
-    case "activate":
-      return combos(a.targets)
-        .map((targets) => ({ type: "activate" as const, source: a.source, ability: a.ability, targets, x: a.xMax ?? undefined }))
-        .slice(0, limit);
+    case "activate": {
+      const base = combos(a.targets).map((targets) => ({
+        type: "activate" as const,
+        source: a.source,
+        ability: a.ability,
+        targets,
+        x: a.xMax ?? undefined,
+      }));
+      // Station : la plus forte créature (choix par défaut du moteur), ou celle qui a le moins de valeur.
+      const tap = a.additional?.tap;
+      const cheap = tap && rank ? rank(tap.options).slice(0, tap.count) : undefined;
+      return [...base, ...(cheap ? base.map((d) => ({ ...d, tap: cheap })) : [])].slice(0, limit);
+    }
     case "playLand":
-      return [{ type: "playLand", card: a.card }];
+      return [{ type: "playLand", card: a.card, payLife: a.payLife }];
     default:
       return [];
   }

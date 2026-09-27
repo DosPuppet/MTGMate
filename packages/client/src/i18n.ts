@@ -59,11 +59,22 @@ export const KEYWORD_LABEL: Record<Keyword, string> = {
   cantBeBlockedByPowerLE2: "Imblocable par les créatures de force 2 ou moins",
   mustBeBlocked: "Doit être bloquée",
   cantBlock: "Ne peut pas bloquer",
+  canBlockOnlyFlyers: "Ne bloque que les créatures volantes",
+  cantBeBlockedByMoreThanOne: "Bloquée par une seule créature au plus",
+  crewPlus2: "Monte et équipe avec 2 de force en plus",
+  crewWithToughness: "Monte et équipe avec son endurance",
+  startYourEngines: "Start your engines!",
+  cantBeBlockedExceptByHaste: "Ne peut être bloquée que par des créatures avec la célérité",
   cantAttack: "Ne peut pas attaquer",
   unblockable: "Ne peut pas être bloquée",
   mustAttack: "Attaque à chaque combat",
   doesntUntap: "Ne se dégage pas",
   cantBeBlockedByWalls: "Imblocable par les Murs",
+  noActivatedAbilities: "Capacités activées bloquées",
+  minThreeBlockers: "Bloquée par trois créatures ou plus",
+  combatDamageImmune: "Blessures de combat prévenues",
+  keepsDamage: "Blessures conservées",
+  absorbsDamage: "Encaisse les blessures",
   convoke: "Convocation",
   assignsToughness: "Blesse selon son endurance",
   absolutePowerDamage: "Blesse selon la valeur absolue de sa force",
@@ -72,6 +83,7 @@ export const KEYWORD_LABEL: Record<Keyword, string> = {
 
 export function faceName(face: CardFace | undefined, lang: Lang): string {
   if (!face) return "?";
+  if (face.defId === "face-down") return lang === "fr" ? "Carte face cachée" : "Face-down card";
   if (face.isToken) return `jeton ${face.name}`;
   return (lang === "fr" && face.fr?.name) || face.name;
 }
@@ -167,6 +179,18 @@ export function describeEvents(
       case "endTurn":
         add("Le tour se termine.", "info");
         break;
+      case "plotted":
+        add(`${who(e.player)} ${e.player === me ? "complotez" : "complote"} ${name(e.defId)}.`, kind(e.player));
+        break;
+      case "speed":
+        add(
+          `${who(e.player)} ${e.player === me ? "passez" : "passe"} à la vitesse ${e.speed}${e.speed >= 4 ? " (maximale)" : ""}.`,
+          kind(e.player),
+        );
+        break;
+      case "turnControl":
+        add(`${who(e.by)} ${e.by === me ? "contrôlez" : "contrôle"} le tour de ${whom(e.player)}.`, "info");
+        break;
       case "attach":
         add(`${name(e.defId)} est attaché à ${name(e.toDefId)}.`, "info");
         break;
@@ -185,6 +209,9 @@ export function describeEvents(
         break;
       case "token":
         add(`${who(e.controller)} ${e.controller === me ? "créez" : "crée"} un ${name(e.defId)}.`, kind(e.controller));
+        break;
+      case "transform":
+        add(`Transformation : ${name(e.defId)}.`, "info");
         break;
       case "attack":
         add(

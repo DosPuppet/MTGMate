@@ -2,10 +2,12 @@
  * Vue d'un joueur : tout ce qui est public + sa propre main + les options de sa décision.
  * Les informations cachées (main adverse, bibliothèques) ne sortent jamais du moteur.
  */
+
+import { copiedDefId } from "./layers";
 import { legalActions } from "./legal";
 import { costToText } from "./mana";
 import { canPlayLand, castTerms } from "./stack";
-import { chars, isSummoningSick, obj } from "./state";
+import { chars, decider, isSummoningSick, obj } from "./state";
 import { playerStatic } from "./statics";
 import { attackableDefenders, attackCandidates, blockCandidates } from "./turn";
 import type {
@@ -39,6 +41,9 @@ export interface CardFace {
   isToken: boolean;
   /** Sort attaché d'une carte « à préparer » (affiché dans l'aperçu). */
   prepareFace?: CardDef["prepareFace"];
+  /** Carte à plusieurs faces : sa disposition et ses autres faces (verso, aventure, autre moitié). */
+  layout?: CardDef["layout"];
+  otherFaces?: CardDef["prepareFace"][];
 }
 
 export interface ObjectView extends CardFace {
@@ -62,9 +67,17 @@ export interface ObjectView extends CardFace {
   /** Aura ou Équipement : le permanent auquel il est attaché. */
   attachedTo: ObjectId | null;
   /** Choix fait en arrivant (type de créature, couleur). */
-  chosen: { creatureType?: string; color?: Color } | null;
+  chosen: {
+    creatureType?: string;
+    color?: Color;
+  } | null;
   /** Reality Fracture : permanent préparé (son sort peut être lancé depuis l'exil). */
   prepared?: boolean;
+  /** Classe : niveau atteint (au-delà de 1) ; Affaire : résolue. */
+  classLevel?: number;
+  solved?: boolean;
+  /** Permanent (ou sort) face cachée du spectateur : la vraie carte, que lui seul connaît (708.5). */
+  faceDownCard?: CardFace;
 }
 
 export interface StackItemView extends CardFace {
@@ -92,6 +105,8 @@ export interface PlayerView {
   lost: boolean;
   /** Emblèmes (zone de commandement). */
   emblems: { name: string; text: string }[];
+  /** Vitesse (702.179), absente tant qu'elle n'a pas démarré. */
+  speed?: number;
 }
 
 export type PendingView =
@@ -117,6 +132,8 @@ export interface GameView {
   /** Tous les autres joueurs (y compris éliminés), dans l'ordre du tour à partir du suivant. */
   opponents: PlayerId[];
   turn: { number: number; active: PlayerId; step: Step; landsPlayed: number };
+  /** 722 : joueur dont le contrôleur prend la décision en cours (sa main remplace alors `hand`). */
+  controlling?: PlayerId;
   players: Record<PlayerId, PlayerView>;
   hand: ObjectView[];
   battlefield: ObjectView[];
@@ -146,12 +163,32 @@ export function cardFace(d: CardDef): CardFace {
     implemented: d.implemented,
     isToken: !!d.isToken,
     ...(d.prepareFace ? { prepareFace: d.prepareFace } : {}),
+    ...(d.layout ? { layout: d.layout, otherFaces: otherFaces(d) } : {}),
   };
+}
+
+/**
+ * Les faces autres que celle affichée (pour l'aperçu) : le verso, l'aventure, ou les deux moitiés d'une carte
+ * scindée. Une face n'a sa propre image que si elle est imprimée à part (verso d'une carte recto-verso).
+ */
+function otherFaces(d: CardDef): NonNullable<CardFace["otherFaces"]> {
+  const faces = d.faceDefs ?? [];
+  return (d.layout === "split" ? faces : faces.slice(1)).map((f) => ({
+    name: f.name,
+    manaCost: f.manaCostText,
+    typeLine: f.typeLine,
+    text: f.text,
+    image: f.image !== d.image ? f.image : undefined,
+    fr: f.fr
+      ? { name: f.fr.name, typeLine: f.fr.typeLine, text: f.fr.text, image: f.fr.image !== d.fr?.image ? f.fr.image : undefined }
+      : undefined,
+  }));
 }
 
 export function objectView(s: GameState, id: ObjectId): ObjectView {
   const o = obj(s, id);
-  const d = s.defs[o.defId] as CardDef;
+  // Une copie (couche 1) s'affiche avec la face de ce qu'elle copie.
+  const d = s.defs[o.zone === "battlefield" ? copiedDefId(s, id) : (o.faceDefId ?? o.defId)] as CardDef;
   const c = chars(s, id);
   const isCreature = c.types.includes("Creature");
   const attacking = !!s.combat?.attackers.some((a) => a.id === id);
@@ -179,7 +216,16 @@ export function objectView(s: GameState, id: ObjectId): ObjectView {
     chosen: o.chosen ?? null,
     name: c.name,
     ...(o.preparedCopy && s.objects[o.preparedCopy] ? { prepared: true } : {}),
+    ...(o.classLevel && o.classLevel > 1 ? { classLevel: o.classLevel } : {}),
+    ...(o.solved ? { solved: true } : {}),
   };
+}
+
+/** 708.5 : le contrôleur d'un permanent face cachée peut le regarder ; les autres joueurs non. */
+function withFaceDownCard(s: GameState, v: ObjectView, viewer: PlayerId): ObjectView {
+  const o = s.objects[v.id];
+  const card = o?.faceDown && o.controller === viewer ? s.defs[o.faceDown.card] : undefined;
+  return card ? { ...v, faceDownCard: cardFace(card) } : v;
 }
 
 export function projectView(s: GameState, viewer: PlayerId): GameView {
@@ -193,6 +239,7 @@ export function projectView(s: GameState, viewer: PlayerId): GameView {
       life: pl.life,
       libraryCount: pl.library.length,
       handCount: pl.hand.length,
+      speed: pl.speed,
       graveyard: pl.graveyard.map((id) => objectView(s, id)),
       manaPool: { ...pl.manaPool },
       lost: pl.lost,
@@ -221,18 +268,21 @@ export function projectView(s: GameState, viewer: PlayerId): GameView {
   });
 
   let pending: PendingView | null = null;
-  const p = s.pending;
+  // 722 : le joueur qui contrôle le tour voit la décision comme la sienne (options du joueur contrôlé).
+  const actor = decider(s);
+  const p = s.pending ? { ...s.pending, player: actor ?? s.pending.player } : null;
+  const who = s.pending?.player ?? viewer;
   if (p) {
     const mine = p.player === viewer;
     switch (p.kind) {
       case "priority":
-        pending = mine ? { ...p, actions: legalActions(s, viewer) } : { ...p };
+        pending = mine ? { ...p, actions: legalActions(s, who) } : { ...p };
         break;
       case "declareAttackers":
-        pending = mine ? { ...p, candidates: attackCandidates(s, viewer), defenders: attackableDefenders(s, viewer) } : { ...p };
+        pending = mine ? { ...p, candidates: attackCandidates(s, who), defenders: attackableDefenders(s, who) } : { ...p };
         break;
       case "declareBlockers":
-        pending = mine ? { ...p, candidates: blockCandidates(s, viewer) } : { ...p };
+        pending = mine ? { ...p, candidates: blockCandidates(s, who) } : { ...p };
         break;
       case "choice": {
         if (!mine) {
@@ -257,14 +307,19 @@ export function projectView(s: GameState, viewer: PlayerId): GameView {
     })(),
     turn: { number: s.turn.number, active: s.turn.active, step: s.turn.step, landsPlayed: s.turn.landsPlayed },
     players,
-    hand: (s.players[viewer]?.hand ?? []).map((id) => objectView(s, id)),
-    battlefield: s.battlefield.map((id) => objectView(s, id)),
+    // Pendant un tour contrôlé, le contrôleur voit et joue la main du joueur contrôlé quand il décide pour lui.
+    hand: (s.players[actor === viewer && who !== viewer ? who : viewer]?.hand ?? []).map((id) => objectView(s, id)),
+    controlling: actor === viewer && who !== viewer ? who : undefined,
+    battlefield: s.battlefield.map((id) => withFaceDownCard(s, objectView(s, id), viewer)),
     stack,
     exile: s.exile.map((id) => objectView(s, id)),
     playableExile: [
       ...s.exile.filter((id) => castTerms(s, viewer, id) || canPlayLand(s, viewer, id)),
       // Vizier of the Menagerie : « vous pouvez regarder la carte du dessus de votre bibliothèque à tout moment ».
-      ...(playerStatic(s, viewer, "castCreaturesFromTop") && s.players[viewer]?.library[0]
+      ...((playerStatic(s, viewer, "castCreaturesFromTop") ||
+        playerStatic(s, viewer, "castArtifactsFromTop") ||
+        playerStatic(s, viewer, "lookAtTopCard")) &&
+      s.players[viewer]?.library[0]
         ? [s.players[viewer]?.library[0] as string]
         : []),
     ].map((id) => objectView(s, id)),

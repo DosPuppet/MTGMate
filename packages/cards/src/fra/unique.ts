@@ -1,8 +1,8 @@
 /**
  * Reality Fracture — lot F : cartes uniques (mécaniques propres à une seule carte, légendes, planeswalkers).
- * Non gérées : Emrakul, the Exigent Doom ; Uldaros Theorix ; Hall of Echoes.
+ * Emrakul, Uldaros Theorix et Hall of Echoes viennent du lot 0.1 de la branche Standard.
  */
-import type { AbilityDef, ActivatedAbilityDef, ObjectFilter } from "@mtgx/engine";
+import type { AbilityDef, ActivatedAbilityDef, CardType, ObjectFilter } from "@mtgx/engine";
 import {
   activated,
   amount,
@@ -32,6 +32,10 @@ import {
 } from "./common";
 
 const CREATURE: ObjectFilter = { types: ["Creature"] };
+
+/** Uldaros Theorix : « jusqu'à une carte non-terrain ciblée de chaque type de carte de votre cimetière ». */
+const ULDAROS_TYPES: CardType[] = ["Artifact", "Creature", "Enchantment", "Instant", "Sorcery", "Planeswalker", "Battle"];
+const uldarosId = (t: string) => `u${t}`;
 const CREATURE_OR_WALKER: ObjectFilter = { types: ["Creature", "Planeswalker"] };
 
 /** Capacité de loyauté activable seulement sous condition. */
@@ -51,6 +55,57 @@ const cryoReflexive = (n: number) =>
   fx.reflexive([target.upTo(n, target.creature("t"))], [fx.tap(ref.target()), fx.counters(ref.target(), "stun", 1)]);
 
 export const UNIQUE: Record<string, CardScript> = {
+  // --- Lot 0.1 (branche Standard) -------------------------------------------
+  "Emrakul, the Exigent Doom": {
+    abilities: [
+      triggered(when.castSelf, [fx.untapUpTo({ types: ["Land"] }, 99)], { label: "Dégagez tous vos terrains" }),
+      activated({
+        mana: "{3}",
+        fromHand: true,
+        exileSelf: true,
+        targets: [target.permanent("t", ["Land"], {}, "terrain")],
+        effects: [
+          fx.modifyWhileExiled(ref.target(), { addAbilities: [manaAbility("C", 2)] }, ref.selfCard),
+          fx.grantPlay(ref.selfCard, { forever: true }),
+        ],
+        label: "Exilez-la : un terrain gagne « {T} : ajoutez {C}{C} »",
+      }),
+    ],
+  },
+  "Uldaros Theorix": {
+    abilities: [
+      triggered(
+        when.entersSelf,
+        [
+          ...ULDAROS_TYPES.map((t) => fx.exileCard(ref.target(uldarosId(t)), { name: uldarosId(t) })),
+          fx.castCopiesFree(
+            ULDAROS_TYPES.map((t) => ref.stored(uldarosId(t))),
+            6,
+          ),
+        ],
+        {
+          targets: ULDAROS_TYPES.map((t) => ({
+            ...target.upTo(1, target.cardInGraveyard(uldarosId(t), { types: [t], nonland: true }, "you", `carte de type ${t}`)),
+            otherThan: ULDAROS_TYPES.filter((x) => x !== t).map(uldarosId),
+          })),
+          condition: cond.wasCast,
+          label: "Exilez et copiez, lancez gratuitement (valeur de mana totale 6 ou moins)",
+        },
+      ),
+    ],
+  },
+  "Hall of Echoes": {
+    abilities: [
+      manaAbility("C"),
+      activated({
+        mana: "{5}",
+        targets: [target.creature("t", { controller: "you" })],
+        effects: [fx.becomeCopy(ref.self, ref.target()), fx.noLegendRuleThisTurn],
+        label: "Devient une copie de la créature ciblée",
+      }),
+    ],
+  },
+
   // --- Blanc -----------------------------------------------------------------
   "Enlightened Confidant": {
     abilities: [

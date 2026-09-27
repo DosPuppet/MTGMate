@@ -5,25 +5,62 @@
 import { availableMana, canPay, manaAbilitiesOf, manaSources, manaValue, totalCost } from "./mana";
 import {
   abilitiesOf,
+  abilityReduction,
   abilityZone,
   activatedAbility,
   additionalOptions,
   canCastTiming,
   canPayNonManaCost,
   canPlayLand,
+  castableFaces,
   castTerms,
+  equipDiscount,
+  FACE_DOWN_SPELL,
   instantLoyalty,
+  kickerCostPermanent,
   modesOf,
   sacrificeOptions,
   sorceryTiming,
   spellCost,
   spellView,
   splitSecondOnStack,
+  tapOthersOptions,
+  warpOf,
 } from "./stack";
+import { matchesCard, matchesObjectFilter } from "./targets";
+
+/** Winter, Cursed Rider : nombre de cartes exilables pour « exilez X cartes … de votre cimetière ». */
+function graveyardXOptions(s: GameState, player: PlayerId, source: ObjectId, f: ObjectFilter): number {
+  return (s.players[player]?.graveyard ?? []).filter((id) => id !== source && matchesCard(s, player, id, f, source)).length;
+}
+
+/** Radiant Lotus : nombre de permanents sacrifiables pour « sacrifiez un ou plusieurs … ». */
+function sacrificeXOptions(s: GameState, player: PlayerId, source: ObjectId, f: ObjectFilter): number {
+  return s.battlefield.filter((id) => obj(s, id).controller === player && matchesObjectFilter(s, player, id, f, source)).length;
+}
+
+/** Secluded Starforge : nombre de permanents dégagés engageables pour « engagez X … ». */
+function tapXOptions(s: GameState, player: PlayerId, source: ObjectId, f: ObjectFilter): number {
+  return s.battlefield.filter(
+    (id) =>
+      id !== source && obj(s, id).controller === player && !obj(s, id).tapped && matchesObjectFilter(s, player, id, f, source),
+  ).length;
+}
+
 import { obj } from "./state";
 import { legalTargets } from "./targets";
 import { checkCondition } from "./triggers";
-import type { ActionOption, GameState, ManaCost, ObjectId, PlayerId, TargetOption, TargetSpec } from "./types";
+import type {
+  ActionOption,
+  CardDef,
+  GameState,
+  ManaCost,
+  ObjectFilter,
+  ObjectId,
+  PlayerId,
+  TargetOption,
+  TargetSpec,
+} from "./types";
 
 function targetOptions(s: GameState, player: PlayerId, specs: TargetSpec[], sourceId?: ObjectId): TargetOption[] {
   return specs.map((t) => {
@@ -90,24 +127,50 @@ export function legalActions(s: GameState, player: PlayerId): ActionOption[] {
     const d = s.defs[obj(s, card).defId];
     if (!d) continue;
     if (d.types.includes("Land")) {
-      if (canPlayLand(s, player, card)) out.push({ type: "playLand", card });
-      continue;
+      if (canPlayLand(s, player, card)) {
+        // Terrain choc : payer les points de vie (dégagé) ou non (engagé).
+        if (d.shockLand && (s.players[player]?.life ?? 0) >= d.shockLand) out.push({ type: "playLand", card, payLife: true });
+        out.push({ type: "playLand", card });
+      }
+      // Ville à aventure : l'Aventure reste lançable.
+      if (d.layout !== "adventure") continue;
     }
     const terms = castTerms(s, player, card);
     if (!terms || !d.implemented) continue;
+    // Chaque face lançable (la carte, son aventure) donne une option distincte ; le déguisement, face cachée.
+    if (!terms.warpOnly) for (const [face, faceDef] of castableFaces(s, card, d)) castOption(card, face, faceDef, terms);
+    if (d.disguise) castOption(card, undefined, FACE_DOWN_SPELL, terms, "faceDown");
+    // Distorsion (702.185) : depuis la main, ou le cimetière si la carte le permet.
+    const warp = warpOf(s, player, card, d);
+    const life = s.players[player]?.life ?? 0;
+    if (warp && (terms.source === "hand" || terms.warpOnly) && life >= (warp.life ?? 0)) {
+      castOption(card, undefined, { ...d, manaCost: warp.cost }, terms, "warp");
+    }
+  }
+
+  function castOption(
+    card: ObjectId,
+    face: number | undefined,
+    d: CardDef,
+    terms: NonNullable<ReturnType<typeof castTerms>>,
+    variant?: "faceDown" | "warp",
+  ) {
     // Timing : normal, ignoré (Etali), ou flash moyennant un surcoût (Harbinger of the Tides).
-    const onTime = terms.anyTime || canCastTiming(s, player, d);
-    if (!onTime && !d.flashExtraCost) continue;
+    const onTime = terms.anyTime || (terms.sorceryTiming ? sorceryTiming(s, player) : canCastTiming(s, player, d));
+    if (!onTime && !d.flashExtraCost) return;
     const timingExtra = onTime ? undefined : d.flashExtraCost;
     const flashback = terms.source === "flashback";
     const modes = modesOf(d)
-      .map((m, index) => ({ index, label: m.label, targets: targetOptions(s, player, m.targets, card) }))
-      .filter((m) => targetsAvailable(m.targets));
-    if (modes.length === 0) continue;
+      .map((m, index) => ({ index, label: m.label, targets: targetOptions(s, player, m.targets, card), extra: m.extraCost }))
+      .filter((m) => targetsAvailable(m.targets))
+      // Spree : le coût supplémentaire du mode doit être payable.
+      .filter((m) => !m.extra || canPay(s, player, totalCost(spellCost(s, player, d, { free: terms.free }), 0, m.extra)))
+      .map(({ extra: _, ...m }) => m);
+    if (modes.length === 0) return;
     const additional = additionalOptions(s, player, card, d, terms.source === "flashback");
-    if (!additional) continue;
+    if (!additional) return;
     const purpose = { spell: spellView(d, player), convoke: d.keywords.includes("convoke"), fromHand: terms.source === "hand" };
-    const base = { flashback, anyMana: terms.anyMana };
+    const base = { flashback, anyMana: terms.anyMana, fromZone: terms.source };
     // « Sacrifiez une créature ou payez {3}{B} » : sans créature à sacrifier, le mana s'ajoute au coût.
     const sac = additional.sacrifice;
     const mustPayInstead = !!sac?.orPay && sac.options.length < sac.count;
@@ -122,7 +185,7 @@ export function legalActions(s: GameState, player: PlayerId): ActionOption[] {
       !!d.altCost &&
       checkCondition(s, d.altCost.condition, player) &&
       canPay(s, player, withExtra(spellCost(s, player, d, { ...base, alternative: true })), undefined, purpose);
-    if (!terms.free && !normal && !freeAvailable && !altAvailable) continue;
+    if (!terms.free && !normal && !freeAvailable && !altAvailable) return;
     // Le mana à payer à la place du sacrifice est-il disponible ?
     if (sac?.orPay) {
       sac.orPayAffordable = canPay(s, player, totalCost(spellCost(s, player, d, base), 0, sac.orPay), undefined, purpose);
@@ -131,11 +194,15 @@ export function legalActions(s: GameState, player: PlayerId): ActionOption[] {
     out.push({
       type: "cast",
       card,
+      ...(face !== undefined ? { face, faceName: d.name } : {}),
+      ...(variant === "faceDown" ? { faceDown: true, faceName: "Face cachée" } : {}),
+      ...(variant === "warp" ? { warp: true } : {}),
       modes,
       xMax: hasX && normal ? maxXFor(s, player, (x) => withExtra(spellCost(s, player, d, { ...base, x }))) : null,
       kickerAffordable:
         !!d.kicker &&
         !flashback &&
+        (!d.kickerCost || !!kickerCostPermanent(s, player, card, d)) &&
         canPay(s, player, withExtra(spellCost(s, player, d, { ...base, kicked: true, free: terms.free })), undefined, purpose),
       fromGraveyard: terms.source === "graveyard" || terms.source === "flashback" ? true : undefined,
       fromExile: terms.source === "exile" ? true : undefined,
@@ -165,7 +232,7 @@ export function legalActions(s: GameState, player: PlayerId): ActionOption[] {
             0,
             ...s.battlefield.filter((c) => obj(s, c).controller === player).map((c) => obj(s, c).counters["+1/+1"] ?? 0),
           )
-        : 0;
+        : abilityReduction(s, player, id, ab) + Math.max(0, ...s.battlefield.map((c) => equipDiscount(s, player, ab, c)));
       if (ab.cost.mana && !canPay(s, player, totalCost(ab.cost.mana, 0, undefined, reduction), exclude, { abilitySource: id }))
         return;
       const targets = targetOptions(s, player, ab.targets, id);
@@ -176,10 +243,27 @@ export function legalActions(s: GameState, player: PlayerId): ActionOption[] {
         ability: index,
         label: ab.label,
         targets,
-        xMax: ab.cost.loyaltyX ? (o.counters.loyalty ?? 0) : maxX(s, player, ab.cost.mana, exclude),
-        additional: ab.cost.sacrifice
-          ? { sacrifice: { count: ab.cost.sacrifice.count, options: sacrificeOptions(s, player, id, ab) } }
-          : undefined,
+        xMax: ab.cost.loyaltyX
+          ? (o.counters.loyalty ?? 0)
+          : ab.cost.tapX
+            ? tapXOptions(s, player, id, ab.cost.tapX)
+            : ab.cost.exileFromGraveyardX
+              ? graveyardXOptions(s, player, id, ab.cost.exileFromGraveyardX)
+              : ab.cost.sacrificeX
+                ? sacrificeXOptions(s, player, id, ab.cost.sacrificeX)
+                : maxX(s, player, ab.cost.mana, exclude),
+        additional:
+          ab.cost.sacrifice || ab.cost.tapOthers
+            ? {
+                ...(ab.cost.sacrifice
+                  ? { sacrifice: { count: ab.cost.sacrifice.count, options: sacrificeOptions(s, player, id, ab) } }
+                  : {}),
+                // Station : le joueur choisit la créature à engager.
+                ...(ab.cost.tapOthers
+                  ? { tap: { count: ab.cost.tapOthers.count, options: tapOthersOptions(s, player, id, ab) } }
+                  : {}),
+              }
+            : undefined,
       });
     });
   }

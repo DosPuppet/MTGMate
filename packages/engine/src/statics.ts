@@ -2,10 +2,14 @@
  * Capacités statiques « globales » lues sur les permanents (et emblèmes) d'un joueur :
  * défense talismanique du joueur, « ne peut pas perdre », doublements, préventions…
  */
+import { snapshot } from "./layers";
 import { chars, obj } from "./state";
+import { matchesView } from "./targets";
+import { checkCondition } from "./triggers";
 import type {
   AbilityDef,
   DoublerAbilityDef,
+  GameObject,
   GameState,
   ObjectId,
   PlayerId,
@@ -46,13 +50,34 @@ export function controlledAbilitiesWithSource(s: GameState, player: PlayerId): E
   return index(s).get(player) ?? [];
 }
 
-export function playerStatic(s: GameState, player: PlayerId, key: keyof Omit<PlayerStaticAbilityDef, "kind" | "label">): boolean {
-  return controlledAbilitiesWithSource(s, player).some(({ ab }) => ab.kind === "playerStatic" && !!ab[key]);
+export function playerStatic(
+  s: GameState,
+  player: PlayerId,
+  key: keyof Omit<PlayerStaticAbilityDef, "kind" | "label" | "condition">,
+): boolean {
+  return controlledAbilitiesWithSource(s, player).some(
+    ({ id, ab }) => ab.kind === "playerStatic" && !!ab[key] && (!ab.condition || checkCondition(s, ab.condition, player, id)),
+  );
 }
 
 /** Nombre de doubleurs d'un type contrôlés par ce joueur (616.1 : ils se cumulent, ×2 chacun). */
-export function doublers(s: GameState, player: PlayerId, key: keyof Omit<DoublerAbilityDef, "kind" | "label">): number {
-  return controlledAbilitiesWithSource(s, player).filter(({ ab }) => ab.kind === "doubler" && !!ab[key]).length;
+export function doublers(
+  s: GameState,
+  player: PlayerId,
+  key: keyof Omit<DoublerAbilityDef, "kind" | "label" | "countersFilter">,
+): number {
+  return controlledAbilitiesWithSource(s, player).filter(({ ab }) => ab.kind === "doubler" && !!ab[key] && !ab.countersFilter)
+    .length;
+}
+
+/** Doublements de marqueurs sur ce permanent, filtrés compris (Loading Zone : créatures, Vaisseaux, Planètes). */
+export function counterDoublers(s: GameState, o: GameObject): number {
+  return controlledAbilitiesWithSource(s, o.controller).filter(
+    ({ id, ab }) =>
+      ab.kind === "doubler" &&
+      !!ab.counters &&
+      (!ab.countersFilter || matchesView(snapshot(s, o.id), ab.countersFilter, o.controller, id)),
+  ).length;
 }
 
 /** Préventions statiques des permanents de tous les joueurs, avec leur contrôleur et leur source. */

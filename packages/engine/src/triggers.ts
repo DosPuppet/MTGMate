@@ -9,14 +9,28 @@
  * - Capacités retardées (603.7) et réflexives (603.12) : créées par des effets, avec leurs propres effets et cibles.
  */
 import { ask } from "./choices";
-import { boardAmount } from "./effects";
+import { boardAmount, evalAmount } from "./effects";
 import { RulesError } from "./errors";
-import { apnapOrder, chars, emit, newId, obj, onBattlefield, opponentsOf, type RulesEvent, rulesEvent, snapshot } from "./state";
-import { playerStatic } from "./statics";
+import { copiedDefId } from "./layers";
+import {
+  apnapOrder,
+  chars,
+  emit,
+  isCreature,
+  newId,
+  obj,
+  onBattlefield,
+  opponentsOf,
+  type RulesEvent,
+  rulesEvent,
+  snapshot,
+} from "./state";
+import { controlledAbilitiesWithSource, playerStatic } from "./statics";
 import { legalTargets, matchesObjectFilter, matchesView, validateTargets, withChosen } from "./targets";
 import type {
   AbilityDef,
   Condition,
+  DelayedTiming,
   GameState,
   InlineAbility,
   LkiSnapshot,
@@ -40,10 +54,15 @@ const hasTriggers = (abilities: AbilityDef[] | undefined) => !!abilities?.some((
 
 function liveSources(s: GameState): Source[] {
   const out: Source[] = [];
-  const granted = s.effects.some((e) => e.addAbilities?.some((a) => a.kind === "triggered"));
+  // Capacités déclenchées accordées, ou copiées (couche 1) : on ne peut pas se fier aux capacités imprimées.
+  const granted = s.effects.some((e) => e.copyOf || e.addAbilities?.some((a) => a.kind === "triggered"));
   for (const id of s.battlefield) {
     // Filtre rapide sur les capacités imprimées, sauf si un effet accorde des capacités déclenchées.
-    if (!granted && !hasTriggers(s.defs[obj(s, id).defId]?.abilities)) continue;
+    const o = obj(s, id);
+    const d = s.defs[o.faceDefId ?? o.defId];
+    // Salle : les capacités déclenchées sont portées par ses portes.
+    const levels = !!d?.classLevels || !!d?.caseSolved;
+    if (!granted && !levels && !hasTriggers(d?.abilities) && !d?.faceDefs?.some((f) => hasTriggers(f.abilities))) continue;
     const view = snapshot(s, id);
     if (hasTriggers(view.abilities)) out.push({ id, view });
   }
@@ -53,6 +72,13 @@ function liveSources(s: GameState): Source[] {
       const abs = s.defs[obj(s, id).defId]?.abilities;
       if (abs?.some((a) => a.kind === "triggered" && a.fromGraveyard)) out.push({ id, view: snapshot(s, id) });
     }
+  }
+  // « Quand vous lancez ce sort » : le sort sur la pile (Emrakul, the Exigent Doom).
+  for (const item of s.stack) {
+    if (item.kind !== "spell" || !s.objects[item.id]) continue;
+    const abs = s.defs[item.sourceDefId]?.abilities;
+    if (abs?.some((a) => a.kind === "triggered" && a.trigger.on === "castSelf"))
+      out.push({ id: item.id, view: snapshot(s, item.id) });
   }
   // Emblèmes (zone de commandement).
   for (const p of s.playerOrder) {
@@ -86,11 +112,48 @@ export function simultaneously<T>(s: GameState, fn: () => T): T {
 
 export function checkCondition(s: GameState, c: Condition, controller: PlayerId, sourceId?: ObjectId): boolean {
   switch (c.kind) {
+    case "castFromHandThisTurn":
+      return (s.players[controller]?.turnStats.handSpells ?? 0) > 0;
+    case "turnsTakenAtLeast":
+      return (s.players[controller]?.turnsTaken ?? 0) >= c.n;
+    case "crimeThisTurn":
+      return (s.players[controller]?.turnStats.crimes ?? 0) > 0;
+    case "exileAtLeast":
+      return s.exile.length >= c.n;
+    case "evenCounters": {
+      const o = sourceId ? s.objects[sourceId] : undefined;
+      return !!o && Object.values(o.counters).reduce((n, x) => n + x, 0) % 2 === 0;
+    }
+    case "maxSpeed":
+      return (s.players[controller]?.speed ?? 0) >= 4;
+    case "opponentLifeAtMost":
+      return opponentsOf(s, controller).some((p) => (s.players[p]?.life ?? 0) <= c.n);
+    case "playerWithoutCreatures":
+      return s.playerOrder.some(
+        (p) => !s.players[p]?.lost && !s.battlefield.some((id) => s.objects[id]?.controller === p && isCreature(s, id)),
+      );
     case "attackedThisTurn":
-      return s.turn.attacked && s.turn.active === controller;
+      return s.turn.attacked && s.turn.active === controller && (!c.subtype || !!s.turn.attackerSubtypes?.includes(c.subtype));
     case "creatureDiedThisTurn":
       return s.turn.creatureDied;
+    case "firstEndStep":
+      return (s.turn.endSteps ?? 0) <= 1;
+    case "firstCombat":
+      return (s.turn.combats ?? 0) <= 1;
+    case "opponentDamagedByLegendary":
+      return opponentsOf(s, controller).some((q) => s.players[q]?.turnStats.damagedByLegendary);
+    case "playerCombatDamageAtLeast":
+      return s.playerOrder.some((q) => (s.players[q]?.turnStats.combatDamageTaken ?? 0) >= c.n);
+    case "noLegendaryCreatureCastThisTurn":
+      return !s.players[controller]?.turnStats.legendaryCreatureSpells;
+    case "controlsGreatestPower": {
+      const creatures = s.battlefield.filter((id) => isCreature(s, id));
+      const best = Math.max(-Infinity, ...creatures.map((id) => chars(s, id).power));
+      return creatures.some((id) => s.objects[id]?.controller === controller && chars(s, id).power === best);
+    }
     case "creaturesDiedAtLeast":
+      if (c.underOpponent)
+        return opponentsOf(s, controller).reduce((n, q) => n + (s.players[q]?.turnStats.creaturesLost ?? 0), 0) >= c.n;
       return (s.turn.creaturesDied ?? 0) >= c.n;
     case "scriedThisTurn":
       return (s.players[controller]?.turnStats.scried ?? 0) > 0;
@@ -113,6 +176,20 @@ export function checkCondition(s: GameState, c: Condition, controller: PlayerId,
       return !!s.resolving?.item.fromHand;
     case "spellCastFromGraveyard":
       return !!s.resolving?.item.flashback;
+    case "classLevel":
+      return (s.objects[sourceId ?? ""]?.classLevel ?? 1) === c.level;
+    case "saddled":
+      return s.objects[sourceId ?? ""]?.saddledTurn === s.turn.number;
+    case "void":
+      return !!s.turn.nonlandLeft || !!s.turn.spellWarped;
+    case "solved":
+      return !!s.objects[sourceId ?? ""]?.solved;
+    case "doorLocked":
+      return !!sourceId && !s.objects[sourceId]?.unlocked?.includes(c.door);
+    case "fullyUnlocked": {
+      const faces = sourceId ? (s.defs[s.objects[sourceId]?.defId ?? ""]?.faceDefs?.length ?? 0) : 0;
+      return faces > 0 && (s.objects[sourceId ?? ""]?.unlocked?.length ?? 0) >= faces;
+    }
     case "sourceDealtCombatDamage":
       return !!(sourceId && s.objects[sourceId]?.dealtCombatDamage);
     case "activatedLoyaltyThisTurn":
@@ -184,12 +261,22 @@ export function checkCondition(s: GameState, c: Condition, controller: PlayerId,
         const zone = a.zone;
         const players = a.whose === "all" ? s.playerOrder : a.whose === "opponents" ? opponentsOf(s, controller) : [controller];
         const n = players
-          .flatMap((p) => s.players[p]?.[zone] ?? [])
+          .flatMap((p) => (zone === "exile" ? s.exile.filter((id) => s.objects[id]?.owner === p) : (s.players[p]?.[zone] ?? [])))
           .filter((id) => matchesView(snapshot(s, id), { ...a.filter, controller: undefined }, controller, sourceId)).length;
         return n >= c.n;
       }
       if (a.kind === "count" || a.kind === "totalPower") return boardAmount(s, a, controller, sourceId) >= c.n;
-      return false;
+      // Autres montants (sommes, force d'un objet, vitesse…) : évalués comme pendant une résolution, sans cible.
+      const ctx = {
+        controller,
+        sourceId: sourceId ?? "",
+        sourceDefId: (sourceId && s.objects[sourceId]?.defId) || "",
+        sourceSnapshot: { keywords: [], power: 0 },
+        targets: {},
+        x: 0,
+        kicked: false,
+      };
+      return evalAmount(s, ctx, a) >= c.n;
     }
     case "var":
     case "refLife":
@@ -230,17 +317,32 @@ function matchTrigger(s: GameState, ev: RulesEvent, t: TriggerSpec, src: Source)
         s.playerOrder.some((p) => playerStatic(s, p, "noEntersTriggers"))
       )
         return null;
+      // Torpor Orb : l'arrivée de créatures ne déclenche rien.
+      if (v?.types.includes("Creature") && s.playerOrder.some((p) => playerStatic(s, p, "noCreatureEntersTriggers"))) return null;
       return v && matchWho(t.who, v, src) ? { objectId: v.id, player: v.controller } : null;
     }
     case "dies": {
       if (ev.e !== "zone" || ev.from !== "battlefield" || ev.to !== "graveyard" || !ev.lki) return null;
-      if (!ev.lki.types.includes("Creature")) return null;
+      // « Meurt » : une créature, sauf si le filtre nomme d'autres types (« une créature ou un artefact meurt », Edge of Eternities).
+      const typed = t.who !== "self" && (!!t.who.types || !!t.who.anyOf);
+      if (!typed && !ev.lki.types.includes("Creature")) return null;
       return matchWho(t.who, ev.lki, src)
         ? { objectId: ev.lki.id, newObjectId: ev.newId ?? undefined, player: ev.lki.controller }
         : null;
     }
+    case "playerLoses":
+      return ev.e === "playerLost" &&
+        ev.player !== me &&
+        (t.whose === "any" || opponentsOf(s, me).includes(ev.player) || s.players[ev.player]?.lost)
+        ? { player: ev.player }
+        : null;
+    case "controlChange":
+      return ev.e === "controlChange" && ev.from === me && ev.to !== me ? { objectId: ev.objectId, player: ev.to } : null;
     case "leaves": {
       if (ev.e !== "zone" || ev.from !== "battlefield" || !ev.lki) return null;
+      if (t.to && ev.to !== t.to) return null;
+      // Zenos yae Galvus : « quand la créature choisie quitte le champ de bataille » (liée à la source).
+      if (t.who === "linked") return s.objects[src.id]?.linked?.includes(ev.lki.id) ? { objectId: ev.lki.id } : null;
       return ev.lki.id === src.id ? { objectId: ev.lki.id, newObjectId: ev.newId ?? undefined } : null;
     }
     case "attacks": {
@@ -249,6 +351,7 @@ function matchTrigger(s: GameState, ev: RulesEvent, t: TriggerSpec, src: Source)
       if (!v || !matchWho(t.who, v, src)) return null;
       // « … vous attaque ou attaque un planeswalker que vous contrôlez » (Jace, Reality Sculptor).
       if (t.defending === "you" && ev.defender !== me && s.objects[ev.defender]?.controller !== me) return null;
+      if (t.alone && (s.combat?.attackers.length ?? 0) !== 1) return null;
       return { objectId: ev.attacker, player: ev.defender };
     }
     case "attackWith":
@@ -260,6 +363,11 @@ function matchTrigger(s: GameState, ev: RulesEvent, t: TriggerSpec, src: Source)
         if (ev.sourceController !== me || (t.noncombatOnly && ev.combat)) return null;
         const toOpp = !!s.players[ev.target] && ev.target !== me;
         if (t.toOpponent && !toOpp) return null;
+        if (t.exactToughness) {
+          const victim = s.objects[ev.target];
+          if (victim?.zone !== "battlefield" || !isCreature(s, ev.target) || chars(s, ev.target).toughness !== ev.amount)
+            return null;
+        }
         return { objectId: ev.sourceId ?? undefined, player: toOpp ? ev.target : undefined, amount: ev.amount };
       }
       if (!ev.sourceId) return null;
@@ -267,6 +375,8 @@ function matchTrigger(s: GameState, ev: RulesEvent, t: TriggerSpec, src: Source)
       if (t.on === "dealsDamage" && t.noncombatOnly && ev.combat) return null;
       const toPlayer = !!s.players[ev.target];
       if (t.on === "dealsCombatDamage" && t.toPlayer && !toPlayer) return null;
+      // « … à l'un de vos adversaires » (Gonti, Night Minister).
+      if (t.on === "dealsCombatDamage" && t.toOpponent && (!toPlayer || ev.target === me)) return null;
       if (t.on === "dealsDamage" && t.toOpponent && (!toPlayer || ev.target === me)) return null;
       const v = liveView(s, ev.sourceId) ?? s.lki[ev.sourceId] ?? null;
       if (!v || !matchWho(t.who, v, src)) return null;
@@ -290,26 +400,126 @@ function matchTrigger(s: GameState, ev: RulesEvent, t: TriggerSpec, src: Source)
         // Danitha, Sword of Hope : « un sort d'Équipement ou un sort qui cible… ».
         if (!ok && !(t.targeting.orFilter && f && filterOk)) return null;
       }
+      // « votre deuxième sort de chaque tour ».
+      if (t.nth !== undefined && s.players[ev.player]?.turnStats.spellsCast !== t.nth) return null;
+      if (t.notTheirTurn && s.turn.active === ev.player) return null;
+      if (t.modal) {
+        const d = s.defs[s.objects[ev.stackId]?.defId ?? ""];
+        if ((d?.spell?.modes?.length ?? 0) < 2) return null;
+      }
+      if (t.notFromHand && s.stack.find((x) => x.id === ev.stackId)?.fromHand) return null;
+      if (t.minManaSpent !== undefined && (s.stack.find((x) => x.id === ev.stackId)?.manaSpent ?? 0) < t.minManaSpent)
+        return null;
+      if (t.notOwned && s.objects[ev.stackId]?.owner === ev.player) return null;
       // `amount` : éphémères et rituels déjà lancés ce tour-ci (Thousand-Year Storm).
       return { objectId: ev.stackId, player: ev.player, amount: ev.instantSorceryBefore };
     }
     case "discard":
       return ev.e === "discard" && whose(t.whose, ev.player, me) ? { objectId: ev.cards[0], player: ev.player } : null;
+    case "discardBatch":
+      return ev.e === "discardBatch" && whose(t.whose, ev.player, me) ? { player: ev.player, amount: ev.count } : null;
     case "loyaltyActivated": {
       if (ev.e !== "loyalty") return null;
       if (t.byOpponent ? ev.player === me : ev.player !== me) return null;
       if (t.minRemoved !== undefined && -ev.cost < t.minRemoved) return null;
       return { objectId: ev.sourceId, player: ev.player };
     }
-    case "isDealtDamage":
-      return ev.e === "damage" && ev.target === src.id && ev.amount > 0
-        ? { objectId: src.id, amount: ev.amount, player: me }
+    case "isDealtDamage": {
+      // La créature enchantée ou équipée (Cryoshatter, Pain for All), ou la source elle-même.
+      const who = t.who === "attached" ? src.view.attachedTo : src.id;
+      return ev.e === "damage" && who && ev.target === who && ev.amount > 0
+        ? { objectId: who, amount: ev.amount, player: me }
         : null;
+    }
     case "blocks": {
       if (ev.e !== "block") return null;
       const v = liveView(s, ev.blocker);
-      return v && matchWho(t.who, v, src) ? { objectId: ev.blocker, player: v.controller } : null;
+      if (!v || !matchWho(t.who, v, src)) return null;
+      // « … bloque une créature avec le vol » (Skystinger).
+      const a = liveView(s, ev.attacker);
+      if (t.attacker && (!a || !matchesView(a, t.attacker, me, src.id))) return null;
+      return { objectId: ev.blocker, player: v.controller };
     }
+    case "chapter": {
+      // 714.2b : chaque chapitre atteint ou dépassé par les marqueurs de savoir posés.
+      if (ev.e !== "counters" || ev.kind !== "lore" || ev.objectId !== src.id) return null;
+      const after = s.objects[src.id]?.counters.lore ?? 0;
+      const before = after - ev.amount;
+      return t.chapters.some((n) => before < n && n <= after) ? { objectId: src.id, player: src.view.controller } : null;
+    }
+    case "classLevel":
+      return ev.e === "classLevel" && ev.objectId === src.id && ev.level === t.level
+        ? { objectId: src.id, player: src.view.controller }
+        : null;
+    case "explores": {
+      if (ev.e !== "explore" || (t.land !== undefined && t.land !== ev.land)) return null;
+      const v = liveView(s, ev.objectId);
+      return v && matchWho(t.who, v, src) ? { objectId: ev.objectId, player: v.controller } : null;
+    }
+    case "combatDamageBatch": {
+      if (ev.e !== "combatDamageBatch") return null;
+      const ok = ev.sources.some((id) => {
+        const v = liveView(s, id) ?? s.lki[id];
+        return !!v && matchesView(v, t.who, me, src.id);
+      });
+      return ok ? { player: ev.player } : null;
+    }
+    case "sacrifice": {
+      if (ev.e !== "sacrifice" || (ev.player !== me && !t.anyPlayer)) return null;
+      const v = liveView(s, ev.objectId);
+      return v && matchWho(t.who, v, src) ? { objectId: ev.objectId, player: ev.player } : null;
+    }
+    case "saddled":
+      return ev.e === "saddled" && ev.objectId === src.id ? { objectId: src.id, player: src.view.controller } : null;
+    case "crews": {
+      if (ev.e !== "crewed" || !ev.crew.includes(src.id)) return null;
+      if (t.mainPhase && (s.turn.active !== me || (s.turn.step !== "main1" && s.turn.step !== "main2"))) return null;
+      return { objectId: ev.vehicle, player: me };
+    }
+    case "turnedFaceUp":
+      return ev.e === "turnedFaceUp" && ev.objectId === src.id ? { objectId: src.id, player: src.view.controller } : null;
+    case "unlockDoor":
+      return ev.e === "unlock" && ev.objectId === src.id && (t.door === undefined || t.door === ev.door)
+        ? { objectId: src.id, player: ev.player }
+        : null;
+    case "diesOrExiled": {
+      if (ev.e !== "zone" || ev.from !== "battlefield" || (ev.to !== "graveyard" && ev.to !== "exile") || !ev.lki) return null;
+      if (!ev.lki.types.includes("Creature") || (t.minPower !== undefined && ev.lki.power < t.minPower)) return null;
+      return matchWho(t.who, ev.lki, src)
+        ? { objectId: ev.lki.id, newObjectId: ev.newId ?? undefined, player: ev.lki.controller }
+        : null;
+    }
+    case "playLand":
+      return ev.e === "playLand" && ev.player === me ? { objectId: ev.objectId, player: me } : null;
+    case "castSelf":
+      return ev.e === "cast" && ev.stackId === src.id ? { objectId: src.id, player: me } : null;
+    case "zoneChange": {
+      if (ev.e !== "zone" || !ev.from || !t.from.includes(ev.from) || (t.to && !t.to.includes(ev.to))) return null;
+      const card = (ev.newId && s.objects[ev.newId]) || undefined;
+      const owner = card?.owner ?? ev.lki?.owner;
+      if (t.whose === "you" && owner !== me) return null;
+      if (t.filter) {
+        const d = s.defs[card?.defId ?? ev.lki?.defId ?? ""];
+        if (!d || (t.filter.types && !t.filter.types.some((x) => d.types.includes(x)))) return null;
+      }
+      return { objectId: ev.newId ?? undefined, player: owner ?? me };
+    }
+    case "crime":
+      return ev.e === "crime" && ev.player === me ? { player: me } : null;
+    case "activateTargeting": {
+      if (ev.e !== "targeted" || ev.controller !== me) return null;
+      const item = s.stack.find((x) => x.id === ev.stackId);
+      if (item?.kind !== "ability" || item.inline || item.copy) return null;
+      if (s.defs[item.sourceDefId]?.abilities[item.abilityIndex]?.kind !== "activated") return null;
+      const ok = ev.targets.some((id) => !!s.players[id] || (s.objects[id]?.zone === "battlefield" && isCreature(s, id)));
+      return ok ? { objectId: item.id, player: me } : null;
+    }
+    case "plottedSelf":
+      return ev.e === "plotted" && ev.card === src.id ? { objectId: src.id, player: me } : null;
+    case "exhaustActivated":
+      return ev.e === "exhaust" && ev.player === me ? { objectId: ev.source, player: me } : null;
+    case "cycleSelf":
+      return ev.e === "cycled" && ev.card === src.id ? { objectId: src.id, player: ev.player, amount: ev.x } : null;
     case "discardSelf":
       return ev.e === "discard" && ev.cards.includes(src.id) ? { objectId: src.id, player: ev.player } : null;
     case "step":
@@ -375,23 +585,46 @@ export function detectTriggers(s: GameState, ev: RulesEvent): void {
       const data = matchTrigger(s, ev, ab.trigger, src);
       if (!data) return;
       if (ab.condition && !checkCondition(s, ab.condition, src.view.controller, src.id)) return;
+      // « une ou plusieurs … » : un seul déclenchement en attente pour ce lot d'événements.
+      if (ab.batched && s.triggers.some((t) => t.sourceId === src.id && t.abilityIndex === index)) return;
       if (ab.oncePerTurn) {
         const key = `${src.view.defId}:${src.id}:${index}`;
         if (s.turn.onceFired.includes(key)) return;
         s.turn.onceFired.push(key);
       }
-      s.triggers.push({
-        id: newId(s, "t"),
-        sourceId: src.id,
-        sourceDefId: src.view.defId,
-        abilityIndex: index,
-        controller: src.view.controller,
-        sourceSnapshot: { keywords: src.view.keywords, power: src.view.power, controller: src.view.controller },
-        event: data,
-        targets: {},
-        // Capacité accordée (pas dans la définition) : on la transporte avec le déclenchement.
-        inline: (s.defs[src.view.defId]?.abilities[index] ?? null) === ab ? undefined : inlineOf(ab),
-      });
+      // Starfield Vocalist : une arrivée fait se déclencher une fois de plus les capacités de vos permanents.
+      // Annie Joins Up : les capacités déclenchées de vos créatures légendaires se déclenchent une fois de plus.
+      const legendary =
+        src.view.types.includes("Creature") &&
+        src.view.supertypes.includes("Legendary") &&
+        playerStatic(s, src.view.controller, "doubleLegendaryTriggers");
+      // Cloud, Midgar Mercenary : Cloud équipé, ou un Équipement attaché à Cloud.
+      const cloud = (id: string | undefined) =>
+        !!id && onBattlefield(s, id) && !!s.defs[copiedDefId(s, id)]?.doubleTriggersWhenEquipped && !!snapshot(s, id).equipped;
+      const equippedCloud =
+        (src.view.equipped && cloud(src.id)) || (src.view.subtypes.includes("Equipment") && cloud(src.view.attachedTo));
+      const again =
+        (ev.e === "zone" && ev.to === "battlefield" && playerStatic(s, src.view.controller, "doubleEnterTriggers") ? 2 : 1) +
+        (legendary ? 1 : 0) +
+        (equippedCloud ? 1 : 0) +
+        (ev.e === "zone" && ev.to === "battlefield" && ev.newId ? enterDoublers(s, src.view.controller, ev.newId) : 0) +
+        (ev.e === "zone" && ev.from === "battlefield" && ev.to === "graveyard" && ev.lki?.types.includes("Creature")
+          ? masamunes(s, src.id, src.view.controller)
+          : 0);
+      for (let k = 0; k < again; k++) {
+        s.triggers.push({
+          id: newId(s, "t"),
+          sourceId: src.id,
+          sourceDefId: src.view.defId,
+          abilityIndex: index,
+          controller: src.view.controller,
+          sourceSnapshot: { keywords: src.view.keywords, power: src.view.power, controller: src.view.controller },
+          event: data,
+          targets: {},
+          // Capacité accordée (pas dans la définition) : on la transporte avec le déclenchement.
+          inline: (s.defs[src.view.defId]?.abilities[index] ?? null) === ab ? undefined : inlineOf(ab),
+        });
+      }
     });
   }
 }
@@ -411,22 +644,55 @@ export function createDelayed(
   sourceId: ObjectId,
   sourceDefId: string,
   ability: InlineAbility,
+  at: DelayedTiming = "nextEndStep",
 ): void {
   const lateInTurn = s.turn.step === "end" || s.turn.step === "cleanup";
+  // « à votre prochaine étape de fin » : celle de ce tour si c'est le vôtre et qu'elle n'est pas passée.
   s.delayed.push({
     id: newId(s, "d"),
     controller,
     sourceId,
     sourceDefId,
-    at: "nextEndStep",
-    notBeforeTurn: lateInTurn ? s.turn.number + 1 : s.turn.number,
+    at,
+    // « à l'étape de fin de votre prochain tour » : pas ce tour-ci.
+    notBeforeTurn: at === "yourNextEndStep" || at === "nextUpkeep" || lateInTurn ? s.turn.number + 1 : s.turn.number,
     ability,
   });
 }
 
-/** Au début de l'étape de fin : les capacités retardées dont c'est le moment se déclenchent. */
-export function releaseDelayedTriggers(s: GameState): void {
-  const due = s.delayed.filter((d) => d.notBeforeTurn <= s.turn.number);
+/** The Masamune : Équipements « doubleurs de morts » attachés à la source, ou (pour un emblème) à une créature de son propriétaire. */
+function masamunes(s: GameState, sourceId: ObjectId, player: PlayerId): number {
+  const flagged = (id: ObjectId) => !!s.defs[s.objects[id]?.defId ?? ""]?.doubleDeathTriggersForEquipped;
+  const emblem = s.objects[sourceId]?.zone === "command";
+  return s.battlefield.filter((id) => {
+    const host = s.objects[id]?.attachedTo;
+    if (!host || !flagged(id)) return false;
+    return emblem ? s.objects[host]?.controller === player : host === sourceId;
+  }).length;
+}
+
+/** Traveling Chocobo : un terrain ou un Oiseau que vous contrôlez arrive, vos capacités se déclenchent une fois de plus. */
+function enterDoublers(s: GameState, player: PlayerId, entered: ObjectId): number {
+  if (s.objects[entered]?.controller !== player) return 0;
+  return controlledAbilitiesWithSource(s, player).filter(
+    ({ id, ab }) =>
+      ab.kind === "playerStatic" &&
+      !!ab.doubleEnterTriggersFor &&
+      matchesObjectFilter(s, player, entered, ab.doubleEnterTriggersFor, id),
+  ).length;
+}
+
+/** Au début de l'étape de fin (ou à la fin du combat) : les capacités retardées dont c'est le moment se déclenchent. */
+export function releaseDelayedTriggers(s: GameState, moment: "end" | "endCombat" | "upkeep" = "end"): void {
+  const due = s.delayed.filter((d) => {
+    if (d.notBeforeTurn > s.turn.number) return false;
+    if (moment === "endCombat") return d.at === "endOfCombat";
+    // Firion : « au début du prochain entretien ».
+    if (moment === "upkeep") return d.at === "nextUpkeep";
+    if (d.at === "endOfCombat" || d.at === "nextUpkeep") return false;
+    // « … de votre prochain tour » : seulement pendant un tour de son contrôleur.
+    return (d.at !== "yourNextEndStep" && d.at !== "yourEndStep") || s.turn.active === d.controller;
+  });
   if (due.length === 0) return;
   s.delayed = s.delayed.filter((d) => !due.includes(d));
   for (const d of due) pushInline(s, d.controller, d.sourceId, d.sourceDefId, d.ability);
@@ -537,6 +803,7 @@ export function processTriggers(s: GameState): boolean {
       changed = true;
       const all = Object.values(item.targets).flat();
       if (all.length) rulesEvent(s, { e: "targeted", stackId: item.id, controller: item.controller, targets: all });
+      checkCrime(s, item.controller, all);
       emit({
         type: "trigger",
         player: t.controller,
@@ -556,7 +823,14 @@ function chooseTriggerMode(s: GameState, t: PendingTrigger): boolean {
   if (!modes) return true;
   // Seuls les modes dont les cibles requises existent sont proposés (et, pour Demonic Pact, pas encore choisis).
   const ab = triggeredAbility(s, t);
-  const used = ab?.uniqueModes ? (s.objects[t.sourceId]?.usedModes ?? []) : [];
+  const o = s.objects[t.sourceId];
+  const used = !ab?.uniqueModes
+    ? []
+    : ab.uniqueModes === "turn"
+      ? o?.usedModesTurn === s.turn.number
+        ? (o?.usedModes ?? [])
+        : []
+      : (o?.usedModes ?? []);
   const possible = modes
     .map((m, i) => ({ m, i }))
     .filter(({ i }) => !used.includes(i))
@@ -610,8 +884,13 @@ function chooseTriggerTargets(s: GameState, t: PendingTrigger): boolean {
       group = { kind: spec.samePlayer ? "same" : "different", holders };
     }
     const suggested: string[] = [];
+    // Phoenix, Warden of Fire : « d'une valeur de mana totale de 6 ou moins ».
+    const mv = (id: string) => (s.objects[id] ? (snapshot(s, id).manaValue ?? 0) : 0);
+    let total = 0;
     for (const id of [first, ...legal.filter((x) => x !== first)]) {
       if (suggested.length >= count) break;
+      if (spec.maxTotalManaValue !== undefined && total + mv(id) > spec.maxTotalManaValue) continue;
+      total += mv(id);
       if (group?.kind === "same" && suggested.length && group.holders[suggested[0] as string] !== group.holders[id]) continue;
       if (group?.kind === "different" && suggested.some((x) => group?.holders[x] === group?.holders[id])) continue;
       suggested.push(id);
@@ -683,5 +962,32 @@ export function answerTriggerMode(s: GameState, triggerId: string, mode: number)
 function markModeUsed(s: GameState, t: PendingTrigger): void {
   if (t.mode === undefined || t.mode < 0 || !triggeredAbility(s, t)?.uniqueModes) return;
   const o = s.objects[t.sourceId];
-  if (o) o.usedModes = [...(o.usedModes ?? []), t.mode];
+  if (!o) return;
+  // « … ce tour-ci » : la liste repart de zéro à chaque tour.
+  if (triggeredAbility(s, t)?.uniqueModes === "turn" && o.usedModesTurn !== s.turn.number) {
+    o.usedModes = [];
+    o.usedModesTurn = s.turn.number;
+  }
+  o.usedModes = [...(o.usedModes ?? []), t.mode];
+}
+
+/**
+ * 700.13 : commettre un crime — cibler un adversaire, un objet qu'il contrôle (permanent, sort, capacité)
+ * ou une carte de son cimetière.
+ */
+export function checkCrime(s: GameState, player: PlayerId, targets: string[]): void {
+  const opponent = (p: PlayerId | undefined) => !!p && p !== player && !!s.players[p];
+  const crime = targets.some((id) => {
+    if (s.players[id]) return opponent(id);
+    const o = s.objects[id];
+    if (o?.zone === "battlefield") return opponent(o.controller);
+    if (o?.zone === "graveyard") return opponent(o.owner);
+    const item = s.stack.find((x) => x.id === id);
+    return opponent(item?.controller);
+  });
+  if (!crime) return;
+  const stats = s.players[player]?.turnStats;
+  if (stats) stats.crimes = (stats.crimes ?? 0) + 1;
+  s.version += 1; // conditions « si vous avez commis un crime ce tour-ci »
+  rulesEvent(s, { e: "crime", player });
 }

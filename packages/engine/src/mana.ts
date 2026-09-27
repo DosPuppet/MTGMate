@@ -1,9 +1,11 @@
 /**
  * Mana : lecture des coûts, sources disponibles et solveur de paiement automatique.
  */
-import { putIntoGraveyard } from "./actions";
+import { sacrifice } from "./actions";
 import { chars, defOf, isCreature, isSummoningSick, obj, snapshot, tapObject } from "./state";
+import { controlledAbilitiesWithSource, playerStatic } from "./statics";
 import { matchesObjectFilter, matchesView, withChosen } from "./targets";
+import { checkCondition } from "./triggers";
 import type { GameState, LkiSnapshot, ManaAbilityDef, ManaCost, ManaType, ObjectId, PlayerId } from "./types";
 import { MANA_TYPES } from "./types";
 
@@ -109,8 +111,22 @@ export function manaAbilitiesOf(s: GameState, id: ObjectId): ManaAbilityDef[] {
 function canActivateMana(s: GameState, id: ObjectId, ab: ManaAbilityDef): boolean {
   const o = obj(s, id);
   if (ab.cost.mana) return false;
+  if (chars(s, id).keywords.includes("noActivatedAbilities")) return false;
   if (ab.cost.tap && (o.tapped || isSummoningSick(s, id))) return false;
+  if (ab.tapAnother && !otherToTap(s, id)) return false;
+  if (ab.condition && !checkCondition(s, ab.condition, o.controller, id)) return false;
+  if (ab.oncePerTurn && s.turn.onceFired.includes(`mana:${id}`)) return false;
   return true;
+}
+
+/**
+ * Gene Pollinator : le permanent engagé en plus, choisi automatiquement. D'abord un permanent sans capacité de mana
+ * (pour ne pas priver le solveur d'une source), sinon n'importe lequel ; `strict` : seulement le premier cas.
+ */
+function otherToTap(s: GameState, id: ObjectId, strict = false): ObjectId | undefined {
+  const me = obj(s, id).controller;
+  const mine = s.battlefield.filter((x) => x !== id && !obj(s, x).tapped && obj(s, x).controller === me);
+  return mine.find((x) => manaAbilitiesOf(s, x).length === 0) ?? (strict ? undefined : mine[0]);
 }
 
 /** Quantité produite (« {G} pour chaque Elfe que vous contrôlez »). */
@@ -122,6 +138,17 @@ function manaAmount(s: GameState, id: ObjectId, ab: ManaAbilityDef): number {
   // Molten Tide : « chaque fois que vous engagez une Montagne pour du mana, ajoutez {R} de plus ».
   const tide = s.players[controller]?.extraMountainMana;
   const extra = tide?.turn === s.turn.number && ab.cost.tap && chars(s, id).subtypes.includes("Mountain") ? tide.n : 0;
+  // The Eternity Elevator : autant de mana que de marqueurs de charge.
+  if (ab.amountCounters) return (o.counters[ab.amountCounters] ?? 0) + extra;
+  if (ab.amountSelfPower) return Math.max(0, chars(s, id).power) + extra;
+  // Roxanne, Starfall Savant : un jeton d'artefact engagé pour du mana en produit un de plus.
+  if (
+    o.isToken &&
+    ab.cost.tap &&
+    chars(s, id).types.includes("Artifact") &&
+    playerStatic(s, controller, "artifactTokenManaBonus")
+  )
+    return ab.amount + extra + 1;
   // Loot, the Nexus : un mana pour chaque force différente parmi vos créatures.
   if (ab.amountDistinctPowers) {
     const powers = s.battlefield
@@ -160,8 +187,12 @@ function restrictionAllows(
   if (!purpose) return false;
   const o = obj(s, sourceId);
   if (r.notSpellFromHand) return !!purpose.abilitySource || (!!purpose.spell && !purpose.fromHand);
+  if (r.spellNotFromHand) return !!purpose.spell && !purpose.fromHand;
   if (r.spell && purpose.spell && matchesView(purpose.spell, withChosen(r.spell, o), player, sourceId)) return true;
   const src = purpose.abilitySource;
+  if (r.abilityOfSource && src && s.objects[src]) {
+    return matchesView(snapshot(s, src), withChosen(r.abilityOfSource, o), player, sourceId);
+  }
   if (r.abilityOfCreature && src && s.objects[src] && isCreature(s, src)) {
     return matchesView(snapshot(s, src), withChosen(r.abilityOfCreature, o), player, sourceId);
   }
@@ -182,6 +213,7 @@ export function manaSources(
       if (!canActivateMana(s, id, ab)) return;
       // Mana restreint : seulement utilisable par le solveur pour un paiement autorisé.
       if (!restrictionAllows(s, id, ab, player, purpose)) return;
+      if (ab.tapAnother && !otherToTap(s, id, true)) return;
       out.push({
         id,
         ability: i,
@@ -215,9 +247,17 @@ export function activateManaAbility(s: GameState, player: PlayerId, id: ObjectId
   const c = color ?? ab.produce[0];
   if (!c || !ab.produce.includes(c)) throw new Error("Couleur de mana invalide");
   if (ab.cost.tap) tapObject(s, o);
-  if (ab.cost.sacrificeSelf) putIntoGraveyard(s, id);
+  if (ab.oncePerTurn) s.turn.onceFired.push(`mana:${id}`);
+  if (ab.tapAnother) tapObject(s, obj(s, otherToTap(s, id) as ObjectId));
+  if (ab.cost.sacrificeSelf) sacrifice(s, id);
   const pool = s.players[player]?.manaPool;
   if (pool) pool[c] += manaAmount(s, id, ab);
+  // Ultima, Origin of Oblivion : un terrain engagé pour {C} en ajoute un de plus.
+  if (pool && c === "C" && ab.cost.tap && chars(s, id).types.includes("Land")) {
+    pool.C += controlledAbilitiesWithSource(s, player).filter(
+      ({ ab: x }) => x.kind === "playerStatic" && !!x.extraColorlessFromLands,
+    ).length;
+  }
 }
 
 // ---------------------------------------------------------------------------

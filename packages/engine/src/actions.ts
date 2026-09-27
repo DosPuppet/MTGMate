@@ -42,6 +42,7 @@ export function drawCard(s: GameState, p: PlayerId): void {
   const id = moveObject(s, top, "hand");
   emit({ type: "draw", player: p, objectId: id ?? undefined, defId: s.objects[id ?? ""]?.defId });
   player.turnStats.cardsDrawn += 1;
+  bump(s); // Duelist of the Mind : force égale aux cartes piochées ce tour-ci
   rulesEvent(s, { e: "draw", player: p, nth: player.turnStats.cardsDrawn });
 }
 
@@ -55,6 +56,8 @@ export function gainLife(s: GameState, p: PlayerId, amount: number): void {
     (n, { ab }) => n + (ab.kind === "playerStatic" ? (ab.lifeGainBonus ?? 0) : 0),
     0,
   );
+  // The Wind Crystal : « vous en gagnez le double à la place » (616.1 : les doublements se cumulent).
+  amount *= 2 ** doublers(s, p, "lifeGain");
   player.life += amount;
   bump(s); // des caractéristiques peuvent dépendre des points de vie (Elenda)
   emit({ type: "life", player: p, delta: amount, life: player.life });
@@ -71,19 +74,60 @@ export function loseLife(s: GameState, p: PlayerId, amount: number): void {
   emit({ type: "life", player: p, delta: -amount, life: player.life });
   player.turnStats.lifeLost += amount;
   rulesEvent(s, { e: "lifeLoss", player: p, amount });
+  // 702.179 : une fois par tour, quand un adversaire perd des points de vie pendant votre tour, votre vitesse augmente.
+  const active = s.players[s.turn.active];
+  if (p !== s.turn.active && active?.speed !== undefined && active.speed < 4 && !s.turn.speedRaised) {
+    s.turn.speedRaised = true;
+    setSpeed(s, s.turn.active, active.speed + 1);
+  }
+}
+
+/** Fixe la vitesse d'un joueur (702.179). */
+export function setSpeed(s: GameState, p: PlayerId, speed: number): void {
+  const player = s.players[p];
+  if (!player || player.speed === speed) return;
+  player.speed = speed;
+  bump(s);
+  emit({ type: "speed", player: p, speed });
 }
 
 /** Inflige des blessures à un joueur ou à une créature (règle 120). */
 export function dealDamage(s: GameState, source: DamageSource, target: string, amount: number, combat: boolean): void {
   if (amount <= 0) return;
-  if (combat && preventsCombatDamage(s, target)) return;
+  // Ancient Adamantoise : les blessures à son contrôleur et à ses autres permanents lui sont infligées à la place.
+  const owner = isPlayer(s, target)
+    ? target
+    : s.objects[target]?.zone === "battlefield"
+      ? s.objects[target]?.controller
+      : undefined;
+  const absorber = owner
+    ? s.battlefield.find(
+        (id) => id !== target && s.objects[id]?.controller === owner && isCreature(s, id) && hasKeyword(s, id, "absorbsDamage"),
+      )
+    : undefined;
+  if (absorber) target = absorber;
+  // Frenzied Baloth : « les blessures de combat ne peuvent pas être prévenues ».
+  const unpreventable = combat && s.playerOrder.some((p) => playerStatic(s, p, "combatDamageUnpreventable"));
+  if (combat && !unpreventable && preventsCombatDamage(s, target)) return;
+  if (
+    combat &&
+    !unpreventable &&
+    s.objects[target]?.zone === "battlefield" &&
+    chars(s, target).keywords.includes("combatDamageImmune")
+  )
+    return;
+  // Absolute Virtue : les blessures des sources adverses à ce joueur sont prévenues.
+  if (!unpreventable && isPlayer(s, target) && source.controller !== target && playerStatic(s, target, "protectionFromOpponents"))
+    return;
   const targetObj = s.objects[target];
   if (targetObj?.zone === "battlefield") {
     // 702.16e : protection contre tout — les blessures sont prévenues.
     if (hasKeyword(s, target, "protectionFromEverything")) return;
+    // Summon: Alexander : « prévenez toutes les blessures infligées aux créatures que vous contrôlez ce tour-ci ».
+    if (!unpreventable && s.turn.preventCreatureDamageFor?.includes(targetObj.controller) && isCreature(s, target)) return;
   }
   // Préventions statiques : blessures reçues (Crystal Barricade, Fog Bank) ou infligées par la source (Fog Bank).
-  for (const p of preventions(s)) {
+  for (const p of unpreventable ? [] : preventions(s)) {
     if (p.ab.noncombatOnly && combat) continue;
     if (p.ab.combatOnly && !combat) continue;
     if (p.ab.bySource) {
@@ -101,13 +145,30 @@ export function dealDamage(s: GameState, source: DamageSource, target: string, a
   // Twinflame Tyrant : blessures d'une source que vous contrôlez à un adversaire ou à un permanent adverse, doublées.
   const victim = isPlayer(s, target) ? target : targetObj?.controller;
   // Tomik, Izzet Sparkmage : blessures non de combat à un adversaire ou à ses permanents, +1.
+  // Taii Wakeen : ce tour-ci, les blessures non de combat de vos sources sont augmentées de X.
+  const taii = s.players[source.controller]?.noncombatBonusTurn;
+  if (!combat && taii?.turn === s.turn.number) amount += taii.n;
   if (!combat && victim && victim !== source.controller && playerStatic(s, source.controller, "noncombatDamageBonus"))
     amount += 1;
+  // Far Fortune (vitesse maximale) : toute blessure de vos sources à un adversaire ou à ses permanents, +1.
+  if (victim && victim !== source.controller && playerStatic(s, source.controller, "damagePlusOneToOpponents")) amount += 1;
   if (victim && victim !== source.controller) amount *= 2 ** doublers(s, source.controller, "damageToOpponents");
   // Gratuitous Violence : blessures d'une créature que vous contrôlez, doublées.
   if (source.id && s.objects[source.id]?.zone === "battlefield" && isCreature(s, source.id)) {
     amount *= 2 ** doublers(s, source.controller, "creatureDamage");
   }
+  // Trance Kuja : « si un Sorcier que vous contrôlez devait infliger des blessures, il en inflige le double ».
+  if (source.id && s.objects[source.id]?.zone === "battlefield") {
+    const id = source.id;
+    const n = controlledAbilitiesWithSource(s, source.controller).filter(
+      ({ id: from, ab }) =>
+        ab.kind === "doubler" && !!ab.damageFilter && matchesObjectFilter(s, source.controller, id, ab.damageFilter, from),
+    ).length;
+    amount *= 2 ** n;
+  }
+  // Lightning, Army of One : blessures à ce joueur ou à ses permanents doublées jusqu'au prochain tour de Lightning.
+  const marked = victim ? (s.players[victim]?.damageDoubled?.filter((d) => s.turn.number < d.until).length ?? 0) : 0;
+  amount *= 2 ** marked;
   if (isPlayer(s, target)) {
     // Suivi des joueurs blessés au combat par cette source ce tour-ci (Steel Hellkite).
     const src = source.id ? s.objects[source.id] : undefined;
@@ -117,6 +178,11 @@ export function dealDamage(s: GameState, source: DamageSource, target: string, a
     emit({ type: "damage", sourceDefId: source.defId, target, amount, combat });
     const hurt = s.players[target];
     if (hurt && !combat && amount > 0) hurt.turnStats.noncombatDamageTaken += amount;
+    if (hurt && combat && amount > 0) {
+      hurt.turnStats.combatDamageTaken = (hurt.turnStats.combatDamageTaken ?? 0) + amount;
+      if (src && chars(s, src.id).supertypes.includes("Legendary") && isCreature(s, src.id))
+        hurt.turnStats.damagedByLegendary = true;
+    }
     loseLife(s, target, amount);
   } else {
     const o = s.objects[target];
@@ -162,6 +228,14 @@ export function putIntoGraveyard(s: GameState, id: ObjectId): void {
   removeFromCombat(s, id);
 }
 
+/** Sacrifier (701.21) : le contrôleur met le permanent au cimetière ; « chaque fois que vous sacrifiez… » se déclenche. */
+export function sacrifice(s: GameState, id: ObjectId): void {
+  const o = s.objects[id];
+  if (o?.zone !== "battlefield") return;
+  rulesEvent(s, { e: "sacrifice", objectId: id, player: o.controller });
+  putIntoGraveyard(s, id);
+}
+
 export function removeFromCombat(s: GameState, id: ObjectId): void {
   if (!s.combat) return;
   bump(s);
@@ -175,7 +249,7 @@ export function tokenDefId(t: TokenSpec): string {
   return `token:${t.name.toLowerCase().replace(/\W+/g, "-")}-${t.power ?? "x"}-${t.toughness ?? "x"}-${t.colors.join("")}${kw ? `-${kw}` : ""}`;
 }
 
-export function createTokens(s: GameState, controller: PlayerId, t: TokenSpec, count: number): ObjectId[] {
+export function createTokens(s: GameState, controller: PlayerId, t: TokenSpec, count: number, extras = true): ObjectId[] {
   // Draconic Visitor : les jetons d'artefact deviennent des Dragons 5/5 volants.
   if (t.types.includes("Artifact")) {
     const replacement = controlledAbilitiesWithSource(s, controller).find(
@@ -184,6 +258,30 @@ export function createTokens(s: GameState, controller: PlayerId, t: TokenSpec, c
     if (replacement?.kind === "playerStatic" && replacement.replaceArtifactTokens) t = replacement.replaceArtifactTokens;
   }
   const created: ObjectId[] = [];
+  // Worldwalker Helm : « ces jetons plus un jeton Carte supplémentaire » (la Carte elle-même n'en ajoute pas).
+  const helm =
+    t.types.includes("Artifact") && t.name !== "Map"
+      ? controlledAbilitiesWithSource(s, controller).find(({ ab }) => ab.kind === "playerStatic" && !!ab.extraMapToken)?.ab
+      : undefined;
+  const extraMap = helm?.kind === "playerStatic" ? helm.extraMapToken : undefined;
+  // Moonlit Meditation : la première fois de chaque tour, des copies du permanent enchanté à la place.
+  const meditation = controlledAbilitiesWithSource(s, controller).find(
+    ({ id, ab }) =>
+      ab.kind === "playerStatic" &&
+      !!ab.tokensAsCopiesOfAttached &&
+      !s.turn.onceFired.includes(`copies:${id}`) &&
+      !!s.objects[id]?.attachedTo &&
+      !!s.objects[s.objects[id]?.attachedTo ?? ""],
+  );
+  if (meditation) {
+    s.turn.onceFired.push(`copies:${meditation.id}`);
+    const model = s.objects[s.objects[meditation.id]?.attachedTo ?? ""];
+    if (model) {
+      const n = count * 2 ** doublers(s, controller, "tokens");
+      for (let i = 0; i < n; i++) created.push(createTokenCopy(s, controller, model.defId));
+      return created;
+    }
+  }
   const defId = tokenDefId(t);
   if (!s.defs[defId]) {
     const def: CardDef = {
@@ -193,11 +291,12 @@ export function createTokens(s: GameState, controller: PlayerId, t: TokenSpec, c
       manaCost: null,
       manaCostText: "",
       colors: t.colors,
-      supertypes: [],
+      supertypes: t.legendary ? ["Legendary"] : [],
       types: t.types,
       subtypes: t.subtypes,
       power: t.power,
       toughness: t.toughness,
+      cdaPT: t.cdaPT,
       keywords: t.keywords ?? [],
       abilities: t.abilities ?? [],
       text: t.text ?? "",
@@ -211,9 +310,18 @@ export function createTokens(s: GameState, controller: PlayerId, t: TokenSpec, c
   for (let i = 0; i < n; i++) {
     const o = createObject(s, defId, controller, "battlefield", { isToken: true });
     o.timestamp = nextTimestamp(s);
+    // Remplacements d'arrivée des autres permanents (« chaque créature que vous contrôlez arrive avec… »).
+    applyEntersReplacements(s, o, {});
     emit({ type: "token", objectId: o.id, defId, controller });
     rulesEvent(s, { e: "zone", oldId: null, newId: o.id, from: null, to: "battlefield", lki: null });
     created.push(o.id);
+  }
+  if (extraMap) created.push(...createTokens(s, controller, extraMap, 1));
+  // Quina, Qu Gourmet : « ces jetons plus un jeton Grenouille 1/1 » (le jeton ajouté ne déclenche pas le remplacement).
+  if (extras && count > 0) {
+    for (const { ab } of controlledAbilitiesWithSource(s, controller)) {
+      if (ab.kind === "playerStatic" && ab.extraToken) created.push(...createTokens(s, controller, ab.extraToken, 1, false));
+    }
   }
   return created;
 }

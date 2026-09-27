@@ -85,17 +85,17 @@ npm run dev          # http://localhost:5173
 | `npm run server` | Serveur de parties en ligne (WebSocket `/ws`, sert aussi `packages/client/dist`) |
 | `npm run online-smoke [-- --base <url>]` | Duel en ligne entre deux navigateurs : salon, lien d'invitation, corde, reprise après rechargement, revanche (serveur de dev par défaut, ou `--base` vers un serveur de production ou nginx) |
 | `npm run battlefield-smoke` | Plateaux chargés (jetons, 2e ligne, 4 joueurs) mis en jeu par le bac à sable du mode dev : rangées, piles de jetons, aucune carte rognée (serveur de dev lancé) |
+| `npm run import-cards -- <set>\|all` | Import Scryfall d'une extension, ou de toutes les extensions Standard hors FDN et FRA (`all`) |
 | `npm run deck-smoke` | Deckbuilder de bout en bout : import, édition, export, persistance, partie (serveur de dev lancé) |
 | `npm run ui-smoke -- <dossier> [actions]` | Joue une partie dans Chromium via l'interface et prend des captures (serveur de dev lancé) |
 | `npm run typecheck` / `npm run lint` | TypeScript strict / Biome |
-| `npm run import-cards -- fdn` (ou `fra`) | Réimporte un set depuis Scryfall (EN + FR, loyauté et légalité en Standard comprises) |
 
 ## Architecture
 
 ```
 packages/
   engine/   moteur pur et déterministe : état JSON, décisions, règles, autopilot, vue filtrée, GameHost
-  cards/    données Scryfall (data/fdn.json), scripts des cartes (src/fdn/<couleur>.ts), decklists, decks préconstruits (decks/*.json : 2 FDN, 4 FRA)
+  cards/    données Scryfall (data/<set>.json, 20 extensions), scripts des cartes (src/fdn/<couleur>.ts), decklists, decks préconstruits (decks/*.json : 2 FDN, 4 FRA)
   ai/       IA aléatoire (fuzz) et heuristique (simulation sur clones de l'état + évaluation)
   server/   jeu en ligne : salons, GameHost côté serveur (fait autorité), minuteur, reconnexion ; protocole partagé
   client/   React + Vite + Zustand + Motion ; la partie tourne dans un Web Worker ; deckbuilder ; disposition du plateau façon MTGA (board/layout.ts) ; effets sonores (audio/)
@@ -133,7 +133,7 @@ Les caractéristiques d'une carte (coût, types, F/E, mots-clés, loyauté, gard
 "Burst Lightning": { kicker: "{4}", spell: spell([target.any()], [fx.damage(amount.kicked(4, 2), ref.target())]) },
 ```
 
-Chaque carte gérée est automatiquement jouée par le test de fumée (`packages/ai/test/cards-smoke.test.ts`) ; les mécaniques nouvelles ont en plus un test de règles (`packages/engine/test/fdn.test.ts`).
+Chaque carte gérée est automatiquement jouée par le test de fumée (`packages/ai/test/smoke/`, un fichier par extension) ; les mécaniques nouvelles ont en plus un test de règles (`packages/engine/test/fdn.test.ts`).
 
 ## État
 
@@ -147,7 +147,7 @@ Chaque carte gérée est automatiquement jouée par le test de fumée (`packages
 | 4c. FDN, set principal (n° 1 à 281) | lots A (longue traîne) à F (mécaniques uniques : permissions de lancement, doublements, protection, choix en arrivant, mana restreint, copie de sorts…) | ✅ **276 / 276** |
 | 4d. FDN, réimpressions (n° 282 et plus) | cartes des decks d'initiation et de la Starter Collection | ✅ **241 / 241** (517 / 517 pour tout FDN) |
 | 4e. Légalité Standard | légalités Scryfall importées, liste des bannies, validation du format dans le deckbuilder | ✅ |
-| 4f. Autres extensions Standard | une extension à la fois ; Reality Fracture d'abord (276/279 cartes, 4 decks préconstruits) | en cours |
+| 4f. Autres extensions Standard | une extension à la fois ; Reality Fracture ✅ (279/279, 4 decks préconstruits) ; le reste du Standard sur la branche `standard`, lot par lot | en cours |
 | 5. IA | attaques par simulation, puis ISMCTS | à faire |
 | 6. JcJ en ligne | duel Standard : serveur Node `ws` (`GameHost`, vues et faces filtrées), code de salon, corde, reconnexion, revanche | ✅ duel ; déploiement pm2 + nginx documenté |
 | 7. Finitions | effets sonores ✅ ; replays (graine + décisions), images des jetons, musique | en cours |

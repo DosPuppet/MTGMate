@@ -1,8 +1,8 @@
 /** Fenêtres de choix : réservées aux vraies décisions (mulligan, modes, X, kicker, défausse…). */
-import { costToText, type GameView } from "@mtgx/engine";
+import { costToText, type GameView, type ObjectView } from "@mtgx/engine";
 import { useState } from "react";
 import { Card } from "../board/Card";
-import { faceName } from "../i18n";
+import { faceName, type Lang } from "../i18n";
 import { myActions, type PlayableOption, useGame } from "../store";
 import { ChoicePrompt } from "./ChoicePrompt";
 
@@ -118,7 +118,7 @@ function AdditionalCostPicker({
   options,
   orPay,
 }: {
-  kind: "discard" | "sacrifice";
+  kind: "discard" | "sacrifice" | "tap";
   count: number;
   options: string[];
   /** « … ou payez {3}{B} » : on peut payer ce mana à la place. */
@@ -137,7 +137,9 @@ function AdditionalCostPicker({
       title={
         kind === "discard"
           ? `Coût additionnel : défaussez ${count} carte(s)`
-          : `Coût additionnel : sacrifiez ${count} permanent(s)`
+          : kind === "tap"
+            ? `Coût : engagez ${count} créature(s)`
+            : `Coût additionnel : sacrifiez ${count} permanent(s)`
       }
       wide
     >
@@ -173,7 +175,7 @@ function AdditionalCostPicker({
   );
 }
 
-/** Cibles hors du champ de bataille (cartes dans un cimetière) : choisies dans une fenêtre. */
+/** Cibles hors du champ de bataille (cartes dans un cimetière ou en exil) : choisies dans une fenêtre. */
 function TargetCardPicker() {
   const view = useGame((s) => s.view);
   const casting = useGame((s) => s.casting);
@@ -183,7 +185,8 @@ function TargetCardPicker() {
   const cancel = useGame((s) => s.cancel);
   if (!view || !casting?.spec) return null;
   const spec = casting.spec;
-  const cards = Object.values(view.players).flatMap((p) => p.graveyard);
+  // Cartes d'un cimetière, ou exilées (Blade of the Swarm : « carte exilée avec la distorsion »).
+  const cards = [...Object.values(view.players).flatMap((p) => p.graveyard), ...view.exile];
   const options = cards.filter((o) => spec.legal.includes(o.id));
   const max = spec.count ?? 1;
   const picked = casting.picked ?? [];
@@ -251,6 +254,10 @@ function CastingPrompt() {
   if (casting.stage === "target" && casting.spec && view) {
     const onBoard = new Set([...view.battlefield.map((o) => o.id), ...Object.keys(view.players), ...view.stack.map((x) => x.id)]);
     if (casting.spec.legal.some((id) => !onBoard.has(id))) return <TargetCardPicker />;
+  }
+  if (casting.stage === "tap" && opt.type === "activate" && opt.additional?.tap) {
+    const spec = opt.additional.tap;
+    return <AdditionalCostPicker kind="tap" count={spec.count} options={spec.options} />;
   }
   if (casting.stage === "sacrifice" && opt.type === "activate" && opt.additional?.sacrifice) {
     const spec = opt.additional.sacrifice;
@@ -321,6 +328,14 @@ function CastingPrompt() {
   return null;
 }
 
+/** Nom de la face lancée : l'aventure (ou autre face), sinon le recto de la carte (« A // B » → « A »). */
+function faceLabel(source: ObjectView | undefined, face: string | undefined, lang: Lang): string {
+  if (!source) return "";
+  if (!face) return lang === "fr" && source.fr?.name ? source.fr.name : (source.name.split(" // ")[0] ?? source.name);
+  const f = source.otherFaces?.find((x) => x?.name === face);
+  return (lang === "fr" && f?.fr?.name) || face;
+}
+
 function AbilityMenu() {
   const menu = useGame((s) => s.abilityMenu);
   const view = useGame((s) => s.view);
@@ -337,7 +352,8 @@ function AbilityMenu() {
           if (o.type === "cast") {
             return (
               <button key={i} type="button" className="btn choice" onClick={() => beginCasting(o, menu.sourceId)}>
-                Lancer {faceName(source, lang)}
+                Lancer {faceLabel(source, o.faceName, lang)}
+                {o.warp ? " (distorsion)" : ""}
               </button>
             );
           }
@@ -345,6 +361,22 @@ function AbilityMenu() {
             return (
               <button key={i} type="button" className="btn choice" onClick={() => beginCasting(o, menu.sourceId)}>
                 {o.label ?? "Activer la capacité"}
+              </button>
+            );
+          }
+          if (o.type === "playLand") {
+            return (
+              <button
+                key={i}
+                type="button"
+                className="btn choice"
+                onClick={() => decide({ type: "playLand", card: o.card, payLife: o.payLife })}
+              >
+                {o.payLife
+                  ? "Jouer ce terrain en payant 2 points de vie (dégagé)"
+                  : menu.options.some((x) => x.type === "playLand" && x.payLife)
+                    ? "Jouer ce terrain engagé"
+                    : "Jouer ce terrain"}
               </button>
             );
           }
