@@ -6,7 +6,12 @@ Moteur pur et déterministe (`packages/engine/src`). L'état est sérialisable ;
 
 | Fichier | Rôle |
 |---|---|
-| `types.ts` | Tous les types : `GameState`, `GameObject`, `CardDef`, `Effect` (union `op`), `TriggerSpec` (union `on`), `Condition`, `Amount`, `Ref`, `ObjectFilter`, `TargetSpec`, statiques de joueur, `Keyword`… |
+| `types.ts` | Types de base (`Color`, `ManaCost`, `CardType`, `Keyword`, `RESTRICTIONS`) ; réexporte `model/*`. On importe toujours depuis `types.ts`. |
+| `model/cards.ts` | `CardDef`, capacités (activées, déclenchées, statiques, de mana, de joueur, remplacements, doublements), coûts, `LayerMods`, `TokenSpec`, `MoveSpec`. |
+| `model/rules.ts` | `ObjectFilter`, `TargetSpec`/`TargetFilter`, `TriggerSpec` (union `on`), `Condition`, `Ref`, `Amount`. |
+| `model/effects.ts` | `Effect` (union `op`). |
+| `model/state.ts` | `GameState`, `GameObject`, `PlayerState`, `StackItem`, combat, déclencheurs en attente, `LkiSnapshot`. |
+| `model/decisions.ts` | Décisions, choix, options d'action, `GameEvent`. |
 | `dsl.ts` | Constructeurs pour les scripts de cartes : `fx.*`, `when.*`, `cond.*`, `amount.*`, `ref.*`, `target.*`, `activated`, `triggered`, `staticAbility`, `playerStatic`, `manaAbility`, `chapter`, `spree`, `tiered`… Plus `CardScript` (champs du script d'une carte). |
 | `effects.ts` | `runEffect` : aiguillage vers la table `op → traitement` ; `evalAmount` (`switch (a.kind)`) ; `resolveRef` ; `evalCondition` ; aides partagées (`store`, `damageSource`, `moveWithSpec`, `grantPlay`, `addEffect`…). |
 | `ops/*.ts` | Les traitements des effets, par domaine : `damage`, `players`, `counters`, `zones`, `spells` (pile, permissions de lancer), `permanents` (modifications, contrôle, copies, jetons), `mana`, `flow` (si, peut, réflexif, retardé). Chaque fichier exporte `HANDLERS: OpHandlers`. |
@@ -25,8 +30,8 @@ Moteur pur et déterministe (`packages/engine/src`). L'état est sérialisable ;
 
 ## Recettes
 
-- **Nouvel effet :** ajouter la variante `{ op: "…" }` à `Effect` (`types.ts`), son traitement `op(s, r, e, ctx, key) { … }` dans le `HANDLERS` du bon fichier `ops/<domaine>.ts` (`e` y est typé selon `op` ; `r` et `key` servent aux choix et aux variables mémorisées), puis son constructeur `fx.…` (`dsl.ts`). Si l'effet change des caractéristiques, appeler `bump(s)`.
-- **Nouveau déclencheur :** une variante de `TriggerSpec`, un `case` dans `triggers.ts` (renvoyer `{ objectId, player, amount }` pour `ref.eventObject`, `ref.eventPlayer` et `amount.eventAmount`), puis `when.…`. Si l'événement n'existe pas, ajouter un `RulesEvent` (`state.ts`) et l'émettre avec `rulesEvent(s, …)`.
+- **Nouvel effet :** ajouter la variante `{ op: "…" }` à `Effect` (`model/effects.ts`), son traitement `op(s, r, e, ctx, key) { … }` dans le `HANDLERS` du bon fichier `ops/<domaine>.ts` (`e` y est typé selon `op` ; `r` et `key` servent aux choix et aux variables mémorisées), puis son constructeur `fx.…` (`dsl.ts`). Si l'effet change des caractéristiques, appeler `bump(s)`.
+- **Nouveau déclencheur :** une variante de `TriggerSpec` (`model/rules.ts`), un `case` dans `triggers.ts` (renvoyer `{ objectId, player, amount }` pour `ref.eventObject`, `ref.eventPlayer` et `amount.eventAmount`), puis `when.…`. Si l'événement n'existe pas, ajouter un `RulesEvent` (`state.ts`) et l'émettre avec `rulesEvent(s, …)`.
 - **Nouvelle condition ou nouveau montant :** `Condition` + `checkCondition` + `cond.…` ; `Amount` + `evalAmount` + `amount.…`.
 - **Filtre d'objet :** un champ de `ObjectFilter`, calculé dans `view()` (`layers.ts`) si besoin, et testé dans `matchesView` (`targets.ts`).
 - **Statique de joueur :** un champ de `PlayerStaticAbilityDef`, lu avec `playerStatic(s, p, "clé")` ou `controlledAbilitiesWithSource` là où la règle s'applique.
