@@ -133,7 +133,7 @@ Les caractéristiques d'une carte (coût, types, F/E, mots-clés, loyauté, gard
 "Burst Lightning": { kicker: "{4}", spell: spell([target.any()], [fx.damage(amount.kicked(4, 2), ref.target())]) },
 ```
 
-Chaque carte gérée est automatiquement jouée par le test de fumée (`packages/ai/test/cards-smoke.test.ts`) ; les mécaniques nouvelles ont en plus un test de règles (`packages/engine/test/fdn.test.ts`).
+Chaque carte gérée est automatiquement jouée par le test de fumée (`packages/ai/test/smoke/`, un fichier par extension) ; les mécaniques nouvelles ont en plus un test de règles (`packages/engine/test/fdn.test.ts`).
 
 ## État
 

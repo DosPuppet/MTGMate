@@ -1,8 +1,9 @@
 /**
- * Test de fumée de toutes les cartes gérées de Foundations : chaque carte est jouée dans une position
- * préparée (mana de toutes les couleurs, cibles de chaque sorte, cimetières garnis), puis chacune de ses
- * capacités activées est utilisée ; la partie continue quelques tours. Aucune exception inattendue ni
- * violation d'invariant n'est tolérée.
+ * Test de fumée des cartes gérées : chaque carte est jouée dans une position préparée (mana de toutes les
+ * couleurs, cibles de chaque sorte, cimetières garnis), puis chacune de ses capacités activées est utilisée ;
+ * la partie continue un peu. Aucune exception inattendue ni violation d'invariant n'est tolérée.
+ *
+ * Un fichier par extension (`smoke/<set>.test.ts`) appelle `smokeTest` : vitest les répartit sur tous les cœurs.
  */
 import { CARDS, SETS } from "@mtgx/cards";
 import {
@@ -16,9 +17,9 @@ import {
   submit,
 } from "@mtgx/engine";
 import { describe, expect, it } from "vitest";
-import { scenario } from "../../engine/test/helpers";
-import { enumerateDecisions, randomAgent } from "../src";
-import { checkInvariants } from "../src/selfplay";
+import { scenario } from "../../../engine/test/helpers";
+import { enumerateDecisions, randomAgent } from "../../src";
+import { checkInvariants } from "../../src/selfplay";
 
 const LANDS = ["Plains", "Island", "Swamp", "Mountain", "Forest"].flatMap((l) => [l, l, l]);
 const LIBRARY = [
@@ -114,7 +115,9 @@ function play(c: CardDef, seed: number): { state: GameState; illegal: number; pl
   const agents: Record<string, Agent> = { p1: explorer(seed), p2: randomAgent(seed + 1, 0.6) };
   let illegal = 0;
   let played = false;
+  let playedAt = -1;
   for (let i = 0; i < 700 && state.pending && !state.over && state.turn.number <= 8; i++) {
+    if (playedAt >= 0 && i - playedAt > AFTER_PLAYED) break;
     const p = state.pending;
     let d: Decision = (agents[p.player] as Agent)(state, p.player);
     try {
@@ -127,6 +130,7 @@ function play(c: CardDef, seed: number): { state: GameState; illegal: number; pl
     }
     if ((d.type === "cast" || d.type === "playLand") && state.objects[d.card] === undefined) {
       played ||= Object.values(state.objects).some((o) => o.defId === c.id && o.zone !== "hand" && o.zone !== "library");
+      if (played && playedAt < 0) playedAt = i;
     }
     const errors = checkInvariants(state, sizes);
     if (errors.length) throw new Error(`${c.name} (décision ${i}) :\n${errors.join("\n")}`);
@@ -134,21 +138,38 @@ function play(c: CardDef, seed: number): { state: GameState; illegal: number; pl
   return { state, illegal, played };
 }
 
-// Toutes les cartes gérées, sauf les terrains de base, regroupées par extension.
+/** Décisions jouées après que la carte a été jouée, avant d'arrêter la partie (ses effets ont eu le temps d'agir). */
+const AFTER_PLAYED = 80;
+
+// Toutes les cartes gérées, sauf les terrains de base.
 const cards = Object.values(CARDS).filter((c) => !c.isToken && c.implemented && !c.meldResult && !c.supertypes.includes("Basic"));
 
-describe.each(SETS.map((s) => [s.name, s.code] as const).filter(([, code]) => cards.some((c) => c.set === code)))(
-  "test de fumée des cartes : %s",
-  (_, code) => {
-    it.each(cards.filter((c) => c.set === code).map((c) => [c.name, c] as const))("%s", (_, c) => {
-      let playedOnce = false;
-      for (const seed of [1, 2, 3]) {
-        const { state, played } = play(c, seed);
-        expect(state.pending || state.over).toBeTruthy();
-        playedOnce ||= played;
-      }
-      // La carte a bien été jouée (lancée ou posée) au moins une fois.
-      expect(playedOnce, `${c.name} n'a pas pu être jouée`).toBe(true);
+/**
+ * Déclare le test de fumée des cartes d'une ou plusieurs extensions. `shard` : [i, n] ne garde qu'une carte sur n
+ * (pour découper une grosse extension en plusieurs fichiers, donc plusieurs workers).
+ */
+export function smokeTest(codes: string[], shard: [number, number] = [0, 1]): void {
+  const names = new Map(SETS.map((s) => [s.code, s.name]));
+  for (const code of codes) {
+    const list = cards.filter((c) => c.set === code).filter((_, k) => k % shard[1] === shard[0]);
+    if (list.length === 0) continue;
+    describe(`test de fumée des cartes : ${names.get(code) ?? code}`, () => {
+      it.each(list.map((c) => [c.name, c] as const))("%s", (_, c) => {
+        let playedOnce = false;
+        // Graines suivantes seulement tant que la carte n'a pas pu être jouée.
+        for (const seed of [1, 2, 3]) {
+          const { state, played } = play(c, seed);
+          expect(state.pending || state.over).toBeTruthy();
+          playedOnce ||= played;
+          if (playedOnce) break;
+        }
+        // La carte a bien été jouée (lancée ou posée) au moins une fois.
+        expect(playedOnce, `${c.name} n'a pas pu être jouée`).toBe(true);
+      });
     });
-  },
-);
+  }
+}
+
+/** Extensions qui ont leur propre fichier de test de fumée ; les autres sont dans `others.test.ts`. */
+export const OWN_FILES = ["FDN", "FRA", "EOE", "DFT", "OTJ", "BIG", "FIN"];
+export const OTHER_SETS = (): string[] => SETS.map((s) => s.code).filter((c) => !OWN_FILES.includes(c));

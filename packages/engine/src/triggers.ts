@@ -884,8 +884,13 @@ function chooseTriggerTargets(s: GameState, t: PendingTrigger): boolean {
       group = { kind: spec.samePlayer ? "same" : "different", holders };
     }
     const suggested: string[] = [];
+    // Phoenix, Warden of Fire : « d'une valeur de mana totale de 6 ou moins ».
+    const mv = (id: string) => (s.objects[id] ? (snapshot(s, id).manaValue ?? 0) : 0);
+    let total = 0;
     for (const id of [first, ...legal.filter((x) => x !== first)]) {
       if (suggested.length >= count) break;
+      if (spec.maxTotalManaValue !== undefined && total + mv(id) > spec.maxTotalManaValue) continue;
+      total += mv(id);
       if (group?.kind === "same" && suggested.length && group.holders[suggested[0] as string] !== group.holders[id]) continue;
       if (group?.kind === "different" && suggested.some((x) => group?.holders[x] === group?.holders[id])) continue;
       suggested.push(id);

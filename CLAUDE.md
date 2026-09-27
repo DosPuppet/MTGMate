@@ -548,16 +548,20 @@ Réimpressions : défenses talismaniques contre une couleur, changelin, restrict
 
 ## Vérifications avant de rendre un lot
 
-1. `npx tsc -p tsconfig.json`, `npx biome check .` : Biome réordonne les imports, donc relire un fichier avant de le patcher par recherche/remplacement.
-2. `npx vitest run` : règles, IA, test de fumée de chaque carte, decklists.
-3. Fuzz sur toutes les cartes gérées :
-   - `npm run fuzz -- --games 300 --pool all` (plusieurs `--seed`) ;
-   - `--players 3` et `--players 4` ;
-   - `--ai mixed`.
-4. `npm run bench` : cibles atteintes.
-5. Interface :
-   - `npm run deck-smoke`, `npm run ui-smoke` et `npm run battlefield-smoke` (plateaux chargés via le bac à sable) ;
-   - pour une nouvelle mécanique visible, un script Playwright ponctuel avec captures dans `test-results/`.
+- **Par lot :** `npm run verify -- --set <EXT>` (environ 70 s). Il lance :
+  - `tsc`, Biome et la couverture ;
+  - `vitest`, où le test de fumée est découpé en un fichier par extension (tous les cœurs) ;
+  - le fuzz ciblé sur l'extension (`--pool <EXT>`, à 2, 3 et 4 joueurs, et en IA mixte) ;
+  - un fuzz sur tout le pool ;
+  - les tests d'interface seulement si le client, `view.ts` ou le protocole ont changé (`--ui` pour les forcer). Vite doit tourner.
+- **En fin d'extension ou avant une fusion :** `npm run verify -- --full` (environ 3 min). Il lance :
+  - trois graines sur tout le pool, puis 3 et 4 joueurs, et l'IA mixte ;
+  - le bench ;
+  - les trois tests d'interface.
+- **Résultat :** une ligne par étape, avec sa durée. Le détail n'est affiché qu'en cas d'échec ; tous les journaux sont dans `test-results/verify/`.
+- **Fuzz à la main :** `npm run fuzz -- --games 300 --pool FIN --jobs 10`. Les résultats sont identiques à graine égale, quel que soit `--jobs`.
+- **Bench :** il n'est fiable que sur secteur (le mode éco du CPU fausse les mesures). On juge une régression en comparant avant et après.
+- **Nouvelle mécanique visible :** un script Playwright ponctuel, avec captures dans `test-results/`.
 
 ## Pièges connus
 
@@ -582,7 +586,7 @@ Réimpressions : défenses talismaniques contre une couleur, changelin, restrict
 - **Mulligans :** ils se décident l'un après l'autre (le premier joueur d'abord) ; un script de test ne doit pas supposer l'ordre.
 - **Bac à sable (mode dev) :** `window.__mtgx` expose le store ; `startGame(deck, decksIA, { p1: { cards, tokens }, p2: … })` met des permanents en jeu dès le début (voir `battlefield-smoke`). Dans `page.evaluate`, pas de fonction nommée (tsx injecte `__name`).
 - **`pgrep -f` / `pkill -f` :** avec un motif présent dans la ligne de commande, ils peuvent tuer le shell courant.
-- **Test de fumée (`ai/test/cards-smoke.test.ts`) :** une carte qui n'a pas pu être jouée fait échouer le test. Pour les cartes réactives (contresorts), l'adversaire doit avoir de quoi lancer des sorts.
+- **Test de fumée (`ai/test/smoke/`, un fichier par extension, harnais `harness.ts`) :** une carte qui n'a pas pu être jouée fait échouer le test. Une nouvelle extension gérée reçoit son fichier et entre dans `OWN_FILES`. On arrête 80 décisions après que la carte a été jouée, et on passe aux graines 2 et 3 seulement si elle ne l'a pas été. Pour les cartes réactives (contresorts), l'adversaire doit avoir de quoi lancer des sorts.
 - **Cache des caractéristiques :** tout ce dont une capacité statique ou une F/E variable dépend doit faire avancer la version d'état (`bump`). Les points de vie et l'élimination d'un joueur le font désormais. Le fuzz détecte les oublis (« cache des caractéristiques périmé »).
 - **Biome :**
   - `npx biome check . | tail -1` cache les erreurs : lire toute la sortie, ou grep « Found » ;
