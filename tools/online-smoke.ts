@@ -88,10 +88,8 @@ async function step(page: Page): Promise<void> {
       .catch(() => {});
     return;
   }
-  if (/Pas d'attaque/.test(label)) {
-    const tous = page.getByRole("button", { name: "Tous attaquent" });
-    if (await tous.count()) await tous.click().catch(() => {});
-  }
+  // « Attaquer avec tous » sélectionne toutes les créatures ; l'appui suivant (ci-dessous) confirme.
+  if (/Attaquer avec tous/.test(label)) await main.click({ timeout: 2000 }).catch(() => {});
   if (!(await main.isDisabled().catch(() => true))) await main.click({ timeout: 2000 }).catch(() => {});
 }
 

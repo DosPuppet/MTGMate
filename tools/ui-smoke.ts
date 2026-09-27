@@ -102,12 +102,10 @@ for (let i = 0; i < MAX; i++) {
   const label = (await main.innerText()).trim();
   if (await main.isDisabled()) continue;
 
-  if (label === "Pas d'attaque") {
-    const all = page.getByRole("button", { name: "Tous attaquent" });
-    if (await all.count()) {
-      await all.click();
-      await shot("attaque");
-    }
+  if (label === "Attaquer avec tous") {
+    // Façon MTGA : un premier appui sélectionne toutes les créatures, un second confirme.
+    await main.click({ timeout: 3000 }).catch(() => {});
+    await shot("attaque");
     await main.click({ timeout: 3000 }).catch(() => {});
     continue;
   }

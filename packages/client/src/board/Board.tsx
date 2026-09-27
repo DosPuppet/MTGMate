@@ -499,7 +499,6 @@ function Banner() {
   const cancel = useGame((s) => s.cancel);
   const chooseNoTarget = useGame((s) => s.chooseNoTarget);
   const confirmTargets = useGame((s) => s.confirmTargets);
-  const allAttack = useGame((s) => s.allAttack);
   const aiming = useGame((s) => s.aimingAttacker);
   const lang = useGame((s) => s.lang);
   const p = view.pending;
@@ -554,11 +553,6 @@ function Banner() {
         : aiming
           ? `${nameOf(aiming)} attaque… cliquez sa cible (en surbrillance) — Échap pour annuler`
           : "Cliquez une créature, puis le joueur ou le planeswalker qu'elle attaque";
-    extra = (
-      <button type="button" className="btn small" onClick={allAttack}>
-        Tous attaquent
-      </button>
-    );
   } else if (p.kind === "declareBlockers") {
     text = "Bloqueurs : cliquez une de vos créatures, puis l'attaquant à bloquer";
   } else if (p.kind === "priority" && view.stack.length > 0) {
@@ -749,6 +743,8 @@ export function useMainAction(): { label: string; run?: () => void; disabled?: b
       return { label: "Passer", run: pass, hot: true };
     case "declareAttackers": {
       const n = s.attackers.length;
+      // Façon MTGA : sans sélection, le bouton sélectionne toutes les créatures ; un second appui confirme.
+      if (!n && (p.candidates?.length ?? 0) > 0) return { label: "Attaquer avec tous", hot: true, run: s.allAttack };
       return {
         label: n ? `Attaquer (${n})` : "Pas d'attaque",
         hot: true,
@@ -778,6 +774,8 @@ export function useMainAction(): { label: string; run?: () => void; disabled?: b
 function ActionPanel() {
   const view = useGame((s) => s.view) as GameView;
   const endTurn = useGame((s) => s.endTurn);
+  const decide = useGame((s) => s.decide);
+  const attackers = useGame((s) => s.attackers);
   const action = useMainAction();
   const myTurn = view.turn.active === view.viewer;
   const p = view.pending;
@@ -796,6 +794,18 @@ function ActionPanel() {
       >
         {action.label}
       </button>
+      {p?.kind === "declareAttackers" &&
+        p.player === view.viewer &&
+        (attackers.length > 0 || (p.candidates?.length ?? 0) > 0) && (
+          <button
+            type="button"
+            className="btn small no-attack"
+            onClick={() => decide({ type: "declareAttackers", attackers: [] })}
+            title="Ne pas attaquer ce tour-ci"
+          >
+            Pas d'attaque
+          </button>
+        )}
       {myTurn && mine && !view.over && (
         <button type="button" className="btn small ghost" onClick={endTurn} title="Entrée : passer jusqu'à la fin du tour">
           Passer le tour ⏎

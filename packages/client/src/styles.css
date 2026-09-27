@@ -2361,3 +2361,9 @@ button {
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
 }
+
+/* « Pas d'attaque », sous le grand bouton pendant la déclaration des attaquants. */
+.btn.no-attack {
+  border-color: rgba(255, 255, 255, 0.25);
+  opacity: 0.9;
+}
