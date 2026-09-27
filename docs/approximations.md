@@ -1,0 +1,126 @@
+# Approximations connues
+
+À lever si une carte l'exige. Les premières entrées valent pour tout le moteur ; les suivantes concernent des cartes précises (dans l'ordre où elles ont été ajoutées, extension par extension). Chercher le nom de la carte ou de la mécanique.
+
+- **Blocages :** ils sont déclarés joueur par joueur en ordre APNAP, et non simultanément.
+- **Remplacements multiples (616.1) :** le premier s'applique, sans choix du joueur affecté.
+- **Dépendances de couches (613.8) :** seulement une approximation à un niveau, du type « une source qui perd toutes ses capacités n'applique plus ses statiques ».
+- **Blessures « réparties » (Chandra −4) :** la répartition est choisie à la résolution, et non au lancement (601.2d).
+- **Aura mise en jeu sans être lancée :** elle va au cimetière, faute du choix de l'objet enchanté (303.4f).
+- **Fishing Pole :** la capacité accordée à la créature équipée est portée par l'Équipement (coût « engager la créature équipée »).
+- **« Au début de l'étape de fin, sacrifiez ce jeton » :** modélisé par une capacité retardée plutôt que par une capacité du jeton.
+- **Etali :** les cartes exilées se lancent gratuitement, sans restriction de timing, après la résolution du déclencheur (et non pendant), jusqu'à la fin du tour.
+- **Thousand-Year Storm :** les copies gardent les cibles du sort d'origine (pas de nouveau choix de cibles).
+- **Coûts retirés automatiquement :**
+  - Quilled Greatwurm : les six marqueurs sont retirés d'abord des créatures qui en ont le plus ;
+  - Lathril : les Elfes à engager sont choisis automatiquement.
+- **Mana restreint (Giada, Secluded Courtyard) :** utilisé seulement par le paiement automatique, pour un sort ou une capacité autorisés ; ces sources ne se tapent pas à la main.
+- **Muldrotha :** une carte à plusieurs types de permanent utilise automatiquement le premier type encore libre.
+- **Abyssal Harvester :** les autres jetons Cauchemar sont exilés avant la création de la copie (même résultat).
+- **Choix « en arrivant » sans résolution** (permanent remis en jeu par un effet) : choix par défaut, le type ou la couleur les plus présents chez le contrôleur.
+- **Curator of Destinies :** en multijoueur, c'est l'adversaire suivant qui choisit la pile.
+- **Tinybones :** seuls les sorts avec un marqueur de butin sont jouables, pas les terrains.
+- **Soulstone Sanctuary** (« tous les types de créature ») : tout sous-type sauf ceux de terrain, d'artefact et d'enchantement connus.
+- **Équipage :** les créatures engagées sont choisies automatiquement.
+- **Ramos, Three Tree Mascot :** leurs capacités de mana sont des capacités activées qui passent par la pile.
+- **Mana « déclencheur » (haste, copie du sort) :** appliqué seulement quand ce mana est dépensé par le paiement automatique.
+- **Bolt Bend :** la nouvelle cible est choisie à la résolution.
+- **Demonic Pact :** les modes déjà choisis sont mémorisés sur le permanent (perdus s'il change de zone, ce qui est conforme).
+- **Ordeal of Nylea :** sacrifiée directement, sans déclencheur séparé.
+- **Dégager jusqu'à N terrains :** les terrains sont choisis automatiquement.
+- **Prolifération (Tam) :** choix automatique. Tous les marqueurs de vos permanents ; chez les adversaires, seulement les marqueurs -1/-1, d'étourdissement et de poison.
+- **Mabel, Bitter Recluse :** les marqueurs retirés sont choisis automatiquement (loyauté, puis +1/+1, puis les autres).
+- **Liliana the Faultless, Massacre Girl :** mêmes approximations que plus haut (défausse à la résolution ; blessures non de combat de vos seules sources).
+- **Empower Jace avec plusieurs jetons Jace :** les marqueurs vont sur le premier jeton (pas de choix).
+- **Contempler un Jace :** toujours fait quand c'est possible (Countersculpt, Theorist's Sanctum), sans révéler la carte.
+- **Codie, Ravenous Codex :** la copie du sort préparé garde ses cibles (pas de nouveau choix).
+- **Hallway Heckler :** la défausse est faite à la résolution, et non comme coût.
+- **Convocation :** une créature qui a une capacité de mana ne sert pas à la convocation (elle paie par sa capacité de mana).
+- **Master of Barbs :** seules les blessures non de combat infligées par vos sources (sorts compris) comptent, pas celles d'une source adverse.
+- **Something Worth Saving :** les quatre cartes sont regardées puis mises au cimetière, ce qui n'est pas une meule au sens strict (pas de déclencheur de meule).
+- **Solitary Cell, Murmuring Volume :** la carte défaussée l'est à la résolution, et non comme coût d'activation.
+- **Extrapolate the Impossible :** ne fait rien, comme sur Arena en BO1 (pas de cartes « hors du jeu »).
+- **Chandra, Torch of Defiance +1 :** la carte exilée est lançable ce tour-ci (et non immédiatement) ; les 2 blessures ne sont infligées que si c'est un terrain.
+- **Chandra, Chill of Compliance +1 ({U}) :** mana sans restriction (pas de réserve de mana restreint).
+- **Fblthp, Impossibly Lost :** une seule fois par tour (et non une fois par étape de blessures de combat).
+- **Garruk, Veiled Butcher −3 :** pioche si le total de cartes non-terrain défaussées est inférieur à deux (exact à 2 joueurs, approché en multijoueur).
+- **Garruk, Curse Breaker −4, Jace, Reality Sculptor −3 :** emblèmes temporaires ; Garruk utilise « chaque fois que vous attaquez ».
+- **Hapatra, the Desert Fang :** une seule cible adverse, même en multijoueur.
+- **Seasoned Cryomancer :** le nombre de cibles est choisi d'après les cartes non-terrain défaussées (1 ou 2), via deux déclencheurs réflexifs exclusifs.
+- **Gallia, Tragic Host :** la carte exilée du cimetière est choisie automatiquement (la moins chère).
+- **Molten Tide :** le {R} supplémentaire s'ajoute à toute capacité de mana « {T} » d'une Montagne, quelle que soit la couleur produite.
+- **Warrior's Blades :** la légalité de l'Équiper suppose la meilleure réduction possible ; le coût payé dépend de la cible choisie.
+- **Uldaros Theorix :** les copies choisies (valeur de mana totale 6 ou moins) se lancent gratuitement après la résolution du déclencheur, à tout moment ce tour-ci, et non pendant la résolution (comme Etali).
+- **Emrakul, the Exigent Doom :** la capacité accordée au terrain cesse dès que la carte quitte l'exil, de quelque façon que ce soit (et pas seulement quand elle est lancée).
+- **Evendo, Uthros (Planètes 12+) :** leurs capacités de mana à coût ({G}, {T}) passent par la pile (comme Ramos).
+- **Terrains choc mis en jeu par un effet** (et non joués) : ils arrivent engagés, sans proposer de payer 2 points de vie.
+- **Gene Pollinator :** le permanent engagé en plus est choisi automatiquement (d'abord un permanent sans capacité de mana).
+- **Emissary Escort :** le bonus « +X/+0 » est une force de base variable (un effet qui fixe la force l'écrase).
+- **Terrasymbiosis :** se déclenche au plus une fois par tour (même si l'on refuse de piocher), pour tout marqueur +1/+1 mis sur vos créatures, qu'importe qui le met.
+- **Roving Actuator :** la copie se lance après la résolution, à tout moment ce tour-ci (comme Uldaros Theorix).
+- **Syr Vondam, Sunstar Exemplar :** « tant que sa force est de 4 ou plus » est lu dans ses dernières informations connues.
+- **The Endstone :** « la moitié de vos points de vie de départ » vaut 10 (Standard, 20 PV).
+- **The Dominion Bracelet :** la capacité accordée à la créature équipée est portée par l'Équipement (comme Fishing Pole). Une IA qui contrôle le tour d'un autre joueur se contente des décisions par défaut (passer, ne pas attaquer).
+- **Close Encounter :** la créature ou la carte exilée « choisie » est une cible.
+- **Chorale of the Void :** la carte vient du cimetière d'un adversaire quelconque (pas forcément du joueur défenseur en multijoueur).
+- **Moonlit Meditation :** les copies sont toujours créées (pas de choix « vous pouvez »).
+- **Dyadrine, Synthesis Amalgam :** les deux créatures dont on retire un marqueur sont choisies automatiquement (celles qui en ont le plus).
+- **Molt Tender :** sa capacité de mana à coût « exilez une carte de votre cimetière » passe par la pile (comme Ramos).
+- **Caradora, Heart of Alacria :** le marqueur supplémentaire ne vaut que pour vos créatures (Véhicules animés compris).
+- **Pyrewood Gearhulk :** « les blessures ne peuvent pas être prévenues ce tour-ci » n'est pas modélisé.
+- **Webstrike Elite :** la cible est un artefact ou enchantement quelconque, détruit seulement si sa valeur de mana vaut X.
+- **Chorale, Grim Javelineer :** « quand cette créature meurt ce tour-ci » est une capacité accordée jusqu'à la fin du tour.
+- **Vitesse :** l'augmentation (« quand un adversaire perd des PV pendant votre tour ») est immédiate, sans passer par la pile.
+- **Boommobile :** les quatre mana ne sont pas restreints aux capacités.
+- **Loot, the Pathfinder :** sa capacité d'exhaust de mana passe par la pile (comme Ramos).
+- **Thunderhead Gunner, Avishkar Raceway :** la carte est défaussée à la résolution, et non comme coût (comme Solitary Cell).
+- **Cursecloth Wrappings :** l'embaumement accordé est payé tout de suite (en rituel) et le jeton garde les couleurs de la carte.
+- **Gonti, Night Minister :** la carte est exilée face visible, jouable par le contrôleur de Gonti, sans mana de n'importe quel type.
+- **Radiant Lotus :** c'est son contrôleur qui ajoute le mana (pas de joueur ciblé) ; les artefacts sacrifiés sont choisis automatiquement (la source en dernier).
+- **Winter, Cursed Rider :** les X cartes d'artefact exilées sont choisies automatiquement.
+- **Full Throttle :** deux combats supplémentaires après le combat normal (et non juste après la phase principale).
+- **Oviya :** le piétinement vaut pour vos créatures attaquantes (quel que soit le joueur attaqué).
+- **Déclencheurs « une ou plusieurs … » (Ketramose, Dredger's Insight) :** fusionnés tant qu'une occurrence attend d'être mise sur la pile.
+- **Hollow Marauder :** une carte piochée si au moins un adversaire ciblé n'a pas défaussé de carte de VM 4 ou plus.
+- **Giant Beaver, Rambling Possum :** la créature qui reçoit le marqueur est ciblée parmi les vôtres ; Rambling Possum ne renvoie pas les créatures qui l'ont montée.
+- **Arid Archway :** le terrain renvoyé est ciblé. **Conduit Pylons :** la capacité de mana à coût passe par la pile.
+- **Marqueurs de capacité :** ils s'appliquent après les autres effets de couche 6.
+- **Fortune, Calamity, The Gitrog :** toutes les créatures qui ont monté la Monture sont concernées (et non une au plus, au choix).
+- **Fblthp, Lost on the Range :** comploter la carte du dessus passe par une capacité (sur la pile) qui paie son coût de mana.
+- **Kaervek, Tinybones the Pickpocket, Kellan the Kid :** la carte se lance plus tard dans le tour (et non pendant la résolution) ; Kaervek fait perdre 2 PV même si la copie n'est pas lancée ; Kellan met le permanent sur le champ de bataille au lieu de le lancer.
+- **Obeka :** les étapes d'entretien supplémentaires ne font que déclencher les capacités « au début de votre entretien ».
+- **Riku of Many Paths :** un seul mode, quel que soit le nombre de modes du sort. **Resilient Roadrunner :** pas de protection contre les Coyotes.
+- **Great Train Heist :** le combat supplémentaire a lieu après le combat normal ; les Trésors viennent des blessures infligées à n'importe quel adversaire.
+- **Collector's Cage (hideaway) :** la carte est exilée face visible. **Memory Vessel :** on peut encore jouer les cartes de sa main. **Sword of Wealth and Power :** la protection devient une défense talismanique contre les éphémères. **Transmutation Font :** les trois jetons sacrifiés n'ont pas à avoir des noms différents. **Grand Abolisher :** les capacités de mana ne sont pas bloquées.
+- **Blessures de combat groupées** (« une ou plusieurs créatures… ») : une fois par étape de blessures et par joueur blessé.
+- **Demon Wall :** « a un marqueur » est lu comme « a un marqueur +1/+1 ».
+- **Haste Magic, Opera Love Song :** les cartes exilées sont jouables jusqu'à la fin de votre prochain tour (et non jusqu'à votre prochaine étape de fin).
+- **Freya Crescent :** son mana sert à toute capacité d'un Équipement, pas seulement à Équiper.
+- **Sorceress's Schemes :** seulement une carte d'éphémère ou de rituel du cimetière (pas une carte exilée avec flashback).
+- **Vayne's Treachery, Chocobo Kick :** le permanent du kicker est choisi automatiquement (le moins cher, jeton d'abord).
+- **Quistis Trepe, Seifer Almasy :** le sort se lance après la résolution, à tout moment ce tour-ci (comme Etali).
+- **The Lunar Whale :** « regarder la carte du dessus à tout moment » n'est pas affiché.
+- **Tellah, Great Sage :** trois déclenchements séparés (Héros, pioche, sacrifice). **Ultimecia, Sidequest: Raise a Chocobo :** l'effet « quand elle se transforme » est fait par l'effet qui la transforme.
+- **Quina, Qu Gourmet :** pas de Grenouille pour les jetons copies.
+- **Vivi Ornitier :** le mana est d'une seule couleur ({U} ou {R}), pas une combinaison.
+- **Garnet, Princess of Alexandria :** un marqueur de savoir de chacune de vos Sagas, ou d'aucune.
+- **Choco, Seeker of Paradise :** les cartes regardées sont meulées, puis une va en main et les terrains sur le champ de bataille.
+- **Memories Returning :** vous choisissez les trois cartes gardées (l'adversaire ne choisit pas celles du dessous).
+- **Esper Terra :** trois marqueurs de savoir sur la copie de Saga, ou aucun.
+- **Sin, Spira's Punishment :** six copies au plus par déclenchement.
+- **Zack Fair :** tous les Équipements qui lui étaient attachés sont déplacés (et non un seul).
+- **Stolen Uniform, Unexpected Request :** l'Équipement est détaché à l'étape de fin ; pour Unexpected Request, il est ciblé au lancement.
+- **Vaan, Buster Sword :** on décide tout de suite, et la carte se lance ensuite, à tout moment ce tour-ci. Avec Buster Sword, la carte choisie est gratuite (et non « peut être » gratuite).
+- **Ultima, Origin of Oblivion :** l'effet sur les terrains avec un marqueur de fléau cesse si Ultima quitte le champ de bataille.
+- **Zenos, Shinryu :** la créature choisie est une cible ; l'adversaire choisi est le premier qui perd la partie.
+- **Traveling Chocobo, The Lunar Whale :** la carte du dessus n'est pas montée à leur contrôleur.
+- **Zell Dincht :** le terrain renvoyé est ciblé (comme Arid Archway).
+- **The Earth Crystal :** tous les marqueurs mis sur vos créatures sont doublés, pas seulement les marqueurs +1/+1.
+- **Rydia, Summoner of Mist :** la Saga ciblée a une valeur de mana d'au plus X (et non exactement X).
+- **Beatrix, Loyal General :** tous vos Équipements ou aucun (pas de choix un par un).
+- **Lightning, Security Sergeant :** la carte reste jouable tant que vous contrôlez une créature nommée Lightning, Security Sergeant.
+- **Sidequest: Raise a Chocobo :** la recherche de terrain de Black Chocobo (« quand il se transforme ») est faite par l'effet qui le transforme.
+- **Summoner's Grimoire :** le joueur choisit d'abord parmi les cartes de créature non-enchantement ; s'il n'en prend aucune, il peut mettre une créature-enchantement engagée et attaquante.
+- **Capital City, Starting Town :** leurs capacités de mana à coût (mana ou PV) passent par la pile (comme Ramos).
+- **Légalité Standard :** instantané des légalités Scryfall au moment de l'import (`legalities.standard` dans `data/<set>.json`). Après une rotation ou une annonce de bannissement, réimporter les sets (`npm run import-cards -- <set>`).
+- **Jetons :** pas d'image (cadre texte).
