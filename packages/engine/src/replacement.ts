@@ -29,6 +29,10 @@ export interface EntersContext {
   chosen?: GameObject["chosen"];
   /** Terrain choc : les points de vie ont été payés (sinon il arrive engagé). */
   shockPaid?: boolean;
+  /** Mana dépensé pour le lancer (Dyadrine). */
+  manaSpent?: number;
+  /** Dévorer : nombre de permanents sacrifiés en arrivant. */
+  devoured?: number;
 }
 
 /**
@@ -39,6 +43,9 @@ function amountAtEntry(s: GameState, a: Amount, o: GameObject, ctx: EntersContex
   if (typeof a === "number") return a;
   if (a.kind === "x") return ctx.x ?? 0;
   if (a.kind === "kicked") return ctx.kicked ? a.yes : a.no;
+  if (a.kind === "manaSpent") return ctx.manaSpent ?? 0;
+  // Bioengineered Future : terrains arrivés ce tour-ci sous le contrôle de la source.
+  if (a.kind === "landsEnteredThisTurn") return s.players[o.controller]?.turnStats.landsEntered ?? 0;
   if (a.kind === "maxPower") {
     // « la plus grande force parmi les autres créatures que vous contrôlez » (Prime Speaker Zegana)
     const f = withChosen(a.filter, o);
@@ -111,6 +118,9 @@ export function applyEntersReplacements(s: GameState, o: GameObject, ctx: Enters
   // 614.12 : « en arrivant, choisissez… » (le choix vient de la résolution, sinon choix par défaut).
   const choose = s.defs[o.defId]?.chooseOnEnter;
   if (choose) o.chosen = ctx.chosen ?? defaultChoice(s, o, choose);
+  // 702.82 : dévorer N (les permanents ont été sacrifiés pendant la résolution).
+  const devour = s.defs[o.defId]?.devour;
+  if (devour && ctx.devoured) changeCounters(s, o, P1P1, devour.n * ctx.devoured);
   // Terrain choc : engagé, sauf si les points de vie ont été payés en le jouant (mis en jeu par un effet : engagé).
   if (s.defs[o.defId]?.shockLand && !ctx.shockPaid) o.tapped = true;
   // 714.3a : une Saga arrive avec un marqueur de savoir.

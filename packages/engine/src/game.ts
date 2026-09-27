@@ -10,6 +10,7 @@ import {
   cloneState,
   collectEvents,
   createObject,
+  decider,
   emit,
   emptyPool,
   emptyTurnStats,
@@ -135,8 +136,9 @@ function expect<T extends Decision["type"]>(d: Decision, ...types: T[]): asserts
   if (!types.includes(d.type as T)) throw new RulesError(`Décision inattendue : ${d.type}`);
 }
 
-function apply(s: GameState, player: PlayerId, d: Decision): void {
+function apply(s: GameState, submitter: PlayerId, d: Decision): void {
   if (d.type === "concede") {
+    const player = submitter;
     const pl = s.players[player];
     if (pl && !pl.lost) {
       emit({ type: "lose", player, reason: "concede" });
@@ -146,7 +148,9 @@ function apply(s: GameState, player: PlayerId, d: Decision): void {
   }
   const p = s.pending;
   if (s.over || !p) throw new RulesError("Aucune décision attendue");
-  if (p.player !== player) throw new RulesError("Ce n'est pas à vous de décider");
+  // 722 : le joueur qui contrôle ce tour décide à la place du joueur contrôlé (la décision reste celle du joueur contrôlé).
+  if (p.player !== submitter && decider(s) !== submitter) throw new RulesError("Ce n'est pas à vous de décider");
+  const player = p.player;
 
   // La décision en attente est consommée avant d'appliquer la réponse : le gestionnaire
   // peut lui-même poser la décision suivante (défenseur suivant, cartes à remettre…).

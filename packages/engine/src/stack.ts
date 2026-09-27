@@ -1029,6 +1029,9 @@ function specsAndEffects(s: GameState, item: StackItem): { specs: TargetSpec[]; 
     if (d.chooseOnEnter && isPermanentCard(d) && !item.copy) {
       return { specs: mode?.targets ?? [], effects: [...effects, { op: "chooseOnEnter", kind: d.chooseOnEnter }] };
     }
+    if (d.devour && isPermanentCard(d)) {
+      return { specs: mode?.targets ?? [], effects: [...effects, { op: "devour", filter: d.devour.filter }] };
+    }
     return { specs: mode?.targets ?? [], effects };
   }
   // Capacité retardée, réflexive ou accordée : ses effets voyagent avec elle.
@@ -1141,6 +1144,8 @@ function finishResolution(
           castFromHand: item.fromHand,
           attachTo: d.enchant ? targets[ENCHANT_SPEC]?.[0] : undefined,
           chosen: chosenFrom(vars),
+          manaSpent: item.manaSpent,
+          devoured: Number(vars.$devoured?.[0] ?? 0),
         },
       });
       const arrived = enteredId ? s.objects[enteredId] : undefined;

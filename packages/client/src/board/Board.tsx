@@ -774,6 +774,9 @@ function ActionPanel() {
   const mine = p?.player === view.viewer && (p?.kind === "priority" || p?.kind === "declareAttackers");
   return (
     <div className="action-panel">
+      {view.controlling && (
+        <div className="control-banner">Vous contrôlez {view.players[view.controlling]?.name ?? "l'adversaire"}</div>
+      )}
       <button
         type="button"
         className={`main-button ${action.hot ? "hot" : ""}`}

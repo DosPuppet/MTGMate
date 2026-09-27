@@ -160,6 +160,8 @@ export const ref = {
   selfCard: { kind: "selfCard" } as Ref,
   linked: { kind: "linked" } as Ref,
   costSacrificed: { kind: "costSacrificed" } as Ref,
+  /** Cartes exilées par la source « jusqu'à ce qu'elle quitte le champ de bataille ». */
+  exiledWith: { kind: "exiledWith" } as Ref,
   stored: (name: string): Ref => ({ kind: "stored", name }),
   /** « chaque [créature] que [le joueur désigné] contrôle » */
   permanentsOf: (player: Ref, filter: ObjectFilter): Ref => ({ kind: "permanentsOf", player, filter }),
@@ -264,6 +266,15 @@ export const fx = {
     amount: n,
     store,
   }),
+  /** Chaque joueur désigné meule la moitié de sa bibliothèque, arrondie à l'inférieur. */
+  millHalf: (who: Ref): Effect => ({ op: "mill", who, amount: 0, halfLibrary: true }),
+  removeCounterFromEach: (filter: ObjectFilter, n: number, store?: string, kind = "+1/+1"): Effect => ({
+    op: "removeCounterFromEach",
+    filter,
+    n,
+    kind,
+    store,
+  }),
   scry: (n: Amount): Effect => ({ op: "scry", amount: n }),
   surveil: (n: Amount, toHand?: { filter?: ObjectFilter; maxManaValue?: Amount }): Effect => ({
     op: "surveil",
@@ -280,13 +291,14 @@ export const fx = {
       store?: string;
       random?: boolean;
       storeFilter?: ObjectFilter;
+      unlessFilter?: ObjectFilter;
     } = {},
   ): Effect => ({ op: "discard", who, amount: n, ...opts }),
   sacrifice: (
     who: Ref,
     filter: ObjectFilter,
     n: Amount = 1,
-    opts: { optional?: boolean; store?: string; greatestManaValue?: boolean } = {},
+    opts: { optional?: boolean; store?: string; greatestManaValue?: boolean; exile?: boolean } = {},
   ): Effect => ({
     op: "sacrifice",
     who,
@@ -372,6 +384,8 @@ export const fx = {
   noLegendRuleThisTurn: { op: "noLegendRuleThisTurn" } as Effect,
   exileUntil: (filter: ObjectFilter, store: string): Effect => ({ op: "exileUntil", filter, store }),
   setLife: (amount: Amount, who: Ref = ref.you): Effect => ({ op: "setLife", who, amount }),
+  /** « Vous contrôlez [le joueur] pendant son prochain tour » (722). */
+  controlNextTurn: (who: Ref): Effect => ({ op: "controlNextTurn", who }),
   exileFromOwnHand: (who: Ref, store: string): Effect => ({ op: "exileFromOwnHand", who, store }),
   tapOrSacrifice: { op: "tapOrSacrifice" } as Effect,
   /** Manifester (sans garde) ou envelopper d'une cape (`ward`) les cartes désignées. */
@@ -515,7 +529,15 @@ export const fx = {
     zone: "graveyard" | "hand",
     filter: ObjectFilter,
     to: MoveSpec,
-    opts: { count?: Amount; min?: number; prompt?: string; excludeStored?: string } = {},
+    opts: {
+      count?: Amount;
+      min?: number;
+      prompt?: string;
+      excludeStored?: string;
+      maxManaValue?: Amount;
+      store?: string;
+      pool?: Ref;
+    } = {},
   ): Effect => ({
     op: "pickFromZone",
     zone,
@@ -525,6 +547,9 @@ export const fx = {
     min: opts.min,
     prompt: opts.prompt,
     excludeStored: opts.excludeStored,
+    maxManaValue: opts.maxManaValue,
+    store: opts.store,
+    pool: opts.pool,
   }),
   topOrBottom: (what: Ref, topDamage?: number): Effect => ({ op: "libraryTopOrBottom", what, topDamage }),
   /** « … perd N points de vie à moins de défausser une carte / sacrifier un permanent » */
@@ -880,6 +905,7 @@ export const cond = {
   fullyUnlocked: { kind: "fullyUnlocked" } as Condition,
   /** Une seule créature attaque, et elle attaque un joueur. */
   attackingAlone: { kind: "attackingAlone" } as Condition,
+  playerWithoutCreatures: { kind: "playerWithoutCreatures" } as Condition,
   opponentDealtNoncombatDamageLastTurn: { kind: "opponentDealtNoncombatDamageLastTurn" } as Condition,
   spellCastFromHand: { kind: "spellCastFromHand" } as Condition,
   spellCastFromGraveyard: { kind: "spellCastFromGraveyard" } as Condition,

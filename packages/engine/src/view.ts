@@ -7,7 +7,7 @@ import { copiedDefId } from "./layers";
 import { legalActions } from "./legal";
 import { costToText } from "./mana";
 import { canPlayLand, castTerms } from "./stack";
-import { chars, isSummoningSick, obj } from "./state";
+import { chars, decider, isSummoningSick, obj } from "./state";
 import { playerStatic } from "./statics";
 import { attackableDefenders, attackCandidates, blockCandidates } from "./turn";
 import type {
@@ -130,6 +130,8 @@ export interface GameView {
   /** Tous les autres joueurs (y compris éliminés), dans l'ordre du tour à partir du suivant. */
   opponents: PlayerId[];
   turn: { number: number; active: PlayerId; step: Step; landsPlayed: number };
+  /** 722 : joueur dont le contrôleur prend la décision en cours (sa main remplace alors `hand`). */
+  controlling?: PlayerId;
   players: Record<PlayerId, PlayerView>;
   hand: ObjectView[];
   battlefield: ObjectView[];
@@ -263,18 +265,21 @@ export function projectView(s: GameState, viewer: PlayerId): GameView {
   });
 
   let pending: PendingView | null = null;
-  const p = s.pending;
+  // 722 : le joueur qui contrôle le tour voit la décision comme la sienne (options du joueur contrôlé).
+  const actor = decider(s);
+  const p = s.pending ? { ...s.pending, player: actor ?? s.pending.player } : null;
+  const who = s.pending?.player ?? viewer;
   if (p) {
     const mine = p.player === viewer;
     switch (p.kind) {
       case "priority":
-        pending = mine ? { ...p, actions: legalActions(s, viewer) } : { ...p };
+        pending = mine ? { ...p, actions: legalActions(s, who) } : { ...p };
         break;
       case "declareAttackers":
-        pending = mine ? { ...p, candidates: attackCandidates(s, viewer), defenders: attackableDefenders(s, viewer) } : { ...p };
+        pending = mine ? { ...p, candidates: attackCandidates(s, who), defenders: attackableDefenders(s, who) } : { ...p };
         break;
       case "declareBlockers":
-        pending = mine ? { ...p, candidates: blockCandidates(s, viewer) } : { ...p };
+        pending = mine ? { ...p, candidates: blockCandidates(s, who) } : { ...p };
         break;
       case "choice": {
         if (!mine) {
@@ -299,7 +304,9 @@ export function projectView(s: GameState, viewer: PlayerId): GameView {
     })(),
     turn: { number: s.turn.number, active: s.turn.active, step: s.turn.step, landsPlayed: s.turn.landsPlayed },
     players,
-    hand: (s.players[viewer]?.hand ?? []).map((id) => objectView(s, id)),
+    // Pendant un tour contrôlé, le contrôleur voit et joue la main du joueur contrôlé quand il décide pour lui.
+    hand: (s.players[actor === viewer && who !== viewer ? who : viewer]?.hand ?? []).map((id) => objectView(s, id)),
+    controlling: actor === viewer && who !== viewer ? who : undefined,
     battlefield: s.battlefield.map((id) => withFaceDownCard(s, objectView(s, id), viewer)),
     stack,
     exile: s.exile.map((id) => objectView(s, id)),

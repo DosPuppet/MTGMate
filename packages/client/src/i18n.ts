@@ -170,6 +170,9 @@ export function describeEvents(
       case "endTurn":
         add("Le tour se termine.", "info");
         break;
+      case "turnControl":
+        add(`${who(e.by)} ${e.by === me ? "contrôlez" : "contrôle"} le tour de ${whom(e.player)}.`, "info");
+        break;
       case "attach":
         add(`${name(e.defId)} est attaché à ${name(e.toDefId)}.`, "info");
         break;

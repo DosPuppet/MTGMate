@@ -23,6 +23,7 @@ Ce fichier sert au suivi du projet entre les sessions. Le README présente le pr
 | Jeu en ligne : duel Standard à 2 (serveur local, code de salon, corde, reconnexion, revanche) | ✅ |
 | Déploiement : pm2 derrière nginx sur un VPS (`docs/deploiement.md`, `deploy/`) | ✅ documenté et testé en local (pm2, nginx) |
 | **Reality Fracture (FRA, « Réalité fracturée »)** | ✅ **279 / 279** (lots 0 à G, dont 4 decks préconstruits ; les 3 dernières cartes au lot 0.1 de la branche `standard`) |
+| **Edge of Eternities (EOE)** | ✅ **260 / 260** (lots A à D, branche `standard`) |
 | Autres extensions Standard | branche `standard`, plan par lots ci-dessous |
 
 ### Branche `standard` : tout le Standard
@@ -41,7 +42,7 @@ Objectif : les 18 extensions Standard restantes (environ 4 360 cartes), **100 % 
   - 0.9 mots-clés communs ✅ ;
   - 0.10 performances ✅.
 - **Phase 0 terminée.**
-- **Phase 1, extensions** (lots A/B/C, D pour FIN) : EOE, DFT, OTJ+BIG, BLB, TDM, WOE, SOS, ECL, TLA, SPM, MSH, TMT, HOB, MKM, DSK, LCI, FIN.
+- **Phase 1, extensions** (lots A/B/C, D pour FIN) : EOE ✅, DFT, OTJ+BIG, BLB, TDM, WOE, SOS, ECL, TLA, SPM, MSH, TMT, HOB, MKM, DSK, LCI, FIN.
 - **Phase 2 :** decks Standard multi-extensions, puis clôture (5 158 / 5 158).
 
 Lot 0.1 : le moteur gagne :
@@ -173,7 +174,16 @@ Lot 0.10 (performances, pool complet de 5 174 cartes) :
   - une cible « carte exilée » (`TargetFilter.exiled`), la garde accordée (`wardAbility`, la garde de la carte n'est lue que si Scryfall la donne en mot-clé) ;
   - des capacités retardées à l'étape de fin de votre prochain tour et à la fin du combat (`fx.delayedAt`) ;
   - « [ce joueur] peut… ; s'il ne le fait pas » (`fx.mayForStore`), « votre total de points de vie devient N », « meurt ou est exilée » (avec force minimale), la condition « vous avez attaqué avec un Vaisseau » (`cond.attackedWith`).
-- Lot D (19 cartes) : Anticausal Vestige, Tezzeret, Cruel Captain, Pinnacle Starcage, Scout for Survivors, Moonlit Meditation, Chorale of the Void, Sothera, the Supervoid, Xu-Ifit, Zero Point Ballad, Terminal Velocity, Close Encounter, Famished Worldsire, Loading Zone, Alpharael, Dreaming Acolyte, Dyadrine, Mutinous Massacre, Ragost, Singularity Rupture, The Dominion Bracelet.
+- Lot D ✅ (**260/260**) : les 19 dernières cartes (`eoe/unique.ts`). Le moteur gagne :
+  - **le contrôle du tour d'un adversaire** (722, The Dominion Bracelet) : `GameState.turnControl`, `decider(s)` donne le joueur qui décide ; `submit` accepte sa décision au nom du joueur contrôlé ; l'hôte et le serveur (horloge) la lui demandent ; sa vue présente la décision comme la sienne, avec la main du joueur contrôlé (`GameView.controlling`, bandeau « Vous contrôlez … ») ;
+  - dévorer (`CardDef.devour`, lu dans le texte : sacrifices choisis pendant la résolution) ;
+  - le doublement de marqueurs filtré (`countersFilter`), les jetons remplacés par des copies du permanent enchanté ;
+  - les cibles de valeur de mana totale limitée (`maxTotalManaValue`), les filtres de parité et « endurance ≤ X » ;
+  - « chaque adversaire choisit une créature et l'exile » (`sacrifice` avec `exile`), les cartes exilées par la source (`ref.exiledWith`) ;
+  - `pickFromZone` parmi des objets mémorisés ou liés (`pool`), avec valeur de mana maximale variable ;
+  - « défaussez deux cartes à moins de défausser une carte d'artefact », la meule de la moitié de la bibliothèque ;
+  - un permanent mis en jeu attaquant ; la condition « un joueur ne contrôle aucune créature » ;
+  - les remplacements d'arrivée s'appliquent aussi aux jetons créés, et savent lire le mana dépensé et les terrains arrivés ce tour-ci.
 - Test de fumée : l'adversaire du scénario a un Goblin Firebomb en main (cible des contresorts d'artefact).
 
 ### Reality Fracture (FRA)
@@ -311,6 +321,11 @@ Réimpressions : défenses talismaniques contre une couleur, changelin, restrict
 - **Roving Actuator :** la copie se lance après la résolution, à tout moment ce tour-ci (comme Uldaros Theorix).
 - **Syr Vondam, Sunstar Exemplar :** « tant que sa force est de 4 ou plus » est lu dans ses dernières informations connues.
 - **The Endstone :** « la moitié de vos points de vie de départ » vaut 10 (Standard, 20 PV).
+- **The Dominion Bracelet :** la capacité accordée à la créature équipée est portée par l'Équipement (comme Fishing Pole). Une IA qui contrôle le tour d'un autre joueur se contente des décisions par défaut (passer, ne pas attaquer).
+- **Close Encounter :** la créature ou la carte exilée « choisie » est une cible.
+- **Chorale of the Void :** la carte vient du cimetière d'un adversaire quelconque (pas forcément du joueur défenseur en multijoueur).
+- **Moonlit Meditation :** les copies sont toujours créées (pas de choix « vous pouvez »).
+- **Dyadrine, Synthesis Amalgam :** les deux créatures dont on retire un marqueur sont choisies automatiquement (celles qui en ont le plus).
 - **Blessures de combat groupées** (« une ou plusieurs créatures… ») : une fois par étape de blessures et par joueur blessé.
 - **Légalité Standard :** instantané des légalités Scryfall au moment de l'import (`legalities.standard` dans `data/<set>.json`). Après une rotation ou une annonce de bannissement, réimporter les sets (`npm run import-cards -- <set>`).
 - **Jetons :** pas d'image (cadre texte).

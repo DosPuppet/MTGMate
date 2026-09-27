@@ -17,6 +17,7 @@ export {
   cloneState,
   createObject,
   creaturesControlledBy,
+  decider,
   hasKeyword,
   isAlive,
   isCreature,

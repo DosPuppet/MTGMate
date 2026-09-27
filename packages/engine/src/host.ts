@@ -7,6 +7,7 @@
 import { type AutopilotSettings, autopilotDecision, DEFAULT_AUTOPILOT } from "./autopilot";
 import { submit } from "./game";
 import { RulesError } from "./stack";
+import { decider } from "./state";
 import { requiredBlocks } from "./turn";
 import type { Decision, GameEvent, GameState, PendingDecision, PlayerId } from "./types";
 import { filterEvents, type GameView, projectView } from "./view";
@@ -86,6 +87,8 @@ export class GameHost {
 
   /** Décision d'un humain. Renvoie un message d'erreur si elle est illégale. */
   async submitHuman(player: PlayerId, d: Decision): Promise<string | null> {
+    // 722 : pendant un tour contrôlé, seul le contrôleur décide pour le joueur contrôlé.
+    if (d.type !== "concede" && this.state.pending && decider(this.state) !== player) return "Ce n'est pas à vous de décider";
     try {
       this.apply(player, d);
     } catch (e) {
@@ -104,16 +107,19 @@ export class GameHost {
       for (let guard = 0; guard < 10_000; guard++) {
         const p = this.state.pending;
         if (!p || this.state.over) break;
-        const agent = this.opts.agents?.[p.player];
+        // 722 : le joueur qui décide (le contrôleur du tour, le cas échéant).
+        const actor = decider(this.state) ?? p.player;
+        const agent = this.opts.agents?.[actor];
         if (agent) {
           let d: Decision;
           try {
-            d = agent(this.state, p.player);
-            this.apply(p.player, d);
+            // Une IA qui contrôle le tour d'un autre joueur se contente des décisions par défaut (passer, ne pas attaquer).
+            d = actor === p.player ? agent(this.state, p.player) : fallbackDecision(this.state, p);
+            this.apply(actor, d);
           } catch (e) {
             console.warn("Décision IA illégale, repli :", e);
             d = fallbackDecision(this.state, p);
-            this.apply(p.player, d);
+            this.apply(actor, d);
           }
           // On laisse à l'humain le temps de voir les actions visibles de l'IA.
           if (d.type !== "pass" && d.type !== "keep" && d.type !== "tapForMana" && this.opts.aiDelay && this.opts.sleep) {
@@ -122,9 +128,9 @@ export class GameHost {
           }
           continue;
         }
-        const auto = autopilotDecision(this.state, p.player, this.settings[p.player] ?? DEFAULT_AUTOPILOT);
+        const auto = autopilotDecision(this.state, p.player, this.settings[actor] ?? DEFAULT_AUTOPILOT);
         if (!auto) break;
-        this.apply(p.player, auto);
+        this.apply(actor, auto);
       }
     } finally {
       this.running = false;

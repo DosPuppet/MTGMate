@@ -11,7 +11,19 @@
 import { ask } from "./choices";
 import { boardAmount } from "./effects";
 import { RulesError } from "./errors";
-import { apnapOrder, chars, emit, newId, obj, onBattlefield, opponentsOf, type RulesEvent, rulesEvent, snapshot } from "./state";
+import {
+  apnapOrder,
+  chars,
+  emit,
+  isCreature,
+  newId,
+  obj,
+  onBattlefield,
+  opponentsOf,
+  type RulesEvent,
+  rulesEvent,
+  snapshot,
+} from "./state";
 import { playerStatic } from "./statics";
 import { legalTargets, matchesObjectFilter, matchesView, validateTargets, withChosen } from "./targets";
 import type {
@@ -99,6 +111,10 @@ export function simultaneously<T>(s: GameState, fn: () => T): T {
 
 export function checkCondition(s: GameState, c: Condition, controller: PlayerId, sourceId?: ObjectId): boolean {
   switch (c.kind) {
+    case "playerWithoutCreatures":
+      return s.playerOrder.some(
+        (p) => !s.players[p]?.lost && !s.battlefield.some((id) => s.objects[id]?.controller === p && isCreature(s, id)),
+      );
     case "attackedThisTurn":
       return s.turn.attacked && s.turn.active === controller && (!c.subtype || !!s.turn.attackerSubtypes?.includes(c.subtype));
     case "creatureDiedThisTurn":

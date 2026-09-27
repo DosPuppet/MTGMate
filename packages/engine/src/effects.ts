@@ -193,6 +193,11 @@ export function resolveRef(s: GameState, ctx: EffectContext, ref: Ref): string[]
     }
     case "costSacrificed":
       return ctx.sacrificed ?? [];
+    case "exiledWith":
+      return s.linkedExile
+        .filter((l) => l.sourceId === ctx.sourceId)
+        .flatMap((l) => l.cards)
+        .filter((id) => s.objects[id]?.zone === "exile");
     case "permanentsOf": {
       const players = resolveRef(s, ctx, ref.player);
       const f = { ...ref.filter, controller: undefined };
@@ -219,7 +224,9 @@ export function evalAmount(s: GameState, ctx: EffectContext, a: Amount): number 
       if (!id) return 0;
       if (onBattlefield(s, id)) return Math.max(0, chars(s, id).power);
       if (id === ctx.sourceId) return Math.max(0, ctx.sourceSnapshot.power);
-      return Math.max(0, s.lki[id]?.power ?? 0);
+      if (s.lki[id]) return Math.max(0, s.lki[id].power);
+      // Carte hors du champ de bataille (Close Encounter : carte exilée) : force imprimée.
+      return Math.max(0, s.defs[s.objects[id]?.defId ?? ""]?.power ?? 0);
     }
     case "eventAmount":
       return ctx.event?.amount ?? 0;
@@ -447,7 +454,15 @@ export function moveWithSpec(s: GameState, controller: PlayerId, id: ObjectId, s
   // Marqueurs sur une carte exilée (« exilez-la avec un marqueur de butin », Tinybones).
   if (moved && zone === "exile" && spec.counters) changeCounters(s, moved, spec.counters.kind, spec.counters.n);
   if (!moved || zone !== "battlefield") return newId_;
-  if (spec.tapped) moved.tapped = true;
+  if (spec.tapped || spec.attacking) moved.tapped = true;
+  if (spec.attacking && s.combat) {
+    // 508.4 : il attaque sans avoir été déclaré ; il attaque ce qu'attaque une créature de son contrôleur.
+    const defender =
+      s.combat.attackers.find((a) => s.objects[a.id]?.controller === moved.controller)?.defender ??
+      opponentsOf(s, moved.controller)[0] ??
+      "";
+    s.combat.attackers.push({ id: moved.id, defender, blockers: [], blocked: false });
+  }
   // « … sur le champ de bataille transformée » : le verso d'une carte recto-verso transformable.
   const back = s.defs[moved.defId]?.layout === "transform" ? s.defs[moved.defId]?.faceDefs?.[1] : undefined;
   if (spec.transformed && back) {
@@ -1052,10 +1067,12 @@ export function runEffect(s: GameState, r: Resolution, e: Effect): OpResult {
       // « une autre carte » : les objets mémorisés, reconnus par leur identité physique (ils ont changé de zone).
       const stored = (e.excludeStored ? r.vars[`$ids:${e.excludeStored}`] : undefined)?.map(String) ?? [];
       const excludedUids = new Set(stored.map((id) => s.objects[id]?.uid ?? s.lki[id]?.uid).filter(Boolean));
-      const pool = (s.players[ctx.controller]?.[e.zone] ?? []).filter(
+      const maxMv = e.maxManaValue !== undefined ? evalAmount(s, ctx, e.maxManaValue) : undefined;
+      const pool = (e.pool ? resolveRef(s, ctx, e.pool) : (s.players[ctx.controller]?.[e.zone] ?? [])).filter(
         (id) =>
+          !!s.objects[id] &&
           !excludedUids.has(s.objects[id]?.uid) &&
-          matchesCard(s, ctx.controller, id, { ...e.filter, controller: undefined }, ctx.sourceId),
+          matchesCard(s, ctx.controller, id, { ...e.filter, controller: undefined, maxManaValue: maxMv }, ctx.sourceId),
       );
       const count = Math.min(evalAmount(s, ctx, e.count), pool.length);
       if (count <= 0) return;
@@ -1082,7 +1099,8 @@ export function runEffect(s: GameState, r: Resolution, e: Effect): OpResult {
         }
         picked = answer.map(String);
       }
-      for (const id of picked) moveWithSpec(s, ctx.controller, id, e.to);
+      const moved = picked.map((id) => moveWithSpec(s, ctx.controller, id, e.to)).filter((x): x is string => !!x);
+      if (e.store) r.vars[`$ids:${e.store}`] = moved;
       return;
     }
     case "libraryTopOrBottom": {
@@ -1343,7 +1361,8 @@ export function runEffect(s: GameState, r: Resolution, e: Effect): OpResult {
       let matching = 0;
       const f = e.store?.filter;
       for (const p of resolveRef(s, ctx, e.who)) {
-        for (const id of (s.players[p]?.library ?? []).slice(0, n)) {
+        const library = s.players[p]?.library ?? [];
+        for (const id of library.slice(0, e.halfLibrary ? Math.floor(library.length / 2) : n)) {
           if (f && matchesCard(s, ctx.controller, id, { ...f, controller: undefined })) matching++;
           moveAndLog(s, id, "graveyard");
         }
@@ -1435,7 +1454,34 @@ export function runEffect(s: GameState, r: Resolution, e: Effect): OpResult {
         const hand = (s.players[p]?.hand ?? []).filter((id) => !f || matchesCard(s, p, id, { ...f, controller: undefined }));
         const chooser = e.chooser === "controller" ? ctx.controller : p;
         let chosen: string[];
-        if (hand.length <= n && !e.optional && !e.chooser) chosen = [...hand];
+        const unless = e.unlessFilter;
+        const exempt = unless ? hand.filter((id) => matchesCard(s, p, id, { ...unless, controller: undefined })) : [];
+        if (unless && exempt.length > 0) {
+          // « Défaussez deux cartes à moins de défausser une carte d'artefact » : une carte d'artefact, ou deux cartes.
+          const answer = r.vars[key(`discard-${p}`)];
+          if (!answer) {
+            return {
+              ask: {
+                player: p,
+                key: key(`discard-${p}`),
+                request: {
+                  type: "pick",
+                  intent: "discard",
+                  prompt: `Défaussez ${n} cartes, ou une seule carte correspondante`,
+                  options: [...hand],
+                  min: 1,
+                  max: Math.min(n, hand.length),
+                  suggested: [exempt[0] as string],
+                },
+              },
+            };
+          }
+          chosen = answer.map(String);
+          // Une seule carte qui ne correspond pas : il faut en défausser une autre.
+          if (chosen.length < n && !chosen.some((id) => exempt.includes(id))) {
+            chosen = [...chosen, ...hand.filter((id) => !chosen.includes(id)).slice(0, n - chosen.length)];
+          }
+        } else if (hand.length <= n && !e.optional && !e.chooser) chosen = [...hand];
         else if (hand.length === 0) chosen = [];
         else if (e.random) {
           // « … au hasard »
@@ -1523,6 +1569,15 @@ export function runEffect(s: GameState, r: Resolution, e: Effect): OpResult {
         }
         r.vars[key(`done-${p}`)] = [1];
         store(r, e.store, readVar(ctx, e.store ?? "") + chosen.length);
+        if (e.exile) {
+          // « … l'exile » : les cartes exilées sont mémorisées (pour les lier à la source).
+          const exiled = chosen
+            .filter((id) => onBattlefield(s, id))
+            .map((id) => moveWithSpec(s, ctx.controller, id, { to: "exile" }))
+            .filter((x): x is string => !!x);
+          if (e.store) r.vars[`$ids:${e.store}`] = [...(r.vars[`$ids:${e.store}`] ?? []), ...exiled];
+          continue;
+        }
         if (e.store) r.vars[`$ids:${e.store}`] = [...(r.vars[`$ids:${e.store}`] ?? []), ...chosen];
         for (const id of chosen) if (onBattlefield(s, id)) sacrifice(s, id);
       }
@@ -1558,10 +1613,37 @@ export function runEffect(s: GameState, r: Resolution, e: Effect): OpResult {
     }
     case "destroyAll": {
       let destroyed = 0;
-      for (const id of s.battlefield.filter((x) => matchesObjectFilter(s, ctx.controller, x, e.filter, ctx.sourceId))) {
-        if (destroy(s, id)) destroyed++;
+      const f = e.filter.maxToughnessX ? { ...e.filter, maxToughnessX: undefined, maxToughness: ctx.x } : e.filter;
+      const uids = new Set<string>();
+      for (const id of s.battlefield.filter((x) => matchesObjectFilter(s, ctx.controller, x, f, ctx.sourceId))) {
+        const uid = s.objects[id]?.uid;
+        if (destroy(s, id)) {
+          destroyed++;
+          if (uid !== undefined) uids.add(uid);
+        }
       }
       store(r, e.store, destroyed);
+      // Les cartes « mises au cimetière de cette façon » (Zero Point Ballad).
+      if (e.store) {
+        r.vars[`$ids:${e.store}`] = s.playerOrder.flatMap((p) =>
+          (s.players[p]?.graveyard ?? []).filter((id) => uids.has(s.objects[id]?.uid ?? "")),
+        );
+      }
+      return;
+    }
+    case "removeCounterFromEach": {
+      // Dyadrine : les N permanents qui ont le plus de marqueurs de ce type.
+      const withCounter = s.battlefield
+        .filter((x) => (s.objects[x]?.counters[e.kind] ?? 0) > 0)
+        .filter((x) => matchesObjectFilter(s, ctx.controller, x, e.filter, ctx.sourceId))
+        .sort((a, b) => (s.objects[b]?.counters[e.kind] ?? 0) - (s.objects[a]?.counters[e.kind] ?? 0));
+      const done = withCounter.length >= e.n;
+      if (done)
+        for (const id of withCounter.slice(0, e.n)) {
+          const o = s.objects[id];
+          if (o) changeCounters(s, o, e.kind, -1);
+        }
+      store(r, e.store, done ? 1 : 0);
       return;
     }
     case "addCountersAll": {
@@ -1770,6 +1852,40 @@ export function runEffect(s: GameState, r: Resolution, e: Effect): OpResult {
       const vars: Record<string, ChoiceValue[]> = {};
       for (const [k, a] of Object.entries(e.vars ?? {})) vars[`$${k}`] = [evalAmount(s, ctx, a)];
       createDelayed(s, ctx.controller, ctx.sourceId, ctx.sourceDefId, { targets: [], effects: e.effects, bound, vars }, e.at);
+      return;
+    }
+    case "controlNextTurn": {
+      const p = resolveRef(s, ctx, e.who).find((x) => isPlayer(s, x));
+      if (p) s.turnControl = { player: p, by: ctx.controller };
+      return;
+    }
+    case "devour": {
+      if (r.vars.$devoured) return;
+      const options = s.battlefield.filter(
+        (id) =>
+          s.objects[id]?.controller === ctx.controller && matchesObjectFilter(s, ctx.controller, id, e.filter, ctx.sourceId),
+      );
+      const answer = options.length ? r.vars[key("devour")] : [];
+      if (!answer) {
+        return {
+          ask: {
+            player: ctx.controller,
+            key: key("devour"),
+            request: {
+              type: "pick",
+              intent: "sacrifice",
+              prompt: `${nameOf(s, ctx.sourceId)} : dévorer (sacrifiez autant de permanents que vous voulez)`,
+              options,
+              min: 0,
+              max: options.length,
+              suggested: [],
+            },
+          },
+        };
+      }
+      const chosen = answer.map(String).filter((id) => options.includes(id));
+      for (const id of chosen) sacrifice(s, id);
+      r.vars.$devoured = [chosen.length];
       return;
     }
     case "chooseOnEnter": {

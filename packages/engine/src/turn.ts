@@ -400,6 +400,12 @@ export function endTheTurn(s: GameState, r: { item: StackItem }): void {
 }
 
 function startTurnOf(s: GameState, p: PlayerId): void {
+  // 722 : le tour contrôlé commence (ou le contrôle précédent se termine).
+  if (s.turnControl?.turn !== undefined && s.turnControl.turn !== s.turn.number) s.turnControl = undefined;
+  if (s.turnControl && s.turnControl.turn === undefined && s.turnControl.player === p) {
+    s.turnControl.turn = s.turn.number;
+    emit({ type: "turnControl", player: p, by: s.turnControl.by });
+  }
   const player = s.players[p];
   if (player) player.lastTurnStarted = s.turn.number;
   // Les statistiques « ce tour-ci » repartent de zéro pour tout le monde (on garde les blessures non de combat du tour passé).

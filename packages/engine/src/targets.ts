@@ -44,6 +44,7 @@ export function matchesView(v: LkiSnapshot, f: ObjectFilter, perspective: Player
   if (f.anyOf && !f.anyOf.some((g) => matchesView(v, g, perspective, sourceId))) return false;
   if (f.legendary !== undefined && v.supertypes.includes("Legendary") !== f.legendary) return false;
   if (f.maxToughness !== undefined && v.toughness > f.maxToughness) return false;
+  if (f.manaValueParity && ((v.manaValue ?? 0) % 2 === 0) !== (f.manaValueParity === "even")) return false;
   if (f.preparedSpell !== undefined && !!v.preparedSpell !== f.preparedSpell) return false;
   if (f.prepared !== undefined && !!v.prepared !== f.prepared) return false;
   if (f.warped !== undefined && !!v.warped !== f.warped) return false;
@@ -162,6 +163,7 @@ export function isLegalTarget(s: GameState, controller: PlayerId, spec: TargetSp
     const ex = spec.filter.exiled;
     if (!ex || o.faceDown || o.cardCopy || o.preparedFor) return false;
     if (ex.withWarp && !s.defs[o.defId]?.warp) return false;
+    if (ex.own && o.owner !== controller) return false;
     return !ex.filter || matchesCard(s, controller, id, { ...ex.filter, controller: undefined }, sourceId);
   }
   if (o && o.zone === "graveyard") {
@@ -231,6 +233,10 @@ export function validateTargets(
     if (spec.samePlayer && new Set(holders).size > 1) throw new RulesError("Les cibles doivent appartenir au même joueur");
     if (spec.differentPlayers && new Set(holders).size !== holders.length)
       throw new RulesError("Les cibles doivent être contrôlées par des joueurs différents");
+    if (spec.maxTotalManaValue !== undefined) {
+      const total = ids.reduce((n, id) => n + (snapshot(s, id).manaValue ?? 0), 0);
+      if (total > spec.maxTotalManaValue) throw new RulesError(`Valeur de mana totale supérieure à ${spec.maxTotalManaValue}`);
+    }
     result[spec.id] = ids;
   }
   return result;

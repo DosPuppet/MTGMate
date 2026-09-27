@@ -580,6 +580,16 @@ button {
 }
 
 /* Actions */
+.control-banner {
+  padding: 4px 10px;
+  border-radius: 6px;
+  background: var(--gold);
+  color: #111;
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-align: center;
+}
+
 .action-panel {
   display: flex;
   flex-direction: column;

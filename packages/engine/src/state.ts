@@ -265,7 +265,7 @@ export function tapObject(s: GameState, o: GameObject): void {
 /** Ajoute (ou retire, si n < 0) des marqueurs ; renvoie le nombre réellement modifié. */
 export function changeCounters(s: GameState, o: GameObject, kind: string, n: number): number {
   // Doubling Season : des marqueurs mis sur un permanent que vous contrôlez sont doublés (y compris en arrivant).
-  if (n > 0 && o.zone === "battlefield") n *= 2 ** doublers(s, o.controller, "counters");
+  if (n > 0 && o.zone === "battlefield") n *= 2 ** counterDoublers(s, o);
   // Yoshimaru, Beloved Companion : un marqueur +1/+1 de plus sur vos créatures.
   if (n > 0 && kind === "+1/+1" && o.zone === "battlefield" && playerStatic(s, o.controller, "plusOneCounterBonus")) n += 1;
   const before = counterCount(o, kind);
@@ -485,6 +485,15 @@ export function unlockDoor(s: GameState, id: ObjectId, door: number): void {
 }
 
 /** Salle : carte scindée dont les moitiés sont des enchantements (portes). */
+/** 722 : le joueur qui prend la décision en attente (le contrôleur du tour, s'il y en a un). */
+export function decider(s: GameState): PlayerId | undefined {
+  const p = s.pending;
+  if (!p) return undefined;
+  const tc = s.turnControl;
+  if (tc && tc.turn === s.turn.number && p.player === tc.player && !s.players[tc.by]?.lost) return tc.by;
+  return p.player;
+}
+
 export function isRoom(d: CardDef | undefined): boolean {
   return d?.layout === "split" && !!d.faceDefs?.every((f) => f.subtypes.includes("Room"));
 }
@@ -534,7 +543,7 @@ export function setPrepared(s: GameState, o: GameObject, on: boolean): void {
 
 import { bump, snapshot } from "./layers";
 import { applyEntersReplacements, type EntersContext, releaseLinkedExile, replaceDestination } from "./replacement";
-import { doublers, playerStatic } from "./statics";
+import { counterDoublers, playerStatic } from "./statics";
 import { detectTriggers } from "./triggers";
 
 export {

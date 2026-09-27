@@ -9,6 +9,7 @@ import { MULTI } from "./multi";
 import { RARES } from "./rares";
 import { RED } from "./red";
 import { STATION } from "./station";
+import { UNIQUE } from "./unique";
 import { WHITE } from "./white";
 
 export const EOE_SCRIPTS: Record<string, CardScript> = {
@@ -20,4 +21,5 @@ export const EOE_SCRIPTS: Record<string, CardScript> = {
   ...MULTI,
   ...STATION,
   ...RARES,
+  ...UNIQUE,
 };

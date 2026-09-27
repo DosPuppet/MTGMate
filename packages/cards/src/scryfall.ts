@@ -124,6 +124,14 @@ export function parseWard(text: string): CardDef["ward"] {
   return { mana: m[2] ? parseManaCost(m[2]) : undefined, life: Number(m[3]) };
 }
 
+/** Dévorer (702.82) : « Devour 2 », « Devour land 3 », « Devour artifact 1 ». */
+export function parseDevour(text: string): CardDef["devour"] {
+  const m = /^Devour(?: (land|artifact))? (\d+)/m.exec(stripReminder(text));
+  if (!m) return undefined;
+  const type = m[1] === "land" ? "Land" : m[1] === "artifact" ? "Artifact" : "Creature";
+  return { filter: { types: [type] }, n: Number(m[2]) };
+}
+
 /** Distorsion (702.185) : « Warp {1}{W} » ou « Warp—{B}, Pay 2 life. » ; « …depuis votre cimetière avec sa distorsion ». */
 export function parseWarp(text: string): CardDef["warp"] {
   const t = stripReminder(text);
@@ -617,6 +625,7 @@ function singleDef(raw: RawCard, script: CardScript | undefined, set: string): C
     flashbackDiscard: script?.flashbackDiscard,
     disguise: parseDisguise(raw.oracleText),
     warp: parseWarp(raw.oracleText),
+    devour: parseDevour(raw.oracleText),
     shockLand: /As this land enters, you may pay (\d+) life\. If you don't, it enters tapped\./.exec(raw.oracleText)
       ? Number(/you may pay (\d+) life/.exec(raw.oracleText)?.[1])
       : undefined,

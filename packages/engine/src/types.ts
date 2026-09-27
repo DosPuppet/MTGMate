@@ -146,6 +146,8 @@ export interface CardDef {
   cdaPT?: Amount;
   /** « En arrivant, choisissez un type de créature / une couleur » (614.12). */
   chooseOnEnter?: "creatureType" | "color" | "cardName";
+  /** Dévorer (702.82) : « en arrivant, sacrifiez des [terrains] ; N marqueurs +1/+1 par permanent sacrifié ». */
+  devour?: { filter: ObjectFilter; n: number };
   /** « Si cette carte devait être mise dans un cimetière de n'importe où, mélangez-la dans la bibliothèque à la place. » */
   shuffleIntoLibrary?: boolean;
   /** Peut être lancée depuis le cimetière en retirant N marqueurs parmi vos créatures (Quilled Greatwurm). */
@@ -368,6 +370,8 @@ export interface CostDef {
 export interface TargetSpec {
   id: string;
   filter: TargetFilter;
+  /** Valeur de mana totale des cibles au plus égale à N (Scout for Survivors). */
+  maxTotalManaValue?: number;
   /** « jusqu'à une cible » */
   optional?: boolean;
   label?: string;
@@ -391,7 +395,7 @@ export interface TargetFilter {
   /** Cartes dans un cimetière (« carte de créature ciblée de votre cimetière »). */
   cards?: { filter: ObjectFilter; whose?: "you" | "opponent" | "any" };
   /** Cartes exilées face visible (Blade of the Swarm : « carte exilée ciblée avec la distorsion »). */
-  exiled?: { filter?: ObjectFilter; withWarp?: boolean };
+  exiled?: { filter?: ObjectFilter; withWarp?: boolean; own?: boolean };
   /** Sorts sur la pile (« contrecarrez le sort de créature ciblé »). */
   spells?: ObjectFilter;
   /** Sorts ou capacités sur la pile à cible unique (Bolt Bend). */
@@ -474,6 +478,10 @@ export interface ObjectFilter {
   /** A attaqué ce tour-ci. */
   attackedThisTurn?: boolean;
   maxToughness?: number;
+  /** Valeur de mana paire ou impaire (Mutinous Massacre ; 0 est pair). */
+  manaValueParity?: "odd" | "even";
+  /** Endurance au plus égale au X du sort (Zero Point Ballad), résolue pendant la résolution. */
+  maxToughnessX?: boolean;
 }
 
 /**
@@ -635,7 +643,9 @@ export type Condition =
   /** Vide : un permanent non-terrain a quitté le champ de bataille ou un sort a été lancé avec la distorsion ce tour-ci. */
   | { kind: "void" }
   | { kind: "solved" }
-  | { kind: "fullyUnlocked" };
+  | { kind: "fullyUnlocked" }
+  /** Un joueur (encore en partie) ne contrôle aucune créature (Sothera, the Supervoid). */
+  | { kind: "playerWithoutCreatures" };
 
 /** Modifications apportées par un effet continu, rangées par couche (613). */
 export interface LayerMods {
@@ -763,6 +773,8 @@ export interface PlayerStaticAbilityDef {
   replaceArtifactTokens?: TokenSpec;
   /** Samut, Tyrant of Naktamun : « les éphémères et rituels que vous contrôlez ont le second partagé ». */
   splitSecondInstantsSorceries?: boolean;
+  /** Moonlit Meditation : la première fois de chaque tour, vos jetons sont des copies du permanent enchanté. */
+  tokensAsCopiesOfAttached?: boolean;
   /** Sanctum Lurker : vos planeswalkers ne vont pas au cimetière faute de loyauté. */
   walkersSurviveZeroLoyalty?: boolean;
   label?: string;
@@ -788,6 +800,8 @@ export interface DoublerAbilityDef {
   damageToOpponents?: boolean;
   /** Blessures infligées par une créature que vous contrôlez, à n'importe quoi (Gratuitous Violence). */
   creatureDamage?: boolean;
+  /** Marqueurs doublés seulement sur les permanents correspondants (Loading Zone). */
+  countersFilter?: ObjectFilter;
   label?: string;
 }
 
@@ -846,6 +860,8 @@ export type Ref =
   | { kind: "selfCard" }
   /** Cartes liées à la source (Hoarding Dragon). */
   | { kind: "linked" }
+  /** Cartes exilées « jusqu'à ce que » la source quitte le champ de bataille (Pinnacle Starcage). */
+  | { kind: "exiledWith" }
   /** Permanents sacrifiés pour payer le coût de la capacité (Ayli). */
   | { kind: "costSacrificed" }
   /** Le joueur de l'événement (joueur blessé, lanceur du sort…). */
@@ -951,6 +967,8 @@ export interface MoveSpec {
   addKeywords?: Keyword[];
   /** Arrive transformé (verso d'une carte recto-verso). */
   transformed?: boolean;
+  /** Engagé et attaquant (Chorale of the Void) : il attaque le joueur qu'attaque une de vos créatures. */
+  attacking?: boolean;
 }
 
 export type Effect =
@@ -991,7 +1009,10 @@ export type Effect =
   | { op: "loseLife"; who: Ref; amount: Amount; store?: string }
   | { op: "bounce"; what: Ref }
   | { op: "exile"; what: Ref }
-  | { op: "mill"; who: Ref; amount: Amount; store?: { name: string; filter?: ObjectFilter } }
+  /** `halfLibrary` : chaque joueur meule la moitié de sa bibliothèque, arrondie à l'inférieur (Singularity Rupture). */
+  | { op: "mill"; who: Ref; amount: Amount; store?: { name: string; filter?: ObjectFilter }; halfLibrary?: boolean }
+  /** Retire un marqueur de chacun de N permanents correspondants (choisis automatiquement) ; `store` : 1 si fait. */
+  | { op: "removeCounterFromEach"; filter: ObjectFilter; n: number; kind: string; store?: string }
   /** Effets avec choix pendant la résolution. */
   | { op: "scry"; amount: Amount }
   /** `toHand` : les cartes ainsi mises au cimetière et correspondantes vont ensuite en main (Enlightened Confidant). */
@@ -1009,6 +1030,8 @@ export type Effect =
       random?: boolean;
       /** Mémorise, sous `store`, seulement le nombre de cartes défaussées correspondant à ce filtre (« cartes non-terrain »). */
       storeFilter?: ObjectFilter;
+      /** « … à moins de défausser une carte [de ce type] » (Alpharael, Dreaming Acolyte). */
+      unlessFilter?: ObjectFilter;
     }
   | {
       op: "sacrifice";
@@ -1019,6 +1042,8 @@ export type Effect =
       store?: string;
       /** « … avec la plus grande valeur de mana parmi … » (Break Under Pressure). */
       greatestManaValue?: boolean;
+      /** « … choisit une créature qu'il contrôle et l'exile » (Sothera) : `store` mémorise les cartes exilées. */
+      exile?: boolean;
     }
   /** « Vous pouvez payer {X}. Si vous le faites, … » : les `skip` effets suivants sont ignorés sinon. */
   | { op: "mayPay"; cost: ManaCost; prompt: string; skip: number; life?: number }
@@ -1118,6 +1143,8 @@ export type Effect =
   | { op: "allowCastFromGraveyard"; what: Ref }
   /** « En arrivant, choisissez un type de créature / une couleur » (sort de permanent qui se résout). */
   | { op: "chooseOnEnter"; kind: "creatureType" | "color" | "cardName" }
+  /** Dévorer : pendant la résolution du sort de permanent, sacrifier des permanents (nombre mémorisé). */
+  | { op: "devour"; filter: ObjectFilter }
   /** Le contrôleur sépare les N cartes du dessus en deux piles, un adversaire en choisit une (en main), l'autre au cimetière. */
   | { op: "piles"; n: number }
   /** Carte de cimetière qui gagne le flashback jusqu'à la fin du tour (coût : son coût de mana). */
@@ -1150,6 +1177,8 @@ export type Effect =
     }
   /** Exile les cartes du dessus jusqu'à une carte correspondante (mémorisée) : Territorial Bruntar. */
   | { op: "exileUntil"; filter: ObjectFilter; store: string }
+  /** « Vous contrôlez [le joueur ciblé] pendant son prochain tour » (The Dominion Bracelet). */
+  | { op: "controlNextTurn"; who: Ref }
   /** « Votre total de points de vie devient N » (The Endstone). */
   | { op: "setLife"; who: Ref; amount: Amount }
   /** Chaque joueur désigné exile une carte de sa main (à son choix), mémorisée (Lightstall Inquisitor). */
@@ -1257,6 +1286,12 @@ export type Effect =
       prompt?: string;
       /** Exclut les objets mémorisés sous ce nom (« une autre carte de permanent »). */
       excludeStored?: string;
+      /** Valeur de mana au plus égale à ce montant (Anticausal Vestige : le nombre de terrains). */
+      maxManaValue?: Amount;
+      /** Mémorise les objets déplacés. */
+      store?: string;
+      /** Choisir parmi ces objets plutôt que dans la zone (cartes exilées avec la source, mémorisées…). */
+      pool?: Ref;
     }
   /** Le propriétaire met l'objet au-dessus ou au-dessous de sa bibliothèque. */
   /** `topDamage` : si le propriétaire la met au-dessus, la source lui inflige N blessures (Clash of Elements). */
@@ -1706,6 +1741,11 @@ export interface GameState {
   auraControl?: { host: ObjectId; aura: ObjectId; original: PlayerId }[];
   /** Changements de contrôle « jusqu'à la fin du tour » (contrôleur d'origine à rétablir). */
   controlChanges?: { id: ObjectId; original: PlayerId }[];
+  /**
+   * 722 : « vous contrôlez [ce joueur] pendant son prochain tour » (The Dominion Bracelet). `turn` est fixé au début
+   * de ce tour ; pendant ce tour, les décisions de `player` sont prises par `by`.
+   */
+  turnControl?: { player: PlayerId; by: PlayerId; turn?: number };
   /** « Au prochain éphémère ou rituel que vous lancez ce tour-ci, copiez-le » (Teach by Example). */
   nextSpellCopies?: { player: PlayerId; turn: number }[];
   /** « Terminez le tour » (Time Stop) : le tour passe directement à l'étape de nettoyage. */
@@ -1947,6 +1987,8 @@ export type GameEvent =
   | { type: "reveal"; player: PlayerId; defIds: string[] }
   /** Un permanent face cachée est retourné face visible (la carte est révélée). */
   | { type: "turnedFaceUp"; objectId: ObjectId; defId: string }
+  /** 722 : `by` contrôle le tour de `player`. */
+  | { type: "turnControl"; player: PlayerId; by: PlayerId }
   /** Un permanent recto-verso se transforme (`defId` : la face désormais visible). */
   | { type: "transform"; objectId: ObjectId; defId: string }
   | { type: "attack"; player: PlayerId; attackers: { id: ObjectId; defId: string }[] }

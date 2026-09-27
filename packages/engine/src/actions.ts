@@ -194,6 +194,24 @@ export function createTokens(s: GameState, controller: PlayerId, t: TokenSpec, c
     if (replacement?.kind === "playerStatic" && replacement.replaceArtifactTokens) t = replacement.replaceArtifactTokens;
   }
   const created: ObjectId[] = [];
+  // Moonlit Meditation : la première fois de chaque tour, des copies du permanent enchanté à la place.
+  const meditation = controlledAbilitiesWithSource(s, controller).find(
+    ({ id, ab }) =>
+      ab.kind === "playerStatic" &&
+      !!ab.tokensAsCopiesOfAttached &&
+      !s.turn.onceFired.includes(`copies:${id}`) &&
+      !!s.objects[id]?.attachedTo &&
+      !!s.objects[s.objects[id]?.attachedTo ?? ""],
+  );
+  if (meditation) {
+    s.turn.onceFired.push(`copies:${meditation.id}`);
+    const model = s.objects[s.objects[meditation.id]?.attachedTo ?? ""];
+    if (model) {
+      const n = count * 2 ** doublers(s, controller, "tokens");
+      for (let i = 0; i < n; i++) created.push(createTokenCopy(s, controller, model.defId));
+      return created;
+    }
+  }
   const defId = tokenDefId(t);
   if (!s.defs[defId]) {
     const def: CardDef = {
@@ -221,6 +239,8 @@ export function createTokens(s: GameState, controller: PlayerId, t: TokenSpec, c
   for (let i = 0; i < n; i++) {
     const o = createObject(s, defId, controller, "battlefield", { isToken: true });
     o.timestamp = nextTimestamp(s);
+    // Remplacements d'arrivée des autres permanents (« chaque créature que vous contrôlez arrive avec… »).
+    applyEntersReplacements(s, o, {});
     emit({ type: "token", objectId: o.id, defId, controller });
     rulesEvent(s, { e: "zone", oldId: null, newId: o.id, from: null, to: "battlefield", lki: null });
     created.push(o.id);

@@ -5,10 +5,12 @@
 import { card, TOKEN_SPECS } from "@mtgx/cards";
 import { describe, expect, it } from "vitest";
 import { createTokens } from "../src/actions";
+import { GameHost } from "../src/host";
 import { legalActions } from "../src/legal";
-import { chars } from "../src/state";
+import { changeCounters, chars, decider } from "../src/state";
 import { canBlock, declareBlockers } from "../src/turn";
 import type { GameState, TokenSpec } from "../src/types";
+import { projectView } from "../src/view";
 import { act, advanceUntil, idOf, idsOf, passAccepting, passBoth, passUntil, scenario } from "./helpers";
 
 type S = GameState;
@@ -347,5 +349,172 @@ describe("Edge of Eternities, lot C", () => {
     };
     expect(returned(cast(setup(), "p1", "Astelli Reclaimer", { warp: true }))).toEqual(["Thaumaton Torpedo"]);
     expect(returned(cast(setup(), "p1", "Astelli Reclaimer"))).toHaveLength(1);
+  });
+});
+
+describe("Edge of Eternities, lot D", () => {
+  it("The Dominion Bracelet : vous contrôlez l'adversaire pendant son prochain tour (722)", () => {
+    let s = scenario({
+      p1: { battlefield: ["The Dominion Bracelet", "Serra Angel", ...lands("Plains", 15)] },
+      p2: { hand: ["Bear Cub"], battlefield: lands("Forest", 2) },
+    });
+    const bracelet = idOf(s, "p1", "battlefield", "The Dominion Bracelet");
+    const angel = idOf(s, "p1", "battlefield", "Serra Angel");
+    s.objects[bracelet]!.attachedTo = angel;
+    s.version += 1;
+    const ab = chars(s, bracelet).abilities.findIndex((a) => a.kind === "activated" && a.label?.startsWith("Contrôlez"));
+    s = act(s, "p1", { type: "activate", source: bracelet, ability: ab, targets: { t: ["p2"] } });
+    // {15} − 5 (force de l'Ange équipé) = {10}.
+    expect(s.battlefield.filter((id) => s.objects[id]?.tapped)).toHaveLength(10);
+    s = passBoth(s);
+    expect(s.turnControl).toEqual({ player: "p2", by: "p1" });
+    s = advanceUntil(s, (x) => x.turn.active === "p2" && x.turn.step === "main1");
+    expect(s.turnControl?.turn).toBe(s.turn.number);
+    expect(s.pending?.player).toBe("p2");
+    expect(decider(s)).toBe("p1");
+    // La vue du contrôleur : la décision est la sienne, avec la main et les options du joueur contrôlé.
+    const view = projectView(s, "p1");
+    expect(view.pending?.player).toBe("p1");
+    expect(view.controlling).toBe("p2");
+    expect(view.hand.map((o) => o.name)).toContain("Bear Cub");
+    expect(projectView(s, "p2").pending?.player).toBe("p1");
+    // Le contrôle cesse au tour suivant.
+    const later = advanceUntil(s, (x) => x.turn.active === "p1" && x.turn.step === "main1");
+    expect(later.turnControl).toBeUndefined();
+    expect(decider(later)).toBe(later.pending?.player);
+    // Le joueur contrôlé ne peut pas décider ; le contrôleur lance le sort du joueur contrôlé.
+    const host = new GameHost(s);
+    return host.submitHuman("p2", { type: "pass" }).then(async (err) => {
+      expect(err).toBeTruthy();
+      const cub = idOf(s, "p2", "hand", "Bear Cub");
+      expect(await host.submitHuman("p1", { type: "cast", card: cub })).toBeNull();
+      const st = host.state;
+      const onStack = st.stack.some((x) => x.controller === "p2");
+      expect(onStack || idsOf(st, "p2", "battlefield", "Bear Cub").length === 1).toBe(true);
+    });
+  });
+
+  it("Famished Worldsire : dévorer 3 (terrains sacrifiés en arrivant)", () => {
+    let s = scenario({
+      p1: { battlefield: lands("Forest", 8), hand: ["Famished Worldsire"], library: lands("Forest", 10) },
+    });
+    s = cast(s, "p1", "Famished Worldsire");
+    s = passBoth(s);
+    expect(s.pending?.kind === "choice" && s.pending.request.type === "pick" && s.pending.request.prompt).toMatch(/dévorer/);
+    s = act(s, "p1", { type: "choose", values: idsOf(s, "p1", "battlefield", "Forest").slice(0, 2) });
+    const w = idOf(s, "p1", "battlefield", "Famished Worldsire");
+    expect(s.objects[w]?.counters["+1/+1"]).toBe(6);
+    expect(idsOf(s, "p1", "battlefield", "Forest")).toHaveLength(6);
+  });
+
+  it("Loading Zone : marqueurs doublés sur vos créatures, pas sur vos autres permanents", () => {
+    const s = scenario({ p1: { battlefield: ["Loading Zone", "Bear Cub", "Thaumaton Torpedo"] } });
+    const bear = s.objects[idOf(s, "p1", "battlefield", "Bear Cub")]!;
+    const torpedo = s.objects[idOf(s, "p1", "battlefield", "Thaumaton Torpedo")]!;
+    changeCounters(s, bear, "+1/+1", 1);
+    changeCounters(s, torpedo, "charge", 1);
+    expect(bear.counters["+1/+1"]).toBe(2);
+    expect(torpedo.counters.charge).toBe(1);
+  });
+
+  it("Zero Point Ballad : détruit selon X, et renvoie une créature détruite si X ≥ 6", () => {
+    let s = scenario({
+      p1: { battlefield: lands("Swamp", 7), hand: ["Zero Point Ballad"] },
+      p2: { battlefield: ["Serra Angel", "Bear Cub"] },
+    });
+    s = cast(s, "p1", "Zero Point Ballad", { x: 6 });
+    s = passAccepting(s, (x) => x.stack.length === 0 && x.pending?.kind === "priority");
+    expect(s.players.p1?.life).toBe(14);
+    expect(idsOf(s, "p2", "battlefield", "Serra Angel")).toHaveLength(0);
+    expect(
+      s.battlefield.filter((id) => s.objects[id]?.controller === "p1" && chars(s, id).types.includes("Creature")),
+    ).toHaveLength(1);
+  });
+
+  it("Mutinous Massacre : parité de la valeur de mana, puis contrôle de toutes les créatures", () => {
+    let s = scenario({
+      p1: { battlefield: [...lands("Swamp", 4), ...lands("Mountain", 3)], hand: ["Mutinous Massacre"] },
+      p2: { battlefield: ["Serra Angel", "Bear Cub", "Llanowar Elves"] },
+    });
+    s = cast(s, "p1", "Mutinous Massacre", { mode: 0 }); // impaire : Serra Angel (5), Llanowar Elves (1)
+    s = passBoth(s);
+    const bear = idOf(s, "p1", "battlefield", "Bear Cub");
+    expect(idsOf(s, "p1", "battlefield", "Serra Angel")).toHaveLength(0);
+    expect(chars(s, bear).keywords).toContain("haste");
+  });
+
+  it("Moonlit Meditation : le premier jeton du tour est une copie du permanent enchanté", () => {
+    let s = scenario({
+      p1: { battlefield: ["Plains", "Island", "Island", "Serra Angel"], hand: ["Moonlit Meditation"] },
+    });
+    const angel = idOf(s, "p1", "battlefield", "Serra Angel");
+    s = cast(s, "p1", "Moonlit Meditation", { targets: { enchant: [angel] } });
+    s = passBoth(s);
+    createTokens(s, "p1", DRONE, 1);
+    createTokens(s, "p1", DRONE, 1);
+    expect(idsOf(s, "p1", "battlefield", "Serra Angel")).toHaveLength(2);
+    expect(idsOf(s, "p1", "battlefield", "Drone")).toHaveLength(1);
+  });
+
+  it("Pinnacle Starcage : exile les VM ≤ 2, puis les met au cimetière contre des Robots", () => {
+    let s = scenario({
+      p1: { battlefield: [...lands("Plains", 11)], hand: ["Pinnacle Starcage"] },
+      p2: { battlefield: ["Bear Cub", "Llanowar Elves", "Serra Angel"] },
+    });
+    s = cast(s, "p1", "Pinnacle Starcage");
+    s = passAccepting(s, (x) => x.stack.length === 0 && x.pending?.kind === "priority");
+    expect(idsOf(s, "p2", "battlefield", "Bear Cub")).toHaveLength(0);
+    expect(idsOf(s, "p2", "battlefield", "Serra Angel")).toHaveLength(1);
+    const cage = idOf(s, "p1", "battlefield", "Pinnacle Starcage");
+    s = act(s, "p1", { type: "activate", source: cage, ability: 1 });
+    s = passBoth(s);
+    expect(idsOf(s, "p1", "battlefield", "Robot")).toHaveLength(2);
+    expect(s.players.p2?.graveyard).toHaveLength(2);
+    expect(idsOf(s, "p2", "battlefield", "Bear Cub")).toHaveLength(0);
+  });
+
+  it("Scout for Survivors : valeur de mana totale 3 au plus", () => {
+    const s = scenario({
+      p1: {
+        battlefield: lands("Plains", 3),
+        hand: ["Scout for Survivors"],
+        graveyard: ["Bear Cub", "Llanowar Elves", "Serra Angel"],
+      },
+    });
+    const gy = (n: string) => idOf(s, "p1", "graveyard", n);
+    expect(() => cast(s, "p1", "Scout for Survivors", { targets: { t: [gy("Bear Cub"), gy("Serra Angel")] } })).toThrow();
+    let t = cast(s, "p1", "Scout for Survivors", { targets: { t: [gy("Bear Cub"), gy("Llanowar Elves")] } });
+    t = passBoth(t);
+    expect(t.objects[idOf(t, "p1", "battlefield", "Bear Cub")]?.counters["+1/+1"]).toBe(1);
+  });
+
+  it("Dyadrine : autant de marqueurs que de mana dépensé ; Bioengineered Future : un par terrain arrivé", () => {
+    let s = scenario({
+      p1: { battlefield: [...lands("Forest", 3), ...lands("Plains", 2)], hand: ["Dyadrine, Synthesis Amalgam"] },
+    });
+    s = cast(s, "p1", "Dyadrine, Synthesis Amalgam", { x: 3 });
+    s = passBoth(s);
+    expect(s.objects[idOf(s, "p1", "battlefield", "Dyadrine, Synthesis Amalgam")]?.counters["+1/+1"]).toBe(5);
+    let t = scenario({ p1: { battlefield: ["Bioengineered Future", ...lands("Forest", 2)], hand: ["Forest", "Bear Cub"] } });
+    t = act(t, "p1", { type: "playLand", card: idOf(t, "p1", "hand", "Forest") });
+    t = cast(t, "p1", "Bear Cub");
+    t = passBoth(t);
+    expect(t.objects[idOf(t, "p1", "battlefield", "Bear Cub")]?.counters["+1/+1"]).toBe(1);
+  });
+
+  it("Terminal Velocity : le permanent a la célérité et inflige sa VM à chaque créature en partant", () => {
+    let s = scenario({
+      p1: { battlefield: lands("Mountain", 6), hand: ["Terminal Velocity", "Serra Angel"] },
+      p2: { battlefield: ["Bear Cub", "Serra Angel"] },
+    });
+    s = cast(s, "p1", "Terminal Velocity");
+    s = passBoth(s);
+    s = act(s, "p1", { type: "choose", values: [idOf(s, "p1", "hand", "Serra Angel")] });
+    const angel = idOf(s, "p1", "battlefield", "Serra Angel");
+    expect(chars(s, angel).keywords).toContain("haste");
+    s = advanceUntil(s, (x) => x.turn.active === "p2");
+    expect(idsOf(s, "p1", "battlefield", "Serra Angel")).toHaveLength(0);
+    expect(idsOf(s, "p2", "battlefield", "Serra Angel")).toHaveLength(0);
+    expect(idsOf(s, "p2", "battlefield", "Bear Cub")).toHaveLength(0);
   });
 });
