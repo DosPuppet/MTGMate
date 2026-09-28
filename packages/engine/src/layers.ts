@@ -379,14 +379,22 @@ export function computeBattlefield(s: GameState): Map<ObjectId, Characteristics>
       const own = o.zone === "battlefield" ? defOfId(id) : o.defId;
       const ownDef = s.defs[own];
       // Salle : capacités de ses portes déverrouillées. Face cachée : aucune capacité statique.
-      const abilities = o.faceDown
+      const printed = o.faceDown
         ? []
         : o.zone === "battlefield" && ownDef?.layout === "split" && ownDef.faceDefs
           ? roomBase(o, ownDef).abilities
           : ownDef
             ? levelAbilities(o, ownDef)
             : [];
-      for (const ab of abilities ?? []) {
+      // Statiques accordées par un effet de résolution (Roar of the Fifth People, chapitre II : « gagne “Les
+      // créatures que vous contrôlez ont…” »). Une statique accordée par une autre statique n'est pas gérée (613.8).
+      // 613.7a : horodatage le plus récent entre l'objet et l'effet qui accorde la capacité.
+      const grantedAt = new Map<AbilityDef, number>();
+      for (const e of s.effects) {
+        if (!e.affected.includes(id)) continue;
+        for (const ab of e.addAbilities ?? []) if (ab.kind === "static") grantedAt.set(ab, Math.max(o.timestamp, e.timestamp));
+      }
+      for (const ab of grantedAt.size ? [...printed, ...grantedAt.keys()] : printed) {
         if (ab.kind !== "static") continue;
         if (ab.condition && !checkCondition(s, ab.condition, o.controller, id)) continue;
         let mods = ab.mods;
@@ -442,7 +450,7 @@ export function computeBattlefield(s: GameState): Map<ObjectId, Characteristics>
           mods = { ...mods, addSubtypes: [...(mods.addSubtypes ?? []), o.chosen.creatureType] };
         }
         applied.push({
-          timestamp: o.timestamp,
+          timestamp: grantedAt.get(ab) ?? o.timestamp,
           mods,
           affected: { sourceId: id, controller: o.controller, filter: affects },
         });

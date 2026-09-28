@@ -1,6 +1,8 @@
+import { CARDS } from "@mtgx/cards";
 import { describe, expect, it } from "vitest";
-import { fx, ref, spell, target } from "../src/dsl";
+import { fx, ref, spell, staticAbility, target } from "../src/dsl";
 import { chars } from "../src/state";
+import type { LayerMods } from "../src/types";
 import { act, customCard, idOf, passBoth, passUntil, scenario } from "./helpers";
 
 /** « La créature ciblée devient 0/1 et perd toutes ses capacités jusqu'à la fin du tour. » */
@@ -139,5 +141,175 @@ describe("remplacements et prévention (614–615)", () => {
     s = passUntil(s, (x) => x.turn.step === "main2");
     expect(s.objects[bear]).toBeDefined();
     expect(s.objects[bear]?.damage).toBe(0);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Interactions synthétiques : cartes fabriquées, effets continus posés directement, horodatages maîtrisés.
+// ---------------------------------------------------------------------------
+
+type State = ReturnType<typeof scenario>;
+
+/** Effet continu issu d'une résolution (ensemble verrouillé, 611.2c), avec l'horodatage voulu. */
+function withEffect(s: State, affected: string[], mods: LayerMods, timestamp = s.timestamp + 1): State {
+  return {
+    ...s,
+    timestamp: Math.max(s.timestamp, timestamp),
+    version: s.version + 1,
+    effects: [...s.effects, { id: `e${timestamp}`, timestamp, affected, duration: "permanent", ...mods }],
+  };
+}
+
+const ARTIFACT = customCard({ name: "Rouage", typeLine: "Artifact", types: ["Artifact"] });
+/** « Les artefacts que vous contrôlez sont des créatures-artefacts 2/2. » (couches 4 et 7b) */
+const ANIMATOR = customCard({
+  name: "Animateur",
+  typeLine: "Enchantment",
+  types: ["Enchantment"],
+  abilities: [
+    staticAbility({ types: ["Artifact"], controller: "you" }, { addTypes: ["Creature"], setPower: 2, setToughness: 2 }),
+  ],
+});
+/** « Les créatures que vous contrôlez gagnent +1/+1 et ont le vol. » (couches 6 et 7c) */
+const ANTHEM = customCard({
+  name: "Hymne",
+  typeLine: "Enchantment",
+  types: ["Enchantment"],
+  abilities: [staticAbility({ types: ["Creature"], controller: "you" }, { power: 1, toughness: 1, addKeywords: ["flying"] })],
+});
+/** « Les créatures rouges ont la célérité. » (couche 6, filtre de couleur) */
+const RED_HASTE = customCard({
+  name: "Fanion rouge",
+  typeLine: "Enchantment",
+  types: ["Enchantment"],
+  abilities: [staticAbility({ types: ["Creature"], colors: ["R"] }, { addKeywords: ["haste"] })],
+});
+
+describe("couches : interactions synthétiques", () => {
+  it("un type ajouté en couche 4 rend l'objet concerné par les couches suivantes (6, 7b, 7c)", () => {
+    const s = scenario({ p1: { battlefield: [ARTIFACT, ANIMATOR, ANTHEM] } });
+    // Artefact → créature 2/2 (4, 7b), puis +1/+1 et vol de l'Hymne, dont l'ensemble est fixé à ses couches (613.6).
+    expect(chars(s, idOf(s, "p1", "battlefield", "Rouage"))).toMatchObject({
+      types: ["Artifact", "Creature"],
+      power: 3,
+      toughness: 3,
+      keywords: ["flying"],
+    });
+  });
+
+  it("une couleur changée en couche 5 compte pour un filtre de couleur en couche 6", () => {
+    let s = scenario({ p1: { battlefield: ["Bear Cub", RED_HASTE] } });
+    const bear = idOf(s, "p1", "battlefield", "Bear Cub");
+    expect(chars(s, bear).keywords).not.toContain("haste");
+    s = withEffect(s, [bear], { setColors: ["R"] });
+    expect(chars(s, bear).keywords).toContain("haste");
+  });
+
+  it("611.2c : l'ensemble d'un effet de résolution est verrouillé, un nouveau venu n'en profite pas", () => {
+    // « Les créatures que vous contrôlez gagnent +2/+0 » résolu quand seul l'Ours était là ; les Elfes arrivent après.
+    let s = scenario({ p1: { battlefield: ["Bear Cub", "Llanowar Elves"] } });
+    const bear = idOf(s, "p1", "battlefield", "Bear Cub");
+    s = withEffect(s, [bear], { power: 2 });
+    expect(chars(s, idOf(s, "p1", "battlefield", "Llanowar Elves")).power).toBe(1);
+    expect(chars(s, bear).power).toBe(4);
+  });
+
+  it("perte de toutes les capacités : l'ordre des horodatages décide (613.7)", () => {
+    const base = scenario({ p1: { battlefield: ["Bear Cub"] } });
+    const bear = idOf(base, "p1", "battlefield", "Bear Cub");
+    const t = base.timestamp;
+    // Vol puis perte : plus de vol.
+    const lostLast = withEffect(
+      withEffect(base, [bear], { addKeywords: ["flying"] }, t + 1),
+      [bear],
+      { loseAllAbilities: true },
+      t + 2,
+    );
+    expect(chars(lostLast, bear).keywords).not.toContain("flying");
+    // Perte puis vol : le vol reste.
+    const gainedLast = withEffect(
+      withEffect(base, [bear], { loseAllAbilities: true }, t + 1),
+      [bear],
+      { addKeywords: ["flying"] },
+      t + 2,
+    );
+    expect(chars(gainedLast, bear).keywords).toContain("flying");
+  });
+
+  it("une source qui perd ses capacités n'applique plus ses statiques", () => {
+    let s = scenario({ p1: { battlefield: ["Bear Cub", ANTHEM] } });
+    const bear = idOf(s, "p1", "battlefield", "Bear Cub");
+    expect(chars(s, bear).power).toBe(3);
+    s = withEffect(s, [idOf(s, "p1", "battlefield", "Hymne")], { loseAllAbilities: true });
+    expect(chars(s, bear)).toMatchObject({ power: 2, keywords: [] });
+  });
+
+  it("7b, 7c puis 7d : F/E fixées, modification, marqueur, puis échange", () => {
+    let s = scenario({ p1: { battlefield: ["Bear Cub"] } });
+    const bear = idOf(s, "p1", "battlefield", "Bear Cub");
+    s = withEffect(s, [bear], { switchPT: true }); // le plus ancien, mais la couche 7d vient en dernier
+    s = withEffect(s, [bear], { setPower: 1, setToughness: 4 });
+    s = withEffect(s, [bear], { power: 2 });
+    s = { ...s, objects: { ...s.objects, [bear]: { ...s.objects[bear]!, counters: { "+1/+1": 1 } } }, version: s.version + 1 };
+    // 1/4 → +2/+0 → +1/+1 = 4/5 → échange = 5/4.
+    expect(chars(s, bear)).toMatchObject({ power: 5, toughness: 4, basePower: 1 });
+  });
+
+  it("copie (couche 1) puis modification : les valeurs copiables, puis le bonus", () => {
+    let s = scenario({ p1: { battlefield: ["Llanowar Elves", "Bear Cub"] } });
+    const elves = idOf(s, "p1", "battlefield", "Llanowar Elves");
+    const bearDef = s.objects[idOf(s, "p1", "battlefield", "Bear Cub")]!.defId;
+    s = withEffect(s, [elves], { power: 1 });
+    s = withEffect(s, [elves], { copyOf: bearDef });
+    // La copie (plus récente) ne balaie pas le bonus : les couches s'appliquent dans l'ordre, pas par horodatage.
+    expect(chars(s, elves)).toMatchObject({ name: "Bear Cub", power: 3, toughness: 2 });
+  });
+
+  it("une statique accordée par un effet s'applique (Roar of the Fifth People, chapitre II)", () => {
+    let s = scenario({ p1: { battlefield: ["Bear Cub", ARTIFACT] } });
+    const bear = idOf(s, "p1", "battlefield", "Bear Cub");
+    const grant = staticAbility({ types: ["Creature"], controller: "you" }, { addKeywords: ["vigilance"] });
+    expect(chars(s, bear).keywords).not.toContain("vigilance");
+    s = withEffect(s, [idOf(s, "p1", "battlefield", "Rouage")], { addAbilities: [grant] });
+    expect(chars(s, bear).keywords).toContain("vigilance");
+  });
+
+  it("approximation (613.8) : la condition d'une statique lit les caractéristiques imprimées", () => {
+    // Kargan a le vol « tant que vous contrôlez un Dragon ». Un Ours devenu Dragon par un effet devrait suffire
+    // (règles), mais les conditions des statiques sont évaluées sur les types imprimés (docs/approximations.md).
+    let s = scenario({ p1: { battlefield: ["Kargan Dragonrider", "Bear Cub"] } });
+    const kargan = idOf(s, "p1", "battlefield", "Kargan Dragonrider");
+    s = withEffect(s, [idOf(s, "p1", "battlefield", "Bear Cub")], { addSubtypes: ["Dragon"] });
+    expect(chars(s, kargan).keywords).not.toContain("flying");
+  });
+
+  it("dernières informations connues : une créature renforcée qui meurt garde sa force modifiée", () => {
+    let s = scenario({
+      p1: { battlefield: ["Bear Cub"] },
+      p2: { battlefield: ["Mountain"], hand: ["Burst Lightning"] },
+      active: "p2",
+    });
+    const bear = idOf(s, "p1", "battlefield", "Bear Cub");
+    s = withEffect(s, [bear], { power: 3 });
+    s = act(s, "p2", { type: "cast", card: idOf(s, "p2", "hand", "Burst Lightning"), targets: { t: [bear] } });
+    s = passBoth(s);
+    expect(s.objects[bear]).toBeUndefined();
+    expect(s.lki[bear]).toMatchObject({ power: 5, toughness: 2 });
+  });
+});
+
+describe("limites connues du moteur, gardées par un test", () => {
+  it("aucune statique n'accorde de capacité statique (dépendance non gérée par les couches)", () => {
+    const offenders: string[] = [];
+    const walk = (v: unknown, name: string): void => {
+      if (Array.isArray(v)) for (const x of v) walk(x, name);
+      else if (v && typeof v === "object") {
+        const ab = v as { kind?: string; mods?: LayerMods };
+        if (ab.kind === "static" && ab.mods?.addAbilities?.some((a) => a.kind === "static")) offenders.push(name);
+        for (const x of Object.values(v)) walk(x, name);
+      }
+    };
+    for (const def of Object.values(CARDS)) walk(def, def.name);
+    expect([...new Set(offenders)]).toEqual([]);
   });
 });
