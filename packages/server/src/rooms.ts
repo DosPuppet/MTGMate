@@ -175,10 +175,27 @@ export class Room {
       players: this.seats.map((s) => ({ id: s.seat, name: s.name, deck: buildDeck({ main: s.deck }) })),
     });
     this.status = "playing";
-    this.host = new GameHost(state, { onUpdate: (p, view, evts) => this.buffer(p as Seat, view, evts) }, events);
+    const host = new GameHost(state, { onUpdate: (p, view, evts) => this.buffer(p as Seat, view, evts) }, events);
+    this.host = host;
     this.broadcastRoom();
-    await this.host.run();
-    this.afterStep();
+    await this.advancing(host, () => host.run());
+  }
+
+  /**
+   * Exécute une action sur la partie, puis minuteur et envois si l'état a changé, même si l'action a échoué
+   * en cours de route (erreur interne) : une partie ne doit jamais rester sans minuteur. Une décision refusée
+   * ne change pas l'état et ne relance donc pas le minuteur.
+   */
+  private async advancing(host: GameHost, fn: () => Promise<void>): Promise<void> {
+    const before = host.state;
+    try {
+      await fn();
+    } catch (e) {
+      console.error(`Salon ${this.code} : erreur interne`, e);
+      throw e;
+    } finally {
+      if (host.state !== before || this.outbox.size) this.afterStep();
+    }
   }
 
   private buffer(p: Seat, view: GameView, events: GameEvent[]): void {
@@ -239,35 +256,39 @@ export class Room {
     const p = host?.state.pending;
     if (!host || !seat || host.state.over || !p || decider(host.state) !== player) return;
     seat.timeouts += 1;
-    if (seat.timeouts >= this.config.maxTimeouts) {
-      await host.submitHuman(player, { type: "concede" });
-    } else {
-      await host.submitHuman(player, fallbackDecision(host.state, p));
-    }
-    this.afterStep();
+    await this.advancing(host, async () => {
+      // Une décision par défaut qui échouerait (erreur du moteur) ne doit pas laisser la partie sans issue.
+      let played = false;
+      if (seat.timeouts < this.config.maxTimeouts) {
+        try {
+          played = (await host.submitHuman(player, fallbackDecision(host.state, p))) === null;
+        } catch (e) {
+          console.error(`Salon ${this.code} : décision par défaut impossible`, e);
+        }
+      }
+      if (!played && !host.state.over && host.state.pending === p) await host.submitHuman(player, { type: "concede" });
+    });
   }
 
   decide(seat: SeatState, d: Decision): Promise<void> {
     return this.enqueue(async () => {
       const host = this.host;
       if (!host || this.status !== "playing") throw new ClientError("state", "Aucune partie en cours.");
-      const error = await host.submitHuman(seat.seat, d);
-      if (error) {
+      await this.advancing(host, async () => {
+        const error = await host.submitHuman(seat.seat, d);
         // Décision refusée : l'état n'a pas changé, le minuteur continue.
-        seat.peer?.send({ type: "error", code: "rules", message: error });
-        return;
-      }
-      this.afterStep();
+        if (error) seat.peer?.send({ type: "error", code: "rules", message: error });
+      });
     });
   }
 
   settings(seat: SeatState, settings: Parameters<GameHost["setSettings"]>[1]): Promise<void> {
     return this.enqueue(async () => {
-      if (!this.host) return;
-      this.host.setSettings(seat.seat, settings);
+      const host = this.host;
+      if (!host) return;
+      host.setSettings(seat.seat, settings);
       if (this.status !== "playing") return;
-      await this.host.run();
-      this.afterStep();
+      await this.advancing(host, () => host.run());
     });
   }
 
@@ -332,9 +353,11 @@ export class Room {
     if (seat.graceTimer) clearTimeout(seat.graceTimer);
     seat.graceTimer = null;
     seat.graceDeadline = null;
-    if (!this.host || this.status !== "playing" || this.host.state.over) return;
-    await this.host.submitHuman(seat.seat, { type: "concede" });
-    this.afterStep();
+    const host = this.host;
+    if (!host || this.status !== "playing" || host.state.over) return;
+    await this.advancing(host, async () => {
+      await host.submitHuman(seat.seat, { type: "concede" });
+    });
   }
 
   private sendOpponentStatus(): void {

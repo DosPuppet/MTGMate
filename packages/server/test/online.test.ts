@@ -12,7 +12,7 @@ afterEach(async () => {
   await srv?.close();
   srv = null;
 });
-async function start(config = {}, opts: { maxPerIp?: number; pingMs?: number } = {}) {
+async function start(config = {}, opts: Parameters<typeof server>[1] = {}) {
   srv = await server(config, opts);
   return srv.port;
 }
@@ -84,6 +84,26 @@ describe("salons", () => {
     turn.send({ type: "decision", decision: { type: "keep" } });
     await turn.next("update");
   });
+
+  it("une décision mal formée est refusée proprement", async () => {
+    const port = await start();
+    const { a } = await pair(port, false);
+    for (const decision of [null, "keep", [], { type: "inconnu" }]) {
+      a.send({ type: "decision", decision } as never);
+      expect((await a.next("error")).message).toBe("Décision invalide.");
+    }
+  });
+
+  it("des réglages mal formés ne figent pas la partie", async () => {
+    const port = await start();
+    const { a, b } = await pair(port, false);
+    for (const c of [a, b]) c.send({ type: "settings", settings: { stops: null, passUntilTurn: "x" } } as never);
+    a.bot = b.bot = true;
+    a.play(a.lastView as NonNullable<typeof a.lastView>);
+    b.play(b.lastView as NonNullable<typeof b.lastView>);
+    const later = await a.next("update", (m) => m.view.turn.number >= 3, 30_000);
+    expect(later.clock).not.toBeNull();
+  }, 40_000);
 });
 
 describe("partie complète", () => {
@@ -229,6 +249,20 @@ describe("exposition à Internet", () => {
     const off = await a.next("opponent", (m) => !m.connected, 3_000);
     expect(off.remainingMs).toBeGreaterThan(0);
     dead.terminate();
+  });
+
+  it("limite le débit des messages, puis ferme une connexion qui insiste", async () => {
+    const port = await start({}, { rate: { perSecond: 1, burst: 5 } });
+    const ws = new WebSocket(`ws://127.0.0.1:${port}/ws`);
+    await new Promise((ok) => ws.once("open", ok));
+    const errors: string[] = [];
+    ws.on("message", (data) => errors.push(JSON.parse(String(data)).code));
+    const closed = new Promise<number>((ok) => ws.once("close", ok));
+    for (let i = 0; i < 400; i++) ws.send(JSON.stringify({ type: "decision", decision: { type: "pass" } }));
+    expect(await closed).toBe(1008);
+    // 5 messages traités (« aucune partie »), puis un seul avertissement de débit.
+    expect(errors.filter((c) => c === "state")).toHaveLength(5);
+    expect(errors.filter((c) => c === "busy")).toHaveLength(1);
   });
 
   it("un salon resté sans adversaire est fermé", async () => {

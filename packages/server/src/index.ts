@@ -11,6 +11,7 @@ import { Readable } from "node:stream";
 import { WebSocket, WebSocketServer } from "ws";
 import type { ClientMessage, ServerMessage } from "./protocol";
 import { ClientError, DEFAULT_CONFIG, type Peer, type Room, type RoomConfig, RoomManager } from "./rooms";
+import { cleanSettings, isDecision } from "./validate";
 
 export type { ClientMessage, Clock, RoomInfo, Seat, ServerMessage } from "./protocol";
 export { DEFAULT_CONFIG, type RoomConfig } from "./rooms";
@@ -23,6 +24,8 @@ export interface ServerOptions {
   maxPerIp?: number;
   /** Intervalle des pings WebSocket (ms) : détecte les connexions mortes, évite les coupures d'inactivité. */
   pingMs?: number;
+  /** Débit de messages par connexion : `perSecond` en régime continu, `burst` en rafale. */
+  rate?: { perSecond: number; burst: number };
   /** Dossier du client construit (packages/client/dist), servi en statique. */
   staticDir?: string;
   /** Récupération d'une image de Scryfall pour le relais /scry/ (remplaçable dans les tests). */
@@ -37,6 +40,8 @@ export interface RunningServer {
 }
 
 const MAX_MESSAGE = 64 * 1024;
+/** Messages refusés d'affilée (débit dépassé) avant de fermer la connexion. */
+const MAX_DROPPED = 200;
 const LOOPBACK = new Set(["127.0.0.1", "::1", "::ffff:127.0.0.1"]);
 
 /** Adresse du client : celle transmise par nginx (X-Forwarded-For) si la connexion vient de la machine elle-même. */
@@ -165,6 +170,7 @@ export function startServer(opts: ServerOptions = {}): Promise<RunningServer> {
   const wss = new WebSocketServer({ server: http, path: "/ws", maxPayload: MAX_MESSAGE });
   const perIp = new Map<string, number>();
   const maxPerIp = opts.maxPerIp ?? 8;
+  const rate = opts.rate ?? { perSecond: 20, burst: 40 };
   const alive = new WeakSet<WebSocket>();
   const pinger = setInterval(() => {
     for (const c of wss.clients) {
@@ -188,6 +194,22 @@ export function startServer(opts: ServerOptions = {}): Promise<RunningServer> {
     perIp.set(ip, count);
     alive.add(ws);
     ws.on("pong", () => alive.add(ws));
+    // Seau à jetons : chaque décision coûte une copie de l'état ; un client ne doit pas monopoliser le serveur.
+    let tokens = rate.burst;
+    let refilled = Date.now();
+    let dropped = 0;
+    const allow = () => {
+      const now = Date.now();
+      tokens = Math.min(rate.burst, tokens + ((now - refilled) / 1000) * rate.perSecond);
+      refilled = now;
+      if (tokens >= 1) {
+        tokens -= 1;
+        dropped = 0;
+        return true;
+      }
+      dropped++;
+      return false;
+    };
     const peer: Peer = {
       send(msg: ServerMessage) {
         if (ws.readyState === WebSocket.OPEN) ws.send(JSON.stringify(msg));
@@ -203,6 +225,11 @@ export function startServer(opts: ServerOptions = {}): Promise<RunningServer> {
     };
 
     ws.on("message", (data) => {
+      if (!allow()) {
+        if (dropped === 1) peer.send({ type: "error", code: "busy", message: "Trop de messages : ralentissez." });
+        if (dropped >= MAX_DROPPED) ws.close(1008, "Trop de messages");
+        return;
+      }
       const msg = parse(data);
       if (!msg) return;
       try {
@@ -231,11 +258,12 @@ export function startServer(opts: ServerOptions = {}): Promise<RunningServer> {
           }
           case "decision":
             if (!current) throw new ClientError("state", "Aucune partie en cours.");
+            if (!isDecision(msg.decision)) throw new ClientError("rules", "Décision invalide.");
             current.room.decide(current.seat, msg.decision).catch(fail);
             return;
           case "settings":
             if (!current) return;
-            current.room.settings(current.seat, msg.settings ?? {}).catch(fail);
+            current.room.settings(current.seat, cleanSettings(msg.settings)).catch(fail);
             return;
           case "rematch":
             if (!current) throw new ClientError("state", "Aucune partie en cours.");

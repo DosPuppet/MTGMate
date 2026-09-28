@@ -10,7 +10,7 @@ export const RED: DeckEntries = deckById("bienvenue-rouge").main;
 
 export function server(
   config: Partial<RoomConfig> = {},
-  opts: { maxPerIp?: number; pingMs?: number } = {},
+  opts: { maxPerIp?: number; pingMs?: number; rate?: { perSecond: number; burst: number } } = {},
 ): Promise<RunningServer> {
   return startServer({ port: 0, host: "127.0.0.1", config, ...opts });
 }
