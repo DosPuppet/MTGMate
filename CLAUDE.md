@@ -37,7 +37,8 @@ Ce fichier sert au suivi du projet entre les sessions : où on en est, les règl
 ### Suite du travail
 
 - **27/09/2026 :** l'intégration de tout le Standard d'un coup est abandonnée. La branche `standard` (socle multi-extensions, EOE, DFT, OTJ+BIG, FIN, vérification parallélisée) est fusionnée dans `master`.
-- Ensuite : **une extension à la fois, sur `master`, seulement quand l'utilisateur la nomme.**
+- **28/09/2026 :** le travail se fait désormais sur la branche `dev` (créée depuis `master`).
+- Ensuite : **une extension à la fois, sur `dev`, seulement quand l'utilisateur la nomme.**
 - Découpage habituel d'une extension :
   - lot A : cartes faisables avec le moteur, jetons et terrains ;
   - lot B : mécaniques phares ;
@@ -86,7 +87,7 @@ Ce fichier sert au suivi du projet entre les sessions : où on en est, les règl
 - **Commits :**
   - uniquement quand l'utilisateur le demande ;
   - message en anglais, terminé par `Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>` ;
-  - branche `master`, pas de remote.
+  - branche `dev` pour le travail courant (`master` = version stable), pas de remote.
 
 ## Vérifications avant de rendre un lot
 
