@@ -35,6 +35,7 @@ Ce fichier sert au suivi du projet entre les sessions : où on en est, les règl
 | Decks préconstruits : seulement les 5 decks de bienvenue (40 cartes FDN, joués tels quels malgré la règle des 60) et le Starter Kit Final Fantasy (Séphiroth, Cloud) ; les anciens decks FDN et FRA sont retirés | ✅ |
 | Tutoriel « Apprendre à jouer » (9 leçons mises en scène, guidage strict, reprise au début de la leçon ; `docs/tutoriel.md`) | ✅ |
 | IA à trois niveaux (débutant, moyen, élevé : combat par simulation, ISMCTS en duel ; `docs/ia.md`, tournoi `npm run arena`) | ✅ |
+| Fiabilisation (29/09/2026) : serveur (validation des messages, débit), décisions mal formées refusées, fuzz « chaos », invariants élargis, tests synthétiques des couches (`docs/moteur.md`, « Règles de conception ») | ✅ |
 | Autres extensions Standard | à la demande de l'utilisateur, une à la fois |
 
 
@@ -101,7 +102,7 @@ Ce fichier sert au suivi du projet entre les sessions : où on en est, les règl
 - **Par lot :** `npm run verify -- --set <EXT>` (environ 70 s). Il lance :
   - `tsc`, Biome et la couverture ;
   - `vitest`, où le test de fumée est découpé en un fichier par extension (tous les cœurs) ;
-  - le fuzz ciblé sur l'extension (`--pool <EXT>`, à 2, 3 et 4 joueurs, et en IA mixte) ;
+  - le fuzz ciblé sur l'extension (`--pool <EXT>`, à 2, 3 et 4 joueurs, en IA mixte et en mode « chaos ») ;
   - un fuzz sur tout le pool ;
   - les tests d'interface seulement si le client, `view.ts` ou le protocole ont changé (`--ui` pour les forcer). Vite doit tourner. Ils tournent en deux files parallèles (environ 50 s ; `verify --set X --ui` : environ 125 s).
 - **En fin d'extension ou avant une fusion :** `npm run verify -- --full` (environ 3 min). Il lance :

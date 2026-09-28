@@ -1,12 +1,33 @@
 # Approximations connues
 
-À lever si une carte l'exige. Les premières entrées valent pour tout le moteur ; les suivantes concernent des cartes précises (dans l'ordre où elles ont été ajoutées, extension par extension). Chercher le nom de la carte ou de la mécanique.
+À lever si une carte l'exige. Chercher le nom de la carte ou de la mécanique.
 
-- **Blocages :** ils sont déclarés joueur par joueur en ordre APNAP, et non simultanément.
-- **Remplacements multiples (616.1) :** le premier s'applique, sans choix du joueur affecté.
-- **Dépendances de couches (613.8) :** seulement une approximation à un niveau, du type « une source qui perd toutes ses capacités n'applique plus ses statiques ».
-- **Blessures « réparties » (Chandra −4) :** la répartition est choisie à la résolution, et non au lancement (601.2d).
-- **Aura mise en jeu sans être lancée :** elle va au cimetière, faute du choix de l'objet enchanté (303.4f).
+## Générales
+
+Chaque entrée porte sa nature :
+
+- `règle` : le résultat peut différer des règles officielles ;
+- `timing` : le bon résultat, mais un choix fait à un autre moment que dans les règles ;
+- `choix auto` : le moteur choisit à la place du joueur, comme souvent sur Arena.
+
+- `timing` **Blocages :** ils sont déclarés joueur par joueur en ordre APNAP, et non simultanément.
+- `règle` **Remplacements multiples (616.1) :** le premier s'applique, sans choix du joueur affecté.
+- `règle` **Dépendances de couches (613.8) :** seulement une approximation à un niveau, du type « une source qui perd toutes ses capacités n'applique plus ses statiques ». De plus :
+  - les conditions des capacités statiques (« tant que vous contrôlez un Dragon ») sont lues sur les caractéristiques imprimées, pas sur les types ajoutés par un effet (test « approximation (613.8) » de `layers.test.ts`) ;
+  - une statique accordée par un effet de résolution s'applique (Roar of the Fifth People), mais pas une statique accordée par une autre statique (un test de `layers.test.ts` vérifie qu'aucune carte n'en a besoin).
+- `timing` **Blessures « réparties » (Chandra −4) :** la répartition est choisie à la résolution, et non au lancement (601.2d).
+- `règle` **Aura mise en jeu sans être lancée :** elle va au cimetière, faute du choix de l'objet enchanté (303.4f).
+- `règle` **Convocation :** une créature qui a une capacité de mana ne sert pas à la convocation (elle paie par sa capacité de mana).
+- `choix auto` **Choix « en arrivant » sans résolution** (permanent remis en jeu par un effet) : choix par défaut, le type ou la couleur les plus présents chez le contrôleur.
+- `choix auto` **Équipage :** les créatures engagées sont choisies automatiquement.
+- `choix auto` **Dégager jusqu'à N terrains :** les terrains sont choisis automatiquement.
+- `choix auto` **Mana restreint (Giada, Secluded Courtyard) :** utilisé seulement par le paiement automatique, pour un sort ou une capacité autorisés ; ces sources ne se tapent pas à la main.
+- `choix auto` **Mana « déclencheur » (haste, copie du sort) :** appliqué seulement quand ce mana est dépensé par le paiement automatique.
+
+## Carte par carte
+
+Dans l'ordre où elles ont été ajoutées, extension par extension.
+
 - **Fishing Pole :** la capacité accordée à la créature équipée est portée par l'Équipement (coût « engager la créature équipée »).
 - **« Au début de l'étape de fin, sacrifiez ce jeton » :** modélisé par une capacité retardée plutôt que par une capacité du jeton.
 - **Etali :** les cartes exilées se lancent gratuitement, sans restriction de timing, après la résolution du déclencheur (et non pendant), jusqu'à la fin du tour.
@@ -14,20 +35,15 @@
 - **Coûts retirés automatiquement :**
   - Quilled Greatwurm : les six marqueurs sont retirés d'abord des créatures qui en ont le plus ;
   - Lathril : les Elfes à engager sont choisis automatiquement.
-- **Mana restreint (Giada, Secluded Courtyard) :** utilisé seulement par le paiement automatique, pour un sort ou une capacité autorisés ; ces sources ne se tapent pas à la main.
 - **Muldrotha :** une carte à plusieurs types de permanent utilise automatiquement le premier type encore libre.
 - **Abyssal Harvester :** les autres jetons Cauchemar sont exilés avant la création de la copie (même résultat).
-- **Choix « en arrivant » sans résolution** (permanent remis en jeu par un effet) : choix par défaut, le type ou la couleur les plus présents chez le contrôleur.
 - **Curator of Destinies :** en multijoueur, c'est l'adversaire suivant qui choisit la pile.
 - **Tinybones :** seuls les sorts avec un marqueur de butin sont jouables, pas les terrains.
 - **Soulstone Sanctuary** (« tous les types de créature ») : tout sous-type sauf ceux de terrain, d'artefact et d'enchantement connus.
-- **Équipage :** les créatures engagées sont choisies automatiquement.
 - **Ramos, Three Tree Mascot :** leurs capacités de mana sont des capacités activées qui passent par la pile.
-- **Mana « déclencheur » (haste, copie du sort) :** appliqué seulement quand ce mana est dépensé par le paiement automatique.
 - **Bolt Bend :** la nouvelle cible est choisie à la résolution.
 - **Demonic Pact :** les modes déjà choisis sont mémorisés sur le permanent (perdus s'il change de zone, ce qui est conforme).
 - **Ordeal of Nylea :** sacrifiée directement, sans déclencheur séparé.
-- **Dégager jusqu'à N terrains :** les terrains sont choisis automatiquement.
 - **Prolifération (Tam) :** choix automatique. Tous les marqueurs de vos permanents ; chez les adversaires, seulement les marqueurs -1/-1, d'étourdissement et de poison.
 - **Mabel, Bitter Recluse :** les marqueurs retirés sont choisis automatiquement (loyauté, puis +1/+1, puis les autres).
 - **Liliana the Faultless, Massacre Girl :** mêmes approximations que plus haut (défausse à la résolution ; blessures non de combat de vos seules sources).
@@ -35,7 +51,6 @@
 - **Contempler un Jace :** toujours fait quand c'est possible (Countersculpt, Theorist's Sanctum), sans révéler la carte.
 - **Codie, Ravenous Codex :** la copie du sort préparé garde ses cibles (pas de nouveau choix).
 - **Hallway Heckler :** la défausse est faite à la résolution, et non comme coût.
-- **Convocation :** une créature qui a une capacité de mana ne sert pas à la convocation (elle paie par sa capacité de mana).
 - **Master of Barbs :** seules les blessures non de combat infligées par vos sources (sorts compris) comptent, pas celles d'une source adverse.
 - **Something Worth Saving :** les quatre cartes sont regardées puis mises au cimetière, ce qui n'est pas une meule au sens strict (pas de déclencheur de meule).
 - **Solitary Cell, Murmuring Volume :** la carte défaussée l'est à la résolution, et non comme coût d'activation.

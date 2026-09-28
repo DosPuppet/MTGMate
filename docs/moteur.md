@@ -29,6 +29,8 @@ Moteur pur et déterministe (`packages/engine/src`). L'état est sérialisable ;
 | `view.ts` | Projection de l'état pour un joueur (information cachée). |
 | `scenario.ts` | `createScenario` : partie mise en scène (bibliothèques dans l'ordre, mains, permanents, tour de départ, mulligan facultatif) pour le tutoriel ; l'état vide vient de `blankState` (`game.ts`). |
 | `host.ts` | `GameHost` : IA, automatisme et humains ; l'option `gate` met l'IA en pause (explications du tutoriel). |
+| `decisionShape.ts` | Forme d'une décision reçue (types des champs, objets inconnus, doublons), vérifiée par `apply` (`game.ts`) avant les règles. |
+| `errors.ts` | `RulesError` et `rethrowAsRules`. |
 
 ## Recettes
 
@@ -43,7 +45,20 @@ Moteur pur et déterministe (`packages/engine/src`). L'état est sérialisable ;
 
 ## Règles de conception
 
-- Une décision illégale lève une `RulesError` (l'IA et le fuzz en dépendent).
+- **Erreurs :**
+  - une décision illégale ou mal formée lève une `RulesError` (l'IA, le serveur et le fuzz en dépendent) ;
+  - toute autre `Error` est un bug du moteur ;
+  - on ne convertit jamais une erreur quelconque en `RulesError`. Autour d'une étape qui peut être illégale (paiement, cibles), on passe par `rethrowAsRules(e, message)`, qui laisse remonter les autres erreurs ;
+  - l'IA n'avale que les `RulesError` dans ses simulations ;
+  - le fuzz « chaos » (`npm run fuzz -- --ai chaos`) soumet des variantes corrompues de chaque décision : elles doivent être refusées par une `RulesError`, sans modifier l'état reçu.
+- **Invariants du fuzz** (`checkInvariants`, `ai/src/selfplay.ts`) :
+  - zones, conservation des cartes, cache des couches ;
+  - nombres finis ;
+  - références (attachements, combattants) ;
+  - aucune décision demandée à un joueur éliminé ;
+  - état en JSON pur.
+  
+  Un nouveau champ d'état doit les respecter.
 - Tout ce dont une statique ou une F/E variable dépend fait avancer la version d'état (`bump`). Le fuzz détecte les oublis (« cache des caractéristiques périmé »).
 - Préférer un mécanisme générique et nommé à un drapeau « pour une carte » :
   - réutiliser les doublements (`doubler`, multiplicateurs de déclenchements dans `triggers.ts`) ;
