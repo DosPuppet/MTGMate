@@ -2,6 +2,7 @@ import type { GameView, ObjectView, PlayerView } from "@mtgx/engine";
 import { motion } from "motion/react";
 import { type CSSProperties, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { faceName, PHASE_BAR, STEP_LABEL } from "../i18n";
+import { boardPick, choiceSource, pickValid, shortPrompt } from "../prompts/boardChoice";
 import { myActions, useGame } from "../store";
 import { Arrows } from "./Arrows";
 import { Card, CardBack, type Glow, ManaCost } from "./Card";
@@ -76,10 +77,14 @@ function PlayerBar({ player, isMe }: { player: PlayerView; isMe: boolean }) {
   const openGraveyard = useGame((s) => s.openGraveyard);
   const lang = useGame((s) => s.lang);
   const aiming = useGame((s) => s.aimingAttacker);
+  const selection = useGame((s) => s.selection);
   const p = view.pending;
-  // Ciblage d'un sort, ou cible possible de l'attaquant en visée.
+  const pick = boardPick(view);
+  const picked = !!pick && selection.includes(player.id);
+  // Ciblage d'un sort, option d'un choix sur le plateau, ou cible possible de l'attaquant en visée.
   const isTarget =
     (casting?.stage === "target" && casting.spec?.legal.includes(player.id)) ||
+    (!!pick && !picked && pick.options.includes(player.id)) ||
     (!!aiming && p?.kind === "declareAttackers" && !!p.defenders?.includes(player.id));
   const thinking = view.pending?.player === player.id && !isMe;
   const active = view.turn.active === player.id;
@@ -88,7 +93,7 @@ function PlayerBar({ player, isMe }: { player: PlayerView; isMe: boolean }) {
     <div className={`player-bar ${isMe ? "me" : "opp"} ${active ? "active-turn" : ""}`}>
       <button
         type="button"
-        className={`avatar ${isTarget ? "glow-target" : ""} ${active ? "active" : ""}`}
+        className={`avatar ${isTarget ? "glow-target" : ""} ${picked ? "glow-picked" : ""} ${active ? "active" : ""}`}
         data-oid={player.id}
         onClick={() => clickPlayer(player.id)}
       >
@@ -147,13 +152,20 @@ function usePermanentGlow(): (o: ObjectView) => Glow {
   const blocks = useGame((s) => s.blocks);
   const selectedBlocker = useGame((s) => s.selectedBlocker);
   const aiming = useGame((s) => s.aimingAttacker);
+  const selection = useGame((s) => s.selection);
   const acts = myActions(view);
   const p = view.pending;
   const mine = p?.player === view.viewer;
+  const pick = boardPick(view);
   return (o) => {
     if (casting?.stage === "target") {
-      if (casting.picked?.includes(o.id)) return "selected";
+      if (casting.picked?.includes(o.id)) return "picked";
       return casting.spec?.legal.includes(o.id) ? "target" : null;
+    }
+    // Choix sur le plateau : options en surbrillance, sélection dorée, le reste éteint.
+    if (pick) {
+      if (selection.includes(o.id)) return "picked";
+      return pick.options.includes(o.id) ? "target" : null;
     }
     // Planeswalker attaquable : en surbrillance quand un attaquant est en visée.
     if (mine && p?.kind === "declareAttackers" && p.defenders?.includes(o.id)) {
@@ -501,8 +513,10 @@ function Banner() {
   const confirmTargets = useGame((s) => s.confirmTargets);
   const aiming = useGame((s) => s.aimingAttacker);
   const lang = useGame((s) => s.lang);
+  const selection = useGame((s) => s.selection);
   const p = view.pending;
   const mine = p?.player === view.viewer;
+  const pick = boardPick(view);
   const nameOf = (id: string | undefined) =>
     (id && (view.players[id]?.name ?? faceNameOf(view.battlefield.find((o) => o.id === id)))) || "L'adversaire";
   const faceNameOf = (o: ObjectView | undefined) => (o ? faceName(o, lang) : undefined);
@@ -533,6 +547,10 @@ function Banner() {
         </button>
       </>
     );
+  } else if (pick) {
+    const source = choiceSource(view);
+    const what = shortPrompt(pick.prompt, source);
+    text = `${source ? `${faceName(source.face, lang)} : ${what}` : what} (${selection.length}/${pick.max})`;
   } else if (!p) text = view.over ? "Partie terminée" : "…";
   else if (!mine) {
     const what: Record<string, string> = {
@@ -764,6 +782,17 @@ export function useMainAction(): { label: string; run?: () => void; disabled?: b
         label: entries.length ? `Bloquer (${entries.length})` : "Pas de blocage",
         hot: true,
         run: () => s.decide({ type: "declareBlockers", blocks: entries.map(([blocker, attacker]) => ({ blocker, attacker })) }),
+      };
+    }
+    case "choice": {
+      const pick = boardPick(v);
+      if (!pick) return { label: "Choisissez…", disabled: true };
+      const n = s.selection.length;
+      return {
+        label: n === 0 && pick.min === 0 ? "Aucun" : `Valider (${n})`,
+        hot: true,
+        disabled: !pickValid(pick, s.selection),
+        run: () => s.decide({ type: "choose", values: s.selection }),
       };
     }
     default:

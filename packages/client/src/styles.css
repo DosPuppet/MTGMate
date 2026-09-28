@@ -11,6 +11,7 @@
   --gold-2: #d99a2b;
   --playable: #4db6ff;
   --target: #ffd84d;
+  --picked: #5ed684;
   --attack: #ff5a4f;
   --block: #58a6ff;
   --me: #62c48a;
@@ -924,6 +925,35 @@ button {
   box-shadow:
     0 0 0 3px var(--gold),
     0 0 16px 4px rgba(240, 184, 74, 0.7);
+}
+.glow-picked {
+  box-shadow:
+    0 0 0 3px var(--picked),
+    0 0 16px 4px rgba(94, 214, 132, 0.7);
+}
+/* Coche au milieu de l'illustration : la sélection se distingue d'un coup d'œil des options restantes. */
+.card.glow-picked::after {
+  content: "✓";
+  position: absolute;
+  left: 50%;
+  top: 34%;
+  translate: -50% -50%;
+  z-index: 3;
+  width: 30%;
+  aspect-ratio: 1;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: rgba(20, 110, 55, 0.92);
+  border: 2px solid #b8f5c9;
+  color: #fff;
+  font-weight: 800;
+  font-size: clamp(12px, 2.4vh, 22px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.6);
+  pointer-events: none;
+}
+.avatar.glow-picked {
+  border-color: var(--picked);
 }
 .glow-attacking {
   box-shadow:
@@ -2319,6 +2349,49 @@ button {
   to {
     transform: scaleX(0);
   }
+}
+
+/* Choix parmi des permanents, fait sur le plateau (prompts/ChoicePrompt.tsx) : panneau non bloquant à gauche. */
+.board-choice {
+  --board-choice-w: clamp(110px, 17vh, 170px);
+  position: absolute;
+  left: 1.5%;
+  top: 44%;
+  translate: 0 -50%;
+  z-index: 40;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  align-items: center;
+  padding: 10px 12px 12px;
+  border-radius: 14px;
+  background: rgba(10, 14, 20, 0.9);
+  border: 1px solid rgba(240, 184, 74, 0.6);
+  filter: drop-shadow(0 12px 30px rgba(0, 0, 0, 0.8));
+  max-width: calc(var(--board-choice-w) + 80px);
+}
+.board-choice .effect-frame {
+  max-width: 100%;
+}
+.board-choice-label {
+  font-size: 13px;
+  color: var(--text);
+  text-align: center;
+}
+.board-choice-effect {
+  font-size: 12px;
+  color: #8cc4ff;
+  text-align: center;
+}
+.board-choice-hint {
+  margin: 0;
+  font-size: 12px;
+  color: var(--dim);
+  text-align: center;
+}
+.board-choice-actions {
+  display: flex;
+  gap: 8px;
 }
 
 /* Effet joué (mode choisi, capacité) encadré en bleu sous la carte montrée. */

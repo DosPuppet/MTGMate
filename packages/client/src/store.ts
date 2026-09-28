@@ -24,6 +24,7 @@ import { soundsFor } from "./audio/eventSounds";
 import { playSound, preloadSounds } from "./audio/sfx";
 import { findObjectEl } from "./board/layout";
 import { describeEvents, type Lang, type LogLine } from "./i18n";
+import { boardPick, togglePick } from "./prompts/boardChoice";
 import type { FromWorker, Sandbox } from "./protocol";
 import { LocalSession, RemoteSession, type Session } from "./session";
 
@@ -196,7 +197,12 @@ export function myActions(view: GameView | null): ActionOption[] {
 function pendingKey(v: GameView | null): string {
   const p = v?.pending;
   if (!v || !p) return "none";
-  return `${p.kind}:${p.player}:${v.turn.number}:${v.turn.step}:${v.stack.length}`;
+  // Deux choix successifs d'une même résolution : la question elle-même les distingue.
+  const req =
+    p.kind === "choice" && p.request
+      ? `:${p.request.prompt}:${JSON.stringify(p.request.type === "pick" ? p.request.options : [])}`
+      : "";
+  return `${p.kind}:${p.player}:${v.turn.number}:${v.turn.step}:${v.stack.length}${req}`;
 }
 
 function targetSpecs(c: Casting): TargetOption[] {
@@ -368,6 +374,14 @@ function connectRemote(keep?: OnlineState | null): RemoteSession {
 }
 
 export const useGame = create<Store>((set, get) => {
+  /** Choix sur le plateau en cours (façon MTGA) : un clic sélectionne ou retire l'option. Renvoie false hors de ce mode. */
+  const pickOnBoard = (id: string): boolean => {
+    const req = boardPick(get().view);
+    if (!req) return false;
+    if (req.options.includes(id)) set({ selection: togglePick(req, get().selection, id) });
+    else get().notify("Ce choix n'est pas possible.");
+    return true;
+  };
   /** Avance dans les choix d'un lancement ; envoie la décision quand tout est choisi. */
   const continueCasting = (c: Casting) => {
     if (c.option.type === "cast" && c.mode === null) {
@@ -634,7 +648,7 @@ export const useGame = create<Store>((set, get) => {
 
     decide(d) {
       get().session?.send({ type: "decision", decision: d });
-      set({ casting: null, abilityMenu: null, selectedBlocker: null });
+      set({ casting: null, abilityMenu: null, selectedBlocker: null, selection: [] });
     },
 
     notify(text) {
@@ -685,6 +699,7 @@ export const useGame = create<Store>((set, get) => {
         if (casting.spec.legal.includes(id)) return get().pickTarget(id);
         return get().notify("Cible invalide.");
       }
+      if (pickOnBoard(id)) return;
       const p = view.pending;
       if (!p || p.player !== view.viewer) return;
       if (p.kind === "declareAttackers") {
@@ -734,6 +749,7 @@ export const useGame = create<Store>((set, get) => {
       if (p?.kind === "declareAttackers" && p.player === view?.viewer && p.defenders?.includes(id)) {
         return get().aimAttackAt(id);
       }
+      if (pickOnBoard(id)) return;
       if (casting?.stage === "target" && casting.spec) {
         if (casting.spec.legal.includes(id)) return get().pickTarget(id);
         get().notify("Cible invalide.");

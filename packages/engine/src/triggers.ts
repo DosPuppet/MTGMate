@@ -806,6 +806,14 @@ export function triggerTargetSpecs(
   return ab.targets;
 }
 
+/** Carte et capacité d'un déclenchement en attente (interface : rappel de l'effet pendant le choix de ses cibles). */
+export function pendingTriggerSource(s: GameState, triggerId: string): { defId: string; label?: string } | null {
+  const t = s.triggers.find((x) => x.id === triggerId);
+  if (!t) return null;
+  const label = t.inline?.label ?? triggeredAbility(s, t)?.label;
+  return { defId: t.sourceDefId, ...(label ? { label } : {}) };
+}
+
 function triggerLabel(s: GameState, t: PendingTrigger): string {
   const label = t.inline?.label ?? triggeredAbility(s, t)?.label;
   return `${s.defs[t.sourceDefId]?.name ?? "?"}${label ? ` — ${label}` : ""}`;

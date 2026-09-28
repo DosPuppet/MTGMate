@@ -9,6 +9,7 @@ import { costToText } from "./mana";
 import { canPlayLand, castTerms, modesOf } from "./stack";
 import { chars, decider, isCreature, isSummoningSick, obj } from "./state";
 import { playerStatic } from "./statics";
+import { pendingTriggerSource } from "./triggers";
 import { attackableDefenders, attackCandidates, blockCandidates } from "./turn";
 import type {
   ActionOption,
@@ -129,6 +130,8 @@ export type PendingView =
       purpose?: ChoicePurpose;
       /** Objets mentionnés par la demande (y compris cachés, ex. dessus de bibliothèque pour un regard). */
       objects?: ObjectView[];
+      /** Déclenchement dont on choisit les cibles ou le mode : sa carte et sa capacité (pas encore sur la pile). */
+      source?: { face: CardFace; effect?: string };
     };
 
 export interface GameView {
@@ -337,6 +340,12 @@ export function projectView(s: GameState, viewer: PlayerId): GameView {
         const r = p.request;
         const ids = r.type === "pick" ? r.options : r.type === "order" ? r.items : r.type === "divide" ? r.among : [];
         pending = { ...p, objects: ids.filter((id) => s.objects[id]).map((id) => objectView(s, id)) };
+        const trig =
+          p.purpose.kind === "triggerTarget" || p.purpose.kind === "triggerMode"
+            ? pendingTriggerSource(s, p.purpose.trigger)
+            : null;
+        const def = trig ? s.defs[trig.defId] : undefined;
+        if (trig && def) pending.source = { face: cardFace(def), ...(trig.label ? { effect: trig.label } : {}) };
         break;
       }
       default:

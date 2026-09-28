@@ -5,7 +5,17 @@ import { faceImage, faceName, faceText, faceType } from "../i18n";
 import { useGame } from "../store";
 import { KeywordBadges } from "./Keywords";
 
-export type Glow = "playable" | "target" | "selectable" | "selected" | "attacking" | "blocking" | "activatable" | null;
+export type Glow =
+  | "playable"
+  | "target"
+  | "selectable"
+  | "selected"
+  /** Choisi parmi les options en surbrillance (cible, choix sur le plateau) : coche verte. */
+  | "picked"
+  | "attacking"
+  | "blocking"
+  | "activatable"
+  | null;
 
 const SPRING = { type: "spring", stiffness: 420, damping: 38 } as const;
 

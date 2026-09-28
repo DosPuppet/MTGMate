@@ -7,6 +7,7 @@ import { useEffect, useState } from "react";
 import { Card } from "../board/Card";
 import { faceName } from "../i18n";
 import { useGame } from "../store";
+import { boardPick, choiceSource, type PickRequest, pickValid, shortPrompt, togglePick } from "./boardChoice";
 
 type ChoiceView = Extract<NonNullable<GameView["pending"]>, { kind: "choice" }>;
 
@@ -42,7 +43,64 @@ function Option({
   );
 }
 
+const capitalize = (t: string) => t.charAt(0).toUpperCase() + t.slice(1);
+
+/**
+ * Choix parmi des permanents (façon MTGA) : pas de fenêtre ; les options sont en surbrillance sur le plateau et ce
+ * panneau rappelle l'effet (carte qui se résout, consigne) et la sélection. Le bouton principal (Espace) valide aussi.
+ */
+function BoardChoicePanel({ view, req }: { view: GameView; req: PickRequest }) {
+  const decide = useGame((s) => s.decide);
+  const selection = useGame((s) => s.selection);
+  const lang = useGame((s) => s.lang);
+  const source = choiceSource(view);
+  const valid = pickValid(req, selection);
+  return (
+    <div className="board-choice" role="dialog" aria-label={req.prompt}>
+      {source && (
+        <>
+          <div className="board-choice-label">
+            <strong>{faceName(source.face, lang)}</strong>
+          </div>
+          <Card face={source.face} width="var(--board-choice-w)" hoverable />
+          {source.effect && <div className="board-choice-effect">{source.effect}</div>}
+        </>
+      )}
+      <div className="effect-frame">
+        <span className="effect-frame-kind">À vous de choisir</span>
+        {capitalize(shortPrompt(req.prompt, source))}
+      </div>
+      <p className="board-choice-hint">
+        Cliquez sur {req.max > 1 ? "les cartes" : "la carte"} en surbrillance — sélection : {selection.length} / {req.max}
+      </p>
+      <div className="board-choice-actions">
+        <button
+          type="button"
+          className="btn small ghost"
+          onClick={() => useGame.setState({ selection: req.suggested.map(String) })}
+        >
+          Suggestion
+        </button>
+        <button
+          type="button"
+          className="btn small primary"
+          disabled={!valid}
+          onClick={() => decide({ type: "choose", values: selection })}
+        >
+          {selection.length === 0 && req.min === 0 ? "Aucun" : "Valider"}
+        </button>
+      </div>
+    </div>
+  );
+}
+
 export function ChoicePrompt({ view }: { view: GameView }) {
+  const pick = boardPick(view);
+  if (pick) return <BoardChoicePanel view={view} req={pick} />;
+  return <ChoiceModal view={view} />;
+}
+
+function ChoiceModal({ view }: { view: GameView }) {
   const decide = useGame((s) => s.decide);
   const p = view.pending as ChoiceView;
   const req = p.request;
@@ -61,17 +119,7 @@ export function ChoicePrompt({ view }: { view: GameView }) {
   let valid = true;
   switch (req.type) {
     case "pick": {
-      const g = req.group;
-      const toggle = (id: string) =>
-        setValues((cur) => {
-          if (cur.includes(id)) return cur.filter((x) => x !== id);
-          if (req.max === 1) return [id];
-          // « d'un même cimetière » : changer de joueur recommence la sélection ;
-          // « de joueurs différents » : remplace l'option du même joueur.
-          if (g?.kind === "same" && cur.some((x) => g.holders[x] !== g.holders[id])) return [id];
-          const kept = g?.kind === "different" ? cur.filter((x) => g.holders[x] !== g.holders[id]) : cur;
-          return kept.length >= req.max ? kept : [...kept, id];
-        });
+      const toggle = (id: string) => setValues((cur) => togglePick(req, cur.map(String), id));
       valid = values.length >= req.min && values.length <= req.max;
       // Longues listes (types de créature…) : recherche, et la suggestion en tête.
       const long = req.options.length > 20;
