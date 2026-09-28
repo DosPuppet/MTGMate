@@ -94,7 +94,9 @@ export function buildCastDecision(
  * `rank` ordonne les options de coûts additionnels (les premières sont défaussées ou sacrifiées).
  */
 export function enumerateDecisions(a: ActionOption, limit = 40, rank?: (ids: string[]) => string[]): Decision[] {
-  const combos = (opts: TargetOption[]): Record<string, string[]>[] => {
+  const combos = (opts0: TargetOption[], kicked = false): Record<string, string[]>[] => {
+    // Cadeau promis : les cibles légales peuvent changer (« à la place, un permanent non-terrain ciblé »).
+    const opts = opts0.map((o) => (kicked && o.kickedLegal ? { ...o, legal: o.kickedLegal } : o));
     let acc: Record<string, string[]>[] = [{}];
     for (const o of opts) {
       // Plusieurs cibles : on essaie chaque cible « en tête », complétée par les suivantes.
@@ -141,7 +143,13 @@ export function enumerateDecisions(a: ActionOption, limit = 40, rank?: (ids: str
           ];
           for (const v of variants) {
             out.push(v);
-            if (a.kickerAffordable) out.push({ ...v, kicked: true });
+            if (a.kickerAffordable && !m.targets.some((t) => t.kickedLegal)) out.push({ ...v, kicked: true });
+          }
+        }
+        // Cibles propres au cadeau promis : combinaisons calculées à part.
+        if (a.kickerAffordable && m.targets.some((t) => t.kickedLegal)) {
+          for (const targets of combos(m.targets, true)) {
+            out.push({ type: "cast", card: a.card, face: a.face, mode: m.index, targets, x: a.xMax ?? undefined, kicked: true });
           }
         }
       }

@@ -39,7 +39,7 @@ import {
 } from "../state";
 import { controlledAbilitiesWithSource } from "../statics";
 import { matchesCard, matchesObjectFilter } from "../targets";
-import type { Effect, GameState, Resolution } from "../types";
+import type { CardType, Effect, GameState, Resolution } from "../types";
 
 export const HANDLERS: OpHandlers = {
   destroy(s, r, e, ctx) {
@@ -467,7 +467,11 @@ export const HANDLERS: OpHandlers = {
       if (chosen.length === 0) continue;
       if (e.exile) {
         // Intimidation Tactics : la carte choisie est exilée (ce n'est pas une défausse).
-        for (const id of chosen) moveObject(s, id, "exile");
+        for (const id of chosen) {
+          const moved = moveObject(s, id, "exile");
+          // Cruelclaw's Heist : « vous pouvez lancer cette carte tant qu'elle reste exilée ».
+          if (e.store && moved) r.vars[`$ids:${e.store}`] = [...(r.vars[`$ids:${e.store}`] ?? []), moved];
+        }
         continue;
       }
       emit({ type: "discard", player: p, defIds: chosen.map((id) => s.objects[id]?.defId ?? "") });
@@ -495,6 +499,10 @@ export const HANDLERS: OpHandlers = {
       if (n <= 0) {
         r.vars[key(`done-${p}`)] = [1];
         continue;
+      }
+      if (e.greatestPower && candidates.length) {
+        const max = Math.max(...candidates.map((id) => chars(s, id).power));
+        candidates = candidates.filter((id) => chars(s, id).power === max);
       }
       if (e.greatestManaValue && candidates.length) {
         const mv = (id: string) => manaValue(s.defs[s.objects[id]?.defId ?? ""]?.manaCost);
@@ -931,6 +939,31 @@ export const HANDLERS: OpHandlers = {
       const cards = i < 0 ? [...pl.library] : pl.library.slice(0, i + 1);
       for (const id of cards) moveAndLog(s, id, "graveyard");
     }
+    return;
+  },
+  portent(s, r, _e, ctx) {
+    const pl = s.players[ctx.controller];
+    if (!pl) return;
+    const revealed = pl.library.slice(0, Math.max(0, ctx.x));
+    const typesOf = (id: string) => s.defs[s.objects[id]?.defId ?? ""]?.types ?? [];
+    // Une carte par type de carte : on attribue d'abord les cartes qui ont le moins de types.
+    const order: CardType[] = ["Battle", "Planeswalker", "Enchantment", "Artifact", "Sorcery", "Instant", "Creature", "Land"];
+    const picked: string[] = [];
+    for (const t of order) {
+      const c = revealed
+        .filter((id) => !picked.includes(id) && typesOf(id).includes(t))
+        .sort((a, b) => typesOf(a).length - typesOf(b).length)[0];
+      if (c) picked.push(c);
+    }
+    emit({ type: "reveal", player: ctx.controller, defIds: revealed.map((id) => s.objects[id]?.defId ?? "") });
+    const exiled = picked.map((id) => moveWithSpec(s, ctx.controller, id, { to: "exile" })).filter((x): x is string => !!x);
+    for (const id of revealed) if (!picked.includes(id) && s.objects[id]) moveAndLog(s, id, "graveyard");
+    // Quatre cartes ou plus : le sort non-terrain de plus grande valeur de mana peut être lancé gratuitement.
+    const mv = (id: string) => manaValue(s.defs[s.objects[id]?.defId ?? ""]?.manaCost);
+    const free =
+      exiled.length >= 4 ? exiled.filter((id) => !typesOf(id).includes("Land")).sort((a, b) => mv(b) - mv(a))[0] : undefined;
+    r.vars["$ids:free"] = free ? [free] : [];
+    r.vars["$ids:rest"] = exiled.filter((id) => id !== free);
     return;
   },
   exileTop(s, r, e, ctx) {

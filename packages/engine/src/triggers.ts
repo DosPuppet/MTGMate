@@ -8,6 +8,7 @@
  *   chaque joueur ordonne ses déclenchements, choisit leur mode et leurs cibles (603.3c–d) via les choix génériques.
  * - Capacités retardées (603.7) et réflexives (603.12) : créées par des effets, avec leurs propres effets et cibles.
  */
+import { canForage } from "./actions";
 import { ask } from "./choices";
 import { boardAmount, evalAmount } from "./effects";
 import { RulesError } from "./errors";
@@ -31,6 +32,7 @@ import { legalTargets, matchesObjectFilter, matchesView, validateTargets, withCh
 import type {
   AbilityDef,
   Amount,
+  CardType,
   Condition,
   DelayedTiming,
   GameState,
@@ -57,14 +59,26 @@ const hasTriggers = (abilities: AbilityDef[] | undefined) => !!abilities?.some((
 function liveSources(s: GameState): Source[] {
   const out: Source[] = [];
   // Capacités déclenchées accordées, ou copiées (couche 1) : on ne peut pas se fier aux capacités imprimées.
-  const granted = s.effects.some((e) => e.copyOf || e.addAbilities?.some((a) => a.kind === "triggered"));
+  // Prouesse (702.108) : la capacité déclenchée est ajoutée par les couches à toute créature qui a le mot-clé.
+  const grants = (m: { addAbilities?: AbilityDef[]; addKeywords?: string[] }) =>
+    !!m.addAbilities?.some((a) => a.kind === "triggered") || !!m.addKeywords?.includes("prowess");
+  const granted =
+    s.effects.some((e) => e.copyOf || grants(e)) ||
+    s.battlefield.some((id) => (s.defs[obj(s, id).defId]?.abilities ?? []).some((ab) => ab.kind === "static" && grants(ab.mods)));
   for (const id of s.battlefield) {
     // Filtre rapide sur les capacités imprimées, sauf si un effet accorde des capacités déclenchées.
     const o = obj(s, id);
     const d = s.defs[o.faceDefId ?? o.defId];
     // Salle : les capacités déclenchées sont portées par ses portes.
     const levels = !!d?.classLevels || !!d?.caseSolved;
-    if (!granted && !levels && !hasTriggers(d?.abilities) && !d?.faceDefs?.some((f) => hasTriggers(f.abilities))) continue;
+    if (
+      !granted &&
+      !levels &&
+      !hasTriggers(d?.abilities) &&
+      !d?.keywords.includes("prowess") &&
+      !d?.faceDefs?.some((f) => hasTriggers(f.abilities))
+    )
+      continue;
     const view = snapshot(s, id);
     if (hasTriggers(view.abilities)) out.push({ id, view });
   }
@@ -303,8 +317,29 @@ export function checkCondition(s: GameState, c: Condition, controller: PlayerId,
       if (a.kind === "count" || a.kind === "totalPower") return boardAmount(s, a, controller, sourceId) >= c.n;
       return checkAmount(s, a, controller, sourceId) >= c.n;
     }
+    case "any":
+      return c.of.some((x) => checkCondition(s, x, controller, sourceId));
+    case "opponentHasMore": {
+      const measure = (p: PlayerId): number => {
+        if (c.what === "life") return s.players[p]?.life ?? 0;
+        if (c.what === "hand") return s.players[p]?.hand.length ?? 0;
+        const type = c.what === "lands" ? "Land" : "Creature";
+        return s.battlefield.filter((id) => s.objects[id]?.controller === p && chars(s, id).types.includes(type)).length;
+      };
+      const mine = measure(controller);
+      return opponentsOf(s, controller).some((p) => measure(p) > mine);
+    }
+    case "lostLifeThisTurn":
+      return (s.players[controller]?.turnStats.lifeLost ?? 0) > 0;
+    case "sacrificedFood":
+      return (s.players[controller]?.turnStats.foodSacrificed ?? 0) > 0;
+    case "canForage":
+      return canForage(s, controller);
     case "var":
     case "refLife":
+    case "refLostLife":
+    case "handAtMost":
+    case "targetChosen":
       return false; // évalué pendant la résolution (effects.ts)
   }
 }
@@ -381,8 +416,18 @@ function matchTrigger(s: GameState, ev: RulesEvent, t: TriggerSpec, src: Source)
       if (t.alone && (s.combat?.attackers.length ?? 0) !== 1) return null;
       return { objectId: ev.attacker, player: ev.defender };
     }
-    case "attackWith":
-      return ev.e === "attackWith" && ev.player === me && ev.count >= (t.min ?? 1) ? { player: me, amount: ev.count } : null;
+    case "attackWith": {
+      if (ev.e !== "attackWith" || ev.player !== me) return null;
+      // « Chaque fois que vous attaquez avec un ou plusieurs [Rats] » : seulement les attaquants correspondants.
+      const f = t.filter;
+      const count = f
+        ? (s.combat?.attackers ?? []).filter((a) => {
+            const v = liveView(s, a.id);
+            return !!v && v.controller === me && matchesView(v, f, me, src.id);
+          }).length
+        : ev.count;
+      return count >= (t.min ?? 1) ? { player: me, amount: count } : null;
+    }
     case "dealsCombatDamage":
     case "dealsDamage": {
       if (ev.e !== "damage") return null;
@@ -438,6 +483,15 @@ function matchTrigger(s: GameState, ev: RulesEvent, t: TriggerSpec, src: Source)
       if (t.minManaSpent !== undefined && (s.stack.find((x) => x.id === ev.stackId)?.manaSpent ?? 0) < t.minManaSpent)
         return null;
       if (t.notOwned && s.objects[ev.stackId]?.owner === ev.player) return null;
+      // Alania : le premier éphémère, le premier rituel ou le premier sort de Loutre (autre qu'elle) de ce tour.
+      if (t.firstOf) {
+        const kinds = s.players[ev.player]?.turnStats.castKinds ?? {};
+        const first =
+          !!v &&
+          ev.stackId !== src.id &&
+          t.firstOf.some((k) => (v.types.includes(k as CardType) || v.subtypes.includes(k)) && kinds[k] === 1);
+        if (!first) return null;
+      }
       // `amount` : éphémères et rituels déjà lancés ce tour-ci (Thousand-Year Storm).
       return { objectId: ev.stackId, player: ev.player, amount: ev.instantSorceryBefore };
     }
@@ -601,13 +655,44 @@ function matchTrigger(s: GameState, ev: RulesEvent, t: TriggerSpec, src: Source)
       const v = liveView(s, ev.objectId);
       return v && matchWho(t.who, v, src) ? { objectId: ev.objectId, player: v.controller } : null;
     }
-    case "becomesTarget":
-      if (ev.e !== "targeted" || !ev.targets.includes(src.id)) return null;
+    case "becomesTarget": {
+      if (ev.e !== "targeted") return null;
+      // « Chaque fois qu'une créature que vous contrôlez devient la cible… » (Pawpatch Recruit) : l'objet ciblé.
+      const who = t.who;
+      const hit =
+        who === "self"
+          ? ev.targets.includes(src.id)
+            ? src.id
+            : undefined
+          : ev.targets.find((id) => {
+              const v = liveView(s, id);
+              return !!v && s.objects[id]?.zone === "battlefield" && matchWho(who, v, src);
+            });
+      if (!hit) return null;
       if (t.byOpponent && ev.controller === me) return null;
+      // Vaillance : un sort ou une capacité que vous contrôlez.
+      if (t.byYou && ev.controller !== me) return null;
+      if (who !== "self") return { objectId: hit, player: ev.controller };
       // « Chaque fois que vous lancez un sort qui cible cette créature »
       if (t.bySpellYouControl && (ev.controller !== me || s.stack.find((x) => x.id === ev.stackId)?.kind !== "spell"))
         return null;
       return { objectId: ev.stackId, player: ev.controller };
+    }
+    case "expend":
+      return ev.e === "expend" && ev.player === me && ev.n === t.n ? { player: me } : null;
+    case "forage":
+      return ev.e === "forage" && ev.player === me ? { player: me } : null;
+    case "gift":
+      return ev.e === "gift" && ev.player === me ? { player: me } : null;
+    case "lifeChange":
+      return (ev.e === "lifeGain" || ev.e === "lifeLoss") && ev.player === me ? { player: me, amount: ev.amount } : null;
+    case "leavesWithoutDying": {
+      if (ev.e !== "zone" || ev.from !== "battlefield" || !ev.lki) return null;
+      if (ev.to === "graveyard" && ev.lki.types.includes("Creature")) return null;
+      return matchWho(t.who, ev.lki, src)
+        ? { objectId: ev.lki.id, newObjectId: ev.newId ?? undefined, player: ev.lki.controller }
+        : null;
+    }
     case "countersPut": {
       if (ev.e !== "counters" || (t.kind && ev.kind !== t.kind)) return null;
       const v = liveView(s, ev.objectId);

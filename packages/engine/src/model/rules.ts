@@ -23,6 +23,10 @@ export interface TargetSpec {
   differentPlayers?: boolean;
   /** Nombre de cibles variable (« jusqu'à X créatures ciblées ») : remplace `count` au moment de choisir les cibles. */
   countAmount?: Amount;
+  /** Filtre si le sort est kické ou si le cadeau est promis (« à la place, un permanent non-terrain ciblé »). */
+  kickedFilter?: TargetFilter;
+  /** Valeur de mana exacte évaluée quand la capacité réflexive est mise sur la pile (Wishing Well). */
+  manaValueAmount?: Amount;
 }
 
 export interface TargetFilter {
@@ -143,6 +147,8 @@ export interface ObjectFilter {
   notAttachedToSource?: boolean;
   /** Objet lié à la source (Turn Inside Out : « quand elle meurt ce tour-ci »). */
   linkedToSource?: boolean;
+  /** Endurance supérieure à sa force (Fecund Greenshell). */
+  toughnessAbovePower?: boolean;
 }
 
 /**
@@ -181,6 +187,11 @@ export type TriggerSpec =
       minManaSpent?: number;
       /** « un sort qu'il ne possède pas » (Gonti, Night Minister). */
       notOwned?: boolean;
+      /**
+       * Alania : le premier sort de l'un de ces types (« Instant », « Sorcery ») ou sous-types (« Otter ») lancé ce tour-ci,
+       * autre que la source.
+       */
+      firstOf?: string[];
     }
   | { on: "step"; step: Step; whose: "you" | "opponent" | "any" }
   | { on: "landfall" }
@@ -190,7 +201,7 @@ export type TriggerSpec =
   | { on: "draw"; whose: "you" | "opponent" | "any"; nth?: number }
   | { on: "loseLife"; whose: "you" | "opponent" | "any" }
   /** « Chaque fois que vous attaquez [avec au moins N créatures] » */
-  | { on: "attackWith"; min?: number }
+  | { on: "attackWith"; min?: number; filter?: ObjectFilter }
   /** « Chaque fois que des marqueurs sont placés sur … » */
   | { on: "countersPut"; who: "self" | ObjectFilter; kind?: string }
   /** Blessures infligées par une source (non de combat seulement si demandé), éventuellement à un adversaire. */
@@ -207,7 +218,8 @@ export type TriggerSpec =
   /** « Chaque fois qu'un adversaire défausse une carte » */
   | { on: "discard"; whose: "you" | "opponent" | "any" }
   /** « Chaque fois que [cette créature] devient la cible d'un sort ou d'une capacité [qu'un adversaire contrôle] » */
-  | { on: "becomesTarget"; who: "self"; byOpponent?: boolean; bySpellYouControl?: boolean }
+  /** `byYou` : un sort ou une capacité que le contrôleur de la source contrôle (Vaillance, Bloomburrow). */
+  | { on: "becomesTarget"; who: "self" | ObjectFilter; byOpponent?: boolean; bySpellYouControl?: boolean; byYou?: boolean }
   /** « Chaque fois que [la créature équipée] se dégage » */
   | { on: "untaps"; who: "self" | ObjectFilter }
   /** « Chaque fois que [cette créature] devient engagée » */
@@ -270,7 +282,17 @@ export type TriggerSpec =
    */
   | { on: "zoneChange"; from: Zone[]; to?: Zone[]; filter?: ObjectFilter; whose?: "you" | "any" }
   /** « Chaque fois que vous activez une capacité de loyauté [en retirant au moins N marqueurs] » ; `byOpponent` : un adversaire l'active. */
-  | { on: "loyaltyActivated"; minRemoved?: number; byOpponent?: boolean };
+  | { on: "loyaltyActivated"; minRemoved?: number; byOpponent?: boolean }
+  /** Dépense N (Bloomburrow) : « chaque fois que vous dépensez votre N-ième mana total pour lancer des sorts pendant un tour ». */
+  | { on: "expend"; n: number }
+  /** « Chaque fois que vous fourragez » (Corpseberry Cultivator). */
+  | { on: "forage" }
+  /** « Chaque fois que vous offrez un cadeau » (Jolly Gerbils). */
+  | { on: "gift" }
+  /** « Chaque fois que vous gagnez ou perdez des points de vie » (Wax-Wane Witness). */
+  | { on: "lifeChange" }
+  /** « Chaque fois qu'une [créature] quitte le champ de bataille sans mourir » (Dour Port-Mage, Three Tree Scribe). */
+  | { on: "leavesWithoutDying"; who: ObjectFilter };
 
 /** Conditions (« if intermédiaire » 603.4, « tant que »…). */
 export type Condition =
@@ -388,7 +410,23 @@ export type Condition =
   /** Un permanent est arrivé face cachée sous votre contrôle ou vous avez retourné un permanent face visible ce tour-ci. */
   | { kind: "faceDownOrUpThisTurn" }
   /** Vous avez sacrifié au moins un permanent ce tour-ci. */
-  | { kind: "sacrificedThisTurn" };
+  | { kind: "sacrificedThisTurn" }
+  /** Au moins une des conditions. */
+  | { kind: "any"; of: Condition[] }
+  /** Un adversaire a plus de terrains, de points de vie, de créatures ou de cartes en main que vous (Beza). */
+  | { kind: "opponentHasMore"; what: "lands" | "life" | "creatures" | "hand" }
+  /** Vous avez perdu des points de vie ce tour-ci. */
+  | { kind: "lostLifeThisTurn" }
+  /** Le joueur désigné a perdu des points de vie ce tour-ci (évalué pendant la résolution). */
+  | { kind: "refLostLife"; ref: Ref }
+  /** Le joueur désigné a au plus N cartes en main (évalué pendant la résolution). */
+  | { kind: "handAtMost"; ref: Ref; n: number }
+  /** Une cible a été choisie pour ce mot « cible » (« jusqu'à une … »). */
+  | { kind: "targetChosen"; spec: string }
+  /** Vous avez sacrifié une Nourriture ce tour-ci (Bonecache Overseer). */
+  | { kind: "sacrificedFood" }
+  /** Vous pouvez fourrager (trois cartes dans votre cimetière ou une Nourriture). */
+  | { kind: "canForage" };
 /** Référence à un joueur ou à un objet, résolue au moment de l'effet. */
 export type Ref =
   | { kind: "target"; id: string }
@@ -431,7 +469,9 @@ export type Ref =
   /** Permanents correspondants contrôlés par le joueur désigné (« chaque créature que le joueur ciblé contrôle »). */
   | { kind: "permanentsOf"; player: Ref; filter: ObjectFilter }
   /** Cartes en main d'un joueur, de valeur de mana au plus `maxManaValue` (Buster Sword). */
-  | { kind: "handOf"; player: Ref; filter: ObjectFilter; maxManaValue?: Amount };
+  | { kind: "handOf"; player: Ref; filter: ObjectFilter; maxManaValue?: Amount }
+  /** Le joueur défenseur de la source attaquante (celui qui contrôle le planeswalker attaqué). */
+  | { kind: "defendingPlayer" };
 
 export type Amount =
   | number
@@ -537,4 +577,18 @@ export type Amount =
   /** Couleurs différentes parmi les permanents correspondants (Karn, Gilded Guardian). */
   | { kind: "distinctColors"; filter: ObjectFilter }
   /** Nombre de sous-types différents parmi les permanents correspondants (« types de planeswalker », Tam). */
-  | { kind: "distinctSubtypes"; filter: ObjectFilter };
+  | { kind: "distinctSubtypes"; filter: ObjectFilter }
+  /** Objets désignés encore en exil (Dragonhawk : « celles de ces cartes encore exilées »). */
+  | { kind: "inExile"; ref: Ref }
+  /** Créatures mortes sous votre contrôle ce tour-ci (Season of Loss). */
+  | { kind: "yourCreaturesDiedThisTurn" }
+  /** Créatures exilées sous le contrôle de vos adversaires ce tour-ci (Vren). */
+  | { kind: "opponentCreaturesExiledThisTurn" }
+  /** Adversaires qui ont au plus N cartes en main (Bandit's Talent). */
+  | { kind: "opponentsWithHandAtMost"; n: number }
+  /** Force de la source quand la capacité s'est déclenchée (« quand cette créature meurt, … égales à sa force »). */
+  | { kind: "lkiPower" }
+  /** Éphémères et rituels que vous avez lancés ce tour-ci. */
+  | { kind: "instantSorceryCast" }
+  /** Cartes qui ont quitté votre cimetière ce tour-ci (Bonecache Overseer). */
+  | { kind: "cardsLeftGraveyardThisTurn" };

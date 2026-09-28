@@ -7,11 +7,14 @@ import {
   type CardType,
   type Color,
   dsl,
+  type Effect,
   type Keyword,
   type ManaCost,
   type ObjectFilter,
   parseManaCost,
+  type SpellDef,
 } from "@mtgx/engine";
+import { FISH, FOOD, TREASURE } from "./fdn/common";
 
 export interface RawCard {
   name: string;
@@ -289,6 +292,35 @@ export function onlyKeywords(text: string): boolean {
 function parseInt0(v: string | undefined): number | undefined | null {
   if (v === undefined) return undefined;
   return /^-?\d+$/.test(v) ? Number(v) : null;
+}
+
+/** Progéniture (702.175) : « Offspring {2} » — un kicker, et « quand elle arrive, créez un jeton 1/1 copie d'elle ». */
+export function parseOffspring(text: string): string | undefined {
+  return /^Offspring ((?:\{[^}]+\})+)/m.exec(text)?.[1];
+}
+
+const GIFTS: Record<string, NonNullable<CardDef["gift"]>> = {
+  card: "card",
+  Food: "food",
+  "tapped Fish": "fish",
+  Treasure: "treasure",
+};
+
+/** Cadeau (702.174) : « Gift a card », « Gift a Food », « Gift a tapped Fish », « Gift a Treasure ». */
+export function parseGift(text: string): CardDef["gift"] {
+  const m = /^Gift an? (card|Food|tapped Fish|Treasure)\b/m.exec(text);
+  return m ? GIFTS[m[1] as string] : undefined;
+}
+
+const GIFT_TOKENS = { food: FOOD, fish: FISH, treasure: TREASURE } as const;
+
+/** L'effet du cadeau promis (702.174b : l'adversaire le reçoit avant les autres effets du sort). */
+function giftEffects(kind: NonNullable<CardDef["gift"]>): Effect[] {
+  const token = kind === "card" ? undefined : GIFT_TOKENS[kind];
+  return [
+    { op: "if", cond: { kind: "kicked" }, skip: 1 },
+    { op: "gift", kind, token },
+  ];
 }
 
 /** Capacités déclenchées portées par un mot-clé (702.108 prouesse, 702.21 garde). */
@@ -638,6 +670,28 @@ function singleDef(raw: RawCard, script: CardScript | undefined, set: string): C
     stationIncomplete,
     ...levelFields
   } = sagaClassCase(raw, script) as ReturnType<typeof sagaClassCase> & { stationIncomplete?: boolean };
+  // Bloomburrow : Progéniture et Cadeau sont des coûts optionnels, comme un kicker.
+  const offspring = parseOffspring(raw.oracleText);
+  const gift = parseGift(raw.oracleText);
+  const isSpell = types.includes("Instant") || types.includes("Sorcery");
+  const bloomburrowAbilities: CardDef["abilities"] = [];
+  if (offspring) {
+    bloomburrowAbilities.push(
+      dsl.triggered(dsl.when.entersSelf, [dsl.fx.copyToken(dsl.ref.self, { pt: 1 })], {
+        condition: dsl.cond.kicked,
+        label: "Progéniture — jeton 1/1 copie",
+      }),
+    );
+  }
+  if (gift && !isSpell) {
+    bloomburrowAbilities.push(
+      dsl.triggered(dsl.when.entersSelf, giftEffects(gift).slice(1), { condition: dsl.cond.kicked, label: "Cadeau promis" }),
+    );
+  }
+  const spell: SpellDef | undefined =
+    gift && isSpell && script?.spell
+      ? { modes: script.spell.modes.map((m) => ({ ...m, effects: [...giftEffects(gift), ...m.effects] })) }
+      : script?.spell;
   // Station : un palier dont les capacités (autres que des mots-clés) ne sont pas scriptées rend la carte non gérée.
   if (stationIncomplete) implemented = false;
   return {
@@ -669,6 +723,7 @@ function singleDef(raw: RawCard, script: CardScript | undefined, set: string): C
       ...jobSelectAbility(raw.keywords),
       ...(parseCycling(raw.oracleText) ? [parseCycling(raw.oracleText) as CardDef["abilities"][number]] : []),
       ...extraAbilities,
+      ...bloomburrowAbilities,
     ],
     ...levelFields,
     cdaPower: script?.cdaPower,
@@ -682,7 +737,12 @@ function singleDef(raw: RawCard, script: CardScript | undefined, set: string): C
     leyline: script?.leyline,
     altCost: script?.altCost
       ? { mana: parseManaCost(script.altCost.mana), condition: script.altCost.condition, label: script.altCost.label }
-      : impendingAltCost(raw.oracleText),
+      : script?.forageOrPay && manaCost
+        ? { mana: manaCost, condition: dsl.cond.canForage, label: `Fourrager — ${raw.manaCost}`, forage: true }
+        : impendingAltCost(raw.oracleText),
+    forageOrPay: script?.forageOrPay ? parseManaCost(script.forageOrPay) : undefined,
+    entersAsCopyAnyController: script?.entersAsCopyAnyController,
+    entersAsCopyAddKeywords: script?.entersAsCopyAddKeywords,
     impending: parseImpending(raw.oracleText)?.n,
     cdaPT: script?.cdaPT,
     chooseOnEnter: script?.chooseOnEnter,
@@ -695,8 +755,16 @@ function singleDef(raw: RawCard, script: CardScript | undefined, set: string): C
     chosenNameTax: script?.chosenNameTax,
     ward,
     cantBeCountered: script?.cantBeCountered,
-    spell: script?.spell,
-    kicker: script?.kicker ? parseManaCost(script.kicker) : undefined,
+    spell,
+    kicker: script?.kicker
+      ? parseManaCost(script.kicker)
+      : offspring
+        ? parseManaCost(offspring)
+        : gift
+          ? parseManaCost("{0}")
+          : undefined,
+    kickerKind: offspring ? "offspring" : gift ? "gift" : undefined,
+    gift,
     kickerCost: script?.kickerCost,
     flashback: script?.flashback ? parseManaCost(script.flashback) : undefined,
     flashbackDiscard: script?.flashbackDiscard,

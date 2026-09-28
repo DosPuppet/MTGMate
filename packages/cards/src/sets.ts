@@ -24,6 +24,7 @@ import tlaData from "../data/tla.json";
 import tmtData from "../data/tmt.json";
 import woeData from "../data/woe.json";
 import { BIG_SCRIPTS } from "./big/index";
+import { BLB_SCRIPTS } from "./blb/index";
 import { DFT_SCRIPTS } from "./dft/index";
 import { DSK_SCRIPTS } from "./dsk/index";
 import { EOE_SCRIPTS } from "./eoe/index";
@@ -72,7 +73,7 @@ export const SETS: CardSet[] = [
     scripts: OTJ_SCRIPTS,
   },
   { code: "BIG", name: "The Big Score", nameFr: "Le gros coup", mainMax: 30, data: bigData as RawCard[], scripts: BIG_SCRIPTS },
-  { code: "BLB", name: "Bloomburrow", nameFr: "Bloomburrow", mainMax: 281, data: blbData as RawCard[], scripts: {} },
+  { code: "BLB", name: "Bloomburrow", nameFr: "Bloomburrow", mainMax: 281, data: blbData as RawCard[], scripts: BLB_SCRIPTS },
   {
     code: "TDM",
     name: "Tarkir: Dragonstorm",

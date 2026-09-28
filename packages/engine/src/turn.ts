@@ -632,6 +632,7 @@ export function canBlock(s: GameState, blocker: ObjectId, attacker: ObjectId): b
   if (hasKeyword(s, attacker, "cantBeBlockedByHumans") && chars(s, blocker).subtypes.includes("Human")) return false;
   if (hasKeyword(s, attacker, "cantBeBlockedByGlimmers") && chars(s, blocker).subtypes.includes("Glimmer")) return false;
   if (hasKeyword(s, attacker, "cantBeBlockedByPowerLE2") && chars(s, blocker).power <= 2) return false;
+  if (hasKeyword(s, attacker, "cantBeBlockedByPowerGE2") && chars(s, blocker).power >= 2) return false;
   if (hasKeyword(s, attacker, "flying") && !hasKeyword(s, blocker, "flying") && !hasKeyword(s, blocker, "reach")) return false;
   if (hasKeyword(s, attacker, "cantBeBlockedByWalls") && chars(s, blocker).subtypes.includes("Wall")) return false;
   if (hasKeyword(s, attacker, "cantBeBlockedExceptByHaste") && !hasKeyword(s, blocker, "haste")) return false;

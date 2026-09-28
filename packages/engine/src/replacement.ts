@@ -149,6 +149,8 @@ export function applyEntersReplacements(s: GameState, o: GameObject, ctx: Enters
       copyOf: ctx.copyOf,
       // Visage Bandit : « sauf que c'est un Métamorphe Voleur en plus de ses autres types ».
       addSubtypes: s.defs[o.defId]?.entersAsCopyAddSubtypes,
+      // Mockingbird : « … et elle a le vol ».
+      addKeywords: s.defs[o.defId]?.entersAsCopyAddKeywords,
     });
     s.version += 1; // cache des couches
   }

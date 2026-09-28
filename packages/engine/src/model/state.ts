@@ -324,6 +324,16 @@ export interface TurnStats {
   freeFromExile?: number;
   /** Un permanent est arrivé face cachée sous son contrôle, ou il en a retourné un face visible (Oblivious Bookworm). */
   faceDownOrUp?: number;
+  /** Mana total dépensé pour lancer des sorts ce tour-ci (Dépense, Bloomburrow). */
+  manaSpentOnSpells?: number;
+  /** Nourritures sacrifiées ce tour-ci (Bonecache Overseer). */
+  foodSacrificed?: number;
+  /** Cartes qui ont quitté le cimetière de ce joueur ce tour-ci (Bonecache Overseer). */
+  cardsLeftGraveyard?: number;
+  /** Créatures exilées depuis le champ de bataille sous le contrôle de ce joueur ce tour-ci (Vren). */
+  creaturesExiled?: number;
+  /** Sorts lancés ce tour-ci par type (« Instant », « Sorcery ») et sous-type de créature (Alania). */
+  castKinds?: Record<string, number>;
 }
 
 export interface CombatState {

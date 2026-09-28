@@ -1,5 +1,5 @@
 /** Effets du moteur : joueurs (points de vie, pioche, tours et étapes supplémentaires, victoire). Chaque clé est un `op` d'`Effect` (voir `runEffect`, effects.ts). */
-import { dealDamage, drawCard, gainLife, loseLife, sacrifice, setSpeed } from "../actions";
+import { createTokens, dealDamage, drawCard, gainLife, loseLife, sacrifice, setSpeed } from "../actions";
 import type { OpHandlers } from "../effects";
 import {
   announceDiscard,
@@ -17,6 +17,34 @@ import { matchesObjectFilter } from "../targets";
 import { eliminate, endTheTurn } from "../turn";
 
 export const HANDLERS: OpHandlers = {
+  gift(s, _r, e, ctx) {
+    // 702.174 : l'adversaire choisi reçoit le cadeau (approximation : le prochain adversaire dans l'ordre du tour).
+    const to = opponentsOf(s, ctx.controller)[0];
+    if (!to) return;
+    if (e.kind === "card") drawCard(s, to);
+    else if (e.token) {
+      const created = createTokens(s, to, e.token, 1);
+      for (const id of created) {
+        const o = s.objects[id];
+        if (o && e.kind === "fish") o.tapped = true;
+      }
+    }
+    emit({ type: "gift", player: ctx.controller, to, kind: e.kind });
+    rulesEvent(s, { e: "gift", player: ctx.controller });
+    return;
+  },
+  damageEachPlayerPer(s, _r, e, ctx) {
+    // Sunspine Lynx : chaque joueur, autant de blessures que de permanents correspondants qu'il contrôle.
+    const src = damageSource(s, ctx);
+    if (!src) return;
+    for (const p of s.playerOrder.filter((q) => !s.players[q]?.lost)) {
+      const n = s.battlefield.filter(
+        (id) => s.objects[id]?.controller === p && matchesObjectFilter(s, p, id, { ...e.filter, controller: undefined }),
+      ).length;
+      dealDamage(s, src, p, n, false);
+    }
+    return;
+  },
   cantGainLife(s, _r, e, ctx) {
     for (const p of resolveRef(s, ctx, e.who)) {
       const pl = s.players[p];
@@ -55,72 +83,75 @@ export const HANDLERS: OpHandlers = {
     return;
   },
   punisher(s, r, e, ctx, key) {
-    for (const p of resolveRef(s, ctx, e.who)) {
-      if (!isPlayer(s, p) || r.vars[key(`pdone-${p}`)]) continue;
-      const hand = s.players[p]?.hand ?? [];
-      const f = e.sacrifice;
-      const perms = f ? s.battlefield.filter((id) => s.objects[id]?.controller === p && matchesObjectFilter(s, p, id, f)) : [];
-      const options = ["life", ...(e.discard && hand.length ? ["discard"] : []), ...(perms.length ? ["sacrifice"] : [])];
-      let choice = options.length === 1 ? "life" : r.vars[key(`punish-${p}`)]?.[0];
-      if (choice === undefined) {
-        return {
-          ask: {
-            player: p,
-            key: key(`punish-${p}`),
-            request: {
-              type: "pick",
-              intent: "punisher",
-              prompt: `${nameOf(s, ctx.sourceId)} : choisissez`,
-              options,
-              labels: {
-                life: e.damage !== undefined ? `Subir ${evalAmount(s, ctx, e.damage)} blessures` : `Perdre ${e.loseLife} PV`,
-                discard: "Défausser une carte",
-                sacrifice: "Sacrifier un permanent",
+    // Rottenmouth Viper : « pour chaque marqueur de fléau » (la vie à perdre est redemandée à chaque fois).
+    const times = e.times === undefined ? 1 : Math.max(0, evalAmount(s, ctx, e.times));
+    for (let i = 0; i < times; i++)
+      for (const p of resolveRef(s, ctx, e.who)) {
+        if (!isPlayer(s, p) || r.vars[key(`pdone-${i}-${p}`)]) continue;
+        const hand = s.players[p]?.hand ?? [];
+        const f = e.sacrifice;
+        const perms = f ? s.battlefield.filter((id) => s.objects[id]?.controller === p && matchesObjectFilter(s, p, id, f)) : [];
+        const options = ["life", ...(e.discard && hand.length ? ["discard"] : []), ...(perms.length ? ["sacrifice"] : [])];
+        let choice = options.length === 1 ? "life" : r.vars[key(`punish-${i}-${p}`)]?.[0];
+        if (choice === undefined) {
+          return {
+            ask: {
+              player: p,
+              key: key(`punish-${i}-${p}`),
+              request: {
+                type: "pick",
+                intent: "punisher",
+                prompt: `${nameOf(s, ctx.sourceId)} : choisissez`,
+                options,
+                labels: {
+                  life: e.damage !== undefined ? `Subir ${evalAmount(s, ctx, e.damage)} blessures` : `Perdre ${e.loseLife} PV`,
+                  discard: "Défausser une carte",
+                  sacrifice: "Sacrifier un permanent",
+                },
+                min: 1,
+                max: 1,
+                suggested: [options[options.length - 1] as string],
               },
-              min: 1,
-              max: 1,
-              suggested: [options[options.length - 1] as string],
             },
-          },
-        };
-      }
-      choice = String(choice);
-      if (choice === "life") {
-        if (e.damage !== undefined) {
-          const src = damageSource(s, ctx);
-          if (src) dealDamage(s, src, p, Math.max(0, evalAmount(s, ctx, e.damage)), false);
-        } else loseLife(s, p, e.loseLife);
-        r.vars[key(`pdone-${p}`)] = [1];
-        continue;
-      }
-      const pool = choice === "discard" ? hand : perms;
-      const picked = pool.length === 1 ? [pool[0] as string] : r.vars[key(`punishPick-${p}`)]?.map(String);
-      if (!picked) {
-        return {
-          ask: {
-            player: p,
-            key: key(`punishPick-${p}`),
-            request: {
-              type: "pick",
-              intent: choice === "discard" ? "discard" : "sacrifice",
-              prompt: choice === "discard" ? "Défaussez une carte" : "Sacrifiez un permanent",
-              options: [...pool],
-              min: 1,
-              max: 1,
-              suggested: [pool[0] as string],
+          };
+        }
+        choice = String(choice);
+        if (choice === "life") {
+          if (e.damage !== undefined) {
+            const src = damageSource(s, ctx);
+            if (src) dealDamage(s, src, p, Math.max(0, evalAmount(s, ctx, e.damage)), false);
+          } else loseLife(s, p, e.loseLife);
+          r.vars[key(`pdone-${i}-${p}`)] = [1];
+          continue;
+        }
+        const pool = choice === "discard" ? hand : perms;
+        const picked = pool.length === 1 ? [pool[0] as string] : r.vars[key(`punishPick-${i}-${p}`)]?.map(String);
+        if (!picked) {
+          return {
+            ask: {
+              player: p,
+              key: key(`punishPick-${i}-${p}`),
+              request: {
+                type: "pick",
+                intent: choice === "discard" ? "discard" : "sacrifice",
+                prompt: choice === "discard" ? "Défaussez une carte" : "Sacrifiez un permanent",
+                options: [...pool],
+                min: 1,
+                max: 1,
+                suggested: [pool[0] as string],
+              },
             },
-          },
-        };
+          };
+        }
+        r.vars[key(`pdone-${i}-${p}`)] = [1];
+        for (const id of picked) {
+          if (choice === "discard") {
+            emit({ type: "discard", player: p, defIds: [s.objects[id]?.defId ?? ""] });
+            announceDiscard(s, p, moveObject(s, id, "graveyard"));
+          } else if (onBattlefield(s, id)) sacrifice(s, id);
+        }
+        if (choice === "discard") announceDiscardBatch(s, p, picked.length);
       }
-      r.vars[key(`pdone-${p}`)] = [1];
-      for (const id of picked) {
-        if (choice === "discard") {
-          emit({ type: "discard", player: p, defIds: [s.objects[id]?.defId ?? ""] });
-          announceDiscard(s, p, moveObject(s, id, "graveyard"));
-        } else if (onBattlefield(s, id)) sacrifice(s, id);
-      }
-      if (choice === "discard") announceDiscardBatch(s, p, picked.length);
-    }
     return;
   },
   draw(s, _r, e, ctx) {

@@ -140,5 +140,22 @@
   - Haunted Screen : le paiement automatique peut payer le point de vie de la capacité {G}/{U}/{R} ;
   - Creeping Peeper : tout sort d'enchantement, toute capacité d'une Salle ou d'un permanent face cachée ;
   - Turn Inside Out : un emblème temporaire, lié à la créature, porte « quand elle meurt ce tour-ci ».
+- **Bloomburrow (BLB) :**
+  - Cadeau : il va à l'adversaire suivant dans l'ordre du tour (pas de choix de l'adversaire en multijoueur) ;
+  - Fourrager : choix automatique, trois cartes du cimetière (terrains d'abord) s'il y en a au moins trois, sinon une Nourriture (un jeton de préférence) ;
+  - « vous pouvez lancer [cette carte] sans payer son coût de mana » (Daring Waverider, Wishing Well, The Infamous Cruelclaw, Portent of Calamity) : la carte est lançable gratuitement jusqu'à la fin du tour, après la résolution ; The Infamous Cruelclaw fait défausser d'abord ;
+  - Portent of Calamity : les cartes exilées sont choisies automatiquement (une par type) ; avec quatre cartes ou plus, le sort non-terrain de plus grande valeur de mana reste lançable en exil, les autres vont en main ;
+  - choix non ciblés modélisés par une cible : Season of Weaving et Season of Gathering (« une créature que vous contrôlez »), Wick (« un Escargot que vous contrôlez »), Mistbreath Elder (la créature renvoyée est choisie au déclenchement) ;
+  - Jackdaw Savior : la carte de valeur de mana inférieure est choisie à la résolution, sans cibler ; Clement : la créature ciblée n'est renvoyée que si sa valeur de mana est inférieure ;
+  - Pawpatch Recruit : le marqueur peut aller sur la créature ciblée par l'adversaire ;
+  - Whiskervale Forerunner : pendant votre tour, la créature révélée va toujours sur le champ de bataille ; Fecund Greenshell : un terrain refusé va en main ;
+  - capacités de mana modélisées par des capacités activées (pile) : Thornvault Forager (fourrager : deux mana d'une même couleur), Baylen (engager deux jetons) ; Muerra ajoute des mana d'une seule couleur, au choix ;
+  - Helga : son mana ne sert pas aux sorts de créature avec {X} de valeur de mana inférieure à 4 ; Heirloom Epic : les créatures ne peuvent pas aider à payer ;
+  - Rottenmouth Viper : le coût additionnel facultatif (sacrifier des permanents non-terrains pour réduire le coût) n'est pas proposé ;
+  - Eluge : l'Île ajoutée par le marqueur d'inondation dure toute la partie ; la réduction de coût est générique ;
+  - Alania : les sorts de Loutre (des créatures) ne sont pas copiés ; Ral (emblème) : la réplique compte vos seuls sorts ;
+  - Season of the Bold (troisième mode) : l'emblème cesse au début de votre prochain tour, et non à sa fin ;
+  - Kastral (premier mode) : un Oiseau de votre main, sinon de votre cimetière ;
+  - Thought-Stalker Warlock : « si il a perdu des points de vie ce tour-ci » est vérifié pour l'adversaire ciblé.
 - **Légalité Standard :** instantané des légalités Scryfall au moment de l'import (`legalities.standard` dans `data/<set>.json`). Après une rotation ou une annonce de bannissement, réimporter les sets (`npm run import-cards -- <set>`).
 - **Jetons :** pas d'image (cadre texte).

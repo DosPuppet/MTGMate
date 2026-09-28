@@ -103,7 +103,29 @@ export const HANDLERS: OpHandlers = {
   },
   modifyAll(s, _r, e, ctx) {
     const ids = s.battlefield.filter((x) => matchesObjectFilter(s, ctx.controller, x, e.filter, ctx.sourceId));
-    addEffect(s, ids, e.mods, "endOfTurn");
+    if (ids.length === 0) return;
+    bump(s);
+    // « … jusqu'à votre prochain tour » (For the Common Good).
+    const until = e.duration === "untilYourNextTurn";
+    s.effects.push({
+      id: newId(s, "e"),
+      timestamp: nextTimestamp(s),
+      affected: ids,
+      duration: until ? "untilYourNextTurn" : "endOfTurn",
+      ...(until ? { until: ctx.controller } : {}),
+      ...e.mods,
+    });
+    return;
+  },
+  untapAll(s, _r, e, ctx) {
+    for (const id of s.battlefield) {
+      const o = s.objects[id];
+      if (o?.controller !== ctx.controller || !o.tapped || !matchesObjectFilter(s, ctx.controller, id, e.filter, ctx.sourceId))
+        continue;
+      o.tapped = false;
+      bump(s);
+      rulesEvent(s, { e: "untap", objectId: id });
+    }
     return;
   },
   chooseCardName(s, r, _e, ctx, key) {
@@ -200,12 +222,16 @@ export const HANDLERS: OpHandlers = {
           s.combat.attackers.push({ id: token, defender, blockers: [], blocked: false });
           bump(s);
         }
-        if (e.sacrificeAtEndStep) {
+        if (e.sacrificeAtEndStep || e.exileAtEndStep) {
           createDelayed(s, ctx.controller, ctx.sourceId, ctx.sourceDefId, {
             targets: [],
-            effects: [{ op: "sacrificeIt", what: { kind: "target", id: "copy" } }],
+            effects: [
+              e.exileAtEndStep
+                ? { op: "exile", what: { kind: "target", id: "copy" } }
+                : { op: "sacrificeIt", what: { kind: "target", id: "copy" } },
+            ],
             bound: { copy: [token] },
-            label: "sacrifier la copie",
+            label: e.exileAtEndStep ? "exiler la copie" : "sacrifier la copie",
           });
         }
       }
@@ -215,7 +241,10 @@ export const HANDLERS: OpHandlers = {
   chooseCopy(s, r, e, ctx, key) {
     if (r.vars.$copyOf) return;
     const options = s.battlefield.filter(
-      (id) => s.objects[id]?.controller === ctx.controller && matchesObjectFilter(s, ctx.controller, id, e.filter, ctx.sourceId),
+      (id) =>
+        (e.anyController || s.objects[id]?.controller === ctx.controller) &&
+        id !== ctx.sourceId &&
+        matchesObjectFilter(s, ctx.controller, id, e.filter, ctx.sourceId),
     );
     const answer = options.length ? r.vars[key("copy")] : [];
     if (!answer) {

@@ -33,6 +33,7 @@ export const {
   exhaust,
   spree,
   tiered,
+  pawprint,
 } = dsl;
 
 /** Cible quelconque décrite par un filtre d'objets. */

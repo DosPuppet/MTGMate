@@ -46,6 +46,11 @@ function applySandbox(s: GameState, sandbox: Sandbox): void {
       o.controlledSince = 0;
       if (def.loyalty) o.counters.loyalty = def.loyalty;
     }
+    for (const name of side.hand ?? []) {
+      const def = card(name);
+      registerDef(s, def);
+      createObject(s, def.id, player, "hand");
+    }
     for (const [n, name] of side.tokens ?? []) {
       const spec = TOKEN_SPECS[name];
       if (!spec) continue;

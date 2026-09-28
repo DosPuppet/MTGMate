@@ -3,7 +3,7 @@
  * Côté moteur, un lancement est atomique : le client envoie d'un coup mode, cibles, X et kicker,
  * et le paiement du mana est résolu automatiquement (réserve d'abord, puis solveur).
  */
-import { createTokenCopy, loseLife, removeFromCombat, sacrifice as sacrificePermanent } from "./actions";
+import { canForage, createTokenCopy, forage, loseLife, removeFromCombat, sacrifice as sacrificePermanent } from "./actions";
 import { ask } from "./choices";
 import { addEffect, announceDiscard, announceDiscardBatch, evalAmount, moveWithSpec, runEffect } from "./effects";
 import { RulesError } from "./errors";
@@ -56,7 +56,11 @@ import type {
 export { RulesError };
 
 /** Coût alternatif disponible : celui de la carte (si sa condition est remplie), sinon Leyline of Mutation. */
-export function altCostFor(s: GameState, player: PlayerId, d: CardDef): { mana: ManaCost; label: string } | undefined {
+export function altCostFor(
+  s: GameState,
+  player: PlayerId,
+  d: CardDef,
+): { mana: ManaCost; label: string; forage?: boolean } | undefined {
   if (d.altCost && checkCondition(s, d.altCost.condition, player)) return d.altCost;
   for (const { ab } of controlledAbilitiesWithSource(s, player)) {
     if (ab.kind === "playerStatic" && ab.altCostAll)
@@ -95,6 +99,11 @@ export function canCastTiming(s: GameState, player: PlayerId, d: CardDef): boole
   if (d.types.includes("Instant") || d.keywords.includes("flash")) return true;
   if (d.flashIf && checkCondition(s, d.flashIf, player)) return true;
   if (sorceryTiming(s, player)) return true;
+  // Valley Floodcaller : « vous pouvez lancer des sorts non-créature comme s'ils avaient le flash ».
+  const flashFor = controlledAbilitiesWithSource(s, player).some(
+    ({ ab }) => ab.kind === "playerStatic" && !!ab.flashFor && matchesView(spellView(d, player), ab.flashFor, player),
+  );
+  if (flashFor) return true;
   // « Vous pouvez lancer des sorts comme s'ils avaient le flash. »
   return s.battlefield.some(
     (id) => obj(s, id).controller === player && chars(s, id).abilities.some((ab) => ab.kind === "castPermission" && ab.flash),
@@ -345,12 +354,14 @@ export function spellCost(
   const empty: ManaCost = { generic: 0, colored: {}, x: 0 };
   const alt = opts.alternative ? altCostFor(s, player, d) : undefined;
   const base = opts.free ? empty : alt ? alt.mana : opts.flashback ? (d.flashback ?? d.manaCost) : d.manaCost;
-  const cost = totalCost(
+  const cost0 = totalCost(
     base,
     opts.free ? 0 : (opts.x ?? 0),
     opts.kicked ? d.kicker : undefined,
     opts.free ? 0 : spellReduction(s, player, d, opts.targets, opts.fromZone),
   );
+  // Feed the Cycle : « fourragez ou payez {B} » — le mana s'ajoute sauf si l'on fourrage (coût alternatif).
+  const cost = d.forageOrPay && !alt?.forage ? totalCost(cost0, 0, d.forageOrPay) : cost0;
   if (!opts.anyMana) return cost;
   const colored =
     Object.values(cost.colored).reduce<number>((n, k) => n + (k ?? 0), 0) +
@@ -388,6 +399,8 @@ export interface CastTerms {
   exileAfter?: boolean;
   /** Le permanent arrive avec un marqueur de finalité (Noctis). */
   finality?: boolean;
+  /** Il faut fourrager en plus (Osteomancer Adept). */
+  forage?: boolean;
 }
 
 /** 702.170 : la carte (depuis la main ou la pile) est exilée face visible et devient complotée. */
@@ -605,6 +618,21 @@ function baseCastTerms(s: GameState, player: PlayerId, card: ObjectId): CastTerm
     if (noctis?.kind === "playerStatic" && noctis.artifactsFromGraveyardLife) {
       if ((s.players[player]?.life ?? 0) < noctis.artifactsFromGraveyardLife) return null;
       return { source: "graveyard", payLife: noctis.artifactsFromGraveyardLife, finality: true };
+    }
+    // Festival of Embers : pendant votre tour, éphémères et rituels depuis votre cimetière en payant 1 PV en plus.
+    if (d.types.includes("Instant") || d.types.includes("Sorcery")) {
+      const festival = controlledAbilitiesWithSource(s, player).find(
+        ({ id, ab }) =>
+          ab.kind === "playerStatic" &&
+          !!ab.instantsSorceriesFromGraveyardLife &&
+          (!ab.condition || checkCondition(s, ab.condition, player, id)),
+      )?.ab;
+      const life = festival?.kind === "playerStatic" ? (festival.instantsSorceriesFromGraveyardLife ?? 0) : 0;
+      if (life) return (s.players[player]?.life ?? 0) >= life ? { source: "graveyard", payLife: life } : null;
+    }
+    // Osteomancer Adept : les sorts de créature, en fourrageant en plus ; ils arrivent avec un marqueur de finalité.
+    if (d.types.includes("Creature") && playerStatic(s, player, "creaturesFromGraveyardForage") && canForage(s, player, card)) {
+      return { source: "graveyard", forage: true, finality: true };
     }
     const fromGy = d.castFromGraveyard;
     if (fromGy && (!fromGy.condition || checkCondition(s, fromGy.condition, player, card))) {
@@ -902,6 +930,9 @@ export function castSpell(s: GameState, player: PlayerId, card: ObjectId, choice
   const group = exilePermission(s, player, card)?.group;
   if (group) s.playPermissions = (s.playPermissions ?? []).filter((p) => p.group !== group);
   const stackId = moveObject(s, card, "stack", { controller: player }) as string;
+  // Fourrager en coût (Osteomancer Adept, ou le coût alternatif de Feed the Cycle) : la carte a quitté le cimetière.
+  if ((terms.forage || (alternative && altCostFor(s, player, d)?.forage)) && !forage(s, player))
+    throw new RulesError("Impossible de fourrager");
   // Coûts additionnels choisis automatiquement (avant le mana : ces permanents ne produisent plus de mana).
   for (const id of auto.tap) tapObject(s, obj(s, id));
   for (const id of auto.bounce) moveObject(s, id, "hand");
@@ -997,7 +1028,20 @@ export function castSpell(s: GameState, player: PlayerId, card: ObjectId, choice
     if (instantOrSorcery) caster.turnStats.instantSorceryCast += 1;
     if (!d.types.includes("Creature")) caster.turnStats.noncreatureCast += 1;
   }
+  if (caster) {
+    // Alania : premier sort de chaque type et sous-type de créature lancé ce tour-ci.
+    const kinds = { ...(caster.turnStats.castKinds ?? {}) };
+    for (const k of [...d.types, ...(d.types.includes("Creature") ? d.subtypes : [])]) kinds[k] = (kinds[k] ?? 0) + 1;
+    caster.turnStats.castKinds = kinds;
+  }
   rulesEvent(s, { e: "cast", player, stackId, instantSorceryBefore: instantOrSorcery ? before : undefined });
+  // Dépense N (Bloomburrow) : le N-ième mana total dépensé pour lancer des sorts ce tour-ci.
+  const spent = item.manaSpent ?? 0;
+  if (caster && spent > 0) {
+    const was = caster.turnStats.manaSpentOnSpells ?? 0;
+    caster.turnStats.manaSpentOnSpells = was + spent;
+    for (const n of [4, 8]) if (was < n && was + spent >= n) rulesEvent(s, { e: "expend", player, n });
+  }
   announceTargets(s, stackId, player, targets);
 }
 
@@ -1233,6 +1277,7 @@ export function canPayNonManaCost(s: GameState, source: ObjectId, ab: ActivatedA
   if (ab.cost.tapOthers && tapOthersOptions(s, player, source, ab).length < ab.cost.tapOthers.count) return false;
   if (ab.cost.discard && discardCostOptions(s, player, source).length < ab.cost.discard) return false;
   if (ab.cost.returnUnblockedAttacker && unblockedAttackers(s, player).length === 0) return false;
+  if (ab.cost.forage && !canForage(s, player)) return false;
   return true;
 }
 
@@ -1431,6 +1476,8 @@ export function activateAbility(s: GameState, player: PlayerId, source: ObjectId
     item.sacrificed = options.slice(0, x);
     for (const id of options.slice(0, x)) sacrificePermanent(s, id);
   }
+  // Fourrager (701.61) : trois cartes du cimetière ou une Nourriture (choix automatique).
+  if (ab.cost.forage && !forage(s, player)) throw new RulesError("Impossible de fourrager");
   // Ninjutsu : l'attaquant non bloqué le plus faible retourne dans la main de son propriétaire.
   if (ab.cost.returnUnblockedAttacker) {
     const weakest = [...unblockedAttackers(s, player)].sort((a, b) => chars(s, a).power - chars(s, b).power)[0];
@@ -1481,7 +1528,10 @@ function specsAndEffects(s: GameState, item: StackItem): { specs: TargetSpec[]; 
       return { specs: mode?.targets ?? [], effects: [...effects, op] };
     }
     if (d.entersAsCopyOf && isPermanentCard(d) && !item.copy) {
-      return { specs: mode?.targets ?? [], effects: [...effects, { op: "chooseCopy", filter: d.entersAsCopyOf }] };
+      return {
+        specs: mode?.targets ?? [],
+        effects: [...effects, { op: "chooseCopy", filter: d.entersAsCopyOf, anyController: d.entersAsCopyAnyController }],
+      };
     }
     return { specs: mode?.targets ?? [], effects };
   }
@@ -1518,7 +1568,9 @@ export function resolveTop(s: GameState): boolean {
   for (const spec of specs) {
     const ids = item.targets[spec.id] ?? [];
     chosen += ids.length;
-    legal[spec.id] = ids.filter((id) => isLegalTarget(s, item.controller, spec, id, item.sourceId));
+    // Cadeau promis ou kicker : le filtre propre (« à la place, un permanent non-terrain ciblé »).
+    const legalSpec = item.kicked && spec.kickedFilter ? { ...spec, filter: spec.kickedFilter } : spec;
+    legal[spec.id] = ids.filter((id) => isLegalTarget(s, item.controller, legalSpec, id, item.sourceId));
     stillLegal += legal[spec.id]?.length ?? 0;
   }
   if (chosen > 0 && stillLegal === 0) {

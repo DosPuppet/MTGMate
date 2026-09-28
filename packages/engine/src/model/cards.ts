@@ -5,6 +5,7 @@ import type {
   Color,
   Condition,
   Effect,
+  GiftKind,
   Keyword,
   ManaCost,
   ManaType,
@@ -62,7 +63,7 @@ export interface CardDef {
   /** « Ce sort coûte {N} de moins à lancer [si…] » (601.2f). */
   costReduction?: { generic: Amount; condition?: Condition };
   /** Coût alternatif (« vous pouvez payer {B} plutôt que le coût de mana de ce sort si… »). */
-  altCost?: { mana: ManaCost; condition: Condition; label: string };
+  altCost?: { mana: ManaCost; condition: Condition; label: string; forage?: boolean };
   /** F/E définies par une capacité (604.3, couche 7a), ex. cartes dans les cimetières adverses. */
   cdaPT?: Amount;
   /** « En arrivant, choisissez un type de créature / une couleur » (614.12). */
@@ -145,6 +146,15 @@ export interface CardDef {
   caseSolved?: AbilityDef[];
   /** Assemblage (701.42) : les deux parties et la carte assemblée, par nom. */
   meld?: { parts: string[]; result?: string };
+  /** Libellé du kicker : Progéniture (702.175) ou Cadeau (702.174), lus dans le texte (Bloomburrow). */
+  kickerKind?: "offspring" | "gift";
+  /** Cadeau (702.174) : ce que reçoit l'adversaire choisi si le cadeau est promis. */
+  gift?: GiftKind;
+  /** « En coût additionnel, fourragez ou payez [mana] » (Feed the Cycle) : le coût alternatif « Fourrager » l'évite. */
+  forageOrPay?: ManaCost;
+  /** Copie à l'arrivée : de n'importe quel contrôleur (Mockingbird), et mots-clés ajoutés. */
+  entersAsCopyAnyController?: boolean;
+  entersAsCopyAddKeywords?: Keyword[];
   /** Carte assemblée (verso commun de deux cartes) : elle ne se met pas dans un deck. */
   meldResult?: boolean;
   /** Définition de la carte assemblée, enregistrée dans la partie avec la carte (partie d'un assemblage). */
@@ -344,6 +354,8 @@ export interface CostDef {
   discard?: number;
   /** Ninjutsu : renvoyer en main un attaquant non bloqué que vous contrôlez (choisi automatiquement : le plus faible). */
   returnUnblockedAttacker?: boolean;
+  /** Fourrager (701.61) : exiler trois cartes de votre cimetière ou sacrifier une Nourriture (choix automatique). */
+  forage?: boolean;
 }
 /** Modifications apportées par un effet continu, rangées par couche (613). */
 export interface LayerMods {
@@ -573,6 +585,18 @@ export interface PlayerStaticAbilityDef {
   seeFaceDown?: boolean;
   /** Marina Vendrell's Grimoire : vous ne perdez pas la partie pour avoir 0 point de vie ou moins. */
   noLoseForLife?: boolean;
+  /** Artist's Talent : blessures non de combat de vos sources à un adversaire ou à ses permanents : +N. */
+  noncombatDamageBonusAmount?: number;
+  /** Sunspine Lynx (tous) : les blessures ne peuvent pas être prévenues. */
+  damageUnpreventable?: boolean;
+  /** Festival of Embers : lancer des éphémères et des rituels depuis votre cimetière en payant N PV en plus. */
+  instantsSorceriesFromGraveyardLife?: number;
+  /** Valley Floodcaller : les sorts correspondants ont le flash. */
+  flashFor?: ObjectFilter;
+  /** Valley Flamecaller : les blessures de vos sources correspondantes : +1. */
+  damagePlusOneFrom?: ObjectFilter;
+  /** Osteomancer Adept : lancer des sorts de créature depuis votre cimetière en fourrageant (marqueur de finalité). */
+  creaturesFromGraveyardForage?: boolean;
   label?: string;
 }
 

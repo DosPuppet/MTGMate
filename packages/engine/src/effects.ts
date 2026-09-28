@@ -126,6 +126,14 @@ export function evalCondition(s: GameState, ctx: EffectContext, c: Condition): b
       return ctx.x >= c.n;
     case "amountAtLeast":
       return evalAmount(s, ctx, c.amount) >= c.n;
+    case "any":
+      return c.of.some((x) => evalCondition(s, ctx, x));
+    case "refLostLife":
+      return resolveRef(s, ctx, c.ref).some((p) => (s.players[p]?.turnStats.lifeLost ?? 0) > 0);
+    case "handAtMost":
+      return resolveRef(s, ctx, c.ref).some((p) => !!s.players[p] && (s.players[p]?.hand.length ?? 0) <= c.n);
+    case "targetChosen":
+      return (ctx.targets[c.spec] ?? []).length > 0;
     default:
       return checkCondition(s, c, ctx.controller, ctx.sourceId);
   }
@@ -221,6 +229,13 @@ export function resolveRef(s: GameState, ctx: EffectContext, ref: Ref): string[]
       return s.battlefield.filter(
         (id) => players.includes(s.objects[id]?.controller ?? "") && matchesObjectFilter(s, ctx.controller, id, f, ctx.sourceId),
       );
+    }
+    case "defendingPlayer": {
+      const atk = s.combat?.attackers.find((a) => a.id === ctx.sourceId);
+      if (!atk) return [];
+      if (isPlayer(s, atk.defender)) return [atk.defender];
+      const pw = s.objects[atk.defender];
+      return pw ? [pw.controller] : [];
     }
     case "attached": {
       const host = s.objects[ctx.sourceId]?.attachedTo ?? s.lki[ctx.sourceId]?.attachedTo;
@@ -463,6 +478,20 @@ export function evalAmount(s: GameState, ctx: EffectContext, a: Amount): number 
     }
     case "cardsIn":
       return s.players[ctx.controller]?.[a.zone].length ?? 0;
+    case "inExile":
+      return resolveRef(s, ctx, a.ref).filter((id) => s.objects[id]?.zone === "exile").length;
+    case "yourCreaturesDiedThisTurn":
+      return s.players[ctx.controller]?.turnStats.creaturesLost ?? 0;
+    case "opponentCreaturesExiledThisTurn":
+      return opponentsOf(s, ctx.controller).reduce((n, p) => n + (s.players[p]?.turnStats.creaturesExiled ?? 0), 0);
+    case "opponentsWithHandAtMost":
+      return opponentsOf(s, ctx.controller).filter((p) => (s.players[p]?.hand.length ?? 0) <= a.n).length;
+    case "lkiPower":
+      return Math.max(0, ctx.sourceSnapshot.power);
+    case "instantSorceryCast":
+      return s.players[ctx.controller]?.turnStats.instantSorceryCast ?? 0;
+    case "cardsLeftGraveyardThisTurn":
+      return s.players[ctx.controller]?.turnStats.cardsLeftGraveyard ?? 0;
   }
 }
 

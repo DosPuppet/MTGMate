@@ -104,6 +104,12 @@ export type RulesEvent =
   | { e: "classLevel"; objectId: ObjectId; level: number }
   /** Un joueur joue un terrain. */
   | { e: "playLand"; player: PlayerId; objectId: ObjectId }
+  /** Dépense N (Bloomburrow) : ce joueur vient de dépenser son N-ième mana total pour lancer des sorts ce tour-ci. */
+  | { e: "expend"; player: PlayerId; n: number }
+  /** Un joueur fourrage (701.61). */
+  | { e: "forage"; player: PlayerId }
+  /** Un joueur offre un cadeau (702.174). */
+  | { e: "gift"; player: PlayerId }
   /** Une porte de Salle est déverrouillée. */
   | { e: "unlock"; objectId: ObjectId; door: number; player: PlayerId }
   | { e: "blocked"; attacker: ObjectId; player: PlayerId };
@@ -425,6 +431,16 @@ export function moveObject(
       const stats = s.players[lki.controller]?.turnStats;
       if (stats) stats.creaturesLost = (stats.creaturesLost ?? 0) + 1;
     }
+    // Vren, the Relentless : « créatures exilées sous le contrôle de vos adversaires ce tour-ci ».
+    if (to === "exile" && lki.types.includes("Creature")) {
+      const stats = s.players[lki.controller]?.turnStats;
+      if (stats) stats.creaturesExiled = (stats.creaturesExiled ?? 0) + 1;
+    }
+  }
+  // Bonecache Overseer : « si trois cartes ou plus ont quitté votre cimetière ce tour-ci ».
+  if (o.zone === "graveyard" && to !== "graveyard") {
+    const stats = s.players[o.owner]?.turnStats;
+    if (stats) stats.cardsLeftGraveyard = (stats.cardsLeftGraveyard ?? 0) + 1;
   }
   const from0 = o.zone;
   if (from0 === "library" && to === "graveyard") {

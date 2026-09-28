@@ -49,6 +49,7 @@ export function matchesView(v: LkiSnapshot, f: ObjectFilter, perspective: Player
   if (f.anyOf && !f.anyOf.some((g) => matchesView(v, g, perspective, sourceId))) return false;
   if (f.legendary !== undefined && v.supertypes.includes("Legendary") !== f.legendary) return false;
   if (f.maxToughness !== undefined && v.toughness > f.maxToughness) return false;
+  if (f.toughnessAbovePower && !(v.toughness > v.power)) return false;
   if (f.manaValueParity && ((v.manaValue ?? 0) % 2 === 0) !== (f.manaValueParity === "even")) return false;
   if (f.noManaSpent && (v.manaSpent ?? 0) > 0) return false;
   if (f.notOwned && v.owner === v.controller) return false;
@@ -118,7 +119,11 @@ function resolveFilter(s: GameState, f: ObjectFilter, sourceId?: ObjectId): Obje
     return { ...f, maxManaValueX: undefined, maxManaValue: x };
   }
   if (f.maxManaValueManaSpent) {
-    const spent = (sourceId && (s.objects[sourceId]?.manaSpent ?? s.lki[sourceId]?.manaSpent)) || 0;
+    // Sort de permanent en cours de résolution (Mockingbird) : le mana dépensé est sur l'élément de pile.
+    const spent =
+      (sourceId &&
+        (s.objects[sourceId]?.manaSpent ?? s.lki[sourceId]?.manaSpent ?? s.stack.find((x) => x.id === sourceId)?.manaSpent)) ||
+      0;
     return { ...f, maxManaValueManaSpent: undefined, maxManaValue: spent };
   }
   if (!f.maxManaValueSourcePower) return f;
@@ -261,8 +266,10 @@ export function validateTargets(
     if (new Set(ids).size !== ids.length) throw new RulesError("Même cible choisie deux fois");
     if (ids.length === 0 && !spec.optional) throw new RulesError(`Cible manquante : ${spec.label ?? spec.id}`);
     if (!spec.optional && !spec.kickedCount && ids.length < max) throw new RulesError(`${max} cibles requises`);
+    // Cadeau promis ou kicker : un autre filtre (« à la place, un permanent non-terrain ciblé »).
+    const legalSpec = opts.kicked && spec.kickedFilter ? { ...spec, filter: spec.kickedFilter } : spec;
     for (const id of ids)
-      if (!isLegalTarget(s, controller, spec, id, opts.sourceId)) throw new RulesError(`Cible illégale : ${id}`);
+      if (!isLegalTarget(s, controller, legalSpec, id, opts.sourceId)) throw new RulesError(`Cible illégale : ${id}`);
     const holders = ids.map((id) => s.objects[id]?.[s.objects[id]?.zone === "battlefield" ? "controller" : "owner"] ?? id);
     if (spec.samePlayer && new Set(holders).size > 1) throw new RulesError("Les cibles doivent appartenir au même joueur");
     if (spec.differentPlayers && new Set(holders).size !== holders.length)

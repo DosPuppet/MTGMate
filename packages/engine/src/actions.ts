@@ -77,6 +77,46 @@ export function gainLife(s: GameState, p: PlayerId, amount: number): void {
   rulesEvent(s, { e: "lifeGain", player: p, amount, first: player.turnStats.lifeGainEvents === 1 });
 }
 
+/** Fourrager (701.61) : peut-on exiler trois cartes de son cimetière ou sacrifier une Nourriture ? */
+/** `exclude` : une carte du cimetière qui n'y sera plus (le sort lancé depuis le cimetière). */
+export function canForage(s: GameState, p: PlayerId, exclude?: ObjectId): boolean {
+  const gy = (s.players[p]?.graveyard ?? []).filter((id) => id !== exclude);
+  return gy.length >= 3 || foodToSacrifice(s, p) !== undefined;
+}
+
+function foodToSacrifice(s: GameState, p: PlayerId): ObjectId | undefined {
+  const foods = s.battlefield.filter((id) => s.objects[id]?.controller === p && chars(s, id).subtypes.includes("Food"));
+  // Un jeton de préférence, puis ce qui n'est pas une créature (Ygra rend les créatures Nourritures).
+  return foods.sort((a, b) => rank(a) - rank(b))[0];
+  function rank(id: ObjectId): number {
+    return (s.objects[id]?.isToken ? 0 : 2) + (isCreature(s, id) ? 4 : 0);
+  }
+}
+
+/**
+ * Fourrager (701.61), choix automatique : trois cartes du cimetière (terrains d'abord) s'il y en a au moins trois,
+ * sinon une Nourriture sacrifiée. Renvoie false si c'est impossible.
+ */
+export function forage(s: GameState, p: PlayerId): boolean {
+  const player = s.players[p];
+  if (!player) return false;
+  if (player.graveyard.length >= 3) {
+    const isLand = (id: ObjectId) => !!s.defs[s.objects[id]?.defId ?? ""]?.types.includes("Land");
+    const chosen = [...player.graveyard].sort((a, b) => Number(isLand(b)) - Number(isLand(a))).slice(0, 3);
+    for (const id of chosen) {
+      const o = obj(s, id);
+      emit({ type: "moved", owner: o.owner, objectId: id, defId: o.defId, from: "graveyard", to: "exile" });
+      moveObject(s, id, "exile");
+    }
+  } else {
+    const food = foodToSacrifice(s, p);
+    if (!food) return false;
+    sacrifice(s, food);
+  }
+  rulesEvent(s, { e: "forage", player: p });
+  return true;
+}
+
 export function loseLife(s: GameState, p: PlayerId, amount: number): void {
   const player = s.players[p];
   if (!player || amount <= 0) return;
@@ -118,7 +158,10 @@ export function dealDamage(s: GameState, source: DamageSource, target: string, a
     : undefined;
   if (absorber) target = absorber;
   // Frenzied Baloth : « les blessures de combat ne peuvent pas être prévenues ».
-  const unpreventable = combat && s.playerOrder.some((p) => playerStatic(s, p, "combatDamageUnpreventable"));
+  // Sunspine Lynx : « les blessures ne peuvent pas être prévenues ».
+  const unpreventable =
+    (combat && s.playerOrder.some((p) => playerStatic(s, p, "combatDamageUnpreventable"))) ||
+    s.playerOrder.some((p) => playerStatic(s, p, "damageUnpreventable"));
   if (combat && !unpreventable && preventsCombatDamage(s, target)) return;
   if (
     combat &&
@@ -178,6 +221,24 @@ export function dealDamage(s: GameState, source: DamageSource, target: string, a
   if (!combat && taii?.turn === s.turn.number) amount += taii.n;
   if (!combat && victim && victim !== source.controller && playerStatic(s, source.controller, "noncombatDamageBonus"))
     amount += 1;
+  // Artist's Talent (niveau 3) : « … elle en inflige autant plus 2 à la place ».
+  if (!combat && victim && victim !== source.controller) {
+    amount += controlledAbilitiesWithSource(s, source.controller).reduce(
+      (n, { ab }) => n + (ab.kind === "playerStatic" ? (ab.noncombatDamageBonusAmount ?? 0) : 0),
+      0,
+    );
+  }
+  // Valley Flamecaller : « si un Lézard, une Souris, une Loutre ou un Raton laveur que vous contrôlez devait infliger des
+  // blessures, il en inflige autant plus 1 à la place ».
+  if (source.id && s.objects[source.id]?.zone === "battlefield") {
+    const id = source.id;
+    amount += controlledAbilitiesWithSource(s, source.controller).filter(
+      ({ id: from, ab }) =>
+        ab.kind === "playerStatic" &&
+        !!ab.damagePlusOneFrom &&
+        matchesObjectFilter(s, source.controller, id, ab.damagePlusOneFrom, from),
+    ).length;
+  }
   // Far Fortune (vitesse maximale) : toute blessure de vos sources à un adversaire ou à ses permanents, +1.
   if (victim && victim !== source.controller && playerStatic(s, source.controller, "damagePlusOneToOpponents")) amount += 1;
   if (victim && victim !== source.controller) amount *= 2 ** doublers(s, source.controller, "damageToOpponents");
@@ -273,6 +334,7 @@ export function sacrifice(s: GameState, id: ObjectId): void {
   rulesEvent(s, { e: "sacrifice", objectId: id, player: o.controller });
   const stats = s.players[o.controller]?.turnStats;
   if (stats) stats.sacrificed = (stats.sacrificed ?? 0) + 1;
+  if (stats && chars(s, id).subtypes.includes("Food")) stats.foodSacrificed = (stats.foodSacrificed ?? 0) + 1;
   putIntoGraveyard(s, id);
 }
 

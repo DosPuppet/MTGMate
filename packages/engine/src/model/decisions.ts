@@ -1,5 +1,5 @@
 /** Types du moteur — Décisions, choix, options d'action et événements. Réexportés par `types.ts`. */
-import type { ManaCost, ManaType, ObjectId, PlayerId, Step, Zone } from "../types";
+import type { GiftKind, ManaCost, ManaType, ObjectId, PlayerId, Step, Zone } from "../types";
 
 export type PendingDecision =
   | { kind: "mulligan"; player: PlayerId; mulligans: number }
@@ -139,6 +139,8 @@ export interface TargetOption {
   /** Contrainte entre les cibles : même joueur, ou joueurs différents (avec le joueur de chaque cible). */
   group?: { kind: "same" | "different"; holders: Record<string, string> };
   kickedCount?: number;
+  /** Cibles légales si le sort est kické ou si le cadeau est promis (filtre différent). */
+  kickedLegal?: string[];
   otherThan?: string[];
   attachedToTarget?: string;
 }
@@ -165,6 +167,8 @@ export type ActionOption =
       modes: ModeOption[];
       xMax: number | null;
       kickerAffordable: boolean;
+      /** Coût optionnel propre à l'extension (Bloomburrow) : question et réponses affichées à la place de « kicker ». */
+      kickerPrompt?: { title: string; without: string; with: string };
       /** Lancée depuis le cimetière grâce au flashback. */
       fromGraveyard?: boolean;
       /** Carte exilée jouable (impulsion, Etali, Tinybones). */
@@ -228,6 +232,8 @@ export type GameEvent =
   | { type: "token"; objectId: ObjectId; defId: string; controller: PlayerId }
   /** Cartes révélées à tous (dessus de la bibliothèque qui explore…). */
   | { type: "reveal"; player: PlayerId; defIds: string[] }
+  /** Cadeau (702.174) offert par `player` à `to`. */
+  | { type: "gift"; player: PlayerId; to: PlayerId; kind: GiftKind }
   /** Un permanent face cachée est retourné face visible (la carte est révélée). */
   | { type: "turnedFaceUp"; objectId: ObjectId; defId: string }
   /** 702.170 : la carte devient complotée. */

@@ -104,6 +104,11 @@ export interface CardScript {
   /** Affaire (719) : « Pour résoudre — [condition] » et capacités « Résolue — … ». */
   caseToSolve?: Condition;
   caseSolved?: AbilityDef[];
+  /** « En coût additionnel, fourragez ou payez [mana] » (Feed the Cycle). */
+  forageOrPay?: string;
+  /** Copie à l'arrivée : de n'importe quel contrôleur, avec des mots-clés en plus (Mockingbird). */
+  entersAsCopyAnyController?: boolean;
+  entersAsCopyAddKeywords?: Keyword[];
 }
 
 export const target = {
@@ -194,6 +199,8 @@ export const ref = {
   stored: (name: string): Ref => ({ kind: "stored", name }),
   /** « chaque [créature] que [le joueur désigné] contrôle » */
   permanentsOf: (player: Ref, filter: ObjectFilter): Ref => ({ kind: "permanentsOf", player, filter }),
+  /** Le joueur défenseur de la créature attaquante source (ou le contrôleur du planeswalker attaqué). */
+  defendingPlayer: { kind: "defendingPlayer" } as Ref,
   handOf: (player: Ref, filter: ObjectFilter = {}, maxManaValue?: Amount): Ref => ({
     kind: "handOf",
     player,
@@ -270,6 +277,15 @@ export const amount = {
   distinctPowers: (filter: ObjectFilter): Amount => ({ kind: "distinctPowers", filter }),
   cardTypesAmong: (filter: ObjectFilter): Amount => ({ kind: "cardTypesAmong", filter }),
   maxManaValue: (filter: ObjectFilter): Amount => ({ kind: "maxManaValue", filter }),
+  /** Cartes que vous possédez en exil correspondant au filtre. */
+  countExiled: (filter: ObjectFilter = {}): Amount => ({ kind: "count", filter, zone: "exile", whose: "you" }),
+  inExile: (r: Ref): Amount => ({ kind: "inExile", ref: r }),
+  yourCreaturesDiedThisTurn: { kind: "yourCreaturesDiedThisTurn" } as Amount,
+  opponentCreaturesExiledThisTurn: { kind: "opponentCreaturesExiledThisTurn" } as Amount,
+  opponentsWithHandAtMost: (n: number): Amount => ({ kind: "opponentsWithHandAtMost", n }),
+  lkiPower: { kind: "lkiPower" } as Amount,
+  instantSorceryCast: { kind: "instantSorceryCast" } as Amount,
+  cardsLeftGraveyardThisTurn: { kind: "cardsLeftGraveyardThisTurn" } as Amount,
 };
 
 export const fx = {
@@ -366,7 +382,14 @@ export const fx = {
     who: Ref,
     filter: ObjectFilter,
     n: Amount = 1,
-    opts: { optional?: boolean; store?: string; greatestManaValue?: boolean; exile?: boolean; half?: boolean } = {},
+    opts: {
+      optional?: boolean;
+      store?: string;
+      greatestManaValue?: boolean;
+      greatestPower?: boolean;
+      exile?: boolean;
+      half?: boolean;
+    } = {},
   ): Effect => ({
     op: "sacrifice",
     who,
@@ -627,7 +650,12 @@ export const fx = {
     amount: n,
     kind,
   }),
-  modifyAll: (filter: ObjectFilter, mods: LayerMods): Effect => ({ op: "modifyAll", filter, mods }),
+  modifyAll: (filter: ObjectFilter, mods: LayerMods, duration?: "endOfTurn" | "untilYourNextTurn"): Effect => ({
+    op: "modifyAll",
+    filter,
+    mods,
+    duration,
+  }),
   sacrificeIt: (what: Ref): Effect => ({ op: "sacrificeIt", what }),
   moveTo: (what: Ref, spec: MoveSpec, store?: { name: string; filter?: ObjectFilter }): Effect => ({
     op: "moveTo",
@@ -719,7 +747,7 @@ export const fx = {
   punisher: (
     who: Ref,
     loseLife: number,
-    opts: { discard?: boolean; sacrifice?: ObjectFilter; damage?: Amount } = {},
+    opts: { discard?: boolean; sacrifice?: ObjectFilter; damage?: Amount; times?: Amount } = {},
   ): Effect => ({
     op: "punisher",
     who,
@@ -751,6 +779,7 @@ export const fx = {
       addKeywords?: Keyword[];
       addSubtypes?: string[];
       sacrificeAtEndStep?: boolean;
+      exileAtEndStep?: boolean;
       addAbilities?: AbilityDef[];
       legendary?: boolean;
       tapped?: boolean;
@@ -792,6 +821,19 @@ export const fx = {
     { op: "draw", who: ref.you, amount: n },
     { op: "discard", who: ref.you, amount: n },
   ],
+  /** « Vous pouvez fourrager. Si vous le faites, … » (701.61 : exiler trois cartes de votre cimetière ou sacrifier une Nourriture). */
+  mayForage: (_prompt: string, ...effects: Effects): Effect[] => {
+    const flat = effects.flat();
+    return [{ op: "forage", skip: flat.length }, ...flat];
+  },
+  /** « Vous pouvez payer [mana] et N points de vie. Si vous le faites, … » */
+  mayPayWithLife: (mana: string, life: number, prompt: string, ...effects: Effects): Effect[] => {
+    const flat = effects.flat();
+    return [{ op: "mayPay", cost: parseManaCost(mana), life, prompt, skip: flat.length }, ...flat];
+  },
+  untapAll: (filter: ObjectFilter): Effect => ({ op: "untapAll", filter }),
+  damageEachPlayerPer: (filter: ObjectFilter): Effect => ({ op: "damageEachPlayerPer", filter }),
+  portent: { op: "portent" } as Effect,
   drain: (n: Amount, who: Ref = ref.eachOpponent): Effect[] => [
     { op: "loseLife", who, amount: n },
     { op: "gainLife", who: ref.you, amount: n },
@@ -844,6 +886,60 @@ export function tiered(...modes: { cost: string; label: string; targets?: Target
       extraCost: parseManaCost(m.cost),
     })),
   };
+}
+
+/** Remplace les identifiants de cibles (`ref.target`, `cond.targetMatches`, `otherThan`…) dans une structure de données. */
+function renameTargets<T>(value: T, map: Record<string, string>): T {
+  const walk = (v: unknown): unknown => {
+    if (Array.isArray(v)) return v.map(walk);
+    if (!v || typeof v !== "object") return v;
+    const o = v as Record<string, unknown>;
+    const out: Record<string, unknown> = {};
+    for (const [k, x] of Object.entries(o)) {
+      if (typeof x === "string" && map[x] && ((k === "id" && ("filter" in o || o.kind === "target")) || k === "spec")) {
+        out[k] = map[x];
+      } else if (k === "otherThan" && Array.isArray(x)) {
+        out[k] = x.map((id) => (typeof id === "string" && map[id]) || id);
+      } else out[k] = walk(x);
+    }
+    return out;
+  };
+  return walk(value) as T;
+}
+
+/**
+ * Modes « patte » (Saisons de Bloomburrow, 700.2h) : « choisissez jusqu'à cinq {P} de modes ; vous pouvez choisir le même
+ * mode plusieurs fois ». Toutes les combinaisons sont générées ; les cibles de chaque exemplaire d'un mode sont renommées.
+ */
+export function pawprint(...modes: { pips: number; label: string; targets?: TargetSpec[]; effects: Effects }[]): SpellDef {
+  const out: ModeDef[] = [];
+  const counts: number[] = modes.map(() => 0);
+  const visit = (i: number, left: number) => {
+    if (i === modes.length) {
+      if (counts.every((n) => n === 0)) return;
+      const labels: string[] = [];
+      const targets: TargetSpec[] = [];
+      const effects: Effect[] = [];
+      modes.forEach((m, k) => {
+        for (let n = 0; n < (counts[k] ?? 0); n++) {
+          const map = Object.fromEntries((m.targets ?? []).map((t) => [t.id, `${t.id}${k}_${n}`]));
+          labels.push(m.label);
+          targets.push(...renameTargets(m.targets ?? [], map));
+          effects.push(...renameTargets(m.effects.flat(), map));
+        }
+      });
+      out.push({ label: labels.join(" + "), targets, effects });
+      return;
+    }
+    const pips = modes[i]?.pips ?? 1;
+    for (let n = 0; n * pips <= left; n++) {
+      counts[i] = n;
+      visit(i + 1, left - n * pips);
+    }
+    counts[i] = 0;
+  };
+  visit(0, 5);
+  return { modes: out };
 }
 
 export function mode(label: string, targets: TargetSpec[], effects: Effects): ModeDef {
@@ -943,6 +1039,8 @@ export function activated(opts: {
   discard?: number;
   /** Ninjutsu : « renvoyez en main un attaquant non bloqué que vous contrôlez ». */
   returnUnblockedAttacker?: boolean;
+  /** « Fourragez » (701.61). */
+  forage?: boolean;
   label?: string;
 }): ActivatedAbilityDef {
   return {
@@ -970,6 +1068,7 @@ export function activated(opts: {
       sacrificeX: opts.sacrificeX,
       discard: opts.discard,
       returnUnblockedAttacker: opts.returnUnblockedAttacker,
+      forage: opts.forage,
     },
     reduction: opts.reduction,
     targets: opts.targets ?? [],
@@ -1092,7 +1191,8 @@ export const when = {
   draw: (nth?: number, whose: "you" | "opponent" | "any" = "you"): TriggerSpec => ({ on: "draw", whose, nth }),
   loseLife: (whose: "you" | "opponent" | "any" = "opponent"): TriggerSpec => ({ on: "loseLife", whose }),
   /** « Chaque fois que vous attaquez [avec N créatures ou plus] » */
-  attackWith: (min = 1): TriggerSpec => ({ on: "attackWith", min }),
+  /** `filter` : « … avec un ou plusieurs [Rats] ». */
+  attackWith: (min = 1, filter?: ObjectFilter): TriggerSpec => ({ on: "attackWith", min, filter }),
   countersPut: (who: "self" | ObjectFilter, kind?: string): TriggerSpec => ({ on: "countersPut", who, kind }),
   dealsDamage: (
     who: "self" | ObjectFilter,
@@ -1156,6 +1256,19 @@ export const when = {
   /** « Au début de votre seconde phase principale » (Survie, avec la condition « si cette créature est engagée »). */
   secondMain: { on: "step", step: "main2", whose: "you" } as TriggerSpec,
   /** « Chaque fois que vous activez une capacité de loyauté [en retirant au moins N marqueurs] » */
+  /** Vaillance : « chaque fois que cette créature devient la cible d'un sort ou d'une capacité que vous contrôlez ». */
+  valiant: { on: "becomesTarget", who: "self", byYou: true } as TriggerSpec,
+  /** « Chaque fois qu'une [créature que vous contrôlez] devient la cible d'un sort ou d'une capacité qu'un adversaire contrôle » */
+  targetedByOpponent: (who: ObjectFilter): TriggerSpec => ({ on: "becomesTarget", who, byOpponent: true }),
+  /** Dépense N : « chaque fois que vous dépensez votre N-ième mana total pour lancer des sorts pendant un tour ». */
+  expend: (n: number): TriggerSpec => ({ on: "expend", n }),
+  forage: { on: "forage" } as TriggerSpec,
+  /** « Chaque fois que vous offrez un cadeau » */
+  giveGift: { on: "gift" } as TriggerSpec,
+  /** « Chaque fois que vous gagnez ou perdez des points de vie » */
+  lifeChange: { on: "lifeChange" } as TriggerSpec,
+  /** « Chaque fois qu'une [créature] quitte le champ de bataille sans mourir » */
+  leavesWithoutDying: (who: ObjectFilter): TriggerSpec => ({ on: "leavesWithoutDying", who }),
   loyaltyActivated: (minRemoved?: number, byOpponent?: boolean): TriggerSpec => ({
     on: "loyaltyActivated",
     minRemoved,
@@ -1247,6 +1360,17 @@ export const cond = {
   castFromGraveyard: { kind: "castFromGraveyard" } as Condition,
   faceDownOrUp: { kind: "faceDownOrUpThisTurn" } as Condition,
   sacrificedThisTurn: { kind: "sacrificedThisTurn" } as Condition,
+  /** « Si le cadeau a été promis » (702.174 : comme un kicker). */
+  gift: { kind: "kicked" } as Condition,
+  any: (...of: Condition[]): Condition => ({ kind: "any", of }),
+  opponentHasMore: (what: "lands" | "life" | "creatures" | "hand"): Condition => ({ kind: "opponentHasMore", what }),
+  /** « si vous avez perdu des points de vie ce tour-ci » */
+  lostLife: { kind: "lostLifeThisTurn" } as Condition,
+  refLostLife: (r: Ref): Condition => ({ kind: "refLostLife", ref: r }),
+  handAtMost: (r: Ref, n: number): Condition => ({ kind: "handAtMost", ref: r, n }),
+  targetChosen: (spec: string): Condition => ({ kind: "targetChosen", spec }),
+  sacrificedFood: { kind: "sacrificedFood" } as Condition,
+  canForage: { kind: "canForage" } as Condition,
   /** Délire : au moins quatre types de cartes parmi les cartes de votre cimetière. */
   delirium: { kind: "amountAtLeast", amount: { kind: "cardTypesInGraveyard" }, n: 4 } as Condition,
 };

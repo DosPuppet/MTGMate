@@ -59,6 +59,8 @@ export type Keyword =
   | "cantAttackOrBlockAlone"
   /** « Ne peut pas être bloquée par des créatures de force 2 ou moins. » */
   | "cantBeBlockedByPowerLE2"
+  /** Azure Beastbinder : « ne peut pas être bloquée par des créatures de force 2 ou plus ». */
+  | "cantBeBlockedByPowerGE2"
   /** « Doit être bloquée si possible » (509.1c). */
   | "mustBeBlocked"
   /** Restrictions (pas des mots-clés imprimés, mais gérées comme des capacités de couche 6). */

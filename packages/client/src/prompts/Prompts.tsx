@@ -307,14 +307,20 @@ function CastingPrompt() {
     );
   }
   if (casting.stage === "kicker") {
+    // Progéniture et Cadeau (Bloomburrow) : même mécanisme, autres libellés.
+    const labels = (casting.option.type === "cast" && casting.option.kickerPrompt) || {
+      title: "Payer le kicker ?",
+      without: "Sans kicker",
+      with: "Avec kicker",
+    };
     return (
-      <Modal title="Payer le kicker ?">
+      <Modal title={labels.title}>
         <div className="choice-list">
           <button type="button" className="btn choice" onClick={() => chooseKicker(false)}>
-            Sans kicker
+            {labels.without}
           </button>
           <button type="button" className="btn choice primary" onClick={() => chooseKicker(true)}>
-            Avec kicker
+            {labels.with}
           </button>
         </div>
         <div className="modal-actions">

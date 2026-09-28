@@ -32,7 +32,7 @@ import { LocalSession, RemoteSession, type Session } from "./session";
 function defsFor(decks: DeckEntries[], sandbox?: Sandbox): Record<string, CardDef> {
   const names = new Set<string>(decks.flatMap((d) => d.map(([, name]) => name)));
   for (const side of Object.values(sandbox ?? {})) {
-    for (const n of side.cards ?? []) names.add(n);
+    for (const n of [...(side.cards ?? []), ...(side.hand ?? [])]) names.add(n);
     for (const [n] of side.attach ?? []) names.add(n);
   }
   return Object.fromEntries([...names].map((n) => [n, card(n)]));
@@ -410,7 +410,9 @@ export const useGame = create<Store>((set, get) => {
       if (c.option.kickerAffordable) return set({ casting: { ...c, stage: "kicker" } });
       c.kicked = false;
     }
-    for (const spec of targetSpecs(c)) {
+    for (const spec0 of targetSpecs(c)) {
+      // Cadeau promis (Bloomburrow) : « à la place, un permanent non-terrain ciblé ».
+      const spec = c.kicked && spec0.kickedLegal ? { ...spec0, legal: spec0.kickedLegal } : spec0;
       if (c.targets[spec.id] !== undefined) continue;
       if (c.preset && spec.legal.includes(c.preset)) {
         c.targets[spec.id] = [c.preset];

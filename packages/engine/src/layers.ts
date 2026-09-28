@@ -496,6 +496,10 @@ export function computeBattlefield(s: GameState): Map<ObjectId, Characteristics>
       const k = KEYWORD_COUNTERS[kind];
       if (k && n > 0 && !c.keywords.includes(k)) c.keywords.push(k);
     }
+    // 702.108 : une prouesse accordée (Bria) ou portée par un jeton (Loutre) a sa capacité déclenchée.
+    if (c.keywords.includes("prowess") && !c.abilities.some((ab) => ab.kind === "triggered" && ab.label === "Prouesse")) {
+      c.abilities = [...c.abilities, PROWESS];
+    }
   }
   // Couche 7b : F/E fixées.
   layer(
@@ -527,6 +531,15 @@ export function computeBattlefield(s: GameState): Map<ObjectId, Characteristics>
   );
   return out;
 }
+
+/** Prouesse (702.108) : « chaque fois que vous lancez un sort non-créature, cette créature gagne +1/+1 jusqu'à la fin du tour ». */
+const PROWESS: AbilityDef = {
+  kind: "triggered",
+  trigger: { on: "castSpell", by: "you", filter: { notTypes: ["Creature"] } },
+  targets: [],
+  effects: [{ op: "pump", what: { kind: "self" }, power: 1, toughness: 1 }],
+  label: "Prouesse",
+};
 
 function battlefieldChars(s: GameState): Map<ObjectId, Characteristics> {
   const key = `${s.version}|${s.turn.number}|${s.turn.active}|${s.turn.step}`;

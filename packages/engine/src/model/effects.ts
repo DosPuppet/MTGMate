@@ -125,6 +125,8 @@ export type Effect =
       exile?: boolean;
       /** La moitié des permanents correspondants, arrondie à l'inférieur (Zodiark). */
       half?: boolean;
+      /** « … avec la plus grande force parmi … » (Consumed by Greed). */
+      greatestPower?: boolean;
     }
   /** « Vous pouvez payer {X}. Si vous le faites, … » : les `skip` effets suivants sont ignorés sinon. */
   | { op: "mayPay"; cost: ManaCost; prompt: string; skip: number; life?: number }
@@ -142,7 +144,7 @@ export type Effect =
   | { op: "destroyAll"; filter: ObjectFilter; store?: string }
   | { op: "addCountersAll"; filter: ObjectFilter; amount: Amount; kind?: string }
   /** Effet continu « jusqu'à la fin du tour » sur tous les permanents correspondant au filtre. */
-  | { op: "modifyAll"; filter: ObjectFilter; mods: LayerMods }
+  | { op: "modifyAll"; filter: ObjectFilter; mods: LayerMods; duration?: "endOfTurn" | "untilYourNextTurn" }
   /** Sacrifier un objet précis (jeton temporaire, « sacrifiez-la »). */
   | { op: "sacrificeIt"; what: Ref }
   /** Déplace un objet (retour en main, exil, retour du cimetière sur le champ de bataille…). */
@@ -230,6 +232,8 @@ export type Effect =
       /** « … excepté que c'est un Cauchemar en plus de ses autres types » */
       addSubtypes?: string[];
       sacrificeAtEndStep?: boolean;
+      /** « Exilez ce jeton au début de la prochaine étape de fin » (Stormsplitter). */
+      exileAtEndStep?: boolean;
       /** « … sauf que c'est légendaire » (Adagia, Windswept Bastion). */
       legendary?: boolean;
       /** Capacités ajoutées à la copie (Face Yourself). */
@@ -286,7 +290,8 @@ export type Effect =
   /** Dévorer : pendant la résolution du sort de permanent, sacrifier des permanents (nombre mémorisé). */
   | { op: "devour"; filter: ObjectFilter; graveyardUpToX?: boolean }
   /** Pendant la résolution d'un sort de permanent : choisir le permanent à copier en arrivant. */
-  | { op: "chooseCopy"; filter: ObjectFilter }
+  /** `anyController` : n'importe quel permanent sur le champ de bataille (Mockingbird). */
+  | { op: "chooseCopy"; filter: ObjectFilter; anyController?: boolean }
   /** Mimeoplasm : la source devient une copie de la carte, 0/0, en gardant ses capacités activées. */
   | { op: "becomeCopyKeepAbilities"; what: Ref }
   /** Révèle des cartes jusqu'à N cartes correspondantes ; celles-ci vont selon `to`, le reste dessous au hasard. */
@@ -500,9 +505,37 @@ export type Effect =
   | { op: "libraryTopOrBottom"; what: Ref; topDamage?: number }
   /** Chaque joueur désigné perd N points de vie à moins de défausser une carte ou de sacrifier un permanent. */
   /** `damage` : la source inflige ces blessures au lieu de la perte de points de vie (Osseous Sticktwister). */
-  | { op: "punisher"; who: Ref; loseLife: number; discard?: boolean; sacrifice?: ObjectFilter; damage?: Amount }
+  /** `times` : répété N fois (Rottenmouth Viper : pour chaque marqueur de fléau). */
+  | {
+      op: "punisher";
+      who: Ref;
+      loseLife: number;
+      discard?: boolean;
+      sacrifice?: ObjectFilter;
+      damage?: Amount;
+      times?: Amount;
+    }
   /** Révéler jusqu'à une carte correspondant au filtre : elle va en main, le reste au-dessous dans un ordre aléatoire. */
-  | { op: "revealUntil"; filter: ObjectFilter; to: MoveSpec };
+  | { op: "revealUntil"; filter: ObjectFilter; to: MoveSpec }
+  /**
+   * Fourrager (701.61, Bloomburrow) : exiler trois cartes de son cimetière ou sacrifier une Nourriture (choix automatique).
+   * `skip` : « vous pouvez fourrager ; si vous le faites, … » (les `skip` effets suivants sont ignorés sinon).
+   */
+  | { op: "forage"; skip: number }
+  /** Cadeau (702.174) : l'adversaire choisi reçoit le cadeau promis. */
+  | { op: "gift"; kind: GiftKind; token?: TokenSpec }
+  /** Dégage tous les permanents correspondants du contrôleur. */
+  | { op: "untapAll"; filter: ObjectFilter }
+  /** Chaque joueur subit des blessures égales au nombre de ses permanents correspondants (Sunspine Lynx). */
+  | { op: "damageEachPlayerPer"; filter: ObjectFilter }
+  /**
+   * Portent of Calamity : révéler X cartes, en exiler une par type de carte (choix automatique), le reste au cimetière.
+   * Mémorise `$ids:free` (le sort à lancer gratuitement si quatre cartes ou plus ont été exilées) et `$ids:rest`.
+   */
+  | { op: "portent" };
+
+/** Ce qu'offre un cadeau : une carte, une Nourriture, un Poisson engagé, un Trésor. */
+export type GiftKind = "card" | "food" | "fish" | "treasure";
 
 // ---------------------------------------------------------------------------
 // État de partie

@@ -51,6 +51,8 @@ const EXTRA_P1: Record<string, string[]> = {
   "Meathook Massacre II": ["Swamp", "Swamp"],
   // « un Équipement ciblé ».
   "Stolen Uniform": ["Monk's Fist"],
+  // « copies d'un jeton ciblé » : Fountainport crée un Poisson.
+  "For the Common Good": ["Fountainport"],
 };
 /** Cartes supplémentaires dans le cimetière du joueur 1 (« carte d'artefact ciblée de votre cimetière »). */
 const EXTRA_P1_GRAVEYARD: Record<string, string[]> = { "Tune Up": ["Nutrient Block"] };
@@ -174,5 +176,5 @@ export function smokeTest(codes: string[], shard: [number, number] = [0, 1]): vo
 }
 
 /** Extensions qui ont leur propre fichier de test de fumée ; les autres sont dans `others.test.ts`. */
-export const OWN_FILES = ["FDN", "FRA", "EOE", "DFT", "OTJ", "BIG", "FIN", "DSK"];
+export const OWN_FILES = ["FDN", "FRA", "EOE", "DFT", "OTJ", "BIG", "FIN", "DSK", "BLB"];
 export const OTHER_SETS = (): string[] => SETS.map((s) => s.code).filter((c) => !OWN_FILES.includes(c));

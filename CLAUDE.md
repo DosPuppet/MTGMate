@@ -28,6 +28,7 @@ Ce fichier sert au suivi du projet entre les sessions : où on en est, les règl
 | **Outlaws of Thunder Junction + The Big Score (OTJ, BIG)** | ✅ **269 / 269 + 30 / 30** (lots A à C) |
 | **Final Fantasy (FIN)** | ✅ **307 / 307** (lots A à D4) |
 | **Duskmourn: House of Horror (DSK, « Mornebrune »)** | ✅ **268 / 268** (lots A à D) |
+| **Bloomburrow (BLB)** | ✅ **266 / 266** (lots A à C) |
 | Autres extensions Standard | à la demande de l'utilisateur, une à la fois |
 
 
@@ -46,7 +47,7 @@ Ce fichier sert au suivi du projet entre les sessions : où on en est, les règl
 - `docs/moteur.md` : **à lire avant d'ajouter une mécanique**. Carte des fichiers du moteur, et où toucher pour un effet, un déclencheur, une condition, un filtre, un statique de joueur ou un mot-clé.
 - `docs/approximations.md` : approximations connues, générales puis carte par carte (à lever si une carte l'exige). **Toute nouvelle approximation y est ajoutée.**
 - `docs/extensions/<ext>.md` : mécaniques et détail des lots de chaque extension :
-  - `fdn`, `fra`, `eoe`, `dft`, `otj-big`, `fin`, `dsk` ;
+  - `fdn`, `fra`, `eoe`, `dft`, `otj-big`, `fin`, `dsk`, `blb` ;
   - `socle` pour les lots transverses (faces multiples, Sagas, face cachée…).
   
   **Le détail d'un nouveau lot va là**, et CLAUDE.md ne reçoit qu'une ligne d'avancement.

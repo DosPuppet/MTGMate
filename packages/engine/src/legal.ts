@@ -2,7 +2,7 @@
  * Énumération exhaustive des actions légales pour le joueur qui a la priorité.
  * L'interface ne met en surbrillance que ces options ; l'IA et l'autopilot s'en servent aussi.
  */
-import { availableMana, canPay, manaAbilitiesOf, manaSources, manaValue, totalCost } from "./mana";
+import { availableMana, canPay, costToText, manaAbilitiesOf, manaSources, manaValue, totalCost } from "./mana";
 import {
   abilitiesOf,
   abilityReduction,
@@ -66,6 +66,24 @@ import type {
   TargetSpec,
 } from "./types";
 
+const GIFT_TEXT = { card: "une carte", food: "une Nourriture", fish: "un Poisson engagé", treasure: "un Trésor" } as const;
+
+/** Libellés de la question du kicker pour la Progéniture (702.175) et le Cadeau (702.174). */
+function kickerPrompt(d: CardDef): { title: string; without: string; with: string } | undefined {
+  if (d.kickerKind === "offspring" && d.kicker) {
+    const c = costToText(d.kicker);
+    return { title: `Payer la progéniture ${c} ?`, without: "Sans progéniture", with: `Progéniture ${c}` };
+  }
+  if (d.kickerKind === "gift" && d.gift) {
+    return {
+      title: "Promettre un cadeau à un adversaire ?",
+      without: "Sans cadeau",
+      with: `Offrir ${GIFT_TEXT[d.gift]}`,
+    };
+  }
+  return undefined;
+}
+
 function targetOptions(s: GameState, player: PlayerId, specs: TargetSpec[], sourceId?: ObjectId): TargetOption[] {
   return specs.map((t) => {
     const legal = legalTargets(s, player, t, sourceId);
@@ -76,6 +94,7 @@ function targetOptions(s: GameState, player: PlayerId, specs: TargetSpec[], sour
       legal,
       count: t.count && t.count > 1 ? t.count : undefined,
       kickedCount: t.kickedCount,
+      kickedLegal: t.kickedFilter ? legalTargets(s, player, { ...t, filter: t.kickedFilter }, sourceId) : undefined,
       otherThan: t.otherThan,
       attachedToTarget: t.attachedToTarget,
     };
@@ -173,7 +192,12 @@ export function legalActions(s: GameState, player: PlayerId): ActionOption[] {
         ok: !m.condition || checkCondition(s, m.condition, player, card),
       }))
       .filter((m) => m.ok)
-      .filter((m) => targetsAvailable(m.targets))
+      // Cadeau promis : les cibles propres au cadeau suffisent (Into the Flood Maw sans créature adverse).
+      .filter(
+        (m) =>
+          targetsAvailable(m.targets) ||
+          (!!d.kicker && targetsAvailable(m.targets.map((t) => (t.kickedLegal ? { ...t, legal: t.kickedLegal } : t)))),
+      )
       // Spree : le coût supplémentaire du mode doit être payable.
       .filter((m) => !m.extra || canPay(s, player, totalCost(spellCost(s, player, d, { free: terms.free }), 0, m.extra)))
       .map(({ extra: _, ok: __, ...m }) => m);
@@ -218,6 +242,7 @@ export function legalActions(s: GameState, player: PlayerId): ActionOption[] {
         !flashback &&
         (!d.kickerCost || !!kickerCostPermanent(s, player, card, d)) &&
         canPay(s, player, withExtra(spellCost(s, player, d, { ...base, kicked: true, free: terms.free })), undefined, purpose),
+      kickerPrompt: d.kicker ? kickerPrompt(d) : undefined,
       fromGraveyard: terms.source === "graveyard" || terms.source === "flashback" ? true : undefined,
       fromExile: terms.source === "exile" ? true : undefined,
       free: terms.free || undefined,

@@ -1,11 +1,11 @@
 /** Effets du moteur : contrôle du déroulement (si, peut, réflexif, retardé). Chaque clé est un `op` d'`Effect` (voir `runEffect`, effects.ts). */
-import { loseLife } from "../actions";
+import { canForage, forage, loseLife } from "../actions";
 import type { OpHandlers } from "../effects";
 import { evalAmount, evalCondition, nameOf, resolveRef, store } from "../effects";
 import { canPay, payMana } from "../mana";
 import { isPlayer } from "../state";
 import { createDelayed, pushInline } from "../triggers";
-import type { ChoiceValue } from "../types";
+import type { ChoiceValue, ObjectFilter } from "../types";
 
 export const HANDLERS: OpHandlers = {
   mayPay(s, r, e, ctx, key) {
@@ -26,6 +26,27 @@ export const HANDLERS: OpHandlers = {
     if (e.life) loseLife(s, ctx.controller, e.life);
     return;
   },
+  forage(s, r, e, ctx, key) {
+    // « Vous pouvez fourrager. Si vous le faites, … » (701.61).
+    if (!canForage(s, ctx.controller)) return { skip: e.skip };
+    const answer = r.vars[key("forage")];
+    if (!answer) {
+      return {
+        ask: {
+          player: ctx.controller,
+          key: key("forage"),
+          request: {
+            type: "yesNo",
+            intent: "may",
+            prompt: `${nameOf(s, ctx.sourceId)} : fourrager (exiler trois cartes de votre cimetière ou sacrifier une Nourriture) ?`,
+            suggested: [1],
+          },
+        },
+      };
+    }
+    if (answer[0] !== 1 || !forage(s, ctx.controller)) return { skip: e.skip };
+    return;
+  },
   if(s, _r, e, ctx) {
     return evalCondition(s, ctx, e.cond) ? undefined : { skip: e.skip };
   },
@@ -40,9 +61,26 @@ export const HANDLERS: OpHandlers = {
   },
   reflexive(s, _r, e, ctx) {
     // « jusqu'à X cibles » : le nombre de cibles est évalué maintenant (Miasma Demon, The Rollercrusher Ride).
-    const targets = e.targets.map((t) =>
-      t.countAmount === undefined ? t : { ...t, count: Math.max(0, evalAmount(s, ctx, t.countAmount)), countAmount: undefined },
-    );
+    const targets = e.targets
+      .map((t) =>
+        t.countAmount === undefined ? t : { ...t, count: Math.max(0, evalAmount(s, ctx, t.countAmount)), countAmount: undefined },
+      )
+      // Wishing Well : « de valeur de mana égale au nombre de marqueurs de pièce » (évaluée maintenant).
+      .map((t) => {
+        if (t.manaValueAmount === undefined) return t;
+        const mv = evalAmount(s, ctx, t.manaValueAmount);
+        const f = t.filter;
+        const withMv = (o?: ObjectFilter) => (o ? { ...o, manaValue: mv } : o);
+        return {
+          ...t,
+          manaValueAmount: undefined,
+          filter: {
+            ...f,
+            objects: withMv(f.objects),
+            cards: f.cards ? { ...f.cards, filter: { ...f.cards.filter, manaValue: mv } } : undefined,
+          },
+        };
+      });
     // Aucune cible possible (X = 0) : rien ne se passe.
     if (targets.some((t) => t.count === 0)) return;
     pushInline(s, ctx.controller, ctx.sourceId, ctx.sourceDefId, { targets, effects: e.effects });
