@@ -90,7 +90,8 @@ Ce fichier sert au suivi du projet entre les sessions : où on en est, les règl
 - **Commits :**
   - uniquement quand l'utilisateur le demande ;
   - message en anglais, terminé par `Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>` ;
-  - branche `dev` pour le travail courant (`master` = version stable), pas de remote.
+  - branche `dev` pour le travail courant (`master` = version stable) ;
+  - remote `origin` (github.com/DosPuppet/MTGMate) : c'est l'utilisateur qui pousse, pas Claude.
 
 ## Vérifications avant de rendre un lot
 
