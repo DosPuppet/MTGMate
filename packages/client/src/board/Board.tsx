@@ -42,6 +42,9 @@ const ICONS = {
   library: "M4 3h11a2 2 0 0 1 2 2v14H6a2 2 0 0 1-2-2V3zm2 2v12h9V5H6zm13 2h1v14H8v-1h11V7z",
   hand: "M3 6l7-3 3 7-7 3-3-7zm8 2l6-2 3 8-6 2-3-8z",
   grave: "M7 21V9a5 5 0 0 1 10 0v12H7zm4-12v3H9v2h2v4h2v-4h2v-2h-2V9h-2z",
+  // Un vortex (spirale) pour l'exil.
+  exile:
+    "M12 3a9 9 0 1 1-9 9h2a7 7 0 1 0 7-7 5 5 0 0 0-5 5 3 3 0 0 0 3 3 1 1 0 0 0 1-1h2a3 3 0 0 1-3 3 5 5 0 0 1-5-5 7 7 0 0 1 7-7z",
 };
 
 function Icon({ d }: { d: string }) {
@@ -77,6 +80,7 @@ function PlayerBar({ player, isMe }: { player: PlayerView; isMe: boolean }) {
   const casting = useGame((s) => s.casting);
   const clickPlayer = useGame((s) => s.clickPlayer);
   const openGraveyard = useGame((s) => s.openGraveyard);
+  const openExile = useGame((s) => s.openExile);
   const lang = useGame((s) => s.lang);
   const aiming = useGame((s) => s.aimingAttacker);
   const selection = useGame((s) => s.selection);
@@ -127,6 +131,15 @@ function PlayerBar({ player, isMe }: { player: PlayerView; isMe: boolean }) {
           >
             <Icon d={ICONS.grave} /> {player.graveyard.length}
             {top && <span className="gy-top">{faceName(top, lang)}</span>}
+          </button>
+          <button
+            type="button"
+            className="gy-button exile-button"
+            data-tuto={isMe ? "exile-me" : undefined}
+            title="Exil (cliquer pour voir)"
+            onClick={() => openExile(player.id)}
+          >
+            <Icon d={ICONS.exile} /> {view.exile.filter((o) => o.owner === player.id).length}
           </button>
           {player.speed !== undefined && (
             <span className={`speed-chip ${player.speed >= 4 ? "max" : ""}`} title="Vitesse (4 : vitesse maximale)">
@@ -194,12 +207,16 @@ function usePermanentGlow(): (o: ObjectView) => Glow {
   };
 }
 
-/** Un permanent, avec ses Auras et Équipements empilés derrière lui. */
+/**
+ * Un permanent, avec ses Auras et Équipements empilés derrière lui, puis les cartes qu'il a exilées (Sheltered by Ghosts,
+ * cartes liées…) : elles dépassent de la même façon, teintées, et s'agrandissent au survol.
+ */
 function Permanent({
   o,
   width,
   isMe,
   attached,
+  exiled = [],
   glow,
   showStats,
 }: {
@@ -207,19 +224,21 @@ function Permanent({
   width: string;
   isMe: boolean;
   attached: ObjectView[];
+  exiled?: ObjectView[];
   glow: (o: ObjectView) => Glow;
   showStats: boolean;
 }) {
   const clickPermanent = useGame((s) => s.clickPermanent);
   const attackers = useGame((s) => s.attackers);
   const attacking = o.attacking || attackers.includes(o.id);
+  const n = attached.length + exiled.length;
   return (
     <div
-      className={`perm ${attacking ? (isMe ? "advance-up" : "advance-down") : ""} ${attached.length ? "has-attach" : ""}`}
-      style={attached.length ? ({ "--attach-n": attached.length } as CSSProperties) : undefined}
+      className={`perm ${attacking ? (isMe ? "advance-up" : "advance-down") : ""} ${n ? "has-attach" : ""}`}
+      style={n ? ({ "--attach-n": n } as CSSProperties) : undefined}
     >
       {attached.map((a, i) => (
-        <div key={a.uid} className="attachment" style={{ "--attach-i": attached.length - 1 - i } as CSSProperties}>
+        <div key={a.uid} className="attachment" style={{ "--attach-i": i } as CSSProperties}>
           <Card
             face={a}
             obj={a}
@@ -230,6 +249,17 @@ function Permanent({
             onClick={() => clickPermanent(a.id)}
             oid={a.id}
           />
+        </div>
+      ))}
+      {exiled.map((a, i) => (
+        <div
+          key={a.uid}
+          className="attachment exiled-under"
+          style={{ "--attach-i": attached.length + i } as CSSProperties}
+          title="Carte exilée (survolez pour la voir)"
+        >
+          <Card face={a} obj={a} width={width} />
+          <span className="exiled-tag">Exil</span>
         </div>
       ))}
       <Card
@@ -278,6 +308,7 @@ function PermanentLine({
   row,
   isMe,
   attachments,
+  exiled,
   glow,
 }: {
   slots: Slot[];
@@ -285,6 +316,8 @@ function PermanentLine({
   isMe: boolean;
   /** Auras et Équipements, par permanent hôte. */
   attachments: Map<string, ObjectView[]>;
+  /** Cartes exilées par un permanent, par permanent. */
+  exiled: Map<string, ObjectView[]>;
   glow: (o: ObjectView) => Glow;
 }) {
   const width = row === "back" ? "var(--land-w)" : "var(--card-w)";
@@ -310,6 +343,7 @@ function PermanentLine({
                 width={width}
                 isMe={isMe}
                 attached={attachments.get(o.id) ?? []}
+                exiled={exiled.get(o.id)}
                 glow={glow}
                 showStats={slot.block !== "lands"}
               />
@@ -336,12 +370,27 @@ function Battlefield({ player, isMe }: { player: string; isMe: boolean }) {
   for (const o of view.battlefield) {
     if (isAttached(o)) attachments.set(o.attachedTo as string, [...(attachments.get(o.attachedTo as string) ?? []), o]);
   }
+  // Cartes exilées par un permanent : affichées sous lui.
+  const exileById = new Map(view.exile.map((o) => [o.id, o]));
+  const exiled = new Map<string, ObjectView[]>();
+  const byId = new Map(view.battlefield.map((o) => [o.id, o]));
+  for (const [source, ids] of Object.entries(view.exiledWith ?? {})) {
+    const objs = ids.map((id) => exileById.get(id)).filter((o): o is ObjectView => !!o);
+    // Une Aura ou un Équipement (Sheltered by Ghosts) est dessiné avec son hôte : ses cartes exilées vont sous l'hôte.
+    const src = byId.get(source);
+    const holder = src && isAttached(src) ? (src.attachedTo as string) : source;
+    if (objs.length) exiled.set(holder, [...(exiled.get(holder) ?? []), ...objs]);
+  }
   const perms = view.battlefield.filter((o) => o.controller === player && !isAttached(o));
   // Les jetons dont l'état d'interface diffère (lueur, attaquant bloqué, joueur attaqué) ne sont pas regroupés.
   const blocked = new Set(Object.values(blocks));
   const uiKey = (o: ObjectView) => `${glow(o) ?? ""}|${blocked.has(o.id) ? "b" : ""}|${attackTargets[o.id] ?? ""}`;
-  const { front, back, walkers } = battlefieldSlots(battlefieldRows(perms), new Set(attachments.keys()), uiKey);
-  const depth = Math.max(0, ...perms.map((o) => attachments.get(o.id)?.length ?? 0));
+  const { front, back, walkers } = battlefieldSlots(
+    battlefieldRows(perms),
+    new Set([...attachments.keys(), ...exiled.keys()]),
+    uiKey,
+  );
+  const depth = Math.max(0, ...perms.map((o) => (attachments.get(o.id)?.length ?? 0) + (exiled.get(o.id)?.length ?? 0)));
   const layoutKey = (slots: Slot[]) =>
     slots.map((s) => `${s.kind}:${s.objs.map((o) => `${o.id}${o.tapped ? "t" : ""}`).join("+")}`);
   const signature = `${layoutKey(front).join(",")}|${layoutKey(back).join(",")}|${layoutKey(walkers).join(",")}|${depth}`;
@@ -371,7 +420,7 @@ function Battlefield({ player, isMe }: { player: string; isMe: boolean }) {
   const lines = (slots: Slot[], n: number, row: "front" | "back") => {
     const ls = splitLines(slots, n);
     return (isMe ? ls : ls.reverse()).map((l, i) => (
-      <PermanentLine key={`${row}${i}`} slots={l} row={row} isMe={isMe} attachments={attachments} glow={glow} />
+      <PermanentLine key={`${row}${i}`} slots={l} row={row} isMe={isMe} attachments={attachments} exiled={exiled} glow={glow} />
     ));
   };
   const rows = [
@@ -395,7 +444,15 @@ function Battlefield({ player, isMe }: { player: string; isMe: boolean }) {
             const o = slot.objs[0] as ObjectView;
             return (
               <div key={o.uid} className="walker" style={{ marginTop: i ? overlap : 0, "--walker-z": i + 1 } as CSSProperties}>
-                <Permanent o={o} width="var(--card-w)" isMe={isMe} attached={attachments.get(o.id) ?? []} glow={glow} showStats />
+                <Permanent
+                  o={o}
+                  width="var(--card-w)"
+                  isMe={isMe}
+                  attached={attachments.get(o.id) ?? []}
+                  exiled={exiled.get(o.id)}
+                  glow={glow}
+                  showStats
+                />
               </div>
             );
           })}

@@ -484,6 +484,38 @@ button {
 .attachment .card-slot {
   position: relative;
 }
+/* Cartes exilées par un permanent (Sheltered by Ghosts…) : derrière lui, teintées ; le survol montre la carte. */
+.attachment.exiled-under .card-slot {
+  filter: grayscale(0.5) brightness(0.75) sepia(0.3) hue-rotate(200deg);
+}
+.attachment.exiled-under:hover .card-slot {
+  filter: none;
+}
+.exiled-tag {
+  position: absolute;
+  top: 2px;
+  right: 4px;
+  padding: 0 5px;
+  border-radius: 6px;
+  background: rgba(70, 90, 170, 0.9);
+  color: #fff;
+  font-size: 10px;
+  font-weight: 700;
+  pointer-events: none;
+}
+.exile-entry {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+.exile-holder {
+  font-size: 12px;
+  color: var(--dim);
+  font-style: italic;
+  max-width: var(--pick-w);
+  text-align: center;
+}
 .perm.advance-up {
   transform: translateY(-16px);
 }

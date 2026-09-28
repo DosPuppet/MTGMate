@@ -121,6 +121,7 @@ Ce fichier sert au suivi du projet entre les sessions : où on en est, les règl
   - la disposition est calculée en pur TypeScript et testée (`client/test/layout.test.ts`) ; les lignes sont découpées explicitement, pas par `flex-wrap` ;
   - chaque camp est dimensionné indépendamment (comme sur MTGA) : un adversaire très chargé ne rapetisse pas vos cartes ;
   - placement par type, d'après MTGA : créatures devant ; terrains, puis artefacts, puis enchantements derrière ; planeswalkers et batailles dans une zone à part tout à droite (recouvrement vertical s'ils sont nombreux) ; Auras et Équipements attachés rendus avec leur hôte ; `battlefield-smoke` vérifie ce rangement ;
+  - cartes exilées par un permanent (`view.exiledWith` : exil lié et cartes liées) : empilées derrière lui comme les Auras, teintées, étiquette « Exil » ; celles d'une Aura ou d'un Équipement vont sous son hôte. Elles comptent dans la profondeur d'empilement de `fitBattlefield`. L'exil de chaque joueur se consulte par le bouton à côté du cimetière (`ExileViewer`) ;
   - batailles : placées chez leur contrôleur (MTGA les met chez le protecteur, que le moteur ne modélise pas encore) ;
   - les constantes d'espacement de `layout.ts` (GAP, SEPARATOR, TOKEN_OFFSET…) doivent rester alignées avec `styles.css` ;
   - la colonne du plateau est bornée (`grid-template-columns: minmax(0, 1fr)`) : sans cela, le contenu élargit la zone mesurée et la taille des cartes ne se réduit plus ;

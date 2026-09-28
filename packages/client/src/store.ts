@@ -162,6 +162,8 @@ interface Store {
   /** Écran étroit : barre latérale (réglages, aperçu, journal) ouverte en tiroir. */
   drawerOpen: boolean;
   graveyardOpen: string | null;
+  /** Exil consulté (cartes possédées par ce joueur). */
+  exileOpen: string | null;
   fx: Fx[];
   turnBanner: { id: number; text: string; mine: boolean } | null;
   spotlight: { id: number; face: CardFace; who: string } | null;
@@ -218,6 +220,7 @@ interface Store {
   setDrawerOpen(open: boolean): void;
   toggleSelection(id: string): void;
   openGraveyard(player: string | null): void;
+  openExile(player: string | null): void;
 }
 
 /**
@@ -531,6 +534,7 @@ export const useGame = create<Store>((set, get) => {
     peek: null,
     drawerOpen: false,
     graveyardOpen: null,
+    exileOpen: null,
     fx: [],
     turnBanner: null,
     spotlight: null,
@@ -1042,6 +1046,10 @@ export const useGame = create<Store>((set, get) => {
 
     openGraveyard(player) {
       set({ graveyardOpen: player });
+    },
+
+    openExile(player) {
+      set({ exileOpen: player });
     },
   };
 });

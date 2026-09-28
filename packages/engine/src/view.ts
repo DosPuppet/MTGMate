@@ -146,6 +146,11 @@ export interface GameView {
   battlefield: ObjectView[];
   stack: StackItemView[];
   exile: ObjectView[];
+  /**
+   * Cartes exilées « par » un permanent encore sur le champ de bataille (Sheltered by Ghosts, Deep-Cavern Bat, cartes
+   * liées, matériaux d'une fabrication) : identifiant du permanent → cartes exilées. Information publique.
+   */
+  exiledWith: Record<ObjectId, ObjectId[]>;
   /** Cartes exilées que le spectateur peut jouer ce tour-ci. */
   playableExile: ObjectView[];
   combat: { attackers: { id: ObjectId; defender: string; blockers: ObjectId[] }[] } | null;
@@ -154,6 +159,19 @@ export interface GameView {
   potentialAttackers: number;
   over: boolean;
   winner: PlayerId | null;
+}
+
+/** Cartes en exil rattachées au permanent qui les a exilées (exil lié « jusqu'à ce que… » et cartes liées). */
+function exiledWith(s: GameState): Record<ObjectId, ObjectId[]> {
+  const out: Record<ObjectId, ObjectId[]> = {};
+  const add = (source: ObjectId, cards: ObjectId[]) => {
+    if (s.objects[source]?.zone !== "battlefield") return;
+    const exiled = cards.filter((id) => s.objects[id]?.zone === "exile" && !out[source]?.includes(id));
+    if (exiled.length) out[source] = [...(out[source] ?? []), ...exiled];
+  };
+  for (const l of s.linkedExile) add(l.sourceId, l.cards);
+  for (const id of s.battlefield) add(id, s.objects[id]?.linked ?? []);
+  return out;
 }
 
 /** Libellé de l'effet joué : mode d'un sort modal (spree, tiered…), ou capacité d'un permanent. */
@@ -367,6 +385,7 @@ export function projectView(s: GameState, viewer: PlayerId): GameView {
     battlefield: s.battlefield.map((id) => withFaceDownCard(s, objectView(s, id), viewer)),
     stack,
     exile: s.exile.map((id) => objectView(s, id)),
+    exiledWith: exiledWith(s),
     playableExile: [
       ...s.exile.filter((id) => castTerms(s, viewer, id) || canPlayLand(s, viewer, id)),
       // Vizier of the Menagerie : « vous pouvez regarder la carte du dessus de votre bibliothèque à tout moment ».

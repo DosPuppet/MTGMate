@@ -419,6 +419,47 @@ function AbilityMenu() {
   );
 }
 
+/** Exil d'un joueur (ses cartes exilées), consultable par tous ; « exilée par … » quand un permanent la retient. */
+function ExileViewer() {
+  const open = useGame((s) => s.exileOpen);
+  const view = useGame((s) => s.view);
+  const close = useGame((s) => s.openExile);
+  const lang = useGame((s) => s.lang);
+  if (!open || !view) return null;
+  const player = view.players[open];
+  if (!player) return null;
+  const cards = view.exile.filter((c) => c.owner === open);
+  const playable = new Set(view.playableExile.map((c) => c.id));
+  const holder = new Map<string, string>();
+  for (const [source, ids] of Object.entries(view.exiledWith ?? {})) {
+    const src = view.battlefield.find((o) => o.id === source);
+    if (src) for (const id of ids) holder.set(id, faceName(src, lang));
+  }
+  return (
+    <div className="modal-backdrop" onClick={() => close(null)}>
+      <div className="modal wide" onClick={(e) => e.stopPropagation()}>
+        <h2>
+          Exil — {open === view.viewer ? "vous" : player.name} ({cards.length})
+        </h2>
+        <div className="hand-picker">
+          {cards.length === 0 && <p className="hint">Vide.</p>}
+          {[...cards].reverse().map((c) => (
+            <div key={c.uid} className="exile-entry">
+              <Card face={c} obj={c} width="var(--pick-w)" glow={playable.has(c.id) ? "playable" : null} />
+              {holder.has(c.id) && <span className="exile-holder">Exilée par {holder.get(c.id)}</span>}
+            </div>
+          ))}
+        </div>
+        <div className="modal-actions">
+          <button type="button" className="btn" onClick={() => close(null)}>
+            Fermer
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function GraveyardViewer() {
   const open = useGame((s) => s.graveyardOpen);
   const view = useGame((s) => s.view);
@@ -548,6 +589,7 @@ export function Prompts() {
       <AbilityMenu />
       <LegendConfirm />
       <GraveyardViewer />
+      <ExileViewer />
       <GameOver view={view} />
     </>
   );
