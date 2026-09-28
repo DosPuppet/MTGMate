@@ -2,4 +2,5 @@ export { creatureValue, evaluate, lifeValue, rollout, targetOpponent, trySubmit 
 export { duel, heuristicAgent } from "./heuristic";
 export { buildCastDecision, enumerateDecisions } from "./options";
 export { mulberry32, randomAgent } from "./random";
+export { type ScriptAction, type ScriptTarget, scriptedAgent } from "./scripted";
 export { checkInvariants, playGame, type SelfPlayResult } from "./selfplay";

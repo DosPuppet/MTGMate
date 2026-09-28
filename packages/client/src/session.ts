@@ -14,6 +14,8 @@ export class LocalSession implements Session {
   constructor(onMessage: (m: FromWorker) => void) {
     this.worker = new Worker(new URL("./worker/game.worker.ts", import.meta.url), { type: "module" });
     this.worker.onmessage = (e: MessageEvent<FromWorker>) => onMessage(e.data);
+    // Erreur du moteur dans le worker : visible dans la console plutôt que silencieuse.
+    this.worker.onerror = (e) => console.error("Erreur du worker de partie :", e.message);
   }
 
   send(m: ToWorker): void {

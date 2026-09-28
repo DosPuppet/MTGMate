@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Card } from "../board/Card";
 import { faceName, type Lang } from "../i18n";
 import { myActions, type PlayableOption, useGame } from "../store";
+import { useTutorial } from "../tutorial/store";
 import { ChoicePrompt } from "./ChoicePrompt";
 
 function Modal({ title, children, wide }: { title: string; children: React.ReactNode; wide?: boolean }) {
@@ -465,7 +466,9 @@ function GameOver({ view }: { view: GameView }) {
   const backToLobby = useGame((s) => s.backToLobby);
   const online = useGame((s) => s.online);
   const rematch = useGame((s) => s.rematch);
-  if (!view.over) return null;
+  // Tutoriel : le guide annonce lui-même la fin de la partie et propose la suite.
+  const coached = useTutorial((t) => !!t.lessonId);
+  if (!view.over || coached) return null;
   const me = online?.players.find((p) => p.seat === online.seat);
   const opp = online?.players.find((p) => p.seat !== online.seat);
   const won = view.winner === view.viewer;

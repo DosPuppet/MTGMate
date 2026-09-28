@@ -158,6 +158,7 @@ if (!flag("no-ui") && (full || flag("ui") || uiTouched)) {
         { name: "deck-smoke", cmd: "npx tsx tools/deck-smoke.ts", show: /^ok : partie lancée.*$/ },
         { name: "battlefield-smoke", cmd: "npx tsx tools/battlefield-smoke.ts", show: /^ok : aucune erreur de page$/ },
         { name: "proxy-smoke", cmd: "npx tsx tools/proxy-smoke.ts", show: /^ok : aucune erreur de page$/ },
+        { name: "tutorial-smoke", cmd: "npx tsx tools/tutorial-smoke.ts", show: /^ok : tutoriel suivi de bout en bout$/ },
       ]),
     ]);
     ok = results.every(Boolean) && ok;

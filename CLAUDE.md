@@ -32,6 +32,7 @@ Ce fichier sert au suivi du projet entre les sessions : où on en est, les règl
 | **Duskmourn: House of Horror (DSK, « Mornebrune »)** | ✅ **268 / 268** (lots A à D) |
 | **Bloomburrow (BLB)** | ✅ **266 / 266** (lots A à C) |
 | Decks préconstruits : seulement les 5 decks de bienvenue (40 cartes FDN, joués tels quels malgré la règle des 60) et le Starter Kit Final Fantasy (Séphiroth, Cloud) ; les anciens decks FDN et FRA sont retirés | ✅ |
+| Tutoriel « Apprendre à jouer » (9 leçons mises en scène, guidage strict, reprise au début de la leçon ; `docs/tutoriel.md`) | ✅ |
 | Autres extensions Standard | à la demande de l'utilisateur, une à la fois |
 
 
@@ -56,6 +57,7 @@ Ce fichier sert au suivi du projet entre les sessions : où on en est, les règl
   
   **Le détail d'un nouveau lot va là**, et CLAUDE.md ne reçoit qu'une ligne d'avancement.
 - `docs/deploiement.md` : mise en production (pm2, nginx).
+- `docs/tutoriel.md` : leçons du tutoriel, format des étapes, ajout d'une leçon.
 - Textes Oracle des cartes à faire : `npm run coverage -- --set <ext> --text [--color W|U|B|R|G|M|C|L]` ; une carte : `--card "<nom>"`.
 
 ## Conventions
@@ -101,7 +103,7 @@ Ce fichier sert au suivi du projet entre les sessions : où on en est, les règl
 - **En fin d'extension ou avant une fusion :** `npm run verify -- --full` (environ 3 min). Il lance :
   - trois graines sur tout le pool, puis 3 et 4 joueurs, et l'IA mixte ;
   - le bench ;
-  - les cinq tests d'interface.
+  - les six tests d'interface (dont `tutorial-smoke`).
 - **Résultat :** une ligne par étape, avec sa durée. Le détail n'est affiché qu'en cas d'échec ; tous les journaux sont dans `test-results/verify/`.
 - **Fuzz à la main :** `npm run fuzz -- --games 300 --pool FIN --jobs 10`. Les résultats sont identiques à graine égale, quel que soit `--jobs`.
 - **Bench :** il n'est fiable que sur secteur (le mode éco du CPU fausse les mesures). On juge une régression en comparant avant et après.
@@ -138,6 +140,7 @@ Ce fichier sert au suivi du projet entre les sessions : où on en est, les règl
 - **Déploiement (VPS de l'utilisateur) :** machine partagée avec d'autres applis, nginx existant devant, **ni Docker ni Caddy ni unité systemd** : pm2 (`deploy/ecosystem.config.cjs`), serveur sur `127.0.0.1`. Une mise à jour (`deploy/update.sh`) redémarre le serveur et **coupe les parties en cours** (salons en mémoire).
 - **Mode dev seulement :** `window.__mtgx` (bac à sable) et `window.__sfxLog` n'existent pas dans le build de production ; les scripts qui visent la production (`online-smoke --base`) ne doivent pas s'en servir.
 - **Mode rapide des tests (`?fast`, dev seulement, `client/src/fast.ts`) :** l'IA joue sans sa pause de 0,9 s et un sort adverse n'est montré que 0,3 s. Les scripts d'interface ouvrent `/?fast`, sauf `battlefield-smoke`, qui audite un plateau figé et ne doit pas laisser l'IA jouer pendant la mesure. Une boucle de test qui joue une partie doit gérer les fenêtres de choix (« Suggestion » puis « Valider ») et la défausse, et échouer si la partie se bloque.
+- **Tutoriel (`client/src/tutorial/`) :** chaque leçon est rejouée par `client/test/tutorial.test.ts`, et suivie dans le navigateur par `tutorial-smoke`. Modifier une leçon, une carte qu'elle utilise ou l'automatisme (arrêts) peut la bloquer : relancer les deux tests. La garde du guidage passe par `store.decide` et `store.endTurn` : une nouvelle façon d'envoyer une décision doit aussi passer par eux.
 - **Mulligans :** ils se décident l'un après l'autre (le premier joueur d'abord) ; un script de test ne doit pas supposer l'ordre.
 - **Bac à sable (mode dev) :** `window.__mtgx` expose le store ; `startGame(deck, decksIA, { p1: { cards, tokens }, p2: … })` met des permanents en jeu dès le début (voir `battlefield-smoke`). Dans `page.evaluate`, pas de fonction nommée (tsx injecte `__name`).
 - **`pgrep -f` / `pkill -f` :** avec un motif présent dans la ligne de commande, ils peuvent tuer le shell courant.

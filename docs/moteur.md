@@ -27,6 +27,8 @@ Moteur pur et déterministe (`packages/engine/src`). L'état est sérialisable ;
 | `mana.ts` | Capacités de mana, solveur de paiement, mana restreint. |
 | `statics.ts` | Index des capacités par contrôleur (`controlledAbilitiesWithSource`, `playerStatic`, `doublers`). |
 | `view.ts` | Projection de l'état pour un joueur (information cachée). |
+| `scenario.ts` | `createScenario` : partie mise en scène (bibliothèques dans l'ordre, mains, permanents, tour de départ, mulligan facultatif) pour le tutoriel ; l'état vide vient de `blankState` (`game.ts`). |
+| `host.ts` | `GameHost` : IA, automatisme et humains ; l'option `gate` met l'IA en pause (explications du tutoriel). |
 
 ## Recettes
 

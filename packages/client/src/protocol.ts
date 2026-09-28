@@ -1,4 +1,5 @@
 /** Messages échangés entre l'interface et le Web Worker qui fait tourner la partie. */
+import type { ScriptAction } from "@mtgx/ai";
 import type { DeckEntries } from "@mtgx/cards";
 import type { AutopilotSettings, CardDef, CardFace, Decision, GameEvent, GameView } from "@mtgx/engine";
 
@@ -18,6 +19,27 @@ export type Sandbox = Record<
   }
 >;
 
+/** Un camp d'une partie mise en scène (tutoriel), par noms de cartes. */
+export interface ScenarioSide {
+  name?: string;
+  life?: number;
+  /** Bibliothèque dans l'ordre : la première carte est le dessus. */
+  library: string[];
+  hand: string[];
+  battlefield?: (string | { card: string; tapped?: boolean; sick?: boolean })[];
+  graveyard?: string[];
+}
+
+/** Partie mise en scène (tutoriel) : état de départ connu et adversaire scripté (ou l'IA heuristique). */
+export interface ScenarioSpec {
+  you: ScenarioSide;
+  opponent: ScenarioSide;
+  active: "you" | "opponent";
+  turn?: number;
+  mulligan?: boolean;
+  opponentPlays: ScriptAction[] | "heuristic";
+}
+
 export type ToWorker =
   | {
       type: "start";
@@ -30,7 +52,11 @@ export type ToWorker =
       sandbox?: Sandbox;
       /** Mode rapide des tests d'interface (dev) : l'IA joue sans pause. */
       fast?: boolean;
+      /** Tutoriel : partie mise en scène au lieu de decks mélangés (les decks sont alors vides). */
+      scenario?: ScenarioSpec;
     }
+  /** Tutoriel : l'adversaire attend (explication à l'écran). */
+  | { type: "pause"; paused: boolean }
   | { type: "decision"; decision: Decision }
   | { type: "settings"; settings: Partial<AutopilotSettings> };
 

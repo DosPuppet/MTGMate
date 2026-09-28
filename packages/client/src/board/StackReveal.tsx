@@ -9,6 +9,7 @@ import { useEffect, useState } from "react";
 import { fastMode } from "../fast";
 import { faceName } from "../i18n";
 import { myActions, useGame } from "../store";
+import { useTutorialHold } from "../tutorial/store";
 import { Card } from "./Card";
 
 /** Durée d'affichage avant de passer automatiquement (un instant en mode rapide des tests). */
@@ -33,14 +34,16 @@ export function StackReveal() {
   const top = revealed(view, fullControl);
   const topId = top?.id;
   const [started, setStarted] = useState(0);
+  // Tutoriel guidé : le joueur clique OK lui-même, quand le guide le lui demande.
+  const held = useTutorialHold();
 
   // Minuterie : on passe seul au bout de REVEAL_MS (relancée pour chaque nouvel élément de pile).
   useEffect(() => {
-    if (!topId) return;
+    if (!topId || held) return;
     setStarted(Date.now());
     const t = setTimeout(() => decide({ type: "pass" }), REVEAL_MS);
     return () => clearTimeout(t);
-  }, [topId, decide]);
+  }, [topId, decide, held]);
 
   const nameOf = (id: string) => {
     if (!view) return id;
@@ -75,9 +78,11 @@ export function StackReveal() {
           <button type="button" className="btn primary stack-reveal-ok" onClick={() => decide({ type: "pass" })}>
             OK
           </button>
-          <div className="stack-reveal-timer">
-            <div key={started} className="stack-reveal-bar" style={{ animationDuration: `${REVEAL_MS}ms` }} />
-          </div>
+          {!held && (
+            <div className="stack-reveal-timer">
+              <div key={started} className="stack-reveal-bar" style={{ animationDuration: `${REVEAL_MS}ms` }} />
+            </div>
+          )}
         </motion.div>
       )}
     </AnimatePresence>

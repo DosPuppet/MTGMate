@@ -22,6 +22,11 @@ export interface HostOptions {
   /** Pause entre deux actions visibles de l'IA (ms), pour que l'humain puisse suivre. */
   aiDelay?: number;
   sleep?: (ms: number) => Promise<void>;
+  /**
+   * Consulté avant chaque décision d'une IA : une promesse la fait attendre (le tutoriel met l'adversaire
+   * en pause pendant une explication), null la laisse jouer.
+   */
+  gate?: () => Promise<void> | null;
 }
 
 /** Décision de repli si une IA renvoie une décision illégale. */
@@ -111,6 +116,14 @@ export class GameHost {
         const actor = decider(this.state) ?? p.player;
         const agent = this.opts.agents?.[actor];
         if (agent) {
+          const wait = this.opts.gate?.();
+          if (wait) {
+            // L'humain voit la partie telle qu'elle est pendant l'attente.
+            this.flush();
+            await wait;
+            // La partie a pu changer pendant l'attente (décision de l'humain) : on repart de l'état courant.
+            if (this.state.pending !== p) continue;
+          }
           let d: Decision;
           try {
             // Une IA qui contrôle le tour d'un autre joueur se contente des décisions par défaut (passer, ne pas attaquer).

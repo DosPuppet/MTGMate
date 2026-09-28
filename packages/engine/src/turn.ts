@@ -435,7 +435,7 @@ export function endTheTurn(s: GameState, r: { item: StackItem }): void {
   emit({ type: "endTurn", player: r.item.controller });
 }
 
-function startTurnOf(s: GameState, p: PlayerId): void {
+export function startTurnOf(s: GameState, p: PlayerId): void {
   // 722 : le tour contrôlé commence (ou le contrôle précédent se termine).
   if (s.turnControl?.turn !== undefined && s.turnControl.turn !== s.turn.number) s.turnControl = undefined;
   if (s.turnControl && s.turnControl.turn === undefined && s.turnControl.player === p) {

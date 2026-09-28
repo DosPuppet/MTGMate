@@ -26,17 +26,50 @@ import { findObjectEl } from "./board/layout";
 import { fastMode } from "./fast";
 import { describeEvents, type Lang, type LogLine } from "./i18n";
 import { boardPick, togglePick } from "./prompts/boardChoice";
-import type { FromWorker, Sandbox } from "./protocol";
+import type { FromWorker, Sandbox, ScenarioSpec } from "./protocol";
+import { scenarioCards } from "./scenario";
 import { LocalSession, RemoteSession, type Session } from "./session";
 
-/** Définitions des cartes des decks (et du bac à sable), envoyées au worker de partie. */
-function defsFor(decks: DeckEntries[], sandbox?: Sandbox): Record<string, CardDef> {
+/** Définitions des cartes des decks (et du bac à sable ou du scénario), envoyées au worker de partie. */
+function defsFor(decks: DeckEntries[], sandbox?: Sandbox, scenario?: ScenarioSpec): Record<string, CardDef> {
   const names = new Set<string>(decks.flatMap((d) => d.map(([, name]) => name)));
+  for (const n of scenario ? scenarioCards(scenario) : []) names.add(n);
   for (const side of Object.values(sandbox ?? {})) {
     for (const n of [...(side.cards ?? []), ...(side.hand ?? [])]) names.add(n);
     for (const [n] of side.attach ?? []) names.add(n);
   }
   return Object.fromEntries([...names].map((n) => [n, card(n)]));
+}
+
+// ---------------------------------------------------------------------------
+// Tutoriel : garde des décisions (guidage strict) et observateur des mises à jour, installés par tutorial/store.ts
+// ---------------------------------------------------------------------------
+
+/** Ce que le joueur demande : une décision, ou « fin du tour » (un réglage, pas une décision). */
+export type PlayerIntent = Decision | { type: "endTurn" };
+
+/** Renvoie un rappel si l'intention est refusée, null si elle est permise. */
+type DecisionGuard = (intent: PlayerIntent, view: GameView) => string | null;
+let guard: DecisionGuard | null = null;
+let observer: ((view: GameView, events: GameEvent[]) => void) | null = null;
+
+export function setDecisionGuard(g: DecisionGuard | null): void {
+  guard = g;
+}
+
+export function setUpdateObserver(o: ((view: GameView, events: GameEvent[]) => void) | null): void {
+  observer = o;
+}
+
+/** Intention refusée par le tutoriel : on prévient le joueur et on abandonne le lancement en cours. */
+function refused(intent: PlayerIntent): boolean {
+  const view = useGame.getState().view;
+  const reason = view && guard ? guard(intent, view) : null;
+  if (!reason) return false;
+  playSound("error");
+  useGame.getState().notify(reason);
+  useGame.setState({ casting: null, abilityMenu: null, selectedBlocker: null, legendConfirm: null });
+  return true;
 }
 
 type CastOption = Extract<ActionOption, { type: "cast" }>;
@@ -99,7 +132,9 @@ export interface OnlineState {
 }
 
 interface Store {
-  screen: "lobby" | "decks" | "game" | "online";
+  screen: "lobby" | "decks" | "game" | "online" | "tutorial";
+  /** Partie du tutoriel : le retour au menu ramène au menu du tutoriel. */
+  tutorialGame: boolean;
   /** Deck ouvert dans le deckbuilder. */
   editingDeck: string | null;
   session: Session | null;
@@ -131,6 +166,9 @@ interface Store {
   spotlight: { id: number; face: CardFace; who: string } | null;
 
   startGame(playerDeck: DeckEntries, aiDecks: DeckEntries[], sandbox?: Sandbox): void;
+  /** Tutoriel : partie mise en scène. */
+  startScenario(scenario: ScenarioSpec): void;
+  openTutorial(): void;
   openOnline(): void;
   createRoom(name: string, deck: DeckEntries): void;
   joinRoom(code: string, name: string, deck: DeckEntries): void;
@@ -171,6 +209,8 @@ interface Store {
   endTurn(): void;
   toggleStop(side: "own" | "opponent", step: Step): void;
   setFullControl(on: boolean): void;
+  /** Réglages de l'automatisme imposés par le tutoriel (arrêts). */
+  applySettings(partial: Partial<AutopilotSettings>): void;
   setLang(lang: Lang): void;
   setHover(h: Hover | null): void;
   setPeek(h: Hover | null): void;
@@ -468,6 +508,7 @@ export const useGame = create<Store>((set, get) => {
 
   return {
     screen: "lobby",
+    tutorialGame: false,
     editingDeck: null,
     session: null,
     online: null,
@@ -495,7 +536,7 @@ export const useGame = create<Store>((set, get) => {
 
     startGame(playerDeck, aiDecks, sandbox) {
       get().session?.close();
-      set({ online: null });
+      set({ online: null, tutorialGame: false });
       preloadSounds();
       const session = new LocalSession((m) => get().receive(m));
       const settings = { ...get().settings, passUntilTurn: null };
@@ -513,8 +554,46 @@ export const useGame = create<Store>((set, get) => {
       session.send({ type: "settings", settings });
     },
 
+    startScenario(scenario) {
+      get().session?.close();
+      preloadSounds();
+      const session = new LocalSession((m) => get().receive(m));
+      // Réglages par défaut : le tutoriel fixe lui-même les arrêts dont il a besoin.
+      const settings = structuredClone(DEFAULT_AUTOPILOT);
+      set({
+        screen: "game",
+        tutorialGame: true,
+        online: null,
+        session,
+        view: null,
+        log: [],
+        fx: [],
+        casting: null,
+        attackers: [],
+        blocks: {},
+        selection: [],
+        hover: null,
+        settings,
+      });
+      session.send({
+        type: "start",
+        seed: 1,
+        playerName: "Vous",
+        playerDeck: [],
+        aiDecks: [],
+        defs: defsFor([], undefined, scenario),
+        scenario,
+        fast: fastMode(),
+      });
+      session.send({ type: "settings", settings });
+    },
+
+    openTutorial() {
+      set({ screen: "tutorial" });
+    },
+
     openOnline() {
-      set({ screen: "online" });
+      set({ screen: "online", tutorialGame: false });
     },
 
     createRoom(name, deck) {
@@ -628,7 +707,16 @@ export const useGame = create<Store>((set, get) => {
     backToLobby() {
       if (get().online) return get().leaveRoom();
       get().session?.close();
-      set({ screen: "lobby", session: null, view: null, casting: null, hover: null, peek: null, drawerOpen: false });
+      set({
+        screen: get().tutorialGame && get().screen === "game" ? "tutorial" : "lobby",
+        tutorialGame: false,
+        session: null,
+        view: null,
+        casting: null,
+        hover: null,
+        peek: null,
+        drawerOpen: false,
+      });
     },
 
     receive(msg) {
@@ -665,9 +753,11 @@ export const useGame = create<Store>((set, get) => {
             }
           : {}),
       }));
+      observer?.(view, events);
     },
 
     decide(d) {
+      if (refused(d)) return;
       get().session?.send({ type: "decision", decision: d });
       set({ casting: null, abilityMenu: null, selectedBlocker: null, selection: [] });
     },
@@ -907,7 +997,7 @@ export const useGame = create<Store>((set, get) => {
 
     endTurn() {
       const v = get().view;
-      if (!v) return;
+      if (!v || refused({ type: "endTurn" })) return;
       set({ casting: null, attackers: [] });
       sendSettings({ ...get().settings, passUntilTurn: v.turn.number });
     },
@@ -921,6 +1011,10 @@ export const useGame = create<Store>((set, get) => {
 
     setFullControl(on) {
       sendSettings({ ...get().settings, fullControl: on });
+    },
+
+    applySettings(partial) {
+      sendSettings({ ...get().settings, ...partial });
     },
 
     setLang(lang) {

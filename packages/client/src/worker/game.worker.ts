@@ -16,6 +16,7 @@ import {
   visibleFaces,
 } from "@mtgx/engine";
 import type { FromWorker, Sandbox, ToWorker } from "../protocol";
+import { buildScenario, OPPONENT } from "../scenario";
 
 const HUMAN = "p1";
 let host: GameHost | null = null;
@@ -34,6 +35,11 @@ function buildDeck(entries: DeckEntries): CardDef[] {
 
 const post = (msg: FromWorker) => (self as unknown as Worker).postMessage(msg);
 const sleep = (ms: number) => new Promise<void>((r) => setTimeout(r, ms));
+
+/** Tutoriel : l'adversaire attend pendant une explication. */
+let paused = false;
+const resumers: (() => void)[] = [];
+const gate = () => (paused ? new Promise<void>((r) => resumers.push(r)) : null);
 
 /** Met en jeu les permanents du bac à sable, sans mal d'invocation. */
 function applySandbox(s: GameState, sandbox: Sandbox): void {
@@ -82,11 +88,37 @@ function applySandbox(s: GameState, sandbox: Sandbox): void {
   }
 }
 
-self.onmessage = async (e: MessageEvent<ToWorker>) => {
-  const msg = e.data;
+self.onmessage = (e: MessageEvent<ToWorker>) => {
+  // Une erreur du moteur ne doit pas rester silencieuse (rejet de promesse dans le worker) : l'interface l'affiche.
+  handle(e.data).catch((err: unknown) => {
+    console.error(err);
+    post({ type: "error", message: `Erreur du moteur : ${err instanceof Error ? err.message : String(err)}` });
+  });
+};
+
+async function handle(msg: ToWorker): Promise<void> {
   switch (msg.type) {
     case "start": {
       defs = msg.defs;
+      paused = false;
+      if (msg.scenario) {
+        const { state, events, opponent } = buildScenario(msg.scenario, card, msg.seed, msg.playerName);
+        host = new GameHost(
+          state,
+          {
+            agents: { [OPPONENT]: opponent },
+            // Un débutant doit pouvoir suivre chaque action de l'adversaire.
+            aiDelay: msg.fast && import.meta.env.DEV ? 0 : 1400,
+            sleep,
+            gate,
+            onUpdate: (_p, view, evts) =>
+              post({ type: "update", view, events: evts, faces: host ? visibleFaces(host.state, view, evts) : {} }),
+          },
+          events,
+        );
+        await host.run();
+        return;
+      }
       const { state, events } = createGame({
         seed: msg.seed,
         players: [
@@ -120,6 +152,11 @@ self.onmessage = async (e: MessageEvent<ToWorker>) => {
       if (error) post({ type: "error", message: error });
       return;
     }
+    case "pause": {
+      paused = msg.paused;
+      if (!paused) for (const r of resumers.splice(0)) r();
+      return;
+    }
     case "settings": {
       if (!host) return;
       host.setSettings(HUMAN, msg.settings);
@@ -127,4 +164,4 @@ self.onmessage = async (e: MessageEvent<ToWorker>) => {
       return;
     }
   }
-};
+}

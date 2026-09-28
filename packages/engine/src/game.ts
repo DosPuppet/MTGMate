@@ -56,64 +56,77 @@ export interface StepResult {
   events: GameEvent[];
 }
 
+/** État vide d'une partie : les joueurs, sans aucune carte (partagé par `createGame` et `createScenario`). */
+export function blankState(opts: {
+  seed: number;
+  players: { id: PlayerId; name: string; life?: number }[];
+  startingLife?: number;
+}): GameState {
+  if (opts.players.length < 2) throw new Error("Il faut au moins deux joueurs");
+  const first = opts.players[0] as { id: PlayerId };
+  const s: GameState = {
+    version: 0,
+    rng: opts.seed | 0,
+    nextId: 1,
+    timestamp: 0,
+    defs: {},
+    objects: {},
+    players: {},
+    playerOrder: opts.players.map((p) => p.id),
+    battlefield: [],
+    exile: [],
+    stack: [],
+    turn: {
+      number: 0,
+      active: first.id,
+      step: "untap",
+      landsPlayed: 0,
+      attacked: false,
+      creatureDied: false,
+      onceFired: [],
+      startingPlayer: first.id,
+    },
+    flow: "mulligan",
+    priority: { holder: first.id, passes: 0 },
+    combat: null,
+    effects: [],
+    pending: null,
+    mulliganQueue: [],
+    resolving: null,
+    replacements: [],
+    triggers: [],
+    delayed: [],
+    linkedExile: [],
+    lki: {},
+    winner: null,
+    over: false,
+  };
+  for (const p of opts.players) {
+    const life = p.life ?? opts.startingLife ?? 20;
+    s.players[p.id] = {
+      id: p.id,
+      name: p.name,
+      life,
+      library: [],
+      hand: [],
+      graveyard: [],
+      command: [],
+      manaPool: emptyPool(),
+      drewFromEmptyLibrary: false,
+      lost: false,
+      mulligans: 0,
+      lastTurnStarted: 0,
+      startingLife: opts.startingLife ?? 20,
+      turnStats: emptyTurnStats(),
+    };
+  }
+  return s;
+}
+
 export function createGame(opts: GameOptions): StepResult {
   const [state, events] = collectEvents(() => {
-    if (opts.players.length < 2) throw new Error("Il faut au moins deux joueurs");
-    const first = opts.players[0] as PlayerSetup;
-    const s: GameState = {
-      version: 0,
-      rng: opts.seed | 0,
-      nextId: 1,
-      timestamp: 0,
-      defs: {},
-      objects: {},
-      players: {},
-      playerOrder: opts.players.map((p) => p.id),
-      battlefield: [],
-      exile: [],
-      stack: [],
-      turn: {
-        number: 0,
-        active: first.id,
-        step: "untap",
-        landsPlayed: 0,
-        attacked: false,
-        creatureDied: false,
-        onceFired: [],
-        startingPlayer: first.id,
-      },
-      flow: "mulligan",
-      priority: { holder: first.id, passes: 0 },
-      combat: null,
-      effects: [],
-      pending: null,
-      mulliganQueue: [],
-      resolving: null,
-      replacements: [],
-      triggers: [],
-      delayed: [],
-      linkedExile: [],
-      lki: {},
-      winner: null,
-      over: false,
-    };
+    const s = blankState(opts);
     for (const p of opts.players) {
-      s.players[p.id] = {
-        id: p.id,
-        name: p.name,
-        life: opts.startingLife ?? 20,
-        library: [],
-        hand: [],
-        graveyard: [],
-        command: [],
-        manaPool: emptyPool(),
-        drewFromEmptyLibrary: false,
-        lost: false,
-        mulligans: 0,
-        lastTurnStarted: 0,
-        startingLife: opts.startingLife ?? 20,
-        turnStats: emptyTurnStats(),
-      };
       for (const card of p.deck) {
         registerDef(s, card);
         createObject(s, card.id, p.id, "library");

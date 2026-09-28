@@ -6,6 +6,7 @@ import { deckCover, useAllDecks } from "../decks/store";
 import { ImageRelayToggle } from "../ImageRelayToggle";
 import { useRelayActive } from "../images";
 import { useGame } from "../store";
+import { useTutorial } from "../tutorial/store";
 
 /** Un deck peut lancer une partie s'il est légal dans le format et que toutes ses cartes sont jouables. */
 export function deckStatus(d: DeckList): { ok: boolean; reason?: string; format: string } {
@@ -70,6 +71,9 @@ export function Lobby() {
   const startGame = useGame((s) => s.startGame);
   const openDeckBuilder = useGame((s) => s.openDeckBuilder);
   const openOnline = useGame((s) => s.openOnline);
+  const openTutorial = useGame((s) => s.openTutorial);
+  // Nouveau joueur (aucune leçon commencée) : le tutoriel est mis en avant.
+  const newcomer = useTutorial((t) => t.progress.done.length === 0 && !t.progress.current);
   const decks = useAllDecks();
   const [mine, setMine] = useState(decks[0]?.id ?? "");
   const [ai, setAi] = useState(decks[1]?.id ?? "");
@@ -124,6 +128,9 @@ export function Lobby() {
           </button>
           <button type="button" className="btn big" onClick={openOnline}>
             Contre un joueur
+          </button>
+          <button type="button" className={`btn big ${newcomer ? "learn" : ""}`} onClick={openTutorial}>
+            Apprendre à jouer
           </button>
         </div>
         <div className="lobby-help">

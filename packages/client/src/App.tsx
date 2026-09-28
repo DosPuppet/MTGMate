@@ -8,6 +8,8 @@ import { Online } from "./lobby/Online";
 import { Prompts } from "./prompts/Prompts";
 import { useGame } from "./store";
 import { isTouch } from "./touch";
+import { Coach } from "./tutorial/Coach";
+import { TutorialMenu } from "./tutorial/TutorialMenu";
 
 function Toast() {
   const toast = useGame((s) => s.toast);
@@ -59,6 +61,7 @@ function GameScreen() {
       <DrawerToggle />
       <Prompts />
       <TouchPreview />
+      <Coach />
       <div className="rotate-hint">
         <div className="rotate-icon">⟳</div>
         Tournez votre appareil en paysage pour jouer.
@@ -71,7 +74,17 @@ export function App() {
   const screen = useGame((s) => s.screen);
   return (
     <>
-      {screen === "decks" ? <DeckBuilder /> : screen === "lobby" ? <Lobby /> : screen === "online" ? <Online /> : <GameScreen />}
+      {screen === "decks" ? (
+        <DeckBuilder />
+      ) : screen === "lobby" ? (
+        <Lobby />
+      ) : screen === "online" ? (
+        <Online />
+      ) : screen === "tutorial" ? (
+        <TutorialMenu />
+      ) : (
+        <GameScreen />
+      )}
       <Toast />
     </>
   );

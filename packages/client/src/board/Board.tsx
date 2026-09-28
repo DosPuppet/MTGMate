@@ -97,6 +97,7 @@ function PlayerBar({ player, isMe }: { player: PlayerView; isMe: boolean }) {
         type="button"
         className={`avatar ${isTarget ? "glow-target" : ""} ${picked ? "glow-picked" : ""} ${active ? "active" : ""}`}
         data-oid={player.id}
+        data-tuto={isMe ? "life-me" : "life-opp"}
         onClick={() => clickPlayer(player.id)}
       >
         <span className="avatar-initial">{isMe ? "V" : player.name.slice(0, 3)}</span>
@@ -109,7 +110,7 @@ function PlayerBar({ player, isMe }: { player: PlayerView; isMe: boolean }) {
           {thinking && <span className="thinking">réfléchit…</span>}
         </div>
         <div className="player-counts">
-          <span title="Bibliothèque">
+          <span title="Bibliothèque" data-tuto={isMe ? "library-me" : undefined}>
             <Icon d={ICONS.library} /> {player.libraryCount}
           </span>
           {!isMe && (
@@ -120,6 +121,7 @@ function PlayerBar({ player, isMe }: { player: PlayerView; isMe: boolean }) {
           <button
             type="button"
             className="gy-button"
+            data-tuto={isMe ? "graveyard-me" : undefined}
             title="Cimetière (cliquer pour voir)"
             onClick={() => openGraveyard(player.id)}
           >
@@ -384,7 +386,7 @@ function Battlefield({ player, isMe }: { player: string; isMe: boolean }) {
   // Recouvrement des planeswalkers quand ils ne tiennent pas en hauteur (le haut de chaque carte reste visible).
   const overlap = cardW ? Math.min(0, walkerStep - cardW * CARD_RATIO) : 0;
   return (
-    <div ref={ref} className={`battlefield ${isMe ? "me" : "opp"}`} style={style}>
+    <div ref={ref} className={`battlefield ${isMe ? "me" : "opp"}`} data-tuto={isMe ? "field-me" : "field-opp"} style={style}>
       <div className="bf-rows">{isMe ? rows : rows.reverse()}</div>
       {walkers.length > 0 && (
         // Zone des planeswalkers (et batailles), tout à droite comme sur MTGA.
@@ -413,11 +415,11 @@ function PhaseBar() {
   const toggleStop = useGame((s) => s.toggleStop);
   const myTurn = view.turn.active === view.viewer;
   return (
-    <div className="phase-bar">
+    <div className="phase-bar" data-tuto="phase-bar">
       <div className="phase-turn">
         Tour {view.turn.number} · <strong>{myTurn ? "vous" : view.players[view.turn.active]?.name}</strong>
       </div>
-      <div className="phases">
+      <div className="phases" data-tuto="stops">
         {PHASE_BAR.map(({ step, short }) => {
           const current = view.turn.step === step || (step === "combatDamage" && view.turn.step === "firstStrikeDamage");
           return (
@@ -457,7 +459,7 @@ function StackView() {
   if (view.stack.length === 0) return null;
   const targeting = casting?.stage === "target" ? casting.spec : null;
   return (
-    <div className="stack">
+    <div className="stack" data-tuto="stack">
       <div className="stack-label">Pile</div>
       <div className="stack-items">
         {view.stack.map((item, i) => (
@@ -711,7 +713,7 @@ function Hand() {
   }, [liftedId]);
 
   return (
-    <div className="hand" ref={handRef}>
+    <div className="hand" data-tuto="hand" ref={handRef}>
       {cards.map((c, i) => {
         const angle = n > 1 ? (i - (n - 1) / 2) * Math.min(4, 24 / n) : 0;
         const lift = Math.abs(i - (n - 1) / 2) * Math.min(6, 30 / n);
@@ -863,6 +865,7 @@ function ActionPanel() {
       <button
         type="button"
         className={`main-button ${action.hot ? "hot" : ""}`}
+        data-tuto="main-button"
         disabled={action.disabled}
         onClick={action.run}
         title="Espace"
@@ -882,7 +885,13 @@ function ActionPanel() {
           </button>
         )}
       {myTurn && mine && !view.over && (
-        <button type="button" className="btn small ghost" onClick={endTurn} title="Entrée : passer jusqu'à la fin du tour">
+        <button
+          type="button"
+          className="btn small ghost"
+          data-tuto="end-turn"
+          onClick={endTurn}
+          title="Entrée : passer jusqu'à la fin du tour"
+        >
           Passer le tour ⏎
         </button>
       )}

@@ -3,11 +3,12 @@ export { type AutopilotSettings, autopilotDecision, autoTarget, DEFAULT_AUTOPILO
 export { divisionOf, validateChoice } from "./choices";
 export type { CardScript } from "./dsl";
 export * as dsl from "./dsl";
-export { applyMutable, createGame, type GameOptions, type PlayerSetup, type StepResult, submit } from "./game";
+export { applyMutable, blankState, createGame, type GameOptions, type PlayerSetup, type StepResult, submit } from "./game";
 export { type Agent, fallbackDecision, GameHost, type HostOptions } from "./host";
 export { computeBattlefield } from "./layers";
 export { legalActions, meaningfulActions } from "./legal";
 export { availableMana, costToText, manaSources, manaValue, parseManaCost, solvePayment } from "./mana";
+export { createScenario, type ScenarioOptions, type ScenarioPermanent, type ScenarioPlayer } from "./scenario";
 export { isPermanentCard, modesOf, RulesError } from "./stack";
 export {
   alivePlayers,

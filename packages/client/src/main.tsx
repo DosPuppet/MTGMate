@@ -5,10 +5,15 @@ import { App } from "./App";
 import { playSound, unlockAudio, useAudio } from "./audio/sfx";
 import { detectBlockedScryfall } from "./images";
 import { useGame } from "./store";
+import { useTutorial } from "./tutorial/store";
 import "./styles.css";
 
-// Mode dev : accès au store pour les scripts Playwright (bac à sable, voir protocol.ts).
-if (import.meta.env.DEV) (window as unknown as { __mtgx: typeof useGame }).__mtgx = useGame;
+// Mode dev : accès aux stores pour les scripts Playwright (bac à sable, voir protocol.ts ; tutoriel).
+if (import.meta.env.DEV) {
+  const w = window as unknown as { __mtgx: typeof useGame; __tuto: typeof useTutorial };
+  w.__mtgx = useGame;
+  w.__tuto = useTutorial;
+}
 
 const root = document.getElementById("root");
 if (root) {

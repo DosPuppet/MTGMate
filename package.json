@@ -24,7 +24,8 @@
     "mobile-smoke": "tsx tools/mobile-smoke.ts",
     "proxy-smoke": "tsx tools/proxy-smoke.ts",
     "server": "tsx packages/server/src/main.ts",
-    "online-smoke": "tsx tools/online-smoke.ts"
+    "online-smoke": "tsx tools/online-smoke.ts",
+    "tutorial-smoke": "tsx tools/tutorial-smoke.ts"
   },
   "devDependencies": {
     "@biomejs/biome": "^2.5.14",
