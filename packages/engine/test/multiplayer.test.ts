@@ -82,6 +82,16 @@ describe("multijoueur", () => {
     expect(s.pending?.player).toBe("p3");
   });
 
+  it("le joueur actif éliminé par une action basée sur l'état ne reçoit pas la priorité", () => {
+    // Le joueur actif est à 0 point de vie : l'action basée sur l'état l'élimine, et son tour s'arrête.
+    let s = scenario({ players: 3, p1: { hand: ["Forest"] } });
+    (s.players.p1 as { life: number }).life = 0;
+    s = act(s, "p1", { type: "playLand", card: idOf(s, "p1", "hand", "Forest") });
+    expect(s.players.p1?.lost).toBe(true);
+    expect(s.pending?.player).not.toBe("p1");
+    expect(s.turn.active).toBe("p2");
+  });
+
   it("abandon en multijoueur : la partie continue sans le joueur", () => {
     let s = scenario({ players: 3 });
     s = act(s, "p2", { type: "concede" });

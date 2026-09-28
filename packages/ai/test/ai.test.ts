@@ -1,6 +1,7 @@
 import { buildDeck, deckById } from "@mtgx/cards";
 import { createGame, submit } from "@mtgx/engine";
 import { describe, expect, it } from "vitest";
+import { randomDeck } from "../../../tools/random-deck";
 import { act, idOf, passUntil, scenario } from "../../engine/test/helpers";
 import { heuristicAgent, playGame, randomAgent } from "../src";
 
@@ -31,6 +32,18 @@ describe("fuzz", () => {
     for (const { player, decision } of r.decisions) state = submit(state, player, decision).state;
     expect(JSON.stringify(state)).toBe(JSON.stringify(r.state));
   });
+
+  it("rejeu déterministe à 3 joueurs, decks aléatoires de tout le pool, IA heuristique", () => {
+    const deckList = [0, 1, 2].map((i) => randomDeck(4242 + i));
+    const r = playGame({ seed: 11, decks: deckList, agents: [heuristicAgent(), heuristicAgent(), randomAgent(3)] });
+    let { state } = createGame({
+      seed: 11,
+      players: deckList.map((deck, i) => ({ id: `p${i + 1}`, name: `IA ${i + 1}`, deck })),
+    });
+    for (const { player, decision } of r.decisions) state = submit(state, player, decision).state;
+    expect(r.decisions.length).toBeGreaterThan(100);
+    expect(JSON.stringify(state)).toBe(JSON.stringify(r.state));
+  }, 60_000);
 });
 
 describe("IA heuristique", () => {

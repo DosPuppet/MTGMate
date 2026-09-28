@@ -71,9 +71,59 @@ export function checkInvariants(s: GameState, deckSizes: Record<string, number>)
       errors.push(`${id} (${s.objects[id]?.defId}) : cache des caractéristiques périmé (${diff.join(", ")})`);
     }
   }
+  // Nombres : jamais NaN ni infini ; marqueurs, blessures et mana jamais négatifs.
+  for (const p of s.playerOrder) {
+    const pl = s.players[p];
+    if (!pl) continue;
+    if (!Number.isFinite(pl.life)) errors.push(`${p} : points de vie ${pl.life}`);
+    for (const [m, n] of Object.entries(pl.manaPool)) if (!(Number.isFinite(n) && n >= 0)) errors.push(`${p} : mana ${m} = ${n}`);
+  }
+  for (const [id, o] of Object.entries(s.objects)) {
+    for (const [k, n] of Object.entries(o.counters))
+      if (!(Number.isFinite(n) && n >= 0)) errors.push(`${id} : marqueurs ${k} = ${n}`);
+    if (!Number.isFinite(o.damage)) errors.push(`${id} : blessures ${o.damage}`);
+  }
+  // Références : une Aura ou un Équipement est attaché à un permanent (ou à un joueur) ; les combattants sont en jeu.
+  // L'attachement n'est vérifié qu'à la priorité : en pleine résolution, les actions basées sur l'état (704.5m-n)
+  // n'ont pas encore détaché ce qui l'est illégalement.
+  const onBattlefield = new Set(s.battlefield);
+  const settled = s.pending?.kind === "priority";
+  for (const id of settled ? s.battlefield : []) {
+    const to = s.objects[id]?.attachedTo;
+    if (to && !onBattlefield.has(to) && !s.players[to]) errors.push(`${id} attaché à ${to}, absent du champ de bataille`);
+  }
+  for (const a of s.combat?.attackers ?? [])
+    if (!onBattlefield.has(a.id)) errors.push(`attaquant ${a.id} absent du champ de bataille`);
+  for (const b of s.combat?.blockers ?? [])
+    if (!onBattlefield.has(b.id)) errors.push(`bloqueur ${b.id} absent du champ de bataille`);
+  if (s.pending && s.players[s.pending.player]?.lost) errors.push(`décision attendue d'un joueur éliminé (${s.pending.player})`);
+  // Sérialisable en JSON (sauvegarde, rejeu, envoi) : ni Map, ni Set, ni fonction, ni nombre non fini.
+  const bad = nonJson({ ...s, defs: undefined });
+  if (bad) errors.push(`état non sérialisable en JSON : ${bad}`);
   if (!s.over && !s.pending) errors.push("partie non terminée sans décision en attente");
   if (s.over && s.pending) errors.push("partie terminée avec une décision en attente");
   return errors;
+}
+
+/** Chemin du premier élément de `v` qui ne survivrait pas à JSON.stringify / JSON.parse, ou null. */
+function nonJson(v: unknown, path = "état"): string | null {
+  if (v === null || v === undefined || typeof v === "string" || typeof v === "boolean") return null;
+  if (typeof v === "number") return Number.isFinite(v) ? null : `${path} = ${v}`;
+  if (typeof v !== "object") return `${path} : ${typeof v}`;
+  if (Array.isArray(v)) {
+    for (let i = 0; i < v.length; i++) {
+      const r = nonJson(v[i], `${path}[${i}]`);
+      if (r) return r;
+    }
+    return null;
+  }
+  const proto = Object.getPrototypeOf(v);
+  if (proto !== Object.prototype && proto !== null) return `${path} : instance de ${proto?.constructor?.name ?? "?"}`;
+  for (const k in v) {
+    const r = nonJson((v as Record<string, unknown>)[k], `${path}.${k}`);
+    if (r) return r;
+  }
+  return null;
 }
 
 /** Joue une partie entre IA (2 joueurs ou plus : un deck et un agent par joueur). */

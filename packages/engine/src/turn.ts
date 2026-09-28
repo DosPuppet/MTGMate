@@ -63,8 +63,9 @@ export function advance(s: GameState): void {
         // 117.5 : actions basées sur l'état, puis capacités déclenchées, jusqu'à stabilité ;
         // l'une ou l'autre peut poser une question (règle des légendes, cibles…).
         stateBasedActions(s);
-        if (s.over || s.pending) break;
-        if (processTriggers(s)) break;
+        // Un joueur actif éliminé par ces actions met fin au tour (`eliminate` change le flux).
+        if (s.over || s.pending || s.flow !== "priority") break;
+        if (processTriggers(s) || s.flow !== "priority") break;
         s.pending = { kind: "priority", player: s.priority.holder };
         break;
       case "stepEnd":
@@ -79,8 +80,17 @@ export function advance(s: GameState): void {
   }
 }
 
+/**
+ * Premier joueur à recevoir la priorité : le joueur actif, ou, s'il a quitté la partie pendant son tour (800.4a :
+ * le tour continue sans joueur actif), le joueur suivant.
+ */
+function firstPriority(s: GameState): PlayerId {
+  const active = s.turn.active;
+  return s.players[active]?.lost ? nextPlayer(s, active) : active;
+}
+
 function givePriority(s: GameState): void {
-  s.priority = { holder: s.turn.active, passes: 0 };
+  s.priority = { holder: firstPriority(s), passes: 0 };
   s.flow = "priority";
 }
 
@@ -415,7 +425,7 @@ export function afterResolution(s: GameState): void {
     s.flow = "stepStart";
     return;
   }
-  s.priority = { holder: s.turn.active, passes: 0 };
+  s.priority = { holder: firstPriority(s), passes: 0 };
   s.flow = "priority";
 }
 
