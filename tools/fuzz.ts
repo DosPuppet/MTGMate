@@ -1,7 +1,7 @@
 /**
  * Fuzzing du moteur : parties IA contre IA avec vérification d'invariants à chaque décision.
  *
- * Usage : npm run fuzz -- [--games 200] [--seed 1] [--ai random|heuristic|mixed|beginner|medium|expert|levels] [--players 2]
+ * Usage : npm run fuzz -- [--games 200] [--seed 1] [--ai random|heuristic|mixed|beginner|medium|expert|levels|chaos] [--players 2]
  *                        [--pool decks|all|<SET>]
  *                        [--jobs N]
  *
@@ -9,7 +9,8 @@
  * --pool FIN : decks tirés d'abord des cartes de cette extension (complétés par les autres cartes gérées).
  * --jobs N : les parties sont réparties sur N processus (graines contiguës), les résultats sont additionnés.
  * --ai : heuristic = medium ; mixed : une IA moyenne contre des IA aléatoires ; levels : les trois niveaux mélangés
- * (l'ISMCTS du niveau élevé avec un petit budget en itérations, pour rester rapide).
+ * (l'ISMCTS du niveau élevé avec un petit budget en itérations, pour rester rapide) ; chaos : IA aléatoires, et avant chaque
+ * décision, des variantes corrompues qui doivent être refusées par une RulesError sans modifier l'état.
  */
 import { fork } from "node:child_process";
 import { type AiLevel, aiAgent, heuristicAgent, playGame, randomAgent } from "@mtgx/ai";
@@ -65,6 +66,7 @@ function run(first: number, count: number): Tally {
       agents: ids.map((i) => agentFor(seed, i)),
       maxDecisions: 5000 * players,
       check: true,
+      chaos: mode === "chaos" ? { seed: seed * 13 + 5, perDecision: 3 } : undefined,
     });
     const key = !r.state.over ? "inachevée" : (r.state.winner ?? "nul");
     tally.wins[key] = (tally.wins[key] ?? 0) + 1;

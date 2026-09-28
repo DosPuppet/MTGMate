@@ -1,9 +1,10 @@
 /**
  * API publique du moteur : création de partie et soumission de décisions.
- * Chaque appel renvoie un nouvel état (immuable, via Immer) et la liste des événements produits.
+ * Chaque appel renvoie un nouvel état (copie de travail, l'état reçu n'est jamais modifié) et les événements produits.
  */
 import { drawCard } from "./actions";
 import { divisionOf, validateChoice } from "./choices";
+import { checkDecisionShape } from "./decisionShape";
 import { activateManaAbility } from "./mana";
 import { activateAbility, answerResolutionChoice, castSpell, playLand, RulesError } from "./stack";
 import {
@@ -150,6 +151,7 @@ function expect<T extends Decision["type"]>(d: Decision, ...types: T[]): asserts
 }
 
 function apply(s: GameState, submitter: PlayerId, d: Decision): void {
+  checkDecisionShape(s, d);
   if (d.type === "concede") {
     const player = submitter;
     const pl = s.players[player];
@@ -243,11 +245,7 @@ function apply(s: GameState, submitter: PlayerId, d: Decision): void {
           activateAbility(s, player, d.source, d.ability, d);
           break;
         case "tapForMana":
-          try {
-            activateManaAbility(s, player, d.source, d.ability, d.color);
-          } catch (e) {
-            throw new RulesError((e as Error).message);
-          }
+          activateManaAbility(s, player, d.source, d.ability, d.color);
           break;
       }
       return;

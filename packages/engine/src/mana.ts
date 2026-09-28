@@ -2,6 +2,7 @@
  * Mana : lecture des coûts, sources disponibles et solveur de paiement automatique.
  */
 import { loseLife, sacrifice } from "./actions";
+import { RulesError } from "./errors";
 import { linkedColors } from "./layers";
 import { changeCounters, chars, defOf, isCreature, isSummoningSick, obj, snapshot, tapObject } from "./state";
 import { controlledAbilitiesWithSource, playerStatic } from "./statics";
@@ -87,6 +88,11 @@ export interface ManaSource {
   sacrifice: boolean;
   /** Créature engagée pour la convocation. */
   convoke?: boolean;
+  /**
+   * Sources exclusives : deux capacités qui engagent ou sacrifient le même permanent (Forêt qui a aussi « {T} : un mana
+   * de n'importe quelle couleur ») ont la même clé, et une seule peut servir.
+   */
+  key: string;
 }
 
 /** Capacités de mana d'un objet, y compris celles intrinsèques aux types de terrain de base (305.6). */
@@ -231,6 +237,7 @@ export function manaSources(
         amount: manaAmount(s, id, ab),
         isCreature: defOf(s, id).types.includes("Creature"),
         sacrifice: !!ab.cost.sacrificeSelf,
+        key: ab.cost.tap || ab.cost.sacrificeSelf ? id : `${id}#${i}`,
       });
     });
   }
@@ -241,7 +248,16 @@ export function manaSources(
       if (o.controller !== player || exclude.has(id) || o.tapped || !isCreature(s, id)) continue;
       if (manaAbilitiesOf(s, id).length) continue;
       const colors = chars(s, id).colors;
-      out.push({ id, ability: CONVOKE, colors: [...colors, "C"], amount: 1, isCreature: true, sacrifice: false, convoke: true });
+      out.push({
+        id,
+        ability: CONVOKE,
+        colors: [...colors, "C"],
+        amount: 1,
+        isCreature: true,
+        sacrifice: false,
+        convoke: true,
+        key: id,
+      });
     }
   }
   // Préférence : terrains, puis créatures, puis sources sacrifiées, puis convocation ; les moins flexibles d'abord.
@@ -250,12 +266,12 @@ export function manaSources(
 }
 
 export function activateManaAbility(s: GameState, player: PlayerId, id: ObjectId, ability: number, color?: ManaType): void {
-  const o = obj(s, id);
-  if (o.controller !== player) throw new Error("Vous ne contrôlez pas cette source");
+  const o = s.objects[id];
+  if (!o || o.controller !== player) throw new RulesError("Vous ne contrôlez pas cette source");
   const ab = manaAbilitiesOf(s, id)[ability];
-  if (!ab || !canActivateMana(s, id, ab)) throw new Error("Capacité de mana indisponible");
+  if (!ab || !canActivateMana(s, id, ab)) throw new RulesError("Capacité de mana indisponible");
   const c = color ?? ab.produce[0];
-  if (!c || !ab.produce.includes(c)) throw new Error("Couleur de mana invalide");
+  if (!c || !ab.produce.includes(c)) throw new RulesError("Couleur de mana invalide");
   if (ab.cost.tap) tapObject(s, o);
   if (ab.oncePerTurn) s.turn.onceFired.push(`mana:${id}`);
   if (ab.tapAnother) tapObject(s, obj(s, otherToTap(s, id) as ObjectId));
@@ -323,7 +339,7 @@ export function solvePayment(
     colors.reduce((n, m) => n + pool[m], 0) + sources.filter((x) => x.colors.some((c) => colors.includes(c))).length;
   pips.sort((a, b) => supply(a) - supply(b));
 
-  const used = new Set<number>();
+  const used = new Set<string>();
   const taps: PaymentPlan["taps"] = [];
   const extra = zero();
   const spend = zero();
@@ -345,10 +361,10 @@ export function solvePayment(
     // 2. Une source non utilisée.
     for (let k = 0; k < sources.length; k++) {
       const src = sources[k] as ManaSource;
-      if (used.has(k)) continue;
+      if (used.has(src.key)) continue;
       for (const m of allowed) {
         if (!src.colors.includes(m)) continue;
-        used.add(k);
+        used.add(src.key);
         taps.push({ id: src.id, ability: src.ability, color: m });
         extra[m] += src.amount - 1;
         spend[m] += 1;
@@ -356,7 +372,7 @@ export function solvePayment(
         spend[m] -= 1;
         extra[m] -= src.amount - 1;
         taps.pop();
-        used.delete(k);
+        used.delete(src.key);
       }
     }
     return false;
@@ -374,10 +390,10 @@ export function solvePayment(
     }
   }
   for (let k = 0; k < sources.length && generic > 0; k++) {
-    if (used.has(k)) continue;
     const src = sources[k] as ManaSource;
+    if (used.has(src.key)) continue;
     const m = src.colors[0] as ManaType;
-    used.add(k);
+    used.add(src.key);
     taps.push({ id: src.id, ability: src.ability, color: m });
     const n = Math.min(generic, src.amount);
     spend[m] += n;
@@ -401,7 +417,10 @@ export function availableMana(
 ): number {
   const pool = s.players[player]?.manaPool;
   const inPool = pool ? MANA_TYPES.reduce((n, m) => n + pool[m], 0) : 0;
-  return inPool + manaSources(s, player, exclude, purpose).reduce((n, src) => n + src.amount, 0);
+  // Sources exclusives (même permanent engagé) : seule la plus productive compte.
+  const best = new Map<string, number>();
+  for (const src of manaSources(s, player, exclude, purpose)) best.set(src.key, Math.max(best.get(src.key) ?? 0, src.amount));
+  return inPool + [...best.values()].reduce((n, a) => n + a, 0);
 }
 
 export function canPay(
@@ -425,7 +444,7 @@ export function payMana(
   sources?: { id: ObjectId; ab?: ManaAbilityDef; amount: number }[],
 ): ManaAbilityDef[] {
   const plan = solvePayment(s, player, cost, exclude, purpose);
-  if (!plan) throw new Error("Mana insuffisant");
+  if (!plan) throw new RulesError("Mana insuffisant");
   if (sources) {
     for (const t of plan.taps) {
       const ab = t.ability === CONVOKE ? undefined : manaAbilitiesOf(s, t.id)[t.ability];
@@ -444,7 +463,8 @@ export function payMana(
     } else activateManaAbility(s, player, t.id, t.ability, t.color);
   }
   for (const m of MANA_TYPES) {
-    if (pool[m] < plan.spend[m]) throw new Error("Mana insuffisant");
+    // Le solveur a promis ce mana : un manque ici est un bug, pas une décision illégale.
+    if (pool[m] < plan.spend[m]) throw new Error(`Paiement incohérent : ${m} manquant`);
     pool[m] -= plan.spend[m];
   }
   return used;

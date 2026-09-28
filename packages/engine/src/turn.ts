@@ -4,6 +4,7 @@
 import { type DamageSource, dealDamage, destroy, drawCard, putIntoGraveyard, setSpeed, sourceFromObject } from "./actions";
 import { ask } from "./choices";
 import { announceDiscard, announceDiscardBatch, drawBonus, evalAmount } from "./effects";
+import { rethrowAsRules } from "./errors";
 import { copiedDefId } from "./layers";
 import { manaValue, payMana } from "./mana";
 import { RulesError, resolveTop } from "./stack";
@@ -608,8 +609,8 @@ export function declareAttackers(s: GameState, player: PlayerId, attackers: { id
   if (tax > 0) {
     try {
       payMana(s, player, { generic: tax, colored: {}, x: 0 });
-    } catch {
-      throw new RulesError(`Il faut payer {${tax}} pour attaquer`);
+    } catch (e) {
+      rethrowAsRules(e, `Il faut payer {${tax}} pour attaquer`);
     }
   }
   if (!s.combat) s.combat = emptyCombat();
@@ -731,8 +732,8 @@ export function declareBlockers(s: GameState, player: PlayerId, blocks: { blocke
   if (blocks.length && s.playerOrder.some((p) => p !== player && playerStatic(s, p, "blockTax"))) {
     try {
       payMana(s, player, { generic: blocks.length, colored: {}, x: 0 });
-    } catch {
-      throw new RulesError(`Il faut payer {${blocks.length}} pour bloquer`);
+    } catch (e) {
+      rethrowAsRules(e, `Il faut payer {${blocks.length}} pour bloquer`);
     }
   }
   for (const a of c.attackers) {

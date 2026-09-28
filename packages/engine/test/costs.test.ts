@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { fx, spell } from "../src/dsl";
 import { legalActions } from "../src/legal";
-import { parseManaCost, solvePayment } from "../src/mana";
+import { availableMana, parseManaCost, solvePayment } from "../src/mana";
 import { act, customCard, idOf, idsOf, passBoth, scenario } from "./helpers";
 
 const castOption = (s: ReturnType<typeof scenario>, name: string, zone: "hand" | "graveyard" = "hand") =>
@@ -95,5 +95,28 @@ describe("coûts (601.2f–h)", () => {
     const s = scenario({ p1: { battlefield: Array(4).fill("Mountain"), hand: [fireball] } });
     const opt = castOption(s, "Boule de feu");
     expect(opt?.type === "cast" && opt.xMax).toBe(3);
+  });
+});
+
+describe("solveur de paiement", () => {
+  it("un terrain à deux capacités de mana {T} n'est engagé qu'une fois", () => {
+    // « Les terrains que vous contrôlez ont “{T} : ajoutez un mana de n'importe quelle couleur” » : chaque Forêt a
+    // alors deux capacités de mana, mais une seule peut servir.
+    const prism = customCard({
+      name: "Prisme",
+      types: ["Artifact"],
+      typeLine: "Artifact",
+      abilities: [
+        {
+          kind: "static",
+          affects: { types: ["Land"], controller: "you" },
+          mods: { addAbilities: [{ kind: "mana", cost: { tap: true }, produce: ["W", "U", "B", "R", "G"], amount: 1 }] },
+        },
+      ],
+    });
+    const s = scenario({ p1: { battlefield: ["Forest", prism] } });
+    expect(solvePayment(s, "p1", parseManaCost("{2}"))).toBeNull();
+    expect(solvePayment(s, "p1", parseManaCost("{U}"))?.taps).toHaveLength(1);
+    expect(availableMana(s, "p1")).toBe(1);
   });
 });

@@ -6,7 +6,7 @@
 import { canForage, createTokenCopy, forage, loseLife, removeFromCombat, sacrifice as sacrificePermanent } from "./actions";
 import { ask } from "./choices";
 import { addEffect, announceDiscard, announceDiscardBatch, evalAmount, moveWithSpec, runEffect } from "./effects";
-import { RulesError } from "./errors";
+import { RulesError, rethrowAsRules } from "./errors";
 import { copiedDefId } from "./layers";
 import { costToText, manaValue, payMana, totalCost } from "./mana";
 import {
@@ -1053,8 +1053,8 @@ export function castSpell(s: GameState, player: PlayerId, card: ObjectId, choice
     });
     if (riders.length) item.riders = riders;
     if (riders.includes("uncounterable")) item.uncounterable = true;
-  } catch {
-    throw new RulesError("Mana insuffisant");
+  } catch (e) {
+    rethrowAsRules(e, "Mana insuffisant");
   }
   // Distorsion « Warp—{B}, Pay 2 life » : les points de vie font partie du coût.
   if (warp?.life) loseLife(s, player, warp.life);
@@ -1468,8 +1468,8 @@ export function activateAbility(s: GameState, player: PlayerId, source: ObjectId
         payMana(s, player, totalCost(ab.cost.mana, 0, undefined, plotReduction + unlockReduction(s, player, ab)), undefined, {
           abilitySource: source,
         });
-      } catch {
-        throw new RulesError("Mana insuffisant");
+      } catch (e) {
+        rethrowAsRules(e, "Mana insuffisant");
       }
     }
     for (const e of ab.effects) {
@@ -1532,8 +1532,8 @@ export function activateAbility(s: GameState, player: PlayerId, source: ObjectId
         abilityReduction(s, player, source, ab) +
         equipDiscount(s, player, ab, targets.t?.[0]);
       payMana(s, player, totalCost(ab.cost.mana, x, undefined, reduction), reserved, { abilitySource: source });
-    } catch {
-      throw new RulesError("Mana insuffisant");
+    } catch (e) {
+      rethrowAsRules(e, "Mana insuffisant");
     }
   }
   if (ab.cost.tap) tapObject(s, o);

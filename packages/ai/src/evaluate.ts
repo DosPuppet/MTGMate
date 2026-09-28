@@ -18,6 +18,7 @@ import {
   type ObjectId,
   opponentsOf,
   type PlayerId,
+  RulesError,
   submit,
 } from "@mtgx/engine";
 
@@ -210,10 +211,19 @@ export function evaluate(s: GameState, me: PlayerId, opts: EvalOptions = {}): nu
 // Simulation
 // ---------------------------------------------------------------------------
 
+/**
+ * Seules les décisions illégales (RulesError) sont attendues dans une simulation : toute autre erreur est un bug du
+ * moteur et remonte (le fuzz la voit ; en partie, GameHost se replie sur la décision par défaut).
+ */
+export function onlyRulesErrors(e: unknown): void {
+  if (!(e instanceof RulesError)) throw e;
+}
+
 export function trySubmit(s: GameState, player: PlayerId, d: Decision): GameState | null {
   try {
     return submit(s, player, d).state;
-  } catch {
+  } catch (e) {
+    onlyRulesErrors(e);
     return null;
   }
 }
@@ -253,7 +263,8 @@ export function simulate(s: GameState, until: (s: GameState) => boolean, max = 1
   for (let i = 0; i < max && !cur.over && cur.pending && !until(cur); i++) {
     try {
       cur = step(cur, cur.pending.player, fallbackDecision(cur, cur.pending), true);
-    } catch {
+    } catch (e) {
+      onlyRulesErrors(e);
       break;
     }
   }

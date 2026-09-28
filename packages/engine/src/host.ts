@@ -50,6 +50,9 @@ export function fallbackDecision(s: GameState, p: PendingDecision): Decision {
   }
 }
 
+/** Décisions automatiques (IA, autopilot) enchaînées dans un même tour au-delà desquelles on suppose une boucle. */
+const MAX_AUTOMATIC_DECISIONS = 10_000;
+
 export class GameHost {
   state: GameState;
   readonly settings: Record<PlayerId, AutopilotSettings> = {};
@@ -123,8 +126,22 @@ export class GameHost {
     if (this.running) return;
     this.running = true;
     try {
-      for (let guard = 0; guard < 10_000; guard++) {
+      // Compté par tour : une partie entre IA (humain éliminé) peut légitimement durer, une boucle reste dans le tour.
+      let turn = this.state.turn.number;
+      for (let guard = 1; ; guard++) {
         const p = this.state.pending;
+        if (this.state.turn.number !== turn) {
+          turn = this.state.turn.number;
+          guard = 1;
+        }
+        if (guard > MAX_AUTOMATIC_DECISIONS) {
+          // Boucle de décisions automatiques : bug à reproduire, jamais un arrêt silencieux.
+          const t = this.state.turn;
+          throw new Error(
+            `GameHost : plus de ${MAX_AUTOMATIC_DECISIONS} décisions automatiques d'affilée (tour ${t.number}, étape ${t.step}, ` +
+              `décision ${p?.kind ?? "aucune"} de ${p?.player ?? "?"})`,
+          );
+        }
         const agent = p && !this.state.over ? this.opts.agents?.[decider(this.state) ?? p.player] : undefined;
         const auto =
           p && !this.state.over && !agent

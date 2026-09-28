@@ -14,6 +14,8 @@ import {
   RulesError,
   submit,
 } from "@mtgx/engine";
+import { corruptDecision } from "./chaos";
+import { mulberry32 } from "./random";
 
 export interface SelfPlayResult {
   state: GameState;
@@ -82,6 +84,8 @@ export function playGame(opts: {
   maxDecisions?: number;
   check?: boolean;
   startingLife?: number;
+  /** Fuzz « chaos » : avant chaque décision, `perDecision` variantes corrompues sont soumises et doivent être refusées proprement. */
+  chaos?: { seed: number; perDecision: number };
 }): SelfPlayResult {
   const ids = opts.decks.map((_, i) => `p${i + 1}`);
   const deckSizes = Object.fromEntries(ids.map((id, i) => [id, opts.decks[i]?.length ?? 0]));
@@ -94,9 +98,11 @@ export function playGame(opts: {
   const decisions: SelfPlayResult["decisions"] = [];
   let illegal = 0;
   const max = opts.maxDecisions ?? 5000;
+  const chaosRand = opts.chaos ? mulberry32(opts.chaos.seed) : null;
   for (let i = 0; i < max && state.pending && !state.over; i++) {
     const p = state.pending;
     let d = (agents[p.player] as Agent)(state, p.player);
+    if (chaosRand && opts.chaos) probe(state, p.player, d, chaosRand, opts.chaos.perDecision, `seed ${opts.seed}, décision ${i}`);
     try {
       state = submit(state, p.player, d).state;
     } catch (e) {
@@ -112,4 +118,30 @@ export function playGame(opts: {
     }
   }
   return { state, decisions, illegal, turns: state.turn.number };
+}
+
+/** État sans les définitions (partagées, immuables) : sert à vérifier qu'une soumission n'a rien modifié. */
+function fingerprint(s: GameState): string {
+  return JSON.stringify({ ...s, defs: undefined });
+}
+
+/**
+ * Soumet des variantes corrompues de `d` : chacune doit être refusée par une RulesError (ou acceptée si elle est
+ * légale par hasard), et l'état d'origine ne doit jamais changer (`submit` est transactionnel).
+ */
+function probe(state: GameState, player: string, d: Decision, rand: () => number, count: number, where: string): void {
+  const before = fingerprint(state);
+  for (let k = 0; k < count; k++) {
+    const bad = corruptDecision(state, d, rand);
+    try {
+      submit(state, player, bad);
+    } catch (e) {
+      if (!(e instanceof RulesError)) {
+        throw new Error(`Chaos (${where}) : erreur non RulesError pour ${JSON.stringify(bad)} (légale : ${JSON.stringify(d)})`, {
+          cause: e,
+        });
+      }
+    }
+  }
+  if (fingerprint(state) !== before) throw new Error(`Chaos (${where}) : une soumission a modifié l'état d'origine`);
 }

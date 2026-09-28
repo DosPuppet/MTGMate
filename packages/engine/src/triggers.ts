@@ -11,7 +11,7 @@
 import { canForage } from "./actions";
 import { ask } from "./choices";
 import { boardAmount, evalAmount } from "./effects";
-import { RulesError } from "./errors";
+import { RulesError, rethrowAsRules } from "./errors";
 import { copiedDefId } from "./layers";
 import {
   apnapOrder,
@@ -1144,7 +1144,7 @@ export function answerTriggerTarget(s: GameState, triggerId: string, specId: str
         { sourceId: t.sourceId },
       )[specId] ?? [];
   } catch (e) {
-    throw new RulesError((e as Error).message);
+    rethrowAsRules(e);
   }
 }
 

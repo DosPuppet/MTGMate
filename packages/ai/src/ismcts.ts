@@ -11,7 +11,7 @@
  * d'itérations, les nœuds plus profonds seraient trop peu visités pour être fiables.
  */
 import { cloneState, type Decision, fallbackDecision, type GameState, opponentsOf, type PlayerId } from "@mtgx/engine";
-import { evaluate, step } from "./evaluate";
+import { evaluate, onlyRulesErrors, step } from "./evaluate";
 import { priorityOptions } from "./heuristic";
 import { fastPolicy } from "./policy";
 import type { Profile } from "./profile";
@@ -93,10 +93,12 @@ function playout(start: GameState, me: PlayerId, horizon: number): GameState {
     const p = d.pending;
     try {
       d = step(d, p.player, policy(d, p.player), true);
-    } catch {
+    } catch (e) {
+      onlyRulesErrors(e);
       try {
         d = step(d, p.player, fallbackDecision(d, p), true);
-      } catch {
+      } catch (e2) {
+        onlyRulesErrors(e2);
         break;
       }
     }
@@ -147,7 +149,8 @@ export function ismctsChoose(s: GameState, me: PlayerId, cands: Candidate[], cfg
     let d = determinize(s, me, cfg.rand);
     try {
       d = step(d, me, (cands[i] as Candidate).decision, true);
-    } catch {
+    } catch (e) {
+      onlyRulesErrors(e);
       // Option impossible dans cette déterminisation : elle ne compte pas.
       n[i] = (n[i] as number) + 1;
       total++;

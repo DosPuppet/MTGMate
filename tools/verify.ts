@@ -125,6 +125,8 @@ const fuzzes: Step[] = full
       fuzz("fuzz 4 joueurs", "--games 100 --pool all --players 4"),
       fuzz("fuzz IA mixte", "--games 100 --pool all --ai mixed"),
       fuzz("fuzz niveaux d'IA", "--games 60 --pool all --ai levels"),
+      fuzz("fuzz chaos 2 j.", "--games 300 --pool all --ai chaos --seed 3000"),
+      fuzz("fuzz chaos 4 j.", "--games 60 --pool all --ai chaos --players 4"),
     ]
   : [
       fuzz(`fuzz ${set} 2 joueurs`, `--games 300 --pool ${set} --seed 1`),
@@ -133,6 +135,7 @@ const fuzzes: Step[] = full
       fuzz(`fuzz ${set} IA mixte`, `--games 60 --pool ${set} --ai mixed`),
       fuzz(`fuzz ${set} niveaux d'IA`, `--games 30 --pool ${set} --ai levels`),
       fuzz("fuzz tout le pool", "--games 200 --pool all --seed 2000"),
+      fuzz(`fuzz ${set} chaos`, `--games 150 --pool ${set} --ai chaos`),
     ];
 for (const f of fuzzes) ok = (await group([f])) && ok;
 
