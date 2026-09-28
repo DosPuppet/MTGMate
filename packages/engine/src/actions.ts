@@ -16,10 +16,12 @@ import {
   moveObject,
   nextTimestamp,
   obj,
+  opponentsOf,
   rulesEvent,
 } from "./state";
 import { controlledAbilitiesWithSource, doublers, playerStatic, preventions } from "./statics";
 import { matchesObjectFilter } from "./targets";
+import { checkCondition } from "./triggers";
 import type { CardDef, GameState, Keyword, ObjectId, PlayerId, TokenSpec } from "./types";
 
 export interface DamageSource {
@@ -49,8 +51,17 @@ export function drawCard(s: GameState, p: PlayerId): void {
 export function gainLife(s: GameState, p: PlayerId, amount: number): void {
   const player = s.players[p];
   if (!player || amount <= 0) return;
-  // Giant Cindermaw : « les joueurs ne peuvent pas gagner de points de vie ».
-  if (s.playerOrder.some((q) => playerStatic(s, q, "noLifeGainForAll"))) return;
+  // Giant Cindermaw : « les joueurs ne peuvent pas gagner de points de vie » ; Screaming Nemesis : ce joueur, pour la partie.
+  if (player.cantGainLife || s.playerOrder.some((q) => playerStatic(s, q, "noLifeGainForAll"))) return;
+  // Grievous Wound : « le joueur enchanté ne peut pas gagner de points de vie ».
+  if (
+    s.battlefield.some(
+      (id) =>
+        s.objects[id]?.attachedTo === p &&
+        chars(s, id).abilities.some((ab) => ab.kind === "playerStatic" && ab.enchantedPlayerCantGainLife),
+    )
+  )
+    return;
   // Angel of Vitality : « vous gagnez autant plus 1 à la place ».
   amount += controlledAbilitiesWithSource(s, p).reduce(
     (n, { ab }) => n + (ab.kind === "playerStatic" ? (ab.lifeGainBonus ?? 0) : 0),
@@ -119,6 +130,23 @@ export function dealDamage(s: GameState, source: DamageSource, target: string, a
   // Absolute Virtue : les blessures des sources adverses à ce joueur sont prévenues.
   if (!unpreventable && isPlayer(s, target) && source.controller !== target && playerStatic(s, target, "protectionFromOpponents"))
     return;
+  // The Mindskinner : les blessures de vos sources à un adversaire sont prévenues ; chaque adversaire meule autant.
+  if (
+    !unpreventable &&
+    isPlayer(s, target) &&
+    source.controller &&
+    source.controller !== target &&
+    playerStatic(s, source.controller, "damageToOpponentsMills")
+  ) {
+    for (const p of opponentsOf(s, source.controller)) {
+      for (const id of (s.players[p]?.library ?? []).slice(0, amount)) {
+        const o = obj(s, id);
+        emit({ type: "moved", owner: o.owner, objectId: id, defId: o.defId, from: "library", to: "graveyard" });
+        moveObject(s, id, "graveyard");
+      }
+    }
+    return;
+  }
   const targetObj = s.objects[target];
   if (targetObj?.zone === "battlefield") {
     // 702.16e : protection contre tout — les blessures sont prévenues.
@@ -163,6 +191,16 @@ export function dealDamage(s: GameState, source: DamageSource, target: string, a
     const n = controlledAbilitiesWithSource(s, source.controller).filter(
       ({ id: from, ab }) =>
         ab.kind === "doubler" && !!ab.damageFilter && matchesObjectFilter(s, source.controller, id, ab.damageFilter, from),
+    ).length;
+    amount *= 2 ** n;
+  }
+  // The Rollercrusher Ride (délire) : blessures non de combat de vos sources, doublées.
+  if (!combat) {
+    const n = controlledAbilitiesWithSource(s, source.controller).filter(
+      ({ id: from, ab }) =>
+        ab.kind === "doubler" &&
+        !!ab.noncombatDamage &&
+        (!ab.condition || checkCondition(s, ab.condition, source.controller, from)),
     ).length;
     amount *= 2 ** n;
   }
@@ -233,6 +271,8 @@ export function sacrifice(s: GameState, id: ObjectId): void {
   const o = s.objects[id];
   if (o?.zone !== "battlefield") return;
   rulesEvent(s, { e: "sacrifice", objectId: id, player: o.controller });
+  const stats = s.players[o.controller]?.turnStats;
+  if (stats) stats.sacrificed = (stats.sacrificed ?? 0) + 1;
   putIntoGraveyard(s, id);
 }
 

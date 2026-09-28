@@ -2,7 +2,18 @@
 import { createTokens } from "../actions";
 import type { OpHandlers } from "../effects";
 import { evalAmount, resolveRef, store } from "../effects";
-import { bump, changeCounters, chars, counterCount, onBattlefield, opponentsOf, P1P1, rulesEvent, unlockDoor } from "../state";
+import {
+  bump,
+  changeCounters,
+  chars,
+  counterCount,
+  isRoom,
+  onBattlefield,
+  opponentsOf,
+  P1P1,
+  rulesEvent,
+  unlockDoor,
+} from "../state";
 import { playerStatic } from "../statics";
 import { matchesObjectFilter } from "../targets";
 
@@ -170,6 +181,68 @@ export const HANDLERS: OpHandlers = {
     if (o?.zone !== "battlefield" || o.solved) return;
     o.solved = true;
     bump(s);
+    return;
+  },
+  lkiCountersTo(s, _r, e, ctx) {
+    const from = ctx.event?.objectId;
+    const counters = from ? s.lki[from]?.counters : undefined;
+    if (!counters) return;
+    for (const id of resolveRef(s, ctx, e.to)) {
+      const o = s.objects[id];
+      if (o?.zone !== "battlefield") continue;
+      for (const [kind, n] of Object.entries(counters)) if (n > 0) changeCounters(s, o, kind, n);
+    }
+    return;
+  },
+  door(s, r, e, ctx, key) {
+    if (r.vars[key("doorDone")]) return;
+    const options: string[] = [];
+    const labels: Record<string, string> = {};
+    for (const id of resolveRef(s, ctx, e.what)) {
+      const o = s.objects[id];
+      const faces = s.defs[o?.defId ?? ""]?.faceDefs ?? [];
+      if (o?.zone !== "battlefield" || !isRoom(s.defs[o.defId])) continue;
+      faces.forEach((f, door) => {
+        const open = !!o.unlocked?.includes(door);
+        if (e.mode === "unlock" && open) return;
+        const opt = `${id}#${door}`;
+        options.push(opt);
+        labels[opt] = `${open ? "Verrouiller" : "Déverrouiller"} ${f.name}`;
+      });
+    }
+    if (options.length === 0) return;
+    let chosen = options[0] as string;
+    if (options.length > 1) {
+      const answer = r.vars[key("door")];
+      if (!answer) {
+        return {
+          ask: {
+            player: ctx.controller,
+            key: key("door"),
+            request: {
+              type: "pick",
+              intent: "other",
+              prompt: e.mode === "unlock" ? "Porte à déverrouiller" : "Porte à verrouiller ou à déverrouiller",
+              options,
+              labels,
+              min: 1,
+              max: 1,
+              suggested: [options.find((o) => labels[o]?.startsWith("Déverrouiller")) ?? chosen],
+            },
+          },
+        };
+      }
+      chosen = String(answer[0]);
+    }
+    r.vars[key("doorDone")] = [1];
+    const [id = "", door = "0"] = chosen.split("#");
+    const o = s.objects[id];
+    if (!o) return;
+    if (o.unlocked?.includes(Number(door))) {
+      // 709.5g : verrouiller une porte ne déclenche rien ; elle pourra être déverrouillée de nouveau.
+      o.unlocked = o.unlocked.filter((d) => d !== Number(door));
+      bump(s);
+    } else unlockDoor(s, id, Number(door));
     return;
   },
   unlockDoor(s, _r, e, ctx) {

@@ -122,7 +122,10 @@ export const HANDLERS: OpHandlers = {
   },
   eachDealsDamage(s, _r, e, ctx) {
     const to = resolveRef(s, ctx, e.to);
-    for (const id of s.battlefield.filter((x) => matchesObjectFilter(s, ctx.controller, x, e.filter, ctx.sourceId))) {
+    const from = e.from
+      ? resolveRef(s, ctx, e.from).filter((x) => onBattlefield(s, x))
+      : s.battlefield.filter((x) => matchesObjectFilter(s, ctx.controller, x, e.filter, ctx.sourceId));
+    for (const id of from) {
       const src = sourceFromObject(s, id);
       for (const t of to) dealDamage(s, src, t, Math.max(0, chars(s, id).power), false);
     }

@@ -175,6 +175,8 @@ export type ActionOption =
       freeAvailable?: boolean;
       /** Coût alternatif payable (Blasphemous Edict). */
       altAvailable?: boolean;
+      /** Libellé du coût alternatif (« Imminence 4 — {2}{W}{W} »). */
+      altLabel?: string;
       /** Coût normal payable. */
       normalAvailable?: boolean;
       additional?: {
@@ -190,7 +192,11 @@ export type ActionOption =
       label?: string;
       targets: TargetOption[];
       xMax: number | null;
-      additional?: { sacrifice?: { count: number; options: ObjectId[] }; tap?: { count: number; options: ObjectId[] } };
+      additional?: {
+        sacrifice?: { count: number; options: ObjectId[] };
+        tap?: { count: number; options: ObjectId[] };
+        discard?: { count: number; options: ObjectId[] };
+      };
     }
   | { type: "tapForMana"; source: ObjectId; ability: number; colors: ManaType[] };
 

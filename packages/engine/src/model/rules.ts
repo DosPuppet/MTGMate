@@ -21,6 +21,8 @@ export interface TargetSpec {
   attachedToTarget?: string;
   /** Cibles contrôlées par des joueurs différents (« contrôlées par des joueurs différents »). */
   differentPlayers?: boolean;
+  /** Nombre de cibles variable (« jusqu'à X créatures ciblées ») : remplace `count` au moment de choisir les cibles. */
+  countAmount?: Amount;
 }
 
 export interface TargetFilter {
@@ -135,6 +137,12 @@ export interface ObjectFilter {
   manaValueParity?: "odd" | "even";
   /** Endurance au plus égale au X du sort (Zero Point Ballad), résolue pendant la résolution. */
   maxToughnessX?: boolean;
+  /** Permanent face cachée (Duskmourn). */
+  faceDown?: boolean;
+  /** N'est pas le permanent auquel la source est attachée (« autre que la créature enchantée »). */
+  notAttachedToSource?: boolean;
+  /** Objet lié à la source (Turn Inside Out : « quand elle meurt ce tour-ci »). */
+  linkedToSource?: boolean;
 }
 
 /**
@@ -222,10 +230,18 @@ export type TriggerSpec =
   | { on: "saddled" }
   /** « Chaque fois que cette créature monte une Monture ou équipe un Véhicule [pendant votre phase principale] » ; l'objet de l'événement est la Monture ou le Véhicule. */
   | { on: "crews"; mainPhase?: boolean }
-  /** « Quand cette créature est retournée face visible » */
-  | { on: "turnedFaceUp" }
+  /** « Quand cette créature est retournée face visible » ; `who` : « chaque fois qu'un permanent [filtre] est retourné face visible ». */
+  | { on: "turnedFaceUp"; who?: ObjectFilter }
+  /** « Chaque fois que le joueur enchanté subit des blessures » (Aura de joueur). */
+  | { on: "attachedPlayerDamaged" }
+  /** « Chaque fois qu'une [créature] devient bloquée » (Norin). */
+  | { on: "becomesBlocked"; who: ObjectFilter }
+  /** « Chaque fois que vous manifestez l'effroi » : l'objet de l'événement est la carte mise au cimetière. */
+  | { on: "manifestDread" }
   /** « Quand vous déverrouillez cette porte » (Salle : `door` est fixé à l'import d'après la face). */
   | { on: "unlockDoor"; door?: number }
+  /** Sinistre (Duskmourn) : « chaque fois qu'un enchantement que vous contrôlez arrive et chaque fois que vous déverrouillez entièrement une Salle ». */
+  | { on: "eerie" }
   /** « Chaque fois que cette créature (ou la créature enchantée/équipée) subit des blessures » */
   | { on: "isDealtDamage"; who: "self" | "attached" }
   /** « Chaque fois qu'une ou plusieurs [créatures] infligent des blessures de combat à un joueur » : une fois par étape et par joueur. */
@@ -360,7 +376,19 @@ export type Condition =
   /** C'est au moins votre N-ième tour (Jace Reawakened : « pas pendant vos trois premiers tours »). */
   | { kind: "turnsTakenAtLeast"; n: number }
   /** Vous avez lancé un sort depuis votre main ce tour-ci. */
-  | { kind: "castFromHandThisTurn" };
+  | { kind: "castFromHandThisTurn" }
+  /** Le permanent source a été lancé depuis le cimetière (Undead Sprinter). */
+  | { kind: "castFromGraveyard" }
+  /** C'est cette étape (Smoky Lounge : « votre première phase principale »). */
+  | { kind: "step"; step: Step }
+  /** Une créature correspondant au filtre est morte ce tour-ci (Undead Sprinter : non-Zombie). */
+  | { kind: "creatureDiedMatching"; filter: ObjectFilter }
+  /** Le montant est un nombre premier (Zimone, All-Questioning). */
+  | { kind: "prime"; amount: Amount }
+  /** Un permanent est arrivé face cachée sous votre contrôle ou vous avez retourné un permanent face visible ce tour-ci. */
+  | { kind: "faceDownOrUpThisTurn" }
+  /** Vous avez sacrifié au moins un permanent ce tour-ci. */
+  | { kind: "sacrificedThisTurn" };
 /** Référence à un joueur ou à un objet, résolue au moment de l'effet. */
 export type Ref =
   | { kind: "target"; id: string }
@@ -390,6 +418,10 @@ export type Ref =
   | { kind: "crewedBy" }
   /** Permanents sacrifiés pour payer le coût de la capacité (Ayli). */
   | { kind: "costSacrificed" }
+  /** Cartes défaussées pour payer le coût additionnel du sort (Grab the Prize). */
+  | { kind: "costDiscarded" }
+  /** Les objets désignés qui correspondent au filtre, dans n'importe quelle zone (Ghost Vacuum : les cartes de créature). */
+  | { kind: "filtered"; ref: Ref; filter: ObjectFilter }
   /** Le joueur de l'événement (joueur blessé, lanceur du sort…). */
   | { kind: "eventPlayer" }
   /** Le contrôleur (ou, hors du champ de bataille, le dernier contrôleur connu) de l'objet désigné. */
@@ -479,6 +511,22 @@ export type Amount =
   | { kind: "maxManaValue"; filter: ObjectFilter }
   /** Tarmogoyf : types de cartes parmi les cartes de tous les cimetières. */
   | { kind: "cardTypesInGraveyards" }
+  /** Portes déverrouillées parmi les Salles que contrôle le contrôleur (Duskmourn). */
+  | { kind: "unlockedDoors" }
+  /** Le plus grand des montants. */
+  | { kind: "max"; of: Amount[] }
+  /** Plus grande force parmi les cartes de créature de votre main (Monstrous Emergence). */
+  | { kind: "maxPowerInHand" }
+  /** Adversaires qui ont perdu des points de vie ce tour-ci (Kaito). */
+  | { kind: "opponentsLostLife" }
+  /** X du sort qui a mis la source en jeu (Meathook Massacre II). */
+  | { kind: "sourceX" }
+  /** Noms différents parmi les portes déverrouillées de ses Salles (Promising Stairs). */
+  | { kind: "unlockedDoorNames" }
+  /** Permanents sacrifiés par le contrôleur ce tour-ci (Sawblade Skinripper). */
+  | { kind: "sacrificedThisTurn" }
+  /** Délire : types de cartes parmi les cartes du cimetière du contrôleur. */
+  | { kind: "cardTypesInGraveyard" }
   /** Cartes mises de sa bibliothèque au cimetière ce tour-ci, par le joueur désigné. */
   | { kind: "milledThisTurn"; who: Ref }
   | { kind: "cardsDiscardedThisTurn" }

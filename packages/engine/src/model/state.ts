@@ -88,6 +88,8 @@ export interface GameObject {
   chosen?: { creatureType?: string; color?: Color; cardName?: string };
   /** Arrivé depuis un sort lancé depuis la main (Myojin). */
   castFromHand?: boolean;
+  /** Lancé depuis le cimetière (Undead Sprinter : « si vous le faites, elle arrive avec un marqueur +1/+1 »). */
+  castFromGraveyard?: boolean;
   /** Préparé (Reality Fracture) : identifiant de la copie de son sort, en exil. */
   preparedCopy?: ObjectId;
   /** Copie d'un sort préparé (en exil puis sur la pile) : le permanent qui l'a préparée. Cesse d'exister hors de ces zones. */
@@ -101,6 +103,8 @@ export interface GameObject {
   faceDown?: { card: string; ward: boolean; upCosts: ManaCost[] };
   /** Distorsion : le permanent a été lancé pour son coût de distorsion ; carte exilée par la distorsion (tour de l'exil). */
   warped?: boolean;
+  /** Imminence (702.176) : lancé pour son coût d'imminence ; ce n'est pas une créature tant qu'il a un marqueur de temps. */
+  impending?: boolean;
   warpExiledTurn?: number;
   /** Mana dépensé pour lancer ce sort ou ce permanent (Astelli Reclaimer, Unravel). */
   manaSpent?: number;
@@ -152,6 +156,8 @@ export interface PlayerState {
   id: PlayerId;
   name: string;
   life: number;
+  /** Screaming Nemesis : ce joueur ne peut plus gagner de points de vie de la partie. */
+  cantGainLife?: boolean;
   /** Molten Tide : ce tour-ci, chaque Montagne engagée pour du mana produit N {R} de plus. */
   extraMountainMana?: { turn: number; n: number };
   /** Blessures non de combat subies au tour précédent (Command the Stage). */
@@ -220,6 +226,12 @@ export interface StackItem {
   adventure?: boolean;
   /** Lancé pour son coût de distorsion : le permanent sera exilé à la prochaine étape de fin. */
   warped?: boolean;
+  /** Cartes défaussées pour payer un coût additionnel (Grab the Prize). */
+  discarded?: ObjectId[];
+  /** Cartes exilées pour payer un coût additionnel (Fear of Abduction : liées au permanent). */
+  costExiled?: ObjectId[];
+  /** Lancé pour son coût d'imminence : le permanent arrive avec N marqueurs de temps. */
+  impending?: boolean;
   /** Mana dépensé pour le lancer. */
   manaSpent?: number;
   /** Lilah : exilé et comploté au lieu d'aller au cimetière. */
@@ -238,6 +250,8 @@ export interface StackItem {
   riders?: ("haste" | "copy")[];
   /** Sort lancé depuis la main. */
   fromHand?: boolean;
+  /** Lancé depuis le cimetière (Undead Sprinter). */
+  fromGraveyard?: boolean;
 }
 
 /** Capacité créée pendant la partie (retardée, réflexive) : pas d'index dans la définition de sa source. */
@@ -304,6 +318,12 @@ export interface TurnStats {
   crimes?: number;
   /** Sorts lancés depuis la main ce tour-ci (« si vous n'avez pas lancé de sort depuis votre main ce tour-ci »). */
   handSpells?: number;
+  /** Permanents sacrifiés ce tour-ci (Sawblade Skinripper). */
+  sacrificed?: number;
+  /** Warped Space : un sort lancé depuis l'exil sans payer son coût de mana ce tour-ci. */
+  freeFromExile?: number;
+  /** Un permanent est arrivé face cachée sous son contrôle, ou il en a retourné un face visible (Oblivious Bookworm). */
+  faceDownOrUp?: number;
 }
 
 export interface CombatState {
@@ -393,6 +413,8 @@ export interface LkiSnapshot {
   crewedByThisTurn?: ObjectId[];
   /** Lancé pour son coût de distorsion. */
   warped?: boolean;
+  /** Face cachée. */
+  faceDown?: boolean;
   /** A subi des blessures ce tour-ci. */
   damaged?: boolean;
   /** Mana dépensé pour le lancer (sort sur la pile). */
@@ -454,6 +476,8 @@ export interface GameState {
     creatureDied: boolean;
     /** Nombre de créatures mortes ce tour-ci. */
     creaturesDied?: number;
+    /** Sous-types des créatures mortes ce tour-ci (Undead Sprinter : « une créature non-Zombie »). */
+    diedSubtypes?: string[][];
     /** Vide (Edge of Eternities) : un permanent non-terrain a quitté le champ de bataille ce tour-ci ; un sort a été lancé avec la distorsion. */
     nonlandLeft?: boolean;
     spellWarped?: boolean;

@@ -7,7 +7,7 @@ import { copiedDefId } from "./layers";
 import { legalActions } from "./legal";
 import { costToText } from "./mana";
 import { canPlayLand, castTerms, modesOf } from "./stack";
-import { chars, decider, isSummoningSick, obj } from "./state";
+import { chars, decider, isCreature, isSummoningSick, obj } from "./state";
 import { playerStatic } from "./statics";
 import { attackableDefenders, attackCandidates, blockCandidates } from "./turn";
 import type {
@@ -256,7 +256,7 @@ function wardCost(abilities: CardDef["abilities"]): string | undefined {
       pay.life ? `${pay.life} PV` : "",
       pay.lifeAmount ? "PV égaux à sa force" : "",
       pay.discard ? (pay.discardRandom ? "une carte au hasard" : "défausser une carte") : "",
-      pay.sacrifice ? `sacrifier ${pay.sacrifice} permanents` : "",
+      pay.sacrifice ? `sacrifier ${pay.sacrifice} permanents${pay.sacrificeNonland ? " non-terrains" : ""}` : "",
     ].filter(Boolean);
     return parts.length ? [parts.join(" et ")] : [];
   });
@@ -266,7 +266,9 @@ function wardCost(abilities: CardDef["abilities"]): string | undefined {
 /** 708.5 : le contrôleur d'un permanent face cachée peut le regarder ; les autres joueurs non. */
 function withFaceDownCard(s: GameState, v: ObjectView, viewer: PlayerId): ObjectView {
   const o = s.objects[v.id];
-  const card = o?.faceDown && o.controller === viewer ? s.defs[o.faceDown.card] : undefined;
+  // Found Footage : « vous pouvez regarder les créatures face cachée de vos adversaires à tout moment ».
+  const sees = o?.controller === viewer || (!!o && playerStatic(s, viewer, "seeFaceDown") && isCreature(s, o.id));
+  const card = o?.faceDown && sees ? s.defs[o.faceDown.card] : undefined;
   return card ? { ...v, faceDownCard: cardFace(card) } : v;
 }
 

@@ -3,12 +3,12 @@
  * Côté moteur, un lancement est atomique : le client envoie d'un coup mode, cibles, X et kicker,
  * et le paiement du mana est résolu automatiquement (réserve d'abord, puis solveur).
  */
-import { createTokenCopy, loseLife, sacrifice as sacrificePermanent } from "./actions";
+import { createTokenCopy, loseLife, removeFromCombat, sacrifice as sacrificePermanent } from "./actions";
 import { ask } from "./choices";
 import { addEffect, announceDiscard, announceDiscardBatch, evalAmount, moveWithSpec, runEffect } from "./effects";
 import { RulesError } from "./errors";
 import { copiedDefId } from "./layers";
-import { manaValue, payMana, totalCost } from "./mana";
+import { costToText, manaValue, payMana, totalCost } from "./mana";
 import {
   bump,
   changeCounters,
@@ -46,6 +46,7 @@ import type {
   ManaCost,
   ManaType,
   ModeDef,
+  ObjectFilter,
   ObjectId,
   PlayerId,
   StackItem,
@@ -53,6 +54,21 @@ import type {
 } from "./types";
 
 export { RulesError };
+
+/** Coût alternatif disponible : celui de la carte (si sa condition est remplie), sinon Leyline of Mutation. */
+export function altCostFor(s: GameState, player: PlayerId, d: CardDef): { mana: ManaCost; label: string } | undefined {
+  if (d.altCost && checkCondition(s, d.altCost.condition, player)) return d.altCost;
+  for (const { ab } of controlledAbilitiesWithSource(s, player)) {
+    if (ab.kind === "playerStatic" && ab.altCostAll)
+      return { mana: ab.altCostAll, label: `Leyline of Mutation — ${costToText(ab.altCostAll)}` };
+  }
+  return undefined;
+}
+
+/** Convocation : le sort l'a, ou Dazzling Theater la donne à vos sorts de créature. */
+export function hasConvoke(s: GameState, player: PlayerId, d: CardDef): boolean {
+  return d.keywords.includes("convoke") || (d.types.includes("Creature") && playerStatic(s, player, "convokeCreatureSpells"));
+}
 
 export function isPermanentCard(d: CardDef): boolean {
   return !d.types.includes("Instant") && !d.types.includes("Sorcery");
@@ -65,7 +81,8 @@ export const ENCHANT_SPEC = "enchant";
 export function modesOf(d: CardDef): ModeDef[] {
   if (d.spell) return d.spell.modes;
   if (d.enchant) {
-    return [{ targets: [{ id: ENCHANT_SPEC, label: d.enchant.label, filter: { objects: d.enchant.filter } }], effects: [] }];
+    const filter = d.enchant.player ? { players: "any" as const } : { objects: d.enchant.filter };
+    return [{ targets: [{ id: ENCHANT_SPEC, label: d.enchant.label, filter }], effects: [] }];
   }
   return [{ targets: [], effects: [] }];
 }
@@ -110,6 +127,19 @@ function exilePermission(s: GameState, player: PlayerId, card: ObjectId) {
   );
 }
 
+/** Valgavoth, Terror Eater : carte exilée liée à un permanent de ce joueur qui permet de la jouer (pendant son tour). */
+function valgavothLinked(s: GameState, player: PlayerId, card: ObjectId): boolean {
+  if (s.turn.active !== player) return false;
+  return s.battlefield.some((id) => {
+    const src = s.objects[id];
+    return (
+      src?.controller === player &&
+      !!src.linked?.includes(card) &&
+      chars(s, id).abilities.some((ab) => ab.kind === "playerStatic" && ab.playLinkedPayLife)
+    );
+  });
+}
+
 /** Muldrotha : type de permanent encore disponible pour jouer cette carte depuis le cimetière ce tour-ci. */
 function graveyardTypeAvailable(s: GameState, player: PlayerId, card: ObjectId): string | null {
   if (s.turn.active !== player) return null;
@@ -129,6 +159,7 @@ export function canPlayLand(s: GameState, player: PlayerId, card: ObjectId): boo
   const allowed =
     (o.zone === "hand" && o.owner === player) ||
     (o.zone === "exile" && !!exilePermission(s, player, card) && !exilePermission(s, player, card)?.anyTime) ||
+    (o.zone === "exile" && valgavothLinked(s, player, card)) ||
     (o.zone === "library" && o.owner === player && s.players[player]?.library[0] === card && topCardPlayable(s, player, card)) ||
     // Ville à aventure (FIN) : la carte « en aventure » se joue comme terrain depuis l'exil (715.4).
     (o.zone === "exile" && !!o.onAdventure && o.owner === player) ||
@@ -312,13 +343,8 @@ export function spellCost(
   },
 ): ManaCost {
   const empty: ManaCost = { generic: 0, colored: {}, x: 0 };
-  const base = opts.free
-    ? empty
-    : opts.alternative && d.altCost
-      ? d.altCost.mana
-      : opts.flashback
-        ? (d.flashback ?? d.manaCost)
-        : d.manaCost;
+  const alt = opts.alternative ? altCostFor(s, player, d) : undefined;
+  const base = opts.free ? empty : alt ? alt.mana : opts.flashback ? (d.flashback ?? d.manaCost) : d.manaCost;
   const cost = totalCost(
     base,
     opts.free ? 0 : (opts.x ?? 0),
@@ -344,6 +370,8 @@ export interface CastTerms {
   free?: boolean;
   /** Peut être lancée sans payer son coût de mana, au choix (Omniscience). */
   freeOptional?: boolean;
+  /** La gratuité vient de Warped Space (une fois par tour). */
+  warpedSpace?: boolean;
   /** Ignore les restrictions de timing (Etali : lancée pendant la résolution, approximation). */
   anyTime?: boolean;
   /** Du mana de n'importe quel type peut être dépensé (Tinybones). */
@@ -413,6 +441,15 @@ function reductionContext(controller: PlayerId, sourceId: string, sourceDefId: s
 }
 
 /** « Cette capacité coûte {N} de moins à activer » (Starport Security, Survey Mechan, The Dominion Bracelet). */
+/** Inquisitive Glimmer : « déverrouiller une porte vous coûte {1} de moins ». */
+function unlockReduction(s: GameState, player: PlayerId, ab: ActivatedAbilityDef): number {
+  if (!ab.specialAction || !ab.effects.some((e) => e.op === "unlockDoor")) return 0;
+  return controlledAbilitiesWithSource(s, player).reduce(
+    (n, { ab: x }) => n + (x.kind === "playerStatic" ? (x.unlockReduction ?? 0) : 0),
+    0,
+  );
+}
+
 export function abilityReduction(s: GameState, player: PlayerId, source: ObjectId, ab: ActivatedAbilityDef): number {
   // Boom Scholar : les capacités d'exhaust de vos autres permanents coûtent moins.
   const exhaust = ab.exhaust
@@ -422,7 +459,7 @@ export function abilityReduction(s: GameState, player: PlayerId, source: ObjectI
       )
     : 0;
   const red = ab.reduction;
-  const tax = chosenNameTax(s, source);
+  const tax = chosenNameTax(s, source) - unlockReduction(s, player, ab);
   if (!red) return exhaust - tax;
   if (red.condition && !checkCondition(s, red.condition, player, source)) return 0;
   return (
@@ -510,6 +547,16 @@ export function castTerms(s: GameState, player: PlayerId, card: ObjectId): CastT
     s.playerOrder.some((p) => playerStatic(s, p, "firstSpellFree"))
   ) {
     return { ...terms, freeOptional: true };
+  }
+  // Warped Space : « une fois par tour, vous pouvez payer {0} plutôt que le coût de mana d'un sort lancé depuis l'exil ».
+  if (
+    terms?.source === "exile" &&
+    !terms.free &&
+    !terms.freeOptional &&
+    (s.players[player]?.turnStats.freeFromExile ?? 0) === 0 &&
+    playerStatic(s, player, "freeFromExileOncePerTurn")
+  ) {
+    return { ...terms, freeOptional: true, warpedSpace: true };
   }
   return terms;
 }
@@ -605,6 +652,12 @@ function baseCastTerms(s: GameState, player: PlayerId, card: ObjectId): CastTerm
         return { source: "exile", anyMana: true };
       }
     }
+    // Valgavoth : pendant votre tour, les cartes liées ; un sort ainsi lancé coûte des PV égaux à sa valeur de mana.
+    if (valgavothLinked(s, player, card)) {
+      const life = manaValue(d.manaCost);
+      if ((s.players[player]?.life ?? 0) < life) return null;
+      return { source: "exile", free: true, payLife: life || undefined };
+    }
     // 715.4 : la carte « en aventure » : son propriétaire peut lancer la créature.
     if (o.onAdventure && o.owner === player) return { source: "exile" };
     // 702.185a : exilée par la distorsion, lançable depuis l'exil à partir du tour suivant.
@@ -693,6 +746,61 @@ export function additionalOptions(
   return out;
 }
 
+/**
+ * Coûts additionnels choisis automatiquement (Duskmourn) : exiler ou renvoyer des permanents que vous contrôlez, engager
+ * des permanents dégagés, exiler des cartes de votre cimetière. On paie avec ce qui vaut le moins : jetons et petits
+ * permanents d'abord ; pour engager, les créatures avant les terrains. `null` : le coût ne peut pas être payé.
+ */
+export function autoAdditional(
+  s: GameState,
+  player: PlayerId,
+  card: ObjectId,
+  d: CardDef,
+): { exile: ObjectId[]; bounce: ObjectId[]; tap: ObjectId[]; graveyard: ObjectId[] } | null {
+  const out = { exile: [] as ObjectId[], bounce: [] as ObjectId[], tap: [] as ObjectId[], graveyard: [] as ObjectId[] };
+  const add = d.additionalCost;
+  if (!add) return out;
+  const used = new Set<ObjectId>();
+  const mine = (f: ObjectFilter) =>
+    s.battlefield.filter((id) => !used.has(id) && obj(s, id).controller === player && matchesObjectFilter(s, player, id, f));
+  const mv = (id: ObjectId) => manaValue(s.defs[obj(s, id).defId]?.manaCost ?? null);
+  const pick = (ids: ObjectId[], n: number, score: (id: ObjectId) => number): ObjectId[] | null => {
+    if (ids.length < n) return null;
+    const chosen = [...ids].sort((a, b) => score(a) - score(b)).slice(0, n);
+    for (const id of chosen) used.add(id);
+    return chosen;
+  };
+  const isLand = (id: ObjectId) => chars(s, id).types.includes("Land");
+  if (add.exile) {
+    const c = pick(mine(add.exile.filter), add.exile.count, (id) => (obj(s, id).isToken ? -1 : mv(id)));
+    if (!c) return null;
+    out.exile = c;
+  }
+  if (add.bounce) {
+    const c = pick(mine(add.bounce.filter), add.bounce.count, (id) =>
+      obj(s, id).isToken ? 100 : isLand(id) ? 50 + (obj(s, id).tapped ? 0 : 1) : mv(id),
+    );
+    if (!c) return null;
+    out.bounce = c;
+  }
+  if (add.tap) {
+    const c = pick(mine({ ...add.tap.filter, tapped: false }), add.tap.count, (id) => (isLand(id) ? 100 : chars(s, id).power));
+    if (!c) return null;
+    out.tap = c;
+  }
+  if (add.exileGraveyard) {
+    const gy = (s.players[player]?.graveyard ?? []).filter((id) => id !== card);
+    if (gy.length < add.exileGraveyard) return null;
+    out.graveyard = [...gy]
+      .sort(
+        (a, b) =>
+          Number(!s.defs[obj(s, a).defId]?.types.includes("Land")) - Number(!s.defs[obj(s, b).defId]?.types.includes("Land")),
+      )
+      .slice(0, add.exileGraveyard);
+  }
+  return out;
+}
+
 export function castSpell(s: GameState, player: PlayerId, card: ObjectId, choices: CastChoices): void {
   const terms = castTerms(s, player, card);
   if (!terms) throw new RulesError("Vous ne pouvez pas lancer cette carte d'ici");
@@ -722,15 +830,20 @@ export function castSpell(s: GameState, player: PlayerId, card: ObjectId, choice
   if (terms.sorceryTiming && !sorceryTiming(s, player)) throw new RulesError("Seulement au moment d'un rituel");
   const flashback = terms.source === "flashback";
   const free = !!terms.free || (!!choices.free && !!terms.freeOptional);
+  if (free && terms.warpedSpace) {
+    const stats = s.players[player]?.turnStats;
+    if (stats) stats.freeFromExile = (stats.freeFromExile ?? 0) + 1;
+  }
   if (choices.free && !free) throw new RulesError("Ce sort ne peut pas être lancé sans payer son coût");
   const alternative = !!choices.alternative && !free;
-  if (alternative && !(d.altCost && checkCondition(s, d.altCost.condition, player))) {
+  if (alternative && !altCostFor(s, player, d)) {
     throw new RulesError("Coût alternatif indisponible");
   }
   const modes = modesOf(d);
   const modeIndex = choices.mode ?? 0;
   const mode = modes[modeIndex];
   if (!mode) throw new RulesError("Mode invalide");
+  if (mode.condition && !checkCondition(s, mode.condition, player, card)) throw new RulesError("Ce mode n'est pas disponible");
   const targets = validateTargets(s, player, mode.targets, choices.targets, { kicked: !!choices.kicked, sourceId: card });
   const hasX = !free && !!(flashback ? (d.flashback ?? d.manaCost)?.x : d.manaCost?.x);
   const x = hasX ? Math.max(0, Math.floor(choices.x ?? 0)) : 0;
@@ -753,6 +866,8 @@ export function castSpell(s: GameState, player: PlayerId, card: ObjectId, choice
   };
   check(discard, opts.discard);
   check(sacrifice, opts.sacrifice);
+  const auto = autoAdditional(s, player, card, d);
+  if (!auto) throw new RulesError("Impossible de payer le coût additionnel");
   let cost = spellCost(s, player, d, {
     x,
     kicked,
@@ -787,6 +902,11 @@ export function castSpell(s: GameState, player: PlayerId, card: ObjectId, choice
   const group = exilePermission(s, player, card)?.group;
   if (group) s.playPermissions = (s.playPermissions ?? []).filter((p) => p.group !== group);
   const stackId = moveObject(s, card, "stack", { controller: player }) as string;
+  // Coûts additionnels choisis automatiquement (avant le mana : ces permanents ne produisent plus de mana).
+  for (const id of auto.tap) tapObject(s, obj(s, id));
+  for (const id of auto.bounce) moveObject(s, id, "hand");
+  for (const id of auto.graveyard) moveObject(s, id, "exile");
+  const costExiled = auto.exile.map((id) => moveObject(s, id, "exile")).filter((id): id is string => !!id);
   // Seule une Aventure part « en aventure » ; un présage (même disposition Scryfall) est mélangé dans la bibliothèque.
   const adventure = choices.face !== undefined && cardDef.layout === "adventure" && d.subtypes.includes("Adventure");
   if (choices.face !== undefined) obj(s, stackId).faceDefId = d.id;
@@ -817,17 +937,20 @@ export function castSpell(s: GameState, player: PlayerId, card: ObjectId, choice
     arrival: arrivalFor(s, player, d, terms),
     adventure: adventure || undefined,
     warped: warp ? true : undefined,
+    impending: alternative && cardDef.impending ? true : undefined,
     manaSpent: free ? 0 : manaValue(cost),
     fromHand: terms.source === "hand" || undefined,
+    fromGraveyard: terms.source === "graveyard" || terms.source === "flashback" || undefined,
     // Permanents sacrifiés comme coût additionnel (« si le permanent sacrifié était un Véhicule »).
     sacrificed: sacrifice.length ? [...sacrifice] : undefined,
+    costExiled: costExiled.length ? costExiled : undefined,
     uncounterable: uncounterable || undefined,
   };
   s.stack.push(item);
   try {
     const used = payMana(s, player, cost, undefined, {
       spell: view,
-      convoke: d.keywords.includes("convoke"),
+      convoke: hasConvoke(s, player, d),
       fromHand: terms.source === "hand",
     });
     // Effets associés au mana dépensé, si ce sort correspond (Carnelian Orb, Pyromancer's Goggles).
@@ -850,8 +973,11 @@ export function castSpell(s: GameState, player: PlayerId, card: ObjectId, choice
   }
   if (discard.length) {
     emit({ type: "discard", player, defIds: discard.map((id) => obj(s, id).defId) });
-    for (const id of discard) announceDiscard(s, player, moveObject(s, id, "graveyard"));
+    const discarded = discard.map((id) => moveObject(s, id, "graveyard"));
+    for (const id of discarded) announceDiscard(s, player, id);
     announceDiscardBatch(s, player, discard.length);
+    // Grab the Prize : « si la carte défaussée n'était pas une carte de terrain ».
+    item.discarded = discarded.filter((id): id is string => !!id);
   }
   for (const id of sacrifice) sacrificePermanent(s, id);
   if (kickerPermanent && d.kickerCost?.sacrifice) sacrificePermanent(s, kickerPermanent);
@@ -1105,7 +1231,22 @@ export function canPayNonManaCost(s: GameState, source: ObjectId, ab: ActivatedA
   if (ab.cost.payLife && (s.players[player]?.life ?? 0) < ab.cost.payLife) return false;
   if (ab.cost.sacrifice && sacrificeOptions(s, player, source, ab).length < ab.cost.sacrifice.count) return false;
   if (ab.cost.tapOthers && tapOthersOptions(s, player, source, ab).length < ab.cost.tapOthers.count) return false;
+  if (ab.cost.discard && discardCostOptions(s, player, source).length < ab.cost.discard) return false;
+  if (ab.cost.returnUnblockedAttacker && unblockedAttackers(s, player).length === 0) return false;
   return true;
+}
+
+/** Ninjutsu (702.49) : attaquants non bloqués du joueur, une fois les bloqueurs déclarés. */
+export function unblockedAttackers(s: GameState, player: PlayerId): ObjectId[] {
+  const afterBlocks = ["declareBlockers", "firstStrikeDamage", "combatDamage", "endCombat"].includes(s.turn.step);
+  if (!s.combat || !afterBlocks || s.turn.active !== player) return [];
+  if (s.turn.step === "declareBlockers" && s.pending?.kind === "declareBlockers") return [];
+  return s.combat.attackers.filter((a) => !a.blocked && s.objects[a.id]?.controller === player).map((a) => a.id);
+}
+
+/** Cartes de la main qui peuvent être défaussées pour un coût d'activation (pas la source elle-même). */
+export function discardCostOptions(s: GameState, player: PlayerId, source: ObjectId): ObjectId[] {
+  return (s.players[player]?.hand ?? []).filter((id) => id !== source);
 }
 
 export function activateAbility(s: GameState, player: PlayerId, source: ObjectId, index: number, choices: CastChoices): void {
@@ -1152,7 +1293,9 @@ export function activateAbility(s: GameState, player: PlayerId, source: ObjectId
           )
         : 0;
       try {
-        payMana(s, player, totalCost(ab.cost.mana, 0, undefined, plotReduction), undefined, { abilitySource: source });
+        payMana(s, player, totalCost(ab.cost.mana, 0, undefined, plotReduction + unlockReduction(s, player, ab)), undefined, {
+          abilitySource: source,
+        });
       } catch {
         throw new RulesError("Mana insuffisant");
       }
@@ -1287,6 +1430,23 @@ export function activateAbility(s: GameState, player: PlayerId, source: ObjectId
     if (options.length < x) throw new RulesError("Pas assez de permanents à sacrifier");
     item.sacrificed = options.slice(0, x);
     for (const id of options.slice(0, x)) sacrificePermanent(s, id);
+  }
+  // Ninjutsu : l'attaquant non bloqué le plus faible retourne dans la main de son propriétaire.
+  if (ab.cost.returnUnblockedAttacker) {
+    const weakest = [...unblockedAttackers(s, player)].sort((a, b) => chars(s, a).power - chars(s, b).power)[0];
+    if (!weakest) throw new RulesError("Aucun attaquant non bloqué");
+    removeFromCombat(s, weakest);
+    moveObject(s, weakest, "hand");
+  }
+  // « Défaussez une carte » : choisie par le joueur (sinon la première de la main).
+  if (ab.cost.discard) {
+    const options = discardCostOptions(s, player, source);
+    const chosen = choices.discard?.length ? choices.discard : options.slice(0, ab.cost.discard);
+    if (chosen.length !== ab.cost.discard || chosen.some((id) => !options.includes(id)))
+      throw new RulesError("Défausse invalide");
+    emit({ type: "discard", player, defIds: chosen.map((id) => obj(s, id).defId) });
+    for (const id of chosen) announceDiscard(s, player, moveObject(s, id, "graveyard"));
+    announceDiscardBatch(s, player, chosen.length);
   }
   if (ab.cost.exileSelf) moveObject(s, source, "exile");
   if (ab.cost.discardSelf) {
@@ -1439,6 +1599,7 @@ function finishResolution(
           kicked: item.kicked,
           cast: true,
           castFromHand: item.fromHand,
+          castFromGraveyard: item.fromGraveyard,
           attachTo: d.enchant ? targets[ENCHANT_SPEC]?.[0] : undefined,
           chosen: chosenFrom(vars),
           manaSpent: item.manaSpent,
@@ -1457,6 +1618,13 @@ function finishResolution(
       // Mimeoplasm : les cartes exilées en arrivant sont liées au permanent.
       if (arrived && vars["$ids:devoured"]?.length)
         arrived.linked = [...(arrived.linked ?? []), ...vars["$ids:devoured"].map(String)];
+      // Fear of Abduction : les cartes exilées pour payer le coût additionnel sont liées au permanent.
+      if (arrived && item.costExiled?.length) arrived.linked = [...(arrived.linked ?? []), ...item.costExiled];
+      // Imminence (702.176a) : il arrive avec N marqueurs de temps et n'est pas une créature tant qu'il en a.
+      if (item.impending && arrived) {
+        arrived.impending = true;
+        changeCounters(s, arrived, "time", s.defs[arrived.defId]?.impending ?? 0);
+      }
       // Distorsion : exilé au début de la prochaine étape de fin.
       if (item.warped && arrived) {
         arrived.warped = true;

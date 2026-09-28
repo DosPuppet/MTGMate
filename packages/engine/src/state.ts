@@ -97,7 +97,7 @@ export type RulesEvent =
   /** Des créatures ont monté une Monture ou équipé un Véhicule (coût payé). */
   | { e: "crewed"; vehicle: ObjectId; crew: ObjectId[] }
   /** Un joueur manifeste avec effroi (déclencheurs « chaque fois que vous manifestez avec effroi »). */
-  | { e: "manifestDread"; player: PlayerId }
+  | { e: "manifestDread"; player: PlayerId; graveyard?: ObjectId[] }
   /** Un permanent face cachée est retourné face visible. */
   | { e: "turnedFaceUp"; objectId: ObjectId }
   /** Une Classe atteint un niveau. */
@@ -105,7 +105,8 @@ export type RulesEvent =
   /** Un joueur joue un terrain. */
   | { e: "playLand"; player: PlayerId; objectId: ObjectId }
   /** Une porte de Salle est déverrouillée. */
-  | { e: "unlock"; objectId: ObjectId; door: number; player: PlayerId };
+  | { e: "unlock"; objectId: ObjectId; door: number; player: PlayerId }
+  | { e: "blocked"; attacker: ObjectId; player: PlayerId };
 
 /** Signale un événement de règles : les capacités déclenchées correspondantes sont mises en attente. */
 export function rulesEvent(s: GameState, ev: RulesEvent): void {
@@ -385,6 +386,25 @@ export function moveObject(
   }
   // Rest in Peace : tout ce qui irait au cimetière est exilé à la place.
   if (to === "graveyard" && s.playerOrder.some((p) => playerStatic(s, p, "graveyardToExile"))) to = "exile";
+  // Valgavoth, Terror Eater : une carte que son contrôleur ne contrôlait pas, qui irait au cimetière d'un adversaire, est
+  // exilée à la place (et liée à Valgavoth).
+  let linkTo: ObjectId | undefined;
+  if (to === "graveyard" && !o.isToken) {
+    for (const p of s.playerOrder) {
+      if (p === o.owner || o.controller === p) continue;
+      const src = controlledAbilitiesWithSource(s, p).find(
+        ({ id: v, ab }) => ab.kind === "playerStatic" && ab.exileOpponentsCardsLinked && s.objects[v]?.zone === "battlefield",
+      );
+      if (src) {
+        to = "exile";
+        linkTo = src.id;
+        break;
+      }
+    }
+  }
+  // Leyline of the Void : ce qui irait au cimetière d'un adversaire de son contrôleur est exilé à la place.
+  if (to === "graveyard" && s.playerOrder.some((p) => p !== o.owner && playerStatic(s, p, "opponentGraveyardToExile")))
+    to = "exile";
   // Hades, Sorcerer of Eld : seulement le cimetière de son contrôleur.
   if (to === "graveyard" && playerStatic(s, o.isToken ? o.controller : o.owner, "ownGraveyardToExile")) to = "exile";
   const from = zoneArray(s, o);
@@ -400,6 +420,7 @@ export function moveObject(
     if (to === "graveyard" && lki.types.includes("Creature")) {
       s.turn.creatureDied = true;
       s.turn.creaturesDied = (s.turn.creaturesDied ?? 0) + 1;
+      s.turn.diedSubtypes = [...(s.turn.diedSubtypes ?? []), lki.subtypes];
       // Sidequest: Hunt the Mark : « si une créature est morte sous le contrôle d'un adversaire ce tour-ci ».
       const stats = s.players[lki.controller]?.turnStats;
       if (stats) stats.creaturesLost = (stats.creaturesLost ?? 0) + 1;
@@ -468,6 +489,11 @@ export function moveObject(
     const ctrl = s.players[moved.controller];
     if (ctrl) ctrl.turnStats.landsEntered += 1;
   }
+  const linker = linkTo ? s.objects[linkTo] : undefined;
+  if (linker) {
+    linker.linked = [...(linker.linked ?? []), moved.id];
+    bump(s);
+  }
   rulesEvent(s, { e: "zone", oldId: id, newId: moved.id, from: from0, to, lki });
   if (from0 === "battlefield") releaseLinkedExile(s, id);
   return moved.id;
@@ -501,6 +527,8 @@ export function turnFaceUp(s: GameState, id: ObjectId): void {
   if (o?.zone !== "battlefield" || !o.faceDown) return;
   o.defId = o.faceDown.card;
   delete o.faceDown;
+  const stats = s.players[o.controller]?.turnStats;
+  if (stats) stats.faceDownOrUp = (stats.faceDownOrUp ?? 0) + 1;
   bump(s);
   emit({ type: "turnedFaceUp", objectId: id, defId: o.defId });
   rulesEvent(s, { e: "turnedFaceUp", objectId: id });
@@ -574,7 +602,7 @@ export function setPrepared(s: GameState, o: GameObject, on: boolean): void {
 
 import { bump, snapshot } from "./layers";
 import { applyEntersReplacements, type EntersContext, releaseLinkedExile, replaceDestination } from "./replacement";
-import { counterDoublers, playerStatic } from "./statics";
+import { controlledAbilitiesWithSource, counterDoublers, playerStatic } from "./statics";
 import { detectTriggers } from "./triggers";
 
 export {

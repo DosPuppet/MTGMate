@@ -155,10 +155,16 @@ function base(s: GameState, o: GameObject, defId = o.defId): Characteristics {
   const cdaPower = d.cdaPower === undefined ? undefined : cdaValue(s, o, d.cdaPower);
   const cdaToughness = d.cdaToughness === undefined ? undefined : cdaValue(s, o, d.cdaToughness);
   const station = stationTraits(o, d);
+  // Imminence (702.176a) : ce n'est pas une créature tant qu'il a un marqueur de temps (ni ses types de créature).
+  const impending = !!o.impending && o.zone === "battlefield" && (o.counters.time ?? 0) > 0;
   return {
     name: d.name,
-    types: station.creature && !d.types.includes("Creature") ? [...d.types, "Creature"] : [...d.types],
-    subtypes: [...d.subtypes],
+    types: impending
+      ? d.types.filter((t) => t !== "Creature")
+      : station.creature && !d.types.includes("Creature")
+        ? [...d.types, "Creature"]
+        : [...d.types],
+    subtypes: impending ? [] : [...d.subtypes],
     supertypes: [...d.supertypes],
     colors: [...d.colors],
     power: cdaPower ?? cda ?? d.power ?? 0,
@@ -193,6 +199,7 @@ function stationTraits(o: GameObject, d: CardDef): { creature: boolean; keywords
 /** Garde {2} des permanents face cachée par déguisement ou cape (702.168b, 701.58a). */
 const FACE_DOWN_WARD: AbilityDef = {
   kind: "triggered",
+  ward: true,
   trigger: { on: "becomesTarget", who: "self", byOpponent: true },
   targets: [],
   effects: [
@@ -292,6 +299,7 @@ function view(s: GameState, id: ObjectId, c: Characteristics, o: GameObject, att
     preparedSpell: !!o.preparedFor || undefined,
     prepared: !!o.preparedCopy || undefined,
     warped: o.warped || undefined,
+    faceDown: !!o.faceDown || undefined,
     // Sort sur la pile : le mana dépensé est porté par l'élément de pile (Unravel).
     manaSpent: o.manaSpent ?? (o.zone === "stack" ? s.stack.find((x) => x.id === id)?.manaSpent : undefined),
     attackedTurn: o.attackedTurn,
@@ -363,6 +371,17 @@ export function computeBattlefield(s: GameState): Map<ObjectId, Characteristics>
             .filter((a) => a.kind === "activated" || a.kind === "mana");
           mods = { ...mods, gainLinkedActivated: undefined, addAbilities: [...(mods.addAbilities ?? []), ...extra] };
         }
+        if (mods.gainActivatedFrom) {
+          // Marvin, Murderous Mimic : les capacités activées imprimées des créatures correspondantes qui n'ont pas son nom.
+          const f = mods.gainActivatedFrom;
+          const name = s.defs[o.defId]?.name;
+          const extra = s.battlefield
+            .filter((x) => x !== id && matchesView(snapshotBase(s, x), f, o.controller, id))
+            .filter((x) => s.defs[s.objects[x]?.defId ?? ""]?.name !== name)
+            .flatMap((x) => s.defs[s.objects[x]?.defId ?? ""]?.abilities ?? [])
+            .filter((a) => (a.kind === "activated" && !a.specialAction && !a.fromHand && !a.fromGraveyard) || a.kind === "mana");
+          mods = { ...mods, gainActivatedFrom: undefined, addAbilities: [...(mods.addAbilities ?? []), ...extra] };
+        }
         if (mods.copyLinkedExile) {
           const card = s.linkedExile.find((l) => l.sourceId === id)?.cards.find((c) => s.objects[c]?.zone === "exile");
           const defId = card ? s.objects[card]?.defId : undefined;
@@ -387,6 +406,9 @@ export function computeBattlefield(s: GameState): Map<ObjectId, Characteristics>
               : (o.counters[ab.perCounter as string] ?? 0);
           const n = ab.perDivisor ? Math.floor(raw / ab.perDivisor) : raw;
           mods = { ...mods, power: (mods.power ?? 0) * n, toughness: (mods.toughness ?? 0) * n };
+          // Porcelain Gallery : « F/E de base égales au nombre de créatures que vous contrôlez ».
+          if (mods.setPower !== undefined) mods = { ...mods, setPower: mods.setPower * n };
+          if (mods.setToughness !== undefined) mods = { ...mods, setToughness: mods.setToughness * n };
         }
         const affects = typeof ab.affects === "string" ? ab.affects : withChosen(ab.affects, o);
         if (mods.addChosenSubtype && o.chosen?.creatureType) {

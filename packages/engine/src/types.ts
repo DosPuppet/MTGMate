@@ -53,6 +53,10 @@ export type Keyword =
   /** Changelin (702.73) : a tous les types de créature, dans toutes les zones. */
   | "changeling"
   | "cantBeBlockedByHumans"
+  /** Cynical Loner : « ne peut pas être bloquée par des Lueurs ». */
+  | "cantBeBlockedByGlimmers"
+  /** Toby, Beastie Befriender : « ce jeton ne peut ni attaquer ni bloquer seul ». */
+  | "cantAttackOrBlockAlone"
   /** « Ne peut pas être bloquée par des créatures de force 2 ou moins. » */
   | "cantBeBlockedByPowerLE2"
   /** « Doit être bloquée si possible » (509.1c). */
@@ -104,6 +108,7 @@ export const RESTRICTIONS: readonly Keyword[] = [
   "cantBeBlockedByWalls",
   "noActivatedAbilities",
   "minThreeBlockers",
+  "cantAttackOrBlockAlone",
   "keepsDamage",
   "absorbsDamage",
   "combatDamageImmune",

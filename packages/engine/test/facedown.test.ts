@@ -85,7 +85,7 @@ describe("manifestation effroyable (701.62) et cape (701.58)", () => {
     const ask = runEffect(s, r as never, { op: "manifestDread" });
     expect(ask && "ask" in ask).toBe(true);
     const bear = s.players.p1?.library[0] as string;
-    (r.vars as Record<string, unknown>)[`${r.pc}:dread`] = [bear];
+    (r.vars as Record<string, unknown>)[`${r.pc}:dread0`] = [bear];
     runEffect(s, r as never, { op: "manifestDread" });
     const id = s.battlefield.find((x) => s.objects[x]?.defId === FACE_DOWN_ID) as string;
     expect(chars(s, id).keywords).toEqual([]); // pas de garde

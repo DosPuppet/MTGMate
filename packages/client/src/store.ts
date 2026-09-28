@@ -228,6 +228,7 @@ function buildDecision(c: Casting): Decision {
     ability: c.option.ability,
     targets: c.targets,
     x: c.x ?? undefined,
+    discard: c.discard ?? undefined,
     sacrifice: c.sacrifice ?? undefined,
     tap: c.tap ?? undefined,
   };

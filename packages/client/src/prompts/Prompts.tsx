@@ -294,7 +294,7 @@ function CastingPrompt() {
           )}
           {opt.altAvailable && (
             <button type="button" className="btn choice" onClick={() => choosePayMode("alt")}>
-              Coût alternatif
+              {opt.altLabel ?? "Coût alternatif"}
             </button>
           )}
         </div>

@@ -42,8 +42,93 @@ import { matchesCard, matchesObjectFilter } from "../targets";
 import type { Effect, GameState, Resolution } from "../types";
 
 export const HANDLERS: OpHandlers = {
-  destroy(s, _r, e, ctx) {
-    for (const id of resolveRef(s, ctx, e.what)) destroy(s, id);
+  destroy(s, r, e, ctx) {
+    const stored: string[] = [];
+    for (const id of resolveRef(s, ctx, e.what)) {
+      const o = s.objects[id];
+      destroy(s, id);
+      // Come Back Wrong : la carte mise au cimetière de cette façon.
+      const card = o && (s.players[o.owner]?.graveyard ?? []).find((x) => s.objects[x]?.uid === o.uid);
+      if (card) stored.push(card);
+    }
+    if (e.store) r.vars[`$ids:${e.store}`] = stored;
+    return;
+  },
+  chooseAmong(s, r, e, ctx, key) {
+    const ids = resolveRef(s, ctx, e.what).filter((id) => onBattlefield(s, id));
+    if (ids.length === 0) return;
+    const chooser = resolveRef(s, ctx, e.chooser).find((x) => isPlayer(s, x)) ?? ctx.controller;
+    let picked = ids.length === 1 ? ids[0] : r.vars[key("among")]?.map(String)[0];
+    if (picked === undefined) {
+      // Suggestion : celle qui a la plus grande endurance.
+      const sturdy = [...ids].sort((a, b) => chars(s, b).toughness - chars(s, a).toughness)[0] as string;
+      return {
+        ask: {
+          player: chooser,
+          key: key("among"),
+          request: {
+            type: "pick",
+            intent: "pickCards",
+            prompt: "Choisissez l'une de ces créatures",
+            options: ids,
+            min: 1,
+            max: 1,
+            suggested: [sturdy],
+          },
+        },
+      };
+    }
+    picked = String(picked);
+    r.vars[`$ids:${e.store}`] = [picked];
+    r.vars[`$ids:${e.store}Rest`] = ids.filter((x) => x !== picked);
+    return;
+  },
+  tapChosen(s, r, e, ctx, key) {
+    const options = s.battlefield.filter(
+      (id) =>
+        s.objects[id]?.controller === ctx.controller &&
+        !s.objects[id]?.tapped &&
+        matchesObjectFilter(s, ctx.controller, id, e.filter, ctx.sourceId),
+    );
+    let chosen: string[] = [];
+    if (options.length) {
+      const answer = r.vars[key("tapChosen")];
+      if (!answer) {
+        return {
+          ask: {
+            player: ctx.controller,
+            key: key("tapChosen"),
+            request: {
+              type: "pick",
+              intent: "pickCards",
+              prompt: "Permanents à engager (autant que vous voulez)",
+              options,
+              min: 0,
+              max: options.length,
+              suggested: options,
+            },
+          },
+        };
+      }
+      chosen = answer.map(String).filter((id) => options.includes(id));
+    }
+    for (const id of chosen) {
+      const o = s.objects[id];
+      if (o) tapObject(s, o);
+    }
+    store(r, e.store, chosen.length);
+    return;
+  },
+  millWhileShared(s, _r, _e, ctx) {
+    // The Tale of Tamiyo : on recommence tant que les deux cartes meulées partagent un type de carte.
+    for (let i = 0; i < 100; i++) {
+      const top = (s.players[ctx.controller]?.library ?? []).slice(0, 2);
+      if (top.length === 0) return;
+      const types = top.map((id) => s.defs[s.objects[id]?.defId ?? ""]?.types ?? []);
+      for (const id of top) moveAndLog(s, id, "graveyard");
+      if (top.length < 2 || !types[0]?.some((t) => types[1]?.includes(t))) return;
+      drawCard(s, ctx.controller);
+    }
     return;
   },
   destroyAllButChosenType(s, r, _e, ctx, key) {
@@ -120,7 +205,7 @@ export const HANDLERS: OpHandlers = {
   exileLibraryButBottom(s, _r, e, ctx) {
     for (const p of resolveRef(s, ctx, e.who)) {
       const lib = s.players[p]?.library ?? [];
-      for (const id of lib.slice(0, Math.max(0, lib.length - 1))) moveObject(s, id, "exile");
+      for (const id of lib.slice(0, Math.max(0, lib.length - (e.keep ?? 1)))) moveObject(s, id, "exile");
     }
     return;
   },
@@ -1097,37 +1182,73 @@ export const HANDLERS: OpHandlers = {
     for (const id of resolveRef(s, ctx, e.what)) putFaceDown(s, ctx.controller, id, e.ward);
     return;
   },
-  manifestDread(s, r, _e, ctx, key) {
-    const library = s.players[ctx.controller]?.library ?? [];
-    const top = library.slice(0, 2);
-    if (top.length === 0) return;
-    let chosen = top[0] as string;
-    if (top.length === 2) {
-      const answer = r.vars[key("dread")];
+  manifestDread(s, r, e, ctx, key) {
+    const players = e.who ? resolveRef(s, ctx, e.who) : [ctx.controller];
+    const times = e.times === undefined ? 1 : Math.max(0, evalAmount(s, ctx, e.times));
+    const made = (r.vars[key("dreadMade")] ?? []).map(String);
+    let step = Number(r.vars[key("dreadStep")]?.[0] ?? 0);
+    for (; step < players.length * times; step++) {
+      const player = players[Math.floor(step / times)] as string;
+      const library = s.players[player]?.library ?? [];
+      const top = library.slice(0, 2);
+      if (top.length === 0) continue;
+      let chosen = top[0] as string;
+      if (top.length === 2) {
+        const answer = r.vars[key(`dread${step}`)];
+        if (!answer) {
+          const creature = top.find((id) => s.defs[s.objects[id]?.defId ?? ""]?.types.includes("Creature"));
+          r.vars[key("dreadStep")] = [step];
+          r.vars[key("dreadMade")] = made;
+          return {
+            ask: {
+              player,
+              key: key(`dread${step}`),
+              request: {
+                type: "pick",
+                intent: "pickCards",
+                prompt: "Manifestation effroyable : la carte à manifester (l'autre va au cimetière)",
+                options: top,
+                min: 1,
+                max: 1,
+                suggested: [creature ?? (top[0] as string)],
+              },
+            },
+          };
+        }
+        chosen = String(answer[0]);
+      }
+      const rest = top.filter((id) => id !== chosen);
+      const id = putFaceDown(s, player, chosen, false);
+      if (id) made.push(id);
+      const graveyard = rest.map((c) => moveAndLog(s, c, "graveyard")).filter((c): c is string => !!c);
+      rulesEvent(s, { e: "manifestDread", player, graveyard });
+    }
+    r.vars[key("dreadStep")] = [step];
+    if (e.store) r.vars[`$ids:${e.store}`] = made;
+    return;
+  },
+  revealFaceDown(s, r, e, ctx, key) {
+    for (const id of resolveRef(s, ctx, e.what)) {
+      const o = s.objects[id];
+      if (o?.zone !== "battlefield" || !o.faceDown) continue;
+      const card = s.defs[o.faceDown.card];
+      if (!r.vars[key(`revealed-${id}`)]) {
+        emit({ type: "reveal", player: o.controller, defIds: [o.faceDown.card] });
+        r.vars[key(`revealed-${id}`)] = [1];
+      }
+      if (!card?.types.includes("Creature")) continue;
+      const answer = r.vars[key(`up-${id}`)];
       if (!answer) {
-        const creature = top.find((id) => s.defs[s.objects[id]?.defId ?? ""]?.types.includes("Creature"));
         return {
           ask: {
             player: ctx.controller,
-            key: key("dread"),
-            request: {
-              type: "pick",
-              intent: "pickCards",
-              prompt: "Manifestation effroyable : la carte à manifester (l'autre va au cimetière)",
-              options: top,
-              min: 1,
-              max: 1,
-              suggested: [creature ?? (top[0] as string)],
-            },
+            key: key(`up-${id}`),
+            request: { type: "yesNo", intent: "may", prompt: `Retourner ${card.name} face visible ?`, suggested: [1] },
           },
         };
       }
-      chosen = String(answer[0]);
+      if (answer[0] === 1) turnFaceUp(s, id);
     }
-    const rest = top.filter((id) => id !== chosen);
-    putFaceDown(s, ctx.controller, chosen, false);
-    for (const id of rest) moveAndLog(s, id, "graveyard");
-    rulesEvent(s, { e: "manifestDread", player: ctx.controller });
     return;
   },
   turnFaceUp(s, _r, e, ctx) {

@@ -9,13 +9,17 @@ import {
   abilityZone,
   activatedAbility,
   additionalOptions,
+  altCostFor,
+  autoAdditional,
   canCastTiming,
   canPayNonManaCost,
   canPlayLand,
   castableFaces,
   castTerms,
+  discardCostOptions,
   equipDiscount,
   FACE_DOWN_SPELL,
+  hasConvoke,
   instantLoyalty,
   kickerCostPermanent,
   modesOf,
@@ -161,15 +165,27 @@ export function legalActions(s: GameState, player: PlayerId): ActionOption[] {
     const timingExtra = onTime ? undefined : d.flashExtraCost;
     const flashback = terms.source === "flashback";
     const modes = modesOf(d)
-      .map((m, index) => ({ index, label: m.label, targets: targetOptions(s, player, m.targets, card), extra: m.extraCost }))
+      .map((m, index) => ({
+        index,
+        label: m.label,
+        targets: targetOptions(s, player, m.targets, card),
+        extra: m.extraCost,
+        ok: !m.condition || checkCondition(s, m.condition, player, card),
+      }))
+      .filter((m) => m.ok)
       .filter((m) => targetsAvailable(m.targets))
       // Spree : le coût supplémentaire du mode doit être payable.
       .filter((m) => !m.extra || canPay(s, player, totalCost(spellCost(s, player, d, { free: terms.free }), 0, m.extra)))
-      .map(({ extra: _, ...m }) => m);
+      .map(({ extra: _, ok: __, ...m }) => m);
     if (modes.length === 0) return;
     const additional = additionalOptions(s, player, card, d, terms.source === "flashback");
     if (!additional) return;
-    const purpose = { spell: spellView(d, player), convoke: d.keywords.includes("convoke"), fromHand: terms.source === "hand" };
+    // Coûts additionnels choisis automatiquement : ces permanents ne peuvent pas servir à payer le mana.
+    const auto = autoAdditional(s, player, card, d);
+    if (!auto) return;
+    const spent = [...auto.tap, ...auto.exile, ...auto.bounce];
+    const exclude = spent.length ? new Set(spent) : undefined;
+    const purpose = { spell: spellView(d, player), convoke: hasConvoke(s, player, d), fromHand: terms.source === "hand" };
     const base = { flashback, anyMana: terms.anyMana, fromZone: terms.source };
     // « Sacrifiez une créature ou payez {3}{B} » : sans créature à sacrifier, le mana s'ajoute au coût.
     const sac = additional.sacrifice;
@@ -178,13 +194,11 @@ export function legalActions(s: GameState, player: PlayerId): ActionOption[] {
       const a = mustPayInstead && sac?.orPay ? totalCost(c, 0, sac.orPay) : c;
       return timingExtra ? totalCost(a, 0, timingExtra) : a;
     };
-    const normal = !terms.free && canPay(s, player, withExtra(spellCost(s, player, d, base)), undefined, purpose);
+    const normal = !terms.free && canPay(s, player, withExtra(spellCost(s, player, d, base)), exclude, purpose);
     const freeAvailable = !!terms.freeOptional;
+    const alt = terms.free ? undefined : altCostFor(s, player, d);
     const altAvailable =
-      !terms.free &&
-      !!d.altCost &&
-      checkCondition(s, d.altCost.condition, player) &&
-      canPay(s, player, withExtra(spellCost(s, player, d, { ...base, alternative: true })), undefined, purpose);
+      !!alt && canPay(s, player, withExtra(spellCost(s, player, d, { ...base, alternative: true })), exclude, purpose);
     if (!terms.free && !normal && !freeAvailable && !altAvailable) return;
     // Le mana à payer à la place du sacrifice est-il disponible ?
     if (sac?.orPay) {
@@ -209,6 +223,7 @@ export function legalActions(s: GameState, player: PlayerId): ActionOption[] {
       free: terms.free || undefined,
       freeAvailable: freeAvailable || undefined,
       altAvailable: altAvailable || undefined,
+      altLabel: altAvailable ? alt?.label : undefined,
       normalAvailable: normal || undefined,
       additional: additional.discard || additional.sacrifice ? additional : undefined,
     });
@@ -253,11 +268,12 @@ export function legalActions(s: GameState, player: PlayerId): ActionOption[] {
                 ? sacrificeXOptions(s, player, id, ab.cost.sacrificeX)
                 : maxX(s, player, ab.cost.mana, exclude),
         additional:
-          ab.cost.sacrifice || ab.cost.tapOthers
+          ab.cost.sacrifice || ab.cost.tapOthers || ab.cost.discard
             ? {
                 ...(ab.cost.sacrifice
                   ? { sacrifice: { count: ab.cost.sacrifice.count, options: sacrificeOptions(s, player, id, ab) } }
                   : {}),
+                ...(ab.cost.discard ? { discard: { count: ab.cost.discard, options: discardCostOptions(s, player, id) } } : {}),
                 // Station : le joueur choisit la créature à engager.
                 ...(ab.cost.tapOthers
                   ? { tap: { count: ab.cost.tapOthers.count, options: tapOthersOptions(s, player, id, ab) } }

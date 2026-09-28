@@ -13,7 +13,7 @@ import {
 } from "../effects";
 import { availableMana, canPay, costToText, manaValue, payMana } from "../mana";
 import { copySpellItem, counterItem, plotCard, stackItemSpecs } from "../stack";
-import { apnapOrder, createObject, emit, isPlayer, moveObject, newId, setPrepared, shuffle } from "../state";
+import { apnapOrder, chars, createObject, emit, isPlayer, moveObject, newId, setPrepared, shuffle } from "../state";
 import { legalTargets, matchesObjectFilter } from "../targets";
 import type { ObjectId } from "../types";
 
@@ -23,6 +23,7 @@ export const HANDLERS: OpHandlers = {
     return;
   },
   unlessPay(s, r, e, ctx, key) {
+    const isLand = (id: string) => chars(s, id).types.includes("Land");
     const p = resolveRef(s, ctx, e.who).find((x) => isPlayer(s, x));
     if (!p) return;
     // « à moins que son contrôleur ne paie {X} » (Syncopate) : X est celui du sort.
@@ -37,7 +38,8 @@ export const HANDLERS: OpHandlers = {
       (!mana || canPay(s, p, mana)) &&
       (s.players[p]?.life ?? 0) >= (life ?? 0) &&
       (!e.discard || hand.length > 0) &&
-      s.battlefield.filter((id) => s.objects[id]?.controller === p).length >= (e.sacrifice ?? 0);
+      s.battlefield.filter((id) => s.objects[id]?.controller === p && !(e.sacrificeNonland && isLand(id))).length >=
+        (e.sacrifice ?? 0);
     if (!canDo) return;
     const answer = r.vars[key("unless")];
     if (!answer) {
@@ -45,7 +47,7 @@ export const HANDLERS: OpHandlers = {
         mana ? costToText(mana) : "",
         life ? `${life} points de vie` : "",
         e.discard ? "défausser une carte" : "",
-        e.sacrifice ? `sacrifier ${e.sacrifice} permanents` : "",
+        e.sacrifice ? `sacrifier ${e.sacrifice} permanents${e.sacrificeNonland ? " non-terrains" : ""}` : "",
       ]
         .filter(Boolean)
         .join(" et ");
@@ -101,7 +103,7 @@ export const HANDLERS: OpHandlers = {
     }
     // Garde « sacrifiez trois permanents » (Emrakul, the Exigent Doom).
     if (e.sacrifice) {
-      const perms = s.battlefield.filter((id) => s.objects[id]?.controller === p);
+      const perms = s.battlefield.filter((id) => s.objects[id]?.controller === p && !(e.sacrificeNonland && isLand(id)));
       const chosen = r.vars[key("unlessSac")];
       if (!chosen) {
         const cheapest = [...perms].sort(

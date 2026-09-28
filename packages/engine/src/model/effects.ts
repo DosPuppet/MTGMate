@@ -45,7 +45,16 @@ export type Effect =
       duration: "endOfTurn" | "permanent" | "untilYourNextTurn";
       untilLeavesExile?: Ref;
     }
-  | { op: "destroy"; what: Ref }
+  /** `store` : les cartes mises au cimetière ainsi (« si une carte de créature est mise dans un cimetière de cette façon »). */
+  | { op: "destroy"; what: Ref; store?: string }
+  /** « Engagez un nombre quelconque de [permanents] dégagés que vous contrôlez » : `store` mémorise leur nombre. */
+  | { op: "tapChosen"; filter: ObjectFilter; store: string }
+  /** « Mettez ces marqueurs sur [cible] » : les marqueurs qu'avait l'objet de l'événement (dernières informations connues). */
+  | { op: "lkiCountersTo"; to: Ref }
+  /** « Il ne peut plus gagner de points de vie de la partie » (Screaming Nemesis). */
+  | { op: "cantGainLife"; who: Ref }
+  /** The Tale of Tamiyo : « meulez deux cartes ; si elles partagent un type de carte, piochez et recommencez ». */
+  | { op: "millWhileShared" }
   | { op: "draw"; who: Ref; amount: Amount }
   | { op: "gainLife"; who: Ref; amount: Amount }
   /** `tapped` : jetons engagés ; `attacking` : engagés et attaquants (le même défenseur que la source, sinon le premier adversaire). */
@@ -259,6 +268,8 @@ export type Effect =
       discard?: boolean;
       discardRandom?: boolean;
       sacrifice?: number;
+      /** Les permanents sacrifiés sont non-terrains (garde de Valgavoth). */
+      sacrificeNonland?: boolean;
       who: Ref;
       mana?: ManaCost;
       /** {1} pour chaque… (Swallowed by Leviathan). */
@@ -349,7 +360,8 @@ export type Effect =
   /** Met les cartes désignées sur le champ de bataille face cachée (manifester ; `ward` : cape). */
   | { op: "putFaceDown"; what: Ref; ward: boolean }
   /** Manifestation effroyable (701.62) : regarder les deux cartes du dessus, en manifester une, l'autre au cimetière. */
-  | { op: "manifestDread" }
+  /** Manifestation effroyable (701.62) : `who` manifeste (vous par défaut), `times` fois ; `store` mémorise les créatures face cachée. */
+  | { op: "manifestDread"; who?: Ref; times?: Amount; store?: string }
   /** Retourne face visible les permanents désignés (sans payer de coût). */
   | { op: "turnFaceUp"; what: Ref }
   /** Distorsion : exile le permanent à la prochaine étape de fin (il pourra être lancé depuis l'exil un tour suivant). */
@@ -362,6 +374,11 @@ export type Effect =
   | { op: "solveCase" }
   /** Déverrouille la porte N d'une Salle (709.5e). */
   | { op: "unlockDoor"; what: Ref; door: number }
+  /**
+   * Salle : « déverrouillez une porte verrouillée » (`unlock`) ou « verrouillez ou déverrouillez une porte » (`toggle`)
+   * d'une des Salles désignées ; le joueur choisit la porte s'il y en a plusieurs.
+   */
+  | { op: "door"; what: Ref; mode: "unlock" | "toggle" }
   /** « [Ce permanent] devient une copie de [la cible] jusqu'à la fin du tour » (couche 1). */
   | { op: "becomeCopy"; what: Ref; of: Ref; duration: "endOfTurn" | "permanent" }
   /** Donne le contrôle de l'objet à un joueur, sans limite de durée (Harmless Offering). */
@@ -408,13 +425,19 @@ export type Effect =
   /** « Il y a une étape de fin supplémentaire après celle-ci » (Y'shtola Rhul). */
   | { op: "extraEndStep" }
   /** « Chaque [créature] inflige des blessures égales à sa force à [cible] » (Bartz and Boko). */
-  | { op: "eachDealsDamage"; filter: ObjectFilter; to: Ref }
+  /** `from` : les créatures désignées à la place du filtre (Coordinated Clobbering). */
+  | { op: "eachDealsDamage"; filter: ObjectFilter; to: Ref; from?: Ref }
+  /** Hauntwoods Shrieker : révélez le permanent face cachée ; si c'est une carte de créature, vous pouvez le retourner. */
+  | { op: "revealFaceDown"; what: Ref }
   /** Compte les résolutions de cette capacité ce tour-ci, mémorisé sous `store` (Venom Connoisseur). */
   | { op: "countResolution"; store: string }
   /** Détruit les permanents non-terrains de valeur X des joueurs blessés au combat par la source ce tour-ci. */
   | { op: "hellkite" }
   /** Lie des cartes à la source (Hoarding Dragon). */
-  | { op: "link"; what: Ref }
+  /** `to` : lie à cet objet plutôt qu'à la source (un emblème créé par le sort). */
+  | { op: "link"; what: Ref; to?: Ref }
+  /** « Ce joueur choisit l'un d'eux » : `store` le choisi, `${store}Rest` les autres (Trial of Agony). */
+  | { op: "chooseAmong"; what: Ref; chooser: Ref; store: string }
   /** Attache une Aura ou un Équipement à un permanent (701.3). */
   | { op: "attach"; what: Ref; to: Ref }
   /** Ajoute du mana à la réserve du contrôleur. */
@@ -429,7 +452,8 @@ export type Effect =
   /** Le joueur désigné révèle sa main ; le contrôleur y choisit une carte correspondante, exilée et liée à la source. */
   | { op: "exileFromHandLinked"; who: Ref; filter: ObjectFilter }
   /** « Exilez toutes les cartes de la bibliothèque de chaque adversaire, sauf celle du dessous. » */
-  | { op: "exileLibraryButBottom"; who: Ref }
+  /** `keep` : cartes laissées au-dessous (1 par défaut ; Doomsday Excruciator : 6). */
+  | { op: "exileLibraryButBottom"; who: Ref; keep?: number }
   /** Ajoute N mana d'une couleur choisie par le contrôleur. */
   | { op: "addManaChoice"; n: Amount }
   /** Exile les N cartes du dessus ; le contrôleur en choisit une qu'il peut jouer ce tour-ci. */
@@ -439,7 +463,16 @@ export type Effect =
   /** Chaque joueur désigné garde un permanent de chaque type et sacrifie le reste. */
   | { op: "keepOnePerType"; who: Ref }
   /** Le contrôleur reçoit un emblème (114) portant ces capacités. */
-  | { op: "emblem"; name: string; abilities: AbilityDef[]; text: string; untilYourNextTurn?: boolean; thisTurn?: boolean }
+  | {
+      op: "emblem";
+      name: string;
+      abilities: AbilityDef[];
+      text: string;
+      untilYourNextTurn?: boolean;
+      thisTurn?: boolean;
+      /** Mémorise l'emblème (pour y lier des objets). */
+      store?: string;
+    }
   /** Exile jusqu'à ce que la source quitte le champ de bataille (610.3). */
   | { op: "exileUntilLeaves"; what: Ref }
   /** Choisir des cartes (non ciblées) dans une zone du contrôleur et les déplacer. */
@@ -466,7 +499,8 @@ export type Effect =
   /** `topDamage` : si le propriétaire la met au-dessus, la source lui inflige N blessures (Clash of Elements). */
   | { op: "libraryTopOrBottom"; what: Ref; topDamage?: number }
   /** Chaque joueur désigné perd N points de vie à moins de défausser une carte ou de sacrifier un permanent. */
-  | { op: "punisher"; who: Ref; loseLife: number; discard?: boolean; sacrifice?: ObjectFilter }
+  /** `damage` : la source inflige ces blessures au lieu de la perte de points de vie (Osseous Sticktwister). */
+  | { op: "punisher"; who: Ref; loseLife: number; discard?: boolean; sacrifice?: ObjectFilter; damage?: Amount }
   /** Révéler jusqu'à une carte correspondant au filtre : elle va en main, le reste au-dessous dans un ordre aléatoire. */
   | { op: "revealUntil"; filter: ObjectFilter; to: MoveSpec };
 

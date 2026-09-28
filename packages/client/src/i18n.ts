@@ -56,6 +56,8 @@ export const KEYWORD_LABEL: Record<Keyword, string> = {
   hexproofFromWhite: "Défense talismanique contre le blanc",
   changeling: "Changelin",
   cantBeBlockedByHumans: "Imblocable par les Humains",
+  cantBeBlockedByGlimmers: "Imblocable par les Lueurs",
+  cantAttackOrBlockAlone: "Ne peut ni attaquer ni bloquer seule",
   cantBeBlockedByPowerLE2: "Imblocable par les créatures de force 2 ou moins",
   mustBeBlocked: "Doit être bloquée",
   cantBlock: "Ne peut pas bloquer",

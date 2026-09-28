@@ -108,7 +108,7 @@ function stripReminder(text: string): string {
 
 /** Garde : « Ward {2} », « Ward—Pay 7 life. » ou « Ward—{3}, Pay 3 life. » */
 const WARD =
-  /\bward(?: ((?:\{[^}]+\})+)|—(?:((?:\{[^}]+\})+), )?pay (\d+) life\.?|—discard a card( at random)?\.?|—sacrifice (two|three|four) permanents\.?)/i;
+  /\bward(?: ((?:\{[^}]+\})+)|—(?:((?:\{[^}]+\})+), )?pay (\d+) life\.?|—discard a card( at random)?\.?|—sacrifice (two|three|four) (nonland )?permanents\.?)/i;
 
 /** « Equip {3}{W} » (702.6) : capacité activée en rituel, cible une créature que vous contrôlez. */
 /** « Equip {2} » ou, avec un nom de capacité, « Gae Bolg — Equip {4} ». */
@@ -141,7 +141,8 @@ export function parseWard(text: string): CardDef["ward"] {
   if (!m) return undefined;
   if (m[1]) return { mana: parseManaCost(m[1]) };
   // « Ward—Sacrifice three permanents. » (Emrakul, the Exigent Doom)
-  if (m[5]) return { sacrifice: { two: 2, three: 3, four: 4 }[m[5].toLowerCase()] };
+  // « Ward—Sacrifice three nonland permanents. » (Valgavoth, Terror Eater)
+  if (m[5]) return { sacrifice: { two: 2, three: 3, four: 4 }[m[5].toLowerCase()], sacrificeNonland: m[6] ? true : undefined };
   // « Ward—Discard a card [at random]. » (Gideon the Oathless, Alpharael, Stonechosen)
   if (!m[3]) return m[4] ? { discard: true, discardRandom: true } : { discard: true };
   return { mana: m[2] ? parseManaCost(m[2]) : undefined, life: Number(m[3]) };
@@ -192,6 +193,34 @@ export function parseWarp(text: string): CardDef["warp"] {
 }
 
 /** Déguisement (702.168) : « Disguise {1}{W} ». */
+/** Imminence N—[coût] (702.176) : nombre de marqueurs de temps et coût alternatif. */
+export function parseImpending(text: string): { n: number; cost: string } | undefined {
+  const m = /Impending (\d+)—((?:\{[^}]+\})+)/.exec(text);
+  return m ? { n: Number(m[1]), cost: m[2] as string } : undefined;
+}
+
+function impendingAltCost(text: string): CardDef["altCost"] {
+  const imp = parseImpending(text);
+  return imp
+    ? { mana: parseManaCost(imp.cost), condition: { kind: "all", of: [] }, label: `Imminence ${imp.n} — ${imp.cost}` }
+    : undefined;
+}
+
+/** « Au début de votre étape de fin, s'il a un marqueur de temps, retirez-en un » (imminence). */
+function impendingAbilities(text: string): CardDef["abilities"] {
+  if (!parseImpending(text)) return [];
+  return [
+    {
+      kind: "triggered",
+      trigger: { on: "step", step: "end", whose: "you" },
+      condition: { kind: "counterAtLeast", counter: "time", n: 1 },
+      targets: [],
+      effects: [{ op: "removeCounters", what: { kind: "self" }, n: 1, kind: "time" }],
+      label: "Imminence : retirez un marqueur de temps",
+    },
+  ];
+}
+
 export function parseDisguise(text: string): CardDef["disguise"] {
   const m = /^Disguise ((?:\{[^}]+\})+)/m.exec(stripReminder(text));
   return m ? parseManaCost(m[1] as string) : undefined;
@@ -636,6 +665,7 @@ function singleDef(raw: RawCard, script: CardScript | undefined, set: string): C
         crewOncePerTurn(raw.oracleText),
       ),
       ...plotAbility(raw.oracleText),
+      ...impendingAbilities(raw.oracleText),
       ...jobSelectAbility(raw.keywords),
       ...(parseCycling(raw.oracleText) ? [parseCycling(raw.oracleText) as CardDef["abilities"][number]] : []),
       ...extraAbilities,
@@ -652,7 +682,8 @@ function singleDef(raw: RawCard, script: CardScript | undefined, set: string): C
     leyline: script?.leyline,
     altCost: script?.altCost
       ? { mana: parseManaCost(script.altCost.mana), condition: script.altCost.condition, label: script.altCost.label }
-      : undefined,
+      : impendingAltCost(raw.oracleText),
+    impending: parseImpending(raw.oracleText)?.n,
     cdaPT: script?.cdaPT,
     chooseOnEnter: script?.chooseOnEnter,
     shuffleIntoLibrary: script?.shuffleIntoLibrary,

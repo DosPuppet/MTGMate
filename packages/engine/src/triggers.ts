@@ -17,6 +17,7 @@ import {
   chars,
   emit,
   isCreature,
+  isPlayer,
   newId,
   obj,
   onBattlefield,
@@ -29,6 +30,7 @@ import { controlledAbilitiesWithSource, playerStatic } from "./statics";
 import { legalTargets, matchesObjectFilter, matchesView, validateTargets, withChosen } from "./targets";
 import type {
   AbilityDef,
+  Amount,
   Condition,
   DelayedTiming,
   GameState,
@@ -95,6 +97,20 @@ function liveSources(s: GameState): Source[] {
 
 let batchBefore: Source[] | null = null;
 
+/** Montant évalué hors résolution (sommes, force d'un objet, vitesse…), comme pendant une résolution sans cible. */
+function checkAmount(s: GameState, a: Amount, controller: PlayerId, sourceId?: ObjectId): number {
+  const ctx = {
+    controller,
+    sourceId: sourceId ?? "",
+    sourceDefId: (sourceId && s.objects[sourceId]?.defId) || "",
+    sourceSnapshot: { keywords: [], power: 0 },
+    targets: {},
+    x: 0,
+    kicked: false,
+  };
+  return evalAmount(s, ctx, a);
+}
+
 /** Exécute `fn` comme un ensemble d'événements simultanés (actions basées sur l'état, un effet…). */
 export function simultaneously<T>(s: GameState, fn: () => T): T {
   if (batchBefore) return fn();
@@ -114,6 +130,25 @@ export function checkCondition(s: GameState, c: Condition, controller: PlayerId,
   switch (c.kind) {
     case "castFromHandThisTurn":
       return (s.players[controller]?.turnStats.handSpells ?? 0) > 0;
+    case "step":
+      return s.turn.step === c.step;
+    case "creatureDiedMatching":
+      return (s.turn.diedSubtypes ?? []).some(
+        (st) =>
+          (!c.filter.subtype || st.includes(c.filter.subtype)) && (!c.filter.notSubtype || !st.includes(c.filter.notSubtype)),
+      );
+    case "castFromGraveyard":
+      return !!(sourceId && s.objects[sourceId]?.castFromGraveyard);
+    case "faceDownOrUpThisTurn":
+      return (s.players[controller]?.turnStats.faceDownOrUp ?? 0) > 0;
+    case "sacrificedThisTurn":
+      return (s.players[controller]?.turnStats.sacrificed ?? 0) > 0;
+    case "prime": {
+      const n = checkAmount(s, c.amount, controller, sourceId);
+      if (n < 2) return false;
+      for (let d = 2; d * d <= n; d++) if (n % d === 0) return false;
+      return true;
+    }
     case "turnsTakenAtLeast":
       return (s.players[controller]?.turnsTaken ?? 0) >= c.n;
     case "crimeThisTurn":
@@ -266,17 +301,7 @@ export function checkCondition(s: GameState, c: Condition, controller: PlayerId,
         return n >= c.n;
       }
       if (a.kind === "count" || a.kind === "totalPower") return boardAmount(s, a, controller, sourceId) >= c.n;
-      // Autres montants (sommes, force d'un objet, vitesse…) : évalués comme pendant une résolution, sans cible.
-      const ctx = {
-        controller,
-        sourceId: sourceId ?? "",
-        sourceDefId: (sourceId && s.objects[sourceId]?.defId) || "",
-        sourceSnapshot: { keywords: [], power: 0 },
-        targets: {},
-        x: 0,
-        kicked: false,
-      };
-      return evalAmount(s, ctx, a) >= c.n;
+      return checkAmount(s, a, controller, sourceId) >= c.n;
     }
     case "var":
     case "refLife":
@@ -292,6 +317,8 @@ function matchWho(who: "self" | ObjectFilter, v: LkiSnapshot, src: Source): bool
   if (who === "self") return v.id === src.id;
   // « la créature équipée / enchantée »
   if (who.attachedToSource && v.id !== src.view.attachedTo) return false;
+  // Turn Inside Out : l'objet lié à l'emblème.
+  if (who.linkedToSource && !src.view.linked?.includes(v.id)) return false;
   return matchesView(v, who, src.view.controller, src.id);
 }
 
@@ -476,8 +503,33 @@ function matchTrigger(s: GameState, ev: RulesEvent, t: TriggerSpec, src: Source)
       if (t.mainPhase && (s.turn.active !== me || (s.turn.step !== "main1" && s.turn.step !== "main2"))) return null;
       return { objectId: ev.vehicle, player: me };
     }
-    case "turnedFaceUp":
-      return ev.e === "turnedFaceUp" && ev.objectId === src.id ? { objectId: src.id, player: src.view.controller } : null;
+    case "turnedFaceUp": {
+      if (ev.e !== "turnedFaceUp") return null;
+      if (!t.who) return ev.objectId === src.id ? { objectId: src.id, player: src.view.controller } : null;
+      const v = liveView(s, ev.objectId);
+      return v && matchWho(t.who, v, src) ? { objectId: v.id, player: v.controller } : null;
+    }
+    case "manifestDread":
+      return ev.e === "manifestDread" && ev.player === me ? { objectId: ev.graveyard?.[0], player: me } : null;
+    case "attachedPlayerDamaged":
+      return ev.e === "damage" && ev.target === src.view.attachedTo && isPlayer(s, ev.target)
+        ? { player: ev.target, amount: ev.amount }
+        : null;
+    case "becomesBlocked": {
+      if (ev.e !== "blocked") return null;
+      const v = liveView(s, ev.attacker);
+      return v && matchWho(t.who, v, src) ? { objectId: v.id, player: v.controller } : null;
+    }
+    case "eerie": {
+      if (ev.e === "zone" && ev.to === "battlefield") {
+        const v = liveView(s, ev.newId);
+        return v && v.controller === me && v.types.includes("Enchantment") ? { objectId: v.id, player: me } : null;
+      }
+      if (ev.e !== "unlock" || ev.player !== me) return null;
+      const room = s.objects[ev.objectId];
+      const doors = s.defs[room?.defId ?? ""]?.faceDefs?.length ?? 0;
+      return doors > 0 && (room?.unlocked?.length ?? 0) >= doors ? { objectId: ev.objectId, player: me } : null;
+    }
     case "unlockDoor":
       return ev.e === "unlock" && ev.objectId === src.id && (t.door === undefined || t.door === ev.door)
         ? { objectId: src.id, player: ev.player }
@@ -584,6 +636,15 @@ export function detectTriggers(s: GameState, ev: RulesEvent): void {
       if (!!ab.fromGraveyard !== (s.objects[src.id]?.zone === "graveyard")) return;
       const data = matchTrigger(s, ev, ab.trigger, src);
       if (!data) return;
+      // Nowhere to Run : la garde des créatures des adversaires de son contrôleur ne se déclenche pas.
+      if (
+        ab.ward &&
+        ev.e === "targeted" &&
+        ev.controller !== src.view.controller &&
+        src.view.types.includes("Creature") &&
+        playerStatic(s, ev.controller, "ignoreOpponentsHexproofWard")
+      )
+        return;
       if (ab.condition && !checkCondition(s, ab.condition, src.view.controller, src.id)) return;
       // « une ou plusieurs … » : un seul déclenchement en attente pour ce lot d'événements.
       if (ab.batched && s.triggers.some((t) => t.sourceId === src.id && t.abilityIndex === index)) return;
@@ -607,6 +668,10 @@ export function detectTriggers(s: GameState, ev: RulesEvent): void {
         (ev.e === "zone" && ev.to === "battlefield" && playerStatic(s, src.view.controller, "doubleEnterTriggers") ? 2 : 1) +
         (legendary ? 1 : 0) +
         (equippedCloud ? 1 : 0) +
+        // Fractured Realm : les capacités déclenchées de vos permanents (ou qui viennent d'en quitter le champ de bataille).
+        ((s.objects[src.id]?.zone ?? "battlefield") === "battlefield" && playerStatic(s, src.view.controller, "doubleTriggers")
+          ? 1
+          : 0) +
         (ev.e === "zone" && ev.to === "battlefield" && ev.newId ? enterDoublers(s, src.view.controller, ev.newId) : 0) +
         (ev.e === "zone" && ev.from === "battlefield" && ev.to === "graveyard" && ev.lki?.types.includes("Creature")
           ? masamunes(s, src.id, src.view.controller)

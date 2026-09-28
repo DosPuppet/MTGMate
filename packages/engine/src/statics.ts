@@ -64,7 +64,7 @@ export function playerStatic(
 export function doublers(
   s: GameState,
   player: PlayerId,
-  key: keyof Omit<DoublerAbilityDef, "kind" | "label" | "countersFilter">,
+  key: keyof Omit<DoublerAbilityDef, "kind" | "label" | "countersFilter" | "condition">,
 ): number {
   return controlledAbilitiesWithSource(s, player).filter(({ ab }) => ab.kind === "doubler" && !!ab[key] && !ab.countersFilter)
     .length;

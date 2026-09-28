@@ -25,6 +25,7 @@ import tmtData from "../data/tmt.json";
 import woeData from "../data/woe.json";
 import { BIG_SCRIPTS } from "./big/index";
 import { DFT_SCRIPTS } from "./dft/index";
+import { DSK_SCRIPTS } from "./dsk/index";
 import { EOE_SCRIPTS } from "./eoe/index";
 import { FDN_SCRIPTS } from "./fdn/index";
 import { FIN_SCRIPTS } from "./fin/index";
@@ -141,10 +142,10 @@ export const SETS: CardSet[] = [
   {
     code: "DSK",
     name: "Duskmourn: House of Horror",
-    nameFr: "Duskmourn : la Maison de l'horreur",
+    nameFr: "Mornebrune : la Maison de l'horreur",
     mainMax: 301,
     data: dskData as RawCard[],
-    scripts: {},
+    scripts: DSK_SCRIPTS,
   },
   {
     code: "LCI",

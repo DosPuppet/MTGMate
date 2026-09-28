@@ -28,6 +28,7 @@ import {
   onBattlefield,
   opponentsOf,
   rulesEvent,
+  shuffle,
   snapshot,
 } from "./state";
 import { playerStatic } from "./statics";
@@ -69,6 +70,8 @@ export interface EffectContext {
   vars?: Record<string, ChoiceValue[]>;
   /** Permanents sacrifiés pour le coût de la capacité. */
   sacrificed?: ObjectId[];
+  /** Cartes défaussées pour payer le coût additionnel du sort. */
+  discarded?: ObjectId[];
   tappedForCost?: ObjectId[];
 }
 
@@ -174,6 +177,12 @@ export function resolveRef(s: GameState, ctx: EffectContext, ref: Ref): string[]
     }
     case "costSacrificed":
       return ctx.sacrificed ?? [];
+    case "costDiscarded":
+      return (ctx.discarded ?? []).filter((id) => !!s.objects[id]);
+    case "filtered":
+      return resolveRef(s, ctx, ref.ref).filter(
+        (id) => !!s.objects[id] && matchesCard(s, ctx.controller, id, { ...ref.filter, controller: undefined }, ctx.sourceId),
+      );
     case "libraryTop":
       return resolveRef(s, ctx, ref.who).flatMap((p) => (s.players[p]?.library[0] ? [s.players[p]?.library[0] as string] : []));
     case "exiledCardsOf": {
@@ -215,7 +224,8 @@ export function resolveRef(s: GameState, ctx: EffectContext, ref: Ref): string[]
     }
     case "attached": {
       const host = s.objects[ctx.sourceId]?.attachedTo ?? s.lki[ctx.sourceId]?.attachedTo;
-      return host && onBattlefield(s, host) ? [host] : [];
+      // Aura de joueur (Grievous Wound) : le joueur enchanté.
+      return host && (onBattlefield(s, host) || isPlayer(s, host)) ? [host] : [];
     }
   }
 }
@@ -369,6 +379,43 @@ export function evalAmount(s: GameState, ctx: EffectContext, a: Amount): number 
           for (const t of s.defs[s.objects[id]?.defId ?? ""]?.types ?? []) types.add(t);
       return types.size;
     }
+    case "max":
+      return Math.max(0, ...a.of.map((x) => evalAmount(s, ctx, x)));
+    case "maxPowerInHand":
+      return Math.max(
+        0,
+        ...(s.players[ctx.controller]?.hand ?? []).map((id) => {
+          const d = s.defs[s.objects[id]?.defId ?? ""];
+          return d?.types.includes("Creature") ? (d.power ?? 0) : 0;
+        }),
+      );
+    case "opponentsLostLife":
+      return opponentsOf(s, ctx.controller).filter((p) => (s.players[p]?.turnStats.lifeLost ?? 0) > 0).length;
+    case "sourceX":
+      return s.objects[ctx.sourceId]?.castX ?? 0;
+    case "unlockedDoorNames": {
+      const names = new Set<string>();
+      for (const id of s.battlefield) {
+        const o = s.objects[id];
+        if (o?.controller !== ctx.controller) continue;
+        const faces = s.defs[o.defId]?.faceDefs ?? [];
+        for (const d of o.unlocked ?? []) if (faces[d]) names.add(faces[d].name);
+      }
+      return names.size;
+    }
+    case "sacrificedThisTurn":
+      return s.players[ctx.controller]?.turnStats.sacrificed ?? 0;
+    case "unlockedDoors":
+      return s.battlefield.reduce(
+        (n, id) => n + (s.objects[id]?.controller === ctx.controller ? (s.objects[id]?.unlocked?.length ?? 0) : 0),
+        0,
+      );
+    case "cardTypesInGraveyard": {
+      const types = new Set<string>();
+      for (const id of s.players[ctx.controller]?.graveyard ?? [])
+        for (const t of s.defs[s.objects[id]?.defId ?? ""]?.types ?? []) types.add(t);
+      return types.size;
+    }
     case "milledThisTurn":
       return resolveRef(s, ctx, a.who).reduce((n, p) => n + (s.players[p]?.turnStats.milled ?? 0), 0);
     case "cardsDiscardedThisTurn":
@@ -473,6 +520,7 @@ export function contextOf(r: Resolution): EffectContext {
     event: r.item.event,
     vars: r.vars,
     sacrificed: r.item.sacrificed,
+    discarded: r.item.discarded,
     tappedForCost: r.item.tappedForCost,
   };
 }
@@ -481,12 +529,12 @@ export function nameOf(s: GameState, id: string): string {
   return s.defs[s.objects[id]?.defId ?? ""]?.name ?? id;
 }
 
-export function moveAndLog(s: GameState, id: ObjectId, to: "hand" | "exile" | "graveyard"): void {
+export function moveAndLog(s: GameState, id: ObjectId, to: "hand" | "exile" | "graveyard"): ObjectId | null {
   const o = s.objects[id];
-  if (!o) return;
+  if (!o) return null;
   emit({ type: "moved", owner: o.owner, objectId: id, defId: o.defId, from: o.zone, to });
   if (o.zone === "battlefield") removeFromCombat(s, id);
-  moveObject(s, id, to);
+  return moveObject(s, id, to);
 }
 
 /** Ajoute un effet continu (couches) à des objets. */
@@ -515,6 +563,8 @@ export function moveWithSpec(s: GameState, controller: PlayerId, id: ObjectId, s
       lib.splice(Math.min(spec.fromTop - 1, lib.length), 0, newId_);
     }
   }
+  // « Mélangez-le dans la bibliothèque de son propriétaire. »
+  if (newId_ && zone === "library" && spec.shuffle) shuffle(s, s.players[o.owner]?.library ?? []);
   const moved = newId_ ? s.objects[newId_] : undefined;
   // Marqueurs sur une carte exilée (« exilez-la avec un marqueur de butin », Tinybones).
   if (moved && zone === "exile" && spec.counters) changeCounters(s, moved, spec.counters.kind, spec.counters.n);
@@ -546,11 +596,17 @@ export function moveWithSpec(s: GameState, controller: PlayerId, id: ObjectId, s
     bump(s);
   }
   if (spec.counters) changeCounters(s, moved, spec.counters.kind, spec.counters.n);
-  if (spec.addTypes || spec.addSubtypes || spec.addKeywords) {
+  if (spec.addTypes || spec.addSubtypes || spec.addKeywords || spec.setTypes || spec.setSubtypes) {
     addEffect(
       s,
       [moved.id],
-      { addTypes: spec.addTypes, addSubtypes: spec.addSubtypes, addKeywords: spec.addKeywords },
+      {
+        addTypes: spec.addTypes,
+        addSubtypes: spec.addSubtypes,
+        addKeywords: spec.addKeywords,
+        setTypes: spec.setTypes,
+        setSubtypes: spec.setSubtypes,
+      },
       "permanent",
     );
   }
@@ -635,6 +691,8 @@ export function putFaceDown(s: GameState, controller: PlayerId, id: ObjectId, wa
   const d = s.defs[o.defId];
   const upCosts = [...(d?.disguise ? [d.disguise] : []), ...(d?.types.includes("Creature") && d.manaCost ? [d.manaCost] : [])];
   emit({ type: "moved", owner: o.owner, from: o.zone, to: "battlefield" });
+  const stats = s.players[controller]?.turnStats;
+  if (stats) stats.faceDownOrUp = (stats.faceDownOrUp ?? 0) + 1;
   return moveObject(s, id, "battlefield", { controller, faceDown: { ward, upCosts } });
 }
 

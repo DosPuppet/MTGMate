@@ -41,11 +41,20 @@ export interface CardDef {
   /** Planeswalker : loyauté de départ (306.5b). */
   loyalty?: number;
   /** Aura : ce qu'elle peut enchanter (cible du sort d'Aura, puis légalité de l'attachement). */
-  enchant?: { filter: ObjectFilter; label: string };
+  enchant?: { filter: ObjectFilter; label: string; player?: boolean };
   /** « Si cette carte est dans votre main de départ, vous pouvez commencer la partie avec elle sur le champ de bataille. » */
   leyline?: boolean;
   /** Garde : coût à payer (mana ou points de vie). */
-  ward?: { mana?: ManaCost; life?: number; lifePower?: boolean; discard?: boolean; discardRandom?: boolean; sacrifice?: number };
+  ward?: {
+    mana?: ManaCost;
+    life?: number;
+    lifePower?: boolean;
+    discard?: boolean;
+    discardRandom?: boolean;
+    sacrifice?: number;
+    /** Les permanents à sacrifier sont non-terrains (Valgavoth). */
+    sacrificeNonland?: boolean;
+  };
   /** Flashback avec « défaussez une carte » en plus (Twinned Vision). */
   flashbackDiscard?: number;
   /** « En coût additionnel pour lancer ce sort, … » (601.2b, 601.2h). */
@@ -123,6 +132,8 @@ export interface CardDef {
    * Vaisseau devient une créature-artefact.
    */
   station?: { creatureAt?: number; thresholds: { n: number; keywords: Keyword[]; abilities: AbilityDef[] }[] };
+  /** Imminence N (702.176) : marqueurs de temps à l'arrivée si le coût d'imminence (`altCost`) a été payé. */
+  impending?: number;
   /** Déguisement (702.168) : coût pour retourner face visible une carte lancée face cachée pour {3}. */
   disguise?: ManaCost;
   /** Saga (714) : numéro du dernier chapitre (lu dans le texte). */
@@ -179,6 +190,8 @@ export interface ModeDef {
   effects: Effect[];
   /** Spree (702.172) : coût supplémentaire de ce mode (les modes combinés additionnent les leurs). */
   extraCost?: ManaCost;
+  /** Mode disponible seulement si la condition est remplie (délire : « choisissez-en un ou plus à la place »). */
+  condition?: Condition;
 }
 
 export type AbilityDef =
@@ -195,6 +208,11 @@ export type AbilityDef =
 
 export interface AdditionalCost {
   discard?: number;
+  /** Choisis automatiquement (Duskmourn) : permanents exilés (liés au permanent), renvoyés, engagés ; cartes du cimetière exilées. */
+  exile?: { filter: ObjectFilter; count: number };
+  bounce?: { filter: ObjectFilter; count: number };
+  tap?: { filter: ObjectFilter; count: number };
+  exileGraveyard?: number;
   /** `orPay` : « sacrifiez une créature ou payez {3}{B} » (sans sacrifice, ce mana s'ajoute au coût). */
   sacrifice?: { filter: ObjectFilter; count: number; orPay?: ManaCost };
 }
@@ -239,6 +257,8 @@ export interface ManaAbilityDef {
   condition?: Condition;
   /** « Une seule fois par tour » (Vivi Ornitier). */
   oncePerTurn?: boolean;
+  /** Twitching Doll : « mettez un marqueur [nid] sur cette créature » quand on l'active. */
+  addCounter?: string;
   /** Effet si ce mana sert à lancer un sort correspondant (Carnelian Orb : célérité ; Pyromancer's Goggles : copie). */
   rider?: { spell: ObjectFilter; effect: "haste" | "copy" };
   amount: number;
@@ -320,6 +340,10 @@ export interface CostDef {
   /** Équipage N (702.122) : engager des créatures dégagées de force totale N ou plus (choisies automatiquement). */
   crew?: number;
   payLife?: number;
+  /** Défausser N cartes (choisies par le joueur ; par défaut les premières de la main). */
+  discard?: number;
+  /** Ninjutsu : renvoyer en main un attaquant non bloqué que vous contrôlez (choisi automatiquement : le plus faible). */
+  returnUnblockedAttacker?: boolean;
 }
 /** Modifications apportées par un effet continu, rangées par couche (613). */
 export interface LayerMods {
@@ -351,6 +375,8 @@ export interface LayerMods {
   copyLinkedExile?: boolean;
   /** Territory Forge : a les capacités activées des cartes liées à la source. */
   gainLinkedActivated?: boolean;
+  /** Marvin : a les capacités activées (imprimées) des créatures correspondantes qui n'ont pas son nom. */
+  gainActivatedFrom?: ObjectFilter;
   /** Couche 7b : F/E fixées. */
   setPower?: number;
   setToughness?: number;
@@ -517,6 +543,36 @@ export interface PlayerStaticAbilityDef {
   exhaustReuse?: boolean;
   /** Sanctum Lurker : vos planeswalkers ne vont pas au cimetière faute de loyauté. */
   walkersSurviveZeroLoyalty?: boolean;
+  /** Fractured Realm : les capacités déclenchées de vos permanents se déclenchent une fois de plus. */
+  doubleTriggers?: boolean;
+  /** Dazzling Theater : vos sorts de créature ont la convocation. */
+  convokeCreatureSpells?: boolean;
+  /** Prop Room : vos créatures se dégagent pendant l'étape de dégagement des autres joueurs. */
+  untapCreaturesOnOthersUntap?: boolean;
+  /** Inquisitive Glimmer : déverrouiller une porte vous coûte {N} de moins. */
+  unlockReduction?: number;
+  /** The Mindskinner : les blessures de vos sources à un adversaire sont prévenues ; chaque adversaire meule autant. */
+  damageToOpponentsMills?: boolean;
+  /** Nowhere to Run : les créatures adverses sont ciblables malgré la défense talismanique ; leur garde ne se déclenche pas. */
+  ignoreOpponentsHexproofWard?: boolean;
+  /** Leyline of the Void : ce qui irait au cimetière d'un adversaire est exilé à la place. */
+  opponentGraveyardToExile?: boolean;
+  /** Grievous Wound : le joueur enchanté ne peut pas gagner de points de vie. */
+  enchantedPlayerCantGainLife?: boolean;
+  /** Warped Space : une fois par tour, un sort lancé depuis l'exil peut l'être en payant {0}. */
+  freeFromExileOncePerTurn?: boolean;
+  /** Leyline of Mutation : coût alternatif pour tous vos sorts. */
+  altCostAll?: ManaCost;
+  /** Winter, Misanthropic Guide : taille de main maximale de chaque adversaire (évaluée pour le contrôleur). */
+  opponentMaxHandSize?: Amount;
+  /** Valgavoth : les cartes que vous ne contrôliez pas qui iraient au cimetière d'un adversaire sont exilées, liées à la source. */
+  exileOpponentsCardsLinked?: boolean;
+  /** Valgavoth : pendant votre tour, jouer les cartes liées à la source ; un sort ainsi lancé coûte des PV égaux à sa VM. */
+  playLinkedPayLife?: boolean;
+  /** Found Footage : vous pouvez regarder les créatures face cachée de vos adversaires à tout moment. */
+  seeFaceDown?: boolean;
+  /** Marina Vendrell's Grimoire : vous ne perdez pas la partie pour avoir 0 point de vie ou moins. */
+  noLoseForLife?: boolean;
   label?: string;
 }
 
@@ -546,6 +602,10 @@ export interface DoublerAbilityDef {
   damageFilter?: ObjectFilter;
   /** Marqueurs doublés seulement sur les permanents correspondants (Loading Zone). */
   countersFilter?: ObjectFilter;
+  /** Blessures non de combat de vos sources (The Rollercrusher Ride), à n'importe quel permanent ou joueur. */
+  noncombatDamage?: boolean;
+  /** Seulement si la condition est remplie (délire). */
+  condition?: Condition;
   label?: string;
 }
 
@@ -594,6 +654,8 @@ export interface TriggeredAbilityDef {
   uniqueModes?: boolean | "turn";
   /** « une ou plusieurs … » : une seule occurrence en attente à la fois (même lot d'événements). */
   batched?: boolean;
+  /** Garde (702.21) : Nowhere to Run l'empêche de se déclencher. */
+  ward?: boolean;
   label?: string;
 }
 export interface TokenSpec {
@@ -623,10 +685,15 @@ export interface MoveSpec {
   addTypes?: CardType[];
   addSubtypes?: string[];
   addKeywords?: Keyword[];
+  /** Types et sous-types remplacés (« c'est un enchantement ; ce n'est pas une créature », Duskmourn). */
+  setTypes?: CardType[];
+  setSubtypes?: string[];
   /** Arrive transformé (verso d'une carte recto-verso). */
   transformed?: boolean;
   /** Engagé et attaquant (Chorale of the Void) : il attaque le joueur qu'attaque une de vos créatures. */
   attacking?: boolean;
   /** Avec `libraryTop` : N-ième depuis le dessus (Riptide Gearhulk : 3). */
   fromTop?: number;
+  /** Avec `libraryTop` : « mélangez-le dans la bibliothèque de son propriétaire ». */
+  shuffle?: boolean;
 }

@@ -61,6 +61,7 @@ export function matchesView(v: LkiSnapshot, f: ObjectFilter, perspective: Player
   if (f.multicolored !== undefined && v.colors.length >= 2 !== f.multicolored) return false;
   if (f.manaSpentBelowValue && !((v.manaSpent ?? 0) < (v.manaValue ?? 0))) return false;
   if (f.damaged !== undefined && !!v.damaged !== f.damaged) return false;
+  if (f.faceDown !== undefined && !!v.faceDown !== f.faceDown) return false;
   return true;
 }
 
@@ -152,6 +153,8 @@ export function matchesObjectFilter(
   // « arrivé sous votre contrôle ce tour-ci » (Cloudspire Coordinator).
   if (f.enteredThisTurn && o.controlledSince !== s.turn.number) return false;
   if (f.notOwned && o.owner === o.controller) return false;
+  // « autre que la créature enchantée » (Sporogenic Infection, Saw).
+  if (f.notAttachedToSource && sourceId && s.objects[sourceId]?.attachedTo === id) return false;
   return matchesView(snapshot(s, id), resolveFilter(s, f, sourceId), controller, sourceId);
 }
 
@@ -200,7 +203,13 @@ export function isLegalTarget(s: GameState, controller: PlayerId, spec: TargetSp
   }
   if (!spec.filter.objects || !matchesObjectFilter(s, controller, id, spec.filter.objects, sourceId)) return false;
   // Défense talismanique : ne peut pas être la cible de sorts ou capacités adverses.
-  if (obj(s, id).controller !== controller && hasKeyword(s, id, "hexproof")) return false;
+  // Nowhere to Run : les créatures adverses sont ciblables comme si elles n'avaient pas la défense talismanique.
+  if (
+    obj(s, id).controller !== controller &&
+    hasKeyword(s, id, "hexproof") &&
+    !(chars(s, id).types.includes("Creature") && playerStatic(s, controller, "ignoreOpponentsHexproofWard"))
+  )
+    return false;
   // Protection contre tout : ne peut être la cible de rien (702.16b).
   if (hasKeyword(s, id, "protectionFromEverything")) return false;
   // Défense talismanique contre les éphémères / le noir / le blanc : selon la source adverse.

@@ -39,7 +39,13 @@ export const HANDLERS: OpHandlers = {
     return;
   },
   reflexive(s, _r, e, ctx) {
-    pushInline(s, ctx.controller, ctx.sourceId, ctx.sourceDefId, { targets: e.targets, effects: e.effects });
+    // « jusqu'à X cibles » : le nombre de cibles est évalué maintenant (Miasma Demon, The Rollercrusher Ride).
+    const targets = e.targets.map((t) =>
+      t.countAmount === undefined ? t : { ...t, count: Math.max(0, evalAmount(s, ctx, t.countAmount)), countAmount: undefined },
+    );
+    // Aucune cible possible (X = 0) : rien ne se passe.
+    if (targets.some((t) => t.count === 0)) return;
+    pushInline(s, ctx.controller, ctx.sourceId, ctx.sourceDefId, { targets, effects: e.effects });
     return;
   },
   may(s, r, e, ctx, key) {

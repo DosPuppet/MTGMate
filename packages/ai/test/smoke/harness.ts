@@ -46,6 +46,9 @@ const EXTRA_P1: Record<string, string[]> = {
   "Hardlight Containment": ["Nutrient Block"],
   // {B}{B}{B}{B}{B} : trois Marais ne suffisent pas.
   "Zodiark, Umbral God": ["Swamp", "Swamp"],
+  // {B}{B}{B}{B}{B}{B} et {X}{X}{B}{B}{B}{B}.
+  "Doomsday Excruciator": ["Swamp", "Swamp", "Swamp"],
+  "Meathook Massacre II": ["Swamp", "Swamp"],
   // « un Équipement ciblé ».
   "Stolen Uniform": ["Monk's Fist"],
 };
@@ -171,5 +174,5 @@ export function smokeTest(codes: string[], shard: [number, number] = [0, 1]): vo
 }
 
 /** Extensions qui ont leur propre fichier de test de fumée ; les autres sont dans `others.test.ts`. */
-export const OWN_FILES = ["FDN", "FRA", "EOE", "DFT", "OTJ", "BIG", "FIN"];
+export const OWN_FILES = ["FDN", "FRA", "EOE", "DFT", "OTJ", "BIG", "FIN", "DSK"];
 export const OTHER_SETS = (): string[] => SETS.map((s) => s.code).filter((c) => !OWN_FILES.includes(c));

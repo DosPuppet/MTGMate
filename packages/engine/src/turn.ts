@@ -3,7 +3,7 @@
  */
 import { type DamageSource, dealDamage, destroy, drawCard, putIntoGraveyard, setSpeed, sourceFromObject } from "./actions";
 import { ask } from "./choices";
-import { announceDiscard, announceDiscardBatch, drawBonus } from "./effects";
+import { announceDiscard, announceDiscardBatch, drawBonus, evalAmount } from "./effects";
 import { copiedDefId } from "./layers";
 import { manaValue, payMana } from "./mana";
 import { RulesError, resolveTop } from "./stack";
@@ -21,6 +21,7 @@ import {
   hasKeyword,
   hasType,
   isCreature,
+  isPlayer,
   isSummoningSick,
   M1M1,
   moveObject,
@@ -34,9 +35,9 @@ import {
   shuffle,
   tapObject,
 } from "./state";
-import { playerStatic } from "./statics";
+import { controlledAbilitiesWithSource, playerStatic } from "./statics";
 import { matchesObjectFilter } from "./targets";
-import { processTriggers, releaseDelayedTriggers, simultaneously } from "./triggers";
+import { checkCondition, processTriggers, releaseDelayedTriggers, simultaneously } from "./triggers";
 import type { GameState, ManaType, ObjectId, PlayerId, StackItem, Step } from "./types";
 import { STEPS } from "./types";
 
@@ -190,9 +191,12 @@ function beginStep(s: GameState): void {
     case "untap":
       for (const id of s.battlefield) {
         const o = obj(s, id);
-        if (o.controller !== active) continue;
-        // 701.43 : un permanent épuisé ne se dégage pas lors de la prochaine étape de dégagement.
-        if (o.exerted) {
+        // Prop Room : les créatures de ce joueur se dégagent aussi pendant l'étape de dégagement des autres joueurs.
+        const propRoom =
+          o.controller !== active && isCreature(s, id) && playerStatic(s, o.controller, "untapCreaturesOnOthersUntap");
+        if (o.controller !== active && !propRoom) continue;
+        // 701.43 : un permanent épuisé ne se dégage pas lors de la prochaine étape de dégagement (de son contrôleur).
+        if (o.exerted && !propRoom) {
           o.exerted = undefined;
           continue;
         }
@@ -255,7 +259,9 @@ function beginStep(s: GameState): void {
       return;
     case "cleanup": {
       // 402.2 : taille de main maximale (sauf « vous n'avez pas de taille de main maximale »).
-      const excess = playerStatic(s, active, "noMaxHandSize") ? 0 : (s.players[active]?.hand.length ?? 0) - MAX_HAND_SIZE;
+      const excess = playerStatic(s, active, "noMaxHandSize")
+        ? 0
+        : (s.players[active]?.hand.length ?? 0) - maxHandSize(s, active);
       if (excess > 0) {
         s.pending = { kind: "discard", player: active, count: excess };
         s.flow = "tba";
@@ -379,6 +385,7 @@ function endStep(s: GameState): void {
     s.turn.attacked = false;
     s.turn.creatureDied = false;
     s.turn.creaturesDied = 0;
+    s.turn.diedSubtypes = [];
     s.turn.nonlandLeft = false;
     s.turn.spellWarped = false;
     s.turn.speedRaised = false;
@@ -535,6 +542,29 @@ export function attackableDefenders(s: GameState, player: PlayerId): string[] {
   return [...opps, ...walkers];
 }
 
+/** 402.2 : taille de main maximale (7), réduite par Winter, Misanthropic Guide d'un adversaire. */
+function maxHandSize(s: GameState, player: PlayerId): number {
+  let max = MAX_HAND_SIZE;
+  for (const q of s.playerOrder) {
+    if (q === player || s.players[q]?.lost) continue;
+    for (const { id, ab } of controlledAbilitiesWithSource(s, q)) {
+      if (ab.kind !== "playerStatic" || ab.opponentMaxHandSize === undefined) continue;
+      if (ab.condition && !checkCondition(s, ab.condition, q, id)) continue;
+      const ctx = {
+        controller: q,
+        sourceId: id,
+        sourceDefId: "",
+        sourceSnapshot: { keywords: [], power: 0 },
+        targets: {},
+        x: 0,
+        kicked: false,
+      };
+      max = Math.min(max, Math.max(0, evalAmount(s, ctx, ab.opponentMaxHandSize)));
+    }
+  }
+  return max;
+}
+
 export function declareAttackers(s: GameState, player: PlayerId, attackers: { id: ObjectId; defender: string }[]): void {
   const seen = new Set<ObjectId>();
   const defenders = attackableDefenders(s, player);
@@ -555,6 +585,10 @@ export function declareAttackers(s: GameState, player: PlayerId, attackers: { id
   // 508.1d : les créatures qui « attaquent à chaque combat si possible » doivent être déclarées.
   const forced = attackCandidates(s, player).filter((id) => hasKeyword(s, id, "mustAttack") && !seen.has(id));
   if (forced.length > 0) throw new RulesError(`${chars(s, forced[0] as ObjectId).name} doit attaquer si elle le peut`);
+  // Toby, Beastie Befriender : « ce jeton ne peut pas attaquer seul ».
+  const alone = attackers.length === 1 ? attackers[0]?.id : undefined;
+  if (alone && hasKeyword(s, alone, "cantAttackOrBlockAlone"))
+    throw new RulesError(`${chars(s, alone).name} ne peut pas attaquer seule`);
   // Archangel of Tithes : {1} pour chaque créature qui attaque un joueur protégé (ou ses planeswalkers).
   const tax = attackers.reduce((n, a) => {
     const defender = defendingPlayer(s, a.defender);
@@ -596,6 +630,7 @@ export function canBlock(s: GameState, blocker: ObjectId, attacker: ObjectId): b
   // 702.16f : une créature avec la protection contre tout ne peut pas être bloquée.
   if (hasKeyword(s, attacker, "protectionFromEverything")) return false;
   if (hasKeyword(s, attacker, "cantBeBlockedByHumans") && chars(s, blocker).subtypes.includes("Human")) return false;
+  if (hasKeyword(s, attacker, "cantBeBlockedByGlimmers") && chars(s, blocker).subtypes.includes("Glimmer")) return false;
   if (hasKeyword(s, attacker, "cantBeBlockedByPowerLE2") && chars(s, blocker).power <= 2) return false;
   if (hasKeyword(s, attacker, "flying") && !hasKeyword(s, blocker, "flying") && !hasKeyword(s, blocker, "reach")) return false;
   if (hasKeyword(s, attacker, "cantBeBlockedByWalls") && chars(s, blocker).subtypes.includes("Wall")) return false;
@@ -666,6 +701,9 @@ export function declareBlockers(s: GameState, player: PlayerId, blocks: { blocke
       throw new RulesError("Blocage illégal");
     }
   }
+  const lone = blocks.length === 1 ? blocks[0]?.blocker : undefined;
+  if (lone && hasKeyword(s, lone, "cantAttackOrBlockAlone"))
+    throw new RulesError(`${chars(s, lone).name} ne peut pas bloquer seule`);
   const unmet = unmetBlockRequirement(s, player, blocks);
   if (unmet) throw new RulesError(`${chars(s, unmet).name} doit être bloquée si possible`);
   // Archangel of Tithes (attaquant) : {1} par créature qui bloque.
@@ -687,6 +725,11 @@ export function declareBlockers(s: GameState, player: PlayerId, blocks: { blocke
   }
   c.blockers.push(...blocks.map((b) => ({ id: b.blocker, attacker: b.attacker })));
   for (const b of blocks) rulesEvent(s, { e: "block", blocker: b.blocker, attacker: b.attacker });
+  // 509.1h : chaque attaquant qui a au moins un bloqueur devient bloqué (Norin).
+  for (const a of new Set(blocks.map((b) => b.attacker))) {
+    const o = s.objects[a];
+    if (o) rulesEvent(s, { e: "blocked", attacker: a, player: o.controller });
+  }
   for (const a of c.attackers) {
     if (defendingPlayer(s, a.defender) !== player) continue;
     a.blockers = blocks.filter((b) => b.attacker === a.id).map((b) => b.blocker);
@@ -877,7 +920,9 @@ export function checkGameOver(s: GameState): void {
     const player = s.players[p];
     if (!player || player.lost) continue;
     // Herald of Eternal Dawn : « vous ne pouvez pas perdre la partie ». 704.5c : 10 marqueurs poison ou plus.
-    if ((player.life <= 0 || player.drewFromEmptyLibrary || (player.poison ?? 0) >= 10) && !playerStatic(s, p, "cantLose")) {
+    // Marina Vendrell's Grimoire : « vous ne perdez pas la partie pour avoir 0 point de vie ou moins ».
+    const lifeLoss = player.life <= 0 && !playerStatic(s, p, "noLoseForLife");
+    if ((lifeLoss || player.drewFromEmptyLibrary || (player.poison ?? 0) >= 10) && !playerStatic(s, p, "cantLose")) {
       losers.push(p);
       emit({ type: "lose", player: p, reason: player.life <= 0 ? "life" : "draw" });
     }
@@ -1022,12 +1067,14 @@ function stateBasedActionsOnce(s: GameState): void {
       const d = s.defs[o.defId];
       if (d?.enchant) {
         const host = o.attachedTo;
-        const legal =
-          !!host &&
-          host !== id &&
-          onBattlefield(s, host) &&
-          !hasKeyword(s, host, "protectionFromEverything") &&
-          matchesObjectFilter(s, o.controller, host, d.enchant.filter, id);
+        // Aura de joueur (Grievous Wound) : attachée à un joueur encore en partie.
+        const legal = d.enchant.player
+          ? !!host && isPlayer(s, host) && !s.players[host]?.lost
+          : !!host &&
+            host !== id &&
+            onBattlefield(s, host) &&
+            !hasKeyword(s, host, "protectionFromEverything") &&
+            matchesObjectFilter(s, o.controller, host, d.enchant.filter, id);
         if (!legal) toGraveyard.push(id);
       } else if (
         o.attachedTo &&

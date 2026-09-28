@@ -53,7 +53,7 @@ export const HANDLERS: OpHandlers = {
     if (to) for (const what of resolveRef(s, ctx, e.what)) attach(s, what, to);
     return;
   },
-  emblem(s, _r, e, ctx) {
+  emblem(s, r, e, ctx) {
     const defId = `emblem:${e.name.toLowerCase().replace(/[^a-z0-9]+/g, "-")}`;
     s.defs[defId] ??= {
       id: defId,
@@ -74,6 +74,7 @@ export const HANDLERS: OpHandlers = {
     const emblem = createObject(s, defId, ctx.controller, "command", { isToken: true });
     if (e.untilYourNextTurn) emblem.expiresAtTurnOf = ctx.controller;
     if (e.thisTurn) emblem.expiresEndOfTurn = true;
+    if (e.store) r.vars[`$ids:${e.store}`] = [emblem.id];
     bump(s);
     return;
   },
@@ -389,7 +390,7 @@ export const HANDLERS: OpHandlers = {
     return;
   },
   link(s, _r, e, ctx) {
-    const o = s.objects[ctx.sourceId];
+    const o = s.objects[(e.to ? resolveRef(s, ctx, e.to)[0] : ctx.sourceId) ?? ""];
     if (o) o.linked = [...(o.linked ?? []), ...resolveRef(s, ctx, e.what)];
     // Territory Forge : les capacités de la source dépendent des cartes liées.
     bump(s);

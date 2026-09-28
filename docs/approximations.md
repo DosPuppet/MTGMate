@@ -122,5 +122,23 @@
 - **Sidequest: Raise a Chocobo :** la recherche de terrain de Black Chocobo (« quand il se transforme ») est faite par l'effet qui le transforme.
 - **Summoner's Grimoire :** le joueur choisit d'abord parmi les cartes de créature non-enchantement ; s'il n'en prend aucune, il peut mettre une créature-enchantement engagée et attaquante.
 - **Capital City, Starting Town :** leurs capacités de mana à coût (mana ou PV) passent par la pile (comme Ramos).
+- **Duskmourn (DSK) :**
+  - Survie : se déclenche au début de chaque phase principale d'après-combat (combats supplémentaires compris), pas seulement la seconde ;
+  - Acrobatic Cheerleader (« ne se déclenche qu'une fois ») : tant qu'elle n'a pas de marqueur de vol ;
+  - coûts additionnels choisis automatiquement : Fear of Abduction, Abhorrent Oculus, Fear of Isolation, Fear of Exposure (ce qui vaut le moins : jetons et petits permanents d'abord ; les créatures avant les terrains) ; Monstrous Emergence prend la plus grande force (créature ou carte en main) ; Kaito renvoie l'attaquant non bloqué le plus faible et attaque le joueur qu'attaque une de vos créatures ;
+  - « le joueur défenseur », « ce joueur » : Fear of Falling et Fear of Burning Alive ciblent une créature adverse ; Fear of the Dark vérifie qu'aucun adversaire ne contrôle de Lueur ;
+  - « une ou deux cibles » : jusqu'à deux (Get Out, Coordinated Clobbering, Omnivorous Flytrap) ; Get Out renvoie ce que vous contrôlez (et non ce que vous possédez) ;
+  - « avait des marqueurs » : seulement les marqueurs +1/+1, -1/-1, d'étourdissement (et de possession pour Unwilling Vessel, de nid pour Twitching Doll) ;
+  - Fear of Missing Out (« la première fois chaque tour ») et Irreverent Gremlin : une fois par tour, même si la défausse est refusée ; Vengeful Possession et Irreverent Gremlin piochent même sans carte à défausser ;
+  - conditions non vérifiées : les créatures non-Jouets (Dollmaker's Shop, qui se déclenche à chaque attaque), la Salle d'un nom différent (Central Elevator), les forces différentes (Rip, Spawn Hunter), « une seule créature ciblée » (Leyline of Resonance : un sort qui cible une de vos créatures) ;
+  - The Jolly Balloon Man : la copie ne devient pas rouge ; Unable to Scream : la créature face cachée peut encore être retournée ;
+  - Leyline of Transformation : seulement les créatures sur le champ de bataille (pas les sorts ni les cartes) ;
+  - Smoky Lounge : le {R}{R} est une capacité de mana utilisable pendant votre première phase principale (et non ajouté au début de celle-ci) ;
+  - Miasma Demon, The Rollercrusher Ride : les cibles sont choisies par une capacité réflexive, à la résolution ; Ghostly Dancers : le choix est fait à la mise sur la pile ;
+  - Say Its Name : Altanak est cherché dans le cimetière, puis la main, puis la bibliothèque ;
+  - Marvin, Murderous Mimic : seulement les capacités activées imprimées des autres créatures (pas celles accordées) ;
+  - Haunted Screen : le paiement automatique peut payer le point de vie de la capacité {G}/{U}/{R} ;
+  - Creeping Peeper : tout sort d'enchantement, toute capacité d'une Salle ou d'un permanent face cachée ;
+  - Turn Inside Out : un emblème temporaire, lié à la créature, porte « quand elle meurt ce tour-ci ».
 - **Légalité Standard :** instantané des légalités Scryfall au moment de l'import (`legalities.standard` dans `data/<set>.json`). Après une rotation ou une annonce de bannissement, réimporter les sets (`npm run import-cards -- <set>`).
 - **Jetons :** pas d'image (cadre texte).

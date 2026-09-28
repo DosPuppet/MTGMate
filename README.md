@@ -24,9 +24,10 @@ Les cartes sont couvertes **extension par extension, à 100 % avant de passer à
 | **Aetherdrift (DFT)** | ✅ 260 / 260 |
 | **Outlaws of Thunder Junction (OTJ) et The Big Score (BIG)** | ✅ 269 / 269 et 30 / 30 |
 | **Final Fantasy (FIN)** | ✅ 307 / 307 |
-| Bloomburrow (BLB), Tarkir: Dragonstorm (TDM), Wilds of Eldraine (WOE), Secrets of Strixhaven (SOS), Lorwyn Eclipsed (ECL), Avatar: The Last Airbender (TLA), Marvel's Spider-Man (SPM), Marvel Super Heroes (MSH), Teenage Mutant Ninja Turtles (TMT), The Hobbit (HOB), Murders at Karlov Manor (MKM), Duskmourn (DSK), The Lost Caverns of Ixalan (LCI) | à venir (seules quelques créatures à mots-clés sont déjà jouables) |
+| **Duskmourn: House of Horror (DSK, « Mornebrune : la Maison de l'horreur »)** | ✅ 268 / 268 |
+| Bloomburrow (BLB), Tarkir: Dragonstorm (TDM), Wilds of Eldraine (WOE), Secrets of Strixhaven (SOS), Lorwyn Eclipsed (ECL), Avatar: The Last Airbender (TLA), Marvel's Spider-Man (SPM), Marvel Super Heroes (MSH), Teenage Mutant Ninja Turtles (TMT), The Hobbit (HOB), Murders at Karlov Manor (MKM), The Lost Caverns of Ixalan (LCI) | à venir (seules quelques créatures à mots-clés sont déjà jouables) |
 
-Au total, **environ 1 950 cartes jouables** sur 5 161 cartes légales en Standard. Quelques réimpressions d'extensions plus anciennes sont aussi légales parce qu'elles figurent dans ces sets.
+Au total, **environ 2 210 cartes jouables** sur 5 161 cartes légales en Standard. Quelques réimpressions d'extensions plus anciennes sont aussi légales parce qu'elles figurent dans ces sets.
 
 **Cartes bannies en Standard** (13) :
 
@@ -120,7 +121,7 @@ docs/       guide du moteur, approximations connues, détail des extensions, dé
   - remplacements : exil à la place de mourir, arrivée engagée ou avec marqueurs (y compris imposée par un autre permanent), prévention ;
   - coûts : hybride, coûts additionnels, flashback, réductions, sacrifice ou marqueurs comme coût, activation depuis le cimetière.
 - **Cartes à plusieurs faces** : aventures et présages, recto-verso (transformation, faces modales, Sagas au verso), cartes scindées et Salles, assemblage ; Sagas, Classes et Affaires ; cartes face cachée (déguisement, cape, manifestation), invisibles pour l'adversaire.
-- **Mécaniques d'extensions** : entre autres, préparé (FRA), distorsion et station (EOE), vitesse, exhaust et Véhicules (DFT), plot, spree et crimes (OTJ), job select et tiered (FIN). Le détail par extension est dans `docs/extensions/`.
+- **Mécaniques d'extensions** : entre autres, préparé (FRA), distorsion et station (EOE), vitesse, exhaust et Véhicules (DFT), plot, spree et crimes (OTJ), job select et tiered (FIN), Salles, manifestation effroyable, Sinistre, Survie, Délire et Imminence (DSK). Le détail par extension est dans `docs/extensions/`.
 - **Performance** : `submit` copie l'état puis le mute (pas d'Immer) ; les simulations de l'IA utilisent `applyMutable` sur une copie de travail.
 
 ## Ajouter une carte
@@ -151,7 +152,7 @@ Chaque carte gérée est automatiquement jouée par le test de fumée (`packages
 | 4d. FDN, réimpressions (n° 282 et plus) | cartes des decks d'initiation et de la Starter Collection | ✅ **241 / 241** (517 / 517 pour tout FDN) |
 | 4e. Légalité Standard | légalités Scryfall importées, liste des bannies, validation du format dans le deckbuilder | ✅ |
 | 4f. Cartes à plusieurs faces | aventures, recto-verso, cartes scindées et Salles, Sagas, Classes, Affaires, face cachée, assemblage | ✅ |
-| 4g. Autres extensions Standard | une extension à la fois : Reality Fracture ✅ (4 decks préconstruits), Edge of Eternities ✅, Aetherdrift ✅, Outlaws of Thunder Junction + The Big Score ✅, Final Fantasy ✅ ; les suivantes à la demande | en cours |
+| 4g. Autres extensions Standard | une extension à la fois : Reality Fracture ✅ (4 decks préconstruits), Edge of Eternities ✅, Aetherdrift ✅, Outlaws of Thunder Junction + The Big Score ✅, Final Fantasy ✅, Duskmourn ✅ ; les suivantes à la demande | en cours |
 | 5. IA | attaques par simulation, puis ISMCTS | à faire |
 | 6. JcJ en ligne | duel Standard : serveur Node `ws` (`GameHost`, vues et faces filtrées), code de salon, corde, reconnexion, revanche | ✅ duel ; déploiement pm2 + nginx documenté |
 | 7. Finitions | effets sonores ✅ ; replays (graine + décisions), images des jetons, musique | en cours |

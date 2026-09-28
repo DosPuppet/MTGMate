@@ -1,13 +1,29 @@
 /** Effets du moteur : joueurs (points de vie, pioche, tours et étapes supplémentaires, victoire). Chaque clé est un `op` d'`Effect` (voir `runEffect`, effects.ts). */
-import { drawCard, gainLife, loseLife, sacrifice, setSpeed } from "../actions";
+import { dealDamage, drawCard, gainLife, loseLife, sacrifice, setSpeed } from "../actions";
 import type { OpHandlers } from "../effects";
-import { announceDiscard, announceDiscardBatch, drawBonus, evalAmount, nameOf, resolveRef, store } from "../effects";
+import {
+  announceDiscard,
+  announceDiscardBatch,
+  damageSource,
+  drawBonus,
+  evalAmount,
+  nameOf,
+  resolveRef,
+  store,
+} from "../effects";
 import { apnapOrder, emit, isPlayer, moveObject, onBattlefield, opponentsOf, random, rulesEvent, shuffle } from "../state";
 import { playerStatic } from "../statics";
 import { matchesObjectFilter } from "../targets";
 import { eliminate, endTheTurn } from "../turn";
 
 export const HANDLERS: OpHandlers = {
+  cantGainLife(s, _r, e, ctx) {
+    for (const p of resolveRef(s, ctx, e.who)) {
+      const pl = s.players[p];
+      if (pl) pl.cantGainLife = true;
+    }
+    return;
+  },
   mayWheel(s, r, _e, ctx, key) {
     // « Chaque joueur peut défausser sa main et piocher sept cartes » : choix dans l'ordre APNAP, puis tout se fait ensemble.
     const order = apnapOrder(s);
@@ -56,7 +72,11 @@ export const HANDLERS: OpHandlers = {
               intent: "punisher",
               prompt: `${nameOf(s, ctx.sourceId)} : choisissez`,
               options,
-              labels: { life: `Perdre ${e.loseLife} PV`, discard: "Défausser une carte", sacrifice: "Sacrifier un permanent" },
+              labels: {
+                life: e.damage !== undefined ? `Subir ${evalAmount(s, ctx, e.damage)} blessures` : `Perdre ${e.loseLife} PV`,
+                discard: "Défausser une carte",
+                sacrifice: "Sacrifier un permanent",
+              },
               min: 1,
               max: 1,
               suggested: [options[options.length - 1] as string],
@@ -66,7 +86,10 @@ export const HANDLERS: OpHandlers = {
       }
       choice = String(choice);
       if (choice === "life") {
-        loseLife(s, p, e.loseLife);
+        if (e.damage !== undefined) {
+          const src = damageSource(s, ctx);
+          if (src) dealDamage(s, src, p, Math.max(0, evalAmount(s, ctx, e.damage)), false);
+        } else loseLife(s, p, e.loseLife);
         r.vars[key(`pdone-${p}`)] = [1];
         continue;
       }

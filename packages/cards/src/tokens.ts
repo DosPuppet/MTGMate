@@ -3,6 +3,7 @@
  */
 import type { TokenSpec } from "@mtgx/engine";
 import { DINOSAUR_DRAGON, ELEPHANT, PILOT, SERVO, VEHICLE } from "./dft/common";
+import { EVERYWHERE, GLIMMER } from "./dsk/common";
 import { DRONE, LANDER, MUNITIONS, ROBOT } from "./eoe/common";
 import { CAT, CLUE, DOG, FOOD, GOBLIN, MAP, RABBIT, SOLDIER, SPIRIT, TREASURE } from "./fdn/common";
 import { THOPTER } from "./fra/common";
@@ -23,6 +24,8 @@ export const TOKEN_SPECS: Record<string, TokenSpec> = {
   Vehicle: VEHICLE,
   Thopter: THOPTER,
   "Dinosaur Dragon": DINOSAUR_DRAGON,
+  Everywhere: EVERYWHERE,
+  Glimmer: GLIMMER,
   Goblin: GOBLIN,
   Rabbit: RABBIT,
   Robot: ROBOT,
