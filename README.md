@@ -6,7 +6,8 @@ Plateforme pour jouer à Magic: The Gathering contre une ou plusieurs IA (en due
 - paiement automatique du mana ;
 - arrêts configurables ;
 - cible choisie automatiquement quand elle est unique ;
-- glisser-déposer.
+- glisser-déposer ;
+- jouable sur tablette et sur téléphone en paysage (appui long pour agrandir une carte).
 
 ## Périmètre : le Standard
 
@@ -79,6 +80,7 @@ npm run dev          # http://localhost:5173
 | `npm run coverage [-- --set all\|standard\|<EXT>] [-- --text [--color W]] [-- --card "<nom>"]` | Cartes gérées par extension, textes Oracle des cartes restantes, texte et script d'une carte |
 | `npm run server` | Serveur de parties en ligne (WebSocket `/ws`, sert aussi `packages/client/dist`) |
 | `npm run online-smoke [-- --base <url>]` | Duel en ligne entre deux navigateurs : salon, lien d'invitation, corde, reprise après rechargement, revanche (serveur de dev par défaut, ou `--base` vers un serveur de production ou nginx) |
+| `npm run mobile-smoke` | Tablette et téléphone émulés : main, bouton principal et champs à l'écran, appui long, tap pour lever une carte, tiroir, portrait (serveur de dev lancé) |
 | `npm run battlefield-smoke` | Plateaux chargés (jetons, 2e ligne, 4 joueurs) mis en jeu par le bac à sable du mode dev : rangées, piles de jetons, aucune carte rognée (serveur de dev lancé) |
 | `npm run import-cards -- <set>\|all` | Import Scryfall d'une extension, ou de toutes les extensions Standard hors FDN et FRA (`all`) |
 | `npm run deck-smoke` | Deckbuilder de bout en bout : import, édition, export, persistance, partie (serveur de dev lancé) |

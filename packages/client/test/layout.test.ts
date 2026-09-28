@@ -4,6 +4,9 @@ import {
   battlefieldRows,
   battlefieldSlots,
   fitBattlefield,
+  fitHand,
+  HAND_MIN_STEP,
+  HAND_STEP,
   MIN_W,
   type Slot,
   slotUnits,
@@ -194,5 +197,24 @@ describe("zone des planeswalkers (comme sur MTGA)", () => {
     ];
     const { back } = battlefieldSlots(battlefieldRows(perms));
     expect(back.map((s) => s.objs[0]?.name)).toEqual(["Forest", "Fishing Pole", "Banner", "Omniscience"]);
+  });
+});
+
+describe("main (elle se resserre au lieu de déborder)", () => {
+  it("garde le pas naturel quand la place suffit", () => {
+    expect(fitHand(2000, 100, 7)).toBe(100 * HAND_STEP);
+  });
+  it("tient dans la largeur disponible", () => {
+    for (const [w, n] of [
+      [600, 10],
+      [900, 17],
+      [400, 8],
+    ] as const) {
+      const step = fitHand(w, 100, n);
+      expect(100 + (n - 1) * step).toBeLessThanOrEqual(w);
+    }
+  });
+  it("ne descend pas sous le pas minimal", () => {
+    expect(fitHand(200, 100, 30)).toBe(100 * HAND_MIN_STEP);
   });
 });

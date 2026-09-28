@@ -4,6 +4,7 @@ import { type CSSProperties, useEffect, useLayoutEffect, useRef, useState } from
 import { faceName, PHASE_BAR, STEP_LABEL } from "../i18n";
 import { boardPick, choiceSource, pickValid, shortPrompt } from "../prompts/boardChoice";
 import { myActions, useGame } from "../store";
+import { isTouch, justLongPressed } from "../touch";
 import { Arrows } from "./Arrows";
 import { Card, CardBack, type Glow, ManaCost } from "./Card";
 import { Effects } from "./Effects";
@@ -13,6 +14,7 @@ import {
   battlefieldSlots,
   CARD_RATIO,
   fitBattlefield,
+  fitHand,
   LAND_SCALE,
   type Slot,
   splitLines,
@@ -661,11 +663,14 @@ function Hand() {
   const view = useGame((s) => s.view) as GameView;
   const clickHandCard = useGame((s) => s.clickHandCard);
   const dropHandCard = useGame((s) => s.dropHandCard);
+  const setHover = useGame((s) => s.setHover);
   const selection = useGame((s) => s.selection);
   const casting = useGame((s) => s.casting);
   const handRef = useRef<HTMLDivElement>(null);
   // Un glisser se termine aussi par un « tap » : on l'ignore pour ne pas envoyer deux décisions.
   const dragged = useRef(false);
+  // Écran tactile : carte levée par un premier tap (pas de survol), jouée au second.
+  const [lifted, setLifted] = useState<string | null>(null);
   const acts = myActions(view);
   const playable = new Set(
     acts.flatMap((a) => (a.type === "cast" || a.type === "playLand" ? [a.card] : a.type === "activate" ? [a.source] : [])),
@@ -674,17 +679,49 @@ function Hand() {
   const cards = [...view.hand, ...view.playableExile];
   const exiled = new Set(view.playableExile.map((c) => c.id));
   const n = cards.length;
+
+  // Pas entre les cartes : elles se resserrent pour tenir dans la largeur de la main (voir fitHand).
+  const [box, setBox] = useState({ width: 0, cardW: 0 });
+  // biome-ignore lint/correctness/useExhaustiveDependencies: nouvelle mesure quand le nombre de cartes change
+  useLayoutEffect(() => {
+    const el = handRef.current;
+    if (!el) return;
+    const measure = () => {
+      const cardW = (el.firstElementChild as HTMLElement | null)?.offsetWidth ?? 0;
+      setBox((cur) => (cur.width === el.clientWidth && cur.cardW === cardW ? cur : { width: el.clientWidth, cardW }));
+    };
+    measure();
+    const ro = new ResizeObserver(measure);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [n]);
+  const step = box.cardW ? fitHand(box.width, box.cardW, n) : null;
+  const margin = step === null ? undefined : `0 ${-(box.cardW - step) / 2}px`;
+  const selecting =
+    view.pending?.player === view.viewer && (view.pending.kind === "discard" || view.pending.kind === "bottomCards");
+  const liftedId = lifted && cards.some((c) => c.id === lifted) ? lifted : null;
+  // Toucher ailleurs que dans la main repose la carte levée.
+  useEffect(() => {
+    if (!liftedId) return;
+    const drop = (e: globalThis.PointerEvent) => {
+      if (!handRef.current?.contains(e.target as Node)) setLifted(null);
+    };
+    document.addEventListener("pointerdown", drop);
+    return () => document.removeEventListener("pointerdown", drop);
+  }, [liftedId]);
+
   return (
     <div className="hand" ref={handRef}>
       {cards.map((c, i) => {
         const angle = n > 1 ? (i - (n - 1) / 2) * Math.min(4, 24 / n) : 0;
         const lift = Math.abs(i - (n - 1) / 2) * Math.min(6, 30 / n);
+        const up = liftedId === c.id;
         return (
           <motion.div
             key={c.uid}
-            className={`hand-card ${exiled.has(c.id) ? "from-exile" : ""}`}
-            style={{ zIndex: i }}
-            animate={{ rotate: angle, y: lift }}
+            className={`hand-card ${exiled.has(c.id) ? "from-exile" : ""} ${up ? "lifted" : ""}`}
+            style={{ zIndex: up ? 40 : i, margin }}
+            animate={up ? { rotate: 0, y: "-38%", scale: 1.15 } : { rotate: angle, y: lift, scale: 1 }}
             drag
             dragSnapToOrigin
             dragMomentum={false}
@@ -695,9 +732,18 @@ function Hand() {
             }}
             onDragStart={() => {
               dragged.current = true;
+              setLifted(null);
             }}
-            onTap={() => {
-              if (!dragged.current) clickHandCard(c.id);
+            onTap={(e) => {
+              if (dragged.current || justLongPressed()) return;
+              // Au doigt : le premier tap lève la carte (et l'affiche dans l'aperçu), le second la joue.
+              if ((e as PointerEvent).pointerType !== "mouse" && isTouch() && !selecting && !up) {
+                setLifted(c.id);
+                setHover({ face: c, obj: c });
+                return;
+              }
+              setLifted(null);
+              clickHandCard(c.id);
             }}
             onDragEnd={(_, info) => {
               const handTop = handRef.current?.getBoundingClientRect().top ?? window.innerHeight;

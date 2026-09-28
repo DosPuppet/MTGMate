@@ -120,6 +120,10 @@ interface Store {
   selectedBlocker: string | null;
   selection: string[];
   hover: Hover | null;
+  /** Écran tactile : carte agrandie en surimpression (appui long). */
+  peek: Hover | null;
+  /** Écran étroit : barre latérale (réglages, aperçu, journal) ouverte en tiroir. */
+  drawerOpen: boolean;
   graveyardOpen: string | null;
   fx: Fx[];
   turnBanner: { id: number; text: string; mine: boolean } | null;
@@ -168,6 +172,8 @@ interface Store {
   setFullControl(on: boolean): void;
   setLang(lang: Lang): void;
   setHover(h: Hover | null): void;
+  setPeek(h: Hover | null): void;
+  setDrawerOpen(open: boolean): void;
   toggleSelection(id: string): void;
   openGraveyard(player: string | null): void;
 }
@@ -479,6 +485,8 @@ export const useGame = create<Store>((set, get) => {
     selectedBlocker: null,
     selection: [],
     hover: null,
+    peek: null,
+    drawerOpen: false,
     graveyardOpen: null,
     fx: [],
     turnBanner: null,
@@ -528,7 +536,16 @@ export const useGame = create<Store>((set, get) => {
       if (session instanceof RemoteSession) session.raw({ type: "leave" });
       session?.close();
       saveToken(null);
-      set({ online: null, session: null, screen: "lobby", view: null, casting: null, hover: null });
+      set({
+        online: null,
+        session: null,
+        screen: "lobby",
+        view: null,
+        casting: null,
+        hover: null,
+        peek: null,
+        drawerOpen: false,
+      });
     },
 
     rematch() {
@@ -609,7 +626,7 @@ export const useGame = create<Store>((set, get) => {
     backToLobby() {
       if (get().online) return get().leaveRoom();
       get().session?.close();
-      set({ screen: "lobby", session: null, view: null, casting: null, hover: null });
+      set({ screen: "lobby", session: null, view: null, casting: null, hover: null, peek: null, drawerOpen: false });
     },
 
     receive(msg) {
@@ -910,6 +927,14 @@ export const useGame = create<Store>((set, get) => {
 
     setHover(h) {
       set({ hover: h });
+    },
+
+    setPeek(h) {
+      set(h ? { peek: h, hover: h } : { peek: null });
+    },
+
+    setDrawerOpen(open) {
+      set({ drawerOpen: open });
     },
 
     toggleSelection(id) {

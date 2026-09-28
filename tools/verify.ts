@@ -147,6 +147,7 @@ if (!flag("no-ui") && (full || flag("ui") || uiTouched)) {
       { name: "deck-smoke", cmd: "npx tsx tools/deck-smoke.ts", show: /^ok : partie lancée.*$/ },
       { name: "ui-smoke", cmd: "npx tsx tools/ui-smoke.ts", show: /^Aucune erreur de page\.$/ },
       { name: "battlefield-smoke", cmd: "npx tsx tools/battlefield-smoke.ts", show: /^ok : aucune erreur de page$/ },
+      { name: "mobile-smoke", cmd: "npx tsx tools/mobile-smoke.ts", show: /^ok : aucune erreur de page$/ },
     ])
       ok = (await group([step])) && ok;
   } else {

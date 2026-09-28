@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { SoundControl } from "../audio/SoundControl";
 import { faceImage, faceName, faceText, faceType, KEYWORD_LABEL } from "../i18n";
 import { useGame } from "../store";
+import { isTouch, justLongPressed } from "../touch";
 import { ManaCost } from "./Card";
 
 export function Preview() {
@@ -18,7 +19,12 @@ export function Preview() {
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, [backImage]);
-  if (!hover) return <div className="preview empty">Survolez une carte pour l'agrandir.</div>;
+  if (!hover)
+    return (
+      <div className="preview empty">
+        {isTouch() ? "Appuyez longuement sur une carte pour l'agrandir." : "Survolez une carte pour l'agrandir."}
+      </div>
+    );
   const { face, obj } = hover;
   const back = flipped && backImage ? (lang === "fr" && backImage.fr?.image) || backImage.image : undefined;
   // Votre carte face cachée : vous seul voyez de quelle carte il s'agit.
@@ -180,12 +186,47 @@ function Settings() {
 }
 
 export function Sidebar() {
+  const setDrawerOpen = useGame((s) => s.setDrawerOpen);
   return (
     <aside className="sidebar">
+      <button type="button" className="drawer-close" onClick={() => setDrawerOpen(false)} aria-label="Fermer le panneau">
+        ×
+      </button>
       <Settings />
       <Preview />
       <div className="log-title">Journal</div>
       <Log />
     </aside>
+  );
+}
+
+/** Écran tactile : carte agrandie par un appui long, en surimpression ; un tap n'importe où la ferme. */
+export function TouchPreview() {
+  const peek = useGame((s) => s.peek);
+  const setPeek = useGame((s) => s.setPeek);
+  if (!peek) return null;
+  return (
+    // Ni le clic qui termine l'appui long (il tombe sur la surimpression), ni les boutons de l'aperçu (autre face)
+    // ne la ferment.
+    <div
+      className="touch-preview"
+      onClick={(e) => !justLongPressed() && !(e.target as HTMLElement).closest("button") && setPeek(null)}
+    >
+      <Preview />
+    </div>
+  );
+}
+
+/** Écran étroit : bouton qui ouvre la barre latérale (réglages, journal) en tiroir. */
+export function DrawerToggle() {
+  const open = useGame((s) => s.drawerOpen);
+  const setDrawerOpen = useGame((s) => s.setDrawerOpen);
+  return (
+    <>
+      <button type="button" className="drawer-toggle" onClick={() => setDrawerOpen(!open)} aria-label="Journal et réglages">
+        ☰
+      </button>
+      {open && <div className="drawer-scrim" onClick={() => setDrawerOpen(false)} />}
+    </>
   );
 }

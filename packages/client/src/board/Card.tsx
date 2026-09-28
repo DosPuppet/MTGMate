@@ -3,6 +3,7 @@ import { motion } from "motion/react";
 import { type CSSProperties, useState } from "react";
 import { faceImage, faceName, faceText, faceType } from "../i18n";
 import { useGame } from "../store";
+import { useLongPress } from "../touch";
 import { KeywordBadges } from "./Keywords";
 
 export type Glow =
@@ -90,6 +91,9 @@ export function Card({
 }: CardProps) {
   const lang = useGame((s) => s.lang);
   const setHover = useGame((s) => s.setHover);
+  const setPeek = useGame((s) => s.setPeek);
+  // Écran tactile : l'appui long remplace le survol (aperçu en surimpression).
+  const longPress = useLongPress(hoverable ? () => setPeek({ face, obj }) : undefined);
   const [failed, setFailed] = useState(false);
   const src = faceImage(face, lang);
   const height = `calc(${width} * 1.395)`;
@@ -105,6 +109,7 @@ export function Card({
       style={{ width: tapped ? height : width, height }}
       data-oid={oid}
       onMouseEnter={hoverable ? () => setHover({ face, obj }) : undefined}
+      {...longPress}
     >
       <motion.div
         layoutId={layoutId}

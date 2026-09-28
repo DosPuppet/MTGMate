@@ -1,12 +1,13 @@
 import { useEffect } from "react";
 import { Board, useMainAction } from "./board/Board";
-import { Sidebar } from "./board/Sidebar";
+import { DrawerToggle, Sidebar, TouchPreview } from "./board/Sidebar";
 import { DeckBuilder } from "./decks/DeckBuilder";
 import { Lobby } from "./lobby/Lobby";
 import { Online } from "./lobby/Online";
 
 import { Prompts } from "./prompts/Prompts";
 import { useGame } from "./store";
+import { isTouch } from "./touch";
 
 function Toast() {
   const toast = useGame((s) => s.toast);
@@ -32,7 +33,12 @@ function useShortcuts() {
         e.preventDefault();
         const v = useGame.getState().view;
         if (v && v.turn.active === v.viewer && v.pending?.player === v.viewer) endTurn();
-      } else if (e.code === "Escape") cancel();
+      } else if (e.code === "Escape") {
+        const s = useGame.getState();
+        if (s.peek) s.setPeek(null);
+        else if (s.drawerOpen) s.setDrawerOpen(false);
+        else cancel();
+      }
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
@@ -41,11 +47,22 @@ function useShortcuts() {
 
 function GameScreen() {
   useShortcuts();
+  const drawerOpen = useGame((s) => s.drawerOpen);
   return (
-    <div className="game">
+    <div
+      className={`game ${drawerOpen ? "drawer-open" : ""}`}
+      // Appui long au doigt : pas de menu contextuel du navigateur (l'aperçu de la carte le remplace).
+      onContextMenu={(e) => isTouch() && e.preventDefault()}
+    >
       <Board />
       <Sidebar />
+      <DrawerToggle />
       <Prompts />
+      <TouchPreview />
+      <div className="rotate-hint">
+        <div className="rotate-icon">⟳</div>
+        Tournez votre appareil en paysage pour jouer.
+      </div>
     </div>
   );
 }

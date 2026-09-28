@@ -276,6 +276,22 @@ export function fitBattlefield(
   };
 }
 
+/** Pas naturel entre deux cartes de la main (part de la largeur d'une carte), quand la place ne manque pas. */
+export const HAND_STEP = 0.68;
+/** Pas minimal : le coin gauche de chaque carte (nom, coût) reste visible. */
+export const HAND_MIN_STEP = 0.14;
+
+/**
+ * Pas horizontal (px) entre deux cartes de la main pour que `n` cartes de largeur `cardW` tiennent dans `width` :
+ * elles se recouvrent davantage au lieu de déborder de l'écran (seul le plancher HAND_MIN_STEP peut déborder).
+ */
+export function fitHand(width: number, cardW: number, n: number): number {
+  if (n <= 1) return cardW * HAND_STEP;
+  // Marge pour l'éventail : les cartes des extrémités, inclinées, débordent d'environ un tiers de carte.
+  const avail = width - cardW * 1.35;
+  return Math.max(cardW * HAND_MIN_STEP, Math.min(cardW * HAND_STEP, avail / (n - 1)));
+}
+
 /** Élément du plateau qui représente un objet (carte seule, ou pile de jetons qui le contient). */
 export function findObjectEl(id: string): Element | null {
   const esc = CSS.escape(id);
