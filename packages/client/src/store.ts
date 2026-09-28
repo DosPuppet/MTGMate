@@ -23,6 +23,7 @@ import { create } from "zustand";
 import { soundsFor } from "./audio/eventSounds";
 import { playSound, preloadSounds } from "./audio/sfx";
 import { findObjectEl } from "./board/layout";
+import { fastMode } from "./fast";
 import { describeEvents, type Lang, type LogLine } from "./i18n";
 import { boardPick, togglePick } from "./prompts/boardChoice";
 import type { FromWorker, Sandbox } from "./protocol";
@@ -507,6 +508,7 @@ export const useGame = create<Store>((set, get) => {
         aiDecks,
         defs: defsFor([playerDeck, ...aiDecks], sandbox),
         sandbox,
+        fast: fastMode(),
       });
       session.send({ type: "settings", settings });
     },

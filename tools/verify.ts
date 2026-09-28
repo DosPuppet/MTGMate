@@ -142,15 +142,25 @@ const changed = await changedFiles();
 const uiTouched = changed.some((f) => /packages\/client\/|engine\/src\/view\.ts|server\/src\/protocol\.ts/.test(f));
 if (!flag("no-ui") && (full || flag("ui") || uiTouched)) {
   if (await viteUp()) {
-    // L'un après l'autre : en parallèle, les parties jouées dans le navigateur manquent de temps sous la charge.
-    for (const step of [
-      { name: "deck-smoke", cmd: "npx tsx tools/deck-smoke.ts", show: /^ok : partie lancée.*$/ },
-      { name: "ui-smoke", cmd: "npx tsx tools/ui-smoke.ts", show: /^Aucune erreur de page\.$/ },
-      { name: "battlefield-smoke", cmd: "npx tsx tools/battlefield-smoke.ts", show: /^ok : aucune erreur de page$/ },
-      { name: "mobile-smoke", cmd: "npx tsx tools/mobile-smoke.ts", show: /^ok : aucune erreur de page$/ },
-      { name: "proxy-smoke", cmd: "npx tsx tools/proxy-smoke.ts", show: /^ok : aucune erreur de page$/ },
-    ])
-      ok = (await group([step])) && ok;
+    // Deux files en parallèle, de durées voisines : ui-smoke et mobile-smoke d'un côté, les autres de l'autre.
+    // Pas plus : sous une charge plus forte, les parties jouées dans le navigateur manquent de temps.
+    const chain = async (steps: Step[]) => {
+      let chainOk = true;
+      for (const step of steps) chainOk = (await group([step])) && chainOk;
+      return chainOk;
+    };
+    const results = await Promise.all([
+      chain([
+        { name: "ui-smoke", cmd: "npx tsx tools/ui-smoke.ts", show: /^Aucune erreur de page\.$/ },
+        { name: "mobile-smoke", cmd: "npx tsx tools/mobile-smoke.ts", show: /^ok : aucune erreur de page$/ },
+      ]),
+      chain([
+        { name: "deck-smoke", cmd: "npx tsx tools/deck-smoke.ts", show: /^ok : partie lancée.*$/ },
+        { name: "battlefield-smoke", cmd: "npx tsx tools/battlefield-smoke.ts", show: /^ok : aucune erreur de page$/ },
+        { name: "proxy-smoke", cmd: "npx tsx tools/proxy-smoke.ts", show: /^ok : aucune erreur de page$/ },
+      ]),
+    ]);
+    ok = results.every(Boolean) && ok;
   } else {
     console.log("⚠️  tests d'interface sautés : Vite ne répond pas sur http://localhost:5173 (lancer npm run dev)");
     ok = false;

@@ -103,7 +103,7 @@ self.onmessage = async (e: MessageEvent<ToWorker>) => {
         state,
         {
           agents: Object.fromEntries(msg.aiDecks.map((_, i) => [`p${i + 2}`, heuristicAgent()])),
-          aiDelay: 900,
+          aiDelay: msg.fast && import.meta.env.DEV ? 0 : 900,
           sleep,
           // Mêmes faces qu'en ligne : seulement les cartes connues du joueur (pas la decklist adverse).
           onUpdate: (_p, view, evts) =>

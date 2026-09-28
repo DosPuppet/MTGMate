@@ -12,7 +12,8 @@ import { type Browser, chromium, type Page } from "playwright";
 
 const OUT = "test-results/proxy";
 mkdirSync(OUT, { recursive: true });
-const BASE = "http://localhost:5173/";
+// ?fast : mode rapide des tests (IA sans pause), mode dev seulement.
+const BASE = "http://localhost:5173/?fast";
 
 const failures: string[] = [];
 const errors: string[] = [];

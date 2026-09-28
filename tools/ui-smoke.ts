@@ -24,7 +24,7 @@ page.on("console", (m) => {
   if (m.type() === "error") errors.push(`console: ${m.text()}`);
 });
 
-await page.goto("http://localhost:5173/");
+await page.goto("http://localhost:5173/?fast");
 await page.screenshot({ path: join(OUT, "01-lobby.png") });
 if (AIS > 1) await page.locator(".ai-count .seg button", { hasText: String(AIS) }).click();
 await page.getByRole("button", { name: "Jouer contre l'IA" }).click();
@@ -39,7 +39,7 @@ const shot = async (name: string) => page.screenshot({ path: join(OUT, `${String
 let lastTurn = "";
 const seen = new Set<string>();
 for (let i = 0; i < MAX; i++) {
-  await page.waitForTimeout(250);
+  await page.waitForTimeout(120);
   if (await page.locator(".gameover").count()) {
     await shot("fin");
     console.log("Partie terminée :", await page.locator(".gameover h2").innerText());
@@ -55,7 +55,23 @@ for (let i = 0; i < MAX; i++) {
   // Fenêtres de choix
   const dialog = page.getByRole("dialog");
   if (await dialog.count()) {
-    const title = await dialog.locator("h2").innerText();
+    // Choix avec suggestion (fenêtre d'options ou choix sur le champ de bataille) : suggestion, puis validation.
+    const suggest = dialog.getByRole("button", { name: "Suggestion" });
+    if (await suggest.count()) {
+      await suggest.click({ timeout: 1000 }).catch(() => {});
+      await dialog
+        .locator(".btn.primary:not([disabled])")
+        .last()
+        .click({ timeout: 1000 })
+        .catch(() => {});
+      continue;
+    }
+    // La fenêtre peut se refermer entre-temps (l'IA joue vite en mode rapide) : on retente au tour suivant.
+    const title = await dialog
+      .locator("h2")
+      .innerText({ timeout: 1000 })
+      .catch(() => null);
+    if (title === null) continue;
     if (/Défaussez|au-dessous/.test(title)) {
       const n = Number(/(\d+) carte/.exec(title)?.[1] ?? 1);
       const cards = dialog.locator(".hand-picker .card");
@@ -145,7 +161,7 @@ if (!(await page.locator(".gameover").count())) {
     .locator("h2")
     .innerText()
     .catch(() => "(aucune)");
-  console.log(`Arrêt sans fin de partie. Bouton : « ${await page.locator(".main-button").innerText()} », fenêtre : ${dialog}`);
+  errors.push(`arrêt sans fin de partie. Bouton : « ${await page.locator(".main-button").innerText()} », fenêtre : ${dialog}`);
 }
 // Effets sonores joués pendant la partie (journal du mode dev, audio/sfx.ts).
 const played = new Set(await page.evaluate(() => (window as unknown as { __sfxLog?: string[] }).__sfxLog ?? []));

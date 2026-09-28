@@ -28,6 +28,8 @@ export type ToWorker =
       /** Définitions des cartes utilisées (par nom) : le worker n'embarque pas toute la base de cartes. */
       defs: Record<string, CardDef>;
       sandbox?: Sandbox;
+      /** Mode rapide des tests d'interface (dev) : l'IA joue sans pause. */
+      fast?: boolean;
     }
   | { type: "decision"; decision: Decision }
   | { type: "settings"; settings: Partial<AutopilotSettings> };

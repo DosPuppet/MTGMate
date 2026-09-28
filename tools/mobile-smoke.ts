@@ -73,7 +73,7 @@ async function open(device: BrowserContextOptions, opp: Side = OPP): Promise<Pag
   const ctx = await browser.newContext(device);
   const page = await ctx.newPage();
   page.on("pageerror", (e) => errors.push(e.message));
-  await page.goto("http://localhost:5173/");
+  await page.goto("http://localhost:5173/?fast");
   await page.evaluate(([deck, sb]) => (window as unknown as DevWindow).__mtgx.getState().startGame(deck, [deck], sb), [
     DECK,
     { p1: ME, p2: opp },

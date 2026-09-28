@@ -97,7 +97,7 @@ Ce fichier sert au suivi du projet entre les sessions : où on en est, les règl
   - `vitest`, où le test de fumée est découpé en un fichier par extension (tous les cœurs) ;
   - le fuzz ciblé sur l'extension (`--pool <EXT>`, à 2, 3 et 4 joueurs, et en IA mixte) ;
   - un fuzz sur tout le pool ;
-  - les tests d'interface seulement si le client, `view.ts` ou le protocole ont changé (`--ui` pour les forcer). Vite doit tourner.
+  - les tests d'interface seulement si le client, `view.ts` ou le protocole ont changé (`--ui` pour les forcer). Vite doit tourner. Ils tournent en deux files parallèles (environ 50 s ; `verify --set X --ui` : environ 125 s).
 - **En fin d'extension ou avant une fusion :** `npm run verify -- --full` (environ 3 min). Il lance :
   - trois graines sur tout le pool, puis 3 et 4 joueurs, et l'IA mixte ;
   - le bench ;
@@ -137,6 +137,7 @@ Ce fichier sert au suivi du projet entre les sessions : où on en est, les règl
 - **Serveur de parties :** `npm run server` charge le moteur au démarrage ; le relancer après toute modification du moteur ou des cartes. Il sert `packages/client/dist` : relancer `npm run build` pour y voir les changements du client (en dev, Vite redirige `/ws` vers le port 8787).
 - **Déploiement (VPS de l'utilisateur) :** machine partagée avec d'autres applis, nginx existant devant, **ni Docker ni Caddy ni unité systemd** : pm2 (`deploy/ecosystem.config.cjs`), serveur sur `127.0.0.1`. Une mise à jour (`deploy/update.sh`) redémarre le serveur et **coupe les parties en cours** (salons en mémoire).
 - **Mode dev seulement :** `window.__mtgx` (bac à sable) et `window.__sfxLog` n'existent pas dans le build de production ; les scripts qui visent la production (`online-smoke --base`) ne doivent pas s'en servir.
+- **Mode rapide des tests (`?fast`, dev seulement, `client/src/fast.ts`) :** l'IA joue sans sa pause de 0,9 s et un sort adverse n'est montré que 0,3 s. Les scripts d'interface ouvrent `/?fast`, sauf `battlefield-smoke`, qui audite un plateau figé et ne doit pas laisser l'IA jouer pendant la mesure. Une boucle de test qui joue une partie doit gérer les fenêtres de choix (« Suggestion » puis « Valider ») et la défausse, et échouer si la partie se bloque.
 - **Mulligans :** ils se décident l'un après l'autre (le premier joueur d'abord) ; un script de test ne doit pas supposer l'ordre.
 - **Bac à sable (mode dev) :** `window.__mtgx` expose le store ; `startGame(deck, decksIA, { p1: { cards, tokens }, p2: … })` met des permanents en jeu dès le début (voir `battlefield-smoke`). Dans `page.evaluate`, pas de fonction nommée (tsx injecte `__name`).
 - **`pgrep -f` / `pkill -f` :** avec un motif présent dans la ligne de commande, ils peuvent tuer le shell courant.

@@ -23,7 +23,7 @@ const check = (cond: boolean, msg: string) => {
   } else console.log(`ok : ${msg}`);
 };
 
-await page.goto("http://localhost:5173/");
+await page.goto("http://localhost:5173/?fast");
 await page.evaluate(() => localStorage.clear());
 await page.reload();
 await page.getByRole("button", { name: "Mes decks" }).click();
@@ -86,9 +86,45 @@ check((await page.locator(".deck-name-input").inputValue()) === "Test importé",
 // Partie avec le deck.
 await page.getByRole("button", { name: "Tester contre l'IA" }).click();
 await page.getByRole("button", { name: "Garder" }).click();
-for (let i = 0; i < 300 && !(await page.locator(".gameover").count()); i++) {
+// Jusqu'au 3e tour (inutile d'aller au bout : ui-smoke joue déjà une partie complète).
+const turn = () =>
+  page
+    .locator(".phase-turn")
+    .innerText()
+    .then((t) => Number(/Tour (\d+)/.exec(t)?.[1] ?? 0))
+    .catch(() => 0);
+for (let i = 0; i < 300 && !(await page.locator(".gameover").count()) && (await turn()) < 3; i++) {
   await page.waitForTimeout(150);
   if (await page.getByRole("dialog").count()) {
+    // Choix avec suggestion (options, ou permanents sur le champ de bataille) : suggestion, puis validation.
+    const suggest = page.getByRole("dialog").getByRole("button", { name: "Suggestion" });
+    if (await suggest.count()) {
+      await suggest.click({ timeout: 1000 }).catch(() => {});
+      await page
+        .getByRole("dialog")
+        .locator(".btn.primary:not([disabled])")
+        .last()
+        .click({ timeout: 1000 })
+        .catch(() => {});
+      continue;
+    }
+    // Défausse (taille de main maximale) : les premières cartes, puis validation.
+    const title = await page
+      .getByRole("dialog")
+      .locator("h2")
+      .innerText({ timeout: 1000 })
+      .catch(() => "");
+    if (/Défaussez/.test(title)) {
+      const n = Number(/(\d+) carte/.exec(title)?.[1] ?? 1);
+      const cards = page.getByRole("dialog").locator(".hand-picker .card");
+      for (let k = 0; k < n; k++) await cards.nth(k).click();
+      await page
+        .getByRole("dialog")
+        .getByRole("button", { name: /Valider/ })
+        .click()
+        .catch(() => {});
+      continue;
+    }
     await page
       .getByRole("dialog")
       .locator(".btn.primary, .btn.choice")
@@ -108,5 +144,6 @@ for (let i = 0; i < 300 && !(await page.locator(".gameover").count()); i++) {
 }
 await page.screenshot({ path: join(OUT, "03-partie.png") });
 check((await page.locator(".battlefield").count()) >= 2, "partie lancée avec le deck importé");
+check((await turn()) >= 3 || (await page.locator(".gameover").count()) > 0, "partie jouée jusqu'au 3e tour");
 console.log(errors.length ? `Erreurs de page :\n${errors.join("\n")}` : "Aucune erreur de page.");
 await browser.close();

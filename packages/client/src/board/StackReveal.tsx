@@ -6,12 +6,13 @@
 import type { GameView } from "@mtgx/engine";
 import { AnimatePresence, motion } from "motion/react";
 import { useEffect, useState } from "react";
+import { fastMode } from "../fast";
 import { faceName } from "../i18n";
 import { myActions, useGame } from "../store";
 import { Card } from "./Card";
 
-/** Durée d'affichage avant de passer automatiquement. */
-export const REVEAL_MS = 5000;
+/** Durée d'affichage avant de passer automatiquement (un instant en mode rapide des tests). */
+export const REVEAL_MS = fastMode() ? 300 : 5000;
 
 /** Le sort ou la capacité adverse à montrer, s'il y en a un et que le joueur ne peut rien y faire. */
 function revealed(view: GameView | null, fullControl: boolean) {
