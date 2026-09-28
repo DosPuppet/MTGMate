@@ -364,6 +364,8 @@ export function moveObject(
     enters?: EntersContext;
     /** Arrive face cachée (manifester, cape) : la vraie carte reste cachée, sans remplacements ni déclencheurs d'arrivée. */
     faceDown?: { ward: boolean; upCosts: ManaCost[] };
+    /** Reçoit la destination réelle, après les remplacements (exilée au lieu de mourir…). */
+    landed?: { to?: Zone };
   } = {},
 ): ObjectId | null {
   const o = obj(s, id);
@@ -413,6 +415,7 @@ export function moveObject(
     to = "exile";
   // Hades, Sorcerer of Eld : seulement le cimetière de son contrôleur.
   if (to === "graveyard" && playerStatic(s, o.isToken ? o.controller : o.owner, "ownGraveyardToExile")) to = "exile";
+  if (opts.landed) opts.landed.to = to;
   const from = zoneArray(s, o);
   if (from) {
     const i = from.indexOf(id);

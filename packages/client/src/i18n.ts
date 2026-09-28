@@ -210,7 +210,11 @@ export function describeEvents(
           add(`${who(e.player)} ${e.player === me ? "gagnez" : "gagne"} ${e.delta} PV (${e.life}).`, kind(e.player));
         break;
       case "dies":
-        add(`${name(e.defId)} va au cimetière.`, "info");
+        // Un remplacement peut changer la destination : exilée au lieu de mourir, mélangée dans la bibliothèque.
+        add(
+          `${name(e.defId)} ${e.to === "exile" ? "est exilé à la place" : e.to === "library" ? "est mélangé dans la bibliothèque de son propriétaire" : "va au cimetière"}.`,
+          "info",
+        );
         break;
       case "token":
         add(`${who(e.controller)} ${e.controller === me ? "créez" : "crée"} un ${name(e.defId)}.`, kind(e.controller));

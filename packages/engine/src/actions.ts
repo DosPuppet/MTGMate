@@ -22,7 +22,7 @@ import {
 import { controlledAbilitiesWithSource, doublers, playerStatic, preventions } from "./statics";
 import { matchesObjectFilter } from "./targets";
 import { checkCondition } from "./triggers";
-import type { CardDef, GameState, Keyword, ObjectId, PlayerId, TokenSpec } from "./types";
+import type { CardDef, GameEvent, GameState, Keyword, ObjectId, PlayerId, TokenSpec, Zone } from "./types";
 
 export interface DamageSource {
   /** Objet source, s'il est identifiable (pour les déclencheurs « inflige des blessures »). */
@@ -322,8 +322,13 @@ export function destroy(s: GameState, id: ObjectId): boolean {
 /** Met un permanent au cimetière de son propriétaire (mort, sacrifice, endurance 0…). */
 export function putIntoGraveyard(s: GameState, id: ObjectId): void {
   const o = obj(s, id);
-  emit({ type: "dies", objectId: id, defId: o.defId, to: "graveyard" });
-  moveObject(s, id, "graveyard");
+  // Émis avant le déplacement (ordre des événements), complété ensuite par la destination réelle :
+  // un remplacement peut exiler la créature (Feu du dragon dévastateur) ou la mélanger dans la bibliothèque.
+  const event: Extract<GameEvent, { type: "dies" }> = { type: "dies", objectId: id, defId: o.defId, to: "graveyard" };
+  emit(event);
+  const landed: { to?: Zone } = {};
+  moveObject(s, id, "graveyard", { landed });
+  if (landed.to) event.to = landed.to;
   removeFromCombat(s, id);
 }
 

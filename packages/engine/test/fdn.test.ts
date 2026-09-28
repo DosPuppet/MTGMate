@@ -6,10 +6,11 @@
 import { card } from "@mtgx/cards";
 import { describe, expect, it } from "vitest";
 import { destroy } from "../src/actions";
-import { createGame } from "../src/game";
+import { createGame, submit } from "../src/game";
 import { legalActions } from "../src/legal";
 import { manaAbilitiesOf } from "../src/mana";
 import { chars, counterCount, onBattlefield } from "../src/state";
+import type { GameEvent, GameState } from "../src/types";
 import { act, idOf, idsOf, passAccepting, passBoth, scenario } from "./helpers";
 
 type S = ReturnType<typeof scenario>;
@@ -640,5 +641,39 @@ describe("Foundations : planeswalkers", () => {
       .filter((id) => s.objects[id]?.controller === "p2")
       .map((id) => s.defs[s.objects[id]?.defId ?? ""]?.name);
     expect(names.sort()).toEqual(["Anthem of Champions", "Island", "Shivan Dragon"]);
+  });
+});
+
+describe("Foundations : destination réelle d'une créature qui meurt", () => {
+  /** Lance un sort puis laisse tout le monde passer jusqu'à sa résolution ; renvoie les événements. */
+  function castAndResolve(s: GameState, player: string, spell: string, target: string): { s: GameState; events: GameEvent[] } {
+    const events: GameEvent[] = [];
+    let r = submit(s, player, { type: "cast", card: idOf(s, player, "hand", spell), mode: 0, targets: { t: [target] } });
+    events.push(...r.events);
+    for (let i = 0; i < 10 && r.state.stack.length > 0 && r.state.pending?.kind === "priority"; i++) {
+      r = submit(r.state, r.state.pending.player, { type: "pass" });
+      events.push(...r.events);
+    }
+    return { s: r.state, events };
+  }
+
+  it("Feu du dragon dévastateur : l'événement de mort annonce l'exil", () => {
+    const s = scenario({
+      active: "p2",
+      p1: { battlefield: ["Bear Cub"] },
+      p2: { battlefield: ["Mountain", "Mountain"], hand: ["Scorching Dragonfire"] },
+    });
+    const { s: after, events } = castAndResolve(s, "p2", "Scorching Dragonfire", idOf(s, "p1", "battlefield", "Bear Cub"));
+    expect(events.find((e) => e.type === "dies")).toMatchObject({ type: "dies", to: "exile" });
+    expect(after.exile.some((id) => after.defs[after.objects[id]?.defId ?? ""]?.name === "Bear Cub")).toBe(true);
+  });
+
+  it("sans remplacement, elle va au cimetière", () => {
+    const s = scenario({
+      p1: { battlefield: ["Mountain"], hand: ["Burst Lightning"] },
+      p2: { battlefield: ["Bear Cub"] },
+    });
+    const { events } = castAndResolve(s, "p1", "Burst Lightning", idOf(s, "p2", "battlefield", "Bear Cub"));
+    expect(events.find((e) => e.type === "dies")).toMatchObject({ type: "dies", to: "graveyard" });
   });
 });
