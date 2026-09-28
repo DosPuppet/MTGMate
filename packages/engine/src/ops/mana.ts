@@ -1,5 +1,6 @@
 import type { OpHandlers } from "../effects";
 import { evalAmount } from "../effects";
+import { linkedColors } from "../layers";
 import { chars } from "../state";
 import { matchesObjectFilter } from "../targets";
 import type { ManaType } from "../types";
@@ -47,10 +48,13 @@ export const HANDLERS: OpHandlers = {
   addManaColorsAmong(s, _r, e, ctx) {
     const pool = s.players[ctx.controller]?.manaPool;
     if (!pool) return;
+    // Sunbird Effigy : les couleurs parmi les cartes liées à la source (exilées pour la fabriquer).
     const colors = new Set(
-      s.battlefield
-        .filter((id) => matchesObjectFilter(s, ctx.controller, id, e.filter, ctx.sourceId))
-        .flatMap((id) => chars(s, id).colors),
+      e.linked
+        ? linkedColors(s, s.objects[ctx.sourceId]?.linked)
+        : s.battlefield
+            .filter((id) => matchesObjectFilter(s, ctx.controller, id, e.filter, ctx.sourceId))
+            .flatMap((id) => chars(s, id).colors),
     );
     for (const c of colors) pool[c] += 1;
     return;

@@ -31,6 +31,7 @@ import { EOE_SCRIPTS } from "./eoe/index";
 import { FDN_SCRIPTS } from "./fdn/index";
 import { FIN_SCRIPTS } from "./fin/index";
 import { FRA_SCRIPTS } from "./fra/index";
+import { LCI_SCRIPTS } from "./lci/index";
 import { OTJ_SCRIPTS } from "./otj/index";
 import type { RawCard } from "./scryfall";
 
@@ -154,7 +155,7 @@ export const SETS: CardSet[] = [
     nameFr: "Les cavernes oubliées d'Ixalan",
     mainMax: 291,
     data: lciData as RawCard[],
-    scripts: {},
+    scripts: LCI_SCRIPTS,
   },
   { code: "FIN", name: "Final Fantasy", nameFr: "Final Fantasy", mainMax: 309, data: finData as RawCard[], scripts: FIN_SCRIPTS },
 ];

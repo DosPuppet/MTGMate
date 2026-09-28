@@ -37,9 +37,9 @@ import {
   tapObject,
   turnFaceUp,
 } from "../state";
-import { controlledAbilitiesWithSource } from "../statics";
+import { controlledAbilitiesWithSource, playerStatic } from "../statics";
 import { matchesCard, matchesObjectFilter } from "../targets";
-import type { CardType, Effect, GameState, Resolution } from "../types";
+import type { CardType, Effect, GameState, ObjectId, Resolution } from "../types";
 
 export const HANDLERS: OpHandlers = {
   destroy(s, r, e, ctx) {
@@ -186,17 +186,25 @@ export const HANDLERS: OpHandlers = {
           request: {
             type: "pick",
             intent: "pickCards",
-            prompt: "Choisissez la carte à exiler",
+            prompt: e.untilLeaves ? "Vous pouvez exiler une carte" : "Choisissez la carte à exiler",
             options,
-            min: 1,
+            min: e.untilLeaves ? 0 : 1,
             max: 1,
             suggested: best.slice(0, 1),
           },
         },
       };
     }
+    if (answer.length === 0) return;
     const id = String(answer[0]);
     if (!options.includes(id)) return;
+    // Deep-Cavern Bat : « jusqu'à ce que cette créature quitte le champ de bataille » (rien si elle est déjà partie).
+    if (e.untilLeaves) {
+      if (s.objects[ctx.sourceId]?.zone !== "battlefield") return;
+      const moved = moveObject(s, id, "exile");
+      if (moved) s.linkedExile.push({ sourceId: ctx.sourceId, cards: [moved], toHand: true });
+      return;
+    }
     const moved = moveObject(s, id, "exile");
     const src = s.objects[ctx.sourceId];
     if (moved && src) src.linked = [...(src.linked ?? []), moved];
@@ -244,6 +252,19 @@ export const HANDLERS: OpHandlers = {
       }
       r.vars[key(`kdone-${p}`)] = [1];
       for (const id of mine) if (!kept.has(id) && onBattlefield(s, id)) sacrifice(s, id);
+    }
+    return;
+  },
+  craftReturn(s, _r, _e, ctx) {
+    // « Renvoyez cette carte transformée sous le contrôle de son propriétaire » : la carte exilée pour le coût.
+    const card = resolveRef(s, ctx, { kind: "selfCard" }).find((id) => s.objects[id]?.zone === "exile");
+    if (!card) return;
+    const back = moveWithSpec(s, s.objects[card]?.owner ?? ctx.controller, card, { to: "battlefield", transformed: true });
+    const o = back ? s.objects[back] : undefined;
+    // Les matériaux sont liés au verso (Mastercraft Raptor, Sunbird Effigy, The Grim Captain…).
+    if (o && ctx.costExiled?.length) {
+      o.linked = [...(o.linked ?? []), ...ctx.costExiled];
+      bump(s);
     }
     return;
   },
@@ -563,9 +584,84 @@ export const HANDLERS: OpHandlers = {
     }
     return;
   },
+  exileForManaValue(s, r, e, ctx) {
+    const need = evalAmount(s, ctx, e.atLeast);
+    const mv = (id: ObjectId) => manaValue(s.defs[s.objects[id]?.defId ?? ""]?.manaCost);
+    const options = s.battlefield
+      .filter(
+        (id) =>
+          s.objects[id]?.controller === ctx.controller && matchesObjectFilter(s, ctx.controller, id, e.filter, ctx.sourceId),
+      )
+      .sort((a, b) => mv(a) - mv(b));
+    const chosen: ObjectId[] = [];
+    let total = 0;
+    for (const id of options) {
+      if (total >= need && chosen.length > 0) break;
+      chosen.push(id);
+      total += mv(id);
+    }
+    if (chosen.length === 0 || total < need) {
+      store(r, e.store, 0);
+      return;
+    }
+    for (const id of chosen) moveObject(s, id, "exile");
+    store(r, e.store, 1);
+    return;
+  },
+  graveyardCreatureOnce(s, _r, _e, ctx) {
+    s.turn.graveyardCreatureOnce = [...(s.turn.graveyardCreatureOnce ?? []), ctx.controller];
+    return;
+  },
+  destroyAllButOnePerPlayer(s, r, e, ctx, key) {
+    // Le contrôleur choisit, pour chaque joueur, une créature correspondante qu'il contrôle ; les autres sont détruites.
+    const keep: ObjectId[] = [];
+    for (const p of s.playerOrder) {
+      if (s.players[p]?.lost) continue;
+      const options = s.battlefield.filter(
+        (id) =>
+          s.objects[id]?.controller === p &&
+          isCreature(s, id) &&
+          matchesObjectFilter(s, ctx.controller, id, e.keep, ctx.sourceId),
+      );
+      if (options.length === 0) continue;
+      if (options.length === 1) {
+        keep.push(options[0] as ObjectId);
+        continue;
+      }
+      const answer = r.vars[key(`keep-${p}`)];
+      if (!answer) {
+        // Suggestion : la plus forte chez soi, la plus faible chez un adversaire.
+        const byPower = [...options].sort((a, b) => chars(s, b).power - chars(s, a).power);
+        const suggested = p === ctx.controller ? byPower[0] : byPower[byPower.length - 1];
+        return {
+          ask: {
+            player: ctx.controller,
+            key: key(`keep-${p}`),
+            request: {
+              type: "pick",
+              intent: "pickCards",
+              prompt: `Créature épargnée chez ${s.players[p]?.name ?? p}`,
+              options,
+              min: 1,
+              max: 1,
+              suggested: [suggested as string],
+            },
+          },
+        };
+      }
+      const chosen = String(answer[0]);
+      if (options.includes(chosen)) keep.push(chosen);
+    }
+    for (const id of s.battlefield.filter((x) => isCreature(s, x) && !keep.includes(x))) destroy(s, id);
+    return;
+  },
   destroyAll(s, r, e, ctx) {
     let destroyed = 0;
-    const f = e.filter.maxToughnessX ? { ...e.filter, maxToughnessX: undefined, maxToughness: ctx.x } : e.filter;
+    const f = e.filter.maxToughnessX
+      ? { ...e.filter, maxToughnessX: undefined, maxToughness: ctx.x }
+      : e.filter.manaValueX
+        ? { ...e.filter, manaValueX: undefined, manaValue: ctx.x }
+        : e.filter;
     const uids = new Set<string>();
     for (const id of s.battlefield.filter((x) => matchesObjectFilter(s, ctx.controller, x, f, ctx.sourceId))) {
       const uid = s.objects[id]?.uid;
@@ -1124,6 +1220,12 @@ export const HANDLERS: OpHandlers = {
         if (r.vars[key(`${k}-done`)]) continue;
         const o = s.objects[id];
         const p = o?.controller;
+        // Twists and Turns : « à la place, regardez 1, puis cette créature explore ».
+        if (p && playerStatic(s, p, "scryBeforeExplore") && !r.vars[key(`${k}-scried`)]) {
+          const asked = scryOrSurveil(s, r, { op: "scry", amount: 1 }, { ...ctx, controller: p }, (x) => key(`${k}-scry-${x}`));
+          if (asked) return asked;
+          r.vars[key(`${k}-scried`)] = [1];
+        }
         const lib = p ? (s.players[p]?.library ?? []) : [];
         const top = lib[0];
         if (!o || !p || !top) {
@@ -1364,6 +1466,7 @@ function scryOrSurveil(
     emit({ type: "scry", player: ctx.controller, top: order.length, bottom: picked.length });
   } else {
     player.library = [...order, ...rest];
+    if (e.op === "surveil") store(r, e.store, order.length);
     // Enlightened Confidant, Chandra : certaines des cartes ainsi mises au cimetière vont ensuite en main.
     const toHand = e.op === "surveil" ? e.toHand : undefined;
     const maxMv = toHand?.maxManaValue !== undefined ? evalAmount(s, ctx, toHand.maxManaValue) : Number.POSITIVE_INFINITY;

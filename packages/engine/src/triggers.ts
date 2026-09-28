@@ -140,6 +140,12 @@ export function simultaneously<T>(s: GameState, fn: () => T): T {
 // Conditions
 // ---------------------------------------------------------------------------
 
+/** Le joueur a le plus de points de vie, ou est à égalité (parmi les joueurs encore en jeu). */
+export function mostLife(s: GameState, p: PlayerId): boolean {
+  const life = (x: PlayerId) => s.players[x]?.life ?? 0;
+  return s.playerOrder.every((x) => s.players[x]?.lost || life(p) >= life(x));
+}
+
 export function checkCondition(s: GameState, c: Condition, controller: PlayerId, sourceId?: ObjectId): boolean {
   switch (c.kind) {
     case "castFromHandThisTurn":
@@ -335,6 +341,13 @@ export function checkCondition(s: GameState, c: Condition, controller: PlayerId,
       return (s.players[controller]?.turnStats.foodSacrificed ?? 0) > 0;
     case "canForage":
       return canForage(s, controller);
+    case "descended":
+      return (s.players[controller]?.turnStats.descended ?? 0) > 0;
+    case "mostLife": {
+      // Avec une référence (le joueur défenseur…) : évaluée pendant la résolution (effects.ts).
+      if (c.ref) return false;
+      return mostLife(s, controller);
+    }
     case "var":
     case "refLife":
     case "refLostLife":
@@ -403,6 +416,7 @@ function matchTrigger(s: GameState, ev: RulesEvent, t: TriggerSpec, src: Source)
     case "leaves": {
       if (ev.e !== "zone" || ev.from !== "battlefield" || !ev.lki) return null;
       if (t.to && ev.to !== t.to) return null;
+      if (t.whileCrafting && !s.turn.crafting) return null;
       // Zenos yae Galvus : « quand la créature choisie quitte le champ de bataille » (liée à la source).
       if (t.who === "linked") return s.objects[src.id]?.linked?.includes(ev.lki.id) ? { objectId: ev.lki.id } : null;
       return ev.lki.id === src.id ? { objectId: ev.lki.id, newObjectId: ev.newId ?? undefined } : null;
@@ -480,6 +494,9 @@ function matchTrigger(s: GameState, ev: RulesEvent, t: TriggerSpec, src: Source)
         if ((d?.spell?.modes?.length ?? 0) < 2) return null;
       }
       if (t.notFromHand && s.stack.find((x) => x.id === ev.stackId)?.fromHand) return null;
+      if (t.fromExile && !s.stack.find((x) => x.id === ev.stackId)?.fromExile) return null;
+      if (t.fromHand && !s.stack.find((x) => x.id === ev.stackId)?.fromHand) return null;
+      if (t.usingManaFromSelf && !s.stack.find((x) => x.id === ev.stackId)?.manaSources?.includes(src.id)) return null;
       if (t.minManaSpent !== undefined && (s.stack.find((x) => x.id === ev.stackId)?.manaSpent ?? 0) < t.minManaSpent)
         return null;
       if (t.notOwned && s.objects[ev.stackId]?.owner === ev.player) return null;
@@ -532,6 +549,13 @@ function matchTrigger(s: GameState, ev: RulesEvent, t: TriggerSpec, src: Source)
       return ev.e === "classLevel" && ev.objectId === src.id && ev.level === t.level
         ? { objectId: src.id, player: src.view.controller }
         : null;
+    case "activateAbility": {
+      if (ev.e !== "activated" || ev.player !== me) return null;
+      const item = s.stack.find((x) => x.id === ev.stackId);
+      return item && !item.copy ? { objectId: item.id, player: me } : null;
+    }
+    case "discover":
+      return ev.e === "discover" && ev.player === me ? { player: me, amount: ev.n } : null;
     case "explores": {
       if (ev.e !== "explore" || (t.land !== undefined && t.land !== ev.land)) return null;
       const v = liveView(s, ev.objectId);
@@ -758,6 +782,7 @@ export function detectTriggers(s: GameState, ev: RulesEvent): void {
           ? 1
           : 0) +
         (ev.e === "zone" && ev.to === "battlefield" && ev.newId ? enterDoublers(s, src.view.controller, ev.newId) : 0) +
+        throneDoublers(s, src) +
         (ev.e === "zone" && ev.from === "battlefield" && ev.to === "graveyard" && ev.lki?.types.includes("Creature")
           ? masamunes(s, src.id, src.view.controller)
           : 0);
@@ -805,7 +830,10 @@ export function createDelayed(
     sourceDefId,
     at,
     // « à l'étape de fin de votre prochain tour » : pas ce tour-ci.
-    notBeforeTurn: at === "yourNextEndStep" || at === "nextUpkeep" || lateInTurn ? s.turn.number + 1 : s.turn.number,
+    notBeforeTurn:
+      at === "yourNextEndStep" || at === "nextUpkeep" || at === "yourNextUpkeep" || lateInTurn
+        ? s.turn.number + 1
+        : s.turn.number,
     ability,
   });
 }
@@ -818,6 +846,16 @@ function masamunes(s: GameState, sourceId: ObjectId, player: PlayerId): number {
     const host = s.objects[id]?.attachedTo;
     if (!host || !flagged(id)) return false;
     return emblem ? s.objects[host]?.controller === player : host === sourceId;
+  }).length;
+}
+
+/** Roaming Throne : une autre créature du type choisi que vous contrôlez voit ses capacités se déclencher une fois de plus. */
+function throneDoublers(s: GameState, src: Source): number {
+  if (!src.view.types.includes("Creature")) return 0;
+  return controlledAbilitiesWithSource(s, src.view.controller).filter(({ id, ab }) => {
+    if (ab.kind !== "playerStatic" || !ab.doubleTriggersFor || id === src.id) return false;
+    const holder = s.objects[id];
+    return !!holder && matchesView(src.view, withChosen(ab.doubleTriggersFor, holder), src.view.controller, id);
   }).length;
 }
 
@@ -838,8 +876,9 @@ export function releaseDelayedTriggers(s: GameState, moment: "end" | "endCombat"
     if (d.notBeforeTurn > s.turn.number) return false;
     if (moment === "endCombat") return d.at === "endOfCombat";
     // Firion : « au début du prochain entretien ».
-    if (moment === "upkeep") return d.at === "nextUpkeep";
-    if (d.at === "endOfCombat" || d.at === "nextUpkeep") return false;
+    // Rebond : « au début de votre prochain entretien ».
+    if (moment === "upkeep") return d.at === "nextUpkeep" || (d.at === "yourNextUpkeep" && s.turn.active === d.controller);
+    if (d.at === "endOfCombat" || d.at === "nextUpkeep" || d.at === "yourNextUpkeep") return false;
     // « … de votre prochain tour » : seulement pendant un tour de son contrôleur.
     return (d.at !== "yourNextEndStep" && d.at !== "yourEndStep") || s.turn.active === d.controller;
   });

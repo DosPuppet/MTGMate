@@ -108,6 +108,8 @@ export interface GameObject {
   warpExiledTurn?: number;
   /** Mana dépensé pour lancer ce sort ou ce permanent (Astelli Reclaimer, Unravel). */
   manaSpent?: number;
+  /** Mana produit par des Cavernes dépensé pour le lancer (Bat Colony). */
+  caveMana?: number;
   /** Monture (702.171) : tour pendant lequel elle a été montée (« sellée »). */
   saddledTurn?: number;
   /** Épuisé : ne se dégage pas lors de la prochaine étape de dégagement de son contrôleur. */
@@ -205,7 +207,7 @@ export interface StackItem {
   /** Esper Origins : après la résolution, exilé puis mis sur le champ de bataille transformé avec un marqueur de finalité. */
   toBattlefieldTransformed?: boolean;
   /** Modifications à l'arrivée du permanent (Torgal, Summon: Fenrir, Summon: Brynhildr, Noctis). */
-  arrival?: { counters?: { kind: string; n: number }[]; haste?: boolean };
+  arrival?: { counters?: { kind: string; n: number }[]; haste?: boolean; subtypes?: string[] };
   kind: "spell" | "ability";
   controller: PlayerId;
   /** Sort : l'objet sur la pile. Capacité : le permanent source (peut avoir disparu). */
@@ -234,6 +236,14 @@ export interface StackItem {
   impending?: boolean;
   /** Mana dépensé pour le lancer. */
   manaSpent?: number;
+  /** Dont le mana produit par des Cavernes (Bat Colony). */
+  caveMana?: number;
+  /** Sources dont le mana a servi à le lancer (« en utilisant du mana produit par [cette source] »). */
+  manaSources?: ObjectId[];
+  /** Lancé depuis l'exil (Quintorius Kand). */
+  fromExile?: boolean;
+  /** Rebond (702.88, accordé par Ojer Pakpatiq). */
+  rebound?: boolean;
   /** Lilah : exilé et comploté au lieu d'aller au cimetière. */
   plotOnResolve?: boolean;
   /** Capacité retardée ou réflexive : ses effets et cibles propres. */
@@ -247,7 +257,7 @@ export interface StackItem {
   /** Permanents engagés pour payer le coût (station). */
   tappedForCost?: ObjectId[];
   /** Effets de mana dépensé (Carnelian Orb, Pyromancer's Goggles). */
-  riders?: ("haste" | "copy")[];
+  riders?: ("haste" | "copy" | "uncounterable")[];
   /** Sort lancé depuis la main. */
   fromHand?: boolean;
   /** Lancé depuis le cimetière (Undead Sprinter). */
@@ -267,7 +277,7 @@ export interface InlineAbility {
 }
 
 /** Moment d'une capacité retardée : prochaine étape de fin, étape de fin de votre prochain tour, fin du combat. */
-export type DelayedTiming = "nextEndStep" | "yourNextEndStep" | "yourEndStep" | "endOfCombat" | "nextUpkeep";
+export type DelayedTiming = "nextEndStep" | "yourNextEndStep" | "yourEndStep" | "endOfCombat" | "nextUpkeep" | "yourNextUpkeep";
 
 export interface DelayedTrigger {
   id: string;
@@ -320,6 +330,16 @@ export interface TurnStats {
   handSpells?: number;
   /** Permanents sacrifiés ce tour-ci (Sawblade Skinripper). */
   sacrificed?: number;
+  /** Descente : cartes de permanent mises dans le cimetière de ce joueur ce tour-ci (Lost Caverns of Ixalan). */
+  descended?: number;
+  /** Créatures qui ont quitté le champ de bataille sous le contrôle de ce joueur ce tour-ci (Kutzil's Flanker). */
+  creaturesLeft?: number;
+  /** Créatures avec lesquelles ce joueur a attaqué ce tour-ci (Temple of Civilization). */
+  attackers?: number;
+  /** Blessures non de combat infligées par des sources rouges de ce joueur ce tour-ci (Temple of Power). */
+  redNoncombatDamage?: number;
+  /** Permanents dégagés pendant l'étape de dégagement de ce joueur (The Millennium Calendar). */
+  untappedInUntapStep?: number;
   /** Warped Space : un sort lancé depuis l'exil sans payer son coût de mana ce tour-ci. */
   freeFromExile?: number;
   /** Un permanent est arrivé face cachée sous son contrôle, ou il en a retourné un face visible (Oblivious Bookworm). */
@@ -396,6 +416,8 @@ export interface LkiSnapshot {
   supertypes: string[];
   colors: Color[];
   power: number;
+  /** Force de base (couche 7b). */
+  basePower?: number;
   toughness: number;
   keywords: Keyword[];
   isToken: boolean;
@@ -480,6 +502,14 @@ export interface GameState {
     number: number;
     active: PlayerId;
     step: Step;
+    /** Pendant l'exil des matériaux d'une fabrication (Market Gnome). */
+    crafting?: boolean;
+    /** Sandswirl Wanderglyph : `player` ne peut pas attaquer `defender` (ni ses planeswalkers) ce tour-ci. */
+    attackBans?: { player: PlayerId; defender: PlayerId }[];
+    /** Joueurs attaqués ce tour-ci, par attaquant (Sandswirl Wanderglyph). */
+    attackedBy?: { attacker: PlayerId; defender: PlayerId }[];
+    /** The Tomb of Aclazotz : joueurs qui peuvent lancer un sort de créature depuis leur cimetière ce tour-ci. */
+    graveyardCreatureOnce?: PlayerId[];
     landsPlayed: number;
     attacked: boolean;
     /** Une créature est morte ce tour-ci (morbide). */
@@ -551,6 +581,8 @@ export interface GameState {
     exileAfter?: boolean;
     /** Une seule carte du groupe peut être lancée (Buster Sword : « un sort de votre main »). */
     group?: string;
+    /** Découverte : si la carte n'a pas été lancée quand la permission expire, elle va dans la main. */
+    orHand?: boolean;
   }[];
   /** Contrôle donné par une Aura (Confiscate) : contrôleur d'origine à rétablir quand l'Aura part. */
   /** `by` : contrôle tant que ce joueur contrôle la source (Possession Engine), et non tant que l'Aura est attachée. */
@@ -573,7 +605,8 @@ export interface GameState {
   /** Joueurs à qui l'on a proposé leurs cartes « leyline » en début de partie. */
   leylineAsked?: PlayerId[];
   /** Cartes exilées « jusqu'à ce que [la source] quitte le champ de bataille ». */
-  linkedExile: { sourceId: ObjectId; cards: ObjectId[] }[];
+  /** `toHand` : les cartes reviennent dans la main de leur propriétaire (Deep-Cavern Bat). */
+  linkedExile: { sourceId: ObjectId; cards: ObjectId[]; toHand?: boolean }[];
   /** Dernières informations connues, par ancien identifiant (purgées à la fin de chaque étape). */
   lki: Record<ObjectId, LkiSnapshot>;
   winner: PlayerId | null;

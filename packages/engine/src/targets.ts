@@ -50,6 +50,8 @@ export function matchesView(v: LkiSnapshot, f: ObjectFilter, perspective: Player
   if (f.legendary !== undefined && v.supertypes.includes("Legendary") !== f.legendary) return false;
   if (f.maxToughness !== undefined && v.toughness > f.maxToughness) return false;
   if (f.toughnessAbovePower && !(v.toughness > v.power)) return false;
+  if (f.powerAboveBase && !(v.power > (v.basePower ?? v.power))) return false;
+  if (f.withActivatedAbility && !(v.abilities ?? []).some((a) => a.kind === "activated")) return false;
   if (f.manaValueParity && ((v.manaValue ?? 0) % 2 === 0) !== (f.manaValueParity === "even")) return false;
   if (f.noManaSpent && (v.manaSpent ?? 0) > 0) return false;
   if (f.notOwned && v.owner === v.controller) return false;

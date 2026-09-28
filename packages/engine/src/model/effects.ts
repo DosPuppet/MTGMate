@@ -44,6 +44,8 @@ export type Effect =
       mods: LayerMods;
       duration: "endOfTurn" | "permanent" | "untilYourNextTurn";
       untilLeavesExile?: Ref;
+      /** « tant que [la source] reste sur le champ de bataille » (Kitesail Larcenist). */
+      whileSource?: boolean;
     }
   /** `store` : les cartes mises au cimetière ainsi (« si une carte de créature est mise dans un cimetière de cette façon »). */
   | { op: "destroy"; what: Ref; store?: string }
@@ -93,7 +95,8 @@ export type Effect =
   /** Effets avec choix pendant la résolution. */
   | { op: "scry"; amount: Amount }
   /** `toHand` : les cartes ainsi mises au cimetière et correspondantes vont ensuite en main (Enlightened Confidant). */
-  | { op: "surveil"; amount: Amount; toHand?: { filter?: ObjectFilter; maxManaValue?: Amount } }
+  /** `store` : le nombre de cartes remises au-dessus (Starving Revenant). */
+  | { op: "surveil"; amount: Amount; toHand?: { filter?: ObjectFilter; maxManaValue?: Amount }; store?: string }
   /** `chooser: "controller"` : le contrôleur de l'effet choisit dans la main révélée (« Pilfer »). */
   | {
       op: "discard";
@@ -204,7 +207,7 @@ export type Effect =
   /** La carte (ou le sort) est exilée et devient complotée (702.170). */
   | { op: "plot"; what: Ref }
   /** Tarnation Vista : un mana de chaque couleur présente parmi les permanents correspondants. */
-  | { op: "addManaColorsAmong"; filter: ObjectFilter }
+  | { op: "addManaColorsAmong"; filter: ObjectFilter; linked?: boolean }
   /** Chaque joueur peut mélanger sa main et son cimetière dans sa bibliothèque, puis pioche N cartes (Step Between Worlds). */
   | { op: "mayShuffleHandGraveyardDraw"; n: number }
   /** 705 : pile ou face ; `store` vaut 1 si le contrôleur gagne. */
@@ -357,6 +360,34 @@ export type Effect =
   | { op: "meld"; with: string }
   /** Les créatures désignées explorent (701.44), `times` fois. */
   | { op: "explore"; what: Ref; times?: Amount }
+  /**
+   * Découverte N (701.57) : exiler depuis le dessus jusqu'à une carte non-terrain de valeur de mana N ou moins, la
+   * lancer sans payer son coût de mana ou la mettre en main ; le reste dessous dans un ordre aléatoire.
+   * `who` : le joueur qui découvre (vous par défaut) ; `store` : la carte découverte.
+   */
+  | { op: "discover"; n: Amount; who?: Ref; store?: string }
+  /** Fabrication : « renvoyez cette carte transformée sous le contrôle de son propriétaire » ; les matériaux lui sont liés. */
+  | { op: "craftReturn" }
+  /**
+   * Tishana's Tidebinder : contrecarrez la capacité ; si c'est celle d'un artefact, d'une créature ou d'un planeswalker,
+   * ce permanent perd toutes ses capacités tant que la source de l'effet reste sur le champ de bataille.
+   */
+  | { op: "counterAbilitySilence"; what: Ref }
+  /** Sandswirl Wanderglyph : « [ce joueur] ne peut pas vous attaquer, ni vos planeswalkers, ce tour-ci ». */
+  | { op: "cantAttackYouThisTurn"; who: Ref }
+  /** Unstable Glyphbridge : pour chaque joueur, choisissez une créature correspondante ; détruisez toutes les autres. */
+  | { op: "destroyAllButOnePerPlayer"; keep: ObjectFilter }
+  /**
+   * Fabrication Foundry : exilez des [artefacts] que vous contrôlez de valeur de mana totale au moins N (les moins chers
+   * d'abord) ; `store` vaut 1 si c'est fait.
+   */
+  | { op: "exileForManaValue"; filter: ObjectFilter; atLeast: Amount; store: string }
+  /** The Tomb of Aclazotz : « vous pouvez lancer un sort de créature depuis votre cimetière ce tour-ci » (finalité, Vampire). */
+  | { op: "graveyardCreatureOnce" }
+  /** « [Ce sort] gagne le rebond » (702.88). */
+  | { op: "grantRebound"; what: Ref }
+  /** Sovereign Okinec Ahau : autant de marqueurs +1/+1 que l'écart entre sa force et sa force de base. */
+  | { op: "countersAboveBase"; filter: ObjectFilter }
   /** Les créatures désignées ont la connivence (701.50) : leur contrôleur pioche, défausse ; non-terrain : marqueur +1/+1. */
   | { op: "connive"; what: Ref }
   /** La Monture source devient montée jusqu'à la fin du tour (702.171a). */
@@ -455,7 +486,7 @@ export type Effect =
   /** « Choisissez un type de créature. Détruisez toutes les créatures qui ne sont pas du type choisi. » */
   | { op: "destroyAllButChosenType" }
   /** Le joueur désigné révèle sa main ; le contrôleur y choisit une carte correspondante, exilée et liée à la source. */
-  | { op: "exileFromHandLinked"; who: Ref; filter: ObjectFilter }
+  | { op: "exileFromHandLinked"; who: Ref; filter: ObjectFilter; untilLeaves?: boolean }
   /** « Exilez toutes les cartes de la bibliothèque de chaque adversaire, sauf celle du dessous. » */
   /** `keep` : cartes laissées au-dessous (1 par défaut ; Doomsday Excruciator : 6). */
   | { op: "exileLibraryButBottom"; who: Ref; keep?: number }

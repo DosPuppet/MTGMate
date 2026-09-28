@@ -17,7 +17,7 @@ import {
   setController,
   tapObject,
 } from "../state";
-import { doublers } from "../statics";
+import { tokenMultiplier } from "../statics";
 import { matchesObjectFilter } from "../targets";
 import { createDelayed } from "../triggers";
 
@@ -35,6 +35,8 @@ export const HANDLERS: OpHandlers = {
   modify(s, _r, e, ctx) {
     const ids = resolveRef(s, ctx, e.what).filter((id) => onBattlefield(s, id));
     if (ids.length === 0) return;
+    // 611.2b : un effet « tant que [la source] reste… » ne fait rien si elle est déjà partie.
+    if (e.whileSource && !onBattlefield(s, ctx.sourceId)) return;
     bump(s);
     s.effects.push({
       id: newId(s, "e"),
@@ -43,6 +45,7 @@ export const HANDLERS: OpHandlers = {
       duration: e.duration,
       ...(e.duration === "untilYourNextTurn" ? { until: ctx.controller } : {}),
       ...(e.untilLeavesExile ? { untilExiledUid: exiledUid(s, ctx, e.untilLeavesExile) } : {}),
+      ...(e.whileSource ? { whileSource: ctx.sourceId } : {}),
       ...e.mods,
     });
     return;
@@ -165,11 +168,14 @@ export const HANDLERS: OpHandlers = {
   },
   copyToken(s, _r, e, ctx) {
     // Doubling Season s'applique aussi aux jetons copies.
-    const n = (e.count === undefined ? 1 : evalAmount(s, ctx, e.count)) * 2 ** doublers(s, ctx.controller, "tokens");
+    const base = e.count === undefined ? 1 : evalAmount(s, ctx, e.count);
     for (const id of resolveRef(s, ctx, e.of)) {
       const model = s.objects[id] ?? undefined;
       const defId = model?.defId ?? s.lki[id]?.defId;
       if (!defId) continue;
+      const creature =
+        model?.zone === "battlefield" ? chars(s, id).types.includes("Creature") : !!s.defs[defId]?.types.includes("Creature");
+      const n = base * tokenMultiplier(s, ctx.controller, creature || !!e.addTypes?.includes("Creature"));
       for (let i = 0; i < n; i++) {
         const token = createTokenCopy(s, ctx.controller, defId);
         const tok = s.objects[token];

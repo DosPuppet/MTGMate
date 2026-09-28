@@ -4,6 +4,7 @@
  */
 import type {
   CardDef,
+  CardType,
   GameEvent,
   GameObject,
   GameState,
@@ -16,6 +17,9 @@ import type {
   TurnStats,
   Zone,
 } from "./types";
+
+/** Types de permanent (Descente : « une carte de permanent a été mise dans votre cimetière »). */
+const DESCEND_TYPES: ReadonlySet<CardType> = new Set(["Artifact", "Battle", "Creature", "Enchantment", "Land", "Planeswalker"]);
 
 // ---------------------------------------------------------------------------
 // Événements : le moteur est synchrone, un collecteur global suffit.
@@ -92,6 +96,10 @@ export type RulesEvent =
   | { e: "controlChange"; objectId: ObjectId; from: PlayerId; to: PlayerId }
   /** Une créature explore (701.44), en révélant une carte de terrain ou non. */
   | { e: "explore"; objectId: ObjectId; land: boolean }
+  /** Un joueur découvre N (701.57). */
+  | { e: "discover"; player: PlayerId; n: number }
+  /** Un joueur active une capacité (qui n'est pas une capacité de mana). */
+  | { e: "activated"; player: PlayerId; stackId: string }
   /** Une Monture devient montée. */
   | { e: "saddled"; objectId: ObjectId }
   /** Des créatures ont monté une Monture ou équipé un Véhicule (coût payé). */
@@ -366,6 +374,9 @@ export function moveObject(
     faceDown?: { ward: boolean; upCosts: ManaCost[] };
     /** Reçoit la destination réelle, après les remplacements (exilée au lieu de mourir…). */
     landed?: { to?: Zone };
+    /** Arrive transformé (712.14) ou engagé : fixé avant les remplacements et les déclencheurs d'arrivée. */
+    transformed?: boolean;
+    tapped?: boolean;
   } = {},
 ): ObjectId | null {
   const o = obj(s, id);
@@ -426,6 +437,10 @@ export function moveObject(
     s.lki[id] = lki;
     // Vide (Edge of Eternities) : un permanent non-terrain a quitté le champ de bataille ce tour-ci.
     if (!lki.types.includes("Land")) s.turn.nonlandLeft = true;
+    if (lki.types.includes("Creature")) {
+      const stats = s.players[lki.controller]?.turnStats;
+      if (stats) stats.creaturesLeft = (stats.creaturesLeft ?? 0) + 1;
+    }
     if (to === "graveyard" && lki.types.includes("Creature")) {
       s.turn.creatureDied = true;
       s.turn.creaturesDied = (s.turn.creaturesDied ?? 0) + 1;
@@ -492,6 +507,11 @@ export function moveObject(
   });
   if (o.preparedFor) moved.preparedFor = o.preparedFor;
   if (o.cardCopy && to === "stack") moved.cardCopy = true;
+  // Descente (Lost Caverns of Ixalan) : une carte de permanent est mise dans le cimetière de son propriétaire.
+  if (to === "graveyard" && s.defs[cardId]?.types.some((t) => DESCEND_TYPES.has(t))) {
+    const stats = s.players[o.owner]?.turnStats;
+    if (stats) stats.descended = (stats.descended ?? 0) + 1;
+  }
   if (staysFaceDown) moved.faceDown = o.faceDown;
   if (hide && opts.faceDown) moved.faceDown = { card: cardId, ...opts.faceDown };
   if (to === "library" && opts.position !== "bottom") {
@@ -502,6 +522,12 @@ export function moveObject(
     }
   }
   if (shuffleIn) shuffle(s, s.players[o.owner]?.library ?? []);
+  if (to === "battlefield" && opts.transformed) {
+    const d = s.defs[moved.defId];
+    const back = d?.layout === "transform" ? d.faceDefs?.[1] : undefined;
+    if (back) moved.faceDefId = back.id;
+  }
+  if (to === "battlefield" && opts.tapped) moved.tapped = true;
   if (to === "battlefield") applyEntersReplacements(s, moved, opts.enters ?? {});
   // Bioengineered Future : terrains arrivés sous votre contrôle ce tour-ci.
   if (to === "battlefield" && s.defs[moved.defId]?.types.includes("Land")) {

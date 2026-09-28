@@ -2,9 +2,10 @@
  * Mana : lecture des coûts, sources disponibles et solveur de paiement automatique.
  */
 import { loseLife, sacrifice } from "./actions";
+import { linkedColors } from "./layers";
 import { changeCounters, chars, defOf, isCreature, isSummoningSick, obj, snapshot, tapObject } from "./state";
 import { controlledAbilitiesWithSource, playerStatic } from "./statics";
-import { matchesObjectFilter, matchesView, withChosen } from "./targets";
+import { matchesCard, matchesObjectFilter, matchesView, withChosen } from "./targets";
 import { checkCondition } from "./triggers";
 import type { GameState, LkiSnapshot, ManaAbilityDef, ManaCost, ManaType, ObjectId, PlayerId } from "./types";
 import { MANA_TYPES } from "./types";
@@ -102,7 +103,9 @@ export function manaAbilitiesOf(s: GameState, id: ObjectId): ManaAbilityDef[] {
   for (const a of c.abilities) {
     if (a.kind !== "mana") continue;
     // « Ajoutez un mana de la couleur choisie » (Heraldic Banner).
-    list.push(a.produceChosen ? { ...a, produce: o.chosen?.color ? [o.chosen.color] : a.produce } : a);
+    // Pit of Offerings : les couleurs des cartes exilées avec la source.
+    if (a.produceLinkedColors) list.push({ ...a, produce: linkedColors(s, o.linked) });
+    else list.push(a.produceChosen ? { ...a, produce: o.chosen?.color ? [o.chosen.color] : a.produce } : a);
   }
   return list;
 }
@@ -141,6 +144,12 @@ function manaAmount(s: GameState, id: ObjectId, ab: ManaAbilityDef): number {
   const extra = tide?.turn === s.turn.number && ab.cost.tap && chars(s, id).subtypes.includes("Mountain") ? tide.n : 0;
   // The Eternity Elevator : autant de mana que de marqueurs de charge.
   if (ab.amountCounters) return (o.counters[ab.amountCounters] ?? 0) + extra;
+  // The Core : « X mana, où X est le nombre de cartes de permanent de votre cimetière ».
+  if (ab.amountGraveyard) {
+    const f = ab.amountGraveyard;
+    return (s.players[controller]?.graveyard ?? []).filter((x) => matchesCard(s, controller, x, { ...f, controller: undefined }))
+      .length;
+  }
   if (ab.amountSelfPower) return Math.max(0, chars(s, id).power) + extra;
   // Roxanne, Starfall Savant : un jeton d'artefact engagé pour du mana en produit un de plus.
   if (
@@ -254,6 +263,7 @@ export function activateManaAbility(s: GameState, player: PlayerId, id: ObjectId
   // Haunted Screen : « {T}, payez 1 point de vie » ; Twitching Doll : « mettez un marqueur de nid sur cette créature ».
   if (ab.cost.payLife) loseLife(s, player, ab.cost.payLife);
   if (ab.addCounter && s.objects[id]?.zone === "battlefield") changeCounters(s, o, ab.addCounter, 1);
+  if (ab.removeCounter && (o.counters[ab.removeCounter] ?? 0) > 0) changeCounters(s, o, ab.removeCounter, -1);
   const pool = s.players[player]?.manaPool;
   if (pool) pool[c] += manaAmount(s, id, ab);
   // Ultima, Origin of Oblivion : un terrain engagé pour {C} en ajoute un de plus.
@@ -411,9 +421,17 @@ export function payMana(
   cost: ManaCost,
   exclude?: ReadonlySet<ObjectId>,
   purpose?: ManaPurpose,
+  /** Reçoit les activations du paiement automatique : source, capacité et quantité produite. */
+  sources?: { id: ObjectId; ab?: ManaAbilityDef; amount: number }[],
 ): ManaAbilityDef[] {
   const plan = solvePayment(s, player, cost, exclude, purpose);
   if (!plan) throw new Error("Mana insuffisant");
+  if (sources) {
+    for (const t of plan.taps) {
+      const ab = t.ability === CONVOKE ? undefined : manaAbilitiesOf(s, t.id)[t.ability];
+      sources.push({ id: t.id, ab, amount: ab ? manaAmount(s, t.id, ab) : 1 });
+    }
+  }
   // Capacités de mana utilisées (effets associés au mana dépensé : Carnelian Orb…).
   const used = plan.taps.map((t) => manaAbilitiesOf(s, t.id)[t.ability]).filter((a): a is ManaAbilityDef => !!a);
   const pool = s.players[player]?.manaPool;

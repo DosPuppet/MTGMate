@@ -18,6 +18,20 @@ import { playerStatic } from "../statics";
 import { matchesObjectFilter } from "../targets";
 
 export const HANDLERS: OpHandlers = {
+  countersAboveBase(s, _r, e, ctx) {
+    // Les écarts sont mesurés d'abord, puis les marqueurs sont posés.
+    const gaps = s.battlefield
+      .filter((id) => matchesObjectFilter(s, ctx.controller, id, e.filter, ctx.sourceId))
+      .map((id) => {
+        const c = chars(s, id);
+        return [id, c.power - (c.basePower ?? c.power)] as const;
+      });
+    for (const [id, n] of gaps) {
+      const o = s.objects[id];
+      if (o && n > 0) changeCounters(s, o, "+1/+1", n);
+    }
+    return;
+  },
   doubleAllCounters(s, _r, e, ctx) {
     for (const id of resolveRef(s, ctx, e.what)) {
       const o = s.objects[id];

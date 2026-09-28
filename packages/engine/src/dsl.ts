@@ -286,6 +286,14 @@ export const amount = {
   lkiPower: { kind: "lkiPower" } as Amount,
   instantSorceryCast: { kind: "instantSorceryCast" } as Amount,
   cardsLeftGraveyardThisTurn: { kind: "cardsLeftGraveyardThisTurn" } as Amount,
+  /** Nombre de fois où vous êtes descendu ce tour-ci (cartes de permanent mises dans votre cimetière). */
+  descendedThisTurn: { kind: "descendedThisTurn" } as Amount,
+  /** « pour chaque mana d'une Caverne dépensé pour la lancer » */
+  caveManaSpent: { kind: "caveManaSpent" } as Amount,
+  /** Force totale des cartes exilées pour fabriquer la source. */
+  linkedTotalPower: { kind: "linkedTotalPower" } as Amount,
+  /** Couleurs parmi les cartes exilées pour fabriquer la source. */
+  linkedColors: { kind: "linkedColors" } as Amount,
 };
 
 export const fx = {
@@ -359,10 +367,11 @@ export const fx = {
     store,
   }),
   scry: (n: Amount): Effect => ({ op: "scry", amount: n }),
-  surveil: (n: Amount, toHand?: { filter?: ObjectFilter; maxManaValue?: Amount }): Effect => ({
+  surveil: (n: Amount, toHand?: { filter?: ObjectFilter; maxManaValue?: Amount }, store?: string): Effect => ({
     op: "surveil",
     amount: n,
     toHand,
+    store,
   }),
   discard: (
     n: Amount,
@@ -535,6 +544,22 @@ export const fx = {
   manifestDreadBy: (opts: { who?: Ref; times?: Amount; store?: string }): Effect => ({ op: "manifestDread", ...opts }),
   /** « [créature] explore » (701.44), `times` fois. */
   explore: (what: Ref = ref.self, times?: Amount): Effect => ({ op: "explore", what, times }),
+  /** « … tant que [cette source] reste sur le champ de bataille » (Kitesail Larcenist). */
+  modifyWhileSource: (what: Ref, mods: LayerMods): Effect => ({
+    op: "modify",
+    what,
+    mods,
+    duration: "permanent",
+    whileSource: true,
+  }),
+  /** Tishana's Tidebinder : contrecarre la capacité ; son permanent perd ses capacités tant que la source reste. */
+  counterAbilitySilence: (what: Ref): Effect => ({ op: "counterAbilitySilence", what }),
+  /** « [Ce sort] gagne le rebond » (Ojer Pakpatiq). */
+  grantRebound: (what: Ref): Effect => ({ op: "grantRebound", what }),
+  /** Sovereign Okinec Ahau : des marqueurs +1/+1 égaux à l'écart entre force et force de base. */
+  countersAboveBase: (filter: ObjectFilter): Effect => ({ op: "countersAboveBase", filter }),
+  /** Découverte N (701.57) ; `who` : « ce joueur découvre N » ; `store` : la carte découverte. */
+  discover: (n: Amount, opts: { who?: Ref; store?: string } = {}): Effect => ({ op: "discover", n, ...opts }),
   /** « [créature] a la connivence » (701.50). */
   connive: (what: Ref = ref.self): Effect => ({ op: "connive", what }),
   turnFaceUp: (what: Ref): Effect => ({ op: "turnFaceUp", what }),
@@ -615,7 +640,12 @@ export const fx = {
   extraMountainMana: { op: "extraMountainMana" } as Effect,
   mayWheel: { op: "mayWheel" } as Effect,
   destroyAllButChosenType: { op: "destroyAllButChosenType" } as Effect,
-  exileFromHandLinked: (who: Ref, filter: ObjectFilter): Effect => ({ op: "exileFromHandLinked", who, filter }),
+  exileFromHandLinked: (who: Ref, filter: ObjectFilter, untilLeaves?: boolean): Effect => ({
+    op: "exileFromHandLinked",
+    who,
+    filter,
+    untilLeaves,
+  }),
   exileLibraryButBottom: (who: Ref, keep?: number): Effect => ({ op: "exileLibraryButBottom", who, keep }),
   /** Attache une Aura ou un Équipement (par défaut la source) au permanent désigné. */
   attach: (to: Ref, what: Ref = ref.self): Effect => ({ op: "attach", what, to }),
@@ -806,7 +836,7 @@ export const fx = {
   }),
   /** Capacité retardée à un autre moment : étape de fin de votre prochain tour, fin du combat. */
   delayedAt: (
-    at: "yourNextEndStep" | "yourEndStep" | "endOfCombat" | "nextUpkeep",
+    at: "yourNextEndStep" | "yourEndStep" | "endOfCombat" | "nextUpkeep" | "yourNextUpkeep",
     effects: Effects,
     bind?: Record<string, Ref>,
   ): Effect => ({
@@ -967,12 +997,21 @@ export function manaAbility(
     payLife?: number;
     /** Marqueur mis sur la source à chaque activation (Twitching Doll). */
     addCounter?: string;
+    /** Marqueur retiré de la source à chaque activation (Temple of Cyclical Time). */
+    removeCounter?: string;
+    /** Couleurs des cartes liées à la source (Pit of Offerings). */
+    linkedColors?: boolean;
+    /** Autant de mana que de cartes de votre cimetière correspondant au filtre (The Core). */
+    perGraveyard?: ObjectFilter;
   } = {},
 ): ManaAbilityDef {
   return {
     kind: "mana",
     cost: { tap: !opts.noTap, sacrificeSelf: opts.sacrifice, payLife: opts.payLife },
     addCounter: opts.addCounter,
+    removeCounter: opts.removeCounter,
+    produceLinkedColors: opts.linkedColors,
+    amountGraveyard: opts.perGraveyard,
     oncePerTurn: opts.oncePerTurn,
     produce: Array.isArray(produce) ? produce : [produce],
     amount: amountProduced,
@@ -1041,6 +1080,8 @@ export function activated(opts: {
   returnUnblockedAttacker?: boolean;
   /** « Fourragez » (701.61). */
   forage?: boolean;
+  /** Fabrication (702.167) : voir `craft()`. */
+  craft?: NonNullable<ActivatedAbilityDef["cost"]["craft"]>;
   label?: string;
 }): ActivatedAbilityDef {
   return {
@@ -1069,6 +1110,7 @@ export function activated(opts: {
       discard: opts.discard,
       returnUnblockedAttacker: opts.returnUnblockedAttacker,
       forage: opts.forage,
+      craft: opts.craft,
     },
     reduction: opts.reduction,
     targets: opts.targets ?? [],
@@ -1080,6 +1122,22 @@ export function activated(opts: {
     fromGraveyard: opts.fromGraveyard,
     fromHand: opts.fromHand,
     label: opts.label,
+  };
+}
+
+/**
+ * Fabrication (702.167) : « Craft with [matériaux] [coût] » — « [coût], exilez ce permanent, exilez [matériaux] parmi les
+ * autres permanents que vous contrôlez et/ou les cartes de votre cimetière : renvoyez cette carte transformée sous le
+ * contrôle de son propriétaire. N'activez qu'en rituel. » Les matériaux sont liés au verso (`ref.linked`).
+ */
+export function craft(
+  mana: string,
+  materials: NonNullable<ActivatedAbilityDef["cost"]["craft"]>,
+  label = "Fabrication",
+): ActivatedAbilityDef {
+  return {
+    ...activated({ mana, exileSelf: true, craft: materials, sorcerySpeed: true, effects: [{ op: "craftReturn" }] }),
+    label: `${label} ${mana}`,
   };
 }
 
@@ -1239,6 +1297,8 @@ export const when = {
   attachedPlayerDamaged: { on: "attachedPlayerDamaged" } as TriggerSpec,
   /** « Chaque fois que vous manifestez l'effroi » (l'objet de l'événement : la carte mise au cimetière). */
   manifestDread: { on: "manifestDread" } as TriggerSpec,
+  /** « Chaque fois que vous découvrez » (`amount.eventAmount` : la valeur N). */
+  discover: { on: "discover" } as TriggerSpec,
   /** « Chaque fois qu'une [créature] explore [une carte de terrain / non-terrain] » */
   explores: (who: "self" | ObjectFilter, land?: boolean): TriggerSpec => ({ on: "explores", who, land }),
   /** « Chaque fois que vous sacrifiez [un permanent] » */
@@ -1373,6 +1433,8 @@ export const cond = {
   canForage: { kind: "canForage" } as Condition,
   /** Délire : au moins quatre types de cartes parmi les cartes de votre cimetière. */
   delirium: { kind: "amountAtLeast", amount: { kind: "cardTypesInGraveyard" }, n: 4 } as Condition,
+  /** « si vous êtes descendu ce tour-ci » (une carte de permanent a été mise dans votre cimetière). */
+  descended: { kind: "descended" } as Condition,
 };
 
 /** Équipage N (702.122) : « engagez des créatures de force totale N ou plus : ce Véhicule devient une créature-artefact ». */

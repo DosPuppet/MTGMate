@@ -245,6 +245,8 @@ export function describeEvents(
           hand: "retourne dans la main de son propriétaire",
           exile: "est exilé",
           graveyard: "va au cimetière",
+          battlefield: "arrive sur le champ de bataille",
+          library: "est mis dans la bibliothèque de son propriétaire",
         };
         if (!e.defId) {
           // Carte cachée d'un autre joueur (recherche vers la main, remise dans la bibliothèque…).

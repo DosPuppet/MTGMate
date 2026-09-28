@@ -218,6 +218,10 @@ export type AbilityDef =
 
 export interface AdditionalCost {
   discard?: number;
+  /** « Défaussez une carte ou payez N points de vie » (Bitter Triumph) : sans défausse, le joueur paie ces PV. */
+  discardOrLife?: number;
+  /** « Défaussez une carte ou sacrifiez un permanent » (Souls of the Lost) : un permanent choisi est sacrifié. */
+  discardOrSacrifice?: boolean;
   /** Choisis automatiquement (Duskmourn) : permanents exilés (liés au permanent), renvoyés, engagés ; cartes du cimetière exilées. */
   exile?: { filter: ObjectFilter; count: number };
   bounce?: { filter: ObjectFilter; count: number };
@@ -269,8 +273,15 @@ export interface ManaAbilityDef {
   oncePerTurn?: boolean;
   /** Twitching Doll : « mettez un marqueur [nid] sur cette créature » quand on l'active. */
   addCounter?: string;
+  /** Temple of Cyclical Time : « retirez un marqueur [de temps] de ce terrain » quand on l'active. */
+  removeCounter?: string;
+  /** Pit of Offerings : un mana de l'une des couleurs des cartes liées à la source (exilées avec elle). */
+  produceLinkedColors?: boolean;
+  /** The Core : autant de mana que de cartes de votre cimetière correspondant au filtre. */
+  amountGraveyard?: ObjectFilter;
   /** Effet si ce mana sert à lancer un sort correspondant (Carnelian Orb : célérité ; Pyromancer's Goggles : copie). */
-  rider?: { spell: ObjectFilter; effect: "haste" | "copy" };
+  /** `uncounterable` : « ce sort ne peut pas être contrecarré » (Cavern of Souls). */
+  rider?: { spell: ObjectFilter; effect: "haste" | "copy" | "uncounterable" };
   amount: number;
   /** « {G} pour chaque Elfe que vous contrôlez » : le montant est le nombre de permanents correspondant. */
   amountPer?: ObjectFilter;
@@ -315,6 +326,20 @@ export interface CostDef {
   mana?: ManaCost;
   tap?: boolean;
   sacrificeSelf?: boolean;
+  /**
+   * Fabrication (702.167) : exiler des matériaux parmi les autres permanents que vous contrôlez et/ou les cartes de votre
+   * cimetière (choisis automatiquement, cartes du cimetière d'abord). `each` : un matériau par filtre (The Grim Captain) ;
+   * `orMore` : un ou plusieurs ; `preferHighManaValue` : les plus chers d'abord (Jadeheart Attendant).
+   */
+  craft?: {
+    filter?: ObjectFilter;
+    count: number;
+    orMore?: boolean;
+    each?: ObjectFilter[];
+    preferHighManaValue?: boolean;
+    /** « Un ou plusieurs » : un matériau par couleur nouvelle (Sunbird Standard), plutôt que tout le cimetière. */
+    distinctColors?: boolean;
+  };
   /** Sacrifier d'autres permanents (choisis par le joueur). */
   sacrifice?: { filter: ObjectFilter; count: number };
   /** Retirer des marqueurs de la source. */
@@ -427,6 +452,10 @@ export interface CastPermissionAbilityDef {
   freeMaxManaValueCreatures?: true;
   /** Null Summoner : lancer les cartes liées exilées (mana de n'importe quel type), sous condition. */
   linkedCards?: true;
+  /** Intrepid Paleontologist : seulement les cartes liées que vous possédez et qui correspondent (mana ordinaire). */
+  linkedFilter?: ObjectFilter;
+  /** … et le permanent arrive avec un marqueur de finalité. */
+  linkedFinality?: true;
   condition?: Condition;
   /** Tinybones : pendant votre tour, jouer les cartes exilées avec un marqueur de butin que vous ne possédez pas (mana de n'importe quel type). */
   stash?: true;
@@ -597,6 +626,18 @@ export interface PlayerStaticAbilityDef {
   damagePlusOneFrom?: ObjectFilter;
   /** Osteomancer Adept : lancer des sorts de créature depuis votre cimetière en fourrageant (marqueur de finalité). */
   creaturesFromGraveyardForage?: boolean;
+  /** Ojer Axonil : une source rouge que vous contrôlez inflige à un adversaire au moins autant de blessures non de combat que la force de la source de cette capacité. */
+  noncombatDamageAtLeastPower?: boolean;
+  /** Bloodletter of Aclazotz : pendant votre tour, un adversaire qui perd des points de vie en perd le double. */
+  doubleOpponentLifeLossYourTurn?: boolean;
+  /** Roaming Throne : les capacités déclenchées des autres créatures correspondantes que vous contrôlez se déclenchent une fois de plus. */
+  doubleTriggersFor?: ObjectFilter;
+  /** Twists and Turns : « si une créature que vous contrôlez devait explorer, regardez 1 d'abord ». */
+  scryBeforeExplore?: boolean;
+  /** Kutzil, Malamet Exemplar : « vos adversaires ne peuvent pas lancer de sorts pendant votre tour ». */
+  opponentsCantCastYourTurn?: boolean;
+  /** Sandswirl Wanderglyph : « chaque adversaire qui vous a attaqué ce tour-ci ne peut pas lancer de sorts ». */
+  attackersCantCast?: boolean;
   label?: string;
 }
 
@@ -615,6 +656,8 @@ export interface PreventionAbilityDef {
 export interface DoublerAbilityDef {
   kind: "doubler";
   tokens?: boolean;
+  /** Ojer Taq : « trois fois plus de jetons de créature ». */
+  creatureTokensTriple?: boolean;
   counters?: boolean;
   /** Blessures d'une source que vous contrôlez à un adversaire ou à un permanent adverse. */
   damageToOpponents?: boolean;

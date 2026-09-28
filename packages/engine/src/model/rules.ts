@@ -149,6 +149,12 @@ export interface ObjectFilter {
   linkedToSource?: boolean;
   /** Endurance supérieure à sa force (Fecund Greenshell). */
   toughnessAbovePower?: boolean;
+  /** Force supérieure à sa force de base (Kutzil, Sovereign Okinec Ahau). */
+  powerAboveBase?: boolean;
+  /** A au moins une capacité activée, autre qu'une capacité de mana (The Enigma Jewel). */
+  withActivatedAbility?: boolean;
+  /** Valeur de mana égale au X de la capacité ou du sort (`destroyAll` : Dauntless Dismantler). */
+  manaValueX?: boolean;
 }
 
 /**
@@ -159,7 +165,8 @@ export type TriggerSpec =
   | { on: "enters"; who: "self" | ObjectFilter }
   | { on: "dies"; who: "self" | ObjectFilter }
   /** `to` : seulement vers cette zone (« quand cet artefact est mis au cimetière depuis le champ de bataille »). */
-  | { on: "leaves"; who: "self" | "linked"; to?: Zone }
+  /** `whileCrafting` : exilé comme matériau d'une fabrication (Market Gnome). */
+  | { on: "leaves"; who: "self" | "linked"; to?: Zone; whileCrafting?: boolean }
   /** « Quand un adversaire perd la partie » (Shinryu). */
   | { on: "playerLoses"; whose: "opponent" | "any" }
   /** `defending: "you"` : elle attaque le contrôleur ou un planeswalker qu'il contrôle. */
@@ -192,6 +199,12 @@ export type TriggerSpec =
        * autre que la source.
        */
       firstOf?: string[];
+      /** « en utilisant du mana produit par [cette source] » (Tecutlan, Barracks of the Thousand). */
+      usingManaFromSelf?: boolean;
+      /** Lancé depuis l'exil (Quintorius Kand). */
+      fromExile?: boolean;
+      /** Lancé depuis la main (Ojer Pakpatiq). */
+      fromHand?: boolean;
     }
   | { on: "step"; step: Step; whose: "you" | "opponent" | "any" }
   | { on: "landfall" }
@@ -292,7 +305,11 @@ export type TriggerSpec =
   /** « Chaque fois que vous gagnez ou perdez des points de vie » (Wax-Wane Witness). */
   | { on: "lifeChange" }
   /** « Chaque fois qu'une [créature] quitte le champ de bataille sans mourir » (Dour Port-Mage, Three Tree Scribe). */
-  | { on: "leavesWithoutDying"; who: ObjectFilter };
+  | { on: "leavesWithoutDying"; who: ObjectFilter }
+  /** « Chaque fois que vous découvrez » (`amount.eventAmount` : la valeur N). */
+  | { on: "discover" }
+  /** « Chaque fois que vous activez une capacité qui n'est pas une capacité de mana » (l'objet : la capacité sur la pile). */
+  | { on: "activateAbility" };
 
 /** Conditions (« if intermédiaire » 603.4, « tant que »…). */
 export type Condition =
@@ -426,7 +443,11 @@ export type Condition =
   /** Vous avez sacrifié une Nourriture ce tour-ci (Bonecache Overseer). */
   | { kind: "sacrificedFood" }
   /** Vous pouvez fourrager (trois cartes dans votre cimetière ou une Nourriture). */
-  | { kind: "canForage" };
+  | { kind: "canForage" }
+  /** « si vous êtes descendu ce tour-ci » : une carte de permanent a été mise dans votre cimetière ce tour-ci. */
+  | { kind: "descended" }
+  /** Le joueur désigné (vous par défaut) a le plus de points de vie, ou est à égalité (Preacher of the Schism). */
+  | { kind: "mostLife"; ref?: Ref };
 /** Référence à un joueur ou à un objet, résolue au moment de l'effet. */
 export type Ref =
   | { kind: "target"; id: string }
@@ -591,4 +612,22 @@ export type Amount =
   /** Éphémères et rituels que vous avez lancés ce tour-ci. */
   | { kind: "instantSorceryCast" }
   /** Cartes qui ont quitté votre cimetière ce tour-ci (Bonecache Overseer). */
-  | { kind: "cardsLeftGraveyardThisTurn" };
+  | { kind: "cardsLeftGraveyardThisTurn" }
+  /** Nombre de fois où vous êtes descendu ce tour-ci (The Mycotyrant). */
+  | { kind: "descendedThisTurn" }
+  /** Mana produit par des Cavernes dépensé pour lancer la source (Bat Colony). */
+  | { kind: "caveManaSpent" }
+  /** Force totale des cartes liées à la source (matériaux d'une fabrication : Mastercraft Raptor). */
+  | { kind: "linkedTotalPower" }
+  /** Nombre de couleurs parmi les cartes liées à la source (Sunbird Effigy). */
+  | { kind: "linkedColors" }
+  /** Créatures qui ont quitté le champ de bataille sous votre contrôle ce tour-ci. */
+  | { kind: "creaturesLeftThisTurn" }
+  /** Créatures avec lesquelles vous avez attaqué ce tour-ci. */
+  | { kind: "attackersThisTurn" }
+  /** Types de permanent parmi les cartes de votre cimetière (Matzalantli). */
+  | { kind: "permanentTypesInGraveyard" }
+  /** Blessures non de combat infligées par vos sources rouges ce tour-ci (Temple of Power). */
+  | { kind: "redNoncombatDamageThisTurn" }
+  /** Permanents dégagés pendant votre étape de dégagement de ce tour (The Millennium Calendar). */
+  | { kind: "untappedInUntapStep" };

@@ -17,6 +17,13 @@ import { matchesObjectFilter } from "../targets";
 import { eliminate, endTheTurn } from "../turn";
 
 export const HANDLERS: OpHandlers = {
+  cantAttackYouThisTurn(s, _r, e, ctx) {
+    for (const p of resolveRef(s, ctx, e.who)) {
+      if (isPlayer(s, p) && p !== ctx.controller)
+        s.turn.attackBans = [...(s.turn.attackBans ?? []), { player: p, defender: ctx.controller }];
+    }
+    return;
+  },
   gift(s, _r, e, ctx) {
     // 702.174 : l'adversaire choisi reçoit le cadeau (approximation : le prochain adversaire dans l'ordre du tour).
     const to = opponentsOf(s, ctx.controller)[0];

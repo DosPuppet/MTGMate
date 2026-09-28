@@ -31,7 +31,15 @@ import {
   unlockDoor,
 } from "./state";
 import { controlledAbilitiesWithSource, playerStatic } from "./statics";
-import { isLegalTarget, legalTargets, matchesCard, matchesObjectFilter, matchesView, validateTargets } from "./targets";
+import {
+  isLegalTarget,
+  legalTargets,
+  matchesCard,
+  matchesObjectFilter,
+  matchesView,
+  validateTargets,
+  withChosen,
+} from "./targets";
 import { checkCondition, checkCrime, createDelayed, pushInline, simultaneously } from "./triggers";
 import type {
   ActivatedAbilityDef,
@@ -43,6 +51,7 @@ import type {
   GameObject,
   GameState,
   LkiSnapshot,
+  ManaAbilityDef,
   ManaCost,
   ManaType,
   ModeDef,
@@ -279,6 +288,8 @@ export function spellReduction(
 /** Modifications à l'arrivée d'un sort (Noctis ; prochain sort de créature : Summon: Fenrir, Summon: Brynhildr). */
 function arrivalFor(s: GameState, player: PlayerId, d: CardDef, terms: CastTerms): StackItem["arrival"] {
   const counters: { kind: string; n: number }[] = terms.finality ? [{ kind: "finality", n: 1 }] : [];
+  // The Tomb of Aclazotz : « c'est un Vampire en plus de ses autres types ».
+  if (terms.tomb) return { counters, subtypes: ["Vampire"] };
   let haste = false;
   if (d.types.includes("Creature")) {
     const pending = (s.nextCreatureSpell ?? []).filter((x) => x.player === player && x.turn === s.turn.number);
@@ -401,6 +412,8 @@ export interface CastTerms {
   finality?: boolean;
   /** Il faut fourrager en plus (Osteomancer Adept). */
   forage?: boolean;
+  /** The Tomb of Aclazotz : permission utilisée une fois ; le permanent est un Vampire en plus. */
+  tomb?: boolean;
 }
 
 /** 702.170 : la carte (depuis la main ou la pile) est exilée face visible et devient complotée. */
@@ -547,6 +560,18 @@ function lockedOut(s: GameState, player: PlayerId): boolean {
 
 export function castTerms(s: GameState, player: PlayerId, card: ObjectId): CastTerms | null {
   if (lockedOut(s, player)) return null;
+  // Kutzil : pas de sort pendant le tour de son contrôleur ; Sandswirl Wanderglyph : pas de sort après l'avoir attaqué.
+  const active = s.turn.active;
+  if (active !== player && playerStatic(s, active, "opponentsCantCastYourTurn")) return null;
+  if (
+    s.playerOrder.some(
+      (q) =>
+        q !== player &&
+        playerStatic(s, q, "attackersCantCast") &&
+        !!s.turn.attackedBy?.some((x) => x.attacker === player && x.defender === q),
+    )
+  )
+    return null;
   // High Noon : « chaque joueur ne peut pas lancer plus d'un sort à chaque tour ».
   if ((s.players[player]?.turnStats.spellsCast ?? 0) >= 1 && s.playerOrder.some((p) => playerStatic(s, p, "oneSpellPerTurn")))
     return null;
@@ -601,6 +626,9 @@ function baseCastTerms(s: GameState, player: PlayerId, card: ObjectId): CastTerm
     if (gyPerm) return { source: "graveyard", anyMana: gyPerm.anyMana, free: gyPerm.free, exileAfter: gyPerm.exileAfter };
     if (o.owner !== player) return null;
     if (s.turn.mayCastFromGraveyard?.includes(card)) return { source: "graveyard" };
+    // The Tomb of Aclazotz : un sort de créature, qui arrive avec un marqueur de finalité et devient un Vampire.
+    if (s.turn.graveyardCreatureOnce?.includes(player) && d.types.includes("Creature"))
+      return { source: "graveyard", finality: true, tomb: true };
     // Timeline Culler : « vous pouvez lancer cette carte depuis votre cimetière avec sa distorsion ».
     if (d.warp?.fromGraveyard) return { source: "graveyard", warpOnly: true };
     // Archmage's Newt : flashback {0}.
@@ -677,7 +705,9 @@ function baseCastTerms(s: GameState, player: PlayerId, card: ObjectId): CastTerm
       if (src.controller !== player || !src.linked?.includes(card)) continue;
       const ab = chars(s, id).abilities.find((a) => a.kind === "castPermission" && a.linkedCards);
       if (ab?.kind === "castPermission" && (!ab.condition || checkCondition(s, ab.condition, player, id))) {
-        return { source: "exile", anyMana: true };
+        if (!ab.linkedFilter) return { source: "exile", anyMana: true };
+        if (o.owner === player && matchesCard(s, player, card, { ...ab.linkedFilter, controller: undefined }, id))
+          return { source: "exile", finality: ab.linkedFinality };
       }
     }
     // Valgavoth : pendant votre tour, les cartes liées ; un sort ainsi lancé coûte des PV égaux à sa valeur de mana.
@@ -749,7 +779,7 @@ export function additionalOptions(
   d: CardDef,
   flashback = false,
 ): {
-  discard?: { count: number; options: ObjectId[] };
+  discard?: { count: number; options: ObjectId[]; orLife?: number; orSacrifice?: boolean };
   sacrifice?: { count: number; options: ObjectId[]; orPay?: ManaCost; orPayAffordable?: boolean };
 } | null {
   // Twinned Vision : « Flashback—{1}{U/R}{U/R}, défaussez une carte ».
@@ -760,9 +790,20 @@ export function additionalOptions(
   if (!add) return {};
   const out: ReturnType<typeof additionalOptions> = {};
   if (add.discard) {
-    const options = (s.players[player]?.hand ?? []).filter((id) => id !== card);
-    if (options.length < add.discard) return null;
-    out.discard = { count: add.discard, options };
+    const hand = (s.players[player]?.hand ?? []).filter((id) => id !== card);
+    // Souls of the Lost : « … ou sacrifiez un permanent ».
+    const perms = add.discardOrSacrifice ? s.battlefield.filter((id) => obj(s, id).controller === player) : [];
+    const options = [...hand, ...perms];
+    // Bitter Triumph : « … ou payez 3 points de vie » (il faut en avoir au moins autant, 119.4).
+    const orLife =
+      add.discardOrLife !== undefined && (s.players[player]?.life ?? 0) >= add.discardOrLife ? add.discardOrLife : undefined;
+    if (options.length < add.discard && orLife === undefined) return null;
+    out.discard = {
+      count: add.discard,
+      options,
+      ...(orLife !== undefined ? { orLife } : {}),
+      ...(add.discardOrSacrifice ? { orSacrifice: true } : {}),
+    };
   }
   if (add.sacrifice) {
     const f = add.sacrifice.filter;
@@ -885,9 +926,10 @@ export function castSpell(s: GameState, player: PlayerId, card: ObjectId, choice
   if (!opts) throw new RulesError("Impossible de payer le coût additionnel");
   const discard = choices.discard ?? [];
   const sacrifice = choices.sacrifice ?? [];
-  const check = (chosen: ObjectId[], spec?: { count: number; options: ObjectId[]; orPay?: ManaCost }) => {
+  const check = (chosen: ObjectId[], spec?: { count: number; options: ObjectId[]; orPay?: ManaCost; orLife?: number }) => {
     const need = spec?.count ?? 0;
     if (spec?.orPay && chosen.length === 0) return; // on paiera le mana à la place
+    if (spec?.orLife !== undefined && chosen.length === 0) return; // on paiera les points de vie à la place
     if (chosen.length !== need || new Set(chosen).size !== need || chosen.some((id) => !spec?.options.includes(id))) {
       throw new RulesError("Choix du coût additionnel invalide");
     }
@@ -921,6 +963,10 @@ export function castSpell(s: GameState, player: PlayerId, card: ObjectId, choice
 
   // 601.2a : le sort passe sur la pile (nouvel objet), puis on paie les coûts (601.2g–h).
   if (terms.graveyardType) s.turn.graveyardTypesUsed = [...(s.turn.graveyardTypesUsed ?? []), terms.graveyardType];
+  if (terms.tomb) {
+    const i = s.turn.graveyardCreatureOnce?.indexOf(player) ?? -1;
+    if (i >= 0) s.turn.graveyardCreatureOnce?.splice(i, 1);
+  }
   if (terms.removeCounters) removeCountersAmongCreatures(s, player, terms.removeCounters);
   const view = spellView(d, player);
   // Lancer la copie d'un sort préparé dé-prépare son permanent (même si le sort est ensuite contrecarré).
@@ -972,6 +1018,7 @@ export function castSpell(s: GameState, player: PlayerId, card: ObjectId, choice
     manaSpent: free ? 0 : manaValue(cost),
     fromHand: terms.source === "hand" || undefined,
     fromGraveyard: terms.source === "graveyard" || terms.source === "flashback" || undefined,
+    fromExile: terms.source === "exile" || undefined,
     // Permanents sacrifiés comme coût additionnel (« si le permanent sacrifié était un Véhicule »).
     sacrificed: sacrifice.length ? [...sacrifice] : undefined,
     costExiled: costExiled.length ? costExiled : undefined,
@@ -979,14 +1026,33 @@ export function castSpell(s: GameState, player: PlayerId, card: ObjectId, choice
   };
   s.stack.push(item);
   try {
-    const used = payMana(s, player, cost, undefined, {
-      spell: view,
-      convoke: hasConvoke(s, player, d),
-      fromHand: terms.source === "hand",
+    const taps: { id: ObjectId; ab?: ManaAbilityDef; amount: number }[] = [];
+    payMana(
+      s,
+      player,
+      cost,
+      undefined,
+      { spell: view, convoke: hasConvoke(s, player, d), fromHand: terms.source === "hand" },
+      taps,
+    );
+    // Mana des Cavernes (Bat Colony) et sources utilisées (Tecutlan, Barracks of the Thousand).
+    if (taps.length) {
+      item.manaSources = taps.flatMap((t) => Array(t.amount).fill(t.id) as ObjectId[]);
+      // Une source sacrifiée pour son mana (Trésor) est connue par ses dernières informations.
+      const subtypes = (id: ObjectId) => (s.objects[id] ? chars(s, id).subtypes : (s.lki[id]?.subtypes ?? []));
+      const caves = taps.filter((t) => subtypes(t.id).includes("Cave")).reduce((n, t) => n + t.amount, 0);
+      if (caves) item.caveMana = caves;
+    }
+    // Effets associés au mana dépensé, si ce sort correspond (Carnelian Orb, Pyromancer's Goggles ; Cavern of Souls :
+    // « du type choisi » se lit sur la source).
+    const riders = taps.flatMap(({ id, ab }) => {
+      const rider = ab?.rider;
+      if (!rider) return [];
+      const src = s.objects[id];
+      return matchesView(view, src ? withChosen(rider.spell, src) : rider.spell, player, id) ? [rider.effect] : [];
     });
-    // Effets associés au mana dépensé, si ce sort correspond (Carnelian Orb, Pyromancer's Goggles).
-    const riders = used.flatMap((ab) => (ab.rider && matchesView(view, ab.rider.spell, player) ? [ab.rider.effect] : []));
     if (riders.length) item.riders = riders;
+    if (riders.includes("uncounterable")) item.uncounterable = true;
   } catch {
     throw new RulesError("Mana insuffisant");
   }
@@ -1002,11 +1068,17 @@ export function castSpell(s: GameState, player: PlayerId, card: ObjectId, choice
     for (const _ of pending) copySpellItem(s, item, player);
     if (pending.length) s.nextSpellCopies = (s.nextSpellCopies ?? []).filter((x) => !pending.includes(x));
   }
-  if (discard.length) {
-    emit({ type: "discard", player, defIds: discard.map((id) => obj(s, id).defId) });
-    const discarded = discard.map((id) => moveObject(s, id, "graveyard"));
+  // Bitter Triumph : sans carte défaussée, les points de vie sont payés.
+  if (opts.discard?.orLife !== undefined && discard.length === 0) loseLife(s, player, opts.discard.orLife);
+  // Souls of the Lost : un permanent choisi à la place d'une carte est sacrifié.
+  const sacrificedInstead = discard.filter((id) => obj(s, id).zone === "battlefield");
+  const handDiscard = discard.filter((id) => !sacrificedInstead.includes(id));
+  for (const id of sacrificedInstead) sacrificePermanent(s, id);
+  if (handDiscard.length) {
+    emit({ type: "discard", player, defIds: handDiscard.map((id) => obj(s, id).defId) });
+    const discarded = handDiscard.map((id) => moveObject(s, id, "graveyard"));
     for (const id of discarded) announceDiscard(s, player, id);
-    announceDiscardBatch(s, player, discard.length);
+    announceDiscardBatch(s, player, handDiscard.length);
     // Grab the Prize : « si la carte défaussée n'était pas une carte de terrain ».
     item.discarded = discarded.filter((id): id is string => !!id);
   }
@@ -1055,6 +1127,8 @@ export function copySpellItem(s: GameState, item: StackItem, controller: PlayerI
     controller,
     copy: true,
     riders: undefined,
+    manaSources: undefined,
+    caveMana: undefined,
     targets: { ...item.targets },
   });
   emit({ type: "copy", stackId: copyId, defId: item.sourceDefId, player: controller });
@@ -1220,6 +1294,58 @@ function graveyardExileOptions(s: GameState, source: ObjectId, ab: ActivatedAbil
     .sort((a, b) => manaValue(s.defs[obj(s, a).defId]?.manaCost) - manaValue(s.defs[obj(s, b).defId]?.manaCost));
 }
 
+/**
+ * Fabrication (702.167) : matériaux choisis automatiquement parmi les cartes du cimetière du joueur (d'abord), puis ses
+ * jetons, puis ses autres permanents (les moins chers d'abord, sauf `preferHighManaValue`). « Un ou plusieurs » : toutes les
+ * cartes correspondantes du cimetière, sinon un permanent. `null` si le coût ne peut pas être payé.
+ */
+export function craftMaterials(s: GameState, player: PlayerId, source: ObjectId, ab: ActivatedAbilityDef): ObjectId[] | null {
+  const c = ab.cost.craft;
+  if (!c) return [];
+  const mv = (id: ObjectId) => manaValue(s.defs[obj(s, id).defId]?.manaCost);
+  const order = (ids: ObjectId[]) => [...ids].sort((a, b) => (c.preferHighManaValue ? mv(b) - mv(a) : mv(a) - mv(b)));
+  const graveyard = (s.players[player]?.graveyard ?? []).filter((id) => id !== source);
+  const permanents = s.battlefield.filter((id) => id !== source && obj(s, id).controller === player);
+  const matches = (id: ObjectId, f: ObjectFilter) =>
+    obj(s, id).zone === "battlefield"
+      ? matchesObjectFilter(s, player, id, f, source)
+      : matchesCard(s, player, id, { ...f, controller: undefined }, source);
+  const candidates = (f: ObjectFilter) => [
+    ...order(graveyard.filter((id) => matches(id, f))),
+    ...order(permanents.filter((id) => obj(s, id).isToken && matches(id, f))),
+    ...order(permanents.filter((id) => !obj(s, id).isToken && matches(id, f))),
+  ];
+  if (c.each) {
+    // Un matériau distinct par filtre (affectation par retour arrière, les listes sont courtes).
+    const pick = (i: number, used: ObjectId[]): ObjectId[] | null => {
+      const f = c.each?.[i];
+      if (!f) return used;
+      for (const id of candidates(f)) {
+        if (used.includes(id)) continue;
+        const rest = pick(i + 1, [...used, id]);
+        if (rest) return rest;
+      }
+      return null;
+    };
+    return pick(0, []);
+  }
+  const all = candidates(c.filter ?? {});
+  if (c.orMore && c.distinctColors) {
+    const seen = new Set<string>();
+    const picked = all.filter((id) => {
+      const fresh = (s.defs[obj(s, id).defId]?.colors ?? []).filter((col) => !seen.has(col));
+      for (const col of fresh) seen.add(col);
+      return fresh.length > 0;
+    });
+    return picked.length ? picked : all.length ? all.slice(0, 1) : null;
+  }
+  if (c.orMore) {
+    const fromGraveyard = all.filter((id) => obj(s, id).zone === "graveyard");
+    return fromGraveyard.length ? fromGraveyard : all.length ? all.slice(0, 1) : null;
+  }
+  return all.length >= c.count ? all.slice(0, c.count) : null;
+}
+
 /** Permanent dont on retire un marqueur pour le coût (celui qui en porte le plus). */
 function counterSource(s: GameState, player: PlayerId, source: ObjectId, ab: ActivatedAbilityDef): ObjectId | null {
   const c = ab.cost.removeCounterFrom;
@@ -1278,6 +1404,7 @@ export function canPayNonManaCost(s: GameState, source: ObjectId, ab: ActivatedA
   if (ab.cost.discard && discardCostOptions(s, player, source).length < ab.cost.discard) return false;
   if (ab.cost.returnUnblockedAttacker && unblockedAttackers(s, player).length === 0) return false;
   if (ab.cost.forage && !canForage(s, player)) return false;
+  if (ab.cost.craft && !craftMaterials(s, player, source, ab)) return false;
   return true;
 }
 
@@ -1387,8 +1514,16 @@ export function activateAbility(s: GameState, player: PlayerId, source: ObjectId
     throw new RulesError("Permanents à engager invalides");
   }
   const crew = ab.cost.crew !== undefined ? (crewOptions(s, player, source, ab.cost.crew) ?? []) : [];
+  const materials = ab.cost.craft ? craftMaterials(s, player, source, ab) : [];
+  if (!materials) throw new RulesError("Matériaux de fabrication insuffisants");
   if (ab.cost.mana) {
-    const reserved = new Set([...sacrificed, ...tapOthers, ...crew, ...(ab.cost.tap ? [source] : [])]);
+    const reserved = new Set([
+      ...sacrificed,
+      ...tapOthers,
+      ...crew,
+      ...materials,
+      ...(ab.cost.tap || ab.cost.craft ? [source] : []),
+    ]);
     try {
       // Warrior's Blades : {1} de moins par marqueur +1/+1 sur la créature ciblée.
       const t = ab.reduceByTargetCounters ? targets.t?.[0] : undefined;
@@ -1495,6 +1630,13 @@ export function activateAbility(s: GameState, player: PlayerId, source: ObjectId
     for (const id of chosen) announceDiscard(s, player, moveObject(s, id, "graveyard"));
     announceDiscardBatch(s, player, chosen.length);
   }
+  // Fabrication : les matériaux sont exilés (et liés au verso à la résolution), puis la source.
+  if (materials.length) {
+    s.turn.crafting = true;
+    const exiled = materials.map((id) => moveObject(s, id, "exile")).filter((id): id is string => !!id);
+    delete s.turn.crafting;
+    item.costExiled = exiled;
+  }
   if (ab.cost.exileSelf) moveObject(s, source, "exile");
   if (ab.cost.discardSelf) {
     const card = moveObject(s, source, "graveyard");
@@ -1505,6 +1647,7 @@ export function activateAbility(s: GameState, player: PlayerId, source: ObjectId
   if (ab.cost.bounceSelf) moveObject(s, source, "hand");
   s.priority.passes = 0;
   emit({ type: "activate", player, stackId: item.id, defId: o.defId, targets: flatTargets(targets) });
+  rulesEvent(s, { e: "activated", player, stackId: item.id });
   announceTargets(s, item.id, player, targets);
 }
 
@@ -1661,10 +1804,12 @@ function finishResolution(
       });
       const arrived = enteredId ? s.objects[enteredId] : undefined;
       if (arrived && item.manaSpent !== undefined) arrived.manaSpent = item.manaSpent;
+      if (arrived && item.caveMana) arrived.caveMana = item.caveMana;
       // Marqueurs et célérité à l'arrivée (Torgal, Summon: Fenrir, Summon: Brynhildr, Noctis).
       if (arrived && item.arrival) {
         for (const c of item.arrival.counters ?? []) changeCounters(s, arrived, c.kind, c.n);
         if (item.arrival.haste) addEffect(s, [arrived.id], { addKeywords: ["haste"] }, "endOfTurn");
+        if (item.arrival.subtypes) addEffect(s, [arrived.id], { addSubtypes: item.arrival.subtypes }, "permanent");
       }
       if (arrived && item.x) arrived.castX = item.x;
       // Mimeoplasm : les cartes exilées en arrivant sont liées au permanent.
@@ -1738,6 +1883,23 @@ function resolvedSpellAway(s: GameState, item: StackItem, d: CardDef | undefined
     const id = moveObject(s, item.sourceId, "exile");
     const o = id ? s.objects[id] : undefined;
     if (o) o.onAdventure = true;
+    return;
+  }
+  // Rebond (702.88) : un sort lancé depuis la main est exilé ; au début de votre prochain entretien, vous pouvez le lancer
+  // depuis l'exil sans payer son coût de mana (approximation : lançable gratuitement pendant ce tour).
+  if (item.rebound && item.fromHand && !item.flashback && !item.copy) {
+    const exiled = moveObject(s, item.sourceId, "exile");
+    if (exiled) {
+      const grant: Effect = { op: "grantPlay", what: { kind: "target", id: "rb" }, free: true, anyTime: true };
+      createDelayed(
+        s,
+        item.controller,
+        exiled,
+        item.sourceDefId,
+        { targets: [], effects: [grant], bound: { rb: [exiled] } },
+        "yourNextUpkeep",
+      );
+    }
     return;
   }
   if (!item.flashback && d?.subtypes.includes("Omen")) {

@@ -45,6 +45,7 @@ export type ChoiceIntent =
   | "impulse"
   | "divideDamage"
   | "keepPerType"
+  | "discover"
   | "other";
 
 interface ChoiceBase {
@@ -184,7 +185,8 @@ export type ActionOption =
       /** Coût normal payable. */
       normalAvailable?: boolean;
       additional?: {
-        discard?: { count: number; options: ObjectId[] };
+        /** `orLife` : on peut payer ces PV au lieu de défausser ; `orSacrifice` : les options comprennent des permanents. */
+        discard?: { count: number; options: ObjectId[]; orLife?: number; orSacrifice?: boolean };
         /** `orPay` : on peut payer ce mana au lieu de sacrifier (Eaten Alive). */
         sacrifice?: { count: number; options: ObjectId[]; orPay?: ManaCost; orPayAffordable?: boolean };
       };

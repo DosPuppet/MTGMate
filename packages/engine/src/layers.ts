@@ -40,6 +40,8 @@ export interface Characteristics {
   colors: Color[];
   power: number;
   toughness: number;
+  /** Force de base : après la couche 7b (F/E fixées), avant les marqueurs et les modifications. */
+  basePower?: number;
   keywords: Keyword[];
   /** Capacités non-mot-clé effectives (vides si l'objet a perdu toutes ses capacités). */
   abilities: AbilityDef[];
@@ -68,8 +70,34 @@ export function bump(s: GameState): void {
 }
 
 /** 604.3 / 613.4a : F/E définies par une capacité (« égales au nombre de cartes dans les cimetières adverses »). */
+/** Filtre évalué sur les caractéristiques imprimées (types, sous-types, « l'un de ») : pas de récursion dans les couches. */
+/** Force totale (imprimée) des cartes liées. */
+export function linkedTotalPower(s: GameState, linked: ObjectId[] | undefined): number {
+  return (linked ?? []).reduce((n, id) => n + Math.max(0, s.defs[s.objects[id]?.defId ?? ""]?.power ?? 0), 0);
+}
+
+/** Couleurs (imprimées) parmi les cartes liées. */
+export function linkedColors(s: GameState, linked: ObjectId[] | undefined): Color[] {
+  return [...new Set((linked ?? []).flatMap((id) => s.defs[s.objects[id]?.defId ?? ""]?.colors ?? []))];
+}
+
+function printedMatch(d: CardDef | undefined, f: ObjectFilter): boolean {
+  if (!d) return false;
+  if (f.types && !f.types.some((t) => d.types.includes(t))) return false;
+  if (f.subtype && !d.subtypes.includes(f.subtype)) return false;
+  if (f.anySubtype && !f.anySubtype.some((t) => d.subtypes.includes(t))) return false;
+  if (f.anyOf && !f.anyOf.some((g) => printedMatch(d, g))) return false;
+  const permanentTypes: CardType[] = ["Artifact", "Battle", "Creature", "Enchantment", "Land", "Planeswalker"];
+  if (f.permanent && !d.types.some((t) => permanentTypes.includes(t))) return false;
+  if (f.nonland && d.types.includes("Land")) return false;
+  return true;
+}
+
 function cdaValue(s: GameState, o: GameObject, a: Amount): number {
   if (typeof a === "number") return a;
+  // Fabrication : cartes exilées pour fabriquer ce permanent (Mastercraft Raptor, Sunbird Effigy).
+  if (a.kind === "linkedTotalPower") return linkedTotalPower(s, o.linked);
+  if (a.kind === "linkedColors") return linkedColors(s, o.linked).length;
   if (a.kind === "sum") return a.of.reduce<number>((n, x) => n + cdaValue(s, o, x), 0);
   if (a.kind === "cardTypesInGraveyards") {
     const types = new Set<string>();
@@ -112,11 +140,10 @@ function cdaValue(s: GameState, o: GameObject, a: Amount): number {
   }
   if (!a.zone || a.zone === "battlefield") {
     // « égales au nombre de créatures que vous contrôlez » (types imprimés : pas de récursion dans les couches).
-    const types = a.filter.types;
     return s.battlefield.filter((id) => {
       const x = obj(s, id);
       if (a.filter.controller === "you" && x.controller !== o.controller) return false;
-      return !types || types.some((t) => s.defs[x.defId]?.types.includes(t));
+      return printedMatch(s.defs[x.defId], a.filter);
     }).length;
   }
   const zone = a.zone;
@@ -126,11 +153,10 @@ function cdaValue(s: GameState, o: GameObject, a: Amount): number {
       : a.whose === "opponents"
         ? s.playerOrder.filter((p) => p !== o.controller)
         : [o.controller];
-  const types = a.filter.types;
   return players
     .filter((p) => !s.players[p]?.lost)
     .flatMap((p) => s.players[p]?.[zone] ?? [])
-    .filter((id) => !types || types.some((t) => s.defs[obj(s, id).defId]?.types.includes(t))).length;
+    .filter((id) => printedMatch(s.defs[obj(s, id).defId], a.filter)).length;
 }
 
 /**
@@ -283,6 +309,7 @@ function view(s: GameState, id: ObjectId, c: Characteristics, o: GameObject, att
     colors: c.colors,
     power: c.power,
     toughness: c.toughness,
+    basePower: c.basePower,
     keywords: c.keywords,
     isToken: o.isToken,
     attacking,
@@ -512,6 +539,7 @@ export function computeBattlefield(s: GameState): Map<ObjectId, Characteristics>
   // Couche 7c : marqueurs, puis modifications (tout est additif : l'ordre n'importe pas).
   for (const [id, c] of out) {
     const o = obj(s, id);
+    c.basePower = c.power;
     c.power += counterPT(o);
     c.toughness += counterPT(o);
   }

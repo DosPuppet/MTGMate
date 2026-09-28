@@ -31,6 +31,7 @@ export const {
   cost,
   wardAbility,
   exhaust,
+  craft,
   spree,
   tiered,
   pawprint,

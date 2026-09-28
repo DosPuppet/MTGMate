@@ -70,6 +70,11 @@ export function doublers(
     .length;
 }
 
+/** Nombre de jetons créés pour un : Doubling Season (×2) et Ojer Taq (×3, jetons de créature). */
+export function tokenMultiplier(s: GameState, player: PlayerId, creature: boolean): number {
+  return 2 ** doublers(s, player, "tokens") * (creature ? 3 ** doublers(s, player, "creatureTokensTriple") : 1);
+}
+
 /** Doublements de marqueurs sur ce permanent, filtrés compris (Loading Zone : créatures, Vaisseaux, Planètes). */
 export function counterDoublers(s: GameState, o: GameObject): number {
   return controlledAbilitiesWithSource(s, o.controller).filter(

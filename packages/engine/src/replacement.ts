@@ -204,7 +204,7 @@ export function releaseLinkedExile(s: GameState, sourceId: ObjectId): void {
   for (const l of links) {
     for (const id of l.cards) {
       const o = s.objects[id];
-      if (o?.zone === "exile") moveObject(s, id, "battlefield", { controller: o.owner });
+      if (o?.zone === "exile") moveObject(s, id, l.toHand ? "hand" : "battlefield", { controller: o.owner });
     }
   }
 }

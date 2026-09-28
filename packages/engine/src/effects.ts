@@ -3,7 +3,7 @@
  * et une résolution pourra être suspendue sur un choix du joueur puis reprise.
  */
 import { type DamageSource, removeFromCombat, sourceFromObject } from "./actions";
-import { copiedDefId } from "./layers";
+import { copiedDefId, linkedColors, linkedTotalPower } from "./layers";
 import { manaValue } from "./mana";
 import { HANDLERS as COUNTERS_HANDLERS } from "./ops/counters";
 import { HANDLERS as DAMAGE_HANDLERS } from "./ops/damage";
@@ -33,7 +33,7 @@ import {
 } from "./state";
 import { playerStatic } from "./statics";
 import { matchesCard, matchesObjectFilter, matchesView } from "./targets";
-import { checkCondition } from "./triggers";
+import { checkCondition, mostLife } from "./triggers";
 import type {
   Amount,
   ChoiceRequest,
@@ -73,6 +73,8 @@ export interface EffectContext {
   /** Cartes défaussées pour payer le coût additionnel du sort. */
   discarded?: ObjectId[];
   tappedForCost?: ObjectId[];
+  /** Cartes exilées pour payer le coût (matériaux d'une fabrication). */
+  costExiled?: ObjectId[];
 }
 
 /** Caractéristiques d'un objet vivant, ou ses dernières informations connues. */
@@ -102,6 +104,10 @@ export function evalCondition(s: GameState, ctx: EffectContext, c: Condition): b
       return !evalCondition(s, ctx, c.cond);
     case "all":
       return c.of.every((x) => evalCondition(s, ctx, x));
+    case "mostLife": {
+      const p = c.ref ? resolveRef(s, ctx, c.ref).find((x) => isPlayer(s, x)) : ctx.controller;
+      return !!p && mostLife(s, p);
+    }
     case "refLife": {
       const p = resolveRef(s, ctx, c.ref)[0];
       return !!p && s.players[p]?.life === c.equals;
@@ -492,6 +498,29 @@ export function evalAmount(s: GameState, ctx: EffectContext, a: Amount): number 
       return s.players[ctx.controller]?.turnStats.instantSorceryCast ?? 0;
     case "cardsLeftGraveyardThisTurn":
       return s.players[ctx.controller]?.turnStats.cardsLeftGraveyard ?? 0;
+    case "descendedThisTurn":
+      return s.players[ctx.controller]?.turnStats.descended ?? 0;
+    case "caveManaSpent":
+      return s.objects[ctx.sourceId]?.caveMana ?? 0;
+    case "linkedTotalPower":
+      return linkedTotalPower(s, s.objects[ctx.sourceId]?.linked);
+    case "linkedColors":
+      return linkedColors(s, s.objects[ctx.sourceId]?.linked).length;
+    case "creaturesLeftThisTurn":
+      return s.players[ctx.controller]?.turnStats.creaturesLeft ?? 0;
+    case "attackersThisTurn":
+      return s.players[ctx.controller]?.turnStats.attackers ?? 0;
+    case "redNoncombatDamageThisTurn":
+      return s.players[ctx.controller]?.turnStats.redNoncombatDamage ?? 0;
+    case "untappedInUntapStep":
+      return s.players[ctx.controller]?.turnStats.untappedInUntapStep ?? 0;
+    case "permanentTypesInGraveyard": {
+      const types = new Set<string>();
+      const PERMANENT = ["Artifact", "Battle", "Creature", "Enchantment", "Land", "Planeswalker"];
+      for (const id of s.players[ctx.controller]?.graveyard ?? [])
+        for (const t of s.defs[s.objects[id]?.defId ?? ""]?.types ?? []) if (PERMANENT.includes(t)) types.add(t);
+      return types.size;
+    }
   }
 }
 
@@ -551,6 +580,7 @@ export function contextOf(r: Resolution): EffectContext {
     sacrificed: r.item.sacrificed,
     discarded: r.item.discarded,
     tappedForCost: r.item.tappedForCost,
+    costExiled: r.item.costExiled,
   };
 }
 
@@ -583,6 +613,8 @@ export function moveWithSpec(s: GameState, controller: PlayerId, id: ObjectId, s
   const newId_ = moveObject(s, id, zone, {
     controller: spec.to === "battlefield" ? (spec.underYourControl ? controller : o.owner) : undefined,
     position: spec.to === "libraryBottom" ? "bottom" : "top",
+    transformed: spec.transformed,
+    tapped: spec.tapped || spec.attacking,
   });
   // « … N-ième depuis le dessus de la bibliothèque » (Riptide Gearhulk).
   if (newId_ && spec.to === "libraryTop" && spec.fromTop && spec.fromTop > 1) {
@@ -598,7 +630,11 @@ export function moveWithSpec(s: GameState, controller: PlayerId, id: ObjectId, s
   // Marqueurs sur une carte exilée (« exilez-la avec un marqueur de butin », Tinybones).
   if (moved && zone === "exile" && spec.counters) changeCounters(s, moved, spec.counters.kind, spec.counters.n);
   if (!moved || zone !== "battlefield") return newId_;
-  if (spec.tapped || spec.attacking) moved.tapped = true;
+  // « Engagé » : une statique peut en dépendre (The Wandering Rescuer), la version d'état avance.
+  if (spec.tapped || spec.attacking) {
+    moved.tapped = true;
+    bump(s);
+  }
   // The Wandering Minstrel : les terrains arrivent dégagés, même mis en jeu engagés par un effet.
   if (
     moved.tapped &&
@@ -618,10 +654,10 @@ export function moveWithSpec(s: GameState, controller: PlayerId, id: ObjectId, s
   }
   // « … sur le champ de bataille transformée » : le verso d'une carte recto-verso transformable.
   const back = s.defs[moved.defId]?.layout === "transform" ? s.defs[moved.defId]?.faceDefs?.[1] : undefined;
+  // Le verso est fixé par `moveObject` avant les déclencheurs d'arrivée (712.14) ; une Saga au verso (FIN) a reçu son
+  // marqueur de savoir par les remplacements d'arrivée (714.3a).
   if (spec.transformed && back) {
     moved.faceDefId = back.id;
-    // 714.3a : une Saga au verso (FIN) arrive avec un marqueur de savoir ; les remplacements d'arrivée ont lu le recto.
-    if (back.saga) changeCounters(s, moved, "lore", 1);
     bump(s);
   }
   if (spec.counters) changeCounters(s, moved, spec.counters.kind, spec.counters.n);
@@ -698,6 +734,7 @@ export function grantPlay(
     anyMana?: boolean;
     exileAfter?: boolean;
     group?: string;
+    orHand?: boolean;
   },
 ): void {
   const last = until === "forever" ? Number.MAX_SAFE_INTEGER : until === "thisTurn" ? s.turn.number : nextTurnOf(s, player);

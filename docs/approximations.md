@@ -157,5 +157,32 @@
   - Season of the Bold (troisième mode) : l'emblème cesse au début de votre prochain tour, et non à sa fin ;
   - Kastral (premier mode) : un Oiseau de votre main, sinon de votre cimetière ;
   - Thought-Stalker Warlock : « si il a perdu des points de vie ce tour-ci » est vérifié pour l'adversaire ciblé.
+- **The Lost Caverns of Ixalan (LCI) :**
+  - Découverte : comme les autres « lancez-la sans payer son coût de mana », la carte est lançable gratuitement, à tout moment, jusqu'à la fin du tour, après la résolution ; si elle n'a pas été lancée, elle va dans la main de son propriétaire au début du tour suivant ;
+  - mana des Cavernes (Bat Colony) et « en utilisant du mana produit par [source] » (Tecutlan, The Myriad Pools) : seulement le mana engagé par le paiement automatique ;
+  - coûts « engagez N artefacts et/ou créatures dégagés » (Adaptive Gemguard, Warden of the Inner Sky, Goldfury Strider, Sunshot Militia) : la source elle-même n'en fait pas partie ;
+  - Warden of the Inner Sky : seuls les marqueurs +1/+1 comptent (« trois marqueurs ou plus ») ;
+  - Glowcap Lantern : on peut regarder la carte du dessus tant qu'on contrôle l'Équipement, même non attaché ;
+  - In the Presence of Ages : jusqu'à deux cartes de créature et/ou de terrain (deux créatures possibles) ;
+  - Journey On : une Carte de plus si au moins un adversaire contrôle un artefact (pas une par adversaire) ;
+  - Kellan, Daring Traveler : une carte révélée qui ne va pas en main reste sur la bibliothèque ;
+  - Deepfathom Echo : la créature à copier est ciblée au déclenchement ; Subterranean Schooner : son équipage explore sans être ciblé ;
+  - Dreadmaw's Ire : l'artefact détruit est celui d'un adversaire quelconque ;
+  - Squirming Emergence : la valeur de mana n'est vérifiée qu'à la résolution ; Abuelo's Awakening : les marqueurs sont posés juste après l'arrivée ;
+  - Brass's Tunnel-Grinder : « défaussez autant de cartes que voulu » est une défausse facultative ;
+  - Zoyowa's Justice : le propriétaire découvre après avoir mélangé la carte ; The Myriad Pools : le permanent devient une copie du sort sur la pile ;
+  - Fabrication : les matériaux sont choisis automatiquement (voir `docs/extensions/lci.md`, lot C) ; Sunbird Effigy : sa capacité de mana est une capacité activée (pile) ;
+  - Braided Net : les capacités activées du permanent engagé sont bloquées jusqu'à la fin du tour (et non tant qu'il reste engagé) ; Iceberg Titan : engager ou dégager est un mode choisi au déclenchement ;
+  - rebond (Ojer Pakpatiq) : le sort est lançable gratuitement pendant votre prochain entretien et le reste de ce tour ;
+  - Thousand Moons Infantry : se dégage au début de l'entretien de chaque adversaire (et non pendant son étape de dégagement) ; The Millennium Calendar : ses marqueurs de temps sont posés au début de votre entretien ;
+  - Thousand Moons Smithy : on choisit librement les permanents engagés (elle ne se transforme qu'avec cinq) ; Tarrian's Journal : la main est défaussée à la résolution ;
+  - Unstable Glyphbridge : le choix des créatures épargnées se fait à la résolution ; Sandswirl Wanderglyph : « pendant son tour » est vérifié comme « pendant le tour d'un adversaire » ;
+  - Kitesail Larcenist : jusqu'à deux cibles contrôlées par des joueurs différents ; Tishana's Tidebinder : la capacité à contrecarrer est ciblée à l'arrivée ;
+  - Locus of Enlightenment : les capacités gagnées ne sont pas limitées à une activation par tour ;
+  - The Skullspore Nexus : un jeton par créature mourante (et non un seul pour le lot) ; Ojer Kaslem : jusqu'à deux cartes parmi les créatures et terrains révélés ;
+  - Contested Game Ball : se déclenche aux blessures de combat d'une créature adverse à un joueur quelconque ;
+  - Echoing Deeps : devient une copie du terrain (et s'engage) par une capacité déclenchée d'arrivée, et non en arrivant ; Cavern of Souls, Roaming Throne, Sunken Citadel : sans résolution (terrain joué), le choix en arrivant est celui par défaut ;
+  - Temple of the Dead : « un joueur a une carte ou moins en main » est vérifié pour vous et vos adversaires ; Kutzil's Flanker : compte les créatures qui ont quitté le champ de bataille sous votre contrôle, sans distinguer les jetons ;
+  - Deep-Cavern Bat : la main adverse est montrée dans la fenêtre de choix ; Malcolm : la carte défaussée est lançable gratuitement jusqu'à la fin du tour.
 - **Légalité Standard :** instantané des légalités Scryfall au moment de l'import (`legalities.standard` dans `data/<set>.json`). Après une rotation ou une annonce de bannissement, réimporter les sets (`npm run import-cards -- <set>`).
 - **Jetons :** pas d'image (cadre texte).

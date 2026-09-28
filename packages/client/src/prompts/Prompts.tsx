@@ -118,12 +118,15 @@ function AdditionalCostPicker({
   count,
   options,
   orPay,
+  orSacrifice,
 }: {
   kind: "discard" | "sacrifice" | "tap";
   count: number;
   options: string[];
-  /** « … ou payez {3}{B} » : on peut payer ce mana à la place. */
+  /** « … ou payez {3}{B} » (ou « 3 points de vie ») : on peut payer cela à la place. */
   orPay?: string;
+  /** « Défaussez une carte ou sacrifiez un permanent » : les options comprennent des permanents. */
+  orSacrifice?: boolean;
 }) {
   const view = useGame((s) => s.view);
   const choose = useGame((s) => s.chooseAdditional);
@@ -136,11 +139,13 @@ function AdditionalCostPicker({
   return (
     <Modal
       title={
-        kind === "discard"
-          ? `Coût additionnel : défaussez ${count} carte(s)`
-          : kind === "tap"
-            ? `Coût : engagez ${count} créature(s)`
-            : `Coût additionnel : sacrifiez ${count} permanent(s)`
+        kind === "discard" && orSacrifice
+          ? "Coût additionnel : défaussez une carte ou sacrifiez un permanent"
+          : kind === "discard"
+            ? `Coût additionnel : défaussez ${count} carte(s)`
+            : kind === "tap"
+              ? `Coût : engagez ${count} créature(s)`
+              : `Coût additionnel : sacrifiez ${count} permanent(s)`
       }
       wide
     >
@@ -268,13 +273,16 @@ function CastingPrompt() {
     const spec = opt.additional?.[casting.stage];
     const sac = opt.additional?.sacrifice;
     const orPay = casting.stage === "sacrifice" && sac?.orPayAffordable && sac.orPay;
+    // Bitter Triumph : « défaussez une carte ou payez 3 points de vie ».
+    const orLife = casting.stage === "discard" ? opt.additional?.discard?.orLife : undefined;
     if (spec) {
       return (
         <AdditionalCostPicker
           kind={casting.stage}
           count={spec.count}
           options={spec.options}
-          orPay={orPay ? costToText(orPay) : undefined}
+          orPay={orPay ? costToText(orPay) : orLife !== undefined ? `${orLife} points de vie` : undefined}
+          orSacrifice={casting.stage === "discard" && !!opt.additional?.discard?.orSacrifice}
         />
       );
     }

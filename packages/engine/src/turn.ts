@@ -208,6 +208,8 @@ function beginStep(s: GameState): void {
           o.tapped = false;
           bump(s);
           rulesEvent(s, { e: "untap", objectId: id });
+          const stats = s.players[o.controller]?.turnStats;
+          if (stats && o.controller === active) stats.untappedInUntapStep = (stats.untappedInUntapStep ?? 0) + 1;
         }
       }
       s.flow = "stepEnd"; // pas de priorité pendant l'étape de dégagement
@@ -390,6 +392,9 @@ function endStep(s: GameState): void {
     s.turn.spellWarped = false;
     s.turn.speedRaised = false;
     s.turn.attackerSubtypes = [];
+    s.turn.attackBans = undefined;
+    s.turn.attackedBy = undefined;
+    s.turn.graveyardCreatureOnce = undefined;
     emit({ type: "turnStart", turn: s.turn.number, player: s.turn.active });
   }
   s.flow = "stepStart";
@@ -466,7 +471,11 @@ export function startTurnOf(s: GameState, p: PlayerId): void {
   s.turn.mayCastFromGraveyard = [];
   s.turn.graveyardTypesUsed = [];
   s.turn.flashbackGranted = [];
-  // Permissions de jouer depuis l'exil : celles qui ont expiré disparaissent.
+  // Permissions de jouer depuis l'exil : celles qui ont expiré disparaissent. Découverte (701.57a) : une carte
+  // qui n'a pas été lancée va dans la main de son propriétaire.
+  for (const perm of s.playPermissions ?? []) {
+    if (perm.until < s.turn.number && perm.orHand && s.objects[perm.card]?.zone === "exile") moveObject(s, perm.card, "hand");
+  }
   if (s.playPermissions) s.playPermissions = s.playPermissions.filter((p) => p.until >= s.turn.number);
 }
 
@@ -534,7 +543,9 @@ export function defendingPlayer(s: GameState, defender: string): PlayerId {
 
 /** Ce qu'un joueur peut attaquer : ses adversaires et leurs planeswalkers (506.2). */
 export function attackableDefenders(s: GameState, player: PlayerId): string[] {
-  const opps = opponentsOf(s, player);
+  // Sandswirl Wanderglyph : « il ne peut pas vous attaquer, ni les planeswalkers que vous contrôlez, ce tour-ci ».
+  const banned = new Set((s.turn.attackBans ?? []).filter((b) => b.player === player).map((b) => b.defender));
+  const opps = opponentsOf(s, player).filter((p) => !banned.has(p));
   // The Aetherspark : « tant qu'il est attaché à une créature, il ne peut pas être attaqué ».
   const walkers = s.battlefield.filter(
     (id) => opps.includes(obj(s, id).controller) && hasType(s, id, "Planeswalker") && !obj(s, id).attachedTo,
@@ -609,7 +620,16 @@ export function declareAttackers(s: GameState, player: PlayerId, attackers: { id
   }
   bump(s);
   for (const a of attackers) rulesEvent(s, { e: "attack", attacker: a.id, defender: a.defender });
-  if (attackers.length > 0) rulesEvent(s, { e: "attackWith", player, count: attackers.length });
+  for (const a of attackers) {
+    const defender = defendingPlayer(s, a.defender);
+    if (!s.turn.attackedBy?.some((x) => x.attacker === player && x.defender === defender))
+      s.turn.attackedBy = [...(s.turn.attackedBy ?? []), { attacker: player, defender }];
+  }
+  if (attackers.length > 0) {
+    const stats = s.players[player]?.turnStats;
+    if (stats) stats.attackers = (stats.attackers ?? 0) + attackers.length;
+    rulesEvent(s, { e: "attackWith", player, count: attackers.length });
+  }
   if (attackers.length > 0) s.turn.attacked = true;
   const subtypes = new Set([...(s.turn.attackerSubtypes ?? []), ...attackers.flatMap((a) => chars(s, a.id).subtypes)]);
   s.turn.attackerSubtypes = [...subtypes];

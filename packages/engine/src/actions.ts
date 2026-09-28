@@ -19,7 +19,7 @@ import {
   opponentsOf,
   rulesEvent,
 } from "./state";
-import { controlledAbilitiesWithSource, doublers, playerStatic, preventions } from "./statics";
+import { controlledAbilitiesWithSource, doublers, playerStatic, preventions, tokenMultiplier } from "./statics";
 import { matchesObjectFilter } from "./targets";
 import { checkCondition } from "./triggers";
 import type { CardDef, GameEvent, GameState, Keyword, ObjectId, PlayerId, TokenSpec, Zone } from "./types";
@@ -120,6 +120,8 @@ export function forage(s: GameState, p: PlayerId): boolean {
 export function loseLife(s: GameState, p: PlayerId, amount: number): void {
   const player = s.players[p];
   if (!player || amount <= 0) return;
+  // Bloodletter of Aclazotz : pendant le tour de son contrôleur, un adversaire perd le double.
+  if (s.turn.active !== p) amount *= 2 ** doublersOfLifeLoss(s, s.turn.active);
   player.life -= amount;
   bump(s);
   emit({ type: "life", player: p, delta: -amount, life: player.life });
@@ -143,6 +145,19 @@ export function setSpeed(s: GameState, p: PlayerId, speed: number): void {
 }
 
 /** Inflige des blessures à un joueur ou à une créature (règle 120). */
+function doublersOfLifeLoss(s: GameState, player: PlayerId): number {
+  return controlledAbilitiesWithSource(s, player).filter(
+    ({ ab }) => ab.kind === "playerStatic" && !!ab.doubleOpponentLifeLossYourTurn,
+  ).length;
+}
+
+/** La source des blessures est-elle rouge (Ojer Axonil) ? */
+function redSource(s: GameState, source: DamageSource): boolean {
+  if (source.id && s.objects[source.id]?.zone === "battlefield") return chars(s, source.id).colors.includes("R");
+  const lki = source.id ? s.lki[source.id] : undefined;
+  return (lki?.colors ?? s.defs[source.defId]?.colors ?? []).includes("R");
+}
+
 export function dealDamage(s: GameState, source: DamageSource, target: string, amount: number, combat: boolean): void {
   if (amount <= 0) return;
   // Ancient Adamantoise : les blessures à son contrôleur et à ses autres permanents lui sont infligées à la place.
@@ -228,6 +243,14 @@ export function dealDamage(s: GameState, source: DamageSource, target: string, a
       0,
     );
   }
+  // Ojer Axonil : une source rouge qui inflige à un adversaire moins de blessures non de combat que la force d'Ojer Axonil.
+  const red = !combat && redSource(s, source);
+  if (red && isPlayer(s, target) && target !== source.controller) {
+    for (const { id, ab } of controlledAbilitiesWithSource(s, source.controller)) {
+      if (ab.kind === "playerStatic" && ab.noncombatDamageAtLeastPower && s.objects[id]?.zone === "battlefield")
+        amount = Math.max(amount, chars(s, id).power);
+    }
+  }
   // Valley Flamecaller : « si un Lézard, une Souris, une Loutre ou un Raton laveur que vous contrôlez devait infliger des
   // blessures, il en inflige autant plus 1 à la place ».
   if (source.id && s.objects[source.id]?.zone === "battlefield") {
@@ -268,6 +291,9 @@ export function dealDamage(s: GameState, source: DamageSource, target: string, a
   // Lightning, Army of One : blessures à ce joueur ou à ses permanents doublées jusqu'au prochain tour de Lightning.
   const marked = victim ? (s.players[victim]?.damageDoubled?.filter((d) => s.turn.number < d.until).length ?? 0) : 0;
   amount *= 2 ** marked;
+  // Temple of Power : blessures non de combat infligées par des sources rouges que ce joueur contrôlait ce tour-ci.
+  const dealerStats = red ? s.players[source.controller]?.turnStats : undefined;
+  if (dealerStats && amount > 0) dealerStats.redNoncombatDamage = (dealerStats.redNoncombatDamage ?? 0) + amount;
   if (isPlayer(s, target)) {
     // Suivi des joueurs blessés au combat par cette source ce tour-ci (Steel Hellkite).
     const src = source.id ? s.objects[source.id] : undefined;
@@ -384,7 +410,7 @@ export function createTokens(s: GameState, controller: PlayerId, t: TokenSpec, c
     s.turn.onceFired.push(`copies:${meditation.id}`);
     const model = s.objects[s.objects[meditation.id]?.attachedTo ?? ""];
     if (model) {
-      const n = count * 2 ** doublers(s, controller, "tokens");
+      const n = count * tokenMultiplier(s, controller, !!s.defs[model.defId]?.types.includes("Creature"));
       for (let i = 0; i < n; i++) created.push(createTokenCopy(s, controller, model.defId));
       return created;
     }
@@ -413,7 +439,7 @@ export function createTokens(s: GameState, controller: PlayerId, t: TokenSpec, c
     s.defs[defId] = def;
   }
   // Doubling Season : « crée deux fois plus de ces jetons ».
-  const n = count * 2 ** doublers(s, controller, "tokens");
+  const n = count * tokenMultiplier(s, controller, t.types.includes("Creature"));
   for (let i = 0; i < n; i++) {
     const o = createObject(s, defId, controller, "battlefield", { isToken: true });
     o.timestamp = nextTimestamp(s);

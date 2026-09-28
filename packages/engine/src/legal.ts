@@ -16,6 +16,7 @@ import {
   canPlayLand,
   castableFaces,
   castTerms,
+  craftMaterials,
   discardCostOptions,
   equipDiscount,
   FACE_DOWN_SPELL,
@@ -265,7 +266,12 @@ export function legalActions(s: GameState, player: PlayerId): ActionOption[] {
       const ab = activatedAbility(s, id, index);
       if (!ab || abilityZone(ab) !== o.zone || !canPayNonManaCost(s, id, ab, index)) return;
       if (ab.sorcerySpeed && !instantLoyalty(s, player, id, ab) && !sorceryTiming(s, player)) return;
-      const exclude = ab.cost.tap ? new Set([id]) : undefined;
+      // Fabrication : la source et les matériaux exilés ne paient pas le mana.
+      const exclude = ab.cost.craft
+        ? new Set([id, ...(craftMaterials(s, player, id, ab) ?? [])])
+        : ab.cost.tap
+          ? new Set([id])
+          : undefined;
       // Warrior's Blades : au mieux, la créature qui porte le plus de marqueurs +1/+1.
       const reduction = ab.reduceByTargetCounters
         ? Math.max(

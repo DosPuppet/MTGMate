@@ -11,13 +11,104 @@ import {
   resolveRef,
   store,
 } from "../effects";
+import { bump } from "../layers";
 import { availableMana, canPay, costToText, manaValue, payMana } from "../mana";
 import { copySpellItem, counterItem, plotCard, stackItemSpecs } from "../stack";
-import { apnapOrder, chars, createObject, emit, isPlayer, moveObject, newId, setPrepared, shuffle } from "../state";
+import {
+  apnapOrder,
+  chars,
+  createObject,
+  emit,
+  isPlayer,
+  moveObject,
+  newId,
+  nextTimestamp,
+  rulesEvent,
+  setPrepared,
+  shuffle,
+} from "../state";
 import { legalTargets, matchesObjectFilter } from "../targets";
 import type { ObjectId } from "../types";
 
 export const HANDLERS: OpHandlers = {
+  discover(s, r, e, ctx, key) {
+    const p = e.who ? resolveRef(s, ctx, e.who).find((x) => isPlayer(s, x)) : ctx.controller;
+    if (!p) return;
+    // La résolution peut reprendre après la question : l'exil n'a lieu qu'une fois.
+    if (!r.vars[key("done")]) {
+      const n = evalAmount(s, ctx, e.n);
+      const lib = s.players[p]?.library ?? [];
+      const rest: ObjectId[] = [];
+      let hit: ObjectId | undefined;
+      while (lib.length && !hit) {
+        const d = s.defs[s.objects[lib[0] as string]?.defId ?? ""];
+        const id = moveObject(s, lib[0] as string, "exile");
+        if (!id) break;
+        if (d && !d.types.includes("Land") && manaValue(d.manaCost) <= n) hit = id;
+        else rest.push(id);
+      }
+      emit({ type: "reveal", player: p, defIds: [...rest, ...(hit ? [hit] : [])].map((id) => s.objects[id]?.defId ?? "") });
+      shuffle(s, rest);
+      for (const id of rest) moveObject(s, id, "library", { position: "bottom" });
+      r.vars[key("done")] = [1];
+      r.vars[key("hit")] = hit ? [hit] : [];
+      rulesEvent(s, { e: "discover", player: p, n });
+    }
+    const hit = r.vars[key("hit")]?.[0] as ObjectId | undefined;
+    if (!hit || s.objects[hit]?.zone !== "exile") return;
+    if (e.store) {
+      r.vars[`$ids:${e.store}`] = [hit];
+      store(r, e.store, 1);
+    }
+    const answer = r.vars[key("cast")];
+    if (!answer) {
+      return {
+        ask: {
+          player: p,
+          key: key("cast"),
+          request: {
+            type: "yesNo",
+            intent: "discover",
+            prompt: `Découverte : lancer ${nameOf(s, hit)} sans payer son coût de mana ? (Sinon, elle va dans votre main.)`,
+            suggested: [1],
+          },
+        },
+      };
+    }
+    // Approximation (comme les autres « lancez-la sans payer ») : lançable gratuitement, à tout moment, jusqu'à la fin
+    // du tour ; si elle n'a pas été lancée, elle va en main au début du tour suivant.
+    if (answer[0] === 1) grantPlay(s, p, [hit], "thisTurn", { free: true, anyTime: true, source: ctx.sourceId, orHand: true });
+    else moveObject(s, hit, "hand");
+    return;
+  },
+  counterAbilitySilence(s, _r, e, ctx) {
+    for (const id of resolveRef(s, ctx, e.what)) {
+      const item = s.stack.find((x) => x.id === id && x.kind === "ability");
+      if (!item) continue;
+      const host = item.sourceId;
+      counterItem(s, id, ctx.sourceDefId);
+      const o = s.objects[host];
+      if (o?.zone !== "battlefield" || s.objects[ctx.sourceId]?.zone !== "battlefield") continue;
+      if (!chars(s, host).types.some((t) => t === "Artifact" || t === "Creature" || t === "Planeswalker")) continue;
+      s.effects.push({
+        id: newId(s, "e"),
+        timestamp: nextTimestamp(s),
+        affected: [host],
+        duration: "permanent",
+        whileSource: ctx.sourceId,
+        loseAllAbilities: true,
+      });
+      bump(s);
+    }
+    return;
+  },
+  grantRebound(s, _r, e, ctx) {
+    for (const id of resolveRef(s, ctx, e.what)) {
+      const item = s.stack.find((x) => x.id === id && x.kind === "spell");
+      if (item) item.rebound = true;
+    }
+    return;
+  },
   counter(s, _r, e, ctx) {
     for (const id of resolveRef(s, ctx, e.what)) counterItem(s, id, ctx.sourceDefId, e.exile);
     return;
