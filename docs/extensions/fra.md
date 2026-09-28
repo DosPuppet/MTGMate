@@ -48,7 +48,7 @@ Détail des lots (déplacé de CLAUDE.md).
   - le domaine (`basicLandTypes`), la recherche « de noms différents » et « quand vous défaussez cette carte ».
   
   Les cartes Jace du lot B (Hexhaven Battalion, Countersculpt, Theorist's Sanctum) passent au lot D, Tam au lot E et Emrakul au lot F.
-- Lot G (**decks préconstruits**) : ✅. Quatre decks bicolores en cartes FRA seules (`packages/cards/decks/fra-*.json`), un par faction :
+- Lot G (**decks préconstruits**) : ✅, puis **retirés le 28/09/2026** (les decks par défaut sont désormais les decks de bienvenue et le Starter Kit Final Fantasy ; les listes restent dans l'historique git). Quatre decks bicolores en cartes FRA seules (`packages/cards/decks/fra-*.json`), un par faction :
   - Fatehold : Jace renforcé (W/U) ;
   - Innovative : sorts préparés (U/R) ;
   - Formidable : cimetière (B/G) ;

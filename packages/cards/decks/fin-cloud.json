@@ -1,0 +1,38 @@
+{
+  "id": "fin-cloud",
+  "name": "Cloud, champion de la planète",
+  "description": "Starter Kit Final Fantasy. Rouge-blanc Équipements : armez Cloud et vos héros, qui gagnent double initiative et indestructible, jusqu'à l'Ultima Weapon.",
+  "colors": [
+    "R",
+    "W"
+  ],
+  "cover": "https://cards.scryfall.io/art_crop/front/7/5/75180e47-064e-4dd6-adcf-d4fb497a445b.jpg?1783906469",
+  "main": [
+    [13, "Plains"],
+    [8, "Mountain"],
+    [1, "Cloud, Planet's Champion"],
+    [2, "Cloudbound Moogle"],
+    [2, "Coeurl"],
+    [4, "Dwarven Castle Guard"],
+    [2, "Fate of the Sun-Cryst"],
+    [2, "Slash of Light"],
+    [2, "White Auracite"],
+    [1, "White Mage's Staff"],
+    [1, "Adelbert Steiner"],
+    [1, "The Crystal's Chosen"],
+    [1, "Dragoon's Lance"],
+    [1, "G'raha Tia"],
+    [1, "Rosa, Resolute White Mage"],
+    [1, "Beatrix, Loyal General"],
+    [3, "Item Shopkeep"],
+    [2, "Warrior's Sword"],
+    [1, "Suplex"],
+    [1, "Freya Crescent"],
+    [2, "Samurai's Katana"],
+    [1, "Barret Wallace"],
+    [1, "Lightning, Security Sergeant"],
+    [1, "Judgment Bolt"],
+    [1, "Ultima Weapon"],
+    [4, "Rabanastre, Royal City"]
+  ]
+}

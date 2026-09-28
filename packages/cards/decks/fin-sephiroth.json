@@ -1,0 +1,33 @@
+{
+  "id": "fin-sephiroth",
+  "name": "Séphiroth, héritier de la planète",
+  "description": "Starter Kit Final Fantasy. Bleu-noir contrôle : éliminez les créatures adverses, faites grandir Séphiroth à chaque mort et récupérez vos sorts du cimetière.",
+  "colors": [
+    "U",
+    "B"
+  ],
+  "cover": "https://cards.scryfall.io/art_crop/front/b/0/b03e29e2-cfda-4284-8d30-0686c01e861e.jpg?1783906458",
+  "main": [
+    [9, "Island"],
+    [12, "Swamp"],
+    [1, "Sephiroth, Planet's Heir"],
+    [1, "Sahagin"],
+    [3, "Il Mheg Pixie"],
+    [2, "Retrieve the Esper"],
+    [2, "Dreams of Laguna"],
+    [1, "Relm's Sketching"],
+    [1, "Ultimecia, Temporal Threat"],
+    [4, "Undercity Dire Rat"],
+    [3, "Shinra Reinforcements"],
+    [3, "Sephiroth's Intervention"],
+    [3, "Shambling Cie'th"],
+    [3, "Al Bhed Salvagers"],
+    [2, "Overkill"],
+    [2, "Evil Reawakened"],
+    [1, "Seymour Flux"],
+    [1, "Deadly Embrace"],
+    [1, "Xande, Dark Mage"],
+    [1, "Magitek Scythe"],
+    [4, "Treno, Dark City"]
+  ]
+}

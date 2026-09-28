@@ -118,7 +118,7 @@ packages/
   engine/   moteur pur et déterministe : état JSON, décisions, règles, autopilot, vue filtrée, GameHost
             src/model/ (types), src/ops/ (traitements des effets par domaine) ; guide : docs/moteur.md
   cards/    données Scryfall (data/<set>.json, 20 extensions), scripts des cartes (src/<ext>/*.ts), lecture du texte
-            Scryfall (src/scryfall.ts), decklists, decks préconstruits (decks/*.json : 2 FDN, 4 FRA)
+            Scryfall (src/scryfall.ts), decklists, decks préconstruits (decks/*.json : 5 decks de bienvenue FDN, Starter Kit FIN)
   ai/       IA aléatoire (fuzz) et heuristique (simulation sur clones de l'état + évaluation)
   server/   jeu en ligne : salons, GameHost côté serveur (fait autorité), minuteur, reconnexion ; protocole partagé ;
             relais des images de Scryfall (/scry/)
@@ -181,7 +181,7 @@ Chaque carte gérée est automatiquement jouée par le test de fumée (`packages
 | 4d. FDN, réimpressions (n° 282 et plus) | cartes des decks d'initiation et de la Starter Collection | ✅ **241 / 241** (517 / 517 pour tout FDN) |
 | 4e. Légalité Standard | légalités Scryfall importées, liste des bannies, validation du format dans le deckbuilder | ✅ |
 | 4f. Cartes à plusieurs faces | aventures, recto-verso, cartes scindées et Salles, Sagas, Classes, Affaires, face cachée, assemblage | ✅ |
-| 4g. Autres extensions Standard | une extension à la fois : Reality Fracture ✅ (4 decks préconstruits), Edge of Eternities ✅, Aetherdrift ✅, Outlaws of Thunder Junction + The Big Score ✅, Final Fantasy ✅, Duskmourn ✅, Bloomburrow ✅ ; les suivantes à la demande | en cours |
+| 4g. Autres extensions Standard | une extension à la fois : Reality Fracture ✅, Edge of Eternities ✅, Aetherdrift ✅, Outlaws of Thunder Junction + The Big Score ✅, Final Fantasy ✅, Duskmourn ✅, Bloomburrow ✅ ; les suivantes à la demande | en cours |
 | 5. IA | attaques par simulation, puis ISMCTS | à faire |
 | 6. JcJ en ligne | duel Standard : serveur Node `ws` (`GameHost`, vues et faces filtrées), code de salon, corde, reconnexion, revanche | ✅ duel ; déploiement pm2 + nginx documenté |
 | 7. Finitions | effets sonores ✅ ; tablette et téléphone ✅ ; relais des images Scryfall ✅ ; replays (graine + décisions), images des jetons, musique | en cours |

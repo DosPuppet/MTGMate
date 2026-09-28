@@ -1,0 +1,29 @@
+{
+  "id": "bienvenue-rouge",
+  "name": "Bienvenue : rouge",
+  "description": "Deck de bienvenue (40 cartes, Foundations). Dragons et sorts de dégâts directs : brûlez les bloqueurs, puis Drakuseth et Shivan Dragon finissent le travail.",
+  "colors": [
+    "R"
+  ],
+  "cover": "https://cards.scryfall.io/art_crop/front/0/2/029b1edb-e1de-4f1c-81df-8d17f4920318.jpg?1783909067",
+  "main": [
+    [17, "Mountain"],
+    [2, "Burst Lightning"],
+    [1, "Carnelian Orb of Dragonkind"],
+    [2, "Firespitter Whelp"],
+    [2, "Kargan Dragonrider"],
+    [1, "Drakuseth, Maw of Flames"],
+    [2, "Scorching Dragonfire"],
+    [1, "Spitfire Lagac"],
+    [2, "Incinerating Blast"],
+    [2, "Dragonlord's Servant"],
+    [1, "Cryptic Caves"],
+    [1, "Axgard Cavalry"],
+    [1, "Terror of Mount Velus"],
+    [1, "Brazen Scourge"],
+    [1, "Etali, Primal Storm"],
+    [1, "Skyraker Giant"],
+    [1, "Shivan Dragon"],
+    [1, "Fanatical Firebrand"]
+  ]
+}

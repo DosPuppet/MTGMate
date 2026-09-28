@@ -1,0 +1,32 @@
+{
+  "id": "bienvenue-bleu",
+  "name": "Bienvenue : bleu",
+  "description": "Deck de bienvenue (40 cartes, Foundations). Créatures volantes, contresorts et renvois en main, puis Arcanis pioche des cartes à foison.",
+  "colors": [
+    "U"
+  ],
+  "cover": "https://cards.scryfall.io/art_crop/front/a/6/a6fee90a-7cb3-4fad-91a7-1b1edbde0133.jpg?1783908935",
+  "main": [
+    [16, "Island"],
+    [2, "Kitesail Corsair"],
+    [1, "Spectral Sailor"],
+    [2, "Starlight Snare"],
+    [2, "Refute"],
+    [1, "Think Twice"],
+    [1, "Uncharted Voyage"],
+    [1, "Sphinx of the Final Word"],
+    [2, "Icewind Elemental"],
+    [1, "Storm Fleet Spy"],
+    [1, "Aetherize"],
+    [1, "Bigfin Bouncer"],
+    [1, "Rune-Sealed Wall"],
+    [1, "Tempest Djinn"],
+    [1, "Cryptic Caves"],
+    [1, "Arcanis the Omnipotent"],
+    [1, "Unsummon"],
+    [1, "Mocking Sprite"],
+    [1, "Quick Study"],
+    [1, "Strix Lookout"],
+    [1, "Aegis Turtle"]
+  ]
+}

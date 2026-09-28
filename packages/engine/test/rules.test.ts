@@ -1,4 +1,4 @@
-import { buildDeck, DECKS } from "@mtgx/cards";
+import { buildDeck, deckById } from "@mtgx/cards";
 import { describe, expect, it } from "vitest";
 import { autopilotDecision, DEFAULT_AUTOPILOT } from "../src/autopilot";
 import { createGame, submit } from "../src/game";
@@ -7,7 +7,7 @@ import { solvePayment } from "../src/mana";
 import { chars } from "../src/state";
 import { act, customCard, idOf, idsOf, passAccepting, passBoth, passUntil, scenario } from "./helpers";
 
-const [green, red] = DECKS as [(typeof DECKS)[0], (typeof DECKS)[0]];
+const [green, red] = [deckById("bienvenue-vert"), deckById("bienvenue-rouge")];
 
 describe("début de partie", () => {
   it("distribue 7 cartes et demande le mulligan au premier joueur", () => {
@@ -40,7 +40,7 @@ describe("début de partie", () => {
     expect(s.pending).toEqual({ kind: "bottomCards", player: "p1", count: 1 });
     s = act(s, "p1", { type: "bottom", cards: [s.players.p1?.hand[0] as string] });
     expect(s.players.p1?.hand).toHaveLength(6);
-    expect(s.players.p1?.library).toHaveLength(54);
+    expect(s.players.p1?.library).toHaveLength(34); // deck de bienvenue : 40 cartes
     expect(s.pending?.player).toBe("p2");
   });
 

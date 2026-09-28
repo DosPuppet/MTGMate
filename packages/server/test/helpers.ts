@@ -1,12 +1,12 @@
 /** Clients de test : vrais WebSockets vers un serveur lancé sur un port libre, bot qui ne voit que sa vue. */
-import { DECKS, type DeckEntries } from "@mtgx/cards";
+import { type DeckEntries, deckById } from "@mtgx/cards";
 import type { ActionOption, Decision, GameView } from "@mtgx/engine";
 import { WebSocket } from "ws";
 import type { ClientMessage, RoomConfig, ServerMessage } from "../src/index";
 import { type RunningServer, startServer } from "../src/index";
 
-export const GREEN: DeckEntries = (DECKS.find((d) => d.colors.join("") === "G") ?? DECKS[0])?.main ?? [];
-export const RED: DeckEntries = (DECKS.find((d) => d.colors.join("") === "R") ?? DECKS[1])?.main ?? [];
+export const GREEN: DeckEntries = deckById("bienvenue-vert").main;
+export const RED: DeckEntries = deckById("bienvenue-rouge").main;
 
 export function server(
   config: Partial<RoomConfig> = {},

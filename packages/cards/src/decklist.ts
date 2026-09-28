@@ -4,6 +4,7 @@
  * et de la légalité dans le format (Standard).
  */
 import type { CardDef, Format } from "@mtgx/engine";
+import { preconFor } from "./decks";
 
 export type DeckEntries = [number, string][];
 
@@ -31,6 +32,10 @@ export interface DeckValidation {
   /** Toutes les cartes sont gérées par le moteur. */
   playable: boolean;
   mainCount: number;
+  /** Taille minimale du deck principal : 60, ou moins pour un deck de bienvenue préconstruit. */
+  minMain: number;
+  /** Deck de bienvenue (préconstruit de 40 cartes, joué tel quel). */
+  welcome: boolean;
   sideCount: number;
   errors: string[];
   warnings: string[];
@@ -261,6 +266,7 @@ const count = (entries: DeckEntries) => entries.reduce((a, [n]) => a + n, 0);
 /**
  * Règles de construction : 60 cartes minimum, 4 exemplaires maximum (sauf terrains de base), réserve de 15,
  * cartes légales dans le format (réserve comprise), d'après les légalités Scryfall importées.
+ * Exception : un deck identique à un deck de bienvenue préconstruit (40 cartes) se joue tel quel.
  */
 export function validateDeck(
   deck: { main: DeckEntries; sideboard?: DeckEntries },
@@ -272,7 +278,10 @@ export function validateDeck(
   const side = deck.sideboard ?? [];
   const mainCount = count(deck.main);
   const sideCount = count(side);
-  if (mainCount < DECK_RULES.minMain) errors.push(`Le deck contient ${mainCount} cartes (minimum ${DECK_RULES.minMain})`);
+  const precon = preconFor(deck.main);
+  const welcome = !!precon && mainCount < DECK_RULES.minMain;
+  const minMain = welcome ? mainCount : DECK_RULES.minMain;
+  if (mainCount < minMain) errors.push(`Le deck contient ${mainCount} cartes (minimum ${minMain})`);
   if (sideCount > DECK_RULES.maxSide) errors.push(`La réserve contient ${sideCount} cartes (maximum ${DECK_RULES.maxSide})`);
   const totals = new Map<string, number>();
   for (const [n, name] of [...deck.main, ...side]) totals.set(name, (totals.get(name) ?? 0) + n);
@@ -301,6 +310,8 @@ export function validateDeck(
     legal: errors.length === 0,
     playable: playable && errors.length === 0,
     mainCount,
+    minMain,
+    welcome,
     sideCount,
     errors,
     warnings,

@@ -24,13 +24,14 @@ Ce fichier sert au suivi du projet entre les sessions : où on en est, les règl
 | Tablette et téléphone (main ajustée à la largeur, appui long = aperçu, tap pour lever une carte, tiroir sous 1100 px, paysage imposé sur téléphone) | ✅ |
 | Jeu en ligne : duel Standard à 2 (serveur local, code de salon, corde, reconnexion, revanche) | ✅ |
 | Déploiement : pm2 derrière nginx sur un VPS (`docs/deploiement.md`, `deploy/`) | ✅ documenté et testé en local (pm2, nginx) |
-| **Reality Fracture (FRA, « Réalité fracturée »)** | ✅ **279 / 279** (lots 0 à G, dont 4 decks préconstruits ; les 3 dernières au lot 0.1 du socle multi-extensions) |
+| **Reality Fracture (FRA, « Réalité fracturée »)** | ✅ **279 / 279** (lots 0 à G, dont 4 decks préconstruits, retirés le 28/09/2026 ; les 3 dernières au lot 0.1 du socle multi-extensions) |
 | **Edge of Eternities (EOE)** | ✅ **260 / 260** (lots A à D) |
 | **Aetherdrift (DFT)** | ✅ **260 / 260** (lots A à C) |
 | **Outlaws of Thunder Junction + The Big Score (OTJ, BIG)** | ✅ **269 / 269 + 30 / 30** (lots A à C) |
 | **Final Fantasy (FIN)** | ✅ **307 / 307** (lots A à D4) |
 | **Duskmourn: House of Horror (DSK, « Mornebrune »)** | ✅ **268 / 268** (lots A à D) |
 | **Bloomburrow (BLB)** | ✅ **266 / 266** (lots A à C) |
+| Decks préconstruits : seulement les 5 decks de bienvenue (40 cartes FDN, joués tels quels malgré la règle des 60) et le Starter Kit Final Fantasy (Séphiroth, Cloud) ; les anciens decks FDN et FRA sont retirés | ✅ |
 | Autres extensions Standard | à la demande de l'utilisateur, une à la fois |
 
 

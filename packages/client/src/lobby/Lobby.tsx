@@ -10,7 +10,7 @@ import { useGame } from "../store";
 /** Un deck peut lancer une partie s'il est légal dans le format et que toutes ses cartes sont jouables. */
 export function deckStatus(d: DeckList): { ok: boolean; reason?: string; format: string } {
   const v = validateDeck(d, CARDS);
-  const format = FORMAT_LABELS[v.format];
+  const format = v.welcome ? "Bienvenue" : FORMAT_LABELS[v.format];
   if (!v.legal) return { ok: false, reason: v.errors[0], format };
   if (!v.playable) return { ok: false, reason: "Contient des cartes pas encore jouables", format };
   return { ok: true, format };

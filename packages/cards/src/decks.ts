@@ -1,10 +1,11 @@
 /** Listes de decks seules (sans les données de cartes) : utilisable côté interface sans alourdir le bundle. */
-import fraDedicatedCadets from "../decks/fra-dedicated-cadets.json";
-import fraFateholdJace from "../decks/fra-fatehold-jace.json";
-import fraFormidableCimetiere from "../decks/fra-formidable-cimetiere.json";
-import fraInnovativePrepare from "../decks/fra-innovative-prepare.json";
-import rougeBrulure from "../decks/rouge-brulure.json";
-import vertColosses from "../decks/vert-colosses.json";
+import bienvenueBlanc from "../decks/bienvenue-blanc.json";
+import bienvenueBleu from "../decks/bienvenue-bleu.json";
+import bienvenueNoir from "../decks/bienvenue-noir.json";
+import bienvenueRouge from "../decks/bienvenue-rouge.json";
+import bienvenueVert from "../decks/bienvenue-vert.json";
+import finCloud from "../decks/fin-cloud.json";
+import finSephiroth from "../decks/fin-sephiroth.json";
 
 /** Un deck : cartes par nom anglais (clé canonique), avec leur nombre d'exemplaires. */
 export interface DeckList {
@@ -19,12 +20,25 @@ export interface DeckList {
   builtin?: boolean;
 }
 
-/** Foundations d'abord (les tests et le bench utilisent les deux premiers), puis Reality Fracture. */
+/** Decks de bienvenue (40 cartes, Foundations), puis le Starter Kit Final Fantasy. */
 export const DECKS: DeckList[] = [
-  vertColosses,
-  rougeBrulure,
-  fraFateholdJace,
-  fraInnovativePrepare,
-  fraFormidableCimetiere,
-  fraDedicatedCadets,
+  bienvenueBlanc,
+  bienvenueBleu,
+  bienvenueNoir,
+  bienvenueRouge,
+  bienvenueVert,
+  finSephiroth,
+  finCloud,
 ].map((d) => ({ ...(d as DeckList), builtin: true }));
+
+const deckKey = (main: [number, string][]) => {
+  const totals = new Map<string, number>();
+  for (const [n, name] of main) totals.set(name, (totals.get(name) ?? 0) + n);
+  return [...totals].sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0)).join("|");
+};
+const PRECON_BY_KEY = new Map(DECKS.map((d) => [deckKey(d.main), d]));
+
+/** Préconstruit dont le deck principal est identique (quels que soient l'ordre et le découpage des lignes). */
+export function preconFor(main: [number, string][]): DeckList | undefined {
+  return PRECON_BY_KEY.get(deckKey(main));
+}

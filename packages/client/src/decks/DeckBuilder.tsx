@@ -498,13 +498,18 @@ export function DeckBuilder() {
         <section className="deck-panel">
           <div className="deck-tabs">
             <button type="button" className={tab === "main" ? "on" : ""} onClick={() => setTab("main")}>
-              Deck <strong className={v.mainCount >= 60 ? "ok" : "short"}>{v.mainCount}</strong>/60
+              Deck <strong className={v.mainCount >= v.minMain ? "ok" : "short"}>{v.mainCount}</strong>/{v.minMain}
             </button>
             <button type="button" className={tab === "side" ? "on" : ""} onClick={() => setTab("side")}>
               Réserve <strong>{v.sideCount}</strong>/15
             </button>
-            <span className={`format-badge ${v.legal ? "ok" : "ko"}`} title={v.legal ? `Deck légal en ${FORMAT}` : v.errors[0]}>
-              {FORMAT} {v.legal ? "✓" : "✗"}
+            <span
+              className={`format-badge ${v.legal ? "ok" : "ko"}`}
+              title={
+                v.welcome ? "Deck de bienvenue : 40 cartes, joué tel quel" : v.legal ? `Deck légal en ${FORMAT}` : v.errors[0]
+              }
+            >
+              {v.welcome ? "Bienvenue" : FORMAT} {v.legal ? "✓" : "✗"}
             </span>
           </div>
           <Stats deck={deck} />

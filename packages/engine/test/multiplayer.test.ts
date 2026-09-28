@@ -1,4 +1,4 @@
-import { buildDeck, DECKS } from "@mtgx/cards";
+import { buildDeck, deckById } from "@mtgx/cards";
 import { describe, expect, it } from "vitest";
 import { createGame } from "../src/game";
 import { act, idOf, passUntil, scenario } from "./helpers";
@@ -96,7 +96,11 @@ describe("multijoueur", () => {
     let { state: s } = createGame({
       seed: 5,
       startingPlayer: "p1",
-      players: ["p1", "p2", "p3"].map((id, i) => ({ id, name: id, deck: buildDeck(DECKS[i % 2]!) })),
+      players: ["p1", "p2", "p3"].map((id, i) => ({
+        id,
+        name: id,
+        deck: buildDeck(deckById(i % 2 ? "bienvenue-rouge" : "bienvenue-vert")),
+      })),
     });
     for (const p of ["p1", "p2", "p3"]) s = act(s, p, { type: "keep" });
     s = passUntil(s, (x) => x.turn.step === "main1");

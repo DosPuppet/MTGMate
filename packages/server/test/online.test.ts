@@ -1,7 +1,8 @@
-import { CARDS } from "@mtgx/cards";
+import { CARDS, DECKS } from "@mtgx/cards";
 import { afterEach, describe, expect, it } from "vitest";
 import { WebSocket } from "ws";
 import type { RunningServer } from "../src/index";
+import { checkDeck } from "../src/rooms";
 import { Client, duel, GREEN, server } from "./helpers";
 
 let srv: RunningServer | null = null;
@@ -62,6 +63,12 @@ describe("salons", () => {
     const { code } = await pair(port, false);
     c.send({ type: "join", code, name: "Eve", deck: GREEN });
     expect((await c.next("error")).code).toBe("full");
+  });
+
+  it("accepte un deck de bienvenue de 40 cartes tel quel, pas un deck quelconque de 40 cartes", () => {
+    const welcome = DECKS.find((d) => d.id === "bienvenue-vert")!.main;
+    expect(checkDeck(welcome)).toEqual(welcome);
+    expect(() => checkDeck([[40, "Forest"]])).toThrow(/minimum 60/);
   });
 
   it("une décision hors tour ou illégale est refusée sans casser la partie", async () => {

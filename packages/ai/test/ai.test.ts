@@ -1,10 +1,14 @@
-import { buildDeck, DECKS } from "@mtgx/cards";
+import { buildDeck, deckById } from "@mtgx/cards";
 import { createGame, submit } from "@mtgx/engine";
 import { describe, expect, it } from "vitest";
 import { act, idOf, passUntil, scenario } from "../../engine/test/helpers";
 import { heuristicAgent, playGame, randomAgent } from "../src";
 
-const decks = () => [buildDeck(DECKS[0]!), buildDeck(DECKS[1]!)] as [ReturnType<typeof buildDeck>, ReturnType<typeof buildDeck>];
+const decks = () =>
+  [buildDeck(deckById("bienvenue-vert")), buildDeck(deckById("bienvenue-rouge"))] as [
+    ReturnType<typeof buildDeck>,
+    ReturnType<typeof buildDeck>,
+  ];
 
 describe("fuzz", () => {
   it("30 parties aléatoires respectent les invariants et se terminent", () => {

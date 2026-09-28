@@ -65,7 +65,7 @@ Sideboard
 });
 
 describe("export des decklists", () => {
-  const deck = DECKS[0]!;
+  const deck = DECKS.find((d) => d.id === "bienvenue-vert")!;
 
   it("aller-retour MTGA : relire l'export redonne le même deck", () => {
     const text = serializeDeckList({ ...deck, sideboard: [[2, "Broken Wings"]] }, CARDS);
@@ -85,7 +85,22 @@ describe("export des decklists", () => {
 
 describe("règles de construction", () => {
   it("les decks préconstruits sont légaux et jouables", () => {
-    for (const d of DECKS) expect(validateDeck(d, CARDS)).toMatchObject({ legal: true, playable: true, mainCount: 60 });
+    for (const d of DECKS) {
+      const welcome = d.id.startsWith("bienvenue-");
+      expect(validateDeck(d, CARDS), d.id).toMatchObject({ legal: true, playable: true, mainCount: welcome ? 40 : 60, welcome });
+    }
+  });
+
+  it("un deck de bienvenue (40 cartes) se joue tel quel, pas une copie modifiée", () => {
+    const d = DECKS.find((x) => x.id === "bienvenue-rouge")!;
+    // Même liste, dans un autre ordre et découpée autrement : reconnue.
+    const [first, ...rest] = d.main;
+    const split: [number, string][] = [...rest.reverse(), [first![0] - 1, first![1]], [1, first![1]]];
+    expect(validateDeck({ main: split }, CARDS)).toMatchObject({ legal: true, welcome: true, minMain: 40 });
+    // Une carte changée : les 60 cartes minimum s'appliquent.
+    const changed: [number, string][] = d.main.map(([n, name]) => [n, name === "Shivan Dragon" ? "Serra Angel" : name]);
+    expect(validateDeck({ main: changed }, CARDS)).toMatchObject({ legal: false, welcome: false, minMain: 60 });
+    expect(validateDeck({ main: changed }, CARDS).errors).toContain("Le deck contient 40 cartes (minimum 60)");
   });
 
   it("60 cartes minimum, 4 exemplaires maximum sauf terrains de base, réserve de 15", () => {
