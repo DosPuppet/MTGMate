@@ -22,6 +22,7 @@
     "deck-smoke": "tsx tools/deck-smoke.ts",
     "battlefield-smoke": "tsx tools/battlefield-smoke.ts",
     "mobile-smoke": "tsx tools/mobile-smoke.ts",
+    "proxy-smoke": "tsx tools/proxy-smoke.ts",
     "server": "tsx packages/server/src/main.ts",
     "online-smoke": "tsx tools/online-smoke.ts"
   },

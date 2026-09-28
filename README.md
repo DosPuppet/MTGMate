@@ -7,7 +7,10 @@ Plateforme pour jouer à Magic: The Gathering contre une ou plusieurs IA (en due
 - arrêts configurables ;
 - cible choisie automatiquement quand elle est unique ;
 - glisser-déposer ;
-- jouable sur tablette et sur téléphone en paysage (appui long pour agrandir une carte).
+- jouable sur tablette et sur téléphone en paysage (voir « Tablette et téléphone ») ;
+- images des cartes relayées par le serveur quand le réseau du joueur bloque Scryfall (voir « Images bloquées par le réseau »).
+
+Dernière extension ajoutée : **Bloomburrow (BLB)**, entièrement gérée (266 / 266), avec la Progéniture, le Cadeau, Fourrager, la Dépense, la Vaillance et les Saisons.
 
 ## Périmètre : le Standard
 
@@ -68,6 +71,26 @@ npm run dev          # http://localhost:5173
   - revanche possible dans le même salon.
 - **Variables d'environnement :** `PORT`, `HOST` (`127.0.0.1` derrière nginx), `MTGX_DECISION_MS`, `MTGX_GRACE_MS`, `MTGX_MAX_ROOMS`. `/healthz` indique l'état du serveur.
 
+### Tablette et téléphone
+
+L'interface s'adapte à l'écran : tablette en paysage ou en portrait, téléphone en paysage. En portrait, un téléphone affiche « Tournez votre appareil ».
+
+- **La main** se resserre pour toujours tenir dans la largeur de l'écran. Sur téléphone, elle dépasse sous l'écran, comme sur MTG Arena.
+- **Au doigt :**
+  - un premier tap lève une carte de la main et l'agrandit, un second la joue ; on peut aussi la glisser vers le champ de bataille ;
+  - un appui long sur n'importe quelle carte l'affiche en grand, et un tap la referme.
+- **Écran étroit** (moins de 1100 px, par exemple une tablette en portrait) : les réglages et le journal passent dans un tiroir ouvert par le bouton ☰.
+- **Essai sur un vrai appareil :** `npm run dev -- --host`, puis ouvrez l'adresse « Network » affichée depuis la tablette (même réseau Wi-Fi).
+
+### Images bloquées par le réseau
+
+Les images des cartes viennent de Scryfall (`cards.scryfall.io`). Certains réseaux (entreprise, école) le bloquent, et les cartes s'affichent alors en cadre texte. Le serveur MTG Mate peut relayer les images par `/scry/…` :
+
+- **Automatique :** au démarrage, si Scryfall ne répond pas et que le serveur répond, le relais s'active tout seul.
+- **À la main :** la case **« Images par le serveur MTG Mate »**, sur l'accueil (en haut à droite) ou dans les réglages de la partie. Cochez-la si les cartes ne s'affichent pas. Le choix est mémorisé.
+- **Serveur :** seules les images de cartes sont relayées (liste blanche) ; ce n'est pas un proxy ouvert. Derrière nginx, les images sont mises en cache (voir [docs/deploiement.md](docs/deploiement.md)). En dev, Vite relaie `/scry` directement.
+- Si Scryfall est accessible, les images viennent de Scryfall en direct, et le serveur n'est pas sollicité.
+
 ## Commandes
 
 | Commande | Rôle |
@@ -80,6 +103,7 @@ npm run dev          # http://localhost:5173
 | `npm run coverage [-- --set all\|standard\|<EXT>] [-- --text [--color W]] [-- --card "<nom>"]` | Cartes gérées par extension, textes Oracle des cartes restantes, texte et script d'une carte |
 | `npm run server` | Serveur de parties en ligne (WebSocket `/ws`, sert aussi `packages/client/dist`) |
 | `npm run online-smoke [-- --base <url>]` | Duel en ligne entre deux navigateurs : salon, lien d'invitation, corde, reprise après rechargement, revanche (serveur de dev par défaut, ou `--base` vers un serveur de production ou nginx) |
+| `npm run proxy-smoke` | Relais des images : Scryfall bloqué (bascule automatique sur `/scry/`), case « Images par le serveur MTG Mate » (serveur de dev lancé) |
 | `npm run mobile-smoke` | Tablette et téléphone émulés : main, bouton principal et champs à l'écran, appui long, tap pour lever une carte, tiroir, portrait (serveur de dev lancé) |
 | `npm run battlefield-smoke` | Plateaux chargés (jetons, 2e ligne, 4 joueurs) mis en jeu par le bac à sable du mode dev : rangées, piles de jetons, aucune carte rognée (serveur de dev lancé) |
 | `npm run import-cards -- <set>\|all` | Import Scryfall d'une extension, ou de toutes les extensions Standard hors FDN et FRA (`all`) |
@@ -96,8 +120,10 @@ packages/
   cards/    données Scryfall (data/<set>.json, 20 extensions), scripts des cartes (src/<ext>/*.ts), lecture du texte
             Scryfall (src/scryfall.ts), decklists, decks préconstruits (decks/*.json : 2 FDN, 4 FRA)
   ai/       IA aléatoire (fuzz) et heuristique (simulation sur clones de l'état + évaluation)
-  server/   jeu en ligne : salons, GameHost côté serveur (fait autorité), minuteur, reconnexion ; protocole partagé
-  client/   React + Vite + Zustand + Motion ; la partie tourne dans un Web Worker ; deckbuilder ; disposition du plateau façon MTGA (board/layout.ts) ; effets sonores (audio/)
+  server/   jeu en ligne : salons, GameHost côté serveur (fait autorité), minuteur, reconnexion ; protocole partagé ;
+            relais des images de Scryfall (/scry/)
+  client/   React + Vite + Zustand + Motion ; la partie tourne dans un Web Worker ; deckbuilder ; disposition du plateau façon MTGA (board/layout.ts) ;
+            effets sonores (audio/) ; gestes tactiles (touch.ts) ; relais des images (images.ts)
 tools/      import Scryfall, vérification, fuzz, bench, couverture, tests d'interface
 docs/       guide du moteur, approximations connues, détail des extensions, déploiement
 ```
@@ -158,10 +184,10 @@ Chaque carte gérée est automatiquement jouée par le test de fumée (`packages
 | 4g. Autres extensions Standard | une extension à la fois : Reality Fracture ✅ (4 decks préconstruits), Edge of Eternities ✅, Aetherdrift ✅, Outlaws of Thunder Junction + The Big Score ✅, Final Fantasy ✅, Duskmourn ✅, Bloomburrow ✅ ; les suivantes à la demande | en cours |
 | 5. IA | attaques par simulation, puis ISMCTS | à faire |
 | 6. JcJ en ligne | duel Standard : serveur Node `ws` (`GameHost`, vues et faces filtrées), code de salon, corde, reconnexion, revanche | ✅ duel ; déploiement pm2 + nginx documenté |
-| 7. Finitions | effets sonores ✅ ; replays (graine + décisions), images des jetons, musique | en cours |
+| 7. Finitions | effets sonores ✅ ; tablette et téléphone ✅ ; relais des images Scryfall ✅ ; replays (graine + décisions), images des jetons, musique | en cours |
 
 Le suivi (avancement, conventions, pièges) est dans [CLAUDE.md](CLAUDE.md). Les approximations connues sont dans [docs/approximations.md](docs/approximations.md), et le détail de chaque extension dans [docs/extensions/](docs/extensions/).
 
 ## Cadre légal
 
-Projet de fan gratuit et non commercial ([Fan Content Policy](https://company.wizards.com/fancontentpolicy) de Wizards of the Coast). Les images restent hébergées par Scryfall et ne sont pas copiées dans le dépôt. Les effets sonores sont des packs de [Kenney](https://www.kenney.nl) sous licence CC0 (`packages/client/public/sounds/LICENSE-kenney.txt`).
+Projet de fan gratuit et non commercial ([Fan Content Policy](https://company.wizards.com/fancontentpolicy) de Wizards of the Coast). Les images restent hébergées par Scryfall et ne sont pas copiées dans le dépôt. Le relais du serveur les transmet telles quelles, sans les stocker ailleurs que dans le cache de nginx. Les effets sonores sont des packs de [Kenney](https://www.kenney.nl) sous licence CC0 (`packages/client/public/sounds/LICENSE-kenney.txt`).

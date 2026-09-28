@@ -3,6 +3,7 @@ import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import { App } from "./App";
 import { playSound, unlockAudio, useAudio } from "./audio/sfx";
+import { detectBlockedScryfall } from "./images";
 import { useGame } from "./store";
 import "./styles.css";
 
@@ -36,6 +37,9 @@ document.addEventListener("keydown", (e) => {
   if (t && (t.tagName === "INPUT" || t.tagName === "TEXTAREA" || t.isContentEditable)) return;
   useAudio.getState().toggleMute();
 });
+
+// Images : Scryfall bloqué par le réseau du joueur ? Relais par le serveur (mode auto, voir images.ts).
+void detectBlockedScryfall();
 
 // Jeu en ligne : reprise de la partie de cet onglet (rechargement de la page), lien d'invitation ?room=CODE.
 useGame.getState().resumeOnline();

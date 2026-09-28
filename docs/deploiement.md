@@ -94,7 +94,20 @@ Points importants de ce site (déjà dans le fichier) :
 
 - `location /ws` transmet les en-têtes `Upgrade` et `Connection` : sans eux, le jeu en ligne ne se connecte pas ;
 - `proxy_read_timeout 1h` : sinon nginx coupe un WebSocket calme au bout de 60 s ;
-- `X-Forwarded-For` : le serveur limite les connexions par adresse IP du joueur.
+- `X-Forwarded-For` : le serveur limite les connexions par adresse IP du joueur ;
+- `location /scry/` et `proxy_cache_path` : relais des images (voir « Images pour les joueurs derrière un proxy »). Si `nginx -t` signale que la zone `mtgmate_scry` existe déjà, c'est que le fichier est inclus deux fois.
+
+### Images pour les joueurs derrière un proxy
+
+Les images des cartes viennent de Scryfall (`cards.scryfall.io`). Certains réseaux (entreprise, école) le bloquent. L'appli relaie alors les images par `https://mtg.mondomaine.fr/scry/…`, et nginx les garde en cache (`/var/cache/nginx/mtgmate-scry`, 2 Go au plus).
+
+- **Côté joueur :** rien à faire. Le relais s'active tout seul quand Scryfall ne répond pas. Sinon, le joueur coche « Images par le serveur MTG Mate », sur l'accueil ou dans les réglages de la partie.
+- **Côté serveur :** seules les images de cartes sont relayées (liste blanche) ; ce n'est pas un proxy ouvert. Le VPS doit pouvoir joindre `cards.scryfall.io` en HTTPS.
+- **Vérification :** lancez deux fois la commande suivante. La première réponse contient `X-Cache: MISS`, la seconde `X-Cache: HIT`.
+
+```bash
+curl -sI https://mtg.mondomaine.fr/scry/small/front/8/d/8d8432a7-1c8a-4cfb-947c-ecf9791063eb.jpg | grep -i -E "^HTTP|x-cache"
+```
 
 ## 7. Vérifier
 
@@ -119,6 +132,7 @@ cd /opt/mtgmate
 | Déconnexions régulières après environ une minute | `proxy_read_timeout` trop court dans `location /ws` |
 | « Trop de connexions depuis cette adresse » | plus de 8 onglets ouverts depuis la même IP |
 | « Serveur complet, réessayez plus tard » | limite `MTGX_MAX_ROOMS` atteinte |
+| Cartes sans images chez un joueur, « Images par le serveur MTG Mate » cochée | le VPS ne joint pas `cards.scryfall.io` (`curl -I https://cards.scryfall.io` depuis le VPS), ou `location /scry/` absent |
 | Certificat refusé par certbot | le DNS ne pointe pas encore vers le VPS, ou le port 80 est fermé |
 
 ## Sécurité

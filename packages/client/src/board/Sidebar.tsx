@@ -1,12 +1,15 @@
 import { useEffect, useRef, useState } from "react";
 import { SoundControl } from "../audio/SoundControl";
+import { ImageRelayToggle } from "../ImageRelayToggle";
 import { faceImage, faceName, faceText, faceType, KEYWORD_LABEL } from "../i18n";
+import { imageUrl, useRelayActive } from "../images";
 import { useGame } from "../store";
 import { isTouch, justLongPressed } from "../touch";
 import { ManaCost } from "./Card";
 
 export function Preview() {
   const hover = useGame((s) => s.hover);
+  useRelayActive(); // nouvelle URL quand le relais des images s'active
   const lang = useGame((s) => s.lang);
   // Carte recto-verso : afficher le verso (touche F ou bouton).
   const [flipped, setFlipped] = useState(false);
@@ -26,7 +29,7 @@ export function Preview() {
       </div>
     );
   const { face, obj } = hover;
-  const back = flipped && backImage ? (lang === "fr" && backImage.fr?.image) || backImage.image : undefined;
+  const back = flipped && backImage ? imageUrl((lang === "fr" && backImage.fr?.image) || backImage.image) : undefined;
   // Votre carte face cachée : vous seul voyez de quelle carte il s'agit.
   const hidden = obj?.faceDownCard;
   const src = back ?? (hidden ? faceImage(hidden, lang) : undefined) ?? faceImage(face, lang);
@@ -165,6 +168,7 @@ function Settings() {
         <input type="checkbox" checked={settings.fullControl} onChange={(e) => setFullControl(e.target.checked)} />
         Contrôle total
       </label>
+      <ImageRelayToggle />
       {!over && (
         <button type="button" className="btn small ghost" onClick={() => decide({ type: "concede" })}>
           Abandonner

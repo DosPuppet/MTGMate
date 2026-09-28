@@ -4,6 +4,7 @@
 import { CARDS, DECKS, type DeckList, deckColors } from "@mtgx/cards";
 import { create } from "zustand";
 import { createJSONStorage, persist, type StateStorage } from "zustand/middleware";
+import { imageUrl } from "../images";
 
 /** Stockage tolérant : navigation privée ou stockage bloqué ne doivent rien casser. */
 const safeStorage: StateStorage = {
@@ -76,7 +77,7 @@ export function useAllDecks(): DeckList[] {
 
 /** Illustration d'un deck : sa couverture, sinon la carte non-terrain la plus présente. */
 export function deckCover(deck: DeckList): string | undefined {
-  if (deck.cover) return deck.cover;
+  if (deck.cover) return imageUrl(deck.cover);
   const best = [...deck.main].filter(([, name]) => !CARDS[name]?.types.includes("Land")).sort((a, b) => b[0] - a[0])[0];
-  return best ? CARDS[best[1]]?.artCrop : undefined;
+  return imageUrl(best ? CARDS[best[1]]?.artCrop : undefined);
 }

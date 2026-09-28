@@ -3,6 +3,8 @@ import { useState } from "react";
 import { SoundControl } from "../audio/SoundControl";
 import { ManaCost } from "../board/Card";
 import { deckCover, useAllDecks } from "../decks/store";
+import { ImageRelayToggle } from "../ImageRelayToggle";
+import { useRelayActive } from "../images";
 import { useGame } from "../store";
 
 /** Un deck peut lancer une partie s'il est légal dans le format et que toutes ses cartes sont jouables. */
@@ -16,6 +18,7 @@ export function deckStatus(d: DeckList): { ok: boolean; reason?: string; format:
 
 export function DeckChoice({ label, value, onChange }: { label: string; value: string; onChange: (id: string) => void }) {
   const decks = useAllDecks();
+  useRelayActive(); // illustrations des decks relayées si Scryfall est bloqué
   const openDeckBuilder = useGame((s) => s.openDeckBuilder);
   return (
     <div className="deck-choice">
@@ -80,6 +83,7 @@ export function Lobby() {
       <header className="lobby-head">
         <div className="lobby-sound">
           <SoundControl />
+          <ImageRelayToggle />
         </div>
         <h1>
           MTG Mate <span className="build-tag">(alpha build)</span>

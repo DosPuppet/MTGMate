@@ -1,5 +1,6 @@
 /** Libellés français et mise en forme du journal. */
 import type { CardFace, GameEvent, GameView, Keyword, Step } from "@mtgx/engine";
+import { imageUrl } from "./images";
 
 export type Lang = "fr" | "en";
 
@@ -99,8 +100,9 @@ export function faceType(face: CardFace, lang: Lang): string {
   return (lang === "fr" && face.fr?.typeLine) || face.typeLine;
 }
 
+/** Image d'une face (relayée par le serveur si Scryfall est bloqué, voir images.ts). */
 export function faceImage(face: CardFace, lang: Lang): string | undefined {
-  return (lang === "fr" && face.fr?.image) || face.image;
+  return imageUrl((lang === "fr" && face.fr?.image) || face.image);
 }
 
 export interface LogLine {

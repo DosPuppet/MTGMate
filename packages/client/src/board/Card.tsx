@@ -2,6 +2,7 @@ import type { CardFace, ObjectView } from "@mtgx/engine";
 import { motion } from "motion/react";
 import { type CSSProperties, useState } from "react";
 import { faceImage, faceName, faceText, faceType } from "../i18n";
+import { detectBlockedScryfall, useRelayActive } from "../images";
 import { useGame } from "../store";
 import { useLongPress } from "../touch";
 import { KeywordBadges } from "./Keywords";
@@ -94,8 +95,11 @@ export function Card({
   const setPeek = useGame((s) => s.setPeek);
   // Écran tactile : l'appui long remplace le survol (aperçu en surimpression).
   const longPress = useLongPress(hoverable ? () => setPeek({ face, obj }) : undefined);
-  const [failed, setFailed] = useState(false);
+  useRelayActive(); // nouvelle URL quand le relais des images s'active
   const src = faceImage(face, lang);
+  // Image en échec : cadre texte. Une nouvelle URL (relais activé entre-temps) retente sa chance.
+  const [failedSrc, setFailedSrc] = useState<string | undefined>();
+  const failed = failedSrc !== undefined && failedSrc === src;
   const height = `calc(${width} * 1.395)`;
 
   const power = obj?.power;
@@ -122,7 +126,17 @@ export function Card({
       >
         <TextFrame face={face} obj={obj} />
         {src && !failed && (
-          <img src={src} alt={faceName(face, lang)} draggable={false} onError={() => setFailed(true)} loading="lazy" />
+          <img
+            src={src}
+            alt={faceName(face, lang)}
+            draggable={false}
+            onError={() => {
+              setFailedSrc(src);
+              // Scryfall bloqué par le réseau ? Le relais du serveur prend le relais (mode auto).
+              void detectBlockedScryfall();
+            }}
+            loading="lazy"
+          />
         )}
         {showStats && obj && (
           <>

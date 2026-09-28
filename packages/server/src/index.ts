@@ -1,11 +1,13 @@
 /**
  * Serveur de jeu en ligne : WebSocket sur /ws (protocole dans protocol.ts) et, si un dossier est fourni,
  * fichiers statiques du client (build Vite) pour jouer en réseau local sur http://<ip>:<port>.
+ * Relaie aussi les images de Scryfall sur /scry/ pour les joueurs dont le réseau bloque cards.scryfall.io.
  */
 import { createReadStream, existsSync, statSync } from "node:fs";
 import { createServer as createHttpServer, type IncomingMessage, type ServerResponse } from "node:http";
 import type { AddressInfo } from "node:net";
 import { extname, join, normalize, resolve, sep } from "node:path";
+import { Readable } from "node:stream";
 import { WebSocket, WebSocketServer } from "ws";
 import type { ClientMessage, ServerMessage } from "./protocol";
 import { ClientError, DEFAULT_CONFIG, type Peer, type Room, type RoomConfig, RoomManager } from "./rooms";
@@ -23,6 +25,8 @@ export interface ServerOptions {
   pingMs?: number;
   /** Dossier du client construit (packages/client/dist), servi en statique. */
   staticDir?: string;
+  /** Récupération d'une image de Scryfall pour le relais /scry/ (remplaçable dans les tests). */
+  fetchImage?: (url: string) => Promise<Response>;
   config?: Partial<RoomConfig>;
 }
 
@@ -76,6 +80,65 @@ function serveStatic(root: string | undefined, req: IncomingMessage, res: Server
   else createReadStream(file).pipe(res);
 }
 
+/**
+ * Relais des images de Scryfall : /scry/<chemin> → https://cards.scryfall.io/<chemin>. Liste blanche stricte
+ * (seules les images de cartes, jamais un autre hôte) : ce n'est pas un proxy ouvert.
+ */
+export const SCRY_PREFIX = "/scry/";
+const SCRY_HOST = "https://cards.scryfall.io";
+const SCRY_PATH = /^\/(normal|large|small|art_crop|png|border_crop)\/(front|back)\/[0-9a-f]\/[0-9a-f]\/[0-9a-f-]{36}\.(jpg|png)$/;
+/** L'URL d'une image change quand Scryfall la remplace (?horodatage) : cache long. */
+const SCRY_CACHE = "public, max-age=2592000, immutable";
+const SCRY_TIMEOUT_MS = 10_000;
+
+const fetchScryfall = (url: string): Promise<Response> =>
+  fetch(url, { headers: { "User-Agent": "MTGMate/1.0", Accept: "image/*" }, signal: AbortSignal.timeout(SCRY_TIMEOUT_MS) });
+
+async function relayImage(
+  req: IncomingMessage,
+  res: ServerResponse,
+  fetchImage: (url: string) => Promise<Response>,
+): Promise<void> {
+  if (req.method !== "GET" && req.method !== "HEAD") {
+    res.writeHead(405).end();
+    return;
+  }
+  const url = new URL(req.url ?? "/", "http://x");
+  const path = url.pathname.slice(SCRY_PREFIX.length - 1);
+  if (!SCRY_PATH.test(path)) {
+    res.writeHead(404).end();
+    return;
+  }
+  let upstream: Response;
+  try {
+    upstream = await fetchImage(`${SCRY_HOST}${path}${url.search}`);
+  } catch {
+    res.writeHead(502).end();
+    return;
+  }
+  if (!upstream.ok || !upstream.body) {
+    res.writeHead(upstream.status === 404 ? 404 : 502).end();
+    return;
+  }
+  const headers: Record<string, string> = {
+    "Content-Type": upstream.headers.get("content-type") ?? "image/jpeg",
+    "Cache-Control": SCRY_CACHE,
+  };
+  for (const h of ["content-length", "etag", "last-modified"]) {
+    const v = upstream.headers.get(h);
+    if (v) headers[h] = v;
+  }
+  res.writeHead(200, headers);
+  if (req.method === "HEAD") {
+    res.end();
+    await upstream.body.cancel();
+    return;
+  }
+  Readable.fromWeb(upstream.body as import("node:stream/web").ReadableStream)
+    .on("error", () => res.destroy())
+    .pipe(res);
+}
+
 function parse(data: WebSocket.RawData): ClientMessage | null {
   try {
     const msg = JSON.parse(String(data)) as ClientMessage;
@@ -91,6 +154,10 @@ export function startServer(opts: ServerOptions = {}): Promise<RunningServer> {
   const http = createHttpServer((req, res) => {
     if (req.url === "/healthz") {
       res.writeHead(200, { "Content-Type": "text/plain; charset=utf-8" }).end(`ok ${rooms.size} salon(s)\n`);
+      return;
+    }
+    if (req.url?.startsWith(SCRY_PREFIX)) {
+      void relayImage(req, res, opts.fetchImage ?? fetchScryfall);
       return;
     }
     serveStatic(root, req, res);

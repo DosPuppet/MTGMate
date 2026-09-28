@@ -20,6 +20,7 @@ Ce fichier sert au suivi du projet entre les sessions : où on en est, les règl
 | Légalité Standard dans le deckbuilder (légalités Scryfall, bannies) | ✅ |
 | Champ de bataille façon MTGA (rangées, zone des planeswalkers, piles de jetons, lignes multiples, redimensionnement) | ✅ |
 | Effets sonores (échantillons Kenney CC0, volume, muet avec M) | ✅ |
+| Relais des images Scryfall par le serveur (`/scry/`, bascule automatique, case « Images par le serveur MTG Mate », cache nginx) | ✅ |
 | Tablette et téléphone (main ajustée à la largeur, appui long = aperçu, tap pour lever une carte, tiroir sous 1100 px, paysage imposé sur téléphone) | ✅ |
 | Jeu en ligne : duel Standard à 2 (serveur local, code de salon, corde, reconnexion, revanche) | ✅ |
 | Déploiement : pm2 derrière nginx sur un VPS (`docs/deploiement.md`, `deploy/`) | ✅ documenté et testé en local (pm2, nginx) |
@@ -98,7 +99,7 @@ Ce fichier sert au suivi du projet entre les sessions : où on en est, les règl
 - **En fin d'extension ou avant une fusion :** `npm run verify -- --full` (environ 3 min). Il lance :
   - trois graines sur tout le pool, puis 3 et 4 joueurs, et l'IA mixte ;
   - le bench ;
-  - les quatre tests d'interface.
+  - les cinq tests d'interface.
 - **Résultat :** une ligne par étape, avec sa durée. Le détail n'est affiché qu'en cas d'échec ; tous les journaux sont dans `test-results/verify/`.
 - **Fuzz à la main :** `npm run fuzz -- --games 300 --pool FIN --jobs 10`. Les résultats sont identiques à graine égale, quel que soit `--jobs`.
 - **Bench :** il n'est fiable que sur secteur (le mode éco du CPU fausse les mesures). On juge une régression en comparant avant et après.
@@ -122,6 +123,10 @@ Ce fichier sert au suivi du projet entre les sessions : où on en est, les règl
   - tactile (`client/src/touch.ts`, `(hover: none), (pointer: coarse)`) : l'appui long sur une `Card` ouvre l'aperçu en surimpression (`peek` du store, `TouchPreview`) ; dans la main, le premier tap lève la carte, le second la joue ; le glisser reste possible ;
   - sous 1100 px de large, la barre latérale est un tiroir (bouton ☰) ; en portrait sous 600 px, la partie affiche « Tournez votre appareil » ;
   - `mobile-smoke` émule iPad, tablette Android, Pixel et iPhone (Playwright `devices`) ; appui long simulé par CDP (`Input.dispatchTouchEvent`). Une émulation ne reproduit pas la barre d'adresse : tester sur un vrai appareil avec `npm run dev -- --host`.
+- **Images de Scryfall :**
+  - toute URL d'image affichée passe par `imageUrl` (`client/src/images.ts`), qui la réécrit en `/scry/…` quand le relais est actif ; un composant qui affiche une image appelle `useRelayActive()` pour se redessiner à la bascule ;
+  - la route `/scry/` du serveur (`server/src/index.ts`) n'accepte que les chemins d'images de cartes (liste blanche `SCRY_PATH`) : ne jamais l'élargir en proxy ouvert ;
+  - en dev, Vite relaie `/scry` directement vers Scryfall (`client/vite.config.ts`) ; `proxy-smoke` bloque Scryfall avec `page.route`.
 - **Effets sonores (`client/src/audio/`) :**
   - `sounds.ts` = table clé → fichiers de `public/sounds/` (changer un son = une ligne) ; `eventSounds.ts` = événements → sons, pur et testé ; `sfx.ts` = Web Audio ;
   - les navigateurs bloquent le son avant le premier geste : `unlockAudio` au premier `pointerdown` (main.tsx) ;
