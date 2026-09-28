@@ -3,6 +3,7 @@
  * Le moteur reste la seule source de vérité : on n'envoie que des décisions tirées des options légales.
  */
 
+import type { AiLevel } from "@mtgx/ai";
 import { card, type DeckEntries } from "@mtgx/cards";
 import {
   type ActionOption,
@@ -165,7 +166,7 @@ interface Store {
   turnBanner: { id: number; text: string; mine: boolean } | null;
   spotlight: { id: number; face: CardFace; who: string } | null;
 
-  startGame(playerDeck: DeckEntries, aiDecks: DeckEntries[], sandbox?: Sandbox): void;
+  startGame(playerDeck: DeckEntries, aiDecks: DeckEntries[], sandbox?: Sandbox, aiLevel?: AiLevel): void;
   /** Tutoriel : partie mise en scène. */
   startScenario(scenario: ScenarioSpec): void;
   openTutorial(): void;
@@ -534,7 +535,7 @@ export const useGame = create<Store>((set, get) => {
     turnBanner: null,
     spotlight: null,
 
-    startGame(playerDeck, aiDecks, sandbox) {
+    startGame(playerDeck, aiDecks, sandbox, aiLevel) {
       get().session?.close();
       set({ online: null, tutorialGame: false });
       preloadSounds();
@@ -550,6 +551,7 @@ export const useGame = create<Store>((set, get) => {
         defs: defsFor([playerDeck, ...aiDecks], sandbox),
         sandbox,
         fast: fastMode(),
+        aiLevel,
       });
       session.send({ type: "settings", settings });
     },

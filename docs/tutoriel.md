@@ -12,7 +12,7 @@ Le tutoriel s'adresse à un joueur qui ne connaît pas Magic. Il se lance depuis
 | 6 | `sorts` | Rituels et éphémères, cibles (glisser-déposer), première victoire |
 | 7 | `pile` | Répondre à un sort, ordre de résolution, blessures qui durent jusqu'à la fin du tour, tour de combat |
 | 8 | `capacites` | Vol, vigilance, lien de vie, portée, contact mortel, capacités déclenchées et activées |
-| 9 | `partie` | Mulligan, arrêts, « Passer le tour », puis une vraie partie contre l'IA heuristique (adversaire à 10 PV), avec des conseils |
+| 9 | `partie` | Mulligan, arrêts, « Passer le tour », puis une vraie partie contre l'IA débutante (adversaire à 10 PV), avec des conseils |
 
 On peut **tout dérouler** (la leçon suivante est proposée en premier), **reprendre** ou choisir une leçon. La progression est gardée dans `localStorage` (`mtgmate.tutorial` : leçons terminées et leçon à reprendre). La reprise relance la leçon **depuis son début**.
 
@@ -21,7 +21,7 @@ On peut **tout dérouler** (la leçon suivante est proposée en premier), **repr
 - `engine/src/scenario.ts` : `createScenario`, partie sans mélange, commencée au début du tour voulu (ou par le mulligan).
 - `engine/src/host.ts` : l'option `gate` de `GameHost` fait attendre l'IA pendant une explication. L'humain voit alors l'état courant.
 - `ai/src/scripted.ts` : `scriptedAgent`, adversaire qui suit un script de données (`playLand`, `cast` éventuellement en réponse, `activate`, `attack`, `block`, cartes désignées par leur nom). En dehors du script, il passe, n'attaque pas et fait les blocages obligatoires.
-- `client/src/protocol.ts` : `ScenarioSpec`, envoyée au worker dans `start`, et message `pause`.
+- `client/src/protocol.ts` : `ScenarioSpec`, envoyée au worker dans `start`, et message `pause`. L'adversaire (`opponentPlays`) est un script ou un niveau d'IA (`"beginner"`, `"medium"`, `"expert"`).
 - `client/src/scenario.ts` : `buildScenario`, de la description par noms à la partie du moteur (worker et tests).
 - `client/src/tutorial/` :
   - `lessons.ts` : le contenu ;

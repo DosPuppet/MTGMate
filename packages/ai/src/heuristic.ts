@@ -1,8 +1,9 @@
 /**
- * IA heuristique (v1) :
+ * IA heuristique, paramétrée par un profil de niveau (profile.ts) :
  * - sorts et capacités : simulation à un coup sur un clone de l'état, puis évaluation du plateau ;
- * - blocages : recherche gloutonne par simulation du combat ;
- * - attaques : règles de combat simples (duels, attaque totale létale, sécurité en défense).
+ * - blocages : recherche gloutonne par simulation du combat (niveau élevé : recherche, voir combat.ts) ;
+ * - attaques : règles de combat simples (duels, attaque totale létale, sécurité en défense) ;
+ *   niveau élevé : simulation des blocages adverses (combat.ts).
  */
 import {
   type Agent,
@@ -24,33 +25,46 @@ import {
   unmetBlockRequirement,
 } from "@mtgx/engine";
 import { heuristicChoice, keepValue } from "./choices";
+import { searchAttackers, searchBlocks } from "./combat";
 import { afterCombat, creatureValue, evaluate, rollout, stackEmpty, targetOpponent, trySubmit } from "./evaluate";
 import { enumerateDecisions } from "./options";
+import { MEDIUM_PROFILE, type Profile } from "./profile";
 
+/** IA de niveau moyen (fuzz, bench, tests). */
 export function heuristicAgent(): Agent {
-  return (s, me) => decide(s, me);
+  return (s, me) => decide(s, me, MEDIUM_PROFILE);
 }
 
-function decide(s: GameState, me: PlayerId): Decision {
+export function decide(s: GameState, me: PlayerId, pr: Profile): Decision {
   const p = s.pending;
   switch (p?.kind) {
     case "mulligan":
-      return keepHand(s, me) || p.mulligans >= 2 ? { type: "keep" } : { type: "mulligan" };
+      return keepHand(s, me, pr) || p.mulligans >= 2 ? { type: "keep" } : { type: "mulligan" };
     case "bottomCards":
       return { type: "bottom", cards: worstCards(s, me, p.count) };
     case "discard":
       return { type: "discard", cards: worstCards(s, me, p.count) };
-    case "declareAttackers":
+    case "declareAttackers": {
+      const chosen =
+        pr.attack === "search"
+          ? searchAttackers(s, me, pr)
+          : pr.attack === "naive"
+            ? naiveAttackers(s, me, pr)
+            : chooseAttackers(s, me);
       return {
         type: "declareAttackers",
-        attackers: chooseDefenders(s, me, [...new Set([...chooseAttackers(s, me), ...forcedAttackers(s, me)])]),
+        attackers: chooseDefenders(s, me, [...new Set([...chosen, ...forcedAttackers(s, me)])]),
       };
-    case "declareBlockers":
-      return { type: "declareBlockers", blocks: withRequiredBlocks(s, me, chooseBlocks(s, me)) };
+    }
+    case "declareBlockers": {
+      const blocks =
+        pr.block === "search" ? searchBlocks(s, me, pr) : pr.block === "naive" ? naiveBlocks(s, me) : chooseBlocks(s, me);
+      return { type: "declareBlockers", blocks: withRequiredBlocks(s, me, blocks) };
+    }
     case "choice":
       return { type: "choose", values: heuristicChoice(s, me, p.request) };
     case "priority":
-      return choosePriority(s, me);
+      return choosePriority(s, me, pr);
     default:
       return { type: "pass" };
   }
@@ -61,7 +75,7 @@ function decide(s: GameState, me: PlayerId): Decision {
  * de force pour l'abattre, en commençant par les créatures évasives ; le reste attaque le joueur.
  * Si les attaquants suffisent à tuer le joueur, tout va sur le joueur.
  */
-function chooseDefenders(s: GameState, me: PlayerId, attackers: string[]): { id: string; defender: string }[] {
+export function chooseDefenders(s: GameState, me: PlayerId, attackers: string[]): { id: string; defender: string }[] {
   const opp = targetOpponent(s, me);
   const power = (id: string) => Math.max(0, chars(s, id).power);
   const total = attackers.reduce((n, id) => n + power(id), 0);
@@ -103,10 +117,11 @@ export function withRequiredBlocks(
 
 const isLand = (s: GameState, id: ObjectId) => !!s.defs[s.objects[id]?.defId ?? ""]?.types.includes("Land");
 
-function keepHand(s: GameState, me: PlayerId): boolean {
+function keepHand(s: GameState, me: PlayerId, pr: Profile): boolean {
   const hand = s.players[me]?.hand ?? [];
   const lands = hand.filter((id) => isLand(s, id)).length;
   if (hand.length <= 5) return true;
+  if (pr.mulligan === "loose") return lands >= 1 && lands <= 6;
   return lands >= 2 && lands <= (hand.length === 7 ? 5 : 4);
 }
 
@@ -127,10 +142,23 @@ function worstCards(s: GameState, me: PlayerId, count: number): ObjectId[] {
 // Priorité : sorts et capacités par simulation
 // ---------------------------------------------------------------------------
 
-function choosePriority(s: GameState, me: PlayerId): Decision {
-  const pass: Decision = { type: "pass" };
+export interface ScoredOption {
+  decision: Decision;
+  /** Évaluation après résolution (simulation à un coup). */
+  score: number;
+}
+
+/**
+ * Options de l'IA à la priorité, évaluées par simulation à un coup. `null` : rien à jouer (hors de ses fenêtres
+ * de jeu, ou aucune action). `forced` : décision évidente (un terrain, un renfort global létal).
+ */
+export function priorityOptions(
+  s: GameState,
+  me: PlayerId,
+  pr: Profile,
+): { baseline: number; options: ScoredOption[]; forced?: Decision } | null {
   const top = s.stack[s.stack.length - 1];
-  if (top?.controller === me) return pass;
+  if (top?.controller === me) return null;
 
   const myTurn = s.turn.active === me;
   const step = s.turn.step;
@@ -138,27 +166,29 @@ function choosePriority(s: GameState, me: PlayerId): Decision {
   const mainPhase = myTurn && (step === "main1" || step === "main2") && !top;
   const response = !!top;
   const opponentEnd = !myTurn && step === "end" && !top;
-  if (!mainPhase && !combatWindow && !response && !opponentEnd) return pass;
+  // Débutant : ni réponse, ni tour de combat, ni jeu à la fin du tour adverse.
+  if (!mainPhase && (!pr.responds || (!combatWindow && !response && !opponentEnd))) return null;
 
   const actions = legalActions(s, me).filter((a) => a.type === "cast" || a.type === "activate" || a.type === "playLand");
-  if (actions.length === 0) return pass;
+  if (actions.length === 0) return null;
 
   // Jouer un terrain d'abord.
   const land = actions.find((a) => a.type === "playLand");
-  if (land && land.type === "playLand") return { type: "playLand", card: land.card, payLife: land.payLife };
+  if (land && land.type === "playLand")
+    return { baseline: 0, options: [], forced: { type: "playLand", card: land.card, payLife: land.payLife } };
 
   const until = combatWindow ? afterCombat(s.turn.number) : stackEmpty;
+  const opts = { exposure: pr.exposure };
+  const pass: Decision = { type: "pass" };
   const afterPass = trySubmit(s, me, pass);
-  const baseline = afterPass ? evaluate(rollout(afterPass, until), me) : evaluate(s, me);
-
-  let best: Decision = pass;
-  let bestScore = baseline + 0.25;
+  const baseline = afterPass ? evaluate(rollout(afterPass, until), me, opts) : evaluate(s, me, opts);
+  const options: ScoredOption[] = [];
   for (const a of actions) {
     // Renfort global en rituel (Overrun…) : seulement pour une attaque potentiellement létale.
     if (a.type === "cast") {
       const d = s.defs[s.objects[a.card]?.defId ?? ""];
       if (d?.spell?.modes[0]?.effects.some((e) => e.op === "pumpAll")) {
-        if (step === "main1" && overrunIsLethal(s, me)) return { type: "cast", card: a.card };
+        if (step === "main1" && overrunIsLethal(s, me)) return { baseline, options, forced: { type: "cast", card: a.card } };
         continue;
       }
     }
@@ -167,13 +197,31 @@ function choosePriority(s: GameState, me: PlayerId): Decision {
     for (const d of enumerateDecisions(a, 40, rank)) {
       const next = trySubmit(s, me, d);
       if (!next) continue;
-      const score = evaluate(rollout(next, until), me);
-      if (score > bestScore) {
-        bestScore = score;
-        best = d;
-      }
+      options.push({ decision: d, score: evaluate(rollout(next, until), me, opts) });
     }
   }
+  return { baseline, options };
+}
+
+export function choosePriority(s: GameState, me: PlayerId, pr: Profile): Decision {
+  const pass: Decision = { type: "pass" };
+  const found = priorityOptions(s, me, pr);
+  if (!found) return pass;
+  if (found.forced) return found.forced;
+  // Débutant : oublie parfois de jouer.
+  if (pr.forgetfulness && pr.rand() < pr.forgetfulness) return pass;
+  let best: Decision = pass;
+  let bestScore = found.baseline + 0.25;
+  /** Options meilleures que passer (le débutant prend parfois l'une d'elles au hasard). */
+  const good: Decision[] = [];
+  for (const { decision, score } of found.options) {
+    if (score > found.baseline + 0.25) good.push(decision);
+    if (score > bestScore) {
+      bestScore = score;
+      best = decision;
+    }
+  }
+  if (pr.sloppiness && good.length > 1 && pr.rand() < pr.sloppiness) return good[Math.floor(pr.rand() * good.length)] as Decision;
   return best;
 }
 
@@ -191,7 +239,7 @@ function overrunIsLethal(s: GameState, me: PlayerId): boolean {
 // Blocages : glouton, par simulation du combat
 // ---------------------------------------------------------------------------
 
-function chooseBlocks(s: GameState, me: PlayerId): { blocker: ObjectId; attacker: ObjectId }[] {
+export function chooseBlocks(s: GameState, me: PlayerId): { blocker: ObjectId; attacker: ObjectId }[] {
   const cands = blockCandidates(s, me);
   const attackers = [...(s.combat?.attackers ?? [])].sort((a, b) => chars(s, b.id).power - chars(s, a.id).power);
   const until = afterCombat(s.turn.number);
@@ -287,7 +335,7 @@ function worth(s: GameState, id: ObjectId): number {
   return d ? creatureValue(d, (o.counters["+1/+1"] ?? 0) - (o.counters["-1/-1"] ?? 0)) : 0;
 }
 
-function chooseAttackers(s: GameState, me: PlayerId): ObjectId[] {
+export function chooseAttackers(s: GameState, me: PlayerId): ObjectId[] {
   // On attaque l'adversaire visé ; la contre-attaque peut venir de n'importe quel adversaire.
   const opp = targetOpponent(s, me);
   const cands = attackCandidates(s, me).filter((id) => chars(s, id).power > 0);
@@ -327,4 +375,61 @@ function chooseAttackers(s: GameState, me: PlayerId): ObjectId[] {
     attackers.splice(attackers.indexOf(drop), 1);
   }
   return attackers;
+}
+
+// ---------------------------------------------------------------------------
+// Débutant : attaques et blocages naïfs
+// ---------------------------------------------------------------------------
+
+/**
+ * Attaque avec ce qu'aucun bloqueur ne tue sans mourir, plus un peu au hasard ; sans penser à la contre-attaque.
+ */
+function naiveAttackers(s: GameState, me: PlayerId, pr: Profile): ObjectId[] {
+  const opp = targetOpponent(s, me);
+  const blockers = creaturesControlledBy(s, opp).filter((id) => !s.objects[id]?.tapped);
+  return attackCandidates(s, me).filter((a) => {
+    if (chars(s, a).power <= 0) return false;
+    const safe = blockers
+      .filter((b) => couldBlock(s, b, a))
+      .every((b) => {
+        const { aDies, bDies } = duel(s, a, b);
+        return !aDies || bDies;
+      });
+    return safe || pr.rand() < 0.3;
+  });
+}
+
+/**
+ * Bloque quand le bloqueur tue l'attaquant sans mourir ; sinon seulement pour ne pas mourir (bloqueurs sacrifiés).
+ */
+export function naiveBlocks(s: GameState, me: PlayerId): { blocker: ObjectId; attacker: ObjectId }[] {
+  const cands = blockCandidates(s, me);
+  const attackers = [...(s.combat?.attackers ?? [])].sort((a, b) => chars(s, b.id).power - chars(s, a.id).power);
+  const blocks: { blocker: ObjectId; attacker: ObjectId }[] = [];
+  const used = new Set<ObjectId>();
+  const free = (a: string) => cands.filter((c) => !used.has(c.blocker) && c.attackers.includes(a)).map((c) => c.blocker);
+  for (const a of attackers) {
+    const good = free(a.id).find((b) => {
+      const { aDies, bDies } = duel(s, a.id, b);
+      return aDies && !bDies;
+    });
+    if (good) {
+      blocks.push({ blocker: good, attacker: a.id });
+      used.add(good);
+    }
+  }
+  // Attaque létale : on sacrifie les plus petits bloqueurs devant les plus gros attaquants non bloqués.
+  const life = s.players[me]?.life ?? 20;
+  const unblocked = () =>
+    attackers.filter((a) => !blocks.some((b) => b.attacker === a.id)).reduce((n, a) => n + Math.max(0, chars(s, a.id).power), 0);
+  for (const a of attackers) {
+    if (unblocked() < life) break;
+    if (blocks.some((b) => b.attacker === a.id)) continue;
+    const chump = free(a.id).sort((x, y) => worth(s, x) - worth(s, y))[0];
+    if (chump) {
+      blocks.push({ blocker: chump, attacker: a.id });
+      used.add(chump);
+    }
+  }
+  return blocks;
 }

@@ -1,10 +1,11 @@
 /**
  * Mesures de performance du moteur et de l'IA.
- * Cibles : ≥ 5 000 décisions/s en simulation aléatoire ; IA < 50 ms par décision en moyenne.
+ * Cibles : ≥ 5 000 décisions/s en simulation aléatoire ; IA moyenne < 50 ms par décision en moyenne ;
+ * IA élevée (ISMCTS à 100 itérations, budget fixe pour une mesure reproductible) < 150 ms en moyenne.
  *
  * Usage : npm run bench
  */
-import { heuristicAgent, randomAgent } from "@mtgx/ai";
+import { aiAgent, heuristicAgent, randomAgent } from "@mtgx/ai";
 import { buildDeck, DECKS } from "@mtgx/cards";
 import { type Agent, createGame, fallbackDecision, RulesError, submit } from "@mtgx/engine";
 
@@ -54,7 +55,10 @@ const random = run("aléatoire, 2 joueurs", 2, 60, (s, i) => randomAgent(s * 7 +
 run("aléatoire, 4 joueurs", 4, 20, (s, i) => randomAgent(s * 7 + i));
 const ai2 = run("IA heuristique, 2 joueurs", 2, 10, () => heuristicAgent());
 const ai4 = run("IA heuristique, 4 joueurs", 4, 4, () => heuristicAgent());
+const expert = run("IA élevée, 2 joueurs", 2, 2, (s, i) =>
+  aiAgent("expert", { seed: s + i, budget: { iterations: 100 }, players: 2 }),
+);
 
-const ok = random.perSecond >= 5000 && ai2.mean < 50 && ai4.mean < 50;
+const ok = random.perSecond >= 5000 && ai2.mean < 50 && ai4.mean < 50 && expert.mean < 150;
 console.log(ok ? "Cibles atteintes." : "Cibles NON atteintes.");
 if (!ok) process.exitCode = 1;

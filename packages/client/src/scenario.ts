@@ -2,11 +2,13 @@
  * Partie mise en scène (tutoriel) : de la description par noms de cartes (`ScenarioSpec`) à la partie du moteur.
  * Pur : sert au worker (définitions reçues dans « start ») et aux tests (base de cartes complète).
  */
-import { heuristicAgent, scriptedAgent } from "@mtgx/ai";
+import { aiAgent, scriptedAgent } from "@mtgx/ai";
 import { type Agent, type CardDef, createScenario, type ScenarioPlayer, type StepResult } from "@mtgx/engine";
 import type { ScenarioSide, ScenarioSpec } from "./protocol";
 
 export const YOU = "p1";
+/** Budget de réflexion des IA dans le navigateur : en temps, pour une latence identique quelle que soit la machine. */
+export const AI_BUDGET = { ms: 700 } as const;
 export const OPPONENT = "p2";
 
 /** Tous les noms de cartes d'un scénario (pour lui envoyer leurs définitions). */
@@ -46,6 +48,9 @@ export function buildScenario(
     mulligan: spec.mulligan,
     players: [player(YOU, playerName, spec.you, def), player(OPPONENT, "Adversaire", spec.opponent, def)],
   });
-  const opponent = spec.opponentPlays === "heuristic" ? heuristicAgent() : scriptedAgent(spec.opponentPlays);
+  const opponent =
+    typeof spec.opponentPlays === "string"
+      ? aiAgent(spec.opponentPlays, { seed, budget: AI_BUDGET, players: 2 })
+      : scriptedAgent(spec.opponentPlays);
   return { ...game, opponent };
 }

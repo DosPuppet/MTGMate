@@ -1,3 +1,4 @@
+import type { AiLevel } from "@mtgx/ai";
 import { CARDS, type DeckList, FORMAT_LABELS, validateDeck } from "@mtgx/cards";
 import { useState } from "react";
 import { SoundControl } from "../audio/SoundControl";
@@ -67,6 +68,35 @@ export function DeckChoice({ label, value, onChange }: { label: string; value: s
   );
 }
 
+const LEVEL_KEY = "mtgmate.aiLevel";
+
+const LEVELS: { level: AiLevel; label: string; hint: string }[] = [
+  { level: "beginner", label: "Débutant", hint: "Pour apprendre : l'IA fait des erreurs et ne vous tend pas de pièges." },
+  { level: "medium", label: "Moyen", hint: "L'IA joue correctement et bloque avec prudence." },
+  {
+    level: "expert",
+    label: "Élevé",
+    hint: "L'IA simule les combats et les tours suivants avant de jouer (en duel ; en multijoueur, elle simule les combats).",
+  },
+];
+
+function loadLevel(): AiLevel {
+  try {
+    const v = localStorage.getItem(LEVEL_KEY);
+    return LEVELS.some((l) => l.level === v) ? (v as AiLevel) : "medium";
+  } catch {
+    return "medium";
+  }
+}
+
+function saveLevel(level: AiLevel): void {
+  try {
+    localStorage.setItem(LEVEL_KEY, level);
+  } catch {
+    // réglage non conservé
+  }
+}
+
 export function Lobby() {
   const startGame = useGame((s) => s.startGame);
   const openDeckBuilder = useGame((s) => s.openDeckBuilder);
@@ -82,6 +112,11 @@ export function Lobby() {
   const them = byId(ai);
   const canStart = !!me && !!them && deckStatus(me).ok && deckStatus(them).ok;
   const [aiCount, setAiCount] = useState(1);
+  const [level, setLevel] = useState<AiLevel>(loadLevel);
+  const chooseLevel = (l: AiLevel) => {
+    setLevel(l);
+    saveLevel(l);
+  };
   return (
     <div className="lobby">
       <header className="lobby-head">
@@ -107,6 +142,24 @@ export function Lobby() {
           </div>
           <span className="hint">{aiCount > 1 ? "Multijoueur chacun pour soi" : "Duel"}</span>
         </div>
+        <div className="ai-level">
+          <div className="ai-count">
+            <span>Niveau de l'IA</span>
+            <div className="seg">
+              {LEVELS.map((l) => (
+                <button
+                  key={l.level}
+                  type="button"
+                  className={level === l.level ? "on" : ""}
+                  onClick={() => chooseLevel(l.level)}
+                >
+                  {l.label}
+                </button>
+              ))}
+            </div>
+          </div>
+          <div className="hint ai-level-hint">{LEVELS.find((l) => l.level === level)?.hint}</div>
+        </div>
         <div className="lobby-actions">
           <button
             type="button"
@@ -118,6 +171,8 @@ export function Lobby() {
               startGame(
                 me.main,
                 Array.from({ length: aiCount }, () => them.main),
+                undefined,
+                level,
               )
             }
           >

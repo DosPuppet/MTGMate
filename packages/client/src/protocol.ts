@@ -1,5 +1,5 @@
 /** Messages échangés entre l'interface et le Web Worker qui fait tourner la partie. */
-import type { ScriptAction } from "@mtgx/ai";
+import type { AiLevel, ScriptAction } from "@mtgx/ai";
 import type { DeckEntries } from "@mtgx/cards";
 import type { AutopilotSettings, CardDef, CardFace, Decision, GameEvent, GameView } from "@mtgx/engine";
 
@@ -30,14 +30,14 @@ export interface ScenarioSide {
   graveyard?: string[];
 }
 
-/** Partie mise en scène (tutoriel) : état de départ connu et adversaire scripté (ou l'IA heuristique). */
+/** Partie mise en scène (tutoriel) : état de départ connu et adversaire scripté (ou une IA du niveau indiqué). */
 export interface ScenarioSpec {
   you: ScenarioSide;
   opponent: ScenarioSide;
   active: "you" | "opponent";
   turn?: number;
   mulligan?: boolean;
-  opponentPlays: ScriptAction[] | "heuristic";
+  opponentPlays: ScriptAction[] | AiLevel;
 }
 
 export type ToWorker =
@@ -54,6 +54,8 @@ export type ToWorker =
       fast?: boolean;
       /** Tutoriel : partie mise en scène au lieu de decks mélangés (les decks sont alors vides). */
       scenario?: ScenarioSpec;
+      /** Niveau des IA adverses (moyen par défaut). */
+      aiLevel?: AiLevel;
     }
   /** Tutoriel : l'adversaire attend (explication à l'écran). */
   | { type: "pause"; paused: boolean }

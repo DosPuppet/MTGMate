@@ -2,7 +2,7 @@
  * Partie contre l'IA, entièrement dans le navigateur : le moteur, l'autopilot et l'IA
  * tournent ici, hors du thread de l'interface.
  */
-import { heuristicAgent } from "@mtgx/ai";
+import { aiAgent } from "@mtgx/ai";
 import type { DeckEntries } from "@mtgx/cards";
 import { TOKEN_SPECS } from "@mtgx/cards/tokens";
 import {
@@ -16,7 +16,7 @@ import {
   visibleFaces,
 } from "@mtgx/engine";
 import type { FromWorker, Sandbox, ToWorker } from "../protocol";
-import { buildScenario, OPPONENT } from "../scenario";
+import { AI_BUDGET, buildScenario, OPPONENT } from "../scenario";
 
 const HUMAN = "p1";
 let host: GameHost | null = null;
@@ -134,7 +134,12 @@ async function handle(msg: ToWorker): Promise<void> {
       host = new GameHost(
         state,
         {
-          agents: Object.fromEntries(msg.aiDecks.map((_, i) => [`p${i + 2}`, heuristicAgent()])),
+          agents: Object.fromEntries(
+            msg.aiDecks.map((_, i) => [
+              `p${i + 2}`,
+              aiAgent(msg.aiLevel ?? "medium", { seed: msg.seed + i + 1, budget: AI_BUDGET, players: msg.aiDecks.length + 1 }),
+            ]),
+          ),
           aiDelay: msg.fast && import.meta.env.DEV ? 0 : 900,
           sleep,
           // Mêmes faces qu'en ligne : seulement les cartes connues du joueur (pas la decklist adverse).

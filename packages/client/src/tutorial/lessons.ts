@@ -747,7 +747,7 @@ export const LESSONS: Lesson[] = [
         ],
         hand: ["Mountain", "Mountain", "Mountain", "Swab Goblin", "Goblin Boarders", "Burst Lightning", "Courageous Goblin"],
       },
-      opponentPlays: "heuristic",
+      opponentPlays: "beginner",
     },
     steps: [
       {

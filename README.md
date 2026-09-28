@@ -98,8 +98,11 @@ Les images des cartes viennent de Scryfall (`cards.scryfall.io`). Certains rése
 | `npm run verify -- --set <EXT>` | Vérification d'un lot, parallélisée (~70 s) : types, Biome, couverture, tous les tests, fuzz ciblé sur l'extension à 2, 3 et 4 joueurs ; tests d'interface si le client a changé |
 | `npm run verify -- --full` | Vérification complète (~3 min) : fuzz sur tout le pool, bench et tests d'interface. Durée de chaque étape affichée, journaux dans `test-results/verify/` |
 | `npm test` | Tests de règles, d'IA, et test de fumée de chaque carte gérée (Vitest, un fichier par extension) |
-| `npm run fuzz -- --games 300 [--pool decks\|all\|<EXT>] [--players 4] [--ai random\|heuristic\|mixed] [--seed N] [--jobs 10]` | Parties IA contre IA, invariants vérifiés à chaque décision. `--pool FIN` : decks tirés surtout de cette extension. `--jobs` : parties réparties sur plusieurs processus, mêmes résultats à graine égale |
-| `npm run bench` | Décisions par seconde du moteur et temps de décision de l'IA (cibles : ≥ 5 000 déc/s, IA < 50 ms ; à mesurer sur secteur) |
+| `npm run fuzz -- --games 300 [--pool decks\|all\|<EXT>] [--players 4] [--ai random\|heuristic\|mixed\|beginner\|medium\|expert\|levels] [--seed N] [--jobs 10]` | Parties IA contre IA, invariants vérifiés à chaque décision. `--pool FIN` : decks tirés surtout de cette extension. `--jobs` : parties réparties sur plusieurs processus, mêmes résultats à graine égale |
+| `npm run bench` | Décisions par seconde du moteur et temps de décision de l'IA (cibles : ≥ 5 000 déc/s, IA moyenne < 50 ms, IA élevée < 150 ms ; à mesurer sur secteur) |
+| `npm run arena -- --a expert --b medium [--games 600] [--jobs 11] [--budget 100] [--pool decks\|all\|mix]` | Tournoi d'IA en duel (places et decks alternés) : taux de victoire avec intervalle à 95 %, temps de décision ; `expert:0` = élevé sans ISMCTS |
+| `npm run ai-smoke` | Niveau de l'IA : sélecteur de l'accueil, latence de l'IA élevée en temps réel, processeur normal et ralenti ×4 (serveur de dev lancé) |
+| `npm run tutorial-smoke [-- --only 2,3] [-- --debug]` | Tutoriel suivi dans le navigateur comme un joueur, refus hors guide, reprise (serveur de dev lancé) |
 | `npm run coverage [-- --set all\|standard\|<EXT>] [-- --text [--color W]] [-- --card "<nom>"]` | Cartes gérées par extension, textes Oracle des cartes restantes, texte et script d'une carte |
 | `npm run server` | Serveur de parties en ligne (WebSocket `/ws`, sert aussi `packages/client/dist`) |
 | `npm run online-smoke [-- --base <url>]` | Duel en ligne entre deux navigateurs : salon, lien d'invitation, corde, reprise après rechargement, revanche (serveur de dev par défaut, ou `--base` vers un serveur de production ou nginx) |
@@ -119,7 +122,8 @@ packages/
             src/model/ (types), src/ops/ (traitements des effets par domaine) ; guide : docs/moteur.md
   cards/    données Scryfall (data/<set>.json, 20 extensions), scripts des cartes (src/<ext>/*.ts), lecture du texte
             Scryfall (src/scryfall.ts), decklists, decks préconstruits (decks/*.json : 5 decks de bienvenue FDN, Starter Kit FIN)
-  ai/       IA aléatoire (fuzz) et heuristique (simulation sur clones de l'état + évaluation)
+  ai/       IA à trois niveaux (heuristique paramétrée, combat par simulation, ISMCTS), IA aléatoire (fuzz),
+            adversaire scripté (tutoriel) ; guide : docs/ia.md
   server/   jeu en ligne : salons, GameHost côté serveur (fait autorité), minuteur, reconnexion ; protocole partagé ;
             relais des images de Scryfall (/scry/)
   client/   React + Vite + Zustand + Motion ; la partie tourne dans un Web Worker ; deckbuilder ; disposition du plateau façon MTGA (board/layout.ts) ;
@@ -182,7 +186,7 @@ Chaque carte gérée est automatiquement jouée par le test de fumée (`packages
 | 4e. Légalité Standard | légalités Scryfall importées, liste des bannies, validation du format dans le deckbuilder | ✅ |
 | 4f. Cartes à plusieurs faces | aventures, recto-verso, cartes scindées et Salles, Sagas, Classes, Affaires, face cachée, assemblage | ✅ |
 | 4g. Autres extensions Standard | une extension à la fois : Reality Fracture ✅, Edge of Eternities ✅, Aetherdrift ✅, Outlaws of Thunder Junction + The Big Score ✅, Final Fantasy ✅, Duskmourn ✅, Bloomburrow ✅ ; les suivantes à la demande | en cours |
-| 5. IA | attaques par simulation, puis ISMCTS | à faire |
+| 5. IA | trois niveaux au choix (débutant, moyen, élevé) ; évaluation sur les caractéristiques durables ; attaques et blocages par simulation ; ISMCTS en duel (déterminisation de l'information cachée), budget en temps ; tournoi d'IA (`npm run arena`) ; guide : docs/ia.md | ✅ |
 | 6. JcJ en ligne | duel Standard : serveur Node `ws` (`GameHost`, vues et faces filtrées), code de salon, corde, reconnexion, revanche | ✅ duel ; déploiement pm2 + nginx documenté |
 | 7. Finitions | effets sonores ✅ ; tablette et téléphone ✅ ; relais des images Scryfall ✅ ; replays (graine + décisions), images des jetons, musique | en cours |
 

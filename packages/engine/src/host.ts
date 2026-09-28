@@ -56,6 +56,8 @@ export class GameHost {
   private readonly opts: HostOptions;
   private pendingEvents: GameEvent[] = [];
   private running = false;
+  /** Moment où la dernière action visible de l'IA a été montrée (Date.now()). */
+  private shownAt = 0;
 
   constructor(state: GameState, opts: HostOptions = {}, initialEvents: GameEvent[] = []) {
     this.state = state;
@@ -104,6 +106,18 @@ export class GameHost {
     return null;
   }
 
+  /**
+   * Laisse à l'humain le temps de voir la dernière action visible de l'IA : on attend le reste de la pause `aiDelay`.
+   * La réflexion de l'IA sur l'action suivante se fait pendant cette pause (elle n'allonge pas l'attente).
+   */
+  private settle(): Promise<void> | null {
+    const { aiDelay, sleep } = this.opts;
+    if (!aiDelay || !sleep) return null;
+    const rest = this.shownAt + aiDelay - Date.now();
+    // Rien à attendre : pas d'`await` (il rendrait la main à la boucle d'événements sans raison).
+    return rest > 0 ? sleep(rest) : null;
+  }
+
   /** Enchaîne les décisions automatiques (IA, autopilot) jusqu'à ce qu'un humain doive choisir. */
   async run(): Promise<void> {
     if (this.running) return;
@@ -111,14 +125,26 @@ export class GameHost {
     try {
       for (let guard = 0; guard < 10_000; guard++) {
         const p = this.state.pending;
-        if (!p || this.state.over) break;
+        const agent = p && !this.state.over ? this.opts.agents?.[decider(this.state) ?? p.player] : undefined;
+        const auto =
+          p && !this.state.over && !agent
+            ? autopilotDecision(this.state, p.player, this.settings[decider(this.state) ?? p.player] ?? DEFAULT_AUTOPILOT)
+            : null;
+        if (!p || this.state.over || (!agent && !auto)) {
+          // Au tour de l'humain (ou fin de partie) : la dernière action visible de l'IA reste affichée le temps de sa
+          // pause. Une décision de l'humain a pu arriver pendant l'attente : on repart alors de l'état courant.
+          const pause = this.settle();
+          if (!pause) break;
+          await pause;
+          continue;
+        }
         // 722 : le joueur qui décide (le contrôleur du tour, le cas échéant).
         const actor = decider(this.state) ?? p.player;
-        const agent = this.opts.agents?.[actor];
         if (agent) {
           const wait = this.opts.gate?.();
           if (wait) {
             // L'humain voit la partie telle qu'elle est pendant l'attente.
+            await this.settle();
             this.flush();
             await wait;
             // La partie a pu changer pendant l'attente (décision de l'humain) : on repart de l'état courant.
@@ -134,16 +160,16 @@ export class GameHost {
             d = fallbackDecision(this.state, p);
             this.apply(actor, d);
           }
-          // On laisse à l'humain le temps de voir les actions visibles de l'IA.
+          // Action visible : montrée une fois la pause de la précédente écoulée ; la suivante se prépare pendant la sienne.
           if (d.type !== "pass" && d.type !== "keep" && d.type !== "tapForMana" && this.opts.aiDelay && this.opts.sleep) {
+            const pause = this.settle();
+            if (pause) await pause;
             this.flush();
-            await this.opts.sleep(this.opts.aiDelay);
+            this.shownAt = Date.now();
           }
           continue;
         }
-        const auto = autopilotDecision(this.state, p.player, this.settings[actor] ?? DEFAULT_AUTOPILOT);
-        if (!auto) break;
-        this.apply(actor, auto);
+        if (auto) this.apply(actor, auto);
       }
     } finally {
       this.running = false;

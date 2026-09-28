@@ -2882,3 +2882,17 @@ button {
 .tutorial-menu .btn.small.ghost {
   align-self: center;
 }
+
+/* Accueil : niveau de l'IA. */
+.ai-level {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+}
+.ai-level-hint {
+  color: var(--dim);
+  font-size: 13px;
+  text-align: center;
+  max-width: 560px;
+}

@@ -1,0 +1,113 @@
+# L'IA : niveaux, évaluation, combat par simulation, ISMCTS
+
+L'IA joue contre l'humain dans le navigateur (Web Worker) : on choisit son niveau à l'accueil (**Débutant**, **Moyen**, **Élevé**), et ce choix est retenu dans `localStorage`, sous `mtgmate.aiLevel`. Le code est dans `packages/ai/src/`.
+
+## Fichiers
+
+| Fichier | Rôle |
+|---|---|
+| `levels.ts` | `aiAgent(level, { seed, budget, players })` : l'agent d'un niveau ; `AiLevel`, `AiBudget` |
+| `profile.ts` | `Profile` : ce qui distingue les niveaux (bruit, réponses, attaques, blocages, contre-attaque, mulligan, budget) |
+| `heuristic.ts` | Décisions heuristiques paramétrées par le profil. `heuristicAgent()` = IA moyenne (fuzz, bench, tests) |
+| `evaluate.ts` | Évaluation d'une position ; simulations (`rollout`, `simulate`, `step`) |
+| `combat.ts` | Niveau élevé : attaques et blocages par simulation |
+| `ismcts.ts` | Niveau élevé, duel : ISMCTS pour les décisions de priorité |
+| `policy.ts` | Politique rapide des simulations de l'ISMCTS |
+| `choices.ts` | Réponses aux choix génériques (regard, défausse, cibles de déclencheurs…) |
+| `random.ts`, `scripted.ts` | IA aléatoire (fuzz), adversaire scripté (tutoriel) |
+
+## Les niveaux
+
+| Niveau | Sorts | Attaques | Blocages | Autres |
+|---|---|---|---|---|
+| **Débutant** | Simulation à un coup, mais il prend parfois une option correcte au hasard plutôt que la meilleure (45 %), ou oublie de jouer (20 %) ; ni réponse, ni tour de combat | Ce qu'aucun bloqueur ne tue sans mourir, plus un peu au hasard ; sans penser à la contre-attaque | Seulement s'il tue sans mourir, ou pour survivre | Mulligans larges ; joue toujours ses terrains |
+| **Moyen** | Simulation à un coup, puis évaluation | Règles de combat (duels, attaque létale, sécurité en défense) | Gloutons par simulation | |
+| **Élevé** | En duel, ISMCTS ; en multijoueur, comme le moyen avec la contre-attaque | Recherche par simulation des blocages adverses | Recherche : blocages à deux, améliorations locales | Évaluation avec la contre-attaque adverse |
+
+## Évaluation (`evaluate.ts`)
+
+- **Caractéristiques durables.** Les créatures sont estimées d'après leurs caractéristiques en jeu, sans les effets « jusqu'à la fin du tour » (`durableChars` : `computeBattlefield` sur une copie superficielle de l'état, sans ces effets).
+  - Une Aura (Pacifisme), un Équipement ou un renfort permanent comptent par leur effet sur la créature.
+  - Un renfort temporaire ne compte que par ce qu'il change au combat.
+  - Avant cela, l'IA ne lançait jamais Pacifisme.
+- **Valeur d'une créature** (`profileValue`) : une part offensive et une part défensive.
+  - Offensive : force, vol, menace, piétinement, double initiative, lien de vie.
+  - Défensive : endurance, contact mortel, portée, initiative, vigilance.
+  - « Ne peut pas attaquer » ou défenseur annulent la première ; « ne peut pas bloquer » réduit la seconde ; « ne se dégage pas » réduit le tout.
+- **Autres permanents.**
+  - Un Équipement a une valeur propre, attaché ou non (il peut changer de porteur).
+  - Une Aura attachée vaut peu : elle compte à travers son hôte.
+  - Au-delà de 7 terrains, un terrain de plus vaut peu.
+- **Main.** Un permanent en main vaut moins qu'en jeu (0,7) ; un éphémère ou un rituel garde sa souplesse (1,5).
+- **Contre-attaque** (niveau élevé, pendant son tour) : `incomingDamage` estime les blessures de la prochaine attaque adverse. Les créatures qui ont attaqué restent engagées jusqu'au prochain tour de l'IA. La pénalité vaut la moitié de la perte de vie, et elle est forte si l'attaque serait létale.
+
+## Combat par simulation (`combat.ts`, niveau élevé)
+
+- **Attaques.** On essaie des ensembles d'attaquants :
+  - d'abord le choix des règles ;
+  - puis tous les sous-ensembles jusqu'à 4 attaquants optionnels, ou, au-delà, des préfixes triés par évasion et par force.
+  
+  Chacun est joué sur une copie : l'adversaire bloque comme l'IA moyenne, puis on évalue la position après le combat, contre-attaque comprise.
+- **Blocages.** On part des blocages gloutons, puis on essaie :
+  - les blocages à deux sur un même attaquant ;
+  - le retrait ou l'échange d'un bloqueur.
+
+## ISMCTS (`ismcts.ts`, niveau élevé, duel)
+
+- **Quand.** Les décisions de priorité qui ont au moins deux options sensées : phases principales, réponses, fenêtres de combat.
+- **Racine.** Passer, plus les 5 meilleures options de l'évaluation à un coup (`priorityOptions` de `heuristic.ts`). Le biais initial favorise les options que l'évaluation préfère.
+- **Déterminisation, à chaque itération** :
+  - la main adverse est retirée au hasard parmi (main + bibliothèque adverses), à taille égale ;
+  - les deux bibliothèques sont mélangées, et le hasard du moteur est retiré.
+  
+  Les cartes sont d'abord rangées par définition. L'échantillon ne dépend donc que de l'ensemble des cartes cachées (la **liste** du deck adverse), jamais de la vraie main.
+- **Sélection** : UCB1.
+- **Simulation** : la politique rapide (`policy.ts`), pour les deux joueurs, jusqu'au début du prochain tour de l'IA :
+  - un terrain, puis le sort le plus cher, avec des cibles simples selon que l'effet nuit ou aide ;
+  - attaques par règles, blocages naïfs.
+- **Récompense** : victoire 1, défaite 0 ; sinon sigmoïde de l'écart d'évaluation avec la position de départ.
+- **Choix final** : l'option la plus visitée.
+- **Arbre limité à la racine.** Avec quelques dizaines à quelques centaines d'itérations, des nœuds plus profonds seraient trop peu visités.
+- **Budget.**
+  - Dans le navigateur : 0,7 s de réflexion (`AI_BUDGET`, `client/src/scenario.ts`). Environ 2 à 3 ms par itération sur la machine de dev ; si moins de 24 itérations tiennent dans ce temps (machine lente), la décision heuristique est gardée.
+  - Dans les tests et au tournoi : budget en itérations, pour des résultats reproductibles.
+- **Multijoueur.** Pas d'ISMCTS (trop coûteux pour rester fluide) : l'élevé garde l'évaluation avec contre-attaque et le combat par simulation.
+
+## Latence
+
+- La pause d'affichage entre deux actions de l'IA (`aiDelay`, 0,9 s, `engine/src/host.ts`) absorbe la réflexion. L'IA prépare son action suivante pendant la pause de la précédente (`settle`).
+- Une IA élevée ne paraît donc pas plus lente, même sur une machine lente : elle y fait simplement moins d'itérations.
+- `tools/ai-smoke.ts` le vérifie dans le navigateur, avec le processeur normal puis ralenti 4 fois.
+
+## Mesures (tournoi)
+
+`npm run arena -- --a expert --b medium --games 600 --jobs 11 [--budget 100] [--pool decks|all|mix]`
+
+- Les parties vont par paires : même graine, places et decks échangés. Le taux d'une IA contre une copie d'elle-même vaut donc exactement 50 %.
+- Syntaxe `expert:200` pour un budget propre à une IA ; `expert:0` pour l'élevé sans ISMCTS.
+
+Résultats, sur des decks préconstruits et des decks aléatoires bicolores (`--pool mix`), ISMCTS à 100 itérations :
+
+| Paire | Parties | Taux de victoire de la première |
+|---|---|---|
+| Moyen (évaluation v2) contre l'IA d'origine | 1 000 | 55,5 % ± 3,1 |
+| Moyen contre Débutant | 1 000 | 65,6 % ± 2,9 |
+| Élevé contre Moyen | 600 | 60,8 % ± 3,9 |
+| Élevé contre Débutant | 600 | 73,2 % ± 3,5 |
+| Élevé contre Élevé sans ISMCTS | 300 | 56,7 % ± 5,6 |
+
+Temps de décision de l'élevé à 100 itérations : environ 30 ms en moyenne (la plupart des décisions sont triviales), 300 ms au 95ᵉ centile ; dans l'interface, le budget en temps borne la réflexion.
+
+L'« IA d'origine » est l'IA heuristique d'avant les niveaux : une copie figée a servi à la mesure, puis a été retirée.
+
+Essais sans gain mesurable, écartés :
+- réglages de l'ISMCTS (exploration, échelle de la récompense, 4 ou 8 options, horizon d'un tour de plus) ;
+- ISMCTS sur les attaques (53 %) : l'adversaire des simulations bloque naïvement, ce qui rend les attaques trop agressives.
+
+## Pièges
+
+- **Information cachée.** Le code de l'IA ne doit jamais lire la main adverse ni l'ordre des bibliothèques. Il passe par `determinize` (ISMCTS). Les simulations à un coup (`rollout`, `simulate`) ne piochent pas. `ai/test/ismcts.test.ts` vérifie qu'une autre répartition des cartes cachées ne change pas la décision.
+- **`applyMutable` n'est pas transactionnel.** Une décision illégale laisse l'état à moitié modifié. Dans une simulation, on passe par `step` (`evaluate.ts`) : « passer » est appliqué sur place, le reste par `submit`, qui travaille sur une copie.
+- **`GameHost.run` et les attentes.** Pendant un `await` de la boucle (pause d'affichage), une décision de l'humain peut être appliquée par `submitHuman`, dont le `run()` rend aussitôt la main (la boucle est déjà en cours). Après chaque attente, la boucle doit donc repartir de l'état courant, et ne jamais attendre sans raison : sinon l'IA reste bloquée. `engine/test/host.test.ts` le vérifie.
+- **Budget.** En temps dans l'interface (latence identique sur toutes les machines), en itérations dans les tests, le tournoi, le fuzz et le bench (reproductibles).
+- **Fuzz.** `npm run fuzz -- --ai levels` mélange les trois niveaux, avec un ISMCTS à petit budget, et fait partie de `verify`.

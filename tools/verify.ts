@@ -124,12 +124,14 @@ const fuzzes: Step[] = full
       fuzz("fuzz 3 joueurs", "--games 200 --pool all --players 3"),
       fuzz("fuzz 4 joueurs", "--games 100 --pool all --players 4"),
       fuzz("fuzz IA mixte", "--games 100 --pool all --ai mixed"),
+      fuzz("fuzz niveaux d'IA", "--games 60 --pool all --ai levels"),
     ]
   : [
       fuzz(`fuzz ${set} 2 joueurs`, `--games 300 --pool ${set} --seed 1`),
       fuzz(`fuzz ${set} 3 joueurs`, `--games 100 --pool ${set} --players 3`),
       fuzz(`fuzz ${set} 4 joueurs`, `--games 60 --pool ${set} --players 4`),
       fuzz(`fuzz ${set} IA mixte`, `--games 60 --pool ${set} --ai mixed`),
+      fuzz(`fuzz ${set} niveaux d'IA`, `--games 30 --pool ${set} --ai levels`),
       fuzz("fuzz tout le pool", "--games 200 --pool all --seed 2000"),
     ];
 for (const f of fuzzes) ok = (await group([f])) && ok;
@@ -162,6 +164,12 @@ if (!flag("no-ui") && (full || flag("ui") || uiTouched)) {
       ]),
     ]);
     ok = results.every(Boolean) && ok;
+    // Latence de l'IA élevée en temps réel : seule (une charge parallèle fausserait la mesure), vérification complète.
+    if (full)
+      ok =
+        (await group([
+          { name: "ai-smoke", cmd: "npx tsx tools/ai-smoke.ts", show: /^ok : niveau de l'IA et latence vérifiés$/ },
+        ])) && ok;
   } else {
     console.log("⚠️  tests d'interface sautés : Vite ne répond pas sur http://localhost:5173 (lancer npm run dev)");
     ok = false;

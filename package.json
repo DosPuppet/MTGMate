@@ -14,6 +14,7 @@
     "lint": "biome check .",
     "format": "biome format --write .",
     "fuzz": "tsx tools/fuzz.ts",
+    "arena": "tsx tools/ai-arena.ts",
     "verify": "tsx tools/verify.ts",
     "import-cards": "tsx tools/import-scryfall.ts",
     "ui-smoke": "tsx tools/ui-smoke.ts",
@@ -25,7 +26,8 @@
     "proxy-smoke": "tsx tools/proxy-smoke.ts",
     "server": "tsx packages/server/src/main.ts",
     "online-smoke": "tsx tools/online-smoke.ts",
-    "tutorial-smoke": "tsx tools/tutorial-smoke.ts"
+    "tutorial-smoke": "tsx tools/tutorial-smoke.ts",
+    "ai-smoke": "tsx tools/ai-smoke.ts"
   },
   "devDependencies": {
     "@biomejs/biome": "^2.5.14",

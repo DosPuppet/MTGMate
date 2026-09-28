@@ -1,17 +1,21 @@
 /**
  * Fuzzing du moteur : parties IA contre IA avec vérification d'invariants à chaque décision.
  *
- * Usage : npm run fuzz -- [--games 200] [--seed 1] [--ai random|heuristic|mixed] [--players 2] [--pool decks|all|<SET>]
+ * Usage : npm run fuzz -- [--games 200] [--seed 1] [--ai random|heuristic|mixed|beginner|medium|expert|levels] [--players 2]
+ *                        [--pool decks|all|<SET>]
  *                        [--jobs N]
  *
  * --pool all : decks aléatoires bicolores tirés de toutes les cartes gérées par le moteur.
  * --pool FIN : decks tirés d'abord des cartes de cette extension (complétés par les autres cartes gérées).
  * --jobs N : les parties sont réparties sur N processus (graines contiguës), les résultats sont additionnés.
+ * --ai : heuristic = medium ; mixed : une IA moyenne contre des IA aléatoires ; levels : les trois niveaux mélangés
+ * (l'ISMCTS du niveau élevé avec un petit budget en itérations, pour rester rapide).
  */
 import { fork } from "node:child_process";
-import { heuristicAgent, mulberry32, playGame, randomAgent } from "@mtgx/ai";
-import { buildDeck, DECKS, implementedCards } from "@mtgx/cards";
-import type { Agent, CardDef, Color } from "@mtgx/engine";
+import { type AiLevel, aiAgent, heuristicAgent, playGame, randomAgent } from "@mtgx/ai";
+import { buildDeck, DECKS } from "@mtgx/cards";
+import type { Agent, CardDef } from "@mtgx/engine";
+import { randomDeck } from "./random-deck";
 
 const arg = (name: string, def: string) => {
   const i = process.argv.indexOf(`--${name}`);
@@ -25,31 +29,14 @@ const pool = arg("pool", "decks");
 const jobs = Math.max(1, Number(arg("jobs", "1")));
 const worker = process.argv.includes("--worker");
 
-const BASICS: Record<Color, string> = { W: "Plains", U: "Island", B: "Swamp", R: "Mountain", G: "Forest" };
-const ALL = implementedCards();
-
-/** Deck aléatoire de 60 cartes sur deux couleurs : 24 terrains de base, 36 cartes gérées (`set` : d'abord celles de l'extension). */
-function randomDeck(seed: number, set?: string): CardDef[] {
-  const rand = mulberry32(seed);
-  const colors = (["W", "U", "B", "R", "G"] as Color[]).sort(() => rand() - 0.5).slice(0, 2);
-  const fits = (c: CardDef) => !c.types.includes("Land") && c.colors.length > 0 && c.colors.every((x) => colors.includes(x));
-  const spells = ALL.filter(fits);
-  const own = set ? ALL.filter((c) => c.set === set && (fits(c) || (!c.types.includes("Land") && c.colors.length === 0))) : [];
-  const deck: CardDef[] = [];
-  // Extension ciblée : trois quarts des sorts viennent d'elle (s'il y en a), le reste des autres cartes gérées.
-  for (let i = 0; i < 36 && spells.length; i++) {
-    const from = own.length && i < 27 ? own : spells;
-    deck.push(from[Math.floor(rand() * from.length)] as CardDef);
-  }
-  for (let i = 0; i < 24; i++) {
-    const land = ALL.find((c) => c.name === BASICS[colors[i % 2] as Color]);
-    if (land) deck.push(land);
-  }
-  return deck;
-}
+const LEVELS: AiLevel[] = ["beginner", "medium", "expert"];
 
 const agentFor = (seed: number, which: number): Agent => {
   if (mode === "heuristic") return heuristicAgent();
+  if (mode === "levels" || (LEVELS as string[]).includes(mode)) {
+    const level = mode === "levels" ? (LEVELS[(seed + which) % 3] as AiLevel) : (mode as AiLevel);
+    return aiAgent(level, { seed: seed * 7 + which, budget: { iterations: 12 }, players });
+  }
   if (mode === "mixed") return which === 0 ? heuristicAgent() : randomAgent(seed * 7 + which);
   return randomAgent(seed * 7 + which);
 };

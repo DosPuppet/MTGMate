@@ -1,38 +1,83 @@
 /**
  * Évaluation d'une position du point de vue d'un joueur, et simulation par clonage de l'état.
+ *
+ * Les créatures sont estimées d'après leurs caractéristiques **durables** : celles du champ de bataille, sans les
+ * effets « jusqu'à la fin du tour ». Une Aura (Pacifisme), un Équipement ou un renfort permanent comptent donc
+ * par leur effet sur la créature ; un renfort temporaire ne compte que par ce qu'il change au combat.
  */
 import {
   applyMutable,
   type CardDef,
+  type Characteristics,
+  chars,
   cloneState,
+  computeBattlefield,
   type Decision,
+  fallbackDecision,
   type GameState,
+  type ObjectId,
   opponentsOf,
   type PlayerId,
   submit,
 } from "@mtgx/engine";
 
-/** Valeur d'une créature d'après ses caractéristiques durables (on ignore les effets « jusqu'à la fin du tour »). */
-export function creatureValue(d: CardDef, counters = 0): number {
-  const p = (d.power ?? 0) + counters;
-  const t = (d.toughness ?? 0) + counters;
+// ---------------------------------------------------------------------------
+// Valeur des créatures
+// ---------------------------------------------------------------------------
+
+type Profile = Pick<Characteristics, "power" | "toughness" | "keywords" | "abilities">;
+
+/**
+ * Valeur d'une créature : une part offensive (force, évasion) et une part défensive (endurance, blocage).
+ * « Ne peut pas attaquer » annule la première, « ne peut pas bloquer » l'essentiel de la seconde (Pacifisme : les deux).
+ */
+export function profileValue(c: Profile): number {
+  const p = Math.max(0, c.power);
+  const t = c.toughness;
   if (t <= 0) return 0;
-  const k = new Set(d.keywords);
-  let v = 0.5 + Math.max(0, p) * 0.6 + t * 0.4;
-  if (k.has("flying")) v += 0.4 + p * 0.3;
-  if (k.has("deathtouch")) v += 1;
-  if (k.has("doubleStrike")) v += p * 0.6;
-  if (k.has("firstStrike")) v += 0.3 + p * 0.1;
-  if (k.has("trample")) v += p * 0.1;
-  if (k.has("lifelink")) v += p * 0.25;
-  if (k.has("vigilance")) v += 0.3;
-  if (k.has("reach")) v += 0.2;
-  if (k.has("menace")) v += p * 0.15;
+  const k = new Set(c.keywords);
+  let offense = p * 0.6;
+  if (k.has("flying")) offense += 0.4 + p * 0.3;
+  if (k.has("unblockable")) offense += p * 0.4;
+  if (k.has("menace")) offense += p * 0.15;
+  if (k.has("trample")) offense += p * 0.1;
+  if (k.has("doubleStrike")) offense += p * 0.6;
+  if (k.has("lifelink")) offense += p * 0.25;
+  if (k.has("deathtouch")) offense += 0.5;
+  let defense = t * 0.4;
+  if (k.has("deathtouch")) defense += 0.5;
+  if (k.has("firstStrike")) defense += 0.3 + p * 0.1;
+  if (k.has("reach")) defense += 0.2;
+  if (k.has("vigilance")) defense += 0.3;
+  const cantAttack = (k.has("cantAttack") || k.has("defender")) && !k.has("attacksDespiteDefender");
+  if (cantAttack) offense = 0;
+  if (k.has("cantBlock")) defense *= 0.2;
+  let v = 0.5 + offense + defense;
   if (k.has("hexproof")) v += 0.6;
   if (k.has("indestructible")) v += 1.5;
-  if (k.has("defender")) v -= p * 0.5;
-  for (const a of d.abilities) v += a.kind === "mana" ? 0.6 : 0.4;
+  if (k.has("doesntUntap")) v *= 0.4;
+  for (const a of c.abilities) v += a.kind === "mana" ? 0.6 : 0.4;
   return v;
+}
+
+/** Valeur d'une créature d'après sa définition (carte en main, au cimetière…) et ses marqueurs +1/+1. */
+export function creatureValue(d: CardDef, counters = 0): number {
+  return profileValue({
+    power: (d.power ?? 0) + counters,
+    toughness: (d.toughness ?? 0) + counters,
+    keywords: d.keywords,
+    abilities: d.abilities,
+  });
+}
+
+/**
+ * Caractéristiques durables du champ de bataille : sans les effets « jusqu'à la fin du tour ».
+ * Sans effet temporaire (cas courant), ce sont les caractéristiques en cache du moteur.
+ */
+export function durableChars(s: GameState): (id: ObjectId) => Characteristics {
+  if (!s.effects.some((e) => e.duration === "endOfTurn")) return (id) => chars(s, id);
+  const map = computeBattlefield({ ...s, effects: s.effects.filter((e) => e.duration !== "endOfTurn") });
+  return (id) => map.get(id) ?? chars(s, id);
 }
 
 /** Valeur de la vie : chaque point compte davantage quand on est bas. */
@@ -40,10 +85,14 @@ export function lifeValue(life: number): number {
   return life <= 0 ? -1000 : 8 * Math.log(1 + life);
 }
 
+/**
+ * Valeur d'une carte en main : un potentiel. Un permanent vaut moins en main qu'une fois en jeu (où il agit) ;
+ * un éphémère ou un rituel garde sa souplesse jusqu'au bon moment.
+ */
 function handCardValue(d: CardDef): number {
   if (d.types.includes("Land")) return 0.3;
   if (d.types.includes("Instant") || d.types.includes("Sorcery")) return 1.5;
-  return 1;
+  return 0.7;
 }
 
 /**
@@ -60,11 +109,52 @@ export function targetOpponent(s: GameState, me: PlayerId): PlayerId {
   return [...opps].sort((a, b) => (s.players[a]?.life ?? 0) - (s.players[b]?.life ?? 0) || power(b) - power(a))[0] ?? me;
 }
 
+// ---------------------------------------------------------------------------
+// Menace adverse au prochain tour (niveau élevé)
+// ---------------------------------------------------------------------------
+
+/**
+ * Blessures que les adversaires peuvent infliger à `me` à leur prochaine attaque, d'après les bloqueurs dont
+ * `me` disposera (ses créatures dégagées : celles qui ont attaqué restent engagées jusqu'à son prochain tour).
+ * Estimation simple : les créatures volantes passent si `me` n'a ni vol ni portée ; chaque bloqueur arrête
+ * un des plus gros attaquants restants.
+ */
+export function incomingDamage(s: GameState, me: PlayerId, dc = durableChars(s)): number {
+  const creatures = (p: PlayerId) =>
+    s.battlefield.filter((id) => s.objects[id]?.controller === p && dc(id).types.includes("Creature"));
+  const blockers = creatures(me).filter((id) => !s.objects[id]?.tapped && !dc(id).keywords.includes("cantBlock"));
+  const airBlockers = blockers.filter((id) => dc(id).keywords.some((k) => k === "flying" || k === "reach")).length;
+  const ground: number[] = [];
+  let air = 0;
+  for (const p of opponentsOf(s, me)) {
+    for (const id of creatures(p)) {
+      const k = dc(id).keywords;
+      if ((k.includes("cantAttack") || k.includes("defender")) && !k.includes("attacksDespiteDefender")) continue;
+      if (k.includes("doesntUntap") && s.objects[id]?.tapped) continue;
+      const dmg = Math.max(0, dc(id).power) * (k.includes("doubleStrike") ? 2 : 1);
+      if (dmg === 0) continue;
+      if (k.includes("unblockable") || (k.includes("flying") && airBlockers === 0)) air += dmg;
+      else ground.push(dmg);
+    }
+  }
+  ground.sort((a, b) => b - a);
+  return air + ground.slice(blockers.length).reduce((a, b) => a + b, 0);
+}
+
+// ---------------------------------------------------------------------------
+// Évaluation
+// ---------------------------------------------------------------------------
+
+export interface EvalOptions {
+  /** Tenir compte de la contre-attaque adverse (pendant son propre tour). */
+  exposure?: boolean;
+}
+
 /**
  * Évaluation du point de vue de `me`. En multijoueur, chaque adversaire pèse 1/n :
  * affaiblir un seul adversaire compte moins que gagner soi-même. En duel, rien ne change.
  */
-export function evaluate(s: GameState, me: PlayerId): number {
+export function evaluate(s: GameState, me: PlayerId, opts: EvalOptions = {}): number {
   const mine = s.players[me];
   if (!mine) return 0;
   if (s.over) return s.winner === me ? 1e6 : -1e6 + mine.life * 100;
@@ -74,17 +164,27 @@ export function evaluate(s: GameState, me: PlayerId): number {
   let score = lifeValue(mine.life);
   for (const p of opps) score -= w * lifeValue(s.players[p]?.life ?? 0);
 
+  const dc = durableChars(s);
+  const lands: Record<PlayerId, number> = {};
   for (const id of s.battlefield) {
     const o = s.objects[id];
-    const d = o && s.defs[o.defId];
-    if (!o || !d) continue;
-    const sign = o.controller === me ? 1 : -w;
-    let v = 0;
-    if (d.types.includes("Creature")) v = creatureValue(d, (o.counters["+1/+1"] ?? 0) - (o.counters["-1/-1"] ?? 0));
+    if (!o) continue;
+    const c = dc(id);
+    const sign = c.controller === me ? 1 : -w;
+    let v: number;
+    if (c.types.includes("Creature")) v = profileValue(c);
     // Planeswalker : vaut d'autant plus qu'il a de loyauté (source d'avantage à chaque tour).
-    else if (d.types.includes("Planeswalker")) v = 3 + (o.counters.loyalty ?? 0) * 0.9;
-    else if (d.types.includes("Land")) v = 1;
-    else v = 1;
+    else if (c.types.includes("Planeswalker")) v = 3 + (o.counters.loyalty ?? 0) * 0.9;
+    else if (c.types.includes("Land")) {
+      // Au-delà de 7 terrains, un terrain de plus apporte peu.
+      lands[c.controller] = (lands[c.controller] ?? 0) + 1;
+      v = (lands[c.controller] ?? 0) > 7 ? 0.4 : 1;
+    }
+    // Équipement : une valeur propre, attaché ou non (il peut changer de porteur) ; son effet se lit sur la créature
+    // équipée. Aura attachée : sa valeur se lit sur son hôte (elle part avec lui).
+    else if (c.subtypes.includes("Equipment")) v = 1.1;
+    else if (o.attachedTo) v = 0.3;
+    else v = 1 + Math.min(1, c.abilities.length * 0.3);
     score += sign * v;
   }
   // Emblèmes : avantage permanent.
@@ -96,6 +196,13 @@ export function evaluate(s: GameState, me: PlayerId): number {
   }
   for (const p of opps) score -= w * (s.players[p]?.hand.length ?? 0) * 1.1;
   if (mine.library.length === 0) score -= 5;
+
+  if (opts.exposure && s.turn.active === me) {
+    // Ce que la contre-attaque coûterait : la moitié de la perte de vie (l'adversaire peut ne pas attaquer),
+    // mais une contre-attaque létale est très lourdement pénalisée.
+    const dmg = incomingDamage(s, me, dc);
+    if (dmg > 0) score -= dmg >= mine.life ? 40 : 0.5 * (lifeValue(mine.life) - lifeValue(mine.life - dmg));
+  }
   return score;
 }
 
@@ -118,6 +225,37 @@ export function rollout(s: GameState, until: (s: GameState) => boolean, max = 60
   const cur = cloneState(s);
   for (let i = 0; i < max && !cur.over && cur.pending?.kind === "priority" && !until(cur); i++) {
     applyMutable(cur, cur.pending.player, { type: "pass" });
+  }
+  return cur;
+}
+
+/**
+ * Applique une décision dans une simulation. Passer (toujours légal, et de loin le plus fréquent) modifie la copie
+ * de travail sur place ; toute autre décision passe par `submit`, qui travaille sur une copie : si elle est illégale,
+ * l'exception laisse `cur` intact (`applyMutable` n'est pas transactionnel).
+ * `owned` : `cur` est déjà une copie de travail qu'on peut modifier.
+ */
+export function step(cur: GameState, player: PlayerId, d: Decision, owned: boolean): GameState {
+  if (d.type === "pass" && owned) {
+    applyMutable(cur, player, d);
+    return cur;
+  }
+  return submit(cur, player, d).state;
+}
+
+/**
+ * Comme `rollout`, mais chaque décision reçoit la réponse par défaut (passer, choix suggéré, blocages obligatoires…) :
+ * la simulation traverse les choix de résolution et de combat (répartition des blessures, cibles de déclencheurs).
+ */
+export function simulate(s: GameState, until: (s: GameState) => boolean, max = 120): GameState {
+  if (s.over || !s.pending || until(s)) return s;
+  let cur = cloneState(s);
+  for (let i = 0; i < max && !cur.over && cur.pending && !until(cur); i++) {
+    try {
+      cur = step(cur, cur.pending.player, fallbackDecision(cur, cur.pending), true);
+    } catch {
+      break;
+    }
   }
   return cur;
 }
