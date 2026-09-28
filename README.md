@@ -7,10 +7,12 @@ Plateforme pour jouer à Magic: The Gathering contre une ou plusieurs IA (en due
 - arrêts configurables ;
 - cible choisie automatiquement quand elle est unique ;
 - glisser-déposer ;
+- IA à trois niveaux au choix (débutant, moyen, élevé), du jeu heuristique à la recherche ISMCTS en duel (voir docs/ia.md) ;
+- exil consultable : bouton à côté du cimetière, et cartes exilées par un permanent affichées sous lui (survol pour les voir) ;
 - jouable sur tablette et sur téléphone en paysage (voir « Tablette et téléphone ») ;
 - images des cartes relayées par le serveur quand le réseau du joueur bloque Scryfall (voir « Images bloquées par le réseau »).
 
-Dernière extension ajoutée : **Bloomburrow (BLB)**, entièrement gérée (266 / 266), avec la Progéniture, le Cadeau, Fourrager, la Dépense, la Vaillance et les Saisons.
+Dernière extension ajoutée : **The Lost Caverns of Ixalan (LCI)**, entièrement gérée (279 / 279), avec la Découverte, la Descente (4, 8, descente profonde, « si vous êtes descendu ce tour-ci »), la Fabrication, les Cavernes, l'exploration, les dieux et leurs Temples, et le rebond (Ojer Pakpatiq).
 
 ## Périmètre : le Standard
 
@@ -179,7 +181,7 @@ Chaque carte gérée est automatiquement jouée par le test de fumée (`packages
 |---|---|---|
 | 1. Fondations | monorepo, TS strict, Biome, Vitest, import Scryfall FDN | ✅ |
 | 2. Noyau du moteur | tours et phases, priorité et pile, mana, combat et mots-clés, actions basées sur l'état, mulligan de Londres, X, kicker, sorts modaux, capacités activées, jetons | ✅ |
-| 3. Client contre l'IA | plateau façon MTGA (créatures devant ; terrains, puis artefacts, puis enchantements derrière ; zone des planeswalkers à part, tout à droite ; attachements sur leur hôte ; piles de jetons « ×N » ; lignes multiples et taille des cartes adaptées à la place), main en éventail, glisser-déposer, flèches, barre des phases et arrêts, autopilot, journal FR | ✅ |
+| 3. Client contre l'IA | plateau façon MTGA (créatures devant ; terrains, puis artefacts, puis enchantements derrière ; zone des planeswalkers à part, tout à droite ; attachements et cartes exilées sur leur hôte ; exil consultable ; piles de jetons « ×N » ; lignes multiples et taille des cartes adaptées à la place), main en éventail, glisser-déposer, flèches, barre des phases et arrêts, autopilot, journal FR | ✅ |
 | 4a. Fondations du moteur | N joueurs, choix génériques, déclencheurs, couches, remplacements, coûts, performance | ✅ |
 | 4b. Deckbuilder | collection filtrable, deck et réserve, validation 60/4/15, import et export de decklists (MTGA, MTGO, noms FR), persistance | ✅ |
 | 4c. FDN, set principal (n° 1 à 281) | lots A (longue traîne) à F (mécaniques uniques : permissions de lancement, doublements, protection, choix en arrivant, mana restreint, copie de sorts…) | ✅ **276 / 276** |
