@@ -32,7 +32,18 @@ export interface HostOptions {
   record?: GameRecord;
   /** Appelé après chaque décision enregistrée (serveur : écriture sur disque). */
   onRecord?: (player: PlayerId, d: Decision) => void;
+  /**
+   * Une mise à jour par étape de la pile (élément ajouté, puis résolu, contrecarré ou sans cible légale), au lieu d'une
+   * seule à la fin d'une suite de décisions automatiques : l'interface montre chaque effet l'un après l'autre.
+   */
+  frames?: boolean;
 }
+
+/**
+ * Événements qui terminent une étape visible de la partie : un élément arrive sur la pile (l'interface le montre avant
+ * qu'il se résolve) ou la quitte (résolu, contrecarré, sans cible légale).
+ */
+const FRAME_EVENTS = new Set<GameEvent["type"]>(["cast", "activate", "trigger", "copy", "resolve", "fizzle", "countered"]);
 
 /** Décision de repli si une IA renvoie une décision illégale. */
 export function fallbackDecision(s: GameState, p: PendingDecision): Decision {
@@ -90,6 +101,8 @@ export class GameHost {
     const { state, events } = submit(this.state, player, d);
     this.state = state;
     this.pendingEvents.push(...events);
+    // Mode « étapes » : une résolution est envoyée tout de suite, avant les décisions automatiques suivantes.
+    if (this.opts.frames && events.some((e) => FRAME_EVENTS.has(e.type))) this.flush(true);
     // Seules les décisions acceptées sont enregistrées : le rejeu redonne exactement cet état.
     this.opts.record?.decisions.push([player, d]);
     this.opts.onRecord?.(player, d);
@@ -100,12 +113,27 @@ export class GameHost {
     return this.opts.record ?? null;
   }
 
-  private flush(): void {
+  /**
+   * Envoie la vue et les événements accumulés à chaque humain. `interim` : étape intermédiaire (une résolution au milieu
+   * de décisions automatiques) ; sa décision en attente est retirée, l'automatisme l'ayant peut-être déjà prise.
+   */
+  private flush(interim = false): void {
     const events = this.pendingEvents;
     this.pendingEvents = [];
     for (const p of this.state.playerOrder) {
-      if (this.isHuman(p)) this.opts.onUpdate?.(p, this.view(p), filterEvents(events, p));
+      if (!this.isHuman(p)) continue;
+      const view = this.view(p);
+      this.opts.onUpdate?.(p, interim ? { ...view, pending: null } : view, filterEvents(events, p));
     }
+  }
+
+  /** La décision en attente est celle d'un humain que l'automatisme va prendre lui-même. */
+  private autopilotNext(): boolean {
+    const p = this.state.pending;
+    if (!p || this.state.over) return false;
+    const who = decider(this.state) ?? p.player;
+    if (this.opts.agents?.[who]) return false;
+    return !!autopilotDecision(this.state, p.player, this.settings[who] ?? DEFAULT_AUTOPILOT);
   }
 
   /** Décision d'un humain. Renvoie un message d'erreur si elle est illégale. */
@@ -194,7 +222,8 @@ export class GameHost {
           if (d.type !== "pass" && d.type !== "keep" && d.type !== "tapForMana" && this.opts.aiDelay && this.opts.sleep) {
             const pause = this.settle();
             if (pause) await pause;
-            this.flush();
+            // Si l'automatisme va décider ensuite pour un humain, cette décision n'est pas montrée (elle serait périmée).
+            this.flush(this.autopilotNext());
             this.shownAt = Date.now();
           }
           continue;

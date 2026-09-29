@@ -3,7 +3,7 @@ import { SoundControl } from "../audio/SoundControl";
 import { ImageRelayToggle } from "../ImageRelayToggle";
 import { faceImage, faceName, faceText, faceType, KEYWORD_LABEL } from "../i18n";
 import { imageUrl, useRelayActive } from "../images";
-import { useGame } from "../store";
+import { PACES, useGame } from "../store";
 import { isTouch, justLongPressed } from "../touch";
 import { ManaCost } from "./Card";
 
@@ -144,6 +144,30 @@ function Log() {
   );
 }
 
+/** Rythme des effets : combien de temps chaque sort ou capacité qui se résout est montré avant de s'appliquer. */
+function PaceControl() {
+  const pace = useGame((s) => s.pace);
+  const setPace = useGame((s) => s.setPace);
+  return (
+    <div className="pace-control" title="Durée pendant laquelle chaque effet est montré avant de s'appliquer">
+      <span>Effets</span>
+      <div className="seg">
+        {PACES.map((p) => (
+          <button
+            key={p.pace}
+            type="button"
+            className={pace === p.pace ? "on" : ""}
+            title={p.hint}
+            onClick={() => setPace(p.pace)}
+          >
+            {p.label}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 function Settings() {
   const lang = useGame((s) => s.lang);
   const setLang = useGame((s) => s.setLang);
@@ -171,6 +195,7 @@ function Settings() {
         <input type="checkbox" checked={settings.fullControl} onChange={(e) => setFullControl(e.target.checked)} />
         Contrôle total
       </label>
+      <PaceControl />
       <ImageRelayToggle />
       {!over && !replay && (
         <button type="button" className="btn small ghost" onClick={() => decide({ type: "concede" })}>

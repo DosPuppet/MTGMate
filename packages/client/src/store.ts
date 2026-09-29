@@ -17,6 +17,7 @@ import {
   type GameRecord,
   type GameView,
   type ObjectView,
+  type StackItemView,
   type Step,
   type TargetOption,
 } from "@mtgx/engine";
@@ -191,6 +192,14 @@ interface Store {
   fx: Fx[];
   turnBanner: { id: number; text: string; mine: boolean } | null;
   spotlight: { id: number; face: CardFace; who: string } | null;
+  /**
+   * Élément de pile qui se résout (ou est contrecarré, ou n'a plus de cible légale), montré avant que son effet
+   * s'applique ; la partie n'avance qu'après (voir `playbackTimes`).
+   */
+  resolving: { id: number; item: StackItemView; outcome: "resolve" | "fizzle" | "countered" } | null;
+  /** Rythme des effets (durée pendant laquelle chaque résolution est montrée). */
+  pace: Pace;
+  setPace(pace: Pace): void;
 
   startGame(
     playerDeck: DeckEntries,
@@ -217,6 +226,8 @@ interface Store {
   backToLobby(): void;
   openDeckBuilder(deckId?: string | null): void;
   receive(msg: FromWorker): void;
+  /** Applique une mise à jour de la partie (vue, journal, sons, effets). */
+  applyUpdate(msg: Extract<FromWorker, { type: "update" }>): void;
   /** Replay en cours : position, point de vue, lecture automatique. */
   replay: { index: number; total: number; viewer: string; players: { id: string; name: string }[]; playing: boolean } | null;
   /** Télécharge l'enregistrement de la partie (contre l'IA : à tout moment ; en ligne : une fois terminée). */
@@ -489,7 +500,100 @@ function connectRemote(keep?: OnlineState | null): RemoteSession {
   return session;
 }
 
+/** Rythme des effets, réglé par le joueur (barre latérale), retenu d'une partie à l'autre. */
+export type Pace = "slow" | "normal" | "fast" | "none";
+
+export const PACES: { pace: Pace; label: string; hint: string }[] = [
+  { pace: "slow", label: "Lent", hint: "Chaque effet est montré près de 2 secondes" },
+  { pace: "normal", label: "Normal", hint: "Chaque effet est montré un peu plus d'une seconde" },
+  { pace: "fast", label: "Rapide", hint: "Chaque effet est montré une demi-seconde" },
+  { pace: "none", label: "Sans pause", hint: "Les effets s'appliquent aussitôt, sans être montrés" },
+];
+
+/**
+ * Rythme de la partie : chaque résolution est montrée (`resolving`) pendant `show` ms avant que son effet s'applique,
+ * puis le résultat reste visible `after` ms avant l'étape suivante. Un instant en mode rapide des tests.
+ */
+export function playbackTimes(pace: Pace): { show: number; after: number } {
+  if (fastMode()) return { show: 40, after: 0 };
+  return {
+    slow: { show: 1900, after: 700 },
+    normal: { show: 1100, after: 400 },
+    fast: { show: 500, after: 150 },
+    none: { show: 0, after: 0 },
+  }[pace];
+}
+
+const PACE_KEY = "mtgmate.pace";
+
+function loadPace(): Pace {
+  try {
+    const v = localStorage.getItem(PACE_KEY);
+    return PACES.some((p) => p.pace === v) ? (v as Pace) : "normal";
+  } catch {
+    return "normal";
+  }
+}
+
+const sleep = (ms: number) => new Promise<void>((r) => setTimeout(r, ms));
+
+/** Mises à jour reçues pas encore affichées, avec la session qui les a envoyées (ignorées si elle a changé). */
+const playback: { msg: Extract<FromWorker, { type: "update" }>; session: Session | null }[] = [];
+let pumping = false;
+let resolvingNow = false;
+
+/** Une résolution est montrée, ou des mises à jour attendent : la vue affichée n'est pas encore la dernière. */
+function playbackBusy(): boolean {
+  return resolvingNow || playback.length > 0;
+}
+
+/** L'élément de pile que la mise à jour fait quitter la pile (résolu, contrecarré ou sans cible), s'il est affiché. */
+function leavingItem(
+  view: GameView | null,
+  events: GameEvent[],
+): { item: StackItemView; outcome: "resolve" | "fizzle" | "countered" } | null {
+  for (const e of events) {
+    if (e.type !== "resolve" && e.type !== "fizzle" && e.type !== "countered") continue;
+    const item = view?.stack.find((x) => x.id === e.stackId);
+    if (item) return { item, outcome: e.type };
+  }
+  return null;
+}
+
 export const useGame = create<Store>((set, get) => {
+  /** Affiche les mises à jour en attente une à une, en montrant chaque résolution avant d'en appliquer l'effet. */
+  const pump = async () => {
+    if (pumping) return;
+    pumping = true;
+    try {
+      while (playback.length) {
+        const next = playback[0];
+        if (!next) break;
+        if (next.session !== get().session) {
+          playback.shift();
+          continue;
+        }
+        const leaving = leavingItem(get().view, next.msg.events);
+        const times = playbackTimes(get().pace);
+        if (leaving && times.show > 0) {
+          resolvingNow = true;
+          set({ resolving: { id: ++fxId, ...leaving } });
+          await sleep(times.show);
+          resolvingNow = false;
+          // La partie a changé pendant l'attente (retour au menu, nouvelle partie) : on abandonne cette étape.
+          if (next.session !== get().session) continue;
+        }
+        playback.shift();
+        set({ resolving: null });
+        get().applyUpdate(next.msg);
+        if (leaving && playback.length > 0 && times.after > 0) await sleep(times.after);
+      }
+    } finally {
+      pumping = false;
+      resolvingNow = false;
+      if (get().resolving) set({ resolving: null });
+    }
+  };
   /** Choix sur le plateau en cours (façon MTGA) : un clic sélectionne ou retire l'option. Renvoie false hors de ce mode. */
   const pickOnBoard = (id: string): boolean => {
     const req = boardPick(get().view);
@@ -643,6 +747,16 @@ export const useGame = create<Store>((set, get) => {
     fx: [],
     turnBanner: null,
     spotlight: null,
+    resolving: null,
+    pace: loadPace(),
+    setPace(pace) {
+      set({ pace });
+      try {
+        localStorage.setItem(PACE_KEY, pace);
+      } catch {
+        // stockage indisponible : réglage non retenu
+      }
+    },
 
     startGame(playerDeck, aiDecks, sandbox, aiLevel, match) {
       get().session?.close();
@@ -945,6 +1059,13 @@ export const useGame = create<Store>((set, get) => {
         playSound("error");
         return get().notify(msg.message);
       }
+      // Rejeu : les étapes s'affichent tout de suite (le visionneur a ses propres commandes).
+      if (get().replay) return get().applyUpdate(msg);
+      playback.push({ msg, session: get().session });
+      void pump();
+    },
+
+    applyUpdate(msg) {
       const { view, events, faces } = msg;
       // Match contre l'IA : la manche qui se termine compte (deux victoires emportent le match, trois manches au plus).
       const m = get().localMatch;
@@ -987,6 +1108,8 @@ export const useGame = create<Store>((set, get) => {
     },
 
     decide(d) {
+      // Pendant qu'une résolution est montrée, la vue affichée n'est pas encore celle de la partie.
+      if (playbackBusy()) return;
       if (refused(d)) return;
       get().session?.send({ type: "decision", decision: d });
       set({ casting: null, abilityMenu: null, selectedBlocker: null, selection: [] });

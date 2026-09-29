@@ -116,6 +116,7 @@ async function handle(msg: ToWorker): Promise<void> {
             aiDelay: msg.fast && import.meta.env.DEV ? 0 : 1400,
             sleep,
             gate,
+            frames: true,
             onUpdate: (_p, view, evts) =>
               post({ type: "update", view, events: evts, faces: host ? visibleFaces(host.state, view, evts) : {} }),
           },
@@ -152,6 +153,7 @@ async function handle(msg: ToWorker): Promise<void> {
           sleep,
           record: sandboxed ? undefined : record,
           // Mêmes faces qu'en ligne : seulement les cartes connues du joueur (pas la decklist adverse).
+          frames: true,
           onUpdate: (_p, view, evts) =>
             post({ type: "update", view, events: evts, faces: host ? visibleFaces(host.state, view, evts) : {} }),
         },

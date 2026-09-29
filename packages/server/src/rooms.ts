@@ -172,7 +172,8 @@ export class Room {
   private nextStarter: Seat | null = null;
   private host: GameHost | null = null;
   /** Mises à jour produites par la dernière action, envoyées avec le minuteur à jour. */
-  private outbox = new Map<Seat, { view: GameView; events: GameEvent[] }>();
+  /** Mises à jour en attente d'envoi, par joueur et dans l'ordre (une par résolution). */
+  private outbox = new Map<Seat, { view: GameView; events: GameEvent[] }[]>();
   private clock: { player: Seat; deadline: number; timer: ReturnType<typeof setTimeout> } | null = null;
   private cleanupTimer: ReturnType<typeof setTimeout> | null = null;
   /** File des actions : une seule à la fois modifie la partie. */
@@ -272,6 +273,8 @@ export class Room {
     return new GameHost(
       state,
       {
+        // Une mise à jour par résolution : l'interface montre chaque effet l'un après l'autre.
+        frames: true,
         onUpdate: (p, view, evts) => this.buffer(p as Seat, view, evts),
         record,
         onRecord: (p, d) => this.appendDecision(p, d),
@@ -355,8 +358,7 @@ export class Room {
   }
 
   private buffer(p: Seat, view: GameView, events: GameEvent[]): void {
-    const prev = this.outbox.get(p);
-    this.outbox.set(p, { view, events: [...(prev?.events ?? []), ...events] });
+    this.outbox.set(p, [...(this.outbox.get(p) ?? []), { view, events }]);
   }
 
   /** Après chaque action : minuteur, envoi des vues, fin de partie. */
@@ -376,8 +378,9 @@ export class Room {
       // 722 : pendant un tour contrôlé, c'est le contrôleur qui décide.
       this.armClock((decider(s) ?? s.pending.player) as Seat);
     }
-    for (const [p, u] of this.outbox)
-      this.sendTo(p, { type: "update", ...u, faces: visibleFaces(s, u.view, u.events), clock: this.clockInfo() });
+    for (const [p, frames] of this.outbox)
+      for (const u of frames)
+        this.sendTo(p, { type: "update", ...u, faces: visibleFaces(s, u.view, u.events), clock: this.clockInfo() });
     this.outbox.clear();
   }
 

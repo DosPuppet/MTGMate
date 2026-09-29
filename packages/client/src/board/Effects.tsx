@@ -1,12 +1,12 @@
 /**
  * Effets visuels pour suivre le rythme de la partie : blessures et soins qui s'envolent de leur cible
  * (avec un flash de la cible), silhouette des créatures qui meurent, bandeau de début de tour,
- * et mise en avant du sort que l'adversaire vient de lancer.
+ * mise en avant du sort que l'adversaire vient de lancer, et de chaque sort ou capacité au moment où il se résout.
  */
 import { AnimatePresence, motion } from "motion/react";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { faceName } from "../i18n";
-import { type Fx, useGame } from "../store";
+import { type Fx, playbackTimes, useGame } from "../store";
 import { Card } from "./Card";
 import { findObjectEl } from "./layout";
 import { EffectFrame, useRevealActive } from "./StackReveal";
@@ -88,6 +88,9 @@ export function Effects() {
     s.spotlight ? [...(s.view?.stack ?? [])].reverse().find((i) => i.defId === s.spotlight?.face.defId && i.effect) : undefined,
   );
   const lang = useGame((s) => s.lang);
+  const resolving = useGame((s) => s.resolving);
+  const pace = useGame((s) => s.pace);
+  const view = useGame((s) => s.view);
   const ref = useRef<HTMLDivElement>(null);
   const [origin, setOrigin] = useState({ x: 0, y: 0 });
   useLayoutEffect(() => {
@@ -113,8 +116,36 @@ export function Effects() {
           </motion.div>
         )}
       </AnimatePresence>
+      <AnimatePresence>
+        {resolving && view && (
+          <motion.div
+            key={resolving.id}
+            className={`resolution ${resolving.outcome}`}
+            initial={{ opacity: 0, x: 40, scale: 0.85 }}
+            animate={{ opacity: 1, x: 0, scale: 1 }}
+            exit={
+              resolving.outcome === "resolve"
+                ? { opacity: 0, scale: 1.12, filter: "brightness(1.8)", transition: { duration: 0.25 } }
+                : { opacity: 0, y: 30, rotate: -6, filter: "grayscale(1)", transition: { duration: 0.3 } }
+            }
+            transition={{ duration: 0.22 }}
+          >
+            <div className="resolution-label">
+              {resolving.outcome === "resolve" ? "Résolution" : resolving.outcome === "countered" ? "Contrecarré" : "Sans effet"}
+              {" · "}
+              {resolving.item.controller === view.viewer ? "vous" : (view.players[resolving.item.controller]?.name ?? "")}
+            </div>
+            <Card face={resolving.item} width="var(--spotlight-w)" hoverable={false} />
+            {resolving.item.effect && <EffectFrame text={resolving.item.effect} ability={resolving.item.kind === "ability"} />}
+            {resolving.outcome === "fizzle" && <div className="resolution-note">Ses cibles ne sont plus légales.</div>}
+            <div className="resolution-timer">
+              <div className="resolution-bar" style={{ animationDuration: `${playbackTimes(pace).show}ms` }} />
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
       <AnimatePresence mode="wait">
-        {spotlight && !targeting && !revealing && (
+        {spotlight && !targeting && !revealing && !resolving && (
           <motion.div
             key={spotlight.id}
             className="spotlight"

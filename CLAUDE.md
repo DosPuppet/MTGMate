@@ -167,6 +167,10 @@ Ce fichier sert au suivi du projet entre les sessions : où on en est, les règl
   - dans une simulation, appliquer les décisions par `step` (`evaluate.ts`), pas par `applyMutable` directement : ce dernier n'est pas transactionnel ;
   - budget de réflexion en temps dans l'interface, en itérations partout ailleurs (tests, tournoi, fuzz, bench : reproductibles) ;
   - juger un changement de l'IA au tournoi (`npm run arena`, 600 parties ou plus), pas sur quelques parties.
+- **Rythme de la partie (résolutions montrées une à une) :**
+  - l'hôte (`GameHost`, option `frames`, activée par le worker et le serveur) envoie une mise à jour à chaque étape de la pile (élément ajouté, résolu, contrecarré, sans cible), sans décision en attente tant que l'automatisme continue ;
+  - le client les joue dans l'ordre (`playback` dans `store.ts`) : chaque résolution est montrée (`resolving`, encart « Résolution » et cibles en surbrillance) avant d'appliquer son effet, puis le résultat reste un instant ; les durées suivent le réglage « Effets » de la barre latérale (Lent, Normal, Rapide, Sans pause ; `playbackTimes`, retenu dans `localStorage`), un instant en mode `?fast` ;
+  - pendant la lecture, `decide` est ignoré ; le visionneur de replays applique les étapes sans attendre.
 - **Mulligans :** ils se décident l'un après l'autre (le premier joueur d'abord) ; un script de test ne doit pas supposer l'ordre.
 - **Bac à sable (mode dev) :** `window.__mtgx` expose le store ; `startGame(deck, decksIA, { p1: { cards, tokens }, p2: … })` met des permanents en jeu dès le début (voir `battlefield-smoke`). Dans `page.evaluate`, pas de fonction nommée (tsx injecte `__name`).
 - **`pgrep -f` / `pkill -f` :** avec un motif présent dans la ligne de commande, ils peuvent tuer le shell courant.

@@ -39,4 +39,46 @@ describe("GameHost", () => {
     // Plus aucune décision d'IA en souffrance : c'est de nouveau à l'humain (ou la partie a avancé d'autant).
     expect(host.state.pending?.player).toBe("p1");
   });
+
+  it("mode « étapes » : une mise à jour par résolution, sans décision en attente (intermédiaire)", async () => {
+    const forest = card("Forest");
+    const { state, events } = createScenario({
+      seed: 1,
+      active: "p1",
+      players: [
+        {
+          id: "p1",
+          name: "Vous",
+          library: Array(10).fill(forest),
+          hand: [card("Burst Lightning"), card("Burst Lightning")],
+          battlefield: [{ def: card("Mountain") }, { def: card("Mountain") }],
+        },
+        { id: "p2", name: "IA", library: Array(10).fill(forest), hand: [] },
+      ],
+    });
+    const updates: { pending: string | null; resolved: number }[] = [];
+    const host = new GameHost(
+      state,
+      {
+        agents: { p2: landPlayer },
+        frames: true,
+        onUpdate: (_p, view, evts) =>
+          updates.push({ pending: view.pending?.kind ?? null, resolved: evts.filter((e) => e.type === "resolve").length }),
+      },
+      events,
+    );
+    await host.run();
+    updates.length = 0;
+    // Deux sorts lancés l'un après l'autre (l'automatisme passe la priorité : chacun se résout aussitôt).
+    for (let i = 0; i < 2; i++) {
+      const card0 = host.state.players.p1?.hand[0] as string;
+      await host.submitHuman("p1", { type: "cast", card: card0, targets: { t: ["p2"] } });
+    }
+    const frames = updates.filter((u) => u.resolved > 0);
+    expect(frames).toHaveLength(2);
+    expect(frames.every((u) => u.pending === null)).toBe(true);
+    // Après chaque résolution, une mise à jour finale redonne la main à l'humain.
+    expect(updates[updates.length - 1]?.pending).toBe("priority");
+    expect(host.state.players.p2?.life).toBe(16);
+  });
 });

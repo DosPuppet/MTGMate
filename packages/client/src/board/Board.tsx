@@ -88,7 +88,9 @@ function PlayerBar({ player, isMe }: { player: PlayerView; isMe: boolean }) {
   const pick = boardPick(view);
   const picked = !!pick && selection.includes(player.id);
   // Ciblage d'un sort, option d'un choix sur le plateau, ou cible possible de l'attaquant en visée.
+  const resolvingTargets = useGame((s) => s.resolving?.item.targets);
   const isTarget =
+    !!resolvingTargets?.includes(player.id) ||
     (casting?.stage === "target" && casting.spec?.legal.includes(player.id)) ||
     (!!pick && !picked && pick.options.includes(player.id)) ||
     (!!aiming && p?.kind === "declareAttackers" && !!p.defenders?.includes(player.id));
@@ -174,7 +176,10 @@ function usePermanentGlow(): (o: ObjectView) => Glow {
   const p = view.pending;
   const mine = p?.player === view.viewer;
   const pick = boardPick(view);
+  const resolving = useGame((s) => s.resolving);
   return (o) => {
+    // Résolution montrée : ses cibles sont mises en évidence.
+    if (resolving) return resolving.item.targets.includes(o.id) ? "target" : null;
     if (casting?.stage === "target") {
       if (casting.picked?.includes(o.id)) return "picked";
       return casting.spec?.legal.includes(o.id) ? "target" : null;
