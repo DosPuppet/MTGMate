@@ -5,8 +5,10 @@
 import {
   activated,
   amount,
+  BASIC_LAND,
   type CardScript,
   cond,
+  entersWith,
   fx,
   INSTANT_SORCERY,
   loyalty,
@@ -15,6 +17,7 @@ import {
   mode,
   ref,
   spell,
+  staticAbility,
   target,
   triggered,
   when,
@@ -102,5 +105,51 @@ export const CARDS: Record<string, CardScript> = {
         [fx.destroy(ref.target())],
       ),
     ),
+  },
+
+  // --- Lot M3 -----------------------------------------------------------------
+  "Emeritus of Ideation": {
+    prepareSpell: spell([target.player()], [fx.draw(3, ref.target())]),
+    abilities: [
+      entersWith({ prepared: true }),
+      triggered(
+        when.attacksSelf,
+        fx.may(
+          "Exiler huit cartes de votre cimetière pour préparer cette créature ?",
+          fx.when(
+            cond.amountAtLeast(amount.cardsIn("graveyard"), 8),
+            fx.pickFromZone(
+              "graveyard",
+              {},
+              { to: "exile" },
+              { count: 8, min: 8, prompt: "Exilez huit cartes de votre cimetière" },
+            ),
+            fx.prepare(ref.self),
+          ),
+        ),
+        { label: "Exiler huit cartes : devient préparée" },
+      ),
+    ],
+  },
+  Erode: {
+    spell: spell(
+      [target.creatureOrPlaneswalker()],
+      [fx.destroy(ref.target()), fx.search(BASIC_LAND, { to: "battlefield", tapped: true }, 1, ref.controllerOf(ref.target()))],
+    ),
+  },
+  "Petrified Hamlet": {
+    // Le nom est choisi par la capacité déclenchée d'arrivée (`chooseOnEnter` : les effets qui le lisent).
+    chooseOnEnter: "landName",
+    abilities: [
+      triggered(when.entersSelf, [fx.chooseForSelf("landName")], { label: "Choisissez un nom de carte de terrain" }),
+      manaAbility("C"),
+      staticAbility(
+        { types: ["Land"], nameChosen: true },
+        { addAbilities: [manaAbility("C")] },
+        {
+          label: "Les terrains du nom choisi ont « {T} : ajoutez {C} »",
+        },
+      ),
+    ],
   },
 };

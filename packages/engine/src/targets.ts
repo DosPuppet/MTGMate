@@ -97,10 +97,11 @@ function hasSubtype(v: LkiSnapshot, t: string): boolean {
 /** Remplace « du type / de la couleur choisis » par le choix fait par la source en arrivant. */
 export function withChosen(
   f: ObjectFilter,
-  source: { chosen?: { creatureType?: string; color?: Color } } | undefined,
+  source: { chosen?: { creatureType?: string; color?: Color; cardName?: string } } | undefined,
 ): ObjectFilter {
-  if (!f.subtypeChosen && !f.colorChosen) return f;
-  const out: ObjectFilter = { ...f, subtypeChosen: undefined, colorChosen: undefined };
+  if (!f.subtypeChosen && !f.colorChosen && !f.nameChosen) return f;
+  const out: ObjectFilter = { ...f, subtypeChosen: undefined, colorChosen: undefined, nameChosen: undefined };
+  if (f.nameChosen) out.name = source?.chosen?.cardName ?? "—";
   // Sans choix (arrivée sans résolution), rien ne correspond.
   if (f.subtypeChosen) out.subtype = source?.chosen?.creatureType ?? "—";
   if (f.colorChosen) out.colors = source?.chosen?.color ? [source.chosen.color] : [];

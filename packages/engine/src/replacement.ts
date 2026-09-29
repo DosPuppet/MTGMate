@@ -40,6 +40,9 @@ export interface EntersContext {
   devoured?: number;
   /** Waxen Shapethief : définition copiée en arrivant (couche 1). */
   copyOf?: string;
+  /** Mana dépensé par type et évocation : lus par les conditions des capacités d'arrivée (Deceit). */
+  spentColors?: GameObject["spentColors"];
+  evoked?: boolean;
 }
 
 /**
@@ -75,10 +78,12 @@ function amountAtEntry(s: GameState, a: Amount, o: GameObject, ctx: EntersContex
 function defaultChoice(
   s: GameState,
   o: GameObject,
-  kind: "creatureType" | "color" | "cardName",
+  kind: "creatureType" | "color" | "cardName" | "landName",
 ): NonNullable<GameObject["chosen"]> {
+  // Petrified Hamlet : le nom est choisi par sa capacité déclenchée d'arrivée ; rien avant sa résolution.
+  if (kind === "landName") return { cardName: "—" };
   if (kind === "cardName") {
-    // Nom le plus présent chez les adversaires.
+    // Nom le plus présent chez les adversaires (un terrain pour Petrified Hamlet).
     const names = s.battlefield
       .filter((id) => s.objects[id]?.controller !== o.controller)
       .map((id) => s.defs[s.objects[id]?.defId ?? ""]?.name ?? "");
@@ -181,6 +186,8 @@ export function applyEntersReplacements(s: GameState, o: GameObject, ctx: Enters
   if (ctx.castFromGraveyard) o.castFromGraveyard = true;
   // Mana dépensé, connu dès l'arrivée (« si aucun mana n'a été dépensé pour la lancer »).
   if (ctx.manaSpent !== undefined) o.manaSpent = ctx.manaSpent;
+  if (ctx.spentColors) o.spentColors = ctx.spentColors;
+  if (ctx.evoked) o.evoked = true;
   if (ctx.attachTo) o.attachedTo = ctx.attachTo;
   // 614.12 : « en arrivant, choisissez… » (le choix vient de la résolution, sinon choix par défaut).
   const choose = s.defs[o.defId]?.chooseOnEnter;
@@ -197,6 +204,14 @@ export function applyEntersReplacements(s: GameState, o: GameObject, ctx: Enters
       addSubtypes: s.defs[o.defId]?.entersAsCopyAddSubtypes,
       // Mockingbird : « … et elle a le vol ».
       addKeywords: s.defs[o.defId]?.entersAsCopyAddKeywords,
+      // Superior Spider-Man : « sauf que son nom est … et que c'est un 4/4 ».
+      ...(s.defs[o.defId]?.entersAsCopyOfGraveyard?.name ? { setName: s.defs[o.defId]?.entersAsCopyOfGraveyard?.name } : {}),
+      ...(s.defs[o.defId]?.entersAsCopyOfGraveyard?.power !== undefined
+        ? {
+            setPower: s.defs[o.defId]?.entersAsCopyOfGraveyard?.power,
+            setToughness: s.defs[o.defId]?.entersAsCopyOfGraveyard?.toughness,
+          }
+        : {}),
     });
     s.version += 1; // cache des couches
   }

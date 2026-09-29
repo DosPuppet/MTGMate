@@ -294,6 +294,16 @@ function parseInt0(v: string | undefined): number | undefined | null {
   return /^-?\d+$/.test(v) ? Number(v) : null;
 }
 
+/** Mobilisation (702.181) : jetons Guerrier rouges 1/1, engagés et attaquants, sacrifiés à la prochaine étape de fin. */
+const MOBILIZE_WARRIOR = {
+  name: "Warrior",
+  colors: ["R" as const],
+  types: ["Creature" as const],
+  subtypes: ["Warrior"],
+  power: 1,
+  toughness: 1,
+};
+
 /** Marchandage (702.166) : « sacrifiez un artefact, un enchantement ou un jeton » en lançant le sort. */
 const BARGAIN_FILTER: ObjectFilter = { anyOf: [{ types: ["Artifact"] }, { types: ["Enchantment"] }, { token: true }] };
 
@@ -679,11 +689,38 @@ function singleDef(raw: RawCard, script: CardScript | undefined, set: string): C
   // Les friches d'Eldraine : Marchandage (702.166), un kicker « sacrifiez un artefact, un enchantement ou un jeton ».
   const bargain = raw.keywords.includes("Bargain");
   // Lorwyn Eclipsed : « en coût additionnel, vous pouvez flétrir N » ; Marvel Super Heroes : Travail d'équipe N.
+  // Meurtres au manoir Karlov : « en coût additionnel, vous pouvez réunir des preuves N ».
+  const evidence = Number(
+    /As an additional cost to cast this spell, you may collect evidence (\d+)/.exec(raw.oracleText)?.[1] ?? 0,
+  );
+  // Évocation (702.74) et Mobilisation (702.181, Tarkir: Dragonstorm).
+  const evoke = /^Evoke ((?:\{[^}]+\})+)/m.exec(raw.oracleText)?.[1];
+  const mobilize = Number(/^Mobilize (\d+)/m.exec(raw.oracleText)?.[1] ?? 0);
   const blight = Number(/As an additional cost to cast this spell, you may blight (\d+)/.exec(raw.oracleText)?.[1] ?? 0);
   const teamwork = Number(/^Teamwork (\d+)/m.exec(raw.oracleText)?.[1] ?? 0);
   const harmonize = /^Harmonize ((?:\{[^}]+\})+)/m.exec(raw.oracleText)?.[1];
   const isSpell = types.includes("Instant") || types.includes("Sorcery");
   const bloomburrowAbilities: CardDef["abilities"] = [];
+  if (evoke) {
+    bloomburrowAbilities.push(
+      dsl.triggered(dsl.when.entersSelf, [dsl.fx.sacrificeIt(dsl.ref.self)], {
+        condition: dsl.cond.evoked,
+        label: "Évoquée : sacrifiez-la",
+      }),
+    );
+  }
+  if (mobilize) {
+    bloomburrowAbilities.push(
+      dsl.triggered(
+        dsl.when.attacksSelf,
+        [
+          dsl.fx.createTappedTokens(MOBILIZE_WARRIOR, mobilize, { attacking: true, store: "mob" }),
+          dsl.fx.delayed([dsl.fx.sacrificeIt(dsl.ref.target("m"))], { m: dsl.ref.stored("mob") }),
+        ],
+        { label: `Mobilisation ${mobilize}` },
+      ),
+    );
+  }
   if (offspring) {
     bloomburrowAbilities.push(
       dsl.triggered(dsl.when.entersSelf, [dsl.fx.copyToken(dsl.ref.self, { pt: 1 })], {
@@ -748,7 +785,9 @@ function singleDef(raw: RawCard, script: CardScript | undefined, set: string): C
       ? { mana: parseManaCost(script.altCost.mana), condition: script.altCost.condition, label: script.altCost.label }
       : script?.forageOrPay && manaCost
         ? { mana: manaCost, condition: dsl.cond.canForage, label: `Fourrager — ${raw.manaCost}`, forage: true }
-        : impendingAltCost(raw.oracleText),
+        : evoke
+          ? { mana: parseManaCost(evoke), condition: dsl.cond.all(), label: `Évocation — ${evoke}` }
+          : impendingAltCost(raw.oracleText),
     forageOrPay: script?.forageOrPay ? parseManaCost(script.forageOrPay) : undefined,
     entersAsCopyAnyController: script?.entersAsCopyAnyController,
     entersAsCopyAddKeywords: script?.entersAsCopyAddKeywords,
@@ -761,6 +800,7 @@ function singleDef(raw: RawCard, script: CardScript | undefined, set: string): C
     flashIf: script?.flashIf,
     exileOnResolve: script?.exileOnResolve,
     entersAsCopyAddSubtypes: script?.entersAsCopyAddSubtypes,
+    entersAsCopyOfGraveyard: script?.entersAsCopyOfGraveyard,
     chosenNameTax: script?.chosenNameTax,
     ward,
     cantBeCountered: script?.cantBeCountered,
@@ -769,7 +809,7 @@ function singleDef(raw: RawCard, script: CardScript | undefined, set: string): C
       ? parseManaCost(script.kicker)
       : offspring
         ? parseManaCost(offspring)
-        : gift || bargain || blight || teamwork
+        : gift || bargain || blight || teamwork || evidence
           ? parseManaCost("{0}")
           : undefined,
     kickerKind: offspring
@@ -782,11 +822,21 @@ function singleDef(raw: RawCard, script: CardScript | undefined, set: string): C
             ? "blight"
             : teamwork
               ? "teamwork"
-              : undefined,
+              : evidence
+                ? "evidence"
+                : undefined,
     gift,
     kickerCost:
       script?.kickerCost ??
-      (bargain ? { sacrifice: BARGAIN_FILTER } : blight ? { blight } : teamwork ? { tapPower: teamwork } : undefined),
+      (bargain
+        ? { sacrifice: BARGAIN_FILTER }
+        : blight
+          ? { blight }
+          : teamwork
+            ? { tapPower: teamwork }
+            : evidence
+              ? { collectEvidence: evidence }
+              : undefined),
     // Harmonie (702.180) : lancée depuis le cimetière comme un flashback, pour son coût d'harmonie.
     flashback: script?.flashback ? parseManaCost(script.flashback) : harmonize ? parseManaCost(harmonize) : undefined,
     harmonize: harmonize ? true : undefined,
@@ -799,6 +849,7 @@ function singleDef(raw: RawCard, script: CardScript | undefined, set: string): C
     doubleTriggersWhenEquipped: script?.doubleTriggersWhenEquipped,
     equipDiscountWhenTargeted: script?.equipDiscountWhenTargeted,
     doubleDeathTriggersForEquipped: script?.doubleDeathTriggersForEquipped,
+    evoke: evoke ? parseManaCost(evoke) : undefined,
     shockLand: /As this land enters, you may pay (\d+) life\. If you don't, it enters tapped\./.exec(raw.oracleText)
       ? Number(/you may pay (\d+) life/.exec(raw.oracleText)?.[1])
       : undefined,

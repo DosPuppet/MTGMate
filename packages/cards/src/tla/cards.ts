@@ -127,4 +127,7 @@ export const CARDS: Record<string, CardScript> = {
       triggered(when.draw(2), fx.drain(1), { label: "Chaque adversaire perd 1 PV, vous en gagnez 1" }),
     ],
   },
+
+  // --- Lot M3 -----------------------------------------------------------------
+  "Shared Roots": { spell: spell([], [fx.search(BASIC_LAND, { to: "battlefield", tapped: true })]) },
 };

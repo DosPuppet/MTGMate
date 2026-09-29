@@ -1,5 +1,5 @@
 /** Types du moteur — Filtres, cibles, déclencheurs, conditions, références et montants. Réexportés par `types.ts`. */
-import type { CardType, Color, Keyword, Step, TurnLogQuery, Zone } from "../types";
+import type { CardType, Color, Keyword, ManaType, Step, TurnLogQuery, Zone } from "../types";
 
 export interface TargetSpec {
   id: string;
@@ -157,6 +157,8 @@ export interface ObjectFilter {
   withActivatedAbility?: boolean;
   /** Valeur de mana égale au X de la capacité ou du sort (`destroyAll` : Dauntless Dismantler). */
   manaValueX?: boolean;
+  /** Du nom choisi par la source en arrivant (Petrified Hamlet : « les terrains du nom choisi »). */
+  nameChosen?: boolean;
   /** Carte avec une Aventure (hors du champ de bataille : cimetière, main ; Hearth Elemental). */
   adventure?: boolean;
 }
@@ -389,6 +391,10 @@ export type Condition =
   /** La source est préparée. */
   | { kind: "prepared" }
   /** « Contempler un Jace » : vous contrôlez un Jace ou vous avez une carte de Jace en main. */
+  /** « Si {U}{U} a été dépensé pour le lancer » : au moins N mana de ce type dépensé pour lancer la source. */
+  | { kind: "spentColor"; color: ManaType; n: number }
+  /** La source a été lancée pour son coût d'évocation. */
+  | { kind: "evoked" }
   /** Contempler (701.63) : vous contrôlez un permanent correspondant, ou vous révélez une carte correspondante de votre main. */
   | { kind: "behold"; filter: ObjectFilter }
   /** Le contrôleur a activé une capacité de loyauté ce tour-ci. */

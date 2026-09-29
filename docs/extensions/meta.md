@@ -92,3 +92,28 @@ Les scripts vont dans le dossier de leur extension (`packages/cards/src/<ext>/ca
 - **Wilds of Eldraine (WOE), réserve :** Disdainful Stroke.
 - **Tarkir: Dragonstorm (TDM), réserve :** Strategic Betrayal.
 - **Murders at Karlov Manor (MKM), réserve :** Vengeful Tracker.
+
+## Lot M3 — Dimir Excruciator, Azorius Control et Selesnya Landfall (cumul 53,2 % du méta)
+
+15 cartes : 12 des decks principaux, 3 des réserves (Day of Black Sun et Strategic Betrayal étaient faites au lot M2). Tests dans `engine/test/meta.test.ts` (« lot M3 »).
+
+### Moteur
+
+- **Évocation** (702.74) : lue dans le texte ; coût alternatif (`altCost`, « Évocation — … ») et capacité « quand elle arrive, si elle a été évoquée, sacrifiez-la » (`cond.evoked`).
+- **Mana dépensé par type** : le paiement le rend (`payMana`, argument `spent`) ; il est gardé sur le sort et le permanent (`spentColors`), et lu par `cond.spent("U", 2)` (« si {U}{U} a été dépensé pour le lancer »). Les conditions d'arrivée le voient : il passe par le contexte d'arrivée, comme l'évocation.
+- **Mobilisation N** (702.181, Tarkir: Dragonstorm) : lue dans le texte ; N Guerriers rouges 1/1 engagés et attaquants, sacrifiés au début de la prochaine étape de fin.
+- **Montée en puissance** (Power-up, Marvel Super Heroes) : `activated({ powerUp: true })`, une seule fois ; le coût est réduit du coût de mana de la source si elle est arrivée ce tour-ci (`abilityMana`).
+- **Réunir des preuves N** en coût additionnel facultatif (« you may collect evidence N ») : lu dans le texte (kicker {0}, `kickerCost.collectEvidence`) ; les cartes du cimetière sont choisies automatiquement (les plus chères d'abord).
+- **`fx.exileNamesakes`** (Deadly Cover-Up) : une carte du cimetière d'un adversaire et ses homonymes (cimetière, main, bibliothèque) ; il pioche autant que de cartes exilées de sa main.
+- **Nom de carte de terrain choisi** (Petrified Hamlet) : `chooseOnEnter: "landName"` et `fx.chooseForSelf("landName")` (capacité déclenchée d'arrivée), filtre `nameChosen` ; les capacités non de mana des sources du nom choisi sont bloquées, comme avec Sorcerous Spyglass.
+- **Copie d'une carte de créature d'un cimetière en arrivant** (Superior Spider-Man, Échange d'esprit) : `entersAsCopyOfGraveyard` (nom, F/E) avec `entersAsCopyAddSubtypes` ; la carte copiée est exilée.
+
+### Cartes, par extension
+
+- **Secrets of Strixhaven (SOS) :** Emeritus of Ideation (préparée, sort Ancestral Recall), Erode, Petrified Hamlet.
+- **Lorwyn Eclipsed (ECL) :** Hallowed Fountain et Temple Garden (terrains choc), Deceit (évocation, mana dépensé).
+- **Murders at Karlov Manor (MKM) :** Meticulous Archive, No More Lies, Deadly Cover-Up (réunir des preuves 6).
+- **Avatar: The Last Airbender (TLA) :** Shared Roots.
+- **Marvel Super Heroes (MSH) :** M.O.D.O.K. ; en réserve, Captain Marvel, Earth's Protector (montée en puissance).
+- **Marvel's Spider-Man (SPM) :** Superior Spider-Man.
+- **Tarkir: Dragonstorm (TDM), réserve :** Voice of Victory (mobilisation 2), Qarsi Revenant (Renouveau).

@@ -106,6 +106,10 @@ export interface GameObject {
   warped?: boolean;
   /** Imminence (702.176) : lancé pour son coût d'imminence ; ce n'est pas une créature tant qu'il a un marqueur de temps. */
   impending?: boolean;
+  /** Évocation (702.74) : lancé pour son coût d'évocation (sacrifié en arrivant). */
+  evoked?: boolean;
+  /** Mana dépensé pour le lancer, par type (« si {U}{U} a été dépensé pour le lancer », Deceit). */
+  spentColors?: Partial<Record<ManaType, number>>;
   warpExiledTurn?: number;
   /** Mana dépensé pour lancer ce sort ou ce permanent (Astelli Reclaimer, Unravel). */
   manaSpent?: number;
@@ -233,6 +237,10 @@ export interface StackItem {
   impending?: boolean;
   /** Mana dépensé pour le lancer. */
   manaSpent?: number;
+  /** Lancé pour son coût d'évocation. */
+  evoked?: boolean;
+  /** Mana dépensé pour le lancer, par type. */
+  spentColors?: Partial<Record<ManaType, number>>;
   /** Dont le mana produit par des Cavernes (Bat Colony). */
   caveMana?: number;
   /** Sources dont le mana a servi à le lancer (« en utilisant du mana produit par [cette source] »). */

@@ -191,5 +191,8 @@ Dans l'ordre où elles ont été ajoutées, extension par extension.
   - `timing` Earthbender Ascension : « s'il a quatre marqueurs de quête ou plus » est vérifié à la résolution de la capacité de landfall, et non comme condition de la capacité réflexive.
   - `règle` Travail d'équipe : la force des créatures engagées est comptée comme pour l'équipage (un pilote compte 2 de plus) ;
   - `timing` Azog, Moria's Ruin : « si vous contrôliez cette créature, piochez une carte » est fait avant la destruction.
+  - `choix auto` Réunir des preuves (Deadly Cover-Up) : les cartes exilées du cimetière sont choisies par le moteur (les plus chères d'abord) ;
+  - `choix auto` Deceit : le type du mana dépensé suit le paiement automatique ; pour payer {U}{U} ou {B}{B}, engagez vos terrains à la main avant de lancer le sort ;
+  - `timing` Superior Spider-Man : la carte copiée est exilée en arrivant, et non par une capacité réflexive.
 - **Légalité Standard :** instantané des légalités Scryfall au moment de l'import (`legalities.standard` dans `data/<set>.json`). Après une rotation ou une annonce de bannissement, réimporter les sets (`npm run import-cards -- <set>`).
 - **Images des jetons :** celle du jeton Scryfall le plus proche (même nom, puis mêmes F/E et couleurs ; `data/tokens.json`, `npm run import-tokens`) ; un jeton de nom inconnu garde le cadre texte.

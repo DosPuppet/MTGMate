@@ -442,9 +442,12 @@ export function payMana(
   purpose?: ManaPurpose,
   /** Reçoit les activations du paiement automatique : source, capacité et quantité produite. */
   sources?: { id: ObjectId; ab?: ManaAbilityDef; amount: number }[],
+  /** Reçoit le mana dépensé, par type (« si {U}{U} a été dépensé pour le lancer »). */
+  spent?: Partial<Record<ManaType, number>>,
 ): ManaAbilityDef[] {
   const plan = solvePayment(s, player, cost, exclude, purpose);
   if (!plan) throw new RulesError("Mana insuffisant");
+  if (spent) for (const m of MANA_TYPES) if (plan.spend[m]) spent[m] = plan.spend[m];
   if (sources) {
     for (const t of plan.taps) {
       const ab = t.ability === CONVOKE ? undefined : manaAbilitiesOf(s, t.id)[t.ability];

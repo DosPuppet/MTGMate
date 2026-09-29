@@ -55,4 +55,23 @@ export const CARDS: Record<string, CardScript> = {
       [fx.destroy(ref.target()), ...fx.when(cond.kicked, fx.gainLife(2))],
     ),
   },
+
+  // --- Lot M3 -----------------------------------------------------------------
+  "Hallowed Fountain": shock,
+  "Temple Garden": shock,
+  Deceit: {
+    // Évocation lue dans le texte ; « si {U}{U} / {B}{B} a été dépensé pour le lancer » : `cond.spent`.
+    abilities: [
+      triggered(when.entersSelf, [fx.bounce(ref.target())], {
+        condition: cond.spent("U", 2),
+        targets: [target.upTo(1, target.nonland("t", { other: true }))],
+        label: "{U}{U} dépensé : renvoie un permanent non-terrain",
+      }),
+      triggered(when.entersSelf, [fx.discard(1, ref.target(), { filter: { nonland: true }, chooser: "controller" })], {
+        condition: cond.spent("B", 2),
+        targets: [target.player("t", "opponent")],
+        label: "{B}{B} dépensé : défausse d'une carte non-terrain choisie",
+      }),
+    ],
+  },
 };

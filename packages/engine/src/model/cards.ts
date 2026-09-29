@@ -40,7 +40,9 @@ export interface CardDef {
    * N marqueurs -1/-1 sur une créature que vous contrôlez), ou engager des créatures de force totale N (`tapPower`,
    * Travail d'équipe, Marvel Super Heroes).
    */
-  kickerCost?: { sacrifice?: ObjectFilter; bounce?: ObjectFilter; blight?: number; tapPower?: number };
+  kickerCost?: { sacrifice?: ObjectFilter; bounce?: ObjectFilter; blight?: number; tapPower?: number; collectEvidence?: number };
+  /** Évocation (702.74) : coût alternatif (dans `altCost`) ; la créature est sacrifiée en arrivant. */
+  evoke?: ManaCost;
   /** Coût de flashback : peut être lancée depuis le cimetière, puis exilée (702.34). */
   /** Harmonie (702.180) : son coût est aussi rangé ici (même lancement depuis le cimetière, puis exil), avec `harmonize`. */
   flashback?: ManaCost;
@@ -79,7 +81,7 @@ export interface CardDef {
   /** F/E définies par une capacité (604.3, couche 7a), ex. cartes dans les cimetières adverses. */
   cdaPT?: Amount;
   /** « En arrivant, choisissez un type de créature / une couleur » (614.12). */
-  chooseOnEnter?: "creatureType" | "color" | "cardName";
+  chooseOnEnter?: "creatureType" | "color" | "cardName" | "landName";
   /**
    * Dévorer (702.82) : « en arrivant, sacrifiez des [terrains] ; N marqueurs +1/+1 par permanent sacrifié ».
    * `graveyardUpToX` : « exilez jusqu'à X cartes de votre cimetière » à la place (Mimeoplasm, cartes liées).
@@ -103,6 +105,11 @@ export interface CardDef {
   exileOnResolve?: boolean;
   /** Visage Bandit : sous-types ajoutés quand elle arrive comme copie. */
   entersAsCopyAddSubtypes?: string[];
+  /**
+   * Superior Spider-Man (Échange d'esprit) : peut arriver comme copie d'une carte de créature d'un cimetière, sauf son nom
+   * et ses F/E (`entersAsCopyAddSubtypes` pour les types en plus) ; la carte copiée est exilée.
+   */
+  entersAsCopyOfGraveyard?: { filter: ObjectFilter; name?: string; power?: number; toughness?: number };
   /** Plot (702.170) : coût de l'action spéciale « complotez cette carte » (lu dans le texte). */
   plot?: ManaCost;
   /** Skyseer's Chariot : les capacités activées des sources du nom choisi coûtent {N} de plus (au lieu d'être interdites). */
@@ -159,7 +166,7 @@ export interface CardDef {
   /** Assemblage (701.42) : les deux parties et la carte assemblée, par nom. */
   meld?: { parts: string[]; result?: string };
   /** Libellé du kicker : Progéniture (702.175) ou Cadeau (702.174), lus dans le texte (Bloomburrow). */
-  kickerKind?: "offspring" | "gift" | "bargain" | "blight" | "teamwork";
+  kickerKind?: "offspring" | "gift" | "bargain" | "blight" | "teamwork" | "evidence";
   /** Cadeau (702.174) : ce que reçoit l'adversaire choisi si le cadeau est promis. */
   gift?: GiftKind;
   /** « En coût additionnel, fourragez ou payez [mana] » (Feed the Cycle) : le coût alternatif « Fourrager » l'évite. */
@@ -315,6 +322,11 @@ export interface ActivatedAbilityDef {
   label?: string;
   /** « N'activez cette capacité qu'une seule fois. » */
   once?: boolean;
+  /**
+   * Montée en puissance (Power-up, Marvel Super Heroes) : une seule fois, et le coût est réduit du coût de mana de la
+   * source si elle est arrivée ce tour-ci.
+   */
+  powerUp?: boolean;
   /** Capacité activée depuis le cimetière (« Renvoyez cette carte de votre cimetière… »). */
   fromGraveyard?: boolean;
   /** Capacité activée depuis la main (cycle, « défaussez cette carte : … »). */

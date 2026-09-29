@@ -462,3 +462,114 @@ describe("Méta, lot M2", () => {
     expect(chars(s, angel).keywords).not.toContain("flying");
   });
 });
+
+describe("Méta, lot M3", () => {
+  it("Deceit évoqué avec {U}{U} : renvoie un permanent, puis il est sacrifié", () => {
+    let s = scenario({
+      p1: { battlefield: ["Island", "Island"], hand: ["Deceit"] },
+      p2: { battlefield: ["Bear Cub"] },
+    });
+    const card = idOf(s, "p1", "hand", "Deceit");
+    const opt = castOption(s, card);
+    expect(opt?.type === "cast" && opt.altAvailable).toBe(true);
+    const bear = idOf(s, "p2", "battlefield", "Bear Cub");
+    s = act(s, "p1", { type: "cast", card, alternative: true });
+    s = passAccepting(s, (x) => x.pending?.kind === "choice" || (x.stack.length === 0 && x.pending?.kind === "priority"));
+    // Choix des cibles de la capacité ({U}{U} dépensé) : l'Ourson.
+    for (let i = 0; i < 10 && s.pending?.kind === "choice"; i++) {
+      const p = s.pending;
+      const r = p.request;
+      const values = r.type === "pick" && r.options.includes(bear) ? [bear] : r.suggested;
+      s = act(s, p.player, { type: "choose", values });
+    }
+    s = settle(s);
+    expect(idsOf(s, "p2", "hand", "Bear Cub")).toHaveLength(1);
+    expect(idsOf(s, "p1", "graveyard", "Deceit")).toHaveLength(1);
+  });
+
+  it("Captain Marvel : la montée en puissance coûte {2} le tour de son arrivée, une seule fois", () => {
+    let s = scenario({ p1: { battlefield: lands("Plains", 7), hand: ["Captain Marvel, Earth's Protector"] } });
+    s = settle(act(s, "p1", { type: "cast", card: idOf(s, "p1", "hand", "Captain Marvel, Earth's Protector") }));
+    const cm = idOf(s, "p1", "battlefield", "Captain Marvel, Earth's Protector");
+    s = activate(s, cm);
+    expect(s.objects[cm]?.counters["+1/+1"]).toBe(1);
+    expect(s.objects[cm]?.counters.indestructible).toBe(1);
+    expect(legalActions(s, "p1").some((a) => a.type === "activate" && a.source === cm)).toBe(false);
+  });
+
+  it("Voice of Victory : Mobilisation 2 ; vos adversaires ne lancent pas de sorts pendant votre tour", () => {
+    let s = scenario({
+      p1: { battlefield: ["Voice of Victory"] },
+      p2: { battlefield: ["Mountain"], hand: ["Burst Lightning"] },
+    });
+    s = advanceUntil(s, (x) => x.pending?.kind === "declareAttackers");
+    const voice = idOf(s, "p1", "battlefield", "Voice of Victory");
+    s = act(s, "p1", { type: "declareAttackers", attackers: [{ id: voice, defender: "p2" }] });
+    s = passAccepting(s, (x) => x.stack.length === 0);
+    expect(idsOf(s, "p1", "battlefield", "Warrior")).toHaveLength(2);
+    expect(legalActions(s, "p2").some((a) => a.type === "cast")).toBe(false);
+    s = advanceUntil(s, (x) => x.turn.active === "p2");
+    expect(idsOf(s, "p1", "battlefield", "Warrior")).toHaveLength(0);
+  });
+
+  it("Petrified Hamlet : le nom choisi bloque les capacités non de mana et donne « {T} : {C} »", () => {
+    let s = scenario({ p1: { hand: ["Petrified Hamlet"] }, p2: { battlefield: ["Rogue's Passage", ...lands("Forest", 4)] } });
+    s = act(s, "p1", { type: "playLand", card: idOf(s, "p1", "hand", "Petrified Hamlet") });
+    s = passAccepting(s, (x) => x.pending?.kind === "choice" || x.stack.length === 0);
+    if (s.pending?.kind === "choice") s = settle(act(s, "p1", { type: "choose", values: ["Rogue's Passage"] }));
+    s = advanceUntil(s, (x) => x.turn.active === "p2" && x.turn.step === "main1");
+    const passage = idOf(s, "p2", "battlefield", "Rogue's Passage");
+    expect(legalActions(s, "p2").some((a) => a.type === "activate" && a.source === passage)).toBe(false);
+    expect(chars(s, passage).abilities.filter((a) => a.kind === "mana").length).toBe(2);
+  });
+
+  it("Superior Spider-Man : copie d'une carte de créature d'un cimetière, 4/4 et de son nom ; la carte est exilée", () => {
+    let s = scenario({
+      p1: { battlefield: [...lands("Island", 2), ...lands("Swamp", 2)], hand: ["Superior Spider-Man"] },
+      p2: { graveyard: ["Serra Angel"] },
+    });
+    const angel = s.players.p2?.graveyard[0] as string;
+    s = act(s, "p1", { type: "cast", card: idOf(s, "p1", "hand", "Superior Spider-Man") });
+    s = passAccepting(s, (x) => x.pending?.kind === "choice" || x.stack.length === 0);
+    if (s.pending?.kind === "choice") s = settle(act(s, "p1", { type: "choose", values: [angel] }));
+    const spidey = s.battlefield.find(
+      (id) => s.objects[id]?.controller === "p1" && chars(s, id).types.includes("Creature"),
+    ) as string;
+    const c = chars(s, spidey);
+    expect(c.name).toBe("Superior Spider-Man");
+    expect([c.power, c.toughness]).toEqual([4, 4]);
+    expect(c.keywords).toEqual(expect.arrayContaining(["flying", "vigilance"]));
+    expect(c.subtypes).toEqual(expect.arrayContaining(["Angel", "Spider", "Hero"]));
+    expect(s.players.p2?.graveyard).toHaveLength(0);
+  });
+
+  it("Deadly Cover-Up : preuves 6, détruit toutes les créatures, exile une carte et ses homonymes, pioche pour la main", () => {
+    let s = scenario({
+      p1: { battlefield: lands("Swamp", 5), hand: ["Deadly Cover-Up"], graveyard: ["Shivan Dragon"] },
+      p2: { battlefield: ["Bear Cub"], graveyard: ["Opt"], hand: ["Opt", "Forest"], library: ["Opt", "Island", "Island"] },
+    });
+    s = settle(act(s, "p1", { type: "cast", card: idOf(s, "p1", "hand", "Deadly Cover-Up"), kicked: true }));
+    expect(idsOf(s, "p1", "graveyard", "Shivan Dragon")).toHaveLength(0);
+    expect(idsOf(s, "p2", "graveyard", "Bear Cub")).toHaveLength(1);
+    const names = (ids: string[]) => ids.map((id) => s.defs[s.objects[id]?.defId ?? ""]?.name);
+    expect(names(s.players.p2?.hand ?? [])).not.toContain("Opt");
+    // Une carte de la main exilée : une carte piochée.
+    expect(s.players.p2?.hand).toHaveLength(2);
+    expect(names(s.players.p2?.library ?? [])).not.toContain("Opt");
+  });
+
+  it("Erode : le contrôleur de la créature détruite cherche un terrain de base", () => {
+    let s = scenario({
+      p1: { battlefield: ["Plains"], hand: ["Erode"] },
+      p2: { battlefield: ["Bear Cub"], library: ["Forest", "Opt"] },
+    });
+    s = settle(
+      act(s, "p1", {
+        type: "cast",
+        card: idOf(s, "p1", "hand", "Erode"),
+        targets: { t: [idOf(s, "p2", "battlefield", "Bear Cub")] },
+      }),
+    );
+    expect(idsOf(s, "p2", "battlefield", "Forest")).toHaveLength(1);
+  });
+});

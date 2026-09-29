@@ -264,6 +264,12 @@ export function checkCondition(s: GameState, c: Condition, controller: PlayerId,
         here || (s.players[controller]?.hand ?? []).some((id) => id !== sourceId && matchesCard(s, controller, id, f, sourceId))
       );
     }
+    case "spentColor": {
+      const spent = (sourceId && (s.objects[sourceId]?.spentColors ?? s.stack.find((x) => x.id === sourceId)?.spentColors)) || {};
+      return (spent[c.color] ?? 0) >= c.n;
+    }
+    case "evoked":
+      return !!sourceId && !!s.objects[sourceId]?.evoked;
     case "prepared": {
       const src = sourceId ? s.objects[sourceId] : undefined;
       return !!src?.preparedCopy && !!s.objects[src.preparedCopy];

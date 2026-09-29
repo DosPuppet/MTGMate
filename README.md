@@ -33,20 +33,20 @@ Les cartes sont couvertes **extension par extension, à 100 % avant de passer à
 | **Duskmourn: House of Horror (DSK, « Mornebrune : la Maison de l'horreur »)** | ✅ 268 / 268 |
 | **Bloomburrow (BLB)** | ✅ 266 / 266 |
 | **The Lost Caverns of Ixalan (LCI, « Les cavernes oubliées d'Ixalan »)** | ✅ 279 / 279 |
-| Tarkir: Dragonstorm (TDM) | 5 / 259 (cartes du méta) |
+| Tarkir: Dragonstorm (TDM) | 7 / 259 (cartes du méta) |
 | Wilds of Eldraine (WOE) | 4 / 269 (cartes du méta) |
-| Secrets of Strixhaven (SOS) | 7 / 262 (cartes du méta) |
-| Lorwyn Eclipsed (ECL) | 10 / 266 (cartes du méta) |
-| Avatar: The Last Airbender (TLA) | 10 / 280 (cartes du méta) |
-| Marvel's Spider-Man (SPM) | 3 / 188 (cartes du méta) |
-| Marvel Super Heroes (MSH) | 9 / 271 (cartes du méta) |
+| Secrets of Strixhaven (SOS) | 10 / 262 (cartes du méta) |
+| Lorwyn Eclipsed (ECL) | 13 / 266 (cartes du méta) |
+| Avatar: The Last Airbender (TLA) | 11 / 280 (cartes du méta) |
+| Marvel's Spider-Man (SPM) | 4 / 188 (cartes du méta) |
+| Marvel Super Heroes (MSH) | 11 / 271 (cartes du méta) |
 | Teenage Mutant Ninja Turtles (TMT) | 7 / 188 (cartes du méta) |
 | The Hobbit (HOB) | 5 / 188 (cartes du méta) |
-| Murders at Karlov Manor (MKM) | 3 / 268 (cartes du méta) |
+| Murders at Karlov Manor (MKM) | 6 / 268 (cartes du méta) |
 
-Au total, **2 792 cartes jouables** sur 5 161 cartes légales en Standard.
+Au total, **2 807 cartes jouables** sur 5 161 cartes légales en Standard.
 
-**Decks du méta (plan P4, en cours) :** avant de finir les dix dernières extensions une à une, on écrit les cartes des decks Standard les plus joués (relevé MTGGoldfish du 29/09/2026, `docs/meta/`). Déjà jouables, réserve comprise : **Izzet Spellementals**, **Mono-Green Landfall**, **Dimir Midrange** et **Jund Sacrifice** (43,7 % du méta). Quelques réimpressions d'extensions plus anciennes sont aussi légales parce qu'elles figurent dans ces sets.
+**Decks du méta (plan P4, en cours) :** avant de finir les dix dernières extensions une à une, on écrit les cartes des decks Standard les plus joués (relevé MTGGoldfish du 29/09/2026, `docs/meta/`). Déjà jouables, réserve comprise : **Izzet Spellementals**, **Mono-Green Landfall**, **Dimir Midrange**, **Jund Sacrifice**, **Dimir Excruciator**, **Azorius Control** et **Selesnya Landfall** (53,2 % du méta). Quelques réimpressions d'extensions plus anciennes sont aussi légales parce qu'elles figurent dans ces sets.
 
 **Cartes bannies en Standard** (13) :
 

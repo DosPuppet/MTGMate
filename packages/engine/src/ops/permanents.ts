@@ -20,8 +20,9 @@ import {
   tapObject,
 } from "../state";
 import { addPlayerEffect, tokenMultiplier } from "../statics";
-import { matchesObjectFilter } from "../targets";
+import { matchesCard, matchesObjectFilter } from "../targets";
 import { createDelayed } from "../triggers";
+import type { Color } from "../types";
 
 export const HANDLERS: OpHandlers = {
   pump(s, _r, e, ctx) {
@@ -282,12 +283,17 @@ export const HANDLERS: OpHandlers = {
   },
   chooseCopy(s, r, e, ctx, key) {
     if (r.vars.$copyOf) return;
-    const options = s.battlefield.filter(
-      (id) =>
-        (e.anyController || s.objects[id]?.controller === ctx.controller) &&
-        id !== ctx.sourceId &&
-        matchesObjectFilter(s, ctx.controller, id, e.filter, ctx.sourceId),
-    );
+    // Superior Spider-Man : une carte de créature de n'importe quel cimetière.
+    const options = e.fromGraveyards
+      ? s.playerOrder.flatMap((p) =>
+          (s.players[p]?.graveyard ?? []).filter((id) => matchesCard(s, ctx.controller, id, e.filter, ctx.sourceId)),
+        )
+      : s.battlefield.filter(
+          (id) =>
+            (e.anyController || s.objects[id]?.controller === ctx.controller) &&
+            id !== ctx.sourceId &&
+            matchesObjectFilter(s, ctx.controller, id, e.filter, ctx.sourceId),
+        );
     const answer = options.length ? r.vars[key("copy")] : [];
     if (!answer) {
       return {
@@ -297,7 +303,9 @@ export const HANDLERS: OpHandlers = {
           request: {
             type: "pick",
             intent: "pickCards",
-            prompt: `${nameOf(s, ctx.sourceId)} : vous pouvez la faire arriver comme copie d'un permanent`,
+            prompt: e.fromGraveyards
+              ? `${nameOf(s, ctx.sourceId)} : vous pouvez le faire arriver comme copie d'une carte de créature d'un cimetière`
+              : `${nameOf(s, ctx.sourceId)} : vous pouvez la faire arriver comme copie d'un permanent`,
             options,
             min: 0,
             max: 1,
@@ -307,7 +315,9 @@ export const HANDLERS: OpHandlers = {
       };
     }
     const picked = answer.map(String).find((id) => options.includes(id));
-    r.vars.$copyOf = picked ? [copiedDefId(s, picked)] : [];
+    r.vars.$copyOf = picked ? [e.fromGraveyards ? (s.objects[picked]?.defId ?? "") : copiedDefId(s, picked)] : [];
+    // La carte copiée depuis un cimetière est exilée une fois le permanent arrivé.
+    if (picked && e.fromGraveyards) r.vars.$copyCard = [picked];
     return;
   },
   becomeCopyKeepAbilities(s, _r, e, ctx) {
@@ -327,7 +337,19 @@ export const HANDLERS: OpHandlers = {
     if (!answer) {
       let options: string[];
       if (kind === "color") options = ["W", "U", "B", "R", "G"];
-      else if (kind === "cardName") {
+      else if (kind === "landName") {
+        // Petrified Hamlet : un nom de carte de terrain, ceux des terrains adverses en tête (non de base d'abord).
+        const opp = s.battlefield.filter((id) => s.objects[id]?.controller !== ctx.controller);
+        const oppLands = opp.map((id) => s.defs[s.objects[id]?.defId ?? ""]).filter((d) => d?.types.includes("Land"));
+        const lands = Object.values(s.defs).filter((d) => d.types.includes("Land") && !d.isToken);
+        options = [
+          ...new Set([
+            ...oppLands.filter((d) => !d?.supertypes.includes("Basic")).map((d) => d?.name ?? ""),
+            ...oppLands.map((d) => d?.name ?? ""),
+            ...lands.map((d) => d.name).sort(),
+          ]),
+        ].filter(Boolean);
+      } else if (kind === "cardName") {
         // Sorcerous Spyglass : on regarde la main d'un adversaire (ses cartes d'abord), puis on nomme une carte.
         const opp = opponentsOf(s, ctx.controller)[0];
         const inHand = (opp ? (s.players[opp]?.hand ?? []) : []).map((id) => s.defs[s.objects[id]?.defId ?? ""]?.name ?? "");
@@ -354,7 +376,7 @@ export const HANDLERS: OpHandlers = {
         for (const k of keys) tally.set(k, (tally.get(k) ?? 0) + 1);
       }
       const best =
-        kind === "cardName"
+        kind === "cardName" || kind === "landName"
           ? options[0]
           : ([...tally.entries()].sort((a, b) => b[1] - a[1]).find(([k]) => options.includes(k))?.[0] ?? options[0]);
       const COLOR: Record<string, string> = { W: "Blanc", U: "Bleu", B: "Noir", R: "Rouge", G: "Vert" };
@@ -370,7 +392,9 @@ export const HANDLERS: OpHandlers = {
                 ? "Choisissez une couleur"
                 : kind === "cardName"
                   ? "Choisissez un nom de carte (les cartes de la main adverse sont en tête)"
-                  : "Choisissez un type de créature",
+                  : kind === "landName"
+                    ? "Choisissez un nom de carte de terrain (ceux de vos adversaires sont en tête)"
+                    : "Choisissez un type de créature",
             options,
             labels: kind === "color" ? COLOR : Object.fromEntries(options.map((o) => [o, o])),
             min: 1,
@@ -381,6 +405,20 @@ export const HANDLERS: OpHandlers = {
       };
     }
     r.vars.$chosen = [kind, String(answer[0])];
+    // Capacité déclenchée d'un permanent déjà en jeu (Petrified Hamlet : « quand ce terrain arrive, choisissez… »).
+    const src = s.objects[ctx.sourceId];
+    if (src?.zone === "battlefield") {
+      const value = String(answer[0]);
+      src.chosen = {
+        ...src.chosen,
+        ...(kind === "color"
+          ? { color: value as Color }
+          : kind === "creatureType"
+            ? { creatureType: value }
+            : { cardName: value }),
+      };
+      bump(s);
+    }
     return;
   },
   exchangeControl(s, _r, e, ctx) {

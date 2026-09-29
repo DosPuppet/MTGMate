@@ -13,6 +13,10 @@ const PLAYABLE = [
   // Lot M2
   "Dimir Midrange",
   "Jund Sacrifice",
+  // Lot M3
+  "Dimir Excruciator",
+  "Azorius Control",
+  "Selesnya Landfall",
 ];
 
 describe("decks du méta", () => {

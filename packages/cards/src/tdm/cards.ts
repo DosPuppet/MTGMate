@@ -3,7 +3,7 @@
  * texte (`scryfall.ts`) : lancée depuis le cimetière comme un flashback, une créature engagée réduit le coût. L'extension
  * sera couverte en entier en phase 2.
  */
-import { type CardScript, fx, ref, spell, target, triggered, when } from "./common";
+import { activated, type CardScript, fx, playerStatic, ref, spell, target, triggered, when } from "./common";
 
 export const CARDS: Record<string, CardScript> = {
   // --- Bleu ------------------------------------------------------------------
@@ -29,5 +29,28 @@ export const CARDS: Record<string, CardScript> = {
         fx.moveAll("graveyard", ref.target(), {}, { to: "exile" }),
       ],
     ),
+  },
+
+  // --- Lot M3 -----------------------------------------------------------------
+  "Voice of Victory": {
+    // Mobilisation 2 : lue dans le texte.
+    abilities: [playerStatic({ opponentsCantCastYourTurn: true })],
+  },
+  "Qarsi Revenant": {
+    abilities: [
+      activated({
+        mana: "{2}{B}",
+        fromGraveyard: true,
+        exileSelf: true,
+        sorcerySpeed: true,
+        targets: [target.creature()],
+        effects: [
+          fx.counters(ref.target(), "flying"),
+          fx.counters(ref.target(), "deathtouch"),
+          fx.counters(ref.target(), "lifelink"),
+        ],
+        label: "Renouveau : vol, contact mortel et lien de vie",
+      }),
+    ],
   },
 };

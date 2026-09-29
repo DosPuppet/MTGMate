@@ -48,7 +48,7 @@ export interface CardScript {
   /** Coût de kicker, ex. "{4}". */
   kicker?: string;
   /** Kicker sans mana (avec `kicker: "{0}"`) : permanent sacrifié ou renvoyé, choisi automatiquement. */
-  kickerCost?: { sacrifice?: ObjectFilter; bounce?: ObjectFilter; blight?: number; tapPower?: number };
+  kickerCost?: { sacrifice?: ObjectFilter; bounce?: ObjectFilter; blight?: number; tapPower?: number; collectEvidence?: number };
   /** Coût de flashback, ex. "{4}{R}{R}". */
   flashback?: string;
   /** « Flashback—[coût], défaussez N cartes. » */
@@ -64,7 +64,7 @@ export interface CardScript {
   altCost?: { mana: string; condition: Condition; label: string };
   /** F/E définies par une capacité (F/E étoilées sur la carte). */
   cdaPT?: Amount;
-  chooseOnEnter?: "creatureType" | "color" | "cardName";
+  chooseOnEnter?: "creatureType" | "color" | "cardName" | "landName";
   shuffleIntoLibrary?: boolean;
   graveyardCastRemoveCounters?: number;
   /** Skyseer's Chariot : les capacités activées des sources du nom choisi coûtent {N} de plus. */
@@ -81,6 +81,11 @@ export interface CardScript {
   flashIf?: Condition;
   exileOnResolve?: boolean;
   entersAsCopyAddSubtypes?: string[];
+  /**
+   * Superior Spider-Man (Échange d'esprit) : peut arriver comme copie d'une carte de créature d'un cimetière, sauf son nom
+   * et ses F/E (`entersAsCopyAddSubtypes` pour les types en plus) ; la carte copiée est exilée.
+   */
+  entersAsCopyOfGraveyard?: { filter: ObjectFilter; name?: string; power?: number; toughness?: number };
   /** « Vous pouvez lancer cette carte depuis votre cimetière [si…] » */
   castFromGraveyard?: { condition?: Condition; payLife?: number; sacrifice?: ObjectFilter };
   /** Seule la force est variable (Enigma Drake). */
@@ -604,6 +609,10 @@ export const fx = {
   copyNextExhaust: { op: "copyNextExhaust" } as Effect,
   chooseCardName: { op: "chooseCardName" } as Effect,
   exileNamed: (who: Ref, max: number): Effect => ({ op: "exileNamed", who, max }),
+  /** Deadly Cover-Up : une carte d'un cimetière adverse, et toutes ses homonymes (cimetière, main, bibliothèque). */
+  exileNamesakes: { op: "exileNamesakes" } as Effect,
+  /** « Quand ce permanent arrive, choisissez [un nom de carte de terrain…] » (capacité déclenchée). */
+  chooseForSelf: (kind: "creatureType" | "color" | "cardName" | "landName"): Effect => ({ op: "chooseOnEnter", kind }),
   payCostOf: (what: Ref, store: string, prompt: string): Effect => ({ op: "payCostOf", what, store, prompt }),
   reduceSpeed: (who: Ref): Effect => ({ op: "reduceSpeed", who }),
   /** « [Cette Monture] devient montée jusqu'à la fin du tour ». */
@@ -1166,6 +1175,8 @@ export function activated(opts: {
   forage?: boolean;
   /** Fabrication (702.167) : voir `craft()`. */
   craft?: NonNullable<ActivatedAbilityDef["cost"]["craft"]>;
+  /** Montée en puissance (Power-up) : une seule fois, coût réduit du coût de mana de la source arrivée ce tour-ci. */
+  powerUp?: boolean;
   label?: string;
 }): ActivatedAbilityDef {
   return {
@@ -1200,7 +1211,8 @@ export function activated(opts: {
     targets: opts.targets ?? [],
     effects: opts.effects.flat(),
     sorcerySpeed: opts.sorcerySpeed,
-    once: opts.once,
+    once: opts.once || opts.powerUp,
+    powerUp: opts.powerUp,
     oncePerTurn: opts.oncePerTurn,
     activationCondition: opts.activationCondition,
     fromGraveyard: opts.fromGraveyard,
@@ -1502,6 +1514,9 @@ export const cond = {
   /** Contempler (701.63) : « vous pouvez contempler un Elfe » (choisir un Elfe que vous contrôlez ou révéler une carte d'Elfe de votre main). */
   behold: (filter: ObjectFilter): Condition => ({ kind: "behold", filter }),
   beholdJace: { kind: "behold", filter: { subtype: "Jace" } } as Condition,
+  /** « Si {U}{U} a été dépensé pour le lancer » : `cond.spent("U", 2)`. */
+  spent: (color: ManaType, n: number): Condition => ({ kind: "spentColor", color, n }),
+  evoked: { kind: "evoked" } as Condition,
   activatedLoyalty: { kind: "activatedLoyaltyThisTurn" } as Condition,
   /** La source est préparée. */
   prepared: { kind: "prepared" } as Condition,

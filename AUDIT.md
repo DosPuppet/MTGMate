@@ -170,7 +170,8 @@ La règle « préférer un mécanisme générique » est écrite dans `docs/mote
 - **P4 planifié le 29/09/2026** : couverture guidée par le méta, puis Tarkir: Dragonstorm (`PLAN-P4.md`).
 - **P4, lot M1 fait le 29/09/2026** : deux archétypes du méta jouables (28,9 % du méta), Harmonie, Marchandage, contempler, maîtrise de la terre (`docs/extensions/meta.md`).
 - **P4, lot M2 fait le 29/09/2026** : quatre archétypes jouables (43,7 % du méta).
-- Restent : P3, P4 (lots M3 à M6, puis Tarkir: Dragonstorm).
+- **P4, lot M3 fait le 29/09/2026** : sept archétypes jouables (53,2 % du méta).
+- Restent : P3, P4 (lots M4 à M6, puis Tarkir: Dragonstorm).
 
 ### P0 — Socle du moteur, pour toutes les extensions (avant la prochaine)
 

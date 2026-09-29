@@ -3,7 +3,20 @@
  * texte (`scryfall.ts` : kicker « engagez des créatures de force totale N »). L'extension n'est pas encore couverte en
  * entier.
  */
-import { amount, type CardScript, cond, fx, manaAbility, ref, spell, target, triggered, when } from "./common";
+import {
+  activated,
+  amount,
+  type CardScript,
+  cond,
+  fx,
+  manaAbility,
+  ref,
+  spell,
+  staticAbility,
+  target,
+  triggered,
+  when,
+} from "./common";
 
 export const CARDS: Record<string, CardScript> = {
   // --- Lot M2 -----------------------------------------------------------------
@@ -35,6 +48,30 @@ export const CARDS: Record<string, CardScript> = {
       triggered(when.entersSelf, [fx.fight(ref.self, ref.target())], {
         targets: [target.upTo(1, target.creature("t", { other: true }))],
         label: "Se bat contre une autre créature",
+      }),
+    ],
+  },
+
+  // --- Lot M3 -----------------------------------------------------------------
+  "M.O.D.O.K.": {
+    abilities: [
+      activated({ payLife: 3, activationCondition: cond.yourTurn, effects: [fx.connive(ref.self)], label: "Complote (3 PV)" }),
+      staticAbility(
+        { types: ["Creature"], controller: "opponent" },
+        { power: -1, toughness: -1 },
+        {
+          label: "Les créatures adverses ont -1/-1",
+        },
+      ),
+    ],
+  },
+  "Captain Marvel, Earth's Protector": {
+    abilities: [
+      activated({
+        mana: "{5}{W}{W}",
+        powerUp: true,
+        effects: [fx.addCounters(ref.self, 1), fx.counters(ref.self, "indestructible")],
+        label: "Montée en puissance : marqueurs +1/+1 et indestructible",
       }),
     ],
   },

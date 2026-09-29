@@ -5,6 +5,7 @@
 import { availableMana, canPay, costToText, manaAbilitiesOf, manaSources, manaValue, totalCost } from "./mana";
 import {
   abilitiesOf,
+  abilityMana,
   abilityReduction,
   abilityZone,
   activatedAbility,
@@ -22,6 +23,7 @@ import {
   crewPower,
   discardCostOptions,
   equipDiscount,
+  evidenceCards,
   FACE_DOWN_SPELL,
   harmonizeOptions,
   hasConvoke,
@@ -95,6 +97,14 @@ function kickerPrompt(d: CardDef): { title: string; without: string; with: strin
       title: `Travail d'équipe ${n} : engager des créatures de force totale ${n} ou plus ?`,
       without: "Sans travail d'équipe",
       with: `Travail d'équipe ${n}`,
+    };
+  }
+  if (d.kickerKind === "evidence" && d.kickerCost?.collectEvidence) {
+    const n = d.kickerCost.collectEvidence;
+    return {
+      title: `Réunir des preuves ${n} : exiler des cartes de votre cimetière de valeur de mana totale ${n} ou plus ?`,
+      without: "Sans preuves",
+      with: `Réunir des preuves ${n}`,
     };
   }
   if (d.kickerKind === "bargain") {
@@ -295,7 +305,9 @@ export function legalActions(s: GameState, player: PlayerId): ActionOption[] {
         (!d.kickerCost ||
           (d.kickerCost.tapPower !== undefined
             ? suggestedCrew(s, player, card, d.kickerCost.tapPower).length > 0
-            : !!kickerCostPermanent(s, player, card, d))) &&
+            : d.kickerCost.collectEvidence !== undefined
+              ? !!evidenceCards(s, player, card, d.kickerCost.collectEvidence)
+              : !!kickerCostPermanent(s, player, card, d))) &&
         canPay(s, player, withExtra(spellCost(s, player, d, { ...base, kicked: true, free: terms.free })), undefined, purpose),
       kickerPrompt: d.kicker ? kickerPrompt(d) : undefined,
       fromGraveyard: terms.source === "graveyard" || terms.source === "flashback" ? true : undefined,
@@ -309,7 +321,10 @@ export function legalActions(s: GameState, player: PlayerId): ActionOption[] {
         additional.discard || additional.sacrifice || harmony?.options.length
           ? { ...additional, ...(harmony?.options.length ? { tap: { count: 1, ...harmony, optional: true as const } } : {}) }
           : undefined,
-      kickerPermanents: d.kickerCost && !d.kickerCost.tapPower ? kickerCostOptions(s, player, card, d) : undefined,
+      kickerPermanents:
+        d.kickerCost && !d.kickerCost.tapPower && !d.kickerCost.collectEvidence
+          ? kickerCostOptions(s, player, card, d)
+          : undefined,
       kickerTap: d.kickerCost?.tapPower ? crewSpec(s, player, card, d.kickerCost.tapPower) : undefined,
     });
   }
@@ -338,7 +353,10 @@ export function legalActions(s: GameState, player: PlayerId): ActionOption[] {
             ...s.battlefield.filter((c) => obj(s, c).controller === player).map((c) => obj(s, c).counters["+1/+1"] ?? 0),
           )
         : abilityReduction(s, player, id, ab) + Math.max(0, ...s.battlefield.map((c) => equipDiscount(s, player, ab, c)));
-      if (ab.cost.mana && !canPay(s, player, totalCost(ab.cost.mana, 0, undefined, reduction), exclude, { abilitySource: id }))
+      if (
+        ab.cost.mana &&
+        !canPay(s, player, totalCost(abilityMana(s, id, ab), 0, undefined, reduction), exclude, { abilitySource: id })
+      )
         return;
       const targets = targetOptions(s, player, ab.targets, id);
       if (!targetsAvailable(targets)) return;

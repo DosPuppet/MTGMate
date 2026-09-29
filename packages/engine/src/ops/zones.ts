@@ -703,6 +703,41 @@ export const HANDLERS: OpHandlers = {
     if (e.store) r.vars[`$ids:${e.store.name}`] = moved;
     return;
   },
+  exileNamesakes(s, r, _e, ctx, key) {
+    const options = opponentsOf(s, ctx.controller).flatMap((p) => s.players[p]?.graveyard ?? []);
+    if (options.length === 0) return;
+    const answer = r.vars[key("pick")];
+    if (!answer) {
+      return {
+        ask: {
+          player: ctx.controller,
+          key: key("pick"),
+          request: {
+            type: "pick",
+            intent: "other",
+            prompt: "Exilez une carte du cimetière d'un adversaire (et toutes celles du même nom)",
+            options,
+            min: 1,
+            max: 1,
+            suggested: options.slice(0, 1),
+          },
+        },
+      };
+    }
+    const picked = String(answer[0]);
+    const card = s.objects[picked];
+    const owner = card?.owner;
+    const name = s.defs[card?.defId ?? ""]?.name;
+    const pl = owner ? s.players[owner] : undefined;
+    if (!card || !pl || !name || !options.includes(picked)) return;
+    moveObject(s, picked, "exile");
+    const same = (id: ObjectId) => s.defs[s.objects[id]?.defId ?? ""]?.name === name;
+    const fromHand = pl.hand.filter(same);
+    for (const id of [...pl.graveyard.filter(same), ...fromHand, ...pl.library.filter(same)]) moveObject(s, id, "exile");
+    shuffle(s, pl.library);
+    for (let i = 0; i < fromHand.length; i++) drawCard(s, owner as string);
+    return;
+  },
   exileNamed(s, r, e, ctx) {
     const name = String(r.vars.$name?.[0] ?? "");
     if (!name) return;

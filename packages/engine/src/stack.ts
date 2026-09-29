@@ -345,6 +345,23 @@ export function kickerCostOptions(
     .sort((a, b) => mv(a) - mv(b));
 }
 
+/**
+ * Réunir des preuves N (701.59, Meurtres au manoir Karlov) : cartes de votre cimetière de valeur de mana totale N ou
+ * plus, choisies automatiquement (les plus chères d'abord, pour en exiler le moins possible) ; null si impossible.
+ */
+export function evidenceCards(s: GameState, player: PlayerId, card: ObjectId, n: number): ObjectId[] | null {
+  const mv = (id: ObjectId) => manaValue(s.defs[s.objects[id]?.defId ?? ""]?.manaCost);
+  const pool = (s.players[player]?.graveyard ?? []).filter((id) => id !== card).sort((a, b) => mv(b) - mv(a));
+  const out: ObjectId[] = [];
+  let total = 0;
+  for (const id of pool) {
+    if (total >= n) break;
+    out.push(id);
+    total += mv(id);
+  }
+  return total >= n ? out : null;
+}
+
 /** Le permanent qui paie le kicker sans mana par défaut, s'il y en a un. */
 export function kickerCostPermanent(
   s: GameState,
@@ -510,6 +527,24 @@ function unlockReduction(s: GameState, player: PlayerId, ab: ActivatedAbilityDef
     (n, { ab: x }) => n + (x.kind === "playerStatic" ? (x.unlockReduction ?? 0) : 0),
     0,
   );
+}
+
+/**
+ * Coût de mana d'une capacité activée : celui qui est imprimé, ou, pour une montée en puissance d'une source arrivée ce
+ * tour-ci, ce coût diminué du coût de mana de la source (générique et symboles colorés).
+ */
+export function abilityMana(s: GameState, source: ObjectId, ab: ActivatedAbilityDef): ManaCost | undefined {
+  const m = ab.cost.mana;
+  const o = s.objects[source];
+  if (!m || !ab.powerUp || !o || o.controlledSince !== s.turn.number) return m;
+  const own = s.defs[o.defId]?.manaCost;
+  if (!own) return m;
+  const colored: ManaCost["colored"] = {};
+  for (const [k, n] of Object.entries(m.colored)) {
+    const left = (n ?? 0) - (own.colored[k as ManaType] ?? 0);
+    if (left > 0) colored[k as ManaType] = left;
+  }
+  return { ...m, generic: Math.max(0, m.generic - own.generic), colored };
 }
 
 export function abilityReduction(s: GameState, player: PlayerId, source: ObjectId, ab: ActivatedAbilityDef): number {
@@ -967,7 +1002,10 @@ export function castSpell(s: GameState, player: PlayerId, card: ObjectId, choice
     throw new RulesError("Permanent invalide pour ce coût");
   const kickerPermanent = kickerChoice?.[0] ?? kickerOptions[0];
   const teamwork = kicked ? d.kickerCost?.tapPower : undefined;
-  if (kicked && d.kickerCost && !teamwork && !kickerPermanent) throw new RulesError("Impossible de payer le kicker");
+  const evidence =
+    kicked && d.kickerCost?.collectEvidence ? evidenceCards(s, player, card, d.kickerCost.collectEvidence) : undefined;
+  if (evidence === null) throw new RulesError("Pas assez de preuves à réunir dans votre cimetière");
+  if (kicked && d.kickerCost && !teamwork && !evidence && !kickerPermanent) throw new RulesError("Impossible de payer le kicker");
   // Travail d'équipe : les créatures engagées (choisies par `tap`, sinon les plus faibles suffisantes).
   const teamTap = teamwork !== undefined ? chosenCrew(s, player, card, teamwork, choices.tap) : [];
   if (teamwork !== undefined && teamTap.length === 0) throw new RulesError("Force totale insuffisante pour le travail d'équipe");
@@ -1038,6 +1076,8 @@ export function castSpell(s: GameState, player: PlayerId, card: ObjectId, choice
   for (const id of auto.bounce) moveObject(s, id, "hand");
   for (const id of auto.graveyard) moveObject(s, id, "exile");
   const costExiled = auto.exile.map((id) => moveObject(s, id, "exile")).filter((id): id is string => !!id);
+  // Réunir des preuves : les cartes du cimetière sont exilées en payant le coût.
+  for (const id of evidence ?? []) moveObject(s, id, "exile");
   // Seule une Aventure part « en aventure » ; un présage (même disposition Scryfall) est mélangé dans la bibliothèque.
   const adventure = choices.face !== undefined && cardDef.layout === "adventure" && d.subtypes.includes("Adventure");
   if (choices.face !== undefined) obj(s, stackId).faceDefId = d.id;
@@ -1067,6 +1107,7 @@ export function castSpell(s: GameState, player: PlayerId, card: ObjectId, choice
     adventure: adventure || undefined,
     warped: warp ? true : undefined,
     impending: alternative && cardDef.impending ? true : undefined,
+    evoked: alternative && cardDef.evoke ? true : undefined,
     manaSpent: free ? 0 : manaValue(cost),
     fromHand: terms.source === "hand" || undefined,
     fromGraveyard: terms.source === "graveyard" || terms.source === "flashback" || undefined,
@@ -1079,6 +1120,7 @@ export function castSpell(s: GameState, player: PlayerId, card: ObjectId, choice
   s.stack.push(item);
   try {
     const taps: { id: ObjectId; ab?: ManaAbilityDef; amount: number }[] = [];
+    const spent: Partial<Record<ManaType, number>> = {};
     payMana(
       s,
       player,
@@ -1086,7 +1128,9 @@ export function castSpell(s: GameState, player: PlayerId, card: ObjectId, choice
       undefined,
       { spell: view, convoke: hasConvoke(s, player, d), fromHand: terms.source === "hand" },
       taps,
+      spent,
     );
+    if (Object.keys(spent).length) item.spentColors = spent;
     // Mana des Cavernes (Bat Colony) et sources utilisées (Tecutlan, Barracks of the Thousand).
     if (taps.length) {
       item.manaSources = taps.flatMap((t) => Array(t.amount).fill(t.id) as ObjectId[]);
@@ -1204,7 +1248,7 @@ function addCosts(a: ManaCost, b: ManaCost): ManaCost {
 function chosenFrom(vars: Record<string, ChoiceValue[]>): GameObject["chosen"] {
   const [kind, value] = (vars.$chosen ?? []).map(String);
   if (!kind || !value) return undefined;
-  if (kind === "cardName") return { cardName: value };
+  if (kind === "cardName" || kind === "landName") return { cardName: value };
   return kind === "color" ? { color: value as Color } : { creatureType: value };
 }
 
@@ -1328,13 +1372,15 @@ export function crewPower(s: GameState, id: ObjectId): number {
   return (c.keywords.includes("crewWithToughness") ? c.toughness : c.power) + (c.keywords.includes("crewPlus2") ? 2 : 0);
 }
 
-/** Une source dont le nom a été choisi par un Sorcerous Spyglass. */
+/** Une source dont le nom a été choisi par un Sorcerous Spyglass (ou un Petrified Hamlet). */
 function spyglassed(s: GameState, source: ObjectId): boolean {
   const name = s.objects[source] && chars(s, source).name;
   return s.battlefield.some((id) => {
     const o = obj(s, id);
     const d = s.defs[o.defId];
-    return o.chosen?.cardName === name && d?.chooseOnEnter === "cardName" && !d.chosenNameTax;
+    return (
+      o.chosen?.cardName === name && (d?.chooseOnEnter === "cardName" || d?.chooseOnEnter === "landName") && !d.chosenNameTax
+    );
   });
 }
 
@@ -1657,7 +1703,7 @@ export function activateAbility(s: GameState, player: PlayerId, source: ObjectId
         (t ? (s.objects[t]?.counters["+1/+1"] ?? 0) : 0) +
         abilityReduction(s, player, source, ab) +
         equipDiscount(s, player, ab, targets.t?.[0]);
-      payMana(s, player, totalCost(ab.cost.mana, x, undefined, reduction), reserved, { abilitySource: source });
+      payMana(s, player, totalCost(abilityMana(s, source, ab), x, undefined, reduction), reserved, { abilitySource: source });
     } catch (e) {
       rethrowAsRules(e, "Mana insuffisant");
     }
@@ -1841,6 +1887,12 @@ function specsAndEffects(s: GameState, item: StackItem): { specs: TargetSpec[]; 
         effects: [...effects, { op: "chooseCopy", filter: d.entersAsCopyOf, anyController: d.entersAsCopyAnyController }],
       };
     }
+    if (d.entersAsCopyOfGraveyard && isPermanentCard(d) && !item.copy) {
+      return {
+        specs: mode?.targets ?? [],
+        effects: [...effects, { op: "chooseCopy", filter: d.entersAsCopyOfGraveyard.filter, fromGraveyards: true }],
+      };
+    }
     return { specs: mode?.targets ?? [], effects };
   }
   // Capacité retardée, réflexive ou accordée : ses effets voyagent avec elle.
@@ -1992,6 +2044,8 @@ function finishResolution(
           manaSpent: item.manaSpent,
           devoured: Number(vars.$devoured?.[0] ?? 0),
           copyOf: vars.$copyOf?.[0] !== undefined ? String(vars.$copyOf[0]) : undefined,
+          spentColors: item.spentColors,
+          evoked: item.evoked,
         },
       });
       const arrived = enteredId ? s.objects[enteredId] : undefined;
@@ -2009,6 +2063,10 @@ function finishResolution(
         arrived.linked = [...(arrived.linked ?? []), ...vars["$ids:devoured"].map(String)];
       // Fear of Abduction : les cartes exilées pour payer le coût additionnel sont liées au permanent.
       if (arrived && item.costExiled?.length) arrived.linked = [...(arrived.linked ?? []), ...item.costExiled];
+      // Superior Spider-Man : « quand vous le faites, exilez cette carte ».
+      const copied = vars.$copyCard?.[0];
+      if (arrived && copied !== undefined && s.objects[String(copied)]?.zone === "graveyard")
+        moveObject(s, String(copied), "exile");
       // Imminence (702.176a) : il arrive avec N marqueurs de temps et n'est pas une créature tant qu'il en a.
       if (item.impending && arrived) {
         arrived.impending = true;

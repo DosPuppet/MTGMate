@@ -19,6 +19,12 @@ import type {
 } from "../types";
 
 export type Effect =
+  /**
+   * Deadly Cover-Up : exilez une carte du cimetière d'un adversaire (au choix du contrôleur), puis toutes les cartes du
+   * même nom de son cimetière, de sa main et de sa bibliothèque ; il mélange, puis pioche autant que de cartes exilées
+   * de sa main.
+   */
+  | { op: "exileNamesakes" }
   /** Amasser (701.47) : N marqueurs +1/+1 sur une Armée du joueur (créée 0/0 noire au besoin), qui devient aussi du sous-type. */
   | { op: "amass"; who: Ref; subtype: string; amount: Amount }
   /** Effet de joueur jusqu'à la fin du tour (« les blessures ne peuvent pas être prévenues ce tour-ci »). */
@@ -294,12 +300,12 @@ export type Effect =
   /** « Vous pouvez lancer [cette carte] depuis votre cimetière ce tour-ci. » */
   | { op: "allowCastFromGraveyard"; what: Ref }
   /** « En arrivant, choisissez un type de créature / une couleur » (sort de permanent qui se résout). */
-  | { op: "chooseOnEnter"; kind: "creatureType" | "color" | "cardName" }
+  | { op: "chooseOnEnter"; kind: "creatureType" | "color" | "cardName" | "landName" }
   /** Dévorer : pendant la résolution du sort de permanent, sacrifier des permanents (nombre mémorisé). */
   | { op: "devour"; filter: ObjectFilter; graveyardUpToX?: boolean }
   /** Pendant la résolution d'un sort de permanent : choisir le permanent à copier en arrivant. */
   /** `anyController` : n'importe quel permanent sur le champ de bataille (Mockingbird). */
-  | { op: "chooseCopy"; filter: ObjectFilter; anyController?: boolean }
+  | { op: "chooseCopy"; filter: ObjectFilter; anyController?: boolean; fromGraveyards?: boolean }
   /** Mimeoplasm : la source devient une copie de la carte, 0/0, en gardant ses capacités activées. */
   | { op: "becomeCopyKeepAbilities"; what: Ref }
   /** Révèle des cartes jusqu'à N cartes correspondantes ; celles-ci vont selon `to`, le reste dessous au hasard. */

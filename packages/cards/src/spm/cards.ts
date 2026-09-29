@@ -37,4 +37,10 @@ export const CARDS: Record<string, CardScript> = {
       }),
     ],
   },
+
+  // --- Lot M3 -----------------------------------------------------------------
+  "Superior Spider-Man": {
+    entersAsCopyOfGraveyard: { filter: { types: ["Creature"] }, name: "Superior Spider-Man", power: 4, toughness: 4 },
+    entersAsCopyAddSubtypes: ["Spider", "Human", "Hero"],
+  },
 };
