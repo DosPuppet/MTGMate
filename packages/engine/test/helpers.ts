@@ -5,7 +5,7 @@ import { card } from "@mtgx/cards";
 import { createGame, submit } from "../src/game";
 import { cloneState, createObject, registerDef } from "../src/state";
 import { advance, emptyCombat } from "../src/turn";
-import type { CardDef, Decision, GameState, PlayerId, Step } from "../src/types";
+import type { CardDef, CastNowRequest, Decision, GameState, PlayerId, Step } from "../src/types";
 
 export interface Permanent {
   name: string | CardDef;
@@ -122,6 +122,16 @@ export function passAccepting(s: GameState, until: (s: GameState) => boolean): G
     else break;
   }
   return cur;
+}
+
+/** Priorité « lancer maintenant » en attente pendant une résolution (608.2g), ou `undefined`. */
+export function castNowOf(s: GameState): CastNowRequest | undefined {
+  return s.pending?.kind === "priority" ? s.pending.castNow : undefined;
+}
+
+/** Passe (et suit les choix suggérés) jusqu'à une priorité « lancer maintenant ». */
+export function untilCastNow(s: GameState): GameState {
+  return passAccepting(s, (x) => !!castNowOf(x));
 }
 
 /** Les deux joueurs passent une fois : résout le dessus de la pile (ou termine l'étape). */

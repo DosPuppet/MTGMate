@@ -4,11 +4,21 @@ import type { GiftKind, ManaCost, ManaType, ObjectId, PlayerId, Step, Zone } fro
 export type PendingDecision =
   | { kind: "mulligan"; player: PlayerId; mulligans: number }
   | { kind: "bottomCards"; player: PlayerId; count: number }
-  | { kind: "priority"; player: PlayerId }
+  /**
+   * `castNow` : priorité restreinte pendant une résolution (608.2g, « vous pouvez lancer cette carte ») : le joueur
+   * lance l'une des cartes proposées, ou passe pour refuser. La résolution reprend ensuite.
+   */
+  | { kind: "priority"; player: PlayerId; castNow?: CastNowRequest }
   | { kind: "declareAttackers"; player: PlayerId }
   | { kind: "declareBlockers"; player: PlayerId }
   | { kind: "discard"; player: PlayerId; count: number }
   | { kind: "choice"; player: PlayerId; request: ChoiceRequest; purpose: ChoicePurpose };
+
+/** Cartes qu'un joueur peut lancer pendant la résolution d'un sort ou d'une capacité. */
+export interface CastNowRequest {
+  cards: ObjectId[];
+  prompt: string;
+}
 
 // ---------------------------------------------------------------------------
 // Choix génériques : toute question posée à un joueur passe par ce modèle,

@@ -634,6 +634,9 @@ function Banner() {
           : "Cliquez une créature, puis le joueur ou le planeswalker qu'elle attaque";
   } else if (p.kind === "declareBlockers") {
     text = "Bloqueurs : cliquez une de vos créatures, puis l'attaquant à bloquer";
+  } else if (p.kind === "priority" && p.castNow) {
+    // 608.2g : la carte à lancer brille au bout de la main ; le bouton principal refuse.
+    text = p.castNow.prompt;
   } else if (p.kind === "priority" && view.stack.length > 0) {
     const top = view.stack[view.stack.length - 1];
     // « répondre ? » seulement si une réponse est possible (sinon le panneau StackReveal le montre).
@@ -858,6 +861,7 @@ export function useMainAction(): { label: string; run?: () => void; disabled?: b
   switch (p.kind) {
     case "priority":
       if (s.casting) return { label: "Annuler", run: s.cancel };
+      if (p.castNow) return { label: "Ne pas lancer", run: pass };
       if (v.stack.length > 0) return { label: "Résoudre", run: pass, hot: true };
       if (v.turn.active === v.viewer) {
         if (v.turn.step === "main1" && v.potentialAttackers > 0) return { label: "Combat", run: pass, hot: true };

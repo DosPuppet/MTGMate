@@ -338,7 +338,7 @@ export const RED: Record<string, CardScript> = {
     abilities: [
       triggered(
         when.attacksSelf,
-        [fx.exileTop(ref.eachPlayer, 1, "etali"), fx.grantPlay(ref.stored("etali"), { free: true, anyTime: true })],
+        [fx.exileTop(ref.eachPlayer, 1, "etali"), fx.castNow(ref.stored("etali"), { free: true, many: true })],
         { label: "exile le dessus de chaque bibliothèque, lancez gratuitement" },
       ),
     ],

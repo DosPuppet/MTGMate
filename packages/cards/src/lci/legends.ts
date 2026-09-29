@@ -252,7 +252,7 @@ export const LEGENDS: Record<string, CardScript> = {
           fx.counters(ref.self, "chorus", 1),
           fx.draw(1),
           fx.discard(1, ref.you, { store: "d" }),
-          ...fx.when(cond.counterAtLeast("chorus", 4), fx.grantPlay(ref.stored("d"), { free: true })),
+          ...fx.when(cond.counterAtLeast("chorus", 4), fx.castNow(ref.stored("d"), { free: true })),
         ],
         { label: "Marqueur de chœur, pillage" },
       ),

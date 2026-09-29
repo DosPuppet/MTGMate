@@ -62,8 +62,7 @@ export const LEGENDS2: Record<string, CardScript> = {
   },
   "Quistis Trepe": {
     abilities: [
-      // Approximation : le sort se lance après la résolution, à tout moment ce tour-ci (comme Etali).
-      triggered(when.entersSelf, [fx.grantPlay(ref.target(), { anyMana: true, anyTime: true, exileAfter: true })], {
+      triggered(when.entersSelf, [fx.castNow(ref.target(), { anyMana: true, exileAfter: true })], {
         targets: [target.cardInGraveyard("t", { types: ["Instant", "Sorcery"] }, "any", "carte d'éphémère ou de rituel")],
         label: "Magie bleue : lancez un sort d'un cimetière",
       }),
@@ -127,8 +126,7 @@ export const LEGENDS2: Record<string, CardScript> = {
       triggered(when.attacksAlone(YOURS), [fx.pump(ref.eventObject, 0, 0, ["doubleStrike"])], {
         label: "Attaque seule : double initiative",
       }),
-      // Approximation : le sort se lance après la résolution, à tout moment ce tour-ci (comme Etali).
-      triggered(when.combatDamageToPlayer, [fx.grantPlay(ref.target(), { free: true, anyTime: true, exileAfter: true })], {
+      triggered(when.combatDamageToPlayer, [fx.castNow(ref.target(), { free: true, exileAfter: true })], {
         targets: [target.cardInGraveyard("t", { types: ["Instant", "Sorcery"], maxManaValue: 3 }, "you", "éphémère ou rituel")],
         label: "Croix de feu",
       }),

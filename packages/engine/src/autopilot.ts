@@ -45,6 +45,8 @@ export function autopilotDecision(s: GameState, player: PlayerId, settings: Auto
   if (p.kind === "choice")
     return p.request.autoOk && !settings.fullControl ? { type: "choose", values: p.request.suggested } : null;
   if (p.kind !== "priority") return null;
+  // « Lancez-la » pendant une résolution : une vraie décision, jamais passée à la place du joueur.
+  if (p.castNow) return null;
   // « Fin du tour » est une demande explicite : elle vaut aussi en contrôle total.
   if (passingTurn) return { type: "pass" };
   if (settings.fullControl) return null;

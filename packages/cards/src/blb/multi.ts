@@ -217,7 +217,7 @@ export const MULTI: Record<string, CardScript> = {
           ...fx.may(
             "Défausser une carte pour lancer la carte exilée ?",
             fx.discard(1, ref.you, { store: "d" }),
-            ...fx.when(cond.v("d"), fx.grantPlay(ref.stored("c"), { free: true, anyTime: true })),
+            ...fx.when(cond.v("d"), fx.castNow(ref.stored("c"), { free: true })),
           ),
         ],
         { label: "Exile jusqu'à une carte non-terrain ; lancez-la en défaussant" },

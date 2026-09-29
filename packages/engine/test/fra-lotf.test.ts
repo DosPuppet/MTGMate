@@ -12,7 +12,7 @@ import { chars, moveObject } from "../src/state";
 import { combatPower, declareAttackers } from "../src/turn";
 import type { GameState } from "../src/types";
 import { objectView } from "../src/view";
-import { act, idOf, idsOf, passBoth, scenario } from "./helpers";
+import { act, castNowOf, idOf, idsOf, passAccepting, passBoth, scenario, untilCastNow } from "./helpers";
 
 type S = GameState;
 const cast = (s: S, p: string, name: string, extra: Record<string, unknown> = {}) =>
@@ -299,16 +299,17 @@ describe("Reality Fracture, lot 0.1 (Standard) : Emrakul, Uldaros Theorix, Hall 
         s = act(s, "p1", { type: "choose", values: want ? [want] : [] });
       } else break;
     }
-    s = passBoth(s);
-    expect(s.pending?.kind === "choice" && s.pending.request.intent).toBe("pickCards");
-    s = act(s, "p1", {
-      type: "choose",
-      values: s.pending?.kind === "choice" ? (s.pending.request as { options: string[] }).options : [],
-    });
+    // Valeur de mana totale 3 (≤ 6) : pas de question, les deux cartes sont copiées et proposées pendant la résolution.
+    s = untilCastNow(s);
     const copies = s.exile.filter((id) => s.objects[id]?.cardCopy);
     expect(copies).toHaveLength(2);
+    expect([...(castNowOf(s)?.cards ?? [])].sort()).toEqual([...copies].sort());
     const bearCopy = copies.find((id) => s.defs[s.objects[id]?.defId ?? ""]?.name === "Bear Cub") as string;
     s = act(s, "p1", { type: "cast", card: bearCopy, free: true });
+    // La copie de Giant Growth est encore proposée ; refusée, elle cesse d'exister (707.12).
+    expect(castNowOf(s)?.cards).toHaveLength(1);
+    s = act(s, "p1", { type: "pass" });
+    expect(s.exile.filter((id) => s.objects[id]?.cardCopy)).toHaveLength(0);
     s = passBoth(s);
     const tokens = idsOf(s, "p1", "battlefield", "Bear Cub");
     expect(tokens).toHaveLength(1);
@@ -330,5 +331,41 @@ describe("Reality Fracture, lot 0.1 (Standard) : Emrakul, Uldaros Theorix, Hall 
     expect(idsOf(s, "p1", "battlefield", "Hall of Echoes")).toHaveLength(1);
     // L'interface affiche la face copiée.
     expect(objectView(s, hall).defId).toBe(card("Thalia, the Survivor").id);
+  });
+
+  describe("Chandra, Torch of Defiance +1 : lancer la carte exilée pendant la résolution (608.2g)", () => {
+    const plusOne = (top: string, castIt: boolean) => {
+      let s = scenario({
+        p1: { battlefield: ["Chandra, Torch of Defiance", ...lands("Mountain", 1)], library: [top, "Forest"] },
+      });
+      const chandra = idOf(s, "p1", "battlefield", "Chandra, Torch of Defiance");
+      s = act(s, "p1", { type: "activate", source: chandra, ability: 0 });
+      s = untilCastNow(s);
+      const now = castNowOf(s);
+      if (now && castIt) s = act(s, "p1", { type: "cast", card: now.cards[0] as string, targets: { t: ["p2"] } });
+      else if (now) s = act(s, "p1", { type: "pass" });
+      return { s: passAccepting(s, (x) => x.stack.length === 0 && x.pending?.kind === "priority"), asked: !!now };
+    };
+
+    it("un sort lancé en payant son coût : pas de blessures de Chandra", () => {
+      const { s, asked } = plusOne("Burst Lightning", true);
+      expect(asked).toBe(true);
+      // Burst Lightning (payé avec la Montagne) : 2 blessures ; Chandra n'en inflige pas.
+      expect(s.players.p2?.life).toBe(18);
+      expect(s.battlefield.filter((id) => s.objects[id]?.tapped)).toHaveLength(1);
+    });
+
+    it("sort refusé : 2 blessures à chaque adversaire, la carte reste en exil", () => {
+      const { s } = plusOne("Burst Lightning", false);
+      expect(s.players.p2?.life).toBe(18);
+      expect(s.exile.some((id) => s.defs[s.objects[id]?.defId ?? ""]?.name === "Burst Lightning")).toBe(true);
+      expect(s.playPermissions ?? []).toHaveLength(0);
+    });
+
+    it("un terrain ne peut pas être lancé : pas de question, 2 blessures", () => {
+      const { s, asked } = plusOne("Forest", true);
+      expect(asked).toBe(false);
+      expect(s.players.p2?.life).toBe(18);
+    });
   });
 });

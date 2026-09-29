@@ -71,7 +71,7 @@ export const BLUE: Record<string, CardScript> = {
   "Daring Waverider": {
     // Approximation : le sort est lançable gratuitement jusqu'à la fin du tour (puis exilé).
     abilities: [
-      triggered(when.entersSelf, [fx.grantPlay(ref.target(), { free: true, anyTime: true, exileAfter: true })], {
+      triggered(when.entersSelf, [fx.castNow(ref.target(), { free: true, exileAfter: true })], {
         targets: [
           target.cardInGraveyard(
             "t",
@@ -305,12 +305,8 @@ export const BLUE: Record<string, CardScript> = {
     ],
   },
   "Portent of Calamity": {
-    // Approximation : les cartes exilées sont choisies automatiquement (une par type) ; avec quatre cartes ou plus, le sort
-    // de plus grande valeur de mana reste en exil, lançable gratuitement ce tour-ci, et les autres vont en main.
-    spell: spell(
-      [],
-      [fx.portent, fx.grantPlay(ref.stored("free"), { free: true, anyTime: true }), fx.toHand(ref.stored("rest"))],
-    ),
+    // Approximation : les cartes exilées sont choisies automatiquement (une par type).
+    spell: spell([], [fx.portent, fx.castNow(ref.stored("free"), { free: true }), fx.toHand(ref.stored("rest"))]),
   },
   "Season of Weaving": {
     spell: pawprint(
@@ -448,7 +444,7 @@ export const BLUE: Record<string, CardScript> = {
                 manaValueAmount: amount.countersOn(ref.self, "coin"),
               },
             ],
-            [fx.grantPlay(ref.target(), { free: true, anyTime: true, exileAfter: true })],
+            [fx.castNow(ref.target(), { free: true, exileAfter: true })],
           ),
         ],
         label: "Marqueur de pièce, lance un sort du cimetière",

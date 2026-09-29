@@ -83,11 +83,15 @@ function castDecision(s: GameState, me: PlayerId, a: ActionOption): Decision | n
   return { type: "activate", source: a.source, ability: a.ability, targets, x: a.xMax ?? undefined };
 }
 
-/** Pendant sa phase principale, pile vide : un terrain, puis le sort le plus cher. Sinon, passer. */
+/**
+ * Pendant sa phase principale, pile vide : un terrain, puis le sort le plus cher. « Lancez-la » pendant une
+ * résolution : le sort le plus cher proposé. Sinon, passer.
+ */
 function priority(s: GameState, me: PlayerId): Decision {
   const pass: Decision = { type: "pass" };
+  const castNow = s.pending?.kind === "priority" && !!s.pending.castNow;
   const main = s.turn.active === me && (s.turn.step === "main1" || s.turn.step === "main2") && s.stack.length === 0;
-  if (!main) return pass;
+  if (!main && !castNow) return pass;
   const actions = legalActions(s, me);
   const land = actions.find((a) => a.type === "playLand");
   if (land?.type === "playLand") return { type: "playLand", card: land.card };

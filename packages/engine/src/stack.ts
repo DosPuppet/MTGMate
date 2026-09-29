@@ -1750,6 +1750,16 @@ export function continueResolution(s: GameState): boolean {
       s.flow = "resolving";
       return false;
     }
+    if (result && "castNow" in result) {
+      r.awaiting = result.castNow.key;
+      s.pending = {
+        kind: "priority",
+        player: result.castNow.player,
+        castNow: { cards: result.castNow.cards, prompt: result.castNow.prompt },
+      };
+      s.flow = "resolving";
+      return false;
+    }
     if (result && "skip" in result) r.pc += result.skip;
     r.pc += 1;
   }
@@ -1765,6 +1775,23 @@ export function answerResolutionChoice(s: GameState, values: ChoiceValue[]): boo
   r.vars[r.awaiting] = values;
   r.awaiting = null;
   return continueResolution(s);
+}
+
+/**
+ * Réponse à une priorité « lancer maintenant » (608.2g) : `card` est la carte lancée (déjà mise sur la pile par
+ * l'appelant), ou `null` pour un refus. La résolution reprend.
+ */
+export function answerCastNow(s: GameState, card: ObjectId | null): boolean {
+  const r = s.resolving;
+  if (!r?.awaiting) throw new RulesError("Aucune résolution en attente");
+  r.vars[r.awaiting] = card ? [card] : [];
+  r.awaiting = null;
+  return continueResolution(s);
+}
+
+/** Retire les permissions d'un « lancez-la » pendant une résolution (elles ne valent que pour la réponse). */
+export function dropNowPermissions(s: GameState): void {
+  if (s.playPermissions?.some((p) => p.now)) s.playPermissions = s.playPermissions.filter((p) => !p.now);
 }
 
 function finishResolution(
@@ -1886,11 +1913,11 @@ function resolvedSpellAway(s: GameState, item: StackItem, d: CardDef | undefined
     return;
   }
   // Rebond (702.88) : un sort lancé depuis la main est exilé ; au début de votre prochain entretien, vous pouvez le lancer
-  // depuis l'exil sans payer son coût de mana (approximation : lançable gratuitement pendant ce tour).
+  // depuis l'exil sans payer son coût de mana (pendant la résolution de la capacité retardée, 608.2g).
   if (item.rebound && item.fromHand && !item.flashback && !item.copy) {
     const exiled = moveObject(s, item.sourceId, "exile");
     if (exiled) {
-      const grant: Effect = { op: "grantPlay", what: { kind: "target", id: "rb" }, free: true, anyTime: true };
+      const grant: Effect = { op: "castNow", what: { kind: "target", id: "rb" }, free: true };
       createDelayed(
         s,
         item.controller,

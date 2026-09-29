@@ -6,7 +6,7 @@ import { drawCard } from "./actions";
 import { divisionOf, validateChoice } from "./choices";
 import { checkDecisionShape } from "./decisionShape";
 import { activateManaAbility } from "./mana";
-import { activateAbility, answerResolutionChoice, castSpell, playLand, RulesError } from "./stack";
+import { activateAbility, answerCastNow, answerResolutionChoice, castSpell, playLand, RulesError } from "./stack";
 import {
   cloneState,
   collectEvents,
@@ -229,6 +229,24 @@ function apply(s: GameState, submitter: PlayerId, d: Decision): void {
       return;
     }
     case "priority":
+      if (p.castNow) {
+        // 608.2g : lancer une des cartes proposées (ou passer pour refuser), puis la résolution reprend.
+        expect(d, "pass", "cast", "tapForMana");
+        if (d.type === "tapForMana") {
+          activateManaAbility(s, player, d.source, d.ability, d.color);
+          s.pending = p;
+          return;
+        }
+        let spell: string | null = null;
+        if (d.type === "cast") {
+          if (!p.castNow.cards.includes(d.card)) throw new RulesError("Cette carte ne peut pas être lancée maintenant");
+          castSpell(s, player, d.card, d);
+          // Le sort lancé (nouvel objet sur la pile, 400.7) : les effets suivants peuvent s'y référer.
+          spell = s.stack[s.stack.length - 1]?.sourceId ?? d.card;
+        }
+        if (answerCastNow(s, spell)) afterResolution(s);
+        return;
+      }
       expect(d, "pass", "playLand", "cast", "activate", "tapForMana");
       switch (d.type) {
         case "pass":

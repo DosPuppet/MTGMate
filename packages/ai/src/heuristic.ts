@@ -158,7 +158,9 @@ export function priorityOptions(
   pr: Profile,
 ): { baseline: number; options: ScoredOption[]; forced?: Decision } | null {
   const top = s.stack[s.stack.length - 1];
-  if (top?.controller === me) return null;
+  // « Lancez-la » pendant une résolution (608.2g) : une offre à évaluer, à tous les niveaux, même sur son propre sort.
+  const castNow = s.pending?.kind === "priority" && !!s.pending.castNow;
+  if (top?.controller === me && !castNow) return null;
 
   const myTurn = s.turn.active === me;
   const step = s.turn.step;
@@ -167,7 +169,7 @@ export function priorityOptions(
   const response = !!top;
   const opponentEnd = !myTurn && step === "end" && !top;
   // Débutant : ni réponse, ni tour de combat, ni jeu à la fin du tour adverse.
-  if (!mainPhase && (!pr.responds || (!combatWindow && !response && !opponentEnd))) return null;
+  if (!castNow && !mainPhase && (!pr.responds || (!combatWindow && !response && !opponentEnd))) return null;
 
   const actions = legalActions(s, me).filter((a) => a.type === "cast" || a.type === "activate" || a.type === "playLand");
   if (actions.length === 0) return null;

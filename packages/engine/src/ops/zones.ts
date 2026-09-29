@@ -1054,12 +1054,10 @@ export const HANDLERS: OpHandlers = {
     emit({ type: "reveal", player: ctx.controller, defIds: revealed.map((id) => s.objects[id]?.defId ?? "") });
     const exiled = picked.map((id) => moveWithSpec(s, ctx.controller, id, { to: "exile" })).filter((x): x is string => !!x);
     for (const id of revealed) if (!picked.includes(id) && s.objects[id]) moveAndLog(s, id, "graveyard");
-    // Quatre cartes ou plus : le sort non-terrain de plus grande valeur de mana peut être lancé gratuitement.
-    const mv = (id: string) => manaValue(s.defs[s.objects[id]?.defId ?? ""]?.manaCost);
-    const free =
-      exiled.length >= 4 ? exiled.filter((id) => !typesOf(id).includes("Land")).sort((a, b) => mv(b) - mv(a))[0] : undefined;
-    r.vars["$ids:free"] = free ? [free] : [];
-    r.vars["$ids:rest"] = exiled.filter((id) => id !== free);
+    // Quatre cartes ou plus : un sort parmi elles peut être lancé gratuitement (au choix, pendant la résolution) ;
+    // le reste va ensuite en main.
+    r.vars["$ids:free"] = exiled.length >= 4 ? exiled.filter((id) => !typesOf(id).includes("Land")) : [];
+    r.vars["$ids:rest"] = exiled;
     return;
   },
   exileTop(s, r, e, ctx) {

@@ -15,6 +15,7 @@ import type {
   ActionOption,
   CardDef,
   CardType,
+  CastNowRequest,
   ChoicePurpose,
   ChoiceRequest,
   Color,
@@ -117,7 +118,8 @@ export interface PlayerView {
 export type PendingView =
   | { kind: "mulligan"; player: PlayerId; mulligans: number }
   | { kind: "bottomCards"; player: PlayerId; count: number }
-  | { kind: "priority"; player: PlayerId; actions?: ActionOption[] }
+  /** `castNow` : lancer une carte pendant une résolution (608.2g), seulement pour le joueur qui décide. */
+  | { kind: "priority"; player: PlayerId; actions?: ActionOption[]; castNow?: CastNowRequest }
   /** `defenders` : adversaires et planeswalkers adverses attaquables. */
   | { kind: "declareAttackers"; player: PlayerId; candidates?: ObjectId[]; defenders?: string[] }
   | { kind: "declareBlockers"; player: PlayerId; candidates?: { blocker: ObjectId; attackers: ObjectId[] }[] }
@@ -342,7 +344,7 @@ export function projectView(s: GameState, viewer: PlayerId): GameView {
     const mine = p.player === viewer;
     switch (p.kind) {
       case "priority":
-        pending = mine ? { ...p, actions: legalActions(s, who) } : { ...p };
+        pending = mine ? { ...p, actions: legalActions(s, who) } : { kind: "priority", player: p.player };
         break;
       case "declareAttackers":
         pending = mine ? { ...p, candidates: attackCandidates(s, who), defenders: attackableDefenders(s, who) } : { ...p };

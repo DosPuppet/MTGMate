@@ -493,7 +493,27 @@ export const fx = {
     what,
     ...opts,
   }),
-  castCopiesFree: (what: Ref[], maxTotalManaValue: number): Effect => ({ op: "castCopiesFree", what, maxTotalManaValue }),
+  /**
+   * « Vous pouvez lancer [ces cartes] » pendant la résolution (608.2g) : `free` sans payer leur coût de mana, `many`
+   * autant qu'on veut, `exileAfter` exilé au lieu d'aller au cimetière ; `storeCast` / `storeRest` pour la suite.
+   */
+  castNow: (
+    what: Ref,
+    opts: {
+      free?: boolean;
+      many?: boolean;
+      exileAfter?: boolean;
+      anyMana?: boolean;
+      storeCast?: string;
+      storeRest?: string;
+    } = {},
+  ): Effect => ({ op: "castNow", what, ...opts }),
+  castCopiesFree: (what: Ref[], maxTotalManaValue: number, opts: { paid?: boolean; storeCast?: string } = {}): Effect => ({
+    op: "castCopiesFree",
+    what,
+    maxTotalManaValue,
+    ...opts,
+  }),
   noLegendRuleThisTurn: { op: "noLegendRuleThisTurn" } as Effect,
   exileUntil: (filter: ObjectFilter, store: string): Effect => ({ op: "exileUntil", filter, store }),
   setLife: (amount: Amount, who: Ref = ref.you): Effect => ({ op: "setLife", who, amount }),

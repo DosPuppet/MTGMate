@@ -158,8 +158,7 @@ export const LEGENDS4: Record<string, CardScript> = {
         }),
         [
           fx.exileTop(ref.eventPlayer, 1, "v"),
-          // Approximation : on décide tout de suite ; la carte se lance ensuite, à tout moment ce tour-ci.
-          ...fx.mayForStore(ref.you, "Lancer la carte exilée ?", "cast", fx.grantPlay(ref.stored("v"), { anyTime: true })),
+          fx.castNow(ref.stored("v"), { storeCast: "cast" }),
           fx.when(cond.not(cond.v("cast")), fx.createTokens(TREASURE)),
         ],
         { label: "Exilez sa carte du dessus ; lancez-la ou Trésor" },
@@ -209,15 +208,7 @@ export const LEGENDS4: Record<string, CardScript> = {
       staticAbility("attached", { power: 3, toughness: 2 }, { label: "+3/+2" }),
       triggered(
         when.attachedDealsCombatDamageToPlayer,
-        [
-          fx.draw(1),
-          // Approximation : le sort se lance après la résolution (gratuitement, une seule carte, ce tour-ci).
-          fx.grantPlay(ref.handOf(ref.you, { notTypes: ["Land"] }, amount.eventAmount), {
-            free: true,
-            anyTime: true,
-            oneOf: true,
-          }),
-        ],
+        [fx.draw(1), fx.castNow(ref.handOf(ref.you, { notTypes: ["Land"] }, amount.eventAmount), { free: true })],
         { label: "Piochez, lancez gratuitement un sort de VM ≤ blessures" },
       ),
     ],

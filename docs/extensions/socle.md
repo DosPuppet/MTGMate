@@ -87,3 +87,11 @@ Lot 0.10 (performances, pool complet de 5 174 cartes) :
 - deckbuilder :
   - rendu progressif de la collection (pages de 120 cartes, suivantes à l'approche du bas de la grille) : toutes les cartes s'affichent en 164 ms au lieu de 2 084 ms ;
   - filtres différés (`useDeferredValue`) : une recherche prend 167 ms au lieu de 474 ms, sans bloquer la saisie.
+
+Lot 0.11 (lancer pendant la résolution, 608.2g ; P0 de l'audit) :
+- une résolution peut se suspendre sur une **priorité restreinte** : `PendingDecision` `priority` avec `castNow: { cards, prompt }`. Le joueur lance l'une des cartes proposées (décision `cast` ordinaire : cibles, modes, X, coûts additionnels, `tapForMana` permis) ou passe pour refuser ; la résolution reprend ensuite (`answerCastNow`, `stack.ts`). Le sort lancé va sur la pile au-dessus de l'objet qui se résout, et se résout après lui ;
+- effet `fx.castNow(ref, { free, many, exileAfter, anyMana, storeCast, storeRest })` (`ops/spells.ts`, boucle commune `castNowLoop`) : permission temporaire `now` (retirée dès la réponse), seules les cartes réellement lançables sont proposées ; `storeCast` compte les sorts lancés (« si vous ne le faites pas… ») ;
+- `castCopiesFree` (Uldaros, Roving Actuator, Kaervek avec `paid`) lance les copies pendant la résolution ; les copies non lancées cessent d'exister (707.12) ;
+- `legalActions` ne propose que ces cartes ; l'automatisme ne passe jamais à la place du joueur ; l'IA évalue l'offre (`priorityOptions`, politique rapide) ; l'interface affiche la question dans le bandeau, la carte brille au bout de la main (exil) ou dans la fenêtre du cimetière, et le bouton principal devient « Ne pas lancer » ;
+- cartes migrées : Découverte (LCI), rebond (Ojer Pakpatiq), Malcolm, Etali, Chandra, Torch of Defiance, Uldaros Theorix, Roving Actuator, Kaervek, Tinybones, the Pickpocket, The Key to the Vault, Quistis Trepe, Seifer Almasy, Vaan, Buster Sword, Daring Waverider, Wishing Well, The Infamous Cruelclaw, Portent of Calamity (le sort lancé est désormais choisi) ;
+- tests : `engine/test/lci.test.ts` (Découverte, rebond), `fra-lotf.test.ts` (Chandra, Uldaros), `fdn-lotf.test.ts` (Etali), `blb.test.ts` (Wishing Well), `ai/test/ai.test.ts` (l'IA lance la carte découverte).

@@ -564,7 +564,11 @@ export function addPump(s: GameState, affected: ObjectId[], power: number, tough
 }
 
 /** Résultat d'un effet : terminé, question au joueur (la résolution est suspendue), ou saut d'effets. */
-export type OpResult = undefined | { ask: { player: PlayerId; request: ChoiceRequest; key: string } } | { skip: number };
+export type OpResult =
+  | undefined
+  | { ask: { player: PlayerId; request: ChoiceRequest; key: string } }
+  | { castNow: { player: PlayerId; cards: ObjectId[]; prompt: string; key: string } }
+  | { skip: number };
 
 export function contextOf(r: Resolution): EffectContext {
   return {
@@ -735,6 +739,7 @@ export function grantPlay(
     exileAfter?: boolean;
     group?: string;
     orHand?: boolean;
+    now?: boolean;
   },
 ): void {
   const last = until === "forever" ? Number.MAX_SAFE_INTEGER : until === "thisTurn" ? s.turn.number : nextTurnOf(s, player);

@@ -192,7 +192,7 @@ export const UNIQUE: Record<string, CardScript> = {
             rest: "bottom",
             store: "k",
           }),
-          fx.grantPlay(ref.stored("k"), { free: true, anyTime: true }),
+          fx.castNow(ref.stored("k"), { free: true }),
         ],
         { label: "Exilez une carte non-terrain, lancez-la gratuitement" },
       ),
@@ -271,10 +271,13 @@ export const UNIQUE: Record<string, CardScript> = {
   },
   "Kaervek, the Punisher": {
     abilities: [
-      // Approximation : la copie se lance ensuite ce tour-ci, et les 2 PV sont perdus dans tous les cas.
       triggered(
         when.crime,
-        [fx.exileCard(ref.target(), { name: "k" }), fx.castCopiesFree([ref.stored("k")], 99), fx.loseLife(2)],
+        [
+          fx.exileCard(ref.target(), { name: "k" }),
+          fx.castCopiesFree([ref.stored("k")], 99, { paid: true, storeCast: "kc" }),
+          fx.when(cond.v("kc"), fx.loseLife(2)),
+        ],
         {
           targets: [target.upTo(1, target.cardInGraveyard("t", { colors: ["B"] }, "you", "carte noire"))],
           label: "Copiez une carte noire de votre cimetière",
@@ -293,8 +296,7 @@ export const UNIQUE: Record<string, CardScript> = {
   },
   "Tinybones, the Pickpocket": {
     abilities: [
-      // Approximation : la carte est lançable ce tour-ci (et non pendant la résolution).
-      triggered(when.combatDamage("self", true), [fx.grantPlay(ref.target(), { anyMana: true })], {
+      triggered(when.combatDamage("self", true), [fx.castNow(ref.target(), { anyMana: true })], {
         targets: [target.cardInGraveyard("t", { permanent: true, nonland: true }, "opponent", "carte de permanent non-terrain")],
         label: "Lancez une carte de son cimetière",
       }),

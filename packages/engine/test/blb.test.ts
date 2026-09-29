@@ -7,7 +7,7 @@ import { RulesError } from "../src/errors";
 import { legalActions } from "../src/legal";
 import { chars } from "../src/state";
 import type { GameState } from "../src/types";
-import { act, advanceUntil, idOf, idsOf, passAccepting, scenario } from "./helpers";
+import { act, advanceUntil, castNowOf, idOf, idsOf, passAccepting, scenario, untilCastNow } from "./helpers";
 
 type S = GameState;
 const lands = (name: string, n: number) => Array(n).fill(name) as string[];
@@ -392,15 +392,19 @@ describe("Bloomburrow", () => {
     expect(s.players.p2?.life).toBe(18);
   });
 
-  it("Wishing Well : lance gratuitement un sort de VM égale aux marqueurs de pièce", () => {
+  it("Wishing Well : lance gratuitement, pendant la résolution, un sort de VM égale aux marqueurs de pièce", () => {
     let s = scenario({ p1: { battlefield: ["Wishing Well"], graveyard: ["Opt", "Stab"], library: ["Forest", "Forest"] } });
     const well = idOf(s, "p1", "battlefield", "Wishing Well");
     const act0 = legalActions(s, "p1").find((a) => a.type === "activate" && a.source === well);
-    s = settle(act(s, "p1", { type: "activate", source: well, ability: act0?.type === "activate" ? act0.ability : -1 }));
+    s = untilCastNow(act(s, "p1", { type: "activate", source: well, ability: act0?.type === "activate" ? act0.ability : -1 }));
     expect(s.objects[well]?.counters.coin).toBe(1);
     const opt = idOf(s, "p1", "graveyard", "Opt");
-    // Opt (VM 1) est jouable gratuitement ; Stab (VM 1 aussi) n'a pas été ciblée.
-    expect(legalActions(s, "p1").some((a) => a.type === "cast" && a.card === opt)).toBe(true);
+    // Opt (VM 1), ciblée par la capacité réflexive, est la seule carte proposée.
+    expect(castNowOf(s)?.cards).toEqual([opt]);
+    s = settle(act(s, "p1", { type: "cast", card: opt }));
+    // Opt s'est résolue (pioche) puis a été exilée au lieu d'aller au cimetière.
+    expect(s.players.p1?.hand).toHaveLength(1);
+    expect(s.exile.some((id) => s.defs[s.objects[id]?.defId ?? ""]?.name === "Opt")).toBe(true);
   });
 
   it("Alania : copie le premier éphémère du tour (un adversaire pioche)", () => {

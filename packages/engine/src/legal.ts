@@ -321,6 +321,10 @@ export function legalActions(s: GameState, player: PlayerId): ActionOption[] {
   }
   // 702.61 : second partagé — ni sorts ni capacités (hors mana) tant que le sort est sur la pile.
   if (splitSecondOnStack(s)) return out.filter((a) => a.type === "pass" || a.type === "tapForMana");
+  // 608.2g : pendant une résolution, seulement les cartes proposées (ou passer pour refuser).
+  const now = p.castNow;
+  if (now)
+    return out.filter((a) => a.type === "pass" || a.type === "tapForMana" || (a.type === "cast" && now.cards.includes(a.card)));
   return out;
 }
 

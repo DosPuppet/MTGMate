@@ -583,6 +583,8 @@ export interface GameState {
     group?: string;
     /** Découverte : si la carte n'a pas été lancée quand la permission expire, elle va dans la main. */
     orHand?: boolean;
+    /** Permission d'un « lancez-la » pendant une résolution (608.2g) : retirée dès la réponse du joueur. */
+    now?: boolean;
   }[];
   /** Contrôle donné par une Aura (Confiscate) : contrôleur d'origine à rétablir quand l'Aura part. */
   /** `by` : contrôle tant que ce joueur contrôle la source (Possession Engine), et non tant que l'Aura est attachée. */

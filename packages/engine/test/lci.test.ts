@@ -112,9 +112,10 @@ describe("The Lost Caverns of Ixalan", () => {
       s = act(s, "p1", { type: "cast", card: idOf(s, "p1", "hand", "Walk with the Ancestors"), targets: { t: [] } });
       for (let i = 0; i < 50 && s.stack.length + (s.pending?.kind === "choice" ? 1 : 0) > 0; i++) {
         const p = s.pending;
-        if (p?.kind === "choice" && p.request.intent === "discover")
-          s = act(s, p.player, { type: "choose", values: [castIt ? 1 : 0] });
-        else if (p?.kind === "choice") s = act(s, p.player, { type: "choose", values: p.request.suggested });
+        if (p?.kind === "priority" && p.castNow) {
+          const card = p.castNow.cards[0] as string;
+          s = act(s, p.player, castIt ? { type: "cast", card } : { type: "pass" });
+        } else if (p?.kind === "choice") s = act(s, p.player, { type: "choose", values: p.request.suggested });
         else if (p?.kind === "priority") s = act(s, p.player, { type: "pass" });
       }
       return s;
@@ -129,14 +130,32 @@ describe("The Lost Caverns of Ixalan", () => {
       expect([...lib.slice(2)].sort()).toEqual(["Forest", "Island", "Shivan Dragon"]);
     });
 
-    it("la carte découverte se lance sans payer son coût de mana", () => {
-      let s = discover(true);
-      const elves = s.exile.find((id) => names(s, [id])[0] === "Llanowar Elves") as string;
-      expect(elves).toBeDefined();
-      const opt = legalActions(s, "p1").find((a) => a.type === "cast" && a.card === elves);
-      expect(opt).toBeDefined();
-      s = settle(act(s, "p1", { type: "cast", card: elves }));
+    it("la carte découverte se lance pendant la résolution, sans payer son coût de mana (608.2g)", () => {
+      let s = scenario({
+        p1: { battlefield: lands("Forest", 5), hand: ["Walk with the Ancestors"], library: LIBRARY },
+      });
+      s = act(s, "p1", { type: "cast", card: idOf(s, "p1", "hand", "Walk with the Ancestors"), targets: { t: [] } });
+      s = act(s, "p1", { type: "pass" });
+      s = act(s, "p2", { type: "pass" });
+      const p = s.pending;
+      if (p?.kind !== "priority" || !p.castNow) throw new Error("lancer maintenant attendu");
+      const elves = p.castNow.cards[0] as string;
+      expect(names(s, [elves])).toEqual(["Llanowar Elves"]);
+      // Seule la carte découverte peut être lancée ; rien d'autre (terrain, capacités).
+      expect(
+        legalActions(s, "p1")
+          .map((a) => a.type)
+          .sort(),
+      ).toEqual(["cast", "pass"]);
+      s = act(s, "p1", { type: "cast", card: elves });
+      // Walk with the Ancestors a fini de se résoudre ; les Elfes sont sur la pile, sans mana dépensé.
+      expect(s.stack.map((x) => s.defs[x.sourceDefId]?.name)).toEqual(["Llanowar Elves"]);
+      expect(s.players.p1?.graveyard.map((id) => names(s, [id])[0])).toContain("Walk with the Ancestors");
+      expect(s.battlefield.filter((id) => s.objects[id]?.tapped)).toHaveLength(5);
+      s = settle(s);
       expect(idsOf(s, "p1", "battlefield", "Llanowar Elves")).toHaveLength(1);
+      // Aucune permission ne subsiste.
+      expect(s.playPermissions ?? []).toHaveLength(0);
     });
 
     it("Curator of Sun's Creation : découvrez de nouveau, une fois par tour", () => {
@@ -308,7 +327,7 @@ describe("The Lost Caverns of Ixalan", () => {
       expect([chars(s, souls).power, chars(s, souls).toughness]).toEqual([2, 3]);
     });
 
-    it("Ojer Pakpatiq : un éphémère lancé depuis la main gagne le rebond", () => {
+    it("Ojer Pakpatiq : un éphémère lancé depuis la main gagne le rebond (relancé pendant votre prochain entretien)", () => {
       let s = scenario({
         p1: {
           battlefield: [...lands("Island", 1), "Ojer Pakpatiq, Deepest Epoch // Temple of Cyclical Time"],
@@ -320,6 +339,17 @@ describe("The Lost Caverns of Ixalan", () => {
       const opt = s.exile.find((id) => s.defs[s.objects[id]?.defId ?? ""]?.name === "Opt");
       expect(opt).toBeDefined();
       expect(s.delayed.some((d) => d.at === "yourNextUpkeep")).toBe(true);
+      // Pas lançable avant le prochain entretien.
+      expect(legalActions(s, "p1").some((a) => a.type === "cast" && a.card === opt)).toBe(false);
+      s = advanceUntil(s, (x) => x.pending?.kind === "priority" && !!x.pending.castNow);
+      expect(s.turn.step).toBe("upkeep");
+      expect(s.turn.active).toBe("p1");
+      const p = s.pending;
+      expect(p?.kind === "priority" && p.castNow?.cards).toEqual([opt]);
+      s = act(s, "p1", { type: "cast", card: opt as string });
+      // Relancé depuis l'exil (et non depuis la main) : il va au cimetière en se résolvant.
+      s = passAccepting(s, (x) => x.stack.length === 0 && x.pending?.kind === "priority");
+      expect(s.players.p1?.graveyard.some((id) => s.defs[s.objects[id]?.defId ?? ""]?.name === "Opt")).toBe(true);
     });
 
     it("Kutzil : les adversaires ne peuvent pas lancer de sorts pendant votre tour", () => {

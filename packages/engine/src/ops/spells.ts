@@ -1,6 +1,6 @@
 /** Effets du moteur : pile et permissions de lancer (contresorts, copies, lancer depuis une autre zone). Chaque clé est un `op` d'`Effect` (voir `runEffect`, effects.ts). */
 import { loseLife, sacrifice } from "../actions";
-import type { OpHandlers } from "../effects";
+import type { OpHandlers, OpResult } from "../effects";
 import {
   announceDiscard,
   announceDiscardBatch,
@@ -13,7 +13,7 @@ import {
 } from "../effects";
 import { bump } from "../layers";
 import { availableMana, canPay, costToText, manaValue, payMana } from "../mana";
-import { copySpellItem, counterItem, plotCard, stackItemSpecs } from "../stack";
+import { castTerms, copySpellItem, counterItem, dropNowPermissions, plotCard, stackItemSpecs } from "../stack";
 import {
   apnapOrder,
   chars,
@@ -23,12 +23,13 @@ import {
   moveObject,
   newId,
   nextTimestamp,
+  removeFromGame,
   rulesEvent,
   setPrepared,
   shuffle,
 } from "../state";
 import { legalTargets, matchesObjectFilter } from "../targets";
-import type { ObjectId } from "../types";
+import type { ChoiceValue, GameState, ObjectId, PlayerId, Resolution } from "../types";
 
 export const HANDLERS: OpHandlers = {
   discover(s, r, e, ctx, key) {
@@ -55,30 +56,53 @@ export const HANDLERS: OpHandlers = {
       rulesEvent(s, { e: "discover", player: p, n });
     }
     const hit = r.vars[key("hit")]?.[0] as ObjectId | undefined;
-    if (!hit || s.objects[hit]?.zone !== "exile") return;
-    if (e.store) {
-      r.vars[`$ids:${e.store}`] = [hit];
+    const storeHit = (id: ObjectId) => {
+      if (!e.store) return;
+      r.vars[`$ids:${e.store}`] = [id];
       store(r, e.store, 1);
-    }
+    };
     const answer = r.vars[key("cast")];
-    if (!answer) {
-      return {
-        ask: {
-          player: p,
-          key: key("cast"),
-          request: {
-            type: "yesNo",
-            intent: "discover",
-            prompt: `Découverte : lancer ${nameOf(s, hit)} sans payer son coût de mana ? (Sinon, elle va dans votre main.)`,
-            suggested: [1],
-          },
-        },
-      };
+    // Carte lancée : le sort sur la pile (Hit the Mother Lode lit sa valeur de mana).
+    if (answer?.length) {
+      dropNowPermissions(s);
+      storeHit(String(answer[0]));
+      return;
     }
-    // Approximation (comme les autres « lancez-la sans payer ») : lançable gratuitement, à tout moment, jusqu'à la fin
-    // du tour ; si elle n'a pas été lancée, elle va en main au début du tour suivant.
-    if (answer[0] === 1) grantPlay(s, p, [hit], "thisTurn", { free: true, anyTime: true, source: ctx.sourceId, orHand: true });
-    else moveObject(s, hit, "hand");
+    if (!hit || s.objects[hit]?.zone !== "exile") {
+      dropNowPermissions(s);
+      return;
+    }
+    // 701.57a : « vous pouvez la lancer sans payer son coût de mana ; sinon, mettez-la dans votre main », pendant
+    // la résolution (608.2g).
+    if (!answer) {
+      grantPlay(s, p, [hit], "thisTurn", { free: true, anyTime: true, source: ctx.sourceId, now: true });
+      if (castTerms(s, p, hit)) {
+        return {
+          castNow: {
+            player: p,
+            key: key("cast"),
+            cards: [hit],
+            prompt: `Découverte : lancer ${nameOf(s, hit)} sans payer son coût de mana ? (Sinon, elle va dans votre main.)`,
+          },
+        };
+      }
+    }
+    dropNowPermissions(s);
+    const inHand = moveObject(s, hit, "hand");
+    storeHit(inHand ?? hit);
+    return;
+  },
+  castNow(s, r, e, ctx, key) {
+    const step = castNowLoop(s, r, key, ctx.controller, ctx.sourceId, resolveRef(s, ctx, e.what), e);
+    if (step.ask) return step.ask;
+    if (e.storeCast) {
+      r.vars[`$ids:${e.storeCast}`] = step.cast;
+      store(r, e.storeCast, step.cast.length);
+    }
+    if (e.storeRest) {
+      r.vars[`$ids:${e.storeRest}`] = step.rest;
+      store(r, e.storeRest, step.rest.length);
+    }
     return;
   },
   counterAbilitySilence(s, _r, e, ctx) {
@@ -481,10 +505,11 @@ export const HANDLERS: OpHandlers = {
   },
   castCopiesFree(s, r, e, ctx, key) {
     // Uldaros Theorix : les cartes exilées sont copiées ; le joueur choisit lesquelles lancer (valeur de mana
-    // totale limitée). Approximation : les copies choisies se lancent gratuitement ce tour-ci, à tout moment.
+    // totale limitée), puis les lance pendant la résolution.
     const cards = [...new Set(e.what.flatMap((w) => resolveRef(s, ctx, w)))].filter((id) => !!s.objects[id]);
-    if (cards.length === 0) return;
     const mv = (id: string) => manaValue(s.defs[s.objects[id]?.defId ?? ""]?.manaCost);
+    // Sans limite effective (toutes les cartes tiennent), pas de question : toutes sont copiées.
+    if (!r.vars[key("copies")] && cards.reduce((n, id) => n + mv(id), 0) <= e.maxTotalManaValue) r.vars[key("copies")] = cards;
     const answer = r.vars[key("copies")];
     if (!answer) {
       const suggested: string[] = [];
@@ -510,17 +535,91 @@ export const HANDLERS: OpHandlers = {
         },
       };
     }
-    let total = 0;
-    const copies: string[] = [];
-    for (const id of answer.map(String)) {
-      const o = s.objects[id];
-      if (!o || !cards.includes(id) || total + mv(id) > e.maxTotalManaValue) continue;
-      total += mv(id);
-      const copy = createObject(s, o.defId, ctx.controller, "exile");
-      copy.cardCopy = true;
-      copies.push(copy.id);
+    // Les copies ne sont créées qu'une fois (la résolution reprend après chaque sort lancé).
+    if (!r.vars[key("made")]) {
+      let total = 0;
+      const made: string[] = [];
+      for (const id of answer.map(String)) {
+        const o = s.objects[id];
+        if (!o || !cards.includes(id) || total + mv(id) > e.maxTotalManaValue) continue;
+        total += mv(id);
+        const copy = createObject(s, o.defId, ctx.controller, "exile");
+        copy.cardCopy = true;
+        made.push(copy.id);
+      }
+      r.vars[key("made")] = made;
     }
-    grantPlay(s, ctx.controller, copies, "thisTurn", { free: true, anyTime: true });
+    // 608.2g : les copies se lancent pendant la résolution ; celles qui ne sont pas lancées cessent d'exister (707.12).
+    const copies = (r.vars[key("made")] ?? []).map(String);
+    const step = castNowLoop(s, r, key, ctx.controller, ctx.sourceId, copies, { free: !e.paid, many: true });
+    if (step.ask) return step.ask;
+    for (const id of step.rest) removeFromGame(s, id);
+    store(r, e.storeCast, step.cast.length);
     return;
   },
 };
+
+/**
+ * 608.2g : « vous pouvez lancer [ces cartes] » pendant une résolution. Pose une priorité restreinte à ces cartes
+ * (clés `cast0`, `cast1`… : la carte lancée, ou vide pour un refus) jusqu'à un refus, ou après un sort si `many` est
+ * faux. Renvoie la question à poser, ou, une fois fini, les sorts lancés et les cartes restées dans leur zone.
+ */
+function castNowLoop(
+  s: GameState,
+  r: Resolution,
+  key: (suffix: string) => string,
+  player: PlayerId,
+  source: ObjectId,
+  cards: ObjectId[],
+  opts: { free?: boolean; many?: boolean; exileAfter?: boolean; anyMana?: boolean },
+): { ask?: OpResult; cast: ObjectId[]; rest: ObjectId[] } {
+  const cast: ObjectId[] = [];
+  let declined = false;
+  let i = 0;
+  for (; r.vars[key(`cast${i}`)]; i++) {
+    const answer = r.vars[key(`cast${i}`)] as ChoiceValue[];
+    if (!answer.length) {
+      declined = true;
+      break;
+    }
+    cast.push(String(answer[0]));
+  }
+  // Une carte lancée a changé d'identifiant (400.7) : il ne reste que les cartes encore dans leur zone.
+  const rest = cards.filter((id) => !!s.objects[id] && s.objects[id]?.zone !== "stack");
+  dropNowPermissions(s);
+  if (!declined && (opts.many || cast.length === 0)) {
+    const open = rest.filter((id) => !s.defs[s.objects[id]?.defId ?? ""]?.types.includes("Land"));
+    grantPlay(s, player, open, "thisTurn", {
+      free: opts.free,
+      anyTime: true,
+      anyMana: opts.anyMana,
+      exileAfter: opts.exileAfter,
+      source,
+      now: true,
+    });
+    // Seules les cartes qu'on peut vraiment lancer (cibles, coûts additionnels) sont proposées.
+    const castable = open.filter((id) => castTerms(s, player, id));
+    if (castable.length) {
+      const names = castable.map((id) => nameOf(s, id)).join(", ");
+      const choice = castable.length > 1 ? "un sort parmi" : "";
+      return {
+        ask: {
+          castNow: {
+            player,
+            key: key(`cast${i}`),
+            cards: castable,
+            prompt:
+              `${nameOf(s, source)} : lancer ${choice} ${names}${opts.free ? " sans payer son coût de mana" : ""} ?`.replace(
+                /\s+/g,
+                " ",
+              ),
+          },
+        },
+        cast,
+        rest,
+      };
+    }
+    dropNowPermissions(s);
+  }
+  return { cast, rest };
+}

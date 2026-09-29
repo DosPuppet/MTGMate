@@ -424,9 +424,9 @@ export const UNIQUE: Record<string, CardScript> = {
       loyalty(1, {
         effects: [
           fx.exileTop(ref.you, 1, "c"),
-          // Approximation : un terrain ne peut pas être lancé, d'où les 2 blessures ; sinon, la carte est lançable ce tour-ci.
-          fx.when(cond.refMatches(ref.stored("c"), { types: ["Land"] }), fx.damage(2, ref.eachOpponent)),
-          fx.when(cond.not(cond.refMatches(ref.stored("c"), { types: ["Land"] })), fx.grantPlay(ref.stored("c"))),
+          // Un terrain ne peut pas être lancé : les 2 blessures sont infligées.
+          fx.castNow(ref.stored("c"), { storeCast: "cast" }),
+          fx.when(cond.not(cond.v("cast")), fx.damage(2, ref.eachOpponent)),
         ],
         label: "Exilez la carte du dessus, vous pouvez la lancer",
       }),

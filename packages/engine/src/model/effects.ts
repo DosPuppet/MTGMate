@@ -351,7 +351,11 @@ export type Effect =
   /** « Sacrifiez-le à moins d'engager un permanent dégagé que vous contrôlez » (Command Bridge). */
   | { op: "tapOrSacrifice" }
   /** Copie les cartes désignées et permet d'en lancer gratuitement, pour une valeur de mana totale limitée (Uldaros). */
-  | { op: "castCopiesFree"; what: Ref[]; maxTotalManaValue: number }
+  /**
+   * Copies des cartes désignées, lancées pendant la résolution (valeur de mana totale limitée) ; `paid` : en payant
+   * leur coût (Kaervek) ; `storeCast` : nombre de copies lancées.
+   */
+  | { op: "castCopiesFree"; what: Ref[]; maxTotalManaValue: number; paid?: boolean; storeCast?: string }
   /** « La règle des légendes ne s'applique pas aux permanents que vous contrôlez ce tour-ci. » */
   | { op: "noLegendRuleThisTurn" }
   /** Transforme les permanents recto-verso désignés (712.10 : recto ↔ verso). */
@@ -366,6 +370,21 @@ export type Effect =
    * `who` : le joueur qui découvre (vous par défaut) ; `store` : la carte découverte.
    */
   | { op: "discover"; n: Amount; who?: Ref; store?: string }
+  /**
+   * 608.2g : « vous pouvez lancer [ces cartes] » pendant la résolution. Le joueur lance tout de suite une des cartes
+   * (puis une autre si `many`), ou refuse. `free` : sans payer leur coût de mana ; `exileAfter` : exilé au lieu d'aller
+   * au cimetière. `storeCast` / `storeRest` : cartes lancées / restées dans leur zone, pour les effets suivants.
+   */
+  | {
+      op: "castNow";
+      what: Ref;
+      free?: boolean;
+      many?: boolean;
+      exileAfter?: boolean;
+      anyMana?: boolean;
+      storeCast?: string;
+      storeRest?: string;
+    }
   /** Fabrication : « renvoyez cette carte transformée sous le contrôle de son propriétaire » ; les matériaux lui sont liés. */
   | { op: "craftReturn" }
   /**

@@ -112,4 +112,21 @@ describe("IA heuristique", () => {
     const d = ai(s, "p1");
     expect(d.type).toBe("cast");
   });
+
+  it("« lancez-la » pendant une résolution (Découverte) : l'IA lance la carte gratuite", () => {
+    let s = scenario({
+      p1: {
+        battlefield: ["Forest", "Forest", "Forest", "Forest", "Forest"],
+        hand: ["Walk with the Ancestors"],
+        library: ["Island", "Llanowar Elves", "Plains"],
+      },
+    });
+    s = act(s, "p1", { type: "cast", card: idOf(s, "p1", "hand", "Walk with the Ancestors"), targets: { t: [] } });
+    s = act(s, "p1", { type: "pass" });
+    s = act(s, "p2", { type: "pass" });
+    const p = s.pending;
+    expect(p?.kind === "priority" && p.castNow?.cards.length).toBe(1);
+    const d = heuristicAgent()(s, "p1");
+    expect(d.type).toBe("cast");
+  });
 });

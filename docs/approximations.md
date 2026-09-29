@@ -30,7 +30,6 @@ Dans l'ordre où elles ont été ajoutées, extension par extension.
 
 - **Fishing Pole :** la capacité accordée à la créature équipée est portée par l'Équipement (coût « engager la créature équipée »).
 - **« Au début de l'étape de fin, sacrifiez ce jeton » :** modélisé par une capacité retardée plutôt que par une capacité du jeton.
-- **Etali :** les cartes exilées se lancent gratuitement, sans restriction de timing, après la résolution du déclencheur (et non pendant), jusqu'à la fin du tour.
 - **Thousand-Year Storm :** les copies gardent les cibles du sort d'origine (pas de nouveau choix de cibles).
 - **Coûts retirés automatiquement :**
   - Quilled Greatwurm : les six marqueurs sont retirés d'abord des créatures qui en ont le plus ;
@@ -55,7 +54,6 @@ Dans l'ordre où elles ont été ajoutées, extension par extension.
 - **Something Worth Saving :** les quatre cartes sont regardées puis mises au cimetière, ce qui n'est pas une meule au sens strict (pas de déclencheur de meule).
 - **Solitary Cell, Murmuring Volume :** la carte défaussée l'est à la résolution, et non comme coût d'activation.
 - **Extrapolate the Impossible :** ne fait rien, comme sur Arena en BO1 (pas de cartes « hors du jeu »).
-- **Chandra, Torch of Defiance +1 :** la carte exilée est lançable ce tour-ci (et non immédiatement) ; les 2 blessures ne sont infligées que si c'est un terrain.
 - **Chandra, Chill of Compliance +1 ({U}) :** mana sans restriction (pas de réserve de mana restreint).
 - **Fblthp, Impossibly Lost :** une seule fois par tour (et non une fois par étape de blessures de combat).
 - **Garruk, Veiled Butcher −3 :** pioche si le total de cartes non-terrain défaussées est inférieur à deux (exact à 2 joueurs, approché en multijoueur).
@@ -65,14 +63,12 @@ Dans l'ordre où elles ont été ajoutées, extension par extension.
 - **Gallia, Tragic Host :** la carte exilée du cimetière est choisie automatiquement (la moins chère).
 - **Molten Tide :** le {R} supplémentaire s'ajoute à toute capacité de mana « {T} » d'une Montagne, quelle que soit la couleur produite.
 - **Warrior's Blades :** la légalité de l'Équiper suppose la meilleure réduction possible ; le coût payé dépend de la cible choisie.
-- **Uldaros Theorix :** les copies choisies (valeur de mana totale 6 ou moins) se lancent gratuitement après la résolution du déclencheur, à tout moment ce tour-ci, et non pendant la résolution (comme Etali).
 - **Emrakul, the Exigent Doom :** la capacité accordée au terrain cesse dès que la carte quitte l'exil, de quelque façon que ce soit (et pas seulement quand elle est lancée).
 - **Evendo, Uthros (Planètes 12+) :** leurs capacités de mana à coût ({G}, {T}) passent par la pile (comme Ramos).
 - **Terrains choc mis en jeu par un effet** (et non joués) : ils arrivent engagés, sans proposer de payer 2 points de vie.
 - **Gene Pollinator :** le permanent engagé en plus est choisi automatiquement (d'abord un permanent sans capacité de mana).
 - **Emissary Escort :** le bonus « +X/+0 » est une force de base variable (un effet qui fixe la force l'écrase).
 - **Terrasymbiosis :** se déclenche au plus une fois par tour (même si l'on refuse de piocher), pour tout marqueur +1/+1 mis sur vos créatures, qu'importe qui le met.
-- **Roving Actuator :** la copie se lance après la résolution, à tout moment ce tour-ci (comme Uldaros Theorix).
 - **Syr Vondam, Sunstar Exemplar :** « tant que sa force est de 4 ou plus » est lu dans ses dernières informations connues.
 - **The Endstone :** « la moitié de vos points de vie de départ » vaut 10 (Standard, 20 PV).
 - **The Dominion Bracelet :** la capacité accordée à la créature équipée est portée par l'Équipement (comme Fishing Pole). Une IA qui contrôle le tour d'un autre joueur se contente des décisions par défaut (passer, ne pas attaquer).
@@ -102,7 +98,7 @@ Dans l'ordre où elles ont été ajoutées, extension par extension.
 - **Marqueurs de capacité :** ils s'appliquent après les autres effets de couche 6.
 - **Fortune, Calamity, The Gitrog :** toutes les créatures qui ont monté la Monture sont concernées (et non une au plus, au choix).
 - **Fblthp, Lost on the Range :** comploter la carte du dessus passe par une capacité (sur la pile) qui paie son coût de mana.
-- **Kaervek, Tinybones the Pickpocket, Kellan the Kid :** la carte se lance plus tard dans le tour (et non pendant la résolution) ; Kaervek fait perdre 2 PV même si la copie n'est pas lancée ; Kellan met le permanent sur le champ de bataille au lieu de le lancer.
+- **Kellan, the Kid :** le permanent est mis sur le champ de bataille au lieu d'être lancé.
 - **Obeka :** les étapes d'entretien supplémentaires ne font que déclencher les capacités « au début de votre entretien ».
 - **Riku of Many Paths :** un seul mode, quel que soit le nombre de modes du sort. **Resilient Roadrunner :** pas de protection contre les Coyotes.
 - **Great Train Heist :** le combat supplémentaire a lieu après le combat normal ; les Trésors viennent des blessures infligées à n'importe quel adversaire.
@@ -113,7 +109,6 @@ Dans l'ordre où elles ont été ajoutées, extension par extension.
 - **Freya Crescent :** son mana sert à toute capacité d'un Équipement, pas seulement à Équiper.
 - **Sorceress's Schemes :** seulement une carte d'éphémère ou de rituel du cimetière (pas une carte exilée avec flashback).
 - **Vayne's Treachery, Chocobo Kick :** le permanent du kicker est choisi automatiquement (le moins cher, jeton d'abord).
-- **Quistis Trepe, Seifer Almasy :** le sort se lance après la résolution, à tout moment ce tour-ci (comme Etali).
 - **The Lunar Whale :** « regarder la carte du dessus à tout moment » n'est pas affiché.
 - **Tellah, Great Sage :** trois déclenchements séparés (Héros, pioche, sacrifice). **Ultimecia, Sidequest: Raise a Chocobo :** l'effet « quand elle se transforme » est fait par l'effet qui la transforme.
 - **Quina, Qu Gourmet :** pas de Grenouille pour les jetons copies.
@@ -125,7 +120,6 @@ Dans l'ordre où elles ont été ajoutées, extension par extension.
 - **Sin, Spira's Punishment :** six copies au plus par déclenchement.
 - **Zack Fair :** tous les Équipements qui lui étaient attachés sont déplacés (et non un seul).
 - **Stolen Uniform, Unexpected Request :** l'Équipement est détaché à l'étape de fin ; pour Unexpected Request, il est ciblé au lancement.
-- **Vaan, Buster Sword :** on décide tout de suite, et la carte se lance ensuite, à tout moment ce tour-ci. Avec Buster Sword, la carte choisie est gratuite (et non « peut être » gratuite).
 - **Ultima, Origin of Oblivion :** l'effet sur les terrains avec un marqueur de fléau cesse si Ultima quitte le champ de bataille.
 - **Zenos, Shinryu :** la créature choisie est une cible ; l'adversaire choisi est le premier qui perd la partie.
 - **Traveling Chocobo, The Lunar Whale :** la carte du dessus n'est pas montée à leur contrôleur.
@@ -158,8 +152,8 @@ Dans l'ordre où elles ont été ajoutées, extension par extension.
 - **Bloomburrow (BLB) :**
   - Cadeau : il va à l'adversaire suivant dans l'ordre du tour (pas de choix de l'adversaire en multijoueur) ;
   - Fourrager : choix automatique, trois cartes du cimetière (terrains d'abord) s'il y en a au moins trois, sinon une Nourriture (un jeton de préférence) ;
-  - « vous pouvez lancer [cette carte] sans payer son coût de mana » (Daring Waverider, Wishing Well, The Infamous Cruelclaw, Portent of Calamity) : la carte est lançable gratuitement jusqu'à la fin du tour, après la résolution ; The Infamous Cruelclaw fait défausser d'abord ;
-  - Portent of Calamity : les cartes exilées sont choisies automatiquement (une par type) ; avec quatre cartes ou plus, le sort non-terrain de plus grande valeur de mana reste lançable en exil, les autres vont en main ;
+  - The Infamous Cruelclaw : la carte est défaussée avant de lancer le sort (et non comme coût de remplacement pendant le lancement) ;
+  - Portent of Calamity : les cartes exilées sont choisies automatiquement (une par type) ;
   - choix non ciblés modélisés par une cible : Season of Weaving et Season of Gathering (« une créature que vous contrôlez »), Wick (« un Escargot que vous contrôlez »), Mistbreath Elder (la créature renvoyée est choisie au déclenchement) ;
   - Jackdaw Savior : la carte de valeur de mana inférieure est choisie à la résolution, sans cibler ; Clement : la créature ciblée n'est renvoyée que si sa valeur de mana est inférieure ;
   - Pawpatch Recruit : le marqueur peut aller sur la créature ciblée par l'adversaire ;
@@ -173,7 +167,6 @@ Dans l'ordre où elles ont été ajoutées, extension par extension.
   - Kastral (premier mode) : un Oiseau de votre main, sinon de votre cimetière ;
   - Thought-Stalker Warlock : « si il a perdu des points de vie ce tour-ci » est vérifié pour l'adversaire ciblé.
 - **The Lost Caverns of Ixalan (LCI) :**
-  - Découverte : comme les autres « lancez-la sans payer son coût de mana », la carte est lançable gratuitement, à tout moment, jusqu'à la fin du tour, après la résolution ; si elle n'a pas été lancée, elle va dans la main de son propriétaire au début du tour suivant ;
   - mana des Cavernes (Bat Colony) et « en utilisant du mana produit par [source] » (Tecutlan, The Myriad Pools) : seulement le mana engagé par le paiement automatique ;
   - coûts « engagez N artefacts et/ou créatures dégagés » (Adaptive Gemguard, Warden of the Inner Sky, Goldfury Strider, Sunshot Militia) : la source elle-même n'en fait pas partie ;
   - Warden of the Inner Sky : seuls les marqueurs +1/+1 comptent (« trois marqueurs ou plus ») ;
@@ -188,7 +181,6 @@ Dans l'ordre où elles ont été ajoutées, extension par extension.
   - Zoyowa's Justice : le propriétaire découvre après avoir mélangé la carte ; The Myriad Pools : le permanent devient une copie du sort sur la pile ;
   - Fabrication : les matériaux sont choisis automatiquement (voir `docs/extensions/lci.md`, lot C) ; Sunbird Effigy : sa capacité de mana est une capacité activée (pile) ;
   - Braided Net : les capacités activées du permanent engagé sont bloquées jusqu'à la fin du tour (et non tant qu'il reste engagé) ; Iceberg Titan : engager ou dégager est un mode choisi au déclenchement ;
-  - rebond (Ojer Pakpatiq) : le sort est lançable gratuitement pendant votre prochain entretien et le reste de ce tour ;
   - Thousand Moons Infantry : se dégage au début de l'entretien de chaque adversaire (et non pendant son étape de dégagement) ; The Millennium Calendar : ses marqueurs de temps sont posés au début de votre entretien ;
   - Thousand Moons Smithy : on choisit librement les permanents engagés (elle ne se transforme qu'avec cinq) ; Tarrian's Journal : la main est défaussée à la résolution ;
   - Unstable Glyphbridge : le choix des créatures épargnées se fait à la résolution ; Sandswirl Wanderglyph : « pendant son tour » est vérifié comme « pendant le tour d'un adversaire » ;
@@ -198,6 +190,6 @@ Dans l'ordre où elles ont été ajoutées, extension par extension.
   - Contested Game Ball : se déclenche aux blessures de combat d'une créature adverse à un joueur quelconque ;
   - Echoing Deeps : devient une copie du terrain (et s'engage) par une capacité déclenchée d'arrivée, et non en arrivant ; Cavern of Souls, Roaming Throne, Sunken Citadel : sans résolution (terrain joué), le choix en arrivant est celui par défaut ;
   - Temple of the Dead : « un joueur a une carte ou moins en main » est vérifié pour vous et vos adversaires ; Kutzil's Flanker : compte les créatures qui ont quitté le champ de bataille sous votre contrôle, sans distinguer les jetons ;
-  - Deep-Cavern Bat : la main adverse est montrée dans la fenêtre de choix ; Malcolm : la carte défaussée est lançable gratuitement jusqu'à la fin du tour.
+  - Deep-Cavern Bat : la main adverse est montrée dans la fenêtre de choix .
 - **Légalité Standard :** instantané des légalités Scryfall au moment de l'import (`legalities.standard` dans `data/<set>.json`). Après une rotation ou une annonce de bannissement, réimporter les sets (`npm run import-cards -- <set>`).
 - **Jetons :** pas d'image (cadre texte).

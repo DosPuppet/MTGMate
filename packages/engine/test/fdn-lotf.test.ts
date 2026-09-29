@@ -8,7 +8,7 @@ import { legalActions } from "../src/legal";
 import { canPay, manaAbilitiesOf } from "../src/mana";
 import { chars, onBattlefield } from "../src/state";
 import type { ActionOption, GameState } from "../src/types";
-import { act, idOf, idsOf, passAccepting, passBoth, scenario } from "./helpers";
+import { act, castNowOf, idOf, idsOf, passAccepting, passBoth, scenario, untilCastNow } from "./helpers";
 
 type S = GameState;
 const lands = (name: string, n: number) => Array(n).fill(name) as string[];
@@ -185,13 +185,22 @@ describe("Lot F : jouer depuis d'autres zones", () => {
       type: "declareAttackers",
       attackers: [{ id: idOf(s, "p1", "battlefield", "Etali, Primal Storm"), defender: "p2" }],
     });
-    s = passAccepting(s, (x) => x.stack.length === 0 && x.pending?.kind === "priority" && x.pending.player === "p1");
+    s = untilCastNow(s);
+    // Pendant la résolution (608.2g) : les deux sorts exilés sont proposés (pas les terrains).
     const wurm = s.exile.find((id) => nameOf(s, id) === "Pelakka Wurm") as string;
-    const opt = castOption(s, "p1", wurm);
-    expect(opt?.free).toBe(true);
+    const dragon = s.exile.find((id) => nameOf(s, id) === "Shivan Dragon") as string;
+    expect([...(castNowOf(s)?.cards ?? [])].sort()).toEqual([wurm, dragon].sort());
+    expect(castOption(s, "p1", wurm)?.free).toBe(true);
     s = act(s, "p1", { type: "cast", card: wurm });
+    // « Autant de sorts que vous voulez » : le Dragon reste proposé ; on refuse.
+    expect(castNowOf(s)?.cards).toEqual([dragon]);
+    s = act(s, "p1", { type: "pass" });
+    expect(castNowOf(s)).toBeUndefined();
     s = passAccepting(s, (x) => x.stack.length === 0);
     expect(s.battlefield.some((id) => nameOf(s, id) === "Pelakka Wurm" && s.objects[id]?.controller === "p1")).toBe(true);
+    // Le Dragon non lancé reste en exil, sans permission.
+    expect(s.exile).toContain(dragon);
+    expect(castOption(s, "p1", dragon)).toBeUndefined();
   });
 
   it("Tinybones : la carte défaussée est exilée avec un marqueur de butin, jouable avec n'importe quel mana", () => {
