@@ -4,7 +4,9 @@
  * Usage :
  *   npm run verify -- --set FIN     vérification d'un lot (fuzz ciblé sur l'extension, environ 2 min)
  *   npm run verify -- --full        vérification complète (fin d'extension, avant une fusion)
- *   options : --ui (force les tests d'interface), --no-ui (les saute)
+ *   npm run verify -- --ci          intégration continue (GitHub Actions) : contrôles, tests et fuzz courts sur tout
+ *                                   le pool, sans tests d'interface ni bench
+ *   options : --ui (force les tests d'interface), --no-ui (les saute), --no-bench (saute le bench de --full)
  *
  * Chaque étape affiche sa durée ; le détail d'une étape n'est affiché qu'en cas d'échec
  * (journaux complets dans test-results/verify/). Les tests d'interface demandent Vite (npm run dev) :
@@ -21,9 +23,10 @@ const opt = (n: string) => {
   return i >= 0 ? argv[i + 1] : undefined;
 };
 const full = flag("full");
+const ci = flag("ci");
 const set = opt("set")?.toUpperCase();
-if (!full && !set) {
-  console.error("Préciser --set <extension> (vérification d'un lot) ou --full.");
+if (!full && !ci && !set) {
+  console.error("Préciser --set <extension> (vérification d'un lot), --full ou --ci.");
   process.exit(2);
 }
 const jobs = Math.max(1, availableParallelism() - 2);
@@ -116,36 +119,44 @@ ok &&= await group([
 ok &&= await group([{ name: "vitest", cmd: "npx vitest run", show: /^\s*Tests .*$/ }]);
 
 // 2. Fuzz, l'un après l'autre (chacun sur tous les cœurs).
-const fuzzes: Step[] = full
+const fuzzes: Step[] = ci
   ? [
-      fuzz("fuzz 2 j. graine 1", "--games 300 --pool all --seed 1"),
-      fuzz("fuzz 2 j. graine 1000", "--games 300 --pool all --seed 1000"),
-      fuzz("fuzz 2 j. graine 5000", "--games 300 --pool all --seed 5000"),
-      fuzz("fuzz 3 joueurs", "--games 200 --pool all --players 3"),
-      fuzz("fuzz 4 joueurs", "--games 100 --pool all --players 4"),
-      fuzz("fuzz IA mixte", "--games 100 --pool all --ai mixed"),
-      fuzz("fuzz niveaux d'IA", "--games 60 --pool all --ai levels"),
-      fuzz("fuzz chaos 2 j.", "--games 300 --pool all --ai chaos --seed 3000"),
-      fuzz("fuzz chaos 4 j.", "--games 60 --pool all --ai chaos --players 4"),
+      fuzz("fuzz 2 j.", "--games 150 --pool all --seed 1"),
+      fuzz("fuzz 3 joueurs", "--games 40 --pool all --players 3"),
+      fuzz("fuzz niveaux d'IA", "--games 20 --pool all --ai levels"),
+      fuzz("fuzz chaos 2 j.", "--games 100 --pool all --ai chaos --seed 3000"),
     ]
-  : [
-      fuzz(`fuzz ${set} 2 joueurs`, `--games 300 --pool ${set} --seed 1`),
-      fuzz(`fuzz ${set} 3 joueurs`, `--games 100 --pool ${set} --players 3`),
-      fuzz(`fuzz ${set} 4 joueurs`, `--games 60 --pool ${set} --players 4`),
-      fuzz(`fuzz ${set} IA mixte`, `--games 60 --pool ${set} --ai mixed`),
-      fuzz(`fuzz ${set} niveaux d'IA`, `--games 30 --pool ${set} --ai levels`),
-      fuzz("fuzz tout le pool", "--games 200 --pool all --seed 2000"),
-      fuzz(`fuzz ${set} chaos`, `--games 150 --pool ${set} --ai chaos`),
-    ];
+  : full
+    ? [
+        fuzz("fuzz 2 j. graine 1", "--games 300 --pool all --seed 1"),
+        fuzz("fuzz 2 j. graine 1000", "--games 300 --pool all --seed 1000"),
+        fuzz("fuzz 2 j. graine 5000", "--games 300 --pool all --seed 5000"),
+        fuzz("fuzz 3 joueurs", "--games 200 --pool all --players 3"),
+        fuzz("fuzz 4 joueurs", "--games 100 --pool all --players 4"),
+        fuzz("fuzz IA mixte", "--games 100 --pool all --ai mixed"),
+        fuzz("fuzz niveaux d'IA", "--games 60 --pool all --ai levels"),
+        fuzz("fuzz chaos 2 j.", "--games 300 --pool all --ai chaos --seed 3000"),
+        fuzz("fuzz chaos 4 j.", "--games 60 --pool all --ai chaos --players 4"),
+      ]
+    : [
+        fuzz(`fuzz ${set} 2 joueurs`, `--games 300 --pool ${set} --seed 1`),
+        fuzz(`fuzz ${set} 3 joueurs`, `--games 100 --pool ${set} --players 3`),
+        fuzz(`fuzz ${set} 4 joueurs`, `--games 60 --pool ${set} --players 4`),
+        fuzz(`fuzz ${set} IA mixte`, `--games 60 --pool ${set} --ai mixed`),
+        fuzz(`fuzz ${set} niveaux d'IA`, `--games 30 --pool ${set} --ai levels`),
+        fuzz("fuzz tout le pool", "--games 200 --pool all --seed 2000"),
+        fuzz(`fuzz ${set} chaos`, `--games 150 --pool ${set} --ai chaos`),
+      ];
 for (const f of fuzzes) ok = (await group([f])) && ok;
 
 // 3. Bench (vérification complète seulement : il juge mal une régression d'un lot, surtout sur batterie).
-if (full) ok = (await group([{ name: "bench", cmd: "npx tsx tools/bench.ts", show: /^(Cibles.*|.*non atteinte.*)$/ }])) && ok;
+if (full && !flag("no-bench"))
+  ok = (await group([{ name: "bench", cmd: "npx tsx tools/bench.ts", show: /^(Cibles.*|.*non atteinte.*)$/ }])) && ok;
 
 // 4. Tests d'interface, si le client, la vue ou le protocole ont changé (ou --ui, ou --full).
 const changed = await changedFiles();
 const uiTouched = changed.some((f) => /packages\/client\/|engine\/src\/view\.ts|server\/src\/protocol\.ts/.test(f));
-if (!flag("no-ui") && (full || flag("ui") || uiTouched)) {
+if (!ci && !flag("no-ui") && (full || flag("ui") || uiTouched)) {
   if (await viteUp()) {
     // Deux files en parallèle, de durées voisines : ui-smoke et mobile-smoke d'un côté, les autres de l'autre.
     // Pas plus : sous une charge plus forte, les parties jouées dans le navigateur manquent de temps.
@@ -177,7 +188,7 @@ if (!flag("no-ui") && (full || flag("ui") || uiTouched)) {
     console.log("⚠️  tests d'interface sautés : Vite ne répond pas sur http://localhost:5173 (lancer npm run dev)");
     ok = false;
   }
-} else console.log("·  tests d'interface sautés (ni client, ni vue, ni protocole modifiés)");
+} else console.log(`·  tests d'interface sautés (${ci ? "intégration continue" : "ni client, ni vue, ni protocole modifiés"})`);
 
 console.log(
   `\n${ok ? "✅ Vérification réussie" : "❌ Vérification en échec"} en ${((performance.now() - t0) / 1000).toFixed(0)} s.`,

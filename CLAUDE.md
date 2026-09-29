@@ -52,6 +52,7 @@ Ce fichier sert au suivi du projet entre les sessions : où on en est, les règl
 
 ## Documents
 
+- `AUDIT.md` : audit du 29/09/2026 (points forts et faibles, limites par rapport au vrai Magic, comparaison, feuille de route P0 à P4).
 - `docs/moteur.md` : **à lire avant d'ajouter une mécanique**. Carte des fichiers du moteur, et où toucher pour un effet, un déclencheur, une condition, un filtre, un statique de joueur ou un mot-clé.
 - `docs/approximations.md` : approximations connues, générales puis carte par carte (à lever si une carte l'exige). **Toute nouvelle approximation y est ajoutée.**
 - `docs/extensions/<ext>.md` : mécaniques et détail des lots de chaque extension :
@@ -110,6 +111,10 @@ Ce fichier sert au suivi du projet entre les sessions : où on en est, les règl
   - le bench ;
   - les tests d'interface (dont `tutorial-smoke` et `ai-smoke`).
 - **Résultat :** une ligne par étape, avec sa durée. Le détail n'est affiché qu'en cas d'échec ; tous les journaux sont dans `test-results/verify/`.
+- **Intégration continue** (`.github/workflows/ci.yml`, GitHub Actions) :
+  - à chaque push sur `dev` ou `master` et à chaque pull request : `npm run verify -- --ci` (contrôles, vitest, fuzz courts sur tout le pool, chaos compris ; environ 1 min en local) ;
+  - chaque nuit : `verify --full --no-ui --no-bench` ;
+  - les tests d'interface et le bench restent locaux ; les journaux d'un échec sont joints à l'exécution.
 - **Fuzz à la main :** `npm run fuzz -- --games 300 --pool FIN --jobs 10`. Les résultats sont identiques à graine égale, quel que soit `--jobs`.
 - **Bench :** il n'est fiable que sur secteur (le mode éco du CPU fausse les mesures). On juge une régression en comparant avant et après.
 - **Nouvelle mécanique visible :** un script Playwright ponctuel, avec captures dans `test-results/`.

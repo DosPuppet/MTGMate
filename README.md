@@ -100,6 +100,7 @@ Les images des cartes viennent de Scryfall (`cards.scryfall.io`). Certains rése
 |---|---|
 | `npm run verify -- --set <EXT>` | Vérification d'un lot, parallélisée (~70 s) : types, Biome, couverture, tous les tests, fuzz ciblé sur l'extension à 2, 3 et 4 joueurs ; tests d'interface si le client a changé |
 | `npm run verify -- --full` | Vérification complète (~3 min) : fuzz sur tout le pool, bench et tests d'interface. Durée de chaque étape affichée, journaux dans `test-results/verify/` |
+| `npm run verify -- --ci` | Vérification de l'intégration continue (GitHub Actions, à chaque push) : types, Biome, couverture, tests et fuzz courts sur tout le pool, sans interface ni bench |
 | `npm test` | Tests de règles, d'IA, et test de fumée de chaque carte gérée (Vitest, un fichier par extension) |
 | `npm run fuzz -- --games 300 [--pool decks\|all\|<EXT>] [--players 4] [--ai random\|heuristic\|mixed\|beginner\|medium\|expert\|levels] [--seed N] [--jobs 10]` | Parties IA contre IA, invariants vérifiés à chaque décision. `--pool FIN` : decks tirés surtout de cette extension. `--jobs` : parties réparties sur plusieurs processus, mêmes résultats à graine égale |
 | `npm run bench` | Décisions par seconde du moteur et temps de décision de l'IA (cibles : ≥ 5 000 déc/s, IA moyenne < 50 ms, IA élevée < 150 ms ; à mesurer sur secteur) |
