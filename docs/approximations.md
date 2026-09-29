@@ -11,7 +11,8 @@ Chaque entrée porte sa nature :
 - `choix auto` : le moteur choisit à la place du joueur, comme souvent sur Arena.
 
 - `timing` **Blocages :** ils sont déclarés joueur par joueur en ordre APNAP, et non simultanément.
-- `règle` **Remplacements multiples (616.1) :** le premier s'applique, sans choix du joueur affecté.
+- `choix auto` **Remplacements « au lieu du cimetière » multiples (616.1) :** l'auto-remplacement passe d'abord (Progenitus), puis un seul « exilez-le à la place » s'applique, choisi pour le joueur affecté : il écarte ceux qui profitent à un adversaire (PV, carte liée), puis prend le plus ancien (`replaceGraveyard`).
+- `règle` **Autres remplacements multiples (616.1) :** pour les blessures, la pioche ou les PV, ils s'appliquent dans l'ordre du code, sans choix du joueur affecté.
 - `règle` **Dépendances de couches (613.8) :** seulement une approximation à un niveau, du type « une source qui perd toutes ses capacités n'applique plus ses statiques ». De plus :
   - les conditions des capacités statiques (« tant que vous contrôlez un Dragon ») sont lues sur les caractéristiques imprimées, pas sur les types ajoutés par un effet (test « approximation (613.8) » de `layers.test.ts`) ;
   - une statique accordée par un effet de résolution s'applique (Roar of the Fifth People), mais pas une statique accordée par une autre statique (un test de `layers.test.ts` vérifie qu'aucune carte n'en a besoin).

@@ -388,44 +388,15 @@ export function moveObject(
   }
   // Un permanent préparé qui quitte le champ de bataille : la copie de son sort cesse d'exister.
   if (o.preparedCopy && o.zone === "battlefield") setPrepared(s, o, false);
-  to = replaceDestination(s, o, to);
-  // Marqueur de finalité : un permanent qui en porte un et devrait mourir est exilé à la place.
-  if (to === "graveyard" && o.zone === "battlefield" && (o.counters.finality ?? 0) > 0) to = "exile";
-  // Progenitus : « si elle devait être mise dans un cimetière de n'importe où, mélangez-la dans la bibliothèque ».
-  const shuffleIn = to === "graveyard" && !o.isToken && !!s.defs[o.defId]?.shuffleIntoLibrary;
-  if (shuffleIn) to = "library";
-  // Dryad Militant : un éphémère ou un rituel qui irait au cimetière est exilé à la place.
-  const dt = s.defs[o.defId]?.types ?? [];
-  if (
-    to === "graveyard" &&
-    (dt.includes("Instant") || dt.includes("Sorcery")) &&
-    s.playerOrder.some((p) => playerStatic(s, p, "exileInstantsSorceries"))
-  ) {
-    to = "exile";
-  }
-  // Rest in Peace : tout ce qui irait au cimetière est exilé à la place.
-  if (to === "graveyard" && s.playerOrder.some((p) => playerStatic(s, p, "graveyardToExile"))) to = "exile";
-  // Valgavoth, Terror Eater : une carte que son contrôleur ne contrôlait pas, qui irait au cimetière d'un adversaire, est
-  // exilée à la place (et liée à Valgavoth).
+  // 614.1a / 616.1 : remplacements « au lieu du cimetière » (Progenitus, finalité, Rest in Peace, Valgavoth…).
+  let shuffleIn = false;
   let linkTo: ObjectId | undefined;
-  if (to === "graveyard" && !o.isToken) {
-    for (const p of s.playerOrder) {
-      if (p === o.owner || o.controller === p) continue;
-      const src = controlledAbilitiesWithSource(s, p).find(
-        ({ id: v, ab }) => ab.kind === "playerStatic" && ab.exileOpponentsCardsLinked && s.objects[v]?.zone === "battlefield",
-      );
-      if (src) {
-        to = "exile";
-        linkTo = src.id;
-        break;
-      }
-    }
+  if (to === "graveyard") {
+    const r = replaceGraveyard(s, o);
+    to = r.to;
+    shuffleIn = !!r.shuffle;
+    linkTo = r.linkTo;
   }
-  // Leyline of the Void : ce qui irait au cimetière d'un adversaire de son contrôleur est exilé à la place.
-  if (to === "graveyard" && s.playerOrder.some((p) => p !== o.owner && playerStatic(s, p, "opponentGraveyardToExile")))
-    to = "exile";
-  // Hades, Sorcerer of Eld : seulement le cimetière de son contrôleur.
-  if (to === "graveyard" && playerStatic(s, o.isToken ? o.controller : o.owner, "ownGraveyardToExile")) to = "exile";
   if (opts.landed) opts.landed.to = to;
   const from = zoneArray(s, o);
   if (from) {
@@ -646,8 +617,8 @@ export function setPrepared(s: GameState, o: GameObject, on: boolean): void {
 // ---------------------------------------------------------------------------
 
 import { bump, snapshot } from "./layers";
-import { applyEntersReplacements, type EntersContext, releaseLinkedExile, replaceDestination } from "./replacement";
-import { controlledAbilitiesWithSource, counterDoublers, playerStatic } from "./statics";
+import { applyEntersReplacements, type EntersContext, releaseLinkedExile, replaceGraveyard } from "./replacement";
+import { counterDoublers, playerStatic } from "./statics";
 import { detectTriggers } from "./triggers";
 
 export {

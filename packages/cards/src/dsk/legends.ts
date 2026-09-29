@@ -15,6 +15,7 @@ import {
   costReducer,
   eerie,
   fx,
+  graveyardReplacement,
   INSTANT_SORCERY,
   manaAbility,
   modal,
@@ -349,7 +350,7 @@ export const LEGENDS: Record<string, CardScript> = {
   },
   "Leyline of the Void": {
     leyline: true,
-    abilities: [playerStatic({ opponentGraveyardToExile: true, label: "Ce qui irait au cimetière adverse est exilé" })],
+    abilities: [graveyardReplacement({ graveyardOf: "opponent", label: "Ce qui irait au cimetière adverse est exilé" })],
   },
   "Meathook Massacre II": {
     abilities: [
@@ -691,7 +692,7 @@ export const LEGENDS: Record<string, CardScript> = {
           fx.emblem(
             "Forgotten Cellar",
             "This turn, you may cast spells from your graveyard, and if a card would be put into your graveyard from anywhere, exile it instead.",
-            [playerStatic({ playFromGraveyard: true, ownGraveyardToExile: true })],
+            [playerStatic({ playFromGraveyard: true }), graveyardReplacement({ graveyardOf: "you" })],
             false,
             true,
           ),

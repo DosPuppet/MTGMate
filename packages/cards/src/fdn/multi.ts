@@ -9,6 +9,7 @@ import {
   ELF_WARRIOR,
   entersWith,
   fx,
+  graveyardReplacement,
   INSTANT_SORCERY,
   KOMAS_COIL,
   manaAbility,
@@ -272,7 +273,12 @@ export const MULTI: Record<string, CardScript> = {
   },
   "Drogskol Reaver": { abilities: [triggered(when.gainLife, [fx.draw(1)], { label: "piochez une carte" })] },
   "Dryad Militant": {
-    abilities: [playerStatic({ exileInstantsSorceries: true, label: "Éphémères et rituels exilés au lieu du cimetière" })],
+    abilities: [
+      graveyardReplacement({
+        filter: { types: ["Instant", "Sorcery"] },
+        label: "Éphémères et rituels exilés au lieu du cimetière",
+      }),
+    ],
   },
   "Enigma Drake": { cdaPower: amount.countIn("graveyard", INSTANT_SORCERY) },
   "Garna, Bloodfist of Keld": {

@@ -11,6 +11,7 @@ import {
   entersWith,
   FOOD,
   fx,
+  graveyardReplacement,
   KNIGHT_2,
   manaAbility,
   playerStatic,
@@ -496,7 +497,7 @@ export const TRANSFORM: Record<string, CardScript> = {
         condition: cond.yourTurn,
         label: "Écho des disparus : jouez depuis votre cimetière",
       }),
-      playerStatic({ ownGraveyardToExile: true, label: "Votre cimetière est exilé" }),
+      graveyardReplacement({ graveyardOf: "you", label: "Votre cimetière est exilé" }),
     ],
   },
   "Crystal Fragments": {

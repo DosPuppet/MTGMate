@@ -5,16 +5,17 @@
  *   changement de zone, avant que les capacités déclenchées ne voient l'objet arriver).
  * - Créés par une résolution, jusqu'à la fin du tour : « si elle devait mourir, exilez-la à la place »,
  *   prévention des blessures de combat.
- * Limite actuelle : si plusieurs remplacements s'appliquent au même événement, le premier l'emporte
- * (le choix du joueur affecté, 616.1, viendra avec des cartes qui en ont besoin).
+ * - « Au lieu du cimetière » (614.1a) : `replaceGraveyard`, qui applique l'ordre de 616.1 (auto-remplacement
+ *   d'abord, puis un seul remplacement choisi pour le joueur affecté).
+ * Limite : pour les autres événements (blessures, pioche, PV), plusieurs remplacements s'appliquent dans l'ordre du code.
  */
 import { gainLife } from "./actions";
 import { boardAmount } from "./effects";
 import { changeCounters, chars, moveObject, newId, nextTimestamp, P1P1, setPrepared } from "./state";
 import { controlledAbilitiesWithSource, playerStatic } from "./statics";
-import { matchesObjectFilter, withChosen } from "./targets";
+import { matchesCard, matchesObjectFilter, withChosen } from "./targets";
 import { checkCondition } from "./triggers";
-import type { Amount, Color, GameObject, GameState, ObjectId, Zone } from "./types";
+import type { Amount, Color, GameObject, GameState, ObjectId, PlayerId, Zone } from "./types";
 
 /** Contexte d'arrivée sur le champ de bataille (valeur de X, kicker du sort qui arrive). */
 export interface EntersContext {
@@ -98,33 +99,76 @@ function defaultChoice(
   return kind === "color" ? { color: (best as Color | undefined) ?? "W" } : { creatureType: best ?? "Human" };
 }
 
-/** 614.1 : la destination d'un changement de zone peut être remplacée (« exilez-la à la place »). */
-export function replaceDestination(s: GameState, o: GameObject, to: Zone): Zone {
-  if (o.zone === "battlefield" && to === "graveyard") {
-    if (s.replacements.some((r) => r.kind === "exileIfDies" && r.objects.includes(o.id))) return "exile";
-    // Garruk, Veiled Butcher : « si une créature qu'un adversaire contrôle devait mourir, exilez-la à la place ».
-    if (
-      chars(s, o.id).types.includes("Creature") &&
-      s.playerOrder.some((p) => p !== o.controller && playerStatic(s, p, "opponentCreaturesDieToExile"))
-    ) {
-      return "exile";
-    }
-    // The Darkness Crystal : exilée à la place, liée au Cristal, et son contrôleur gagne des PV.
-    if (!o.isToken && chars(s, o.id).types.includes("Creature")) {
-      for (const p of s.playerOrder) {
-        if (p === o.controller) continue;
-        const crystal = controlledAbilitiesWithSource(s, p).find(
-          ({ ab }) => ab.kind === "playerStatic" && !!ab.opponentNontokenDiesToExileLife,
-        );
-        if (crystal?.ab.kind !== "playerStatic") continue;
-        const src = s.objects[crystal.id];
-        if (src) src.linkedUids = [...(src.linkedUids ?? []), o.uid];
-        gainLife(s, p, crystal.ab.opponentNontokenDiesToExileLife ?? 0);
-        return "exile";
+/** Un remplacement « exilez-le à la place » qui s'applique à un objet sur le point d'aller au cimetière. */
+interface GraveyardCandidate {
+  /** Contrôleur du remplacement (source, créateur de l'effet) ; absent pour une règle (marqueur de finalité). */
+  controller?: PlayerId;
+  sourceId?: ObjectId;
+  link?: "object" | "uid";
+  gainLife?: number;
+  timestamp: number;
+}
+
+/** Destination après les remplacements « au lieu du cimetière » (614.1a, 616.1). */
+export interface GraveyardOutcome {
+  to: Zone;
+  /** Progenitus : mélanger la bibliothèque après le déplacement. */
+  shuffle?: boolean;
+  /** Source à laquelle lier le nouvel objet (Valgavoth). */
+  linkTo?: ObjectId;
+}
+
+function graveyardCandidates(s: GameState, o: GameObject): GraveyardCandidate[] {
+  const out: GraveyardCandidate[] = [];
+  const fromBattlefield = o.zone === "battlefield";
+  // Effets créés par une résolution : « si elle devait mourir ce tour-ci, exilez-la à la place » (Lava Coil).
+  if (fromBattlefield) {
+    for (const r of s.replacements) if (r.kind === "exileIfDies" && r.objects.includes(o.id)) out.push({ timestamp: 0 });
+    // 122.1h : marqueur de finalité.
+    if ((o.counters.finality ?? 0) > 0) out.push({ timestamp: 0 });
+  }
+  // Capacités des permanents et emblèmes de chaque joueur.
+  const graveyardOwner = o.owner;
+  for (const p of s.playerOrder) {
+    for (const { id, ab } of controlledAbilitiesWithSource(s, p)) {
+      if (ab.kind !== "graveyardReplacement") continue;
+      if (ab.fromBattlefield && !fromBattlefield) continue;
+      if (ab.graveyardOf === "you" && graveyardOwner !== p) continue;
+      if (ab.graveyardOf === "opponent" && graveyardOwner === p) continue;
+      if (ab.notControlledByYou && o.controller === p) continue;
+      if (ab.condition && !checkCondition(s, ab.condition, p, id)) continue;
+      if (ab.filter) {
+        const ok = fromBattlefield ? matchesObjectFilter(s, p, o.id, ab.filter, id) : matchesCard(s, p, o.id, ab.filter, id);
+        if (!ok) continue;
       }
+      out.push({ controller: p, sourceId: id, link: ab.link, gainLife: ab.gainLife, timestamp: s.objects[id]?.timestamp ?? 0 });
     }
   }
-  return to;
+  return out;
+}
+
+/**
+ * 614.1a / 616.1 : l'objet `o` devrait aller au cimetière. On applique d'abord son propre remplacement (616.1a :
+ * Progenitus est mélangé dans la bibliothèque) ; sinon, parmi les « exilez-le à la place », le joueur affecté (le
+ * contrôleur de l'objet, ou son propriétaire hors du champ de bataille) en choisit un (616.1e). Approximation (choix
+ * auto) : il écarte d'abord ceux qui profitent à un adversaire (PV gagnés, carte liée), puis prend le plus ancien. Une
+ * fois l'objet exilé, les autres ne s'appliquent plus (616.1f).
+ */
+export function replaceGraveyard(s: GameState, o: GameObject): GraveyardOutcome {
+  if (!o.isToken && s.defs[o.defId]?.shuffleIntoLibrary) return { to: "library", shuffle: true };
+  const candidates = graveyardCandidates(s, o);
+  if (candidates.length === 0) return { to: "graveyard" };
+  const chooser = o.zone === "battlefield" ? o.controller : o.owner;
+  const helpsOpponent = (c: GraveyardCandidate) =>
+    c.controller && c.controller !== chooser && (!!c.gainLife || !!c.link) ? 1 : 0;
+  const chosen = [...candidates].sort((a, b) => helpsOpponent(a) - helpsOpponent(b) || a.timestamp - b.timestamp)[0];
+  if (!chosen) return { to: "graveyard" };
+  if (chosen.link === "uid" && chosen.sourceId) {
+    const src = s.objects[chosen.sourceId];
+    if (src) src.linkedUids = [...(src.linkedUids ?? []), o.uid];
+  }
+  if (chosen.gainLife && chosen.controller) gainLife(s, chosen.controller, chosen.gainLife);
+  return { to: "exile", linkTo: chosen.link === "object" ? chosen.sourceId : undefined };
 }
 
 /** 614.1c–d : effets qui modifient la façon dont un permanent arrive sur le champ de bataille. */

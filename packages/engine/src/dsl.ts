@@ -17,6 +17,7 @@ import type {
   CostReductionAbilityDef,
   DoublerAbilityDef,
   Effect,
+  GraveyardReplacementAbilityDef,
   Keyword,
   LayerMods,
   ManaAbilityDef,
@@ -1518,6 +1519,11 @@ export function flashForAll(label?: string): CastPermissionAbilityDef {
 /** Permissions de lancement : sans payer (Omniscience), butin (Tinybones), cimetière (Muldrotha)… */
 export function castPermission(opts: Omit<CastPermissionAbilityDef, "kind">): CastPermissionAbilityDef {
   return { kind: "castPermission", ...opts };
+}
+
+/** « Si [un objet] devait être mis dans un cimetière, exilez-le à la place » (614.1a ; ordre : `replaceGraveyard`). */
+export function graveyardReplacement(opts: Omit<GraveyardReplacementAbilityDef, "kind"> = {}): GraveyardReplacementAbilityDef {
+  return { kind: "graveyardReplacement", ...opts };
 }
 
 /** Capacité statique qui s'applique à son contrôleur (défense talismanique, « ne peut pas perdre »…). */

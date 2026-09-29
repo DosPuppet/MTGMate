@@ -13,6 +13,7 @@ import {
   entersWith,
   FOOD,
   fx,
+  graveyardReplacement,
   investigate,
   MAP,
   manaAbility,
@@ -128,7 +129,7 @@ export const BIG_SCRIPTS: Record<string, CardScript> = {
       triggered(when.entersSelf, [fx.moveAll("graveyard", ref.eachPlayer, {}, { to: "exile" })], {
         label: "Exilez tous les cimetières",
       }),
-      playerStatic({ graveyardToExile: true, label: "Ce qui irait au cimetière est exilé" }),
+      graveyardReplacement({ label: "Ce qui irait au cimetière est exilé" }),
     ],
   },
 

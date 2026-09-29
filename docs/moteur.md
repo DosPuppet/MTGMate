@@ -41,6 +41,7 @@ Moteur pur et déterministe (`packages/engine/src`). L'état est sérialisable ;
 - **Statique de joueur :** un champ de `PlayerStaticAbilityDef`, lu avec `playerStatic(s, p, "clé")` ou `controlledAbilitiesWithSource` là où la règle s'applique.
 - **Restriction, mot-clé technique :** ajouter à `Keyword` et `RESTRICTIONS` (`types.ts`), avec son libellé dans `client/src/i18n.ts` (sinon `tsc` échoue).
 - **Champ de script de carte :** dans `CardScript` (`dsl.ts`), `CardDef` (`types.ts`) et la recopie dans `toCardDef` (`cards/src/scryfall.ts`).
+- **« Si [un objet] devait être mis dans un cimetière, exilez-le à la place » :** une capacité `graveyardReplacement({ filter, fromBattlefield, graveyardOf, notControlledByYou, link, gainLife, condition })`, et non un drapeau de `playerStatic`. L'ordre de 616.1 est appliqué par `replaceGraveyard` (`replacement.ts`), appelé par `moveObject`.
 - **« Vous pouvez lancer [cette carte] » pendant une résolution (608.2g) :** `fx.castNow(ref, { free, many, exileAfter, anyMana, storeCast, storeRest })`, et non `fx.grantPlay` (qui laisse la carte lançable plus tard dans le tour). Depuis un traitement d'effet, la boucle `castNowLoop` (`ops/spells.ts`) renvoie `{ castNow: … }`, qui suspend la résolution sur une priorité restreinte (`PendingDecision.castNow`).
 - **Nouveau champ de `GameState` :** l'initialiser dans `game.ts` et, si besoin, dans `engine/test/helpers.ts`. Les champs de tour se remettent à zéro au changement de tour (`turn.ts`).
 

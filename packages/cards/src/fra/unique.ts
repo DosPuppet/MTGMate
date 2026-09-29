@@ -17,6 +17,7 @@ import {
   empower,
   entersWith,
   fx,
+  graveyardReplacement,
   loyalty,
   loyaltyX,
   manaAbility,
@@ -322,7 +323,11 @@ export const UNIQUE: Record<string, CardScript> = {
   },
   "Garruk, Veiled Butcher": {
     abilities: [
-      playerStatic({ opponentCreaturesDieToExile: true, label: "Les créatures adverses sont exilées au lieu de mourir" }),
+      graveyardReplacement({
+        fromBattlefield: true,
+        filter: { types: ["Creature"], controller: "opponent" },
+        label: "Les créatures adverses sont exilées au lieu de mourir",
+      }),
       loyalty(2, {
         targets: [target.upTo(1, target.creature("t"))],
         effects: [fx.modify(ref.target(), { power: -4, toughness: -1 }, "untilYourNextTurn")],

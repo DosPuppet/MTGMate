@@ -15,6 +15,7 @@ import {
   FOOD_ABILITY,
   fx,
   GAINED_OR_LOST,
+  graveyardReplacement,
   INSTANT_SORCERY,
   kin,
   loyalty,
@@ -384,7 +385,11 @@ export const MULTI: Record<string, CardScript> = {
   },
   "Vren, the Relentless": {
     abilities: [
-      playerStatic({ opponentCreaturesDieToExile: true, label: "Les créatures adverses sont exilées" }),
+      graveyardReplacement({
+        fromBattlefield: true,
+        filter: { types: ["Creature"], controller: "opponent" },
+        label: "Les créatures adverses sont exilées",
+      }),
       triggered(when.eachEndStep, [fx.createTokens(VREN_RAT, amount.opponentCreaturesExiledThisTurn)], {
         label: "Rats pour chaque créature adverse exilée",
       }),

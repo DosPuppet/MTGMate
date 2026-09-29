@@ -7,6 +7,7 @@ import {
   costReducer,
   entersWith,
   fx,
+  graveyardReplacement,
   manaAbility,
   playerStatic,
   ref,
@@ -88,7 +89,13 @@ export const LEGENDS4: Record<string, CardScript> = {
   "The Darkness Crystal": {
     abilities: [
       costReducer({ colors: ["B"] }, 1, "Sorts noirs : {1} de moins"),
-      playerStatic({ opponentNontokenDiesToExileLife: 2, label: "Créatures adverses exilées au lieu de mourir, +2 PV" }),
+      graveyardReplacement({
+        fromBattlefield: true,
+        filter: { types: ["Creature"], controller: "opponent", nontoken: true },
+        link: "uid",
+        gainLife: 2,
+        label: "Créatures adverses exilées au lieu de mourir, +2 PV",
+      }),
       activated({
         mana: "{4}{B}{B}",
         tap: true,

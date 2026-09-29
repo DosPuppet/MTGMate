@@ -214,7 +214,8 @@ export type AbilityDef =
   | CastPermissionAbilityDef
   | PlayerStaticAbilityDef
   | PreventionAbilityDef
-  | DoublerAbilityDef;
+  | DoublerAbilityDef
+  | GraveyardReplacementAbilityDef;
 
 export interface AdditionalCost {
   discard?: number;
@@ -441,6 +442,28 @@ export interface ReplacementAbilityDef {
   label?: string;
 }
 
+/**
+ * 614.1a : « si [un objet] devait être mis dans un cimetière, exilez-le à la place » (Rest in Peace, Leyline of the Void,
+ * Garruk, The Darkness Crystal, Valgavoth…). Plusieurs remplacements : voir `replaceGraveyard` (replacement.ts, 616.1).
+ */
+export interface GraveyardReplacementAbilityDef {
+  kind: "graveyardReplacement";
+  /** Objets concernés, vus du contrôleur de la source (types, jetons, « contrôlée par un adversaire »…). */
+  filter?: ObjectFilter;
+  /** Seulement depuis le champ de bataille (« mourir »). */
+  fromBattlefield?: boolean;
+  /** Cimetière visé : celui du contrôleur de la source, ou celui d'un de ses adversaires ; tous par défaut. */
+  graveyardOf?: "you" | "opponent";
+  /** Seulement ce que le contrôleur de la source ne contrôlait pas (Valgavoth). */
+  notControlledByYou?: boolean;
+  /** La carte exilée est liée à la source : par identifiant (Valgavoth, jouable) ou par identité physique (Darkness Crystal). */
+  link?: "object" | "uid";
+  /** Le contrôleur de la source gagne ces points de vie. */
+  gainLife?: number;
+  condition?: Condition;
+  label?: string;
+}
+
 /** « Vous pouvez lancer des sorts comme s'ils avaient le flash. » */
 export interface CastPermissionAbilityDef {
   kind: "castPermission";
@@ -481,14 +504,10 @@ export interface PlayerStaticAbilityDef {
   artifactsFromGraveyardLife?: number;
   /** « Vous pouvez jouer des cartes depuis votre cimetière » (Hades, Sorcerer of Eld, avec `condition`). */
   playFromGraveyard?: boolean;
-  /** « Si une carte ou un jeton devait être mis dans votre cimetière, exilez-le à la place » (Hades). */
-  ownGraveyardToExile?: boolean;
   /** « Les terrains que vous contrôlez arrivent dégagés » (The Wandering Minstrel). */
   landsEnterUntapped?: boolean;
   /** « Vous pouvez jouer la carte du dessus de votre bibliothèque » (The Lunar Whale, avec `condition`). */
   playTopCard?: boolean;
-  /** The Darkness Crystal : une créature non-jeton adverse qui devrait mourir est exilée, liée à la source, et vous gagnez N PV. */
-  opponentNontokenDiesToExileLife?: number;
   /** « Chaque fois que vous engagez un terrain pour {C}, ajoutez {C} de plus » (Ultima, Origin of Oblivion). */
   extraColorlessFromLands?: boolean;
   /** « Vous avez la protection contre chacun de vos adversaires » (702.16j, Absolute Virtue). */
@@ -507,8 +526,6 @@ export interface PlayerStaticAbilityDef {
   noLifeGainForAll?: boolean;
   /** « Les éphémères et rituels que vous contrôlez ne peuvent pas être contrecarrés. » */
   protectSpells?: boolean;
-  /** Dryad Militant : les éphémères et rituels qui iraient au cimetière (de n'importe qui) sont exilés. */
-  exileInstantsSorceries?: boolean;
   /** Vizier of the Menagerie : lancer des créatures du dessus de sa bibliothèque (mana de n'importe quel type). */
   castCreaturesFromTop?: boolean;
   /** Yoshimaru : des marqueurs +1/+1 mis sur vos créatures : un de plus. */
@@ -538,8 +555,6 @@ export interface PlayerStaticAbilityDef {
   stationByToughness?: boolean;
   /** Tomik, Orzhov Lawmage : au plus une créature peut attaquer chacun de vos planeswalkers à chaque combat. */
   walkersMaxOneAttacker?: boolean;
-  /** Garruk, Veiled Butcher : les créatures adverses qui devraient mourir sont exilées. */
-  opponentCreaturesDieToExile?: boolean;
   /** Draconic Visitor : les jetons d'artefact que vous devriez créer sont remplacés par ce jeton. */
   replaceArtifactTokens?: TokenSpec;
   /** Samut, Tyrant of Naktamun : « les éphémères et rituels que vous contrôlez ont le second partagé ». */
@@ -554,8 +569,6 @@ export interface PlayerStaticAbilityDef {
   damagePlusOneToOpponents?: boolean;
   /** Grand Abolisher : pendant votre tour, vos adversaires ne lancent pas de sorts ni n'activent de capacités d'artefacts, de créatures ou d'enchantements. */
   lockOpponentsOnYourTurn?: boolean;
-  /** Rest in Peace (tous) : ce qui irait au cimetière est exilé à la place. */
-  graveyardToExile?: boolean;
   /** Worldwalker Helm : vos jetons d'artefact sont accompagnés d'un jeton Carte. */
   extraMapToken?: TokenSpec;
   /** Torpor Orb (tous) : l'arrivée de créatures ne déclenche rien. */
@@ -596,8 +609,6 @@ export interface PlayerStaticAbilityDef {
   damageToOpponentsMills?: boolean;
   /** Nowhere to Run : les créatures adverses sont ciblables malgré la défense talismanique ; leur garde ne se déclenche pas. */
   ignoreOpponentsHexproofWard?: boolean;
-  /** Leyline of the Void : ce qui irait au cimetière d'un adversaire est exilé à la place. */
-  opponentGraveyardToExile?: boolean;
   /** Grievous Wound : le joueur enchanté ne peut pas gagner de points de vie. */
   enchantedPlayerCantGainLife?: boolean;
   /** Warped Space : une fois par tour, un sort lancé depuis l'exil peut l'être en payant {0}. */
@@ -606,8 +617,6 @@ export interface PlayerStaticAbilityDef {
   altCostAll?: ManaCost;
   /** Winter, Misanthropic Guide : taille de main maximale de chaque adversaire (évaluée pour le contrôleur). */
   opponentMaxHandSize?: Amount;
-  /** Valgavoth : les cartes que vous ne contrôliez pas qui iraient au cimetière d'un adversaire sont exilées, liées à la source. */
-  exileOpponentsCardsLinked?: boolean;
   /** Valgavoth : pendant votre tour, jouer les cartes liées à la source ; un sort ainsi lancé coûte des PV égaux à sa VM. */
   playLinkedPayLife?: boolean;
   /** Found Footage : vous pouvez regarder les créatures face cachée de vos adversaires à tout moment. */

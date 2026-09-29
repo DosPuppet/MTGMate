@@ -12,6 +12,7 @@ import {
   doubler,
   entersWith,
   fx,
+  graveyardReplacement,
   loyalty,
   manaAbility,
   playerStatic,
@@ -53,8 +54,14 @@ export const LEGENDS2: Record<string, CardScript> = {
   },
   "Valgavoth, Terror Eater": {
     abilities: [
+      graveyardReplacement({
+        graveyardOf: "opponent",
+        notControlledByYou: true,
+        filter: { nontoken: true },
+        link: "object",
+        label: "Les cartes adverses sont exilées",
+      }),
       playerStatic({
-        exileOpponentsCardsLinked: true,
         playLinkedPayLife: true,
         label: "Les cartes adverses sont exilées ; jouables pendant votre tour contre des PV",
       }),

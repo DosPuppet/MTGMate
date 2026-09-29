@@ -26,6 +26,7 @@ export const {
   loyaltyX,
   castPermission,
   playerStatic,
+  graveyardReplacement,
   prevention,
   doubler,
   cost,
