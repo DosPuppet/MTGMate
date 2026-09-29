@@ -17,6 +17,10 @@ const PLAYABLE = [
   "Dimir Excruciator",
   "Azorius Control",
   "Selesnya Landfall",
+  // Lot M4
+  "4c Control",
+  "Boros Dragons",
+  "Jeskai Artifacts",
 ];
 
 describe("decks du méta", () => {

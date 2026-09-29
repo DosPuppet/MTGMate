@@ -7,7 +7,8 @@ Plan établi le 29/09/2026 (branche `dev`) : il sert de feuille de route aux pro
 - **Lot M1 fait le 29/09/2026** : Izzet Spellementals et Mono-Green Landfall jouables, réserve comprise (22 cartes). Détail dans `docs/extensions/meta.md`. Le test « méta » (`cards/test/meta-decks.test.ts`), `fuzz --pool meta` et `verify --set META` existent.
 - **Lot M2 fait le 29/09/2026** : Dimir Midrange et Jund Sacrifice (23 cartes ; flétrir, Travail d'équipe, amasser).
 - **Lot M3 fait le 29/09/2026** : Dimir Excruciator, Azorius Control, Selesnya Landfall (15 cartes ; évocation, mobilisation, montée en puissance, réunir des preuves, copie depuis un cimetière).
-- À faire : lots M4 à M6, puis la phase 2 (Tarkir: Dragonstorm à 100 %).
+- **Lot M4 fait le 29/09/2026** : 4c Control, Boros Dragons, Jeskai Artifacts (23 cartes ; type de terrain choisi en jouant le terrain, exploiter, convergence, maîtrise du feu).
+- À faire : lots M5 et M6, puis la phase 2 (Tarkir: Dragonstorm à 100 %).
 
 ## Décision
 

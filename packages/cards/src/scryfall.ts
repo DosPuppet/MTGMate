@@ -696,6 +696,8 @@ function singleDef(raw: RawCard, script: CardScript | undefined, set: string): C
   // Évocation (702.74) et Mobilisation (702.181, Tarkir: Dragonstorm).
   const evoke = /^Evoke ((?:\{[^}]+\})+)/m.exec(raw.oracleText)?.[1];
   const mobilize = Number(/^Mobilize (\d+)/m.exec(raw.oracleText)?.[1] ?? 0);
+  // Maîtrise du feu N (Avatar) : « chaque fois que cette créature attaque, ajoutez N {R} » (jusqu'à la fin du tour).
+  const firebending = Number(/^Firebending (\d+)/m.exec(raw.oracleText)?.[1] ?? 0);
   const blight = Number(/As an additional cost to cast this spell, you may blight (\d+)/.exec(raw.oracleText)?.[1] ?? 0);
   const teamwork = Number(/^Teamwork (\d+)/m.exec(raw.oracleText)?.[1] ?? 0);
   const harmonize = /^Harmonize ((?:\{[^}]+\})+)/m.exec(raw.oracleText)?.[1];
@@ -706,6 +708,13 @@ function singleDef(raw: RawCard, script: CardScript | undefined, set: string): C
       dsl.triggered(dsl.when.entersSelf, [dsl.fx.sacrificeIt(dsl.ref.self)], {
         condition: dsl.cond.evoked,
         label: "Évoquée : sacrifiez-la",
+      }),
+    );
+  }
+  if (firebending) {
+    bloomburrowAbilities.push(
+      dsl.triggered(dsl.when.attacksSelf, [dsl.fx.addManaUntilEndOfTurn(...Array<"R">(firebending).fill("R"))], {
+        label: `Maîtrise du feu ${firebending}`,
       }),
     );
   }
@@ -850,7 +859,7 @@ function singleDef(raw: RawCard, script: CardScript | undefined, set: string): C
     equipDiscountWhenTargeted: script?.equipDiscountWhenTargeted,
     doubleDeathTriggersForEquipped: script?.doubleDeathTriggersForEquipped,
     evoke: evoke ? parseManaCost(evoke) : undefined,
-    shockLand: /As this land enters, you may pay (\d+) life\. If you don't, it enters tapped\./.exec(raw.oracleText)
+    shockLand: /(?:As this land enters, |Then )you may pay (\d+) life\. If you don't, it enters tapped\./.exec(raw.oracleText)
       ? Number(/you may pay (\d+) life/.exec(raw.oracleText)?.[1])
       : undefined,
     additionalCost: script?.additionalCost,

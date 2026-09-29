@@ -81,7 +81,7 @@ export interface CardDef {
   /** F/E définies par une capacité (604.3, couche 7a), ex. cartes dans les cimetières adverses. */
   cdaPT?: Amount;
   /** « En arrivant, choisissez un type de créature / une couleur » (614.12). */
-  chooseOnEnter?: "creatureType" | "color" | "cardName" | "landName";
+  chooseOnEnter?: "creatureType" | "color" | "cardName" | "landName" | "landType";
   /**
    * Dévorer (702.82) : « en arrivant, sacrifiez des [terrains] ; N marqueurs +1/+1 par permanent sacrifié ».
    * `graveyardUpToX` : « exilez jusqu'à X cartes de votre cimetière » à la place (Mimeoplasm, cartes liées).
@@ -425,6 +425,8 @@ export interface LayerMods {
   setColors?: Color[];
   /** Couche 4 : a tous les types de créature (Soulstone Sanctuary, changelin). */
   allCreatureTypes?: boolean;
+  /** Couche 4 : a en plus le type de terrain de base choisi par la source (Multiversal Passage). */
+  addChosenLandType?: boolean;
   /** Couche 4 : a en plus le type de créature choisi par la source (Adaptive Automaton). */
   addChosenSubtype?: boolean;
   /** Couche 6 : capacités (mots-clés) ajoutées ou retirées. */

@@ -78,8 +78,15 @@ function amountAtEntry(s: GameState, a: Amount, o: GameObject, ctx: EntersContex
 function defaultChoice(
   s: GameState,
   o: GameObject,
-  kind: "creatureType" | "color" | "cardName" | "landName",
+  kind: "creatureType" | "color" | "cardName" | "landName" | "landType",
 ): NonNullable<GameObject["chosen"]> {
+  // Multiversal Passage mis en jeu sans avoir été joué : le type de terrain de base le plus présent chez son contrôleur.
+  if (kind === "landType") {
+    const count = (t: string) =>
+      s.battlefield.filter((id) => s.objects[id]?.controller === o.controller && chars(s, id).subtypes.includes(t)).length;
+    const best = ["Plains", "Island", "Swamp", "Mountain", "Forest"].sort((a, b) => count(b) - count(a))[0];
+    return { landType: best };
+  }
   // Petrified Hamlet : le nom est choisi par sa capacité déclenchée d'arrivée ; rien avant sa résolution.
   if (kind === "landName") return { cardName: "—" };
   if (kind === "cardName") {

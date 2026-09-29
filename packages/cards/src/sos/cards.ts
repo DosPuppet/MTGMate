@@ -152,4 +152,42 @@ export const CARDS: Record<string, CardScript> = {
       ),
     ],
   },
+
+  // --- Lot M4 -----------------------------------------------------------------
+  Flashback: {
+    spell: spell(
+      [target.cardInGraveyard("t", { types: ["Instant", "Sorcery"] }, "you", "carte d'éphémère ou de rituel de votre cimetière")],
+      [fx.grantFlashback(ref.target())],
+    ),
+  },
+  "Together as One": {
+    // Convergence : X = couleurs de mana dépensées.
+    spell: spell(
+      [target.player("p"), target.any("d")],
+      [
+        fx.draw(amount.colorsSpent, ref.target("p")),
+        fx.damage(amount.colorsSpent, ref.target("d")),
+        fx.gainLife(amount.colorsSpent),
+      ],
+    ),
+  },
+  "Tablet of Discovery": {
+    abilities: [
+      triggered(when.entersSelf, [fx.mill(1, ref.you, { name: "m" }), fx.grantPlay(ref.stored("m"))], {
+        label: "Meulez une carte, jouable ce tour-ci",
+      }),
+      manaAbility("R"),
+      manaAbility("R", 2, { restriction: { spell: INSTANT_SORCERY } }),
+    ],
+  },
+  "Sundown Pass": {
+    abilities: [
+      entersWith({
+        tapped: true,
+        condition: cond.not(cond.controls({ types: ["Land"], other: true }, 2)),
+        label: "Engagé, sauf avec deux autres terrains ou plus",
+      }),
+      manaAbility(["R", "W"]),
+    ],
+  },
 };

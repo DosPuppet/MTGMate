@@ -261,7 +261,7 @@ function apply(s: GameState, submitter: PlayerId, d: Decision): void {
           passPriority(s, player);
           break;
         case "playLand":
-          playLand(s, player, d.card, !!d.payLife);
+          playLand(s, player, d.card, !!d.payLife, d.landType);
           s.priority.passes = 0;
           break;
         case "cast":

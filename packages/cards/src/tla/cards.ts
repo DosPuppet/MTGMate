@@ -8,8 +8,11 @@ import {
   BASIC_LAND,
   type CardScript,
   CLUE,
+  chapter,
   cond,
   cost,
+  costReducer,
+  DRAGON_FIREBENDING,
   entersWith,
   fx,
   manaAbility,
@@ -130,4 +133,49 @@ export const CARDS: Record<string, CardScript> = {
 
   // --- Lot M3 -----------------------------------------------------------------
   "Shared Roots": { spell: spell([], [fx.search(BASIC_LAND, { to: "battlefield", tapped: true })]) },
+
+  // --- Lot M4 -----------------------------------------------------------------
+  "Momo, Friendly Flier": {
+    abilities: [
+      costReducer(
+        { types: ["Creature"], keyword: "flying", notSubtype: "Lemur" },
+        1,
+        "Premier sort de créature volante du tour : {1} de moins",
+        {
+          condition: cond.all(
+            cond.yourTurn,
+            cond.not(cond.amountAtLeast(amount.turnEvents({ event: "cast", who: "you", types: ["Creature"] }), 1)),
+          ),
+        },
+      ),
+      triggered(
+        when.enters({ types: ["Creature"], controller: "you", keyword: "flying", other: true }),
+        [fx.pump(ref.self, 1, 1)],
+        {
+          label: "+1/+1 jusqu'à la fin du tour",
+        },
+      ),
+    ],
+  },
+  "The Legend of Roku": {
+    abilities: [
+      chapter([1], [fx.exileTop(ref.you, 3, "r"), fx.grantPlay(ref.stored("r"), { untilYourNextTurn: true })], {
+        label: "Exile les trois cartes du dessus, jouables jusqu'à la fin de votre prochain tour",
+      }),
+      chapter([2], [fx.addManaChoice(1)], { label: "Un mana de n'importe quelle couleur" }),
+      chapter([3], [fx.exileCard(ref.self, { name: "flip" }), fx.toBattlefield(ref.stored("flip"), { transformed: true })], {
+        label: "Revient transformée",
+      }),
+    ],
+  },
+  "Avatar Roku": {
+    // Maîtrise du feu 4 : lue dans le texte.
+    abilities: [
+      activated({
+        mana: "{8}",
+        effects: [fx.createTokens(DRAGON_FIREBENDING)],
+        label: "Un Dragon 4/4 volant, maîtrise du feu 4",
+      }),
+    ],
+  },
 };

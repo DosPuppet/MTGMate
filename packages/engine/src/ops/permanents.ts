@@ -53,6 +53,13 @@ export const HANDLERS: OpHandlers = {
     });
     return;
   },
+  harness(s, _r, _e, ctx) {
+    const o = s.objects[ctx.sourceId];
+    if (o?.zone !== "battlefield" || o.harnessed) return;
+    o.harnessed = true;
+    bump(s);
+    return;
+  },
   amass(s, _r, e, ctx) {
     const n = Math.max(0, evalAmount(s, ctx, e.amount));
     for (const p of resolveRef(s, ctx, e.who).filter((x) => isPlayer(s, x))) {

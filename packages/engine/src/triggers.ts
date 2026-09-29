@@ -265,9 +265,12 @@ export function checkCondition(s: GameState, c: Condition, controller: PlayerId,
       );
     }
     case "spentColor": {
-      const spent = (sourceId && (s.objects[sourceId]?.spentColors ?? s.stack.find((x) => x.id === sourceId)?.spentColors)) || {};
+      const item = s.resolving && s.resolving.item.id === sourceId ? s.resolving.item : s.stack.find((x) => x.id === sourceId);
+      const spent = (sourceId && (s.objects[sourceId]?.spentColors ?? item?.spentColors)) || {};
       return (spent[c.color] ?? 0) >= c.n;
     }
+    case "harnessed":
+      return !!sourceId && !!s.objects[sourceId]?.harnessed;
     case "evoked":
       return !!sourceId && !!s.objects[sourceId]?.evoked;
     case "prepared": {

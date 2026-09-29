@@ -573,3 +573,109 @@ describe("Méta, lot M3", () => {
     expect(idsOf(s, "p2", "battlefield", "Forest")).toHaveLength(1);
   });
 });
+
+describe("Méta, lot M4", () => {
+  it("Multiversal Passage : une option par type de terrain de base ; il en a le type et le mana", () => {
+    let s = scenario({ p1: { hand: ["Multiversal Passage"] } });
+    const card = idOf(s, "p1", "hand", "Multiversal Passage");
+    const opts = legalActions(s, "p1").filter((a) => a.type === "playLand" && a.card === card);
+    expect(opts).toHaveLength(10);
+    s = act(s, "p1", { type: "playLand", card, payLife: true, landType: "Island" });
+    const p = idOf(s, "p1", "battlefield", "Multiversal Passage");
+    expect(s.objects[p]?.tapped).toBe(false);
+    expect(chars(s, p).subtypes).toContain("Island");
+    expect(s.players.p1?.life).toBe(18);
+    expect(legalActions(s, "p1").some((a) => a.type === "tapForMana" && a.source === p && a.colors.includes("U"))).toBe(true);
+  });
+
+  it("Together as One : X = couleurs de mana dépensées", () => {
+    let s = scenario({
+      p1: {
+        battlefield: ["Plains", "Island", "Swamp", ...lands("Mountain", 3)],
+        hand: ["Together as One"],
+        library: lands("Forest", 5),
+      },
+    });
+    s = settle(act(s, "p1", { type: "cast", card: idOf(s, "p1", "hand", "Together as One"), targets: { p: ["p1"], d: ["p2"] } }));
+    expect(s.players.p2?.life).toBe(16);
+    expect(s.players.p1?.life).toBe(24);
+    expect(s.players.p1?.hand).toHaveLength(4);
+  });
+
+  it("Clarion Conqueror : même les capacités de mana des créatures sont bloquées", () => {
+    const s = scenario({ p1: { battlefield: ["Llanowar Elves"] }, p2: { battlefield: ["Clarion Conqueror"] } });
+    const elves = idOf(s, "p1", "battlefield", "Llanowar Elves");
+    expect(legalActions(s, "p1").some((a) => a.type === "tapForMana" && a.source === elves)).toBe(false);
+  });
+
+  it("Thor : un sort non-créature inflige autant de blessures que sa valeur de mana", () => {
+    let s = scenario({
+      p1: { battlefield: ["Thor, God of Thunder", ...lands("Mountain", 3)], hand: ["Fiery Annihilation"] },
+      p2: { battlefield: ["Bear Cub"] },
+    });
+    const bear = idOf(s, "p2", "battlefield", "Bear Cub");
+    s = act(s, "p1", { type: "cast", card: idOf(s, "p1", "hand", "Fiery Annihilation"), targets: { t: [bear] } });
+    s = passAccepting(s, (x) => x.pending?.kind === "choice" || x.stack.length === 0);
+    if (s.pending?.kind === "choice") s = act(s, "p1", { type: "choose", values: ["p2"] });
+    s = settle(s);
+    expect(s.players.p2?.life).toBe(17);
+  });
+
+  it("The Mind Stone : exploitée, elle fait sortir et revenir un permanent à votre étape de fin", () => {
+    let s = scenario({ p1: { battlefield: ["The Mind Stone", ...lands("Plains", 6), { name: "Bear Cub", sick: false }] } });
+    const stone = idOf(s, "p1", "battlefield", "The Mind Stone");
+    const bear = idOf(s, "p1", "battlefield", "Bear Cub");
+    const opt = legalActions(s, "p1").find((a) => a.type === "activate" && a.source === stone);
+    s = settle(act(s, "p1", { type: "activate", source: stone, ability: opt?.type === "activate" ? opt.ability : -1 }));
+    expect(s.objects[stone]?.harnessed).toBe(true);
+    s = advanceUntil(s, (x) => x.turn.active === "p2");
+    expect(s.objects[bear]).toBeUndefined();
+    expect(idsOf(s, "p1", "battlefield", "Bear Cub")).toHaveLength(1);
+  });
+
+  it("Jeskai Revelation : renvoie un sort en main", () => {
+    let s = scenario({
+      p1: {
+        battlefield: [...lands("Island", 3), ...lands("Mountain", 2), ...lands("Plains", 2)],
+        hand: ["Jeskai Revelation"],
+        library: lands("Island", 4),
+      },
+      p2: { battlefield: lands("Forest", 2), hand: ["Bear Cub"] },
+      active: "p2",
+    });
+    s = act(s, "p2", { type: "cast", card: idOf(s, "p2", "hand", "Bear Cub") });
+    const spell = s.stack[0]?.id as string;
+    s = act(s, "p2", { type: "pass" });
+    s = settle(
+      act(s, "p1", { type: "cast", card: idOf(s, "p1", "hand", "Jeskai Revelation"), targets: { b: [spell], d: ["p2"] } }),
+    );
+    expect(idsOf(s, "p2", "hand", "Bear Cub")).toHaveLength(1);
+    expect(idsOf(s, "p1", "battlefield", "Monk")).toHaveLength(2);
+    expect(s.players.p2?.life).toBe(16);
+  });
+
+  it("The Legend of Roku : trois chapitres, puis Avatar Roku (maîtrise du feu 4)", () => {
+    let s = scenario({
+      p1: { battlefield: lands("Mountain", 4), hand: ["The Legend of Roku // Avatar Roku"], library: lands("Mountain", 10) },
+    });
+    s = settle(act(s, "p1", { type: "cast", card: idOf(s, "p1", "hand", "The Legend of Roku // Avatar Roku") }));
+    expect(s.exile.filter((id) => s.objects[id]?.owner === "p1")).toHaveLength(3);
+    for (let i = 0; i < 3; i++)
+      s = advanceUntil(s, (x) => x.turn.active === "p1" && x.turn.step === "main1" && x.turn.number > (i === 0 ? 3 : 3 + 2 * i));
+    const roku = s.battlefield.find((id) => chars(s, id).name === "Avatar Roku");
+    expect(roku).toBeDefined();
+  });
+
+  it("Magmatic Hellkite : détruit un terrain non de base ; son contrôleur reçoit un terrain de base engagé avec un marqueur d'étourdissement", () => {
+    let s = scenario({
+      p1: { battlefield: lands("Mountain", 4), hand: ["Magmatic Hellkite"] },
+      p2: { battlefield: ["Hidden Lair"], library: ["Island", "Opt"] },
+    });
+    const lair = idOf(s, "p2", "battlefield", "Hidden Lair");
+    s = settle(act(s, "p1", { type: "cast", card: idOf(s, "p1", "hand", "Magmatic Hellkite") }));
+    expect(s.objects[lair]).toBeUndefined();
+    const island = idOf(s, "p2", "battlefield", "Island");
+    expect(s.objects[island]?.tapped).toBe(true);
+    expect(s.objects[island]?.counters.stun).toBe(1);
+  });
+});

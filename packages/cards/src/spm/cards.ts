@@ -2,7 +2,7 @@
  * Marvel's Spider-Man — cartes des decks du méta (phase 1 du plan P4, lot M1). L'extension n'est pas encore couverte en
  * entier.
  */
-import { activated, amount, type CardScript, cond, fx, manaAbility, ref, target, triggered, when } from "./common";
+import { activated, amount, type CardScript, cond, fx, manaAbility, ref, staticAbility, target, triggered, when } from "./common";
 
 export const CARDS: Record<string, CardScript> = {
   // --- Bleu ------------------------------------------------------------------
@@ -42,5 +42,12 @@ export const CARDS: Record<string, CardScript> = {
   "Superior Spider-Man": {
     entersAsCopyOfGraveyard: { filter: { types: ["Creature"] }, name: "Superior Spider-Man", power: 4, toughness: 4 },
     entersAsCopyAddSubtypes: ["Spider", "Human", "Hero"],
+  },
+
+  // --- Lot M4 -----------------------------------------------------------------
+  "Multiversal Passage": {
+    // Le type de terrain de base est choisi en jouant le terrain (une option par type) ; « payez 2 PV » est lu dans le texte.
+    chooseOnEnter: "landType",
+    abilities: [staticAbility("self", { addChosenLandType: true }, { label: "Est du type choisi" })],
   },
 };

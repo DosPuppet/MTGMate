@@ -187,9 +187,16 @@ export function canPlayLand(s: GameState, player: PlayerId, card: ObjectId): boo
   return allowed && sorceryTiming(s, player) && s.turn.landsPlayed < landsAllowed(s, player);
 }
 
-export function playLand(s: GameState, player: PlayerId, card: ObjectId, payLife = false): void {
+/** Types de terrain de base (205.3i). */
+export const BASIC_LAND_TYPES = ["Plains", "Island", "Swamp", "Mountain", "Forest"];
+
+export function playLand(s: GameState, player: PlayerId, card: ObjectId, payLife = false, landType?: string): void {
   if (!canPlayLand(s, player, card)) throw new RulesError("Vous ne pouvez pas jouer ce terrain maintenant");
   const o = obj(s, card);
+  // Multiversal Passage : « en arrivant, choisissez un type de terrain de base » (choisi avec la décision).
+  const choosesType = s.defs[o.defId]?.chooseOnEnter === "landType";
+  if (landType !== undefined && (!choosesType || !BASIC_LAND_TYPES.includes(landType)))
+    throw new RulesError("Type de terrain de base invalide");
   // Terrains choc : « vous pouvez payer 2 points de vie ; sinon, il arrive engagé ».
   const shock = s.defs[o.defId]?.shockLand;
   if (payLife && !shock) throw new RulesError("Ce terrain ne demande pas de points de vie");
@@ -197,7 +204,10 @@ export function playLand(s: GameState, player: PlayerId, card: ObjectId, payLife
   if (o.zone === "graveyard") s.turn.graveyardTypesUsed = [...(s.turn.graveyardTypesUsed ?? []), "Land"];
   const defId = o.defId;
   const fromExile = o.zone === "exile" ? exilePermission(s, player, card) : undefined;
-  const id = moveObject(s, card, "battlefield", { controller: player, enters: { shockPaid: payLife } });
+  const id = moveObject(s, card, "battlefield", {
+    controller: player,
+    enters: { shockPaid: payLife, chosen: landType ? { landType } : undefined },
+  });
   s.turn.landsPlayed += 1;
   emit({ type: "playLand", player, objectId: id as string, defId });
   if (id) rulesEvent(s, { e: "playLand", player, objectId: id });

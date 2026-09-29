@@ -58,4 +58,15 @@ export const CARDS: Record<string, CardScript> = {
       }),
     ],
   },
+
+  // --- Lot M4 -----------------------------------------------------------------
+  "Smaug the Magnificent": {
+    abilities: [
+      triggered(when.attacksSelf, [fx.damage(amount.count({ subtype: "Treasure", controller: "you" }), ref.target())], {
+        targets: [target.any()],
+        label: "Blessures égales au nombre de vos Trésors",
+      }),
+      triggered(when.yourUpkeep, [fx.createTokens(TREASURE)], { label: "Un Trésor" }),
+    ],
+  },
 };

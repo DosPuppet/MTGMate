@@ -444,6 +444,15 @@ function faceLabel(source: ObjectView | undefined, face: string | undefined, lan
   return (lang === "fr" && f?.fr?.name) || face;
 }
 
+/** Types de terrain de base, pour le choix de Multiversal Passage. */
+const LAND_TYPE_FR: Record<string, string> = {
+  Plains: "Plaine",
+  Island: "Île",
+  Swamp: "Marais",
+  Mountain: "Montagne",
+  Forest: "Forêt",
+};
+
 function AbilityMenu() {
   const menu = useGame((s) => s.abilityMenu);
   const view = useGame((s) => s.view);
@@ -478,13 +487,14 @@ function AbilityMenu() {
                 key={i}
                 type="button"
                 className="btn choice"
-                onClick={() => decide({ type: "playLand", card: o.card, payLife: o.payLife })}
+                onClick={() => decide({ type: "playLand", card: o.card, payLife: o.payLife, landType: o.landType })}
               >
                 {o.payLife
                   ? "Jouer ce terrain en payant 2 points de vie (dégagé)"
                   : menu.options.some((x) => x.type === "playLand" && x.payLife)
                     ? "Jouer ce terrain engagé"
                     : "Jouer ce terrain"}
+                {o.landType ? ` — ${LAND_TYPE_FR[o.landType] ?? o.landType}` : ""}
               </button>
             );
           }

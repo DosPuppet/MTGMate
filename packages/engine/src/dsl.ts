@@ -64,7 +64,7 @@ export interface CardScript {
   altCost?: { mana: string; condition: Condition; label: string };
   /** F/E définies par une capacité (F/E étoilées sur la carte). */
   cdaPT?: Amount;
-  chooseOnEnter?: "creatureType" | "color" | "cardName" | "landName";
+  chooseOnEnter?: "creatureType" | "color" | "cardName" | "landName" | "landType";
   shuffleIntoLibrary?: boolean;
   graveyardCastRemoveCounters?: number;
   /** Skyseer's Chariot : les capacités activées des sources du nom choisi coûtent {N} de plus. */
@@ -258,6 +258,8 @@ export const amount = {
   lifeTotal: { kind: "lifeTotal" } as Amount,
   /** Marqueurs sur la source d'après ses dernières informations connues (capacité « quand elle meurt »). */
   lkiCounters: (counter: string): Amount => ({ kind: "lkiCounters", counter }),
+  /** Convergence : couleurs de mana dépensées pour lancer ce sort. */
+  colorsSpent: { kind: "colorsSpent" } as Amount,
   plus: (...of: Amount[]): Amount => ({ kind: "sum", of }),
   neg: (of: Amount): Amount => ({ kind: "neg", of }),
   /** Division entière : « pour chaque tranche de N ». */
@@ -387,6 +389,8 @@ export const fx = {
     ...opts,
   }),
   addCounters: (what: Ref, n: Amount): Effect => ({ op: "addCounters", what, amount: n }),
+  /** « Exploitez [cette Gemme d'infinité] » (Harness). */
+  harness: { op: "harness" } as Effect,
   /** « [Ce joueur] amasse des [Gobelins] X » (701.47). */
   amass: (who: Ref, subtype: string, n: Amount): Effect => ({ op: "amass", who, subtype, amount: n }),
   /**
@@ -1517,6 +1521,8 @@ export const cond = {
   /** « Si {U}{U} a été dépensé pour le lancer » : `cond.spent("U", 2)`. */
   spent: (color: ManaType, n: number): Condition => ({ kind: "spentColor", color, n }),
   evoked: { kind: "evoked" } as Condition,
+  /** Capacité ∞ : la source a été exploitée. */
+  harnessed: { kind: "harnessed" } as Condition,
   activatedLoyalty: { kind: "activatedLoyaltyThisTurn" } as Condition,
   /** La source est préparée. */
   prepared: { kind: "prepared" } as Condition,

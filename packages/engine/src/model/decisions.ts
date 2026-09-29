@@ -133,7 +133,8 @@ export type Decision =
   | { type: "mulligan" }
   | { type: "bottom"; cards: ObjectId[] }
   | { type: "pass" }
-  | { type: "playLand"; card: ObjectId; payLife?: boolean }
+  /** `landType` : type de terrain de base choisi en arrivant (Multiversal Passage). */
+  | { type: "playLand"; card: ObjectId; payLife?: boolean; landType?: string }
   | ({ type: "cast"; card: ObjectId } & CastChoices)
   | ({ type: "activate"; source: ObjectId; ability: number } & CastChoices)
   | { type: "tapForMana"; source: ObjectId; ability: number; color?: ManaType }
@@ -169,7 +170,8 @@ export interface ModeOption {
 
 export type ActionOption =
   | { type: "pass" }
-  | { type: "playLand"; card: ObjectId; payLife?: boolean }
+  /** `landType` : type de terrain de base choisi en arrivant (Multiversal Passage). */
+  | { type: "playLand"; card: ObjectId; payLife?: boolean; landType?: string }
   | {
       type: "cast";
       card: ObjectId;

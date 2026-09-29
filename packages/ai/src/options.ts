@@ -41,7 +41,7 @@ export function buildCastDecision(
     case "pass":
       return { type: "pass" };
     case "playLand":
-      return { type: "playLand", card: a.card, payLife: a.payLife };
+      return { type: "playLand", card: a.card, payLife: a.payLife, landType: a.landType };
     case "tapForMana":
       return { type: "tapForMana", source: a.source, ability: a.ability, color: a.colors[0] };
     case "cast": {
@@ -172,7 +172,7 @@ export function enumerateDecisions(a: ActionOption, limit = 40, rank?: (ids: str
       return [...base, ...(cheap ? base.map((d) => ({ ...d, tap: cheap })) : [])].slice(0, limit);
     }
     case "playLand":
-      return [{ type: "playLand", card: a.card, payLife: a.payLife }];
+      return [{ type: "playLand", card: a.card, payLife: a.payLife, landType: a.landType }];
     default:
       return [];
   }

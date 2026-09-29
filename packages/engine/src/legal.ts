@@ -12,6 +12,7 @@ import {
   additionalOptions,
   altCostFor,
   autoAdditional,
+  BASIC_LAND_TYPES,
   canCastTiming,
   canPayNonManaCost,
   canPlayLand,
@@ -206,8 +207,14 @@ export function legalActions(s: GameState, player: PlayerId): ActionOption[] {
     if (d.types.includes("Land")) {
       if (canPlayLand(s, player, card)) {
         // Terrain choc : payer les points de vie (dégagé) ou non (engagé).
-        if (d.shockLand && (s.players[player]?.life ?? 0) >= d.shockLand) out.push({ type: "playLand", card, payLife: true });
-        out.push({ type: "playLand", card });
+        // Multiversal Passage : une option par type de terrain de base choisi.
+        const types = d.chooseOnEnter === "landType" ? BASIC_LAND_TYPES : [undefined];
+        for (const landType of types) {
+          const extra = landType ? { landType } : {};
+          if (d.shockLand && (s.players[player]?.life ?? 0) >= d.shockLand)
+            out.push({ type: "playLand", card, payLife: true, ...extra });
+          out.push({ type: "playLand", card, ...extra });
+        }
       }
       // Ville à aventure : l'Aventure reste lançable.
       if (d.layout !== "adventure") continue;

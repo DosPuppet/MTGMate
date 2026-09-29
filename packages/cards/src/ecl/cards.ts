@@ -2,7 +2,20 @@
  * Lorwyn Eclipsed — cartes des decks du méta (phase 1 du plan P4, lot M1). L'extension n'est pas encore couverte en
  * entier : les autres cartes viendront avec elle.
  */
-import { activated, amount, type CardScript, cond, fx, ref, spell, TREEFOLK_REACH, target, triggered, when } from "./common";
+import {
+  activated,
+  amount,
+  type CardScript,
+  cond,
+  fx,
+  manaAbility,
+  ref,
+  spell,
+  TREEFOLK_REACH,
+  target,
+  triggered,
+  when,
+} from "./common";
 
 /** Terrains choc : la règle « payez 2 PV ou il arrive engagé » est lue dans le texte. */
 const shock: CardScript = {};
@@ -71,6 +84,18 @@ export const CARDS: Record<string, CardScript> = {
         condition: cond.spent("B", 2),
         targets: [target.player("t", "opponent")],
         label: "{B}{B} dépensé : défausse d'une carte non-terrain choisie",
+      }),
+    ],
+  },
+
+  // --- Lot M4 -----------------------------------------------------------------
+  "Firdoch Core": {
+    abilities: [
+      manaAbility(["W", "U", "B", "R", "G"]),
+      activated({
+        mana: "{4}",
+        effects: [fx.modify(ref.self, { addTypes: ["Artifact", "Creature"], setPower: 4, setToughness: 4 })],
+        label: "Devient une créature-artefact 4/4",
       }),
     ],
   },

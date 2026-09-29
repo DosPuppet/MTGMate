@@ -3,7 +3,7 @@
  * texte (`scryfall.ts` : kicker « sacrifiez un artefact, un enchantement ou un jeton »). L'extension n'est pas encore
  * couverte en entier.
  */
-import { amount, type CardScript, cond, fx, INSTANT_SORCERY, ref, spell, target } from "./common";
+import { activated, amount, type CardScript, cond, fx, INSTANT_SORCERY, ref, spell, target, triggered, when } from "./common";
 
 export const CARDS: Record<string, CardScript> = {
   // --- Bleu ------------------------------------------------------------------
@@ -29,5 +29,19 @@ export const CARDS: Record<string, CardScript> = {
   // --- Lot M2 -----------------------------------------------------------------
   "Disdainful Stroke": {
     spell: spell([target.spell("t", { minManaValue: 4 }, "sort de VM 4 ou plus")], [fx.counter(ref.target())]),
+  },
+
+  // --- Lot M4 -----------------------------------------------------------------
+  "Candy Trail": {
+    abilities: [
+      triggered(when.entersSelf, [fx.scry(2)], { label: "Regard 2" }),
+      activated({
+        mana: "{2}",
+        tap: true,
+        sacrifice: true,
+        effects: [fx.gainLife(3), fx.draw(1)],
+        label: "Gagnez 3 PV, piochez",
+      }),
+    ],
   },
 };

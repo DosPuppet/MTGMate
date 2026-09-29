@@ -19,6 +19,8 @@ import type {
 } from "../types";
 
 export type Effect =
+  /** « Exploitez [cette Gemme d'infinité] » : ses capacités ∞ deviennent actives. */
+  | { op: "harness" }
   /**
    * Deadly Cover-Up : exilez une carte du cimetière d'un adversaire (au choix du contrôleur), puis toutes les cartes du
    * même nom de son cimetière, de sa main et de sa bibliothèque ; il mélange, puis pioche autant que de cartes exilées
@@ -300,7 +302,7 @@ export type Effect =
   /** « Vous pouvez lancer [cette carte] depuis votre cimetière ce tour-ci. » */
   | { op: "allowCastFromGraveyard"; what: Ref }
   /** « En arrivant, choisissez un type de créature / une couleur » (sort de permanent qui se résout). */
-  | { op: "chooseOnEnter"; kind: "creatureType" | "color" | "cardName" | "landName" }
+  | { op: "chooseOnEnter"; kind: "creatureType" | "color" | "cardName" | "landName" | "landType" }
   /** Dévorer : pendant la résolution du sort de permanent, sacrifier des permanents (nombre mémorisé). */
   | { op: "devour"; filter: ObjectFilter; graveyardUpToX?: boolean }
   /** Pendant la résolution d'un sort de permanent : choisir le permanent à copier en arrivant. */

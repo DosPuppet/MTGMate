@@ -470,6 +470,11 @@ export function evalAmount(s: GameState, ctx: EffectContext, a: Amount): number 
           .filter((id) => matchesObjectFilter(s, ctx.controller, id, a.filter, ctx.sourceId))
           .map((id) => chars(s, id).name),
       ).size;
+    case "colorsSpent": {
+      const item = s.resolving?.item.id === ctx.sourceId ? s.resolving.item : s.stack.find((x) => x.id === ctx.sourceId);
+      const spent = item?.spentColors ?? s.objects[ctx.sourceId]?.spentColors ?? {};
+      return (["W", "U", "B", "R", "G"] as const).filter((c) => (spent[c] ?? 0) > 0).length;
+    }
     case "lkiCounters": {
       const counters = s.objects[ctx.sourceId]?.counters ?? s.lki[ctx.sourceId]?.counters ?? {};
       return counters[a.counter] ?? 0;

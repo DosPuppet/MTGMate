@@ -117,3 +117,24 @@ Les scripts vont dans le dossier de leur extension (`packages/cards/src/<ext>/ca
 - **Marvel Super Heroes (MSH) :** M.O.D.O.K. ; en réserve, Captain Marvel, Earth's Protector (montée en puissance).
 - **Marvel's Spider-Man (SPM) :** Superior Spider-Man.
 - **Tarkir: Dragonstorm (TDM), réserve :** Voice of Victory (mobilisation 2), Qarsi Revenant (Renouveau).
+
+## Lot M4 — 4c Control, Boros Dragons et Jeskai Artifacts (cumul 67,1 % du méta)
+
+23 cartes : 22 des decks principaux, 1 de réserve. Tests dans `engine/test/meta.test.ts` (« lot M4 »).
+
+### Moteur
+
+- **Type de terrain de base choisi en jouant un terrain** (Multiversal Passage) : `chooseOnEnter: "landType"` ; `legalActions` propose une option `playLand` par type (`landType`, aussi pour payer ou non les 2 PV), et la statique `addChosenLandType` lui donne ce type (donc son mana). Le terrain choc « Then you may pay 2 life » est lu dans le texte.
+- **Exploiter** (Harness, Marvel Super Heroes) : `fx.harness` et `cond.harnessed` pour les capacités ∞.
+- **Convergence** : `amount.colorsSpent`, les couleurs de mana dépensées pour lancer le sort.
+- **Maîtrise du feu N** (Firebending, Avatar) : lue dans le texte ; « chaque fois que cette créature attaque, ajoutez N {R} ».
+- Jetons : Moine 1/1 avec la prouesse (`tdm/common.ts`), Doombot (`msh/common.ts`), Dragon 4/4 avec la maîtrise du feu 4 (`tla/common.ts`).
+
+### Cartes, par extension
+
+- **Tarkir: Dragonstorm (TDM) :** Clarion Conqueror, Dispelling Exhale, Inevitable Defeat, Jeskai Revelation, Maelstrom of the Spirit Dragon, Magmatic Hellkite, Mistrise Village, Sarkhan, Dragon Ascendant, Twinmaw Stormbrood // Charring Bite (présage), United Battlefront.
+- **Secrets of Strixhaven (SOS) :** Flashback, Sundown Pass, Tablet of Discovery, Together as One (convergence).
+- **Marvel Super Heroes (MSH) :** Castle Doom, The Mind Stone (exploiter), Thor, God of Thunder.
+- **Wilds of Eldraine (WOE) :** Candy Trail. **Lorwyn Eclipsed (ECL) :** Firdoch Core. **The Hobbit (HOB) :** Smaug the Magnificent.
+- **Avatar: The Last Airbender (TLA) :** Momo, Friendly Flier ; en réserve, The Legend of Roku // Avatar Roku (Saga qui se transforme, maîtrise du feu 4).
+- **Marvel's Spider-Man (SPM) :** Multiversal Passage.

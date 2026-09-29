@@ -449,6 +449,9 @@ export function computeBattlefield(s: GameState): Map<ObjectId, Characteristics>
         if (mods.addChosenSubtype && o.chosen?.creatureType) {
           mods = { ...mods, addSubtypes: [...(mods.addSubtypes ?? []), o.chosen.creatureType] };
         }
+        if (mods.addChosenLandType && o.chosen?.landType) {
+          mods = { ...mods, addSubtypes: [...(mods.addSubtypes ?? []), o.chosen.landType] };
+        }
         applied.push({
           timestamp: grantedAt.get(ab) ?? o.timestamp,
           mods,

@@ -86,7 +86,7 @@ export interface GameObject {
   /** Tour de la dernière activation d'une capacité de loyauté (606.3 : une par tour). */
   loyaltyTurn?: number;
   /** Choix faits en arrivant (type de créature, couleur, nom de carte). */
-  chosen?: { creatureType?: string; color?: Color; cardName?: string };
+  chosen?: { creatureType?: string; color?: Color; cardName?: string; landType?: string };
   /** Arrivé depuis un sort lancé depuis la main (Myojin). */
   castFromHand?: boolean;
   /** Lancé depuis le cimetière (Undead Sprinter : « si vous le faites, elle arrive avec un marqueur +1/+1 »). */
@@ -106,6 +106,8 @@ export interface GameObject {
   warped?: boolean;
   /** Imminence (702.176) : lancé pour son coût d'imminence ; ce n'est pas une créature tant qu'il a un marqueur de temps. */
   impending?: boolean;
+  /** Exploité (Harness, Marvel Super Heroes) : ses capacités ∞ sont actives. */
+  harnessed?: boolean;
   /** Évocation (702.74) : lancé pour son coût d'évocation (sacrifié en arrivant). */
   evoked?: boolean;
   /** Mana dépensé pour le lancer, par type (« si {U}{U} a été dépensé pour le lancer », Deceit). */

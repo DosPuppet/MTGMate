@@ -393,6 +393,8 @@ export type Condition =
   /** « Contempler un Jace » : vous contrôlez un Jace ou vous avez une carte de Jace en main. */
   /** « Si {U}{U} a été dépensé pour le lancer » : au moins N mana de ce type dépensé pour lancer la source. */
   | { kind: "spentColor"; color: ManaType; n: number }
+  /** La source a été exploitée (Harness) : ses capacités ∞ sont actives. */
+  | { kind: "harnessed" }
   /** La source a été lancée pour son coût d'évocation. */
   | { kind: "evoked" }
   /** Contempler (701.63) : vous contrôlez un permanent correspondant, ou vous révélez une carte correspondante de votre main. */
@@ -537,6 +539,8 @@ export type Amount =
   /** Marqueurs d'un type sur la source, d'après ses dernières informations connues (« si elle avait un marqueur… »). */
   | { kind: "lkiCounters"; counter: string }
   | { kind: "manaValueOf"; ref: Ref }
+  /** Convergence : nombre de couleurs de mana dépensées pour lancer la source (le sort qui se résout). */
+  | { kind: "colorsSpent" }
   | { kind: "toughnessOf"; ref: Ref }
   /** Nombre de couleurs de l'objet (Ramos). */
   | { kind: "colorsOf"; ref: Ref }

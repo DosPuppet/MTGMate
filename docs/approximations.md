@@ -194,5 +194,9 @@ Dans l'ordre où elles ont été ajoutées, extension par extension.
   - `choix auto` Réunir des preuves (Deadly Cover-Up) : les cartes exilées du cimetière sont choisies par le moteur (les plus chères d'abord) ;
   - `choix auto` Deceit : le type du mana dépensé suit le paiement automatique ; pour payer {U}{U} ou {B}{B}, engagez vos terrains à la main avant de lancer le sort ;
   - `timing` Superior Spider-Man : la carte copiée est exilée en arrivant, et non par une capacité réflexive.
+  - `règle` Maîtrise du feu : le mana ajouté reste jusqu'à la fin du tour, et non jusqu'à la fin du combat ;
+  - `règle` Momo, Friendly Flier : la réduction s'applique si vous n'avez lancé aucun sort de créature ce tour-ci (et non « aucun sort de créature non-Lémurien avec le vol ») ;
+  - `timing` Dispelling Exhale : contempler un Dragon est vérifié à la résolution (vous en contrôlez un ou en avez un en main) ;
+  - `règle` United Battlefront : les cartes restantes vont sous la bibliothèque dans l'ordre, pas dans un ordre aléatoire.
 - **Légalité Standard :** instantané des légalités Scryfall au moment de l'import (`legalities.standard` dans `data/<set>.json`). Après une rotation ou une annonce de bannissement, réimporter les sets (`npm run import-cards -- <set>`).
 - **Images des jetons :** celle du jeton Scryfall le plus proche (même nom, puis mêmes F/E et couleurs ; `data/tokens.json`, `npm run import-tokens`) ; un jeton de nom inconnu garde le cadre texte.

@@ -8,6 +8,7 @@ import {
   amount,
   type CardScript,
   cond,
+  DOOMBOT,
   fx,
   manaAbility,
   ref,
@@ -72,6 +73,60 @@ export const CARDS: Record<string, CardScript> = {
         powerUp: true,
         effects: [fx.addCounters(ref.self, 1), fx.counters(ref.self, "indestructible")],
         label: "Montée en puissance : marqueurs +1/+1 et indestructible",
+      }),
+    ],
+  },
+
+  // --- Lot M4 -----------------------------------------------------------------
+  "Thor, God of Thunder": {
+    abilities: [
+      triggered(
+        when.entersSelf,
+        [fx.exileCard(ref.target(), { name: "t" }), fx.grantPlay(ref.stored("t"), { untilYourNextTurn: true })],
+        {
+          targets: [
+            target.cardInGraveyard(
+              "t",
+              { anyOf: [{ subtype: "Equipment" }, { types: ["Instant"] }, { types: ["Sorcery"] }] },
+              "you",
+              "carte d'Équipement, d'éphémère ou de rituel de votre cimetière",
+            ),
+          ],
+          label: "Exile une carte : jouable jusqu'à la fin de votre prochain tour",
+        },
+      ),
+      triggered(
+        when.castSpell("you", { notTypes: ["Creature"] }),
+        [fx.damage(amount.manaValueOf(ref.eventObject), ref.target())],
+        {
+          targets: [target.any()],
+          label: "Blessures égales à la valeur de mana du sort",
+        },
+      ),
+    ],
+  },
+  "The Mind Stone": {
+    abilities: [
+      manaAbility("W"),
+      activated({ mana: "{5}{W}", tap: true, effects: [fx.harness], label: "Exploiter la Gemme de l'Esprit" }),
+      triggered(when.yourEndStep, [fx.exileCard(ref.target(), { name: "f" }), fx.toBattlefield(ref.stored("f"))], {
+        condition: cond.harnessed,
+        targets: [target.upTo(1, target.nonland("t", { controller: "you", other: true }))],
+        label: "∞ — Exile puis renvoie un permanent non-terrain",
+      }),
+    ],
+  },
+  "Castle Doom": {
+    abilities: [
+      manaAbility("C"),
+      manaAbility(["W", "U", "B", "R", "G"], 1, { restriction: { spell: { types: ["Artifact"] } } }),
+      activated({
+        mana: "{3}",
+        tap: true,
+        sacrificeOther: { filter: { types: ["Artifact"] } },
+        sorcerySpeed: true,
+        effects: [fx.createTokens(DOOMBOT)],
+        label: "Un Doombot 3/3",
       }),
     ],
   },
