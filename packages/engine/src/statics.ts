@@ -79,6 +79,17 @@ export function playerStaticTotal(s: GameState, player: PlayerId, key: PlayerSta
   return n;
 }
 
+/** Valeurs d'une statique de joueur portées par les effets en vigueur (« ne peut pas attaquer ce joueur »). */
+export function playerEffectValues<K extends PlayerStaticKey>(
+  s: GameState,
+  player: PlayerId,
+  key: K,
+): NonNullable<PlayerStaticAbilityDef[K]>[] {
+  return liveEffects(s, player)
+    .map((e) => e.ability[key])
+    .filter((v): v is NonNullable<PlayerStaticAbilityDef[K]> => v !== undefined && v !== null && v !== false);
+}
+
 /** Crée un effet sur un joueur jusqu'à la fin du tour `until` (null : toute la partie). */
 export function addPlayerEffect(
   s: GameState,

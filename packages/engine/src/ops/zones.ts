@@ -1,4 +1,5 @@
 /** Effets du moteur : déplacements entre zones (détruire, exiler, sacrifier, chercher, meuler, défausser…). Chaque clé est un `op` d'`Effect` (voir `runEffect`, effects.ts). */
+
 import { dealDamage, destroy, drawCard, sacrifice } from "../actions";
 import type { EffectContext, OpHandlers, OpResult } from "../effects";
 import {
@@ -37,7 +38,7 @@ import {
   tapObject,
   turnFaceUp,
 } from "../state";
-import { controlledAbilitiesWithSource, playerStatic } from "../statics";
+import { addPlayerEffect, controlledAbilitiesWithSource, playerStatic } from "../statics";
 import { matchesCard, matchesObjectFilter } from "../targets";
 import type { CardType, Effect, GameState, ObjectId, Resolution } from "../types";
 
@@ -609,7 +610,7 @@ export const HANDLERS: OpHandlers = {
     return;
   },
   graveyardCreatureOnce(s, _r, _e, ctx) {
-    s.turn.graveyardCreatureOnce = [...(s.turn.graveyardCreatureOnce ?? []), ctx.controller];
+    addPlayerEffect(s, ctx.controller, { castCreatureFromGraveyard: true }, s.turn.number, true);
     return;
   },
   destroyAllButOnePerPlayer(s, r, e, ctx, key) {

@@ -117,7 +117,7 @@ export const HANDLERS: OpHandlers = {
     return;
   },
   preventDamageToYourCreatures(s, _r, _e, ctx) {
-    s.turn.preventCreatureDamageFor = [...(s.turn.preventCreatureDamageFor ?? []), ctx.controller];
+    addPlayerEffect(s, ctx.controller, { creaturesDamageImmune: true }, s.turn.number);
     return;
   },
   eachDealsDamage(s, _r, e, ctx) {

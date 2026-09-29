@@ -20,8 +20,7 @@ import { eliminate, endTheTurn } from "../turn";
 export const HANDLERS: OpHandlers = {
   cantAttackYouThisTurn(s, _r, e, ctx) {
     for (const p of resolveRef(s, ctx, e.who)) {
-      if (isPlayer(s, p) && p !== ctx.controller)
-        s.turn.attackBans = [...(s.turn.attackBans ?? []), { player: p, defender: ctx.controller }];
+      if (isPlayer(s, p) && p !== ctx.controller) addPlayerEffect(s, p, { cantAttackPlayer: ctx.controller }, s.turn.number);
     }
     return;
   },

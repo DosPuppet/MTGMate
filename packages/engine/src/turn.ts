@@ -37,7 +37,7 @@ import {
   shuffle,
   tapObject,
 } from "./state";
-import { controlledAbilitiesWithSource, playerStatic } from "./statics";
+import { controlledAbilitiesWithSource, playerEffectValues, playerStatic } from "./statics";
 import { matchesObjectFilter } from "./targets";
 import { checkCondition, processTriggers, releaseDelayedTriggers, simultaneously } from "./triggers";
 import { logTurnEvent } from "./turnlog";
@@ -392,14 +392,11 @@ function endStep(s: GameState): void {
     s.turn.active = extra && s.players[extra] && !s.players[extra]?.lost ? extra : nextPlayer(s, s.turn.active);
     s.turn.endSteps = 0;
     s.turn.extraEndSteps = 0;
-    s.turn.preventCreatureDamageFor = undefined;
     s.turn.combats = 0;
     s.turn.step = "untap";
     startTurnOf(s, s.turn.active);
     s.turn.landsPlayed = 0;
     s.turn.speedRaised = false;
-    s.turn.attackBans = undefined;
-    s.turn.graveyardCreatureOnce = undefined;
     emit({ type: "turnStart", turn: s.turn.number, player: s.turn.active });
   }
   s.flow = "stepStart";
@@ -550,7 +547,7 @@ export function defendingPlayer(s: GameState, defender: string): PlayerId {
 /** Ce qu'un joueur peut attaquer : ses adversaires et leurs planeswalkers (506.2). */
 export function attackableDefenders(s: GameState, player: PlayerId): string[] {
   // Sandswirl Wanderglyph : « il ne peut pas vous attaquer, ni les planeswalkers que vous contrôlez, ce tour-ci ».
-  const banned = new Set((s.turn.attackBans ?? []).filter((b) => b.player === player).map((b) => b.defender));
+  const banned = new Set(playerEffectValues(s, player, "cantAttackPlayer"));
   const opps = opponentsOf(s, player).filter((p) => !banned.has(p));
   // The Aetherspark : « tant qu'il est attaché à une créature, il ne peut pas être attaqué ».
   const walkers = s.battlefield.filter(

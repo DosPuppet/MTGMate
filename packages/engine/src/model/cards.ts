@@ -10,6 +10,7 @@ import type {
   ManaCost,
   ManaType,
   ObjectFilter,
+  PlayerId,
   TargetSpec,
   TriggerSpec,
 } from "../types";
@@ -506,6 +507,12 @@ export interface PlayerStaticAbilityDef {
   copyNextExhaust?: boolean;
   /** Lightning, Army of One : les blessures infligées à vous ou à vos permanents sont doublées. */
   damageTakenDoubled?: boolean;
+  /** Sandswirl Wanderglyph : vous ne pouvez pas attaquer ce joueur (ni ses planeswalkers). */
+  cantAttackPlayer?: PlayerId;
+  /** The Tomb of Aclazotz : lancer un sort de créature depuis votre cimetière (usage unique ; finalité, Vampire). */
+  castCreatureFromGraveyard?: boolean;
+  /** Summon: Alexander : les blessures qui seraient infligées à vos créatures sont prévenues. */
+  creaturesDamageImmune?: boolean;
   /** « Vous avez la défense talismanique. » */
   hexproof?: boolean;
   /** « Vous ne pouvez pas perdre la partie et vos adversaires ne peuvent pas la gagner. » */

@@ -625,7 +625,7 @@ function baseCastTerms(s: GameState, player: PlayerId, card: ObjectId): CastTerm
     if (gyPerm) return { source: "graveyard", anyMana: gyPerm.anyMana, free: gyPerm.free, exileAfter: gyPerm.exileAfter };
     if (o.owner !== player) return null;
     // The Tomb of Aclazotz : un sort de créature, qui arrive avec un marqueur de finalité et devient un Vampire.
-    if (s.turn.graveyardCreatureOnce?.includes(player) && d.types.includes("Creature"))
+    if (d.types.includes("Creature") && playerStatic(s, player, "castCreatureFromGraveyard"))
       return { source: "graveyard", finality: true, tomb: true };
     // Timeline Culler : « vous pouvez lancer cette carte depuis votre cimetière avec sa distorsion ».
     if (d.warp?.fromGraveyard) return { source: "graveyard", warpOnly: true };
@@ -960,8 +960,7 @@ export function castSpell(s: GameState, player: PlayerId, card: ObjectId, choice
   // 601.2a : le sort passe sur la pile (nouvel objet), puis on paie les coûts (601.2g–h).
   if (terms.graveyardType) s.turn.graveyardTypesUsed = [...(s.turn.graveyardTypesUsed ?? []), terms.graveyardType];
   if (terms.tomb) {
-    const i = s.turn.graveyardCreatureOnce?.indexOf(player) ?? -1;
-    if (i >= 0) s.turn.graveyardCreatureOnce?.splice(i, 1);
+    consumePlayerEffect(s, player, "castCreatureFromGraveyard");
   }
   if (terms.removeCounters) removeCountersAmongCreatures(s, player, terms.removeCounters);
   const view = spellView(d, player);

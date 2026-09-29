@@ -261,7 +261,7 @@ export function dealDamage(s: GameState, source: DamageSource, target: string, a
     // 702.16e : protection contre tout — les blessures sont prévenues.
     if (hasKeyword(s, target, "protectionFromEverything")) return;
     // Summon: Alexander : « prévenez toutes les blessures infligées aux créatures que vous contrôlez ce tour-ci ».
-    if (!unpreventable && s.turn.preventCreatureDamageFor?.includes(targetObj.controller) && isCreature(s, target)) return;
+    if (!unpreventable && playerStatic(s, targetObj.controller, "creaturesDamageImmune") && isCreature(s, target)) return;
   }
   // Préventions statiques : blessures reçues (Crystal Barricade, Fog Bank) ou infligées par la source (Fog Bank).
   for (const p of unpreventable ? [] : preventions(s)) {

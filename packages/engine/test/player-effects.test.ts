@@ -1,8 +1,10 @@
 /** Effets sur les joueurs créés par des résolutions (`s.playerEffects`, statics.ts). */
 import { describe, expect, it } from "vitest";
-import { gainLife } from "../src/actions";
+import { dealDamage, gainLife, sourceFromObject } from "../src/actions";
+import { legalActions } from "../src/legal";
 import { landsAllowed } from "../src/stack";
 import { addPlayerEffect, consumePlayerEffect, playerStatic, playerStaticTotal } from "../src/statics";
+import { attackableDefenders } from "../src/turn";
 import { act, advanceUntil, idOf, passBoth, scenario } from "./helpers";
 
 describe("effets sur les joueurs", () => {
@@ -43,5 +45,37 @@ describe("effets sur les joueurs", () => {
     addPlayerEffect(s, "p2", { damageTakenDoubled: true }, s.turn.number + 1);
     addPlayerEffect(s, "p2", { damageTakenDoubled: true }, s.turn.number + 1);
     expect(playerStaticTotal(s, "p2", "damageTakenDoubled")).toBe(2);
+  });
+});
+
+describe("interdictions et permissions du tour (effets sur les joueurs)", () => {
+  it("Sandswirl Wanderglyph : ne peut pas attaquer ce joueur ce tour-ci, les autres oui", () => {
+    const s = scenario({ players: 3, active: "p2", p1: {}, p2: {}, p3: {} });
+    addPlayerEffect(s, "p2", { cantAttackPlayer: "p1" }, s.turn.number);
+    expect(attackableDefenders(s, "p2")).toEqual(["p3"]);
+    expect(attackableDefenders(s, "p3")).toContain("p1");
+  });
+
+  it("The Tomb of Aclazotz : un seul sort de créature depuis le cimetière, avec un marqueur de finalité", () => {
+    let s = scenario({ p1: { battlefield: ["Forest", "Forest"], graveyard: ["Llanowar Elves", "Llanowar Elves"] } });
+    const castable = () =>
+      legalActions(s, "p1").filter((x) => x.type === "cast" && s.objects[x.card]?.zone === "graveyard").length;
+    expect(castable()).toBe(0);
+    addPlayerEffect(s, "p1", { castCreatureFromGraveyard: true }, s.turn.number, true);
+    expect(castable()).toBe(2);
+    s = passBoth(act(s, "p1", { type: "cast", card: s.players.p1?.graveyard[0] as string }));
+    expect(castable()).toBe(0);
+    const elves = idOf(s, "p1", "battlefield", "Llanowar Elves");
+    expect(s.objects[elves]?.counters.finality).toBe(1);
+  });
+
+  it("Summon: Alexander : blessures prévenues sur vos créatures, pas sur vous", () => {
+    const s = scenario({ p1: { battlefield: ["Bear Cub"] }, p2: { battlefield: ["Shivan Dragon"] } });
+    addPlayerEffect(s, "p1", { creaturesDamageImmune: true }, s.turn.number);
+    const dragon = sourceFromObject(s, idOf(s, "p2", "battlefield", "Shivan Dragon"));
+    dealDamage(s, dragon, idOf(s, "p1", "battlefield", "Bear Cub"), 3, false);
+    dealDamage(s, dragon, "p1", 3, false);
+    expect(s.objects[idOf(s, "p1", "battlefield", "Bear Cub")]?.damage).toBe(0);
+    expect(s.players.p1?.life).toBe(17);
   });
 });

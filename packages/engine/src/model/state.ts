@@ -550,10 +550,6 @@ export interface GameState {
     step: Step;
     /** Pendant l'exil des matériaux d'une fabrication (Market Gnome). */
     crafting?: boolean;
-    /** Sandswirl Wanderglyph : `player` ne peut pas attaquer `defender` (ni ses planeswalkers) ce tour-ci. */
-    attackBans?: { player: PlayerId; defender: PlayerId }[];
-    /** The Tomb of Aclazotz : joueurs qui peuvent lancer un sort de créature depuis leur cimetière ce tour-ci. */
-    graveyardCreatureOnce?: PlayerId[];
     landsPlayed: number;
     /** La vitesse du joueur actif a déjà augmenté ce tour-ci. */
     speedRaised?: boolean;
@@ -565,8 +561,6 @@ export interface GameState {
     extraCombats?: number;
     /** Phases de combat commencées ce tour-ci (Genji Glove : « si c'est la première phase de combat du tour »). */
     combats?: number;
-    /** Joueurs dont les créatures ne subissent pas de blessures ce tour-ci (Summon: Alexander). */
-    preventCreatureDamageFor?: PlayerId[];
     /** Étapes de fin supplémentaires à venir (Y'shtola Rhul) et étapes de fin déjà commencées ce tour-ci. */
     extraEndSteps?: number;
     endSteps?: number;
