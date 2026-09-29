@@ -81,6 +81,22 @@ function kickerPrompt(d: CardDef): { title: string; without: string; with: strin
     const c = costToText(d.kicker);
     return { title: `Payer la progéniture ${c} ?`, without: "Sans progéniture", with: `Progéniture ${c}` };
   }
+  if (d.kickerKind === "blight" && d.kickerCost?.blight) {
+    const n = d.kickerCost.blight;
+    return {
+      title: `Flétrir ${n} : mettre ${n} marqueur(s) -1/-1 sur une de vos créatures ?`,
+      without: "Sans flétrir",
+      with: `Flétrir ${n}`,
+    };
+  }
+  if (d.kickerKind === "teamwork" && d.kickerCost?.tapPower) {
+    const n = d.kickerCost.tapPower;
+    return {
+      title: `Travail d'équipe ${n} : engager des créatures de force totale ${n} ou plus ?`,
+      without: "Sans travail d'équipe",
+      with: `Travail d'équipe ${n}`,
+    };
+  }
   if (d.kickerKind === "bargain") {
     return {
       title: "Marchander : sacrifier un artefact, un enchantement ou un jeton ?",
@@ -276,7 +292,10 @@ export function legalActions(s: GameState, player: PlayerId): ActionOption[] {
       kickerAffordable:
         !!d.kicker &&
         !flashback &&
-        (!d.kickerCost || !!kickerCostPermanent(s, player, card, d)) &&
+        (!d.kickerCost ||
+          (d.kickerCost.tapPower !== undefined
+            ? suggestedCrew(s, player, card, d.kickerCost.tapPower).length > 0
+            : !!kickerCostPermanent(s, player, card, d))) &&
         canPay(s, player, withExtra(spellCost(s, player, d, { ...base, kicked: true, free: terms.free })), undefined, purpose),
       kickerPrompt: d.kicker ? kickerPrompt(d) : undefined,
       fromGraveyard: terms.source === "graveyard" || terms.source === "flashback" ? true : undefined,
@@ -290,7 +309,8 @@ export function legalActions(s: GameState, player: PlayerId): ActionOption[] {
         additional.discard || additional.sacrifice || harmony?.options.length
           ? { ...additional, ...(harmony?.options.length ? { tap: { count: 1, ...harmony, optional: true as const } } : {}) }
           : undefined,
-      kickerPermanents: d.kickerCost ? kickerCostOptions(s, player, card, d) : undefined,
+      kickerPermanents: d.kickerCost && !d.kickerCost.tapPower ? kickerCostOptions(s, player, card, d) : undefined,
+      kickerTap: d.kickerCost?.tapPower ? crewSpec(s, player, card, d.kickerCost.tapPower) : undefined,
     });
   }
 

@@ -6,6 +6,7 @@ import { addEffect, addPump, attach, evalAmount, exiledUid, nameOf, resolveRef }
 import { copiedDefId } from "../layers";
 import {
   bump,
+  changeCounters,
   chars,
   createObject,
   isCreature,
@@ -49,6 +50,38 @@ export const HANDLERS: OpHandlers = {
       ...(e.whileSource ? { whileSource: ctx.sourceId } : {}),
       ...e.mods,
     });
+    return;
+  },
+  amass(s, _r, e, ctx) {
+    const n = Math.max(0, evalAmount(s, ctx, e.amount));
+    for (const p of resolveRef(s, ctx, e.who).filter((x) => isPlayer(s, x))) {
+      let army = s.battlefield.find((id) => s.objects[id]?.controller === p && chars(s, id).subtypes.includes("Army"));
+      if (!army) {
+        const spec = {
+          name: `${e.subtype} Army`,
+          colors: ["B" as const],
+          types: ["Creature" as const],
+          subtypes: [e.subtype, "Army"],
+          power: 0,
+          toughness: 0,
+        };
+        army = createTokens(s, p, spec, 1)[0];
+      }
+      const o = army ? s.objects[army] : undefined;
+      if (!o) continue;
+      if (n > 0) changeCounters(s, o, "+1/+1", n);
+      // 701.47a : l'Armée devient aussi du sous-type indiqué.
+      if (!chars(s, o.id).subtypes.includes(e.subtype)) {
+        bump(s);
+        s.effects.push({
+          id: newId(s, "e"),
+          timestamp: nextTimestamp(s),
+          affected: [o.id],
+          duration: "permanent",
+          addSubtypes: [e.subtype],
+        });
+      }
+    }
     return;
   },
   attach(s, _r, e, ctx) {
@@ -106,7 +139,9 @@ export const HANDLERS: OpHandlers = {
     return;
   },
   modifyAll(s, _r, e, ctx) {
-    const ids = s.battlefield.filter((x) => matchesObjectFilter(s, ctx.controller, x, e.filter, ctx.sourceId));
+    // « valeur de mana X ou moins » : le X du sort (Day of Black Sun).
+    const f = e.filter.maxManaValueX ? { ...e.filter, maxManaValueX: undefined, maxManaValue: ctx.x } : e.filter;
+    const ids = s.battlefield.filter((x) => matchesObjectFilter(s, ctx.controller, x, f, ctx.sourceId));
     if (ids.length === 0) return;
     bump(s);
     // « … jusqu'à votre prochain tour » (For the Common Good).

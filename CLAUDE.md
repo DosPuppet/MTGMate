@@ -41,7 +41,8 @@ Ce fichier sert au suivi du projet entre les sessions : où on en est, les règl
 | P2 de l'audit (29/09/2026) : enregistrement des parties (`engine/src/record.ts`, graine + décisions), parties en ligne reprises après un redémarrage du serveur (`data/rooms`), export d'une partie et visionneur de replays | ✅ |
 | P2 de l'audit, fin (29/09/2026) : images des jetons, bundle découpé et compressé, service worker (hors ligne), match BO3 avec réserve (contre l'IA et en ligne) | ✅ |
 | Méta Standard, lot M1 (29/09/2026 ; plan P4, phase 1) : Izzet Spellementals et Mono-Green Landfall jouables, réserve comprise (22 cartes de 9 extensions) ; Harmonie, Marchandage, contempler, maîtrise de la terre ; `docs/extensions/meta.md` | ✅ |
-| Méta Standard, lots M2 à M6, puis Tarkir: Dragonstorm à 100 % (`PLAN-P4.md`) | à faire |
+| Méta Standard, lot M2 : Dimir Midrange et Jund Sacrifice (23 cartes) ; flétrir, Travail d'équipe, amasser | ✅ |
+| Méta Standard, lots M3 à M6, puis Tarkir: Dragonstorm à 100 % (`PLAN-P4.md`) | à faire |
 | Autres extensions Standard | à la demande de l'utilisateur, une à la fois |
 
 

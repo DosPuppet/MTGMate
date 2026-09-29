@@ -19,6 +19,8 @@ import type {
 } from "../types";
 
 export type Effect =
+  /** Amasser (701.47) : N marqueurs +1/+1 sur une Armée du joueur (créée 0/0 noire au besoin), qui devient aussi du sous-type. */
+  | { op: "amass"; who: Ref; subtype: string; amount: Amount }
   /** Effet de joueur jusqu'à la fin du tour (« les blessures ne peuvent pas être prévenues ce tour-ci »). */
   | { op: "playerEffect"; ability: Omit<PlayerStaticAbilityDef, "kind"> }
   /** Proliférer N fois (701.34), choix automatique : vos permanents qui ont des marqueurs, et chez les adversaires marqueurs -1/-1, d'étourdissement et de poison. */

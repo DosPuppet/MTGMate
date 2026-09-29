@@ -328,7 +328,10 @@ export function kickerCostOptions(
   d: CardDef,
   exclude: ObjectId[] = [],
 ): ObjectId[] {
-  const f = d.kickerCost?.sacrifice ?? d.kickerCost?.bounce;
+  const f =
+    d.kickerCost?.sacrifice ??
+    d.kickerCost?.bounce ??
+    (d.kickerCost?.blight ? ({ types: ["Creature"] } as ObjectFilter) : undefined);
   if (!f) return [];
   const mv = (id: ObjectId) => (s.objects[id]?.isToken ? -1 : manaValue(s.defs[s.objects[id]?.defId ?? ""]?.manaCost));
   return s.battlefield
@@ -517,8 +520,13 @@ export function abilityReduction(s: GameState, player: PlayerId, source: ObjectI
         0,
       )
     : 0;
+  // Mutagen Man : « les capacités activées des jetons d'artefact que vous contrôlez coûtent {1} de moins ».
+  const filtered = controlledAbilitiesWithSource(s, player).reduce((n, { ab: x }) => {
+    const r = x.kind === "playerStatic" ? x.activatedReduction : undefined;
+    return r && matchesObjectFilter(s, player, source, r.filter) ? n + r.n : n;
+  }, 0);
   const red = ab.reduction;
-  const tax = chosenNameTax(s, source) - unlockReduction(s, player, ab);
+  const tax = chosenNameTax(s, source) - unlockReduction(s, player, ab) - filtered;
   if (!red) return exhaust - tax;
   if (red.condition && !checkCondition(s, red.condition, player, source)) return 0;
   return (
@@ -958,7 +966,11 @@ export function castSpell(s: GameState, player: PlayerId, card: ObjectId, choice
   if (kickerChoice && (kickerChoice.length !== 1 || !kickerOptions.includes(kickerChoice[0] as ObjectId)))
     throw new RulesError("Permanent invalide pour ce coût");
   const kickerPermanent = kickerChoice?.[0] ?? kickerOptions[0];
-  if (kicked && d.kickerCost && !kickerPermanent) throw new RulesError("Impossible de payer le kicker");
+  const teamwork = kicked ? d.kickerCost?.tapPower : undefined;
+  if (kicked && d.kickerCost && !teamwork && !kickerPermanent) throw new RulesError("Impossible de payer le kicker");
+  // Travail d'équipe : les créatures engagées (choisies par `tap`, sinon les plus faibles suffisantes).
+  const teamTap = teamwork !== undefined ? chosenCrew(s, player, card, teamwork, choices.tap) : [];
+  if (teamwork !== undefined && teamTap.length === 0) throw new RulesError("Force totale insuffisante pour le travail d'équipe");
   const discard = choices.discard ?? [];
   const sacrifice = kickerChoice ? [] : (choices.sacrifice ?? []);
   const check = (chosen: ObjectId[], spec?: { count: number; options: ObjectId[]; orPay?: ManaCost; orLife?: number }) => {
@@ -997,7 +1009,7 @@ export function castSpell(s: GameState, player: PlayerId, card: ObjectId, choice
   if (terms.extraCost) cost = addCosts(cost, { generic: terms.extraCost, colored: {}, x: 0 });
   // Harmonie : une créature engagée réduit le coût de sa force (`tap` absent : le choix par défaut ; [] : aucune).
   const harmonize = flashback && !!d.harmonize;
-  if (choices.tap?.length && !harmonize) throw new RulesError("Aucune créature à engager pour ce sort");
+  if (choices.tap?.length && !harmonize && teamwork === undefined) throw new RulesError("Aucune créature à engager pour ce sort");
   const harmony = harmonize ? harmonizeOptions(s, player, card, cost.generic) : undefined;
   const harmonyTap = harmony ? (choices.tap ?? harmony.suggested) : [];
   if (harmonyTap.length > 1 || harmonyTap.some((id) => !harmony?.options.includes(id)))
@@ -1022,7 +1034,7 @@ export function castSpell(s: GameState, player: PlayerId, card: ObjectId, choice
   if ((terms.forage || (alternative && altCostFor(s, player, d)?.forage)) && !forage(s, player))
     throw new RulesError("Impossible de fourrager");
   // Coûts additionnels choisis automatiquement (avant le mana : ces permanents ne produisent plus de mana).
-  for (const id of [...auto.tap, ...harmonyTap]) tapObject(s, obj(s, id));
+  for (const id of [...auto.tap, ...harmonyTap, ...teamTap]) tapObject(s, obj(s, id));
   for (const id of auto.bounce) moveObject(s, id, "hand");
   for (const id of auto.graveyard) moveObject(s, id, "exile");
   const costExiled = auto.exile.map((id) => moveObject(s, id, "exile")).filter((id): id is string => !!id);
@@ -1123,8 +1135,10 @@ export function castSpell(s: GameState, player: PlayerId, card: ObjectId, choice
     item.discarded = discarded.filter((id): id is string => !!id);
   }
   for (const id of sacrifice) sacrificePermanent(s, id);
-  if (kickerPermanent && d.kickerCost?.sacrifice) sacrificePermanent(s, kickerPermanent);
-  else if (kickerPermanent) moveObject(s, kickerPermanent, "hand");
+  if (kicked && kickerPermanent && d.kickerCost?.sacrifice) sacrificePermanent(s, kickerPermanent);
+  else if (kicked && kickerPermanent && d.kickerCost?.blight)
+    changeCounters(s, obj(s, kickerPermanent), "-1/-1", d.kickerCost.blight);
+  else if (kicked && kickerPermanent && d.kickerCost?.bounce) moveObject(s, kickerPermanent, "hand");
   s.priority.passes = 0;
   emit({ type: "cast", player, stackId, defId: d.id, targets: flatTargets(targets) });
   const caster = s.players[player];

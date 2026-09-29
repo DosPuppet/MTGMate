@@ -639,6 +639,9 @@ export const useGame = create<Store>((set, get) => {
       c.sacrifice === null
     )
       return set({ casting: { ...c, stage: "sacrifice", spec: null } });
+    // Travail d'équipe : les créatures à engager.
+    if (c.option.type === "cast" && c.kicked && c.option.kickerTap && c.tap === null)
+      return set({ casting: { ...c, stage: "tap", spec: null } });
     for (const spec0 of targetSpecs(c)) {
       // Cadeau promis (Bloomburrow) : « à la place, un permanent non-terrain ciblé ».
       const spec = c.kicked && spec0.kickedLegal ? { ...spec0, legal: spec0.kickedLegal } : spec0;

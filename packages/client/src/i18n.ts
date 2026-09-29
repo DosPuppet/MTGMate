@@ -64,6 +64,7 @@ export const KEYWORD_LABEL: Record<Keyword, string> = {
   cantBeBlockedByPowerLE2: "Imblocable par les créatures de force 2 ou moins",
   cantBeBlockedByPowerGE2: "Imblocable par les créatures de force 2 ou plus",
   mustBeBlocked: "Doit être bloquée",
+  damageHealsFirst: "Chaque blessure guérit les précédentes",
   cantBlock: "Ne peut pas bloquer",
   canBlockOnlyFlyers: "Ne bloque que les créatures volantes",
   cantBeBlockedByMoreThanOne: "Bloquée par une seule créature au plus",

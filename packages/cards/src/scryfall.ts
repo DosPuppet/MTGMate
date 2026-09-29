@@ -678,6 +678,9 @@ function singleDef(raw: RawCard, script: CardScript | undefined, set: string): C
   const gift = parseGift(raw.oracleText);
   // Les friches d'Eldraine : Marchandage (702.166), un kicker « sacrifiez un artefact, un enchantement ou un jeton ».
   const bargain = raw.keywords.includes("Bargain");
+  // Lorwyn Eclipsed : « en coût additionnel, vous pouvez flétrir N » ; Marvel Super Heroes : Travail d'équipe N.
+  const blight = Number(/As an additional cost to cast this spell, you may blight (\d+)/.exec(raw.oracleText)?.[1] ?? 0);
+  const teamwork = Number(/^Teamwork (\d+)/m.exec(raw.oracleText)?.[1] ?? 0);
   const harmonize = /^Harmonize ((?:\{[^}]+\})+)/m.exec(raw.oracleText)?.[1];
   const isSpell = types.includes("Instant") || types.includes("Sorcery");
   const bloomburrowAbilities: CardDef["abilities"] = [];
@@ -766,12 +769,24 @@ function singleDef(raw: RawCard, script: CardScript | undefined, set: string): C
       ? parseManaCost(script.kicker)
       : offspring
         ? parseManaCost(offspring)
-        : gift || bargain
+        : gift || bargain || blight || teamwork
           ? parseManaCost("{0}")
           : undefined,
-    kickerKind: offspring ? "offspring" : gift ? "gift" : bargain ? "bargain" : undefined,
+    kickerKind: offspring
+      ? "offspring"
+      : gift
+        ? "gift"
+        : bargain
+          ? "bargain"
+          : blight
+            ? "blight"
+            : teamwork
+              ? "teamwork"
+              : undefined,
     gift,
-    kickerCost: script?.kickerCost ?? (bargain ? { sacrifice: BARGAIN_FILTER } : undefined),
+    kickerCost:
+      script?.kickerCost ??
+      (bargain ? { sacrifice: BARGAIN_FILTER } : blight ? { blight } : teamwork ? { tapPower: teamwork } : undefined),
     // Harmonie (702.180) : lancée depuis le cimetière comme un flashback, pour son coût d'harmonie.
     flashback: script?.flashback ? parseManaCost(script.flashback) : harmonize ? parseManaCost(harmonize) : undefined,
     harmonize: harmonize ? true : undefined,

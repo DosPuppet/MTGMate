@@ -360,6 +360,11 @@ export function dealDamage(s: GameState, source: DamageSource, target: string, a
     const creature = isCreature(s, target);
     const walker = hasType(s, target, "Planeswalker");
     if (!creature && !walker) return;
+    // Wolverine : les blessures précédentes sont guéries avant que les nouvelles soient marquées.
+    if (creature && chars(s, target).keywords.includes("damageHealsFirst")) {
+      o.damage = 0;
+      o.deathtouched = false;
+    }
     // 120.4a : blessures en excès, au-delà des blessures mortelles (contact mortel : 1 suffit) ou de la loyauté.
     const deathtouch = source.keywords.includes("deathtouch");
     const lethal = creature

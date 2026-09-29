@@ -35,7 +35,12 @@ export interface CardDef {
   spell?: SpellDef;
   kicker?: ManaCost;
   /** Kicker sans mana (FIN) : « sacrifiez un artefact ou une créature », « renvoyez un terrain que vous contrôlez ». */
-  kickerCost?: { sacrifice?: ObjectFilter; bounce?: ObjectFilter };
+  /**
+   * Kicker sans mana : sacrifier (FIN, Marchandage) ou renvoyer un permanent, flétrir N (`blight`, Lorwyn Eclipsed :
+   * N marqueurs -1/-1 sur une créature que vous contrôlez), ou engager des créatures de force totale N (`tapPower`,
+   * Travail d'équipe, Marvel Super Heroes).
+   */
+  kickerCost?: { sacrifice?: ObjectFilter; bounce?: ObjectFilter; blight?: number; tapPower?: number };
   /** Coût de flashback : peut être lancée depuis le cimetière, puis exilée (702.34). */
   /** Harmonie (702.180) : son coût est aussi rangé ici (même lancement depuis le cimetière, puis exil), avec `harmonize`. */
   flashback?: ManaCost;
@@ -154,7 +159,7 @@ export interface CardDef {
   /** Assemblage (701.42) : les deux parties et la carte assemblée, par nom. */
   meld?: { parts: string[]; result?: string };
   /** Libellé du kicker : Progéniture (702.175) ou Cadeau (702.174), lus dans le texte (Bloomburrow). */
-  kickerKind?: "offspring" | "gift" | "bargain";
+  kickerKind?: "offspring" | "gift" | "bargain" | "blight" | "teamwork";
   /** Cadeau (702.174) : ce que reçoit l'adversaire choisi si le cadeau est promis. */
   gift?: GiftKind;
   /** « En coût additionnel, fourragez ou payez [mana] » (Feed the Cycle) : le coût alternatif « Fourrager » l'évite. */
@@ -622,6 +627,8 @@ export interface PlayerStaticAbilityDef {
   artifactTokenManaBonus?: boolean;
   /** Boom Scholar : les capacités d'exhaust de vos autres permanents coûtent {N} de moins. */
   exhaustReduction?: number;
+  /** Mutagen Man : les capacités activées de vos permanents correspondant au filtre coûtent {N} de moins. */
+  activatedReduction?: { filter: ObjectFilter; n: number };
   /** Elvish Refueler : pendant votre tour, tant qu'aucune capacité d'exhaust n'a été activée, elles sont réactivables. */
   exhaustReuse?: boolean;
   /** Sanctum Lurker : vos planeswalkers ne vont pas au cimetière faute de loyauté. */

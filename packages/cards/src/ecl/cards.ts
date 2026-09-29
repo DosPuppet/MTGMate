@@ -44,4 +44,15 @@ export const CARDS: Record<string, CardScript> = {
       }),
     ],
   },
+
+  // --- Lot M2 -----------------------------------------------------------------
+  "Blood Crypt": shock,
+  "Overgrown Tomb": shock,
+  "Requiting Hex": {
+    // Flétrir 1 en coût additionnel facultatif : lu dans le texte (kicker « blight »).
+    spell: spell(
+      [target.creature("t", { maxManaValue: 2 })],
+      [fx.destroy(ref.target()), ...fx.when(cond.kicked, fx.gainLife(2))],
+    ),
+  },
 };

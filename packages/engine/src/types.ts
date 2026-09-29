@@ -63,6 +63,8 @@ export type Keyword =
   | "cantBeBlockedByPowerGE2"
   /** « Doit être bloquée si possible » (509.1c). */
   | "mustBeBlocked"
+  /** Wolverine : « si des blessures devaient lui être infligées, elles le sont, mais les autres blessures sont guéries ». */
+  | "damageHealsFirst"
   /** Restrictions (pas des mots-clés imprimés, mais gérées comme des capacités de couche 6). */
   | "cantBlock"
   | "cantAttack"
@@ -114,6 +116,7 @@ export const RESTRICTIONS: readonly Keyword[] = [
   "keepsDamage",
   "absorbsDamage",
   "combatDamageImmune",
+  "damageHealsFirst",
 ];
 
 export const KEYWORDS: readonly Keyword[] = [

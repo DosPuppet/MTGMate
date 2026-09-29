@@ -307,3 +307,158 @@ describe("Méta, lot M1", () => {
     expect(chars(s, tree).keywords).toContain("reach");
   });
 });
+
+describe("Méta, lot M2", () => {
+  it("Requiting Hex : flétrir 1 (créature choisie) en coût facultatif, puis 2 PV", () => {
+    let s = scenario({
+      p1: { battlefield: ["Swamp", "Bear Cub", "Fire Elemental"], hand: ["Requiting Hex"] },
+      p2: { battlefield: ["Llanowar Elves"] },
+    });
+    const elves = idOf(s, "p2", "battlefield", "Llanowar Elves");
+    const fire = idOf(s, "p1", "battlefield", "Fire Elemental");
+    s = settle(
+      act(s, "p1", {
+        type: "cast",
+        card: idOf(s, "p1", "hand", "Requiting Hex"),
+        targets: { t: [elves] },
+        kicked: true,
+        sacrifice: [fire],
+      }),
+    );
+    expect(idsOf(s, "p2", "graveyard", "Llanowar Elves")).toHaveLength(1);
+    expect(s.objects[fire]?.counters["-1/-1"]).toBe(1);
+    expect(s.players.p1?.life).toBe(22);
+  });
+
+  it("We Say Thee Nay! : Travail d'équipe 2 (créatures engagées) : il faut payer {4}", () => {
+    let s = scenario({
+      p1: { battlefield: ["Island", "Island", "Bear Cub"], hand: ["We Say Thee Nay!"] },
+      p2: { battlefield: [...lands("Mountain", 7)], hand: ["Fire Elemental"] },
+      active: "p2",
+    });
+    s = act(s, "p2", { type: "cast", card: idOf(s, "p2", "hand", "Fire Elemental") });
+    // Il reste deux Montagnes à p2 après l'Élémental : assez pour {2}, pas pour {4}.
+    const spell = s.stack[0]?.id as string;
+    s = act(s, "p2", { type: "pass" });
+    const opt = castOption(s, idOf(s, "p1", "hand", "We Say Thee Nay!"));
+    expect(opt?.type === "cast" && opt.kickerTap?.minPower).toBe(2);
+    const bear = idOf(s, "p1", "battlefield", "Bear Cub");
+    s = act(s, "p1", {
+      type: "cast",
+      card: idOf(s, "p1", "hand", "We Say Thee Nay!"),
+      targets: { t: [spell] },
+      kicked: true,
+      tap: [bear],
+    });
+    expect(s.objects[bear]?.tapped).toBe(true);
+    s = settle(s);
+    expect(idsOf(s, "p2", "graveyard", "Fire Elemental")).toHaveLength(1);
+  });
+
+  it("Azog : détruit une créature, son contrôleur amasse des Gobelins X (sa force)", () => {
+    let s = scenario({
+      p1: { battlefield: lands("Swamp", 3), hand: ["Azog, Moria's Ruin"] },
+      p2: { battlefield: ["Fire Elemental"] },
+    });
+    s = settle(act(s, "p1", { type: "cast", card: idOf(s, "p1", "hand", "Azog, Moria's Ruin") }));
+    const army = s.battlefield.find((id) => chars(s, id).subtypes.includes("Army")) as string;
+    expect(s.objects[army]?.controller).toBe("p2");
+    expect(chars(s, army).subtypes).toContain("Goblin");
+    expect(chars(s, army).power).toBe(5);
+  });
+
+  it("Wan Shi Tong : X marqueurs, X/2 cartes ; un adversaire qui cherche lui donne un marqueur et une carte", () => {
+    let s = scenario({
+      p1: { battlefield: lands("Island", 6), hand: ["Wan Shi Tong, Librarian"], library: lands("Island", 5) },
+      p2: { battlefield: ["Evolving Wilds"], library: ["Forest", "Island"] },
+    });
+    s = settle(act(s, "p1", { type: "cast", card: idOf(s, "p1", "hand", "Wan Shi Tong, Librarian"), x: 4 }));
+    const wan = idOf(s, "p1", "battlefield", "Wan Shi Tong, Librarian");
+    expect(s.objects[wan]?.counters["+1/+1"]).toBe(4);
+    expect(s.players.p1?.hand).toHaveLength(2);
+    s = advanceUntil(s, (x) => x.turn.active === "p2" && x.turn.step === "main1");
+    const wilds = idOf(s, "p2", "battlefield", "Evolving Wilds");
+    const a = legalActions(s, "p2").find((x) => x.type === "activate" && x.source === wilds);
+    s = passAccepting(
+      act(s, "p2", { type: "activate", source: wilds, ability: a?.type === "activate" ? a.ability : -1 }),
+      (x) => x.stack.length === 0 && x.pending?.kind === "priority",
+    );
+    expect(s.objects[wan]?.counters["+1/+1"]).toBe(5);
+  });
+
+  it("Wolverine : de nouvelles blessures guérissent les précédentes", () => {
+    let s = scenario({
+      p1: { battlefield: [{ name: "Wolverine, Fierce Fighter", damage: 4 }, "Mountain"], hand: ["Burst Lightning"] },
+    });
+    const w = idOf(s, "p1", "battlefield", "Wolverine, Fierce Fighter");
+    s = settle(act(s, "p1", { type: "cast", card: idOf(s, "p1", "hand", "Burst Lightning"), targets: { t: [w] } }));
+    expect(idsOf(s, "p1", "battlefield", "Wolverine, Fierce Fighter")).toHaveLength(1);
+    expect(s.objects[w]?.damage).toBe(2);
+  });
+
+  it("Day of Black Sun : les créatures de VM X ou moins perdent leurs capacités et sont détruites", () => {
+    let s = scenario({
+      p1: { battlefield: lands("Swamp", 4), hand: ["Day of Black Sun"] },
+      p2: { battlefield: ["Bear Cub", "Fire Elemental"] },
+    });
+    s = settle(act(s, "p1", { type: "cast", card: idOf(s, "p1", "hand", "Day of Black Sun"), x: 2 }));
+    expect(idsOf(s, "p2", "graveyard", "Bear Cub")).toHaveLength(1);
+    expect(idsOf(s, "p2", "battlefield", "Fire Elemental")).toHaveLength(1);
+  });
+
+  it("Mutagen Man : X Mutagènes, dont la capacité coûte {1} de moins ; The Ooze : un Mutagène par marqueur", () => {
+    let s = scenario({
+      p1: { battlefield: [...lands("Forest", 4), "The Ooze", "Bear Cub"], hand: ["Mutagen Man, Living Ooze"] },
+    });
+    s = settle(act(s, "p1", { type: "cast", card: idOf(s, "p1", "hand", "Mutagen Man, Living Ooze"), x: 2 }));
+    const mutagens = idsOf(s, "p1", "battlefield", "Mutagen");
+    expect(mutagens).toHaveLength(2);
+    // Toutes les Forêts sont engagées : la capacité {1} ne coûte plus rien.
+    const bear = idOf(s, "p1", "battlefield", "Bear Cub");
+    const a = legalActions(s, "p1").find((x) => x.type === "activate" && x.source === mutagens[0]);
+    expect(a).toBeDefined();
+    s = settle(
+      act(s, "p1", {
+        type: "activate",
+        source: mutagens[0] as string,
+        ability: a?.type === "activate" ? a.ability : -1,
+        targets: { t: [bear] },
+      }),
+    );
+    expect(s.objects[bear]?.counters["+1/+1"]).toBe(1);
+  });
+
+  it("Hidden Lair : {U} ou {B} seulement l'arrivée ce tour-ci ou avec un terrain de base", () => {
+    const colors = (battlefield: string[]) => {
+      const s = scenario({ p1: { battlefield } });
+      const lair = idOf(s, "p1", "battlefield", "Hidden Lair");
+      return legalActions(s, "p1")
+        .filter((a) => a.type === "tapForMana" && a.source === lair)
+        .flatMap((a) => (a.type === "tapForMana" ? a.colors : []));
+    };
+    expect(colors(["Hidden Lair"])).toEqual(["C"]);
+    expect(colors(["Hidden Lair", "Island"])).toEqual(expect.arrayContaining(["C", "U", "B"]));
+  });
+
+  it("Strategic Betrayal : l'adversaire exile une créature et son cimetière", () => {
+    let s = scenario({
+      p1: { battlefield: lands("Swamp", 2), hand: ["Strategic Betrayal"] },
+      p2: { battlefield: ["Bear Cub"], graveyard: ["Opt", "Forest"] },
+    });
+    s = settle(act(s, "p1", { type: "cast", card: idOf(s, "p1", "hand", "Strategic Betrayal"), targets: { t: ["p2"] } }));
+    expect(idsOf(s, "p2", "battlefield", "Bear Cub")).toHaveLength(0);
+    expect(s.players.p2?.graveyard).toHaveLength(0);
+    expect(s.exile.filter((id) => s.objects[id]?.owner === "p2")).toHaveLength(3);
+  });
+
+  it("The Wondrous Wasp : la créature engagée perd ses capacités tant que la Guêpe reste", () => {
+    let s = scenario({
+      p1: { battlefield: lands("Island", 2), hand: ["The Wondrous Wasp"] },
+      p2: { battlefield: ["Serra Angel"] },
+    });
+    const angel = idOf(s, "p2", "battlefield", "Serra Angel");
+    s = settle(act(s, "p1", { type: "cast", card: idOf(s, "p1", "hand", "The Wondrous Wasp") }));
+    expect(s.objects[angel]?.tapped).toBe(true);
+    expect(chars(s, angel).keywords).not.toContain("flying");
+  });
+});

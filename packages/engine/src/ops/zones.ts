@@ -662,7 +662,9 @@ export const HANDLERS: OpHandlers = {
       ? { ...e.filter, maxToughnessX: undefined, maxToughness: ctx.x }
       : e.filter.manaValueX
         ? { ...e.filter, manaValueX: undefined, manaValue: ctx.x }
-        : e.filter;
+        : e.filter.maxManaValueX
+          ? { ...e.filter, maxManaValueX: undefined, maxManaValue: ctx.x }
+          : e.filter;
     const uids = new Set<string>();
     for (const id of s.battlefield.filter((x) => matchesObjectFilter(s, ctx.controller, x, f, ctx.sourceId))) {
       const uid = s.objects[id]?.uid;
@@ -826,6 +828,7 @@ export const HANDLERS: OpHandlers = {
         }
       }
       r.vars[key(`sdone-${p}`)] = [1];
+      rulesEvent(s, { e: "search", player: p });
       // 701.23 : on mélange après la recherche ; « sur le dessus » s'applique après le mélange.
       const toTop = e.to.to === "libraryTop";
       for (const id of picked) {

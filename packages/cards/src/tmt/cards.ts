@@ -2,7 +2,21 @@
  * Teenage Mutant Ninja Turtles — cartes des decks du méta (phase 1 du plan P4, lot M1). L'extension n'est pas encore
  * couverte en entier.
  */
-import { activated, BASIC_LAND, type CardScript, cond, entersWith, fx, ref, target, triggered, when } from "./common";
+import {
+  activated,
+  amount,
+  BASIC_LAND,
+  type CardScript,
+  cond,
+  entersWith,
+  fx,
+  MUTAGEN,
+  playerStatic,
+  ref,
+  target,
+  triggered,
+  when,
+} from "./common";
 
 export const CARDS: Record<string, CardScript> = {
   // --- Terrains --------------------------------------------------------------
@@ -49,6 +63,32 @@ export const CARDS: Record<string, CardScript> = {
         ),
         { label: "Retirer un marqueur : détruire un artefact ou un enchantement" },
       ),
+    ],
+  },
+
+  // --- Lot M2 -----------------------------------------------------------------
+  "Dream Beavers": {
+    abilities: [triggered(when.entersSelf, [...fx.drain(1), fx.scry(1)], { label: "Drain 1, regard 1" })],
+  },
+  "Mutagen Man, Living Ooze": {
+    abilities: [
+      playerStatic({ activatedReduction: { filter: { types: ["Artifact"], token: true }, n: 1 } }),
+      triggered(when.entersSelf, [fx.createTokens(MUTAGEN, amount.sourceX)], { label: "X jetons Mutagène" }),
+    ],
+  },
+  "The Ooze": {
+    abilities: [
+      triggered(
+        when.leaves({ types: ["Creature"], controller: "you", withCounter: "+1/+1" }),
+        [fx.createTokens(MUTAGEN, amount.countersOn(ref.eventObject, "+1/+1"))],
+        { label: "Un Mutagène par marqueur +1/+1" },
+      ),
+      activated({
+        tap: true,
+        targets: [target.cardInGraveyard("t", {}, "any")],
+        effects: [fx.exileCard(ref.target()), fx.createTokens(MUTAGEN)],
+        label: "Exiler une carte d'un cimetière, un Mutagène",
+      }),
     ],
   },
 };

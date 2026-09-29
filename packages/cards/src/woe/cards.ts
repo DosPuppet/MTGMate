@@ -25,4 +25,9 @@ export const CARDS: Record<string, CardScript> = {
       [fx.exileIfDies(ref.target()), fx.damage(amount.kicked(3, 2), ref.target()), ...fx.when(cond.kicked, fx.scry(1))],
     ),
   },
+
+  // --- Lot M2 -----------------------------------------------------------------
+  "Disdainful Stroke": {
+    spell: spell([target.spell("t", { minManaValue: 4 }, "sort de VM 4 ou plus")], [fx.counter(ref.target())]),
+  },
 };

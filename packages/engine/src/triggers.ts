@@ -422,6 +422,8 @@ function matchTrigger(s: GameState, ev: RulesEvent, t: TriggerSpec, src: Source)
       if (t.whileCrafting && !s.turn.crafting) return null;
       // Zenos yae Galvus : « quand la créature choisie quitte le champ de bataille » (liée à la source).
       if (t.who === "linked") return s.objects[src.id]?.linked?.includes(ev.lki.id) ? { objectId: ev.lki.id } : null;
+      if (typeof t.who === "object")
+        return matchWho(t.who, ev.lki, src) ? { objectId: ev.lki.id, player: ev.lki.controller } : null;
       return ev.lki.id === src.id ? { objectId: ev.lki.id, newObjectId: ev.newId ?? undefined } : null;
     }
     case "attacks": {
@@ -590,10 +592,14 @@ function matchTrigger(s: GameState, ev: RulesEvent, t: TriggerSpec, src: Source)
       return ok ? { player: ev.player } : null;
     }
     case "sacrifice": {
-      if (ev.e !== "sacrifice" || (ev.player !== me && !t.anyPlayer)) return null;
+      if (ev.e !== "sacrifice" || (ev.player !== me && !t.anyPlayer) || (t.byOpponent && ev.player === me)) return null;
       const v = liveView(s, ev.objectId);
       return v && matchWho(t.who, v, src) ? { objectId: ev.objectId, player: ev.player } : null;
     }
+    case "search":
+      if (ev.e !== "search") return null;
+      if ((t.whose === "you" && ev.player !== me) || (t.whose === "opponent" && ev.player === me)) return null;
+      return { player: ev.player };
     case "saddled":
       return ev.e === "saddled" && ev.objectId === src.id ? { objectId: src.id, player: src.view.controller } : null;
     case "crews": {

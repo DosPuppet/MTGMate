@@ -10,6 +10,9 @@ const PLAYABLE = [
   // Lot M1
   "Izzet Spellementals",
   "Mono-Green Landfall",
+  // Lot M2
+  "Dimir Midrange",
+  "Jund Sacrifice",
 ];
 
 describe("decks du méta", () => {

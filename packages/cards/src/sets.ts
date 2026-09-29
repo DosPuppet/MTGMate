@@ -35,6 +35,7 @@ import { FRA_SCRIPTS } from "./fra/index";
 import { HOB_SCRIPTS } from "./hob/index";
 import { LCI_SCRIPTS } from "./lci/index";
 import { MKM_SCRIPTS } from "./mkm/index";
+import { MSH_SCRIPTS } from "./msh/index";
 import { OTJ_SCRIPTS } from "./otj/index";
 import type { RawCard } from "./scryfall";
 import { SOS_SCRIPTS } from "./sos/index";
@@ -138,7 +139,7 @@ export const SETS: CardSet[] = [
     nameFr: "Marvel Super Heroes",
     mainMax: 429,
     data: mshData as RawCard[],
-    scripts: {},
+    scripts: MSH_SCRIPTS,
   },
   {
     code: "TMT",

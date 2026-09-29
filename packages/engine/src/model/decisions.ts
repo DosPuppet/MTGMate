@@ -215,6 +215,14 @@ export type ActionOption =
        * premier ; le joueur en désigne un par `sacrifice`.
        */
       kickerPermanents?: ObjectId[];
+      /** Travail d'équipe : créatures à engager si le sort est kické (force totale `minPower`), désignées par `tap`. */
+      kickerTap?: {
+        count: number;
+        options: ObjectId[];
+        minPower: number;
+        powers: Record<ObjectId, number>;
+        suggested: ObjectId[];
+      };
     }
   | {
       type: "activate";

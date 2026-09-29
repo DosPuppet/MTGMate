@@ -9,6 +9,7 @@ import {
   cond,
   fx,
   INSTANT_SORCERY,
+  loyalty,
   manaAbility,
   modal,
   mode,
@@ -66,5 +67,40 @@ export const CARDS: Record<string, CardScript> = {
   },
   "Traumatic Critique": {
     spell: spell([target.any()], [fx.damage(amount.x, ref.target()), fx.draw(2), fx.discard(1)]),
+  },
+
+  // --- Lot M2 -----------------------------------------------------------------
+  "Professor Dellian Fel": {
+    abilities: [
+      loyalty(2, { effects: [fx.gainLife(3)], label: "Gagnez 3 PV" }),
+      loyalty(0, { effects: [fx.draw(1), fx.loseLife(1)], label: "Piochez, perdez 1 PV" }),
+      loyalty(-3, { targets: [target.creature()], effects: [fx.destroy(ref.target())], label: "Détruit une créature" }),
+      loyalty(-6, {
+        effects: [
+          fx.emblem("Professor Dellian Fel", "Whenever you gain life, target opponent loses that much life.", [
+            triggered(when.gainLife, [fx.loseLife(amount.eventAmount, ref.target())], {
+              targets: [target.player("t", "opponent")],
+              label: "Un adversaire perd autant de PV",
+            }),
+          ]),
+        ],
+        label: "Emblème",
+      }),
+    ],
+  },
+  "Witherbloom Charm": {
+    spell: modal(
+      mode(
+        "Sacrifice facultatif : piochez deux cartes",
+        [],
+        [fx.sacrifice(ref.you, {}, 1, { optional: true, store: "s" }), ...fx.when(cond.v("s"), fx.draw(2))],
+      ),
+      mode("Gagnez 5 PV", [], [fx.gainLife(5)]),
+      mode(
+        "Détruit un permanent non-terrain de VM 2 ou moins",
+        [target.nonland("t", { maxManaValue: 2 })],
+        [fx.destroy(ref.target())],
+      ),
+    ),
   },
 };

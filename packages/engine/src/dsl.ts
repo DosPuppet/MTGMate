@@ -48,7 +48,7 @@ export interface CardScript {
   /** Coût de kicker, ex. "{4}". */
   kicker?: string;
   /** Kicker sans mana (avec `kicker: "{0}"`) : permanent sacrifié ou renvoyé, choisi automatiquement. */
-  kickerCost?: { sacrifice?: ObjectFilter; bounce?: ObjectFilter };
+  kickerCost?: { sacrifice?: ObjectFilter; bounce?: ObjectFilter; blight?: number; tapPower?: number };
   /** Coût de flashback, ex. "{4}{R}{R}". */
   flashback?: string;
   /** « Flashback—[coût], défaussez N cartes. » */
@@ -382,6 +382,8 @@ export const fx = {
     ...opts,
   }),
   addCounters: (what: Ref, n: Amount): Effect => ({ op: "addCounters", what, amount: n }),
+  /** « [Ce joueur] amasse des [Gobelins] X » (701.47). */
+  amass: (who: Ref, subtype: string, n: Amount): Effect => ({ op: "amass", who, subtype, amount: n }),
   /**
    * Maîtrise de la terre N (701.65, Avatar) : le terrain devient une créature 0/0 avec la célérité qui est toujours un
    * terrain, avec N marqueurs +1/+1, et « quand il meurt ou est exilé, renvoyez-le sur le champ de bataille engagé ».
@@ -1263,6 +1265,10 @@ export const when = {
   leavesSelf: { on: "leaves", who: "self" } as TriggerSpec,
   /** « Quand l'objet lié (choisi) quitte le champ de bataille » */
   linkedLeaves: { on: "leaves", who: "linked" } as TriggerSpec,
+  /** « Chaque fois qu'une [créature que vous contrôlez …] quitte le champ de bataille » (filtre vu du contrôleur de la source). */
+  leaves: (who: ObjectFilter): TriggerSpec => ({ on: "leaves", who }),
+  /** « Chaque fois qu'un adversaire cherche dans sa bibliothèque » */
+  search: (whose: "you" | "opponent" | "any" = "opponent"): TriggerSpec => ({ on: "search", whose }),
   opponentLoses: { on: "playerLoses", whose: "opponent" } as TriggerSpec,
   attacksSelf: { on: "attacks", who: "self" } as TriggerSpec,
   attacks: (filter: ObjectFilter): TriggerSpec => ({ on: "attacks", who: filter }),
@@ -1386,7 +1392,13 @@ export const when = {
   /** « Chaque fois qu'une [créature] explore [une carte de terrain / non-terrain] » */
   explores: (who: "self" | ObjectFilter, land?: boolean): TriggerSpec => ({ on: "explores", who, land }),
   /** « Chaque fois que vous sacrifiez [un permanent] » */
-  sacrifice: (who: ObjectFilter, anyPlayer?: boolean): TriggerSpec => ({ on: "sacrifice", who, anyPlayer }),
+  /** `anyPlayer` : sacrifié par n'importe quel joueur ; `byOpponent` : par un adversaire (Vengeful Tracker). */
+  sacrifice: (who: ObjectFilter, anyPlayer?: boolean, byOpponent?: boolean): TriggerSpec => ({
+    on: "sacrifice",
+    who,
+    anyPlayer: anyPlayer || byOpponent,
+    byOpponent,
+  }),
   /** « Chaque fois que cette Monture devient montée » */
   saddled: { on: "saddled" } as TriggerSpec,
   /** « Chaque fois que cette créature monte une Monture ou équipe un Véhicule [pendant votre phase principale] » */

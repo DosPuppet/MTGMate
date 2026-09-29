@@ -89,6 +89,8 @@ export type RulesEvent =
   | { e: "tap"; objectId: ObjectId }
   /** Un joueur vient de regarder (scry) ou de surveiller. */
   | { e: "scry"; player: PlayerId }
+  /** Un joueur a cherché dans sa bibliothèque (Wan Shi Tong). */
+  | { e: "search"; player: PlayerId }
   /** Capacité de loyauté activée (`cost` : variation de loyauté, négative si des marqueurs sont retirés). */
   | { e: "loyalty"; player: PlayerId; sourceId: ObjectId; cost: number }
   /** Une créature bloque. */

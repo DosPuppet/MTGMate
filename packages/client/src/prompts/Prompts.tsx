@@ -297,6 +297,21 @@ function CastingPrompt() {
     const onBoard = new Set([...view.battlefield.map((o) => o.id), ...Object.keys(view.players), ...view.stack.map((x) => x.id)]);
     if (casting.spec.legal.some((id) => !onBoard.has(id))) return <TargetCardPicker />;
   }
+  // Travail d'équipe : des créatures de force totale suffisante.
+  if (casting.stage === "tap" && opt.type === "cast" && casting.kicked && opt.kickerTap) {
+    const spec = opt.kickerTap;
+    return (
+      <AdditionalCostPicker
+        kind="tap"
+        count={spec.count}
+        options={spec.options}
+        minPower={spec.minPower}
+        powers={spec.powers}
+        suggested={spec.suggested}
+        title={`Travail d'équipe : engagez des créatures de force totale ${spec.minPower} ou plus`}
+      />
+    );
+  }
   // Harmonie : une créature facultative à engager, qui réduit le coût de sa force.
   if (casting.stage === "tap" && opt.type === "cast" && opt.additional?.tap) {
     const spec = opt.additional.tap;

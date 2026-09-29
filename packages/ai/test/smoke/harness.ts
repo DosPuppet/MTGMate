@@ -60,9 +60,25 @@ const EXTRA_P1_GRAVEYARD: Record<string, string[]> = {
   "Abuelo's Awakening": ["Nutrient Block"],
 };
 
+/** Cartes supplémentaires dans la main du joueur 2 (contresorts qui visent un sort de VM 4 ou plus). */
+const EXTRA_P2_HAND: Record<string, string[]> = {
+  "Disdainful Stroke": ["Serra Angel"],
+};
+/** Permanents supplémentaires du joueur 2 (de quoi lancer ces sorts). */
+const EXTRA_P2: Record<string, string[]> = {};
+/**
+ * Contresorts exigeants (« VM 4 ou plus ») : la partie commence au tour du joueur 2, qui lance ce sort ; le joueur 1 a
+ * la priorité pour y répondre.
+ */
+const P2_CASTS_FIRST: Record<string, string> = {
+  "Disdainful Stroke": "Serra Angel",
+};
+
 function setup(c: CardDef): GameState {
-  return scenario({
+  const first = P2_CASTS_FIRST[c.name];
+  const s = scenario({
     turn: 3,
+    active: first ? "p2" : "p1",
     p1: {
       battlefield: [
         ...LANDS,
@@ -87,12 +103,31 @@ function setup(c: CardDef): GameState {
       library: LIBRARY,
     },
     p2: {
-      battlefield: [...LANDS.slice(0, 6), "Shivan Dragon", "Llanowar Elves", "Gleaming Barrier", "Anthem of Champions"],
-      hand: ["Giant Growth", "Opt", "Forest", "Llanowar Elves", "Helpful Hunter", "Goblin Firebomb"],
+      battlefield: [
+        ...LANDS.slice(0, 6),
+        "Shivan Dragon",
+        "Llanowar Elves",
+        "Gleaming Barrier",
+        "Anthem of Champions",
+        ...(EXTRA_P2[c.name] ?? []),
+      ],
+      hand: [
+        "Giant Growth",
+        "Opt",
+        "Forest",
+        "Llanowar Elves",
+        "Helpful Hunter",
+        "Goblin Firebomb",
+        ...(EXTRA_P2_HAND[c.name] ?? []),
+      ],
       graveyard: ["Pelakka Wurm", "Think Twice"],
       library: LIBRARY,
     },
   });
+  if (!first) return s;
+  const spell = s.players.p2?.hand.find((id) => s.defs[s.objects[id]?.defId ?? ""]?.name === first) as string;
+  const cast = submit(s, "p2", { type: "cast", card: spell }).state;
+  return submit(cast, "p2", { type: "pass" }).state;
 }
 
 /** Joueur 1 : essaie chaque sort et chaque capacité (une fois par carte et par zone), le reste au hasard. */

@@ -170,7 +170,10 @@ export type TriggerSpec =
   | { on: "dies"; who: "self" | ObjectFilter }
   /** `to` : seulement vers cette zone (« quand cet artefact est mis au cimetière depuis le champ de bataille »). */
   /** `whileCrafting` : exilé comme matériau d'une fabrication (Market Gnome). */
-  | { on: "leaves"; who: "self" | "linked"; to?: Zone; whileCrafting?: boolean }
+  /** `who` filtre : « chaque fois qu'une créature que vous contrôlez avec un marqueur +1/+1 quitte le champ de bataille ». */
+  | { on: "leaves"; who: "self" | "linked" | ObjectFilter; to?: Zone; whileCrafting?: boolean }
+  /** « Chaque fois qu'un adversaire cherche dans sa bibliothèque » (Wan Shi Tong). */
+  | { on: "search"; whose: "you" | "opponent" | "any" }
   /** « Quand un adversaire perd la partie » (Shinryu). */
   | { on: "playerLoses"; whose: "opponent" | "any" }
   /** `defending: "you"` : elle attaque le contrôleur ou un planeswalker qu'il contrôle. */
@@ -262,7 +265,7 @@ export type TriggerSpec =
   /** « Chaque fois qu'une [créature] explore [une carte de terrain / non-terrain] » (701.44). */
   | { on: "explores"; who: "self" | ObjectFilter; land?: boolean }
   /** « Chaque fois que vous sacrifiez [un permanent] » */
-  | { on: "sacrifice"; anyPlayer?: boolean; who: ObjectFilter }
+  | { on: "sacrifice"; anyPlayer?: boolean; byOpponent?: boolean; who: ObjectFilter }
   /** « Chaque fois que cette Monture devient montée » (702.171). */
   | { on: "saddled" }
   /** « Chaque fois que cette créature monte une Monture ou équipe un Véhicule [pendant votre phase principale] » ; l'objet de l'événement est la Monture ou le Véhicule. */

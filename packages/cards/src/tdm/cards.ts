@@ -3,7 +3,7 @@
  * texte (`scryfall.ts`) : lancée depuis le cimetière comme un flashback, une créature engagée réduit le coût. L'extension
  * sera couverte en entier en phase 2.
  */
-import { type CardScript, fx, ref, spell, triggered, when } from "./common";
+import { type CardScript, fx, ref, spell, target, triggered, when } from "./common";
 
 export const CARDS: Record<string, CardScript> = {
   // --- Bleu ------------------------------------------------------------------
@@ -18,5 +18,16 @@ export const CARDS: Record<string, CardScript> = {
         label: "Piochez une carte",
       }),
     ],
+  },
+
+  // --- Lot M2 -----------------------------------------------------------------
+  "Strategic Betrayal": {
+    spell: spell(
+      [target.player("t", "opponent")],
+      [
+        fx.sacrifice(ref.target(), { types: ["Creature"] }, 1, { exile: true }),
+        fx.moveAll("graveyard", ref.target(), {}, { to: "exile" }),
+      ],
+    ),
   },
 };

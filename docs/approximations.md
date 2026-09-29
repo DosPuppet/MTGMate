@@ -189,5 +189,7 @@ Dans l'ordre où elles ont été ajoutées, extension par extension.
   - `choix auto` Elven Passage : on contemple un Elfe automatiquement dès qu'on en contrôle un ou qu'on en a un en main, sans montrer la carte révélée ;
   - `règle` Torch the Tower : la cible est exilée si elle meurt ce tour-ci, même si ses blessures ont été prévenues ;
   - `timing` Earthbender Ascension : « s'il a quatre marqueurs de quête ou plus » est vérifié à la résolution de la capacité de landfall, et non comme condition de la capacité réflexive.
+  - `règle` Travail d'équipe : la force des créatures engagées est comptée comme pour l'équipage (un pilote compte 2 de plus) ;
+  - `timing` Azog, Moria's Ruin : « si vous contrôliez cette créature, piochez une carte » est fait avant la destruction.
 - **Légalité Standard :** instantané des légalités Scryfall au moment de l'import (`legalities.standard` dans `data/<set>.json`). Après une rotation ou une annonce de bannissement, réimporter les sets (`npm run import-cards -- <set>`).
 - **Images des jetons :** celle du jeton Scryfall le plus proche (même nom, puis mêmes F/E et couleurs ; `data/tokens.json`, `npm run import-tokens`) ; un jeton de nom inconnu garde le cadre texte.
