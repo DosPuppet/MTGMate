@@ -167,7 +167,8 @@ La règle « préférer un mécanisme générique » est écrite dans `docs/mote
 - **P2, première pièce faite le 29/09/2026** : enregistrement des parties (graine + décisions), parties en ligne reprises après un redémarrage, export et replays (lot 0.22).
 - **P2, suite (29/09/2026)** : images des jetons (lot 0.23), bundle découpé, compression, cache et service worker (lot 0.24).
 - **P2 terminé le 29/09/2026** : match BO3 avec réserve, contre l'IA et en ligne (lot 0.25).
-- Restent : P3, P4.
+- **P4 planifié le 29/09/2026** : couverture guidée par le méta, puis Tarkir: Dragonstorm (`PLAN-P4.md`, non implémenté).
+- Restent : P3, P4 (à implémenter).
 
 ### P0 — Socle du moteur, pour toutes les extensions (avant la prochaine)
 

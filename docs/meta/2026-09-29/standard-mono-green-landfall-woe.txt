@@ -1,0 +1,29 @@
+// Mono-Green Landfall (13.4%)
+4 Fabled Passage
+2 Elven Passage
+2 Escape Tunnel
+3 Ba Sing Se
+14 Forest
+1 Bushwhack
+4 Llanowar Elves
+4 Sazh's Chocobo
+4 Esper Origins
+4 Icetill Explorer
+1 Lumbering Worldwagon
+1 Surrak, Elusive Hunter
+1 Meltstrider's Resolve
+4 Earthbender Ascension
+2 Glimpse the Core
+1 Keen-Eyed Curator
+4 Mightform Harmonizer
+3 Sapling Nursery
+1 Promising Vein
+sideboard
+3 Meltstrider's Gear
+1 Keen-Eyed Curator
+2 Torpor Orb
+1 Sandman, Shifting Scoundrel
+2 Surrak, Elusive Hunter
+4 Mossborn Hydra
+1 Leatherhead, Swamp Stalker
+1 Sapling Nursery

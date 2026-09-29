@@ -1,0 +1,30 @@
+// Boros Tokens (2.5%)
+1 Mountain
+4 Belladonna Took
+4 Political Triumph
+4 Warleader's Call
+2 Hop to It
+1 Erode
+3 The Last Ronin's Technique
+4 Inspiring Vantage
+2 Dalkovan Encampment
+4 Frontline Rush
+4 Stadium Headliner
+4 Voice of Victory
+4 Sunbillow Verge
+2 Fountainport
+4 Torch the Tower
+4 Song of Totentanz
+4 Sacred Foundry
+1 Multiversal Passage
+1 Plains
+1 Mountain
+1 Mountain
+1 Mountain
+sideboard
+2 Magebane Lizard
+4 Rest in Peace
+2 Caretaker's Talent
+2 Dawn's Truce
+2 Pyrrhic Strike
+3 Erode

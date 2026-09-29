@@ -1,0 +1,27 @@
+// Izzet Aggro (1.2%)
+4 Spirebluff Canal
+4 Colorstorm Stallion
+2 Soulstone Sanctuary
+4 Hired Claw
+1 Bounce Off
+5 Mountain
+4 Riverpyre Verge
+4 Scalding Viper
+1 Mountain
+2 Stormcarved Coast
+4 Vibrant Outburst
+4 Steam Vents
+4 Greasewrench Goblin
+4 Burst Lightning
+4 Nova Hellkite
+2 Channeled Dragonfire
+1 Soulstone Sanctuary
+2 Mockingbird
+4 Emberheart Challenger
+sideboard
+3 Spell Pierce
+4 Sunspine Lynx
+1 Soul-Guide Lantern
+1 Soul-Guide Lantern
+4 Sear
+2 Magebane Lizard

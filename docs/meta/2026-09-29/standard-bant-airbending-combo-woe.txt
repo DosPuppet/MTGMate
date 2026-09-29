@@ -1,0 +1,30 @@
+// Bant Airbending Combo (1.4%)
+2 Jennifer Walters
+3 Hallowed Fountain
+4 Doc Aurlock, Grizzled Genius
+1 Breeding Pool
+2 Aang, at the Crossroads
+4 Aang, Swift Savior
+3 Breeding Pool
+3 Spider Manifestation
+4 Interdimensional Web Watch
+1 The Mind Stone
+3 Floodfarm Verge
+1 Airbender Ascension
+3 Temple Garden
+1 Cavern of Souls
+1 Plains
+3 Michelangelo's Technique
+4 Hushwood Verge
+4 Starting Town
+4 Bramble Familiar
+4 Appa, Steadfast Guardian
+1 Temple Garden
+4 Llanowar Elves
+sideboard
+2 Seam Rip
+2 Negate
+2 Surrak, Elusive Hunter
+3 Rest in Peace
+2 Bovine Intervention
+1 Aven Interrupter

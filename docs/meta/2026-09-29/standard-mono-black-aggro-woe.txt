@@ -1,0 +1,20 @@
+// Mono-Black Aggro (1.2%)
+4 Forsaken Miner
+4 Iridescent Vinelasher
+18 Swamp
+3 Soulstone Sanctuary
+2 Realm of Koh
+4 Nighthowl Pursuer
+4 Desolation Prowler
+4 Sunset Saboteur
+3 Shoot the Sheriff
+4 Corpses of the Lost
+3 Dissection Practice
+3 Gollum, Riddle Master
+4 Requiting Hex
+sideboard
+4 Duress
+2 Elegy Acolyte
+3 Day of Black Sun
+4 Strategic Betrayal
+2 Ral Zarek, Guest Lecturer

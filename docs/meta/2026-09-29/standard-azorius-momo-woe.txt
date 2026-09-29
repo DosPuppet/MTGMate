@@ -1,0 +1,33 @@
+// Azorius Momo (1.3%)
+2 Abandoned Air Temple
+4 Daydream
+3 Clarion Conqueror
+1 Erode
+4 Floodfarm Verge
+4 Gleaming Bastion
+4 Hallowed Fountain
+4 Momo, Friendly Flier
+2 Nurturing Pixie
+3 Plains
+4 Practiced Offense
+3 Quantum Riddler
+4 Sage of the Skies
+2 Seam Rip
+1 Springleaf Drum
+4 Starfield Shepherd
+4 Steamcore Scholar
+4 Plains
+2 Springleaf Drum
+1 Quantum Riddler
+sideboard
+1 Avatar's Wrath
+1 Dawn's Truce
+1 Disdainful Stroke
+2 Get Lost
+2 Rest in Peace
+2 Seam Rip
+1 Rest in Peace
+1 Wan Shi Tong, Librarian
+2 Spider-Sense
+1 Wan Shi Tong, Librarian
+1 Clarion Conqueror

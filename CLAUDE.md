@@ -56,6 +56,7 @@ Ce fichier sert au suivi du projet entre les sessions : où on en est, les règl
 
 ## Documents
 
+- `PLAN-P4.md` : plan de couverture (méta Standard d'abord, puis Tarkir: Dragonstorm) ; instantané des decks du méta dans `docs/meta/2026-09-29/`.
 - `AUDIT.md` : audit du 29/09/2026 (points forts et faibles, limites par rapport au vrai Magic, comparaison, feuille de route P0 à P4).
 - `docs/moteur.md` : **à lire avant d'ajouter une mécanique**. Carte des fichiers du moteur, et où toucher pour un effet, un déclencheur, une condition, un filtre, un statique de joueur ou un mot-clé.
 - `docs/approximations.md` : approximations connues, générales puis carte par carte (à lever si une carte l'exige). **Toute nouvelle approximation y est ajoutée.**

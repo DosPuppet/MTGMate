@@ -1,0 +1,33 @@
+// Jeskai Artifacts (2.2%)
+2 Braided Net
+3 Candy Trail
+4 Simulacrum Synthesizer
+4 Perilous Snare
+1 Starting Town
+1 Torpor Orb
+4 Floodfarm Verge
+4 Hallowed Fountain
+1 Unidentified Hovership
+3 Repurposing Bay
+4 Cryogen Relic
+1 The Fire Crystal
+4 The Mind Stone
+2 Dusk Rose Reliquary
+4 Meticulous Archive
+1 Sacred Foundry
+3 Plains
+1 Spring-Loaded Sawblades
+4 United Battlefront
+4 Castle Doom
+2 Pinnacle Starcage
+3 Petrified Hamlet
+sideboard
+2 Disdainful Stroke
+2 Negate
+2 Erode
+1 Rest in Peace
+1 Torpor Orb
+1 Crystal Barricade
+3 Day of Judgment
+2 Authority of the Consuls
+1 Pinnacle Starcage

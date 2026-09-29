@@ -1,0 +1,38 @@
+// Jund Sacrifice (6.5%)
+2 Biotech Specialist
+1 Blood Crypt
+4 Blooming Marsh
+2 Deadly Precision
+1 Forest
+4 Gene Pollinator
+4 Greedy Freebooter
+4 Lively Dirge
+2 Obsessive Pursuit
+1 Mutagen Man, Living Ooze
+2 Biotech Specialist
+3 Callous Inspector
+2 Starting Town
+2 Stomping Ground
+1 Swamp
+4 The Sackville-Bagginses
+2 Rottenmouth Viper
+3 Blazemire Verge
+4 Overgrown Tomb
+2 Starting Town
+1 Stomping Ground
+2 Obsessive Pursuit
+2 Umbral Collar Zealot
+1 Fountainport
+2 Requiting Hex
+1 Wolverine, Fierce Fighter
+1 Azog, Moria's Ruin
+sideboard
+2 The Ooze
+3 Duress
+1 Professor Dellian Fel
+2 Shoot the Sheriff
+2 Strategic Betrayal
+1 Requiting Hex
+1 Witherbloom Charm
+1 Leatherhead, Swamp Stalker
+2 Vengeful Tracker

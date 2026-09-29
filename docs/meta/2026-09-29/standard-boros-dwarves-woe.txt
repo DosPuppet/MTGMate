@@ -1,0 +1,32 @@
+// Boros Dwarves (5.4%)
+2 Thorin Oakenshield
+2 Zack Fair
+1 Erode
+4 Inspiring Vantage
+3 Buster Sword
+2 Bofur, Reliable Guardian
+2 The Lonely Mountain
+4 Dwarven Mauler
+3 Thorin, Mountain-king
+3 Mountain
+1 Skateboard
+3 Cavern of Souls
+4 Dain's Company
+4 Sacred Foundry
+1 Mjolnir, Hammer of Thor
+4 Kili the Resourceful
+4 Leyline Axe
+2 Plains
+3 Chainsaw
+3 Cloud, Midgar Mercenary
+1 Dragonfire Blade
+4 Sunbillow Verge
+sideboard
+2 Requisition Raid
+3 Sheltered by Ghosts
+1 Swiftfoot Boots
+1 Ghost Vacuum
+2 Chandra, Spark Hunter
+3 Rest in Peace
+2 Bilbo's Gambit
+1 Erode
