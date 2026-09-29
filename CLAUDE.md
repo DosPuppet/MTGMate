@@ -125,7 +125,7 @@ Ce fichier sert au suivi du projet entre les sessions : où on en est, les règl
 
 ## Pièges connus
 
-- **Bundle de l'interface :** toutes les cartes sont dans le bundle principal (6,3 Mo). Le worker ne doit pas importer `@mtgx/cards` (il reçoit ses définitions dans `start`) ; seul `@mtgx/cards/tokens` est permis. Le premier chargement en dev est lent (compilation des JSON) : relancer un test d'interface qui échoue par délai dépassé juste après un redémarrage de Vite.
+- **Bundle de l'interface :** les données des cartes forment un fichier à part (`cartes-*.js`, 5,8 Mo, 750 Ko en brotli ; `client/vite.config.ts`), le code de l'application un autre (1 Mo). Le serveur Node compresse (brotli ou gzip, en mémoire) et met `/assets/` en cache un an (`index.html` jamais). En production, un service worker (`client/public/sw.js`) garde l'application en cache et permet une partie contre l'IA hors ligne. Le worker ne doit pas importer `@mtgx/cards` (il reçoit ses définitions dans `start`) ; seul `@mtgx/cards/tokens` est permis. Le premier chargement en dev est lent (compilation des JSON) : relancer un test d'interface qui échoue par délai dépassé juste après un redémarrage de Vite.
 - **Serveur Vite sous WSL :** il peut servir une version périmée d'un module du moteur après modification. Redémarrer `npm run dev` avant tout test dans le navigateur, ou vérifier avec `curl http://localhost:5173/@fs/<chemin absolu> | grep <nouveau code>`.
 - **Champ de bataille (`client/src/board/layout.ts`) :**
   - la disposition est calculée en pur TypeScript et testée (`client/test/layout.test.ts`) ; les lignes sont découpées explicitement, pas par `flex-wrap` ;
@@ -170,4 +170,5 @@ Ce fichier sert au suivi du projet entre les sessions : où on en est, les règl
   - `npx biome check . | tail -1` cache les erreurs : lire toute la sortie, ou grep « Found » ;
   - un `*/` dans un commentaire JSDoc (« */* ») ferme le commentaire.
 - **Patchs par recherche/remplacement :** Biome reformate le code. Un outil tolérant aux espaces est pratique (voir l'historique : `patch.py` dans le scratchpad de session).
+- **`ai-smoke` en fin de `verify --full` :** la mesure « ralenti ×4 » (médiane < 1,6 s) échoue parfois de peu, la machine étant chargée par les étapes précédentes ; relancer `npm run ai-smoke` seul avant de conclure à une régression.
 - **Performances :** la machine (WSL) varie beaucoup d'une session à l'autre. Pour juger une régression, comparer `npm run bench` avant et après (`git stash`), pas avec un chiffre ancien.

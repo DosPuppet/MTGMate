@@ -4,6 +4,7 @@ import { createRoot } from "react-dom/client";
 import { App } from "./App";
 import { playSound, unlockAudio, useAudio } from "./audio/sfx";
 import { detectBlockedScryfall } from "./images";
+import { prefetchGameWorker } from "./session";
 import { useGame } from "./store";
 import { useTutorial } from "./tutorial/store";
 import "./styles.css";
@@ -13,6 +14,16 @@ if (import.meta.env.DEV) {
   const w = window as unknown as { __mtgx: typeof useGame; __tuto: typeof useTutorial };
   w.__mtgx = useGame;
   w.__tuto = useTutorial;
+}
+
+// Production : service worker (application en cache, démarrage hors ligne ; public/sw.js).
+if (import.meta.env.PROD && "serviceWorker" in navigator) {
+  navigator.serviceWorker
+    .register("/sw.js")
+    .then(() => navigator.serviceWorker.ready)
+    // Le worker de partie en cache dès la première visite (partie contre l'IA hors ligne).
+    .then(() => setTimeout(prefetchGameWorker, 3000))
+    .catch((e) => console.warn("Service worker non enregistré :", e));
 }
 
 const root = document.getElementById("root");

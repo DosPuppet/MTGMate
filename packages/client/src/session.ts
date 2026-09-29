@@ -40,6 +40,15 @@ export class LocalSession implements Session {
   }
 }
 
+/**
+ * Production : fait télécharger le script du worker de partie (et le met en cache via le service worker) sans attendre
+ * la première partie, pour qu'une partie contre l'IA puisse démarrer hors ligne.
+ */
+export function prefetchGameWorker(): void {
+  const worker = new Worker(new URL("./worker/game.worker.ts", import.meta.url), { type: "module" });
+  setTimeout(() => worker.terminate(), 10_000);
+}
+
 /** Adresse du serveur : même hôte que la page (/ws, redirigé vers le serveur par Vite en dev). */
 export function serverUrl(): string {
   const proto = location.protocol === "https:" ? "wss" : "ws";

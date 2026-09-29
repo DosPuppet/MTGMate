@@ -3,11 +3,13 @@
  * fichiers statiques du client (build Vite) pour jouer en réseau local sur http://<ip>:<port>.
  * Relaie aussi les images de Scryfall sur /scry/ pour les joueurs dont le réseau bloque cards.scryfall.io.
  */
-import { createReadStream, existsSync, statSync } from "node:fs";
+
+import { createReadStream, existsSync, readFileSync, statSync } from "node:fs";
 import { createServer as createHttpServer, type IncomingMessage, type ServerResponse } from "node:http";
 import type { AddressInfo } from "node:net";
 import { extname, join, normalize, resolve, sep } from "node:path";
 import { Readable } from "node:stream";
+import { brotliCompressSync, gzipSync, constants as zlibConstants } from "node:zlib";
 import { WebSocket, WebSocketServer } from "ws";
 import type { ClientMessage, ServerMessage } from "./protocol";
 import { ClientError, DEFAULT_CONFIG, type Peer, type Room, type RoomConfig, RoomManager } from "./rooms";
@@ -80,9 +82,46 @@ function serveStatic(root: string | undefined, req: IncomingMessage, res: Server
     res.writeHead(404).end();
     return;
   }
-  res.writeHead(200, { "Content-Type": MIME[extname(file)] ?? "application/octet-stream" });
-  if (req.method === "HEAD") res.end();
-  else createReadStream(file).pipe(res);
+  const type = MIME[extname(file)] ?? "application/octet-stream";
+  // Fichiers du build nommés par leur empreinte (/assets/…) : immuables, en cache un an. index.html : jamais en cache
+  // (il désigne les fichiers de la version en cours).
+  const cache = path.startsWith("/assets/") ? "public, max-age=31536000, immutable" : "no-cache";
+  const encoding = COMPRESSIBLE.test(type) ? acceptedEncoding(req) : null;
+  if (!encoding) {
+    res.writeHead(200, { "Content-Type": type, "Cache-Control": cache });
+    if (req.method === "HEAD") res.end();
+    else createReadStream(file).pipe(res);
+    return;
+  }
+  // Texte (JS, CSS, JSON…) : compressé une fois par fichier et par version, puis servi depuis la mémoire
+  // (le bundle principal passe de 7 Mo à 1,5 Mo en gzip, moins en brotli).
+  const body = compressed(file, encoding);
+  res.writeHead(200, { "Content-Type": type, "Cache-Control": cache, "Content-Encoding": encoding, Vary: "Accept-Encoding" });
+  res.end(req.method === "HEAD" ? undefined : body);
+}
+
+const COMPRESSIBLE = /^(text\/|application\/(json|javascript)|image\/svg)/;
+
+function acceptedEncoding(req: IncomingMessage): "br" | "gzip" | null {
+  const accept = String(req.headers["accept-encoding"] ?? "");
+  return /\bbr\b/.test(accept) ? "br" : /\bgzip\b/.test(accept) ? "gzip" : null;
+}
+
+/** Fichiers compressés en mémoire, par chemin, encodage et date de modification (un nouveau build les remplace). */
+const compressedCache = new Map<string, { mtime: number; body: Buffer }>();
+
+function compressed(file: string, encoding: "br" | "gzip"): Buffer {
+  const key = `${encoding}:${file}`;
+  const mtime = statSync(file).mtimeMs;
+  const hit = compressedCache.get(key);
+  if (hit && hit.mtime === mtime) return hit.body;
+  const raw = readFileSync(file);
+  const body =
+    encoding === "br"
+      ? brotliCompressSync(raw, { params: { [zlibConstants.BROTLI_PARAM_QUALITY]: 9 } })
+      : gzipSync(raw, { level: 9 });
+  compressedCache.set(key, { mtime, body });
+  return body;
 }
 
 /**

@@ -4,6 +4,21 @@ import { defineConfig } from "vite";
 export default defineConfig({
   plugins: [react()],
   worker: { format: "es" },
+  build: {
+    // Les données des cartes (6 Mo, 1 Mo compressées) forment un fichier à part : une mise à jour du code ne force pas à
+    // les retélécharger, et elles se chargent en parallèle de l'application.
+    chunkSizeWarningLimit: 7000,
+    rolldownOptions: {
+      output: {
+        codeSplitting: {
+          groups: [
+            { name: "cartes", test: /packages[\\/]cards[\\/]data/ },
+            { name: "bibliotheques", test: /node_modules/ },
+          ],
+        },
+      },
+    },
+  },
   server: {
     port: 5173,
     proxy: {

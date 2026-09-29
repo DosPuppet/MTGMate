@@ -125,6 +125,10 @@ cd /opt/mtgmate
 
 Limite : une mise à jour qui change le comportement du moteur peut rendre une partie en cours impossible à rejouer. Le fichier est alors mis de côté (`.bad`), et la partie est perdue.
 
+## Compression et cache
+
+Le serveur compresse lui-même le code de l'interface (brotli ou gzip) et le met en cache chez le joueur ; nginx n'a rien à configurer pour cela. Un service worker garde l'application sur l'appareil après la première visite : les visites suivantes démarrent immédiatement, même hors ligne pour une partie contre l'IA.
+
 ## Dépannage
 
 | Symptôme | Cause probable |

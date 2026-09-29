@@ -167,3 +167,9 @@ Lot 0.23 (P2 de l'audit : images des jetons) :
 - `npm run import-tokens` (`tools/import-tokens.ts`) importe les jetons Scryfall des extensions Standard (sets `t<code>`, faces recto-verso comprises) dans `packages/cards/data/tokens.json` (334 faces) : nom, ligne de type, F/E, couleurs, texte, URL de l'image ;
 - `tokenImage` (`cards/src/tokenImages.ts`) choisit l'image du jeton de même nom le plus proche (mêmes F/E, puis mêmes couleurs, puis même ligne de type ; à égalité, l'extension la plus récente). La face d'un jeton (`CardFace`) porte ses couleurs ; `faceImage` (client) s'en sert quand la face n'a pas d'image. 104 profils de jetons des scripts sur 112 ont une image ; les autres gardent le cadre texte ;
 - tests : `cards/test/token-images.test.ts`.
+
+Lot 0.24 (P2 de l'audit : chargement) :
+- build découpé (`client/vite.config.ts`, groupes Rolldown) : `cartes-*.js` (données des cartes, 5,8 Mo, 750 Ko en brotli), `bibliotheques-*.js` (React, Motion, Zustand : 100 Ko en brotli), `index-*.js` (application : 225 Ko en brotli). Une mise à jour du code ne fait plus retélécharger les données des cartes ;
+- serveur Node : fichiers texte compressés (brotli si accepté, sinon gzip ; compressés une fois par fichier et par version, en mémoire), `/assets/` en cache un an (`immutable`), `index.html` et `sw.js` sans cache. nginx transmet la compression telle quelle (rien à configurer). Premier chargement : environ 1,1 Mo transférés au lieu de 7,1 Mo ;
+- service worker (`client/public/sw.js`, production seulement) : `/assets/` et `/sounds/` depuis le cache (une nouvelle version d'un fichier remplace l'ancienne), la page réseau d'abord puis cache ; le worker de partie est mis en cache dès la première visite. Une partie contre l'IA démarre hors ligne (cartes en cadre texte, faute d'images) ;
+- tests : `server/test/static.test.ts` ; vérifié à la main sur un build de production (hors ligne, partie contre l'IA).
