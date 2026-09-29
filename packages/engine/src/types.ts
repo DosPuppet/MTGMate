@@ -55,6 +55,8 @@ export type Keyword =
   /** Changelin (702.73) : a tous les types de créature, dans toutes les zones. */
   | "changeling"
   | "cantBeBlockedByHumans"
+  /** Jeton Esprit de Realm of Koh : « ne peut pas être bloqué par des créatures non-Esprits ». */
+  | "cantBeBlockedByNonSpirits"
   /** Cynical Loner : « ne peut pas être bloquée par des Lueurs ». */
   | "cantBeBlockedByGlimmers"
   /** Toby, Beastie Befriender : « ce jeton ne peut ni attaquer ni bloquer seul ». */

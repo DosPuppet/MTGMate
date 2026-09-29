@@ -141,4 +141,21 @@ export const CARDS: Record<string, CardScript> = {
       }),
     ],
   },
+
+  // --- Lot M6 -----------------------------------------------------------------
+  "Michelangelo's Technique": {
+    // Faufilement {3}{G} : lu dans le texte.
+    spell: spell(
+      [],
+      [
+        fx.lookAtTop(8, {
+          count: 2,
+          filter: { types: ["Creature"] },
+          maxTotalManaValue: 6,
+          to: { to: "battlefield" },
+          rest: "bottom",
+        }),
+      ],
+    ),
+  },
 };

@@ -52,4 +52,21 @@ export const CARDS: Record<string, CardScript> = {
       }),
     ],
   },
+
+  // --- Lot M6 -----------------------------------------------------------------
+  "Steamcore Scholar": {
+    abilities: [
+      triggered(
+        when.entersSelf,
+        [
+          fx.draw(2),
+          fx.discard(2, ref.you, {
+            unlessFilter: { anyOf: [{ types: ["Instant", "Sorcery"] }, { types: ["Creature"], keyword: "flying" }] },
+          }),
+        ],
+        { label: "Piochez deux cartes, défaussez-en deux (ou une)" },
+      ),
+    ],
+  },
+  "Underground Mortuary": surveilLand,
 };

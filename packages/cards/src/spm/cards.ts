@@ -2,7 +2,21 @@
  * Marvel's Spider-Man — cartes des decks du méta (phase 1 du plan P4, lot M1). L'extension n'est pas encore couverte en
  * entier.
  */
-import { activated, amount, type CardScript, cond, fx, manaAbility, ref, staticAbility, target, triggered, when } from "./common";
+import {
+  activated,
+  amount,
+  type CardScript,
+  cond,
+  fx,
+  INSTANT_SORCERY,
+  manaAbility,
+  ref,
+  spell,
+  staticAbility,
+  target,
+  triggered,
+  when,
+} from "./common";
 
 export const CARDS: Record<string, CardScript> = {
   // --- Bleu ------------------------------------------------------------------
@@ -85,5 +99,34 @@ export const CARDS: Record<string, CardScript> = {
         },
       ),
     ],
+  },
+
+  // --- Lot M6 -----------------------------------------------------------------
+  "Spider Manifestation": {
+    abilities: [
+      manaAbility(["R", "G"]),
+      triggered(when.castSpell("you", { minManaValue: 4 }), [fx.untap(ref.self)], { label: "Se dégage" }),
+    ],
+  },
+  "Interdimensional Web Watch": {
+    abilities: [
+      triggered(when.entersSelf, [fx.exileTop(ref.you, 2, "w"), fx.grantPlay(ref.stored("w"), { untilYourNextTurn: true })], {
+        label: "Exile les deux cartes du dessus, jouables jusqu'à la fin de votre prochain tour",
+      }),
+      manaAbility(["W", "U", "B", "R", "G"], 2, { restriction: { spellNotFromHand: true } }),
+    ],
+  },
+  "Spider-Sense": {
+    // Web-slinging {U} : lu dans le texte.
+    spell: spell(
+      [
+        {
+          id: "t",
+          label: "éphémère, rituel ou capacité déclenchée",
+          filter: { spells: INSTANT_SORCERY, stackItems: { triggeredOnly: true } },
+        },
+      ],
+      [fx.counter(ref.target())],
+    ),
   },
 };

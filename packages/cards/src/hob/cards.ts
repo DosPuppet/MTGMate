@@ -12,6 +12,8 @@ import {
   DWARF,
   entersWith,
   fx,
+  graveyardReplacement,
+  mode,
   playerStatic,
   ref,
   spell,
@@ -19,6 +21,8 @@ import {
   TREASURE,
   target,
   triggered,
+  triggeredModal,
+  WOLF,
   wardAbility,
   when,
 } from "./common";
@@ -217,6 +221,51 @@ export const CARDS: Record<string, CardScript> = {
           ),
         ],
         { label: "1re fois : 1 PV ; 2e : piochez ; 3e : +1/+1 sur vos créatures" },
+      ),
+    ],
+  },
+
+  // --- Lot M6 -----------------------------------------------------------------
+  "Chief Warg's Company": {
+    abilities: [
+      staticAbility(
+        "self",
+        { addKeywords: ["cantAttack"] },
+        {
+          condition: cond.not(cond.controls({ subtype: "Wolf", other: true }, 2)),
+          label: "N'attaque qu'avec deux autres Loups",
+        },
+      ),
+      triggered(when.yourUpkeep, [fx.createTokens(WOLF)], { label: "Un Loup 2/2" }),
+    ],
+  },
+  "Head of the Hunt": {
+    abilities: [
+      graveyardReplacement({
+        filter: { types: ["Creature"], controller: "opponent" },
+        fromBattlefield: true,
+        createToken: WOLF,
+        label: "Les créatures adverses qui meurent sont exilées ; un Loup 2/2",
+      }),
+    ],
+  },
+  "Nighthowl Pursuer": {
+    abilities: [triggered(when.attacksSelf, [fx.pump(ref.self, 2, 2)], { condition: cond.ferocious, label: "Férocité : +2/+2" })],
+  },
+  "Desolation Prowler": {
+    abilities: [activated({ payLife: 2, oncePerTurn: true, effects: [fx.pump(ref.self, 2, 2)], label: "+2/+2" })],
+  },
+  "Gollum, Riddle Master": {
+    chooseOnEnter: "parity",
+    abilities: [
+      triggeredModal(
+        when.castSpell("opponent", { parityChosen: true }),
+        [
+          mode("Un marqueur +1/+1 sur Gollum", [], [fx.addCounters(ref.self, 1)]),
+          mode("Drain 2", [], fx.drain(2)),
+          mode("Piochez une carte", [], [fx.draw(1)]),
+        ],
+        { uniqueModes: true, label: "Sort adverse de la parité choisie : un mode pas encore choisi" },
       ),
     ],
   },

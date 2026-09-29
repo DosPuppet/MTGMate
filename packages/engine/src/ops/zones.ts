@@ -7,6 +7,7 @@ import {
   announceDiscardBatch,
   damageSource,
   evalAmount,
+  grantPlay,
   moveAndLog,
   moveWithSpec,
   nameOf,
@@ -16,8 +17,9 @@ import {
   store,
   zoneCards,
 } from "../effects";
+import { RulesError } from "../errors";
 import { manaValue } from "../mana";
-import { bounceSpell } from "../stack";
+import { bounceSpell, exileSpell } from "../stack";
 import {
   bump,
   changeCounters,
@@ -371,6 +373,20 @@ export const HANDLERS: OpHandlers = {
     player.library = [...lib, ...rest];
     return;
   },
+  airbend(s, _r, e, ctx) {
+    for (const id of resolveRef(s, ctx, e.what)) {
+      const exiled = onBattlefield(s, id)
+        ? moveAndLog(s, id, "exile")
+        : s.stack.some((x) => x.id === id && x.kind === "spell")
+          ? exileSpell(s, id)
+          : undefined;
+      const card = exiled ? s.objects[exiled] : undefined;
+      // Un jeton ou une copie cesse d'exister en exil : rien à lancer.
+      if (!card || card.isToken) continue;
+      grantPlay(s, card.owner, [card.id], "forever", { cost: { generic: 2, colored: {}, x: 0 }, source: ctx.sourceId });
+    }
+    return;
+  },
   bounce(s, _r, e, ctx) {
     for (const id of resolveRef(s, ctx, e.what)) {
       if (onBattlefield(s, id)) moveAndLog(s, id, "hand");
@@ -703,7 +719,23 @@ export const HANDLERS: OpHandlers = {
     if (e.store) r.vars[`$ids:${e.store.name}`] = moved;
     return;
   },
-  exileNamesakes(s, r, _e, ctx, key) {
+  exileNamesakes(s, r, e, ctx, key) {
+    // The End : le permanent ciblé, exilé, puis ses homonymes chez son contrôleur.
+    if (e.of) {
+      const target = resolveRef(s, ctx, e.of).find((id) => onBattlefield(s, id));
+      if (!target) return;
+      const who = s.objects[target]?.controller as string;
+      const name = chars(s, target).name;
+      moveAndLog(s, target, "exile");
+      const pl = s.players[who];
+      if (!pl) return;
+      const same = (id: ObjectId) => s.defs[s.objects[id]?.defId ?? ""]?.name === name;
+      const fromHand = pl.hand.filter(same);
+      for (const id of [...pl.graveyard.filter(same), ...fromHand, ...pl.library.filter(same)]) moveObject(s, id, "exile");
+      shuffle(s, pl.library);
+      for (let i = 0; i < fromHand.length; i++) drawCard(s, who);
+      return;
+    }
     const options = opponentsOf(s, ctx.controller).flatMap((p) => s.players[p]?.graveyard ?? []);
     if (options.length === 0) return;
     const answer = r.vars[key("pick")];
@@ -782,6 +814,17 @@ export const HANDLERS: OpHandlers = {
     const filter = maxMv === undefined ? e.filter : { ...e.filter, maxManaValue: maxMv };
     const options = top.filter((id) => !filter || matchesCard(s, ctx.controller, id, filter, ctx.sourceId));
     const count = evalAmount(s, ctx, e.count);
+    // Suggestion qui respecte la limite de valeur de mana totale (les premières cartes qui tiennent).
+    const withinTotal = (ids: string[]) => {
+      if (e.maxTotalManaValue === undefined) return ids;
+      let total = 0;
+      return ids.filter((id) => {
+        const mv = manaValue(s.defs[s.objects[id]?.defId ?? ""]?.manaCost);
+        if (total + mv > (e.maxTotalManaValue ?? 0)) return false;
+        total += mv;
+        return true;
+      });
+    };
     let picked: string[] = [];
     if (options.length > 0 && count > 0) {
       const answer = r.vars[key("look")];
@@ -797,12 +840,17 @@ export const HANDLERS: OpHandlers = {
               options,
               min: 0,
               max: Math.min(count, options.length),
-              suggested: options.slice(0, Math.min(count, options.length)),
+              suggested: withinTotal(options.slice(0, Math.min(count, options.length))),
             },
           },
         };
       }
       picked = answer.map(String);
+      // « de valeur de mana totale N ou moins » : un choix qui dépasse est refusé.
+      if (e.maxTotalManaValue !== undefined) {
+        const total = picked.reduce((n, id) => n + manaValue(s.defs[s.objects[id]?.defId ?? ""]?.manaCost), 0);
+        if (total > e.maxTotalManaValue) throw new RulesError(`Valeur de mana totale supérieure à ${e.maxTotalManaValue}`);
+      }
     }
     const rest = top.filter((id) => !picked.includes(id));
     store(r, e.store, picked.length);
@@ -1214,7 +1262,8 @@ export const HANDLERS: OpHandlers = {
     for (const id of resolveRef(s, ctx, e.what)) {
       const o = s.objects[id];
       const d = o ? s.defs[o.defId] : undefined;
-      const back = d?.layout === "transform" ? d.faceDefs?.[1] : undefined;
+      // Marvel Super Heroes : des cartes modales recto-verso se transforment aussi (Jennifer Walters).
+      const back = d?.layout === "transform" || d?.layout === "modal_dfc" ? d.faceDefs?.[1] : undefined;
       if (o?.zone !== "battlefield" || !back) continue;
       o.faceDefId = o.faceDefId === back.id ? undefined : back.id;
       bump(s);

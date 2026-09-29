@@ -163,4 +163,7 @@ export const CARDS: Record<string, CardScript> = {
       ),
     ],
   },
+
+  // --- Lot M6 -----------------------------------------------------------------
+  "Springleaf Drum": { abilities: [{ ...manaAbility(["W", "U", "B", "R", "G"]), tapAnother: "creature" }] },
 };

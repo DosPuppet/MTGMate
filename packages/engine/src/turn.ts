@@ -37,7 +37,7 @@ import {
   shuffle,
   tapObject,
 } from "./state";
-import { addPlayerEffect, controlledAbilitiesWithSource, playerEffectValues, playerStatic } from "./statics";
+import { addPlayerEffect, consumePlayerEffect, controlledAbilitiesWithSource, playerEffectValues, playerStatic } from "./statics";
 import { matchesObjectFilter } from "./targets";
 import { checkCondition, processTriggers, releaseDelayedTriggers, simultaneously } from "./triggers";
 import { logTurnEvent } from "./turnlog";
@@ -390,6 +390,9 @@ function endStep(s: GameState): void {
     // 500.7 : un tour supplémentaire (le dernier créé d'abord), sinon le joueur suivant.
     const extra = s.extraTurns?.pop();
     s.turn.active = extra && s.players[extra] && !s.players[extra]?.lost ? extra : nextPlayer(s, s.turn.active);
+    // Ral Zarek : un joueur qui doit passer son tour le passe (un effet consommé par tour passé).
+    for (let guard = 0; guard < s.playerOrder.length && consumePlayerEffect(s, s.turn.active, "skipTurn"); guard++)
+      s.turn.active = nextPlayer(s, s.turn.active);
     s.turn.endSteps = 0;
     s.turn.extraEndSteps = 0;
     s.turn.combats = 0;
@@ -651,6 +654,7 @@ export function canBlock(s: GameState, blocker: ObjectId, attacker: ObjectId): b
   // 702.16f : une créature avec la protection contre tout ne peut pas être bloquée.
   if (hasKeyword(s, attacker, "protectionFromEverything")) return false;
   if (hasKeyword(s, attacker, "cantBeBlockedByHumans") && chars(s, blocker).subtypes.includes("Human")) return false;
+  if (hasKeyword(s, attacker, "cantBeBlockedByNonSpirits") && !chars(s, blocker).subtypes.includes("Spirit")) return false;
   if (hasKeyword(s, attacker, "cantBeBlockedByGlimmers") && chars(s, blocker).subtypes.includes("Glimmer")) return false;
   if (hasKeyword(s, attacker, "cantBeBlockedByPowerLE2") && chars(s, blocker).power <= 2) return false;
   if (hasKeyword(s, attacker, "cantBeBlockedByPowerGE2") && chars(s, blocker).power >= 2) return false;

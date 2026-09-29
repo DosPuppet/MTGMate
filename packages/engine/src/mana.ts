@@ -135,7 +135,10 @@ function canActivateMana(s: GameState, id: ObjectId, ab: ManaAbilityDef): boolea
  */
 function otherToTap(s: GameState, id: ObjectId, strict = false): ObjectId | undefined {
   const me = obj(s, id).controller;
-  const mine = s.battlefield.filter((x) => x !== id && !obj(s, x).tapped && obj(s, x).controller === me);
+  const creature = manaAbilitiesOf(s, id).some((a) => a.tapAnother === "creature");
+  const mine = s.battlefield.filter(
+    (x) => x !== id && !obj(s, x).tapped && obj(s, x).controller === me && (!creature || isCreature(s, x)),
+  );
   return mine.find((x) => manaAbilitiesOf(s, x).length === 0) ?? (strict ? undefined : mine[0]);
 }
 

@@ -8,8 +8,11 @@ import {
   amount,
   type CardScript,
   cond,
+  entersWith,
+  FOOD,
   fx,
   INSTANT_SORCERY,
+  manaAbility,
   RAT_NO_BLOCK,
   ref,
   spell,
@@ -67,5 +70,70 @@ export const CARDS: Record<string, CardScript> = {
         fx.modifyAll({ types: ["Creature"], controller: "you" }, { addKeywords: ["haste"] }),
       ],
     ),
+  },
+
+  // --- Lot M6 -----------------------------------------------------------------
+  "Bramble Familiar": {
+    abilities: [
+      manaAbility("G"),
+      activated({ mana: "{1}{G}", tap: true, discard: 1, effects: [fx.bounce(ref.self)], label: "Renvoyez-la dans la main" }),
+    ],
+  },
+  "Fetch Quest": {
+    spell: spell(
+      [],
+      [
+        fx.mill(7, ref.you, { name: "m" }),
+        fx.pickFromZone(
+          "graveyard",
+          { anyOf: [{ types: ["Creature"] }, { types: ["Enchantment"] }, { types: ["Land"] }] },
+          { to: "battlefield" },
+          { count: 1, pool: ref.stored("m"), prompt: "Une carte de créature, d'enchantement ou de terrain meulée" },
+        ),
+      ],
+    ),
+  },
+  "Mosswood Dreadknight": {
+    abilities: [
+      triggered(when.diesSelf, [fx.grantPlay(ref.selfCard, { untilYourNextTurn: true })], {
+        label: "Lançable depuis le cimetière (en Aventure) jusqu'à la fin de votre prochain tour",
+      }),
+    ],
+  },
+  "Dread Whispers": { spell: spell([], [fx.draw(1), fx.loseLife(1)]) },
+  "Restless Cottage": {
+    abilities: [
+      entersWith({ tapped: true }),
+      manaAbility(["B", "G"]),
+      activated({
+        mana: "{2}{B}{G}",
+        effects: [
+          fx.modify(ref.self, {
+            addTypes: ["Creature"],
+            addSubtypes: ["Horror"],
+            setPower: 4,
+            setToughness: 4,
+            setColors: ["B", "G"],
+          }),
+        ],
+        label: "Devient une créature Horreur 4/4",
+      }),
+      triggered(when.attacksSelf, [fx.createTokens(FOOD), fx.exileCard(ref.target())], {
+        targets: [target.optional(target.cardInGraveyard("t", {}, "any"))],
+        label: "Une Nourriture, exile une carte d'un cimetière",
+      }),
+    ],
+  },
+  "Scalding Viper": {
+    abilities: [
+      triggered(when.castSpell("opponent", { maxManaValue: 3 }), [fx.damage(1, ref.eventPlayer)], {
+        label: "1 blessure au lanceur",
+      }),
+    ],
+  },
+  "Steam Clean": { spell: spell([target.nonland()], [fx.bounce(ref.target())]) },
+  "The End": {
+    costReduction: { generic: 2, condition: cond.not(cond.lifeAtLeast(6)) },
+    spell: spell([target.creatureOrPlaneswalker()], [fx.exileWithNamesakes(ref.target())]),
   },
 };

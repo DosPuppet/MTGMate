@@ -274,4 +274,26 @@ export const CARDS: Record<string, CardScript> = {
       ),
     ],
   },
+
+  // --- Lot M6 -----------------------------------------------------------------
+  "Channeled Dragonfire": { spell: spell([target.any()], [fx.damage(2, ref.target())]) },
+  "Sage of the Skies": {
+    abilities: [
+      triggered(when.castSelf, [fx.copySpell(ref.self, 1)], {
+        condition: cond.amountAtLeast(amount.spellsCastThisTurn, 2),
+        label: "Un autre sort lancé ce tour-ci : copiez ce sort",
+      }),
+    ],
+  },
+  "Heritage Reclamation": {
+    spell: modal(
+      mode("Détruit un artefact", [target.permanent("a", ["Artifact"])], [fx.destroy(ref.target("a"))]),
+      mode("Détruit un enchantement", [target.permanent("e", ["Enchantment"])], [fx.destroy(ref.target("e"))]),
+      mode(
+        "Exile une carte d'un cimetière, piochez",
+        [target.optional(target.cardInGraveyard("g", {}, "any"))],
+        [fx.exileCard(ref.target("g")), fx.draw(1)],
+      ),
+    ),
+  },
 };

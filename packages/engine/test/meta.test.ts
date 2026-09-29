@@ -797,3 +797,179 @@ describe("Méta, lot M5", () => {
     expect(s.players.p1?.hand).toHaveLength(2);
   });
 });
+
+describe("Méta, lot M6", () => {
+  it("Maîtrise de l'air : Aang exile une créature, que son propriétaire peut relancer pour {2}", () => {
+    let s = scenario({
+      p1: { battlefield: [...lands("Plains", 2), "Island"], hand: ["Aang, Swift Savior // Aang and La, Ocean's Fury"] },
+      p2: { battlefield: ["Serra Angel", ...lands("Forest", 2)] },
+    });
+    const angel = idOf(s, "p2", "battlefield", "Serra Angel");
+    s = act(s, "p1", { type: "cast", card: idOf(s, "p1", "hand", "Aang, Swift Savior // Aang and La, Ocean's Fury") });
+    s = passAccepting(s, (x) => x.pending?.kind === "choice" || x.stack.length === 0);
+    for (let i = 0; i < 5 && s.pending?.kind === "choice"; i++) {
+      const r = s.pending.request;
+      s = act(s, "p1", { type: "choose", values: r.type === "pick" && r.options.includes(angel) ? [angel] : r.suggested });
+    }
+    s = settle(s);
+    const exiled = s.exile.find((id) => s.defs[s.objects[id]?.defId ?? ""]?.name === "Serra Angel") as string;
+    expect(exiled).toBeDefined();
+    s = advanceUntil(s, (x) => x.turn.active === "p2" && x.turn.step === "main1");
+    const opt = legalActions(s, "p2").find((a) => a.type === "cast" && a.card === exiled);
+    expect(opt).toBeDefined();
+    s = settle(act(s, "p2", { type: "cast", card: exiled }));
+    expect(idsOf(s, "p2", "battlefield", "Serra Angel")).toHaveLength(1);
+  });
+
+  it("Springleaf Drum : engage une créature pour du mana de n'importe quelle couleur", () => {
+    const s = scenario({ p1: { battlefield: ["Springleaf Drum", "Bear Cub"] } });
+    const drum = idOf(s, "p1", "battlefield", "Springleaf Drum");
+    expect(legalActions(s, "p1").some((a) => a.type === "tapForMana" && a.source === drum)).toBe(true);
+    const t = scenario({ p1: { battlefield: ["Springleaf Drum", "Fishing Pole"] } });
+    const drum2 = idOf(t, "p1", "battlefield", "Springleaf Drum");
+    expect(legalActions(t, "p1").some((a) => a.type === "tapForMana" && a.source === drum2)).toBe(false);
+  });
+
+  it("Head of the Hunt : une créature adverse qui meurt est exilée, et vous créez un Loup", () => {
+    let s = scenario({
+      p1: { battlefield: ["Head of the Hunt", "Mountain"], hand: ["Burst Lightning"] },
+      p2: { battlefield: ["Bear Cub"] },
+    });
+    s = settle(
+      act(s, "p1", {
+        type: "cast",
+        card: idOf(s, "p1", "hand", "Burst Lightning"),
+        targets: { t: [idOf(s, "p2", "battlefield", "Bear Cub")] },
+      }),
+    );
+    expect(idsOf(s, "p2", "graveyard", "Bear Cub")).toHaveLength(0);
+    expect(idsOf(s, "p1", "battlefield", "Wolf")).toHaveLength(1);
+  });
+
+  it("The End : exile la cible et ses homonymes ; son contrôleur pioche pour ceux de sa main", () => {
+    let s = scenario({
+      p1: { battlefield: lands("Swamp", 4), hand: ["The End"] },
+      p2: {
+        battlefield: ["Bear Cub"],
+        hand: ["Bear Cub", "Opt"],
+        graveyard: ["Bear Cub"],
+        library: ["Bear Cub", "Island", "Island"],
+      },
+    });
+    s = settle(
+      act(s, "p1", {
+        type: "cast",
+        card: idOf(s, "p1", "hand", "The End"),
+        targets: { t: [idOf(s, "p2", "battlefield", "Bear Cub")] },
+      }),
+    );
+    const bears = s.exile.filter((id) => s.defs[s.objects[id]?.defId ?? ""]?.name === "Bear Cub");
+    expect(bears).toHaveLength(4);
+    expect(s.players.p2?.hand).toHaveLength(2);
+  });
+
+  it("Vicious Rivalry : X se paie en points de vie ; détruit les artefacts et créatures de VM X ou moins", () => {
+    let s = scenario({
+      p1: { battlefield: [...lands("Swamp", 2), ...lands("Forest", 2)], hand: ["Vicious Rivalry"] },
+      p2: { battlefield: ["Bear Cub", "Fishing Pole", "Serra Angel"] },
+    });
+    const opt = castOption(s, idOf(s, "p1", "hand", "Vicious Rivalry"));
+    expect(opt?.type === "cast" && opt.xMax).toBe(20);
+    s = settle(act(s, "p1", { type: "cast", card: idOf(s, "p1", "hand", "Vicious Rivalry"), x: 2 }));
+    expect(s.players.p1?.life).toBe(18);
+    expect(idsOf(s, "p2", "graveyard", "Bear Cub")).toHaveLength(1);
+    expect(idsOf(s, "p2", "graveyard", "Fishing Pole")).toHaveLength(1);
+    expect(idsOf(s, "p2", "battlefield", "Serra Angel")).toHaveLength(1);
+  });
+
+  it("Michelangelo's Technique : deux créatures de valeur de mana totale 6 ou moins", () => {
+    const setup = () =>
+      scenario({
+        p1: {
+          battlefield: lands("Forest", 5),
+          hand: ["Michelangelo's Technique"],
+          library: ["Shivan Dragon", "Llanowar Elves", "Serra Angel", ...lands("Forest", 5)],
+        },
+      });
+    let s = setup();
+    s = act(s, "p1", { type: "cast", card: idOf(s, "p1", "hand", "Michelangelo's Technique") });
+    s = passUntil(s, (x) => x.pending?.kind === "choice");
+    const lib = s.players.p1?.library ?? [];
+    const dragon = lib.find((id) => s.defs[s.objects[id]?.defId ?? ""]?.name === "Shivan Dragon") as string;
+    const angel = lib.find((id) => s.defs[s.objects[id]?.defId ?? ""]?.name === "Serra Angel") as string;
+    const elves = lib.find((id) => s.defs[s.objects[id]?.defId ?? ""]?.name === "Llanowar Elves") as string;
+    expect(() => act(s, "p1", { type: "choose", values: [dragon, angel] })).toThrow(/totale/);
+    s = settle(act(s, "p1", { type: "choose", values: [angel, elves] }));
+    expect(idsOf(s, "p1", "battlefield", "Serra Angel")).toHaveLength(1);
+    expect(idsOf(s, "p1", "battlefield", "Llanowar Elves")).toHaveLength(1);
+  });
+
+  it("Gollum : chaque sort adverse de la parité choisie donne un mode pas encore choisi", () => {
+    let s = scenario({
+      p1: { battlefield: ["Swamp", "Swamp"], hand: ["Gollum, Riddle Master"], library: lands("Swamp", 5) },
+      p2: { battlefield: lands("Forest", 4), hand: ["Bear Cub", "Bear Cub"] },
+    });
+    s = act(s, "p1", { type: "cast", card: idOf(s, "p1", "hand", "Gollum, Riddle Master") });
+    s = passAccepting(s, (x) => x.pending?.kind === "choice" || x.stack.length === 0);
+    if (s.pending?.kind === "choice") s = settle(act(s, "p1", { type: "choose", values: ["even"] }));
+    const gollum = idOf(s, "p1", "battlefield", "Gollum, Riddle Master");
+    expect(s.objects[gollum]?.chosen?.parity).toBe("even");
+    s = advanceUntil(s, (x) => x.turn.active === "p2" && x.turn.step === "main1");
+    for (let i = 0; i < 2; i++) {
+      s = act(s, "p2", { type: "cast", card: idOf(s, "p2", "hand", "Bear Cub") });
+      s = passAccepting(s, (x) => x.stack.length === 0 && x.pending?.kind === "priority" && x.pending.player === "p2");
+    }
+    // Deux modes différents parmi les trois : jamais deux fois le même.
+    const effects = [
+      (s.objects[gollum]?.counters["+1/+1"] ?? 0) > 0,
+      (s.players.p2?.life ?? 20) < 20,
+      (s.players.p1?.hand.length ?? 0) > 0,
+    ];
+    expect(effects.filter(Boolean)).toHaveLength(2);
+  });
+
+  it("Ral Zarek −7 : l'adversaire passe autant de tours que de piles obtenues", () => {
+    let s = scenario({ p1: { battlefield: [{ name: "Ral Zarek, Guest Lecturer" }] } });
+    const ral = idOf(s, "p1", "battlefield", "Ral Zarek, Guest Lecturer");
+    (s.objects[ral] as { counters: Record<string, number> }).counters.loyalty = 7;
+    const opt = legalActions(s, "p1").find((a) => a.type === "activate" && a.source === ral && a.label?.includes("Cinq"));
+    s = settle(
+      act(s, "p1", {
+        type: "activate",
+        source: ral,
+        ability: opt?.type === "activate" ? opt.ability : -1,
+        targets: { t: ["p2"] },
+      }),
+    );
+    const skips = s.playerEffects.filter((e) => e.player === "p2" && e.ability.skipTurn).length;
+    s = advanceUntil(s, (x) => x.turn.number > 3 && x.turn.step === "main1");
+    expect(s.turn.active).toBe(skips > 0 ? "p1" : "p2");
+  });
+
+  it("Jennifer Walters se transforme en The Sensational She-Hulk", () => {
+    let s = scenario({
+      p1: { battlefield: [...lands("Forest", 2), ...lands("Plains", 4), "Jennifer Walters // The Sensational She-Hulk"] },
+    });
+    const jen = idOf(s, "p1", "battlefield", "Jennifer Walters // The Sensational She-Hulk");
+    s = activate(s, jen);
+    expect(chars(s, jen).name).toBe("The Sensational She-Hulk");
+    expect(chars(s, jen).keywords).toEqual(expect.arrayContaining(["reach", "trample"]));
+  });
+
+  it("Spider-Sense : contrecarre une capacité déclenchée", () => {
+    let s = scenario({
+      p1: { battlefield: ["Island", "Island"], hand: ["Spider-Sense"] },
+      p2: { battlefield: [...lands("Swamp", 1)], hand: ["Dream Beavers"] },
+      active: "p2",
+    });
+    s = act(s, "p2", { type: "cast", card: idOf(s, "p2", "hand", "Dream Beavers") });
+    s = passUntil(
+      s,
+      (x) =>
+        x.stack.length === 1 && x.stack[0]?.kind === "ability" && x.pending?.kind === "priority" && x.pending.player === "p1",
+    );
+    const trig = s.stack[0]?.id as string;
+    s = settle(act(s, "p1", { type: "cast", card: idOf(s, "p1", "hand", "Spider-Sense"), targets: { t: [trig] } }));
+    expect(s.players.p1?.life).toBe(20);
+  });
+});

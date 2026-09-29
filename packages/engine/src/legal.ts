@@ -272,7 +272,13 @@ export function legalActions(s: GameState, player: PlayerId): ActionOption[] {
     const spent = [...auto.tap, ...auto.exile, ...auto.bounce];
     const exclude = spent.length ? new Set(spent) : undefined;
     const purpose = { spell: spellView(d, player), convoke: hasConvoke(s, player, d), fromHand: terms.source === "hand" };
-    const base = { flashback, anyMana: terms.anyMana, mayhem: terms.mayhem, fromZone: terms.source };
+    const base = {
+      flashback,
+      anyMana: terms.anyMana,
+      mayhem: terms.mayhem,
+      costOverride: terms.costOverride,
+      fromZone: terms.source,
+    };
     // « Sacrifiez une créature ou payez {3}{B} » : sans créature à sacrifier, le mana s'ajoute au coût.
     const sac = additional.sacrifice;
     const mustPayInstead = !!sac?.orPay && sac.options.length < sac.count;
@@ -299,6 +305,8 @@ export function legalActions(s: GameState, player: PlayerId): ActionOption[] {
       sac.orPayAffordable = canPay(s, player, totalCost(spellCost(s, player, d, base), 0, sac.orPay), undefined, purpose);
     }
     const hasX = !terms.free && !!(flashback ? (d.flashback ?? d.manaCost)?.x : d.manaCost?.x);
+    // Vicious Rivalry : X se paie en points de vie.
+    const lifeX = d.payLifeX && normal ? (s.players[player]?.life ?? 0) : null;
     out.push({
       type: "cast",
       card,
@@ -306,7 +314,7 @@ export function legalActions(s: GameState, player: PlayerId): ActionOption[] {
       ...(variant === "faceDown" ? { faceDown: true, faceName: "Face cachée" } : {}),
       ...(variant === "warp" ? { warp: true } : {}),
       modes,
-      xMax: hasX && normal ? maxXFor(s, player, (x) => withExtra(spellCost(s, player, d, { ...base, x }))) : null,
+      xMax: lifeX ?? (hasX && normal ? maxXFor(s, player, (x) => withExtra(spellCost(s, player, d, { ...base, x }))) : null),
       kickerAffordable:
         !!d.kicker &&
         !flashback &&

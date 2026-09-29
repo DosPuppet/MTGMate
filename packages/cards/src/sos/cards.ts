@@ -257,4 +257,91 @@ export const CARDS: Record<string, CardScript> = {
     // Paradigme : lu dans le texte.
     spell: spell([target.player()], [fx.draw(2, ref.target()), fx.loseLife(2, ref.target())]),
   },
+
+  // --- Lot M6 -----------------------------------------------------------------
+  Daydream: {
+    flashback: "{2}{W}",
+    spell: spell(
+      [target.creature("t", { controller: "you" })],
+      [fx.exileCard(ref.target(), { name: "d" }), fx.toBattlefield(ref.stored("d"), { counters: { kind: "+1/+1", n: 1 } })],
+    ),
+  },
+  "Deathcap Glade": {
+    abilities: [
+      entersWith({
+        tapped: true,
+        condition: cond.not(cond.controls({ types: ["Land"], other: true }, 2)),
+        label: "Engagé, sauf avec deux autres terrains ou plus",
+      }),
+      manaAbility(["B", "G"]),
+    ],
+  },
+  "Stormcarved Coast": {
+    abilities: [
+      entersWith({
+        tapped: true,
+        condition: cond.not(cond.controls({ types: ["Land"], other: true }, 2)),
+        label: "Engagé, sauf avec deux autres terrains ou plus",
+      }),
+      manaAbility(["U", "R"]),
+    ],
+  },
+  "Dissection Practice": {
+    spell: spell(
+      [target.player("p", "opponent"), target.upTo(1, target.creature("a")), target.upTo(1, target.creature("b"))],
+      [fx.loseLife(1, ref.target("p")), fx.gainLife(1), fx.pump(ref.target("a"), 1, 1), fx.pump(ref.target("b"), -1, -1)],
+    ),
+  },
+  "Colorstorm Stallion": {
+    abilities: [
+      triggered(
+        when.castSpell("you", INSTANT_SORCERY),
+        [fx.pump(ref.self, 1, 1), ...fx.when(cond.amountAtLeast(amount.eventManaSpent, 5), fx.copyToken(ref.self))],
+        { label: "Opus : +1/+1 ; cinq mana ou plus : un jeton copie" },
+      ),
+    ],
+  },
+  "Vibrant Outburst": {
+    spell: spell(
+      [target.any("d"), target.upTo(1, target.creature("c"))],
+      [fx.damage(3, ref.target("d")), fx.tap(ref.target("c"))],
+    ),
+  },
+  "Vicious Rivalry": {
+    // « Payez X points de vie » en coût additionnel : lu dans le texte.
+    spell: spell([], [fx.destroyAll({ anyOf: [{ types: ["Artifact"] }, { types: ["Creature"] }], maxManaValueX: true })]),
+  },
+  "Ral Zarek, Guest Lecturer": {
+    abilities: [
+      loyalty(1, { effects: [fx.surveil(2)], label: "Surveillance 2" }),
+      loyalty(-1, {
+        targets: [target.upTo(8, target.player("t"))],
+        effects: [fx.discard(1, ref.target())],
+        label: "Chaque joueur ciblé défausse une carte",
+      }),
+      loyalty(-2, {
+        targets: [
+          target.cardInGraveyard("t", { types: ["Creature"], maxManaValue: 3 }, "you", "carte de créature de VM 3 ou moins"),
+        ],
+        effects: [fx.toBattlefield(ref.target())],
+        label: "Renvoie une créature de VM 3 ou moins",
+      }),
+      loyalty(-7, {
+        targets: [target.player("t", "opponent")],
+        effects: [
+          fx.coinFlip("h1"),
+          fx.coinFlip("h2"),
+          fx.coinFlip("h3"),
+          fx.coinFlip("h4"),
+          fx.coinFlip("h5"),
+          fx.playerEffectTimes(
+            { skipTurn: true },
+            amount.plus(amount.v("h1"), amount.v("h2"), amount.v("h3"), amount.v("h4"), amount.v("h5")),
+            ref.target(),
+          ),
+        ],
+        label: "Cinq pièces : l'adversaire passe X tours",
+      }),
+    ],
+  },
 };

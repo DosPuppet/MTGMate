@@ -728,6 +728,9 @@ function singleDef(raw: RawCard, script: CardScript | undefined, set: string): C
   const sneak = /^Sneak ((?:\{[^}]+\})+)/m.exec(raw.oracleText)?.[1];
   const mayhem = /^Mayhem ((?:\{[^}]+\})+)/m.exec(raw.oracleText)?.[1];
   const paradigm = /^Paradigm\b/m.test(raw.oracleText);
+  // Spider-Man : Web-slinging ; Strixhaven : « en coût additionnel, payez X points de vie ».
+  const webSlinging = /^Web-slinging ((?:\{[^}]+\})+)/m.exec(raw.oracleText)?.[1];
+  const payLifeX = /As an additional cost to cast this spell, pay X life\./.test(raw.oracleText);
   const blight = Number(/As an additional cost to cast this spell, you may blight (\d+)/.exec(raw.oracleText)?.[1] ?? 0);
   const teamwork = Number(/^Teamwork (\d+)/m.exec(raw.oracleText)?.[1] ?? 0);
   const harmonize = /^Harmonize ((?:\{[^}]+\})+)/m.exec(raw.oracleText)?.[1];
@@ -829,7 +832,13 @@ function singleDef(raw: RawCard, script: CardScript | undefined, set: string): C
           ? { mana: parseManaCost(evoke), condition: dsl.cond.all(), label: `Évocation — ${evoke}` }
           : sneak
             ? { mana: parseManaCost(sneak), condition: dsl.cond.sneakWindow, label: `Faufilement — ${sneak}` }
-            : impendingAltCost(raw.oracleText),
+            : webSlinging
+              ? {
+                  mana: parseManaCost(webSlinging),
+                  condition: dsl.cond.controls({ types: ["Creature"], tapped: true }),
+                  label: `Web-slinging — ${webSlinging}`,
+                }
+              : impendingAltCost(raw.oracleText),
     forageOrPay: script?.forageOrPay ? parseManaCost(script.forageOrPay) : undefined,
     entersAsCopyAnyController: script?.entersAsCopyAnyController,
     entersAsCopyAddKeywords: script?.entersAsCopyAddKeywords,
@@ -896,6 +905,8 @@ function singleDef(raw: RawCard, script: CardScript | undefined, set: string): C
     sneak: sneak ? parseManaCost(sneak) : undefined,
     mayhem: mayhem ? parseManaCost(mayhem) : undefined,
     paradigm: paradigm || undefined,
+    webSlinging: webSlinging ? parseManaCost(webSlinging) : undefined,
+    payLifeX: payLifeX || undefined,
     shockLand: /(?:As this land enters, |Then )you may pay (\d+) life\. If you don't, it enters tapped\./.exec(raw.oracleText)
       ? Number(/you may pay (\d+) life/.exec(raw.oracleText)?.[1])
       : undefined,

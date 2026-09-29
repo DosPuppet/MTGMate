@@ -26,6 +26,13 @@ const PLAYABLE = [
   "Lifegain",
   "Mardu Discard",
   "Boros Tokens",
+  // Lot M6
+  "Izzet Aggro",
+  "Mono-Black Aggro",
+  "Azorius Momo",
+  "Golgari Midrange",
+  "Bant Airbending Combo",
+  "Jeskai Control",
 ];
 
 describe("decks du méta", () => {
@@ -34,6 +41,10 @@ describe("decks du méta", () => {
   it("les vingt archétypes sont lus, sans carte inconnue", () => {
     expect(decks).toHaveLength(20);
     for (const d of decks) expect(d.unknown, d.name).toEqual([]);
+  });
+
+  it("la phase 1 est finie : les vingt archétypes sont jouables", () => {
+    expect(PLAYABLE).toHaveLength(20);
   });
 
   it.each(PLAYABLE)("%s est légal et jouable, réserve comprise", (name) => {

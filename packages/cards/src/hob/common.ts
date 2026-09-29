@@ -12,3 +12,6 @@ export const DWARF: TokenSpec = {
   power: 2,
   toughness: 2,
 };
+
+/** Loup : créature verte 2/2. */
+export const WOLF: TokenSpec = { name: "Wolf", colors: ["G"], types: ["Creature"], subtypes: ["Wolf"], power: 2, toughness: 2 };

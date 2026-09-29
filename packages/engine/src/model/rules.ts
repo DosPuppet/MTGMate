@@ -42,7 +42,7 @@ export interface TargetFilter {
   /** Sorts sur la pile (« contrecarrez le sort de créature ciblé »). */
   spells?: ObjectFilter;
   /** Sorts ou capacités sur la pile à cible unique (Bolt Bend). */
-  stackItems?: { singleTarget?: boolean; abilitiesOnly?: boolean };
+  stackItems?: { singleTarget?: boolean; abilitiesOnly?: boolean; triggeredOnly?: boolean };
 }
 
 export interface ObjectFilter {
@@ -157,6 +157,10 @@ export interface ObjectFilter {
   withActivatedAbility?: boolean;
   /** Valeur de mana égale au X de la capacité ou du sort (`destroyAll` : Dauntless Dismantler). */
   manaValueX?: boolean;
+  /** Valeur de mana de la parité choisie par la source (Gollum, Riddle Master). */
+  parityChosen?: boolean;
+  /** Sans aucun marqueur (Heartless Act). */
+  noCounters?: boolean;
   /** Du nom choisi par la source en arrivant (Petrified Hamlet : « les terrains du nom choisi »). */
   nameChosen?: boolean;
   /** Carte avec une Aventure (hors du champ de bataille : cimetière, main ; Hearth Elemental). */
@@ -285,7 +289,8 @@ export type TriggerSpec =
   /** Sinistre (Duskmourn) : « chaque fois qu'un enchantement que vous contrôlez arrive et chaque fois que vous déverrouillez entièrement une Salle ». */
   | { on: "eerie" }
   /** « Chaque fois que cette créature (ou la créature enchantée/équipée) subit des blessures » */
-  | { on: "isDealtDamage"; who: "self" | "attached" }
+  /** Filtre : « chaque fois qu'une créature que vous contrôlez subit des blessures » (The Sensational She-Hulk). */
+  | { on: "isDealtDamage"; who: "self" | "attached" | ObjectFilter }
   /** « Chaque fois qu'une ou plusieurs [créatures] subissent des blessures en excès [non de combat] » (120.4a). */
   | { on: "excessDamage"; who: ObjectFilter; noncombatOnly?: boolean }
   /** « Chaque fois qu'une ou plusieurs [créatures] infligent des blessures de combat à un joueur » : une fois par étape et par joueur. */
@@ -500,6 +505,8 @@ export type Ref =
   | { kind: "costDiscarded" }
   /** Les objets désignés qui correspondent au filtre, dans n'importe quelle zone (Ghost Vacuum : les cartes de créature). */
   | { kind: "filtered"; ref: Ref; filter: ObjectFilter }
+  /** Les objets de `ref` moins ceux de `exclude` (« toutes les autres créatures »). */
+  | { kind: "except"; ref: Ref; exclude: Ref }
   /** Le joueur de l'événement (joueur blessé, lanceur du sort…). */
   | { kind: "eventPlayer" }
   /** Le contrôleur (ou, hors du champ de bataille, le dernier contrôleur connu) de l'objet désigné. */

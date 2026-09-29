@@ -45,7 +45,8 @@ Ce fichier sert au suivi du projet entre les sessions : où on en est, les règl
 | Méta Standard, lot M3 : Dimir Excruciator, Azorius Control, Selesnya Landfall (15 cartes) ; évocation, mana dépensé par type, mobilisation, montée en puissance, réunir des preuves | ✅ |
 | Méta Standard, lot M4 : 4c Control, Boros Dragons, Jeskai Artifacts (23 cartes) ; type de terrain choisi en jouant le terrain, exploiter, convergence, maîtrise du feu | ✅ |
 | Méta Standard, lot M5 : Boros Dwarves, Lifegain, Mardu Discard, Boros Tokens (34 cartes) ; Storied, faufilement, chaos, paradigme, équiper digne | ✅ |
-| Méta Standard, lot M6, puis Tarkir: Dragonstorm à 100 % (`PLAN-P4.md`) | à faire |
+| Méta Standard, lot M6 : les six derniers archétypes (47 cartes) ; maîtrise de l'air, Web-slinging, payer X PV, tours passés. **Phase 1 du plan P4 finie : les 20 archétypes du méta (88,1 %) sont jouables** | ✅ |
+| Phase 2 du plan P4 : Tarkir: Dragonstorm à 100 % (`PLAN-P4.md`) | à faire |
 | Autres extensions Standard | à la demande de l'utilisateur, une à la fois |
 
 

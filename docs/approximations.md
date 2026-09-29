@@ -197,10 +197,15 @@ Dans l'ordre où elles ont été ajoutées, extension par extension.
   - `règle` Maîtrise du feu : le mana ajouté reste jusqu'à la fin du tour, et non jusqu'à la fin du combat ;
   - `règle` Momo, Friendly Flier : la réduction s'applique si vous n'avez lancé aucun sort de créature ce tour-ci (et non « aucun sort de créature non-Lémurien avec le vol ») ;
   - `timing` Dispelling Exhale : contempler un Dragon est vérifié à la résolution (vous en contrôlez un ou en avez un en main) ;
-  - `règle` United Battlefront : les cartes restantes vont sous la bibliothèque dans l'ordre, pas dans un ordre aléatoire.
   - `choix auto` Faufilement : l'attaquant non bloqué renvoyé en main est choisi par le moteur (le plus faible) ;
   - `règle` Dalkovan Encampment : « chaque fois que vous attaquez ce tour-ci » est une capacité accordée au terrain jusqu'à la fin du tour (perdue s'il quitte le champ de bataille) ;
   - `timing` Moseo, Vein's New Dean : la carte ciblée est une carte de créature quelconque ; sa valeur de mana (au plus les PV gagnés) est vérifiée à la résolution ;
   - `choix auto` Kíli the Resourceful : la première capacité d'équipement du tour coûte {0} d'office.
+  - `choix auto` Web-slinging : la créature engagée renvoyée en main est choisie par le moteur (la moins chère) ;
+  - `règle` Maîtrise de l'eau (Aang, Swift Savior) : le coût se paie en mana, sans engager d'artefacts ni de créatures ;
+  - `règle` Mosswood Dreadknight : depuis le cimetière, la carte peut être lancée comme créature aussi, pas seulement en Aventure ;
+  - `règle` Interdimensional Web Watch : les deux mana sont d'une même couleur, et servent à tout sort lancé ailleurs que depuis la main ;
+  - `règle` Realm of Koh : son jeton Esprit ne peut bloquer aucune créature (et non « aucune créature non-Esprit ») ;
+  - `timing` Head of the Hunt : le Loup est créé en même temps que l'exil, et non par une capacité réflexive.
 - **Légalité Standard :** instantané des légalités Scryfall au moment de l'import (`legalities.standard` dans `data/<set>.json`). Après une rotation ou une annonce de bannissement, réimporter les sets (`npm run import-cards -- <set>`).
 - **Images des jetons :** celle du jeton Scryfall le plus proche (même nom, puis mêmes F/E et couleurs ; `data/tokens.json`, `npm run import-tokens`) ; un jeton de nom inconnu garde le cadre texte.

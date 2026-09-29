@@ -344,6 +344,7 @@ export const HANDLERS: OpHandlers = {
     if (!answer) {
       let options: string[];
       if (kind === "color") options = ["W", "U", "B", "R", "G"];
+      else if (kind === "parity") options = ["odd", "even"];
       else if (kind === "landName") {
         // Petrified Hamlet : un nom de carte de terrain, ceux des terrains adverses en tête (non de base d'abord).
         const opp = s.battlefield.filter((id) => s.objects[id]?.controller !== ctx.controller);
@@ -383,7 +384,7 @@ export const HANDLERS: OpHandlers = {
         for (const k of keys) tally.set(k, (tally.get(k) ?? 0) + 1);
       }
       const best =
-        kind === "cardName" || kind === "landName"
+        kind === "cardName" || kind === "landName" || kind === "parity"
           ? options[0]
           : ([...tally.entries()].sort((a, b) => b[1] - a[1]).find(([k]) => options.includes(k))?.[0] ?? options[0]);
       const COLOR: Record<string, string> = { W: "Blanc", U: "Bleu", B: "Noir", R: "Rouge", G: "Vert" };
@@ -401,9 +402,16 @@ export const HANDLERS: OpHandlers = {
                   ? "Choisissez un nom de carte (les cartes de la main adverse sont en tête)"
                   : kind === "landName"
                     ? "Choisissez un nom de carte de terrain (ceux de vos adversaires sont en tête)"
-                    : "Choisissez un type de créature",
+                    : kind === "parity"
+                      ? "Choisissez : valeur de mana impaire ou paire"
+                      : "Choisissez un type de créature",
             options,
-            labels: kind === "color" ? COLOR : Object.fromEntries(options.map((o) => [o, o])),
+            labels:
+              kind === "color"
+                ? COLOR
+                : kind === "parity"
+                  ? { odd: "Impaire", even: "Paire" }
+                  : Object.fromEntries(options.map((o) => [o, o])),
             min: 1,
             max: 1,
             suggested: [best as string],
@@ -422,7 +430,9 @@ export const HANDLERS: OpHandlers = {
           ? { color: value as Color }
           : kind === "creatureType"
             ? { creatureType: value }
-            : { cardName: value }),
+            : kind === "parity"
+              ? { parity: value === "odd" ? ("odd" as const) : ("even" as const) }
+              : { cardName: value }),
       };
       bump(s);
     }

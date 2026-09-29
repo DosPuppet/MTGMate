@@ -167,3 +167,29 @@ Les scripts vont dans le dossier de leur extension (`packages/cards/src/<ext>/ca
 - **Murders at Karlov Manor (MKM) :** Case of the Uneaten Feast (Affaire), Warleader's Call.
 - **Marvel Super Heroes (MSH) :** Mjölnir, Hammer of Thor (équiper digne), Political Triumph.
 - **Wilds of Eldraine (WOE) :** Song of Totentanz (Torch the Tower était au lot M1).
+
+## Lot M6 — Izzet Aggro, Mono-Black Aggro, Azorius Momo, Golgari Midrange, Bant Airbending Combo, Jeskai Control (cumul 88,1 % du méta)
+
+47 cartes : 42 des decks principaux, 5 des réserves. Les vingt archétypes relevés sont jouables : la phase 1 du plan P4 est finie. Tests dans `engine/test/meta.test.ts` (« lot M6 »).
+
+### Moteur
+
+- **Maîtrise de l'air** (airbend, Avatar) : `fx.airbend(ref)` exile le permanent ou le sort (`exileSpell`, sans le contrecarrer) ; son propriétaire peut le lancer depuis l'exil pour {2} (permission `cost`, `CastTerms.costOverride`). « Chaque fois que vous lancez un sort depuis l'exil » : `castSpell` avec `fromExile`.
+- **Web-slinging** (Spider-Man) : lu dans le texte ; coût alternatif qui renvoie en main une créature engagée que vous contrôlez (la moins chère).
+- **« Payez X points de vie » en coût additionnel** (Vicious Rivalry) : lu dans le texte (`payLifeX`) ; le X du sort se paie en PV.
+- **Parité choisie** (Gollum) : `chooseOnEnter: "parity"`, filtre `parityChosen`.
+- **Tours passés** (Ral Zarek) : effet de joueur `skipTurn`, un par tour passé (`fx.playerEffectTimes`), consommé au début du tour.
+- **Effets de joueur jusqu'à votre prochain tour** : `fx.untilYourNextTurn` (Avatar's Wrath : `castOnlyFromHand`).
+- **Divers :** référence `ref.except` (« toutes les autres créatures ») ; filtre `noCounters` ; cible « capacité déclenchée » (`stackItems.triggeredOnly`) ; `lookAtTop` avec une valeur de mana totale maximale (`maxTotalManaValue`) ; déclencheur `when.dealtDamage(filtre)` ; remplacement « au lieu du cimetière » qui crée un jeton (`graveyardReplacement.createToken`) ; `fx.exileWithNamesakes(cible)` (The End) ; capacité de mana qui engage une créature (`tapAnother: "creature"`) ; restriction `cantBeBlockedByNonSpirits` ; une carte modale recto-verso peut se transformer (Jennifer Walters).
+- Jetons : Allié et Esprit (`tla/common.ts`), Loup (`hob/common.ts`).
+
+### Cartes, par extension
+
+- **Avatar: The Last Airbender (TLA) :** Aang, Swift Savior // Aang and La, Ocean's Fury, Aang, at the Crossroads // Aang, Destined Savior, Abandon Attachments, Abandoned Air Temple, Accumulate Wisdom, Airbender Ascension, Appa, Steadfast Guardian, Combustion Technique, Firebending Lesson, Heartless Act, Iroh's Demonstration, It'll Quench Ya!, Price of Freedom, Realm of Koh ; en réserve, Avatar's Wrath.
+- **Secrets of Strixhaven (SOS) :** Colorstorm Stallion (Opus), Daydream, Deathcap Glade, Dissection Practice, Stormcarved Coast, Vibrant Outburst ; en réserve, Ral Zarek, Guest Lecturer, Vicious Rivalry.
+- **Wilds of Eldraine (WOE) :** Bramble Familiar // Fetch Quest, Mosswood Dreadknight // Dread Whispers, Restless Cottage, Scalding Viper // Steam Clean, The End.
+- **The Hobbit (HOB) :** Chief Warg's Company, Desolation Prowler, Gollum, Riddle Master, Head of the Hunt, Nighthowl Pursuer.
+- **Marvel Super Heroes (MSH) :** Avengers Disassembled, Doctor Doom, Gleaming Bastion, Jennifer Walters // The Sensational She-Hulk.
+- **Tarkir: Dragonstorm (TDM) :** Channeled Dragonfire (harmonie), Sage of the Skies ; en réserve, Heritage Reclamation.
+- **Marvel's Spider-Man (SPM) :** Interdimensional Web Watch, Spider Manifestation ; en réserve, Spider-Sense (Web-slinging).
+- **Murders at Karlov Manor (MKM) :** Steamcore Scholar, Underground Mortuary. **Teenage Mutant Ninja Turtles (TMT) :** Michelangelo's Technique (faufilement). **Lorwyn Eclipsed (ECL) :** Springleaf Drum.

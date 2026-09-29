@@ -9,7 +9,8 @@ Plan établi le 29/09/2026 (branche `dev`) : il sert de feuille de route aux pro
 - **Lot M3 fait le 29/09/2026** : Dimir Excruciator, Azorius Control, Selesnya Landfall (15 cartes ; évocation, mobilisation, montée en puissance, réunir des preuves, copie depuis un cimetière).
 - **Lot M4 fait le 29/09/2026** : 4c Control, Boros Dragons, Jeskai Artifacts (23 cartes ; type de terrain choisi en jouant le terrain, exploiter, convergence, maîtrise du feu).
 - **Lot M5 fait le 29/09/2026** : Boros Dwarves, Lifegain, Mardu Discard, Boros Tokens (34 cartes ; Storied, faufilement, chaos, paradigme, équiper digne).
-- À faire : lot M6, puis la phase 2 (Tarkir: Dragonstorm à 100 %).
+- **Lot M6 fait le 30/09/2026** : les six derniers archétypes (47 cartes ; maîtrise de l'air, Web-slinging, payer X PV, tours passés). **La phase 1 est finie : les vingt archétypes relevés (88,1 % du méta) sont jouables, réserve comprise.**
+- À faire : proposer les decks du méta comme decks préconstruits (à valider avec l'utilisateur), puis la phase 2 (Tarkir: Dragonstorm à 100 %).
 
 ## Décision
 

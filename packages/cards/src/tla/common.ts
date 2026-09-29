@@ -10,3 +10,18 @@ export const DRAGON_FIREBENDING: TokenSpec = {
   abilities: [triggered(when.attacksSelf, [fx.addManaUntilEndOfTurn("R", "R", "R", "R")], { label: "Maîtrise du feu 4" })],
   text: "Flying\nFirebending 4",
 };
+
+/** Allié : créature blanche 1/1 (Appa). */
+export const ALLY: TokenSpec = { name: "Ally", colors: ["W"], types: ["Creature"], subtypes: ["Ally"], power: 1, toughness: 1 };
+
+/** Esprit incolore 1/1 de Realm of Koh : « ne peut pas bloquer ni être bloqué par des créatures non-Esprits ». */
+export const SPIRIT_KOH: TokenSpec = {
+  name: "Spirit",
+  colors: [],
+  types: ["Creature"],
+  subtypes: ["Spirit"],
+  power: 1,
+  toughness: 1,
+  keywords: ["cantBlock", "cantBeBlockedByNonSpirits"],
+  text: "This token can't block or be blocked by non-Spirit creatures.",
+};

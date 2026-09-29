@@ -422,6 +422,8 @@ export function spellCost(
     anyMana?: boolean;
     /** Lancée pour son coût de chaos (Mayhem). */
     mayhem?: boolean;
+    /** Coût remplaçant le coût de mana (maîtrise de l'air : {2}). */
+    costOverride?: ManaCost;
     /** Cibles choisies (réduction « si ce sort cible… ») ; absentes : on suppose la cible la plus favorable. */
     targets?: Record<string, string[]>;
     /** Zone d'où le sort est lancé (réductions et taxes « depuis un cimetière ou l'exil »). */
@@ -438,7 +440,7 @@ export function spellCost(
         ? (d.flashback ?? d.manaCost)
         : opts.mayhem
           ? (d.mayhem ?? d.manaCost)
-          : d.manaCost;
+          : (opts.costOverride ?? d.manaCost);
   const cost0 = totalCost(
     base,
     opts.free ? 0 : (opts.x ?? 0),
@@ -463,6 +465,8 @@ export interface CastTerms {
   warpOnly?: boolean;
   /** Chaos (Mayhem) : lancée depuis le cimetière pour son coût de chaos, défaussée ce tour-ci. */
   mayhem?: boolean;
+  /** Maîtrise de l'air : lancée pour ce coût plutôt que pour son coût de mana. */
+  costOverride?: ManaCost;
   source: "hand" | "graveyard" | "exile" | "flashback" | "library";
   /** Doit être lancée sans payer son coût de mana (Etali). */
   free?: boolean;
@@ -668,6 +672,8 @@ export function castTerms(s: GameState, player: PlayerId, card: ObjectId): CastT
   if (lockedOut(s, player)) return null;
   // Bilbo's Gambit : « les joueurs ne peuvent pas lancer de sorts ce tour-ci ».
   if (playerStatic(s, player, "cantCastSpells")) return null;
+  // Avatar's Wrath : seulement depuis la main.
+  if (s.objects[card]?.zone !== "hand" && playerStatic(s, player, "castOnlyFromHand")) return null;
   // Kutzil : pas de sort pendant le tour de son contrôleur ; Sandswirl Wanderglyph : pas de sort après l'avoir attaqué.
   const active = s.turn.active;
   if (active !== player && playerStatic(s, active, "opponentsCantCastYourTurn")) return null;
@@ -832,7 +838,14 @@ function baseCastTerms(s: GameState, player: PlayerId, card: ObjectId): CastTerm
     if (o.warpExiledTurn !== undefined && o.owner === player && s.turn.number > o.warpExiledTurn) return { source: "exile" };
     const perm = exilePermission(s, player, card);
     if (perm)
-      return { source: "exile", free: perm.free, anyTime: perm.anyTime, extraCost: perm.extraCost, anyMana: perm.anyMana };
+      return {
+        source: "exile",
+        free: perm.free,
+        anyTime: perm.anyTime,
+        extraCost: perm.extraCost,
+        anyMana: perm.anyMana,
+        costOverride: perm.cost,
+      };
     // Tinybones : cartes d'adversaires exilées avec un marqueur de butin, pendant votre tour.
     if (
       o.owner !== player &&
@@ -1028,8 +1041,10 @@ export function castSpell(s: GameState, player: PlayerId, card: ObjectId, choice
   } else if (mode.condition && !checkCondition(s, mode.condition, player, card))
     throw new RulesError("Ce mode n'est pas disponible");
   const targets = validateTargets(s, player, mode.targets, choices.targets, { kicked: !!choices.kicked, sourceId: card });
-  const hasX = !free && !!(flashback ? (d.flashback ?? d.manaCost)?.x : d.manaCost?.x);
+  const hasX = (!free && !!(flashback ? (d.flashback ?? d.manaCost)?.x : d.manaCost?.x)) || !!d.payLifeX;
   const x = hasX ? Math.max(0, Math.floor(choices.x ?? 0)) : 0;
+  // Vicious Rivalry : « en coût additionnel, payez X points de vie ».
+  if (d.payLifeX && x > (s.players[player]?.life ?? 0)) throw new RulesError("Pas assez de points de vie");
   const kicked = !!choices.kicked && !!d.kicker;
   // Coûts additionnels : vérifiés avant tout changement d'état.
   const opts = additionalOptions(s, player, card, d, flashback);
@@ -1071,6 +1086,7 @@ export function castSpell(s: GameState, player: PlayerId, card: ObjectId, choice
     alternative,
     anyMana: terms.anyMana,
     mayhem: terms.mayhem,
+    costOverride: terms.costOverride,
     targets,
     fromZone: terms.source,
   });
@@ -1118,6 +1134,16 @@ export function castSpell(s: GameState, player: PlayerId, card: ObjectId, choice
   for (const id of auto.graveyard) moveObject(s, id, "exile");
   const costExiled = auto.exile.map((id) => moveObject(s, id, "exile")).filter((id): id is string => !!id);
   // Faufilement : l'attaquant non bloqué le plus faible retourne dans la main de son propriétaire.
+  // Web-slinging : une créature engagée que vous contrôlez retourne en main (la moins chère).
+  if (alternative && d.webSlinging) {
+    const mv = (id: ObjectId) => manaValue(s.defs[obj(s, id).defId]?.manaCost);
+    const tapped = s.battlefield
+      .filter((id) => obj(s, id).controller === player && obj(s, id).tapped && isCreature(s, id))
+      .sort((a, b) => mv(a) - mv(b))[0];
+    if (!tapped) throw new RulesError("Aucune créature engagée à renvoyer");
+    removeFromCombat(s, tapped);
+    moveObject(s, tapped, "hand");
+  }
   const sneaked = alternative && !!d.sneak;
   if (sneaked) {
     const weakest = [...unblockedAttackers(s, player)].sort((a, b) => chars(s, a).power - chars(s, b).power)[0];
@@ -1205,6 +1231,7 @@ export function castSpell(s: GameState, player: PlayerId, card: ObjectId, choice
   // Distorsion « Warp—{B}, Pay 2 life » : les points de vie font partie du coût.
   if (warp?.life) loseLife(s, player, warp.life);
   if (terms.payLife) loseLife(s, player, terms.payLife);
+  if (d.payLifeX && x > 0) loseLife(s, player, x);
   if (lifeTax) loseLife(s, player, lifeTax);
   // Pyromancer's Goggles : « copiez ce sort ».
   for (const r of item.riders ?? []) if (r === "copy") copySpellItem(s, item, player);
@@ -1299,6 +1326,7 @@ function chosenFrom(vars: Record<string, ChoiceValue[]>): GameObject["chosen"] {
   const [kind, value] = (vars.$chosen ?? []).map(String);
   if (!kind || !value) return undefined;
   if (kind === "cardName" || kind === "landName") return { cardName: value };
+  if (kind === "parity") return { parity: value === "odd" ? "odd" : "even" };
   return kind === "color" ? { color: value as Color } : { creatureType: value };
 }
 
@@ -1339,6 +1367,17 @@ export function counterItem(s: GameState, id: string, by: string, exile = false)
   if (item.kind === "spell" && s.objects[item.sourceId])
     moveObject(s, item.sourceId, item.flashback || exile ? "exile" : "graveyard");
   return true;
+}
+
+/** « Exilez le sort » (maîtrise de l'air) : il quitte la pile sans être contrecarré ; une copie cesse d'exister. */
+export function exileSpell(s: GameState, id: string): ObjectId | undefined {
+  const i = s.stack.findIndex((x) => x.id === id);
+  const item = s.stack[i];
+  if (item?.kind !== "spell" || s.resolving?.item.id === id) return undefined;
+  s.stack.splice(i, 1);
+  const moved = s.objects[item.sourceId] ? moveObject(s, item.sourceId, "exile") : undefined;
+  bump(s);
+  return moved ?? undefined;
 }
 
 /** « Renvoyez le sort ciblé dans la main de son propriétaire » : une copie cesse d'exister. */

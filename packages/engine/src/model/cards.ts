@@ -41,6 +41,10 @@ export interface CardDef {
    * Travail d'équipe, Marvel Super Heroes).
    */
   kickerCost?: { sacrifice?: ObjectFilter; bounce?: ObjectFilter; blight?: number; tapPower?: number; collectEvidence?: number };
+  /** « En coût additionnel, payez X points de vie » (Vicious Rivalry) : le X du sort se paie en PV, pas en mana. */
+  payLifeX?: boolean;
+  /** Web-slinging (Spider-Man) : coût alternatif (dans `altCost`), en renvoyant en main une créature engagée. */
+  webSlinging?: ManaCost;
   /** Storied (Le Hobbit) : son contrôleur peut acquérir un récit durable (voir `stateBasedActions`). */
   storied?: boolean;
   /** Faufilement (Sneak, Tortues Ninja) : coût alternatif (dans `altCost`), en renvoyant un attaquant non bloqué. */
@@ -89,7 +93,7 @@ export interface CardDef {
   /** F/E définies par une capacité (604.3, couche 7a), ex. cartes dans les cimetières adverses. */
   cdaPT?: Amount;
   /** « En arrivant, choisissez un type de créature / une couleur » (614.12). */
-  chooseOnEnter?: "creatureType" | "color" | "cardName" | "landName" | "landType";
+  chooseOnEnter?: "creatureType" | "color" | "cardName" | "landName" | "landType" | "parity";
   /**
    * Dévorer (702.82) : « en arrivant, sacrifiez des [terrains] ; N marqueurs +1/+1 par permanent sacrifié ».
    * `graveyardUpToX` : « exilez jusqu'à X cartes de votre cimetière » à la place (Mimeoplasm, cartes liées).
@@ -294,7 +298,8 @@ export interface ManaAbilityDef {
     spellNotFromHand?: boolean;
   };
   /** Gene Pollinator : « engagez un permanent dégagé que vous contrôlez » en plus de {T} (choisi automatiquement). */
-  tapAnother?: boolean;
+  /** `"creature"` : une créature dégagée (Springleaf Drum). */
+  tapAnother?: boolean | "creature";
   /** « N'activez que si vous contrôlez… » (Verges d'Aetherdrift). */
   condition?: Condition;
   /** « Une seule fois par tour » (Vivi Ornitier). */
@@ -498,6 +503,8 @@ export interface GraveyardReplacementAbilityDef {
   link?: "object" | "uid";
   /** Le contrôleur de la source gagne ces points de vie. */
   gainLife?: number;
+  /** Head of the Hunt : « quand vous le faites, créez [ce jeton] » (créé aussitôt). */
+  createToken?: TokenSpec;
   condition?: Condition;
   label?: string;
 }
@@ -663,6 +670,10 @@ export interface PlayerStaticAbilityDef {
   firstEquipFree?: boolean;
   /** « Les joueurs ne peuvent pas lancer de sorts ce tour-ci » (Bilbo's Gambit), posé sur chaque joueur. */
   cantCastSpells?: boolean;
+  /** Avatar's Wrath : « ne peut lancer des sorts que depuis sa main » (posé sur les adversaires). */
+  castOnlyFromHand?: boolean;
+  /** Ral Zarek : « passe son prochain tour » (un effet par tour passé, consommé). */
+  skipTurn?: boolean;
   /** Case of the Uneaten Feast : les cartes de créature de votre cimetière peuvent être lancées depuis celui-ci. */
   castCreaturesFromGraveyard?: boolean;
   /** Sanctum Lurker : vos planeswalkers ne vont pas au cimetière faute de loyauté. */

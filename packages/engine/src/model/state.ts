@@ -86,7 +86,7 @@ export interface GameObject {
   /** Tour de la dernière activation d'une capacité de loyauté (606.3 : une par tour). */
   loyaltyTurn?: number;
   /** Choix faits en arrivant (type de créature, couleur, nom de carte). */
-  chosen?: { creatureType?: string; color?: Color; cardName?: string; landType?: string };
+  chosen?: { creatureType?: string; color?: Color; cardName?: string; landType?: string; parity?: "odd" | "even" };
   /** Arrivé depuis un sort lancé depuis la main (Myojin). */
   castFromHand?: boolean;
   /** Lancé depuis le cimetière (Undead Sprinter : « si vous le faites, elle arrive avec un marqueur +1/+1 »). */
@@ -625,6 +625,8 @@ export interface GameState {
     now?: boolean;
     /** Flashback accordé (702.34) : lancé depuis le cimetière, exilé ensuite (Sphinx of Forgotten Lore, Archmage's Newt). */
     flashback?: boolean;
+    /** Maîtrise de l'air : lançable pour ce coût plutôt que pour son coût de mana. */
+    cost?: ManaCost;
   }[];
   /** Contrôle donné par une Aura (Confiscate) : contrôleur d'origine à rétablir quand l'Aura part. */
   /** `by` : contrôle tant que ce joueur contrôle la source (Possession Engine), et non tant que l'Aura est attachée. */

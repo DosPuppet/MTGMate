@@ -46,6 +46,7 @@ import type {
   Keyword,
   LayerMods,
   LkiSnapshot,
+  ManaCost,
   MoveSpec,
   ObjectId,
   PlayerId,
@@ -195,6 +196,10 @@ export function resolveRef(s: GameState, ctx: EffectContext, ref: Ref): string[]
       return ctx.sacrificed ?? [];
     case "costDiscarded":
       return (ctx.discarded ?? []).filter((id) => !!s.objects[id]);
+    case "except": {
+      const out = new Set(resolveRef(s, ctx, ref.exclude));
+      return resolveRef(s, ctx, ref.ref).filter((id) => !out.has(id));
+    }
     case "filtered":
       return resolveRef(s, ctx, ref.ref).filter(
         (id) => !!s.objects[id] && matchesCard(s, ctx.controller, id, { ...ref.filter, controller: undefined }, ctx.sourceId),
@@ -732,6 +737,7 @@ export function grantPlay(
     orHand?: boolean;
     now?: boolean;
     flashback?: boolean;
+    cost?: ManaCost;
   },
 ): void {
   const last = until === "forever" ? Number.MAX_SAFE_INTEGER : until === "thisTurn" ? s.turn.number : nextTurnOf(s, player);

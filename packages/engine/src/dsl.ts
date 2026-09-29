@@ -64,7 +64,7 @@ export interface CardScript {
   altCost?: { mana: string; condition: Condition; label: string };
   /** F/E définies par une capacité (F/E étoilées sur la carte). */
   cdaPT?: Amount;
-  chooseOnEnter?: "creatureType" | "color" | "cardName" | "landName" | "landType";
+  chooseOnEnter?: "creatureType" | "color" | "cardName" | "landName" | "landType" | "parity";
   shuffleIntoLibrary?: boolean;
   graveyardCastRemoveCounters?: number;
   /** Skyseer's Chariot : les capacités activées des sources du nom choisi coûtent {N} de plus. */
@@ -198,6 +198,8 @@ export const ref = {
   costDiscarded: { kind: "costDiscarded" } as Ref,
   /** Les objets désignés qui correspondent au filtre (Ghost Vacuum : « chaque carte de créature exilée avec… »). */
   filtered: (r: Ref, filter: ObjectFilter): Ref => ({ kind: "filtered", ref: r, filter }),
+  /** Les objets de `r` sauf ceux de `exclude` (« toutes les autres créatures »). */
+  except: (r: Ref, exclude: Ref): Ref => ({ kind: "except", ref: r, exclude }),
   /** Cartes exilées par la source « jusqu'à ce qu'elle quitte le champ de bataille ». */
   exiledWith: { kind: "exiledWith" } as Ref,
   playersWithoutMaxSpeed: { kind: "playersWithoutMaxSpeed" } as Ref,
@@ -418,8 +420,24 @@ export const fx = {
   ],
   loseLife: (n: Amount, who: Ref = ref.you, store?: string): Effect => ({ op: "loseLife", who, amount: n, store }),
   bounce: (what: Ref): Effect => ({ op: "bounce", what }),
+  /** Maîtrise de l'air : exile ; son propriétaire peut le lancer pour {2} tant qu'il est exilé. */
+  airbend: (what: Ref): Effect => ({ op: "airbend", what }),
   /** Effet de joueur jusqu'à la fin du tour, pour son contrôleur (`damageUnpreventable` : « les blessures ne peuvent pas être prévenues ce tour-ci »). */
   thisTurn: (ability: Omit<PlayerStaticAbilityDef, "kind">, who?: Ref): Effect => ({ op: "playerEffect", ability, who }),
+  /** Effet de joueur jusqu'au début de votre prochain tour (Avatar's Wrath). */
+  untilYourNextTurn: (ability: Omit<PlayerStaticAbilityDef, "kind">, who?: Ref): Effect => ({
+    op: "playerEffect",
+    ability,
+    who,
+    untilYourNextTurn: true,
+  }),
+  /** N effets à usage unique sur ces joueurs (Ral Zarek : « passe ses X prochains tours »). */
+  playerEffectTimes: (ability: Omit<PlayerStaticAbilityDef, "kind">, times: Amount, who?: Ref): Effect => ({
+    op: "playerEffect",
+    ability,
+    who,
+    times,
+  }),
   exile: (what: Ref): Effect => ({ op: "exile", what }),
   mill: (n: Amount, who: Ref = ref.you, store?: { name: string; filter?: ObjectFilter }): Effect => ({
     op: "mill",
@@ -615,6 +633,8 @@ export const fx = {
   exileNamed: (who: Ref, max: number): Effect => ({ op: "exileNamed", who, max }),
   /** Deadly Cover-Up : une carte d'un cimetière adverse, et toutes ses homonymes (cimetière, main, bibliothèque). */
   exileNamesakes: { op: "exileNamesakes" } as Effect,
+  /** The End : exile le permanent désigné et ses homonymes (cimetière, main, bibliothèque de son contrôleur). */
+  exileWithNamesakes: (of: Ref): Effect => ({ op: "exileNamesakes", of }),
   /** « Quand ce permanent arrive, choisissez [un nom de carte de terrain…] » (capacité déclenchée). */
   chooseForSelf: (kind: "creatureType" | "color" | "cardName" | "landName"): Effect => ({ op: "chooseOnEnter", kind }),
   payCostOf: (what: Ref, store: string, prompt: string): Effect => ({ op: "payCostOf", what, store, prompt }),
@@ -827,6 +847,7 @@ export const fx = {
       to?: MoveSpec;
       rest?: "bottom" | "graveyard" | "top" | "hand";
       maxManaValue?: Amount;
+      maxTotalManaValue?: number;
       store?: string;
     } = {},
   ): Effect => ({
@@ -836,6 +857,7 @@ export const fx = {
     count: opts.count ?? 1,
     to: opts.to ?? { to: "hand" },
     rest: opts.rest ?? "bottom",
+    maxTotalManaValue: opts.maxTotalManaValue,
     maxManaValue: opts.maxManaValue,
     store: opts.store,
   }),
@@ -1333,6 +1355,8 @@ export const when = {
   }),
   /** « Chaque fois que cette créature subit des blessures » */
   isDealtDamage: { on: "isDealtDamage", who: "self" } as TriggerSpec,
+  /** « Chaque fois qu'une [créature que vous contrôlez] subit des blessures » */
+  dealtDamage: (who: ObjectFilter): TriggerSpec => ({ on: "isDealtDamage", who }),
   /** « Chaque fois qu'une ou plusieurs [créatures] subissent des blessures en excès » (120.4a). */
   excessDamage: (who: ObjectFilter, noncombatOnly = false): TriggerSpec => ({ on: "excessDamage", who, noncombatOnly }),
   /** « Chaque fois que la créature enchantée (ou équipée) subit des blessures » */

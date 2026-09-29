@@ -3,6 +3,7 @@
  * (`fx.earthbend`). L'extension n'est pas encore couverte en entier.
  */
 import {
+  ALLY,
   activated,
   amount,
   BASIC_LAND,
@@ -16,8 +17,12 @@ import {
   entersWith,
   fx,
   manaAbility,
+  modal,
+  mode,
   ref,
+  SPIRIT_KOH,
   spell,
+  staticAbility,
   target,
   triggered,
   when,
@@ -176,6 +181,184 @@ export const CARDS: Record<string, CardScript> = {
         effects: [fx.createTokens(DRAGON_FIREBENDING)],
         label: "Un Dragon 4/4 volant, maîtrise du feu 4",
       }),
+    ],
+  },
+
+  // --- Lot M6 -----------------------------------------------------------------
+  "Abandoned Air Temple": {
+    abilities: [
+      entersWith({
+        tapped: true,
+        condition: cond.not(cond.controls({ types: ["Land"], basic: true })),
+        label: "Engagé, sauf si vous contrôlez un terrain de base",
+      }),
+      manaAbility("W"),
+      activated({
+        mana: "{3}{W}",
+        tap: true,
+        effects: [fx.addCountersAll({ types: ["Creature"], controller: "you" }, 1)],
+        label: "Un marqueur +1/+1 sur chacune de vos créatures",
+      }),
+    ],
+  },
+  "Avatar's Wrath": {
+    exileOnResolve: true,
+    spell: spell(
+      [target.upTo(1, target.creature())],
+      [
+        fx.airbend(ref.except(ref.permanentsOf(ref.eachPlayer, { types: ["Creature"] }), ref.target())),
+        fx.untilYourNextTurn({ castOnlyFromHand: true }, ref.eachOpponent),
+      ],
+    ),
+  },
+  "Aang, at the Crossroads": {
+    abilities: [
+      triggered(
+        when.entersSelf,
+        [
+          fx.lookAtTop(5, {
+            count: 1,
+            filter: { types: ["Creature"], maxManaValue: 4 },
+            to: { to: "battlefield" },
+            rest: "bottom",
+          }),
+        ],
+        { label: "Une créature de VM 4 ou moins parmi les cinq du dessus" },
+      ),
+      triggered(
+        when.leaves({ types: ["Creature"], controller: "you", other: true }),
+        [fx.delayedAt("nextUpkeep", [fx.transform(ref.self)])],
+        {
+          label: "Se transforme au début du prochain entretien",
+        },
+      ),
+    ],
+  },
+  "Aang, Destined Savior": {
+    abilities: [
+      staticAbility(
+        { types: ["Land"], controller: "you", anyOf: [{ types: ["Creature"] }] },
+        { addKeywords: ["vigilance"] },
+        {
+          label: "Vos créatures-terrains ont la vigilance",
+        },
+      ),
+      triggered(when.yourCombat, fx.earthbend(ref.target(), 2), {
+        targets: [target.permanent("t", ["Land"], { controller: "you" }, "terrain que vous contrôlez")],
+        label: "Maîtrise de la terre 2",
+      }),
+    ],
+  },
+  "Aang, Swift Savior": {
+    abilities: [
+      triggered(when.entersSelf, [fx.airbend(ref.target())], {
+        targets: [
+          target.upTo(1, {
+            id: "t",
+            label: "autre créature ou sort",
+            filter: { objects: { types: ["Creature"], other: true }, spells: {} },
+          }),
+        ],
+        label: "Maîtrise de l'air",
+      }),
+      // Maîtrise de l'eau {8} : payée en mana (les artefacts et créatures engagés n'aident pas).
+      activated({ mana: "{8}", effects: [fx.transform(ref.self)], label: "Maîtrise de l'eau 8 : transformez Aang" }),
+    ],
+  },
+  "Aang and La, Ocean's Fury": {
+    abilities: [
+      triggered(when.attacksSelf, [fx.addCountersAll({ types: ["Creature"], controller: "you", tapped: true }, 1)], {
+        label: "+1/+1 sur chacune de vos créatures engagées",
+      }),
+    ],
+  },
+  "Airbender Ascension": {
+    abilities: [
+      triggered(when.entersSelf, [fx.airbend(ref.target())], {
+        targets: [target.upTo(1, target.creature())],
+        label: "Maîtrise de l'air",
+      }),
+      triggered(when.enters({ types: ["Creature"], controller: "you" }), [fx.counters(ref.self, "quest")], {
+        label: "Un marqueur de quête",
+      }),
+      triggered(when.yourEndStep, [fx.exileCard(ref.target(), { name: "f" }), fx.toBattlefield(ref.stored("f"))], {
+        condition: cond.counterAtLeast("quest", 4),
+        targets: [target.upTo(1, target.creature("t", { controller: "you" }))],
+        label: "Exile puis renvoie une de vos créatures",
+      }),
+    ],
+  },
+  "Appa, Steadfast Guardian": {
+    abilities: [
+      triggered(when.entersSelf, [fx.airbend(ref.target())], {
+        targets: [{ ...target.nonland("t", { controller: "you", other: true }), count: 20, optional: true }],
+        label: "Maîtrise de l'air de vos permanents non-terrains",
+      }),
+      triggered({ on: "castSpell", by: "you", fromExile: true }, [fx.createTokens(ALLY)], { label: "Un Allié 1/1" }),
+    ],
+  },
+  "Heartless Act": {
+    spell: modal(
+      mode("Détruit une créature sans marqueur", [target.creature("t", { noCounters: true })], [fx.destroy(ref.target())]),
+      mode("Retire jusqu'à trois marqueurs", [target.creature("u")], [fx.removeCounters(ref.target("u"), 3)]),
+    ),
+  },
+  "Price of Freedom": {
+    spell: spell(
+      [target.permanent("t", ["Artifact", "Land"], { controller: "opponent" }, "artefact ou terrain adverse")],
+      [
+        fx.destroy(ref.target()),
+        fx.search(BASIC_LAND, { to: "battlefield", tapped: true }, 1, ref.controllerOf(ref.target())),
+        fx.draw(1),
+      ],
+    ),
+  },
+  "Combustion Technique": {
+    spell: spell(
+      [target.creature()],
+      [fx.exileIfDies(ref.target()), fx.damage(amount.plus(2, amount.countIn("graveyard", { subtype: "Lesson" })), ref.target())],
+    ),
+  },
+  "Iroh's Demonstration": {
+    spell: modal(
+      mode("1 blessure à chaque créature adverse", [], [fx.damageAll(1, { types: ["Creature"], controller: "opponent" })]),
+      mode("4 blessures à une créature", [target.creature()], [fx.damage(4, ref.target())]),
+    ),
+  },
+  "Firebending Lesson": {
+    kicker: "{4}",
+    spell: spell([target.creature()], [fx.damage(amount.kicked(5, 2), ref.target())]),
+  },
+  "Accumulate Wisdom": {
+    spell: spell(
+      [],
+      [
+        ...fx.when(
+          cond.amountAtLeast(amount.countIn("graveyard", { subtype: "Lesson" }), 3),
+          fx.lookAtTop(3, { count: 3, to: { to: "hand" }, rest: "bottom" }),
+        ),
+        ...fx.when(
+          cond.not(cond.amountAtLeast(amount.countIn("graveyard", { subtype: "Lesson" }), 3)),
+          fx.lookAtTop(3, { count: 1, to: { to: "hand" }, rest: "bottom" }),
+        ),
+      ],
+    ),
+  },
+  "Abandon Attachments": {
+    spell: spell([], [fx.discard(1, ref.you, { optional: true, store: "d" }), ...fx.when(cond.v("d"), fx.draw(2))]),
+  },
+  "It'll Quench Ya!": {
+    spell: spell([target.spell()], fx.unlessPays(ref.controllerOf(ref.target()), { mana: "{2}" }, fx.counter(ref.target()))),
+  },
+  "Realm of Koh": {
+    abilities: [
+      entersWith({
+        tapped: true,
+        condition: cond.not(cond.controls({ types: ["Land"], basic: true })),
+        label: "Engagé, sauf si vous contrôlez un terrain de base",
+      }),
+      manaAbility("B"),
+      activated({ mana: "{3}{B}", tap: true, effects: [fx.createTokens(SPIRIT_KOH)], label: "Un Esprit 1/1" }),
     ],
   },
 };

@@ -33,6 +33,7 @@ export function matchesView(v: LkiSnapshot, f: ObjectFilter, perspective: Player
   if (f.colors && !f.colors.some((c) => v.colors.includes(c))) return false;
   // « avec un marqueur » : `any` accepte n'importe quel type de marqueur.
   if (f.withCounter === "any" && !Object.values(v.counters ?? {}).some((n) => n > 0)) return false;
+  if (f.noCounters && Object.values(v.counters ?? {}).some((n) => n > 0)) return false;
   if (f.withCounter && f.withCounter !== "any" && !((v.counters?.[f.withCounter] ?? 0) > 0)) return false;
   if (f.inCombat && !v.attacking && !v.blocking) return false;
   if (f.anySubtype && !f.anySubtype.some((t) => hasSubtype(v, t))) return false;
@@ -97,10 +98,17 @@ function hasSubtype(v: LkiSnapshot, t: string): boolean {
 /** Remplace « du type / de la couleur choisis » par le choix fait par la source en arrivant. */
 export function withChosen(
   f: ObjectFilter,
-  source: { chosen?: { creatureType?: string; color?: Color; cardName?: string } } | undefined,
+  source: { chosen?: { creatureType?: string; color?: Color; cardName?: string; parity?: "odd" | "even" } } | undefined,
 ): ObjectFilter {
-  if (!f.subtypeChosen && !f.colorChosen && !f.nameChosen) return f;
-  const out: ObjectFilter = { ...f, subtypeChosen: undefined, colorChosen: undefined, nameChosen: undefined };
+  if (!f.subtypeChosen && !f.colorChosen && !f.nameChosen && !f.parityChosen) return f;
+  const out: ObjectFilter = {
+    ...f,
+    subtypeChosen: undefined,
+    colorChosen: undefined,
+    nameChosen: undefined,
+    parityChosen: undefined,
+  };
+  if (f.parityChosen) out.manaValueParity = source?.chosen?.parity ?? "even";
   if (f.nameChosen) out.name = source?.chosen?.cardName ?? "—";
   // Sans choix (arrivée sans résolution), rien ne correspond.
   if (f.subtypeChosen) out.subtype = source?.chosen?.creatureType ?? "—";
@@ -181,7 +189,18 @@ export function isLegalTarget(s: GameState, controller: PlayerId, spec: TargetSp
   // Sort ou capacité sur la pile (« sort ou capacité ciblé avec une seule cible »).
   const stackItem = s.stack.find((x) => x.id === id);
   // « capacité activée ou déclenchée ciblée » : les sorts relèvent du filtre `spells` (Louisoix's Sacrifice).
-  if (stackItem && spec.filter.stackItems && !(spec.filter.stackItems.abilitiesOnly && stackItem.kind === "spell")) {
+  const onlyTriggered = spec.filter.stackItems?.triggeredOnly;
+  if (
+    stackItem &&
+    spec.filter.stackItems &&
+    !((spec.filter.stackItems.abilitiesOnly || onlyTriggered) && stackItem.kind === "spell") &&
+    !(
+      onlyTriggered &&
+      stackItem.abilityIndex >= 0 &&
+      s.defs[stackItem.sourceDefId]?.abilities[stackItem.abilityIndex]?.kind !== "triggered" &&
+      !stackItem.inline
+    )
+  ) {
     const n = Object.values(stackItem.targets).flat().length;
     return !spec.filter.stackItems.singleTarget || n === 1;
   }

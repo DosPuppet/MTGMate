@@ -10,14 +10,14 @@
  * Limite : pour les autres événements (blessures, pioche, PV), plusieurs remplacements s'appliquent dans l'ordre du code.
  */
 
-import { gainLife } from "./actions";
+import { createTokens, gainLife } from "./actions";
 import { boardAmount } from "./effects";
 import { changeCounters, chars, moveObject, newId, nextTimestamp, P1P1, setPrepared } from "./state";
 import { controlledAbilitiesWithSource, playerStatic } from "./statics";
 import { matchesCard, matchesObjectFilter, withChosen } from "./targets";
 import { checkCondition } from "./triggers";
 import { countTurnEvents } from "./turnlog";
-import type { Amount, Color, GameObject, GameState, ObjectId, PlayerId, Zone } from "./types";
+import type { Amount, Color, GameObject, GameState, ObjectId, PlayerId, TokenSpec, Zone } from "./types";
 
 /** Contexte d'arrivée sur le champ de bataille (valeur de X, kicker du sort qui arrive). */
 export interface EntersContext {
@@ -78,7 +78,7 @@ function amountAtEntry(s: GameState, a: Amount, o: GameObject, ctx: EntersContex
 function defaultChoice(
   s: GameState,
   o: GameObject,
-  kind: "creatureType" | "color" | "cardName" | "landName" | "landType",
+  kind: "creatureType" | "color" | "cardName" | "landName" | "landType" | "parity",
 ): NonNullable<GameObject["chosen"]> {
   // Multiversal Passage mis en jeu sans avoir été joué : le type de terrain de base le plus présent chez son contrôleur.
   if (kind === "landType") {
@@ -87,6 +87,8 @@ function defaultChoice(
     const best = ["Plains", "Island", "Swamp", "Mountain", "Forest"].sort((a, b) => count(b) - count(a))[0];
     return { landType: best };
   }
+  // Gollum mis en jeu sans résolution : « pair » par défaut.
+  if (kind === "parity") return { parity: "even" };
   // Petrified Hamlet : le nom est choisi par sa capacité déclenchée d'arrivée ; rien avant sa résolution.
   if (kind === "landName") return { cardName: "—" };
   if (kind === "cardName") {
@@ -120,6 +122,7 @@ interface GraveyardCandidate {
   sourceId?: ObjectId;
   link?: "object" | "uid";
   gainLife?: number;
+  createToken?: TokenSpec;
   timestamp: number;
 }
 
@@ -155,7 +158,14 @@ function graveyardCandidates(s: GameState, o: GameObject): GraveyardCandidate[] 
         const ok = fromBattlefield ? matchesObjectFilter(s, p, o.id, ab.filter, id) : matchesCard(s, p, o.id, ab.filter, id);
         if (!ok) continue;
       }
-      out.push({ controller: p, sourceId: id, link: ab.link, gainLife: ab.gainLife, timestamp: s.objects[id]?.timestamp ?? 0 });
+      out.push({
+        controller: p,
+        sourceId: id,
+        link: ab.link,
+        gainLife: ab.gainLife,
+        createToken: ab.createToken,
+        timestamp: s.objects[id]?.timestamp ?? 0,
+      });
     }
   }
   return out;
@@ -182,6 +192,8 @@ export function replaceGraveyard(s: GameState, o: GameObject): GraveyardOutcome 
     if (src) src.linkedUids = [...(src.linkedUids ?? []), o.uid];
   }
   if (chosen.gainLife && chosen.controller) gainLife(s, chosen.controller, chosen.gainLife);
+  // Head of the Hunt : « quand vous le faites, créez un Loup 2/2 ».
+  if (chosen.createToken && chosen.controller) createTokens(s, chosen.controller, chosen.createToken, 1);
   return { to: "exile", linkTo: chosen.link === "object" ? chosen.sourceId : undefined };
 }
 

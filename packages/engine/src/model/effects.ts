@@ -19,6 +19,8 @@ import type {
 } from "../types";
 
 export type Effect =
+  /** Maîtrise de l'air (Avatar) : exile le permanent ou le sort ; son propriétaire peut le lancer pour {2} tant qu'il est exilé. */
+  | { op: "airbend"; what: Ref }
   /** « Exploitez [cette Gemme d'infinité] » : ses capacités ∞ deviennent actives. */
   | { op: "harness" }
   /**
@@ -26,11 +28,19 @@ export type Effect =
    * même nom de son cimetière, de sa main et de sa bibliothèque ; il mélange, puis pioche autant que de cartes exilées
    * de sa main.
    */
-  | { op: "exileNamesakes" }
+  /** `of` : la cible (The End) plutôt qu'une carte choisie dans un cimetière adverse. */
+  | { op: "exileNamesakes"; of?: Ref }
   /** Amasser (701.47) : N marqueurs +1/+1 sur une Armée du joueur (créée 0/0 noire au besoin), qui devient aussi du sous-type. */
   | { op: "amass"; who: Ref; subtype: string; amount: Amount }
   /** Effet de joueur jusqu'à la fin du tour (« les blessures ne peuvent pas être prévenues ce tour-ci »). */
-  | { op: "playerEffect"; ability: Omit<PlayerStaticAbilityDef, "kind">; who?: Ref }
+  /** `untilYourNextTurn` : jusqu'au début du prochain tour du contrôleur ; `times` : autant d'effets à usage unique. */
+  | {
+      op: "playerEffect";
+      ability: Omit<PlayerStaticAbilityDef, "kind">;
+      who?: Ref;
+      untilYourNextTurn?: boolean;
+      times?: Amount;
+    }
   /** Proliférer N fois (701.34), choix automatique : vos permanents qui ont des marqueurs, et chez les adversaires marqueurs -1/-1, d'étourdissement et de poison. */
   | { op: "proliferate"; times: Amount }
   /** « Retirez jusqu'à N marqueurs » (choix automatique : loyauté, +1/+1, puis les autres). */
@@ -191,6 +201,8 @@ export type Effect =
       rest: "bottom" | "graveyard" | "top" | "hand";
       /** Valeur de mana maximale des cartes prises (évaluée à la résolution). */
       maxManaValue?: Amount;
+      /** Valeur de mana totale des cartes prises au plus égale à N (Michelangelo's Technique). */
+      maxTotalManaValue?: number;
       /** Mémorise le nombre de cartes prises (« si vous n'avez pas mis de carte dans votre main ainsi »). */
       store?: string;
     }
@@ -303,7 +315,7 @@ export type Effect =
   /** « Vous pouvez lancer [cette carte] depuis votre cimetière ce tour-ci. » */
   | { op: "allowCastFromGraveyard"; what: Ref }
   /** « En arrivant, choisissez un type de créature / une couleur » (sort de permanent qui se résout). */
-  | { op: "chooseOnEnter"; kind: "creatureType" | "color" | "cardName" | "landName" | "landType" }
+  | { op: "chooseOnEnter"; kind: "creatureType" | "color" | "cardName" | "landName" | "landType" | "parity" }
   /** Dévorer : pendant la résolution du sort de permanent, sacrifier des permanents (nombre mémorisé). */
   | { op: "devour"; filter: ObjectFilter; graveyardUpToX?: boolean }
   /** Pendant la résolution d'un sort de permanent : choisir le permanent à copier en arrivant. */

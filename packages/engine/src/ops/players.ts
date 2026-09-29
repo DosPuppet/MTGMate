@@ -9,6 +9,7 @@ import {
   drawBonus,
   evalAmount,
   nameOf,
+  nextTurnOf,
   resolveRef,
   store,
 } from "../effects";
@@ -20,7 +21,9 @@ import { eliminate, endTheTurn } from "../turn";
 export const HANDLERS: OpHandlers = {
   playerEffect(s, _r, e, ctx) {
     const who = e.who ? resolveRef(s, ctx, e.who).filter((p) => isPlayer(s, p)) : [ctx.controller];
-    for (const p of who) addPlayerEffect(s, p, e.ability, s.turn.number);
+    const until = e.untilYourNextTurn ? nextTurnOf(s, ctx.controller) - 1 : e.times !== undefined ? null : s.turn.number;
+    const times = e.times !== undefined ? evalAmount(s, ctx, e.times) : 1;
+    for (const p of who) for (let i = 0; i < times; i++) addPlayerEffect(s, p, e.ability, until, e.times !== undefined);
     return;
   },
   cantAttackYouThisTurn(s, _r, e, ctx) {

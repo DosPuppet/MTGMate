@@ -561,6 +561,11 @@ function matchTrigger(s: GameState, ev: RulesEvent, t: TriggerSpec, src: Source)
       return { objectId: ev.sourceId, player: ev.player };
     }
     case "isDealtDamage": {
+      if (typeof t.who === "object") {
+        if (ev.e !== "damage" || ev.amount <= 0) return null;
+        const v = liveView(s, ev.target);
+        return v && matchWho(t.who, v, src) ? { objectId: ev.target, amount: ev.amount, player: me } : null;
+      }
       // La créature enchantée ou équipée (Cryoshatter, Pain for All), ou la source elle-même.
       const who = t.who === "attached" ? src.view.attachedTo : src.id;
       return ev.e === "damage" && who && ev.target === who && ev.amount > 0

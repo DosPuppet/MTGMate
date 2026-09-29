@@ -6,12 +6,16 @@
 import {
   activated,
   amount,
+  BASIC_LAND,
   type CardScript,
   cond,
   DOOMBOT,
   doubler,
   fx,
   manaAbility,
+  modal,
+  mode,
+  playerStatic,
   ref,
   spell,
   staticAbility,
@@ -162,6 +166,68 @@ export const CARDS: Record<string, CardScript> = {
           condition: cond.counterAtLeast("plan", 4),
           label: "Quatrième marqueur : sacrifiez-le, piochez, +1/+1 sur vos créatures",
         },
+      ),
+    ],
+  },
+
+  // --- Lot M6 -----------------------------------------------------------------
+  "Avengers Disassembled": {
+    spell: modal(
+      mode("3 blessures à chaque créature", [], [fx.damageAll(3, { types: ["Creature"] })]),
+      mode(
+        "Détruit un terrain",
+        [target.permanent("t", ["Land"])],
+        [fx.destroy(ref.target()), fx.search(BASIC_LAND, { to: "battlefield", tapped: true }, 1, ref.controllerOf(ref.target()))],
+      ),
+      mode(
+        "Les deux",
+        [target.permanent("t", ["Land"])],
+        [
+          fx.damageAll(3, { types: ["Creature"] }),
+          fx.destroy(ref.target()),
+          fx.search(BASIC_LAND, { to: "battlefield", tapped: true }, 1, ref.controllerOf(ref.target())),
+        ],
+      ),
+    ),
+  },
+  "Doctor Doom": {
+    abilities: [
+      triggered(when.entersSelf, [fx.createTokens(DOOMBOT, 2)], { label: "Deux Doombots 3/3" }),
+      staticAbility(
+        "self",
+        { addKeywords: ["indestructible"] },
+        {
+          condition: cond.any(
+            cond.controls({ types: ["Artifact"], anyOf: [{ types: ["Creature"] }] }),
+            cond.controls({ subtype: "Plan" }),
+          ),
+          label: "Indestructible avec une créature-artefact ou un Plan",
+        },
+      ),
+      triggered(when.yourEndStep, [fx.draw(1), fx.loseLife(1)], { label: "Piochez, perdez 1 PV" }),
+    ],
+  },
+  "Gleaming Bastion": {
+    abilities: [
+      manaAbility("C"),
+      manaAbility(["W", "U"], 1, {
+        condition: cond.any(cond.sourceMatches({ enteredThisTurn: true }), cond.controls({ types: ["Land"], basic: true })),
+      }),
+    ],
+  },
+  "Jennifer Walters": {
+    abilities: [
+      playerStatic({ opponentsCantCastYourTurn: true }),
+      activated({ mana: "{3}{G}{W}{W}", sorcerySpeed: true, effects: [fx.transform(ref.self)], label: "Transformez-la" }),
+    ],
+  },
+  "The Sensational She-Hulk": {
+    abilities: [
+      playerStatic({ opponentsCantCastYourTurn: true }),
+      triggered(
+        when.dealtDamage({ types: ["Creature"], controller: "you" }),
+        fx.may("Infliger autant de blessures à une cible ?", fx.damage(amount.eventAmount, ref.target())),
+        { oncePerTurn: true, targets: [target.any()], label: "Autant de blessures à n'importe quelle cible" },
       ),
     ],
   },
