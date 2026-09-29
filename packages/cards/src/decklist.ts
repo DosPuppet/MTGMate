@@ -324,3 +324,27 @@ export function deckColors(main: DeckEntries, cards: Record<string, CardDef>): s
   for (const [, name] of main) for (const c of cards[name]?.colors ?? []) set.add(c);
   return ["W", "U", "B", "R", "G"].filter((c) => set.has(c));
 }
+
+/**
+ * Réserve entre deux manches (BO3) : le nouveau deck doit contenir exactement les mêmes cartes, deck et réserve réunis,
+ * et rester légal et jouable. Renvoie le problème, ou null si l'échange est valable.
+ */
+export function sideboardSwapError(
+  original: { main: DeckEntries; sideboard?: DeckEntries },
+  next: { main: DeckEntries; sideboard?: DeckEntries },
+  cards: Record<string, CardDef>,
+): string | null {
+  const totals = (d: { main: DeckEntries; sideboard?: DeckEntries }) => {
+    const m = new Map<string, number>();
+    for (const [n, name] of [...d.main, ...(d.sideboard ?? [])]) m.set(name, (m.get(name) ?? 0) + n);
+    return m;
+  };
+  const a = totals(original);
+  const b = totals(next);
+  if (a.size !== b.size || [...a].some(([name, n]) => b.get(name) !== n))
+    return "Le deck et la réserve doivent contenir les mêmes cartes qu'au début du match.";
+  const v = validateDeck(next, cards);
+  if (!v.legal) return v.errors[0] ?? "Deck illégal.";
+  if (!v.playable) return "Le deck contient des cartes pas encore jouables.";
+  return null;
+}

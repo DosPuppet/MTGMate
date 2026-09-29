@@ -39,6 +39,7 @@ Ce fichier sert au suivi du projet entre les sessions : où on en est, les règl
 | Socle P0 de l'audit (29/09/2026) : intégration continue, lancer pendant la résolution (608.2g), remplacements « au lieu du cimetière » (616.1), équipage / Fabrication / prolifération au choix du joueur, capacités de mana à coût sans la pile (605.3b) ; `docs/extensions/socle.md`, lots 0.11 à 0.14 | ✅ |
 | P1 de l'audit (29/09/2026) : audit Oracle ↔ script (`coverage --audit`, test `audit.test.ts`), attentes déduites de l'Oracle (84 cartes), journal des événements du tour (`turnlog.ts`) ; lots 0.15 à 0.17 | ✅ |
 | P2 de l'audit (29/09/2026) : enregistrement des parties (`engine/src/record.ts`, graine + décisions), parties en ligne reprises après un redémarrage du serveur (`data/rooms`), export d'une partie et visionneur de replays | ✅ |
+| P2 de l'audit, fin (29/09/2026) : images des jetons, bundle découpé et compressé, service worker (hors ligne), match BO3 avec réserve (contre l'IA et en ligne) | ✅ |
 | Autres extensions Standard | à la demande de l'utilisateur, une à la fois |
 
 

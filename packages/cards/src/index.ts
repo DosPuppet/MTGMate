@@ -17,6 +17,7 @@ export {
   type ParsedDeck,
   parseDeckList,
   serializeDeckList,
+  sideboardSwapError,
   validateDeck,
 } from "./decklist";
 export { DECKS, type DeckList } from "./decks";

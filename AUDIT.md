@@ -166,7 +166,8 @@ La règle « préférer un mécanisme générique » est écrite dans `docs/mote
 - **P1 fait le 29/09/2026** : audit Oracle ↔ script (`npm run coverage -- --audit`, deux oublis corrigés : Greenhouse Propagator, Magmatic Galleon), attentes déduites de l'Oracle (138 cartes : sorts simples, déclencheurs d'arrivée, de mort, d'attaque, d'étape de fin et d'entretien, avec leur condition), journal des événements du tour (dix-sept compteurs de `TurnStats` et huit champs de `s.turn` retirés ; trois permissions du tour fondues dans `playPermissions`), effets sur les joueurs (neuf champs de `PlayerState` et trois de `s.turn` retirés). Lots 0.15 à 0.21 de `docs/extensions/socle.md`.
 - **P2, première pièce faite le 29/09/2026** : enregistrement des parties (graine + décisions), parties en ligne reprises après un redémarrage, export et replays (lot 0.22).
 - **P2, suite (29/09/2026)** : images des jetons (lot 0.23), bundle découpé, compression, cache et service worker (lot 0.24).
-- Restent : P2 (BO3 avec réserve), P3, P4.
+- **P2 terminé le 29/09/2026** : match BO3 avec réserve, contre l'IA et en ligne (lot 0.25).
+- Restent : P3, P4.
 
 ### P0 — Socle du moteur, pour toutes les extensions (avant la prochaine)
 

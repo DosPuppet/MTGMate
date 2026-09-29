@@ -71,13 +71,17 @@ describe("parties sauvegardées", () => {
     // Pas d'export pendant la partie (il révèle les decks et la graine).
     a2.send({ type: "export" });
     expect((await a2.next("error", (m) => m.code === "state")).message).toMatch(/pas terminée/);
-    // Et elle continue jusqu'au bout.
+    // Et elle continue : les bots jouent quelques secondes, puis Alice concède (si elle n'est pas déjà finie).
     a2.bot = b2.bot = true;
     a2.play(upA.view);
     b2.play(upB.view);
-    // Une partie complète entre ces bots peut durer plus d'une minute (voir « partie complète », online.test.ts).
-    const end = await a2.next("update", (m) => m.view.over, 90_000);
+    await new Promise((r) => setTimeout(r, 2_000));
+    a2.bot = false;
+    // Les bots jouent sans pause : la partie a pu se terminer d'elle-même.
+    if (!a2.lastView?.over) a2.send({ type: "decision", decision: { type: "concede" } });
+    const end = await a2.next("update", (m) => m.view.over, 20_000);
     expect(end.view.winner).toBeTruthy();
+    expect(end.view.turn.number).toBeGreaterThanOrEqual(upA.view.turn.number);
     // Export de la partie terminée : il se rejoue jusqu'au même vainqueur (décisions d'avant et d'après le redémarrage).
     a2.send({ type: "export" });
     const { record } = await a2.next("record");
@@ -85,7 +89,7 @@ describe("parties sauvegardées", () => {
     const replayed = replayGame(record, card);
     expect(replayed.state.over).toBe(true);
     expect(replayed.state.winner).toBe(end.view.winner);
-  }, 150_000);
+  }, 60_000);
 
   it("un salon fermé efface sa sauvegarde ; un fichier illisible est mis de côté sans bloquer le démarrage", async () => {
     const dataDir = tempDir();

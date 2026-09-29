@@ -4,7 +4,7 @@
  */
 
 import type { AiLevel } from "@mtgx/ai";
-import { card, type DeckEntries } from "@mtgx/cards";
+import { CARDS, card, type DeckEntries, sideboardSwapError } from "@mtgx/cards";
 import {
   type ActionOption,
   type AutopilotSettings,
@@ -20,7 +20,7 @@ import {
   type Step,
   type TargetOption,
 } from "@mtgx/engine";
-import type { Clock, RoomInfo, Seat, ServerMessage } from "@mtgx/server/protocol";
+import type { Clock, MatchInfo, RoomInfo, Seat, ServerMessage } from "@mtgx/server/protocol";
 import { create } from "zustand";
 import { soundsFor } from "./audio/eventSounds";
 import { playSound, preloadSounds } from "./audio/sfx";
@@ -121,8 +121,24 @@ export interface Hover {
 }
 
 /** Partie en ligne (salon sur le serveur). */
+/** Match contre l'IA au meilleur des trois manches (le serveur tient celui d'un match en ligne). */
+export interface LocalMatch {
+  bestOf: 3;
+  wins: Record<string, number>;
+  game: number;
+  winner: string | null;
+  /** Deck et réserve de la manche en cours, et ceux du début du match (un échange garde les mêmes cartes). */
+  deck: { main: DeckEntries; sideboard: DeckEntries };
+  original: { main: DeckEntries; sideboard: DeckEntries };
+  aiDeck: DeckEntries;
+  aiLevel?: AiLevel;
+}
+
 export interface OnlineState {
   status: "connecting" | RoomInfo["status"];
+  /** Match (BO1 ou BO3) et deck actuel du joueur (point de départ de la réserve entre deux manches). */
+  match?: MatchInfo;
+  deck?: RoomInfo["deck"];
   code: string | null;
   seat: Seat | null;
   players: RoomInfo["players"];
@@ -171,13 +187,23 @@ interface Store {
   turnBanner: { id: number; text: string; mine: boolean } | null;
   spotlight: { id: number; face: CardFace; who: string } | null;
 
-  startGame(playerDeck: DeckEntries, aiDecks: DeckEntries[], sandbox?: Sandbox, aiLevel?: AiLevel): void;
+  startGame(
+    playerDeck: DeckEntries,
+    aiDecks: DeckEntries[],
+    sandbox?: Sandbox,
+    aiLevel?: AiLevel,
+    match?: { bestOf: 3; sideboard: DeckEntries },
+  ): void;
+  /** Match contre l'IA en cours (BO3). */
+  localMatch: LocalMatch | null;
+  /** Manche suivante d'un match : deck et réserve choisis (contre l'IA : relance ; en ligne : envoyés au serveur). */
+  nextGame(main: DeckEntries, sideboard: DeckEntries): void;
   /** Tutoriel : partie mise en scène. */
   startScenario(scenario: ScenarioSpec): void;
   openTutorial(): void;
   openOnline(): void;
-  createRoom(name: string, deck: DeckEntries): void;
-  joinRoom(code: string, name: string, deck: DeckEntries): void;
+  createRoom(name: string, deck: DeckEntries, opts?: { sideboard?: DeckEntries; bestOf?: 1 | 3 }): void;
+  joinRoom(code: string, name: string, deck: DeckEntries, sideboard?: DeckEntries): void;
   /** Reprend la partie en ligne de cet onglet (jeton de reconnexion), au chargement ou après une coupure. */
   resumeOnline(): void;
   leaveRoom(): void;
@@ -545,6 +571,34 @@ export const useGame = create<Store>((set, get) => {
     get().session?.send({ type: "settings", settings });
   };
 
+  /** Lance une partie contre l'IA dans un nouveau worker. */
+  function startLocal(
+    playerDeck: DeckEntries,
+    aiDecks: DeckEntries[],
+    sandbox?: Sandbox,
+    aiLevel?: AiLevel,
+    startingPlayer?: string,
+  ): void {
+    get().session?.close();
+    preloadSounds();
+    const session = new LocalSession((m) => get().receive(m));
+    const settings = { ...get().settings, passUntilTurn: null };
+    set({ screen: "game", session, view: null, log: [], casting: null, attackers: [], blocks: {}, selection: [], settings });
+    session.send({
+      type: "start",
+      seed: Math.floor(Math.random() * 2 ** 31),
+      playerName: "Vous",
+      playerDeck,
+      aiDecks,
+      defs: defsFor([playerDeck, ...aiDecks], sandbox),
+      sandbox,
+      fast: fastMode(),
+      aiLevel,
+      startingPlayer,
+    });
+    session.send({ type: "settings", settings });
+  }
+
   return {
     screen: "lobby",
     replay: null,
@@ -575,27 +629,43 @@ export const useGame = create<Store>((set, get) => {
     turnBanner: null,
     spotlight: null,
 
-    startGame(playerDeck, aiDecks, sandbox, aiLevel) {
+    startGame(playerDeck, aiDecks, sandbox, aiLevel, match) {
       get().session?.close();
-      set({ online: null, tutorialGame: false, replay: null });
-      preloadSounds();
-      const session = new LocalSession((m) => get().receive(m));
-      const settings = { ...get().settings, passUntilTurn: null };
-      set({ screen: "game", session, view: null, log: [], casting: null, attackers: [], blocks: {}, selection: [], settings });
-      session.send({
-        type: "start",
-        seed: Math.floor(Math.random() * 2 ** 31),
-        playerName: "Vous",
-        playerDeck,
-        aiDecks,
-        defs: defsFor([playerDeck, ...aiDecks], sandbox),
-        sandbox,
-        fast: fastMode(),
-        aiLevel,
-      });
-      session.send({ type: "settings", settings });
+      const localMatch: LocalMatch | null =
+        match && aiDecks.length === 1
+          ? {
+              bestOf: 3,
+              wins: { p1: 0, p2: 0 },
+              game: 1,
+              winner: null,
+              deck: { main: playerDeck, sideboard: match.sideboard },
+              original: { main: playerDeck, sideboard: match.sideboard },
+              aiDeck: aiDecks[0] as DeckEntries,
+              aiLevel,
+            }
+          : null;
+      set({ online: null, tutorialGame: false, replay: null, localMatch });
+      startLocal(playerDeck, aiDecks, sandbox, aiLevel);
     },
 
+    nextGame(main, sideboard) {
+      const online = get().online;
+      if (online) {
+        (get().session as RemoteSession | null)?.raw({ type: "sideboard", main, sideboard });
+        return;
+      }
+      const m = get().localMatch;
+      if (!m || m.winner) return;
+      const error = sideboardSwapError(m.original, { main, sideboard }, CARDS);
+      if (error) return get().notify(error);
+      // Le perdant de la manche précédente commence.
+      const last = get().view;
+      const loser = last?.winner ? (last.winner === "p1" ? "p2" : "p1") : undefined;
+      set({ localMatch: { ...m, deck: { main, sideboard }, game: m.game + 1 } });
+      startLocal(main, [m.aiDeck], undefined, m.aiLevel, loser);
+    },
+
+    localMatch: null,
     startScenario(scenario) {
       get().session?.close();
       preloadSounds();
@@ -606,6 +676,7 @@ export const useGame = create<Store>((set, get) => {
         screen: "game",
         tutorialGame: true,
         replay: null,
+        localMatch: null,
         online: null,
         session,
         view: null,
@@ -639,13 +710,15 @@ export const useGame = create<Store>((set, get) => {
       set({ screen: "online", tutorialGame: false });
     },
 
-    createRoom(name, deck) {
-      connectRemote().raw({ type: "create", name, deck });
+    createRoom(name, deck, opts = {}) {
+      set({ localMatch: null });
+      connectRemote().raw({ type: "create", name, deck, sideboard: opts.sideboard, bestOf: opts.bestOf });
       saveName(name);
     },
 
-    joinRoom(code, name, deck) {
-      connectRemote().raw({ type: "join", code, name, deck });
+    joinRoom(code, name, deck, sideboard) {
+      set({ localMatch: null });
+      connectRemote().raw({ type: "join", code, name, deck, sideboard });
       saveName(name);
     },
 
@@ -692,6 +765,8 @@ export const useGame = create<Store>((set, get) => {
               code: r.code,
               seat: r.seat,
               players: r.players,
+              match: r.match,
+              deck: r.deck,
               error: null,
               reconnecting: false,
             },
@@ -769,6 +844,7 @@ export const useGame = create<Store>((set, get) => {
         screen: "game",
         tutorialGame: false,
         online: null,
+        localMatch: null,
         session,
         log: [],
         fx: [],
@@ -855,6 +931,15 @@ export const useGame = create<Store>((set, get) => {
         return get().notify(msg.message);
       }
       const { view, events, faces } = msg;
+      // Match contre l'IA : la manche qui se termine compte (deux victoires emportent le match, trois manches au plus).
+      const m = get().localMatch;
+      if (m && !m.winner && view.over && !get().view?.over) {
+        const wins = { ...m.wins };
+        if (view.winner) wins[view.winner] = (wins[view.winner] ?? 0) + 1;
+        const decided = (wins.p1 ?? 0) >= 2 || (wins.p2 ?? 0) >= 2 || m.game >= m.bestOf;
+        const winner = decided ? ((wins.p1 ?? 0) > (wins.p2 ?? 0) ? "p1" : (wins.p2 ?? 0) > (wins.p1 ?? 0) ? "p2" : null) : null;
+        set({ localMatch: { ...m, wins, winner: decided ? (winner ?? "nul") : null } });
+      }
       const lines = describeEvents(events, view, faces, get().lang, get().view);
       for (const cue of soundsFor(events, view, get().view, faces)) playSound(cue.key, cue);
       playEffects(view, events, faces);

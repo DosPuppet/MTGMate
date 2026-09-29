@@ -1,7 +1,7 @@
 import type { AiLevel } from "@mtgx/ai";
 import { CARDS, type DeckList, FORMAT_LABELS, validateDeck } from "@mtgx/cards";
 import { isGameRecord } from "@mtgx/engine";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { SoundControl } from "../audio/SoundControl";
 import { ManaCost } from "../board/Card";
 import { deckCover, useAllDecks } from "../decks/store";
@@ -113,6 +113,9 @@ export function Lobby() {
   const them = byId(ai);
   const canStart = !!me && !!them && deckStatus(me).ok && deckStatus(them).ok;
   const [aiCount, setAiCount] = useState(1);
+  // Match au meilleur des trois manches (duel), retenu d'une partie à l'autre.
+  const [bo3, setBo3] = useState(() => localStorageFlag("mtgmate.bo3"));
+  useEffect(() => saveFlag("mtgmate.bo3", bo3), [bo3]);
   const [level, setLevel] = useState<AiLevel>(loadLevel);
   const chooseLevel = (l: AiLevel) => {
     setLevel(l);
@@ -142,6 +145,12 @@ export function Lobby() {
             ))}
           </div>
           <span className="hint">{aiCount > 1 ? "Multijoueur chacun pour soi" : "Duel"}</span>
+          {aiCount === 1 && (
+            <label className="toggle" title="Au meilleur des trois manches, avec votre réserve entre les manches">
+              <input type="checkbox" checked={bo3} onChange={(e) => setBo3(e.target.checked)} />
+              Match en 3 manches (BO3)
+            </label>
+          )}
         </div>
         <div className="ai-level">
           <div className="ai-count">
@@ -174,6 +183,7 @@ export function Lobby() {
                 Array.from({ length: aiCount }, () => them.main),
                 undefined,
                 level,
+                bo3 && aiCount === 1 ? { bestOf: 3, sideboard: me.sideboard ?? [] } : undefined,
               )
             }
           >
@@ -230,4 +240,21 @@ function ReplayOpener() {
       />
     </label>
   );
+}
+
+/** Réglage booléen mémorisé (le stockage peut être indisponible : navigation privée, aperçu). */
+function localStorageFlag(key: string): boolean {
+  try {
+    return localStorage.getItem(key) === "1";
+  } catch {
+    return false;
+  }
+}
+
+function saveFlag(key: string, on: boolean): void {
+  try {
+    localStorage.setItem(key, on ? "1" : "0");
+  } catch {
+    // stockage indisponible : réglage non mémorisé
+  }
 }

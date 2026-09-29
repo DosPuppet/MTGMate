@@ -63,6 +63,7 @@ export function Online() {
   const [name, setName] = useState(loadName);
   const [deckId, setDeckId] = useState(() => decks.find((d) => deckStatus(d).ok)?.id ?? "");
   const [code, setCode] = useState(codeFromUrl);
+  const [bo3, setBo3] = useState(false);
   const deck = decks.find((d) => d.id === deckId);
   const ready = !!deck && deckStatus(deck).ok && name.trim().length > 0;
   const busy = online?.status === "connecting" && !online.error;
@@ -98,11 +99,15 @@ export function Online() {
               <div className="online-card">
                 <h3>Créer une partie</h3>
                 <p className="hint">Vous recevrez un code à partager.</p>
+                <label className="toggle" title="Au meilleur des trois manches, avec votre réserve entre les manches">
+                  <input type="checkbox" checked={bo3} onChange={(e) => setBo3(e.target.checked)} />
+                  Match en 3 manches (BO3)
+                </label>
                 <button
                   type="button"
                   className="btn primary big"
                   disabled={!ready || busy}
-                  onClick={() => deck && createRoom(name.trim(), deck.main)}
+                  onClick={() => deck && createRoom(name.trim(), deck.main, { sideboard: deck.sideboard, bestOf: bo3 ? 3 : 1 })}
                 >
                   Créer
                 </button>
@@ -121,7 +126,7 @@ export function Online() {
                   type="button"
                   className="btn primary big"
                   disabled={!ready || busy || code.length !== 6}
-                  onClick={() => deck && joinRoom(code, name.trim(), deck.main)}
+                  onClick={() => deck && joinRoom(code, name.trim(), deck.main, deck.sideboard)}
                 >
                   Rejoindre
                 </button>

@@ -121,6 +121,7 @@ async function handle(msg: ToWorker): Promise<void> {
       }
       const { state, events, record } = createRecordedGame({
         seed: msg.seed,
+        startingPlayer: msg.startingPlayer,
         players: [
           { id: HUMAN, name: msg.playerName, deck: buildDeck(msg.playerDeck) },
           ...msg.aiDecks.map((deck, i) => ({

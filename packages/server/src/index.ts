@@ -277,8 +277,9 @@ export function startServer(opts: ServerOptions = {}): Promise<RunningServer> {
           case "join":
           case "rejoin": {
             if (current) throw new ClientError("state", "Vous êtes déjà dans un salon.");
-            if (msg.type === "create") current = rooms.create(msg.name, msg.deck, peer);
-            else if (msg.type === "join") current = rooms.join(msg.code, msg.name, msg.deck, peer);
+            if (msg.type === "create")
+              current = rooms.create(msg.name, msg.deck, peer, { sideboard: msg.sideboard, bestOf: msg.bestOf });
+            else if (msg.type === "join") current = rooms.join(msg.code, msg.name, msg.deck, peer, msg.sideboard);
             else {
               const found = rooms.byToken(msg.token);
               if (!found) throw new ClientError("token", "Cette partie n'existe plus.");
@@ -307,6 +308,10 @@ export function startServer(opts: ServerOptions = {}): Promise<RunningServer> {
           case "rematch":
             if (!current) throw new ClientError("state", "Aucune partie en cours.");
             current.room.rematch(current.seat).catch(fail);
+            return;
+          case "sideboard":
+            if (!current) throw new ClientError("state", "Aucune partie en cours.");
+            current.room.sideboard(current.seat, msg.main, msg.sideboard).catch(fail);
             return;
           case "export": {
             if (!current) throw new ClientError("state", "Aucune partie en cours.");

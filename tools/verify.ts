@@ -175,6 +175,7 @@ if (!ci && !flag("no-ui") && (full || flag("ui") || uiTouched)) {
         { name: "battlefield-smoke", cmd: "npx tsx tools/battlefield-smoke.ts", show: /^ok : aucune erreur de page$/ },
         { name: "proxy-smoke", cmd: "npx tsx tools/proxy-smoke.ts", show: /^ok : aucune erreur de page$/ },
         { name: "replay-smoke", cmd: "npx tsx tools/replay-smoke.ts", show: /^ok : replay .*$/ },
+        { name: "bo3-smoke", cmd: "npx tsx tools/bo3-smoke.ts", show: /^ok : BO3 .*$/ },
         { name: "tutorial-smoke", cmd: "npx tsx tools/tutorial-smoke.ts", show: /^ok : tutoriel suivi de bout en bout$/ },
       ]),
     ]);

@@ -23,23 +23,41 @@ export interface Clock {
   maxTimeouts: number;
 }
 
+/** Match : une manche (BO1) ou au meilleur des trois (BO3). */
+export interface MatchInfo {
+  bestOf: 1 | 3;
+  /** Manches gagnées par siège. */
+  wins: Record<Seat, number>;
+  /** Numéro de la manche en cours (ou de la dernière jouée). */
+  game: number;
+  /** Vainqueur du match (null tant qu'il n'est pas décidé). */
+  winner: Seat | null;
+}
+
 export interface RoomInfo {
   code: string;
   seat: Seat;
   /** Jeton de reconnexion du destinataire (à garder pour `rejoin`). */
   token: string;
-  status: "waiting" | "playing" | "over";
-  players: { seat: Seat; name: string; connected: boolean; rematch: boolean }[];
+  /** `sideboard` : entre deux manches d'un BO3, chacun ajuste son deck avec sa réserve. */
+  status: "waiting" | "playing" | "sideboard" | "over";
+  /** `ready` : réserve validée, prêt pour la manche suivante. */
+  players: { seat: Seat; name: string; connected: boolean; rematch: boolean; ready: boolean }[];
+  match: MatchInfo;
+  /** Deck et réserve actuels du destinataire (entre les manches : point de départ de l'échange). */
+  deck: { main: DeckEntries; sideboard: DeckEntries };
 }
 
 export type ClientMessage =
-  | { type: "create"; name: string; deck: DeckEntries }
-  | { type: "join"; code: string; name: string; deck: DeckEntries }
+  | { type: "create"; name: string; deck: DeckEntries; sideboard?: DeckEntries; bestOf?: 1 | 3 }
+  | { type: "join"; code: string; name: string; deck: DeckEntries; sideboard?: DeckEntries }
   | { type: "rejoin"; token: string }
   | { type: "leave" }
   | { type: "decision"; decision: Decision }
   | { type: "settings"; settings: Partial<AutopilotSettings> }
   | { type: "rematch" }
+  /** Entre deux manches (BO3) : deck et réserve pour la manche suivante (mêmes cartes au total), puis prêt. */
+  | { type: "sideboard"; main: DeckEntries; sideboard: DeckEntries }
   /** Enregistrement de la partie terminée (replay, signalement d'un bug) ; refusé pendant la partie (decks, graine). */
   | { type: "export" };
 

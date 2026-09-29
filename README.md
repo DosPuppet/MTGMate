@@ -67,6 +67,7 @@ npm run dev          # http://localhost:5173
 - **En développement :** `npm run server` (serveur de parties, port 8787) et `npm run dev`. Ouvrez deux onglets, puis « Contre un joueur » : l'un crée la partie, l'autre la rejoint avec le code ou le lien.
 - **En réseau local :** `npm run build` puis `npm run server`. Le serveur sert aussi l'interface : votre adversaire ouvre l'adresse « réseau » affichée (`http://<ip>:8787`).
 - **Sur un serveur (Internet, HTTPS) :** Node + pm2 derrière nginx, avec un sous-domaine. La notice pas à pas est dans [docs/deploiement.md](docs/deploiement.md) ; les fichiers sont dans `deploy/` (configuration pm2, site nginx, script de mise à jour).
+- **Match en 3 manches (BO3) :** à cocher en créant le salon (et, contre l'IA, sur l'accueil). Entre deux manches, chacun ajuste son deck avec sa réserve (mêmes cartes au total, deck légal), puis le perdant de la manche précédente commence la suivante. Le match s'arrête à deux victoires.
 - **Règles du salon :**
   - 60 s par décision, avec une corde affichée pendant les 20 dernières ;
   - à l'expiration, une décision par défaut est jouée ; 3 expirations valent une défaite ;
@@ -117,6 +118,7 @@ Les images des cartes viennent de Scryfall (`cards.scryfall.io`). Certains rése
 | `npm run server` | Serveur de parties en ligne (WebSocket `/ws`, sert aussi `packages/client/dist`) |
 | `npm run online-smoke [-- --base <url>]` | Duel en ligne entre deux navigateurs : salon, lien d'invitation, corde, reprise après rechargement, revanche (serveur de dev par défaut, ou `--base` vers un serveur de production ou nginx) |
 | `npm run proxy-smoke` | Relais des images : Scryfall bloqué (bascule automatique sur `/scry/`), case « Images par le serveur MTG Mate » (serveur de dev lancé) |
+| `npm run bo3-smoke` | Match BO3 contre l'IA : réserve entre les manches, perdant qui commence, issue du match (serveur de dev lancé) |
 | `npm run replay-smoke` | Replays : partie contre l'IA exportée, puis rouverte dans le visionneur (avance, retour, fin, point de vue) (serveur de dev lancé) |
 | `npm run mobile-smoke` | Tablette et téléphone émulés : main, bouton principal et champs à l'écran, appui long, tap pour lever une carte, tiroir, portrait (serveur de dev lancé) |
 | `npm run battlefield-smoke` | Plateaux chargés (jetons, 2e ligne, 4 joueurs) mis en jeu par le bac à sable du mode dev : rangées, piles de jetons, aucune carte rognée (serveur de dev lancé) |

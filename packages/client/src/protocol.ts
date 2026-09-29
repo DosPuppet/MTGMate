@@ -46,6 +46,8 @@ export type ToWorker =
       seed: number;
       playerName: string;
       playerDeck: DeckEntries;
+      /** Premier joueur imposé (manche suivante d'un BO3 : le perdant de la précédente) ; absent : tirage au sort. */
+      startingPlayer?: string;
       aiDecks: DeckEntries[];
       /** Définitions des cartes utilisées (par nom) : le worker n'embarque pas toute la base de cartes. */
       defs: Record<string, CardDef>;
