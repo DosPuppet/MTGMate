@@ -166,7 +166,12 @@ interface Store {
   settings: AutopilotSettings;
   lang: Lang;
   casting: Casting | null;
-  abilityMenu: { sourceId: string; options: ActionOption[] } | null;
+  /** `unavailable` : capacités activées du permanent qu'on ne peut pas activer en ce moment (affichées grisées). */
+  abilityMenu: {
+    sourceId: string;
+    options: ActionOption[];
+    unavailable?: { label: string; cost: string }[];
+  } | null;
   attackers: string[];
   /** Défenseur choisi pour chaque attaquant (multijoueur). */
   attackTargets: Record<string, string>;
@@ -1070,8 +1075,16 @@ export const useGame = create<Store>((set, get) => {
         const acts = myActions(view);
         const activations = acts.filter((a): a is ActivateOption => a.type === "activate" && a.source === id);
         const mana = acts.filter((a) => a.type === "tapForMana" && a.source === id);
-        if (activations.length + mana.length > 1)
-          return set({ abilityMenu: { sourceId: id, options: [...activations, ...mana] } });
+        // Capacités activées impossibles en ce moment (mana, cible, timing) : montrées grisées plutôt que tues, pour
+        // qu'un clic sur un terrain ne l'engage pas en silence pour son mana (Rogue's Passage sans {4} disponible).
+        const perm = view.battlefield.find((o) => o.id === id);
+        const unavailable = (perm?.controller === view.viewer ? (perm.activated ?? []) : []).filter(
+          (a) => !activations.some((x) => x.ability === a.index),
+        );
+        if (activations.length + mana.length > 1 || (unavailable.length > 0 && activations.length + mana.length > 0))
+          return set({ abilityMenu: { sourceId: id, options: [...activations, ...mana], unavailable } });
+        if (unavailable.length > 0 && activations.length + mana.length === 0)
+          return get().notify(`${unavailable[0]?.label} : impossible maintenant (mana, cible ou moment).`);
         if (activations[0]) return get().beginCasting(activations[0], id);
         const m = mana[0];
         if (m?.type === "tapForMana")

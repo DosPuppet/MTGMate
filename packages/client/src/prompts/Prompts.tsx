@@ -487,6 +487,11 @@ function AbilityMenu() {
           }
           return null;
         })}
+        {menu.unavailable?.map((a, i) => (
+          <button key={`off-${i}`} type="button" className="btn choice" disabled title="Mana, cible ou moment : pas maintenant">
+            {a.label} — {a.cost ? `${a.cost} : ` : ""}impossible maintenant
+          </button>
+        ))}
       </div>
       <div className="modal-actions">
         <button type="button" className="btn ghost" onClick={cancel}>

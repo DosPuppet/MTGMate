@@ -84,6 +84,11 @@ export interface ObjectView extends CardFace {
   faceDownCard?: CardFace;
   /** Coût de sa garde (imprimée ou accordée), pour l'affichage : « {2} », « 3 PV »… */
   ward?: string;
+  /**
+   * Capacités activées d'un permanent (hors capacités de mana), activables ou non : l'interface montre celles qui ne le
+   * sont pas en ce moment (coût impayable, cible absente, timing) au lieu de les taire. `index` : celui de `activate`.
+   */
+  activated?: { index: number; label: string; cost: string }[];
 }
 
 export interface StackItemView extends CardFace {
@@ -268,7 +273,19 @@ export function objectView(s: GameState, id: ObjectId): ObjectView {
     ...(o.classLevel && o.classLevel > 1 ? { classLevel: o.classLevel } : {}),
     ...(o.solved ? { solved: true } : {}),
     ...(c.keywords.includes("ward") ? { ward: wardCost(c.abilities) } : {}),
+    ...activatedView(o.zone === "battlefield" ? c.abilities : []),
   };
+}
+
+/** Capacités activées depuis le champ de bataille, avec un libellé et leur coût (mana et {T}). */
+function activatedView(abilities: CardDef["abilities"]): Pick<ObjectView, "activated"> {
+  const out: NonNullable<ObjectView["activated"]> = [];
+  abilities.forEach((ab, index) => {
+    if (ab.kind !== "activated" || ab.fromGraveyard || ab.fromHand) return;
+    const cost = [ab.cost.mana ? costToText(ab.cost.mana) : "", ab.cost.tap ? "{T}" : ""].filter(Boolean).join(", ");
+    out.push({ index, label: ab.label ?? "Capacité activée", cost });
+  });
+  return out.length ? { activated: out } : {};
 }
 
 /** Coût de la garde (702.21) lu dans sa capacité déclenchée : « à moins de payer … ». */
