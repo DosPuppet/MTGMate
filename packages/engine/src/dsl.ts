@@ -419,7 +419,7 @@ export const fx = {
   loseLife: (n: Amount, who: Ref = ref.you, store?: string): Effect => ({ op: "loseLife", who, amount: n, store }),
   bounce: (what: Ref): Effect => ({ op: "bounce", what }),
   /** Effet de joueur jusqu'à la fin du tour, pour son contrôleur (`damageUnpreventable` : « les blessures ne peuvent pas être prévenues ce tour-ci »). */
-  thisTurn: (ability: Omit<PlayerStaticAbilityDef, "kind">): Effect => ({ op: "playerEffect", ability }),
+  thisTurn: (ability: Omit<PlayerStaticAbilityDef, "kind">, who?: Ref): Effect => ({ op: "playerEffect", ability, who }),
   exile: (what: Ref): Effect => ({ op: "exile", what }),
   mill: (n: Amount, who: Ref = ref.you, store?: { name: string; filter?: ObjectFilter }): Effect => ({
     op: "mill",
@@ -942,7 +942,12 @@ export const fx = {
     effects: effects.flat(),
     bind,
   }),
-  reflexive: (targets: TargetSpec[], effects: Effects): Effect => ({ op: "reflexive", targets, effects: effects.flat() }),
+  reflexive: (targets: TargetSpec[], effects: Effects, bind?: Record<string, Ref>): Effect => ({
+    op: "reflexive",
+    targets,
+    effects: effects.flat(),
+    bind,
+  }),
   /** « Piochez N cartes, puis défaussez N cartes. » */
   loot: (n = 1): Effect[] => [
     { op: "draw", who: ref.you, amount: n },
@@ -1523,6 +1528,11 @@ export const cond = {
   evoked: { kind: "evoked" } as Condition,
   /** Capacité ∞ : la source a été exploitée. */
   harnessed: { kind: "harnessed" } as Condition,
+  /** Storied : « tant que vous avez un récit durable ». */
+  enduringStory: { kind: "enduringStory" } as Condition,
+  /** « Si le coût de faufilement de ce sort a été payé ». */
+  sneaked: { kind: "sneaked" } as Condition,
+  sneakWindow: { kind: "sneakWindow" } as Condition,
   activatedLoyalty: { kind: "activatedLoyaltyThisTurn" } as Condition,
   /** La source est préparée. */
   prepared: { kind: "prepared" } as Condition,

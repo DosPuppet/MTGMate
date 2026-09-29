@@ -30,7 +30,7 @@ export type Effect =
   /** Amasser (701.47) : N marqueurs +1/+1 sur une Armée du joueur (créée 0/0 noire au besoin), qui devient aussi du sous-type. */
   | { op: "amass"; who: Ref; subtype: string; amount: Amount }
   /** Effet de joueur jusqu'à la fin du tour (« les blessures ne peuvent pas être prévenues ce tour-ci »). */
-  | { op: "playerEffect"; ability: Omit<PlayerStaticAbilityDef, "kind"> }
+  | { op: "playerEffect"; ability: Omit<PlayerStaticAbilityDef, "kind">; who?: Ref }
   /** Proliférer N fois (701.34), choix automatique : vos permanents qui ont des marqueurs, et chez les adversaires marqueurs -1/-1, d'étourdissement et de poison. */
   | { op: "proliferate"; times: Amount }
   /** « Retirez jusqu'à N marqueurs » (choix automatique : loyauté, +1/+1, puis les autres). */
@@ -278,7 +278,8 @@ export type Effect =
       vars?: Record<string, Amount>;
     }
   /** Capacité déclenchée réflexive (« quand vous le faites, … ») : ses cibles sont choisies à sa mise sur la pile. */
-  | { op: "reflexive"; targets: TargetSpec[]; effects: Effect[] }
+  /** `bind` : objets figés maintenant, relus comme cibles par la capacité réflexive (« cette créature »). */
+  | { op: "reflexive"; targets: TargetSpec[]; effects: Effect[]; bind?: Record<string, Ref> }
   /** Contrecarre un sort ou une capacité sur la pile (701.5). */
   | { op: "counter"; what: Ref; exile?: boolean }
   /** « … à moins que [joueur] ne paie X » : s'il paie, les `skip` effets suivants sont ignorés. */

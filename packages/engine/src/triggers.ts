@@ -269,6 +269,19 @@ export function checkCondition(s: GameState, c: Condition, controller: PlayerId,
       const spent = (sourceId && (s.objects[sourceId]?.spentColors ?? item?.spentColors)) || {};
       return (spent[c.color] ?? 0) >= c.n;
     }
+    case "sneakWindow":
+      return (
+        s.turn.step === "declareBlockers" &&
+        s.turn.active === controller &&
+        s.pending?.kind !== "declareBlockers" &&
+        !!s.combat?.attackers.some((a) => !a.blocked && s.objects[a.id]?.controller === controller)
+      );
+    case "enduringStory":
+      return playerStatic(s, controller, "enduringStory");
+    case "sneaked": {
+      const item = s.resolving && s.resolving.item.id === sourceId ? s.resolving.item : s.stack.find((x) => x.id === sourceId);
+      return !!item?.sneaked;
+    }
     case "harnessed":
       return !!sourceId && !!s.objects[sourceId]?.harnessed;
     case "evoked":

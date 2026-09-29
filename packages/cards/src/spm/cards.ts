@@ -50,4 +50,40 @@ export const CARDS: Record<string, CardScript> = {
     chooseOnEnter: "landType",
     abilities: [staticAbility("self", { addChosenLandType: true }, { label: "Est du type choisi" })],
   },
+
+  // --- Lot M5 -----------------------------------------------------------------
+  "Aunt May": {
+    abilities: [
+      triggered(
+        when.enters({ types: ["Creature"], controller: "you", other: true }),
+        [fx.gainLife(1), ...fx.when(cond.eventObjectMatches({ subtype: "Spider" }), fx.addCounters(ref.eventObject, 1))],
+        { label: "Gagnez 1 PV (Araignée : marqueur +1/+1)" },
+      ),
+    ],
+  },
+  "Carnage, Crimson Chaos": {
+    // Chaos {B}{R} : lu dans le texte.
+    abilities: [
+      triggered(
+        when.entersSelf,
+        [
+          fx.moveTo(ref.target(), { to: "battlefield" }, { name: "c" }),
+          fx.modify(
+            ref.stored("c"),
+            {
+              addKeywords: ["mustAttack"],
+              addAbilities: [triggered(when.combatDamageToPlayer, [fx.sacrificeIt(ref.self)], { label: "Sacrifiez-la" })],
+            },
+            "permanent",
+          ),
+        ],
+        {
+          targets: [
+            target.cardInGraveyard("t", { types: ["Creature"], maxManaValue: 3 }, "you", "carte de créature de VM 3 ou moins"),
+          ],
+          label: "Renvoie une créature, qui attaque et se sacrifie après avoir blessé un joueur",
+        },
+      ),
+    ],
+  },
 };

@@ -83,7 +83,9 @@ export const HANDLERS: OpHandlers = {
       });
     // Aucune cible possible (X = 0) : rien ne se passe.
     if (targets.some((t) => t.count === 0)) return;
-    pushInline(s, ctx.controller, ctx.sourceId, ctx.sourceDefId, { targets, effects: e.effects });
+    const bound: Record<string, string[]> = {};
+    for (const [k, r] of Object.entries(e.bind ?? {})) bound[k] = resolveRef(s, ctx, r);
+    pushInline(s, ctx.controller, ctx.sourceId, ctx.sourceDefId, { targets, effects: e.effects, bound });
     return;
   },
   may(s, r, e, ctx, key) {

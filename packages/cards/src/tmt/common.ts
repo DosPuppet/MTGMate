@@ -23,3 +23,13 @@ export const MUTAGEN: TokenSpec = {
   ],
   text: "{1}, {T}, Sacrifice this token: Put a +1/+1 counter on target creature. Activate only as a sorcery.",
 };
+
+/** Esprit Tortue Ninja : créature blanche 1/1 (The Last Ronin's Technique). */
+export const NINJA_TURTLE_SPIRIT: TokenSpec = {
+  name: "Ninja Turtle Spirit",
+  colors: ["W"],
+  types: ["Creature"],
+  subtypes: ["Ninja", "Turtle", "Spirit"],
+  power: 1,
+  toughness: 1,
+};

@@ -15,6 +15,7 @@ import {
   manaAbility,
   modal,
   mode,
+  PEST,
   ref,
   spell,
   staticAbility,
@@ -189,5 +190,71 @@ export const CARDS: Record<string, CardScript> = {
       }),
       manaAbility(["R", "W"]),
     ],
+  },
+
+  // --- Lot M5 -----------------------------------------------------------------
+  "Hardened Academic": {
+    abilities: [
+      activated({ discard: 1, effects: [fx.modify(ref.self, { addKeywords: ["lifelink"] })], label: "Lien de vie" }),
+      triggered(when.zoneChange(["graveyard"], { whose: "you" }), [fx.addCounters(ref.target(), 1)], {
+        batched: true,
+        targets: [target.creature("t", { controller: "you" })],
+        label: "Des cartes quittent votre cimetière : un marqueur +1/+1",
+      }),
+    ],
+  },
+  "Moseo, Vein's New Dean": {
+    abilities: [
+      triggered(when.entersSelf, [fx.createTokens(PEST)], { label: "Un Nuisible 1/1" }),
+      triggered(
+        when.yourEndStep,
+        fx.when(
+          cond.amountAtLeast(amount.plus(amount.lifeGainedThisTurn, amount.neg(amount.manaValueOf(ref.target()))), 0),
+          fx.toBattlefield(ref.target()),
+        ),
+        {
+          condition: cond.lifeGainedAtLeast(1),
+          targets: [
+            target.optional(target.cardInGraveyard("t", { types: ["Creature"] }, "you", "carte de créature de votre cimetière")),
+          ],
+          label: "Infusion : renvoie une créature de VM X ou moins (PV gagnés)",
+        },
+      ),
+    ],
+  },
+  "Practiced Offense": {
+    flashback: "{1}{W}",
+    spell: modal(
+      mode(
+        "Marqueurs +1/+1, double initiative",
+        [target.player("p"), target.creature("c")],
+        [
+          fx.addCounters(ref.permanentsOf(ref.target("p"), { types: ["Creature"] }), 1),
+          fx.modify(ref.target("c"), { addKeywords: ["doubleStrike"] }),
+        ],
+      ),
+      mode(
+        "Marqueurs +1/+1, lien de vie",
+        [target.player("p"), target.creature("c")],
+        [
+          fx.addCounters(ref.permanentsOf(ref.target("p"), { types: ["Creature"] }), 1),
+          fx.modify(ref.target("c"), { addKeywords: ["lifelink"] }),
+        ],
+      ),
+    ),
+  },
+  "Shattered Sanctum": {
+    abilities: [
+      entersWith({
+        tapped: true,
+        condition: cond.not(cond.controls({ types: ["Land"], other: true }, 2)),
+        label: "Engagé, sauf avec deux autres terrains ou plus",
+      }),
+      manaAbility(["W", "B"]),
+    ],
+  },
+  "Decorum Dissertation": {
+    // Paradigme : lu dans le texte.
+    spell: spell([target.player()], [fx.draw(2, ref.target()), fx.loseLife(2, ref.target())]),
   },
 };

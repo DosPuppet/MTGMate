@@ -101,12 +101,13 @@ export function paragraphs(text: string, isSpell: boolean): Paragraph[] {
   return out;
 }
 
-/** Capacités d'une définition, toutes sources comprises (paliers de station, niveaux de Classe). */
+/** Capacités d'une définition, toutes sources comprises (paliers de station, niveaux de Classe, Affaire résolue). */
 function allAbilities(d: CardDef): AbilityDef[] {
   return [
     ...d.abilities,
     ...(d.station?.thresholds.flatMap((t) => t.abilities) ?? []),
     ...(d.classLevels?.flatMap((l) => l.abilities) ?? []),
+    ...(d.caseSolved ?? []),
   ];
 }
 

@@ -24,6 +24,7 @@ function subjectOf(e: TurnLogEntry, byOwner?: boolean): PlayerId | undefined {
     case "cast":
     case "sacrifice":
     case "attack":
+    case "activate":
       return e.player;
     case "damage":
       return e.player;
@@ -51,6 +52,7 @@ function matches(e: TurnLogEntry, q: TurnLogQuery, me: PlayerId, subject?: Playe
   }
   if (e.e === "cast" && q.fromZone && e.fromZone !== q.fromZone) return false;
   if (e.e === "cast" && q.warped && !e.warped) return false;
+  if (e.e === "activate" && q.equip && !e.equip) return false;
   if (e.e === "attack" && q.againstYou && e.defender !== me) return false;
   if (e.e === "damage") {
     if (q.combat !== undefined && e.combat !== q.combat) return false;

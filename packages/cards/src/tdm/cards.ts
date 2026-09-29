@@ -5,13 +5,17 @@
  */
 import {
   activated,
+  amount,
   BASIC_LAND,
   type CardScript,
   cond,
   entersWith,
   fx,
+  GOBLIN,
   MONK,
   manaAbility,
+  modal,
+  mode,
   playerStatic,
   ref,
   spell,
@@ -19,6 +23,7 @@ import {
   TREASURE,
   target,
   triggered,
+  WARRIOR_R,
   when,
 } from "./common";
 
@@ -182,5 +187,91 @@ export const CARDS: Record<string, CardScript> = {
         }),
       ],
     ),
+  },
+
+  // --- Lot M5 -----------------------------------------------------------------
+  "Dalkovan Encampment": {
+    abilities: [
+      entersWith({
+        tapped: true,
+        condition: cond.not(cond.controls({ anySubtype: ["Swamp", "Mountain"] })),
+        label: "Engagé, sauf si vous contrôlez un Marais ou une Montagne",
+      }),
+      manaAbility("W"),
+      activated({
+        mana: "{2}{W}",
+        tap: true,
+        // « Chaque fois que vous attaquez ce tour-ci » : capacité accordée au terrain jusqu'à la fin du tour.
+        effects: [
+          fx.modify(ref.self, {
+            addAbilities: [
+              triggered(
+                when.attackWith(1),
+                [
+                  fx.createTappedTokens(WARRIOR_R, 2, { attacking: true, store: "w" }),
+                  fx.delayed([fx.sacrificeIt(ref.target("m"))], { m: ref.stored("w") }),
+                ],
+                { label: "Deux Guerriers 1/1 attaquants" },
+              ),
+            ],
+          }),
+        ],
+        label: "Ce tour-ci, chaque attaque crée deux Guerriers",
+      }),
+    ],
+  },
+  "Dragonfire Blade": {
+    // Équiper {4}, {1} de moins par couleur de la créature ciblée : lu dans le texte.
+    abilities: [
+      staticAbility(
+        "attached",
+        { power: 2, toughness: 2, addKeywords: ["hexproofFromMonocolored"] },
+        { label: "+2/+2, défense contre le monocolore" },
+      ),
+    ],
+  },
+  "Frontline Rush": {
+    spell: modal(
+      mode("Deux Gobelins 1/1", [], [fx.createTokens(GOBLIN, 2)]),
+      mode(
+        "+X/+X (vos créatures)",
+        [target.creature()],
+        [
+          fx.pump(
+            ref.target(),
+            amount.count({ types: ["Creature"], controller: "you" }),
+            amount.count({ types: ["Creature"], controller: "you" }),
+          ),
+        ],
+      ),
+    ),
+  },
+  "Stadium Headliner": {
+    // Mobilisation 1 : lue dans le texte.
+    abilities: [
+      activated({
+        mana: "{1}{R}",
+        sacrifice: true,
+        targets: [target.creature()],
+        effects: [fx.damage(amount.count({ types: ["Creature"], controller: "you" }), ref.target())],
+        label: "Blessures égales au nombre de vos créatures",
+      }),
+    ],
+  },
+  "Tersa Lightshatter": {
+    abilities: [
+      triggered(when.entersSelf, [fx.discard(2, ref.you, { optional: true, store: "d" }), fx.draw(amount.v("d"))], {
+        label: "Défaussez jusqu'à deux cartes, piochez-en autant",
+      }),
+      triggered(
+        when.attacksSelf,
+        fx.when(
+          cond.amountAtLeast(amount.cardsIn("graveyard"), 7),
+          fx.pickFromZone("graveyard", {}, { to: "exile" }, { count: 1, random: true, store: "x" }),
+          fx.grantPlay(ref.stored("x")),
+        ),
+        { label: "Sept cartes au cimetière : exile une carte au hasard, jouable ce tour-ci" },
+      ),
+    ],
   },
 };

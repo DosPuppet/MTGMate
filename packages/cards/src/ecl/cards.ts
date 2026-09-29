@@ -7,8 +7,11 @@ import {
   amount,
   type CardScript,
   cond,
+  entersWith,
   fx,
   manaAbility,
+  modal,
+  mode,
   ref,
   spell,
   TREEFOLK_REACH,
@@ -97,6 +100,67 @@ export const CARDS: Record<string, CardScript> = {
         effects: [fx.modify(ref.self, { addTypes: ["Artifact", "Creature"], setPower: 4, setToughness: 4 })],
         label: "Devient une créature-artefact 4/4",
       }),
+    ],
+  },
+
+  // --- Lot M5 -----------------------------------------------------------------
+  "Pyrrhic Strike": {
+    // Flétrir 2 (coût additionnel facultatif) : lu dans le texte ; payé, on choisit les deux modes.
+    spell: modal(
+      mode(
+        "Détruit un artefact ou un enchantement",
+        [target.permanent("a", ["Artifact", "Enchantment"])],
+        [fx.destroy(ref.target("a"))],
+      ),
+      mode("Détruit une créature de VM 3 ou plus", [target.creature("c", { minManaValue: 3 })], [fx.destroy(ref.target("c"))]),
+      {
+        ...mode(
+          "Les deux (flétrir 2 payé)",
+          [target.permanent("a", ["Artifact", "Enchantment"]), target.creature("c", { minManaValue: 3 })],
+          [fx.destroy(ref.target("a")), fx.destroy(ref.target("c"))],
+        ),
+        condition: cond.kicked,
+      },
+    ),
+  },
+  Emptiness: {
+    // Évocation lue dans le texte.
+    abilities: [
+      triggered(when.entersSelf, [fx.toBattlefield(ref.target())], {
+        condition: cond.spent("W", 2),
+        targets: [
+          target.cardInGraveyard("t", { types: ["Creature"], maxManaValue: 3 }, "you", "carte de créature de VM 3 ou moins"),
+        ],
+        label: "{W}{W} dépensé : renvoie une créature de votre cimetière",
+      }),
+      triggered(when.entersSelf, [fx.counters(ref.target(), "-1/-1", 3)], {
+        condition: cond.spent("B", 2),
+        targets: [target.upTo(1, target.creature())],
+        label: "{B}{B} dépensé : trois marqueurs -1/-1",
+      }),
+    ],
+  },
+  "Iron-Shield Elf": {
+    abilities: [
+      activated({
+        discard: 1,
+        effects: [fx.modify(ref.self, { addKeywords: ["indestructible"] }), fx.tap(ref.self)],
+        label: "Indestructible, engagez-la",
+      }),
+    ],
+  },
+  Moonshadow: {
+    abilities: [
+      entersWith({ counters: 6, counterKind: "-1/-1", label: "Arrive avec six marqueurs -1/-1" }),
+      triggered(
+        when.zoneChange(["battlefield", "hand", "library", "exile", "stack"], {
+          to: ["graveyard"],
+          whose: "you",
+          filter: { types: ["Artifact", "Creature", "Enchantment", "Land", "Planeswalker", "Battle"] },
+        }),
+        [fx.removeCounters(ref.self, 1, "-1/-1")],
+        { condition: cond.counterAtLeast("-1/-1", 1), batched: true, label: "Retire un marqueur -1/-1" },
+      ),
     ],
   },
 };

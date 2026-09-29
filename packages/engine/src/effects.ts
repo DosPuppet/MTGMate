@@ -694,6 +694,9 @@ export function attach(s: GameState, what: ObjectId, to: ObjectId): void {
 
 /** Signale une carte défaussée (déclencheurs « chaque fois qu'un adversaire défausse une carte »). */
 export function announceDiscard(s: GameState, player: PlayerId, card: ObjectId | null): void {
+  // Chaos (Mayhem) : la carte défaussée ce tour-ci peut être lancée depuis le cimetière.
+  const o = card ? s.objects[card] : undefined;
+  if (o) o.discardedTurn = s.turn.number;
   if (card) rulesEvent(s, { e: "discard", player, cards: [card] });
 }
 

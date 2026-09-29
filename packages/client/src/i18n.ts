@@ -57,6 +57,7 @@ export const KEYWORD_LABEL: Record<Keyword, string> = {
   hexproofFromInstants: "Défense talismanique contre les éphémères",
   hexproofFromBlack: "Défense talismanique contre le noir",
   hexproofFromWhite: "Défense talismanique contre le blanc",
+  hexproofFromMonocolored: "Défense talismanique contre le monocolore",
   changeling: "Changelin",
   cantBeBlockedByHumans: "Imblocable par les Humains",
   cantBeBlockedByGlimmers: "Imblocable par les Lueurs",

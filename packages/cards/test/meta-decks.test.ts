@@ -21,6 +21,11 @@ const PLAYABLE = [
   "4c Control",
   "Boros Dragons",
   "Jeskai Artifacts",
+  // Lot M5
+  "Boros Dwarves",
+  "Lifegain",
+  "Mardu Discard",
+  "Boros Tokens",
 ];
 
 describe("decks du méta", () => {

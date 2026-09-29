@@ -166,6 +166,8 @@ export interface ModeOption {
   index: number;
   label?: string;
   targets: TargetOption[];
+  /** Mode possible seulement en payant le coût additionnel (« si vous l'avez payé, choisissez les deux »). */
+  requiresKicker?: boolean;
 }
 
 export type ActionOption =

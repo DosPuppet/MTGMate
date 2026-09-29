@@ -2,7 +2,26 @@
  * The Hobbit — cartes des decks du méta (phase 1 du plan P4, lot M1) : contempler (`cond.behold`). L'extension n'est pas
  * encore couverte en entier.
  */
-import { activated, amount, BASIC_LAND, type CardScript, cond, fx, ref, TREASURE, target, triggered, when } from "./common";
+import {
+  activated,
+  amount,
+  BASIC_LAND,
+  type CardScript,
+  cond,
+  cost,
+  DWARF,
+  entersWith,
+  fx,
+  playerStatic,
+  ref,
+  spell,
+  staticAbility,
+  TREASURE,
+  target,
+  triggered,
+  wardAbility,
+  when,
+} from "./common";
 
 export const CARDS: Record<string, CardScript> = {
   // --- Terrains --------------------------------------------------------------
@@ -67,6 +86,138 @@ export const CARDS: Record<string, CardScript> = {
         label: "Blessures égales au nombre de vos Trésors",
       }),
       triggered(when.yourUpkeep, [fx.createTokens(TREASURE)], { label: "Un Trésor" }),
+    ],
+  },
+
+  // --- Lot M5 -----------------------------------------------------------------
+  "Thorin Oakenshield": {
+    // Storied : lu dans le texte.
+    abilities: [
+      staticAbility(
+        { anyOf: [{ types: ["Artifact"] }, { types: ["Creature"] }], controller: "you" },
+        { addAbilities: [wardAbility({ mana: cost("{1}") })] },
+        { condition: cond.enduringStory, label: "Récit durable : vos artefacts et créatures ont la garde {1}" },
+      ),
+    ],
+  },
+  "Concerted Care": {
+    spell: spell(
+      [target.permanent("t", ["Artifact", "Creature"], { controller: "you" }, "artefact ou créature que vous contrôlez")],
+      [fx.modify(ref.target(), { addKeywords: ["hexproof", "indestructible"] })],
+    ),
+  },
+  "The Lonely Mountain": {
+    abilities: [
+      entersWith({
+        tapped: true,
+        condition: cond.not(cond.controls({ subtype: "Equipment" })),
+        label: "Engagé, sauf si vous contrôlez un Équipement",
+      }),
+      activated({
+        mana: "{4}{R}",
+        tap: true,
+        sorcerySpeed: true,
+        reduction: { generic: amount.count({ subtype: "Equipment", controller: "you" }) },
+        effects: [fx.createTokens(DWARF)],
+        label: "Un Nain 2/2",
+      }),
+    ],
+  },
+  "Dwarven Mauler": { equipDiscountWhenTargeted: 2 },
+  "Thorin, Mountain-king": {
+    abilities: [
+      triggered(
+        when.entersSelf,
+        [
+          fx.attach(ref.target("e"), ref.target("c")),
+          ...fx.when(
+            cond.amountAtLeast(amount.refCount(ref.target("e")), 1),
+            fx.reflexive(
+              [target.upTo(1, target.creature("d"))],
+              [fx.damage(amount.powerOf(ref.target("c")), ref.target("d"), ref.target("c"))],
+              { c: ref.target("c") },
+            ),
+          ),
+        ],
+        {
+          targets: [
+            {
+              ...target.permanent(
+                "e",
+                ["Artifact"],
+                { subtype: "Equipment", controller: "you" },
+                "Équipements que vous contrôlez",
+              ),
+              count: 20,
+              optional: true,
+            },
+            target.creature("c", { controller: "you" }),
+          ],
+          label: "Attache vos Équipements ; la créature blesse une créature",
+        },
+      ),
+    ],
+  },
+  "Dáin's Company": {
+    abilities: [
+      staticAbility(
+        "self",
+        { addKeywords: ["lifelink"] },
+        { condition: cond.controls({ subtype: "Dwarf", other: true }), label: "Lien de vie avec un autre Nain" },
+      ),
+      triggered(
+        when.entersSelf,
+        [
+          fx.lookAtTop(4, {
+            count: 1,
+            filter: { anyOf: [{ subtype: "Dwarf" }, { subtype: "Equipment" }] },
+            to: { to: "hand" },
+            rest: "bottom",
+          }),
+        ],
+        { label: "Un Nain ou un Équipement parmi les quatre du dessus" },
+      ),
+    ],
+  },
+  "Kíli the Resourceful": {
+    abilities: [
+      playerStatic({
+        firstEquipFree: true,
+        condition: cond.enduringStory,
+        label: "Récit durable : premier Équiper du tour pour {0}",
+      }),
+      triggered(
+        when.enters({ anyOf: [{ subtype: "Dwarf" }, { subtype: "Equipment" }], controller: "you", other: true }),
+        [fx.draw(1)],
+        {
+          oncePerTurn: true,
+          label: "Piochez une carte",
+        },
+      ),
+    ],
+  },
+  "Bilbo's Gambit": {
+    // Cadeau d'un Trésor : lu dans le texte.
+    spell: spell(
+      [target.spell()],
+      [fx.bounce(ref.target()), ...fx.when(cond.gift, fx.thisTurn({ cantCastSpells: true }, ref.eachPlayer))],
+    ),
+  },
+  "Belladonna Took": {
+    abilities: [
+      triggered(
+        when.enters({ token: true, controller: "you" }),
+        [
+          fx.countResolution("n"),
+          ...fx.when(cond.all(cond.v("n", 1), cond.not(cond.v("n", 2))), fx.gainLife(1)),
+          ...fx.when(cond.all(cond.v("n", 2), cond.not(cond.v("n", 3))), fx.draw(1)),
+          ...fx.when(
+            cond.all(cond.v("n", 3), cond.not(cond.v("n", 4))),
+            fx.addCountersAll({ types: ["Creature"], controller: "you" }, 1),
+          ),
+        ],
+        { label: "1re fois : 1 PV ; 2e : piochez ; 3e : +1/+1 sur vos créatures" },
+      ),
     ],
   },
 };

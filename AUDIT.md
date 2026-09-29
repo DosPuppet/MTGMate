@@ -172,7 +172,8 @@ La règle « préférer un mécanisme générique » est écrite dans `docs/mote
 - **P4, lot M2 fait le 29/09/2026** : quatre archétypes jouables (43,7 % du méta).
 - **P4, lot M3 fait le 29/09/2026** : sept archétypes jouables (53,2 % du méta).
 - **P4, lot M4 fait le 29/09/2026** : dix archétypes jouables (67,1 % du méta).
-- Restent : P3, P4 (lots M5 et M6, puis Tarkir: Dragonstorm).
+- **P4, lot M5 fait le 29/09/2026** : quatorze archétypes jouables (79,8 % du méta).
+- Restent : P3, P4 (lot M6, puis Tarkir: Dragonstorm).
 
 ### P0 — Socle du moteur, pour toutes les extensions (avant la prochaine)
 

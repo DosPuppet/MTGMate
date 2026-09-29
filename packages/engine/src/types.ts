@@ -50,6 +50,8 @@ export type Keyword =
   | "hexproofFromInstants"
   | "hexproofFromBlack"
   | "hexproofFromWhite"
+  /** Dragonfire Blade : « défense talismanique contre le monocolore ». */
+  | "hexproofFromMonocolored"
   /** Changelin (702.73) : a tous les types de créature, dans toutes les zones. */
   | "changeling"
   | "cantBeBlockedByHumans"

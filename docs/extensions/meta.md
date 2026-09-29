@@ -138,3 +138,32 @@ Les scripts vont dans le dossier de leur extension (`packages/cards/src/<ext>/ca
 - **Wilds of Eldraine (WOE) :** Candy Trail. **Lorwyn Eclipsed (ECL) :** Firdoch Core. **The Hobbit (HOB) :** Smaug the Magnificent.
 - **Avatar: The Last Airbender (TLA) :** Momo, Friendly Flier ; en réserve, The Legend of Roku // Avatar Roku (Saga qui se transforme, maîtrise du feu 4).
 - **Marvel's Spider-Man (SPM) :** Multiversal Passage.
+
+## Lot M5 — Boros Dwarves, Lifegain, Mardu Discard et Boros Tokens (cumul 79,8 % du méta)
+
+34 cartes : 31 des decks principaux, 3 des réserves. Tests dans `engine/test/meta.test.ts` (« lot M5 »).
+
+### Moteur
+
+- **Storied / récit durable** (Le Hobbit) : lu dans le texte (`CardDef.storied`) ; une action basée sur l'état donne au contrôleur d'un tel permanent, s'il contrôle trois artefacts, légendaires et/ou Sagas ou plus, un effet de joueur permanent `enduringStory` (`cond.enduringStory`).
+- **Faufilement** (Sneak, Tortues Ninja) : lu dans le texte ; coût alternatif possible pendant l'étape de déclaration des bloqueurs (`cond.sneakWindow`), qui renvoie en main votre attaquant non bloqué le plus faible ; `cond.sneaked` à la résolution.
+- **Chaos** (Mayhem, Spider-Man) : lu dans le texte ; une carte défaussée ce tour-ci (`GameObject.discardedTurn`) se lance depuis le cimetière pour son coût de chaos.
+- **Paradigme** (Strixhaven) : lu dans le texte ; le sort est exilé et un emblème (lié à la carte) propose d'en lancer une copie gratuite au début de chacune de vos premières phases principales.
+- **Équiper** : « Equip worthy » (créature légendaire non-Méchant rouge et/ou blanche) et « {1} de moins par couleur de la créature ciblée » lus dans le texte ; les capacités d'équipement sont marquées (`equip`) et journalisées (`activate` dans le journal du tour) ; Kíli : la première de chaque tour coûte {0} (`firstEquipFree`).
+- **Mode réservé au coût payé** (« si le coût additionnel a été payé, choisissez les deux ») : un mode avec `condition: cond.kicked` exige le kicker dans la décision (`ModeOption.requiresKicker` ; l'interface et l'IA le paient).
+- **Capacité réflexive liée** : `fx.reflexive(cibles, effets, { c: ref.target("c") })` relit un objet de la capacité d'origine.
+- **Effets de joueur** : `fx.thisTurn(capacité, joueurs)` pour d'autres joueurs (`cantCastSpells`) ; `castCreaturesFromGraveyard`.
+- **Défense talismanique contre le monocolore** (`hexproofFromMonocolored`).
+- L'audit Oracle ↔ script compte les capacités d'une Affaire résolue.
+
+### Cartes, par extension
+
+- **The Hobbit (HOB) :** Belladonna Took, Bofur, Reliable Guardian // Concerted Care, Dwarven Mauler, Dáin's Company, Kíli the Resourceful, The Lonely Mountain, Thorin Oakenshield, Thorin, Mountain-king ; en réserve, Bilbo's Gambit.
+- **Tarkir: Dragonstorm (TDM) :** Dalkovan Encampment, Dragonfire Blade, Frontline Rush, Stadium Headliner (mobilisation 1), Tersa Lightshatter.
+- **Teenage Mutant Ninja Turtles (TMT) :** Casey Jones, Vigilante, Cool but Rude (Classe), Skateboard, The Last Ronin's Technique (faufilement).
+- **Secrets of Strixhaven (SOS) :** Hardened Academic, Moseo, Vein's New Dean (infusion), Practiced Offense, Shattered Sanctum ; en réserve, Decorum Dissertation (paradigme).
+- **Lorwyn Eclipsed (ECL) :** Emptiness (évocation), Iron-Shield Elf, Moonshadow ; en réserve, Pyrrhic Strike (flétrir 2, les deux modes).
+- **Marvel's Spider-Man (SPM) :** Aunt May, Carnage, Crimson Chaos (chaos).
+- **Murders at Karlov Manor (MKM) :** Case of the Uneaten Feast (Affaire), Warleader's Call.
+- **Marvel Super Heroes (MSH) :** Mjölnir, Hammer of Thor (équiper digne), Political Triumph.
+- **Wilds of Eldraine (WOE) :** Song of Totentanz (Torch the Tower était au lot M1).

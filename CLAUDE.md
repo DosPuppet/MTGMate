@@ -44,7 +44,8 @@ Ce fichier sert au suivi du projet entre les sessions : où on en est, les règl
 | Méta Standard, lot M2 : Dimir Midrange et Jund Sacrifice (23 cartes) ; flétrir, Travail d'équipe, amasser | ✅ |
 | Méta Standard, lot M3 : Dimir Excruciator, Azorius Control, Selesnya Landfall (15 cartes) ; évocation, mana dépensé par type, mobilisation, montée en puissance, réunir des preuves | ✅ |
 | Méta Standard, lot M4 : 4c Control, Boros Dragons, Jeskai Artifacts (23 cartes) ; type de terrain choisi en jouant le terrain, exploiter, convergence, maîtrise du feu | ✅ |
-| Méta Standard, lots M5 et M6, puis Tarkir: Dragonstorm à 100 % (`PLAN-P4.md`) | à faire |
+| Méta Standard, lot M5 : Boros Dwarves, Lifegain, Mardu Discard, Boros Tokens (34 cartes) ; Storied, faufilement, chaos, paradigme, équiper digne | ✅ |
+| Méta Standard, lot M6, puis Tarkir: Dragonstorm à 100 % (`PLAN-P4.md`) | à faire |
 | Autres extensions Standard | à la demande de l'utilisateur, une à la fois |
 
 

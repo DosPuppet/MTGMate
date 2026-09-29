@@ -116,8 +116,28 @@ const WARD =
 /** « Equip {3}{W} » (702.6) : capacité activée en rituel, cible une créature que vous contrôlez. */
 /** « Equip {2} » ou, avec un nom de capacité, « Gae Bolg — Equip {4} ». */
 export function parseEquip(text: string): string | undefined {
-  return /^(?:[^\n—]+ — )?Equip ((?:\{[^}]+\})+)/m.exec(stripReminder(text))?.[1];
+  return /^(?:[^\n—]+ — )?Equip (?:worthy )?((?:\{[^}]+\})+)/m.exec(stripReminder(text))?.[1];
 }
+
+/**
+ * Variantes d'Équiper lues dans le texte : « Equip worthy {1} » (Marvel Super Heroes : créature légendaire non-Méchant
+ * rouge et/ou blanche) ; « coûte {1} de moins par couleur de la créature ciblée » (Dragonfire Blade).
+ */
+function equipVariant(text: string): { worthy?: boolean; byColors?: boolean } {
+  return {
+    worthy: /^Equip worthy /m.test(text) || undefined,
+    byColors: /costs \{1\} less to activate for each color of the creature it targets/.test(text) || undefined,
+  };
+}
+
+/** « Digne » (worthy) : créature légendaire que vous contrôlez, non-Méchant, rouge et/ou blanche. */
+const WORTHY: ObjectFilter = {
+  types: ["Creature"],
+  controller: "you",
+  legendary: true,
+  noneOfSubtypes: ["Villain"],
+  colors: ["R", "W"],
+};
 
 /** Héros : créature incolore 1/1 (Job select). */
 const HERO_TOKEN = { name: "Hero", colors: [], types: ["Creature" as const], subtypes: ["Hero"], power: 1, toughness: 1 };
@@ -345,6 +365,7 @@ function intrinsicAbilities(
   equipReduced?: boolean,
   saddle?: number,
   crewOnce?: boolean,
+  equipKind: { worthy?: boolean; byColors?: boolean } = {},
 ): CardDef["abilities"] {
   const out: CardDef["abilities"] = [];
   if (keywords.has("prowess")) {
@@ -363,12 +384,16 @@ function intrinsicAbilities(
       kind: "activated",
       cost: { mana: parseManaCost(equip) },
       targets: [
-        { id: "t", label: "créature que vous contrôlez", filter: { objects: { types: ["Creature"], controller: "you" } } },
+        equipKind.worthy
+          ? { id: "t", label: "créature digne que vous contrôlez", filter: { objects: WORTHY } }
+          : { id: "t", label: "créature que vous contrôlez", filter: { objects: { types: ["Creature"], controller: "you" } } },
       ],
       effects: [{ op: "attach", what: { kind: "self" }, to: { kind: "target", id: "t" } }],
       sorcerySpeed: true,
       reduceByTargetCounters: equipReduced || undefined,
-      label: `Équiper ${equip}`,
+      reduceByTargetColors: equipKind.byColors,
+      equip: true,
+      label: `Équiper ${equipKind.worthy ? "(digne) " : ""}${equip}`,
     });
   }
   if (ward) out.push(dsl.wardAbility(ward));
@@ -698,6 +723,11 @@ function singleDef(raw: RawCard, script: CardScript | undefined, set: string): C
   const mobilize = Number(/^Mobilize (\d+)/m.exec(raw.oracleText)?.[1] ?? 0);
   // Maîtrise du feu N (Avatar) : « chaque fois que cette créature attaque, ajoutez N {R} » (jusqu'à la fin du tour).
   const firebending = Number(/^Firebending (\d+)/m.exec(raw.oracleText)?.[1] ?? 0);
+  // Le Hobbit : Storied ; Tortues Ninja : Faufilement ; Spider-Man : Chaos ; Strixhaven : Paradigme.
+  const storied = /^Storied\b/m.test(raw.oracleText);
+  const sneak = /^Sneak ((?:\{[^}]+\})+)/m.exec(raw.oracleText)?.[1];
+  const mayhem = /^Mayhem ((?:\{[^}]+\})+)/m.exec(raw.oracleText)?.[1];
+  const paradigm = /^Paradigm\b/m.test(raw.oracleText);
   const blight = Number(/As an additional cost to cast this spell, you may blight (\d+)/.exec(raw.oracleText)?.[1] ?? 0);
   const teamwork = Number(/^Teamwork (\d+)/m.exec(raw.oracleText)?.[1] ?? 0);
   const harmonize = /^Harmonize ((?:\{[^}]+\})+)/m.exec(raw.oracleText)?.[1];
@@ -772,6 +802,7 @@ function singleDef(raw: RawCard, script: CardScript | undefined, set: string): C
         /costs \{1\} less to activate for each \+1\/\+1 counter on the creature it targets/.test(raw.oracleText),
         parseSaddle(raw.oracleText),
         crewOncePerTurn(raw.oracleText),
+        equipVariant(raw.oracleText),
       ),
       ...plotAbility(raw.oracleText),
       ...impendingAbilities(raw.oracleText),
@@ -796,7 +827,9 @@ function singleDef(raw: RawCard, script: CardScript | undefined, set: string): C
         ? { mana: manaCost, condition: dsl.cond.canForage, label: `Fourrager — ${raw.manaCost}`, forage: true }
         : evoke
           ? { mana: parseManaCost(evoke), condition: dsl.cond.all(), label: `Évocation — ${evoke}` }
-          : impendingAltCost(raw.oracleText),
+          : sneak
+            ? { mana: parseManaCost(sneak), condition: dsl.cond.sneakWindow, label: `Faufilement — ${sneak}` }
+            : impendingAltCost(raw.oracleText),
     forageOrPay: script?.forageOrPay ? parseManaCost(script.forageOrPay) : undefined,
     entersAsCopyAnyController: script?.entersAsCopyAnyController,
     entersAsCopyAddKeywords: script?.entersAsCopyAddKeywords,
@@ -859,6 +892,10 @@ function singleDef(raw: RawCard, script: CardScript | undefined, set: string): C
     equipDiscountWhenTargeted: script?.equipDiscountWhenTargeted,
     doubleDeathTriggersForEquipped: script?.doubleDeathTriggersForEquipped,
     evoke: evoke ? parseManaCost(evoke) : undefined,
+    storied: storied || undefined,
+    sneak: sneak ? parseManaCost(sneak) : undefined,
+    mayhem: mayhem ? parseManaCost(mayhem) : undefined,
+    paradigm: paradigm || undefined,
     shockLand: /(?:As this land enters, |Then )you may pay (\d+) life\. If you don't, it enters tapped\./.exec(raw.oracleText)
       ? Number(/you may pay (\d+) life/.exec(raw.oracleText)?.[1])
       : undefined,

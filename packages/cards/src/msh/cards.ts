@@ -9,6 +9,7 @@ import {
   type CardScript,
   cond,
   DOOMBOT,
+  doubler,
   fx,
   manaAbility,
   ref,
@@ -128,6 +129,40 @@ export const CARDS: Record<string, CardScript> = {
         effects: [fx.createTokens(DOOMBOT)],
         label: "Un Doombot 3/3",
       }),
+    ],
+  },
+
+  // --- Lot M5 -----------------------------------------------------------------
+  "Mjölnir, Hammer of Thor": {
+    // Équiper digne {1} : lu dans le texte.
+    abilities: [
+      triggered(when.entersSelf, [fx.damage(4, ref.target())], {
+        targets: [target.upTo(1, target.creature())],
+        label: "4 blessures",
+      }),
+      doubler({ damageFilter: { attachedToSource: true }, label: "Double les blessures de la créature équipée" }),
+      activated({
+        mana: "{2}{R}",
+        fromHand: true,
+        discardSelf: true,
+        effects: [fx.damageAll(2, { types: ["Creature"] })],
+        label: "2 blessures à chaque créature",
+      }),
+    ],
+  },
+  "Political Triumph": {
+    abilities: [
+      triggered(when.enters({ types: ["Creature"], controller: "you" }), [fx.scry(1), fx.counters(ref.self, "plan")], {
+        label: "Regard 1, un marqueur de plan",
+      }),
+      triggered(
+        when.countersPut("self", "plan"),
+        [fx.sacrificeIt(ref.self), fx.draw(1), fx.addCountersAll({ types: ["Creature"], controller: "you" }, 1)],
+        {
+          condition: cond.counterAtLeast("plan", 4),
+          label: "Quatrième marqueur : sacrifiez-le, piochez, +1/+1 sur vos créatures",
+        },
+      ),
     ],
   },
 };

@@ -229,6 +229,7 @@ export function isLegalTarget(s: GameState, controller: PlayerId, spec: TargetSp
     if (hasKeyword(s, id, "hexproofFromInstants") && d?.types.includes("Instant")) return false;
     if (hasKeyword(s, id, "hexproofFromBlack") && colors.includes("B")) return false;
     if (hasKeyword(s, id, "hexproofFromWhite") && colors.includes("W")) return false;
+    if (hasKeyword(s, id, "hexproofFromMonocolored") && colors.length === 1) return false;
   }
   return true;
 }

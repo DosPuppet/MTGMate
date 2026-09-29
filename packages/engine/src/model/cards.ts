@@ -41,6 +41,14 @@ export interface CardDef {
    * Travail d'équipe, Marvel Super Heroes).
    */
   kickerCost?: { sacrifice?: ObjectFilter; bounce?: ObjectFilter; blight?: number; tapPower?: number; collectEvidence?: number };
+  /** Storied (Le Hobbit) : son contrôleur peut acquérir un récit durable (voir `stateBasedActions`). */
+  storied?: boolean;
+  /** Faufilement (Sneak, Tortues Ninja) : coût alternatif (dans `altCost`), en renvoyant un attaquant non bloqué. */
+  sneak?: ManaCost;
+  /** Chaos (Mayhem, Spider-Man) : lançable depuis le cimetière pour ce coût si elle a été défaussée ce tour-ci. */
+  mayhem?: ManaCost;
+  /** Paradigme (Strixhaven) : exilée à la résolution ; une copie gratuite au début de chacune de vos phases principales. */
+  paradigm?: boolean;
   /** Évocation (702.74) : coût alternatif (dans `altCost`) ; la créature est sacrifiée en arrivant. */
   evoke?: ManaCost;
   /** Coût de flashback : peut être lancée depuis le cimetière, puis exilée (702.34). */
@@ -341,6 +349,10 @@ export interface ActivatedAbilityDef {
   activationCondition?: Condition;
   /** « Coûte {1} de moins pour chaque marqueur +1/+1 sur la créature ciblée » (Warrior's Blades). */
   reduceByTargetCounters?: boolean;
+  /** Dragonfire Blade : « coûte {1} de moins par couleur de la créature ciblée ». */
+  reduceByTargetColors?: boolean;
+  /** Capacité d'équipement (Kíli : la première de chaque tour peut coûter {0}). */
+  equip?: boolean;
   /** Action spéciale (116) : pas de pile, effets immédiats (déverrouiller une porte de Salle). */
   specialAction?: boolean;
   /** « Cette capacité coûte {N} de moins à activer [si …] » (N évalué à l'activation). */
@@ -645,6 +657,14 @@ export interface PlayerStaticAbilityDef {
   activatedReduction?: { filter: ObjectFilter; n: number };
   /** Elvish Refueler : pendant votre tour, tant qu'aucune capacité d'exhaust n'a été activée, elles sont réactivables. */
   exhaustReuse?: boolean;
+  /** Récit durable (Storied, Le Hobbit) : acquis pour le reste de la partie (effet de joueur permanent). */
+  enduringStory?: boolean;
+  /** Kíli the Resourceful : la première capacité d'équipement activée chaque tour peut coûter {0}. */
+  firstEquipFree?: boolean;
+  /** « Les joueurs ne peuvent pas lancer de sorts ce tour-ci » (Bilbo's Gambit), posé sur chaque joueur. */
+  cantCastSpells?: boolean;
+  /** Case of the Uneaten Feast : les cartes de créature de votre cimetière peuvent être lancées depuis celui-ci. */
+  castCreaturesFromGraveyard?: boolean;
   /** Sanctum Lurker : vos planeswalkers ne vont pas au cimetière faute de loyauté. */
   walkersSurviveZeroLoyalty?: boolean;
   /** Fractured Realm : les capacités déclenchées de vos permanents se déclenchent une fois de plus. */

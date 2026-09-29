@@ -106,6 +106,8 @@ export interface GameObject {
   warped?: boolean;
   /** Imminence (702.176) : lancé pour son coût d'imminence ; ce n'est pas une créature tant qu'il a un marqueur de temps. */
   impending?: boolean;
+  /** Tour où la carte a été défaussée (Chaos / Mayhem : « si vous l'avez défaussée ce tour-ci »). */
+  discardedTurn?: number;
   /** Exploité (Harness, Marvel Super Heroes) : ses capacités ∞ sont actives. */
   harnessed?: boolean;
   /** Évocation (702.74) : lancé pour son coût d'évocation (sacrifié en arrivant). */
@@ -241,6 +243,8 @@ export interface StackItem {
   manaSpent?: number;
   /** Lancé pour son coût d'évocation. */
   evoked?: boolean;
+  /** Lancé pour son coût de faufilement (Sneak). */
+  sneaked?: boolean;
   /** Mana dépensé pour le lancer, par type. */
   spentColors?: Partial<Record<ManaType, number>>;
   /** Dont le mana produit par des Cavernes (Bat Colony). */
@@ -358,6 +362,8 @@ export type TurnLogEntry =
   /** Attaque d'une créature : `player` attaque `defender` (le joueur attaqué, ou le contrôleur du planeswalker). */
   | { e: "attack"; player: PlayerId; defender: PlayerId; types: CardType[]; subtypes: string[] }
   | { e: "sacrifice"; player: PlayerId; types: CardType[]; subtypes: string[]; supertypes?: string[]; token?: boolean }
+  /** Capacité activée (hors mana) ; `equip` : une capacité d'équipement (Kíli the Resourceful). */
+  | { e: "activate"; player: PlayerId; equip?: boolean; types?: CardType[]; subtypes?: string[] }
   | {
       e: "damage";
       /** Joueur blessé, ou contrôleur du permanent blessé. */
@@ -397,6 +403,8 @@ export interface TurnLogQuery {
   againstYou?: boolean;
   /** Sort lancé pour son coût de distorsion. */
   warped?: boolean;
+  /** Capacité activée : seulement les capacités d'équipement. */
+  equip?: boolean;
   from?: Zone;
   to?: Zone;
   fromZone?: Zone;

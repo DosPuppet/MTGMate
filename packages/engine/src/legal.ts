@@ -61,7 +61,7 @@ function tapXOptions(s: GameState, player: PlayerId, source: ObjectId, f: Object
   ).length;
 }
 
-import { obj } from "./state";
+import { chars, isCreature, obj } from "./state";
 import { legalTargets } from "./targets";
 import { checkCondition } from "./triggers";
 import type {
@@ -250,7 +250,8 @@ export function legalActions(s: GameState, player: PlayerId): ActionOption[] {
         label: m.label,
         targets: targetOptions(s, player, m.targets, card),
         extra: m.extraCost,
-        ok: !m.condition || checkCondition(s, m.condition, player, card),
+        ok: !m.condition || m.condition.kind === "kicked" || checkCondition(s, m.condition, player, card),
+        requiresKicker: m.condition?.kind === "kicked" || undefined,
       }))
       .filter((m) => m.ok)
       // Cadeau promis : les cibles propres au cadeau suffisent (Into the Flood Maw sans créature adverse).
@@ -271,7 +272,7 @@ export function legalActions(s: GameState, player: PlayerId): ActionOption[] {
     const spent = [...auto.tap, ...auto.exile, ...auto.bounce];
     const exclude = spent.length ? new Set(spent) : undefined;
     const purpose = { spell: spellView(d, player), convoke: hasConvoke(s, player, d), fromHand: terms.source === "hand" };
-    const base = { flashback, anyMana: terms.anyMana, fromZone: terms.source };
+    const base = { flashback, anyMana: terms.anyMana, mayhem: terms.mayhem, fromZone: terms.source };
     // « Sacrifiez une créature ou payez {3}{B} » : sans créature à sacrifier, le mana s'ajoute au coût.
     const sac = additional.sacrifice;
     const mustPayInstead = !!sac?.orPay && sac.options.length < sac.count;
@@ -354,12 +355,23 @@ export function legalActions(s: GameState, player: PlayerId): ActionOption[] {
           ? new Set([id])
           : undefined;
       // Warrior's Blades : au mieux, la créature qui porte le plus de marqueurs +1/+1.
+      // Dragonfire Blade : au mieux, la créature qui a le plus de couleurs.
+      const byColors = ab.reduceByTargetColors
+        ? Math.max(
+            0,
+            ...s.battlefield
+              .filter((c) => obj(s, c).controller === player && isCreature(s, c))
+              .map((c) => chars(s, c).colors.length),
+          )
+        : 0;
       const reduction = ab.reduceByTargetCounters
         ? Math.max(
             0,
             ...s.battlefield.filter((c) => obj(s, c).controller === player).map((c) => obj(s, c).counters["+1/+1"] ?? 0),
           )
-        : abilityReduction(s, player, id, ab) + Math.max(0, ...s.battlefield.map((c) => equipDiscount(s, player, ab, c)));
+        : byColors +
+          abilityReduction(s, player, id, ab) +
+          Math.max(0, ...s.battlefield.map((c) => equipDiscount(s, player, ab, c)));
       if (
         ab.cost.mana &&
         !canPay(s, player, totalCost(abilityMana(s, id, ab), 0, undefined, reduction), exclude, { abilitySource: id })

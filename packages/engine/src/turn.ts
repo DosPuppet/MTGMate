@@ -37,7 +37,7 @@ import {
   shuffle,
   tapObject,
 } from "./state";
-import { controlledAbilitiesWithSource, playerEffectValues, playerStatic } from "./statics";
+import { addPlayerEffect, controlledAbilitiesWithSource, playerEffectValues, playerStatic } from "./statics";
 import { matchesObjectFilter } from "./targets";
 import { checkCondition, processTriggers, releaseDelayedTriggers, simultaneously } from "./triggers";
 import { logTurnEvent } from "./turnlog";
@@ -1038,6 +1038,18 @@ function stateBasedActionsOnce(s: GameState): void {
     for (const id of s.battlefield) {
       const c = s.players[obj(s, id).controller];
       if (c && c.speed === undefined && hasKeyword(s, id, "startYourEngines")) setSpeed(s, c.id, 1);
+    }
+    // Storied (Le Hobbit) : avec trois artefacts, légendaires et/ou Sagas ou plus, le contrôleur d'un permanent qui a
+    // cette capacité acquiert un récit durable, pour le reste de la partie.
+    for (const id of s.battlefield) {
+      const p = obj(s, id).controller;
+      if (!s.defs[obj(s, id).defId]?.storied || playerStatic(s, p, "enduringStory")) continue;
+      const n = s.battlefield.filter((x) => {
+        if (obj(s, x).controller !== p) return false;
+        const c = chars(s, x);
+        return c.types.includes("Artifact") || c.supertypes.includes("Legendary") || c.subtypes.includes("Saga");
+      }).length;
+      if (n >= 3) addPlayerEffect(s, p, { enduringStory: true }, null);
     }
     const toGraveyard: ObjectId[] = [];
     const toDestroy: ObjectId[] = [];

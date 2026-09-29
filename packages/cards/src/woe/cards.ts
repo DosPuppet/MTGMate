@@ -3,7 +3,20 @@
  * texte (`scryfall.ts` : kicker « sacrifiez un artefact, un enchantement ou un jeton »). L'extension n'est pas encore
  * couverte en entier.
  */
-import { activated, amount, type CardScript, cond, fx, INSTANT_SORCERY, ref, spell, target, triggered, when } from "./common";
+import {
+  activated,
+  amount,
+  type CardScript,
+  cond,
+  fx,
+  INSTANT_SORCERY,
+  RAT_NO_BLOCK,
+  ref,
+  spell,
+  target,
+  triggered,
+  when,
+} from "./common";
 
 export const CARDS: Record<string, CardScript> = {
   // --- Bleu ------------------------------------------------------------------
@@ -43,5 +56,16 @@ export const CARDS: Record<string, CardScript> = {
         label: "Gagnez 3 PV, piochez",
       }),
     ],
+  },
+
+  // --- Lot M5 -----------------------------------------------------------------
+  "Song of Totentanz": {
+    spell: spell(
+      [],
+      [
+        fx.createTokens(RAT_NO_BLOCK, amount.x),
+        fx.modifyAll({ types: ["Creature"], controller: "you" }, { addKeywords: ["haste"] }),
+      ],
+    ),
   },
 };

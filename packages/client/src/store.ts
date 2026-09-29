@@ -1270,7 +1270,10 @@ export const useGame = create<Store>((set, get) => {
 
     chooseMode(index) {
       const c = get().casting;
-      if (c) continueCasting({ ...c, mode: index });
+      if (!c) return;
+      // « Si le coût additionnel a été payé, choisissez les deux » : ce mode impose de le payer.
+      const needs = c.option.type === "cast" && c.option.modes.find((m) => m.index === index)?.requiresKicker;
+      continueCasting({ ...c, mode: index, ...(needs ? { kicked: true } : {}) });
     },
 
     choosePayMode(payMode) {

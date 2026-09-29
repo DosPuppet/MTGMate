@@ -63,7 +63,7 @@ export function buildCastDecision(
         mode: mode.index,
         targets: targetsFrom(mode.targets),
         x: a.xMax === null ? undefined : Math.floor(rand() * (a.xMax + 1)),
-        kicked: a.kickerAffordable && rand() < 0.5,
+        kicked: !!mode.requiresKicker || (a.kickerAffordable && rand() < 0.5),
         discard: a.additional?.discard?.orLife !== undefined && rand() < 0.5 ? [] : pickN(a.additional?.discard),
         sacrifice: a.additional?.sacrifice?.orPay && rand() < 0.5 ? [] : pickN(a.additional?.sacrifice),
         free: a.freeAvailable && (!a.normalAvailable || rand() < 0.7) ? true : undefined,
@@ -145,7 +145,8 @@ export function enumerateDecisions(a: ActionOption, limit = 40, rank?: (ids: str
             ...(a.additional?.discard?.orLife !== undefined ? [{ ...base, discard: [] }] : []),
           ];
           for (const v of variants) {
-            out.push(v);
+            // Mode « les deux » : seulement avec le coût additionnel payé.
+            if (!m.requiresKicker) out.push(v);
             if (a.kickerAffordable && !m.targets.some((t) => t.kickedLegal)) out.push({ ...v, kicked: true });
           }
         }

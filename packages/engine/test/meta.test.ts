@@ -9,7 +9,7 @@ import { legalActions } from "../src/legal";
 import { chars } from "../src/state";
 import { playerStatic } from "../src/statics";
 import type { GameState } from "../src/types";
-import { act, advanceUntil, idOf, idsOf, passAccepting, scenario } from "./helpers";
+import { act, advanceUntil, idOf, idsOf, passAccepting, passUntil, scenario } from "./helpers";
 
 type S = GameState;
 const lands = (name: string, n: number) => Array(n).fill(name) as string[];
@@ -677,5 +677,123 @@ describe("Méta, lot M4", () => {
     const island = idOf(s, "p2", "battlefield", "Island");
     expect(s.objects[island]?.tapped).toBe(true);
     expect(s.objects[island]?.counters.stun).toBe(1);
+  });
+});
+
+describe("Méta, lot M5", () => {
+  it("Storied : trois artefacts ou légendaires donnent un récit durable ; Thorin Oakenshield donne la garde {1}", () => {
+    let s = scenario({
+      p1: {
+        battlefield: [...lands("Mountain", 2), ...lands("Plains", 2), "Skateboard", "Fishing Pole"],
+        hand: ["Thorin Oakenshield"],
+      },
+    });
+    s = settle(act(s, "p1", { type: "cast", card: idOf(s, "p1", "hand", "Thorin Oakenshield") }));
+    expect(playerStatic(s, "p1", "enduringStory")).toBe(true);
+    const pole = idOf(s, "p1", "battlefield", "Fishing Pole");
+    expect(chars(s, pole).abilities.some((a) => a.kind === "triggered" && a.trigger.on === "becomesTarget")).toBe(true);
+  });
+
+  it("Faufilement : The Last Ronin's Technique, un attaquant non bloqué rentre ; trois Esprits engagés et attaquants", () => {
+    let s = scenario({ p1: { battlefield: ["Bear Cub", "Plains", "Plains"], hand: ["The Last Ronin's Technique"] } });
+    s = advanceUntil(s, (x) => x.pending?.kind === "declareAttackers");
+    const bear = idOf(s, "p1", "battlefield", "Bear Cub");
+    s = act(s, "p1", { type: "declareAttackers", attackers: [{ id: bear, defender: "p2" }] });
+    s = passUntil(s, (x) => x.turn.step === "declareBlockers" && x.pending?.kind === "priority" && x.pending.player === "p1");
+    const card = idOf(s, "p1", "hand", "The Last Ronin's Technique");
+    const opt = castOption(s, card);
+    expect(opt?.type === "cast" && opt.altAvailable).toBe(true);
+    s = act(s, "p1", { type: "cast", card, alternative: true });
+    expect(idsOf(s, "p1", "hand", "Bear Cub")).toHaveLength(1);
+    s = passAccepting(s, (x) => x.stack.length === 0);
+    const spirits = idsOf(s, "p1", "battlefield", "Ninja Turtle Spirit");
+    expect(spirits).toHaveLength(3);
+    expect(spirits.every((id) => s.combat?.attackers.some((a) => a.id === id))).toBe(true);
+  });
+
+  it("Chaos : Carnage défaussée ce tour-ci se lance depuis le cimetière pour {B}{R}", () => {
+    let s = scenario({ p1: { battlefield: ["Swamp", "Mountain", "Iron-Shield Elf"], hand: ["Carnage, Crimson Chaos"] } });
+    const elf = idOf(s, "p1", "battlefield", "Iron-Shield Elf");
+    s = activate(s, elf);
+    if (s.pending?.kind === "choice")
+      s = settle(act(s, "p1", { type: "choose", values: [idOf(s, "p1", "hand", "Carnage, Crimson Chaos")] }));
+    const carnage = idOf(s, "p1", "graveyard", "Carnage, Crimson Chaos");
+    expect(castOption(s, carnage)).toBeDefined();
+  });
+
+  it("Paradigme : Decorum Dissertation est exilée ; un emblème en lance une copie à votre phase principale suivante", () => {
+    let s = scenario({ p1: { battlefield: lands("Swamp", 5), hand: ["Decorum Dissertation"], library: lands("Swamp", 10) } });
+    s = settle(act(s, "p1", { type: "cast", card: idOf(s, "p1", "hand", "Decorum Dissertation"), targets: { t: ["p2"] } }));
+    expect(s.players.p2?.life).toBe(18);
+    expect(s.exile.some((id) => s.defs[s.objects[id]?.defId ?? ""]?.name === "Decorum Dissertation")).toBe(true);
+    // Au début de votre phase principale suivante, l'emblème propose de lancer une copie : on la lance.
+    s = advanceUntil(s, (x) => (x.pending?.kind === "priority" && !!x.pending.castNow) || x.turn.number > 5);
+    const now = s.pending?.kind === "priority" ? s.pending.castNow : undefined;
+    expect(now).toBeDefined();
+    s = act(s, "p1", { type: "cast", card: now?.cards[0] as string, targets: { t: ["p2"] } });
+    s = settle(s);
+    expect(s.players.p2?.life).toBe(16);
+  });
+
+  it("Pyrrhic Strike : « les deux » exige de flétrir 2", () => {
+    const setup = () =>
+      scenario({
+        p1: { battlefield: [...lands("Plains", 3), "Fire Elemental"], hand: ["Pyrrhic Strike"] },
+        p2: { battlefield: ["Fishing Pole", "Shivan Dragon"] },
+      });
+    const s = setup();
+    const card = idOf(s, "p1", "hand", "Pyrrhic Strike");
+    const targets = { a: [idOf(s, "p2", "battlefield", "Fishing Pole")], c: [idOf(s, "p2", "battlefield", "Shivan Dragon")] };
+    expect(() => act(s, "p1", { type: "cast", card, mode: 2, targets })).toThrow(/coût additionnel/);
+    const t = settle(act(setup(), "p1", { type: "cast", card, mode: 2, targets, kicked: true }));
+    expect(idsOf(t, "p2", "graveyard", "Fishing Pole")).toHaveLength(1);
+    expect(idsOf(t, "p2", "graveyard", "Shivan Dragon")).toHaveLength(1);
+    expect(t.objects[idOf(t, "p1", "battlefield", "Fire Elemental")]?.counters["-1/-1"]).toBe(2);
+  });
+
+  it("Dragonfire Blade : Équiper {4} coûte {1} de moins par couleur ; défense contre le monocolore", () => {
+    let s = scenario({ p1: { battlefield: ["Dragonfire Blade", "Swiftblade Vindicator", "Plains", "Mountain"] } });
+    const blade = idOf(s, "p1", "battlefield", "Dragonfire Blade");
+    const vind = idOf(s, "p1", "battlefield", "Swiftblade Vindicator");
+    s = activate(s, blade, { t: [vind] });
+    expect(s.objects[blade]?.attachedTo).toBe(vind);
+    expect(chars(s, vind).keywords).toContain("hexproofFromMonocolored");
+  });
+
+  it("Bilbo's Gambit avec le cadeau : plus aucun sort ce tour-ci", () => {
+    let s = scenario({
+      p1: { battlefield: lands("Plains", 2), hand: ["Bilbo's Gambit", "Opt"] },
+      p2: { battlefield: lands("Forest", 2), hand: ["Bear Cub"] },
+      active: "p2",
+    });
+    s = act(s, "p2", { type: "cast", card: idOf(s, "p2", "hand", "Bear Cub") });
+    const spell = s.stack[0]?.id as string;
+    s = act(s, "p2", { type: "pass" });
+    s = act(s, "p1", { type: "cast", card: idOf(s, "p1", "hand", "Bilbo's Gambit"), targets: { t: [spell] }, kicked: true });
+    s = passAccepting(s, (x) => x.stack.length === 0);
+    expect(idsOf(s, "p2", "hand", "Bear Cub")).toHaveLength(1);
+    expect(legalActions(s, "p2").some((a) => a.type === "cast")).toBe(false);
+  });
+
+  it("Case of the Uneaten Feast résolue : les créatures du cimetière se lancent ce tour-ci", () => {
+    let s = scenario({ p1: { battlefield: ["Case of the Uneaten Feast", ...lands("Forest", 2)], graveyard: ["Bear Cub"] } });
+    const caseId = idOf(s, "p1", "battlefield", "Case of the Uneaten Feast");
+    (s.objects[caseId] as { solved?: boolean }).solved = true;
+    s.version += 1;
+    s = activate(s, caseId);
+    expect(castOption(s, idOf(s, "p1", "graveyard", "Bear Cub"))).toBeDefined();
+  });
+
+  it("Belladonna Took : 1 PV, puis une carte, puis des marqueurs, au fil des jetons du tour", () => {
+    let s = scenario({
+      p1: {
+        battlefield: ["Belladonna Took", ...lands("Mountain", 6)],
+        hand: ["Dragon Fodder", "Dragon Fodder"],
+        library: lands("Forest", 4),
+      },
+    });
+    s = settle(act(s, "p1", { type: "cast", card: idOf(s, "p1", "hand", "Dragon Fodder") }));
+    expect(s.players.p1?.life).toBe(21);
+    expect(s.players.p1?.hand).toHaveLength(2);
   });
 });

@@ -393,6 +393,12 @@ export type Condition =
   /** « Contempler un Jace » : vous contrôlez un Jace ou vous avez une carte de Jace en main. */
   /** « Si {U}{U} a été dépensé pour le lancer » : au moins N mana de ce type dépensé pour lancer la source. */
   | { kind: "spentColor"; color: ManaType; n: number }
+  /** Faufilement : étape de déclaration des bloqueurs, avec un attaquant non bloqué que vous contrôlez. */
+  | { kind: "sneakWindow" }
+  /** Vous avez un récit durable (Storied). */
+  | { kind: "enduringStory" }
+  /** Le sort qui se résout a été lancé pour son coût de faufilement. */
+  | { kind: "sneaked" }
   /** La source a été exploitée (Harness) : ses capacités ∞ sont actives. */
   | { kind: "harnessed" }
   /** La source a été lancée pour son coût d'évocation. */

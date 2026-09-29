@@ -14,6 +14,7 @@ import {
   bump,
   changeCounters,
   chars,
+  createObject,
   emit,
   FACE_DOWN_DEF,
   FACE_DOWN_ID,
@@ -419,6 +420,8 @@ export function spellCost(
     alternative?: boolean;
     /** Du mana de n'importe quel type peut être dépensé : les symboles colorés deviennent génériques. */
     anyMana?: boolean;
+    /** Lancée pour son coût de chaos (Mayhem). */
+    mayhem?: boolean;
     /** Cibles choisies (réduction « si ce sort cible… ») ; absentes : on suppose la cible la plus favorable. */
     targets?: Record<string, string[]>;
     /** Zone d'où le sort est lancé (réductions et taxes « depuis un cimetière ou l'exil »). */
@@ -427,7 +430,15 @@ export function spellCost(
 ): ManaCost {
   const empty: ManaCost = { generic: 0, colored: {}, x: 0 };
   const alt = opts.alternative ? altCostFor(s, player, d) : undefined;
-  const base = opts.free ? empty : alt ? alt.mana : opts.flashback ? (d.flashback ?? d.manaCost) : d.manaCost;
+  const base = opts.free
+    ? empty
+    : alt
+      ? alt.mana
+      : opts.flashback
+        ? (d.flashback ?? d.manaCost)
+        : opts.mayhem
+          ? (d.mayhem ?? d.manaCost)
+          : d.manaCost;
   const cost0 = totalCost(
     base,
     opts.free ? 0 : (opts.x ?? 0),
@@ -450,6 +461,8 @@ export interface CastTerms {
   extraCost?: number;
   /** Lançable d'ici seulement avec la distorsion (Timeline Culler, depuis le cimetière). */
   warpOnly?: boolean;
+  /** Chaos (Mayhem) : lancée depuis le cimetière pour son coût de chaos, défaussée ce tour-ci. */
+  mayhem?: boolean;
   source: "hand" | "graveyard" | "exile" | "flashback" | "library";
   /** Doit être lancée sans payer son coût de mana (Etali). */
   free?: boolean;
@@ -570,8 +583,15 @@ export function abilityReduction(s: GameState, player: PlayerId, source: ObjectI
     const r = x.kind === "playerStatic" ? x.activatedReduction : undefined;
     return r && matchesObjectFilter(s, player, source, r.filter) ? n + r.n : n;
   }, 0);
+  // Kíli the Resourceful : la première capacité d'équipement activée ce tour-ci peut coûter {0}.
+  const freeEquip =
+    ab.equip &&
+    playerStatic(s, player, "firstEquipFree") &&
+    countTurnEvents(s, { event: "activate", who: "you", equip: true }, player) === 0
+      ? 99
+      : 0;
   const red = ab.reduction;
-  const tax = chosenNameTax(s, source) - unlockReduction(s, player, ab) - filtered;
+  const tax = chosenNameTax(s, source) - unlockReduction(s, player, ab) - filtered - freeEquip;
   if (!red) return exhaust - tax;
   if (red.condition && !checkCondition(s, red.condition, player, source)) return 0;
   return (
@@ -646,6 +666,8 @@ function lockedOut(s: GameState, player: PlayerId): boolean {
 
 export function castTerms(s: GameState, player: PlayerId, card: ObjectId): CastTerms | null {
   if (lockedOut(s, player)) return null;
+  // Bilbo's Gambit : « les joueurs ne peuvent pas lancer de sorts ce tour-ci ».
+  if (playerStatic(s, player, "cantCastSpells")) return null;
   // Kutzil : pas de sort pendant le tour de son contrôleur ; Sandswirl Wanderglyph : pas de sort après l'avoir attaqué.
   const active = s.turn.active;
   if (active !== player && playerStatic(s, active, "opponentsCantCastYourTurn")) return null;
@@ -717,7 +739,11 @@ function baseCastTerms(s: GameState, player: PlayerId, card: ObjectId): CastTerm
       return { source: "graveyard", finality: true, tomb: true };
     // Timeline Culler : « vous pouvez lancer cette carte depuis votre cimetière avec sa distorsion ».
     if (d.warp?.fromGraveyard) return { source: "graveyard", warpOnly: true };
+    // Chaos (Mayhem) : défaussée ce tour-ci, elle se lance depuis le cimetière pour son coût de chaos.
+    if (d.mayhem && o.discardedTurn === s.turn.number) return { source: "graveyard", mayhem: true };
     if (d.flashback) return { source: "flashback" };
+    // Case of the Uneaten Feast : « les cartes de créature de votre cimetière peuvent être lancées depuis celui-ci ».
+    if (d.types.includes("Creature") && playerStatic(s, player, "castCreaturesFromGraveyard")) return { source: "graveyard" };
     const t = graveyardTypeAvailable(s, player, card);
     if (t && t !== "Land") return { source: "graveyard", graveyardType: t };
     // Hades, Sorcerer of Eld : « pendant votre tour, vous pouvez jouer des cartes depuis votre cimetière ».
@@ -996,7 +1022,11 @@ export function castSpell(s: GameState, player: PlayerId, card: ObjectId, choice
   const modeIndex = choices.mode ?? 0;
   const mode = modes[modeIndex];
   if (!mode) throw new RulesError("Mode invalide");
-  if (mode.condition && !checkCondition(s, mode.condition, player, card)) throw new RulesError("Ce mode n'est pas disponible");
+  // « Si le coût additionnel a été payé, choisissez les deux » : le mode exige le kicker choisi avec la décision.
+  if (mode.condition?.kind === "kicked") {
+    if (!choices.kicked) throw new RulesError("Ce mode demande de payer le coût additionnel");
+  } else if (mode.condition && !checkCondition(s, mode.condition, player, card))
+    throw new RulesError("Ce mode n'est pas disponible");
   const targets = validateTargets(s, player, mode.targets, choices.targets, { kicked: !!choices.kicked, sourceId: card });
   const hasX = !free && !!(flashback ? (d.flashback ?? d.manaCost)?.x : d.manaCost?.x);
   const x = hasX ? Math.max(0, Math.floor(choices.x ?? 0)) : 0;
@@ -1040,6 +1070,7 @@ export function castSpell(s: GameState, player: PlayerId, card: ObjectId, choice
     free,
     alternative,
     anyMana: terms.anyMana,
+    mayhem: terms.mayhem,
     targets,
     fromZone: terms.source,
   });
@@ -1086,6 +1117,14 @@ export function castSpell(s: GameState, player: PlayerId, card: ObjectId, choice
   for (const id of auto.bounce) moveObject(s, id, "hand");
   for (const id of auto.graveyard) moveObject(s, id, "exile");
   const costExiled = auto.exile.map((id) => moveObject(s, id, "exile")).filter((id): id is string => !!id);
+  // Faufilement : l'attaquant non bloqué le plus faible retourne dans la main de son propriétaire.
+  const sneaked = alternative && !!d.sneak;
+  if (sneaked) {
+    const weakest = [...unblockedAttackers(s, player)].sort((a, b) => chars(s, a).power - chars(s, b).power)[0];
+    if (!weakest) throw new RulesError("Aucun attaquant non bloqué");
+    removeFromCombat(s, weakest);
+    moveObject(s, weakest, "hand");
+  }
   // Réunir des preuves : les cartes du cimetière sont exilées en payant le coût.
   for (const id of evidence ?? []) moveObject(s, id, "exile");
   // Seule une Aventure part « en aventure » ; un présage (même disposition Scryfall) est mélangé dans la bibliothèque.
@@ -1118,6 +1157,7 @@ export function castSpell(s: GameState, player: PlayerId, card: ObjectId, choice
     warped: warp ? true : undefined,
     impending: alternative && cardDef.impending ? true : undefined,
     evoked: alternative && cardDef.evoke ? true : undefined,
+    sneaked: sneaked || undefined,
     manaSpent: free ? 0 : manaValue(cost),
     fromHand: terms.source === "hand" || undefined,
     fromGraveyard: terms.source === "graveyard" || terms.source === "flashback" || undefined,
@@ -1709,7 +1749,9 @@ export function activateAbility(s: GameState, player: PlayerId, source: ObjectId
     try {
       // Warrior's Blades : {1} de moins par marqueur +1/+1 sur la créature ciblée.
       const t = ab.reduceByTargetCounters ? targets.t?.[0] : undefined;
+      const colored = ab.reduceByTargetColors && targets.t?.[0] ? chars(s, targets.t[0]).colors.length : 0;
       const reduction =
+        colored +
         (t ? (s.objects[t]?.counters["+1/+1"] ?? 0) : 0) +
         abilityReduction(s, player, source, ab) +
         equipDiscount(s, player, ab, targets.t?.[0]);
@@ -1828,6 +1870,7 @@ export function activateAbility(s: GameState, player: PlayerId, source: ObjectId
   if (ab.cost.bounceSelf) moveObject(s, source, "hand");
   s.priority.passes = 0;
   emit({ type: "activate", player, stackId: item.id, defId: o.defId, targets: flatTargets(targets) });
+  logTurnEvent(s, { e: "activate", player, equip: ab.equip || undefined });
   rulesEvent(s, { e: "activated", player, stackId: item.id });
   announceTargets(s, item.id, player, targets);
   // 605.1a / 605.3b : une capacité de mana ne va pas sur la pile ; elle se résout aussitôt.
@@ -2132,6 +2175,43 @@ function resolvedSpellAway(s: GameState, item: StackItem, d: CardDef | undefined
   // Lilah : exilé et comploté au lieu d'aller au cimetière.
   if (item.plotOnResolve && !item.flashback) {
     plotCard(s, item.sourceId);
+    return;
+  }
+  // Paradigme : exilé ; après la première résolution, un emblème propose d'en lancer une copie gratuite au début de chacune
+  // de vos premières phases principales.
+  if (d?.paradigm && !item.copy) {
+    const exiled = moveObject(s, item.sourceId, "exile");
+    const defId = `emblem:paradigm-${d.id}`;
+    const already = Object.values(s.objects).some((o) => o.defId === defId && o.controller === item.controller);
+    if (exiled && !already) {
+      s.defs[defId] ??= {
+        id: defId,
+        name: `Paradigme : ${d.name}`,
+        typeLine: "Emblème",
+        manaCost: null,
+        manaCostText: "",
+        colors: [],
+        supertypes: [],
+        types: [],
+        subtypes: [],
+        keywords: [],
+        abilities: [
+          {
+            kind: "triggered",
+            trigger: { on: "step", step: "main1", whose: "you" },
+            targets: [],
+            effects: [{ op: "castCopiesFree", what: [{ kind: "linked" }], maxTotalManaValue: 99 }],
+            label: `Paradigme : lancer une copie de ${d.name}`,
+          },
+        ],
+        text: `At the beginning of your first main phase, you may cast a copy of ${d.name} from exile without paying its mana cost.`,
+        implemented: true,
+        isToken: true,
+      };
+      const emblem = createObject(s, defId, item.controller, "command", { isToken: true });
+      emblem.linked = [exiled];
+      bump(s);
+    }
     return;
   }
   // « Exilez [ce sort] » (Step Between Worlds).

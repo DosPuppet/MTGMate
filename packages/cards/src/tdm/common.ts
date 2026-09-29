@@ -13,3 +13,13 @@ export const MONK: TokenSpec = {
   toughness: 1,
   keywords: ["prowess"],
 };
+
+/** Guerrier : créature rouge 1/1 (mobilisation, Dalkovan Encampment). */
+export const WARRIOR_R: TokenSpec = {
+  name: "Warrior",
+  colors: ["R"],
+  types: ["Creature"],
+  subtypes: ["Warrior"],
+  power: 1,
+  toughness: 1,
+};
