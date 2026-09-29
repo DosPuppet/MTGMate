@@ -37,6 +37,7 @@ import type {
   TokenSpec,
   TriggeredAbilityDef,
   TriggerSpec,
+  TurnLogQuery,
   Zone,
 } from "./types";
 
@@ -210,6 +211,16 @@ export const ref = {
   }),
 };
 
+/** Journal du tour (`turnlog.ts`) : nombre d'événements correspondants (ou somme des blessures). */
+function turnEvents(query: TurnLogQuery): Amount {
+  return { kind: "turnEvents", query };
+}
+
+/** Au moins N événements correspondants ce tour-ci. */
+function turnAtLeast(query: TurnLogQuery, n = 1): Condition {
+  return { kind: "amountAtLeast", amount: turnEvents(query), n };
+}
+
 export const amount = {
   x: { kind: "x" } as Amount,
   kicked: (yes: number, no: number): Amount => ({ kind: "kicked", yes, no }),
@@ -282,11 +293,20 @@ export const amount = {
   countExiled: (filter: ObjectFilter = {}): Amount => ({ kind: "count", filter, zone: "exile", whose: "you" }),
   inExile: (r: Ref): Amount => ({ kind: "inExile", ref: r }),
   yourCreaturesDiedThisTurn: { kind: "yourCreaturesDiedThisTurn" } as Amount,
-  opponentCreaturesExiledThisTurn: { kind: "opponentCreaturesExiledThisTurn" } as Amount,
+  /** Vren : créatures exilées depuis le champ de bataille sous le contrôle de vos adversaires ce tour-ci. */
+  opponentCreaturesExiledThisTurn: turnEvents({
+    event: "zone",
+    from: "battlefield",
+    to: "exile",
+    types: ["Creature"],
+    who: "opponent",
+  }),
   opponentsWithHandAtMost: (n: number): Amount => ({ kind: "opponentsWithHandAtMost", n }),
   lkiPower: { kind: "lkiPower" } as Amount,
   instantSorceryCast: { kind: "instantSorceryCast" } as Amount,
-  cardsLeftGraveyardThisTurn: { kind: "cardsLeftGraveyardThisTurn" } as Amount,
+  cardsLeftGraveyardThisTurn: turnEvents({ event: "zone", from: "graveyard", who: "you" }),
+  /** Journal du tour (`turnlog.ts`) : événements correspondants, vus du contrôleur de la capacité. */
+  turnEvents,
   /** Nombre de fois où vous êtes descendu ce tour-ci (cartes de permanent mises dans votre cimetière). */
   descendedThisTurn: { kind: "descendedThisTurn" } as Amount,
   /** « pour chaque mana d'une Caverne dépensé pour la lancer » */
@@ -1393,9 +1413,22 @@ export const cond = {
   scried: { kind: "scriedThisTurn" } as Condition,
   firstEndStep: { kind: "firstEndStep" } as Condition,
   firstCombat: { kind: "firstCombat" } as Condition,
-  opponentDamagedByLegendary: { kind: "opponentDamagedByLegendary" } as Condition,
-  playerCombatDamageAtLeast: (n: number): Condition => ({ kind: "playerCombatDamageAtLeast", n }),
-  noLegendaryCreatureCastThisTurn: { kind: "noLegendaryCreatureCastThisTurn" } as Condition,
+  /** Un adversaire a subi ce tour-ci des blessures de combat d'une créature légendaire. */
+  opponentDamagedByLegendary: turnAtLeast({
+    event: "damage",
+    who: "opponent",
+    toPlayer: true,
+    combat: true,
+    sourceTypes: ["Creature"],
+    sourceSupertype: "Legendary",
+  }),
+  /** Un joueur a subi N blessures de combat ou plus ce tour-ci. */
+  playerCombatDamageAtLeast: (n: number): Condition =>
+    turnAtLeast({ event: "damage", toPlayer: true, combat: true, sum: true, perPlayer: true }, n),
+  noLegendaryCreatureCastThisTurn: {
+    kind: "not",
+    cond: turnAtLeast({ event: "cast", who: "you", types: ["Creature"], supertype: "Legendary" }),
+  } as Condition,
   controlsGreatestPower: { kind: "controlsGreatestPower" } as Condition,
   creaturesDied: (n: number, underOpponent?: boolean): Condition => ({ kind: "creaturesDiedAtLeast", n, underOpponent }),
   opponentDealtNoncombatDamage: { kind: "opponentDealtNoncombatDamage" } as Condition,
@@ -1431,7 +1464,7 @@ export const cond = {
   /** « si vous avez commis un crime ce tour-ci » */
   crime: { kind: "crimeThisTurn" } as Condition,
   /** « si vous avez lancé un sort depuis votre main ce tour-ci » */
-  handSpellThisTurn: { kind: "castFromHandThisTurn" } as Condition,
+  handSpellThisTurn: turnAtLeast({ event: "cast", who: "you", fromZone: "hand" }),
   turnsTakenAtLeast: (n: number): Condition => ({ kind: "turnsTakenAtLeast", n }),
   opponentDealtNoncombatDamageLastTurn: { kind: "opponentDealtNoncombatDamageLastTurn" } as Condition,
   spellCastFromHand: { kind: "spellCastFromHand" } as Condition,
@@ -1452,7 +1485,7 @@ export const cond = {
   refLostLife: (r: Ref): Condition => ({ kind: "refLostLife", ref: r }),
   handAtMost: (r: Ref, n: number): Condition => ({ kind: "handAtMost", ref: r, n }),
   targetChosen: (spec: string): Condition => ({ kind: "targetChosen", spec }),
-  sacrificedFood: { kind: "sacrificedFood" } as Condition,
+  sacrificedFood: turnAtLeast({ event: "sacrifice", who: "you", subtype: "Food" }),
   canForage: { kind: "canForage" } as Condition,
   /** Délire : au moins quatre types de cartes parmi les cartes de votre cimetière. */
   delirium: { kind: "amountAtLeast", amount: { kind: "cardTypesInGraveyard" }, n: 4 } as Condition,

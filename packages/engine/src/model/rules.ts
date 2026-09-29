@@ -1,5 +1,5 @@
 /** Types du moteur — Filtres, cibles, déclencheurs, conditions, références et montants. Réexportés par `types.ts`. */
-import type { CardType, Color, Keyword, Step, Zone } from "../types";
+import type { CardType, Color, Keyword, Step, TurnLogQuery, Zone } from "../types";
 
 export interface TargetSpec {
   id: string;
@@ -363,12 +363,6 @@ export type Condition =
   | { kind: "firstEndStep" }
   /** C'est la première phase de combat du tour (Genji Glove). */
   | { kind: "firstCombat" }
-  /** Un adversaire a subi des blessures de combat d'une créature légendaire ce tour-ci (Blitzball). */
-  | { kind: "opponentDamagedByLegendary" }
-  /** Un joueur a subi au moins N blessures de combat ce tour-ci (Sidequest: Play Blitzball). */
-  | { kind: "playerCombatDamageAtLeast"; n: number }
-  /** Aucun sort de créature légendaire lancé par vous ce tour-ci (Serah Farron). */
-  | { kind: "noLegendaryCreatureCastThisTurn" }
   /** Vous contrôlez une créature de force la plus grande ou à égalité (Summon: Fenrir). */
   | { kind: "controlsGreatestPower" }
   /** Un adversaire a subi des blessures non de combat ce tour-ci. */
@@ -416,8 +410,6 @@ export type Condition =
   | { kind: "crimeThisTurn" }
   /** C'est au moins votre N-ième tour (Jace Reawakened : « pas pendant vos trois premiers tours »). */
   | { kind: "turnsTakenAtLeast"; n: number }
-  /** Vous avez lancé un sort depuis votre main ce tour-ci. */
-  | { kind: "castFromHandThisTurn" }
   /** Le permanent source a été lancé depuis le cimetière (Undead Sprinter). */
   | { kind: "castFromGraveyard" }
   /** C'est cette étape (Smoky Lounge : « votre première phase principale »). */
@@ -443,7 +435,6 @@ export type Condition =
   /** Une cible a été choisie pour ce mot « cible » (« jusqu'à une … »). */
   | { kind: "targetChosen"; spec: string }
   /** Vous avez sacrifié une Nourriture ce tour-ci (Bonecache Overseer). */
-  | { kind: "sacrificedFood" }
   /** Vous pouvez fourrager (trois cartes dans votre cimetière ou une Nourriture). */
   | { kind: "canForage" }
   /** « si vous êtes descendu ce tour-ci » : une carte de permanent a été mise dans votre cimetière ce tour-ci. */
@@ -606,7 +597,6 @@ export type Amount =
   /** Créatures mortes sous votre contrôle ce tour-ci (Season of Loss). */
   | { kind: "yourCreaturesDiedThisTurn" }
   /** Créatures exilées sous le contrôle de vos adversaires ce tour-ci (Vren). */
-  | { kind: "opponentCreaturesExiledThisTurn" }
   /** Adversaires qui ont au plus N cartes en main (Bandit's Talent). */
   | { kind: "opponentsWithHandAtMost"; n: number }
   /** Force de la source quand la capacité s'est déclenchée (« quand cette créature meurt, … égales à sa force »). */
@@ -614,7 +604,6 @@ export type Amount =
   /** Éphémères et rituels que vous avez lancés ce tour-ci. */
   | { kind: "instantSorceryCast" }
   /** Cartes qui ont quitté votre cimetière ce tour-ci (Bonecache Overseer). */
-  | { kind: "cardsLeftGraveyardThisTurn" }
   /** Nombre de fois où vous êtes descendu ce tour-ci (The Mycotyrant). */
   | { kind: "descendedThisTurn" }
   /** Mana produit par des Cavernes dépensé pour lancer la source (Bat Colony). */
@@ -624,12 +613,12 @@ export type Amount =
   /** Nombre de couleurs parmi les cartes liées à la source (Sunbird Effigy). */
   | { kind: "linkedColors" }
   /** Créatures qui ont quitté le champ de bataille sous votre contrôle ce tour-ci. */
-  | { kind: "creaturesLeftThisTurn" }
   /** Créatures avec lesquelles vous avez attaqué ce tour-ci. */
   | { kind: "attackersThisTurn" }
   /** Types de permanent parmi les cartes de votre cimetière (Matzalantli). */
   | { kind: "permanentTypesInGraveyard" }
   /** Blessures non de combat infligées par vos sources rouges ce tour-ci (Temple of Power). */
-  | { kind: "redNoncombatDamageThisTurn" }
+  /** Journal du tour (`turnlog.ts`) : entrées correspondantes, vues du contrôleur de la capacité. */
+  | { kind: "turnEvents"; query: TurnLogQuery }
   /** Permanents dégagés pendant votre étape de dégagement de ce tour (The Millennium Calendar). */
   | { kind: "untappedInUntapStep" };

@@ -143,7 +143,16 @@ export const LEGENDS: Record<string, CardScript> = {
       triggeredModal(
         when.entersSelf,
         [
-          mode("Marqueurs (créatures parties ce tour-ci)", [], [fx.addCounters(ref.self, { kind: "creaturesLeftThisTurn" })]),
+          mode(
+            "Marqueurs (créatures parties ce tour-ci)",
+            [],
+            [
+              fx.addCounters(
+                ref.self,
+                amount.turnEvents({ event: "zone", from: "battlefield", types: ["Creature"], who: "you" }),
+              ),
+            ],
+          ),
           mode("+2 PV et regard 2", [], [fx.gainLife(2), fx.scry(2)]),
           mode(
             "Exilez le cimetière d'un joueur",
@@ -411,7 +420,13 @@ export const LEGENDS: Record<string, CardScript> = {
       returnsAsTemple(),
     ],
   },
-  "Temple of Power": temple("R", cond.amountAtLeast({ kind: "redNoncombatDamageThisTurn" }, 4)),
+  "Temple of Power": temple(
+    "R",
+    cond.amountAtLeast(
+      amount.turnEvents({ event: "damage", combat: false, sourceYours: true, sourceColors: ["R"], sum: true }),
+      4,
+    ),
+  ),
   "Rampaging Ceratops": { keywords: ["minThreeBlockers"] },
   // --- Vert -------------------------------------------------------------------
   "Cosmium Confluence": { spell: { modes: confluence() } },

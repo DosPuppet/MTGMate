@@ -470,6 +470,7 @@ export function startTurnOf(s: GameState, p: PlayerId): void {
     pl.noncombatDamageLastTurn = pl.turnStats.noncombatDamageTaken;
     pl.turnStats = emptyTurnStats();
   }
+  s.turnLog = [];
   s.turn.onceFired = [];
   // « Jusqu'à votre prochain tour » : effets et emblèmes temporaires de ce joueur.
   const before = s.effects.length;

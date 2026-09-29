@@ -2,6 +2,7 @@
  * Interpréteur d'effets. Les effets sont des données (voir types.ts) : l'état reste sérialisable,
  * et une résolution pourra être suspendue sur un choix du joueur puis reprise.
  */
+
 import { type DamageSource, removeFromCombat, sourceFromObject } from "./actions";
 import { copiedDefId, linkedColors, linkedTotalPower } from "./layers";
 import { manaValue } from "./mana";
@@ -34,6 +35,7 @@ import {
 import { playerStatic } from "./statics";
 import { matchesCard, matchesObjectFilter, matchesView } from "./targets";
 import { checkCondition, mostLife } from "./triggers";
+import { countTurnEvents } from "./turnlog";
 import type {
   Amount,
   ChoiceRequest,
@@ -488,16 +490,14 @@ export function evalAmount(s: GameState, ctx: EffectContext, a: Amount): number 
       return resolveRef(s, ctx, a.ref).filter((id) => s.objects[id]?.zone === "exile").length;
     case "yourCreaturesDiedThisTurn":
       return s.players[ctx.controller]?.turnStats.creaturesLost ?? 0;
-    case "opponentCreaturesExiledThisTurn":
-      return opponentsOf(s, ctx.controller).reduce((n, p) => n + (s.players[p]?.turnStats.creaturesExiled ?? 0), 0);
     case "opponentsWithHandAtMost":
       return opponentsOf(s, ctx.controller).filter((p) => (s.players[p]?.hand.length ?? 0) <= a.n).length;
+    case "turnEvents":
+      return countTurnEvents(s, a.query, ctx.controller);
     case "lkiPower":
       return Math.max(0, ctx.sourceSnapshot.power);
     case "instantSorceryCast":
       return s.players[ctx.controller]?.turnStats.instantSorceryCast ?? 0;
-    case "cardsLeftGraveyardThisTurn":
-      return s.players[ctx.controller]?.turnStats.cardsLeftGraveyard ?? 0;
     case "descendedThisTurn":
       return s.players[ctx.controller]?.turnStats.descended ?? 0;
     case "caveManaSpent":
@@ -506,12 +506,8 @@ export function evalAmount(s: GameState, ctx: EffectContext, a: Amount): number 
       return linkedTotalPower(s, s.objects[ctx.sourceId]?.linked);
     case "linkedColors":
       return linkedColors(s, s.objects[ctx.sourceId]?.linked).length;
-    case "creaturesLeftThisTurn":
-      return s.players[ctx.controller]?.turnStats.creaturesLeft ?? 0;
     case "attackersThisTurn":
       return s.players[ctx.controller]?.turnStats.attackers ?? 0;
-    case "redNoncombatDamageThisTurn":
-      return s.players[ctx.controller]?.turnStats.redNoncombatDamage ?? 0;
     case "untappedInUntapStep":
       return s.players[ctx.controller]?.turnStats.untappedInUntapStep ?? 0;
     case "permanentTypesInGraveyard": {

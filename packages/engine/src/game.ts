@@ -99,6 +99,7 @@ export function blankState(opts: {
     delayed: [],
     linkedExile: [],
     lki: {},
+    turnLog: [],
     winner: null,
     over: false,
   };

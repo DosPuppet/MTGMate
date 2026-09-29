@@ -312,12 +312,6 @@ export interface TurnStats {
   milled: number;
   /** Cartes défaussées ce tour-ci (Jiang Yanggu, Alone). */
   cardsDiscarded: number;
-  /** Sorts de créature légendaire lancés ce tour-ci (Serah Farron). */
-  legendaryCreatureSpells?: number;
-  /** Blessures de combat subies ce tour-ci (Sidequest: Play Blitzball). */
-  combatDamageTaken?: number;
-  /** A subi des blessures de combat d'une créature légendaire ce tour-ci (Blitzball). */
-  damagedByLegendary?: boolean;
   /** Lancers de pièce de ce joueur ce tour-ci (Edgar). */
   coinFlips?: number;
   /** Créatures mortes sous le contrôle de ce joueur ce tour-ci. */
@@ -326,18 +320,12 @@ export interface TurnStats {
   exhaustActivated?: number;
   /** Crimes commis ce tour-ci (700.13). */
   crimes?: number;
-  /** Sorts lancés depuis la main ce tour-ci (« si vous n'avez pas lancé de sort depuis votre main ce tour-ci »). */
-  handSpells?: number;
   /** Permanents sacrifiés ce tour-ci (Sawblade Skinripper). */
   sacrificed?: number;
   /** Descente : cartes de permanent mises dans le cimetière de ce joueur ce tour-ci (Lost Caverns of Ixalan). */
   descended?: number;
-  /** Créatures qui ont quitté le champ de bataille sous le contrôle de ce joueur ce tour-ci (Kutzil's Flanker). */
-  creaturesLeft?: number;
   /** Créatures avec lesquelles ce joueur a attaqué ce tour-ci (Temple of Civilization). */
   attackers?: number;
-  /** Blessures non de combat infligées par des sources rouges de ce joueur ce tour-ci (Temple of Power). */
-  redNoncombatDamage?: number;
   /** Permanents dégagés pendant l'étape de dégagement de ce joueur (The Millennium Calendar). */
   untappedInUntapStep?: number;
   /** Warped Space : un sort lancé depuis l'exil sans payer son coût de mana ce tour-ci. */
@@ -346,14 +334,75 @@ export interface TurnStats {
   faceDownOrUp?: number;
   /** Mana total dépensé pour lancer des sorts ce tour-ci (Dépense, Bloomburrow). */
   manaSpentOnSpells?: number;
-  /** Nourritures sacrifiées ce tour-ci (Bonecache Overseer). */
-  foodSacrificed?: number;
-  /** Cartes qui ont quitté le cimetière de ce joueur ce tour-ci (Bonecache Overseer). */
-  cardsLeftGraveyard?: number;
-  /** Créatures exilées depuis le champ de bataille sous le contrôle de ce joueur ce tour-ci (Vren). */
-  creaturesExiled?: number;
   /** Sorts lancés ce tour-ci par type (« Instant », « Sorcery ») et sous-type de créature (Alania). */
   castKinds?: Record<string, number>;
+}
+
+/** Événement du tour (`turnlog.ts`) : déplacement, sort lancé, sacrifice, blessures. */
+export type TurnLogEntry =
+  | {
+      e: "zone";
+      from: Zone;
+      to: Zone;
+      owner: PlayerId;
+      /** Contrôleur au moment du départ (dernières informations connues pour le champ de bataille). */
+      controller: PlayerId;
+      types: CardType[];
+      subtypes: string[];
+      supertypes?: string[];
+      token?: boolean;
+    }
+  | {
+      e: "cast";
+      player: PlayerId;
+      types: CardType[];
+      subtypes: string[];
+      supertypes: string[];
+      fromZone: Zone;
+      token?: boolean;
+    }
+  | { e: "sacrifice"; player: PlayerId; types: CardType[]; subtypes: string[]; supertypes?: string[]; token?: boolean }
+  | {
+      e: "damage";
+      /** Joueur blessé, ou contrôleur du permanent blessé. */
+      player: PlayerId;
+      toPlayer: boolean;
+      amount: number;
+      combat: boolean;
+      sourceController: PlayerId;
+      sourceColors: Color[];
+      sourceTypes: CardType[];
+      sourceSupertypes: string[];
+      types?: CardType[];
+      subtypes?: string[];
+      supertypes?: string[];
+      token?: boolean;
+    };
+
+/**
+ * Requête sur le journal du tour (`amount.turnEvents`). `who` : le joueur concerné (propriétaire de la carte déplacée,
+ * ou son contrôleur si elle quittait le champ de bataille ; lanceur ; joueur blessé ; sacrificateur), vu du contrôleur
+ * de la capacité ; absent : tous. `sum` : somme des blessures plutôt que nombre d'entrées ; `perPlayer` : le plus grand
+ * total d'un joueur.
+ */
+export interface TurnLogQuery {
+  event: TurnLogEntry["e"];
+  who?: "you" | "opponent";
+  types?: CardType[];
+  subtype?: string;
+  supertype?: string;
+  token?: boolean;
+  from?: Zone;
+  to?: Zone;
+  fromZone?: Zone;
+  combat?: boolean;
+  toPlayer?: boolean;
+  sourceYours?: boolean;
+  sourceColors?: Color[];
+  sourceTypes?: CardType[];
+  sourceSupertype?: string;
+  sum?: boolean;
+  perPlayer?: boolean;
 }
 
 export interface CombatState {
@@ -613,6 +662,8 @@ export interface GameState {
   linkedExile: { sourceId: ObjectId; cards: ObjectId[]; toHand?: boolean }[];
   /** Dernières informations connues, par ancien identifiant (purgées à la fin de chaque étape). */
   lki: Record<ObjectId, LkiSnapshot>;
+  /** Journal des événements du tour en cours (`turnlog.ts`), vidé au début de chaque tour. */
+  turnLog: TurnLogEntry[];
   winner: PlayerId | null;
   over: boolean;
 }

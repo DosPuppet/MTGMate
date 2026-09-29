@@ -2,9 +2,11 @@
  * The Lost Caverns of Ixalan : jetons Carte, Descente (4 et 8, descente profonde, « descendu ce tour-ci »),
  * Découverte, mana des Cavernes, terrains « Restless », transformation (Treasure Map), exil au lieu de mourir.
  */
+
 import { describe, expect, it } from "vitest";
 import { legalActions } from "../src/legal";
 import { chars } from "../src/state";
+import { countTurnEvents } from "../src/turnlog";
 import type { GameState } from "../src/types";
 import { act, advanceUntil, idOf, idsOf, passAccepting, scenario } from "./helpers";
 
@@ -331,7 +333,10 @@ describe("The Lost Caverns of Ixalan", () => {
       });
       s = cast(s, "Burst Lightning", { t: ["p2"] });
       expect(s.players.p2?.life).toBe(16);
-      expect(s.players.p1?.turnStats.redNoncombatDamage).toBe(4);
+      // Journal du tour : 4 blessures non de combat d'une source rouge (condition de Temple of Power).
+      expect(
+        countTurnEvents(s, { event: "damage", combat: false, sourceYours: true, sourceColors: ["R"], sum: true }, "p1"),
+      ).toBe(4);
     });
 
     it("Bloodletter of Aclazotz : pendant votre tour, l'adversaire perd le double", () => {

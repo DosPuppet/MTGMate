@@ -417,10 +417,6 @@ export function moveObject(
     s.lki[id] = lki;
     // Vide (Edge of Eternities) : un permanent non-terrain a quitté le champ de bataille ce tour-ci.
     if (!lki.types.includes("Land")) s.turn.nonlandLeft = true;
-    if (lki.types.includes("Creature")) {
-      const stats = s.players[lki.controller]?.turnStats;
-      if (stats) stats.creaturesLeft = (stats.creaturesLeft ?? 0) + 1;
-    }
     if (to === "graveyard" && lki.types.includes("Creature")) {
       s.turn.creatureDied = true;
       s.turn.creaturesDied = (s.turn.creaturesDied ?? 0) + 1;
@@ -429,16 +425,20 @@ export function moveObject(
       const stats = s.players[lki.controller]?.turnStats;
       if (stats) stats.creaturesLost = (stats.creaturesLost ?? 0) + 1;
     }
-    // Vren, the Relentless : « créatures exilées sous le contrôle de vos adversaires ce tour-ci ».
-    if (to === "exile" && lki.types.includes("Creature")) {
-      const stats = s.players[lki.controller]?.turnStats;
-      if (stats) stats.creaturesExiled = (stats.creaturesExiled ?? 0) + 1;
-    }
   }
-  // Bonecache Overseer : « si trois cartes ou plus ont quitté votre cimetière ce tour-ci ».
-  if (o.zone === "graveyard" && to !== "graveyard") {
-    const stats = s.players[o.owner]?.turnStats;
-    if (stats) stats.cardsLeftGraveyard = (stats.cardsLeftGraveyard ?? 0) + 1;
+  // Journal du tour : « créatures exilées ce tour-ci » (Vren), « cartes qui ont quitté votre cimetière » (Bonecache)…
+  // Seulement les déplacements publics : une pioche (bibliothèque → main) n'y figure pas (information cachée).
+  const hidden = (z: Zone) => z === "library" || z === "hand";
+  if (o.zone !== to && !(hidden(o.zone) && hidden(to))) {
+    const d = s.defs[o.defId];
+    logTurnEvent(
+      s,
+      zoneEntry(o.zone, to, o.owner, lki?.controller ?? o.controller, {
+        types: lki?.types ?? d?.types ?? [],
+        subtypes: lki?.subtypes ?? d?.subtypes ?? [],
+        token: o.isToken,
+      }),
+    );
   }
   const from0 = o.zone;
   if (from0 === "library" && to === "graveyard") {
@@ -629,6 +629,7 @@ import { bump, snapshot } from "./layers";
 import { applyEntersReplacements, type EntersContext, releaseLinkedExile, replaceGraveyard } from "./replacement";
 import { counterDoublers, playerStatic } from "./statics";
 import { detectTriggers } from "./triggers";
+import { logTurnEvent, zoneEntry } from "./turnlog";
 
 export {
   bump,

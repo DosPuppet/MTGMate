@@ -3,6 +3,7 @@
  * Côté moteur, un lancement est atomique : le client envoie d'un coup mode, cibles, X et kicker,
  * et le paiement du mana est résolu automatiquement (réserve d'abord, puis solveur).
  */
+
 import { canForage, createTokenCopy, forage, loseLife, removeFromCombat, sacrifice as sacrificePermanent } from "./actions";
 import { ask } from "./choices";
 import { addEffect, announceDiscard, announceDiscardBatch, evalAmount, moveWithSpec, runEffect } from "./effects";
@@ -41,6 +42,7 @@ import {
   withChosen,
 } from "./targets";
 import { checkCondition, checkCrime, createDelayed, pushInline, simultaneously } from "./triggers";
+import { logTurnEvent } from "./turnlog";
 import type {
   ActivatedAbilityDef,
   CardDef,
@@ -1092,9 +1094,15 @@ export function castSpell(s: GameState, player: PlayerId, card: ObjectId, choice
   const before = caster?.turnStats.instantSorceryCast ?? 0;
   if (caster) {
     caster.turnStats.spellsCast += 1;
-    if (d.types.includes("Creature") && d.supertypes.includes("Legendary"))
-      caster.turnStats.legendaryCreatureSpells = (caster.turnStats.legendaryCreatureSpells ?? 0) + 1;
-    if (terms.source === "hand") caster.turnStats.handSpells = (caster.turnStats.handSpells ?? 0) + 1;
+    // Journal du tour : « sort de créature légendaire lancé ce tour-ci », « sort lancé depuis votre main ».
+    logTurnEvent(s, {
+      e: "cast",
+      player,
+      types: d.types,
+      subtypes: d.subtypes,
+      supertypes: d.supertypes,
+      fromZone: terms.source === "flashback" ? "graveyard" : terms.source,
+    });
     bump(s); // des capacités statiques en dépendent (« si vous avez lancé deux sorts ce tour-ci »)
     if (warp) s.turn.spellWarped = true;
     if (instantOrSorcery) caster.turnStats.instantSorceryCast += 1;

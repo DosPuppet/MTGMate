@@ -22,7 +22,8 @@ import {
 import { controlledAbilitiesWithSource, doublers, playerStatic, preventions, tokenMultiplier } from "./statics";
 import { matchesObjectFilter } from "./targets";
 import { checkCondition } from "./triggers";
-import type { CardDef, GameEvent, GameState, Keyword, ObjectId, PlayerId, TokenSpec, Zone } from "./types";
+import { logTurnEvent } from "./turnlog";
+import type { CardDef, CardType, Color, GameEvent, GameState, Keyword, ObjectId, PlayerId, TokenSpec, Zone } from "./types";
 
 export interface DamageSource {
   /** Objet source, s'il est identifiable (pour les déclencheurs « inflige des blessures »). */
@@ -152,6 +153,49 @@ function doublersOfLifeLoss(s: GameState, player: PlayerId): number {
 }
 
 /** La source des blessures est-elle rouge (Ojer Axonil) ? */
+/** Caractéristiques de la source des blessures (sur le champ de bataille, sinon dernières informations ou carte). */
+function sourceChars(s: GameState, source: DamageSource): { colors: Color[]; types: CardType[]; supertypes: string[] } {
+  if (source.id && s.objects[source.id]?.zone === "battlefield") {
+    const c = chars(s, source.id);
+    return { colors: c.colors, types: c.types, supertypes: c.supertypes };
+  }
+  const lki = source.id ? s.lki[source.id] : undefined;
+  const d = s.defs[source.defId];
+  return {
+    colors: lki?.colors ?? d?.colors ?? [],
+    types: lki?.types ?? d?.types ?? [],
+    supertypes: lki?.supertypes ?? d?.supertypes ?? [],
+  };
+}
+
+/** Journal du tour : blessures (Temple of Power, Sidequest: Play Blitzball…). */
+function logDamage(
+  s: GameState,
+  source: DamageSource,
+  target: string,
+  player: PlayerId,
+  toPlayer: boolean,
+  amount: number,
+  combat: boolean,
+): void {
+  if (amount <= 0) return;
+  const src = sourceChars(s, source);
+  const victim = toPlayer ? undefined : chars(s, target);
+  logTurnEvent(s, {
+    e: "damage",
+    player,
+    toPlayer,
+    amount,
+    combat,
+    sourceController: source.controller,
+    sourceColors: src.colors,
+    sourceTypes: src.types,
+    sourceSupertypes: src.supertypes,
+    types: victim?.types,
+    subtypes: victim?.subtypes,
+  });
+}
+
 function redSource(s: GameState, source: DamageSource): boolean {
   if (source.id && s.objects[source.id]?.zone === "battlefield") return chars(s, source.id).colors.includes("R");
   const lki = source.id ? s.lki[source.id] : undefined;
@@ -292,9 +336,6 @@ export function dealDamage(s: GameState, source: DamageSource, target: string, a
   let excess = 0;
   const marked = victim ? (s.players[victim]?.damageDoubled?.filter((d) => s.turn.number < d.until).length ?? 0) : 0;
   amount *= 2 ** marked;
-  // Temple of Power : blessures non de combat infligées par des sources rouges que ce joueur contrôlait ce tour-ci.
-  const dealerStats = red ? s.players[source.controller]?.turnStats : undefined;
-  if (dealerStats && amount > 0) dealerStats.redNoncombatDamage = (dealerStats.redNoncombatDamage ?? 0) + amount;
   if (isPlayer(s, target)) {
     // Suivi des joueurs blessés au combat par cette source ce tour-ci (Steel Hellkite).
     const src = source.id ? s.objects[source.id] : undefined;
@@ -304,11 +345,7 @@ export function dealDamage(s: GameState, source: DamageSource, target: string, a
     emit({ type: "damage", sourceDefId: source.defId, target, amount, combat });
     const hurt = s.players[target];
     if (hurt && !combat && amount > 0) hurt.turnStats.noncombatDamageTaken += amount;
-    if (hurt && combat && amount > 0) {
-      hurt.turnStats.combatDamageTaken = (hurt.turnStats.combatDamageTaken ?? 0) + amount;
-      if (src && chars(s, src.id).supertypes.includes("Legendary") && isCreature(s, src.id))
-        hurt.turnStats.damagedByLegendary = true;
-    }
+    logDamage(s, source, target, target, true, amount, combat);
     loseLife(s, target, amount);
   } else {
     const o = s.objects[target];
@@ -332,6 +369,7 @@ export function dealDamage(s: GameState, source: DamageSource, target: string, a
       if (source.id && !o.damagedBy?.includes(source.id)) o.damagedBy = [...(o.damagedBy ?? []), source.id];
     }
     emit({ type: "damage", sourceDefId: source.defId, target, targetDefId: o.defId, amount, combat });
+    logDamage(s, source, target, o.controller, false, amount, combat);
   }
   if (source.keywords.includes("lifelink")) gainLife(s, source.controller, amount);
   rulesEvent(s, {
@@ -380,7 +418,15 @@ export function sacrifice(s: GameState, id: ObjectId): void {
   rulesEvent(s, { e: "sacrifice", objectId: id, player: o.controller });
   const stats = s.players[o.controller]?.turnStats;
   if (stats) stats.sacrificed = (stats.sacrificed ?? 0) + 1;
-  if (stats && chars(s, id).subtypes.includes("Food")) stats.foodSacrificed = (stats.foodSacrificed ?? 0) + 1;
+  const c = chars(s, id);
+  logTurnEvent(s, {
+    e: "sacrifice",
+    player: o.controller,
+    types: c.types,
+    subtypes: c.subtypes,
+    supertypes: c.supertypes,
+    token: o.isToken || undefined,
+  });
   putIntoGraveyard(s, id);
 }
 

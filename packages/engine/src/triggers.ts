@@ -148,8 +148,6 @@ export function mostLife(s: GameState, p: PlayerId): boolean {
 
 export function checkCondition(s: GameState, c: Condition, controller: PlayerId, sourceId?: ObjectId): boolean {
   switch (c.kind) {
-    case "castFromHandThisTurn":
-      return (s.players[controller]?.turnStats.handSpells ?? 0) > 0;
     case "step":
       return s.turn.step === c.step;
     case "creatureDiedMatching":
@@ -195,12 +193,6 @@ export function checkCondition(s: GameState, c: Condition, controller: PlayerId,
       return (s.turn.endSteps ?? 0) <= 1;
     case "firstCombat":
       return (s.turn.combats ?? 0) <= 1;
-    case "opponentDamagedByLegendary":
-      return opponentsOf(s, controller).some((q) => s.players[q]?.turnStats.damagedByLegendary);
-    case "playerCombatDamageAtLeast":
-      return s.playerOrder.some((q) => (s.players[q]?.turnStats.combatDamageTaken ?? 0) >= c.n);
-    case "noLegendaryCreatureCastThisTurn":
-      return !s.players[controller]?.turnStats.legendaryCreatureSpells;
     case "controlsGreatestPower": {
       const creatures = s.battlefield.filter((id) => isCreature(s, id));
       const best = Math.max(-Infinity, ...creatures.map((id) => chars(s, id).power));
@@ -337,8 +329,6 @@ export function checkCondition(s: GameState, c: Condition, controller: PlayerId,
     }
     case "lostLifeThisTurn":
       return (s.players[controller]?.turnStats.lifeLost ?? 0) > 0;
-    case "sacrificedFood":
-      return (s.players[controller]?.turnStats.foodSacrificed ?? 0) > 0;
     case "canForage":
       return canForage(s, controller);
     case "descended":

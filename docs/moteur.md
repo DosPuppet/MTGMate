@@ -31,11 +31,13 @@ Moteur pur et déterministe (`packages/engine/src`). L'état est sérialisable ;
 | `host.ts` | `GameHost` : IA, automatisme et humains ; l'option `gate` met l'IA en pause (explications du tutoriel). |
 | `decisionShape.ts` | Forme d'une décision reçue (types des champs, objets inconnus, doublons), vérifiée par `apply` (`game.ts`) avant les règles. |
 | `errors.ts` | `RulesError` et `rethrowAsRules`. |
+| `turnlog.ts` | Journal des événements du tour (`s.turnLog` : déplacements publics, sorts lancés, sacrifices, blessures) et requêtes (`countTurnEvents`). |
 
 ## Recettes
 
 - **Nouvel effet :** ajouter la variante `{ op: "…" }` à `Effect` (`model/effects.ts`), son traitement `op(s, r, e, ctx, key) { … }` dans le `HANDLERS` du bon fichier `ops/<domaine>.ts` (`e` y est typé selon `op` ; `r` et `key` servent aux choix et aux variables mémorisées), puis son constructeur `fx.…` (`dsl.ts`). Si l'effet change des caractéristiques, appeler `bump(s)`.
 - **Nouveau déclencheur :** une variante de `TriggerSpec` (`model/rules.ts`), un `case` dans `triggers.ts` (renvoyer `{ objectId, player, amount }` pour `ref.eventObject`, `ref.eventPlayer` et `amount.eventAmount`), puis `when.…`. Si l'événement n'existe pas, ajouter un `RulesEvent` (`state.ts`) et l'émettre avec `rulesEvent(s, …)`.
+- **« … ce tour-ci » (compter ce qui s'est passé pendant le tour) :** pas de nouveau compteur dans `TurnStats` ; utiliser le journal du tour, `amount.turnEvents({ event, who, types, from, to, … })` (`turnlog.ts`), avec `cond.amountAtLeast`. S'il manque un événement ou un champ, l'ajouter à `TurnLogEntry` (`model/state.ts`) et à son enregistrement.
 - **Nouvelle condition ou nouveau montant :** `Condition` + `checkCondition` + `cond.…` ; `Amount` + `evalAmount` + `amount.…`.
 - **Filtre d'objet :** un champ de `ObjectFilter`, calculé dans `view()` (`layers.ts`) si besoin, et testé dans `matchesView` (`targets.ts`).
 - **Statique de joueur :** un champ de `PlayerStaticAbilityDef`, lu avec `playerStatic(s, p, "clé")` ou `controlledAbilitiesWithSource` là où la règle s'applique.
