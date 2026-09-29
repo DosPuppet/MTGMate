@@ -42,7 +42,7 @@ import {
   withChosen,
 } from "./targets";
 import { checkCondition, checkCrime, createDelayed, pushInline, simultaneously } from "./triggers";
-import { logTurnEvent } from "./turnlog";
+import { countTurnEvents, logTurnEvent } from "./turnlog";
 import type {
   ActivatedAbilityDef,
   CardDef,
@@ -1091,7 +1091,8 @@ export function castSpell(s: GameState, player: PlayerId, card: ObjectId, choice
   emit({ type: "cast", player, stackId, defId: d.id, targets: flatTargets(targets) });
   const caster = s.players[player];
   const instantOrSorcery = d.types.includes("Instant") || d.types.includes("Sorcery");
-  const before = caster?.turnStats.instantSorceryCast ?? 0;
+  // Thousand-Year Storm : éphémères et rituels lancés avant celui-ci ce tour-ci (lu avant d'inscrire ce sort au journal).
+  const before = countTurnEvents(s, { event: "cast", who: "you", types: ["Instant", "Sorcery"] }, player);
   if (caster) {
     caster.turnStats.spellsCast += 1;
     // Journal du tour : « sort de créature légendaire lancé ce tour-ci », « sort lancé depuis votre main ».
@@ -1105,14 +1106,6 @@ export function castSpell(s: GameState, player: PlayerId, card: ObjectId, choice
     });
     bump(s); // des capacités statiques en dépendent (« si vous avez lancé deux sorts ce tour-ci »)
     if (warp) s.turn.spellWarped = true;
-    if (instantOrSorcery) caster.turnStats.instantSorceryCast += 1;
-    if (!d.types.includes("Creature")) caster.turnStats.noncreatureCast += 1;
-  }
-  if (caster) {
-    // Alania : premier sort de chaque type et sous-type de créature lancé ce tour-ci.
-    const kinds = { ...(caster.turnStats.castKinds ?? {}) };
-    for (const k of [...d.types, ...(d.types.includes("Creature") ? d.subtypes : [])]) kinds[k] = (kinds[k] ?? 0) + 1;
-    caster.turnStats.castKinds = kinds;
   }
   rulesEvent(s, { e: "cast", player, stackId, instantSorceryBefore: instantOrSorcery ? before : undefined });
   // Dépense N (Bloomburrow) : le N-ième mana total dépensé pour lancer des sorts ce tour-ci.

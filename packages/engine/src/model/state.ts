@@ -297,33 +297,20 @@ export interface TurnStats {
   lifeLost: number;
   cardsDrawn: number;
   spellsCast: number;
-  /** Éphémères et rituels lancés ce tour-ci (Thousand-Year Storm). */
-  instantSorceryCast: number;
-  noncreatureCast: number;
-  /** Terrains arrivés sous le contrôle de ce joueur ce tour-ci. */
-  landsEntered: number;
   /** Regards (scry) et surveillances effectués ce tour-ci. */
   scried: number;
   /** Blessures non de combat subies ce tour-ci. */
   noncombatDamageTaken: number;
   /** Capacités de loyauté activées ce tour-ci. */
   loyaltyActivations: number;
-  /** Cartes mises de la bibliothèque au cimetière ce tour-ci (Cruel Calculations). */
-  milled: number;
   /** Cartes défaussées ce tour-ci (Jiang Yanggu, Alone). */
   cardsDiscarded: number;
   /** Lancers de pièce de ce joueur ce tour-ci (Edgar). */
   coinFlips?: number;
-  /** Créatures mortes sous le contrôle de ce joueur ce tour-ci. */
-  creaturesLost?: number;
   /** Capacités d'exhaust activées ce tour-ci (Elvish Refueler). */
   exhaustActivated?: number;
   /** Crimes commis ce tour-ci (700.13). */
   crimes?: number;
-  /** Permanents sacrifiés ce tour-ci (Sawblade Skinripper). */
-  sacrificed?: number;
-  /** Descente : cartes de permanent mises dans le cimetière de ce joueur ce tour-ci (Lost Caverns of Ixalan). */
-  descended?: number;
   /** Créatures avec lesquelles ce joueur a attaqué ce tour-ci (Temple of Civilization). */
   attackers?: number;
   /** Permanents dégagés pendant l'étape de dégagement de ce joueur (The Millennium Calendar). */
@@ -334,8 +321,6 @@ export interface TurnStats {
   faceDownOrUp?: number;
   /** Mana total dépensé pour lancer des sorts ce tour-ci (Dépense, Bloomburrow). */
   manaSpentOnSpells?: number;
-  /** Sorts lancés ce tour-ci par type (« Instant », « Sorcery ») et sous-type de créature (Alania). */
-  castKinds?: Record<string, number>;
 }
 
 /** Événement du tour (`turnlog.ts`) : déplacement, sort lancé, sacrifice, blessures. */
@@ -388,7 +373,11 @@ export type TurnLogEntry =
 export interface TurnLogQuery {
   event: TurnLogEntry["e"];
   who?: "you" | "opponent";
+  /** Déplacement : le joueur concerné est le propriétaire (« mise dans votre cimetière », Descente). */
+  byOwner?: boolean;
   types?: CardType[];
+  /** Aucun de ces types (« sort non-créature »). */
+  notTypes?: CardType[];
   subtype?: string;
   supertype?: string;
   token?: boolean;

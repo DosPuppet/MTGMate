@@ -63,6 +63,51 @@ function clause(t: string): Clause | null {
     const d = n(m[1] as string);
     return { target: "opponentCreature", check: (_b, a) => expect(a.objects[big(a) ?? ""]?.damage).toBe(d) };
   }
+  // Perte de PV adverse (et gain de PV) : « Each opponent loses 2 life and you gain 2 life. »
+  m = /^(Each|Target) opponent loses (\d+) life(?: and you gain (\d+) life)?\.$/.exec(t);
+  if (m) {
+    const [lose, gain] = [Number(m[2]), m[3] ? Number(m[3]) : 0];
+    return {
+      target: m[1] === "Target" ? "opponent" : undefined,
+      check: (b, a) => {
+        expect(life(b, "p2") - life(a, "p2")).toBe(lose);
+        expect(life(a, "p1") - life(b, "p1")).toBe(gain);
+      },
+    };
+  }
+  m = /^(?:Each|Target) opponent discards (\w+) cards?\.$/.exec(t);
+  if (m) {
+    const k = n(m[1] as string);
+    return {
+      target: t.startsWith("Target") ? "opponent" : undefined,
+      check: (b, a) => expect((b.players.p2?.hand.length ?? 0) - (a.players.p2?.hand.length ?? 0)).toBe(k),
+    };
+  }
+  m = /^Mill (\w+) cards?\.$/.exec(t);
+  if (m) {
+    const k = n(m[1] as string);
+    return { check: (b, a) => expect((b.players.p1?.library.length ?? 0) - (a.players.p1?.library.length ?? 0)).toBe(k) };
+  }
+  // Pillage : « Draw a card, then discard a card. » (la main garde sa taille, moins la carte lancée).
+  m = /^Draw (\w+) cards?, then discard (\w+) cards?\.$/.exec(t);
+  if (m) {
+    const k = n(m[1] as string) - n(m[2] as string);
+    return { check: (b, a) => expect(handSize(a) - (handSize(b) - 1)).toBe(k) };
+  }
+  m = /^Put (\w+) \+1\/\+1 counters? on target creature(?: you control)?\.$/.exec(t);
+  if (m) {
+    const k = n(m[1] as string);
+    return {
+      target: "myCreature",
+      check: (b, a) =>
+        expect((a.objects[mine(a)]?.counters["+1/+1"] ?? 0) - (b.objects[mine(b)]?.counters["+1/+1"] ?? 0)).toBe(k),
+    };
+  }
+  if (/^Gain control of target creature until end of turn\.$/.test(t))
+    return {
+      target: "opponentCreature",
+      check: (_b, a) => expect(a.objects[idsOf(a, "p1", "battlefield", BIG)[0] ?? ""]).toBeDefined(),
+    };
   m = /^Draw (\w+) cards?\.$/.exec(t);
   if (m) {
     const k = n(m[1] as string);
@@ -74,20 +119,21 @@ function clause(t: string): Clause | null {
     const k = n(m[1] as string);
     return { check: (b, a) => expect(life(a, "p1") - life(b, "p1")).toBe(k) };
   }
-  m = /^Create (\w+) (?:\d+\/\d+ [^.]*?creature|Treasure|Food|Clue|Map) tokens?(?: with [a-z ,]+)?\.$/.exec(t);
+  m = /^Create (\w+) (?:tapped )?(?:\d+\/\d+ [^.]*?creature|[A-Z][a-z]+) tokens?(?: with [a-z ,]+)?\.$/.exec(t);
   if (m) {
     const k = n(m[1] as string);
     return { check: (b, a) => expect(tokenCount(a) - tokenCount(b)).toBe(k) };
   }
   // « Target creature [you control] gets ±N/±N [and gains …] until end of turn. »
   m =
-    /^(Target creature(?: you control)?|Creatures you control) gets? ([+-])(\d+)\/([+-])(\d+)(?: and gains? ([a-z ,]+?))? until end of turn\.$/.exec(
+    /^(Target creature(?: you control| an opponent controls)?|Creatures you control) gets? ([+-])(\d+)\/([+-])(\d+)(?: and gains? ([a-z ,]+?))? until end of turn\.$/.exec(
       t,
     );
   if (m) {
     const sign = (x: string) => (x === "-" ? -1 : 1);
-    const p = sign(m[2] as string) * Number(m[3]);
-    const q = sign(m[4] as string) * Number(m[5]);
+    // « -1/-0 » : pas de -0 (toBe distingue -0 de 0).
+    const p = sign(m[2] as string) * Number(m[3]) || 0;
+    const q = sign(m[4] as string) * Number(m[5]) || 0;
     const kws = m[6] ? keywordList(m[6]) : [];
     const hostile = p < 0 || q < 0;
     const all = m[1] === "Creatures you control";
@@ -114,7 +160,11 @@ function clause(t: string): Clause | null {
       },
     };
   }
-  if (/^(?:Destroy|Exile) target (?:creature|creature or planeswalker|nonland permanent|creature or enchantment)\.$/.test(t))
+  if (
+    /^(?:Destroy|Exile) target (?:creature|creature or planeswalker|nonland permanent|creature or enchantment|permanent|nonland permanent an opponent controls|creature an opponent controls)\.$/.test(
+      t,
+    )
+  )
     return { target: "opponentCreature", check: (_b, a) => expect(big(a)).toBeUndefined() };
   if (/^Return target creature to its owner's hand\.$/.test(t))
     return {
@@ -123,7 +173,13 @@ function clause(t: string): Clause | null {
     };
   if (/^Destroy all creatures\.$/.test(t))
     return { check: (_b, a) => expect(a.battlefield.filter((id) => chars(a, id).types.includes("Creature"))).toEqual([]) };
-  if (/^(?:Untap it|Untap that creature|Scry \d+)\.$/.test(t)) return "ok";
+  // Phrases reconnues sans vérification propre (effet annexe, ou déjà couvert par la phrase précédente).
+  if (
+    /^(?:Untap it|Untap that creature|Scry \d+|Surveil \d+|It gains haste until end of turn|If that (?:creature|creature or planeswalker) would die this turn, exile it instead)\.$/.test(
+      t,
+    )
+  )
+    return "ok";
   return null;
 }
 
@@ -131,7 +187,10 @@ function clause(t: string): Clause | null {
 export function expectationFor(text: string, name: string): Expectation | null {
   const t = stripReminder(text.replaceAll(name, "~")).replace(/^This spell/, "~");
   if (t.includes("\n")) return null;
-  const parts = t.split(/(?<=\.)\s+/).map(clause);
+  const parts = t
+    .split(/(?<=\.)\s+/)
+    .map((x) => x.charAt(0).toUpperCase() + x.slice(1))
+    .map(clause);
   if (parts.some((x) => x === null)) return null;
   const real = parts.filter((x): x is Expectation => !!x && x !== "ok");
   const targets = [...new Set(real.map((x) => x.target).filter(Boolean))];
@@ -162,7 +221,7 @@ function castAndResolve(c: string | CardDef, e: Expectation): { before: GameStat
   const name = typeof c === "string" ? c : c.name;
   let s = scenario({
     p1: { battlefield: [...LANDS, MINE], hand: [c], library: LANDS },
-    p2: { battlefield: [BIG], library: LANDS },
+    p2: { battlefield: [BIG], hand: ["Forest", "Island", "Swamp"], library: LANDS },
   });
   const before = s;
   const card = s.players.p1?.hand.find((id) => s.defs[s.objects[id]?.defId ?? ""]?.name === name) as string;

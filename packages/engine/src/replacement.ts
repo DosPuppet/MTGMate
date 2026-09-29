@@ -9,12 +9,14 @@
  *   d'abord, puis un seul remplacement choisi pour le joueur affecté).
  * Limite : pour les autres événements (blessures, pioche, PV), plusieurs remplacements s'appliquent dans l'ordre du code.
  */
+
 import { gainLife } from "./actions";
 import { boardAmount } from "./effects";
 import { changeCounters, chars, moveObject, newId, nextTimestamp, P1P1, setPrepared } from "./state";
 import { controlledAbilitiesWithSource, playerStatic } from "./statics";
 import { matchesCard, matchesObjectFilter, withChosen } from "./targets";
 import { checkCondition } from "./triggers";
+import { countTurnEvents } from "./turnlog";
 import type { Amount, Color, GameObject, GameState, ObjectId, PlayerId, Zone } from "./types";
 
 /** Contexte d'arrivée sur le champ de bataille (valeur de X, kicker du sort qui arrive). */
@@ -50,7 +52,7 @@ function amountAtEntry(s: GameState, a: Amount, o: GameObject, ctx: EntersContex
   if (a.kind === "kicked") return ctx.kicked ? a.yes : a.no;
   if (a.kind === "manaSpent") return ctx.manaSpent ?? 0;
   // Bioengineered Future : terrains arrivés ce tour-ci sous le contrôle de la source.
-  if (a.kind === "landsEnteredThisTurn") return s.players[o.controller]?.turnStats.landsEntered ?? 0;
+  if (a.kind === "turnEvents") return countTurnEvents(s, a.query, o.controller);
   if (a.kind === "maxPower") {
     // « la plus grande force parmi les autres créatures que vous contrôlez » (Prime Speaker Zegana)
     const f = withChosen(a.filter, o);

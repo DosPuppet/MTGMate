@@ -335,8 +335,6 @@ export function evalAmount(s: GameState, ctx: EffectContext, a: Amount): number 
       const p = resolveRef(s, ctx, a.who).find((x) => isPlayer(s, x));
       return p ? Math.ceil(Math.max(0, s.players[p]?.life ?? 0) / 2) : 0;
     }
-    case "landsEnteredThisTurn":
-      return s.players[ctx.controller]?.turnStats.landsEntered ?? 0;
     case "manaSpent":
       return s.objects[ctx.sourceId]?.manaSpent ?? 0;
     case "speed":
@@ -380,10 +378,6 @@ export function evalAmount(s: GameState, ctx: EffectContext, a: Amount): number 
     }
     case "refCount":
       return resolveRef(s, ctx, a.ref).length;
-    case "noncreatureCastBy": {
-      const p = resolveRef(s, ctx, a.who).find((x) => isPlayer(s, x));
-      return p ? (s.players[p]?.turnStats.noncreatureCast ?? 0) : 0;
-    }
     case "maxManaValue":
       return Math.max(
         0,
@@ -426,8 +420,6 @@ export function evalAmount(s: GameState, ctx: EffectContext, a: Amount): number 
       }
       return names.size;
     }
-    case "sacrificedThisTurn":
-      return s.players[ctx.controller]?.turnStats.sacrificed ?? 0;
     case "unlockedDoors":
       return s.battlefield.reduce(
         (n, id) => n + (s.objects[id]?.controller === ctx.controller ? (s.objects[id]?.unlocked?.length ?? 0) : 0),
@@ -439,8 +431,6 @@ export function evalAmount(s: GameState, ctx: EffectContext, a: Amount): number 
         for (const t of s.defs[s.objects[id]?.defId ?? ""]?.types ?? []) types.add(t);
       return types.size;
     }
-    case "milledThisTurn":
-      return resolveRef(s, ctx, a.who).reduce((n, p) => n + (s.players[p]?.turnStats.milled ?? 0), 0);
     case "cardsDiscardedThisTurn":
       return s.players[ctx.controller]?.turnStats.cardsDiscarded ?? 0;
     case "maxToughness":
@@ -488,18 +478,15 @@ export function evalAmount(s: GameState, ctx: EffectContext, a: Amount): number 
       return s.players[ctx.controller]?.[a.zone].length ?? 0;
     case "inExile":
       return resolveRef(s, ctx, a.ref).filter((id) => s.objects[id]?.zone === "exile").length;
-    case "yourCreaturesDiedThisTurn":
-      return s.players[ctx.controller]?.turnStats.creaturesLost ?? 0;
     case "opponentsWithHandAtMost":
       return opponentsOf(s, ctx.controller).filter((p) => (s.players[p]?.hand.length ?? 0) <= a.n).length;
     case "turnEvents":
-      return countTurnEvents(s, a.query, ctx.controller);
+      if (!a.of) return countTurnEvents(s, a.query, ctx.controller);
+      return resolveRef(s, ctx, a.of)
+        .filter((x) => isPlayer(s, x))
+        .reduce((n, p) => n + countTurnEvents(s, a.query, ctx.controller, p), 0);
     case "lkiPower":
       return Math.max(0, ctx.sourceSnapshot.power);
-    case "instantSorceryCast":
-      return s.players[ctx.controller]?.turnStats.instantSorceryCast ?? 0;
-    case "descendedThisTurn":
-      return s.players[ctx.controller]?.turnStats.descended ?? 0;
     case "caveManaSpent":
       return s.objects[ctx.sourceId]?.caveMana ?? 0;
     case "linkedTotalPower":

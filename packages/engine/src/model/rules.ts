@@ -420,8 +420,6 @@ export type Condition =
   | { kind: "prime"; amount: Amount }
   /** Un permanent est arrivé face cachée sous votre contrôle ou vous avez retourné un permanent face visible ce tour-ci. */
   | { kind: "faceDownOrUpThisTurn" }
-  /** Vous avez sacrifié au moins un permanent ce tour-ci. */
-  | { kind: "sacrificedThisTurn" }
   /** Au moins une des conditions. */
   | { kind: "any"; of: Condition[] }
   /** Un adversaire a plus de terrains, de points de vie, de créatures ou de cartes en main que vous (Beza). */
@@ -437,8 +435,6 @@ export type Condition =
   /** Vous avez sacrifié une Nourriture ce tour-ci (Bonecache Overseer). */
   /** Vous pouvez fourrager (trois cartes dans votre cimetière ou une Nourriture). */
   | { kind: "canForage" }
-  /** « si vous êtes descendu ce tour-ci » : une carte de permanent a été mise dans votre cimetière ce tour-ci. */
-  | { kind: "descended" }
   /** Le joueur désigné (vous par défaut) a le plus de points de vie, ou est à égalité (Preacher of the Schism). */
   | { kind: "mostLife"; ref?: Ref };
 /** Référence à un joueur ou à un objet, résolue au moment de l'effet. */
@@ -534,8 +530,6 @@ export type Amount =
   | { kind: "countersAmong"; filter: ObjectFilter; counter: string }
   /** La moitié des points de vie du joueur désigné, arrondie à l'unité supérieure (Alpharael). */
   | { kind: "halfLife"; who: Ref }
-  /** Terrains arrivés sous votre contrôle ce tour-ci (Bioengineered Future). */
-  | { kind: "landsEnteredThisTurn" }
   /** Mana dépensé pour lancer la source (Astelli Reclaimer, Dyadrine). */
   | { kind: "manaSpent" }
   /** Votre vitesse (0 si vous n'en avez pas). */
@@ -553,8 +547,6 @@ export type Amount =
   | { kind: "cardTypesOf"; ref: Ref }
   /** Dévotion à une couleur (700.5) : symboles de cette couleur dans les coûts de mana de vos permanents. */
   | { kind: "devotion"; color: Color }
-  /** Sorts non-créature lancés ce tour-ci par le joueur désigné (Magebane Lizard). */
-  | { kind: "noncreatureCastBy"; who: Ref }
   /** Nombre d'objets désignés (Luxurious Locomotive : les créatures qui l'ont équipé). */
   | { kind: "refCount"; ref: Ref }
   /** Forces différentes parmi les créatures correspondantes (Collector's Cage). */
@@ -577,12 +569,8 @@ export type Amount =
   | { kind: "sourceX" }
   /** Noms différents parmi les portes déverrouillées de ses Salles (Promising Stairs). */
   | { kind: "unlockedDoorNames" }
-  /** Permanents sacrifiés par le contrôleur ce tour-ci (Sawblade Skinripper). */
-  | { kind: "sacrificedThisTurn" }
   /** Délire : types de cartes parmi les cartes du cimetière du contrôleur. */
   | { kind: "cardTypesInGraveyard" }
-  /** Cartes mises de sa bibliothèque au cimetière ce tour-ci, par le joueur désigné. */
-  | { kind: "milledThisTurn"; who: Ref }
   | { kind: "cardsDiscardedThisTurn" }
   /** Plus grande endurance parmi les permanents correspondants (Ghalta the Immovable). */
   | { kind: "maxToughness"; filter: ObjectFilter }
@@ -594,18 +582,12 @@ export type Amount =
   | { kind: "distinctSubtypes"; filter: ObjectFilter }
   /** Objets désignés encore en exil (Dragonhawk : « celles de ces cartes encore exilées »). */
   | { kind: "inExile"; ref: Ref }
-  /** Créatures mortes sous votre contrôle ce tour-ci (Season of Loss). */
-  | { kind: "yourCreaturesDiedThisTurn" }
   /** Créatures exilées sous le contrôle de vos adversaires ce tour-ci (Vren). */
   /** Adversaires qui ont au plus N cartes en main (Bandit's Talent). */
   | { kind: "opponentsWithHandAtMost"; n: number }
   /** Force de la source quand la capacité s'est déclenchée (« quand cette créature meurt, … égales à sa force »). */
   | { kind: "lkiPower" }
-  /** Éphémères et rituels que vous avez lancés ce tour-ci. */
-  | { kind: "instantSorceryCast" }
   /** Cartes qui ont quitté votre cimetière ce tour-ci (Bonecache Overseer). */
-  /** Nombre de fois où vous êtes descendu ce tour-ci (The Mycotyrant). */
-  | { kind: "descendedThisTurn" }
   /** Mana produit par des Cavernes dépensé pour lancer la source (Bat Colony). */
   | { kind: "caveManaSpent" }
   /** Force totale des cartes liées à la source (matériaux d'une fabrication : Mastercraft Raptor). */
@@ -619,6 +601,7 @@ export type Amount =
   | { kind: "permanentTypesInGraveyard" }
   /** Blessures non de combat infligées par vos sources rouges ce tour-ci (Temple of Power). */
   /** Journal du tour (`turnlog.ts`) : entrées correspondantes, vues du contrôleur de la capacité. */
-  | { kind: "turnEvents"; query: TurnLogQuery }
+  /** `of` : compter pour ces joueurs (« les cartes meulées par le joueur ciblé ») plutôt que pour le contrôleur. */
+  | { kind: "turnEvents"; query: TurnLogQuery; of?: Ref }
   /** Permanents dégagés pendant votre étape de dégagement de ce tour (The Millennium Calendar). */
   | { kind: "untappedInUntapStep" };

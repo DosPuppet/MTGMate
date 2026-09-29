@@ -123,7 +123,7 @@ Lot 0.15 (audit Oracle ↔ script ; P1 de l'audit, étape 6) :
 
 Lot 0.16 (attentes déduites de l'Oracle ; P1 de l'audit, étape 7) :
 - `cards/test/oracle-expectations.test.ts` : pour les éphémères et rituels au texte simple, et pour les créatures dont la seule capacité est « When this creature enters, … », le texte est lu phrase par phrase (blessures à une cible, à un joueur, à chaque adversaire ou à une créature ; pioche ; PV ; jetons ; ±N/±N et mots-clés jusqu'à la fin du tour, sur une cible ou sur vos créatures ; destruction, exil, renvoi en main ; « Untap it », « Scry N »). La carte est lancée dans une position fixe (une créature adverse 10/10, une créature à vous), puis l'effet est vérifié ;
-- une phrase inconnue écarte la carte : 84 cartes vérifiées aujourd'hui, toutes conformes ; un témoin (script à 2 blessures, texte à 3) vérifie que le test sait échouer ;
+- une phrase inconnue écarte la carte : 104 cartes vérifiées (84 au lot 0.16), toutes conformes ; un témoin (script à 2 blessures, texte à 3) vérifie que le test sait échouer ;
 - pour couvrir plus de cartes : ajouter une phrase reconnue dans `clause`.
 
 Lot 0.17 (journal des événements du tour ; P1 de l'audit, étape 8, première tranche) :
@@ -133,3 +133,9 @@ Lot 0.17 (journal des événements du tour ; P1 de l'audit, étape 8, première 
 - bench inchangé, et parties identiques à graine égale ;
 - tests : `engine/test/turnlog.test.ts`.
 - suite : migrer les autres compteurs de `TurnStats` et les champs de tour propres à une carte (`s.turn`) au fil des extensions.
+
+Lot 0.18 (suite des étapes 7 et 8 de l'audit) :
+- journal du tour, deuxième tranche : huit autres compteurs retirés de `TurnStats` (terrains arrivés, cartes meulées, sorts non-créature, éphémères et rituels lancés, créatures mortes, sacrifices, Descente, sorts par type pour Alania), avec leurs montants et conditions propres (`landsEnteredThisTurn`, `milledThisTurn`, `noncreatureCastBy`, `descended`…), désormais des requêtes. La requête accepte `notTypes` et `byOwner` (propriétaire plutôt que contrôleur) ; le montant accepte `of` (compter pour des joueurs désignés). Une arrivée sur le champ de bataille est attribuée à son nouveau contrôleur ;
+- correction en passant : un jeton mis au cimetière ne compte plus pour la Descente (ce n'est pas une carte) ;
+- attentes de l'Oracle : nouvelles phrases (perte de PV adverse et drain, défausse adverse, meule, pillage, marqueurs +1/+1, vol de contrôle jusqu'à la fin du tour, -N/-N sur une créature adverse, jetons nommés, surveillance, « It gains haste », « exilez-la à la place »), et les phrases suivantes sont lues avec une majuscule : 104 cartes vérifiées ;
+- bench et nombres de décisions inchangés.

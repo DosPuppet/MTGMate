@@ -163,7 +163,7 @@ La règle « préférer un mécanisme générique » est écrite dans `docs/mote
 ### Suivi
 
 - **P0 fait le 29/09/2026** (branche `dev`) : étapes 1 à 5 ci-dessous, une par commit ; détail dans `docs/extensions/socle.md`, lots 0.11 à 0.14. Environ 25 approximations levées, et trois erreurs de règles corrigées en route (Kaervek, Chandra, Darksteel Colossus avec un marqueur de finalité, The Darkness Crystal avec Rest in Peace).
-- **P1 fait le 29/09/2026** : audit Oracle ↔ script (`npm run coverage -- --audit`, deux oublis corrigés : Greenhouse Propagator, Magmatic Galleon), attentes déduites de l'Oracle pour 84 cartes, journal des événements du tour (première tranche : neuf compteurs de `TurnStats` retirés). Lots 0.15 à 0.17 de `docs/extensions/socle.md`.
+- **P1 fait le 29/09/2026** : audit Oracle ↔ script (`npm run coverage -- --audit`, deux oublis corrigés : Greenhouse Propagator, Magmatic Galleon), attentes déduites de l'Oracle (104 cartes), journal des événements du tour (dix-sept compteurs de `TurnStats` retirés en deux tranches). Lots 0.15 à 0.18 de `docs/extensions/socle.md`.
 - Restent : P2 à P4, et la suite de l'étape 8 (autres compteurs de `TurnStats`, champs de tour propres à une carte).
 
 ### P0 — Socle du moteur, pour toutes les extensions (avant la prochaine)

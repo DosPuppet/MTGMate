@@ -416,8 +416,6 @@ export function sacrifice(s: GameState, id: ObjectId): void {
   const o = s.objects[id];
   if (o?.zone !== "battlefield") return;
   rulesEvent(s, { e: "sacrifice", objectId: id, player: o.controller });
-  const stats = s.players[o.controller]?.turnStats;
-  if (stats) stats.sacrificed = (stats.sacrificed ?? 0) + 1;
   const c = chars(s, id);
   logTurnEvent(s, {
     e: "sacrifice",

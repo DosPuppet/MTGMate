@@ -8,6 +8,7 @@
  *   chaque joueur ordonne ses déclenchements, choisit leur mode et leurs cibles (603.3c–d) via les choix génériques.
  * - Capacités retardées (603.7) et réflexives (603.12) : créées par des effets, avec leurs propres effets et cibles.
  */
+
 import { canForage } from "./actions";
 import { ask } from "./choices";
 import { boardAmount, evalAmount } from "./effects";
@@ -29,6 +30,7 @@ import {
 } from "./state";
 import { controlledAbilitiesWithSource, playerStatic } from "./statics";
 import { legalTargets, matchesObjectFilter, matchesView, validateTargets, withChosen } from "./targets";
+import { countTurnEvents } from "./turnlog";
 import type {
   AbilityDef,
   Amount,
@@ -159,8 +161,6 @@ export function checkCondition(s: GameState, c: Condition, controller: PlayerId,
       return !!(sourceId && s.objects[sourceId]?.castFromGraveyard);
     case "faceDownOrUpThisTurn":
       return (s.players[controller]?.turnStats.faceDownOrUp ?? 0) > 0;
-    case "sacrificedThisTurn":
-      return (s.players[controller]?.turnStats.sacrificed ?? 0) > 0;
     case "prime": {
       const n = checkAmount(s, c.amount, controller, sourceId);
       if (n < 2) return false;
@@ -200,7 +200,13 @@ export function checkCondition(s: GameState, c: Condition, controller: PlayerId,
     }
     case "creaturesDiedAtLeast":
       if (c.underOpponent)
-        return opponentsOf(s, controller).reduce((n, q) => n + (s.players[q]?.turnStats.creaturesLost ?? 0), 0) >= c.n;
+        return (
+          countTurnEvents(
+            s,
+            { event: "zone", from: "battlefield", to: "graveyard", types: ["Creature"], who: "opponent" },
+            controller,
+          ) >= c.n
+        );
       return (s.turn.creaturesDied ?? 0) >= c.n;
     case "scriedThisTurn":
       return (s.players[controller]?.turnStats.scried ?? 0) > 0;
@@ -210,7 +216,10 @@ export function checkCondition(s: GameState, c: Condition, controller: PlayerId,
       return (s.players[controller]?.turnStats.cardsDrawn ?? 0) >= c.n;
     case "castThisTurn": {
       const st = s.players[controller]?.turnStats;
-      const n = (c.noncreature ? st?.noncreatureCast : st?.spellsCast) ?? 0;
+      const n =
+        (c.noncreature
+          ? countTurnEvents(s, { event: "cast", who: "you", notTypes: ["Creature"] }, controller)
+          : st?.spellsCast) ?? 0;
       return c.exactly ? n === c.n : n >= c.n;
     }
     case "attackingAlone": {
@@ -331,8 +340,6 @@ export function checkCondition(s: GameState, c: Condition, controller: PlayerId,
       return (s.players[controller]?.turnStats.lifeLost ?? 0) > 0;
     case "canForage":
       return canForage(s, controller);
-    case "descended":
-      return (s.players[controller]?.turnStats.descended ?? 0) > 0;
     case "mostLife": {
       // Avec une référence (le joueur défenseur…) : évaluée pendant la résolution (effects.ts).
       if (c.ref) return false;
@@ -492,11 +499,22 @@ function matchTrigger(s: GameState, ev: RulesEvent, t: TriggerSpec, src: Source)
       if (t.notOwned && s.objects[ev.stackId]?.owner === ev.player) return null;
       // Alania : le premier éphémère, le premier rituel ou le premier sort de Loutre (autre qu'elle) de ce tour.
       if (t.firstOf) {
-        const kinds = s.players[ev.player]?.turnStats.castKinds ?? {};
+        // Journal du tour : un seul sort de ce type (ou de ce sous-type de créature), celui-ci.
+        const castOf = (k: string) =>
+          countTurnEvents(
+            s,
+            (
+              ["Instant", "Sorcery", "Creature", "Artifact", "Enchantment", "Planeswalker", "Battle", "Land"] as string[]
+            ).includes(k)
+              ? { event: "cast", types: [k as CardType] }
+              : { event: "cast", types: ["Creature"], subtype: k },
+            me,
+            ev.player,
+          );
         const first =
           !!v &&
           ev.stackId !== src.id &&
-          t.firstOf.some((k) => (v.types.includes(k as CardType) || v.subtypes.includes(k)) && kinds[k] === 1);
+          t.firstOf.some((k) => (v.types.includes(k as CardType) || v.subtypes.includes(k)) && castOf(k) === 1);
         if (!first) return null;
       }
       // `amount` : éphémères et rituels déjà lancés ce tour-ci (Thousand-Year Storm).

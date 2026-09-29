@@ -4,6 +4,7 @@
  */
 
 import { describe, expect, it } from "vitest";
+import { amount } from "../src/dsl";
 import { legalActions } from "../src/legal";
 import { chars } from "../src/state";
 import { countTurnEvents } from "../src/turnlog";
@@ -186,7 +187,9 @@ describe("The Lost Caverns of Ixalan", () => {
       },
     });
     s = cast(s, "Deathcap Marionette");
-    expect(s.players.p1?.turnStats.descended).toBe(1);
+    // Journal du tour : une carte de permanent mise dans votre cimetière (Descente).
+    const descent = amount.descendedThisTurn;
+    expect(typeof descent === "object" && descent.kind === "turnEvents" && countTurnEvents(s, descent.query, "p1")).toBe(1);
     const goblin = idOf(s, "p1", "battlefield", "Deep Goblin Skulltaker");
     s = advanceUntil(s, (x) => x.turn.step === "cleanup" || x.turn.number > 3);
     expect(s.objects[goblin]?.counters["+1/+1"]).toBe(1);

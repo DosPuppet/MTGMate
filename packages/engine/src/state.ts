@@ -4,7 +4,6 @@
  */
 import type {
   CardDef,
-  CardType,
   GameEvent,
   GameObject,
   GameState,
@@ -19,7 +18,6 @@ import type {
 } from "./types";
 
 /** Types de permanent (Descente : « une carte de permanent a été mise dans votre cimetière »). */
-const DESCEND_TYPES: ReadonlySet<CardType> = new Set(["Artifact", "Battle", "Creature", "Enchantment", "Land", "Planeswalker"]);
 
 // ---------------------------------------------------------------------------
 // Événements : le moteur est synchrone, un collecteur global suffit.
@@ -204,13 +202,9 @@ export function emptyTurnStats(): TurnStats {
     lifeLost: 0,
     cardsDrawn: 0,
     spellsCast: 0,
-    instantSorceryCast: 0,
-    noncreatureCast: 0,
-    landsEntered: 0,
     scried: 0,
     noncombatDamageTaken: 0,
     loyaltyActivations: 0,
-    milled: 0,
     cardsDiscarded: 0,
   };
 }
@@ -421,9 +415,6 @@ export function moveObject(
       s.turn.creatureDied = true;
       s.turn.creaturesDied = (s.turn.creaturesDied ?? 0) + 1;
       s.turn.diedSubtypes = [...(s.turn.diedSubtypes ?? []), lki.subtypes];
-      // Sidequest: Hunt the Mark : « si une créature est morte sous le contrôle d'un adversaire ce tour-ci ».
-      const stats = s.players[lki.controller]?.turnStats;
-      if (stats) stats.creaturesLost = (stats.creaturesLost ?? 0) + 1;
     }
   }
   // Journal du tour : « créatures exilées ce tour-ci » (Vren), « cartes qui ont quitté votre cimetière » (Bonecache)…
@@ -433,18 +424,20 @@ export function moveObject(
     const d = s.defs[o.defId];
     logTurnEvent(
       s,
-      zoneEntry(o.zone, to, o.owner, lki?.controller ?? o.controller, {
-        types: lki?.types ?? d?.types ?? [],
-        subtypes: lki?.subtypes ?? d?.subtypes ?? [],
-        token: o.isToken,
-      }),
+      zoneEntry(
+        o.zone,
+        to,
+        o.owner,
+        lki?.controller ?? (to === "battlefield" ? (opts.controller ?? o.controller) : o.controller),
+        {
+          types: lki?.types ?? d?.types ?? [],
+          subtypes: lki?.subtypes ?? d?.subtypes ?? [],
+          token: o.isToken,
+        },
+      ),
     );
   }
   const from0 = o.zone;
-  if (from0 === "library" && to === "graveyard") {
-    const owner = s.players[o.owner];
-    if (owner) owner.turnStats.milled += 1;
-  }
   delete s.objects[id];
   // Permanent assemblé : il redevient ses deux cartes dans la zone de destination (701.42c).
   if (o.melded) {
@@ -487,11 +480,6 @@ export function moveObject(
   });
   if (o.preparedFor) moved.preparedFor = o.preparedFor;
   if (o.cardCopy && to === "stack") moved.cardCopy = true;
-  // Descente (Lost Caverns of Ixalan) : une carte de permanent est mise dans le cimetière de son propriétaire.
-  if (to === "graveyard" && s.defs[cardId]?.types.some((t) => DESCEND_TYPES.has(t))) {
-    const stats = s.players[o.owner]?.turnStats;
-    if (stats) stats.descended = (stats.descended ?? 0) + 1;
-  }
   if (staysFaceDown) moved.faceDown = o.faceDown;
   if (hide && opts.faceDown) moved.faceDown = { card: cardId, ...opts.faceDown };
   if (to === "library" && opts.position !== "bottom") {
@@ -509,11 +497,6 @@ export function moveObject(
   }
   if (to === "battlefield" && opts.tapped) moved.tapped = true;
   if (to === "battlefield") applyEntersReplacements(s, moved, opts.enters ?? {});
-  // Bioengineered Future : terrains arrivés sous votre contrôle ce tour-ci.
-  if (to === "battlefield" && s.defs[moved.defId]?.types.includes("Land")) {
-    const ctrl = s.players[moved.controller];
-    if (ctrl) ctrl.turnStats.landsEntered += 1;
-  }
   const linker = linkTo ? s.objects[linkTo] : undefined;
   if (linker) {
     linker.linked = [...(linker.linked ?? []), moved.id];

@@ -216,6 +216,16 @@ function turnEvents(query: TurnLogQuery): Amount {
   return { kind: "turnEvents", query };
 }
 
+/** Descente (LCI) : une carte de permanent (pas un jeton) mise dans votre cimetière ce tour-ci. */
+const DESCENT: TurnLogQuery = {
+  event: "zone",
+  to: "graveyard",
+  byOwner: true,
+  who: "you",
+  token: false,
+  types: ["Artifact", "Battle", "Creature", "Enchantment", "Land", "Planeswalker"],
+};
+
 /** Au moins N événements correspondants ce tour-ci. */
 function turnAtLeast(query: TurnLogQuery, n = 1): Condition {
   return { kind: "amountAtLeast", amount: turnEvents(query), n };
@@ -261,19 +271,23 @@ export const amount = {
   max: (...of: Amount[]): Amount => ({ kind: "max", of }),
   maxPowerInHand: { kind: "maxPowerInHand" } as Amount,
   opponentsLostLife: { kind: "opponentsLostLife" } as Amount,
-  sacrificedThisTurn: { kind: "sacrificedThisTurn" } as Amount,
+  sacrificedThisTurn: turnEvents({ event: "sacrifice", who: "you" }),
   /** Portes déverrouillées parmi les Salles que vous contrôlez. */
   unlockedDoors: { kind: "unlockedDoors" } as Amount,
   /** Types de cartes parmi les cartes de votre cimetière (délire). */
   cardTypesInGraveyard: { kind: "cardTypesInGraveyard" } as Amount,
-  milledThisTurn: (who: Ref): Amount => ({ kind: "milledThisTurn", who }),
+  milledThisTurn: (who: Ref): Amount => ({
+    kind: "turnEvents",
+    query: { event: "zone", from: "library", to: "graveyard", byOwner: true },
+    of: who,
+  }),
   cardsDiscardedThisTurn: { kind: "cardsDiscardedThisTurn" } as Amount,
   maxToughness: (filter: ObjectFilter): Amount => ({ kind: "maxToughness", filter }),
   maxManaValueInGraveyard: { kind: "maxManaValueInGraveyard" } as Amount,
   distinctColors: (filter: ObjectFilter): Amount => ({ kind: "distinctColors", filter }),
   countersAmong: (filter: ObjectFilter, counter: string): Amount => ({ kind: "countersAmong", filter, counter }),
   halfLife: (who: Ref): Amount => ({ kind: "halfLife", who }),
-  landsEnteredThisTurn: { kind: "landsEnteredThisTurn" } as Amount,
+  landsEnteredThisTurn: turnEvents({ event: "zone", to: "battlefield", types: ["Land"], who: "you" }),
   manaSpent: { kind: "manaSpent" } as Amount,
   /** Votre vitesse. */
   speed: { kind: "speed" } as Amount,
@@ -284,7 +298,7 @@ export const amount = {
   eventManaSpent: { kind: "eventManaSpent" } as Amount,
   cardTypesOf: (r: Ref): Amount => ({ kind: "cardTypesOf", ref: r }),
   devotion: (color: Color): Amount => ({ kind: "devotion", color }),
-  noncreatureCastBy: (who: Ref): Amount => ({ kind: "noncreatureCastBy", who }),
+  noncreatureCastBy: (who: Ref): Amount => ({ kind: "turnEvents", query: { event: "cast", notTypes: ["Creature"] }, of: who }),
   refCount: (r: Ref): Amount => ({ kind: "refCount", ref: r }),
   distinctPowers: (filter: ObjectFilter): Amount => ({ kind: "distinctPowers", filter }),
   cardTypesAmong: (filter: ObjectFilter): Amount => ({ kind: "cardTypesAmong", filter }),
@@ -292,7 +306,7 @@ export const amount = {
   /** Cartes que vous possédez en exil correspondant au filtre. */
   countExiled: (filter: ObjectFilter = {}): Amount => ({ kind: "count", filter, zone: "exile", whose: "you" }),
   inExile: (r: Ref): Amount => ({ kind: "inExile", ref: r }),
-  yourCreaturesDiedThisTurn: { kind: "yourCreaturesDiedThisTurn" } as Amount,
+  yourCreaturesDiedThisTurn: turnEvents({ event: "zone", from: "battlefield", to: "graveyard", types: ["Creature"], who: "you" }),
   /** Vren : créatures exilées depuis le champ de bataille sous le contrôle de vos adversaires ce tour-ci. */
   opponentCreaturesExiledThisTurn: turnEvents({
     event: "zone",
@@ -303,12 +317,12 @@ export const amount = {
   }),
   opponentsWithHandAtMost: (n: number): Amount => ({ kind: "opponentsWithHandAtMost", n }),
   lkiPower: { kind: "lkiPower" } as Amount,
-  instantSorceryCast: { kind: "instantSorceryCast" } as Amount,
+  instantSorceryCast: turnEvents({ event: "cast", who: "you", types: ["Instant", "Sorcery"] }),
   cardsLeftGraveyardThisTurn: turnEvents({ event: "zone", from: "graveyard", who: "you" }),
   /** Journal du tour (`turnlog.ts`) : événements correspondants, vus du contrôleur de la capacité. */
   turnEvents,
   /** Nombre de fois où vous êtes descendu ce tour-ci (cartes de permanent mises dans votre cimetière). */
-  descendedThisTurn: { kind: "descendedThisTurn" } as Amount,
+  descendedThisTurn: turnEvents(DESCENT),
   /** « pour chaque mana d'une Caverne dépensé pour la lancer » */
   caveManaSpent: { kind: "caveManaSpent" } as Amount,
   /** Force totale des cartes exilées pour fabriquer la source. */
@@ -1475,7 +1489,7 @@ export const cond = {
   creatureDiedMatching: (filter: ObjectFilter): Condition => ({ kind: "creatureDiedMatching", filter }),
   castFromGraveyard: { kind: "castFromGraveyard" } as Condition,
   faceDownOrUp: { kind: "faceDownOrUpThisTurn" } as Condition,
-  sacrificedThisTurn: { kind: "sacrificedThisTurn" } as Condition,
+  sacrificedThisTurn: turnAtLeast({ event: "sacrifice", who: "you" }),
   /** « Si le cadeau a été promis » (702.174 : comme un kicker). */
   gift: { kind: "kicked" } as Condition,
   any: (...of: Condition[]): Condition => ({ kind: "any", of }),
@@ -1490,7 +1504,7 @@ export const cond = {
   /** Délire : au moins quatre types de cartes parmi les cartes de votre cimetière. */
   delirium: { kind: "amountAtLeast", amount: { kind: "cardTypesInGraveyard" }, n: 4 } as Condition,
   /** « si vous êtes descendu ce tour-ci » (une carte de permanent a été mise dans votre cimetière). */
-  descended: { kind: "descended" } as Condition,
+  descended: turnAtLeast(DESCENT),
 };
 
 /** Équipage N (702.122) : « engagez des créatures de force totale N ou plus : ce Véhicule devient une créature-artefact ». */

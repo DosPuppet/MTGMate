@@ -11,11 +11,14 @@ export function logTurnEvent(s: GameState, entry: TurnLogEntry): void {
   s.turnLog.push(entry);
 }
 
-/** Joueur « concerné » par une entrée : propriétaire de la carte déplacée, lanceur, joueur blessé, sacrificateur. */
-function subjectOf(e: TurnLogEntry): PlayerId | undefined {
+/**
+ * Joueur « concerné » par une entrée : contrôleur d'un permanent qui quitte ou rejoint le champ de bataille, sinon
+ * propriétaire de la carte déplacée (`byOwner` : toujours le propriétaire) ; lanceur ; joueur blessé ; sacrificateur.
+ */
+function subjectOf(e: TurnLogEntry, byOwner?: boolean): PlayerId | undefined {
   switch (e.e) {
     case "zone":
-      return e.from === "battlefield" ? e.controller : e.owner;
+      return !byOwner && (e.from === "battlefield" || e.to === "battlefield") ? e.controller : e.owner;
     case "cast":
     case "sacrifice":
       return e.player;
@@ -29,10 +32,11 @@ const hasAny = <T>(have: readonly T[] | undefined, want: readonly T[] | undefine
 
 function matches(e: TurnLogEntry, q: TurnLogQuery, me: PlayerId, subject?: PlayerId): boolean {
   if (e.e !== q.event) return false;
-  const who = subjectOf(e);
+  const who = subjectOf(e, q.byOwner);
   if (subject !== undefined ? who !== subject : q.who === "you" ? who !== me : q.who === "opponent" ? who === me : false)
     return false;
   if (!hasAny<CardType>(e.types, q.types)) return false;
+  if (q.notTypes?.some((x) => e.types?.includes(x))) return false;
   if (q.subtype && !e.subtypes?.includes(q.subtype)) return false;
   if (q.supertype && !e.supertypes?.includes(q.supertype)) return false;
   if (q.token !== undefined && !!e.token !== q.token) return false;
@@ -58,14 +62,18 @@ const weight = (e: TurnLogEntry, q: TurnLogQuery) => (q.sum && e.e === "damage" 
  * Nombre d'entrées du tour qui correspondent (ou somme des blessures, `sum`), vu de `me`. `perPlayer` : le plus grand
  * total parmi les joueurs concernés (« un joueur a subi 10 blessures de combat ou plus ce tour-ci »).
  */
-export function countTurnEvents(s: GameState, q: TurnLogQuery, me: PlayerId): number {
+export function countTurnEvents(s: GameState, q: TurnLogQuery, me: PlayerId, subject?: PlayerId): number {
+  if (subject !== undefined) return s.turnLog.reduce((n, e) => n + (matches(e, q, me, subject) ? weight(e, q) : 0), 0);
   if (q.perPlayer) {
     return Math.max(0, ...s.playerOrder.map((p) => s.turnLog.reduce((n, e) => n + (matches(e, q, me, p) ? weight(e, q) : 0), 0)));
   }
   return s.turnLog.reduce((n, e) => n + (matches(e, q, me) ? weight(e, q) : 0), 0);
 }
 
-/** Entrée d'un déplacement de zone (caractéristiques connues au moment du déplacement). */
+/**
+ * Entrée d'un déplacement de zone (caractéristiques connues au moment du déplacement). `controller` : celui qui le
+ * contrôlait en partant du champ de bataille, ou qui le contrôle en y arrivant.
+ */
 export function zoneEntry(
   from: Zone,
   to: Zone,
