@@ -61,7 +61,6 @@ export const MULTI: Record<string, CardScript> = {
   },
   "Baylen, the Haymaker": {
     abilities: [
-      // Approximation : capacité activée (pas de mana).
       activated({
         tapOthers: { filter: { token: true }, count: 2 },
         effects: [fx.addManaChoice(1)],

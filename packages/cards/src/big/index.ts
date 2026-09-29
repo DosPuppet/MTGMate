@@ -482,7 +482,6 @@ export const BIG_SCRIPTS: Record<string, CardScript> = {
     abilities: [
       entersWith({ tapped: true }),
       manaAbility(["W"], 1, { produceChosen: true }),
-      // Approximation : capacité de mana à coût, résolue par la pile.
       activated({
         mana: "{1}",
         tap: true,

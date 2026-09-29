@@ -386,7 +386,6 @@ export const GREEN: Record<string, CardScript> = {
   "Thornvault Forager": {
     abilities: [
       manaAbility("G"),
-      // Approximation : capacité activée (pas de mana), deux mana d'une même couleur.
       activated({ tap: true, forage: true, effects: [fx.addManaChoice(2)], label: "Fourrager : deux mana" }),
       activated({
         mana: "{3}{G}",

@@ -107,3 +107,10 @@ Lot 0.13 (choix automatiques rendus au joueur ; P0 de l'audit) :
 - Fabrication : `additional.materials` (`craftSpec` : `min`, `max`, options du cimetière et du champ de bataille, suggestion) et le champ de décision `materials`, vérifié par `chosenCraftMaterials` (un matériau distinct par filtre pour `each`) ;
 - prolifération : un choix `pick` (intention `proliferate`, `autoOk`) parmi les permanents et joueurs qui ont des marqueurs ; l'automatisme et l'IA prennent la suggestion d'avant (vos marqueurs, les marqueurs nuisibles adverses), le mode « contrôle total » laisse choisir ;
 - tests : `fdn-reprints.test.ts` (équipage), `lci.test.ts` (Fabrication), `fra.test.ts` (prolifération).
+
+Lot 0.14 (capacités de mana à coût, 605.1a / 605.3b ; P0 de l'audit) :
+- une capacité activée sans cible, qui n'est pas une capacité de loyauté et qui peut ajouter du mana (`addMana`, `addManaChoice`, `addManaColorsAmong`, `addManaUntilEndOfTurn`, même imbriqués) est une capacité de mana (`isManaAbility`, `stack.ts`) : ses coûts sont payés comme d'habitude, puis elle se résout aussitôt, sans la pile (`resolveManaAbilityNow`) ;
+- un choix pendant cette résolution (couleur du mana) la suspend ; la réponse rend la priorité au joueur qui l'a activée, telle qu'elle était (`Resolution.returnPriority`, `game.ts`), même en réponse à un sort adverse ;
+- cartes concernées sans modification de leur script : Ramos, Dragon Engine, Ramos, Three Tree Mascot, les Planètes d'Edge of Eternities (Evendo, Uthros…), Molt Tender, Loot, the Pathfinder, Conduit Pylons, Tarnation Vista, Capital City et la ville à 1 PV de Final Fantasy, Sunbird Effigy, Thornvault Forager, Baylen ;
+- limite : le paiement automatique ne s'en sert pas (il faut les activer à la main avant de lancer) ;
+- tests : `engine/test/costs.test.ts`.

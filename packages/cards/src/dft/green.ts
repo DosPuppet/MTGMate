@@ -111,7 +111,6 @@ export const GREEN: Record<string, CardScript> = {
   "Molt Tender": {
     abilities: [
       activated({ tap: true, effects: [fx.mill(1)], label: "Meulez une carte" }),
-      // Approximation : capacité de mana à coût supplémentaire, résolue par la pile (comme Ramos).
       activated({
         tap: true,
         exileFromGraveyard: { filter: {} },

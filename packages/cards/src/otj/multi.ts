@@ -435,7 +435,6 @@ export const MULTI: Record<string, CardScript> = {
     abilities: [
       triggered(when.entersSelf, [fx.surveil(1)], { label: "Surveillance 1" }),
       manaAbility("C"),
-      // Approximation : capacité de mana à coût, résolue par la pile.
       activated({ mana: "{1}", tap: true, effects: [fx.addManaChoice(1)], label: "Un mana de n'importe quelle couleur" }),
     ],
   },

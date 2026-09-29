@@ -21,6 +21,7 @@ Chaque entrée porte sa nature :
 - `règle` **Convocation :** une créature qui a une capacité de mana ne sert pas à la convocation (elle paie par sa capacité de mana).
 - `choix auto` **Choix « en arrivant » sans résolution** (permanent remis en jeu par un effet) : choix par défaut, le type ou la couleur les plus présents chez le contrôleur.
 - `choix auto` **Dégager jusqu'à N terrains :** les terrains sont choisis automatiquement.
+- `choix auto` **Capacités de mana à coût (605.1a) :** elles se résolvent sans la pile, mais seulement activées à la main : le paiement automatique ne s'en sert pas (Ramos, Capital City, Loot, the Pathfinder…).
 - `choix auto` **Mana restreint (Giada, Secluded Courtyard) :** utilisé seulement par le paiement automatique, pour un sort ou une capacité autorisés ; ces sources ne se tapent pas à la main.
 - `choix auto` **Mana « déclencheur » (haste, copie du sort) :** appliqué seulement quand ce mana est dépensé par le paiement automatique.
 
@@ -39,7 +40,6 @@ Dans l'ordre où elles ont été ajoutées, extension par extension.
 - **Curator of Destinies :** en multijoueur, c'est l'adversaire suivant qui choisit la pile.
 - **Tinybones :** seuls les sorts avec un marqueur de butin sont jouables, pas les terrains.
 - **Soulstone Sanctuary** (« tous les types de créature ») : tout sous-type sauf ceux de terrain, d'artefact et d'enchantement connus.
-- **Ramos, Three Tree Mascot :** leurs capacités de mana sont des capacités activées qui passent par la pile.
 - **Bolt Bend :** la nouvelle cible est choisie à la résolution.
 - **Demonic Pact :** les modes déjà choisis sont mémorisés sur le permanent (perdus s'il change de zone, ce qui est conforme).
 - **Ordeal of Nylea :** sacrifiée directement, sans déclencheur séparé.
@@ -63,7 +63,6 @@ Dans l'ordre où elles ont été ajoutées, extension par extension.
 - **Molten Tide :** le {R} supplémentaire s'ajoute à toute capacité de mana « {T} » d'une Montagne, quelle que soit la couleur produite.
 - **Warrior's Blades :** la légalité de l'Équiper suppose la meilleure réduction possible ; le coût payé dépend de la cible choisie.
 - **Emrakul, the Exigent Doom :** la capacité accordée au terrain cesse dès que la carte quitte l'exil, de quelque façon que ce soit (et pas seulement quand elle est lancée).
-- **Evendo, Uthros (Planètes 12+) :** leurs capacités de mana à coût ({G}, {T}) passent par la pile (comme Ramos).
 - **Terrains choc mis en jeu par un effet** (et non joués) : ils arrivent engagés, sans proposer de payer 2 points de vie.
 - **Gene Pollinator :** le permanent engagé en plus est choisi automatiquement (d'abord un permanent sans capacité de mana).
 - **Emissary Escort :** le bonus « +X/+0 » est une force de base variable (un effet qui fixe la force l'écrase).
@@ -75,14 +74,12 @@ Dans l'ordre où elles ont été ajoutées, extension par extension.
 - **Chorale of the Void :** la carte vient du cimetière d'un adversaire quelconque (pas forcément du joueur défenseur en multijoueur).
 - **Moonlit Meditation :** les copies sont toujours créées (pas de choix « vous pouvez »).
 - **Dyadrine, Synthesis Amalgam :** les deux créatures dont on retire un marqueur sont choisies automatiquement (celles qui en ont le plus).
-- **Molt Tender :** sa capacité de mana à coût « exilez une carte de votre cimetière » passe par la pile (comme Ramos).
 - **Caradora, Heart of Alacria :** le marqueur supplémentaire ne vaut que pour vos créatures (Véhicules animés compris).
 - **Pyrewood Gearhulk :** « les blessures ne peuvent pas être prévenues ce tour-ci » n'est pas modélisé.
 - **Webstrike Elite :** la cible est un artefact ou enchantement quelconque, détruit seulement si sa valeur de mana vaut X.
 - **Chorale, Grim Javelineer :** « quand cette créature meurt ce tour-ci » est une capacité accordée jusqu'à la fin du tour.
 - **Vitesse :** l'augmentation (« quand un adversaire perd des PV pendant votre tour ») est immédiate, sans passer par la pile.
 - **Boommobile :** les quatre mana ne sont pas restreints aux capacités.
-- **Loot, the Pathfinder :** sa capacité d'exhaust de mana passe par la pile (comme Ramos).
 - **Thunderhead Gunner, Avishkar Raceway :** la carte est défaussée à la résolution, et non comme coût (comme Solitary Cell).
 - **Cursecloth Wrappings :** l'embaumement accordé est payé tout de suite (en rituel) et le jeton garde les couleurs de la carte.
 - **Gonti, Night Minister :** la carte est exilée face visible, jouable par le contrôleur de Gonti, sans mana de n'importe quel type.
@@ -93,7 +90,7 @@ Dans l'ordre où elles ont été ajoutées, extension par extension.
 - **Déclencheurs « une ou plusieurs … » (Ketramose, Dredger's Insight) :** fusionnés tant qu'une occurrence attend d'être mise sur la pile.
 - **Hollow Marauder :** une carte piochée si au moins un adversaire ciblé n'a pas défaussé de carte de VM 4 ou plus.
 - **Giant Beaver, Rambling Possum :** la créature qui reçoit le marqueur est ciblée parmi les vôtres ; Rambling Possum ne renvoie pas les créatures qui l'ont montée.
-- **Arid Archway :** le terrain renvoyé est ciblé. **Conduit Pylons :** la capacité de mana à coût passe par la pile.
+- **Arid Archway :** le terrain renvoyé est ciblé.
 - **Marqueurs de capacité :** ils s'appliquent après les autres effets de couche 6.
 - **Fortune, Calamity, The Gitrog :** toutes les créatures qui ont monté la Monture sont concernées (et non une au plus, au choix).
 - **Fblthp, Lost on the Range :** comploter la carte du dessus passe par une capacité (sur la pile) qui paie son coût de mana.
@@ -129,7 +126,6 @@ Dans l'ordre où elles ont été ajoutées, extension par extension.
 - **Lightning, Security Sergeant :** la carte reste jouable tant que vous contrôlez une créature nommée Lightning, Security Sergeant.
 - **Sidequest: Raise a Chocobo :** la recherche de terrain de Black Chocobo (« quand il se transforme ») est faite par l'effet qui le transforme.
 - **Summoner's Grimoire :** le joueur choisit d'abord parmi les cartes de créature non-enchantement ; s'il n'en prend aucune, il peut mettre une créature-enchantement engagée et attaquante.
-- **Capital City, Starting Town :** leurs capacités de mana à coût (mana ou PV) passent par la pile (comme Ramos).
 - **Duskmourn (DSK) :**
   - Survie : se déclenche au début de chaque phase principale d'après-combat (combats supplémentaires compris), pas seulement la seconde ;
   - Acrobatic Cheerleader (« ne se déclenche qu'une fois ») : tant qu'elle n'a pas de marqueur de vol ;
@@ -157,7 +153,7 @@ Dans l'ordre où elles ont été ajoutées, extension par extension.
   - Jackdaw Savior : la carte de valeur de mana inférieure est choisie à la résolution, sans cibler ; Clement : la créature ciblée n'est renvoyée que si sa valeur de mana est inférieure ;
   - Pawpatch Recruit : le marqueur peut aller sur la créature ciblée par l'adversaire ;
   - Whiskervale Forerunner : pendant votre tour, la créature révélée va toujours sur le champ de bataille ; Fecund Greenshell : un terrain refusé va en main ;
-  - capacités de mana modélisées par des capacités activées (pile) : Thornvault Forager (fourrager : deux mana d'une même couleur), Baylen (engager deux jetons) ; Muerra ajoute des mana d'une seule couleur, au choix ;
+  - Thornvault Forager : deux mana d'une même couleur ; Muerra ajoute des mana d'une seule couleur, au choix ;
   - Helga : son mana ne sert pas aux sorts de créature avec {X} de valeur de mana inférieure à 4 ; Heirloom Epic : les créatures ne peuvent pas aider à payer ;
   - Rottenmouth Viper : le coût additionnel facultatif (sacrifier des permanents non-terrains pour réduire le coût) n'est pas proposé ;
   - Eluge : l'Île ajoutée par le marqueur d'inondation dure toute la partie ; la réduction de coût est générique ;
@@ -178,7 +174,6 @@ Dans l'ordre où elles ont été ajoutées, extension par extension.
   - Squirming Emergence : la valeur de mana n'est vérifiée qu'à la résolution ; Abuelo's Awakening : les marqueurs sont posés juste après l'arrivée ;
   - Brass's Tunnel-Grinder : « défaussez autant de cartes que voulu » est une défausse facultative ;
   - Zoyowa's Justice : le propriétaire découvre après avoir mélangé la carte ; The Myriad Pools : le permanent devient une copie du sort sur la pile ;
-  - Sunbird Effigy : sa capacité de mana est une capacité activée (pile) ;
   - Braided Net : les capacités activées du permanent engagé sont bloquées jusqu'à la fin du tour (et non tant qu'il reste engagé) ; Iceberg Titan : engager ou dégager est un mode choisi au déclenchement ;
   - Thousand Moons Infantry : se dégage au début de l'entretien de chaque adversaire (et non pendant son étape de dégagement) ; The Millennium Calendar : ses marqueurs de temps sont posés au début de votre entretien ;
   - Thousand Moons Smithy : on choisit librement les permanents engagés (elle ne se transforme qu'avec cinq) ; Tarrian's Journal : la main est défaussée à la résolution ;

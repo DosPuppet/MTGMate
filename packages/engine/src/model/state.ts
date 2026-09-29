@@ -456,6 +456,8 @@ export interface LkiSnapshot {
 /** Résolution en cours d'un sort ou d'une capacité, éventuellement suspendue sur un choix. */
 export interface Resolution {
   item: StackItem;
+  /** Capacité de mana (605.3b) : résolue sans la pile ; la priorité revient ensuite à ce joueur, telle quelle. */
+  returnPriority?: { holder: PlayerId; passes: number };
   effects: Effect[];
   /** Indice de l'effet en cours. */
   pc: number;

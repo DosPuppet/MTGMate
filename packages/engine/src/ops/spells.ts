@@ -82,7 +82,7 @@ export const HANDLERS: OpHandlers = {
             player: p,
             key: key("cast"),
             cards: [hit],
-            prompt: `Découverte : lancer ${nameOf(s, hit)} sans payer son coût de mana ? (Sinon, elle va dans votre main.)`,
+            prompt: `Découverte : lancer ${nameOf(s, hit)} gratuitement ? (sinon, en main)`,
           },
         };
       }
@@ -601,18 +601,14 @@ function castNowLoop(
     const castable = open.filter((id) => castTerms(s, player, id));
     if (castable.length) {
       const names = castable.map((id) => nameOf(s, id)).join(", ");
-      const choice = castable.length > 1 ? "un sort parmi" : "";
       return {
         ask: {
           castNow: {
             player,
             key: key(`cast${i}`),
             cards: castable,
-            prompt:
-              `${nameOf(s, source)} : lancer ${choice} ${names}${opts.free ? " sans payer son coût de mana" : ""} ?`.replace(
-                /\s+/g,
-                " ",
-              ),
+            // Court : le bandeau de la partie l'affiche sur une ligne.
+            prompt: `${nameOf(s, source)} : lancer ${castable.length > 1 ? "un sort" : names}${opts.free ? " gratuitement" : ""} ?`,
           },
         },
         cast,

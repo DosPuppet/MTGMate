@@ -36,6 +36,7 @@ Ce fichier sert au suivi du projet entre les sessions : où on en est, les règl
 | Tutoriel « Apprendre à jouer » (9 leçons mises en scène, guidage strict, reprise au début de la leçon ; `docs/tutoriel.md`) | ✅ |
 | IA à trois niveaux (débutant, moyen, élevé : combat par simulation, ISMCTS en duel ; `docs/ia.md`, tournoi `npm run arena`) | ✅ |
 | Fiabilisation (29/09/2026) : serveur (validation des messages, débit), décisions mal formées refusées, fuzz « chaos », invariants élargis, tests synthétiques des couches (`docs/moteur.md`, « Règles de conception ») | ✅ |
+| Socle P0 de l'audit (29/09/2026) : intégration continue, lancer pendant la résolution (608.2g), remplacements « au lieu du cimetière » (616.1), équipage / Fabrication / prolifération au choix du joueur, capacités de mana à coût sans la pile (605.3b) ; `docs/extensions/socle.md`, lots 0.11 à 0.14 | ✅ |
 | Autres extensions Standard | à la demande de l'utilisateur, une à la fois |
 
 

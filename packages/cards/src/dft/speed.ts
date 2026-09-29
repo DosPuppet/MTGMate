@@ -451,7 +451,6 @@ export const SPEED: Record<string, CardScript> = {
   },
   "Loot, the Pathfinder": {
     abilities: [
-      // Approximation : la capacité de mana passe par la pile (comme Ramos).
       exhaust({ mana: "{G}", tap: true, effects: [fx.addManaChoice(3)], label: "trois mana d'une couleur" }),
       exhaust({ mana: "{U}", tap: true, effects: [fx.draw(3)], label: "piochez trois cartes" }),
       exhaust({

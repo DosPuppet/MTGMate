@@ -160,6 +160,11 @@ La règle « préférer un mécanisme générique » est écrite dans `docs/mote
 
 ## 7. Feuille de route (par priorité)
 
+### Suivi
+
+- **P0 fait le 29/09/2026** (branche `dev`) : étapes 1 à 5 ci-dessous, une par commit ; détail dans `docs/extensions/socle.md`, lots 0.11 à 0.14. Environ 25 approximations levées, et trois erreurs de règles corrigées en route (Kaervek, Chandra, Darksteel Colossus avec un marqueur de finalité, The Darkness Crystal avec Rest in Peace).
+- Restent : P1 à P4.
+
 ### P0 — Socle du moteur, pour toutes les extensions (avant la prochaine)
 
 « Socle » désigne ici le moteur lui-même, **pas l'extension Foundations (FDN)**. Ces étapes changent des mécanismes généraux du moteur. Elles corrigent ensuite des cartes de **toutes** les extensions déjà intégrées :

@@ -1724,6 +1724,46 @@ export function activateAbility(s: GameState, player: PlayerId, source: ObjectId
   emit({ type: "activate", player, stackId: item.id, defId: o.defId, targets: flatTargets(targets) });
   rulesEvent(s, { e: "activated", player, stackId: item.id });
   announceTargets(s, item.id, player, targets);
+  // 605.1a / 605.3b : une capacité de mana ne va pas sur la pile ; elle se résout aussitôt.
+  if (isManaAbility(ab)) resolveManaAbilityNow(s, item);
+}
+
+const MANA_OPS = new Set<Effect["op"]>(["addMana", "addManaChoice", "addManaColorsAmong", "addManaUntilEndOfTurn"]);
+
+/** Un effet (ou un effet imbriqué : « si… », « vous pouvez… ») ajoute-t-il du mana ? */
+function addsMana(effects: readonly Effect[]): boolean {
+  return effects.some(
+    (e) =>
+      MANA_OPS.has(e.op) ||
+      Object.values(e).some((v) => Array.isArray(v) && v.length > 0 && typeof v[0] === "object" && addsMana(v as Effect[])),
+  );
+}
+
+/**
+ * 605.1a : une capacité activée sans cible, qui n'est pas une capacité de loyauté et qui peut ajouter du mana, est une
+ * capacité de mana (Ramos, Capital City, Loot, the Pathfinder…).
+ */
+export function isManaAbility(ab: ActivatedAbilityDef): boolean {
+  return ab.targets.length === 0 && ab.cost.loyalty === undefined && !ab.cost.loyaltyX && addsMana(ab.effects);
+}
+
+/** 605.3b : résout une capacité de mana sans passer par la pile ; le joueur garde la priorité. */
+function resolveManaAbilityNow(s: GameState, item: StackItem): void {
+  const i = s.stack.findIndex((x) => x.id === item.id);
+  if (i >= 0) s.stack.splice(i, 1);
+  const { effects } = specsAndEffects(s, item);
+  s.resolving = {
+    item,
+    effects,
+    pc: 0,
+    controller: item.controller,
+    targets: { ...(item.inline?.bound ?? {}) },
+    vars: { ...(item.inline?.vars ?? {}) },
+    awaiting: null,
+    returnPriority: { ...s.priority },
+  };
+  // Un choix (couleur du mana) suspend la résolution ; la réponse rendra la priorité (`game.ts`).
+  if (continueResolution(s)) s.flow = "priority";
 }
 
 /** Mots « cible » d'un élément de pile (Bolt Bend). */

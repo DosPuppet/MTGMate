@@ -26,7 +26,6 @@ export const LANDS: Record<string, CardScript> = {
   "Capital City": {
     abilities: [
       manaAbility("C"),
-      // Approximation : cette capacité de mana à coût passe par la pile (comme Ramos).
       activated({ mana: "{1}", tap: true, effects: [fx.addManaChoice(1)], label: "Un mana de n'importe quelle couleur" }),
     ],
   },
@@ -94,7 +93,6 @@ export const LANDS: Record<string, CardScript> = {
     abilities: [
       entersWith({ tapped: true, condition: cond.not(cond.all(cond.yourTurn, cond.not(cond.turnsTakenAtLeast(4)))) }),
       manaAbility("C"),
-      // Approximation : cette capacité de mana qui coûte 1 PV passe par la pile.
       activated({
         tap: true,
         payLife: 1,

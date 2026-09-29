@@ -202,9 +202,17 @@ function apply(s: GameState, submitter: PlayerId, d: Decision): void {
       }
       emit({ type: "choice", player, intent: p.request.intent });
       switch (p.purpose.kind) {
-        case "effect":
-          if (answerResolutionChoice(s, d.values)) afterResolution(s);
+        case "effect": {
+          // Capacité de mana (605.3b) : la priorité revient au joueur qui l'a activée.
+          const back = s.resolving?.returnPriority;
+          if (answerResolutionChoice(s, d.values)) {
+            if (back) {
+              s.priority = back;
+              s.flow = "priority";
+            } else afterResolution(s);
+          }
           return;
+        }
         case "combatDamage":
           if (p.request.type !== "divide") throw new RulesError("Répartition attendue");
           answerCombatAssignment(s, p.purpose.attacker, divisionOf(p.request, d.values));

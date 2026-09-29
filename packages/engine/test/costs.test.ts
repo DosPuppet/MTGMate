@@ -120,3 +120,48 @@ describe("solveur de paiement", () => {
     expect(availableMana(s, "p1")).toBe(1);
   });
 });
+
+describe("Capacités de mana à coût (605.1a, 605.3b) : sans la pile", () => {
+  const capital = (active: "p1" | "p2") => {
+    const s = scenario({
+      active,
+      p1: { battlefield: ["Capital City", "Plains"] },
+      p2: { battlefield: ["Mountain"], hand: ["Burst Lightning"] },
+    });
+    return s;
+  };
+  const activateCity = (s: ReturnType<typeof scenario>) => {
+    const city = idOf(s, "p1", "battlefield", "Capital City");
+    const a = legalActions(s, "p1").find(
+      (x) =>
+        x.type === "activate" &&
+        x.source === city &&
+        s.defs[s.objects[city]?.defId ?? ""]?.abilities[x.ability]?.kind === "activated",
+    );
+    if (a?.type !== "activate") throw new Error("capacité indisponible");
+    return act(s, "p1", { type: "activate", source: city, ability: a.ability });
+  };
+
+  it("Capital City : le mana est ajouté sans passer par la pile, et le joueur garde la priorité", () => {
+    let s = activateCity(capital("p1"));
+    expect(s.stack).toHaveLength(0);
+    const p = s.pending;
+    expect(p?.kind === "choice" && p.request.intent).toBe("manaColor");
+    s = act(s, "p1", { type: "choose", values: ["B"] });
+    expect(s.stack).toHaveLength(0);
+    expect(s.players.p1?.manaPool.B).toBe(1);
+    expect(s.pending).toEqual({ kind: "priority", player: "p1" });
+  });
+
+  it("en réponse à un sort adverse : le sort reste seul sur la pile, la priorité revient à celui qui a activé", () => {
+    let s = capital("p2");
+    s = act(s, "p2", { type: "cast", card: idOf(s, "p2", "hand", "Burst Lightning"), targets: { t: ["p1"] } });
+    s = act(s, "p2", { type: "pass" });
+    expect(s.pending).toEqual({ kind: "priority", player: "p1" });
+    s = activateCity(s);
+    s = act(s, "p1", { type: "choose", values: ["R"] });
+    expect(s.stack.map((x) => s.defs[x.sourceDefId]?.name)).toEqual(["Burst Lightning"]);
+    expect(s.pending).toEqual({ kind: "priority", player: "p1" });
+    expect(s.players.p1?.manaPool.R).toBe(1);
+  });
+});
