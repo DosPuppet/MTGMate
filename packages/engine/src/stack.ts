@@ -1236,9 +1236,7 @@ export function tapOthersOptions(s: GameState, player: PlayerId, source: ObjectI
 
 /** Équipage N : créatures dégagées (autres que la source) de force totale N ou plus, les plus faibles d'abord. */
 function crewOptions(s: GameState, player: PlayerId, source: ObjectId, n: number): ObjectId[] | null {
-  const ids = s.battlefield
-    .filter((id) => id !== source && obj(s, id).controller === player && !obj(s, id).tapped && isCreature(s, id))
-    .sort((a, b) => crewPower(s, a) - crewPower(s, b));
+  const ids = crewCandidates(s, player, source).sort((a, b) => crewPower(s, a) - crewPower(s, b));
   const out: ObjectId[] = [];
   let total = 0;
   for (const id of ids) {
@@ -1249,8 +1247,30 @@ function crewOptions(s: GameState, player: PlayerId, source: ObjectId, n: number
   return total >= n ? out : null;
 }
 
+/** Créatures qui peuvent monter ou équiper la source. */
+export function crewCandidates(s: GameState, player: PlayerId, source: ObjectId): ObjectId[] {
+  return s.battlefield.filter(
+    (id) => id !== source && obj(s, id).controller === player && !obj(s, id).tapped && isCreature(s, id),
+  );
+}
+
+/** Choix par défaut de l'équipage (les plus faibles d'abord), pour l'interface et l'IA. */
+export function suggestedCrew(s: GameState, player: PlayerId, source: ObjectId, n: number): ObjectId[] {
+  return crewOptions(s, player, source, n) ?? [];
+}
+
+function chosenCrew(s: GameState, player: PlayerId, source: ObjectId, n: number, picked: ObjectId[] | undefined): ObjectId[] {
+  if (!picked?.length) return crewOptions(s, player, source, n) ?? [];
+  const legal = crewCandidates(s, player, source);
+  if (new Set(picked).size !== picked.length || picked.some((id) => !legal.includes(id)))
+    throw new RulesError("Créatures d'équipage invalides");
+  if (picked.reduce((t, id) => t + Math.max(0, crewPower(s, id)), 0) < n)
+    throw new RulesError(`Force totale insuffisante (${n} requise)`);
+  return picked;
+}
+
 /** Force comptée pour monter et équiper : endurance (Interface Ace), +2 pour les pilotes. */
-function crewPower(s: GameState, id: ObjectId): number {
+export function crewPower(s: GameState, id: ObjectId): number {
   const c = chars(s, id);
   return (c.keywords.includes("crewWithToughness") ? c.toughness : c.power) + (c.keywords.includes("crewPlus2") ? 2 : 0);
 }
@@ -1299,11 +1319,11 @@ function graveyardExileOptions(s: GameState, source: ObjectId, ab: ActivatedAbil
  * jetons, puis ses autres permanents (les moins chers d'abord, sauf `preferHighManaValue`). « Un ou plusieurs » : toutes les
  * cartes correspondantes du cimetière, sinon un permanent. `null` si le coût ne peut pas être payé.
  */
-export function craftMaterials(s: GameState, player: PlayerId, source: ObjectId, ab: ActivatedAbilityDef): ObjectId[] | null {
+/** Matériaux possibles d'une fabrication : cartes du cimetière puis jetons puis autres permanents correspondants. */
+function craftPool(s: GameState, player: PlayerId, source: ObjectId, ab: ActivatedAbilityDef) {
   const c = ab.cost.craft;
-  if (!c) return [];
   const mv = (id: ObjectId) => manaValue(s.defs[obj(s, id).defId]?.manaCost);
-  const order = (ids: ObjectId[]) => [...ids].sort((a, b) => (c.preferHighManaValue ? mv(b) - mv(a) : mv(a) - mv(b)));
+  const order = (ids: ObjectId[]) => [...ids].sort((a, b) => (c?.preferHighManaValue ? mv(b) - mv(a) : mv(a) - mv(b)));
   const graveyard = (s.players[player]?.graveyard ?? []).filter((id) => id !== source);
   const permanents = s.battlefield.filter((id) => id !== source && obj(s, id).controller === player);
   const matches = (id: ObjectId, f: ObjectFilter) =>
@@ -1315,6 +1335,58 @@ export function craftMaterials(s: GameState, player: PlayerId, source: ObjectId,
     ...order(permanents.filter((id) => obj(s, id).isToken && matches(id, f))),
     ...order(permanents.filter((id) => !obj(s, id).isToken && matches(id, f))),
   ];
+  return { matches, candidates };
+}
+
+/** Choix des matériaux d'une fabrication proposé au joueur : options, nombre, choix par défaut. */
+export function craftSpec(
+  s: GameState,
+  player: PlayerId,
+  source: ObjectId,
+  ab: ActivatedAbilityDef,
+): { min: number; max: number; options: ObjectId[]; suggested: ObjectId[] } | null {
+  const c = ab.cost.craft;
+  const suggested = craftMaterials(s, player, source, ab);
+  if (!c || !suggested) return null;
+  const { candidates } = craftPool(s, player, source, ab);
+  const options = [...new Set(c.each ? c.each.flatMap((f) => candidates(f)) : candidates(c.filter ?? {}))];
+  const n = c.each ? c.each.length : c.count;
+  return { min: c.orMore ? 1 : n, max: c.orMore ? options.length : n, options, suggested };
+}
+
+/** Matériaux choisis par le joueur, vérifiés (702.167) ; sans choix, ceux par défaut. */
+export function chosenCraftMaterials(
+  s: GameState,
+  player: PlayerId,
+  source: ObjectId,
+  ab: ActivatedAbilityDef,
+  picked: ObjectId[] | undefined,
+): ObjectId[] | null {
+  const c = ab.cost.craft;
+  if (!c) return [];
+  if (!picked?.length) return craftMaterials(s, player, source, ab);
+  const spec = craftSpec(s, player, source, ab);
+  if (!spec) return null;
+  const bad = () => new RulesError("Matériaux de fabrication invalides");
+  if (new Set(picked).size !== picked.length || picked.some((id) => !spec.options.includes(id))) throw bad();
+  if (picked.length < spec.min || picked.length > spec.max) throw bad();
+  if (c.each) {
+    // Un matériau distinct par filtre : il faut une affectation complète.
+    const { matches } = craftPool(s, player, source, ab);
+    const assign = (i: number, used: Set<ObjectId>): boolean => {
+      const f = c.each?.[i];
+      if (!f) return true;
+      return picked.some((id) => !used.has(id) && matches(id, f) && assign(i + 1, new Set([...used, id])));
+    };
+    if (!assign(0, new Set())) throw bad();
+  }
+  return picked;
+}
+
+export function craftMaterials(s: GameState, player: PlayerId, source: ObjectId, ab: ActivatedAbilityDef): ObjectId[] | null {
+  const c = ab.cost.craft;
+  if (!c) return [];
+  const { candidates } = craftPool(s, player, source, ab);
   if (c.each) {
     // Un matériau distinct par filtre (affectation par retour arrière, les listes sont courtes).
     const pick = (i: number, used: ObjectId[]): ObjectId[] | null => {
@@ -1513,8 +1585,11 @@ export function activateAbility(s: GameState, player: PlayerId, source: ObjectId
   ) {
     throw new RulesError("Permanents à engager invalides");
   }
-  const crew = ab.cost.crew !== undefined ? (crewOptions(s, player, source, ab.cost.crew) ?? []) : [];
-  const materials = ab.cost.craft ? craftMaterials(s, player, source, ab) : [];
+  // Équipage et monture (702.122, 702.171) : les créatures choisies par le joueur (force totale suffisante), sinon le
+  // choix par défaut (les plus faibles d'abord).
+  const crew = ab.cost.crew !== undefined ? chosenCrew(s, player, source, ab.cost.crew, choices.tap) : [];
+  // Fabrication : les matériaux choisis par le joueur, sinon ceux par défaut (cartes du cimetière d'abord).
+  const materials = ab.cost.craft ? chosenCraftMaterials(s, player, source, ab, choices.materials) : [];
   if (!materials) throw new RulesError("Matériaux de fabrication insuffisants");
   if (ab.cost.mana) {
     const reserved = new Set([

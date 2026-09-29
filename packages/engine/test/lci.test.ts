@@ -262,6 +262,33 @@ describe("The Lost Caverns of Ixalan", () => {
       expect(chars(s, raptor).power).toBe(13);
       expect(idsOf(s, "p1", "graveyard", "Llanowar Elves")).toHaveLength(1);
     });
+
+    it("Mastercraft Raptor : le joueur choisit ses matériaux (un seul Dinosaure)", () => {
+      let s = scenario({
+        p1: {
+          battlefield: [...lands("Mountain", 5), "Saheeli's Lattice // Mastercraft Raptor"],
+          graveyard: ["Earthshaker Dreadmaw", "Cavern Stomper", "Llanowar Elves"],
+        },
+      });
+      const lattice = idOf(s, "p1", "battlefield", "Saheeli's Lattice // Mastercraft Raptor");
+      const a = craftOption(s, lattice);
+      if (a?.type !== "activate") throw new Error("fabrication indisponible");
+      const spec = a.additional?.materials;
+      // « Un ou plusieurs Dinosaures » : 1 à 2 matériaux ; par défaut, tout le cimetière correspondant.
+      expect([spec?.min, spec?.max, spec?.suggested.length]).toEqual([1, 2, 2]);
+      const stomper = idOf(s, "p1", "graveyard", "Cavern Stomper");
+      const stomperPower = s.defs[s.objects[stomper]?.defId ?? ""]?.power;
+      const elves = idOf(s, "p1", "graveyard", "Llanowar Elves");
+      expect(() => act(s, "p1", { type: "activate", source: lattice, ability: a.ability, materials: [elves] })).toThrow(
+        /Matériaux de fabrication invalides/,
+      );
+      s = settle(act(s, "p1", { type: "activate", source: lattice, ability: a.ability, materials: [stomper] }));
+      const raptor = byName(s, "Mastercraft Raptor") as string;
+      // Force du Raptor : celle du seul Dinosaure exilé.
+      expect(chars(s, raptor).power).toBe(stomperPower);
+      expect(idsOf(s, "p1", "graveyard", "Earthshaker Dreadmaw")).toHaveLength(1);
+      expect(idsOf(s, "p1", "graveyard", "Cavern Stomper")).toHaveLength(0);
+    });
   });
 
   describe("Légendaires et cartes uniques", () => {

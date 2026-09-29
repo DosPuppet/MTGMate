@@ -90,6 +90,30 @@ describe("Réimpressions : combat", () => {
     expect(chars(s, caravan).types).toContain("Creature");
     expect(s.objects[idOf(s, "p1", "battlefield", "Shivan Dragon")]?.tapped).toBe(true);
   });
+
+  it("Équipage : le joueur choisit les créatures engagées (force totale suffisante)", () => {
+    let s = scenario({
+      p1: { battlefield: ["Cultivator's Caravan", "Shivan Dragon", "Llanowar Elves", "Llanowar Elves", "Llanowar Elves"] },
+    });
+    const caravan = idOf(s, "p1", "battlefield", "Cultivator's Caravan");
+    const crew = activation(s, "p1", caravan, "Équipage");
+    const spec = crew?.type === "activate" ? crew.additional?.tap : undefined;
+    // L'option expose la force requise, les forces et le choix par défaut (les plus faibles d'abord : trois Elfes).
+    expect(spec?.minPower).toBe(3);
+    expect(spec?.options).toHaveLength(4);
+    expect(spec?.suggested).toHaveLength(3);
+    const elves = idsOf(s, "p1", "battlefield", "Llanowar Elves");
+    // Deux Elfes (force 2) : insuffisant.
+    expect(() => act(s, "p1", { type: "activate", source: caravan, ability: crew!.ability, tap: elves.slice(0, 2) })).toThrow(
+      /Force totale insuffisante/,
+    );
+    const dragon = idOf(s, "p1", "battlefield", "Shivan Dragon");
+    s = act(s, "p1", { type: "activate", source: caravan, ability: crew!.ability, tap: [dragon] });
+    s = passBoth(s);
+    expect(chars(s, caravan).types).toContain("Creature");
+    expect(s.objects[dragon]?.tapped).toBe(true);
+    expect(elves.every((id) => !s.objects[id]?.tapped)).toBe(true);
+  });
 });
 
 describe("Réimpressions : pile et mana", () => {

@@ -20,7 +20,6 @@ Chaque entrée porte sa nature :
 - `règle` **Aura mise en jeu sans être lancée :** elle va au cimetière, faute du choix de l'objet enchanté (303.4f).
 - `règle` **Convocation :** une créature qui a une capacité de mana ne sert pas à la convocation (elle paie par sa capacité de mana).
 - `choix auto` **Choix « en arrivant » sans résolution** (permanent remis en jeu par un effet) : choix par défaut, le type ou la couleur les plus présents chez le contrôleur.
-- `choix auto` **Équipage :** les créatures engagées sont choisies automatiquement.
 - `choix auto` **Dégager jusqu'à N terrains :** les terrains sont choisis automatiquement.
 - `choix auto` **Mana restreint (Giada, Secluded Courtyard) :** utilisé seulement par le paiement automatique, pour un sort ou une capacité autorisés ; ces sources ne se tapent pas à la main.
 - `choix auto` **Mana « déclencheur » (haste, copie du sort) :** appliqué seulement quand ce mana est dépensé par le paiement automatique.
@@ -44,7 +43,6 @@ Dans l'ordre où elles ont été ajoutées, extension par extension.
 - **Bolt Bend :** la nouvelle cible est choisie à la résolution.
 - **Demonic Pact :** les modes déjà choisis sont mémorisés sur le permanent (perdus s'il change de zone, ce qui est conforme).
 - **Ordeal of Nylea :** sacrifiée directement, sans déclencheur séparé.
-- **Prolifération (Tam) :** choix automatique. Tous les marqueurs de vos permanents ; chez les adversaires, seulement les marqueurs -1/-1, d'étourdissement et de poison.
 - **Mabel, Bitter Recluse :** les marqueurs retirés sont choisis automatiquement (loyauté, puis +1/+1, puis les autres).
 - **Liliana the Faultless, Massacre Girl :** mêmes approximations que plus haut (défausse à la résolution ; blessures non de combat de vos seules sources).
 - **Empower Jace avec plusieurs jetons Jace :** les marqueurs vont sur le premier jeton (pas de choix).
@@ -180,7 +178,7 @@ Dans l'ordre où elles ont été ajoutées, extension par extension.
   - Squirming Emergence : la valeur de mana n'est vérifiée qu'à la résolution ; Abuelo's Awakening : les marqueurs sont posés juste après l'arrivée ;
   - Brass's Tunnel-Grinder : « défaussez autant de cartes que voulu » est une défausse facultative ;
   - Zoyowa's Justice : le propriétaire découvre après avoir mélangé la carte ; The Myriad Pools : le permanent devient une copie du sort sur la pile ;
-  - Fabrication : les matériaux sont choisis automatiquement (voir `docs/extensions/lci.md`, lot C) ; Sunbird Effigy : sa capacité de mana est une capacité activée (pile) ;
+  - Sunbird Effigy : sa capacité de mana est une capacité activée (pile) ;
   - Braided Net : les capacités activées du permanent engagé sont bloquées jusqu'à la fin du tour (et non tant qu'il reste engagé) ; Iceberg Titan : engager ou dégager est un mode choisi au déclenchement ;
   - Thousand Moons Infantry : se dégage au début de l'entretien de chaque adversaire (et non pendant son étape de dégagement) ; The Millennium Calendar : ses marqueurs de temps sont posés au début de votre entretien ;
   - Thousand Moons Smithy : on choisit librement les permanents engagés (elle ne se transforme qu'avec cinq) ; Tarrian's Journal : la main est défaussée à la résolution ;

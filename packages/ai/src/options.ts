@@ -71,12 +71,14 @@ export function buildCastDecision(
       };
     }
     case "activate": {
-      // Station : une créature engagée au hasard parmi celles possibles.
+      // Station : une créature engagée au hasard parmi celles possibles. Équipage (force minimale) : des créatures au
+      // hasard jusqu'à la force requise.
       const tap = a.additional?.tap;
       const pool = tap ? [...tap.options] : [];
       const picked: string[] = [];
-      while (tap && picked.length < tap.count && pool.length)
-        picked.push(pool.splice(Math.floor(rand() * pool.length), 1)[0] as string);
+      const power = () => picked.reduce((n, id) => n + (tap?.powers?.[id] ?? 0), 0);
+      const enough = () => (tap?.minPower !== undefined ? power() >= tap.minPower : picked.length >= (tap?.count ?? 0));
+      while (tap && !enough() && pool.length) picked.push(pool.splice(Math.floor(rand() * pool.length), 1)[0] as string);
       return {
         type: "activate",
         source: a.source,
@@ -166,7 +168,7 @@ export function enumerateDecisions(a: ActionOption, limit = 40, rank?: (ids: str
       }));
       // Station : la plus forte créature (choix par défaut du moteur), ou celle qui a le moins de valeur.
       const tap = a.additional?.tap;
-      const cheap = tap && rank ? rank(tap.options).slice(0, tap.count) : undefined;
+      const cheap = tap?.minPower !== undefined ? tap.suggested : tap && rank ? rank(tap.options).slice(0, tap.count) : undefined;
       return [...base, ...(cheap ? base.map((d) => ({ ...d, tap: cheap })) : [])].slice(0, limit);
     }
     case "playLand":

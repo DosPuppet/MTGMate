@@ -101,3 +101,9 @@ Lot 0.12 (remplacements « au lieu du cimetière », 614.1a / 616.1 ; P0 de l'au
 - `replaceGraveyard` (`replacement.ts`) réunit tous les candidats, y compris « exilez-la si elle devait mourir » (Lava Coil) et le marqueur de finalité : l'auto-remplacement passe d'abord (616.1a, Progenitus et Darksteel Colossus mélangés même avec un marqueur de finalité), puis un seul remplacement s'applique, choisi pour le joueur affecté (616.1e ; choix automatique : il écarte ceux qui profitent à un adversaire) ;
 - deux erreurs corrigées : Darksteel Colossus avec un marqueur de finalité était exilé ; avec Rest in Peace et The Darkness Crystal, le Cristal donnait ses PV ;
 - tests : `engine/test/replacement.test.ts`.
+
+Lot 0.13 (choix automatiques rendus au joueur ; P0 de l'audit) :
+- équipage et monture : l'option d'activation expose `additional.tap` avec `minPower`, les forces (`powers`) et le choix par défaut (`suggested`) ; le joueur engage les créatures de son choix (force totale suffisante, vérifiée par `chosenCrew`, `stack.ts`), sinon le choix par défaut s'applique. Dans l'interface, la fenêtre « Engagez des créatures de force totale N ou plus » a un bouton « Suggestion » ;
+- Fabrication : `additional.materials` (`craftSpec` : `min`, `max`, options du cimetière et du champ de bataille, suggestion) et le champ de décision `materials`, vérifié par `chosenCraftMaterials` (un matériau distinct par filtre pour `each`) ;
+- prolifération : un choix `pick` (intention `proliferate`, `autoOk`) parmi les permanents et joueurs qui ont des marqueurs ; l'automatisme et l'IA prennent la suggestion d'avant (vos marqueurs, les marqueurs nuisibles adverses), le mode « contrôle total » laisse choisir ;
+- tests : `fdn-reprints.test.ts` (équipage), `lci.test.ts` (Fabrication), `fra.test.ts` (prolifération).

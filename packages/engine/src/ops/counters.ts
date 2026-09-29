@@ -2,18 +2,7 @@
 import { createTokens } from "../actions";
 import type { OpHandlers } from "../effects";
 import { evalAmount, resolveRef, store } from "../effects";
-import {
-  bump,
-  changeCounters,
-  chars,
-  counterCount,
-  isRoom,
-  onBattlefield,
-  opponentsOf,
-  P1P1,
-  rulesEvent,
-  unlockDoor,
-} from "../state";
+import { bump, changeCounters, chars, counterCount, isRoom, onBattlefield, P1P1, rulesEvent, unlockDoor } from "../state";
 import { playerStatic } from "../statics";
 import { matchesObjectFilter } from "../targets";
 
@@ -61,22 +50,56 @@ export const HANDLERS: OpHandlers = {
     if (o && n > 0) changeCounters(s, o, "loyalty", n);
     return;
   },
-  proliferate(s, _r, e, ctx) {
+  proliferate(s, r, e, ctx, key) {
+    // 701.34a : choisissez des permanents et/ou joueurs qui ont des marqueurs ; chacun reçoit un marqueur de plus de
+    // chaque sorte qu'il a déjà. Suggestion (automatisme, IA) : vos permanents sans marqueur nuisible, et les
+    // marqueurs nuisibles (-1/-1, étourdissement, poison) de vos adversaires.
     const times = evalAmount(s, ctx, e.times);
     const bad = new Set(["-1/-1", "stun"]);
     for (let t = 0; t < times; t++) {
-      for (const id of [...s.battlefield]) {
-        const o = s.objects[id];
-        if (!o) continue;
-        const mine = o.controller === ctx.controller;
-        for (const [kind, n] of Object.entries(o.counters)) {
-          if (n > 0 && (mine ? !bad.has(kind) : bad.has(kind))) changeCounters(s, o, kind, 1);
+      if (r.vars[key(`done${t}`)]) continue;
+      const withCounters = s.battlefield.filter((id) => Object.values(s.objects[id]?.counters ?? {}).some((n) => n > 0));
+      const poisoned = s.playerOrder.filter((p) => !s.players[p]?.lost && (s.players[p]?.poison ?? 0) > 0);
+      const options = [...withCounters, ...poisoned];
+      if (options.length === 0) return;
+      const answer = r.vars[key(`pick${t}`)];
+      if (!answer) {
+        const good = (id: string) => {
+          const o = s.objects[id];
+          if (!o) return false;
+          const kinds = Object.entries(o.counters)
+            .filter(([, n]) => n > 0)
+            .map(([k]) => k);
+          return o.controller === ctx.controller ? kinds.every((k) => !bad.has(k)) : kinds.every((k) => bad.has(k));
+        };
+        const suggested = [...withCounters.filter(good), ...poisoned.filter((p) => p !== ctx.controller)];
+        return {
+          ask: {
+            player: ctx.controller,
+            key: key(`pick${t}`),
+            request: {
+              type: "pick",
+              intent: "proliferate",
+              prompt: "Proliférer : choisissez les permanents et joueurs qui reçoivent un marqueur de plus",
+              options,
+              min: 0,
+              max: options.length,
+              suggested,
+              autoOk: true,
+            },
+          },
+        };
+      }
+      for (const v of answer.map(String)) {
+        const o = s.objects[v];
+        if (o?.zone === "battlefield") {
+          for (const [kind, n] of Object.entries(o.counters)) if (n > 0) changeCounters(s, o, kind, 1);
+        } else {
+          const pl = s.players[v];
+          if (pl && (pl.poison ?? 0) > 0) pl.poison = (pl.poison ?? 0) + 1;
         }
       }
-      for (const p of opponentsOf(s, ctx.controller)) {
-        const pl = s.players[p];
-        if (pl && (pl.poison ?? 0) > 0) pl.poison = (pl.poison ?? 0) + 1;
-      }
+      r.vars[key(`done${t}`)] = [1];
     }
     return;
   },

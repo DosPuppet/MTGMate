@@ -86,12 +86,14 @@ export interface Casting {
   /** Coûts additionnels choisis (cartes défaussées, permanents sacrifiés). */
   discard: string[] | null;
   sacrifice: string[] | null;
-  /** Permanents à engager pour le coût (station). */
+  /** Permanents à engager pour le coût (station, équipage). */
   tap: string[] | null;
+  /** Matériaux d'une fabrication. */
+  materials: string[] | null;
   /** Façon de payer le sort : coût normal, sans payer (Omniscience, Etali), coût alternatif. */
   payMode: "normal" | "free" | "alt" | null;
   targets: Record<string, string[]>;
-  stage: "mode" | "pay" | "x" | "kicker" | "target" | "discard" | "sacrifice" | "tap";
+  stage: "mode" | "pay" | "x" | "kicker" | "target" | "discard" | "sacrifice" | "tap" | "materials";
   spec: TargetOption | null;
   /** Cibles déjà désignées pour `spec` quand il en accepte plusieurs. */
   picked?: string[];
@@ -203,7 +205,7 @@ interface Store {
   pickTarget(id: string): void;
   /** Valide les cibles déjà désignées (« jusqu'à N »). */
   confirmTargets(): void;
-  chooseAdditional(kind: "discard" | "sacrifice" | "tap", ids: string[]): void;
+  chooseAdditional(kind: "discard" | "sacrifice" | "tap" | "materials", ids: string[]): void;
   cancel(): void;
   toggleAttacker(id: string): void;
   /** Cible choisie pour l'attaquant en visée. */
@@ -288,6 +290,7 @@ function buildDecision(c: Casting): Decision {
     discard: c.discard ?? undefined,
     sacrifice: c.sacrifice ?? undefined,
     tap: c.tap ?? undefined,
+    materials: c.materials ?? undefined,
   };
 }
 
@@ -502,6 +505,8 @@ export const useGame = create<Store>((set, get) => {
       return set({ casting: { ...c, stage: "discard", spec: null } });
     if (extra?.sacrifice && c.sacrifice === null) return set({ casting: { ...c, stage: "sacrifice", spec: null } });
     if (extra && "tap" in extra && extra.tap && c.tap === null) return set({ casting: { ...c, stage: "tap", spec: null } });
+    if (extra && "materials" in extra && extra.materials && c.materials === null)
+      return set({ casting: { ...c, stage: "materials", spec: null } });
     get().decide(buildDecision(c));
   };
 
@@ -890,6 +895,7 @@ export const useGame = create<Store>((set, get) => {
         discard: null,
         sacrifice: null,
         tap: null,
+        materials: null,
         payMode: null,
         targets: {},
         stage: "mode",

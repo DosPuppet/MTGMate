@@ -38,7 +38,7 @@ function objectRefs(s: GameState, ids: unknown[]): void {
 function castChoices(s: GameState, d: Rec): void {
   for (const f of ["free", "alternative", "kicked", "faceDown", "warp"]) opt(d, f, (v) => typeof v === "boolean");
   for (const f of ["mode", "x", "face"]) opt(d, f, isIndex);
-  for (const f of ["discard", "sacrifice", "tap"]) {
+  for (const f of ["discard", "sacrifice", "tap", "materials"]) {
     opt(d, f, isIdSet);
     objectRefs(s, (d[f] as string[] | undefined) ?? []);
   }

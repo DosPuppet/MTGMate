@@ -9,7 +9,7 @@ import { legalActions } from "../src/legal";
 import { spellCost } from "../src/stack";
 import { chars, setPrepared } from "../src/state";
 import type { GameState } from "../src/types";
-import { act, idOf, passBoth, scenario } from "./helpers";
+import { act, idOf, passAccepting, passBoth, scenario } from "./helpers";
 
 type S = GameState;
 const cast = (s: S, p: string, name: string, extra: Record<string, unknown> = {}) =>
@@ -398,7 +398,8 @@ describe("Reality Fracture, lot E : planeswalkers", () => {
     });
     const tam = idOf(s, "p1", "battlefield", "Tam, the Possibility");
     s = act(s, "p1", { type: "activate", source: tam, ability: 1 });
-    s = passBoth(s);
+    // Chaque prolifération est un choix (701.34a) ; la suggestion prend vos planeswalkers.
+    s = passAccepting(s, (x) => x.stack.length === 0 && x.pending?.kind === "priority");
     expect(s.objects[idOf(s, "p1", "battlefield", "Ajani Resolute")]?.counters.loyalty).toBe(4); // 2 + 2
     expect(s.objects[idOf(s, "p1", "battlefield", "The Theorist, Jace Beleren")]?.counters.loyalty).toBe(5);
   });
@@ -421,5 +422,41 @@ describe("Reality Fracture, lot E : planeswalkers", () => {
     s = passBoth(s);
     s = passBoth(s);
     expect(s.objects[ajani]?.counters.loyalty).toBe(2); // 5 - 3
+  });
+});
+
+describe("Prolifération : un choix (701.34a)", () => {
+  it("le joueur choisit les permanents qui reçoivent un marqueur de plus", () => {
+    let s = scenario({
+      p1: {
+        battlefield: [
+          "Tam, the Possibility",
+          "Ajani Resolute",
+          "The Theorist, Jace Beleren",
+          "Plains",
+          "Island",
+          "Swamp",
+          "Mountain",
+          "Forest",
+        ],
+      },
+    });
+    const tam = idOf(s, "p1", "battlefield", "Tam, the Possibility");
+    const ajani = idOf(s, "p1", "battlefield", "Ajani Resolute");
+    const jace = idOf(s, "p1", "battlefield", "The Theorist, Jace Beleren");
+    s = act(s, "p1", { type: "activate", source: tam, ability: 1 });
+    s = passBoth(s);
+    // Deux proliférations : seulement Ajani la première fois, rien la seconde.
+    for (const values of [[ajani], []]) {
+      const p = s.pending;
+      if (p?.kind !== "choice" || p.request.intent !== "proliferate") throw new Error("prolifération attendue");
+      expect(p.request.type === "pick" && p.request.options).toEqual(expect.arrayContaining([ajani, jace]));
+      expect(p.request.autoOk).toBe(true);
+      s = act(s, "p1", { type: "choose", values });
+    }
+    s = passAccepting(s, (x) => x.stack.length === 0 && x.pending?.kind === "priority");
+    const jaceLoyalty = s.defs[s.objects[jace]?.defId ?? ""]?.loyalty ?? 0;
+    expect(s.objects[ajani]?.counters.loyalty).toBe(3);
+    expect(s.objects[jace]?.counters.loyalty).toBe(jaceLoyalty);
   });
 });

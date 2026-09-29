@@ -119,23 +119,36 @@ function AdditionalCostPicker({
   options,
   orPay,
   orSacrifice,
+  minPower,
+  powers,
+  suggested,
+  min,
 }: {
-  kind: "discard" | "sacrifice" | "tap";
+  kind: "discard" | "sacrifice" | "tap" | "materials";
   count: number;
   options: string[];
+  /** Équipage, monture : autant de créatures qu'on veut, de force totale au moins `minPower`. */
+  minPower?: number;
+  powers?: Record<string, number>;
+  suggested?: string[];
   /** « … ou payez {3}{B} » (ou « 3 points de vie ») : on peut payer cela à la place. */
   orPay?: string;
   /** « Défaussez une carte ou sacrifiez un permanent » : les options comprennent des permanents. */
   orSacrifice?: boolean;
+  /** Fabrication « un ou plusieurs » : au moins `min`, au plus `count`. */
+  min?: number;
 }) {
   const view = useGame((s) => s.view);
   const choose = useGame((s) => s.chooseAdditional);
   const cancel = useGame((s) => s.cancel);
   const [picked, setPicked] = useState<string[]>([]);
   if (!view) return null;
-  const all = [...view.hand, ...view.battlefield];
+  const all = [...view.hand, ...view.battlefield, ...(view.players[view.viewer]?.graveyard ?? [])];
+  const byPower = minPower !== undefined;
+  const power = picked.reduce((n, id) => n + (powers?.[id] ?? 0), 0);
+  const ready = byPower ? power >= minPower : picked.length >= (min ?? count) && picked.length <= count;
   const toggle = (id: string) =>
-    setPicked((cur) => (cur.includes(id) ? cur.filter((x) => x !== id) : cur.length < count ? [...cur, id] : cur));
+    setPicked((cur) => (cur.includes(id) ? cur.filter((x) => x !== id) : byPower || cur.length < count ? [...cur, id] : cur));
   return (
     <Modal
       title={
@@ -143,9 +156,13 @@ function AdditionalCostPicker({
           ? "Coût additionnel : défaussez une carte ou sacrifiez un permanent"
           : kind === "discard"
             ? `Coût additionnel : défaussez ${count} carte(s)`
-            : kind === "tap"
-              ? `Coût : engagez ${count} créature(s)`
-              : `Coût additionnel : sacrifiez ${count} permanent(s)`
+            : kind === "materials"
+              ? `Fabrication : exilez ${min !== undefined && min !== count ? `de ${min} à ${count}` : count} matériau(x)`
+              : kind === "tap" && byPower
+                ? `Engagez des créatures de force totale ${minPower} ou plus`
+                : kind === "tap"
+                  ? `Coût : engagez ${count} créature(s)`
+                  : `Coût additionnel : sacrifiez ${count} permanent(s)`
       }
       wide
     >
@@ -173,8 +190,13 @@ function AdditionalCostPicker({
             Payer {orPay} à la place
           </button>
         )}
-        <button type="button" className="btn primary" disabled={picked.length !== count} onClick={() => choose(kind, picked)}>
-          Valider ({picked.length}/{count})
+        {suggested && (
+          <button type="button" className="btn" onClick={() => setPicked(suggested)}>
+            Suggestion
+          </button>
+        )}
+        <button type="button" className="btn primary" disabled={!ready} onClick={() => choose(kind, picked)}>
+          {byPower ? `Valider (force ${power}/${minPower})` : `Valider (${picked.length}/${count})`}
         </button>
       </div>
     </Modal>
@@ -263,7 +285,22 @@ function CastingPrompt() {
   }
   if (casting.stage === "tap" && opt.type === "activate" && opt.additional?.tap) {
     const spec = opt.additional.tap;
-    return <AdditionalCostPicker kind="tap" count={spec.count} options={spec.options} />;
+    return (
+      <AdditionalCostPicker
+        kind="tap"
+        count={spec.count}
+        options={spec.options}
+        minPower={spec.minPower}
+        powers={spec.powers}
+        suggested={spec.suggested}
+      />
+    );
+  }
+  if (casting.stage === "materials" && opt.type === "activate" && opt.additional?.materials) {
+    const spec = opt.additional.materials;
+    return (
+      <AdditionalCostPicker kind="materials" count={spec.max} min={spec.min} options={spec.options} suggested={spec.suggested} />
+    );
   }
   if (casting.stage === "sacrifice" && opt.type === "activate" && opt.additional?.sacrifice) {
     const spec = opt.additional.sacrifice;

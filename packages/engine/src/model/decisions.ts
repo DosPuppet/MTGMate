@@ -52,6 +52,7 @@ export type ChoiceIntent =
   | "payX"
   | "changeTarget"
   | "leyline"
+  | "proliferate"
   | "impulse"
   | "divideDamage"
   | "keepPerType"
@@ -115,8 +116,10 @@ export interface CastChoices {
   /** Coûts additionnels : cartes défaussées, permanents sacrifiés. */
   discard?: ObjectId[];
   sacrifice?: ObjectId[];
-  /** Permanents engagés pour le coût (station), choisis par le joueur. */
+  /** Permanents engagés pour le coût (station, équipage, monture), choisis par le joueur. */
   tap?: ObjectId[];
+  /** Matériaux d'une fabrication (702.167), choisis par le joueur. */
+  materials?: ObjectId[];
   /** Face lancée d'une carte à plusieurs faces (1 : l'aventure) ; absente : la carte elle-même (recto). */
   face?: number;
   /** Lancée face cachée pour {3} (déguisement). */
@@ -210,8 +213,20 @@ export type ActionOption =
       xMax: number | null;
       additional?: {
         sacrifice?: { count: number; options: ObjectId[] };
-        tap?: { count: number; options: ObjectId[] };
+        /**
+         * Permanents à engager : exactement `count` (station), ou, avec `minPower`, autant qu'on veut pourvu que leur force
+         * totale (`powers`) atteigne `minPower` (équipage, monture). `suggested` : le choix par défaut.
+         */
+        tap?: {
+          count: number;
+          options: ObjectId[];
+          minPower?: number;
+          powers?: Record<ObjectId, number>;
+          suggested?: ObjectId[];
+        };
         discard?: { count: number; options: ObjectId[] };
+        /** Fabrication : entre `min` et `max` matériaux parmi `options` (cimetière et permanents). */
+        materials?: { min: number; max: number; options: ObjectId[]; suggested: ObjectId[] };
       };
     }
   | { type: "tapForMana"; source: ObjectId; ability: number; colors: ManaType[] };

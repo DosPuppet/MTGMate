@@ -17,6 +17,9 @@ import {
   castableFaces,
   castTerms,
   craftMaterials,
+  craftSpec,
+  crewCandidates,
+  crewPower,
   discardCostOptions,
   equipDiscount,
   FACE_DOWN_SPELL,
@@ -29,6 +32,7 @@ import {
   spellCost,
   spellView,
   splitSecondOnStack,
+  suggestedCrew,
   tapOthersOptions,
   warpOf,
 } from "./stack";
@@ -133,6 +137,19 @@ function maxX(s: GameState, player: PlayerId, cost: ManaCost | null | undefined,
   const upper = Math.floor((availableMana(s, player, exclude) - manaValue(cost)) / cost.x);
   for (let x = upper; x > 0; x--) if (canPay(s, player, totalCost(cost, x), exclude)) return x;
   return 0;
+}
+
+/** Choix des créatures d'équipage ou de monture : force totale requise, forces, choix par défaut. */
+function crewSpec(s: GameState, player: PlayerId, source: ObjectId, n: number) {
+  const options = crewCandidates(s, player, source);
+  const suggested = suggestedCrew(s, player, source, n);
+  return {
+    count: suggested.length,
+    options,
+    minPower: n,
+    powers: Object.fromEntries(options.map((id) => [id, Math.max(0, crewPower(s, id))])),
+    suggested,
+  };
 }
 
 export function legalActions(s: GameState, player: PlayerId): ActionOption[] {
@@ -299,7 +316,7 @@ export function legalActions(s: GameState, player: PlayerId): ActionOption[] {
                 ? sacrificeXOptions(s, player, id, ab.cost.sacrificeX)
                 : maxX(s, player, ab.cost.mana, exclude),
         additional:
-          ab.cost.sacrifice || ab.cost.tapOthers || ab.cost.discard
+          ab.cost.sacrifice || ab.cost.tapOthers || ab.cost.discard || ab.cost.crew !== undefined || ab.cost.craft
             ? {
                 ...(ab.cost.sacrifice
                   ? { sacrifice: { count: ab.cost.sacrifice.count, options: sacrificeOptions(s, player, id, ab) } }
@@ -309,6 +326,10 @@ export function legalActions(s: GameState, player: PlayerId): ActionOption[] {
                 ...(ab.cost.tapOthers
                   ? { tap: { count: ab.cost.tapOthers.count, options: tapOthersOptions(s, player, id, ab) } }
                   : {}),
+                // Équipage, monture : le joueur choisit les créatures (force totale suffisante).
+                ...(ab.cost.crew !== undefined ? { tap: crewSpec(s, player, id, ab.cost.crew) } : {}),
+                // Fabrication : le joueur choisit ses matériaux.
+                ...(ab.cost.craft ? { materials: craftSpec(s, player, id, ab) ?? undefined } : {}),
               }
             : undefined,
       });

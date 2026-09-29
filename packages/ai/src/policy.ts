@@ -79,7 +79,13 @@ function castDecision(s: GameState, me: PlayerId, a: ActionOption): Decision | n
     if (a.additional?.discard || a.additional?.sacrifice) return null;
     return { type: "cast", card: a.card, face: a.face, mode: a.modes[0]?.index ?? 0, targets, x: a.xMax ?? undefined };
   }
-  if (a.additional?.tap || a.additional?.sacrifice || ("discard" in (a.additional ?? {}) && a.additional?.discard)) return null;
+  // Équipage : le choix par défaut du moteur (sans `tap`) convient.
+  if (
+    (a.additional?.tap && a.additional.tap.minPower === undefined) ||
+    a.additional?.sacrifice ||
+    ("discard" in (a.additional ?? {}) && a.additional?.discard)
+  )
+    return null;
   return { type: "activate", source: a.source, ability: a.ability, targets, x: a.xMax ?? undefined };
 }
 
