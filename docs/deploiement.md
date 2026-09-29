@@ -76,7 +76,7 @@ Commandes utiles : `pm2 status`, `pm2 logs mtgmate`, `pm2 restart mtgmate`, `pm2
 
 Si le port 8787 est déjà pris sur le VPS, changez `PORT` dans `deploy/ecosystem.config.cjs` **et** dans le site nginx (étape 6), puis `pm2 restart mtgmate --update-env && pm2 save`.
 
-Réglages facultatifs (même fichier, section `env`) : `MTGX_DECISION_MS` (temps par décision, 60 000 ms), `MTGX_GRACE_MS` (délai de retour après une déconnexion, 60 000 ms), `MTGX_MAX_ROOMS` (salons ouverts au plus, 200).
+Réglages facultatifs (même fichier, section `env`) : `MTGX_DECISION_MS` (temps par décision, 60 000 ms), `MTGX_GRACE_MS` (délai de retour après une déconnexion, 60 000 ms), `MTGX_MAX_ROOMS` (salons ouverts au plus, 200), `MTGX_DATA_DIR` (sauvegarde des parties en cours, `data/rooms` par défaut, `off` pour la désactiver).
 
 ## 6. nginx et HTTPS
 
@@ -121,7 +121,9 @@ cd /opt/mtgmate
 ./deploy/update.sh      # git pull, npm ci, build, pm2 restart
 ```
 
-**Le redémarrage coupe les parties en cours** (les salons sont gardés en mémoire) : mettez à jour quand personne ne joue.
+**Les parties en cours survivent au redémarrage** : chaque salon est sauvegardé dans `data/rooms/` (un fichier par salon : les sièges, puis une décision par ligne) et repris au démarrage, en rejouant ses décisions. Les joueurs se reconnectent seuls (le navigateur réessaie pendant une minute) et ont le délai de retour habituel (`MTGX_GRACE_MS`).
+
+Limite : une mise à jour qui change le comportement du moteur peut rendre une partie en cours impossible à rejouer. Le fichier est alors mis de côté (`.bad`), et la partie est perdue.
 
 ## Dépannage
 

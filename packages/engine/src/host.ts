@@ -6,6 +6,7 @@
 
 import { type AutopilotSettings, autopilotDecision, DEFAULT_AUTOPILOT } from "./autopilot";
 import { submit } from "./game";
+import type { GameRecord } from "./record";
 import { RulesError } from "./stack";
 import { decider } from "./state";
 import { requiredBlocks } from "./turn";
@@ -27,6 +28,10 @@ export interface HostOptions {
    * en pause pendant une explication), null la laisse jouer.
    */
   gate?: () => Promise<void> | null;
+  /** Enregistrement de la partie (`createRecordedGame`) : chaque décision appliquée y est ajoutée. */
+  record?: GameRecord;
+  /** Appelé après chaque décision enregistrée (serveur : écriture sur disque). */
+  onRecord?: (player: PlayerId, d: Decision) => void;
 }
 
 /** Décision de repli si une IA renvoie une décision illégale. */
@@ -85,6 +90,14 @@ export class GameHost {
     const { state, events } = submit(this.state, player, d);
     this.state = state;
     this.pendingEvents.push(...events);
+    // Seules les décisions acceptées sont enregistrées : le rejeu redonne exactement cet état.
+    this.opts.record?.decisions.push([player, d]);
+    this.opts.onRecord?.(player, d);
+  }
+
+  /** Enregistrement de la partie (null si elle n'est pas enregistrée : tutoriel, bac à sable). */
+  get record(): GameRecord | null {
+    return this.opts.record ?? null;
   }
 
   private flush(): void {

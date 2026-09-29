@@ -3,15 +3,21 @@
  * déconnexions avec délai de retour, revanche. Le serveur fait autorité sur tout.
  */
 import { randomBytes, randomInt, randomUUID } from "node:crypto";
-import { buildDeck, CARDS, type DeckEntries, validateDeck } from "@mtgx/cards";
+import { appendFileSync, existsSync, mkdirSync, readdirSync, readFileSync, renameSync, rmSync, writeFileSync } from "node:fs";
+import { join } from "node:path";
+import { buildDeck, CARDS, card, type DeckEntries, validateDeck } from "@mtgx/cards";
 import {
-  createGame,
+  createRecordedGame,
   type Decision,
   decider,
   fallbackDecision,
   type GameEvent,
   GameHost,
+  type GameRecord,
   type GameView,
+  isGameRecord,
+  type PlayerId,
+  replayGame,
   visibleFaces,
 } from "@mtgx/engine";
 import type { Clock, ErrorCode, RoomInfo, Seat, ServerMessage } from "./protocol";
@@ -36,6 +42,11 @@ export interface RoomConfig {
   waitingMs: number;
   /** Nombre maximal de salons ouverts sur le serveur. */
   maxRooms: number;
+  /**
+   * Dossier de sauvegarde des parties (un fichier par salon : en-tête, puis une décision par ligne). Au démarrage, les
+   * parties en cours y sont reprises : un redémarrage du serveur ne les coupe plus. Absent : parties en mémoire seulement.
+   */
+  dataDir?: string;
 }
 
 export const DEFAULT_CONFIG: RoomConfig = {
@@ -56,6 +67,13 @@ export class ClientError extends Error {
   ) {
     super(message);
   }
+}
+
+/** Première ligne du fichier d'un salon : les sièges (jetons de reconnexion compris) et l'enregistrement de la partie. */
+interface SavedRoom {
+  code: string;
+  seats: { seat: Seat; name: string; deck: DeckEntries; token: string }[];
+  record: GameRecord;
 }
 
 interface SeatState {
@@ -169,13 +187,14 @@ export class Room {
       s.timeouts = 0;
       s.rematch = false;
     }
-    const { state, events } = createGame({
+    const { state, events, record } = createRecordedGame({
       seed: randomInt(0, 2 ** 31),
       startingPlayer: this.seats[randomInt(0, 2)]?.seat,
       players: this.seats.map((s) => ({ id: s.seat, name: s.name, deck: buildDeck({ main: s.deck }) })),
     });
     this.status = "playing";
-    const host = new GameHost(state, { onUpdate: (p, view, evts) => this.buffer(p as Seat, view, evts) }, events);
+    this.saveHeader(record);
+    const host = this.newHost(state, record, events);
     this.host = host;
     this.broadcastRoom();
     await this.advancing(host, () => host.run());
@@ -196,6 +215,73 @@ export class Room {
     } finally {
       if (host.state !== before || this.outbox.size) this.afterStep();
     }
+  }
+
+  /** Hôte d'une partie enregistrée : chaque décision est ajoutée au fichier du salon. */
+  private newHost(state: GameHost["state"], record: GameRecord, events: GameEvent[]): GameHost {
+    return new GameHost(
+      state,
+      {
+        onUpdate: (p, view, evts) => this.buffer(p as Seat, view, evts),
+        record,
+        onRecord: (p, d) => this.appendDecision(p, d),
+      },
+      events,
+    );
+  }
+
+  // -------------------------------------------------------------------------
+  // Sauvegarde sur disque
+  // -------------------------------------------------------------------------
+
+  private get file(): string | null {
+    return this.config.dataDir ? join(this.config.dataDir, `${this.code}.jsonl`) : null;
+  }
+
+  private saveHeader(record: GameRecord): void {
+    const file = this.file;
+    if (!file || !this.config.dataDir) return;
+    try {
+      mkdirSync(this.config.dataDir, { recursive: true });
+      const saved: SavedRoom = {
+        code: this.code,
+        seats: this.seats.map((s) => ({ seat: s.seat, name: s.name, deck: s.deck, token: s.token })),
+        record: { ...record, decisions: [] },
+      };
+      writeFileSync(file, `${JSON.stringify(saved)}\n`);
+    } catch (e) {
+      console.error(`Salon ${this.code} : sauvegarde impossible`, e);
+    }
+  }
+
+  private appendDecision(player: PlayerId, d: Decision): void {
+    const file = this.file;
+    if (!file) return;
+    try {
+      appendFileSync(file, `${JSON.stringify([player, d])}\n`);
+    } catch (e) {
+      console.error(`Salon ${this.code} : sauvegarde impossible`, e);
+    }
+  }
+
+  /**
+   * Reprise d'un salon sauvegardé (redémarrage du serveur) : la partie est rejouée depuis son enregistrement, les deux
+   * joueurs sont considérés comme déconnectés (délai de retour ordinaire) et reviennent avec leur jeton.
+   */
+  static restore(saved: SavedRoom, decisions: [PlayerId, Decision][], config: RoomConfig, onClose: (room: Room) => void): Room {
+    const room = new Room(saved.code, config, onClose);
+    for (const s of saved.seats) {
+      room.seats.push({ ...s, peer: null, timeouts: 0, rematch: false, graceDeadline: null, graceTimer: null });
+    }
+    const record: GameRecord = { ...saved.record, decisions };
+    const { state } = replayGame(record, card);
+    room.host = room.newHost(state, record, []);
+    room.status = state.over ? "over" : "playing";
+    if (room.waitingTimer) clearTimeout(room.waitingTimer);
+    room.waitingTimer = null;
+    for (const seat of room.seats) room.disconnect(seat);
+    room.afterStep();
+    return room;
   }
 
   private buffer(p: Seat, view: GameView, events: GameEvent[]): void {
@@ -384,12 +470,20 @@ export class Room {
     this.cleanupTimer = null;
   }
 
+  /** Fermeture définitive du salon : son fichier de sauvegarde disparaît. */
   close(): void {
+    this.shutdown();
+    const file = this.file;
+    if (file) rmSync(file, { force: true });
+    this.onClose(this);
+  }
+
+  /** Arrêt du serveur : les minuteurs s'arrêtent, la sauvegarde reste (la partie sera reprise au redémarrage). */
+  shutdown(): void {
     this.stopClock();
     this.cancelCleanup();
     if (this.waitingTimer) clearTimeout(this.waitingTimer);
     for (const s of this.seats) if (s.graceTimer) clearTimeout(s.graceTimer);
-    this.onClose(this);
   }
 
   // -------------------------------------------------------------------------
@@ -431,7 +525,30 @@ export class Room {
 export class RoomManager {
   private readonly rooms = new Map<string, Room>();
 
-  constructor(private readonly config: RoomConfig = DEFAULT_CONFIG) {}
+  constructor(private readonly config: RoomConfig = DEFAULT_CONFIG) {
+    if (config.dataDir) this.restore(config.dataDir);
+  }
+
+  /** Reprend les parties sauvegardées ; un fichier illisible est mis de côté (`.bad`) sans bloquer le démarrage. */
+  private restore(dir: string): void {
+    if (!existsSync(dir)) return;
+    for (const name of readdirSync(dir).filter((f) => f.endsWith(".jsonl"))) {
+      const file = join(dir, name);
+      try {
+        const [head, ...lines] = readFileSync(file, "utf8").split("\n").filter(Boolean);
+        const saved = JSON.parse(head ?? "null") as SavedRoom;
+        const decisions = lines.map((l) => JSON.parse(l) as [PlayerId, Decision]);
+        if (!saved?.code || !Array.isArray(saved.seats) || !isGameRecord({ ...saved.record, decisions }))
+          throw new Error("format inconnu");
+        const room = Room.restore(saved, decisions, this.config, (r) => this.rooms.delete(r.code));
+        this.rooms.set(room.code, room);
+        console.log(`Salon ${room.code} repris (${decisions.length} décisions)`);
+      } catch (e) {
+        console.error(`Sauvegarde ${name} illisible, mise de côté :`, e);
+        renameSync(file, `${file}.bad`);
+      }
+    }
+  }
 
   get size(): number {
     return this.rooms.size;
@@ -474,7 +591,9 @@ export class RoomManager {
     return null;
   }
 
+  /** Arrêt du serveur : les salons s'arrêtent sans effacer leur sauvegarde. */
   closeAll(): void {
-    for (const room of [...this.rooms.values()]) room.close();
+    for (const room of [...this.rooms.values()]) room.shutdown();
+    this.rooms.clear();
   }
 }

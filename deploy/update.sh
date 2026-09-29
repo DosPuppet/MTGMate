@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Mise à jour de MTG Mate sur le serveur : code, dépendances, build du client, redémarrage.
-# Attention : le redémarrage coupe les parties en cours (les salons sont en mémoire).
+# Les parties en cours sont sauvegardées (data/rooms) et reprises au redémarrage : les joueurs se reconnectent seuls.
 set -euo pipefail
 cd "$(dirname "$0")/.."
 git pull --ff-only

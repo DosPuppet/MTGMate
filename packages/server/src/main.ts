@@ -1,7 +1,8 @@
 /**
  * Lancement du serveur : `npm run server`.
  * Variables : PORT (8787), HOST (0.0.0.0 ; 127.0.0.1 derrière nginx), MTGX_DECISION_MS, MTGX_GRACE_MS
- * (durées du minuteur et du délai de retour), MTGX_MAX_ROOMS (salons ouverts au plus, 200).
+ * (durées du minuteur et du délai de retour), MTGX_MAX_ROOMS (salons ouverts au plus, 200), MTGX_DATA_DIR (sauvegarde
+ * des parties en cours, `data/rooms` par défaut ; « off » pour garder les parties en mémoire seulement).
  */
 import { networkInterfaces } from "node:os";
 import { dirname, join } from "node:path";
@@ -20,6 +21,10 @@ const server = await startServer({
     ...(num(process.env.MTGX_DECISION_MS) ? { decisionMs: num(process.env.MTGX_DECISION_MS) } : {}),
     ...(num(process.env.MTGX_GRACE_MS) ? { graceMs: num(process.env.MTGX_GRACE_MS) } : {}),
     ...(num(process.env.MTGX_MAX_ROOMS) ? { maxRooms: num(process.env.MTGX_MAX_ROOMS) } : {}),
+    // Parties sauvegardées : reprises après un redémarrage (pm2 restart, mise à jour).
+    ...(process.env.MTGX_DATA_DIR === "off"
+      ? {}
+      : { dataDir: process.env.MTGX_DATA_DIR || join(process.cwd(), "data", "rooms") }),
   },
 });
 

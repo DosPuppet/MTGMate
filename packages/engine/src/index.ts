@@ -8,6 +8,15 @@ export { type Agent, fallbackDecision, GameHost, type HostOptions } from "./host
 export { computeBattlefield } from "./layers";
 export { legalActions, meaningfulActions } from "./legal";
 export { availableMana, costToText, manaSources, manaValue, parseManaCost, solvePayment } from "./mana";
+export {
+  createRecordedGame,
+  type GameRecord,
+  isGameRecord,
+  RECORD_FORMAT,
+  RECORD_VERSION,
+  replayGame,
+  replayStates,
+} from "./record";
 export { createScenario, type ScenarioOptions, type ScenarioPermanent, type ScenarioPlayer } from "./scenario";
 export { isPermanentCard, modesOf, RulesError } from "./stack";
 export {
