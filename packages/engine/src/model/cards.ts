@@ -490,6 +490,22 @@ export interface CastPermissionAbilityDef {
 /** Capacité statique qui s'applique à des joueurs (défense talismanique, « ne peut pas perdre »…). */
 export interface PlayerStaticAbilityDef {
   kind: "playerStatic";
+  /** Hall of Echoes : la règle des légendes ne s'applique pas à vos permanents. */
+  noLegendRule?: boolean;
+  /** Jace's Machinations : capacités de loyauté de vos Jace à vitesse d'éphémère. */
+  jaceLoyaltyInstant?: boolean;
+  /** Screaming Nemesis : vous ne pouvez pas gagner de points de vie. */
+  cantGainLife?: boolean;
+  /** Molten Tide : chaque Montagne engagée pour du mana en produit N {R} de plus. */
+  extraMountainMana?: number;
+  /** Taii Wakeen : les blessures non de combat de vos sources sont augmentées de N. */
+  noncombatDamageBonusAll?: number;
+  /** Theorist's Proxy : votre prochain sort ne peut pas être contrecarré (usage unique). */
+  nextSpellUncounterable?: boolean;
+  /** Pit Automaton : votre prochaine capacité d'exhaust est copiée (usage unique). */
+  copyNextExhaust?: boolean;
+  /** Lightning, Army of One : les blessures infligées à vous ou à vos permanents sont doublées. */
+  damageTakenDoubled?: boolean;
   /** « Vous avez la défense talismanique. » */
   hexproof?: boolean;
   /** « Vous ne pouvez pas perdre la partie et vos adversaires ne peuvent pas la gagner. » */

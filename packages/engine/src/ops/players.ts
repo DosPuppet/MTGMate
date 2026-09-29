@@ -1,4 +1,5 @@
 /** Effets du moteur : joueurs (points de vie, pioche, tours et étapes supplémentaires, victoire). Chaque clé est un `op` d'`Effect` (voir `runEffect`, effects.ts). */
+
 import { createTokens, dealDamage, drawCard, gainLife, loseLife, sacrifice, setSpeed } from "../actions";
 import type { OpHandlers } from "../effects";
 import {
@@ -12,7 +13,7 @@ import {
   store,
 } from "../effects";
 import { apnapOrder, emit, isPlayer, moveObject, onBattlefield, opponentsOf, random, rulesEvent, shuffle } from "../state";
-import { playerStatic } from "../statics";
+import { addPlayerEffect, playerStatic } from "../statics";
 import { matchesObjectFilter } from "../targets";
 import { eliminate, endTheTurn } from "../turn";
 
@@ -53,10 +54,7 @@ export const HANDLERS: OpHandlers = {
     return;
   },
   cantGainLife(s, _r, e, ctx) {
-    for (const p of resolveRef(s, ctx, e.who)) {
-      const pl = s.players[p];
-      if (pl) pl.cantGainLife = true;
-    }
+    for (const p of resolveRef(s, ctx, e.who)) if (s.players[p]) addPlayerEffect(s, p, { cantGainLife: true }, null);
     return;
   },
   mayWheel(s, r, _e, ctx, key) {
@@ -186,10 +184,7 @@ export const HANDLERS: OpHandlers = {
     return;
   },
   extraLandThisTurn(s, _r, _e, ctx) {
-    const p = s.players[ctx.controller];
-    if (!p) return;
-    const cur = p.extraLandsTurn?.turn === s.turn.number ? p.extraLandsTurn.n : 0;
-    p.extraLandsTurn = { turn: s.turn.number, n: cur + 1 };
+    addPlayerEffect(s, ctx.controller, { extraLands: 1 }, s.turn.number);
     return;
   },
   reduceSpeed(s, _r, e, ctx) {
@@ -256,11 +251,7 @@ export const HANDLERS: OpHandlers = {
     return;
   },
   noncombatBonusThisTurn(s, _r, e, ctx) {
-    const pl = s.players[ctx.controller];
-    if (!pl) return;
-    const n = evalAmount(s, ctx, e.amount);
-    const cur = pl.noncombatBonusTurn?.turn === s.turn.number ? pl.noncombatBonusTurn.n : 0;
-    pl.noncombatBonusTurn = { turn: s.turn.number, n: cur + n };
+    addPlayerEffect(s, ctx.controller, { noncombatDamageBonusAll: evalAmount(s, ctx, e.amount) }, s.turn.number);
     return;
   },
   poison(s, _r, e, ctx) {

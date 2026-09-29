@@ -1,9 +1,11 @@
 /** Effets du moteur : blessures, combats et préventions. Chaque clé est un `op` d'`Effect` (voir `runEffect`, effects.ts). */
+
 import { dealDamage, destroy, sourceFromObject } from "../actions";
 import type { OpHandlers } from "../effects";
 import { damageSource, evalAmount, nextTurnOf, resolveRef, store, viewOf } from "../effects";
 import { addReplacement } from "../replacement";
 import { chars, isCreature, isPlayer, newId, onBattlefield } from "../state";
+import { addPlayerEffect } from "../statics";
 import { matchesObjectFilter } from "../targets";
 
 export const HANDLERS: OpHandlers = {
@@ -109,11 +111,9 @@ export const HANDLERS: OpHandlers = {
   },
   doubleDamageTo(s, _r, e, ctx) {
     const until = nextTurnOf(s, ctx.controller);
-    for (const p of resolveRef(s, ctx, e.who).filter((x) => isPlayer(s, x))) {
-      const pl = s.players[p];
-      if (pl)
-        pl.damageDoubled = [...(pl.damageDoubled ?? []).filter((d) => s.turn.number < d.until), { by: ctx.controller, until }];
-    }
+    // Jusqu'au prochain tour de son contrôleur (exclu).
+    for (const p of resolveRef(s, ctx, e.who).filter((x) => isPlayer(s, x)))
+      addPlayerEffect(s, p, { damageTakenDoubled: true }, until - 1);
     return;
   },
   preventDamageToYourCreatures(s, _r, _e, ctx) {

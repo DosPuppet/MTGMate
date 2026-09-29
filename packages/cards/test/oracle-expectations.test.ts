@@ -5,7 +5,7 @@
  */
 import { type CardDef, chars, dsl, type GameState, legalActions, RulesError, submit } from "@mtgx/engine";
 import { describe, expect, it } from "vitest";
-import { destroy } from "../../engine/src/actions";
+import { destroy, gainLife, loseLife } from "../../engine/src/actions";
 import { act, customCard, idsOf, passAccepting, scenario } from "../../engine/test/helpers";
 import { paragraphs, stripReminder } from "../src/audit";
 import { implementedCards } from "../src/index";
@@ -15,9 +15,41 @@ const n = (w: string) => (/^\d+$/.test(w) ? Number(w) : (NUM[w.toLowerCase()] ??
 
 /** Une attente : la cible à choisir et ce qui doit avoir changé. */
 interface Expectation {
-  target?: "opponent" | "opponentCreature" | "myCreature";
+  target?: "opponent" | "opponentCreature" | "myCreature" | "myGraveyardCreature";
   check: (before: GameState, after: GameState) => void;
+  /** Condition intercalée (603.4, « if you attacked this turn ») : la mise en scène la remplit, puis la vérifie absente. */
+  condition?: Condition603;
 }
+
+/** Conditions intercalées prises en charge, et comment la mise en scène les remplit. */
+const CONDITIONS = {
+  "you attacked this turn": (s: GameState) => {
+    s.turnLog.push({ e: "attack", player: "p1", defender: "p2", types: ["Creature"], subtypes: [] });
+  },
+  "a creature died this turn": (s: GameState) => {
+    destroy(s, idsOf(s, "p1", "battlefield", EXTRA)[0] as string);
+  },
+  "you gained or lost life this turn": (s: GameState) => {
+    gainLife(s, "p1", 1);
+  },
+  "you control two or more tapped creatures": (s: GameState) => {
+    for (const id of idsOf(s, "p1", "battlefield", EXTRA)) (s.objects[id] as { tapped: boolean }).tapped = true;
+  },
+  "a nonland permanent left the battlefield this turn or a spell was warped this turn": (s: GameState) => {
+    destroy(s, idsOf(s, "p1", "battlefield", EXTRA)[0] as string);
+  },
+  "you gained life this turn": (s: GameState) => {
+    gainLife(s, "p1", 1);
+  },
+  "an opponent lost life this turn": (s: GameState) => {
+    loseLife(s, "p2", 1);
+  },
+  // Rien n'est lancé dans la mise en scène : toujours remplie, jamais « non remplie ».
+  "you haven't cast a spell from your hand this turn": (_s: GameState) => {},
+} as const;
+type Condition603 = keyof typeof CONDITIONS;
+/** Deux créatures en plus pour les conditions (mourir, être engagées). */
+const EXTRA = "Llanowar Elves";
 
 const LANDS = ["Plains", "Island", "Swamp", "Mountain", "Forest"].flatMap((l) => [l, l, l]);
 // Créatures de référence : une grosse créature adverse (blessures sans la tuer), une créature à vous (renforts).
@@ -25,11 +57,17 @@ const BIG = "Gigantosaurus";
 const MINE = "Bear Cub";
 const life = (s: GameState, p: string) => s.players[p]?.life ?? 0;
 const handSize = (s: GameState) => s.players.p1?.hand.length ?? 0;
+/** Nom de la créature dont on vérifie le déclencheur (« this creature »), fixé par la mise en scène. */
+let selfName = "";
 /** Cartes sorties de la main par la mise en scène (1 : la carte lancée ; 0 : déclencheur d'une carte déjà en jeu). */
 let castShift = 1;
 const tokenCount = (s: GameState) => s.battlefield.filter((id) => s.objects[id]?.isToken).length;
 const big = (s: GameState) => idsOf(s, "p2", "battlefield", BIG)[0];
 const mine = (s: GameState) => idsOf(s, "p1", "battlefield", MINE)[0] as string;
+/** Carte de créature de votre cimetière (retours du cimetière). */
+const DEAD = "Savannah Lions";
+const deadCard = (s: GameState) => idsOf(s, "p1", "graveyard", DEAD)[0];
+const count = (s: GameState, zone: "battlefield" | "graveyard" | "hand", name: string) => idsOf(s, "p1", zone, name).length;
 
 const KEYWORDS: Record<string, string> = {
   trample: "trample",
@@ -96,6 +134,16 @@ function clause(t: string): Clause | null {
   if (m) {
     const k = n(m[1] as string) - n(m[2] as string);
     return { check: (b, a) => expect(handSize(a) - (handSize(b) - castShift)).toBe(k) };
+  }
+  // Sur la créature qui porte le déclencheur (« put a +1/+1 counter on this creature »).
+  m = /^Put (\w+) \+1\/\+1 counters? on (?:this creature|~)\.$/.exec(t);
+  if (m) {
+    const k = n(m[1] as string);
+    const self = (s: GameState) => idsOf(s, "p1", "battlefield", selfName)[0] ?? "";
+    return {
+      check: (b, a) =>
+        expect((a.objects[self(a)]?.counters["+1/+1"] ?? 0) - (b.objects[self(b)]?.counters["+1/+1"] ?? 0)).toBe(k),
+    };
   }
   m = /^Put (\w+) \+1\/\+1 counters? on target creature(?: you control)?\.$/.exec(t);
   if (m) {
@@ -174,6 +222,17 @@ function clause(t: string): Clause | null {
       target: "opponentCreature",
       check: (_b, a) => expect(a.players.p2?.hand.some((id) => a.defs[a.objects[id]?.defId ?? ""]?.name === BIG)).toBe(true),
     };
+  m = /^Return target creature card from your graveyard to (your hand|the battlefield)\.$/.exec(t);
+  if (m) {
+    const zone = m[1] === "your hand" ? "hand" : "battlefield";
+    return {
+      target: "myGraveyardCreature",
+      check: (b, a) => {
+        expect(count(b, "graveyard", DEAD) - count(a, "graveyard", DEAD)).toBe(1);
+        expect(count(a, zone, DEAD) - count(b, zone, DEAD)).toBe(1);
+      },
+    };
+  }
   if (/^Destroy all creatures\.$/.test(t))
     return { check: (_b, a) => expect(a.battlefield.filter((id) => chars(a, id).types.includes("Creature"))).toEqual([]) };
   // Phrases reconnues sans vérification propre (effet annexe, ou déjà couvert par la phrase précédente).
@@ -188,6 +247,8 @@ function clause(t: string): Clause | null {
 
 /** Attente pour un texte simple (phrases toutes reconnues, une seule sorte de cible), ou null. */
 export function expectationFor(text: string, name: string): Expectation | null {
+  // « Max speed — » : une condition sans « if » dans le texte (les autres mots d'aptitude sont suivis d'un « if » explicite).
+  if (/^Max speed — /m.test(text)) return null;
   const t = stripReminder(text.replaceAll(name, "~")).replace(/^This spell/, "~");
   if (t.includes("\n")) return null;
   const parts = t
@@ -215,11 +276,12 @@ export function enterExpectationFor(text: string, name: string): Expectation | n
 }
 
 /** Déclencheurs vérifiés : arrivée, mort, attaque de la créature elle-même. */
-export type TriggerKind = "enters" | "dies" | "attacks";
+export type TriggerKind = "enters" | "dies" | "attacks" | "endStep";
 const TRIGGER_RE: Record<TriggerKind, RegExp> = {
   enters: /^When (?:this creature|~) enters, (.*)$/,
   dies: /^When (?:this creature|~) dies, (.*)$/,
   attacks: /^Whenever (?:this creature|~) attacks, (.*)$/,
+  endStep: /^At the beginning of your end step, (?:if ([^,]+), )?(.*)$/,
 };
 
 /**
@@ -227,19 +289,48 @@ const TRIGGER_RE: Record<TriggerKind, RegExp> = {
  * « it deals » devient « ~ deals », la première lettre passe en majuscule.
  */
 export function triggerExpectationFor(text: string, name: string, kind: TriggerKind): Expectation | null {
+  if (/^Max speed — /m.test(text)) return null;
   const paras = paragraphs(text.replaceAll(name, "~"), false).filter((p) => p.kind !== "keywords");
   const only = paras.length === 1 ? paras[0] : undefined;
   const m = only?.kind === "triggered" ? TRIGGER_RE[kind].exec(only.text) : null;
   if (!m) return null;
-  const rest = (m[1] as string).replace(/^it deals/, "~ deals");
-  return expectationFor(rest.charAt(0).toUpperCase() + rest.slice(1), "~");
+  // Déclencheur d'étape de fin : condition intercalée facultative (groupe 1), effet (groupe 2).
+  const cond = kind === "endStep" ? m[1] : undefined;
+  if (cond !== undefined && !(cond in CONDITIONS)) return null;
+  const rest = ((kind === "endStep" ? m[2] : m[1]) as string).replace(/^(?:it|this creature) deals/, "~ deals");
+  const e = expectationFor(rest.charAt(0).toUpperCase() + rest.slice(1), "~");
+  return e && cond ? { ...e, condition: cond as Condition603 } : e;
+}
+
+/** Passe la priorité jusqu'à ce qu'un déclencheur attende (pile, ou question de cible), sans quitter le tour. */
+function passUntilTrigger(s0: GameState): GameState {
+  let s = s0;
+  for (let i = 0; i < 20 && s.stack.length === 0 && s.pending?.kind === "priority" && s.turn.step !== "end"; i++)
+    s = act(s, s.pending.player, { type: "pass" });
+  return s;
+}
+
+/** Identifiant de la cible voulue par l'attente. */
+function wantedFor(s: GameState, e: Expectation): string | undefined {
+  switch (e.target) {
+    case "opponent":
+      return "p2";
+    case "opponentCreature":
+      return big(s);
+    case "myCreature":
+      return mine(s);
+    case "myGraveyardCreature":
+      return deadCard(s);
+    default:
+      return undefined;
+  }
 }
 
 /** Lance la carte avec la cible voulue, laisse la pile se résoudre (choix : réponses suggérées). */
 function castAndResolve(c: string | CardDef, e: Expectation): { before: GameState; after: GameState } {
   const name = typeof c === "string" ? c : c.name;
   let s = scenario({
-    p1: { battlefield: [...LANDS, MINE], hand: [c], library: LANDS },
+    p1: { battlefield: [...LANDS, MINE], hand: [c], library: LANDS, graveyard: [DEAD] },
     p2: { battlefield: [BIG], hand: ["Forest", "Island", "Swamp"], library: LANDS },
   });
   const before = s;
@@ -248,8 +339,7 @@ function castAndResolve(c: string | CardDef, e: Expectation): { before: GameStat
   if (opt?.type !== "cast") throw new Error(`${name} : pas d'option de lancement`);
   const mode = opt.modes[0];
   const targets: Record<string, string[]> = {};
-  const wanted =
-    e.target === "opponent" ? "p2" : e.target === "opponentCreature" ? big(s) : e.target === "myCreature" ? mine(s) : undefined;
+  const wanted = wantedFor(s, e);
   for (const spec of mode?.targets ?? []) {
     if (!wanted || !spec.legal.includes(wanted)) throw new Error(`${name} : cible ${e.target} impossible`);
     targets[spec.id] = [wanted];
@@ -292,28 +382,46 @@ function settleWith(s0: GameState, name: string, e: Expectation, wanted: string 
  * Déclencheur d'une créature déjà en jeu : elle meurt (détruite) ou attaque, puis la pile se résout. Pas de carte
  * lancée : la main ne perd rien.
  */
-function triggerAndResolve(name: string, e: Expectation, kind: "dies" | "attacks"): { before: GameState; after: GameState } {
+function triggerAndResolve(
+  name: string,
+  e: Expectation,
+  kind: "dies" | "attacks" | "endStep",
+  conditionMet = true,
+): { before: GameState; after: GameState; fired: boolean } {
   let s = scenario({
-    step: kind === "attacks" ? "beginCombat" : "main1",
-    p1: { battlefield: [...LANDS, MINE, name], library: LANDS },
+    step: kind === "attacks" ? "beginCombat" : kind === "endStep" ? "main2" : "main1",
+    p1: { battlefield: [...LANDS, MINE, name, EXTRA, EXTRA], library: LANDS, graveyard: [DEAD] },
     p2: { battlefield: [BIG], hand: ["Forest", "Island", "Swamp"], library: LANDS },
   });
   const self = idsOf(s, "p1", "battlefield", name)[0] as string;
-  const wanted =
-    e.target === "opponent" ? "p2" : e.target === "opponentCreature" ? big(s) : e.target === "myCreature" ? mine(s) : undefined;
+  selfName = name;
+  const wanted = wantedFor(s, e);
   if (kind === "attacks") {
     s = passAccepting(s, (x) => x.pending?.kind === "declareAttackers");
     const before = s;
     s = act(s, "p1", { type: "declareAttackers", attackers: [{ id: self, defender: "p2" }] });
     castShift = 0;
-    return { before, after: settleWith(s, name, e, wanted) };
+    return { before, after: settleWith(s, name, e, wanted), fired: true };
+  }
+  if (kind === "endStep") {
+    if (e.condition && conditionMet) {
+      s = structuredClone(s);
+      CONDITIONS[e.condition](s);
+      s.version += 1;
+    }
+    // On passe jusqu'au déclencheur de l'étape de fin (sur la pile, ou sa question de cible).
+    const before = s;
+    s = passUntilTrigger(s);
+    const fired = s.turn.step === "end" && (s.stack.length > 0 || s.pending?.kind === "choice");
+    castShift = 0;
+    return { before, after: settleWith(s, name, e, wanted), fired };
   }
   const before = s;
   s = structuredClone(s);
   destroy(s, self);
   s = act(s, "p1", { type: "pass" });
   castShift = 0;
-  return { before, after: settleWith(s, name, e, wanted) };
+  return { before, after: settleWith(s, name, e, wanted), fired: true };
 }
 
 describe("attentes déduites de l'Oracle (sorts au texte simple)", () => {
@@ -350,21 +458,32 @@ describe("attentes déduites de l'Oracle (créatures « quand elle arrive »)", 
   });
 });
 
-describe.each(["dies", "attacks"] as const)("attentes déduites de l'Oracle (créatures : déclencheur « %s »)", (kind) => {
-  const cases = implementedCards()
-    .filter((c) => !c.isToken && !c.faceDefs?.length && c.types.includes("Creature") && !c.types.includes("Land"))
-    .map((c) => ({ c, e: triggerExpectationFor(c.text ?? "", c.name, kind) }))
-    .filter((x): x is { c: (typeof x)["c"]; e: Expectation } => !!x.e);
+describe.each(["dies", "attacks", "endStep"] as const)(
+  "attentes déduites de l'Oracle (créatures : déclencheur « %s »)",
+  (kind) => {
+    const cases = implementedCards()
+      .filter((c) => !c.isToken && !c.faceDefs?.length && c.types.includes("Creature") && !c.types.includes("Land"))
+      .map((c) => ({ c, e: triggerExpectationFor(c.text ?? "", c.name, kind) }))
+      .filter((x): x is { c: (typeof x)["c"]; e: Expectation } => !!x.e);
 
-  it("le filtre reconnaît au moins quelques cartes", () => {
-    expect(cases.length).toBeGreaterThanOrEqual(3);
-  });
+    it("le filtre reconnaît au moins quelques cartes", () => {
+      expect(cases.length).toBeGreaterThanOrEqual(3);
+    });
 
-  it.each(cases.map((x) => [x.c.name, x] as const))("%s fait ce que dit son texte", (_name, { c, e }) => {
-    const { before, after } = triggerAndResolve(c.name, e, kind);
-    e.check(before, after);
-  });
-});
+    it.each(cases.map((x) => [x.c.name, x] as const))("%s fait ce que dit son texte", (_name, { c, e }) => {
+      const { before, after } = triggerAndResolve(c.name, e, kind);
+      e.check(before, after);
+    });
+
+    // 603.4 : sans la condition intercalée, le déclencheur ne se déclenche pas.
+    const conditional = cases.filter(
+      (x) => x.e.condition && x.e.condition !== "you haven't cast a spell from your hand this turn",
+    );
+    it.each(conditional.map((x) => [x.c.name, x] as const))("%s : rien sans sa condition", (_name, { c, e }) => {
+      expect(triggerAndResolve(c.name, e, kind, false).fired).toBe(false);
+    });
+  },
+);
 
 describe("attentes déduites de l'Oracle : le test sait échouer", () => {
   it("un script qui inflige 2 blessures quand le texte en annonce 3 est détecté", () => {

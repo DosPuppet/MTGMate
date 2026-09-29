@@ -5,7 +5,7 @@ import { loseLife, sacrifice } from "./actions";
 import { RulesError } from "./errors";
 import { linkedColors } from "./layers";
 import { changeCounters, chars, defOf, isCreature, isSummoningSick, obj, snapshot, tapObject } from "./state";
-import { controlledAbilitiesWithSource, playerStatic } from "./statics";
+import { controlledAbilitiesWithSource, playerStatic, playerStaticTotal } from "./statics";
 import { matchesCard, matchesObjectFilter, matchesView, withChosen } from "./targets";
 import { checkCondition } from "./triggers";
 import type { GameState, LkiSnapshot, ManaAbilityDef, ManaCost, ManaType, ObjectId, PlayerId } from "./types";
@@ -146,8 +146,8 @@ function manaAmount(s: GameState, id: ObjectId, ab: ManaAbilityDef): number {
   if (!o) return ab.amount;
   const controller = o.controller;
   // Molten Tide : « chaque fois que vous engagez une Montagne pour du mana, ajoutez {R} de plus ».
-  const tide = s.players[controller]?.extraMountainMana;
-  const extra = tide?.turn === s.turn.number && ab.cost.tap && chars(s, id).subtypes.includes("Mountain") ? tide.n : 0;
+  const extra =
+    ab.cost.tap && chars(s, id).subtypes.includes("Mountain") ? playerStaticTotal(s, controller, "extraMountainMana") : 0;
   // The Eternity Elevator : autant de mana que de marqueurs de charge.
   if (ab.amountCounters) return (o.counters[ab.amountCounters] ?? 0) + extra;
   // The Core : « X mana, où X est le nombre de cartes de permanent de votre cimetière ».

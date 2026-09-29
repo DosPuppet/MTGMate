@@ -98,6 +98,7 @@ export function blankState(opts: {
     linkedExile: [],
     lki: {},
     turnLog: [],
+    playerEffects: [],
     winner: null,
     over: false,
   };

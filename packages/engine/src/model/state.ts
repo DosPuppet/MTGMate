@@ -12,6 +12,7 @@ import type {
   ManaCost,
   ManaType,
   PendingDecision,
+  PlayerStaticAbilityDef,
   TargetSpec,
 } from "../types";
 
@@ -158,20 +159,8 @@ export interface PlayerState {
   id: PlayerId;
   name: string;
   life: number;
-  /** Screaming Nemesis : ce joueur ne peut plus gagner de points de vie de la partie. */
-  cantGainLife?: boolean;
-  /** Molten Tide : ce tour-ci, chaque Montagne engagée pour du mana produit N {R} de plus. */
-  extraMountainMana?: { turn: number; n: number };
   /** Blessures non de combat subies au tour précédent (Command the Stage). */
   noncombatDamageLastTurn?: number;
-  /** Jace's Machinations : capacités de loyauté des Jace à vitesse d'éphémère pendant ce tour. */
-  jaceInstantTurn?: number;
-  /** Hall of Echoes : tour pendant lequel la règle des légendes ne s'applique pas à ses permanents. */
-  noLegendRuleTurn?: number;
-  /** Terrains supplémentaires ce tour-ci (Way of the Paradox). */
-  extraLandsTurn?: { turn: number; n: number };
-  /** Theorist's Proxy : le prochain sort lancé ce tour-ci ne peut pas être contrecarré. */
-  nextSpellUncounterableTurn?: number;
   library: ObjectId[];
   hand: ObjectId[];
   graveyard: ObjectId[];
@@ -187,18 +176,26 @@ export interface PlayerState {
   turnStats: TurnStats;
   /** Marqueurs poison (104.3d : 10 ou plus, le joueur perd). */
   poison?: number;
-  /** Pit Automaton : la prochaine capacité d'exhaust activée pendant ce tour est copiée. */
-  copyNextExhaustTurn?: number;
   /** Nombre de tours commencés par ce joueur (Jace Reawakened). */
   turnsTaken?: number;
-  /** Taii Wakeen : ce tour-ci, les blessures non de combat de vos sources sont augmentées de N. */
-  noncombatBonusTurn?: { turn: number; n: number };
   /** Vitesse (702.179) : absente tant qu'aucun « Start your engines! » ne l'a démarrée ; 4 = vitesse maximale. */
   speed?: number;
   /** Mana qui ne se vide pas avant la fin du tour (Savage Ventmaw). */
   manaKeep?: Partial<Record<ManaType, number>>;
-  /** Lightning, Army of One : blessures reçues doublées tant que le tour `until` n'a pas commencé. */
-  damageDoubled?: { by: PlayerId; until: number }[];
+}
+
+/**
+ * Effet sur un joueur, créé par une résolution (« ce tour-ci, vous pouvez jouer un terrain de plus », « vous ne pouvez
+ * plus gagner de points de vie ») : une statique de joueur ordinaire, lue par `playerStatic` (statics.ts) comme si le
+ * joueur la contrôlait. `until` : dernier tour où elle s'applique (null : toute la partie) ; `once` : retirée à son
+ * premier usage (`consumePlayerEffect`).
+ */
+export interface PlayerEffect {
+  id: string;
+  player: PlayerId;
+  ability: PlayerStaticAbilityDef;
+  until: number | null;
+  once?: boolean;
 }
 
 export interface StackItem {
@@ -644,6 +641,8 @@ export interface GameState {
   lki: Record<ObjectId, LkiSnapshot>;
   /** Journal des événements du tour en cours (`turnlog.ts`), vidé au début de chaque tour. */
   turnLog: TurnLogEntry[];
+  /** Effets sur les joueurs créés par des résolutions (`PlayerEffect`). */
+  playerEffects: PlayerEffect[];
   winner: PlayerId | null;
   over: boolean;
 }

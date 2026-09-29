@@ -31,7 +31,7 @@ import {
   turnFaceUp,
   unlockDoor,
 } from "./state";
-import { controlledAbilitiesWithSource, playerStatic } from "./statics";
+import { consumePlayerEffect, controlledAbilitiesWithSource, playerStatic, playerStaticTotal } from "./statics";
 import {
   isLegalTarget,
   legalTargets,
@@ -128,11 +128,7 @@ function controlledAbilities(s: GameState, player: PlayerId): CardDef["abilities
 
 /** Nombre de terrains que le joueur peut jouer ce tour-ci (305.2 : 1, plus les effets comme Loot). */
 export function landsAllowed(s: GameState, player: PlayerId): number {
-  const turnExtra = s.players[player]?.extraLandsTurn;
-  const extra = turnExtra?.turn === s.turn.number ? turnExtra.n : 0;
-  return (
-    1 + extra + controlledAbilities(s, player).reduce((n, ab) => n + (ab.kind === "playerStatic" ? (ab.extraLands ?? 0) : 0), 0)
-  );
+  return 1 + playerStaticTotal(s, player, "extraLands");
 }
 
 /** Permission de jouer une carte exilée (impulsion, Etali…) encore valable. */
@@ -994,9 +990,7 @@ export function castSpell(s: GameState, player: PlayerId, card: ObjectId, choice
     spellObj.defId = FACE_DOWN_ID;
   }
   // Theorist's Proxy : « le prochain sort que vous lancez ce tour-ci ne peut pas être contrecarré ».
-  const caster0 = s.players[player];
-  const uncounterable = caster0?.nextSpellUncounterableTurn === s.turn.number;
-  if (caster0 && uncounterable) delete caster0.nextSpellUncounterableTurn;
+  const uncounterable = consumePlayerEffect(s, player, "nextSpellUncounterable");
   const item: StackItem = {
     id: stackId,
     kind: "spell",
@@ -1297,9 +1291,7 @@ function chosenNameTax(s: GameState, source: ObjectId): number {
 /** Jace's Machinations : capacité de loyauté d'un Jace activable à vitesse d'éphémère ce tour-ci. */
 export function instantLoyalty(s: GameState, player: PlayerId, source: ObjectId, ab: ActivatedAbilityDef): boolean {
   return (
-    ab.cost.loyalty !== undefined &&
-    s.players[player]?.jaceInstantTurn === s.turn.number &&
-    chars(s, source).subtypes.includes("Jace")
+    ab.cost.loyalty !== undefined && playerStatic(s, player, "jaceLoyaltyInstant") && chars(s, source).subtypes.includes("Jace")
   );
 }
 
@@ -1627,8 +1619,7 @@ export function activateAbility(s: GameState, player: PlayerId, source: ObjectId
     if (stats) stats.exhaustActivated = (stats.exhaustActivated ?? 0) + 1;
     rulesEvent(s, { e: "exhaust", player, source });
     // Pit Automaton : la prochaine capacité d'exhaust de ce tour est copiée (mêmes cibles).
-    if (pl?.copyNextExhaustTurn === s.turn.number) {
-      pl.copyNextExhaustTurn = undefined;
+    if (consumePlayerEffect(s, player, "copyNextExhaust")) {
       s.stack.push({ ...item, id: newId(s, "copy"), copy: true, targets: { ...item.targets } });
     }
   }

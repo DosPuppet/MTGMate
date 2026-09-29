@@ -1,4 +1,5 @@
 /** Effets du moteur : pile et permissions de lancer (contresorts, copies, lancer depuis une autre zone). Chaque clé est un `op` d'`Effect` (voir `runEffect`, effects.ts). */
+
 import { loseLife, sacrifice } from "../actions";
 import type { OpHandlers, OpResult } from "../effects";
 import {
@@ -28,6 +29,7 @@ import {
   setPrepared,
   shuffle,
 } from "../state";
+import { addPlayerEffect } from "../statics";
 import { legalTargets, matchesObjectFilter } from "../targets";
 import type { ChoiceValue, GameState, ObjectId, PlayerId, Resolution } from "../types";
 
@@ -295,8 +297,7 @@ export const HANDLERS: OpHandlers = {
     return;
   },
   nextSpellUncounterable(s, _r, _e, ctx) {
-    const p = s.players[ctx.controller];
-    if (p) p.nextSpellUncounterableTurn = s.turn.number;
+    addPlayerEffect(s, ctx.controller, { nextSpellUncounterable: true }, s.turn.number, true);
     return;
   },
   prepare(s, _r, e, ctx) {
@@ -343,8 +344,7 @@ export const HANDLERS: OpHandlers = {
     return;
   },
   copyNextExhaust(s, _r, _e, ctx) {
-    const pl = s.players[ctx.controller];
-    if (pl) pl.copyNextExhaustTurn = s.turn.number;
+    addPlayerEffect(s, ctx.controller, { copyNextExhaust: true }, s.turn.number, true);
     return;
   },
   copySpell(s, _r, e, ctx) {

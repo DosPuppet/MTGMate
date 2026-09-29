@@ -1,4 +1,5 @@
 /** Effets du moteur : modifications de permanents, contrôle, copies et jetons. Chaque clé est un `op` d'`Effect` (voir `runEffect`, effects.ts). */
+
 import { createTokenCopy, createTokens, removeFromCombat } from "../actions";
 import type { OpHandlers } from "../effects";
 import { addEffect, addPump, attach, evalAmount, exiledUid, nameOf, resolveRef } from "../effects";
@@ -17,7 +18,7 @@ import {
   setController,
   tapObject,
 } from "../state";
-import { tokenMultiplier } from "../statics";
+import { addPlayerEffect, tokenMultiplier } from "../statics";
 import { matchesObjectFilter } from "../targets";
 import { createDelayed } from "../triggers";
 
@@ -456,8 +457,7 @@ export const HANDLERS: OpHandlers = {
     return;
   },
   noLegendRuleThisTurn(s, _r, _e, ctx) {
-    const pl = s.players[ctx.controller];
-    if (pl) pl.noLegendRuleTurn = s.turn.number;
+    addPlayerEffect(s, ctx.controller, { noLegendRule: true }, s.turn.number);
     return;
   },
 };

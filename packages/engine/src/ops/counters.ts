@@ -1,9 +1,10 @@
 /** Effets du moteur : marqueurs, niveaux, stations, portes. Chaque clé est un `op` d'`Effect` (voir `runEffect`, effects.ts). */
+
 import { createTokens } from "../actions";
 import type { OpHandlers } from "../effects";
 import { evalAmount, resolveRef, store } from "../effects";
 import { bump, changeCounters, chars, counterCount, isRoom, onBattlefield, P1P1, rulesEvent, unlockDoor } from "../state";
-import { playerStatic } from "../statics";
+import { addPlayerEffect, playerStatic } from "../statics";
 import { matchesObjectFilter } from "../targets";
 
 export const HANDLERS: OpHandlers = {
@@ -124,8 +125,7 @@ export const HANDLERS: OpHandlers = {
     return;
   },
   instantJaceLoyalty(s, _r, _e, ctx) {
-    const p = s.players[ctx.controller];
-    if (p) p.jaceInstantTurn = s.turn.number;
+    addPlayerEffect(s, ctx.controller, { jaceLoyaltyInstant: true }, s.turn.number);
     return;
   },
   addCounters(s, _r, e, ctx) {

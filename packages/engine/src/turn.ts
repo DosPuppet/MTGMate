@@ -465,6 +465,8 @@ export function startTurnOf(s: GameState, p: PlayerId): void {
     pl.turnStats = emptyTurnStats();
   }
   s.turnLog = [];
+  // Effets sur les joueurs « ce tour-ci » (ou jusqu'à un tour passé) : expirés.
+  s.playerEffects = s.playerEffects.filter((e) => e.until === null || e.until >= s.turn.number);
   s.turn.onceFired = [];
   // « Jusqu'à votre prochain tour » : effets et emblèmes temporaires de ce joueur.
   const before = s.effects.length;
@@ -1122,7 +1124,7 @@ function stateBasedActionsOnce(s: GameState): void {
       // Caractéristiques calculées : une copie (Hall of Echoes) porte le nom et le supertype copiés.
       const c = chars(s, id);
       if (!c.supertypes.includes("Legendary")) continue;
-      if (s.players[o.controller]?.noLegendRuleTurn === s.turn.number) continue;
+      if (playerStatic(s, o.controller, "noLegendRule")) continue;
       const key = `${o.controller}|${c.name}`;
       legends.set(key, [...(legends.get(key) ?? []), id]);
     }

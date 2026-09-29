@@ -2,6 +2,7 @@ import type { OpHandlers } from "../effects";
 import { evalAmount } from "../effects";
 import { linkedColors } from "../layers";
 import { chars } from "../state";
+import { addPlayerEffect } from "../statics";
 import { matchesObjectFilter } from "../targets";
 import type { ManaType } from "../types";
 
@@ -13,12 +14,7 @@ export const HANDLERS: OpHandlers = {
     return;
   },
   extraMountainMana(s, _r, _e, ctx) {
-    const pl = s.players[ctx.controller];
-    if (pl)
-      pl.extraMountainMana = {
-        turn: s.turn.number,
-        n: (pl.extraMountainMana?.turn === s.turn.number ? pl.extraMountainMana.n : 0) + 1,
-      };
+    addPlayerEffect(s, ctx.controller, { extraMountainMana: 1 }, s.turn.number);
     return;
   },
   addManaChoice(s, r, e, ctx, key) {

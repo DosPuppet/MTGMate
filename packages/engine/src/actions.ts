@@ -19,7 +19,14 @@ import {
   opponentsOf,
   rulesEvent,
 } from "./state";
-import { controlledAbilitiesWithSource, doublers, playerStatic, preventions, tokenMultiplier } from "./statics";
+import {
+  controlledAbilitiesWithSource,
+  doublers,
+  playerStatic,
+  playerStaticTotal,
+  preventions,
+  tokenMultiplier,
+} from "./statics";
 import { matchesObjectFilter } from "./targets";
 import { checkCondition } from "./triggers";
 import { logTurnEvent } from "./turnlog";
@@ -53,7 +60,7 @@ export function gainLife(s: GameState, p: PlayerId, amount: number): void {
   const player = s.players[p];
   if (!player || amount <= 0) return;
   // Giant Cindermaw : « les joueurs ne peuvent pas gagner de points de vie » ; Screaming Nemesis : ce joueur, pour la partie.
-  if (player.cantGainLife || s.playerOrder.some((q) => playerStatic(s, q, "noLifeGainForAll"))) return;
+  if (playerStatic(s, p, "cantGainLife") || s.playerOrder.some((q) => playerStatic(s, q, "noLifeGainForAll"))) return;
   // Grievous Wound : « le joueur enchanté ne peut pas gagner de points de vie ».
   if (
     s.battlefield.some(
@@ -276,8 +283,7 @@ export function dealDamage(s: GameState, source: DamageSource, target: string, a
   const victim = isPlayer(s, target) ? target : targetObj?.controller;
   // Tomik, Izzet Sparkmage : blessures non de combat à un adversaire ou à ses permanents, +1.
   // Taii Wakeen : ce tour-ci, les blessures non de combat de vos sources sont augmentées de X.
-  const taii = s.players[source.controller]?.noncombatBonusTurn;
-  if (!combat && taii?.turn === s.turn.number) amount += taii.n;
+  if (!combat) amount += playerStaticTotal(s, source.controller, "noncombatDamageBonusAll");
   if (!combat && victim && victim !== source.controller && playerStatic(s, source.controller, "noncombatDamageBonus"))
     amount += 1;
   // Artist's Talent (niveau 3) : « … elle en inflige autant plus 2 à la place ».
@@ -334,7 +340,7 @@ export function dealDamage(s: GameState, source: DamageSource, target: string, a
   }
   // Lightning, Army of One : blessures à ce joueur ou à ses permanents doublées jusqu'au prochain tour de Lightning.
   let excess = 0;
-  const marked = victim ? (s.players[victim]?.damageDoubled?.filter((d) => s.turn.number < d.until).length ?? 0) : 0;
+  const marked = victim ? playerStaticTotal(s, victim, "damageTakenDoubled") : 0;
   amount *= 2 ** marked;
   if (isPlayer(s, target)) {
     // Suivi des joueurs blessés au combat par cette source ce tour-ci (Steel Hellkite).

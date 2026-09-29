@@ -2,6 +2,7 @@
  * Reality Fracture, lot F : cartes uniques (F/E variables, taxes, remplacements, durées « jusqu'à votre
  * prochain tour », hybride monocolore, loyauté −X, combat selon l'endurance…).
  */
+
 import { card } from "@mtgx/cards";
 import { describe, expect, it } from "vitest";
 import { createTokens, dealDamage, destroy, sourceFromObject } from "../src/actions";
@@ -9,6 +10,7 @@ import { legalActions } from "../src/legal";
 import { canPay, manaValue, parseManaCost } from "../src/mana";
 import { spellCost } from "../src/stack";
 import { chars, moveObject } from "../src/state";
+import { addPlayerEffect } from "../src/statics";
 import { combatPower, declareAttackers } from "../src/turn";
 import type { GameState } from "../src/types";
 import { objectView } from "../src/view";
@@ -208,7 +210,7 @@ describe("Reality Fracture, lot F", () => {
 
   it("Molten Tide : chaque Montagne produit un {R} de plus ce tour-ci", () => {
     let s = scenario({ p1: { battlefield: ["Mountain"] } });
-    s.players.p1!.extraMountainMana = { turn: s.turn.number, n: 1 };
+    addPlayerEffect(s, "p1", { extraMountainMana: 1 }, s.turn.number);
     s = act(s, "p1", { type: "tapForMana", source: idOf(s, "p1", "battlefield", "Mountain"), ability: 0 });
     expect(s.players.p1?.manaPool.R).toBe(2);
   });
