@@ -139,3 +139,10 @@ Lot 0.18 (suite des étapes 7 et 8 de l'audit) :
 - correction en passant : un jeton mis au cimetière ne compte plus pour la Descente (ce n'est pas une carte) ;
 - attentes de l'Oracle : nouvelles phrases (perte de PV adverse et drain, défausse adverse, meule, pillage, marqueurs +1/+1, vol de contrôle jusqu'à la fin du tour, -N/-N sur une créature adverse, jetons nommés, surveillance, « It gains haste », « exilez-la à la place »), et les phrases suivantes sont lues avec une majuscule : 104 cartes vérifiées ;
 - bench et nombres de décisions inchangés.
+
+Lot 0.19 (suite des étapes 7 et 8 de l'audit) :
+- journal du tour, tranche « champs de tour » : `s.turn.attacked`, `creatureDied`, `creaturesDied`, `diedSubtypes`, `nonlandLeft`, `spellWarped`, `attackerSubtypes` et `attackedBy` sont retirés. Le journal a une entrée `attack` (joueur, joueur défenseur, types et sous-types de l'attaquant), les sorts lancés savent s'ils l'ont été avec la distorsion, et la requête accepte `notSubtype`, `againstYou` et `warped`. Morbide, Vide, raid (« si vous avez attaqué avec un Vaisseau »), Sandswirl Wanderglyph et Undead Sprinter lisent le journal. Chaque entrée fait avancer la version d'état (cache des couches : des statiques en dépendent) ;
+- permissions du tour : `mayCastFromGraveyard` (Zul Ashur), `flashbackGranted` et `freeFlashbackGranted` (Sphinx of Forgotten Lore, Archmage's Newt) deviennent des `playPermissions` ordinaires ; le flashback accordé est une permission marquée `flashback` (exilée après la résolution) ;
+- ce qui reste dans `s.turn` : l'état propre au déroulement du tour (terrains joués, combats et étapes de fin supplémentaires, « une fois par tour ») et quelques interdictions ou permissions de joueur (Sandswirl `attackBans`, Tomb of Aclazotz, Muldrotha, Summon: Alexander) ;
+- attentes de l'Oracle : déclencheurs de mort (la créature est détruite) et d'attaque (elle attaque), en plus de l'arrivée : 121 cartes vérifiées ;
+- tests : `fdn-lotf.test.ts` (flashback {0} accordé), tests de raid et de Vide adaptés au journal.

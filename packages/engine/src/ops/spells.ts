@@ -289,8 +289,9 @@ export const HANDLERS: OpHandlers = {
     return;
   },
   allowCastFromGraveyard(s, _r, e, ctx) {
+    // Zul Ashur : ces cartes de votre cimetière sont lançables ce tour-ci (permission ordinaire).
     const ids = resolveRef(s, ctx, e.what).filter((id) => s.objects[id]?.zone === "graveyard");
-    s.turn.mayCastFromGraveyard = [...(s.turn.mayCastFromGraveyard ?? []), ...ids];
+    grantPlay(s, ctx.controller, ids, "thisTurn", { source: ctx.sourceId });
     return;
   },
   nextSpellUncounterable(s, _r, _e, ctx) {
@@ -332,9 +333,9 @@ export const HANDLERS: OpHandlers = {
     return;
   },
   grantFlashback(s, _r, e, ctx) {
+    // Flashback accordé jusqu'à la fin du tour (et {0} pour Archmage's Newt) : une permission marquée `flashback`.
     const ids = resolveRef(s, ctx, e.what).filter((id) => s.objects[id]?.zone === "graveyard");
-    s.turn.flashbackGranted = [...(s.turn.flashbackGranted ?? []), ...ids];
-    if (e.free) s.turn.freeFlashbackGranted = [...(s.turn.freeFlashbackGranted ?? []), ...ids];
+    grantPlay(s, ctx.controller, ids, "thisTurn", { source: ctx.sourceId, flashback: true, free: e.free || undefined });
     return;
   },
   plot(s, _r, e, ctx) {

@@ -101,7 +101,12 @@ describe("remplacements et prévention (614–615)", () => {
 
   it("arrive avec des marqueurs (raid) et « double ses marqueurs » (landfall)", () => {
     let s = scenario({ step: "main2", p1: { battlefield: Array(3).fill("Mountain"), hand: ["Goblin Boarders"] } });
-    s = { ...s, turn: { ...s.turn, attacked: true } };
+    // Raid : une attaque ce tour-ci (journal du tour).
+    s = {
+      ...s,
+      turnLog: [...s.turnLog, { e: "attack", player: "p1", defender: "p2", types: ["Creature"], subtypes: [] }],
+      version: s.version + 1,
+    };
     s = act(s, "p1", { type: "cast", card: idOf(s, "p1", "hand", "Goblin Boarders") });
     s = passBoth(s);
     expect(chars(s, idOf(s, "p1", "battlefield", "Goblin Boarders")).power).toBe(4);

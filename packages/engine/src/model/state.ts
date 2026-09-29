@@ -345,7 +345,11 @@ export type TurnLogEntry =
       supertypes: string[];
       fromZone: Zone;
       token?: boolean;
+      /** Lancé pour son coût de distorsion (Vide, Edge of Eternities). */
+      warped?: boolean;
     }
+  /** Attaque d'une créature : `player` attaque `defender` (le joueur attaqué, ou le contrôleur du planeswalker). */
+  | { e: "attack"; player: PlayerId; defender: PlayerId; types: CardType[]; subtypes: string[] }
   | { e: "sacrifice"; player: PlayerId; types: CardType[]; subtypes: string[]; supertypes?: string[]; token?: boolean }
   | {
       e: "damage";
@@ -379,8 +383,13 @@ export interface TurnLogQuery {
   /** Aucun de ces types (« sort non-créature »). */
   notTypes?: CardType[];
   subtype?: string;
+  notSubtype?: string;
   supertype?: string;
   token?: boolean;
+  /** Attaque : contre le joueur qui interroge (« chaque adversaire qui vous a attaqué ce tour-ci »). */
+  againstYou?: boolean;
+  /** Sort lancé pour son coût de distorsion. */
+  warped?: boolean;
   from?: Zone;
   to?: Zone;
   fromZone?: Zone;
@@ -546,35 +555,15 @@ export interface GameState {
     crafting?: boolean;
     /** Sandswirl Wanderglyph : `player` ne peut pas attaquer `defender` (ni ses planeswalkers) ce tour-ci. */
     attackBans?: { player: PlayerId; defender: PlayerId }[];
-    /** Joueurs attaqués ce tour-ci, par attaquant (Sandswirl Wanderglyph). */
-    attackedBy?: { attacker: PlayerId; defender: PlayerId }[];
     /** The Tomb of Aclazotz : joueurs qui peuvent lancer un sort de créature depuis leur cimetière ce tour-ci. */
     graveyardCreatureOnce?: PlayerId[];
     landsPlayed: number;
-    attacked: boolean;
-    /** Une créature est morte ce tour-ci (morbide). */
-    creatureDied: boolean;
-    /** Nombre de créatures mortes ce tour-ci. */
-    creaturesDied?: number;
-    /** Sous-types des créatures mortes ce tour-ci (Undead Sprinter : « une créature non-Zombie »). */
-    diedSubtypes?: string[][];
-    /** Vide (Edge of Eternities) : un permanent non-terrain a quitté le champ de bataille ce tour-ci ; un sort a été lancé avec la distorsion. */
-    nonlandLeft?: boolean;
-    spellWarped?: boolean;
     /** La vitesse du joueur actif a déjà augmenté ce tour-ci. */
     speedRaised?: boolean;
-    /** Sous-types des créatures qui ont attaqué ce tour-ci (Thaumaton Torpedo : « si vous avez attaqué avec un Vaisseau »). */
-    attackerSubtypes?: string[];
     /** Capacités « une fois par tour » déjà déclenchées (source:index). */
     onceFired: string[];
-    /** Cartes de cimetière qu'on peut lancer ce tour-ci (Zul Ashur). */
-    mayCastFromGraveyard?: ObjectId[];
     /** Muldrotha : types de permanents déjà joués depuis le cimetière ce tour-ci. */
     graveyardTypesUsed?: string[];
-    /** Cartes du cimetière qui ont le flashback ce tour-ci (Sphinx of Forgotten Lore). */
-    flashbackGranted?: ObjectId[];
-    /** Flashback {0} accordé ce tour-ci. */
-    freeFlashbackGranted?: ObjectId[];
     /** Combats supplémentaires à venir ce tour-ci (Aurelia). */
     extraCombats?: number;
     /** Phases de combat commencées ce tour-ci (Genji Glove : « si c'est la première phase de combat du tour »). */
@@ -625,6 +614,8 @@ export interface GameState {
     orHand?: boolean;
     /** Permission d'un « lancez-la » pendant une résolution (608.2g) : retirée dès la réponse du joueur. */
     now?: boolean;
+    /** Flashback accordé (702.34) : lancé depuis le cimetière, exilé ensuite (Sphinx of Forgotten Lore, Archmage's Newt). */
+    flashback?: boolean;
   }[];
   /** Contrôle donné par une Aura (Confiscate) : contrôleur d'origine à rétablir quand l'Aura part. */
   /** `by` : contrôle tant que ce joueur contrôle la source (Possession Engine), et non tant que l'Aura est attachée. */

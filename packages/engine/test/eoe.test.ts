@@ -240,8 +240,8 @@ describe("Edge of Eternities, lot C", () => {
     });
     const torpedo = idOf(s, "p1", "battlefield", "Thaumaton Torpedo");
     expect(legalActions(s, "p1").some((a) => a.type === "activate" && a.source === torpedo)).toBe(false);
-    s.turn.attacked = true;
-    s.turn.attackerSubtypes = ["Spacecraft"];
+    // Une attaque avec un Vaisseau ce tour-ci (journal du tour).
+    s.turnLog.push({ e: "attack", player: "p1", defender: "p2", types: ["Artifact"], subtypes: ["Spacecraft"] });
     s.version += 1;
     expect(legalActions(s, "p1").some((a) => a.type === "activate" && a.source === torpedo)).toBe(true);
   });

@@ -56,8 +56,6 @@ export function scenario(opts: ScenarioOptions): GameState {
       active: opts.active ?? "p1",
       step: opts.step ?? "main1",
       landsPlayed: 0,
-      attacked: false,
-      creatureDied: false,
       onceFired: [],
       startingPlayer: "p1",
     };

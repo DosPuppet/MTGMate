@@ -570,7 +570,7 @@ export function castTerms(s: GameState, player: PlayerId, card: ObjectId): CastT
       (q) =>
         q !== player &&
         playerStatic(s, q, "attackersCantCast") &&
-        !!s.turn.attackedBy?.some((x) => x.attacker === player && x.defender === q),
+        countTurnEvents(s, { event: "attack", againstYou: true }, q, player) > 0,
     )
   )
     return null;
@@ -625,17 +625,15 @@ function baseCastTerms(s: GameState, player: PlayerId, card: ObjectId): CastTerm
   if (o.zone === "graveyard") {
     // Tinybones, the Pickpocket : une carte d'un autre cimetière, lançable avec du mana de n'importe quel type.
     const gyPerm = exilePermission(s, player, card);
+    if (gyPerm?.flashback) return { source: "flashback", free: gyPerm.free };
     if (gyPerm) return { source: "graveyard", anyMana: gyPerm.anyMana, free: gyPerm.free, exileAfter: gyPerm.exileAfter };
     if (o.owner !== player) return null;
-    if (s.turn.mayCastFromGraveyard?.includes(card)) return { source: "graveyard" };
     // The Tomb of Aclazotz : un sort de créature, qui arrive avec un marqueur de finalité et devient un Vampire.
     if (s.turn.graveyardCreatureOnce?.includes(player) && d.types.includes("Creature"))
       return { source: "graveyard", finality: true, tomb: true };
     // Timeline Culler : « vous pouvez lancer cette carte depuis votre cimetière avec sa distorsion ».
     if (d.warp?.fromGraveyard) return { source: "graveyard", warpOnly: true };
-    // Archmage's Newt : flashback {0}.
-    if (s.turn.freeFlashbackGranted?.includes(card)) return { source: "flashback", free: true };
-    if (d.flashback || s.turn.flashbackGranted?.includes(card)) return { source: "flashback" };
+    if (d.flashback) return { source: "flashback" };
     const t = graveyardTypeAvailable(s, player, card);
     if (t && t !== "Land") return { source: "graveyard", graveyardType: t };
     // Hades, Sorcerer of Eld : « pendant votre tour, vous pouvez jouer des cartes depuis votre cimetière ».
@@ -1103,9 +1101,9 @@ export function castSpell(s: GameState, player: PlayerId, card: ObjectId, choice
       subtypes: d.subtypes,
       supertypes: d.supertypes,
       fromZone: terms.source === "flashback" ? "graveyard" : terms.source,
+      warped: warp ? true : undefined,
     });
     bump(s); // des capacités statiques en dépendent (« si vous avez lancé deux sorts ce tour-ci »)
-    if (warp) s.turn.spellWarped = true;
   }
   rulesEvent(s, { e: "cast", player, stackId, instantSorceryBefore: instantOrSorcery ? before : undefined });
   // Dépense N (Bloomburrow) : le N-ième mana total dépensé pour lancer des sorts ce tour-ci.

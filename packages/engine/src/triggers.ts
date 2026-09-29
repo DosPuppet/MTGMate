@@ -49,6 +49,7 @@ import type {
   TriggerEventData,
   TriggeredAbilityDef,
   TriggerSpec,
+  TurnLogQuery,
 } from "./types";
 
 interface Source {
@@ -148,15 +149,15 @@ export function mostLife(s: GameState, p: PlayerId): boolean {
   return s.playerOrder.every((x) => s.players[x]?.lost || life(p) >= life(x));
 }
 
+/** Créatures mortes ce tour-ci (champ de bataille → cimetière), sous n'importe quel contrôleur. */
+const DIED_QUERY: TurnLogQuery = { event: "zone", from: "battlefield", to: "graveyard", types: ["Creature"] };
+
 export function checkCondition(s: GameState, c: Condition, controller: PlayerId, sourceId?: ObjectId): boolean {
   switch (c.kind) {
     case "step":
       return s.turn.step === c.step;
     case "creatureDiedMatching":
-      return (s.turn.diedSubtypes ?? []).some(
-        (st) =>
-          (!c.filter.subtype || st.includes(c.filter.subtype)) && (!c.filter.notSubtype || !st.includes(c.filter.notSubtype)),
-      );
+      return countTurnEvents(s, { ...DIED_QUERY, subtype: c.filter.subtype, notSubtype: c.filter.notSubtype }, controller) > 0;
     case "castFromGraveyard":
       return !!(sourceId && s.objects[sourceId]?.castFromGraveyard);
     case "faceDownOrUpThisTurn":
@@ -186,9 +187,11 @@ export function checkCondition(s: GameState, c: Condition, controller: PlayerId,
         (p) => !s.players[p]?.lost && !s.battlefield.some((id) => s.objects[id]?.controller === p && isCreature(s, id)),
       );
     case "attackedThisTurn":
-      return s.turn.attacked && s.turn.active === controller && (!c.subtype || !!s.turn.attackerSubtypes?.includes(c.subtype));
+      return (
+        s.turn.active === controller && countTurnEvents(s, { event: "attack", who: "you", subtype: c.subtype }, controller) > 0
+      );
     case "creatureDiedThisTurn":
-      return s.turn.creatureDied;
+      return countTurnEvents(s, DIED_QUERY, controller) > 0;
     case "firstEndStep":
       return (s.turn.endSteps ?? 0) <= 1;
     case "firstCombat":
@@ -207,7 +210,7 @@ export function checkCondition(s: GameState, c: Condition, controller: PlayerId,
             controller,
           ) >= c.n
         );
-      return (s.turn.creaturesDied ?? 0) >= c.n;
+      return countTurnEvents(s, DIED_QUERY, controller) >= c.n;
     case "scriedThisTurn":
       return (s.players[controller]?.turnStats.scried ?? 0) > 0;
     case "opponentDealtNoncombatDamage":
@@ -237,7 +240,11 @@ export function checkCondition(s: GameState, c: Condition, controller: PlayerId,
     case "saddled":
       return s.objects[sourceId ?? ""]?.saddledTurn === s.turn.number;
     case "void":
-      return !!s.turn.nonlandLeft || !!s.turn.spellWarped;
+      // Vide : un permanent non-terrain a quitté le champ de bataille, ou un sort a été lancé avec la distorsion.
+      return (
+        countTurnEvents(s, { event: "zone", from: "battlefield", notTypes: ["Land"] }, controller) > 0 ||
+        countTurnEvents(s, { event: "cast", warped: true }, controller) > 0
+      );
     case "solved":
       return !!s.objects[sourceId ?? ""]?.solved;
     case "doorLocked":

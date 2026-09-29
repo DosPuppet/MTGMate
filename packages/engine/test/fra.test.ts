@@ -3,11 +3,13 @@
  * marqueur de finalité, créatures mortes ce tour, blessures non de combat, cartes piochées, filtres
  * légendaire / endurance, montants négatifs).
  */
+
 import { describe, expect, it } from "vitest";
 import { dealDamage, destroy, sourceFromObject } from "../src/actions";
 import { legalActions } from "../src/legal";
 import { spellCost } from "../src/stack";
 import { chars, setPrepared } from "../src/state";
+import { countTurnEvents } from "../src/turnlog";
 import type { GameState } from "../src/types";
 import { act, idOf, passAccepting, passBoth, scenario } from "./helpers";
 
@@ -62,7 +64,7 @@ describe("Reality Fracture, lot A", () => {
       p1: { graveyard: ["Darklight Phoenix"], battlefield: ["Savannah Lions", "Llanowar Elves"] },
     });
     for (const n of ["Savannah Lions", "Llanowar Elves"]) destroy(s, idOf(s, "p1", "battlefield", n));
-    expect(s.turn.creaturesDied).toBe(2);
+    expect(countTurnEvents(s, { event: "zone", from: "battlefield", to: "graveyard", types: ["Creature"] }, "p1")).toBe(2);
     s = passBoth(s); // passage au début du combat : le déclencheur depuis le cimetière
     s = passBoth(s);
     expect(s.battlefield.some((id) => s.defs[s.objects[id]?.defId ?? ""]?.name === "Darklight Phoenix")).toBe(true);

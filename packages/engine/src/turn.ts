@@ -1,6 +1,7 @@
 /**
  * Structure du tour (500–514), priorité (117), combat (506–511) et actions basées sur l'état (704).
  */
+
 import { type DamageSource, dealDamage, destroy, drawCard, putIntoGraveyard, setSpeed, sourceFromObject } from "./actions";
 import { ask } from "./choices";
 import { announceDiscard, announceDiscardBatch, drawBonus, evalAmount } from "./effects";
@@ -39,6 +40,7 @@ import {
 import { controlledAbilitiesWithSource, playerStatic } from "./statics";
 import { matchesObjectFilter } from "./targets";
 import { checkCondition, processTriggers, releaseDelayedTriggers, simultaneously } from "./triggers";
+import { logTurnEvent } from "./turnlog";
 import type { GameState, ManaType, ObjectId, PlayerId, StackItem, Step } from "./types";
 import { STEPS } from "./types";
 
@@ -395,16 +397,8 @@ function endStep(s: GameState): void {
     s.turn.step = "untap";
     startTurnOf(s, s.turn.active);
     s.turn.landsPlayed = 0;
-    s.turn.attacked = false;
-    s.turn.creatureDied = false;
-    s.turn.creaturesDied = 0;
-    s.turn.diedSubtypes = [];
-    s.turn.nonlandLeft = false;
-    s.turn.spellWarped = false;
     s.turn.speedRaised = false;
-    s.turn.attackerSubtypes = [];
     s.turn.attackBans = undefined;
-    s.turn.attackedBy = undefined;
     s.turn.graveyardCreatureOnce = undefined;
     emit({ type: "turnStart", turn: s.turn.number, player: s.turn.active });
   }
@@ -480,9 +474,7 @@ export function startTurnOf(s: GameState, p: PlayerId): void {
     const cmd = s.players[pl]?.command ?? [];
     for (const id of [...cmd]) if (s.objects[id]?.expiresAtTurnOf === p) moveObject(s, id, "exile");
   }
-  s.turn.mayCastFromGraveyard = [];
   s.turn.graveyardTypesUsed = [];
-  s.turn.flashbackGranted = [];
   // Permissions de jouer depuis l'exil : celles qui ont expiré disparaissent. Découverte (701.57a) : une carte
   // qui n'a pas été lancée va dans la main de son propriétaire.
   for (const perm of s.playPermissions ?? []) {
@@ -632,19 +624,17 @@ export function declareAttackers(s: GameState, player: PlayerId, attackers: { id
   }
   bump(s);
   for (const a of attackers) rulesEvent(s, { e: "attack", attacker: a.id, defender: a.defender });
+  // Journal du tour : attaques (« si vous avez attaqué avec un Vaisseau », Sandswirl Wanderglyph).
   for (const a of attackers) {
-    const defender = defendingPlayer(s, a.defender);
-    if (!s.turn.attackedBy?.some((x) => x.attacker === player && x.defender === defender))
-      s.turn.attackedBy = [...(s.turn.attackedBy ?? []), { attacker: player, defender }];
+    const c = chars(s, a.id);
+    const defender = defendingPlayer(s, a.defender) ?? a.defender;
+    logTurnEvent(s, { e: "attack", player, defender, types: c.types, subtypes: c.subtypes });
   }
   if (attackers.length > 0) {
     const stats = s.players[player]?.turnStats;
     if (stats) stats.attackers = (stats.attackers ?? 0) + attackers.length;
     rulesEvent(s, { e: "attackWith", player, count: attackers.length });
   }
-  if (attackers.length > 0) s.turn.attacked = true;
-  const subtypes = new Set([...(s.turn.attackerSubtypes ?? []), ...attackers.flatMap((a) => chars(s, a.id).subtypes)]);
-  s.turn.attackerSubtypes = [...subtypes];
   if (attackers.length > 0) {
     emit({ type: "attack", player, attackers: attackers.map((a) => ({ id: a.id, defId: obj(s, a.id).defId })) });
   }

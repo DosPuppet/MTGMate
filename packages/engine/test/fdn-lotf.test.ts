@@ -4,11 +4,12 @@
  */
 import { describe, expect, it } from "vitest";
 import { dealDamage, destroy, sourceFromObject } from "../src/actions";
+import { grantPlay } from "../src/effects";
 import { legalActions } from "../src/legal";
 import { canPay, manaAbilitiesOf } from "../src/mana";
 import { chars, onBattlefield } from "../src/state";
 import type { ActionOption, GameState } from "../src/types";
-import { act, castNowOf, idOf, idsOf, passAccepting, passBoth, scenario, untilCastNow } from "./helpers";
+import { act, advanceUntil, castNowOf, idOf, idsOf, passAccepting, passBoth, scenario, untilCastNow } from "./helpers";
 
 type S = GameState;
 const lands = (name: string, n: number) => Array(n).fill(name) as string[];
@@ -154,6 +155,23 @@ describe("Lot F : jouer depuis d'autres zones", () => {
     expect(s.exile.map((id) => nameOf(s, id))).toContain("Burst Lightning");
   });
 
+  it("flashback {0} accordé (Archmage's Newt montée) : lancé sans mana, puis exilé ; rien le tour suivant", () => {
+    let s = scenario({ p1: { graveyard: ["Burst Lightning"] } });
+    const bolt = idOf(s, "p1", "graveyard", "Burst Lightning");
+    grantPlay(s, "p1", [bolt], "thisTurn", { flashback: true, free: true });
+    expect(castOption(s, "p1", bolt)?.free).toBe(true);
+    s = act(s, "p1", { type: "cast", card: bolt, targets: { t: ["p2"] } });
+    s = passBoth(s);
+    expect(s.players.p2?.life).toBe(18);
+    expect(s.exile.map((id) => nameOf(s, id))).toContain("Burst Lightning");
+    // La permission expire à la fin du tour.
+    const t = scenario({ p1: { graveyard: ["Burst Lightning"] } });
+    const card = idOf(t, "p1", "graveyard", "Burst Lightning");
+    grantPlay(t, "p1", [card], "thisTurn", { flashback: true });
+    const next = advanceUntil(t, (x) => x.turn.number > t.turn.number && x.turn.active === "p1" && x.turn.step === "main1");
+    expect(castOption(next, "p1", card)).toBeUndefined();
+  });
+
   it("Strongbox Raider : la carte choisie reste jouable jusqu'à la fin du prochain tour", () => {
     let s = scenario({
       p1: {
@@ -162,7 +180,8 @@ describe("Lot F : jouer depuis d'autres zones", () => {
         library: ["Shivan Dragon", "Opt", "Forest", "Forest", "Forest"],
       },
     });
-    s.turn.attacked = true;
+    // Une attaque ce tour-ci (journal du tour).
+    s.turnLog.push({ e: "attack", player: "p1", defender: "p2", types: ["Creature"], subtypes: [] });
     s = cast(s, "p1", "Strongbox Raider");
     s = passAccepting(s, (x) => x.pending?.kind === "choice" && x.pending.request.intent === "impulse");
     const opt = s.exile.find((id) => nameOf(s, id) === "Opt") as string;

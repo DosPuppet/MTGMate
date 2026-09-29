@@ -409,13 +409,6 @@ export function moveObject(
   const lki = o.zone === "battlefield" ? snapshot(s, id) : null;
   if (lki) {
     s.lki[id] = lki;
-    // Vide (Edge of Eternities) : un permanent non-terrain a quitté le champ de bataille ce tour-ci.
-    if (!lki.types.includes("Land")) s.turn.nonlandLeft = true;
-    if (to === "graveyard" && lki.types.includes("Creature")) {
-      s.turn.creatureDied = true;
-      s.turn.creaturesDied = (s.turn.creaturesDied ?? 0) + 1;
-      s.turn.diedSubtypes = [...(s.turn.diedSubtypes ?? []), lki.subtypes];
-    }
   }
   // Journal du tour : « créatures exilées ce tour-ci » (Vren), « cartes qui ont quitté votre cimetière » (Bonecache)…
   // Seulement les déplacements publics : une pioche (bibliothèque → main) n'y figure pas (information cachée).

@@ -82,8 +82,6 @@ export function blankState(opts: {
       active: first.id,
       step: "untap",
       landsPlayed: 0,
-      attacked: false,
-      creatureDied: false,
       onceFired: [],
       startingPlayer: first.id,
     },

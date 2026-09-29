@@ -5,7 +5,8 @@
  */
 import { type CardDef, chars, dsl, type GameState, legalActions, RulesError, submit } from "@mtgx/engine";
 import { describe, expect, it } from "vitest";
-import { act, customCard, idsOf, scenario } from "../../engine/test/helpers";
+import { destroy } from "../../engine/src/actions";
+import { act, customCard, idsOf, passAccepting, scenario } from "../../engine/test/helpers";
 import { paragraphs, stripReminder } from "../src/audit";
 import { implementedCards } from "../src/index";
 
@@ -24,6 +25,8 @@ const BIG = "Gigantosaurus";
 const MINE = "Bear Cub";
 const life = (s: GameState, p: string) => s.players[p]?.life ?? 0;
 const handSize = (s: GameState) => s.players.p1?.hand.length ?? 0;
+/** Cartes sorties de la main par la mise en scène (1 : la carte lancée ; 0 : déclencheur d'une carte déjà en jeu). */
+let castShift = 1;
 const tokenCount = (s: GameState) => s.battlefield.filter((id) => s.objects[id]?.isToken).length;
 const big = (s: GameState) => idsOf(s, "p2", "battlefield", BIG)[0];
 const mine = (s: GameState) => idsOf(s, "p1", "battlefield", MINE)[0] as string;
@@ -92,7 +95,7 @@ function clause(t: string): Clause | null {
   m = /^Draw (\w+) cards?, then discard (\w+) cards?\.$/.exec(t);
   if (m) {
     const k = n(m[1] as string) - n(m[2] as string);
-    return { check: (b, a) => expect(handSize(a) - (handSize(b) - 1)).toBe(k) };
+    return { check: (b, a) => expect(handSize(a) - (handSize(b) - castShift)).toBe(k) };
   }
   m = /^Put (\w+) \+1\/\+1 counters? on target creature(?: you control)?\.$/.exec(t);
   if (m) {
@@ -112,7 +115,7 @@ function clause(t: string): Clause | null {
   if (m) {
     const k = n(m[1] as string);
     // La carte lancée a quitté la main.
-    return { check: (b, a) => expect(handSize(a) - (handSize(b) - 1)).toBe(k) };
+    return { check: (b, a) => expect(handSize(a) - (handSize(b) - castShift)).toBe(k) };
   }
   m = /^You gain (\d+) life\.$/.exec(t);
   if (m) {
@@ -208,9 +211,25 @@ export function expectationFor(text: string, name: string): Expectation | null {
  * « it deals » devient « ~ deals », la première lettre passe en majuscule.
  */
 export function enterExpectationFor(text: string, name: string): Expectation | null {
+  return triggerExpectationFor(text, name, "enters");
+}
+
+/** Déclencheurs vérifiés : arrivée, mort, attaque de la créature elle-même. */
+export type TriggerKind = "enters" | "dies" | "attacks";
+const TRIGGER_RE: Record<TriggerKind, RegExp> = {
+  enters: /^When (?:this creature|~) enters, (.*)$/,
+  dies: /^When (?:this creature|~) dies, (.*)$/,
+  attacks: /^Whenever (?:this creature|~) attacks, (.*)$/,
+};
+
+/**
+ * Créature dont la seule capacité (hors mots-clés) est un déclencheur de ce type : l'attente de sa phrase.
+ * « it deals » devient « ~ deals », la première lettre passe en majuscule.
+ */
+export function triggerExpectationFor(text: string, name: string, kind: TriggerKind): Expectation | null {
   const paras = paragraphs(text.replaceAll(name, "~"), false).filter((p) => p.kind !== "keywords");
   const only = paras.length === 1 ? paras[0] : undefined;
-  const m = only?.kind === "triggered" ? /^When (?:this creature|~) enters, (.*)$/.exec(only.text) : null;
+  const m = only?.kind === "triggered" ? TRIGGER_RE[kind].exec(only.text) : null;
   if (!m) return null;
   const rest = (m[1] as string).replace(/^it deals/, "~ deals");
   return expectationFor(rest.charAt(0).toUpperCase() + rest.slice(1), "~");
@@ -236,6 +255,13 @@ function castAndResolve(c: string | CardDef, e: Expectation): { before: GameStat
     targets[spec.id] = [wanted];
   }
   s = act(s, "p1", { type: "cast", card, targets, mode: mode?.index });
+  castShift = 1;
+  return { before, after: settleWith(s, name, e, wanted) };
+}
+
+/** Laisse la pile et les déclencheurs se résoudre ; la cible d'un déclencheur est celle voulue, les autres choix suggérés. */
+function settleWith(s0: GameState, name: string, e: Expectation, wanted: string | undefined): GameState {
+  let s = s0;
   for (let i = 0; i < 40 && s.stack.length + (s.pending?.kind === "choice" ? 1 : 0) + s.triggers.length > 0; i++) {
     const p = s.pending;
     if (!p) break;
@@ -259,7 +285,35 @@ function castAndResolve(c: string | CardDef, e: Expectation): { before: GameStat
       throw err;
     }
   }
-  return { before, after: s };
+  return s;
+}
+
+/**
+ * Déclencheur d'une créature déjà en jeu : elle meurt (détruite) ou attaque, puis la pile se résout. Pas de carte
+ * lancée : la main ne perd rien.
+ */
+function triggerAndResolve(name: string, e: Expectation, kind: "dies" | "attacks"): { before: GameState; after: GameState } {
+  let s = scenario({
+    step: kind === "attacks" ? "beginCombat" : "main1",
+    p1: { battlefield: [...LANDS, MINE, name], library: LANDS },
+    p2: { battlefield: [BIG], hand: ["Forest", "Island", "Swamp"], library: LANDS },
+  });
+  const self = idsOf(s, "p1", "battlefield", name)[0] as string;
+  const wanted =
+    e.target === "opponent" ? "p2" : e.target === "opponentCreature" ? big(s) : e.target === "myCreature" ? mine(s) : undefined;
+  if (kind === "attacks") {
+    s = passAccepting(s, (x) => x.pending?.kind === "declareAttackers");
+    const before = s;
+    s = act(s, "p1", { type: "declareAttackers", attackers: [{ id: self, defender: "p2" }] });
+    castShift = 0;
+    return { before, after: settleWith(s, name, e, wanted) };
+  }
+  const before = s;
+  s = structuredClone(s);
+  destroy(s, self);
+  s = act(s, "p1", { type: "pass" });
+  castShift = 0;
+  return { before, after: settleWith(s, name, e, wanted) };
 }
 
 describe("attentes déduites de l'Oracle (sorts au texte simple)", () => {
@@ -292,6 +346,22 @@ describe("attentes déduites de l'Oracle (créatures « quand elle arrive »)", 
 
   it.each(cases.map((x) => [x.c.name, x] as const))("%s fait ce que dit son texte en arrivant", (_name, { c, e }) => {
     const { before, after } = castAndResolve(c.name, e);
+    e.check(before, after);
+  });
+});
+
+describe.each(["dies", "attacks"] as const)("attentes déduites de l'Oracle (créatures : déclencheur « %s »)", (kind) => {
+  const cases = implementedCards()
+    .filter((c) => !c.isToken && !c.faceDefs?.length && c.types.includes("Creature") && !c.types.includes("Land"))
+    .map((c) => ({ c, e: triggerExpectationFor(c.text ?? "", c.name, kind) }))
+    .filter((x): x is { c: (typeof x)["c"]; e: Expectation } => !!x.e);
+
+  it("le filtre reconnaît au moins quelques cartes", () => {
+    expect(cases.length).toBeGreaterThanOrEqual(3);
+  });
+
+  it.each(cases.map((x) => [x.c.name, x] as const))("%s fait ce que dit son texte", (_name, { c, e }) => {
+    const { before, after } = triggerAndResolve(c.name, e, kind);
     e.check(before, after);
   });
 });

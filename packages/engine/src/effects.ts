@@ -344,7 +344,7 @@ export function evalAmount(s: GameState, ctx: EffectContext, a: Amount): number 
     case "cardsDrawnThisTurn":
       return s.players[ctx.controller]?.turnStats.cardsDrawn ?? 0;
     case "creaturesDiedThisTurn":
-      return s.turn.creaturesDied ?? 0;
+      return countTurnEvents(s, { event: "zone", from: "battlefield", to: "graveyard", types: ["Creature"] }, ctx.controller);
     case "totalManaValue":
       return s.battlefield
         .filter((id) => matchesObjectFilter(s, ctx.controller, id, a.filter, ctx.sourceId))
@@ -723,6 +723,7 @@ export function grantPlay(
     group?: string;
     orHand?: boolean;
     now?: boolean;
+    flashback?: boolean;
   },
 ): void {
   const last = until === "forever" ? Number.MAX_SAFE_INTEGER : until === "thisTurn" ? s.turn.number : nextTurnOf(s, player);

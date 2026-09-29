@@ -82,7 +82,12 @@ describe("capacités déclenchées", () => {
     expect(s.pending?.kind).toBe("priority");
 
     let t = scenario({ step: "main2", p1: { battlefield: Array(5).fill("Mountain"), hand: ["Gorehorn Raider"] } });
-    t = { ...t, turn: { ...t.turn, attacked: true } };
+    // Raid : une attaque ce tour-ci (journal du tour).
+    t = {
+      ...t,
+      turnLog: [...t.turnLog, { e: "attack", player: "p1", defender: "p2", types: ["Creature"], subtypes: [] }],
+      version: t.version + 1,
+    };
     t = cast(t, "p1", "Gorehorn Raider");
     t = passBoth(t);
     expect(t.pending?.kind).toBe("choice"); // cible de « 2 blessures à n'importe quelle cible »

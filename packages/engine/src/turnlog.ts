@@ -9,6 +9,8 @@ import type { CardType, Color, GameState, PlayerId, TurnLogEntry, TurnLogQuery, 
 
 export function logTurnEvent(s: GameState, entry: TurnLogEntry): void {
   s.turnLog.push(entry);
+  // Des capacités statiques en dépendent (raid, « si vous avez attaqué avec un Vaisseau ») : cache des couches (`bump`).
+  s.version += 1;
 }
 
 /**
@@ -21,6 +23,7 @@ function subjectOf(e: TurnLogEntry, byOwner?: boolean): PlayerId | undefined {
       return !byOwner && (e.from === "battlefield" || e.to === "battlefield") ? e.controller : e.owner;
     case "cast":
     case "sacrifice":
+    case "attack":
       return e.player;
     case "damage":
       return e.player;
@@ -38,13 +41,17 @@ function matches(e: TurnLogEntry, q: TurnLogQuery, me: PlayerId, subject?: Playe
   if (!hasAny<CardType>(e.types, q.types)) return false;
   if (q.notTypes?.some((x) => e.types?.includes(x))) return false;
   if (q.subtype && !e.subtypes?.includes(q.subtype)) return false;
-  if (q.supertype && !e.supertypes?.includes(q.supertype)) return false;
-  if (q.token !== undefined && !!e.token !== q.token) return false;
+  if (q.notSubtype && e.subtypes?.includes(q.notSubtype)) return false;
+  const extra = e as { supertypes?: string[]; token?: boolean };
+  if (q.supertype && !extra.supertypes?.includes(q.supertype)) return false;
+  if (q.token !== undefined && !!extra.token !== q.token) return false;
   if (e.e === "zone") {
     if (q.from && e.from !== q.from) return false;
     if (q.to && e.to !== q.to) return false;
   }
   if (e.e === "cast" && q.fromZone && e.fromZone !== q.fromZone) return false;
+  if (e.e === "cast" && q.warped && !e.warped) return false;
+  if (e.e === "attack" && q.againstYou && e.defender !== me) return false;
   if (e.e === "damage") {
     if (q.combat !== undefined && e.combat !== q.combat) return false;
     if (q.toPlayer !== undefined && e.toPlayer !== q.toPlayer) return false;
