@@ -107,7 +107,7 @@ Les images des cartes viennent de Scryfall (`cards.scryfall.io`). Certains rése
 | `npm run arena -- --a expert --b medium [--games 600] [--jobs 11] [--budget 100] [--pool decks\|all\|mix]` | Tournoi d'IA en duel (places et decks alternés) : taux de victoire avec intervalle à 95 %, temps de décision ; `expert:0` = élevé sans ISMCTS |
 | `npm run ai-smoke` | Niveau de l'IA : sélecteur de l'accueil, latence de l'IA élevée en temps réel, processeur normal et ralenti ×4 (serveur de dev lancé) |
 | `npm run tutorial-smoke [-- --only 2,3] [-- --debug]` | Tutoriel suivi dans le navigateur comme un joueur, refus hors guide, reprise (serveur de dev lancé) |
-| `npm run coverage [-- --set all\|standard\|<EXT>] [-- --text [--color W]] [-- --card "<nom>"]` | Cartes gérées par extension, textes Oracle des cartes restantes, texte et script d'une carte |
+| `npm run coverage [-- --set all\|standard\|<EXT>] [-- --text [--color W]] [-- --card "<nom>"] [-- --audit]` | Cartes gérées par extension, textes Oracle des cartes restantes, texte et script d'une carte ; `--audit` : écarts entre le texte Oracle et le script des cartes gérées |
 | `npm run server` | Serveur de parties en ligne (WebSocket `/ws`, sert aussi `packages/client/dist`) |
 | `npm run online-smoke [-- --base <url>]` | Duel en ligne entre deux navigateurs : salon, lien d'invitation, corde, reprise après rechargement, revanche (serveur de dev par défaut, ou `--base` vers un serveur de production ou nginx) |
 | `npm run proxy-smoke` | Relais des images : Scryfall bloqué (bascule automatique sur `/scry/`), case « Images par le serveur MTG Mate » (serveur de dev lancé) |

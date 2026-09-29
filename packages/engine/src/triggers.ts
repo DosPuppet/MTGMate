@@ -529,6 +529,12 @@ function matchTrigger(s: GameState, ev: RulesEvent, t: TriggerSpec, src: Source)
         ? { objectId: who, amount: ev.amount, player: me }
         : null;
     }
+    case "excessDamage": {
+      if (ev.e !== "damage" || !ev.excess || (t.noncombatOnly && ev.combat)) return null;
+      const v = liveView(s, ev.target);
+      if (!v || !matchWho(t.who, v, src)) return null;
+      return { objectId: ev.target, amount: ev.excess, player: v.controller };
+    }
     case "blocks": {
       if (ev.e !== "block") return null;
       const v = liveView(s, ev.blocker);

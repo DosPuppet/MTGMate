@@ -196,6 +196,10 @@ export const RED: Record<string, CardScript> = {
         targets: [target.creature("t", { controller: "opponent" })],
         label: "5 blessures",
       }),
+      triggered(when.excessDamage({ types: ["Creature"], controller: "opponent" }, true), [fx.createTokens(TREASURE)], {
+        batched: true,
+        label: "Blessures en excès : un Trésor",
+      }),
     ],
   },
   "Panicked Altisaur": {

@@ -1,0 +1,10 @@
+{
+ "Ordeal of Nylea | triggered | Ordeal of Nylea : 2 dans le texte, 1 dans le script": "approximation documentée : sacrifiée directement, sans déclencheur séparé",
+ "Vnwxt, Verbose Host | number | Vnwxt, Verbose Host : 2 absent(s)": "« piochez-en deux à la place » : statique de joueur drawDouble",
+ "Assimilation Aegis | triggered | Assimilation Aegis : 2 dans le texte, 1 dans le script": "copie tant qu'il reste attaché : modélisée par une statique (copyLinkedExile)",
+ "Eriette, the Beguiler | triggered | Eriette, the Beguiler : 1 dans le texte, 0 dans le script": "vol de contrôle tant que l'Aura reste attachée : statique de joueur auraStealsCheaper",
+ "Smoky Lounge // Misty Salon | triggered | Smoky Lounge : 1 dans le texte, 0 dans le script": "approximation documentée : capacité de mana utilisable pendant la première phase principale",
+ "Ultima, Origin of Oblivion | triggered | Ultima, Origin of Oblivion : 2 dans le texte, 1 dans le script": "capacité de mana déclenchée ({C} en plus) : statique de joueur extraColorlessFromLands",
+ "Sidequest: Raise a Chocobo // Black Chocobo | triggered | Black Chocobo : 2 dans le texte, 1 dans le script": "approximation documentée : la recherche « quand il se transforme » est faite par l'effet qui le transforme",
+ "Ultimecia, Time Sorceress // Ultimecia, Omnipotent | triggered | Ultimecia, Omnipotent : 1 dans le texte, 0 dans le script": "approximation documentée : l'effet « quand elle se transforme » est fait par l'effet qui la transforme"
+}

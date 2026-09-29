@@ -1245,6 +1245,8 @@ export const when = {
   }),
   /** « Chaque fois que cette créature subit des blessures » */
   isDealtDamage: { on: "isDealtDamage", who: "self" } as TriggerSpec,
+  /** « Chaque fois qu'une ou plusieurs [créatures] subissent des blessures en excès » (120.4a). */
+  excessDamage: (who: ObjectFilter, noncombatOnly = false): TriggerSpec => ({ on: "excessDamage", who, noncombatOnly }),
   /** « Chaque fois que la créature enchantée (ou équipée) subit des blessures » */
   attachedIsDealtDamage: { on: "isDealtDamage", who: "attached" } as TriggerSpec,
   /** « Chaque fois qu'une ou plusieurs [créatures] infligent des blessures de combat à un joueur » */

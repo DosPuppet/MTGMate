@@ -269,6 +269,8 @@ export type TriggerSpec =
   | { on: "eerie" }
   /** « Chaque fois que cette créature (ou la créature enchantée/équipée) subit des blessures » */
   | { on: "isDealtDamage"; who: "self" | "attached" }
+  /** « Chaque fois qu'une ou plusieurs [créatures] subissent des blessures en excès [non de combat] » (120.4a). */
+  | { on: "excessDamage"; who: ObjectFilter; noncombatOnly?: boolean }
   /** « Chaque fois qu'une ou plusieurs [créatures] infligent des blessures de combat à un joueur » : une fois par étape et par joueur. */
   | { on: "combatDamageBatch"; who: ObjectFilter }
   /** « Chaque fois qu'une [créature] bloque » */

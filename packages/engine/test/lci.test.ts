@@ -291,6 +291,25 @@ describe("The Lost Caverns of Ixalan", () => {
     });
   });
 
+  describe("Blessures en excès (120.4a) : Magmatic Galleon", () => {
+    const shoot = (victim: string) => {
+      let s = scenario({
+        p1: { battlefield: ["Magmatic Galleon", ...lands("Mountain", 1)], hand: ["Burst Lightning"] },
+        p2: { battlefield: [victim] },
+      });
+      s = cast(s, "Burst Lightning", { t: [idOf(s, "p2", "battlefield", victim)] });
+      return s;
+    };
+    it("2 blessures à une créature 1/1 : 1 en excès, un Trésor", () => {
+      const s = shoot("Llanowar Elves");
+      expect(idsOf(s, "p1", "battlefield", "Treasure")).toHaveLength(1);
+    });
+    it("2 blessures à une créature 2/2 : pas d'excès, pas de Trésor", () => {
+      const s = shoot("Bear Cub");
+      expect(idsOf(s, "p1", "battlefield", "Treasure")).toHaveLength(0);
+    });
+  });
+
   describe("Légendaires et cartes uniques", () => {
     it("Ojer Taq : trois fois plus de jetons de créature", () => {
       let s = scenario({

@@ -5,10 +5,13 @@
  * Usage : npm run coverage [-- --set all|standard|main|<set>] [-- --list <mécanique>] [-- --missing] [-- --card "<nom>"]
  *         npm run coverage -- --set FIN --text [--color W|U|B|R|G|M|C|L]
  *
+ * --audit : écarts entre le texte Oracle et le script des cartes gérées (capacités manquantes, nombres absents).
  * --text : textes Oracle des cartes non gérées (toutes faces), pour préparer un lot ; --color filtre par couleur
  * (M = multicolore, C = incolore, L = terrain).
  */
 import { CARDS, isMainSet, SET_BY_CODE, SETS } from "@mtgx/cards";
+import auditBaseline from "../packages/cards/data/audit-baseline.json";
+import { auditCard, issueKey } from "../packages/cards/src/audit";
 
 const MECHANICS: [string, RegExp][] = [
   ["aura", /^Enchant (creature|land|permanent)/m],
@@ -138,4 +141,16 @@ if (process.argv.includes("--text")) {
 
 if (process.argv.includes("--missing")) {
   console.log(`\nCartes non gérées :\n  ${missing.map((c) => c.name).join("\n  ")}`);
+}
+
+// --audit : écarts Oracle ↔ script des cartes gérées (packages/cards/src/audit.ts), connus ou nouveaux.
+if (process.argv.includes("--audit")) {
+  const issues = done.flatMap(auditCard);
+  const known = auditBaseline as Record<string, string>;
+  const fresh = issues.filter((x) => !(issueKey(x) in known));
+  console.log(`\nAudit Oracle ↔ script : ${issues.length} écart(s), dont ${fresh.length} nouveau(x)`);
+  for (const x of issues) {
+    const why = known[issueKey(x)];
+    console.log(`  ${why ? "·" : "✗"} [${x.kind}] ${x.card} — ${x.detail}${why ? ` (connu : ${why})` : ""}`);
+  }
 }

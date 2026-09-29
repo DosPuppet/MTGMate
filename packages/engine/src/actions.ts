@@ -289,6 +289,7 @@ export function dealDamage(s: GameState, source: DamageSource, target: string, a
     amount *= 2 ** n;
   }
   // Lightning, Army of One : blessures à ce joueur ou à ses permanents doublées jusqu'au prochain tour de Lightning.
+  let excess = 0;
   const marked = victim ? (s.players[victim]?.damageDoubled?.filter((d) => s.turn.number < d.until).length ?? 0) : 0;
   amount *= 2 ** marked;
   // Temple of Power : blessures non de combat infligées par des sources rouges que ce joueur contrôlait ce tour-ci.
@@ -316,6 +317,12 @@ export function dealDamage(s: GameState, source: DamageSource, target: string, a
     const creature = isCreature(s, target);
     const walker = hasType(s, target, "Planeswalker");
     if (!creature && !walker) return;
+    // 120.4a : blessures en excès, au-delà des blessures mortelles (contact mortel : 1 suffit) ou de la loyauté.
+    const deathtouch = source.keywords.includes("deathtouch");
+    const lethal = creature
+      ? Math.max(0, deathtouch ? (o.damage > 0 || o.deathtouched ? 0 : 1) : chars(s, target).toughness - o.damage)
+      : (o.counters.loyalty ?? 0);
+    excess = Math.max(0, amount - lethal);
     // 120.3c : les blessures infligées à un planeswalker lui retirent autant de marqueurs de loyauté.
     if (walker) changeCounters(s, o, "loyalty", -Math.min(amount, o.counters.loyalty ?? 0));
     if (creature) {
@@ -327,7 +334,15 @@ export function dealDamage(s: GameState, source: DamageSource, target: string, a
     emit({ type: "damage", sourceDefId: source.defId, target, targetDefId: o.defId, amount, combat });
   }
   if (source.keywords.includes("lifelink")) gainLife(s, source.controller, amount);
-  rulesEvent(s, { e: "damage", sourceId: source.id ?? null, sourceController: source.controller, target, amount, combat });
+  rulesEvent(s, {
+    e: "damage",
+    sourceId: source.id ?? null,
+    sourceController: source.controller,
+    target,
+    amount,
+    combat,
+    excess: excess || undefined,
+  });
 }
 
 export function sourceFromObject(s: GameState, id: ObjectId): DamageSource {

@@ -65,6 +65,7 @@ Ce fichier sert au suivi du projet entre les sessions : où on en est, les règl
 - `docs/tutoriel.md` : leçons du tutoriel, format des étapes, ajout d'une leçon.
 - `docs/ia.md` : niveaux de l'IA, évaluation, combat par simulation, ISMCTS, tournoi et mesures.
 - Textes Oracle des cartes à faire : `npm run coverage -- --set <ext> --text [--color W|U|B|R|G|M|C|L]` ; une carte : `--card "<nom>"`.
+- Audit Oracle ↔ script : `npm run coverage -- --set <ext> --audit` (`cards/src/audit.ts`). Le test `cards/test/audit.test.ts` échoue sur tout nouvel écart ; un écart vérifié et voulu (équivalence, approximation documentée) va dans `cards/data/audit-baseline.json` avec sa raison.
 
 ## Conventions
 

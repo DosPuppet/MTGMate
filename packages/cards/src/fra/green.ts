@@ -58,6 +58,7 @@ export const GREEN: Record<string, CardScript> = {
   "Greenhouse Propagator": {
     abilities: [
       triggered(when.enters({ types: ["Creature"], controller: "you", other: true }), [fx.gainLife(1)], { label: "+1 PV" }),
+      manaAbility("G"),
     ],
   },
   "Hungering Puppetbeast": {

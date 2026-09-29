@@ -67,7 +67,16 @@ export type RulesEvent =
   | { e: "crime"; player: PlayerId }
   | { e: "plotted"; card: ObjectId }
   | { e: "attack"; attacker: ObjectId; defender: PlayerId }
-  | { e: "damage"; sourceId: ObjectId | null; sourceController?: PlayerId; target: string; amount: number; combat: boolean }
+  /** `excess` : blessures en excès (120.4a) infligées à une créature ou à un planeswalker. */
+  | {
+      e: "damage";
+      sourceId: ObjectId | null;
+      sourceController?: PlayerId;
+      target: string;
+      amount: number;
+      combat: boolean;
+      excess?: number;
+    }
   | { e: "step"; step: Step; active: PlayerId }
   /** `first` : première fois que ce joueur gagne des points de vie ce tour-ci. */
   | { e: "lifeGain"; player: PlayerId; amount: number; first: boolean }

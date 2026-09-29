@@ -114,3 +114,9 @@ Lot 0.14 (capacités de mana à coût, 605.1a / 605.3b ; P0 de l'audit) :
 - cartes concernées sans modification de leur script : Ramos, Dragon Engine, Ramos, Three Tree Mascot, les Planètes d'Edge of Eternities (Evendo, Uthros…), Molt Tender, Loot, the Pathfinder, Conduit Pylons, Tarnation Vista, Capital City et la ville à 1 PV de Final Fantasy, Sunbird Effigy, Thornvault Forager, Baylen ;
 - limite : le paiement automatique ne s'en sert pas (il faut les activer à la main avant de lancer) ;
 - tests : `engine/test/costs.test.ts`.
+
+Lot 0.15 (audit Oracle ↔ script ; P1 de l'audit, étape 6) :
+- `cards/src/audit.ts` découpe le texte Oracle en paragraphes (mots-clés, déclenchées, activées, statiques, chapitres ; texte de rappel, mots d'aptitude et capacités citées écartés) et vérifie que le script a au moins autant de capacités déclenchées et activées, et que les nombres d'effet du texte (blessures, pioche, PV, +N/+N, jetons, marqueurs, regard) figurent dans le script ;
+- `npm run coverage -- --audit` liste les écarts ; `cards/test/audit.test.ts` échoue sur un nouvel écart, ou sur un écart connu qui a disparu (`cards/data/audit-baseline.json`, huit équivalences ou approximations documentées) ;
+- deux oublis trouvés et corrigés : Greenhouse Propagator (FRA) n'avait pas sa capacité de mana « {T} : ajoutez {G} » ; Magmatic Galleon (LCI) n'avait pas son déclencheur de Trésors. Pour ce dernier, le moteur calcule désormais les blessures en excès (120.4a : au-delà des blessures mortelles, contact mortel compris, ou de la loyauté), transmises par l'événement `damage` (`excess`), avec le déclencheur `when.excessDamage(filtre, nonCombatSeulement)` ;
+- limite : c'est une heuristique structurelle. Elle ne vérifie ni le sens des effets ni les statiques ; les nombres d'un script sont comparés en vrac.
