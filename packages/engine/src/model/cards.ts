@@ -37,7 +37,13 @@ export interface CardDef {
   /** Kicker sans mana (FIN) : « sacrifiez un artefact ou une créature », « renvoyez un terrain que vous contrôlez ». */
   kickerCost?: { sacrifice?: ObjectFilter; bounce?: ObjectFilter };
   /** Coût de flashback : peut être lancée depuis le cimetière, puis exilée (702.34). */
+  /** Harmonie (702.180) : son coût est aussi rangé ici (même lancement depuis le cimetière, puis exil), avec `harmonize`. */
   flashback?: ManaCost;
+  /**
+   * Harmonie (702.180) : lancée depuis le cimetière pour `flashback`, on peut engager une créature qu'on contrôle pour
+   * réduire ce coût de {X}, X étant sa force.
+   */
+  harmonize?: boolean;
   /** « Ce sort ne peut pas être contrecarré. » */
   cantBeCountered?: boolean;
   /** Planeswalker : loyauté de départ (306.5b). */
@@ -148,7 +154,7 @@ export interface CardDef {
   /** Assemblage (701.42) : les deux parties et la carte assemblée, par nom. */
   meld?: { parts: string[]; result?: string };
   /** Libellé du kicker : Progéniture (702.175) ou Cadeau (702.174), lus dans le texte (Bloomburrow). */
-  kickerKind?: "offspring" | "gift";
+  kickerKind?: "offspring" | "gift" | "bargain";
   /** Cadeau (702.174) : ce que reçoit l'adversaire choisi si le cadeau est promis. */
   gift?: GiftKind;
   /** « En coût additionnel, fourragez ou payez [mana] » (Feed the Cycle) : le coût alternatif « Fourrager » l'évite. */

@@ -294,6 +294,9 @@ function parseInt0(v: string | undefined): number | undefined | null {
   return /^-?\d+$/.test(v) ? Number(v) : null;
 }
 
+/** Marchandage (702.166) : « sacrifiez un artefact, un enchantement ou un jeton » en lançant le sort. */
+const BARGAIN_FILTER: ObjectFilter = { anyOf: [{ types: ["Artifact"] }, { types: ["Enchantment"] }, { token: true }] };
+
 /** Progéniture (702.175) : « Offspring {2} » — un kicker, et « quand elle arrive, créez un jeton 1/1 copie d'elle ». */
 export function parseOffspring(text: string): string | undefined {
   return /^Offspring ((?:\{[^}]+\})+)/m.exec(text)?.[1];
@@ -673,6 +676,9 @@ function singleDef(raw: RawCard, script: CardScript | undefined, set: string): C
   // Bloomburrow : Progéniture et Cadeau sont des coûts optionnels, comme un kicker.
   const offspring = parseOffspring(raw.oracleText);
   const gift = parseGift(raw.oracleText);
+  // Les friches d'Eldraine : Marchandage (702.166), un kicker « sacrifiez un artefact, un enchantement ou un jeton ».
+  const bargain = raw.keywords.includes("Bargain");
+  const harmonize = /^Harmonize ((?:\{[^}]+\})+)/m.exec(raw.oracleText)?.[1];
   const isSpell = types.includes("Instant") || types.includes("Sorcery");
   const bloomburrowAbilities: CardDef["abilities"] = [];
   if (offspring) {
@@ -760,13 +766,15 @@ function singleDef(raw: RawCard, script: CardScript | undefined, set: string): C
       ? parseManaCost(script.kicker)
       : offspring
         ? parseManaCost(offspring)
-        : gift
+        : gift || bargain
           ? parseManaCost("{0}")
           : undefined,
-    kickerKind: offspring ? "offspring" : gift ? "gift" : undefined,
+    kickerKind: offspring ? "offspring" : gift ? "gift" : bargain ? "bargain" : undefined,
     gift,
-    kickerCost: script?.kickerCost,
-    flashback: script?.flashback ? parseManaCost(script.flashback) : undefined,
+    kickerCost: script?.kickerCost ?? (bargain ? { sacrifice: BARGAIN_FILTER } : undefined),
+    // Harmonie (702.180) : lancée depuis le cimetière comme un flashback, pour son coût d'harmonie.
+    flashback: script?.flashback ? parseManaCost(script.flashback) : harmonize ? parseManaCost(harmonize) : undefined,
+    harmonize: harmonize ? true : undefined,
     flashbackDiscard: script?.flashbackDiscard,
     disguise: parseDisguise(raw.oracleText),
     warp: parseWarp(raw.oracleText),

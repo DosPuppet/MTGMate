@@ -141,6 +141,7 @@ export function matchesCard(s: GameState, controller: PlayerId, id: ObjectId, f:
   if (f.enteredThisTurn && o.controlledSince !== s.turn.number) return false;
   // « carte de créature sans capacité » : pas de texte de règles.
   if (f.noAbilities && (s.defs[o.defId]?.text ?? "").trim()) return false;
+  if (f.adventure !== undefined && (s.defs[o.defId]?.layout === "adventure") !== f.adventure) return false;
   return (
     matchesView(snapshot(s, id), { ...f, controller: undefined }, controller, sourceId) &&
     (f.controller === undefined || (f.controller === "you" ? o.owner === controller : o.owner !== controller))
@@ -267,7 +268,9 @@ export function validateTargets(
     if (ids.length > max) throw new RulesError(max === 1 ? "Une seule cible par mot « cible »" : `${max} cibles au maximum`);
     if (new Set(ids).size !== ids.length) throw new RulesError("Même cible choisie deux fois");
     if (ids.length === 0 && !spec.optional) throw new RulesError(`Cible manquante : ${spec.label ?? spec.id}`);
-    if (!spec.optional && !spec.kickedCount && ids.length < max) throw new RulesError(`${max} cibles requises`);
+    const min = spec.minCount ?? max;
+    if (!spec.optional && !spec.kickedCount && ids.length < min)
+      throw new RulesError(min === max ? `${max} cibles requises` : `Au moins ${min} cible(s)`);
     // Cadeau promis ou kicker : un autre filtre (« à la place, un permanent non-terrain ciblé »).
     const legalSpec = opts.kicked && spec.kickedFilter ? { ...spec, filter: spec.kickedFilter } : spec;
     for (const id of ids)

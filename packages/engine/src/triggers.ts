@@ -29,7 +29,7 @@ import {
   snapshot,
 } from "./state";
 import { controlledAbilitiesWithSource, playerStatic } from "./statics";
-import { legalTargets, matchesObjectFilter, matchesView, validateTargets, withChosen } from "./targets";
+import { legalTargets, matchesCard, matchesObjectFilter, matchesView, validateTargets, withChosen } from "./targets";
 import { countTurnEvents } from "./turnlog";
 import type {
   AbilityDef,
@@ -257,13 +257,12 @@ export function checkCondition(s: GameState, c: Condition, controller: PlayerId,
       return !!(sourceId && s.objects[sourceId]?.dealtCombatDamage);
     case "activatedLoyaltyThisTurn":
       return (s.players[controller]?.turnStats.loyaltyActivations ?? 0) > 0;
-    case "beholdJace": {
-      const pl = s.players[controller];
-      const jaceHere = s.battlefield.some(
-        (id) => s.objects[id]?.controller === controller && chars(s, id).subtypes.includes("Jace"),
+    case "behold": {
+      const f = { ...c.filter, controller: "you" as const };
+      const here = s.battlefield.some((id) => matchesObjectFilter(s, controller, id, f, sourceId));
+      return (
+        here || (s.players[controller]?.hand ?? []).some((id) => id !== sourceId && matchesCard(s, controller, id, f, sourceId))
       );
-      const jaceInHand = (pl?.hand ?? []).some((id) => s.defs[s.objects[id]?.defId ?? ""]?.subtypes.includes("Jace"));
-      return jaceHere || jaceInHand;
     }
     case "prepared": {
       const src = sourceId ? s.objects[sourceId] : undefined;
@@ -711,7 +710,8 @@ function matchTrigger(s: GameState, ev: RulesEvent, t: TriggerSpec, src: Source)
             : undefined
           : ev.targets.find((id) => {
               const v = liveView(s, id);
-              return !!v && s.objects[id]?.zone === "battlefield" && matchWho(who, v, src);
+              const zone = s.objects[id]?.zone;
+              return !!v && (zone === "battlefield" || (!!t.spells && zone === "stack")) && matchWho(who, v, src);
             });
       if (!hit) return null;
       if (t.byOpponent && ev.controller === me) return null;

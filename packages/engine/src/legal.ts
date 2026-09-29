@@ -23,8 +23,10 @@ import {
   discardCostOptions,
   equipDiscount,
   FACE_DOWN_SPELL,
+  harmonizeOptions,
   hasConvoke,
   instantLoyalty,
+  kickerCostOptions,
   kickerCostPermanent,
   modesOf,
   sacrificeOptions,
@@ -73,11 +75,18 @@ import type {
 
 const GIFT_TEXT = { card: "une carte", food: "une Nourriture", fish: "un Poisson engagé", treasure: "un Trésor" } as const;
 
-/** Libellés de la question du kicker pour la Progéniture (702.175) et le Cadeau (702.174). */
+/** Libellés de la question du kicker : Progéniture (702.175), Cadeau (702.174), Marchandage (702.166). */
 function kickerPrompt(d: CardDef): { title: string; without: string; with: string } | undefined {
   if (d.kickerKind === "offspring" && d.kicker) {
     const c = costToText(d.kicker);
     return { title: `Payer la progéniture ${c} ?`, without: "Sans progéniture", with: `Progéniture ${c}` };
+  }
+  if (d.kickerKind === "bargain") {
+    return {
+      title: "Marchander : sacrifier un artefact, un enchantement ou un jeton ?",
+      without: "Sans marchander",
+      with: "Marchander",
+    };
   }
   if (d.kickerKind === "gift" && d.gift) {
     return {
@@ -98,6 +107,7 @@ function targetOptions(s: GameState, player: PlayerId, specs: TargetSpec[], sour
       optional: !!t.optional,
       legal,
       count: t.count && t.count > 1 ? t.count : undefined,
+      min: t.minCount,
       kickedCount: t.kickedCount,
       kickedLegal: t.kickedFilter ? legalTargets(s, player, { ...t, filter: t.kickedFilter }, sourceId) : undefined,
       otherThan: t.otherThan,
@@ -118,7 +128,7 @@ function targetOptions(s: GameState, player: PlayerId, specs: TargetSpec[], sour
 function targetsAvailable(opts: TargetOption[]): boolean {
   return opts.every((t) => {
     if (t.optional) return true;
-    const need = t.count ?? 1;
+    const need = t.min ?? t.count ?? 1;
     if (t.group?.kind === "different") return new Set(Object.values(t.group.holders)).size >= need;
     return t.legal.length >= need;
   });
@@ -236,7 +246,15 @@ export function legalActions(s: GameState, player: PlayerId): ActionOption[] {
       const a = mustPayInstead && sac?.orPay ? totalCost(c, 0, sac.orPay) : c;
       return timingExtra ? totalCost(a, 0, timingExtra) : a;
     };
-    const normal = !terms.free && canPay(s, player, withExtra(spellCost(s, player, d, base)), exclude, purpose);
+    // Harmonie : payable aussi en engageant une créature (qui ne sert alors pas à payer le mana).
+    const harmony =
+      flashback && d.harmonize ? harmonizeOptions(s, player, card, withExtra(spellCost(s, player, d, base)).generic) : undefined;
+    const payableWith = (c: ManaCost) =>
+      canPay(s, player, c, exclude, purpose) ||
+      !!harmony?.options.some((id) =>
+        canPay(s, player, totalCost(c, 0, undefined, harmony.powers[id] ?? 0), new Set([...(exclude ?? []), id]), purpose),
+      );
+    const normal = !terms.free && payableWith(withExtra(spellCost(s, player, d, base)));
     const freeAvailable = !!terms.freeOptional;
     const alt = terms.free ? undefined : altCostFor(s, player, d);
     const altAvailable =
@@ -268,7 +286,11 @@ export function legalActions(s: GameState, player: PlayerId): ActionOption[] {
       altAvailable: altAvailable || undefined,
       altLabel: altAvailable ? alt?.label : undefined,
       normalAvailable: normal || undefined,
-      additional: additional.discard || additional.sacrifice ? additional : undefined,
+      additional:
+        additional.discard || additional.sacrifice || harmony?.options.length
+          ? { ...additional, ...(harmony?.options.length ? { tap: { count: 1, ...harmony, optional: true as const } } : {}) }
+          : undefined,
+      kickerPermanents: d.kickerCost ? kickerCostOptions(s, player, card, d) : undefined,
     });
   }
 

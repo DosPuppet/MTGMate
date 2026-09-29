@@ -18,6 +18,10 @@ import { matchesObjectFilter } from "../targets";
 import { eliminate, endTheTurn } from "../turn";
 
 export const HANDLERS: OpHandlers = {
+  playerEffect(s, _r, e, ctx) {
+    addPlayerEffect(s, ctx.controller, e.ability, s.turn.number);
+    return;
+  },
   cantAttackYouThisTurn(s, _r, e, ctx) {
     for (const p of resolveRef(s, ctx, e.who)) {
       if (isPlayer(s, p) && p !== ctx.controller) addPlayerEffect(s, p, { cantAttackPlayer: ctx.controller }, s.turn.number);

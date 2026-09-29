@@ -11,6 +11,8 @@ export interface TargetSpec {
   label?: string;
   /** Nombre de cibles pour ce mot « cible » (« jusqu'à deux créatures ciblées ») ; 1 par défaut. */
   count?: number;
+  /** Nombre minimal de cibles quand `count` > 1 (« une ou deux cibles » : 1) ; `count` par défaut. */
+  minCount?: number;
   /** Toutes les cibles de ce mot « cible » appartiennent au même joueur (« d'un même cimetière »). */
   samePlayer?: boolean;
   /** Nombre de cibles si le sort est kické (« si ce sort a été kické, à la place n'importe quel nombre de cibles »). */
@@ -155,6 +157,8 @@ export interface ObjectFilter {
   withActivatedAbility?: boolean;
   /** Valeur de mana égale au X de la capacité ou du sort (`destroyAll` : Dauntless Dismantler). */
   manaValueX?: boolean;
+  /** Carte avec une Aventure (hors du champ de bataille : cimetière, main ; Hearth Elemental). */
+  adventure?: boolean;
 }
 
 /**
@@ -232,7 +236,15 @@ export type TriggerSpec =
   | { on: "discard"; whose: "you" | "opponent" | "any" }
   /** « Chaque fois que [cette créature] devient la cible d'un sort ou d'une capacité [qu'un adversaire contrôle] » */
   /** `byYou` : un sort ou une capacité que le contrôleur de la source contrôle (Vaillance, Bloomburrow). */
-  | { on: "becomesTarget"; who: "self" | ObjectFilter; byOpponent?: boolean; bySpellYouControl?: boolean; byYou?: boolean }
+  /** `spells` : les sorts correspondants aussi (« une créature ou un sort de créature que vous contrôlez », Surrak). */
+  | {
+      on: "becomesTarget";
+      who: "self" | ObjectFilter;
+      byOpponent?: boolean;
+      bySpellYouControl?: boolean;
+      byYou?: boolean;
+      spells?: boolean;
+    }
   /** « Chaque fois que [la créature équipée] se dégage » */
   | { on: "untaps"; who: "self" | ObjectFilter }
   /** « Chaque fois que [cette créature] devient engagée » */
@@ -374,7 +386,8 @@ export type Condition =
   /** La source est préparée. */
   | { kind: "prepared" }
   /** « Contempler un Jace » : vous contrôlez un Jace ou vous avez une carte de Jace en main. */
-  | { kind: "beholdJace" }
+  /** Contempler (701.63) : vous contrôlez un permanent correspondant, ou vous révélez une carte correspondante de votre main. */
+  | { kind: "behold"; filter: ObjectFilter }
   /** Le contrôleur a activé une capacité de loyauté ce tour-ci. */
   | { kind: "activatedLoyaltyThisTurn" }
   /** Une seule créature attaque, et elle attaque un joueur (« attaque seule un joueur »). */

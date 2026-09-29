@@ -18,7 +18,7 @@ Dernière extension ajoutée : **The Lost Caverns of Ixalan (LCI)**, entièremen
 
 Le périmètre visé avant toute extension est le **format Standard** : construit, 60 cartes minimum, 4 exemplaires maximum (sauf terrains de base et cartes « n'importe quel nombre »), réserve de 15 cartes.
 
-Les cartes sont couvertes **extension par extension, à 100 % avant de passer à la suivante**. Toutes les extensions Standard sont importées (textes, légalités, faces), mais une carte n'est jouable que lorsqu'elle est gérée par le moteur. Les autres apparaissent grisées dans le deckbuilder, avec la mention « bientôt » (un filtre n'affiche que les cartes jouables).
+Les cartes sont couvertes **extension par extension, à 100 % avant de passer à la suivante**, sauf pendant la phase « méta » du plan P4 (voir plus bas). Toutes les extensions Standard sont importées (textes, légalités, faces), mais une carte n'est jouable que lorsqu'elle est gérée par le moteur. Les autres apparaissent grisées dans le deckbuilder, avec la mention « bientôt » (un filtre n'affiche que les cartes jouables).
 
 **Extensions légales en Standard au 25/09/2026** (source : Scryfall, à revérifier à chaque rotation) :
 
@@ -33,9 +33,20 @@ Les cartes sont couvertes **extension par extension, à 100 % avant de passer à
 | **Duskmourn: House of Horror (DSK, « Mornebrune : la Maison de l'horreur »)** | ✅ 268 / 268 |
 | **Bloomburrow (BLB)** | ✅ 266 / 266 |
 | **The Lost Caverns of Ixalan (LCI, « Les cavernes oubliées d'Ixalan »)** | ✅ 279 / 279 |
-| Tarkir: Dragonstorm (TDM), Wilds of Eldraine (WOE), Secrets of Strixhaven (SOS), Lorwyn Eclipsed (ECL), Avatar: The Last Airbender (TLA), Marvel's Spider-Man (SPM), Marvel Super Heroes (MSH), Teenage Mutant Ninja Turtles (TMT), The Hobbit (HOB), Murders at Karlov Manor (MKM) | à venir (seules quelques créatures à mots-clés sont déjà jouables) |
+| Tarkir: Dragonstorm (TDM) | 4 / 259 (cartes du méta) |
+| Wilds of Eldraine (WOE) | 3 / 269 (cartes du méta) |
+| Secrets of Strixhaven (SOS) | 5 / 262 (cartes du méta) |
+| Lorwyn Eclipsed (ECL) | 7 / 266 (cartes du méta) |
+| Avatar: The Last Airbender (TLA) | 4 / 280 (cartes du méta) |
+| Marvel's Spider-Man (SPM) | 3 / 188 (cartes du méta) |
+| Marvel Super Heroes (MSH) | 5 / 271 (créatures à mots-clés seuls) |
+| Teenage Mutant Ninja Turtles (TMT) | 4 / 188 (cartes du méta) |
+| The Hobbit (HOB) | 3 / 188 (cartes du méta) |
+| Murders at Karlov Manor (MKM) | 2 / 268 (cartes du méta) |
 
-Au total, **environ 2 750 cartes jouables** sur 5 161 cartes légales en Standard. Quelques réimpressions d'extensions plus anciennes sont aussi légales parce qu'elles figurent dans ces sets.
+Au total, **2 769 cartes jouables** sur 5 161 cartes légales en Standard.
+
+**Decks du méta (plan P4, en cours) :** avant de finir les dix dernières extensions une à une, on écrit les cartes des decks Standard les plus joués (relevé MTGGoldfish du 29/09/2026, `docs/meta/`). Déjà jouables, réserve comprise : **Izzet Spellementals** et **Mono-Green Landfall** (28,9 % du méta). Quelques réimpressions d'extensions plus anciennes sont aussi légales parce qu'elles figurent dans ces sets.
 
 **Cartes bannies en Standard** (13) :
 

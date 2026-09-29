@@ -1,6 +1,11 @@
 # Plan P4 — couverture guidée par le méta, puis Tarkir: Dragonstorm
 
-Plan établi le 29/09/2026 (branche `dev`), **non implémenté** : il sert de feuille de route aux prochaines sessions.
+Plan établi le 29/09/2026 (branche `dev`) : il sert de feuille de route aux prochaines sessions.
+
+## Suivi
+
+- **Lot M1 fait le 29/09/2026** : Izzet Spellementals et Mono-Green Landfall jouables, réserve comprise (22 cartes). Détail dans `docs/extensions/meta.md`. Le test « méta » (`cards/test/meta-decks.test.ts`), `fuzz --pool meta` et `verify --set META` existent.
+- À faire : lots M2 à M6, puis la phase 2 (Tarkir: Dragonstorm à 100 %).
 
 ## Décision
 

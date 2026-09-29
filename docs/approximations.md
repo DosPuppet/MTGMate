@@ -104,7 +104,6 @@ Dans l'ordre où elles ont été ajoutées, extension par extension.
 - **Haste Magic, Opera Love Song :** les cartes exilées sont jouables jusqu'à la fin de votre prochain tour (et non jusqu'à votre prochaine étape de fin).
 - **Freya Crescent :** son mana sert à toute capacité d'un Équipement, pas seulement à Équiper.
 - **Sorceress's Schemes :** seulement une carte d'éphémère ou de rituel du cimetière (pas une carte exilée avec flashback).
-- **Vayne's Treachery, Chocobo Kick :** le permanent du kicker est choisi automatiquement (le moins cher, jeton d'abord).
 - **The Lunar Whale :** « regarder la carte du dessus à tout moment » n'est pas affiché.
 - **Tellah, Great Sage :** trois déclenchements séparés (Héros, pioche, sacrifice). **Ultimecia, Sidequest: Raise a Chocobo :** l'effet « quand elle se transforme » est fait par l'effet qui la transforme.
 - **Quina, Qu Gourmet :** pas de Grenouille pour les jetons copies.
@@ -185,5 +184,10 @@ Dans l'ordre où elles ont été ajoutées, extension par extension.
   - Echoing Deeps : devient une copie du terrain (et s'engage) par une capacité déclenchée d'arrivée, et non en arrivant ; Cavern of Souls, Roaming Throne, Sunken Citadel : sans résolution (terrain joué), le choix en arrivant est celui par défaut ;
   - Temple of the Dead : « un joueur a une carte ou moins en main » est vérifié pour vous et vos adversaires ; Kutzil's Flanker : compte les créatures qui ont quitté le champ de bataille sous votre contrôle, sans distinguer les jetons ;
   - Deep-Cavern Bat : la main adverse est montrée dans la fenêtre de choix .
+- **Méta Standard (plan P4, `docs/extensions/meta.md`) :**
+  - `choix auto` Leatherhead, Swamp Stalker : le marqueur retiré est choisi par le moteur (+1/+1 d'abord, puis les autres) ; l'artefact ou l'enchantement détruit est celui d'un adversaire quelconque (« ce joueur ») ;
+  - `choix auto` Elven Passage : on contemple un Elfe automatiquement dès qu'on en contrôle un ou qu'on en a un en main, sans montrer la carte révélée ;
+  - `règle` Torch the Tower : la cible est exilée si elle meurt ce tour-ci, même si ses blessures ont été prévenues ;
+  - `timing` Earthbender Ascension : « s'il a quatre marqueurs de quête ou plus » est vérifié à la résolution de la capacité de landfall, et non comme condition de la capacité réflexive.
 - **Légalité Standard :** instantané des légalités Scryfall au moment de l'import (`legalities.standard` dans `data/<set>.json`). Après une rotation ou une annonce de bannissement, réimporter les sets (`npm run import-cards -- <set>`).
 - **Images des jetons :** celle du jeton Scryfall le plus proche (même nom, puis mêmes F/E et couleurs ; `data/tokens.json`, `npm run import-tokens`) ; un jeton de nom inconnu garde le cadre texte.

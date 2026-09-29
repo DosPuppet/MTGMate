@@ -150,6 +150,8 @@ export interface TargetOption {
   legal: string[];
   /** Nombre maximal de cibles pour ce mot « cible » (1 par défaut). */
   count?: number;
+  /** Nombre minimal de cibles (« une ou deux cibles ») ; `count` par défaut. */
+  min?: number;
   /** Contrainte entre les cibles : même joueur, ou joueurs différents (avec le joueur de chaque cible). */
   group?: { kind: "same" | "different"; holders: Record<string, string> };
   kickedCount?: number;
@@ -202,7 +204,17 @@ export type ActionOption =
         discard?: { count: number; options: ObjectId[]; orLife?: number; orSacrifice?: boolean };
         /** `orPay` : on peut payer ce mana au lieu de sacrifier (Eaten Alive). */
         sacrifice?: { count: number; options: ObjectId[]; orPay?: ManaCost; orPayAffordable?: boolean };
+        /**
+         * Harmonie (702.180) : au plus `count` (1) créature à engager, facultative, qui réduit le coût de sa force
+         * (`powers`) ; `suggested` : le choix par défaut (appliqué si la décision n'a pas de `tap`).
+         */
+        tap?: { count: number; options: ObjectId[]; powers: Record<ObjectId, number>; suggested: ObjectId[]; optional: true };
       };
+      /**
+       * Kicker sans mana (Marchandage, FIN) : permanents qui peuvent le payer si le sort est kické, le choix par défaut en
+       * premier ; le joueur en désigne un par `sacrifice`.
+       */
+      kickerPermanents?: ObjectId[];
     }
   | {
       type: "activate";

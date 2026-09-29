@@ -46,6 +46,9 @@ Moteur pur et déterministe (`packages/engine/src`). L'état est sérialisable ;
 - **Capacité de mana à coût (« {1}, {T} : ajoutez un mana de n'importe quelle couleur ») :** une capacité `activated` ordinaire suffit ; `isManaAbility` (605.1a) la résout sans la pile.
 - **« Si [un objet] devait être mis dans un cimetière, exilez-le à la place » :** une capacité `graveyardReplacement({ filter, fromBattlefield, graveyardOf, notControlledByYou, link, gainLife, condition })`, et non un drapeau de `playerStatic`. L'ordre de 616.1 est appliqué par `replaceGraveyard` (`replacement.ts`), appelé par `moveObject`.
 - **« Vous pouvez lancer [cette carte] » pendant une résolution (608.2g) :** `fx.castNow(ref, { free, many, exileAfter, anyMana, storeCast, storeRest })`, et non `fx.grantPlay` (qui laisse la carte lançable plus tard dans le tour). Depuis un traitement d'effet, la boucle `castNowLoop` (`ops/spells.ts`) renvoie `{ castNow: … }`, qui suspend la résolution sur une priorité restreinte (`PendingDecision.castNow`).
+- **Effet sur un joueur jusqu'à la fin du tour** (« les blessures ne peuvent pas être prévenues ce tour-ci ») : `fx.thisTurn({ clé: valeur })`, avec une clé de `PlayerStaticAbilityDef` déjà lue par le moteur ; pas de nouvel effet.
+- **Coûts lus dans le texte :** Harmonie (`CardDef.harmonize`, coût dans `flashback`, créature engagée par `CastChoices.tap`) et Marchandage (kicker {0} avec `kickerCost.sacrifice`, permanent choisi par `CastChoices.sacrifice`) sont déduits dans `scryfall.ts` ; une carte qui les a n'a rien à écrire.
+- **Contempler, maîtrise de la terre :** `cond.behold(filtre)` ; `fx.earthbend(ref, n)`.
 - **Nouveau champ de `GameState` :** l'initialiser dans `game.ts` et, si besoin, dans `engine/test/helpers.ts`. Les champs de tour se remettent à zéro au changement de tour (`turn.ts`).
 
 ## Règles de conception

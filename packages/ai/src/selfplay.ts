@@ -85,9 +85,10 @@ export function checkInvariants(s: GameState, deckSizes: Record<string, number>)
   }
   // Références : une Aura ou un Équipement est attaché à un permanent (ou à un joueur) ; les combattants sont en jeu.
   // L'attachement n'est vérifié qu'à la priorité : en pleine résolution, les actions basées sur l'état (704.5m-n)
-  // n'ont pas encore détaché ce qui l'est illégalement.
+  // n'ont pas encore détaché ce qui l'est illégalement. La priorité « lancer maintenant » (608.2g) est encore dans la
+  // résolution (Zoyowa's Justice mélange une créature enchantée, puis découvre).
   const onBattlefield = new Set(s.battlefield);
-  const settled = s.pending?.kind === "priority";
+  const settled = s.pending?.kind === "priority" && !s.pending.castNow;
   for (const id of settled ? s.battlefield : []) {
     const to = s.objects[id]?.attachedTo;
     if (to && !onBattlefield.has(to) && !s.players[to]) errors.push(`${id} attaché à ${to}, absent du champ de bataille`);

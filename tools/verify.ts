@@ -3,6 +3,7 @@
  *
  * Usage :
  *   npm run verify -- --set FIN     vérification d'un lot (fuzz ciblé sur l'extension, environ 2 min)
+ *   npm run verify -- --set META    lot du méta (plan P4) : fuzz entre les decks du méta jouables (docs/meta/)
  *   npm run verify -- --full        vérification complète (fin d'extension, avant une fusion)
  *   npm run verify -- --ci          intégration continue (GitHub Actions) : contrôles, tests et fuzz courts sur tout
  *                                   le pool, sans tests d'interface ni bench
@@ -25,6 +26,8 @@ const opt = (n: string) => {
 const full = flag("full");
 const ci = flag("ci");
 const set = opt("set")?.toUpperCase();
+// Lot du méta : les cartes touchent plusieurs extensions ; le fuzz ciblé joue les decks du méta.
+const pool = set === "META" ? "meta" : set;
 if (!full && !ci && !set) {
   console.error("Préciser --set <extension> (vérification d'un lot), --full ou --ci.");
   process.exit(2);
@@ -112,7 +115,7 @@ ok &&= await group([
   { name: "biome", cmd: "npx biome check .", show: /^Found .*$/ },
   {
     name: "couverture",
-    cmd: `npx tsx tools/card-coverage.ts --set ${set ?? "standard"}`,
+    cmd: `npx tsx tools/card-coverage.ts --set ${set && set !== "META" ? set : "standard"}`,
     show: /^.* cartes gérées .*$/,
   },
 ]);
@@ -125,6 +128,7 @@ const fuzzes: Step[] = ci
       fuzz("fuzz 3 joueurs", "--games 40 --pool all --players 3"),
       fuzz("fuzz niveaux d'IA", "--games 20 --pool all --ai levels"),
       fuzz("fuzz chaos 2 j.", "--games 100 --pool all --ai chaos --seed 3000"),
+      fuzz("fuzz méta", "--games 60 --pool meta --ai mixed"),
     ]
   : full
     ? [
@@ -137,15 +141,16 @@ const fuzzes: Step[] = ci
         fuzz("fuzz niveaux d'IA", "--games 60 --pool all --ai levels"),
         fuzz("fuzz chaos 2 j.", "--games 300 --pool all --ai chaos --seed 3000"),
         fuzz("fuzz chaos 4 j.", "--games 60 --pool all --ai chaos --players 4"),
+        fuzz("fuzz méta", "--games 100 --pool meta --ai levels"),
       ]
     : [
-        fuzz(`fuzz ${set} 2 joueurs`, `--games 300 --pool ${set} --seed 1`),
-        fuzz(`fuzz ${set} 3 joueurs`, `--games 100 --pool ${set} --players 3`),
-        fuzz(`fuzz ${set} 4 joueurs`, `--games 60 --pool ${set} --players 4`),
-        fuzz(`fuzz ${set} IA mixte`, `--games 60 --pool ${set} --ai mixed`),
-        fuzz(`fuzz ${set} niveaux d'IA`, `--games 30 --pool ${set} --ai levels`),
+        fuzz(`fuzz ${set} 2 joueurs`, `--games 300 --pool ${pool} --seed 1`),
+        fuzz(`fuzz ${set} 3 joueurs`, `--games 100 --pool ${pool} --players 3`),
+        fuzz(`fuzz ${set} 4 joueurs`, `--games 60 --pool ${pool} --players 4`),
+        fuzz(`fuzz ${set} IA mixte`, `--games 60 --pool ${pool} --ai mixed`),
+        fuzz(`fuzz ${set} niveaux d'IA`, `--games 30 --pool ${pool} --ai levels`),
         fuzz("fuzz tout le pool", "--games 200 --pool all --seed 2000"),
-        fuzz(`fuzz ${set} chaos`, `--games 150 --pool ${set} --ai chaos`),
+        fuzz(`fuzz ${set} chaos`, `--games 150 --pool ${pool} --ai chaos`),
       ];
 for (const f of fuzzes) ok = (await group([f])) && ok;
 
@@ -190,7 +195,10 @@ if (!ci && !flag("no-ui") && (full || flag("ui") || uiTouched)) {
     console.log("⚠️  tests d'interface sautés : Vite ne répond pas sur http://localhost:5173 (lancer npm run dev)");
     ok = false;
   }
-} else console.log(`·  tests d'interface sautés (${ci ? "intégration continue" : "ni client, ni vue, ni protocole modifiés"})`);
+} else {
+  const why = ci ? "intégration continue" : flag("no-ui") ? "--no-ui" : "ni client, ni vue, ni protocole modifiés";
+  console.log(`·  tests d'interface sautés (${why})`);
+}
 
 console.log(
   `\n${ok ? "✅ Vérification réussie" : "❌ Vérification en échec"} en ${((performance.now() - t0) / 1000).toFixed(0)} s.`,

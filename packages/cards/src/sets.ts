@@ -27,13 +27,22 @@ import { BIG_SCRIPTS } from "./big/index";
 import { BLB_SCRIPTS } from "./blb/index";
 import { DFT_SCRIPTS } from "./dft/index";
 import { DSK_SCRIPTS } from "./dsk/index";
+import { ECL_SCRIPTS } from "./ecl/index";
 import { EOE_SCRIPTS } from "./eoe/index";
 import { FDN_SCRIPTS } from "./fdn/index";
 import { FIN_SCRIPTS } from "./fin/index";
 import { FRA_SCRIPTS } from "./fra/index";
+import { HOB_SCRIPTS } from "./hob/index";
 import { LCI_SCRIPTS } from "./lci/index";
+import { MKM_SCRIPTS } from "./mkm/index";
 import { OTJ_SCRIPTS } from "./otj/index";
 import type { RawCard } from "./scryfall";
+import { SOS_SCRIPTS } from "./sos/index";
+import { SPM_SCRIPTS } from "./spm/index";
+import { TDM_SCRIPTS } from "./tdm/index";
+import { TLA_SCRIPTS } from "./tla/index";
+import { TMT_SCRIPTS } from "./tmt/index";
+import { WOE_SCRIPTS } from "./woe/index";
 
 export interface CardSet {
   code: string;
@@ -81,7 +90,7 @@ export const SETS: CardSet[] = [
     nameFr: "Tarkir : Tempête draconique",
     mainMax: 291,
     data: tdmData as RawCard[],
-    scripts: {},
+    scripts: TDM_SCRIPTS,
   },
   {
     code: "WOE",
@@ -89,7 +98,7 @@ export const SETS: CardSet[] = [
     nameFr: "Les friches d'Eldraine",
     mainMax: 276,
     data: woeData as RawCard[],
-    scripts: {},
+    scripts: WOE_SCRIPTS,
   },
   {
     code: "SOS",
@@ -97,16 +106,23 @@ export const SETS: CardSet[] = [
     nameFr: "Secrets de Strixhaven",
     mainMax: 362,
     data: sosData as RawCard[],
-    scripts: {},
+    scripts: SOS_SCRIPTS,
   },
-  { code: "ECL", name: "Lorwyn Eclipsed", nameFr: "Lorwyn éclipsé", mainMax: 401, data: eclData as RawCard[], scripts: {} },
+  {
+    code: "ECL",
+    name: "Lorwyn Eclipsed",
+    nameFr: "Lorwyn éclipsé",
+    mainMax: 401,
+    data: eclData as RawCard[],
+    scripts: ECL_SCRIPTS,
+  },
   {
     code: "TLA",
     name: "Avatar: The Last Airbender",
     nameFr: "Avatar : le dernier maître de l'air",
     mainMax: 286,
     data: tlaData as RawCard[],
-    scripts: {},
+    scripts: TLA_SCRIPTS,
   },
   {
     code: "SPM",
@@ -114,7 +130,7 @@ export const SETS: CardSet[] = [
     nameFr: "Marvel's Spider-Man",
     mainMax: 198,
     data: spmData as RawCard[],
-    scripts: {},
+    scripts: SPM_SCRIPTS,
   },
   {
     code: "MSH",
@@ -130,16 +146,16 @@ export const SETS: CardSet[] = [
     nameFr: "Les Tortues Ninja",
     mainMax: 319,
     data: tmtData as RawCard[],
-    scripts: {},
+    scripts: TMT_SCRIPTS,
   },
-  { code: "HOB", name: "The Hobbit", nameFr: "Le Hobbit", mainMax: 320, data: hobData as RawCard[], scripts: {} },
+  { code: "HOB", name: "The Hobbit", nameFr: "Le Hobbit", mainMax: 320, data: hobData as RawCard[], scripts: HOB_SCRIPTS },
   {
     code: "MKM",
     name: "Murders at Karlov Manor",
     nameFr: "Meurtres au manoir Karlov",
     mainMax: 286,
     data: mkmData as RawCard[],
-    scripts: {},
+    scripts: MKM_SCRIPTS,
   },
   {
     code: "DSK",

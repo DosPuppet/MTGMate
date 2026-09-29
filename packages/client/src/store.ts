@@ -37,7 +37,7 @@ function defsFor(decks: DeckEntries[], sandbox?: Sandbox, scenario?: ScenarioSpe
   const names = new Set<string>(decks.flatMap((d) => d.map(([, name]) => name)));
   for (const n of scenario ? scenarioCards(scenario) : []) names.add(n);
   for (const side of Object.values(sandbox ?? {})) {
-    for (const n of [...(side.cards ?? []), ...(side.hand ?? [])]) names.add(n);
+    for (const n of [...(side.cards ?? []), ...(side.hand ?? []), ...(side.graveyard ?? [])]) names.add(n);
     for (const [n] of side.attach ?? []) names.add(n);
   }
   return Object.fromEntries([...names].map((n) => [n, card(n)]));
@@ -313,6 +313,7 @@ function buildDecision(c: Casting): Decision {
       kicked: c.kicked ?? false,
       discard: c.discard ?? undefined,
       sacrifice: c.sacrifice ?? undefined,
+      tap: c.tap ?? undefined,
       free: c.payMode === "free" && !c.option.free ? true : undefined,
       alternative: c.payMode === "alt" ? true : undefined,
     };
@@ -520,6 +521,15 @@ export const useGame = create<Store>((set, get) => {
       if (c.option.kickerAffordable) return set({ casting: { ...c, stage: "kicker" } });
       c.kicked = false;
     }
+    // Marchandage (kicker sans mana) : le permanent sacrifié, s'il y a le choix.
+    if (
+      c.option.type === "cast" &&
+      c.kicked &&
+      !c.option.additional?.sacrifice &&
+      (c.option.kickerPermanents?.length ?? 0) > 1 &&
+      c.sacrifice === null
+    )
+      return set({ casting: { ...c, stage: "sacrifice", spec: null } });
     for (const spec0 of targetSpecs(c)) {
       // Cadeau promis (Bloomburrow) : « à la place, un permanent non-terrain ciblé ».
       const spec = c.kicked && spec0.kickedLegal ? { ...spec0, legal: spec0.kickedLegal } : spec0;

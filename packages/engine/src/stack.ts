@@ -317,16 +317,19 @@ function topCardPlayable(s: GameState, player: PlayerId, card: ObjectId): boolea
   );
 }
 
-/** Kicker sans mana (FIN) : le permanent choisi automatiquement pour le payer, s'il y en a un. */
-export function kickerCostPermanent(
+/**
+ * Kicker sans mana (FIN, Marchandage de WOE) : les permanents qui peuvent le payer, le moins précieux d'abord (jetons,
+ * puis valeur de mana croissante). Le joueur choisit (`CastChoices.sacrifice`) ; sans choix, le premier.
+ */
+export function kickerCostOptions(
   s: GameState,
   player: PlayerId,
   card: ObjectId,
   d: CardDef,
   exclude: ObjectId[] = [],
-): ObjectId | undefined {
+): ObjectId[] {
   const f = d.kickerCost?.sacrifice ?? d.kickerCost?.bounce;
-  if (!f) return undefined;
+  if (!f) return [];
   const mv = (id: ObjectId) => (s.objects[id]?.isToken ? -1 : manaValue(s.defs[s.objects[id]?.defId ?? ""]?.manaCost));
   return s.battlefield
     .filter(
@@ -336,7 +339,39 @@ export function kickerCostPermanent(
         s.objects[id]?.controller === player &&
         matchesObjectFilter(s, player, id, f, card),
     )
-    .sort((a, b) => mv(a) - mv(b))[0];
+    .sort((a, b) => mv(a) - mv(b));
+}
+
+/** Le permanent qui paie le kicker sans mana par défaut, s'il y en a un. */
+export function kickerCostPermanent(
+  s: GameState,
+  player: PlayerId,
+  card: ObjectId,
+  d: CardDef,
+  exclude: ObjectId[] = [],
+): ObjectId | undefined {
+  return kickerCostOptions(s, player, card, d, exclude)[0];
+}
+
+/**
+ * Harmonie (702.180) : créatures dégagées que le joueur peut engager pour réduire de sa force le coût d'harmonie, et le
+ * choix par défaut pour un coût générique `generic` : la plus petite force qui couvre tout le générique, sinon la plus
+ * grande (aucune si le coût n'a pas de générique).
+ */
+export function harmonizeOptions(
+  s: GameState,
+  player: PlayerId,
+  card: ObjectId,
+  generic: number,
+): { options: ObjectId[]; powers: Record<ObjectId, number>; suggested: ObjectId[] } {
+  const options = s.battlefield.filter((id) => {
+    const o = obj(s, id);
+    return id !== card && o.controller === player && !o.tapped && isCreature(s, id) && chars(s, id).power > 0;
+  });
+  const powers = Object.fromEntries(options.map((id) => [id, chars(s, id).power]));
+  const byPower = [...options].sort((a, b) => (powers[a] ?? 0) - (powers[b] ?? 0));
+  const best = byPower.find((id) => (powers[id] ?? 0) >= generic) ?? byPower[byPower.length - 1];
+  return { options, powers, suggested: generic > 0 && best ? [best] : [] };
 }
 
 /** Coût total d'un sort : coût de base, de flashback ou alternatif (ou rien), X, kicker, réductions. */
@@ -913,15 +948,19 @@ export function castSpell(s: GameState, player: PlayerId, card: ObjectId, choice
   const hasX = !free && !!(flashback ? (d.flashback ?? d.manaCost)?.x : d.manaCost?.x);
   const x = hasX ? Math.max(0, Math.floor(choices.x ?? 0)) : 0;
   const kicked = !!choices.kicked && !!d.kicker;
-  // Kicker sans mana : le permanent à sacrifier ou à renvoyer (choisi automatiquement : le moins cher, jeton d'abord).
-  const kickerPermanent = kicked && d.kickerCost ? kickerCostPermanent(s, player, card, d, flatTargets(targets)) : undefined;
-  if (kicked && d.kickerCost && !kickerPermanent) throw new RulesError("Impossible de payer le kicker");
-
   // Coûts additionnels : vérifiés avant tout changement d'état.
   const opts = additionalOptions(s, player, card, d, flashback);
   if (!opts) throw new RulesError("Impossible de payer le coût additionnel");
+  // Kicker sans mana (Marchandage) : le permanent à sacrifier ou à renvoyer, choisi par le joueur (`sacrifice`, quand le
+  // sort n'a pas d'autre sacrifice en coût) ; sans choix, le moins cher, jeton d'abord.
+  const kickerOptions = kicked && d.kickerCost ? kickerCostOptions(s, player, card, d, flatTargets(targets)) : [];
+  const kickerChoice = kicked && d.kickerCost && !opts.sacrifice && choices.sacrifice?.length ? choices.sacrifice : undefined;
+  if (kickerChoice && (kickerChoice.length !== 1 || !kickerOptions.includes(kickerChoice[0] as ObjectId)))
+    throw new RulesError("Permanent invalide pour ce coût");
+  const kickerPermanent = kickerChoice?.[0] ?? kickerOptions[0];
+  if (kicked && d.kickerCost && !kickerPermanent) throw new RulesError("Impossible de payer le kicker");
   const discard = choices.discard ?? [];
-  const sacrifice = choices.sacrifice ?? [];
+  const sacrifice = kickerChoice ? [] : (choices.sacrifice ?? []);
   const check = (chosen: ObjectId[], spec?: { count: number; options: ObjectId[]; orPay?: ManaCost; orLife?: number }) => {
     const need = spec?.count ?? 0;
     if (spec?.orPay && chosen.length === 0) return; // on paiera le mana à la place
@@ -956,6 +995,14 @@ export function castSpell(s: GameState, player: PlayerId, card: ObjectId, choice
   if (opts.sacrifice?.orPay && sacrifice.length === 0) cost = addCosts(cost, opts.sacrifice.orPay);
   if (flashExtra) cost = addCosts(cost, flashExtra);
   if (terms.extraCost) cost = addCosts(cost, { generic: terms.extraCost, colored: {}, x: 0 });
+  // Harmonie : une créature engagée réduit le coût de sa force (`tap` absent : le choix par défaut ; [] : aucune).
+  const harmonize = flashback && !!d.harmonize;
+  if (choices.tap?.length && !harmonize) throw new RulesError("Aucune créature à engager pour ce sort");
+  const harmony = harmonize ? harmonizeOptions(s, player, card, cost.generic) : undefined;
+  const harmonyTap = harmony ? (choices.tap ?? harmony.suggested) : [];
+  if (harmonyTap.length > 1 || harmonyTap.some((id) => !harmony?.options.includes(id)))
+    throw new RulesError("Créature invalide pour l'harmonie");
+  for (const id of harmonyTap) cost = totalCost(cost, 0, undefined, harmony?.powers[id] ?? 0);
 
   // 601.2a : le sort passe sur la pile (nouvel objet), puis on paie les coûts (601.2g–h).
   if (terms.graveyardType) s.turn.graveyardTypesUsed = [...(s.turn.graveyardTypesUsed ?? []), terms.graveyardType];
@@ -975,7 +1022,7 @@ export function castSpell(s: GameState, player: PlayerId, card: ObjectId, choice
   if ((terms.forage || (alternative && altCostFor(s, player, d)?.forage)) && !forage(s, player))
     throw new RulesError("Impossible de fourrager");
   // Coûts additionnels choisis automatiquement (avant le mana : ces permanents ne produisent plus de mana).
-  for (const id of auto.tap) tapObject(s, obj(s, id));
+  for (const id of [...auto.tap, ...harmonyTap]) tapObject(s, obj(s, id));
   for (const id of auto.bounce) moveObject(s, id, "hand");
   for (const id of auto.graveyard) moveObject(s, id, "exile");
   const costExiled = auto.exile.map((id) => moveObject(s, id, "exile")).filter((id): id is string => !!id);

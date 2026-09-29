@@ -2,11 +2,12 @@
  * Fuzzing du moteur : parties IA contre IA avec vérification d'invariants à chaque décision.
  *
  * Usage : npm run fuzz -- [--games 200] [--seed 1] [--ai random|heuristic|mixed|beginner|medium|expert|levels|chaos] [--players 2]
- *                        [--pool decks|all|<SET>]
+ *                        [--pool decks|all|meta|<SET>]
  *                        [--jobs N]
  *
  * --pool all : decks aléatoires bicolores tirés de toutes les cartes gérées par le moteur.
  * --pool FIN : decks tirés d'abord des cartes de cette extension (complétés par les autres cartes gérées).
+ * --pool meta : les decks du méta Standard déjà jouables (`docs/meta/`, plan P4), les uns contre les autres.
  * --jobs N : les parties sont réparties sur N processus (graines contiguës), les résultats sont additionnés.
  * --ai : heuristic = medium ; mixed : une IA moyenne contre des IA aléatoires ; levels : les trois niveaux mélangés
  * (l'ISMCTS du niveau élevé avec un petit budget en itérations, pour rester rapide) ; chaos : IA aléatoires, et avant chaque
@@ -16,6 +17,7 @@ import { fork } from "node:child_process";
 import { type AiLevel, aiAgent, heuristicAgent, playGame, randomAgent } from "@mtgx/ai";
 import { buildDeck, DECKS } from "@mtgx/cards";
 import type { Agent, CardDef } from "@mtgx/engine";
+import { metaDecks } from "./meta-decks";
 import { randomDeck } from "./random-deck";
 
 const arg = (name: string, def: string) => {
@@ -42,10 +44,15 @@ const agentFor = (seed: number, which: number): Agent => {
   return randomAgent(seed * 7 + which);
 };
 
+const meta = pool === "meta" ? metaDecks().filter((d) => d.playable) : [];
+if (pool === "meta" && meta.length === 0) throw new Error("Aucun deck du méta n'est encore jouable");
+
 const deckFor = (seed: number, g: number, i: number): CardDef[] =>
   pool === "decks"
     ? buildDeck(DECKS[(g + i) % DECKS.length]!)
-    : randomDeck(seed * 31 + i, pool === "all" ? undefined : pool.toUpperCase());
+    : pool === "meta"
+      ? buildDeck(meta[(g + i) % meta.length]!)
+      : randomDeck(seed * 31 + i, pool === "all" ? undefined : pool.toUpperCase());
 
 interface Tally {
   wins: Record<string, number>;

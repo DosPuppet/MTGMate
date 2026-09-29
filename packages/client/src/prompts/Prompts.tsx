@@ -125,6 +125,7 @@ function AdditionalCostPicker({
   powers,
   suggested,
   min,
+  title,
 }: {
   kind: "discard" | "sacrifice" | "tap" | "materials";
   count: number;
@@ -139,6 +140,8 @@ function AdditionalCostPicker({
   orSacrifice?: boolean;
   /** Fabrication « un ou plusieurs » : au moins `min`, au plus `count`. */
   min?: number;
+  /** Titre de la fenêtre, à la place du titre déduit de `kind`. */
+  title?: string;
 }) {
   const view = useGame((s) => s.view);
   const choose = useGame((s) => s.chooseAdditional);
@@ -154,7 +157,8 @@ function AdditionalCostPicker({
   return (
     <Modal
       title={
-        kind === "discard" && orSacrifice
+        title ??
+        (kind === "discard" && orSacrifice
           ? "Coût additionnel : défaussez une carte ou sacrifiez un permanent"
           : kind === "discard"
             ? `Coût additionnel : défaussez ${count} carte(s)`
@@ -164,7 +168,7 @@ function AdditionalCostPicker({
                 ? `Engagez des créatures de force totale ${minPower} ou plus`
                 : kind === "tap"
                   ? `Coût : engagez ${count} créature(s)`
-                  : `Coût additionnel : sacrifiez ${count} permanent(s)`
+                  : `Coût additionnel : sacrifiez ${count} permanent(s)`)
       }
       wide
     >
@@ -285,6 +289,21 @@ function CastingPrompt() {
     const onBoard = new Set([...view.battlefield.map((o) => o.id), ...Object.keys(view.players), ...view.stack.map((x) => x.id)]);
     if (casting.spec.legal.some((id) => !onBoard.has(id))) return <TargetCardPicker />;
   }
+  // Harmonie : une créature facultative à engager, qui réduit le coût de sa force.
+  if (casting.stage === "tap" && opt.type === "cast" && opt.additional?.tap) {
+    const spec = opt.additional.tap;
+    return (
+      <AdditionalCostPicker
+        kind="tap"
+        count={spec.count}
+        min={0}
+        options={spec.options}
+        powers={spec.powers}
+        suggested={spec.suggested}
+        title="Harmonie : engagez une créature pour réduire le coût de sa force (facultatif)"
+      />
+    );
+  }
   if (casting.stage === "tap" && opt.type === "activate" && opt.additional?.tap) {
     const spec = opt.additional.tap;
     return (
@@ -307,6 +326,18 @@ function CastingPrompt() {
   if (casting.stage === "sacrifice" && opt.type === "activate" && opt.additional?.sacrifice) {
     const spec = opt.additional.sacrifice;
     return <AdditionalCostPicker kind="sacrifice" count={spec.count} options={spec.options} />;
+  }
+  // Marchandage (kicker sans mana) : le permanent à sacrifier.
+  if (casting.stage === "sacrifice" && opt.type === "cast" && !opt.additional?.sacrifice && opt.kickerPermanents) {
+    return (
+      <AdditionalCostPicker
+        kind="sacrifice"
+        count={1}
+        options={opt.kickerPermanents}
+        suggested={opt.kickerPermanents.slice(0, 1)}
+        title={opt.kickerPrompt ? `${opt.kickerPrompt.with} : choisissez le permanent` : "Kicker : choisissez le permanent"}
+      />
+    );
   }
   if ((casting.stage === "discard" || casting.stage === "sacrifice") && opt.type === "cast") {
     const spec = opt.additional?.[casting.stage];

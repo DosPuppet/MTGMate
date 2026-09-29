@@ -40,6 +40,8 @@ Ce fichier sert au suivi du projet entre les sessions : où on en est, les règl
 | P1 de l'audit (29/09/2026) : audit Oracle ↔ script (`coverage --audit`, test `audit.test.ts`), attentes déduites de l'Oracle (84 cartes), journal des événements du tour (`turnlog.ts`) ; lots 0.15 à 0.17 | ✅ |
 | P2 de l'audit (29/09/2026) : enregistrement des parties (`engine/src/record.ts`, graine + décisions), parties en ligne reprises après un redémarrage du serveur (`data/rooms`), export d'une partie et visionneur de replays | ✅ |
 | P2 de l'audit, fin (29/09/2026) : images des jetons, bundle découpé et compressé, service worker (hors ligne), match BO3 avec réserve (contre l'IA et en ligne) | ✅ |
+| Méta Standard, lot M1 (29/09/2026 ; plan P4, phase 1) : Izzet Spellementals et Mono-Green Landfall jouables, réserve comprise (22 cartes de 9 extensions) ; Harmonie, Marchandage, contempler, maîtrise de la terre ; `docs/extensions/meta.md` | ✅ |
+| Méta Standard, lots M2 à M6, puis Tarkir: Dragonstorm à 100 % (`PLAN-P4.md`) | à faire |
 | Autres extensions Standard | à la demande de l'utilisateur, une à la fois |
 
 
@@ -48,6 +50,7 @@ Ce fichier sert au suivi du projet entre les sessions : où on en est, les règl
 - **27/09/2026 :** l'intégration de tout le Standard d'un coup est abandonnée. La branche `standard` (socle multi-extensions, EOE, DFT, OTJ+BIG, FIN, vérification parallélisée) est fusionnée dans `master`.
 - **28/09/2026 :** le travail se fait désormais sur la branche `dev` (créée depuis `master`).
 - Ensuite : **une extension à la fois, sur `dev`, seulement quand l'utilisateur la nomme.**
+- **29/09/2026 (plan P4) :** exception décidée par l'utilisateur. On écrit d'abord les cartes des decks du méta Standard (lots M1 à M6, toutes extensions confondues ; des extensions restent donc partielles), puis Tarkir: Dragonstorm à 100 %. Un lot du méta se vérifie avec `npm run verify -- --set META`.
 - Découpage habituel d'une extension :
   - lot A : cartes faisables avec le moteur, jetons et terrains ;
   - lot B : mécaniques phares ;
@@ -62,7 +65,8 @@ Ce fichier sert au suivi du projet entre les sessions : où on en est, les règl
 - `docs/approximations.md` : approximations connues, générales puis carte par carte (à lever si une carte l'exige). **Toute nouvelle approximation y est ajoutée.**
 - `docs/extensions/<ext>.md` : mécaniques et détail des lots de chaque extension :
   - `fdn`, `fra`, `eoe`, `dft`, `otj-big`, `fin`, `dsk`, `blb`, `lci` ;
-  - `socle` pour les lots transverses (faces multiples, Sagas, face cachée…).
+  - `socle` pour les lots transverses (faces multiples, Sagas, face cachée…) ;
+  - `meta` pour les lots du méta Standard (plan P4, phase 1), avec une section par extension touchée.
   
   **Le détail d'un nouveau lot va là**, et CLAUDE.md ne reçoit qu'une ligne d'avancement.
 - `docs/deploiement.md` : mise en production (pm2, nginx).
@@ -106,7 +110,7 @@ Ce fichier sert au suivi du projet entre les sessions : où on en est, les règl
 
 ## Vérifications avant de rendre un lot
 
-- **Par lot :** `npm run verify -- --set <EXT>` (environ 70 s). Il lance :
+- **Par lot :** `npm run verify -- --set <EXT>` (environ 70 s ; `--set META` pour un lot du méta, dont le fuzz joue les decks du méta jouables). Il lance :
   - `tsc`, Biome et la couverture ;
   - `vitest`, où le test de fumée est découpé en un fichier par extension (tous les cœurs) ;
   - le fuzz ciblé sur l'extension (`--pool <EXT>`, à 2, 3 et 4 joueurs, en IA mixte et en mode « chaos ») ;

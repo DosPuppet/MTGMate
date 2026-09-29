@@ -13,6 +13,8 @@ export type Sandbox = Record<
     cards?: string[];
     /** Cartes ajoutées à la main de ce joueur. */
     hand?: string[];
+    /** Cartes ajoutées au cimetière de ce joueur (flashback, harmonie). */
+    graveyard?: string[];
     tokens?: [number, string][];
     /** Aura ou Équipement de ce joueur, attaché à une créature (nom) de `hostPlayer` (ce joueur par défaut). */
     attach?: [card: string, host: string, hostPlayer?: string][];

@@ -144,6 +144,8 @@ export const target = {
   upTo: (n: number, t: TargetSpec): TargetSpec => ({ ...t, count: n, optional: true }),
   /** « N [cibles] » (exactement N, toutes différentes). */
   exactly: (n: number, t: TargetSpec): TargetSpec => ({ ...t, count: n }),
+  /** « une ou deux cibles » : entre `min` et `max` cibles. */
+  between: (min: number, max: number, t: TargetSpec): TargetSpec => ({ ...t, count: max, minCount: min }),
   /** « carte de [filtre] ciblée de votre cimetière / d'un cimetière » */
   cardInGraveyard: (
     id = "t",
@@ -380,8 +382,33 @@ export const fx = {
     ...opts,
   }),
   addCounters: (what: Ref, n: Amount): Effect => ({ op: "addCounters", what, amount: n }),
+  /**
+   * Maîtrise de la terre N (701.65, Avatar) : le terrain devient une créature 0/0 avec la célérité qui est toujours un
+   * terrain, avec N marqueurs +1/+1, et « quand il meurt ou est exilé, renvoyez-le sur le champ de bataille engagé ».
+   */
+  earthbend: (what: Ref, n: Amount): Effect[] => [
+    {
+      op: "modify",
+      what,
+      mods: {
+        addTypes: ["Creature"],
+        setPower: 0,
+        setToughness: 0,
+        addKeywords: ["haste"],
+        addAbilities: [
+          triggered(when.diesOrExiled("self"), [fx.toBattlefield(ref.selfCard, { tapped: true })], {
+            label: "Revient sur le champ de bataille engagé",
+          }),
+        ],
+      },
+      duration: "permanent",
+    },
+    { op: "addCounters", what, amount: n },
+  ],
   loseLife: (n: Amount, who: Ref = ref.you, store?: string): Effect => ({ op: "loseLife", who, amount: n, store }),
   bounce: (what: Ref): Effect => ({ op: "bounce", what }),
+  /** Effet de joueur jusqu'à la fin du tour, pour son contrôleur (`damageUnpreventable` : « les blessures ne peuvent pas être prévenues ce tour-ci »). */
+  thisTurn: (ability: Omit<PlayerStaticAbilityDef, "kind">): Effect => ({ op: "playerEffect", ability }),
   exile: (what: Ref): Effect => ({ op: "exile", what }),
   mill: (n: Amount, who: Ref = ref.you, store?: { name: string; filter?: ObjectFilter }): Effect => ({
     op: "mill",
@@ -1376,7 +1403,13 @@ export const when = {
   /** Vaillance : « chaque fois que cette créature devient la cible d'un sort ou d'une capacité que vous contrôlez ». */
   valiant: { on: "becomesTarget", who: "self", byYou: true } as TriggerSpec,
   /** « Chaque fois qu'une [créature que vous contrôlez] devient la cible d'un sort ou d'une capacité qu'un adversaire contrôle » */
-  targetedByOpponent: (who: ObjectFilter): TriggerSpec => ({ on: "becomesTarget", who, byOpponent: true }),
+  /** `spells` : « … ou un sort de [créature] que vous contrôlez » (Surrak, Elusive Hunter). */
+  targetedByOpponent: (who: ObjectFilter, spells?: boolean): TriggerSpec => ({
+    on: "becomesTarget",
+    who,
+    byOpponent: true,
+    spells,
+  }),
   /** Dépense N : « chaque fois que vous dépensez votre N-ième mana total pour lancer des sorts pendant un tour ». */
   expend: (n: number): TriggerSpec => ({ on: "expend", n }),
   forage: { on: "forage" } as TriggerSpec,
@@ -1454,7 +1487,9 @@ export const cond = {
     exactly,
   }),
   /** « si vous contemplez un Jace » : vous contrôlez un Jace ou vous avez une carte de Jace en main. */
-  beholdJace: { kind: "beholdJace" } as Condition,
+  /** Contempler (701.63) : « vous pouvez contempler un Elfe » (choisir un Elfe que vous contrôlez ou révéler une carte d'Elfe de votre main). */
+  behold: (filter: ObjectFilter): Condition => ({ kind: "behold", filter }),
+  beholdJace: { kind: "behold", filter: { subtype: "Jace" } } as Condition,
   activatedLoyalty: { kind: "activatedLoyaltyThisTurn" } as Condition,
   /** La source est préparée. */
   prepared: { kind: "prepared" } as Condition,

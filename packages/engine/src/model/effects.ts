@@ -12,12 +12,15 @@ import type {
   ManaType,
   MoveSpec,
   ObjectFilter,
+  PlayerStaticAbilityDef,
   Ref,
   TargetSpec,
   TokenSpec,
 } from "../types";
 
 export type Effect =
+  /** Effet de joueur jusqu'à la fin du tour (« les blessures ne peuvent pas être prévenues ce tour-ci »). */
+  | { op: "playerEffect"; ability: Omit<PlayerStaticAbilityDef, "kind"> }
   /** Proliférer N fois (701.34), choix automatique : vos permanents qui ont des marqueurs, et chez les adversaires marqueurs -1/-1, d'étourdissement et de poison. */
   | { op: "proliferate"; times: Amount }
   /** « Retirez jusqu'à N marqueurs » (choix automatique : loyauté, +1/+1, puis les autres). */
