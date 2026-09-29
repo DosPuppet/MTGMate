@@ -22,6 +22,7 @@ export {
 export { DECKS, type DeckList } from "./decks";
 export { HANDLED_LAYOUTS, onlyKeywords, type RawCard, type RawFace, slug, toCardDef } from "./scryfall";
 export { type CardSet, isMainSet, SET_BY_CODE, SETS } from "./sets";
+export { type TokenLike, tokenImage } from "./tokenImages";
 export { TOKEN_SPECS } from "./tokens";
 
 /** Toutes les cartes connues, indexées par nom anglais (toutes extensions ; une réimpression garde la première). */

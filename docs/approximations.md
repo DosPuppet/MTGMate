@@ -186,4 +186,4 @@ Dans l'ordre où elles ont été ajoutées, extension par extension.
   - Temple of the Dead : « un joueur a une carte ou moins en main » est vérifié pour vous et vos adversaires ; Kutzil's Flanker : compte les créatures qui ont quitté le champ de bataille sous votre contrôle, sans distinguer les jetons ;
   - Deep-Cavern Bat : la main adverse est montrée dans la fenêtre de choix .
 - **Légalité Standard :** instantané des légalités Scryfall au moment de l'import (`legalities.standard` dans `data/<set>.json`). Après une rotation ou une annonce de bannissement, réimporter les sets (`npm run import-cards -- <set>`).
-- **Jetons :** pas d'image (cadre texte).
+- **Images des jetons :** celle du jeton Scryfall le plus proche (même nom, puis mêmes F/E et couleurs ; `data/tokens.json`, `npm run import-tokens`) ; un jeton de nom inconnu garde le cadre texte.

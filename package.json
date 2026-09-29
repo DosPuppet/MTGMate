@@ -17,6 +17,7 @@
     "arena": "tsx tools/ai-arena.ts",
     "verify": "tsx tools/verify.ts",
     "import-cards": "tsx tools/import-scryfall.ts",
+    "import-tokens": "tsx tools/import-tokens.ts",
     "ui-smoke": "tsx tools/ui-smoke.ts",
     "bench": "tsx tools/bench.ts",
     "coverage": "tsx tools/card-coverage.ts",

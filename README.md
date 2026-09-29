@@ -120,6 +120,7 @@ Les images des cartes viennent de Scryfall (`cards.scryfall.io`). Certains rése
 | `npm run replay-smoke` | Replays : partie contre l'IA exportée, puis rouverte dans le visionneur (avance, retour, fin, point de vue) (serveur de dev lancé) |
 | `npm run mobile-smoke` | Tablette et téléphone émulés : main, bouton principal et champs à l'écran, appui long, tap pour lever une carte, tiroir, portrait (serveur de dev lancé) |
 | `npm run battlefield-smoke` | Plateaux chargés (jetons, 2e ligne, 4 joueurs) mis en jeu par le bac à sable du mode dev : rangées, piles de jetons, aucune carte rognée (serveur de dev lancé) |
+| `npm run import-tokens` | Images des jetons : jetons Scryfall des extensions Standard (`t<code>`) dans `packages/cards/data/tokens.json` |
 | `npm run import-cards -- <set>\|all` | Import Scryfall d'une extension, ou de toutes les extensions Standard hors FDN et FRA (`all`) |
 | `npm run deck-smoke` | Deckbuilder de bout en bout : import, édition, export, persistance, partie (serveur de dev lancé) |
 | `npm run ui-smoke -- <dossier> [actions]` | Joue une partie dans Chromium via l'interface et prend des captures (serveur de dev lancé) |
@@ -199,7 +200,7 @@ Chaque carte gérée est automatiquement jouée par le test de fumée (`packages
 | 4g. Autres extensions Standard | une extension à la fois : Reality Fracture ✅, Edge of Eternities ✅, Aetherdrift ✅, Outlaws of Thunder Junction + The Big Score ✅, Final Fantasy ✅, Duskmourn ✅, Bloomburrow ✅, The Lost Caverns of Ixalan ✅ ; les suivantes à la demande | en cours |
 | 5. IA | trois niveaux au choix (débutant, moyen, élevé) ; évaluation sur les caractéristiques durables ; attaques et blocages par simulation ; ISMCTS en duel (déterminisation de l'information cachée), budget en temps ; tournoi d'IA (`npm run arena`) ; guide : docs/ia.md | ✅ |
 | 6. JcJ en ligne | duel Standard : serveur Node `ws` (`GameHost`, vues et faces filtrées), code de salon, corde, reconnexion, revanche | ✅ duel ; déploiement pm2 + nginx documenté |
-| 7. Finitions | effets sonores ✅ ; tablette et téléphone ✅ ; relais des images Scryfall ✅ ; replays (graine + décisions), images des jetons, musique | en cours |
+| 7. Finitions | effets sonores ✅ ; tablette et téléphone ✅ ; relais des images Scryfall ✅ ; replays (graine + décisions) ✅ ; images des jetons ✅ ; musique | en cours |
 
 Le suivi (avancement, conventions, pièges) est dans [CLAUDE.md](CLAUDE.md). Les approximations connues sont dans [docs/approximations.md](docs/approximations.md), et le détail de chaque extension dans [docs/extensions/](docs/extensions/).
 

@@ -41,6 +41,8 @@ export interface CardFace {
   baseToughness?: number;
   implemented: boolean;
   isToken: boolean;
+  /** Jeton : ses couleurs (image correspondante, `tokenImage` du paquet des cartes). */
+  colors?: Color[];
   /** Sort attaché d'une carte « à préparer » (affiché dans l'aperçu). */
   prepareFace?: CardDef["prepareFace"];
   /** Carte à plusieurs faces : sa disposition et ses autres faces (verso, aventure, autre moitié). */
@@ -208,6 +210,7 @@ export function cardFace(d: CardDef): CardFace {
     baseToughness: d.toughness,
     implemented: d.implemented,
     isToken: !!d.isToken,
+    ...(d.isToken ? { colors: d.colors } : {}),
     ...(d.prepareFace ? { prepareFace: d.prepareFace } : {}),
     ...(d.layout ? { layout: d.layout, otherFaces: otherFaces(d) } : {}),
   };

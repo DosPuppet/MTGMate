@@ -1,4 +1,6 @@
 /** Libellés français et mise en forme du journal. */
+
+import { tokenImage } from "@mtgx/cards";
 import type { CardFace, GameEvent, GameView, Keyword, Step } from "@mtgx/engine";
 import { imageUrl } from "./images";
 
@@ -102,7 +104,8 @@ export function faceType(face: CardFace, lang: Lang): string {
 
 /** Image d'une face (relayée par le serveur si Scryfall est bloqué, voir images.ts). */
 export function faceImage(face: CardFace, lang: Lang): string | undefined {
-  return imageUrl((lang === "fr" && face.fr?.image) || face.image);
+  // Jeton : l'image d'un jeton Scryfall correspondant (data/tokens.json), sinon le cadre texte.
+  return imageUrl((lang === "fr" && face.fr?.image) || face.image || (face.isToken ? tokenImage(face) : undefined));
 }
 
 export interface LogLine {
