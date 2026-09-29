@@ -27,7 +27,8 @@
     "server": "tsx packages/server/src/main.ts",
     "online-smoke": "tsx tools/online-smoke.ts",
     "tutorial-smoke": "tsx tools/tutorial-smoke.ts",
-    "ai-smoke": "tsx tools/ai-smoke.ts"
+    "ai-smoke": "tsx tools/ai-smoke.ts",
+    "replay-smoke": "tsx tools/replay-smoke.ts"
   },
   "devDependencies": {
     "@biomejs/biome": "^2.5.14",

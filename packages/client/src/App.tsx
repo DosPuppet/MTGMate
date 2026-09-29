@@ -1,5 +1,6 @@
 import { useEffect } from "react";
 import { Board, useMainAction } from "./board/Board";
+import { ReplayBar } from "./board/ReplayBar";
 import { DrawerToggle, Sidebar, TouchPreview } from "./board/Sidebar";
 import { DeckBuilder } from "./decks/DeckBuilder";
 import { Lobby } from "./lobby/Lobby";
@@ -58,6 +59,7 @@ function GameScreen() {
     >
       <Board />
       <Sidebar />
+      <ReplayBar />
       <DrawerToggle />
       <Prompts />
       <TouchPreview />

@@ -1,5 +1,6 @@
 import type { AiLevel } from "@mtgx/ai";
 import { CARDS, type DeckList, FORMAT_LABELS, validateDeck } from "@mtgx/cards";
+import { isGameRecord } from "@mtgx/engine";
 import { useState } from "react";
 import { SoundControl } from "../audio/SoundControl";
 import { ManaCost } from "../board/Card";
@@ -187,6 +188,7 @@ export function Lobby() {
           <button type="button" className={`btn big ${newcomer ? "learn" : ""}`} onClick={openTutorial}>
             Apprendre à jouer
           </button>
+          <ReplayOpener />
         </div>
         <div className="lobby-help">
           <strong>Raccourcis :</strong> Espace = bouton principal · Entrée = passer le tour · Échap = annuler · M = couper le son.
@@ -199,5 +201,33 @@ export function Lobby() {
         approuvé ni soutenu par Wizards. Images et données de cartes : Scryfall.
       </footer>
     </div>
+  );
+}
+
+/** « Revoir une partie » : ouvre un fichier exporté (« Exporter la partie ») dans le visionneur de replays. */
+function ReplayOpener() {
+  const openReplay = useGame((s) => s.openReplay);
+  const notify = useGame((s) => s.notify);
+  return (
+    <label className="btn big replay-open">
+      Revoir une partie
+      <input
+        type="file"
+        accept="application/json,.json"
+        hidden
+        onChange={async (e) => {
+          const file = e.target.files?.[0];
+          e.target.value = "";
+          if (!file) return;
+          try {
+            const record = JSON.parse(await file.text()) as unknown;
+            if (!isGameRecord(record)) return notify("Ce fichier n'est pas une partie MTG Mate.");
+            openReplay(record);
+          } catch {
+            notify("Fichier illisible.");
+          }
+        }}
+      />
+    </label>
   );
 }

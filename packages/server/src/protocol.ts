@@ -3,7 +3,7 @@
  * Le serveur fait autorité : il valide les decks et chaque décision (RulesError du moteur).
  */
 import type { DeckEntries } from "@mtgx/cards";
-import type { AutopilotSettings, CardFace, Decision, GameEvent, GameView } from "@mtgx/engine";
+import type { AutopilotSettings, CardFace, Decision, GameEvent, GameRecord, GameView } from "@mtgx/engine";
 
 /** Sièges d'un duel : identifiants des joueurs dans le moteur. */
 export type Seat = "p1" | "p2";
@@ -39,7 +39,9 @@ export type ClientMessage =
   | { type: "leave" }
   | { type: "decision"; decision: Decision }
   | { type: "settings"; settings: Partial<AutopilotSettings> }
-  | { type: "rematch" };
+  | { type: "rematch" }
+  /** Enregistrement de la partie terminée (replay, signalement d'un bug) ; refusé pendant la partie (decks, graine). */
+  | { type: "export" };
 
 /** `busy` : serveur complet ; `closed` : salon fermé par le serveur (attente trop longue). */
 export type ErrorCode = "deck" | "name" | "room" | "full" | "busy" | "closed" | "token" | "rules" | "state";
@@ -48,4 +50,5 @@ export type ServerMessage =
   | { type: "room"; room: RoomInfo }
   | { type: "update"; view: GameView; events: GameEvent[]; faces: Record<string, CardFace>; clock: Clock | null }
   | { type: "opponent"; connected: boolean; remainingMs: number | null }
-  | { type: "error"; code: ErrorCode; message: string };
+  | { type: "error"; code: ErrorCode; message: string }
+  | { type: "record"; record: GameRecord };

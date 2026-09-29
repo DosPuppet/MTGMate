@@ -356,6 +356,12 @@ export class Room {
     });
   }
 
+  /** Enregistrement de la partie, seulement si elle est terminée (il révèle les decks et la graine). */
+  exportRecord(): GameRecord | null {
+    const host = this.host;
+    return host?.state.over && host.record ? structuredClone(host.record) : null;
+  }
+
   decide(seat: SeatState, d: Decision): Promise<void> {
     return this.enqueue(async () => {
       const host = this.host;

@@ -14,6 +14,7 @@ import {
   DEFAULT_AUTOPILOT,
   type Decision,
   type GameEvent,
+  type GameRecord,
   type GameView,
   type ObjectView,
   type Step,
@@ -29,7 +30,7 @@ import { describeEvents, type Lang, type LogLine } from "./i18n";
 import { boardPick, togglePick } from "./prompts/boardChoice";
 import type { FromWorker, Sandbox, ScenarioSpec } from "./protocol";
 import { scenarioCards } from "./scenario";
-import { LocalSession, RemoteSession, type Session } from "./session";
+import { LocalSession, RemoteSession, ReplaySession, type Session } from "./session";
 
 /** Définitions des cartes des decks (et du bac à sable ou du scénario), envoyées au worker de partie. */
 function defsFor(decks: DeckEntries[], sandbox?: Sandbox, scenario?: ScenarioSpec): Record<string, CardDef> {
@@ -185,6 +186,15 @@ interface Store {
   backToLobby(): void;
   openDeckBuilder(deckId?: string | null): void;
   receive(msg: FromWorker): void;
+  /** Replay en cours : position, point de vue, lecture automatique. */
+  replay: { index: number; total: number; viewer: string; players: { id: string; name: string }[]; playing: boolean } | null;
+  /** Télécharge l'enregistrement de la partie (contre l'IA : à tout moment ; en ligne : une fois terminée). */
+  exportGame(): void;
+  /** Ouvre un enregistrement de partie dans le visionneur. */
+  openReplay(record: GameRecord): void;
+  replaySeek(index: number): void;
+  replayViewer(player: string): void;
+  replayPlay(on: boolean): void;
   decide(d: Decision): void;
   notify(text: string): void;
   clickHandCard(id: string): void;
@@ -323,7 +333,13 @@ function playEffects(view: GameView, events: GameEvent[], faces: Record<string, 
     else if (e.type === "dies") push("death", e.objectId, 0);
     else if (e.type === "turnStart") {
       const mine = e.player === view.viewer;
-      banner = { id: ++fxId, mine, text: mine ? "À vous de jouer" : `Tour de ${view.players[e.player]?.name ?? "l'adversaire"}` };
+      // Replay : pas de « À vous de jouer » (on ne joue pas), le nom du joueur actif.
+      const replaying = !!store.getState().replay;
+      banner = {
+        id: ++fxId,
+        mine,
+        text: mine && !replaying ? "À vous de jouer" : `Tour de ${view.players[e.player]?.name ?? "l'adversaire"}`,
+      };
     } else if ((e.type === "cast" || e.type === "activate" || e.type === "trigger") && e.player !== view.viewer) {
       const face = faces[e.defId];
       if (face) spotlight = { id: ++fxId, face, who: view.players[e.player]?.name ?? "L'adversaire" };
@@ -362,6 +378,20 @@ function loadToken(): string | null {
     return null;
   }
 }
+
+/** Enregistrement de partie téléchargé en fichier JSON (« mtgmate-partie-2026-09-29-1432.json »). */
+function downloadRecord(record: GameRecord): void {
+  const stamp = new Date().toISOString().slice(0, 16).replace("T", "-").replace(":", "");
+  const blob = new Blob([JSON.stringify(record)], { type: "application/json" });
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = `mtgmate-partie-${stamp}.json`;
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+}
+
+/** Lecture automatique du replay : une étape toutes les 700 ms. */
+let replayTimer: ReturnType<typeof setInterval> | null = null;
 
 function saveToken(token: string | null): void {
   try {
@@ -517,6 +547,7 @@ export const useGame = create<Store>((set, get) => {
 
   return {
     screen: "lobby",
+    replay: null,
     tutorialGame: false,
     editingDeck: null,
     session: null,
@@ -546,7 +577,7 @@ export const useGame = create<Store>((set, get) => {
 
     startGame(playerDeck, aiDecks, sandbox, aiLevel) {
       get().session?.close();
-      set({ online: null, tutorialGame: false });
+      set({ online: null, tutorialGame: false, replay: null });
       preloadSounds();
       const session = new LocalSession((m) => get().receive(m));
       const settings = { ...get().settings, passUntilTurn: null };
@@ -574,6 +605,7 @@ export const useGame = create<Store>((set, get) => {
       set({
         screen: "game",
         tutorialGame: true,
+        replay: null,
         online: null,
         session,
         view: null,
@@ -690,6 +722,9 @@ export const useGame = create<Store>((set, get) => {
             },
           });
           return;
+        case "record":
+          downloadRecord(msg.record);
+          return;
         case "error":
           if (msg.code === "rules") return get().receive({ type: "error", message: msg.message });
           if (msg.code === "token") {
@@ -715,7 +750,86 @@ export const useGame = create<Store>((set, get) => {
       set({ screen: "decks", editingDeck: deckId ?? get().editingDeck });
     },
 
+    exportGame() {
+      get().session?.send({ type: "export" });
+    },
+
+    openReplay(record) {
+      get().session?.close();
+      if (replayTimer) clearInterval(replayTimer);
+      replayTimer = null;
+      let session: ReplaySession;
+      try {
+        session = new ReplaySession(record, card);
+      } catch (e) {
+        return get().notify(`Replay impossible : ${e instanceof Error ? e.message : String(e)}`);
+      }
+      const viewer = record.players[0]?.id ?? "p1";
+      set({
+        screen: "game",
+        tutorialGame: false,
+        online: null,
+        session,
+        log: [],
+        fx: [],
+        // Rien de la partie précédente : bandeau de tour, sort adverse montré, message.
+        turnBanner: null,
+        spotlight: null,
+        toast: null,
+        casting: null,
+        attackers: [],
+        blocks: {},
+        selection: [],
+        replay: {
+          index: 0,
+          total: session.states.length - 1,
+          viewer,
+          players: record.players.map((p) => ({ id: p.id, name: p.name })),
+          playing: false,
+        },
+      });
+      const { view, faces } = session.frame(0, viewer, false);
+      set({ view, faces });
+    },
+
+    replaySeek(index) {
+      const { replay, session } = get();
+      if (!replay || !(session instanceof ReplaySession)) return;
+      const i = Math.max(0, Math.min(replay.total, index));
+      // Une étape en avant : ses événements (journal, sons, effets) ; un saut : l'état seul, journal vidé.
+      const step = i === replay.index + 1;
+      const frame = session.frame(i, replay.viewer, step);
+      if (step) {
+        get().receive({ type: "update", ...frame });
+      } else set({ view: frame.view, faces: frame.faces, log: [] });
+      set({ replay: { ...replay, index: i } });
+      if (i >= replay.total) get().replayPlay(false);
+    },
+
+    replayViewer(player) {
+      const { replay, session } = get();
+      if (!replay || !(session instanceof ReplaySession)) return;
+      const frame = session.frame(replay.index, player, false);
+      set({ replay: { ...replay, viewer: player }, view: frame.view, faces: frame.faces, log: [] });
+    },
+
+    replayPlay(on) {
+      const replay = get().replay;
+      if (!replay) return;
+      if (replayTimer) clearInterval(replayTimer);
+      replayTimer = null;
+      if (on)
+        replayTimer = setInterval(() => {
+          const r = get().replay;
+          if (r) get().replaySeek(r.index + 1);
+        }, 700);
+      set({ replay: { ...replay, playing: on } });
+    },
+
     backToLobby() {
+      if (replayTimer) clearInterval(replayTimer);
+      replayTimer = null;
+      if (get().replay) set({ replay: null });
       if (get().online) return get().leaveRoom();
       get().session?.close();
       set({
@@ -731,6 +845,11 @@ export const useGame = create<Store>((set, get) => {
     },
 
     receive(msg) {
+      if (msg.type === "record") {
+        if (msg.record) downloadRecord(msg.record);
+        else get().notify("Cette partie n'est pas enregistrée (tutoriel ou bac à sable).");
+        return;
+      }
       if (msg.type === "error") {
         playSound("error");
         return get().notify(msg.message);

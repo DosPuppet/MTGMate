@@ -2928,3 +2928,46 @@ button {
   text-align: center;
   max-width: 560px;
 }
+
+/* Replay : barre de lecture en haut du plateau. */
+.replay-bar {
+  position: fixed;
+  top: 8px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 150;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+  justify-content: center;
+  max-width: calc(100vw - 32px);
+  padding: 6px 12px;
+  border-radius: 12px;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  color: var(--text);
+  backdrop-filter: blur(6px);
+}
+.replay-title {
+  color: var(--gold);
+  margin-right: 4px;
+}
+.replay-slider {
+  width: clamp(120px, 22vw, 320px);
+}
+.replay-pos {
+  color: var(--dim);
+  font-variant-numeric: tabular-nums;
+  min-width: 7ch;
+  text-align: center;
+}
+.replay-viewer select {
+  background: var(--panel-2);
+  color: var(--text);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+}
+.replay-open {
+  cursor: pointer;
+}

@@ -153,6 +153,9 @@ function Settings() {
   const backToLobby = useGame((s) => s.backToLobby);
   const over = useGame((s) => s.view?.over);
   const online = useGame((s) => !!s.online);
+  const tutorial = useGame((s) => s.tutorialGame);
+  const replay = useGame((s) => !!s.replay);
+  const exportGame = useGame((s) => s.exportGame);
   return (
     <div className="settings">
       <div className="seg">
@@ -169,9 +172,20 @@ function Settings() {
         Contrôle total
       </label>
       <ImageRelayToggle />
-      {!over && (
+      {!over && !replay && (
         <button type="button" className="btn small ghost" onClick={() => decide({ type: "concede" })}>
           Abandonner
+        </button>
+      )}
+      {/* Enregistrement de la partie (replay, signalement d'un bug) ; en ligne, seulement une fois terminée. */}
+      {!tutorial && !replay && (!online || over) && (
+        <button
+          type="button"
+          className="btn small ghost"
+          title="Télécharger la partie (fichier à revoir, ou à joindre au signalement d'un bug)"
+          onClick={exportGame}
+        >
+          Exporter la partie
         </button>
       )}
       <button

@@ -269,6 +269,14 @@ export function startServer(opts: ServerOptions = {}): Promise<RunningServer> {
             if (!current) throw new ClientError("state", "Aucune partie en cours.");
             current.room.rematch(current.seat).catch(fail);
             return;
+          case "export": {
+            if (!current) throw new ClientError("state", "Aucune partie en cours.");
+            // L'enregistrement révèle les decks et la graine : seulement une fois la partie terminée.
+            const record = current.room.exportRecord();
+            if (!record) throw new ClientError("state", "La partie n'est pas terminée : l'export sera possible à la fin.");
+            peer.send({ type: "record", record });
+            return;
+          }
         }
       } catch (e) {
         fail(e);

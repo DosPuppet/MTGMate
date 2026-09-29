@@ -2,6 +2,8 @@
 import { existsSync, mkdtempSync, readdirSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import { card } from "@mtgx/cards";
+import { isGameRecord, replayGame } from "@mtgx/engine";
 import { afterEach, describe, expect, it } from "vitest";
 import type { RunningServer } from "../src/index";
 import { Client, duel, server } from "./helpers";
@@ -66,6 +68,9 @@ describe("parties sauvegardées", () => {
     expect(upA.view.hand.map((c) => c.id)).toEqual(before.a?.hand.map((c) => c.id));
     expect(upB.view.hand.map((c) => c.id)).toEqual(before.b?.hand.map((c) => c.id));
     expect(upA.view.turn).toEqual(before.a?.turn);
+    // Pas d'export pendant la partie (il révèle les decks et la graine).
+    a2.send({ type: "export" });
+    expect((await a2.next("error", (m) => m.code === "state")).message).toMatch(/pas terminée/);
     // Et elle continue jusqu'au bout.
     a2.bot = b2.bot = true;
     a2.play(upA.view);
@@ -73,6 +78,13 @@ describe("parties sauvegardées", () => {
     // Une partie complète entre ces bots peut durer plus d'une minute (voir « partie complète », online.test.ts).
     const end = await a2.next("update", (m) => m.view.over, 90_000);
     expect(end.view.winner).toBeTruthy();
+    // Export de la partie terminée : il se rejoue jusqu'au même vainqueur (décisions d'avant et d'après le redémarrage).
+    a2.send({ type: "export" });
+    const { record } = await a2.next("record");
+    expect(isGameRecord(record)).toBe(true);
+    const replayed = replayGame(record, card);
+    expect(replayed.state.over).toBe(true);
+    expect(replayed.state.winner).toBe(end.view.winner);
   }, 150_000);
 
   it("un salon fermé efface sa sauvegarde ; un fichier illisible est mis de côté sans bloquer le démarrage", async () => {

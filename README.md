@@ -74,6 +74,12 @@ npm run dev          # http://localhost:5173
   - revanche possible dans le même salon.
 - **Variables d'environnement :** `PORT`, `HOST` (`127.0.0.1` derrière nginx), `MTGX_DECISION_MS`, `MTGX_GRACE_MS`, `MTGX_MAX_ROOMS`, `MTGX_DATA_DIR` (sauvegarde des parties, reprises après un redémarrage ; `data/rooms` par défaut). `/healthz` indique l'état du serveur.
 
+### Replays et export d'une partie
+
+- **Exporter la partie** (barre latérale) télécharge un fichier JSON : la graine, les decks et toutes les décisions. Le moteur étant déterministe, ce fichier suffit à rejouer exactement la partie ; joignez-le au signalement d'un bug. Contre l'IA, l'export est possible à tout moment ; en ligne, seulement une fois la partie terminée (le fichier révèle les decks).
+- **Revoir une partie** (accueil) ouvre ce fichier dans le visionneur : étape par étape, lecture automatique, saut au début ou à la fin, et choix du point de vue (chaque joueur ne voit que ce qu'il voyait).
+- **En ligne,** les parties sont sauvegardées de la même façon par le serveur (`data/rooms`) : un redémarrage ne les coupe plus.
+
 ### Tablette et téléphone
 
 L'interface s'adapte à l'écran : tablette en paysage ou en portrait, téléphone en paysage. En portrait, un téléphone affiche « Tournez votre appareil ».
@@ -111,6 +117,7 @@ Les images des cartes viennent de Scryfall (`cards.scryfall.io`). Certains rése
 | `npm run server` | Serveur de parties en ligne (WebSocket `/ws`, sert aussi `packages/client/dist`) |
 | `npm run online-smoke [-- --base <url>]` | Duel en ligne entre deux navigateurs : salon, lien d'invitation, corde, reprise après rechargement, revanche (serveur de dev par défaut, ou `--base` vers un serveur de production ou nginx) |
 | `npm run proxy-smoke` | Relais des images : Scryfall bloqué (bascule automatique sur `/scry/`), case « Images par le serveur MTG Mate » (serveur de dev lancé) |
+| `npm run replay-smoke` | Replays : partie contre l'IA exportée, puis rouverte dans le visionneur (avance, retour, fin, point de vue) (serveur de dev lancé) |
 | `npm run mobile-smoke` | Tablette et téléphone émulés : main, bouton principal et champs à l'écran, appui long, tap pour lever une carte, tiroir, portrait (serveur de dev lancé) |
 | `npm run battlefield-smoke` | Plateaux chargés (jetons, 2e ligne, 4 joueurs) mis en jeu par le bac à sable du mode dev : rangées, piles de jetons, aucune carte rognée (serveur de dev lancé) |
 | `npm run import-cards -- <set>\|all` | Import Scryfall d'une extension, ou de toutes les extensions Standard hors FDN et FRA (`all`) |

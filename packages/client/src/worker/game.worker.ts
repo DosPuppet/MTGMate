@@ -7,8 +7,8 @@ import type { DeckEntries } from "@mtgx/cards";
 import { TOKEN_SPECS } from "@mtgx/cards/tokens";
 import {
   type CardDef,
-  createGame,
   createObject,
+  createRecordedGame,
   createTokens,
   GameHost,
   type GameState,
@@ -119,7 +119,7 @@ async function handle(msg: ToWorker): Promise<void> {
         await host.run();
         return;
       }
-      const { state, events } = createGame({
+      const { state, events, record } = createRecordedGame({
         seed: msg.seed,
         players: [
           { id: HUMAN, name: msg.playerName, deck: buildDeck(msg.playerDeck) },
@@ -130,7 +130,9 @@ async function handle(msg: ToWorker): Promise<void> {
           })),
         ],
       });
-      if (msg.sandbox && import.meta.env.DEV) applySandbox(state, msg.sandbox);
+      // Bac à sable : l'état de départ est modifié à la main, la partie ne peut pas être rejouée (pas d'enregistrement).
+      const sandboxed = !!msg.sandbox && import.meta.env.DEV;
+      if (sandboxed && msg.sandbox) applySandbox(state, msg.sandbox);
       host = new GameHost(
         state,
         {
@@ -142,6 +144,7 @@ async function handle(msg: ToWorker): Promise<void> {
           ),
           aiDelay: msg.fast && import.meta.env.DEV ? 0 : 900,
           sleep,
+          record: sandboxed ? undefined : record,
           // Mêmes faces qu'en ligne : seulement les cartes connues du joueur (pas la decklist adverse).
           onUpdate: (_p, view, evts) =>
             post({ type: "update", view, events: evts, faces: host ? visibleFaces(host.state, view, evts) : {} }),
@@ -155,6 +158,10 @@ async function handle(msg: ToWorker): Promise<void> {
       if (!host) return;
       const error = await host.submitHuman(HUMAN, msg.decision);
       if (error) post({ type: "error", message: error });
+      return;
+    }
+    case "export": {
+      post({ type: "record", record: host?.record ? structuredClone(host.record) : null });
       return;
     }
     case "pause": {
