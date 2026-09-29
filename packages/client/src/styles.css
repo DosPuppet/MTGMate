@@ -1209,6 +1209,19 @@ button {
 .seg button.on {
   background: rgba(240, 184, 74, 0.25);
 }
+/* Onglets de zones (un cimetière par joueur, l'exil) dans les fenêtres de choix de cartes. */
+.zone-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  width: fit-content;
+  max-width: 100%;
+  margin: 0 auto 12px;
+}
+.zone-tabs button {
+  padding: 6px 12px;
+  font-size: 13px;
+  color: inherit;
+}
 .toggle {
   display: flex;
   gap: 5px;

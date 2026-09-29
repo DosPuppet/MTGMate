@@ -8,6 +8,7 @@ import { Card } from "../board/Card";
 import { faceName } from "../i18n";
 import { useGame } from "../store";
 import { boardPick, choiceSource, type PickRequest, pickValid, shortPrompt, togglePick } from "./boardChoice";
+import { ZoneTabbed } from "./ZoneTabs";
 
 type ChoiceView = Extract<NonNullable<GameView["pending"]>, { kind: "choice" }>;
 
@@ -146,11 +147,23 @@ function ChoiceModal({ view }: { view: GameView }) {
               autoFocus
             />
           )}
-          <div className={`hand-picker ${long ? "long" : ""}`}>
-            {shown.map((id) => (
-              <Option key={id} id={id} objects={objects} view={view} selected={values.includes(id)} onClick={() => toggle(id)} />
-            ))}
-          </div>
+          {/* Cartes de plusieurs cimetières (ou de l'exil) : un onglet par zone. */}
+          <ZoneTabbed view={view} objects={objects} ids={shown} selected={values.map(String)}>
+            {(inTab) => (
+              <div className={`hand-picker ${long ? "long" : ""}`}>
+                {inTab.map((id) => (
+                  <Option
+                    key={id}
+                    id={id}
+                    objects={objects}
+                    view={view}
+                    selected={values.includes(id)}
+                    onClick={() => toggle(id)}
+                  />
+                ))}
+              </div>
+            )}
+          </ZoneTabbed>
           <p className="hint">
             {req.min === req.max ? `Choisissez ${req.min}` : `Choisissez de ${req.min} à ${req.max}`} — sélection :{" "}
             {values.length}

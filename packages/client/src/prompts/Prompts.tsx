@@ -8,6 +8,7 @@ import { myActions, type PlayableOption, useGame } from "../store";
 import { useTutorial } from "../tutorial/store";
 import { ChoicePrompt } from "./ChoicePrompt";
 import { SideboardEditor } from "./SideboardEditor";
+import { ZoneTabbed } from "./ZoneTabs";
 
 function Modal({ title, children, wide }: { title: string; children: React.ReactNode; wide?: boolean }) {
   return (
@@ -220,24 +221,31 @@ function TargetCardPicker() {
   if (!view || !casting?.spec) return null;
   const spec = casting.spec;
   // Cartes d'un cimetière, ou exilées (Blade of the Swarm : « carte exilée avec la distorsion »).
+  // Un onglet par cimetière (et l'exil) quand les cibles possibles sont dans plusieurs zones.
   const cards = [...Object.values(view.players).flatMap((p) => p.graveyard), ...view.exile];
   const options = cards.filter((o) => spec.legal.includes(o.id));
   const max = spec.count ?? 1;
   const picked = casting.picked ?? [];
   return (
     <Modal title={`Choisissez ${max > 1 ? `jusqu'à ${max} cibles` : "une cible"} : ${spec.label ?? "carte"}`} wide>
-      <div className="hand-picker">
-        {options.map((o) => (
-          <Card
-            key={o.id}
-            face={o}
-            obj={o}
-            width="var(--pick-w)"
-            glow={picked.includes(o.id) ? "selected" : "target"}
-            onClick={() => pickTarget(o.id)}
-          />
-        ))}
-      </div>
+      <ZoneTabbed view={view} objects={options} ids={options.map((o) => o.id)} selected={picked}>
+        {(shown) => (
+          <div className="hand-picker">
+            {options
+              .filter((o) => shown.includes(o.id))
+              .map((o) => (
+                <Card
+                  key={o.id}
+                  face={o}
+                  obj={o}
+                  width="var(--pick-w)"
+                  glow={picked.includes(o.id) ? "selected" : "target"}
+                  onClick={() => pickTarget(o.id)}
+                />
+              ))}
+          </div>
+        )}
+      </ZoneTabbed>
       <div className="modal-actions">
         <button type="button" className="btn ghost" onClick={cancel}>
           Annuler
