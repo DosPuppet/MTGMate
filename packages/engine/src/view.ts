@@ -389,6 +389,10 @@ export function projectView(s: GameState, viewer: PlayerId): GameView {
             : null;
         const def = trig ? s.defs[trig.defId] : undefined;
         if (trig && def) pending.source = { face: cardFace(def), ...(trig.label ? { effect: trig.label } : {}) };
+        // Nouvelles cibles d'une copie, répartition : l'élément de pile concerné.
+        const purpose = p.purpose;
+        const onStack = purpose.kind === "stackChoice" ? stack.find((x) => x.id === purpose.stackId) : undefined;
+        if (onStack) pending.source = { face: onStack, ...(onStack.effect ? { effect: onStack.effect } : {}) };
         break;
       }
       default:

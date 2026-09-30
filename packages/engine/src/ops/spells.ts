@@ -14,7 +14,8 @@ import {
 } from "../effects";
 import { bump } from "../layers";
 import { availableMana, canPay, costToText, manaValue, payMana } from "../mana";
-import { castTerms, copySpellItem, counterItem, dropNowPermissions, plotCard, stackItemSpecs } from "../stack";
+import { castTerms, counterItem, dropNowPermissions, plotCard, stackItemSpecs } from "../stack";
+import { copyStackItem } from "../stackChoices";
 import {
   apnapOrder,
   chars,
@@ -352,12 +353,8 @@ export const HANDLERS: OpHandlers = {
     for (const id of resolveRef(s, ctx, e.what)) {
       const item = s.stack.find((x) => x.id === id);
       if (!item) continue;
-      for (let i = 0; i < n; i++) {
-        if (item.kind === "spell") copySpellItem(s, item, ctx.controller);
-        // Copie d'une capacité activée ou déclenchée (Return the Favor, Ertha Jo) : mêmes cibles.
-        else
-          s.stack.push({ ...item, id: newId(s, "copy"), controller: ctx.controller, copy: true, targets: { ...item.targets } });
-      }
+      // Sort, capacité activée ou déclenchée (Return the Favor, Ertha Jo) : nouvelles cibles au choix avant la priorité.
+      for (let i = 0; i < n; i++) copyStackItem(s, item, ctx.controller);
     }
     return;
   },

@@ -10,6 +10,7 @@ import { announceDiscard, announceDiscardBatch, evalAmount, moveWithSpec, runEff
 import { RulesError, rethrowAsRules } from "./errors";
 import { copiedDefId } from "./layers";
 import { costToText, manaValue, payMana, totalCost } from "./mana";
+import { copyStackItem } from "./stackChoices";
 import {
   bump,
   changeCounters,
@@ -25,6 +26,7 @@ import {
   nextTimestamp,
   obj,
   onBattlefield,
+  removeFromGame,
   rulesEvent,
   shuffle,
   snapshot,
@@ -1224,11 +1226,11 @@ export function castSpell(s: GameState, player: PlayerId, card: ObjectId, choice
   if (d.payLifeX && x > 0) loseLife(s, player, x);
   if (lifeTax) loseLife(s, player, lifeTax);
   // Pyromancer's Goggles : « copiez ce sort ».
-  for (const r of item.riders ?? []) if (r === "copy") copySpellItem(s, item, player);
+  for (const r of item.riders ?? []) if (r === "copy") copyStackItem(s, item, player);
   // Teach by Example : « la prochaine fois que vous lancez un éphémère ou un rituel ce tour-ci, copiez-le ».
   if (d.types.includes("Instant") || d.types.includes("Sorcery")) {
     const pending = (s.nextSpellCopies ?? []).filter((x) => x.player === player && x.turn === s.turn.number);
-    for (const _ of pending) copySpellItem(s, item, player);
+    for (const _ of pending) copyStackItem(s, item, player);
     if (pending.length) s.nextSpellCopies = (s.nextSpellCopies ?? []).filter((x) => !pending.includes(x));
   }
   // Bitter Triumph : sans carte défaussée, les points de vie sont payés.
@@ -1279,23 +1281,6 @@ export function castSpell(s: GameState, player: PlayerId, card: ObjectId, choice
     for (const n of [4, 8]) if (was < n && was + spent >= n) rulesEvent(s, { e: "expend", player, n });
   }
   announceTargets(s, stackId, player, targets);
-}
-
-/** Copie d'un sort sur la pile (707.10), mêmes choix et mêmes cibles. */
-export function copySpellItem(s: GameState, item: StackItem, controller: PlayerId): void {
-  const copyId = newId(s, "copy");
-  s.stack.push({
-    ...item,
-    id: copyId,
-    sourceId: copyId,
-    controller,
-    copy: true,
-    riders: undefined,
-    manaSources: undefined,
-    caveMana: undefined,
-    targets: { ...item.targets },
-  });
-  emit({ type: "copy", stackId: copyId, defId: item.sourceDefId, player: controller });
 }
 
 /** Somme de deux coûts de mana. */
@@ -1802,10 +1787,8 @@ export function activateAbility(s: GameState, player: PlayerId, source: ObjectId
     const stats = pl?.turnStats;
     if (stats) stats.exhaustActivated = (stats.exhaustActivated ?? 0) + 1;
     rulesEvent(s, { e: "exhaust", player, source });
-    // Pit Automaton : la prochaine capacité d'exhaust de ce tour est copiée (mêmes cibles).
-    if (consumePlayerEffect(s, player, "copyNextExhaust")) {
-      s.stack.push({ ...item, id: newId(s, "copy"), copy: true, targets: { ...item.targets } });
-    }
+    // Pit Automaton : la prochaine capacité d'exhaust de ce tour est copiée (nouvelles cibles au choix).
+    if (consumePlayerEffect(s, player, "copyNextExhaust")) copyStackItem(s, item, player);
   }
   if (ab.oncePerTurn) o.activatedTurn = { ...(o.activatedTurn ?? {}), [index]: s.turn.number };
   if (ab.cost.addCounters) changeCounters(s, o, ab.cost.addCounters.kind, ab.cost.addCounters.n, true);
@@ -1946,7 +1929,7 @@ export function stackItemSpecs(s: GameState, item: StackItem): TargetSpec[] {
   return specsAndEffects(s, item).specs;
 }
 
-function specsAndEffects(s: GameState, item: StackItem): { specs: TargetSpec[]; effects: Effect[] } {
+export function specsAndEffects(s: GameState, item: StackItem): { specs: TargetSpec[]; effects: Effect[] } {
   const d = s.defs[item.sourceDefId];
   if (!d) return { specs: [], effects: [] };
   if (item.kind === "spell") {
@@ -2099,8 +2082,10 @@ function finishResolution(
 ): void {
   const i = s.stack.findIndex((x) => x.id === item.id);
   if (i >= 0) s.stack.splice(i, 1);
-  // 707.10 : la copie d'un sort de permanent devient un jeton en se résolvant (Double Down).
-  if (item.kind === "spell" && item.copy && !s.objects[item.sourceId]) {
+  // 707.10 : une copie de sort cesse d'exister en quittant la pile ; celle d'un sort de permanent devient un jeton en se
+  // résolvant (Double Down).
+  if (item.kind === "spell" && item.copy) {
+    if (s.objects[item.sourceId]) removeFromGame(s, item.sourceId);
     const d = s.defs[item.sourceDefId];
     if (d && isPermanentCard(d))
       createTokenCopy(s, item.controller, d.id, {

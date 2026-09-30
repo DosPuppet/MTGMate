@@ -42,7 +42,8 @@ function bestBySimulation(s: GameState, me: PlayerId, candidates: ChoiceValue[][
 }
 
 export function heuristicChoice(s: GameState, me: PlayerId, req: ChoiceRequest): ChoiceValue[] {
-  if (req.type === "pick" && req.intent === "triggerTarget" && req.max === 1) {
+  // Cibles d'une capacité déclenchée, nouvelles cibles d'une copie : on essaie chacune.
+  if (req.type === "pick" && (req.intent === "triggerTarget" || req.intent === "changeTarget") && req.max === 1) {
     const candidates = req.options.map((o) => [o] as ChoiceValue[]);
     if (req.min === 0) candidates.push([]);
     return bestBySimulation(s, me, candidates) ?? req.suggested;

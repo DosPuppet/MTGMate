@@ -259,8 +259,18 @@ export interface StackItem {
   plotOnResolve?: boolean;
   /** Capacité retardée ou réflexive : ses effets et cibles propres. */
   inline?: InlineAbility;
-  /** Copie d'un sort (707.10) : pas de carte associée. */
+  /**
+   * Copie d'un sort ou d'une capacité (707.10). Une copie de sort est un objet sur la pile (`cardCopy`), sans carte :
+   * elle cesse d'exister en quittant la pile, sauf une copie de sort de permanent, qui devient un jeton.
+   */
   copy?: boolean;
+  /**
+   * Choix qui restent à annoncer avant la prochaine priorité (`announceNext`, stack.ts) : nouvelles cibles d'une copie
+   * (707.10c), une étape par mot « cible » puis `announce` (« devient la cible ») ; répartition (601.2d, 603.3d).
+   */
+  pendingChoices?: PendingStackChoice[];
+  /** Répartition annoncée (601.2d) : par mot « cible », la part de chaque cible, dans l'ordre des cibles. */
+  division?: Record<string, number[]>;
   /** « Ce sort ne peut pas être contrecarré » (accordé au lancement). */
   uncounterable?: boolean;
   /** Permanents sacrifiés pour le coût (dernières informations connues disponibles). */
@@ -274,6 +284,9 @@ export interface StackItem {
   /** Lancé depuis le cimetière (Undead Sprinter). */
   fromGraveyard?: boolean;
 }
+
+/** Choix d'un élément de pile qui reste à faire (voir `StackItem.pendingChoices`). */
+export type PendingStackChoice = { step: "target"; spec: string } | { step: "announce" } | { step: "divide" };
 
 /** Capacité créée pendant la partie (retardée, réflexive) : pas d'index dans la définition de sa source. */
 export interface InlineAbility {

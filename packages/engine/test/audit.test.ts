@@ -16,7 +16,7 @@ import { changeCounters, chars, FACE_DOWN_ID, moveObject } from "../src/state";
 import { simultaneously } from "../src/triggers";
 import { forcedAttacks } from "../src/turn";
 import type { CardDef, GameEvent, GameState, TokenSpec } from "../src/types";
-import { act, advanceUntil, customCard, idOf, idsOf, passBoth, passUntil, scenario } from "./helpers";
+import { act, advanceUntil, customCard, idOf, idsOf, passAccepting, passBoth, passUntil, scenario } from "./helpers";
 
 const raw = (name: string, typeLine: string, oracleText: string, keywords: string[], manaCost = "{3}{W}"): RawCard => ({
   name,
@@ -536,5 +536,99 @@ describe("R1 : ordre des remplacements qui modifient un nombre (616.1)", () => {
     const before = s.players.p2?.hand.length ?? 0;
     runEffect(s, resolution("p1") as never, { op: "gift", kind: "card" } as never);
     expect((s.players.p2?.hand.length ?? 0) - before).toBe(4);
+  });
+});
+
+describe("#4 et N11 : copies de sorts, nouvelles cibles et objet sur la pile (707.10, 707.10c)", () => {
+  const choose = (s: GameState, values: (string | number)[]) => act(s, s.pending?.player ?? "p1", { type: "choose", values });
+  const strike = (s: GameState, target: string) =>
+    act(s, "p1", { type: "cast", card: idsOf(s, "p1", "hand", "Lightning Strike")[0] as string, targets: { t: [target] } });
+
+  /** Thousand-Year Storm : le second Lightning Strike du tour est copié une fois. */
+  function stormCopy(p2: string[]) {
+    let s = scenario({
+      p1: {
+        battlefield: ["Thousand-Year Storm", "Mountain", "Mountain", "Mountain", "Mountain"],
+        hand: ["Lightning Strike", "Lightning Strike"],
+      },
+      p2: { battlefield: p2 },
+    });
+    s = passBoth(strike(s, "p2"));
+    const elves = idOf(s, "p2", "battlefield", "Llanowar Elves");
+    s = strike(s, elves);
+    // Le déclenchement de Thousand-Year Storm se résout : la copie est mise sur la pile, ses cibles sont à choisir.
+    s = passUntil(s, (x) => x.pending?.kind === "choice");
+    return { s, elves };
+  }
+
+  it("la copie propose les cibles d'origine et accepte une nouvelle cible", () => {
+    const { s: s0, elves } = stormCopy(["Llanowar Elves", "Pelakka Wurm"]);
+    const req = s0.pending?.kind === "choice" ? s0.pending.request : undefined;
+    expect(req?.intent).toBe("changeTarget");
+    expect(req?.suggested).toEqual([elves]);
+    const copy = s0.stack[s0.stack.length - 1];
+    expect(copy?.copy).toBe(true);
+    // N11 : la copie est un objet sur la pile (sans carte), qu'un « contrecarrez le sort ciblé » peut viser.
+    expect(s0.objects[copy?.id ?? ""]?.zone).toBe("stack");
+    let s = choose(s0, ["p2"]);
+    expect(s.stack[s.stack.length - 1]?.targets.t).toEqual(["p2"]);
+    s = passUntil(s, (x) => x.stack.length === 0);
+    expect(s.players.p2?.life).toBe(20 - 3 - 3);
+    expect(idsOf(s, "p2", "graveyard", "Llanowar Elves")).toHaveLength(1);
+    // La copie a cessé d'exister en quittant la pile.
+    expect(s.objects[copy?.id ?? ""]).toBeUndefined();
+  });
+
+  it("la cible choisie pour la copie devient sa cible : la garde se déclenche", () => {
+    const { s: s0 } = stormCopy(["Llanowar Elves", "Zul Ashur, Lich Lord"]);
+    const zul = idOf(s0, "p2", "battlefield", "Zul Ashur, Lich Lord");
+    const s = choose(s0, [zul]);
+    const top = s.stack[s.stack.length - 1];
+    expect(top?.kind).toBe("ability");
+    expect(s.defs[top?.sourceDefId ?? ""]?.name).toBe("Zul Ashur, Lich Lord");
+  });
+
+  it("une copie n'est pas lancée : « chaque fois que vous lancez un sort qui cible » ne se déclenche pas pour elle", () => {
+    const heroic = customCard({
+      name: "Héros de test",
+      power: 1,
+      toughness: 1,
+      abilities: [triggered(when.targetedBySpellYouCast, [fx.draw(1)], { label: "piochez" })],
+    });
+    let s = scenario({
+      p1: {
+        battlefield: ["Thousand-Year Storm", heroic, "Mountain", "Forest", "Forest", "Forest"],
+        hand: ["Giant Growth", "Giant Growth"],
+        library: ["Forest", "Forest", "Forest", "Forest"],
+      },
+    });
+    const hero = idOf(s, "p1", "battlefield", heroic.name);
+    const growth = () => idsOf(s, "p1", "hand", "Giant Growth")[0] as string;
+    const empty = (x: GameState) => x.stack.length === 0 && x.pending?.kind === "priority";
+    s = passAccepting(act(s, "p1", { type: "cast", card: growth(), targets: { t: [hero] } }), empty);
+    s = passAccepting(act(s, "p1", { type: "cast", card: growth(), targets: { t: [hero] } }), empty);
+    // Deux sorts lancés qui ciblent le héros : deux pioches ; la copie n'en donne pas.
+    expect(s.players.p1?.library).toHaveLength(2);
+    // Deux Giant Growth et la copie : +9.
+    expect(chars(s, hero).power).toBe(10);
+  });
+});
+
+describe("#15 : répartition annoncée à la mise sur la pile ; la part d'une cible devenue illégale est perdue (601.2d, 608.2b)", () => {
+  it("Chandra, Flameshaper −4 : 4 et 4 ; l'une des cibles disparaît, l'autre ne reçoit que ses 4", () => {
+    let s = scenario({ p1: { battlefield: ["Chandra, Flameshaper"] }, p2: { battlefield: ["Pelakka Wurm", "Llanowar Elves"] } });
+    const chandra = idOf(s, "p1", "battlefield", "Chandra, Flameshaper");
+    (s.objects[chandra] as { counters: Record<string, number> }).counters.loyalty = 6;
+    const wurm = idOf(s, "p2", "battlefield", "Pelakka Wurm");
+    const elves = idOf(s, "p2", "battlefield", "Llanowar Elves");
+    const a = legalActions(s, "p1").find((x) => x.type === "activate" && x.source === chandra && x.label?.startsWith("−4"));
+    if (a?.type !== "activate") throw new Error("capacité −4 indisponible");
+    s = act(s, "p1", { type: "activate", source: chandra, ability: a.ability, targets: { t: [wurm, elves] } });
+    expect(s.pending?.kind === "choice" && s.pending.request.type).toBe("divide");
+    s = act(s, "p1", { type: "choose", values: [4, 4] });
+    destroy(s, elves);
+    s = passUntil(s, (x) => x.stack.length === 0);
+    expect(s.objects[wurm]?.damage).toBe(4);
+    expect(idsOf(s, "p2", "battlefield", "Pelakka Wurm")).toHaveLength(1);
   });
 });

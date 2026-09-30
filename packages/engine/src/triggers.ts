@@ -785,9 +785,9 @@ function matchTrigger(s: GameState, ev: RulesEvent, t: TriggerSpec, src: Source)
       // Vaillance : un sort ou une capacité que vous contrôlez.
       if (t.byYou && ev.controller !== me) return null;
       if (who !== "self") return { objectId: hit, player: ev.controller };
-      // « Chaque fois que vous lancez un sort qui cible cette créature »
-      if (t.bySpellYouControl && (ev.controller !== me || s.stack.find((x) => x.id === ev.stackId)?.kind !== "spell"))
-        return null;
+      // « Chaque fois que vous lancez un sort qui cible cette créature » : une copie n'est pas lancée.
+      const byItem = s.stack.find((x) => x.id === ev.stackId);
+      if (t.bySpellYouControl && (ev.controller !== me || byItem?.kind !== "spell" || byItem.copy)) return null;
       return { objectId: ev.stackId, player: ev.controller };
     }
     case "expend":

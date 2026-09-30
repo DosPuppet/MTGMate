@@ -33,8 +33,11 @@ export const RECORD_VERSION = 1;
  *   enchanter reste dans sa zone (707.5, 303.4f, 303.4g ; R2.3).
  * - 11 : ordre des remplacements qui modifient un nombre (blessures, marqueurs, PV, pioche) choisi pour le joueur affecté ;
  *   toutes les pioches de la partie passent par les remplacements (616.1 ; R1).
+ * - 12 : une copie de sort est un objet sur la pile ; nouvelles cibles au choix pour toute copie, qui deviennent ses
+ *   cibles (garde) ; répartition des blessures et des marqueurs annoncée à la mise sur la pile, part d'une cible devenue
+ *   illégale perdue (707.10c, 601.2d, 608.2b ; R3).
  */
-export const RULES_VERSION = 11;
+export const RULES_VERSION = 12;
 
 /** Un point de contrôle toutes les N décisions (plus la dernière de la partie). */
 export const CHECKPOINT_EVERY = 25;

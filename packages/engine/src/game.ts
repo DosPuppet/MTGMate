@@ -7,6 +7,7 @@ import { divisionOf, validateChoice } from "./choices";
 import { checkDecisionShape } from "./decisionShape";
 import { activateManaAbility } from "./mana";
 import { activateAbility, answerCastNow, answerResolutionChoice, castSpell, playLand, RulesError } from "./stack";
+import { answerStackChoice } from "./stackChoices";
 import {
   cloneState,
   collectEvents,
@@ -233,6 +234,9 @@ function apply(s: GameState, submitter: PlayerId, d: Decision): void {
           return;
         case "leyline":
           answerLeylines(s, p.purpose.player, d.values.map(String));
+          return;
+        case "stackChoice":
+          answerStackChoice(s, p.purpose.stackId, p.request, d.values);
           return;
       }
       return;

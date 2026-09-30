@@ -18,7 +18,8 @@ Plan établi le 30/09/2026 (branche `dev`) : il sert de feuille de route aux pro
 - **30/09/2026 : R2.2 fait** (`RULES_VERSION` = 9 : copies de permanents ; N7, N8, N9, #13 en partie).
 - **30/09/2026 : R2.3 fait** (`RULES_VERSION` = 10 : Clone ou Aura qui arrive sans être lancé ; #7, 303.4f, 303.4g).
 - **30/09/2026 : R1 fait en partie** (`RULES_VERSION` = 11 : ordre des remplacements chiffrés choisi pour le joueur affecté, `drawCards` pour toutes les pioches ; la conversion des drapeaux en capacité générique est reportée aux familles de R4).
-- À faire : R3.1, puis la suite dans l'ordre du tableau ci-dessous.
+- **30/09/2026 : R3 fait** (`RULES_VERSION` = 12 : une copie de sort est un objet sur la pile ; nouvelles cibles au choix pour toute copie, qui deviennent ses cibles ; répartition annoncée à la mise sur la pile, part d'une cible devenue illégale perdue ; #4, #15, N11). Constat : le fuzz à 3 joueurs du méta (2 parties inachevées sur 100) et à 4 joueurs sur tout le pool (1 sur 100) échouait déjà avant R3, à l'identique : parties aléatoires qui atteignent la limite de décisions, pas un blocage.
+- À faire : R2.4, puis la suite dans l'ordre du tableau ci-dessous.
 
 ## Le garde-fou de la dette (lot F2)
 
@@ -49,8 +50,8 @@ Plan établi le 30/09/2026 (branche `dev`) : il sert de feuille de route aux pro
 | 5 | R4.0 : accesseur unique des statiques de joueur | § 3.3 | F2 | moyen | ✅ (voir suivi) |
 | 6 | R2.1 à R2.3 : entrée sur le champ de bataille, copies de permanents | § 3.1, § 3.2 | R4.0 | moyen | ✅ `f0b77a1`, `ead9cd5`, `c055371` |
 | 7 | R1.1 à R1.3 : remplacements (616) | § 3.2 | R4.0, R2.1 | élevé | ✅ en partie (voir la section) |
-| 8 | R3.1 et R3.2 : copies de sorts, blessures réparties | § 3.1 | R0 | moyen à élevé | **prochain** |
-| 9 | R2.4 : couche 2 (contrôle) | § 3.2 | R4.0 | élevé | à faire |
+| 8 | R3.1 et R3.2 : copies de sorts, blessures réparties | § 3.1 | R0 | moyen à élevé | ✅ (voir suivi) |
+| 9 | R2.4 : couche 2 (contrôle) | § 3.2 | R4.0 | élevé | **prochain** |
 | 10 | R2.5 : 613.8 par point fixe, couche 5 « en plus » | § 3.2 | R2.2, R2.4 | élevé (perf.) | à faire |
 | 11 | R4.1 à R4.6 : familles génériques | § 3.3 | R1, R2 | moyen | à faire |
 | 12 | R5 : blocages simultanés, mulligans 103.5 | § 3.2 | F1 | moyen | à faire |
@@ -74,7 +75,7 @@ Lus dans le code ; chacun est confirmé par un test au début de son lot.
 | N8 | `copyToken` lit la carte imprimée et engage le jeton par un événement « devient engagé » | `engine/src/ops/permanents.ts:218, 226` | R2.2 | ✅ R2.2 |
 | N9 | Le `copyOf` d'une statique n'est jamais appliqué (Assimilation Aegis ne copie rien) ; la copie d'un sort de Clone est un 0/0 | `engine/src/layers.ts:420-424`, `engine/src/stack.ts:2115` | R2.2 | ✅ R2.2 |
 | N10 | Deux vols de contrôle du même permanent dans un tour le rendent au mauvais joueur ; un joueur qui quitte la partie fait exiler les permanents volés (800.4a) | `engine/src/turn.ts:322-329, 1006-1008` | R2.4 | à faire |
-| N11 | Une copie de sort n'a pas d'objet : « contrecarrez le sort ciblé » ne peut pas la viser, et les « défense talismanique contre » sont ignorées | `engine/src/targets.ts:207-212, 244-252` | R3.1 | à faire |
+| N11 | Une copie de sort n'a pas d'objet : « contrecarrez le sort ciblé » ne peut pas la viser, et les « défense talismanique contre » sont ignorées | `engine/src/targets.ts:207-212, 244-252` | R3.1 | ✅ R3 |
 | N12 | `drawBonus` (Vnwxt, Quantum Riddler) n'est appliqué que par 2 des 11 appels de `drawCard` | `engine/src/effects.ts:769` | R1.3 | ✅ R1 |
 
 ## Phase 0 — fondations ✅
@@ -222,7 +223,7 @@ Lus dans le code ; chacun est confirmé par un test au début de son lot.
 - bench (coup sur coup, `git stash`) : 2 656 → 2 695 déc/s en aléatoire à 2 joueurs, inchangé ;
 - tests : `engine/test/audit.test.ts` (R1, N12).
 
-## R3 — copies de sorts
+## R3 — copies de sorts ✅
 
 - **R3.1 [règles] : nouvelles cibles.**
   - L'opération `copySpell` demande de nouvelles cibles pour chaque spécification : intention `changeTarget`, `suggested` = les cibles d'origine, `autoOk`, clés `r.vars` idempotentes.
@@ -233,6 +234,16 @@ Lus dans le code ; chacun est confirmé par un test au début de son lot.
   - `changeTarget` gère plusieurs cibles ;
   - `CastChoices.divide` est validé au lancement (601.2d) et gardé dans `StackItem.division` ; la part d'une cible devenue illégale est perdue (#15) ;
   - l'interface reçoit une étape de répartition au lancement.
+
+**Réalisé, et écarts au prévu :**
+- un seul mécanisme pour R3.1 et R3.2 (`stackChoices.ts`) : `StackItem.pendingChoices`, des choix d'un élément déjà sur la pile que `announceNext` pose avant les déclencheurs et la priorité (but `stackChoice`). Il remplace à la fois la `ChoicePurpose` `copyTargets` prévue pour les copies faites au lancement et les questions posées par l'opération `copySpell` pendant la résolution : une copie faite pendant une résolution choisit ses cibles à la fin de celle-ci (pas de clés `r.vars` à rendre idempotentes) ;
+- copies : `copyStackItem` pour les sorts et les capacités ; une copie de sort est un objet `cardCopy` sur la pile (N11) ; une question par mot « cible » (intention `changeTarget`, cibles d'origine suggérées, même nombre de cibles), puis l'événement « ciblé » (garde, vaillance ; pas l'héroïsme ni le crime : une copie n'est pas lancée) (#4) ;
+- **pas d'`autoOk`** sur les nouvelles cibles, contrairement au plan : l'automatisme aurait répondu à la place du joueur hors « contrôle total », qui n'aurait jamais pu changer de cible. Comme sur Arena, la question est posée, cibles d'origine pré-remplies ;
+- toutes les cartes gérées qui copient disent « vous pouvez choisir de nouvelles cibles » : le choix est proposé à toute copie, sans drapeau ;
+- `changeTarget` (Bolt Bend) n'a pas été étendu à plusieurs cibles : aucune carte gérée n'en a besoin ;
+- répartition : pas de champ `CastChoices.divide` ni d'étape d'interface au lancement ; la répartition est une question `divide` posée dès la mise sur la pile (sort, capacité activée ou déclenchée à au moins deux cibles), que l'interface savait déjà afficher, gardée dans `StackItem.division` et copiée avec l'élément ; blessures et marqueurs +1/+1 (même règle) (#15) ;
+- l'IA essaie par simulation chaque nouvelle cible d'une copie à cible unique, comme les cibles d'un déclenchement ;
+- tests : `engine/test/audit.test.ts` (#4, N11, #15) ; Chandra, Flameshaper (`fdn.test.ts`) répartit à l'activation.
 
 ## R2.4 et R2.5 — couches
 

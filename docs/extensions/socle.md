@@ -268,3 +268,10 @@ Lot R1 (PLAN-R.md ; `RULES_VERSION` = 11) :
 - remplacements qui modifient un nombre (616.1) : `modifiers.ts` (`AmountMod`, `chooseReplacementOrder`) ; blessures, marqueurs et PV gagnés rassemblent leurs remplacements et les appliquent dans l'ordre le plus favorable au joueur affecté (le moins de blessures ; le plus de marqueurs, sauf les nuisibles ; le plus de PV) ;
 - pioche : `drawCards(s, p, n)`, un seul événement de pioche soumis aux remplacements (Vnwxt, Quantum Riddler), pour toutes les pioches de la partie ; `drawBonus` supprimé ;
 - tests : `engine/test/audit.test.ts`.
+
+Lot R3 (PLAN-R.md ; `RULES_VERSION` = 12) :
+- `stackChoices.ts` : `copyStackItem` pour toute copie (sort ou capacité : Thousand-Year Storm, Pyromancer's Goggles, Teach by Example, Return the Favor, Ertha Jo, Pit Automaton…). Une copie de sort est un objet `cardCopy` sur la pile, qui appartient à qui l'a mise sur la pile : un contresort peut la viser, la défense talismanique contre un type ou une couleur la voit, et elle cesse d'exister en quittant la pile (N11) ;
+- `StackItem.pendingChoices` : choix d'un élément déjà sur la pile, posés par `announceNext` avant les déclencheurs et la priorité (`advance`), avec le but `stackChoice` ;
+- nouvelles cibles d'une copie (707.10c) : une question par mot « cible » (intention `changeTarget`, cibles d'origine proposées, autant de cibles qu'à l'origine, sans `autoOk` : le joueur choisit) ; puis les cibles deviennent celles de la copie (garde, vaillance ; pas l'héroïsme ni le crime, une copie n'étant pas lancée) (#4) ;
+- répartition (601.2d, 602.2b, 603.3d) : demandée dès la mise sur la pile pour un sort, une capacité activée ou déclenchée à au moins deux cibles, gardée dans `StackItem.division` (copiée avec l'élément) ; à la résolution, la part d'une cible devenue illégale est perdue (#15) ; blessures (Chandra, Flameshaper) et marqueurs +1/+1 ;
+- tests : `engine/test/audit.test.ts` (#4, N11, #15).

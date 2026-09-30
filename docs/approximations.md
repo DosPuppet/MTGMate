@@ -16,7 +16,7 @@ Chaque entrée porte sa nature :
 - `règle` **Dépendances de couches (613.8) :** seulement une approximation à un niveau, du type « une source qui perd toutes ses capacités n'applique plus ses statiques ». De plus :
   - les conditions des capacités statiques (« tant que vous contrôlez un Dragon ») sont lues sur les caractéristiques imprimées, pas sur les types ajoutés par un effet (test « approximation (613.8) » de `layers.test.ts`) ;
   - une statique accordée par un effet de résolution s'applique (Roar of the Fifth People), mais pas une statique accordée par une autre statique (un test de `layers.test.ts` vérifie qu'aucune carte n'en a besoin).
-- `règle` **Blessures « réparties » (Chandra −4) :** la répartition est choisie à la résolution, et non au lancement (601.2d), entre les seules cibles encore légales ; la part d'une cible devenue illégale devrait être perdue (608.2b).
+- `timing` **Répartition (601.2d) et nouvelles cibles d'une copie (707.10c) :** demandées juste après la mise sur la pile (coûts payés), avant que quiconque reçoive la priorité, et non pendant l'annonce ; une copie faite pendant une résolution choisit ses cibles à la fin de celle-ci. Une copie faite avant que l'original ait annoncé sa répartition annonce la sienne (`stackChoices.ts`).
 - `choix auto` **Aura ou « arrive comme une copie » sans être lancé, hors résolution** (retour d'un exil lié, actions basées sur l'état) : le premier hôte ou modèle possible est choisi pour le joueur. Pendant une résolution (`moveTo`), le choix est demandé (303.4f, 707.5).
 - `règle` **Convocation :** une créature qui a une capacité de mana ne sert pas à la convocation (elle paie par sa capacité de mana).
 - `choix auto` **Choix « en arrivant » sans résolution** (permanent remis en jeu par un effet) : choix par défaut, le type ou la couleur les plus présents chez le contrôleur.
@@ -25,17 +25,12 @@ Chaque entrée porte sa nature :
 - `choix auto` **Mana restreint (Giada, Secluded Courtyard) :** utilisé seulement par le paiement automatique, pour un sort ou une capacité autorisés ; ces sources ne se tapent pas à la main.
 - `choix auto` **Mana « déclencheur » (haste, copie du sort) :** appliqué seulement quand ce mana est dépensé par le paiement automatique.
 
-Écarts relevés par l'audit du 30/09/2026 et confirmés en jouant la position (détail, preuves et autres écarts lus dans le code : `AUDIT.md`, § 3.1 ; correction prévue en R0 et R3) :
-
-- `règle` **Copies de sorts (707.10c) :** la copie garde les cibles de l'original, et la cible ne « devient pas la cible » de la copie (la garde ne se déclenche pas).
-
 ## Carte par carte
 
 Dans l'ordre où elles ont été ajoutées, extension par extension.
 
 - **Fishing Pole :** la capacité accordée à la créature équipée est portée par l'Équipement (coût « engager la créature équipée »).
 - **« Au début de l'étape de fin, sacrifiez ce jeton » :** modélisé par une capacité retardée plutôt que par une capacité du jeton.
-- **Thousand-Year Storm :** les copies gardent les cibles du sort d'origine (pas de nouveau choix de cibles).
 - **Coûts retirés automatiquement :**
   - Quilled Greatwurm : les six marqueurs sont retirés d'abord des créatures qui en ont le plus ;
   - Lathril : les Elfes à engager sont choisis automatiquement.
@@ -51,7 +46,6 @@ Dans l'ordre où elles ont été ajoutées, extension par extension.
 - **Liliana the Faultless, Massacre Girl :** mêmes approximations que plus haut (défausse à la résolution ; blessures non de combat de vos seules sources).
 - **Empower Jace avec plusieurs jetons Jace :** les marqueurs vont sur le premier jeton (pas de choix).
 - **Contempler un Jace :** toujours fait quand c'est possible (Countersculpt, Theorist's Sanctum), sans révéler la carte.
-- **Codie, Ravenous Codex :** la copie du sort préparé garde ses cibles (pas de nouveau choix).
 - **Hallway Heckler :** la défausse est faite à la résolution, et non comme coût.
 - **Master of Barbs :** seules les blessures non de combat infligées par vos sources (sorts compris) comptent, pas celles d'une source adverse.
 - **Something Worth Saving :** les quatre cartes sont regardées puis mises au cimetière, ce qui n'est pas une meule au sens strict (pas de déclencheur de meule).

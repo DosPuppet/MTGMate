@@ -613,10 +613,12 @@ describe("Foundations : planeswalkers", () => {
     const wurm = walker(s, "Pelakka Wurm", "p2");
     const elf = walker(s, "Llanowar Elves", "p2");
     s = activate(s, ch, "−4", { t: [wurm, elf] });
-    s = passBoth(s);
+    // La répartition s'annonce à l'activation (601.2d, 602.2b), avant la priorité.
     expect(s.pending?.kind === "choice" && s.pending.request.type).toBe("divide");
     expect(() => choose(s, [8, 0])).toThrow(); // au moins 1 par cible
     s = choose(s, [7, 1]);
+    expect(s.stack[0]?.division).toEqual({ t: [7, 1] });
+    s = passBoth(s);
     expect(idsOf(s, "p2", "graveyard", "Pelakka Wurm")).toHaveLength(1);
     expect(idsOf(s, "p2", "graveyard", "Llanowar Elves")).toHaveLength(1);
   });

@@ -160,6 +160,16 @@ export const HANDLERS: OpHandlers = {
     return;
   },
   countersDivided(s, r, e, ctx, key) {
+    // Répartition annoncée à la mise sur la pile (601.2d) : la part d'une cible devenue illégale est perdue (608.2b).
+    const division = e.to.kind === "target" ? r.item.division?.[e.to.id] : undefined;
+    if (division && e.to.kind === "target") {
+      const legal = new Set(resolveRef(s, ctx, e.to));
+      (r.item.targets[e.to.id] ?? []).forEach((id, i) => {
+        const o = s.objects[id];
+        if (o && legal.has(id) && onBattlefield(s, id)) changeCounters(s, o, P1P1, division[i] ?? 0);
+      });
+      return;
+    }
     const among = resolveRef(s, ctx, e.to).filter((id) => onBattlefield(s, id));
     if (among.length === 0) return;
     let split: number[];

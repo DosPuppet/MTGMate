@@ -102,7 +102,9 @@ export type ChoicePurpose =
   | { kind: "triggerOrder"; player: PlayerId }
   | { kind: "triggerTarget"; trigger: string; spec: string }
   | { kind: "triggerMode"; trigger: string }
-  | { kind: "leyline"; player: PlayerId };
+  | { kind: "leyline"; player: PlayerId }
+  /** Choix d'un élément déjà sur la pile : nouvelles cibles d'une copie, répartition (voir `StackItem.pendingChoices`). */
+  | { kind: "stackChoice"; stackId: string };
 
 export interface CastChoices {
   /** Sans payer le coût de mana (Omniscience). */

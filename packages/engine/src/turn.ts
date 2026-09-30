@@ -19,6 +19,7 @@ import { rethrowAsRules } from "./errors";
 import { copiedDefId } from "./layers";
 import { manaValue, payMana } from "./mana";
 import { RulesError, resolveTop } from "./stack";
+import { announceNext } from "./stackChoices";
 import {
   alivePlayers,
   apnapOrder,
@@ -84,6 +85,8 @@ export function advance(s: GameState): void {
         stateBasedActions(s);
         // Un joueur actif éliminé par ces actions met fin au tour (`eliminate` change le flux).
         if (s.over || s.pending || s.flow !== "priority") break;
+        // Nouvelles cibles d'une copie, répartition : avant les déclencheurs (la garde en dépend) et la priorité.
+        if (announceNext(s)) break;
         if (processTriggers(s) || s.flow !== "priority") break;
         s.pending = { kind: "priority", player: s.priority.holder };
         break;
