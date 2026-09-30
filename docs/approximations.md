@@ -16,7 +16,7 @@ Chaque entrée porte sa nature :
 - `règle` **Dépendances de couches (613.8) :** seulement une approximation à un niveau, du type « une source qui perd toutes ses capacités n'applique plus ses statiques ». De plus :
   - les conditions des capacités statiques (« tant que vous contrôlez un Dragon ») sont lues sur les caractéristiques imprimées, pas sur les types ajoutés par un effet (test « approximation (613.8) » de `layers.test.ts`) ;
   - une statique accordée par un effet de résolution s'applique (Roar of the Fifth People), mais pas une statique accordée par une autre statique (un test de `layers.test.ts` vérifie qu'aucune carte n'en a besoin).
-- `timing` **Blessures « réparties » (Chandra −4) :** la répartition est choisie à la résolution, et non au lancement (601.2d).
+- `règle` **Blessures « réparties » (Chandra −4) :** la répartition est choisie à la résolution, et non au lancement (601.2d), entre les seules cibles encore légales ; la part d'une cible devenue illégale devrait être perdue (608.2b).
 - `règle` **Aura mise en jeu sans être lancée :** elle va au cimetière, faute du choix de l'objet enchanté (303.4f).
 - `règle` **Convocation :** une créature qui a une capacité de mana ne sert pas à la convocation (elle paie par sa capacité de mana).
 - `choix auto` **Choix « en arrivant » sans résolution** (permanent remis en jeu par un effet) : choix par défaut, le type ou la couleur les plus présents chez le contrôleur.
@@ -24,6 +24,16 @@ Chaque entrée porte sa nature :
 - `choix auto` **Capacités de mana à coût (605.1a) :** elles se résolvent sans la pile, mais seulement activées à la main : le paiement automatique ne s'en sert pas (Ramos, Capital City, Loot, the Pathfinder…).
 - `choix auto` **Mana restreint (Giada, Secluded Courtyard) :** utilisé seulement par le paiement automatique, pour un sort ou une capacité autorisés ; ces sources ne se tapent pas à la main.
 - `choix auto` **Mana « déclencheur » (haste, copie du sort) :** appliqué seulement quand ce mana est dépensé par le paiement automatique.
+
+Écarts relevés par l'audit du 30/09/2026 et confirmés en jouant la position (détail, preuves et autres écarts lus dans le code : `AUDIT.md`, § 3.1 ; correction prévue en R0 et R3) :
+
+- `règle` **Étape de nettoyage (514.3a) :** ni actions basées sur l'état, ni déclencheurs, ni priorité ; une créature tuée par la fin d'un effet « jusqu'à la fin du tour » meurt à l'entretien suivant.
+- `règle` **Lien de vie :** un gain de PV par affectation de blessures ; une créature qui blesse plusieurs objets en même temps déclenche « chaque fois que vous gagnez des PV » plusieurs fois.
+- `règle` **Obligation d'attaquer et taxe d'attaque (508.1d) :** si le joueur ne peut pas payer la taxe, aucune déclaration d'attaque n'est acceptée (la partie se bloque).
+- `règle` **Copies de sorts (707.10c) :** la copie garde les cibles de l'original, et la cible ne « devient pas la cible » de la copie (la garde ne se déclenche pas).
+- `règle` **Sort lancé sans payer son coût :** les augmentations de coût (Thalia, the Survivor) ne s'appliquent pas (118.9d).
+- `règle` **Pioche dans une bibliothèque vide (704.5b) :** l'indicateur n'est jamais remis à zéro ; le joueur perd dès que « vous ne pouvez pas perdre » prend fin, même des tours plus tard.
+- `règle` **Second partagé (702.61b) :** il interdit aussi les actions spéciales (retourner une carte face visible).
 
 ## Carte par carte
 

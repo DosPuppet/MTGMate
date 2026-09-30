@@ -1,242 +1,355 @@
-# Audit de MTGX (MTG Mate) — 29/09/2026
+# Audit de MTGX (MTG Mate) — 30/09/2026
 
-Audit fait en lecture seule (code, documentation, historique git) sur la branche `dev`, au commit `41eea2f`. Les tests et le fuzz n'ont pas été relancés pour l'audit : les chiffres de tests viennent du code et des docs.
+**Méthode :**
+- audit en lecture seule, au commit `23698dc` (`master`) : code, documentation, historique git ;
+- les écarts de règles marqués **(exéc.)** ont été confirmés en jouant la position dans le moteur (script jetable, hors du dépôt) ; les autres ont été lus dans le code ;
+- les tests, le fuzz et le bench n'ont pas été relancés : les nombres de tests sont comptés dans le code ;
+- les chemins sont relatifs à `packages/`.
+
+L'audit précédent (29/09/2026) est archivé dans `docs/audits/2026-09-29.md`. Cet audit insiste sur les **règles du moteur** ; l'interface, l'IA et la plateforme sont traitées plus brièvement.
 
 ## 1. Le projet en chiffres
 
-| Élément | Mesure |
-|---|---|
-| Historique | 86 commits du 24 au 29/09/2026, environ 233 000 lignes ajoutées |
-| Moteur (`packages/engine/src`) | 17 600 lignes, 36 fichiers ; les plus gros : `stack.ts` (1 900), `dsl.ts` (1 640), `ops/zones.ts` (1 490), `turn.ts` (1 230), `triggers.ts` (1 190) |
-| Scripts de cartes (`packages/cards/src`) | 29 200 lignes, environ 2 750 cartes jouables sur les 5 161 légales en Standard (53 %) |
-| DSL | 150 opérations d'effet, 168 sortes de montants et conditions, 55 déclencheurs, 87 drapeaux de « statique de joueur » |
-| IA | 2 100 lignes : heuristique, combat par simulation, ISMCTS |
-| Client / serveur | 8 400 / 930 lignes |
-| Tests | environ 430 tests de règles, test de fumée de chaque carte, fuzz avec invariants et fuzz « chaos », 9 scripts Playwright, bench, tournoi d'IA |
-| Approximations documentées | 126 entrées + 63 sous-entrées (`docs/approximations.md`) |
-| Intégration continue | **aucune** (pas de `.github/`) |
+| Élément | 29/09 | 30/09 |
+|---|---|---|
+| Historique | 86 commits | 114 commits, du 24 au 30/09/2026 |
+| Moteur (`engine/src`) | 17 600 lignes | 19 400 lignes, 38 fichiers ; les plus gros : `stack.ts` (2 290), `dsl.ts` (1 820), `ops/zones.ts` (1 570), `triggers.ts` (1 240), `turn.ts` (1 240) |
+| Scripts de cartes (`cards/src`) | 29 200 lignes | 32 100 lignes |
+| Cartes jouables | environ 2 750 sur 5 161 (53 %) | **2 911 sur 5 161 (56 %)**, dont les 20 archétypes du méta relevés (88,1 % du méta) |
+| IA / client / serveur | 2 100 / 8 400 / 930 lignes | 2 100 / 9 500 (plus 3 100 de CSS) / 1 270 lignes |
+| Tests | environ 430 | environ 650 appels `it`/`test` (moteur 522, client 42, cartes 34, serveur 28, IA 27), test de fumée de chaque carte, 138 cartes vérifiées contre l'Oracle, 10 scripts Playwright |
+| Intégration continue | aucune | GitHub Actions : `verify --ci` à chaque push, `verify --full` chaque nuit |
+| DSL | 150 opérations, 55 déclencheurs | 171 opérations d'effet, 57 sortes de déclencheurs |
+| `PlayerStaticAbilityDef` | 85 drapeaux (recompté avec la même méthode) | **96 drapeaux** |
+| `TurnStats` | 34 compteurs | 17 compteurs |
+| `Keyword` | 48 | 51, dont environ 16 propres à une carte |
+| Approximations documentées | 126 entrées + 63 sous-entrées | 115 entrées + 82 sous-entrées, plus les 17 écarts relevés ici (§ 3.1) |
+
+### Ce qui a changé depuis le 29/09
+
+L'ancienne feuille de route a été suivie presque entièrement en deux jours :
+
+- **P0 (socle du moteur) :**
+  - intégration continue ;
+  - lancer pendant la résolution (608.2g) ;
+  - remplacements « au lieu du cimetière » avec l'ordre de 616.1 ;
+  - équipage, Fabrication et prolifération au choix du joueur ;
+  - capacités de mana à coût sans la pile (605.3b).
+- **P1 (justesse des cartes) :**
+  - audit Oracle ↔ script (`coverage --audit`) ;
+  - attentes déduites de l'Oracle (138 cartes) ;
+  - journal des événements du tour (`turnlog.ts`) ;
+  - effets sur les joueurs (`s.playerEffects`).
+- **P2 (plateforme) :**
+  - enregistrement des parties (graine et décisions), parties en ligne reprises après un redémarrage, export et replays ;
+  - images des jetons ;
+  - bundle découpé et compressé, service worker ;
+  - BO3 avec réserve.
+- **P4, phase 1 :** les lots M1 à M6 rendent jouables les 20 archétypes du méta, réserve comprise ; les cinq premiers sont proposés en decks préconstruits.
+- **Reste :** P3 (IA), repris en R8 ci-dessous, et P4 phase 2 (Tarkir: Dragonstorm à 100 %).
 
 ## 2. Points forts
 
-**Architecture**
-- **Moteur pur et déterministe.** L'état est du JSON, les décisions sont des données et `submit(state, player, decision)` renvoie un nouvel état (`engine/src/game.ts`). Le même moteur tourne à quatre endroits : le Web Worker, le serveur qui fait autorité, les simulations de l'IA et le fuzz. C'est le meilleur choix possible pour ce type de projet (Forge et XMage, plus anciens, mélangent état et logique).
-- **Séparation moteur strict / automatisme** (`autopilot.ts`), comme sur Arena. Le moteur n'a pas de raccourcis cachés, et la fluidité vient d'une couche à part.
-- **`legalActions` exhaustif**, partagé par l'interface, l'IA, l'automatisme et le serveur. `legal.ts` réutilise les fonctions de `stack.ts` (`castTerms`, `canPay`…) au lieu de les recopier.
-- **Couches 613 avec cache par version** (`bump`). Le fuzz détecte un cache périmé, ce qui est rare même dans des moteurs mûrs.
-- **Contrat d'erreurs net :** `RulesError` pour une décision illégale, `Error` pour un bug du moteur, et le fuzz « chaos » qui envoie des décisions corrompues.
-- **Information cachée traitée sérieusement :** `projectView`, `filterEvents`, `visibleFaces`, et un audit automatique (`ai/test/hidden-info.test.ts`).
-- **Import Scryfall avec déduction des mots-clés** (`cards/src/scryfall.ts`) : les créatures vanilla et « french vanilla » sont jouables sans script.
+### Architecture
 
-**Qualité et outillage**
-- TypeScript strict, Biome, Vitest, React 19, Zustand et Vite : une pile moderne et cohérente.
-- **Culture de test inhabituelle pour un projet amateur :**
-  - fuzz à 2, 3 et 4 joueurs, avec des invariants (conservation des cartes, références, nombres finis, sérialisabilité) ;
-  - tournoi d'IA à graines appariées, avec intervalles de confiance ;
-  - bench ;
-  - tests d'interface sur mobile.
-- `npm run verify` donne une ligne par étape, et les journaux sont dans `test-results/verify/`.
-- **Documentation exemplaire et honnête.** `docs/moteur.md` sert de guide pour ajouter une mécanique, et `docs/approximations.md` classe les écarts en `règle`, `timing` et `choix auto`.
+- **Moteur pur et déterministe** (`submit(state, player, decision)`), qui tourne à quatre endroits : Web Worker, serveur qui fait autorité, simulations de l'IA et fuzz. Les replays et la reprise des parties en ligne en découlent presque gratuitement.
+- **`legalActions` exhaustif,** partagé par l'interface, l'IA, l'automatisme et le serveur ; l'automatisme (`autopilot.ts`) est séparé du moteur strict, comme sur Arena.
+- **Contrat d'erreurs** (`RulesError` contre `Error`), éprouvé par le fuzz « chaos ».
+- **Information cachée** filtrée (`projectView`, `filterEvents`, `visibleFaces`) et auditée automatiquement.
 
-**Produit**
-- Une interface façon Arena :
-  - arrêts, paiement automatique, cibles automatiques quand il n'y en a qu'une ;
-  - glisser-déposer, flèches, disposition du plateau testée ;
-  - jouable sur tablette et sur téléphone.
-- Entièrement en français, avec vouvoiement, et les noms français à l'import des decklists.
-- Tutoriel en 9 leçons, IA à 3 niveaux, sons.
-- Duel en ligne privé : corde, reconnexion, revanche, limitation de débit et validation des messages.
+### Justesse du cœur des règles
 
-## 3. Points faibles
+Vérifié dans le code :
+- couches 4 à 7 avec horodatages (613.7), nouvel horodatage d'un attachement (613.7e), ensemble des objets touchés figé à la première couche (613.6), cache par version contrôlé par le fuzz ;
+- blessures de combat selon les règles de 2025 (plus d'ordre d'affectation des blessures ; létal avec contact mortel ; piétinement) ;
+- initiative et double initiative (first strike, double strike), avec l'étape de blessures supplémentaire décidée au bon moment ;
+- dernières informations connues et nouvel objet à chaque changement de zone (400.7) ;
+- règle des légendes au choix, annulation des marqueurs +1/+1 et −1/−1, Sagas, « Start your engines! » ;
+- priorité gardée après un lancer (117.3c), déclencheurs en APNAP ordonnés par chaque joueur (603.3b), sort qui fizzle seulement si toutes ses cibles sont illégales (608.2b) ;
+- lancer pendant la résolution (608.2g), capacités de mana sans la pile (605.3b), remplacements « au lieu du cimetière » avec auto-remplacement d'abord (616.1a).
 
-### 3.1 Architecture du moteur : les cas particuliers s'accumulent (risque n° 1)
+### Outillage
 
-La règle « préférer un mécanisme générique » est écrite dans `docs/moteur.md`, mais le code montre l'inverse à mesure que les extensions s'ajoutent.
+- Fuzz à 2, 3 et 4 joueurs avec invariants (conservation des cartes, références, cache des couches, JSON pur), et mode « chaos ».
+- Tournoi d'IA à graines appariées, bench, replays déterministes.
+- Audit Oracle ↔ script et attentes déduites de l'Oracle.
+- `npm run verify` (une ligne par étape) et intégration continue.
+- Documentation honnête et tenue à jour : `docs/moteur.md`, `docs/approximations.md`, une page par extension.
 
-- **Des champs d'état au nom d'une carte :**
-  - dans `PlayerState` : `extraMountainMana` (Molten Tide), `jaceInstantTurn`, `noLegendRuleTurn` (Hall of Echoes), `copyNextExhaustTurn` (Pit Automaton), `damageDoubled` (Lightning)…
-  - dans `TurnStats` : une trentaine de compteurs, dont `foodSacrificed`, `coinFlips` (Edgar) et `untappedInUntapStep` (Millennium Calendar) ;
-  - dans `turn` : `graveyardCreatureOnce` (Tomb of Aclazotz), `attackBans` (Sandswirl)…
-  
-  Voir `engine/src/model/state.ts`.
-- **87 drapeaux dans `PlayerStaticAbilityDef`** (`model/cards.ts`), presque un par carte : Rest in Peace, Torpor Orb, Grand Abolisher, Vnwxt, Yoshimaru… Chacun est lu à l'endroit précis du moteur où il s'applique.
-- **Pas de cadre général des remplacements (614 et 616).** `replaceDestination` (`replacement.ts`) enchaîne des `if` carte par carte (Garruk, The Darkness Crystal…). Quand plusieurs remplacements s'appliquent, le premier l'emporte, sans le choix du joueur affecté (616.1).
-- **Couches incomplètes :**
-  - pas de couche 2 (le contrôle passe par des champs à part : `auraControl`, `controlChanges`) ;
-  - pas de dépendances (613.8) ;
-  - les conditions des statiques sont lues sur les caractéristiques imprimées ;
-  - une statique accordée par une autre statique n'est pas gérée.
-- **Environ 150 commentaires nomment une carte** dans `engine/src`.
+### Produit
 
-**Conséquence :** chaque nouvelle extension grossit le DSL, et le coût marginal d'une carte augmente au lieu de baisser. Les cas croisés (deux remplacements, dépendance entre couches) produiront des bugs discrets que le fuzz ne voit pas, parce qu'ils ne violent aucun invariant.
+- Rien à installer : navigateur, tablette et téléphone, hors ligne contre l'IA.
+- Français natif, avec vouvoiement et noms français à l'import des decklists.
+- Présentation proche d'Arena : animations, flèches, encart « Résolution », piles de jetons, badges de mots-clés.
+- Tutoriel en 9 leçons, IA à trois niveaux, BO3 avec réserve.
+- Replays avec choix du point de vue, ce qu'Arena n'offre pas.
 
-### 3.2 Justesse des cartes non prouvée
+## 3. Moteur : écarts avec les règles officielles
 
-- `implemented = !!script || onlyKeywords(...)` (`scryfall.ts:636`) : une carte est « gérée » dès qu'un script existe. **Rien ne vérifie que le script couvre tout le texte Oracle.**
-- Le test de fumée vérifie que la carte se joue **sans planter**, pas qu'elle fait **ce qu'elle dit**.
-- Les tests de règles nomment environ 20 % des cartes d'une extension (LCI : 53 cartes sur 279).
-- La vitesse (une extension complète en quelques heures, 233 000 lignes en 5 jours) rend impossible une relecture humaine carte par carte. Il faut donc des vérifications automatiques de fond, pas seulement contre les plantages.
+Le cœur est juste. Les écarts qui restent sont de trois sortes :
+1. des bugs de fond simples, non documentés (§ 3.1) ;
+2. des interactions croisées sans cadre général : remplacements multiples, couches, copies (§ 3.2) ;
+3. une dette de conception qui recommence à grossir (§ 3.3).
 
-### 3.3 Approximations en grappes (même cause, plusieurs cartes)
+### 3.1 Écarts nouveaux, absents de `docs/approximations.md`
 
-| Grappe | Exemples | Cause commune |
-|---|---|---|
-| « Lancez-la sans payer son coût » repoussé **après** la résolution, jusqu'à la fin du tour | Découverte (mécanique phare de LCI), Etali, Uldaros, Roving Actuator, Kaervek, Quistis, Vaan, Daring Waverider, Cruelclaw, Malcolm, rebond | pas de « lancer pendant la résolution » (608.2g) |
-| Capacités de mana passées par la pile | Ramos, Evendo, Molt Tender, Loot, Conduit Pylons, Capital City, Sunbird Effigy, Thornvault Forager, Baylen | le solveur ne gère pas une capacité de mana à coût complexe |
-| Coûts ou choix faits automatiquement (21 mentions) | Équipage, Fabrication, Lathril, Quilled Greatwurm, Radiant Lotus, Winter, Gallia, prolifération | le choix n'est pas posé comme une `ChoiceRequest` |
-| Coût payé à la résolution | Hallway Heckler, Solitary Cell, Thunderhead Gunner | la défausse en coût existe (`discardCostOptions`, `stack.ts:1420`) mais n'est pas utilisée partout |
+Rangés par impact décroissant.
 
-### 3.4 Plateforme
+| # | Écart | Règle | Preuve | Impact |
+|---|---|---|---|---|
+| 1 | **Nettoyage :** ni actions basées sur l'état, ni déclencheurs, ni priorité. Une créature 0/0 quand un bonus « jusqu'à la fin du tour » expire meurt à l'entretien du joueur suivant (exéc.) | 514.3a | `engine/src/turn.ts:306-335` (`finishCleanup` passe à `stepEnd`) | **moyen** : −1/−1 et flétrir (Lorwyn Eclipsed), défausse en fin de tour ; « meurt » se déclenche pendant le mauvais tour |
+| 2 | **Lien de vie :** un gain de PV par affectation de blessures. Un piétineur 5/5 bloqué donne deux marqueurs à Ajani's Pridemate au lieu d'un (exéc.) | 119.9, 702.15b, décision d'Ajani's Pridemate | `engine/src/actions.ts:385`, appelé par affectation (`engine/src/turn.ts:928`) | **moyen** : archétype Lifegain du méta |
+| 3 | **Obligation d'attaquer et taxe d'attaque :** sans mana, face à Archangel of Tithes, Juggernaut ne peut ni attaquer (taxe impayée) ni rester en arrière (obligation) ; **aucune déclaration n'est acceptée et la partie se bloque** (exéc.) | 508.1d (une obligation n'impose pas de payer un coût) | `engine/src/turn.ts:602-620` | rare, mais **bloquant** |
+| 4 | **Copies de sorts :** la copie garde les cibles de l'original, sans possibilité d'en choisir de nouvelles ; la cible ne « devient pas la cible » de la copie, donc sa garde ne se déclenche pas (exéc. pour la garde) | 707.10c, 702.21a | `engine/src/stack.ts:1295-1309` (`copySpellItem` n'appelle pas `announceTargets`) | **moyen** : environ 21 cartes des extensions restantes copient un sort avec de nouvelles cibles |
+| 5 | **Taxes et sorts gratuits :** un sort lancé sans payer son coût ignore les augmentations de coût (`opts.free ? 0 : spellReduction(…)`). Lightning Strike gratuit face à Thalia, the Survivor coûte 0 au lieu de {1} (exéc.) | 601.2f, 118.9d | `engine/src/stack.ts:448` | faible à moyen : Découverte, sorts complotés, Omniscience |
+| 6 | **Arrivées simultanées :** de deux permanents qui arrivent ensemble, le premier ne voit pas arriver le second | 603.6a | `engine/src/triggers.ts:793` (sources recalculées à chaque événement) | moyen : jetons créés en nombre, landfall |
+| 7 | « Arrive comme une copie » ne marche que pour un sort lancé : un Clone réanimé ou qui clignote arrive en tant que lui-même | 614.1c | `engine/src/stack.ts:1976-1987` | moyen pour les extensions à venir |
+| 8 | **704.5b :** l'indicateur « a pioché dans une bibliothèque vide » n'est jamais remis à zéro. Quand Herald of Eternal Dawn quitte le jeu, le joueur perd pour une pioche faite des étapes plus tôt (exéc.) | 704.5b | `engine/src/actions.ts:48`, `engine/src/turn.ts:951` | faible |
+| 9 | **Second partagé :** il interdit aussi les actions spéciales ; on ne peut plus retourner une carte face visible (exéc.) | 702.61b | `engine/src/stack.ts:1698` (avant la branche d'action spéciale), `engine/src/legal.ts:431` | faible |
+| 10 | « Vous gagnez / perdez la partie » par un effet ignore « ne peut pas perdre » et « ne peut pas gagner » | 104.3, 104.2 | `engine/src/ops/players.ts:286-293` | faible (Herald of Eternal Dawn) |
+| 11 | La protection contre tout prévient les blessures même quand elles « ne peuvent pas être prévenues » | 615 (« ne peuvent pas être prévenues »), 702.16e | `engine/src/actions.ts:262` (testé avant `unpreventable`) | faible |
+| 12 | Un changement de contrôle « jusqu'à la fin du tour » rend le permanent à un contrôleur mémorisé, qui peut être périmé si un autre effet de contrôle a pris fin entre-temps | 613.1b, 613.7 | `engine/src/turn.ts:322-329` | faible |
+| 13 | La valeur de mana des filtres est lue sur la carte imprimée, même pour une copie ; les exceptions d'une copie (« sauf que c'est un Zombie ») ne sont pas copiables | 707.2, 707.9b | `engine/src/layers.ts:317`, `engine/src/ops/permanents.ts:535` | faible à moyen |
+| 14 | `moveWithSpec` ajoute marqueurs et types après l'événement d'arrivée ; les jetons « engagés et attaquants » sont engagés après leur arrivée | 614.1c, 614.12 | `engine/src/effects.ts:610-673`, `engine/src/ops/permanents.ts:133-145` | faible : « chaque fois qu'un Zombie arrive » manqué |
+| 15 | Blessures « réparties » : le partage se fait à la résolution entre les seules cibles encore légales ; la part d'une cible devenue illégale devrait être perdue | 601.2d, 608.2b | `engine/src/ops/damage.ts:59-92` | faible |
+| 16 | Une créature qui cesse d'être une créature (Véhicule, terrain animé) reste au combat | 506.4 | `engine/src/turn.ts:510-513` | faible |
+| 17 | Les créatures mises en jeu attaquantes reçoivent leur défenseur d'office | 508.4 | `engine/src/ops/permanents.ts:139-143` | multijoueur seulement |
 
-- **Salons uniquement en mémoire :** une mise à jour (`deploy/update.sh`) coupe les parties en cours.
-- **En ligne :**
-  - duel à deux seulement ;
-  - ni comptes, ni classement, ni recherche d'adversaire, ni spectateurs ;
-  - ni **BO3 avec réserve** (la réserve est validée mais ne sert jamais).
-- **Pas de replays**, pourtant presque gratuits avec un moteur déterministe (graine + décisions). Ils sont dans la liste « Finitions ».
-- **Bundle de 6,3 Mo avec toutes les cartes** (premier chargement lent sur mobile), et pas de mise en cache hors ligne (PWA).
-- Jetons sans image.
-- Peu d'accessibilité (23 attributs `aria` ou `role`).
-- Pas d'en-têtes de sécurité sur les fichiers statiques (nginx peut les ajouter).
-- **Aucune intégration continue.** Tout repose sur un `verify` lancé à la main.
+### 3.2 Écarts structurels, toujours présents
 
-### 3.5 IA
+**Couches (`engine/src/layers.ts`) :**
+- **Pas de couche 2.** Le contrôle passe par trois mécanismes sans horodatage : `controlChanges` (jusqu'à la fin du tour), `auraControl` (Auras et « tant que vous contrôlez… »), et `giveControl` / `exchangeControl`, qui changent `o.controller` sans trace.
+- **Pas de couche 3** (texte), sans impact en Standard aujourd'hui. **Couche 5** : pas de « en plus de ses autres couleurs ».
+- **613.8, dépendances :** une seule approximation à un niveau (une source qui perd ses capacités n'applique plus ses statiques).
+- **Caractéristiques imprimées :** les conditions des statiques, les capacités définissant une caractéristique (7a) et les bonus « pour chaque » comptent sur les types imprimés ; un Véhicule animé ou un terrain devenu créature n'est pas une créature pour eux.
+- **Couches sur le champ de bataille seulement :** ailleurs, `chars()` rend la carte imprimée. Les effets sur la main, la pile et le cimetière passent par des drapeaux (`flashFor`, `convokeCreatureSpells`, `grantWarp`…).
+- Les marqueurs de capacité s'appliquent après tous les autres effets de couche 6, quel que soit leur horodatage (documenté).
 
-- **Elle connaît la composition exacte du deck adverse.** `determinize` (`ai/src/ismcts.ts:48`) redistribue la **vraie** main et la **vraie** bibliothèque adverses. Elle ne voit pas la main, mais elle sait quelles cartes restent. C'est une petite triche, et elle surestime ses lectures.
-- Évaluation générique (F/E, mots-clés), sans connaissance propre aux cartes. Beaucoup de choix reviennent à `req.suggested` (`ai/src/choices.ts`).
-- ISMCTS limité à la racine, avec une politique de simulation naïve.
-- Résultats mesurés : élevé contre moyen 60,8 %, élevé contre élevé sans ISMCTS 56,7 %. L'apport existe mais reste modeste.
-- Pas de plan de jeu propre à un deck, pas de mulligan selon l'archétype, pas de politique multijoueur.
+**Remplacements et prévention (614 et 616) :** seule la destination « cimetière » a un cadre générique (`replaceGraveyard`), et même là le choix du joueur affecté est fait par le moteur.
+- **Blessures** (`engine/src/actions.ts:286-344`) : ordre fixe (redirection, prévention, +N, ×2). Exemple : 3 blessures à un adversaire avec Artist's Talent et Twinflame Tyrant donnent 10 ; l'adversaire, qui choisit l'ordre, n'en subirait que 8.
+- **Marqueurs** (`engine/src/state.ts:307-309`) : ×2 puis +1 (Yoshimaru) ; le contrôleur choisirait +1 puis ×2.
+- **PV, jetons :** ordre du code, jamais demandé.
+- **Pioche :** aucun point d'accroche de remplacement ; Vnwxt est un booléen (`drawDouble`), deux exemplaires ne se cumulent pas.
+- **Prévention :** pas de boucliers « prévenez les N prochaines blessures » (615.7), pas de marqueurs de bouclier (122.1c).
 
-## 4. Limites par rapport au vrai Magic
+**Combat (`engine/src/turn.ts`) :**
+- blocages déclarés joueur par joueur en ordre APNAP (multijoueur seulement) ;
+- une créature ne bloque qu'un attaquant ;
+- obligations de blocage limitées à « doit être bloquée si possible » : pas de Leurre, pas de « doit bloquer », pas de maximisation des obligations avec la menace (509.1c) ;
+- pas de batailles (aucune dans le pool aujourd'hui).
 
-1. **Couverture :** 53 % du Standard. Il manque TDM, WOE, MKM, SOS, ECL, TLA, SPM, MSH, TMT et HOB, donc la plupart des decks compétitifs actuels ne s'importent pas en entier.
-2. **Règles de fond simplifiées :**
-   - 616.1 (ordre des remplacements) ;
-   - 613.8 (dépendances) et couche 2 ;
-   - 601.2d (blessures réparties choisies à la résolution) ;
-   - 303.4f (Aura mise en jeu sans être lancée : elle va au cimetière) ;
-   - blocages déclarés joueur par joueur en multijoueur.
-3. **Timing faussé** pour les sorts lancés gratuitement « pendant la résolution » : on peut garder la carte et la lancer plus tard dans le tour. Cela change des parties réelles (Découverte).
-4. **Choix automatiques** là où le joueur doit choisir, parfois même en mode « contrôle total ».
-5. **Pas de gestion des boucles :** ni partie nulle sur boucle obligatoire (104.4b), ni raccourcis pour les boucles facultatives. Une garde de 100 000 itérations lève une `Error`.
-6. **Pas de BO3 ni de réserve,** pas de cartes « hors de la partie ». Hors périmètre : Commander, Limité, formats éternels.
-7. **Légalité figée à l'import :** une rotation ou un bannissement demande un réimport à la main.
+**Boucles et fin de partie :**
+- pas de partie nulle sur une boucle obligatoire (104.4b), ni de raccourcis pour les boucles facultatives (732) ;
+- trois gardes en tiennent lieu : `advance` lève une `Error` après 100 000 étapes (`engine/src/turn.ts:54-56`), l'hôte après 10 000 décisions automatiques par tour (`engine/src/host.ts:70`), et la boucle des actions basées sur l'état s'arrête en silence après 100 passes. Une vraie boucle obligatoire fait planter la partie au lieu de la déclarer nulle.
 
-## 5. Comparaison
+**Divers :**
+- mulligans décidés joueur par joueur jusqu'au bout, et non tour de table par tour de table (103.5) ;
+- Aura mise en jeu sans être lancée : elle va au cimetière, faute du choix de l'objet enchanté (303.4f) ;
+- protection : seulement « contre tout » et « contre chaque adversaire » ; « protection contre [couleur, type] » manque (Sword of Wealth and Power est approchée) ; « défense talismanique contre X » existe en quatre variantes codées en dur ;
+- second partagé et tempête ne sont pas des mots-clés (drapeau de Samut, emblème de Ral) ;
+- contrôler le tour d'un autre joueur (722) : les décisions passent bien au contrôleur, mais sa vue ne montre pas la main du joueur contrôlé (non vérifié plus loin).
 
-| | **MTGX** | **Forge** | **XMage** | **MTG Arena** | Cockatrice / Untap |
-|---|---|---|---|---|---|
-| Cartes | environ 2 750 (Standard partiel) | quasiment toutes (> 25 000) | quasiment toutes | le catalogue Arena | toutes (aucune règle) |
-| Justesse des règles | bonne sur le cœur, environ 190 approximations documentées | très mûre (15 ans) | mûre | référence | aucune (manuel) |
-| IA | 3 niveaux, simulation + ISMCTS | heuristique avec indices par carte, correcte | faible | bots faibles | aucune |
-| Installation | **navigateur, tablette, téléphone** | Java (bureau) + Android | Java client-serveur | client lourd, mobile | navigateur ou bureau |
-| Ergonomie | **façon Arena, moderne** | datée | datée | référence | manuelle |
-| En ligne | duel privé | limité | serveurs publics, tous formats | classé, draft | oui |
-| Formats | Standard (duel, FFA contre l'IA) | tous, Limité, quête | tous, draft | Standard, Historique, Limité… | tous |
-| Français | **natif** | interface partielle | non | officiel | non |
-| Coût | gratuit, ouvert | gratuit, ouvert | gratuit, ouvert | free-to-play + boutique | gratuit |
+**Absent, mais sans carte concernée dans les données Standard aujourd'hui :** mana phyrexian, phasing, régénération, cascade (1 carte), jour et nuit, monarque, « prendre l'initiative », donjon, l'Anneau, énergie, batailles. À faire seulement quand une extension en aura besoin.
+
+### 3.3 Dette de conception
+
+**La tendance s'est inversée pendant les lots du méta.**
+- Le P1 avait divisé `TurnStats` par deux (34 → 17) et vidé `PlayerState` de ses champs propres à une carte.
+- Mais `PlayerStaticAbilityDef` est passé de 85 à 96 drapeaux en deux jours, et `Keyword` compte environ 16 mots-clés qui sont la règle d'une seule carte : `cantBeBlockedByHumans`, `…NonSpirits`, `…Glimmers`, `…PowerLE2`, `…PowerGE2`, `minThreeBlockers`, `assignsToughness`, `hexproofFromMonocolored`…
+- Des traitements portent le nom d'une carte : `hellkite`, `empowerJace`, `instantJaceLoyalty`, `tripleTriad`, `graveyardCreatureOnce`, `extraMountainMana`.
+- Environ 790 lignes de `engine/src`, presque toutes des commentaires, nomment environ 450 cartes différentes. Méthode : noms Scryfall avec limites de mot ; l'« environ 150 » de l'ancien audit venait d'une méthode plus étroite, la hausse n'est donc pas mesurée.
+- `stack.ts` dépasse 2 290 lignes ; `CardDef` a 88 champs, `GameObject` 57, `StackItem` 37.
+
+**Remède :** des familles génériques paramétrées par un filtre d'objet, à la place des drapeaux :
+- « ne peut pas être bloquée par [filtre] » (remplace six mots-clés) ;
+- « protection contre [filtre] » (lève l'approximation de Sword of Wealth and Power et de Resilient Roadrunner) ;
+- « défense talismanique contre [filtre] » ;
+- statiques de joueur à paramètres (« les sorts de [filtre] coûtent N de plus ou de moins », « les [filtre] ne peuvent pas… ») plutôt qu'un drapeau par carte.
+
+### 3.4 Justesse des cartes
+
+- Une carte est « gérée » dès qu'un script existe (`cards/src/scryfall.ts:674`).
+- L'audit Oracle ↔ script est structurel : nombre de capacités, nombres présents dans le script ; 8 écarts acceptés dans `cards/data/audit-baseline.json`. Il ne vérifie ni le sens des effets ni les statiques.
+- Les attentes déduites de l'Oracle couvrent 138 cartes, environ 5 % du pool.
+- Le test de fumée vérifie qu'une carte se joue sans planter, pas qu'elle fait ce qu'elle dit.
+- Les 11 extensions partielles (TDM, WOE, SOS, ECL, TLA, SPM, MSH, TMT, HOB, MKM, BIG) n'ont pas de fichier de tests de règles à elles : seulement `engine/test/meta.test.ts` (64 tests).
+- Les écarts du § 3.1 n'étaient attrapés par rien : le fuzz ne voit que ce qui viole un invariant, et aucun test ne compare le moteur aux décisions officielles (rulings).
+
+## 4. Interface, face à MTG Arena
+
+La présentation est proche d'Arena (animations, flèches, résolution montrée, piles de jetons, tactile). Les manques qui comptent le plus pour le joueur :
+
+1. **Priorité :**
+   - impossible de garder la priorité sur son propre sort, sauf en « contrôle total » (`engine/src/autopilot.ts:58-61`) ;
+   - « Passer le tour » est une passe dure qui laisse aussi passer les sorts adverses (`autopilot.ts:51`) ; Arena distingue passe douce et passe dure ;
+   - rien pour passer jusqu'à son tour pendant le tour adverse, ni pour répondre toujours de la même façon à un déclencheur.
+2. **Informations absentes :**
+   - le poison n'est jamais affiché : il manque dans `PlayerView` (`engine/src/view.ts:110-123`), alors qu'un son est joué ;
+   - l'événement `reveal` est ignoré : une carte révélée n'est ni montrée ni journalisée ;
+   - le journal ne note ni les pertes de PV hors blessures, ni le poison, ni les destructions ; ses noms de cartes ne sont pas survolables.
+3. **Choix faits d'office hors « contrôle total »** (`autoOk`) : l'ordre de ses propres déclencheurs simultanés et la répartition des blessures de piétinement ou entre plusieurs bloqueurs.
+4. **Mana :**
+   - un terrain engagé à la main ne se dégage pas (Arena permet d'annuler tant que le mana n'est pas dépensé) ;
+   - aucune alerte en passant avec du mana flottant ;
+   - pas de choix des terrains pendant le paiement ; hybride choisi d'office.
+5. **Combat :**
+   - pas d'aperçu des blessures ni d'alerte de létal ;
+   - la menace n'est vérifiée qu'à la validation (message d'erreur) ;
+   - la fenêtre de répartition ne vérifie pas le létal du piétinement ;
+   - « Attaquer avec tous » envoie tout sur le premier défenseur en multijoueur.
+6. **Fenêtres de choix :**
+   - regard et surveillance en deux étapes génériques (choisir, puis ordonner avec des flèches) au lieu d'un glisser dessus / dessous ;
+   - questions « oui / non » sans la carte source ;
+   - modes présentés en texte seul.
+7. **Aperçu des cartes :** dans la barre latérale et non près de la carte ; absent à la souris sous 1100 px, où la barre devient un tiroir.
+8. **Accessibilité :**
+   - symboles de mana en pastilles sans glyphe (noir et incolore presque identiques) ;
+   - surbrillances distinguées par la seule couleur ;
+   - tailles en px ;
+   - pas de jeu au clavier (cartes en `div` sans `tabIndex`) ;
+   - 28 attributs ARIA ou `role` en tout ;
+   - pas de `prefers-reduced-motion`.
+9. **Deckbuilder :** pas de syntaxe de recherche (`t:`, `o:`, `mv>=`), ni de terrains automatiques, ni de main d'essai, ni de vue en colonnes par valeur de mana ; entre deux manches, la réserve s'édite en liste texte.
+10. **Réglages et finitions :**
+    - arrêts, contrôle total et langue ne sont pas retenus d'une session à l'autre (`client/src/store.ts:735`) ;
+    - « Abandonner » sans confirmation ;
+    - noms anglais dans des invites françaises (`engine/src/turn.ts:870`, `engine/src/triggers.ts:997`) ;
+    - libellé brut pour la plupart des types de marqueurs ;
+    - tout l'écran se redessine au survol d'une carte : `useMainAction` s'abonne à tout le store (`client/src/board/Board.tsx:859`).
+
+## 5. IA
+
+Le P3 de l'ancien audit n'est pas fait :
+- la déterminisation de l'ISMCTS part de la vraie liste restante de l'adversaire : seule la répartition entre main et bibliothèque est tirée au sort (`ai/src/ismcts.ts:59`) ;
+- environ 24 des 30 intentions de choix reviennent à la réponse suggérée par le moteur (`ai/src/choices.ts`) ; les « vous pouvez » sont toujours acceptés ;
+- l'évaluation est générique (F/E, mots-clés, cartes en main), sans connaissance propre aux cartes ;
+- le mulligan ne regarde que le nombre de terrains, ni les couleurs ni la courbe ;
+- en multijoueur, pas d'ISMCTS, et toutes les attaques visent l'adversaire le plus bas en PV ;
+- les mesures du tournoi (`docs/ia.md`) datent du 28/09, avant les lots du méta.
+
+## 6. Plateforme et sécurité
+
+**Deux bugs du serveur :**
+- **Plantage probable sur une URL mal encodée :** `decodeURIComponent` sans `try` dans `serveStatic` (`server/src/index.ts:73`). `GET /%` lève une `URIError` dans le gestionnaire de requêtes, et aucun `uncaughtException` ne la rattrape. pm2 redémarre le serveur et les salons sont repris, mais un seul octet suffit à couper toutes les parties. L'exception a été reproduite avec `node` ; le serveur n'a pas été lancé.
+- **Plafond de connexions par IP contournable :** `clientIp` prend la première adresse de `X-Forwarded-For` (`server/src/index.ts:52-54`), or nginx y ajoute l'adresse réelle en dernier (`$proxy_add_x_forwarded_for`, `deploy/nginx-mtgmate.conf:29`) : c'est le client qui choisit la première.
+
+**Autres défauts :**
+- pas de vérification d'`Origin` sur le WebSocket (`server/src/index.ts:209`) ;
+- pas d'en-têtes de sécurité (CSP, `X-Content-Type-Options`, `X-Frame-Options`) ;
+- `/scry/` transmet la chaîne de requête telle quelle (`server/src/index.ts:158`) : chaque variante est une nouvelle requête à Scryfall et une nouvelle entrée dans le cache nginx ;
+- les 200 places de salon peuvent être occupées par des salons abandonnés (5 minutes chacun) ;
+- les jetons de reconnexion sont en clair dans `data/rooms`.
+
+**Manques, face à un service public :** recherche d'adversaire, comptes, spectateurs, discussion ou emotes, en ligne à plus de 2 joueurs, historique des parties. Les légalités sont un instantané de l'import : une rotation ou un bannissement demande un réimport à la main.
+
+## 7. Comparaison
+
+| | **MTGX** | **Forge** | **XMage** | **MTG Arena** | **MTGO** | Cockatrice / Untap |
+|---|---|---|---|---|---|---|
+| Cartes | 2 911 (56 % du Standard, 88 % du méta) | quasiment toutes | quasiment toutes | le catalogue Arena | toutes | toutes (sans règles) |
+| Justesse des règles | cœur juste ; environ 200 approximations documentées et 17 écarts relevés ici | très mûre | mûre | référence sur son catalogue | référence, règles complètes | aucune (manuel) |
+| IA | 3 niveaux, simulation et ISMCTS | heuristique, indices par carte | faible | bots faibles | aucune | aucune |
+| Installation | **navigateur, tablette, téléphone** | Java (bureau), Android | Java, client-serveur | client lourd, mobile | Windows | navigateur ou bureau |
+| Ergonomie | **façon Arena, moderne** | datée | datée | référence | datée | manuelle |
+| En ligne | duel privé, BO3, reprise après redémarrage | limité | serveurs publics, tous formats | classé, draft | tournois, marché | oui |
+| Formats | Standard (duel en ligne ; jusqu'à 4 joueurs contre l'IA) | tous, Limité, modes solo | tous, draft | Standard, Historique, Limité… | tous | tous |
+| Français | **natif** | interface partielle | non | officiel | officiel | non |
+| Coût | gratuit, ouvert | gratuit, ouvert | gratuit, ouvert | free-to-play | cartes payantes | gratuit |
 
 **Où MTGX se démarque :**
-- rien à installer, sur tablette et téléphone ;
+- rien à installer, sur tablette et téléphone, et même hors ligne ;
 - l'ergonomie d'Arena, en français ;
-- un code moderne et testable (moteur déterministe, fuzz).
+- un moteur déterministe et testable (fuzz, replays, reprise des parties).
 
 **Où il perd :**
-- le nombre de cartes ;
-- la maturité des règles face à Forge et XMage ;
-- l'écosystème compétitif face à Arena.
+- le nombre de cartes (environ un dixième de ce que couvrent Forge et XMage) ;
+- la maturité des règles sur les interactions croisées (remplacements, couches, copies) face à MTGO, Arena, Forge et XMage ;
+- l'écosystème en ligne (classement, recherche d'adversaire) face à Arena et MTGO.
 
-## 6. Est-ce que ça vaut le coup ?
+## 8. Est-ce que ça vaut le coup ?
 
 - **Oui**, pour :
-  - jouer en français contre une IA correcte, dans le navigateur ou sur tablette, avec FDN et les 8 extensions couvertes ;
+  - jouer le méta Standard actuel en français, contre l'IA ou entre amis, en BO3 avec réserve ;
   - apprendre le jeu (tutoriel) ;
-  - un duel privé entre amis.
+  - jouer sur tablette ou téléphone sans rien installer.
 - **Pas encore**, pour :
-  - préparer des decks Standard compétitifs : cartes manquantes, pas de BO3 ni de réserve ;
-  - les interactions de règles pointues : Forge et XMage sont plus sûrs ;
-  - le Commander ou le Limité.
-- **Comme base de code**, c'est un socle au-dessus de la moyenne des projets amateurs. La qualité ne tiendra que si l'on traite **maintenant** l'accumulation de cas particuliers (§ 3.1) et la vérification de la justesse des cartes (§ 3.2), **avant** d'ajouter d'autres extensions.
+  - servir de référence des règles : les interactions croisées restent approchées, et quelques bugs de fond (§ 3.1) touchent des parties réelles (nettoyage, lien de vie, copies) ;
+  - un service public : sécurité du serveur à durcir, ni comptes ni recherche d'adversaire ;
+  - le Commander ou le Limité (hors périmètre).
+- **Comme base de code**, le socle reste bien au-dessus de la moyenne des projets amateurs. Deux conditions pour que cela dure :
+  1. corriger les écarts du § 3.1 et écrire les cadres génériques du § 3.2 (remplacements, couche 2, copies) **avant** d'élargir la couverture aux extensions restantes, qui en ont besoin (copies avec nouvelles cibles, Clones, jetons en nombre) ;
+  2. arrêter la croissance des drapeaux propres à une carte (§ 3.3).
 
-## 7. Feuille de route (par priorité)
+## 9. Feuille de route (par priorité)
 
 ### Suivi
 
-- **P0 fait le 29/09/2026** (branche `dev`) : étapes 1 à 5 ci-dessous, une par commit ; détail dans `docs/extensions/socle.md`, lots 0.11 à 0.14. Environ 25 approximations levées, et trois erreurs de règles corrigées en route (Kaervek, Chandra, Darksteel Colossus avec un marqueur de finalité, The Darkness Crystal avec Rest in Peace).
-- **P1 fait le 29/09/2026** : audit Oracle ↔ script (`npm run coverage -- --audit`, deux oublis corrigés : Greenhouse Propagator, Magmatic Galleon), attentes déduites de l'Oracle (138 cartes : sorts simples, déclencheurs d'arrivée, de mort, d'attaque, d'étape de fin et d'entretien, avec leur condition), journal des événements du tour (dix-sept compteurs de `TurnStats` et huit champs de `s.turn` retirés ; trois permissions du tour fondues dans `playPermissions`), effets sur les joueurs (neuf champs de `PlayerState` et trois de `s.turn` retirés). Lots 0.15 à 0.21 de `docs/extensions/socle.md`.
-- **P2, première pièce faite le 29/09/2026** : enregistrement des parties (graine + décisions), parties en ligne reprises après un redémarrage, export et replays (lot 0.22).
-- **P2, suite (29/09/2026)** : images des jetons (lot 0.23), bundle découpé, compression, cache et service worker (lot 0.24).
-- **P2 terminé le 29/09/2026** : match BO3 avec réserve, contre l'IA et en ligne (lot 0.25).
-- **P4 planifié le 29/09/2026** : couverture guidée par le méta, puis Tarkir: Dragonstorm (`PLAN-P4.md`).
-- **P4, lot M1 fait le 29/09/2026** : deux archétypes du méta jouables (28,9 % du méta), Harmonie, Marchandage, contempler, maîtrise de la terre (`docs/extensions/meta.md`).
-- **P4, lot M2 fait le 29/09/2026** : quatre archétypes jouables (43,7 % du méta).
-- **P4, lot M3 fait le 29/09/2026** : sept archétypes jouables (53,2 % du méta).
-- **P4, lot M4 fait le 29/09/2026** : dix archétypes jouables (67,1 % du méta).
-- **P4, lot M5 fait le 29/09/2026** : quatorze archétypes jouables (79,8 % du méta).
-- **P4, phase 1 finie le 30/09/2026** (lot M6) : les vingt archétypes relevés sont jouables (88,1 % du méta).
-- Restent : P3, P4 phase 2 (Tarkir: Dragonstorm).
+- Rien de fait pour l'instant. Ajouter ici une ligne par étape terminée, comme dans l'audit précédent.
 
-### P0 — Socle du moteur, pour toutes les extensions (avant la prochaine)
+### R0 — Corrections simples (un lot, un test de règles par correction)
 
-« Socle » désigne ici le moteur lui-même, **pas l'extension Foundations (FDN)**. Ces étapes changent des mécanismes généraux du moteur. Elles corrigent ensuite des cartes de **toutes** les extensions déjà intégrées :
+- Moteur :
+  - les écarts 1 à 3, 5, 8 à 12 et 14 à 16 du § 3.1 ;
+  - chacun reçoit un test dans `engine/test/` qui rejoue la position (le script jetable de cet audit en donne la mise en scène), et son entrée disparaît de ce tableau.
+- Serveur :
+  - `decodeURIComponent` protégé (réponse 400) ;
+  - adresse du client prise en fin de `X-Forwarded-For`, ou `X-Real-IP` fixé par nginx ;
+  - vérification d'`Origin` ;
+  - `/scry/` sans chaîne de requête ;
+  - en-têtes de sécurité dans nginx.
 
-| Étape | Cartes concernées, par extension |
-|---|---|
-| 2. Lancer pendant la résolution | LCI (Découverte, Malcolm, rebond d'Ojer Pakpatiq), FRA (Uldaros), EOE (Roving Actuator), OTJ (Kaervek), FIN (Quistis, Vaan), BLB (Daring Waverider, Cruelclaw), FDN (Etali) |
-| 3. Remplacements | FRA (Garruk), FIN (Darkness Crystal), BIG (Rest in Peace), DSK (Leyline of the Void), DFT (Vnwxt), doubleurs de toutes les extensions |
-| 4. Choix automatiques → vrais choix | FDN (Lathril, Quilled Greatwurm), FRA (Gallia, Mabel), DFT (Radiant Lotus, Winter, Équipage), EOE (Dyadrine), LCI (Fabrication), BLB (Fourrager) |
-| 5. Capacités de mana à coût | FDN (Ramos), EOE (Evendo), DFT (Molt Tender, Loot), OTJ (Conduit Pylons), FIN (Capital City), LCI (Sunbird Effigy), BLB (Thornvault Forager, Baylen) |
+### R1 — Cadre général des remplacements (614 et 616)
 
-La vérification de chaque étape se fait donc sur tout le pool (`verify --full`), et pas sur une seule extension.
+- Dans `engine/src/replacement.ts` : des remplacements décrits comme des données (événement : blessures, marqueurs, PV, jetons, pioche, arrivée ; filtre ; modification), collectés depuis les statiques et `s.replacements`.
+- Boucle de 616.1 : chaque remplacement s'applique au plus une fois par événement ; s'il en reste plusieurs, le joueur ou le contrôleur affecté choisit par une `ChoiceRequest`, avec `suggested` (l'ordre actuel) et `autoOk`, comme pour le cimetière.
+- Boucliers de prévention (615.7) et pioche remplaçable.
+- Migration des drapeaux concernés (`drawDouble`, doubleurs de blessures, de marqueurs, de jetons) ; les écarts de Twinflame Tyrant et de Yoshimaru disparaissent.
 
-1. **Intégration continue GitHub Actions.**
-   - Fichier : `.github/workflows/ci.yml`.
-   - À chaque push sur `dev` : `tsc`, Biome, `vitest` et un fuzz court.
-   - Chaque nuit : `verify --full`, sans les tests d'interface.
-   - On réutilise `tools/verify.ts` (ajouter une option `--ci` sans l'étape d'interface si besoin).
-2. **« Lancer pendant la résolution » générique (608.2g).**
-   - Nouvelle intention de choix, `castNow`, dans `choices.ts` / `model/decisions.ts`. La résolution se suspend comme pour les autres choix (`Resolution.awaiting`), le joueur lance le sort (cibles, modes, X) ou refuse, puis la résolution reprend.
-   - Nouvel effet `fx.castDuringResolution(ref, { free, filter })` dans `ops/spells.ts` et `dsl.ts`, qui réutilise `castSpell` et `castTerms` (`stack.ts`).
-   - On migre ensuite Découverte, Etali, Uldaros, Kaervek, rebond… et on retire leurs entrées de `docs/approximations.md`.
-3. **Cadre général des remplacements (614 et 616).**
-   - Dans `replacement.ts` : un type `ReplacementDef { event: zoneChange | damage | draw | lifeGain | counters | tokens | mill; filter; modify }`.
-   - Les remplacements sont collectés depuis les statiques (`controlledAbilitiesWithSource`) et depuis `s.replacements`.
-   - Boucle d'application : chaque remplacement ne s'applique qu'une fois par événement (616.1f). S'il en reste plusieurs, le joueur affecté choisit par une `ChoiceRequest`, avec en `suggested` l'ordre actuel et `autoOk` (l'automatisme garde le comportement d'aujourd'hui).
-   - On migre ensuite les drapeaux `PlayerStaticAbilityDef` concernés : Rest in Peace, Leyline of the Void, Garruk, Darkness Crystal, Vnwxt, gain de vie +N, doubleurs de `actions.ts`…
-4. **Choix automatiques transformés en `ChoiceRequest` avec `suggested` + `autoOk`.** L'infrastructure existe (`choices.ts`, `autoOk` dans `model/decisions.ts:58`) :
-   - équipage, fabrication, sacrifices et marqueurs retirés en coût, prolifération ;
-   - l'automatisme répond comme aujourd'hui, le mode « contrôle total » laisse choisir.
-5. **Vraies capacités de mana à coût complexe** (mana, sacrifice, exil du cimetière, PV, exhaust) dans `mana.ts` : le solveur `solvePayment` les traite comme des sources avec un coût, sans passer par la pile.
+### R2 — Couches
 
-### P1 — Justesse des cartes
+- Couche 2 unifiée : un effet de contrôle horodaté, qui remplace `controlChanges`, `auraControl` et `giveControl` (corrige aussi l'écart 12).
+- Couche 5 « en plus de ses autres couleurs ».
+- 613.8 : conditions des statiques, capacités définissant une caractéristique et bonus « pour chaque » lus sur les caractéristiques calculées (point fixe ou ordre de dépendance), avec des tests synthétiques dans `layers.test.ts`.
+- Valeurs copiables complètes : exceptions de copie (707.9b), valeur de mana d'une copie (écart 13) ; « arrive comme une copie » sans lancer (écart 7).
+- Couches hors du champ de bataille, pour remplacer les drapeaux de main et de pile (`flashFor`, `convokeCreatureSpells`, `grantWarp`).
 
-6. **Vérificateur Oracle ↔ script** (`npm run coverage -- --audit`).
-   - Rendre chaque script DSL en texte (nouveau `cards/src/render.ts`).
-   - Comparer au texte Oracle, capacité par capacité :
-     - nombre et nature des capacités (déclenchée « When/Whenever/At », activée « coût : effet », statique) ;
-     - nombres (N blessures, piocher N, +N/+N, jetons).
-   - Les écarts sont listés pour relecture. Le rendu sert aussi d'infobulle pour les jetons et les effets.
-7. **Attentes dans le test de fumée.** Pour les modèles simples (blessures, pioche, PV, jetons, +N/+N), des attentes sont déduites de l'Oracle, par exemple « PV adverses −3 ». Le harnais `ai/test/smoke/harness.ts` vérifie l'effet, pas seulement l'absence de plantage.
-8. **Désendetter l'état.**
-   - Remplacer les compteurs de `TurnStats` et les champs de tour propres à une carte par un **journal d'événements du tour** (`s.turnLog`, des `RulesEvent` compacts), avec un montant générique `amount.eventsThisTurn(filter)`.
-   - Migration progressive, avec un bench avant et après (`git stash`).
+### R3 — Copies de sorts et cibles
 
-### P2 — Plateforme
+- Nouvelles cibles au choix pour une copie (707.10c), avec `suggested` = cibles de l'original et `autoOk`.
+- Événement « devient la cible » pour les copies (garde, héroïsme adverse).
+- Changer les cibles d'un sort à plusieurs cibles.
+- Prérequis des extensions restantes (environ 21 cartes).
 
-9. **Parties persistées en graine + journal des décisions** (`server/src/rooms.ts`, fichier en ajout seul ou SQLite).
-   - Les parties survivent au redémarrage : `update.sh` ne coupe plus rien.
-   - Cela donne aussi les replays et l'export d'une partie pour signaler un bug, y compris contre l'IA depuis le worker.
-10. **BO3 avec réserve**, en ligne et contre l'IA.
-11. **Bundle découpé :**
-    - données de cartes chargées par extension (import dynamique ou JSON), le worker recevant déjà ses définitions ;
-    - mise en cache hors ligne (PWA) des données et des images.
-12. **Images des jetons** : impressions de jetons Scryfall, via `imageUrl`.
+### R4 — Familles de mots-clés à filtre (§ 3.3)
 
-### P3 — IA
+- « Protection contre [filtre] », « ne peut pas être bloquée par [filtre] », « défense talismanique contre [filtre] ».
+- Nouvelle règle dans `docs/moteur.md` : pas de nouveau drapeau de `PlayerStaticAbilityDef` ni de mot-clé propre à une carte sans avoir écarté une forme générique ; le nombre de drapeaux est suivi à chaque lot.
 
-13. **Déterminisation honnête :** tirer les cartes cachées d'une distribution qui ne dépend que des cartes vues et des couleurs (pool Standard géré), et non du vrai deck. On mesure l'effet au tournoi (`npm run arena`, 600 parties ou plus).
-14. **Réglage des poids d'évaluation par auto-jeu,** avec le tournoi comme mesure. Réflexion pendant le temps de l'humain. Indices propres aux cartes dans `policy.ts` (retenir un contresort, cibler la bonne menace).
+### R5 — Combat
 
-### P4 — Couverture (décision à prendre par vous)
+- Blocages simultanés en multijoueur ; une créature qui bloque plusieurs attaquants.
+- Obligations de blocage (Leurre, « doit bloquer ») avec maximisation (509.1c).
+- Arrivées simultanées (603.6a, écart 6) : les déclencheurs d'arrivée regardent l'ensemble des objets arrivés ensemble.
 
-15. **Couvrir d'abord les cartes des decks Standard les plus joués** (TDM, WOE, MKM…), plutôt qu'une extension entière à 100 %. Cela contredit la convention actuelle, « 100 % par extension ».
+### R6 — Boucles
+
+- Détecter une boucle obligatoire (même état, aucune décision) et déclarer la partie nulle (104.4b), au lieu des `Error` des gardes.
+- Raccourcis des boucles facultatives (732) plus tard, si des cartes le demandent.
+
+### R7 — Justesse des cartes
+
+- Étendre les attentes déduites de l'Oracle (phrases reconnues de `oracle-expectations.test.ts`).
+- Un fichier de tests de règles par extension partielle.
+- Tests tirés des décisions officielles (rulings Scryfall) pour les interactions fréquentes du méta : lien de vie, copies, remplacements, nettoyage.
+
+### R8 — Interface et IA
+
+- Interface, dans l'ordre du § 4 :
+  1. poison et cartes révélées ;
+  2. garder la priorité, passe douce et passe dure ;
+  3. réglages retenus, confirmation d'abandon ;
+  4. annulation d'un terrain engagé, alerte de mana flottant ;
+  5. aperçu des blessures de combat ;
+  6. noms français dans les invites du moteur ;
+  7. accessibilité (glyphes de mana, formes en plus des couleurs, `rem`).
+- IA : le P3 de l'ancien audit (déterminisation qui ne dépend que des cartes vues, réponses propres aux choix fréquents, mulligan selon les couleurs), puis nouvelles mesures au tournoi avec les decks du méta.
