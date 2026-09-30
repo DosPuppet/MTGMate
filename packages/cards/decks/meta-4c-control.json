@@ -1,0 +1,176 @@
+{
+  "id": "meta-4c-control",
+  "name": "4c Control",
+  "description": "Méta Standard (6,4 %). Contrôle quatre couleurs : contresorts, retrait, balayage (Deadly Cover-Up) et grosses cartes de fin de partie (Jeskai Revelation, Together as One).",
+  "colors": [
+    "W",
+    "U",
+    "B",
+    "R"
+  ],
+  "cover": "https://cards.scryfall.io/art_crop/front/3/c/3cac0ad3-5107-4ed6-a688-d44bbd65e407.jpg?1783907311",
+  "main": [
+    [
+      1,
+      "Thor, God of Thunder"
+    ],
+    [
+      1,
+      "Flashback"
+    ],
+    [
+      2,
+      "Requiting Hex"
+    ],
+    [
+      3,
+      "Consult the Star Charts"
+    ],
+    [
+      3,
+      "Dispelling Exhale"
+    ],
+    [
+      3,
+      "Shoot the Sheriff"
+    ],
+    [
+      3,
+      "Inevitable Defeat"
+    ],
+    [
+      3,
+      "Jeskai Revelation"
+    ],
+    [
+      3,
+      "Stock Up"
+    ],
+    [
+      3,
+      "Deadly Cover-Up"
+    ],
+    [
+      2,
+      "Together as One"
+    ],
+    [
+      4,
+      "Firdoch Core"
+    ],
+    [
+      2,
+      "Tablet of Discovery"
+    ],
+    [
+      4,
+      "Unholy Annex // Ritual Chamber"
+    ],
+    [
+      2,
+      "Blazemire Verge"
+    ],
+    [
+      2,
+      "Blood Crypt"
+    ],
+    [
+      1,
+      "Gloomlake Verge"
+    ],
+    [
+      2,
+      "Godless Shrine"
+    ],
+    [
+      4,
+      "Great Hall of the Biblioplex"
+    ],
+    [
+      1,
+      "Hallowed Fountain"
+    ],
+    [
+      1,
+      "Island"
+    ],
+    [
+      1,
+      "Mistrise Village"
+    ],
+    [
+      1,
+      "Mountain"
+    ],
+    [
+      1,
+      "Plains"
+    ],
+    [
+      1,
+      "Riverpyre Verge"
+    ],
+    [
+      1,
+      "Sacred Foundry"
+    ],
+    [
+      1,
+      "Steam Vents"
+    ],
+    [
+      1,
+      "Sunbillow Verge"
+    ],
+    [
+      1,
+      "Sundown Pass"
+    ],
+    [
+      1,
+      "Swamp"
+    ],
+    [
+      2,
+      "Watery Grave"
+    ]
+  ],
+  "sideboard": [
+    [
+      2,
+      "Annul"
+    ],
+    [
+      1,
+      "Disdainful Stroke"
+    ],
+    [
+      1,
+      "Flashfreeze"
+    ],
+    [
+      3,
+      "Duress"
+    ],
+    [
+      1,
+      "Intimidation Tactics"
+    ],
+    [
+      2,
+      "Day of Black Sun"
+    ],
+    [
+      1,
+      "Strategic Betrayal"
+    ],
+    [
+      2,
+      "Ghost Vacuum"
+    ],
+    [
+      2,
+      "Nowhere to Run"
+    ]
+  ]
+}

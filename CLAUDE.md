@@ -32,7 +32,7 @@ Ce fichier sert au suivi du projet entre les sessions : où on en est, les règl
 | **Duskmourn: House of Horror (DSK, « Mornebrune »)** | ✅ **268 / 268** (lots A à D) |
 | **Bloomburrow (BLB)** | ✅ **266 / 266** (lots A à C) |
 | **The Lost Caverns of Ixalan (LCI, « Les cavernes oubliées d'Ixalan »)** | ✅ **279 / 279** (lots A à D) |
-| Decks préconstruits : seulement les 5 decks de bienvenue (40 cartes FDN, joués tels quels malgré la règle des 60) et le Starter Kit Final Fantasy (Séphiroth, Cloud) ; les anciens decks FDN et FRA sont retirés | ✅ |
+| Decks préconstruits : les 5 decks de bienvenue (40 cartes FDN, joués tels quels malgré la règle des 60), le Starter Kit Final Fantasy (Séphiroth, Cloud) et, depuis le 30/09/2026, les 5 premiers decks du méta Standard avec leur réserve (`cards/decks/meta-*.json`) ; les anciens decks FDN et FRA sont retirés | ✅ |
 | Tutoriel « Apprendre à jouer » (9 leçons mises en scène, guidage strict, reprise au début de la leçon ; `docs/tutoriel.md`) | ✅ |
 | IA à trois niveaux (débutant, moyen, élevé : combat par simulation, ISMCTS en duel ; `docs/ia.md`, tournoi `npm run arena`) | ✅ |
 | Fiabilisation (29/09/2026) : serveur (validation des messages, débit), décisions mal formées refusées, fuzz « chaos », invariants élargis, tests synthétiques des couches (`docs/moteur.md`, « Règles de conception ») | ✅ |

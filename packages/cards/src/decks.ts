@@ -6,6 +6,11 @@ import bienvenueRouge from "../decks/bienvenue-rouge.json";
 import bienvenueVert from "../decks/bienvenue-vert.json";
 import finCloud from "../decks/fin-cloud.json";
 import finSephiroth from "../decks/fin-sephiroth.json";
+import meta4cControl from "../decks/meta-4c-control.json";
+import metaDimirMidrange from "../decks/meta-dimir-midrange.json";
+import metaIzzetSpellementals from "../decks/meta-izzet-spellementals.json";
+import metaJundSacrifice from "../decks/meta-jund-sacrifice.json";
+import metaMonoGreenLandfall from "../decks/meta-mono-green-landfall.json";
 
 /** Un deck : cartes par nom anglais (clé canonique), avec leur nombre d'exemplaires. */
 export interface DeckList {
@@ -20,7 +25,10 @@ export interface DeckList {
   builtin?: boolean;
 }
 
-/** Decks de bienvenue (40 cartes, Foundations), puis le Starter Kit Final Fantasy. */
+/**
+ * Decks de bienvenue (40 cartes, Foundations), le Starter Kit Final Fantasy, puis les cinq premiers decks du méta
+ * Standard (relevé du 29/09/2026, `docs/meta/`), réserve comprise.
+ */
 export const DECKS: DeckList[] = [
   bienvenueBlanc,
   bienvenueBleu,
@@ -29,6 +37,11 @@ export const DECKS: DeckList[] = [
   bienvenueVert,
   finSephiroth,
   finCloud,
+  metaIzzetSpellementals,
+  metaMonoGreenLandfall,
+  metaDimirMidrange,
+  metaJundSacrifice,
+  meta4cControl,
 ].map((d) => ({ ...(d as DeckList), builtin: true }));
 
 const deckKey = (main: [number, string][]) => {

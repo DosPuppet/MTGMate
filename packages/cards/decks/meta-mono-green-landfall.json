@@ -1,0 +1,121 @@
+{
+  "id": "meta-mono-green-landfall",
+  "name": "Mono-Green Landfall",
+  "description": "Méta Standard (13,4 %). Vert : des terrains à chaque tour (Passages, Tunnel, Ba Sing Se) qui déclenchent Earthbender Ascension, Sapling Nursery et les créatures qui grandissent.",
+  "colors": [
+    "G"
+  ],
+  "cover": "https://cards.scryfall.io/art_crop/front/5/9/590a58ab-5e98-4031-8aa6-ce396dc1429f.jpg?1783904943",
+  "main": [
+    [
+      4,
+      "Fabled Passage"
+    ],
+    [
+      2,
+      "Elven Passage"
+    ],
+    [
+      2,
+      "Escape Tunnel"
+    ],
+    [
+      3,
+      "Ba Sing Se"
+    ],
+    [
+      14,
+      "Forest"
+    ],
+    [
+      1,
+      "Bushwhack"
+    ],
+    [
+      4,
+      "Llanowar Elves"
+    ],
+    [
+      4,
+      "Sazh's Chocobo"
+    ],
+    [
+      4,
+      "Esper Origins // Summon: Esper Maduin"
+    ],
+    [
+      4,
+      "Icetill Explorer"
+    ],
+    [
+      1,
+      "Lumbering Worldwagon"
+    ],
+    [
+      1,
+      "Surrak, Elusive Hunter"
+    ],
+    [
+      1,
+      "Meltstrider's Resolve"
+    ],
+    [
+      4,
+      "Earthbender Ascension"
+    ],
+    [
+      2,
+      "Glimpse the Core"
+    ],
+    [
+      1,
+      "Keen-Eyed Curator"
+    ],
+    [
+      4,
+      "Mightform Harmonizer"
+    ],
+    [
+      3,
+      "Sapling Nursery"
+    ],
+    [
+      1,
+      "Promising Vein"
+    ]
+  ],
+  "sideboard": [
+    [
+      3,
+      "Meltstrider's Gear"
+    ],
+    [
+      1,
+      "Keen-Eyed Curator"
+    ],
+    [
+      2,
+      "Torpor Orb"
+    ],
+    [
+      1,
+      "Sandman, Shifting Scoundrel"
+    ],
+    [
+      2,
+      "Surrak, Elusive Hunter"
+    ],
+    [
+      4,
+      "Mossborn Hydra"
+    ],
+    [
+      1,
+      "Leatherhead, Swamp Stalker"
+    ],
+    [
+      1,
+      "Sapling Nursery"
+    ]
+  ]
+}

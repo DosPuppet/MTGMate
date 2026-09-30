@@ -4,6 +4,7 @@
  */
 import { describe, expect, it } from "vitest";
 import { metaDecks } from "../../../tools/meta-decks";
+import { CARDS, DECKS, validateDeck } from "../src";
 
 /** Decks rendus jouables par les lots du méta déjà faits (PLAN-P4.md). */
 const PLAYABLE = [
@@ -51,4 +52,36 @@ describe("decks du méta", () => {
     const d = decks.find((x) => x.name === name);
     expect(d?.playable).toBe(true);
   });
+});
+
+describe("decks préconstruits du méta", () => {
+  const prebuilt = DECKS.filter((d) => d.id.startsWith("meta-"));
+  const total = (l: [number, string][]) => {
+    const m = new Map<string, number>();
+    for (const [n, x] of l) m.set(x, (m.get(x) ?? 0) + n);
+    return [...m].sort(([a], [b]) => (a < b ? -1 : 1));
+  };
+
+  it("les cinq premiers archétypes, dans l'ordre du méta", () => {
+    expect(prebuilt.map((d) => d.name)).toEqual([
+      "Izzet Spellementals",
+      "Mono-Green Landfall",
+      "Dimir Midrange",
+      "Jund Sacrifice",
+      "4c Control",
+    ]);
+  });
+
+  it.each(prebuilt.map((d) => [d.name, d] as const))(
+    "%s : légal, jouable, identique au relevé, avec une illustration",
+    (name, d) => {
+      const v = validateDeck(d, CARDS);
+      expect(v.errors).toEqual([]);
+      expect(v.playable).toBe(true);
+      expect(d.cover).toBeTruthy();
+      const listed = metaDecks().find((x) => x.name === name);
+      expect(total(d.main)).toEqual(total(listed?.main ?? []));
+      expect(total(d.sideboard ?? [])).toEqual(total(listed?.sideboard ?? []));
+    },
+  );
 });

@@ -87,7 +87,11 @@ describe("règles de construction", () => {
   it("les decks préconstruits sont légaux et jouables", () => {
     for (const d of DECKS) {
       const welcome = d.id.startsWith("bienvenue-");
-      expect(validateDeck(d, CARDS), d.id).toMatchObject({ legal: true, playable: true, mainCount: welcome ? 40 : 60, welcome });
+      const v = validateDeck(d, CARDS);
+      expect(v, d.id).toMatchObject({ legal: true, playable: true, welcome });
+      // 40 cartes pour un deck de bienvenue ; 60 au moins sinon (4c Control du méta en a 61).
+      if (welcome) expect(v.mainCount, d.id).toBe(40);
+      else expect(v.mainCount, d.id).toBeGreaterThanOrEqual(60);
     }
   });
 

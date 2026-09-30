@@ -1,0 +1,138 @@
+{
+  "id": "meta-izzet-spellementals",
+  "name": "Izzet Spellementals",
+  "description": "Méta Standard (15,5 %). Bleu-rouge : éphémères et rituels bon marché qui font baisser le coût des Élémentaux (Hearth Elemental, Sunderflock), qui renvoie ensuite toutes les autres créatures en main.",
+  "colors": [
+    "U",
+    "R"
+  ],
+  "cover": "https://cards.scryfall.io/art_crop/front/e/5/e5b6221e-cb22-45e4-bb98-2b960afc614c.jpg?1783904481",
+  "main": [
+    [
+      1,
+      "Thundering Falls"
+    ],
+    [
+      4,
+      "Sunderflock"
+    ],
+    [
+      6,
+      "Island"
+    ],
+    [
+      4,
+      "Eddymurk Crab"
+    ],
+    [
+      4,
+      "Opt"
+    ],
+    [
+      3,
+      "Traumatic Critique"
+    ],
+    [
+      3,
+      "Burst Lightning"
+    ],
+    [
+      1,
+      "Great Hall of the Biblioplex"
+    ],
+    [
+      2,
+      "Get Out"
+    ],
+    [
+      2,
+      "Winternight Stories"
+    ],
+    [
+      2,
+      "Impractical Joke"
+    ],
+    [
+      2,
+      "Spell Snare"
+    ],
+    [
+      2,
+      "Spell Pierce"
+    ],
+    [
+      4,
+      "Hearth Elemental // Stoke Genius"
+    ],
+    [
+      4,
+      "Riverpyre Verge"
+    ],
+    [
+      4,
+      "Prismari Charm"
+    ],
+    [
+      4,
+      "Steam Vents"
+    ],
+    [
+      4,
+      "Spirebluff Canal"
+    ],
+    [
+      4,
+      "Sleight of Hand"
+    ]
+  ],
+  "sideboard": [
+    [
+      1,
+      "Return the Favor"
+    ],
+    [
+      1,
+      "Get Out"
+    ],
+    [
+      1,
+      "Torch the Tower"
+    ],
+    [
+      1,
+      "Sear"
+    ],
+    [
+      3,
+      "Hydro-Man, Fluid Felon"
+    ],
+    [
+      1,
+      "Winternight Stories"
+    ],
+    [
+      1,
+      "Abrade"
+    ],
+    [
+      2,
+      "Soul-Guide Lantern"
+    ],
+    [
+      1,
+      "Fire Magic"
+    ],
+    [
+      1,
+      "Spell Pierce"
+    ],
+    [
+      1,
+      "Spell Snare"
+    ],
+    [
+      1,
+      "Broadside Barrage"
+    ]
+  ]
+}

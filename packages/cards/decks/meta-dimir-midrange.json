@@ -1,0 +1,138 @@
+{
+  "id": "meta-dimir-midrange",
+  "name": "Dimir Midrange",
+  "description": "Méta Standard (8,3 %). Bleu-noir : créatures efficaces avec le flash et le vol, Kaito et Enduring Curiosity, soutenues par des contresorts et du retrait bon marché.",
+  "colors": [
+    "U",
+    "B"
+  ],
+  "cover": "https://cards.scryfall.io/art_crop/front/5/5/55a14f30-4ff9-4472-90a6-c3139f1c18e5.jpg?1784963190",
+  "main": [
+    [
+      4,
+      "Spyglass Siren"
+    ],
+    [
+      4,
+      "Dream Beavers"
+    ],
+    [
+      1,
+      "Cecil, Dark Knight // Cecil, Redeemed Paladin"
+    ],
+    [
+      4,
+      "Floodpits Drowner"
+    ],
+    [
+      1,
+      "The Wondrous Wasp"
+    ],
+    [
+      1,
+      "Wan Shi Tong, Librarian"
+    ],
+    [
+      2,
+      "Tishana's Tidebinder"
+    ],
+    [
+      4,
+      "Enduring Curiosity"
+    ],
+    [
+      4,
+      "Kaito, Bane of Nightmares"
+    ],
+    [
+      1,
+      "Spell Snare"
+    ],
+    [
+      1,
+      "Spell Pierce"
+    ],
+    [
+      2,
+      "We Say Thee Nay!"
+    ],
+    [
+      3,
+      "Requiting Hex"
+    ],
+    [
+      2,
+      "Shoot the Sheriff"
+    ],
+    [
+      2,
+      "Bitter Triumph"
+    ],
+    [
+      4,
+      "Watery Grave"
+    ],
+    [
+      4,
+      "Gloomlake Verge"
+    ],
+    [
+      3,
+      "Hidden Lair"
+    ],
+    [
+      5,
+      "Island"
+    ],
+    [
+      4,
+      "Swamp"
+    ],
+    [
+      2,
+      "Restless Reef"
+    ],
+    [
+      2,
+      "Soulstone Sanctuary"
+    ]
+  ],
+  "sideboard": [
+    [
+      3,
+      "Duress"
+    ],
+    [
+      1,
+      "Requiting Hex"
+    ],
+    [
+      3,
+      "Strategic Betrayal"
+    ],
+    [
+      1,
+      "Raven Eagle"
+    ],
+    [
+      2,
+      "Day of Black Sun"
+    ],
+    [
+      1,
+      "Annul"
+    ],
+    [
+      1,
+      "Disdainful Stroke"
+    ],
+    [
+      2,
+      "Flashfreeze"
+    ],
+    [
+      1,
+      "Wan Shi Tong, Librarian"
+    ]
+  ]
+}

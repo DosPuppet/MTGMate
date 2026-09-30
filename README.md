@@ -46,7 +46,7 @@ Les cartes sont couvertes **extension par extension, à 100 % avant de passer à
 
 Au total, **2 911 cartes jouables** sur 5 161 cartes légales en Standard.
 
-**Decks du méta (plan P4, phase 1 terminée) :** avant de finir les dix dernières extensions une à une, on écrit les cartes des decks Standard les plus joués (relevé MTGGoldfish du 29/09/2026, `docs/meta/`). Les **vingt archétypes relevés** (88,1 % du méta) sont jouables, réserve comprise. Quelques réimpressions d'extensions plus anciennes sont aussi légales parce qu'elles figurent dans ces sets.
+**Decks du méta (plan P4, phase 1 terminée) :** avant de finir les dix dernières extensions une à une, on écrit les cartes des decks Standard les plus joués (relevé MTGGoldfish du 29/09/2026, `docs/meta/`). Les **vingt archétypes relevés** (88,1 % du méta) sont jouables, réserve comprise ; les cinq premiers sont proposés comme decks préconstruits (Izzet Spellementals, Mono-Green Landfall, Dimir Midrange, Jund Sacrifice, 4c Control). Quelques réimpressions d'extensions plus anciennes sont aussi légales parce qu'elles figurent dans ces sets.
 
 **Cartes bannies en Standard** (13) :
 
@@ -146,7 +146,7 @@ packages/
   engine/   moteur pur et déterministe : état JSON, décisions, règles, autopilot, vue filtrée, GameHost
             src/model/ (types), src/ops/ (traitements des effets par domaine) ; guide : docs/moteur.md
   cards/    données Scryfall (data/<set>.json, 20 extensions), scripts des cartes (src/<ext>/*.ts), lecture du texte
-            Scryfall (src/scryfall.ts), decklists, decks préconstruits (decks/*.json : 5 decks de bienvenue FDN, Starter Kit FIN)
+            Scryfall (src/scryfall.ts), decklists, decks préconstruits (decks/*.json : 5 decks de bienvenue FDN, Starter Kit FIN, 5 decks du méta)
   ai/       IA à trois niveaux (heuristique paramétrée, combat par simulation, ISMCTS), IA aléatoire (fuzz),
             adversaire scripté (tutoriel) ; guide : docs/ia.md
   server/   jeu en ligne : salons, GameHost côté serveur (fait autorité), minuteur, reconnexion ; protocole partagé ;
