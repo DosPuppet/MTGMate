@@ -29,9 +29,7 @@ Chaque entrée porte sa nature :
 
 - `règle` **Étape de nettoyage (514.3a) :** ni actions basées sur l'état, ni déclencheurs, ni priorité ; une créature tuée par la fin d'un effet « jusqu'à la fin du tour » meurt à l'entretien suivant.
 - `règle` **Lien de vie :** un gain de PV par affectation de blessures ; une créature qui blesse plusieurs objets en même temps déclenche « chaque fois que vous gagnez des PV » plusieurs fois.
-- `règle` **Obligation d'attaquer et taxe d'attaque (508.1d) :** si le joueur ne peut pas payer la taxe, aucune déclaration d'attaque n'est acceptée (la partie se bloque).
 - `règle` **Copies de sorts (707.10c) :** la copie garde les cibles de l'original, et la cible ne « devient pas la cible » de la copie (la garde ne se déclenche pas).
-- `règle` **Sort lancé sans payer son coût :** les augmentations de coût (Thalia, the Survivor) ne s'appliquent pas (118.9d).
 
 ## Carte par carte
 

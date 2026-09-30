@@ -2,14 +2,16 @@
  * Écarts de règles relevés par l'audit du 30/09/2026 (AUDIT.md, § 3.1) et corrigés par PLAN-R.md : un `describe` par
  * écart (numéro de l'audit, ou N… pour ceux trouvés en préparant le plan).
  */
-import { type RawCard, toCardDef } from "@mtgx/cards";
+import { card, type RawCard, toCardDef } from "@mtgx/cards";
 import { describe, expect, it } from "vitest";
 import { destroy } from "../src/actions";
 import { fx, ref } from "../src/dsl";
 import { addEffect, runEffect } from "../src/effects";
 import { submit } from "../src/game";
 import { legalActions } from "../src/legal";
+import { spellCost } from "../src/stack";
 import { FACE_DOWN_ID } from "../src/state";
+import { forcedAttacks } from "../src/turn";
 import type { GameEvent, GameState } from "../src/types";
 import { act, idOf, passBoth, passUntil, scenario } from "./helpers";
 
@@ -135,5 +137,48 @@ describe("N2 : les marqueurs mis comme coût ne sont pas doublés par Doubling S
     expect(s.objects[ajani]?.counters.loyalty).toBe(before + 1);
     s = passBoth(s);
     expect(s.objects[bear]?.counters["+1/+1"]).toBe(2);
+  });
+});
+
+describe("#3 : une obligation d'attaquer n'impose pas de payer une taxe d'attaque (508.1d)", () => {
+  it("Juggernaut face à Archangel of Tithes : ne pas attaquer est accepté, avec ou sans mana ; l'automatisme n'attaque pas", () => {
+    for (const lands of [[], ["Plains"]]) {
+      let s = scenario({ p1: { battlefield: ["Juggernaut", ...lands] }, p2: { battlefield: ["Archangel of Tithes"] } });
+      s = passUntil(s, (x) => x.pending?.kind === "declareAttackers");
+      expect(forcedAttacks(s, "p1")).toEqual([]);
+      s = act(s, "p1", { type: "declareAttackers", attackers: [] });
+      expect(s.combat?.attackers ?? []).toEqual([]);
+    }
+  });
+
+  it("sans taxe, Juggernaut doit toujours attaquer", () => {
+    let s = scenario({ p1: { battlefield: ["Juggernaut"] } });
+    s = passUntil(s, (x) => x.pending?.kind === "declareAttackers");
+    expect(() => act(s, "p1", { type: "declareAttackers", attackers: [] })).toThrow(/doit attaquer/);
+    expect(forcedAttacks(s, "p1")).toEqual([{ id: idOf(s, "p1", "battlefield", "Juggernaut"), defender: "p2" }]);
+  });
+});
+
+describe("N3 : les taxes d'attaque se cumulent", () => {
+  it("deux Archangel of Tithes : {2} par attaquant", () => {
+    let s = scenario({
+      p1: { battlefield: ["Bear Cub", "Forest", "Forest"] },
+      p2: { battlefield: ["Archangel of Tithes", "Archangel of Tithes"] },
+    });
+    s = passUntil(s, (x) => x.pending?.kind === "declareAttackers");
+    const bear = idOf(s, "p1", "battlefield", "Bear Cub");
+    s = act(s, "p1", { type: "declareAttackers", attackers: [{ id: bear, defender: "p2" }] });
+    expect(
+      s.battlefield.filter((id) => s.objects[id]?.tapped && s.defs[s.objects[id]?.defId ?? ""]?.name === "Forest"),
+    ).toHaveLength(2);
+  });
+});
+
+describe("#5 : un sort lancé sans payer son coût paie quand même les augmentations (601.2f, 118.9d)", () => {
+  it("Lightning Strike gratuit face à Thalia, the Survivor coûte {1}", () => {
+    const s = scenario({ p2: { battlefield: ["Thalia, the Survivor"] } });
+    const cost = spellCost(s, "p1", card("Lightning Strike"), { free: true });
+    expect(cost.generic).toBe(1);
+    expect(Object.values(cost.colored).every((n) => !n)).toBe(true);
   });
 });

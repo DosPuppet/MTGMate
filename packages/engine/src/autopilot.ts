@@ -3,8 +3,7 @@
  * Le moteur reste strict ; c'est cette couche qui rend le jeu fluide.
  */
 import { meaningfulActions } from "./legal";
-import { opponentsOf } from "./state";
-import { forcedAttackers } from "./turn";
+import { forcedAttacks } from "./turn";
 import type { Decision, GameState, PlayerId, Step, TargetOption } from "./types";
 
 export interface AutopilotSettings {
@@ -39,8 +38,7 @@ export function autopilotDecision(s: GameState, player: PlayerId, settings: Auto
   if (p.kind === "declareAttackers") {
     if (!passingTurn) return null;
     // Même en passant le tour, les créatures obligées d'attaquer attaquent.
-    const defender = opponentsOf(s, player)[0];
-    return { type: "declareAttackers", attackers: defender ? forcedAttackers(s, player).map((id) => ({ id, defender })) : [] };
+    return { type: "declareAttackers", attackers: forcedAttacks(s, player) };
   }
   if (p.kind === "choice")
     return p.request.autoOk && !settings.fullControl ? { type: "choose", values: p.request.suggested } : null;

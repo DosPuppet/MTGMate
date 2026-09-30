@@ -8,7 +8,8 @@ Plan établi le 30/09/2026 (branche `dev`) : il sert de feuille de route aux pro
 - **30/09/2026 : F1 fait** (`RULES_VERSION` = 1, empreintes et rejeu vérifié, un compteur d'identifiants par préfixe, reprise des salons selon la version, parties dorées ; détail dans `docs/extensions/socle.md`, lot F1).
 - **30/09/2026 : F3 fait** (serveur : URL mal encodée, adresse du client par `X-Real-IP`, `Origin` vérifié, `/scry/` sans chaîne de requête, plafond de salons par adresse, en-têtes de sécurité ; nginx mis à jour).
 - **30/09/2026 : R0.1 fait** (`RULES_VERSION` = 2 : second partagé et actions spéciales, protection contre tout et blessures impossibles à prévenir, 704.5b, gagner ou perdre la partie, marqueurs payés comme coût, 506.4, erreur au-delà de 100 passes d'actions basées sur l'état ; tests dans `engine/test/audit.test.ts`).
-- À faire : R0.2, puis la suite dans l'ordre du tableau ci-dessous.
+- **30/09/2026 : R0.2 fait** (`RULES_VERSION` = 3 : taxes payées par les sorts gratuits et options gratuites vérifiées, taxes d'attaque et de blocage cumulées, obligation d'attaquer seulement vers un défenseur sans taxe, `forcedAttacks` pour l'automatisme).
+- À faire : R0.3, puis la suite dans l'ordre du tableau ci-dessous.
 
 ## Le garde-fou de la dette (lot F2)
 

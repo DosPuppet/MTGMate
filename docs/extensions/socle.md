@@ -209,3 +209,10 @@ Lot R0.1 (PLAN-R.md ; `RULES_VERSION` = 2) :
 - 506.4 : un attaquant ou un bloqueur qui cesse d'être une créature quitte le combat (vérifié avec les actions basées sur l'état) ;
 - plus de 100 passes d'actions basées sur l'état : une `Error` (au lieu d'un arrêt silencieux), que le fuzz verrait ;
 - tests : `engine/test/audit.test.ts`.
+
+Lot R0.2 (PLAN-R.md ; `RULES_VERSION` = 3) :
+- sorts lancés sans payer leur coût de mana (Découverte, complot, Omniscience) : les augmentations de coût s'appliquent (601.2f, 118.9d ; Thalia, the Survivor), les réductions ne descendent pas sous zéro ; `legalActions` ne propose une option gratuite que si ce reste est payable ;
+- taxes d'attaque et de blocage (Archangel of Tithes) : additionnées (`playerStaticTotal`, `attackTaxFor`) au lieu d'être lues comme des booléens ;
+- 508.1d : une créature qui « attaque si possible » n'est obligée d'attaquer que s'il existe un défenseur sans taxe (`forcedAttackers`) ; l'automatisme déclare les attaques obligées vers un tel défenseur (`forcedAttacks`). Avant, sans mana face à Archangel of Tithes, aucune déclaration n'était acceptée ;
+- limite : l'IA garde `forcedAttackers` et choisit elle-même ses défenseurs ; en multijoueur, elle peut encore viser un joueur taxé (décision refusée, puis décision par défaut) ;
+- tests : `engine/test/audit.test.ts` (#3, #5, N3).

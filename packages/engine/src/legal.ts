@@ -295,7 +295,10 @@ export function legalActions(s: GameState, player: PlayerId): ActionOption[] {
         canPay(s, player, totalCost(c, 0, undefined, harmony.powers[id] ?? 0), new Set([...(exclude ?? []), id]), purpose),
       );
     const normal = !terms.free && payableWith(withExtra(spellCost(s, player, d, base)));
-    const freeAvailable = !!terms.freeOptional;
+    // Sans payer son coût de mana : les taxes (Thalia, the Survivor) et coûts supplémentaires restent à payer.
+    const freePayable = () => payableWith(withExtra(spellCost(s, player, d, { ...base, free: true })));
+    if (terms.free && !freePayable()) return;
+    const freeAvailable = !!terms.freeOptional && freePayable();
     const alt = terms.free ? undefined : altCostFor(s, player, d);
     const altAvailable =
       !!alt && canPay(s, player, withExtra(spellCost(s, player, d, { ...base, alternative: true })), exclude, purpose);

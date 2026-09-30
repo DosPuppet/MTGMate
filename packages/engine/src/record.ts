@@ -19,8 +19,10 @@ export const RECORD_VERSION = 1;
  * - 1 : un compteur d'identifiants par préfixe (lot F1).
  * - 2 : corrections R0.1 (second partagé, protection, 704.5b, gagner ou perdre la partie, marqueurs payés comme coût,
  *   506.4).
+ * - 3 : corrections R0.2 (taxes des sorts gratuits, taxes d'attaque et de blocage cumulées, obligation d'attaquer sans
+ *   payer de taxe).
  */
-export const RULES_VERSION = 2;
+export const RULES_VERSION = 3;
 
 /** Un point de contrôle toutes les N décisions (plus la dernière de la partie). */
 export const CHECKPOINT_EVERY = 25;

@@ -445,7 +445,9 @@ export function spellCost(
     base,
     opts.free ? 0 : (opts.x ?? 0),
     opts.kicked ? d.kicker : undefined,
-    opts.free ? 0 : spellReduction(s, player, d, opts.targets, opts.fromZone),
+    // 601.2f / 118.9d : un sort lancé sans payer son coût de mana paie quand même les augmentations (Thalia, the
+    // Survivor) ; une réduction ne descend pas sous zéro.
+    spellReduction(s, player, d, opts.targets, opts.fromZone),
   );
   // Feed the Cycle : « fourragez ou payez {B} » — le mana s'ajoute sauf si l'on fourrage (coût alternatif).
   const cost = d.forageOrPay && !alt?.forage ? totalCost(cost0, 0, d.forageOrPay) : cost0;

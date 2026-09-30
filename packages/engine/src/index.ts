@@ -51,6 +51,7 @@ export {
   canBlock,
   defendingPlayer,
   forcedAttackers,
+  forcedAttacks,
   MAX_HAND_SIZE,
   requiredBlocks,
   unmetBlockRequirement,

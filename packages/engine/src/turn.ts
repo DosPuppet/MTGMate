@@ -46,7 +46,14 @@ import {
   shuffle,
   tapObject,
 } from "./state";
-import { addPlayerEffect, consumePlayerEffect, controlledAbilitiesWithSource, playerEffectValues, playerStatic } from "./statics";
+import {
+  addPlayerEffect,
+  consumePlayerEffect,
+  controlledAbilitiesWithSource,
+  playerEffectValues,
+  playerStatic,
+  playerStaticTotal,
+} from "./statics";
 import { matchesObjectFilter } from "./targets";
 import { checkCondition, processTriggers, releaseDelayedTriggers, simultaneously } from "./triggers";
 import { logTurnEvent } from "./turnlog";
@@ -541,9 +548,28 @@ export function canAttack(s: GameState, id: ObjectId): boolean {
   return !defender && !hasKeyword(s, id, "cantAttack");
 }
 
-/** Créatures qui « attaquent à chaque combat si possible » (508.1d). */
+/**
+ * Créatures qui « attaquent à chaque combat si possible » (508.1d). Une obligation n'impose jamais de payer un coût :
+ * si chaque défenseur possible exige une taxe d'attaque (Archangel of Tithes), elles ne sont pas obligées d'attaquer.
+ */
 export function forcedAttackers(s: GameState, player: PlayerId): ObjectId[] {
+  if (untaxedDefenders(s, player).length === 0) return [];
   return attackCandidates(s, player).filter((id) => hasKeyword(s, id, "mustAttack"));
+}
+
+/** Les attaques obligées, chacune vers un défenseur sans taxe d'attaque (automatisme : « Fin du tour »). */
+export function forcedAttacks(s: GameState, player: PlayerId): { id: ObjectId; defender: string }[] {
+  const defender = untaxedDefenders(s, player).find((d) => !!s.players[d]) ?? untaxedDefenders(s, player)[0];
+  return defender ? forcedAttackers(s, player).map((id) => ({ id, defender })) : [];
+}
+
+/** Taxe d'attaque (Archangel of Tithes) pour attaquer ce défenseur ou ses planeswalkers : {N} par créature. */
+export function attackTaxFor(s: GameState, defender: string): number {
+  return playerStaticTotal(s, defendingPlayer(s, defender), "attackTax");
+}
+
+function untaxedDefenders(s: GameState, player: PlayerId): string[] {
+  return attackableDefenders(s, player).filter((d) => attackTaxFor(s, d) === 0);
 }
 
 export function attackCandidates(s: GameState, player: PlayerId): ObjectId[] {
@@ -608,18 +634,16 @@ export function declareAttackers(s: GameState, player: PlayerId, attackers: { id
       throw new RulesError(`Une seule créature peut attaquer ${chars(s, w).name}`);
     }
   }
-  // 508.1d : les créatures qui « attaquent à chaque combat si possible » doivent être déclarées.
-  const forced = attackCandidates(s, player).filter((id) => hasKeyword(s, id, "mustAttack") && !seen.has(id));
+  // 508.1d : les créatures qui « attaquent à chaque combat si possible » doivent être déclarées (sauf si attaquer
+  // coûte quelque chose partout : une obligation n'impose pas de payer).
+  const forced = forcedAttackers(s, player).filter((id) => !seen.has(id));
   if (forced.length > 0) throw new RulesError(`${chars(s, forced[0] as ObjectId).name} doit attaquer si elle le peut`);
   // Toby, Beastie Befriender : « ce jeton ne peut pas attaquer seul ».
   const alone = attackers.length === 1 ? attackers[0]?.id : undefined;
   if (alone && hasKeyword(s, alone, "cantAttackOrBlockAlone"))
     throw new RulesError(`${chars(s, alone).name} ne peut pas attaquer seule`);
   // Archangel of Tithes : {1} pour chaque créature qui attaque un joueur protégé (ou ses planeswalkers).
-  const tax = attackers.reduce((n, a) => {
-    const defender = defendingPlayer(s, a.defender);
-    return n + (defender && playerStatic(s, defender, "attackTax") ? 1 : 0);
-  }, 0);
+  const tax = attackers.reduce((n, a) => n + attackTaxFor(s, a.defender), 0);
   if (tax > 0) {
     try {
       payMana(s, player, { generic: tax, colored: {}, x: 0 });
@@ -742,11 +766,13 @@ export function declareBlockers(s: GameState, player: PlayerId, blocks: { blocke
   const unmet = unmetBlockRequirement(s, player, blocks);
   if (unmet) throw new RulesError(`${chars(s, unmet).name} doit être bloquée si possible`);
   // Archangel of Tithes (attaquant) : {1} par créature qui bloque.
-  if (blocks.length && s.playerOrder.some((p) => p !== player && playerStatic(s, p, "blockTax"))) {
+  const perBlocker = s.playerOrder.filter((p) => p !== player).reduce((n, p) => n + playerStaticTotal(s, p, "blockTax"), 0);
+  if (blocks.length && perBlocker > 0) {
+    const tax = blocks.length * perBlocker;
     try {
-      payMana(s, player, { generic: blocks.length, colored: {}, x: 0 });
+      payMana(s, player, { generic: tax, colored: {}, x: 0 });
     } catch (e) {
-      rethrowAsRules(e, `Il faut payer {${blocks.length}} pour bloquer`);
+      rethrowAsRules(e, `Il faut payer {${tax}} pour bloquer`);
     }
   }
   for (const a of c.attackers) {
