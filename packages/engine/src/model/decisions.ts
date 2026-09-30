@@ -140,6 +140,8 @@ export type Decision =
   | ({ type: "cast"; card: ObjectId } & CastChoices)
   | ({ type: "activate"; source: ObjectId; ability: number } & CastChoices)
   | { type: "tapForMana"; source: ObjectId; ability: number; color?: ManaType }
+  /** Annule l'engagement d'une source pour son mana, tant que ce mana n'a pas servi (`GameState.manaUndo`). */
+  | { type: "undoMana"; source: ObjectId }
   | { type: "declareAttackers"; attackers: { id: ObjectId; defender: PlayerId }[] }
   | { type: "declareBlockers"; blocks: { blocker: ObjectId; attacker: ObjectId }[] }
   | { type: "discard"; cards: ObjectId[] }

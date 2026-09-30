@@ -35,7 +35,7 @@ function useShortcuts() {
       } else if (e.code === "Enter" || e.code === "NumpadEnter") {
         e.preventDefault();
         const v = useGame.getState().view;
-        if (v && v.turn.active === v.viewer && v.pending?.player === v.viewer) endTurn();
+        if (v && v.turn.active === v.viewer && v.pending?.player === v.viewer) endTurn(e.shiftKey);
       } else if (e.code === "Escape") {
         const s = useGame.getState();
         if (s.peek) s.setPeek(null);

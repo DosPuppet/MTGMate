@@ -1,6 +1,7 @@
 import type { GameView, ObjectView, PlayerView } from "@mtgx/engine";
 import { motion } from "motion/react";
 import { type CSSProperties, useEffect, useLayoutEffect, useRef, useState } from "react";
+import { useShallow } from "zustand/react/shallow";
 import { faceName, PHASE_BAR, STEP_LABEL } from "../i18n";
 import { useLocalize } from "../localize";
 import { boardPick, choiceSource, pickValid, shortPrompt } from "../prompts/boardChoice";
@@ -8,6 +9,7 @@ import { myActions, useGame } from "../store";
 import { isTouch, justLongPressed } from "../touch";
 import { Arrows } from "./Arrows";
 import { Card, CardBack, type Glow, ManaCost } from "./Card";
+import { combatPreview } from "./combatPreview";
 import { Effects } from "./Effects";
 import {
   type BattlefieldFit,
@@ -863,13 +865,28 @@ function OpponentHand({ count }: { count: number }) {
 }
 
 export function useMainAction(): { label: string; run?: () => void; disabled?: boolean; hot?: boolean } {
-  const s = useGame();
+  // Seules ces données comptent : pas de redessin à chaque survol de carte (le store entier changerait).
+  const s = useGame(
+    useShallow((g) => ({
+      view: g.view,
+      casting: g.casting,
+      attackers: g.attackers,
+      attackTargets: g.attackTargets,
+      blocks: g.blocks,
+      selection: g.selection,
+      decide: g.decide,
+      cancel: g.cancel,
+      endTurn: g.endTurn,
+      allAttack: g.allAttack,
+      passPriority: g.passPriority,
+    })),
+  );
   const v = s.view;
   if (!v) return { label: "…", disabled: true };
   const p = v.pending;
   if (!p) return { label: v.over ? "Partie terminée" : "…", disabled: true };
   if (p.player !== v.viewer) return { label: "Adversaire…", disabled: true };
-  const pass = () => s.decide({ type: "pass" });
+  const pass = () => s.passPriority();
   switch (p.kind) {
     case "priority":
       if (s.casting) return { label: "Annuler", run: s.cancel };
@@ -877,7 +894,8 @@ export function useMainAction(): { label: string; run?: () => void; disabled?: b
       if (v.stack.length > 0) return { label: "Résoudre", run: pass, hot: true };
       if (v.turn.active === v.viewer) {
         if (v.turn.step === "main1" && v.potentialAttackers > 0) return { label: "Combat", run: pass, hot: true };
-        if (v.turn.step === "main1" || v.turn.step === "main2") return { label: "Fin du tour", run: s.endTurn, hot: true };
+        if (v.turn.step === "main1" || v.turn.step === "main2")
+          return { label: "Fin du tour", run: () => s.endTurn(), hot: true };
       }
       return { label: "Passer", run: pass, hot: true };
     case "declareAttackers": {
@@ -921,6 +939,38 @@ export function useMainAction(): { label: string; run?: () => void; disabled?: b
   }
 }
 
+/** Aperçu des blessures du combat en préparation (attaquants choisis, blocages en cours ou déclarés). */
+function CombatPreviewLine() {
+  const view = useGame((s) => s.view) as GameView;
+  const attackers = useGame((s) => s.attackers);
+  const attackTargets = useGame((s) => s.attackTargets);
+  const blocks = useGame((s) => s.blocks);
+  const p = view.pending;
+  const choosingAttack = p?.kind === "declareAttackers" && p.player === view.viewer;
+  const atk = choosingAttack
+    ? attackers.map((id) => ({ id, defender: attackTargets[id] ?? p.defenders?.[0] ?? (view.opponents[0] as string) }))
+    : (view.combat?.attackers ?? []);
+  const declared = Object.fromEntries((view.combat?.attackers ?? []).flatMap((a) => a.blockers.map((b) => [b, a.id])));
+  const choosingBlocks = p?.kind === "declareBlockers" && p.player === view.viewer;
+  const preview = combatPreview(view, atk, choosingBlocks ? { ...declared, ...blocks } : declared);
+  if (!preview || view.over) return null;
+  const name = (id: string) => view.battlefield.find((o) => o.id === id)?.name ?? "";
+  const parts = Object.entries(preview.lifeLoss)
+    .filter(([, n]) => n !== 0)
+    .map(([pl, n]) => {
+      const who = pl === view.viewer ? "vous" : (view.players[pl]?.name ?? pl);
+      const lethal = n > 0 && (view.players[pl]?.life ?? 0) - n <= 0;
+      return `${who} ${n > 0 ? `−${n}` : `+${-n}`} PV${lethal ? " (létal)" : ""}`;
+    });
+  if (preview.dies.length) parts.push(`meurent : ${preview.dies.map(name).join(", ")}`);
+  if (parts.length === 0) return null;
+  return (
+    <div className="combat-preview" role="status">
+      Aperçu : {parts.join(" · ")}
+    </div>
+  );
+}
+
 function ActionPanel() {
   const view = useGame((s) => s.view) as GameView;
   const endTurn = useGame((s) => s.endTurn);
@@ -932,6 +982,7 @@ function ActionPanel() {
   const mine = p?.player === view.viewer && (p?.kind === "priority" || p?.kind === "declareAttackers");
   return (
     <div className="action-panel">
+      <CombatPreviewLine />
       {view.controlling && (
         <div className="control-banner">Vous contrôlez {view.players[view.controlling]?.name ?? "l'adversaire"}</div>
       )}
@@ -962,8 +1013,8 @@ function ActionPanel() {
           type="button"
           className="btn small ghost"
           data-tuto="end-turn"
-          onClick={endTurn}
-          title="Entrée : passer jusqu'à la fin du tour"
+          onClick={(e) => endTurn(e.shiftKey)}
+          title="Entrée : passer jusqu'à la fin du tour (s'arrête si un adversaire agit) ; Maj+Entrée ou Maj+clic : tout laisser passer"
         >
           Passer le tour ⏎
         </button>

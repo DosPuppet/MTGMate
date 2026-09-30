@@ -47,7 +47,7 @@ Ce fichier sert au suivi du projet entre les sessions : où on en est, les règl
 | Méta Standard, lot M5 : Boros Dwarves, Lifegain, Mardu Discard, Boros Tokens (34 cartes) ; Storied, faufilement, chaos, paradigme, équiper digne | ✅ |
 | Méta Standard, lot M6 : les six derniers archétypes (47 cartes) ; maîtrise de l'air, Web-slinging, payer X PV, tours passés. **Phase 1 du plan P4 finie : les 20 archétypes du méta (88,1 %) sont jouables** | ✅ |
 | Phase 2 du plan P4 : Tarkir: Dragonstorm à 100 % (`docs/plans/PLAN-P4.md`) | en attente de `PLAN-R.md` |
-| Plan de remédiation de l'audit du 30/09/2026 (`PLAN-R.md`, lots F1 à R8) : F1 à F3 (fondations), R0 (corrections rapides), R4.0 à R4.6, R2.1 à R2.5, R1 en partie, R3 (copies de sorts, répartition), R5, R6 et R7 faits, `RULES_VERSION` = 19 ; prochain : R8 | en cours |
+| Plan de remédiation de l'audit du 30/09/2026 (`PLAN-R.md`, lots F1 à R8) : F1 à F3 (fondations), R0 (corrections rapides), R4.0 à R4.6, R2.1 à R2.5, R1 en partie, R3 (copies de sorts, répartition), R5 à R8 faits, `RULES_VERSION` = 19 ; restent R1 en partie (familles E, H, I, boucliers 615.7), R7 (continu) | ✅ (sauf R1 et R7, à poursuivre) |
 | Autres extensions Standard | à la demande de l'utilisateur, une à la fois |
 
 
@@ -168,11 +168,13 @@ Ce fichier sert au suivi du projet entre les sessions : où on en est, les règl
   - en mode dev, `window.__sfxLog` liste les sons joués (vérifié par `ui-smoke`).
 - **Serveur de parties :** `npm run server` charge le moteur au démarrage ; le relancer après toute modification du moteur ou des cartes. Il sert `packages/client/dist` : relancer `npm run build` pour y voir les changements du client (en dev, Vite redirige `/ws` vers le port 8787).
 - **Déploiement (VPS de l'utilisateur) :** machine partagée avec d'autres applis, nginx existant devant, **ni Docker ni Caddy ni unité systemd** : pm2 (`deploy/ecosystem.config.cjs`), serveur sur `127.0.0.1`. Une mise à jour (`deploy/update.sh`) redémarre le serveur ; les parties en cours sont sauvegardées (`data/rooms`, `MTGX_DATA_DIR`) et reprises au démarrage en rejouant leurs décisions. Un changement de comportement du moteur peut rendre une sauvegarde impossible à rejouer (fichier mis de côté en `.bad`).
+- **Réglages retenus :** arrêts, contrôle total, « garder la priorité » et langue sont gardés dans `localStorage` (`mtgmate.autopilot`, `mtgmate.lang` ; `client/src/store.ts`). « Fin du tour » est une passe douce (elle s'arrête dès qu'un adversaire met quelque chose sur la pile) ; Maj+Entrée ou Maj+clic, une passe dure.
+- **Annuler un terrain engagé (`undoMana`) :** n'est pas une option de `legalActions` (l'IA aléatoire engagerait et dégagerait sans fin) ; la vue marque `undoMana` sur les sources annulables de son joueur, et l'interface l'envoie au clic.
 - **Mode dev seulement :** `window.__mtgx` (bac à sable) et `window.__sfxLog` n'existent pas dans le build de production ; les scripts qui visent la production (`online-smoke --base`) ne doivent pas s'en servir.
 - **Mode rapide des tests (`?fast`, dev seulement, `client/src/fast.ts`) :** l'IA joue sans sa pause de 0,9 s et un sort adverse n'est montré que 0,3 s. Les scripts d'interface ouvrent `/?fast`, sauf `battlefield-smoke`, qui audite un plateau figé et ne doit pas laisser l'IA jouer pendant la mesure. Une boucle de test qui joue une partie doit gérer les fenêtres de choix (« Suggestion » puis « Valider ») et la défausse, et échouer si la partie se bloque.
 - **Tutoriel (`client/src/tutorial/`) :** chaque leçon est rejouée par `client/test/tutorial.test.ts`, et suivie dans le navigateur par `tutorial-smoke`. Modifier une leçon, une carte qu'elle utilise ou l'automatisme (arrêts) peut la bloquer : relancer les deux tests. La garde du guidage passe par `store.decide` et `store.endTurn` : une nouvelle façon d'envoyer une décision doit aussi passer par eux.
 - **IA (`packages/ai`, `docs/ia.md`) :**
-  - ne jamais lire la main adverse ni l'ordre des bibliothèques : l'ISMCTS passe par `determinize`, et `ismcts.test.ts` le vérifie ;
+  - ne jamais lire la main adverse, la liste de son deck ni l'ordre des bibliothèques : l'ISMCTS passe par `determinize`, qui ne tire que des cartes vues, et `ismcts.test.ts` le vérifie ;
   - dans une simulation, appliquer les décisions par `step` (`evaluate.ts`), pas par `applyMutable` directement : ce dernier n'est pas transactionnel ;
   - budget de réflexion en temps dans l'interface, en itérations partout ailleurs (tests, tournoi, fuzz, bench : reproductibles) ;
   - juger un changement de l'IA au tournoi (`npm run arena`, 600 parties ou plus), pas sur quelques parties.

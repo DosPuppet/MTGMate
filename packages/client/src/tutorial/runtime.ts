@@ -148,7 +148,7 @@ export function matches(allow: Allow, intent: PlayerIntent, v: GameView): boolea
 
 /** Décisions toujours permises : produire du mana à la main, répondre à une question du moteur. */
 export function alwaysAllowed(intent: PlayerIntent): boolean {
-  return intent.type === "tapForMana" || intent.type === "choose" || intent.type === "concede";
+  return intent.type === "tapForMana" || intent.type === "undoMana" || intent.type === "choose" || intent.type === "concede";
 }
 
 // ---------------------------------------------------------------------------

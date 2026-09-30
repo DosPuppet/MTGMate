@@ -247,6 +247,10 @@ interface Store {
   replayPlay(on: boolean): void;
   decide(d: Decision): void;
   notify(text: string): void;
+  /** Passer la priorité ; avec du mana flottant qui serait perdu, un premier appui avertit seulement. */
+  passPriority(): void;
+  /** Décision pour laquelle l'avertissement de mana flottant a déjà été donné. */
+  floatWarned: string | null;
   clickHandCard(id: string): void;
   dropHandCard(id: string, targetId: string | null): void;
   clickPermanent(id: string): void;
@@ -271,9 +275,11 @@ interface Store {
   /** Cible choisie pour l'attaquant en visée. */
   aimAttackAt(defender: string): void;
   allAttack(): void;
-  endTurn(): void;
+  /** « Fin du tour » : passe douce (s'arrête si un adversaire agit), ou dure (`hard`). */
+  endTurn(hard?: boolean): void;
   toggleStop(side: "own" | "opponent", step: Step): void;
   setFullControl(on: boolean): void;
+  setHoldPriority(on: boolean): void;
   /** Réglages de l'automatisme imposés par le tutoriel (arrêts). */
   applySettings(partial: Partial<AutopilotSettings>): void;
   setLang(lang: Lang): void;
@@ -533,6 +539,45 @@ export function playbackTimes(pace: Pace): { show: number; after: number } {
 }
 
 const PACE_KEY = "mtgmate.pace";
+const SETTINGS_KEY = "mtgmate.autopilot";
+const LANG_KEY = "mtgmate.lang";
+
+/** Réglages de l'automatisme retenus d'une session à l'autre (arrêts, contrôle total, garder la priorité). */
+function loadSettings(): AutopilotSettings {
+  const base = structuredClone(DEFAULT_AUTOPILOT);
+  try {
+    const raw = JSON.parse(localStorage.getItem(SETTINGS_KEY) ?? "null") as Partial<AutopilotSettings> | null;
+    if (!raw || typeof raw !== "object") return base;
+    return {
+      ...base,
+      ...(typeof raw.fullControl === "boolean" ? { fullControl: raw.fullControl } : {}),
+      ...(typeof raw.holdPriority === "boolean" ? { holdPriority: raw.holdPriority } : {}),
+      ...(typeof raw.revealOpponentStack === "boolean" ? { revealOpponentStack: raw.revealOpponentStack } : {}),
+      ...(raw.stops && Array.isArray(raw.stops.own) && Array.isArray(raw.stops.opponent)
+        ? { stops: { own: raw.stops.own, opponent: raw.stops.opponent } }
+        : {}),
+    };
+  } catch {
+    return base;
+  }
+}
+
+function saveSettings(s: AutopilotSettings): void {
+  try {
+    const { fullControl, holdPriority, revealOpponentStack, stops } = s;
+    localStorage.setItem(SETTINGS_KEY, JSON.stringify({ fullControl, holdPriority, revealOpponentStack, stops }));
+  } catch {
+    // Stockage indisponible (navigation privée) : réglages de la session seulement.
+  }
+}
+
+function loadLang(): Lang {
+  try {
+    return localStorage.getItem(LANG_KEY) === "en" ? "en" : "fr";
+  } catch {
+    return "fr";
+  }
+}
 
 function loadPace(): Pace {
   try {
@@ -698,6 +743,7 @@ export const useGame = create<Store>((set, get) => {
 
   const sendSettings = (settings: AutopilotSettings) => {
     set({ settings });
+    saveSettings(settings);
     get().session?.send({ type: "settings", settings });
   };
 
@@ -740,8 +786,9 @@ export const useGame = create<Store>((set, get) => {
     faces: {},
     log: [],
     toast: null,
-    settings: structuredClone(DEFAULT_AUTOPILOT),
-    lang: "fr",
+    floatWarned: null,
+    settings: loadSettings(),
+    lang: loadLang(),
     casting: null,
     abilityMenu: null,
     attackers: [],
@@ -1092,6 +1139,18 @@ export const useGame = create<Store>((set, get) => {
       for (const cue of soundsFor(events, view, get().view, faces)) playSound(cue.key, cue);
       playEffects(view, events, faces);
       const changed = pendingKey(get().view) !== pendingKey(view);
+      // Passe douce : un sort ou une capacité adverse rend la main ; la passe jusqu'à la fin du tour s'arrête là.
+      const st = get().settings;
+      const top = view.stack[view.stack.length - 1];
+      if (
+        st.passUntilTurn !== null &&
+        st.passMode !== "hard" &&
+        view.pending?.kind === "priority" &&
+        view.pending.player === view.viewer &&
+        top &&
+        top.controller !== view.viewer
+      )
+        sendSettings({ ...st, passUntilTurn: null });
       // Créatures qui doivent attaquer : déjà sélectionnées (et impossibles à retirer côté moteur).
       const p = view.pending;
       const forced =
@@ -1125,6 +1184,20 @@ export const useGame = create<Store>((set, get) => {
       if (refused(d)) return;
       get().session?.send({ type: "decision", decision: d });
       set({ casting: null, abilityMenu: null, selectedBlocker: null, selection: [] });
+    },
+
+    passPriority() {
+      const v = get().view;
+      if (!v) return;
+      const pool: Record<string, number> = v.players[v.viewer]?.manaPool ?? {};
+      const floating = Object.values(pool).some((n) => n > 0);
+      const key = pendingKey(v);
+      // Pile vide : l'étape va finir et la réserve se vider.
+      if (floating && v.stack.length === 0 && get().floatWarned !== key) {
+        set({ floatWarned: key });
+        return get().notify("Mana inutilisé : il sera perdu à la fin de l'étape. Appuyez de nouveau pour passer.");
+      }
+      get().decide({ type: "pass" });
     },
 
     notify(text) {
@@ -1207,6 +1280,8 @@ export const useGame = create<Store>((set, get) => {
         return;
       }
       if (p.kind === "priority") {
+        // Terrain engagé pour son mana, encore inutilisé : un clic l'annule (façon Arena).
+        if (view.battlefield.find((o) => o.id === id)?.undoMana) return get().decide({ type: "undoMana", source: id });
         const acts = myActions(view);
         const activations = acts.filter((a): a is ActivateOption => a.type === "activate" && a.source === id);
         const mana = acts.filter((a) => a.type === "tapForMana" && a.source === id);
@@ -1372,11 +1447,11 @@ export const useGame = create<Store>((set, get) => {
       });
     },
 
-    endTurn() {
+    endTurn(hard) {
       const v = get().view;
       if (!v || refused({ type: "endTurn" })) return;
       set({ casting: null, attackers: [] });
-      sendSettings({ ...get().settings, passUntilTurn: v.turn.number });
+      sendSettings({ ...get().settings, passUntilTurn: v.turn.number, passMode: hard ? "hard" : "soft" });
     },
 
     toggleStop(side, step) {
@@ -1390,12 +1465,21 @@ export const useGame = create<Store>((set, get) => {
       sendSettings({ ...get().settings, fullControl: on });
     },
 
+    setHoldPriority(on) {
+      sendSettings({ ...get().settings, holdPriority: on });
+    },
+
     applySettings(partial) {
       sendSettings({ ...get().settings, ...partial });
     },
 
     setLang(lang) {
       set({ lang });
+      try {
+        localStorage.setItem(LANG_KEY, lang);
+      } catch {
+        // Stockage indisponible : langue de la session seulement.
+      }
     },
 
     setHover(h) {

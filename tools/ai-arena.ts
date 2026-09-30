@@ -1,19 +1,21 @@
 /**
  * Tournoi d'IA : deux IA s'affrontent en duel, places et decks alternés, pour mesurer leur force relative.
  *
- * Usage : npm run arena -- --a expert --b medium [--games 200] [--pool decks|all|mix] [--seed 1] [--jobs 8]
+ * Usage : npm run arena -- --a expert --b medium [--games 200] [--pool decks|all|mix|meta] [--seed 1] [--jobs 8]
  *                          [--budget 150]
  *
  * IA : random, beginner, medium, expert ; « expert:200 » donne un budget propre
  * à cette IA (« expert:0 » : sans ISMCTS).
  * Les parties vont par paires : même graine et mêmes decks, places et decks échangés (l'avantage du premier joueur
  * et des decks s'annule). --budget : itérations de l'ISMCTS (un budget en itérations rend le tournoi reproductible).
- * --pool decks : decks préconstruits ; all : decks aléatoires bicolores ; mix : moitié-moitié.
+ * --pool decks : decks préconstruits ; all : decks aléatoires bicolores ; mix : moitié-moitié ; meta : les decks du
+ * méta Standard jouables (docs/meta/).
  */
 import { fork } from "node:child_process";
 import { type AiLevel, aiAgent, playGame, randomAgent } from "@mtgx/ai";
 import { buildDeck, DECKS } from "@mtgx/cards";
 import type { Agent, CardDef } from "@mtgx/engine";
+import { metaDecks } from "./meta-decks";
 import { randomDeck } from "./random-deck";
 
 const arg = (name: string, def: string) => {
@@ -39,7 +41,15 @@ function agent(spec: string, seed: number): Agent {
 }
 
 /** Decks de la paire de parties `pair` : deux decks différents. */
+const META = pool === "meta" ? metaDecks().filter((d) => d.playable) : [];
+
 function decksFor(pair: number): [CardDef[], CardDef[]] {
+  if (pool === "meta") {
+    const n = META.length;
+    const i = pair % n;
+    const j = (i + 1 + (Math.floor(pair / n) % (n - 1))) % n;
+    return [buildDeck(META[i]!), buildDeck(META[j]!)];
+  }
   const usePrecons = pool === "decks" || (pool === "mix" && pair % 2 === 0);
   if (usePrecons) {
     const n = DECKS.length;

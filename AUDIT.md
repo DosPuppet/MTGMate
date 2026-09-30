@@ -180,8 +180,8 @@ Rangés par impact décroissant.
 La présentation est proche d'Arena (animations, flèches, résolution montrée, piles de jetons, tactile). Les manques qui comptent le plus pour le joueur :
 
 1. **Priorité :**
-   - impossible de garder la priorité sur son propre sort, sauf en « contrôle total » (`engine/src/autopilot.ts:58-61`) ;
-   - « Passer le tour » est une passe dure qui laisse aussi passer les sorts adverses (`autopilot.ts:51`) ; Arena distingue passe douce et passe dure ;
+   - ✅ (R8) impossible de garder la priorité sur son propre sort, sauf en « contrôle total » (`engine/src/autopilot.ts:58-61`) ;
+   - ✅ (R8) « Passer le tour » est une passe dure qui laisse aussi passer les sorts adverses (`autopilot.ts:51`) ; Arena distingue passe douce et passe dure ;
    - rien pour passer jusqu'à son tour pendant le tour adverse, ni pour répondre toujours de la même façon à un déclencheur.
 2. **Informations absentes :**
    - le poison n'est jamais affiché : il manque dans `PlayerView` (`engine/src/view.ts:110-123`), alors qu'un son est joué ;
@@ -189,11 +189,11 @@ La présentation est proche d'Arena (animations, flèches, résolution montrée,
    - le journal ne note ni les pertes de PV hors blessures, ni le poison, ni les destructions ; ses noms de cartes ne sont pas survolables.
 3. **Choix faits d'office hors « contrôle total »** (`autoOk`) : l'ordre de ses propres déclencheurs simultanés et la répartition des blessures de piétinement ou entre plusieurs bloqueurs.
 4. **Mana :**
-   - un terrain engagé à la main ne se dégage pas (Arena permet d'annuler tant que le mana n'est pas dépensé) ;
-   - aucune alerte en passant avec du mana flottant ;
+   - ✅ (R8) un terrain engagé à la main ne se dégage pas (Arena permet d'annuler tant que le mana n'est pas dépensé) ;
+   - ✅ (R8) aucune alerte en passant avec du mana flottant ;
    - pas de choix des terrains pendant le paiement ; hybride choisi d'office.
 5. **Combat :**
-   - pas d'aperçu des blessures ni d'alerte de létal ;
+   - ✅ (R8) pas d'aperçu des blessures ni d'alerte de létal ;
    - la menace n'est vérifiée qu'à la validation (message d'erreur) ;
    - la fenêtre de répartition ne vérifie pas le létal du piétinement ;
    - « Attaquer avec tous » envoie tout sur le premier défenseur en multijoueur.
@@ -209,13 +209,13 @@ La présentation est proche d'Arena (animations, flèches, résolution montrée,
    - pas de jeu au clavier (cartes en `div` sans `tabIndex`) ;
    - 28 attributs ARIA ou `role` en tout ;
    - pas de `prefers-reduced-motion`.
-9. **Deckbuilder :** pas de syntaxe de recherche (`t:`, `o:`, `mv>=`), ni de terrains automatiques, ni de main d'essai, ni de vue en colonnes par valeur de mana ; entre deux manches, la réserve s'édite en liste texte.
+9. **Deckbuilder :** ✅ (R8, recherche) pas de syntaxe de recherche (`t:`, `o:`, `mv>=`), ni de terrains automatiques, ni de main d'essai, ni de vue en colonnes par valeur de mana ; entre deux manches, la réserve s'édite en liste texte.
 10. **Réglages et finitions :**
-    - arrêts, contrôle total et langue ne sont pas retenus d'une session à l'autre (`client/src/store.ts:735`) ;
+    - ✅ (R8) arrêts, contrôle total et langue ne sont pas retenus d'une session à l'autre (`client/src/store.ts:735`) ;
     - « Abandonner » sans confirmation ;
     - noms anglais dans des invites françaises (`engine/src/turn.ts:870`, `engine/src/triggers.ts:997`) ;
     - libellé brut pour la plupart des types de marqueurs ;
-    - tout l'écran se redessine au survol d'une carte : `useMainAction` s'abonne à tout le store (`client/src/board/Board.tsx:859`).
+    - ✅ (R8) tout l'écran se redessine au survol d'une carte : `useMainAction` s'abonne à tout le store (`client/src/board/Board.tsx:859`).
 
 ## 5. IA
 
@@ -296,6 +296,7 @@ Détail, ordre d'exécution et décisions de conception : `PLAN-R.md`.
 - **30/09/2026 :** lot R0.5 fait : écart 6 corrigé (arrivées simultanées, 603.6a).
 - **30/09/2026 :** lot R4.0 fait (§ 3.3) : un seul accès aux statiques de joueur (N6).
 - **30/09/2026 :** lot R1 fait (§ 3.2) : ordre des remplacements qui modifient un nombre choisi pour le joueur affecté (Artist's Talent et Twinflame Tyrant : 8 blessures, plus 10), toutes les pioches passent par les remplacements (N12).
+- **30/09/2026 :** lot R8 fait (§ 4 et § 5) : priorité (garder, passe douce et dure), réglages retenus, annulation d'un terrain engagé, alerte de mana flottant, aperçu du combat, recherche du deckbuilder, accessibilité, redessins limités ; IA : déterminisation par les cartes vues, choix simulés, mulligan selon les couleurs.
 - **30/09/2026 :** lot R7 fait (§ 3.4, premier passage) : un fichier de tests de règles par extension partielle, tests tirés des décisions officielles ; 7 écarts de cartes trouvés et corrigés.
 - **30/09/2026 :** lot R6 fait : boucles d'actions obligatoires (104.4b), partie nulle ; déclenchements d'un joueur éliminé retirés (800.4a).
 - **30/09/2026 :** lot R5 fait : blocages simultanés en multijoueur (cachés jusqu'au dernier défenseur), mulligans tour de table par tour de table (103.5).

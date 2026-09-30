@@ -4,7 +4,7 @@
 import { loseLife, sacrifice } from "./actions";
 import { RulesError } from "./errors";
 import { linkedColors } from "./layers";
-import { changeCounters, chars, defOf, isCreature, isSummoningSick, obj, snapshot, tapObject } from "./state";
+import { bump, changeCounters, chars, defOf, isCreature, isSummoningSick, obj, snapshot, tapObject } from "./state";
 import { playerStatic, playerStaticTotal } from "./statics";
 import { matchesCard, matchesObjectFilter, matchesView, withChosen } from "./targets";
 import { checkCondition } from "./triggers";
@@ -275,6 +275,17 @@ export function activateManaAbility(s: GameState, player: PlayerId, id: ObjectId
   if (!ab || !canActivateMana(s, id, ab)) throw new RulesError("Capacité de mana indisponible");
   const c = color ?? ab.produce[0];
   if (!c || !ab.produce.includes(c)) throw new RulesError("Couleur de mana invalide");
+  // Annulable seulement si {T} est le seul coût, sans autre effet ni déclenchement (façon Arena).
+  const simple =
+    !!ab.cost.tap &&
+    !ab.oncePerTurn &&
+    !ab.tapAnother &&
+    !ab.cost.sacrificeSelf &&
+    !ab.cost.payLife &&
+    !ab.addCounter &&
+    !ab.removeCounter;
+  const triggersBefore = s.triggers.length;
+  const poolBefore = s.players[player]?.manaPool[c] ?? 0;
   if (ab.cost.tap) tapObject(s, o);
   if (ab.oncePerTurn) s.turn.onceFired.push(`mana:${id}`);
   if (ab.tapAnother) tapObject(s, obj(s, otherToTap(s, id) as ObjectId));
@@ -289,6 +300,21 @@ export function activateManaAbility(s: GameState, player: PlayerId, id: ObjectId
   if (pool && c === "C" && ab.cost.tap && chars(s, id).types.includes("Land")) {
     pool.C += playerStaticTotal(s, player, "extraColorlessFromLands");
   }
+  const amount = (pool?.[c] ?? 0) - poolBefore;
+  if (simple && s.triggers.length === triggersBefore && amount > 0)
+    s.manaUndo = [...(s.manaUndo ?? []), { player, source: id, color: c, amount }];
+}
+
+/** Annule l'engagement d'une source pour son mana (voir `GameState.manaUndo`) : elle se dégage, le mana disparaît. */
+export function undoMana(s: GameState, player: PlayerId, source: ObjectId): void {
+  const entry = s.manaUndo?.find((x) => x.player === player && x.source === source);
+  const o = s.objects[source];
+  const pool = s.players[player]?.manaPool;
+  if (!entry || !o?.tapped || !pool || pool[entry.color] < entry.amount) throw new RulesError("Ce mana ne peut plus être annulé");
+  pool[entry.color] -= entry.amount;
+  o.tapped = false;
+  s.manaUndo = s.manaUndo?.filter((x) => x !== entry);
+  bump(s);
 }
 
 // ---------------------------------------------------------------------------

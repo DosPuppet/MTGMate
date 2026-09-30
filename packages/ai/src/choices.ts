@@ -58,9 +58,23 @@ export function heuristicChoice(s: GameState, me: PlayerId, req: ChoiceRequest):
       case "discard":
       case "sacrifice":
         return byValue.slice(0, req.min);
-      default:
+      default: {
+        // Choix d'une seule option parmi peu : on essaie chacune (P3 ; avant, la réponse suggérée).
+        if (req.max === 1 && req.options.length <= 6) {
+          const candidates = req.options.map((o) => [o] as ChoiceValue[]);
+          if (req.min === 0) candidates.push([]);
+          return bestBySimulation(s, me, candidates) ?? req.suggested;
+        }
         return req.suggested;
+      }
     }
+  }
+  // « Vous pouvez », « à moins que … ne paie » : oui et non sont essayés (P3 ; avant, toujours la suggestion).
+  if (req.type === "yesNo") return bestBySimulation(s, me, [[1], [0]]) ?? req.suggested;
+  // Petit nombre à choisir (X à payer…) : chaque valeur est essayée.
+  if (req.type === "number" && req.max - req.min <= 5) {
+    const candidates = Array.from({ length: req.max - req.min + 1 }, (_, i) => [req.min + i] as ChoiceValue[]);
+    return bestBySimulation(s, me, candidates) ?? req.suggested;
   }
   if (req.type === "order") {
     // Le plus utile en premier.

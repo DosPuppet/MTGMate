@@ -6,7 +6,7 @@ import { drawCard } from "./actions";
 import { divisionOf, validateChoice } from "./choices";
 import { checkDecisionShape } from "./decisionShape";
 import { outcomeHash } from "./fingerprint";
-import { activateManaAbility } from "./mana";
+import { activateManaAbility, undoMana } from "./mana";
 import { activateAbility, answerCastNow, answerResolutionChoice, castSpell, playLand, RulesError } from "./stack";
 import { answerStackChoice } from "./stackChoices";
 import {
@@ -156,6 +156,8 @@ function expect<T extends Decision["type"]>(d: Decision, ...types: T[]): asserts
 
 function apply(s: GameState, submitter: PlayerId, d: Decision): void {
   checkDecisionShape(s, d);
+  // Toute autre décision que produire ou annuler du mana rend les engagements de mana définitifs.
+  if (d.type !== "tapForMana" && d.type !== "undoMana") s.manaUndo = undefined;
   if (d.type === "concede") {
     const player = submitter;
     const pl = s.players[player];
@@ -246,9 +248,10 @@ function apply(s: GameState, submitter: PlayerId, d: Decision): void {
     case "priority":
       if (p.castNow) {
         // 608.2g : lancer une des cartes proposées (ou passer pour refuser), puis la résolution reprend.
-        expect(d, "pass", "cast", "tapForMana");
-        if (d.type === "tapForMana") {
-          activateManaAbility(s, player, d.source, d.ability, d.color);
+        expect(d, "pass", "cast", "tapForMana", "undoMana");
+        if (d.type === "tapForMana" || d.type === "undoMana") {
+          if (d.type === "tapForMana") activateManaAbility(s, player, d.source, d.ability, d.color);
+          else undoMana(s, player, d.source);
           s.pending = p;
           return;
         }
@@ -262,7 +265,7 @@ function apply(s: GameState, submitter: PlayerId, d: Decision): void {
         if (answerCastNow(s, spell)) afterResolution(s);
         return;
       }
-      expect(d, "pass", "playLand", "cast", "activate", "tapForMana");
+      expect(d, "pass", "playLand", "cast", "activate", "tapForMana", "undoMana");
       switch (d.type) {
         case "pass":
           passPriority(s, player);
@@ -279,6 +282,9 @@ function apply(s: GameState, submitter: PlayerId, d: Decision): void {
           break;
         case "tapForMana":
           activateManaAbility(s, player, d.source, d.ability, d.color);
+          break;
+        case "undoMana":
+          undoMana(s, player, d.source);
           break;
       }
       return;

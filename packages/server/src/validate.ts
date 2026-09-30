@@ -13,6 +13,7 @@ const DECISION_TYPES = new Set<Decision["type"]>([
   "cast",
   "activate",
   "tapForMana",
+  "undoMana",
   "declareAttackers",
   "declareBlockers",
   "discard",
@@ -45,6 +46,8 @@ export function cleanSettings(raw: unknown): Partial<AutopilotSettings> {
   const r = raw as Record<string, unknown>;
   if (typeof r.fullControl === "boolean") out.fullControl = r.fullControl;
   if (typeof r.revealOpponentStack === "boolean") out.revealOpponentStack = r.revealOpponentStack;
+  if (typeof r.holdPriority === "boolean") out.holdPriority = r.holdPriority;
+  if (r.passMode === "soft" || r.passMode === "hard") out.passMode = r.passMode;
   if (r.passUntilTurn === null || (Number.isInteger(r.passUntilTurn) && (r.passUntilTurn as number) >= 0)) {
     out.passUntilTurn = r.passUntilTurn as number | null;
   }

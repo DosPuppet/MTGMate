@@ -1,4 +1,4 @@
-import { LayoutGroup } from "motion/react";
+import { LayoutGroup, MotionConfig } from "motion/react";
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import { App } from "./App";
@@ -30,9 +30,12 @@ const root = document.getElementById("root");
 if (root) {
   createRoot(root).render(
     <StrictMode>
-      <LayoutGroup>
-        <App />
-      </LayoutGroup>
+      {/* Mouvements réduits si le système le demande (accessibilité). */}
+      <MotionConfig reducedMotion="user">
+        <LayoutGroup>
+          <App />
+        </LayoutGroup>
+      </MotionConfig>
     </StrictMode>,
   );
 }

@@ -117,12 +117,31 @@ export function withRequiredBlocks(
 
 const isLand = (s: GameState, id: ObjectId) => !!s.defs[s.objects[id]?.defId ?? ""]?.types.includes("Land");
 
+/** Couleurs que produisent les terrains de la main (capacités de mana imprimées). */
+function landColors(s: GameState, hand: ObjectId[]): Set<string> {
+  const out = new Set<string>();
+  for (const id of hand.filter((x) => isLand(s, x))) {
+    for (const ab of s.defs[s.objects[id]?.defId ?? ""]?.abilities ?? []) {
+      if (ab.kind === "mana") for (const c of ab.produce) out.add(c);
+    }
+  }
+  return out;
+}
+
 function keepHand(s: GameState, me: PlayerId, pr: Profile): boolean {
   const hand = s.players[me]?.hand ?? [];
   const lands = hand.filter((id) => isLand(s, id)).length;
   if (hand.length <= 5) return true;
   if (pr.mulligan === "loose") return lands >= 1 && lands <= 6;
-  return lands >= 2 && lands <= (hand.length === 7 ? 5 : 4);
+  if (lands < 2 || lands > (hand.length === 7 ? 5 : 4)) return false;
+  // Couleurs (P3) : au moins un sort de la main dont les symboles colorés sont tous produits par ses terrains.
+  const colors = landColors(s, hand);
+  const spells = hand.filter((id) => !isLand(s, id));
+  if (spells.length === 0 || colors.size === 0) return true;
+  return spells.some((id) => {
+    const cost = s.defs[s.objects[id]?.defId ?? ""]?.manaCost;
+    return Object.entries(cost?.colored ?? {}).every(([c, n]) => !n || colors.has(c));
+  });
 }
 
 /** Les cartes dont on se sépare en premier : terrains en trop, puis sorts les plus chers. */

@@ -319,3 +319,6 @@ Lot R6 (PLAN-R.md ; `RULES_VERSION` = 18) :
 Lot R7 (PLAN-R.md ; `RULES_VERSION` = 19) :
 - un fichier de tests de règles par extension partielle (TDM, WOE, SOS, ECL, TLA, SPM, MSH, TMT, HOB, MKM, BIG), `rulings.test.ts` ;
 - corrigés : dernières informations connues pour `ref.eventObject` et « si la source… » (603.10), « autre » dans `pumpAll`, Thorin, prouesses multiples (702.108b), terrain joué par une permission depuis le cimetière, capacité de mana la plus productive d'une source d'abord.
+
+Lot R8 (PLAN-R.md, sans changement de règles) :
+- moteur : `holdPriority` et `passMode` (automatisme), décision `undoMana` (annuler un engagement de mana, `GameState.manaUndo`) ; le reste est dans le client et l'IA (voir PLAN-R.md et `docs/ia.md`).

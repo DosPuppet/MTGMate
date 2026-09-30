@@ -71,17 +71,26 @@ describe("ISMCTS", () => {
     expect(ismctsPriority(position(), "p1", PROFILE, { rand: mulberry32(1), ms: 0, minIterations: 24 })).toBeNull();
   });
 
-  it("déterminisation : cartes cachées redistribuées, cartes connues intactes", () => {
+  it("déterminisation : cartes cachées tirées des seules cartes vues, cartes connues intactes", () => {
     const s = position();
     const d = determinize(s, "p1", mulberry32(9));
-    const names = (st: GameState, ids: string[]) => ids.map((id) => st.defs[st.objects[id]?.defId ?? ""]?.name).sort();
+    const names = (st: GameState, ids: string[]) => ids.map((id) => st.defs[st.objects[id]?.defId ?? ""]?.name);
     const hidden = (st: GameState) => [...(st.players.p2?.hand ?? []), ...(st.players.p2?.library ?? [])];
-    // Même ensemble de cartes cachées adverses (la liste du deck), mêmes tailles de main et de bibliothèque.
-    expect(names(d, hidden(d))).toEqual(names(s, hidden(s)));
+    // Seulement ce qu'on a vu de p2 (Swab Goblin) et des terrains de base de ses couleurs (Montagne).
+    for (const n of names(d, hidden(d))) expect(["Swab Goblin", "Mountain"]).toContain(n);
     expect(d.players.p2?.hand.length).toBe(s.players.p2?.hand.length);
+    expect(d.players.p2?.library.length).toBe(s.players.p2?.library.length);
     // Ce que p1 sait reste intact : sa main, le champ de bataille.
     expect(d.players.p1?.hand).toEqual(s.players.p1?.hand);
     expect(d.battlefield).toEqual(s.battlefield);
-    for (const id of d.players.p2?.hand ?? []) expect(d.objects[id]?.zone).toBe("hand");
+    // Aucune dépendance aux vraies cartes cachées : les changer ne change rien au tirage.
+    const other = position();
+    const hand = other.players.p2?.hand ?? [];
+    const lib = other.players.p2?.library ?? [];
+    [hand[0], lib[1]] = [lib[1] as string, hand[0] as string];
+    for (const id of hand) (other.objects[id] as { zone: string }).zone = "hand";
+    for (const id of lib) (other.objects[id] as { zone: string }).zone = "library";
+    const d2 = determinize(other, "p1", mulberry32(9));
+    expect(names(d2, hidden(d2))).toEqual(names(d, hidden(d)));
   });
 });

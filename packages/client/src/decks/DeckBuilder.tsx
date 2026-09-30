@@ -9,7 +9,6 @@ import {
   type DeckList,
   FORMAT_LABELS,
   legalityIssue,
-  normalizeName,
   SETS,
   validateDeck,
 } from "@mtgx/cards";
@@ -20,6 +19,7 @@ import { Preview } from "../board/Sidebar";
 import { faceName } from "../i18n";
 import { useGame } from "../store";
 import { ExportModal, ImportModal } from "./ImportExport";
+import { searchFilter } from "./search";
 import { useAllDecks, useDecks } from "./store";
 
 const COLORS = ["W", "U", "B", "R", "G"] as const;
@@ -110,24 +110,8 @@ function matches(c: CardDef, f: Filters): boolean {
     if (f.mv === "6" ? mv < 6 : mv !== Number(f.mv)) return false;
   }
   if (f.rarity && c.rarity !== f.rarity) return false;
-  if (f.query) {
-    const q = normalizeName(f.query);
-    const hay = normalizeName(
-      [
-        c.name,
-        c.fr?.name,
-        c.typeLine,
-        c.fr?.typeLine,
-        c.text,
-        c.fr?.text,
-        c.prepareFace?.name,
-        c.prepareFace?.text,
-        // Toutes les faces d'une carte à plusieurs faces (verso, aventure, autre moitié).
-        ...(c.faceDefs ?? []).flatMap((x) => [x.name, x.fr?.name, x.typeLine, x.fr?.text]),
-      ].join(" "),
-    );
-    if (!hay.includes(q)) return false;
-  }
+  // Recherche : mots libres, ou syntaxe à la Scryfall (t:, o:, c:, mv<=2…).
+  if (f.query && !searchFilter(f.query)(c)) return false;
   return true;
 }
 
@@ -174,7 +158,8 @@ function Collection({ deck, onChange }: { deck: DeckList; onChange: (name: strin
       <div className="filters">
         <input
           className="search"
-          placeholder="Rechercher (nom, type, texte — FR ou EN)"
+          placeholder="Rechercher : nom, type, texte ; t:créature o:pioche c:wu mv<=2 -r:rare"
+          title="Mots libres (FR ou EN), ou t: type, o: texte, c: couleurs (c:c incolore, c:m multicolore), mv, pow, tou avec : = < > <= >=, r: rareté, s: extension ; guillemets pour plusieurs mots, - pour exclure"
           value={f.query}
           onChange={(e) => setF({ ...f, query: e.target.value })}
         />

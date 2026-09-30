@@ -18,6 +18,13 @@ export interface AutopilotSettings {
    * pour que l'interface le lui montre (elle passe seule après quelques secondes).
    */
   revealOpponentStack?: boolean;
+  /** Garder la priorité sur ses propres sorts et capacités (pour y répondre soi-même, façon Arena). */
+  holdPriority?: boolean;
+  /**
+   * « Fin du tour » : passe douce (par défaut), qui rend la main dès qu'un adversaire met quelque chose sur la pile ; passe
+   * dure, qui laisse tout passer jusqu'à la fin du tour.
+   */
+  passMode?: "soft" | "hard";
 }
 
 export const DEFAULT_AUTOPILOT: AutopilotSettings = {
@@ -45,17 +52,18 @@ export function autopilotDecision(s: GameState, player: PlayerId, settings: Auto
   if (p.kind !== "priority") return null;
   // « Lancez-la » pendant une résolution : une vraie décision, jamais passée à la place du joueur.
   if (p.castNow) return null;
-  // « Fin du tour » est une demande explicite : elle vaut aussi en contrôle total.
-  if (passingTurn) return { type: "pass" };
-  if (settings.fullControl) return null;
   const top = s.stack[s.stack.length - 1];
+  // « Fin du tour » est une demande explicite : elle vaut aussi en contrôle total. En passe douce, un sort ou une
+  // capacité adverse rend la main au joueur (le client annule alors la passe).
+  if (passingTurn) return settings.passMode !== "hard" && top && top.controller !== player ? null : { type: "pass" };
+  if (settings.fullControl) return null;
   // Sort ou capacité adverse : le joueur doit le voir, même sans réponse possible (l'interface passe seule).
   if (top && top.controller !== player && settings.revealOpponentStack) return null;
   // Rien à faire : on passe.
   if (meaningfulActions(s, player).length === 0) return { type: "pass" };
   if (top) {
-    // Son propre sort : on le laisse se résoudre. Sort adverse : fenêtre de réponse.
-    return top.controller === player ? { type: "pass" } : null;
+    // Son propre sort : on le laisse se résoudre, sauf si l'on garde la priorité. Sort adverse : fenêtre de réponse.
+    return top.controller === player && !settings.holdPriority ? { type: "pass" } : null;
   }
   const stops = s.turn.active === player ? settings.stops.own : settings.stops.opponent;
   return stops.includes(s.turn.step) ? null : { type: "pass" };

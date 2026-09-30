@@ -30,7 +30,8 @@ Plan établi le 30/09/2026 (branche `dev`) : il sert de feuille de route aux pro
 - **30/09/2026 : R5 fait** (`RULES_VERSION` = 17) : blocages des défenseurs appliqués ensemble, cachés jusqu'au dernier (509.1) ; mulligans tour de table par tour de table (103.5).
 - **30/09/2026 : R6 fait** (`RULES_VERSION` = 18) : boucle d'actions obligatoires déclarée nulle (104.4b) ; les trois gardes y passent. En cherchant la cause des parties « inachevées » du fuzz (méta à 3 joueurs, tout le pool à 4), trouvé : un déclenchement d'un joueur éliminé restait en attente, jamais mis sur la pile, et le nettoyage redonnait la priorité sans fin (514.3a). Corrigé (800.4a) : `verify --full` passe entièrement.
 - **30/09/2026 : R7 fait** (`RULES_VERSION` = 19) : un fichier de tests de règles par extension partielle (11 fichiers, 195 tests), `rulings.test.ts` (10 tests tirés des décisions officielles), deux motifs d'Oracle de plus. Ces tests ont trouvé 7 écarts, corrigés (voir la section R7).
-- À faire : R8.
+- **30/09/2026 : R8 fait** (sans changement de règles d'une partie) : interface (garder la priorité, passe douce et passe dure, réglages retenus, annulation d'un terrain engagé, alerte de mana flottant, aperçu des blessures de combat, accessibilité, recherche du deckbuilder, moins de redessins) ; IA (P3). Tournoi sur les decks du méta, élevé contre moyen : 66,8 % ± 3,8 avant, 65,0 % ± 3,8 après (écart non significatif ; `docs/ia.md`).
+- **Le plan est terminé, sauf :** R1 en partie (familles E, H, I et boucliers 615.7, reportés faute de carte qui les exige) et R7, continu.
 
 ## Le garde-fou de la dette (lot F2)
 
@@ -67,8 +68,8 @@ Plan établi le 30/09/2026 (branche `dev`) : il sert de feuille de route aux pro
 | 11 | R4.1 à R4.6 : familles génériques | § 3.3 | R1, R2 | moyen | ✅ `41a3cf0` à `616411f` |
 | 12 | R5 : blocages simultanés, mulligans 103.5 | § 3.2 | F1 | moyen | ✅ `ecc17e6` |
 | 13 | R6 : boucles (104.4b) | § 3.2 | F1 | moyen | ✅ `95dfd1b` |
-| 14 | R7 : justesse des cartes | § 3.4 | — | continu | ✅ (voir suivi ; à poursuivre) |
-| 15 | R8 : interface, puis IA (P3) | § 4, § 5 | — | moyen | **prochain** |
+| 14 | R7 : justesse des cartes | § 3.4 | — | continu | ✅ `60549ef` (à poursuivre) |
+| 15 | R8 : interface, puis IA (P3) | § 4, § 5 | — | moyen | ✅ (voir suivi) |
 
 ## Écarts supplémentaires, trouvés en préparant ce plan
 
@@ -359,6 +360,17 @@ Lus dans le code ; chacun est confirmé par un test au début de son lot.
   - IA :
     - le P3 (déterminisation qui ne dépend que des cartes vues, réponses aux choix fréquents, mulligan selon les couleurs) ;
     - puis `npm run arena` (600 parties) avec les decks du méta.
+
+  **R8 réalisé ✅ :**
+  - priorité (`engine/src/autopilot.ts`) : `holdPriority` (case « Garder la priorité ») ; `passMode` : « Fin du tour » est une passe douce, qui rend la main dès qu'un adversaire met quelque chose sur la pile (le client annule alors la passe) ; Maj+Entrée ou Maj+clic, une passe dure ; réglages acceptés par `server/src/validate.ts` ;
+  - réglages retenus (`localStorage`) : arrêts, contrôle total, garder la priorité, langue ;
+  - mana : décision `undoMana` (`GameState.manaUndo`, `mana.ts`) : une source engagée seulement pour {T}, sans déclenchement, se dégage d'un clic tant que son mana est dans la réserve ; toute autre décision rend l'engagement définitif ; ce n'est pas une option de `legalActions` (l'IA aléatoire bouclerait) ; alerte avant de passer, pile vide, avec du mana flottant (`passPriority`) ;
+  - aperçu des blessures de combat (`client/src/board/combatPreview.ts`, testé) : PV perdus par joueur, créatures qui mourraient, « létal », pendant la déclaration des attaquants et des bloqueurs ;
+  - recherche du deckbuilder (`client/src/decks/search.ts`, testée) : `t:`, `o:`, `c:`, `mv`, `pow`, `tou`, `r:`, `s:`, guillemets, négation ;
+  - accessibilité : lettre dans les pastilles de mana, cartes jouables atteignables au clavier (Tab, Entrée), mouvements réduits (`prefers-reduced-motion`, `MotionConfig`) ;
+  - redessins : `useMainAction` ne s'abonne plus qu'aux données dont il a besoin (`useShallow`) ;
+  - IA (P3) : déterminisation par les seules cartes vues ; « vous pouvez », petits nombres et choix d'une option parmi 6 essayés par simulation ; mulligan selon les couleurs ; pool `meta` pour le tournoi ;
+  - **pas fait :** annulation d'un terrain dont la capacité a un autre coût ou un déclenchement (Arena ne le permet pas non plus) ; aperçu du combat sans remplacements ni déclencheurs ; accessibilité complète (tailles en px, ARIA des fenêtres de choix) ; ISMCTS en multijoueur.
 
 ## Reporté tant qu'aucune carte ne l'exige
 

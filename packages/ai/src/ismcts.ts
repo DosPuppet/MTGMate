@@ -1,9 +1,8 @@
 /**
  * ISMCTS (Information Set Monte Carlo Tree Search) pour les décisions de priorité du niveau élevé, en duel.
  *
- * L'IA ne voit ni la main adverse ni l'ordre des bibliothèques. À chaque itération, on tire une **déterminisation** :
- * la main adverse est retirée au hasard parmi (main + bibliothèque adverses), les bibliothèques sont mélangées. L'IA
- * connaît donc la liste du deck adverse, jamais sa main. On joue alors l'une des options de la racine (choisie par
+ * L'IA ne voit ni la main adverse, ni la liste de son deck, ni l'ordre des bibliothèques. À chaque itération, on tire
+ * une **déterminisation** : les cartes cachées adverses sont tirées de ce qu'on a vu de lui (`determinize`). On joue alors l'une des options de la racine (choisie par
  * UCB1, avec un biais vers les options que l'évaluation à un coup préfère), puis une simulation rapide (policy.ts)
  * jusqu'au début du prochain tour de l'IA, et on évalue la position obtenue.
  *
@@ -40,42 +39,74 @@ function shuffleInPlace<T>(items: T[], rand: () => number): void {
   }
 }
 
+/** Proportion de terrains supposée dans les cartes cachées d'un adversaire (deck de 60 à 24 terrains). */
+const LAND_SHARE = 0.4;
+const BASICS: Record<string, string> = { W: "Plains", U: "Island", B: "Swamp", R: "Mountain", G: "Forest" };
+
 /**
- * Une déterminisation de l'état vu par `me` : main adverse retirée parmi (main + bibliothèque adverses), bibliothèques
- * mélangées. Avant le mélange, les cartes sont rangées par définition : l'échantillon ne dépend que de l'ensemble des
- * cartes cachées (la liste du deck), jamais de leur répartition réelle entre main et bibliothèque.
+ * Cartes vues d'un adversaire : ce qu'il possède sur le champ de bataille, dans son cimetière, en exil (face visible)
+ * et ses sorts sur la pile. Ses terrains de base, ceux des couleurs vues.
+ */
+function seenCards(s: GameState, p: PlayerId): { spells: string[]; lands: string[] } {
+  const visible = [
+    ...s.battlefield,
+    ...(s.players[p]?.graveyard ?? []),
+    ...s.exile,
+    ...s.stack.filter((i) => i.kind === "spell" && !i.copy).map((i) => i.sourceId),
+  ]
+    .map((id) => s.objects[id])
+    .filter((o) => !!o && o.owner === p && !o.faceDown && !o.isToken && !o.cardCopy);
+  const defs = visible.map((o) => o?.defId as string);
+  const spells = defs.filter((id) => !s.defs[id]?.types.includes("Land"));
+  const colors = new Set(defs.flatMap((id) => s.defs[id]?.colors ?? []));
+  const basicIds = (names: string[]) =>
+    Object.values(s.defs)
+      .filter((d) => names.includes(d.name) && d.supertypes.includes("Basic") && !d.isToken)
+      .map((d) => d.id);
+  let lands = basicIds([...colors].map((c) => BASICS[c] as string));
+  if (lands.length === 0) lands = defs.filter((id) => s.defs[id]?.types.includes("Land"));
+  if (lands.length === 0) lands = basicIds(Object.values(BASICS));
+  return { spells, lands };
+}
+
+/**
+ * Une déterminisation de l'état vu par `me` (P3 de l'audit) : les cartes cachées de chaque adversaire (main et
+ * bibliothèque) sont remplacées par un tirage fondé sur ses seules cartes vues (et des terrains de base de ses couleurs),
+ * dans la proportion d'un deck ordinaire. L'IA ne tire donc profit ni de sa main ni de la liste de son deck. Sa propre
+ * bibliothèque est mélangée. Le hasard du moteur est retiré.
  */
 export function determinize(s: GameState, me: PlayerId, rand: () => number): GameState {
   const d = cloneState(s);
-  const canonical = (ids: string[]) =>
-    ids.sort((a, b) => {
+  const pick = <T>(items: T[]) => items[Math.floor(rand() * items.length)] as T;
+  for (const p of opponentsOf(d, me)) {
+    const pl = d.players[p];
+    if (!pl) continue;
+    const { spells, lands } = seenCards(s, p);
+    for (const id of [...pl.hand, ...pl.library]) {
+      const o = d.objects[id];
+      if (!o) continue;
+      const land = spells.length === 0 || rand() < LAND_SHARE;
+      const def = land && lands.length ? pick(lands) : spells.length ? pick(spells) : undefined;
+      if (def) {
+        o.defId = def;
+        o.faceDefId = undefined;
+      }
+    }
+    shuffleInPlace(pl.library, rand);
+  }
+  const mine = d.players[me];
+  if (mine) {
+    const canonical = [...mine.library].sort((a, b) => {
       const da = d.objects[a]?.defId ?? "";
       const db = d.objects[b]?.defId ?? "";
       return da < db ? -1 : da > db ? 1 : 0;
     });
-  for (const p of opponentsOf(d, me)) {
-    const pl = d.players[p];
-    if (!pl) continue;
-    const pool = canonical([...pl.hand, ...pl.library]);
-    shuffleInPlace(pool, rand);
-    pl.hand = pool.slice(0, pl.hand.length);
-    pl.library = pool.slice(pl.hand.length);
-    for (const id of pl.hand) {
-      const o = d.objects[id];
-      if (o) o.zone = "hand";
-    }
-    for (const id of pl.library) {
-      const o = d.objects[id];
-      if (o) o.zone = "library";
-    }
-  }
-  const mine = d.players[me];
-  if (mine) {
-    canonical(mine.library);
-    shuffleInPlace(mine.library, rand);
+    shuffleInPlace(canonical, rand);
+    mine.library = canonical;
   }
   // Le hasard du moteur (pile ou face…) ne doit pas non plus être connu d'avance.
   d.rng = Math.floor(rand() * 2 ** 31);
+  d.version += 1;
   return d;
 }
 

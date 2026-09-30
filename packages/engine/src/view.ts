@@ -71,6 +71,8 @@ export interface ObjectView extends CardFace {
   protections?: string[];
   /** Règles « utilise son endurance pour » : leurs libellés. */
   powerRules?: string[];
+  /** Engagé pour son mana, encore annulable par son contrôleur (décision `undoMana`). Seulement dans sa propre vue. */
+  undoMana?: boolean;
   sick: boolean;
   attacking: boolean;
   blocking: ObjectId | null;
@@ -420,7 +422,10 @@ export function projectView(s: GameState, viewer: PlayerId): GameView {
     // Pendant un tour contrôlé, le contrôleur voit et joue la main du joueur contrôlé quand il décide pour lui.
     hand: (s.players[actor === viewer && who !== viewer ? who : viewer]?.hand ?? []).map((id) => objectView(s, id)),
     controlling: actor === viewer && who !== viewer ? who : undefined,
-    battlefield: s.battlefield.map((id) => withFaceDownCard(s, objectView(s, id), viewer)),
+    battlefield: s.battlefield.map((id) => {
+      const o = withFaceDownCard(s, objectView(s, id), viewer);
+      return s.manaUndo?.some((u) => u.player === viewer && u.source === id) ? { ...o, undoMana: true } : o;
+    }),
     stack,
     exile: s.exile.map((id) => objectView(s, id)),
     exiledWith: exiledWith(s),

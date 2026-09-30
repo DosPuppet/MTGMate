@@ -195,6 +195,7 @@ function Settings() {
   const setLang = useGame((s) => s.setLang);
   const settings = useGame((s) => s.settings);
   const setFullControl = useGame((s) => s.setFullControl);
+  const setHoldPriority = useGame((s) => s.setHoldPriority);
   const decide = useGame((s) => s.decide);
   const backToLobby = useGame((s) => s.backToLobby);
   const over = useGame((s) => s.view?.over);
@@ -216,6 +217,10 @@ function Settings() {
       <label className="toggle" title="Recevoir la priorité à chaque étape, sans automatisme">
         <input type="checkbox" checked={settings.fullControl} onChange={(e) => setFullControl(e.target.checked)} />
         Contrôle total
+      </label>
+      <label className="toggle" title="Recevoir la priorité après avoir lancé un sort, pour y répondre vous-même">
+        <input type="checkbox" checked={!!settings.holdPriority} onChange={(e) => setHoldPriority(e.target.checked)} />
+        Garder la priorité
       </label>
       <PaceControl />
       <ImageRelayToggle />

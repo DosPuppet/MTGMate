@@ -77,6 +77,9 @@ export function checkDecisionShape(s: GameState, raw: Decision): void {
       if (!isIndex(d.ability)) bad("ability");
       castChoices(s, d);
       return;
+    case "undoMana":
+      objectRef(s, d, "source");
+      return;
     case "tapForMana":
       objectRef(s, d, "source");
       if (!isIndex(d.ability)) bad("ability");

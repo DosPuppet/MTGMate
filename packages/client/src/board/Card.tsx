@@ -30,8 +30,9 @@ export function ManaCost({ cost, size = 16 }: { cost: string; size?: number }) {
         /^[WUBRG]\/[WUBRG]$/.test(s) ? (
           <span key={i} className={`mana-sym hybrid mana-${s[0]}-${s[2]}`} title={`{${s}}`} />
         ) : (
-          <span key={i} className={`mana-sym mana-${/^[WUBRGC]$/.test(s) ? s : "N"}`}>
-            {/^[WUBRGC]$/.test(s) ? "" : s}
+          // Lettre dans la pastille : le noir et l'incolore ne se distinguent pas qu'à la couleur (accessibilité).
+          <span key={i} className={`mana-sym mana-${/^[WUBRGC]$/.test(s) ? s : "N"}`} title={`{${s}}`}>
+            {s}
           </span>
         ),
       )}
@@ -113,6 +114,19 @@ export function Card({
       style={{ width: tapped ? height : width, height }}
       data-oid={oid}
       onMouseEnter={hoverable ? () => setHover({ face, obj }) : undefined}
+      // Clavier : Tab pour atteindre une carte jouable, Entrée ou Espace pour l'utiliser (le focus montre l'aperçu).
+      {...(onClick ? { tabIndex: 0, role: "button", "aria-label": faceName(face, lang) } : {})}
+      onFocus={onClick && hoverable ? () => setHover({ face, obj }) : undefined}
+      onKeyDown={
+        onClick
+          ? (e) => {
+              if (e.key !== "Enter" && e.key !== " ") return;
+              e.preventDefault();
+              e.stopPropagation();
+              onClick();
+            }
+          : undefined
+      }
       {...longPress}
     >
       <motion.div

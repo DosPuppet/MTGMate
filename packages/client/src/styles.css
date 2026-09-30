@@ -714,6 +714,16 @@ button {
   text-align: center;
 }
 
+/* Aperçu des blessures du combat en préparation. */
+.combat-preview {
+  max-width: 220px;
+  padding: 4px 8px;
+  border-radius: 6px;
+  background: rgba(20, 24, 32, 0.85);
+  border: 1px solid var(--line);
+  font-size: 0.78rem;
+  text-align: center;
+}
 .action-panel {
   display: flex;
   flex-direction: column;
@@ -3139,4 +3149,25 @@ button {
   background: #8a2a2a;
   color: #fff;
   border-color: #a33;
+}
+
+/* Accessibilité : focus clavier visible sur les cartes jouables, et mouvements réduits sur demande du système. */
+.card-slot:focus-visible {
+  outline: 2px solid var(--gold);
+  outline-offset: 3px;
+  border-radius: 8px;
+}
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    /* biome-ignore lint/complexity/noImportantStyles: les mouvements réduits l'emportent sur toute animation. */
+    animation-duration: 0.01ms !important;
+    /* biome-ignore lint/complexity/noImportantStyles: idem. */
+    animation-iteration-count: 1 !important;
+    /* biome-ignore lint/complexity/noImportantStyles: idem. */
+    transition-duration: 0.01ms !important;
+    /* biome-ignore lint/complexity/noImportantStyles: idem. */
+    scroll-behavior: auto !important;
+  }
 }

@@ -24,6 +24,11 @@ L'IA joue contre l'humain dans le navigateur (Web Worker) : on choisit son nivea
 | **Moyen** | Simulation à un coup, puis évaluation | Règles de combat (duels, attaque létale, sécurité en défense) | Gloutons par simulation | |
 | **Élevé** | En duel, ISMCTS ; en multijoueur, comme le moyen avec la contre-attaque | Recherche par simulation des blocages adverses | Recherche : blocages à deux, améliorations locales | Évaluation avec la contre-attaque adverse |
 
+## Choix et mulligan
+
+- **Choix génériques** (`choices.ts`) : cibles d'un déclenchement et nouvelles cibles d'une copie, « vous pouvez » et « à moins que … ne paie » (oui ou non), petits nombres (X à payer, jusqu'à 6 valeurs) et choix d'une option parmi 6 au plus : chaque réponse est essayée par une simulation courte (`bestBySimulation`), la meilleure position l'emporte ; sinon la réponse suggérée par le moteur.
+- **Mulligan** (`heuristic.ts`, profil « normal ») : 2 à 5 terrains sur 7, et au moins un sort dont les symboles colorés sont tous produits par les terrains de la main.
+
 ## Évaluation (`evaluate.ts`)
 
 - **Caractéristiques durables.** Les créatures sont estimées d'après leurs caractéristiques en jeu, sans les effets « jusqu'à la fin du tour » (`durableChars` : `computeBattlefield` sur une copie superficielle de l'état, sans ces effets).
@@ -56,11 +61,11 @@ L'IA joue contre l'humain dans le navigateur (Web Worker) : on choisit son nivea
 
 - **Quand.** Les décisions de priorité qui ont au moins deux options sensées : phases principales, réponses, fenêtres de combat.
 - **Racine.** Passer, plus les 5 meilleures options de l'évaluation à un coup (`priorityOptions` de `heuristic.ts`). Le biais initial favorise les options que l'évaluation préfère.
-- **Déterminisation, à chaque itération** :
-  - la main adverse est retirée au hasard parmi (main + bibliothèque adverses), à taille égale ;
-  - les deux bibliothèques sont mélangées, et le hasard du moteur est retiré.
-  
-  Les cartes sont d'abord rangées par définition. L'échantillon ne dépend donc que de l'ensemble des cartes cachées (la **liste** du deck adverse), jamais de la vraie main.
+- **Déterminisation, à chaque itération** (P3, lot R8 de PLAN-R) :
+  - chaque carte cachée de l'adversaire (main et bibliothèque) est remplacée par un tirage : un terrain de base de ses couleurs vues (4 fois sur 10), sinon l'une de ses cartes vues (champ de bataille, cimetière, exil, sorts sur la pile) ;
+  - sa propre bibliothèque est mélangée (rangée d'abord par définition), et le hasard du moteur est retiré.
+
+  L'IA ne profite donc ni de la main adverse ni de la liste de son deck : seulement de ce qui a été montré. Avant R8, elle tirait la main parmi les vraies cartes restantes de l'adversaire.
 - **Sélection** : UCB1.
 - **Simulation** : la politique rapide (`policy.ts`), pour les deux joueurs, jusqu'au début du prochain tour de l'IA :
   - un terrain, puis le sort le plus cher, avec des cibles simples selon que l'effet nuit ou aide ;
@@ -96,6 +101,14 @@ Résultats, sur des decks préconstruits et des decks aléatoires bicolores (`--
 | Élevé contre Débutant | 600 | 73,2 % ± 3,5 |
 | Élevé contre Élevé sans ISMCTS | 300 | 56,7 % ± 5,6 |
 
+Sur les decks du méta Standard (`--pool meta`, ISMCTS à 100 itérations), le 30/09/2026 :
+
+| Paire | Parties | Avant le P3 | Après le P3 |
+|---|---|---|---|
+| Élevé contre Moyen | 600 | 66,8 % ± 3,8 | 65,0 % ± 3,8 |
+
+Le P3 (déterminisation par les cartes vues, choix « vous pouvez » et petits choix essayés par simulation, mulligan selon les couleurs) touche les deux niveaux ; l'écart n'est pas significatif. L'IA élevée garde son avance sans connaître la liste du deck adverse.
+
 Temps de décision de l'élevé à 100 itérations : environ 30 ms en moyenne (la plupart des décisions sont triviales), 300 ms au 95ᵉ centile ; dans l'interface, le budget en temps borne la réflexion.
 
 L'« IA d'origine » est l'IA heuristique d'avant les niveaux : une copie figée a servi à la mesure, puis a été retirée.
@@ -106,7 +119,7 @@ Essais sans gain mesurable, écartés :
 
 ## Pièges
 
-- **Information cachée.** Le code de l'IA ne doit jamais lire la main adverse ni l'ordre des bibliothèques. Il passe par `determinize` (ISMCTS). Les simulations à un coup (`rollout`, `simulate`) ne piochent pas. `ai/test/ismcts.test.ts` vérifie qu'une autre répartition des cartes cachées ne change pas la décision.
+- **Information cachée.** Le code de l'IA ne doit jamais lire la main adverse, la liste de son deck ni l'ordre des bibliothèques. Il passe par `determinize` (ISMCTS), qui ne tire que de ce qui a été vu. Les simulations à un coup (`rollout`, `simulate`) ne piochent pas. `ai/test/ismcts.test.ts` vérifie qu'une autre répartition, ou d'autres cartes cachées, ne changent ni la déterminisation ni la décision.
 - **`applyMutable` n'est pas transactionnel.** Une décision illégale laisse l'état à moitié modifié. Dans une simulation, on passe par `step` (`evaluate.ts`) : « passer » est appliqué sur place, le reste par `submit`, qui travaille sur une copie.
 - **`GameHost.run` et les attentes.** Pendant un `await` de la boucle (pause d'affichage), une décision de l'humain peut être appliquée par `submitHuman`, dont le `run()` rend aussitôt la main (la boucle est déjà en cours). Après chaque attente, la boucle doit donc repartir de l'état courant, et ne jamais attendre sans raison : sinon l'IA reste bloquée. `engine/test/host.test.ts` le vérifie.
 - **Budget.** En temps dans l'interface (latence identique sur toutes les machines), en itérations dans les tests, le tournoi, le fuzz et le bench (reproductibles).

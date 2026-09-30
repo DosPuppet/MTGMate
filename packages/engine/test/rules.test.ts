@@ -421,7 +421,7 @@ describe("autopilot", () => {
 
   it("laisse résoudre son propre sort, mais s'arrête sur un sort adverse si on peut répondre", () => {
     let s = scenario({
-      p1: { battlefield: ["Mountain", "Mountain"], hand: ["Burst Lightning", "Burst Lightning"] },
+      p1: { battlefield: ["Mountain", "Mountain", "Mountain"], hand: ["Burst Lightning", "Burst Lightning", "Burst Lightning"] },
       p2: { battlefield: ["Forest"], hand: ["Giant Growth"] },
     });
     s = act(s, "p1", { type: "cast", card: idsOf(s, "p1", "hand", "Burst Lightning")[0] as string, targets: { t: ["p2"] } });
@@ -432,8 +432,15 @@ describe("autopilot", () => {
     expect(autopilotDecision(s, "p2", DEFAULT_AUTOPILOT)).toBeNull();
     // Sans cette révélation, il passe automatiquement.
     expect(autopilotDecision(s, "p2", { ...DEFAULT_AUTOPILOT, revealOpponentStack: false })).toEqual({ type: "pass" });
-    // « Fin du tour » explicite : on passe aussi.
-    expect(autopilotDecision(s, "p2", { ...DEFAULT_AUTOPILOT, passUntilTurn: s.turn.number })).toEqual({ type: "pass" });
+    // « Fin du tour » en passe douce : un sort adverse rend la main ; en passe dure, on passe aussi.
+    expect(autopilotDecision(s, "p2", { ...DEFAULT_AUTOPILOT, passUntilTurn: s.turn.number })).toBeNull();
+    expect(autopilotDecision(s, "p2", { ...DEFAULT_AUTOPILOT, passUntilTurn: s.turn.number, passMode: "hard" })).toEqual({
+      type: "pass",
+    });
+    // Garder la priorité : son propre sort ne passe plus tout seul.
+    s = act(s, "p2", { type: "pass" });
+    s = act(s, "p1", { type: "cast", card: idsOf(s, "p1", "hand", "Burst Lightning")[0] as string, targets: { t: ["p2"] } });
+    expect(autopilotDecision(s, "p1", { ...DEFAULT_AUTOPILOT, holdPriority: true })).toBeNull();
   });
 
   it("« fin du tour » : ne déclare aucun attaquant et passe tout", () => {
@@ -447,5 +454,20 @@ describe("autopilot", () => {
     }
     expect(s.turn.active).toBe("p2");
     expect(s.players.p2?.life).toBe(20);
+  });
+});
+
+describe("annuler un engagement de mana (façon Arena)", () => {
+  it("un terrain engagé pour son mana se dégage tant que ce mana n'a pas servi ; plus après une autre décision", () => {
+    let s = scenario({ p1: { battlefield: ["Mountain", "Mountain"], hand: ["Burst Lightning"] } });
+    const [a, b] = idsOf(s, "p1", "battlefield", "Mountain") as [string, string];
+    s = act(s, "p1", { type: "tapForMana", source: a, ability: 0 });
+    expect(s.players.p1?.manaPool.R).toBe(1);
+    s = act(s, "p1", { type: "undoMana", source: a });
+    expect(s.objects[a]?.tapped).toBe(false);
+    expect(s.players.p1?.manaPool.R).toBe(0);
+    s = act(s, "p1", { type: "tapForMana", source: b, ability: 0 });
+    s = act(s, "p1", { type: "cast", card: idsOf(s, "p1", "hand", "Burst Lightning")[0] as string, targets: { t: ["p2"] } });
+    expect(() => act(s, "p1", { type: "undoMana", source: b })).toThrow();
   });
 });

@@ -632,6 +632,11 @@ export interface GameState {
   /** 103.5 : joueurs qui ont décidé de prendre un mulligan à ce tour de table ; ils le prennent ensemble à la fin. */
   mulliganTaken?: PlayerId[];
   /**
+   * Engagements de mana qu'on peut encore annuler (façon Arena) : source engagée seulement pour {T}, sans déclenchement,
+   * mana encore dans la réserve. Vidé par toute décision autre que produire ou annuler du mana (`undoMana`, mana.ts).
+   */
+  manaUndo?: { player: PlayerId; source: ObjectId; color: ManaType; amount: number }[];
+  /**
    * 104.4b : passes enchaînées pile non vide, sans autre décision, et empreintes relevées au-delà de 20 (game.ts) ; une
    * même empreinte trois fois, ou plus de 2 000 passes, et la partie est nulle.
    */
