@@ -582,8 +582,49 @@ export interface CastPermissionAbilityDef {
   label?: string;
 }
 
+/**
+ * Modificateur de coût des capacités activées (famille A, R4.4) : {N} de moins, ou {0} pour la première de ce tour.
+ */
+export interface AbilityCostMod {
+  /** Capacités concernées : exhaust, Équiper, déverrouiller une porte, comploter ; sinon toutes. */
+  ability?: "exhaust" | "equip" | "unlock" | "plot";
+  /** Sources concernées (Mutagen Man : vos jetons d'artefact). */
+  source?: ObjectFilter;
+  /** Pas les capacités de la source de la statique (Boom Scholar : « vos autres permanents »). */
+  notSelf?: boolean;
+  reduce?: number;
+  /** La première de ces capacités activée ce tour-ci coûte {0} (Kíli the Resourceful, Équiper). */
+  firstThisTurnFree?: boolean;
+}
+
+/**
+ * Permission de jouer depuis une zone (famille C, R4.4) : les cartes de son cimetière ou la carte du dessus de sa
+ * bibliothèque, qui correspondent au filtre, se jouent (terrains) ou se lancent (sorts), avec d'éventuels coûts ou
+ * effets en plus.
+ */
+export interface PlayFromZone {
+  zone: "graveyard" | "libraryTop";
+  filter?: ObjectFilter;
+  /** Terrains, sorts, ou les deux (par défaut). */
+  what?: "lands" | "spells";
+  /** Points de vie payés en plus (Noctis, Festival of Embers). */
+  payLife?: number;
+  /** Fourrager en plus (Osteomancer Adept). */
+  forage?: boolean;
+  /** Le permanent arrive avec un marqueur de finalité. */
+  finality?: boolean;
+  /** Du mana de n'importe quel type (Vizier of the Menagerie). */
+  anyMana?: boolean;
+  /** Sous-types en plus à l'arrivée (The Tomb of Aclazotz : Vampire). */
+  addSubtypes?: string[];
+}
+
 /** Capacité statique qui s'applique à des joueurs (défense talismanique, « ne peut pas perdre »…). */
 export interface PlayerStaticAbilityDef {
+  /** Jouer ou lancer des cartes depuis le cimetière ou le dessus de la bibliothèque (famille C, R4.4). */
+  playFrom?: PlayFromZone;
+  /** Coût des capacités activées modifié (famille A, R4.4). */
+  abilityCost?: AbilityCostMod;
   kind: "playerStatic";
   /** Hall of Echoes : la règle des légendes ne s'applique pas à vos permanents. */
   noLegendRule?: boolean;
@@ -603,8 +644,6 @@ export interface PlayerStaticAbilityDef {
   damageTakenDoubled?: boolean;
   /** Sandswirl Wanderglyph : vous ne pouvez pas attaquer ce joueur (ni ses planeswalkers). */
   cantAttackPlayer?: PlayerId;
-  /** The Tomb of Aclazotz : lancer un sort de créature depuis votre cimetière (usage unique ; finalité, Vampire). */
-  castCreatureFromGraveyard?: boolean;
   /** Summon: Alexander : les blessures qui seraient infligées à vos créatures sont prévenues. */
   creaturesDamageImmune?: boolean;
   /** « Vous avez la défense talismanique. » */
@@ -617,20 +656,12 @@ export interface PlayerStaticAbilityDef {
   extraLands?: number;
   /** « Si vous deviez gagner des points de vie, vous en gagnez autant plus N à la place. » */
   lifeGainBonus?: number;
-  /** « Vous pouvez lancer des sorts d'artefact depuis votre cimetière en payant N PV en plus ; ils arrivent avec un marqueur de finalité » (Noctis). */
-  artifactsFromGraveyardLife?: number;
-  /** « Vous pouvez jouer des cartes depuis votre cimetière » (Hades, Sorcerer of Eld, avec `condition`). */
-  playFromGraveyard?: boolean;
   /** « Les terrains que vous contrôlez arrivent dégagés » (The Wandering Minstrel). */
   landsEnterUntapped?: boolean;
-  /** « Vous pouvez jouer la carte du dessus de votre bibliothèque » (The Lunar Whale, avec `condition`). */
-  playTopCard?: boolean;
   /** « Chaque fois que vous engagez un terrain pour {C}, ajoutez {C} de plus » (Ultima, Origin of Oblivion). */
   extraColorlessFromLands?: boolean;
   /** « Vous avez la protection contre chacun de vos adversaires » (702.16j, Absolute Virtue). */
   protectionFromOpponents?: boolean;
-  /** Seulement les cartes correspondantes (Traveling Chocobo : terrains et Oiseaux). */
-  playTopFilter?: ObjectFilter;
   /** Traveling Chocobo : l'arrivée d'un de ces permanents fait se déclencher vos capacités une fois de plus. */
   doubleEnterTriggersFor?: ObjectFilter;
   /** « Ces jetons plus un jeton [X] sont créés à la place » (Quina, Qu Gourmet). */
@@ -643,8 +674,6 @@ export interface PlayerStaticAbilityDef {
   noLifeGainForAll?: boolean;
   /** « Les éphémères et rituels que vous contrôlez ne peuvent pas être contrecarrés. » */
   protectSpells?: boolean;
-  /** Vizier of the Menagerie : lancer des créatures du dessus de sa bibliothèque (mana de n'importe quel type). */
-  castCreaturesFromTop?: boolean;
   /** Yoshimaru : des marqueurs +1/+1 mis sur vos créatures : un de plus. */
   plusOneCounterBonus?: boolean;
   /** Tomik, Izzet Sparkmage : blessures non de combat de vos sources à un adversaire ou à ses permanents : +1. */
@@ -657,15 +686,11 @@ export interface PlayerStaticAbilityDef {
   doubleEnterTriggers?: boolean;
   /** Quantum Riddler : avec une carte en main ou moins, vous piochez une carte de plus. */
   drawPlusOneWhenHandSmall?: boolean;
-  /** Mm'menon, the Right Hand : regarder la carte du dessus et lancer des sorts d'artefact depuis le dessus. */
-  castArtifactsFromTop?: boolean;
   /** Weftwalking (s'applique à tous) : le premier sort de chaque joueur pendant son tour peut être lancé sans payer. */
   firstSpellFree?: boolean;
   /** Frenzied Baloth : vos sorts de créature ne peuvent pas être contrecarrés ; les blessures de combat ne peuvent pas être prévenues (tous). */
   protectCreatureSpells?: boolean;
   combatDamageUnpreventable?: boolean;
-  /** Icetill Explorer : jouer des terrains depuis votre cimetière. */
-  playLandsFromGraveyard?: boolean;
   /** Tannuk, Steadfast Second : les cartes de votre main correspondant au filtre ont la distorsion à ce coût. */
   grantWarp?: { filter: ObjectFilter; cost: ManaCost };
   /** Tomik, Orzhov Lawmage : au plus une créature peut attaquer chacun de vos planeswalkers à chaque combat. */
@@ -696,8 +721,6 @@ export interface PlayerStaticAbilityDef {
   blockTax?: number;
   /** High Noon (tous les joueurs) : un seul sort par joueur et par tour. */
   oneSpellPerTurn?: boolean;
-  /** Doc Aurlock : comploter des cartes de votre main coûte {N} de moins. */
-  plotReduction?: number;
   /** Annie Joins Up : les capacités déclenchées de vos créatures légendaires se déclenchent une fois de plus. */
   doubleLegendaryTriggers?: boolean;
   /** Terror of the Peaks : les sorts adverses qui ciblent cette créature coûtent N PV de plus. */
@@ -706,24 +729,16 @@ export interface PlayerStaticAbilityDef {
   auraStealsCheaper?: boolean;
   /** Roxanne : quand vous engagez un jeton d'artefact pour du mana, un mana de plus de ce type. */
   artifactTokenManaBonus?: boolean;
-  /** Boom Scholar : les capacités d'exhaust de vos autres permanents coûtent {N} de moins. */
-  exhaustReduction?: number;
-  /** Mutagen Man : les capacités activées de vos permanents correspondant au filtre coûtent {N} de moins. */
-  activatedReduction?: { filter: ObjectFilter; n: number };
   /** Elvish Refueler : pendant votre tour, tant qu'aucune capacité d'exhaust n'a été activée, elles sont réactivables. */
   exhaustReuse?: boolean;
   /** Récit durable (Storied, Le Hobbit) : acquis pour le reste de la partie (effet de joueur permanent). */
   enduringStory?: boolean;
-  /** Kíli the Resourceful : la première capacité d'équipement activée chaque tour peut coûter {0}. */
-  firstEquipFree?: boolean;
   /** « Les joueurs ne peuvent pas lancer de sorts ce tour-ci » (Bilbo's Gambit), posé sur chaque joueur. */
   cantCastSpells?: boolean;
   /** Avatar's Wrath : « ne peut lancer des sorts que depuis sa main » (posé sur les adversaires). */
   castOnlyFromHand?: boolean;
   /** Ral Zarek : « passe son prochain tour » (un effet par tour passé, consommé). */
   skipTurn?: boolean;
-  /** Case of the Uneaten Feast : les cartes de créature de votre cimetière peuvent être lancées depuis celui-ci. */
-  castCreaturesFromGraveyard?: boolean;
   /** Sanctum Lurker : vos planeswalkers ne vont pas au cimetière faute de loyauté. */
   walkersSurviveZeroLoyalty?: boolean;
   /** Fractured Realm : les capacités déclenchées de vos permanents se déclenchent une fois de plus. */
@@ -732,8 +747,6 @@ export interface PlayerStaticAbilityDef {
   convokeCreatureSpells?: boolean;
   /** Prop Room : vos créatures se dégagent pendant l'étape de dégagement des autres joueurs. */
   untapCreaturesOnOthersUntap?: boolean;
-  /** Inquisitive Glimmer : déverrouiller une porte vous coûte {N} de moins. */
-  unlockReduction?: number;
   /** The Mindskinner : les blessures de vos sources à un adversaire sont prévenues ; chaque adversaire meule autant. */
   damageToOpponentsMills?: boolean;
   /** Nowhere to Run : les créatures adverses sont ciblables malgré la défense talismanique ; leur garde ne se déclenche pas. */
@@ -756,14 +769,10 @@ export interface PlayerStaticAbilityDef {
   noncombatDamageBonusAmount?: number;
   /** Sunspine Lynx (tous) : les blessures ne peuvent pas être prévenues. */
   damageUnpreventable?: boolean;
-  /** Festival of Embers : lancer des éphémères et des rituels depuis votre cimetière en payant N PV en plus. */
-  instantsSorceriesFromGraveyardLife?: number;
   /** Valley Floodcaller : les sorts correspondants ont le flash. */
   flashFor?: ObjectFilter;
   /** Valley Flamecaller : les blessures de vos sources correspondantes : +1. */
   damagePlusOneFrom?: ObjectFilter;
-  /** Osteomancer Adept : lancer des sorts de créature depuis votre cimetière en fourrageant (marqueur de finalité). */
-  creaturesFromGraveyardForage?: boolean;
   /** Ojer Axonil : une source rouge que vous contrôlez inflige à un adversaire au moins autant de blessures non de combat que la force de la source de cette capacité. */
   noncombatDamageAtLeastPower?: boolean;
   /** Bloodletter of Aclazotz : pendant votre tour, un adversaire qui perd des points de vie en perd le double. */

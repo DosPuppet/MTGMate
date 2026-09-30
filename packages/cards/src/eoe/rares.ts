@@ -132,7 +132,10 @@ export const RARES: Record<string, CardScript> = {
   },
   "Mm'menon, the Right Hand": {
     abilities: [
-      playerStatic({ castArtifactsFromTop: true, label: "Sorts d'artefact du dessus de la bibliothèque" }),
+      playerStatic({
+        playFrom: { zone: "libraryTop", filter: { types: ["Artifact"] }, what: "spells" },
+        label: "Sorts d'artefact du dessus de la bibliothèque",
+      }),
       staticAbility(
         { types: ["Artifact"], controller: "you" },
         { addAbilities: [manaAbility("U", 1, { restriction: { spellNotFromHand: true } })] },
@@ -321,7 +324,11 @@ export const RARES: Record<string, CardScript> = {
   "Gene Pollinator": { abilities: [manaAbility([...FIVE_COLORS], 1, { tapAnother: true })] },
   "Icetill Explorer": {
     abilities: [
-      playerStatic({ extraLands: 1, playLandsFromGraveyard: true, label: "Terrain supplémentaire, depuis le cimetière" }),
+      playerStatic({
+        extraLands: 1,
+        playFrom: { zone: "graveyard", what: "lands" },
+        label: "Terrain supplémentaire, depuis le cimetière",
+      }),
       triggered(when.landfall, [fx.mill(1)], { label: "Meulez une carte" }),
     ],
   },

@@ -47,6 +47,7 @@ import {
 import { checkCondition, checkCrime, createDelayed, pushInline, simultaneously } from "./triggers";
 import { countTurnEvents, logTurnEvent } from "./turnlog";
 import type {
+  AbilityCostMod,
   ActivatedAbilityDef,
   CardDef,
   CastChoices,
@@ -63,6 +64,7 @@ import type {
   ObjectFilter,
   ObjectId,
   PlayerId,
+  PlayFromZone,
   StackItem,
   TargetSpec,
 } from "./types";
@@ -178,14 +180,15 @@ export function canPlayLand(s: GameState, player: PlayerId, card: ObjectId): boo
     (o.zone === "hand" && o.owner === player) ||
     (o.zone === "exile" && !!exilePermission(s, player, card) && !exilePermission(s, player, card)?.anyTime) ||
     (o.zone === "exile" && valgavothLinked(s, player, card)) ||
-    (o.zone === "library" && o.owner === player && s.players[player]?.library[0] === card && topCardPlayable(s, player, card)) ||
+    (o.zone === "library" &&
+      o.owner === player &&
+      s.players[player]?.library[0] === card &&
+      playFromRules(s, player, card, "libraryTop", "lands").length > 0) ||
     // Ville à aventure (FIN) : la carte « en aventure » se joue comme terrain depuis l'exil (715.4).
     (o.zone === "exile" && !!o.onAdventure && o.owner === player) ||
     (o.zone === "graveyard" &&
       o.owner === player &&
-      (graveyardTypeAvailable(s, player, card) === "Land" ||
-        playerStatic(s, player, "playLandsFromGraveyard") ||
-        playerStatic(s, player, "playFromGraveyard")));
+      (graveyardTypeAvailable(s, player, card) === "Land" || playFromRules(s, player, card, "graveyard", "lands").length > 0));
   return allowed && sorceryTiming(s, player) && s.turn.landsPlayed < landsAllowed(s, player);
 }
 
@@ -299,7 +302,7 @@ export function spellReduction(
 function arrivalFor(s: GameState, player: PlayerId, d: CardDef, terms: CastTerms): StackItem["arrival"] {
   const counters: { kind: string; n: number }[] = terms.finality ? [{ kind: "finality", n: 1 }] : [];
   // The Tomb of Aclazotz : « c'est un Vampire en plus de ses autres types ».
-  if (terms.tomb) return { counters, subtypes: ["Vampire"] };
+  if (terms.playFrom?.addSubtypes) return { counters, subtypes: terms.playFrom.addSubtypes };
   let haste = false;
   if (d.types.includes("Creature")) {
     const pending = (s.nextCreatureSpell ?? []).filter((x) => x.player === player && x.turn === s.turn.number);
@@ -318,12 +321,41 @@ export function equipDiscount(s: GameState, player: PlayerId, ab: ActivatedAbili
   return s.defs[copiedDefId(s, target)]?.equipDiscountWhenTargeted ?? 0;
 }
 
-/** The Lunar Whale, Traveling Chocobo : la carte du dessus de la bibliothèque peut être jouée. */
-function topCardPlayable(s: GameState, player: PlayerId, card: ObjectId): boolean {
-  return playerStatics(s, player, "playTopCard").some(
-    ({ id, ab }) =>
-      !!ab.playTopCard && (!ab.playTopFilter || matchesCard(s, player, card, { ...ab.playTopFilter, controller: undefined }, id)),
-  );
+/**
+ * Permissions « jouer depuis une zone » (famille C) qui s'appliquent à cette carte, sans coût ni effet en plus d'abord
+ * (Case of the Uneaten Feast avant Noctis), puis celles qui laissent dépenser du mana de n'importe quel type.
+ */
+export function playFromRules(
+  s: GameState,
+  player: PlayerId,
+  card: ObjectId,
+  zone: PlayFromZone["zone"],
+  what: "lands" | "spells",
+): PlayFromZone[] {
+  const weight = (r: PlayFromZone) =>
+    (r.payLife ? 2 : 0) + (r.forage ? 2 : 0) + (r.finality ? 1 : 0) + (r.addSubtypes ? 1 : 0) - (r.anyMana ? 0.5 : 0);
+  return playerStatics(s, player, "playFrom")
+    .flatMap(({ id, ab }) => {
+      const r = ab.playFrom;
+      if (!r || r.zone !== zone || (r.what && r.what !== what)) return [];
+      if (r.filter && !matchesCard(s, player, card, { ...r.filter, controller: undefined }, id)) return [];
+      if (r.payLife && (s.players[player]?.life ?? 0) < r.payLife) return [];
+      if (r.forage && !canForage(s, player, card)) return [];
+      return [r];
+    })
+    .sort((a, b) => weight(a) - weight(b));
+}
+
+/** Conditions de lancement données par une permission « jouer depuis une zone ». */
+function playFromTerms(r: PlayFromZone, source: "graveyard" | "library"): CastTerms {
+  return {
+    source,
+    playFrom: r,
+    ...(r.payLife ? { payLife: r.payLife } : {}),
+    ...(r.forage ? { forage: true } : {}),
+    ...(r.finality ? { finality: true } : {}),
+    ...(r.anyMana ? { anyMana: true } : {}),
+  };
 }
 
 /**
@@ -492,8 +524,8 @@ export interface CastTerms {
   finality?: boolean;
   /** Il faut fourrager en plus (Osteomancer Adept). */
   forage?: boolean;
-  /** The Tomb of Aclazotz : permission utilisée une fois ; le permanent est un Vampire en plus. */
-  tomb?: boolean;
+  /** Permission « jouer depuis une zone » utilisée (famille C) : sous-types à l'arrivée, usage unique consommé. */
+  playFrom?: PlayFromZone;
 }
 
 /** 702.170 : la carte (depuis la main ou la pile) est exilée face visible et devient complotée. */
@@ -546,11 +578,29 @@ function reductionContext(controller: PlayerId, sourceId: string, sourceDefId: s
   };
 }
 
-/** « Cette capacité coûte {N} de moins à activer » (Starport Security, Survey Mechan, The Dominion Bracelet). */
-/** Inquisitive Glimmer : « déverrouiller une porte vous coûte {1} de moins ». */
-function unlockReduction(s: GameState, player: PlayerId, ab: ActivatedAbilityDef): number {
-  if (!ab.specialAction || !ab.effects.some((e) => e.op === "unlockDoor")) return 0;
-  return playerStaticTotal(s, player, "unlockReduction");
+/**
+ * Modificateurs de coût des capacités activées (famille A) : Boom Scholar (exhaust de vos autres permanents), Mutagen
+ * Man (vos jetons d'artefact), Kíli the Resourceful (premier Équiper du tour gratuit), Inquisitive Glimmer
+ * (déverrouiller), Doc Aurlock (comploter).
+ */
+function abilityCostReduction(s: GameState, player: PlayerId, source: ObjectId, ab: ActivatedAbilityDef): number {
+  const kind = (m: AbilityCostMod) =>
+    !m.ability ||
+    (m.ability === "exhaust" && !!ab.exhaust) ||
+    (m.ability === "equip" && !!ab.equip) ||
+    (m.ability === "unlock" && !!ab.specialAction && ab.effects.some((e) => e.op === "unlockDoor")) ||
+    (m.ability === "plot" && ab.effects.some((e) => e.op === "plot"));
+  let n = 0;
+  for (const { id, ab: x } of playerStatics(s, player, "abilityCost")) {
+    const m = x.abilityCost;
+    if (!m || !kind(m) || (m.notSelf && id === source)) continue;
+    if (m.source && !matchesObjectFilter(s, player, source, m.source)) continue;
+    if (m.firstThisTurnFree) {
+      if (m.ability !== "equip" || countTurnEvents(s, { event: "activate", who: "you", equip: true }, player) > 0) continue;
+      n += 99;
+    } else n += m.reduce ?? 0;
+  }
+  return n;
 }
 
 /**
@@ -572,32 +622,13 @@ export function abilityMana(s: GameState, source: ObjectId, ab: ActivatedAbility
 }
 
 export function abilityReduction(s: GameState, player: PlayerId, source: ObjectId, ab: ActivatedAbilityDef): number {
-  // Boom Scholar : les capacités d'exhaust de vos autres permanents coûtent moins.
-  const exhaust = ab.exhaust
-    ? playerStatics(s, player, "exhaustReduction").reduce(
-        (n, { id, ab: x }) => n + (id !== source ? (x.exhaustReduction ?? 0) : 0),
-        0,
-      )
-    : 0;
-  // Mutagen Man : « les capacités activées des jetons d'artefact que vous contrôlez coûtent {1} de moins ».
-  const filtered = playerStatics(s, player, "activatedReduction").reduce((n, { ab: x }) => {
-    const r = x.activatedReduction;
-    return r && matchesObjectFilter(s, player, source, r.filter) ? n + r.n : n;
-  }, 0);
-  // Kíli the Resourceful : la première capacité d'équipement activée ce tour-ci peut coûter {0}.
-  const freeEquip =
-    ab.equip &&
-    playerStatic(s, player, "firstEquipFree") &&
-    countTurnEvents(s, { event: "activate", who: "you", equip: true }, player) === 0
-      ? 99
-      : 0;
+  const mods = abilityCostReduction(s, player, source, ab);
   const red = ab.reduction;
-  const tax = chosenNameTax(s, source) - unlockReduction(s, player, ab) - filtered - freeEquip;
-  if (!red) return exhaust - tax;
+  const tax = chosenNameTax(s, source) - mods;
+  if (!red) return -tax;
+  // « Cette capacité coûte {N} de moins à activer » (Starport Security, Survey Mechan, The Dominion Bracelet).
   if (red.condition && !checkCondition(s, red.condition, player, source)) return 0;
-  return (
-    exhaust - tax + Math.max(0, evalAmount(s, reductionContext(player, source, s.objects[source]?.defId ?? ""), red.generic))
-  );
+  return -tax + Math.max(0, evalAmount(s, reductionContext(player, source, s.objects[source]?.defId ?? ""), red.generic));
 }
 
 /** Elvish Refueler : pendant votre tour, tant qu'aucune capacité d'exhaust n'a été activée ce tour-ci. */
@@ -737,39 +768,19 @@ function baseCastTerms(s: GameState, player: PlayerId, card: ObjectId): CastTerm
     if (gyPerm?.flashback) return { source: "flashback", free: gyPerm.free };
     if (gyPerm) return { source: "graveyard", anyMana: gyPerm.anyMana, free: gyPerm.free, exileAfter: gyPerm.exileAfter };
     if (o.owner !== player) return null;
-    // The Tomb of Aclazotz : un sort de créature, qui arrive avec un marqueur de finalité et devient un Vampire.
-    if (d.types.includes("Creature") && playerStatic(s, player, "castCreatureFromGraveyard"))
-      return { source: "graveyard", finality: true, tomb: true };
     // Timeline Culler : « vous pouvez lancer cette carte depuis votre cimetière avec sa distorsion ».
     if (d.warp?.fromGraveyard) return { source: "graveyard", warpOnly: true };
     // Chaos (Mayhem) : défaussée ce tour-ci, elle se lance depuis le cimetière pour son coût de chaos.
     if (d.mayhem && o.discardedTurn === s.turn.number) return { source: "graveyard", mayhem: true };
     if (d.flashback) return { source: "flashback" };
-    // Case of the Uneaten Feast : « les cartes de créature de votre cimetière peuvent être lancées depuis celui-ci ».
-    if (d.types.includes("Creature") && playerStatic(s, player, "castCreaturesFromGraveyard")) return { source: "graveyard" };
+    // Permissions « jouer depuis le cimetière » (famille C) : Case of the Uneaten Feast, Hades, The Tomb of Aclazotz,
+    // Noctis (PV et finalité), Festival of Embers (PV), Osteomancer Adept (fourrager et finalité)…
+    const rules = playFromRules(s, player, card, "graveyard", "spells");
+    const free = rules.find((r) => !r.payLife && !r.forage && !r.finality && !r.addSubtypes);
+    if (free) return playFromTerms(free, "graveyard");
     const t = graveyardTypeAvailable(s, player, card);
     if (t && t !== "Land") return { source: "graveyard", graveyardType: t };
-    // Hades, Sorcerer of Eld : « pendant votre tour, vous pouvez jouer des cartes depuis votre cimetière ».
-    if (playerStatic(s, player, "playFromGraveyard")) return { source: "graveyard" };
-    // Noctis, Prince of Lucis : les sorts d'artefact, en payant des PV en plus, avec un marqueur de finalité.
-    const noctis = d.types.includes("Artifact")
-      ? playerStatics(s, player, "artifactsFromGraveyardLife").find(({ ab }) => !!ab.artifactsFromGraveyardLife)?.ab
-      : undefined;
-    if (noctis?.artifactsFromGraveyardLife) {
-      if ((s.players[player]?.life ?? 0) < noctis.artifactsFromGraveyardLife) return null;
-      return { source: "graveyard", payLife: noctis.artifactsFromGraveyardLife, finality: true };
-    }
-    // Festival of Embers : pendant votre tour, éphémères et rituels depuis votre cimetière en payant 1 PV en plus.
-    if (d.types.includes("Instant") || d.types.includes("Sorcery")) {
-      const life = playerStatics(s, player, "instantsSorceriesFromGraveyardLife").find(
-        ({ ab }) => !!ab.instantsSorceriesFromGraveyardLife,
-      )?.ab.instantsSorceriesFromGraveyardLife;
-      if (life) return (s.players[player]?.life ?? 0) >= life ? { source: "graveyard", payLife: life } : null;
-    }
-    // Osteomancer Adept : les sorts de créature, en fourrageant en plus ; ils arrivent avec un marqueur de finalité.
-    if (d.types.includes("Creature") && playerStatic(s, player, "creaturesFromGraveyardForage") && canForage(s, player, card)) {
-      return { source: "graveyard", forage: true, finality: true };
-    }
+    if (rules[0]) return playFromTerms(rules[0], "graveyard");
     const fromGy = d.castFromGraveyard;
     if (fromGy && (!fromGy.condition || checkCondition(s, fromGy.condition, player, card))) {
       // Wickerfolk Indomitable : « en payant 2 PV et en sacrifiant un artefact ou une créature en plus ».
@@ -782,18 +793,11 @@ function baseCastTerms(s: GameState, player: PlayerId, card: ObjectId): CastTerm
     return null;
   }
   if (o.zone === "library") {
-    // Vizier of the Menagerie : créatures du dessus de votre bibliothèque, mana de n'importe quel type.
+    // Vizier of the Menagerie (créatures, mana de n'importe quel type), The Lunar Whale, Mm'menon (artefacts)…
     const top = s.players[o.owner]?.library[0];
-    if (o.owner === player && top === card && d.types.includes("Creature") && playerStatic(s, player, "castCreaturesFromTop")) {
-      return { source: "library", anyMana: true };
-    }
-    // The Lunar Whale : « vous pouvez jouer la carte du dessus de votre bibliothèque » (si elle a attaqué ce tour-ci).
-    if (o.owner === player && top === card && topCardPlayable(s, player, card)) return { source: "library" };
-    // Mm'menon, the Right Hand : « vous pouvez lancer des sorts d'artefact depuis le dessus de votre bibliothèque ».
-    if (o.owner === player && top === card && d.types.includes("Artifact") && playerStatic(s, player, "castArtifactsFromTop")) {
-      return { source: "library" };
-    }
-    return null;
+    if (o.owner !== player || top !== card) return null;
+    const rule = playFromRules(s, player, card, "libraryTop", "spells")[0];
+    return rule ? playFromTerms(rule, "library") : null;
   }
   if (o.zone === "exile") {
     // 702.170d : une carte complotée se lance sans payer son coût, à un tour ultérieur, au moment d'un rituel.
@@ -1105,9 +1109,9 @@ export function castSpell(s: GameState, player: PlayerId, card: ObjectId, choice
 
   // 601.2a : le sort passe sur la pile (nouvel objet), puis on paie les coûts (601.2g–h).
   if (terms.graveyardType) s.turn.graveyardTypesUsed = [...(s.turn.graveyardTypesUsed ?? []), terms.graveyardType];
-  if (terms.tomb) {
-    consumePlayerEffect(s, player, "castCreatureFromGraveyard");
-  }
+  // The Tomb of Aclazotz : la permission à usage unique est consommée.
+  const once = terms.playFrom && s.playerEffects.find((e) => e.once && e.ability.playFrom === terms.playFrom);
+  if (once) s.playerEffects = s.playerEffects.filter((e) => e !== once);
   if (terms.removeCounters) removeCountersAmongCreatures(s, player, terms.removeCounters);
   const view = spellView(d, player);
   // Lancer la copie d'un sort préparé dé-prépare son permanent (même si le sort est ensuite contrecarré).
@@ -1691,10 +1695,9 @@ export function activateAbility(s: GameState, player: PlayerId, source: ObjectId
   // Action spéciale (116.2, déverrouiller une porte) : les coûts sont payés, les effets s'appliquent sans la pile.
   if (ab.specialAction) {
     if (ab.cost.mana) {
-      // Doc Aurlock : comploter depuis la main coûte {2} de moins.
-      const plotReduction = ab.effects.some((e) => e.op === "plot") ? playerStaticTotal(s, player, "plotReduction") : 0;
+      // Doc Aurlock (comploter), Inquisitive Glimmer (déverrouiller) : moins cher.
       try {
-        payMana(s, player, totalCost(ab.cost.mana, 0, undefined, plotReduction + unlockReduction(s, player, ab)), undefined, {
+        payMana(s, player, totalCost(ab.cost.mana, 0, undefined, abilityCostReduction(s, player, source, ab)), undefined, {
           abilitySource: source,
         });
       } catch (e) {

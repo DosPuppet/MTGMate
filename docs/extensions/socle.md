@@ -298,3 +298,6 @@ Lot R4.2 (PLAN-R.md ; `RULES_VERSION` = 15) :
 
 Lot R4.3 (PLAN-R.md, sans changement de règles) :
 - « utilise son endurance pour » (`PowerRule`, `powerFor.*`, `effectivePower`) à la place de 4 mots-clés et d'un drapeau de joueur : blessures de combat (Ghalta, Loot, Tapestry Warden), équipage (pilotes, Interface Ace), station.
+
+Lot R4.4 (PLAN-R.md ; `RULES_VERSION` = 16) :
+- jouer depuis une zone (`playFrom`, `PlayFromZone`, `playFromRules`) à la place de 11 drapeaux ; coût des capacités activées (`abilityCost`, `AbilityCostMod`) à la place de 5.

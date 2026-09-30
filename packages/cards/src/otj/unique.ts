@@ -467,7 +467,7 @@ export const UNIQUE: Record<string, CardScript> = {
         fromZones: ["graveyard", "exile"],
         label: "Sorts depuis un cimetière ou l'exil : {2} de moins",
       },
-      playerStatic({ plotReduction: 2, label: "Comploter coûte {2} de moins" }),
+      playerStatic({ abilityCost: { ability: "plot", reduce: 2 }, label: "Comploter coûte {2} de moins" }),
     ],
   },
   "Eriette, the Beguiler": {

@@ -186,7 +186,7 @@ export const CARDS: Record<string, CardScript> = {
   "Kíli the Resourceful": {
     abilities: [
       playerStatic({
-        firstEquipFree: true,
+        abilityCost: { ability: "equip", firstThisTurnFree: true },
         condition: cond.enduringStory,
         label: "Récit durable : premier Équiper du tour pour {0}",
       }),

@@ -61,7 +61,21 @@ describe("interdictions et permissions du tour (effets sur les joueurs)", () => 
     const castable = () =>
       legalActions(s, "p1").filter((x) => x.type === "cast" && s.objects[x.card]?.zone === "graveyard").length;
     expect(castable()).toBe(0);
-    addPlayerEffect(s, "p1", { castCreatureFromGraveyard: true }, s.turn.number, true);
+    addPlayerEffect(
+      s,
+      "p1",
+      {
+        playFrom: {
+          zone: "graveyard",
+          filter: { types: ["Creature"] },
+          what: "spells",
+          finality: true,
+          addSubtypes: ["Vampire"],
+        },
+      },
+      s.turn.number,
+      true,
+    );
     expect(castable()).toBe(2);
     s = passBoth(act(s, "p1", { type: "cast", card: s.players.p1?.graveyard[0] as string }));
     expect(castable()).toBe(0);

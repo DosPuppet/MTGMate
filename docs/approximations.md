@@ -103,7 +103,6 @@ Dans l'ordre où elles ont été ajoutées, extension par extension.
 - **Haste Magic, Opera Love Song :** les cartes exilées sont jouables jusqu'à la fin de votre prochain tour (et non jusqu'à votre prochaine étape de fin).
 - **Freya Crescent :** son mana sert à toute capacité d'un Équipement, pas seulement à Équiper.
 - **Sorceress's Schemes :** seulement une carte d'éphémère ou de rituel du cimetière (pas une carte exilée avec flashback).
-- **The Lunar Whale :** « regarder la carte du dessus à tout moment » n'est pas affiché.
 - **Tellah, Great Sage :** trois déclenchements séparés (Héros, pioche, sacrifice). **Ultimecia, Sidequest: Raise a Chocobo :** l'effet « quand elle se transforme » est fait par l'effet qui la transforme.
 - **Quina, Qu Gourmet :** pas de Grenouille pour les jetons copies.
 - **Vivi Ornitier :** le mana est d'une seule couleur ({U} ou {R}), pas une combinaison.
@@ -116,7 +115,6 @@ Dans l'ordre où elles ont été ajoutées, extension par extension.
 - **Stolen Uniform, Unexpected Request :** l'Équipement est détaché à l'étape de fin ; pour Unexpected Request, il est ciblé au lancement.
 - **Ultima, Origin of Oblivion :** l'effet sur les terrains avec un marqueur de fléau cesse si Ultima quitte le champ de bataille.
 - **Zenos, Shinryu :** la créature choisie est une cible ; l'adversaire choisi est le premier qui perd la partie.
-- **Traveling Chocobo, The Lunar Whale :** la carte du dessus n'est pas montée à leur contrôleur.
 - **Zell Dincht :** le terrain renvoyé est ciblé (comme Arid Archway).
 - **The Earth Crystal :** tous les marqueurs mis sur vos créatures sont doublés, pas seulement les marqueurs +1/+1.
 - **Rydia, Summoner of Mist :** la Saga ciblée a une valeur de mana d'au plus X (et non exactement X).

@@ -87,7 +87,12 @@ export const LEGENDS3: Record<string, CardScript> = {
     abilities: [triggered(when.combatDamageToPlayer, [fx.doubleDamageTo(ref.eventPlayer)], { label: "Déséquilibre" })],
   },
   "Noctis, Prince of Lucis": {
-    abilities: [playerStatic({ artifactsFromGraveyardLife: 3, label: "Artefacts depuis le cimetière (3 PV, finalité)" })],
+    abilities: [
+      playerStatic({
+        playFrom: { zone: "graveyard", filter: { types: ["Artifact"] }, what: "spells", payLife: 3, finality: true },
+        label: "Artefacts depuis le cimetière (3 PV, finalité)",
+      }),
+    ],
   },
   "Omega, Heartless Evolution": {
     abilities: [

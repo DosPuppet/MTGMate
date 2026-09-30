@@ -193,7 +193,11 @@ export const BLACK: Record<string, CardScript> = {
           fx.emblem(
             "Osteomancer Adept",
             "Jusqu'à la fin du tour, vous pouvez lancer des sorts de créature depuis votre cimetière en fourrageant ; ils arrivent avec un marqueur de finalité.",
-            [playerStatic({ creaturesFromGraveyardForage: true })],
+            [
+              playerStatic({
+                playFrom: { zone: "graveyard", filter: { types: ["Creature"] }, what: "spells", forage: true, finality: true },
+              }),
+            ],
             false,
             true,
           ),

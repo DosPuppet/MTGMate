@@ -42,8 +42,10 @@ export const RECORD_VERSION = 1;
  *   exceptions de copie copiables ; couleurs ajoutées (613.8, 707.9b, 105.3 ; R2.5).
  * - 15 : protection et défense talismanique « contre [filtre] » : Sword of Wealth and Power protège des éphémères et
  *   des rituels, Resilient Roadrunner des Coyotes (702.16 ; R4.2).
+ * - 16 : permissions de jouer depuis le cimetière ou le dessus de la bibliothèque unifiées (une permission sans coût passe
+ *   avant Muldrotha ; Forgotten Cellar : seulement des sorts) ; modificateurs de coût des capacités unifiés (R4.4).
  */
-export const RULES_VERSION = 15;
+export const RULES_VERSION = 16;
 
 /** Un point de contrôle toutes les N décisions (plus la dernière de la partie). */
 export const CHECKPOINT_EVERY = 25;

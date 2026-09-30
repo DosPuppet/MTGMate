@@ -681,7 +681,12 @@ export const LEGENDS: Record<string, CardScript> = {
     spell: spell([], [fx.manifestDreadBy({ times: amount.x, store: "m" }), fx.addCounters(ref.stored("m"), amount.x)]),
   },
   "Walk-In Closet": {
-    abilities: [playerStatic({ playLandsFromGraveyard: true, label: "Vous pouvez jouer des terrains depuis votre cimetière" })],
+    abilities: [
+      playerStatic({
+        playFrom: { zone: "graveyard", what: "lands" },
+        label: "Vous pouvez jouer des terrains depuis votre cimetière",
+      }),
+    ],
   },
   "Forgotten Cellar": {
     abilities: [
@@ -691,7 +696,7 @@ export const LEGENDS: Record<string, CardScript> = {
           fx.emblem(
             "Forgotten Cellar",
             "This turn, you may cast spells from your graveyard, and if a card would be put into your graveyard from anywhere, exile it instead.",
-            [playerStatic({ playFromGraveyard: true }), graveyardReplacement({ graveyardOf: "you" })],
+            [playerStatic({ playFrom: { zone: "graveyard", what: "spells" } }), graveyardReplacement({ graveyardOf: "you" })],
             false,
             true,
           ),
@@ -735,7 +740,7 @@ export const LEGENDS: Record<string, CardScript> = {
   "Inquisitive Glimmer": {
     abilities: [
       costReducer({ types: ["Enchantment"] }, 1, "Vos sorts d'enchantement coûtent {1} de moins"),
-      playerStatic({ unlockReduction: 1, label: "Déverrouiller vous coûte {1} de moins" }),
+      playerStatic({ abilityCost: { ability: "unlock", reduce: 1 }, label: "Déverrouiller vous coûte {1} de moins" }),
     ],
   },
   "Nashi, Searcher in the Dark": {

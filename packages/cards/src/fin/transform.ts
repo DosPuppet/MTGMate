@@ -493,7 +493,7 @@ export const TRANSFORM: Record<string, CardScript> = {
   "Hades, Sorcerer of Eld": {
     abilities: [
       playerStatic({
-        playFromGraveyard: true,
+        playFrom: { zone: "graveyard" },
         condition: cond.yourTurn,
         label: "Écho des disparus : jouez depuis votre cimetière",
       }),

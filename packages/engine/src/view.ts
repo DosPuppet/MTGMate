@@ -8,7 +8,7 @@ import { legalActions } from "./legal";
 import { costToText } from "./mana";
 import { canPlayLand, castTerms, modesOf } from "./stack";
 import { chars, decider, isCreature, isSummoningSick, obj } from "./state";
-import { playerStatic } from "./statics";
+import { playerStatic, playerStatics } from "./statics";
 import { pendingTriggerSource } from "./triggers";
 import { attackableDefenders, attackCandidates, blockCandidates } from "./turn";
 import type {
@@ -426,9 +426,9 @@ export function projectView(s: GameState, viewer: PlayerId): GameView {
     exiledWith: exiledWith(s),
     playableExile: [
       ...s.exile.filter((id) => castTerms(s, viewer, id) || canPlayLand(s, viewer, id)),
-      // Vizier of the Menagerie : « vous pouvez regarder la carte du dessus de votre bibliothèque à tout moment ».
-      ...((playerStatic(s, viewer, "castCreaturesFromTop") ||
-        playerStatic(s, viewer, "castArtifactsFromTop") ||
+      // « Vous pouvez regarder la carte du dessus de votre bibliothèque à tout moment » : Vizier of the Menagerie, et
+      // toute permission de jouer depuis le dessus de la bibliothèque (famille C).
+      ...((playerStatics(s, viewer, "playFrom").some(({ ab }) => ab.playFrom?.zone === "libraryTop") ||
         playerStatic(s, viewer, "lookAtTopCard")) &&
       s.players[viewer]?.library[0]
         ? [s.players[viewer]?.library[0] as string]

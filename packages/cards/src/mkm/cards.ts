@@ -39,7 +39,7 @@ export const CARDS: Record<string, CardScript> = {
     caseSolved: [
       activated({
         sacrifice: true,
-        effects: [fx.thisTurn({ castCreaturesFromGraveyard: true })],
+        effects: [fx.thisTurn({ playFrom: { zone: "graveyard", filter: { types: ["Creature"] }, what: "spells" } })],
         label: "Ce tour-ci, lancez vos cartes de créature depuis votre cimetière",
       }),
     ],

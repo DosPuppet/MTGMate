@@ -515,7 +515,12 @@ export const GREEN: Record<string, CardScript> = {
     ],
   },
   "Vizier of the Menagerie": {
-    abilities: [playerStatic({ castCreaturesFromTop: true, label: "Créatures du dessus de votre bibliothèque" })],
+    abilities: [
+      playerStatic({
+        playFrom: { zone: "libraryTop", filter: { types: ["Creature"] }, what: "spells", anyMana: true },
+        label: "Créatures du dessus de votre bibliothèque",
+      }),
+    ],
   },
   "Wildborn Preserver": {
     abilities: [

@@ -518,7 +518,7 @@ export const LEGENDS: Record<string, CardScript> = {
           fx.emblem(
             "The Belligerent",
             "Until end of turn, you may look at the top card of your library any time, and you may play lands and cast spells from the top of your library.",
-            [playerStatic({ playTopCard: true, lookAtTopCard: true })],
+            [playerStatic({ playFrom: { zone: "libraryTop" }, lookAtTopCard: true })],
             undefined,
             true,
           ),

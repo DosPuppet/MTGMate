@@ -420,7 +420,10 @@ export const SPEED: Record<string, CardScript> = {
   // --- Multicolores ----------------------------------------------------------
   "Boom Scholar": {
     abilities: [
-      playerStatic({ exhaustReduction: 2, label: "Exhaust de vos autres permanents : {2} de moins" }),
+      playerStatic({
+        abilityCost: { ability: "exhaust", notSelf: true, reduce: 2 },
+        label: "Exhaust de vos autres permanents : {2} de moins",
+      }),
       exhaust({
         mana: "{4}{R}{G}",
         effects: [fx.pumpAll({ ...CREATURE_OR_VEHICLE, controller: "you" }, 0, 0, ["trample"]), counters(2)],

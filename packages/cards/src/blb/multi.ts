@@ -173,8 +173,7 @@ export const MULTI: Record<string, CardScript> = {
     abilities: [
       playerStatic({ lookAtTopCard: true, label: "Regardez la carte du dessus" }),
       playerStatic({
-        playTopCard: true,
-        playTopFilter: { anyOf: [{ types: ["Land"] }, { minManaValue: 4, notTypes: ["Land"] }] },
+        playFrom: { zone: "libraryTop", filter: { anyOf: [{ types: ["Land"] }, { minManaValue: 4, notTypes: ["Land"] }] } },
         label: "Terrains et sorts de VM 4 ou plus depuis le dessus",
       }),
       activated({ tap: true, effects: [fx.surveil(2)], label: "Surveillance 2" }),

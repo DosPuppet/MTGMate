@@ -621,7 +621,22 @@ export const HANDLERS: OpHandlers = {
     return;
   },
   graveyardCreatureOnce(s, _r, _e, ctx) {
-    addPlayerEffect(s, ctx.controller, { castCreatureFromGraveyard: true }, s.turn.number, true);
+    // The Tomb of Aclazotz : un sort de créature depuis votre cimetière, une fois ; finalité et Vampire.
+    addPlayerEffect(
+      s,
+      ctx.controller,
+      {
+        playFrom: {
+          zone: "graveyard",
+          filter: { types: ["Creature"] },
+          what: "spells",
+          finality: true,
+          addSubtypes: ["Vampire"],
+        },
+      },
+      s.turn.number,
+      true,
+    );
     return;
   },
   destroyAllButOnePerPlayer(s, r, e, ctx, key) {

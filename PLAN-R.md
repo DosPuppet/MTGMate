@@ -24,7 +24,8 @@ Plan établi le 30/09/2026 (branche `dev`) : il sert de feuille de route aux pro
 - **30/09/2026 : R4.1 fait** (sans changement de règles) : `BlockRule` (« ne peut pas être bloquée par [filtre] », « ne peut bloquer que [filtre] », nombre de bloqueurs, « pas seule »), 11 mots-clés en moins (33 → 22).
 - **30/09/2026 : R4.2 fait** (`RULES_VERSION` = 15) : `ProtectionRule` (protection et défense talismanique « contre [filtre] »), `ObjectFilter.colorCount` et `not`, 5 mots-clés en moins (22 → 17) ; Sword of Wealth and Power et Resilient Roadrunner sans approximation.
 - **30/09/2026 : R4.3 fait** (sans changement de règles) : `PowerRule` (« utilise son endurance pour » : blessures de combat, équipage, station), 4 mots-clés (17 → 13) et un drapeau de joueur (96 → 95) en moins.
-- À faire : R4.4, puis la suite dans l'ordre du tableau ci-dessous.
+- **30/09/2026 : R4.4 fait** (`RULES_VERSION` = 16) : `playFrom` (famille C, 11 drapeaux) et `abilityCost` (famille A, 5 drapeaux) ; drapeaux de joueur 95 → 81.
+- À faire : R4.5, puis la suite dans l'ordre du tableau ci-dessous.
 
 ## Le garde-fou de la dette (lot F2)
 
@@ -289,6 +290,11 @@ Lus dans le code ; chacun est confirmé par un test au début de son lot.
 **R4.2 réalisé ✅ :** `ProtectionRule` (`from` : filtre sur la source, `hexproofOnly` pour la défense talismanique) dans les caractéristiques (`protections`, couche 6, `addProtections`) ; `protectedFrom` et `sourceView` (`targets.ts`) servent au ciblage, au blocage, aux blessures et aux attachements ; protection contre tout = filtre vide. `ObjectFilter` reçoit `colorCount` et `not`. Remplace `protectionFromEverything`, `hexproofFromInstants`, `…Black`, `…White`, `…Monocolored` ; badges en bouclier (`ObjectView.protections`). Changement de règles pour deux cartes (protection complète) : `RULES_VERSION` = 15. Test : `audit.test.ts` (R4.2).
 
 **R4.3 réalisé ✅ :** `PowerRule` (`uses` : blessures de combat, équipage et selle, station ; `toughness` toujours ou si plus grande, `absolute`, `bonus`) dans les caractéristiques (`powerRules`, `addPowerRules`) ; `effectivePower` sert à `combatPower`, `crewPower` et à la station ; constantes `powerFor.*` et `powerRuleAbility`. Remplace `assignsToughness`, `absolutePowerDamage`, `crewWithToughness`, `crewPlus2` et le drapeau de joueur `stationByToughness` (Tapestry Warden accorde la règle à vos créatures). Parties dorées identiques.
+
+**R4.4 réalisé ✅ :**
+- famille C, `playFrom` (`PlayFromZone` : cimetière ou dessus de la bibliothèque, filtre, terrains ou sorts, PV, fourrager, finalité, mana de n'importe quel type, sous-types) : remplace `artifactsFromGraveyardLife`, `castArtifactsFromTop`, `castCreatureFromGraveyard`, `castCreaturesFromGraveyard`, `castCreaturesFromTop`, `creaturesFromGraveyardForage`, `instantsSorceriesFromGraveyardLife`, `playFromGraveyard`, `playLandsFromGraveyard`, `playTopCard`, `playTopFilter`. `playFromRules` choisit la permission la moins coûteuse ; l'usage unique de The Tomb of Aclazotz est consommé par identité de la règle ; toute permission du dessus de la bibliothèque montre la carte du dessus à son joueur (lève l'approximation de Traveling Chocobo et The Lunar Whale) ; Forgotten Cellar ne permet plus que des sorts (Oracle) ;
+- famille A, `abilityCost` (`AbilityCostMod` : exhaust, Équiper, déverrouiller, comploter ; source ; « autres » ; {N} de moins ou le premier du tour gratuit) : remplace `activatedReduction`, `exhaustReduction`, `firstEquipFree`, `plotReduction`, `unlockReduction` ;
+- **pas fait :** les gratuités de sorts (`firstSpellFree`, `freeFromExileOncePerTurn`) et la famille B (dons aux sorts) restent des drapeaux : les fusionner ne ferait que déplacer des booléens propres à une carte.
 
 - **R4.1 :** « ne peut pas être bloquée par [filtre] », qui remplace 7 mots-clés, plus `canBlockOnly` et le nombre de bloqueurs (minimum et maximum).
 - **R4.2 :** « défense talismanique contre » et « protection contre [filtre] ». `ObjectFilter` reçoit `colorCount` et un `not`. Lève les approximations Sword of Wealth and Power et Resilient Roadrunner.

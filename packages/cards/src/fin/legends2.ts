@@ -53,10 +53,9 @@ export const LEGENDS2: Record<string, CardScript> = {
     abilities: [triggered(when.entersSelf, [fx.search({ subtype: "Equipment" })], { label: "Cherchez un Équipement" })],
   },
   "The Lunar Whale": {
-    // Approximation : « vous pouvez regarder la carte du dessus à tout moment » n'est pas affiché.
     abilities: [
       playerStatic({
-        playTopCard: true,
+        playFrom: { zone: "libraryTop" },
         condition: cond.sourceMatches({ attackedThisTurn: true }),
         label: "Jouez la carte du dessus (a attaqué ce tour-ci)",
       }),

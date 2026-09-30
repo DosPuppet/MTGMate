@@ -75,7 +75,7 @@ export const CARDS: Record<string, CardScript> = {
   },
   "Mutagen Man, Living Ooze": {
     abilities: [
-      playerStatic({ activatedReduction: { filter: { types: ["Artifact"], token: true }, n: 1 } }),
+      playerStatic({ abilityCost: { source: { types: ["Artifact"], token: true }, reduce: 1 } }),
       triggered(when.entersSelf, [fx.createTokens(MUTAGEN, amount.sourceX)], { label: "X jetons Mutagène" }),
     ],
   },

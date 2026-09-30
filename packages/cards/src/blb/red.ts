@@ -143,7 +143,7 @@ export const RED: Record<string, CardScript> = {
   "Festival of Embers": {
     abilities: [
       playerStatic({
-        instantsSorceriesFromGraveyardLife: 1,
+        playFrom: { zone: "graveyard", filter: { types: ["Instant", "Sorcery"] }, what: "spells", payLife: 1 },
         condition: cond.yourTurn,
         label: "Éphémères et rituels depuis le cimetière (1 PV)",
       }),
