@@ -19,7 +19,8 @@ Plan établi le 30/09/2026 (branche `dev`) : il sert de feuille de route aux pro
 - **30/09/2026 : R2.3 fait** (`RULES_VERSION` = 10 : Clone ou Aura qui arrive sans être lancé ; #7, 303.4f, 303.4g).
 - **30/09/2026 : R1 fait en partie** (`RULES_VERSION` = 11 : ordre des remplacements chiffrés choisi pour le joueur affecté, `drawCards` pour toutes les pioches ; la conversion des drapeaux en capacité générique est reportée aux familles de R4).
 - **30/09/2026 : R3 fait** (`RULES_VERSION` = 12 : une copie de sort est un objet sur la pile ; nouvelles cibles au choix pour toute copie, qui deviennent ses cibles ; répartition annoncée à la mise sur la pile, part d'une cible devenue illégale perdue ; #4, #15, N11). Constat : le fuzz à 3 joueurs du méta (2 parties inachevées sur 100) et à 4 joueurs sur tout le pool (1 sur 100) échouait déjà avant R3, à l'identique : parties aléatoires qui atteignent la limite de décisions, pas un blocage.
-- À faire : R2.4, puis la suite dans l'ordre du tableau ci-dessous.
+- **30/09/2026 : R2.4 fait** (`RULES_VERSION` = 13 : couche 2, contrôleur de base et effets de contrôle horodatés, 800.4a ; #12, N10). Bench inchangé (aléatoire 2 joueurs 6 272 → 6 668 déc/s, 4 joueurs 4 115 → 4 466). Le tutoriel se rejoue (`tutorial.test.ts`, `tutorial-smoke`).
+- À faire : R2.5, puis la suite dans l'ordre du tableau ci-dessous.
 
 ## Le garde-fou de la dette (lot F2)
 
@@ -50,9 +51,9 @@ Plan établi le 30/09/2026 (branche `dev`) : il sert de feuille de route aux pro
 | 5 | R4.0 : accesseur unique des statiques de joueur | § 3.3 | F2 | moyen | ✅ (voir suivi) |
 | 6 | R2.1 à R2.3 : entrée sur le champ de bataille, copies de permanents | § 3.1, § 3.2 | R4.0 | moyen | ✅ `f0b77a1`, `ead9cd5`, `c055371` |
 | 7 | R1.1 à R1.3 : remplacements (616) | § 3.2 | R4.0, R2.1 | élevé | ✅ en partie (voir la section) |
-| 8 | R3.1 et R3.2 : copies de sorts, blessures réparties | § 3.1 | R0 | moyen à élevé | ✅ (voir suivi) |
-| 9 | R2.4 : couche 2 (contrôle) | § 3.2 | R4.0 | élevé | **prochain** |
-| 10 | R2.5 : 613.8 par point fixe, couche 5 « en plus » | § 3.2 | R2.2, R2.4 | élevé (perf.) | à faire |
+| 8 | R3.1 et R3.2 : copies de sorts, blessures réparties | § 3.1 | R0 | moyen à élevé | ✅ `827cc6f` |
+| 9 | R2.4 : couche 2 (contrôle) | § 3.2 | R4.0 | élevé | ✅ (voir suivi) |
+| 10 | R2.5 : 613.8 par point fixe, couche 5 « en plus » | § 3.2 | R2.2, R2.4 | élevé (perf.) | **prochain** |
 | 11 | R4.1 à R4.6 : familles génériques | § 3.3 | R1, R2 | moyen | à faire |
 | 12 | R5 : blocages simultanés, mulligans 103.5 | § 3.2 | F1 | moyen | à faire |
 | 13 | R6 : boucles (104.4b) | § 3.2 | F1 | moyen | à faire |
@@ -74,7 +75,7 @@ Lus dans le code ; chacun est confirmé par un test au début de son lot.
 | N7 | Un Clone qui copie un planeswalker arrive sans loyauté ; `applyEntersReplacements` lit la carte imprimée | `engine/src/replacement.ts:212-261` | R2.2 | ✅ R2.2 |
 | N8 | `copyToken` lit la carte imprimée et engage le jeton par un événement « devient engagé » | `engine/src/ops/permanents.ts:218, 226` | R2.2 | ✅ R2.2 |
 | N9 | Le `copyOf` d'une statique n'est jamais appliqué (Assimilation Aegis ne copie rien) ; la copie d'un sort de Clone est un 0/0 | `engine/src/layers.ts:420-424`, `engine/src/stack.ts:2115` | R2.2 | ✅ R2.2 |
-| N10 | Deux vols de contrôle du même permanent dans un tour le rendent au mauvais joueur ; un joueur qui quitte la partie fait exiler les permanents volés (800.4a) | `engine/src/turn.ts:322-329, 1006-1008` | R2.4 | à faire |
+| N10 | Deux vols de contrôle du même permanent dans un tour le rendent au mauvais joueur ; un joueur qui quitte la partie fait exiler les permanents volés (800.4a) | `engine/src/turn.ts:322-329, 1006-1008` | R2.4 | ✅ R2.4 |
 | N11 | Une copie de sort n'a pas d'objet : « contrecarrez le sort ciblé » ne peut pas la viser, et les « défense talismanique contre » sont ignorées | `engine/src/targets.ts:207-212, 244-252` | R3.1 | ✅ R3 |
 | N12 | `drawBonus` (Vnwxt, Quantum Riddler) n'est appliqué que par 2 des 11 appels de `drawCard` | `engine/src/effects.ts:769` | R1.3 | ✅ R1 |
 
@@ -245,7 +246,7 @@ Lus dans le code ; chacun est confirmé par un test au début de son lot.
 - l'IA essaie par simulation chaque nouvelle cible d'une copie à cible unique, comme les cibles d'un déclenchement ;
 - tests : `engine/test/audit.test.ts` (#4, N11, #15) ; Chandra, Flameshaper (`fdn.test.ts`) répartit à l'activation.
 
-## R2.4 et R2.5 — couches
+## R2.4 et R2.5 — couches (R2.4 ✅)
 
 - **R2.4 [règles] : couche 2.**
   - `GameObject.baseController` et des effets de contrôle horodatés dans `s.effects` ;
@@ -254,6 +255,14 @@ Lus dans le code ; chacun est confirmé par un test au début de son lot.
   - `controlChanges` et `auraControl` sont supprimés (#12, N10) ;
   - `o.controller` reste la valeur stockée, donc les ~200 lectures ne changent pas ;
   - nouvel invariant du fuzz : `syncControl` est idempotent.
+
+  **R2.4 réalisé ✅ :**
+  - `control.ts` : `baseController` (fixé par `createObject` à l'arrivée), `addControlEffect` (effet de `s.effects` avec `controller`, horodaté, `duration` fin du tour ou permanent, `whileSource` et `whileControlledBy` pour Possession Engine), `syncControl` (effets et Auras de contrôle par horodatage, jusqu'à 4 passes, sortie du combat) ;
+  - appelé à la fin de chaque opération de contrôle, dans les actions basées sur l'état (à la place de `applyAuraControl`), après le nettoyage et dans `removePlayerObjects` ;
+  - 800.4a : les effets et Auras d'un joueur qui a quitté la partie sont ignorés, ce qu'il contrôle encore est exilé ; un permanent dont il était le contrôleur de base revient ensuite à son propriétaire ;
+  - approximations notées dans `docs/approximations.md` : Eriette, the Beguiler reste une statique (et non un déclencheur) ; l'horodatage d'une Aura de contrôle est celui de son arrivée ;
+  - invariant du fuzz ignoré une fois la partie finie (les objets et effets du perdant du coup final restent en place) ;
+  - tests : `engine/test/audit.test.ts` (#12, N10, Confiscate, 800.4a).
 - **R2.5 [règles] : 613.8 et couche 5.**
   - Le booléen `computing` devient une carte `provisional`.
   - Une seconde passe ne réévalue que les statiques dépendantes (conditions, `per`, caractéristiques définies qui lisent le champ de bataille), et compare une signature ; au plus 3 passes.

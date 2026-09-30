@@ -6,6 +6,7 @@ import type { CardDef } from "@mtgx/engine";
 import {
   type Agent,
   chars,
+  cloneState,
   computeBattlefield,
   createGame,
   type Decision,
@@ -13,6 +14,7 @@ import {
   type GameState,
   RulesError,
   submit,
+  syncControl,
 } from "@mtgx/engine";
 import { corruptDecision } from "./chaos";
 import { mulberry32 } from "./random";
@@ -59,6 +61,16 @@ export function checkInvariants(s: GameState, deckSizes: Record<string, number>)
     // Éliminé en cours de partie : 0 carte ; éliminé par le coup final : ses cartes restent.
     const ok = s.players[p]?.lost ? owned === 0 || owned === size : owned === size;
     if (!ok) errors.push(`${p} : ${owned} cartes au lieu de ${size}`);
+  }
+  // Couche 2 : le contrôle est déjà à jour (un nouveau calcul ne change rien). Partie finie : les objets du perdant
+  // restent en place, ses effets de contrôle aussi.
+  const probe = s.over ? null : cloneState(s);
+  if (probe && syncControl(probe)) {
+    const moved = s.battlefield.filter((id) => probe.objects[id]?.controller !== s.objects[id]?.controller);
+    for (const id of moved) {
+      const o = s.objects[id];
+      errors.push(`${id} (${o?.defId}) : contrôle périmé, ${o?.controller} au lieu de ${probe.objects[id]?.controller}`);
+    }
   }
   // Le cache des couches ne doit jamais diverger d'un calcul à neuf.
   const fresh = computeBattlefield(s);

@@ -275,3 +275,10 @@ Lot R3 (PLAN-R.md ; `RULES_VERSION` = 12) :
 - nouvelles cibles d'une copie (707.10c) : une question par mot « cible » (intention `changeTarget`, cibles d'origine proposées, autant de cibles qu'à l'origine, sans `autoOk` : le joueur choisit) ; puis les cibles deviennent celles de la copie (garde, vaillance ; pas l'héroïsme ni le crime, une copie n'étant pas lancée) (#4) ;
 - répartition (601.2d, 602.2b, 603.3d) : demandée dès la mise sur la pile pour un sort, une capacité activée ou déclenchée à au moins deux cibles, gardée dans `StackItem.division` (copiée avec l'élément) ; à la résolution, la part d'une cible devenue illégale est perdue (#15) ; blessures (Chandra, Flameshaper) et marqueurs +1/+1 ;
 - tests : `engine/test/audit.test.ts` (#4, N11, #15).
+
+Lot R2.4 (PLAN-R.md ; `RULES_VERSION` = 13) :
+- couche 2 (`control.ts`) : `GameObject.baseController` (fixé à l'arrivée), effets de contrôle dans `s.effects` (`ContinuousEffect.controller`, `whileControlledBy`), appliqués avec les Auras de contrôle par ordre d'horodatage par `syncControl`, qui sort du combat ce qui change de contrôleur ;
+- `gainControl` (fin du tour), `giveControl`, `exchangeControl` et `gainControlWhileSource` passent par `addControlEffect` ; `s.controlChanges` et `s.auraControl` disparaissent : un vol qui prend fin rend le permanent à qui le contrôlerait sans lui (#12, N10) ;
+- 800.4a : un joueur qui quitte la partie perd ce que ses effets lui donnaient (le permanent revient, au lieu d'être exilé) ;
+- invariant du fuzz : `syncControl` ne change plus rien après une décision ;
+- tests : `engine/test/audit.test.ts` (#12, N10, Confiscate, 800.4a).

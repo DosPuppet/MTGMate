@@ -372,6 +372,7 @@ export function createObject(
     timestamp: nextTimestamp(s),
     isToken: opts.isToken ?? false,
   };
+  if (zone === "battlefield") o.baseController = o.controller;
   s.objects[id] = o;
   const arr = zoneArray(s, o);
   arr?.push(id);

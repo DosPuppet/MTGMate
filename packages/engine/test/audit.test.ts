@@ -5,6 +5,7 @@
 import { card, type RawCard, toCardDef } from "@mtgx/cards";
 import { describe, expect, it } from "vitest";
 import { destroy, gainLife } from "../src/actions";
+import { syncControl } from "../src/control";
 import { cond, doubler, fx, playerStatic, ref, triggered, when } from "../src/dsl";
 import { addEffect, runEffect } from "../src/effects";
 import { submit } from "../src/game";
@@ -14,8 +15,8 @@ import { chooseReplacementOrder } from "../src/modifiers";
 import { spellCost } from "../src/stack";
 import { changeCounters, chars, FACE_DOWN_ID, moveObject } from "../src/state";
 import { simultaneously } from "../src/triggers";
-import { forcedAttacks } from "../src/turn";
-import type { CardDef, GameEvent, GameState, TokenSpec } from "../src/types";
+import { eliminate, forcedAttacks } from "../src/turn";
+import type { CardDef, Effect, GameEvent, GameState, TokenSpec } from "../src/types";
 import { act, advanceUntil, customCard, idOf, idsOf, passAccepting, passBoth, passUntil, scenario } from "./helpers";
 
 const raw = (name: string, typeLine: string, oracleText: string, keywords: string[], manaCost = "{3}{W}"): RawCard => ({
@@ -630,5 +631,55 @@ describe("#15 : répartition annoncée à la mise sur la pile ; la part d'une ci
     s = passUntil(s, (x) => x.stack.length === 0);
     expect(s.objects[wurm]?.damage).toBe(4);
     expect(idsOf(s, "p2", "battlefield", "Pelakka Wurm")).toHaveLength(1);
+  });
+});
+
+describe("#12, N10 et 800.4a : le contrôle est une couche (613.1b, 613.7)", () => {
+  const steal = (s: GameState, id: string, to: string, e: Effect) =>
+    runEffect(s, { ...resolution(to), targets: { t: [id] } } as never, e);
+
+  it("N10 : volé puis repris dans le même tour, le permanent revient à son contrôleur de base à la fin du tour", () => {
+    let s = scenario({ p2: { battlefield: ["Pelakka Wurm"] } });
+    const wurm = idOf(s, "p2", "battlefield", "Pelakka Wurm");
+    steal(s, wurm, "p1", fx.gainControl(ref.target()));
+    expect(s.objects[wurm]?.controller).toBe("p1");
+    steal(s, wurm, "p2", fx.gainControl(ref.target()));
+    expect(s.objects[wurm]?.controller).toBe("p2");
+    s = passUntil(s, (x) => x.turn.number === 4);
+    expect(s.objects[wurm]?.controller).toBe("p2");
+  });
+
+  it("#12 : un don permanent plus récent survit à la fin d'un vol « jusqu'à la fin du tour »", () => {
+    let s = scenario({ p2: { battlefield: ["Pelakka Wurm"] } });
+    const wurm = idOf(s, "p2", "battlefield", "Pelakka Wurm");
+    steal(s, wurm, "p1", fx.gainControl(ref.target()));
+    runEffect(s, { ...resolution("p2"), targets: { t: [wurm] } } as never, fx.giveControl(ref.target(), ref.you));
+    runEffect(s, { ...resolution("p2"), targets: { t: [wurm] } } as never, fx.giveControl(ref.target(), ref.eachOpponent));
+    expect(s.objects[wurm]?.controller).toBe("p1");
+    s = passUntil(s, (x) => x.turn.number === 4);
+    // L'ancien code rendait le permanent au contrôleur mémorisé au moment du vol (p2).
+    expect(s.objects[wurm]?.controller).toBe("p1");
+  });
+
+  it("Confiscate : le contrôle suit l'Aura et revient quand elle part", () => {
+    const s = scenario({ p1: { hand: ["Confiscate"] }, p2: { battlefield: ["Pelakka Wurm"] } });
+    const wurm = idOf(s, "p2", "battlefield", "Pelakka Wurm");
+    const aura = moveObject(s, idOf(s, "p1", "hand", "Confiscate"), "battlefield", { enters: { attachTo: wurm } }) as string;
+    syncControl(s);
+    expect(s.objects[wurm]?.controller).toBe("p1");
+    destroy(s, aura);
+    syncControl(s);
+    expect(s.objects[wurm]?.controller).toBe("p2");
+    expect(syncControl(s)).toBe(false);
+  });
+
+  it("800.4a : quand le voleur quitte la partie, le permanent revient à son contrôleur au lieu d'être exilé", () => {
+    const s = scenario({ players: 3, p2: { battlefield: ["Pelakka Wurm"] } });
+    const wurm = idOf(s, "p2", "battlefield", "Pelakka Wurm");
+    runEffect(s, { ...resolution("p3"), targets: { t: [wurm] } } as never, fx.giveControl(ref.target(), ref.you));
+    expect(s.objects[wurm]?.controller).toBe("p3");
+    eliminate(s, ["p3"]);
+    expect(s.objects[wurm]?.zone).toBe("battlefield");
+    expect(s.objects[wurm]?.controller).toBe("p2");
   });
 });

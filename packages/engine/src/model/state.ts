@@ -74,6 +74,11 @@ export interface GameObject {
   counters: Record<string, number>;
   /** Numéro du tour pendant lequel le contrôleur actuel en a pris le contrôle. */
   controlledSince: number;
+  /**
+   * Couche 2 : contrôleur en l'absence d'effet de contrôle (qui a mis le permanent sur le champ de bataille, 110.2).
+   * Fixé à l'arrivée ; `controller` est la valeur calculée par `syncControl` (control.ts).
+   */
+  baseController?: PlayerId;
   timestamp: number;
   isToken: boolean;
   /** Capacités « une seule fois » déjà activées (indices). */
@@ -558,6 +563,10 @@ export interface ContinuousEffect extends LayerMods {
   untilExiledUid?: string;
   /** L'effet cesse quand cette source quitte le champ de bataille (Possession Engine). */
   whileSource?: ObjectId;
+  /** Couche 2 : le joueur qui contrôle les objets touchés (appliqué par `syncControl`, dans l'ordre des horodatages). */
+  controller?: PlayerId;
+  /** « Tant que vous contrôlez [la source] » : l'effet cesse dès que ce joueur ne contrôle plus `whileSource` (611.2b). */
+  whileControlledBy?: PlayerId;
 }
 
 export type Flow = "mulligan" | "stepStart" | "tba" | "priority" | "resolving" | "stepEnd" | "over";
@@ -649,11 +658,6 @@ export interface GameState {
     /** Maîtrise de l'air : lançable pour ce coût plutôt que pour son coût de mana. */
     cost?: ManaCost;
   }[];
-  /** Contrôle donné par une Aura (Confiscate) : contrôleur d'origine à rétablir quand l'Aura part. */
-  /** `by` : contrôle tant que ce joueur contrôle la source (Possession Engine), et non tant que l'Aura est attachée. */
-  auraControl?: { host: ObjectId; aura: ObjectId; original: PlayerId; by?: PlayerId }[];
-  /** Changements de contrôle « jusqu'à la fin du tour » (contrôleur d'origine à rétablir). */
-  controlChanges?: { id: ObjectId; original: PlayerId }[];
   /**
    * 722 : « vous contrôlez [ce joueur] pendant son prochain tour » (The Dominion Bracelet). `turn` est fixé au début
    * de ce tour ; pendant ce tour, les décisions de `player` sont prises par `by`.

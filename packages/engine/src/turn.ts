@@ -14,10 +14,11 @@ import {
   sourceFromObject,
 } from "./actions";
 import { ask, cardRef } from "./choices";
+import { syncControl } from "./control";
 import { announceDiscard, announceDiscardBatch, evalAmount } from "./effects";
 import { rethrowAsRules } from "./errors";
 import { copiedDefId } from "./layers";
-import { manaValue, payMana } from "./mana";
+import { payMana } from "./mana";
 import { RulesError, resolveTop } from "./stack";
 import { announceNext } from "./stackChoices";
 import {
@@ -44,7 +45,6 @@ import {
   opponentsOf,
   P1P1,
   rulesEvent,
-  setController,
   shuffle,
   tapObject,
 } from "./state";
@@ -338,14 +338,8 @@ function finishCleanup(s: GameState): void {
   for (const p of s.playerOrder) {
     for (const id of [...(s.players[p]?.command ?? [])]) if (s.objects[id]?.expiresEndOfTurn) moveObject(s, id, "exile");
   }
-  // Fin des changements de contrôle « jusqu'à la fin du tour » (Involuntary Employment).
-  for (const c of s.controlChanges ?? []) {
-    const o = s.objects[c.id];
-    if (o?.zone === "battlefield") {
-      setController(s, o, c.original);
-    }
-  }
-  s.controlChanges = [];
+  // Fin des changements de contrôle « jusqu'à la fin du tour » (Involuntary Employment) : couche 2 recalculée.
+  syncControl(s);
   for (const p of s.playerOrder) {
     const pl = s.players[p];
     if (pl) pl.manaKeep = undefined;
@@ -1061,9 +1055,15 @@ function removePlayerObjects(s: GameState, p: PlayerId): void {
   const player = s.players[p];
   if (!player) return;
   bump(s);
+  // 800.4a : les effets qui lui donnent le contrôle d'objets prennent fin (couche 2 : `syncControl` ignore les effets et
+  // les Auras d'un joueur qui a quitté la partie), puis ce qu'il contrôle encore est exilé.
+  syncControl(s);
   for (const o of Object.values(s.objects)) {
     if (o.owner !== p && o.controller === p && o.zone === "battlefield") moveObject(s, o.id, "exile");
+    // Contrôlé par un autre effet : à la fin de celui-ci, il revient à son propriétaire.
+    else if (o.owner !== p && o.baseController === p) o.baseController = o.owner;
   }
+  s.effects = s.effects.filter((e) => e.controller !== p);
   const gone = new Set(
     Object.values(s.objects)
       .filter((o) => o.owner === p)
@@ -1163,8 +1163,9 @@ function stateBasedActionsOnce(s: GameState): boolean {
       else if (o.damage >= c.toughness || (o.deathtouched && o.damage > 0)) toDestroy.push(id); // 704.5g–h
     }
 
-    // Confiscate : le contrôleur de l'Aura contrôle le permanent enchanté (et le rend quand l'Aura part).
-    if (applyAuraControl(s)) changed = true;
+    // Couche 2 : Confiscate (le contrôleur de l'Aura contrôle le permanent enchanté, et le rend quand l'Aura part), fin
+    // des effets « tant que vous contrôlez ».
+    if (syncControl(s)) changed = true;
 
     // 704.5m–n : Auras attachées illégalement (cimetière), Équipements attachés illégalement (détachés).
     for (const id of s.battlefield) {
@@ -1260,57 +1261,6 @@ function stateBasedActionsOnce(s: GameState): boolean {
   }
   // Toujours des actions à faire après 100 passes : une boucle du moteur, qu'il faut voir (le fuzz la signale).
   throw new Error("Actions basées sur l'état : encore des changements après 100 passes");
-}
-
-/** Contrôle par une Aura (Confiscate). Renvoie true si un contrôleur a changé. */
-function applyAuraControl(s: GameState): boolean {
-  let changed = false;
-  // Aura partie ou détachée : le contrôleur d'origine récupère le permanent.
-  for (const c of [...(s.auraControl ?? [])]) {
-    const aura = s.objects[c.aura];
-    // Possession Engine : tant que ce joueur contrôle la source (et non tant que l'Aura est attachée).
-    if (
-      c.by ? aura?.zone === "battlefield" && aura.controller === c.by : aura?.zone === "battlefield" && aura.attachedTo === c.host
-    )
-      continue;
-    s.auraControl = (s.auraControl ?? []).filter((x) => x !== c);
-    const host = s.objects[c.host];
-    if (host?.zone === "battlefield" && host.controller !== c.original) {
-      removeFromCombatOf(s, c.host);
-      setController(s, host, c.original);
-      changed = true;
-    }
-  }
-  for (const id of s.battlefield) {
-    const aura = obj(s, id);
-    const host = aura.attachedTo ? s.objects[aura.attachedTo] : undefined;
-    // Eriette, the Beguiler : une Aura attachée à un permanent non-terrain adverse de VM inférieure ou égale.
-    const steals =
-      host?.zone === "battlefield" &&
-      host.controller !== aura.controller &&
-      !chars(s, host.id).types.includes("Land") &&
-      manaValue(s.defs[host.defId]?.manaCost) <= manaValue(s.defs[aura.defId]?.manaCost) &&
-      !!s.defs[aura.defId]?.subtypes.includes("Aura") &&
-      playerStatic(s, aura.controller, "auraStealsCheaper");
-    if (host?.zone !== "battlefield" || !(s.defs[aura.defId]?.controlsEnchanted || steals)) continue;
-    if (host.controller === aura.controller) continue;
-    if (!(s.auraControl ?? []).some((c) => c.host === host.id && c.aura === id)) {
-      s.auraControl = [...(s.auraControl ?? []), { host: host.id, aura: id, original: host.controller }];
-    }
-    removeFromCombatOf(s, host.id);
-    setController(s, host, aura.controller);
-    changed = true;
-  }
-  if (changed) bump(s);
-  return changed;
-}
-
-function removeFromCombatOf(s: GameState, id: ObjectId): void {
-  if (!s.combat) return;
-  bump(s);
-  s.combat.attackers = s.combat.attackers.filter((a) => a.id !== id);
-  s.combat.blockers = s.combat.blockers.filter((b) => b.id !== id);
-  for (const a of s.combat.attackers) a.blockers = a.blockers.filter((b) => b !== id);
 }
 
 export function answerLegendChoice(s: GameState, keep: ObjectId, options: ObjectId[]): void {

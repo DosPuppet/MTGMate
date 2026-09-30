@@ -108,7 +108,7 @@ Rangés par impact décroissant.
 | 9 | ✅ **Corrigé (R0.1).** **Second partagé :** il interdit aussi les actions spéciales ; on ne peut plus retourner une carte face visible (exéc.) | 702.61b | `engine/src/stack.ts:1698` (avant la branche d'action spéciale), `engine/src/legal.ts:431` | faible |
 | 10 | ✅ **Corrigé (R0.1).** « Vous gagnez / perdez la partie » par un effet ignore « ne peut pas perdre » et « ne peut pas gagner » | 104.3, 104.2 | `engine/src/ops/players.ts:286-293` | faible (Herald of Eternal Dawn) |
 | 11 | ✅ **Corrigé (R0.1).** La protection contre tout prévient les blessures même quand elles « ne peuvent pas être prévenues » | 615 (« ne peuvent pas être prévenues »), 702.16e | `engine/src/actions.ts:262` (testé avant `unpreventable`) | faible |
-| 12 | Un changement de contrôle « jusqu'à la fin du tour » rend le permanent à un contrôleur mémorisé, qui peut être périmé si un autre effet de contrôle a pris fin entre-temps | 613.1b, 613.7 | `engine/src/turn.ts:322-329` | faible |
+| 12 | ✅ **Corrigé (R2.4).** Un changement de contrôle « jusqu'à la fin du tour » rend le permanent à un contrôleur mémorisé, qui peut être périmé si un autre effet de contrôle a pris fin entre-temps | 613.1b, 613.7 | `engine/src/turn.ts:322-329` | faible |
 | 13 | ✅ **Corrigé en partie (R2.2)** : valeur de mana ; les exceptions de copie restent non copiables. La valeur de mana des filtres est lue sur la carte imprimée, même pour une copie ; les exceptions d'une copie (« sauf que c'est un Zombie ») ne sont pas copiables | 707.2, 707.9b | `engine/src/layers.ts:317`, `engine/src/ops/permanents.ts:535` | faible à moyen |
 | 14 | ✅ **Corrigé (R2.1).** `moveWithSpec` ajoute marqueurs et types après l'événement d'arrivée ; les jetons « engagés et attaquants » sont engagés après leur arrivée | 614.1c, 614.12 | `engine/src/effects.ts:610-673`, `engine/src/ops/permanents.ts:133-145` | faible : « chaque fois qu'un Zombie arrive » manqué |
 | 15 | ✅ **Corrigé (R3).** Blessures « réparties » : le partage se fait à la résolution entre les seules cibles encore légales ; la part d'une cible devenue illégale devrait être perdue | 601.2d, 608.2b | `engine/src/ops/damage.ts:59-92` | faible |
@@ -296,6 +296,7 @@ Détail, ordre d'exécution et décisions de conception : `PLAN-R.md`.
 - **30/09/2026 :** lot R0.5 fait : écart 6 corrigé (arrivées simultanées, 603.6a).
 - **30/09/2026 :** lot R4.0 fait (§ 3.3) : un seul accès aux statiques de joueur (N6).
 - **30/09/2026 :** lot R1 fait (§ 3.2) : ordre des remplacements qui modifient un nombre choisi pour le joueur affecté (Artist's Talent et Twinflame Tyrant : 8 blessures, plus 10), toutes les pioches passent par les remplacements (N12).
+- **30/09/2026 :** lot R2.4 fait : écart 12 corrigé (le contrôle est une couche), ainsi que N10.
 - **30/09/2026 :** lot R3 fait : écarts 4 et 15 corrigés (nouvelles cibles d'une copie et garde, répartition annoncée à la mise sur la pile), ainsi que N11 (une copie de sort est un objet sur la pile).
 - **30/09/2026 :** lot R2.3 fait : écart 7 corrigé, et 303.4f / 303.4g (Aura mise en jeu sans être lancée).
 - **30/09/2026 :** lot R2.2 fait : copies de permanents (écart 13 en partie, N7, N8, N9).

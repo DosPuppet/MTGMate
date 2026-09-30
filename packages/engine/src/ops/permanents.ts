@@ -1,6 +1,7 @@
 /** Effets du moteur : modifications de permanents, contrôle, copies et jetons. Chaque clé est un `op` d'`Effect` (voir `runEffect`, effects.ts). */
 
-import { createTokenCopy, createTokens, removeFromCombat } from "../actions";
+import { createTokenCopy, createTokens } from "../actions";
+import { addControlEffect } from "../control";
 import type { OpHandlers } from "../effects";
 import { addEffect, addPump, attach, attackingDefender, evalAmount, exiledUid, nameOf, resolveRef } from "../effects";
 import { copiedDefId } from "../layers";
@@ -16,7 +17,6 @@ import {
   onBattlefield,
   opponentsOf,
   rulesEvent,
-  setController,
 } from "../state";
 import { addPlayerEffect, tokenMultiplier } from "../statics";
 import { matchesCard, matchesObjectFilter } from "../targets";
@@ -465,11 +465,8 @@ export const HANDLERS: OpHandlers = {
     // 701.10 : l'échange n'a lieu que si les deux permanents sont encore là.
     if (oa?.zone !== "battlefield" || ob?.zone !== "battlefield" || oa.controller === ob.controller) return;
     const [ca, cb] = [oa.controller, ob.controller];
-    removeFromCombat(s, oa.id);
-    removeFromCombat(s, ob.id);
-    setController(s, oa, cb);
-    setController(s, ob, ca);
-    bump(s);
+    addControlEffect(s, [oa.id], cb, "permanent");
+    addControlEffect(s, [ob.id], ca, "permanent");
     return;
   },
   gainControlWhileSource(s, _r, e, ctx) {
@@ -477,9 +474,10 @@ export const HANDLERS: OpHandlers = {
     for (const id of resolveRef(s, ctx, e.what)) {
       const o = s.objects[id];
       if (o?.zone !== "battlefield" || o.controller === ctx.controller) continue;
-      s.auraControl = [...(s.auraControl ?? []), { host: id, aura: ctx.sourceId, original: o.controller, by: ctx.controller }];
-      removeFromCombat(s, id);
-      setController(s, o, ctx.controller);
+      addControlEffect(s, [id], ctx.controller, "permanent", {
+        whileSource: ctx.sourceId,
+        whileControlledBy: ctx.controller,
+      });
       if (e.restrict) {
         s.effects.push({
           id: newId(s, "e"),
@@ -504,10 +502,8 @@ export const HANDLERS: OpHandlers = {
     for (const id of resolveRef(s, ctx, e.what)) {
       const o = s.objects[id];
       if (o?.zone !== "battlefield" || o.controller === ctx.controller) continue;
-      s.controlChanges = [...(s.controlChanges ?? []), { id, original: o.controller }];
-      removeFromCombat(s, id);
-      setController(s, o, ctx.controller);
-      bump(s);
+      // Vol « jusqu'à la fin du tour » (Involuntary Employment) : l'effet prend fin au nettoyage (couche 2).
+      addControlEffect(s, [id], ctx.controller, "endOfTurn");
     }
     return;
   },
@@ -517,9 +513,7 @@ export const HANDLERS: OpHandlers = {
     for (const id of resolveRef(s, ctx, e.what)) {
       const o = s.objects[id];
       if (o?.zone !== "battlefield" || o.controller === to) continue;
-      removeFromCombat(s, id);
-      setController(s, o, to);
-      bump(s);
+      addControlEffect(s, [id], to, "permanent");
     }
     return;
   },

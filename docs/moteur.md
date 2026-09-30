@@ -17,6 +17,7 @@ Moteur pur et déterministe (`packages/engine/src`). L'état est sérialisable ;
 | `ops/*.ts` | Les traitements des effets, par domaine : `damage`, `players`, `counters`, `zones`, `spells` (pile, permissions de lancer), `permanents` (modifications, contrôle, copies, jetons), `mana`, `flow` (si, peut, réflexif, retardé). Chaque fichier exporte `HANDLERS: OpHandlers`. |
 | `triggers.ts` | Détection des déclencheurs (`switch (t.on)` sur les `RulesEvent`), doublements de déclenchements, `checkCondition` (`switch (c.kind)`), capacités retardées. |
 | `stack.ts` | Lancer (`castTerms`, `castableFaces`, `castSpell`), coûts, activer (`activateAbility`, `canPayNonManaCost`), résoudre, contrecarrer, jouer un terrain. |
+| `control.ts` | Couche 2 : contrôleur de base (`baseController`), effets de contrôle horodatés (`addControlEffect`), Auras qui donnent le contrôle ; `syncControl` recalcule le contrôleur de chaque permanent (actions basées sur l'état, nettoyage, 800.4a). |
 | `stackChoices.ts` | Copies de sorts et de capacités (`copyStackItem` : une copie de sort est un objet sur la pile) ; choix d'un élément déjà sur la pile, posés avant la priorité (`announceNext`) : nouvelles cibles d'une copie (707.10c), répartition (601.2d, gardée dans `StackItem.division`). |
 | `legal.ts` | `legalActions` : options proposées aux joueurs et à l'IA (doit refléter `stack.ts`). |
 | `layers.ts` | Couches 613 (`chars`, cache par `s.version` → `bump(s)`), `copiedDefId` (face active, copie), `snapshot`/`view` (vue d'un objet pour les filtres). |
