@@ -226,3 +226,7 @@ Lot R0.3 (PLAN-R.md ; `RULES_VERSION` = 4) :
 Lot R0.4 (PLAN-R.md ; `RULES_VERSION` = 5) :
 - lien de vie (119.9, 120.3f) : pendant un lot d'événements simultanés (`simultaneously` : un effet de résolution, les blessures de combat d'une étape, les actions basées sur l'état), les gains d'une même source sont additionnés (`queueLifelink`) et appliqués à la fin du lot, en un seul gain par source. Un piétineur bloqué ne déclenche plus deux fois Ajani's Pridemate ; deux sources avec le lien de vie font deux gains ; la double initiative, un par étape de blessures. Hors lot (capacité de mana), le gain est immédiat ;
 - tests : `engine/test/audit.test.ts` (#2).
+
+Lot R0.5 (PLAN-R.md ; `RULES_VERSION` = 6) :
+- 603.6a : des permanents qui arrivent en même temps (jetons créés ensemble, cartes mises sur le champ de bataille par un même effet) se voient arriver. Chaque arrivée d'un lot `simultaneously` est détectée tout de suite, puis revue à la fin du lot pour les seules sources arrivées après elle (`enterBatch`, option `only` de `detectTriggers`) ; rien ne change pour une arrivée isolée ;
+- tests : `engine/test/audit.test.ts` (#6).

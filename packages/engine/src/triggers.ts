@@ -119,6 +119,12 @@ let batchBefore: Source[] | null = null;
  * fois « chaque fois que vous gagnez des points de vie ».
  */
 let lifelinkBatch: Map<string, { controller: PlayerId; amount: number }> | null = null;
+/**
+ * 603.6a : des permanents qui arrivent en même temps se voient arriver les uns les autres. Chaque arrivée d'un lot est
+ * détectée tout de suite (sources présentes à cet instant), puis revue à la fin du lot pour les sources arrivées après
+ * elle dans le même lot.
+ */
+let enterBatch: { ev: RulesEvent; seen: Set<ObjectId> }[] | null = null;
 
 /** Met de côté un gain de lien de vie jusqu'à la fin du lot en cours ; false s'il n'y a pas de lot (gain immédiat). */
 export function queueLifelink(key: string, controller: PlayerId, amount: number): boolean {
@@ -148,8 +154,13 @@ export function simultaneously<T>(s: GameState, fn: () => T): T {
   if (batchBefore) return fn();
   batchBefore = liveSources(s);
   lifelinkBatch = new Map();
+  enterBatch = [];
   try {
     const result = fn();
+    // Arrivées du lot : les permanents arrivés ensemble se voient arriver (603.6a).
+    const enters = enterBatch;
+    enterBatch = null;
+    for (const { ev, seen } of enters) detectTriggers(s, ev, (src) => !seen.has(src.id));
     // Les gains du lien de vie ont lieu avec les blessures du lot : un par source, dans l'ordre des blessures.
     const gains = lifelinkBatch;
     lifelinkBatch = null;
@@ -158,6 +169,7 @@ export function simultaneously<T>(s: GameState, fn: () => T): T {
   } finally {
     batchBefore = null;
     lifelinkBatch = null;
+    enterBatch = null;
   }
 }
 
@@ -801,7 +813,8 @@ function matchTrigger(s: GameState, ev: RulesEvent, t: TriggerSpec, src: Source)
   }
 }
 
-export function detectTriggers(s: GameState, ev: RulesEvent): void {
+/** `only` : ne regarder que certaines sources (revue des arrivées en fin de lot, 603.6a). */
+export function detectTriggers(s: GameState, ev: RulesEvent, only?: (src: Source) => boolean): void {
   if (s.over) return;
   const leaving = ev.e === "zone" && ev.from === "battlefield";
   let sources: Source[];
@@ -813,7 +826,10 @@ export function detectTriggers(s: GameState, ev: RulesEvent): void {
     }
   } else {
     sources = liveSources(s);
+    if (!only && enterBatch && ev.e === "zone" && ev.to === "battlefield")
+      enterBatch.push({ ev, seen: new Set(sources.map((x) => x.id)) });
   }
+  if (only) sources = sources.filter(only);
   for (const src of sources) {
     (src.view.abilities ?? []).forEach((ab, index) => {
       if (ab.kind !== "triggered") return;

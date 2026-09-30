@@ -11,7 +11,8 @@ Plan établi le 30/09/2026 (branche `dev`) : il sert de feuille de route aux pro
 - **30/09/2026 : R0.2 fait** (`RULES_VERSION` = 3 : taxes payées par les sorts gratuits et options gratuites vérifiées, taxes d'attaque et de blocage cumulées, obligation d'attaquer seulement vers un défenseur sans taxe, `forcedAttacks` pour l'automatisme).
 - **30/09/2026 : R0.3 fait** (`RULES_VERSION` = 4 : nettoyage 514.3a). `tutorial-smoke` : « action hors guide refusée » échoue sur cette machine, déjà avant R0.3 (aucun message après le clic sur la Plaine, qui n'est pas jouée) ; à examiner à part.
 - **30/09/2026 : R0.4 fait** (`RULES_VERSION` = 5 : lien de vie, un gain par source et par lot de blessures simultanées).
-- À faire : R0.5, puis la suite dans l'ordre du tableau ci-dessous.
+- **30/09/2026 : R0.5 fait** (`RULES_VERSION` = 6 : 603.6a). Constat : les parties dorées des versions 1 à 5 se rejouent à l'identique avec le moteur de la version 6 ; elles couvrent le déroulement courant d'une partie, pas les cas corrigés en R0 (que couvrent les tests de `engine/test/audit.test.ts`). Piste : des parties dorées jouées par l'IA moyenne, plus riches.
+- À faire : R0.6, puis la suite dans l'ordre du tableau ci-dessous.
 
 ## Le garde-fou de la dette (lot F2)
 

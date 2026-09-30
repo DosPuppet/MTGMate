@@ -12,8 +12,9 @@ import { bump } from "../src/layers";
 import { legalActions } from "../src/legal";
 import { spellCost } from "../src/stack";
 import { changeCounters, FACE_DOWN_ID } from "../src/state";
+import { simultaneously } from "../src/triggers";
 import { forcedAttacks } from "../src/turn";
-import type { CardDef, GameEvent, GameState } from "../src/types";
+import type { CardDef, GameEvent, GameState, TokenSpec } from "../src/types";
 import { act, advanceUntil, customCard, idOf, idsOf, passBoth, passUntil, scenario } from "./helpers";
 
 const raw = (name: string, typeLine: string, oracleText: string, keywords: string[], manaCost = "{3}{W}"): RawCard => ({
@@ -268,5 +269,29 @@ describe("#2 : lien de vie, un gain de points de vie par source et par lot de bl
     const { s, pridemate } = combat([lifelinker("Double", ["doubleStrike"])], []);
     expect(s.players.p1?.life).toBe(30);
     expect(s.objects[pridemate]?.counters["+1/+1"]).toBe(2);
+  });
+});
+
+describe("#6 : des permanents qui arrivent en même temps se voient arriver (603.6a)", () => {
+  const WATCHER: TokenSpec = {
+    name: "Guetteur",
+    colors: ["W"],
+    types: ["Creature"],
+    subtypes: ["Spirit"],
+    power: 1,
+    toughness: 1,
+    abilities: [triggered(when.enters({ types: ["Creature"], other: true }), [fx.gainLife(1)], { label: "1 PV" })],
+  };
+
+  it("deux jetons créés ensemble : chacun voit l'autre arriver (deux déclenchements)", () => {
+    const s = scenario({});
+    simultaneously(s, () => runEffect(s, resolution("p1") as never, fx.createTokens(WATCHER, 2)));
+    expect(s.triggers.map((t) => t.sourceId).sort()).toEqual(s.battlefield.filter((id) => s.objects[id]?.isToken).sort());
+  });
+
+  it("un jeton qui arrive seul ne se voit pas lui-même", () => {
+    const s = scenario({});
+    simultaneously(s, () => runEffect(s, resolution("p1") as never, fx.createTokens(WATCHER, 1)));
+    expect(s.triggers).toHaveLength(0);
   });
 });
