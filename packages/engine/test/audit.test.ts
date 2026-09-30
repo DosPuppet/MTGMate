@@ -322,3 +322,73 @@ describe("N6 : une seule façon de lire les statiques de joueur (condition véri
     expect(bear?.counters["+1/+1"]).toBe(1);
   });
 });
+
+describe("#14 et #17 : ce qui accompagne une arrivée est en place avant l'événement d'arrivée (614.1c, 614.12, 508.4)", () => {
+  const zombieWatcher = customCard({
+    name: "Guetteur de Zombies",
+    power: 1,
+    toughness: 1,
+    abilities: [triggered(when.enters({ subtype: "Zombie" }), [fx.gainLife(2)], { label: "2 PV" })],
+  });
+
+  it("une créature remise en jeu « en tant que Zombie en plus » déclenche « chaque fois qu'un Zombie arrive »", () => {
+    const s = scenario({ p1: { battlefield: [zombieWatcher], graveyard: ["Bear Cub"] } });
+    const bear = idOf(s, "p1", "graveyard", "Bear Cub");
+    const r = { ...resolution("p1"), targets: { t: [bear] } };
+    simultaneously(s, () =>
+      runEffect(
+        s,
+        r as never,
+        fx.moveTo(ref.target(), { to: "battlefield", addSubtypes: ["Zombie"], counters: { kind: "+1/+1", n: 1 } }),
+      ),
+    );
+    expect(s.triggers.map((t) => s.defs[t.sourceDefId]?.name)).toContain("Guetteur de Zombies");
+    const back = idOf(s, "p1", "battlefield", "Bear Cub");
+    expect(s.objects[back]?.counters["+1/+1"]).toBe(1);
+  });
+
+  it("un jeton créé engagé ne « devient » pas engagé", () => {
+    const tapWatcher: TokenSpec = {
+      name: "Sentinelle",
+      colors: ["W"],
+      types: ["Creature"],
+      subtypes: ["Soldier"],
+      power: 1,
+      toughness: 1,
+      abilities: [triggered(when.tapsSelf, [fx.gainLife(1)], { label: "1 PV" })],
+    };
+    const s = scenario({});
+    simultaneously(s, () =>
+      runEffect(s, resolution("p1") as never, { op: "createTokens", token: tapWatcher, count: 1, tapped: true }),
+    );
+    const token = s.battlefield.find((id) => s.objects[id]?.isToken) as string;
+    expect(s.objects[token]?.tapped).toBe(true);
+    expect(s.triggers).toHaveLength(0);
+  });
+
+  it("à plusieurs adversaires, le contrôleur choisit ce qu'attaquent les jetons « engagés et attaquants »", () => {
+    let s = scenario({ players: 3, p1: { battlefield: ["Bear Cub"] } });
+    s = passUntil(s, (x) => x.pending?.kind === "declareAttackers");
+    const bear = idOf(s, "p1", "battlefield", "Bear Cub");
+    s = act(s, "p1", { type: "declareAttackers", attackers: [{ id: bear, defender: "p2" }] });
+    const soldier: TokenSpec = {
+      name: "Soldat",
+      colors: ["W"],
+      types: ["Creature"],
+      subtypes: ["Soldier"],
+      power: 1,
+      toughness: 1,
+    };
+    const r = { ...resolution("p1", { id: bear, defId: s.objects[bear]?.defId as string }), vars: {} as Record<string, unknown> };
+    const effect = { op: "createTokens", token: soldier, count: 1, tapped: true, attacking: true } as const;
+    const asked = runEffect(s, r as never, effect as never) as {
+      ask?: { key: string; request: { options: string[]; suggested: string[] } };
+    };
+    expect(asked?.ask?.request.options.sort()).toEqual(["p2", "p3"]);
+    expect(asked?.ask?.request.suggested).toEqual(["p2"]);
+    r.vars[asked?.ask?.key ?? ""] = ["p3"];
+    runEffect(s, r as never, effect as never);
+    const token = s.battlefield.find((id) => s.objects[id]?.isToken) as string;
+    expect(s.combat?.attackers.find((a) => a.id === token)?.defender).toBe("p3");
+  });
+});

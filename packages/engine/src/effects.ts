@@ -607,11 +607,22 @@ export function moveWithSpec(s: GameState, controller: PlayerId, id: ObjectId, s
   const zone: Zone = spec.to === "libraryTop" || spec.to === "libraryBottom" ? "library" : (spec.to as Zone);
   emit({ type: "moved", owner: o.owner, objectId: id, defId: o.defId, from: o.zone, to: zone });
   if (o.zone === "battlefield") removeFromCombat(s, id);
+  const newController = spec.to === "battlefield" ? (spec.underYourControl ? controller : o.owner) : undefined;
+  const mods = { addTypes: spec.addTypes, addSubtypes: spec.addSubtypes, addKeywords: spec.addKeywords };
   const newId_ = moveObject(s, id, zone, {
-    controller: spec.to === "battlefield" ? (spec.underYourControl ? controller : o.owner) : undefined,
+    controller: newController,
     position: spec.to === "libraryBottom" ? "bottom" : "top",
     transformed: spec.transformed,
     tapped: spec.tapped || spec.attacking,
+    // Marqueurs, types et attaque : en place avant l'événement d'arrivée (614.1c, 614.12, 508.4).
+    enters:
+      spec.to === "battlefield"
+        ? {
+            counters: spec.counters ? [spec.counters] : undefined,
+            mods: { ...mods, setTypes: spec.setTypes, setSubtypes: spec.setSubtypes },
+            attacking: spec.attacking && s.combat ? attackingDefender(s, newController ?? o.owner) : undefined,
+          }
+        : undefined,
   });
   // « … N-ième depuis le dessus de la bibliothèque » (Riptide Gearhulk).
   if (newId_ && spec.to === "libraryTop" && spec.fromTop && spec.fromTop > 1) {
@@ -626,53 +637,19 @@ export function moveWithSpec(s: GameState, controller: PlayerId, id: ObjectId, s
   const moved = newId_ ? s.objects[newId_] : undefined;
   // Marqueurs sur une carte exilée (« exilez-la avec un marqueur de butin », Tinybones).
   if (moved && zone === "exile" && spec.counters) changeCounters(s, moved, spec.counters.kind, spec.counters.n);
-  if (!moved || zone !== "battlefield") return newId_;
-  // « Engagé » : une statique peut en dépendre (The Wandering Rescuer), la version d'état avance.
-  if (spec.tapped || spec.attacking) {
-    moved.tapped = true;
-    bump(s);
-  }
-  // The Wandering Minstrel : les terrains arrivent dégagés, même mis en jeu engagés par un effet.
-  if (
-    moved.tapped &&
-    !spec.attacking &&
-    s.defs[moved.defId]?.types.includes("Land") &&
-    playerStatic(s, moved.controller, "landsEnterUntapped")
-  )
-    moved.tapped = false;
-  if (spec.attacking && s.combat) {
-    // 508.4 : il attaque sans avoir été déclaré ; il attaque ce qu'attaque une créature de son contrôleur.
-    const defender =
-      s.combat.attackers.find((a) => s.objects[a.id]?.controller === moved.controller)?.defender ??
-      opponentsOf(s, moved.controller)[0] ??
-      "";
-    s.combat.attackers.push({ id: moved.id, defender, blockers: [], blocked: false });
-    bump(s); // statiques « créatures attaquantes »
-  }
-  // « … sur le champ de bataille transformée » : le verso d'une carte recto-verso transformable.
-  const back = s.defs[moved.defId]?.layout === "transform" ? s.defs[moved.defId]?.faceDefs?.[1] : undefined;
-  // Le verso est fixé par `moveObject` avant les déclencheurs d'arrivée (712.14) ; une Saga au verso (FIN) a reçu son
-  // marqueur de savoir par les remplacements d'arrivée (714.3a).
-  if (spec.transformed && back) {
-    moved.faceDefId = back.id;
-    bump(s);
-  }
-  if (spec.counters) changeCounters(s, moved, spec.counters.kind, spec.counters.n);
-  if (spec.addTypes || spec.addSubtypes || spec.addKeywords || spec.setTypes || spec.setSubtypes) {
-    addEffect(
-      s,
-      [moved.id],
-      {
-        addTypes: spec.addTypes,
-        addSubtypes: spec.addSubtypes,
-        addKeywords: spec.addKeywords,
-        setTypes: spec.setTypes,
-        setSubtypes: spec.setSubtypes,
-      },
-      "permanent",
-    );
-  }
+  // Le verso (712.14), l'état engagé, les marqueurs, les types et l'attaque sont posés par `moveObject` avant l'événement
+  // d'arrivée (voir `EntersContext`).
   return newId_;
+}
+
+/**
+ * 508.4 : défenseur d'un permanent mis sur le champ de bataille attaquant, faute de choix : ce qu'attaque une créature de
+ * son contrôleur, sinon son premier adversaire.
+ */
+export function attackingDefender(s: GameState, controller: PlayerId): string {
+  return (
+    s.combat?.attackers.find((a) => s.objects[a.id]?.controller === controller)?.defender ?? opponentsOf(s, controller)[0] ?? ""
+  );
 }
 
 /** Peut-on attacher cette Aura ou cet Équipement à ce permanent ? (301.5c, 303.4d) */

@@ -2,7 +2,7 @@
 
 import { createTokenCopy, createTokens, removeFromCombat } from "../actions";
 import type { OpHandlers } from "../effects";
-import { addEffect, addPump, attach, evalAmount, exiledUid, nameOf, resolveRef } from "../effects";
+import { addEffect, addPump, attach, attackingDefender, evalAmount, exiledUid, nameOf, resolveRef } from "../effects";
 import { copiedDefId } from "../layers";
 import {
   bump,
@@ -17,11 +17,11 @@ import {
   opponentsOf,
   rulesEvent,
   setController,
-  tapObject,
 } from "../state";
 import { addPlayerEffect, tokenMultiplier } from "../statics";
 import { matchesCard, matchesObjectFilter } from "../targets";
 import { createDelayed } from "../triggers";
+import { attackableDefenders } from "../turn";
 import type { Color } from "../types";
 
 export const HANDLERS: OpHandlers = {
@@ -123,26 +123,41 @@ export const HANDLERS: OpHandlers = {
     bump(s);
     return;
   },
-  createTokens(s, r, e, ctx) {
+  createTokens(s, r, e, ctx, key) {
     const n = evalAmount(s, ctx, e.count);
     const created: string[] = [];
     const pt = e.pt !== undefined ? evalAmount(s, ctx, e.pt) : undefined;
     const token = pt === undefined ? e.token : { ...e.token, power: pt, toughness: pt };
-    for (const p of e.for ? resolveRef(s, ctx, e.for).filter((x) => isPlayer(s, x)) : [ctx.controller])
-      created.push(...createTokens(s, p, token, n));
-    if (e.tapped || e.attacking) {
-      for (const id of created) {
-        const o = s.objects[id];
-        if (o) o.tapped = true;
-      }
-      bump(s);
-    }
+    // 508.4 : des jetons « engagés et attaquants » attaquent sans avoir été déclarés ; leur contrôleur choisit ce qu'ils
+    // attaquent (par défaut, ce qu'attaque la source, sinon son premier adversaire).
+    let attacking: string | undefined;
     if (e.attacking && s.combat) {
-      // 508.4 : ils attaquent sans avoir été déclarés (pas de déclencheur « attaque »).
-      const defender = s.combat.attackers.find((a) => a.id === ctx.sourceId)?.defender ?? opponentsOf(s, ctx.controller)[0] ?? "";
-      for (const id of created) s.combat.attackers.push({ id, defender, blockers: [], blocked: false });
-      bump(s);
+      const suggested = s.combat.attackers.find((a) => a.id === ctx.sourceId)?.defender ?? attackingDefender(s, ctx.controller);
+      const options = attackableDefenders(s, ctx.controller);
+      const answer = r.vars[key("defender")];
+      if (options.length > 1 && !answer) {
+        return {
+          ask: {
+            player: ctx.controller,
+            key: key("defender"),
+            request: {
+              type: "pick",
+              intent: "other",
+              prompt: "Que doivent attaquer les jetons ?",
+              options,
+              min: 1,
+              max: 1,
+              suggested: [options.includes(suggested) ? suggested : (options[0] as string)],
+              autoOk: true,
+            },
+          },
+        };
+      }
+      attacking = answer ? String(answer[0]) : suggested;
     }
+    const enters = { tapped: !!(e.tapped || e.attacking), attacking };
+    for (const p of e.for ? resolveRef(s, ctx, e.for).filter((x) => isPlayer(s, x)) : [ctx.controller])
+      created.push(...createTokens(s, p, token, n, true, enters));
     if (e.store) r.vars[`$ids:${e.store}`] = created;
     return;
   },
@@ -221,15 +236,18 @@ export const HANDLERS: OpHandlers = {
         model?.zone === "battlefield" ? chars(s, id).types.includes("Creature") : !!s.defs[defId]?.types.includes("Creature");
       const n = base * tokenMultiplier(s, ctx.controller, creature || !!e.addTypes?.includes("Creature"));
       for (let i = 0; i < n; i++) {
-        const token = createTokenCopy(s, ctx.controller, defId);
-        const tok = s.objects[token];
-        if (e.tapped && tok) tapObject(s, tok);
-        if (e.addTypes?.length) addEffect(s, [token], { addTypes: e.addTypes }, "permanent");
-        if (e.addKeywords?.length) addEffect(s, [token], { addKeywords: e.addKeywords }, "permanent");
-        if (e.addSubtypes?.length) addEffect(s, [token], { addSubtypes: e.addSubtypes }, "permanent");
-        if (e.legendary) addEffect(s, [token], { addSupertypes: ["Legendary"] }, "permanent");
-        if (e.addAbilities?.length) addEffect(s, [token], { addAbilities: e.addAbilities }, "permanent");
-        if (e.pt !== undefined) addEffect(s, [token], { setPower: e.pt, setToughness: e.pt }, "permanent");
+        // Engagé, types, capacités et F/E en place avant l'événement d'arrivée (pas de « devient engagé »).
+        const token = createTokenCopy(s, ctx.controller, defId, {
+          tapped: !!e.tapped,
+          mods: {
+            addTypes: e.addTypes?.length ? e.addTypes : undefined,
+            addKeywords: e.addKeywords?.length ? e.addKeywords : undefined,
+            addSubtypes: e.addSubtypes?.length ? e.addSubtypes : undefined,
+            addSupertypes: e.legendary ? ["Legendary"] : undefined,
+            addAbilities: e.addAbilities?.length ? e.addAbilities : undefined,
+            ...(e.pt !== undefined ? { setPower: e.pt, setToughness: e.pt } : {}),
+          },
+        });
         // Firion : des capacités d'Équiper moins chères (ajoutées ; la moins chère sera utilisée).
         if (e.equipDiscount) {
           const equips = (s.defs[defId]?.abilities ?? []).flatMap((ab) =>

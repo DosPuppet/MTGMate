@@ -6,7 +6,7 @@
 
 import { canForage, createTokenCopy, forage, loseLife, removeFromCombat, sacrifice as sacrificePermanent } from "./actions";
 import { ask } from "./choices";
-import { addEffect, announceDiscard, announceDiscardBatch, evalAmount, moveWithSpec, runEffect } from "./effects";
+import { announceDiscard, announceDiscardBatch, evalAmount, moveWithSpec, runEffect } from "./effects";
 import { RulesError, rethrowAsRules } from "./errors";
 import { copiedDefId } from "./layers";
 import { costToText, manaValue, payMana, totalCost } from "./mana";
@@ -2125,17 +2125,16 @@ function finishResolution(
           copyOf: vars.$copyOf?.[0] !== undefined ? String(vars.$copyOf[0]) : undefined,
           spentColors: item.spentColors,
           evoked: item.evoked,
+          // Marqueurs, célérité et sous-types d'arrivée (Torgal, Summon: Fenrir, Noctis), Imminence : avant l'événement.
+          counters: item.arrival?.counters,
+          haste: item.arrival?.haste,
+          mods: item.arrival?.subtypes ? { addSubtypes: item.arrival.subtypes } : undefined,
+          impending: item.impending ? (d.impending ?? 0) : undefined,
         },
       });
       const arrived = enteredId ? s.objects[enteredId] : undefined;
       if (arrived && item.manaSpent !== undefined) arrived.manaSpent = item.manaSpent;
       if (arrived && item.caveMana) arrived.caveMana = item.caveMana;
-      // Marqueurs et célérité à l'arrivée (Torgal, Summon: Fenrir, Summon: Brynhildr, Noctis).
-      if (arrived && item.arrival) {
-        for (const c of item.arrival.counters ?? []) changeCounters(s, arrived, c.kind, c.n);
-        if (item.arrival.haste) addEffect(s, [arrived.id], { addKeywords: ["haste"] }, "endOfTurn");
-        if (item.arrival.subtypes) addEffect(s, [arrived.id], { addSubtypes: item.arrival.subtypes }, "permanent");
-      }
       if (arrived && item.x) arrived.castX = item.x;
       // Mimeoplasm : les cartes exilées en arrivant sont liées au permanent.
       if (arrived && vars["$ids:devoured"]?.length)
@@ -2146,11 +2145,6 @@ function finishResolution(
       const copied = vars.$copyCard?.[0];
       if (arrived && copied !== undefined && s.objects[String(copied)]?.zone === "graveyard")
         moveObject(s, String(copied), "exile");
-      // Imminence (702.176a) : il arrive avec N marqueurs de temps et n'est pas une créature tant qu'il en a.
-      if (item.impending && arrived) {
-        arrived.impending = true;
-        changeCounters(s, arrived, "time", s.defs[arrived.defId]?.impending ?? 0);
-      }
       // Distorsion : exilé au début de la prochaine étape de fin.
       if (item.warped && arrived) {
         arrived.warped = true;

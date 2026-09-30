@@ -110,10 +110,10 @@ Rangés par impact décroissant.
 | 11 | ✅ **Corrigé (R0.1).** La protection contre tout prévient les blessures même quand elles « ne peuvent pas être prévenues » | 615 (« ne peuvent pas être prévenues »), 702.16e | `engine/src/actions.ts:262` (testé avant `unpreventable`) | faible |
 | 12 | Un changement de contrôle « jusqu'à la fin du tour » rend le permanent à un contrôleur mémorisé, qui peut être périmé si un autre effet de contrôle a pris fin entre-temps | 613.1b, 613.7 | `engine/src/turn.ts:322-329` | faible |
 | 13 | La valeur de mana des filtres est lue sur la carte imprimée, même pour une copie ; les exceptions d'une copie (« sauf que c'est un Zombie ») ne sont pas copiables | 707.2, 707.9b | `engine/src/layers.ts:317`, `engine/src/ops/permanents.ts:535` | faible à moyen |
-| 14 | `moveWithSpec` ajoute marqueurs et types après l'événement d'arrivée ; les jetons « engagés et attaquants » sont engagés après leur arrivée | 614.1c, 614.12 | `engine/src/effects.ts:610-673`, `engine/src/ops/permanents.ts:133-145` | faible : « chaque fois qu'un Zombie arrive » manqué |
+| 14 | ✅ **Corrigé (R2.1).** `moveWithSpec` ajoute marqueurs et types après l'événement d'arrivée ; les jetons « engagés et attaquants » sont engagés après leur arrivée | 614.1c, 614.12 | `engine/src/effects.ts:610-673`, `engine/src/ops/permanents.ts:133-145` | faible : « chaque fois qu'un Zombie arrive » manqué |
 | 15 | Blessures « réparties » : le partage se fait à la résolution entre les seules cibles encore légales ; la part d'une cible devenue illégale devrait être perdue | 601.2d, 608.2b | `engine/src/ops/damage.ts:59-92` | faible |
 | 16 | ✅ **Corrigé (R0.1).** Une créature qui cesse d'être une créature (Véhicule, terrain animé) reste au combat | 506.4 | `engine/src/turn.ts:510-513` | faible |
-| 17 | Les créatures mises en jeu attaquantes reçoivent leur défenseur d'office | 508.4 | `engine/src/ops/permanents.ts:139-143` | multijoueur seulement |
+| 17 | ✅ **Corrigé (R2.1).** Les créatures mises en jeu attaquantes reçoivent leur défenseur d'office | 508.4 | `engine/src/ops/permanents.ts:139-143` | multijoueur seulement |
 
 ### 3.2 Écarts structurels, toujours présents
 
@@ -295,6 +295,7 @@ Détail, ordre d'exécution et décisions de conception : `PLAN-R.md`.
 - **30/09/2026 :** lot R0.4 fait : écart 2 corrigé (lien de vie).
 - **30/09/2026 :** lot R0.5 fait : écart 6 corrigé (arrivées simultanées, 603.6a).
 - **30/09/2026 :** lot R4.0 fait (§ 3.3) : un seul accès aux statiques de joueur (N6).
+- **30/09/2026 :** lot R2.1 fait : écarts 14 et 17 corrigés (ce qui accompagne une arrivée est en place avant l'événement d'arrivée ; défenseur des jetons attaquants au choix).
 - **30/09/2026 :** lot R0.6 fait (§ 4) : poison affiché, cartes révélées et poison au journal, abandon confirmé, noms de cartes des invites en français. R0 terminé.
 
 ### R0 — Corrections simples (un lot, un test de règles par correction)

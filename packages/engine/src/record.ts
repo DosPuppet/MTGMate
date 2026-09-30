@@ -25,8 +25,10 @@ export const RECORD_VERSION = 1;
  * - 5 : lien de vie, un gain par source et par lot de blessures simultanées (R0.4).
  * - 6 : des permanents qui arrivent en même temps se voient arriver (603.6a, R0.5).
  * - 7 : accès unique aux statiques de joueur, conditions et effets sur les joueurs respectés partout (R4.0).
+ * - 8 : marqueurs, types, état engagé, attaque, célérité et Imminence posés avant l'événement d'arrivée ; défenseur des
+ *   jetons attaquants au choix (R2.1).
  */
-export const RULES_VERSION = 7;
+export const RULES_VERSION = 8;
 
 /** Un point de contrôle toutes les N décisions (plus la dernière de la partie). */
 export const CHECKPOINT_EVERY = 25;

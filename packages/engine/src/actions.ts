@@ -2,7 +2,7 @@
  * Actions de jeu élémentaires, partagées par les effets, le combat et les actions basées sur l'état.
  */
 
-import { applyEntersReplacements, preventsCombatDamage } from "./replacement";
+import { applyEntersReplacements, type EntersContext, preventsCombatDamage } from "./replacement";
 import {
   bump,
   changeCounters,
@@ -446,7 +446,15 @@ export function tokenDefId(t: TokenSpec): string {
   return `token:${t.name.toLowerCase().replace(/\W+/g, "-")}-${t.power ?? "x"}-${t.toughness ?? "x"}-${t.colors.join("")}${kw ? `-${kw}` : ""}`;
 }
 
-export function createTokens(s: GameState, controller: PlayerId, t: TokenSpec, count: number, extras = true): ObjectId[] {
+/** `enters` : modifications d'arrivée imposées par l'effet (engagés, attaquants, marqueurs), avant l'événement d'arrivée. */
+export function createTokens(
+  s: GameState,
+  controller: PlayerId,
+  t: TokenSpec,
+  count: number,
+  extras = true,
+  enters: EntersContext = {},
+): ObjectId[] {
   // Draconic Visitor : les jetons d'artefact deviennent des Dragons 5/5 volants.
   if (t.types.includes("Artifact")) {
     const replacement = playerStatics(s, controller, "replaceArtifactTokens").find(({ ab }) => !!ab.replaceArtifactTokens)?.ab
@@ -506,7 +514,7 @@ export function createTokens(s: GameState, controller: PlayerId, t: TokenSpec, c
     const o = createObject(s, defId, controller, "battlefield", { isToken: true });
     o.timestamp = nextTimestamp(s);
     // Remplacements d'arrivée des autres permanents (« chaque créature que vous contrôlez arrive avec… »).
-    applyEntersReplacements(s, o, {});
+    applyEntersReplacements(s, o, enters);
     emit({ type: "token", objectId: o.id, defId, controller });
     rulesEvent(s, { e: "zone", oldId: null, newId: o.id, from: null, to: "battlefield", lki: null });
     created.push(o.id);
@@ -522,10 +530,10 @@ export function createTokens(s: GameState, controller: PlayerId, t: TokenSpec, c
 }
 
 /** Jeton copie d'une carte : mêmes valeurs copiables (sa définition), mais c'est un jeton (707.2). */
-export function createTokenCopy(s: GameState, controller: PlayerId, defId: string): ObjectId {
+export function createTokenCopy(s: GameState, controller: PlayerId, defId: string, enters: EntersContext = {}): ObjectId {
   const o = createObject(s, defId, controller, "battlefield", { isToken: true });
   o.timestamp = nextTimestamp(s);
-  applyEntersReplacements(s, o, {});
+  applyEntersReplacements(s, o, enters);
   emit({ type: "token", objectId: o.id, defId, controller });
   rulesEvent(s, { e: "zone", oldId: null, newId: o.id, from: null, to: "battlefield", lki: null });
   return o.id;

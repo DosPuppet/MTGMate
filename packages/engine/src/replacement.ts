@@ -17,7 +17,7 @@ import { controlledAbilitiesWithSource, playerStatic } from "./statics";
 import { matchesCard, matchesObjectFilter, withChosen } from "./targets";
 import { checkCondition } from "./triggers";
 import { countTurnEvents } from "./turnlog";
-import type { Amount, Color, GameObject, GameState, ObjectId, PlayerId, TokenSpec, Zone } from "./types";
+import type { Amount, Color, GameObject, GameState, LayerMods, ObjectId, PlayerId, TokenSpec, Zone } from "./types";
 
 /** Contexte d'arrivée sur le champ de bataille (valeur de X, kicker du sort qui arrive). */
 export interface EntersContext {
@@ -43,6 +43,19 @@ export interface EntersContext {
   /** Mana dépensé par type et évocation : lus par les conditions des capacités d'arrivée (Deceit). */
   spentColors?: GameObject["spentColors"];
   evoked?: boolean;
+  /**
+   * Modifications d'arrivée imposées par l'effet qui le met sur le champ de bataille (614.1c, 614.12) : elles sont en
+   * place avant l'événement d'arrivée, que les déclencheurs voient donc (« chaque fois qu'un Zombie arrive »).
+   */
+  tapped?: boolean;
+  /** 508.4 : arrive attaquant ce joueur ou ce planeswalker (sans avoir été déclaré attaquant). */
+  attacking?: string;
+  counters?: { kind: string; n: number }[];
+  mods?: LayerMods;
+  /** Célérité jusqu'à la fin du tour (Summon: Fenrir). */
+  haste?: boolean;
+  /** Imminence (702.176a) : N marqueurs de temps ; ce n'est pas une créature tant qu'il en a. */
+  impending?: number;
 }
 
 /**
@@ -208,6 +221,25 @@ export function applyEntersReplacements(s: GameState, o: GameObject, ctx: Enters
   if (ctx.spentColors) o.spentColors = ctx.spentColors;
   if (ctx.evoked) o.evoked = true;
   if (ctx.attachTo) o.attachedTo = ctx.attachTo;
+  // Modifications imposées par l'effet qui le met sur le champ de bataille, avant les autres remplacements (qui peuvent
+  // dépendre des types ajoutés) et avant l'événement d'arrivée.
+  if (ctx.tapped) o.tapped = true;
+  if (ctx.impending) o.impending = true;
+  if (ctx.mods && Object.values(ctx.mods).some((v) => v !== undefined)) {
+    s.effects.push({ id: newId(s, "e"), timestamp: nextTimestamp(s), affected: [o.id], duration: "permanent", ...ctx.mods });
+    s.version += 1;
+  }
+  if (ctx.haste) {
+    s.effects.push({
+      id: newId(s, "e"),
+      timestamp: nextTimestamp(s),
+      affected: [o.id],
+      duration: "endOfTurn",
+      addKeywords: ["haste"],
+    });
+    s.version += 1;
+  }
+  if (ctx.attacking && s.combat) s.combat.attackers.push({ id: o.id, defender: ctx.attacking, blockers: [], blocked: false });
   // 614.12 : « en arrivant, choisissez… » (le choix vient de la résolution, sinon choix par défaut).
   const choose = s.defs[o.defId]?.chooseOnEnter;
   if (choose) o.chosen = ctx.chosen ?? defaultChoice(s, o, choose);
@@ -244,6 +276,9 @@ export function applyEntersReplacements(s: GameState, o: GameObject, ctx: Enters
   // 306.5b : un planeswalker arrive avec sa loyauté imprimée.
   const loyalty = s.defs[o.defId]?.loyalty;
   if (loyalty) changeCounters(s, o, "loyalty", loyalty);
+  // Marqueurs imposés par l'effet (« avec un marqueur +1/+1 », Imminence) : mis en arrivant (122.6).
+  for (const c of ctx.counters ?? []) changeCounters(s, o, c.kind, c.n);
+  if (ctx.impending) changeCounters(s, o, "time", ctx.impending);
   // Remplacements portés par d'autres permanents (« les créatures de vos adversaires arrivent engagées »).
   for (const id of s.battlefield) {
     const src = s.objects[id];

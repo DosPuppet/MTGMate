@@ -14,7 +14,8 @@ Plan établi le 30/09/2026 (branche `dev`) : il sert de feuille de route aux pro
 - **30/09/2026 : R0.5 fait** (`RULES_VERSION` = 6 : 603.6a). Constat : les parties dorées des versions 1 à 5 se rejouent à l'identique avec le moteur de la version 6 ; elles couvrent le déroulement courant d'une partie, pas les cas corrigés en R0 (que couvrent les tests de `engine/test/audit.test.ts`). Piste : des parties dorées jouées par l'IA moyenne, plus riches.
 - **30/09/2026 : R0.6 fait** (sans changement de règles : poison affiché, cartes révélées et poison au journal, abandon confirmé, noms de cartes des invites du moteur dans la langue de l'interface par `cardRef`). **R0 terminé.**
 - **30/09/2026 : R4.0 fait** (`RULES_VERSION` = 7 : `playerStatics(s, p, clé)`, seul accès aux statiques de joueur ; 23 lectures directes migrées ; conditions des doubleurs vérifiées ; bench inchangé).
-- À faire : R2.1, puis la suite dans l'ordre du tableau ci-dessous.
+- **30/09/2026 : R2.1 fait** (`RULES_VERSION` = 8 : `EntersContext` porte l'état engagé, l'attaque, les marqueurs, les modifications de couches, la célérité et l'Imminence, posés avant l'événement d'arrivée par `moveWithSpec`, la création de jetons, `copyToken` et la résolution d'un sort de permanent ; défenseur des jetons attaquants au choix).
+- À faire : R2.2, puis la suite dans l'ordre du tableau ci-dessous.
 
 ## Le garde-fou de la dette (lot F2)
 
@@ -151,6 +152,12 @@ Lus dans le code ; chacun est confirmé par un test au début de son lot.
   - `EntersContext` (`replacement.ts:23-46`) reçoit `tapped`, `attacking` (défenseur), `counters` et `mods`, appliqués avant l'événement d'arrivée ;
   - `moveWithSpec`, `createTokens`, `copyToken` et `StackItem.arrival` passent par lui (#14) ;
   - 508.4 : le défenseur d'un jeton attaquant est demandé (#17).
+
+  **R2.1 réalisé ✅ :**
+  - `EntersContext` (`replacement.ts`) : `tapped`, `attacking`, `counters`, `mods` (tout `LayerMods`), `haste`, `impending`, appliqués au début d'`applyEntersReplacements`, donc avant les autres remplacements d'arrivée et avant l'événement d'arrivée ;
+  - y passent : `moveWithSpec` (plus rien n'est ajouté après coup), `createTokens(…, enters)`, `createTokenCopy(…, enters)` et `copyToken` (plus d'événement « devient engagé » pour un jeton créé engagé : c'était N8 en partie), la résolution d'un sort de permanent (`arrival` de Torgal, Summon: Fenrir, Noctis ; Imminence, qui n'est plus une créature au moment de l'arrivée) ;
+  - 508.4 : l'opération « créer des jetons engagés et attaquants » demande le défenseur s'il y en a plusieurs (`autoOk`, suggestion : ce qu'attaque la source) ; ailleurs (`moveWithSpec` attaquant), choix automatique `attackingDefender` ;
+  - tests : `engine/test/audit.test.ts` (#14, #17, jeton créé engagé).
 - **R2.2 [règles] :**
   - valeur de mana par `copiedDefId` (#13) ;
   - `applyEntersReplacements` lit la carte copiée (N7) ;

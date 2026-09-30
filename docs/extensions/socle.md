@@ -243,3 +243,9 @@ Lot R4.0 (PLAN-R.md ; `RULES_VERSION` = 7) :
 - `playerStatics(s, p, clé)` : seul accès aux statiques de joueur (condition vérifiée, effets sur le joueur `s.playerEffects` compris) ; `playerStatic` et `playerStaticTotal` reposent dessus. Les lectures qui filtraient `controlledAbilitiesWithSource` à la main (Leyline of Mutation, Valley Floodcaller, Boom Scholar, Mutagen Man, Tannuk, Noctis, Festival of Embers, Doc Aurlock, Inquisitive Glimmer, Angel of Vitality, Artist's Talent, Ojer Axonil, Valley Flamecaller, Draconic Visitor, Worldwalker Helm, Moonlit Meditation, Quina, Bloodletter of Aclazotz, Ultima, Traveling Chocobo, The Water Crystal, The Lunar Whale) y passent : un effet « ce tour-ci » (`fx.thisTurn`) de ces clés s'applique désormais, et leur condition est respectée ;
 - les doubleurs vérifient leur condition (`doublers`, `counterDoublers`) ;
 - tests : `engine/test/audit.test.ts` (N6).
+
+Lot R2.1 (PLAN-R.md ; `RULES_VERSION` = 8) :
+- ce qu'impose l'effet qui met un permanent sur le champ de bataille est en place avant l'événement d'arrivée (614.1c, 614.12) : `EntersContext` porte `tapped`, `attacking` (508.4), `counters`, `mods` (modifications de couches permanentes), `haste` (jusqu'à la fin du tour) et `impending` (Imminence) ; `applyEntersReplacements` les applique d'abord ;
+- `moveWithSpec`, `createTokens`, `createTokenCopy`, `copyToken` et la résolution d'un sort de permanent (`StackItem.arrival`) passent par lui : « chaque fois qu'un Zombie arrive » voit une créature remise en jeu en Zombie, un jeton créé engagé ne déclenche pas « devient engagé », un permanent imminent n'arrive pas en créature ;
+- jetons « engagés et attaquants » : le défenseur est demandé s'il y en a plusieurs (sinon, ou hors de cette opération, `attackingDefender`) ;
+- tests : `engine/test/audit.test.ts` (#14, #17).
