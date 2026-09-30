@@ -1636,6 +1636,28 @@ button {
   color: var(--dim);
   margin-bottom: 8px;
 }
+/* Accueil : une catégorie de decks à la fois. */
+.deck-categories {
+  display: inline-flex;
+  flex-wrap: wrap;
+  margin-bottom: 10px;
+}
+.deck-categories button {
+  padding: 6px 12px;
+  font-size: 13px;
+}
+.deck-category-count {
+  opacity: 0.6;
+  font-size: 0.85em;
+  margin-left: 2px;
+}
+.deck-empty {
+  padding: 16px;
+  border: 1px dashed var(--line);
+  border-radius: 12px;
+  color: var(--dim);
+  margin-bottom: 8px;
+}
 .deck-list {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));

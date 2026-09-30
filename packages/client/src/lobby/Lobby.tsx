@@ -19,15 +19,56 @@ export function deckStatus(d: DeckList): { ok: boolean; reason?: string; format:
   return { ok: true, format };
 }
 
+/** Catégories de decks de l'accueil : préconstruits par famille, puis ceux du joueur. */
+const CATEGORIES = [
+  { key: "welcome", label: "Débutant (bienvenue)" },
+  { key: "fin", label: "Final Fantasy" },
+  { key: "meta", label: "Méta Standard" },
+  { key: "mine", label: "Vos decks" },
+] as const;
+type Category = (typeof CATEGORIES)[number]["key"];
+
+/** Catégorie d'un deck, d'après son identifiant (préconstruits) ; les decks du joueur vont dans « Vos decks ». */
+export function deckCategory(d: DeckList): Category {
+  if (!d.builtin) return "mine";
+  if (d.id.startsWith("fin-")) return "fin";
+  if (d.id.startsWith("meta-")) return "meta";
+  return "welcome";
+}
+
 export function DeckChoice({ label, value, onChange }: { label: string; value: string; onChange: (id: string) => void }) {
   const decks = useAllDecks();
   useRelayActive(); // illustrations des decks relayées si Scryfall est bloqué
   const openDeckBuilder = useGame((s) => s.openDeckBuilder);
+  // Une catégorie à la fois ; au départ, celle du deck choisi.
+  const chosen = decks.find((d) => d.id === value);
+  const [category, setCategory] = useState<Category>(chosen ? deckCategory(chosen) : "welcome");
+  const shown = decks.filter((d) => deckCategory(d) === category);
   return (
     <div className="deck-choice">
       <div className="deck-choice-label">{label}</div>
+      <div className="seg deck-categories" role="tablist" aria-label={`${label} : catégories`}>
+        {CATEGORIES.map((c) => {
+          const n = decks.filter((d) => deckCategory(d) === c.key).length;
+          return (
+            <button
+              key={c.key}
+              type="button"
+              role="tab"
+              aria-selected={category === c.key}
+              className={category === c.key ? "on" : ""}
+              onClick={() => setCategory(c.key)}
+            >
+              {c.label} <span className="deck-category-count">{n}</span>
+            </button>
+          );
+        })}
+      </div>
+      {shown.length === 0 && (
+        <div className="deck-empty">Aucun deck pour l'instant. Créez-en un, ou importez une liste, depuis « Mes decks ».</div>
+      )}
       <div className="deck-list">
-        {decks.map((d) => {
+        {shown.map((d) => {
           const status = deckStatus(d);
           const cover = deckCover(d);
           return (
