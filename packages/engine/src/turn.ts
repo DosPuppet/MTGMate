@@ -129,6 +129,13 @@ function stepEvent(s: GameState): void {
 // ---------------------------------------------------------------------------
 
 function nextMulligan(s: GameState): void {
+  // 103.5 : fin d'un tour de table ; ceux qui ont décidé de prendre un mulligan le prennent ensemble, puis redécident.
+  if (s.mulliganQueue.length === 0 && s.mulliganTaken?.length) {
+    const taken = s.mulliganTaken;
+    s.mulliganTaken = [];
+    for (const q of taken) takeMulligan(s, q);
+    s.mulliganQueue = taken;
+  }
   const p = s.mulliganQueue[0];
   if (!p) {
     if (askLeylines(s)) return;
@@ -179,6 +186,12 @@ export function answerLeylines(s: GameState, player: PlayerId, cards: ObjectId[]
     if (o?.zone === "hand" && o.owner === player && s.defs[o.defId]?.leyline) moveObject(s, id, "battlefield");
   }
   s.flow = "mulligan";
+}
+
+/** 103.5 : le joueur décide de prendre un mulligan ; il le prendra avec les autres à la fin de ce tour de table. */
+export function declareMulligan(s: GameState, p: PlayerId): void {
+  s.mulliganQueue = s.mulliganQueue.filter((q) => q !== p);
+  s.mulliganTaken = [...(s.mulliganTaken ?? []), p];
 }
 
 export function takeMulligan(s: GameState, p: PlayerId): void {
@@ -275,8 +288,8 @@ function beginStep(s: GameState): void {
       } else givePriority(s);
       return;
     case "declareBlockers": {
-      // Chaque joueur attaqué déclare ses bloqueurs, dans l'ordre APNAP.
-      // (Les règles les veulent simultanés ; l'ordre séquentiel est une simplification assumée.)
+      // Chaque joueur attaqué déclare ses bloqueurs, dans l'ordre APNAP, sans voir ceux des autres : ils sont appliqués
+      // ensemble à la fin (509.1).
       const c = s.combat ?? emptyCombat();
       s.combat = c;
       c.blockQueue = apnapOrder(s).filter(
@@ -812,6 +825,27 @@ export function declareBlockers(s: GameState, player: PlayerId, blocks: { blocke
           : `Cette créature ne peut pas être bloquée par plus de ${max} créatures`,
       );
   }
+  // 509.1 : les blocages des défenseurs sont simultanés ; ceux-ci sont gardés (et cachés) jusqu'au dernier défenseur.
+  c.pendingBlocks = [...(c.pendingBlocks ?? []), { player, blocks }];
+  nextBlockingPlayer(s);
+}
+
+/** Applique ensemble les blocages de tous les défenseurs (509.1), dans l'ordre de leurs déclarations. */
+function commitBlocks(s: GameState): void {
+  const c = s.combat;
+  if (!c) return;
+  const pending = c.pendingBlocks ?? [];
+  c.pendingBlocks = undefined;
+  for (const { player, blocks } of pending) applyBlocks(s, c, player, blocks);
+}
+
+function applyBlocks(
+  s: GameState,
+  c: NonNullable<GameState["combat"]>,
+  player: PlayerId,
+  blocks: { blocker: ObjectId; attacker: ObjectId }[],
+): void {
+  blocks = blocks.filter((b) => onBattlefield(s, b.blocker) && c.attackers.some((a) => a.id === b.attacker));
   c.blockers.push(...blocks.map((b) => ({ id: b.blocker, attacker: b.attacker })));
   for (const b of blocks) rulesEvent(s, { e: "block", blocker: b.blocker, attacker: b.attacker });
   // 509.1h : chaque attaquant qui a au moins un bloqueur devient bloqué (Norin).
@@ -831,7 +865,6 @@ export function declareBlockers(s: GameState, player: PlayerId, blocks: { blocke
       blocks: blocks.map((b) => ({ ...b, blockerDefId: obj(s, b.blocker).defId, attackerDefId: obj(s, b.attacker).defId })),
     });
   }
-  nextBlockingPlayer(s);
 }
 
 function nextBlockingPlayer(s: GameState): void {
@@ -839,7 +872,10 @@ function nextBlockingPlayer(s: GameState): void {
   if (p) {
     s.pending = { kind: "declareBlockers", player: p };
     s.flow = "tba";
-  } else givePriority(s);
+  } else {
+    commitBlocks(s);
+    givePriority(s);
+  }
 }
 
 /** Blessures mortelles restantes pour une créature (702.2c : 1 suffit avec le contact mortel). */
@@ -1050,6 +1086,7 @@ export function eliminate(s: GameState, losers: PlayerId[]): void {
   }
   for (const p of losers) removePlayerObjects(s, p);
   s.mulliganQueue = s.mulliganQueue.filter((q) => !losers.includes(q));
+  if (s.mulliganTaken) s.mulliganTaken = s.mulliganTaken.filter((q) => !losers.includes(q));
   const pendingLeaving = !!s.pending && losers.includes(s.pending.player);
   if (pendingLeaving) s.pending = null;
   if (s.flow === "mulligan") return;
@@ -1098,6 +1135,7 @@ function removePlayerObjects(s: GameState, p: PlayerId): void {
     s.combat.attackers = s.combat.attackers.filter((a) => !gone.has(a.id) && defendingPlayer(s, a.defender) !== p);
     s.combat.blockers = s.combat.blockers.filter((b) => !gone.has(b.id));
     s.combat.blockQueue = s.combat.blockQueue.filter((q) => q !== p);
+    s.combat.pendingBlocks = s.combat.pendingBlocks?.filter((b) => b.player !== p);
     for (const a of s.combat.attackers) a.blockers = a.blockers.filter((b) => !gone.has(b));
   }
   s.effects = s.effects.filter((e) => e.affected.some((id) => !gone.has(id)));

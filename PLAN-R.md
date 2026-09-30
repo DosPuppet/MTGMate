@@ -27,7 +27,8 @@ Plan établi le 30/09/2026 (branche `dev`) : il sert de feuille de route aux pro
 - **30/09/2026 : R4.4 fait** (`RULES_VERSION` = 16) : `playFrom` (famille C, 11 drapeaux) et `abilityCost` (famille A, 5 drapeaux) ; drapeaux de joueur 95 → 81.
 - **30/09/2026 : R4.5 fait** (sans changement de règles) : `castLimit` (famille D, 7 drapeaux) et `triggerMod` (famille G, 7 drapeaux) ; drapeaux de joueur 81 → 69.
 - **30/09/2026 : R4.6 fait** (sans changement de règles) : `counterOnOrCreate` (renforcer Jace, amasser), « le prochain sort » en effet de joueur à usage unique (`nextSpell`), `instantJaceLoyalty` et `extraMountainMana` par `fx.thisTurn`. **R4 terminé** : la référence de la dette passe de 96 / 33 / 61 à 69 drapeaux de joueur, 13 mots-clés non imprimés et 58 opérations d'une seule carte.
-- À faire : R5, puis la suite dans l'ordre du tableau ci-dessous.
+- **30/09/2026 : R5 fait** (`RULES_VERSION` = 17) : blocages des défenseurs appliqués ensemble, cachés jusqu'au dernier (509.1) ; mulligans tour de table par tour de table (103.5).
+- À faire : R6, puis la suite dans l'ordre du tableau ci-dessous.
 
 ## Le garde-fou de la dette (lot F2)
 
@@ -61,9 +62,9 @@ Plan établi le 30/09/2026 (branche `dev`) : il sert de feuille de route aux pro
 | 8 | R3.1 et R3.2 : copies de sorts, blessures réparties | § 3.1 | R0 | moyen à élevé | ✅ `827cc6f` |
 | 9 | R2.4 : couche 2 (contrôle) | § 3.2 | R4.0 | élevé | ✅ `2b2ef83` |
 | 10 | R2.5 : 613.8 par point fixe, couche 5 « en plus » | § 3.2 | R2.2, R2.4 | élevé (perf.) | ✅ `be0eefa` |
-| 11 | R4.1 à R4.6 : familles génériques | § 3.3 | R1, R2 | moyen | ✅ `41a3cf0` à R4.6 |
-| 12 | R5 : blocages simultanés, mulligans 103.5 | § 3.2 | F1 | moyen | **prochain** |
-| 13 | R6 : boucles (104.4b) | § 3.2 | F1 | moyen | à faire |
+| 11 | R4.1 à R4.6 : familles génériques | § 3.3 | R1, R2 | moyen | ✅ `41a3cf0` à `616411f` |
+| 12 | R5 : blocages simultanés, mulligans 103.5 | § 3.2 | F1 | moyen | ✅ (voir suivi) |
+| 13 | R6 : boucles (104.4b) | § 3.2 | F1 | moyen | **prochain** |
 | 14 | R7 : justesse des cartes | § 3.4 | — | continu | à faire |
 | 15 | R8 : interface, puis IA (P3) | § 4, § 5 | — | moyen | à faire |
 
@@ -322,9 +323,11 @@ Lus dans le code ; chacun est confirmé par un test au début de son lot.
 
 ## R5 à R8
 
-- **R5 :**
+- **R5 ✅ :**
   - blocages simultanés en multijoueur, cachés dans `projectView` jusqu'à ce que tous les défenseurs aient déclaré ;
   - mulligans tour de table par tour de table (103.5) [règles].
+
+  **Réalisé :** `combat.pendingBlocks` : chaque défenseur déclare (validation et taxes à la déclaration), ses blocages sont gardés hors de `combat.blockers` (donc de la vue) et appliqués ensemble par `commitBlocks` quand la file est vide ; `declareMulligan` et `s.mulliganTaken` : les joueurs décident à tour de rôle, ceux qui prennent un mulligan le prennent ensemble à la fin du tour de table (`nextMulligan`). Tests : `audit.test.ts` (R5), `rules.test.ts` (103.5).
 - **R6 [règles] :**
   - boucle obligatoire détectée par une empreinte canonique (projection de `outcomeHash`), qui déclare la partie nulle (104.4b) ;
   - les trois gardes y passent.

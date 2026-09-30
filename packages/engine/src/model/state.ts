@@ -444,6 +444,8 @@ export interface CombatState {
   firstStrikers: ObjectId[];
   /** Joueurs défenseurs qui doivent encore déclarer leurs bloqueurs (ordre APNAP). */
   blockQueue: PlayerId[];
+  /** Blocages déjà déclarés, appliqués ensemble quand tous les défenseurs ont déclaré (509.1, cachés d'ici là). */
+  pendingBlocks?: { player: PlayerId; blocks: { blocker: ObjectId; attacker: ObjectId }[] }[];
   /** Étape de blessures en cours de préparation (répartition des blessures par les attaquants). */
   damageStep: "first" | "regular" | null;
   /** Attaquants dont le contrôleur doit encore répartir les blessures. */
@@ -627,6 +629,8 @@ export interface GameState {
   effects: ContinuousEffect[];
   pending: PendingDecision | null;
   mulliganQueue: PlayerId[];
+  /** 103.5 : joueurs qui ont décidé de prendre un mulligan à ce tour de table ; ils le prennent ensemble à la fin. */
+  mulliganTaken?: PlayerId[];
   resolving: Resolution | null;
   /** Effets de remplacement et de prévention créés par des résolutions (jusqu'à la fin du tour). */
   replacements: CreatedReplacement[];

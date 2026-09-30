@@ -44,8 +44,9 @@ export const RECORD_VERSION = 1;
  *   des rituels, Resilient Roadrunner des Coyotes (702.16 ; R4.2).
  * - 16 : permissions de jouer depuis le cimetière ou le dessus de la bibliothèque unifiées (une permission sans coût passe
  *   avant Muldrotha ; Forgotten Cellar : seulement des sorts) ; modificateurs de coût des capacités unifiés (R4.4).
+ * - 17 : mulligans tour de table par tour de table (103.5) ; blocages des défenseurs appliqués ensemble (509.1 ; R5).
  */
-export const RULES_VERSION = 16;
+export const RULES_VERSION = 17;
 
 /** Un point de contrôle toutes les N décisions (plus la dernière de la partie). */
 export const CHECKPOINT_EVERY = 25;

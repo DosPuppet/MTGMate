@@ -307,3 +307,7 @@ Lot R4.5 (PLAN-R.md, sans changement de règles) :
 
 Lot R4.6 (PLAN-R.md, sans changement de règles) :
 - `counterOnOrCreate` (renforcer Jace, amasser) ; « le prochain sort que vous lancez ce tour-ci » (`nextSpell`, effet de joueur à usage unique, `consumeNextSpells`) ; `fx.thisTurn` pour la loyauté de Jace en éphémère et le mana des Montagnes. Référence de la dette : 69 drapeaux de joueur, 13 mots-clés non imprimés, 58 opérations d'une seule carte.
+
+Lot R5 (PLAN-R.md ; `RULES_VERSION` = 17) :
+- blocages des défenseurs gardés (`combat.pendingBlocks`) et appliqués ensemble quand le dernier a déclaré (509.1), invisibles d'ici là ;
+- mulligans tour de table par tour de table (103.5 ; `declareMulligan`, `s.mulliganTaken`).

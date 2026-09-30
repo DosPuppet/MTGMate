@@ -133,7 +133,7 @@ Rangés par impact décroissant.
 - **Prévention :** pas de boucliers « prévenez les N prochaines blessures » (615.7), pas de marqueurs de bouclier (122.1c).
 
 **Combat (`engine/src/turn.ts`) :**
-- blocages déclarés joueur par joueur en ordre APNAP (multijoueur seulement) ;
+- ✅ corrigé (R5) : blocages déclarés joueur par joueur en ordre APNAP (multijoueur seulement) ;
 - une créature ne bloque qu'un attaquant ;
 - obligations de blocage limitées à « doit être bloquée si possible » : pas de Leurre, pas de « doit bloquer », pas de maximisation des obligations avec la menace (509.1c) ;
 - pas de batailles (aucune dans le pool aujourd'hui).
@@ -296,6 +296,7 @@ Détail, ordre d'exécution et décisions de conception : `PLAN-R.md`.
 - **30/09/2026 :** lot R0.5 fait : écart 6 corrigé (arrivées simultanées, 603.6a).
 - **30/09/2026 :** lot R4.0 fait (§ 3.3) : un seul accès aux statiques de joueur (N6).
 - **30/09/2026 :** lot R1 fait (§ 3.2) : ordre des remplacements qui modifient un nombre choisi pour le joueur affecté (Artist's Talent et Twinflame Tyrant : 8 blessures, plus 10), toutes les pioches passent par les remplacements (N12).
+- **30/09/2026 :** lot R5 fait : blocages simultanés en multijoueur (cachés jusqu'au dernier défenseur), mulligans tour de table par tour de table (103.5).
 - **30/09/2026 :** lot R2.5 fait (§ 3.2) : dépendances de couches par point fixe, couleurs ajoutées, exceptions de copie copiables (fin de l'écart 13).
 - **30/09/2026 :** lot R2.4 fait : écart 12 corrigé (le contrôle est une couche), ainsi que N10.
 - **30/09/2026 :** lot R3 fait : écarts 4 et 15 corrigés (nouvelles cibles d'une copie et garde, répartition annoncée à la mise sur la pile), ainsi que N11 (une copie de sort est un objet sur la pile).

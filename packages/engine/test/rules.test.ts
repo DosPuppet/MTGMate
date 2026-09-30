@@ -33,7 +33,12 @@ describe("début de partie", () => {
         { id: "p2", name: "B", deck: buildDeck(red) },
       ],
     });
+    const first = [...(s.players.p1?.hand ?? [])];
     s = act(s, "p1", { type: "mulligan" });
+    // 103.5 : p2 décide à son tour avant que p1 ne prenne son mulligan.
+    expect(s.players.p1?.hand).toEqual(first);
+    expect(s.pending).toEqual({ kind: "mulligan", player: "p2", mulligans: 0 });
+    s = act(s, "p2", { type: "keep" });
     expect(s.players.p1?.hand).toHaveLength(7);
     expect(s.pending).toEqual({ kind: "mulligan", player: "p1", mulligans: 1 });
     s = act(s, "p1", { type: "keep" });
@@ -41,7 +46,22 @@ describe("début de partie", () => {
     s = act(s, "p1", { type: "bottom", cards: [s.players.p1?.hand[0] as string] });
     expect(s.players.p1?.hand).toHaveLength(6);
     expect(s.players.p1?.library).toHaveLength(34); // deck de bienvenue : 40 cartes
-    expect(s.pending?.player).toBe("p2");
+  });
+
+  it("103.5 : les joueurs qui prennent un mulligan au même tour de table le prennent ensemble", () => {
+    let { state: s } = createGame({
+      seed: 1,
+      startingPlayer: "p1",
+      players: [
+        { id: "p1", name: "A", deck: buildDeck(green) },
+        { id: "p2", name: "B", deck: buildDeck(red) },
+      ],
+    });
+    s = act(s, "p1", { type: "mulligan" });
+    s = act(s, "p2", { type: "mulligan" });
+    expect(s.players.p1?.mulligans).toBe(1);
+    expect(s.players.p2?.mulligans).toBe(1);
+    expect(s.pending).toEqual({ kind: "mulligan", player: "p1", mulligans: 1 });
   });
 
   it("le premier joueur ne pioche pas à son premier tour", () => {

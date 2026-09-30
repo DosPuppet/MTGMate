@@ -10,7 +10,7 @@ Chaque entrée porte sa nature :
 - `timing` : le bon résultat, mais un choix fait à un autre moment que dans les règles ;
 - `choix auto` : le moteur choisit à la place du joueur, comme souvent sur Arena.
 
-- `timing` **Blocages :** ils sont déclarés joueur par joueur en ordre APNAP, et non simultanément.
+- `timing` **Blocages en multijoueur :** déclarés l'un après l'autre en ordre APNAP, sans voir ceux des autres (cachés jusqu'au dernier défenseur), puis appliqués ensemble (509.1) ; les taxes de blocage sont payées à la déclaration.
 - `choix auto` **Remplacements « au lieu du cimetière » multiples (616.1) :** l'auto-remplacement passe d'abord (Progenitus), puis un seul « exilez-le à la place » s'applique, choisi pour le joueur affecté : il écarte ceux qui profitent à un adversaire (PV, carte liée), puis prend le plus ancien (`replaceGraveyard`).
 - `choix auto` **Remplacements qui modifient un nombre (616.1) :** blessures, marqueurs, PV gagnés, cartes piochées. L'ordre est choisi pour le joueur affecté, au mieux de ses intérêts (le moins de blessures, le plus de PV, de marqueurs et de cartes, sauf au-delà de sa bibliothèque ; `chooseReplacementOrder`, `modifiers.ts`). Il ne peut pas choisir un ordre moins favorable. Au-delà de cinq remplacements du même événement, l'ordre du code.
 - `règle` **Dépendances de couches (613.8) :** les conditions des statiques, les « pour chaque » et les F/E définies par une capacité qui lisent des permanents sont réévalués sur le résultat des couches jusqu'à stabilité (trois passes au plus), plutôt que par l'ordre de dépendance de 613.8 : même résultat sauf en cas de dépendance circulaire. Restent :

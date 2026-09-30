@@ -19,6 +19,7 @@ import { legalTargets } from "../src/targets";
 import { simultaneously } from "../src/triggers";
 import { canBlock, eliminate, forcedAttacks } from "../src/turn";
 import type { CardDef, Effect, GameEvent, GameState, TokenSpec } from "../src/types";
+import { projectView } from "../src/view";
 import { act, advanceUntil, customCard, idOf, idsOf, passAccepting, passBoth, passUntil, scenario } from "./helpers";
 
 const raw = (name: string, typeLine: string, oracleText: string, keywords: string[], manaCost = "{3}{W}"): RawCard => ({
@@ -766,5 +767,37 @@ describe("R4.2 : protection et défense talismanique « contre [filtre] » (702.
     expect(s.objects[id]?.damage).toBe(0);
     dealDamage(s, { defId: warded.id, controller: "p2", keywords: [] }, id, 1, false);
     expect(s.objects[id]?.damage).toBe(1);
+  });
+});
+
+describe("R5 : blocages simultanés en multijoueur (509.1)", () => {
+  it("les blocages du premier défenseur restent cachés jusqu'à la déclaration du dernier", () => {
+    let s = scenario({
+      players: 3,
+      p1: { battlefield: ["Pelakka Wurm", "Bear Cub"] },
+      p2: { battlefield: ["Llanowar Elves"] },
+      p3: { battlefield: ["Bear Cub"] },
+    });
+    s = passUntil(s, (x) => x.pending?.kind === "declareAttackers");
+    const wurm = idOf(s, "p1", "battlefield", "Pelakka Wurm");
+    const bear = idOf(s, "p1", "battlefield", "Bear Cub");
+    s = act(s, "p1", {
+      type: "declareAttackers",
+      attackers: [
+        { id: wurm, defender: "p2" },
+        { id: bear, defender: "p3" },
+      ],
+    });
+    s = passUntil(s, (x) => x.pending?.kind === "declareBlockers");
+    const first = s.pending?.player as string;
+    const blocker = idOf(s, first as never, "battlefield", first === "p2" ? "Llanowar Elves" : "Bear Cub");
+    s = act(s, first, { type: "declareBlockers", blocks: [{ blocker, attacker: first === "p2" ? wurm : bear }] });
+    const second = s.pending?.player as string;
+    expect(s.pending?.kind).toBe("declareBlockers");
+    expect(second).not.toBe(first);
+    expect(s.combat?.blockers).toEqual([]);
+    expect(projectView(s, second).battlefield.find((o) => o.id === blocker)?.blocking).toBeFalsy();
+    s = act(s, second, { type: "declareBlockers", blocks: [] });
+    expect(s.combat?.blockers.map((b) => b.id)).toEqual([blocker]);
   });
 });

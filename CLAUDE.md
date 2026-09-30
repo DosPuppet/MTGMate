@@ -47,7 +47,7 @@ Ce fichier sert au suivi du projet entre les sessions : où on en est, les règl
 | Méta Standard, lot M5 : Boros Dwarves, Lifegain, Mardu Discard, Boros Tokens (34 cartes) ; Storied, faufilement, chaos, paradigme, équiper digne | ✅ |
 | Méta Standard, lot M6 : les six derniers archétypes (47 cartes) ; maîtrise de l'air, Web-slinging, payer X PV, tours passés. **Phase 1 du plan P4 finie : les 20 archétypes du méta (88,1 %) sont jouables** | ✅ |
 | Phase 2 du plan P4 : Tarkir: Dragonstorm à 100 % (`docs/plans/PLAN-P4.md`) | en attente de `PLAN-R.md` |
-| Plan de remédiation de l'audit du 30/09/2026 (`PLAN-R.md`, lots F1 à R8) : F1 à F3 (fondations), R0 (corrections rapides), R4.0 à R4.6, R2.1 à R2.5, R1 en partie et R3 (copies de sorts, répartition) faits, `RULES_VERSION` = 16 ; prochain : R5 | en cours |
+| Plan de remédiation de l'audit du 30/09/2026 (`PLAN-R.md`, lots F1 à R8) : F1 à F3 (fondations), R0 (corrections rapides), R4.0 à R4.6, R2.1 à R2.5, R1 en partie, R3 (copies de sorts, répartition) et R5 faits, `RULES_VERSION` = 17 ; prochain : R6 | en cours |
 | Autres extensions Standard | à la demande de l'utilisateur, une à la fois |
 
 
@@ -180,7 +180,7 @@ Ce fichier sert au suivi du projet entre les sessions : où on en est, les règl
   - l'hôte (`GameHost`, option `frames`, activée par le worker et le serveur) envoie une mise à jour à chaque étape de la pile (élément ajouté, résolu, contrecarré, sans cible), sans décision en attente tant que l'automatisme continue ;
   - le client les joue dans l'ordre (`playback` dans `store.ts`) : chaque résolution est montrée (`resolving`, encart « Résolution » et cibles en surbrillance) avant d'appliquer son effet, puis le résultat reste un instant ; les durées suivent le réglage « Effets » de la barre latérale (Lent, Normal, Rapide, Sans pause ; `playbackTimes`, retenu dans `localStorage`), un instant en mode `?fast` ;
   - pendant la lecture, `decide` est ignoré ; le visionneur de replays applique les étapes sans attendre.
-- **Mulligans :** ils se décident l'un après l'autre (le premier joueur d'abord) ; un script de test ne doit pas supposer l'ordre.
+- **Mulligans (103.5) :** tour de table par tour de table. Chaque joueur encore en lice déclare, dans l'ordre de jeu, s'il garde ou prend un mulligan ; ceux qui en prennent un le prennent ensemble à la fin du tour de table, puis redécident. Un script de test ne doit pas supposer l'ordre.
 - **Bac à sable (mode dev) :** `window.__mtgx` expose le store ; `startGame(deck, decksIA, { p1: { cards, tokens }, p2: … })` met des permanents en jeu dès le début (voir `battlefield-smoke`). Dans `page.evaluate`, pas de fonction nommée (tsx injecte `__name`).
 - **`pgrep -f` / `pkill -f` :** avec un motif présent dans la ligne de commande, ils peuvent tuer le shell courant.
 - **Test de fumée (`ai/test/smoke/`, un fichier par extension, harnais `harness.ts`) :** une carte qui n'a pas pu être jouée fait échouer le test. Une nouvelle extension gérée reçoit son fichier et entre dans `OWN_FILES`. On arrête 80 décisions après que la carte a été jouée, et on passe aux graines 2 et 3 seulement si elle ne l'a pas été. Pour les cartes réactives (contresorts), l'adversaire doit avoir de quoi lancer des sorts.

@@ -31,11 +31,11 @@ import {
   bottomCards,
   declareAttackers,
   declareBlockers,
+  declareMulligan,
   discardToHandSize,
   eliminate,
   keepHand,
   passPriority,
-  takeMulligan,
 } from "./turn";
 import type { CardDef, Decision, GameEvent, GameState, PlayerId } from "./types";
 
@@ -176,7 +176,7 @@ function apply(s: GameState, submitter: PlayerId, d: Decision): void {
     case "mulligan":
       expect(d, "keep", "mulligan");
       if (d.type === "keep") keepHand(s, player);
-      else takeMulligan(s, player);
+      else declareMulligan(s, player);
       return;
     case "bottomCards":
       expect(d, "bottom");
