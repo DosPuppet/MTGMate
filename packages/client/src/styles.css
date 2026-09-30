@@ -3052,6 +3052,13 @@ button {
 .replay-open {
   cursor: pointer;
 }
+.replay-warning {
+  flex-basis: 100%;
+  margin: 0;
+  text-align: center;
+  color: var(--gold);
+  font-size: 0.85em;
+}
 
 /* Match BO3 : score et réserve entre les manches. */
 .modal.gameover.wide {

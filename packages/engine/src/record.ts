@@ -11,6 +11,18 @@ import type { CardDef, Decision, GameEvent, GameState, PlayerId } from "./types"
 export const RECORD_FORMAT = "mtgx-game";
 export const RECORD_VERSION = 1;
 
+/**
+ * Version des règles du moteur. Elle avance à chaque lot qui change le comportement d'une partie (PLAN-R.md, lots
+ * « [règles] ») : un enregistrement d'une autre version peut ne plus se rejouer à l'identique. Absente d'un
+ * enregistrement : 0.
+ *
+ * - 1 : un compteur d'identifiants par préfixe (lot F1).
+ */
+export const RULES_VERSION = 1;
+
+/** Un point de contrôle toutes les N décisions (plus la dernière de la partie). */
+export const CHECKPOINT_EVERY = 25;
+
 export interface GameRecord {
   format: typeof RECORD_FORMAT;
   version: typeof RECORD_VERSION;
@@ -26,6 +38,10 @@ export interface GameRecord {
   decisions: [PlayerId, Decision][];
   /** Date de début (ISO), pour l'affichage. */
   createdAt?: string;
+  /** Version des règles du moteur qui a joué la partie (absente : 0). */
+  rules?: number;
+  /** Points de contrôle : [nombre de décisions appliquées, `outcomeHash` de l'état obtenu]. */
+  checkpoints?: [number, string][];
 }
 
 /** Crée la partie et l'enregistrement qui permettra de la rejouer. */
@@ -40,8 +56,62 @@ export function createRecordedGame(opts: GameOptions): StepResult & { record: Ga
     players: opts.players.map((p) => ({ id: p.id, name: p.name, deck: p.deck.map((c) => c.name) })),
     decisions: [],
     createdAt: new Date().toISOString(),
+    rules: RULES_VERSION,
+    checkpoints: [],
   };
   return { ...result, record };
+}
+
+/** Ajoute une décision acceptée à l'enregistrement, avec un point de contrôle toutes les `CHECKPOINT_EVERY` décisions. */
+export function recordDecision(record: GameRecord, player: PlayerId, d: Decision, after: GameState): void {
+  record.decisions.push([player, d]);
+  const n = record.decisions.length;
+  if (n % CHECKPOINT_EVERY !== 0 && !after.over) return;
+  record.checkpoints = [...(record.checkpoints ?? []), [n, outcomeHash(after)]];
+}
+
+/**
+ * Empreinte de ce qu'une partie « est » : tour, étape, décision attendue, joueurs (PV, poison, zones), champ de bataille
+ * et pile. Elle ne cite aucun identifiant d'objet ni compteur interne (horodatages, version du cache, hasard) : deux
+ * versions du moteur qui jouent la même partie donnent la même empreinte.
+ */
+export function outcomeHash(s: GameState): string {
+  const def = (id: string | undefined) => (id ? (s.objects[id]?.defId ?? "?") : null);
+  const zone = (ids: string[]) => ids.map(def);
+  const projection = {
+    turn: [s.turn.number, s.turn.active, s.turn.step],
+    pending: s.pending ? [s.pending.kind, s.pending.player] : null,
+    over: [s.over, s.winner],
+    players: s.playerOrder.map((p) => {
+      const pl = s.players[p];
+      return pl ? [p, pl.life, pl.poison ?? 0, pl.lost, zone(pl.library), zone(pl.hand), zone(pl.graveyard)] : [p, null];
+    }),
+    exile: zone(s.exile),
+    battlefield: s.battlefield.map((id) => {
+      const o = s.objects[id];
+      if (!o) return null;
+      const counters = Object.entries(o.counters)
+        .filter(([, n]) => n)
+        .sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0));
+      return [o.defId, o.owner, o.controller, o.tapped, o.damage, counters, def(o.attachedTo)];
+    }),
+    stack: s.stack.map((i) => [i.kind, i.sourceDefId, i.controller]),
+  };
+  return cyrb53(JSON.stringify(projection));
+}
+
+/** Hachage 53 bits (cyrb53), en hexadécimal : pur et déterministe. */
+function cyrb53(str: string): string {
+  let h1 = 0xdeadbeef;
+  let h2 = 0x41c6ce57;
+  for (let i = 0; i < str.length; i++) {
+    const c = str.charCodeAt(i);
+    h1 = Math.imul(h1 ^ c, 2654435761);
+    h2 = Math.imul(h2 ^ c, 1597334677);
+  }
+  h1 = Math.imul(h1 ^ (h1 >>> 16), 2246822507) ^ Math.imul(h2 ^ (h2 >>> 13), 3266489909);
+  h2 = Math.imul(h2 ^ (h2 >>> 16), 2246822507) ^ Math.imul(h1 ^ (h1 >>> 13), 3266489909);
+  return (4294967296 * (2097151 & h2) + (h1 >>> 0)).toString(16);
 }
 
 /** Vérifie la forme d'un enregistrement reçu (fichier importé, disque du serveur). */
@@ -52,6 +122,10 @@ export function isGameRecord(x: unknown): x is GameRecord {
     r.format === RECORD_FORMAT &&
     r.version === RECORD_VERSION &&
     Number.isInteger(r.seed) &&
+    (r.rules === undefined || Number.isInteger(r.rules)) &&
+    (r.checkpoints === undefined ||
+      (Array.isArray(r.checkpoints) &&
+        r.checkpoints.every((c) => Array.isArray(c) && Number.isInteger(c[0]) && typeof c[1] === "string"))) &&
     (r.startingPlayer === undefined || typeof r.startingPlayer === "string") &&
     Array.isArray(r.players) &&
     r.players.every((p) => typeof p?.id === "string" && typeof p.name === "string" && Array.isArray(p.deck)) &&
@@ -93,4 +167,59 @@ export function replayStates(record: GameRecord, resolve: (name: string) => Card
     out.push(state);
   }
   return out;
+}
+
+/** Rejeu vérifié : où et pourquoi la partie cesse d'être celle qui a été enregistrée. */
+export interface ReplayDivergence {
+  /** Nombre de décisions appliquées sans écart. */
+  index: number;
+  reason: "error" | "checkpoint";
+  message: string;
+}
+
+/**
+ * Rejoue l'enregistrement en vérifiant ses points de contrôle, et s'arrête à la première divergence : décision refusée
+ * (ou erreur du moteur), ou empreinte différente. `onStep` reçoit chaque état validé (le départ compris) et les événements
+ * qui y mènent. Seuls les états antérieurs au point de contrôle qui échoue sont montrés comme sûrs : l'écart peut dater
+ * d'avant lui, mais pas d'avant le point de contrôle précédent.
+ */
+export function replayChecked(
+  record: GameRecord,
+  resolve: (name: string) => CardDef,
+  onStep?: (state: GameState, events: GameEvent[]) => void,
+): { state: GameState; applied: number; divergence: ReplayDivergence | null } {
+  let { state, events } = initial(record, resolve);
+  onStep?.(state, events);
+  const expected = new Map(record.checkpoints ?? []);
+  let verified = { state, applied: 0 };
+  const pending: [GameState, GameEvent[]][] = [];
+  const flush = () => {
+    for (const [st, ev] of pending) onStep?.(st, ev);
+    pending.length = 0;
+  };
+  for (let i = 0; i < record.decisions.length; i++) {
+    const [player, d] = record.decisions[i] as [PlayerId, Decision];
+    try {
+      ({ state, events } = submit(state, player, d));
+    } catch (e) {
+      flush();
+      const message = e instanceof Error ? e.message : String(e);
+      return { state, applied: i, divergence: { index: i, reason: "error", message } };
+    }
+    pending.push([state, events]);
+    const hash = expected.get(i + 1);
+    if (hash === undefined) continue;
+    if (hash !== outcomeHash(state)) {
+      pending.length = 0;
+      return {
+        state: verified.state,
+        applied: verified.applied,
+        divergence: { index: verified.applied, reason: "checkpoint", message: `écart constaté à la décision ${i + 1}` },
+      };
+    }
+    flush();
+    verified = { state, applied: i + 1 };
+  }
+  flush();
+  return { state, applied: record.decisions.length, divergence: null };
 }

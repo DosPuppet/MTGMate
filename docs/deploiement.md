@@ -123,7 +123,7 @@ cd /opt/mtgmate
 
 **Les parties en cours survivent au redémarrage** : chaque salon est sauvegardé dans `data/rooms/` (un fichier par salon : les sièges, puis une décision par ligne) et repris au démarrage, en rejouant ses décisions. Les joueurs se reconnectent seuls (le navigateur réessaie pendant une minute) et ont le délai de retour habituel (`MTGX_GRACE_MS`).
 
-Limite : une mise à jour qui change le comportement du moteur peut rendre une partie en cours impossible à rejouer. Le fichier est alors mis de côté (`.bad`), et la partie est perdue.
+Chaque décision sauvegardée porte une empreinte de l'état obtenu, vérifiée à la reprise. Une mise à jour qui change le comportement du moteur fait avancer sa version des règles (`RULES_VERSION`) : une partie d'une autre version ne reprend que si toutes ses empreintes concordent. Sinon, elle est interrompue : le fichier devient `.rules<N>`, et le joueur qui revient lit « Partie interrompue par une mise à jour du moteur ». Une empreinte différente à version égale (moteur non déterministe) met le fichier de côté (`.bad`).
 
 ## Compression et cache
 

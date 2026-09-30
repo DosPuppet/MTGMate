@@ -1,14 +1,14 @@
 import {
   type CardDef,
   type CardFace,
-  createGame,
   filterEvents,
   type GameEvent,
   type GameRecord,
   type GameState,
   type GameView,
   projectView,
-  submit,
+  RULES_VERSION,
+  replayChecked,
   visibleFaces,
 } from "@mtgx/engine";
 import type { ClientMessage, ServerMessage } from "@mtgx/server/protocol";
@@ -107,28 +107,29 @@ export class RemoteSession implements Session {
 }
 
 /**
- * Replay d'une partie enregistrée : les états sont recalculés à l'avance (`replayStates`), puis montrés un par un depuis
- * le point de vue choisi. Les décisions de l'interface sont ignorées.
+ * Replay d'une partie enregistrée : les états sont recalculés à l'avance (`replayChecked`), puis montrés un par un depuis
+ * le point de vue choisi. Les décisions de l'interface sont ignorées. Une partie enregistrée par une autre version des
+ * règles peut ne plus se rejouer à l'identique : le replay s'arrête alors à la première divergence (`warning`).
  */
 export class ReplaySession implements Session {
-  readonly states: GameState[];
+  readonly states: GameState[] = [];
   /** Événements produits par chaque décision (`events[i]` : ceux qui mènent à `states[i]`). */
-  private readonly events: GameEvent[][];
+  private readonly events: GameEvent[][] = [];
+  /** Avertissement à afficher : replay arrêté avant la fin, ou version des règles différente. */
+  readonly warning: string | null;
 
   constructor(record: GameRecord, resolve: (name: string) => CardDef) {
-    let { state, events } = createGame({
-      seed: record.seed,
-      startingPlayer: record.startingPlayer,
-      startingLife: record.startingLife,
-      players: record.players.map((p) => ({ id: p.id, name: p.name, deck: p.deck.map(resolve) })),
-    });
-    this.states = [state];
-    this.events = [events];
-    for (const [player, d] of record.decisions) {
-      ({ state, events } = submit(state, player, d));
+    const { divergence } = replayChecked(record, resolve, (state, events) => {
       this.states.push(state);
       this.events.push(events);
-    }
+    });
+    const other = (record.rules ?? 0) !== RULES_VERSION;
+    const version = other ? " (partie enregistrée avec une version antérieure des règles)" : "";
+    this.warning = divergence
+      ? `Replay arrêté à la décision ${divergence.index} sur ${record.decisions.length}${version}.`
+      : other
+        ? `Partie enregistrée avec une autre version des règles (${record.rules ?? 0}, moteur : ${RULES_VERSION}).`
+        : null;
   }
 
   /** Vue du joueur `viewer` à l'étape `i` (sans décision en attente : le replay ne se joue pas). */

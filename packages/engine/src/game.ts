@@ -69,6 +69,7 @@ export function blankState(opts: {
     version: 0,
     rng: opts.seed | 0,
     nextId: 1,
+    idCounters: {},
     timestamp: 0,
     defs: {},
     objects: {},

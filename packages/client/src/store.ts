@@ -229,7 +229,15 @@ interface Store {
   /** Applique une mise à jour de la partie (vue, journal, sons, effets). */
   applyUpdate(msg: Extract<FromWorker, { type: "update" }>): void;
   /** Replay en cours : position, point de vue, lecture automatique. */
-  replay: { index: number; total: number; viewer: string; players: { id: string; name: string }[]; playing: boolean } | null;
+  replay: {
+    index: number;
+    total: number;
+    viewer: string;
+    players: { id: string; name: string }[];
+    playing: boolean;
+    /** Replay arrêté avant la fin, ou enregistré avec une autre version des règles. */
+    warning: string | null;
+  } | null;
   /** Télécharge l'enregistrement de la partie (contre l'IA : à tout moment ; en ligne : une fois terminée). */
   exportGame(): void;
   /** Ouvre un enregistrement de partie dans le visionneur. */
@@ -994,6 +1002,7 @@ export const useGame = create<Store>((set, get) => {
           viewer,
           players: record.players.map((p) => ({ id: p.id, name: p.name })),
           playing: false,
+          warning: session.warning,
         },
       });
       const { view, faces } = session.frame(0, viewer, false);

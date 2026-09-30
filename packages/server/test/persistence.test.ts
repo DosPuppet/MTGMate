@@ -1,9 +1,9 @@
 /** Sauvegarde des parties en ligne : un redémarrage du serveur ne coupe plus les parties (`RoomConfig.dataDir`). */
-import { existsSync, mkdtempSync, readdirSync, rmSync, writeFileSync } from "node:fs";
+import { existsSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { card } from "@mtgx/cards";
-import { isGameRecord, replayGame } from "@mtgx/engine";
+import { isGameRecord, RULES_VERSION, replayGame } from "@mtgx/engine";
 import { afterEach, describe, expect, it } from "vitest";
 import type { RunningServer } from "../src/index";
 import { Client, duel, server } from "./helpers";
@@ -90,6 +90,60 @@ describe("parties sauvegardées", () => {
     expect(replayed.state.over).toBe(true);
     expect(replayed.state.winner).toBe(end.view.winner);
   }, 60_000);
+
+  /** Une partie en cours (les deux joueurs gardent leur main), puis l'arrêt du serveur : le fichier et les jetons. */
+  async function savedGame(dataDir: string): Promise<{ file: string; tokens: string[] }> {
+    const first = await server({ dataDir, graceMs: 10_000 });
+    const { a, b, code } = await duel(first.port, { bots: false });
+    for (let i = 0; i < 4; i++) {
+      for (const c of [a, b]) {
+        const v = c.lastView;
+        if (v?.pending?.player === v?.viewer && v?.pending?.kind === "mulligan")
+          c.send({ type: "decision", decision: { type: "keep" } });
+      }
+      await new Promise((r) => setTimeout(r, 100));
+    }
+    const tokens = [await tokenOf(a), await tokenOf(b)];
+    await Promise.all([a.close(), b.close()]);
+    await first.close();
+    return { file: join(dataDir, `${code}.jsonl`), tokens };
+  }
+
+  it("chaque décision sauvegardée porte l'empreinte de l'état ; autre version des règles sans empreinte : partie interrompue", async () => {
+    const dataDir = tempDir();
+    const { file, tokens } = await savedGame(dataDir);
+    const [head, ...lines] = readFileSync(file, "utf8").split("\n").filter(Boolean);
+    expect(JSON.parse(head as string).record.rules).toBe(RULES_VERSION);
+    expect(lines.length).toBeGreaterThan(0);
+    for (const l of lines) expect(typeof JSON.parse(l)[2]).toBe("string");
+    // Sauvegarde d'une version antérieure des règles, sans empreintes (version 0).
+    const old = JSON.parse(head as string);
+    delete old.record.rules;
+    const oldLines = lines.map((l) => JSON.stringify(JSON.parse(l).slice(0, 2)));
+    writeFileSync(file, `${[JSON.stringify(old), ...oldLines].join("\n")}\n`);
+
+    const srv = await server({ dataDir });
+    servers.push(srv);
+    expect(srv.rooms.size).toBe(0);
+    expect(readdirSync(dataDir)).toContain(`${file.split("/").at(-1)}.rules0`);
+    const c = await Client.connect(srv.port);
+    clients.push(c);
+    c.send({ type: "rejoin", token: tokens[0] as string });
+    expect((await c.next("error", (m) => m.code === "token")).message).toMatch(/interrompue par une mise à jour du moteur/);
+  }, 30_000);
+
+  it("même version des règles mais empreinte différente : le fichier est mis de côté (moteur non déterministe)", async () => {
+    const dataDir = tempDir();
+    const { file } = await savedGame(dataDir);
+    const [head, ...lines] = readFileSync(file, "utf8").split("\n").filter(Boolean);
+    const last = JSON.parse(lines.at(-1) as string);
+    last[2] = "0";
+    writeFileSync(file, `${[head, ...lines.slice(0, -1), JSON.stringify(last)].join("\n")}\n`);
+    const srv = await server({ dataDir });
+    servers.push(srv);
+    expect(srv.rooms.size).toBe(0);
+    expect(readdirSync(dataDir)).toContain(`${file.split("/").at(-1)}.bad`);
+  }, 30_000);
 
   it("un salon fermé efface sa sauvegarde ; un fichier illisible est mis de côté sans bloquer le démarrage", async () => {
     const dataDir = tempDir();

@@ -91,6 +91,7 @@ npm run dev          # http://localhost:5173
 - **Exporter la partie** (barre latérale) télécharge un fichier JSON : la graine, les decks et toutes les décisions. Le moteur étant déterministe, ce fichier suffit à rejouer exactement la partie ; joignez-le au signalement d'un bug. Contre l'IA, l'export est possible à tout moment ; en ligne, seulement une fois la partie terminée (le fichier révèle les decks).
 - **Revoir une partie** (accueil) ouvre ce fichier dans le visionneur : étape par étape, lecture automatique, saut au début ou à la fin, et choix du point de vue (chaque joueur ne voit que ce qu'il voyait).
 - **En ligne,** les parties sont sauvegardées de la même façon par le serveur (`data/rooms`) : un redémarrage ne les coupe plus.
+- **Version des règles :** l'enregistrement note la version des règles du moteur et une empreinte de la partie toutes les 25 décisions. Une partie enregistrée par une version antérieure du moteur qui ne se rejoue plus à l'identique s'arrête à la première divergence, signalée dans la barre du visionneur.
 
 ### Tablette et téléphone
 
@@ -120,6 +121,7 @@ Les images des cartes viennent de Scryfall (`cards.scryfall.io`). Certains rése
 | `npm run verify -- --full` | Vérification complète (~3 min) : fuzz sur tout le pool, bench et tests d'interface. Durée de chaque étape affichée, journaux dans `test-results/verify/` |
 | `npm run verify -- --ci` | Vérification de l'intégration continue (GitHub Actions, à chaque push) : types, Biome, couverture, tests et fuzz courts sur tout le pool, sans interface ni bench |
 | `npm test` | Tests de règles, d'IA, et test de fumée de chaque carte gérée (Vitest, un fichier par extension) |
+| `npm run golden [-- --update]` | Parties dorées (`ai/src/golden.ts`) : vérifie qu'elles se rejouent à l'identique ; `--update` les régénère après un changement de `RULES_VERSION` |
 | `npm run fuzz -- --games 300 [--pool decks\|all\|<EXT>] [--players 4] [--ai random\|heuristic\|mixed\|beginner\|medium\|expert\|levels] [--seed N] [--jobs 10]` | Parties IA contre IA, invariants vérifiés à chaque décision. `--pool FIN` : decks tirés surtout de cette extension. `--jobs` : parties réparties sur plusieurs processus, mêmes résultats à graine égale |
 | `npm run bench` | Décisions par seconde du moteur et temps de décision de l'IA (cibles : ≥ 5 000 déc/s, IA moyenne < 50 ms, IA élevée < 150 ms ; à mesurer sur secteur) |
 | `npm run arena -- --a expert --b medium [--games 600] [--jobs 11] [--budget 100] [--pool decks\|all\|mix]` | Tournoi d'IA en duel (places et decks alternés) : taux de victoire avec intervalle à 95 %, temps de décision ; `expert:0` = élevé sans ISMCTS |

@@ -14,6 +14,7 @@
     "lint": "biome check .",
     "format": "biome format --write .",
     "fuzz": "tsx tools/fuzz.ts",
+    "golden": "tsx tools/golden.ts",
     "arena": "tsx tools/ai-arena.ts",
     "verify": "tsx tools/verify.ts",
     "import-cards": "tsx tools/import-scryfall.ts",

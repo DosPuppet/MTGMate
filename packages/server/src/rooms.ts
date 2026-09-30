@@ -14,10 +14,13 @@ import {
   type GameEvent,
   GameHost,
   type GameRecord,
+  type GameState,
   type GameView,
   isGameRecord,
+  outcomeHash,
   type PlayerId,
-  replayGame,
+  RULES_VERSION,
+  replayChecked,
   visibleFaces,
 } from "@mtgx/engine";
 import type { Clock, ErrorCode, MatchInfo, RoomInfo, Seat, ServerMessage } from "./protocol";
@@ -70,6 +73,13 @@ export class ClientError extends Error {
 }
 
 /** Première ligne du fichier d'un salon : les sièges (jetons de reconnexion compris) et l'enregistrement de la partie. */
+/** Partie sauvegardée par une autre version des règles du moteur, qui ne se rejoue plus à l'identique. */
+export class RulesChangedError extends Error {
+  constructor(readonly rules: number) {
+    super(`partie enregistrée avec la version ${rules} des règles (moteur : ${RULES_VERSION})`);
+  }
+}
+
 interface SavedRoom {
   code: string;
   seats: {
@@ -277,7 +287,7 @@ export class Room {
         frames: true,
         onUpdate: (p, view, evts) => this.buffer(p as Seat, view, evts),
         record,
-        onRecord: (p, d) => this.appendDecision(p, d),
+        onRecord: (p, d, after) => this.appendDecision(p, d, after),
       },
       events,
     );
@@ -306,7 +316,7 @@ export class Room {
           original: s.original,
           token: s.token,
         })),
-        record: { ...record, decisions: [] },
+        record: { ...record, decisions: [], checkpoints: [] },
         match: this.match,
       };
       writeFileSync(file, `${JSON.stringify(saved)}\n`);
@@ -315,11 +325,12 @@ export class Room {
     }
   }
 
-  private appendDecision(player: PlayerId, d: Decision): void {
+  /** Une ligne par décision : [joueur, décision, empreinte de l'état obtenu] (vérifiée à la reprise). */
+  private appendDecision(player: PlayerId, d: Decision, after: GameState): void {
     const file = this.file;
     if (!file) return;
     try {
-      appendFileSync(file, `${JSON.stringify([player, d])}\n`);
+      appendFileSync(file, `${JSON.stringify([player, d, outcomeHash(after)])}\n`);
     } catch (e) {
       console.error(`Salon ${this.code} : sauvegarde impossible`, e);
     }
@@ -329,7 +340,22 @@ export class Room {
    * Reprise d'un salon sauvegardé (redémarrage du serveur) : la partie est rejouée depuis son enregistrement, les deux
    * joueurs sont considérés comme déconnectés (délai de retour ordinaire) et reviennent avec leur jeton.
    */
-  static restore(saved: SavedRoom, decisions: [PlayerId, Decision][], config: RoomConfig, onClose: (room: Room) => void): Room {
+  static restore(
+    saved: SavedRoom,
+    decisions: [PlayerId, Decision][],
+    checkpoints: [number, string][],
+    config: RoomConfig,
+    onClose: (room: Room) => void,
+  ): Room {
+    const record: GameRecord = { ...saved.record, decisions, checkpoints };
+    const { state, divergence } = replayChecked(record, card);
+    const rules = saved.record.rules ?? 0;
+    if (rules !== RULES_VERSION) {
+      // Autre version des règles : la partie ne reprend que si chaque décision a son empreinte, et qu'elles concordent.
+      if (divergence || checkpoints.length < decisions.length) throw new RulesChangedError(rules);
+    } else if (divergence) {
+      throw new Error(`rejeu différent de la partie jouée (${divergence.message}) : moteur non déterministe ?`);
+    }
     const room = new Room(saved.code, config, onClose);
     for (const s of saved.seats) {
       room.seats.push({
@@ -345,8 +371,6 @@ export class Room {
       });
     }
     if (saved.match) room.match = saved.match;
-    const record: GameRecord = { ...saved.record, decisions };
-    const { state } = replayGame(record, card);
     room.host = room.newHost(state, record, []);
     // Manche terminée avant l'arrêt : sa victoire est comptée par `afterStep` (passage « en cours » → « terminée »).
     room.status = "playing";
@@ -657,6 +681,8 @@ export class Room {
 
 export class RoomManager {
   private readonly rooms = new Map<string, Room>();
+  /** Jetons des joueurs dont la partie a été interrompue par une mise à jour des règles (au démarrage). */
+  private readonly interrupted = new Set<string>();
 
   constructor(private readonly config: RoomConfig = DEFAULT_CONFIG) {
     if (config.dataDir) this.restore(config.dataDir);
@@ -667,20 +693,35 @@ export class RoomManager {
     if (!existsSync(dir)) return;
     for (const name of readdirSync(dir).filter((f) => f.endsWith(".jsonl"))) {
       const file = join(dir, name);
+      let saved: SavedRoom | null = null;
       try {
         const [head, ...lines] = readFileSync(file, "utf8").split("\n").filter(Boolean);
-        const saved = JSON.parse(head ?? "null") as SavedRoom;
-        const decisions = lines.map((l) => JSON.parse(l) as [PlayerId, Decision]);
+        saved = JSON.parse(head ?? "null") as SavedRoom;
+        const rows = lines.map((l) => JSON.parse(l) as [PlayerId, Decision, string?]);
+        const decisions = rows.map(([p, d]): [PlayerId, Decision] => [p, d]);
+        const checkpoints = rows.flatMap(([, , h], i): [number, string][] => (typeof h === "string" ? [[i + 1, h]] : []));
         if (!saved?.code || !Array.isArray(saved.seats) || !isGameRecord({ ...saved.record, decisions }))
           throw new Error("format inconnu");
-        const room = Room.restore(saved, decisions, this.config, (r) => this.rooms.delete(r.code));
+        const room = Room.restore(saved, decisions, checkpoints, this.config, (r) => this.rooms.delete(r.code));
         this.rooms.set(room.code, room);
         console.log(`Salon ${room.code} repris (${decisions.length} décisions)`);
       } catch (e) {
-        console.error(`Sauvegarde ${name} illisible, mise de côté :`, e);
-        renameSync(file, `${file}.bad`);
+        if (e instanceof RulesChangedError && saved) {
+          // Mise à jour du moteur : la partie est interrompue ; ses joueurs l'apprennent en revenant.
+          for (const s of saved.seats) this.interrupted.add(s.token);
+          console.warn(`Salon ${saved.code} interrompu par la mise à jour des règles : ${e.message}`);
+          renameSync(file, `${file}.rules${e.rules}`);
+        } else {
+          console.error(`Sauvegarde ${name} illisible, mise de côté :`, e);
+          renameSync(file, `${file}.bad`);
+        }
       }
     }
+  }
+
+  /** La partie de ce jeton a-t-elle été interrompue par une mise à jour des règles du moteur ? */
+  wasInterrupted(token: unknown): boolean {
+    return typeof token === "string" && this.interrupted.has(token);
   }
 
   get size(): number {

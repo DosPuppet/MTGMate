@@ -282,7 +282,13 @@ export function startServer(opts: ServerOptions = {}): Promise<RunningServer> {
             else if (msg.type === "join") current = rooms.join(msg.code, msg.name, msg.deck, peer, msg.sideboard);
             else {
               const found = rooms.byToken(msg.token);
-              if (!found) throw new ClientError("token", "Cette partie n'existe plus.");
+              if (!found)
+                throw new ClientError(
+                  "token",
+                  rooms.wasInterrupted(msg.token)
+                    ? "Partie interrompue par une mise à jour du moteur."
+                    : "Cette partie n'existe plus.",
+                );
               if (found.seat.peer) throw new ClientError("state", "Cette partie est déjà ouverte ailleurs.");
               current = found;
               found.room.reconnect(found.seat, peer);

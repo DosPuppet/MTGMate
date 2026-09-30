@@ -6,7 +6,7 @@
 
 import { type AutopilotSettings, autopilotDecision, DEFAULT_AUTOPILOT } from "./autopilot";
 import { submit } from "./game";
-import type { GameRecord } from "./record";
+import { type GameRecord, recordDecision } from "./record";
 import { RulesError } from "./stack";
 import { decider } from "./state";
 import { requiredBlocks } from "./turn";
@@ -31,7 +31,7 @@ export interface HostOptions {
   /** Enregistrement de la partie (`createRecordedGame`) : chaque décision appliquée y est ajoutée. */
   record?: GameRecord;
   /** Appelé après chaque décision enregistrée (serveur : écriture sur disque). */
-  onRecord?: (player: PlayerId, d: Decision) => void;
+  onRecord?: (player: PlayerId, d: Decision, after: GameState) => void;
   /**
    * Une mise à jour par étape de la pile (élément ajouté, puis résolu, contrecarré ou sans cible légale), au lieu d'une
    * seule à la fin d'une suite de décisions automatiques : l'interface montre chaque effet l'un après l'autre.
@@ -104,8 +104,8 @@ export class GameHost {
     // Mode « étapes » : une résolution est envoyée tout de suite, avant les décisions automatiques suivantes.
     if (this.opts.frames && events.some((e) => FRAME_EVENTS.has(e.type))) this.flush(true);
     // Seules les décisions acceptées sont enregistrées : le rejeu redonne exactement cet état.
-    this.opts.record?.decisions.push([player, d]);
-    this.opts.onRecord?.(player, d);
+    if (this.opts.record) recordDecision(this.opts.record, player, d, state);
+    this.opts.onRecord?.(player, d, state);
   }
 
   /** Enregistrement de la partie (null si elle n'est pas enregistrée : tutoriel, bac à sable). */

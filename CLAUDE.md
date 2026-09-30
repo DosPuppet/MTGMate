@@ -47,7 +47,7 @@ Ce fichier sert au suivi du projet entre les sessions : où on en est, les règl
 | Méta Standard, lot M5 : Boros Dwarves, Lifegain, Mardu Discard, Boros Tokens (34 cartes) ; Storied, faufilement, chaos, paradigme, équiper digne | ✅ |
 | Méta Standard, lot M6 : les six derniers archétypes (47 cartes) ; maîtrise de l'air, Web-slinging, payer X PV, tours passés. **Phase 1 du plan P4 finie : les 20 archétypes du méta (88,1 %) sont jouables** | ✅ |
 | Phase 2 du plan P4 : Tarkir: Dragonstorm à 100 % (`PLAN-P4.md`) | à faire |
-| Plan de remédiation de l'audit du 30/09/2026 (`PLAN-R.md`, lots F1 à R8) : garde-fou de la dette (F2) en place, le reste à faire | en cours |
+| Plan de remédiation de l'audit du 30/09/2026 (`PLAN-R.md`, lots F1 à R8) : F2 (garde-fou de la dette) et F1 (version des règles, rejeu vérifié, parties dorées) faits, le reste à faire | en cours |
 | Autres extensions Standard | à la demande de l'utilisateur, une à la fois |
 
 
@@ -56,6 +56,7 @@ Ce fichier sert au suivi du projet entre les sessions : où on en est, les règl
 - **27/09/2026 :** l'intégration de tout le Standard d'un coup est abandonnée. La branche `standard` (socle multi-extensions, EOE, DFT, OTJ+BIG, FIN, vérification parallélisée) est fusionnée dans `master`.
 - **28/09/2026 :** le travail se fait désormais sur la branche `dev` (créée depuis `master`).
 - Ensuite : **une extension à la fois, sur `dev`, seulement quand l'utilisateur la nomme.**
+- **30/09/2026 :** pas de nouvelles cartes tant que le moteur n'est pas sécurisé et finalisé (`PLAN-R.md`) ; Tarkir: Dragonstorm (phase 2 du P4) attend.
 - **29/09/2026 (plan P4) :** exception décidée par l'utilisateur. On écrit d'abord les cartes des decks du méta Standard (lots M1 à M6, toutes extensions confondues ; des extensions restent donc partielles), puis Tarkir: Dragonstorm à 100 %. Un lot du méta se vérifie avec `npm run verify -- --set META`.
 - Découpage habituel d'une extension :
   - lot A : cartes faisables avec le moteur, jetons et terrains ;
@@ -134,6 +135,7 @@ Ce fichier sert au suivi du projet entre les sessions : où on en est, les règl
   - les tests d'interface et le bench restent locaux ; les journaux d'un échec sont joints à l'exécution.
 - **Fuzz à la main :** `npm run fuzz -- --games 300 --pool FIN --jobs 10`. Les résultats sont identiques à graine égale, quel que soit `--jobs`.
 - **Bench :** il n'est fiable que sur secteur (le mode éco du CPU fausse les mesures). On juge une régression en comparant avant et après.
+- **Lot qui change le comportement du moteur (« [règles] », `PLAN-R.md`) :** faire avancer `RULES_VERSION` (`engine/src/record.ts`, avec une ligne d'historique), puis régénérer les parties dorées (`npm run golden -- --update`). Le test `ai/test/golden.test.ts` échoue si une partie dorée ne se rejoue plus à l'identique à version égale.
 - **Nouvelle mécanique visible :** un script Playwright ponctuel, avec captures dans `test-results/`.
 
 ## Pièges connus

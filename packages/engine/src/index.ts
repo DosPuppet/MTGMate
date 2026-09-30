@@ -9,11 +9,17 @@ export { computeBattlefield } from "./layers";
 export { legalActions, meaningfulActions } from "./legal";
 export { availableMana, costToText, manaSources, manaValue, parseManaCost, solvePayment } from "./mana";
 export {
+  CHECKPOINT_EVERY,
   createRecordedGame,
   type GameRecord,
   isGameRecord,
+  outcomeHash,
   RECORD_FORMAT,
   RECORD_VERSION,
+  type ReplayDivergence,
+  RULES_VERSION,
+  recordDecision,
+  replayChecked,
   replayGame,
   replayStates,
 } from "./record";

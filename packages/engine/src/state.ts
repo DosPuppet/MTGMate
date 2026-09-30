@@ -172,7 +172,11 @@ export function cloneState(s: GameState): GameState {
 // ---------------------------------------------------------------------------
 
 export function newId(s: GameState, prefix = "o"): string {
-  return `${prefix}${s.nextId++}`;
+  if (prefix === "o") return `o${s.nextId++}`;
+  // Un compteur par préfixe : créer un effet ou un déclencheur de plus ne décale pas les identifiants des objets.
+  const n = s.idCounters[prefix] ?? 1;
+  s.idCounters[prefix] = n + 1;
+  return `${prefix}${n}`;
 }
 
 export function nextTimestamp(s: GameState): number {

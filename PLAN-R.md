@@ -5,7 +5,8 @@ Plan établi le 30/09/2026 (branche `dev`) : il sert de feuille de route aux pro
 ## Suivi
 
 - **30/09/2026 :** plan écrit ; **F2 fait** (garde-fou de la dette et règle en fin de CLAUDE.md).
-- À faire : tout le reste, dans l'ordre du tableau ci-dessous.
+- **30/09/2026 : F1 fait** (`RULES_VERSION` = 1, empreintes et rejeu vérifié, un compteur d'identifiants par préfixe, reprise des salons selon la version, parties dorées ; détail dans `docs/extensions/socle.md`, lot F1).
+- À faire : F3, puis la suite dans l'ordre du tableau ci-dessous.
 
 ## Le garde-fou de la dette (lot F2)
 
@@ -23,7 +24,7 @@ Plan établi le 30/09/2026 (branche `dev`) : il sert de feuille de route aux pro
   - fait avancer `RULES_VERSION` ;
   - ajoute un test de règles par écart, dans `engine/test/audit.test.ts` (un `describe` par numéro du § 3.1, qui reprend la mise en scène du script de l'audit) ;
   - retire sa ligne du § 3.1 d'`AUDIT.md` et de `docs/approximations.md`, et ajoute une ligne au suivi.
-- **Place de la phase 2 du P4 (Tarkir: Dragonstorm), à confirmer par l'utilisateur :** proposée **après R3.1** (copies avec nouvelles cibles), dont TDM et 20 cartes déjà « gérées » ont besoin (42 cartes en tout).
+- **Décision de l'utilisateur (30/09/2026) : pas de nouvelles cartes tant que le moteur n'est pas sécurisé et finalisé.** La phase 2 du P4 (Tarkir: Dragonstorm) attend la fin de ce plan (au moins R0 à R6).
 - **Ordre d'exécution :**
 
 | # | Lot | Audit | Dépend de | Risque |
@@ -36,7 +37,6 @@ Plan établi le 30/09/2026 (branche `dev`) : il sert de feuille de route aux pro
 | 6 | R2.1 à R2.3 : entrée sur le champ de bataille, copies de permanents | § 3.1, § 3.2 | R4.0 | moyen |
 | 7 | R1.1 à R1.3 : remplacements (616) | § 3.2 | R4.0, R2.1 | élevé |
 | 8 | R3.1 et R3.2 : copies de sorts, blessures réparties | § 3.1 | R0 | moyen à élevé |
-| — | *(proposé) phase 2 du P4 : TDM à 100 %* | | R3.1 | |
 | 9 | R2.4 : couche 2 (contrôle) | § 3.2 | R4.0 | élevé |
 | 10 | R2.5 : 613.8 par point fixe, couche 5 « en plus » | § 3.2 | R2.2, R2.4 | élevé (perf.) |
 | 11 | R4.1 à R4.6 : familles génériques | § 3.3 | R1, R2 | moyen |

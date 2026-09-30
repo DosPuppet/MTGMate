@@ -8,7 +8,7 @@ export function ReplayBar() {
   const setViewer = useGame((s) => s.replayViewer);
   const backToLobby = useGame((s) => s.backToLobby);
   if (!replay) return null;
-  const { index, total, viewer, players, playing } = replay;
+  const { index, total, viewer, players, playing, warning } = replay;
   return (
     <div className="replay-bar" role="toolbar" aria-label="Replay">
       <strong className="replay-title">Replay</strong>
@@ -58,6 +58,11 @@ export function ReplayBar() {
       <button type="button" className="btn small ghost" onClick={backToLobby}>
         Quitter
       </button>
+      {warning && (
+        <p className="replay-warning" role="status">
+          {warning}
+        </p>
+      )}
     </div>
   );
 }

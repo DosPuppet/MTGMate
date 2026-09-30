@@ -287,6 +287,7 @@ Détail, ordre d'exécution et décisions de conception : `PLAN-R.md`.
 ### Suivi
 
 - **30/09/2026 :** plan de remédiation écrit (`PLAN-R.md`) ; garde-fou de la dette en place (lot F2 : `cards/test/debt.test.ts`, règle en fin de CLAUDE.md).
+- **30/09/2026 :** lot F1 fait : version des règles dans les enregistrements, rejeu vérifié par empreintes, parties dorées (`npm run golden`).
 
 ### R0 — Corrections simples (un lot, un test de règles par correction)
 
