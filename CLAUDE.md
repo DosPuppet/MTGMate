@@ -47,6 +47,7 @@ Ce fichier sert au suivi du projet entre les sessions : où on en est, les règl
 | Méta Standard, lot M5 : Boros Dwarves, Lifegain, Mardu Discard, Boros Tokens (34 cartes) ; Storied, faufilement, chaos, paradigme, équiper digne | ✅ |
 | Méta Standard, lot M6 : les six derniers archétypes (47 cartes) ; maîtrise de l'air, Web-slinging, payer X PV, tours passés. **Phase 1 du plan P4 finie : les 20 archétypes du méta (88,1 %) sont jouables** | ✅ |
 | Phase 2 du plan P4 : Tarkir: Dragonstorm à 100 % (`PLAN-P4.md`) | à faire |
+| Plan de remédiation de l'audit du 30/09/2026 (`PLAN-R.md`, lots F1 à R8) : garde-fou de la dette (F2) en place, le reste à faire | en cours |
 | Autres extensions Standard | à la demande de l'utilisateur, une à la fois |
 
 
@@ -65,6 +66,7 @@ Ce fichier sert au suivi du projet entre les sessions : où on en est, les règl
 ## Documents
 
 - `PLAN-P4.md` : plan de couverture (méta Standard d'abord, puis Tarkir: Dragonstorm) ; instantané des decks du méta dans `docs/meta/2026-09-29/`.
+- `PLAN-R.md` : plan de remédiation de l'audit du 30/09/2026 (lots F1 à R8, ordre, décisions de conception, écarts trouvés en route, version des règles et replays).
 - `AUDIT.md` : audit du 30/09/2026, centré sur les règles du moteur (17 écarts avec les règles officielles, dette de conception, interface face à Arena, sécurité du serveur, comparaison, feuille de route R0 à R8). Les audits précédents sont archivés dans `docs/audits/` (celui du 29/09 et sa feuille de route P0 à P4).
 - `docs/moteur.md` : **à lire avant d'ajouter une mécanique**. Carte des fichiers du moteur, et où toucher pour un effet, un déclencheur, une condition, un filtre, un statique de joueur ou un mot-clé.
 - `docs/approximations.md` : approximations connues, générales puis carte par carte (à lever si une carte l'exige). **Toute nouvelle approximation y est ajoutée.**
@@ -187,3 +189,16 @@ Ce fichier sert au suivi du projet entre les sessions : où on en est, les règl
 - **Patchs par recherche/remplacement :** Biome reformate le code. Un outil tolérant aux espaces est pratique (voir l'historique : `patch.py` dans le scratchpad de session).
 - **`ai-smoke` en fin de `verify --full` :** la mesure « ralenti ×4 » (médiane < 1,6 s) échoue parfois de peu, la machine étant chargée par les étapes précédentes ; relancer `npm run ai-smoke` seul avant de conclure à une régression.
 - **Performances :** la machine (WSL) varie beaucoup d'une session à l'autre. Pour juger une régression, comparer `npm run bench` avant et après (`git stash`), pas avec un chiffre ancien.
+
+## Règle pour la suite : arrêter la croissance des drapeaux propres à une carte
+
+Audit du 30/09/2026, § 3.3 ; `PLAN-R.md`, lots R4.
+
+- **Chercher d'abord une forme générique** avant d'ajouter, pour une seule carte, un champ à `PlayerStaticAbilityDef`, un membre à `Keyword`, une opération d'effet ou un champ d'état :
+  - une famille paramétrée par un `ObjectFilter` (« ne peut pas être bloquée par [filtre] », « protection contre [filtre] », modificateurs de coût, jouer depuis une zone, restrictions de joueur…) ;
+  - le journal du tour (`amount.turnEvents`) ;
+  - les effets sur les joueurs (`fx.thisTurn`) ;
+  - un effet ou un déclencheur existant.
+- **Si une carte l'exige vraiment,** l'ajout est justifié dans `packages/cards/data/debt-baseline.json` (raison, famille cible) et signalé dans le lot.
+- **`packages/cards/test/debt.test.ts` le vérifie :** il échoue sur tout drapeau, mot-clé non imprimé ou opération d'une seule carte absent de la référence, et sur toute entrée périmée. Un lot qui supprime un drapeau, ou dont l'opération sert désormais à plusieurs cartes, retire l'entrée : le plafond ne fait que baisser.
+- **Départ au 30/09/2026 :** 96 drapeaux de `PlayerStaticAbilityDef`, 33 mots-clés non imprimés, 61 opérations utilisées par une seule carte.

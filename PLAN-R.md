@@ -1,0 +1,261 @@
+# Plan R — remédiation de l'audit du 30/09/2026
+
+Plan établi le 30/09/2026 (branche `dev`) : il sert de feuille de route aux prochaines sessions. Il détaille et ordonne la feuille de route R0 à R8 d'`AUDIT.md` (§ 9).
+
+## Suivi
+
+- **30/09/2026 :** plan écrit ; **F2 fait** (garde-fou de la dette et règle en fin de CLAUDE.md).
+- À faire : tout le reste, dans l'ordre du tableau ci-dessous.
+
+## Le garde-fou de la dette (lot F2)
+
+- Un test, `packages/cards/test/debt.test.ts`, compare trois listes à une référence, `packages/cards/data/debt-baseline.json` :
+  - les champs de `PlayerStaticAbilityDef` ;
+  - les membres de `Keyword` qui ne sont pas des mots-clés imprimés ;
+  - les opérations d'effet utilisées par une seule carte.
+- Il échoue sur une nouvelle entrée (voir la règle en fin de CLAUDE.md) et sur une entrée périmée : le plafond ne peut que baisser.
+
+
+## Décisions et ordre
+
+- **Lots :** un commit par lot, rattaché aux numéros R0 à R8 de l'audit.
+- **Lots marqués [règles] :** ils changent le comportement du moteur. Chacun :
+  - fait avancer `RULES_VERSION` ;
+  - ajoute un test de règles par écart, dans `engine/test/audit.test.ts` (un `describe` par numéro du § 3.1, qui reprend la mise en scène du script de l'audit) ;
+  - retire sa ligne du § 3.1 d'`AUDIT.md` et de `docs/approximations.md`, et ajoute une ligne au suivi.
+- **Place de la phase 2 du P4 (Tarkir: Dragonstorm), à confirmer par l'utilisateur :** proposée **après R3.1** (copies avec nouvelles cibles), dont TDM et 20 cartes déjà « gérées » ont besoin (42 cartes en tout).
+- **Ordre d'exécution :**
+
+| # | Lot | Audit | Dépend de | Risque |
+|---|---|---|---|---|
+| 1 | F1 : version des règles, empreintes de parties, un compteur d'identifiants par préfixe | nouveau | — | moyen |
+| 2 | F2 : garde-fou de la dette | § 3.3 | — | faible |
+| 3 | F3 : durcissement du serveur | § 6 | — | faible |
+| 4 | R0.1 à R0.6 : corrections rapides | § 3.1 | F1 | faible à moyen |
+| 5 | R4.0 : accesseur unique des statiques de joueur | § 3.3 | F2 | moyen |
+| 6 | R2.1 à R2.3 : entrée sur le champ de bataille, copies de permanents | § 3.1, § 3.2 | R4.0 | moyen |
+| 7 | R1.1 à R1.3 : remplacements (616) | § 3.2 | R4.0, R2.1 | élevé |
+| 8 | R3.1 et R3.2 : copies de sorts, blessures réparties | § 3.1 | R0 | moyen à élevé |
+| — | *(proposé) phase 2 du P4 : TDM à 100 %* | | R3.1 | |
+| 9 | R2.4 : couche 2 (contrôle) | § 3.2 | R4.0 | élevé |
+| 10 | R2.5 : 613.8 par point fixe, couche 5 « en plus » | § 3.2 | R2.2, R2.4 | élevé (perf.) |
+| 11 | R4.1 à R4.6 : familles génériques | § 3.3 | R1, R2 | moyen |
+| 12 | R5 : blocages simultanés, mulligans 103.5 | § 3.2 | F1 | moyen |
+| 13 | R6 : boucles (104.4b) | § 3.2 | F1 | moyen |
+| 14 | R7 : justesse des cartes | § 3.4 | — | continu |
+| 15 | R8 : interface, puis IA (P3) | § 4, § 5 | — | moyen |
+
+## Écarts supplémentaires, trouvés en préparant ce plan
+
+Lus dans le code ; chacun est confirmé par un test au début de son lot.
+
+| # | Écart | Preuve | Lot |
+|---|---|---|---|
+| N1 | Un seul compteur d'identifiants pour les objets, les effets, les déclencheurs et les effets de joueur : un effet de plus décale tous les objets suivants, et les anciens enregistrements visent d'autres objets | `engine/src/state.ts:174` | F1 |
+| N2 | Les marqueurs posés comme coût (loyauté +N, `cost.addCounters`) sont doublés par les doubleurs | `engine/src/stack.ts:1807, 1824` | R0.1 |
+| N3 | `attackTax` et `blockTax` sont lus comme des booléens : deux Archangel of Tithes coûtent {1} | `engine/src/turn.ts:612, 736` | R0.2 |
+| N4 | Les options de sort gratuit ne vérifient pas que les coûts restants sont payables | `engine/src/legal.ts:298, 302` | R0.2 |
+| N5 | Perte par poison annoncée comme « pioche » | `engine/src/turn.ts:951-953` | R0.1 |
+| N6 | 29 lectures directes des statiques de joueur ignorent leur condition et les effets sur les joueurs ; `doublers` ignore la condition | `engine/src/actions.ts`, `engine/src/stack.ts`, `engine/src/statics.ts:120` | R4.0 |
+| N7 | Un Clone qui copie un planeswalker arrive sans loyauté ; `applyEntersReplacements` lit la carte imprimée | `engine/src/replacement.ts:212-261` | R2.2 |
+| N8 | `copyToken` lit la carte imprimée et engage le jeton par un événement « devient engagé » | `engine/src/ops/permanents.ts:218, 226` | R2.2 |
+| N9 | Le `copyOf` d'une statique n'est jamais appliqué (Assimilation Aegis ne copie rien) ; la copie d'un sort de Clone est un 0/0 | `engine/src/layers.ts:420-424`, `engine/src/stack.ts:2115` | R2.2 |
+| N10 | Deux vols de contrôle du même permanent dans un tour le rendent au mauvais joueur ; un joueur qui quitte la partie fait exiler les permanents volés (800.4a) | `engine/src/turn.ts:322-329, 1006-1008` | R2.4 |
+| N11 | Une copie de sort n'a pas d'objet : « contrecarrez le sort ciblé » ne peut pas la viser, et les « défense talismanique contre » sont ignorées | `engine/src/targets.ts:207-212, 244-252` | R3.1 |
+| N12 | `drawBonus` (Vnwxt, Quantum Riddler) n'est appliqué que par 2 des 11 appels de `drawCard` | `engine/src/effects.ts:769` | R1.3 |
+
+## Phase 0 — fondations
+
+- **F1 [règles] : version des règles, empreintes de parties, compteur d'identifiants.**
+  - Dans `engine/src/record.ts` :
+    - constante `RULES_VERSION` ;
+    - `GameRecord.rules` (absent = 0) ;
+    - `checkpoints` : l'empreinte `outcomeHash(s)` toutes les 25 décisions.
+  - `outcomeHash(s)` est une projection stable : tour, étape, décision attendue, PV, poison, zones en `defId`, champ de bataille (propriétaire, contrôleur, engagé, blessures, marqueurs), pile. Hachage pur (cyrb53).
+  - Un compteur d'identifiants par préfixe (N1).
+  - Serveur, partie sauvegardée :
+    - même version : on la rejoue, et une empreinte différente vaut `.bad` ;
+    - autre version : on la reprend si toutes les empreintes concordent, sinon le salon est fermé proprement (fichier gardé en `.rules<N>`, message « Partie interrompue par une mise à jour du moteur »).
+  - Visionneur de replays : lecture jusqu'à la première divergence, avec un bandeau.
+  - Test doré : `ai/test/golden.test.ts`, six parties à graine fixe (decks du méta, 2 et 4 joueurs), régénérées par un outil `--update`.
+- **F2 : garde-fou de la dette.** Voir la section « Le garde-fou de la dette » plus haut.
+- **F3 : durcissement du serveur.**
+  - `decodeURIComponent` protégé (réponse 400) ;
+  - adresse du client prise dans `X-Real-IP` (fixé par nginx), sinon le dernier `X-Forwarded-For` ;
+  - liste blanche d'`Origin` ;
+  - `/scry/` sans chaîne de requête ;
+  - plafond de salons par IP ;
+  - en-têtes de sécurité dans `deploy/nginx-mtgmate.conf`.
+
+## R0 — corrections rapides
+
+- **R0.1 [règles] :**
+  - second partagé : la vérification passe après la branche des actions spéciales (`stack.ts:1698`), et le filtre de `legal.ts:431` les garde (#9) ;
+  - protection contre tout soumise à `unpreventable` (#11) ;
+  - 704.5b : indicateur remis à zéro après `checkGameOver` (#8) ; raison « poison » pour la perte par poison (N5) ;
+  - `winGame` et `loseGame` respectent « ne peut pas perdre », plus une clé « ne peut pas gagner » (#10) ;
+  - marqueurs de coût non doublés (N2) ;
+  - 506.4 : un non-créature sort du combat dans les actions basées sur l'état (#16) ;
+  - la limite de 100 passes des actions basées sur l'état lève une `Error` au lieu de s'arrêter en silence.
+- **R0.2 [règles] :**
+  - taxes payées pour les sorts gratuits (#5), et coûts restants vérifiés dans `legal.ts` (N4) ;
+  - taxes d'attaque et de blocage cumulées (N3) ;
+  - obligation d'attaquer seulement s'il existe un défenseur sans taxe (#3) ;
+  - nouvelle API `forcedAttacks(s, p)`, utilisée par l'automatisme et l'IA (`heuristic.ts`, `combat.ts`, `random.ts`, `policy.ts`).
+- **R0.3 [règles] : nettoyage 514.3a (#1).**
+  - `stateBasedActions` renvoie un booléen ;
+  - `finishCleanup` lance les actions basées sur l'état. Si quelque chose s'est passé ou qu'un déclencheur attend, il met `turn.cleanupAgain` et donne la priorité, puis `endStep` rejoue le nettoyage.
+- **R0.4 [règles] : lien de vie (#2).** Un lot de gains par source, ouvert par le `simultaneously()` le plus extérieur (`triggers.ts:132`) et vidé à sa fin ; remis à zéro dans un `finally`.
+- **R0.5 [règles] : 603.6a (#6).** Les arrivées du même lot sont détectées à la fin du lot, avec les sources d'après le lot. Même mécanisme que R0.4.
+- **R0.6 : informations et finitions** (sans changer les règles) :
+  - poison dans `PlayerView` ;
+  - cartes révélées montrées et journalisées ;
+  - confirmation avant d'abandonner ;
+  - noms français dans les invites du moteur (`turn.ts:870`, `triggers.ts:997`).
+
+## R4.0 — accesseur unique des statiques de joueur [règles]
+
+- `playerStatics(s, p)` renvoie les capacités vivantes dont la condition est remplie, plus les effets sur les joueurs.
+- `playerStatic`, `playerStaticTotal`, `doublers`, `counterDoublers` et `tokenMultiplier` sont réécrits dessus.
+- Les 29 lectures directes y passent (N6).
+- Le cache indexé par version est gardé.
+
+## R2.1 à R2.3 — entrée sur le champ de bataille et copies de permanents
+
+- **R2.1 [règles] :**
+  - `EntersContext` (`replacement.ts:23-46`) reçoit `tapped`, `attacking` (défenseur), `counters` et `mods`, appliqués avant l'événement d'arrivée ;
+  - `moveWithSpec`, `createTokens`, `copyToken` et `StackItem.arrival` passent par lui (#14) ;
+  - 508.4 : le défenseur d'un jeton attaquant est demandé (#17).
+- **R2.2 [règles] :**
+  - valeur de mana par `copiedDefId` (#13) ;
+  - `applyEntersReplacements` lit la carte copiée (N7) ;
+  - `copyToken` corrigé (N8) ;
+  - `copyOf` des statiques, et copie d'un sort de Clone (N9) ;
+  - exceptions de copie copiables (707.9b).
+- **R2.3 [règles] :**
+  - choix en arrivant sans lancer : « arrive comme une copie » après une réanimation ou un clignotement (#7), hôte d'une Aura (303.4f) ;
+  - le choix est demandé par les opérations de déplacement, avant `moveObject` ;
+  - hors résolution, choix automatique documenté.
+
+## R1 — remplacements (616)
+
+- **R1.1 [règles] : cadre, marqueurs, jetons.**
+  - `EventReplacementAbilityDef`, sur le modèle de `GraveyardReplacementAbilityDef` :
+    - `event` (blessures, marqueurs, gain de PV, perte de PV, jetons, pioche, meule) ;
+    - filtres ;
+    - `effectOnly` (« si un effet devait ») ;
+    - `modify : { add, times, atLeast, prevent }` ;
+    - `condition`.
+  - Un collecteur (sur R4.0 et `s.replacements`).
+  - Migration des doubleurs de marqueurs et de jetons, et de `plusOneCounterBonus` : Yoshimaru avec Doubling Season donne (1+1)×2.
+- **R1.2 [règles] : blessures et prévention.**
+  - La chaîne de `actions.ts:212-344` devient des données : redirection, préventions, protection, +N, doubleurs.
+  - Boucliers « la prochaine fois que » (615.7 ; une carte de TDM).
+  - En deux temps : migration à ordre constant, tests au vert, puis politique d'ordre. Test : Artist's Talent avec Twinflame Tyrant donne 8 blessures.
+- **R1.3 [règles] : PV, pioche, meule.** Une seule accroche pour les 11 appels de `drawCard` : `drawBonus` disparaît (N12), et `drawDouble` se cumule.
+- **Décision (ordre des remplacements hors résolution) :**
+  - rien ne peut se suspendre au milieu de `dealDamage`, `changeCounters` ou `gainLife` ; le moteur choisit donc pour le joueur affecté (616.1) ;
+  - d'abord 616.1a à d, puis l'ordre des horodatages si les remplacements commutent ;
+  - sinon, toutes les permutations jusqu'à 5 remplacements, et le meilleur résultat pour le joueur affecté : blessures et perte de PV minimales, gains et jetons maximaux, marqueurs maximaux sauf les nuisibles, pioche maximale sauf au-delà de la bibliothèque ;
+  - une seule fonction, `chooseReplacementOrder`, pour pouvoir brancher plus tard une vraie `ChoiceRequest` ;
+  - documenté en `choix auto`.
+
+## R3 — copies de sorts
+
+- **R3.1 [règles] : nouvelles cibles.**
+  - L'opération `copySpell` demande de nouvelles cibles pour chaque spécification : intention `changeTarget`, `suggested` = les cibles d'origine, `autoOk`, clés `r.vars` idempotentes.
+  - Puis `validateTargets` et `announceTargets`, pour que la garde se déclenche (#4).
+  - Les copies faites pendant `castSpell` passent par une `ChoicePurpose` `copyTargets`.
+  - Les copies deviennent des objets (N11).
+- **R3.2 [règles] :**
+  - `changeTarget` gère plusieurs cibles ;
+  - `CastChoices.divide` est validé au lancement (601.2d) et gardé dans `StackItem.division` ; la part d'une cible devenue illégale est perdue (#15) ;
+  - l'interface reçoit une étape de répartition au lancement.
+
+## R2.4 et R2.5 — couches
+
+- **R2.4 [règles] : couche 2.**
+  - `GameObject.baseController` et des effets de contrôle horodatés dans `s.effects` ;
+  - `syncControl(s)` applique ces effets par ordre d'horodatage, sort du combat et appelle `setController` si le contrôleur change ;
+  - il est appelé dans les actions basées sur l'état, après le nettoyage, à la fin des opérations de contrôle, et dans `removePlayerObjects` (800.4a) ;
+  - `controlChanges` et `auraControl` sont supprimés (#12, N10) ;
+  - `o.controller` reste la valeur stockée, donc les ~200 lectures ne changent pas ;
+  - nouvel invariant du fuzz : `syncControl` est idempotent.
+- **R2.5 [règles] : 613.8 et couche 5.**
+  - Le booléen `computing` devient une carte `provisional`.
+  - Une seconde passe ne réévalue que les statiques dépendantes (conditions, `per`, caractéristiques définies qui lisent le champ de bataille), et compare une signature ; au plus 3 passes.
+  - Couche 5 « en plus de ses autres couleurs ».
+  - Cible de performance : bench ≥ 5 000 décisions/s, et au plus 5 % de perte (comparaison avant et après avec `git stash`, sur secteur).
+
+## R4.1 à R4.6 — familles génériques (chaque lot fait baisser la référence)
+
+- **R4.1 :** « ne peut pas être bloquée par [filtre] », qui remplace 7 mots-clés, plus `canBlockOnly` et le nombre de bloqueurs (minimum et maximum).
+- **R4.2 :** « défense talismanique contre » et « protection contre [filtre] ». `ObjectFilter` reçoit `colorCount` et un `not`. Lève les approximations Sword of Wealth and Power et Resilient Roadrunner.
+- **R4.3 :** une seule statique « utilise l'endurance pour » (combat, équipage, station) : `assignsToughness`, `absolutePowerDamage`, `crewWithToughness`, `crewPlus2`, `stationByToughness`.
+- **R4.4 :** modificateurs de coût (famille A) ; permissions de jouer depuis une zone (famille C).
+- **R4.5 :** restrictions de joueur et moment de lancer (familles D et L) ; modifications de déclencheurs (famille G).
+- **R4.6 :** opérations propres à une carte :
+  - `empowerJace` et `amass` deviennent `counterOnOrCreate` ;
+  - `instantJaceLoyalty` et `extraMountainMana` passent par `fx.thisTurn` ;
+  - le reste de `TurnStats` va au journal du tour ;
+  - `nextCreatureSpell` et `nextSpellCopies` deviennent un effet de joueur « prochain sort ».
+
+## R5 à R8
+
+- **R5 :**
+  - blocages simultanés en multijoueur, cachés dans `projectView` jusqu'à ce que tous les défenseurs aient déclaré ;
+  - mulligans tour de table par tour de table (103.5) [règles].
+- **R6 [règles] :**
+  - boucle obligatoire détectée par une empreinte canonique (projection de `outcomeHash`), qui déclare la partie nulle (104.4b) ;
+  - les trois gardes y passent.
+- **R7 (continu) :**
+  - attentes de l'Oracle étendues ;
+  - un fichier de tests de règles par extension partielle ;
+  - tests tirés des décisions officielles (rulings) pour le lien de vie, les copies, les remplacements et le nettoyage.
+- **R8 :**
+  - interface :
+    - garder la priorité ;
+    - passe douce et passe dure (réglage autorisé par `server/src/validate.ts`) ;
+    - réglages retenus d'une session à l'autre ;
+    - annulation d'un terrain engagé, alerte de mana flottant ;
+    - aperçu des blessures de combat ;
+    - accessibilité ;
+    - recherche du deckbuilder ;
+    - redessins limités (`Board.tsx:859`) ;
+  - IA :
+    - le P3 (déterminisation qui ne dépend que des cartes vues, réponses aux choix fréquents, mulligan selon les couleurs) ;
+    - puis `npm run arena` (600 parties) avec les decks du méta.
+
+## Reporté tant qu'aucune carte ne l'exige
+
+- bloquer plusieurs attaquants, obligations de blocage (Leurre, « doit bloquer », 509.1c) ;
+- batailles, phasing, couche 3, raccourcis de boucles (732) ;
+- mot-clé second partagé (seul Samut en a besoin) ;
+- couches hors du champ de bataille ;
+- `ChoiceRequest` pour l'ordre des remplacements ;
+- vue du joueur qui contrôle le tour d'un autre (722).
+
+## Vérification de chaque lot
+
+- **Chaque lot :**
+  - test de règles par écart ;
+  - `npm run verify -- --full`.
+- **Lots [règles] :**
+  - test doré régénéré, avec mention de `RULES_VERSION` dans le message de commit ;
+  - lancer seuls `client/test/tutorial.test.ts` et `npm run tutorial-smoke` pour R0.3, R0.4, R0.5, R2.1 et R2.4 ;
+  - bench avant et après pour R1.2, R4.0, R2.4 et R2.5 ;
+  - `npm run arena` après R1.3 et après R2.5.
+- **Nouveaux invariants du fuzz :**
+  - lot de simultanéité vide après chaque décision ;
+  - `syncControl` idempotent ;
+  - au plus 3 passes de couches ;
+  - le mode « chaos » refuse les réponses mal formées aux nouveaux choix.
+
+## Risques
+
+- Une mise à jour d'un lot [règles] peut fermer les parties en ligne en cours (politique de F1).
+- Changements de l'IA : attaques obligées (R0.2), fenêtres de priorité pendant le nettoyage (R0.3), ordre des déclencheurs (R0.5, R3.1).
+- Tutoriel : la leçon des capacités compte sur le lien de vie ; le nettoyage.
+- Performance : le chemin des blessures, les couches, les actions basées sur l'état.
+- Tout nouvel événement passe par `filterEvents` (information cachée).
+

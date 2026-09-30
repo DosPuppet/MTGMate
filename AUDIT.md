@@ -282,9 +282,11 @@ Le P3 de l'ancien audit n'est pas fait :
 
 ## 9. Feuille de route (par priorité)
 
+Détail, ordre d'exécution et décisions de conception : `PLAN-R.md`.
+
 ### Suivi
 
-- Rien de fait pour l'instant. Ajouter ici une ligne par étape terminée, comme dans l'audit précédent.
+- **30/09/2026 :** plan de remédiation écrit (`PLAN-R.md`) ; garde-fou de la dette en place (lot F2 : `cards/test/debt.test.ts`, règle en fin de CLAUDE.md).
 
 ### R0 — Corrections simples (un lot, un test de règles par correction)
 

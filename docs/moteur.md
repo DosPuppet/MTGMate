@@ -68,6 +68,7 @@ Moteur pur et déterministe (`packages/engine/src`). L'état est sérialisable ;
   
   Un nouveau champ d'état doit les respecter.
 - Tout ce dont une statique ou une F/E variable dépend fait avancer la version d'état (`bump`). Le fuzz détecte les oublis (« cache des caractéristiques périmé »).
+- Pas de nouveau drapeau, mot-clé ou opération propre à une carte sans justification : règle en fin de CLAUDE.md, vérifiée par `cards/test/debt.test.ts` (référence `cards/data/debt-baseline.json`).
 - Préférer un mécanisme générique et nommé à un drapeau « pour une carte » :
   - réutiliser les doublements (`doubler`, multiplicateurs de déclenchements dans `triggers.ts`) ;
   - réutiliser les permissions de lancer (`grantPlay`, `castTerms`) et les modifications à l'arrivée (`StackItem.arrival`).
