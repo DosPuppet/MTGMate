@@ -103,7 +103,7 @@ Rangés par impact décroissant.
 | 4 | **Copies de sorts :** la copie garde les cibles de l'original, sans possibilité d'en choisir de nouvelles ; la cible ne « devient pas la cible » de la copie, donc sa garde ne se déclenche pas (exéc. pour la garde) | 707.10c, 702.21a | `engine/src/stack.ts:1295-1309` (`copySpellItem` n'appelle pas `announceTargets`) | **moyen** : environ 21 cartes des extensions restantes copient un sort avec de nouvelles cibles |
 | 5 | ✅ **Corrigé (R0.2).** **Taxes et sorts gratuits :** un sort lancé sans payer son coût ignore les augmentations de coût (`opts.free ? 0 : spellReduction(…)`). Lightning Strike gratuit face à Thalia, the Survivor coûte 0 au lieu de {1} (exéc.) | 601.2f, 118.9d | `engine/src/stack.ts:448` | faible à moyen : Découverte, sorts complotés, Omniscience |
 | 6 | ✅ **Corrigé (R0.5).** **Arrivées simultanées :** de deux permanents qui arrivent ensemble, le premier ne voit pas arriver le second | 603.6a | `engine/src/triggers.ts:793` (sources recalculées à chaque événement) | moyen : jetons créés en nombre, landfall |
-| 7 | « Arrive comme une copie » ne marche que pour un sort lancé : un Clone réanimé ou qui clignote arrive en tant que lui-même | 614.1c | `engine/src/stack.ts:1976-1987` | moyen pour les extensions à venir |
+| 7 | ✅ **Corrigé (R2.3).** « Arrive comme une copie » ne marche que pour un sort lancé : un Clone réanimé ou qui clignote arrive en tant que lui-même | 614.1c | `engine/src/stack.ts:1976-1987` | moyen pour les extensions à venir |
 | 8 | ✅ **Corrigé (R0.1).** **704.5b :** l'indicateur « a pioché dans une bibliothèque vide » n'est jamais remis à zéro. Quand Herald of Eternal Dawn quitte le jeu, le joueur perd pour une pioche faite des étapes plus tôt (exéc.) | 704.5b | `engine/src/actions.ts:48`, `engine/src/turn.ts:951` | faible |
 | 9 | ✅ **Corrigé (R0.1).** **Second partagé :** il interdit aussi les actions spéciales ; on ne peut plus retourner une carte face visible (exéc.) | 702.61b | `engine/src/stack.ts:1698` (avant la branche d'action spéciale), `engine/src/legal.ts:431` | faible |
 | 10 | ✅ **Corrigé (R0.1).** « Vous gagnez / perdez la partie » par un effet ignore « ne peut pas perdre » et « ne peut pas gagner » | 104.3, 104.2 | `engine/src/ops/players.ts:286-293` | faible (Herald of Eternal Dawn) |
@@ -295,6 +295,7 @@ Détail, ordre d'exécution et décisions de conception : `PLAN-R.md`.
 - **30/09/2026 :** lot R0.4 fait : écart 2 corrigé (lien de vie).
 - **30/09/2026 :** lot R0.5 fait : écart 6 corrigé (arrivées simultanées, 603.6a).
 - **30/09/2026 :** lot R4.0 fait (§ 3.3) : un seul accès aux statiques de joueur (N6).
+- **30/09/2026 :** lot R2.3 fait : écart 7 corrigé, et 303.4f / 303.4g (Aura mise en jeu sans être lancée).
 - **30/09/2026 :** lot R2.2 fait : copies de permanents (écart 13 en partie, N7, N8, N9).
 - **30/09/2026 :** lot R2.1 fait : écarts 14 et 17 corrigés (ce qui accompagne une arrivée est en place avant l'événement d'arrivée ; défenseur des jetons attaquants au choix).
 - **30/09/2026 :** lot R0.6 fait (§ 4) : poison affiché, cartes révélées et poison au journal, abandon confirmé, noms de cartes des invites en français. R0 terminé.

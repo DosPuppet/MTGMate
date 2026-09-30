@@ -257,3 +257,9 @@ Lot R2.2 (PLAN-R.md ; `RULES_VERSION` = 9) :
 - `copyToken` copie ce que copie le modèle ; une copie d'un sort de Clone choisit ce qu'elle copie ;
 - reste (R2.5) : exceptions de copie (707.9b) non copiables ;
 - tests : `engine/test/audit.test.ts`.
+
+Lot R2.3 (PLAN-R.md ; `RULES_VERSION` = 10) :
+- un permanent « qui arrive comme une copie » arrive aussi ainsi sans être lancé (réanimé, clignotant) ; une Aura mise en jeu sans être lancée enchante un objet choisi (303.4f) ; les candidats viennent de `copyCandidates` et `auraHosts` ;
+- pendant une résolution, `moveTo` demande ces choix avant de déplacer quoi que ce soit ; hors résolution, choix automatique du premier candidat ;
+- 303.4g : une Aura sans rien de légal à enchanter reste dans sa zone (`moveObject` renvoie null) ;
+- tests : `engine/test/audit.test.ts`.

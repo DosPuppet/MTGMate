@@ -17,7 +17,7 @@ Chaque entrée porte sa nature :
   - les conditions des capacités statiques (« tant que vous contrôlez un Dragon ») sont lues sur les caractéristiques imprimées, pas sur les types ajoutés par un effet (test « approximation (613.8) » de `layers.test.ts`) ;
   - une statique accordée par un effet de résolution s'applique (Roar of the Fifth People), mais pas une statique accordée par une autre statique (un test de `layers.test.ts` vérifie qu'aucune carte n'en a besoin).
 - `règle` **Blessures « réparties » (Chandra −4) :** la répartition est choisie à la résolution, et non au lancement (601.2d), entre les seules cibles encore légales ; la part d'une cible devenue illégale devrait être perdue (608.2b).
-- `règle` **Aura mise en jeu sans être lancée :** elle va au cimetière, faute du choix de l'objet enchanté (303.4f).
+- `choix auto` **Aura ou « arrive comme une copie » sans être lancé, hors résolution** (retour d'un exil lié, actions basées sur l'état) : le premier hôte ou modèle possible est choisi pour le joueur. Pendant une résolution (`moveTo`), le choix est demandé (303.4f, 707.5).
 - `règle` **Convocation :** une créature qui a une capacité de mana ne sert pas à la convocation (elle paie par sa capacité de mana).
 - `choix auto` **Choix « en arrivant » sans résolution** (permanent remis en jeu par un effet) : choix par défaut, le type ou la couleur les plus présents chez le contrôleur.
 - `choix auto` **Dégager jusqu'à N terrains :** les terrains sont choisis automatiquement.

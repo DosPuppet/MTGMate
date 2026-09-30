@@ -16,7 +16,8 @@ Plan établi le 30/09/2026 (branche `dev`) : il sert de feuille de route aux pro
 - **30/09/2026 : R4.0 fait** (`RULES_VERSION` = 7 : `playerStatics(s, p, clé)`, seul accès aux statiques de joueur ; 23 lectures directes migrées ; conditions des doubleurs vérifiées ; bench inchangé).
 - **30/09/2026 : R2.1 fait** (`RULES_VERSION` = 8 : `EntersContext` porte l'état engagé, l'attaque, les marqueurs, les modifications de couches, la célérité et l'Imminence, posés avant l'événement d'arrivée par `moveWithSpec`, la création de jetons, `copyToken` et la résolution d'un sort de permanent ; défenseur des jetons attaquants au choix).
 - **30/09/2026 : R2.2 fait** (`RULES_VERSION` = 9 : copies de permanents ; N7, N8, N9, #13 en partie).
-- À faire : R2.3, puis la suite dans l'ordre du tableau ci-dessous.
+- **30/09/2026 : R2.3 fait** (`RULES_VERSION` = 10 : Clone ou Aura qui arrive sans être lancé ; #7, 303.4f, 303.4g).
+- À faire : R1.1, puis la suite dans l'ordre du tableau ci-dessous.
 
 ## Le garde-fou de la dette (lot F2)
 
@@ -45,8 +46,8 @@ Plan établi le 30/09/2026 (branche `dev`) : il sert de feuille de route aux pro
 | 3 | F3 : durcissement du serveur | § 6 | — | faible | ✅ `e5910a4` |
 | 4 | R0.1 à R0.6 : corrections rapides | § 3.1 | F1 | faible à moyen | ✅ `709a43a` à `c7896e5` |
 | 5 | R4.0 : accesseur unique des statiques de joueur | § 3.3 | F2 | moyen | ✅ (voir suivi) |
-| 6 | R2.1 à R2.3 : entrée sur le champ de bataille, copies de permanents | § 3.1, § 3.2 | R4.0 | moyen | **prochain** |
-| 7 | R1.1 à R1.3 : remplacements (616) | § 3.2 | R4.0, R2.1 | élevé | à faire |
+| 6 | R2.1 à R2.3 : entrée sur le champ de bataille, copies de permanents | § 3.1, § 3.2 | R4.0 | moyen | ✅ `f0b77a1`, `ead9cd5`, R2.3 |
+| 7 | R1.1 à R1.3 : remplacements (616) | § 3.2 | R4.0, R2.1 | élevé | **prochain** |
 | 8 | R3.1 et R3.2 : copies de sorts, blessures réparties | § 3.1 | R0 | moyen à élevé | à faire |
 | 9 | R2.4 : couche 2 (contrôle) | § 3.2 | R4.0 | élevé | à faire |
 | 10 | R2.5 : 613.8 par point fixe, couche 5 « en plus » | § 3.2 | R2.2, R2.4 | élevé (perf.) | à faire |
@@ -147,7 +148,7 @@ Lus dans le code ; chacun est confirmé par un test au début de son lot.
 - Bench (sur batterie, avant → après) : aléatoire 2 joueurs 2 976 → 3 008 déc/s, 4 joueurs 2 046 → 2 034 : inchangé. La cible de 5 000 déc/s n'est pas atteinte sur cette machine, avant comme après.
 - Tests : `engine/test/audit.test.ts` (N6 : effet « ce tour-ci » appliqué, condition non remplie, doubleur sous condition).
 
-## R2.1 à R2.3 — entrée sur le champ de bataille et copies de permanents
+## R2.1 à R2.3 — entrée sur le champ de bataille et copies de permanents ✅
 
 - **R2.1 [règles] :**
   - `EntersContext` (`replacement.ts:23-46`) reçoit `tapped`, `attacking` (défenseur), `counters` et `mods`, appliqués avant l'événement d'arrivée ;
@@ -178,6 +179,14 @@ Lus dans le code ; chacun est confirmé par un test au début de son lot.
   - choix en arrivant sans lancer : « arrive comme une copie » après une réanimation ou un clignotement (#7), hôte d'une Aura (303.4f) ;
   - le choix est demandé par les opérations de déplacement, avant `moveObject` ;
   - hors résolution, choix automatique documenté.
+
+  **R2.3 réalisé ✅ :**
+  - `copyCandidates` et `auraHosts` (`replacement.ts`) : ce qu'un Clone peut copier, ce qu'une Aura peut enchanter ;
+  - l'opération `moveTo` (réanimation, clignotement, « mettez sur le champ de bataille ») demande ces choix avant tout déplacement, au joueur qui contrôlera le permanent ; `moveWithSpec` les transmet ;
+  - hors résolution, `applyEntersReplacements` choisit le premier candidat (choix automatique, documenté) ; `copyChosen` distingue « rien copié, par choix » d'un choix à faire ;
+  - 303.4g : `moveObject` laisse dans sa zone une Aura qui n'a rien à enchanter (au lieu de la mettre en jeu puis au cimetière, avec des déclencheurs d'arrivée et de départ parasites) ;
+  - Auras de joueur (malédictions) : inchangées ;
+  - tests : `engine/test/audit.test.ts` (#7, 303.4f, 303.4g).
 
 ## R1 — remplacements (616)
 

@@ -14,6 +14,7 @@ import { HANDLERS as PERMANENTS_HANDLERS } from "./ops/permanents";
 import { HANDLERS as PLAYERS_HANDLERS } from "./ops/players";
 import { HANDLERS as SPELLS_HANDLERS } from "./ops/spells";
 import { HANDLERS as ZONES_HANDLERS } from "./ops/zones";
+import type { EntersContext } from "./replacement";
 import {
   alivePlayers,
   bump,
@@ -601,7 +602,14 @@ export function addEffect(s: GameState, ids: ObjectId[], mods: LayerMods, durati
 }
 
 /** Déplace un objet selon une destination d'effet ; renvoie son nouvel identifiant. */
-export function moveWithSpec(s: GameState, controller: PlayerId, id: ObjectId, spec: MoveSpec): ObjectId | null {
+/** `choices` : choix d'arrivée faits pendant la résolution (ce que copie un Clone, ce qu'enchante une Aura). */
+export function moveWithSpec(
+  s: GameState,
+  controller: PlayerId,
+  id: ObjectId,
+  spec: MoveSpec,
+  choices?: Pick<EntersContext, "copyOf" | "copyChosen" | "attachTo">,
+): ObjectId | null {
   const o = s.objects[id];
   if (!o) return null;
   const zone: Zone = spec.to === "libraryTop" || spec.to === "libraryBottom" ? "library" : (spec.to as Zone);
@@ -621,6 +629,7 @@ export function moveWithSpec(s: GameState, controller: PlayerId, id: ObjectId, s
             counters: spec.counters ? [spec.counters] : undefined,
             mods: { ...mods, setTypes: spec.setTypes, setSubtypes: spec.setSubtypes },
             attacking: spec.attacking && s.combat ? attackingDefender(s, newController ?? o.owner) : undefined,
+            ...choices,
           }
         : undefined,
   });

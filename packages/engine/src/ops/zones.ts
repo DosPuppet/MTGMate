@@ -19,7 +19,9 @@ import {
   zoneCards,
 } from "../effects";
 import { RulesError } from "../errors";
+import { copiedDefId } from "../layers";
 import { manaValue } from "../mana";
+import { auraHosts, copyCandidates, type EntersContext } from "../replacement";
 import { bounceSpell, exileSpell } from "../stack";
 import {
   bump,
@@ -695,7 +697,7 @@ export const HANDLERS: OpHandlers = {
     for (const id of resolveRef(s, ctx, e.what)) if (onBattlefield(s, id)) sacrifice(s, id);
     return;
   },
-  moveTo(s, r, e, ctx) {
+  moveTo(s, r, e, ctx, key) {
     const ids = resolveRef(s, ctx, e.what);
     const f = e.store?.filter;
     if (e.store)
@@ -704,9 +706,66 @@ export const HANDLERS: OpHandlers = {
         e.store.name,
         ids.filter((id) => !f || matchesCard(s, ctx.controller, id, { ...f, controller: undefined })).length,
       );
+    // Choix d'arrivée d'un permanent qui n'est pas lancé, demandés avant tout déplacement (la résolution reprend l'effet
+    // depuis le début une fois la réponse donnée) : ce que copie un Clone (707.5), ce qu'enchante une Aura (303.4f).
+    const choices: Record<string, Pick<EntersContext, "copyOf" | "copyChosen" | "attachTo">> = {};
+    if (e.spec.to === "battlefield") {
+      for (const id of ids) {
+        const o = s.objects[id];
+        const d = s.defs[o?.defId ?? ""];
+        if (!o || !d) continue;
+        const who = e.spec.underYourControl ? ctx.controller : o.owner;
+        if (d.entersAsCopyOf) {
+          const options = copyCandidates(s, who, id);
+          const k = key(`copy-${id}`);
+          if (options.length && !r.vars[k]) {
+            return {
+              ask: {
+                player: who,
+                key: k,
+                request: {
+                  type: "pick",
+                  intent: "pickCards",
+                  prompt: `${cardRef(d.id)} : vous pouvez le faire arriver comme copie d'un permanent`,
+                  options,
+                  min: 0,
+                  max: 1,
+                  suggested: options.slice(0, 1),
+                },
+              },
+            };
+          }
+          const picked = (r.vars[k] ?? []).map(String).find((x) => options.includes(x));
+          choices[id] = { copyOf: picked ? copiedDefId(s, picked) : undefined, copyChosen: true };
+        }
+        if (d.enchant && !d.enchant.player) {
+          const options = auraHosts(s, who, id);
+          const k = key(`host-${id}`);
+          if (options.length > 1 && !r.vars[k]) {
+            return {
+              ask: {
+                player: who,
+                key: k,
+                request: {
+                  type: "pick",
+                  intent: "pickCards",
+                  prompt: `${cardRef(d.id)} : choisissez ce qu'elle enchante`,
+                  options,
+                  min: 1,
+                  max: 1,
+                  suggested: options.slice(0, 1),
+                },
+              },
+            };
+          }
+          const picked = (r.vars[k] ?? []).map(String).find((x) => options.includes(x)) ?? options[0];
+          if (picked) choices[id] = { ...choices[id], attachTo: picked };
+        }
+      }
+    }
     const moved: string[] = [];
     for (const id of ids) {
-      const n = moveWithSpec(s, ctx.controller, id, e.spec);
+      const n = moveWithSpec(s, ctx.controller, id, e.spec, choices[id]);
       if (n) moved.push(n);
     }
     if (e.store) r.vars[`$ids:${e.store.name}`] = moved;

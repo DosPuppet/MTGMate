@@ -438,3 +438,55 @@ describe("N7, N8, N9, #13 : copies de permanents", () => {
     expect(chars(s, bear).power).toBe(5);
   });
 });
+
+describe("#7 et 303.4f : choix d'un permanent qui arrive sans être lancé", () => {
+  const CLONE = customCard({
+    name: "Clone réanimé",
+    power: 0,
+    toughness: 0,
+    entersAsCopyOf: { types: ["Creature"] },
+    entersAsCopyAnyController: true,
+  });
+  type Asked = { ask?: { key: string; request: { options: string[] } } };
+
+  it("#7 : un Clone réanimé pendant une résolution demande ce qu'il copie, puis arrive comme cette copie", () => {
+    const s = scenario({ p1: { graveyard: [CLONE] }, p2: { battlefield: ["Bear Cub", "Shivan Dragon"] } });
+    const clone = idOf(s, "p1", "graveyard", CLONE.name);
+    const dragon = idOf(s, "p2", "battlefield", "Shivan Dragon");
+    const r = { ...resolution("p1"), targets: { t: [clone] }, vars: {} as Record<string, unknown> };
+    const effect = fx.moveTo(ref.target(), { to: "battlefield" });
+    const asked = runEffect(s, r as never, effect) as Asked;
+    expect(asked.ask?.request.options).toContain(dragon);
+    r.vars[asked.ask?.key ?? ""] = [dragon];
+    runEffect(s, r as never, effect);
+    const back = idOf(s, "p1", "battlefield", CLONE.name);
+    expect(chars(s, back).name).toBe("Shivan Dragon");
+  });
+
+  it("#7 : hors résolution, il copie automatiquement le premier permanent possible", () => {
+    const s = scenario({ p1: { graveyard: [CLONE] }, p2: { battlefield: ["Shivan Dragon"] } });
+    const id = moveObject(s, idOf(s, "p1", "graveyard", CLONE.name), "battlefield") as string;
+    expect(chars(s, id).name).toBe("Shivan Dragon");
+  });
+
+  it("303.4f : une Aura réanimée demande ce qu'elle enchante", () => {
+    const s = scenario({ p1: { graveyard: ["Pacifism"] }, p2: { battlefield: ["Bear Cub", "Shivan Dragon"] } });
+    const aura = idOf(s, "p1", "graveyard", "Pacifism");
+    const dragon = idOf(s, "p2", "battlefield", "Shivan Dragon");
+    const r = { ...resolution("p1"), targets: { t: [aura] }, vars: {} as Record<string, unknown> };
+    const effect = fx.moveTo(ref.target(), { to: "battlefield" });
+    const asked = runEffect(s, r as never, effect) as Asked;
+    expect(asked.ask?.request.options).toHaveLength(2);
+    r.vars[asked.ask?.key ?? ""] = [dragon];
+    runEffect(s, r as never, effect);
+    const placed = idOf(s, "p1", "battlefield", "Pacifism");
+    expect(s.objects[placed]?.attachedTo).toBe(dragon);
+  });
+
+  it("303.4g : sans rien à enchanter, l'Aura reste au cimetière", () => {
+    const s = scenario({ p1: { graveyard: ["Pacifism"] } });
+    const aura = idOf(s, "p1", "graveyard", "Pacifism");
+    expect(moveObject(s, aura, "battlefield")).toBeNull();
+    expect(s.objects[aura]?.zone).toBe("graveyard");
+  });
+});

@@ -398,6 +398,18 @@ export function moveObject(
     removeObject(s, id);
     return null;
   }
+  // 303.4g : une Aura qui devrait arriver sans être lancée et sans rien de légal à enchanter reste dans sa zone.
+  const auraDef = s.defs[o.defId]?.enchant;
+  if (
+    to === "battlefield" &&
+    auraDef &&
+    !auraDef.player &&
+    o.zone !== "stack" &&
+    !opts.enters?.attachTo &&
+    !opts.faceDown &&
+    auraHosts(s, opts.controller ?? o.controller, id).length === 0
+  )
+    return null;
   // Un permanent préparé qui quitte le champ de bataille : la copie de son sort cesse d'exister.
   if (o.preparedCopy && o.zone === "battlefield") setPrepared(s, o, false);
   // 614.1a / 616.1 : remplacements « au lieu du cimetière » (Progenitus, finalité, Rest in Peace, Valgavoth…).
@@ -611,7 +623,7 @@ export function setPrepared(s: GameState, o: GameObject, on: boolean): void {
 // ---------------------------------------------------------------------------
 
 import { bump, snapshot } from "./layers";
-import { applyEntersReplacements, type EntersContext, releaseLinkedExile, replaceGraveyard } from "./replacement";
+import { applyEntersReplacements, auraHosts, type EntersContext, releaseLinkedExile, replaceGraveyard } from "./replacement";
 import { counterDoublers, playerStatic } from "./statics";
 import { detectTriggers } from "./triggers";
 import { logTurnEvent, zoneEntry } from "./turnlog";

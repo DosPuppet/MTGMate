@@ -29,8 +29,10 @@ export const RECORD_VERSION = 1;
  *   jetons attaquants au choix (R2.1).
  * - 9 : copies de permanents (valeur de mana, loyauté et remplacements de la définition copiée, copie d'une copie,
  *   copie par une statique, copie d'un sort de Clone ; R2.2).
+ * - 10 : un Clone ou une Aura qui arrive sans être lancé choisit ce qu'il copie ou enchante ; une Aura sans rien à
+ *   enchanter reste dans sa zone (707.5, 303.4f, 303.4g ; R2.3).
  */
-export const RULES_VERSION = 9;
+export const RULES_VERSION = 10;
 
 /** Un point de contrôle toutes les N décisions (plus la dernière de la partie). */
 export const CHECKPOINT_EVERY = 25;

@@ -2108,6 +2108,7 @@ function finishResolution(
         kicked: item.kicked,
         chosen: chosenFrom(vars),
         copyOf: vars.$copyOf?.[0] !== undefined ? String(vars.$copyOf[0]) : undefined,
+        copyChosen: vars.$copyOf !== undefined,
       });
     return;
   }
@@ -2130,6 +2131,7 @@ function finishResolution(
           manaSpent: item.manaSpent,
           devoured: Number(vars.$devoured?.[0] ?? 0),
           copyOf: vars.$copyOf?.[0] !== undefined ? String(vars.$copyOf[0]) : undefined,
+          copyChosen: vars.$copyOf !== undefined,
           spentColors: item.spentColors,
           evoked: item.evoked,
           // Marqueurs, célérité et sous-types d'arrivée (Torgal, Summon: Fenrir, Noctis), Imminence : avant l'événement.

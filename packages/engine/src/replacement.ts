@@ -57,6 +57,33 @@ export interface EntersContext {
   haste?: boolean;
   /** Imminence (702.176a) : N marqueurs de temps ; ce n'est pas une créature tant qu'il en a. */
   impending?: number;
+  /** « Arrive comme une copie » : le choix a été fait (même s'il était de ne rien copier) ; sinon choix automatique. */
+  copyChosen?: boolean;
+}
+
+/** Permanents qu'une carte « qui arrive comme une copie de … » peut copier en arrivant sous le contrôle de `controller`. */
+export function copyCandidates(s: GameState, controller: PlayerId, cardId: ObjectId): ObjectId[] {
+  const d = s.defs[s.objects[cardId]?.defId ?? ""];
+  const filter = d?.entersAsCopyOf;
+  if (!filter) return [];
+  return s.battlefield.filter(
+    (id) =>
+      id !== cardId &&
+      (d.entersAsCopyAnyController || s.objects[id]?.controller === controller) &&
+      matchesObjectFilter(s, controller, id, filter, cardId),
+  );
+}
+
+/** 303.4f : ce qu'une Aura qui arrive sans être lancée peut enchanter (permanents ; pas les Auras de joueur). */
+export function auraHosts(s: GameState, controller: PlayerId, cardId: ObjectId): ObjectId[] {
+  const enchant = s.defs[s.objects[cardId]?.defId ?? ""]?.enchant;
+  if (!enchant || enchant.player) return [];
+  return s.battlefield.filter(
+    (id) =>
+      id !== cardId &&
+      !chars(s, id).keywords.includes("protectionFromEverything") &&
+      matchesObjectFilter(s, controller, id, enchant.filter, cardId),
+  );
 }
 
 /**
@@ -221,7 +248,16 @@ export function applyEntersReplacements(s: GameState, o: GameObject, ctx: Enters
   if (ctx.manaSpent !== undefined) o.manaSpent = ctx.manaSpent;
   if (ctx.spentColors) o.spentColors = ctx.spentColors;
   if (ctx.evoked) o.evoked = true;
-  if (ctx.attachTo) o.attachedTo = ctx.attachTo;
+  const own = s.defs[o.defId];
+  // 303.4f : une Aura qui arrive sans être lancée enchante un objet choisi par celui qui la contrôle (automatiquement ici :
+  // le premier possible ; les opérations de déplacement le demandent pendant une résolution).
+  const attachTo = ctx.attachTo ?? (own?.enchant && !own.enchant.player ? auraHosts(s, o.controller, o.id)[0] : undefined);
+  if (attachTo) o.attachedTo = attachTo;
+  // 707.5 : « arrive comme une copie » aussi sans être lancé (réanimé, clignotant) ; choix automatique hors résolution.
+  if (!ctx.copyOf && !ctx.copyChosen && own?.entersAsCopyOf) {
+    const model = copyCandidates(s, o.controller, o.id)[0];
+    if (model) ctx = { ...ctx, copyOf: copiedDefId(s, model) };
+  }
   // Modifications imposées par l'effet qui le met sur le champ de bataille, avant les autres remplacements (qui peuvent
   // dépendre des types ajoutés) et avant l'événement d'arrivée.
   if (ctx.tapped) o.tapped = true;
