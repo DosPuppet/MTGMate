@@ -47,7 +47,7 @@ Ce fichier sert au suivi du projet entre les sessions : où on en est, les règl
 | Méta Standard, lot M5 : Boros Dwarves, Lifegain, Mardu Discard, Boros Tokens (34 cartes) ; Storied, faufilement, chaos, paradigme, équiper digne | ✅ |
 | Méta Standard, lot M6 : les six derniers archétypes (47 cartes) ; maîtrise de l'air, Web-slinging, payer X PV, tours passés. **Phase 1 du plan P4 finie : les 20 archétypes du méta (88,1 %) sont jouables** | ✅ |
 | Phase 2 du plan P4 : Tarkir: Dragonstorm à 100 % (`PLAN-P4.md`) | à faire |
-| Plan de remédiation de l'audit du 30/09/2026 (`PLAN-R.md`, lots F1 à R8) : F2 (garde-fou de la dette), F1 (version des règles, rejeu vérifié, parties dorées) et F3 (sécurité du serveur) faits, le reste à faire | en cours |
+| Plan de remédiation de l'audit du 30/09/2026 (`PLAN-R.md`, lots F1 à R8) : F1 à F3 (fondations) et R0 (corrections rapides, `RULES_VERSION` = 6) faits, le reste à faire | en cours |
 | Autres extensions Standard | à la demande de l'utilisateur, une à la fois |
 
 

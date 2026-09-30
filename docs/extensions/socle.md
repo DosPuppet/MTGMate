@@ -230,3 +230,11 @@ Lot R0.4 (PLAN-R.md ; `RULES_VERSION` = 5) :
 Lot R0.5 (PLAN-R.md ; `RULES_VERSION` = 6) :
 - 603.6a : des permanents qui arrivent en même temps (jetons créés ensemble, cartes mises sur le champ de bataille par un même effet) se voient arriver. Chaque arrivée d'un lot `simultaneously` est détectée tout de suite, puis revue à la fin du lot pour les seules sources arrivées après elle (`enterBatch`, option `only` de `detectTriggers`) ; rien ne change pour une arrivée isolée ;
 - tests : `engine/test/audit.test.ts` (#6).
+
+Lot R0.6 (PLAN-R.md ; interface, sans changement de règles) :
+- poison : `PlayerView.poison` (absent à 0), pastille ☠ dans la barre du joueur (plus visible à 7 et plus) ;
+- journal : cartes révélées (« Bob révèle … »), marqueurs poison reçus (avec le total), raison de la défaite (bibliothèque vide, poison, abandon) ;
+- « Abandonner » se confirme en deux temps (`ConcedeButton`, barre latérale) ;
+- noms de cartes des invites du moteur : le moteur écrit un repère `cardRef(defId)` (`⟦defId⟧`) dans ses invites et libellés (répartition des blessures, règle des légendes, retourner face visible, ordre des déclencheurs) ; le client le remplace par le nom dans la langue choisie (`localizeText`, `useLocalizedView`, `useLocalize`) ;
+- reste : les messages d'erreur (`RulesError`) nomment encore les cartes en anglais ;
+- tests : `client/test/i18n.test.ts` ; `ui-smoke`.

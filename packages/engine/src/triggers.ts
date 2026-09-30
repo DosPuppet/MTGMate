@@ -10,7 +10,7 @@
  */
 
 import { canForage, gainLife } from "./actions";
-import { ask } from "./choices";
+import { ask, cardRef } from "./choices";
 import { boardAmount, evalAmount } from "./effects";
 import { RulesError, rethrowAsRules } from "./errors";
 import { copiedDefId } from "./layers";
@@ -1032,7 +1032,7 @@ export function pendingTriggerSource(s: GameState, triggerId: string): { defId: 
 
 function triggerLabel(s: GameState, t: PendingTrigger): string {
   const label = t.inline?.label ?? triggeredAbility(s, t)?.label;
-  return `${s.defs[t.sourceDefId]?.name ?? "?"}${label ? ` — ${label}` : ""}`;
+  return `${cardRef(t.sourceDefId)}${label ? ` — ${label}` : ""}`;
 }
 
 /**

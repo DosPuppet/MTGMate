@@ -1,6 +1,6 @@
 export { createTokens } from "./actions";
 export { type AutopilotSettings, autopilotDecision, autoTarget, DEFAULT_AUTOPILOT } from "./autopilot";
-export { divisionOf, validateChoice } from "./choices";
+export { cardRef, divisionOf, validateChoice } from "./choices";
 export type { CardScript } from "./dsl";
 export * as dsl from "./dsl";
 export { applyMutable, blankState, createGame, type GameOptions, type PlayerSetup, type StepResult, submit } from "./game";

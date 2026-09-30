@@ -12,7 +12,7 @@ import {
   setSpeed,
   sourceFromObject,
 } from "./actions";
-import { ask } from "./choices";
+import { ask, cardRef } from "./choices";
 import { announceDiscard, announceDiscardBatch, drawBonus, evalAmount } from "./effects";
 import { rethrowAsRules } from "./errors";
 import { copiedDefId } from "./layers";
@@ -918,7 +918,7 @@ function nextCombatAssignment(s: GameState): void {
     {
       type: "divide",
       intent: "combatDamage",
-      prompt: `Répartissez les ${combatPower(s, attacker)} blessures de ${s.defs[obj(s, attacker).defId]?.name ?? "l'attaquant"}`,
+      prompt: `Répartissez les ${combatPower(s, attacker)} blessures de ${cardRef(obj(s, attacker).defId)}`,
       among,
       total: combatPower(s, attacker),
       lethal: trample
@@ -1244,7 +1244,7 @@ function stateBasedActionsOnce(s: GameState): boolean {
         {
           type: "pick",
           intent: "legend",
-          prompt: `Règle des légendes : choisissez le ${s.defs[obj(s, newest).defId]?.name ?? "permanent"} à garder`,
+          prompt: `Règle des légendes : choisissez le ${cardRef(obj(s, newest).defId)} à garder`,
           options: legendChoice.ids,
           min: 1,
           max: 1,

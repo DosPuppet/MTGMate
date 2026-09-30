@@ -1,6 +1,7 @@
 /** Effets du moteur : déplacements entre zones (détruire, exiler, sacrifier, chercher, meuler, défausser…). Chaque clé est un `op` d'`Effect` (voir `runEffect`, effects.ts). */
 
 import { dealDamage, destroy, drawCard, sacrifice } from "../actions";
+import { cardRef } from "../choices";
 import type { EffectContext, OpHandlers, OpResult } from "../effects";
 import {
   announceDiscard,
@@ -1464,7 +1465,7 @@ export const HANDLERS: OpHandlers = {
           ask: {
             player: ctx.controller,
             key: key(`up-${id}`),
-            request: { type: "yesNo", intent: "may", prompt: `Retourner ${card.name} face visible ?`, suggested: [1] },
+            request: { type: "yesNo", intent: "may", prompt: `Retourner ${cardRef(card.id)} face visible ?`, suggested: [1] },
           },
         };
       }

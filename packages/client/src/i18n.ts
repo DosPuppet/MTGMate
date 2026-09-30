@@ -98,6 +98,11 @@ export const KEYWORD_LABEL: Record<Keyword, string> = {
   attacksDespiteDefender: "Attaque malgré le défenseur",
 };
 
+/** Remplace les repères de carte du moteur (`⟦defId⟧`, voir `cardRef`) par le nom de la carte dans la langue choisie. */
+export function localizeText(text: string, faces: Record<string, CardFace>, lang: Lang): string {
+  return text.replace(/⟦([^⟧]+)⟧/g, (_, id: string) => (faces[id] ? faceName(faces[id], lang) : "cette carte"));
+}
+
 export function faceName(face: CardFace | undefined, lang: Lang): string {
   if (!face) return "?";
   if (face.defId === "face-down") return lang === "fr" ? "Carte face cachée" : "Face-down card";
@@ -247,6 +252,16 @@ export function describeEvents(
         break;
       case "discard":
         add(`${who(e.player)} ${e.player === me ? "défaussez" : "défausse"} ${e.defIds.map(name).join(", ")}.`, kind(e.player));
+        break;
+      case "reveal":
+        if (e.defIds.length)
+          add(`${who(e.player)} ${e.player === me ? "révélez" : "révèle"} ${e.defIds.map(name).join(", ")}.`, kind(e.player));
+        break;
+      case "poison":
+        add(
+          `${who(e.player)} ${e.player === me ? "recevez" : "reçoit"} ${e.amount} marqueur${e.amount > 1 ? "s" : ""} poison (${e.total}).`,
+          kind(e.player),
+        );
         break;
       case "lose":
         add(`${who(e.player)} ${e.player === me ? "perdez" : "perd"}${LOSS_REASON[e.reason]}.`, kind(e.player));

@@ -4,6 +4,14 @@
 import { RulesError } from "./errors";
 import type { ChoicePurpose, ChoiceRequest, ChoiceValue, GameState, PlayerId } from "./types";
 
+/**
+ * Repère d'une carte dans un texte destiné au joueur (invite, libellé) : l'interface le remplace par le nom de la carte
+ * dans sa langue (`localizeText` du client).
+ */
+export function cardRef(defId: string): string {
+  return `⟦${defId}⟧`;
+}
+
 export function ask(s: GameState, player: PlayerId, request: ChoiceRequest, purpose: ChoicePurpose): void {
   s.pending = { kind: "choice", player, request, purpose };
 }

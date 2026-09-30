@@ -691,6 +691,19 @@ button {
   color: #111;
 }
 
+.poison-chip {
+  padding: 0 6px;
+  border-radius: 8px;
+  background: var(--panel-2);
+  color: #9be07a;
+  font-weight: 600;
+}
+
+.poison-chip.danger {
+  background: #3d6b22;
+  color: #fff;
+}
+
 .control-banner {
   padding: 4px 10px;
   border-radius: 6px;
@@ -3113,4 +3126,17 @@ button {
   .sideboard-editor .sb-columns {
     grid-template-columns: 1fr;
   }
+}
+
+/* Abandon confirmé en deux temps (barre latérale). */
+.concede-confirm {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.btn.danger {
+  background: #8a2a2a;
+  color: #fff;
+  border-color: #a33;
 }

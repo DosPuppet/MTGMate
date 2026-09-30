@@ -120,6 +120,8 @@ export interface PlayerView {
   emblems: { name: string; text: string }[];
   /** Vitesse (702.179), absente tant qu'elle n'a pas démarré. */
   speed?: number;
+  /** Marqueurs poison (104.3d : 10 ou plus, le joueur perd), absents s'il n'en a aucun. */
+  poison?: number;
 }
 
 export type PendingView =
@@ -327,6 +329,7 @@ export function projectView(s: GameState, viewer: PlayerId): GameView {
       libraryCount: pl.library.length,
       handCount: pl.hand.length,
       speed: pl.speed,
+      ...(pl.poison ? { poison: pl.poison } : {}),
       graveyard: pl.graveyard.map((id) => objectView(s, id)),
       manaPool: { ...pl.manaPool },
       lost: pl.lost,

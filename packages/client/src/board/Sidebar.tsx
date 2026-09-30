@@ -145,6 +145,28 @@ function Log() {
 }
 
 /** Rythme des effets : combien de temps chaque sort ou capacité qui se résout est montré avant de s'appliquer. */
+/** « Abandonner » en deux temps : un clic par erreur ne fait pas perdre la partie. */
+function ConcedeButton({ onConcede }: { onConcede: () => void }) {
+  const [asking, setAsking] = useState(false);
+  if (!asking)
+    return (
+      <button type="button" className="btn small ghost" onClick={() => setAsking(true)}>
+        Abandonner
+      </button>
+    );
+  return (
+    <span className="concede-confirm">
+      Abandonner la partie ?
+      <button type="button" className="btn small danger" onClick={onConcede}>
+        Confirmer
+      </button>
+      <button type="button" className="btn small ghost" onClick={() => setAsking(false)}>
+        Non
+      </button>
+    </span>
+  );
+}
+
 function PaceControl() {
   const pace = useGame((s) => s.pace);
   const setPace = useGame((s) => s.setPace);
@@ -197,11 +219,7 @@ function Settings() {
       </label>
       <PaceControl />
       <ImageRelayToggle />
-      {!over && !replay && (
-        <button type="button" className="btn small ghost" onClick={() => decide({ type: "concede" })}>
-          Abandonner
-        </button>
-      )}
+      {!over && !replay && <ConcedeButton onConcede={() => decide({ type: "concede" })} />}
       {/* Enregistrement de la partie (replay, signalement d'un bug) ; en ligne, seulement une fois terminée. */}
       {!tutorial && !replay && (!online || over) && (
         <button

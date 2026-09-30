@@ -6,6 +6,7 @@ import type { ChoiceValue, GameView, ObjectView } from "@mtgx/engine";
 import { useEffect, useState } from "react";
 import { Card } from "../board/Card";
 import { faceName } from "../i18n";
+import { useLocalizedView } from "../localize";
 import { useGame } from "../store";
 import { boardPick, choiceSource, type PickRequest, pickValid, shortPrompt, togglePick } from "./boardChoice";
 import { ZoneTabbed } from "./ZoneTabs";
@@ -95,7 +96,9 @@ function BoardChoicePanel({ view, req }: { view: GameView; req: PickRequest }) {
   );
 }
 
-export function ChoicePrompt({ view }: { view: GameView }) {
+export function ChoicePrompt({ view: raw }: { view: GameView }) {
+  // Noms de cartes des invites et libellés du moteur dans la langue de l'interface.
+  const view = useLocalizedView(raw);
   const pick = boardPick(view);
   if (pick) return <BoardChoicePanel view={view} req={pick} />;
   return <ChoiceModal view={view} />;

@@ -2,6 +2,7 @@ import type { GameView, ObjectView, PlayerView } from "@mtgx/engine";
 import { motion } from "motion/react";
 import { type CSSProperties, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { faceName, PHASE_BAR, STEP_LABEL } from "../i18n";
+import { useLocalize } from "../localize";
 import { boardPick, choiceSource, pickValid, shortPrompt } from "../prompts/boardChoice";
 import { myActions, useGame } from "../store";
 import { isTouch, justLongPressed } from "../touch";
@@ -143,6 +144,11 @@ function PlayerBar({ player, isMe }: { player: PlayerView; isMe: boolean }) {
           >
             <Icon d={ICONS.exile} /> {view.exile.filter((o) => o.owner === player.id).length}
           </button>
+          {!!player.poison && (
+            <span className={`poison-chip ${player.poison >= 7 ? "danger" : ""}`} title="Marqueurs poison (10 : le joueur perd)">
+              ☠ {player.poison}
+            </span>
+          )}
           {player.speed !== undefined && (
             <span className={`speed-chip ${player.speed >= 4 ? "max" : ""}`} title="Vitesse (4 : vitesse maximale)">
               ⚡ {player.speed}
@@ -573,6 +579,7 @@ function StackView() {
 
 function Banner() {
   const view = useGame((s) => s.view) as GameView;
+  const loc = useLocalize();
   const casting = useGame((s) => s.casting);
   const cancel = useGame((s) => s.cancel);
   const chooseNoTarget = useGame((s) => s.chooseNoTarget);
@@ -615,7 +622,7 @@ function Banner() {
     );
   } else if (pick) {
     const source = choiceSource(view);
-    const what = shortPrompt(pick.prompt, source);
+    const what = shortPrompt(loc(pick.prompt), source);
     text = `${source ? `${faceName(source.face, lang)} : ${what}` : what} (${selection.length}/${pick.max})`;
   } else if (!p) text = view.over ? "Partie terminée" : "…";
   else if (!mine) {
@@ -641,7 +648,7 @@ function Banner() {
     text = "Bloqueurs : cliquez une de vos créatures, puis l'attaquant à bloquer";
   } else if (p.kind === "priority" && p.castNow) {
     // 608.2g : la carte à lancer brille au bout de la main ; le bouton principal refuse.
-    text = p.castNow.prompt;
+    text = loc(p.castNow.prompt);
   } else if (p.kind === "priority" && view.stack.length > 0) {
     const top = view.stack[view.stack.length - 1];
     // « répondre ? » seulement si une réponse est possible (sinon le panneau StackReveal le montre).
