@@ -33,7 +33,6 @@ import {
   shuffle,
   snapshot,
 } from "./state";
-import { playerStatic } from "./statics";
 import { matchesCard, matchesObjectFilter, matchesView } from "./targets";
 import { checkCondition, mostLife } from "./triggers";
 import { countTurnEvents } from "./turnlog";
@@ -749,15 +748,6 @@ export function putFaceDown(s: GameState, controller: PlayerId, id: ObjectId, wa
   const stats = s.players[controller]?.turnStats;
   if (stats) stats.faceDownOrUp = (stats.faceDownOrUp ?? 0) + 1;
   return moveObject(s, id, "battlefield", { controller, faceDown: { ward, upCosts } });
-}
-
-/** Quantum Riddler : avec une carte en main ou moins, « si vous deviez piocher, vous piochez une carte de plus ». */
-export function drawBonus(s: GameState, player: PlayerId, n: number): number {
-  if (n <= 0) return 0;
-  // Vnwxt, Verbose Host : chaque pioche est doublée.
-  const double = playerStatic(s, player, "drawDouble") ? n : 0;
-  if ((s.players[player]?.hand.length ?? 0) > 1) return double;
-  return double + (playerStatic(s, player, "drawPlusOneWhenHandSmall") ? 1 : 0);
 }
 
 /** Cartes d'une zone appartenant à des joueurs donnés. */

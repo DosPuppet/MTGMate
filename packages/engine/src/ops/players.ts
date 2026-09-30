@@ -1,12 +1,11 @@
 /** Effets du moteur : joueurs (points de vie, pioche, tours et étapes supplémentaires, victoire). Chaque clé est un `op` d'`Effect` (voir `runEffect`, effects.ts). */
 
-import { createTokens, dealDamage, drawCard, gainLife, loseLife, sacrifice, setSpeed } from "../actions";
+import { createTokens, dealDamage, drawCards, gainLife, loseLife, sacrifice, setSpeed } from "../actions";
 import type { OpHandlers } from "../effects";
 import {
   announceDiscard,
   announceDiscardBatch,
   damageSource,
-  drawBonus,
   evalAmount,
   nameOf,
   nextTurnOf,
@@ -36,7 +35,7 @@ export const HANDLERS: OpHandlers = {
     // 702.174 : l'adversaire choisi reçoit le cadeau (approximation : le prochain adversaire dans l'ordre du tour).
     const to = opponentsOf(s, ctx.controller)[0];
     if (!to) return;
-    if (e.kind === "card") drawCard(s, to);
+    if (e.kind === "card") drawCards(s, to, 1);
     else if (e.token) {
       const created = createTokens(s, to, e.token, 1);
       for (const id of created) {
@@ -91,7 +90,7 @@ export const HANDLERS: OpHandlers = {
       for (const id of hand) announceDiscard(s, p, moveObject(s, id, "graveyard"));
       announceDiscardBatch(s, p, hand.length);
     }
-    for (const p of yes) for (let i = 0; i < 7; i++) drawCard(s, p);
+    for (const p of yes) drawCards(s, p, 7);
     return;
   },
   punisher(s, r, e, ctx, key) {
@@ -170,7 +169,7 @@ export const HANDLERS: OpHandlers = {
     const n = evalAmount(s, ctx, e.amount);
     for (const p of resolveRef(s, ctx, e.who)) {
       if (!isPlayer(s, p)) continue;
-      for (let i = 0; i < n + drawBonus(s, p, n); i++) drawCard(s, p);
+      drawCards(s, p, n);
     }
     return;
   },
@@ -238,7 +237,7 @@ export const HANDLERS: OpHandlers = {
       if (!pl) continue;
       for (const id of [...pl.hand, ...pl.graveyard]) moveObject(s, id, "library");
       shuffle(s, pl.library);
-      for (let i = 0; i < e.n; i++) drawCard(s, p);
+      drawCards(s, p, e.n);
     }
     return;
   },

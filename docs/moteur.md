@@ -22,6 +22,7 @@ Moteur pur et déterministe (`packages/engine/src`). L'état est sérialisable ;
 | `targets.ts` | `matchesView` (filtres d'objets), légalité et validation des cibles. |
 | `actions.ts` | Blessures (`dealDamage` : préventions, doublements, redirection), pioche, PV, jetons, sacrifice. |
 | `state.ts` | Objets, zones (`moveObject` et remplacements de destination), marqueurs, `RulesEvent`, `setController`. |
+| `modifiers.ts` | Remplacements qui modifient un nombre (« autant plus N », « le double », « au moins N ») : ordre choisi pour le joueur affecté (616.1, `chooseReplacementOrder`). |
 | `replacement.ts` | Remplacements d'arrivée (`applyEntersReplacements`) et de destination (`replaceDestination`). |
 | `turn.ts` | Étapes, actions basées sur l'état (Sagas, Auras…), combat, élimination, tours et étapes supplémentaires. |
 | `mana.ts` | Capacités de mana, solveur de paiement, mana restreint. |
@@ -44,6 +45,7 @@ Moteur pur et déterministe (`packages/engine/src`). L'état est sérialisable ;
 - **Restriction, mot-clé technique :** ajouter à `Keyword` et `RESTRICTIONS` (`types.ts`), avec son libellé dans `client/src/i18n.ts` (sinon `tsc` échoue).
 - **Champ de script de carte :** dans `CardScript` (`dsl.ts`), `CardDef` (`types.ts`) et la recopie dans `toCardDef` (`cards/src/scryfall.ts`).
 - **Capacité de mana à coût (« {1}, {T} : ajoutez un mana de n'importe quelle couleur ») :** une capacité `activated` ordinaire suffit ; `isManaAbility` (605.1a) la résout sans la pile.
+- **Remplacement qui modifie un nombre** (blessures, marqueurs, PV, pioche) : l'ajouter comme `AmountMod` (`add`, `times`, `atLeast`) dans la liste de l'événement (`dealDamage`, `changeCounters`, `gainLife`, `drawCards`), jamais en modifiant la quantité directement ; l'ordre est choisi par `chooseReplacementOrder`. Une pioche passe par `drawCards` (sauf la main de départ).
 - **« Si [un objet] devait être mis dans un cimetière, exilez-le à la place » :** une capacité `graveyardReplacement({ filter, fromBattlefield, graveyardOf, notControlledByYou, link, gainLife, condition })`, et non un drapeau de `playerStatic`. L'ordre de 616.1 est appliqué par `replaceGraveyard` (`replacement.ts`), appelé par `moveObject`.
 - **« Vous pouvez lancer [cette carte] » pendant une résolution (608.2g) :** `fx.castNow(ref, { free, many, exileAfter, anyMana, storeCast, storeRest })`, et non `fx.grantPlay` (qui laisse la carte lançable plus tard dans le tour). Depuis un traitement d'effet, la boucle `castNowLoop` (`ops/spells.ts`) renvoie `{ castNow: … }`, qui suspend la résolution sur une priorité restreinte (`PendingDecision.castNow`).
 - **Effet sur un joueur jusqu'à la fin du tour** (« les blessures ne peuvent pas être prévenues ce tour-ci ») : `fx.thisTurn({ clé: valeur })`, avec une clé de `PlayerStaticAbilityDef` déjà lue par le moteur ; pas de nouvel effet.

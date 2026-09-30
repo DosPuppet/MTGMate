@@ -295,6 +295,7 @@ Détail, ordre d'exécution et décisions de conception : `PLAN-R.md`.
 - **30/09/2026 :** lot R0.4 fait : écart 2 corrigé (lien de vie).
 - **30/09/2026 :** lot R0.5 fait : écart 6 corrigé (arrivées simultanées, 603.6a).
 - **30/09/2026 :** lot R4.0 fait (§ 3.3) : un seul accès aux statiques de joueur (N6).
+- **30/09/2026 :** lot R1 fait (§ 3.2) : ordre des remplacements qui modifient un nombre choisi pour le joueur affecté (Artist's Talent et Twinflame Tyrant : 8 blessures, plus 10), toutes les pioches passent par les remplacements (N12).
 - **30/09/2026 :** lot R2.3 fait : écart 7 corrigé, et 303.4f / 303.4g (Aura mise en jeu sans être lancée).
 - **30/09/2026 :** lot R2.2 fait : copies de permanents (écart 13 en partie, N7, N8, N9).
 - **30/09/2026 :** lot R2.1 fait : écarts 14 et 17 corrigés (ce qui accompagne une arrivée est en place avant l'événement d'arrivée ; défenseur des jetons attaquants au choix).

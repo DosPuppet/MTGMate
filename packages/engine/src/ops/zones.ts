@@ -1,6 +1,6 @@
 /** Effets du moteur : déplacements entre zones (détruire, exiler, sacrifier, chercher, meuler, défausser…). Chaque clé est un `op` d'`Effect` (voir `runEffect`, effects.ts). */
 
-import { dealDamage, destroy, drawCard, sacrifice } from "../actions";
+import { dealDamage, destroy, drawCards, sacrifice } from "../actions";
 import { cardRef } from "../choices";
 import type { EffectContext, OpHandlers, OpResult } from "../effects";
 import {
@@ -133,7 +133,7 @@ export const HANDLERS: OpHandlers = {
       const types = top.map((id) => s.defs[s.objects[id]?.defId ?? ""]?.types ?? []);
       for (const id of top) moveAndLog(s, id, "graveyard");
       if (top.length < 2 || !types[0]?.some((t) => types[1]?.includes(t))) return;
-      drawCard(s, ctx.controller);
+      drawCards(s, ctx.controller, 1);
     }
     return;
   },
@@ -785,7 +785,7 @@ export const HANDLERS: OpHandlers = {
       const fromHand = pl.hand.filter(same);
       for (const id of [...pl.graveyard.filter(same), ...fromHand, ...pl.library.filter(same)]) moveObject(s, id, "exile");
       shuffle(s, pl.library);
-      for (let i = 0; i < fromHand.length; i++) drawCard(s, who);
+      drawCards(s, who, fromHand.length);
       return;
     }
     const options = opponentsOf(s, ctx.controller).flatMap((p) => s.players[p]?.graveyard ?? []);
@@ -819,7 +819,7 @@ export const HANDLERS: OpHandlers = {
     const fromHand = pl.hand.filter(same);
     for (const id of [...pl.graveyard.filter(same), ...fromHand, ...pl.library.filter(same)]) moveObject(s, id, "exile");
     shuffle(s, pl.library);
-    for (let i = 0; i < fromHand.length; i++) drawCard(s, owner as string);
+    drawCards(s, owner as string, fromHand.length);
     return;
   },
   exileNamed(s, r, e, ctx) {
@@ -1409,7 +1409,7 @@ export const HANDLERS: OpHandlers = {
       const p = o?.controller;
       if (!o || !p || r.vars[key(`connive-${id}-done`)]) continue;
       if (!r.vars[key(`connive-${id}-drew`)]) {
-        drawCard(s, p);
+        drawCards(s, p, 1);
         r.vars[key(`connive-${id}-drew`)] = [1];
       }
       const hand = s.players[p]?.hand ?? [];

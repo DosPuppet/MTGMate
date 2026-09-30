@@ -2,6 +2,7 @@
  * Actions de jeu élémentaires, partagées par les effets, le combat et les actions basées sur l'état.
  */
 
+import { type AmountMod, chooseReplacementOrder } from "./modifiers";
 import { applyEntersReplacements, type EntersContext, preventsCombatDamage } from "./replacement";
 import {
   bump,
@@ -57,6 +58,21 @@ export function drawCard(s: GameState, p: PlayerId): void {
   rulesEvent(s, { e: "draw", player: p, nth: player.turnStats.cardsDrawn });
 }
 
+/**
+ * Pioche N cartes : un seul événement de pioche pour les remplacements (616.1), dans l'ordre le plus favorable au joueur
+ * (le plus de cartes, sauf s'il n'en a pas autant dans sa bibliothèque) : Vnwxt, Verbose Host (« piochez-en deux à la
+ * place », pour chaque carte), Quantum Riddler (« autant plus une » avec une carte en main ou moins).
+ */
+export function drawCards(s: GameState, p: PlayerId, n: number): void {
+  const player = s.players[p];
+  if (!player || n <= 0) return;
+  const mods: AmountMod[] = playerStatics(s, p, "drawDouble").map(() => ({ times: 2 }));
+  if (player.hand.length <= 1) for (const _ of playerStatics(s, p, "drawPlusOneWhenHandSmall")) mods.push({ add: 1 });
+  const most = chooseReplacementOrder(n, mods, "max");
+  const total = most <= player.library.length ? most : chooseReplacementOrder(n, mods, "min");
+  for (let i = 0; i < total; i++) drawCard(s, p);
+}
+
 export function gainLife(s: GameState, p: PlayerId, amount: number): void {
   const player = s.players[p];
   if (!player || amount <= 0) return;
@@ -71,10 +87,11 @@ export function gainLife(s: GameState, p: PlayerId, amount: number): void {
     )
   )
     return;
-  // Angel of Vitality : « vous gagnez autant plus 1 à la place ».
-  amount += playerStaticTotal(s, p, "lifeGainBonus");
-  // The Wind Crystal : « vous en gagnez le double à la place » (616.1 : les doublements se cumulent).
-  amount *= 2 ** doublers(s, p, "lifeGain");
+  // Remplacements (616.1), dans l'ordre le plus favorable au joueur qui gagne les points de vie :
+  // Angel of Vitality (« autant plus 1 »), The Wind Crystal (« le double »).
+  const mods: AmountMod[] = playerStatics(s, p, "lifeGainBonus").map(({ ab }) => ({ add: ab.lifeGainBonus ?? 0 }));
+  for (let i = 0; i < doublers(s, p, "lifeGain"); i++) mods.push({ times: 2 });
+  amount = chooseReplacementOrder(amount, mods, "max");
   player.life += amount;
   bump(s); // des caractéristiques peuvent dépendre des points de vie (Elenda)
   emit({ type: "life", player: p, delta: amount, life: player.life });
@@ -275,63 +292,66 @@ export function dealDamage(s: GameState, source: DamageSource, target: string, a
     dealer.dealtCombatDamage = true;
     bump(s);
   }
-  // Twinflame Tyrant : blessures d'une source que vous contrôlez à un adversaire ou à un permanent adverse, doublées.
   const victim = isPlayer(s, target) ? target : targetObj?.controller;
-  // Tomik, Izzet Sparkmage : blessures non de combat à un adversaire ou à ses permanents, +1.
+  // Remplacements qui modifient la quantité (614, 616.1) : chacun s'applique une fois, dans l'ordre que choisit le joueur
+  // blessé (ou le contrôleur du permanent blessé), ici le moins de blessures pour lui (`chooseReplacementOrder`).
+  const mods: AmountMod[] = [];
+  const toOpponent = !!victim && victim !== source.controller;
   // Taii Wakeen : ce tour-ci, les blessures non de combat de vos sources sont augmentées de X.
-  if (!combat) amount += playerStaticTotal(s, source.controller, "noncombatDamageBonusAll");
-  if (!combat && victim && victim !== source.controller && playerStatic(s, source.controller, "noncombatDamageBonus"))
-    amount += 1;
+  if (!combat)
+    for (const { ab } of playerStatics(s, source.controller, "noncombatDamageBonusAll"))
+      mods.push({ add: ab.noncombatDamageBonusAll ?? 0 });
+  // Tomik, Izzet Sparkmage : blessures non de combat à un adversaire ou à ses permanents, +1.
+  if (!combat && toOpponent) for (const _ of playerStatics(s, source.controller, "noncombatDamageBonus")) mods.push({ add: 1 });
   // Artist's Talent (niveau 3) : « … elle en inflige autant plus 2 à la place ».
-  if (!combat && victim && victim !== source.controller) {
-    amount += playerStaticTotal(s, source.controller, "noncombatDamageBonusAmount");
-  }
-  // Ojer Axonil : une source rouge qui inflige à un adversaire moins de blessures non de combat que la force d'Ojer Axonil.
-  const red = !combat && redSource(s, source);
-  if (red && isPlayer(s, target) && target !== source.controller) {
+  if (!combat && toOpponent)
+    for (const { ab } of playerStatics(s, source.controller, "noncombatDamageBonusAmount"))
+      mods.push({ add: ab.noncombatDamageBonusAmount ?? 0 });
+  // Ojer Axonil : une source rouge qui inflige à un adversaire moins de blessures non de combat que sa force en inflige
+  // autant que sa force à la place.
+  if (!combat && redSource(s, source) && isPlayer(s, target) && target !== source.controller) {
     for (const { id, ab } of playerStatics(s, source.controller, "noncombatDamageAtLeastPower")) {
       if (ab.noncombatDamageAtLeastPower && id && s.objects[id]?.zone === "battlefield")
-        amount = Math.max(amount, chars(s, id).power);
+        mods.push({ atLeast: chars(s, id).power });
     }
   }
   // Valley Flamecaller : « si un Lézard, une Souris, une Loutre ou un Raton laveur que vous contrôlez devait infliger des
   // blessures, il en inflige autant plus 1 à la place ».
   if (source.id && s.objects[source.id]?.zone === "battlefield") {
     const id = source.id;
-    amount += playerStatics(s, source.controller, "damagePlusOneFrom").filter(
-      ({ id: from, ab }) => !!ab.damagePlusOneFrom && matchesObjectFilter(s, source.controller, id, ab.damagePlusOneFrom, from),
-    ).length;
+    for (const { id: from, ab } of playerStatics(s, source.controller, "damagePlusOneFrom"))
+      if (ab.damagePlusOneFrom && matchesObjectFilter(s, source.controller, id, ab.damagePlusOneFrom, from))
+        mods.push({ add: 1 });
   }
   // Far Fortune (vitesse maximale) : toute blessure de vos sources à un adversaire ou à ses permanents, +1.
-  if (victim && victim !== source.controller && playerStatic(s, source.controller, "damagePlusOneToOpponents")) amount += 1;
-  if (victim && victim !== source.controller) amount *= 2 ** doublers(s, source.controller, "damageToOpponents");
+  if (toOpponent) for (const _ of playerStatics(s, source.controller, "damagePlusOneToOpponents")) mods.push({ add: 1 });
+  // Twinflame Tyrant : blessures d'une source que vous contrôlez à un adversaire ou à un permanent adverse, doublées.
+  if (toOpponent) for (let i = 0; i < doublers(s, source.controller, "damageToOpponents"); i++) mods.push({ times: 2 });
   // Gratuitous Violence : blessures d'une créature que vous contrôlez, doublées.
   if (source.id && s.objects[source.id]?.zone === "battlefield" && isCreature(s, source.id)) {
-    amount *= 2 ** doublers(s, source.controller, "creatureDamage");
+    for (let i = 0; i < doublers(s, source.controller, "creatureDamage"); i++) mods.push({ times: 2 });
   }
   // Trance Kuja : « si un Sorcier que vous contrôlez devait infliger des blessures, il en inflige le double ».
   if (source.id && s.objects[source.id]?.zone === "battlefield") {
     const id = source.id;
-    const n = controlledAbilitiesWithSource(s, source.controller).filter(
-      ({ id: from, ab }) =>
-        ab.kind === "doubler" && !!ab.damageFilter && matchesObjectFilter(s, source.controller, id, ab.damageFilter, from),
-    ).length;
-    amount *= 2 ** n;
+    for (const { id: from, ab } of controlledAbilitiesWithSource(s, source.controller))
+      if (ab.kind === "doubler" && ab.damageFilter && matchesObjectFilter(s, source.controller, id, ab.damageFilter, from))
+        mods.push({ times: 2 });
   }
   // The Rollercrusher Ride (délire) : blessures non de combat de vos sources, doublées.
   if (!combat) {
-    const n = controlledAbilitiesWithSource(s, source.controller).filter(
-      ({ id: from, ab }) =>
+    for (const { id: from, ab } of controlledAbilitiesWithSource(s, source.controller))
+      if (
         ab.kind === "doubler" &&
-        !!ab.noncombatDamage &&
-        (!ab.condition || checkCondition(s, ab.condition, source.controller, from)),
-    ).length;
-    amount *= 2 ** n;
+        ab.noncombatDamage &&
+        (!ab.condition || checkCondition(s, ab.condition, source.controller, from))
+      )
+        mods.push({ times: 2 });
   }
   // Lightning, Army of One : blessures à ce joueur ou à ses permanents doublées jusqu'au prochain tour de Lightning.
+  if (victim) for (let i = 0; i < playerStaticTotal(s, victim, "damageTakenDoubled"); i++) mods.push({ times: 2 });
+  amount = chooseReplacementOrder(amount, mods, "min");
   let excess = 0;
-  const marked = victim ? playerStaticTotal(s, victim, "damageTakenDoubled") : 0;
-  amount *= 2 ** marked;
   if (isPlayer(s, target)) {
     // Suivi des joueurs blessés au combat par cette source ce tour-ci (Steel Hellkite).
     const src = source.id ? s.objects[source.id] : undefined;

@@ -10,6 +10,7 @@ import { addEffect, runEffect } from "../src/effects";
 import { submit } from "../src/game";
 import { bump, snapshot } from "../src/layers";
 import { legalActions } from "../src/legal";
+import { chooseReplacementOrder } from "../src/modifiers";
 import { spellCost } from "../src/stack";
 import { changeCounters, chars, FACE_DOWN_ID, moveObject } from "../src/state";
 import { simultaneously } from "../src/triggers";
@@ -488,5 +489,52 @@ describe("#7 et 303.4f : choix d'un permanent qui arrive sans être lancé", () 
     const aura = idOf(s, "p1", "graveyard", "Pacifism");
     expect(moveObject(s, aura, "battlefield")).toBeNull();
     expect(s.objects[aura]?.zone).toBe("graveyard");
+  });
+});
+
+describe("R1 : ordre des remplacements qui modifient un nombre (616.1)", () => {
+  const ench = (name: string, ab: CardDef["abilities"][number]) =>
+    customCard({ name, types: ["Enchantment"], typeLine: "Enchantment", abilities: [ab] });
+
+  it("chooseReplacementOrder : le joueur affecté obtient l'ordre le plus favorable", () => {
+    expect(chooseReplacementOrder(3, [{ add: 2 }, { times: 2 }], "min")).toBe(8);
+    expect(chooseReplacementOrder(3, [{ add: 2 }, { times: 2 }], "max")).toBe(10);
+    expect(chooseReplacementOrder(0, [{ add: 2 }], "max")).toBe(0);
+    expect(chooseReplacementOrder(1, [{ atLeast: 4 }, { times: 2 }], "min")).toBe(4);
+  });
+
+  it("Artist's Talent (+2) et Twinflame Tyrant (×2) : 3 blessures à l'adversaire en font 8, pas 10", () => {
+    const talent = ench("Talent", playerStatic({ noncombatDamageBonusAmount: 2 }));
+    const tyrant = ench("Tyran", doubler({ damageToOpponents: true }));
+    const s = scenario({ p1: { battlefield: [talent, tyrant, "Bear Cub"] } });
+    const bear = idOf(s, "p1", "battlefield", "Bear Cub");
+    const r = { ...resolution("p1", { id: bear, defId: s.objects[bear]?.defId as string }), targets: { t: ["p2"] } };
+    runEffect(s, r as never, fx.damage(3, ref.target()));
+    expect(s.players.p2?.life).toBe(12);
+  });
+
+  it("Yoshimaru (+1) et Doubling Season (×2) : un marqueur +1/+1 en devient quatre", () => {
+    const yoshimaru = ench("Yoshimaru", playerStatic({ plusOneCounterBonus: true }));
+    const season = ench("Saison", doubler({ counters: true }));
+    const s = scenario({ p1: { battlefield: [yoshimaru, season, "Bear Cub"] } });
+    const bear = s.objects[idOf(s, "p1", "battlefield", "Bear Cub")];
+    if (bear) changeCounters(s, bear, "+1/+1", 1);
+    expect(bear?.counters["+1/+1"]).toBe(4);
+  });
+
+  it("gain de PV : « autant plus 1 » puis le double", () => {
+    const angel = ench("Ange", playerStatic({ lifeGainBonus: 1 }));
+    const crystal = ench("Cristal", doubler({ lifeGain: true }));
+    const s = scenario({ p1: { battlefield: [angel, crystal] } });
+    gainLife(s, "p1", 2);
+    expect(s.players.p1?.life).toBe(26);
+  });
+
+  it("N12 : la pioche d'un cadeau passe aussi par les remplacements ; deux Vnwxt se cumulent", () => {
+    const vnwxt = ench("Vnwxt", playerStatic({ drawDouble: true }));
+    const s = scenario({ p2: { battlefield: [vnwxt, vnwxt], hand: ["Forest", "Forest", "Forest"] } });
+    const before = s.players.p2?.hand.length ?? 0;
+    runEffect(s, resolution("p1") as never, { op: "gift", kind: "card" } as never);
+    expect((s.players.p2?.hand.length ?? 0) - before).toBe(4);
   });
 });

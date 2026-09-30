@@ -263,3 +263,8 @@ Lot R2.3 (PLAN-R.md ; `RULES_VERSION` = 10) :
 - pendant une résolution, `moveTo` demande ces choix avant de déplacer quoi que ce soit ; hors résolution, choix automatique du premier candidat ;
 - 303.4g : une Aura sans rien de légal à enchanter reste dans sa zone (`moveObject` renvoie null) ;
 - tests : `engine/test/audit.test.ts`.
+
+Lot R1 (PLAN-R.md ; `RULES_VERSION` = 11) :
+- remplacements qui modifient un nombre (616.1) : `modifiers.ts` (`AmountMod`, `chooseReplacementOrder`) ; blessures, marqueurs et PV gagnés rassemblent leurs remplacements et les appliquent dans l'ordre le plus favorable au joueur affecté (le moins de blessures ; le plus de marqueurs, sauf les nuisibles ; le plus de PV) ;
+- pioche : `drawCards(s, p, n)`, un seul événement de pioche soumis aux remplacements (Vnwxt, Quantum Riddler), pour toutes les pioches de la partie ; `drawBonus` supprimé ;
+- tests : `engine/test/audit.test.ts`.

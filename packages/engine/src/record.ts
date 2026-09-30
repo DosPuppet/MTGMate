@@ -31,8 +31,10 @@ export const RECORD_VERSION = 1;
  *   copie par une statique, copie d'un sort de Clone ; R2.2).
  * - 10 : un Clone ou une Aura qui arrive sans être lancé choisit ce qu'il copie ou enchante ; une Aura sans rien à
  *   enchanter reste dans sa zone (707.5, 303.4f, 303.4g ; R2.3).
+ * - 11 : ordre des remplacements qui modifient un nombre (blessures, marqueurs, PV, pioche) choisi pour le joueur affecté ;
+ *   toutes les pioches de la partie passent par les remplacements (616.1 ; R1).
  */
-export const RULES_VERSION = 10;
+export const RULES_VERSION = 11;
 
 /** Un point de contrôle toutes les N décisions (plus la dernière de la partie). */
 export const CHECKPOINT_EVERY = 25;

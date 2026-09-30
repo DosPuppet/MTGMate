@@ -7,13 +7,14 @@ import {
   dealDamage,
   destroy,
   drawCard,
+  drawCards,
   putIntoGraveyard,
   removeFromCombat,
   setSpeed,
   sourceFromObject,
 } from "./actions";
 import { ask, cardRef } from "./choices";
-import { announceDiscard, announceDiscardBatch, drawBonus, evalAmount } from "./effects";
+import { announceDiscard, announceDiscardBatch, evalAmount } from "./effects";
 import { rethrowAsRules } from "./errors";
 import { copiedDefId } from "./layers";
 import { manaValue, payMana } from "./mana";
@@ -247,8 +248,7 @@ function beginStep(s: GameState): void {
       // 103.8a : en duel, le joueur qui commence ne pioche pas lors de son premier tour
       // (103.8c : en multijoueur, personne ne saute sa pioche).
       if (s.turn.number > 1 || s.playerOrder.length > 2) {
-        const extra = drawBonus(s, active, 1);
-        for (let i = 0; i < 1 + extra; i++) drawCard(s, active);
+        drawCards(s, active, 1);
       }
       givePriority(s);
       return;

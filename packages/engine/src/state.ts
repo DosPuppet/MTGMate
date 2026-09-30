@@ -305,15 +305,23 @@ export function tapObject(s: GameState, o: GameObject): void {
   rulesEvent(s, { e: "tap", objectId: o.id });
 }
 
+/** Marqueurs dont le contrôleur du permanent veut le moins possible (ordre des remplacements, 616.1). */
+const HARMFUL_COUNTERS = new Set(["-1/-1", "stun", "time", "doom", "bounty", "finality"]);
+
 /**
  * Ajoute (ou retire, si n < 0) des marqueurs ; renvoie le nombre réellement modifié. `asCost` : marqueurs mis pour payer
  * un coût (loyauté +N, « mettez un marqueur : ») ; les remplacements « si un effet devait » ne s'y appliquent pas.
  */
 export function changeCounters(s: GameState, o: GameObject, kind: string, n: number, asCost = false): number {
-  // Doubling Season : des marqueurs mis sur un permanent que vous contrôlez sont doublés (y compris en arrivant).
-  if (n > 0 && o.zone === "battlefield") n *= 2 ** counterDoublers(s, o, asCost);
-  // Yoshimaru, Beloved Companion : un marqueur +1/+1 de plus sur vos créatures.
-  if (n > 0 && kind === "+1/+1" && o.zone === "battlefield" && playerStatic(s, o.controller, "plusOneCounterBonus")) n += 1;
+  // Remplacements (616.1), dans l'ordre que choisit le contrôleur du permanent : Doubling Season, The Earth Crystal
+  // (« le double », y compris en arrivant), Yoshimaru, Caradora (« autant plus un » marqueur +1/+1). Il veut le plus de
+  // marqueurs, sauf pour les marqueurs nuisibles.
+  if (n > 0 && o.zone === "battlefield") {
+    const mods: AmountMod[] = [];
+    for (let i = 0; i < counterDoublers(s, o, asCost); i++) mods.push({ times: 2 });
+    if (kind === "+1/+1") for (const _ of playerStatics(s, o.controller, "plusOneCounterBonus")) mods.push({ add: 1 });
+    n = chooseReplacementOrder(n, mods, HARMFUL_COUNTERS.has(kind) ? "min" : "max");
+  }
   const before = counterCount(o, kind);
   const after = Math.max(0, before + n);
   if (after === 0) delete o.counters[kind];
@@ -623,8 +631,9 @@ export function setPrepared(s: GameState, o: GameObject, on: boolean): void {
 // ---------------------------------------------------------------------------
 
 import { bump, snapshot } from "./layers";
+import { type AmountMod, chooseReplacementOrder } from "./modifiers";
 import { applyEntersReplacements, auraHosts, type EntersContext, releaseLinkedExile, replaceGraveyard } from "./replacement";
-import { counterDoublers, playerStatic } from "./statics";
+import { counterDoublers, playerStatics } from "./statics";
 import { detectTriggers } from "./triggers";
 import { logTurnEvent, zoneEntry } from "./turnlog";
 

@@ -17,7 +17,8 @@ Plan établi le 30/09/2026 (branche `dev`) : il sert de feuille de route aux pro
 - **30/09/2026 : R2.1 fait** (`RULES_VERSION` = 8 : `EntersContext` porte l'état engagé, l'attaque, les marqueurs, les modifications de couches, la célérité et l'Imminence, posés avant l'événement d'arrivée par `moveWithSpec`, la création de jetons, `copyToken` et la résolution d'un sort de permanent ; défenseur des jetons attaquants au choix).
 - **30/09/2026 : R2.2 fait** (`RULES_VERSION` = 9 : copies de permanents ; N7, N8, N9, #13 en partie).
 - **30/09/2026 : R2.3 fait** (`RULES_VERSION` = 10 : Clone ou Aura qui arrive sans être lancé ; #7, 303.4f, 303.4g).
-- À faire : R1.1, puis la suite dans l'ordre du tableau ci-dessous.
+- **30/09/2026 : R1 fait en partie** (`RULES_VERSION` = 11 : ordre des remplacements chiffrés choisi pour le joueur affecté, `drawCards` pour toutes les pioches ; la conversion des drapeaux en capacité générique est reportée aux familles de R4).
+- À faire : R3.1, puis la suite dans l'ordre du tableau ci-dessous.
 
 ## Le garde-fou de la dette (lot F2)
 
@@ -47,8 +48,8 @@ Plan établi le 30/09/2026 (branche `dev`) : il sert de feuille de route aux pro
 | 4 | R0.1 à R0.6 : corrections rapides | § 3.1 | F1 | faible à moyen | ✅ `709a43a` à `c7896e5` |
 | 5 | R4.0 : accesseur unique des statiques de joueur | § 3.3 | F2 | moyen | ✅ (voir suivi) |
 | 6 | R2.1 à R2.3 : entrée sur le champ de bataille, copies de permanents | § 3.1, § 3.2 | R4.0 | moyen | ✅ `f0b77a1`, `ead9cd5`, `c055371` |
-| 7 | R1.1 à R1.3 : remplacements (616) | § 3.2 | R4.0, R2.1 | élevé | **prochain** |
-| 8 | R3.1 et R3.2 : copies de sorts, blessures réparties | § 3.1 | R0 | moyen à élevé | à faire |
+| 7 | R1.1 à R1.3 : remplacements (616) | § 3.2 | R4.0, R2.1 | élevé | ✅ en partie (voir la section) |
+| 8 | R3.1 et R3.2 : copies de sorts, blessures réparties | § 3.1 | R0 | moyen à élevé | **prochain** |
 | 9 | R2.4 : couche 2 (contrôle) | § 3.2 | R4.0 | élevé | à faire |
 | 10 | R2.5 : 613.8 par point fixe, couche 5 « en plus » | § 3.2 | R2.2, R2.4 | élevé (perf.) | à faire |
 | 11 | R4.1 à R4.6 : familles génériques | § 3.3 | R1, R2 | moyen | à faire |
@@ -74,7 +75,7 @@ Lus dans le code ; chacun est confirmé par un test au début de son lot.
 | N9 | Le `copyOf` d'une statique n'est jamais appliqué (Assimilation Aegis ne copie rien) ; la copie d'un sort de Clone est un 0/0 | `engine/src/layers.ts:420-424`, `engine/src/stack.ts:2115` | R2.2 | ✅ R2.2 |
 | N10 | Deux vols de contrôle du même permanent dans un tour le rendent au mauvais joueur ; un joueur qui quitte la partie fait exiler les permanents volés (800.4a) | `engine/src/turn.ts:322-329, 1006-1008` | R2.4 | à faire |
 | N11 | Une copie de sort n'a pas d'objet : « contrecarrez le sort ciblé » ne peut pas la viser, et les « défense talismanique contre » sont ignorées | `engine/src/targets.ts:207-212, 244-252` | R3.1 | à faire |
-| N12 | `drawBonus` (Vnwxt, Quantum Riddler) n'est appliqué que par 2 des 11 appels de `drawCard` | `engine/src/effects.ts:769` | R1.3 | à faire |
+| N12 | `drawBonus` (Vnwxt, Quantum Riddler) n'est appliqué que par 2 des 11 appels de `drawCard` | `engine/src/effects.ts:769` | R1.3 | ✅ R1 |
 
 ## Phase 0 — fondations ✅
 
@@ -188,7 +189,7 @@ Lus dans le code ; chacun est confirmé par un test au début de son lot.
   - Auras de joueur (malédictions) : inchangées ;
   - tests : `engine/test/audit.test.ts` (#7, 303.4f, 303.4g).
 
-## R1 — remplacements (616)
+## R1 — remplacements (616) ✅ en partie
 
 - **R1.1 [règles] : cadre, marqueurs, jetons.**
   - `EventReplacementAbilityDef`, sur le modèle de `GraveyardReplacementAbilityDef` :
@@ -210,6 +211,16 @@ Lus dans le code ; chacun est confirmé par un test au début de son lot.
   - sinon, toutes les permutations jusqu'à 5 remplacements, et le meilleur résultat pour le joueur affecté : blessures et perte de PV minimales, gains et jetons maximaux, marqueurs maximaux sauf les nuisibles, pioche maximale sauf au-delà de la bibliothèque ;
   - une seule fonction, `chooseReplacementOrder`, pour pouvoir brancher plus tard une vraie `ChoiceRequest` ;
   - documenté en `choix auto`.
+
+**Réalisé, et écarts au prévu :**
+- `modifiers.ts` : `AmountMod` (`add`, `times`, `atLeast`) et `chooseReplacementOrder(base, mods, prefer)`, qui essaie les ordres (jusqu'à 5 remplacements) et garde le meilleur pour le joueur affecté ; des remplacements du même genre commutent et ne sont pas permutés ;
+- blessures (`dealDamage`) : bonus, minimum d'Ojer Axonil, doubleurs et `damageTakenDoubled` deviennent des modificateurs ; le joueur blessé obtient le moins de blessures (Artist's Talent et Twinflame Tyrant : 3 → 8) ;
+- marqueurs (`changeCounters`) : doubleurs et +1 (Yoshimaru, Caradora) ; le contrôleur obtient le plus (Yoshimaru et Doubling Season : 1 → 4) ; chaque statique compte (deux Yoshimaru : +2) ;
+- PV (`gainLife`) : bonus et doubleurs, le plus pour le joueur ;
+- pioche (R1.3) : `drawCards(s, p, n)`, un seul événement de pioche ; toutes les pioches de la partie y passent (11 appels, sauf la main de départ et le mulligan), `drawBonus` disparaît (N12) ; deux Vnwxt se cumulent ;
+- **pas fait, et pourquoi :** la capacité générique `EventReplacementAbilityDef` et la conversion des drapeaux (`lifeGainBonus`, `plusOneCounterBonus`, bonus de blessures…) : elles relèvent des familles E, H et I, faites en R4 ; les jetons (doubleurs qui commutent, rien à ordonner) et la meule restent tels quels ; boucliers « la prochaine fois que » (615.7) : aucune carte gérée n'en a besoin (pas de nouvelles cartes), reportés ;
+- bench (coup sur coup, `git stash`) : 2 656 → 2 695 déc/s en aléatoire à 2 joueurs, inchangé ;
+- tests : `engine/test/audit.test.ts` (R1, N12).
 
 ## R3 — copies de sorts
 
