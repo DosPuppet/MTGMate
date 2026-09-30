@@ -563,6 +563,11 @@ export interface ContinuousEffect extends LayerMods {
   untilExiledUid?: string;
   /** L'effet cesse quand cette source quitte le champ de bataille (Possession Engine). */
   whileSource?: ObjectId;
+  /**
+   * 707.9b : exceptions d'un effet de copie (« sauf que c'est un Zombie ») ; elles font partie des valeurs copiables,
+   * qu'une copie de cet objet reprend (`copiableExceptions`).
+   */
+  copiable?: boolean;
   /** Couche 2 : le joueur qui contrôle les objets touchés (appliqué par `syncControl`, dans l'ordre des horodatages). */
   controller?: PlayerId;
   /** « Tant que vous contrôlez [la source] » : l'effet cesse dès que ce joueur ne contrôle plus `whileSource` (611.2b). */

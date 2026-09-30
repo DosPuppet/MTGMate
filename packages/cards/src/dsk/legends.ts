@@ -112,10 +112,7 @@ export const LEGENDS: Record<string, CardScript> = {
         mana: "{3}",
         discard: 1,
         once: true,
-        effects: [
-          fx.addCounters(ref.self, 3),
-          fx.modify(ref.self, { setColors: ["W", "B"], addSubtypes: ["Demon"] }, "permanent"),
-        ],
+        effects: [fx.addCounters(ref.self, 3), fx.modify(ref.self, { addColors: ["B"], addSubtypes: ["Demon"] }, "permanent")],
         label: "Trois marqueurs +1/+1, devient un Démon noir",
       }),
     ],

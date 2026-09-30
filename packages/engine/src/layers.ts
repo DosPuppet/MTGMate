@@ -9,8 +9,9 @@
  *
  * Le résultat est mis en cache par état et par `s.version`, que le moteur incrémente à chaque changement
  * pouvant affecter les caractéristiques (voir `bump`). Le fuzz vérifie que le cache ne diverge jamais.
- * Couche 1 : copie d'une définition (`copyOf`), pour une durée. Limites : pas de couche 2 (changement de
- * contrôle par effet continu), pas de dépendances (613.8).
+ * Couche 1 : copie d'une définition (`copyOf`), pour une durée, avec ses exceptions copiables (707.9b). La couche 2
+ * (contrôle) est calculée à part (`control.ts`). Dépendances (613.8) : par point fixe (`computeBattlefield`) ; limite :
+ * une statique accordée par une autre statique n'est pas gérée.
  */
 import { manaValue } from "./mana";
 import { counterPT, obj } from "./state";
@@ -81,7 +82,7 @@ export function linkedColors(s: GameState, linked: ObjectId[] | undefined): Colo
   return [...new Set((linked ?? []).flatMap((id) => s.defs[s.objects[id]?.defId ?? ""]?.colors ?? []))];
 }
 
-function printedMatch(d: CardDef | undefined, f: ObjectFilter): boolean {
+function printedMatch(d: Pick<CardDef, "types" | "subtypes"> | undefined, f: ObjectFilter): boolean {
   if (!d) return false;
   if (f.types && !f.types.some((t) => d.types.includes(t))) return false;
   if (f.subtype && !d.subtypes.includes(f.subtype)) return false;
@@ -91,6 +92,19 @@ function printedMatch(d: CardDef | undefined, f: ObjectFilter): boolean {
   if (f.permanent && !d.types.some((t) => permanentTypes.includes(t))) return false;
   if (f.nonland && d.types.includes("Land")) return false;
   return true;
+}
+
+/** Une valeur de F/E définie par une capacité qui lit les permanents (et dépend donc des couches, 613.8). */
+function readsBattlefield(a: Amount): boolean {
+  if (typeof a === "number") return false;
+  if (a.kind === "sum") return a.of.some(readsBattlefield);
+  if (a.kind === "basicLandTypes" || a.kind === "maxManaValue") return true;
+  return a.kind === "count" && (!a.zone || a.zone === "battlefield");
+}
+
+/** Types et sous-types d'un permanent pendant le calcul : ceux de la passe précédente (613.8), sinon imprimés. */
+function typesOf(s: GameState, id: ObjectId): { types: CardType[]; subtypes: string[] } | undefined {
+  return provisional?.get(id) ?? s.defs[obj(s, id).defId];
 }
 
 function cdaValue(s: GameState, o: GameObject, a: Amount): number {
@@ -106,11 +120,11 @@ function cdaValue(s: GameState, o: GameObject, a: Amount): number {
     return types.size;
   }
   if (a.kind === "basicLandTypes") {
-    // Domaine : sous-types imprimés des terrains du contrôleur (pas de récursion dans les couches).
+    // Domaine : sous-types des terrains du contrôleur (passe précédente, sinon imprimés).
     const subtypes = new Set(
       s.battlefield.flatMap((id) => {
         const x = obj(s, id);
-        const d = s.defs[x.defId];
+        const d = typesOf(s, id);
         return x.controller === o.controller && d?.types.includes("Land") ? d.subtypes : [];
       }),
     );
@@ -125,7 +139,7 @@ function cdaValue(s: GameState, o: GameObject, a: Amount): number {
       ...s.battlefield
         .filter((id) => {
           const x = obj(s, id);
-          const d = s.defs[x.defId];
+          const d = typesOf(s, id);
           if (a.filter.other && id === o.id) return false;
           if (a.filter.controller === "you" && x.controller !== o.controller) return false;
           return !a.filter.types || a.filter.types.some((t) => d?.types.includes(t));
@@ -139,11 +153,11 @@ function cdaValue(s: GameState, o: GameObject, a: Amount): number {
     return s.exile.filter((id) => obj(s, id).owner === o.controller).length;
   }
   if (!a.zone || a.zone === "battlefield") {
-    // « égales au nombre de créatures que vous contrôlez » (types imprimés : pas de récursion dans les couches).
+    // « égales au nombre de créatures que vous contrôlez » (types de la passe précédente, sinon imprimés).
     return s.battlefield.filter((id) => {
       const x = obj(s, id);
       if (a.filter.controller === "you" && x.controller !== o.controller) return false;
-      return printedMatch(s.defs[x.defId], a.filter);
+      return printedMatch(typesOf(s, id), a.filter);
     }).length;
   }
   const zone = a.zone;
@@ -179,6 +193,60 @@ export function copiedDefId(s: GameState, id: ObjectId): string {
   const o = obj(s, id);
   return best?.def ?? o.faceDefId ?? o.defId;
 }
+
+/** Champs de `LayerMods` qui sont des listes (cumulées quand on fusionne des modifications). */
+const LIST_MODS = [
+  "addAbilities",
+  "addTypes",
+  "addSubtypes",
+  "addSupertypes",
+  "addKeywords",
+  "removeKeywords",
+  "addColors",
+] as const satisfies (keyof LayerMods)[];
+
+/** Fusionne des modifications dans l'ordre : les listes se cumulent, les autres valeurs sont remplacées. */
+export function mergeMods(...all: (LayerMods | undefined)[]): LayerMods | undefined {
+  const out: Record<string, unknown> = {};
+  for (const m of all) {
+    if (!m) continue;
+    for (const [k, v] of Object.entries(m)) {
+      if (v === undefined) continue;
+      if ((LIST_MODS as readonly string[]).includes(k))
+        out[k] = [...new Set([...((out[k] as unknown[]) ?? []), ...(v as unknown[])])];
+      else out[k] = v;
+    }
+  }
+  return Object.keys(out).length ? (out as LayerMods) : undefined;
+}
+
+/**
+ * 707.9b : exceptions copiables d'un permanent (celles des effets de copie qui le touchent, dans l'ordre des
+ * horodatages), que reprend une copie de ce permanent. Sans la définition copiée elle-même (`copiedDefId`).
+ */
+export function copiableExceptions(s: GameState, id: ObjectId | undefined): LayerMods | undefined {
+  if (!id || s.objects[id]?.zone !== "battlefield") return undefined;
+  const effects = s.effects.filter((e) => e.copiable && e.affected.includes(id)).sort((a, b) => a.timestamp - b.timestamp);
+  if (effects.length === 0) return undefined;
+  return mergeMods(
+    ...effects.map((e) => Object.fromEntries(Object.entries(e).filter(([k]) => !EFFECT_FIELDS.has(k))) as LayerMods),
+  );
+}
+
+/** Champs d'un effet continu qui ne sont pas des modifications de couches (ni la copie elle-même). */
+const EFFECT_FIELDS = new Set([
+  "id",
+  "timestamp",
+  "affected",
+  "duration",
+  "until",
+  "untilExiledUid",
+  "whileSource",
+  "copiable",
+  "controller",
+  "whileControlledBy",
+  "copyOf",
+]);
 
 /**
  * Valeur de mana vue par les filtres : celle de ce que copie le permanent (707.2) ; sinon celle de la carte (le verso
@@ -324,6 +392,14 @@ interface Applied {
 
 const cache = new WeakMap<GameState, { key: string; map: Map<ObjectId, Characteristics> }>();
 let computing = false;
+/** Caractéristiques de la passe précédente (613.8), lues pendant le calcul à la place des caractéristiques imprimées. */
+let provisional: Map<ObjectId, Characteristics> | null = null;
+/** Lectures de caractéristiques d'un permanent pendant le calcul : une condition qui n'en fait pas ne dépend pas des couches. */
+let reads = 0;
+/** Vues des permanents pendant une collecte des statiques (les caractéristiques lues ne changent pas pendant elle). */
+let viewCache: Map<ObjectId, LkiSnapshot> | null = null;
+/** Pendant une collecte : permanents équipés, et s'il existe des copies (sinon la valeur de mana est celle de la carte). */
+let scan: { equipped: Set<ObjectId>; copying: boolean } | null = null;
 
 function view(s: GameState, id: ObjectId, c: Characteristics, o: GameObject, attacking: boolean): LkiSnapshot {
   return {
@@ -342,7 +418,7 @@ function view(s: GameState, id: ObjectId, c: Characteristics, o: GameObject, att
     isToken: o.isToken,
     attacking,
     name: c.name,
-    manaValue: viewManaValue(s, id, o),
+    manaValue: scan && !scan.copying ? manaValue(s.defs[o.defId]?.manaCost) : viewManaValue(s, id, o),
     tapped: o.tapped,
     uid: o.uid,
     linked: o.linked,
@@ -360,34 +436,145 @@ function view(s: GameState, id: ObjectId, c: Characteristics, o: GameObject, att
     attackedTurn: o.attackedTurn,
     lastAttachedTo: o.lastAttachedTo,
     crewedByThisTurn: o.crewedBy?.turn === s.turn.number ? o.crewedBy.ids : undefined,
-    equipped:
-      (o.zone === "battlefield" &&
-        s.battlefield.some(
-          (x) => s.objects[x]?.attachedTo === id && s.defs[s.objects[x]?.defId ?? ""]?.subtypes.includes("Equipment"),
-        )) ||
-      undefined,
+    equipped: scan
+      ? (o.zone === "battlefield" && scan.equipped.has(id)) || undefined
+      : (o.zone === "battlefield" &&
+          s.battlefield.some(
+            (x) => s.objects[x]?.attachedTo === id && s.defs[s.objects[x]?.defId ?? ""]?.subtypes.includes("Equipment"),
+          )) ||
+        undefined,
   };
 }
 
-/** Vue d'un objet à partir de ses caractéristiques imprimées (pendant le calcul des couches). */
+/** Vue d'un objet pendant le calcul des couches : caractéristiques de la passe précédente, sinon imprimées. */
 function snapshotBase(s: GameState, id: ObjectId): LkiSnapshot {
   const o = obj(s, id);
-  return view(s, id, base(s, o), o, false);
+  if (o.zone !== "battlefield") return view(s, id, base(s, o), o, false);
+  reads++;
+  const hit = viewCache?.get(id);
+  if (hit) return hit;
+  const v = view(s, id, provisional?.get(id) ?? base(s, o), o, false);
+  viewCache?.set(id, v);
+  return v;
 }
 
-/** Calcule, sans cache, les caractéristiques de tous les objets du champ de bataille. */
+/** Au plus trois applications des couches pour résoudre les dépendances (613.8). */
+const MAX_PASSES = 3;
+
+/**
+ * Calcule, sans cache, les caractéristiques de tous les objets du champ de bataille.
+ *
+ * 613.8 par point fixe : une première passe évalue les statiques (conditions, « pour chaque », F/E définies par une
+ * capacité, capacités copiées) sur les caractéristiques imprimées. Si l'une d'elles dépend du champ de bataille, on
+ * les réévalue sur le résultat provisoire (`provisional`) et on recommence tant que leur signature change.
+ */
 export function computeBattlefield(s: GameState): Map<ObjectId, Characteristics> {
-  const out = new Map<ObjectId, Characteristics>();
-  const attacking = new Set(s.combat?.attackers.map((a) => a.id) ?? []);
   const copying =
     s.effects.some((e) => e.copyOf) || s.battlefield.some((x) => !!s.objects[x]?.attachedTo && !!staticCopyOf(s, x));
   const defOfId = (id: ObjectId) => (copying ? copiedDefId(s, id) : (obj(s, id).faceDefId ?? obj(s, id).defId));
-  // Couche 1 : copie (valeurs copiables de la définition copiée).
-  for (const id of s.battlefield) out.set(id, base(s, obj(s, id), defOfId(id)));
+  const prev = provisional;
+  try {
+    provisional = null;
+    let collected = collectStatics(s, defOfId);
+    let out = applyLayers(s, collected.applied, defOfId);
+    for (let pass = 1; pass < MAX_PASSES && collected.dependent; pass++) {
+      provisional = out;
+      const next = collectStatics(s, defOfId, collected);
+      if (next.signature === collected.signature) break;
+      collected = next;
+      out = applyLayers(s, next.applied, defOfId);
+    }
+    return out;
+  } finally {
+    provisional = prev;
+  }
+}
 
-  const applied: Applied[] = s.effects.map((e) => ({ timestamp: e.timestamp, mods: e, affected: e.affected }));
-  // Capacités statiques des permanents. Une source qui perd toutes ses capacités (Witness Protection,
-  // effet « perd toutes ses capacités ») n'applique plus les siennes ; approximation de 613.8 à un niveau.
+/** Capacité statique d'un objet, avec l'horodatage de sa source. */
+interface StaticSlot {
+  id: ObjectId;
+  ab: Extract<AbilityDef, { kind: "static" }>;
+  ts: number;
+}
+
+interface Collected {
+  /** Effets à appliquer, dans l'ordre des horodatages. */
+  applied: Applied[];
+  /** Ce qui ne dépend pas des couches : réutilisé tel quel aux passes suivantes. */
+  fixed: Applied[];
+  /** Statiques qui lisent des permanents, réévaluées à chaque passe (613.8). */
+  dependentSlots: StaticSlot[];
+  /** Résumé de ce qui dépend des couches ; `dependent` : il y en a. */
+  signature: string;
+  dependent: boolean;
+}
+
+/**
+ * Effets à appliquer : effets de résolution et capacités statiques. Avec `previous` (passe suivante), seules les
+ * statiques dépendantes et les F/E définies par une capacité qui lisent des permanents sont réévaluées.
+ */
+function collectStatics(s: GameState, defOfId: (id: ObjectId) => string, previous?: Collected): Collected {
+  const sig: (string | number)[] = [];
+  let dependent = false;
+  // F/E définies par une capacité qui comptent des permanents (types, types de terrain de base).
+  for (const id of s.battlefield) {
+    const d = s.defs[defOfId(id)];
+    if (!d || (d.cdaPT === undefined && d.cdaPower === undefined && d.cdaToughness === undefined)) continue;
+    const o = obj(s, id);
+    for (const a of [d.cdaPT, d.cdaPower, d.cdaToughness]) {
+      if (a === undefined || !readsBattlefield(a)) continue;
+      dependent = true;
+      sig.push(`${id}:${cdaValue(s, o, a)}`);
+    }
+  }
+  const prev = computing;
+  const prevViews = viewCache;
+  const prevScan = scan;
+  computing = true;
+  viewCache = new Map();
+  scan = {
+    equipped: new Set(
+      s.battlefield.flatMap((x) => {
+        const e = s.objects[x];
+        return e?.attachedTo && s.defs[e.defId]?.subtypes.includes("Equipment") ? [e.attachedTo] : [];
+      }),
+    ),
+    copying: s.effects.some((e) => e.copyOf) || s.battlefield.some((x) => !!s.objects[x]?.attachedTo && !!staticCopyOf(s, x)),
+  };
+  try {
+    if (previous) {
+      const applied = [...previous.fixed];
+      for (const slot of previous.dependentSlots) {
+        const r = evalStatic(s, slot, sig);
+        if (r.entry) applied.push(r.entry);
+      }
+      applied.sort((a, b) => a.timestamp - b.timestamp);
+      return { ...previous, applied, signature: sig.join(","), dependent: true };
+    }
+    const fixed: Applied[] = s.effects.map((e) => ({ timestamp: e.timestamp, mods: e, affected: e.affected }));
+    const applied = [...fixed];
+    const dependentSlots: StaticSlot[] = [];
+    for (const slot of staticSlots(s, defOfId)) {
+      const r = evalStatic(s, slot, sig);
+      if (r.dependent) {
+        dependent = true;
+        dependentSlots.push(slot);
+      } else if (r.entry) fixed.push(r.entry);
+      if (r.entry) applied.push(r.entry);
+    }
+    applied.sort((a, b) => a.timestamp - b.timestamp);
+    return { applied, fixed, dependentSlots, signature: sig.join(","), dependent };
+  } finally {
+    computing = prev;
+    viewCache = prevViews;
+    scan = prevScan;
+  }
+}
+
+/** Capacités statiques en vigueur : permanents, puis emblèmes (zone de commandement). */
+function staticSlots(s: GameState, defOfId: (id: ObjectId) => string): StaticSlot[] {
+  // Une source qui perd toutes ses capacités (Witness Protection, effet « perd toutes ses capacités ») n'applique plus
+  // les siennes ; approximation de 613.8 à un niveau.
   const lost = new Set<ObjectId>();
   for (const e of s.effects) if (e.loseAllAbilities) for (const id of e.affected) lost.add(id);
   for (const id of s.battlefield) {
@@ -397,101 +584,124 @@ export function computeBattlefield(s: GameState): Map<ObjectId, Characteristics>
       if (ab.kind === "static" && ab.affects === "attached" && ab.mods.loseAllAbilities) lost.add(o.attachedTo);
     }
   }
-  const prev = computing;
-  computing = true;
-  // Sources de capacités statiques : permanents, puis emblèmes (zone de commandement).
+  const slots: StaticSlot[] = [];
   const emblems = s.playerOrder.flatMap((p) => s.players[p]?.command ?? []);
-  try {
-    for (const id of [...s.battlefield, ...emblems]) {
-      if (lost.has(id)) continue;
-      const o = obj(s, id);
-      const own = o.zone === "battlefield" ? defOfId(id) : o.defId;
-      const ownDef = s.defs[own];
-      // Salle : capacités de ses portes déverrouillées. Face cachée : aucune capacité statique.
-      const printed = o.faceDown
-        ? []
-        : o.zone === "battlefield" && ownDef?.layout === "split" && ownDef.faceDefs
-          ? roomBase(o, ownDef).abilities
-          : ownDef
-            ? levelAbilities(o, ownDef)
-            : [];
-      // Statiques accordées par un effet de résolution (Roar of the Fifth People, chapitre II : « gagne “Les
-      // créatures que vous contrôlez ont…” »). Une statique accordée par une autre statique n'est pas gérée (613.8).
-      // 613.7a : horodatage le plus récent entre l'objet et l'effet qui accorde la capacité.
-      const grantedAt = new Map<AbilityDef, number>();
-      for (const e of s.effects) {
-        if (!e.affected.includes(id)) continue;
-        for (const ab of e.addAbilities ?? []) if (ab.kind === "static") grantedAt.set(ab, Math.max(o.timestamp, e.timestamp));
-      }
-      for (const ab of grantedAt.size ? [...printed, ...grantedAt.keys()] : printed) {
-        if (ab.kind !== "static") continue;
-        if (ab.condition && !checkCondition(s, ab.condition, o.controller, id)) continue;
-        let mods = ab.mods;
-        if (mods.gainLinkedActivated) {
-          // Territory Forge : les capacités activées (et de mana) des cartes liées.
-          const extra = (o.linked ?? [])
-            .filter((c) => s.objects[c]?.zone === "exile")
-            .flatMap((c) => s.defs[s.objects[c]?.defId ?? ""]?.abilities ?? [])
-            .filter((a) => a.kind === "activated" || a.kind === "mana");
-          mods = { ...mods, gainLinkedActivated: undefined, addAbilities: [...(mods.addAbilities ?? []), ...extra] };
-        }
-        if (mods.gainActivatedFrom) {
-          // Marvin, Murderous Mimic : les capacités activées imprimées des créatures correspondantes qui n'ont pas son nom.
-          const f = mods.gainActivatedFrom;
-          const name = s.defs[o.defId]?.name;
-          const extra = s.battlefield
-            .filter((x) => x !== id && matchesView(snapshotBase(s, x), f, o.controller, id))
-            .filter((x) => s.defs[s.objects[x]?.defId ?? ""]?.name !== name)
-            .flatMap((x) => s.defs[s.objects[x]?.defId ?? ""]?.abilities ?? [])
-            .filter((a) => (a.kind === "activated" && !a.specialAction && !a.fromHand && !a.fromGraveyard) || a.kind === "mana");
-          mods = { ...mods, gainActivatedFrom: undefined, addAbilities: [...(mods.addAbilities ?? []), ...extra] };
-        }
-        if (mods.copyLinkedExile) {
-          const card = s.linkedExile.find((l) => l.sourceId === id)?.cards.find((c) => s.objects[c]?.zone === "exile");
-          const defId = card ? s.objects[card]?.defId : undefined;
-          mods = defId ? { ...mods, copyOf: defId, copyLinkedExile: undefined } : { ...mods, copyLinkedExile: undefined };
-        }
-        if (ab.perSpeed || ab.perLife || ab.perHand) {
-          const pl = s.players[o.controller];
-          const n = ab.perSpeed ? (pl?.speed ?? 0) : ab.perHand ? (pl?.hand.length ?? 0) : Math.max(0, pl?.life ?? 0);
-          mods = { ...mods, power: (mods.power ?? 0) * n, toughness: (mods.toughness ?? 0) * n };
-          // Aettir and Priwen : « F/E de base X/X, où X est votre total de points de vie ».
-          if (mods.setPower !== undefined) mods = { ...mods, setPower: mods.setPower * n };
-          if (mods.setToughness !== undefined) mods = { ...mods, setToughness: mods.setToughness * n };
-        } else if (ab.per || ab.perCounter || ab.perGraveyard) {
-          // « +1/+1 pour chaque Forêt » / « pour chaque marqueur de camaraderie » / « pour chaque carte de créature de votre cimetière ».
-          const f = ab.per ? withChosen(ab.per, o) : null;
-          const g = ab.perGraveyard;
-          const raw = g
-            ? (s.players[o.controller]?.graveyard ?? []).filter((x) => matchesView(snapshotBase(s, x), g, o.controller, id))
-                .length
-            : f
-              ? s.battlefield.filter((x) => matchesView(snapshotBase(s, x), f, o.controller, id)).length
-              : (o.counters[ab.perCounter as string] ?? 0);
-          const n = ab.perDivisor ? Math.floor(raw / ab.perDivisor) : raw;
-          mods = { ...mods, power: (mods.power ?? 0) * n, toughness: (mods.toughness ?? 0) * n };
-          // Porcelain Gallery : « F/E de base égales au nombre de créatures que vous contrôlez ».
-          if (mods.setPower !== undefined) mods = { ...mods, setPower: mods.setPower * n };
-          if (mods.setToughness !== undefined) mods = { ...mods, setToughness: mods.setToughness * n };
-        }
-        const affects = typeof ab.affects === "string" ? ab.affects : withChosen(ab.affects, o);
-        if (mods.addChosenSubtype && o.chosen?.creatureType) {
-          mods = { ...mods, addSubtypes: [...(mods.addSubtypes ?? []), o.chosen.creatureType] };
-        }
-        if (mods.addChosenLandType && o.chosen?.landType) {
-          mods = { ...mods, addSubtypes: [...(mods.addSubtypes ?? []), o.chosen.landType] };
-        }
-        applied.push({
-          timestamp: grantedAt.get(ab) ?? o.timestamp,
-          mods,
-          affected: { sourceId: id, controller: o.controller, filter: affects },
-        });
-      }
+  for (const id of [...s.battlefield, ...emblems]) {
+    if (lost.has(id)) continue;
+    const o = obj(s, id);
+    const own = o.zone === "battlefield" ? defOfId(id) : o.defId;
+    const ownDef = s.defs[own];
+    // Salle : capacités de ses portes déverrouillées. Face cachée : aucune capacité statique.
+    const printed = o.faceDown
+      ? []
+      : o.zone === "battlefield" && ownDef?.layout === "split" && ownDef.faceDefs
+        ? roomBase(o, ownDef).abilities
+        : ownDef
+          ? levelAbilities(o, ownDef)
+          : [];
+    // Statiques accordées par un effet de résolution (Roar of the Fifth People, chapitre II : « gagne “Les
+    // créatures que vous contrôlez ont…” »). Une statique accordée par une autre statique n'est pas gérée (613.8).
+    // 613.7a : horodatage le plus récent entre l'objet et l'effet qui accorde la capacité.
+    const grantedAt = new Map<AbilityDef, number>();
+    for (const e of s.effects) {
+      if (!e.affected.includes(id)) continue;
+      for (const ab of e.addAbilities ?? []) if (ab.kind === "static") grantedAt.set(ab, Math.max(o.timestamp, e.timestamp));
     }
-  } finally {
-    computing = prev;
+    for (const ab of grantedAt.size ? [...printed, ...grantedAt.keys()] : printed) {
+      if (ab.kind === "static") slots.push({ id, ab, ts: grantedAt.get(ab) ?? o.timestamp });
+    }
   }
-  applied.sort((a, b) => a.timestamp - b.timestamp);
+  return slots;
+}
+
+/**
+ * Évalue une statique : l'effet qu'elle applique (ou aucun si sa condition n'est pas remplie), et si elle dépend des
+ * couches (condition ou compte qui lit des permanents). Ajoute à `sig` ce qui en dépend.
+ */
+function evalStatic(s: GameState, slot: StaticSlot, sig: (string | number)[]): { entry: Applied | null; dependent: boolean } {
+  const { id, ab } = slot;
+  const o = obj(s, id);
+  let dependent = false;
+  if (ab.condition) {
+    const before = reads;
+    const ok = checkCondition(s, ab.condition, o.controller, id);
+    // Seule une condition qui lit des permanents dépend des couches (« tant que vous contrôlez un Dragon »).
+    if (reads !== before) dependent = true;
+    sig.push(ok ? 1 : 0);
+    if (!ok) return { entry: null, dependent };
+  }
+  let mods = ab.mods;
+  if (mods.gainLinkedActivated) {
+    // Territory Forge : les capacités activées (et de mana) des cartes liées.
+    const extra = (o.linked ?? [])
+      .filter((c) => s.objects[c]?.zone === "exile")
+      .flatMap((c) => s.defs[s.objects[c]?.defId ?? ""]?.abilities ?? [])
+      .filter((a) => a.kind === "activated" || a.kind === "mana");
+    mods = { ...mods, gainLinkedActivated: undefined, addAbilities: [...(mods.addAbilities ?? []), ...extra] };
+  }
+  if (mods.gainActivatedFrom) {
+    // Marvin, Murderous Mimic : les capacités activées imprimées des créatures correspondantes qui n'ont pas son nom.
+    const f = mods.gainActivatedFrom;
+    const name = s.defs[o.defId]?.name;
+    const extra = s.battlefield
+      .filter((x) => x !== id && matchesView(snapshotBase(s, x), f, o.controller, id))
+      .filter((x) => s.defs[s.objects[x]?.defId ?? ""]?.name !== name)
+      .flatMap((x) => s.defs[s.objects[x]?.defId ?? ""]?.abilities ?? [])
+      .filter((a) => (a.kind === "activated" && !a.specialAction && !a.fromHand && !a.fromGraveyard) || a.kind === "mana");
+    mods = { ...mods, gainActivatedFrom: undefined, addAbilities: [...(mods.addAbilities ?? []), ...extra] };
+    dependent = true;
+    sig.push(`a${extra.length}`);
+  }
+  if (mods.copyLinkedExile) {
+    const card = s.linkedExile.find((l) => l.sourceId === id)?.cards.find((c) => s.objects[c]?.zone === "exile");
+    const defId = card ? s.objects[card]?.defId : undefined;
+    mods = defId ? { ...mods, copyOf: defId, copyLinkedExile: undefined } : { ...mods, copyLinkedExile: undefined };
+  }
+  if (ab.perSpeed || ab.perLife || ab.perHand) {
+    const pl = s.players[o.controller];
+    const n = ab.perSpeed ? (pl?.speed ?? 0) : ab.perHand ? (pl?.hand.length ?? 0) : Math.max(0, pl?.life ?? 0);
+    mods = { ...mods, power: (mods.power ?? 0) * n, toughness: (mods.toughness ?? 0) * n };
+    // Aettir and Priwen : « F/E de base X/X, où X est votre total de points de vie ».
+    if (mods.setPower !== undefined) mods = { ...mods, setPower: mods.setPower * n };
+    if (mods.setToughness !== undefined) mods = { ...mods, setToughness: mods.setToughness * n };
+  } else if (ab.per || ab.perCounter || ab.perGraveyard) {
+    // « +1/+1 pour chaque Forêt » / « pour chaque marqueur de camaraderie » / « pour chaque carte de créature de votre cimetière ».
+    const f = ab.per ? withChosen(ab.per, o) : null;
+    const g = ab.perGraveyard;
+    const raw = g
+      ? (s.players[o.controller]?.graveyard ?? []).filter((x) => matchesView(snapshotBase(s, x), g, o.controller, id)).length
+      : f
+        ? s.battlefield.filter((x) => matchesView(snapshotBase(s, x), f, o.controller, id)).length
+        : (o.counters[ab.perCounter as string] ?? 0);
+    const n = ab.perDivisor ? Math.floor(raw / ab.perDivisor) : raw;
+    if (f) {
+      dependent = true;
+      sig.push(`n${n}`);
+    }
+    mods = { ...mods, power: (mods.power ?? 0) * n, toughness: (mods.toughness ?? 0) * n };
+    // Porcelain Gallery : « F/E de base égales au nombre de créatures que vous contrôlez ».
+    if (mods.setPower !== undefined) mods = { ...mods, setPower: mods.setPower * n };
+    if (mods.setToughness !== undefined) mods = { ...mods, setToughness: mods.setToughness * n };
+  }
+  const affects = typeof ab.affects === "string" ? ab.affects : withChosen(ab.affects, o);
+  if (mods.addChosenSubtype && o.chosen?.creatureType) {
+    mods = { ...mods, addSubtypes: [...(mods.addSubtypes ?? []), o.chosen.creatureType] };
+  }
+  if (mods.addChosenLandType && o.chosen?.landType) {
+    mods = { ...mods, addSubtypes: [...(mods.addSubtypes ?? []), o.chosen.landType] };
+  }
+  return {
+    entry: { timestamp: slot.ts, mods, affected: { sourceId: id, controller: o.controller, filter: affects } },
+    dependent,
+  };
+}
+
+/** Applique les couches 1 et 4 à 7 aux objets du champ de bataille. */
+function applyLayers(s: GameState, applied: Applied[], defOfId: (id: ObjectId) => string): Map<ObjectId, Characteristics> {
+  const out = new Map<ObjectId, Characteristics>();
+  const attacking = new Set(s.combat?.attackers.map((a) => a.id) ?? []);
+  // Couche 1 : copie (valeurs copiables de la définition copiée).
+  for (const id of s.battlefield) out.set(id, base(s, obj(s, id), defOfId(id)));
 
   const targets = (a: Applied): ObjectId[] => {
     if (Array.isArray(a.affected)) return a.affected.filter((id) => out.has(id));
@@ -537,11 +747,12 @@ export function computeBattlefield(s: GameState): Map<ObjectId, Characteristics>
       for (const t of m.addSubtypes ?? []) if (!c.subtypes.includes(t)) c.subtypes.push(t);
     },
   );
-  // Couche 5 : couleurs.
+  // Couche 5 : couleurs, remplacées ou ajoutées (« en plus de ses autres couleurs »).
   layer(
-    (m) => !!m.setColors,
+    (m) => !!(m.setColors || m.addColors),
     (c, m) => {
-      c.colors = [...(m.setColors ?? [])];
+      if (m.setColors) c.colors = [...m.setColors];
+      for (const k of m.addColors ?? []) if (!c.colors.includes(k)) c.colors.push(k);
     },
   );
   // Couche 6 : capacités.
@@ -620,8 +831,11 @@ function battlefieldChars(s: GameState): Map<ObjectId, Characteristics> {
 
 export function chars(s: GameState, id: ObjectId): Characteristics {
   const o = obj(s, id);
-  // Pendant le calcul (conditions des capacités statiques), on lit les caractéristiques de base.
-  if (o.zone !== "battlefield" || computing) return base(s, o, o.faceDefId ?? o.defId);
+  // Pendant le calcul (conditions des capacités statiques), on lit la passe précédente, sinon les caractéristiques de base.
+  if (o.zone !== "battlefield" || computing) {
+    if (computing && o.zone === "battlefield") reads++;
+    return provisional?.get(id) ?? base(s, o, o.faceDefId ?? o.defId);
+  }
   return battlefieldChars(s).get(id) ?? base(s, o);
 }
 

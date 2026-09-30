@@ -936,6 +936,7 @@ export const fx = {
       addTypes?: CardType[];
       pt?: number;
       setColors?: Color[];
+      addColors?: Color[];
       setSubtypes?: string[];
       equipDiscount?: number;
       sacrificeAtNextUpkeep?: boolean;

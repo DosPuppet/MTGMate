@@ -20,7 +20,7 @@ Moteur pur et déterministe (`packages/engine/src`). L'état est sérialisable ;
 | `control.ts` | Couche 2 : contrôleur de base (`baseController`), effets de contrôle horodatés (`addControlEffect`), Auras qui donnent le contrôle ; `syncControl` recalcule le contrôleur de chaque permanent (actions basées sur l'état, nettoyage, 800.4a). |
 | `stackChoices.ts` | Copies de sorts et de capacités (`copyStackItem` : une copie de sort est un objet sur la pile) ; choix d'un élément déjà sur la pile, posés avant la priorité (`announceNext`) : nouvelles cibles d'une copie (707.10c), répartition (601.2d, gardée dans `StackItem.division`). |
 | `legal.ts` | `legalActions` : options proposées aux joueurs et à l'IA (doit refléter `stack.ts`). |
-| `layers.ts` | Couches 613 (`chars`, cache par `s.version` → `bump(s)`), `copiedDefId` (face active, copie), `snapshot`/`view` (vue d'un objet pour les filtres). |
+| `layers.ts` | Couches 613 (`chars`, cache par `s.version` → `bump(s)`), dépendances 613.8 par point fixe (`collectStatics`, `applyLayers`), `copiedDefId` (face active, copie) et `copiableExceptions` (707.9b), `snapshot`/`view` (vue d'un objet pour les filtres). |
 | `targets.ts` | `matchesView` (filtres d'objets), légalité et validation des cibles. |
 | `actions.ts` | Blessures (`dealDamage` : préventions, doublements, redirection), pioche, PV, jetons, sacrifice. |
 | `state.ts` | Objets, zones (`moveObject` et remplacements de destination), marqueurs, `RulesEvent`, `setController`. |

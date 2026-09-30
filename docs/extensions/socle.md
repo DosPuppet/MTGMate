@@ -282,3 +282,10 @@ Lot R2.4 (PLAN-R.md ; `RULES_VERSION` = 13) :
 - 800.4a : un joueur qui quitte la partie perd ce que ses effets lui donnaient (le permanent revient, au lieu d'être exilé) ;
 - invariant du fuzz : `syncControl` ne change plus rien après une décision ;
 - tests : `engine/test/audit.test.ts` (#12, N10, Confiscate, 800.4a).
+
+Lot R2.5 (PLAN-R.md ; `RULES_VERSION` = 14) :
+- 613.8 par point fixe (`computeBattlefield`) : `collectStatics` puis `applyLayers` ; les statiques qui lisent des permanents (condition qui en lit, « pour chaque » sur le champ de bataille, capacités copiées de Marvin) et les F/E définies par une capacité qui comptent des permanents sont réévaluées sur le résultat provisoire (`provisional`), jusqu'à ce que leur signature ne change plus (trois passes au plus). Kargan Dragonrider voit un Dragon devenu Dragon par un effet ;
+- performances : une condition n'est dépendante que si elle a lu un permanent pendant son évaluation ; les passes suivantes ne réévaluent que les statiques dépendantes ; les vues des permanents sont mises en cache pendant une collecte, avec les permanents équipés précalculés. Bench inchangé ;
+- couche 5 : `addColors` (« en plus de ses autres couleurs » : The Jolly Balloon Man, Possessed Goat) ;
+- 707.9b : les exceptions d'un effet de copie sont marquées `copiable` ; `copiableExceptions` les rend, et `copyToken`, « arrive comme une copie », `becomeCopy` et le choix d'un Clone les reprennent ;
+- tests : `engine/test/audit.test.ts` (R2.5), `layers.test.ts` (613.8).

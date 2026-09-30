@@ -12,7 +12,7 @@
 
 import { createTokens, gainLife } from "./actions";
 import { boardAmount } from "./effects";
-import { copiedDefId } from "./layers";
+import { copiableExceptions, copiedDefId, mergeMods } from "./layers";
 import { changeCounters, chars, moveObject, newId, nextTimestamp, P1P1, setPrepared } from "./state";
 import { controlledAbilitiesWithSource, playerStatic } from "./statics";
 import { matchesCard, matchesObjectFilter, withChosen } from "./targets";
@@ -41,6 +41,8 @@ export interface EntersContext {
   devoured?: number;
   /** Waxen Shapethief : définition copiée en arrivant (couche 1). */
   copyOf?: string;
+  /** 707.9b : exceptions copiables du modèle (`copiableExceptions`), reprises par la copie. */
+  copyMods?: LayerMods;
   /** Mana dépensé par type et évocation : lus par les conditions des capacités d'arrivée (Deceit). */
   spentColors?: GameObject["spentColors"];
   evoked?: boolean;
@@ -53,6 +55,8 @@ export interface EntersContext {
   attacking?: string;
   counters?: { kind: string; n: number }[];
   mods?: LayerMods;
+  /** Les `mods` sont les exceptions d'une copie (jeton copie « sauf que… ») : copiables (707.9b). */
+  modsCopiable?: boolean;
   /** Célérité jusqu'à la fin du tour (Summon: Fenrir). */
   haste?: boolean;
   /** Imminence (702.176a) : N marqueurs de temps ; ce n'est pas une créature tant qu'il en a. */
@@ -256,14 +260,21 @@ export function applyEntersReplacements(s: GameState, o: GameObject, ctx: Enters
   // 707.5 : « arrive comme une copie » aussi sans être lancé (réanimé, clignotant) ; choix automatique hors résolution.
   if (!ctx.copyOf && !ctx.copyChosen && own?.entersAsCopyOf) {
     const model = copyCandidates(s, o.controller, o.id)[0];
-    if (model) ctx = { ...ctx, copyOf: copiedDefId(s, model) };
+    if (model) ctx = { ...ctx, copyOf: copiedDefId(s, model), copyMods: copiableExceptions(s, model) };
   }
   // Modifications imposées par l'effet qui le met sur le champ de bataille, avant les autres remplacements (qui peuvent
   // dépendre des types ajoutés) et avant l'événement d'arrivée.
   if (ctx.tapped) o.tapped = true;
   if (ctx.impending) o.impending = true;
   if (ctx.mods && Object.values(ctx.mods).some((v) => v !== undefined)) {
-    s.effects.push({ id: newId(s, "e"), timestamp: nextTimestamp(s), affected: [o.id], duration: "permanent", ...ctx.mods });
+    s.effects.push({
+      id: newId(s, "e"),
+      timestamp: nextTimestamp(s),
+      affected: [o.id],
+      duration: "permanent",
+      ...ctx.mods,
+      ...(ctx.modsCopiable ? { copiable: true } : {}),
+    });
     s.version += 1;
   }
   if (ctx.haste) {
@@ -277,26 +288,29 @@ export function applyEntersReplacements(s: GameState, o: GameObject, ctx: Enters
     s.version += 1;
   }
   if (ctx.attacking && s.combat) s.combat.attackers.push({ id: o.id, defender: ctx.attacking, blockers: [], blocked: false });
-  // 707.9 : « arrive comme copie de … » (Waxen Shapethief).
+  // 707.9 : « arrive comme copie de … » (Waxen Shapethief). Les exceptions du modèle, puis les siennes, sont copiables
+  // (707.9b) : une copie de ce permanent les reprend.
   if (ctx.copyOf) {
+    const own = s.defs[o.defId];
+    const graveyard = own?.entersAsCopyOfGraveyard;
+    const mods = mergeMods(ctx.copyMods, {
+      // Visage Bandit : « sauf que c'est un Métamorphe Voleur en plus de ses autres types ».
+      addSubtypes: own?.entersAsCopyAddSubtypes,
+      // Mockingbird : « … et elle a le vol ».
+      addKeywords: own?.entersAsCopyAddKeywords,
+      // Superior Spider-Man : « sauf que son nom est … et que c'est un 4/4 ».
+      setName: graveyard?.name,
+      setPower: graveyard?.power,
+      setToughness: graveyard?.power !== undefined ? graveyard.toughness : undefined,
+    });
     s.effects.push({
       id: newId(s, "e"),
       timestamp: nextTimestamp(s),
       affected: [o.id],
       duration: "permanent",
       copyOf: ctx.copyOf,
-      // Visage Bandit : « sauf que c'est un Métamorphe Voleur en plus de ses autres types ».
-      addSubtypes: s.defs[o.defId]?.entersAsCopyAddSubtypes,
-      // Mockingbird : « … et elle a le vol ».
-      addKeywords: s.defs[o.defId]?.entersAsCopyAddKeywords,
-      // Superior Spider-Man : « sauf que son nom est … et que c'est un 4/4 ».
-      ...(s.defs[o.defId]?.entersAsCopyOfGraveyard?.name ? { setName: s.defs[o.defId]?.entersAsCopyOfGraveyard?.name } : {}),
-      ...(s.defs[o.defId]?.entersAsCopyOfGraveyard?.power !== undefined
-        ? {
-            setPower: s.defs[o.defId]?.entersAsCopyOfGraveyard?.power,
-            setToughness: s.defs[o.defId]?.entersAsCopyOfGraveyard?.toughness,
-          }
-        : {}),
+      ...mods,
+      copiable: true,
     });
     s.version += 1; // cache des couches
   }

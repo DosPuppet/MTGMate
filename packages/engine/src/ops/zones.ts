@@ -19,7 +19,7 @@ import {
   zoneCards,
 } from "../effects";
 import { RulesError } from "../errors";
-import { copiedDefId } from "../layers";
+import { copiableExceptions, copiedDefId } from "../layers";
 import { manaValue } from "../mana";
 import { auraHosts, copyCandidates, type EntersContext } from "../replacement";
 import { bounceSpell, exileSpell } from "../stack";
@@ -708,7 +708,7 @@ export const HANDLERS: OpHandlers = {
       );
     // Choix d'arrivée d'un permanent qui n'est pas lancé, demandés avant tout déplacement (la résolution reprend l'effet
     // depuis le début une fois la réponse donnée) : ce que copie un Clone (707.5), ce qu'enchante une Aura (303.4f).
-    const choices: Record<string, Pick<EntersContext, "copyOf" | "copyChosen" | "attachTo">> = {};
+    const choices: Record<string, Pick<EntersContext, "copyOf" | "copyMods" | "copyChosen" | "attachTo">> = {};
     if (e.spec.to === "battlefield") {
       for (const id of ids) {
         const o = s.objects[id];
@@ -736,7 +736,11 @@ export const HANDLERS: OpHandlers = {
             };
           }
           const picked = (r.vars[k] ?? []).map(String).find((x) => options.includes(x));
-          choices[id] = { copyOf: picked ? copiedDefId(s, picked) : undefined, copyChosen: true };
+          choices[id] = {
+            copyOf: picked ? copiedDefId(s, picked) : undefined,
+            copyMods: copiableExceptions(s, picked),
+            copyChosen: true,
+          };
         }
         if (d.enchant && !d.enchant.player) {
           const options = auraHosts(s, who, id);

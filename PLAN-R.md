@@ -20,7 +20,8 @@ Plan établi le 30/09/2026 (branche `dev`) : il sert de feuille de route aux pro
 - **30/09/2026 : R1 fait en partie** (`RULES_VERSION` = 11 : ordre des remplacements chiffrés choisi pour le joueur affecté, `drawCards` pour toutes les pioches ; la conversion des drapeaux en capacité générique est reportée aux familles de R4).
 - **30/09/2026 : R3 fait** (`RULES_VERSION` = 12 : une copie de sort est un objet sur la pile ; nouvelles cibles au choix pour toute copie, qui deviennent ses cibles ; répartition annoncée à la mise sur la pile, part d'une cible devenue illégale perdue ; #4, #15, N11). Constat : le fuzz à 3 joueurs du méta (2 parties inachevées sur 100) et à 4 joueurs sur tout le pool (1 sur 100) échouait déjà avant R3, à l'identique : parties aléatoires qui atteignent la limite de décisions, pas un blocage.
 - **30/09/2026 : R2.4 fait** (`RULES_VERSION` = 13 : couche 2, contrôleur de base et effets de contrôle horodatés, 800.4a ; #12, N10). Bench inchangé (aléatoire 2 joueurs 6 272 → 6 668 déc/s, 4 joueurs 4 115 → 4 466). Le tutoriel se rejoue (`tutorial.test.ts`, `tutorial-smoke`).
-- À faire : R2.5, puis la suite dans l'ordre du tableau ci-dessous.
+- **30/09/2026 : R2.5 fait** (`RULES_VERSION` = 14 : 613.8 par point fixe, couleurs ajoutées, exceptions de copie copiables). Bench coup sur coup (`git stash`) : aléatoire 2 joueurs 6 529 → 6 527 déc/s, 4 joueurs 4 414 → 4 398, IA heuristique 4 joueurs 1 094 → 1 093 : inchangé, cible de 5 000 déc/s atteinte.
+- À faire : R4.1, puis la suite dans l'ordre du tableau ci-dessous.
 
 ## Le garde-fou de la dette (lot F2)
 
@@ -52,9 +53,9 @@ Plan établi le 30/09/2026 (branche `dev`) : il sert de feuille de route aux pro
 | 6 | R2.1 à R2.3 : entrée sur le champ de bataille, copies de permanents | § 3.1, § 3.2 | R4.0 | moyen | ✅ `f0b77a1`, `ead9cd5`, `c055371` |
 | 7 | R1.1 à R1.3 : remplacements (616) | § 3.2 | R4.0, R2.1 | élevé | ✅ en partie (voir la section) |
 | 8 | R3.1 et R3.2 : copies de sorts, blessures réparties | § 3.1 | R0 | moyen à élevé | ✅ `827cc6f` |
-| 9 | R2.4 : couche 2 (contrôle) | § 3.2 | R4.0 | élevé | ✅ (voir suivi) |
-| 10 | R2.5 : 613.8 par point fixe, couche 5 « en plus » | § 3.2 | R2.2, R2.4 | élevé (perf.) | **prochain** |
-| 11 | R4.1 à R4.6 : familles génériques | § 3.3 | R1, R2 | moyen | à faire |
+| 9 | R2.4 : couche 2 (contrôle) | § 3.2 | R4.0 | élevé | ✅ `2b2ef83` |
+| 10 | R2.5 : 613.8 par point fixe, couche 5 « en plus » | § 3.2 | R2.2, R2.4 | élevé (perf.) | ✅ (voir suivi) |
+| 11 | R4.1 à R4.6 : familles génériques | § 3.3 | R1, R2 | moyen | **prochain** |
 | 12 | R5 : blocages simultanés, mulligans 103.5 | § 3.2 | F1 | moyen | à faire |
 | 13 | R6 : boucles (104.4b) | § 3.2 | F1 | moyen | à faire |
 | 14 | R7 : justesse des cartes | § 3.4 | — | continu | à faire |
@@ -246,7 +247,7 @@ Lus dans le code ; chacun est confirmé par un test au début de son lot.
 - l'IA essaie par simulation chaque nouvelle cible d'une copie à cible unique, comme les cibles d'un déclenchement ;
 - tests : `engine/test/audit.test.ts` (#4, N11, #15) ; Chandra, Flameshaper (`fdn.test.ts`) répartit à l'activation.
 
-## R2.4 et R2.5 — couches (R2.4 ✅)
+## R2.4 et R2.5 — couches ✅
 
 - **R2.4 [règles] : couche 2.**
   - `GameObject.baseController` et des effets de contrôle horodatés dans `s.effects` ;
@@ -268,6 +269,15 @@ Lus dans le code ; chacun est confirmé par un test au début de son lot.
   - Une seconde passe ne réévalue que les statiques dépendantes (conditions, `per`, caractéristiques définies qui lisent le champ de bataille), et compare une signature ; au plus 3 passes.
   - Couche 5 « en plus de ses autres couleurs ».
   - Cible de performance : bench ≥ 5 000 décisions/s, et au plus 5 % de perte (comparaison avant et après avec `git stash`, sur secteur).
+
+  **R2.5 réalisé ✅ :**
+  - `computing` reste, et une carte `provisional` (résultat de la passe précédente) est lue par `chars`, les vues des « pour chaque » et les F/E définies par une capacité ;
+  - `collectStatics` sépare ce qui ne dépend pas des couches (réutilisé) des statiques dépendantes (réévaluées) ; signature comparée, trois applications des couches au plus ;
+  - une condition n'est dépendante que si elle lit un permanent pendant son évaluation (compteur de lectures) : « pendant votre tour », les PV, les marqueurs ne déclenchent pas de seconde passe ;
+  - premier essai à 19,5 % de perte (IA heuristique, 4 joueurs) : la vue construite pour chaque permanent compté coûtait O(n) (permanents équipés, valeur de mana). Cache des vues et permanents équipés précalculés par collecte : perte nulle ;
+  - couche 5 : `addColors` ; 707.9b : exceptions de copie copiables (reporté de R2.2) ;
+  - lève les approximations « conditions et comptes sur les types imprimés » et « The Jolly Balloon Man : la copie ne devient pas rouge » ; Possessed Goat devient noir en plus de ses couleurs ;
+  - tests : `engine/test/audit.test.ts` (R2.5), `layers.test.ts` (613.8, qui était un test d'approximation).
 
 ## R4.1 à R4.6 — familles génériques (chaque lot fait baisser la référence)
 

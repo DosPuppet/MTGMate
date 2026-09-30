@@ -438,8 +438,9 @@ export interface LayerMods {
   setSubtypes?: string[];
   /** Nom remplacé (Witness Protection). */
   setName?: string;
-  /** Couche 5 : couleurs. */
+  /** Couche 5 : couleurs remplacées ; `addColors` : « en plus de ses autres couleurs ». */
   setColors?: Color[];
+  addColors?: Color[];
   /** Couche 4 : a tous les types de créature (Soulstone Sanctuary, changelin). */
   allCreatureTypes?: boolean;
   /** Couche 4 : a en plus le type de terrain de base choisi par la source (Multiversal Passage). */

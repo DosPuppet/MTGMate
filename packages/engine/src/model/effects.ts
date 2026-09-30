@@ -277,6 +277,8 @@ export type Effect =
       sacrificeAtNextUpkeep?: boolean;
       /** « … sauf que c'est un Démon noir » (Ardyn, the Usurper) : couleurs et sous-types remplacés. */
       setColors?: Color[];
+      /** « … en plus de ses autres couleurs » (The Jolly Balloon Man). */
+      addColors?: Color[];
       setSubtypes?: string[];
       /** « … sauf que c'est un artefact en plus » (Molten Duplication, Vaultborn Tyrant). */
       addTypes?: CardType[];

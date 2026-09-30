@@ -8,7 +8,7 @@ import { canForage, createTokenCopy, forage, loseLife, removeFromCombat, sacrifi
 import { ask } from "./choices";
 import { announceDiscard, announceDiscardBatch, evalAmount, moveWithSpec, runEffect } from "./effects";
 import { RulesError, rethrowAsRules } from "./errors";
-import { copiedDefId } from "./layers";
+import { copiableExceptions, copiedDefId } from "./layers";
 import { costToText, manaValue, payMana, totalCost } from "./mana";
 import { copyStackItem } from "./stackChoices";
 import {
@@ -2093,6 +2093,7 @@ function finishResolution(
         kicked: item.kicked,
         chosen: chosenFrom(vars),
         copyOf: vars.$copyOf?.[0] !== undefined ? String(vars.$copyOf[0]) : undefined,
+        copyMods: copiableExceptions(s, vars.$copyOf?.[1] !== undefined ? String(vars.$copyOf[1]) : undefined),
         copyChosen: vars.$copyOf !== undefined,
       });
     return;
@@ -2116,6 +2117,7 @@ function finishResolution(
           manaSpent: item.manaSpent,
           devoured: Number(vars.$devoured?.[0] ?? 0),
           copyOf: vars.$copyOf?.[0] !== undefined ? String(vars.$copyOf[0]) : undefined,
+          copyMods: copiableExceptions(s, vars.$copyOf?.[1] !== undefined ? String(vars.$copyOf[1]) : undefined),
           copyChosen: vars.$copyOf !== undefined,
           spentColors: item.spentColors,
           evoked: item.evoked,

@@ -4,7 +4,7 @@ import { createTokenCopy, createTokens } from "../actions";
 import { addControlEffect } from "../control";
 import type { OpHandlers } from "../effects";
 import { addEffect, addPump, attach, attackingDefender, evalAmount, exiledUid, nameOf, resolveRef } from "../effects";
-import { copiedDefId } from "../layers";
+import { copiableExceptions, copiedDefId, mergeMods } from "../layers";
 import {
   bump,
   changeCounters,
@@ -238,16 +238,22 @@ export const HANDLERS: OpHandlers = {
       const n = base * tokenMultiplier(s, ctx.controller, creature || !!e.addTypes?.includes("Creature"));
       for (let i = 0; i < n; i++) {
         // Engagé, types, capacités et F/E en place avant l'événement d'arrivée (pas de « devient engagé »).
+        // 707.9b : les exceptions du modèle, puis celles de cet effet (« sauf que c'est un 1/1 »), sont copiables.
         const token = createTokenCopy(s, ctx.controller, defId, {
           tapped: !!e.tapped,
-          mods: {
+          mods: mergeMods(model?.zone === "battlefield" ? copiableExceptions(s, id) : undefined, {
             addTypes: e.addTypes?.length ? e.addTypes : undefined,
             addKeywords: e.addKeywords?.length ? e.addKeywords : undefined,
             addSubtypes: e.addSubtypes?.length ? e.addSubtypes : undefined,
             addSupertypes: e.legendary ? ["Legendary"] : undefined,
             addAbilities: e.addAbilities?.length ? e.addAbilities : undefined,
+            addColors: e.addColors?.length ? e.addColors : undefined,
+            // Ardyn, the Usurper : « sauf que c'est un Démon noir ».
+            setColors: e.setColors,
+            setSubtypes: e.setSubtypes,
             ...(e.pt !== undefined ? { setPower: e.pt, setToughness: e.pt } : {}),
-          },
+          }),
+          modsCopiable: true,
         });
         // Firion : des capacités d'Équiper moins chères (ajoutées ; la moins chère sera utilisée).
         if (e.equipDiscount) {
@@ -276,9 +282,6 @@ export const HANDLERS: OpHandlers = {
             { targets: [], effects: [{ op: "sacrificeIt", what: { kind: "target", id: "c" } }], bound: { c: [token] } },
             "nextUpkeep",
           );
-        }
-        if (e.setColors || e.setSubtypes) {
-          addEffect(s, [token], { setColors: e.setColors, setSubtypes: e.setSubtypes }, "permanent");
         }
         if (e.attacking && s.combat) {
           // Calamity : « engagé et attaquant » (il attaque ce qu'attaque une de vos créatures).
@@ -341,7 +344,8 @@ export const HANDLERS: OpHandlers = {
       };
     }
     const picked = answer.map(String).find((id) => options.includes(id));
-    r.vars.$copyOf = picked ? [e.fromGraveyards ? (s.objects[picked]?.defId ?? "") : copiedDefId(s, picked)] : [];
+    // Le modèle (sur le champ de bataille) suit la définition : ses exceptions de copie sont reprises (707.9b).
+    r.vars.$copyOf = picked ? (e.fromGraveyards ? [s.objects[picked]?.defId ?? ""] : [copiedDefId(s, picked), picked]) : [];
     // La carte copiée depuis un cimetière est exilée une fois le permanent arrivé.
     if (picked && e.fromGraveyards) r.vars.$copyCard = [picked];
     return;
@@ -546,6 +550,8 @@ export const HANDLERS: OpHandlers = {
       affected: ids,
       duration: e.duration,
       copyOf: copiedDefId(s, model),
+      ...copiableExceptions(s, model),
+      copiable: true,
     });
     return;
   },

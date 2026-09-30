@@ -105,6 +105,7 @@ export const MULTI: Record<string, CardScript> = {
         effects: [
           fx.copyToken(ref.target(), {
             pt: 1,
+            addColors: ["R"],
             addSubtypes: ["Balloon"],
             addKeywords: ["flying", "haste"],
             sacrificeAtEndStep: true,

@@ -38,8 +38,10 @@ export const RECORD_VERSION = 1;
  *   illégale perdue (707.10c, 601.2d, 608.2b ; R3).
  * - 13 : le contrôle est une couche (613.1b) : contrôleur de base et effets de contrôle horodatés ; un joueur qui quitte
  *   la partie rend ce qu'il avait volé (800.4a ; R2.4).
+ * - 14 : dépendances de couches par point fixe (conditions, « pour chaque », F/E définies qui lisent des permanents) ;
+ *   exceptions de copie copiables ; couleurs ajoutées (613.8, 707.9b, 105.3 ; R2.5).
  */
-export const RULES_VERSION = 13;
+export const RULES_VERSION = 14;
 
 /** Un point de contrôle toutes les N décisions (plus la dernière de la partie). */
 export const CHECKPOINT_EVERY = 25;

@@ -279,13 +279,13 @@ describe("couches : interactions synthétiques", () => {
     expect(chars(s, bear).keywords).toContain("vigilance");
   });
 
-  it("approximation (613.8) : la condition d'une statique lit les caractéristiques imprimées", () => {
-    // Kargan a le vol « tant que vous contrôlez un Dragon ». Un Ours devenu Dragon par un effet devrait suffire
-    // (règles), mais les conditions des statiques sont évaluées sur les types imprimés (docs/approximations.md).
+  it("613.8 : la condition d'une statique voit les types ajoutés par un effet", () => {
+    // Kargan a le vol « tant que vous contrôlez un Dragon » : un Ours devenu Dragon par un effet suffit.
     let s = scenario({ p1: { battlefield: ["Kargan Dragonrider", "Bear Cub"] } });
     const kargan = idOf(s, "p1", "battlefield", "Kargan Dragonrider");
-    s = withEffect(s, [idOf(s, "p1", "battlefield", "Bear Cub")], { addSubtypes: ["Dragon"] });
     expect(chars(s, kargan).keywords).not.toContain("flying");
+    s = withEffect(s, [idOf(s, "p1", "battlefield", "Bear Cub")], { addSubtypes: ["Dragon"] });
+    expect(chars(s, kargan).keywords).toContain("flying");
   });
 
   it("dernières informations connues : une créature renforcée qui meurt garde sa force modifiée", () => {

@@ -683,3 +683,47 @@ describe("#12, N10 et 800.4a : le contrôle est une couche (613.1b, 613.7)", () 
     expect(s.objects[wurm]?.controller).toBe("p2");
   });
 });
+
+describe("R2.5 : couches, exceptions de copie, couleurs ajoutées et dépendances (707.9b, 105.3, 613.8)", () => {
+  it("707.9b : la copie d'un jeton « sauf que c'est un 1/1 Ballon rouge » reprend ces exceptions", () => {
+    const s = scenario({ p1: { battlefield: ["Pelakka Wurm"] } });
+    const wurm = idOf(s, "p1", "battlefield", "Pelakka Wurm");
+    const balloon = fx.copyToken(ref.target(), { pt: 1, addColors: ["R"], addSubtypes: ["Balloon"], addKeywords: ["flying"] });
+    runEffect(s, { ...resolution("p1"), targets: { t: [wurm] } } as never, balloon);
+    const first = s.battlefield.find((id) => s.objects[id]?.isToken) as string;
+    expect(chars(s, first)).toMatchObject({ power: 1, toughness: 1 });
+    // 105.3 : rouge en plus de ses autres couleurs.
+    expect(chars(s, first).colors).toEqual(expect.arrayContaining(["G", "R"]));
+    runEffect(s, { ...resolution("p1"), targets: { t: [first] } } as never, fx.copyToken(ref.target()));
+    const second = s.battlefield.find((id) => s.objects[id]?.isToken && id !== first) as string;
+    expect(chars(s, second)).toMatchObject({ name: "Pelakka Wurm", power: 1, toughness: 1 });
+    expect(chars(s, second).subtypes).toContain("Balloon");
+    expect(chars(s, second).keywords).toContain("flying");
+    expect(chars(s, second).colors).toContain("R");
+  });
+
+  it("613.8 : « pour chaque » compte un permanent qui a reçu le type par un effet", () => {
+    const counter = customCard({
+      name: "Compteur de Dragons",
+      power: 0,
+      toughness: 1,
+      abilities: [
+        {
+          kind: "static",
+          affects: "self",
+          mods: { power: 1 },
+          per: { types: ["Creature"], subtype: "Dragon", controller: "you" },
+        } as CardDef["abilities"][number],
+      ],
+    });
+    const s = scenario({ p1: { battlefield: [counter, "Bear Cub"] } });
+    const id = idOf(s, "p1", "battlefield", counter.name);
+    expect(chars(s, id).power).toBe(0);
+    runEffect(
+      s,
+      { ...resolution("p1"), targets: { t: [idOf(s, "p1", "battlefield", "Bear Cub")] } } as never,
+      fx.modify(ref.target(), { addSubtypes: ["Dragon"] }, "permanent"),
+    );
+    expect(chars(s, id).power).toBe(1);
+  });
+});
