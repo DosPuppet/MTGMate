@@ -579,6 +579,8 @@ export interface GameState {
     speedRaised?: boolean;
     /** Capacités « une fois par tour » déjà déclenchées (source:index). */
     onceFired: string[];
+    /** 514.3a : une priorité a été donnée pendant le nettoyage ; il y aura une nouvelle étape de nettoyage. */
+    cleanupAgain?: boolean;
     /** Muldrotha : types de permanents déjà joués depuis le cimetière ce tour-ci. */
     graveyardTypesUsed?: string[];
     /** Combats supplémentaires à venir ce tour-ci (Aurelia). */

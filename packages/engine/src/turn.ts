@@ -348,6 +348,15 @@ function finishCleanup(s: GameState): void {
     if (pl) pl.manaKeep = undefined;
   }
   bump(s);
+  // 514.3a : si des actions basées sur l'état sont accomplies ou que des capacités se déclenchent pendant le nettoyage,
+  // les joueurs reçoivent la priorité, puis une nouvelle étape de nettoyage a lieu.
+  const acted = stateBasedActions(s);
+  if (s.over) return;
+  if (acted || s.pending || s.triggers.length > 0) {
+    s.turn.cleanupAgain = true;
+    givePriority(s);
+    return;
+  }
   s.flow = "stepEnd";
 }
 
@@ -382,6 +391,13 @@ function endStep(s: GameState): void {
   if (s.turn.step === "endCombat") {
     s.combat = null;
     bump(s);
+  }
+  // 514.3a : après une priorité pendant le nettoyage, une nouvelle étape de nettoyage (et non le tour suivant).
+  if (s.turn.step === "cleanup" && s.turn.cleanupAgain) {
+    s.turn.cleanupAgain = false;
+    s.lki = {};
+    s.flow = "stepStart";
+    return;
   }
 
   // Dernières informations connues : plus nécessaires une fois la pile vide et l'étape finie.
@@ -1069,14 +1085,23 @@ function removePlayerObjects(s: GameState, p: PlayerId): void {
   s.effects = s.effects.filter((e) => e.affected.some((id) => !gone.has(id)));
 }
 
-export function stateBasedActions(s: GameState): void {
-  simultaneously(s, () => stateBasedActionsOnce(s));
+/** Actions basées sur l'état (704.3). Renvoie true si l'une d'elles a été accomplie (ou une question posée). */
+export function stateBasedActions(s: GameState): boolean {
+  let acted = false;
+  simultaneously(s, () => {
+    acted = stateBasedActionsOnce(s);
+  });
+  return acted;
 }
 
-function stateBasedActionsOnce(s: GameState): void {
+function stateBasedActionsOnce(s: GameState): boolean {
+  const alive = () => s.playerOrder.filter((p) => !s.players[p]?.lost).length;
+  const before = alive();
+  let acted = false;
   for (let guard = 0; guard < 100; guard++) {
     checkGameOver(s);
-    if (s.over) return;
+    if (s.over) return true;
+    if (alive() !== before) acted = true;
     // 702.179a : « Start your engines! » — un joueur sans vitesse qui contrôle un tel permanent a la vitesse 1.
     for (const id of s.battlefield) {
       const c = s.players[obj(s, id).controller];
@@ -1205,8 +1230,12 @@ function stateBasedActionsOnce(s: GameState): void {
         }
       }
     }
-    if (changed) continue;
+    if (changed) {
+      acted = true;
+      continue;
+    }
     if (legendChoice) {
+      acted = true;
       // 704.5j : le joueur choisit la légende qu'il garde ; les autres vont au cimetière.
       const newest = [...legendChoice.ids].sort((x, y) => obj(s, y).timestamp - obj(s, x).timestamp)[0] as ObjectId;
       ask(
@@ -1224,7 +1253,7 @@ function stateBasedActionsOnce(s: GameState): void {
         { kind: "legend" },
       );
     }
-    return;
+    return acted;
   }
   // Toujours des actions à faire après 100 passes : une boucle du moteur, qu'il faut voir (le fuzz la signale).
   throw new Error("Actions basées sur l'état : encore des changements après 100 passes");

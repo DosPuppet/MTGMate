@@ -21,8 +21,9 @@ export const RECORD_VERSION = 1;
  *   506.4).
  * - 3 : corrections R0.2 (taxes des sorts gratuits, taxes d'attaque et de blocage cumulées, obligation d'attaquer sans
  *   payer de taxe).
+ * - 4 : nettoyage avec actions basées sur l'état, déclencheurs et priorité (514.3a, R0.3).
  */
-export const RULES_VERSION = 3;
+export const RULES_VERSION = 4;
 
 /** Un point de contrôle toutes les N décisions (plus la dernière de la partie). */
 export const CHECKPOINT_EVERY = 25;

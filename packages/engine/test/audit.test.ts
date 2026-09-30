@@ -5,15 +5,16 @@
 import { card, type RawCard, toCardDef } from "@mtgx/cards";
 import { describe, expect, it } from "vitest";
 import { destroy } from "../src/actions";
-import { fx, ref } from "../src/dsl";
+import { fx, ref, triggered, when } from "../src/dsl";
 import { addEffect, runEffect } from "../src/effects";
 import { submit } from "../src/game";
+import { bump } from "../src/layers";
 import { legalActions } from "../src/legal";
 import { spellCost } from "../src/stack";
-import { FACE_DOWN_ID } from "../src/state";
+import { changeCounters, FACE_DOWN_ID } from "../src/state";
 import { forcedAttacks } from "../src/turn";
-import type { GameEvent, GameState } from "../src/types";
-import { act, idOf, passBoth, passUntil, scenario } from "./helpers";
+import type { CardDef, GameEvent, GameState } from "../src/types";
+import { act, advanceUntil, customCard, idOf, passBoth, passUntil, scenario } from "./helpers";
 
 const raw = (name: string, typeLine: string, oracleText: string, keywords: string[], manaCost = "{3}{W}"): RawCard => ({
   name,
@@ -180,5 +181,55 @@ describe("#5 : un sort lancé sans payer son coût paie quand même les augmenta
     const cost = spellCost(s, "p1", card("Lightning Strike"), { free: true });
     expect(cost.generic).toBe(1);
     expect(Object.values(cost.colored).every((n) => !n)).toBe(true);
+  });
+});
+
+describe("#1 : étape de nettoyage, actions basées sur l'état et priorité (514.3a)", () => {
+  /** Une créature 2/2 avec deux marqueurs −1/−1, tenue en vie par Giant Growth jusqu'à la fin du tour. */
+  function pumped(extra: (string | CardDef)[] = []) {
+    let s = scenario({ p1: { battlefield: ["Forest", ...extra], hand: ["Giant Growth"] } });
+    const first = extra[0];
+    const bear = first ? idOf(s, "p1", "battlefield", typeof first === "string" ? first : first.name) : "";
+    s = act(s, "p1", { type: "cast", card: idOf(s, "p1", "hand", "Giant Growth"), targets: { t: [bear] } });
+    s = passBoth(s);
+    const o = s.objects[bear];
+    if (o) changeCounters(s, o, "-1/-1", 2);
+    bump(s);
+    return { s, bear };
+  }
+
+  it("la créature meurt pendant le nettoyage du même tour, pas à l'entretien suivant", () => {
+    const { s: s0, bear } = pumped(["Bear Cub"]);
+    let s = s0;
+    let diedAt: [number, string] | null = null;
+    for (let i = 0; i < 300 && !diedAt; i++) {
+      const next = advanceUntil(s, (x) => x !== s, 1);
+      if (next === s) break;
+      s = next;
+      if (!s.battlefield.includes(bear)) diedAt = [s.turn.number, s.turn.step];
+    }
+    expect(diedAt).toEqual([3, "cleanup"]);
+  });
+
+  it("son déclencheur « quand elle meurt » se résout pendant le nettoyage, suivi d'un nouveau nettoyage", () => {
+    const mourner = customCard({
+      name: "Pleureur",
+      power: 2,
+      toughness: 2,
+      abilities: [triggered(when.dies({ self: true }), [fx.gainLife(3)], { label: "3 PV" })],
+    });
+    const { s: s0 } = pumped([mourner]);
+    const s = advanceUntil(s0, (x) => x.turn.number === 4 || x.players.p1?.life === 23);
+    expect(s.players.p1?.life).toBe(23);
+    expect(s.turn).toMatchObject({ number: 3, step: "cleanup" });
+    const next = advanceUntil(s, (x) => x.turn.number === 4);
+    expect(next.turn.number).toBe(4);
+    expect(next.turn.cleanupAgain).toBeFalsy();
+  });
+
+  it("sans rien à faire, pas de priorité pendant le nettoyage", () => {
+    let s = scenario({ step: "end" });
+    s = advanceUntil(s, (x) => x.turn.number === 4 || (x.turn.step === "cleanup" && x.pending?.kind === "priority"));
+    expect(s.turn.number).toBe(4);
   });
 });

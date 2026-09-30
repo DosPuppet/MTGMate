@@ -27,7 +27,6 @@ Chaque entrée porte sa nature :
 
 Écarts relevés par l'audit du 30/09/2026 et confirmés en jouant la position (détail, preuves et autres écarts lus dans le code : `AUDIT.md`, § 3.1 ; correction prévue en R0 et R3) :
 
-- `règle` **Étape de nettoyage (514.3a) :** ni actions basées sur l'état, ni déclencheurs, ni priorité ; une créature tuée par la fin d'un effet « jusqu'à la fin du tour » meurt à l'entretien suivant.
 - `règle` **Lien de vie :** un gain de PV par affectation de blessures ; une créature qui blesse plusieurs objets en même temps déclenche « chaque fois que vous gagnez des PV » plusieurs fois.
 - `règle` **Copies de sorts (707.10c) :** la copie garde les cibles de l'original, et la cible ne « devient pas la cible » de la copie (la garde ne se déclenche pas).
 

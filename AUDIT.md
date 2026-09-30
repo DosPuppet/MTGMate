@@ -97,7 +97,7 @@ Rangés par impact décroissant.
 
 | # | Écart | Règle | Preuve | Impact |
 |---|---|---|---|---|
-| 1 | **Nettoyage :** ni actions basées sur l'état, ni déclencheurs, ni priorité. Une créature 0/0 quand un bonus « jusqu'à la fin du tour » expire meurt à l'entretien du joueur suivant (exéc.) | 514.3a | `engine/src/turn.ts:306-335` (`finishCleanup` passe à `stepEnd`) | **moyen** : −1/−1 et flétrir (Lorwyn Eclipsed), défausse en fin de tour ; « meurt » se déclenche pendant le mauvais tour |
+| 1 | ✅ **Corrigé (R0.3).** **Nettoyage :** ni actions basées sur l'état, ni déclencheurs, ni priorité. Une créature 0/0 quand un bonus « jusqu'à la fin du tour » expire meurt à l'entretien du joueur suivant (exéc.) | 514.3a | `engine/src/turn.ts:306-335` (`finishCleanup` passe à `stepEnd`) | **moyen** : −1/−1 et flétrir (Lorwyn Eclipsed), défausse en fin de tour ; « meurt » se déclenche pendant le mauvais tour |
 | 2 | **Lien de vie :** un gain de PV par affectation de blessures. Un piétineur 5/5 bloqué donne deux marqueurs à Ajani's Pridemate au lieu d'un (exéc.) | 119.9, 702.15b, décision d'Ajani's Pridemate | `engine/src/actions.ts:385`, appelé par affectation (`engine/src/turn.ts:928`) | **moyen** : archétype Lifegain du méta |
 | 3 | ✅ **Corrigé (R0.2).** **Obligation d'attaquer et taxe d'attaque :** sans mana, face à Archangel of Tithes, Juggernaut ne peut ni attaquer (taxe impayée) ni rester en arrière (obligation) ; **aucune déclaration n'est acceptée et la partie se bloque** (exéc.) | 508.1d (une obligation n'impose pas de payer un coût) | `engine/src/turn.ts:602-620` | rare, mais **bloquant** |
 | 4 | **Copies de sorts :** la copie garde les cibles de l'original, sans possibilité d'en choisir de nouvelles ; la cible ne « devient pas la cible » de la copie, donc sa garde ne se déclenche pas (exéc. pour la garde) | 707.10c, 702.21a | `engine/src/stack.ts:1295-1309` (`copySpellItem` n'appelle pas `announceTargets`) | **moyen** : environ 21 cartes des extensions restantes copient un sort avec de nouvelles cibles |
@@ -291,6 +291,7 @@ Détail, ordre d'exécution et décisions de conception : `PLAN-R.md`.
 - **30/09/2026 :** lot F3 fait : les deux bugs du serveur du § 6 (URL mal encodée, `X-Forwarded-For`) et ses autres défauts (`Origin`, en-têtes, `/scry/`, salons par adresse) sont corrigés ; reste : jetons de reconnexion en clair.
 - **30/09/2026 :** lot R0.1 fait : écarts 8, 9, 10, 11 et 16 corrigés, ainsi que N2 et N5 de `PLAN-R.md`.
 - **30/09/2026 :** lot R0.2 fait : écarts 3 et 5 corrigés, ainsi que N3 et N4.
+- **30/09/2026 :** lot R0.3 fait : écart 1 corrigé (nettoyage, 514.3a).
 
 ### R0 — Corrections simples (un lot, un test de règles par correction)
 

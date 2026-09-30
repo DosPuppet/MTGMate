@@ -216,3 +216,9 @@ Lot R0.2 (PLAN-R.md ; `RULES_VERSION` = 3) :
 - 508.1d : une créature qui « attaque si possible » n'est obligée d'attaquer que s'il existe un défenseur sans taxe (`forcedAttackers`) ; l'automatisme déclare les attaques obligées vers un tel défenseur (`forcedAttacks`). Avant, sans mana face à Archangel of Tithes, aucune déclaration n'était acceptée ;
 - limite : l'IA garde `forcedAttackers` et choisit elle-même ses défenseurs ; en multijoueur, elle peut encore viser un joueur taxé (décision refusée, puis décision par défaut) ;
 - tests : `engine/test/audit.test.ts` (#3, #5, N3).
+
+Lot R0.3 (PLAN-R.md ; `RULES_VERSION` = 4) :
+- 514.3a : après les actions de nettoyage (514.1, 514.2), les actions basées sur l'état sont vérifiées ; si l'une est accomplie, qu'une question est posée (règle des légendes) ou qu'une capacité s'est déclenchée, les joueurs reçoivent la priorité (`turn.cleanupAgain`), puis une nouvelle étape de nettoyage a lieu (`endStep`), qui met fin aux effets « jusqu'à la fin du tour » créés entre-temps ;
+- `stateBasedActions` renvoie désormais si quelque chose a été fait ;
+- une créature tenue en vie par un bonus qui expire meurt pendant le nettoyage du même tour, et ses déclencheurs « meurt » s'y résolvent ;
+- tests : `engine/test/audit.test.ts` (#1).
