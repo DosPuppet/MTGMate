@@ -17,7 +17,7 @@ import { ask, cardRef } from "./choices";
 import { syncControl } from "./control";
 import { announceDiscard, announceDiscardBatch, evalAmount } from "./effects";
 import { rethrowAsRules } from "./errors";
-import { copiedDefId, snapshot } from "./layers";
+import { copiedDefId, effectivePower, snapshot } from "./layers";
 import { payMana } from "./mana";
 import { RulesError, resolveTop } from "./stack";
 import { announceNext } from "./stackChoices";
@@ -546,11 +546,7 @@ function combatants(s: GameState): ObjectId[] {
  * ou la valeur absolue d'une force négative (Loot, the Anomaly).
  */
 export function combatPower(s: GameState, id: ObjectId): number {
-  const c = chars(s, id);
-  let power = c.power;
-  if (power < 0 && c.keywords.includes("absolutePowerDamage")) power = -power;
-  if (c.keywords.includes("assignsToughness") && c.toughness > power) power = c.toughness;
-  return power;
+  return effectivePower(chars(s, id), "combatDamage");
 }
 
 export function canAttack(s: GameState, id: ObjectId): boolean {

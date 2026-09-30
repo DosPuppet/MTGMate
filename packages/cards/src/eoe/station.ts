@@ -14,7 +14,7 @@ import {
   manaAbility,
   modal,
   mode,
-  playerStatic,
+  powerFor,
   ROBOT,
   ref,
   spell,
@@ -340,10 +340,9 @@ export const STATION: Record<string, CardScript> = {
     abilities: [
       staticAbility(
         CREATURE_YOU_CONTROL,
-        { addKeywords: ["assignsToughness"] },
-        { label: "Blessures selon l'endurance si elle est plus grande" },
+        { addPowerRules: [{ ...powerFor.combatToughness, uses: ["combatDamage", "station"] }] },
+        { label: "Blessures et station selon l'endurance si elle est plus grande" },
       ),
-      playerStatic({ stationByToughness: true, label: "Station selon l'endurance si elle est plus grande" }),
     ],
   },
 };

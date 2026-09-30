@@ -453,7 +453,24 @@ export interface ProtectionRule {
   label: string;
 }
 
+/**
+ * « Utilise son endurance (ou une force modifiée) pour … » (famille R4.3) : blessures de combat (Ghalta, Loot, the
+ * Anomaly), équipage et selle (pilotes, Interface Ace), station (Tapestry Warden).
+ */
+export interface PowerRule {
+  uses: ("combatDamage" | "crew" | "station")[];
+  /** L'endurance à la place de la force : toujours, ou seulement si elle est plus grande. */
+  toughness?: "always" | "ifGreater";
+  /** La valeur absolue d'une force négative. */
+  absolute?: boolean;
+  /** Comme si sa force était supérieure de N. */
+  bonus?: number;
+  label: string;
+}
+
 export interface LayerMods {
+  /** Couche 6 : règles « utilise son endurance pour » accordées. */
+  addPowerRules?: PowerRule[];
   /** Couche 6 : protections et défenses talismaniques « contre [filtre] » accordées. */
   addProtections?: ProtectionRule[];
   /** Couche 6 : capacités (non mots-clés) accordées. */
@@ -651,8 +668,6 @@ export interface PlayerStaticAbilityDef {
   playLandsFromGraveyard?: boolean;
   /** Tannuk, Steadfast Second : les cartes de votre main correspondant au filtre ont la distorsion à ce coût. */
   grantWarp?: { filter: ObjectFilter; cost: ManaCost };
-  /** Tapestry Warden : vos créatures dont l'endurance dépasse la force stationnent selon leur endurance. */
-  stationByToughness?: boolean;
   /** Tomik, Orzhov Lawmage : au plus une créature peut attaquer chacun de vos planeswalkers à chaque combat. */
   walkersMaxOneAttacker?: boolean;
   /** Draconic Visitor : les jetons d'artefact que vous devriez créer sont remplacés par ce jeton. */

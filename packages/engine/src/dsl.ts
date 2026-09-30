@@ -28,6 +28,7 @@ import type {
   MoveSpec,
   ObjectFilter,
   PlayerStaticAbilityDef,
+  PowerRule,
   PreventionAbilityDef,
   ProtectionRule,
   Ref,
@@ -1717,6 +1718,24 @@ export const block = {
   /** Les plus fréquentes. */
   notByPowerLE2: { cantBeBlockedBy: { maxPower: 2 }, label: "Imblocable par les créatures de force 2 ou moins" } as BlockRule,
 };
+
+/** « Utilise son endurance (ou une force modifiée) pour … » (famille R4.3). */
+export const powerFor = {
+  /** Pilote : monte et équipe comme si sa force était supérieure de 2. */
+  pilot: { uses: ["crew"], bonus: 2, label: "Monte et équipe avec 2 de force en plus" } as PowerRule,
+  crewWithToughness: { uses: ["crew"], toughness: "always", label: "Monte et équipe avec son endurance" } as PowerRule,
+  combatToughness: {
+    uses: ["combatDamage"],
+    toughness: "ifGreater",
+    label: "Blesse selon son endurance si elle est plus grande",
+  } as PowerRule,
+  combatAbsolute: { uses: ["combatDamage"], absolute: true, label: "Blesse selon la valeur absolue de sa force" } as PowerRule,
+};
+
+/** Règle « utilise son endurance pour » imprimée sur la carte : une statique sur elle-même. */
+export function powerRuleAbility(rule: PowerRule): AbilityDef {
+  return staticAbility("self", { addPowerRules: [rule] }, { label: rule.label });
+}
 
 /** Protections et défenses talismaniques « contre [filtre] » (famille R4.2). */
 export const protection = {

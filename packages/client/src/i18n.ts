@@ -65,8 +65,6 @@ export const KEYWORD_LABEL: Record<Keyword, string> = {
   mustBeBlocked: "Doit être bloquée",
   damageHealsFirst: "Chaque blessure guérit les précédentes",
   cantBlock: "Ne peut pas bloquer",
-  crewPlus2: "Monte et équipe avec 2 de force en plus",
-  crewWithToughness: "Monte et équipe avec son endurance",
   startYourEngines: "Start your engines!",
   cantAttack: "Ne peut pas attaquer",
   unblockable: "Ne peut pas être bloquée",
@@ -77,8 +75,6 @@ export const KEYWORD_LABEL: Record<Keyword, string> = {
   keepsDamage: "Blessures conservées",
   absorbsDamage: "Encaisse les blessures",
   convoke: "Convocation",
-  assignsToughness: "Blesse selon son endurance",
-  absolutePowerDamage: "Blesse selon la valeur absolue de sa force",
   attacksDespiteDefender: "Attaque malgré le défenseur",
 };
 

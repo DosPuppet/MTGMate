@@ -15,7 +15,7 @@ export const PILOT: TokenSpec = {
   subtypes: ["Pilot"],
   power: 1,
   toughness: 1,
-  keywords: ["crewPlus2"],
+  abilities: [dsl.powerRuleAbility(dsl.powerFor.pilot)],
   text: "This token saddles Mounts and crews Vehicles as though its power were 2 greater.",
 };
 

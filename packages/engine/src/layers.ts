@@ -32,6 +32,7 @@ import type {
   ObjectFilter,
   ObjectId,
   PlayerId,
+  PowerRule,
   ProtectionRule,
 } from "./types";
 
@@ -52,6 +53,8 @@ export interface Characteristics {
   blockRules: BlockRule[];
   /** Protections et défenses talismaniques « contre [filtre] ». */
   protections: ProtectionRule[];
+  /** « Utilise son endurance pour » (blessures de combat, équipage, station). */
+  powerRules: PowerRule[];
   controller: PlayerId;
 }
 
@@ -211,6 +214,7 @@ const LIST_MODS = [
   "addColors",
   "addBlockRules",
   "addProtections",
+  "addPowerRules",
 ] as const satisfies (keyof LayerMods)[];
 
 /** Fusionne des modifications dans l'ordre : les listes se cumulent, les autres valeurs sont remplacées. */
@@ -303,6 +307,7 @@ function base(s: GameState, o: GameObject, defId = o.defId): Characteristics {
     abilities: levelAbilities(o, d),
     blockRules: [],
     protections: [],
+    powerRules: [],
     controller: o.controller,
   };
 }
@@ -371,6 +376,7 @@ function faceDownBase(o: GameObject): Characteristics {
     ],
     blockRules: [],
     protections: [],
+    powerRules: [],
     controller: o.controller,
   };
 }
@@ -393,6 +399,7 @@ function roomBase(o: GameObject, d: CardDef): Characteristics {
     abilities: [...d.abilities, ...open.flatMap((f) => f.abilities)],
     blockRules: [],
     protections: [],
+    powerRules: [],
     controller: o.controller,
   };
 }
@@ -778,7 +785,8 @@ function applyLayers(s: GameState, applied: Applied[], defOfId: (id: ObjectId) =
         m.loseAllAbilities ||
         m.addAbilities?.length ||
         m.addBlockRules?.length ||
-        m.addProtections?.length
+        m.addProtections?.length ||
+        m.addPowerRules?.length
       ),
     (c, m) => {
       if (m.loseAllAbilities) {
@@ -786,7 +794,9 @@ function applyLayers(s: GameState, applied: Applied[], defOfId: (id: ObjectId) =
         c.abilities = [];
         c.blockRules = [];
         c.protections = [];
+        c.powerRules = [];
       }
+      if (m.addPowerRules?.length) c.powerRules = [...c.powerRules, ...m.addPowerRules];
       if (m.addBlockRules?.length) c.blockRules = [...c.blockRules, ...m.addBlockRules];
       if (m.addProtections?.length) c.protections = [...c.protections, ...m.addProtections];
       for (const k of m.removeKeywords ?? []) c.keywords = c.keywords.filter((x) => x !== k);
@@ -863,6 +873,22 @@ export function chars(s: GameState, id: ObjectId): Characteristics {
     return provisional?.get(id) ?? base(s, o, o.faceDefId ?? o.defId);
   }
   return battlefieldChars(s).get(id) ?? base(s, o);
+}
+
+/**
+ * Force qui compte pour un usage (famille R4.3) : blessures de combat, équipage et selle, station. Valeur absolue, puis
+ * endurance, puis bonus.
+ */
+export function effectivePower(
+  c: Pick<Characteristics, "power" | "toughness"> & { powerRules?: PowerRule[] },
+  use: PowerRule["uses"][number],
+): number {
+  const rules = (c.powerRules ?? []).filter((r) => r.uses.includes(use));
+  let power = c.power;
+  if (power < 0 && rules.some((r) => r.absolute)) power = -power;
+  if (rules.some((r) => r.toughness === "always")) power = c.toughness;
+  else if (rules.some((r) => r.toughness === "ifGreater") && c.toughness > power) power = c.toughness;
+  return power + rules.reduce((n, r) => n + (r.bonus ?? 0), 0);
 }
 
 export function hasType(s: GameState, id: ObjectId, t: CardType): boolean {

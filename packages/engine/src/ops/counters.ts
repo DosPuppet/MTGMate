@@ -3,8 +3,9 @@
 import { createTokens } from "../actions";
 import type { OpHandlers } from "../effects";
 import { evalAmount, resolveRef, store } from "../effects";
+import { effectivePower } from "../layers";
 import { bump, changeCounters, chars, counterCount, isRoom, onBattlefield, P1P1, rulesEvent, unlockDoor } from "../state";
-import { addPlayerEffect, playerStatic } from "../statics";
+import { addPlayerEffect } from "../statics";
 import { matchesObjectFilter } from "../targets";
 
 export const HANDLERS: OpHandlers = {
@@ -210,8 +211,7 @@ export const HANDLERS: OpHandlers = {
     if (o?.zone !== "battlefield" || !tapped) return;
     const c = s.objects[tapped] ? chars(s, tapped) : s.lki[tapped];
     if (!c) return;
-    const byToughness = playerStatic(s, ctx.controller, "stationByToughness") && c.toughness > c.power;
-    const n = Math.max(0, byToughness ? c.toughness : c.power);
+    const n = Math.max(0, effectivePower(c as { power: number; toughness: number }, "station"));
     if (n > 0) changeCounters(s, o, "charge", n);
     return;
   },

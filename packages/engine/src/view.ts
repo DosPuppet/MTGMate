@@ -69,6 +69,8 @@ export interface ObjectView extends CardFace {
   blockRules?: string[];
   /** Protections et défenses talismaniques « contre [filtre] » : leurs libellés. */
   protections?: string[];
+  /** Règles « utilise son endurance pour » : leurs libellés. */
+  powerRules?: string[];
   sick: boolean;
   attacking: boolean;
   blocking: ObjectId | null;
@@ -271,6 +273,7 @@ export function objectView(s: GameState, id: ObjectId): ObjectView {
     keywords: c.keywords,
     ...(c.blockRules.length ? { blockRules: c.blockRules.map((r) => r.label) } : {}),
     ...(c.protections.length ? { protections: c.protections.map((r) => r.label) } : {}),
+    ...(c.powerRules.length ? { powerRules: c.powerRules.map((r) => r.label) } : {}),
     sick: o.zone === "battlefield" && isSummoningSick(s, id),
     attacking,
     blocking,

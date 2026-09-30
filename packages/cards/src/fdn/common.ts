@@ -40,6 +40,8 @@ export const {
   blockAbility,
   protection,
   protectionAbility,
+  powerFor,
+  powerRuleAbility,
 } = dsl;
 
 /** Cible quelconque décrite par un filtre d'objets. */

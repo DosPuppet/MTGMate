@@ -136,7 +136,8 @@ export function KeywordBadges({ obj }: { obj: ObjectView }) {
   const shown = obj.keywords.filter((k) => !HIDDEN.has(k));
   const rules = obj.blockRules ?? [];
   const protections = obj.protections ?? [];
-  if (shown.length === 0 && rules.length === 0 && protections.length === 0) return null;
+  const powerRules = obj.powerRules ?? [];
+  if (shown.length === 0 && rules.length === 0 && protections.length === 0 && powerRules.length === 0) return null;
   const hover = (title: string, help?: string) => (ev: React.MouseEvent<HTMLElement>) => {
     const r = ev.currentTarget.getBoundingClientRect();
     setTip({ x: r.right + 6, y: r.top + r.height / 2, title, help });
@@ -156,6 +157,23 @@ export function KeywordBadges({ obj }: { obj: ObjectView }) {
           >
             <svg viewBox="0 0 24 24" aria-hidden="true">
               {PROTECTION_ICON}
+            </svg>
+          </span>
+        ))}
+        {powerRules.map((title) => (
+          <span
+            key={title}
+            className="kw-badge"
+            data-power-rule={title}
+            role="img"
+            aria-label={title}
+            onMouseEnter={hover(title)}
+            onMouseLeave={() => setTip(null)}
+          >
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <text x="12" y="16.5" textAnchor="middle" fontSize="13" fontWeight="700" fill="currentColor">
+                {title.charAt(0)}
+              </text>
             </svg>
           </span>
         ))}

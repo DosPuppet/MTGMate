@@ -14,6 +14,8 @@ import {
   mode,
   PILOT,
   pilot,
+  powerFor,
+  powerRuleAbility,
   ref,
   spell,
   staticAbility,
@@ -82,8 +84,10 @@ export const WHITE: Record<string, CardScript> = {
     ],
   },
   "Cloudspire Captain": {
-    keywords: ["crewPlus2"],
-    abilities: [staticAbility({ ...MOUNT_OR_VEHICLE, controller: "you" }, { power: 1, toughness: 1 }, { label: "+1/+1" })],
+    abilities: [
+      powerRuleAbility(powerFor.pilot),
+      staticAbility({ ...MOUNT_OR_VEHICLE, controller: "you" }, { power: 1, toughness: 1 }, { label: "+1/+1" }),
+    ],
   },
   "Collision Course": {
     spell: modal(
@@ -130,8 +134,8 @@ export const WHITE: Record<string, CardScript> = {
     ],
   },
   "Interface Ace": {
-    keywords: ["crewWithToughness"],
     abilities: [
+      powerRuleAbility(powerFor.crewWithToughness),
       triggered(when.tapsSelf, [fx.untap(ref.self)], { condition: cond.yourTurn, oncePerTurn: true, label: "Dégagez-la" }),
     ],
   },

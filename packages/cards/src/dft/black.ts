@@ -8,6 +8,8 @@ import {
   cond,
   fx,
   pilot,
+  powerFor,
+  powerRuleAbility,
   ref,
   spell,
   staticAbility,
@@ -60,8 +62,10 @@ export const BLACK: Record<string, CardScript> = {
     ],
   },
   "Deathless Pilot": {
-    keywords: ["crewPlus2"],
-    abilities: [activated({ mana: "{3}{B}", fromGraveyard: true, effects: [fx.toHand(ref.self)], label: "Revenir en main" })],
+    abilities: [
+      powerRuleAbility(powerFor.pilot),
+      activated({ mana: "{3}{B}", fromGraveyard: true, effects: [fx.toHand(ref.self)], label: "Revenir en main" }),
+    ],
   },
   "Engine Rat": {
     abilities: [activated({ mana: "{5}{B}", effects: [fx.loseLife(2, ref.eachOpponent)], label: "Chaque adversaire perd 2 PV" })],

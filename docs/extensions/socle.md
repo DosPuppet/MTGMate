@@ -295,3 +295,6 @@ Lot R4.1 (PLAN-R.md, sans changement de règles) :
 
 Lot R4.2 (PLAN-R.md ; `RULES_VERSION` = 15) :
 - protection et défense talismanique « contre [filtre] » (`ProtectionRule`, `protection.*`, `protectionAbility`, `protectedFrom`) à la place de 5 mots-clés ; `ObjectFilter.colorCount` et `not` ; Sword of Wealth and Power (éphémères et rituels) et Resilient Roadrunner (Coyotes) protégés pour de bon.
+
+Lot R4.3 (PLAN-R.md, sans changement de règles) :
+- « utilise son endurance pour » (`PowerRule`, `powerFor.*`, `effectivePower`) à la place de 4 mots-clés et d'un drapeau de joueur : blessures de combat (Ghalta, Loot, Tapestry Warden), équipage (pilotes, Interface Ace), station.

@@ -7,6 +7,8 @@ import {
   MOUNT_OR_VEHICLE,
   modal,
   mode,
+  powerFor,
+  powerRuleAbility,
   ref,
   spell,
   TREASURE,
@@ -45,8 +47,10 @@ export const RED: Record<string, CardScript> = {
     abilities: [whileSaddled([fx.damage(2, ref.target())], { targets: [target.any("t")], label: "2 blessures" })],
   },
   "Dynamite Diver": {
-    keywords: ["crewPlus2"],
-    abilities: [triggered(when.diesSelf, [fx.damage(1, ref.target())], { targets: [target.any("t")], label: "1 blessure" })],
+    abilities: [
+      powerRuleAbility(powerFor.pilot),
+      triggered(when.diesSelf, [fx.damage(1, ref.target())], { targets: [target.any("t")], label: "1 blessure" }),
+    ],
   },
   "Fuel the Flames": { spell: spell([], [fx.damageAll(2, { types: ["Creature"] })]) },
   "Gastal Blockbuster": {

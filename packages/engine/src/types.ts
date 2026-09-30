@@ -66,16 +66,8 @@ export type Keyword =
   | "combatDamageImmune"
   /** Convocation (702.51) : les créatures peuvent aider à payer le sort. */
   | "convoke"
-  /** Ghalta the Immovable : si son endurance dépasse sa force, elle inflige ses blessures de combat selon son endurance. */
-  | "assignsToughness"
-  /** Loot, the Anomaly : une force négative inflige ses blessures de combat comme si elle était positive. */
-  | "absolutePowerDamage"
   /** Ghalta the Immovable : peut attaquer comme si elle n'avait pas le défenseur. */
   | "attacksDespiteDefender"
-  /** Pilote (Aetherdrift) : monte et équipe comme si sa force était supérieure de 2. */
-  | "crewPlus2"
-  /** Interface Ace : monte et équipe avec son endurance plutôt que sa force. */
-  | "crewWithToughness"
   /** « Start your engines! » (702.179) : si vous n'avez pas de vitesse, elle démarre à 1. */
   | "startYourEngines";
 

@@ -24,6 +24,8 @@ import {
   modal,
   mode,
   playerStatic,
+  powerFor,
+  powerRuleAbility,
   ref,
   spell,
   staticAbility,
@@ -131,7 +133,7 @@ export const UNIQUE: Record<string, CardScript> = {
     abilities: [
       staticAbility(
         CREATURE_YOU_CONTROL,
-        { addKeywords: ["attacksDespiteDefender", "assignsToughness"] },
+        { addKeywords: ["attacksDespiteDefender"], addPowerRules: [powerFor.combatToughness] },
         { label: "Attaquent malgré le défenseur ; blessent selon l'endurance si elle est plus grande" },
       ),
     ],
@@ -360,7 +362,7 @@ export const UNIQUE: Record<string, CardScript> = {
   },
   "Loot, the Anomaly": {
     abilities: [
-      staticAbility("self", { addKeywords: ["absolutePowerDamage"] }, { label: "Force négative : blesse comme si positive" }),
+      powerRuleAbility(powerFor.combatAbsolute),
       activated({
         sacrificeOther: { filter: { ...CREATURE_OR_WALKER, other: true } },
         activationCondition: cond.threshold,

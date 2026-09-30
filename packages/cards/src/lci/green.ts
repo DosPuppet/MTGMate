@@ -20,6 +20,7 @@ import {
   mode,
   PERMANENT_CARD,
   playerStatic,
+  powerFor,
   ref,
   spell,
   staticAbility,
@@ -63,7 +64,7 @@ export const GREEN: Record<string, CardScript> = {
       ),
       staticAbility(
         CREATURE_YOU_CONTROL,
-        { addKeywords: ["assignsToughness"] },
+        { addPowerRules: [powerFor.combatToughness] },
         {
           label: "Blessures de combat selon l'endurance",
         },

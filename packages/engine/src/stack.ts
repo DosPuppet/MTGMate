@@ -8,7 +8,7 @@ import { canForage, createTokenCopy, forage, loseLife, removeFromCombat, sacrifi
 import { ask } from "./choices";
 import { announceDiscard, announceDiscardBatch, evalAmount, moveWithSpec, runEffect } from "./effects";
 import { RulesError, rethrowAsRules } from "./errors";
-import { copiableExceptions, copiedDefId } from "./layers";
+import { copiableExceptions, copiedDefId, effectivePower } from "./layers";
 import { costToText, manaValue, payMana, totalCost } from "./mana";
 import { copyStackItem } from "./stackChoices";
 import {
@@ -1432,8 +1432,7 @@ function chosenCrew(s: GameState, player: PlayerId, source: ObjectId, n: number,
 
 /** Force comptée pour monter et équiper : endurance (Interface Ace), +2 pour les pilotes. */
 export function crewPower(s: GameState, id: ObjectId): number {
-  const c = chars(s, id);
-  return (c.keywords.includes("crewWithToughness") ? c.toughness : c.power) + (c.keywords.includes("crewPlus2") ? 2 : 0);
+  return effectivePower(chars(s, id), "crew");
 }
 
 /** Une source dont le nom a été choisi par un Sorcerous Spyglass (ou un Petrified Hamlet). */
