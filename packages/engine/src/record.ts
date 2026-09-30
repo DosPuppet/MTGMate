@@ -40,8 +40,10 @@ export const RECORD_VERSION = 1;
  *   la partie rend ce qu'il avait volé (800.4a ; R2.4).
  * - 14 : dépendances de couches par point fixe (conditions, « pour chaque », F/E définies qui lisent des permanents) ;
  *   exceptions de copie copiables ; couleurs ajoutées (613.8, 707.9b, 105.3 ; R2.5).
+ * - 15 : protection et défense talismanique « contre [filtre] » : Sword of Wealth and Power protège des éphémères et
+ *   des rituels, Resilient Roadrunner des Coyotes (702.16 ; R4.2).
  */
-export const RULES_VERSION = 14;
+export const RULES_VERSION = 15;
 
 /** Un point de contrôle toutes les N décisions (plus la dernière de la partie). */
 export const CHECKPOINT_EVERY = 25;

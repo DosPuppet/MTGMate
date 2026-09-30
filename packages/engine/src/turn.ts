@@ -56,7 +56,7 @@ import {
   playerStatic,
   playerStaticTotal,
 } from "./statics";
-import { matchesObjectFilter, matchesView } from "./targets";
+import { matchesObjectFilter, matchesView, protectedFrom, sourceView } from "./targets";
 import { checkCondition, processTriggers, releaseDelayedTriggers, simultaneously } from "./triggers";
 import { logTurnEvent } from "./turnlog";
 import type { GameState, ManaType, ObjectFilter, ObjectId, PlayerId, StackItem, Step } from "./types";
@@ -695,8 +695,8 @@ export function canBlock(s: GameState, blocker: ObjectId, attacker: ObjectId): b
   const a = s.combat?.attackers.find((x) => x.id === attacker);
   if (!a || !onBattlefield(s, attacker) || b.controller !== defendingPlayer(s, a.defender)) return false;
   if (hasKeyword(s, blocker, "cantBlock") || hasKeyword(s, attacker, "unblockable")) return false;
-  // 702.16f : une créature avec la protection contre tout ne peut pas être bloquée.
-  if (hasKeyword(s, attacker, "protectionFromEverything")) return false;
+  // 702.16f : une créature avec la protection contre [filtre] ne peut pas être bloquée par ce qui y correspond.
+  if (protectedFrom(s, attacker, snapshot(s, blocker))) return false;
   if (hasKeyword(s, attacker, "flying") && !hasKeyword(s, blocker, "flying") && !hasKeyword(s, blocker, "reach")) return false;
   // Règles de blocage (R4.1) : « ne peut bloquer que [filtre] » (Drone), « ne peut pas être bloquée par [filtre] ».
   const own = chars(s, blocker).blockRules;
@@ -1198,7 +1198,7 @@ function stateBasedActionsOnce(s: GameState): boolean {
           : !!host &&
             host !== id &&
             onBattlefield(s, host) &&
-            !hasKeyword(s, host, "protectionFromEverything") &&
+            !protectedFrom(s, host, sourceView(s, id)) &&
             matchesObjectFilter(s, o.controller, host, d.enchant.filter, id);
         if (!legal) toGraveyard.push(id);
       } else if (
@@ -1207,7 +1207,7 @@ function stateBasedActionsOnce(s: GameState): boolean {
           onBattlefield(s, o.attachedTo) &&
           isCreature(s, o.attachedTo) &&
           hasType(s, id, "Artifact") &&
-          !hasKeyword(s, o.attachedTo, "protectionFromEverything")
+          !protectedFrom(s, o.attachedTo, sourceView(s, id))
         )
       ) {
         o.lastAttachedTo = o.attachedTo;

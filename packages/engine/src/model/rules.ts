@@ -81,6 +81,10 @@ export interface ObjectFilter {
   /** Bloqueuse. */
   blocking?: boolean;
   /** Multicolore (au moins deux couleurs). */
+  /** Nombre exact de couleurs (« monocolore » : 1). */
+  colorCount?: number;
+  /** Ne correspond pas à ce filtre. */
+  not?: ObjectFilter;
   multicolored?: boolean;
   /** Sort dont le mana dépensé est inférieur à sa valeur de mana (Unravel). */
   manaSpentBelowValue?: boolean;

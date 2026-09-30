@@ -442,7 +442,20 @@ export interface BlockRule {
   label: string;
 }
 
+/**
+ * Protection (702.16) ou défense talismanique (702.11d) contre une qualité, décrite par un filtre sur la source (le
+ * sort, ou la source de la capacité ou des blessures ; famille R4.2). Protection contre tout : filtre vide.
+ */
+export interface ProtectionRule {
+  from: ObjectFilter;
+  /** Défense talismanique : seulement contre le ciblage par un adversaire. Sinon protection (DEBT). */
+  hexproofOnly?: boolean;
+  label: string;
+}
+
 export interface LayerMods {
+  /** Couche 6 : protections et défenses talismaniques « contre [filtre] » accordées. */
+  addProtections?: ProtectionRule[];
   /** Couche 6 : capacités (non mots-clés) accordées. */
   addAbilities?: AbilityDef[];
   /** Couche 6 : règles de blocage accordées. */

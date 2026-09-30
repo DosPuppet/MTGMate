@@ -15,7 +15,7 @@ import { boardAmount } from "./effects";
 import { copiableExceptions, copiedDefId, mergeMods } from "./layers";
 import { changeCounters, chars, moveObject, newId, nextTimestamp, P1P1, setPrepared } from "./state";
 import { controlledAbilitiesWithSource, playerStatic } from "./statics";
-import { matchesCard, matchesObjectFilter, withChosen } from "./targets";
+import { matchesCard, matchesObjectFilter, protectedFrom, sourceView, withChosen } from "./targets";
 import { checkCondition } from "./triggers";
 import { countTurnEvents } from "./turnlog";
 import type { Amount, Color, GameObject, GameState, LayerMods, ObjectId, PlayerId, TokenSpec, Zone } from "./types";
@@ -85,7 +85,7 @@ export function auraHosts(s: GameState, controller: PlayerId, cardId: ObjectId):
   return s.battlefield.filter(
     (id) =>
       id !== cardId &&
-      !chars(s, id).keywords.includes("protectionFromEverything") &&
+      !protectedFrom(s, id, sourceView(s, cardId)) &&
       matchesObjectFilter(s, controller, id, enchant.filter, cardId),
   );
 }

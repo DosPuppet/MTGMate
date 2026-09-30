@@ -110,15 +110,10 @@
     "crewWithToughness": "statique « utilise l'endurance pour » (R4.3)",
     "damageHealsFirst": "marquage des blessures (R4.6)",
     "doesntUntap": "règle de mot-clé, plusieurs cartes",
-    "hexproofFromBlack": "« défense talismanique contre [filtre] » (R4.2)",
-    "hexproofFromInstants": "« défense talismanique contre [filtre] » (R4.2)",
-    "hexproofFromMonocolored": "« défense talismanique contre [filtre] » (R4.2)",
-    "hexproofFromWhite": "« défense talismanique contre [filtre] » (R4.2)",
     "keepsDamage": "marquage des blessures (R4.6)",
     "mustAttack": "règle de mot-clé, plusieurs cartes",
     "mustBeBlocked": "règle de mot-clé, plusieurs cartes",
     "noActivatedAbilities": "règle de mot-clé, plusieurs cartes",
-    "protectionFromEverything": "« protection contre [filtre] » (R4.2)",
     "unblockable": "règle de mot-clé, plusieurs cartes"
   },
   "op": {

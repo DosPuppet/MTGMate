@@ -19,6 +19,8 @@ import {
   OUTLAW,
   OUTLAW_CREATURE,
   playerStatic,
+  protection,
+  protectionAbility,
   ref,
   spell,
   spree,
@@ -354,7 +356,7 @@ export const UNIQUE: Record<string, CardScript> = {
   },
   "Resilient Roadrunner": {
     abilities: [
-      // Approximation : la protection contre les Coyotes n'est pas modélisée.
+      protectionAbility(protection.from({ subtype: "Coyote" }, "Protection contre les Coyotes")),
       activated({
         mana: "{3}",
         effects: [

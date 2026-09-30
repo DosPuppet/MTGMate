@@ -38,6 +38,8 @@ export const {
   pawprint,
   block,
   blockAbility,
+  protection,
+  protectionAbility,
 } = dsl;
 
 /** Cible quelconque décrite par un filtre d'objets. */

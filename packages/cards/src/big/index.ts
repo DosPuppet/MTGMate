@@ -19,6 +19,7 @@ import {
   manaAbility,
   mode,
   playerStatic,
+  protection,
   ref,
   spell,
   staticAbility,
@@ -426,10 +427,13 @@ export const BIG_SCRIPTS: Record<string, CardScript> = {
   },
   "Sword of Wealth and Power": {
     abilities: [
-      // Approximation : la protection contre les éphémères et les rituels devient une défense talismanique contre les éphémères.
       staticAbility(
         "attached",
-        { power: 2, toughness: 2, addKeywords: ["hexproofFromInstants"] },
+        {
+          power: 2,
+          toughness: 2,
+          addProtections: [protection.from({ types: ["Instant", "Sorcery"] }, "Protection contre les éphémères et les rituels")],
+        },
         { label: "+2/+2, protection" },
       ),
       triggered(

@@ -44,14 +44,6 @@ export type Keyword =
   | "prowess"
   /** Garde (702.21) : la capacité déclenchée est générée à partir du coût lu dans le texte. */
   | "ward"
-  /** Protection contre tout (702.16j) : ni ciblée, ni bloquée, ni blessée, ni enchantée/équipée. */
-  | "protectionFromEverything"
-  /** Défense talismanique contre les éphémères (702.11d). */
-  | "hexproofFromInstants"
-  | "hexproofFromBlack"
-  | "hexproofFromWhite"
-  /** Dragonfire Blade : « défense talismanique contre le monocolore ». */
-  | "hexproofFromMonocolored"
   /** Changelin (702.73) : a tous les types de créature, dans toutes les zones. */
   | "changeling"
   /** « Doit être bloquée si possible » (509.1c). */

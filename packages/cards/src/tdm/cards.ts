@@ -17,6 +17,7 @@ import {
   modal,
   mode,
   playerStatic,
+  protection,
   ref,
   spell,
   staticAbility,
@@ -225,7 +226,11 @@ export const CARDS: Record<string, CardScript> = {
     abilities: [
       staticAbility(
         "attached",
-        { power: 2, toughness: 2, addKeywords: ["hexproofFromMonocolored"] },
+        {
+          power: 2,
+          toughness: 2,
+          addProtections: [protection.hexproofFrom({ colorCount: 1 }, "Défense talismanique contre le monocolore")],
+        },
         { label: "+2/+2, défense contre le monocolore" },
       ),
     ],

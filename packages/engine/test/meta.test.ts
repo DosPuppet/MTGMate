@@ -757,7 +757,7 @@ describe("Méta, lot M5", () => {
     const vind = idOf(s, "p1", "battlefield", "Swiftblade Vindicator");
     s = activate(s, blade, { t: [vind] });
     expect(s.objects[blade]?.attachedTo).toBe(vind);
-    expect(chars(s, vind).keywords).toContain("hexproofFromMonocolored");
+    expect(chars(s, vind).protections.map((p) => p.from)).toContainEqual({ colorCount: 1 });
   });
 
   it("Bilbo's Gambit avec le cadeau : plus aucun sort ce tour-ci", () => {

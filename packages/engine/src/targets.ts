@@ -7,6 +7,47 @@ import { obj } from "./state";
 import { playerStatic } from "./statics";
 import type { CardType, Color, GameState, LkiSnapshot, ObjectFilter, ObjectId, PlayerId, TargetSpec } from "./types";
 
+/**
+ * Vue d'une source (sort, source d'une capacité ou de blessures) : l'objet, ses dernières informations connues, sinon
+ * la carte imprimée.
+ */
+export function sourceView(s: GameState, id?: ObjectId, defId?: string, controller?: PlayerId): LkiSnapshot | undefined {
+  if (id && s.objects[id]) return snapshot(s, id);
+  if (id && s.lki[id]) return s.lki[id];
+  const d = defId ? s.defs[defId] : undefined;
+  if (!d || !controller) return undefined;
+  return {
+    id: id ?? "",
+    defId: d.id,
+    owner: controller,
+    controller,
+    types: d.types,
+    subtypes: d.subtypes,
+    supertypes: d.supertypes,
+    colors: d.colors,
+    power: d.power ?? 0,
+    toughness: d.toughness ?? 0,
+    keywords: d.keywords,
+    isToken: !!d.isToken,
+    name: d.name,
+  } as LkiSnapshot;
+}
+
+/**
+ * Protection et défense talismanique « contre [filtre] » (702.16, 702.11d ; R4.2) : l'objet `id` est-il protégé de
+ * cette source ? Une défense talismanique ne compte que pour le ciblage par un adversaire (`targetedByOpponent`).
+ * Sans vue de la source, seule la protection contre tout (filtre vide) s'applique.
+ */
+export function protectedFrom(s: GameState, id: ObjectId, source: LkiSnapshot | undefined, targetedByOpponent = false): boolean {
+  const o = s.objects[id];
+  if (o?.zone !== "battlefield") return false;
+  for (const r of chars(s, id).protections) {
+    if (r.hexproofOnly && !targetedByOpponent) continue;
+    if (source ? matchesView(source, r.from, o.controller, id) : Object.keys(r.from).length === 0) return true;
+  }
+  return false;
+}
+
 const PERMANENT_TYPES: readonly CardType[] = ["Artifact", "Creature", "Enchantment", "Land", "Planeswalker", "Battle"];
 
 /** Le filtre s'applique-t-il à ces caractéristiques (objet vivant ou dernières informations connues) ? */
@@ -63,6 +104,8 @@ export function matchesView(v: LkiSnapshot, f: ObjectFilter, perspective: Player
   if (f.warped !== undefined && !!v.warped !== f.warped) return false;
   if (f.blocking !== undefined && !!v.blocking !== f.blocking) return false;
   if (f.multicolored !== undefined && v.colors.length >= 2 !== f.multicolored) return false;
+  if (f.colorCount !== undefined && v.colors.length !== f.colorCount) return false;
+  if (f.not && matchesView(v, f.not, perspective, sourceId)) return false;
   if (f.manaSpentBelowValue && !((v.manaSpent ?? 0) < (v.manaValue ?? 0))) return false;
   if (f.damaged !== undefined && !!v.damaged !== f.damaged) return false;
   if (f.faceDown !== undefined && !!v.faceDown !== f.faceDown) return false;
@@ -238,18 +281,8 @@ export function isLegalTarget(s: GameState, controller: PlayerId, spec: TargetSp
     !(chars(s, id).types.includes("Creature") && playerStatic(s, controller, "ignoreOpponentsHexproofWard"))
   )
     return false;
-  // Protection contre tout : ne peut être la cible de rien (702.16b).
-  if (hasKeyword(s, id, "protectionFromEverything")) return false;
-  // Défense talismanique contre les éphémères / le noir / le blanc : selon la source adverse.
-  if (obj(s, id).controller !== controller && sourceId) {
-    const src = s.objects[sourceId];
-    const d = src ? s.defs[src.defId] : undefined;
-    const colors = src ? chars(s, sourceId).colors : [];
-    if (hasKeyword(s, id, "hexproofFromInstants") && d?.types.includes("Instant")) return false;
-    if (hasKeyword(s, id, "hexproofFromBlack") && colors.includes("B")) return false;
-    if (hasKeyword(s, id, "hexproofFromWhite") && colors.includes("W")) return false;
-    if (hasKeyword(s, id, "hexproofFromMonocolored") && colors.length === 1) return false;
-  }
+  // Protection contre [filtre] (702.16b), défense talismanique contre [filtre] si la source est adverse.
+  if (protectedFrom(s, id, sourceId ? sourceView(s, sourceId) : undefined, obj(s, id).controller !== controller)) return false;
   return true;
 }
 

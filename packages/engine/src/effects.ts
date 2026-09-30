@@ -21,7 +21,6 @@ import {
   changeCounters,
   chars,
   emit,
-  hasKeyword,
   isCreature,
   isPlayer,
   moveObject,
@@ -33,7 +32,7 @@ import {
   shuffle,
   snapshot,
 } from "./state";
-import { matchesCard, matchesObjectFilter, matchesView } from "./targets";
+import { matchesCard, matchesObjectFilter, matchesView, protectedFrom, sourceView } from "./targets";
 import { checkCondition, mostLife } from "./triggers";
 import { countTurnEvents } from "./turnlog";
 import type {
@@ -665,8 +664,8 @@ export function canAttach(s: GameState, what: ObjectId, to: ObjectId): boolean {
   const a = s.objects[what];
   if (a?.zone !== "battlefield" || !onBattlefield(s, to) || what === to) return false;
   const d = s.defs[a.defId];
-  // 702.16c : protection contre tout — ni enchantée, ni équipée.
-  if (hasKeyword(s, to, "protectionFromEverything")) return false;
+  // 702.16c : protection — ni enchantée, ni équipée par ce qui correspond à sa qualité.
+  if (protectedFrom(s, to, sourceView(s, what))) return false;
   if (d?.enchant) return matchesObjectFilter(s, a.controller, to, d.enchant.filter, what);
   if (chars(s, what).subtypes.includes("Equipment")) return isCreature(s, to);
   return false;

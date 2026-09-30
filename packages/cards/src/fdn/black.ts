@@ -14,6 +14,8 @@ import {
   INSECT,
   modal,
   mode,
+  protection,
+  protectionAbility,
   RAT,
   ref,
   spell,
@@ -472,8 +474,8 @@ export const BLACK: Record<string, CardScript> = {
     ],
   },
   "Knight of Malice": {
-    keywords: ["hexproofFromWhite"],
     abilities: [
+      protectionAbility(protection.hexproofFrom({ colors: ["W"] }, "Défense talismanique contre le blanc")),
       staticAbility(
         "self",
         { power: 1 },

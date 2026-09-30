@@ -29,6 +29,7 @@ import type {
   ObjectFilter,
   PlayerStaticAbilityDef,
   PreventionAbilityDef,
+  ProtectionRule,
   Ref,
   ReplacementAbilityDef,
   SpellDef,
@@ -1716,6 +1717,18 @@ export const block = {
   /** Les plus fréquentes. */
   notByPowerLE2: { cantBeBlockedBy: { maxPower: 2 }, label: "Imblocable par les créatures de force 2 ou moins" } as BlockRule,
 };
+
+/** Protections et défenses talismaniques « contre [filtre] » (famille R4.2). */
+export const protection = {
+  from: (filter: ObjectFilter, label: string): ProtectionRule => ({ from: filter, label }),
+  hexproofFrom: (filter: ObjectFilter, label: string): ProtectionRule => ({ from: filter, hexproofOnly: true, label }),
+  everything: { from: {}, label: "Protection contre tout" } as ProtectionRule,
+};
+
+/** Protection ou défense talismanique imprimée sur la carte : une statique sur elle-même. */
+export function protectionAbility(rule: ProtectionRule): AbilityDef {
+  return staticAbility("self", { addProtections: [rule] }, { label: rule.label });
+}
 
 /** Règle de blocage imprimée sur la carte : une statique sur elle-même. */
 export function blockAbility(rule: BlockRule): AbilityDef {

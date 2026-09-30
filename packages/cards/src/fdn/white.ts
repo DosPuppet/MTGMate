@@ -22,6 +22,8 @@ import {
   OTHER_CREATURE_YOU_CONTROL,
   playerStatic,
   prevention,
+  protection,
+  protectionAbility,
   RABBIT,
   ref,
   SOLDIER,
@@ -431,8 +433,8 @@ export const WHITE: Record<string, CardScript> = {
     ],
   },
   "Knight of Grace": {
-    keywords: ["hexproofFromBlack"],
     abilities: [
+      protectionAbility(protection.hexproofFrom({ colors: ["B"] }, "Défense talismanique contre le noir")),
       staticAbility(
         "self",
         { power: 1 },

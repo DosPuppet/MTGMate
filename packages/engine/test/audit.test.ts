@@ -4,8 +4,9 @@
  */
 import { card, type RawCard, toCardDef } from "@mtgx/cards";
 import { describe, expect, it } from "vitest";
-import { destroy, gainLife } from "../src/actions";
+import { dealDamage, destroy, gainLife } from "../src/actions";
 import { syncControl } from "../src/control";
+import * as dsl from "../src/dsl";
 import { cond, doubler, fx, playerStatic, ref, triggered, when } from "../src/dsl";
 import { addEffect, runEffect } from "../src/effects";
 import { submit } from "../src/game";
@@ -14,6 +15,7 @@ import { legalActions } from "../src/legal";
 import { chooseReplacementOrder } from "../src/modifiers";
 import { spellCost } from "../src/stack";
 import { changeCounters, chars, FACE_DOWN_ID, moveObject } from "../src/state";
+import { legalTargets } from "../src/targets";
 import { simultaneously } from "../src/triggers";
 import { canBlock, eliminate, forcedAttacks } from "../src/turn";
 import type { CardDef, Effect, GameEvent, GameState, TokenSpec } from "../src/types";
@@ -742,5 +744,27 @@ describe("R4.1 : règles de blocage paramétrées par un filtre", () => {
     expect(canBlock(s, bear, noble)).toBe(true);
     runEffect(s, { ...resolution("p2"), targets: { t: [bear] } } as never, fx.modify(ref.target(), { addSubtypes: ["Human"] }));
     expect(canBlock(s, bear, noble)).toBe(false);
+  });
+});
+
+describe("R4.2 : protection et défense talismanique « contre [filtre] » (702.16, 702.11d)", () => {
+  const warded = customCard({
+    name: "Protégé des éphémères et rituels",
+    power: 2,
+    toughness: 2,
+    abilities: [dsl.protectionAbility(dsl.protection.from({ types: ["Instant", "Sorcery"] }, "Protection"))],
+  });
+
+  it("ni ciblée par un éphémère (même le sien), ni blessée par un rituel ; ciblable par une capacité", () => {
+    const s = scenario({ p1: { battlefield: [warded], hand: ["Lightning Strike"] } });
+    const id = idOf(s, "p1", "battlefield", warded.name);
+    const strike = idOf(s, "p1", "hand", "Lightning Strike");
+    expect(legalTargets(s, "p1", { id: "t", filter: { objects: { types: ["Creature"] } } }, strike)).not.toContain(id);
+    const sorcery = customCard({ name: "Rituel de test", types: ["Sorcery"], typeLine: "Sorcery" });
+    s.defs[sorcery.id] = sorcery;
+    dealDamage(s, { defId: sorcery.id, controller: "p2", keywords: [] }, id, 3, false);
+    expect(s.objects[id]?.damage).toBe(0);
+    dealDamage(s, { defId: warded.id, controller: "p2", keywords: [] }, id, 1, false);
+    expect(s.objects[id]?.damage).toBe(1);
   });
 });

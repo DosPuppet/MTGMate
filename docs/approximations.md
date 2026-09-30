@@ -95,9 +95,9 @@ Dans l'ordre où elles ont été ajoutées, extension par extension.
 - **Fblthp, Lost on the Range :** comploter la carte du dessus passe par une capacité (sur la pile) qui paie son coût de mana.
 - **Kellan, the Kid :** le permanent est mis sur le champ de bataille au lieu d'être lancé.
 - **Obeka :** les étapes d'entretien supplémentaires ne font que déclencher les capacités « au début de votre entretien ».
-- **Riku of Many Paths :** un seul mode, quel que soit le nombre de modes du sort. **Resilient Roadrunner :** pas de protection contre les Coyotes.
+- **Riku of Many Paths :** un seul mode, quel que soit le nombre de modes du sort.
 - **Great Train Heist :** le combat supplémentaire a lieu après le combat normal ; les Trésors viennent des blessures infligées à n'importe quel adversaire.
-- **Collector's Cage (hideaway) :** la carte est exilée face visible. **Memory Vessel :** on peut encore jouer les cartes de sa main. **Sword of Wealth and Power :** la protection devient une défense talismanique contre les éphémères. **Transmutation Font :** les trois jetons sacrifiés n'ont pas à avoir des noms différents. **Grand Abolisher :** les capacités de mana ne sont pas bloquées.
+- **Collector's Cage (hideaway) :** la carte est exilée face visible. **Memory Vessel :** on peut encore jouer les cartes de sa main. **Transmutation Font :** les trois jetons sacrifiés n'ont pas à avoir des noms différents. **Grand Abolisher :** les capacités de mana ne sont pas bloquées.
 - **Blessures de combat groupées** (« une ou plusieurs créatures… ») : une fois par étape de blessures et par joueur blessé.
 - **Demon Wall :** « a un marqueur » est lu comme « a un marqueur +1/+1 ».
 - **Haste Magic, Opera Love Song :** les cartes exilées sont jouables jusqu'à la fin de votre prochain tour (et non jusqu'à votre prochaine étape de fin).

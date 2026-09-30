@@ -32,6 +32,7 @@ import type {
   ObjectFilter,
   ObjectId,
   PlayerId,
+  ProtectionRule,
 } from "./types";
 
 export interface Characteristics {
@@ -49,6 +50,8 @@ export interface Characteristics {
   abilities: AbilityDef[];
   /** Règles de blocage (« ne peut pas être bloquée par… »), comme des capacités. */
   blockRules: BlockRule[];
+  /** Protections et défenses talismaniques « contre [filtre] ». */
+  protections: ProtectionRule[];
   controller: PlayerId;
 }
 
@@ -207,6 +210,7 @@ const LIST_MODS = [
   "removeKeywords",
   "addColors",
   "addBlockRules",
+  "addProtections",
 ] as const satisfies (keyof LayerMods)[];
 
 /** Fusionne des modifications dans l'ordre : les listes se cumulent, les autres valeurs sont remplacées. */
@@ -298,6 +302,7 @@ function base(s: GameState, o: GameObject, defId = o.defId): Characteristics {
     keywords: [...new Set([...d.keywords, ...station.keywords])],
     abilities: levelAbilities(o, d),
     blockRules: [],
+    protections: [],
     controller: o.controller,
   };
 }
@@ -365,6 +370,7 @@ function faceDownBase(o: GameObject): Characteristics {
       ),
     ],
     blockRules: [],
+    protections: [],
     controller: o.controller,
   };
 }
@@ -386,6 +392,7 @@ function roomBase(o: GameObject, d: CardDef): Characteristics {
     keywords: [...new Set(open.flatMap((f) => f.keywords))],
     abilities: [...d.abilities, ...open.flatMap((f) => f.abilities)],
     blockRules: [],
+    protections: [],
     controller: o.controller,
   };
 }
@@ -770,15 +777,18 @@ function applyLayers(s: GameState, applied: Applied[], defOfId: (id: ObjectId) =
         m.removeKeywords?.length ||
         m.loseAllAbilities ||
         m.addAbilities?.length ||
-        m.addBlockRules?.length
+        m.addBlockRules?.length ||
+        m.addProtections?.length
       ),
     (c, m) => {
       if (m.loseAllAbilities) {
         c.keywords = [];
         c.abilities = [];
         c.blockRules = [];
+        c.protections = [];
       }
       if (m.addBlockRules?.length) c.blockRules = [...c.blockRules, ...m.addBlockRules];
+      if (m.addProtections?.length) c.protections = [...c.protections, ...m.addProtections];
       for (const k of m.removeKeywords ?? []) c.keywords = c.keywords.filter((x) => x !== k);
       for (const k of m.addKeywords ?? []) if (!c.keywords.includes(k)) c.keywords.push(k);
       if (m.addAbilities?.length) c.abilities = [...c.abilities, ...m.addAbilities];

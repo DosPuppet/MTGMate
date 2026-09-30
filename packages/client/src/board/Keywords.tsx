@@ -28,11 +28,6 @@ const HELP: Partial<Record<Keyword, string>> = {
   indestructible: "Les blessures et les effets « détruire » ne la détruisent pas.",
   prowess: "Chaque fois que son contrôleur lance un sort non-créature, elle gagne +1/+1 jusqu'à la fin du tour.",
   ward: "Quand elle devient la cible d'un sort ou d'une capacité d'un adversaire, ce sort ou cette capacité est contrecarré à moins que son contrôleur ne paie le coût de garde.",
-  protectionFromEverything:
-    "Ne peut être ni ciblée, ni bloquée, ni enchantée, ni équipée ; les blessures qu'elle subirait sont prévenues.",
-  hexproofFromInstants: "Ne peut pas être la cible des éphémères des adversaires.",
-  hexproofFromBlack: "Ne peut pas être la cible des sorts ni des capacités noirs des adversaires.",
-  hexproofFromWhite: "Ne peut pas être la cible des sorts ni des capacités blancs des adversaires.",
   changeling: "Elle a tous les types de créature.",
 };
 
@@ -98,19 +93,10 @@ const ICONS: Partial<Record<Keyword, ReactNode>> = {
     </g>
   ),
   hexproof: <path {...stroke} d={SHIELD} />,
-  hexproofFromInstants: <path {...stroke} d={SHIELD} />,
-  hexproofFromBlack: <path {...stroke} d={SHIELD} />,
-  hexproofFromWhite: <path {...stroke} d={SHIELD} />,
   ward: (
     <g>
       <path {...stroke} d={SHIELD} />
       <circle cx="12" cy="11.5" r="3" fill="currentColor" />
-    </g>
-  ),
-  protectionFromEverything: (
-    <g>
-      <path {...solid} d={SHIELD} />
-      <path d="M12 7.5 V16 M8 11.5 H16" stroke="#15181e" strokeWidth={2.2} strokeLinecap="round" />
     </g>
   ),
   indestructible: (
@@ -121,6 +107,14 @@ const ICONS: Partial<Record<Keyword, ReactNode>> = {
   ),
   prowess: <path {...solid} d="M12 2 L14.2 9.8 L22 12 L14.2 14.2 L12 22 L9.8 14.2 L2 12 L9.8 9.8 Z" />,
 };
+
+/** Icône des protections et défenses talismaniques « contre [filtre] » : bouclier marqué. */
+const PROTECTION_ICON = (
+  <g>
+    <path {...solid} d={SHIELD} />
+    <path d="M12 7.5 V16 M8 11.5 H16" stroke="#15181e" strokeWidth={2.2} strokeLinecap="round" />
+  </g>
+);
 
 /** Icône des restrictions (« ne peut pas bloquer »…) : cercle barré. */
 const RESTRICTION_ICON = (
@@ -141,7 +135,8 @@ export function KeywordBadges({ obj }: { obj: ObjectView }) {
   const [tip, setTip] = useState<Tip | null>(null);
   const shown = obj.keywords.filter((k) => !HIDDEN.has(k));
   const rules = obj.blockRules ?? [];
-  if (shown.length === 0 && rules.length === 0) return null;
+  const protections = obj.protections ?? [];
+  if (shown.length === 0 && rules.length === 0 && protections.length === 0) return null;
   const hover = (title: string, help?: string) => (ev: React.MouseEvent<HTMLElement>) => {
     const r = ev.currentTarget.getBoundingClientRect();
     setTip({ x: r.right + 6, y: r.top + r.height / 2, title, help });
@@ -149,6 +144,21 @@ export function KeywordBadges({ obj }: { obj: ObjectView }) {
   return (
     <>
       <div className="kw-badges">
+        {protections.map((title) => (
+          <span
+            key={title}
+            className="kw-badge"
+            data-protection={title}
+            role="img"
+            aria-label={title}
+            onMouseEnter={hover(title)}
+            onMouseLeave={() => setTip(null)}
+          >
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              {PROTECTION_ICON}
+            </svg>
+          </span>
+        ))}
         {rules.map((title) => (
           <span
             key={title}

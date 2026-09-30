@@ -18,6 +18,8 @@ import {
   OTHER_CREATURE_YOU_CONTROL,
   PHYREXIAN_GOBLIN,
   playerStatic,
+  protection,
+  protectionAbility,
   ref,
   SOLDIER,
   SPIRIT,
@@ -173,8 +175,8 @@ export const MULTI: Record<string, CardScript> = {
     abilities: [triggered(when.landfall, [fx.gainLife(1), fx.draw(1)], { label: "+1 PV, piochez" })],
   },
   "Elenda, Saint of Dusk": {
-    keywords: ["hexproofFromInstants"],
     abilities: [
+      protectionAbility(protection.hexproofFrom({ types: ["Instant"] }, "Défense talismanique contre les éphémères")),
       staticAbility(
         "self",
         { power: 1, toughness: 1, addKeywords: ["menace"] },
@@ -205,7 +207,7 @@ export const MULTI: Record<string, CardScript> = {
     abilities: [castPermission({ graveyardPermanentTypes: true, label: "Un permanent de chaque type depuis le cimetière" })],
   },
   Progenitus: {
-    keywords: ["protectionFromEverything"],
+    abilities: [protectionAbility(protection.everything)],
     shuffleIntoLibrary: true,
   },
   "Thousand-Year Storm": {

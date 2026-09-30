@@ -22,7 +22,8 @@ Plan établi le 30/09/2026 (branche `dev`) : il sert de feuille de route aux pro
 - **30/09/2026 : R2.4 fait** (`RULES_VERSION` = 13 : couche 2, contrôleur de base et effets de contrôle horodatés, 800.4a ; #12, N10). Bench inchangé (aléatoire 2 joueurs 6 272 → 6 668 déc/s, 4 joueurs 4 115 → 4 466). Le tutoriel se rejoue (`tutorial.test.ts`, `tutorial-smoke`).
 - **30/09/2026 : R2.5 fait** (`RULES_VERSION` = 14 : 613.8 par point fixe, couleurs ajoutées, exceptions de copie copiables). Bench coup sur coup (`git stash`) : aléatoire 2 joueurs 6 529 → 6 527 déc/s, 4 joueurs 4 414 → 4 398, IA heuristique 4 joueurs 1 094 → 1 093 : inchangé, cible de 5 000 déc/s atteinte.
 - **30/09/2026 : R4.1 fait** (sans changement de règles) : `BlockRule` (« ne peut pas être bloquée par [filtre] », « ne peut bloquer que [filtre] », nombre de bloqueurs, « pas seule »), 11 mots-clés en moins (33 → 22).
-- À faire : R4.2, puis la suite dans l'ordre du tableau ci-dessous.
+- **30/09/2026 : R4.2 fait** (`RULES_VERSION` = 15) : `ProtectionRule` (protection et défense talismanique « contre [filtre] »), `ObjectFilter.colorCount` et `not`, 5 mots-clés en moins (22 → 17) ; Sword of Wealth and Power et Resilient Roadrunner sans approximation.
+- À faire : R4.3, puis la suite dans l'ordre du tableau ci-dessous.
 
 ## Le garde-fou de la dette (lot F2)
 
@@ -283,6 +284,8 @@ Lus dans le code ; chacun est confirmé par un test au début de son lot.
 ## R4.1 à R4.6 — familles génériques (chaque lot fait baisser la référence)
 
 **R4.1 réalisé ✅ :** `BlockRule` (`model/cards.ts`) dans les caractéristiques (`blockRules`, couche 6, `addBlockRules`), perdue avec toutes les capacités ; constructeurs `block.*` et `blockAbility` (DSL) ; `canBlock`, `minBlockers`, `maxBlockers` et « pas seule » dans `turn.ts` ; badges de restriction (`ObjectView.blockRules`). Remplace `cantBeBlockedByHumans`, `…NonSpirits`, `…Glimmers`, `…PowerLE2`, `…PowerGE2`, `…Walls`, `…ExceptByHaste`, `canBlockOnlyFlyers`, `cantBeBlockedByMoreThanOne`, `minThreeBlockers`, `cantAttackOrBlockAlone`. Parties dorées identiques. Test : `audit.test.ts` (un bloqueur devenu Humain par un effet).
+
+**R4.2 réalisé ✅ :** `ProtectionRule` (`from` : filtre sur la source, `hexproofOnly` pour la défense talismanique) dans les caractéristiques (`protections`, couche 6, `addProtections`) ; `protectedFrom` et `sourceView` (`targets.ts`) servent au ciblage, au blocage, aux blessures et aux attachements ; protection contre tout = filtre vide. `ObjectFilter` reçoit `colorCount` et `not`. Remplace `protectionFromEverything`, `hexproofFromInstants`, `…Black`, `…White`, `…Monocolored` ; badges en bouclier (`ObjectView.protections`). Changement de règles pour deux cartes (protection complète) : `RULES_VERSION` = 15. Test : `audit.test.ts` (R4.2).
 
 - **R4.1 :** « ne peut pas être bloquée par [filtre] », qui remplace 7 mots-clés, plus `canBlockOnly` et le nombre de bloqueurs (minimum et maximum).
 - **R4.2 :** « défense talismanique contre » et « protection contre [filtre] ». `ObjectFilter` reçoit `colorCount` et un `not`. Lève les approximations Sword of Wealth and Power et Resilient Roadrunner.

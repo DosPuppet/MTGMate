@@ -29,7 +29,7 @@ import {
   preventions,
   tokenMultiplier,
 } from "./statics";
-import { matchesObjectFilter } from "./targets";
+import { matchesObjectFilter, protectedFrom, sourceView } from "./targets";
 import { checkCondition, queueLifelink } from "./triggers";
 import { logTurnEvent } from "./turnlog";
 import type { CardDef, CardType, Color, GameEvent, GameState, Keyword, ObjectId, PlayerId, TokenSpec, Zone } from "./types";
@@ -271,8 +271,8 @@ export function dealDamage(s: GameState, source: DamageSource, target: string, a
   }
   const targetObj = s.objects[target];
   if (targetObj?.zone === "battlefield") {
-    // 702.16e : protection contre tout — les blessures sont prévenues.
-    if (!unpreventable && hasKeyword(s, target, "protectionFromEverything")) return;
+    // 702.16e : protection — les blessures d'une source qui correspond à sa qualité sont prévenues.
+    if (!unpreventable && protectedFrom(s, target, sourceView(s, source.id, source.defId, source.controller))) return;
     // Summon: Alexander : « prévenez toutes les blessures infligées aux créatures que vous contrôlez ce tour-ci ».
     if (!unpreventable && playerStatic(s, targetObj.controller, "creaturesDamageImmune") && isCreature(s, target)) return;
   }
