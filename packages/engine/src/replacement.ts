@@ -12,6 +12,7 @@
 
 import { createTokens, gainLife } from "./actions";
 import { boardAmount } from "./effects";
+import { copiedDefId } from "./layers";
 import { changeCounters, chars, moveObject, newId, nextTimestamp, P1P1, setPrepared } from "./state";
 import { controlledAbilitiesWithSource, playerStatic } from "./statics";
 import { matchesCard, matchesObjectFilter, withChosen } from "./targets";
@@ -240,9 +241,6 @@ export function applyEntersReplacements(s: GameState, o: GameObject, ctx: Enters
     s.version += 1;
   }
   if (ctx.attacking && s.combat) s.combat.attackers.push({ id: o.id, defender: ctx.attacking, blockers: [], blocked: false });
-  // 614.12 : « en arrivant, choisissez… » (le choix vient de la résolution, sinon choix par défaut).
-  const choose = s.defs[o.defId]?.chooseOnEnter;
-  if (choose) o.chosen = ctx.chosen ?? defaultChoice(s, o, choose);
   // 707.9 : « arrive comme copie de … » (Waxen Shapethief).
   if (ctx.copyOf) {
     s.effects.push({
@@ -266,15 +264,21 @@ export function applyEntersReplacements(s: GameState, o: GameObject, ctx: Enters
     });
     s.version += 1; // cache des couches
   }
+  // La suite lit la définition effective : celle que copie le permanent (707.9 : un Clone de planeswalker arrive avec la
+  // loyauté de ce planeswalker), sinon sa face active (714.3a : une Saga au verso).
+  const eff = s.defs[copiedDefId(s, o.id)];
+  // 614.12 : « en arrivant, choisissez… » (le choix vient de la résolution, sinon choix par défaut).
+  const choose = eff?.chooseOnEnter;
+  if (choose) o.chosen = ctx.chosen ?? defaultChoice(s, o, choose);
   // 702.82 : dévorer N (les permanents ont été sacrifiés pendant la résolution).
-  const devour = s.defs[o.defId]?.devour;
+  const devour = eff?.devour;
   if (devour && ctx.devoured) changeCounters(s, o, P1P1, devour.n * ctx.devoured);
   // Terrain choc : engagé, sauf si les points de vie ont été payés en le jouant (mis en jeu par un effet : engagé).
-  if (s.defs[o.defId]?.shockLand && !ctx.shockPaid) o.tapped = true;
+  if (eff?.shockLand && !ctx.shockPaid) o.tapped = true;
   // 714.3a : une Saga arrive avec un marqueur de savoir.
-  if (s.defs[o.faceDefId ?? o.defId]?.saga) changeCounters(s, o, "lore", 1);
+  if (eff?.saga) changeCounters(s, o, "lore", 1);
   // 306.5b : un planeswalker arrive avec sa loyauté imprimée.
-  const loyalty = s.defs[o.defId]?.loyalty;
+  const loyalty = eff?.loyalty;
   if (loyalty) changeCounters(s, o, "loyalty", loyalty);
   // Marqueurs imposés par l'effet (« avec un marqueur +1/+1 », Imminence) : mis en arrivant (122.6).
   for (const c of ctx.counters ?? []) changeCounters(s, o, c.kind, c.n);
@@ -293,7 +297,7 @@ export function applyEntersReplacements(s: GameState, o: GameObject, ctx: Enters
       }
     }
   }
-  for (const ab of s.defs[o.defId]?.abilities ?? []) {
+  for (const ab of eff?.abilities ?? []) {
     if (ab.kind !== "replacement" || ab.affects) continue;
     if (ab.condition) {
       const ok = ab.condition.kind === "kicked" ? !!ctx.kicked : checkCondition(s, ab.condition, o.controller, o.id);
@@ -305,8 +309,7 @@ export function applyEntersReplacements(s: GameState, o: GameObject, ctx: Enters
       changeCounters(s, o, ab.counterKind ?? P1P1, amountAtEntry(s, ab.entersWithCounters, o, ctx));
   }
   // The Wandering Minstrel : « les terrains que vous contrôlez arrivent dégagés ».
-  if (o.tapped && s.defs[o.defId]?.types.includes("Land") && playerStatic(s, o.controller, "landsEnterUntapped"))
-    o.tapped = false;
+  if (o.tapped && eff?.types.includes("Land") && playerStatic(s, o.controller, "landsEnterUntapped")) o.tapped = false;
   // « Arrive engagé » : des statiques en dépendent (« vos autres créatures engagées ont la défense talismanique »).
   s.version += 1;
 }

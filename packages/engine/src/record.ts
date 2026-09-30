@@ -27,8 +27,10 @@ export const RECORD_VERSION = 1;
  * - 7 : accès unique aux statiques de joueur, conditions et effets sur les joueurs respectés partout (R4.0).
  * - 8 : marqueurs, types, état engagé, attaque, célérité et Imminence posés avant l'événement d'arrivée ; défenseur des
  *   jetons attaquants au choix (R2.1).
+ * - 9 : copies de permanents (valeur de mana, loyauté et remplacements de la définition copiée, copie d'une copie,
+ *   copie par une statique, copie d'un sort de Clone ; R2.2).
  */
-export const RULES_VERSION = 8;
+export const RULES_VERSION = 9;
 
 /** Un point de contrôle toutes les N décisions (plus la dernière de la partie). */
 export const CHECKPOINT_EVERY = 25;

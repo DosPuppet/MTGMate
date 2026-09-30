@@ -1953,20 +1953,21 @@ function specsAndEffects(s: GameState, item: StackItem): { specs: TargetSpec[]; 
     const mode = modesOf(d)[item.mode];
     const effects = mode?.effects ?? [];
     // 614.12 : « en arrivant, choisissez… » — le choix se fait pendant la résolution du sort de permanent.
-    if (d.chooseOnEnter && isPermanentCard(d) && !item.copy) {
+    // Une copie d'un sort de permanent fait aussi ces choix : elle devient un jeton qui arrive de la même façon (707.10).
+    if (d.chooseOnEnter && isPermanentCard(d)) {
       return { specs: mode?.targets ?? [], effects: [...effects, { op: "chooseOnEnter", kind: d.chooseOnEnter }] };
     }
     if (d.devour && isPermanentCard(d)) {
       const op: Effect = { op: "devour", filter: d.devour.filter, graveyardUpToX: d.devour.graveyardUpToX };
       return { specs: mode?.targets ?? [], effects: [...effects, op] };
     }
-    if (d.entersAsCopyOf && isPermanentCard(d) && !item.copy) {
+    if (d.entersAsCopyOf && isPermanentCard(d)) {
       return {
         specs: mode?.targets ?? [],
         effects: [...effects, { op: "chooseCopy", filter: d.entersAsCopyOf, anyController: d.entersAsCopyAnyController }],
       };
     }
-    if (d.entersAsCopyOfGraveyard && isPermanentCard(d) && !item.copy) {
+    if (d.entersAsCopyOfGraveyard && isPermanentCard(d)) {
       return {
         specs: mode?.targets ?? [],
         effects: [...effects, { op: "chooseCopy", filter: d.entersAsCopyOfGraveyard.filter, fromGraveyards: true }],
@@ -2101,7 +2102,13 @@ function finishResolution(
   // 707.10 : la copie d'un sort de permanent devient un jeton en se résolvant (Double Down).
   if (item.kind === "spell" && item.copy && !s.objects[item.sourceId]) {
     const d = s.defs[item.sourceDefId];
-    if (d && isPermanentCard(d)) createTokenCopy(s, item.controller, d.id);
+    if (d && isPermanentCard(d))
+      createTokenCopy(s, item.controller, d.id, {
+        x: item.x,
+        kicked: item.kicked,
+        chosen: chosenFrom(vars),
+        copyOf: vars.$copyOf?.[0] !== undefined ? String(vars.$copyOf[0]) : undefined,
+      });
     return;
   }
   if (item.kind === "spell" && s.objects[item.sourceId]) {

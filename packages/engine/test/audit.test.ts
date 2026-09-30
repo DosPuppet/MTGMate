@@ -8,10 +8,10 @@ import { destroy, gainLife } from "../src/actions";
 import { cond, doubler, fx, playerStatic, ref, triggered, when } from "../src/dsl";
 import { addEffect, runEffect } from "../src/effects";
 import { submit } from "../src/game";
-import { bump } from "../src/layers";
+import { bump, snapshot } from "../src/layers";
 import { legalActions } from "../src/legal";
 import { spellCost } from "../src/stack";
-import { changeCounters, FACE_DOWN_ID } from "../src/state";
+import { changeCounters, chars, FACE_DOWN_ID, moveObject } from "../src/state";
 import { simultaneously } from "../src/triggers";
 import { forcedAttacks } from "../src/turn";
 import type { CardDef, GameEvent, GameState, TokenSpec } from "../src/types";
@@ -390,5 +390,51 @@ describe("#14 et #17 : ce qui accompagne une arrivée est en place avant l'évé
     runEffect(s, r as never, effect as never);
     const token = s.battlefield.find((id) => s.objects[id]?.isToken) as string;
     expect(s.combat?.attackers.find((a) => a.id === token)?.defender).toBe("p3");
+  });
+});
+
+describe("N7, N8, N9, #13 : copies de permanents", () => {
+  const CLONE = customCard({ name: "Clone de test", power: 0, toughness: 0, entersAsCopyOf: {} });
+
+  /** Un Clone qui arrive copie d'Ajani, Caller of the Pride (planeswalker à 4 marqueurs de loyauté, valeur de mana 3). */
+  function cloneOfAjani() {
+    const s = scenario({ p1: { hand: [CLONE] }, p2: { battlefield: ["Ajani, Caller of the Pride"] } });
+    const ajani = idOf(s, "p2", "battlefield", "Ajani, Caller of the Pride");
+    const inHand = idOf(s, "p1", "hand", CLONE.name);
+    const clone = moveObject(s, inHand, "battlefield", { enters: { copyOf: s.objects[ajani]?.defId } }) as string;
+    return { s, ajani, clone };
+  }
+
+  it("N7 : un Clone qui copie un planeswalker arrive avec sa loyauté", () => {
+    const { s, ajani, clone } = cloneOfAjani();
+    expect(s.objects[clone]?.counters.loyalty).toBe(s.defs[s.objects[ajani]?.defId ?? ""]?.loyalty);
+    expect(chars(s, clone).types).toContain("Planeswalker");
+  });
+
+  it("#13 : la valeur de mana vue par les filtres est celle de ce qui est copié", () => {
+    const { s, ajani, clone } = cloneOfAjani();
+    expect(snapshot(s, clone).manaValue).toBe(snapshot(s, ajani).manaValue);
+    expect(snapshot(s, clone).manaValue).toBeGreaterThan(0);
+  });
+
+  it("N8 : la copie en jeton d'un Clone copie ce qu'il copie, et un jeton créé engagé ne « devient » pas engagé", () => {
+    const { s, clone } = cloneOfAjani();
+    const r = { ...resolution("p1"), targets: { t: [clone] } };
+    runEffect(s, r as never, fx.copyToken(ref.target()));
+    const token = s.battlefield.find((id) => s.objects[id]?.isToken) as string;
+    expect(chars(s, token).name).toBe("Ajani, Caller of the Pride");
+  });
+
+  it("N9 : Assimilation Aegis, la créature équipée devient une copie de la carte exilée", () => {
+    const s = scenario({ p1: { battlefield: ["Assimilation Aegis", "Bear Cub"] }, p2: { graveyard: ["Shivan Dragon"] } });
+    const aegis = idOf(s, "p1", "battlefield", "Assimilation Aegis");
+    const bear = idOf(s, "p1", "battlefield", "Bear Cub");
+    const dragon = moveObject(s, idOf(s, "p2", "graveyard", "Shivan Dragon"), "exile") as string;
+    s.linkedExile.push({ sourceId: aegis, cards: [dragon] });
+    const o = s.objects[aegis];
+    if (o) o.attachedTo = bear;
+    bump(s);
+    expect(chars(s, bear).name).toBe("Shivan Dragon");
+    expect(chars(s, bear).power).toBe(5);
   });
 });

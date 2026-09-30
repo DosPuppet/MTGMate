@@ -168,8 +168,36 @@ export function copiedDefId(s: GameState, id: ObjectId): string {
   for (const e of s.effects) {
     if (e.copyOf && e.affected.includes(id) && (!best || e.timestamp > best.t)) best = { t: e.timestamp, def: e.copyOf };
   }
+  // Copie portée par une statique d'un permanent attaché (Assimilation Aegis : « la créature équipée devient une copie de
+  // la carte exilée ») ; horodatage de la statique : celui de l'attachement (613.7e).
+  for (const x of s.battlefield) {
+    const src = s.objects[x];
+    if (src?.attachedTo !== id) continue;
+    const def = staticCopyOf(s, x);
+    if (def && (!best || src.timestamp > best.t)) best = { t: src.timestamp, def };
+  }
   const o = obj(s, id);
   return best?.def ?? o.faceDefId ?? o.defId;
+}
+
+/**
+ * Valeur de mana vue par les filtres : celle de ce que copie le permanent (707.2) ; sinon celle de la carte (le verso
+ * d'une carte transformable a la valeur de mana du recto, 712.8e).
+ */
+function viewManaValue(s: GameState, id: ObjectId, o: GameObject): number {
+  if (o.zone === "battlefield") {
+    const copied = copiedDefId(s, id);
+    if (copied !== (o.faceDefId ?? o.defId)) return manaValue(s.defs[copied]?.manaCost);
+  }
+  return manaValue(s.defs[o.defId]?.manaCost);
+}
+
+/** Définition que copie le permanent auquel `source` est attaché, d'après une statique `copyLinkedExile` de `source`. */
+function staticCopyOf(s: GameState, source: ObjectId): string | undefined {
+  const d = s.defs[s.objects[source]?.defId ?? ""];
+  if (!d?.abilities.some((ab) => ab.kind === "static" && ab.affects === "attached" && ab.mods.copyLinkedExile)) return undefined;
+  const card = s.linkedExile.find((l) => l.sourceId === source)?.cards.find((c) => s.objects[c]?.zone === "exile");
+  return card ? s.objects[card]?.defId : undefined;
 }
 
 function base(s: GameState, o: GameObject, defId = o.defId): Characteristics {
@@ -314,7 +342,7 @@ function view(s: GameState, id: ObjectId, c: Characteristics, o: GameObject, att
     isToken: o.isToken,
     attacking,
     name: c.name,
-    manaValue: manaValue(s.defs[o.defId]?.manaCost),
+    manaValue: viewManaValue(s, id, o),
     tapped: o.tapped,
     uid: o.uid,
     linked: o.linked,
@@ -351,7 +379,8 @@ function snapshotBase(s: GameState, id: ObjectId): LkiSnapshot {
 export function computeBattlefield(s: GameState): Map<ObjectId, Characteristics> {
   const out = new Map<ObjectId, Characteristics>();
   const attacking = new Set(s.combat?.attackers.map((a) => a.id) ?? []);
-  const copying = s.effects.some((e) => e.copyOf);
+  const copying =
+    s.effects.some((e) => e.copyOf) || s.battlefield.some((x) => !!s.objects[x]?.attachedTo && !!staticCopyOf(s, x));
   const defOfId = (id: ObjectId) => (copying ? copiedDefId(s, id) : (obj(s, id).faceDefId ?? obj(s, id).defId));
   // Couche 1 : copie (valeurs copiables de la définition copiée).
   for (const id of s.battlefield) out.set(id, base(s, obj(s, id), defOfId(id)));

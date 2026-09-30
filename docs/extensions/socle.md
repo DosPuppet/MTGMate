@@ -249,3 +249,11 @@ Lot R2.1 (PLAN-R.md ; `RULES_VERSION` = 8) :
 - `moveWithSpec`, `createTokens`, `createTokenCopy`, `copyToken` et la résolution d'un sort de permanent (`StackItem.arrival`) passent par lui : « chaque fois qu'un Zombie arrive » voit une créature remise en jeu en Zombie, un jeton créé engagé ne déclenche pas « devient engagé », un permanent imminent n'arrive pas en créature ;
 - jetons « engagés et attaquants » : le défenseur est demandé s'il y en a plusieurs (sinon, ou hors de cette opération, `attackingDefender`) ;
 - tests : `engine/test/audit.test.ts` (#14, #17).
+
+Lot R2.2 (PLAN-R.md ; `RULES_VERSION` = 9) :
+- `copiedDefId` : une statique d'un permanent attaché peut faire de son hôte une copie (Assimilation Aegis, qui ne copiait rien) ;
+- valeur de mana vue par les filtres : celle de ce qui est copié (707.2), sinon celle du recto (712.8e) ;
+- `applyEntersReplacements` lit la définition copiée : un Clone de planeswalker arrive avec sa loyauté (au lieu de mourir), un Clone de Saga avec son marqueur de savoir ;
+- `copyToken` copie ce que copie le modèle ; une copie d'un sort de Clone choisit ce qu'elle copie ;
+- reste (R2.5) : exceptions de copie (707.9b) non copiables ;
+- tests : `engine/test/audit.test.ts`.

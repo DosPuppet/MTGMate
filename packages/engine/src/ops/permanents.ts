@@ -230,7 +230,8 @@ export const HANDLERS: OpHandlers = {
     const base = e.count === undefined ? 1 : evalAmount(s, ctx, e.count);
     for (const id of resolveRef(s, ctx, e.of)) {
       const model = s.objects[id] ?? undefined;
-      const defId = model?.defId ?? s.lki[id]?.defId;
+      // La copie d'une copie copie ce que copie le modèle (707.3), et la face active d'une carte transformée.
+      const defId = model?.zone === "battlefield" ? copiedDefId(s, id) : (model?.defId ?? s.lki[id]?.defId);
       if (!defId) continue;
       const creature =
         model?.zone === "battlefield" ? chars(s, id).types.includes("Creature") : !!s.defs[defId]?.types.includes("Creature");

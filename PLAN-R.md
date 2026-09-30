@@ -15,7 +15,8 @@ Plan établi le 30/09/2026 (branche `dev`) : il sert de feuille de route aux pro
 - **30/09/2026 : R0.6 fait** (sans changement de règles : poison affiché, cartes révélées et poison au journal, abandon confirmé, noms de cartes des invites du moteur dans la langue de l'interface par `cardRef`). **R0 terminé.**
 - **30/09/2026 : R4.0 fait** (`RULES_VERSION` = 7 : `playerStatics(s, p, clé)`, seul accès aux statiques de joueur ; 23 lectures directes migrées ; conditions des doubleurs vérifiées ; bench inchangé).
 - **30/09/2026 : R2.1 fait** (`RULES_VERSION` = 8 : `EntersContext` porte l'état engagé, l'attaque, les marqueurs, les modifications de couches, la célérité et l'Imminence, posés avant l'événement d'arrivée par `moveWithSpec`, la création de jetons, `copyToken` et la résolution d'un sort de permanent ; défenseur des jetons attaquants au choix).
-- À faire : R2.2, puis la suite dans l'ordre du tableau ci-dessous.
+- **30/09/2026 : R2.2 fait** (`RULES_VERSION` = 9 : copies de permanents ; N7, N8, N9, #13 en partie).
+- À faire : R2.3, puis la suite dans l'ordre du tableau ci-dessous.
 
 ## Le garde-fou de la dette (lot F2)
 
@@ -67,9 +68,9 @@ Lus dans le code ; chacun est confirmé par un test au début de son lot.
 | N4 | Les options de sort gratuit ne vérifient pas que les coûts restants sont payables | `engine/src/legal.ts:298, 302` | R0.2 | ✅ R0.2 |
 | N5 | Perte par poison annoncée comme « pioche » | `engine/src/turn.ts:951-953` | R0.1 | ✅ R0.1 |
 | N6 | 29 lectures directes des statiques de joueur ignorent leur condition et les effets sur les joueurs ; `doublers` ignore la condition | `engine/src/actions.ts`, `engine/src/stack.ts`, `engine/src/statics.ts:120` | R4.0 | ✅ R4.0 |
-| N7 | Un Clone qui copie un planeswalker arrive sans loyauté ; `applyEntersReplacements` lit la carte imprimée | `engine/src/replacement.ts:212-261` | R2.2 | à faire |
-| N8 | `copyToken` lit la carte imprimée et engage le jeton par un événement « devient engagé » | `engine/src/ops/permanents.ts:218, 226` | R2.2 | à faire |
-| N9 | Le `copyOf` d'une statique n'est jamais appliqué (Assimilation Aegis ne copie rien) ; la copie d'un sort de Clone est un 0/0 | `engine/src/layers.ts:420-424`, `engine/src/stack.ts:2115` | R2.2 | à faire |
+| N7 | Un Clone qui copie un planeswalker arrive sans loyauté ; `applyEntersReplacements` lit la carte imprimée | `engine/src/replacement.ts:212-261` | R2.2 | ✅ R2.2 |
+| N8 | `copyToken` lit la carte imprimée et engage le jeton par un événement « devient engagé » | `engine/src/ops/permanents.ts:218, 226` | R2.2 | ✅ R2.2 |
+| N9 | Le `copyOf` d'une statique n'est jamais appliqué (Assimilation Aegis ne copie rien) ; la copie d'un sort de Clone est un 0/0 | `engine/src/layers.ts:420-424`, `engine/src/stack.ts:2115` | R2.2 | ✅ R2.2 |
 | N10 | Deux vols de contrôle du même permanent dans un tour le rendent au mauvais joueur ; un joueur qui quitte la partie fait exiler les permanents volés (800.4a) | `engine/src/turn.ts:322-329, 1006-1008` | R2.4 | à faire |
 | N11 | Une copie de sort n'a pas d'objet : « contrecarrez le sort ciblé » ne peut pas la viser, et les « défense talismanique contre » sont ignorées | `engine/src/targets.ts:207-212, 244-252` | R3.1 | à faire |
 | N12 | `drawBonus` (Vnwxt, Quantum Riddler) n'est appliqué que par 2 des 11 appels de `drawCard` | `engine/src/effects.ts:769` | R1.3 | à faire |
@@ -164,6 +165,15 @@ Lus dans le code ; chacun est confirmé par un test au début de son lot.
   - `copyToken` corrigé (N8) ;
   - `copyOf` des statiques, et copie d'un sort de Clone (N9) ;
   - exceptions de copie copiables (707.9b).
+
+  **R2.2 réalisé ✅ :**
+  - `copiedDefId` voit aussi une copie portée par une statique d'un permanent attaché (Assimilation Aegis, `copyLinkedExile`), avec l'horodatage de l'attachement ; `computeBattlefield` en tient compte (N9) ;
+  - valeur de mana vue par les filtres : celle de ce qui est copié ; sans copie, celle du recto (712.8e) (#13) ;
+  - `applyEntersReplacements` lit la définition copiée (choix en arrivant, dévorer, terrain choc, Saga, loyauté, remplacements propres) : un Clone de planeswalker arrive avec sa loyauté (N7) ;
+  - `copyToken` copie ce que copie le modèle (N8) ;
+  - une copie d'un sort de permanent fait les choix d'arrivée (« arrive comme une copie », « en arrivant, choisissez ») et devient un jeton qui arrive ainsi (N9) ;
+  - **reporté à R2.5 :** les exceptions de copie (707.9b : « sauf que c'est un Zombie ») ne sont toujours pas copiables ;
+  - tests : `engine/test/audit.test.ts` (N7, N8, N9, #13).
 - **R2.3 [règles] :**
   - choix en arrivant sans lancer : « arrive comme une copie » après une réanimation ou un clignotement (#7), hôte d'une Aura (303.4f) ;
   - le choix est demandé par les opérations de déplacement, avant `moveObject` ;
