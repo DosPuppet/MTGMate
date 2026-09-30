@@ -304,3 +304,6 @@ Lot R4.4 (PLAN-R.md ; `RULES_VERSION` = 16) :
 
 Lot R4.5 (PLAN-R.md, sans changement de règles) :
 - restrictions de lancer (`castLimit`, `CastLimit`) et déclenchements doublés ou supprimés (`triggerMod`, `TriggerMod`), à la place de 14 drapeaux.
+
+Lot R4.6 (PLAN-R.md, sans changement de règles) :
+- `counterOnOrCreate` (renforcer Jace, amasser) ; « le prochain sort que vous lancez ce tour-ci » (`nextSpell`, effet de joueur à usage unique, `consumeNextSpells`) ; `fx.thisTurn` pour la loyauté de Jace en éphémère et le mana des Montagnes. Référence de la dette : 69 drapeaux de joueur, 13 mots-clés non imprimés, 58 opérations d'une seule carte.

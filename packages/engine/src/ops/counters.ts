@@ -2,10 +2,9 @@
 
 import { createTokens } from "../actions";
 import type { OpHandlers } from "../effects";
-import { evalAmount, resolveRef, store } from "../effects";
+import { addEffect, evalAmount, resolveRef, store } from "../effects";
 import { effectivePower } from "../layers";
 import { bump, changeCounters, chars, counterCount, isRoom, onBattlefield, P1P1, rulesEvent, unlockDoor } from "../state";
-import { addPlayerEffect } from "../statics";
 import { matchesObjectFilter } from "../targets";
 
 export const HANDLERS: OpHandlers = {
@@ -38,18 +37,19 @@ export const HANDLERS: OpHandlers = {
     }
     return;
   },
-  empowerJace(s, _r, e, ctx) {
-    // « Mettez N marqueurs de loyauté sur un jeton Jace que vous contrôlez ; si vous n'en contrôlez pas, créez-en un d'abord. »
+  counterOnOrCreate(s, _r, e, ctx) {
+    // Renforcer Jace (un jeton Jace), amasser (une Armée) : le premier permanent correspondant du joueur, sinon un jeton
+    // créé d'abord ; puis les marqueurs, et les sous-types en plus (701.47a).
     const n = Math.max(0, evalAmount(s, ctx, e.amount));
-    const isJaceToken = (id: string) => {
-      const o = s.objects[id];
-      const c = chars(s, id);
-      return !!o?.isToken && o.controller === ctx.controller && c.types.includes("Planeswalker") && c.subtypes.includes("Jace");
-    };
-    let jace = s.battlefield.find(isJaceToken);
-    if (!jace) jace = createTokens(s, ctx.controller, e.token, 1)[0];
-    const o = jace ? s.objects[jace] : undefined;
-    if (o && n > 0) changeCounters(s, o, "loyalty", n);
+    for (const p of resolveRef(s, ctx, e.who).filter((x) => !!s.players[x])) {
+      let id = s.battlefield.find((x) => s.objects[x]?.controller === p && matchesObjectFilter(s, p, x, e.find));
+      if (!id) id = createTokens(s, p, e.token, 1)[0];
+      const o = id ? s.objects[id] : undefined;
+      if (!o) continue;
+      if (n > 0) changeCounters(s, o, e.kind, n);
+      const missing = (e.addSubtypes ?? []).filter((t) => !chars(s, o.id).subtypes.includes(t));
+      if (missing.length) addEffect(s, [o.id], { addSubtypes: missing }, "permanent");
+    }
     return;
   },
   proliferate(s, r, e, ctx, key) {
@@ -123,10 +123,6 @@ export const HANDLERS: OpHandlers = {
     }
     // Garnet : « un marqueur +1/+1 pour chaque marqueur de savoir retiré ainsi ».
     store(r, e.store, removed);
-    return;
-  },
-  instantJaceLoyalty(s, _r, _e, ctx) {
-    addPlayerEffect(s, ctx.controller, { jaceLoyaltyInstant: true }, s.turn.number);
     return;
   },
   addCounters(s, _r, e, ctx) {

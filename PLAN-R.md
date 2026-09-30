@@ -26,7 +26,8 @@ Plan établi le 30/09/2026 (branche `dev`) : il sert de feuille de route aux pro
 - **30/09/2026 : R4.3 fait** (sans changement de règles) : `PowerRule` (« utilise son endurance pour » : blessures de combat, équipage, station), 4 mots-clés (17 → 13) et un drapeau de joueur (96 → 95) en moins.
 - **30/09/2026 : R4.4 fait** (`RULES_VERSION` = 16) : `playFrom` (famille C, 11 drapeaux) et `abilityCost` (famille A, 5 drapeaux) ; drapeaux de joueur 95 → 81.
 - **30/09/2026 : R4.5 fait** (sans changement de règles) : `castLimit` (famille D, 7 drapeaux) et `triggerMod` (famille G, 7 drapeaux) ; drapeaux de joueur 81 → 69.
-- À faire : R4.6, puis la suite dans l'ordre du tableau ci-dessous.
+- **30/09/2026 : R4.6 fait** (sans changement de règles) : `counterOnOrCreate` (renforcer Jace, amasser), « le prochain sort » en effet de joueur à usage unique (`nextSpell`), `instantJaceLoyalty` et `extraMountainMana` par `fx.thisTurn`. **R4 terminé** : la référence de la dette passe de 96 / 33 / 61 à 69 drapeaux de joueur, 13 mots-clés non imprimés et 58 opérations d'une seule carte.
+- À faire : R5, puis la suite dans l'ordre du tableau ci-dessous.
 
 ## Le garde-fou de la dette (lot F2)
 
@@ -60,8 +61,8 @@ Plan établi le 30/09/2026 (branche `dev`) : il sert de feuille de route aux pro
 | 8 | R3.1 et R3.2 : copies de sorts, blessures réparties | § 3.1 | R0 | moyen à élevé | ✅ `827cc6f` |
 | 9 | R2.4 : couche 2 (contrôle) | § 3.2 | R4.0 | élevé | ✅ `2b2ef83` |
 | 10 | R2.5 : 613.8 par point fixe, couche 5 « en plus » | § 3.2 | R2.2, R2.4 | élevé (perf.) | ✅ `be0eefa` |
-| 11 | R4.1 à R4.6 : familles génériques | § 3.3 | R1, R2 | moyen | **prochain** |
-| 12 | R5 : blocages simultanés, mulligans 103.5 | § 3.2 | F1 | moyen | à faire |
+| 11 | R4.1 à R4.6 : familles génériques | § 3.3 | R1, R2 | moyen | ✅ `41a3cf0` à R4.6 |
+| 12 | R5 : blocages simultanés, mulligans 103.5 | § 3.2 | F1 | moyen | **prochain** |
 | 13 | R6 : boucles (104.4b) | § 3.2 | F1 | moyen | à faire |
 | 14 | R7 : justesse des cartes | § 3.4 | — | continu | à faire |
 | 15 | R8 : interface, puis IA (P3) | § 4, § 5 | — | moyen | à faire |
@@ -284,7 +285,7 @@ Lus dans le code ; chacun est confirmé par un test au début de son lot.
   - lève les approximations « conditions et comptes sur les types imprimés » et « The Jolly Balloon Man : la copie ne devient pas rouge » ; Possessed Goat devient noir en plus de ses couleurs ;
   - tests : `engine/test/audit.test.ts` (R2.5), `layers.test.ts` (613.8, qui était un test d'approximation).
 
-## R4.1 à R4.6 — familles génériques (chaque lot fait baisser la référence)
+## R4.1 à R4.6 — familles génériques (chaque lot fait baisser la référence) ✅
 
 **R4.1 réalisé ✅ :** `BlockRule` (`model/cards.ts`) dans les caractéristiques (`blockRules`, couche 6, `addBlockRules`), perdue avec toutes les capacités ; constructeurs `block.*` et `blockAbility` (DSL) ; `canBlock`, `minBlockers`, `maxBlockers` et « pas seule » dans `turn.ts` ; badges de restriction (`ObjectView.blockRules`). Remplace `cantBeBlockedByHumans`, `…NonSpirits`, `…Glimmers`, `…PowerLE2`, `…PowerGE2`, `…Walls`, `…ExceptByHaste`, `canBlockOnlyFlyers`, `cantBeBlockedByMoreThanOne`, `minThreeBlockers`, `cantAttackOrBlockAlone`. Parties dorées identiques. Test : `audit.test.ts` (un bloqueur devenu Humain par un effet).
 
@@ -301,6 +302,12 @@ Lus dans le code ; chacun est confirmé par un test au début de son lot.
 - famille D, `castLimit` (`CastLimit` : qui, pendant votre tour ou le combat, adversaires qui vous ont attaqué, au plus N sorts, sauf depuis la main, capacités bloquées) : remplace `attackersCantCast`, `cantCastSpells`, `castOnlyFromHand`, `lockOpponentsOnYourTurn`, `noSpellsDuringCombat`, `oneSpellPerTurn`, `opponentsCantCastYourTurn` ; `castLimits` et `abilitiesLocked` (`stack.ts`) ; Yuriko reste traitée comme le second partagé (pour tous, pendant le combat) ;
 - famille G, `triggerMod` (`TriggerMod` : une fois de plus ou jamais, arrivées et permanent qui arrive, sources, tous les joueurs) : remplace `doubleEnterTriggers`, `doubleEnterTriggersFor`, `doubleLegendaryTriggers`, `doubleTriggers`, `doubleTriggersFor`, `noCreatureEntersTriggers`, `noEntersTriggers` ; `triggerDoublers` (`triggers.ts`) ;
 - **pas fait :** famille L (`flashFor` est déjà générique ; `jaceLoyaltyInstant` va avec R4.6), vie (`cantGainLife`, `noLifeGainForAll`). Parties dorées identiques.
+
+**R4.6 réalisé ✅ :**
+- `counterOnOrCreate` (N marqueurs sur un permanent correspondant du joueur, sinon un jeton créé d'abord, sous-types en plus) : remplace les opérations `empowerJace` et `amass` (le constructeur `fx.amass` et `empower` restent) ;
+- famille N, `nextSpell` (filtre ; copie, incontrecarrable, marqueurs, célérité), posé par `playerEffect` avec `once` (usage unique, ce tour-ci) et consommé au lancement par `consumeNextSpells` : remplace `s.nextCreatureSpell`, `s.nextSpellCopies`, le drapeau `nextSpellUncounterable` et les opérations `nextCreatureSpell`, `copyNextSpell`, `nextSpellUncounterable` ;
+- `instantJaceLoyalty` et `extraMountainMana` ne sont plus des opérations : `fx.thisTurn` sur le drapeau ;
+- **pas fait, et pourquoi :** le reste de `TurnStats` n'est pas passé au journal du tour. Ces compteurs (PV gagnés, cartes piochées, sorts lancés…) sont des statistiques générales lues à chaque évaluation de condition ; les recompter dans le journal coûterait plus cher sans réduire la dette propre à une carte. Parties dorées identiques.
 
 - **R4.1 :** « ne peut pas être bloquée par [filtre] », qui remplace 7 mots-clés, plus `canBlockOnly` et le nombre de bloqueurs (minimum et maximum).
 - **R4.2 :** « défense talismanique contre » et « protection contre [filtre] ». `ObjectFilter` reçoit `colorCount` et un `not`. Lève les approximations Sword of Wealth and Power et Resilient Roadrunner.

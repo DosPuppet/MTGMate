@@ -668,12 +668,8 @@ export interface GameState {
    * de ce tour ; pendant ce tour, les décisions de `player` sont prises par `by`.
    */
   turnControl?: { player: PlayerId; by: PlayerId; turn?: number };
-  /** « Quand vous lancerez votre prochain sort de créature ce tour-ci, il arrive avec… » (Summon: Fenrir, Summon: Brynhildr). */
-  nextCreatureSpell?: { player: PlayerId; turn: number; counters?: number; haste?: boolean }[];
   /** Tours supplémentaires à venir (500.7 : le plus récent d'abord). */
   extraTurns?: PlayerId[];
-  /** « Au prochain éphémère ou rituel que vous lancez ce tour-ci, copiez-le » (Teach by Example). */
-  nextSpellCopies?: { player: PlayerId; turn: number }[];
   /** « Terminez le tour » (Time Stop) : le tour passe directement à l'étape de nettoyage. */
   endTurnRequested?: boolean;
   /** Joueurs à qui l'on a proposé leurs cartes « leyline » en début de partie. */

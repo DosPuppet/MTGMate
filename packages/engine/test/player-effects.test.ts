@@ -31,13 +31,13 @@ describe("effets sur les joueurs", () => {
 
   it("usage unique : Theorist's Proxy, le prochain sort seulement ne peut pas être contrecarré", () => {
     let s = scenario({ p1: { battlefield: ["Forest", "Forest"], hand: ["Llanowar Elves", "Llanowar Elves"] } });
-    addPlayerEffect(s, "p1", { nextSpellUncounterable: true }, s.turn.number, true);
+    addPlayerEffect(s, "p1", { nextSpell: { uncounterable: true } }, s.turn.number, true);
     s = act(s, "p1", { type: "cast", card: idOf(s, "p1", "hand", "Llanowar Elves") });
     expect(s.stack[s.stack.length - 1]?.uncounterable).toBe(true);
     s = passBoth(s);
     s = act(s, "p1", { type: "cast", card: idOf(s, "p1", "hand", "Llanowar Elves") });
     expect(s.stack[s.stack.length - 1]?.uncounterable).toBeFalsy();
-    expect(consumePlayerEffect(s, "p1", "nextSpellUncounterable")).toBe(false);
+    expect(consumePlayerEffect(s, "p1", "nextSpell")).toBe(false);
   });
 
   it("un booléen compte pour 1 dans un total (blessures doublées, cumulables)", () => {

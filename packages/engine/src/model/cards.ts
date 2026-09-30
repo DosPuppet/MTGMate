@@ -583,6 +583,18 @@ export interface CastPermissionAbilityDef {
 }
 
 /**
+ * « Le prochain sort [correspondant] que vous lancez ce tour-ci… » (famille N, R4.6) : copié (Teach by Example),
+ * incontrecarrable (Theorist's Proxy), avec des marqueurs ou la célérité à l'arrivée (Summon: Fenrir).
+ */
+export interface NextSpell {
+  filter?: ObjectFilter;
+  copy?: boolean;
+  uncounterable?: boolean;
+  counters?: number;
+  haste?: boolean;
+}
+
+/**
  * Restriction de lancer (famille D, R4.5), vue du joueur qui a la statique : qui est concerné, quand, et ce qui est
  * interdit (tous les sorts, au-delà de N par tour, ou ceux lancés d'ailleurs que de la main).
  */
@@ -662,6 +674,8 @@ export interface PlayerStaticAbilityDef {
   castLimit?: CastLimit;
   /** Déclenchements doublés ou supprimés (famille G, R4.5). */
   triggerMod?: TriggerMod;
+  /** « Le prochain sort que vous lancez ce tour-ci… » (famille N, R4.6), posé par un effet à usage unique. */
+  nextSpell?: NextSpell;
   kind: "playerStatic";
   /** Hall of Echoes : la règle des légendes ne s'applique pas à vos permanents. */
   noLegendRule?: boolean;
@@ -673,8 +687,6 @@ export interface PlayerStaticAbilityDef {
   extraMountainMana?: number;
   /** Taii Wakeen : les blessures non de combat de vos sources sont augmentées de N. */
   noncombatDamageBonusAll?: number;
-  /** Theorist's Proxy : votre prochain sort ne peut pas être contrecarré (usage unique). */
-  nextSpellUncounterable?: boolean;
   /** Pit Automaton : votre prochaine capacité d'exhaust est copiée (usage unique). */
   copyNextExhaust?: boolean;
   /** Lightning, Army of One : les blessures infligées à vous ou à vos permanents sont doublées. */

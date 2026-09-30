@@ -62,6 +62,7 @@ import type {
   ManaCost,
   ManaType,
   ModeDef,
+  NextSpell,
   ObjectFilter,
   ObjectId,
   PlayerId,
@@ -300,20 +301,30 @@ export function spellReduction(
 }
 
 /** Modifications à l'arrivée d'un sort (Noctis ; prochain sort de créature : Summon: Fenrir, Summon: Brynhildr). */
-function arrivalFor(s: GameState, player: PlayerId, d: CardDef, terms: CastTerms): StackItem["arrival"] {
+function arrivalFor(terms: CastTerms, next: NextSpell[]): StackItem["arrival"] {
   const counters: { kind: string; n: number }[] = terms.finality ? [{ kind: "finality", n: 1 }] : [];
+  for (const n of next) if (n.counters) counters.push({ kind: "+1/+1", n: n.counters });
+  const haste = next.some((n) => n.haste) || undefined;
   // The Tomb of Aclazotz : « c'est un Vampire en plus de ses autres types ».
-  if (terms.playFrom?.addSubtypes) return { counters, subtypes: terms.playFrom.addSubtypes };
-  let haste = false;
-  if (d.types.includes("Creature")) {
-    const pending = (s.nextCreatureSpell ?? []).filter((x) => x.player === player && x.turn === s.turn.number);
-    for (const p of pending) {
-      if (p.counters) counters.push({ kind: "+1/+1", n: p.counters });
-      if (p.haste) haste = true;
-    }
-    if (pending.length) s.nextCreatureSpell = (s.nextCreatureSpell ?? []).filter((x) => !pending.includes(x));
-  }
-  return counters.length || haste ? { counters, haste: haste || undefined } : undefined;
+  const subtypes = terms.playFrom?.addSubtypes;
+  return counters.length || haste || subtypes ? { counters, haste, ...(subtypes ? { subtypes } : {}) } : undefined;
+}
+
+/**
+ * « Le prochain sort que vous lancez ce tour-ci… » (famille N) : les effets à usage unique qui correspondent à ce sort
+ * sont retirés et renvoyés (Teach by Example : copié ; Theorist's Proxy : incontrecarrable ; Summon: Fenrir : marqueur).
+ */
+function consumeNextSpells(s: GameState, player: PlayerId, d: CardDef): NextSpell[] {
+  const view = spellView(d, player);
+  const used = s.playerEffects.filter(
+    (e) =>
+      e.player === player &&
+      e.once &&
+      !!e.ability.nextSpell &&
+      (!e.ability.nextSpell.filter || matchesView(view, e.ability.nextSpell.filter, player)),
+  );
+  if (used.length) s.playerEffects = s.playerEffects.filter((e) => !used.includes(e));
+  return used.map((e) => e.ability.nextSpell as NextSpell);
 }
 
 /** Cloud, Planet's Champion : réduction d'une capacité d'Équiper qui cible la créature. */
@@ -1186,8 +1197,9 @@ export function castSpell(s: GameState, player: PlayerId, card: ObjectId, choice
     spellObj.faceDown = { card: spellObj.defId, ward: true, upCosts: [cardDef.disguise] };
     spellObj.defId = FACE_DOWN_ID;
   }
-  // Theorist's Proxy : « le prochain sort que vous lancez ce tour-ci ne peut pas être contrecarré ».
-  const uncounterable = consumePlayerEffect(s, player, "nextSpellUncounterable");
+  // Le prochain sort : incontrecarrable (Theorist's Proxy), marqueurs ou célérité (Summon: Fenrir), copié (plus bas).
+  const next = consumeNextSpells(s, player, d);
+  const uncounterable = next.some((n) => n.uncounterable);
   const item: StackItem = {
     id: stackId,
     kind: "spell",
@@ -1202,7 +1214,7 @@ export function castSpell(s: GameState, player: PlayerId, card: ObjectId, choice
     sourceSnapshot: { keywords: d.keywords, power: d.power ?? 0, controller: player },
     // Quistis Trepe : exilé en quittant la pile, comme un flashback.
     flashback: flashback || !!terms.exileAfter,
-    arrival: arrivalFor(s, player, d, terms),
+    arrival: arrivalFor(terms, next),
     adventure: adventure || undefined,
     warped: warp ? true : undefined,
     impending: alternative && cardDef.impending ? true : undefined,
@@ -1260,11 +1272,7 @@ export function castSpell(s: GameState, player: PlayerId, card: ObjectId, choice
   // Pyromancer's Goggles : « copiez ce sort ».
   for (const r of item.riders ?? []) if (r === "copy") copyStackItem(s, item, player);
   // Teach by Example : « la prochaine fois que vous lancez un éphémère ou un rituel ce tour-ci, copiez-le ».
-  if (d.types.includes("Instant") || d.types.includes("Sorcery")) {
-    const pending = (s.nextSpellCopies ?? []).filter((x) => x.player === player && x.turn === s.turn.number);
-    for (const _ of pending) copyStackItem(s, item, player);
-    if (pending.length) s.nextSpellCopies = (s.nextSpellCopies ?? []).filter((x) => !pending.includes(x));
-  }
+  for (const n of next) if (n.copy) copyStackItem(s, item, player);
   // Bitter Triumph : sans carte défaussée, les points de vie sont payés.
   if (opts.discard?.orLife !== undefined && discard.length === 0) loseLife(s, player, opts.discard.orLife);
   // Souls of the Lost : un permanent choisi à la place d'une carte est sacrifié.

@@ -397,7 +397,22 @@ export const fx = {
   /** « Exploitez [cette Gemme d'infinité] » (Harness). */
   harness: { op: "harness" } as Effect,
   /** « [Ce joueur] amasse des [Gobelins] X » (701.47). */
-  amass: (who: Ref, subtype: string, n: Amount): Effect => ({ op: "amass", who, subtype, amount: n }),
+  amass: (who: Ref, subtype: string, n: Amount): Effect => ({
+    op: "counterOnOrCreate",
+    who,
+    find: { subtype: "Army", controller: "you" },
+    token: {
+      name: `${subtype} Army`,
+      colors: ["B"],
+      types: ["Creature"],
+      subtypes: [subtype, "Army"],
+      power: 0,
+      toughness: 0,
+    },
+    kind: "+1/+1",
+    amount: n,
+    addSubtypes: [subtype],
+  }),
   /**
    * Maîtrise de la terre N (701.65, Avatar) : le terrain devient une créature 0/0 avec la célérité qui est toujours un
    * terrain, avec N marqueurs +1/+1, et « quand il meurt ou est exilé, renvoyez-le sur le champ de bataille engagé ».
@@ -714,14 +729,22 @@ export const fx = {
   tripleTriad: { op: "tripleTriad" } as Effect,
   unattach: (what: Ref, ifAttachedTo?: Ref): Effect => ({ op: "unattach", what, ifAttachedTo }),
   resolveToBattlefieldTransformed: { op: "resolveToBattlefieldTransformed" } as Effect,
-  nextCreatureSpell: (opts: { counters?: number; haste?: boolean }): Effect => ({ op: "nextCreatureSpell", ...opts }),
+  nextCreatureSpell: (opts: { counters?: number; haste?: boolean }): Effect => ({
+    op: "playerEffect",
+    ability: { nextSpell: { filter: { types: ["Creature"] }, ...opts } },
+    once: true,
+  }),
   spellArrivalCounters: (what: Ref, amount: Amount): Effect => ({ op: "spellArrivalCounters", what, amount }),
   doubleDamageTo: (who: Ref): Effect => ({ op: "doubleDamageTo", who }),
   preventDamageToYourCreatures: { op: "preventDamageToYourCreatures" } as Effect,
   extraEndStep: { op: "extraEndStep" } as Effect,
   eachDealsDamage: (filter: ObjectFilter, to: Ref): Effect => ({ op: "eachDealsDamage", filter, to }),
   addManaUntilEndOfTurn: (...mana: ManaType[]): Effect => ({ op: "addManaUntilEndOfTurn", mana }),
-  copyNextSpell: { op: "copyNextSpell" } as Effect,
+  copyNextSpell: {
+    op: "playerEffect",
+    ability: { nextSpell: { filter: { types: ["Instant", "Sorcery"] }, copy: true } },
+    once: true,
+  } as Effect,
   winGame: { op: "winGame" } as Effect,
   loseGame: { op: "loseGame" } as Effect,
   /** « Ce joueur perd la partie » (Summon: Primal Odin). */
@@ -757,7 +780,7 @@ export const fx = {
     store,
   }),
   addManaTimes: (times: Amount, ...mana: ManaType[]): Effect => ({ op: "addMana", mana, times }),
-  extraMountainMana: { op: "extraMountainMana" } as Effect,
+  extraMountainMana: { op: "playerEffect", ability: { extraMountainMana: 1 } } as Effect,
   mayWheel: { op: "mayWheel" } as Effect,
   destroyAllButChosenType: { op: "destroyAllButChosenType" } as Effect,
   exileFromHandLinked: (who: Ref, filter: ObjectFilter, untilLeaves?: boolean): Effect => ({
@@ -772,7 +795,7 @@ export const fx = {
   /** « … devient préparé » / « … devient dé-préparé » (Reality Fracture). */
   prepare: (what: Ref, value = true): Effect => ({ op: "prepare", what, value }),
   prepareAll: (filter: ObjectFilter, value = true): Effect => ({ op: "prepare", filter, value }),
-  instantJaceLoyalty: { op: "instantJaceLoyalty" } as Effect,
+  instantJaceLoyalty: { op: "playerEffect", ability: { jaceLoyaltyInstant: true } } as Effect,
   proliferate: (times: Amount = 1): Effect => ({ op: "proliferate", times }),
   removeCounters: (what: Ref, n: number, kind?: string, store?: string): Effect => ({
     op: "removeCounters",
@@ -782,7 +805,7 @@ export const fx = {
     store,
   }),
   extraLandThisTurn: { op: "extraLandThisTurn" } as Effect,
-  nextSpellUncounterable: { op: "nextSpellUncounterable" } as Effect,
+  nextSpellUncounterable: { op: "playerEffect", ability: { nextSpell: { uncounterable: true } }, once: true } as Effect,
   tap: (what: Ref): Effect => ({ op: "tap", what }),
   untap: (what: Ref): Effect => ({ op: "tap", what, untap: true }),
   counters: (what: Ref, kind: string, n: Amount = 1): Effect => ({ op: "addCounters", what, amount: n, kind }),

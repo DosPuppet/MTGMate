@@ -297,10 +297,6 @@ export const HANDLERS: OpHandlers = {
     grantPlay(s, ctx.controller, ids, "thisTurn", { source: ctx.sourceId });
     return;
   },
-  nextSpellUncounterable(s, _r, _e, ctx) {
-    addPlayerEffect(s, ctx.controller, { nextSpellUncounterable: true }, s.turn.number, true);
-    return;
-  },
   prepare(s, _r, e, ctx) {
     const f = e.filter;
     const ids = f
@@ -433,13 +429,6 @@ export const HANDLERS: OpHandlers = {
     }
     return;
   },
-  nextCreatureSpell(s, _r, e, ctx) {
-    s.nextCreatureSpell = [
-      ...(s.nextCreatureSpell ?? []),
-      { player: ctx.controller, turn: s.turn.number, counters: e.counters, haste: e.haste },
-    ];
-    return;
-  },
   spellArrivalCounters(s, _r, e, ctx) {
     const n = evalAmount(s, ctx, e.amount);
     for (const id of resolveRef(s, ctx, e.what)) {
@@ -462,10 +451,6 @@ export const HANDLERS: OpHandlers = {
     const mv = (id: ObjectId) => manaValue(s.defs[s.objects[id]?.defId ?? ""]?.manaCost);
     const playable = [mine, ...exiled.filter((id) => id !== mine && mv(id) < mv(mine))];
     grantPlay(s, ctx.controller, playable, "thisTurn", { free: true });
-    return;
-  },
-  copyNextSpell(s, _r, _e, ctx) {
-    s.nextSpellCopies = [...(s.nextSpellCopies ?? []), { player: ctx.controller, turn: s.turn.number }];
     return;
   },
   countResolution(s, r, e, ctx) {

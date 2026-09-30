@@ -119,7 +119,14 @@ export const JACE_TOKEN: TokenSpec = {
 };
 
 /** « Renforcez Jace N » : N marqueurs de loyauté sur votre jeton Jace (créé s'il n'y en a pas). */
-export const empower = (n: Amount): Effect => ({ op: "empowerJace", amount: n, token: JACE_TOKEN });
+export const empower = (n: Amount): Effect => ({
+  op: "counterOnOrCreate",
+  who: { kind: "you" },
+  find: { types: ["Planeswalker"], subtype: "Jace", token: true, controller: "you" },
+  token: JACE_TOKEN,
+  kind: "loyalty",
+  amount: n,
+});
 
 /** « Les planeswalkers que vous contrôlez ont "[capacité de loyauté]". » */
 export const walkersHave = (ability: ReturnType<typeof dsl.loyalty>, label: string) =>

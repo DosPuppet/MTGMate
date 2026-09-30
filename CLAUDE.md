@@ -47,7 +47,7 @@ Ce fichier sert au suivi du projet entre les sessions : où on en est, les règl
 | Méta Standard, lot M5 : Boros Dwarves, Lifegain, Mardu Discard, Boros Tokens (34 cartes) ; Storied, faufilement, chaos, paradigme, équiper digne | ✅ |
 | Méta Standard, lot M6 : les six derniers archétypes (47 cartes) ; maîtrise de l'air, Web-slinging, payer X PV, tours passés. **Phase 1 du plan P4 finie : les 20 archétypes du méta (88,1 %) sont jouables** | ✅ |
 | Phase 2 du plan P4 : Tarkir: Dragonstorm à 100 % (`docs/plans/PLAN-P4.md`) | en attente de `PLAN-R.md` |
-| Plan de remédiation de l'audit du 30/09/2026 (`PLAN-R.md`, lots F1 à R8) : F1 à F3 (fondations), R0 (corrections rapides), R4.0 à R4.5, R2.1 à R2.5, R1 en partie et R3 (copies de sorts, répartition) faits, `RULES_VERSION` = 16 ; prochain : R4.6 | en cours |
+| Plan de remédiation de l'audit du 30/09/2026 (`PLAN-R.md`, lots F1 à R8) : F1 à F3 (fondations), R0 (corrections rapides), R4.0 à R4.6, R2.1 à R2.5, R1 en partie et R3 (copies de sorts, répartition) faits, `RULES_VERSION` = 16 ; prochain : R5 | en cours |
 | Autres extensions Standard | à la demande de l'utilisateur, une à la fois |
 
 
@@ -203,4 +203,4 @@ Audit du 30/09/2026, § 3.3 ; `PLAN-R.md`, lots R4.
   - un effet ou un déclencheur existant.
 - **Si une carte l'exige vraiment,** l'ajout est justifié dans `packages/cards/data/debt-baseline.json` (raison, famille cible) et signalé dans le lot.
 - **`packages/cards/test/debt.test.ts` le vérifie :** il échoue sur tout drapeau, mot-clé non imprimé ou opération d'une seule carte absent de la référence, et sur toute entrée périmée. Un lot qui supprime un drapeau, ou dont l'opération sert désormais à plusieurs cartes, retire l'entrée : le plafond ne fait que baisser.
-- **Départ au 30/09/2026 :** 96 drapeaux de `PlayerStaticAbilityDef`, 33 mots-clés non imprimés, 61 opérations utilisées par une seule carte.
+- **Départ au 30/09/2026 :** 96 drapeaux de `PlayerStaticAbilityDef`, 33 mots-clés non imprimés, 61 opérations utilisées par une seule carte. **Après R4 :** 69, 13 et 58 (familles génériques : `BlockRule`, `ProtectionRule`, `PowerRule`, `playFrom`, `abilityCost`, `castLimit`, `triggerMod`, `nextSpell`, `counterOnOrCreate`).

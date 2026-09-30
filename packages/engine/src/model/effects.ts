@@ -30,8 +30,6 @@ export type Effect =
    */
   /** `of` : la cible (The End) plutôt qu'une carte choisie dans un cimetière adverse. */
   | { op: "exileNamesakes"; of?: Ref }
-  /** Amasser (701.47) : N marqueurs +1/+1 sur une Armée du joueur (créée 0/0 noire au besoin), qui devient aussi du sous-type. */
-  | { op: "amass"; who: Ref; subtype: string; amount: Amount }
   /** Effet de joueur jusqu'à la fin du tour (« les blessures ne peuvent pas être prévenues ce tour-ci »). */
   /** `untilYourNextTurn` : jusqu'au début du prochain tour du contrôleur ; `times` : autant d'effets à usage unique. */
   | {
@@ -40,19 +38,28 @@ export type Effect =
       who?: Ref;
       untilYourNextTurn?: boolean;
       times?: Amount;
+      /** À usage unique, jusqu'à la fin du tour (« le prochain sort que vous lancez ce tour-ci »). */
+      once?: boolean;
     }
   /** Proliférer N fois (701.34), choix automatique : vos permanents qui ont des marqueurs, et chez les adversaires marqueurs -1/-1, d'étourdissement et de poison. */
   | { op: "proliferate"; times: Amount }
+  /**
+   * N marqueurs sur un permanent correspondant du joueur ; s'il n'en a pas, il crée d'abord le jeton (famille R4.6 :
+   * renforcer Jace, amasser). `addSubtypes` : le permanent reçoit ces sous-types (701.47a).
+   */
+  | {
+      op: "counterOnOrCreate";
+      who: Ref;
+      find: ObjectFilter;
+      token: TokenSpec;
+      kind: string;
+      amount: Amount;
+      addSubtypes?: string[];
+    }
   /** « Retirez jusqu'à N marqueurs » (choix automatique : loyauté, +1/+1, puis les autres). */
   | { op: "removeCounters"; what: Ref; n: number; kind?: string; store?: string }
-  /** « Renforcez Jace N » : N marqueurs de loyauté sur un jeton Jace (créé s'il n'y en a pas). */
-  | { op: "empowerJace"; amount: Amount; token: TokenSpec }
-  /** Jace's Machinations : loyauté des Jace à vitesse d'éphémère ce tour-ci. */
-  | { op: "instantJaceLoyalty" }
   /** « Vous pouvez jouer un terrain supplémentaire ce tour-ci. » */
   | { op: "extraLandThisTurn" }
-  /** « Le prochain sort que vous lancez ce tour-ci ne peut pas être contrecarré. » */
-  | { op: "nextSpellUncounterable" }
   /** Devient préparé / dé-préparé (Reality Fracture). */
   | { op: "prepare"; what?: Ref; filter?: ObjectFilter; value: boolean }
   | { op: "damage"; amount: Amount; to: Ref; source?: Ref; storeExcess?: string }
@@ -484,8 +491,6 @@ export type Effect =
   | { op: "extraCombat" }
   /** Le mana ajouté ne se vide pas avant la fin du tour (Savage Ventmaw). */
   | { op: "addManaUntilEndOfTurn"; mana: ManaType[] }
-  /** Au prochain éphémère ou rituel lancé ce tour-ci par le contrôleur : copie (Teach by Example). */
-  | { op: "copyNextSpell" }
   /** Le contrôleur gagne la partie (Maze's End). */
   | { op: "winGame" }
   | { op: "loseGame"; who?: Ref }
@@ -501,8 +506,6 @@ export type Effect =
   | { op: "doubleDamageTo"; who: Ref }
   /** « Prévenez toutes les blessures infligées aux créatures que vous contrôlez ce tour-ci » (Summon: Alexander). */
   | { op: "preventDamageToYourCreatures" }
-  /** Le prochain sort de créature lancé ce tour-ci arrive avec des marqueurs +1/+1 ou la célérité. */
-  | { op: "nextCreatureSpell"; counters?: number; haste?: boolean }
   /** Le sort désigné (sur la pile) arrive avec N marqueurs +1/+1 de plus (Torgal). */
   | { op: "spellArrivalCounters"; what: Ref; amount: Amount }
   /** « Il y a une étape de fin supplémentaire après celle-ci » (Y'shtola Rhul). */
@@ -526,8 +529,6 @@ export type Effect =
   /** Ajoute du mana à la réserve du contrôleur. */
   /** `times` : chaque mana est ajouté autant de fois (« {G} pour chaque marqueur »). */
   | { op: "addMana"; mana: ManaType[]; times?: Amount }
-  /** Molten Tide : jusqu'à la fin du tour, chaque Montagne engagée pour du mana produit {R} de plus. */
-  | { op: "extraMountainMana" }
   /** Chaque joueur peut défausser sa main et piocher sept cartes (Arc of Fortune). */
   | { op: "mayWheel" }
   /** « Choisissez un type de créature. Détruisez toutes les créatures qui ne sont pas du type choisi. » */

@@ -7,7 +7,6 @@ import { addEffect, addPump, attach, attackingDefender, evalAmount, exiledUid, n
 import { copiableExceptions, copiedDefId, mergeMods } from "../layers";
 import {
   bump,
-  changeCounters,
   chars,
   createObject,
   isCreature,
@@ -58,38 +57,6 @@ export const HANDLERS: OpHandlers = {
     if (o?.zone !== "battlefield" || o.harnessed) return;
     o.harnessed = true;
     bump(s);
-    return;
-  },
-  amass(s, _r, e, ctx) {
-    const n = Math.max(0, evalAmount(s, ctx, e.amount));
-    for (const p of resolveRef(s, ctx, e.who).filter((x) => isPlayer(s, x))) {
-      let army = s.battlefield.find((id) => s.objects[id]?.controller === p && chars(s, id).subtypes.includes("Army"));
-      if (!army) {
-        const spec = {
-          name: `${e.subtype} Army`,
-          colors: ["B" as const],
-          types: ["Creature" as const],
-          subtypes: [e.subtype, "Army"],
-          power: 0,
-          toughness: 0,
-        };
-        army = createTokens(s, p, spec, 1)[0];
-      }
-      const o = army ? s.objects[army] : undefined;
-      if (!o) continue;
-      if (n > 0) changeCounters(s, o, "+1/+1", n);
-      // 701.47a : l'Armée devient aussi du sous-type indiqué.
-      if (!chars(s, o.id).subtypes.includes(e.subtype)) {
-        bump(s);
-        s.effects.push({
-          id: newId(s, "e"),
-          timestamp: nextTimestamp(s),
-          affected: [o.id],
-          duration: "permanent",
-          addSubtypes: [e.subtype],
-        });
-      }
-    }
     return;
   },
   attach(s, _r, e, ctx) {

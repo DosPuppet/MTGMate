@@ -2,7 +2,6 @@ import type { OpHandlers } from "../effects";
 import { evalAmount } from "../effects";
 import { linkedColors } from "../layers";
 import { chars } from "../state";
-import { addPlayerEffect } from "../statics";
 import { matchesObjectFilter } from "../targets";
 import type { ManaType } from "../types";
 
@@ -11,10 +10,6 @@ export const HANDLERS: OpHandlers = {
     const pool = s.players[ctx.controller]?.manaPool;
     const times = e.times === undefined ? 1 : evalAmount(s, ctx, e.times);
     if (pool) for (const m of e.mana) pool[m] += times;
-    return;
-  },
-  extraMountainMana(s, _r, _e, ctx) {
-    addPlayerEffect(s, ctx.controller, { extraMountainMana: 1 }, s.turn.number);
     return;
   },
   addManaChoice(s, r, e, ctx, key) {
