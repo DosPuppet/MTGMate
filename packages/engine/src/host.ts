@@ -5,7 +5,7 @@
  */
 
 import { type AutopilotSettings, autopilotDecision, DEFAULT_AUTOPILOT } from "./autopilot";
-import { submit } from "./game";
+import { drawByLoop, submit } from "./game";
 import { type GameRecord, recordDecision } from "./record";
 import { RulesError } from "./stack";
 import { decider } from "./state";
@@ -175,13 +175,17 @@ export class GameHost {
           turn = this.state.turn.number;
           guard = 1;
         }
-        if (guard > MAX_AUTOMATIC_DECISIONS) {
-          // Boucle de décisions automatiques : bug à reproduire, jamais un arrêt silencieux.
+        if (guard > MAX_AUTOMATIC_DECISIONS && !this.state.over) {
+          // Boucle de décisions automatiques dans un même tour : partie nulle (104.4b), signalée dans la console.
           const t = this.state.turn;
-          throw new Error(
+          console.warn(
             `GameHost : plus de ${MAX_AUTOMATIC_DECISIONS} décisions automatiques d'affilée (tour ${t.number}, étape ${t.step}, ` +
-              `décision ${p?.kind ?? "aucune"} de ${p?.player ?? "?"})`,
+              `décision ${p?.kind ?? "aucune"} de ${p?.player ?? "?"}) : partie nulle`,
           );
+          const { state, events } = drawByLoop(this.state);
+          this.state = state;
+          this.pendingEvents.push(...events);
+          continue;
         }
         const agent = p && !this.state.over ? this.opts.agents?.[decider(this.state) ?? p.player] : undefined;
         const auto =

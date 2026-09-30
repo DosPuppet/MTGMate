@@ -311,3 +311,7 @@ Lot R4.6 (PLAN-R.md, sans changement de règles) :
 Lot R5 (PLAN-R.md ; `RULES_VERSION` = 17) :
 - blocages des défenseurs gardés (`combat.pendingBlocks`) et appliqués ensemble quand le dernier a déclaré (509.1), invisibles d'ici là ;
 - mulligans tour de table par tour de table (103.5 ; `declareMulligan`, `s.mulliganTaken`).
+
+Lot R6 (PLAN-R.md ; `RULES_VERSION` = 18) :
+- boucle d'actions obligatoires : partie nulle (104.4b ; `declareLoopDraw`, `watchLoop`, `drawByLoop` pour l'hôte) ;
+- 800.4a : les déclenchements d'un joueur éliminé cessent d'exister (ils bloquaient le nettoyage : parties « inachevées » du fuzz).

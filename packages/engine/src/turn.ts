@@ -68,10 +68,26 @@ export const MAX_HAND_SIZE = 7;
 // Boucle principale : avance jusqu'à la prochaine décision
 // ---------------------------------------------------------------------------
 
+/**
+ * 104.4b : une boucle faite seulement d'actions obligatoires, que rien ne peut arrêter : la partie est nulle. Appelée par
+ * les gardes du moteur (déroulement, actions basées sur l'état), de l'hôte, et par la détection des boucles (game.ts).
+ */
+export function declareLoopDraw(s: GameState): void {
+  if (s.over) return;
+  s.over = true;
+  s.winner = null;
+  s.flow = "over";
+  s.pending = null;
+  emit({ type: "gameOver", winner: null, reason: "loop" });
+}
+
 export function advance(s: GameState): void {
   let guard = 0;
   while (!s.pending && !s.over) {
-    if (++guard > 100_000) throw new Error("advance : boucle infinie");
+    if (++guard > 100_000) {
+      declareLoopDraw(s);
+      return;
+    }
     switch (s.flow) {
       case "mulligan":
         nextMulligan(s);
@@ -1129,6 +1145,9 @@ function removePlayerObjects(s: GameState, p: PlayerId): void {
   s.battlefield = s.battlefield.filter((id) => !gone.has(id));
   s.exile = s.exile.filter((id) => !gone.has(id));
   s.stack = s.stack.filter((item) => item.controller !== p && (item.kind === "ability" || !gone.has(item.sourceId)));
+  // 800.4a : ses capacités déclenchées en attente et retardées cessent d'exister.
+  s.triggers = s.triggers.filter((t) => t.controller !== p);
+  s.delayed = s.delayed.filter((d) => d.controller !== p);
   if (s.combat) {
     // Des créatures cessent d'attaquer : des statiques « créatures attaquantes » en dépendent.
     bump(s);
@@ -1312,8 +1331,9 @@ function stateBasedActionsOnce(s: GameState): boolean {
     }
     return acted;
   }
-  // Toujours des actions à faire après 100 passes : une boucle du moteur, qu'il faut voir (le fuzz la signale).
-  throw new Error("Actions basées sur l'état : encore des changements après 100 passes");
+  // Toujours des actions à faire après 100 passes : une boucle d'actions obligatoires (104.4b).
+  declareLoopDraw(s);
+  return true;
 }
 
 export function answerLegendChoice(s: GameState, keep: ObjectId, options: ObjectId[]): void {

@@ -1033,6 +1033,9 @@ function triggerLabel(s: GameState, t: PendingTrigger): string {
  */
 export function processTriggers(s: GameState): boolean {
   if (s.triggers.length === 0) return false;
+  // 800.4a : un déclenchement d'un joueur qui a quitté la partie (créé après coup, d'une dernière information) n'existe pas.
+  if (s.triggers.some((t) => s.players[t.controller]?.lost))
+    s.triggers = s.triggers.filter((t) => !s.players[t.controller]?.lost);
   let changed = false;
   // 603.3b : APNAP — le joueur actif met les siennes en premier (elles se résoudront en dernier).
   for (const p of apnapOrder(s)) {

@@ -4,7 +4,16 @@ export { cardRef, divisionOf, validateChoice } from "./choices";
 export { syncControl } from "./control";
 export type { CardScript } from "./dsl";
 export * as dsl from "./dsl";
-export { applyMutable, blankState, createGame, type GameOptions, type PlayerSetup, type StepResult, submit } from "./game";
+export {
+  applyMutable,
+  blankState,
+  createGame,
+  drawByLoop,
+  type GameOptions,
+  type PlayerSetup,
+  type StepResult,
+  submit,
+} from "./game";
 export { type Agent, fallbackDecision, GameHost, type HostOptions } from "./host";
 export { computeBattlefield } from "./layers";
 export { legalActions, meaningfulActions } from "./legal";

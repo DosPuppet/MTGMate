@@ -5,6 +5,7 @@
 import { drawCard } from "./actions";
 import { divisionOf, validateChoice } from "./choices";
 import { checkDecisionShape } from "./decisionShape";
+import { outcomeHash } from "./fingerprint";
 import { activateManaAbility } from "./mana";
 import { activateAbility, answerCastNow, answerResolutionChoice, castSpell, playLand, RulesError } from "./stack";
 import { answerStackChoice } from "./stackChoices";
@@ -31,6 +32,7 @@ import {
   bottomCards,
   declareAttackers,
   declareBlockers,
+  declareLoopDraw,
   declareMulligan,
   discardToHandSize,
   eliminate,
@@ -290,11 +292,41 @@ function apply(s: GameState, submitter: PlayerId, d: Decision): void {
 export function submit(state: GameState, player: PlayerId, decision: Decision): StepResult {
   const [next, events] = collectEvents(() => {
     const s = cloneState(state);
+    const stacked = s.stack.length > 0;
     apply(s, player, decision);
     advance(s);
+    watchLoop(s, decision, stacked);
     return s;
   });
   return { state: next, events };
+}
+
+/** Passes pile non vide au-delà desquelles on relève l'empreinte de l'état, puis limite absolue. */
+const LOOP_SUSPECT = 20;
+const LOOP_LIMIT = 2000;
+
+/**
+ * 104.4b : détection d'une boucle d'actions obligatoires. Tant que les joueurs ne font que passer alors que la pile n'est
+ * pas vide (déclenchements qui se relancent), on compte ; au-delà de `LOOP_SUSPECT`, on relève l'empreinte canonique
+ * de l'état (`outcomeHash`) : la même trois fois, ou plus de `LOOP_LIMIT` passes, et la partie est nulle.
+ */
+function watchLoop(s: GameState, d: Decision, stacked: boolean): void {
+  if (s.over) return;
+  if (d.type !== "pass" || !stacked || s.stack.length === 0) {
+    s.loop = undefined;
+    return;
+  }
+  s.loop ??= { passes: 0, seen: [] };
+  const loop = s.loop;
+  loop.passes += 1;
+  if (loop.passes > LOOP_LIMIT) {
+    declareLoopDraw(s);
+    return;
+  }
+  if (loop.passes < LOOP_SUSPECT) return;
+  const h = outcomeHash(s);
+  if (loop.seen.filter((x) => x === h).length >= 2) declareLoopDraw(s);
+  else loop.seen.push(h);
 }
 
 /**
@@ -303,7 +335,19 @@ export function submit(state: GameState, player: PlayerId, decision: Decision): 
  */
 export function applyMutable(s: GameState, player: PlayerId, decision: Decision): void {
   collectEvents(() => {
+    const stacked = s.stack.length > 0;
     apply(s, player, decision);
     advance(s);
+    watchLoop(s, decision, stacked);
   });
+}
+
+/** 104.4b : l'hôte constate une boucle de décisions automatiques ; la partie est nulle. */
+export function drawByLoop(state: GameState): StepResult {
+  const [next, events] = collectEvents(() => {
+    const s = cloneState(state);
+    declareLoopDraw(s);
+    return s;
+  });
+  return { state: next, events };
 }

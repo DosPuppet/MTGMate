@@ -28,7 +28,8 @@ Plan établi le 30/09/2026 (branche `dev`) : il sert de feuille de route aux pro
 - **30/09/2026 : R4.5 fait** (sans changement de règles) : `castLimit` (famille D, 7 drapeaux) et `triggerMod` (famille G, 7 drapeaux) ; drapeaux de joueur 81 → 69.
 - **30/09/2026 : R4.6 fait** (sans changement de règles) : `counterOnOrCreate` (renforcer Jace, amasser), « le prochain sort » en effet de joueur à usage unique (`nextSpell`), `instantJaceLoyalty` et `extraMountainMana` par `fx.thisTurn`. **R4 terminé** : la référence de la dette passe de 96 / 33 / 61 à 69 drapeaux de joueur, 13 mots-clés non imprimés et 58 opérations d'une seule carte.
 - **30/09/2026 : R5 fait** (`RULES_VERSION` = 17) : blocages des défenseurs appliqués ensemble, cachés jusqu'au dernier (509.1) ; mulligans tour de table par tour de table (103.5).
-- À faire : R6, puis la suite dans l'ordre du tableau ci-dessous.
+- **30/09/2026 : R6 fait** (`RULES_VERSION` = 18) : boucle d'actions obligatoires déclarée nulle (104.4b) ; les trois gardes y passent. En cherchant la cause des parties « inachevées » du fuzz (méta à 3 joueurs, tout le pool à 4), trouvé : un déclenchement d'un joueur éliminé restait en attente, jamais mis sur la pile, et le nettoyage redonnait la priorité sans fin (514.3a). Corrigé (800.4a) : `verify --full` passe entièrement.
+- À faire : R7, puis R8.
 
 ## Le garde-fou de la dette (lot F2)
 
@@ -63,9 +64,9 @@ Plan établi le 30/09/2026 (branche `dev`) : il sert de feuille de route aux pro
 | 9 | R2.4 : couche 2 (contrôle) | § 3.2 | R4.0 | élevé | ✅ `2b2ef83` |
 | 10 | R2.5 : 613.8 par point fixe, couche 5 « en plus » | § 3.2 | R2.2, R2.4 | élevé (perf.) | ✅ `be0eefa` |
 | 11 | R4.1 à R4.6 : familles génériques | § 3.3 | R1, R2 | moyen | ✅ `41a3cf0` à `616411f` |
-| 12 | R5 : blocages simultanés, mulligans 103.5 | § 3.2 | F1 | moyen | ✅ (voir suivi) |
-| 13 | R6 : boucles (104.4b) | § 3.2 | F1 | moyen | **prochain** |
-| 14 | R7 : justesse des cartes | § 3.4 | — | continu | à faire |
+| 12 | R5 : blocages simultanés, mulligans 103.5 | § 3.2 | F1 | moyen | ✅ `ecc17e6` |
+| 13 | R6 : boucles (104.4b) | § 3.2 | F1 | moyen | ✅ (voir suivi) |
+| 14 | R7 : justesse des cartes | § 3.4 | — | continu | **prochain** |
 | 15 | R8 : interface, puis IA (P3) | § 4, § 5 | — | moyen | à faire |
 
 ## Écarts supplémentaires, trouvés en préparant ce plan
@@ -328,9 +329,11 @@ Lus dans le code ; chacun est confirmé par un test au début de son lot.
   - mulligans tour de table par tour de table (103.5) [règles].
 
   **Réalisé :** `combat.pendingBlocks` : chaque défenseur déclare (validation et taxes à la déclaration), ses blocages sont gardés hors de `combat.blockers` (donc de la vue) et appliqués ensemble par `commitBlocks` quand la file est vide ; `declareMulligan` et `s.mulliganTaken` : les joueurs décident à tour de rôle, ceux qui prennent un mulligan le prennent ensemble à la fin du tour de table (`nextMulligan`). Tests : `audit.test.ts` (R5), `rules.test.ts` (103.5).
-- **R6 [règles] :**
+- **R6 [règles] ✅ :**
   - boucle obligatoire détectée par une empreinte canonique (projection de `outcomeHash`), qui déclare la partie nulle (104.4b) ;
   - les trois gardes y passent.
+
+  **Réalisé :** `declareLoopDraw` (`turn.ts`, événement `gameOver` avec `reason: "loop"`) ; les gardes de `advance` (100 000 tours), des actions basées sur l'état (100 passes) et de l'hôte (10 000 décisions automatiques dans un tour, `drawByLoop`) déclarent la partie nulle au lieu de lever une erreur ; `watchLoop` (`game.ts`) compte les passes pile non vide sans autre décision, relève l'empreinte (`outcomeHash`, déplacé dans `fingerprint.ts`) au-delà de 20 et déclare la partie nulle à la troisième répétition ou au-delà de 2 000 passes (boucle qui ne répète pas l'état) ; 800.4a : les déclenchements en attente et retardés d'un joueur éliminé sont retirés (`removePlayerObjects`, `processTriggers`). Tests : `audit.test.ts` (R6).
 - **R7 (continu) :**
   - attentes de l'Oracle étendues ;
   - un fichier de tests de règles par extension partielle ;

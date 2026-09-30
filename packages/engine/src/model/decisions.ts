@@ -312,4 +312,5 @@ export type GameEvent =
   | { type: "choice"; player: PlayerId; intent: ChoiceIntent }
   | { type: "trigger"; player: PlayerId; stackId: string; defId: string; targets: string[] }
   | { type: "lose"; player: PlayerId; reason: "life" | "draw" | "poison" | "concede" }
-  | { type: "gameOver"; winner: PlayerId | null };
+  /** `reason` : « loop », partie nulle sur une boucle d'actions obligatoires (104.4b). */
+  | { type: "gameOver"; winner: PlayerId | null; reason?: "loop" };

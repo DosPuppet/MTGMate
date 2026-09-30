@@ -801,3 +801,36 @@ describe("R5 : blocages simultanés en multijoueur (509.1)", () => {
     expect(s.combat?.blockers.map((b) => b.id)).toEqual([blocker]);
   });
 });
+
+describe("R6 : boucle d'actions obligatoires, partie nulle (104.4b)", () => {
+  it("« gagnez 1 PV, perdez 1 PV » sans fin : la partie est déclarée nulle", () => {
+    const ench = (name: string, ab: CardDef["abilities"][number]) =>
+      customCard({ name, types: ["Enchantment"], typeLine: "Enchantment", abilities: [ab] });
+    const gain = ench("Gain", triggered(when.loseLife("you"), [fx.gainLife(1)], { label: "gain" }));
+    const lose = ench("Perte", triggered(when.gainLife, [fx.loseLife(1)], { label: "perte" }));
+    let s = scenario({ p1: { battlefield: [gain, lose] } });
+    runEffect(s, resolution("p1") as never, fx.gainLife(1));
+    s = passUntil(act(s, "p1", { type: "pass" }), (x) => x.over);
+    expect(s.over).toBe(true);
+    expect(s.winner).toBeNull();
+  });
+});
+
+describe("R6 : 800.4a, les déclenchements d'un joueur qui quitte la partie cessent d'exister", () => {
+  it("un déclenchement en attente d'un joueur éliminé ne bloque plus le nettoyage", () => {
+    let s = scenario({ players: 3, step: "end" });
+    s.triggers.push({
+      id: "t-perdu",
+      sourceId: "absent",
+      sourceDefId: "absent",
+      abilityIndex: 0,
+      controller: "p3",
+      targets: {},
+      sourceSnapshot: { keywords: [], power: 0, controller: "p3" },
+    } as never);
+    eliminate(s, ["p3"]);
+    expect(s.triggers).toEqual([]);
+    s = passUntil(s, (x) => x.turn.number > 3);
+    expect(s.turn.number).toBe(4);
+  });
+});

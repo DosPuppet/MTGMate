@@ -631,6 +631,11 @@ export interface GameState {
   mulliganQueue: PlayerId[];
   /** 103.5 : joueurs qui ont décidé de prendre un mulligan à ce tour de table ; ils le prennent ensemble à la fin. */
   mulliganTaken?: PlayerId[];
+  /**
+   * 104.4b : passes enchaînées pile non vide, sans autre décision, et empreintes relevées au-delà de 20 (game.ts) ; une
+   * même empreinte trois fois, ou plus de 2 000 passes, et la partie est nulle.
+   */
+  loop?: { passes: number; seen: string[] };
   resolving: Resolution | null;
   /** Effets de remplacement et de prévention créés par des résolutions (jusqu'à la fin du tour). */
   replacements: CreatedReplacement[];

@@ -5,6 +5,9 @@
  *
  * Les decks sont enregistrés par noms de cartes : `resolve` redonne les définitions au rejeu.
  */
+export { outcomeHash } from "./fingerprint";
+
+import { outcomeHash } from "./fingerprint";
 import { createGame, type GameOptions, type StepResult, submit } from "./game";
 import type { CardDef, Decision, GameEvent, GameState, PlayerId } from "./types";
 
@@ -45,8 +48,10 @@ export const RECORD_VERSION = 1;
  * - 16 : permissions de jouer depuis le cimetière ou le dessus de la bibliothèque unifiées (une permission sans coût passe
  *   avant Muldrotha ; Forgotten Cellar : seulement des sorts) ; modificateurs de coût des capacités unifiés (R4.4).
  * - 17 : mulligans tour de table par tour de table (103.5) ; blocages des défenseurs appliqués ensemble (509.1 ; R5).
+ * - 18 : boucle d'actions obligatoires, partie nulle (104.4b) ; les déclenchements d'un joueur qui quitte la partie
+ *   cessent d'exister (800.4a ; R6).
  */
-export const RULES_VERSION = 17;
+export const RULES_VERSION = 18;
 
 /** Un point de contrôle toutes les N décisions (plus la dernière de la partie). */
 export const CHECKPOINT_EVERY = 25;
@@ -96,50 +101,6 @@ export function recordDecision(record: GameRecord, player: PlayerId, d: Decision
   const n = record.decisions.length;
   if (n % CHECKPOINT_EVERY !== 0 && !after.over) return;
   record.checkpoints = [...(record.checkpoints ?? []), [n, outcomeHash(after)]];
-}
-
-/**
- * Empreinte de ce qu'une partie « est » : tour, étape, décision attendue, joueurs (PV, poison, zones), champ de bataille
- * et pile. Elle ne cite aucun identifiant d'objet ni compteur interne (horodatages, version du cache, hasard) : deux
- * versions du moteur qui jouent la même partie donnent la même empreinte.
- */
-export function outcomeHash(s: GameState): string {
-  const def = (id: string | undefined) => (id ? (s.objects[id]?.defId ?? "?") : null);
-  const zone = (ids: string[]) => ids.map(def);
-  const projection = {
-    turn: [s.turn.number, s.turn.active, s.turn.step],
-    pending: s.pending ? [s.pending.kind, s.pending.player] : null,
-    over: [s.over, s.winner],
-    players: s.playerOrder.map((p) => {
-      const pl = s.players[p];
-      return pl ? [p, pl.life, pl.poison ?? 0, pl.lost, zone(pl.library), zone(pl.hand), zone(pl.graveyard)] : [p, null];
-    }),
-    exile: zone(s.exile),
-    battlefield: s.battlefield.map((id) => {
-      const o = s.objects[id];
-      if (!o) return null;
-      const counters = Object.entries(o.counters)
-        .filter(([, n]) => n)
-        .sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0));
-      return [o.defId, o.owner, o.controller, o.tapped, o.damage, counters, def(o.attachedTo)];
-    }),
-    stack: s.stack.map((i) => [i.kind, i.sourceDefId, i.controller]),
-  };
-  return cyrb53(JSON.stringify(projection));
-}
-
-/** Hachage 53 bits (cyrb53), en hexadécimal : pur et déterministe. */
-function cyrb53(str: string): string {
-  let h1 = 0xdeadbeef;
-  let h2 = 0x41c6ce57;
-  for (let i = 0; i < str.length; i++) {
-    const c = str.charCodeAt(i);
-    h1 = Math.imul(h1 ^ c, 2654435761);
-    h2 = Math.imul(h2 ^ c, 1597334677);
-  }
-  h1 = Math.imul(h1 ^ (h1 >>> 16), 2246822507) ^ Math.imul(h2 ^ (h2 >>> 13), 3266489909);
-  h2 = Math.imul(h2 ^ (h2 >>> 16), 2246822507) ^ Math.imul(h1 ^ (h1 >>> 13), 3266489909);
-  return (4294967296 * (2097151 & h2) + (h1 >>> 0)).toString(16);
 }
 
 /** Vérifie la forme d'un enregistrement reçu (fichier importé, disque du serveur). */
