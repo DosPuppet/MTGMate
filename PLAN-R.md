@@ -46,7 +46,7 @@ Plan établi le 30/09/2026 (branche `dev`) : il sert de feuille de route aux pro
 | 3 | F3 : durcissement du serveur | § 6 | — | faible | ✅ `e5910a4` |
 | 4 | R0.1 à R0.6 : corrections rapides | § 3.1 | F1 | faible à moyen | ✅ `709a43a` à `c7896e5` |
 | 5 | R4.0 : accesseur unique des statiques de joueur | § 3.3 | F2 | moyen | ✅ (voir suivi) |
-| 6 | R2.1 à R2.3 : entrée sur le champ de bataille, copies de permanents | § 3.1, § 3.2 | R4.0 | moyen | ✅ `f0b77a1`, `ead9cd5`, R2.3 |
+| 6 | R2.1 à R2.3 : entrée sur le champ de bataille, copies de permanents | § 3.1, § 3.2 | R4.0 | moyen | ✅ `f0b77a1`, `ead9cd5`, `c055371` |
 | 7 | R1.1 à R1.3 : remplacements (616) | § 3.2 | R4.0, R2.1 | élevé | **prochain** |
 | 8 | R3.1 et R3.2 : copies de sorts, blessures réparties | § 3.1 | R0 | moyen à élevé | à faire |
 | 9 | R2.4 : couche 2 (contrôle) | § 3.2 | R4.0 | élevé | à faire |
