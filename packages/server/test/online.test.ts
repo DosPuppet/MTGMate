@@ -1,7 +1,7 @@
 import { CARDS, DECKS } from "@mtgx/cards";
 import { afterEach, describe, expect, it } from "vitest";
 import { WebSocket } from "ws";
-import type { RunningServer } from "../src/index";
+import { type RunningServer, startServer } from "../src/index";
 import { checkDeck } from "../src/rooms";
 import { Client, duel, GREEN, server } from "./helpers";
 
@@ -214,11 +214,15 @@ describe("exposition à Internet", () => {
     expect((await b.next("error")).code).toBe("busy");
   });
 
-  it("limite les connexions simultanées par adresse (nginx : X-Forwarded-For)", async () => {
+  it("limite les connexions simultanées par adresse (nginx : X-Real-IP, sinon la dernière de X-Forwarded-For)", async () => {
     const port = await start({}, { maxPerIp: 2 });
+    // Le client remplit le début de X-Forwarded-For comme il veut ; nginx ajoute la vraie adresse à la fin.
+    let spoof = 0;
     const open = (ip: string) =>
       new Promise<{ ws: WebSocket; code: number | null }>((ok) => {
-        const ws = new WebSocket(`ws://127.0.0.1:${port}/ws`, { headers: { "X-Forwarded-For": ip } });
+        spoof++;
+        const headers = spoof % 2 ? { "X-Forwarded-For": `192.168.9.${spoof}, ${ip}` } : { "X-Real-IP": ip };
+        const ws = new WebSocket(`ws://127.0.0.1:${port}/ws`, { headers });
         let settled = false;
         ws.once("close", (code) => {
           if (!settled) ok({ ws, code });
@@ -234,6 +238,47 @@ describe("exposition à Internet", () => {
     const conns = [await open("10.0.0.1"), await open("10.0.0.1"), await open("10.0.0.1"), await open("10.0.0.2")];
     expect(conns.map((c) => c.code)).toEqual([null, null, 1013, null]);
     for (const c of conns) c.ws.terminate();
+  });
+
+  it("n'accepte le WebSocket que du même hôte ou d'une origine autorisée", async () => {
+    const port = await start({});
+    const tryOrigin = (origin: string) =>
+      new Promise<boolean>((ok) => {
+        const ws = new WebSocket(`ws://127.0.0.1:${port}/ws`, { headers: { Origin: origin } });
+        ws.once("open", () => {
+          ws.terminate();
+          ok(true);
+        });
+        ws.once("error", () => ok(false));
+      });
+    expect(await tryOrigin(`http://127.0.0.1:${port}`)).toBe(true);
+    expect(await tryOrigin("https://site-malveillant.example")).toBe(false);
+    const other = await startServer({ port: 0, host: "127.0.0.1", allowedOrigins: ["https://mtg.exemple.fr"] });
+    const ok = await new Promise<boolean>((done) => {
+      const ws = new WebSocket(`ws://127.0.0.1:${other.port}/ws`, { headers: { Origin: "https://mtg.exemple.fr" } });
+      ws.once("open", () => {
+        ws.terminate();
+        done(true);
+      });
+      ws.once("error", () => done(false));
+    });
+    await other.close();
+    expect(ok).toBe(true);
+  });
+
+  it("plafonne les salons ouverts par adresse (salons abandonnés en boucle)", async () => {
+    const port = await start({ maxRoomsPerIp: 2 });
+    for (let i = 0; i < 2; i++) {
+      const c = await Client.connect(port);
+      clients.push(c);
+      c.send({ type: "create", name: `J${i}`, deck: GREEN });
+      await c.next("room");
+      await c.close();
+    }
+    const c = await Client.connect(port);
+    clients.push(c);
+    c.send({ type: "create", name: "J2", deck: GREEN });
+    expect((await c.next("error")).code).toBe("busy");
   });
 
   it("une connexion qui ne répond plus aux pings est fermée (délai de retour normal)", async () => {

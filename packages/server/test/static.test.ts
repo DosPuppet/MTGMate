@@ -46,11 +46,23 @@ describe("fichiers du client", () => {
     expect(gz.headers["content-encoding"]).toBe("gzip");
     expect(gunzipSync(gz.body).toString()).toBe(js);
 
+    // En-têtes de sécurité sur les fichiers servis.
+    expect(br.headers["x-content-type-options"]).toBe("nosniff");
+    expect(br.headers["x-frame-options"]).toBe("DENY");
+
     const plain = await get(srv.port, "/assets/index-abc.js");
     expect(plain.headers["content-encoding"]).toBeUndefined();
     expect(plain.body.toString()).toBe(js);
 
     const html = await get(srv.port, "/", "br");
     expect(html.headers["cache-control"]).toBe("no-cache");
+  });
+
+  it("une URL mal encodée répond 400, sans arrêter le serveur", async () => {
+    dir = mkdtempSync(join(tmpdir(), "mtgx-dist-"));
+    writeFileSync(join(dir, "index.html"), "<!doctype html><title>MTG Mate</title>");
+    srv = await startServer({ port: 0, host: "127.0.0.1", staticDir: dir });
+    expect((await fetch(`http://127.0.0.1:${srv.port}/%`)).status).toBe(400);
+    expect((await fetch(`http://127.0.0.1:${srv.port}/healthz`)).status).toBe(200);
   });
 });

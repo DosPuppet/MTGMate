@@ -28,6 +28,8 @@ export interface ServerOptions {
   pingMs?: number;
   /** Débit de messages par connexion : `perSecond` en régime continu, `burst` en rafale. */
   rate?: { perSecond: number; burst: number };
+  /** Origines admises pour le WebSocket en plus du même hôte (MTGX_ORIGINS, séparées par des virgules). */
+  allowedOrigins?: string[];
   /** Dossier du client construit (packages/client/dist), servi en statique. */
   staticDir?: string;
   /** Récupération d'une image de Scryfall pour le relais /scry/ (remplaçable dans les tests). */
@@ -46,13 +48,44 @@ const MAX_MESSAGE = 64 * 1024;
 const MAX_DROPPED = 200;
 const LOOPBACK = new Set(["127.0.0.1", "::1", "::ffff:127.0.0.1"]);
 
-/** Adresse du client : celle transmise par nginx (X-Forwarded-For) si la connexion vient de la machine elle-même. */
-function clientIp(req: IncomingMessage): string {
+/**
+ * Adresse du client. Derrière nginx (connexion venue de la machine elle-même), celle que nginx a vue : `X-Real-IP`,
+ * sinon la dernière adresse de `X-Forwarded-For` (nginx l'ajoute à la fin ; les premières sont fournies par le client
+ * et ne prouvent rien).
+ */
+export function clientIp(req: IncomingMessage): string {
   const direct = req.socket.remoteAddress ?? "";
+  if (!LOOPBACK.has(direct)) return direct;
+  const real = req.headers["x-real-ip"];
+  if (typeof real === "string" && real.trim()) return real.trim();
   const forwarded = req.headers["x-forwarded-for"];
-  if (LOOPBACK.has(direct) && typeof forwarded === "string") return forwarded.split(",")[0]?.trim() || direct;
+  if (typeof forwarded === "string") return forwarded.split(",").at(-1)?.trim() || direct;
   return direct;
 }
+
+/**
+ * Origine d'une connexion WebSocket : un navigateur l'envoie toujours ; une page d'un autre site ne doit pas pouvoir
+ * jouer à la place du joueur. Acceptées : pas d'en-tête Origin (client hors navigateur), même hôte que la requête (site
+ * servi par ce serveur, nginx, relais de Vite en dev), ou une origine de la liste `allowedOrigins` (MTGX_ORIGINS).
+ */
+export function originAllowed(req: IncomingMessage, allowed: readonly string[] = []): boolean {
+  const origin = req.headers.origin;
+  if (!origin) return true;
+  if (allowed.includes(origin)) return true;
+  try {
+    return new URL(origin).host === req.headers.host;
+  } catch {
+    return false;
+  }
+}
+
+/** En-têtes de sécurité des fichiers servis (l'application et ses ressources). */
+const SECURITY_HEADERS: Record<string, string> = {
+  "X-Content-Type-Options": "nosniff",
+  "X-Frame-Options": "DENY",
+  "Referrer-Policy": "no-referrer",
+  "Permissions-Policy": "camera=(), microphone=(), geolocation=()",
+};
 const MIME: Record<string, string> = {
   ".html": "text/html; charset=utf-8",
   ".js": "text/javascript; charset=utf-8",
@@ -70,7 +103,13 @@ function serveStatic(root: string | undefined, req: IncomingMessage, res: Server
     res.writeHead(root ? 405 : 404).end();
     return;
   }
-  const path = decodeURIComponent(new URL(req.url ?? "/", "http://x").pathname);
+  let path: string;
+  try {
+    path = decodeURIComponent(new URL(req.url ?? "/", "http://x").pathname);
+  } catch {
+    res.writeHead(400).end(); // chemin mal encodé (« /% ») : ce n'est pas un fichier
+    return;
+  }
   let file = normalize(join(root, path));
   // Jamais en dehors du dossier servi.
   if (file !== root && !file.startsWith(root + sep)) {
@@ -88,7 +127,7 @@ function serveStatic(root: string | undefined, req: IncomingMessage, res: Server
   const cache = path.startsWith("/assets/") ? "public, max-age=31536000, immutable" : "no-cache";
   const encoding = COMPRESSIBLE.test(type) ? acceptedEncoding(req) : null;
   if (!encoding) {
-    res.writeHead(200, { "Content-Type": type, "Cache-Control": cache });
+    res.writeHead(200, { ...SECURITY_HEADERS, "Content-Type": type, "Cache-Control": cache });
     if (req.method === "HEAD") res.end();
     else createReadStream(file).pipe(res);
     return;
@@ -96,7 +135,13 @@ function serveStatic(root: string | undefined, req: IncomingMessage, res: Server
   // Texte (JS, CSS, JSON…) : compressé une fois par fichier et par version, puis servi depuis la mémoire
   // (le bundle principal passe de 7 Mo à 1,5 Mo en gzip, moins en brotli).
   const body = compressed(file, encoding);
-  res.writeHead(200, { "Content-Type": type, "Cache-Control": cache, "Content-Encoding": encoding, Vary: "Accept-Encoding" });
+  res.writeHead(200, {
+    ...SECURITY_HEADERS,
+    "Content-Type": type,
+    "Cache-Control": cache,
+    "Content-Encoding": encoding,
+    Vary: "Accept-Encoding",
+  });
   res.end(req.method === "HEAD" ? undefined : body);
 }
 
@@ -155,7 +200,8 @@ async function relayImage(
   }
   let upstream: Response;
   try {
-    upstream = await fetchImage(`${SCRY_HOST}${path}${url.search}`);
+    // Sans la chaîne de requête : une variante (?x=1, ?x=2…) ne doit pas refaire une requête à Scryfall à chaque fois.
+    upstream = await fetchImage(`${SCRY_HOST}${path}`);
   } catch {
     res.writeHead(502).end();
     return;
@@ -196,6 +242,16 @@ export function startServer(opts: ServerOptions = {}): Promise<RunningServer> {
   const rooms = new RoomManager({ ...DEFAULT_CONFIG, ...opts.config });
   const root = opts.staticDir && existsSync(opts.staticDir) ? resolve(opts.staticDir) : undefined;
   const http = createHttpServer((req, res) => {
+    try {
+      handle(req, res);
+    } catch (e) {
+      // Une requête ne doit jamais arrêter le serveur (et toutes les parties en cours).
+      console.error("Requête HTTP en erreur :", e);
+      if (!res.headersSent) res.writeHead(500);
+      res.end();
+    }
+  });
+  const handle = (req: IncomingMessage, res: ServerResponse) => {
     if (req.url === "/healthz") {
       res.writeHead(200, { "Content-Type": "text/plain; charset=utf-8" }).end(`ok ${rooms.size} salon(s)\n`);
       return;
@@ -205,8 +261,13 @@ export function startServer(opts: ServerOptions = {}): Promise<RunningServer> {
       return;
     }
     serveStatic(root, req, res);
+  };
+  const wss = new WebSocketServer({
+    server: http,
+    path: "/ws",
+    maxPayload: MAX_MESSAGE,
+    verifyClient: ({ req }: { req: IncomingMessage }) => originAllowed(req, opts.allowedOrigins),
   });
-  const wss = new WebSocketServer({ server: http, path: "/ws", maxPayload: MAX_MESSAGE });
   const perIp = new Map<string, number>();
   const maxPerIp = opts.maxPerIp ?? 8;
   const rate = opts.rate ?? { perSecond: 20, burst: 40 };
@@ -278,7 +339,7 @@ export function startServer(opts: ServerOptions = {}): Promise<RunningServer> {
           case "rejoin": {
             if (current) throw new ClientError("state", "Vous êtes déjà dans un salon.");
             if (msg.type === "create")
-              current = rooms.create(msg.name, msg.deck, peer, { sideboard: msg.sideboard, bestOf: msg.bestOf });
+              current = rooms.create(msg.name, msg.deck, peer, { sideboard: msg.sideboard, bestOf: msg.bestOf, ip });
             else if (msg.type === "join") current = rooms.join(msg.code, msg.name, msg.deck, peer, msg.sideboard);
             else {
               const found = rooms.byToken(msg.token);

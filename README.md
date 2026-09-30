@@ -84,7 +84,7 @@ npm run dev          # http://localhost:5173
   - à l'expiration, une décision par défaut est jouée ; 3 expirations valent une défaite ;
   - après une déconnexion, 60 s pour revenir (en rechargeant la page), sinon défaite ;
   - revanche possible dans le même salon.
-- **Variables d'environnement :** `PORT`, `HOST` (`127.0.0.1` derrière nginx), `MTGX_DECISION_MS`, `MTGX_GRACE_MS`, `MTGX_MAX_ROOMS`, `MTGX_DATA_DIR` (sauvegarde des parties, reprises après un redémarrage ; `data/rooms` par défaut). `/healthz` indique l'état du serveur.
+- **Variables d'environnement :** `PORT`, `HOST` (`127.0.0.1` derrière nginx), `MTGX_DECISION_MS`, `MTGX_GRACE_MS`, `MTGX_MAX_ROOMS`, `MTGX_DATA_DIR` (sauvegarde des parties, reprises après un redémarrage ; `data/rooms` par défaut), `MTGX_MAX_ROOMS_PER_IP` (4), `MTGX_ORIGINS` (origines admises pour le WebSocket en plus du site lui-même). `/healthz` indique l'état du serveur.
 
 ### Replays et export d'une partie
 

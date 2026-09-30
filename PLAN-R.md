@@ -6,7 +6,8 @@ Plan établi le 30/09/2026 (branche `dev`) : il sert de feuille de route aux pro
 
 - **30/09/2026 :** plan écrit ; **F2 fait** (garde-fou de la dette et règle en fin de CLAUDE.md).
 - **30/09/2026 : F1 fait** (`RULES_VERSION` = 1, empreintes et rejeu vérifié, un compteur d'identifiants par préfixe, reprise des salons selon la version, parties dorées ; détail dans `docs/extensions/socle.md`, lot F1).
-- À faire : F3, puis la suite dans l'ordre du tableau ci-dessous.
+- **30/09/2026 : F3 fait** (serveur : URL mal encodée, adresse du client par `X-Real-IP`, `Origin` vérifié, `/scry/` sans chaîne de requête, plafond de salons par adresse, en-têtes de sécurité ; nginx mis à jour).
+- À faire : R0.1, puis la suite dans l'ordre du tableau ci-dessous.
 
 ## Le garde-fou de la dette (lot F2)
 

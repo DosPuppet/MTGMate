@@ -32,7 +32,8 @@ describe("relais des images de Scryfall", () => {
     expect(r.headers.get("cache-control")).toContain("immutable");
     expect(r.headers.get("etag")).toBe('"abc"');
     expect([...new Uint8Array(await r.arrayBuffer())]).toEqual([0xff, 0xd8, 0xff]);
-    expect(asked.at(-1)).toBe(`https://cards.scryfall.io${IMG}?1783909131`);
+    // Sans la chaîne de requête : une variante ne refait pas de requête différente à Scryfall.
+    expect(asked.at(-1)).toBe(`https://cards.scryfall.io${IMG}`);
   });
 
   it("accepte HEAD et les illustrations (art_crop)", async () => {

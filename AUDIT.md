@@ -288,6 +288,7 @@ Détail, ordre d'exécution et décisions de conception : `PLAN-R.md`.
 
 - **30/09/2026 :** plan de remédiation écrit (`PLAN-R.md`) ; garde-fou de la dette en place (lot F2 : `cards/test/debt.test.ts`, règle en fin de CLAUDE.md).
 - **30/09/2026 :** lot F1 fait : version des règles dans les enregistrements, rejeu vérifié par empreintes, parties dorées (`npm run golden`).
+- **30/09/2026 :** lot F3 fait : les deux bugs du serveur du § 6 (URL mal encodée, `X-Forwarded-For`) et ses autres défauts (`Origin`, en-têtes, `/scry/`, salons par adresse) sont corrigés ; reste : jetons de reconnexion en clair.
 
 ### R0 — Corrections simples (un lot, un test de règles par correction)
 

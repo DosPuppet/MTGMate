@@ -2,7 +2,8 @@
  * Lancement du serveur : `npm run server`.
  * Variables : PORT (8787), HOST (0.0.0.0 ; 127.0.0.1 derrière nginx), MTGX_DECISION_MS, MTGX_GRACE_MS
  * (durées du minuteur et du délai de retour), MTGX_MAX_ROOMS (salons ouverts au plus, 200), MTGX_DATA_DIR (sauvegarde
- * des parties en cours, `data/rooms` par défaut ; « off » pour garder les parties en mémoire seulement).
+ * des parties en cours, `data/rooms` par défaut ; « off » pour garder les parties en mémoire seulement), MTGX_ORIGINS
+ * (origines admises pour le WebSocket en plus du même hôte, séparées par des virgules), MTGX_MAX_ROOMS_PER_IP (4).
  */
 import { networkInterfaces } from "node:os";
 import { dirname, join } from "node:path";
@@ -17,7 +18,12 @@ const server = await startServer({
   port: num(process.env.PORT) ?? 8787,
   host,
   staticDir,
+  allowedOrigins: (process.env.MTGX_ORIGINS ?? "")
+    .split(",")
+    .map((o) => o.trim())
+    .filter(Boolean),
   config: {
+    ...(num(process.env.MTGX_MAX_ROOMS_PER_IP) ? { maxRoomsPerIp: num(process.env.MTGX_MAX_ROOMS_PER_IP) } : {}),
     ...(num(process.env.MTGX_DECISION_MS) ? { decisionMs: num(process.env.MTGX_DECISION_MS) } : {}),
     ...(num(process.env.MTGX_GRACE_MS) ? { graceMs: num(process.env.MTGX_GRACE_MS) } : {}),
     ...(num(process.env.MTGX_MAX_ROOMS) ? { maxRooms: num(process.env.MTGX_MAX_ROOMS) } : {}),

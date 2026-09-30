@@ -76,7 +76,7 @@ Commandes utiles : `pm2 status`, `pm2 logs mtgmate`, `pm2 restart mtgmate`, `pm2
 
 Si le port 8787 est déjà pris sur le VPS, changez `PORT` dans `deploy/ecosystem.config.cjs` **et** dans le site nginx (étape 6), puis `pm2 restart mtgmate --update-env && pm2 save`.
 
-Réglages facultatifs (même fichier, section `env`) : `MTGX_DECISION_MS` (temps par décision, 60 000 ms), `MTGX_GRACE_MS` (délai de retour après une déconnexion, 60 000 ms), `MTGX_MAX_ROOMS` (salons ouverts au plus, 200), `MTGX_DATA_DIR` (sauvegarde des parties en cours, `data/rooms` par défaut, `off` pour la désactiver).
+Réglages facultatifs (même fichier, section `env`) : `MTGX_DECISION_MS` (temps par décision, 60 000 ms), `MTGX_GRACE_MS` (délai de retour après une déconnexion, 60 000 ms), `MTGX_MAX_ROOMS` (salons ouverts au plus, 200), `MTGX_DATA_DIR` (sauvegarde des parties en cours, `data/rooms` par défaut, `off` pour la désactiver), `MTGX_MAX_ROOMS_PER_IP` (salons ouverts au plus par adresse de créateur, 4), `MTGX_ORIGINS` (origines admises pour le WebSocket en plus du site lui-même, séparées par des virgules ; inutile en temps normal).
 
 ## 6. nginx et HTTPS
 
@@ -94,7 +94,9 @@ Points importants de ce site (déjà dans le fichier) :
 
 - `location /ws` transmet les en-têtes `Upgrade` et `Connection` : sans eux, le jeu en ligne ne se connecte pas ;
 - `proxy_read_timeout 1h` : sinon nginx coupe un WebSocket calme au bout de 60 s ;
-- `X-Forwarded-For` : le serveur limite les connexions par adresse IP du joueur ;
+- `X-Real-IP` : l'adresse du joueur vue par nginx ; le serveur limite les connexions et les salons par adresse. `X-Forwarded-For` ne suffit pas : son début est fourni par le client ;
+- `proxy_cache_key $scheme$host$uri` (dans `/scry/`) : une image par chemin, quelle que soit la chaîne de requête ;
+- HSTS : après `certbot`, ajoutez dans le bloc `listen 443` la ligne indiquée en commentaire en tête du fichier. Les autres en-têtes de sécurité (`nosniff`, `X-Frame-Options`, `Referrer-Policy`) viennent du serveur Node ;
 - `location /scry/` et `proxy_cache_path` : relais des images (voir « Images pour les joueurs derrière un proxy »). Si `nginx -t` signale que la zone `mtgmate_scry` existe déjà, c'est que le fichier est inclus deux fois.
 
 ### Images pour les joueurs derrière un proxy
@@ -138,6 +140,8 @@ Le serveur compresse lui-même le code de l'interface (brotli ou gzip) et le met
 | Déconnexions régulières après environ une minute | `proxy_read_timeout` trop court dans `location /ws` |
 | « Trop de connexions depuis cette adresse » | plus de 8 onglets ouverts depuis la même IP |
 | « Serveur complet, réessayez plus tard » | limite `MTGX_MAX_ROOMS` atteinte |
+| « Trop de salons ouverts depuis cette adresse » | limite `MTGX_MAX_ROOMS_PER_IP` ; si tous les joueurs semblent avoir la même adresse, vérifier `X-Real-IP` dans le site nginx |
+| Jeu en ligne impossible (WebSocket refusé) | page servie depuis une autre adresse que le serveur : ajouter cette origine à `MTGX_ORIGINS` |
 | Cartes sans images chez un joueur, « Images par le serveur MTG Mate » cochée | le VPS ne joint pas `cards.scryfall.io` (`curl -I https://cards.scryfall.io` depuis le VPS), ou `location /scry/` absent |
 | Certificat refusé par certbot | le DNS ne pointe pas encore vers le VPS, ou le port 80 est fermé |
 
@@ -146,3 +150,7 @@ Le serveur compresse lui-même le code de l'interface (brotli ou gzip) et le met
 - Le serveur n'écoute que sur `127.0.0.1` : il n'est joignable qu'à travers nginx.
 - Il fait autorité : decks vérifiés (légaux en Standard et jouables), chaque décision contrôlée par le moteur, aucune information cachée envoyée à l'adversaire.
 - Pas de comptes ni de données personnelles : un pseudo par partie, un jeton de reconnexion propre à l'onglet.
+- WebSocket accepté seulement depuis le site lui-même (même hôte) ou une origine de `MTGX_ORIGINS` : une page d'un autre site ne peut pas jouer à la place du joueur.
+- Plafonds par adresse IP (connexions simultanées, salons ouverts), d'après `X-Real-IP` transmis par nginx.
+- Une requête mal formée (URL mal encodée…) répond 400 ou 500 sans arrêter le serveur.
+- Relais `/scry/` : liste blanche des chemins d'images de cartes, sans la chaîne de requête.

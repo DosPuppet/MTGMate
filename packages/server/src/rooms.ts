@@ -45,6 +45,8 @@ export interface RoomConfig {
   waitingMs: number;
   /** Nombre maximal de salons ouverts sur le serveur. */
   maxRooms: number;
+  /** Salons ouverts au plus par adresse IP de créateur (un salon abandonné reste ouvert quelques minutes). */
+  maxRoomsPerIp: number;
   /**
    * Dossier de sauvegarde des parties (un fichier par salon : en-tête, puis une décision par ligne). Au démarrage, les
    * parties en cours y sont reprises : un redémarrage du serveur ne les coupe plus. Absent : parties en mémoire seulement.
@@ -60,6 +62,7 @@ export const DEFAULT_CONFIG: RoomConfig = {
   cleanupMs: 5 * 60_000,
   waitingMs: 30 * 60_000,
   maxRooms: 200,
+  maxRoomsPerIp: 4,
 };
 
 /** Erreur destinée au client (message en français). */
@@ -683,6 +686,8 @@ export class RoomManager {
   private readonly rooms = new Map<string, Room>();
   /** Jetons des joueurs dont la partie a été interrompue par une mise à jour des règles (au démarrage). */
   private readonly interrupted = new Set<string>();
+  /** Adresse IP du créateur de chaque salon ouvert (plafond `maxRoomsPerIp`). */
+  private readonly createdBy = new Map<string, string>();
 
   constructor(private readonly config: RoomConfig = DEFAULT_CONFIG) {
     if (config.dataDir) this.restore(config.dataDir);
@@ -740,13 +745,21 @@ export class RoomManager {
     name: unknown,
     deck: unknown,
     peer: Peer,
-    opts: { sideboard?: unknown; bestOf?: unknown } = {},
+    opts: { sideboard?: unknown; bestOf?: unknown; ip?: string } = {},
   ): { room: Room; seat: SeatState } {
     const n = cleanName(name);
     const d = checkDeck(deck);
     const side = checkSide(d, opts.sideboard);
     if (this.rooms.size >= this.config.maxRooms) throw new ClientError("busy", "Serveur complet, réessayez plus tard.");
-    const room = new Room(this.newCode(), this.config, (r) => this.rooms.delete(r.code));
+    // Créer puis abandonner des salons en boucle ne doit pas occuper toutes les places du serveur.
+    const ip = opts.ip;
+    if (ip && [...this.createdBy.values()].filter((x) => x === ip).length >= this.config.maxRoomsPerIp)
+      throw new ClientError("busy", "Trop de salons ouverts depuis cette adresse : fermez-en un avant d'en créer un autre.");
+    const room = new Room(this.newCode(), this.config, (r) => {
+      this.rooms.delete(r.code);
+      this.createdBy.delete(r.code);
+    });
+    if (ip) this.createdBy.set(room.code, ip);
     room.match = { ...room.match, bestOf: opts.bestOf === 3 ? 3 : 1 };
     this.rooms.set(room.code, room);
     return { room, seat: room.addPlayer(n, d, peer, side) };

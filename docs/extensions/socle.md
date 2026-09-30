@@ -189,3 +189,13 @@ Lot F1 (PLAN-R.md : version des règles, parties dorées) :
 - client : le visionneur s'arrête à la première divergence et l'affiche dans sa barre (`ReplaySession.warning`) ;
 - parties dorées : six parties à graine fixe entre decks du méta, dont deux à quatre joueurs (`ai/src/golden.ts`, fichiers `ai/test/golden/`), rejouées par `ai/test/golden.test.ts` ; `npm run golden` les vérifie, `-- --update` les régénère ;
 - tests : `ai/test/record.test.ts` (points de contrôle, divergences, empreinte stable), `engine/test/ids.test.ts`, `server/test/persistence.test.ts` (version différente, empreinte fausse).
+
+Lot F3 (PLAN-R.md : sécurité du serveur) :
+- une URL mal encodée (`GET /%`) répond 400 ; toute exception d'une requête HTTP répond 500 au lieu d'arrêter le serveur ;
+- adresse du client (`clientIp`) : derrière nginx, `X-Real-IP`, sinon la dernière adresse de `X-Forwarded-For` (le début est fourni par le client, qui contournait le plafond de connexions) ; le site nginx transmet `X-Real-IP` ;
+- WebSocket (`originAllowed`) : sans en-tête Origin, même hôte que la requête, ou origine de `MTGX_ORIGINS` ; le relais de Vite en dev et nginx en production gardent l'hôte ;
+- plafond de salons ouverts par adresse de créateur (`maxRoomsPerIp`, 4, `MTGX_MAX_ROOMS_PER_IP`) : créer et abandonner des salons en boucle ne remplit plus le serveur ;
+- `/scry/` ne transmet plus la chaîne de requête à Scryfall, et la clé de cache nginx l'ignore ;
+- en-têtes de sécurité sur les fichiers servis (`nosniff`, `X-Frame-Options: DENY`, `Referrer-Policy: no-referrer`, `Permissions-Policy`) ; HSTS en commentaire dans le site nginx, à activer après certbot ;
+- reste : jetons de reconnexion en clair dans `data/rooms` ;
+- tests : `server/test/online.test.ts` (adresse, Origin, plafond de salons), `static.test.ts` (URL mal encodée, en-têtes), `images.test.ts` ; `npm run online-smoke` à travers le relais de Vite.
