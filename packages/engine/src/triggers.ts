@@ -28,7 +28,7 @@ import {
   rulesEvent,
   snapshot,
 } from "./state";
-import { controlledAbilitiesWithSource, playerStatic } from "./statics";
+import { controlledAbilitiesWithSource, playerStatic, playerStatics } from "./statics";
 import { legalTargets, matchesCard, matchesObjectFilter, matchesView, validateTargets, withChosen } from "./targets";
 import { countTurnEvents } from "./turnlog";
 import type {
@@ -954,11 +954,8 @@ function throneDoublers(s: GameState, src: Source): number {
 /** Traveling Chocobo : un terrain ou un Oiseau que vous contrôlez arrive, vos capacités se déclenchent une fois de plus. */
 function enterDoublers(s: GameState, player: PlayerId, entered: ObjectId): number {
   if (s.objects[entered]?.controller !== player) return 0;
-  return controlledAbilitiesWithSource(s, player).filter(
-    ({ id, ab }) =>
-      ab.kind === "playerStatic" &&
-      !!ab.doubleEnterTriggersFor &&
-      matchesObjectFilter(s, player, entered, ab.doubleEnterTriggersFor, id),
+  return playerStatics(s, player, "doubleEnterTriggersFor").filter(
+    ({ id, ab }) => !!ab.doubleEnterTriggersFor && matchesObjectFilter(s, player, entered, ab.doubleEnterTriggersFor, id),
   ).length;
 }
 

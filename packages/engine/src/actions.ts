@@ -23,6 +23,7 @@ import {
   controlledAbilitiesWithSource,
   doublers,
   playerStatic,
+  playerStatics,
   playerStaticTotal,
   preventions,
   tokenMultiplier,
@@ -71,10 +72,7 @@ export function gainLife(s: GameState, p: PlayerId, amount: number): void {
   )
     return;
   // Angel of Vitality : « vous gagnez autant plus 1 à la place ».
-  amount += controlledAbilitiesWithSource(s, p).reduce(
-    (n, { ab }) => n + (ab.kind === "playerStatic" ? (ab.lifeGainBonus ?? 0) : 0),
-    0,
-  );
+  amount += playerStaticTotal(s, p, "lifeGainBonus");
   // The Wind Crystal : « vous en gagnez le double à la place » (616.1 : les doublements se cumulent).
   amount *= 2 ** doublers(s, p, "lifeGain");
   player.life += amount;
@@ -154,9 +152,7 @@ export function setSpeed(s: GameState, p: PlayerId, speed: number): void {
 
 /** Inflige des blessures à un joueur ou à une créature (règle 120). */
 function doublersOfLifeLoss(s: GameState, player: PlayerId): number {
-  return controlledAbilitiesWithSource(s, player).filter(
-    ({ ab }) => ab.kind === "playerStatic" && !!ab.doubleOpponentLifeLossYourTurn,
-  ).length;
+  return playerStaticTotal(s, player, "doubleOpponentLifeLossYourTurn");
 }
 
 /** La source des blessures est-elle rouge (Ojer Axonil) ? */
@@ -288,16 +284,13 @@ export function dealDamage(s: GameState, source: DamageSource, target: string, a
     amount += 1;
   // Artist's Talent (niveau 3) : « … elle en inflige autant plus 2 à la place ».
   if (!combat && victim && victim !== source.controller) {
-    amount += controlledAbilitiesWithSource(s, source.controller).reduce(
-      (n, { ab }) => n + (ab.kind === "playerStatic" ? (ab.noncombatDamageBonusAmount ?? 0) : 0),
-      0,
-    );
+    amount += playerStaticTotal(s, source.controller, "noncombatDamageBonusAmount");
   }
   // Ojer Axonil : une source rouge qui inflige à un adversaire moins de blessures non de combat que la force d'Ojer Axonil.
   const red = !combat && redSource(s, source);
   if (red && isPlayer(s, target) && target !== source.controller) {
-    for (const { id, ab } of controlledAbilitiesWithSource(s, source.controller)) {
-      if (ab.kind === "playerStatic" && ab.noncombatDamageAtLeastPower && s.objects[id]?.zone === "battlefield")
+    for (const { id, ab } of playerStatics(s, source.controller, "noncombatDamageAtLeastPower")) {
+      if (ab.noncombatDamageAtLeastPower && id && s.objects[id]?.zone === "battlefield")
         amount = Math.max(amount, chars(s, id).power);
     }
   }
@@ -305,11 +298,8 @@ export function dealDamage(s: GameState, source: DamageSource, target: string, a
   // blessures, il en inflige autant plus 1 à la place ».
   if (source.id && s.objects[source.id]?.zone === "battlefield") {
     const id = source.id;
-    amount += controlledAbilitiesWithSource(s, source.controller).filter(
-      ({ id: from, ab }) =>
-        ab.kind === "playerStatic" &&
-        !!ab.damagePlusOneFrom &&
-        matchesObjectFilter(s, source.controller, id, ab.damagePlusOneFrom, from),
+    amount += playerStatics(s, source.controller, "damagePlusOneFrom").filter(
+      ({ id: from, ab }) => !!ab.damagePlusOneFrom && matchesObjectFilter(s, source.controller, id, ab.damagePlusOneFrom, from),
     ).length;
   }
   // Far Fortune (vitesse maximale) : toute blessure de vos sources à un adversaire ou à ses permanents, +1.
@@ -459,28 +449,26 @@ export function tokenDefId(t: TokenSpec): string {
 export function createTokens(s: GameState, controller: PlayerId, t: TokenSpec, count: number, extras = true): ObjectId[] {
   // Draconic Visitor : les jetons d'artefact deviennent des Dragons 5/5 volants.
   if (t.types.includes("Artifact")) {
-    const replacement = controlledAbilitiesWithSource(s, controller).find(
-      ({ ab }) => ab.kind === "playerStatic" && !!ab.replaceArtifactTokens,
-    )?.ab;
-    if (replacement?.kind === "playerStatic" && replacement.replaceArtifactTokens) t = replacement.replaceArtifactTokens;
+    const replacement = playerStatics(s, controller, "replaceArtifactTokens").find(({ ab }) => !!ab.replaceArtifactTokens)?.ab
+      .replaceArtifactTokens;
+    if (replacement) t = replacement;
   }
   const created: ObjectId[] = [];
   // Worldwalker Helm : « ces jetons plus un jeton Carte supplémentaire » (la Carte elle-même n'en ajoute pas).
-  const helm =
+  const extraMap =
     t.types.includes("Artifact") && t.name !== "Map"
-      ? controlledAbilitiesWithSource(s, controller).find(({ ab }) => ab.kind === "playerStatic" && !!ab.extraMapToken)?.ab
+      ? playerStatics(s, controller, "extraMapToken").find(({ ab }) => !!ab.extraMapToken)?.ab.extraMapToken
       : undefined;
-  const extraMap = helm?.kind === "playerStatic" ? helm.extraMapToken : undefined;
   // Moonlit Meditation : la première fois de chaque tour, des copies du permanent enchanté à la place.
-  const meditation = controlledAbilitiesWithSource(s, controller).find(
+  const meditation = playerStatics(s, controller, "tokensAsCopiesOfAttached").find(
     ({ id, ab }) =>
-      ab.kind === "playerStatic" &&
+      !!id &&
       !!ab.tokensAsCopiesOfAttached &&
       !s.turn.onceFired.includes(`copies:${id}`) &&
       !!s.objects[id]?.attachedTo &&
       !!s.objects[s.objects[id]?.attachedTo ?? ""],
   );
-  if (meditation) {
+  if (meditation?.id) {
     s.turn.onceFired.push(`copies:${meditation.id}`);
     const model = s.objects[s.objects[meditation.id]?.attachedTo ?? ""];
     if (model) {
@@ -526,8 +514,8 @@ export function createTokens(s: GameState, controller: PlayerId, t: TokenSpec, c
   if (extraMap) created.push(...createTokens(s, controller, extraMap, 1));
   // Quina, Qu Gourmet : « ces jetons plus un jeton Grenouille 1/1 » (le jeton ajouté ne déclenche pas le remplacement).
   if (extras && count > 0) {
-    for (const { ab } of controlledAbilitiesWithSource(s, controller)) {
-      if (ab.kind === "playerStatic" && ab.extraToken) created.push(...createTokens(s, controller, ab.extraToken, 1, false));
+    for (const { ab } of playerStatics(s, controller, "extraToken")) {
+      if (ab.extraToken) created.push(...createTokens(s, controller, ab.extraToken, 1, false));
     }
   }
   return created;

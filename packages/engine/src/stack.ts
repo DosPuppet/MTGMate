@@ -32,7 +32,7 @@ import {
   turnFaceUp,
   unlockDoor,
 } from "./state";
-import { consumePlayerEffect, controlledAbilitiesWithSource, playerStatic, playerStaticTotal } from "./statics";
+import { consumePlayerEffect, controlledAbilitiesWithSource, playerStatic, playerStatics, playerStaticTotal } from "./statics";
 import {
   isLegalTarget,
   legalTargets,
@@ -74,9 +74,8 @@ export function altCostFor(
   d: CardDef,
 ): { mana: ManaCost; label: string; forage?: boolean } | undefined {
   if (d.altCost && checkCondition(s, d.altCost.condition, player)) return d.altCost;
-  for (const { ab } of controlledAbilitiesWithSource(s, player)) {
-    if (ab.kind === "playerStatic" && ab.altCostAll)
-      return { mana: ab.altCostAll, label: `Leyline of Mutation — ${costToText(ab.altCostAll)}` };
+  for (const { ab } of playerStatics(s, player, "altCostAll")) {
+    if (ab.altCostAll) return { mana: ab.altCostAll, label: `Leyline of Mutation — ${costToText(ab.altCostAll)}` };
   }
   return undefined;
 }
@@ -112,8 +111,8 @@ export function canCastTiming(s: GameState, player: PlayerId, d: CardDef): boole
   if (d.flashIf && checkCondition(s, d.flashIf, player)) return true;
   if (sorceryTiming(s, player)) return true;
   // Valley Floodcaller : « vous pouvez lancer des sorts non-créature comme s'ils avaient le flash ».
-  const flashFor = controlledAbilitiesWithSource(s, player).some(
-    ({ ab }) => ab.kind === "playerStatic" && !!ab.flashFor && matchesView(spellView(d, player), ab.flashFor, player),
+  const flashFor = playerStatics(s, player, "flashFor").some(
+    ({ ab }) => !!ab.flashFor && matchesView(spellView(d, player), ab.flashFor, player),
   );
   if (flashFor) return true;
   // « Vous pouvez lancer des sorts comme s'ils avaient le flash. »
@@ -319,12 +318,9 @@ export function equipDiscount(s: GameState, player: PlayerId, ab: ActivatedAbili
 
 /** The Lunar Whale, Traveling Chocobo : la carte du dessus de la bibliothèque peut être jouée. */
 function topCardPlayable(s: GameState, player: PlayerId, card: ObjectId): boolean {
-  return controlledAbilitiesWithSource(s, player).some(
+  return playerStatics(s, player, "playTopCard").some(
     ({ id, ab }) =>
-      ab.kind === "playerStatic" &&
-      !!ab.playTopCard &&
-      (!ab.condition || checkCondition(s, ab.condition, player, id)) &&
-      (!ab.playTopFilter || matchesCard(s, player, card, { ...ab.playTopFilter, controller: undefined }, id)),
+      !!ab.playTopCard && (!ab.playTopFilter || matchesCard(s, player, card, { ...ab.playTopFilter, controller: undefined }, id)),
   );
 }
 
@@ -552,10 +548,7 @@ function reductionContext(controller: PlayerId, sourceId: string, sourceDefId: s
 /** Inquisitive Glimmer : « déverrouiller une porte vous coûte {1} de moins ». */
 function unlockReduction(s: GameState, player: PlayerId, ab: ActivatedAbilityDef): number {
   if (!ab.specialAction || !ab.effects.some((e) => e.op === "unlockDoor")) return 0;
-  return controlledAbilitiesWithSource(s, player).reduce(
-    (n, { ab: x }) => n + (x.kind === "playerStatic" ? (x.unlockReduction ?? 0) : 0),
-    0,
-  );
+  return playerStaticTotal(s, player, "unlockReduction");
 }
 
 /**
@@ -579,14 +572,14 @@ export function abilityMana(s: GameState, source: ObjectId, ab: ActivatedAbility
 export function abilityReduction(s: GameState, player: PlayerId, source: ObjectId, ab: ActivatedAbilityDef): number {
   // Boom Scholar : les capacités d'exhaust de vos autres permanents coûtent moins.
   const exhaust = ab.exhaust
-    ? controlledAbilitiesWithSource(s, player).reduce(
-        (n, { id, ab: x }) => n + (x.kind === "playerStatic" && id !== source ? (x.exhaustReduction ?? 0) : 0),
+    ? playerStatics(s, player, "exhaustReduction").reduce(
+        (n, { id, ab: x }) => n + (id !== source ? (x.exhaustReduction ?? 0) : 0),
         0,
       )
     : 0;
   // Mutagen Man : « les capacités activées des jetons d'artefact que vous contrôlez coûtent {1} de moins ».
-  const filtered = controlledAbilitiesWithSource(s, player).reduce((n, { ab: x }) => {
-    const r = x.kind === "playerStatic" ? x.activatedReduction : undefined;
+  const filtered = playerStatics(s, player, "activatedReduction").reduce((n, { ab: x }) => {
+    const r = x.activatedReduction;
     return r && matchesObjectFilter(s, player, source, r.filter) ? n + r.n : n;
   }, 0);
   // Kíli the Resourceful : la première capacité d'équipement activée ce tour-ci peut coûter {0}.
@@ -623,8 +616,8 @@ export function warpOf(s: GameState, player: PlayerId, card: ObjectId, d: CardDe
   if (d.warp) return d.warp;
   const o = s.objects[card];
   if (o?.zone !== "hand") return undefined;
-  for (const ab of controlledAbilities(s, player)) {
-    if (ab.kind === "playerStatic" && ab.grantWarp && matchesView(spellView(d, player), ab.grantWarp.filter, player)) {
+  for (const { ab } of playerStatics(s, player, "grantWarp")) {
+    if (ab.grantWarp && matchesView(spellView(d, player), ab.grantWarp.filter, player)) {
       return { cost: ab.grantWarp.cost };
     }
   }
@@ -758,22 +751,17 @@ function baseCastTerms(s: GameState, player: PlayerId, card: ObjectId): CastTerm
     if (playerStatic(s, player, "playFromGraveyard")) return { source: "graveyard" };
     // Noctis, Prince of Lucis : les sorts d'artefact, en payant des PV en plus, avec un marqueur de finalité.
     const noctis = d.types.includes("Artifact")
-      ? controlledAbilitiesWithSource(s, player).find(({ ab }) => ab.kind === "playerStatic" && !!ab.artifactsFromGraveyardLife)
-          ?.ab
+      ? playerStatics(s, player, "artifactsFromGraveyardLife").find(({ ab }) => !!ab.artifactsFromGraveyardLife)?.ab
       : undefined;
-    if (noctis?.kind === "playerStatic" && noctis.artifactsFromGraveyardLife) {
+    if (noctis?.artifactsFromGraveyardLife) {
       if ((s.players[player]?.life ?? 0) < noctis.artifactsFromGraveyardLife) return null;
       return { source: "graveyard", payLife: noctis.artifactsFromGraveyardLife, finality: true };
     }
     // Festival of Embers : pendant votre tour, éphémères et rituels depuis votre cimetière en payant 1 PV en plus.
     if (d.types.includes("Instant") || d.types.includes("Sorcery")) {
-      const festival = controlledAbilitiesWithSource(s, player).find(
-        ({ id, ab }) =>
-          ab.kind === "playerStatic" &&
-          !!ab.instantsSorceriesFromGraveyardLife &&
-          (!ab.condition || checkCondition(s, ab.condition, player, id)),
-      )?.ab;
-      const life = festival?.kind === "playerStatic" ? (festival.instantsSorceriesFromGraveyardLife ?? 0) : 0;
+      const life = playerStatics(s, player, "instantsSorceriesFromGraveyardLife").find(
+        ({ ab }) => !!ab.instantsSorceriesFromGraveyardLife,
+      )?.ab.instantsSorceriesFromGraveyardLife;
       if (life) return (s.players[player]?.life ?? 0) >= life ? { source: "graveyard", payLife: life } : null;
     }
     // Osteomancer Adept : les sorts de créature, en fourrageant en plus ; ils arrivent avec un marqueur de finalité.
@@ -1720,12 +1708,7 @@ export function activateAbility(s: GameState, player: PlayerId, source: ObjectId
   if (ab.specialAction) {
     if (ab.cost.mana) {
       // Doc Aurlock : comploter depuis la main coûte {2} de moins.
-      const plotReduction = ab.effects.some((e) => e.op === "plot")
-        ? controlledAbilitiesWithSource(s, player).reduce(
-            (n, { ab: x }) => n + (x.kind === "playerStatic" ? (x.plotReduction ?? 0) : 0),
-            0,
-          )
-        : 0;
+      const plotReduction = ab.effects.some((e) => e.op === "plot") ? playerStaticTotal(s, player, "plotReduction") : 0;
       try {
         payMana(s, player, totalCost(ab.cost.mana, 0, undefined, plotReduction + unlockReduction(s, player, ab)), undefined, {
           abilitySource: source,

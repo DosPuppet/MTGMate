@@ -51,31 +51,43 @@ export function controlledAbilitiesWithSource(s: GameState, player: PlayerId): E
   return index(s).get(player) ?? [];
 }
 
-type PlayerStaticKey = keyof Omit<PlayerStaticAbilityDef, "kind" | "label" | "condition">;
+export type PlayerStaticKey = keyof Omit<PlayerStaticAbilityDef, "kind" | "label" | "condition">;
 
 /** Effets sur ce joueur encore en vigueur (créés par des résolutions, `s.playerEffects`). */
 function liveEffects(s: GameState, player: PlayerId): PlayerEffect[] {
   return s.playerEffects.filter((e) => e.player === player && (e.until === null || s.turn.number <= e.until));
 }
 
+/**
+ * Statiques de joueur en vigueur pour ce joueur : celles des permanents et emblèmes qu'il contrôle dont la condition est
+ * remplie, puis les effets sur lui (`s.playerEffects`, sans source). Seul accès aux statiques de joueur : ne jamais
+ * filtrer `controlledAbilitiesWithSource` sur `kind === "playerStatic"` à la main (condition et effets oubliés).
+ */
+export function playerStatics(
+  s: GameState,
+  player: PlayerId,
+  /** Seulement celles qui portent cette clé ; la condition des autres n'est pas évaluée (une condition peut lire une statique). */
+  key: PlayerStaticKey,
+): { id?: ObjectId; ab: PlayerStaticAbilityDef }[] {
+  const out: { id?: ObjectId; ab: PlayerStaticAbilityDef }[] = [];
+  for (const { id, ab } of controlledAbilitiesWithSource(s, player))
+    if (ab.kind === "playerStatic" && ab[key] && (!ab.condition || checkCondition(s, ab.condition, player, id)))
+      out.push({ id, ab });
+  for (const e of liveEffects(s, player)) if (e.ability[key]) out.push({ ab: e.ability });
+  return out;
+}
+
 export function playerStatic(s: GameState, player: PlayerId, key: PlayerStaticKey): boolean {
-  return (
-    controlledAbilitiesWithSource(s, player).some(
-      ({ id, ab }) => ab.kind === "playerStatic" && !!ab[key] && (!ab.condition || checkCondition(s, ab.condition, player, id)),
-    ) || liveEffects(s, player).some((e) => !!e.ability[key])
-  );
+  return playerStatics(s, player, key).length > 0;
 }
 
 /** Somme d'une statique de joueur numérique (un booléen vaut 1) : capacités contrôlées et effets en vigueur. */
 export function playerStaticTotal(s: GameState, player: PlayerId, key: PlayerStaticKey): number {
-  const value = (ab: PlayerStaticAbilityDef) => {
-    const v = ab[key];
-    return typeof v === "number" ? v : v ? 1 : 0;
-  };
   let n = 0;
-  for (const { id, ab } of controlledAbilitiesWithSource(s, player))
-    if (ab.kind === "playerStatic" && (!ab.condition || checkCondition(s, ab.condition, player, id))) n += value(ab);
-  for (const e of liveEffects(s, player)) n += value(e.ability);
+  for (const { ab } of playerStatics(s, player, key)) {
+    const v = ab[key];
+    n += typeof v === "number" ? v : v ? 1 : 0;
+  }
   return n;
 }
 
@@ -122,8 +134,10 @@ export function doublers(
   player: PlayerId,
   key: keyof Omit<DoublerAbilityDef, "kind" | "label" | "countersFilter" | "condition">,
 ): number {
-  return controlledAbilitiesWithSource(s, player).filter(({ ab }) => ab.kind === "doubler" && !!ab[key] && !ab.countersFilter)
-    .length;
+  return controlledAbilitiesWithSource(s, player).filter(
+    ({ id, ab }) =>
+      ab.kind === "doubler" && !!ab[key] && !ab.countersFilter && (!ab.condition || checkCondition(s, ab.condition, player, id)),
+  ).length;
 }
 
 /** Nombre de jetons créés pour un : Doubling Season (×2) et Ojer Taq (×3, jetons de créature). */
@@ -138,6 +152,7 @@ export function counterDoublers(s: GameState, o: GameObject, asCost = false): nu
       ab.kind === "doubler" &&
       !!ab.counters &&
       !(asCost && ab.effectOnly) &&
+      (!ab.condition || checkCondition(s, ab.condition, o.controller, id)) &&
       (!ab.countersFilter || matchesView(snapshot(s, o.id), ab.countersFilter, o.controller, id)),
   ).length;
 }

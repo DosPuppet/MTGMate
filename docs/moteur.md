@@ -40,7 +40,7 @@ Moteur pur et déterministe (`packages/engine/src`). L'état est sérialisable ;
 - **« … ce tour-ci » (compter ce qui s'est passé pendant le tour) :** pas de nouveau compteur dans `TurnStats` ; utiliser le journal du tour, `amount.turnEvents({ event, who, types, from, to, … })` (`turnlog.ts`), avec `cond.amountAtLeast`. S'il manque un événement ou un champ, l'ajouter à `TurnLogEntry` (`model/state.ts`) et à son enregistrement.
 - **Nouvelle condition ou nouveau montant :** `Condition` + `checkCondition` + `cond.…` ; `Amount` + `evalAmount` + `amount.…`.
 - **Filtre d'objet :** un champ de `ObjectFilter`, calculé dans `view()` (`layers.ts`) si besoin, et testé dans `matchesView` (`targets.ts`).
-- **Statique de joueur :** un champ de `PlayerStaticAbilityDef`, lu avec `playerStatic(s, p, "clé")` ou `controlledAbilitiesWithSource` là où la règle s'applique.
+- **Statique de joueur :** un champ de `PlayerStaticAbilityDef` (seulement si aucune forme générique ne convient : règle en fin de CLAUDE.md), lu avec `playerStatic`, `playerStaticTotal` ou `playerStatics(s, p, "clé")` (`statics.ts`), qui vérifient la condition et comptent les effets sur les joueurs. Jamais en filtrant `controlledAbilitiesWithSource` sur `kind === "playerStatic"`.
 - **Restriction, mot-clé technique :** ajouter à `Keyword` et `RESTRICTIONS` (`types.ts`), avec son libellé dans `client/src/i18n.ts` (sinon `tsc` échoue).
 - **Champ de script de carte :** dans `CardScript` (`dsl.ts`), `CardDef` (`types.ts`) et la recopie dans `toCardDef` (`cards/src/scryfall.ts`).
 - **Capacité de mana à coût (« {1}, {T} : ajoutez un mana de n'importe quelle couleur ») :** une capacité `activated` ordinaire suffit ; `isManaAbility` (605.1a) la résout sans la pile.

@@ -238,3 +238,8 @@ Lot R0.6 (PLAN-R.md ; interface, sans changement de règles) :
 - noms de cartes des invites du moteur : le moteur écrit un repère `cardRef(defId)` (`⟦defId⟧`) dans ses invites et libellés (répartition des blessures, règle des légendes, retourner face visible, ordre des déclencheurs) ; le client le remplace par le nom dans la langue choisie (`localizeText`, `useLocalizedView`, `useLocalize`) ;
 - reste : les messages d'erreur (`RulesError`) nomment encore les cartes en anglais ;
 - tests : `client/test/i18n.test.ts` ; `ui-smoke`.
+
+Lot R4.0 (PLAN-R.md ; `RULES_VERSION` = 7) :
+- `playerStatics(s, p, clé)` : seul accès aux statiques de joueur (condition vérifiée, effets sur le joueur `s.playerEffects` compris) ; `playerStatic` et `playerStaticTotal` reposent dessus. Les lectures qui filtraient `controlledAbilitiesWithSource` à la main (Leyline of Mutation, Valley Floodcaller, Boom Scholar, Mutagen Man, Tannuk, Noctis, Festival of Embers, Doc Aurlock, Inquisitive Glimmer, Angel of Vitality, Artist's Talent, Ojer Axonil, Valley Flamecaller, Draconic Visitor, Worldwalker Helm, Moonlit Meditation, Quina, Bloodletter of Aclazotz, Ultima, Traveling Chocobo, The Water Crystal, The Lunar Whale) y passent : un effet « ce tour-ci » (`fx.thisTurn`) de ces clés s'applique désormais, et leur condition est respectée ;
+- les doubleurs vérifient leur condition (`doublers`, `counterDoublers`) ;
+- tests : `engine/test/audit.test.ts` (N6).

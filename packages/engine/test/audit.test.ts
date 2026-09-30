@@ -4,8 +4,8 @@
  */
 import { card, type RawCard, toCardDef } from "@mtgx/cards";
 import { describe, expect, it } from "vitest";
-import { destroy } from "../src/actions";
-import { fx, ref, triggered, when } from "../src/dsl";
+import { destroy, gainLife } from "../src/actions";
+import { cond, doubler, fx, playerStatic, ref, triggered, when } from "../src/dsl";
 import { addEffect, runEffect } from "../src/effects";
 import { submit } from "../src/game";
 import { bump } from "../src/layers";
@@ -293,5 +293,32 @@ describe("#6 : des permanents qui arrivent en même temps se voient arriver (603
     const s = scenario({});
     simultaneously(s, () => runEffect(s, resolution("p1") as never, fx.createTokens(WATCHER, 1)));
     expect(s.triggers).toHaveLength(0);
+  });
+});
+
+describe("N6 : une seule façon de lire les statiques de joueur (condition vérifiée, effets sur le joueur compris)", () => {
+  const withAbility = (name: string, ab: CardDef["abilities"][number]) =>
+    customCard({ name, types: ["Enchantment"], typeLine: "Enchantment", abilities: [ab] });
+
+  it("un effet « ce tour-ci » qui augmente les gains de PV s'applique", () => {
+    const s = scenario({});
+    runEffect(s, resolution("p1") as never, fx.thisTurn({ lifeGainBonus: 1 }));
+    gainLife(s, "p1", 2);
+    expect(s.players.p1?.life).toBe(23);
+  });
+
+  it("une statique de joueur sous condition non remplie ne s'applique pas (délire)", () => {
+    const aura = withAbility("Bonus sous délire", playerStatic({ lifeGainBonus: 5, condition: cond.delirium }));
+    const s = scenario({ p1: { battlefield: [aura] } });
+    gainLife(s, "p1", 2);
+    expect(s.players.p1?.life).toBe(22);
+  });
+
+  it("un doubleur de marqueurs sous condition non remplie ne double pas", () => {
+    const season = withAbility("Saison sous délire", doubler({ counters: true, condition: cond.delirium }));
+    const s = scenario({ p1: { battlefield: [season, "Bear Cub"] } });
+    const bear = s.objects[idOf(s, "p1", "battlefield", "Bear Cub")];
+    if (bear) changeCounters(s, bear, "+1/+1", 1);
+    expect(bear?.counters["+1/+1"]).toBe(1);
   });
 });

@@ -294,6 +294,7 @@ Détail, ordre d'exécution et décisions de conception : `PLAN-R.md`.
 - **30/09/2026 :** lot R0.3 fait : écart 1 corrigé (nettoyage, 514.3a).
 - **30/09/2026 :** lot R0.4 fait : écart 2 corrigé (lien de vie).
 - **30/09/2026 :** lot R0.5 fait : écart 6 corrigé (arrivées simultanées, 603.6a).
+- **30/09/2026 :** lot R4.0 fait (§ 3.3) : un seul accès aux statiques de joueur (N6).
 - **30/09/2026 :** lot R0.6 fait (§ 4) : poison affiché, cartes révélées et poison au journal, abandon confirmé, noms de cartes des invites en français. R0 terminé.
 
 ### R0 — Corrections simples (un lot, un test de règles par correction)

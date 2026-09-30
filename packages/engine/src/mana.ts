@@ -5,7 +5,7 @@ import { loseLife, sacrifice } from "./actions";
 import { RulesError } from "./errors";
 import { linkedColors } from "./layers";
 import { changeCounters, chars, defOf, isCreature, isSummoningSick, obj, snapshot, tapObject } from "./state";
-import { controlledAbilitiesWithSource, playerStatic, playerStaticTotal } from "./statics";
+import { playerStatic, playerStaticTotal } from "./statics";
 import { matchesCard, matchesObjectFilter, matchesView, withChosen } from "./targets";
 import { checkCondition } from "./triggers";
 import type { GameState, LkiSnapshot, ManaAbilityDef, ManaCost, ManaType, ObjectId, PlayerId } from "./types";
@@ -287,9 +287,7 @@ export function activateManaAbility(s: GameState, player: PlayerId, id: ObjectId
   if (pool) pool[c] += manaAmount(s, id, ab);
   // Ultima, Origin of Oblivion : un terrain engagé pour {C} en ajoute un de plus.
   if (pool && c === "C" && ab.cost.tap && chars(s, id).types.includes("Land")) {
-    pool.C += controlledAbilitiesWithSource(s, player).filter(
-      ({ ab: x }) => x.kind === "playerStatic" && !!x.extraColorlessFromLands,
-    ).length;
+    pool.C += playerStaticTotal(s, player, "extraColorlessFromLands");
   }
 }
 

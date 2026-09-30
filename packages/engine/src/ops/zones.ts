@@ -41,7 +41,7 @@ import {
   tapObject,
   turnFaceUp,
 } from "../state";
-import { addPlayerEffect, controlledAbilitiesWithSource, playerStatic } from "../statics";
+import { addPlayerEffect, playerStatic, playerStaticTotal } from "../statics";
 import { matchesCard, matchesObjectFilter } from "../targets";
 import type { CardType, Effect, GameState, ObjectId, Resolution } from "../types";
 
@@ -406,15 +406,7 @@ export const HANDLERS: OpHandlers = {
     for (const p of resolveRef(s, ctx, e.who)) {
       const library = s.players[p]?.library ?? [];
       // The Water Crystal : « il en meule autant plus quatre » (pour chaque adversaire de ce joueur qui en contrôle un).
-      const extra = opponentsOf(s, p).reduce(
-        (m, q) =>
-          m +
-          controlledAbilitiesWithSource(s, q).reduce(
-            (k, { ab }) => k + (ab.kind === "playerStatic" ? (ab.opponentMillExtra ?? 0) : 0),
-            0,
-          ),
-        0,
-      );
+      const extra = opponentsOf(s, p).reduce((m, q) => m + playerStaticTotal(s, q, "opponentMillExtra"), 0);
       const base = e.halfLibrary ? Math.floor(library.length / 2) : e.graveyardSize ? (s.players[p]?.graveyard.length ?? 0) : n;
       const count = base > 0 ? base + extra : 0;
       for (const id of library.slice(0, count)) {

@@ -24,8 +24,9 @@ export const RECORD_VERSION = 1;
  * - 4 : nettoyage avec actions basées sur l'état, déclencheurs et priorité (514.3a, R0.3).
  * - 5 : lien de vie, un gain par source et par lot de blessures simultanées (R0.4).
  * - 6 : des permanents qui arrivent en même temps se voient arriver (603.6a, R0.5).
+ * - 7 : accès unique aux statiques de joueur, conditions et effets sur les joueurs respectés partout (R4.0).
  */
-export const RULES_VERSION = 6;
+export const RULES_VERSION = 7;
 
 /** Un point de contrôle toutes les N décisions (plus la dernière de la partie). */
 export const CHECKPOINT_EVERY = 25;

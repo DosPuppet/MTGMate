@@ -13,7 +13,8 @@ Plan établi le 30/09/2026 (branche `dev`) : il sert de feuille de route aux pro
 - **30/09/2026 : R0.4 fait** (`RULES_VERSION` = 5 : lien de vie, un gain par source et par lot de blessures simultanées).
 - **30/09/2026 : R0.5 fait** (`RULES_VERSION` = 6 : 603.6a). Constat : les parties dorées des versions 1 à 5 se rejouent à l'identique avec le moteur de la version 6 ; elles couvrent le déroulement courant d'une partie, pas les cas corrigés en R0 (que couvrent les tests de `engine/test/audit.test.ts`). Piste : des parties dorées jouées par l'IA moyenne, plus riches.
 - **30/09/2026 : R0.6 fait** (sans changement de règles : poison affiché, cartes révélées et poison au journal, abandon confirmé, noms de cartes des invites du moteur dans la langue de l'interface par `cardRef`). **R0 terminé.**
-- À faire : R4.0, puis la suite dans l'ordre du tableau ci-dessous.
+- **30/09/2026 : R4.0 fait** (`RULES_VERSION` = 7 : `playerStatics(s, p, clé)`, seul accès aux statiques de joueur ; 23 lectures directes migrées ; conditions des doubleurs vérifiées ; bench inchangé).
+- À faire : R2.1, puis la suite dans l'ordre du tableau ci-dessous.
 
 ## Le garde-fou de la dette (lot F2)
 
@@ -41,8 +42,8 @@ Plan établi le 30/09/2026 (branche `dev`) : il sert de feuille de route aux pro
 | 2 | F2 : garde-fou de la dette | § 3.3 | — | faible | ✅ `025b25a` |
 | 3 | F3 : durcissement du serveur | § 6 | — | faible | ✅ `e5910a4` |
 | 4 | R0.1 à R0.6 : corrections rapides | § 3.1 | F1 | faible à moyen | ✅ `709a43a` à `c7896e5` |
-| 5 | R4.0 : accesseur unique des statiques de joueur | § 3.3 | F2 | moyen | **prochain** |
-| 6 | R2.1 à R2.3 : entrée sur le champ de bataille, copies de permanents | § 3.1, § 3.2 | R4.0 | moyen | à faire |
+| 5 | R4.0 : accesseur unique des statiques de joueur | § 3.3 | F2 | moyen | ✅ (voir suivi) |
+| 6 | R2.1 à R2.3 : entrée sur le champ de bataille, copies de permanents | § 3.1, § 3.2 | R4.0 | moyen | **prochain** |
 | 7 | R1.1 à R1.3 : remplacements (616) | § 3.2 | R4.0, R2.1 | élevé | à faire |
 | 8 | R3.1 et R3.2 : copies de sorts, blessures réparties | § 3.1 | R0 | moyen à élevé | à faire |
 | 9 | R2.4 : couche 2 (contrôle) | § 3.2 | R4.0 | élevé | à faire |
@@ -64,7 +65,7 @@ Lus dans le code ; chacun est confirmé par un test au début de son lot.
 | N3 | `attackTax` et `blockTax` sont lus comme des booléens : deux Archangel of Tithes coûtent {1} | `engine/src/turn.ts:612, 736` | R0.2 | ✅ R0.2 |
 | N4 | Les options de sort gratuit ne vérifient pas que les coûts restants sont payables | `engine/src/legal.ts:298, 302` | R0.2 | ✅ R0.2 |
 | N5 | Perte par poison annoncée comme « pioche » | `engine/src/turn.ts:951-953` | R0.1 | ✅ R0.1 |
-| N6 | 29 lectures directes des statiques de joueur ignorent leur condition et les effets sur les joueurs ; `doublers` ignore la condition | `engine/src/actions.ts`, `engine/src/stack.ts`, `engine/src/statics.ts:120` | R4.0 | à faire |
+| N6 | 29 lectures directes des statiques de joueur ignorent leur condition et les effets sur les joueurs ; `doublers` ignore la condition | `engine/src/actions.ts`, `engine/src/stack.ts`, `engine/src/statics.ts:120` | R4.0 | ✅ R4.0 |
 | N7 | Un Clone qui copie un planeswalker arrive sans loyauté ; `applyEntersReplacements` lit la carte imprimée | `engine/src/replacement.ts:212-261` | R2.2 | à faire |
 | N8 | `copyToken` lit la carte imprimée et engage le jeton par un événement « devient engagé » | `engine/src/ops/permanents.ts:218, 226` | R2.2 | à faire |
 | N9 | Le `copyOf` d'une statique n'est jamais appliqué (Assimilation Aegis ne copie rien) ; la copie d'un sort de Clone est un 0/0 | `engine/src/layers.ts:420-424`, `engine/src/stack.ts:2115` | R2.2 | à faire |
@@ -130,12 +131,19 @@ Lus dans le code ; chacun est confirmé par un test au début de son lot.
 - R0.6 : les messages d'erreur (`RulesError`) nomment encore les cartes en anglais ; les pertes de PV hors blessures ne sont pas journalisées.
 - Tests : `engine/test/audit.test.ts` (19 tests), `client/test/i18n.test.ts`.
 
-## R4.0 — accesseur unique des statiques de joueur [règles]
+## R4.0 — accesseur unique des statiques de joueur [règles] ✅
 
 - `playerStatics(s, p)` renvoie les capacités vivantes dont la condition est remplie, plus les effets sur les joueurs.
 - `playerStatic`, `playerStaticTotal`, `doublers`, `counterDoublers` et `tokenMultiplier` sont réécrits dessus.
 - Les 29 lectures directes y passent (N6).
 - Le cache indexé par version est gardé.
+
+**Réalisé :**
+- `playerStatics(s, p, clé)` (`statics.ts`) : statiques de joueur en vigueur qui portent la clé, condition vérifiée, effets sur le joueur compris ; `playerStatic` et `playerStaticTotal` reposent dessus. La clé est obligatoire : une condition peut elle-même lire une statique (« récit durable »), et évaluer les conditions de toutes les statiques bouclait à l'infini (trouvé par le fuzz).
+- 23 lectures directes migrées (`stack.ts`, `actions.ts`, `mana.ts`, `triggers.ts`, `ops/zones.ts`). Restent volontairement trois lectures de statiques d'objet (Aura ou source liée : Grievous Wound, Valgavoth, Terror of the Peaks), qui ne sont pas des statiques du joueur.
+- `doublers` et `counterDoublers` vérifient la condition des doubleurs (délire).
+- Bench (sur batterie, avant → après) : aléatoire 2 joueurs 2 976 → 3 008 déc/s, 4 joueurs 2 046 → 2 034 : inchangé. La cible de 5 000 déc/s n'est pas atteinte sur cette machine, avant comme après.
+- Tests : `engine/test/audit.test.ts` (N6 : effet « ce tour-ci » appliqué, condition non remplie, doubleur sous condition).
 
 ## R2.1 à R2.3 — entrée sur le champ de bataille et copies de permanents
 
