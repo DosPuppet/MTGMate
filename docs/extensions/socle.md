@@ -289,3 +289,6 @@ Lot R2.5 (PLAN-R.md ; `RULES_VERSION` = 14) :
 - couche 5 : `addColors` (« en plus de ses autres couleurs » : The Jolly Balloon Man, Possessed Goat) ;
 - 707.9b : les exceptions d'un effet de copie sont marquées `copiable` ; `copiableExceptions` les rend, et `copyToken`, « arrive comme une copie », `becomeCopy` et le choix d'un Clone les reprennent ;
 - tests : `engine/test/audit.test.ts` (R2.5), `layers.test.ts` (613.8).
+
+Lot R4.1 (PLAN-R.md, sans changement de règles) :
+- règles de blocage paramétrées par un filtre (`BlockRule`, `block.*`, `blockAbility`) à la place de 11 mots-clés propres à une carte ; affichées en badges de restriction.

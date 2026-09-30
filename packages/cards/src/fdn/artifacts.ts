@@ -3,6 +3,8 @@ import {
   activated,
   amount,
   BASIC_LAND,
+  block,
+  blockAbility,
   type CardScript,
   CREATURE_YOU_CONTROL,
   cond,
@@ -112,7 +114,10 @@ export const ARTIFACTS: Record<string, CardScript> = {
     ],
   },
   "Gleaming Barrier": { abilities: [triggered(when.diesSelf, [fx.createTokens(TREASURE)], { label: "Trésor" })] },
-  Juggernaut: { keywords: ["mustAttack", "cantBeBlockedByWalls"] },
+  Juggernaut: {
+    keywords: ["mustAttack"],
+    abilities: [blockAbility(block.notBy({ subtype: "Wall" }, "Imblocable par les Murs"))],
+  },
   "Meteor Golem": {
     abilities: [
       triggered(when.entersSelf, [fx.destroy(ref.target())], {
@@ -202,9 +207,9 @@ export const ARTIFACTS: Record<string, CardScript> = {
   },
   Fireshrieker: { abilities: [staticAbility("attached", { addKeywords: ["doubleStrike"] }, { label: "Double initiative" })] },
   "Gate Colossus": {
-    keywords: ["cantBeBlockedByPowerLE2"],
     costReduction: { generic: amount.count({ subtype: "Gate", controller: "you" }) },
     abilities: [
+      blockAbility(block.notByPowerLE2),
       triggered(
         when.enters({ subtype: "Gate", controller: "you" }),
         fx.may("Remettre Gate Colossus du cimetière au-dessus de la bibliothèque ?", fx.moveTo(ref.self, { to: "libraryTop" })),

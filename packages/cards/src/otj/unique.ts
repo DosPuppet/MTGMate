@@ -7,6 +7,7 @@ import {
   activated,
   amount,
   BIRD_1,
+  block,
   CREATURE_YOU_CONTROL,
   cond,
   ELK,
@@ -356,7 +357,11 @@ export const UNIQUE: Record<string, CardScript> = {
       // Approximation : la protection contre les Coyotes n'est pas modélisée.
       activated({
         mana: "{3}",
-        effects: [fx.pump(ref.self, 0, 0, ["cantBeBlockedExceptByHaste"])],
+        effects: [
+          fx.modify(ref.self, {
+            addBlockRules: [block.notBy({ notKeyword: "haste" }, "Ne peut être bloquée que par des créatures avec la célérité")],
+          }),
+        ],
         label: "Bloquée seulement par la célérité",
       }),
     ],

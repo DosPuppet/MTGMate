@@ -20,6 +20,7 @@ import { checkCondition } from "./triggers";
 import type {
   AbilityDef,
   Amount,
+  BlockRule,
   CardDef,
   CardType,
   Color,
@@ -46,6 +47,8 @@ export interface Characteristics {
   keywords: Keyword[];
   /** Capacités non-mot-clé effectives (vides si l'objet a perdu toutes ses capacités). */
   abilities: AbilityDef[];
+  /** Règles de blocage (« ne peut pas être bloquée par… »), comme des capacités. */
+  blockRules: BlockRule[];
   controller: PlayerId;
 }
 
@@ -203,6 +206,7 @@ const LIST_MODS = [
   "addKeywords",
   "removeKeywords",
   "addColors",
+  "addBlockRules",
 ] as const satisfies (keyof LayerMods)[];
 
 /** Fusionne des modifications dans l'ordre : les listes se cumulent, les autres valeurs sont remplacées. */
@@ -293,6 +297,7 @@ function base(s: GameState, o: GameObject, defId = o.defId): Characteristics {
     toughness: cdaToughness ?? cda ?? d.toughness ?? 0,
     keywords: [...new Set([...d.keywords, ...station.keywords])],
     abilities: levelAbilities(o, d),
+    blockRules: [],
     controller: o.controller,
   };
 }
@@ -359,6 +364,7 @@ function faceDownBase(o: GameObject): Characteristics {
         }),
       ),
     ],
+    blockRules: [],
     controller: o.controller,
   };
 }
@@ -379,6 +385,7 @@ function roomBase(o: GameObject, d: CardDef): Characteristics {
     toughness: 0,
     keywords: [...new Set(open.flatMap((f) => f.keywords))],
     abilities: [...d.abilities, ...open.flatMap((f) => f.abilities)],
+    blockRules: [],
     controller: o.controller,
   };
 }
@@ -757,12 +764,21 @@ function applyLayers(s: GameState, applied: Applied[], defOfId: (id: ObjectId) =
   );
   // Couche 6 : capacités.
   layer(
-    (m) => !!(m.addKeywords?.length || m.removeKeywords?.length || m.loseAllAbilities || m.addAbilities?.length),
+    (m) =>
+      !!(
+        m.addKeywords?.length ||
+        m.removeKeywords?.length ||
+        m.loseAllAbilities ||
+        m.addAbilities?.length ||
+        m.addBlockRules?.length
+      ),
     (c, m) => {
       if (m.loseAllAbilities) {
         c.keywords = [];
         c.abilities = [];
+        c.blockRules = [];
       }
+      if (m.addBlockRules?.length) c.blockRules = [...c.blockRules, ...m.addBlockRules];
       for (const k of m.removeKeywords ?? []) c.keywords = c.keywords.filter((x) => x !== k);
       for (const k of m.addKeywords ?? []) if (!c.keywords.includes(k)) c.keywords.push(k);
       if (m.addAbilities?.length) c.abilities = [...c.abilities, ...m.addAbilities];

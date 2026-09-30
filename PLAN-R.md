@@ -21,7 +21,8 @@ Plan établi le 30/09/2026 (branche `dev`) : il sert de feuille de route aux pro
 - **30/09/2026 : R3 fait** (`RULES_VERSION` = 12 : une copie de sort est un objet sur la pile ; nouvelles cibles au choix pour toute copie, qui deviennent ses cibles ; répartition annoncée à la mise sur la pile, part d'une cible devenue illégale perdue ; #4, #15, N11). Constat : le fuzz à 3 joueurs du méta (2 parties inachevées sur 100) et à 4 joueurs sur tout le pool (1 sur 100) échouait déjà avant R3, à l'identique : parties aléatoires qui atteignent la limite de décisions, pas un blocage.
 - **30/09/2026 : R2.4 fait** (`RULES_VERSION` = 13 : couche 2, contrôleur de base et effets de contrôle horodatés, 800.4a ; #12, N10). Bench inchangé (aléatoire 2 joueurs 6 272 → 6 668 déc/s, 4 joueurs 4 115 → 4 466). Le tutoriel se rejoue (`tutorial.test.ts`, `tutorial-smoke`).
 - **30/09/2026 : R2.5 fait** (`RULES_VERSION` = 14 : 613.8 par point fixe, couleurs ajoutées, exceptions de copie copiables). Bench coup sur coup (`git stash`) : aléatoire 2 joueurs 6 529 → 6 527 déc/s, 4 joueurs 4 414 → 4 398, IA heuristique 4 joueurs 1 094 → 1 093 : inchangé, cible de 5 000 déc/s atteinte.
-- À faire : R4.1, puis la suite dans l'ordre du tableau ci-dessous.
+- **30/09/2026 : R4.1 fait** (sans changement de règles) : `BlockRule` (« ne peut pas être bloquée par [filtre] », « ne peut bloquer que [filtre] », nombre de bloqueurs, « pas seule »), 11 mots-clés en moins (33 → 22).
+- À faire : R4.2, puis la suite dans l'ordre du tableau ci-dessous.
 
 ## Le garde-fou de la dette (lot F2)
 
@@ -54,7 +55,7 @@ Plan établi le 30/09/2026 (branche `dev`) : il sert de feuille de route aux pro
 | 7 | R1.1 à R1.3 : remplacements (616) | § 3.2 | R4.0, R2.1 | élevé | ✅ en partie (voir la section) |
 | 8 | R3.1 et R3.2 : copies de sorts, blessures réparties | § 3.1 | R0 | moyen à élevé | ✅ `827cc6f` |
 | 9 | R2.4 : couche 2 (contrôle) | § 3.2 | R4.0 | élevé | ✅ `2b2ef83` |
-| 10 | R2.5 : 613.8 par point fixe, couche 5 « en plus » | § 3.2 | R2.2, R2.4 | élevé (perf.) | ✅ (voir suivi) |
+| 10 | R2.5 : 613.8 par point fixe, couche 5 « en plus » | § 3.2 | R2.2, R2.4 | élevé (perf.) | ✅ `be0eefa` |
 | 11 | R4.1 à R4.6 : familles génériques | § 3.3 | R1, R2 | moyen | **prochain** |
 | 12 | R5 : blocages simultanés, mulligans 103.5 | § 3.2 | F1 | moyen | à faire |
 | 13 | R6 : boucles (104.4b) | § 3.2 | F1 | moyen | à faire |
@@ -280,6 +281,8 @@ Lus dans le code ; chacun est confirmé par un test au début de son lot.
   - tests : `engine/test/audit.test.ts` (R2.5), `layers.test.ts` (613.8, qui était un test d'approximation).
 
 ## R4.1 à R4.6 — familles génériques (chaque lot fait baisser la référence)
+
+**R4.1 réalisé ✅ :** `BlockRule` (`model/cards.ts`) dans les caractéristiques (`blockRules`, couche 6, `addBlockRules`), perdue avec toutes les capacités ; constructeurs `block.*` et `blockAbility` (DSL) ; `canBlock`, `minBlockers`, `maxBlockers` et « pas seule » dans `turn.ts` ; badges de restriction (`ObjectView.blockRules`). Remplace `cantBeBlockedByHumans`, `…NonSpirits`, `…Glimmers`, `…PowerLE2`, `…PowerGE2`, `…Walls`, `…ExceptByHaste`, `canBlockOnlyFlyers`, `cantBeBlockedByMoreThanOne`, `minThreeBlockers`, `cantAttackOrBlockAlone`. Parties dorées identiques. Test : `audit.test.ts` (un bloqueur devenu Humain par un effet).
 
 - **R4.1 :** « ne peut pas être bloquée par [filtre] », qui remplace 7 mots-clés, plus `canBlockOnly` et le nombre de bloqueurs (minimum et maximum).
 - **R4.2 :** « défense talismanique contre » et « protection contre [filtre] ». `ObjectFilter` reçoit `colorCount` et un `not`. Lève les approximations Sword of Wealth and Power et Resilient Roadrunner.

@@ -36,6 +36,8 @@ export const {
   spree,
   tiered,
   pawprint,
+  block,
+  blockAbility,
 } = dsl;
 
 /** Cible quelconque décrite par un filtre d'objets. */

@@ -2,6 +2,7 @@
 import {
   activated,
   amount,
+  block,
   type CardScript,
   cond,
   DINOSAUR_3_3,
@@ -81,7 +82,7 @@ export const MULTI: Record<string, CardScript> = {
       ),
       staticAbility(
         "self",
-        { power: 2, toughness: 2, addKeywords: ["cantBeBlockedByMoreThanOne"] },
+        { power: 2, toughness: 2, addBlockRules: [block.atMost(1)] },
         {
           condition: descend(8),
           label: "Descente 8 — +2/+2, un seul bloqueur",

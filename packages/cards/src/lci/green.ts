@@ -3,6 +3,7 @@ import {
   activated,
   amount,
   BASIC_LAND,
+  block,
   CAVE,
   type CardScript,
   CREATURE_YOU_CONTROL,
@@ -74,7 +75,7 @@ export const GREEN: Record<string, CardScript> = {
       triggered(when.entersSelf, [fx.scry(2)], { label: "Regard 2" }),
       activated({
         mana: "{3}{G}",
-        effects: [fx.pump(ref.self, 0, 0, ["cantBeBlockedByPowerLE2"])],
+        effects: [fx.modify(ref.self, { addBlockRules: [block.notByPowerLE2] })],
         label: "Imblocable par force 2 ou moins",
       }),
     ],

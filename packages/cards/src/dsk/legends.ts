@@ -7,6 +7,8 @@ import {
   activated,
   amount,
   BASIC_LAND,
+  block,
+  blockAbility,
   type CardScript,
   CREATURE_OR_ENCHANTMENT,
   CREATURE_YOU_CONTROL,
@@ -43,7 +45,7 @@ const TOBY_BEAST: TokenSpec = {
   subtypes: ["Beast"],
   power: 4,
   toughness: 4,
-  keywords: ["cantAttackOrBlockAlone"],
+  abilities: [blockAbility(block.notAlone)],
   text: "This token can't attack or block alone.",
 };
 
@@ -315,8 +317,8 @@ export const LEGENDS: Record<string, CardScript> = {
     ),
   },
   "Cynical Loner": {
-    keywords: ["cantBeBlockedByGlimmers"],
     abilities: [
+      blockAbility(block.notBy({ subtype: "Glimmer" }, "Imblocable par les Lueurs")),
       survival([...fx.may("Chercher une carte à mettre au cimetière ?", fx.search({}, { to: "graveyard" }))], {
         label: "Une carte de votre bibliothèque au cimetière",
       }),

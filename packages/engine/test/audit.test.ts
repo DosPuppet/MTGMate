@@ -15,7 +15,7 @@ import { chooseReplacementOrder } from "../src/modifiers";
 import { spellCost } from "../src/stack";
 import { changeCounters, chars, FACE_DOWN_ID, moveObject } from "../src/state";
 import { simultaneously } from "../src/triggers";
-import { eliminate, forcedAttacks } from "../src/turn";
+import { canBlock, eliminate, forcedAttacks } from "../src/turn";
 import type { CardDef, Effect, GameEvent, GameState, TokenSpec } from "../src/types";
 import { act, advanceUntil, customCard, idOf, idsOf, passAccepting, passBoth, passUntil, scenario } from "./helpers";
 
@@ -725,5 +725,22 @@ describe("R2.5 : couches, exceptions de copie, couleurs ajoutées et dépendance
       fx.modify(ref.target(), { addSubtypes: ["Dragon"] }, "permanent"),
     );
     expect(chars(s, id).power).toBe(1);
+  });
+});
+
+describe("R4.1 : règles de blocage paramétrées par un filtre", () => {
+  it("Stromkirk Noble ne peut pas être bloquée par une créature devenue Humain par un effet", () => {
+    const s = scenario({ p1: { battlefield: ["Stromkirk Noble"] }, p2: { battlefield: ["Bear Cub"] }, step: "declareBlockers" });
+    const noble = idOf(s, "p1", "battlefield", "Stromkirk Noble");
+    const bear = idOf(s, "p2", "battlefield", "Bear Cub");
+    s.combat = {
+      attackers: [{ id: noble, defender: "p2", blockers: [], blocked: false }],
+      blockers: [],
+      blockQueue: [],
+    } as never;
+    bump(s);
+    expect(canBlock(s, bear, noble)).toBe(true);
+    runEffect(s, { ...resolution("p2"), targets: { t: [bear] } } as never, fx.modify(ref.target(), { addSubtypes: ["Human"] }));
+    expect(canBlock(s, bear, noble)).toBe(false);
   });
 });

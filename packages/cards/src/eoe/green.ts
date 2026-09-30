@@ -2,6 +2,7 @@
 import {
   activated,
   amount,
+  block,
   type CardScript,
   CREATURE_YOU_CONTROL,
   cond,
@@ -125,7 +126,7 @@ export const GREEN: Record<string, CardScript> = {
       }),
       staticAbility(
         "attached",
-        { toughness: 2, addKeywords: ["cantBeBlockedByMoreThanOne"] },
+        { toughness: 2, addBlockRules: [block.atMost(1)] },
         {
           label: "+0/+2, bloquée par une seule créature",
         },

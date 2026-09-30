@@ -3,6 +3,8 @@ import type { CardScript, TokenSpec } from "@mtgx/engine";
 import {
   activated,
   amount,
+  block,
+  blockAbility,
   chapter,
   cond,
   FROG,
@@ -220,7 +222,7 @@ export const LEGENDS2: Record<string, CardScript> = {
   },
   "Relentless X-ATM092": {
     abilities: [
-      staticAbility("self", { addKeywords: ["minThreeBlockers"] }, { label: "Bloquée par trois créatures ou plus" }),
+      blockAbility(block.atLeast(3)),
       activated({
         mana: "{8}",
         fromGraveyard: true,

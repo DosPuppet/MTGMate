@@ -54,17 +54,6 @@ export type Keyword =
   | "hexproofFromMonocolored"
   /** Changelin (702.73) : a tous les types de créature, dans toutes les zones. */
   | "changeling"
-  | "cantBeBlockedByHumans"
-  /** Jeton Esprit de Realm of Koh : « ne peut pas être bloqué par des créatures non-Esprits ». */
-  | "cantBeBlockedByNonSpirits"
-  /** Cynical Loner : « ne peut pas être bloquée par des Lueurs ». */
-  | "cantBeBlockedByGlimmers"
-  /** Toby, Beastie Befriender : « ce jeton ne peut ni attaquer ni bloquer seul ». */
-  | "cantAttackOrBlockAlone"
-  /** « Ne peut pas être bloquée par des créatures de force 2 ou moins. » */
-  | "cantBeBlockedByPowerLE2"
-  /** Azure Beastbinder : « ne peut pas être bloquée par des créatures de force 2 ou plus ». */
-  | "cantBeBlockedByPowerGE2"
   /** « Doit être bloquée si possible » (509.1c). */
   | "mustBeBlocked"
   /** Wolverine : « si des blessures devaient lui être infligées, elles le sont, mais les autres blessures sont guéries ». */
@@ -74,18 +63,13 @@ export type Keyword =
   | "cantAttack"
   | "unblockable"
   | "mustAttack"
-  | "canBlockOnlyFlyers"
-  | "cantBeBlockedByMoreThanOne"
   | "doesntUntap"
-  | "cantBeBlockedByWalls"
   /** Stuck in Summoner's Sanctum : « ses capacités activées ne peuvent pas être activées ». */
   | "noActivatedAbilities"
   /** Ancient Adamantoise : « les blessures ne sont pas retirées de cette créature pendant l'étape de nettoyage ». */
   | "keepsDamage"
   /** Ancient Adamantoise : les blessures infligées à son contrôleur et à ses autres permanents lui sont infligées à la place. */
   | "absorbsDamage"
-  /** Relentless X-ATM092 : « ne peut être bloquée que par trois créatures ou plus ». */
-  | "minThreeBlockers"
   /** Diamond Weapon : « prévenez toutes les blessures de combat qui devraient lui être infligées ». */
   | "combatDamageImmune"
   /** Convocation (702.51) : les créatures peuvent aider à payer le sort. */
@@ -96,8 +80,6 @@ export type Keyword =
   | "absolutePowerDamage"
   /** Ghalta the Immovable : peut attaquer comme si elle n'avait pas le défenseur. */
   | "attacksDespiteDefender"
-  /** Resilient Roadrunner : ne peut être bloquée que par des créatures avec la célérité. */
-  | "cantBeBlockedExceptByHaste"
   /** Pilote (Aetherdrift) : monte et équipe comme si sa force était supérieure de 2. */
   | "crewPlus2"
   /** Interface Ace : monte et équipe avec son endurance plutôt que sa force. */
@@ -108,15 +90,11 @@ export type Keyword =
 /** Restrictions : affichées différemment des mots-clés. */
 export const RESTRICTIONS: readonly Keyword[] = [
   "cantBlock",
-  "canBlockOnlyFlyers",
   "cantAttack",
   "unblockable",
   "mustAttack",
   "doesntUntap",
-  "cantBeBlockedByWalls",
   "noActivatedAbilities",
-  "minThreeBlockers",
-  "cantAttackOrBlockAlone",
   "keepsDamage",
   "absorbsDamage",
   "combatDamageImmune",

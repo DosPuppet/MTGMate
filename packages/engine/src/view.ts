@@ -65,6 +65,8 @@ export interface ObjectView extends CardFace {
   power?: number;
   toughness?: number;
   keywords: Keyword[];
+  /** Règles de blocage (« imblocable par les Humains »…) : leurs libellés. */
+  blockRules?: string[];
   sick: boolean;
   attacking: boolean;
   blocking: ObjectId | null;
@@ -265,6 +267,7 @@ export function objectView(s: GameState, id: ObjectId): ObjectView {
     power: isCreature ? c.power : undefined,
     toughness: isCreature ? c.toughness : undefined,
     keywords: c.keywords,
+    ...(c.blockRules.length ? { blockRules: c.blockRules.map((r) => r.label) } : {}),
     sick: o.zone === "battlefield" && isSummoningSick(s, id),
     attacking,
     blocking,

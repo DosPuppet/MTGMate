@@ -2,6 +2,8 @@
 import {
   activated,
   amount,
+  block,
+  blockAbility,
   type CardScript,
   CREATURE_YOU_CONTROL,
   cond,
@@ -40,8 +42,8 @@ const blink = (what: ReturnType<typeof ref.target>, counters?: { kind: string; n
 
 export const BLUE: Record<string, CardScript> = {
   "Azure Beastbinder": {
-    keywords: ["cantBeBlockedByPowerGE2"],
     abilities: [
+      blockAbility(block.notBy({ minPower: 2 }, "Imblocable par les créatures de force 2 ou plus")),
       triggered(
         when.attacksSelf,
         [fx.modify(ref.target(), { loseAllAbilities: true, setPower: 2, setToughness: 2 }, "untilYourNextTurn")],

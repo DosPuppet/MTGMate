@@ -140,10 +140,30 @@ interface Tip {
 export function KeywordBadges({ obj }: { obj: ObjectView }) {
   const [tip, setTip] = useState<Tip | null>(null);
   const shown = obj.keywords.filter((k) => !HIDDEN.has(k));
-  if (shown.length === 0) return null;
+  const rules = obj.blockRules ?? [];
+  if (shown.length === 0 && rules.length === 0) return null;
+  const hover = (title: string, help?: string) => (ev: React.MouseEvent<HTMLElement>) => {
+    const r = ev.currentTarget.getBoundingClientRect();
+    setTip({ x: r.right + 6, y: r.top + r.height / 2, title, help });
+  };
   return (
     <>
       <div className="kw-badges">
+        {rules.map((title) => (
+          <span
+            key={title}
+            className="kw-badge restriction"
+            data-rule={title}
+            role="img"
+            aria-label={title}
+            onMouseEnter={hover(title)}
+            onMouseLeave={() => setTip(null)}
+          >
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              {RESTRICTION_ICON}
+            </svg>
+          </span>
+        ))}
         {shown.map((k) => {
           const restriction = RESTRICTIONS.includes(k);
           const title = k === "ward" && obj.ward ? `${KEYWORD_LABEL[k]} — ${obj.ward}` : KEYWORD_LABEL[k];

@@ -3,6 +3,8 @@ import {
   activated,
   amount,
   BASIC_LAND,
+  block,
+  blockAbility,
   type CardScript,
   CREATURE_YOU_CONTROL,
   cond,
@@ -315,7 +317,7 @@ export const GREEN: Record<string, CardScript> = {
       [fx.damage(amount.plus(amount.powerOf(ref.target()), amount.powerOf(ref.target())), ref.target("u"), ref.target())],
     ),
   },
-  "Rust-Shield Rampager": { keywords: ["cantBeBlockedByPowerLE2"] },
+  "Rust-Shield Rampager": { abilities: [blockAbility(block.notByPowerLE2)] },
   Scrapshooter: {
     abilities: [
       triggered(when.entersSelf, [fx.destroy(ref.target())], {

@@ -2,6 +2,7 @@
 export * from "../lci/common";
 
 import type { TokenSpec } from "@mtgx/engine";
+import { block, blockAbility } from "../fdn/common";
 import { DRAGON, fx, triggered, when } from "../lci/common";
 
 /** Dragon 4/4 volant avec la maîtrise du feu 4 (Avatar Roku). */
@@ -22,6 +23,7 @@ export const SPIRIT_KOH: TokenSpec = {
   subtypes: ["Spirit"],
   power: 1,
   toughness: 1,
-  keywords: ["cantBlock", "cantBeBlockedByNonSpirits"],
+  keywords: ["cantBlock"],
+  abilities: [blockAbility(block.notBy({ notSubtype: "Spirit" }, "Imblocable par les créatures non-Esprits"))],
   text: "This token can't block or be blocked by non-Spirit creatures.",
 };

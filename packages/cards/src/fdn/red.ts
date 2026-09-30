@@ -2,6 +2,8 @@
 import {
   activated,
   amount,
+  block,
+  blockAbility,
   type CardScript,
   CREATURE_YOU_CONTROL,
   cond,
@@ -499,8 +501,10 @@ export const RED: Record<string, CardScript> = {
     ],
   },
   "Stromkirk Noble": {
-    keywords: ["cantBeBlockedByHumans"],
-    abilities: [triggered(when.combatDamageToPlayer, [fx.addCounters(ref.self, 1)], { label: "marqueur +1/+1" })],
+    abilities: [
+      blockAbility(block.notBy({ subtype: "Human" }, "Imblocable par les Humains")),
+      triggered(when.combatDamageToPlayer, [fx.addCounters(ref.self, 1)], { label: "marqueur +1/+1" }),
+    ],
   },
   "Taurean Mauler": {
     keywords: ["changeling"],

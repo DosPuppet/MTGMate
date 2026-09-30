@@ -86,7 +86,7 @@ describe("mécaniques d'Edge of Eternities", () => {
       timestamp: 999,
       affected: [bear],
       duration: "endOfTurn",
-      addKeywords: ["cantBeBlockedByMoreThanOne"],
+      addBlockRules: [{ maxBlockers: 1, label: "Bloquée par une seule créature au plus" }],
     });
     s.version += 1;
     const blockers = idsOf(s, "p2", "battlefield", "Bear Cub").concat(idsOf(s, "p2", "battlefield", "Llanowar Elves"));

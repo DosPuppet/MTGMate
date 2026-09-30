@@ -17,7 +17,7 @@ import { ask, cardRef } from "./choices";
 import { syncControl } from "./control";
 import { announceDiscard, announceDiscardBatch, evalAmount } from "./effects";
 import { rethrowAsRules } from "./errors";
-import { copiedDefId } from "./layers";
+import { copiedDefId, snapshot } from "./layers";
 import { payMana } from "./mana";
 import { RulesError, resolveTop } from "./stack";
 import { announceNext } from "./stackChoices";
@@ -56,10 +56,10 @@ import {
   playerStatic,
   playerStaticTotal,
 } from "./statics";
-import { matchesObjectFilter } from "./targets";
+import { matchesObjectFilter, matchesView } from "./targets";
 import { checkCondition, processTriggers, releaseDelayedTriggers, simultaneously } from "./triggers";
 import { logTurnEvent } from "./turnlog";
-import type { GameState, ManaType, ObjectId, PlayerId, StackItem, Step } from "./types";
+import type { GameState, ManaType, ObjectFilter, ObjectId, PlayerId, StackItem, Step } from "./types";
 import { STEPS } from "./types";
 
 export const MAX_HAND_SIZE = 7;
@@ -653,7 +653,7 @@ export function declareAttackers(s: GameState, player: PlayerId, attackers: { id
   if (forced.length > 0) throw new RulesError(`${chars(s, forced[0] as ObjectId).name} doit attaquer si elle le peut`);
   // Toby, Beastie Befriender : « ce jeton ne peut pas attaquer seul ».
   const alone = attackers.length === 1 ? attackers[0]?.id : undefined;
-  if (alone && hasKeyword(s, alone, "cantAttackOrBlockAlone"))
+  if (alone && chars(s, alone).blockRules.some((r) => r.notAlone))
     throw new RulesError(`${chars(s, alone).name} ne peut pas attaquer seule`);
   // Archangel of Tithes : {1} pour chaque créature qui attaque un joueur protégé (ou ses planeswalkers).
   const tax = attackers.reduce((n, a) => n + attackTaxFor(s, a.defender), 0);
@@ -695,19 +695,30 @@ export function canBlock(s: GameState, blocker: ObjectId, attacker: ObjectId): b
   const a = s.combat?.attackers.find((x) => x.id === attacker);
   if (!a || !onBattlefield(s, attacker) || b.controller !== defendingPlayer(s, a.defender)) return false;
   if (hasKeyword(s, blocker, "cantBlock") || hasKeyword(s, attacker, "unblockable")) return false;
-  // Drone : « ne peut bloquer que des créatures avec le vol ».
-  if (hasKeyword(s, blocker, "canBlockOnlyFlyers") && !hasKeyword(s, attacker, "flying")) return false;
   // 702.16f : une créature avec la protection contre tout ne peut pas être bloquée.
   if (hasKeyword(s, attacker, "protectionFromEverything")) return false;
-  if (hasKeyword(s, attacker, "cantBeBlockedByHumans") && chars(s, blocker).subtypes.includes("Human")) return false;
-  if (hasKeyword(s, attacker, "cantBeBlockedByNonSpirits") && !chars(s, blocker).subtypes.includes("Spirit")) return false;
-  if (hasKeyword(s, attacker, "cantBeBlockedByGlimmers") && chars(s, blocker).subtypes.includes("Glimmer")) return false;
-  if (hasKeyword(s, attacker, "cantBeBlockedByPowerLE2") && chars(s, blocker).power <= 2) return false;
-  if (hasKeyword(s, attacker, "cantBeBlockedByPowerGE2") && chars(s, blocker).power >= 2) return false;
   if (hasKeyword(s, attacker, "flying") && !hasKeyword(s, blocker, "flying") && !hasKeyword(s, blocker, "reach")) return false;
-  if (hasKeyword(s, attacker, "cantBeBlockedByWalls") && chars(s, blocker).subtypes.includes("Wall")) return false;
-  if (hasKeyword(s, attacker, "cantBeBlockedExceptByHaste") && !hasKeyword(s, blocker, "haste")) return false;
+  // Règles de blocage (R4.1) : « ne peut bloquer que [filtre] » (Drone), « ne peut pas être bloquée par [filtre] ».
+  const own = chars(s, blocker).blockRules;
+  if (own.some((r) => r.canBlockOnly && !matchesView(snapshot(s, attacker), r.canBlockOnly, b.controller, blocker))) return false;
+  const rules = chars(s, attacker).blockRules.filter((r) => r.cantBeBlockedBy);
+  if (rules.length) {
+    const v = snapshot(s, blocker);
+    const who = obj(s, attacker).controller;
+    if (rules.some((r) => matchesView(v, r.cantBeBlockedBy as ObjectFilter, who, attacker))) return false;
+  }
   return true;
+}
+
+/** Nombre minimal de bloqueurs d'un attaquant : 1, 2 avec la menace, plus selon ses règles de blocage. */
+function minBlockers(s: GameState, id: ObjectId): number {
+  const rules = chars(s, id).blockRules.map((r) => r.minBlockers ?? 0);
+  return Math.max(hasKeyword(s, id, "menace") ? 2 : 1, ...rules);
+}
+
+/** Nombre maximal de bloqueurs d'un attaquant (« ne peut pas être bloquée par plus d'une créature »). */
+function maxBlockers(s: GameState, id: ObjectId): number {
+  return Math.min(Number.POSITIVE_INFINITY, ...chars(s, id).blockRules.map((r) => r.maxBlockers ?? Number.POSITIVE_INFINITY));
 }
 
 /** Pour chaque bloqueur potentiel, les attaquants qu'il peut bloquer. */
@@ -722,7 +733,7 @@ function hasAnyLegalBlock(s: GameState, player: PlayerId): boolean {
   const cands = blockCandidates(s, player);
   return (s.combat?.attackers ?? []).some((a) => {
     const n = cands.filter((c) => c.attackers.includes(a.id)).length;
-    return hasKeyword(s, a.id, "minThreeBlockers") ? n >= 3 : hasKeyword(s, a.id, "menace") ? n >= 2 : n >= 1;
+    return n >= minBlockers(s, a.id);
   });
 }
 
@@ -774,7 +785,7 @@ export function declareBlockers(s: GameState, player: PlayerId, blocks: { blocke
     }
   }
   const lone = blocks.length === 1 ? blocks[0]?.blocker : undefined;
-  if (lone && hasKeyword(s, lone, "cantAttackOrBlockAlone"))
+  if (lone && chars(s, lone).blockRules.some((r) => r.notAlone))
     throw new RulesError(`${chars(s, lone).name} ne peut pas bloquer seule`);
   const unmet = unmetBlockRequirement(s, player, blocks);
   if (unmet) throw new RulesError(`${chars(s, unmet).name} doit être bloquée si possible`);
@@ -790,12 +801,20 @@ export function declareBlockers(s: GameState, player: PlayerId, blocks: { blocke
   }
   for (const a of c.attackers) {
     const n = blocks.filter((b) => b.attacker === a.id).length;
-    if (n === 1 && hasKeyword(s, a.id, "menace"))
-      throw new RulesError("Une créature avec la menace doit être bloquée par au moins deux créatures");
-    if (n > 0 && n < 3 && hasKeyword(s, a.id, "minThreeBlockers"))
-      throw new RulesError("Cette créature ne peut être bloquée que par trois créatures ou plus");
-    if (n > 1 && hasKeyword(s, a.id, "cantBeBlockedByMoreThanOne"))
-      throw new RulesError("Cette créature ne peut pas être bloquée par plus d'une créature");
+    const min = minBlockers(s, a.id);
+    if (n > 0 && n < min)
+      throw new RulesError(
+        min === 2 && hasKeyword(s, a.id, "menace")
+          ? "Une créature avec la menace doit être bloquée par au moins deux créatures"
+          : `Cette créature ne peut être bloquée que par ${min} créatures ou plus`,
+      );
+    const max = maxBlockers(s, a.id);
+    if (n > max)
+      throw new RulesError(
+        max === 1
+          ? "Cette créature ne peut pas être bloquée par plus d'une créature"
+          : `Cette créature ne peut pas être bloquée par plus de ${max} créatures`,
+      );
   }
   c.blockers.push(...blocks.map((b) => ({ id: b.blocker, attacker: b.attacker })));
   for (const b of blocks) rulesEvent(s, { e: "block", blocker: b.blocker, attacker: b.attacker });

@@ -3,6 +3,7 @@ import type { CardScript } from "@mtgx/engine";
 import {
   activated,
   amount,
+  block,
   CREATURE_YOU_CONTROL,
   cond,
   ELEMENTAL,
@@ -109,7 +110,13 @@ export const GREEN: Record<string, CardScript> = {
     ],
   },
   "Full Steam Ahead": {
-    spell: spell([], [fx.pumpAll(CREATURE_YOU_CONTROL, 2, 2, ["trample", "cantBeBlockedByMoreThanOne"])]),
+    spell: spell(
+      [],
+      [
+        fx.pumpAll(CREATURE_YOU_CONTROL, 2, 2, ["trample"]),
+        fx.modifyAll(CREATURE_YOU_CONTROL, { addBlockRules: [block.atMost(1)] }),
+      ],
+    ),
   },
   "Giant Beaver": {
     abilities: [

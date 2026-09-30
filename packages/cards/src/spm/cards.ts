@@ -5,6 +5,8 @@
 import {
   activated,
   amount,
+  block,
+  blockAbility,
   type CardScript,
   cond,
   fx,
@@ -40,8 +42,8 @@ export const CARDS: Record<string, CardScript> = {
   // --- Vert ------------------------------------------------------------------
   "Sandman, Shifting Scoundrel": {
     cdaPT: amount.count({ types: ["Land"], controller: "you" }),
-    keywords: ["cantBeBlockedByPowerLE2"],
     abilities: [
+      blockAbility(block.notByPowerLE2),
       activated({
         mana: "{3}{G}{G}",
         fromGraveyard: true,

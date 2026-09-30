@@ -54,7 +54,8 @@ export const DRONE: TokenSpec = {
   subtypes: ["Drone"],
   power: 1,
   toughness: 1,
-  keywords: ["flying", "canBlockOnlyFlyers"],
+  keywords: ["flying"],
+  abilities: [dsl.blockAbility(dsl.block.onlyBlocks({ keyword: "flying" }, "Ne bloque que les créatures volantes"))],
   text: "Flying\nThis token can block only creatures with flying.",
 };
 

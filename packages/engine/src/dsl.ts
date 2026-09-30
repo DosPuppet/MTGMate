@@ -9,6 +9,7 @@ import type {
   ActivatedAbilityDef,
   AdditionalCost,
   Amount,
+  BlockRule,
   CardDef,
   CardType,
   CastPermissionAbilityDef,
@@ -1697,6 +1698,28 @@ export function doubler(opts: Omit<DoublerAbilityDef, "kind">): DoublerAbilityDe
 /** Coût de mana écrit comme sur la carte (« {3}{B} »). */
 export function cost(text: string): ManaCost {
   return parseManaCost(text);
+}
+
+/**
+ * Règles de blocage (famille R4.1) : « ne peut pas être bloquée par [filtre] », « ne peut bloquer que [filtre] »,
+ * nombre de bloqueurs. Imprimées : `blockAbility(block.…)` ; accordées : `addBlockRules` d'un effet ou d'une statique.
+ */
+export const block = {
+  notBy: (filter: ObjectFilter, label: string): BlockRule => ({ cantBeBlockedBy: filter, label }),
+  onlyBlocks: (filter: ObjectFilter, label: string): BlockRule => ({ canBlockOnly: filter, label }),
+  atLeast: (n: number): BlockRule => ({ minBlockers: n, label: `Bloquée par ${n} créatures ou plus` }),
+  atMost: (n: number): BlockRule => ({
+    maxBlockers: n,
+    label: n === 1 ? "Bloquée par une seule créature au plus" : `Bloquée par ${n} créatures au plus`,
+  }),
+  notAlone: { notAlone: true, label: "Ne peut ni attaquer ni bloquer seule" } as BlockRule,
+  /** Les plus fréquentes. */
+  notByPowerLE2: { cantBeBlockedBy: { maxPower: 2 }, label: "Imblocable par les créatures de force 2 ou moins" } as BlockRule,
+};
+
+/** Règle de blocage imprimée sur la carte : une statique sur elle-même. */
+export function blockAbility(rule: BlockRule): AbilityDef {
+  return staticAbility("self", { addBlockRules: [rule] }, { label: rule.label });
 }
 
 /** Capacité statique : « Les autres Elfes que vous contrôlez gagnent +1/+1 », « a le vol tant que… ». */

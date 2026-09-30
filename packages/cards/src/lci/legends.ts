@@ -6,6 +6,8 @@ import {
   activated,
   amount,
   BAT_1,
+  block,
+  blockAbility,
   type CardScript,
   CREATURE_YOU_CONTROL,
   castPermission,
@@ -427,7 +429,7 @@ export const LEGENDS: Record<string, CardScript> = {
       4,
     ),
   ),
-  "Rampaging Ceratops": { keywords: ["minThreeBlockers"] },
+  "Rampaging Ceratops": { abilities: [blockAbility(block.atLeast(3))] },
   // --- Vert -------------------------------------------------------------------
   "Cosmium Confluence": { spell: { modes: confluence() } },
   "Intrepid Paleontologist": {

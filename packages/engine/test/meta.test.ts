@@ -272,7 +272,7 @@ describe("Méta, lot M1", () => {
     expect(s.objects[back]?.tapped).toBe(true);
     expect(s.objects[idOf(s, "p1", "battlefield", "Island")]?.tapped).toBe(true);
     expect(chars(s, back).power).toBe(6);
-    expect(chars(s, back).keywords).toContain("cantBeBlockedByPowerLE2");
+    expect(chars(s, back).blockRules.map((r) => r.cantBeBlockedBy)).toContainEqual({ maxPower: 2 });
   });
 
   it("Leatherhead arrive avec un marqueur de défense talismanique", () => {

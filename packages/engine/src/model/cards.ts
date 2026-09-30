@@ -425,9 +425,28 @@ export interface CostDef {
   forage?: boolean;
 }
 /** Modifications apportées par un effet continu, rangées par couche (613). */
+/**
+ * Règle de blocage d'une créature (couche 6, famille R4.1) : « ne peut pas être bloquée par [filtre] », « ne peut
+ * bloquer que [filtre] », nombre de bloqueurs, « ne peut ni attaquer ni bloquer seule ». `label` : badge affiché.
+ */
+export interface BlockRule {
+  /** Les bloqueurs qui correspondent au filtre ne peuvent pas la bloquer. */
+  cantBeBlockedBy?: ObjectFilter;
+  /** Elle ne peut bloquer qu'un attaquant qui correspond au filtre. */
+  canBlockOnly?: ObjectFilter;
+  /** Bloquée par au moins / au plus N créatures. */
+  minBlockers?: number;
+  maxBlockers?: number;
+  /** Ne peut ni attaquer ni bloquer seule (Toby, Beastie Befriender). */
+  notAlone?: boolean;
+  label: string;
+}
+
 export interface LayerMods {
   /** Couche 6 : capacités (non mots-clés) accordées. */
   addAbilities?: AbilityDef[];
+  /** Couche 6 : règles de blocage accordées. */
+  addBlockRules?: BlockRule[];
   /** Couche 4 : types et sous-types ajoutés. */
   addTypes?: CardType[];
   addSubtypes?: string[];
