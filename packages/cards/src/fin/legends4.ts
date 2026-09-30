@@ -189,7 +189,7 @@ export const LEGENDS4: Record<string, CardScript> = {
     abilities: [
       playerStatic({
         playFrom: { zone: "libraryTop", filter: LANDS_AND_BIRDS },
-        doubleEnterTriggersFor: { ...LANDS_AND_BIRDS, controller: "you" },
+        triggerMod: { effect: "again", onEnter: true, entering: { ...LANDS_AND_BIRDS, controller: "you" } },
         label: "Terrains et Oiseaux du dessus ; déclencheurs d'arrivée doublés",
       }),
     ],

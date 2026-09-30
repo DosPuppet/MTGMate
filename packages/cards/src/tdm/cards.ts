@@ -57,7 +57,7 @@ export const CARDS: Record<string, CardScript> = {
   // --- Lot M3 -----------------------------------------------------------------
   "Voice of Victory": {
     // Mobilisation 2 : lue dans le texte.
-    abilities: [playerStatic({ opponentsCantCastYourTurn: true })],
+    abilities: [playerStatic({ castLimit: { who: "opponents", during: "yourTurn" } })],
   },
   "Qarsi Revenant": {
     abilities: [

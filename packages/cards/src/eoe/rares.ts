@@ -123,7 +123,9 @@ export const RARES: Record<string, CardScript> = {
       }),
     ],
   },
-  "Starfield Vocalist": { abilities: [playerStatic({ doubleEnterTriggers: true, label: "Déclencheurs d'arrivée doublés" })] },
+  "Starfield Vocalist": {
+    abilities: [playerStatic({ triggerMod: { effect: "again", onEnter: true }, label: "Déclencheurs d'arrivée doublés" })],
+  },
   "Quantum Riddler": {
     abilities: [
       triggered(when.entersSelf, [fx.draw(1)], { label: "Piochez" }),

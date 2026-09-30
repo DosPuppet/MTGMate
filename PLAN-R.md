@@ -25,7 +25,8 @@ Plan établi le 30/09/2026 (branche `dev`) : il sert de feuille de route aux pro
 - **30/09/2026 : R4.2 fait** (`RULES_VERSION` = 15) : `ProtectionRule` (protection et défense talismanique « contre [filtre] »), `ObjectFilter.colorCount` et `not`, 5 mots-clés en moins (22 → 17) ; Sword of Wealth and Power et Resilient Roadrunner sans approximation.
 - **30/09/2026 : R4.3 fait** (sans changement de règles) : `PowerRule` (« utilise son endurance pour » : blessures de combat, équipage, station), 4 mots-clés (17 → 13) et un drapeau de joueur (96 → 95) en moins.
 - **30/09/2026 : R4.4 fait** (`RULES_VERSION` = 16) : `playFrom` (famille C, 11 drapeaux) et `abilityCost` (famille A, 5 drapeaux) ; drapeaux de joueur 95 → 81.
-- À faire : R4.5, puis la suite dans l'ordre du tableau ci-dessous.
+- **30/09/2026 : R4.5 fait** (sans changement de règles) : `castLimit` (famille D, 7 drapeaux) et `triggerMod` (famille G, 7 drapeaux) ; drapeaux de joueur 81 → 69.
+- À faire : R4.6, puis la suite dans l'ordre du tableau ci-dessous.
 
 ## Le garde-fou de la dette (lot F2)
 
@@ -295,6 +296,11 @@ Lus dans le code ; chacun est confirmé par un test au début de son lot.
 - famille C, `playFrom` (`PlayFromZone` : cimetière ou dessus de la bibliothèque, filtre, terrains ou sorts, PV, fourrager, finalité, mana de n'importe quel type, sous-types) : remplace `artifactsFromGraveyardLife`, `castArtifactsFromTop`, `castCreatureFromGraveyard`, `castCreaturesFromGraveyard`, `castCreaturesFromTop`, `creaturesFromGraveyardForage`, `instantsSorceriesFromGraveyardLife`, `playFromGraveyard`, `playLandsFromGraveyard`, `playTopCard`, `playTopFilter`. `playFromRules` choisit la permission la moins coûteuse ; l'usage unique de The Tomb of Aclazotz est consommé par identité de la règle ; toute permission du dessus de la bibliothèque montre la carte du dessus à son joueur (lève l'approximation de Traveling Chocobo et The Lunar Whale) ; Forgotten Cellar ne permet plus que des sorts (Oracle) ;
 - famille A, `abilityCost` (`AbilityCostMod` : exhaust, Équiper, déverrouiller, comploter ; source ; « autres » ; {N} de moins ou le premier du tour gratuit) : remplace `activatedReduction`, `exhaustReduction`, `firstEquipFree`, `plotReduction`, `unlockReduction` ;
 - **pas fait :** les gratuités de sorts (`firstSpellFree`, `freeFromExileOncePerTurn`) et la famille B (dons aux sorts) restent des drapeaux : les fusionner ne ferait que déplacer des booléens propres à une carte.
+
+**R4.5 réalisé ✅ :**
+- famille D, `castLimit` (`CastLimit` : qui, pendant votre tour ou le combat, adversaires qui vous ont attaqué, au plus N sorts, sauf depuis la main, capacités bloquées) : remplace `attackersCantCast`, `cantCastSpells`, `castOnlyFromHand`, `lockOpponentsOnYourTurn`, `noSpellsDuringCombat`, `oneSpellPerTurn`, `opponentsCantCastYourTurn` ; `castLimits` et `abilitiesLocked` (`stack.ts`) ; Yuriko reste traitée comme le second partagé (pour tous, pendant le combat) ;
+- famille G, `triggerMod` (`TriggerMod` : une fois de plus ou jamais, arrivées et permanent qui arrive, sources, tous les joueurs) : remplace `doubleEnterTriggers`, `doubleEnterTriggersFor`, `doubleLegendaryTriggers`, `doubleTriggers`, `doubleTriggersFor`, `noCreatureEntersTriggers`, `noEntersTriggers` ; `triggerDoublers` (`triggers.ts`) ;
+- **pas fait :** famille L (`flashFor` est déjà générique ; `jaceLoyaltyInstant` va avec R4.6), vie (`cantGainLife`, `noLifeGainForAll`). Parties dorées identiques.
 
 - **R4.1 :** « ne peut pas être bloquée par [filtre] », qui remplace 7 mots-clés, plus `canBlockOnly` et le nombre de bloqueurs (minimum et maximum).
 - **R4.2 :** « défense talismanique contre » et « protection contre [filtre] ». `ObjectFilter` reçoit `colorCount` et un `not`. Lève les approximations Sword of Wealth and Power et Resilient Roadrunner.

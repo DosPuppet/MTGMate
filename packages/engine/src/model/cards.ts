@@ -583,6 +583,39 @@ export interface CastPermissionAbilityDef {
 }
 
 /**
+ * Restriction de lancer (famille D, R4.5), vue du joueur qui a la statique : qui est concerné, quand, et ce qui est
+ * interdit (tous les sorts, au-delà de N par tour, ou ceux lancés d'ailleurs que de la main).
+ */
+export interface CastLimit {
+  who: "you" | "opponents" | "each";
+  /** Seulement pendant le tour du joueur de la statique, ou pendant le combat. */
+  during?: "yourTurn" | "combat";
+  /** Seulement les adversaires qui ont attaqué le joueur de la statique ce tour-ci (Sandswirl Wanderglyph). */
+  attackedYou?: boolean;
+  /** Au plus N sorts par tour (High Noon : 1). */
+  maxSpells?: number;
+  /** Seulement les sorts lancés d'ailleurs que de la main (Avatar's Wrath). */
+  exceptFromHand?: boolean;
+  /** Bloque aussi les capacités activées (hors mana) : toutes (Yuriko), ou d'artefacts, de créatures et d'enchantements (Grand Abolisher). */
+  abilities?: "all" | "artifactsCreaturesEnchantments";
+}
+
+/**
+ * Déclenchements modifiés (famille G, R4.5) : une fois de plus (Fractured Realm, Starfield Vocalist, Annie Joins Up,
+ * Roaming Throne, Traveling Chocobo) ou jamais (Torpor Orb, Karn, Argent Defender).
+ */
+export interface TriggerMod {
+  effect: "again" | "none";
+  /** Seulement les déclenchements dus à l'arrivée d'un permanent, qui correspond à `entering`. */
+  onEnter?: boolean;
+  entering?: ObjectFilter;
+  /** Capacités concernées : celles des permanents correspondants (par défaut, vos permanents). */
+  sources?: ObjectFilter;
+  /** Concerne les capacités de tous les joueurs (Torpor Orb). */
+  everyone?: boolean;
+}
+
+/**
  * Modificateur de coût des capacités activées (famille A, R4.4) : {N} de moins, ou {0} pour la première de ce tour.
  */
 export interface AbilityCostMod {
@@ -625,6 +658,10 @@ export interface PlayerStaticAbilityDef {
   playFrom?: PlayFromZone;
   /** Coût des capacités activées modifié (famille A, R4.4). */
   abilityCost?: AbilityCostMod;
+  /** Restriction de lancer des sorts (et d'activer des capacités) (famille D, R4.5). */
+  castLimit?: CastLimit;
+  /** Déclenchements doublés ou supprimés (famille G, R4.5). */
+  triggerMod?: TriggerMod;
   kind: "playerStatic";
   /** Hall of Echoes : la règle des légendes ne s'applique pas à vos permanents. */
   noLegendRule?: boolean;
@@ -662,8 +699,6 @@ export interface PlayerStaticAbilityDef {
   extraColorlessFromLands?: boolean;
   /** « Vous avez la protection contre chacun de vos adversaires » (702.16j, Absolute Virtue). */
   protectionFromOpponents?: boolean;
-  /** Traveling Chocobo : l'arrivée d'un de ces permanents fait se déclencher vos capacités une fois de plus. */
-  doubleEnterTriggersFor?: ObjectFilter;
   /** « Ces jetons plus un jeton [X] sont créés à la place » (Quina, Qu Gourmet). */
   extraToken?: TokenSpec;
   /** « La première fois que vous lancez des pièces chaque tour, vous gagnez ces lancers » (Edgar, King of Figaro). */
@@ -678,12 +713,6 @@ export interface PlayerStaticAbilityDef {
   plusOneCounterBonus?: boolean;
   /** Tomik, Izzet Sparkmage : blessures non de combat de vos sources à un adversaire ou à ses permanents : +1. */
   noncombatDamageBonus?: boolean;
-  /** Karn, Argent Defender (s'applique à tous) : l'arrivée d'artefacts et de créatures ne déclenche rien. */
-  noEntersTriggers?: boolean;
-  /** Yuriko, Blade of the Mighty (s'applique à tous) : pendant le combat, ni sorts ni capacités (hors mana). */
-  noSpellsDuringCombat?: boolean;
-  /** Starfield Vocalist : les capacités déclenchées de vos permanents par une arrivée se déclenchent une fois de plus. */
-  doubleEnterTriggers?: boolean;
   /** Quantum Riddler : avec une carte en main ou moins, vous piochez une carte de plus. */
   drawPlusOneWhenHandSmall?: boolean;
   /** Weftwalking (s'applique à tous) : le premier sort de chaque joueur pendant son tour peut être lancé sans payer. */
@@ -707,22 +736,14 @@ export interface PlayerStaticAbilityDef {
   drawDouble?: boolean;
   /** Far Fortune : les blessures de vos sources à un adversaire ou à ses permanents : +1. */
   damagePlusOneToOpponents?: boolean;
-  /** Grand Abolisher : pendant votre tour, vos adversaires ne lancent pas de sorts ni n'activent de capacités d'artefacts, de créatures ou d'enchantements. */
-  lockOpponentsOnYourTurn?: boolean;
   /** Worldwalker Helm : vos jetons d'artefact sont accompagnés d'un jeton Carte. */
   extraMapToken?: TokenSpec;
-  /** Torpor Orb (tous) : l'arrivée de créatures ne déclenche rien. */
-  noCreatureEntersTriggers?: boolean;
   /** Fblthp, Lost on the Range : vous pouvez regarder la carte du dessus de votre bibliothèque à tout moment. */
   lookAtTopCard?: boolean;
   /** Archangel of Tithes : les créatures ne peuvent vous attaquer que si leur contrôleur paie {1} pour chacune. */
   attackTax?: number;
   /** Archangel of Tithes (attaquant) : les créatures adverses ne bloquent que si leur contrôleur paie {1} pour chacune. */
   blockTax?: number;
-  /** High Noon (tous les joueurs) : un seul sort par joueur et par tour. */
-  oneSpellPerTurn?: boolean;
-  /** Annie Joins Up : les capacités déclenchées de vos créatures légendaires se déclenchent une fois de plus. */
-  doubleLegendaryTriggers?: boolean;
   /** Terror of the Peaks : les sorts adverses qui ciblent cette créature coûtent N PV de plus. */
   targetLifeTax?: number;
   /** Eriette, the Beguiler : vos Auras attachées à un permanent non-terrain adverse de VM inférieure ou égale en prennent le contrôle. */
@@ -733,16 +754,10 @@ export interface PlayerStaticAbilityDef {
   exhaustReuse?: boolean;
   /** Récit durable (Storied, Le Hobbit) : acquis pour le reste de la partie (effet de joueur permanent). */
   enduringStory?: boolean;
-  /** « Les joueurs ne peuvent pas lancer de sorts ce tour-ci » (Bilbo's Gambit), posé sur chaque joueur. */
-  cantCastSpells?: boolean;
-  /** Avatar's Wrath : « ne peut lancer des sorts que depuis sa main » (posé sur les adversaires). */
-  castOnlyFromHand?: boolean;
   /** Ral Zarek : « passe son prochain tour » (un effet par tour passé, consommé). */
   skipTurn?: boolean;
   /** Sanctum Lurker : vos planeswalkers ne vont pas au cimetière faute de loyauté. */
   walkersSurviveZeroLoyalty?: boolean;
-  /** Fractured Realm : les capacités déclenchées de vos permanents se déclenchent une fois de plus. */
-  doubleTriggers?: boolean;
   /** Dazzling Theater : vos sorts de créature ont la convocation. */
   convokeCreatureSpells?: boolean;
   /** Prop Room : vos créatures se dégagent pendant l'étape de dégagement des autres joueurs. */
@@ -777,14 +792,8 @@ export interface PlayerStaticAbilityDef {
   noncombatDamageAtLeastPower?: boolean;
   /** Bloodletter of Aclazotz : pendant votre tour, un adversaire qui perd des points de vie en perd le double. */
   doubleOpponentLifeLossYourTurn?: boolean;
-  /** Roaming Throne : les capacités déclenchées des autres créatures correspondantes que vous contrôlez se déclenchent une fois de plus. */
-  doubleTriggersFor?: ObjectFilter;
   /** Twists and Turns : « si une créature que vous contrôlez devait explorer, regardez 1 d'abord ». */
   scryBeforeExplore?: boolean;
-  /** Kutzil, Malamet Exemplar : « vos adversaires ne peuvent pas lancer de sorts pendant votre tour ». */
-  opponentsCantCastYourTurn?: boolean;
-  /** Sandswirl Wanderglyph : « chaque adversaire qui vous a attaqué ce tour-ci ne peut pas lancer de sorts ». */
-  attackersCantCast?: boolean;
   label?: string;
 }
 

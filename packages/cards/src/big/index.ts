@@ -107,7 +107,7 @@ export const BIG_SCRIPTS: Record<string, CardScript> = {
   "Grand Abolisher": {
     abilities: [
       playerStatic({
-        lockOpponentsOnYourTurn: true,
+        castLimit: { who: "opponents", during: "yourTurn", abilities: "artifactsCreaturesEnchantments" },
         condition: cond.yourTurn,
         label: "Pendant votre tour, vos adversaires sont bloqués",
       }),
@@ -446,7 +446,12 @@ export const BIG_SCRIPTS: Record<string, CardScript> = {
     ],
   },
   "Torpor Orb": {
-    abilities: [playerStatic({ noCreatureEntersTriggers: true, label: "L'arrivée de créatures ne déclenche rien" })],
+    abilities: [
+      playerStatic({
+        triggerMod: { effect: "none", onEnter: true, entering: { types: ["Creature"] }, everyone: true },
+        label: "L'arrivée de créatures ne déclenche rien",
+      }),
+    ],
   },
   "Transmutation Font": {
     abilities: [

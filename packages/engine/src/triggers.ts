@@ -28,7 +28,7 @@ import {
   rulesEvent,
   snapshot,
 } from "./state";
-import { controlledAbilitiesWithSource, playerStatic, playerStatics } from "./statics";
+import { playerStatic, playerStatics } from "./statics";
 import { legalTargets, matchesCard, matchesObjectFilter, matchesView, validateTargets, withChosen } from "./targets";
 import { countTurnEvents } from "./turnlog";
 import type {
@@ -444,15 +444,19 @@ function matchTrigger(s: GameState, ev: RulesEvent, t: TriggerSpec, src: Source)
     case "enters": {
       if (ev.e !== "zone" || ev.to !== "battlefield") return null;
       const v = liveView(s, ev.newId);
-      // Karn, Argent Defender : l'arrivée d'artefacts et de créatures ne déclenche rien.
+      // Torpor Orb (créatures), Karn, Argent Defender (artefacts et créatures) : leur arrivée ne déclenche rien.
       if (
         v &&
-        (v.types.includes("Artifact") || v.types.includes("Creature")) &&
-        s.playerOrder.some((p) => playerStatic(s, p, "noEntersTriggers"))
+        s.playerOrder.some((p) =>
+          playerStatics(s, p, "triggerMod").some(
+            ({ id, ab }) =>
+              ab.triggerMod?.effect === "none" &&
+              ab.triggerMod.onEnter &&
+              (!ab.triggerMod.entering || matchesView(v, ab.triggerMod.entering, p, id)),
+          ),
+        )
       )
         return null;
-      // Torpor Orb : l'arrivée de créatures ne déclenche rien.
-      if (v?.types.includes("Creature") && s.playerOrder.some((p) => playerStatic(s, p, "noCreatureEntersTriggers"))) return null;
       return v && matchWho(t.who, v, src) ? { objectId: v.id, player: v.controller } : null;
     }
     case "dies": {
@@ -854,27 +858,15 @@ export function detectTriggers(s: GameState, ev: RulesEvent, only?: (src: Source
         if (s.turn.onceFired.includes(key)) return;
         s.turn.onceFired.push(key);
       }
-      // Starfield Vocalist : une arrivée fait se déclencher une fois de plus les capacités de vos permanents.
-      // Annie Joins Up : les capacités déclenchées de vos créatures légendaires se déclenchent une fois de plus.
-      const legendary =
-        src.view.types.includes("Creature") &&
-        src.view.supertypes.includes("Legendary") &&
-        playerStatic(s, src.view.controller, "doubleLegendaryTriggers");
       // Cloud, Midgar Mercenary : Cloud équipé, ou un Équipement attaché à Cloud.
       const cloud = (id: string | undefined) =>
         !!id && onBattlefield(s, id) && !!s.defs[copiedDefId(s, id)]?.doubleTriggersWhenEquipped && !!snapshot(s, id).equipped;
       const equippedCloud =
         (src.view.equipped && cloud(src.id)) || (src.view.subtypes.includes("Equipment") && cloud(src.view.attachedTo));
       const again =
-        (ev.e === "zone" && ev.to === "battlefield" && playerStatic(s, src.view.controller, "doubleEnterTriggers") ? 2 : 1) +
-        (legendary ? 1 : 0) +
+        1 +
         (equippedCloud ? 1 : 0) +
-        // Fractured Realm : les capacités déclenchées de vos permanents (ou qui viennent d'en quitter le champ de bataille).
-        ((s.objects[src.id]?.zone ?? "battlefield") === "battlefield" && playerStatic(s, src.view.controller, "doubleTriggers")
-          ? 1
-          : 0) +
-        (ev.e === "zone" && ev.to === "battlefield" && ev.newId ? enterDoublers(s, src.view.controller, ev.newId) : 0) +
-        throneDoublers(s, src) +
+        triggerDoublers(s, src, ev) +
         (ev.e === "zone" && ev.from === "battlefield" && ev.to === "graveyard" && ev.lki?.types.includes("Creature")
           ? masamunes(s, src.id, src.view.controller)
           : 0);
@@ -941,22 +933,25 @@ function masamunes(s: GameState, sourceId: ObjectId, player: PlayerId): number {
   }).length;
 }
 
-/** Roaming Throne : une autre créature du type choisi que vous contrôlez voit ses capacités se déclencher une fois de plus. */
-function throneDoublers(s: GameState, src: Source): number {
-  if (!src.view.types.includes("Creature")) return 0;
-  return controlledAbilitiesWithSource(s, src.view.controller).filter(({ id, ab }) => {
-    if (ab.kind !== "playerStatic" || !ab.doubleTriggersFor || id === src.id) return false;
-    const holder = s.objects[id];
-    return !!holder && matchesView(src.view, withChosen(ab.doubleTriggersFor, holder), src.view.controller, id);
+/**
+ * Déclenchements supplémentaires (famille G) : Fractured Realm (vos permanents), Starfield Vocalist (une arrivée),
+ * Traveling Chocobo (l'arrivée d'un terrain ou d'un Oiseau à vous), Annie Joins Up (vos créatures légendaires),
+ * Roaming Throne (les autres créatures du type choisi).
+ */
+function triggerDoublers(s: GameState, src: Source, ev: RulesEvent): number {
+  const player = src.view.controller;
+  const entered = ev.e === "zone" && ev.to === "battlefield" ? (ev.newId ?? undefined) : undefined;
+  // Par défaut, les capacités de vos permanents (ou d'un permanent qui vient de quitter le champ de bataille).
+  const permanent = (s.objects[src.id]?.zone ?? "battlefield") === "battlefield";
+  return playerStatics(s, player, "triggerMod").filter(({ id, ab }) => {
+    const m = ab.triggerMod;
+    if (m?.effect !== "again") return false;
+    if (m.onEnter && !entered) return false;
+    if (m.entering && !(entered && s.objects[entered] && matchesObjectFilter(s, player, entered, m.entering, id))) return false;
+    if (!m.sources) return permanent;
+    const holder = id ? s.objects[id] : undefined;
+    return matchesView(src.view, holder ? withChosen(m.sources, holder) : m.sources, player, id);
   }).length;
-}
-
-/** Traveling Chocobo : un terrain ou un Oiseau que vous contrôlez arrive, vos capacités se déclenchent une fois de plus. */
-function enterDoublers(s: GameState, player: PlayerId, entered: ObjectId): number {
-  if (s.objects[entered]?.controller !== player) return 0;
-  return playerStatics(s, player, "doubleEnterTriggersFor").filter(
-    ({ id, ab }) => !!ab.doubleEnterTriggersFor && matchesObjectFilter(s, player, entered, ab.doubleEnterTriggersFor, id),
-  ).length;
 }
 
 /** Au début de l'étape de fin (ou à la fin du combat) : les capacités retardées dont c'est le moment se déclenchent. */

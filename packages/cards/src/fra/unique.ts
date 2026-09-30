@@ -173,7 +173,10 @@ export const UNIQUE: Record<string, CardScript> = {
   },
   "Yuriko, Blade of the Mighty": {
     abilities: [
-      playerStatic({ noSpellsDuringCombat: true, label: "Pendant le combat : ni sorts ni capacités" }),
+      playerStatic({
+        castLimit: { who: "each", during: "combat", abilities: "all" },
+        label: "Pendant le combat : ni sorts ni capacités",
+      }),
       triggered(when.attacks(CREATURE_YOU_CONTROL), [fx.pump(ref.eventObject, 0, 0, ["doubleStrike"])], {
         condition: cond.attackingAlone,
         label: "Attaque seule : double initiative",
@@ -618,6 +621,11 @@ export const UNIQUE: Record<string, CardScript> = {
     ],
   },
   "Karn, Argent Defender": {
-    abilities: [playerStatic({ noEntersTriggers: true, label: "L'arrivée d'artefacts et de créatures ne déclenche rien" })],
+    abilities: [
+      playerStatic({
+        triggerMod: { effect: "none", onEnter: true, entering: { types: ["Artifact", "Creature"] }, everyone: true },
+        label: "L'arrivée d'artefacts et de créatures ne déclenche rien",
+      }),
+    ],
   },
 };

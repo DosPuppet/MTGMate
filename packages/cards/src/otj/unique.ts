@@ -116,7 +116,7 @@ export const UNIQUE: Record<string, CardScript> = {
   },
   "High Noon": {
     abilities: [
-      playerStatic({ oneSpellPerTurn: true, label: "Un seul sort par joueur et par tour" }),
+      playerStatic({ castLimit: { who: "each", maxSpells: 1 }, label: "Un seul sort par joueur et par tour" }),
       activated({
         mana: "{4}{R}",
         sacrifice: true,
@@ -405,7 +405,10 @@ export const UNIQUE: Record<string, CardScript> = {
         targets: [target.creatureOrPlaneswalker("t", { controller: "opponent" })],
         label: "5 blessures",
       }),
-      playerStatic({ doubleLegendaryTriggers: true, label: "Déclencheurs de vos légendaires doublés" }),
+      playerStatic({
+        triggerMod: { effect: "again", sources: { types: ["Creature"], legendary: true } },
+        label: "Déclencheurs de vos légendaires doublés",
+      }),
     ],
   },
   "Assimilation Aegis": {

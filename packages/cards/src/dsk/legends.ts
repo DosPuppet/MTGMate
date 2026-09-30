@@ -256,7 +256,9 @@ export const LEGENDS: Record<string, CardScript> = {
     ],
   },
   "Fractured Realm": {
-    abilities: [playerStatic({ doubleTriggers: true, label: "Vos capacités déclenchées se déclenchent une fois de plus" })],
+    abilities: [
+      playerStatic({ triggerMod: { effect: "again" }, label: "Vos capacités déclenchées se déclenchent une fois de plus" }),
+    ],
   },
   "Paranormal Analyst": {
     abilities: [

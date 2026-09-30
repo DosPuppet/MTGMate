@@ -51,6 +51,7 @@ import type {
   ActivatedAbilityDef,
   CardDef,
   CastChoices,
+  CastLimit,
   ChoiceValue,
   Color,
   Effect,
@@ -554,9 +555,17 @@ export function plotCard(s: GameState, id: ObjectId): ObjectId | null {
 /** D'où, et à quelles conditions, ce joueur peut-il lancer cette carte ? */
 /** 702.61 : un sort avec le second partagé est sur la pile — seules les capacités de mana restent possibles. */
 export function splitSecondOnStack(s: GameState): boolean {
-  // Yuriko, Blade of the Mighty : « pendant le combat, les joueurs ne peuvent ni lancer de sorts ni activer de capacités (hors mana) ».
-  const combatSteps = ["beginCombat", "declareAttackers", "declareBlockers", "firstStrikeDamage", "combatDamage", "endCombat"];
-  if (combatSteps.includes(s.turn.step) && s.playerOrder.some((p) => playerStatic(s, p, "noSpellsDuringCombat"))) return true;
+  // Yuriko, Blade of the Mighty : « pendant le combat, les joueurs ne peuvent ni lancer de sorts ni activer de capacités
+  // (hors mana) » : comme le second partagé, pour tous.
+  if (
+    inCombat(s) &&
+    s.playerOrder.some((p) =>
+      playerStatics(s, p, "castLimit").some(
+        ({ ab }) => ab.castLimit?.who === "each" && ab.castLimit.during === "combat" && ab.castLimit.abilities === "all",
+      ),
+    )
+  )
+    return true;
   return s.stack.some((item) => {
     if (item.kind !== "spell") return false;
     const d = s.defs[item.sourceDefId];
@@ -690,33 +699,52 @@ export function castableFaces(s: GameState, card: ObjectId, d: CardDef): [number
   return [[undefined, d]];
 }
 
-/** Grand Abolisher : le joueur actif empêche ses adversaires de lancer des sorts ou d'activer ces capacités. */
-function lockedOut(s: GameState, player: PlayerId): boolean {
-  const active = s.turn.active;
-  return active !== player && playerStatic(s, active, "lockOpponentsOnYourTurn");
+const COMBAT_STEPS: readonly string[] = [
+  "beginCombat",
+  "declareAttackers",
+  "declareBlockers",
+  "firstStrikeDamage",
+  "combatDamage",
+  "endCombat",
+];
+const inCombat = (s: GameState) => COMBAT_STEPS.includes(s.turn.step);
+
+/**
+ * Restrictions de lancer (famille D) qui pèsent en ce moment sur ce joueur, d'où qu'elles viennent : Bilbo's Gambit,
+ * Avatar's Wrath, Kutzil, Grand Abolisher, Sandswirl Wanderglyph, High Noon, Yuriko.
+ */
+function castLimits(s: GameState, player: PlayerId): CastLimit[] {
+  const out: CastLimit[] = [];
+  for (const q of s.playerOrder) {
+    for (const { ab } of playerStatics(s, q, "castLimit")) {
+      const l = ab.castLimit;
+      if (!l) continue;
+      if (l.who === "you" ? q !== player : l.who === "opponents" ? q === player : false) continue;
+      if (l.during === "yourTurn" && s.turn.active !== q) continue;
+      if (l.during === "combat" && !inCombat(s)) continue;
+      if (l.attackedYou && countTurnEvents(s, { event: "attack", againstYou: true }, q, player) === 0) continue;
+      out.push(l);
+    }
+  }
+  return out;
+}
+
+/** Grand Abolisher, Yuriko : les capacités activées (hors mana) de cette source sont-elles bloquées ? */
+function abilitiesLocked(s: GameState, player: PlayerId, source: ObjectId): boolean {
+  return castLimits(s, player).some(
+    (l) =>
+      l.abilities === "all" ||
+      (l.abilities === "artifactsCreaturesEnchantments" &&
+        chars(s, source).types.some((t) => t === "Artifact" || t === "Creature" || t === "Enchantment")),
+  );
 }
 
 export function castTerms(s: GameState, player: PlayerId, card: ObjectId): CastTerms | null {
-  if (lockedOut(s, player)) return null;
-  // Bilbo's Gambit : « les joueurs ne peuvent pas lancer de sorts ce tour-ci ».
-  if (playerStatic(s, player, "cantCastSpells")) return null;
-  // Avatar's Wrath : seulement depuis la main.
-  if (s.objects[card]?.zone !== "hand" && playerStatic(s, player, "castOnlyFromHand")) return null;
-  // Kutzil : pas de sort pendant le tour de son contrôleur ; Sandswirl Wanderglyph : pas de sort après l'avoir attaqué.
-  const active = s.turn.active;
-  if (active !== player && playerStatic(s, active, "opponentsCantCastYourTurn")) return null;
-  if (
-    s.playerOrder.some(
-      (q) =>
-        q !== player &&
-        playerStatic(s, q, "attackersCantCast") &&
-        countTurnEvents(s, { event: "attack", againstYou: true }, q, player) > 0,
-    )
-  )
-    return null;
-  // High Noon : « chaque joueur ne peut pas lancer plus d'un sort à chaque tour ».
-  if ((s.players[player]?.turnStats.spellsCast ?? 0) >= 1 && s.playerOrder.some((p) => playerStatic(s, p, "oneSpellPerTurn")))
-    return null;
+  const spells = s.players[player]?.turnStats.spellsCast ?? 0;
+  const fromHand = s.objects[card]?.zone === "hand";
+  for (const l of castLimits(s, player)) {
+    if (l.maxSpells !== undefined ? spells >= l.maxSpells : !l.exceptFromHand || !fromHand) return null;
+  }
   const terms = baseCastTerms(s, player, card);
   // Weftwalking : « le premier sort que chaque joueur lance pendant chacun de ses tours peut être lancé sans payer ».
   if (
@@ -1608,12 +1636,7 @@ export function canPayNonManaCost(s: GameState, source: ObjectId, ab: ActivatedA
   if (!o || o.zone !== abilityZone(ab)) return false;
   if (o.zone === "battlefield" && !ab.specialAction && chars(s, source).keywords.includes("noActivatedAbilities")) return false;
   if (ab.once && o.used?.includes(index) && !exhaustReusable(s, o.controller, ab)) return false;
-  if (
-    o.zone === "battlefield" &&
-    lockedOut(s, o.controller) &&
-    chars(s, source).types.some((t) => t === "Artifact" || t === "Creature" || t === "Enchantment")
-  )
-    return false;
+  if (o.zone === "battlefield" && abilitiesLocked(s, o.controller, source)) return false;
   if (ab.oncePerTurn && o.activatedTurn?.[index] === s.turn.number) return false;
   const who = abilityZone(ab) !== "battlefield" ? o.owner : o.controller;
   if (ab.activationCondition && !checkCondition(s, ab.activationCondition, who, source)) return false;

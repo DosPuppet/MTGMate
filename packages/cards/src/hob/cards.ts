@@ -204,7 +204,7 @@ export const CARDS: Record<string, CardScript> = {
     // Cadeau d'un Trésor : lu dans le texte.
     spell: spell(
       [target.spell()],
-      [fx.bounce(ref.target()), ...fx.when(cond.gift, fx.thisTurn({ cantCastSpells: true }, ref.eachPlayer))],
+      [fx.bounce(ref.target()), ...fx.when(cond.gift, fx.thisTurn({ castLimit: { who: "you" } }, ref.eachPlayer))],
     ),
   },
   "Belladonna Took": {

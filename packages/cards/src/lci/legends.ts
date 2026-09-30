@@ -214,7 +214,10 @@ export const LEGENDS: Record<string, CardScript> = {
         condition: cond.opponentsTurn,
         label: "Il ne peut pas vous attaquer ce tour-ci",
       }),
-      playerStatic({ attackersCantCast: true, label: "Qui vous a attaqué ne peut pas lancer de sorts" }),
+      playerStatic({
+        castLimit: { who: "opponents", attackedYou: true },
+        label: "Qui vous a attaqué ne peut pas lancer de sorts",
+      }),
     ],
   },
   // --- Bleu -------------------------------------------------------------------
@@ -529,7 +532,7 @@ export const LEGENDS: Record<string, CardScript> = {
   },
   "Kutzil, Malamet Exemplar": {
     abilities: [
-      playerStatic({ opponentsCantCastYourTurn: true, label: "Pas de sorts adverses pendant votre tour" }),
+      playerStatic({ castLimit: { who: "opponents", during: "yourTurn" }, label: "Pas de sorts adverses pendant votre tour" }),
       triggered(when.combatDamageBatch({ ...CREATURE_YOU_CONTROL, powerAboveBase: true }), [fx.draw(1)], {
         label: "Piochez une carte",
       }),
@@ -597,7 +600,7 @@ export const LEGENDS: Record<string, CardScript> = {
     abilities: [
       staticAbility("self", { addChosenSubtype: true }, { label: "Du type choisi" }),
       playerStatic({
-        doubleTriggersFor: { types: ["Creature"], subtypeChosen: true, other: true },
+        triggerMod: { effect: "again", sources: { types: ["Creature"], subtypeChosen: true, other: true } },
         label: "Déclencheurs du type choisi doublés",
       }),
     ],

@@ -217,13 +217,13 @@ export const CARDS: Record<string, CardScript> = {
   },
   "Jennifer Walters": {
     abilities: [
-      playerStatic({ opponentsCantCastYourTurn: true }),
+      playerStatic({ castLimit: { who: "opponents", during: "yourTurn" } }),
       activated({ mana: "{3}{G}{W}{W}", sorcerySpeed: true, effects: [fx.transform(ref.self)], label: "Transformez-la" }),
     ],
   },
   "The Sensational She-Hulk": {
     abilities: [
-      playerStatic({ opponentsCantCastYourTurn: true }),
+      playerStatic({ castLimit: { who: "opponents", during: "yourTurn" } }),
       triggered(
         when.dealtDamage({ types: ["Creature"], controller: "you" }),
         fx.may("Infliger autant de blessures à une cible ?", fx.damage(amount.eventAmount, ref.target())),

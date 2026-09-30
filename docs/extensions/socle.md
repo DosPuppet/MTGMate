@@ -301,3 +301,6 @@ Lot R4.3 (PLAN-R.md, sans changement de règles) :
 
 Lot R4.4 (PLAN-R.md ; `RULES_VERSION` = 16) :
 - jouer depuis une zone (`playFrom`, `PlayFromZone`, `playFromRules`) à la place de 11 drapeaux ; coût des capacités activées (`abilityCost`, `AbilityCostMod`) à la place de 5.
+
+Lot R4.5 (PLAN-R.md, sans changement de règles) :
+- restrictions de lancer (`castLimit`, `CastLimit`) et déclenchements doublés ou supprimés (`triggerMod`, `TriggerMod`), à la place de 14 drapeaux.
