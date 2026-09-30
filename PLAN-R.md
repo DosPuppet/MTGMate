@@ -31,47 +31,50 @@ Plan établi le 30/09/2026 (branche `dev`) : il sert de feuille de route aux pro
   - fait avancer `RULES_VERSION` ;
   - ajoute un test de règles par écart, dans `engine/test/audit.test.ts` (un `describe` par numéro du § 3.1, qui reprend la mise en scène du script de l'audit) ;
   - retire sa ligne du § 3.1 d'`AUDIT.md` et de `docs/approximations.md`, et ajoute une ligne au suivi.
+- **Ce fichier est tenu à jour à chaque lot :** colonne « État » du tableau d'ordre et du tableau des écarts N, ligne de suivi, section du lot marquée ✅ avec ce qui a été réalisé et les écarts par rapport au prévu.
 - **Décision de l'utilisateur (30/09/2026) : pas de nouvelles cartes tant que le moteur n'est pas sécurisé et finalisé.** La phase 2 du P4 (Tarkir: Dragonstorm) attend la fin de ce plan (au moins R0 à R6).
 - **Ordre d'exécution :**
 
-| # | Lot | Audit | Dépend de | Risque |
-|---|---|---|---|---|
-| 1 | F1 : version des règles, empreintes de parties, un compteur d'identifiants par préfixe | nouveau | — | moyen |
-| 2 | F2 : garde-fou de la dette | § 3.3 | — | faible |
-| 3 | F3 : durcissement du serveur | § 6 | — | faible |
-| 4 | R0.1 à R0.6 : corrections rapides | § 3.1 | F1 | faible à moyen |
-| 5 | R4.0 : accesseur unique des statiques de joueur | § 3.3 | F2 | moyen |
-| 6 | R2.1 à R2.3 : entrée sur le champ de bataille, copies de permanents | § 3.1, § 3.2 | R4.0 | moyen |
-| 7 | R1.1 à R1.3 : remplacements (616) | § 3.2 | R4.0, R2.1 | élevé |
-| 8 | R3.1 et R3.2 : copies de sorts, blessures réparties | § 3.1 | R0 | moyen à élevé |
-| 9 | R2.4 : couche 2 (contrôle) | § 3.2 | R4.0 | élevé |
-| 10 | R2.5 : 613.8 par point fixe, couche 5 « en plus » | § 3.2 | R2.2, R2.4 | élevé (perf.) |
-| 11 | R4.1 à R4.6 : familles génériques | § 3.3 | R1, R2 | moyen |
-| 12 | R5 : blocages simultanés, mulligans 103.5 | § 3.2 | F1 | moyen |
-| 13 | R6 : boucles (104.4b) | § 3.2 | F1 | moyen |
-| 14 | R7 : justesse des cartes | § 3.4 | — | continu |
-| 15 | R8 : interface, puis IA (P3) | § 4, § 5 | — | moyen |
+| # | Lot | Audit | Dépend de | Risque | État |
+|---|---|---|---|---|---|
+| 1 | F1 : version des règles, empreintes de parties, un compteur d'identifiants par préfixe | nouveau | — | moyen | ✅ `ce1dbc0` |
+| 2 | F2 : garde-fou de la dette | § 3.3 | — | faible | ✅ `025b25a` |
+| 3 | F3 : durcissement du serveur | § 6 | — | faible | ✅ `e5910a4` |
+| 4 | R0.1 à R0.6 : corrections rapides | § 3.1 | F1 | faible à moyen | ✅ `709a43a` à `c7896e5` |
+| 5 | R4.0 : accesseur unique des statiques de joueur | § 3.3 | F2 | moyen | **prochain** |
+| 6 | R2.1 à R2.3 : entrée sur le champ de bataille, copies de permanents | § 3.1, § 3.2 | R4.0 | moyen | à faire |
+| 7 | R1.1 à R1.3 : remplacements (616) | § 3.2 | R4.0, R2.1 | élevé | à faire |
+| 8 | R3.1 et R3.2 : copies de sorts, blessures réparties | § 3.1 | R0 | moyen à élevé | à faire |
+| 9 | R2.4 : couche 2 (contrôle) | § 3.2 | R4.0 | élevé | à faire |
+| 10 | R2.5 : 613.8 par point fixe, couche 5 « en plus » | § 3.2 | R2.2, R2.4 | élevé (perf.) | à faire |
+| 11 | R4.1 à R4.6 : familles génériques | § 3.3 | R1, R2 | moyen | à faire |
+| 12 | R5 : blocages simultanés, mulligans 103.5 | § 3.2 | F1 | moyen | à faire |
+| 13 | R6 : boucles (104.4b) | § 3.2 | F1 | moyen | à faire |
+| 14 | R7 : justesse des cartes | § 3.4 | — | continu | à faire |
+| 15 | R8 : interface, puis IA (P3) | § 4, § 5 | — | moyen | à faire |
 
 ## Écarts supplémentaires, trouvés en préparant ce plan
 
 Lus dans le code ; chacun est confirmé par un test au début de son lot.
 
-| # | Écart | Preuve | Lot |
-|---|---|---|---|
-| N1 | Un seul compteur d'identifiants pour les objets, les effets, les déclencheurs et les effets de joueur : un effet de plus décale tous les objets suivants, et les anciens enregistrements visent d'autres objets | `engine/src/state.ts:174` | F1 |
-| N2 | Les marqueurs posés comme coût (loyauté +N, `cost.addCounters`) sont doublés par les doubleurs | `engine/src/stack.ts:1807, 1824` | R0.1 |
-| N3 | `attackTax` et `blockTax` sont lus comme des booléens : deux Archangel of Tithes coûtent {1} | `engine/src/turn.ts:612, 736` | R0.2 |
-| N4 | Les options de sort gratuit ne vérifient pas que les coûts restants sont payables | `engine/src/legal.ts:298, 302` | R0.2 |
-| N5 | Perte par poison annoncée comme « pioche » | `engine/src/turn.ts:951-953` | R0.1 |
-| N6 | 29 lectures directes des statiques de joueur ignorent leur condition et les effets sur les joueurs ; `doublers` ignore la condition | `engine/src/actions.ts`, `engine/src/stack.ts`, `engine/src/statics.ts:120` | R4.0 |
-| N7 | Un Clone qui copie un planeswalker arrive sans loyauté ; `applyEntersReplacements` lit la carte imprimée | `engine/src/replacement.ts:212-261` | R2.2 |
-| N8 | `copyToken` lit la carte imprimée et engage le jeton par un événement « devient engagé » | `engine/src/ops/permanents.ts:218, 226` | R2.2 |
-| N9 | Le `copyOf` d'une statique n'est jamais appliqué (Assimilation Aegis ne copie rien) ; la copie d'un sort de Clone est un 0/0 | `engine/src/layers.ts:420-424`, `engine/src/stack.ts:2115` | R2.2 |
-| N10 | Deux vols de contrôle du même permanent dans un tour le rendent au mauvais joueur ; un joueur qui quitte la partie fait exiler les permanents volés (800.4a) | `engine/src/turn.ts:322-329, 1006-1008` | R2.4 |
-| N11 | Une copie de sort n'a pas d'objet : « contrecarrez le sort ciblé » ne peut pas la viser, et les « défense talismanique contre » sont ignorées | `engine/src/targets.ts:207-212, 244-252` | R3.1 |
-| N12 | `drawBonus` (Vnwxt, Quantum Riddler) n'est appliqué que par 2 des 11 appels de `drawCard` | `engine/src/effects.ts:769` | R1.3 |
+| # | Écart | Preuve | Lot | État |
+|---|---|---|---|---|
+| N1 | Un seul compteur d'identifiants pour les objets, les effets, les déclencheurs et les effets de joueur : un effet de plus décale tous les objets suivants, et les anciens enregistrements visent d'autres objets | `engine/src/state.ts:174` | F1 | ✅ F1 |
+| N2 | Les marqueurs posés comme coût (loyauté +N, `cost.addCounters`) sont doublés par les doubleurs | `engine/src/stack.ts:1807, 1824` | R0.1 | ✅ R0.1 |
+| N3 | `attackTax` et `blockTax` sont lus comme des booléens : deux Archangel of Tithes coûtent {1} | `engine/src/turn.ts:612, 736` | R0.2 | ✅ R0.2 |
+| N4 | Les options de sort gratuit ne vérifient pas que les coûts restants sont payables | `engine/src/legal.ts:298, 302` | R0.2 | ✅ R0.2 |
+| N5 | Perte par poison annoncée comme « pioche » | `engine/src/turn.ts:951-953` | R0.1 | ✅ R0.1 |
+| N6 | 29 lectures directes des statiques de joueur ignorent leur condition et les effets sur les joueurs ; `doublers` ignore la condition | `engine/src/actions.ts`, `engine/src/stack.ts`, `engine/src/statics.ts:120` | R4.0 | à faire |
+| N7 | Un Clone qui copie un planeswalker arrive sans loyauté ; `applyEntersReplacements` lit la carte imprimée | `engine/src/replacement.ts:212-261` | R2.2 | à faire |
+| N8 | `copyToken` lit la carte imprimée et engage le jeton par un événement « devient engagé » | `engine/src/ops/permanents.ts:218, 226` | R2.2 | à faire |
+| N9 | Le `copyOf` d'une statique n'est jamais appliqué (Assimilation Aegis ne copie rien) ; la copie d'un sort de Clone est un 0/0 | `engine/src/layers.ts:420-424`, `engine/src/stack.ts:2115` | R2.2 | à faire |
+| N10 | Deux vols de contrôle du même permanent dans un tour le rendent au mauvais joueur ; un joueur qui quitte la partie fait exiler les permanents volés (800.4a) | `engine/src/turn.ts:322-329, 1006-1008` | R2.4 | à faire |
+| N11 | Une copie de sort n'a pas d'objet : « contrecarrez le sort ciblé » ne peut pas la viser, et les « défense talismanique contre » sont ignorées | `engine/src/targets.ts:207-212, 244-252` | R3.1 | à faire |
+| N12 | `drawBonus` (Vnwxt, Quantum Riddler) n'est appliqué que par 2 des 11 appels de `drawCard` | `engine/src/effects.ts:769` | R1.3 | à faire |
 
-## Phase 0 — fondations
+## Phase 0 — fondations ✅
+
+**Réalisé :** F1 (`ce1dbc0`), F2 (`025b25a`), F3 (`e5910a4`). Écart au prévu pour F3 : les en-têtes de sécurité sont envoyés par le serveur Node (nginx les transmet) ; HSTS est en commentaire dans le site nginx, à activer après certbot ; reste : jetons de reconnexion en clair dans `data/rooms`.
 
 - **F1 [règles] : version des règles, empreintes de parties, compteur d'identifiants.**
   - Dans `engine/src/record.ts` :
@@ -94,7 +97,7 @@ Lus dans le code ; chacun est confirmé par un test au début de son lot.
   - plafond de salons par IP ;
   - en-têtes de sécurité dans `deploy/nginx-mtgmate.conf`.
 
-## R0 — corrections rapides
+## R0 — corrections rapides ✅
 
 - **R0.1 [règles] :**
   - second partagé : la vérification passe après la branche des actions spéciales (`stack.ts:1698`), et le filtre de `legal.ts:431` les garde (#9) ;
@@ -119,6 +122,13 @@ Lus dans le code ; chacun est confirmé par un test au début de son lot.
   - cartes révélées montrées et journalisées ;
   - confirmation avant d'abandonner ;
   - noms français dans les invites du moteur (`turn.ts:870`, `triggers.ts:997`).
+
+**Réalisé, et écarts par rapport au prévu :**
+- R0.1 : pas de nouvelle clé « ne peut pas gagner » ; `cantLose` (Herald : « vos adversaires ne peuvent pas gagner ») sert aux deux sens, conformément à la règle anti-drapeaux. Marqueurs de coût : propriété générique `effectOnly` des doubleurs (seul Doubling Season dit « si un effet devait »).
+- R0.2 : `forcedAttacks` sert à l'automatisme ; l'IA garde `forcedAttackers` (désormais tenant compte des taxes) et choisit ses défenseurs elle-même ; en multijoueur, elle peut encore viser un joueur taxé.
+- R0.5 : approche additive plutôt que différée : chaque arrivée reste détectée tout de suite, puis est revue en fin de lot pour les sources arrivées après elle.
+- R0.6 : les messages d'erreur (`RulesError`) nomment encore les cartes en anglais ; les pertes de PV hors blessures ne sont pas journalisées.
+- Tests : `engine/test/audit.test.ts` (19 tests), `client/test/i18n.test.ts`.
 
 ## R4.0 — accesseur unique des statiques de joueur [règles]
 
