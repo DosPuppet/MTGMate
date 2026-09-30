@@ -331,7 +331,12 @@ export function solvePayment(
     return null;
   }
   const pool = { ...(s.players[player]?.manaPool ?? zero()) } as Record<ManaType, number>;
-  const sources = manaSources(s, player, exclude, purpose);
+  // Une même source à plusieurs capacités (Tablet of Discovery : {R}, ou {R}{R} pour un éphémère ou un rituel) : celle qui
+  // produit le plus d'abord, son surplus paie le générique.
+  const listed = manaSources(s, player, exclude, purpose);
+  const byKey = new Map<string, ManaSource[]>();
+  for (const src of listed) byKey.set(src.key, [...(byKey.get(src.key) ?? []), src]);
+  const sources = [...byKey.values()].flatMap((group) => [...group].sort((a, b) => b.amount - a.amount));
   // Symboles à payer : chacun accepte un ensemble de types (un seul pour un symbole coloré, deux pour un hybride).
   const pips: ManaType[][] = [];
   for (const m of MANA_TYPES) for (let i = 0; i < (cost.colored[m] ?? 0); i++) pips.push([m]);

@@ -50,8 +50,11 @@ export const RECORD_VERSION = 1;
  * - 17 : mulligans tour de table par tour de table (103.5) ; blocages des défenseurs appliqués ensemble (509.1 ; R5).
  * - 18 : boucle d'actions obligatoires, partie nulle (104.4b) ; les déclenchements d'un joueur qui quitte la partie
  *   cessent d'exister (800.4a ; R6).
+ * - 19 : justesse des cartes (R7) : « l'objet de l'événement » et « si la source… » lisent les dernières informations
+ *   connues d'un objet parti (603.10) ; `pumpAll` respecte « autre » ; prouesses multiples ; terrain joué depuis le
+ *   cimetière par une permission ; le solveur de mana préfère la capacité qui produit le plus (Tablet of Discovery).
  */
-export const RULES_VERSION = 18;
+export const RULES_VERSION = 19;
 
 /** Un point de contrôle toutes les N décisions (plus la dernière de la partie). */
 export const CHECKPOINT_EVERY = 25;

@@ -296,6 +296,7 @@ Détail, ordre d'exécution et décisions de conception : `PLAN-R.md`.
 - **30/09/2026 :** lot R0.5 fait : écart 6 corrigé (arrivées simultanées, 603.6a).
 - **30/09/2026 :** lot R4.0 fait (§ 3.3) : un seul accès aux statiques de joueur (N6).
 - **30/09/2026 :** lot R1 fait (§ 3.2) : ordre des remplacements qui modifient un nombre choisi pour le joueur affecté (Artist's Talent et Twinflame Tyrant : 8 blessures, plus 10), toutes les pioches passent par les remplacements (N12).
+- **30/09/2026 :** lot R7 fait (§ 3.4, premier passage) : un fichier de tests de règles par extension partielle, tests tirés des décisions officielles ; 7 écarts de cartes trouvés et corrigés.
 - **30/09/2026 :** lot R6 fait : boucles d'actions obligatoires (104.4b), partie nulle ; déclenchements d'un joueur éliminé retirés (800.4a).
 - **30/09/2026 :** lot R5 fait : blocages simultanés en multijoueur (cachés jusqu'au dernier défenseur), mulligans tour de table par tour de table (103.5).
 - **30/09/2026 :** lot R2.5 fait (§ 3.2) : dépendances de couches par point fixe, couleurs ajoutées, exceptions de copie copiables (fin de l'écart 13).

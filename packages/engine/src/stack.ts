@@ -188,6 +188,8 @@ export function canPlayLand(s: GameState, player: PlayerId, card: ObjectId): boo
       playFromRules(s, player, card, "libraryTop", "lands").length > 0) ||
     // Ville à aventure (FIN) : la carte « en aventure » se joue comme terrain depuis l'exil (715.4).
     (o.zone === "exile" && !!o.onAdventure && o.owner === player) ||
+    // « Vous pouvez jouer cette carte ce tour-ci » (Tablet of Discovery : la carte meulée, terrain compris).
+    (o.zone === "graveyard" && !!exilePermission(s, player, card) && !exilePermission(s, player, card)?.anyTime) ||
     (o.zone === "graveyard" &&
       o.owner === player &&
       (graveyardTypeAvailable(s, player, card) === "Land" || playFromRules(s, player, card, "graveyard", "lands").length > 0));

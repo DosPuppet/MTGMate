@@ -30,7 +30,9 @@ export const HANDLERS: OpHandlers = {
     return;
   },
   pumpAll(s, _r, e, ctx) {
-    const ids = s.battlefield.filter((id) => isCreature(s, id) && matchesObjectFilter(s, ctx.controller, id, e.filter));
+    const ids = s.battlefield.filter(
+      (id) => isCreature(s, id) && matchesObjectFilter(s, ctx.controller, id, e.filter, ctx.sourceId),
+    );
     addPump(s, ids, evalAmount(s, ctx, e.power), evalAmount(s, ctx, e.toughness), e.keywords);
     return;
   },

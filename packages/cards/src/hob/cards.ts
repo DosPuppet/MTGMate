@@ -133,7 +133,7 @@ export const CARDS: Record<string, CardScript> = {
       triggered(
         when.entersSelf,
         [
-          fx.attach(ref.target("e"), ref.target("c")),
+          fx.attach(ref.target("c"), ref.target("e")),
           ...fx.when(
             cond.amountAtLeast(amount.refCount(ref.target("e")), 1),
             fx.reflexive(

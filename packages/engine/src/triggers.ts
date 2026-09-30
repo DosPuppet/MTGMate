@@ -362,8 +362,13 @@ export function checkCondition(s: GameState, c: Condition, controller: PlayerId,
       return !!(sourceId && s.objects[sourceId]?.castFromHand);
     case "battlefieldCount":
       return s.battlefield.filter((id) => matchesView(snapshot(s, id), c.filter, controller, sourceId)).length >= c.atLeast;
-    case "sourceMatches":
-      return !!sourceId && onBattlefield(s, sourceId) && matchesObjectFilter(s, controller, sourceId, c.filter, sourceId);
+    case "sourceMatches": {
+      if (!sourceId) return false;
+      if (onBattlefield(s, sourceId)) return matchesObjectFilter(s, controller, sourceId, c.filter, sourceId);
+      // Source partie (« quand elle meurt, si ce n'est pas un jeton ») : ses dernières informations connues (603.10).
+      const lki = s.objects[sourceId] ? undefined : s.lki[sourceId];
+      return !!lki && matchesView(lki, c.filter, controller, sourceId);
+    }
     case "targetMatches":
     case "refMatches":
     case "eventObjectMatches":

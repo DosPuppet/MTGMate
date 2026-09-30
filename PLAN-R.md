@@ -29,7 +29,8 @@ Plan établi le 30/09/2026 (branche `dev`) : il sert de feuille de route aux pro
 - **30/09/2026 : R4.6 fait** (sans changement de règles) : `counterOnOrCreate` (renforcer Jace, amasser), « le prochain sort » en effet de joueur à usage unique (`nextSpell`), `instantJaceLoyalty` et `extraMountainMana` par `fx.thisTurn`. **R4 terminé** : la référence de la dette passe de 96 / 33 / 61 à 69 drapeaux de joueur, 13 mots-clés non imprimés et 58 opérations d'une seule carte.
 - **30/09/2026 : R5 fait** (`RULES_VERSION` = 17) : blocages des défenseurs appliqués ensemble, cachés jusqu'au dernier (509.1) ; mulligans tour de table par tour de table (103.5).
 - **30/09/2026 : R6 fait** (`RULES_VERSION` = 18) : boucle d'actions obligatoires déclarée nulle (104.4b) ; les trois gardes y passent. En cherchant la cause des parties « inachevées » du fuzz (méta à 3 joueurs, tout le pool à 4), trouvé : un déclenchement d'un joueur éliminé restait en attente, jamais mis sur la pile, et le nettoyage redonnait la priorité sans fin (514.3a). Corrigé (800.4a) : `verify --full` passe entièrement.
-- À faire : R7, puis R8.
+- **30/09/2026 : R7 fait** (`RULES_VERSION` = 19) : un fichier de tests de règles par extension partielle (11 fichiers, 195 tests), `rulings.test.ts` (10 tests tirés des décisions officielles), deux motifs d'Oracle de plus. Ces tests ont trouvé 7 écarts, corrigés (voir la section R7).
+- À faire : R8.
 
 ## Le garde-fou de la dette (lot F2)
 
@@ -65,9 +66,9 @@ Plan établi le 30/09/2026 (branche `dev`) : il sert de feuille de route aux pro
 | 10 | R2.5 : 613.8 par point fixe, couche 5 « en plus » | § 3.2 | R2.2, R2.4 | élevé (perf.) | ✅ `be0eefa` |
 | 11 | R4.1 à R4.6 : familles génériques | § 3.3 | R1, R2 | moyen | ✅ `41a3cf0` à `616411f` |
 | 12 | R5 : blocages simultanés, mulligans 103.5 | § 3.2 | F1 | moyen | ✅ `ecc17e6` |
-| 13 | R6 : boucles (104.4b) | § 3.2 | F1 | moyen | ✅ (voir suivi) |
-| 14 | R7 : justesse des cartes | § 3.4 | — | continu | **prochain** |
-| 15 | R8 : interface, puis IA (P3) | § 4, § 5 | — | moyen | à faire |
+| 13 | R6 : boucles (104.4b) | § 3.2 | F1 | moyen | ✅ `95dfd1b` |
+| 14 | R7 : justesse des cartes | § 3.4 | — | continu | ✅ (voir suivi ; à poursuivre) |
+| 15 | R8 : interface, puis IA (P3) | § 4, § 5 | — | moyen | **prochain** |
 
 ## Écarts supplémentaires, trouvés en préparant ce plan
 
@@ -334,10 +335,17 @@ Lus dans le code ; chacun est confirmé par un test au début de son lot.
   - les trois gardes y passent.
 
   **Réalisé :** `declareLoopDraw` (`turn.ts`, événement `gameOver` avec `reason: "loop"`) ; les gardes de `advance` (100 000 tours), des actions basées sur l'état (100 passes) et de l'hôte (10 000 décisions automatiques dans un tour, `drawByLoop`) déclarent la partie nulle au lieu de lever une erreur ; `watchLoop` (`game.ts`) compte les passes pile non vide sans autre décision, relève l'empreinte (`outcomeHash`, déplacé dans `fingerprint.ts`) au-delà de 20 et déclare la partie nulle à la troisième répétition ou au-delà de 2 000 passes (boucle qui ne répète pas l'état) ; 800.4a : les déclenchements en attente et retardés d'un joueur éliminé sont retirés (`removePlayerObjects`, `processTriggers`). Tests : `audit.test.ts` (R6).
-- **R7 (continu) :**
+- **R7 (continu) ✅ pour ce premier passage :**
   - attentes de l'Oracle étendues ;
   - un fichier de tests de règles par extension partielle ;
   - tests tirés des décisions officielles (rulings) pour le lien de vie, les copies, les remplacements et le nettoyage.
+
+  **Réalisé :**
+  - `engine/test/<ext>.test.ts` pour TDM (24 tests), WOE (17), SOS (25), ECL (14), TLA (18), SPM (15), MSH (19), TMT (16), HOB (16), MKM (15), BIG (16) : chaque test vérifie le texte Oracle d'une carte, pas seulement qu'elle se joue ;
+  - `engine/test/rulings.test.ts` : lien de vie (deux sources, deux gains ; blessures prévenues, pas de gain), copies (pas de prouesse pour une copie ; la copie survit au contresort de l'original), remplacements (doubleurs cumulés ; prévention avant doublement ; exil à la place, pas de « meurt »), nettoyage (défausse qui déclenche : seconde étape de nettoyage), prouesse multiple, Tablet of Discovery ;
+  - attentes de l'Oracle : « engagez la créature ciblée », « … meule N cartes », « vous perdez N PV », « ~ inflige N blessures à chaque créature » ;
+  - **écarts trouvés et corrigés :** `ref.eventObject` et la condition « si la source… » ignoraient les dernières informations connues d'un objet parti (The Ooze créait 0 Mutagène, Esoteric Duplicator ne copiait rien, la copie de Vaultborn Tyrant revenait) ; `pumpAll` ignorait « autre » (Harvester of Misery se donnait −2/−2) ; Thorin, Mountain-king n'attachait rien (arguments d'`attach` inversés) ; les prouesses multiples étaient fondues en une (Thor Odinson) ; un terrain meulé par Tablet of Discovery ne se jouait pas (permission de jouer ignorée pour un terrain du cimetière) ; son {R}{R} restreint ne payait jamais (le solveur prend maintenant, pour une même source, la capacité qui produit le plus) ;
+  - à poursuivre : attentes de l'Oracle pour d'autres formes de texte, décisions officielles d'autres interactions.
 - **R8 :**
   - interface :
     - garder la priorité ;

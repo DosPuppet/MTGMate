@@ -164,7 +164,9 @@ export function resolveRef(s: GameState, ctx: EffectContext, ref: Ref): string[]
       if (!ev?.objectId) return [];
       // L'objet tel qu'il est encore, sinon ce qu'il est devenu après son changement de zone.
       if (s.objects[ev.objectId] || s.stack.some((x) => x.id === ev.objectId)) return [ev.objectId];
-      return ev.newObjectId && s.objects[ev.newObjectId] ? [ev.newObjectId] : [];
+      if (ev.newObjectId && s.objects[ev.newObjectId]) return [ev.newObjectId];
+      // Parti sans laisser d'objet (jeton, copie) : ses dernières informations connues (marqueurs, définition copiée).
+      return s.lki[ev.objectId] ? [ev.objectId] : [];
     }
     case "eventPlayer":
       return ctx.event?.player ? [ctx.event.player] : [];

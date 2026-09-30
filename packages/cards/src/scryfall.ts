@@ -366,9 +366,11 @@ function intrinsicAbilities(
   saddle?: number,
   crewOnce?: boolean,
   equipKind: { worthy?: boolean; byColors?: boolean } = {},
+  prowessCount = 1,
 ): CardDef["abilities"] {
   const out: CardDef["abilities"] = [];
-  if (keywords.has("prowess")) {
+  // 702.108b : chaque prouesse se déclenche séparément (Thor Odinson : « prowess, prowess »).
+  for (let i = 0; keywords.has("prowess") && i < prowessCount; i++) {
     out.push({
       kind: "triggered",
       trigger: { on: "castSpell", by: "you", filter: { notTypes: ["Creature"] } },
@@ -806,6 +808,7 @@ function singleDef(raw: RawCard, script: CardScript | undefined, set: string): C
         parseSaddle(raw.oracleText),
         crewOncePerTurn(raw.oracleText),
         equipVariant(raw.oracleText),
+        Math.max(1, [...stripReminder(raw.oracleText).matchAll(/(?:^|, )prowess(?=,|$)/gim)].length),
       ),
       ...plotAbility(raw.oracleText),
       ...impendingAbilities(raw.oracleText),

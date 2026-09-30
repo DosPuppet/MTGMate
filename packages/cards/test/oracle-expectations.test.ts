@@ -240,6 +240,32 @@ function clause(t: string): Clause | null {
       },
     };
   }
+  if (/^Tap target creature(?: an opponent controls)?\.$/.test(t))
+    return { target: "opponentCreature", check: (_b, a) => expect(a.objects[big(a) ?? ""]?.tapped).toBe(true) };
+  m = /^(Each|Target) opponent mills (\w+) cards?\.$/.exec(t);
+  if (m) {
+    const k = n(m[2] as string);
+    return {
+      target: m[1] === "Target" ? "opponent" : undefined,
+      check: (b, a) => expect((b.players.p2?.library.length ?? 0) - (a.players.p2?.library.length ?? 0)).toBe(k),
+    };
+  }
+  m = /^You lose (\d+) life\.$/.exec(t);
+  if (m) {
+    const k = n(m[1] as string);
+    return { check: (b, a) => expect(life(b, "p1") - life(a, "p1")).toBe(k) };
+  }
+  m = /^~ deals (\d+) damage to each creature\.$/.exec(t);
+  if (m) {
+    const d = n(m[1] as string);
+    return {
+      check: (b, a) => {
+        const id = big(a);
+        if (id) expect(a.objects[id]?.damage).toBe(d);
+        else expect(chars(b, big(b) as string).toughness).toBeLessThanOrEqual(d);
+      },
+    };
+  }
   if (/^Destroy all creatures\.$/.test(t))
     return { check: (_b, a) => expect(a.battlefield.filter((id) => chars(a, id).types.includes("Creature"))).toEqual([]) };
   // Phrases reconnues sans vérification propre (effet annexe, ou déjà couvert par la phrase précédente).

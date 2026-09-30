@@ -315,3 +315,7 @@ Lot R5 (PLAN-R.md ; `RULES_VERSION` = 17) :
 Lot R6 (PLAN-R.md ; `RULES_VERSION` = 18) :
 - boucle d'actions obligatoires : partie nulle (104.4b ; `declareLoopDraw`, `watchLoop`, `drawByLoop` pour l'hôte) ;
 - 800.4a : les déclenchements d'un joueur éliminé cessent d'exister (ils bloquaient le nettoyage : parties « inachevées » du fuzz).
+
+Lot R7 (PLAN-R.md ; `RULES_VERSION` = 19) :
+- un fichier de tests de règles par extension partielle (TDM, WOE, SOS, ECL, TLA, SPM, MSH, TMT, HOB, MKM, BIG), `rulings.test.ts` ;
+- corrigés : dernières informations connues pour `ref.eventObject` et « si la source… » (603.10), « autre » dans `pumpAll`, Thorin, prouesses multiples (702.108b), terrain joué par une permission depuis le cimetière, capacité de mana la plus productive d'une source d'abord.
