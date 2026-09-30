@@ -199,3 +199,13 @@ Lot F3 (PLAN-R.md : sécurité du serveur) :
 - en-têtes de sécurité sur les fichiers servis (`nosniff`, `X-Frame-Options: DENY`, `Referrer-Policy: no-referrer`, `Permissions-Policy`) ; HSTS en commentaire dans le site nginx, à activer après certbot ;
 - reste : jetons de reconnexion en clair dans `data/rooms` ;
 - tests : `server/test/online.test.ts` (adresse, Origin, plafond de salons), `static.test.ts` (URL mal encodée, en-têtes), `images.test.ts` ; `npm run online-smoke` à travers le relais de Vite.
+
+Lot R0.1 (PLAN-R.md ; `RULES_VERSION` = 2) :
+- second partagé (702.61b) : les actions spéciales restent possibles (retourner une carte face visible), dans `activateAbility` comme dans `legalActions` ;
+- protection contre tout : elle ne prévient plus des blessures qui ne peuvent pas être prévenues (Sunspine Lynx) ;
+- 704.5b : l'indicateur de pioche impossible est remis à zéro à chaque vérification ; la défaite par poison est annoncée comme telle (`reason: "poison"`, journal « 10 marqueurs poison ») ;
+- « vous gagnez / perdez la partie » par un effet respecte « vous ne pouvez pas perdre et vos adversaires ne peuvent pas gagner » (clé `cantLose` existante, sans nouveau drapeau) ;
+- marqueurs mis comme coût (loyauté +N, « mettez un marqueur », flétrir en kicker) : `changeCounters(…, asCost)` ; un doubleur `effectOnly` (Doubling Season : « si un effet devait ») ne les double pas ; The Earth Crystal et Innkeeper's Talent, si ;
+- 506.4 : un attaquant ou un bloqueur qui cesse d'être une créature quitte le combat (vérifié avec les actions basées sur l'état) ;
+- plus de 100 passes d'actions basées sur l'état : une `Error` (au lieu d'un arrêt silencieux), que le fuzz verrait ;
+- tests : `engine/test/audit.test.ts`.

@@ -284,11 +284,18 @@ export const HANDLERS: OpHandlers = {
     return;
   },
   winGame(s, _r, _e, ctx) {
-    eliminate(s, opponentsOf(s, ctx.controller));
+    // Herald of Eternal Dawn (`cantLose`) : « vous ne pouvez pas perdre et vos adversaires ne peuvent pas gagner ».
+    const opponents = opponentsOf(s, ctx.controller);
+    if (opponents.some((p) => playerStatic(s, p, "cantLose"))) return;
+    eliminate(s, opponents);
     return;
   },
   loseGame(s, _r, e, ctx) {
-    eliminate(s, e.who ? resolveRef(s, ctx, e.who).filter((p) => isPlayer(s, p)) : [ctx.controller]);
+    const who = e.who ? resolveRef(s, ctx, e.who).filter((p) => isPlayer(s, p)) : [ctx.controller];
+    eliminate(
+      s,
+      who.filter((p) => !playerStatic(s, p, "cantLose")),
+    );
     return;
   },
   setLife(s, _r, e, ctx) {

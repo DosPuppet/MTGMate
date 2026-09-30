@@ -132,11 +132,12 @@ export function tokenMultiplier(s: GameState, player: PlayerId, creature: boolea
 }
 
 /** Doublements de marqueurs sur ce permanent, filtrés compris (Loading Zone : créatures, Vaisseaux, Planètes). */
-export function counterDoublers(s: GameState, o: GameObject): number {
+export function counterDoublers(s: GameState, o: GameObject, asCost = false): number {
   return controlledAbilitiesWithSource(s, o.controller).filter(
     ({ id, ab }) =>
       ab.kind === "doubler" &&
       !!ab.counters &&
+      !(asCost && ab.effectOnly) &&
       (!ab.countersFilter || matchesView(snapshot(s, o.id), ab.countersFilter, o.controller, id)),
   ).length;
 }

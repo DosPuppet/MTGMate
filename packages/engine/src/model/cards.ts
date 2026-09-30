@@ -749,6 +749,11 @@ export interface DoublerAbilityDef {
   /** Ojer Taq : « trois fois plus de jetons de créature ». */
   creatureTokensTriple?: boolean;
   counters?: boolean;
+  /**
+   * Doubling Season : « si un effet devait mettre des marqueurs » — pas les marqueurs mis comme coût (loyauté +N d'un
+   * planeswalker, coût « mettez un marqueur »).
+   */
+  effectOnly?: boolean;
   /** Blessures d'une source que vous contrôlez à un adversaire ou à un permanent adverse. */
   damageToOpponents?: boolean;
   /** Blessures infligées par une créature que vous contrôlez, à n'importe quoi (Gratuitous Violence). */

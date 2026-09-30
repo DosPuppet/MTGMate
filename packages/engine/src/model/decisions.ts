@@ -309,5 +309,5 @@ export type GameEvent =
   | { type: "scry"; player: PlayerId; top: number; bottom: number }
   | { type: "choice"; player: PlayerId; intent: ChoiceIntent }
   | { type: "trigger"; player: PlayerId; stackId: string; defId: string; targets: string[] }
-  | { type: "lose"; player: PlayerId; reason: "life" | "draw" | "concede" }
+  | { type: "lose"; player: PlayerId; reason: "life" | "draw" | "poison" | "concede" }
   | { type: "gameOver"; winner: PlayerId | null };

@@ -305,10 +305,13 @@ export function tapObject(s: GameState, o: GameObject): void {
   rulesEvent(s, { e: "tap", objectId: o.id });
 }
 
-/** Ajoute (ou retire, si n < 0) des marqueurs ; renvoie le nombre réellement modifié. */
-export function changeCounters(s: GameState, o: GameObject, kind: string, n: number): number {
+/**
+ * Ajoute (ou retire, si n < 0) des marqueurs ; renvoie le nombre réellement modifié. `asCost` : marqueurs mis pour payer
+ * un coût (loyauté +N, « mettez un marqueur : ») ; les remplacements « si un effet devait » ne s'y appliquent pas.
+ */
+export function changeCounters(s: GameState, o: GameObject, kind: string, n: number, asCost = false): number {
   // Doubling Season : des marqueurs mis sur un permanent que vous contrôlez sont doublés (y compris en arrivant).
-  if (n > 0 && o.zone === "battlefield") n *= 2 ** counterDoublers(s, o);
+  if (n > 0 && o.zone === "battlefield") n *= 2 ** counterDoublers(s, o, asCost);
   // Yoshimaru, Beloved Companion : un marqueur +1/+1 de plus sur vos créatures.
   if (n > 0 && kind === "+1/+1" && o.zone === "battlefield" && playerStatic(s, o.controller, "plusOneCounterBonus")) n += 1;
   const before = counterCount(o, kind);

@@ -427,8 +427,15 @@ export function legalActions(s: GameState, player: PlayerId): ActionOption[] {
     const ab = manaAbilitiesOf(s, src.id)[src.ability];
     if (ab) out.push({ type: "tapForMana", source: src.id, ability: src.ability, colors: ab.produce });
   }
-  // 702.61 : second partagé — ni sorts ni capacités (hors mana) tant que le sort est sur la pile.
-  if (splitSecondOnStack(s)) return out.filter((a) => a.type === "pass" || a.type === "tapForMana");
+  // 702.61 : second partagé — ni sorts ni capacités (hors mana) tant que le sort est sur la pile ; les actions spéciales
+  // restent possibles (702.61b).
+  if (splitSecondOnStack(s))
+    return out.filter(
+      (a) =>
+        a.type === "pass" ||
+        a.type === "tapForMana" ||
+        (a.type === "activate" && !!activatedAbility(s, a.source, a.ability)?.specialAction),
+    );
   // 608.2g : pendant une résolution, seulement les cartes proposées (ou passer pour refuser).
   const now = p.castNow;
   if (now)

@@ -17,8 +17,10 @@ export const RECORD_VERSION = 1;
  * enregistrement : 0.
  *
  * - 1 : un compteur d'identifiants par préfixe (lot F1).
+ * - 2 : corrections R0.1 (second partagé, protection, 704.5b, gagner ou perdre la partie, marqueurs payés comme coût,
+ *   506.4).
  */
-export const RULES_VERSION = 1;
+export const RULES_VERSION = 2;
 
 /** Un point de contrôle toutes les N décisions (plus la dernière de la partie). */
 export const CHECKPOINT_EVERY = 25;

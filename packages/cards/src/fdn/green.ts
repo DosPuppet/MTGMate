@@ -362,7 +362,7 @@ export const GREEN: Record<string, CardScript> = {
     ],
   },
   "Doubling Season": {
-    abilities: [doubler({ tokens: true, counters: true, label: "Jetons et marqueurs doublés" })],
+    abilities: [doubler({ tokens: true, counters: true, effectOnly: true, label: "Jetons et marqueurs doublés" })],
   },
 
   // --- Réimpressions ---

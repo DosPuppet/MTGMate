@@ -1258,7 +1258,7 @@ export function castSpell(s: GameState, player: PlayerId, card: ObjectId, choice
   for (const id of sacrifice) sacrificePermanent(s, id);
   if (kicked && kickerPermanent && d.kickerCost?.sacrifice) sacrificePermanent(s, kickerPermanent);
   else if (kicked && kickerPermanent && d.kickerCost?.blight)
-    changeCounters(s, obj(s, kickerPermanent), "-1/-1", d.kickerCost.blight);
+    changeCounters(s, obj(s, kickerPermanent), "-1/-1", d.kickerCost.blight, true);
   else if (kicked && kickerPermanent && d.kickerCost?.bounce) moveObject(s, kickerPermanent, "hand");
   s.priority.passes = 0;
   emit({ type: "cast", player, stackId, defId: d.id, targets: flatTargets(targets) });
@@ -1695,7 +1695,9 @@ export function activateAbility(s: GameState, player: PlayerId, source: ObjectId
     throw new RulesError("Cette capacité s'active seulement en rituel");
   }
   if (!canPayNonManaCost(s, source, ab, index)) throw new RulesError("Impossible de payer le coût");
-  if (splitSecondOnStack(s)) throw new RulesError("Aucun sort ni capacité maintenant (second partagé ou combat)");
+  // 702.61b : le second partagé n'empêche pas les actions spéciales (retourner une carte face visible).
+  if (!ab.specialAction && splitSecondOnStack(s))
+    throw new RulesError("Aucun sort ni capacité maintenant (second partagé ou combat)");
   let sacrificed: ObjectId[] = [];
   if (ab.cost.sacrifice) {
     const options = sacrificeOptions(s, player, source, ab);
@@ -1804,7 +1806,7 @@ export function activateAbility(s: GameState, player: PlayerId, source: ObjectId
   if (ab.cost.loyalty !== undefined) {
     o.loyaltyTurn = s.turn.number;
     const cost = ab.cost.loyaltyX ? -x : ab.cost.loyalty;
-    if (cost !== 0) changeCounters(s, o, "loyalty", cost);
+    if (cost !== 0) changeCounters(s, o, "loyalty", cost, true);
     const pl = s.players[player];
     if (pl) pl.turnStats.loyaltyActivations += 1;
     rulesEvent(s, { e: "loyalty", player, sourceId: source, cost });
@@ -1821,7 +1823,7 @@ export function activateAbility(s: GameState, player: PlayerId, source: ObjectId
     }
   }
   if (ab.oncePerTurn) o.activatedTurn = { ...(o.activatedTurn ?? {}), [index]: s.turn.number };
-  if (ab.cost.addCounters) changeCounters(s, o, ab.cost.addCounters.kind, ab.cost.addCounters.n);
+  if (ab.cost.addCounters) changeCounters(s, o, ab.cost.addCounters.kind, ab.cost.addCounters.n, true);
   for (const id of crew) tapObject(s, obj(s, id));
   if (crew.length) {
     o.crewedBy = { turn: s.turn.number, ids: [...crew] };

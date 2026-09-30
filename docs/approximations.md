@@ -32,8 +32,6 @@ Chaque entrée porte sa nature :
 - `règle` **Obligation d'attaquer et taxe d'attaque (508.1d) :** si le joueur ne peut pas payer la taxe, aucune déclaration d'attaque n'est acceptée (la partie se bloque).
 - `règle` **Copies de sorts (707.10c) :** la copie garde les cibles de l'original, et la cible ne « devient pas la cible » de la copie (la garde ne se déclenche pas).
 - `règle` **Sort lancé sans payer son coût :** les augmentations de coût (Thalia, the Survivor) ne s'appliquent pas (118.9d).
-- `règle` **Pioche dans une bibliothèque vide (704.5b) :** l'indicateur n'est jamais remis à zéro ; le joueur perd dès que « vous ne pouvez pas perdre » prend fin, même des tours plus tard.
-- `règle` **Second partagé (702.61b) :** il interdit aussi les actions spéciales (retourner une carte face visible).
 
 ## Carte par carte
 

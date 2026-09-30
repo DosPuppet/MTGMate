@@ -36,6 +36,14 @@ export const PHASE_BAR: { step: Step; short: string }[] = [
   { step: "end", short: "Fin" },
 ];
 
+/** Raison d'une défaite, ajoutée au journal (« Bob perd (10 marqueurs poison). »). */
+const LOSS_REASON: Record<"life" | "draw" | "poison" | "concede", string> = {
+  life: "",
+  draw: " (bibliothèque vide)",
+  poison: " (10 marqueurs poison)",
+  concede: " (abandon)",
+};
+
 export const KEYWORD_LABEL: Record<Keyword, string> = {
   flying: "Vol",
   reach: "Portée",
@@ -241,10 +249,7 @@ export function describeEvents(
         add(`${who(e.player)} ${e.player === me ? "défaussez" : "défausse"} ${e.defIds.map(name).join(", ")}.`, kind(e.player));
         break;
       case "lose":
-        add(
-          `${who(e.player)} ${e.player === me ? "perdez" : "perd"}${e.reason === "concede" ? " (abandon)" : ""}.`,
-          kind(e.player),
-        );
+        add(`${who(e.player)} ${e.player === me ? "perdez" : "perd"}${LOSS_REASON[e.reason]}.`, kind(e.player));
         break;
       case "moved": {
         const where: Record<string, string> = {

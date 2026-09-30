@@ -2,7 +2,16 @@
  * Structure du tour (500–514), priorité (117), combat (506–511) et actions basées sur l'état (704).
  */
 
-import { type DamageSource, dealDamage, destroy, drawCard, putIntoGraveyard, setSpeed, sourceFromObject } from "./actions";
+import {
+  type DamageSource,
+  dealDamage,
+  destroy,
+  drawCard,
+  putIntoGraveyard,
+  removeFromCombat,
+  setSpeed,
+  sourceFromObject,
+} from "./actions";
 import { ask } from "./choices";
 import { announceDiscard, announceDiscardBatch, drawBonus, evalAmount } from "./effects";
 import { rethrowAsRules } from "./errors";
@@ -948,10 +957,14 @@ export function checkGameOver(s: GameState): void {
     // Herald of Eternal Dawn : « vous ne pouvez pas perdre la partie ». 704.5c : 10 marqueurs poison ou plus.
     // Marina Vendrell's Grimoire : « vous ne perdez pas la partie pour avoir 0 point de vie ou moins ».
     const lifeLoss = player.life <= 0 && !playerStatic(s, p, "noLoseForLife");
-    if ((lifeLoss || player.drewFromEmptyLibrary || (player.poison ?? 0) >= 10) && !playerStatic(s, p, "cantLose")) {
+    const poisoned = (player.poison ?? 0) >= 10;
+    if ((lifeLoss || player.drewFromEmptyLibrary || poisoned) && !playerStatic(s, p, "cantLose")) {
       losers.push(p);
-      emit({ type: "lose", player: p, reason: player.life <= 0 ? "life" : "draw" });
+      emit({ type: "lose", player: p, reason: lifeLoss ? "life" : poisoned ? "poison" : "draw" });
     }
+    // 704.5b : seule compte une pioche impossible depuis la dernière vérification ; un joueur qui ne pouvait pas perdre
+    // ne perd pas plus tard pour une pioche ancienne.
+    player.drewFromEmptyLibrary = false;
   }
   eliminate(s, losers);
 }
@@ -1157,6 +1170,15 @@ function stateBasedActionsOnce(s: GameState): void {
       if (onBattlefield(s, id) && destroy(s, id)) changed = true;
     }
     for (const id of s.battlefield) obj(s, id).deathtouched = false;
+    // 506.4 : un permanent qui cesse d'être une créature (Véhicule, terrain animé) est retiré du combat.
+    if (s.combat) {
+      for (const id of combatants(s)) {
+        if (!isCreature(s, id)) {
+          removeFromCombat(s, id);
+          changed = true;
+        }
+      }
+    }
     if (changed) continue;
     if (legendChoice) {
       // 704.5j : le joueur choisit la légende qu'il garde ; les autres vont au cimetière.
@@ -1178,6 +1200,8 @@ function stateBasedActionsOnce(s: GameState): void {
     }
     return;
   }
+  // Toujours des actions à faire après 100 passes : une boucle du moteur, qu'il faut voir (le fuzz la signale).
+  throw new Error("Actions basées sur l'état : encore des changements après 100 passes");
 }
 
 /** Contrôle par une Aura (Confiscate). Renvoie true si un contrôleur a changé. */

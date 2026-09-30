@@ -104,15 +104,15 @@ Rangés par impact décroissant.
 | 5 | **Taxes et sorts gratuits :** un sort lancé sans payer son coût ignore les augmentations de coût (`opts.free ? 0 : spellReduction(…)`). Lightning Strike gratuit face à Thalia, the Survivor coûte 0 au lieu de {1} (exéc.) | 601.2f, 118.9d | `engine/src/stack.ts:448` | faible à moyen : Découverte, sorts complotés, Omniscience |
 | 6 | **Arrivées simultanées :** de deux permanents qui arrivent ensemble, le premier ne voit pas arriver le second | 603.6a | `engine/src/triggers.ts:793` (sources recalculées à chaque événement) | moyen : jetons créés en nombre, landfall |
 | 7 | « Arrive comme une copie » ne marche que pour un sort lancé : un Clone réanimé ou qui clignote arrive en tant que lui-même | 614.1c | `engine/src/stack.ts:1976-1987` | moyen pour les extensions à venir |
-| 8 | **704.5b :** l'indicateur « a pioché dans une bibliothèque vide » n'est jamais remis à zéro. Quand Herald of Eternal Dawn quitte le jeu, le joueur perd pour une pioche faite des étapes plus tôt (exéc.) | 704.5b | `engine/src/actions.ts:48`, `engine/src/turn.ts:951` | faible |
-| 9 | **Second partagé :** il interdit aussi les actions spéciales ; on ne peut plus retourner une carte face visible (exéc.) | 702.61b | `engine/src/stack.ts:1698` (avant la branche d'action spéciale), `engine/src/legal.ts:431` | faible |
-| 10 | « Vous gagnez / perdez la partie » par un effet ignore « ne peut pas perdre » et « ne peut pas gagner » | 104.3, 104.2 | `engine/src/ops/players.ts:286-293` | faible (Herald of Eternal Dawn) |
-| 11 | La protection contre tout prévient les blessures même quand elles « ne peuvent pas être prévenues » | 615 (« ne peuvent pas être prévenues »), 702.16e | `engine/src/actions.ts:262` (testé avant `unpreventable`) | faible |
+| 8 | ✅ **Corrigé (R0.1).** **704.5b :** l'indicateur « a pioché dans une bibliothèque vide » n'est jamais remis à zéro. Quand Herald of Eternal Dawn quitte le jeu, le joueur perd pour une pioche faite des étapes plus tôt (exéc.) | 704.5b | `engine/src/actions.ts:48`, `engine/src/turn.ts:951` | faible |
+| 9 | ✅ **Corrigé (R0.1).** **Second partagé :** il interdit aussi les actions spéciales ; on ne peut plus retourner une carte face visible (exéc.) | 702.61b | `engine/src/stack.ts:1698` (avant la branche d'action spéciale), `engine/src/legal.ts:431` | faible |
+| 10 | ✅ **Corrigé (R0.1).** « Vous gagnez / perdez la partie » par un effet ignore « ne peut pas perdre » et « ne peut pas gagner » | 104.3, 104.2 | `engine/src/ops/players.ts:286-293` | faible (Herald of Eternal Dawn) |
+| 11 | ✅ **Corrigé (R0.1).** La protection contre tout prévient les blessures même quand elles « ne peuvent pas être prévenues » | 615 (« ne peuvent pas être prévenues »), 702.16e | `engine/src/actions.ts:262` (testé avant `unpreventable`) | faible |
 | 12 | Un changement de contrôle « jusqu'à la fin du tour » rend le permanent à un contrôleur mémorisé, qui peut être périmé si un autre effet de contrôle a pris fin entre-temps | 613.1b, 613.7 | `engine/src/turn.ts:322-329` | faible |
 | 13 | La valeur de mana des filtres est lue sur la carte imprimée, même pour une copie ; les exceptions d'une copie (« sauf que c'est un Zombie ») ne sont pas copiables | 707.2, 707.9b | `engine/src/layers.ts:317`, `engine/src/ops/permanents.ts:535` | faible à moyen |
 | 14 | `moveWithSpec` ajoute marqueurs et types après l'événement d'arrivée ; les jetons « engagés et attaquants » sont engagés après leur arrivée | 614.1c, 614.12 | `engine/src/effects.ts:610-673`, `engine/src/ops/permanents.ts:133-145` | faible : « chaque fois qu'un Zombie arrive » manqué |
 | 15 | Blessures « réparties » : le partage se fait à la résolution entre les seules cibles encore légales ; la part d'une cible devenue illégale devrait être perdue | 601.2d, 608.2b | `engine/src/ops/damage.ts:59-92` | faible |
-| 16 | Une créature qui cesse d'être une créature (Véhicule, terrain animé) reste au combat | 506.4 | `engine/src/turn.ts:510-513` | faible |
+| 16 | ✅ **Corrigé (R0.1).** Une créature qui cesse d'être une créature (Véhicule, terrain animé) reste au combat | 506.4 | `engine/src/turn.ts:510-513` | faible |
 | 17 | Les créatures mises en jeu attaquantes reçoivent leur défenseur d'office | 508.4 | `engine/src/ops/permanents.ts:139-143` | multijoueur seulement |
 
 ### 3.2 Écarts structurels, toujours présents
@@ -289,6 +289,7 @@ Détail, ordre d'exécution et décisions de conception : `PLAN-R.md`.
 - **30/09/2026 :** plan de remédiation écrit (`PLAN-R.md`) ; garde-fou de la dette en place (lot F2 : `cards/test/debt.test.ts`, règle en fin de CLAUDE.md).
 - **30/09/2026 :** lot F1 fait : version des règles dans les enregistrements, rejeu vérifié par empreintes, parties dorées (`npm run golden`).
 - **30/09/2026 :** lot F3 fait : les deux bugs du serveur du § 6 (URL mal encodée, `X-Forwarded-For`) et ses autres défauts (`Origin`, en-têtes, `/scry/`, salons par adresse) sont corrigés ; reste : jetons de reconnexion en clair.
+- **30/09/2026 :** lot R0.1 fait : écarts 8, 9, 10, 11 et 16 corrigés, ainsi que N2 et N5 de `PLAN-R.md`.
 
 ### R0 — Corrections simples (un lot, un test de règles par correction)
 

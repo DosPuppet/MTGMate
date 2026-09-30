@@ -259,7 +259,7 @@ export function dealDamage(s: GameState, source: DamageSource, target: string, a
   const targetObj = s.objects[target];
   if (targetObj?.zone === "battlefield") {
     // 702.16e : protection contre tout — les blessures sont prévenues.
-    if (hasKeyword(s, target, "protectionFromEverything")) return;
+    if (!unpreventable && hasKeyword(s, target, "protectionFromEverything")) return;
     // Summon: Alexander : « prévenez toutes les blessures infligées aux créatures que vous contrôlez ce tour-ci ».
     if (!unpreventable && playerStatic(s, targetObj.controller, "creaturesDamageImmune") && isCreature(s, target)) return;
   }
