@@ -14,7 +14,7 @@ import { spellCost } from "../src/stack";
 import { changeCounters, FACE_DOWN_ID } from "../src/state";
 import { forcedAttacks } from "../src/turn";
 import type { CardDef, GameEvent, GameState } from "../src/types";
-import { act, advanceUntil, customCard, idOf, passBoth, passUntil, scenario } from "./helpers";
+import { act, advanceUntil, customCard, idOf, idsOf, passBoth, passUntil, scenario } from "./helpers";
 
 const raw = (name: string, typeLine: string, oracleText: string, keywords: string[], manaCost = "{3}{W}"): RawCard => ({
   name,
@@ -231,5 +231,42 @@ describe("#1 : étape de nettoyage, actions basées sur l'état et priorité (51
     let s = scenario({ step: "end" });
     s = advanceUntil(s, (x) => x.turn.number === 4 || (x.turn.step === "cleanup" && x.pending?.kind === "priority"));
     expect(s.turn.number).toBe(4);
+  });
+});
+
+describe("#2 : lien de vie, un gain de points de vie par source et par lot de blessures (119.9, 120.3f)", () => {
+  const lifelinker = (name: string, keywords: CardDef["keywords"]) =>
+    customCard({ name, power: 5, toughness: 5, keywords: ["lifelink", ...keywords] });
+
+  function combat(attackers: CardDef[], blockers: string[]) {
+    let s = scenario({ p1: { battlefield: ["Ajani's Pridemate", ...attackers] }, p2: { battlefield: blockers } });
+    s = passUntil(s, (x) => x.pending?.kind === "declareAttackers");
+    const ids = attackers.map((a) => idOf(s, "p1", "battlefield", a.name));
+    s = act(s, "p1", { type: "declareAttackers", attackers: ids.map((id) => ({ id, defender: "p2" })) });
+    if (blockers.length) {
+      s = passUntil(s, (x) => x.pending?.kind === "declareBlockers");
+      const blocker = idsOf(s, "p2", "battlefield", blockers[0] as string)[0] as string;
+      s = act(s, "p2", { type: "declareBlockers", blocks: [{ blocker, attacker: ids[0] as string }] });
+    }
+    s = advanceUntil(s, (x) => x.turn.step === "main2");
+    return { s, pridemate: idOf(s, "p1", "battlefield", "Ajani's Pridemate") };
+  }
+
+  it("un piétineur 5/5 bloqué par un 2/2 : 5 PV en un seul gain", () => {
+    const { s, pridemate } = combat([lifelinker("Piétineur", ["trample"])], ["Bear Cub"]);
+    expect(s.players.p1?.life).toBe(25);
+    expect(s.objects[pridemate]?.counters["+1/+1"]).toBe(1);
+  });
+
+  it("deux attaquants avec le lien de vie : deux gains", () => {
+    const { s, pridemate } = combat([lifelinker("Lien A", []), lifelinker("Lien B", [])], []);
+    expect(s.players.p1?.life).toBe(30);
+    expect(s.objects[pridemate]?.counters["+1/+1"]).toBe(2);
+  });
+
+  it("double initiative : un gain par étape de blessures", () => {
+    const { s, pridemate } = combat([lifelinker("Double", ["doubleStrike"])], []);
+    expect(s.players.p1?.life).toBe(30);
+    expect(s.objects[pridemate]?.counters["+1/+1"]).toBe(2);
   });
 });

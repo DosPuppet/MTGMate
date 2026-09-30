@@ -222,3 +222,7 @@ Lot R0.3 (PLAN-R.md ; `RULES_VERSION` = 4) :
 - `stateBasedActions` renvoie désormais si quelque chose a été fait ;
 - une créature tenue en vie par un bonus qui expire meurt pendant le nettoyage du même tour, et ses déclencheurs « meurt » s'y résolvent ;
 - tests : `engine/test/audit.test.ts` (#1).
+
+Lot R0.4 (PLAN-R.md ; `RULES_VERSION` = 5) :
+- lien de vie (119.9, 120.3f) : pendant un lot d'événements simultanés (`simultaneously` : un effet de résolution, les blessures de combat d'une étape, les actions basées sur l'état), les gains d'une même source sont additionnés (`queueLifelink`) et appliqués à la fin du lot, en un seul gain par source. Un piétineur bloqué ne déclenche plus deux fois Ajani's Pridemate ; deux sources avec le lien de vie font deux gains ; la double initiative, un par étape de blessures. Hors lot (capacité de mana), le gain est immédiat ;
+- tests : `engine/test/audit.test.ts` (#2).

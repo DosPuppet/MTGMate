@@ -9,7 +9,7 @@
  * - Capacités retardées (603.7) et réflexives (603.12) : créées par des effets, avec leurs propres effets et cibles.
  */
 
-import { canForage } from "./actions";
+import { canForage, gainLife } from "./actions";
 import { ask } from "./choices";
 import { boardAmount, evalAmount } from "./effects";
 import { RulesError, rethrowAsRules } from "./errors";
@@ -113,6 +113,21 @@ function liveSources(s: GameState): Source[] {
 // ---------------------------------------------------------------------------
 
 let batchBefore: Source[] | null = null;
+/**
+ * Lien de vie pendant un lot d'événements simultanés : un seul gain de points de vie par source (120.3f, 119.9). Une
+ * créature qui blesse plusieurs objets ou joueurs en même temps (piétinement, plusieurs bloqueurs) déclenche une seule
+ * fois « chaque fois que vous gagnez des points de vie ».
+ */
+let lifelinkBatch: Map<string, { controller: PlayerId; amount: number }> | null = null;
+
+/** Met de côté un gain de lien de vie jusqu'à la fin du lot en cours ; false s'il n'y a pas de lot (gain immédiat). */
+export function queueLifelink(key: string, controller: PlayerId, amount: number): boolean {
+  if (!lifelinkBatch) return false;
+  const pending = lifelinkBatch.get(key);
+  if (pending) pending.amount += amount;
+  else lifelinkBatch.set(key, { controller, amount });
+  return true;
+}
 
 /** Montant évalué hors résolution (sommes, force d'un objet, vitesse…), comme pendant une résolution sans cible. */
 function checkAmount(s: GameState, a: Amount, controller: PlayerId, sourceId?: ObjectId): number {
@@ -132,10 +147,17 @@ function checkAmount(s: GameState, a: Amount, controller: PlayerId, sourceId?: O
 export function simultaneously<T>(s: GameState, fn: () => T): T {
   if (batchBefore) return fn();
   batchBefore = liveSources(s);
+  lifelinkBatch = new Map();
   try {
-    return fn();
+    const result = fn();
+    // Les gains du lien de vie ont lieu avec les blessures du lot : un par source, dans l'ordre des blessures.
+    const gains = lifelinkBatch;
+    lifelinkBatch = null;
+    for (const { controller, amount } of gains.values()) gainLife(s, controller, amount);
+    return result;
   } finally {
     batchBefore = null;
+    lifelinkBatch = null;
   }
 }
 

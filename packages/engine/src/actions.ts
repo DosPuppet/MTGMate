@@ -28,7 +28,7 @@ import {
   tokenMultiplier,
 } from "./statics";
 import { matchesObjectFilter } from "./targets";
-import { checkCondition } from "./triggers";
+import { checkCondition, queueLifelink } from "./triggers";
 import { logTurnEvent } from "./turnlog";
 import type { CardDef, CardType, Color, GameEvent, GameState, Keyword, ObjectId, PlayerId, TokenSpec, Zone } from "./types";
 
@@ -382,7 +382,11 @@ export function dealDamage(s: GameState, source: DamageSource, target: string, a
     emit({ type: "damage", sourceDefId: source.defId, target, targetDefId: o.defId, amount, combat });
     logDamage(s, source, target, o.controller, false, amount, combat);
   }
-  if (source.keywords.includes("lifelink")) gainLife(s, source.controller, amount);
+  // Lien de vie : un gain par source et par lot de blessures simultanées (voir `queueLifelink`).
+  if (source.keywords.includes("lifelink") && amount > 0) {
+    const key = source.id ?? `${source.defId}|${source.controller}`;
+    if (!queueLifelink(key, source.controller, amount)) gainLife(s, source.controller, amount);
+  }
   rulesEvent(s, {
     e: "damage",
     sourceId: source.id ?? null,
