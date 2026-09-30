@@ -6,7 +6,7 @@ import { describe, expect, it } from "vitest";
 import { metaDecks } from "../../../tools/meta-decks";
 import { CARDS, DECKS, validateDeck } from "../src";
 
-/** Decks rendus jouables par les lots du méta déjà faits (PLAN-P4.md). */
+/** Decks rendus jouables par les lots du méta déjà faits (docs/plans/PLAN-P4.md). */
 const PLAYABLE = [
   // Lot M1
   "Izzet Spellementals",

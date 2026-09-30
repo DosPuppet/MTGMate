@@ -1,6 +1,6 @@
 # Méta Standard (plan P4, phase 1)
 
-Cartes des decks Standard les plus joués, toutes extensions confondues, avant la couverture complète extension par extension (`PLAN-P4.md`). Les decks relevés sont dans `docs/meta/2026-09-29/`. Chaque lot rend jouables quelques archétypes, deck principal **et** réserve (le BO3 en a besoin).
+Cartes des decks Standard les plus joués, toutes extensions confondues, avant la couverture complète extension par extension (`docs/plans/PLAN-P4.md`). Les decks relevés sont dans `docs/meta/2026-09-29/`. Chaque lot rend jouables quelques archétypes, deck principal **et** réserve (le BO3 en a besoin).
 
 Vérification d'un lot : `npm run verify -- --set META`. Le fuzz ciblé joue alors les decks du méta déjà jouables les uns contre les autres (`npm run fuzz -- --pool meta`), et le test `cards/test/meta-decks.test.ts` vérifie que les decks des lots faits sont légaux et jouables.
 
