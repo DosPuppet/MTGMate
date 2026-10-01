@@ -124,7 +124,7 @@ function amountAtEntry(s: GameState, a: Amount, o: GameObject, ctx: EntersContex
 function defaultChoice(
   s: GameState,
   o: GameObject,
-  kind: "creatureType" | "color" | "cardName" | "landName" | "landType" | "parity" | "mode",
+  kind: "creatureType" | "color" | "cardName" | "landName" | "landType" | "parity" | "mode" | "number",
 ): NonNullable<GameObject["chosen"]> {
   // Multiversal Passage mis en jeu sans avoir été joué : le type de terrain de base le plus présent chez son contrôleur.
   if (kind === "landType") {
@@ -137,6 +137,8 @@ function defaultChoice(
   if (kind === "mode") return { mode: s.defs[o.defId]?.enterModes?.[0] ?? "—" };
   // Gollum mis en jeu sans résolution : « pair » par défaut.
   if (kind === "parity") return { parity: "even" };
+  // Talion mis en jeu sans résolution : 2.
+  if (kind === "number") return { number: 2 };
   // Petrified Hamlet : le nom est choisi par sa capacité déclenchée d'arrivée ; rien avant sa résolution.
   if (kind === "landName") return { cardName: "—" };
   if (kind === "cardName") {

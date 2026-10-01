@@ -104,7 +104,7 @@ export interface CardDef {
   /** F/E définies par une capacité (604.3, couche 7a), ex. cartes dans les cimetières adverses. */
   cdaPT?: Amount;
   /** « En arrivant, choisissez un type de créature / une couleur » (614.12). */
-  chooseOnEnter?: "creatureType" | "color" | "cardName" | "landName" | "landType" | "parity" | "mode";
+  chooseOnEnter?: "creatureType" | "color" | "cardName" | "landName" | "landType" | "parity" | "mode" | "number";
   /** Sièges (TDM) : « en arrivant, choisissez Abzan ou Mardu » (avec `chooseOnEnter: "mode"`) ; lu par `cond.chosenMode`. */
   enterModes?: string[];
   /**
@@ -607,9 +607,10 @@ export interface EventReplacement {
   /**
    * L'événement chiffré : blessures et perte de PV (familles E et F) ; jetons créés et marqueurs mis (famille H) ; PV
    * gagnés, cartes piochées, cartes meulées, mana produit (famille I) ; `untap` : un permanent qui se dégage (seule la
-   * prévention s'y applique : Blossombind, « ne peut pas être dégagée »).
+   * prévention s'y applique : Blossombind, « ne peut pas être dégagée ») ; `payLife` : des PV payés (Ashiok, Wicked
+   * Manipulator : `instead.exileFromLibrary`, autant de cartes du dessus de la bibliothèque exilées à la place).
    */
-  event: "damage" | "lifeLoss" | "lifeGain" | "draw" | "mill" | "counters" | "tokens" | "mana" | "untap";
+  event: "damage" | "lifeLoss" | "lifeGain" | "draw" | "mill" | "counters" | "tokens" | "mana" | "untap" | "payLife";
   /** Source des blessures (filtre vu du contrôleur : `controller: "you"` pour « vos sources ») ; mana : le permanent engagé. */
   source?: ObjectFilter;
   /**
@@ -628,7 +629,7 @@ export interface EventReplacement {
    * Jetons : d'autres jetons à la place (Draconic Visitor : un Dragon 5/5) ou des copies du permanent auquel la source est
    * attachée (Moonlit Meditation, Mirrormind Crown) ; `firstEachTurn` : seulement la première fois de chaque tour.
    */
-  instead?: { token?: TokenSpec; copyOfAttached?: boolean; firstEachTurn?: boolean };
+  instead?: { token?: TokenSpec; copyOfAttached?: boolean; firstEachTurn?: boolean; exileFromLibrary?: boolean };
   /** Jetons : « ces jetons plus un jeton [N] » (Quina : une Grenouille ; Worldwalker Helm : une Carte). */
   plus?: TokenSpec;
   /**

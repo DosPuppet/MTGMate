@@ -42,6 +42,7 @@ export interface TargetFilter {
   cards?: { filter: ObjectFilter; whose?: "you" | "opponent" | "any" };
   /** Cartes exilées face visible (Blade of the Swarm : « carte exilée ciblée avec la distorsion »). */
   /** `linked` : exilées « avec » la source (Mimeoplasm). */
+  /** `own` : que vous possédez (`true`) ou non (`false`, Sentinel of Lost Lore). */
   exiled?: { filter?: ObjectFilter; withWarp?: boolean; own?: boolean; linked?: boolean };
   /** Sorts sur la pile (« contrecarrez le sort de créature ciblé »). */
   spells?: ObjectFilter;
@@ -175,6 +176,8 @@ export interface ObjectFilter {
   manaValueX?: boolean;
   /** Valeur de mana de la parité choisie par la source (Gollum, Riddle Master). */
   parityChosen?: boolean;
+  /** Valeur de mana, force ou endurance égale au nombre choisi par la source (Talion, the Kindly Lord). */
+  numberChosen?: boolean;
   /** Sans aucun marqueur (Heartless Act). */
   noCounters?: boolean;
   /** Du nom choisi par la source en arrivant (Petrified Hamlet : « les terrains du nom choisi »). */
@@ -637,7 +640,8 @@ export type Amount =
   | { kind: "cardsDrawnThisTurn" }
   | { kind: "creaturesDiedThisTurn" }
   /** Somme des valeurs de mana des permanents correspondants (Summon: Bahamut). */
-  | { kind: "totalManaValue"; filter: ObjectFilter }
+  /** `zone: "exile"` : les cartes que vous possédez en exil (Ashiok, Wicked Manipulator). */
+  | { kind: "totalManaValue"; filter: ObjectFilter; zone?: "exile" }
   /** Mana dépensé pour lancer le sort de l'événement (Shantotto, Tellah). */
   | { kind: "eventManaSpent" }
   /** Types de carte différents parmi les objets désignés (Kefka : « parmi les cartes défaussées »). */

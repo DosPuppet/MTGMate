@@ -149,16 +149,28 @@ function hasSubtype(v: LkiSnapshot, t: string): boolean {
 /** Remplace « du type / de la couleur choisis » par le choix fait par la source en arrivant. */
 export function withChosen(
   f: ObjectFilter,
-  source: { chosen?: { creatureType?: string; color?: Color; cardName?: string; parity?: "odd" | "even" } } | undefined,
+  source:
+    | { chosen?: { creatureType?: string; color?: Color; cardName?: string; parity?: "odd" | "even"; number?: number } }
+    | undefined,
 ): ObjectFilter {
-  if (!f.subtypeChosen && !f.colorChosen && !f.nameChosen && !f.parityChosen) return f;
+  if (!f.subtypeChosen && !f.colorChosen && !f.nameChosen && !f.parityChosen && !f.numberChosen) return f;
   const out: ObjectFilter = {
     ...f,
     subtypeChosen: undefined,
     colorChosen: undefined,
     nameChosen: undefined,
     parityChosen: undefined,
+    numberChosen: undefined,
   };
+  if (f.numberChosen) {
+    // Sans choix, rien ne correspond (aucune valeur n'est négative).
+    const n = source?.chosen?.number ?? -1;
+    out.anyOf = [
+      { manaValue: n },
+      { types: ["Creature"], minPower: n, maxPower: n },
+      { types: ["Creature"], minToughness: n, maxToughness: n },
+    ];
+  }
   if (f.parityChosen) out.manaValueParity = source?.chosen?.parity ?? "even";
   if (f.nameChosen) out.name = source?.chosen?.cardName ?? "—";
   // Sans choix (arrivée sans résolution), rien ne correspond.
@@ -177,7 +189,7 @@ function sourcePower(s: GameState, sourceId?: ObjectId): number {
 /** Remplace les bornes dynamiques du filtre par leur valeur actuelle. */
 export function resolveFilter(s: GameState, f: ObjectFilter, sourceId?: ObjectId): ObjectFilter {
   // « Du type / de la couleur choisis » : le choix de la source (en jeu, sort qui se résout, sinon dernière information).
-  if (f.subtypeChosen || f.colorChosen || f.nameChosen || f.parityChosen)
+  if (f.subtypeChosen || f.colorChosen || f.nameChosen || f.parityChosen || f.numberChosen)
     f = withChosen(f, sourceId ? (s.objects[sourceId] ?? s.lki[sourceId]) : undefined);
   // Formation Breaker : « de force inférieure à celle de cette créature ».
   if (f.powerBelowSource) f = { ...f, powerBelowSource: undefined, maxPower: sourcePower(s, sourceId) - 1 };
@@ -283,7 +295,7 @@ export function isLegalTarget(s: GameState, controller: PlayerId, spec: TargetSp
     const ex = spec.filter.exiled;
     if (!ex || o.faceDown || o.cardCopy || o.preparedFor) return false;
     if (ex.withWarp && !s.defs[o.defId]?.warp) return false;
-    if (ex.own && o.owner !== controller) return false;
+    if (ex.own !== undefined && (o.owner === controller) !== ex.own) return false;
     if (
       ex.linked &&
       !(sourceId && ((s.objects[sourceId]?.linked ?? []).includes(id) || s.objects[sourceId]?.linkedUids?.includes(o.uid)))

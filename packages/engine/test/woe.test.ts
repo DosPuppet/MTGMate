@@ -7,11 +7,11 @@
 
 import { describe, expect, it } from "vitest";
 import { CELEBRATION, CURSED_ROLE, createRole, MONSTER_ROLE, WICKED_ROLE, YOUNG_HERO_ROLE } from "../../cards/src/woe/common";
-import { dealDamage, destroy } from "../src/actions";
+import { dealDamage, destroy, payLife } from "../src/actions";
 import * as dsl from "../src/dsl";
 import { runEffect } from "../src/effects";
 import { legalActions } from "../src/legal";
-import { chars } from "../src/state";
+import { chars, moveObject } from "../src/state";
 import { legalTargets as legalTargetsOf } from "../src/targets";
 import { checkCondition } from "../src/triggers";
 import { canBlock, stateBasedActions } from "../src/turn";
@@ -4740,5 +4740,138 @@ describe("Wilds of Eldraine, lot C4 : dessus de la bibliothèque, coûts des cap
     s = settleAll(act(s, "p2", { type: "cast", card }));
     expect(idsOf(s, "p2", "battlefield", "Bear Cub")).toHaveLength(1);
     expect(s.players.p1?.hand).toHaveLength(hand + 1);
+  });
+});
+
+describe("Wilds of Eldraine, lot C5 : payer des PV, nombre choisi, cartes à Aventure en exil", () => {
+  const settleAll = (s: S, answer?: Answer) => {
+    while (stateBasedActions(s)) {}
+    return settle(s, answer);
+  };
+  const toExile = (s: S, id: string) => moveObject(s, id, "exile");
+
+  it("Ashiok : payer des PV exile autant de cartes du dessus de votre bibliothèque ; PV payés si elle est trop courte ; pas pour l'adversaire", () => {
+    const s = scenario({ p1: { battlefield: ["Ashiok, Wicked Manipulator"], library: lands("Swamp", 3) } });
+    payLife(s, "p1", 2);
+    expect(s.players.p1?.life).toBe(20);
+    expect(s.players.p1?.library).toHaveLength(1);
+    expect(exiled(s, "Swamp")).toHaveLength(2);
+    // Une seule carte pour 2 PV : on paie les PV (pas de paiement partagé).
+    payLife(s, "p1", 2);
+    expect(s.players.p1?.life).toBe(18);
+    expect(s.players.p1?.library).toHaveLength(1);
+    payLife(s, "p2", 3);
+    expect(s.players.p2?.life).toBe(17);
+  });
+
+  it("Ashiok : un coût en PV d'une capacité est payé en exilant des cartes", () => {
+    const pricey = customCard({
+      name: "Prêtre d'essai",
+      power: 1,
+      toughness: 1,
+      abilities: [dsl.activated({ payLife: 3, effects: [dsl.fx.gainLife(1)], label: "Gagnez 1 PV" })],
+    });
+    let s = scenario({ p1: { battlefield: ["Ashiok, Wicked Manipulator", pricey], library: lands("Swamp", 5) } });
+    s = settleAll(activate(s, "p1", idOf(s, "p1", "battlefield", pricey.name)));
+    expect(s.players.p1?.life).toBe(21);
+    expect(exiled(s, "Swamp")).toHaveLength(3);
+  });
+
+  it("Ashiok +1 : deux cartes regardées, l'une exilée, l'autre en main", () => {
+    let s = scenario({ p1: { battlefield: ["Ashiok, Wicked Manipulator"], library: ["Opt", "Bear Cub", "Swamp"] } });
+    const ashiok = idOf(s, "p1", "battlefield", "Ashiok, Wicked Manipulator");
+    s = settleAll(act(s, "p1", { type: "activate", source: ashiok, ability: 1 }));
+    const names = [...exiled(s, "Opt"), ...exiled(s, "Bear Cub")].map((id) => nameOf(s, id));
+    expect(names).toHaveLength(1);
+    expect(idsOf(s, "p1", "hand", names[0] === "Opt" ? "Bear Cub" : "Opt")).toHaveLength(1);
+    expect(s.players.p1?.library.map((id) => nameOf(s, id))).toEqual(["Swamp"]);
+    expect(s.objects[ashiok]?.counters.loyalty).toBe(6);
+  });
+
+  it("Ashiok −2 : deux Cauchemars, qui grandissent au début de votre combat si une carte a été exilée ce tour-ci", () => {
+    let s = scenario({ p1: { battlefield: ["Ashiok, Wicked Manipulator"], library: lands("Swamp", 5) } });
+    const ashiok = idOf(s, "p1", "battlefield", "Ashiok, Wicked Manipulator");
+    s = settleAll(act(s, "p1", { type: "activate", source: ashiok, ability: 2 }));
+    const nightmares = () => s.battlefield.filter((id) => chars(s, id).name === "Nightmare");
+    expect(nightmares()).toHaveLength(2);
+    s = advanceUntil(s, (x) => x.turn.step === "beginCombat" && x.stack.length === 0 && x.triggers.length === 0);
+    expect(nightmares().map((id) => s.objects[id]?.counters["+1/+1"] ?? 0)).toEqual([0, 0]);
+    // Tour suivant : une carte exilée (PV payés), puis le combat.
+    s = advanceUntil(s, (x) => x.turn.number === 5 && x.turn.step === "main1");
+    payLife(s, "p1", 1);
+    s = advanceUntil(
+      s,
+      (x) => x.turn.number === 5 && x.turn.step === "beginCombat" && x.stack.length === 0 && x.triggers.length === 0,
+    );
+    expect(nightmares().map((id) => s.objects[id]?.counters["+1/+1"] ?? 0)).toEqual([1, 1]);
+  });
+
+  it("Ashiok −7 : le joueur ciblé exile X cartes, X étant la valeur de mana totale des cartes que vous possédez en exil", () => {
+    let s = scenario({
+      p1: { battlefield: ["Ashiok, Wicked Manipulator"], graveyard: ["Shivan Dragon", "Opt"] },
+      p2: { graveyard: ["Serra Angel"], library: lands("Island", 10) },
+    });
+    const ashiok = idOf(s, "p1", "battlefield", "Ashiok, Wicked Manipulator");
+    toExile(s, idOf(s, "p1", "graveyard", "Shivan Dragon"));
+    toExile(s, idOf(s, "p1", "graveyard", "Opt"));
+    // La carte de l'adversaire en exil ne compte pas.
+    toExile(s, idOf(s, "p2", "graveyard", "Serra Angel"));
+    const a = s.objects[ashiok];
+    if (a) a.counters.loyalty = 7;
+    s = settleAll(act(s, "p1", { type: "activate", source: ashiok, ability: 3, targets: { t: ["p2"] } }));
+    // Shivan Dragon (6) + Opt (1) = 7.
+    expect(exiled(s, "Island")).toHaveLength(7);
+    expect(s.players.p2?.library).toHaveLength(3);
+  });
+
+  it("Talion : un nombre choisi en arrivant ; un sort adverse de cette valeur de mana, force ou endurance : il perd 2 PV, vous piochez", () => {
+    let s = scenario({ p1: { battlefield: [...lands("Island", 2), ...lands("Swamp", 2)], hand: ["Talion, the Kindly Lord"] } });
+    s = settleAll(act(s, "p1", { type: "cast", card: idOf(s, "p1", "hand", "Talion, the Kindly Lord") }), (req) =>
+      req.type === "pick" && req.options.includes("3") ? ["3"] : undefined,
+    );
+    expect(s.objects[idOf(s, "p1", "battlefield", "Talion, the Kindly Lord")]?.chosen?.number).toBe(3);
+
+    let t = scenario({
+      active: "p2",
+      p1: { battlefield: ["Talion, the Kindly Lord"], library: lands("Island", 5) },
+      p2: { battlefield: [...lands("Mountain", 2), "Island"], hand: ["Lightning Strike", "Opt"] },
+    });
+    const talion = idOf(t, "p1", "battlefield", "Talion, the Kindly Lord");
+    const tal = t.objects[talion];
+    if (tal) tal.chosen = { number: 2 };
+    const hand = t.players.p1?.hand.length ?? 0;
+    // Lightning Strike : valeur de mana 2.
+    t = settleAll(act(t, "p2", { type: "cast", card: idOf(t, "p2", "hand", "Lightning Strike"), targets: { t: ["p1"] } }));
+    expect(t.players.p2?.life).toBe(18);
+    expect(t.players.p1?.hand).toHaveLength(hand + 1);
+    // Opt : valeur de mana 1, rien.
+    t = settleAll(act(t, "p2", { type: "cast", card: idOf(t, "p2", "hand", "Opt") }));
+    expect(t.players.p2?.life).toBe(18);
+  });
+
+  it("Sentinel of Lost Lore : reprend votre carte à Aventure exilée, met celle d'un adversaire sous sa bibliothèque, exile un cimetière", () => {
+    const BRAMBLE = "Bramble Familiar // Fetch Quest";
+    let s = scenario({
+      p1: { battlefield: lands("Forest", 3), hand: ["Sentinel of Lost Lore"], graveyard: [BRAMBLE] },
+      p2: { graveyard: [BRAMBLE, "Opt"], library: lands("Island", 3) },
+    });
+    const mine = idOf(s, "p1", "graveyard", BRAMBLE);
+    const theirs = idOf(s, "p2", "graveyard", BRAMBLE);
+    toExile(s, mine);
+    toExile(s, theirs);
+    const [myExiled, theirExiled] = s.exile;
+    s = act(s, "p1", { type: "cast", card: idOf(s, "p1", "hand", "Sentinel of Lost Lore") });
+    // Cibles du déclencheur : les suggestions retiennent les trois modes ; on vérifie qu'elles sont les bonnes.
+    s = settleAll(s, (req) => {
+      if (req.type !== "pick") return undefined;
+      if (req.options.includes(myExiled as string) && !req.options.includes(theirExiled as string)) return [myExiled as string];
+      if (req.options.includes(theirExiled as string) && !req.options.includes(myExiled as string))
+        return [theirExiled as string];
+      if (req.options.includes("p2")) return ["p2"];
+      return undefined;
+    });
+    expect(idsOf(s, "p1", "hand", BRAMBLE)).toHaveLength(1);
+    expect(nameOf(s, s.players.p2?.library.at(-1) as string)).toBe(BRAMBLE);
+    expect(exiled(s, "Opt")).toHaveLength(1);
   });
 });

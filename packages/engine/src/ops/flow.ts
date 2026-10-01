@@ -1,5 +1,5 @@
 /** Effets du moteur : contrôle du déroulement (si, peut, réflexif, retardé). Chaque clé est un `op` d'`Effect` (voir `runEffect`, effects.ts). */
-import { canForage, forage, loseLife } from "../actions";
+import { canForage, forage, loseLife, payLife } from "../actions";
 import type { OpHandlers } from "../effects";
 import { evalAmount, evalCondition, nameOf, resolveRef, store } from "../effects";
 import { canPay, payMana } from "../mana";
@@ -23,7 +23,7 @@ export const HANDLERS: OpHandlers = {
     if (answer[0] !== 1 || !canPay(s, ctx.controller, e.cost)) return { skip: e.skip };
     if (e.life && (s.players[ctx.controller]?.life ?? 0) < e.life) return { skip: e.skip };
     payMana(s, ctx.controller, e.cost);
-    if (e.life) loseLife(s, ctx.controller, e.life);
+    if (e.life) payLife(s, ctx.controller, e.life);
     return;
   },
   forage(s, r, e, ctx, key) {

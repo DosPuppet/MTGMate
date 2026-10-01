@@ -6,6 +6,7 @@ import { describe, expect, it } from "vitest";
 import { dealDamage, destroy, sourceFromObject } from "../src/actions";
 import { eventReplacement, fx, graveyardReplacement, ref, triggered, when } from "../src/dsl";
 import { runEffect } from "../src/effects";
+import { legalActions } from "../src/legal";
 import { counterItem } from "../src/stack";
 import { changeCounters, chars } from "../src/state";
 import { addPlayerEffect } from "../src/statics";
@@ -255,5 +256,31 @@ describe("Tablet of Discovery (SOS) : permissions et mana restreint", () => {
     let t = scenario({ p1: { battlefield: ["Tablet of Discovery"], hand: ["Lightning Strike"] } });
     t = act(t, "p1", { type: "cast", card: idOf(t, "p1", "hand", "Lightning Strike"), targets: { t: ["p2"] } });
     expect(t.stack.length).toBe(1);
+  });
+});
+
+describe("Ashiok, Wicked Manipulator (rulings du 01/09/2023)", () => {
+  const pricey = customCard({
+    name: "Prêtre de décision",
+    power: 1,
+    toughness: 1,
+    abilities: [{ kind: "activated", cost: { payLife: 3 }, effects: [fx.gainLife(1)], targets: [], label: "Gagnez 1 PV" }],
+  });
+
+  it("ne permet pas de payer plus de PV que son total, même avec assez de cartes", () => {
+    const s = scenario({
+      p1: { life: 2, battlefield: ["Ashiok, Wicked Manipulator", pricey], library: Array(10).fill("Swamp") },
+    });
+    const priest = idOf(s, "p1", "battlefield", pricey.name);
+    expect(legalActions(s, "p1").some((a) => a.type === "activate" && a.source === priest)).toBe(false);
+  });
+
+  it("le remplacement est obligatoire : aucun PV payé tant que la bibliothèque suffit", () => {
+    let s = scenario({ p1: { battlefield: ["Ashiok, Wicked Manipulator", pricey], library: Array(4).fill("Swamp") } });
+    const priest = idOf(s, "p1", "battlefield", pricey.name);
+    const a = legalActions(s, "p1").find((x) => x.type === "activate" && x.source === priest);
+    s = act(s, "p1", { type: "activate", source: priest, ability: a?.type === "activate" ? a.ability : 0 });
+    expect(s.players.p1?.life).toBe(20);
+    expect(s.players.p1?.library).toHaveLength(1);
   });
 });

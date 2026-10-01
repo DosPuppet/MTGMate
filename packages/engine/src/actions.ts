@@ -161,6 +161,26 @@ export function forage(s: GameState, p: PlayerId): boolean {
   return true;
 }
 
+/**
+ * Payer des points de vie (119.4) : les vérifications « assez de PV » restent celles de l'appelant. Ashiok, Wicked
+ * Manipulator : si la bibliothèque a au moins autant de cartes, autant de cartes du dessus sont exilées à la place
+ * (remplacement obligatoire, jamais partagé entre PV et cartes).
+ */
+export function payLife(s: GameState, p: PlayerId, amount: number): void {
+  const library = s.players[p]?.library ?? [];
+  if (amount <= 0) return;
+  const exileInstead = eventReplacements(s, "payLife").some((a) => a.r.instead?.exileFromLibrary && recipientMatches(s, a, p));
+  if (exileInstead && library.length >= amount) {
+    for (const id of library.slice(0, amount)) {
+      const o = obj(s, id);
+      emit({ type: "moved", owner: o.owner, objectId: id, defId: o.defId, from: "library", to: "exile" });
+      moveObject(s, id, "exile");
+    }
+    return;
+  }
+  loseLife(s, p, amount);
+}
+
 export function loseLife(s: GameState, p: PlayerId, amount: number): void {
   const player = s.players[p];
   if (!player || amount <= 0) return;

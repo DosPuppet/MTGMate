@@ -1,7 +1,7 @@
 /**
  * Mana : lecture des coûts, sources disponibles et solveur de paiement automatique.
  */
-import { loseLife, sacrifice } from "./actions";
+import { loseLife, payLife, sacrifice } from "./actions";
 import { RulesError } from "./errors";
 import { linkedColors } from "./layers";
 import {
@@ -359,7 +359,7 @@ export function activateManaAbility(s: GameState, player: PlayerId, id: ObjectId
   if (ab.tapAnother) tapObject(s, obj(s, otherToTap(s, id) as ObjectId));
   if (ab.cost.sacrificeSelf) sacrifice(s, id);
   // Haunted Screen : « {T}, payez 1 point de vie » ; Twitching Doll : « mettez un marqueur de nid sur cette créature ».
-  if (ab.cost.payLife) loseLife(s, player, ab.cost.payLife);
+  if (ab.cost.payLife) payLife(s, player, ab.cost.payLife);
   if (ab.addCounter && s.objects[id]?.zone === "battlefield") changeCounters(s, o, ab.addCounter, 1);
   if (ab.removeCounter && (o.counters[ab.removeCounter] ?? 0) > 0) changeCounters(s, o, ab.removeCounter, -1);
   const pool = s.players[player]?.manaPool;

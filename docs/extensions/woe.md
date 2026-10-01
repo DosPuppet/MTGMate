@@ -62,7 +62,7 @@ Les scripts sont dans `packages/cards/src/woe/` : `cards` (cartes du méta), `wh
 - **Restent (lot B et suivants) :** Agatha of the Vile Cauldron, The Apprentice's Folly, Yenna, Eriette of the Charmed Apple, Syr Armont, Faunsbane Troll, Hylda of the Icy Crown, Sharae of Numbing Depths, Johann, Likeness Looter, Rowan, Scion of War, Talion, Beluna Grandsquall, Agatha's Soul Cauldron.
 - **Tests :** 28 tests de règles (« lot A — multicolores »).
 
-### Reste à faire (33 cartes) : formes du moteur
+### Reste à faire après le lot A (33 cartes) : formes du moteur (toutes faites aux lots B et C)
 
 | Ce qui manque | Cartes |
 |---|---|
@@ -136,3 +136,14 @@ Les scripts sont dans `packages/cards/src/woe/` : `cards` (cartes du méta), `wh
   - le déclencheur d'arrivée `fromZone: "graveyard" | "exile"` (remplace `fromGraveyard`) : arrivé de cette zone ou lancé depuis elle (`GameObject.castFromExile`) ;
   - le filtre `adventure` s'applique aussi aux sorts (`spellView` : « les sorts de permanent qui ont une Aventure »).
 - **Tests :** 8 tests de règles (« lot C4 »).
+
+## Sous-lot C5 : payer des PV, nombre choisi, cartes à Aventure en exil ✅ (269 / 269)
+
+- **Cartes :** Ashiok, Wicked Manipulator, Talion, the Kindly Lord, Sentinel of Lost Lore.
+- **Le moteur gagne :**
+  - `payLife` (`actions.ts`) : tous les paiements de PV (coûts de capacités et de sorts, distorsion, terrains choc, « à moins que », Terror of the Peaks…) y passent ; le remplacement `eventReplacement({ event: "payLife", instead: { exileFromLibrary: true } })` (R1) exile autant de cartes du dessus de la bibliothèque si elle en a assez. Les vérifications « assez de PV » sont inchangées (rulings) ;
+  - le choix en arrivant `chooseOnEnter: "number"` (1 à 10, badge sur la carte) et le filtre `numberChosen` (valeur de mana, force ou endurance égale) ;
+  - `amount.totalManaValue(filtre, "exile")` : les cartes que vous possédez en exil (face cachée : 0) ;
+  - la cible de carte exilée `own: false` (« que vous ne possédez pas »).
+- **Tests :** 7 tests de règles (« lot C5 ») et 2 décisions officielles d'Ashiok (`rulings.test.ts`).
+- **Écarts :** Sentinel of Lost Lore (« un ou plusieurs » en cibles facultatives), approximation documentée.

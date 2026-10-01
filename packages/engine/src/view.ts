@@ -83,6 +83,7 @@ export interface ObjectView extends CardFace {
     creatureType?: string;
     color?: Color;
     mode?: string;
+    number?: number;
   } | null;
   /** Reality Fracture : permanent préparé (son sort peut être lancé depuis l'exil). */
   prepared?: boolean;

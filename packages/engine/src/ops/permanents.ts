@@ -24,7 +24,7 @@ import { addPlayerEffect } from "../statics";
 import { matchesCard, matchesObjectFilter } from "../targets";
 import { createDelayed } from "../triggers";
 import { attackableDefenders } from "../turn";
-import type { AbilityDef, Color } from "../types";
+import type { AbilityDef, Color, GameState } from "../types";
 
 /** Types de créature toujours proposés quand un type est à choisir (tribus de Lorwyn et types les plus courants). */
 const COMMON_CREATURE_TYPES = [
@@ -395,6 +395,8 @@ export const HANDLERS: OpHandlers = {
       let options: string[];
       if (kind === "color") options = ["W", "U", "B", "R", "G"];
       else if (kind === "parity") options = ["odd", "even"];
+      // Talion, the Kindly Lord : un nombre de 1 à 10.
+      else if (kind === "number") options = Array.from({ length: 10 }, (_, i) => String(i + 1));
       else if (kind === "mode") options = s.defs[ctx.sourceDefId]?.enterModes ?? [];
       else if (kind === "landName") {
         // Petrified Hamlet : un nom de carte de terrain, ceux des terrains adverses en tête (non de base d'abord).
@@ -436,9 +438,11 @@ export const HANDLERS: OpHandlers = {
         for (const k of keys) tally.set(k, (tally.get(k) ?? 0) + 1);
       }
       const best =
-        kind === "cardName" || kind === "landName" || kind === "parity" || kind === "mode"
-          ? options[0]
-          : ([...tally.entries()].sort((a, b) => b[1] - a[1]).find(([k]) => options.includes(k))?.[0] ?? options[0]);
+        kind === "number"
+          ? suggestedNumber(s, ctx.controller)
+          : kind === "cardName" || kind === "landName" || kind === "parity" || kind === "mode"
+            ? options[0]
+            : ([...tally.entries()].sort((a, b) => b[1] - a[1]).find(([k]) => options.includes(k))?.[0] ?? options[0]);
       const COLOR: Record<string, string> = { W: "Blanc", U: "Bleu", B: "Noir", R: "Rouge", G: "Vert" };
       return {
         ask: {
@@ -458,7 +462,9 @@ export const HANDLERS: OpHandlers = {
                       ? "Choisissez : valeur de mana impaire ou paire"
                       : kind === "mode"
                         ? `Choisissez : ${options.join(" ou ")}`
-                        : "Choisissez un type de créature",
+                        : kind === "number"
+                          ? "Choisissez un nombre entre 1 et 10"
+                          : "Choisissez un type de créature",
             options,
             labels:
               kind === "color"
@@ -489,7 +495,9 @@ export const HANDLERS: OpHandlers = {
               ? { parity: value === "odd" ? ("odd" as const) : ("even" as const) }
               : kind === "mode"
                 ? { mode: value }
-                : { cardName: value }),
+                : kind === "number"
+                  ? { number: Number(value) }
+                  : { cardName: value }),
       };
       bump(s);
     }
@@ -615,3 +623,20 @@ export const HANDLERS: OpHandlers = {
     return;
   },
 };
+
+/**
+ * Talion, the Kindly Lord : la valeur de mana la plus fréquente parmi les cartes adverses vues (champ de bataille,
+ * cimetières, exil), terrains exceptés ; 2 sans information.
+ */
+function suggestedNumber(s: GameState, controller: string): string {
+  const tally = new Map<number, number>();
+  for (const o of Object.values(s.objects)) {
+    if (o.owner === controller || !["battlefield", "graveyard", "exile"].includes(o.zone)) continue;
+    const d = s.defs[o.defId];
+    if (!d || d.types.includes("Land") || d.isToken) continue;
+    const mv = manaValue(d.manaCost);
+    if (mv >= 1 && mv <= 10) tally.set(mv, (tally.get(mv) ?? 0) + 1);
+  }
+  const best = [...tally.entries()].sort((a, b) => b[1] - a[1] || a[0] - b[0])[0];
+  return String(best?.[0] ?? 2);
+}

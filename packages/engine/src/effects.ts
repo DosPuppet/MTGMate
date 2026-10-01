@@ -401,6 +401,14 @@ export function evalAmount(s: GameState, ctx: EffectContext, a: Amount): number 
     case "creaturesDiedThisTurn":
       return countTurnEvents(s, { event: "zone", from: "battlefield", to: "graveyard", types: ["Creature"] }, ctx.controller);
     case "totalManaValue":
+      if (a.zone === "exile")
+        return (
+          s.exile
+            .filter((id) => s.objects[id]?.owner === ctx.controller)
+            .filter((id) => matchesCard(s, ctx.controller, id, { ...a.filter, controller: undefined }, ctx.sourceId))
+            // 708.2 : une carte exilée face cachée a une valeur de mana de 0.
+            .reduce((n, id) => n + (s.objects[id]?.faceDown ? 0 : manaValue(s.defs[s.objects[id]?.defId ?? ""]?.manaCost)), 0)
+        );
       return s.battlefield
         .filter((id) => matchesObjectFilter(s, ctx.controller, id, a.filter, ctx.sourceId))
         .reduce((n, id) => n + (snapshot(s, id).manaValue ?? 0), 0);

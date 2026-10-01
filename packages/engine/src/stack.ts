@@ -4,7 +4,15 @@
  * et le paiement du mana est résolu automatiquement (réserve d'abord, puis solveur).
  */
 
-import { canForage, createTokenCopy, forage, loseLife, removeFromCombat, sacrifice as sacrificePermanent } from "./actions";
+import {
+  canForage,
+  createTokenCopy,
+  forage,
+  loseLife,
+  payLife as payLife_,
+  removeFromCombat,
+  sacrifice as sacrificePermanent,
+} from "./actions";
 import { ask } from "./choices";
 import { announceDiscard, announceDiscardBatch, evalAmount, moveWithSpec, runEffect } from "./effects";
 import { RulesError, rethrowAsRules } from "./errors";
@@ -217,7 +225,7 @@ export function playLand(s: GameState, player: PlayerId, card: ObjectId, payLife
   // Terrains choc : « vous pouvez payer 2 points de vie ; sinon, il arrive engagé ».
   const shock = s.defs[o.defId]?.shockLand;
   if (payLife && !shock) throw new RulesError("Ce terrain ne demande pas de points de vie");
-  if (payLife && shock) loseLife(s, player, shock);
+  if (payLife && shock) payLife_(s, player, shock);
   if (o.zone === "graveyard") s.turn.graveyardTypesUsed = [...(s.turn.graveyardTypesUsed ?? []), "Land"];
   const defId = o.defId;
   const fromExile = o.zone === "exile" ? exilePermission(s, player, card) : undefined;
@@ -1369,20 +1377,20 @@ export function castSpell(s: GameState, player: PlayerId, card: ObjectId, choice
     rethrowAsRules(e, "Mana insuffisant");
   }
   // Distorsion « Warp—{B}, Pay 2 life » : les points de vie font partie du coût.
-  if (warp?.life) loseLife(s, player, warp.life);
-  if (terms.payLife) loseLife(s, player, terms.payLife);
-  if (d.xCost === "life" && x > 0) loseLife(s, player, x);
+  if (warp?.life) payLife_(s, player, warp.life);
+  if (terms.payLife) payLife_(s, player, terms.payLife);
+  if (d.xCost === "life" && x > 0) payLife_(s, player, x);
   if (d.xCost === "blight" && x > 0) {
     const blighted = blightTarget(s, player, x);
     if (blighted) changeCounters(s, obj(s, blighted), "-1/-1", x, true);
   }
-  if (lifeTax) loseLife(s, player, lifeTax);
+  if (lifeTax) payLife_(s, player, lifeTax);
   // Pyromancer's Goggles : « copiez ce sort ».
   for (const r of item.riders ?? []) if (r === "copy") copyStackItem(s, item, player);
   // Teach by Example : « la prochaine fois que vous lancez un éphémère ou un rituel ce tour-ci, copiez-le ».
   for (const n of next) if (n.copy) copyStackItem(s, item, player);
   // Bitter Triumph : sans carte défaussée, les points de vie sont payés.
-  if (opts.discard?.orLife !== undefined && discard.length === 0) loseLife(s, player, opts.discard.orLife);
+  if (opts.discard?.orLife !== undefined && discard.length === 0) payLife_(s, player, opts.discard.orLife);
   // Souls of the Lost : un permanent choisi à la place d'une carte est sacrifié.
   const sacrificedInstead = discard.filter((id) => obj(s, id).zone === "battlefield");
   const handDiscard = discard.filter((id) => !sacrificedInstead.includes(id));
@@ -1451,6 +1459,7 @@ function chosenFrom(vars: Record<string, ChoiceValue[]>): GameObject["chosen"] {
   if (kind === "cardName" || kind === "landName") return { cardName: value };
   if (kind === "parity") return { parity: value === "odd" ? "odd" : "even" };
   if (kind === "mode") return { mode: value };
+  if (kind === "number") return { number: Number(value) };
   return kind === "color" ? { color: value as Color } : { creatureType: value };
 }
 
@@ -1999,8 +2008,8 @@ export function activateAbility(s: GameState, player: PlayerId, source: ObjectId
   if (ab.cost.exertSelf) o.exerted = true;
   if (ab.cost.removeCounters?.kind === "any") removeAnyCounters(s, o, ab.cost.removeCounters.n);
   else if (ab.cost.removeCounters) changeCounters(s, o, ab.cost.removeCounters.kind, -ab.cost.removeCounters.n);
-  if (ab.cost.payLife) loseLife(s, player, ab.cost.payLife);
-  if (ab.cost.payLifeX && x > 0) loseLife(s, player, x);
+  if (ab.cost.payLife) payLife_(s, player, ab.cost.payLife);
+  if (ab.cost.payLifeX && x > 0) payLife_(s, player, x);
   for (const id of tapOthers) tapObject(s, obj(s, id));
   // Les permanents sacrifiés restent consultables (dernières informations connues : « sa endurance »).
   item.sacrificed = sacrificed.length ? [...sacrificed] : undefined;

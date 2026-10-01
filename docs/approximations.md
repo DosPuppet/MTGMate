@@ -278,6 +278,9 @@ Dans l'ordre où elles ont été ajoutées, extension par extension.
   - `timing` Hylda of the Icy Crown : le mode est choisi au déclenchement, puis {1} est payé ou non (et non « payez {1} ; quand vous le faites, choisissez ») ;
   - `règle` Sharae of Numbing Depths : « une ou plusieurs créatures » : la capacité se déclenche à la première créature engagée du tour ;
   - `timing` Likeness Looter : la valeur de mana X de la carte ciblée est vérifiée à la résolution (rien ne se passe si elle diffère), et non au ciblage ;
-  - `choix auto` Yenna, Redtooth Regent : la copie d'une Aura s'attache à un hôte choisi par le moteur.
+  - `choix auto` Yenna, Redtooth Regent : la copie d'une Aura s'attache à un hôte choisi par le moteur ;
+  - `règle` Sentinel of Lost Lore : « choisissez un ou plusieurs » : chaque mode est une cible facultative (on peut n'en choisir aucun) ;
+  - `règle` Extraordinary Journey : « une ou plusieurs créatures arrivent » : la capacité se déclenche à la première créature arrivée de l'exil (ou lancée depuis l'exil) du tour ;
+  - `choix auto` Talion, the Kindly Lord : le nombre proposé est la valeur de mana la plus fréquente parmi les cartes adverses vues.
 - **Légalité Standard :** instantané des légalités Scryfall au moment de l'import (`legalities.standard` dans `data/<set>.json`). Après une rotation ou une annonce de bannissement, réimporter les sets (`npm run import-cards -- <set>`).
 - **Images des jetons :** celle du jeton Scryfall le plus proche (même nom, puis mêmes F/E et couleurs ; `data/tokens.json`, `npm run import-tokens`) ; un jeton de nom inconnu garde le cadre texte.

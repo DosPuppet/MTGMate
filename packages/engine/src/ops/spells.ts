@@ -1,6 +1,6 @@
 /** Effets du moteur : pile et permissions de lancer (contresorts, copies, lancer depuis une autre zone). Chaque clé est un `op` d'`Effect` (voir `runEffect`, effects.ts). */
 
-import { loseLife, sacrifice } from "../actions";
+import { loseLife, payLife, sacrifice } from "../actions";
 import type { OpHandlers, OpResult } from "../effects";
 import {
   announceDiscard,
@@ -280,7 +280,7 @@ export const HANDLERS: OpHandlers = {
       if (!canPay(s, p, mana)) return;
       payMana(s, p, mana);
     }
-    if (life) loseLife(s, p, life);
+    if (life) payLife(s, p, life);
     // « S'il le fait, … » (Divert Disaster).
     store(r, e.paidStore, 1);
     return { skip: e.skip };

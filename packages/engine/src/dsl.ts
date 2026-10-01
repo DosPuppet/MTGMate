@@ -69,7 +69,7 @@ export interface CardScript {
   altCost?: { mana: string; condition: Condition; label: string };
   /** F/E définies par une capacité (F/E étoilées sur la carte). */
   cdaPT?: Amount;
-  chooseOnEnter?: "creatureType" | "color" | "cardName" | "landName" | "landType" | "parity" | "mode";
+  chooseOnEnter?: "creatureType" | "color" | "cardName" | "landName" | "landType" | "parity" | "mode" | "number";
   /** Sièges : les modes proposés en arrivant (avec `chooseOnEnter: "mode"`). */
   enterModes?: string[];
   shuffleIntoLibrary?: boolean;
@@ -323,7 +323,7 @@ export const amount = {
   spellsCastThisTurn: { kind: "spellsCastThisTurn" } as Amount,
   cardsDrawnThisTurn: { kind: "cardsDrawnThisTurn" } as Amount,
   creaturesDiedThisTurn: { kind: "creaturesDiedThisTurn" } as Amount,
-  totalManaValue: (filter: ObjectFilter): Amount => ({ kind: "totalManaValue", filter }),
+  totalManaValue: (filter: ObjectFilter, zone?: "exile"): Amount => ({ kind: "totalManaValue", filter, zone }),
   eventManaSpent: { kind: "eventManaSpent" } as Amount,
   cardTypesOf: (r: Ref): Amount => ({ kind: "cardTypesOf", ref: r }),
   devotion: (color: Color): Amount => ({ kind: "devotion", color }),
