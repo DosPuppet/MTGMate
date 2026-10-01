@@ -238,7 +238,8 @@ export interface StackItem {
   /** Esper Origins : après la résolution, exilé puis mis sur le champ de bataille transformé avec un marqueur de finalité. */
   toBattlefieldTransformed?: boolean;
   /** Modifications à l'arrivée du permanent (Torgal, Summon: Fenrir, Summon: Brynhildr, Noctis). */
-  arrival?: { counters?: { kind: string; n: number }[]; haste?: boolean; subtypes?: string[] };
+  /** `sacrificeAtEnd` : le jeton (copie d'un sort de créature) est sacrifié au début de la prochaine étape de fin. */
+  arrival?: { counters?: { kind: string; n: number }[]; haste?: boolean; subtypes?: string[]; sacrificeAtEnd?: boolean };
   kind: "spell" | "ability";
   controller: PlayerId;
   /** Sort : l'objet sur la pile. Capacité : le permanent source (peut avoir disparu). */

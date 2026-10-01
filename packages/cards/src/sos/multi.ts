@@ -5,6 +5,7 @@ import {
   amount,
   BASIC_LAND,
   type CardScript,
+  castPermission,
   cond,
   costReducer,
   ELEMENTAL_UR,
@@ -738,6 +739,17 @@ export const MULTI: Record<string, CardScript> = {
       triggered(when.eachEndStep, [fx.createTokens(FRACTAL, 1, undefined, "f"), fx.addCounters(ref.stored("f"), 3)], {
         condition: cond.sourceMatches({ countersPutByYouThisTurn: true }),
         label: "Vous avez mis un marqueur sur elle ce tour-ci : une Fractale avec trois marqueurs +1/+1",
+      }),
+    ],
+  },
+  "Zaffai and the Tempests": {
+    abilities: [
+      castPermission({
+        freeFromHand: true,
+        freeFilter: INSTANT_SORCERY,
+        freeOncePerTurn: true,
+        condition: cond.yourTurn,
+        label: "Une fois pendant chacun de vos tours : un éphémère ou un rituel de votre main sans payer son coût",
       }),
     ],
   },

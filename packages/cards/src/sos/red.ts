@@ -20,6 +20,7 @@ import {
   ref,
   SPIRIT_RW,
   spell,
+  spree,
   TREASURE,
   target,
   triggered,
@@ -233,5 +234,24 @@ export const RED: Record<string, CardScript> = {
         { label: "Éphémère ou rituel : vos créatures +1/+0 par couleur de mana dépensée pour le lancer" },
       ),
     ],
+  },
+  "Choreographed Sparks": {
+    // « Ce sort ne peut pas être copié » : lu dans le texte. « Un ou les deux » : deux modes sans coût en plus.
+    spell: spree(
+      {
+        cost: "{0}",
+        label: "Copiez un sort d'éphémère ou de rituel que vous contrôlez",
+        targets: [
+          target.spell("a", { ...INSTANT_SORCERY, controller: "you" }, "sort d'éphémère ou de rituel que vous contrôlez"),
+        ],
+        effects: [fx.copySpell(ref.target("a"), 1)],
+      },
+      {
+        cost: "{0}",
+        label: "Copiez un sort de créature que vous contrôlez (célérité, sacrifiée en fin de tour)",
+        targets: [target.spell("b", { types: ["Creature"], controller: "you" }, "sort de créature que vous contrôlez")],
+        effects: [fx.copySpell(ref.target("b"), 1, { haste: true, sacrificeAtEnd: true })],
+      },
+    ),
   },
 };

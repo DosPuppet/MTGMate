@@ -600,6 +600,8 @@ export interface CastTerms {
   removeCounters?: number;
   /** Permission utilisable une fois par tour (Maralen) : clé notée dans `turn.onceFired` au lancement. */
   onceKey?: string;
+  /** Permission gratuite une fois par tour (Zaffai) : consommée seulement si le sort est lancé sans payer. */
+  freeOnceKey?: string;
   /** Points de vie payés en plus (Wickerfolk Indomitable, depuis le cimetière). */
   payLife?: number;
   /** Seulement au moment où l'on pourrait lancer un rituel (carte complotée). */
@@ -896,15 +898,24 @@ function baseCastTerms(s: GameState, player: PlayerId, card: ObjectId): CastTerm
     if (handPerm) return { source: "hand", free: handPerm.free, anyTime: handPerm.anyTime };
     // Omnipresence : seulement si la valeur de mana ne dépasse pas le nombre de créatures que vous contrôlez.
     const creatures = () => s.battlefield.filter((id) => obj(s, id).controller === player && isCreature(s, id)).length;
-    const free = controlledAbilities(s, player).some(
-      (ab) =>
+    const perms = controlledAbilitiesWithSource(s, player).filter(
+      ({ id, ab }) =>
         ab.kind === "castPermission" &&
         ab.freeFromHand &&
         (!ab.freeMaxManaValueCreatures || manaValue(d.manaCost) <= creatures()) &&
         // Dracogenesis : seulement les sorts de Dragon.
-        (!ab.freeFilter || matchesView(spellView(d, player), ab.freeFilter, player)),
+        (!ab.freeFilter || matchesView(spellView(d, player), ab.freeFilter, player)) &&
+        (!ab.condition || checkCondition(s, ab.condition, player, id)) &&
+        // Zaffai and the Tempests : une fois par tour (la permission est consommée par un sort lancé gratuitement).
+        !(ab.freeOncePerTurn && s.turn.onceFired.includes(`freeHand:${id}`)),
     );
-    return { source: "hand", freeOptional: free || undefined };
+    const unlimited = perms.find(({ ab }) => ab.kind === "castPermission" && !ab.freeOncePerTurn);
+    const once = unlimited ? undefined : perms[0];
+    return {
+      source: "hand",
+      freeOptional: perms.length > 0 || undefined,
+      ...(once ? { freeOnceKey: `freeHand:${once.id}` } : {}),
+    };
   }
   if (o.zone === "graveyard") {
     // Tinybones, the Pickpocket : une carte d'un autre cimetière, lançable avec du mana de n'importe quel type.
@@ -1303,6 +1314,7 @@ export function castSpell(s: GameState, player: PlayerId, card: ObjectId, choice
   if (once) s.playerEffects = s.playerEffects.filter((e) => e !== once);
   if (terms.removeCounters) removeCountersAmongCreatures(s, player, terms.removeCounters);
   if (terms.onceKey) s.turn.onceFired.push(terms.onceKey);
+  if (free && terms.freeOnceKey) s.turn.onceFired.push(terms.freeOnceKey);
   const view = spellView(d, player);
   // Lancer la copie d'un sort préparé dé-prépare son permanent (même si le sort est ensuite contrecarré).
   const preparedFor = o.preparedFor ? s.objects[o.preparedFor] : undefined;
@@ -2357,15 +2369,27 @@ function finishResolution(
   if (item.kind === "spell" && item.copy) {
     if (s.objects[item.sourceId]) removeFromGame(s, item.sourceId);
     const d = s.defs[item.sourceDefId];
-    if (d && isPermanentCard(d))
-      createTokenCopy(s, item.controller, d.id, {
+    if (d && isPermanentCard(d)) {
+      const token = createTokenCopy(s, item.controller, d.id, {
         x: item.x,
         kicked: item.kicked,
         chosen: chosenFrom(vars),
         copyOf: vars.$copyOf?.[0] !== undefined ? String(vars.$copyOf[0]) : undefined,
         copyMods: copiableExceptions(s, vars.$copyOf?.[1] !== undefined ? String(vars.$copyOf[1]) : undefined),
         copyChosen: vars.$copyOf !== undefined,
+        // Choreographed Sparks : « la copie gagne la célérité ».
+        counters: item.arrival?.counters,
+        haste: item.arrival?.haste,
       });
+      // « … et "au début de l'étape de fin, sacrifiez ce jeton" ».
+      if (item.arrival?.sacrificeAtEnd && s.objects[token]?.zone === "battlefield")
+        createDelayed(s, item.controller, token, s.objects[token]?.defId ?? d.id, {
+          targets: [],
+          effects: [{ op: "sacrificeIt", what: { kind: "target", id: "c" } }],
+          bound: { c: [token] },
+          label: "sacrifier la copie",
+        });
+    }
     return;
   }
   if (item.kind === "spell" && s.objects[item.sourceId]) {

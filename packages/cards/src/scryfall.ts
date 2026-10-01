@@ -874,6 +874,7 @@ function singleDef(raw: RawCard, script: CardScript | undefined, set: string): C
     chosenNameTax: script?.chosenNameTax,
     ward,
     cantBeCountered: script?.cantBeCountered,
+    cantBeCopied: /This spell can't be copied\./.test(raw.oracleText) || undefined,
     spell,
     kicker: script?.kicker
       ? parseManaCost(script.kicker)

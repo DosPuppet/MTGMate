@@ -68,6 +68,8 @@ export interface CardScript {
   flashbackCost?: AdditionalCost;
   /** « Ce sort ne peut pas être contrecarré. » */
   cantBeCountered?: boolean;
+  /** « Ce sort ne peut pas être copié. » */
+  cantBeCopied?: boolean;
   /** Aura : « Enchanter [filtre] ». */
   /** `player` : « Enchanter un joueur » (Grievous Wound). */
   enchant?: { filter: ObjectFilter; label: string; player?: boolean };
@@ -644,7 +646,13 @@ export const fx = {
   grantHarmonize: (what: Ref): Effect => ({ op: "grantFlashback", what, harmonize: true }),
   endTurn: { op: "endTurn" } as Effect,
   gainControl: (what: Ref): Effect => ({ op: "gainControl", what }),
-  copySpell: (what: Ref, count: Amount): Effect => ({ op: "copySpell", what, count }),
+  /** `haste`, `sacrificeAtEnd` : la copie d'un sort de créature (un jeton) a la célérité, est sacrifiée en fin de tour. */
+  copySpell: (what: Ref, count: Amount, opts: { haste?: boolean; sacrificeAtEnd?: boolean } = {}): Effect => ({
+    op: "copySpell",
+    what,
+    count,
+    ...opts,
+  }),
   millUntil: (who: Ref, filter: ObjectFilter): Effect => ({ op: "millUntil", who, filter }),
   exileTop: (who: Ref, n: Amount, store: string): Effect => ({ op: "exileTop", who, n, store }),
   grantPlay: (

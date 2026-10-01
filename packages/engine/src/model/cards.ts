@@ -84,6 +84,8 @@ export interface CardDef {
   harmonize?: boolean;
   /** « Ce sort ne peut pas être contrecarré. » */
   cantBeCountered?: boolean;
+  /** « Ce sort ne peut pas être copié » (Choreographed Sparks). */
+  cantBeCopied?: boolean;
   /** Planeswalker : loyauté de départ (306.5b). */
   loyalty?: number;
   /** Aura : ce qu'elle peut enchanter (cible du sort d'Aura, puis légalité de l'attachement). */
@@ -677,6 +679,8 @@ export interface CastPermissionAbilityDef {
   freeFromHand?: true;
   /** Seulement les sorts correspondants (Dracogenesis : « vous pouvez lancer des sorts de Dragon sans payer »). */
   freeFilter?: ObjectFilter;
+  /** Une fois par tour (Zaffai and the Tempests) ; `condition` : seulement quand elle est remplie (pendant votre tour). */
+  freeOncePerTurn?: true;
   /** Omnipresence : seulement les sorts de valeur de mana ≤ nombre de créatures que vous contrôlez. */
   freeMaxManaValueCreatures?: true;
   /** Null Summoner : lancer les cartes liées exilées (mana de n'importe quel type), sous condition. */

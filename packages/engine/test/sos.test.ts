@@ -4724,3 +4724,53 @@ describe("Secrets of Strixhaven, lot C1 : moitiés par joueur, exil jouable, mar
     expect(s.players.p1?.manaPool.C).toBe(2);
   });
 });
+
+describe("Secrets of Strixhaven, lot C2 : sort gratuit une fois par tour, copies", () => {
+  it("Zaffai and the Tempests : une fois pendant chacun de vos tours, un éphémère ou un rituel de votre main sans payer", () => {
+    let s = scenario({
+      p1: { battlefield: ["Zaffai and the Tempests"], hand: ["Lightning Strike", "Lightning Strike", "Bear Cub"] },
+    });
+    const [a, b] = idsOf(s, "p1", "hand", "Lightning Strike");
+    expect(castOptions(s, "p1", idOf(s, "p1", "hand", "Bear Cub"))).toHaveLength(0);
+    s = settle(act(s, "p1", { type: "cast", card: a as string, targets: { t: ["p2"] }, free: true }));
+    expect(s.players.p2?.life).toBe(17);
+    // La permission est utilisée pour ce tour.
+    expect(castOptions(s, "p1", b as string)).toHaveLength(0);
+    // Pendant le tour de l'adversaire : pas de sort gratuit.
+    s = advanceUntil(s, (x) => x.turn.number === 4 && x.turn.step === "main1" && x.pending?.player === "p1");
+    expect(castOptions(s, "p1", b as string)).toHaveLength(0);
+    s = advanceUntil(s, (x) => x.turn.number === 5 && x.turn.step === "main1");
+    expect(castOptions(s, "p1", b as string)).not.toHaveLength(0);
+  });
+
+  it("Choreographed Sparks : copie un éphémère que vous contrôlez ; ne peut pas lui-même être copié", () => {
+    let s = scenario({ p1: { battlefield: lands("Mountain", 4), hand: ["Lightning Strike", "Choreographed Sparks"] } });
+    s = act(s, "p1", { type: "cast", card: idOf(s, "p1", "hand", "Lightning Strike"), targets: { t: ["p2"] } });
+    const strike = s.stack[0]?.id as string;
+    const card = idOf(s, "p1", "hand", "Choreographed Sparks");
+    const opt = legalActions(s, "p1").find((x) => x.type === "cast" && x.card === card);
+    const mode = opt?.type === "cast" ? opt.modes.find((m) => m.label?.startsWith("Copiez un sort d'éphémère")) : undefined;
+    expect(mode).toBeDefined();
+    s = settle(act(s, "p1", { type: "cast", card, mode: mode?.index, targets: { a: [strike] } }));
+    expect(s.players.p2?.life).toBe(14);
+    expect(Object.values(s.defs).find((d) => d.name === "Choreographed Sparks")?.cantBeCopied).toBe(true);
+  });
+
+  it("Choreographed Sparks : la copie d'un sort de créature a la célérité et est sacrifiée au début de l'étape de fin", () => {
+    let s = scenario({
+      p1: { battlefield: [...lands("Mountain", 4), ...lands("Forest", 2)], hand: ["Bear Cub", "Choreographed Sparks"] },
+    });
+    s = act(s, "p1", { type: "cast", card: idOf(s, "p1", "hand", "Bear Cub") });
+    const bearSpell = s.stack[0]?.id as string;
+    const card = idOf(s, "p1", "hand", "Choreographed Sparks");
+    const opt = legalActions(s, "p1").find((x) => x.type === "cast" && x.card === card);
+    const mode = opt?.type === "cast" ? opt.modes.find((m) => m.label?.startsWith("Copiez un sort de créature")) : undefined;
+    s = settle(act(s, "p1", { type: "cast", card, mode: mode?.index, targets: { b: [bearSpell] } }));
+    const bears = idsOf(s, "p1", "battlefield", "Bear Cub");
+    expect(bears).toHaveLength(2);
+    const token = bears.find((id) => s.objects[id]?.isToken) as string;
+    expect(chars(s, token).keywords).toContain("haste");
+    s = advanceUntil(s, (x) => x.turn.step === "end" && x.stack.length === 0 && x.triggers.length === 0);
+    expect(idsOf(s, "p1", "battlefield", "Bear Cub")).toHaveLength(1);
+  });
+});

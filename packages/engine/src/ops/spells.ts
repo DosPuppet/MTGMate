@@ -384,7 +384,16 @@ export const HANDLERS: OpHandlers = {
       const item = s.stack.find((x) => x.id === id);
       if (!item) continue;
       // Sort, capacité activée ou déclenchée (Return the Favor, Ertha Jo) : nouvelles cibles au choix avant la priorité.
-      for (let i = 0; i < n; i++) copyStackItem(s, item, ctx.controller);
+      for (let i = 0; i < n; i++) {
+        const id = copyStackItem(s, item, ctx.controller);
+        const copy = id ? s.stack.find((x) => x.id === id) : undefined;
+        if (copy && (e.haste || e.sacrificeAtEnd))
+          copy.arrival = {
+            ...copy.arrival,
+            ...(e.haste ? { haste: true } : {}),
+            ...(e.sacrificeAtEnd ? { sacrificeAtEnd: true } : {}),
+          };
+      }
     }
     return;
   },

@@ -105,3 +105,13 @@ Les scripts sont dans `packages/cards/src/sos/` : `cards` (cartes du méta), `wh
   - le moment `yourNextMain` des capacités retardées (« au début de votre prochaine phase principale », celle d'après combat comprise), `fx.delayedAt(…, vars)` et `amount.manaSpentOf(ref)` (mana dépensé pour le sort ciblé).
 - **[règles] Correctif :** Memory Vessel (BIG) ne rendait les cartes jouables que ce tour-ci, au lieu de « jusqu'à votre prochain tour ». `RULES_VERSION` = 30.
 - **Tests :** 4 tests de règles (« lot C1 »).
+
+## Sous-lot C2 : sort gratuit une fois par tour, copies ✅ (260 / 262)
+
+- **Cartes :** Zaffai and the Tempests, Choreographed Sparks.
+- **Le moteur gagne :**
+  - `castPermission({ freeFromHand, freeOncePerTurn, condition })` : « une fois pendant chacun de vos tours, vous pouvez lancer un éphémère ou un rituel de votre main sans payer son coût » ; la permission n'est consommée que par un sort lancé gratuitement ;
+  - « ce sort ne peut pas être copié » est lu dans le texte (`CardDef.cantBeCopied`, vérifié par `copyStackItem`) ;
+  - `fx.copySpell(…, { haste, sacrificeAtEnd })` : la copie d'un sort de créature (un jeton) a la célérité et est sacrifiée au début de la prochaine étape de fin. Correctif : une copie n'hérite plus des modifications d'arrivée accordées au sort original (707.2), et un jeton copie d'un sort de permanent reçoit les siennes.
+- **[règles]** `RULES_VERSION` = 31.
+- **Tests :** 3 tests de règles (« lot C2 »).

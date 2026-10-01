@@ -382,7 +382,8 @@ export type Effect =
   /** Le contrôleur de l'effet prend le contrôle de l'objet jusqu'à la fin du tour. */
   | { op: "gainControl"; what: Ref }
   /** Copies d'un sort sur la pile (mêmes cibles). */
-  | { op: "copySpell"; what: Ref; count: Amount }
+  /** `haste`, `sacrificeAtEnd` : la copie d'un sort de créature a la célérité et est sacrifiée en fin de tour. */
+  | { op: "copySpell"; what: Ref; count: Amount; haste?: boolean; sacrificeAtEnd?: boolean }
   /** Chaque joueur désigné révèle des cartes jusqu'à une carte correspondant au filtre, puis les met toutes au cimetière. */
   | { op: "millUntil"; who: Ref; filter: ObjectFilter }
   /** Exile les N cartes du dessus de la bibliothèque de chaque joueur désigné (mémorisées sous `store`). */

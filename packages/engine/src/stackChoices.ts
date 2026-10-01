@@ -45,6 +45,8 @@ function queueDivision(s: GameState, item: StackItem): void {
  * dépend de la source du sort (défense talismanique contre les éphémères…) la voit. Renvoie l'identifiant de la copie.
  */
 export function copyStackItem(s: GameState, item: StackItem, controller: PlayerId): string {
+  // « Ce sort ne peut pas être copié » (Choreographed Sparks).
+  if (item.kind === "spell" && s.defs[item.sourceDefId]?.cantBeCopied) return "";
   let id: string;
   if (item.kind === "spell") {
     const src = s.objects[item.sourceId];
@@ -71,6 +73,8 @@ export function copyStackItem(s: GameState, item: StackItem, controller: PlayerI
     controller,
     copy: true,
     riders: undefined,
+    // Les modifications d'arrivée accordées au sort (marqueurs, célérité) ne sont pas copiables (707.2).
+    arrival: undefined,
     manaSources: undefined,
     caveMana: undefined,
     targets: { ...item.targets },

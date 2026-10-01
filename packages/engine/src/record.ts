@@ -85,8 +85,11 @@ export const RECORD_VERSION = 1;
  * - 30 : Secrets of Strixhaven, lot C1 : « jouable jusqu'à votre prochain tour » pour le propriétaire (Memory Vessel ne
  *   valait que ce tour-ci) et « jusqu'à la fin de son prochain tour » ; qui a mis des marqueurs sur un objet ce tour-ci ;
  *   moitiés de PV et de main par joueur ; capacités retardées « au début de votre prochaine phase principale ».
+ * - 31 : Secrets of Strixhaven, lot C2 : une copie de sort n'hérite plus des modifications d'arrivée de l'original ; le
+ *   jeton copie d'un sort de permanent reçoit les siennes (célérité, sacrifice en fin de tour) ; sort gratuit de la main
+ *   une fois par tour ; « ce sort ne peut pas être copié ».
  */
-export const RULES_VERSION = 30;
+export const RULES_VERSION = 31;
 
 /** Un point de contrôle toutes les N décisions (plus la dernière de la partie). */
 export const CHECKPOINT_EVERY = 25;
