@@ -2,11 +2,12 @@
 
 import { dealDamage, destroy, sourceFromObject } from "../actions";
 import type { OpHandlers } from "../effects";
-import { damageSource, evalAmount, nextTurnOf, resolveRef, store, viewOf } from "../effects";
+import { damageSource, evalAmount, nameOf, resolveRef, store, viewOf } from "../effects";
 import { addReplacement } from "../replacement";
 import { chars, isCreature, isPlayer, newId, onBattlefield } from "../state";
 import { addPlayerEffect } from "../statics";
 import { matchesObjectFilter } from "../targets";
+import type { EventReplacement } from "../types";
 
 export const HANDLERS: OpHandlers = {
   damage(s, r, e, ctx) {
@@ -118,15 +119,43 @@ export const HANDLERS: OpHandlers = {
     if (e.players) for (const p of resolveRef(s, ctx, e.players)) dealDamage(s, src, p, amount, false);
     return;
   },
-  doubleDamageTo(s, _r, e, ctx) {
-    const until = nextTurnOf(s, ctx.controller);
-    // Jusqu'au prochain tour de son contrôleur (exclu).
-    for (const p of resolveRef(s, ctx, e.who).filter((x) => isPlayer(s, x)))
-      addPlayerEffect(s, p, { damageTakenDoubled: true }, until - 1);
-    return;
-  },
-  preventDamageToYourCreatures(s, _r, _e, ctx) {
-    addPlayerEffect(s, ctx.controller, { creaturesDamageImmune: true }, s.turn.number);
+  shield(s, r, e, ctx, key) {
+    let sourceIs: string | undefined;
+    if (e.chooseSource) {
+      // « Une source de votre choix » : un permanent ou un sort sur la pile (les sources adverses d'abord).
+      const options = [
+        ...s.battlefield,
+        ...s.stack.filter((x) => x.kind === "spell" && x.id !== ctx.sourceId && !!s.objects[x.id]).map((x) => x.id),
+      ];
+      if (options.length === 0) return;
+      const answer = r.vars[key("source")];
+      if (!answer) {
+        const foe = options.find((id) => s.objects[id]?.controller !== ctx.controller) ?? (options[0] as string);
+        return {
+          ask: {
+            player: ctx.controller,
+            key: key("source"),
+            request: {
+              type: "pick",
+              intent: "other",
+              prompt: `${nameOf(s, ctx.sourceId)} : choisissez la source dont les prochaines blessures seront prévenues`,
+              options,
+              min: 1,
+              max: 1,
+              suggested: [foe],
+            },
+          },
+        };
+      }
+      sourceIs = String(answer[0]);
+    }
+    const replacement: EventReplacement = {
+      ...e.replacement,
+      sourceIs,
+      sourceDefIs: sourceIs ? s.objects[sourceIs]?.defId : undefined,
+      origin: { id: ctx.sourceId, defId: ctx.sourceDefId },
+    };
+    addPlayerEffect(s, ctx.controller, { replacement }, s.turn.number, true);
     return;
   },
   eachDealsDamage(s, _r, e, ctx) {

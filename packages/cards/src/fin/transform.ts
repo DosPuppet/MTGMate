@@ -7,8 +7,8 @@ import {
   chocobo,
   cond,
   costReducer,
-  doubler,
   entersWith,
+  eventReplacement,
   FOOD,
   fx,
   graveyardReplacement,
@@ -413,8 +413,10 @@ export const TRANSFORM: Record<string, CardScript> = {
   },
   "Trance Kuja, Fate Defied": {
     abilities: [
-      doubler({
-        damageFilter: { types: ["Creature"], subtype: "Wizard" },
+      eventReplacement({
+        event: "damage",
+        source: { types: ["Creature"], subtype: "Wizard", controller: "you" },
+        modify: { times: 2 },
         label: "Flare Star : blessures de vos Sorciers doublées",
       }),
     ],

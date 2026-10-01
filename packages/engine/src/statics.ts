@@ -9,6 +9,7 @@ import { checkCondition } from "./triggers";
 import type {
   AbilityDef,
   DoublerAbilityDef,
+  EventReplacement,
   GameObject,
   GameState,
   ObjectId,
@@ -75,6 +76,42 @@ export function playerStatics(
       out.push({ id, ab });
   for (const e of liveEffects(s, player)) if (e.ability[key]) out.push({ ab: e.ability });
   return out;
+}
+
+/** Un remplacement d'événement chiffré en vigueur : son contrôleur, sa source (capacité imprimée) ou son effet (bouclier). */
+export interface ActiveReplacement {
+  r: EventReplacement;
+  controller: PlayerId;
+  sourceId?: ObjectId;
+  /** Effet de joueur qui le porte : un bouclier à usage unique (615.7) est retiré quand il s'applique. */
+  effectId?: string;
+  once?: boolean;
+}
+
+/**
+ * Remplacements d'événements chiffrés en vigueur (R1) : capacités `eventReplacement` des permanents et emblèmes de chaque
+ * joueur encore en partie (condition remplie), puis effets de joueur qui portent un `replacement`.
+ */
+export function eventReplacements(s: GameState, event: EventReplacement["event"]): ActiveReplacement[] {
+  const out: ActiveReplacement[] = [];
+  for (const p of s.playerOrder) {
+    if (s.players[p]?.lost) continue;
+    for (const { id, ab } of controlledAbilitiesWithSource(s, p))
+      if (ab.kind === "eventReplacement" && ab.event === event && (!ab.condition || checkCondition(s, ab.condition, p, id)))
+        out.push({ r: ab, controller: p, sourceId: id });
+    for (const e of liveEffects(s, p)) {
+      const r = e.ability.replacement;
+      if (r?.event === event) out.push({ r, controller: p, effectId: e.id, once: e.once });
+    }
+  }
+  return out;
+}
+
+/** Retire un bouclier « la prochaine fois que » qui vient de s'appliquer (615.7). */
+export function consumeReplacement(s: GameState, a: ActiveReplacement): void {
+  if (!a.once || !a.effectId) return;
+  s.playerEffects = s.playerEffects.filter((e) => e.id !== a.effectId);
+  s.version += 1;
 }
 
 export function playerStatic(s: GameState, player: PlayerId, key: PlayerStaticKey): boolean {

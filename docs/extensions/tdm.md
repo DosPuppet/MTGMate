@@ -62,3 +62,23 @@ Les scripts sont dans `packages/cards/src/tdm/` : `cards` (cartes du méta, phas
 - **Dette :** trois entrées justifiées (`delveSpells`, `cantBeSacrificed`, `suspend`, une carte chacune), deux retirées (`chooseAmong` et `untapAll` servent désormais à plusieurs cartes).
 - **Comportement inchangé** pour les cartes déjà gérées (parties dorées identiques).
 - **Tests :** 23 tests de règles en plus dans `engine/test/tdm.test.ts`, un par carte au moins (suspension sur quatre tours, cave, combat supplémentaire, victoire de Call the Spirit Dragons…).
+
+## Lot D ✅ (**259 / 259**) — remplacements de blessures (R1)
+
+New Way Forward apporte le premier bouclier « la prochaine fois que » (615.7) et Neriv un nouveau remplacement de blessures (famille E) : comme le demande la règle R1 (fin de CLAUDE.md), le cadre générique est écrit et les drapeaux de la même famille y sont convertis.
+
+- **Le moteur gagne :**
+  - `EventReplacement` (`model/cards.ts`) : événement (`damage` ou `lifeLoss`), source (filtre vu du contrôleur), destinataire (`you`, `yourSide`, `opponent`, `opponentSide`, `toFilter`), combat ou non, `modify : { add, times, atLeastSourcePower, prevent }`, `onPrevent` (meule des adversaires, capacité réflexive « quand des blessures sont prévenues ainsi »). Capacité imprimée `eventReplacement(…)` (`EventReplacementAbilityDef`) ; effet de joueur `fx.thisTurn({ replacement })` ;
+  - le collecteur `eventReplacements` (`statics.ts`) et l'application dans `dealDamage` et `loseLife` : modifications ordonnées par `chooseReplacementOrder` (616.1) ; une prévention contrôlée par un autre joueur que le blessé passe avant les modifications (The Mindskinner fait meuler le moins), celle du blessé après (New Way Forward renvoie le plus) ;
+  - les boucliers (615.7) : `fx.shield(remplacement, choixDeLaSource)`, un effet de joueur à usage unique jusqu'à la fin du tour, retiré quand il s'applique (`consumeReplacement`) ;
+  - des blessures prévenues ne comptent plus comme infligées (Ruric Thar, Karakyk Guardian).
+- **Conversions :** dix drapeaux de `PlayerStaticAbilityDef` disparaissent (`noncombatDamageBonusAll`, `noncombatDamageBonus`, `noncombatDamageBonusAmount`, `noncombatDamageAtLeastPower`, `damagePlusOneFrom`, `damagePlusOneToOpponents`, `damageTakenDoubled`, `damageToOpponentsMills`, `creaturesDamageImmune`, `doubleOpponentLifeLossYourTurn`), ainsi que les doubleurs de blessures (`damageToOpponents`, `creatureDamage`, `damageFilter`, `noncombatDamage`) et les opérations `doubleDamageTo` et `preventDamageToYourCreatures`. Cartes converties : Tomik, Izzet Sparkmage, Bloodletter of Aclazotz, Ojer Axonil, Artist's Talent, Valley Flamecaller, Far Fortune, The Mindskinner, The Rollercrusher Ride, Twinflame Tyrant, Gratuitous Violence, Trance Kuja, la carte de Marvel Super Heroes qui double les blessures de la créature équipée, Lightning, Army of One, Summon: Alexander et Taii Wakeen.
+- **Dette :** un champ générique (`replacement`) et une opération (`shield`, une carte) entrent ; dix drapeaux et deux opérations sortent.
+- **[règles] :** `RULES_VERSION` = 21, parties dorées régénérées (elles se rejouaient déjà à l'identique).
+- **Tests :** Neriv et New Way Forward dans `engine/test/tdm.test.ts` (3 tests : double blessures, bouclier à usage unique, autre source et fin du tour) ; deux décisions de 616.1 dans `engine/test/rulings.test.ts` (bouclier du blessé après le doubleur adverse, prévention adverse avant) ; les tests existants des cartes converties (`audit`, `rulings`, `player-effects`) passent sans changement de résultat.
+
+## Bilan de l'extension
+
+- 234 cartes ajoutées en quatre lots (25 étaient déjà gérées par la phase méta), 0 écart à l'audit Oracle ↔ script.
+- 63 tests de règles dans `engine/test/tdm.test.ts` (en plus des 24 de la phase méta), 2 dans `rulings.test.ts`, 1 dans `lci.test.ts`.
+- Écarts trouvés en route et corrigés : condition intercalée sur l'objet de l'événement (Aclazotz), décomposition accordée par un marqueur, angle mort du garde-fou de la dette, délai de `tutorial-smoke`.

@@ -17,6 +17,7 @@ import {
   descend,
   doubler,
   entersWith,
+  eventReplacement,
   FUNGUS_DINOSAUR,
   fx,
   GNOME_SOLDIER,
@@ -319,7 +320,15 @@ export const LEGENDS: Record<string, CardScript> = {
     spell: spell([target.creatureOrPlaneswalker()], [fx.destroy(ref.target())]),
   },
   "Bloodletter of Aclazotz": {
-    abilities: [playerStatic({ doubleOpponentLifeLossYourTurn: true, label: "Pendant votre tour, perte de PV adverse doublée" })],
+    abilities: [
+      eventReplacement({
+        event: "lifeLoss",
+        to: "opponent",
+        modify: { times: 2 },
+        condition: cond.yourTurn,
+        label: "Pendant votre tour, perte de PV adverse doublée",
+      }),
+    ],
   },
   "Bringer of the Last Gift": {
     abilities: [
@@ -421,7 +430,14 @@ export const LEGENDS: Record<string, CardScript> = {
   },
   "Ojer Axonil, Deepest Might": {
     abilities: [
-      playerStatic({ noncombatDamageAtLeastPower: true, label: "Sources rouges : au moins sa force en blessures" }),
+      eventReplacement({
+        event: "damage",
+        source: { controller: "you", colors: ["R"] },
+        to: "opponent",
+        combat: false,
+        modify: { atLeastSourcePower: true },
+        label: "Sources rouges : au moins sa force en blessures",
+      }),
       returnsAsTemple(),
     ],
   },

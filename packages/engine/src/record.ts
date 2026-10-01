@@ -56,8 +56,11 @@ export const RECORD_VERSION = 1;
  * - 20 : Tarkir: Dragonstorm, lot A : un « si » intermédiaire sur l'objet de l'événement est vérifié au déclenchement et
  *   à la résolution (603.4 ; Aclazotz) ; « a déjà infligé des blessures » (Karakyk Guardian) ; « valeur de mana X ou
  *   moins » dans une recherche (Nature's Rhythm).
+ * - 21 : remplacements des blessures et de la perte de PV en données (`EventReplacement`, R1, familles E et F) ; une
+ *   prévention d'un autre joueur que le blessé passe avant les modifications, la sienne après (616.1) ; boucliers « la
+ *   prochaine fois que » (615.7, New Way Forward) ; des blessures prévenues ne comptent pas comme infligées.
  */
-export const RULES_VERSION = 20;
+export const RULES_VERSION = 21;
 
 /** Un point de contrôle toutes les N décisions (plus la dernière de la partie). */
 export const CHECKPOINT_EVERY = 25;

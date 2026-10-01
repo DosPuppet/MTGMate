@@ -10,7 +10,7 @@ import {
   type CardScript,
   cond,
   DOOMBOT,
-  doubler,
+  eventReplacement,
   fx,
   manaAbility,
   modal,
@@ -144,7 +144,12 @@ export const CARDS: Record<string, CardScript> = {
         targets: [target.upTo(1, target.creature())],
         label: "4 blessures",
       }),
-      doubler({ damageFilter: { attachedToSource: true }, label: "Double les blessures de la créature équipée" }),
+      eventReplacement({
+        event: "damage",
+        source: { attachedToSource: true, controller: "you" },
+        modify: { times: 2 },
+        label: "Double les blessures de la créature équipée",
+      }),
       activated({
         mana: "{2}{R}",
         fromHand: true,

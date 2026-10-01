@@ -27,6 +27,7 @@ export const {
   castPermission,
   playerStatic,
   graveyardReplacement,
+  eventReplacement,
   prevention,
   doubler,
   cost,

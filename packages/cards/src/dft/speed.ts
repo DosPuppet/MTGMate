@@ -13,6 +13,7 @@ import {
   DINOSAUR_DRAGON,
   ELEPHANT,
   entersWith,
+  eventReplacement,
   exhaust,
   fx,
   GOBLIN,
@@ -440,7 +441,14 @@ export const SPEED: Record<string, CardScript> = {
   "Far Fortune, End Boss": {
     abilities: [
       triggered(when.attackWith(1), [fx.damage(1, ref.eachOpponent)], { label: "1 blessure à chaque adversaire" }),
-      playerStatic({ damagePlusOneToOpponents: true, condition: MAX, label: "Vitesse max : +1 blessure aux adversaires" }),
+      eventReplacement({
+        event: "damage",
+        source: { controller: "you" },
+        to: "opponentSide",
+        modify: { add: 1 },
+        condition: MAX,
+        label: "Vitesse max : +1 blessure aux adversaires",
+      }),
     ],
   },
   "Gastal Thrillseeker": {

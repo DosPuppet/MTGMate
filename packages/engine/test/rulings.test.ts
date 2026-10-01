@@ -3,11 +3,12 @@
  * lien de vie, copies, remplacements, nettoyage (docs/plans/PLAN-R.md, lot R7).
  */
 import { describe, expect, it } from "vitest";
-import { dealDamage, destroy } from "../src/actions";
-import { doubler, fx, graveyardReplacement, ref, triggered, when } from "../src/dsl";
+import { dealDamage, destroy, sourceFromObject } from "../src/actions";
+import { eventReplacement, fx, graveyardReplacement, ref, triggered, when } from "../src/dsl";
 import { runEffect } from "../src/effects";
 import { counterItem } from "../src/stack";
 import { chars } from "../src/state";
+import { addPlayerEffect } from "../src/statics";
 import type { CardDef, GameState } from "../src/types";
 import { act, advanceUntil, customCard, idOf, idsOf, passAccepting, passUntil, scenario } from "./helpers";
 
@@ -102,8 +103,50 @@ describe("copies de sorts (707.10)", () => {
 });
 
 describe("remplacements (616, 615)", () => {
+  it("616.1 : le joueur blessé applique son bouclier après le doubleur adverse (New Way Forward renvoie 6, pas 3)", () => {
+    const tyrant = ench(
+      "Tyran D",
+      eventReplacement({ event: "damage", source: { controller: "you" }, to: "opponentSide", modify: { times: 2 } }),
+    );
+    const s = scenario({ p1: { battlefield: [tyrant, "Bear Cub"] }, p2: { library: Array(8).fill("Forest") } });
+    const bear = idOf(s, "p1", "battlefield", "Bear Cub");
+    addPlayerEffect(
+      s,
+      "p2",
+      {
+        replacement: {
+          event: "damage",
+          to: "you",
+          modify: { prevent: true },
+          sourceIs: bear,
+          origin: { id: bear, defId: s.objects[bear]?.defId as string },
+          onPrevent: {
+            reflexive: [fx.draw({ kind: "eventAmount" }), fx.damage({ kind: "eventAmount" }, { kind: "eventPlayer" })],
+          },
+        },
+      },
+      s.turn.number,
+      true,
+    );
+    dealDamage(s, sourceFromObject(s, bear), "p2", 3, false);
+    expect(s.players.p2?.life).toBe(20);
+    const t = passAccepting(s, (x) => x.stack.length === 0 && x.triggers.length === 0 && x.pending?.kind === "priority");
+    expect(t.players.p1?.life).toBe(20 - 6);
+  });
+
+  it("616.1 : une prévention d'un autre joueur passe avant les doubleurs (The Mindskinner fait meuler 3, pas 6)", () => {
+    const s = scenario({
+      p1: { battlefield: ["The Mindskinner", "Twinflame Tyrant", "Bear Cub"] },
+      p2: { library: Array(10).fill("Forest") },
+    });
+    dealDamage(s, sourceFromObject(s, idOf(s, "p1", "battlefield", "Bear Cub")), "p2", 3, false);
+    expect(s.players.p2?.life).toBe(20);
+    expect(s.players.p2?.library).toHaveLength(7);
+  });
+
   it("deux doubleurs de blessures se cumulent : 3 blessures en font 12", () => {
-    const tyrant = (name: string) => ench(name, doubler({ damageToOpponents: true }));
+    const tyrant = (name: string) =>
+      ench(name, eventReplacement({ event: "damage", source: { controller: "you" }, to: "opponentSide", modify: { times: 2 } }));
     const s = scenario({ p1: { battlefield: [tyrant("Tyran A"), tyrant("Tyran B"), "Bear Cub"] } });
     const bear = idOf(s, "p1", "battlefield", "Bear Cub");
     runEffect(
@@ -120,7 +163,14 @@ describe("remplacements (616, 615)", () => {
 
   it("des blessures prévenues ne sont pas doublées (615 avant 616)", () => {
     const s = scenario({
-      p1: { battlefield: [ench("Tyran C", doubler({ damageToOpponents: true }))] },
+      p1: {
+        battlefield: [
+          ench(
+            "Tyran C",
+            eventReplacement({ event: "damage", source: { controller: "you" }, to: "opponentSide", modify: { times: 2 } }),
+          ),
+        ],
+      },
       p2: { battlefield: ["Progenitus"] },
     });
     const progenitus = idOf(s, "p2", "battlefield", "Progenitus");

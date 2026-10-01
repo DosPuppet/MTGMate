@@ -46,7 +46,7 @@ Ce fichier sert au suivi du projet entre les sessions : où on en est, les règl
 | Méta Standard, lot M4 : 4c Control, Boros Dragons, Jeskai Artifacts (23 cartes) ; type de terrain choisi en jouant le terrain, exploiter, convergence, maîtrise du feu | ✅ |
 | Méta Standard, lot M5 : Boros Dwarves, Lifegain, Mardu Discard, Boros Tokens (34 cartes) ; Storied, faufilement, chaos, paradigme, équiper digne | ✅ |
 | Méta Standard, lot M6 : les six derniers archétypes (47 cartes) ; maîtrise de l'air, Web-slinging, payer X PV, tours passés. **Phase 1 du plan P4 finie : les 20 archétypes du méta (88,1 %) sont jouables** | ✅ |
-| Phase 2 du plan P4 : **Tarkir: Dragonstorm (TDM)** à 100 % (`docs/plans/PLAN-P4.md`, `docs/extensions/tdm.md`) | en cours (01/10/2026) : lots A, B et C ✅ (257 / 259) |
+| Phase 2 du plan P4 : **Tarkir: Dragonstorm (TDM)** à 100 % (`docs/plans/PLAN-P4.md`, `docs/extensions/tdm.md`) | ✅ **259 / 259** (lots A à D, 01/10/2026) ; lot D : remplacements de blessures génériques (R1, familles E et F), `RULES_VERSION` = 21 |
 | Plan de remédiation de l'audit du 30/09/2026 (`docs/plans/PLAN-R.md`, lots F1 à R8) : F1 à F3 (fondations), R0 (corrections rapides), R4.0 à R4.6, R2.1 à R2.5, R1 en partie, R3 (copies de sorts, répartition), R5 à R8 faits, `RULES_VERSION` = 19 ; restent R1 en partie (familles E, H, I, boucliers 615.7) et R7 (continu), suivis par la section « Ajouter des cartes ou une extension » | ✅ (plan archivé le 01/10/2026) |
 | Autres extensions Standard | à la demande de l'utilisateur, une à la fois |
 
@@ -58,7 +58,7 @@ Ce fichier sert au suivi du projet entre les sessions : où on en est, les règl
 - Ensuite : **une extension à la fois, sur `dev`, seulement quand l'utilisateur la nomme.**
 - **30/09/2026 :** pas de nouvelles cartes tant que le moteur n'est pas sécurisé et finalisé (`docs/plans/PLAN-R.md`) ; Tarkir: Dragonstorm (phase 2 du P4) attend.
 - **01/10/2026 :** PLAN-R terminé (sauf R1 en partie et R7, continu) et archivé avec son audit. Les nouvelles cartes peuvent reprendre, en suivant la section « Ajouter des cartes ou une extension » (fin de ce fichier).
-- **01/10/2026 :** Tarkir: Dragonstorm commencée à la demande de l'utilisateur (phase 2 du plan P4), lot par lot (`docs/extensions/tdm.md`).
+- **01/10/2026 :** Tarkir: Dragonstorm faite à la demande de l'utilisateur (phase 2 du plan P4), lots A à D (`docs/extensions/tdm.md`). Prochaine extension : à la demande de l'utilisateur (suggestion du plan P4 : SOS ou TLA).
 - **29/09/2026 (plan P4) :** exception décidée par l'utilisateur. On écrit d'abord les cartes des decks du méta Standard (lots M1 à M6, toutes extensions confondues ; des extensions restent donc partielles), puis Tarkir: Dragonstorm à 100 %. Un lot du méta se vérifie avec `npm run verify -- --set META`.
 - Découpage habituel d'une extension :
   - lot A : cartes faisables avec le moteur, jetons et terrains ;
@@ -216,8 +216,8 @@ Suite de `docs/plans/PLAN-R.md` (lots R1 et R7, non terminés). À appliquer à 
 
 **R1 — remplacements et prévention (616, 615) :**
 - Un effet qui modifie un nombre (blessures, marqueurs, PV gagnés, cartes piochées) passe par `modifiers.ts` (`AmountMod`, `chooseReplacementOrder`), dans `dealDamage`, `changeCounters`, `gainLife` ou `drawCards` : jamais un ordre fixe écrit dans le code, ni une pioche qui contourne `drawCards`.
-- Une carte qui apporte un nouveau remplacement des familles E (blessures), H (jetons, marqueurs) ou I (quantités : PV, pioche, meule, mana), marquées ainsi dans `debt-baseline.json` : c'est le moment d'écrire la capacité générique `EventReplacementAbilityDef` prévue en R1 (`event`, filtres, `effectOnly`, `modify : { add, times, atLeast, prevent }`, `condition`) et d'y convertir les drapeaux de la même famille, plutôt que d'ajouter un drapeau.
-- Boucliers « la prochaine fois que… » (615.7) et marqueurs de bouclier (122.1c) : à écrire avec la première carte qui en a besoin (il y en a dans Tarkir: Dragonstorm), sur ce même cadre.
+- **Familles E et F (blessures, perte de PV, prévention) : faites** (lot D de TDM, 01/10/2026). Un remplacement de blessures ou de perte de PV s'écrit avec `eventReplacement({ event, source, to, toFilter, combat, modify : { add, times, atLeastSourcePower, prevent }, onPrevent, condition })` (capacité imprimée) ou `fx.thisTurn({ replacement })` (effet), jamais avec un nouveau drapeau ; boucliers « la prochaine fois que » (615.7) : `fx.shield(…)`.
+- Une carte qui apporte un nouveau remplacement des familles H (jetons, marqueurs) ou I (quantités : PV gagnés, pioche, meule, mana), marquées ainsi dans `debt-baseline.json` : c'est le moment d'étendre `EventReplacement` à ces événements (`event` : `counters`, `tokens`, `lifeGain`, `draw`…) et d'y convertir les drapeaux et doubleurs de la même famille, plutôt que d'ajouter un drapeau. Marqueurs de bouclier (122.1c) : sur ce même cadre, avec la première carte qui en a besoin.
 - Avant d'implémenter une règle reportée, relire « Reporté tant qu'aucune carte ne l'exige » dans `docs/plans/PLAN-R.md` (bloquer plusieurs attaquants, batailles, phasing, couche 3, boucles abrégées, `ChoiceRequest` pour l'ordre des remplacements…).
 - Tout changement de comportement du moteur : `RULES_VERSION` et parties dorées (voir « Vérifications avant de rendre un lot »).
 

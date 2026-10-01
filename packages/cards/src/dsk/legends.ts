@@ -16,6 +16,7 @@ import {
   cond,
   costReducer,
   eerie,
+  eventReplacement,
   fx,
   graveyardReplacement,
   INSTANT_SORCERY,
@@ -244,7 +245,14 @@ export const LEGENDS: Record<string, CardScript> = {
   "The Mindskinner": {
     keywords: ["unblockable"],
     abilities: [
-      playerStatic({ damageToOpponentsMills: true, label: "Blessures aux adversaires prévenues : ils meulent autant" }),
+      eventReplacement({
+        event: "damage",
+        source: { controller: "you" },
+        to: "opponent",
+        modify: { prevent: true },
+        onPrevent: { opponentsMill: true },
+        label: "Blessures aux adversaires prévenues : ils meulent autant",
+      }),
     ],
   },
   "Mirror Room": {

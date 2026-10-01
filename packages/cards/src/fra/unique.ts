@@ -16,6 +16,7 @@ import {
   DRAGON_5,
   empower,
   entersWith,
+  eventReplacement,
   fx,
   graveyardReplacement,
   loyalty,
@@ -473,7 +474,16 @@ export const UNIQUE: Record<string, CardScript> = {
     ],
   },
   "Tomik, Izzet Sparkmage": {
-    abilities: [playerStatic({ noncombatDamageBonus: true, label: "Blessures non de combat aux adversaires : +1" })],
+    abilities: [
+      eventReplacement({
+        event: "damage",
+        source: { controller: "you" },
+        to: "opponentSide",
+        combat: false,
+        modify: { add: 1 },
+        label: "Blessures non de combat aux adversaires : +1",
+      }),
+    ],
   },
 
   // --- Vert ------------------------------------------------------------------

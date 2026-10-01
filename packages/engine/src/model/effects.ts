@@ -6,6 +6,7 @@ import type {
   Color,
   Condition,
   DelayedTiming,
+  EventReplacement,
   Keyword,
   LayerMods,
   ManaCost,
@@ -515,12 +516,13 @@ export type Effect =
   | { op: "unattach"; what: Ref; ifAttachedTo?: Ref }
   /** « Exilez-le, puis mettez-le sur le champ de bataille transformé avec un marqueur de finalité » (Esper Origins). */
   | { op: "resolveToBattlefieldTransformed" }
-  /** « Jusqu'à votre prochain tour, les blessures infligées à ce joueur ou à ses permanents sont doublées » (Lightning). */
-  | { op: "doubleDamageTo"; who: Ref }
-  /** « Prévenez toutes les blessures infligées aux créatures que vous contrôlez ce tour-ci » (Summon: Alexander). */
-  | { op: "preventDamageToYourCreatures" }
   /** Le sort désigné (sur la pile) arrive avec N marqueurs +1/+1 de plus (Torgal). */
   | { op: "spellArrivalCounters"; what: Ref; amount: Amount }
+  /**
+   * Bouclier « la prochaine fois que … ce tour-ci » (615.7) : un remplacement à usage unique sur le contrôleur, jusqu'à la
+   * fin du tour ; `chooseSource` : « une source de votre choix », choisie à la résolution (New Way Forward).
+   */
+  | { op: "shield"; replacement: EventReplacement; chooseSource?: boolean }
   /** « Il y a une étape de fin supplémentaire après celle-ci » (Y'shtola Rhul). */
   | { op: "extraEndStep" }
   /** « Chaque [créature] inflige des blessures égales à sa force à [cible] » (Bartz and Boko). */

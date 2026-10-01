@@ -10,6 +10,7 @@ import type {
   ManaCost,
   ManaType,
   ObjectFilter,
+  ObjectId,
   PlayerId,
   TargetSpec,
   TriggerSpec,
@@ -248,7 +249,8 @@ export type AbilityDef =
   | PlayerStaticAbilityDef
   | PreventionAbilityDef
   | DoublerAbilityDef
-  | GraveyardReplacementAbilityDef;
+  | GraveyardReplacementAbilityDef
+  | EventReplacementAbilityDef;
 
 export interface AdditionalCost {
   discard?: number;
@@ -563,6 +565,43 @@ export interface GraveyardReplacementAbilityDef {
   label?: string;
 }
 
+/**
+ * Remplacement ou prévention d'un événement chiffré (614, 615, 616 ; famille E et F de PLAN-R, lot R1) : blessures ou
+ * perte de points de vie, vues du contrôleur du remplacement. Imprimé : `EventReplacementAbilityDef` ; temporaire :
+ * effet de joueur (`fx.thisTurn({ replacement })`) ; bouclier « la prochaine fois que » (615.7) : effet à usage unique.
+ */
+export interface EventReplacement {
+  event: "damage" | "lifeLoss";
+  /** Source des blessures (filtre vu du contrôleur : `controller: "you"` pour « vos sources »). */
+  source?: ObjectFilter;
+  /**
+   * Destinataire : le contrôleur (`you`), le contrôleur ou ses permanents (`yourSide`), un adversaire (`opponent`), un
+   * adversaire ou ses permanents (`opponentSide`). Pour la perte de PV, le joueur qui perd.
+   */
+  to?: "you" | "yourSide" | "opponent" | "opponentSide";
+  /** Seulement les blessures infligées à un permanent correspondant (Summon: Alexander : vos créatures). */
+  toFilter?: ObjectFilter;
+  /** true : seulement les blessures de combat ; false : seulement les autres. */
+  combat?: boolean;
+  /** « autant plus N », « le double », « au moins la force de [la source du remplacement] », « prévenez-les ». */
+  modify: { add?: number; times?: number; atLeastSourcePower?: boolean; prevent?: boolean };
+  /** Après une prévention : chaque adversaire du contrôleur meule autant (The Mindskinner) ; capacité réflexive
+   * « quand des blessures sont prévenues ainsi » (New Way Forward : `amount.eventAmount` et `ref.eventObject`, la source). */
+  onPrevent?: { opponentsMill?: boolean; reflexive?: Effect[] };
+  /** Bouclier : seulement cette source, choisie à la création (`sourceDefIs` pour un sort sans objet). */
+  sourceIs?: ObjectId;
+  sourceDefIs?: string;
+  /** Bouclier : l'objet qui l'a créé (source de la capacité réflexive). */
+  origin?: { id: ObjectId; defId: string };
+}
+
+/** Remplacement d'un événement chiffré imprimé sur un permanent (« si une source que vous contrôlez devait… »). */
+export interface EventReplacementAbilityDef extends EventReplacement {
+  kind: "eventReplacement";
+  condition?: Condition;
+  label?: string;
+}
+
 /** « Vous pouvez lancer des sorts comme s'ils avaient le flash. » */
 export interface CastPermissionAbilityDef {
   kind: "castPermission";
@@ -682,6 +721,8 @@ export interface PlayerStaticAbilityDef {
   castLimit?: CastLimit;
   /** Déclenchements doublés ou supprimés (famille G, R4.5). */
   triggerMod?: TriggerMod;
+  /** Remplacement ou prévention d'un événement chiffré, posé par un effet (familles E et F, R1). */
+  replacement?: EventReplacement;
   /** « Le prochain sort que vous lancez ce tour-ci… » (famille N, R4.6), posé par un effet à usage unique. */
   nextSpell?: NextSpell;
   kind: "playerStatic";
@@ -693,16 +734,10 @@ export interface PlayerStaticAbilityDef {
   cantGainLife?: boolean;
   /** Molten Tide : chaque Montagne engagée pour du mana en produit N {R} de plus. */
   extraMountainMana?: number;
-  /** Taii Wakeen : les blessures non de combat de vos sources sont augmentées de N. */
-  noncombatDamageBonusAll?: number;
   /** Pit Automaton : votre prochaine capacité d'exhaust est copiée (usage unique). */
   copyNextExhaust?: boolean;
-  /** Lightning, Army of One : les blessures infligées à vous ou à vos permanents sont doublées. */
-  damageTakenDoubled?: boolean;
   /** Sandswirl Wanderglyph : vous ne pouvez pas attaquer ce joueur (ni ses planeswalkers). */
   cantAttackPlayer?: PlayerId;
-  /** Summon: Alexander : les blessures qui seraient infligées à vos créatures sont prévenues. */
-  creaturesDamageImmune?: boolean;
   /** « Vous avez la défense talismanique. » */
   hexproof?: boolean;
   /** « Vous ne pouvez pas perdre la partie et vos adversaires ne peuvent pas la gagner. » */
@@ -731,8 +766,6 @@ export interface PlayerStaticAbilityDef {
   protectSpells?: boolean;
   /** Yoshimaru : des marqueurs +1/+1 mis sur vos créatures : un de plus. */
   plusOneCounterBonus?: boolean;
-  /** Tomik, Izzet Sparkmage : blessures non de combat de vos sources à un adversaire ou à ses permanents : +1. */
-  noncombatDamageBonus?: boolean;
   /** Quantum Riddler : avec une carte en main ou moins, vous piochez une carte de plus. */
   drawPlusOneWhenHandSmall?: boolean;
   /** Weftwalking (s'applique à tous) : le premier sort de chaque joueur pendant son tour peut être lancé sans payer. */
@@ -754,8 +787,6 @@ export interface PlayerStaticAbilityDef {
   condition?: Condition;
   /** Vnwxt, Verbose Host : « si vous deviez piocher une carte, piochez-en deux à la place ». */
   drawDouble?: boolean;
-  /** Far Fortune : les blessures de vos sources à un adversaire ou à ses permanents : +1. */
-  damagePlusOneToOpponents?: boolean;
   /** Worldwalker Helm : vos jetons d'artefact sont accompagnés d'un jeton Carte. */
   extraMapToken?: TokenSpec;
   /** Fblthp, Lost on the Range : vous pouvez regarder la carte du dessus de votre bibliothèque à tout moment. */
@@ -784,8 +815,6 @@ export interface PlayerStaticAbilityDef {
   delveSpells?: boolean;
   /** Prop Room : vos créatures se dégagent pendant l'étape de dégagement des autres joueurs. */
   untapCreaturesOnOthersUntap?: boolean;
-  /** The Mindskinner : les blessures de vos sources à un adversaire sont prévenues ; chaque adversaire meule autant. */
-  damageToOpponentsMills?: boolean;
   /** Nowhere to Run : les créatures adverses sont ciblables malgré la défense talismanique ; leur garde ne se déclenche pas. */
   ignoreOpponentsHexproofWard?: boolean;
   /** Grievous Wound : le joueur enchanté ne peut pas gagner de points de vie. */
@@ -802,18 +831,10 @@ export interface PlayerStaticAbilityDef {
   seeFaceDown?: boolean;
   /** Marina Vendrell's Grimoire : vous ne perdez pas la partie pour avoir 0 point de vie ou moins. */
   noLoseForLife?: boolean;
-  /** Artist's Talent : blessures non de combat de vos sources à un adversaire ou à ses permanents : +N. */
-  noncombatDamageBonusAmount?: number;
   /** Sunspine Lynx (tous) : les blessures ne peuvent pas être prévenues. */
   damageUnpreventable?: boolean;
   /** Valley Floodcaller : les sorts correspondants ont le flash. */
   flashFor?: ObjectFilter;
-  /** Valley Flamecaller : les blessures de vos sources correspondantes : +1. */
-  damagePlusOneFrom?: ObjectFilter;
-  /** Ojer Axonil : une source rouge que vous contrôlez inflige à un adversaire au moins autant de blessures non de combat que la force de la source de cette capacité. */
-  noncombatDamageAtLeastPower?: boolean;
-  /** Bloodletter of Aclazotz : pendant votre tour, un adversaire qui perd des points de vie en perd le double. */
-  doubleOpponentLifeLossYourTurn?: boolean;
   /** Twists and Turns : « si une créature que vous contrôlez devait explorer, regardez 1 d'abord ». */
   scryBeforeExplore?: boolean;
   label?: string;
@@ -842,18 +863,10 @@ export interface DoublerAbilityDef {
    * planeswalker, coût « mettez un marqueur »).
    */
   effectOnly?: boolean;
-  /** Blessures d'une source que vous contrôlez à un adversaire ou à un permanent adverse. */
-  damageToOpponents?: boolean;
-  /** Blessures infligées par une créature que vous contrôlez, à n'importe quoi (Gratuitous Violence). */
-  creatureDamage?: boolean;
   /** « Si vous deviez gagner des points de vie, vous en gagnez le double à la place » (The Wind Crystal). */
   lifeGain?: boolean;
-  /** Blessures infligées par une source correspondante que vous contrôlez, doublées (Trance Kuja : vos Sorciers). */
-  damageFilter?: ObjectFilter;
   /** Marqueurs doublés seulement sur les permanents correspondants (Loading Zone). */
   countersFilter?: ObjectFilter;
-  /** Blessures non de combat de vos sources (The Rollercrusher Ride), à n'importe quel permanent ou joueur. */
-  noncombatDamage?: boolean;
   /** Seulement si la condition est remplie (délire). */
   condition?: Condition;
   label?: string;

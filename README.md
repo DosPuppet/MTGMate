@@ -12,7 +12,7 @@ Plateforme pour jouer à Magic: The Gathering contre une ou plusieurs IA (en due
 - jouable sur tablette et sur téléphone en paysage (voir « Tablette et téléphone ») ;
 - images des cartes relayées par le serveur quand le réseau du joueur bloque Scryfall (voir « Images bloquées par le réseau »).
 
-Dernière extension ajoutée : **The Lost Caverns of Ixalan (LCI)**, entièrement gérée (279 / 279), avec la Découverte, la Descente (4, 8, descente profonde, « si vous êtes descendu ce tour-ci »), la Fabrication, les Cavernes, l'exploration, les dieux et leurs Temples, et le rebond (Ojer Pakpatiq).
+Dernière extension ajoutée : **Tarkir: Dragonstorm (TDM)**, entièrement gérée (259 / 259), avec l'endurance, la rafale, le renouveau, contempler, la mobilisation, l'harmonie, les présages, les Sièges, la suspension (Taigam), la cave (Teval) et les boucliers « la prochaine fois que » (New Way Forward).
 
 ## Périmètre : le Standard
 
@@ -33,7 +33,7 @@ Les cartes sont couvertes **extension par extension, à 100 % avant de passer à
 | **Duskmourn: House of Horror (DSK, « Mornebrune : la Maison de l'horreur »)** | ✅ 268 / 268 |
 | **Bloomburrow (BLB)** | ✅ 266 / 266 |
 | **The Lost Caverns of Ixalan (LCI, « Les cavernes oubliées d'Ixalan »)** | ✅ 279 / 279 |
-| Tarkir: Dragonstorm (TDM) | en cours : 257 / 259 (lots A à C) |
+| **Tarkir: Dragonstorm (TDM, « Tarkir : Tempête draconique »)** | ✅ 259 / 259 |
 | Wilds of Eldraine (WOE) | 11 / 269 (cartes du méta) |
 | Secrets of Strixhaven (SOS) | 27 / 262 (cartes du méta) |
 | Lorwyn Eclipsed (ECL) | 19 / 266 (cartes du méta) |
@@ -212,7 +212,7 @@ Chaque carte gérée est automatiquement jouée par le test de fumée (`packages
 | 4d. FDN, réimpressions (n° 282 et plus) | cartes des decks d'initiation et de la Starter Collection | ✅ **241 / 241** (517 / 517 pour tout FDN) |
 | 4e. Légalité Standard | légalités Scryfall importées, liste des bannies, validation du format dans le deckbuilder | ✅ |
 | 4f. Cartes à plusieurs faces | aventures, recto-verso, cartes scindées et Salles, Sagas, Classes, Affaires, face cachée, assemblage | ✅ |
-| 4g. Autres extensions Standard | une extension à la fois : Reality Fracture ✅, Edge of Eternities ✅, Aetherdrift ✅, Outlaws of Thunder Junction + The Big Score ✅, Final Fantasy ✅, Duskmourn ✅, Bloomburrow ✅, The Lost Caverns of Ixalan ✅ ; les suivantes à la demande | en cours |
+| 4g. Autres extensions Standard | une extension à la fois : Reality Fracture ✅, Edge of Eternities ✅, Aetherdrift ✅, Outlaws of Thunder Junction + The Big Score ✅, Final Fantasy ✅, Duskmourn ✅, Bloomburrow ✅, The Lost Caverns of Ixalan ✅, Tarkir: Dragonstorm ✅ ; les suivantes à la demande | en cours |
 | 5. IA | trois niveaux au choix (débutant, moyen, élevé) ; évaluation sur les caractéristiques durables ; attaques et blocages par simulation ; ISMCTS en duel (déterminisation de l'information cachée), budget en temps ; tournoi d'IA (`npm run arena`) ; guide : docs/ia.md | ✅ |
 | 6. JcJ en ligne | duel Standard : serveur Node `ws` (`GameHost`, vues et faces filtrées), code de salon, corde, reconnexion, revanche | ✅ duel ; déploiement pm2 + nginx documenté |
 | 7. Finitions | effets sonores ✅ ; tablette et téléphone ✅ ; relais des images Scryfall ✅ ; replays (graine + décisions) ✅ ; images des jetons ✅ ; musique | en cours |

@@ -16,6 +16,7 @@ import { apnapOrder, emit, isPlayer, moveObject, onBattlefield, opponentsOf, ran
 import { addPlayerEffect, playerStatic } from "../statics";
 import { matchesObjectFilter } from "../targets";
 import { eliminate, endTheTurn } from "../turn";
+import type { EventReplacement } from "../types";
 
 export const HANDLERS: OpHandlers = {
   playerEffect(s, _r, e, ctx) {
@@ -262,7 +263,10 @@ export const HANDLERS: OpHandlers = {
     return;
   },
   noncombatBonusThisTurn(s, _r, e, ctx) {
-    addPlayerEffect(s, ctx.controller, { noncombatDamageBonusAll: evalAmount(s, ctx, e.amount) }, s.turn.number);
+    // Taii Wakeen : « ce tour-ci, les blessures non de combat de vos sources sont augmentées de X » (X figé maintenant).
+    const add = evalAmount(s, ctx, e.amount);
+    const replacement: EventReplacement = { event: "damage", source: { controller: "you" }, combat: false, modify: { add } };
+    addPlayerEffect(s, ctx.controller, { replacement }, s.turn.number);
     return;
   },
   poison(s, _r, e, ctx) {

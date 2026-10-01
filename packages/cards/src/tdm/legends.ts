@@ -13,6 +13,7 @@ import {
   costReducer,
   doubler,
   ELEPHANT_5,
+  eventReplacement,
   flurry,
   fx,
   INSTANT_SORCERY,
@@ -23,6 +24,7 @@ import {
   ref,
   renew,
   SOLDIER,
+  spell,
   staticAbility,
   target,
   targetObj,
@@ -375,5 +377,33 @@ export const LEGENDS: Record<string, CardScript> = {
         },
       ),
     ],
+  },
+
+  // --- Lot D : remplacements de blessures (R1) ------------------------------------
+  "Neriv, Heart of the Storm": {
+    abilities: [
+      eventReplacement({
+        event: "damage",
+        source: { types: ["Creature"], controller: "you", enteredThisTurn: true },
+        modify: { times: 2 },
+        label: "Vos créatures arrivées ce tour-ci infligent le double de blessures",
+      }),
+    ],
+  },
+  "New Way Forward": {
+    spell: spell(
+      [],
+      [
+        fx.shield(
+          {
+            event: "damage",
+            to: "you",
+            modify: { prevent: true },
+            onPrevent: { reflexive: [fx.damage(amount.eventAmount, ref.eventPlayer), fx.draw(amount.eventAmount)] },
+          },
+          true,
+        ),
+      ],
+    ),
   },
 };

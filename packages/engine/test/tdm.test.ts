@@ -5,6 +5,7 @@
  * Tersa Lightshatter, Sage of the Skies et Mistrise Village.
  */
 import { describe, expect, it } from "vitest";
+import { dealDamage, sourceFromObject } from "../src/actions";
 import { legalActions } from "../src/legal";
 import { chars } from "../src/state";
 import type { ChoiceRequest, ChoiceValue, GameState } from "../src/types";
@@ -1344,6 +1345,58 @@ describe("Tarkir: Dragonstorm, lot C", () => {
       expect(idsOf(s, "p1", "battlefield", "Warrior")).toHaveLength(2);
       s = advanceUntil(s, (x) => x.turn.active === "p2");
       expect(idsOf(s, "p1", "battlefield", "Warrior")).toHaveLength(2);
+    });
+  });
+});
+
+describe("Tarkir: Dragonstorm, lot D (remplacements de blessures, R1)", () => {
+  describe("Neriv, Heart of the Storm", () => {
+    it("une de vos créatures arrivée ce tour-ci inflige le double de blessures ; les autres, non", () => {
+      const s = scenario({ p1: { battlefield: ["Neriv, Heart of the Storm", "Bear Cub", { name: "Serra Angel", sick: true }] } });
+      dealDamage(s, sourceFromObject(s, idOf(s, "p1", "battlefield", "Serra Angel")), "p2", 4, false);
+      expect(s.players.p2?.life).toBe(12);
+      dealDamage(s, sourceFromObject(s, idOf(s, "p1", "battlefield", "Bear Cub")), "p2", 2, false);
+      expect(s.players.p2?.life).toBe(10);
+    });
+  });
+
+  describe("New Way Forward (bouclier, 615.7)", () => {
+    const setup = () => {
+      let s = scenario({
+        p1: {
+          battlefield: ["Island", "Mountain", "Plains", ...lands("Island", 2)],
+          hand: ["New Way Forward"],
+          library: lands("Forest", 8),
+        },
+        p2: { battlefield: ["Shivan Dragon", "Serra Angel"] },
+      });
+      const dragon = idOf(s, "p2", "battlefield", "Shivan Dragon");
+      s = settle(cast(s, "p1", "New Way Forward"), (req) =>
+        req.type === "pick" && req.options.includes(dragon) ? [dragon] : undefined,
+      );
+      return { s, dragon };
+    };
+
+    it("la prochaine fois que la source choisie devrait vous blesser ce tour-ci, c'est prévenu : elle blesse son contrôleur et vous piochez autant", () => {
+      let { s, dragon } = setup();
+      const hand = s.players.p1?.hand.length ?? 0;
+      dealDamage(s, sourceFromObject(s, dragon), "p1", 5, true);
+      expect(s.players.p1?.life).toBe(20);
+      s = settle(s);
+      expect(s.players.p2?.life).toBe(15);
+      expect(s.players.p1?.hand.length).toBe(hand + 5);
+      // Le bouclier ne sert qu'une fois.
+      dealDamage(s, sourceFromObject(s, dragon), "p1", 5, true);
+      expect(s.players.p1?.life).toBe(15);
+    });
+
+    it("une autre source n'est pas concernée, et le bouclier disparaît à la fin du tour", () => {
+      let { s, dragon } = setup();
+      dealDamage(s, sourceFromObject(s, idOf(s, "p2", "battlefield", "Serra Angel")), "p1", 4, true);
+      expect(s.players.p1?.life).toBe(16);
+      s = advanceUntil(s, (x) => x.turn.active === "p2");
+      dealDamage(s, sourceFromObject(s, dragon), "p1", 5, true);
+      expect(s.players.p1?.life).toBe(11);
     });
   });
 });

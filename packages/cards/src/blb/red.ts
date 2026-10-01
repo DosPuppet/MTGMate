@@ -7,6 +7,7 @@ import {
   cond,
   costReducer,
   entersWith,
+  eventReplacement,
   expend,
   fx,
   graveyardReplacement,
@@ -51,7 +52,16 @@ export const RED: Record<string, CardScript> = {
     abilities: [triggered(when.castSpell("you", NONCREATURE), mayRummage(), { label: "Défaussez, puis piochez" })],
     classLevels: [
       [costReducer(NONCREATURE, 1, "Sorts non-créature {1} de moins")],
-      [playerStatic({ noncombatDamageBonusAmount: 2, label: "Blessures non de combat aux adversaires +2" })],
+      [
+        eventReplacement({
+          event: "damage",
+          source: { controller: "you" },
+          to: "opponentSide",
+          combat: false,
+          modify: { add: 2 },
+          label: "Blessures non de combat aux adversaires +2",
+        }),
+      ],
     ],
   },
   "Blacksmith's Talent": {
@@ -359,8 +369,10 @@ export const RED: Record<string, CardScript> = {
   },
   "Valley Flamecaller": {
     abilities: [
-      playerStatic({
-        damagePlusOneFrom: kin(["Lizard", "Mouse", "Otter", "Raccoon"]),
+      eventReplacement({
+        event: "damage",
+        source: { ...kin(["Lizard", "Mouse", "Otter", "Raccoon"]), controller: "you" },
+        modify: { add: 1 },
         label: "Lézards, Souris, Loutres et Ratons laveurs : +1 blessure",
       }),
     ],

@@ -9,8 +9,8 @@ import {
   CREATURE_YOU_CONTROL,
   cond,
   cost,
-  doubler,
   entersWith,
+  eventReplacement,
   fx,
   graveyardReplacement,
   loyalty,
@@ -90,7 +90,14 @@ export const LEGENDS2: Record<string, CardScript> = {
   },
   "The Rollercrusher Ride": {
     abilities: [
-      doubler({ noncombatDamage: true, condition: cond.delirium, label: "Délire — blessures non de combat doublées" }),
+      eventReplacement({
+        event: "damage",
+        source: { controller: "you" },
+        combat: false,
+        modify: { times: 2 },
+        condition: cond.delirium,
+        label: "Délire — blessures non de combat doublées",
+      }),
       triggered(
         when.entersSelf,
         [

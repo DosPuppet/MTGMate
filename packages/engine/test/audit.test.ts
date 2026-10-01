@@ -7,7 +7,7 @@ import { describe, expect, it } from "vitest";
 import { dealDamage, destroy, gainLife } from "../src/actions";
 import { syncControl } from "../src/control";
 import * as dsl from "../src/dsl";
-import { cond, doubler, fx, playerStatic, ref, triggered, when } from "../src/dsl";
+import { cond, doubler, eventReplacement, fx, playerStatic, ref, triggered, when } from "../src/dsl";
 import { addEffect, runEffect } from "../src/effects";
 import { submit } from "../src/game";
 import { bump, snapshot } from "../src/layers";
@@ -508,8 +508,14 @@ describe("R1 : ordre des remplacements qui modifient un nombre (616.1)", () => {
   });
 
   it("Artist's Talent (+2) et Twinflame Tyrant (×2) : 3 blessures à l'adversaire en font 8, pas 10", () => {
-    const talent = ench("Talent", playerStatic({ noncombatDamageBonusAmount: 2 }));
-    const tyrant = ench("Tyran", doubler({ damageToOpponents: true }));
+    const talent = ench(
+      "Talent",
+      eventReplacement({ event: "damage", source: { controller: "you" }, to: "opponentSide", combat: false, modify: { add: 2 } }),
+    );
+    const tyrant = ench(
+      "Tyran",
+      eventReplacement({ event: "damage", source: { controller: "you" }, to: "opponentSide", modify: { times: 2 } }),
+    );
     const s = scenario({ p1: { battlefield: [talent, tyrant, "Bear Cub"] } });
     const bear = idOf(s, "p1", "battlefield", "Bear Cub");
     const r = { ...resolution("p1", { id: bear, defId: s.objects[bear]?.defId as string }), targets: { t: ["p2"] } };

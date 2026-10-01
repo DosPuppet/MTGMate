@@ -21,18 +21,31 @@ import {
   rulesEvent,
 } from "./state";
 import {
-  controlledAbilitiesWithSource,
+  type ActiveReplacement,
+  consumeReplacement,
   doublers,
+  eventReplacements,
   playerStatic,
   playerStatics,
-  playerStaticTotal,
   preventions,
   tokenMultiplier,
 } from "./statics";
-import { matchesObjectFilter, protectedFrom, sourceView } from "./targets";
-import { checkCondition, queueLifelink } from "./triggers";
+import { matchesObjectFilter, matchesView, protectedFrom, sourceView } from "./targets";
+import { pushInline, queueLifelink } from "./triggers";
 import { logTurnEvent } from "./turnlog";
-import type { CardDef, CardType, Color, GameEvent, GameState, Keyword, ObjectId, PlayerId, TokenSpec, Zone } from "./types";
+import type {
+  CardDef,
+  CardType,
+  Color,
+  GameEvent,
+  GameState,
+  Keyword,
+  ObjectFilter,
+  ObjectId,
+  PlayerId,
+  TokenSpec,
+  Zone,
+} from "./types";
 
 export interface DamageSource {
   /** Objet source, s'il est identifiable (pour les déclencheurs « inflige des blessures »). */
@@ -143,8 +156,14 @@ export function forage(s: GameState, p: PlayerId): boolean {
 export function loseLife(s: GameState, p: PlayerId, amount: number): void {
   const player = s.players[p];
   if (!player || amount <= 0) return;
-  // Bloodletter of Aclazotz : pendant le tour de son contrôleur, un adversaire perd le double.
-  if (s.turn.active !== p) amount *= 2 ** doublersOfLifeLoss(s, s.turn.active);
+  // Remplacements de la perte de PV (Bloodletter of Aclazotz : pendant votre tour, un adversaire perd le double).
+  const mods: AmountMod[] = [];
+  for (const a of eventReplacements(s, "lifeLoss")) {
+    if (!recipientMatches(s, a, p)) continue;
+    if (a.r.modify.add) mods.push({ add: a.r.modify.add });
+    if (a.r.modify.times) mods.push({ times: a.r.modify.times });
+  }
+  amount = chooseReplacementOrder(amount, mods, "min");
   player.life -= amount;
   bump(s);
   emit({ type: "life", player: p, delta: -amount, life: player.life });
@@ -167,9 +186,86 @@ export function setSpeed(s: GameState, p: PlayerId, speed: number): void {
   emit({ type: "speed", player: p, speed });
 }
 
-/** Inflige des blessures à un joueur ou à une créature (règle 120). */
-function doublersOfLifeLoss(s: GameState, player: PlayerId): number {
-  return playerStaticTotal(s, player, "doubleOpponentLifeLossYourTurn");
+/**
+ * Destinataire d'un remplacement (blessures ou perte de PV), vu de son contrôleur : lui, lui ou ses permanents, un
+ * adversaire, un adversaire ou ses permanents, et le filtre du permanent blessé.
+ */
+function recipientMatches(s: GameState, a: ActiveReplacement, target: string): boolean {
+  const r = a.r;
+  const player = isPlayer(s, target);
+  const victim = player ? target : s.objects[target]?.controller;
+  if (!victim) return false;
+  if (r.toFilter && (player || !matchesObjectFilter(s, a.controller, target, r.toFilter, a.sourceId))) return false;
+  switch (r.to) {
+    case "you":
+      return player && target === a.controller;
+    case "yourSide":
+      return victim === a.controller;
+    case "opponent":
+      return player && opponentsOf(s, a.controller).includes(target);
+    case "opponentSide":
+      return opponentsOf(s, a.controller).includes(victim);
+    default:
+      return true;
+  }
+}
+
+/** Le remplacement s'applique-t-il à ces blessures (combat, source, destinataire) ? */
+function damageReplacementApplies(
+  s: GameState,
+  a: ActiveReplacement,
+  source: DamageSource,
+  target: string,
+  combat: boolean,
+): boolean {
+  const r = a.r;
+  if (r.combat !== undefined && r.combat !== combat) return false;
+  // Bouclier : la source choisie (un sort sans objet est reconnu par sa carte et son contrôleur).
+  if (r.sourceIs && source.id !== r.sourceIs && !(!source.id && source.defId === r.sourceDefIs)) return false;
+  if (r.source) {
+    const id = source.id;
+    const ok =
+      id && s.objects[id]?.zone === "battlefield"
+        ? matchesObjectFilter(s, a.controller, id, r.source, a.sourceId)
+        : (() => {
+            // « Arrivée ce tour-ci » ne se lit que sur le champ de bataille.
+            if (r.source?.enteredThisTurn) return false;
+            const v = sourceView(s, id, source.defId, source.controller);
+            return !!v && matchesView(v, r.source as ObjectFilter, a.controller, a.sourceId);
+          })();
+    if (!ok) return false;
+  }
+  return recipientMatches(s, a, target);
+}
+
+/**
+ * Prévention par un remplacement (615) : un bouclier « la prochaine fois que » est retiré ; The Mindskinner fait meuler
+ * les adversaires, New Way Forward a une capacité réflexive (« quand des blessures sont prévenues ainsi »).
+ */
+function preventByReplacement(s: GameState, a: ActiveReplacement, source: DamageSource, amount: number): void {
+  consumeReplacement(s, a);
+  const after = a.r.onPrevent;
+  if (after?.opponentsMill) {
+    for (const p of opponentsOf(s, a.controller)) {
+      for (const id of (s.players[p]?.library ?? []).slice(0, amount)) {
+        const o = obj(s, id);
+        emit({ type: "moved", owner: o.owner, objectId: id, defId: o.defId, from: "library", to: "graveyard" });
+        moveObject(s, id, "graveyard");
+      }
+    }
+  }
+  if (after?.reflexive) {
+    const origin = a.r.origin ?? (a.sourceId ? { id: a.sourceId, defId: obj(s, a.sourceId).defId } : undefined);
+    if (origin)
+      pushInline(
+        s,
+        a.controller,
+        origin.id,
+        origin.defId,
+        { targets: [], effects: after.reflexive, label: "Blessures prévenues" },
+        { objectId: source.id, player: source.controller, amount },
+      );
+  }
 }
 
 /** La source des blessures est-elle rouge (Ojer Axonil) ? */
@@ -216,7 +312,7 @@ function logDamage(
   });
 }
 
-function redSource(s: GameState, source: DamageSource): boolean {
+function _redSource(s: GameState, source: DamageSource): boolean {
   if (source.id && s.objects[source.id]?.zone === "battlefield") return chars(s, source.id).colors.includes("R");
   const lki = source.id ? s.lki[source.id] : undefined;
   return (lki?.colors ?? s.defs[source.defId]?.colors ?? []).includes("R");
@@ -252,30 +348,24 @@ export function dealDamage(s: GameState, source: DamageSource, target: string, a
   // Absolute Virtue : les blessures des sources adverses à ce joueur sont prévenues.
   if (!unpreventable && isPlayer(s, target) && source.controller !== target && playerStatic(s, target, "protectionFromOpponents"))
     return;
-  // The Mindskinner : les blessures de vos sources à un adversaire sont prévenues ; chaque adversaire meule autant.
-  if (
-    !unpreventable &&
-    isPlayer(s, target) &&
-    source.controller &&
-    source.controller !== target &&
-    playerStatic(s, source.controller, "damageToOpponentsMills")
-  ) {
-    for (const p of opponentsOf(s, source.controller)) {
-      for (const id of (s.players[p]?.library ?? []).slice(0, amount)) {
-        const o = obj(s, id);
-        emit({ type: "moved", owner: o.owner, objectId: id, defId: o.defId, from: "library", to: "graveyard" });
-        moveObject(s, id, "graveyard");
-      }
-    }
+  const targetObj = s.objects[target];
+  const victim = isPlayer(s, target) ? target : targetObj?.controller;
+  // Remplacements et préventions des blessures (R1, 616.1) : le joueur blessé choisit l'ordre, le moins de blessures
+  // pour lui. Une prévention d'un autre joueur passe donc avant les modifications (The Mindskinner meule le moins), la
+  // sienne après (New Way Forward renvoie le plus).
+  const reps = eventReplacements(s, "damage").filter((a) => damageReplacementApplies(s, a, source, target, combat));
+  const foreignPrevention = unpreventable ? undefined : reps.find((a) => a.r.modify.prevent && a.controller !== victim);
+  if (foreignPrevention) {
+    preventByReplacement(s, foreignPrevention, source, amount);
     return;
   }
-  const targetObj = s.objects[target];
-  if (targetObj?.zone === "battlefield") {
-    // 702.16e : protection — les blessures d'une source qui correspond à sa qualité sont prévenues.
-    if (!unpreventable && protectedFrom(s, target, sourceView(s, source.id, source.defId, source.controller))) return;
-    // Summon: Alexander : « prévenez toutes les blessures infligées aux créatures que vous contrôlez ce tour-ci ».
-    if (!unpreventable && playerStatic(s, targetObj.controller, "creaturesDamageImmune") && isCreature(s, target)) return;
-  }
+  // 702.16e : protection — les blessures d'une source qui correspond à sa qualité sont prévenues.
+  if (
+    targetObj?.zone === "battlefield" &&
+    !unpreventable &&
+    protectedFrom(s, target, sourceView(s, source.id, source.defId, source.controller))
+  )
+    return;
   // Préventions statiques : blessures reçues (Crystal Barricade, Fog Bank) ou infligées par la source (Fog Bank).
   for (const p of unpreventable ? [] : preventions(s)) {
     if (p.ab.noncombatOnly && combat) continue;
@@ -286,6 +376,25 @@ export function dealDamage(s: GameState, source: DamageSource, target: string, a
     }
     if (targetObj?.zone === "battlefield" && matchesObjectFilter(s, p.controller, target, p.ab.filter, p.sourceId)) return;
   }
+  // Remplacements qui modifient la quantité (614, 616.1) : chacun s'applique une fois, dans l'ordre que choisit le joueur
+  // blessé (ou le contrôleur du permanent blessé), ici le moins de blessures pour lui (`chooseReplacementOrder`).
+  const mods: AmountMod[] = [];
+  for (const a of reps) {
+    const m = a.r.modify;
+    if (m.add) mods.push({ add: m.add });
+    if (m.times) mods.push({ times: m.times });
+    // Ojer Axonil : « au moins autant de blessures que la force de [cette créature] ».
+    if (m.atLeastSourcePower && a.sourceId && s.objects[a.sourceId]?.zone === "battlefield")
+      mods.push({ atLeast: chars(s, a.sourceId).power });
+  }
+  const _toOpponent = !!victim && victim !== source.controller;
+  amount = chooseReplacementOrder(amount, mods, "min");
+  const ownPrevention = unpreventable ? undefined : reps.find((a) => a.r.modify.prevent && a.controller === victim);
+  if (ownPrevention) {
+    preventByReplacement(s, ownPrevention, source, amount);
+    return;
+  }
+  if (amount <= 0) return;
   // Ruric Thar, Magecrusher : « tant qu'il n'a pas encore infligé de blessures de combat » ; Karakyk Guardian : « tant
   // qu'il n'a pas encore infligé de blessures » (de combat ou non).
   const dealer = source.id ? s.objects[source.id] : undefined;
@@ -294,65 +403,6 @@ export function dealDamage(s: GameState, source: DamageSource, target: string, a
     dealer.dealtDamage = true;
     bump(s);
   }
-  const victim = isPlayer(s, target) ? target : targetObj?.controller;
-  // Remplacements qui modifient la quantité (614, 616.1) : chacun s'applique une fois, dans l'ordre que choisit le joueur
-  // blessé (ou le contrôleur du permanent blessé), ici le moins de blessures pour lui (`chooseReplacementOrder`).
-  const mods: AmountMod[] = [];
-  const toOpponent = !!victim && victim !== source.controller;
-  // Taii Wakeen : ce tour-ci, les blessures non de combat de vos sources sont augmentées de X.
-  if (!combat)
-    for (const { ab } of playerStatics(s, source.controller, "noncombatDamageBonusAll"))
-      mods.push({ add: ab.noncombatDamageBonusAll ?? 0 });
-  // Tomik, Izzet Sparkmage : blessures non de combat à un adversaire ou à ses permanents, +1.
-  if (!combat && toOpponent) for (const _ of playerStatics(s, source.controller, "noncombatDamageBonus")) mods.push({ add: 1 });
-  // Artist's Talent (niveau 3) : « … elle en inflige autant plus 2 à la place ».
-  if (!combat && toOpponent)
-    for (const { ab } of playerStatics(s, source.controller, "noncombatDamageBonusAmount"))
-      mods.push({ add: ab.noncombatDamageBonusAmount ?? 0 });
-  // Ojer Axonil : une source rouge qui inflige à un adversaire moins de blessures non de combat que sa force en inflige
-  // autant que sa force à la place.
-  if (!combat && redSource(s, source) && isPlayer(s, target) && target !== source.controller) {
-    for (const { id, ab } of playerStatics(s, source.controller, "noncombatDamageAtLeastPower")) {
-      if (ab.noncombatDamageAtLeastPower && id && s.objects[id]?.zone === "battlefield")
-        mods.push({ atLeast: chars(s, id).power });
-    }
-  }
-  // Valley Flamecaller : « si un Lézard, une Souris, une Loutre ou un Raton laveur que vous contrôlez devait infliger des
-  // blessures, il en inflige autant plus 1 à la place ».
-  if (source.id && s.objects[source.id]?.zone === "battlefield") {
-    const id = source.id;
-    for (const { id: from, ab } of playerStatics(s, source.controller, "damagePlusOneFrom"))
-      if (ab.damagePlusOneFrom && matchesObjectFilter(s, source.controller, id, ab.damagePlusOneFrom, from))
-        mods.push({ add: 1 });
-  }
-  // Far Fortune (vitesse maximale) : toute blessure de vos sources à un adversaire ou à ses permanents, +1.
-  if (toOpponent) for (const _ of playerStatics(s, source.controller, "damagePlusOneToOpponents")) mods.push({ add: 1 });
-  // Twinflame Tyrant : blessures d'une source que vous contrôlez à un adversaire ou à un permanent adverse, doublées.
-  if (toOpponent) for (let i = 0; i < doublers(s, source.controller, "damageToOpponents"); i++) mods.push({ times: 2 });
-  // Gratuitous Violence : blessures d'une créature que vous contrôlez, doublées.
-  if (source.id && s.objects[source.id]?.zone === "battlefield" && isCreature(s, source.id)) {
-    for (let i = 0; i < doublers(s, source.controller, "creatureDamage"); i++) mods.push({ times: 2 });
-  }
-  // Trance Kuja : « si un Sorcier que vous contrôlez devait infliger des blessures, il en inflige le double ».
-  if (source.id && s.objects[source.id]?.zone === "battlefield") {
-    const id = source.id;
-    for (const { id: from, ab } of controlledAbilitiesWithSource(s, source.controller))
-      if (ab.kind === "doubler" && ab.damageFilter && matchesObjectFilter(s, source.controller, id, ab.damageFilter, from))
-        mods.push({ times: 2 });
-  }
-  // The Rollercrusher Ride (délire) : blessures non de combat de vos sources, doublées.
-  if (!combat) {
-    for (const { id: from, ab } of controlledAbilitiesWithSource(s, source.controller))
-      if (
-        ab.kind === "doubler" &&
-        ab.noncombatDamage &&
-        (!ab.condition || checkCondition(s, ab.condition, source.controller, from))
-      )
-        mods.push({ times: 2 });
-  }
-  // Lightning, Army of One : blessures à ce joueur ou à ses permanents doublées jusqu'au prochain tour de Lightning.
-  if (victim) for (let i = 0; i < playerStaticTotal(s, victim, "damageTakenDoubled"); i++) mods.push({ times: 2 });
-  amount = chooseReplacementOrder(amount, mods, "min");
   let excess = 0;
   if (isPlayer(s, target)) {
     // Suivi des joueurs blessés au combat par cette source ce tour-ci (Steel Hellkite).

@@ -10,8 +10,8 @@ import {
   costReducer,
   DRAGON,
   DRAGON_5,
-  doubler,
   entersWith,
+  eventReplacement,
   fx,
   GOBLIN,
   INSTANT_SORCERY,
@@ -334,7 +334,15 @@ export const RED: Record<string, CardScript> = {
     ],
   },
   "Twinflame Tyrant": {
-    abilities: [doubler({ damageToOpponents: true, label: "Blessures aux adversaires doublées" })],
+    abilities: [
+      eventReplacement({
+        event: "damage",
+        source: { controller: "you" },
+        to: "opponentSide",
+        modify: { times: 2 },
+        label: "Blessures aux adversaires doublées",
+      }),
+    ],
   },
   "Etali, Primal Storm": {
     abilities: [
@@ -436,7 +444,16 @@ export const RED: Record<string, CardScript> = {
       }),
     ],
   },
-  "Gratuitous Violence": { abilities: [doubler({ creatureDamage: true, label: "Blessures de vos créatures doublées" })] },
+  "Gratuitous Violence": {
+    abilities: [
+      eventReplacement({
+        event: "damage",
+        source: { types: ["Creature"], controller: "you" },
+        modify: { times: 2 },
+        label: "Blessures de vos créatures doublées",
+      }),
+    ],
+  },
   "Harmless Offering": {
     spell: spell(
       [target.player("a", "opponent"), targetObj("b", { controller: "you" }, "permanent que vous contrôlez")],

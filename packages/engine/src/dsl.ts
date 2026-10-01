@@ -18,6 +18,8 @@ import type {
   CostReductionAbilityDef,
   DoublerAbilityDef,
   Effect,
+  EventReplacement,
+  EventReplacementAbilityDef,
   GraveyardReplacementAbilityDef,
   Keyword,
   LayerMods,
@@ -755,8 +757,20 @@ export const fx = {
     once: true,
   }),
   spellArrivalCounters: (what: Ref, amount: Amount): Effect => ({ op: "spellArrivalCounters", what, amount }),
-  doubleDamageTo: (who: Ref): Effect => ({ op: "doubleDamageTo", who }),
-  preventDamageToYourCreatures: { op: "preventDamageToYourCreatures" } as Effect,
+  /** « Jusqu'à votre prochain tour, les blessures infligées à ce joueur ou à ses permanents sont doublées » (Lightning). */
+  doubleDamageTo: (who: Ref): Effect => ({
+    op: "playerEffect",
+    ability: { replacement: { event: "damage", to: "yourSide", modify: { times: 2 } } },
+    who,
+    untilYourNextTurn: true,
+  }),
+  /** « Prévenez toutes les blessures qui seraient infligées aux créatures que vous contrôlez ce tour-ci » (Summon: Alexander). */
+  preventDamageToYourCreatures: {
+    op: "playerEffect",
+    ability: { replacement: { event: "damage", to: "yourSide", toFilter: { types: ["Creature"] }, modify: { prevent: true } } },
+  } as Effect,
+  /** Bouclier (615.7) : « la prochaine fois que [une source de votre choix] devrait… ce tour-ci, … » (New Way Forward). */
+  shield: (replacement: EventReplacement, chooseSource = false): Effect => ({ op: "shield", replacement, chooseSource }),
   extraEndStep: { op: "extraEndStep" } as Effect,
   eachDealsDamage: (filter: ObjectFilter, to: Ref): Effect => ({ op: "eachDealsDamage", filter, to }),
   addManaUntilEndOfTurn: (...mana: ManaType[]): Effect => ({ op: "addManaUntilEndOfTurn", mana }),
@@ -1738,6 +1752,14 @@ export function castPermission(opts: Omit<CastPermissionAbilityDef, "kind">): Ca
 /** « Si [un objet] devait être mis dans un cimetière, exilez-le à la place » (614.1a ; ordre : `replaceGraveyard`). */
 export function graveyardReplacement(opts: Omit<GraveyardReplacementAbilityDef, "kind"> = {}): GraveyardReplacementAbilityDef {
   return { kind: "graveyardReplacement", ...opts };
+}
+
+/**
+ * Remplacement d'un événement chiffré imprimé (R1, 614, 615) : « si une source que vous contrôlez devait infliger des
+ * blessures, elle en inflige autant plus 1 / le double », « prévenez … », perte de PV.
+ */
+export function eventReplacement(opts: Omit<EventReplacementAbilityDef, "kind">): EventReplacementAbilityDef {
+  return { kind: "eventReplacement", ...opts };
 }
 
 /** Capacité statique qui s'applique à son contrôleur (défense talismanique, « ne peut pas perdre »…). */

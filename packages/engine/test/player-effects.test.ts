@@ -40,11 +40,20 @@ describe("effets sur les joueurs", () => {
     expect(consumePlayerEffect(s, "p1", "nextSpell")).toBe(false);
   });
 
-  it("un booléen compte pour 1 dans un total (blessures doublées, cumulables)", () => {
+  it("un booléen compte pour 1 dans un total (cumulable)", () => {
     const s = scenario({ p1: {} });
-    addPlayerEffect(s, "p2", { damageTakenDoubled: true }, s.turn.number + 1);
-    addPlayerEffect(s, "p2", { damageTakenDoubled: true }, s.turn.number + 1);
-    expect(playerStaticTotal(s, "p2", "damageTakenDoubled")).toBe(2);
+    addPlayerEffect(s, "p2", { noMaxHandSize: true }, s.turn.number + 1);
+    addPlayerEffect(s, "p2", { noMaxHandSize: true }, s.turn.number + 1);
+    expect(playerStaticTotal(s, "p2", "noMaxHandSize")).toBe(2);
+  });
+
+  it("deux effets « blessures doublées » se cumulent (remplacements, R1)", () => {
+    const s = scenario({ p1: { battlefield: ["Shivan Dragon"] } });
+    const doubled = { replacement: { event: "damage" as const, to: "yourSide" as const, modify: { times: 2 } } };
+    addPlayerEffect(s, "p2", doubled, s.turn.number + 1);
+    addPlayerEffect(s, "p2", doubled, s.turn.number + 1);
+    dealDamage(s, sourceFromObject(s, idOf(s, "p1", "battlefield", "Shivan Dragon")), "p2", 3, false);
+    expect(s.players.p2?.life).toBe(20 - 12);
   });
 });
 
@@ -85,7 +94,12 @@ describe("interdictions et permissions du tour (effets sur les joueurs)", () => 
 
   it("Summon: Alexander : blessures prévenues sur vos créatures, pas sur vous", () => {
     const s = scenario({ p1: { battlefield: ["Bear Cub"] }, p2: { battlefield: ["Shivan Dragon"] } });
-    addPlayerEffect(s, "p1", { creaturesDamageImmune: true }, s.turn.number);
+    addPlayerEffect(
+      s,
+      "p1",
+      { replacement: { event: "damage", to: "yourSide", toFilter: { types: ["Creature"] }, modify: { prevent: true } } },
+      s.turn.number,
+    );
     const dragon = sourceFromObject(s, idOf(s, "p2", "battlefield", "Shivan Dragon"));
     dealDamage(s, dragon, idOf(s, "p1", "battlefield", "Bear Cub"), 3, false);
     dealDamage(s, dragon, "p1", 3, false);
