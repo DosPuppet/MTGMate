@@ -44,3 +44,11 @@ Les scripts sont dans `packages/cards/src/woe/` : `cards` (cartes du méta), `wh
 - **Cartes :** 40 (sur 43), dont des Aventures, la Célébration (Goddric, Redcap Thief…), les Rôles, les Rats, Expensive Taste (cartes adverses exilées et jouables), Become Brutes.
 - **Restent :** Imodane, the Pyrohammer (blessures d'un sort à cible unique sur sa cible), Skewer Slinger (l'attaquant bloqué comme objet de l'événement), Kellan, the Fae-Blooded (compter les Auras et Équipements attachés à la source).
 - **Tests :** 41 tests de règles (« lot A — rouge »). En route, l'audit des cartes face cachée (`ai/test/hidden-info.test.ts`) comptait comme une fuite une main adverse regardée légitimement (Solve for Disappointment, tiré dans un deck aléatoire) : seul le permanent face cachée y est maintenant audité.
+
+## Sous-lot A5 : cartes vertes ✅ (213 / 269)
+
+- **Cartes :** 41 (sur 44), dont des Aventures (Beanstalk Wurm, Ferocious Werefox, Hollow Scavenger, Stormkeld Vanguard, Virtue of Strength, Gingerbread Hunter, Questing Druid, Tempest Hart, Intrepid Trufflesnout), Blossoming Tortoise (`abilityCost`), Territorial Witchstalker, Curse of the Werefox (Rôle puis capacité réflexive), The Huntsman's Redemption.
+- **Dette :** `extraLandThisTurn` sert maintenant à deux cartes (Plant Beans) : son entrée quitte `debt-baseline.json`.
+- **Restent :** Graceful Takedown (créature enchantée), Hamlet Glutton (réduction « si marchandé »), Sentinel of Lost Lore (cartes exilées d'un autre propriétaire ; « un ou plusieurs » en capacité déclenchée).
+- **Écart relevé :** un remplacement de mana « le double » (`modify.times`) n'est pas appliqué, seul « autant plus N » l'est (lot B).
+- **Tests :** 41 tests de règles (« lot A — vert »).

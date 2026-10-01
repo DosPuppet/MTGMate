@@ -3022,3 +3022,656 @@ describe("Wilds of Eldraine, lot A — rouge", () => {
     });
   });
 });
+
+describe("Wilds of Eldraine, lot A — vert", () => {
+  /**
+   * Wilds of Eldraine, lot A — cartes vertes : chaque carte au comportement non trivial est confrontée à son texte Oracle
+   * (plan R, lot R7) en jouant par des décisions.
+   */
+  type S = GameState;
+  type Answer = (req: ChoiceRequest, player: string) => ChoiceValue[] | undefined;
+  const lands = (name: string, n: number) => Array(n).fill(name) as string[];
+  const nameOf = (s: S, id: string) => s.defs[s.objects[id]?.defId ?? ""]?.name;
+  const exiled = (s: S, name: string) => s.exile.filter((id) => nameOf(s, id) === name);
+  const handNames = (s: S, p = "p1") => (s.players[p]?.hand ?? []).map((id) => nameOf(s, id));
+  const castOptions = (s: S, player: string, card: string) =>
+    legalActions(s, player).filter((a) => a.type === "cast" && a.card === card);
+
+  /** Passe et répond aux choix (réponse suggérée par défaut) jusqu'à une pile vide, sans déclenchement en attente. */
+  const settle = (s: S, answer: Answer = () => undefined): S => {
+    let cur = s;
+    for (let i = 0; i < 300; i++) {
+      const p = cur.pending;
+      if (p?.kind === "priority" && cur.stack.length === 0 && cur.triggers.length === 0 && i > 0) break;
+      if (p?.kind === "priority") cur = act(cur, p.player, { type: "pass" });
+      else if (p?.kind === "choice")
+        cur = act(cur, p.player, { type: "choose", values: answer(p.request, p.player) ?? p.request.suggested });
+      else break;
+    }
+    return cur;
+  };
+  /** Actions basées sur l'état, puis résolution de la pile et des déclenchements. */
+  const settleAll = (s: S, answer?: Answer) => {
+    while (stateBasedActions(s)) {}
+    return settle(s, answer);
+  };
+  /** Choix « pick » : les options portant ces noms (dans l'ordre), sinon la suggestion ; « oui » aux questions. */
+  const pickNames =
+    (s: () => S, ...names: string[]): Answer =>
+    (req) => {
+      if (req.type === "yesNo") return [1];
+      if (req.type !== "pick") return undefined;
+      const out: string[] = [];
+      for (const n of names) {
+        const id = req.options.find((o) => nameOf(s(), o) === n && !out.includes(o));
+        if (id && out.length < req.max) out.push(id);
+      }
+      return out.length > 0 ? out : undefined;
+    };
+  const cast = (s: S, player: string, name: string, targets?: Record<string, string[]>, extra: object = {}) =>
+    act(s, player, { type: "cast", card: idOf(s, player, "hand", name), targets, ...extra });
+  const activate = (s: S, player: string, source: string, targets?: Record<string, string[]>, extra: object = {}) => {
+    const a = legalActions(s, player).find((x) => x.type === "activate" && x.source === source);
+    return act(s, player, { type: "activate", source, ability: a?.type === "activate" ? a.ability : -1, targets, ...extra });
+  };
+  const pt = (s: S, id: string) => [chars(s, id).power, chars(s, id).toughness];
+  const attack = (s: S, ids: string[]) =>
+    act(
+      advanceUntil(s, (x) => x.pending?.kind === "declareAttackers"),
+      "p1",
+      {
+        type: "declareAttackers",
+        attackers: ids.map((id) => ({ id, defender: "p2" })),
+      },
+    );
+
+  it("Agatha's Champion : marchandée, elle se bat contre une créature adverse ; sinon, aucun combat", () => {
+    const setup = () =>
+      scenario({
+        p1: { battlefield: [...lands("Forest", 5), "Candy Trail"], hand: ["Agatha's Champion"] },
+        p2: { battlefield: ["Bear Cub"] },
+      });
+    let s = setup();
+    const candy = idOf(s, "p1", "battlefield", "Candy Trail");
+    s = settle(cast(s, "p1", "Agatha's Champion", undefined, { kicked: true, sacrifice: [candy] }));
+    const champion = idOf(s, "p1", "battlefield", "Agatha's Champion");
+    expect(idsOf(s, "p2", "graveyard", "Bear Cub")).toHaveLength(1);
+    expect(s.objects[champion]?.damage).toBe(2);
+    expect(chars(s, champion).keywords).toContain("trample");
+    let t = setup();
+    t = settle(cast(t, "p1", "Agatha's Champion"));
+    expect(idsOf(t, "p2", "battlefield", "Bear Cub")).toHaveLength(1);
+    expect(idsOf(t, "p1", "battlefield", "Candy Trail")).toHaveLength(1);
+  });
+
+  it("Plant Beans : un terrain supplémentaire ce tour-ci ; Beanstalk Wurm se lance ensuite depuis l'exil", () => {
+    const CARD = "Beanstalk Wurm // Plant Beans";
+    let s = scenario({ p1: { battlefield: lands("Forest", 5), hand: [CARD, "Forest", "Island"] } });
+    s = act(s, "p1", { type: "playLand", card: idOf(s, "p1", "hand", "Forest") });
+    s = settle(act(s, "p1", { type: "cast", card: idOf(s, "p1", "hand", CARD), face: 1 }));
+    s = act(s, "p1", { type: "playLand", card: idOf(s, "p1", "hand", "Island") });
+    expect(idsOf(s, "p1", "battlefield", "Island")).toHaveLength(1);
+    const adv = exiled(s, CARD)[0] as string;
+    expect(castOptions(s, "p1", adv)).toHaveLength(1);
+  });
+
+  it("Bestial Bloodline : la créature enchantée gagne +2/+2 ; {4}{G} la renvoie du cimetière dans la main", () => {
+    let s = scenario({ p1: { battlefield: [...lands("Forest", 2), "Bear Cub"], hand: ["Bestial Bloodline"] } });
+    const bear = idOf(s, "p1", "battlefield", "Bear Cub");
+    s = settle(cast(s, "p1", "Bestial Bloodline", { enchant: [bear] }));
+    expect(pt(s, bear)).toEqual([4, 4]);
+    let t = scenario({ p1: { battlefield: lands("Forest", 5), graveyard: ["Bestial Bloodline"] } });
+    t = settle(activate(t, "p1", idOf(t, "p1", "graveyard", "Bestial Bloodline")));
+    expect(handNames(t)).toEqual(["Bestial Bloodline"]);
+  });
+
+  describe("Blossoming Tortoise", () => {
+    it("en arrivant : meulez trois cartes, puis une carte de terrain de votre cimetière revient engagée", () => {
+      let s = scenario({
+        p1: { battlefield: lands("Forest", 4), hand: ["Blossoming Tortoise"], library: ["Opt", "Island", "Bear Cub", "Plains"] },
+      });
+      s = settle(cast(s, "p1", "Blossoming Tortoise"));
+      const island = idOf(s, "p1", "battlefield", "Island");
+      expect(s.objects[island]?.tapped).toBe(true);
+      expect(s.players.p1?.graveyard.map((id) => nameOf(s, id)).sort()).toEqual(["Bear Cub", "Opt"]);
+      expect(s.players.p1?.library.map((id) => nameOf(s, id))).toEqual(["Plains"]);
+    });
+
+    it("les capacités activées de vos terrains coûtent {1} de moins ; vos créatures-terrains gagnent +1/+1", () => {
+      const setup = (tortoise: boolean) =>
+        scenario({ p1: { battlefield: [...(tortoise ? ["Blossoming Tortoise"] : []), "Restless Cottage", "Swamp", "Forest"] } });
+      const without = setup(false);
+      const cottage0 = idOf(without, "p1", "battlefield", "Restless Cottage");
+      expect(legalActions(without, "p1").some((a) => a.type === "activate" && a.source === cottage0)).toBe(false);
+      let s = setup(true);
+      const cottage = idOf(s, "p1", "battlefield", "Restless Cottage");
+      s = settle(activate(s, "p1", cottage));
+      expect(pt(s, cottage)).toEqual([5, 5]);
+      // Un terrain qui n'est pas une créature n'est pas concerné ; la Tortue non plus.
+      expect(pt(s, idOf(s, "p1", "battlefield", "Blossoming Tortoise"))).toEqual([3, 3]);
+    });
+  });
+
+  it("Brave the Wilds : marchandé, le terrain ciblé devient une créature Élémental 3/3 avec la célérité ; un terrain de base en main", () => {
+    let s = scenario({
+      p1: { battlefield: ["Forest", "Forest", "Candy Trail"], hand: ["Brave the Wilds"], library: ["Opt", "Plains"] },
+    });
+    const [, land] = idsOf(s, "p1", "battlefield", "Forest") as [string, string];
+    const candy = idOf(s, "p1", "battlefield", "Candy Trail");
+    s = settle(
+      cast(s, "p1", "Brave the Wilds", { t: [land] }, { kicked: true, sacrifice: [candy] }),
+      pickNames(() => s, "Plains"),
+    );
+    const c = chars(s, land);
+    expect(c.types).toEqual(expect.arrayContaining(["Land", "Creature"]));
+    expect(c.subtypes).toEqual(expect.arrayContaining(["Forest", "Elemental"]));
+    expect([c.power, c.toughness]).toEqual([3, 3]);
+    expect(c.keywords).toContain("haste");
+    expect(handNames(s)).toEqual(["Plains"]);
+    // Sans marchandage : seulement la recherche.
+    let t = scenario({ p1: { battlefield: ["Forest", "Forest"], hand: ["Brave the Wilds"], library: ["Opt", "Plains"] } });
+    const other = idsOf(t, "p1", "battlefield", "Forest")[1] as string;
+    t = settle(
+      cast(t, "p1", "Brave the Wilds", { t: [other] }),
+      pickNames(() => t, "Plains"),
+    );
+    expect(chars(t, other).types).not.toContain("Creature");
+    expect(handNames(t)).toEqual(["Plains"]);
+  });
+
+  it("Commune with Nature : une carte de créature parmi les cinq du dessus en main, le reste au-dessous", () => {
+    let s = scenario({
+      p1: {
+        battlefield: ["Forest"],
+        hand: ["Commune with Nature"],
+        library: ["Opt", "Bear Cub", "Forest", "Serra Angel", "Island", "Plains"],
+      },
+    });
+    s = settle(cast(s, "p1", "Commune with Nature"), (req) => {
+      if (req.type !== "pick") return undefined;
+      expect(req.options.map((id) => nameOf(s, id)).sort()).toEqual(["Bear Cub", "Serra Angel"]);
+      return req.options.filter((id) => nameOf(s, id) === "Serra Angel");
+    });
+    expect(handNames(s)).toEqual(["Serra Angel"]);
+    expect(nameOf(s, s.players.p1?.library[0] as string)).toBe("Plains");
+    expect(s.players.p1?.library).toHaveLength(5);
+  });
+
+  it("Curse of the Werefox : un Rôle Monstre sur votre créature, puis elle se bat contre une créature adverse", () => {
+    let s = scenario({
+      p1: { battlefield: [...lands("Forest", 3), "Bear Cub"], hand: ["Curse of the Werefox"] },
+      p2: { battlefield: ["Bear Cub"] },
+    });
+    const mine = idOf(s, "p1", "battlefield", "Bear Cub");
+    s = settle(cast(s, "p1", "Curse of the Werefox", { t: [mine] }));
+    expect(pt(s, mine)).toEqual([3, 3]);
+    expect(chars(s, mine).keywords).toContain("trample");
+    expect(idsOf(s, "p1", "battlefield", "Monster Role")).toHaveLength(1);
+    expect(idsOf(s, "p2", "graveyard", "Bear Cub")).toHaveLength(1);
+    expect(s.objects[mine]?.damage).toBe(2);
+  });
+
+  it("Elvish Archivist : un ou plusieurs artefacts — deux marqueurs, une fois par tour ; un enchantement — une carte", () => {
+    let s = scenario({
+      p1: {
+        battlefield: [...lands("Forest", 4), "Elvish Archivist"],
+        hand: ["Candy Trail", "Candy Trail", "Bestial Bloodline"],
+      },
+    });
+    const elf = idOf(s, "p1", "battlefield", "Elvish Archivist");
+    s = settle(cast(s, "p1", "Candy Trail"));
+    s = settle(cast(s, "p1", "Candy Trail"));
+    expect(s.objects[elf]?.counters["+1/+1"]).toBe(2);
+    const hand = s.players.p1?.hand.length ?? 0;
+    s = settle(cast(s, "p1", "Bestial Bloodline", { enchant: [elf] }));
+    expect(s.players.p1?.hand).toHaveLength(hand);
+  });
+
+  it("Feral Encounter : une créature exilée parmi les cinq du dessus, lançable ce tour-ci ; au début du combat, votre créature blesse une créature adverse", () => {
+    let s = scenario({
+      p1: {
+        battlefield: [...lands("Forest", 4), "Shivan Dragon"],
+        hand: ["Feral Encounter"],
+        library: ["Opt", "Bear Cub", "Forest", "Island", "Plains", "Swamp"],
+      },
+      p2: { battlefield: ["Serra Angel"] },
+    });
+    s = settle(
+      cast(s, "p1", "Feral Encounter"),
+      pickNames(() => s, "Bear Cub"),
+    );
+    const cub = exiled(s, "Bear Cub")[0] as string;
+    expect(cub).toBeDefined();
+    expect(
+      s.players.p1?.library
+        .slice(-4)
+        .map((id) => nameOf(s, id))
+        .sort(),
+    ).toEqual(["Forest", "Island", "Opt", "Plains"]);
+    expect(castOptions(s, "p1", cub)).toHaveLength(1);
+    s = settle(act(s, "p1", { type: "cast", card: cub }));
+    expect(idsOf(s, "p1", "battlefield", "Bear Cub")).toHaveLength(1);
+    const dragon = idOf(s, "p1", "battlefield", "Shivan Dragon");
+    const angel = idOf(s, "p2", "battlefield", "Serra Angel");
+    s = passAccepting(s, (x) => x.turn.step === "beginCombat" && x.pending?.kind === "choice");
+    s = settle(s, (req) => {
+      if (req.type !== "pick") return undefined;
+      if (req.options.includes(dragon)) return [dragon];
+      return req.options.includes(angel) ? [angel] : undefined;
+    });
+    expect(idsOf(s, "p2", "graveyard", "Serra Angel")).toHaveLength(1);
+    // Une seule fois : la capacité ne revient pas au combat d'un autre tour.
+    s = advanceUntil(s, (x) => x.turn.number === 5 && x.turn.step === "beginCombat");
+    expect(s.stack).toHaveLength(0);
+  });
+
+  it("Guard Change : un Rôle Monstre (+1/+1 et le piétinement) sur votre créature ; Ferocious Werefox se lance ensuite", () => {
+    const CARD = "Ferocious Werefox // Guard Change";
+    let s = scenario({ p1: { battlefield: [...lands("Forest", 6), "Bear Cub"], hand: [CARD] } });
+    const bear = idOf(s, "p1", "battlefield", "Bear Cub");
+    s = settle(act(s, "p1", { type: "cast", card: idOf(s, "p1", "hand", CARD), face: 1, targets: { t: [bear] } }));
+    expect(pt(s, bear)).toEqual([3, 3]);
+    expect(chars(s, bear).keywords).toContain("trample");
+    s = settle(act(s, "p1", { type: "cast", card: exiled(s, CARD)[0] as string }));
+    expect(chars(s, idOf(s, "p1", "battlefield", CARD)).keywords).toContain("trample");
+  });
+
+  it("Gruff Triplets : deux jetons copies (qui n'en créent pas) ; quand l'une meurt, les autres reçoivent autant de marqueurs que sa force", () => {
+    let s = scenario({ p1: { battlefield: lands("Forest", 6), hand: ["Gruff Triplets"] } });
+    s = settle(cast(s, "p1", "Gruff Triplets"));
+    const triplets = idsOf(s, "p1", "battlefield", "Gruff Triplets");
+    expect(triplets).toHaveLength(3);
+    expect(triplets.filter((id) => s.objects[id]?.isToken)).toHaveLength(2);
+    const [card, ...tokens] = [...triplets].sort((a, b) => Number(!!s.objects[a]?.isToken) - Number(!!s.objects[b]?.isToken));
+    destroy(s, card as string);
+    s = settleAll(s);
+    for (const t of tokens) expect(pt(s, t)).toEqual([6, 6]);
+  });
+
+  it("Hollow Scavenger : {1}, sacrifiez une Nourriture : +2/+2, une seule fois par tour ; Bakery Raid crée une Nourriture", () => {
+    let s = scenario({
+      p1: { battlefield: ["Hollow Scavenger // Bakery Raid", "Candy Trail", "Candy Trail", ...lands("Forest", 2)] },
+    });
+    const wolf = idOf(s, "p1", "battlefield", "Hollow Scavenger // Bakery Raid");
+    const [food] = idsOf(s, "p1", "battlefield", "Candy Trail") as [string];
+    s = settle(activate(s, "p1", wolf, undefined, { sacrifice: [food] }));
+    expect(pt(s, wolf)).toEqual([5, 4]);
+    expect(idsOf(s, "p1", "battlefield", "Candy Trail")).toHaveLength(1);
+    expect(legalActions(s, "p1").some((a) => a.type === "activate" && a.source === wolf)).toBe(false);
+    let t = scenario({ p1: { battlefield: ["Forest"], hand: ["Hollow Scavenger // Bakery Raid"] } });
+    t = settle(act(t, "p1", { type: "cast", card: idOf(t, "p1", "hand", "Hollow Scavenger // Bakery Raid"), face: 1 }));
+    expect(idsOf(t, "p1", "battlefield", "Food")).toHaveLength(1);
+  });
+
+  it("Howling Galefang : la célérité tant que vous possédez en exil une carte avec une Aventure", () => {
+    let s = scenario({
+      p1: { battlefield: [{ name: "Howling Galefang", sick: true }, "Forest"], hand: ["Hollow Scavenger // Bakery Raid"] },
+    });
+    const galefang = idOf(s, "p1", "battlefield", "Howling Galefang");
+    expect(chars(s, galefang).keywords).not.toContain("haste");
+    expect(chars(s, galefang).keywords).toContain("vigilance");
+    s = settle(act(s, "p1", { type: "cast", card: idOf(s, "p1", "hand", "Hollow Scavenger // Bakery Raid"), face: 1 }));
+    expect(chars(s, galefang).keywords).toContain("haste");
+  });
+
+  it("The Huntsman's Redemption : I — une Bête 3/3 ; II — sacrifiez une créature pour chercher une créature ou un terrain de base", () => {
+    let s = scenario({
+      p1: {
+        battlefield: lands("Forest", 3),
+        hand: ["The Huntsman's Redemption"],
+        library: ["Forest", "Island", "Bear Cub", "Opt", "Plains"],
+      },
+    });
+    s = settle(cast(s, "p1", "The Huntsman's Redemption"));
+    const beast = idOf(s, "p1", "battlefield", "Beast");
+    expect([pt(s, beast), chars(s, beast).colors]).toEqual([[3, 3], ["G"]]);
+    s = advanceUntil(s, (x) => x.turn.number === 5 && x.turn.step === "main1" && x.pending?.kind === "priority");
+    s = settle(
+      s,
+      pickNames(() => s, "Beast", "Bear Cub"),
+    );
+    expect(idsOf(s, "p1", "battlefield", "Beast")).toHaveLength(0);
+    expect(handNames(s)).toContain("Bear Cub");
+  });
+
+  it("Leaping Ambush : +1/+3 et la portée jusqu'à la fin du tour, et la créature se dégage", () => {
+    let s = scenario({ p1: { battlefield: ["Forest", { name: "Bear Cub", tapped: true }], hand: ["Leaping Ambush"] } });
+    const bear = idOf(s, "p1", "battlefield", "Bear Cub");
+    s = settle(cast(s, "p1", "Leaping Ambush", { t: [bear] }));
+    expect(pt(s, bear)).toEqual([3, 5]);
+    expect(chars(s, bear).keywords).toContain("reach");
+    expect(s.objects[bear]?.tapped).toBe(false);
+  });
+
+  describe("Night of the Sweets' Revenge", () => {
+    it("en arrivant, une Nourriture ; vos Nourritures ont « {T} : ajoutez {G} »", () => {
+      let s = scenario({ p1: { battlefield: lands("Forest", 4), hand: ["Night of the Sweets' Revenge"] } });
+      s = settle(cast(s, "p1", "Night of the Sweets' Revenge"));
+      const food = idOf(s, "p1", "battlefield", "Food");
+      expect(legalActions(s, "p1").some((a) => a.type === "tapForMana" && a.source === food && a.colors.includes("G"))).toBe(
+        true,
+      );
+    });
+
+    it("{5}{G}{G}, sacrifiez-le : vos créatures gagnent +X/+X, X étant le nombre de vos Nourritures", () => {
+      let s = scenario({
+        p1: { battlefield: ["Night of the Sweets' Revenge", "Candy Trail", "Candy Trail", "Bear Cub", ...lands("Forest", 7)] },
+      });
+      const bear = idOf(s, "p1", "battlefield", "Bear Cub");
+      s = settle(activate(s, "p1", idOf(s, "p1", "battlefield", "Night of the Sweets' Revenge")));
+      expect(pt(s, bear)).toEqual([4, 4]);
+      expect(idsOf(s, "p1", "graveyard", "Night of the Sweets' Revenge")).toHaveLength(1);
+    });
+  });
+
+  it("Redtooth Genealogist : un Rôle Royal (+1/+1 et la garde {1}) attaché à une autre de vos créatures", () => {
+    let s = scenario({ p1: { battlefield: [...lands("Forest", 3), "Bear Cub"], hand: ["Redtooth Genealogist"] } });
+    const bear = idOf(s, "p1", "battlefield", "Bear Cub");
+    s = settle(cast(s, "p1", "Redtooth Genealogist"));
+    expect(pt(s, bear)).toEqual([3, 3]);
+    expect(chars(s, bear).abilities.some((a) => a.kind === "triggered" && a.ward)).toBe(true);
+    expect(pt(s, idOf(s, "p1", "battlefield", "Redtooth Genealogist"))).toEqual([2, 3]);
+  });
+
+  it("Redtooth Vanguard : un enchantement arrive sous votre contrôle — payez {2} : elle revient du cimetière dans votre main", () => {
+    let s = scenario({
+      p1: { battlefield: [...lands("Forest", 4), "Bear Cub"], hand: ["Bestial Bloodline"], graveyard: ["Redtooth Vanguard"] },
+    });
+    s = settle(
+      cast(s, "p1", "Bestial Bloodline", { enchant: [idOf(s, "p1", "battlefield", "Bear Cub")] }),
+      pickNames(() => s),
+    );
+    expect(handNames(s)).toEqual(["Redtooth Vanguard"]);
+    expect(s.battlefield.filter((id) => nameOf(s, id) === "Forest" && s.objects[id]?.tapped)).toHaveLength(4);
+  });
+
+  it("Return from the Wilds : deux modes au choix (un Humain 1/1 blanc et une Nourriture)", () => {
+    let s = scenario({ p1: { battlefield: lands("Forest", 3), hand: ["Return from the Wilds"] } });
+    const modes = legalActions(s, "p1").find((a) => a.type === "cast" && nameOf(s, a.card) === "Return from the Wilds");
+    expect(modes?.type === "cast" && modes.modes?.length).toBe(3);
+    s = settle(cast(s, "p1", "Return from the Wilds", undefined, { mode: 2 }));
+    const human = idOf(s, "p1", "battlefield", "Human");
+    expect([pt(s, human), chars(s, human).colors]).toEqual([[1, 1], ["W"]]);
+    expect(idsOf(s, "p1", "battlefield", "Food")).toHaveLength(1);
+  });
+
+  it("Rootrider Faun : {T} ajoute {G} ; {1}, {T} ajoute un mana de n'importe quelle couleur", () => {
+    let s = scenario({ p1: { battlefield: ["Rootrider Faun", "Forest"] } });
+    const faun = idOf(s, "p1", "battlefield", "Rootrider Faun");
+    expect(legalActions(s, "p1").some((a) => a.type === "tapForMana" && a.source === faun && a.colors.includes("G"))).toBe(true);
+    s = activate(s, "p1", faun);
+    if (s.pending?.kind === "choice") s = act(s, "p1", { type: "choose", values: ["B"] });
+    expect(s.players.p1?.manaPool.B).toBe(1);
+    expect(s.objects[faun]?.tapped).toBe(true);
+  });
+
+  it("Royal Treatment : la défense talismanique jusqu'à la fin du tour et un Rôle Royal", () => {
+    let s = scenario({ p1: { battlefield: ["Forest", "Bear Cub"], hand: ["Royal Treatment"] } });
+    const bear = idOf(s, "p1", "battlefield", "Bear Cub");
+    s = settle(cast(s, "p1", "Royal Treatment", { t: [bear] }));
+    expect(chars(s, bear).keywords).toContain("hexproof");
+    expect(pt(s, bear)).toEqual([3, 3]);
+    s = advanceUntil(s, (x) => x.turn.active === "p2" && x.turn.step === "main1");
+    expect(chars(s, bear).keywords).not.toContain("hexproof");
+    expect(pt(s, bear)).toEqual([3, 3]);
+  });
+
+  it("Skybeast Tracker, Up the Beanstalk, Tempest Hart : un sort de VM 5 ou plus donne une Nourriture, une carte et un marqueur", () => {
+    let s = scenario({
+      p1: {
+        battlefield: ["Skybeast Tracker", "Tempest Hart // Scan the Clouds", "Up the Beanstalk", ...lands("Mountain", 8)],
+        hand: ["Lightning Strike", "Shivan Dragon"],
+      },
+    });
+    const hart = idOf(s, "p1", "battlefield", "Tempest Hart // Scan the Clouds");
+    s = settle(cast(s, "p1", "Lightning Strike", { t: ["p2"] }));
+    expect(idsOf(s, "p1", "battlefield", "Food")).toHaveLength(0);
+    expect(s.players.p1?.hand).toHaveLength(1);
+    s = settle(cast(s, "p1", "Shivan Dragon"));
+    expect(idsOf(s, "p1", "battlefield", "Food")).toHaveLength(1);
+    expect(s.players.p1?.hand).toHaveLength(1);
+    expect(s.objects[hart]?.counters["+1/+1"]).toBe(1);
+  });
+
+  it("Up the Beanstalk : en arrivant, piochez une carte", () => {
+    let s = scenario({ p1: { battlefield: lands("Forest", 2), hand: ["Up the Beanstalk"] } });
+    s = settle(cast(s, "p1", "Up the Beanstalk"));
+    expect(s.players.p1?.hand).toHaveLength(1);
+  });
+
+  it("Spider Food : détruit un artefact, un enchantement ou une créature avec le vol, et crée une Nourriture", () => {
+    let s = scenario({
+      p1: { battlefield: lands("Forest", 3), hand: ["Spider Food"] },
+      p2: { battlefield: ["Serra Angel", "Bear Cub"] },
+    });
+    expect(() => cast(s, "p1", "Spider Food", { t: [idOf(s, "p2", "battlefield", "Bear Cub")] })).toThrow();
+    s = settle(cast(s, "p1", "Spider Food", { t: [idOf(s, "p2", "battlefield", "Serra Angel")] }));
+    expect(idsOf(s, "p2", "graveyard", "Serra Angel")).toHaveLength(1);
+    expect(idsOf(s, "p1", "battlefield", "Food")).toHaveLength(1);
+  });
+
+  it("Stormkeld Vanguard : ne peut pas être bloquée par une créature de force 2 ou moins ; Bear Down détruit un artefact", () => {
+    const CARD = "Stormkeld Vanguard // Bear Down";
+    let s = scenario({ p1: { battlefield: [CARD] }, p2: { battlefield: ["Bear Cub", "Serra Angel"] } });
+    const giant = idOf(s, "p1", "battlefield", CARD);
+    s = attack(s, [giant]);
+    s = advanceUntil(s, (x) => x.pending?.kind === "declareBlockers");
+    const bear = idOf(s, "p2", "battlefield", "Bear Cub");
+    expect(() => act(s, "p2", { type: "declareBlockers", blocks: [{ blocker: bear, attacker: giant }] })).toThrow();
+    act(s, "p2", {
+      type: "declareBlockers",
+      blocks: [{ blocker: idOf(s, "p2", "battlefield", "Serra Angel"), attacker: giant }],
+    });
+    let t = scenario({ p1: { battlefield: lands("Forest", 2), hand: [CARD] }, p2: { battlefield: ["Candy Trail"] } });
+    const candy = idOf(t, "p2", "battlefield", "Candy Trail");
+    t = settle(act(t, "p1", { type: "cast", card: idOf(t, "p1", "hand", CARD), face: 1, targets: { t: [candy] } }));
+    expect(idsOf(t, "p2", "graveyard", "Candy Trail")).toHaveLength(1);
+  });
+
+  it("Tanglespan Lookout : une Aura arrive sous votre contrôle — piochez une carte", () => {
+    let s = scenario({ p1: { battlefield: [...lands("Forest", 2), "Tanglespan Lookout"], hand: ["Bestial Bloodline"] } });
+    s = settle(cast(s, "p1", "Bestial Bloodline", { enchant: [idOf(s, "p1", "battlefield", "Tanglespan Lookout")] }));
+    expect(s.players.p1?.hand).toHaveLength(1);
+  });
+
+  it("Territorial Witchstalker : avec une créature de force 4 ou plus, +1/+0 et elle peut attaquer malgré le défenseur", () => {
+    const setup = (big: boolean) =>
+      scenario({ p1: { battlefield: ["Territorial Witchstalker", ...(big ? ["Serra Angel"] : ["Bear Cub"])] } });
+    let s = advanceUntil(setup(true), (x) => x.pending?.kind === "declareAttackers");
+    const wolf = idOf(s, "p1", "battlefield", "Territorial Witchstalker");
+    expect(pt(s, wolf)).toEqual([3, 3]);
+    s = act(s, "p1", { type: "declareAttackers", attackers: [{ id: wolf, defender: "p2" }] });
+    s = advanceUntil(s, (x) => x.turn.active === "p2");
+    expect(s.players.p2?.life).toBe(17);
+    const t = advanceUntil(setup(false), (x) => x.pending?.kind === "declareAttackers");
+    const wolf2 = idOf(t, "p1", "battlefield", "Territorial Witchstalker");
+    expect(pt(t, wolf2)).toEqual([2, 3]);
+    expect(() => act(t, "p1", { type: "declareAttackers", attackers: [{ id: wolf2, defender: "p2" }] })).toThrow();
+  });
+
+  it("Thunderous Debut : parmi les vingt cartes du dessus, jusqu'à deux créatures — sur le champ de bataille si marchandé, sinon en main", () => {
+    const library = [
+      ...lands("Island", 5),
+      "Bear Cub",
+      ...lands("Island", 10),
+      "Serra Angel",
+      ...lands("Island", 3),
+      "Shivan Dragon",
+    ];
+    const setup = () =>
+      scenario({ p1: { battlefield: [...lands("Forest", 8), "Candy Trail"], hand: ["Thunderous Debut"], library } });
+    const answer =
+      (s: () => S): Answer =>
+      (req) => {
+        if (req.type !== "pick" || req.intent !== "lookAtTop") return undefined;
+        expect(req.options.map((id) => nameOf(s(), id)).sort()).toEqual(["Bear Cub", "Serra Angel"]);
+        return req.options;
+      };
+    let s = setup();
+    const candy = idOf(s, "p1", "battlefield", "Candy Trail");
+    s = settle(
+      cast(s, "p1", "Thunderous Debut", undefined, { kicked: true, sacrifice: [candy] }),
+      answer(() => s),
+    );
+    expect(idsOf(s, "p1", "battlefield", "Bear Cub")).toHaveLength(1);
+    expect(idsOf(s, "p1", "battlefield", "Serra Angel")).toHaveLength(1);
+    expect(s.players.p1?.library).toHaveLength(19);
+    let t = setup();
+    t = settle(
+      cast(t, "p1", "Thunderous Debut"),
+      answer(() => t),
+    );
+    expect(handNames(t).sort()).toEqual(["Bear Cub", "Serra Angel"]);
+  });
+
+  it("Tough Cookie : une Nourriture en arrivant ; {2}{G} : un artefact non-créature devient une créature-artefact 4/4", () => {
+    let s = scenario({ p1: { battlefield: lands("Forest", 5), hand: ["Tough Cookie"] } });
+    s = settle(cast(s, "p1", "Tough Cookie"));
+    const food = idOf(s, "p1", "battlefield", "Food");
+    const cookie = idOf(s, "p1", "battlefield", "Tough Cookie");
+    expect(() => activate(s, "p1", cookie, { t: [cookie] })).toThrow();
+    s = settle(activate(s, "p1", cookie, { t: [food] }));
+    const c = chars(s, food);
+    expect(c.types).toEqual(expect.arrayContaining(["Artifact", "Creature"]));
+    expect(c.subtypes).toContain("Food");
+    expect([c.power, c.toughness]).toEqual([4, 4]);
+    s = advanceUntil(s, (x) => x.turn.active === "p2");
+    expect(chars(s, food).types).not.toContain("Creature");
+  });
+
+  it("Troublemaker Ouphe : marchandé, exile un artefact ou un enchantement qu'un adversaire contrôle", () => {
+    const setup = () =>
+      scenario({
+        p1: { battlefield: [...lands("Forest", 2), "Candy Trail"], hand: ["Troublemaker Ouphe"] },
+        p2: { battlefield: ["Candy Trail"] },
+      });
+    let s = setup();
+    s = settle(
+      cast(s, "p1", "Troublemaker Ouphe", undefined, { kicked: true, sacrifice: [idOf(s, "p1", "battlefield", "Candy Trail")] }),
+    );
+    expect(exiled(s, "Candy Trail")).toHaveLength(1);
+    expect(idsOf(s, "p2", "battlefield", "Candy Trail")).toHaveLength(0);
+    let t = setup();
+    t = settle(cast(t, "p1", "Troublemaker Ouphe"));
+    expect(idsOf(t, "p2", "battlefield", "Candy Trail")).toHaveLength(1);
+  });
+
+  it("Verdant Outrider : {1}{G} — ne peut pas être bloquée par une créature de force 2 ou moins ce tour-ci", () => {
+    let s = scenario({ p1: { battlefield: ["Verdant Outrider", ...lands("Forest", 2)] }, p2: { battlefield: ["Bear Cub"] } });
+    const knight = idOf(s, "p1", "battlefield", "Verdant Outrider");
+    s = settle(activate(s, "p1", knight));
+    s = attack(s, [knight]);
+    s = advanceUntil(s, (x) => x.pending?.kind === "declareBlockers");
+    const bear = idOf(s, "p2", "battlefield", "Bear Cub");
+    expect(() => act(s, "p2", { type: "declareBlockers", blocks: [{ blocker: bear, attacker: knight }] })).toThrow();
+  });
+
+  it("Virtue of Strength : un terrain de base engagé pour du mana en produit trois fois plus ; Garenbrig Growth renvoie une carte de créature", () => {
+    let s = scenario({ p1: { battlefield: ["Virtue of Strength // Garenbrig Growth", "Forest", "Restless Cottage"] } });
+    const forest = idOf(s, "p1", "battlefield", "Forest");
+    const a = legalActions(s, "p1").find((x) => x.type === "tapForMana" && x.source === forest);
+    s = act(s, "p1", { type: "tapForMana", source: forest, ability: a?.type === "tapForMana" ? a.ability : 0, color: "G" });
+    expect(s.players.p1?.manaPool.G).toBe(3);
+    const cottage = idOf(s, "p1", "battlefield", "Restless Cottage");
+    const b = legalActions(s, "p1").find((x) => x.type === "tapForMana" && x.source === cottage);
+    s = act(s, "p1", { type: "tapForMana", source: cottage, ability: b?.type === "tapForMana" ? b.ability : 0, color: "B" });
+    expect(s.players.p1?.manaPool.B).toBe(1);
+    let t = scenario({
+      p1: { battlefield: lands("Forest", 2), hand: ["Virtue of Strength // Garenbrig Growth"], graveyard: ["Bear Cub", "Opt"] },
+    });
+    const card = idOf(t, "p1", "hand", "Virtue of Strength // Garenbrig Growth");
+    const opt = idOf(t, "p1", "graveyard", "Opt");
+    expect(() => act(t, "p1", { type: "cast", card, face: 1, targets: { t: [opt] } })).toThrow();
+    t = settle(act(t, "p1", { type: "cast", card, face: 1, targets: { t: [idOf(t, "p1", "graveyard", "Bear Cub")] } }));
+    expect(handNames(t)).toEqual(["Bear Cub"]);
+    expect(exiled(t, "Virtue of Strength // Garenbrig Growth")).toHaveLength(1);
+  });
+
+  it("Welcome to Sweettooth : I — un Humain ; II — une Nourriture ; III — 1 + (vos Nourritures) marqueurs +1/+1", () => {
+    let s = scenario({ p1: { battlefield: [...lands("Forest", 2), "Bear Cub"], hand: ["Welcome to Sweettooth"] } });
+    const bear = idOf(s, "p1", "battlefield", "Bear Cub");
+    s = settle(cast(s, "p1", "Welcome to Sweettooth"));
+    expect(idsOf(s, "p1", "battlefield", "Human")).toHaveLength(1);
+    s = advanceUntil(s, (x) => x.turn.number === 5 && x.turn.step === "main1" && x.pending?.kind === "priority");
+    s = settle(s);
+    expect(idsOf(s, "p1", "battlefield", "Food")).toHaveLength(1);
+    s = advanceUntil(s, (x) => x.turn.number === 7 && x.turn.step === "main1" && x.pending?.kind === "priority");
+    s = settle(s, (req) => (req.type === "pick" && req.options.includes(bear) ? [bear] : undefined));
+    expect(s.objects[bear]?.counters["+1/+1"]).toBe(2);
+    expect(idsOf(s, "p1", "graveyard", "Welcome to Sweettooth")).toHaveLength(1);
+  });
+
+  describe("Questing Druid // Seek the Beast", () => {
+    const CARD = "Questing Druid // Seek the Beast";
+
+    it("un sort blanc, bleu, noir ou rouge que vous lancez : un marqueur +1/+1 ; un sort vert, rien", () => {
+      let s = scenario({
+        p1: { battlefield: [CARD, ...lands("Mountain", 2), ...lands("Forest", 2)], hand: ["Lightning Strike", "Titanic Growth"] },
+      });
+      const druid = idOf(s, "p1", "battlefield", CARD);
+      s = settle(cast(s, "p1", "Titanic Growth", { t: [druid] }));
+      expect(s.objects[druid]?.counters["+1/+1"]).toBeUndefined();
+      expect(pt(s, druid)).toEqual([5, 5]);
+      s = settle(cast(s, "p1", "Lightning Strike", { t: ["p2"] }));
+      expect(s.objects[druid]?.counters["+1/+1"]).toBe(1);
+    });
+
+    it("Seek the Beast : exile les deux cartes du dessus, jouables jusqu'à votre prochaine étape de fin", () => {
+      let s = scenario({ p1: { battlefield: lands("Mountain", 3), hand: [CARD], library: ["Forest", "Bear Cub", "Island"] } });
+      s = settle(act(s, "p1", { type: "cast", card: idOf(s, "p1", "hand", CARD), face: 1 }));
+      const forest = exiled(s, "Forest")[0] as string;
+      const cub = exiled(s, "Bear Cub")[0] as string;
+      expect(legalActions(s, "p1").some((a) => a.type === "playLand" && a.card === forest)).toBe(true);
+      s = act(s, "p1", { type: "playLand", card: forest });
+      expect(castOptions(s, "p1", cub)).toHaveLength(1);
+      s = advanceUntil(s, (x) => x.turn.number === 5 && x.turn.step === "main1" && x.pending?.kind === "priority");
+      expect(s.exile).toContain(cub);
+      expect(castOptions(s, "p1", cub)).toHaveLength(0);
+    });
+  });
+
+  it("Scan the Clouds : piochez deux cartes, puis défaussez-en deux", () => {
+    const CARD = "Tempest Hart // Scan the Clouds";
+    let s = scenario({ p1: { battlefield: lands("Island", 2), hand: [CARD, "Opt"], library: ["Bear Cub", "Forest", "Plains"] } });
+    s = settle(act(s, "p1", { type: "cast", card: idOf(s, "p1", "hand", CARD), face: 1 }));
+    expect(s.players.p1?.hand).toHaveLength(1);
+    expect(s.players.p1?.graveyard).toHaveLength(2);
+  });
+
+  it("Intrepid Trufflesnout : en attaquant seule, une Nourriture ; avec une autre créature, rien", () => {
+    const CARD = "Intrepid Trufflesnout // Go Hog Wild";
+    let s = scenario({ p1: { battlefield: [CARD, "Bear Cub"] } });
+    const boar = idOf(s, "p1", "battlefield", CARD);
+    s = settle(attack(s, [boar]));
+    expect(idsOf(s, "p1", "battlefield", "Food")).toHaveLength(1);
+    let t = scenario({ p1: { battlefield: [CARD, "Bear Cub"] } });
+    t = settle(attack(t, [idOf(t, "p1", "battlefield", CARD), idOf(t, "p1", "battlefield", "Bear Cub")]));
+    expect(idsOf(t, "p1", "battlefield", "Food")).toHaveLength(0);
+  });
+
+  it("Provisions Merchant : en attaquant, sacrifiez une Nourriture — les créatures attaquantes gagnent +1/+1 et le piétinement", () => {
+    let s = scenario({ p1: { battlefield: ["Provisions Merchant", "Bear Cub", "Candy Trail"] } });
+    const merchant = idOf(s, "p1", "battlefield", "Provisions Merchant");
+    const bear = idOf(s, "p1", "battlefield", "Bear Cub");
+    s = settle(
+      attack(s, [merchant, bear]),
+      pickNames(() => s, "Candy Trail"),
+    );
+    expect(idsOf(s, "p1", "graveyard", "Candy Trail")).toHaveLength(1);
+    expect(pt(s, bear)).toEqual([3, 3]);
+    expect(chars(s, bear).keywords).toContain("trample");
+    expect(pt(s, merchant)).toEqual([4, 4]);
+  });
+
+  it("Wildwood Mentor : un jeton arrive — un marqueur +1/+1 ; en attaquant, une autre attaquante gagne +X/+X (sa force)", () => {
+    let s = scenario({
+      p1: { battlefield: ["Wildwood Mentor", "Bear Cub", "Forest"], hand: ["Hollow Scavenger // Bakery Raid"] },
+    });
+    const mentor = idOf(s, "p1", "battlefield", "Wildwood Mentor");
+    const bear = idOf(s, "p1", "battlefield", "Bear Cub");
+    s = settle(act(s, "p1", { type: "cast", card: idOf(s, "p1", "hand", "Hollow Scavenger // Bakery Raid"), face: 1 }));
+    expect(pt(s, mentor)).toEqual([2, 2]);
+    s = settle(attack(s, [mentor, bear]));
+    expect(pt(s, bear)).toEqual([4, 4]);
+  });
+});

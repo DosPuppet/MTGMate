@@ -266,6 +266,11 @@ Dans l'ordre où elles ont été ajoutées, extension par extension.
   - `choix auto` Rowan's Grim Search : l'ordre des cartes remises sur la bibliothèque n'est pas choisi ;
   - `règle` Expensive Taste : les deux cartes sont exilées face visible ;
   - `règle` Goddric, Cloaked Reveler : le vol (lu dans les mots-clés Scryfall) est retiré par une statique tant qu'il n'y a pas de Célébration ; un vol accordé par un effet plus ancien serait aussi retiré ;
-  - `règle` Witchstalker Frenzy : une créature qui attaque lors de deux combats compte deux fois.
+  - `règle` Witchstalker Frenzy : une créature qui attaque lors de deux combats compte deux fois ;
+  - `règle` Virtue of Strength : « trois fois plus de mana » est « deux mana de plus » (exact pour un terrain de base qui produit un mana) ;
+  - `règle` Brave the Wilds : la cible « terrain que vous contrôlez » est proposée même sans Marchandage, sans effet alors ;
+  - `timing` Feral Encounter : « au début de la prochaine phase de combat de ce tour » passe par un emblème du tour ;
+  - `choix auto` Commune with Nature, Feral Encounter : le reste va au-dessous dans un ordre aléatoire ;
+  - `timing` Seek the Beast : « jusqu'à votre prochaine étape de fin » dure jusqu'à la fin de ce tour (le vôtre) ou de votre prochain tour.
 - **Légalité Standard :** instantané des légalités Scryfall au moment de l'import (`legalities.standard` dans `data/<set>.json`). Après une rotation ou une annonce de bannissement, réimporter les sets (`npm run import-cards -- <set>`).
 - **Images des jetons :** celle du jeton Scryfall le plus proche (même nom, puis mêmes F/E et couleurs ; `data/tokens.json`, `npm run import-tokens`) ; un jeton de nom inconnu garde le cadre texte.
