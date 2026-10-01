@@ -188,6 +188,11 @@ export type TriggerSpec =
   /** `whileCrafting` : exilé comme matériau d'une fabrication (Market Gnome). */
   /** `who` filtre : « chaque fois qu'une créature que vous contrôlez avec un marqueur +1/+1 quitte le champ de bataille ». */
   | { on: "leaves"; who: "self" | "linked" | ObjectFilter; to?: Zone; whileCrafting?: boolean }
+  /**
+   * « Quand ce permanent se transforme en [cette face] » : porté par la face visée, il ne se déclenche que lorsque le
+   * permanent devient cette face (les capacités sont lues après la transformation).
+   */
+  | { on: "transformsSelf" }
   /** « Chaque fois qu'un adversaire cherche dans sa bibliothèque » (Wan Shi Tong). */
   | { on: "search"; whose: "you" | "opponent" | "any" }
   /** « Quand un adversaire perd la partie » (Shinryu). */

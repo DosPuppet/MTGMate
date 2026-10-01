@@ -267,8 +267,12 @@ export interface AdditionalCost {
   discardOrLife?: number;
   /** « Défaussez une carte ou sacrifiez un permanent » (Souls of the Lost) : un permanent choisi est sacrifié. */
   discardOrSacrifice?: boolean;
-  /** Choisis automatiquement (Duskmourn) : permanents exilés (liés au permanent), renvoyés, engagés ; cartes du cimetière exilées. */
-  exile?: { filter: ObjectFilter; count: number };
+  /**
+   * Choisis automatiquement (Duskmourn) : permanents exilés (liés au permanent), renvoyés, engagés ; cartes du cimetière
+   * exilées. `fromHand` : « contemplez un [type] et exilez-le » (Lorwyn Eclipsed) : un permanent que vous contrôlez ou
+   * une carte de votre main.
+   */
+  exile?: { filter: ObjectFilter; count: number; fromHand?: boolean };
   bounce?: { filter: ObjectFilter; count: number };
   tap?: { filter: ObjectFilter; count: number };
   exileGraveyard?: number;
@@ -399,7 +403,10 @@ export interface CostDef {
   sacrifice?: { filter: ObjectFilter; count: number };
   /** Flétrir N (ECL) : N marqueurs −1/−1 sur une créature que vous contrôlez (choisie automatiquement : `blightTarget`). */
   blight?: number;
-  /** Retirer des marqueurs de la source. */
+  /**
+   * Retirer des marqueurs de la source. `kind: "any"` : « retirez N marqueurs de cette créature », de n'importe quelle
+   * sorte (ECL), retirés par le moteur : les −1/−1 d'abord, les +1/+1 en dernier.
+   */
   removeCounters?: { kind: string; n: number };
   /** Engager d'autres permanents dégagés que vous contrôlez (choisis automatiquement). */
   tapOthers?: { filter: ObjectFilter; count: number };

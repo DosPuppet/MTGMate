@@ -62,6 +62,7 @@ export const KEYWORD_LABEL: Record<Keyword, string> = {
   prowess: "Prouesse",
   ward: "Garde",
   changeling: "Changelin",
+  wither: "Flétrissure",
   mustBeBlocked: "Doit être bloquée",
   damageHealsFirst: "Chaque blessure guérit les précédentes",
   cantBlock: "Ne peut pas bloquer",

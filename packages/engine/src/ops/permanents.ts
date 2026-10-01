@@ -16,12 +16,36 @@ import {
   onBattlefield,
   opponentsOf,
   rulesEvent,
+  untapObject,
 } from "../state";
 import { addPlayerEffect, tokenMultiplier } from "../statics";
 import { matchesCard, matchesObjectFilter } from "../targets";
 import { createDelayed } from "../triggers";
 import { attackableDefenders } from "../turn";
 import type { Color } from "../types";
+
+/** Types de créature toujours proposés quand un type est à choisir (tribus de Lorwyn et types les plus courants). */
+const COMMON_CREATURE_TYPES = [
+  "Angel",
+  "Beast",
+  "Cat",
+  "Dragon",
+  "Elemental",
+  "Elf",
+  "Faerie",
+  "Giant",
+  "Goblin",
+  "Human",
+  "Kithkin",
+  "Knight",
+  "Merfolk",
+  "Soldier",
+  "Treefolk",
+  "Vampire",
+  "Warrior",
+  "Wizard",
+  "Zombie",
+];
 
 export const HANDLERS: OpHandlers = {
   pump(s, _r, e, ctx) {
@@ -95,6 +119,11 @@ export const HANDLERS: OpHandlers = {
     const emblem = createObject(s, defId, ctx.controller, "command", { isToken: true });
     if (e.untilYourNextTurn) emblem.expiresAtTurnOf = ctx.controller;
     if (e.thisTurn) emblem.expiresEndOfTurn = true;
+    // Oko, Shadowmoor Scion : « choisissez un type de créature ; vous obtenez un emblème avec "les créatures du type
+    // choisi…" » : l'emblème garde le choix fait par l'effet.
+    const chosen = r.vars.$chosen;
+    if (chosen?.[0] === "creatureType") emblem.chosen = { creatureType: String(chosen[1]) };
+    else if (chosen?.[0] === "color") emblem.chosen = { color: String(chosen[1]) as Color };
     if (e.store) r.vars[`$ids:${e.store}`] = [emblem.id];
     bump(s);
     return;
@@ -160,9 +189,7 @@ export const HANDLERS: OpHandlers = {
       const o = s.objects[id];
       if (o?.controller !== ctx.controller || !o.tapped || !matchesObjectFilter(s, ctx.controller, id, e.filter, ctx.sourceId))
         continue;
-      o.tapped = false;
-      bump(s);
-      rulesEvent(s, { e: "untap", objectId: id });
+      untapObject(s, o);
     }
     return;
   },
@@ -366,7 +393,8 @@ export const HANDLERS: OpHandlers = {
           .map((d) => d.name);
         options = [...new Set([...inHand.filter(Boolean), ...s.battlefield.map((id) => chars(s, id).name), ...all.sort()])];
       } else {
-        const set = new Set<string>();
+        // Types des créatures connues de la partie, et toujours les plus courants (un deck sans créature en a besoin).
+        const set = new Set<string>(COMMON_CREATURE_TYPES);
         for (const d of Object.values(s.defs))
           if (d.types.includes("Creature") && !d.isToken) for (const t of d.subtypes) set.add(t);
         options = [...set].sort();
@@ -422,9 +450,10 @@ export const HANDLERS: OpHandlers = {
       };
     }
     r.vars.$chosen = [kind, String(answer[0])];
-    // Capacité déclenchée d'un permanent déjà en jeu (Petrified Hamlet : « quand ce terrain arrive, choisissez… »).
+    // Capacité déclenchée d'un permanent déjà en jeu (Petrified Hamlet : « quand ce terrain arrive, choisissez… ») ou
+    // sort qui se résout (Harmonized Crescendo : « choisissez un type de créature ; piochez pour chaque… »).
     const src = s.objects[ctx.sourceId];
-    if (src?.zone === "battlefield") {
+    if (src?.zone === "battlefield" || src?.zone === "stack") {
       const value = String(answer[0]);
       src.chosen = {
         ...src.chosen,

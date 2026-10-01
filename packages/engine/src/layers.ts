@@ -108,7 +108,7 @@ function printedMatch(d: Pick<CardDef, "types" | "subtypes"> | undefined, f: Obj
 function readsBattlefield(a: Amount): boolean {
   if (typeof a === "number") return false;
   if (a.kind === "sum") return a.of.some(readsBattlefield);
-  if (a.kind === "basicLandTypes" || a.kind === "maxManaValue") return true;
+  if (a.kind === "basicLandTypes" || a.kind === "maxManaValue" || a.kind === "colorsAmong") return true;
   return a.kind === "count" && (!a.zone || a.zone === "battlefield");
 }
 
@@ -139,6 +139,17 @@ function cdaValue(s: GameState, o: GameObject, a: Amount): number {
       }),
     );
     return ["Plains", "Island", "Swamp", "Mountain", "Forest"].filter((t) => subtypes.has(t)).length;
+  }
+  if (a.kind === "colorsAmong") {
+    // Vivid (Squawkroaster) : couleurs parmi les permanents du contrôleur, couleurs imprimées (pendant le calcul des
+    // couches, les couleurs modifiées des autres permanents ne sont pas encore connues).
+    const colors = new Set<string>();
+    for (const id of s.battlefield) {
+      const x = obj(s, id);
+      if (a.filter.controller === "you" && x.controller !== o.controller) continue;
+      for (const c of s.defs[x.faceDefId ?? x.defId]?.colors ?? []) colors.add(c);
+    }
+    return colors.size;
   }
   // Duelist of the Mind : cartes piochées ce tour-ci.
   if (a.kind === "cardsDrawnThisTurn") return s.players[o.controller]?.turnStats.cardsDrawn ?? 0;
@@ -946,5 +957,7 @@ export function snapshot(s: GameState, id: ObjectId): LkiSnapshot {
     ...view(s, id, c, o, !!s.combat?.attackers.some((a) => a.id === id)),
     abilities: c.abilities,
     counters: { ...o.counters },
+    // Choix fait en arrivant (type, couleur…) : lu par « du type choisi » même après son départ (dernière information).
+    ...(o.chosen ? { chosen: { ...o.chosen } } : {}),
   };
 }

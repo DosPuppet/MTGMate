@@ -19,7 +19,7 @@ import {
   unlockDoor,
 } from "../state";
 import { matchesObjectFilter } from "../targets";
-import type { TokenSpec } from "../types";
+import type { ObjectId, TokenSpec } from "../types";
 
 /** Jeton de l'endurance (701.64) : Esprit blanc N/N. */
 const ENDURE_SPIRIT: TokenSpec = {
@@ -216,41 +216,47 @@ export const HANDLERS: OpHandlers = {
     return;
   },
   blight(s, r, e, ctx, key) {
-    // Flétrir N (ECL) : chaque joueur désigné choisit une créature qu'il contrôle et y met N marqueurs −1/−1.
+    // Flétrir N (ECL) : chaque joueur désigné choisit une créature qu'il contrôle et y met N marqueurs −1/−1. Tous les
+    // choix sont faits avant les marqueurs (une question en attente reprend l'effet depuis le début). `store` : 1 si
+    // c'est fait, et les créatures flétries (`ref.stored`, « la créature flétrie »).
     const n = Math.max(0, evalAmount(s, ctx, e.amount));
-    let done = false;
+    const picks: ObjectId[] = [];
     for (const p of resolveRef(s, ctx, e.who).filter((x) => !!s.players[x] && !s.players[x]?.lost)) {
       const options = s.battlefield.filter((id) => s.objects[id]?.controller === p && isCreature(s, id));
       if (options.length === 0 || n === 0) continue;
-      let pick = options.length === 1 ? options[0] : undefined;
-      if (!pick) {
-        const answer = r.vars[key(`blight-${p}`)];
-        if (!answer) {
-          return {
-            ask: {
-              player: p,
-              key: key(`blight-${p}`),
-              request: {
-                type: "pick",
-                intent: "other",
-                prompt: `Flétrir ${n} : choisissez une créature que vous contrôlez (${n} marqueur(s) −1/−1)`,
-                options,
-                min: 1,
-                max: 1,
-                suggested: [blightTarget(s, p, n) ?? (options[0] as string)],
-              },
+      if (options.length === 1) {
+        picks.push(options[0] as ObjectId);
+        continue;
+      }
+      const answer = r.vars[key(`blight-${p}`)];
+      if (!answer) {
+        return {
+          ask: {
+            player: p,
+            key: key(`blight-${p}`),
+            request: {
+              type: "pick",
+              intent: "other",
+              prompt: `Flétrir ${n} : choisissez une créature que vous contrôlez (${n} marqueur(s) −1/−1)`,
+              options,
+              min: 1,
+              max: 1,
+              suggested: [blightTarget(s, p, n) ?? (options[0] as string)],
             },
-          };
-        }
-        pick = String(answer[0]);
+          },
+        };
       }
-      const o = pick ? s.objects[pick] : undefined;
-      if (o?.zone === "battlefield") {
-        changeCounters(s, o, "-1/-1", n);
-        done = true;
-      }
+      picks.push(String(answer[0]));
     }
-    store(r, e.store, done ? 1 : 0);
+    const done: ObjectId[] = [];
+    for (const id of picks) {
+      const o = s.objects[id];
+      if (o?.zone !== "battlefield") continue;
+      changeCounters(s, o, "-1/-1", n);
+      done.push(id);
+    }
+    store(r, e.store, done.length ? 1 : 0);
+    if (e.store) r.vars[`$ids:${e.store}`] = done;
     return;
   },
   countersDivided(s, r, e, ctx, key) {

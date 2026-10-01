@@ -46,6 +46,8 @@ export type Keyword =
   | "ward"
   /** Changelin (702.73) : a tous les types de créature, dans toutes les zones. */
   | "changeling"
+  /** Flétrissure (702.80) : ses blessures aux créatures prennent la forme de marqueurs −1/−1. */
+  | "wither"
   /** « Doit être bloquée si possible » (509.1c). */
   | "mustBeBlocked"
   /** Wolverine : « si des blessures devaient lui être infligées, elles le sont, mais les autres blessures sont guéries ». */

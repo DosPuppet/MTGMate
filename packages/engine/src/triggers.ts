@@ -455,7 +455,7 @@ function matchWho(who: "self" | ObjectFilter, v: LkiSnapshot, src: Source): bool
   if (who.attachedToSource && v.id !== src.view.attachedTo) return false;
   // Turn Inside Out : l'objet lié à l'emblème.
   if (who.linkedToSource && !src.view.linked?.includes(v.id)) return false;
-  return matchesView(v, who, src.view.controller, src.id);
+  return matchesView(v, withChosen(who, src.view), src.view.controller, src.id);
 }
 
 function whose(rel: "you" | "opponent" | "any", player: PlayerId, controller: PlayerId): boolean {
@@ -768,6 +768,8 @@ function matchTrigger(s: GameState, ev: RulesEvent, t: TriggerSpec, src: Source)
       return ev.e === "plotted" && ev.card === src.id ? { objectId: src.id, player: me } : null;
     case "exhaustActivated":
       return ev.e === "exhaust" && ev.player === me ? { objectId: ev.source, player: me } : null;
+    case "transformsSelf":
+      return ev.e === "transformed" && ev.objectId === src.id ? { objectId: src.id, player: me } : null;
     case "cycleSelf":
       return ev.e === "cycled" && ev.card === src.id ? { objectId: src.id, player: ev.player, amount: ev.x } : null;
     case "discardSelf":

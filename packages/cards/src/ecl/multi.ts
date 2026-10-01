@@ -88,6 +88,21 @@ const tamHexproof = (Object.keys(COLOR_NAMES) as (keyof typeof COLOR_NAMES)[]).m
 const MERFOLK_YOU: ObjectFilter = { subtype: "Merfolk", controller: "you" };
 
 export const MULTI: Record<string, CardScript> = {
+  "Shadow Urchin": {
+    abilities: [
+      triggered(when.attacksSelf, [fx.blight(1)], { label: "Flétrir 1" }),
+      // « Jusqu'à votre prochaine étape de fin » : ce tour-ci si c'est le vôtre, sinon jusqu'à la fin de votre prochain tour.
+      triggered(
+        when.dies({ types: ["Creature"], controller: "you", withCounter: "any" }),
+        [
+          fx.exileTop(ref.you, amount.countersOn(ref.eventObject, "any"), "u"),
+          ...fx.when(cond.yourTurn, fx.grantPlay(ref.stored("u"))),
+          ...fx.when(cond.not(cond.yourTurn), fx.grantPlay(ref.stored("u"), { untilYourNextTurn: true })),
+        ],
+        { label: "Exilez autant de cartes que de marqueurs ; jouables jusqu'à votre prochaine étape de fin" },
+      ),
+    ],
+  },
   // --- Changelins et mots-clés seuls (tout est lu dans le texte) ----------------
   "Chitinous Graspling": {},
   "Gangly Stompling": {},
@@ -119,7 +134,7 @@ export const MULTI: Record<string, CardScript> = {
       // Approximation : seuls des marqueurs -1/-1 peuvent être retirés (« retirez deux marqueurs »).
       activated({
         mana: "{1}{W/B}",
-        removeCounters: { kind: "-1/-1", n: 2 },
+        removeCounters: { kind: "any", n: 2 },
         sorcerySpeed: true,
         targets: [
           target.cardInGraveyard("t", { types: ["Creature"], maxManaValue: 3 }, "you", "carte de créature de VM 3 ou moins"),
@@ -290,17 +305,8 @@ export const MULTI: Record<string, CardScript> = {
           label: "Vos autres Elfes ont +1/+1",
         },
       ),
-      // Approximation : « une autre carte d'Elfe » exclut toute carte du même nom (`other` ne reconnaît pas la carte
-      // arrivée au cimetière).
       triggered(when.diesSelf, [fx.toHand(ref.target())], {
-        targets: [
-          target.cardInGraveyard(
-            "t",
-            { subtype: "Elf", not: { name: "Morcant's Loyalist" } },
-            "you",
-            "autre carte d'Elfe de votre cimetière",
-          ),
-        ],
+        targets: [target.cardInGraveyard("t", { subtype: "Elf", other: true }, "you", "autre carte d'Elfe de votre cimetière")],
         label: "Renvoie un autre Elfe de votre cimetière en main",
       }),
     ],
@@ -391,7 +397,7 @@ export const MULTI: Record<string, CardScript> = {
       // Approximation : le marqueur retiré est un marqueur -1/-1 (« retirez un marqueur de cette créature »).
       activated({
         mana: "{R/W}{R/W}",
-        removeCounters: { kind: "-1/-1", n: 1 },
+        removeCounters: { kind: "any", n: 1 },
         sorcerySpeed: true,
         targets: [target.creature("t", { controller: "you", other: true })],
         effects: [fx.pump(ref.target(), 1, 0, ["flying"])],

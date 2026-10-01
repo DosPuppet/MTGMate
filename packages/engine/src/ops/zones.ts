@@ -42,6 +42,7 @@ import {
   shuffle,
   tapObject,
   turnFaceUp,
+  untapObject,
 } from "../state";
 import { addPlayerEffect, playerStatic, playerStaticTotal } from "../statics";
 import { matchesCard, matchesObjectFilter } from "../targets";
@@ -590,12 +591,8 @@ export const HANDLERS: OpHandlers = {
     for (const id of resolveRef(s, ctx, e.what)) {
       const o = s.objects[id];
       if (o?.zone !== "battlefield") continue;
-      const wasTapped = o.tapped;
-      if (e.untap) {
-        o.tapped = false;
-        bump(s);
-        if (wasTapped) rulesEvent(s, { e: "untap", objectId: id });
-      } else tapObject(s, o);
+      if (e.untap) untapObject(s, o);
+      else tapObject(s, o);
     }
     return;
   },
@@ -1246,10 +1243,7 @@ export const HANDLERS: OpHandlers = {
     );
     for (const id of ids.slice(0, e.n)) {
       const o = s.objects[id];
-      if (!o) continue;
-      o.tapped = false;
-      bump(s);
-      rulesEvent(s, { e: "untap", objectId: id });
+      if (o) untapObject(s, o);
     }
     return;
   },
@@ -1346,6 +1340,7 @@ export const HANDLERS: OpHandlers = {
       o.faceDefId = o.faceDefId === back.id ? undefined : back.id;
       bump(s);
       emit({ type: "transform", objectId: id, defId: o.faceDefId ?? o.defId });
+      rulesEvent(s, { e: "transformed", objectId: id });
     }
     return;
   },

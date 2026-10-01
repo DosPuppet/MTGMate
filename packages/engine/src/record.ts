@@ -61,8 +61,13 @@ export const RECORD_VERSION = 1;
  *   prochaine fois que » (615.7, New Way Forward) ; des blessures prévenues ne comptent pas comme infligées.
  * - 22 : un permanent qui quitte le champ de bataille est toujours retiré du combat (506.4), quel que soit l'effet ou le
  *   coût qui le déplace (Lorwyn Eclipsed : « contemplez et exilez » un attaquant).
+ * - 23 : Lorwyn Eclipsed, lot B : « du type choisi » lu partout (filtres d'effet, déclencheurs, réductions de coût,
+ *   remplacements ; choix d'un sort ou d'un emblème) ; « quand il se transforme en… » ; flétrissure (702.80) ; « dégagez »
+ *   retire un marqueur d'étourdissement (122.1d) ; les jetons créés sont au journal du tour ; « une autre carte » reconnaît
+ *   la source morte ; une réduction de coût voit la carte lancée (contempler) ; « retirez un marqueur » de toute sorte ;
+ *   le cache des couches est invalidé après le départ des permanents d'un joueur éliminé (800.4a).
  */
-export const RULES_VERSION = 22;
+export const RULES_VERSION = 23;
 
 /** Un point de contrôle toutes les N décisions (plus la dernière de la partie). */
 export const CHECKPOINT_EVERY = 25;

@@ -43,7 +43,9 @@ const LIBRARY = [
 
 /** Permanents supplémentaires du joueur 1 pour les cartes qui en exigent (« Enchant artifact you control »). */
 const EXTRA_P1: Record<string, string[]> = {
-  // Lorwyn Eclipsed : « contemplez un Kithkin / un Ondin et exilez-le » (un changelin convient).
+  // Lorwyn Eclipsed : « contemplez un [type] et exilez-le » (un changelin convient).
+  "Champion of the Weird": ["Changeling Wayfinder"],
+  "Champion of the Path": ["Changeling Wayfinder"],
   "Champion of the Clachan": ["Changeling Wayfinder"],
   "Champions of the Shoal": ["Changeling Wayfinder"],
   "Hardlight Containment": ["Nutrient Block"],

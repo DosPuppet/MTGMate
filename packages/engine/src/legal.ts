@@ -285,6 +285,7 @@ export function legalActions(s: GameState, player: PlayerId): ActionOption[] {
       mayhem: terms.mayhem,
       costOverride: terms.costOverride,
       fromZone: terms.source,
+      card,
     };
     // « Sacrifiez une créature ou payez {3}{B} » : sans créature à sacrifier, le mana s'ajoute au coût.
     const sac = additional.sacrifice;

@@ -257,6 +257,7 @@ export function spellReduction(
   d: CardDef,
   targets?: Record<string, string[]>,
   fromZone?: CastTerms["source"],
+  card?: ObjectId,
 ): number {
   let r = 0;
   const own = d.costReduction;
@@ -267,7 +268,10 @@ export function spellReduction(
     const spec = modesOf(d)[0]?.targets.find((t) => t.id === cond.spec);
     const ids = targets ? (targets[cond.spec] ?? []) : spec ? legalTargets(s, player, spec) : [];
     ok = ids.some((id) => matchesObjectFilter(s, player, id, cond.filter));
-  } else if (cond) ok = checkCondition(s, cond, player);
+  } else if (cond) {
+    // La carte lancée est la source : « contemplez un Gobelin » ne la compte pas elle-même (601.2a).
+    ok = checkCondition(s, cond, player, card);
+  }
   if (own && ok) {
     r += evalAmount(
       s,
@@ -290,7 +294,8 @@ export function spellReduction(
       if (ab.kind !== "costReduction") continue;
       // Réductions de vos permanents ; taxes des permanents adverses sur vos sorts (Thalia, the Survivor).
       const applies = ab.opponents ? o.controller !== player : o.controller === player;
-      if (!applies || !matchesView(view, ab.filter, player)) continue;
+      // Gathering Stone : « les sorts du type choisi ».
+      if (!applies || !matchesView(view, withChosen(ab.filter, o), player)) continue;
       if (ab.condition && !checkCondition(s, ab.condition, o.controller, id)) continue;
       // « Les sorts lancés depuis un cimetière ou depuis l'exil » (Aven Interrupter, Doc Aurlock).
       const zone = fromZone === "flashback" ? "graveyard" : fromZone;
@@ -472,6 +477,8 @@ export function spellCost(
     targets?: Record<string, string[]>;
     /** Zone d'où le sort est lancé (réductions et taxes « depuis un cimetière ou l'exil »). */
     fromZone?: CastTerms["source"];
+    /** La carte lancée (conditions de réduction qui l'excluent : contempler). */
+    card?: ObjectId;
   },
 ): ManaCost {
   const empty: ManaCost = { generic: 0, colored: {}, x: 0 };
@@ -491,7 +498,7 @@ export function spellCost(
     opts.kicked ? d.kicker : undefined,
     // 601.2f / 118.9d : un sort lancé sans payer son coût de mana paie quand même les augmentations (Thalia, the
     // Survivor) ; une réduction ne descend pas sous zéro.
-    spellReduction(s, player, d, opts.targets, opts.fromZone),
+    spellReduction(s, player, d, opts.targets, opts.fromZone, opts.card),
   );
   // Feed the Cycle : « fourragez ou payez {B} » — le mana s'ajoute sauf si l'on fourrage (coût alternatif).
   const cost1 = d.forageOrPay && !alt?.forage ? totalCost(cost0, 0, d.forageOrPay) : cost0;
@@ -1008,7 +1015,14 @@ export function autoAdditional(
   };
   const isLand = (id: ObjectId) => chars(s, id).types.includes("Land");
   if (add.exile) {
-    const c = pick(mine(add.exile.filter), add.exile.count, (id) => (obj(s, id).isToken ? -1 : mv(id)));
+    const f = add.exile.filter;
+    // Contempler : une carte de la main (autre que celle qu'on lance) convient aussi ; on exile d'abord un jeton, puis une
+    // carte de la main, puis un permanent, chaque fois le moins cher.
+    const hand = add.exile.fromHand
+      ? (s.players[player]?.hand ?? []).filter((id) => id !== card && matchesCard(s, player, id, f, card))
+      : [];
+    const where = (id: ObjectId) => (obj(s, id).isToken ? -100 : obj(s, id).zone === "hand" ? 0 : 50);
+    const c = pick([...mine(f), ...hand], add.exile.count, (id) => where(id) + mv(id));
     if (!c) return null;
     out.exile = c;
   }
@@ -1139,6 +1153,7 @@ export function castSpell(s: GameState, player: PlayerId, card: ObjectId, choice
     costOverride: terms.costOverride,
     targets,
     fromZone: terms.source,
+    card,
   });
   // Terror of the Peaks : « les sorts de vos adversaires qui ciblent cette créature coûtent 3 PV de plus ».
   const lifeTax = flatTargets(targets).reduce((n, id) => {
@@ -1667,6 +1682,24 @@ export function abilityZone(ab: ActivatedAbilityDef): "battlefield" | "graveyard
   return ab.fromGraveyard ? "graveyard" : ab.fromHand ? "hand" : "battlefield";
 }
 
+/** Marqueurs d'une sorte sur un objet (`any` : tous). */
+function countersFor(o: GameObject, kind: string): number {
+  return kind === "any" ? Object.values(o.counters).reduce<number>((n, k) => n + (k ?? 0), 0) : (o.counters[kind] ?? 0);
+}
+
+/** Retire N marqueurs de n'importe quelle sorte : les −1/−1 d'abord, les +1/+1 en dernier. */
+function removeAnyCounters(s: GameState, o: GameObject, n: number): void {
+  const kinds = Object.keys(o.counters).sort(
+    (a, b) => Number(b === "-1/-1") - Number(a === "-1/-1") || Number(a === "+1/+1") - Number(b === "+1/+1"),
+  );
+  let left = n;
+  for (const k of kinds) {
+    const take = Math.min(left, o.counters[k] ?? 0);
+    if (take > 0) changeCounters(s, o, k, -take);
+    left -= take;
+  }
+}
+
 /** Plus grande endurance parmi les créatures d'un joueur (0 s'il n'en a pas). */
 export function greatestToughness(s: GameState, player: PlayerId): number {
   let best = 0;
@@ -1716,7 +1749,7 @@ export function canPayNonManaCost(s: GameState, source: ObjectId, ab: ActivatedA
     if (!host || !onBattlefield(s, host) || obj(s, host).tapped || isSummoningSick(s, host)) return false;
   }
   const player = abilityZone(ab) !== "battlefield" ? o.owner : o.controller;
-  if (ab.cost.removeCounters && (o.counters[ab.cost.removeCounters.kind] ?? 0) < ab.cost.removeCounters.n) return false;
+  if (ab.cost.removeCounters && countersFor(o, ab.cost.removeCounters.kind) < ab.cost.removeCounters.n) return false;
   if (ab.cost.payLife && (s.players[player]?.life ?? 0) < ab.cost.payLife) return false;
   if (ab.cost.sacrifice && sacrificeOptions(s, player, source, ab).length < ab.cost.sacrifice.count) return false;
   if (ab.cost.tapOthers && tapOthersOptions(s, player, source, ab).length < ab.cost.tapOthers.count) return false;
@@ -1885,7 +1918,8 @@ export function activateAbility(s: GameState, player: PlayerId, source: ObjectId
     rulesEvent(s, { e: "crewed", vehicle: source, crew: [...crew] });
   }
   if (ab.cost.exertSelf) o.exerted = true;
-  if (ab.cost.removeCounters) changeCounters(s, o, ab.cost.removeCounters.kind, -ab.cost.removeCounters.n);
+  if (ab.cost.removeCounters?.kind === "any") removeAnyCounters(s, o, ab.cost.removeCounters.n);
+  else if (ab.cost.removeCounters) changeCounters(s, o, ab.cost.removeCounters.kind, -ab.cost.removeCounters.n);
   if (ab.cost.payLife) loseLife(s, player, ab.cost.payLife);
   if (ab.cost.payLifeX && x > 0) loseLife(s, player, x);
   for (const id of tapOthers) tapObject(s, obj(s, id));

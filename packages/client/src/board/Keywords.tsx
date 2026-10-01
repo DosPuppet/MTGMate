@@ -29,6 +29,7 @@ const HELP: Partial<Record<Keyword, string>> = {
   prowess: "Chaque fois que son contrôleur lance un sort non-créature, elle gagne +1/+1 jusqu'à la fin du tour.",
   ward: "Quand elle devient la cible d'un sort ou d'une capacité d'un adversaire, ce sort ou cette capacité est contrecarré à moins que son contrôleur ne paie le coût de garde.",
   changeling: "Elle a tous les types de créature.",
+  wither: "Ses blessures aux créatures prennent la forme de marqueurs −1/−1.",
 };
 
 const stroke = {

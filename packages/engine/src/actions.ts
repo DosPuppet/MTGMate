@@ -30,14 +30,15 @@ import {
   preventions,
   tokenMultiplier,
 } from "./statics";
-import { matchesObjectFilter, matchesView, protectedFrom, sourceView } from "./targets";
+import { matchesObjectFilter, matchesView, protectedFrom, sourceView, withChosen } from "./targets";
 import { pushInline, queueLifelink } from "./triggers";
-import { logTurnEvent } from "./turnlog";
+import { logTurnEvent, zoneEntry } from "./turnlog";
 import type {
   CardDef,
   CardType,
   Color,
   GameEvent,
+  GameObject,
   GameState,
   Keyword,
   ObjectFilter,
@@ -231,7 +232,8 @@ function damageReplacementApplies(
             // « Arrivée ce tour-ci » ne se lit que sur le champ de bataille.
             if (r.source?.enteredThisTurn) return false;
             const v = sourceView(s, id, source.defId, source.controller);
-            return !!v && matchesView(v, r.source as ObjectFilter, a.controller, a.sourceId);
+            const chooser = a.sourceId ? (s.objects[a.sourceId] ?? s.lki[a.sourceId]) : undefined;
+            return !!v && matchesView(v, withChosen(r.source as ObjectFilter, chooser), a.controller, a.sourceId);
           })();
     if (!ok) return false;
   }
@@ -436,7 +438,9 @@ export function dealDamage(s: GameState, source: DamageSource, target: string, a
     // 120.3c : les blessures infligées à un planeswalker lui retirent autant de marqueurs de loyauté.
     if (walker) changeCounters(s, o, "loyalty", -Math.min(amount, o.counters.loyalty ?? 0));
     if (creature) {
-      o.damage += amount;
+      // Flétrissure (702.80) : des marqueurs −1/−1 au lieu de blessures marquées (ce sont toujours des blessures).
+      if (source.keywords.includes("wither")) changeCounters(s, o, "-1/-1", amount);
+      else o.damage += amount;
       if (source.keywords.includes("deathtouch")) o.deathtouched = true;
       // Suivi « blessée par cette créature ce tour-ci » (Predator Ooze).
       if (source.id && !o.damagedBy?.includes(source.id)) o.damagedBy = [...(o.damagedBy ?? []), source.id];
@@ -591,6 +595,7 @@ export function createTokens(
     applyEntersReplacements(s, o, enters);
     emit({ type: "token", objectId: o.id, defId, controller });
     rulesEvent(s, { e: "zone", oldId: null, newId: o.id, from: null, to: "battlefield", lki: null });
+    logTokenArrival(s, o);
     created.push(o.id);
   }
   if (extraMap) created.push(...createTokens(s, controller, extraMap, 1));
@@ -610,5 +615,12 @@ export function createTokenCopy(s: GameState, controller: PlayerId, defId: strin
   applyEntersReplacements(s, o, enters);
   emit({ type: "token", objectId: o.id, defId, controller });
   rulesEvent(s, { e: "zone", oldId: null, newId: o.id, from: null, to: "battlefield", lki: null });
+  logTokenArrival(s, o);
   return o.id;
+}
+
+/** Journal du tour : un jeton créé arrive sur le champ de bataille (« une créature est arrivée sous votre contrôle »). */
+function logTokenArrival(s: GameState, o: GameObject): void {
+  const c = chars(s, o.id);
+  logTurnEvent(s, zoneEntry(null, "battlefield", o.owner, o.controller, { types: c.types, subtypes: c.subtypes, token: true }));
 }

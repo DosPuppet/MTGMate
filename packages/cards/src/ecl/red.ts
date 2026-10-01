@@ -2,7 +2,9 @@
 import {
   activated,
   amount,
+  beholdOrPay,
   type CardScript,
+  champion,
   cond,
   entersWith,
   eventReplacement,
@@ -46,6 +48,19 @@ const TOTAL_PT_5: { anyOf: { maxPower: number; maxToughness: number }[] } = {
 };
 
 export const RED: Record<string, CardScript> = {
+  // Double initiative lue dans le texte ; Vivid : force égale au nombre de couleurs parmi vos permanents.
+  Squawkroaster: { cdaPower: amount.colorsAmong() },
+  // « En coût additionnel, flétrissez X » : lu dans le texte (`xCost: "blight"`, X au plus la plus grande endurance).
+  "Soul Immolation": {
+    spell: spell([], [fx.damageAll(amount.x, { types: ["Creature"], controller: "opponent" }, ref.eachOpponent)]),
+  },
+  "Champion of the Path": champion("Elemental", [
+    triggered(
+      when.enters({ types: ["Creature"], subtype: "Elemental", controller: "you", other: true }),
+      [fx.damage(amount.powerOf(ref.eventObject), ref.eachOpponent, ref.eventObject)],
+      { label: "L'Élémental inflige des blessures égales à sa force à chaque adversaire" },
+    ),
+  ]),
   "Boldwyr Aggressor": {
     abilities: [
       staticAbility(
@@ -76,7 +91,7 @@ export const RED: Record<string, CardScript> = {
       // « Retirez un marqueur de cette créature » : les marqueurs −1/−1, les seuls qu'elle porte d'ordinaire.
       activated({
         mana: "{1}{R}",
-        removeCounters: { kind: "-1/-1", n: 1 },
+        removeCounters: { kind: "any", n: 1 },
         sorcerySpeed: true,
         targets: [target.creature()],
         effects: [fx.modify(ref.target(), { addKeywords: ["cantBlock"] })],
@@ -98,9 +113,7 @@ export const RED: Record<string, CardScript> = {
     abilities: [
       eventReplacement({
         event: "damage",
-        // Approximation : hors du champ de bataille, le filtre d'une source ne lit pas le type choisi (`matchesView` sans
-        // `withChosen`) ; on écarte donc les éphémères et rituels, qui seraient tous doublés.
-        source: { controller: "you", subtypeChosen: true, notTypes: ["Instant", "Sorcery"] },
+        source: { controller: "you", subtypeChosen: true },
         modify: { times: 2 },
         label: "Vos sources du type choisi infligent le double de blessures",
       }),
@@ -271,15 +284,7 @@ export const RED: Record<string, CardScript> = {
     ],
   },
   "Soulbright Seeker": {
-    // « Contemplez un Élémental ou payez {2} » : {2} de plus sans autre Élémental à contempler. La condition d'un
-    // `costReduction` est évaluée sans la carte lancée (`cond.behold` la compterait) : lancée depuis la main, elle
-    // compte parmi les cartes d'Élémental de la main, d'où « au moins deux ».
-    costReduction: {
-      generic: -2,
-      condition: cond.not(
-        cond.amountAtLeast(amount.plus(amount.count({ ...ELEMENTAL, controller: "you" }), amount.countIn("hand", ELEMENTAL)), 2),
-      ),
-    },
+    costReduction: beholdOrPay("Elemental", 2),
     abilities: [
       activated({
         mana: "{R}",

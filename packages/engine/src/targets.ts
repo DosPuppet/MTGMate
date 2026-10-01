@@ -169,6 +169,9 @@ function sourcePower(s: GameState, sourceId?: ObjectId): number {
 
 /** Remplace les bornes dynamiques du filtre par leur valeur actuelle. */
 export function resolveFilter(s: GameState, f: ObjectFilter, sourceId?: ObjectId): ObjectFilter {
+  // « Du type / de la couleur choisis » : le choix de la source (en jeu, sort qui se résout, sinon dernière information).
+  if (f.subtypeChosen || f.colorChosen || f.nameChosen || f.parityChosen)
+    f = withChosen(f, sourceId ? (s.objects[sourceId] ?? s.lki[sourceId]) : undefined);
   // Formation Breaker : « de force inférieure à celle de cette créature ».
   if (f.powerBelowSource) f = { ...f, powerBelowSource: undefined, maxPower: sourcePower(s, sourceId) - 1 };
   if (f.maxManaValueX) {
@@ -192,6 +195,9 @@ export function matchesCard(s: GameState, controller: PlayerId, id: ObjectId, f:
   const o = s.objects[id];
   if (!o) return false;
   f = resolveFilter(s, f, sourceId);
+  // « une autre carte » : la source morte est devenue une nouvelle carte du cimetière, reconnue par son identité
+  // physique (Morcant's Loyalist : « renvoyez une autre carte d'Elfe ciblée »).
+  if (f.other && sourceId && o.uid && o.uid === (s.objects[sourceId]?.uid ?? s.lki[sourceId]?.uid)) return false;
   // « mise dans un cimetière ce tour-ci » : l'objet a été créé dans sa zone pendant ce tour.
   if (f.enteredThisTurn && o.controlledSince !== s.turn.number) return false;
   // « carte de créature sans capacité » : pas de texte de règles.

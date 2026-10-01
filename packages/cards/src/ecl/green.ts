@@ -4,10 +4,12 @@ import {
   activated,
   amount,
   BASIC_LAND,
+  beholdOrPay,
   block,
   blockAbility,
   type CardScript,
   CREATURE_YOU_CONTROL,
+  champion,
   cond,
   ELF_BG,
   entersWith,
@@ -35,19 +37,12 @@ const ELF_IN_GRAVEYARD: Condition = cond.amountAtLeast(amount.countIn("graveyard
 const ANOTHER_CREATURE_YOU_CONTROL: ObjectFilter = { ...CREATURE_YOU_CONTROL, other: true };
 const ELF_YOU_CONTROL: ObjectFilter = { ...CREATURE_YOU_CONTROL, subtype: "Elf" };
 
-/**
- * Créatures arrivées sous votre contrôle ce tour-ci : le journal du tour (créatures parties depuis comprises) ne note pas
- * les jetons créés, d'où aussi les créatures arrivées ce tour-ci que vous contrôlez encore.
- */
+/** Créatures arrivées sous votre contrôle ce tour-ci (journal du tour, jetons et créatures parties depuis compris). */
 const CREATURES_ENTERED = amount.turnEvents({ event: "zone", to: "battlefield", types: ["Creature"], who: "you" });
 /** « si une créature est arrivée sur le champ de bataille sous votre contrôle ce tour-ci » */
-const CREATURE_ENTERED: Condition = cond.any(
-  cond.controls({ types: ["Creature"], enteredThisTurn: true }),
-  cond.amountAtLeast(CREATURES_ENTERED, 1),
-);
+const CREATURE_ENTERED: Condition = cond.amountAtLeast(CREATURES_ENTERED, 1);
 /** « tant qu'une autre créature est arrivée sur le champ de bataille sous votre contrôle ce tour-ci » */
 const ANOTHER_CREATURE_ENTERED: Condition = cond.any(
-  cond.controls({ types: ["Creature"], enteredThisTurn: true, other: true }),
   cond.amountAtLeast(CREATURES_ENTERED, 2),
   cond.all(cond.not(cond.sourceMatches({ enteredThisTurn: true })), cond.amountAtLeast(CREATURES_ENTERED, 1)),
 );
@@ -87,6 +82,25 @@ const SPRY_X = amount.max(
 );
 
 export const GREEN: Record<string, CardScript> = {
+  // Flash et convocation lus dans le texte.
+  "Selfless Safewright": {
+    abilities: [
+      triggered(
+        when.entersSelf,
+        [
+          fx.chooseForSelf("creatureType"),
+          fx.modifyAll(
+            { permanent: true, controller: "you", other: true, subtypeChosen: true },
+            { addKeywords: ["hexproof", "indestructible"] },
+          ),
+        ],
+        { label: "Choisissez un type : vos autres permanents de ce type gagnent la défense talismanique et l'indestructible" },
+      ),
+    ],
+  },
+  "Champions of the Perfect": champion("Elf", [
+    triggered(when.castSpell("you", { types: ["Creature"] }), [fx.draw(1)], { label: "Piochez une carte" }),
+  ]),
   "Assert Perfection": {
     spell: spell(
       [target.creature("a", { controller: "you" }), target.upTo(1, target.creature("b", { controller: "opponent" }))],
@@ -185,14 +199,7 @@ export const GREEN: Record<string, CardScript> = {
     abilities: [triggered(when.entersSelf, [fx.gainLife(VIVID)], { label: "Éclatant — gagnez X points de vie" })],
   },
   "Lys Alana Dignitary": {
-    // « En coût additionnel, contemplez un Elfe ou payez {2} » : {2} de plus si vous ne pouvez pas contempler. La
-    // réduction est évaluée sans la carte lancée : on écarte son nom des cartes de la main (elle est elle-même un Elfe).
-    costReduction: {
-      generic: -2,
-      condition: cond.not(
-        cond.any(cond.controls({ subtype: "Elf" }), cond.behold({ subtype: "Elf", not: { name: "Lys Alana Dignitary" } })),
-      ),
-    },
+    costReduction: beholdOrPay("Elf", 2),
     abilities: [manaAbility("G", 2, { condition: ELF_IN_GRAVEYARD })],
   },
   "Lys Alana Informant": {
@@ -336,36 +343,22 @@ export const GREEN: Record<string, CardScript> = {
   // transforme (seule façon de la transformer), sans passer par la pile.
   "Trystan, Callous Cultivator": {
     abilities: [
-      triggered(when.entersSelf, TRYSTAN_CULTIVATOR, { label: "Meulez trois cartes ; Elfe au cimetière : 2 PV" }),
-      triggered(
-        when.step("main1", "you"),
-        [
-          ...fx.mayPay(
-            "{B}",
-            "Payer {B} pour transformer Trystan ?",
-            fx.transform(),
-            ...fx.when(cond.refMatches(ref.self, { name: "Trystan, Penitent Culler" }), ...TRYSTAN_CULLER),
-          ),
-        ],
-        { label: "Vous pouvez payer {B} : transformez Trystan" },
+      ...[when.entersSelf, when.transformsSelf].map((w) =>
+        triggered(w, TRYSTAN_CULTIVATOR, { label: "Meulez trois cartes ; Elfe au cimetière : 2 PV" }),
       ),
+      triggered(when.step("main1", "you"), fx.mayPay("{B}", "Payer {B} pour transformer Trystan ?", fx.transform()), {
+        label: "Vous pouvez payer {B} : transformez Trystan",
+      }),
     ],
   },
   "Trystan, Penitent Culler": {
     abilities: [
-      triggered(
-        when.step("main1", "you"),
-        [
-          ...fx.mayPay(
-            "{G}",
-            "Payer {G} pour transformer Trystan ?",
-            fx.transform(),
-            // Le recto porte le nom de la carte entière (« Trystan, Callous Cultivator // … »).
-            ...fx.when(cond.refMatches(ref.self, { not: { name: "Trystan, Penitent Culler" } }), ...TRYSTAN_CULTIVATOR),
-          ),
-        ],
-        { label: "Vous pouvez payer {G} : transformez Trystan" },
-      ),
+      triggered(when.transformsSelf, TRYSTAN_CULLER, {
+        label: "Meulez trois cartes ; exilez un Elfe de votre cimetière : chaque adversaire perd 2 PV",
+      }),
+      triggered(when.step("main1", "you"), fx.mayPay("{G}", "Payer {G} pour transformer Trystan ?", fx.transform()), {
+        label: "Vous pouvez payer {G} : transformez Trystan",
+      }),
     ],
   },
   "Unforgiving Aim": {

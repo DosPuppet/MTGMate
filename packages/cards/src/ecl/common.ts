@@ -2,8 +2,8 @@
  * Éléments propres à Lorwyn Eclipsed (ECL) : jetons. Le DSL et les jetons communs viennent des extensions précédentes
  * (via lci/common.ts).
  */
-import type { TokenSpec } from "@mtgx/engine";
-import { activated, fx, manaAbility, ref } from "../lci/common";
+import type { AbilityDef, CardScript, TokenSpec } from "@mtgx/engine";
+import { activated, cond, fx, manaAbility, ref, triggered, when } from "../lci/common";
 
 export * from "../lci/common";
 
@@ -50,3 +50,27 @@ export const MUTAVAULT: TokenSpec = {
   ],
   text: "{T}: Add {C}.\n{1}: This token becomes a 2/2 creature with all creature types until end of turn. It's still a land.",
 };
+
+/**
+ * Champions (« contemplez un [type] et exilez-le » en coût additionnel ; « quand cette créature quitte le champ de
+ * bataille, renvoyez la carte exilée dans la main de son propriétaire ») : un permanent que vous contrôlez ou une carte
+ * de votre main, choisi par le moteur, lié à la créature.
+ */
+export function champion(subtype: string, abilities: AbilityDef[]): CardScript {
+  return {
+    additionalCost: { exile: { filter: { subtype }, count: 1, fromHand: true } },
+    abilities: [
+      ...abilities,
+      triggered(when.leavesSelf, [fx.toHand(ref.linked)], { label: "La carte exilée revient dans la main de son propriétaire" }),
+    ],
+  };
+}
+
+/**
+ * « En coût additionnel, contemplez un [type] ou payez {N} » : {N} de plus sans [type] à contempler (un permanent que
+ * vous contrôlez ou une autre carte de votre main), vérifié au lancement sans révéler la carte.
+ */
+export const beholdOrPay = (subtype: string, n: number): CardScript["costReduction"] => ({
+  generic: -n,
+  condition: cond.not(cond.behold({ subtype })),
+});

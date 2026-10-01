@@ -307,8 +307,12 @@ export function evalAmount(s: GameState, ctx: EffectContext, a: Amount): number 
     case "lifeGainedThisTurn":
       return s.players[ctx.controller]?.turnStats.lifeGained ?? 0;
     case "countersOn": {
+      // L'objet de l'événement qui a quitté le champ de bataille (« quand une créature avec des marqueurs meurt ») : ses
+      // marqueurs au moment de partir (dernières informations connues), pas ceux de la carte qu'il est devenu.
+      const gone = a.ref.kind === "eventObject" ? ctx.event?.objectId : undefined;
+      const lki = gone && !s.objects[gone] ? s.lki[gone]?.counters : undefined;
       const id = resolveRef(s, ctx, a.ref)[0];
-      const counters = (id && (s.objects[id]?.counters ?? s.lki[id]?.counters)) || {};
+      const counters = lki ?? ((id && (s.objects[id]?.counters ?? s.lki[id]?.counters)) || {});
       // « le nombre de marqueurs sur … » (Warden of the Grove) : tous types confondus.
       if (a.counter === "any") return Object.values(counters).reduce((n, k) => n + Math.max(0, k), 0);
       return counters[a.counter] ?? 0;

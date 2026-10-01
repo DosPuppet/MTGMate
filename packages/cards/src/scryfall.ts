@@ -82,6 +82,7 @@ const KEYWORD_NAMES: Record<string, Keyword> = {
   indestructible: "indestructible",
   convoke: "convoke",
   changeling: "changeling",
+  wither: "wither",
   "start your engines!": "startYourEngines",
   decayed: "decayed",
 };

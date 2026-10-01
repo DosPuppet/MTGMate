@@ -47,6 +47,7 @@ import {
   rulesEvent,
   shuffle,
   tapObject,
+  untapObject,
 } from "./state";
 import {
   addPlayerEffect,
@@ -290,12 +291,8 @@ function beginStep(s: GameState): void {
         }
         if (!o.tapped) continue;
         if (hasKeyword(s, id, "doesntUntap")) continue;
-        // 122.1d : un marqueur d'étourdissement est retiré à la place du dégagement.
-        if (counterCount(o, "stun") > 0) changeCounters(s, o, "stun", -1);
-        else {
-          o.tapped = false;
-          bump(s);
-          rulesEvent(s, { e: "untap", objectId: id });
+        // 122.1d : un marqueur d'étourdissement est retiré à la place du dégagement (`untapObject`).
+        if (untapObject(s, o)) {
           const stats = s.players[o.controller]?.turnStats;
           if (stats && o.controller === active) stats.untappedInUntapStep = (stats.untappedInUntapStep ?? 0) + 1;
         }
@@ -1198,6 +1195,8 @@ function removePlayerObjects(s: GameState, p: PlayerId): void {
     for (const a of s.combat.attackers) a.blockers = a.blockers.filter((b) => !gone.has(b));
   }
   s.effects = s.effects.filter((e) => e.affected.some((id) => !gone.has(id)));
+  // Ses permanents ont disparu : leurs capacités statiques ne s'appliquent plus (Ygra, Eater of All).
+  bump(s);
 }
 
 /** Actions basées sur l'état (704.3). Renvoie true si l'une d'elles a été accomplie (ou une question posée). */

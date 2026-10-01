@@ -1376,6 +1376,8 @@ export function loyaltyX(opts: { targets?: TargetSpec[]; effects: Effects; label
 export const when = {
   /** « Quand cette créature arrive sur le champ de bataille » */
   entersSelf: { on: "enters", who: "self" } as TriggerSpec,
+  /** « Quand il se transforme en [cette face] » (à mettre sur la face visée). */
+  transformsSelf: { on: "transformsSelf" } as TriggerSpec,
   /** « Chaque fois qu'un(e) [filtre] arrive sur le champ de bataille » */
   enters: (filter: ObjectFilter): TriggerSpec => ({ on: "enters", who: filter }),
   diesSelf: { on: "dies", who: "self" } as TriggerSpec,

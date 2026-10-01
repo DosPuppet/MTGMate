@@ -8,10 +8,12 @@ import { dealDamage, destroy, sourceFromObject } from "../src/actions";
 import * as dsl from "../src/dsl";
 import { runEffect } from "../src/effects";
 import { legalActions } from "../src/legal";
+import { manaValue } from "../src/mana";
+import { spellCost } from "../src/stack";
 import { bump, chars } from "../src/state";
 import { ALL_CREATURE_TYPES, isLegalTarget, matchesObjectFilter } from "../src/targets";
 import { simultaneously } from "../src/triggers";
-import type { CardDef, ChoiceRequest, ChoiceValue, Color, GameState, ManaCost } from "../src/types";
+import type { CardDef, ChoiceRequest, ChoiceValue, Color, GameState, ManaCost, TokenSpec } from "../src/types";
 import { act, advanceUntil, castNowOf, customCard, idOf, idsOf, passAccepting, scenario, untilCastNow } from "./helpers";
 
 type S = GameState;
@@ -3640,5 +3642,312 @@ describe("Lorwyn Eclipsed, lot A — incolores", () => {
       const after = settle(act(s, "p1", { type: "cast", card: idOf(s, "p1", "hand", ELF.name) }));
       expect(idsOf(after, "p1", "battlefield", ELF.name)).toHaveLength(1);
     });
+  });
+});
+
+const ELF_TOKEN: TokenSpec = { name: "Elfe", colors: ["G"], types: ["Creature"], subtypes: ["Elf"], power: 1, toughness: 1 };
+
+describe("Lorwyn Eclipsed, lot B", () => {
+  const BRIGID = "Brigid, Clachan's Heart // Brigid, Doun's Mind";
+  const GRUB = "Grub, Storied Matriarch // Grub, Notorious Auntie";
+  const resolutionOf = (s: S, controller: string, sourceId: string) =>
+    ({
+      item: { id: "x", controller, sourceId, sourceDefId: s.objects[sourceId]?.defId, targets: {} },
+      controller,
+      targets: {},
+      vars: {},
+      pc: 0,
+    }) as never as Parameters<typeof runEffect>[1];
+  const costOf = (s: S, name: string, opts: Parameters<typeof spellCost>[3] = {}) => {
+    const card = idOf(s, "p1", "hand", name);
+    return manaValue(spellCost(s, "p1", s.defs[s.objects[card]?.defId ?? ""] as CardDef, { ...opts, card }));
+  };
+  /** Passe jusqu'à ce que la pile et les déclenchements en attente soient vides. */
+  const settleAll = (s: S) =>
+    passAccepting(s, (x) => x.stack.length === 0 && x.triggers.length === 0 && x.pending?.kind === "priority");
+  const goblinCard = customCard({ name: "Gobelin de main", subtypes: ["Goblin"], power: 1, toughness: 1 });
+
+  it("Wild Unraveling : « flétrissez 2 ou payez {1} » ; flétrir contrecarre pour {U}{U}", () => {
+    let s = scenario({
+      p1: { battlefield: ["Pelakka Wurm", "Forest", "Island", "Island"], hand: ["Giant Growth", "Wild Unraveling"] },
+    });
+    expect(costOf(s, "Wild Unraveling")).toBe(3);
+    expect(costOf(s, "Wild Unraveling", { kicked: true })).toBe(2);
+    const wurm = idOf(s, "p1", "battlefield", "Pelakka Wurm");
+    s = act(s, "p1", { type: "cast", card: idOf(s, "p1", "hand", "Giant Growth"), targets: { t: [wurm] } });
+    s = act(s, "p1", {
+      type: "cast",
+      card: idOf(s, "p1", "hand", "Wild Unraveling"),
+      targets: { t: [s.stack[0]?.id as string] },
+      kicked: true,
+    });
+    s = settle(s);
+    expect(s.objects[wurm]?.counters["-1/-1"]).toBe(2);
+    expect(chars(s, wurm).power).toBe(5);
+    expect(idsOf(s, "p1", "graveyard", "Giant Growth")).toHaveLength(1);
+  });
+
+  it("Soul Immolation : X flétri au plus la plus grande endurance ; X blessures à chaque adversaire et à ses créatures", () => {
+    let s = scenario({
+      p1: { battlefield: ["Pelakka Wurm", ...lands("Mountain", 5)], hand: ["Soul Immolation"] },
+      p2: { battlefield: ["Bear Cub", "Shivan Dragon"] },
+    });
+    const card = idOf(s, "p1", "hand", "Soul Immolation");
+    expect(castOption(s, card)).toMatchObject({ xMax: 7 });
+    expect(() => act(s, "p1", { type: "cast", card, x: 8 })).toThrow();
+    s = settle(act(s, "p1", { type: "cast", card, x: 5 }));
+    const wurm = idOf(s, "p1", "battlefield", "Pelakka Wurm");
+    expect(s.objects[wurm]?.counters["-1/-1"]).toBe(5);
+    expect(s.players.p2?.life).toBe(15);
+    expect(idsOf(s, "p2", "battlefield", "Bear Cub")).toHaveLength(0);
+    expect(idsOf(s, "p2", "battlefield", "Shivan Dragon")).toHaveLength(0);
+  });
+
+  it("transformation par un autre effet : « quand elle se transforme en Brigid, Clachan's Heart » se déclenche", () => {
+    let s = scenario({ p1: { battlefield: [BRIGID] } });
+    const brigid = idOf(s, "p1", "battlefield", BRIGID);
+    runEffect(s, resolutionOf(s, "p1", brigid), dsl.fx.transform());
+    s = settleAll(s);
+    expect(nameOf(s, brigid)).toBe(BRIGID);
+    expect(chars(s, brigid).name).toBe("Brigid, Doun's Mind");
+    expect(idsOf(s, "p1", "battlefield", "Kithkin")).toHaveLength(0);
+    runEffect(s, resolutionOf(s, "p1", brigid), dsl.fx.transform());
+    s = settleAll(s);
+    expect(chars(s, brigid).name).not.toBe("Brigid, Doun's Mind");
+    expect(s.battlefield.filter((id) => chars(s, id).name === "Kithkin")).toHaveLength(1);
+  });
+
+  it("Grub, Notorious Auntie : flétrir 1 en attaquant crée une copie attaquante de la créature flétrie", () => {
+    let s = scenario({ p1: { battlefield: [GRUB, "Pelakka Wurm"] } });
+    const grub = idOf(s, "p1", "battlefield", GRUB);
+    runEffect(s, resolutionOf(s, "p1", grub), dsl.fx.transform());
+    s = settle(s);
+    s = passAccepting(s, (x) => x.pending?.kind === "declareAttackers");
+    s = act(s, "p1", { type: "declareAttackers", attackers: [{ id: grub, defender: "p2" }] });
+    s = chooseWanted(s, [idOf(s, "p1", "battlefield", "Pelakka Wurm")]);
+    const wurms = s.battlefield.filter((id) => chars(s, id).name === "Pelakka Wurm");
+    expect(wurms).toHaveLength(2);
+    const token = wurms.find((id) => s.objects[id]?.isToken) as string;
+    expect(s.objects[token]?.tapped).toBe(true);
+    expect(s.combat?.attackers.some((a) => a.id === token)).toBe(true);
+  });
+
+  it("Champion of the Weird : contemple et exile une carte de Gobelin de la main, qui revient quand il part", () => {
+    let s = scenario({ p1: { battlefield: lands("Swamp", 4), hand: ["Champion of the Weird", goblinCard] } });
+    s = settle(act(s, "p1", { type: "cast", card: idOf(s, "p1", "hand", "Champion of the Weird") }));
+    const champ = idOf(s, "p1", "battlefield", "Champion of the Weird");
+    expect(s.exile.some((id) => nameOf(s, id) === goblinCard.name)).toBe(true);
+    destroy(s, champ);
+    s = settleAll(s);
+    expect(idsOf(s, "p1", "hand", goblinCard.name)).toHaveLength(1);
+  });
+
+  it("Champion of the Weird : sans Gobelin à contempler, il ne se lance pas", () => {
+    const s = scenario({ p1: { battlefield: lands("Swamp", 4), hand: ["Champion of the Weird"] } });
+    expect(castOption(s, idOf(s, "p1", "hand", "Champion of the Weird"))).toBeUndefined();
+  });
+
+  it("« contemplez un Gobelin ou payez {2} » : la carte lancée ne se contemple pas elle-même, une autre en main oui", () => {
+    const alone = scenario({ p1: { hand: ["Mudbutton Cursetosser"] } });
+    expect(costOf(alone, "Mudbutton Cursetosser")).toBe(3);
+    const two = scenario({ p1: { hand: ["Mudbutton Cursetosser", "Mudbutton Cursetosser"] } });
+    expect(costOf(two, "Mudbutton Cursetosser")).toBe(1);
+  });
+
+  it("chaque joueur flétrit 1 : chacun choisit, et chaque créature choisie ne reçoit qu'un marqueur", () => {
+    const each = customCard({
+      name: "Flétrissure générale",
+      types: ["Sorcery"],
+      typeLine: "Sorcery",
+      manaCost: { generic: 0, colored: { B: 1 }, x: 0 },
+      spell: dsl.spell([], [dsl.fx.blight(1, dsl.ref.eachPlayer)]),
+    });
+    let s = scenario({
+      p1: { battlefield: ["Swamp", "Bear Cub", "Pelakka Wurm"], hand: [each] },
+      p2: { battlefield: ["Bear Cub", "Shivan Dragon"] },
+    });
+    s = chooseWanted(act(s, "p1", { type: "cast", card: idOf(s, "p1", "hand", each.name) }), []);
+    const counters = s.battlefield.map((id) => s.objects[id]?.counters["-1/-1"] ?? 0).filter((n) => n > 0);
+    expect(counters).toEqual([1, 1]);
+  });
+
+  it("506.4 : un attaquant exilé pour un coût (contempler) quitte le combat", () => {
+    let s = scenario({
+      p1: { battlefield: ["Changeling Wayfinder", ...lands("Plains", 4)], hand: ["Champion of the Clachan"] },
+    });
+    const wayfinder = idOf(s, "p1", "battlefield", "Changeling Wayfinder");
+    s = passAccepting(s, (x) => x.pending?.kind === "declareAttackers");
+    s = act(s, "p1", { type: "declareAttackers", attackers: [{ id: wayfinder, defender: "p2" }] });
+    s = act(s, "p1", { type: "cast", card: idOf(s, "p1", "hand", "Champion of the Clachan") });
+    expect(s.combat?.attackers).toHaveLength(0);
+  });
+
+  const elf = customCard({ name: "Elfe de test", subtypes: ["Elf"], power: 1, toughness: 1 });
+  const elfCost2 = customCard({
+    name: "Elfe à deux",
+    subtypes: ["Elf"],
+    power: 2,
+    toughness: 2,
+    manaCost: { generic: 1, colored: { G: 1 }, x: 0 },
+  });
+
+  it("Selfless Safewright : vos autres permanents du type choisi gagnent la défense talismanique et l'indestructible", () => {
+    let s = scenario({
+      p1: { battlefield: [...lands("Forest", 5), elf, "Bear Cub"], hand: ["Selfless Safewright"] },
+    });
+    s = chooseWanted(act(s, "p1", { type: "cast", card: idOf(s, "p1", "hand", "Selfless Safewright") }), ["Elf"]);
+    const kw = (name: string) => chars(s, idOf(s, "p1", "battlefield", name)).keywords;
+    expect(kw(elf.name)).toEqual(expect.arrayContaining(["hexproof", "indestructible"]));
+    expect(kw("Bear Cub")).not.toContain("indestructible");
+    expect(kw("Selfless Safewright")).not.toContain("indestructible");
+  });
+
+  it("Harmonized Crescendo : piochez une carte par permanent du type choisi (choix fait par le sort)", () => {
+    let s = scenario({
+      p1: {
+        battlefield: [...lands("Island", 6), elf, elf, "Bear Cub"],
+        hand: ["Harmonized Crescendo"],
+        library: lands("Island", 5),
+      },
+    });
+    s = chooseWanted(act(s, "p1", { type: "cast", card: idOf(s, "p1", "hand", "Harmonized Crescendo") }), ["Elf"]);
+    expect(s.players.p1?.hand).toHaveLength(2);
+  });
+
+  it("Bloodline Bidding : renvoie sur le champ de bataille les cartes de créature du type choisi", () => {
+    let s = scenario({
+      p1: { battlefield: lands("Swamp", 8), hand: ["Bloodline Bidding"], graveyard: [elf, elf, "Bear Cub"] },
+    });
+    s = chooseWanted(act(s, "p1", { type: "cast", card: idOf(s, "p1", "hand", "Bloodline Bidding") }), ["Elf"]);
+    expect(idsOf(s, "p1", "battlefield", elf.name)).toHaveLength(2);
+    expect(idsOf(s, "p1", "graveyard", "Bear Cub")).toHaveLength(1);
+  });
+
+  it("Gathering Stone : les sorts du type choisi coûtent {1} de moins ; la carte du dessus du type choisi va en main", () => {
+    let s = scenario({
+      p1: { battlefield: lands("Forest", 4), hand: ["Gathering Stone", elfCost2], library: [elf, "Forest"] },
+    });
+    expect(costOf(s, elfCost2.name)).toBe(2);
+    s = chooseWanted(act(s, "p1", { type: "cast", card: idOf(s, "p1", "hand", "Gathering Stone") }), ["Elf"]);
+    expect(idsOf(s, "p1", "hand", elf.name)).toHaveLength(1);
+    expect(costOf(s, elfCost2.name)).toBe(1);
+  });
+
+  it("Rimefire Torque : un marqueur de charge pour chaque permanent du type choisi qui arrive", () => {
+    let s = scenario({ p1: { battlefield: lands("Island", 2), hand: ["Rimefire Torque"] } });
+    s = chooseWanted(act(s, "p1", { type: "cast", card: idOf(s, "p1", "hand", "Rimefire Torque") }), ["Elf"]);
+    const torque = idOf(s, "p1", "battlefield", "Rimefire Torque");
+    const r = resolutionOf(s, "p1", torque);
+    runEffect(s, r, dsl.fx.createTokens({ ...ELF_TOKEN }));
+    runEffect(s, r, dsl.fx.createTokens({ ...ELF_TOKEN, name: "Ours", subtypes: ["Bear"] }));
+    s = settleAll(s);
+    expect(s.objects[torque]?.counters.charge).toBe(1);
+  });
+
+  it("Oko, Shadowmoor Scion, −6 : l'emblème donne +3/+3, vigilance et défense talismanique au type choisi", () => {
+    let s = scenario({ p1: { battlefield: ["Oko, Lorwyn Liege // Oko, Shadowmoor Scion", elf, "Bear Cub"] } });
+    const oko = idOf(s, "p1", "battlefield", "Oko, Lorwyn Liege // Oko, Shadowmoor Scion");
+    runEffect(s, resolutionOf(s, "p1", oko), dsl.fx.transform());
+    const o = s.objects[oko];
+    if (o) o.counters.loyalty = 6;
+    const minus6 = legalActions(s, "p1").find((a) => a.type === "activate" && a.source === oko && a.label?.includes("emblème"));
+    expect(minus6).toBeDefined();
+    const ability = minus6?.type === "activate" ? minus6.ability : -1;
+    s = chooseWanted(act(s, "p1", { type: "activate", source: oko, ability }), ["Elf"]);
+    const e = idOf(s, "p1", "battlefield", elf.name);
+    expect(chars(s, e).power).toBe(4);
+    expect(chars(s, e).keywords).toEqual(expect.arrayContaining(["vigilance", "hexproof"]));
+    expect(chars(s, idOf(s, "p1", "battlefield", "Bear Cub")).power).toBe(2);
+  });
+
+  it("flétrissure (Barbed Bloodletter) : les blessures aux créatures deviennent des marqueurs −1/−1", () => {
+    let s = scenario({
+      p1: { battlefield: ["Swamp", "Swamp", "Bear Cub"], hand: ["Barbed Bloodletter"] },
+      p2: { battlefield: ["Pelakka Wurm"] },
+    });
+    const bear = idOf(s, "p1", "battlefield", "Bear Cub");
+    s = settleAll(act(s, "p1", { type: "cast", card: idOf(s, "p1", "hand", "Barbed Bloodletter"), targets: {} }));
+    s = chooseWanted(s, [bear]);
+    expect(chars(s, bear).power).toBe(3);
+    expect(chars(s, bear).keywords).toContain("wither");
+    const wurm = idOf(s, "p2", "battlefield", "Pelakka Wurm");
+    dealDamage(s, sourceFromObject(s, bear), wurm, 3, false);
+    expect(s.objects[wurm]?.counters["-1/-1"]).toBe(3);
+    expect(s.objects[wurm]?.damage).toBe(0);
+  });
+
+  it("Squawkroaster : sa force est le nombre de couleurs parmi vos permanents", () => {
+    const s = scenario({ p1: { battlefield: ["Squawkroaster", "Bear Cub", "Llanowar Elves", "Shivan Dragon"] } });
+    expect(chars(s, idOf(s, "p1", "battlefield", "Squawkroaster")).power).toBe(2);
+  });
+
+  it("« retirez un marqueur de cette créature » : n'importe quelle sorte de marqueur paie le coût", () => {
+    let s = scenario({ p1: { battlefield: ["Moonlit Lamenter", "Plains", "Plains"], library: lands("Plains", 3) } });
+    const lam = idOf(s, "p1", "battlefield", "Moonlit Lamenter");
+    const o = s.objects[lam];
+    if (o) o.counters = { "+1/+1": 1 };
+    s = settle(act(s, "p1", { type: "activate", source: lam, ability: 1 }));
+    expect(s.objects[lam]?.counters["+1/+1"] ?? 0).toBe(0);
+    expect(s.players.p1?.hand).toHaveLength(1);
+  });
+
+  it("122.1d : « dégagez » retire un marqueur d'étourdissement au lieu de dégager", () => {
+    const s = scenario({ p1: { battlefield: ["Bear Cub"] } });
+    const bear = idOf(s, "p1", "battlefield", "Bear Cub");
+    const o = s.objects[bear];
+    if (o) {
+      o.tapped = true;
+      o.counters.stun = 1;
+    }
+    runEffect(s, resolutionOf(s, "p1", bear), dsl.fx.untap(dsl.ref.self));
+    expect(s.objects[bear]?.tapped).toBe(true);
+    expect(s.objects[bear]?.counters.stun ?? 0).toBe(0);
+    runEffect(s, resolutionOf(s, "p1", bear), dsl.fx.untap(dsl.ref.self));
+    expect(s.objects[bear]?.tapped).toBe(false);
+  });
+
+  it("journal du tour : un jeton créé compte parmi les créatures arrivées sous votre contrôle ce tour-ci", () => {
+    const s = scenario({ p1: { battlefield: ["Bear Cub"] } });
+    const bear = idOf(s, "p1", "battlefield", "Bear Cub");
+    runEffect(s, resolutionOf(s, "p1", bear), dsl.fx.createTokens(ELF_TOKEN));
+    const entered = dsl.amount.turnEvents({ event: "zone", to: "battlefield", types: ["Creature"], who: "you" });
+    runEffect(s, resolutionOf(s, "p1", bear), dsl.fx.gainLife(entered));
+    expect(s.players.p1?.life).toBe(21);
+  });
+
+  it("Morcant's Loyalist : « une autre carte d'Elfe » peut être un autre exemplaire, pas elle-même", () => {
+    let s = scenario({ p1: { battlefield: ["Morcant's Loyalist"], graveyard: ["Morcant's Loyalist"] } });
+    destroy(s, idOf(s, "p1", "battlefield", "Morcant's Loyalist"));
+    s = settleAll(s);
+    expect(idsOf(s, "p1", "hand", "Morcant's Loyalist")).toHaveLength(1);
+    expect(idsOf(s, "p1", "graveyard", "Morcant's Loyalist")).toHaveLength(1);
+  });
+
+  it("Shadow Urchin : une créature avec des marqueurs meurt, autant de cartes exilées (dernières informations)", () => {
+    let s = scenario({ p1: { battlefield: ["Shadow Urchin", "Shivan Dragon"], library: lands("Forest", 6) } });
+    const dragon = idOf(s, "p1", "battlefield", "Shivan Dragon");
+    const o = s.objects[dragon];
+    if (o) o.counters = { "-1/-1": 2, charge: 1 };
+    destroy(s, dragon);
+    s = settleAll(s);
+    expect(s.players.p1?.library).toHaveLength(3);
+    expect(s.exile).toHaveLength(3);
+  });
+
+  it("Collective Inferno : seules vos sources du type choisi infligent le double, sorts compris", () => {
+    let s = scenario({
+      p1: { battlefield: [...lands("Mountain", 7), "Bear Cub"], hand: ["Collective Inferno", "Lightning Strike"] },
+    });
+    s = chooseWanted(act(s, "p1", { type: "cast", card: idOf(s, "p1", "hand", "Collective Inferno") }), ["Goblin"]);
+    dealDamage(s, sourceFromObject(s, idOf(s, "p1", "battlefield", "Bear Cub")), "p2", 2, false);
+    expect(s.players.p2?.life).toBe(18);
+    s = settle(act(s, "p1", { type: "cast", card: idOf(s, "p1", "hand", "Lightning Strike"), targets: { t: ["p2"] } }));
+    expect(s.players.p2?.life).toBe(15);
+    const goblin = customCard({ name: "Gobelin d'essai", subtypes: ["Goblin"], power: 1, toughness: 1 });
+    s = scenario({ p1: { battlefield: ["Collective Inferno", goblin] } });
+    const inferno = s.objects[idOf(s, "p1", "battlefield", "Collective Inferno")];
+    if (inferno) inferno.chosen = { creatureType: "Goblin" };
+    dealDamage(s, sourceFromObject(s, idOf(s, "p1", "battlefield", goblin.name)), "p2", 2, false);
+    expect(s.players.p2?.life).toBe(16);
   });
 });

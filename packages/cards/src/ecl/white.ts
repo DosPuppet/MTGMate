@@ -3,7 +3,9 @@ import type { ObjectFilter } from "@mtgx/engine";
 import {
   activated,
   amount,
+  beholdOrPay,
   type CardScript,
+  champion,
   cond,
   entersWith,
   fx,
@@ -38,14 +40,10 @@ const PERSIST = triggered(when.diesSelf, [fx.toBattlefield(ref.eventObject, { co
   label: "Persistance",
 });
 
-/**
- * « [coût], retirez un marqueur de cette créature : … » : les marqueurs que ces cartes peuvent porter sont des −1/−1 ou
- * des +1/+1 (les deux s'annulent) ; une capacité pour chacun.
- */
-const removeACounter = (opts: Omit<Parameters<typeof activated>[0], "removeCounters">) =>
-  (["-1/-1", "+1/+1"] as const).map((kind) =>
-    activated({ ...opts, removeCounters: { kind, n: 1 }, label: `${opts.label} (retirez un marqueur ${kind})` }),
-  );
+/** « [coût], retirez un marqueur de cette créature : … » : un marqueur de n'importe quelle sorte. */
+const removeACounter = (opts: Omit<Parameters<typeof activated>[0], "removeCounters">) => [
+  activated({ ...opts, removeCounters: { kind: "any", n: 1 } }),
+];
 
 export const WHITE: Record<string, CardScript> = {
   "Adept Watershaper": {
@@ -88,11 +86,10 @@ export const WHITE: Record<string, CardScript> = {
       staticAbility("attached", { addPowerRules: [powerFor.combatToughness] }, { label: powerFor.combatToughness.label }),
     ],
   },
-  // Recto-verso : « quand elle se transforme en Brigid, Clachan's Heart » est porté par la transformation du verso
-  // (seule façon de redevenir le recto ici).
+  // Recto-verso : « quand elle arrive ou se transforme en Brigid, Clachan's Heart » (`when.transformsSelf`).
   "Brigid, Clachan's Heart": {
     abilities: [
-      triggered(when.entersSelf, [fx.createTokens(KITHKIN)], { label: "Kithkin 1/1" }),
+      ...[when.entersSelf, when.transformsSelf].map((w) => triggered(w, [fx.createTokens(KITHKIN)], { label: "Kithkin 1/1" })),
       triggered(when.step("main1", "you"), fx.mayPay("{G}", "Payer {G} pour transformer Brigid ?", fx.transform()), {
         label: "Payez {G} : transformez Brigid",
       }),
@@ -101,11 +98,9 @@ export const WHITE: Record<string, CardScript> = {
   "Brigid, Doun's Mind": {
     abilities: [
       manaAbility(["G", "W"], 1, { per: { ...YOUR_CREATURES, other: true } }),
-      triggered(
-        when.step("main1", "you"),
-        fx.mayPay("{W}", "Payer {W} pour transformer Brigid ?", fx.transform(), fx.createTokens(KITHKIN)),
-        { label: "Payez {W} : transformez Brigid (Kithkin 1/1)" },
-      ),
+      triggered(when.step("main1", "you"), fx.mayPay("{W}", "Payer {W} pour transformer Brigid ?", fx.transform()), {
+        label: "Payez {W} : transformez Brigid",
+      }),
     ],
   },
   "Burdened Stoneback": {
@@ -120,19 +115,10 @@ export const WHITE: Record<string, CardScript> = {
       }),
     ],
   },
-  "Champion of the Clachan": {
-    // Flash lu dans le texte. « Contemplez un Kithkin et exilez-le » : un Kithkin que vous contrôlez, choisi
-    // automatiquement, lié à la créature.
-    additionalCost: { exile: { filter: { subtype: "Kithkin" }, count: 1 } },
-    abilities: [
-      staticAbility(
-        { ...YOUR_CREATURES, subtype: "Kithkin", other: true },
-        { power: 1, toughness: 1 },
-        { label: "Kithkin +1/+1" },
-      ),
-      triggered(when.leavesSelf, [fx.toHand(ref.linked)], { label: "La carte exilée revient en main" }),
-    ],
-  },
+  // Flash lu dans le texte.
+  "Champion of the Clachan": champion("Kithkin", [
+    staticAbility({ ...YOUR_CREATURES, subtype: "Kithkin", other: true }, { power: 1, toughness: 1 }, { label: "Kithkin +1/+1" }),
+  ]),
   "Clachan Festival": {
     abilities: [
       triggered(when.entersSelf, [fx.createTokens(KITHKIN, 2)], { label: "Deux Kithkins 1/1" }),
@@ -242,15 +228,7 @@ export const WHITE: Record<string, CardScript> = {
     ),
   },
   "Kinsbaile Aspirant": {
-    // « Contemplez un Kithkin ou payez {2} » : {2} de plus sans Kithkin à contempler. Le coût se calcule quand la carte
-    // est encore en main et `cond.behold` l'y compterait (elle est elle-même un Kithkin) : il faut une autre carte de
-    // Kithkin en main, donc deux.
-    costReduction: {
-      generic: -2,
-      condition: cond.not(
-        cond.any(cond.controls({ subtype: "Kithkin" }), cond.amountAtLeast(amount.countIn("hand", { subtype: "Kithkin" }), 2)),
-      ),
-    },
+    costReduction: beholdOrPay("Kithkin", 2),
     abilities: [
       triggered(when.enters({ ...YOUR_CREATURES, other: true }), [fx.pump(ref.self, 1, 1)], {
         label: "Une autre créature arrive : +1/+1",

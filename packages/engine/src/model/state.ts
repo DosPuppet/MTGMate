@@ -362,7 +362,8 @@ export interface TurnStats {
 export type TurnLogEntry =
   | {
       e: "zone";
-      from: Zone;
+      /** `null` : jeton créé (il n'arrive d'aucune zone). */
+      from: Zone | null;
       to: Zone;
       owner: PlayerId;
       /** Contrôleur au moment du départ (dernières informations connues pour le champ de bataille). */
@@ -522,6 +523,8 @@ export interface LkiSnapshot {
   /** Capacités effectives (imprimées ou accordées) au moment de l'instantané. */
   abilities?: AbilityDef[];
   counters?: Record<string, number>;
+  /** Choix fait en arrivant (`GameObject.chosen`). */
+  chosen?: GameObject["chosen"];
   /** Copie d'un sort préparé. */
   preparedSpell?: boolean;
   prepared?: boolean;

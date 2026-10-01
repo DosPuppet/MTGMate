@@ -7,7 +7,7 @@ Extension demandée par l'utilisateur le 01/10/2026, après Tarkir: Dragonstorm.
 | Mécanique | Lot |
 |---|---|
 | Cartes faisables avec le moteur : flétrir (effet et coût), Vivid, changelins, convocation, persistance accordée, Ordres (« choisissez deux »), recto-verso transformables | A |
-| Formes restantes du moteur : contempler et exiler depuis la main, type choisi lu partout (`subtypeChosen`), « quand elle se transforme en… », flétrissure (wither), flétrir N ou payer, flétrir X | B |
+| Formes du moteur : contempler et exiler depuis la main, type choisi lu partout (`subtypeChosen`), « quand elle se transforme en… », flétrissure (wither) | B |
 | Légendaires et cartes uniques restantes | C |
 
 Les scripts sont dans `packages/cards/src/ecl/` : `cards` (cartes du méta, phase 1), `white`, `blue`, `black`, `red`, `green`, `multi`, `artifacts` (incolores et terrain) et `legends`. Les jetons sont dans `ecl/common.ts` : Kithkin vert et blanc, Ondin blanc et bleu, Gobelin noir et rouge, Faerie bleue et noire avec le vol, Changeforme incolore avec le changelin, Elfe noir et vert 2/2, Élan 3/3, Ver noir et vert, Mutavault (terrain qui devient une créature 2/2 de tous les types), Sylvin 3/4 avec la portée.
@@ -31,23 +31,37 @@ Les scripts sont dans `packages/cards/src/ecl/` : `cards` (cartes du méta, phas
 - **Tests :** 203 tests de règles en plus dans `engine/test/ecl.test.ts` (un `describe` par couleur, aides locales) ; le test de fumée `ai/test/smoke/ecl.test.ts`, où Champion of the Clachan et Champions of the Shoal reçoivent un changelin à contempler.
 - **Approximations :** voir `docs/approximations.md`, section Lorwyn Eclipsed.
 
-### Reste à faire (39 cartes)
+## Lot B ✅ (243 / 266)
+
+- **Cartes :** 16 nouvelles : Grub, les Champions de Gobelin, d'Élémental et d'Elfe (Champion of the Weird, Champion of the Path, Champions of the Perfect), Wild Unraveling, Bogslither's Embrace, Soul Immolation, Selfless Safewright, Harmonized Crescendo, Bloodline Bidding, Gathering Stone, Rimefire Torque, Oko (planeswalker recto-verso), Barbed Bloodletter, Squawkroaster, Shadow Urchin.
+- **Le moteur gagne :**
+  - le déclencheur « quand il se transforme en [cette face] » (`when.transformsSelf`, événement `transformed`), porté par la face visée : Brigid, Sygg et Trystan le prennent, et leurs entrées quittent `audit-baseline.json` ;
+  - contempler et exiler une carte de la main (`additionalCost.exile.fromHand`, aide `champion(type, capacités)` dans `ecl/common.ts`) ; « contemplez ou payez » : aide `beholdOrPay(type, N)` ;
+  - « du type choisi » lu partout : `resolveFilter` (cibles, comptes, recherches, `lookAtTop`), `matchWho` (déclencheurs), le filtre de source des remplacements de blessures, les réductions de coût. Le choix fait par un sort qui se résout est gardé sur le sort (Harmonized Crescendo) ; un emblème garde le choix de l'effet qui le crée (Oko) ; les dernières informations connues gardent le choix ;
+  - la flétrissure (wither, 702.80) : des marqueurs −1/−1 au lieu de blessures marquées ;
+  - les F/E définies par Vivid (`colorsAmong` dans `cdaValue`) ;
+  - « retirez N marqueurs de cette créature » de n'importe quelle sorte (`removeCounters.kind: "any"`) ;
+  - `fx.blight` garde les créatures flétries (`ref.stored`, « la créature flétrie ») ;
+  - le choix d'un type de créature propose toujours les types les plus courants (aucune option sans créature connue de la partie).
+- **Correctifs [règles] :**
+  - flétrir pour plusieurs joueurs (« chaque adversaire flétrit 1 ») posait les marqueurs du premier deux fois : tous les choix sont faits d'abord ;
+  - une réduction de coût voit la carte lancée : « contemplez un Gobelin » ne la compte plus elle-même ;
+  - « dégagez » retire un marqueur d'étourdissement au lieu de dégager (122.1d), comme l'étape de dégagement (`untapObject`) ;
+  - les jetons créés sont notés au journal du tour (« une créature est arrivée sous votre contrôle ce tour-ci ») ;
+  - « une autre carte » reconnaît la source morte, devenue une carte du cimetière (identité physique) ;
+  - `amount.countersOn(ref.eventObject)` lit les marqueurs d'une créature morte (dernières informations) ;
+  - un joueur qui quitte la partie (800.4a) : le cache des caractéristiques est invalidé après le départ de ses permanents (Ygra, Eater of All rendait encore les créatures Nourritures ; trouvé par le fuzz à 3 joueurs).
+  
+  `RULES_VERSION` = 23, parties dorées régénérées.
+- **Approximations levées :** « retirez un marqueur » limité aux −1/−1, Champions sans la main, « contemplez ou payez » qui excluait son propre nom, la transformation de Brigid, Sygg et Trystan, Morcant's Loyalist, Bristlebane Outrider et Thoughtweft Charge, Collective Inferno.
+- **Tests :** 23 tests de règles en plus dans `engine/test/ecl.test.ts` (« Lorwyn Eclipsed, lot B »).
+
+### Reste à faire (23 cartes)
 
 | Ce qui manque | Cartes |
 |---|---|
-| Contempler et exiler une carte de la main (coût additionnel) | Champion of the Weird, Champion of the Path, Champions of the Perfect, Celestial Reunion |
-| Type de créature choisi lu partout (`subtypeChosen` dans les filtres d'effet, les déclencheurs, les réductions ; choix fait par un sort ou gardé par un emblème) | Selfless Safewright, Gathering Stone, Rimefire Torque, Harmonized Crescendo, Bloodline Bidding, Oko |
-| Déclencheur « quand elle se transforme en [cette face] » | Grub, Ashling (et Brigid, Sygg, Trystan à reprendre) |
-| Flétrissure (wither, 702.80) | Barbed Bloodletter, Spinerock Tyrant |
-| Flétrir N ou payer, flétrir X (moteur fait, scripts à écrire) | Wild Unraveling, Bogslither's Embrace, Soul Immolation |
+| Mana restreint produit par un effet | Ashling |
+| Donner un mot-clé à des sorts sur la pile | Spinerock Tyrant |
+| Coût additionnel facultatif « choisissez un type et contemplez deux créatures » | Celestial Reunion |
 | Remplacements des familles H et I (jetons, pioche, mana) | Mirrormind Crown, Mornsong Aria, Lavaleaper, Shimmerwilds Growth |
-| F/E définies par Vivid | Squawkroaster |
-| Autres | Kinbinding, Winnowing, Blossombind, Glen Elendra's Answer, Swat Away, Dawnhand Dissident, Taster of Wares, Twilight Diviner, Unbury, Goliath Daydreamer, Lasting Tarfire, Dream Harvest, Lluwen, Maralen, Raiding Schemes (conspiration), Sanar, Shadow Urchin |
-
-**Écarts du moteur relevés en route, à corriger au lot B :**
-- `spellReduction` évalue la condition sans la carte lancée : `cond.behold` voit la carte elle-même en main ;
-- `withChosen` n'est appliqué ni dans `resolveFilter`, ni dans `matchWho`, ni dans le filtre de source des remplacements de blessures ;
-- `fx.untap` ne tient pas compte des marqueurs d'étourdissement (122.1d) ;
-- `createToken` n'écrit rien au journal du tour ;
-- `other: true` ne reconnaît pas la carte source une fois au cimetière (nouvel identifiant) ;
-- `amount.countersOn(ref.eventObject)` ne lit pas les dernières informations connues d'une créature morte.
+| Autres | Kinbinding, Winnowing, Blossombind, Glen Elendra's Answer, Swat Away, Dawnhand Dissident, Taster of Wares, Twilight Diviner, Unbury, Goliath Daydreamer, Lasting Tarfire, Dream Harvest, Lluwen, Maralen, Raiding Schemes (conspiration), Sanar |

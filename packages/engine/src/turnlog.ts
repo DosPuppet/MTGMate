@@ -84,7 +84,7 @@ export function countTurnEvents(s: GameState, q: TurnLogQuery, me: PlayerId, sub
  * contrôlait en partant du champ de bataille, ou qui le contrôle en y arrivant.
  */
 export function zoneEntry(
-  from: Zone,
+  from: Zone | null,
   to: Zone,
   owner: PlayerId,
   controller: PlayerId,

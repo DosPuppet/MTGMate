@@ -2,7 +2,9 @@
 import {
   activated,
   amount,
+  beholdOrPay,
   type CardScript,
+  champion,
   cond,
   ELF_BG,
   entersWith,
@@ -13,6 +15,7 @@ import {
   mode,
   ref,
   spell,
+  staticAbility,
   target,
   triggered,
   when,
@@ -31,6 +34,65 @@ const ELF_IN_GRAVEYARD = cond.amountAtLeast(amount.countIn("graveyard", { subtyp
 const YOUR_MAIN_PHASE = cond.all(cond.yourTurn, cond.any(cond.step("main1"), cond.step("main2")));
 
 export const BLACK: Record<string, CardScript> = {
+  // Flash et équipement lus dans le texte.
+  "Barbed Bloodletter": {
+    abilities: [
+      triggered(when.entersSelf, [fx.attach(ref.target()), fx.modify(ref.target(), { addKeywords: ["wither"] })], {
+        targets: [target.creature("t", { controller: "you" })],
+        label: "Attachez-le à une créature que vous contrôlez, qui gagne la flétrissure",
+      }),
+      staticAbility("attached", { power: 1, toughness: 2 }, { label: "+1/+2" }),
+    ],
+  },
+  // Convocation lue dans le texte.
+  "Bloodline Bidding": {
+    spell: spell(
+      [],
+      [
+        fx.chooseForSelf("creatureType"),
+        fx.moveAll("graveyard", ref.you, { types: ["Creature"], subtypeChosen: true }, { to: "battlefield" }),
+      ],
+    ),
+  },
+  // « En coût additionnel, flétrissez 1 ou payez {3} » : lu dans le texte (`kickerOrPay`).
+  "Bogslither's Embrace": { spell: spell([target.creature()], [fx.exile(ref.target())]) },
+  "Champion of the Weird": champion("Goblin", [
+    activated({
+      payLife: 1,
+      blight: 2,
+      sorcerySpeed: true,
+      targets: [target.player("t", "opponent")],
+      effects: [fx.blight(2, ref.target())],
+      label: "Payez 1 PV, flétrir 2 : l'adversaire ciblé flétrit 2",
+    }),
+  ]),
+  // --- Grub (recto-verso) ----------------------------------------------------
+  "Grub, Storied Matriarch": {
+    abilities: [
+      ...[when.entersSelf, when.transformsSelf].map((w) =>
+        triggered(w, [fx.toHand(ref.target())], {
+          targets: [target.upTo(1, target.cardInGraveyard("t", { subtype: "Goblin" }, "you", "carte de Gobelin"))],
+          label: "Renvoyez une carte de Gobelin de votre cimetière dans votre main",
+        }),
+      ),
+      triggered(when.step("main1", "you"), fx.mayPay("{R}", "Payer {R} pour transformer Grub ?", fx.transform()), {
+        label: "Vous pouvez payer {R} : transformez Grub",
+      }),
+    ],
+  },
+  "Grub, Notorious Auntie": {
+    abilities: [
+      // « Créez un jeton engagé et attaquant, copie de la créature flétrie, sacrifié au début de l'étape de fin. »
+      triggered(
+        when.attacksSelf,
+        mayBlight(1, fx.copyToken(ref.stored("blighted"), { tapped: true, attacking: true, sacrificeAtEndStep: true })),
+        { label: "Flétrir 1 : jeton attaquant, copie de la créature flétrie" },
+      ),
+      triggered(when.step("main1", "you"), fx.mayPay("{B}", "Payer {B} pour transformer Grub ?", fx.transform()), {
+        label: "Vous pouvez payer {B} : transformez Grub",
+      }),
+    ],
+  },
   "Auntie's Sentence": {
     spell: modal(
       mode(
@@ -136,7 +198,7 @@ export const BLACK: Record<string, CardScript> = {
       // « Retirez deux marqueurs de cette créature » : seulement des marqueurs -1/-1 (approximation).
       activated({
         mana: "{2}{B}",
-        removeCounters: { kind: "-1/-1", n: 2 },
+        removeCounters: { kind: "any", n: 2 },
         sorcerySpeed: true,
         targets: [target.creature()],
         effects: [fx.pump(ref.target(), -2, -2)],
@@ -178,13 +240,7 @@ export const BLACK: Record<string, CardScript> = {
     abilities: [triggered(when.attacksSelf, [fx.draw(1), fx.loseLife(1)], { label: "Piochez une carte, perdez 1 PV" })],
   },
   "Mudbutton Cursetosser": {
-    // « Contemplez un Gobelin ou payez {2} » : {2} de plus sans Gobelin à contempler (vérifié au lancement, comme
-    // Caustic Exhale). La carte lancée ne peut pas se contempler elle-même : la réduction est évaluée sans source,
-    // d'où l'exclusion par le nom (une autre Mudbutton Cursetosser ne compte donc pas non plus).
-    costReduction: {
-      generic: -2,
-      condition: cond.not(cond.behold({ subtype: "Goblin", not: { name: "Mudbutton Cursetosser" } })),
-    },
+    costReduction: beholdOrPay("Goblin", 2),
     keywords: ["cantBlock"],
     abilities: [
       triggered(when.diesSelf, [fx.destroy(ref.target())], {

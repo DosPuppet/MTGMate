@@ -2,11 +2,15 @@
 import {
   activated,
   amount,
+  beholdOrPay,
   type CardScript,
+  champion,
   cond,
+  ELK,
   entersWith,
   FAERIE_UB,
   fx,
+  loyalty,
   MERFOLK_WU,
   mode,
   protection,
@@ -25,11 +29,8 @@ const CREATURE = { filter: { types: ["Creature" as const] }, label: "créature" 
 /** « Chaque fois que vous lancez un sort de valeur de mana 4 ou plus » (Kulrath Mystic, Tanufel Rimespeaker). */
 const CAST_MV4 = when.castSpell("you", { minManaValue: 4 });
 
-/**
- * « Retirez un marqueur (deux marqueurs) de cette créature » : ces créatures arrivent avec des marqueurs −1/−1 et le coût
- * est écrit avec cette sorte de marqueur (approximation : une autre sorte de marqueur ne peut pas servir à le payer).
- */
-const removeMinus = (n: number) => ({ kind: "-1/-1", n });
+/** « Retirez un marqueur (deux marqueurs) de cette créature » : de n'importe quelle sorte. */
+const removeMinus = (n: number) => ({ kind: "any", n });
 
 /** « Jusqu'à la fin du tour, [la créature ciblée] a “chaque fois qu'elle inflige des blessures de combat à un joueur, piochez une carte” ». */
 const grantCombatDraw = fx.modify(ref.target(), {
@@ -53,6 +54,79 @@ const protectionFromColors = fx.modify(
 const MERFOLK_YOU = { subtype: "Merfolk", controller: "you" as const };
 
 export const BLUE: Record<string, CardScript> = {
+  // Convocation lue dans le texte.
+  "Harmonized Crescendo": {
+    spell: spell(
+      [],
+      [fx.chooseForSelf("creatureType"), fx.draw(amount.count({ permanent: true, controller: "you", subtypeChosen: true }))],
+    ),
+  },
+  "Rimefire Torque": {
+    chooseOnEnter: "creatureType",
+    abilities: [
+      triggered(when.enters({ permanent: true, controller: "you", subtypeChosen: true }), [fx.counters(ref.self, "charge")], {
+        label: "Un permanent du type choisi arrive : marqueur de charge",
+      }),
+      activated({
+        tap: true,
+        removeCounters: { kind: "charge", n: 3 },
+        effects: [fx.copyNextSpell],
+        label: "Copiez le prochain éphémère ou rituel que vous lancez ce tour-ci",
+      }),
+    ],
+  },
+  // --- Oko (planeswalker recto-verso) -------------------------------------------
+  "Oko, Lorwyn Liege": {
+    abilities: [
+      triggered(when.step("main1", "you"), fx.mayPay("{G}", "Payer {G} pour transformer Oko ?", fx.transform()), {
+        label: "Vous pouvez payer {G} : transformez Oko",
+      }),
+      loyalty(2, {
+        targets: [target.upTo(1, target.creature())],
+        effects: [fx.modify(ref.target(), { allCreatureTypes: true }, "permanent")],
+        label: "Une créature gagne tous les types de créature",
+      }),
+      loyalty(1, {
+        targets: [target.creature()],
+        effects: [fx.modify(ref.target(), { power: -2 }, "untilYourNextTurn")],
+        label: "-2/-0 jusqu'à votre prochain tour",
+      }),
+    ],
+  },
+  "Oko, Shadowmoor Scion": {
+    abilities: [
+      triggered(when.step("main1", "you"), fx.mayPay("{U}", "Payer {U} pour transformer Oko ?", fx.transform()), {
+        label: "Vous pouvez payer {U} : transformez Oko",
+      }),
+      loyalty(-1, {
+        effects: [
+          fx.mill(3, ref.you, { name: "m" }),
+          fx.pickFromZone("graveyard", { permanent: true }, { to: "hand" }, { pool: ref.stored("m"), min: 0 }),
+        ],
+        label: "Meulez trois cartes ; une carte de permanent parmi elles en main",
+      }),
+      loyalty(-3, { effects: [fx.createTokens(ELK, 2)], label: "Deux Élans 3/3" }),
+      loyalty(-6, {
+        effects: [
+          fx.chooseForSelf("creatureType"),
+          fx.emblem(
+            "Oko, Shadowmoor Scion",
+            "Creatures you control of the chosen type get +3/+3 and have vigilance and hexproof.",
+            [
+              staticAbility(
+                { types: ["Creature"], controller: "you", subtypeChosen: true },
+                { power: 3, toughness: 3, addKeywords: ["vigilance", "hexproof"] },
+                { label: "Vos créatures du type choisi : +3/+3, vigilance et défense talismanique" },
+              ),
+            ],
+          ),
+        ],
+        label: "Choisissez un type : emblème +3/+3, vigilance et défense talismanique",
+      }),
+    ],
+  },
+  // « En coût additionnel, flétrissez 2 ou payez {1} » : lu dans le texte (`kickerOrPay`).
+  "Wild Unraveling": { spell: spell([target.spell()], [fx.counter(ref.target())]) },
   // --- Auras -------------------------------------------------------------------
   "Aquitect's Defenses": {
     // Flash lu dans le texte.
@@ -84,20 +158,15 @@ export const BLUE: Record<string, CardScript> = {
   },
 
   // --- Créatures ---------------------------------------------------------------
-  "Champions of the Shoal": {
-    // « En coût additionnel, contemplez un Ondin et exilez-le » : l'Ondin exilé est choisi automatiquement parmi ceux
-    // que vous contrôlez (approximation : pas depuis la main), et lié à la créature (comme Fear of Abduction).
-    additionalCost: { exile: { filter: { subtype: "Merfolk" }, count: 1 } },
-    abilities: [
-      ...[when.entersSelf, when.tapsSelf].map((trigger) =>
-        triggered(trigger, [fx.tap(ref.target()), fx.counters(ref.target(), "stun")], {
-          targets: [target.upTo(1, target.creature())],
-          label: "Engagez jusqu'à une créature ; marqueur d'étourdissement",
-        }),
-      ),
-      triggered(when.leavesSelf, [fx.toHand(ref.linked)], { label: "La carte exilée revient dans la main de son propriétaire" }),
-    ],
-  },
+  "Champions of the Shoal": champion(
+    "Merfolk",
+    [when.entersSelf, when.tapsSelf].map((trigger) =>
+      triggered(trigger, [fx.tap(ref.target()), fx.counters(ref.target(), "stun")], {
+        targets: [target.upTo(1, target.creature())],
+        label: "Engagez jusqu'à une créature ; marqueur d'étourdissement",
+      }),
+    ),
+  ),
   "Disruptor of Currents": {
     // Flash et convocation lus dans le texte.
     abilities: [
@@ -237,14 +306,7 @@ export const BLUE: Record<string, CardScript> = {
     ],
   },
   "Silvergill Mentor": {
-    // « Contemplez un Ondin ou payez {2} » : {2} de plus sans Ondin à contempler. La carte elle-même (un Ondin) est encore
-    // dans la main quand le coût est calculé : il faut un Ondin en jeu, ou un autre Ondin en main.
-    costReduction: {
-      generic: -2,
-      condition: cond.not(
-        cond.any(cond.controls(MERFOLK_YOU), cond.amountAtLeast(amount.countIn("hand", { subtype: "Merfolk" }), 2)),
-      ),
-    },
+    costReduction: beholdOrPay("Merfolk", 2),
     abilities: [triggered(when.entersSelf, [fx.createTokens(MERFOLK_WU)], { label: "Jeton Ondin 1/1" })],
   },
   "Silvergill Peddler": {
@@ -282,44 +344,31 @@ export const BLUE: Record<string, CardScript> = {
   },
 
   // --- Sygg (recto-verso) ----------------------------------------------------
-  // « Chaque fois que cette créature se transforme en … » : écrit comme une capacité réflexe de la transformation
-  // qu'elle déclenche elle-même (approximation : une transformation par un autre effet ne la déclenche pas).
+  // « Chaque fois que cette créature arrive ou se transforme en [cette face] » : `when.transformsSelf` sur la face visée.
   "Sygg, Wanderwine Wisdom": {
     keywords: ["unblockable"],
     abilities: [
-      triggered(when.entersSelf, [grantCombatDraw], {
-        targets: [target.creature()],
-        label: "Une créature fait piocher quand elle blesse un joueur",
-      }),
-      triggered(
-        when.step("main1", "you"),
-        [
-          ...fx.mayPay(
-            "{W}",
-            "payer {W} pour transformer Sygg ?",
-            fx.transform(),
-            fx.reflexive([target.creature("t", { controller: "you" })], [protectionFromColors]),
-          ),
-        ],
-        { label: "Payez {W} : transformez Sygg" },
+      ...[when.entersSelf, when.transformsSelf].map((w) =>
+        triggered(w, [grantCombatDraw], {
+          targets: [target.creature()],
+          label: "Une créature fait piocher quand elle blesse un joueur",
+        }),
       ),
+      triggered(when.step("main1", "you"), fx.mayPay("{W}", "payer {W} pour transformer Sygg ?", fx.transform()), {
+        label: "Payez {W} : transformez Sygg",
+      }),
     ],
   },
   "Sygg, Wanderbrine Shield": {
     keywords: ["unblockable"],
     abilities: [
-      triggered(
-        when.step("main1", "you"),
-        [
-          ...fx.mayPay(
-            "{U}",
-            "payer {U} pour transformer Sygg ?",
-            fx.transform(),
-            fx.reflexive([target.creature()], [grantCombatDraw]),
-          ),
-        ],
-        { label: "Payez {U} : transformez Sygg" },
-      ),
+      triggered(when.transformsSelf, [protectionFromColors], {
+        targets: [target.creature("t", { controller: "you" })],
+        label: "Une créature que vous contrôlez gagne la protection contre chaque couleur",
+      }),
+      triggered(when.step("main1", "you"), fx.mayPay("{U}", "payer {U} pour transformer Sygg ?", fx.transform()), {
+        label: "Payez {U} : transformez Sygg",
+      }),
     ],
   },
 

@@ -86,6 +86,8 @@ export type RulesEvent =
   /** Un sort ou une capacité vient d'être mis sur la pile avec ces cibles (identifiant d'élément de pile). */
   | { e: "targeted"; stackId: string; controller: PlayerId; targets: string[] }
   | { e: "untap"; objectId: ObjectId }
+  /** Un permanent recto-verso s'est transformé (701.28) : il a désormais les capacités de la face visible. */
+  | { e: "transformed"; objectId: ObjectId }
   | { e: "tap"; objectId: ObjectId }
   /** Un joueur vient de regarder (scry) ou de surveiller. */
   | { e: "scry"; player: PlayerId }
@@ -303,6 +305,22 @@ export function tapObject(s: GameState, o: GameObject): void {
   o.tapped = true;
   bump(s); // des capacités statiques peuvent en dépendre (« vos créatures légendaires engagées »)
   rulesEvent(s, { e: "tap", objectId: o.id });
+}
+
+/**
+ * Dégage un permanent. 122.1d : s'il a un marqueur d'étourdissement, on lui en retire un à la place. Renvoie true s'il a
+ * été dégagé.
+ */
+export function untapObject(s: GameState, o: GameObject): boolean {
+  if (!o.tapped) return false;
+  if ((o.counters.stun ?? 0) > 0) {
+    changeCounters(s, o, "stun", -1);
+    return false;
+  }
+  o.tapped = false;
+  bump(s);
+  rulesEvent(s, { e: "untap", objectId: o.id });
+  return true;
 }
 
 /** Marqueurs dont le contrôleur du permanent veut le moins possible (ordre des remplacements, 616.1). */

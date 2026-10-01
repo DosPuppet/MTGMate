@@ -6,6 +6,7 @@ import {
   BASIC_LAND,
   type CardScript,
   cond,
+  costReducer,
   fx,
   manaAbility,
   mode,
@@ -33,6 +34,28 @@ const COLORS: { color: Color; feminine: string; masculine: string }[] = [
 const LORWYN_TRIBES = ["Elemental", "Elf", "Faerie", "Giant", "Goblin", "Kithkin", "Merfolk", "Treefolk"];
 
 export const ARTIFACTS: Record<string, CardScript> = {
+  "Gathering Stone": {
+    chooseOnEnter: "creatureType",
+    abilities: [
+      costReducer({ subtypeChosen: true }, 1, "Vos sorts du type choisi coûtent {1} de moins"),
+      ...[when.entersSelf, when.yourUpkeep].map((w) =>
+        triggered(
+          w,
+          [
+            fx.lookAtTop(1, { filter: { subtypeChosen: true }, rest: "top", store: "g" }),
+            ...fx.when(
+              cond.not(cond.v("g")),
+              ...fx.may(
+                "Mettre la carte du dessus dans votre cimetière ?",
+                fx.moveTo(ref.libraryTop(ref.you), { to: "graveyard" }),
+              ),
+            ),
+          ],
+          { label: "Regardez la carte du dessus : du type choisi, en main ; sinon, au cimetière si vous le voulez" },
+        ),
+      ),
+    ],
+  },
   // --- Changelins incolores ---------------------------------------------------
   "Changeling Wayfinder": {
     abilities: [
