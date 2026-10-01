@@ -80,3 +80,9 @@ Les scripts sont dans `packages/cards/src/woe/` : `cards` (cartes du méta), `wh
   - le filtre `enchanted` (`true` : enchantée par au moins une Aura ; `"byYou"` : par une Aura que vous contrôlez ; `false`), lu sur `LkiSnapshot.enchantedBy` (contrôleurs des Auras attachées, calculé comme `equipped`) ;
   - la règle d'attaque `BlockRule.cantAttackPlayer` (« ne peut pas vous attaquer, ni vos planeswalkers ») ; un script écrit `cantAttackSourceController`, fixé sur le contrôleur de la source quand la statique s'applique.
 - **Tests :** 5 tests de règles (« lot B1 ») : Archon (avec un Rôle Monstre de vous ou de l'adversaire), A Tale for the Ages et Syr Armont, Lord Skitter's Blessing à la pioche, Graceful Takedown, Eriette (attaque refusée, drain).
+
+## Sous-lot B2 : « vous engagez une créature adverse » ✅ (245 / 269)
+
+- **Cartes :** Solitary Sanctuary, Hylda of the Icy Crown, Sharae of Numbing Depths ; Icewrought Sentry n'est plus approximée.
+- **Le moteur gagne :** l'événement d'engagement dit qui engage (`by` : le contrôleur de ce qui se résout, sinon, pour un coût ou du mana, le contrôleur du permanent) ; le déclencheur `taps` prend `byYou` (« chaque fois que vous engagez… »).
+- **Tests :** 4 tests de règles (« lot B2 »).

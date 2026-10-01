@@ -257,7 +257,6 @@ Dans l'ordre où elles ont été ajoutées, extension par extension.
   - `timing` Expel the Interlopers : le nombre de 0 à 10 est choisi au lancement (un mode par nombre), et non à la résolution ;
   - `choix auto` Discerning Financier : « un autre joueur » est le premier adversaire ;
   - `règle` Virtue of Loyalty : toutes vos créatures sont dégagées, pas seulement celles qui ont reçu un marqueur ;
-  - `règle` Icewrought Sentry : « chaque fois que vous engagez une créature adverse » se déclenche quand une créature adverse devient engagée pendant votre tour (l'événement ne dit pas qui l'engage) ;
   - `règle` Aquatic Alchemist : la capacité se déclenche à chaque éphémère ou rituel, et ne fait quelque chose qu'au premier du tour ;
   - `règle` Vantress Visions : la capacité ciblée peut être celle d'un adversaire (le filtre de pile n'a pas de contrôleur) ; elle n'est alors pas copiée ;
   - `règle` Rowdy Research : une créature qui attaque lors de deux combats compte deux fois ;
@@ -275,6 +274,8 @@ Dans l'ordre où elles ont été ajoutées, extension par extension.
   - `règle` Troyan, Gutsy Explorer : son mana ne sert qu'aux sorts de VM 5 ou plus (pas aux sorts avec {X} dans leur coût) ;
   - `règle` Will, Scion of Peace : la réduction « ce tour-ci » est accordée à Will et cesse s'il quitte le champ de bataille ;
   - `règle` The Irencrag : « perd toutes ses autres capacités » : sa capacité de mana et son déclencheur sont inactifs une fois Équipement, mais restent listés ;
-  - `règle` Three Bowls of Porridge : « un mode qui n'a pas déjà été choisi » : trois capacités, chacune activable une seule fois.
+  - `règle` Three Bowls of Porridge : « un mode qui n'a pas déjà été choisi » : trois capacités, chacune activable une seule fois ;
+  - `timing` Hylda of the Icy Crown : le mode est choisi au déclenchement, puis {1} est payé ou non (et non « payez {1} ; quand vous le faites, choisissez ») ;
+  - `règle` Sharae of Numbing Depths : « une ou plusieurs créatures » : la capacité se déclenche à la première créature engagée du tour.
 - **Légalité Standard :** instantané des légalités Scryfall au moment de l'import (`legalities.standard` dans `data/<set>.json`). Après une rotation ou une annonce de bannissement, réimporter les sets (`npm run import-cards -- <set>`).
 - **Images des jetons :** celle du jeton Scryfall le plus proche (même nom, puis mêmes F/E et couleurs ; `data/tokens.json`, `npm run import-tokens`) ; un jeton de nom inconnu garde le cadre texte.

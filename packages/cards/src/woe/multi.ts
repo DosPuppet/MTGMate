@@ -1,5 +1,5 @@
 /** Wilds of Eldraine — cartes multicolores. */
-import type { ManaRestriction } from "@mtgx/engine";
+import type { ManaRestriction, TokenSpec, TriggerSpec } from "@mtgx/engine";
 import {
   activated,
   amount,
@@ -12,11 +12,13 @@ import {
   FOOD,
   fx,
   MONSTER_ROLE,
+  mode,
   RAT_NO_BLOCK,
   ref,
   staticAbility,
   target,
   triggered,
+  triggeredModal,
   when,
 } from "./common";
 
@@ -27,7 +29,53 @@ import {
  */
 const TROYAN_MANA: ManaRestriction = { spell: { minManaValue: 5 } };
 
+/** « Chaque fois que vous engagez une créature dégagée qu'un adversaire contrôle » (Hylda, Sharae). */
+const YOU_TAP_OPPONENT_CREATURE: TriggerSpec = {
+  on: "taps",
+  who: { types: ["Creature"], controller: "opponent" },
+  byYou: true,
+};
+/** Élémental : créature blanche et bleue 4/4 (Hylda of the Icy Crown). */
+const ELEMENTAL_WU: TokenSpec = {
+  name: "Elemental",
+  colors: ["W", "U"],
+  types: ["Creature"],
+  subtypes: ["Elemental"],
+  power: 4,
+  toughness: 4,
+};
+
 export const MULTI: Record<string, CardScript> = {
+  // Le mode est choisi au déclenchement, puis {1} est payé ou non (au lieu de « payez {1} ; quand vous le faites, choisissez »).
+  "Hylda of the Icy Crown": {
+    abilities: [
+      triggeredModal(
+        YOU_TAP_OPPONENT_CREATURE,
+        [
+          mode("Un Élémental 4/4", [], fx.mayPay("{1}", "Payer {1} ?", fx.createTokens(ELEMENTAL_WU))),
+          mode(
+            "Un marqueur +1/+1 sur chaque créature que vous contrôlez",
+            [],
+            fx.mayPay("{1}", "Payer {1} ?", fx.addCountersAll({ types: ["Creature"], controller: "you" }, 1)),
+          ),
+          mode("Regard 2, puis piochez une carte", [], fx.mayPay("{1}", "Payer {1} ?", fx.scry(2), fx.draw(1))),
+        ],
+        { label: "Vous engagez une créature adverse : vous pouvez payer {1}" },
+      ),
+    ],
+  },
+  "Sharae of Numbing Depths": {
+    abilities: [
+      triggered(when.entersSelf, [fx.tap(ref.target()), fx.counters(ref.target(), "stun")], {
+        targets: [target.creature("t", { controller: "opponent" })],
+        label: "Engagez une créature adverse, marqueur d'étourdissement",
+      }),
+      triggered(YOU_TAP_OPPONENT_CREATURE, [fx.draw(1)], {
+        oncePerTurn: true,
+        label: "Vous engagez une créature adverse : piochez une carte (une fois par tour)",
+      }),
+    ],
+  },
   "Eriette of the Charmed Apple": {
     abilities: [
       staticAbility(

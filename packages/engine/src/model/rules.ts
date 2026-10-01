@@ -280,7 +280,8 @@ export type TriggerSpec =
   /** « Chaque fois que [la créature équipée] se dégage » */
   | { on: "untaps"; who: "self" | ObjectFilter }
   /** « Chaque fois que [cette créature] devient engagée » */
-  | { on: "taps"; who: "self" | ObjectFilter }
+  /** `byYou` : « chaque fois que vous engagez [une créature] » (Solitary Sanctuary : une créature adverse). */
+  | { on: "taps"; who: "self" | ObjectFilter; byYou?: boolean }
   /** « Chaque fois que vous regardez (scry) ou surveillez » (Reality Fracture). */
   | { on: "scryOrSurveil" }
   /** « Quand vous défaussez cette carte » (se déclenche depuis le cimetière). */

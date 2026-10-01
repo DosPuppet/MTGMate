@@ -161,11 +161,8 @@ export const BLUE: Record<string, CardScript> = {
         ),
         { label: "Vous pouvez payer {1}{U} : engagez une créature adverse" },
       ),
-      // Approximation : l'événement d'engagement ne dit pas qui engage ; on retient une créature adverse engagée
-      // pendant votre tour (ses propres coûts compris), et non celle que vous engagez pendant le tour adverse.
-      triggered({ on: "taps", who: { types: ["Creature"], controller: "opponent" } }, [fx.pump(ref.self, 2, 1)], {
-        condition: cond.yourTurn,
-        label: "Une créature adverse est engagée : +2/+1",
+      triggered({ on: "taps", who: { types: ["Creature"], controller: "opponent" }, byYou: true }, [fx.pump(ref.self, 2, 1)], {
+        label: "Vous engagez une créature adverse : +2/+1",
       }),
     ],
   },

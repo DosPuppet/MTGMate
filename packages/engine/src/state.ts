@@ -88,7 +88,8 @@ export type RulesEvent =
   | { e: "untap"; objectId: ObjectId }
   /** Un permanent recto-verso s'est transformé (701.28) : il a désormais les capacités de la face visible. */
   | { e: "transformed"; objectId: ObjectId }
-  | { e: "tap"; objectId: ObjectId }
+  /** `by` : le joueur qui l'engage (contrôleur de ce qui se résout ; sinon, coût ou mana, son contrôleur). */
+  | { e: "tap"; objectId: ObjectId; by: PlayerId }
   /** Un joueur vient de regarder (scry) ou de surveiller. */
   | { e: "scry"; player: PlayerId }
   /** Un joueur a cherché dans sa bibliothèque (Wan Shi Tong). */
@@ -304,7 +305,7 @@ export function tapObject(s: GameState, o: GameObject): void {
   if (o.tapped) return;
   o.tapped = true;
   bump(s); // des capacités statiques peuvent en dépendre (« vos créatures légendaires engagées »)
-  rulesEvent(s, { e: "tap", objectId: o.id });
+  rulesEvent(s, { e: "tap", objectId: o.id, by: s.resolving?.controller ?? o.controller });
 }
 
 /**

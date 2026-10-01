@@ -800,7 +800,7 @@ function matchTrigger(s: GameState, ev: RulesEvent, t: TriggerSpec, src: Source)
         ? { player: ev.player, amount: 1 }
         : null;
     case "taps": {
-      if (ev.e !== "tap") return null;
+      if (ev.e !== "tap" || (t.byYou && ev.by !== me)) return null;
       const v = liveView(s, ev.objectId);
       return v && matchWho(t.who, v, src) ? { objectId: ev.objectId, player: v.controller } : null;
     }

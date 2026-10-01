@@ -64,6 +64,22 @@ const TOKEN_YOU_CONTROL: TargetSpec = {
 };
 
 export const WHITE: Record<string, CardScript> = {
+  "Solitary Sanctuary": {
+    abilities: [
+      triggered(when.entersSelf, [fx.tap(ref.target()), fx.counters(ref.target(), "stun")], {
+        targets: [target.creature("t", { controller: "opponent" })],
+        label: "Engagez une créature adverse, marqueur d'étourdissement",
+      }),
+      triggered(
+        { on: "taps", who: { types: ["Creature"], controller: "opponent" }, byYou: true },
+        [fx.addCounters(ref.target(), 1)],
+        {
+          targets: [target.creature("t", { controller: "you" })],
+          label: "Vous engagez une créature adverse : un marqueur +1/+1 sur une créature que vous contrôlez",
+        },
+      ),
+    ],
+  },
   // Vol lu dans le texte.
   "Archon of the Wild Rose": {
     abilities: [

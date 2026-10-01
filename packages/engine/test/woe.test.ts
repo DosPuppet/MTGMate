@@ -4261,3 +4261,77 @@ describe("Wilds of Eldraine, lot B1 : créatures enchantées", () => {
     expect(s.players.p2?.life).toBe(21);
   });
 });
+
+describe("Wilds of Eldraine, lot B2 : « vous engagez une créature adverse »", () => {
+  const settleAll = (s: S) => {
+    while (stateBasedActions(s)) {}
+    return passAccepting(s, (x) => x.stack.length === 0 && x.triggers.length === 0 && x.pending?.kind === "priority");
+  };
+  /** Un effet de `controller` qui engage la créature (comme le ferait un sort ou une capacité). */
+  const tapBy = (s: S, controller: string, id: string) => {
+    const r = {
+      item: { id: "x", controller, sourceId: id, sourceDefId: s.objects[id]?.defId, targets: { t: [id] } },
+      controller,
+      targets: { t: [id] },
+      vars: {},
+      pc: 0,
+    } as never as Parameters<typeof runEffect>[1];
+    s.resolving = r as never;
+    runEffect(s, r, dsl.fx.tap(dsl.ref.target()));
+    s.resolving = null;
+  };
+
+  it("Solitary Sanctuary : en arrivant, engage et étourdit ; un marqueur +1/+1 quand vous engagez une créature adverse", () => {
+    let s = scenario({
+      p1: { battlefield: [...lands("Plains", 3), "Bear Cub"], hand: ["Solitary Sanctuary"] },
+      p2: { battlefield: ["Pelakka Wurm", "Shivan Dragon"] },
+    });
+    const bear = idOf(s, "p1", "battlefield", "Bear Cub");
+    const wurm = idOf(s, "p2", "battlefield", "Pelakka Wurm");
+    s = act(s, "p1", { type: "cast", card: idOf(s, "p1", "hand", "Solitary Sanctuary") });
+    s = settleAll(s);
+    expect(s.objects[wurm]?.tapped).toBe(true);
+    expect(s.objects[wurm]?.counters.stun).toBe(1);
+    expect(s.objects[bear]?.counters["+1/+1"]).toBe(1);
+    // L'adversaire qui engage sa propre créature ne déclenche rien.
+    tapBy(s, "p2", idOf(s, "p2", "battlefield", "Shivan Dragon"));
+    s = settleAll(s);
+    expect(s.objects[bear]?.counters["+1/+1"]).toBe(1);
+  });
+
+  it("Sharae of Numbing Depths : piochez une carte la première fois du tour seulement", () => {
+    let s = scenario({
+      p1: { battlefield: ["Sharae of Numbing Depths"], library: lands("Island", 3) },
+      p2: { battlefield: ["Pelakka Wurm", "Shivan Dragon"] },
+    });
+    const hand = s.players.p1?.hand.length ?? 0;
+    tapBy(s, "p1", idOf(s, "p2", "battlefield", "Pelakka Wurm"));
+    s = settleAll(s);
+    tapBy(s, "p1", idOf(s, "p2", "battlefield", "Shivan Dragon"));
+    s = settleAll(s);
+    expect((s.players.p1?.hand.length ?? 0) - hand).toBe(1);
+  });
+
+  it("Icewrought Sentry : +2/+1 quand vous engagez une créature adverse, pas quand l'adversaire l'engage", () => {
+    let s = scenario({ p1: { battlefield: ["Icewrought Sentry"] }, p2: { battlefield: ["Pelakka Wurm", "Shivan Dragon"] } });
+    const sentry = idOf(s, "p1", "battlefield", "Icewrought Sentry");
+    tapBy(s, "p2", idOf(s, "p2", "battlefield", "Pelakka Wurm"));
+    s = settleAll(s);
+    expect(chars(s, sentry).power).toBe(2);
+    tapBy(s, "p1", idOf(s, "p2", "battlefield", "Shivan Dragon"));
+    s = settleAll(s);
+    expect(chars(s, sentry).power).toBe(4);
+  });
+
+  it("Hylda of the Icy Crown : mode choisi, {1} payé : un Élémental 4/4", () => {
+    let s = scenario({ p1: { battlefield: ["Hylda of the Icy Crown", "Plains"] }, p2: { battlefield: ["Pelakka Wurm"] } });
+    tapBy(s, "p1", idOf(s, "p2", "battlefield", "Pelakka Wurm"));
+    s = passAccepting(s, (x) => x.pending?.kind === "choice" || (x.stack.length === 0 && x.triggers.length === 0));
+    for (let i = 0; i < 4 && s.pending?.kind === "choice"; i++) {
+      const p = s.pending;
+      s = act(s, p.player, { type: "choose", values: p.request.suggested });
+      s = passAccepting(s, (x) => x.pending?.kind === "choice" || (x.stack.length === 0 && x.triggers.length === 0));
+    }
+    expect(s.battlefield.filter((id) => chars(s, id).name === "Elemental")).toHaveLength(1);
+  });
+});
