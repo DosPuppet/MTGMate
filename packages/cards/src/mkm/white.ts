@@ -269,4 +269,38 @@ export const WHITE: Record<string, CardScript> = {
       activated({ mana: "{2}", sacrifice: true, effects: [fx.draw(1)], label: "Piochez une carte" }),
     ],
   },
+  "Tenth District Hero": {
+    abilities: [
+      activated({
+        mana: "{1}{W}",
+        collectEvidence: 2,
+        effects: [fx.modify(ref.self, { setSubtypes: ["Human", "Detective"], addKeywords: ["vigilance"] }, "permanent", 4)],
+        label: "Réunissez des preuves 2 : Humain Détective 4/4 avec la vigilance",
+      }),
+      activated({
+        mana: "{2}{W}",
+        collectEvidence: 4,
+        effects: fx.when(
+          cond.sourceMatches({ subtype: "Detective" }),
+          fx.modify(
+            ref.self,
+            {
+              setName: "Mileva, the Stalwart",
+              addSupertypes: ["Legendary"],
+              addAbilities: [
+                staticAbility(
+                  { types: ["Creature"], controller: "you", other: true },
+                  { addKeywords: ["indestructible"] },
+                  { label: "Vos autres créatures ont l'indestructible" },
+                ),
+              ],
+            },
+            "permanent",
+            5,
+          ),
+        ),
+        label: "Réunissez des preuves 4 : devient Mileva, the Stalwart (5/5, vos autres créatures indestructibles)",
+      }),
+    ],
+  },
 };

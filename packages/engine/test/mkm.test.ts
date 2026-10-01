@@ -4564,3 +4564,157 @@ describe("Murders at Karlov Manor, lot A — incolores et terrains", () => {
     });
   });
 });
+
+describe("Murders at Karlov Manor, lot B1 : réunir des preuves (701.59)", () => {
+  const lands = (name: string, n: number) => Array(n).fill(name) as string[];
+  const yes: Answer = (req) => (req.type === "yesNo" ? [1] : undefined);
+  const activateFirst = (s: S, source: string, label: string, targets?: Record<string, string[]>) => {
+    const a = legalActions(s, "p1").find((x) => x.type === "activate" && x.source === source && (x.label ?? "").includes(label));
+    return a?.type === "activate" ? act(s, "p1", { type: "activate", source, ability: a.ability, targets }) : undefined;
+  };
+
+  it("Surveillance Monitor : en arrivant, vous pouvez réunir des preuves 4 ; chaque fois que vous le faites, un Thopter", () => {
+    let s = scenario({
+      p1: { battlefield: lands("Island", 4), hand: ["Surveillance Monitor"], graveyard: ["Shivan Dragon", "Opt"] },
+    });
+    s = settle(cast(s, "p1", "Surveillance Monitor"), yes);
+    // Shivan Dragon (VM 6) suffit : Opt reste au cimetière.
+    expect(idsOf(s, "p1", "graveyard", "Opt")).toHaveLength(1);
+    expect(s.exile.map((id) => nameOf(s, id))).toEqual(["Shivan Dragon"]);
+    expect(idsOf(s, "p1", "battlefield", "Thopter")).toHaveLength(1);
+  });
+
+  it("Forensic Researcher : {T}, réunissez des preuves 3 en coût ; impossible sans preuves suffisantes", () => {
+    let s = scenario({
+      p1: { battlefield: ["Forensic Researcher"], graveyard: ["Opt", "Bear Cub"] },
+      p2: { battlefield: ["Bear Cub"] },
+    });
+    const researcher = idOf(s, "p1", "battlefield", "Forensic Researcher");
+    // Opt (1) + Bear Cub (2) = 3.
+    const bear = idOf(s, "p2", "battlefield", "Bear Cub");
+    s = settle(activateFirst(s, researcher, "engagez", { t: [bear] }) as S);
+    expect(s.objects[bear]?.tapped).toBe(true);
+    expect(s.players.p1?.graveyard).toHaveLength(0);
+    const t = scenario({ p1: { battlefield: ["Forensic Researcher"], graveyard: ["Opt"] }, p2: { battlefield: ["Bear Cub"] } });
+    const r2 = idOf(t, "p1", "battlefield", "Forensic Researcher");
+    expect(activateFirst(t, r2, "engagez", { t: [idOf(t, "p2", "battlefield", "Bear Cub")] })).toBeUndefined();
+  });
+
+  it("Incinerator of the Guilty : blessures de combat à un joueur, réunissez des preuves X : X blessures à ses créatures", () => {
+    let s = scenario({
+      p1: { battlefield: ["Incinerator of the Guilty"], graveyard: ["Bear Cub", "Opt"] },
+      p2: { battlefield: ["Bear Cub", "Llanowar Elves"] },
+    });
+    const dragon = idOf(s, "p1", "battlefield", "Incinerator of the Guilty");
+    s = advanceUntil(s, (x) => x.pending?.kind === "declareAttackers");
+    s = act(s, "p1", { type: "declareAttackers", attackers: [{ id: dragon, defender: "p2" }] });
+    // Jusqu'à la fin du combat : X = 2.
+    for (let i = 0; i < 60 && s.turn.step !== "endCombat" && s.turn.step !== "main2"; i++) {
+      const p = s.pending;
+      if (p?.kind === "choice")
+        s = act(s, p.player, { type: "choose", values: p.request.type === "number" ? [2] : p.request.suggested });
+      else if (p?.kind === "declareBlockers") s = act(s, p.player, { type: "declareBlockers", blocks: [] });
+      else if (p?.kind === "priority") s = act(s, p.player, { type: "pass" });
+      else break;
+    }
+    s = settle(s);
+    expect(s.players.p2?.life).toBe(14);
+    expect(idsOf(s, "p2", "battlefield", "Bear Cub")).toHaveLength(0);
+    expect(idsOf(s, "p2", "battlefield", "Llanowar Elves")).toHaveLength(0);
+    // X = 2 : Bear Cub (VM 2) exilé, Opt reste.
+    expect(idsOf(s, "p1", "graveyard", "Opt")).toHaveLength(1);
+  });
+
+  it("Lamplight Phoenix : en mourant, exilez-le et réunissez des preuves 4 (sans lui) : il revient engagé", () => {
+    let s = scenario({
+      p1: {
+        battlefield: ["Lamplight Phoenix", ...lands("Mountain", 2)],
+        hand: ["Lightning Strike"],
+        graveyard: ["Shivan Dragon"],
+      },
+    });
+    s = settle(cast(s, "p1", "Lightning Strike", { t: [idOf(s, "p1", "battlefield", "Lamplight Phoenix")] }), yes);
+    const phoenix = idOf(s, "p1", "battlefield", "Lamplight Phoenix");
+    expect(s.objects[phoenix]?.tapped).toBe(true);
+    expect(s.exile.map((id) => nameOf(s, id))).toEqual(["Shivan Dragon"]);
+    // Sans preuves suffisantes (le Phénix ne compte pas) : il reste au cimetière.
+    let t = scenario({ p1: { battlefield: ["Lamplight Phoenix", ...lands("Mountain", 2)], hand: ["Lightning Strike"] } });
+    t = settle(cast(t, "p1", "Lightning Strike", { t: [idOf(t, "p1", "battlefield", "Lamplight Phoenix")] }), yes);
+    expect(idsOf(t, "p1", "graveyard", "Lamplight Phoenix")).toHaveLength(1);
+  });
+
+  it("Axebane Ferox : garde — réunissez des preuves 4 (payée par l'adversaire qui la cible)", () => {
+    const run = (graveyard: string[]) => {
+      let s = scenario({
+        active: "p2",
+        p1: { battlefield: ["Axebane Ferox"] },
+        p2: { battlefield: lands("Mountain", 2), hand: ["Lightning Strike"], graveyard },
+      });
+      s = act(s, "p2", {
+        type: "cast",
+        card: idOf(s, "p2", "hand", "Lightning Strike"),
+        targets: { t: [idOf(s, "p1", "battlefield", "Axebane Ferox")] },
+      });
+      return settle(s, yes);
+    };
+    // Sans preuves : le sort est contrecarré.
+    expect(idsOf(run([]), "p1", "battlefield", "Axebane Ferox")).toHaveLength(1);
+    // Avec Shivan Dragon : l'adversaire paie, 3 blessures (4/4 : elle survit).
+    const s = run(["Shivan Dragon"]);
+    expect(s.objects[idOf(s, "p1", "battlefield", "Axebane Ferox")]?.damage).toBe(3);
+    expect(s.exile.some((id) => nameOf(s, id) === "Shivan Dragon")).toBe(true);
+  });
+
+  it("Vein Ripper : garde — sacrifiez une créature ; chaque créature qui meurt draine 2", () => {
+    let s = scenario({
+      active: "p2",
+      p1: { battlefield: ["Vein Ripper"] },
+      p2: { battlefield: [...lands("Mountain", 2), "Llanowar Elves"], hand: ["Lightning Strike"] },
+    });
+    s = act(s, "p2", {
+      type: "cast",
+      card: idOf(s, "p2", "hand", "Lightning Strike"),
+      targets: { t: [idOf(s, "p1", "battlefield", "Vein Ripper")] },
+    });
+    s = settle(s, yes);
+    // Les Elfes sont sacrifiés pour payer la garde, et leur mort draine 2 au profit de Vein Ripper.
+    expect(idsOf(s, "p2", "battlefield", "Llanowar Elves")).toHaveLength(0);
+    expect(s.players.p2?.life).toBe(18);
+    expect(s.players.p1?.life).toBe(22);
+  });
+
+  it("Cryptex : {T}, réunissez des preuves 3 : un mana et un marqueur de déverrouillage ; à cinq, sacrifiez-le pour surveiller et piocher", () => {
+    let s = scenario({ p1: { battlefield: ["Cryptex"], graveyard: ["Shivan Dragon"], library: lands("Island", 8) } });
+    const cryptex = idOf(s, "p1", "battlefield", "Cryptex");
+    const mana = legalActions(s, "p1").find((a) => a.type === "tapForMana" && a.source === cryptex);
+    expect(mana).toBeDefined();
+    s = act(s, "p1", {
+      type: "tapForMana",
+      source: cryptex,
+      ability: mana?.type === "tapForMana" ? mana.ability : 0,
+      color: "R",
+    });
+    expect(s.objects[cryptex]?.counters.unlock).toBe(1);
+    expect(s.players.p1?.manaPool.R).toBe(1);
+    expect(s.exile).toHaveLength(1);
+    const c = s.objects[cryptex];
+    if (c) c.counters.unlock = 5;
+    const hand = s.players.p1?.hand.length ?? 0;
+    s = settle(activateFirst(s, cryptex, "Sacrifiez") as S);
+    expect(s.players.p1?.hand).toHaveLength(hand + 3);
+  });
+
+  it("Tenth District Hero : Détective 4/4 avec la vigilance, puis Mileva, the Stalwart (5/5, vos autres créatures indestructibles)", () => {
+    let s = scenario({
+      p1: { battlefield: ["Tenth District Hero", "Bear Cub", ...lands("Plains", 5)], graveyard: ["Bear Cub", "Shivan Dragon"] },
+    });
+    const hero = idOf(s, "p1", "battlefield", "Tenth District Hero");
+    s = settle(activateFirst(s, hero, "preuves 2") as S);
+    expect(chars(s, hero).subtypes).toEqual(expect.arrayContaining(["Human", "Detective"]));
+    expect([chars(s, hero).power, chars(s, hero).toughness]).toEqual([4, 4]);
+    s = settle(activateFirst(s, hero, "preuves 4") as S);
+    expect(chars(s, hero).name).toBe("Mileva, the Stalwart");
+    expect(chars(s, hero).supertypes).toContain("Legendary");
+    expect(chars(s, idOf(s, "p1", "battlefield", "Bear Cub")).keywords).toContain("indestructible");
+  });
+});

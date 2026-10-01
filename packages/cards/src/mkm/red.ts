@@ -342,4 +342,30 @@ export const RED: Record<string, CardScript> = {
       [fx.damageStoringExcess(amount.plus(amount.x, amount.x), ref.target(), "e"), ...fx.when(cond.v("e"), investigate())],
     ),
   },
+  "Incinerator of the Guilty": {
+    abilities: [
+      triggered(
+        when.combatDamageToPlayer,
+        fx.mayCollectEvidenceX(
+          "x",
+          fx.damage(amount.v("x"), ref.permanentsOf(ref.eventPlayer, { types: ["Creature", "Planeswalker"] })),
+        ),
+        { label: "Réunissez des preuves X : X blessures à chaque créature et planeswalker de ce joueur" },
+      ),
+    ],
+  },
+  "Lamplight Phoenix": {
+    abilities: [
+      triggered(
+        when.diesSelf,
+        fx.mayCollectEvidence(
+          4,
+          { exclude: ref.selfCard },
+          fx.exileCard(ref.selfCard, { name: "p" }),
+          fx.toBattlefield(ref.stored("p"), { tapped: true }),
+        ),
+        { label: "Exilez-le et réunissez des preuves 4 : il revient engagé" },
+      ),
+    ],
+  },
 };

@@ -130,6 +130,8 @@ export type RulesEvent =
   | { e: "expend"; player: PlayerId; n: number }
   /** Un joueur fourrage (701.61). */
   | { e: "forage"; player: PlayerId }
+  /** Réunir des preuves (701.59). */
+  | { e: "collectEvidence"; player: PlayerId }
   /** Un joueur offre un cadeau (702.174). */
   | { e: "gift"; player: PlayerId }
   /** Une porte de Salle est déverrouillée. */

@@ -823,8 +823,9 @@ export function unmetBlockRequirement(
   const blockingRequired = new Set(blocks.filter((b) => required.some((a) => a.id === b.attacker)).map((b) => b.blocker));
   for (const a of required) {
     if (blocks.some((b) => b.attacker === a.id)) continue;
-    const able = creaturesControlledBy(s, player).find((id) => canBlock(s, id, a.id) && !blockingRequired.has(id));
-    if (able) return a.id;
+    // Avec la menace (un suspect qui doit être bloqué), il faut pouvoir le bloquer avec assez de créatures.
+    const able = creaturesControlledBy(s, player).filter((id) => canBlock(s, id, a.id) && !blockingRequired.has(id));
+    if (able.length >= minBlockers(s, a.id)) return a.id;
   }
   return null;
 }
@@ -835,8 +836,10 @@ export function requiredBlocks(s: GameState, player: PlayerId): { blocker: Objec
   const used = new Set<ObjectId>();
   for (const a of s.combat?.attackers ?? []) {
     if (defendingPlayer(s, a.defender) !== player || !hasKeyword(s, a.id, "mustBeBlocked")) continue;
-    const b = creaturesControlledBy(s, player).find((id) => !used.has(id) && canBlock(s, id, a.id));
-    if (b) {
+    const able = creaturesControlledBy(s, player).filter((id) => !used.has(id) && canBlock(s, id, a.id));
+    const need = minBlockers(s, a.id);
+    if (able.length < need) continue;
+    for (const b of able.slice(0, need)) {
       used.add(b);
       out.push({ blocker: b, attacker: a.id });
     }

@@ -326,7 +326,10 @@ function wardCost(abilities: CardDef["abilities"]): string | undefined {
       pay.life ? `${pay.life} PV` : "",
       pay.lifeAmount ? "PV égaux à sa force" : "",
       pay.discard ? (pay.discardRandom ? "une carte au hasard" : "défausser une carte") : "",
-      pay.sacrifice ? `sacrifier ${pay.sacrifice} permanents${pay.sacrificeNonland ? " non-terrains" : ""}` : "",
+      pay.sacrifice
+        ? `sacrifier ${pay.sacrifice} ${pay.sacrificeFilter?.types?.includes("Creature") ? "créature(s)" : pay.sacrificeFilter?.nonland ? "permanents non-terrains" : "permanents"}`
+        : "",
+      pay.collectEvidence ? `réunir des preuves ${pay.collectEvidence}` : "",
     ].filter(Boolean);
     return parts.length ? [parts.join(" et ")] : [];
   });

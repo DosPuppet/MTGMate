@@ -134,4 +134,15 @@ export const ARTIFACTS: Record<string, CardScript> = {
       activated({ mana: "{2}", sacrifice: true, effects: [fx.draw(1)], label: "Piochez une carte" }),
     ],
   },
+  Cryptex: {
+    abilities: [
+      manaAbility(["W", "U", "B", "R", "G"], 1, { collectEvidence: 3, addCounter: "unlock" }),
+      activated({
+        sacrifice: true,
+        activationCondition: cond.counterAtLeast("unlock", 5),
+        effects: [fx.surveil(3), fx.draw(3)],
+        label: "Sacrifiez-le : surveillance 3, puis piochez trois cartes",
+      }),
+    ],
+  },
 };

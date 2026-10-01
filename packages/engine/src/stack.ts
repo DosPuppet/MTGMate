@@ -450,15 +450,29 @@ export function kickerCostOptions(
 
 /**
  * Réunir des preuves N (701.59, Meurtres au manoir Karlov) : cartes de votre cimetière de valeur de mana totale N ou
- * plus, choisies automatiquement (les plus chères d'abord, pour en exiler le moins possible) ; null si impossible.
+ * plus, choisies automatiquement ; null si impossible.
  */
 export function evidenceCards(s: GameState, player: PlayerId, card: ObjectId, n: number): ObjectId[] | null {
+  return pickEvidence(
+    s,
+    (s.players[player]?.graveyard ?? []).filter((id) => id !== card),
+    n,
+  );
+}
+
+/**
+ * Choix automatique des preuves parmi `pool` : à chaque étape, la carte la moins chère qui suffit à atteindre N, sinon
+ * la plus chère (peu de cartes exilées, sans gâcher une carte chère pour un petit N) ; null si le total n'y suffit pas.
+ */
+export function pickEvidence(s: GameState, pool: ObjectId[], n: number): ObjectId[] | null {
   const mv = (id: ObjectId) => manaValue(s.defs[s.objects[id]?.defId ?? ""]?.manaCost);
-  const pool = (s.players[player]?.graveyard ?? []).filter((id) => id !== card).sort((a, b) => mv(b) - mv(a));
+  const left = [...pool].sort((a, b) => mv(a) - mv(b));
+  if (left.reduce((t, id) => t + mv(id), 0) < n) return null;
   const out: ObjectId[] = [];
   let total = 0;
-  for (const id of pool) {
-    if (total >= n) break;
+  while (total < n && left.length) {
+    const i = left.findIndex((id) => total + mv(id) >= n);
+    const id = (i >= 0 ? left.splice(i, 1) : left.splice(left.length - 1, 1))[0] as ObjectId;
     out.push(id);
     total += mv(id);
   }
@@ -475,6 +489,13 @@ export function graveyardToExile(s: GameState, player: PlayerId, card: ObjectId,
   const pool = (s.players[player]?.graveyard ?? []).filter((id) => id !== card);
   if (pool.length < n) return null;
   return [...pool].sort((a, b) => land(a) - land(b) || mv(a) - mv(b)).slice(0, n);
+}
+
+/** Réunit des preuves (701.59) : les cartes sont exilées, et « chaque fois que vous réunissez des preuves » se déclenche. */
+export function collectEvidence(s: GameState, player: PlayerId, cards: ObjectId[]): ObjectId[] {
+  const exiled = cards.map((id) => moveObject(s, id, "exile")).filter((id): id is ObjectId => !!id);
+  rulesEvent(s, { e: "collectEvidence", player });
+  return exiled;
 }
 
 /** Le permanent qui paie le kicker sans mana par défaut, s'il y en a un. */
@@ -1350,7 +1371,7 @@ export function castSpell(s: GameState, player: PlayerId, card: ObjectId, choice
     moveObject(s, weakest, "hand");
   }
   // Réunir des preuves : les cartes du cimetière sont exilées en payant le coût.
-  for (const id of evidence ?? []) moveObject(s, id, "exile");
+  if (evidence) collectEvidence(s, player, evidence);
   for (const id of gyExile ?? []) moveObject(s, id, "exile");
   // Seule une Aventure part « en aventure » ; un présage (même disposition Scryfall) est mélangé dans la bibliothèque.
   const adventure = choices.face !== undefined && cardDef.layout === "adventure" && d.subtypes.includes("Adventure");
@@ -1898,6 +1919,7 @@ export function canPayNonManaCost(s: GameState, source: ObjectId, ab: ActivatedA
   if (ab.cost.exileFromGraveyard && graveyardExileOptions(s, source, ab).length < ab.cost.exileFromGraveyard.count) return false;
   if (ab.cost.removeCounterFrom && !counterSource(s, who, source, ab)) return false;
   if (ab.cost.blight && !blightTarget(s, o.controller, ab.cost.blight)) return false;
+  if (ab.cost.collectEvidence && !evidenceCards(s, who, source, ab.cost.collectEvidence)) return false;
   if (ab.cost.tapAttached) {
     const host = o.attachedTo;
     if (!host || !onBattlefield(s, host) || obj(s, host).tapped || isSummoningSick(s, host)) return false;
@@ -2095,6 +2117,8 @@ export function activateAbility(s: GameState, player: PlayerId, source: ObjectId
   if (blighted && ab.cost.blight) changeCounters(s, obj(s, blighted), "-1/-1", ab.cost.blight, true);
   const counterFrom = ab.cost.removeCounterFrom ? counterSource(s, player, source, ab) : null;
   if (counterFrom && ab.cost.removeCounterFrom) changeCounters(s, obj(s, counterFrom), ab.cost.removeCounterFrom.kind, -1);
+  // Réunir des preuves N comme coût (Forensic Researcher, Polygraph Orb).
+  if (ab.cost.collectEvidence) collectEvidence(s, player, evidenceCards(s, player, source, ab.cost.collectEvidence) ?? []);
   // « Engagez X artefacts dégagés » : X choisi à l'activation.
   if (ab.cost.tapX) {
     const f = ab.cost.tapX;

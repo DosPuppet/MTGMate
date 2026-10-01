@@ -10,6 +10,7 @@ import { legalActions } from "../src/legal";
 import { counterItem } from "../src/stack";
 import { changeCounters, chars } from "../src/state";
 import { addPlayerEffect } from "../src/statics";
+import { requiredBlocks } from "../src/turn";
 import type { CardDef, GameState } from "../src/types";
 import { act, advanceUntil, customCard, idOf, idsOf, passAccepting, passUntil, scenario } from "./helpers";
 
@@ -282,5 +283,35 @@ describe("Ashiok, Wicked Manipulator (rulings du 01/09/2023)", () => {
     s = act(s, "p1", { type: "activate", source: priest, ability: a?.type === "activate" ? a.ability : 0 });
     expect(s.players.p1?.life).toBe(20);
     expect(s.players.p1?.library).toHaveLength(1);
+  });
+});
+
+describe("509.1c : « doit être bloquée si possible » et la menace", () => {
+  it("avec une seule créature capable de bloquer, aucun blocage n'est exigé ; avec deux, il faut bloquer avec les deux", () => {
+    const lure = customCard({ name: "Appât menaçant", power: 2, toughness: 2, keywords: ["mustBeBlocked", "menace"] });
+    const run = (blockers: string[]) => {
+      let s = scenario({ p1: { battlefield: [lure] }, p2: { battlefield: blockers } });
+      const attacker = idOf(s, "p1", "battlefield", lure.name);
+      s = advanceUntil(s, (x) => x.pending?.kind === "declareAttackers");
+      s = act(s, "p1", { type: "declareAttackers", attackers: [{ id: attacker, defender: "p2" }] });
+      return { s: advanceUntil(s, (x) => x.pending?.kind === "declareBlockers"), attacker };
+    };
+    // Une seule créature : aucun blocage possible avec la menace, donc rien n'est exigé (le moteur ne demande rien).
+    const one = run(["Bear Cub"]);
+    if (one.s.pending?.kind === "declareBlockers")
+      expect(() => act(one.s, "p2", { type: "declareBlockers", blocks: [] })).not.toThrow();
+    expect(requiredBlocks(one.s, "p2")).toEqual([]);
+    const two = run(["Bear Cub", "Llanowar Elves"]);
+    expect(() => act(two.s, "p2", { type: "declareBlockers", blocks: [] })).toThrow();
+    const [a, b] = two.s.battlefield.filter((id) => two.s.objects[id]?.controller === "p2");
+    expect(() =>
+      act(two.s, "p2", {
+        type: "declareBlockers",
+        blocks: [
+          { blocker: a as string, attacker: two.attacker },
+          { blocker: b as string, attacker: two.attacker },
+        ],
+      }),
+    ).not.toThrow();
   });
 });

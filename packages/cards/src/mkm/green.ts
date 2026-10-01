@@ -341,4 +341,17 @@ export const GREEN: Record<string, CardScript> = {
       }),
     ],
   },
+  "Sample Collector": {
+    abilities: [
+      triggered(
+        when.attacksSelf,
+        fx.mayCollectEvidence(
+          3,
+          {},
+          fx.reflexive([target.creature("c", { controller: "you" })], [fx.addCounters(ref.target("c"), 1)]),
+        ),
+        { label: "Vous pouvez réunir des preuves 3 : un marqueur +1/+1" },
+      ),
+    ],
+  },
 };

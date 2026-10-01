@@ -2,7 +2,8 @@
 import { canForage, forage, payLife } from "../actions";
 import type { OpHandlers } from "../effects";
 import { evalAmount, evalCondition, nameOf, resolveRef, store } from "../effects";
-import { canPay, payMana } from "../mana";
+import { canPay, manaValue, payMana } from "../mana";
+import { collectEvidence, pickEvidence } from "../stack";
 import { isPlayer } from "../state";
 import { createDelayed, pushInline } from "../triggers";
 import type { ChoiceValue, ObjectFilter } from "../types";
@@ -45,6 +46,58 @@ export const HANDLERS: OpHandlers = {
       };
     }
     if (answer[0] !== 1 || !forage(s, ctx.controller)) return { skip: e.skip };
+    return;
+  },
+  collectEvidence(s, r, e, ctx, key) {
+    const excluded = new Set(e.exclude ? resolveRef(s, ctx, e.exclude) : []);
+    const mv = (id: string) => manaValue(s.defs[s.objects[id]?.defId ?? ""]?.manaCost);
+    const pool = (s.players[ctx.controller]?.graveyard ?? []).filter((id) => !excluded.has(id)).sort((a, b) => mv(b) - mv(a));
+    const total = pool.reduce((n, id) => n + mv(id), 0);
+    let n: number;
+    if (e.n === undefined) {
+      // Réunir des preuves X : X choisi (0 : rien).
+      const answer = r.vars[key("x")];
+      if (!answer) {
+        if (total <= 0) return { skip: e.skip };
+        return {
+          ask: {
+            player: ctx.controller,
+            key: key("x"),
+            request: {
+              type: "number",
+              intent: "payX",
+              prompt: `${nameOf(s, ctx.sourceId)} : réunir des preuves X (0 : non) ?`,
+              min: 0,
+              max: total,
+              suggested: [total],
+            },
+          },
+        };
+      }
+      n = Math.min(total, Math.max(0, Number(answer[0])));
+      if (n <= 0) return { skip: e.skip };
+    } else {
+      n = evalAmount(s, ctx, e.n);
+      if (total < n) return { skip: e.skip };
+      const answer = r.vars[key("may")];
+      if (!answer) {
+        return {
+          ask: {
+            player: ctx.controller,
+            key: key("may"),
+            request: {
+              type: "yesNo",
+              intent: "may",
+              prompt: `${nameOf(s, ctx.sourceId)} : réunir des preuves ${n} (exiler des cartes de votre cimetière de valeur de mana totale ${n} ou plus) ?`,
+              suggested: [1],
+            },
+          },
+        };
+      }
+      if (answer[0] !== 1) return { skip: e.skip };
+    }
+    collectEvidence(s, ctx.controller, pickEvidence(s, pool, n) ?? []);
+    store(r, e.store, n);
     return;
   },
   if(s, _r, e, ctx) {

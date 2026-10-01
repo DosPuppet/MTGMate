@@ -63,3 +63,16 @@ Les scripts sont dans `packages/cards/src/mkm/` : `cards` (cartes du méta), `wh
 - **[règles]** Un sort ou une capacité à « X cibles » (`countX`) est proposé même sans cible (X = 0) ; les options de cibles portent `countX`, l'IA ajuste X au nombre de cibles et l'interface demande autant de cibles que le X choisi. `RULES_VERSION` = 34.
 - **Restent :** 21 multicolores (réunir des preuves hors coût de sort : Evidence Examiner, Izoni, Kylox's Voltstrider, Urgent Necropsy ; Aurelia, Buried in the Garden, Ill-Timed Explosion, Judith, Kaya, Lazav, Vannifar, Yarus, Etrata, Kylox, Niv-Mizzet, Officious Interrogation, Tin Street Gossip, Tolsimir, Hustle // Bustle, Treacherous Greed, Flotsam // Jetsam), Cryptex et Branch of Vitu-Ghazi.
 - **Tests :** 56 tests de règles (« lot A — multicolores ») et 20 (« lot A — incolores et terrains »).
+
+## Sous-lot B1 : réunir des preuves (701.59) ✅ (229 / 268)
+
+- **Cartes :** Surveillance Monitor, Forensic Researcher, Sample Collector, Incinerator of the Guilty, Lamplight Phoenix, Evidence Examiner, Izoni, Center of the Web, Polygraph Orb, Vein Ripper, Tenth District Hero, Cryptex, Axebane Ferox.
+- **Le moteur gagne :**
+  - réunir des preuves N en coût de capacité activée (`activated({ collectEvidence })`) et de capacité de mana (`manaAbility(…, { collectEvidence })`, Cryptex) ;
+  - l'effet facultatif `fx.mayCollectEvidence(N, { exclude }, …effets)` (« vous pouvez réunir des preuves N. Si vous le faites, … » ; `exclude` : Lamplight Phoenix, exilé en même temps) et `fx.mayCollectEvidenceX(store, …)` (X choisi, Incinerator of the Guilty) ;
+  - l'événement et le déclencheur « chaque fois que vous réunissez des preuves » (`when.collectEvidence`), émis aussi par le coût additionnel des sorts ;
+  - les gardes « réunissez des preuves N » et « sacrifiez une créature » (lues dans le texte ; `ward.sacrificeFilter` remplace `sacrificeNonland`) ;
+  - le choix automatique des preuves : la carte la moins chère qui suffit, sinon la plus chère (on ne gâche plus une carte chère pour un petit N).
+- **[règles] Correctif (fuzz à 3 joueurs) :** « doit être bloquée si possible » tient compte de la menace (509.1c) : l'exigence ne vaut que si le défenseur peut opposer assez de bloqueurs, et le blocage par défaut en met autant (un suspect qui doit être bloqué). Test dans `rulings.test.ts`.
+- **[règles]** `RULES_VERSION` = 35.
+- **Tests :** 8 tests de règles (« lot B1 ») et 1 décision officielle.

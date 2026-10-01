@@ -4,6 +4,7 @@
 import { payLife, sacrifice } from "./actions";
 import { RulesError } from "./errors";
 import { linkedColors } from "./layers";
+import { collectEvidence, evidenceCards } from "./stack";
 import {
   bump,
   changeCounters,
@@ -150,6 +151,7 @@ function canActivateMana(s: GameState, id: ObjectId, ab: ManaAbilityDef): boolea
   if (ab.condition && !checkCondition(s, ab.condition, o.controller, id)) return false;
   if (ab.oncePerTurn && s.turn.onceFired.includes(`mana:${id}`)) return false;
   if (ab.cost.payLife && (s.players[o.controller]?.life ?? 0) < ab.cost.payLife) return false;
+  if (ab.cost.collectEvidence && !evidenceCards(s, o.controller, id, ab.cost.collectEvidence)) return false;
   return true;
 }
 
@@ -360,6 +362,8 @@ export function activateManaAbility(s: GameState, player: PlayerId, id: ObjectId
   if (ab.cost.sacrificeSelf) sacrifice(s, id);
   // Haunted Screen : « {T}, payez 1 point de vie » ; Twitching Doll : « mettez un marqueur de nid sur cette créature ».
   if (ab.cost.payLife) payLife(s, player, ab.cost.payLife);
+  // Cryptex : « {T}, réunissez des preuves 3 : ajoutez un mana… ».
+  if (ab.cost.collectEvidence) collectEvidence(s, player, evidenceCards(s, player, id, ab.cost.collectEvidence) ?? []);
   if (ab.addCounter && s.objects[id]?.zone === "battlefield") changeCounters(s, o, ab.addCounter, 1);
   if (ab.removeCounter && (o.counters[ab.removeCounter] ?? 0) > 0) changeCounters(s, o, ab.removeCounter, -1);
   const pool = s.players[player]?.manaPool;

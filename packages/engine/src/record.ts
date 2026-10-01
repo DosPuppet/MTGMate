@@ -95,8 +95,11 @@ export const RECORD_VERSION = 1;
  *   n'a pas de carte en main » hors résolution ; désignation suspect (701.60).
  * - 34 : Murders at Karlov Manor, lot A6 : un sort ou une capacité à « X cibles » est proposé même sans cible (X = 0) ;
  *   l'IA ajuste X au nombre de cibles.
+ * - 35 : Murders at Karlov Manor, lot B1 : réunir des preuves en coût de capacité (et de mana), en effet facultatif (N ou
+ *   X), en garde, et « chaque fois que vous réunissez des preuves » ; choix automatique des preuves sans gâcher une carte
+ *   chère ; garde « sacrifiez [type] » filtrée.
  */
-export const RULES_VERSION = 34;
+export const RULES_VERSION = 35;
 
 /** Un point de contrôle toutes les N décisions (plus la dernière de la partie). */
 export const CHECKPOINT_EVERY = 25;

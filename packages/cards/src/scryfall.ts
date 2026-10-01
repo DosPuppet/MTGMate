@@ -114,7 +114,7 @@ function stripReminder(text: string): string {
 
 /** Garde : « Ward {2} », « Ward—Pay 7 life. » ou « Ward—{3}, Pay 3 life. » */
 const WARD =
-  /\bward(?: ((?:\{[^}]+\})+)|—(?:((?:\{[^}]+\})+), )?pay (\d+) life\.?|—discard a card( at random)?\.?|—sacrifice (two|three|four) (nonland )?permanents\.?)/i;
+  /\bward(?: ((?:\{[^}]+\})+)|—(?:((?:\{[^}]+\})+), )?pay (\d+) life\.?|—discard a card( at random)?\.?|—sacrifice (an?|two|three|four) (nonland permanents?|permanents?|creatures?)\.?|—collect evidence (\d+)\.?)/i;
 
 /** « Equip {3}{W} » (702.6) : capacité activée en rituel, cible une créature que vous contrôlez. */
 /** « Equip {2} » ou, avec un nom de capacité, « Gae Bolg — Equip {4} ». */
@@ -168,7 +168,19 @@ export function parseWard(text: string): CardDef["ward"] {
   if (m[1]) return { mana: parseManaCost(m[1]) };
   // « Ward—Sacrifice three permanents. » (Emrakul, the Exigent Doom)
   // « Ward—Sacrifice three nonland permanents. » (Valgavoth, Terror Eater)
-  if (m[5]) return { sacrifice: { two: 2, three: 3, four: 4 }[m[5].toLowerCase()], sacrificeNonland: m[6] ? true : undefined };
+  // « Ward—Sacrifice a creature. » (Vein Ripper)
+  if (m[5]) {
+    const n = ({ a: 1, an: 1, two: 2, three: 3, four: 4 } as Record<string, number>)[m[5].toLowerCase()];
+    const kind = (m[6] ?? "").toLowerCase();
+    const filter: ObjectFilter | undefined = kind.startsWith("nonland")
+      ? { nonland: true }
+      : kind.startsWith("creature")
+        ? { types: ["Creature"] }
+        : undefined;
+    return { sacrifice: n, ...(filter ? { sacrificeFilter: filter } : {}) };
+  }
+  // « Ward—Collect evidence 4. » (Axebane Ferox)
+  if (m[7]) return { collectEvidence: Number(m[7]) };
   // « Ward—Discard a card [at random]. » (Gideon the Oathless, Alpharael, Stonechosen)
   if (!m[3]) return m[4] ? { discard: true, discardRandom: true } : { discard: true };
   return { mana: m[2] ? parseManaCost(m[2]) : undefined, life: Number(m[3]) };

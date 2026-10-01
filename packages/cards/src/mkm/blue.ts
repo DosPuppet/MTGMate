@@ -16,6 +16,7 @@ import {
   SUSPECTED,
   spell,
   staticAbility,
+  THOPTER,
   target,
   triggered,
   when,
@@ -409,5 +410,32 @@ export const BLUE: Record<string, CardScript> = {
   },
   "Unauthorized Exit": {
     spell: spell([target.nonland()], [fx.bounce(ref.target()), fx.surveil(1)]),
+  },
+  "Surveillance Monitor": {
+    abilities: [
+      triggered(when.entersSelf, fx.mayCollectEvidence(4, {}), { label: "Vous pouvez réunir des preuves 4" }),
+      triggered(when.collectEvidence, [fx.createTokens(THOPTER)], {
+        label: "Vous réunissez des preuves : un Thopter 1/1 volant",
+      }),
+    ],
+  },
+  "Forensic Researcher": {
+    abilities: [
+      activated({
+        tap: true,
+        targets: [
+          { id: "t", label: "autre permanent que vous contrôlez", filter: { objects: { controller: "you", other: true } } },
+        ],
+        effects: [fx.untap(ref.target())],
+        label: "Dégagez un autre permanent que vous contrôlez",
+      }),
+      activated({
+        tap: true,
+        collectEvidence: 3,
+        targets: [target.creature("t", { controller: "opponent" })],
+        effects: [fx.tap(ref.target())],
+        label: "Réunissez des preuves 3 : engagez une créature que vous ne contrôlez pas",
+      }),
+    ],
   },
 };

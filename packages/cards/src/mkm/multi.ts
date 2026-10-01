@@ -15,6 +15,7 @@ import {
   modal,
   mode,
   ref,
+  SPIDER_BG,
   SPIRIT_WB,
   SUSPECTED,
   spell,
@@ -568,5 +569,25 @@ export const MULTI: Record<string, CardScript> = {
         fx.delayed([fx.sacrificeIt(ref.target("p"))], { p: ref.stored("p") }),
       ],
     ),
+  },
+  "Evidence Examiner": {
+    abilities: [
+      triggered(when.yourCombat, fx.mayCollectEvidence(4, {}), { label: "Vous pouvez réunir des preuves 4" }),
+      triggered(when.collectEvidence, [investigate()], { label: "Vous réunissez des preuves : enquêtez" }),
+    ],
+  },
+  "Izoni, Center of the Web": {
+    abilities: [
+      ...([when.entersSelf, when.attacksSelf] as const).map((w) =>
+        triggered(w, fx.mayCollectEvidence(4, {}, fx.createTokens(SPIDER_BG, 2)), {
+          label: "Réunissez des preuves 4 : deux Araignées 2/1",
+        }),
+      ),
+      activated({
+        sacrificeOther: { filter: { token: true }, count: 4 },
+        effects: [fx.surveil(2), fx.draw(2), fx.gainLife(2)],
+        label: "Sacrifiez quatre jetons : surveillance 2, piochez deux cartes, gagnez 2 PV",
+      }),
+    ],
   },
 };

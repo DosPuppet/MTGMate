@@ -345,8 +345,10 @@ export type Effect =
       discard?: boolean;
       discardRandom?: boolean;
       sacrifice?: number;
-      /** Les permanents sacrifiés sont non-terrains (garde de Valgavoth). */
-      sacrificeNonland?: boolean;
+      /** Les permanents sacrifiés : non-terrains (garde de Valgavoth), créatures (Vein Ripper). */
+      sacrificeFilter?: ObjectFilter;
+      /** Réunir des preuves N (garde d'Axebane Ferox). */
+      collectEvidence?: number;
       who: Ref;
       mana?: ManaCost;
       /** {1} pour chaque… (Swallowed by Leviathan). */
@@ -687,6 +689,11 @@ export type Effect =
    * `skip` : « vous pouvez fourrager ; si vous le faites, … » (les `skip` effets suivants sont ignorés sinon).
    */
   | { op: "forage"; skip: number }
+  /**
+   * « Vous pouvez réunir des preuves N. Si vous le faites, … » (701.59) ; sans `n` : réunir des preuves X, X choisi et
+   * mémorisé dans `store` ; `exclude` : cartes qui ne comptent pas (Lamplight Phoenix, exilé en même temps).
+   */
+  | { op: "collectEvidence"; n?: Amount; skip: number; store?: string; exclude?: Ref }
   /** Cadeau (702.174) : l'adversaire choisi reçoit le cadeau promis. */
   | { op: "gift"; kind: GiftKind; token?: TokenSpec }
   /** Dégage tous les permanents correspondants du contrôleur. */

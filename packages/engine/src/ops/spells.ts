@@ -15,7 +15,7 @@ import {
 } from "../effects";
 import { bump } from "../layers";
 import { availableMana, canPay, costToText, manaValue, payMana } from "../mana";
-import { castTerms, counterItem, dropNowPermissions, plotCard, stackItemSpecs } from "../stack";
+import { castTerms, collectEvidence, counterItem, dropNowPermissions, evidenceCards, plotCard, stackItemSpecs } from "../stack";
 import { copyStackItem } from "../stackChoices";
 import {
   apnapOrder,
@@ -177,7 +177,6 @@ export const HANDLERS: OpHandlers = {
     return;
   },
   unlessPay(s, r, e, ctx, key) {
-    const isLand = (id: string) => chars(s, id).types.includes("Land");
     const p = resolveRef(s, ctx, e.who).find((x) => isPlayer(s, x));
     if (!p) return;
     // « à moins que son contrôleur ne paie {X} » (Syncopate) : X est celui du sort.
@@ -188,12 +187,18 @@ export const HANDLERS: OpHandlers = {
     const life = e.lifeAmount ? evalAmount(s, ctx, e.lifeAmount) : e.life;
     // Garde à coût composé (Ovika : {3} et 3 PV) : les deux parties doivent être payables.
     const hand = s.players[p]?.hand ?? [];
+    const sacrificeable = () =>
+      s.battlefield.filter(
+        (id) => s.objects[id]?.controller === p && (!e.sacrificeFilter || matchesObjectFilter(s, p, id, e.sacrificeFilter)),
+      );
+    // Garde « réunissez des preuves N » : les cartes du cimetière du joueur qui la paie.
+    const evidence = e.collectEvidence ? evidenceCards(s, p, "", e.collectEvidence) : undefined;
     const canDo =
       (!mana || canPay(s, p, mana)) &&
       (s.players[p]?.life ?? 0) >= (life ?? 0) &&
       (!e.discard || hand.length > 0) &&
-      s.battlefield.filter((id) => s.objects[id]?.controller === p && !(e.sacrificeNonland && isLand(id))).length >=
-        (e.sacrifice ?? 0);
+      sacrificeable().length >= (e.sacrifice ?? 0) &&
+      evidence !== null;
     if (!canDo) return;
     const answer = r.vars[key("unless")];
     if (!answer) {
@@ -201,7 +206,10 @@ export const HANDLERS: OpHandlers = {
         mana ? costToText(mana) : "",
         life ? `${life} points de vie` : "",
         e.discard ? "défausser une carte" : "",
-        e.sacrifice ? `sacrifier ${e.sacrifice} permanents${e.sacrificeNonland ? " non-terrains" : ""}` : "",
+        e.sacrifice
+          ? `sacrifier ${e.sacrifice} ${e.sacrificeFilter?.types?.includes("Creature") ? "créature(s)" : e.sacrificeFilter?.nonland ? "permanents non-terrains" : "permanents"}`
+          : "",
+        e.collectEvidence ? `réunir des preuves ${e.collectEvidence}` : "",
       ]
         .filter(Boolean)
         .join(" et ");
@@ -257,7 +265,7 @@ export const HANDLERS: OpHandlers = {
     }
     // Garde « sacrifiez trois permanents » (Emrakul, the Exigent Doom).
     if (e.sacrifice) {
-      const perms = s.battlefield.filter((id) => s.objects[id]?.controller === p && !(e.sacrificeNonland && isLand(id)));
+      const perms = sacrificeable();
       const chosen = r.vars[key("unlessSac")];
       if (!chosen) {
         const cheapest = [...perms].sort(
@@ -284,6 +292,7 @@ export const HANDLERS: OpHandlers = {
       if (ids.length < e.sacrifice) return;
       for (const id of ids) sacrifice(s, id);
     }
+    if (evidence) collectEvidence(s, p, evidence);
     if (mana) {
       if (!canPay(s, p, mana)) return;
       payMana(s, p, mana);

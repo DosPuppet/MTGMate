@@ -352,4 +352,27 @@ export const BLACK: Record<string, CardScript> = {
       }),
     ],
   },
+  "Polygraph Orb": {
+    abilities: [
+      triggered(when.entersSelf, [fx.lookAtTop(4, { count: 2, exact: true, rest: "graveyard" }), fx.loseLife(2)], {
+        label: "Deux des quatre cartes du dessus en main, le reste au cimetière ; perdez 2 PV",
+      }),
+      activated({
+        mana: "{2}",
+        tap: true,
+        collectEvidence: 3,
+        effects: [fx.punisher(ref.eachOpponent, 3, { discard: true, sacrifice: { types: ["Creature"] } })],
+        label: "Chaque adversaire perd 3 PV, sauf s'il défausse une carte ou sacrifie une créature",
+      }),
+    ],
+  },
+  "Vein Ripper": {
+    abilities: [
+      // Garde — sacrifiez une créature : lue dans le texte.
+      triggered(when.dies({ types: ["Creature"] }), [fx.loseLife(2, ref.target()), fx.gainLife(2)], {
+        targets: [target.player("t", "opponent")],
+        label: "Une créature meurt : l'adversaire ciblé perd 2 PV, vous en gagnez 2",
+      }),
+    ],
+  },
 };

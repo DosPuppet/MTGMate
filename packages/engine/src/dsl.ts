@@ -1131,6 +1131,16 @@ export const fx = {
     const flat = effects.flat();
     return [{ op: "forage", skip: flat.length }, ...flat];
   },
+  /** « Vous pouvez réunir des preuves N. Si vous le faites (quand vous le faites), … » (701.59). */
+  mayCollectEvidence: (n: Amount, opts: { exclude?: Ref }, ...effects: Effects): Effect[] => {
+    const flat = effects.flat();
+    return [{ op: "collectEvidence", n, skip: flat.length, ...opts }, ...flat];
+  },
+  /** « Vous pouvez réunir des preuves X. Quand vous le faites, … X … » : X est mémorisé dans `store`. */
+  mayCollectEvidenceX: (store: string, ...effects: Effects): Effect[] => {
+    const flat = effects.flat();
+    return [{ op: "collectEvidence", skip: flat.length, store }, ...flat];
+  },
   /** « Vous pouvez payer [mana] et N points de vie. Si vous le faites, … » */
   mayPayWithLife: (mana: string, life: number, prompt: string, ...effects: Effects): Effect[] => {
     const flat = effects.flat();
@@ -1271,6 +1281,8 @@ export function manaAbility(
     oncePerTurn?: boolean;
     /** « Payez N points de vie » en plus de {T} (Haunted Screen). */
     payLife?: number;
+    /** Réunir des preuves N en coût (Cryptex). */
+    collectEvidence?: number;
     /** Marqueur mis sur la source à chaque activation (Twitching Doll). */
     addCounter?: string;
     /** Marqueur retiré de la source à chaque activation (Temple of Cyclical Time). */
@@ -1283,7 +1295,7 @@ export function manaAbility(
 ): ManaAbilityDef {
   return {
     kind: "mana",
-    cost: { tap: !opts.noTap, sacrificeSelf: opts.sacrifice, payLife: opts.payLife },
+    cost: { tap: !opts.noTap, sacrificeSelf: opts.sacrifice, payLife: opts.payLife, collectEvidence: opts.collectEvidence },
     addCounter: opts.addCounter,
     removeCounter: opts.removeCounter,
     produceLinkedColors: opts.linkedColors,
@@ -1348,6 +1360,8 @@ export function activated(opts: {
   removeCounterFrom?: { filter: ObjectFilter; kind: string };
   /** Flétrir N comme coût (ECL). */
   blight?: number;
+  /** Réunir des preuves N comme coût (MKM). */
+  collectEvidence?: number;
   /** « Engagez X [artefacts] dégagés que vous contrôlez ». */
   tapX?: ObjectFilter;
   /** « Exilez X cartes [d'artefact] de votre cimetière ». */
@@ -1389,6 +1403,7 @@ export function activated(opts: {
         : undefined,
       removeCounterFrom: opts.removeCounterFrom,
       blight: opts.blight,
+      collectEvidence: opts.collectEvidence,
       tapX: opts.tapX,
       exileFromGraveyardX: opts.exileFromGraveyardX,
       sacrificeX: opts.sacrificeX,
@@ -1637,6 +1652,7 @@ export const when = {
   /** Dépense N : « chaque fois que vous dépensez votre N-ième mana total pour lancer des sorts pendant un tour ». */
   expend: (n: number): TriggerSpec => ({ on: "expend", n }),
   forage: { on: "forage" } as TriggerSpec,
+  collectEvidence: { on: "collectEvidence" } as TriggerSpec,
   /** « Chaque fois que vous offrez un cadeau » */
   giveGift: { on: "gift" } as TriggerSpec,
   /** « Chaque fois que vous gagnez ou perdez des points de vie » */
@@ -1824,7 +1840,8 @@ export function wardAbility(ward: NonNullable<CardDef["ward"]>): TriggeredAbilit
         discard: ward.discard,
         discardRandom: ward.discardRandom,
         sacrifice: ward.sacrifice,
-        sacrificeNonland: ward.sacrificeNonland,
+        sacrificeFilter: ward.sacrificeFilter,
+        collectEvidence: ward.collectEvidence,
         skip: 1,
       },
       { op: "counter", what: { kind: "eventObject" } },

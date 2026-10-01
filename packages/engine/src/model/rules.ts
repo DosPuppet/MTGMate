@@ -377,6 +377,8 @@ export type TriggerSpec =
   | { on: "expend"; n: number }
   /** « Chaque fois que vous fourragez » (Corpseberry Cultivator). */
   | { on: "forage" }
+  /** « Chaque fois que vous réunissez des preuves » (Surveillance Monitor). */
+  | { on: "collectEvidence" }
   /** « Chaque fois que vous offrez un cadeau » (Jolly Gerbils). */
   | { on: "gift" }
   /** « Chaque fois que vous gagnez ou perdez des points de vie » (Wax-Wane Witness). */

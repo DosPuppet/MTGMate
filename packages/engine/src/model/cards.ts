@@ -100,8 +100,10 @@ export interface CardDef {
     discard?: boolean;
     discardRandom?: boolean;
     sacrifice?: number;
-    /** Les permanents à sacrifier sont non-terrains (Valgavoth). */
-    sacrificeNonland?: boolean;
+    /** Les permanents à sacrifier : non-terrains (Valgavoth), créatures (Vein Ripper). */
+    sacrificeFilter?: ObjectFilter;
+    /** « Garde — Réunissez des preuves N » (Axebane Ferox). */
+    collectEvidence?: number;
   };
   /** Coûts en plus du coût de flashback (Twinned Vision : « défaussez une carte » ; Group Project : « engagez trois créatures »). */
   flashbackCost?: AdditionalCost;
@@ -417,6 +419,8 @@ export interface CostDef {
   sacrifice?: { filter: ObjectFilter; count: number };
   /** Flétrir N (ECL) : N marqueurs −1/−1 sur une créature que vous contrôlez (choisie automatiquement : `blightTarget`). */
   blight?: number;
+  /** Réunir des preuves N (701.59, MKM) : cartes du cimetière de valeur de mana totale N ou plus (choisies automatiquement). */
+  collectEvidence?: number;
   /**
    * Retirer des marqueurs de la source. `kind: "any"` : « retirez N marqueurs de cette créature », de n'importe quelle
    * sorte (ECL), retirés par le moteur : les −1/−1 d'abord, les +1/+1 en dernier.
