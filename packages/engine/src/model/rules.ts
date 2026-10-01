@@ -187,6 +187,8 @@ export interface ObjectFilter {
   noCounters?: boolean;
   /** Du nom choisi par la source en arrivant (Petrified Hamlet : « les terrains du nom choisi »). */
   nameChosen?: boolean;
+  /** {X} dans son coût de mana (« un sort avec {X} dans son coût de mana » : Matterbending Mage, Paradox Surveyor). */
+  hasX?: boolean;
   /** Carte avec une Aventure (hors du champ de bataille : cimetière, main ; Hearth Elemental). */
   adventure?: boolean;
   /** Permanent arrivé en étant lancé (« si vous l'avez lancée » : The Sibsig Ceremony). */
@@ -608,6 +610,8 @@ export type Amount =
   | { kind: "div"; of: Amount; by: number }
   /** Puissance : `base` à la puissance `of` (Mathemagics : « 2^X cartes »), bornée à 2^20. */
   | { kind: "pow"; base: number; of: Amount }
+  /** X du sort de l'événement (« regardez les X cartes du dessus », Geometer's Arthropod). */
+  | { kind: "eventX" }
   /** Force totale des permanents correspondant au filtre, vus du contrôleur. */
   | { kind: "totalPower"; filter: ObjectFilter }
   /** Valeur mémorisée pendant la résolution (vie perdue de cette façon, blessures en excès…). */

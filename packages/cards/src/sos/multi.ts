@@ -705,4 +705,20 @@ export const MULTI: Record<string, CardScript> = {
       [fx.damage(amount.manaSpent, ref.target()), fx.untapAll({ types: ["Creature"], controller: "you" })],
     ),
   },
+  "Geometer's Arthropod": {
+    abilities: [
+      triggered(when.castSpell("you", { hasX: true }), [fx.lookAtTop(amount.eventX, { count: 1, exact: true, rest: "bottom" })], {
+        label: "Sort avec {X} : regardez les X cartes du dessus, une en main",
+      }),
+    ],
+  },
+  "Paradox Surveyor": {
+    abilities: [
+      triggered(
+        when.entersSelf,
+        [fx.lookAtTop(5, { filter: { anyOf: [{ types: ["Land"] }, { hasX: true }] }, count: 1, rest: "bottom" })],
+        { label: "Regardez cinq cartes : un terrain ou une carte avec {X} en main" },
+      ),
+    ],
+  },
 };

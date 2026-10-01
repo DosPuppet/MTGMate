@@ -536,6 +536,8 @@ export interface LkiSnapshot {
   damagedBy?: ObjectId[];
   name?: string;
   manaValue?: number;
+  /** {X} dans son coût de mana (Matterbending Mage, Paradox Surveyor). */
+  hasX?: boolean;
   /** Sort qui a une Aventure (créature ou Aventure d'une carte à Aventure ; Beluna Grandsquall). */
   adventure?: boolean;
   tapped?: boolean;

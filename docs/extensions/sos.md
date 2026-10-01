@@ -72,3 +72,9 @@ Les scripts sont dans `packages/cards/src/sos/` : `cards` (cartes du méta), `wh
 - **[règles]** `RULES_VERSION` = 29.
 - **Restent :** Suspend Aggression (« jusqu'à la fin du prochain tour de son propriétaire »), Zaffai and the Tempests (sort gratuit une fois par tour), Geometer's Arthropod et Paradox Surveyor (« carte avec {X} dans son coût »), Fractal Tender (« si vous avez mis un marqueur sur elle ce tour-ci »), Lorehold, the Historian (miracle), Quandrix, the Proof (cascade).
 - **Tests :** 59 tests de règles (« lot A — multicolores ») et 19 (« lot A — incolores et terrains »).
+
+## Sous-lot B1 : sorts avec {X} dans leur coût ✅ (249 / 262)
+
+- **Cartes :** Matterbending Mage, Geometer's Arthropod, Paradox Surveyor.
+- **Le moteur gagne :** le filtre `hasX` (« un sort / une carte avec {X} dans son coût de mana », lu sur les instantanés et les vues de sorts) et `amount.eventX` (le X du sort déclencheur).
+- **Tests :** 3 tests de règles (« lot B1 »).

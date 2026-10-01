@@ -266,6 +266,7 @@ export function spellView(d: CardDef, player: PlayerId): LkiSnapshot {
     name: d.name,
     manaValue: manaValue(d.manaCost),
     ...(d.layout === "adventure" || d.subtypes.includes("Adventure") ? { adventure: true } : {}),
+    ...((d.manaCost?.x ?? 0) > 0 ? { hasX: true } : {}),
   };
 }
 

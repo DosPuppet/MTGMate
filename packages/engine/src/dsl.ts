@@ -284,6 +284,7 @@ export const amount = {
   /** Division entière : « pour chaque tranche de N ». */
   per: (of: Amount, by: number): Amount => ({ kind: "div", of, by }),
   pow: (base: number, of: Amount): Amount => ({ kind: "pow", base, of }),
+  eventX: { kind: "eventX" } as Amount,
   manaValueOf: (r: Ref): Amount => ({ kind: "manaValueOf", ref: r }),
   toughnessOf: (r: Ref): Amount => ({ kind: "toughnessOf", ref: r }),
   colorsOf: (r: Ref): Amount => ({ kind: "colorsOf", ref: r }),

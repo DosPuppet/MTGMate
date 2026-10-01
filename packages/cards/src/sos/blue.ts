@@ -167,6 +167,17 @@ export const BLUE: Record<string, CardScript> = {
     prepareSpell: spell([], [fx.draw(2)]),
     abilities: [entersWith({ prepared: true })],
   },
+  "Matterbending Mage": {
+    abilities: [
+      triggered(when.entersSelf, [fx.bounce(ref.target())], {
+        targets: [target.upTo(1, target.creature("t", { other: true }))],
+        label: "Renvoyez jusqu'à une autre créature dans la main de son propriétaire",
+      }),
+      triggered(when.castSpell("you", { hasX: true }), [fx.modify(ref.self, { addKeywords: ["unblockable"] })], {
+        label: "Sort avec {X} : ne peut pas être bloquée ce tour-ci",
+      }),
+    ],
+  },
   Mathemagics: {
     spell: spell([target.player("p")], [fx.draw(amount.pow(2, amount.x), ref.target("p"))]),
   },

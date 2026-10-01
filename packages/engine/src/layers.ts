@@ -465,6 +465,8 @@ function view(s: GameState, id: ObjectId, c: Characteristics, o: GameObject, att
     attacking,
     name: c.name,
     manaValue: scan && !scan.copying ? manaValue(s.defs[o.defId]?.manaCost) : viewManaValue(s, id, o),
+    // « un sort avec {X} dans son coût de mana » (Matterbending Mage).
+    hasX: (!o.faceDown && (s.defs[o.faceDefId ?? o.defId]?.manaCost?.x ?? 0) > 0) || undefined,
     tapped: o.tapped,
     damage: o.zone === "battlefield" ? o.damage : undefined,
     uid: o.uid,

@@ -4475,3 +4475,70 @@ describe("Secrets of Strixhaven, lot A — incolores et terrains", () => {
     });
   });
 });
+
+describe("Secrets of Strixhaven, lot B1 : sorts avec {X} dans leur coût", () => {
+  /** Rituel {X}{U} : « piochez une carte ». */
+  const XSPELL = customCard({
+    name: "Équation d'essai",
+    types: ["Sorcery"],
+    typeLine: "Sorcery",
+    colors: ["U"],
+    manaCost: { generic: 0, colored: { U: 1 }, x: 1 },
+    manaCostText: "{X}{U}",
+    spell: spell([], [fx.draw(1)]),
+  });
+
+  it("Matterbending Mage : renvoie une autre créature ; un sort avec {X} la rend imblocable ce tour-ci, pas un autre", () => {
+    let s = scenario({
+      p1: { battlefield: lands("Island", 6), hand: ["Matterbending Mage", XSPELL, "Opt"], library: lands("Island", 5) },
+      p2: { battlefield: ["Bear Cub"] },
+    });
+    s = settle(cast(s, "p1", "Matterbending Mage"));
+    expect(idsOf(s, "p2", "hand", "Bear Cub")).toHaveLength(1);
+    const mage = idOf(s, "p1", "battlefield", "Matterbending Mage");
+    s = settle(cast(s, "p1", "Opt"));
+    expect(chars(s, mage).keywords).not.toContain("unblockable");
+    s = settle(cast(s, "p1", XSPELL.name, undefined, { x: 1 }));
+    expect(chars(s, mage).keywords).toContain("unblockable");
+  });
+
+  it("Geometer's Arthropod : un sort avec {X} : les X cartes du dessus, une en main, les autres au-dessous", () => {
+    let s = scenario({
+      p1: {
+        battlefield: ["Geometer's Arthropod", ...lands("Island", 4)],
+        hand: [XSPELL],
+        library: ["Opt", "Bear Cub", "Serra Angel", "Shivan Dragon", "Forest"],
+      },
+    });
+    s = settle(cast(s, "p1", XSPELL.name, undefined, { x: 3 }), (req) => {
+      if (req.type !== "pick") return undefined;
+      const angel = req.options.find((id) => nameOf(s, id) === "Serra Angel");
+      // Seules les trois cartes du dessus sont proposées.
+      expect(req.options.some((id) => nameOf(s, id) === "Shivan Dragon")).toBe(false);
+      return angel ? [angel] : undefined;
+    });
+    expect(idsOf(s, "p1", "hand", "Serra Angel")).toHaveLength(1);
+    // La pioche du rituel a pris « Opt » ou le Dragon selon l'ordre : le Dragon est désormais au-dessus des deux autres.
+    const lib = s.players.p1?.library.map((id) => nameOf(s, id)) ?? [];
+    expect(lib.slice(-2).sort()).toEqual(["Bear Cub", "Opt"]);
+  });
+
+  it("Paradox Surveyor : cinq cartes, un terrain ou une carte avec {X} en main ; pas une autre carte", () => {
+    let s = scenario({
+      p1: {
+        battlefield: [...lands("Forest", 2), "Island"],
+        hand: ["Paradox Surveyor"],
+        library: ["Bear Cub", XSPELL, "Opt", "Serra Angel", "Island", "Shivan Dragon"],
+      },
+    });
+    let offered: string[] = [];
+    s = settle(cast(s, "p1", "Paradox Surveyor"), (req) => {
+      if (req.type !== "pick") return undefined;
+      offered = req.options.map((id) => nameOf(s, id) ?? "");
+      return [req.options.find((id) => nameOf(s, id) === XSPELL.name) as string];
+    });
+    expect(offered.sort()).toEqual(["Island", XSPELL.name].sort());
+    expect(idsOf(s, "p1", "hand", XSPELL.name)).toHaveLength(1);
+    expect(s.players.p1?.library.map((id) => nameOf(s, id))[0]).toBe("Shivan Dragon");
+  });
+});
