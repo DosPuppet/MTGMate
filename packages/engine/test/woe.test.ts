@@ -13,8 +13,9 @@ import { runEffect } from "../src/effects";
 import { legalActions } from "../src/legal";
 import { chars } from "../src/state";
 import { checkCondition } from "../src/triggers";
-import { stateBasedActions } from "../src/turn";
+import { canBlock, stateBasedActions } from "../src/turn";
 import type { CardDef, ChoiceRequest, ChoiceValue, GameState, TokenSpec } from "../src/types";
+import { projectView } from "../src/view";
 import { act, advanceUntil, castNowOf, customCard, idOf, idsOf, passAccepting, passUntil, scenario } from "./helpers";
 
 type S = GameState;
@@ -4396,5 +4397,99 @@ describe("Wilds of Eldraine, lot B4 : « coûte moins s'il est marchandé »", (
     );
     expect(idsOf(after, "p1", "battlefield", "Hamlet Glutton")).toHaveLength(1);
     expect(after.players.p1?.life).toBe(23);
+  });
+});
+
+describe("Wilds of Eldraine, lot C1 : furtivité, X marqueurs répartis, Auras attachées, PV perdus", () => {
+  const settleAll = (s: S) => {
+    while (stateBasedActions(s)) {}
+    return passAccepting(s, (x) => x.stack.length === 0 && x.triggers.length === 0 && x.pending?.kind === "priority");
+  };
+  const giveRole = (s: S, token: TokenSpec, to: string, controller = "p1") => {
+    const r = {
+      item: { id: "x", controller, sourceId: to, sourceDefId: s.objects[to]?.defId, targets: { t: [to] } },
+      controller,
+      targets: { t: [to] },
+      vars: {},
+      pc: 0,
+    } as never as Parameters<typeof runEffect>[1];
+    for (const e of createRole(token, dsl.ref.target()).flat()) runEffect(s, r, e);
+  };
+
+  it("Ingenious Prodigy : X marqueurs ; furtivité ; à l'entretien, un marqueur retiré pour une carte", () => {
+    let s = scenario({ p1: { battlefield: lands("Island", 3), hand: ["Ingenious Prodigy"], library: lands("Island", 3) } });
+    s = settleAll(act(s, "p1", { type: "cast", card: idOf(s, "p1", "hand", "Ingenious Prodigy"), x: 2 }));
+    const prodigy = idOf(s, "p1", "battlefield", "Ingenious Prodigy");
+    expect(s.objects[prodigy]?.counters["+1/+1"]).toBe(2);
+    // 2/3 : bloquée par une 2/2, pas par une 5/5.
+    const t = scenario({ p1: { battlefield: ["Ingenious Prodigy"] }, p2: { battlefield: ["Bear Cub", "Shivan Dragon"] } });
+    const p = idOf(t, "p1", "battlefield", "Ingenious Prodigy");
+    const pr = t.objects[p];
+    if (pr) pr.counters["+1/+1"] = 2;
+    let u = passAccepting(t, (x) => x.pending?.kind === "declareAttackers");
+    u = act(u, "p1", { type: "declareAttackers", attackers: [{ id: p, defender: "p2" }] });
+    expect(canBlock(u, idOf(u, "p2", "battlefield", "Shivan Dragon"), p)).toBe(false);
+    expect(canBlock(u, idOf(u, "p2", "battlefield", "Bear Cub"), p)).toBe(true);
+    // Entretien suivant : on retire un marqueur et on pioche.
+    const hand = s.players.p1?.hand.length ?? 0;
+    s = advanceUntil(s, (x) => x.turn.number === 5 && x.turn.step === "main1");
+    expect(s.objects[prodigy]?.counters["+1/+1"]).toBe(1);
+    expect((s.players.p1?.hand.length ?? 0) - hand).toBe(2);
+  });
+
+  it("Grove's Bounty : X marqueurs +1/+1 répartis entre vos créatures", () => {
+    let s = scenario({
+      p1: { battlefield: [...lands("Forest", 4), "Bear Cub", "Llanowar Elves"], hand: ["Elusive Otter // Grove's Bounty"] },
+    });
+    const card = idOf(s, "p1", "hand", "Elusive Otter // Grove's Bounty");
+    const bear = idOf(s, "p1", "battlefield", "Bear Cub");
+    const elves = idOf(s, "p1", "battlefield", "Llanowar Elves");
+    const opt = legalActions(s, "p1").find((a) => a.type === "cast" && a.card === card && a.faceName === "Grove's Bounty");
+    const face = opt?.type === "cast" ? opt.face : undefined;
+    s = act(s, "p1", { type: "cast", card, face, x: 3, targets: { t: [bear, elves] } });
+    s = passAccepting(s, (x) => x.pending?.kind === "choice" || (x.stack.length === 0 && x.pending?.kind === "priority"));
+    if (s.pending?.kind === "choice") s = act(s, "p1", { type: "choose", values: [2, 1] });
+    s = settleAll(s);
+    expect(s.objects[bear]?.counters["+1/+1"]).toBe(2);
+    expect(s.objects[elves]?.counters["+1/+1"]).toBe(1);
+  });
+
+  it("Kellan, the Fae-Blooded : vos autres créatures +1/+0 par Aura et Équipement attaché à Kellan", () => {
+    const s = scenario({ p1: { battlefield: ["Kellan, the Fae-Blooded // Birthright Boon", "Bear Cub"] } });
+    const kellan = idOf(s, "p1", "battlefield", "Kellan, the Fae-Blooded // Birthright Boon");
+    const bear = idOf(s, "p1", "battlefield", "Bear Cub");
+    expect(chars(s, bear).power).toBe(2);
+    giveRole(s, MONSTER_ROLE, kellan);
+    expect(chars(s, bear).power).toBe(3);
+    giveRole(s, MONSTER_ROLE, bear);
+    // Le Rôle sur l'Ours n'est pas attaché à Kellan.
+    expect(chars(s, bear).power).toBe(3 + 1);
+  });
+
+  it("Faunsbane Troll : sacrifiez une Aura attachée à lui pour qu'il se batte ; la créature tuée est exilée", () => {
+    let s = scenario({
+      p1: { battlefield: [...lands("Forest", 4), "Swamp"], hand: ["Faunsbane Troll"] },
+      p2: { battlefield: ["Bear Cub"] },
+    });
+    s = settleAll(act(s, "p1", { type: "cast", card: idOf(s, "p1", "hand", "Faunsbane Troll") }));
+    const troll = idOf(s, "p1", "battlefield", "Faunsbane Troll");
+    expect(chars(s, troll).power).toBe(5);
+    s = advanceUntil(s, (x) => x.turn.number === 5 && x.turn.step === "main1");
+    const bear = idOf(s, "p2", "battlefield", "Bear Cub");
+    s = settleAll(act(s, "p1", { type: "activate", source: troll, ability: 1, targets: { t: [bear] } }));
+    expect(idsOf(s, "p2", "battlefield", "Bear Cub")).toHaveLength(0);
+    expect(s.exile.some((id) => s.defs[s.objects[id]?.defId ?? ""]?.name === "Bear Cub")).toBe(true);
+    expect(chars(s, troll).power).toBe(4);
+  });
+
+  it("Rowan, Scion of War : vos sorts noirs et/ou rouges coûtent {X} de moins, X étant les PV perdus ce tour-ci", () => {
+    let s = scenario({ p1: { battlefield: ["Rowan, Scion of War"], hand: ["Lightning Strike"] } });
+    const rowan = idOf(s, "p1", "battlefield", "Rowan, Scion of War");
+    const pl = s.players.p1;
+    if (pl) pl.turnStats.lifeLost = 1;
+    s = settleAll(act(s, "p1", { type: "activate", source: rowan, ability: 0 }));
+    const strike = idOf(s, "p1", "hand", "Lightning Strike");
+    // {1}{R} moins {1} : {R}, impayable sans terrain mais coût affiché d'une valeur de mana 1.
+    expect(projectView(s, "p1").hand.find((c) => c.id === strike)?.castCost).toEqual({ text: "{R}", delta: -1 });
   });
 });

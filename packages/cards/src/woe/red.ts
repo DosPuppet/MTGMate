@@ -49,6 +49,22 @@ const chitterlordEffects = [
 ];
 
 export const RED: Record<string, CardScript> = {
+  // Double initiative lue dans le texte.
+  "Kellan, the Fae-Blooded": {
+    abilities: [
+      staticAbility(
+        { types: ["Creature"], controller: "you", other: true },
+        { power: 1 },
+        {
+          per: { attachedToSelf: true, anyOf: [{ subtype: "Aura" }, { subtype: "Equipment" }] },
+          label: "Vos autres créatures : +1/+0 par Aura et Équipement attaché à Kellan",
+        },
+      ),
+    ],
+  },
+  "Birthright Boon": {
+    spell: spell([], [fx.search({ anyOf: [{ subtype: "Aura" }, { subtype: "Equipment" }] }, { to: "hand" })]),
+  },
   "Belligerent of the Ball": {
     abilities: [
       triggered(when.yourCombat, [fx.pump(ref.target(), 1, 0, ["menace"])], {

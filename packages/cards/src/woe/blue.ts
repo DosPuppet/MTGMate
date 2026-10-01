@@ -60,6 +60,30 @@ const OPPONENTS_WITH_CREATURES = amount.refCount(
 );
 
 export const BLUE: Record<string, CardScript> = {
+  "Ingenious Prodigy": {
+    abilities: [
+      blockAbility(block.notBy({ powerAboveSource: true }, "Furtivité : imblocable par les créatures de force supérieure")),
+      entersWith({ counters: amount.x }),
+      triggered(
+        when.yourUpkeep,
+        [
+          ...fx.may("Retirer un marqueur +1/+1 pour piocher une carte ?", fx.removeCounters(ref.self, 1, "+1/+1", "r")),
+          ...fx.when(cond.v("r"), fx.draw(1)),
+        ],
+        {
+          condition: cond.sourceMatches({ withCounter: "+1/+1" }),
+          label: "Vous pouvez retirer un marqueur +1/+1 : piochez une carte",
+        },
+      ),
+    ],
+  },
+  // Prouesse lue dans le texte.
+  "Elusive Otter": {
+    abilities: [blockAbility(block.notBy({ powerBelowSource: true }, "Imblocable par les créatures de force inférieure"))],
+  },
+  "Grove's Bounty": {
+    spell: spell([target.upTo(99, target.creature("t", { controller: "you" }))], [fx.countersDivided(amount.x, ref.target())]),
+  },
   // Marchandage lu dans le texte ; « coûte {N} de moins s'il est marchandé » : réduction sous `cond.kicked`.
   "Ice Out": {
     costReduction: { generic: 1, condition: cond.kicked },

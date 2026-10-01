@@ -64,6 +64,10 @@ export interface ObjectFilter {
   self?: boolean;
   /** Le permanent auquel la source est attachée (« la créature équipée »). */
   attachedToSource?: boolean;
+  /** Attaché à la source (« chaque Aura et Équipement attaché à Kellan », « une Aura attachée à cette créature »). */
+  attachedToSelf?: boolean;
+  /** De force supérieure à celle de la source (furtivité : « ne peut pas être bloquée par des créatures de force supérieure »). */
+  powerAboveSource?: boolean;
   /** Créature équipée (au moins un Équipement attaché). */
   equipped?: boolean;
   /** Enchanté par au moins une Aura (`true`), par une Aura que vous contrôlez (`byYou`), ou par aucune (`false`). */
@@ -602,6 +606,8 @@ export type Amount =
   | { kind: "distinctNames"; filter: ObjectFilter }
   /** Nombre de cartes dans une zone du contrôleur. */
   | { kind: "cardsIn"; zone: "hand" | "graveyard" | "library" }
+  /** Points de vie perdus ce tour-ci par le contrôleur (Rowan, Scion of War). */
+  | { kind: "lifeLostThisTurn" }
   /** Domaine : types de terrains de base parmi les terrains du contrôleur. */
   | { kind: "basicLandTypes" }
   /** Marqueurs d'un type parmi les permanents correspondants (« marqueurs de loyauté parmi les Jace »). */

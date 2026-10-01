@@ -522,7 +522,7 @@ export type Effect =
   /** Détruit l'objet et tous les autres permanents du même nom (Maelstrom Pulse). */
   | { op: "destroySameName"; what: Ref }
   /** Marqueurs +1/+1 répartis entre les cibles (au moins 1 chacune). */
-  | { op: "countersDivided"; total: number; to: Ref }
+  | { op: "countersDivided"; total: Amount; to: Ref }
   /** Choisir X, puis payer {X} ; mémorisé sous `store` (Wildborn Preserver). */
   | { op: "payX"; prompt: string; store: string }
   /** Change la cible d'un sort ou d'une capacité à cible unique (Bolt Bend). */

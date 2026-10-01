@@ -288,6 +288,7 @@ export const amount = {
   maxPower: (filter: ObjectFilter): Amount => ({ kind: "maxPower", filter }),
   distinctNames: (filter: ObjectFilter): Amount => ({ kind: "distinctNames", filter }),
   cardsIn: (zone: "hand" | "graveyard" | "library"): Amount => ({ kind: "cardsIn", zone }),
+  lifeLostThisTurn: { kind: "lifeLostThisTurn" } as Amount,
   /** Domaine : nombre de types de terrains de base parmi vos terrains. */
   basicLandTypes: { kind: "basicLandTypes" } as Amount,
   distinctSubtypes: (filter: ObjectFilter): Amount => ({ kind: "distinctSubtypes", filter }),
@@ -772,7 +773,7 @@ export const fx = {
   exileOnResolve: { op: "exileOnResolve" } as Effect,
   poison: (who: Ref, n: Amount): Effect => ({ op: "poison", who, n }),
   destroySameName: (what: Ref): Effect => ({ op: "destroySameName", what }),
-  countersDivided: (total: number, to: Ref): Effect => ({ op: "countersDivided", total, to }),
+  countersDivided: (total: Amount, to: Ref): Effect => ({ op: "countersDivided", total, to }),
   payX: (prompt: string, store: string): Effect => ({ op: "payX", prompt, store }),
   changeTarget: (what: Ref): Effect => ({ op: "changeTarget", what }),
   extraCombat: { op: "extraCombat" } as Effect,

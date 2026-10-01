@@ -99,3 +99,12 @@ Les scripts sont dans `packages/cards/src/woe/` : `cards` (cartes du méta), `wh
 - **Le moteur gagne :** une réduction de coût sous `cond.kicked` voit le choix du lanceur (`spellReduction` reçoit `kicked`).
 - **Correctif :** un sort payable seulement avec son kicker (Hamlet Glutton marchandé, avec cinq terrains) n'était jamais proposé. `legalActions` le propose, l'IA le lance avec le kicker, et l'interface pose d'office le marchandage au lieu de demander.
 - **Tests :** 1 test de règles (« lot B4 »).
+
+## Sous-lot C1 : furtivité, marqueurs répartis, Auras attachées, PV perdus ✅ (255 / 269)
+
+- **Cartes :** Ingenious Prodigy, Elusive Otter // Grove's Bounty, Kellan, the Fae-Blooded // Birthright Boon, Faunsbane Troll, Rowan, Scion of War.
+- **Le moteur gagne :**
+  - les filtres `powerAboveSource` (furtivité : « ne peut pas être bloquée par des créatures de force supérieure ») et `attachedToSelf` (« attaché à cette créature » : statiques « pour chaque », coûts de sacrifice) ;
+  - `countersDivided` accepte un montant (« répartissez X marqueurs ») ;
+  - `amount.lifeLostThisTurn`.
+- **Tests :** 5 tests de règles (« lot C1 »).

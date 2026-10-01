@@ -69,6 +69,7 @@ export function matchesView(v: LkiSnapshot, f: ObjectFilter, perspective: Player
   if (f.name && v.name !== f.name) return false;
   if (f.tapped !== undefined && !!v.tapped !== f.tapped) return false;
   if (f.equipped !== undefined && !!v.equipped !== f.equipped) return false;
+  if (f.attachedToSelf && (!sourceId || v.attachedTo !== sourceId)) return false;
   if (f.enchanted !== undefined) {
     const by = v.enchantedBy ?? [];
     if (f.enchanted === "byYou" ? !by.includes(perspective) : by.length > 0 !== f.enchanted) return false;
@@ -178,6 +179,7 @@ export function resolveFilter(s: GameState, f: ObjectFilter, sourceId?: ObjectId
     f = withChosen(f, sourceId ? (s.objects[sourceId] ?? s.lki[sourceId]) : undefined);
   // Formation Breaker : « de force inférieure à celle de cette créature ».
   if (f.powerBelowSource) f = { ...f, powerBelowSource: undefined, maxPower: sourcePower(s, sourceId) - 1 };
+  if (f.powerAboveSource) f = { ...f, powerAboveSource: undefined, minPower: sourcePower(s, sourceId) + 1 };
   if (f.maxManaValueX) {
     const x = (sourceId && s.objects[sourceId]?.castX) || 0;
     return { ...f, maxManaValueX: undefined, maxManaValue: x };

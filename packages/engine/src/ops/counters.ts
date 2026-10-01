@@ -261,6 +261,7 @@ export const HANDLERS: OpHandlers = {
   },
   countersDivided(s, r, e, ctx, key) {
     // Répartition annoncée à la mise sur la pile (601.2d) : la part d'une cible devenue illégale est perdue (608.2b).
+    const total = evalAmount(s, ctx, e.total);
     const division = e.to.kind === "target" ? r.item.division?.[e.to.id] : undefined;
     if (division && e.to.kind === "target") {
       const legal = new Set(resolveRef(s, ctx, e.to));
@@ -273,11 +274,11 @@ export const HANDLERS: OpHandlers = {
     const among = resolveRef(s, ctx, e.to).filter((id) => onBattlefield(s, id));
     if (among.length === 0) return;
     let split: number[];
-    if (among.length === 1) split = [e.total];
+    if (among.length === 1) split = [total];
     else {
       const answer = r.vars[key("cdivide")];
       if (!answer) {
-        const each = Math.floor(e.total / among.length);
+        const each = Math.floor(total / among.length);
         return {
           ask: {
             player: ctx.controller,
@@ -285,11 +286,11 @@ export const HANDLERS: OpHandlers = {
             request: {
               type: "divide",
               intent: "divideCounters",
-              prompt: `Répartissez ${e.total} marqueurs +1/+1 entre les cibles`,
+              prompt: `Répartissez ${total} marqueurs +1/+1 entre les cibles`,
               among,
-              total: e.total,
+              total: total,
               minEach: 1,
-              suggested: among.map((_, i) => each + (i < e.total - each * among.length ? 1 : 0)),
+              suggested: among.map((_, i) => each + (i < total - each * among.length ? 1 : 0)),
             },
           },
         };

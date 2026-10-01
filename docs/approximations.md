@@ -272,7 +272,7 @@ Dans l'ordre où elles ont été ajoutées, extension par extension.
   - `choix auto` Commune with Nature, Feral Encounter : le reste va au-dessous dans un ordre aléatoire ;
   - `timing` Seek the Beast : « jusqu'à votre prochaine étape de fin » dure jusqu'à la fin de ce tour (le vôtre) ou de votre prochain tour ;
   - `règle` Troyan, Gutsy Explorer : son mana ne sert qu'aux sorts de VM 5 ou plus (pas aux sorts avec {X} dans leur coût) ;
-  - `règle` Will, Scion of Peace : la réduction « ce tour-ci » est accordée à Will et cesse s'il quitte le champ de bataille ;
+  - `règle` Will, Scion of Peace, Rowan, Scion of War : la réduction « ce tour-ci » est accordée à la créature et cesse si elle quitte le champ de bataille ; X est relu à chaque sort ;
   - `règle` The Irencrag : « perd toutes ses autres capacités » : sa capacité de mana et son déclencheur sont inactifs une fois Équipement, mais restent listés ;
   - `règle` Three Bowls of Porridge : « un mode qui n'a pas déjà été choisi » : trois capacités, chacune activable une seule fois ;
   - `timing` Hylda of the Icy Crown : le mode est choisi au déclenchement, puis {1} est payé ou non (et non « payez {1} ; quand vous le faites, choisissez ») ;

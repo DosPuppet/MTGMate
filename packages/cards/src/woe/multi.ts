@@ -46,6 +46,38 @@ const ELEMENTAL_WU: TokenSpec = {
 };
 
 export const MULTI: Record<string, CardScript> = {
+  "Faunsbane Troll": {
+    abilities: [
+      triggered(when.entersSelf, createRole(MONSTER_ROLE, ref.self), { label: "Un Rôle Monstre attaché à elle" }),
+      activated({
+        mana: "{1}",
+        sacrificeOther: { filter: { subtype: "Aura", attachedToSelf: true }, count: 1 },
+        sorcerySpeed: true,
+        targets: [target.creature("t", { controller: "opponent" })],
+        effects: [fx.exileIfDies(ref.target()), fx.fight(ref.self, ref.target())],
+        label: "Sacrifiez une Aura attachée : elle se bat contre une créature (exilée si elle meurt ce tour-ci)",
+      }),
+    ],
+  },
+  // Menace lue dans le texte. Comme Will, Scion of Peace : la réduction est accordée à Rowan pour le tour.
+  "Rowan, Scion of War": {
+    abilities: [
+      activated({
+        tap: true,
+        sorcerySpeed: true,
+        effects: [
+          fx.modify(ref.self, {
+            addAbilities: [
+              costReducer({ colors: ["B", "R"] }, 0, "Vos sorts noirs et/ou rouges coûtent {X} de moins (PV perdus)", {
+                genericAmount: amount.lifeLostThisTurn,
+              }),
+            ],
+          }),
+        ],
+        label: "Vos sorts noirs et/ou rouges coûtent {X} de moins ce tour-ci",
+      }),
+    ],
+  },
   // Le mode est choisi au déclenchement, puis {1} est payé ou non (au lieu de « payez {1} ; quand vous le faites, choisissez »).
   "Hylda of the Icy Crown": {
     abilities: [

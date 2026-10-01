@@ -534,6 +534,8 @@ export function evalAmount(s: GameState, ctx: EffectContext, a: Amount): number 
       const counters = s.objects[ctx.sourceId]?.counters ?? s.lki[ctx.sourceId]?.counters ?? {};
       return counters[a.counter] ?? 0;
     }
+    case "lifeLostThisTurn":
+      return s.players[ctx.controller]?.turnStats.lifeLost ?? 0;
     case "cardsIn":
       return s.players[ctx.controller]?.[a.zone].length ?? 0;
     case "inExile":
