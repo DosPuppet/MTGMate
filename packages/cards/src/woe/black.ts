@@ -46,6 +46,15 @@ const sacrificeAnyNumber = (store: string) =>
 const YOUR_CREATURE = (id = "c") => target.creature(id, { controller: "you" });
 
 export const BLACK: Record<string, CardScript> = {
+  "Twisted Sewer-Witch": {
+    abilities: [
+      triggered(
+        when.entersSelf,
+        [fx.createTokens(RAT_NO_BLOCK), ...createRole(WICKED_ROLE, ref.permanentsOf(ref.you, { subtype: "Rat" }))],
+        { label: "Un Rat 1/1, puis un Rôle Méchant attaché à chaque Rat que vous contrôlez" },
+      ),
+    ],
+  },
   "Lord Skitter's Blessing": {
     abilities: [
       triggered(when.entersSelf, createRole(WICKED_ROLE), {

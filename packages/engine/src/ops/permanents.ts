@@ -171,6 +171,15 @@ export const HANDLERS: OpHandlers = {
       attacking = answer ? String(answer[0]) : suggested;
     }
     const enters = { tapped: !!(e.tapped || e.attacking), attacking };
+    if (e.attachTo) {
+      for (const host of resolveRef(s, ctx, e.attachTo).filter((x) => onBattlefield(s, x))) {
+        const made = createTokens(s, ctx.controller, token, n, true, enters);
+        for (const id of made) attach(s, id, host);
+        created.push(...made);
+      }
+      if (e.store) r.vars[`$ids:${e.store}`] = created;
+      return;
+    }
     for (const p of e.for ? resolveRef(s, ctx, e.for).filter((x) => isPlayer(s, x)) : [ctx.controller])
       created.push(...createTokens(s, p, token, n, true, enters));
     if (e.store) r.vars[`$ids:${e.store}`] = created;

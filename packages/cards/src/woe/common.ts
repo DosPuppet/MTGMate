@@ -107,15 +107,12 @@ export const YOUNG_HERO_ROLE = role(
 );
 
 /**
- * « Créez un jeton Rôle [N] attaché à [la créature] » : rien n'est créé si la créature n'est plus sur le champ de
- * bataille (303.7b) ; un autre Rôle du même joueur sur elle part au cimetière (704.5y).
+ * « Créez un jeton Rôle [N] attaché à [la créature] » (ou à chacune des créatures désignées) : rien n'est créé pour une
+ * créature qui n'est plus sur le champ de bataille (303.7b) ; un autre Rôle du même joueur sur elle part au cimetière
+ * (704.5y).
  */
 export function createRole(token: TokenSpec, to: Ref = ref.target()): dsl.Effects {
-  return fx.when(
-    cond.refMatches(to, { types: ["Creature"] }),
-    fx.createTokens(token, 1, undefined, "role"),
-    fx.attach(to, ref.stored("role")),
-  );
+  return [fx.createTokens(token, 1, undefined, undefined, to)];
 }
 
 /** Célébration : « si deux permanents non-terrain ou plus sont arrivés sous votre contrôle ce tour-ci ». */

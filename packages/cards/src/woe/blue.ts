@@ -60,6 +60,10 @@ const OPPONENTS_WITH_CREATURES = amount.refCount(
 );
 
 export const BLUE: Record<string, CardScript> = {
+  "Asinine Antics": {
+    flashExtraCost: "{2}",
+    spell: spell([], createRole(CURSED_ROLE, ref.permanentsOf(ref.eachOpponent, { types: ["Creature"] }))),
+  },
   "Aquatic Alchemist": {
     abilities: [
       // Le premier éphémère ou rituel du tour (tous deux confondus) : le montant de l'événement compte ceux lancés avant.

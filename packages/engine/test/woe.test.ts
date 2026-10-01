@@ -4335,3 +4335,37 @@ describe("Wilds of Eldraine, lot B2 : « vous engagez une créature adverse »",
     expect(s.battlefield.filter((id) => chars(s, id).name === "Elemental")).toHaveLength(1);
   });
 });
+
+describe("Wilds of Eldraine, lot B3 : un Rôle pour chaque créature", () => {
+  const settleAll = (s: S) => {
+    while (stateBasedActions(s)) {}
+    return passAccepting(s, (x) => x.stack.length === 0 && x.triggers.length === 0 && x.pending?.kind === "priority");
+  };
+  const roleOn = (s: S, host: string) =>
+    s.battlefield.filter((id) => s.objects[id]?.attachedTo === host).map((id) => chars(s, id).name);
+
+  it("Asinine Antics : un Rôle Maudit sur chaque créature adverse ; lançable en flash pour {2} de plus", () => {
+    let s = scenario({
+      p1: { battlefield: lands("Island", 6), hand: ["Asinine Antics"] },
+      p2: { battlefield: ["Pelakka Wurm", "Shivan Dragon"] },
+      active: "p2",
+    });
+    s = act(s, "p2", { type: "pass" });
+    s = settleAll(act(s, "p1", { type: "cast", card: idOf(s, "p1", "hand", "Asinine Antics") }));
+    for (const name of ["Pelakka Wurm", "Shivan Dragon"]) {
+      const id = idOf(s, "p2", "battlefield", name);
+      expect(roleOn(s, id)).toEqual(["Cursed Role"]);
+      expect(chars(s, id).power).toBe(1);
+    }
+    expect(s.players.p1?.manaPool.U ?? 0).toBe(0);
+  });
+
+  it("Twisted Sewer-Witch : un Rat, puis un Rôle Méchant attaché à chaque Rat", () => {
+    let s = scenario({ p1: { battlefield: [...lands("Swamp", 5)], hand: ["Twisted Sewer-Witch"] } });
+    s = settleAll(act(s, "p1", { type: "cast", card: idOf(s, "p1", "hand", "Twisted Sewer-Witch") }));
+    const rats = s.battlefield.filter((id) => chars(s, id).name === "Rat");
+    expect(rats).toHaveLength(1);
+    expect(roleOn(s, rats[0] as string)).toEqual(["Wicked Role"]);
+    expect(chars(s, rats[0] as string).power).toBe(2);
+  });
+});

@@ -86,3 +86,9 @@ Les scripts sont dans `packages/cards/src/woe/` : `cards` (cartes du méta), `wh
 - **Cartes :** Solitary Sanctuary, Hylda of the Icy Crown, Sharae of Numbing Depths ; Icewrought Sentry n'est plus approximée.
 - **Le moteur gagne :** l'événement d'engagement dit qui engage (`by` : le contrôleur de ce qui se résout, sinon, pour un coût ou du mana, le contrôleur du permanent) ; le déclencheur `taps` prend `byYou` (« chaque fois que vous engagez… »).
 - **Tests :** 4 tests de règles (« lot B2 »).
+
+## Sous-lot B3 : un Rôle pour chaque créature ✅ (247 / 269)
+
+- **Cartes :** Asinine Antics (flash pour {2} de plus, `flashExtraCost`), Twisted Sewer-Witch.
+- **Le moteur gagne :** `createTokens(…, attachTo)` crée les jetons Aura ou Équipement attachés à chaque objet désigné encore sur le champ de bataille ; `createRole` s'en sert (plus de condition ni de variable mémorisée).
+- **Tests :** 2 tests de règles (« lot B3 »).

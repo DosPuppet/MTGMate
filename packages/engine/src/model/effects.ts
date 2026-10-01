@@ -111,6 +111,11 @@ export type Effect =
       count: Amount;
       for?: Ref;
       store?: string;
+      /**
+       * Jetons Aura ou Équipement créés attachés : `count` jetons pour chaque objet désigné encore sur le champ de
+       * bataille, attachés à lui (Rôles : « un Rôle attaché à [chaque créature] ») ; rien pour un objet parti (303.7b).
+       */
+      attachTo?: Ref;
       tapped?: boolean;
       attacking?: boolean;
       pt?: Amount;

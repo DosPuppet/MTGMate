@@ -396,8 +396,9 @@ export const fx = {
   draw: (n: Amount, who: Ref = ref.you): Effect => ({ op: "draw", who, amount: n }),
   gainLife: (n: Amount, who: Ref = ref.you): Effect => ({ op: "gainLife", who, amount: n }),
   /** Crée des jetons (pour vous, ou pour un autre joueur : « son contrôleur crée… »). */
-  createTokens: (token: TokenSpec, count: Amount = 1, forWho?: Ref, store?: string): Effect => ({
+  createTokens: (token: TokenSpec, count: Amount = 1, forWho?: Ref, store?: string, attachTo?: Ref): Effect => ({
     op: "createTokens",
+    attachTo,
     token,
     count,
     for: forWho,
