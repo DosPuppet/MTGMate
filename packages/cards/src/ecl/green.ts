@@ -13,6 +13,7 @@ import {
   cond,
   ELF_BG,
   entersWith,
+  eventReplacement,
   fx,
   MUTAVAULT,
   manaAbility,
@@ -74,6 +75,20 @@ const SPRY_X = amount.max(
 );
 
 export const GREEN: Record<string, CardScript> = {
+  "Shimmerwilds Growth": {
+    enchant: { filter: { types: ["Land"] }, label: "terrain" },
+    chooseOnEnter: "color",
+    abilities: [
+      staticAbility("attached", { setColorsChosen: true }, { label: "Le terrain enchanté est de la couleur choisie" }),
+      eventReplacement({
+        event: "mana",
+        source: { attachedToSource: true },
+        extraMana: "chosen",
+        modify: { add: 1 },
+        label: "Le terrain enchanté engagé pour du mana : un mana de plus de la couleur choisie",
+      }),
+    ],
+  },
   "Celestial Reunion": {
     // Le coût additionnel facultatif (choisir un type, contempler deux créatures de ce type) est vérifié à la résolution,
     // pour un type de la carte trouvée (approximation : le joueur paie toujours ce coût quand il le peut).

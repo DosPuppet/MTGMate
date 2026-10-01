@@ -7,7 +7,7 @@ import { dealDamage, destroy, sourceFromObject } from "../src/actions";
 import { eventReplacement, fx, graveyardReplacement, ref, triggered, when } from "../src/dsl";
 import { runEffect } from "../src/effects";
 import { counterItem } from "../src/stack";
-import { chars } from "../src/state";
+import { changeCounters, chars } from "../src/state";
 import { addPlayerEffect } from "../src/statics";
 import type { CardDef, GameState } from "../src/types";
 import { act, advanceUntil, customCard, idOf, idsOf, passAccepting, passUntil, scenario } from "./helpers";
@@ -186,6 +186,28 @@ describe("remplacements (616, 615)", () => {
     s = settle(s, (x) => x.stack.length === 0 && x.triggers.length === 0);
     expect(idsOf(s, "p1", "graveyard", "Bear Cub")).toHaveLength(0);
     expect(s.players.p1?.life).toBe(20);
+  });
+});
+
+describe("remplacements des jetons et des marqueurs (R1, famille H)", () => {
+  it("616.1 : un jeton d'artefact remplacé (Draconic Visitor) est aussi doublé (Doubling Season)", () => {
+    const s = scenario({ p1: { battlefield: ["Doubling Season", "Draconic Visitor", "Bear Cub"] } });
+    const bear = idOf(s, "p1", "battlefield", "Bear Cub");
+    runEffect(
+      s,
+      { ...resolution("p1"), item: { ...resolution("p1").item, sourceId: bear } } as never,
+      fx.createTokens({ name: "Treasure", colors: [], types: ["Artifact"], subtypes: ["Treasure"] }),
+    );
+    const dragons = s.battlefield.filter((id) => s.objects[id]?.isToken && chars(s, id).subtypes.includes("Dragon"));
+    expect(dragons).toHaveLength(2);
+  });
+
+  it("une prévention (« on ne peut pas mettre de marqueurs ») l'emporte sur un doubleur", () => {
+    const shield = ench("Sans marqueurs", eventReplacement({ event: "counters", modify: { prevent: true } }));
+    const s = scenario({ p1: { battlefield: ["Doubling Season", shield, "Bear Cub"] } });
+    const bear = s.objects[idOf(s, "p1", "battlefield", "Bear Cub")];
+    if (bear) changeCounters(s, bear, "+1/+1", 1);
+    expect(bear?.counters["+1/+1"] ?? 0).toBe(0);
   });
 });
 

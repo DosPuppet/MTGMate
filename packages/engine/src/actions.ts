@@ -19,16 +19,17 @@ import {
   obj,
   opponentsOf,
   rulesEvent,
+  snapshot,
 } from "./state";
 import {
   type ActiveReplacement,
   consumeReplacement,
-  doublers,
   eventReplacements,
+  playerSide,
   playerStatic,
-  playerStatics,
   preventions,
-  tokenMultiplier,
+  quantityMods,
+  recipientMatches,
 } from "./statics";
 import { matchesObjectFilter, matchesView, protectedFrom, sourceView, withChosen } from "./targets";
 import { pushInline, queueLifelink } from "./triggers";
@@ -41,6 +42,7 @@ import type {
   GameObject,
   GameState,
   Keyword,
+  LkiSnapshot,
   ObjectFilter,
   ObjectId,
   PlayerId,
@@ -80,8 +82,10 @@ export function drawCard(s: GameState, p: PlayerId): void {
 export function drawCards(s: GameState, p: PlayerId, n: number): void {
   const player = s.players[p];
   if (!player || n <= 0) return;
-  const mods: AmountMod[] = playerStatics(s, p, "drawDouble").map(() => ({ times: 2 }));
-  if (player.hand.length <= 1) for (const _ of playerStatics(s, p, "drawPlusOneWhenHandSmall")) mods.push({ add: 1 });
+  // Remplacements de la pioche (R1, famille I) ; Mornsong Aria : « les joueurs ne peuvent pas piocher ».
+  const q = quantityMods(s, "draw", (a) => recipientMatches(s, a, p));
+  if (q.prevented) return;
+  const mods = q.mods;
   const most = chooseReplacementOrder(n, mods, "max");
   const total = most <= player.library.length ? most : chooseReplacementOrder(n, mods, "min");
   for (let i = 0; i < total; i++) drawCard(s, p);
@@ -90,8 +94,8 @@ export function drawCards(s: GameState, p: PlayerId, n: number): void {
 export function gainLife(s: GameState, p: PlayerId, amount: number): void {
   const player = s.players[p];
   if (!player || amount <= 0) return;
-  // Giant Cindermaw : « les joueurs ne peuvent pas gagner de points de vie » ; Screaming Nemesis : ce joueur, pour la partie.
-  if (playerStatic(s, p, "cantGainLife") || s.playerOrder.some((q) => playerStatic(s, q, "noLifeGainForAll"))) return;
+  // Screaming Nemesis : ce joueur ne peut pas gagner de points de vie, pour la partie.
+  if (playerStatic(s, p, "cantGainLife")) return;
   // Grievous Wound : « le joueur enchanté ne peut pas gagner de points de vie ».
   if (
     s.battlefield.some(
@@ -102,10 +106,11 @@ export function gainLife(s: GameState, p: PlayerId, amount: number): void {
   )
     return;
   // Remplacements (616.1), dans l'ordre le plus favorable au joueur qui gagne les points de vie :
-  // Angel of Vitality (« autant plus 1 »), The Wind Crystal (« le double »).
-  const mods: AmountMod[] = playerStatics(s, p, "lifeGainBonus").map(({ ab }) => ({ add: ab.lifeGainBonus ?? 0 }));
-  for (let i = 0; i < doublers(s, p, "lifeGain"); i++) mods.push({ times: 2 });
-  amount = chooseReplacementOrder(amount, mods, "max");
+  // Angel of Vitality (« autant plus 1 »), The Wind Crystal (« le double ») ; Giant Cindermaw, Mornsong Aria : « les
+  // joueurs ne peuvent pas gagner de points de vie ».
+  const q = quantityMods(s, "lifeGain", (a) => recipientMatches(s, a, p));
+  if (q.prevented) return;
+  amount = chooseReplacementOrder(amount, q.mods, "max");
   player.life += amount;
   bump(s); // des caractéristiques peuvent dépendre des points de vie (Elenda)
   emit({ type: "life", player: p, delta: amount, life: player.life });
@@ -191,26 +196,6 @@ export function setSpeed(s: GameState, p: PlayerId, speed: number): void {
  * Destinataire d'un remplacement (blessures ou perte de PV), vu de son contrôleur : lui, lui ou ses permanents, un
  * adversaire, un adversaire ou ses permanents, et le filtre du permanent blessé.
  */
-function recipientMatches(s: GameState, a: ActiveReplacement, target: string): boolean {
-  const r = a.r;
-  const player = isPlayer(s, target);
-  const victim = player ? target : s.objects[target]?.controller;
-  if (!victim) return false;
-  if (r.toFilter && (player || !matchesObjectFilter(s, a.controller, target, r.toFilter, a.sourceId))) return false;
-  switch (r.to) {
-    case "you":
-      return player && target === a.controller;
-    case "yourSide":
-      return victim === a.controller;
-    case "opponent":
-      return player && opponentsOf(s, a.controller).includes(target);
-    case "opponentSide":
-      return opponentsOf(s, a.controller).includes(victim);
-    default:
-      return true;
-  }
-}
-
 /** Le remplacement s'applique-t-il à ces blessures (combat, source, destinataire) ? */
 function damageReplacementApplies(
   s: GameState,
@@ -533,36 +518,34 @@ export function createTokens(
   extras = true,
   enters: EntersContext = {},
 ): ObjectId[] {
-  // Draconic Visitor : les jetons d'artefact deviennent des Dragons 5/5 volants.
-  if (t.types.includes("Artifact")) {
-    const replacement = playerStatics(s, controller, "replaceArtifactTokens").find(({ ab }) => !!ab.replaceArtifactTokens)?.ab
-      .replaceArtifactTokens;
-    if (replacement) t = replacement;
-  }
-  const created: ObjectId[] = [];
-  // Worldwalker Helm : « ces jetons plus un jeton Carte supplémentaire » (la Carte elle-même n'en ajoute pas).
-  const extraMap =
-    t.types.includes("Artifact") && t.name !== "Map"
-      ? playerStatics(s, controller, "extraMapToken").find(({ ab }) => !!ab.extraMapToken)?.ab.extraMapToken
-      : undefined;
-  // Moonlit Meditation : la première fois de chaque tour, des copies du permanent enchanté à la place.
-  const meditation = playerStatics(s, controller, "tokensAsCopiesOfAttached").find(
-    ({ id, ab }) =>
-      !!id &&
-      !!ab.tokensAsCopiesOfAttached &&
-      !s.turn.onceFired.includes(`copies:${id}`) &&
-      !!s.objects[id]?.attachedTo &&
-      !!s.objects[s.objects[id]?.attachedTo ?? ""],
-  );
-  if (meditation?.id) {
-    s.turn.onceFired.push(`copies:${meditation.id}`);
-    const model = s.objects[s.objects[meditation.id]?.attachedTo ?? ""];
+  // Remplacements des jetons (R1, famille H), vus de celui qui les crée et du jeton créé.
+  const tokenReps = (v: LkiSnapshot) =>
+    eventReplacements(s, "tokens").filter(
+      (a) =>
+        playerSide(s, a, controller) &&
+        (!a.r.toFilter || matchesView(v, a.r.toFilter, a.controller, a.sourceId)) &&
+        (!a.r.instead?.firstEachTurn || !s.turn.onceFired.includes(`tokens:${a.sourceId}`)),
+    );
+  // Draconic Visitor : d'autres jetons à la place (les jetons d'artefact deviennent des Dragons 5/5 volants).
+  const swap = tokenReps(tokenView(t, controller)).find((a) => !!a.r.instead?.token);
+  if (swap?.r.instead?.token) t = swap.r.instead.token;
+  // Moonlit Meditation, Mirrormind Crown : la première fois de chaque tour, des copies du permanent auquel la source est
+  // attachée, à la place.
+  const copies = tokenReps(tokenView(t, controller)).find((a) => {
+    const host = a.sourceId ? s.objects[s.objects[a.sourceId]?.attachedTo ?? ""] : undefined;
+    return !!a.r.instead?.copyOfAttached && host?.zone === "battlefield";
+  });
+  if (copies?.sourceId && count > 0) {
+    if (copies.r.instead?.firstEachTurn) s.turn.onceFired.push(`tokens:${copies.sourceId}`);
+    const model = s.objects[s.objects[copies.sourceId]?.attachedTo ?? ""];
     if (model) {
-      const n = count * tokenMultiplier(s, controller, !!s.defs[model.defId]?.types.includes("Creature"));
-      for (let i = 0; i < n; i++) created.push(createTokenCopy(s, controller, model.defId));
-      return created;
+      const out: ObjectId[] = [];
+      const n = chooseReplacementOrder(count, tokenModifiers(tokenReps(snapshot(s, model.id))), "max");
+      for (let i = 0; i < n; i++) out.push(createTokenCopy(s, controller, model.defId));
+      return out;
     }
   }
+  const created: ObjectId[] = [];
   const defId = tokenDefId(t);
   if (!s.defs[defId]) {
     const def: CardDef = {
@@ -586,8 +569,9 @@ export function createTokens(
     };
     s.defs[defId] = def;
   }
-  // Doubling Season : « crée deux fois plus de ces jetons ».
-  const n = count * tokenMultiplier(s, controller, t.types.includes("Creature"));
+  // Doubling Season : « crée deux fois plus de ces jetons » ; Ojer Taq : trois fois plus de jetons de créature.
+  const reps = tokenReps(tokenView(t, controller));
+  const n = chooseReplacementOrder(count, tokenModifiers(reps), "max");
   for (let i = 0; i < n; i++) {
     const o = createObject(s, defId, controller, "battlefield", { isToken: true });
     o.timestamp = nextTimestamp(s);
@@ -598,13 +582,9 @@ export function createTokens(
     logTokenArrival(s, o);
     created.push(o.id);
   }
-  if (extraMap) created.push(...createTokens(s, controller, extraMap, 1));
-  // Quina, Qu Gourmet : « ces jetons plus un jeton Grenouille 1/1 » (le jeton ajouté ne déclenche pas le remplacement).
-  if (extras && count > 0) {
-    for (const { ab } of playerStatics(s, controller, "extraToken")) {
-      if (ab.extraToken) created.push(...createTokens(s, controller, ab.extraToken, 1, false));
-    }
-  }
+  // Quina (« ces jetons plus une Grenouille »), Worldwalker Helm (« plus une Carte ») : les jetons ajoutés ne déclenchent
+  // pas de nouveau remplacement.
+  if (extras && count > 0) for (const a of reps) if (a.r.plus) created.push(...createTokens(s, controller, a.r.plus, 1, false));
   return created;
 }
 
@@ -623,4 +603,44 @@ export function createTokenCopy(s: GameState, controller: PlayerId, defId: strin
 function logTokenArrival(s: GameState, o: GameObject): void {
   const c = chars(s, o.id);
   logTurnEvent(s, zoneEntry(null, "battlefield", o.owner, o.controller, { types: c.types, subtypes: c.subtypes, token: true }));
+}
+
+/** Le jeton tel qu'il serait créé (filtres des remplacements de jetons). */
+function tokenView(t: TokenSpec, controller: PlayerId): LkiSnapshot {
+  return {
+    id: "",
+    defId: tokenDefId(t),
+    owner: controller,
+    controller,
+    name: t.name,
+    types: t.types,
+    subtypes: t.subtypes,
+    supertypes: t.legendary ? ["Legendary"] : [],
+    colors: t.colors,
+    power: t.power ?? 0,
+    toughness: t.toughness ?? 0,
+    keywords: t.keywords ?? [],
+    isToken: true,
+  };
+}
+
+/** Modifications du nombre de jetons : « le double » (Doubling Season), « le triple » (Ojer Taq), « autant plus N ». */
+function tokenModifiers(reps: ActiveReplacement[]): AmountMod[] {
+  const mods: AmountMod[] = [];
+  for (const a of reps) {
+    if (a.r.modify.times) mods.push({ times: a.r.modify.times });
+    if (a.r.modify.add) mods.push({ add: a.r.modify.add });
+  }
+  return mods;
+}
+
+/**
+ * Nombre de jetons copies créés pour `count` (Doubling Season, Ojer Taq…) : les multiplicateurs des remplacements de
+ * jetons qui s'appliquent à ce modèle.
+ */
+export function tokenCopyCount(s: GameState, controller: PlayerId, model: LkiSnapshot, count: number): number {
+  const reps = eventReplacements(s, "tokens").filter(
+    (a) => playerSide(s, a, controller) && (!a.r.toFilter || matchesView(model, a.r.toFilter, a.controller, a.sourceId)),
+  );
+  return chooseReplacementOrder(count, tokenModifiers(reps), "max");
 }

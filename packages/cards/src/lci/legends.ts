@@ -15,7 +15,6 @@ import {
   craft,
   DINOSAUR_YOU,
   descend,
-  doubler,
   entersWith,
   eventReplacement,
   FUNGUS_DINOSAUR,
@@ -168,7 +167,16 @@ export const LEGENDS: Record<string, CardScript> = {
     ],
   },
   "Ojer Taq, Deepest Foundation": {
-    abilities: [doubler({ creatureTokensTriple: true, label: "Trois fois plus de jetons de créature" }), returnsAsTemple()],
+    abilities: [
+      eventReplacement({
+        event: "tokens",
+        to: "you",
+        toFilter: { types: ["Creature"] },
+        modify: { times: 3 },
+        label: "Trois fois plus de jetons de créature",
+      }),
+      returnsAsTemple(),
+    ],
   },
   "Temple of Civilization": temple("W", cond.amountAtLeast({ kind: "attackersThisTurn" }, 3)),
   "Thousand Moons Infantry": {

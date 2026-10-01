@@ -9,8 +9,8 @@ import {
   CREATURE_YOU_CONTROL,
   cond,
   cost,
-  doubler,
   entersAndSacrificed,
+  eventReplacement,
   expend,
   FOOD,
   FOOD_ABILITY,
@@ -229,7 +229,7 @@ export const GREEN: Record<string, CardScript> = {
           { label: "Garde {1}" },
         ),
       ],
-      [doubler({ counters: true, label: "Marqueurs doublés" })],
+      [eventReplacement({ event: "counters", to: "yourSide", modify: { times: 2 }, label: "Marqueurs doublés" })],
     ],
   },
   "Keen-Eyed Curator": {

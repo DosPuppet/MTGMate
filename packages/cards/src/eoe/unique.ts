@@ -8,13 +8,12 @@ import {
   amount,
   CREATURE_YOU_CONTROL,
   cond,
-  doubler,
   entersWith,
+  eventReplacement,
   fx,
   loyalty,
   modal,
   mode,
-  playerStatic,
   ROBOT,
   ref,
   spell,
@@ -78,7 +77,15 @@ export const UNIQUE: Record<string, CardScript> = {
       filter: { types: ["Artifact", "Creature"], controller: "you" },
       label: "artefact ou créature que vous contrôlez",
     },
-    abilities: [playerStatic({ tokensAsCopiesOfAttached: true, label: "Premiers jetons du tour : copies" })],
+    abilities: [
+      eventReplacement({
+        event: "tokens",
+        to: "you",
+        instead: { copyOfAttached: true, firstEachTurn: true },
+        modify: {},
+        label: "Premiers jetons du tour : copies",
+      }),
+    ],
   },
 
   // --- Noir ------------------------------------------------------------------
@@ -223,9 +230,11 @@ export const UNIQUE: Record<string, CardScript> = {
   },
   "Loading Zone": {
     abilities: [
-      doubler({
-        counters: true,
-        countersFilter: { anyOf: [{ types: ["Creature"] }, { subtype: "Spacecraft" }, { subtype: "Planet" }] },
+      eventReplacement({
+        event: "counters",
+        to: "yourSide",
+        toFilter: { anyOf: [{ types: ["Creature"] }, { subtype: "Spacecraft" }, { subtype: "Planet" }] },
+        modify: { times: 2 },
         label: "Marqueurs doublés (créatures, Vaisseaux, Planètes)",
       }),
     ],

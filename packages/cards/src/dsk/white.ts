@@ -6,12 +6,12 @@ import {
   cost,
   eerie,
   entersWith,
+  eventReplacement,
   fx,
   GLIMMER_CREATURE,
   glimmer,
   modal,
   mode,
-  playerStatic,
   ref,
   spell,
   staticAbility,
@@ -125,7 +125,7 @@ export const WHITE: Record<string, CardScript> = {
   "Leyline of Hope": {
     leyline: true,
     abilities: [
-      playerStatic({ lifeGainBonus: 1, label: "Gains de PV +1" }),
+      eventReplacement({ event: "lifeGain", to: "you", modify: { add: 1 }, label: "Gains de PV +1" }),
       staticAbility(
         CREATURE_YOU_CONTROL,
         { power: 2, toughness: 2 },

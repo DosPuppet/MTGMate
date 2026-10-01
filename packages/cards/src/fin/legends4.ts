@@ -6,6 +6,7 @@ import {
   cond,
   costReducer,
   entersWith,
+  eventReplacement,
   fx,
   graveyardReplacement,
   manaAbility,
@@ -38,7 +39,14 @@ export const LEGENDS4: Record<string, CardScript> = {
         { setSubtypes: [], loseAllAbilities: true, addAbilities: [manaAbility("C")] },
         { label: "Terrains flétris : « {T} : Ajoutez {C} »" },
       ),
-      playerStatic({ extraColorlessFromLands: true, label: "Un terrain engagé pour {C} ajoute {C}" }),
+      eventReplacement({
+        event: "mana",
+        to: "you",
+        source: { types: ["Land"] },
+        manaProduced: "C",
+        modify: { add: 1 },
+        label: "Un terrain engagé pour {C} ajoute {C}",
+      }),
     ],
   },
   "Zack Fair": {

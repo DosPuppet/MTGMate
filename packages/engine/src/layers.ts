@@ -687,6 +687,10 @@ function evalStatic(s: GameState, slot: StaticSlot, sig: (string | number)[]): {
     dependent = true;
     sig.push(`a${extra.length}`);
   }
+  if (mods.setColorsChosen) {
+    const color = o.chosen?.color;
+    mods = { ...mods, setColorsChosen: undefined, setColors: color ? [color] : undefined };
+  }
   if (mods.copyLinkedExile) {
     const card = s.linkedExile.find((l) => l.sourceId === id)?.cards.find((c) => s.objects[c]?.zone === "exile");
     const defId = card ? s.objects[card]?.defId : undefined;

@@ -22,6 +22,7 @@ import {
 import { RulesError } from "../errors";
 import { copiableExceptions, copiedDefId, hasKeyword } from "../layers";
 import { manaValue } from "../mana";
+import { chooseReplacementOrder } from "../modifiers";
 import { auraHosts, copyCandidates, type EntersContext } from "../replacement";
 import { bounceSpell, exileSpell, spellToZone } from "../stack";
 import {
@@ -45,7 +46,7 @@ import {
   turnFaceUp,
   untapObject,
 } from "../state";
-import { addPlayerEffect, playerStatic, playerStaticTotal } from "../statics";
+import { addPlayerEffect, playerStatic, quantityMods, recipientMatches } from "../statics";
 import { matchesCard, matchesObjectFilter, shareCreatureType } from "../targets";
 import type { CardType, Effect, GameState, ObjectFilter, ObjectId, Resolution } from "../types";
 
@@ -510,10 +511,10 @@ export const HANDLERS: OpHandlers = {
     const f = e.store?.filter;
     for (const p of resolveRef(s, ctx, e.who)) {
       const library = s.players[p]?.library ?? [];
-      // The Water Crystal : « il en meule autant plus quatre » (pour chaque adversaire de ce joueur qui en contrôle un).
-      const extra = opponentsOf(s, p).reduce((m, q) => m + playerStaticTotal(s, q, "opponentMillExtra"), 0);
       const base = e.halfLibrary ? Math.floor(library.length / 2) : e.graveyardSize ? (s.players[p]?.graveyard.length ?? 0) : n;
-      const count = base > 0 ? base + extra : 0;
+      // Remplacements de la meule (R1, famille I) : The Water Crystal (« il en meule autant plus quatre »).
+      const q = quantityMods(s, "mill", (a) => recipientMatches(s, a, p));
+      const count = base > 0 && !q.prevented ? chooseReplacementOrder(base, q.mods, "min") : 0;
       for (const id of library.slice(0, count)) {
         if (f && matchesCard(s, ctx.controller, id, { ...f, controller: undefined })) matching++;
         const uid = s.objects[id]?.uid;

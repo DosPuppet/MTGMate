@@ -17,7 +17,7 @@ import {
   snapshot,
   tapObject,
 } from "./state";
-import { playerStatic, playerStaticTotal } from "./statics";
+import { type ActiveReplacement, eventReplacements, playerSide } from "./statics";
 import { matchesCard, matchesObjectFilter, matchesView, withChosen } from "./targets";
 import { checkCondition } from "./triggers";
 import type {
@@ -166,15 +166,30 @@ function otherToTap(s: GameState, id: ObjectId, strict = false): ObjectId | unde
   return mine.find((x) => manaAbilitiesOf(s, x).length === 0) ?? (strict ? undefined : mine[0]);
 }
 
+/**
+ * « Chaque fois que [ce permanent] est engagé pour du mana, ajoutez un mana de plus » (R1, famille I) : les remplacements
+ * de mana qui s'appliquent à cette source engagée, vus du joueur qui l'engage (Lavaleaper, Shimmerwilds Growth…).
+ */
+function manaReplacements(s: GameState, id: ObjectId, ab: ManaAbilityDef): ActiveReplacement[] {
+  const o = s.objects[id];
+  if (!o || !ab.cost.tap) return [];
+  return eventReplacements(s, "mana").filter(
+    (a) => playerSide(s, a, o.controller) && (!a.r.source || matchesObjectFilter(s, a.controller, id, a.r.source, a.sourceId)),
+  );
+}
+
+/** Mana du même type ajouté en plus, quel que soit le type produit (connu du solveur). */
+const sameTypeBonus = (reps: ActiveReplacement[]) =>
+  reps.filter((a) => !a.r.manaProduced && (a.r.extraMana ?? "same") === "same").reduce((n, a) => n + (a.r.modify.add ?? 0), 0);
+
 /** Quantité produite (« {G} pour chaque Elfe que vous contrôlez »). */
 function manaAmount(s: GameState, id: ObjectId, ab: ManaAbilityDef): number {
   // Source déjà sacrifiée pour payer le coût (Trésor) : quantité imprimée.
   const o = s.objects[id];
   if (!o) return ab.amount;
   const controller = o.controller;
-  // Molten Tide : « chaque fois que vous engagez une Montagne pour du mana, ajoutez {R} de plus ».
-  const extra =
-    ab.cost.tap && chars(s, id).subtypes.includes("Mountain") ? playerStaticTotal(s, controller, "extraMountainMana") : 0;
+  // Molten Tide, Lavaleaper, Roxanne : « chaque fois que [ce permanent] est engagé pour du mana, un mana de plus ».
+  const extra = sameTypeBonus(manaReplacements(s, id, ab));
   // The Eternity Elevator : autant de mana que de marqueurs de charge.
   if (ab.amountCounters) return (o.counters[ab.amountCounters] ?? 0) + extra;
   // The Core : « X mana, où X est le nombre de cartes de permanent de votre cimetière ».
@@ -184,14 +199,6 @@ function manaAmount(s: GameState, id: ObjectId, ab: ManaAbilityDef): number {
       .length;
   }
   if (ab.amountSelfPower) return Math.max(0, chars(s, id).power) + extra;
-  // Roxanne, Starfall Savant : un jeton d'artefact engagé pour du mana en produit un de plus.
-  if (
-    o.isToken &&
-    ab.cost.tap &&
-    chars(s, id).types.includes("Artifact") &&
-    playerStatic(s, controller, "artifactTokenManaBonus")
-  )
-    return ab.amount + extra + 1;
   // Loot, the Nexus : un mana pour chaque force différente parmi vos créatures.
   if (ab.amountDistinctPowers) {
     const powers = s.battlefield
@@ -357,12 +364,19 @@ export function activateManaAbility(s: GameState, player: PlayerId, id: ObjectId
   if (ab.removeCounter && (o.counters[ab.removeCounter] ?? 0) > 0) changeCounters(s, o, ab.removeCounter, -1);
   const pool = s.players[player]?.manaPool;
   if (pool) pool[c] += manaAmount(s, id, ab);
-  // Ultima, Origin of Oblivion : un terrain engagé pour {C} en ajoute un de plus.
-  if (pool && c === "C" && ab.cost.tap && chars(s, id).types.includes("Land")) {
-    pool.C += playerStaticTotal(s, player, "extraColorlessFromLands");
+  // Mana en plus d'un autre type (Shimmerwilds Growth : la couleur choisie) ou seulement pour ce type (Ultima : {C}).
+  let otherBonus = false;
+  for (const a of manaReplacements(s, id, ab)) {
+    const same = (a.r.extraMana ?? "same") === "same";
+    if ((same && !a.r.manaProduced) || (a.r.manaProduced && a.r.manaProduced !== c) || !pool) continue;
+    const type: ManaType | undefined =
+      a.r.extraMana === "chosen" ? s.objects[a.sourceId ?? ""]?.chosen?.color : same ? c : (a.r.extraMana as ManaType);
+    if (!type) continue;
+    pool[type] += a.r.modify.add ?? 0;
+    if (type !== c) otherBonus = true;
   }
   const amount = (pool?.[c] ?? 0) - poolBefore;
-  if (simple && s.triggers.length === triggersBefore && amount > 0)
+  if (simple && !otherBonus && s.triggers.length === triggersBefore && amount > 0)
     s.manaUndo = [...(s.manaUndo ?? []), { player, source: id, color: c, amount }];
 }
 

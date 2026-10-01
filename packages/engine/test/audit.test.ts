@@ -7,7 +7,7 @@ import { describe, expect, it } from "vitest";
 import { dealDamage, destroy, gainLife } from "../src/actions";
 import { syncControl } from "../src/control";
 import * as dsl from "../src/dsl";
-import { cond, doubler, eventReplacement, fx, playerStatic, ref, triggered, when } from "../src/dsl";
+import { cond, eventReplacement, fx, ref, triggered, when } from "../src/dsl";
 import { addEffect, runEffect } from "../src/effects";
 import { submit } from "../src/game";
 import { bump, snapshot } from "../src/layers";
@@ -307,20 +307,26 @@ describe("N6 : une seule façon de lire les statiques de joueur (condition véri
 
   it("un effet « ce tour-ci » qui augmente les gains de PV s'applique", () => {
     const s = scenario({});
-    runEffect(s, resolution("p1") as never, fx.thisTurn({ lifeGainBonus: 1 }));
+    runEffect(s, resolution("p1") as never, fx.thisTurn({ replacement: { event: "lifeGain", to: "you", modify: { add: 1 } } }));
     gainLife(s, "p1", 2);
     expect(s.players.p1?.life).toBe(23);
   });
 
   it("une statique de joueur sous condition non remplie ne s'applique pas (délire)", () => {
-    const aura = withAbility("Bonus sous délire", playerStatic({ lifeGainBonus: 5, condition: cond.delirium }));
+    const aura = withAbility(
+      "Bonus sous délire",
+      eventReplacement({ event: "lifeGain", to: "you", modify: { add: 5 }, condition: cond.delirium }),
+    );
     const s = scenario({ p1: { battlefield: [aura] } });
     gainLife(s, "p1", 2);
     expect(s.players.p1?.life).toBe(22);
   });
 
   it("un doubleur de marqueurs sous condition non remplie ne double pas", () => {
-    const season = withAbility("Saison sous délire", doubler({ counters: true, condition: cond.delirium }));
+    const season = withAbility(
+      "Saison sous délire",
+      eventReplacement({ event: "counters", to: "yourSide", modify: { times: 2 }, condition: cond.delirium }),
+    );
     const s = scenario({ p1: { battlefield: [season, "Bear Cub"] } });
     const bear = s.objects[idOf(s, "p1", "battlefield", "Bear Cub")];
     if (bear) changeCounters(s, bear, "+1/+1", 1);
@@ -524,8 +530,11 @@ describe("R1 : ordre des remplacements qui modifient un nombre (616.1)", () => {
   });
 
   it("Yoshimaru (+1) et Doubling Season (×2) : un marqueur +1/+1 en devient quatre", () => {
-    const yoshimaru = ench("Yoshimaru", playerStatic({ plusOneCounterBonus: true }));
-    const season = ench("Saison", doubler({ counters: true }));
+    const yoshimaru = ench(
+      "Yoshimaru",
+      eventReplacement({ event: "counters", to: "yourSide", counter: "+1/+1", modify: { add: 1 } }),
+    );
+    const season = ench("Saison", eventReplacement({ event: "counters", to: "yourSide", modify: { times: 2 } }));
     const s = scenario({ p1: { battlefield: [yoshimaru, season, "Bear Cub"] } });
     const bear = s.objects[idOf(s, "p1", "battlefield", "Bear Cub")];
     if (bear) changeCounters(s, bear, "+1/+1", 1);
@@ -533,15 +542,15 @@ describe("R1 : ordre des remplacements qui modifient un nombre (616.1)", () => {
   });
 
   it("gain de PV : « autant plus 1 » puis le double", () => {
-    const angel = ench("Ange", playerStatic({ lifeGainBonus: 1 }));
-    const crystal = ench("Cristal", doubler({ lifeGain: true }));
+    const angel = ench("Ange", eventReplacement({ event: "lifeGain", to: "you", modify: { add: 1 } }));
+    const crystal = ench("Cristal", eventReplacement({ event: "lifeGain", to: "you", modify: { times: 2 } }));
     const s = scenario({ p1: { battlefield: [angel, crystal] } });
     gainLife(s, "p1", 2);
     expect(s.players.p1?.life).toBe(26);
   });
 
   it("N12 : la pioche d'un cadeau passe aussi par les remplacements ; deux Vnwxt se cumulent", () => {
-    const vnwxt = ench("Vnwxt", playerStatic({ drawDouble: true }));
+    const vnwxt = ench("Vnwxt", eventReplacement({ event: "draw", to: "you", modify: { times: 2 } }));
     const s = scenario({ p2: { battlefield: [vnwxt, vnwxt], hand: ["Forest", "Forest", "Forest"] } });
     const before = s.players.p2?.hand.length ?? 0;
     runEffect(s, resolution("p1") as never, { op: "gift", kind: "card" } as never);

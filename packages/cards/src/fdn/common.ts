@@ -29,7 +29,6 @@ export const {
   graveyardReplacement,
   eventReplacement,
   prevention,
-  doubler,
   cost,
   wardAbility,
   exhaust,

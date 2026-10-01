@@ -210,7 +210,12 @@ describe("Reality Fracture, lot F", () => {
 
   it("Molten Tide : chaque Montagne produit un {R} de plus ce tour-ci", () => {
     let s = scenario({ p1: { battlefield: ["Mountain"] } });
-    addPlayerEffect(s, "p1", { extraMountainMana: 1 }, s.turn.number);
+    addPlayerEffect(
+      s,
+      "p1",
+      { replacement: { event: "mana", to: "you", source: { subtype: "Mountain" }, modify: { add: 1 } } },
+      s.turn.number,
+    );
     s = act(s, "p1", { type: "tapForMana", source: idOf(s, "p1", "battlefield", "Mountain"), ability: 0 });
     expect(s.players.p1?.manaPool.R).toBe(2);
   });

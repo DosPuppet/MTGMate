@@ -69,8 +69,11 @@ export const RECORD_VERSION = 1;
  * - 24 : Lorwyn Eclipsed, lot C : un sort lancé est vu avec sa valeur de mana et son nom (filtres de mana restreint et de
  *   réductions de coût) ; mana restreint dans la réserve ; marqueurs mis au journal du tour ; un sort sur la pile peut
  *   gagner un mot-clé ; « lancer les cartes exilées liées » avec ses variantes (gratuit, une fois par tour, ce tour-ci…).
+ * - 25 : Lorwyn Eclipsed, lot D : remplacements des familles H et I (jetons, marqueurs, PV gagnés, pioche, meule, mana) en
+ *   données (`EventReplacement`), doubleurs et drapeaux convertis ; « ces jetons plus un jeton » appliqué une fois par
+ *   événement ; un permanent peut ne pas pouvoir être dégagé ; « le terrain enchanté est de la couleur choisie ».
  */
-export const RULES_VERSION = 24;
+export const RULES_VERSION = 25;
 
 /** Un point de contrôle toutes les N décisions (plus la dernière de la partie). */
 export const CHECKPOINT_EVERY = 25;

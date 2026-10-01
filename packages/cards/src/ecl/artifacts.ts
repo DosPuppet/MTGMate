@@ -7,6 +7,7 @@ import {
   type CardScript,
   cond,
   costReducer,
+  eventReplacement,
   fx,
   manaAbility,
   mode,
@@ -34,6 +35,18 @@ const COLORS: { color: Color; feminine: string; masculine: string }[] = [
 const LORWYN_TRIBES = ["Elemental", "Elf", "Faerie", "Giant", "Goblin", "Kithkin", "Merfolk", "Treefolk"];
 
 export const ARTIFACTS: Record<string, CardScript> = {
+  // Équipement {2} lu dans le texte.
+  "Mirrormind Crown": {
+    abilities: [
+      eventReplacement({
+        event: "tokens",
+        to: "you",
+        instead: { copyOfAttached: true, firstEachTurn: true },
+        modify: {},
+        label: "Les premiers jetons de chaque tour : des copies de la créature équipée",
+      }),
+    ],
+  },
   "Gathering Stone": {
     chooseOnEnter: "creatureType",
     abilities: [

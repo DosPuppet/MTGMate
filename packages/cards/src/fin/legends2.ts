@@ -7,6 +7,7 @@ import {
   blockAbility,
   chapter,
   cond,
+  eventReplacement,
   FROG,
   fx,
   HERO,
@@ -159,7 +160,7 @@ export const LEGENDS2: Record<string, CardScript> = {
   },
   "Quina, Qu Gourmet": {
     abilities: [
-      playerStatic({ extraToken: FROG, label: "Une Grenouille 1/1 en plus de vos jetons" }),
+      eventReplacement({ event: "tokens", to: "you", plus: FROG, modify: {}, label: "Une Grenouille 1/1 en plus de vos jetons" }),
       activated({
         mana: "{2}",
         sacrificeOther: { filter: { subtype: "Frog" } },

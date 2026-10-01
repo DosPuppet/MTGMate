@@ -258,7 +258,6 @@ export type AbilityDef =
   | CastPermissionAbilityDef
   | PlayerStaticAbilityDef
   | PreventionAbilityDef
-  | DoublerAbilityDef
   | GraveyardReplacementAbilityDef
   | EventReplacementAbilityDef;
 
@@ -519,6 +518,8 @@ export interface LayerMods {
   setName?: string;
   /** Couche 5 : couleurs remplacées ; `addColors` : « en plus de ses autres couleurs ». */
   setColors?: Color[];
+  /** « Le terrain enchanté est de la couleur choisie » (Shimmerwilds Growth) : la couleur choisie par la source. */
+  setColorsChosen?: boolean;
   addColors?: Color[];
   /** Couche 4 : a tous les types de créature (Soulstone Sanctuary, changelin). */
   allCreatureTypes?: boolean;
@@ -595,16 +596,39 @@ export interface GraveyardReplacementAbilityDef {
  * effet de joueur (`fx.thisTurn({ replacement })`) ; bouclier « la prochaine fois que » (615.7) : effet à usage unique.
  */
 export interface EventReplacement {
-  event: "damage" | "lifeLoss";
-  /** Source des blessures (filtre vu du contrôleur : `controller: "you"` pour « vos sources »). */
+  /**
+   * L'événement chiffré : blessures et perte de PV (familles E et F) ; jetons créés et marqueurs mis (famille H) ; PV
+   * gagnés, cartes piochées, cartes meulées, mana produit (famille I) ; `untap` : un permanent qui se dégage (seule la
+   * prévention s'y applique : Blossombind, « ne peut pas être dégagée »).
+   */
+  event: "damage" | "lifeLoss" | "lifeGain" | "draw" | "mill" | "counters" | "tokens" | "mana" | "untap";
+  /** Source des blessures (filtre vu du contrôleur : `controller: "you"` pour « vos sources ») ; mana : le permanent engagé. */
   source?: ObjectFilter;
   /**
-   * Destinataire : le contrôleur (`you`), le contrôleur ou ses permanents (`yourSide`), un adversaire (`opponent`), un
-   * adversaire ou ses permanents (`opponentSide`). Pour la perte de PV, le joueur qui perd.
+   * Joueur concerné, vu du contrôleur : lui (`you`), lui ou ses permanents (`yourSide`), un adversaire (`opponent`), un
+   * adversaire ou ses permanents (`opponentSide`) ; absent : tous. Blessures : le blessé ; perte ou gain de PV, pioche,
+   * meule : le joueur ; marqueurs : le contrôleur du permanent ; jetons : celui qui les crée ; mana : celui qui engage.
    */
   to?: "you" | "yourSide" | "opponent" | "opponentSide";
-  /** Seulement les blessures infligées à un permanent correspondant (Summon: Alexander : vos créatures). */
+  /** Seulement un permanent correspondant : blessé (Summon: Alexander), qui reçoit les marqueurs ; jetons : le jeton créé. */
   toFilter?: ObjectFilter;
+  /** Marqueurs : seulement cette sorte (« +1/+1 »). */
+  counter?: string;
+  /** Marqueurs : pas ceux mis pour payer un coût (Doubling Season : « si un effet devait mettre des marqueurs »). */
+  effectOnly?: boolean;
+  /**
+   * Jetons : d'autres jetons à la place (Draconic Visitor : un Dragon 5/5) ou des copies du permanent auquel la source est
+   * attachée (Moonlit Meditation, Mirrormind Crown) ; `firstEachTurn` : seulement la première fois de chaque tour.
+   */
+  instead?: { token?: TokenSpec; copyOfAttached?: boolean; firstEachTurn?: boolean };
+  /** Jetons : « ces jetons plus un jeton [N] » (Quina : une Grenouille ; Worldwalker Helm : une Carte). */
+  plus?: TokenSpec;
+  /**
+   * Mana : seulement quand ce type est produit (Ultima : un terrain engagé pour {C}) ; le mana ajouté en plus est du même
+   * type (`same`, par défaut), de la couleur choisie par la source (`chosen`, Shimmerwilds Growth) ou de ce type.
+   */
+  manaProduced?: ManaType;
+  extraMana?: "same" | "chosen" | ManaType;
   /** true : seulement les blessures de combat ; false : seulement les autres. */
   combat?: boolean;
   /** « autant plus N », « le double », « au moins la force de [la source du remplacement] », « prévenez-les ». */
@@ -770,8 +794,6 @@ export interface PlayerStaticAbilityDef {
   jaceLoyaltyInstant?: boolean;
   /** Screaming Nemesis : vous ne pouvez pas gagner de points de vie. */
   cantGainLife?: boolean;
-  /** Molten Tide : chaque Montagne engagée pour du mana en produit N {R} de plus. */
-  extraMountainMana?: number;
   /** Pit Automaton : votre prochaine capacité d'exhaust est copiée (usage unique). */
   copyNextExhaust?: boolean;
   /** Sandswirl Wanderglyph : vous ne pouvez pas attaquer ce joueur (ni ses planeswalkers). */
@@ -784,28 +806,14 @@ export interface PlayerStaticAbilityDef {
   noMaxHandSize?: boolean;
   /** « Vous pouvez jouer un terrain supplémentaire lors de chacun de vos tours. » */
   extraLands?: number;
-  /** « Si vous deviez gagner des points de vie, vous en gagnez autant plus N à la place. » */
-  lifeGainBonus?: number;
   /** « Les terrains que vous contrôlez arrivent dégagés » (The Wandering Minstrel). */
   landsEnterUntapped?: boolean;
-  /** « Chaque fois que vous engagez un terrain pour {C}, ajoutez {C} de plus » (Ultima, Origin of Oblivion). */
-  extraColorlessFromLands?: boolean;
   /** « Vous avez la protection contre chacun de vos adversaires » (702.16j, Absolute Virtue). */
   protectionFromOpponents?: boolean;
-  /** « Ces jetons plus un jeton [X] sont créés à la place » (Quina, Qu Gourmet). */
-  extraToken?: TokenSpec;
   /** « La première fois que vous lancez des pièces chaque tour, vous gagnez ces lancers » (Edgar, King of Figaro). */
   winFirstCoinFlips?: boolean;
-  /** « Si un adversaire devait meuler des cartes, il en meule autant plus N à la place » (The Water Crystal). */
-  opponentMillExtra?: number;
-  /** « Les joueurs ne peuvent pas gagner de points de vie » (s'applique à tous les joueurs). */
-  noLifeGainForAll?: boolean;
   /** « Les éphémères et rituels que vous contrôlez ne peuvent pas être contrecarrés. » */
   protectSpells?: boolean;
-  /** Yoshimaru : des marqueurs +1/+1 mis sur vos créatures : un de plus. */
-  plusOneCounterBonus?: boolean;
-  /** Quantum Riddler : avec une carte en main ou moins, vous piochez une carte de plus. */
-  drawPlusOneWhenHandSmall?: boolean;
   /** Weftwalking (s'applique à tous) : le premier sort de chaque joueur pendant son tour peut être lancé sans payer. */
   firstSpellFree?: boolean;
   /** Frenzied Baloth : vos sorts de créature ne peuvent pas être contrecarrés ; les blessures de combat ne peuvent pas être prévenues (tous). */
@@ -815,18 +823,10 @@ export interface PlayerStaticAbilityDef {
   grantWarp?: { filter: ObjectFilter; cost: ManaCost };
   /** Tomik, Orzhov Lawmage : au plus une créature peut attaquer chacun de vos planeswalkers à chaque combat. */
   walkersMaxOneAttacker?: boolean;
-  /** Draconic Visitor : les jetons d'artefact que vous devriez créer sont remplacés par ce jeton. */
-  replaceArtifactTokens?: TokenSpec;
   /** Samut, Tyrant of Naktamun : « les éphémères et rituels que vous contrôlez ont le second partagé ». */
   splitSecondInstantsSorceries?: boolean;
-  /** Moonlit Meditation : la première fois de chaque tour, vos jetons sont des copies du permanent enchanté. */
-  tokensAsCopiesOfAttached?: boolean;
   /** « Max speed — … » : la capacité ne s'applique que si la condition est remplie. */
   condition?: Condition;
-  /** Vnwxt, Verbose Host : « si vous deviez piocher une carte, piochez-en deux à la place ». */
-  drawDouble?: boolean;
-  /** Worldwalker Helm : vos jetons d'artefact sont accompagnés d'un jeton Carte. */
-  extraMapToken?: TokenSpec;
   /** Fblthp, Lost on the Range : vous pouvez regarder la carte du dessus de votre bibliothèque à tout moment. */
   lookAtTopCard?: boolean;
   /** Archangel of Tithes : les créatures ne peuvent vous attaquer que si leur contrôleur paie {1} pour chacune. */
@@ -837,8 +837,6 @@ export interface PlayerStaticAbilityDef {
   targetLifeTax?: number;
   /** Eriette, the Beguiler : vos Auras attachées à un permanent non-terrain adverse de VM inférieure ou égale en prennent le contrôle. */
   auraStealsCheaper?: boolean;
-  /** Roxanne : quand vous engagez un jeton d'artefact pour du mana, un mana de plus de ce type. */
-  artifactTokenManaBonus?: boolean;
   /** Elvish Refueler : pendant votre tour, tant qu'aucune capacité d'exhaust n'a été activée, elles sont réactivables. */
   exhaustReuse?: boolean;
   /** Récit durable (Storied, Le Hobbit) : acquis pour le reste de la partie (effet de joueur permanent). */
@@ -890,25 +888,6 @@ export interface PreventionAbilityDef {
 }
 
 /** Remplacements qui doublent (614.1a) : jetons, marqueurs, blessures infligées aux adversaires. */
-export interface DoublerAbilityDef {
-  kind: "doubler";
-  tokens?: boolean;
-  /** Ojer Taq : « trois fois plus de jetons de créature ». */
-  creatureTokensTriple?: boolean;
-  counters?: boolean;
-  /**
-   * Doubling Season : « si un effet devait mettre des marqueurs » — pas les marqueurs mis comme coût (loyauté +N d'un
-   * planeswalker, coût « mettez un marqueur »).
-   */
-  effectOnly?: boolean;
-  /** « Si vous deviez gagner des points de vie, vous en gagnez le double à la place » (The Wind Crystal). */
-  lifeGain?: boolean;
-  /** Marqueurs doublés seulement sur les permanents correspondants (Loading Zone). */
-  countersFilter?: ObjectFilter;
-  /** Seulement si la condition est remplie (délire). */
-  condition?: Condition;
-  label?: string;
-}
 
 /** Capacité statique : génère un effet continu tant que la source est sur le champ de bataille (604, 611.3). */
 export interface StaticAbilityDef {

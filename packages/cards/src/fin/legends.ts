@@ -6,8 +6,8 @@ import {
   chapter,
   cond,
   costReducer,
-  doubler,
   entersWith,
+  eventReplacement,
   fx,
   manaAbility,
   playerStatic,
@@ -58,7 +58,7 @@ export const LEGENDS: Record<string, CardScript> = {
   "The Wind Crystal": {
     abilities: [
       costReducer({ colors: ["W"] }, 1, "Sorts blancs : {1} de moins"),
-      doubler({ lifeGain: true, label: "Gains de PV doublés" }),
+      eventReplacement({ event: "lifeGain", to: "you", modify: { times: 2 }, label: "Gains de PV doublés" }),
       activated({
         mana: "{4}{W}{W}",
         tap: true,
@@ -108,7 +108,12 @@ export const LEGENDS: Record<string, CardScript> = {
   "The Water Crystal": {
     abilities: [
       costReducer({ colors: ["U"] }, 1, "Sorts bleus : {1} de moins"),
-      playerStatic({ opponentMillExtra: 4, label: "Les adversaires meulent quatre cartes de plus" }),
+      eventReplacement({
+        event: "mill",
+        to: "opponent",
+        modify: { add: 4 },
+        label: "Les adversaires meulent quatre cartes de plus",
+      }),
       activated({
         mana: "{4}{U}{U}",
         tap: true,
@@ -252,7 +257,13 @@ export const LEGENDS: Record<string, CardScript> = {
   "The Earth Crystal": {
     abilities: [
       costReducer({ colors: ["G"] }, 1, "Sorts verts : {1} de moins"),
-      doubler({ counters: true, countersFilter: YOURS, label: "Marqueurs doublés sur vos créatures" }),
+      eventReplacement({
+        event: "counters",
+        to: "yourSide",
+        toFilter: YOURS,
+        modify: { times: 2 },
+        label: "Marqueurs doublés sur vos créatures",
+      }),
       activated({
         mana: "{4}{G}{G}",
         tap: true,

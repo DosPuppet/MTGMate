@@ -313,6 +313,8 @@ export function tapObject(s: GameState, o: GameObject): void {
  */
 export function untapObject(s: GameState, o: GameObject): boolean {
   if (!o.tapped) return false;
+  // Blossombind : « la créature enchantée ne peut pas être dégagée ».
+  if (quantityMods(s, "untap", (a) => recipientMatches(s, a, o.id)).prevented) return false;
   if ((o.counters.stun ?? 0) > 0) {
     changeCounters(s, o, "stun", -1);
     return false;
@@ -335,10 +337,14 @@ export function changeCounters(s: GameState, o: GameObject, kind: string, n: num
   // (« le double », y compris en arrivant), Yoshimaru, Caradora (« autant plus un » marqueur +1/+1). Il veut le plus de
   // marqueurs, sauf pour les marqueurs nuisibles.
   if (n > 0 && o.zone === "battlefield") {
-    const mods: AmountMod[] = [];
-    for (let i = 0; i < counterDoublers(s, o, asCost); i++) mods.push({ times: 2 });
-    if (kind === "+1/+1") for (const _ of playerStatics(s, o.controller, "plusOneCounterBonus")) mods.push({ add: 1 });
-    n = chooseReplacementOrder(n, mods, HARMFUL_COUNTERS.has(kind) ? "min" : "max");
+    // Remplacements des marqueurs (R1, famille H) ; Blossombind : « on ne peut pas mettre de marqueurs dessus ».
+    const q = quantityMods(
+      s,
+      "counters",
+      (a) => (!a.r.counter || a.r.counter === kind) && !(asCost && a.r.effectOnly) && recipientMatches(s, a, o.id),
+    );
+    if (q.prevented) return 0;
+    n = chooseReplacementOrder(n, q.mods, HARMFUL_COUNTERS.has(kind) ? "min" : "max");
   }
   const before = counterCount(o, kind);
   const after = Math.max(0, before + n);
@@ -672,9 +678,9 @@ export function setPrepared(s: GameState, o: GameObject, on: boolean): void {
 // ---------------------------------------------------------------------------
 
 import { bump, chars, snapshot } from "./layers";
-import { type AmountMod, chooseReplacementOrder } from "./modifiers";
+import { chooseReplacementOrder } from "./modifiers";
 import { applyEntersReplacements, auraHosts, type EntersContext, releaseLinkedExile, replaceGraveyard } from "./replacement";
-import { counterDoublers, playerStatics } from "./statics";
+import { quantityMods, recipientMatches } from "./statics";
 import { detectTriggers } from "./triggers";
 import { logTurnEvent, zoneEntry } from "./turnlog";
 

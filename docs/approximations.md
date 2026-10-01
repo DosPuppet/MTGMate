@@ -71,7 +71,7 @@ Dans l'ordre où elles ont été ajoutées, extension par extension.
 - **The Dominion Bracelet :** la capacité accordée à la créature équipée est portée par l'Équipement (comme Fishing Pole). Une IA qui contrôle le tour d'un autre joueur se contente des décisions par défaut (passer, ne pas attaquer).
 - **Close Encounter :** la créature ou la carte exilée « choisie » est une cible.
 - **Chorale of the Void :** la carte vient du cimetière d'un adversaire quelconque (pas forcément du joueur défenseur en multijoueur).
-- **Moonlit Meditation :** les copies sont toujours créées (pas de choix « vous pouvez »).
+- **Moonlit Meditation, Mirrormind Crown :** les copies sont toujours créées (pas de choix « vous pouvez »).
 - **Dyadrine, Synthesis Amalgam :** les deux créatures dont on retire un marqueur sont choisies automatiquement (celles qui en ont le plus).
 - **Caradora, Heart of Alacria :** le marqueur supplémentaire ne vaut que pour vos créatures (Véhicules animés compris).
 - **Pyrewood Gearhulk :** « les blessures ne peuvent pas être prévenues ce tour-ci » n'est pas modélisé.
@@ -250,6 +250,7 @@ Dans l'ordre où elles ont été ajoutées, extension par extension.
   - `règle` Twilight Diviner : la capacité se déclenche pour une créature à la fois (la première revenue d'un cimetière dans le tour), et non pour un groupe ;
   - `timing` Raiding Schemes : la conspiration passe par une capacité déclenchée ; les deux créatures sont engagées à sa résolution, et non en lançant le sort ;
   - `timing` Celestial Reunion : le coût additionnel facultatif est vérifié à la résolution, pour un type de la carte trouvée (le joueur le paie toujours quand il le peut) ; la carte passe par la main avant le champ de bataille ;
-  - `règle` Lasting Tarfire : « vous avez mis un marqueur » : le joueur qui met les marqueurs est le contrôleur de ce qui se résout, sinon (coût) le contrôleur du permanent.
+  - `règle` Lasting Tarfire : « vous avez mis un marqueur » : le joueur qui met les marqueurs est le contrôleur de ce qui se résout, sinon (coût) le contrôleur du permanent ;
+  - `timing` Lavaleaper, Shimmerwilds Growth : le mana en plus (capacité de mana déclenchée, 605.1b) est ajouté avec le mana du terrain, comme un remplacement ; le solveur de paiement compte celui du même type, pas celui d'une autre couleur (Shimmerwilds Growth).
 - **Légalité Standard :** instantané des légalités Scryfall au moment de l'import (`legalities.standard` dans `data/<set>.json`). Après une rotation ou une annonce de bannissement, réimporter les sets (`npm run import-cards -- <set>`).
 - **Images des jetons :** celle du jeton Scryfall le plus proche (même nom, puis mêmes F/E et couleurs ; `data/tokens.json`, `npm run import-tokens`) ; un jeton de nom inconnu garde le cadre texte.

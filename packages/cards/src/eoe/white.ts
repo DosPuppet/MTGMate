@@ -7,8 +7,8 @@ import {
   CREATURE_OR_SPACECRAFT,
   CREATURE_YOU_CONTROL,
   cond,
-  doubler,
   entersWith,
+  eventReplacement,
   fx,
   HUMAN_SOLDIER,
   LANDER,
@@ -100,7 +100,7 @@ export const WHITE: Record<string, CardScript> = {
     spell: spell([target.nonland("t")], [fx.destroy(ref.target()), fx.createTokens(LANDER, 1, ref.controllerOf(ref.target()))]),
   },
   "Exalted Sunborn": {
-    abilities: [doubler({ tokens: true, label: "Deux fois plus de jetons" })],
+    abilities: [eventReplacement({ event: "tokens", to: "you", modify: { times: 2 }, label: "Deux fois plus de jetons" })],
   },
   "Exosuit Savior": {
     abilities: [

@@ -351,7 +351,11 @@ export const RED: Record<string, CardScript> = {
   },
   "Sunspine Lynx": {
     abilities: [
-      playerStatic({ noLifeGainForAll: true, label: "Les joueurs ne peuvent pas gagner de points de vie" }),
+      eventReplacement({
+        event: "lifeGain",
+        modify: { prevent: true },
+        label: "Les joueurs ne peuvent pas gagner de points de vie",
+      }),
       playerStatic({ damageUnpreventable: true, label: "Les blessures ne peuvent pas être prévenues" }),
       triggered(when.entersSelf, [fx.damageEachPlayerPer({ types: ["Land"], nonbasic: true })], {
         label: "Blessures selon les terrains non de base",

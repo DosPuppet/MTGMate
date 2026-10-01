@@ -9,9 +9,9 @@ import {
   type CardScript,
   CREATURE_YOU_CONTROL,
   cond,
-  doubler,
   ELF_WARRIOR,
   entersWith,
+  eventReplacement,
   FOOD,
   fx,
   manaAbility,
@@ -362,7 +362,10 @@ export const GREEN: Record<string, CardScript> = {
     ],
   },
   "Doubling Season": {
-    abilities: [doubler({ tokens: true, counters: true, effectOnly: true, label: "Jetons et marqueurs doublés" })],
+    abilities: [
+      eventReplacement({ event: "tokens", to: "you", modify: { times: 2 }, label: "Jetons doublés" }),
+      eventReplacement({ event: "counters", to: "yourSide", effectOnly: true, modify: { times: 2 }, label: "Marqueurs doublés" }),
+    ],
   },
 
   // --- Réimpressions ---

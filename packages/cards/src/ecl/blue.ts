@@ -8,6 +8,7 @@ import {
   cond,
   ELK,
   entersWith,
+  eventReplacement,
   FAERIE_UB,
   fx,
   loyalty,
@@ -54,6 +55,24 @@ const protectionFromColors = fx.modify(
 const MERFOLK_YOU = { subtype: "Merfolk", controller: "you" as const };
 
 export const BLUE: Record<string, CardScript> = {
+  Blossombind: {
+    enchant: CREATURE,
+    abilities: [
+      triggered(when.entersSelf, [fx.tap(ref.attached)], { label: "Engagez la créature enchantée" }),
+      eventReplacement({
+        event: "untap",
+        toFilter: { attachedToSource: true },
+        modify: { prevent: true },
+        label: "La créature enchantée ne peut pas être dégagée",
+      }),
+      eventReplacement({
+        event: "counters",
+        toFilter: { attachedToSource: true },
+        modify: { prevent: true },
+        label: "On ne peut pas mettre de marqueurs sur la créature enchantée",
+      }),
+    ],
+  },
   "Swat Away": {
     // « Coûte {2} de moins si une créature vous attaque » : une créature adverse attaquante (en duel, c'est vous).
     costReduction: {

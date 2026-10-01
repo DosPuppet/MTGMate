@@ -163,7 +163,13 @@ export const UNIQUE: Record<string, CardScript> = {
   },
   "Yoshimaru, Beloved Companion": {
     abilities: [
-      playerStatic({ plusOneCounterBonus: true, label: "Un marqueur +1/+1 de plus sur vos créatures" }),
+      eventReplacement({
+        event: "counters",
+        to: "yourSide",
+        counter: "+1/+1",
+        modify: { add: 1 },
+        label: "Un marqueur +1/+1 de plus sur vos créatures",
+      }),
       activated({
         mana: "{6}",
         targets: [target.creature("t", { legendary: true })],
@@ -402,7 +408,16 @@ export const UNIQUE: Record<string, CardScript> = {
     ],
   },
   "Draconic Visitor": {
-    abilities: [playerStatic({ replaceArtifactTokens: DRAGON_5, label: "Jetons d'artefact : Dragons 5/5 volants à la place" })],
+    abilities: [
+      eventReplacement({
+        event: "tokens",
+        to: "you",
+        toFilter: { types: ["Artifact"] },
+        instead: { token: DRAGON_5 },
+        modify: {},
+        label: "Jetons d'artefact : Dragons 5/5 volants à la place",
+      }),
+    ],
   },
   "Face Yourself": {
     spell: spell(
@@ -427,7 +442,10 @@ export const UNIQUE: Record<string, CardScript> = {
     ],
   },
   "Pyre Rhymer": {
-    prepareSpell: spell([], [fx.extraMountainMana]),
+    prepareSpell: spell(
+      [],
+      [fx.thisTurn({ replacement: { event: "mana", to: "you", source: { subtype: "Mountain" }, modify: { add: 1 } } })],
+    ),
     abilities: [entersWith({ prepared: true })],
   },
   "Chandra, Torch of Defiance": {

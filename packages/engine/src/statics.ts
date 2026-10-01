@@ -1,16 +1,10 @@
-/**
- * Capacités statiques « globales » lues sur les permanents (et emblèmes) d'un joueur :
- * défense talismanique du joueur, « ne peut pas perdre », doublements, préventions…
- */
-import { snapshot } from "./layers";
-import { chars, newId, obj } from "./state";
-import { matchesView } from "./targets";
+import type { AmountMod } from "./modifiers";
+import { chars, newId, obj, opponentsOf } from "./state";
+import { matchesObjectFilter } from "./targets";
 import { checkCondition } from "./triggers";
 import type {
   AbilityDef,
-  DoublerAbilityDef,
   EventReplacement,
-  GameObject,
   GameState,
   ObjectId,
   PlayerEffect,
@@ -107,6 +101,66 @@ export function eventReplacements(s: GameState, event: EventReplacement["event"]
   return out;
 }
 
+/**
+ * Le remplacement vise-t-il ce joueur ou ce permanent ? `to` est relatif au contrôleur du remplacement (le permanent
+ * compte pour son contrôleur) ; `toFilter` : un permanent correspondant.
+ */
+export function recipientMatches(s: GameState, a: ActiveReplacement, target: string): boolean {
+  const r = a.r;
+  const player = !!s.players[target];
+  const victim = player ? target : s.objects[target]?.controller;
+  if (!victim) return false;
+  if (r.toFilter && (player || !matchesObjectFilter(s, a.controller, target, r.toFilter, a.sourceId))) return false;
+  switch (r.to) {
+    case "you":
+      return player && target === a.controller;
+    case "yourSide":
+      return victim === a.controller;
+    case "opponent":
+      return player && opponentsOf(s, a.controller).includes(target);
+    case "opponentSide":
+      return opponentsOf(s, a.controller).includes(victim);
+    default:
+      return true;
+  }
+}
+
+/** Le joueur concerné par un remplacement, sans filtre de permanent (`to` vu du contrôleur du remplacement). */
+export function playerSide(s: GameState, a: ActiveReplacement, player: PlayerId): boolean {
+  switch (a.r.to) {
+    case "you":
+    case "yourSide":
+      return player === a.controller;
+    case "opponent":
+    case "opponentSide":
+      return opponentsOf(s, a.controller).includes(player);
+    default:
+      return true;
+  }
+}
+
+/**
+ * Modifications d'un événement chiffré (R1, 616.1) : les remplacements en vigueur qui s'appliquent (`applies`), en
+ * « autant plus N » et « le double » ; `prevented` : l'un d'eux empêche l'événement (Mornsong Aria : « les joueurs ne
+ * peuvent pas piocher »). Les boucliers à usage unique qui s'appliquent sont retirés.
+ */
+export function quantityMods(
+  s: GameState,
+  event: EventReplacement["event"],
+  applies: (a: ActiveReplacement) => boolean,
+): { mods: AmountMod[]; prevented: boolean } {
+  const mods: AmountMod[] = [];
+  let prevented = false;
+  for (const a of eventReplacements(s, event)) {
+    if (!applies(a)) continue;
+    if (a.r.modify.prevent) prevented = true;
+    if (a.r.modify.add) mods.push({ add: a.r.modify.add });
+    if (a.r.modify.times) mods.push({ times: a.r.modify.times });
+    consumeReplacement(s, a);
+  }
+  return { mods, prevented };
+}
+
 /** Retire un bouclier « la prochaine fois que » qui vient de s'appliquer (615.7). */
 export function consumeReplacement(s: GameState, a: ActiveReplacement): void {
   if (!a.once || !a.effectId) return;
@@ -163,35 +217,6 @@ export function consumePlayerEffect(s: GameState, player: PlayerId, key: PlayerS
   if (!live) return false;
   s.playerEffects = s.playerEffects.filter((e) => e !== live);
   return true;
-}
-
-/** Nombre de doubleurs d'un type contrôlés par ce joueur (616.1 : ils se cumulent, ×2 chacun). */
-export function doublers(
-  s: GameState,
-  player: PlayerId,
-  key: keyof Omit<DoublerAbilityDef, "kind" | "label" | "countersFilter" | "condition">,
-): number {
-  return controlledAbilitiesWithSource(s, player).filter(
-    ({ id, ab }) =>
-      ab.kind === "doubler" && !!ab[key] && !ab.countersFilter && (!ab.condition || checkCondition(s, ab.condition, player, id)),
-  ).length;
-}
-
-/** Nombre de jetons créés pour un : Doubling Season (×2) et Ojer Taq (×3, jetons de créature). */
-export function tokenMultiplier(s: GameState, player: PlayerId, creature: boolean): number {
-  return 2 ** doublers(s, player, "tokens") * (creature ? 3 ** doublers(s, player, "creatureTokensTriple") : 1);
-}
-
-/** Doublements de marqueurs sur ce permanent, filtrés compris (Loading Zone : créatures, Vaisseaux, Planètes). */
-export function counterDoublers(s: GameState, o: GameObject, asCost = false): number {
-  return controlledAbilitiesWithSource(s, o.controller).filter(
-    ({ id, ab }) =>
-      ab.kind === "doubler" &&
-      !!ab.counters &&
-      !(asCost && ab.effectOnly) &&
-      (!ab.condition || checkCondition(s, ab.condition, o.controller, id)) &&
-      (!ab.countersFilter || matchesView(snapshot(s, o.id), ab.countersFilter, o.controller, id)),
-  ).length;
 }
 
 /** Préventions statiques des permanents de tous les joueurs, avec leur contrôleur et leur source. */

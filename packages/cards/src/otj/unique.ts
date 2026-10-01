@@ -11,6 +11,7 @@ import {
   CREATURE_YOU_CONTROL,
   cond,
   ELK,
+  eventReplacement,
   fx,
   loyalty,
   manaAbility,
@@ -138,7 +139,15 @@ export const UNIQUE: Record<string, CardScript> = {
           fx.emblem(
             "Prairie Dog",
             "Until end of turn, if you would put one or more +1/+1 counters on a creature you control, put that many plus one instead.",
-            [playerStatic({ plusOneCounterBonus: true })],
+            [
+              eventReplacement({
+                event: "counters",
+                to: "yourSide",
+                toFilter: { types: ["Creature"] },
+                counter: "+1/+1",
+                modify: { add: 1 },
+              }),
+            ],
             false,
             true,
           ),
@@ -668,7 +677,13 @@ export const UNIQUE: Record<string, CardScript> = {
     abilities: [
       triggered(when.entersSelf, [fx.createTappedTokens(METEORITE)], { label: "Météorite" }),
       triggered(when.attacksSelf, [fx.createTappedTokens(METEORITE)], { label: "Météorite" }),
-      playerStatic({ artifactTokenManaBonus: true, label: "Jetons d'artefact : un mana de plus" }),
+      eventReplacement({
+        event: "mana",
+        to: "you",
+        source: { types: ["Artifact"], token: true },
+        modify: { add: 1 },
+        label: "Jetons d'artefact : un mana de plus",
+      }),
     ],
   },
   "Satoru, the Infiltrator": {

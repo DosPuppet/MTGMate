@@ -4265,3 +4265,76 @@ describe("Lorwyn Eclipsed, lot C", () => {
     expect(s.players.p1?.library.length).toBe(5 - exiled.length - 1);
   });
 });
+
+describe("Lorwyn Eclipsed, lot D (remplacements des familles H et I, R1)", () => {
+  const settleAll = (s: S) =>
+    passAccepting(s, (x) => x.stack.length === 0 && x.triggers.length === 0 && x.pending?.kind === "priority");
+  const resolutionOf = (s: S, controller: string, sourceId: string) =>
+    ({
+      item: { id: "x", controller, sourceId, sourceDefId: s.objects[sourceId]?.defId, targets: {} },
+      controller,
+      targets: {},
+      vars: {},
+      pc: 0,
+    }) as never as Parameters<typeof runEffect>[1];
+
+  it("Blossombind : la créature enchantée est engagée, ne se dégage plus et ne reçoit pas de marqueurs", () => {
+    let s = scenario({ p1: { battlefield: ["Island", "Island"], hand: ["Blossombind"] }, p2: { battlefield: ["Bear Cub"] } });
+    const bear = idOf(s, "p2", "battlefield", "Bear Cub");
+    s = settleAll(act(s, "p1", { type: "cast", card: idOf(s, "p1", "hand", "Blossombind"), targets: { enchant: [bear] } }));
+    expect(s.objects[bear]?.tapped).toBe(true);
+    runEffect(s, resolutionOf(s, "p1", bear), dsl.fx.untap(dsl.ref.self));
+    expect(s.objects[bear]?.tapped).toBe(true);
+    runEffect(s, resolutionOf(s, "p1", bear), dsl.fx.addCounters(dsl.ref.self, 2));
+    expect(s.objects[bear]?.counters["+1/+1"] ?? 0).toBe(0);
+    s = advanceUntil(s, (x) => x.turn.number === 4 && x.turn.step === "main1");
+    expect(s.objects[bear]?.tapped).toBe(true);
+  });
+
+  it("Mornsong Aria : personne ne pioche ni ne gagne de PV ; à sa pioche, chacun perd 3 PV et cherche une carte", () => {
+    let s = scenario({
+      p1: { battlefield: ["Mornsong Aria"], library: ["Forest", "Shivan Dragon", "Island"] },
+      p2: { library: ["Forest", "Forest"] },
+      step: "end",
+    });
+    const before = s.players.p2?.hand.length ?? 0;
+    s = passAccepting(s, (x) => x.turn.number === 4 && x.turn.step === "main1");
+    expect(s.players.p2?.life).toBe(17);
+    expect((s.players.p2?.hand.length ?? 0) - before).toBe(1);
+    expect(s.players.p2?.library).toHaveLength(1);
+    runEffect(s, resolutionOf(s, "p1", idOf(s, "p1", "battlefield", "Mornsong Aria")), dsl.fx.gainLife(5));
+    expect(s.players.p1?.life).toBe(20);
+  });
+
+  it("Lavaleaper : les créatures ont la célérité ; un terrain de base engagé produit un mana de plus, pour chacun", () => {
+    let s = scenario({ p1: { battlefield: ["Lavaleaper", "Mountain"] }, p2: { battlefield: ["Forest", "Bear Cub"] } });
+    expect(chars(s, idOf(s, "p2", "battlefield", "Bear Cub")).keywords).toContain("haste");
+    s = act(s, "p1", { type: "tapForMana", source: idOf(s, "p1", "battlefield", "Mountain"), ability: 0 });
+    expect(s.players.p1?.manaPool.R).toBe(2);
+  });
+
+  it("Shimmerwilds Growth : le terrain enchanté est de la couleur choisie et produit un mana de cette couleur en plus", () => {
+    let s = scenario({ p1: { battlefield: ["Forest", "Forest", "Island"], hand: ["Shimmerwilds Growth"] } });
+    const island = idOf(s, "p1", "battlefield", "Island");
+    s = chooseWanted(
+      act(s, "p1", { type: "cast", card: idOf(s, "p1", "hand", "Shimmerwilds Growth"), targets: { enchant: [island] } }),
+      ["R"],
+    );
+    expect(chars(s, island).colors).toEqual(["R"]);
+    s = act(s, "p1", { type: "tapForMana", source: island, ability: 0 });
+    expect(s.players.p1?.manaPool.U).toBe(1);
+    expect(s.players.p1?.manaPool.R).toBe(1);
+  });
+
+  it("Mirrormind Crown : la première création de jetons du tour donne des copies de la créature équipée", () => {
+    const s = scenario({ p1: { battlefield: ["Mirrormind Crown", "Pelakka Wurm"] } });
+    const crown = idOf(s, "p1", "battlefield", "Mirrormind Crown");
+    const wurm = idOf(s, "p1", "battlefield", "Pelakka Wurm");
+    const c = s.objects[crown];
+    if (c) c.attachedTo = wurm;
+    runEffect(s, resolutionOf(s, "p1", crown), dsl.fx.createTokens(ELF_TOKEN, 2));
+    expect(s.battlefield.filter((id) => chars(s, id).name === "Pelakka Wurm")).toHaveLength(3);
+    runEffect(s, resolutionOf(s, "p1", crown), dsl.fx.createTokens(ELF_TOKEN, 1));
+    expect(s.battlefield.filter((id) => chars(s, id).name === "Elfe")).toHaveLength(1);
+  });
+});

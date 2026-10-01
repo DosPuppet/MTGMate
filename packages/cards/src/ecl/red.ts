@@ -48,6 +48,17 @@ const TOTAL_PT_5: { anyOf: { maxPower: number; maxToughness: number }[] } = {
 };
 
 export const RED: Record<string, CardScript> = {
+  Lavaleaper: {
+    abilities: [
+      staticAbility({ types: ["Creature"] }, { addKeywords: ["haste"] }, { label: "Toutes les créatures ont la célérité" }),
+      eventReplacement({
+        event: "mana",
+        source: { types: ["Land"], basic: true },
+        modify: { add: 1 },
+        label: "Un terrain de base engagé pour du mana en produit un de plus",
+      }),
+    ],
+  },
   // --- Ashling (recto-verso) ---------------------------------------------------
   "Ashling, Rekindled": {
     abilities: [

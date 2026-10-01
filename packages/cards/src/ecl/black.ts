@@ -9,6 +9,7 @@ import {
   cond,
   ELF_BG,
   entersWith,
+  eventReplacement,
   FAERIE_UB,
   fx,
   GOBLIN_BR,
@@ -35,6 +36,19 @@ const ELF_IN_GRAVEYARD = cond.amountAtLeast(amount.countIn("graveyard", { subtyp
 const YOUR_MAIN_PHASE = cond.all(cond.yourTurn, cond.any(cond.step("main1"), cond.step("main2")));
 
 export const BLACK: Record<string, CardScript> = {
+  "Mornsong Aria": {
+    abilities: [
+      eventReplacement({ event: "draw", modify: { prevent: true }, label: "Les joueurs ne peuvent pas piocher" }),
+      eventReplacement({
+        event: "lifeGain",
+        modify: { prevent: true },
+        label: "Les joueurs ne peuvent pas gagner de points de vie",
+      }),
+      triggered(when.step("draw", "any"), [fx.loseLife(3, ref.eventPlayer), fx.search({}, { to: "hand" }, 1, ref.eventPlayer)], {
+        label: "Ce joueur perd 3 PV et cherche une carte dans sa bibliothèque",
+      }),
+    ],
+  },
   "Twilight Diviner": {
     abilities: [
       triggered(when.entersSelf, [fx.surveil(2)], { label: "Surveillance 2" }),

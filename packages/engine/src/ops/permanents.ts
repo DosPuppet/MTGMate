@@ -1,6 +1,6 @@
 /** Effets du moteur : modifications de permanents, contrôle, copies et jetons. Chaque clé est un `op` d'`Effect` (voir `runEffect`, effects.ts). */
 
-import { createTokenCopy, createTokens } from "../actions";
+import { createTokenCopy, createTokens, tokenCopyCount } from "../actions";
 import { addControlEffect } from "../control";
 import type { OpHandlers } from "../effects";
 import { addEffect, addPump, attach, attackingDefender, evalAmount, exiledUid, nameOf, resolveRef } from "../effects";
@@ -16,9 +16,10 @@ import {
   onBattlefield,
   opponentsOf,
   rulesEvent,
+  snapshot,
   untapObject,
 } from "../state";
-import { addPlayerEffect, tokenMultiplier } from "../statics";
+import { addPlayerEffect } from "../statics";
 import { matchesCard, matchesObjectFilter } from "../targets";
 import { createDelayed } from "../triggers";
 import { attackableDefenders } from "../turn";
@@ -245,9 +246,9 @@ export const HANDLERS: OpHandlers = {
       // La copie d'une copie copie ce que copie le modèle (707.3), et la face active d'une carte transformée.
       const defId = model?.zone === "battlefield" ? copiedDefId(s, id) : (model?.defId ?? s.lki[id]?.defId);
       if (!defId) continue;
-      const creature =
-        model?.zone === "battlefield" ? chars(s, id).types.includes("Creature") : !!s.defs[defId]?.types.includes("Creature");
-      const n = base * tokenMultiplier(s, ctx.controller, creature || !!e.addTypes?.includes("Creature"));
+      const view = model?.zone === "battlefield" ? snapshot(s, id) : s.lki[id];
+      const types = [...new Set([...(view?.types ?? s.defs[defId]?.types ?? []), ...(e.addTypes ?? [])])];
+      const n = view ? tokenCopyCount(s, ctx.controller, { ...view, types, isToken: true }, base) : base;
       for (let i = 0; i < n; i++) {
         // Engagé, types, capacités et F/E en place avant l'événement d'arrivée (pas de « devient engagé »).
         // 707.9b : les exceptions du modèle, puis celles de cet effet (« sauf que c'est un 1/1 »), sont copiables.

@@ -18,7 +18,6 @@ import {
   manaAbility,
   modal,
   mode,
-  playerStatic,
   RAT_NO_BLOCK,
   ref,
   spell,
@@ -433,7 +432,11 @@ export const RED: Record<string, CardScript> = {
       ),
     ],
   },
-  "Giant Cindermaw": { abilities: [playerStatic({ noLifeGainForAll: true, label: "Les joueurs ne peuvent pas gagner de PV" })] },
+  "Giant Cindermaw": {
+    abilities: [
+      eventReplacement({ event: "lifeGain", modify: { prevent: true }, label: "Les joueurs ne peuvent pas gagner de PV" }),
+    ],
+  },
   "Goblin Smuggler": {
     abilities: [
       activated({

@@ -16,7 +16,6 @@ import type {
   Color,
   Condition,
   CostReductionAbilityDef,
-  DoublerAbilityDef,
   Effect,
   EventReplacement,
   EventReplacementAbilityDef,
@@ -846,7 +845,6 @@ export const fx = {
     store,
   }),
   addManaTimes: (times: Amount, ...mana: ManaType[]): Effect => ({ op: "addMana", mana, times }),
-  extraMountainMana: { op: "playerEffect", ability: { extraMountainMana: 1 } } as Effect,
   mayWheel: { op: "mayWheel" } as Effect,
   destroyAllButChosenType: { op: "destroyAllButChosenType" } as Effect,
   exileFromHandLinked: (who: Ref, filter: ObjectFilter, untilLeaves?: boolean, reveal?: Amount): Effect => ({
@@ -1815,10 +1813,6 @@ export function prevention(
   opts: { noncombatOnly?: boolean; combatOnly?: boolean; bySource?: boolean; label?: string } = {},
 ): PreventionAbilityDef {
   return { kind: "prevention", filter, ...opts };
-}
-
-export function doubler(opts: Omit<DoublerAbilityDef, "kind">): DoublerAbilityDef {
-  return { kind: "doubler", ...opts };
 }
 
 /** Coût de mana écrit comme sur la carte (« {3}{B} »). */

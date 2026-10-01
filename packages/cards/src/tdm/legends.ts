@@ -11,7 +11,6 @@ import {
   chapter,
   cond,
   costReducer,
-  doubler,
   ELEPHANT_5,
   eventReplacement,
   flurry,
@@ -71,7 +70,12 @@ export const LEGENDS: Record<string, CardScript> = {
   // --- Blanc -------------------------------------------------------------------
   "Elspeth, Storm Slayer": {
     abilities: [
-      doubler({ tokens: true, label: "Les jetons créés sous votre contrôle : le double" }),
+      eventReplacement({
+        event: "tokens",
+        to: "you",
+        modify: { times: 2 },
+        label: "Les jetons créés sous votre contrôle : le double",
+      }),
       loyalty(1, { effects: [fx.createTokens(SOLDIER)], label: "Un Soldat 1/1" }),
       loyalty(0, {
         effects: [

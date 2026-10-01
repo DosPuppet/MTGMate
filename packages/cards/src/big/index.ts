@@ -11,6 +11,7 @@ import {
   CREATURE_YOU_CONTROL,
   cond,
   entersWith,
+  eventReplacement,
   FOOD,
   fx,
   graveyardReplacement,
@@ -163,7 +164,14 @@ export const BIG_SCRIPTS: Record<string, CardScript> = {
   },
   "Worldwalker Helm": {
     abilities: [
-      playerStatic({ extraMapToken: MAP, label: "Un jeton Carte en plus de vos jetons d'artefact" }),
+      eventReplacement({
+        event: "tokens",
+        to: "you",
+        toFilter: { types: ["Artifact"], not: { name: "Map" } },
+        plus: MAP,
+        modify: {},
+        label: "Un jeton Carte en plus de vos jetons d'artefact",
+      }),
       activated({
         mana: "{1}{U}",
         tap: true,

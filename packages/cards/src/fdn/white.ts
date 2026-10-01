@@ -12,6 +12,7 @@ import {
   costReducer,
   DOG,
   entersWith,
+  eventReplacement,
   FOOD,
   fx,
   HUMAN,
@@ -282,7 +283,7 @@ export const WHITE: Record<string, CardScript> = {
   },
   "Angel of Vitality": {
     abilities: [
-      playerStatic({ lifeGainBonus: 1, label: "Gains de vie +1" }),
+      eventReplacement({ event: "lifeGain", to: "you", modify: { add: 1 }, label: "Gains de vie +1" }),
       staticAbility("self", { power: 2, toughness: 2 }, { condition: cond.lifeAtLeast(25), label: "+2/+2 à 25 PV ou plus" }),
     ],
   },

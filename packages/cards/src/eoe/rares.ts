@@ -11,6 +11,7 @@ import {
   cost,
   costReducer,
   entersWith,
+  eventReplacement,
   fx,
   LANDER,
   lander,
@@ -129,7 +130,13 @@ export const RARES: Record<string, CardScript> = {
   "Quantum Riddler": {
     abilities: [
       triggered(when.entersSelf, [fx.draw(1)], { label: "Piochez" }),
-      playerStatic({ drawPlusOneWhenHandSmall: true, label: "Une carte de plus avec une main de 1 carte ou moins" }),
+      eventReplacement({
+        event: "draw",
+        to: "you",
+        modify: { add: 1 },
+        condition: cond.not(cond.amountAtLeast(amount.cardsIn("hand"), 2)),
+        label: "Une carte de plus avec une main de 1 carte ou moins",
+      }),
     ],
   },
   "Mm'menon, the Right Hand": {

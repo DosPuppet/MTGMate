@@ -28,7 +28,7 @@ Moteur pur et déterministe (`packages/engine/src`). L'état est sérialisable ;
 | `replacement.ts` | Remplacements d'arrivée (`applyEntersReplacements`) et de destination (`replaceDestination`). |
 | `turn.ts` | Étapes, actions basées sur l'état (Sagas, Auras…), combat, élimination, tours et étapes supplémentaires. |
 | `mana.ts` | Capacités de mana, solveur de paiement, mana restreint. |
-| `statics.ts` | Index des capacités par contrôleur (`controlledAbilitiesWithSource`, `playerStatic`, `doublers`). |
+| `statics.ts` | Index des capacités par contrôleur (`controlledAbilitiesWithSource`, `playerStatic`) ; remplacements d'événements chiffrés en vigueur (`eventReplacements`, `quantityMods`, `recipientMatches`). |
 | `view.ts` | Projection de l'état pour un joueur (information cachée). |
 | `scenario.ts` | `createScenario` : partie mise en scène (bibliothèques dans l'ordre, mains, permanents, tour de départ, mulligan facultatif) pour le tutoriel ; l'état vide vient de `blankState` (`game.ts`). |
 | `host.ts` | `GameHost` : IA, automatisme et humains ; l'option `gate` met l'IA en pause (explications du tutoriel). |
@@ -76,7 +76,7 @@ Moteur pur et déterministe (`packages/engine/src`). L'état est sérialisable ;
 - Tout ce dont une statique ou une F/E variable dépend fait avancer la version d'état (`bump`). Le fuzz détecte les oublis (« cache des caractéristiques périmé »).
 - Pas de nouveau drapeau, mot-clé ou opération propre à une carte sans justification : règle en fin de CLAUDE.md, vérifiée par `cards/test/debt.test.ts` (référence `cards/data/debt-baseline.json`).
 - Préférer un mécanisme générique et nommé à un drapeau « pour une carte » :
-  - réutiliser les doublements (`doubler`, multiplicateurs de déclenchements dans `triggers.ts`) ;
+  - réutiliser les remplacements d'événements chiffrés (`eventReplacement` : blessures, perte et gain de PV, pioche, meule, marqueurs, jetons, mana, dégagement ; R1) et les multiplicateurs de déclenchements (`triggers.ts`) ;
   - réutiliser les permissions de lancer (`grantPlay`, `castTerms`) et les modifications à l'arrivée (`StackItem.arrival`).
 - Une capacité d'un permanent inflige ses blessures avec ce permanent pour source (`damageSource`).
 - Les scripts de cartes vont dans `packages/cards/src/<ext>/`. Les textes des cartes manquantes s'obtiennent avec `npm run coverage -- --set <ext> --text`.

@@ -76,11 +76,17 @@ Les scripts sont dans `packages/cards/src/ecl/` : `cards` (cartes du méta, phas
 - **Limite d'affichage :** le mana restreint n'apparaît pas encore dans la réserve affichée.
 - **Tests :** 18 tests de règles en plus dans `engine/test/ecl.test.ts` (« Lorwyn Eclipsed, lot C »). Le test de fumée essaie désormais les décisions d'une action jusqu'à la première que le moteur accepte (Unbury : deux cartes qui partagent un type, une contrainte que l'énumération des cibles ne voit pas).
 
-### Reste à faire (5 cartes) : lot D, familles H et I de R1
+## Lot D ✅ (266 / 266) : remplacements des familles H et I (R1)
 
-| Ce qui manque | Cartes |
-|---|---|
-| Remplacement de la création de jetons (famille H) | Mirrormind Crown |
-| « Ne peut pas avoir de marqueurs » (famille H) et « ne peut pas être dégagée » | Blossombind |
-| Remplacement de la pioche (famille I) | Mornsong Aria |
-| Mana en plus quand un terrain est engagé (famille I) | Lavaleaper, Shimmerwilds Growth |
+- **Cartes :** Mirrormind Crown, Blossombind, Mornsong Aria, Lavaleaper, Shimmerwilds Growth.
+- **Le moteur gagne** les remplacements des familles H et I sur le cadre d'`EventReplacement` (R1), comme les blessures au lot D de Tarkir :
+  - `event: "tokens"` (`createTokens`, `copyToken`) : « le double / le triple » (`modify.times`), d'autres jetons à la place (`instead.token`), des copies du permanent auquel la source est attachée, la première fois de chaque tour (`instead.copyOfAttached`, `firstEachTurn`), « ces jetons plus un jeton » (`plus`) ;
+  - `event: "counters"` (`changeCounters`) : sorte de marqueur (`counter`), pas pour un coût (`effectOnly`), prévention (Blossombind : « on ne peut pas mettre de marqueurs dessus ») ;
+  - `event: "lifeGain"`, `"draw"`, `"mill"` (`gainLife`, `drawCards`, la meule) : « autant plus N », « le double », prévention (Mornsong Aria : « les joueurs ne peuvent pas piocher ni gagner de PV ») ;
+  - `event: "mana"` (production de mana d'un permanent engagé) : un mana de plus du même type, de la couleur choisie par la source (`extraMana: "chosen"`) ou seulement quand un type est produit (`manaProduced`, Ultima) ;
+  - `event: "untap"` : un permanent qui ne peut pas être dégagé (Blossombind), y compris à l'étape de dégagement (`untapObject`) ;
+  - `quantityMods`, `recipientMatches` et `playerSide` (`statics.ts`) rassemblent les remplacements qui s'appliquent ; le filtre `attachedToSource` (« la créature enchantée / équipée ») vaut aussi pour les permanents ; `setColorsChosen` : « le terrain enchanté est de la couleur choisie ».
+- **Conversion :** les doubleurs (`doubler`, `DoublerAbilityDef` : Doubling Season, Ojer Taq, The Wind Crystal, The Earth Crystal…) et 13 drapeaux de `PlayerStaticAbilityDef` (`extraToken`, `extraMapToken`, `replaceArtifactTokens`, `tokensAsCopiesOfAttached`, `plusOneCounterBonus`, `lifeGainBonus`, `noLifeGainForAll`, `drawDouble`, `drawPlusOneWhenHandSmall`, `opponentMillExtra`, `extraMountainMana`, `extraColorlessFromLands`, `artifactTokenManaBonus`) deviennent des `eventReplacement` dans les scripts de 19 fichiers ; leurs entrées quittent `debt-baseline.json`.
+- **[règles]** « ces jetons plus un jeton » s'applique une fois par événement (Worldwalker Helm et Quina ne se donnent plus une Grenouille de plus pour la Carte). `RULES_VERSION` = 25, parties dorées régénérées.
+- **Audit :** Lavaleaper et Shimmerwilds Growth (capacités de mana déclenchées écrites comme remplacements) entrent dans `audit-baseline.json` ; l'entrée de Vnwxt en sort (le « 2 » est dans le script).
+- **Tests :** 5 tests de règles en plus dans `engine/test/ecl.test.ts` (« lot D »), 2 dans `engine/test/rulings.test.ts` (jeton remplacé puis doublé ; prévention plus forte qu'un doubleur) ; les tests existants des drapeaux convertis (`audit.test.ts`, `fra-lotf.test.ts`) passent par le nouveau cadre.
