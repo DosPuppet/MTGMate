@@ -342,4 +342,27 @@ export const WHITE: Record<string, CardScript> = {
       }),
     ],
   },
+  "Case File Auditor": {
+    abilities: [
+      ...[when.entersSelf, when.caseSolved].map((w) =>
+        triggered(w, [fx.lookAtTop(6, { filter: { types: ["Enchantment"] }, count: 1, rest: "bottom" })], {
+          label: "Regardez six cartes : un enchantement en main",
+        }),
+      ),
+      playerStatic({
+        spellCost: { filter: { subtype: "Case" }, anyMana: true },
+        label: "Mana de n'importe quelle couleur pour les sorts d'Affaire",
+      }),
+    ],
+  },
+  "Case of the Gateway Express": {
+    abilities: [
+      triggered(when.entersSelf, [fx.eachDealsDamage({ types: ["Creature"], controller: "you" }, ref.target(), 1)], {
+        targets: [target.creature("t", { controller: "opponent" })],
+        label: "Chacune de vos créatures inflige 1 blessure à la créature ciblée",
+      }),
+    ],
+    caseToSolve: cond.amountAtLeast(amount.turnEvents({ event: "attack" }), 3),
+    caseSolved: [staticAbility({ types: ["Creature"], controller: "you" }, { power: 1 }, { label: "Vos créatures +1/+0" })],
+  },
 };

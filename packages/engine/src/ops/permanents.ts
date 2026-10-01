@@ -10,6 +10,7 @@ import {
   bump,
   chars,
   createObject,
+  hasKeyword,
   isCreature,
   isPlayer,
   newId,
@@ -74,6 +75,8 @@ export const HANDLERS: OpHandlers = {
     for (const id of resolveRef(s, ctx, e.what)) {
       const o = s.objects[id];
       if (o?.zone !== "battlefield" || !!o.suspected === e.value) continue;
+      // Airtight Alibi : « ne peut pas devenir suspecte ».
+      if (e.value && hasKeyword(s, id, "cantBeSuspected")) continue;
       o.suspected = e.value || undefined;
       bump(s);
     }

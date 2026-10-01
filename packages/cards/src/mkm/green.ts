@@ -367,4 +367,22 @@ export const GREEN: Record<string, CardScript> = {
       manaAbility("G"),
     ],
   },
+  "Airtight Alibi": {
+    // Flash : lu dans le texte.
+    enchant: { filter: { types: ["Creature"] }, label: "créature" },
+    abilities: [
+      triggered(
+        when.entersSelf,
+        [fx.untap(ref.attached), fx.pump(ref.attached, 0, 0, ["hexproof"]), fx.suspect(ref.attached, false)],
+        { label: "Dégagez-la ; défense talismanique ; elle n'est plus suspecte" },
+      ),
+      staticAbility(
+        "attached",
+        { power: 2, toughness: 2, addKeywords: ["cantBeSuspected"] },
+        {
+          label: "+2/+2, ne peut pas devenir suspecte",
+        },
+      ),
+    ],
+  },
 };

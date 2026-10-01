@@ -825,8 +825,11 @@ export interface PlayerStaticAbilityDef {
   abilityCost?: AbilityCostMod;
   /** Restriction de lancer des sorts (et d'activer des capacités) (famille D, R4.5). */
   castLimit?: CastLimit;
-  /** Sorts du joueur qui coûtent {N} de moins (Goblin Maskmaker : « vos sorts face cachée lancés ce tour-ci »). */
-  spellCost?: { filter: ObjectFilter; reduce: number };
+  /**
+   * Sorts du joueur qui coûtent {N} de moins (Goblin Maskmaker : « vos sorts face cachée lancés ce tour-ci ») ; `anyMana` :
+   * le mana se dépense pour eux comme s'il était de n'importe quelle couleur (Case File Auditor : les sorts d'Affaire).
+   */
+  spellCost?: { filter: ObjectFilter; reduce?: number; anyMana?: boolean };
   /** Déclenchements doublés ou supprimés (famille G, R4.5). */
   triggerMod?: TriggerMod;
   /** Remplacement ou prévention d'un événement chiffré, posé par un effet (familles E et F, R1). */

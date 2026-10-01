@@ -75,7 +75,9 @@ export type Keyword =
   /** Décomposition (702.147) : ne peut pas bloquer, et quand elle attaque, elle est sacrifiée à la fin du combat. */
   | "decayed"
   /** « Ne peut pas être sacrifié » (Zurgo, Thunder's Decree : ses jetons Guerrier pendant votre étape de fin). */
-  | "cantBeSacrificed";
+  | "cantBeSacrificed"
+  /** « Ne peut pas devenir suspecte » (Airtight Alibi, 701.60). */
+  | "cantBeSuspected";
 
 /** Restrictions : affichées différemment des mots-clés. */
 export const RESTRICTIONS: readonly Keyword[] = [
@@ -90,6 +92,7 @@ export const RESTRICTIONS: readonly Keyword[] = [
   "combatDamageImmune",
   "damageHealsFirst",
   "cantBeSacrificed",
+  "cantBeSuspected",
 ];
 
 export const KEYWORDS: readonly Keyword[] = [

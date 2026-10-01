@@ -432,6 +432,8 @@ export type TurnLogEntry =
       sourceColors: Color[];
       sourceTypes: CardType[];
       sourceSupertypes: string[];
+      /** Identité de la source (« trois sources ou plus ont infligé des blessures », Case of the Burning Masks). */
+      sourceKey?: string;
       types?: CardType[];
       subtypes?: string[];
       supertypes?: string[];
@@ -475,6 +477,8 @@ export interface TurnLogQuery {
   sourceSupertype?: string;
   sum?: boolean;
   perPlayer?: boolean;
+  /** Blessures : le nombre de sources différentes (Case of the Burning Masks). */
+  distinctSources?: boolean;
 }
 
 export interface CombatState {

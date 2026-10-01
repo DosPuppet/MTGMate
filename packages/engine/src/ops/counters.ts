@@ -329,6 +329,7 @@ export const HANDLERS: OpHandlers = {
     if (o?.zone !== "battlefield" || o.solved) return;
     o.solved = true;
     bump(s);
+    rulesEvent(s, { e: "caseSolved", player: o.controller, objectId: o.id });
     return;
   },
   lkiCountersTo(s, _r, e, ctx) {

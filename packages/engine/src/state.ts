@@ -132,6 +132,8 @@ export type RulesEvent =
   | { e: "forage"; player: PlayerId }
   /** Réunir des preuves (701.59). */
   | { e: "collectEvidence"; player: PlayerId }
+  /** Une Affaire est résolue (Case File Auditor). */
+  | { e: "caseSolved"; player: PlayerId; objectId: ObjectId }
   /** Un joueur offre un cadeau (702.174). */
   | { e: "gift"; player: PlayerId }
   /** Une porte de Salle est déverrouillée. */

@@ -880,6 +880,8 @@ function matchTrigger(s: GameState, ev: RulesEvent, t: TriggerSpec, src: Source)
       return ev.e === "forage" && ev.player === me ? { player: me } : null;
     case "collectEvidence":
       return ev.e === "collectEvidence" && ev.player === me ? { player: me } : null;
+    case "caseSolved":
+      return ev.e === "caseSolved" && ev.player === me ? { player: me, objectId: ev.objectId } : null;
     case "gift":
       return ev.e === "gift" && ev.player === me ? { player: me } : null;
     case "lifeChange":

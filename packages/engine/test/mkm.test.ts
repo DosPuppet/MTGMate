@@ -4933,3 +4933,87 @@ describe("Murders at Karlov Manor, lot B3 : cape (701.58)", () => {
     expect(chars(s, lazav).name).toBe("Shivan Dragon");
   });
 });
+
+describe("Murders at Karlov Manor, lot B4 : suspect et Affaires", () => {
+  const lands = (name: string, n: number) => Array(n).fill(name) as string[];
+  const castOptions = (s: S, player: string, card: string) =>
+    legalActions(s, player).filter((a) => a.type === "cast" && a.card === card);
+
+  it("Airtight Alibi : dégage la créature, défense talismanique, plus suspecte ; +2/+2 et ne peut plus devenir suspecte", () => {
+    let s = scenario({
+      p1: {
+        battlefield: [{ name: "Bear Cub", tapped: true }, ...lands("Forest", 3), ...lands("Mountain", 3)],
+        hand: ["Airtight Alibi", "Convenient Target"],
+      },
+    });
+    const bear = idOf(s, "p1", "battlefield", "Bear Cub");
+    const b = s.objects[bear];
+    if (b) b.suspected = true;
+    s = settle(act(s, "p1", { type: "cast", card: idOf(s, "p1", "hand", "Airtight Alibi"), targets: { enchant: [bear] } }));
+    expect(s.objects[bear]?.tapped).toBe(false);
+    expect(s.objects[bear]?.suspected).toBeUndefined();
+    expect(chars(s, bear).keywords).toContain("hexproof");
+    expect(chars(s, bear).power).toBe(4);
+    // Convenient Target : « suspectez la créature enchantée » ne fait rien.
+    s = settle(act(s, "p1", { type: "cast", card: idOf(s, "p1", "hand", "Convenient Target"), targets: { enchant: [bear] } }));
+    expect(s.objects[bear]?.suspected).toBeUndefined();
+  });
+
+  it("Case File Auditor : en arrivant, un enchantement parmi six cartes ; mana de n'importe quelle couleur pour les sorts d'Affaire", () => {
+    let s = scenario({
+      p1: {
+        battlefield: lands("Island", 5),
+        hand: ["Case File Auditor"],
+        library: ["Opt", "Case of the Gateway Express", "Bear Cub", "Opt", "Opt", "Opt", "Island"],
+      },
+    });
+    // {2}{W} payé avec des Îles : impossible, ce n'est pas une Affaire.
+    expect(castOptions(s, "p1", idOf(s, "p1", "hand", "Case File Auditor"))).toHaveLength(0);
+    s = scenario({
+      p1: {
+        battlefield: [...lands("Island", 4), "Plains"],
+        hand: ["Case File Auditor"],
+        library: ["Opt", "Case of the Gateway Express", "Bear Cub", "Opt", "Opt", "Opt", "Island"],
+      },
+    });
+    s = settle(cast(s, "p1", "Case File Auditor"));
+    const casePick = idOf(s, "p1", "hand", "Case of the Gateway Express");
+    expect(casePick).toBeDefined();
+    // {1}{W} avec deux Îles : l'Affaire se lance.
+    expect(castOptions(s, "p1", casePick)).not.toHaveLength(0);
+  });
+
+  it("Case of the Gateway Express : chacune de vos créatures inflige 1 blessure ; résolue après trois attaquants, vos créatures +1/+0", () => {
+    let s = scenario({
+      p1: {
+        battlefield: ["Bear Cub", "Bear Cub", "Llanowar Elves", ...lands("Plains", 2)],
+        hand: ["Case of the Gateway Express"],
+      },
+      p2: { battlefield: ["Serra Angel"] },
+    });
+    const angel = idOf(s, "p2", "battlefield", "Serra Angel");
+    s = settle(cast(s, "p1", "Case of the Gateway Express", { t: [angel] }));
+    expect(s.objects[angel]?.damage).toBe(3);
+    s = advanceUntil(s, (x) => x.pending?.kind === "declareAttackers");
+    const attackers = s.battlefield.filter((id) => s.objects[id]?.controller === "p1" && chars(s, id).types.includes("Creature"));
+    s = act(s, "p1", { type: "declareAttackers", attackers: attackers.map((id) => ({ id, defender: "p2" })) });
+    s = advanceUntil(s, (x) => x.turn.step === "end" && x.stack.length === 0 && x.triggers.length === 0);
+    const theCase = idOf(s, "p1", "battlefield", "Case of the Gateway Express");
+    expect(s.objects[theCase]?.solved).toBe(true);
+    expect(chars(s, attackers[0] as string).power).toBe(3);
+  });
+
+  it("Case of the Burning Masks : 3 blessures en arrivant ; résolue si trois de vos sources ont infligé des blessures ce tour-ci", () => {
+    let s = scenario({
+      p1: { battlefield: [...lands("Mountain", 7)], hand: ["Case of the Burning Masks", "Lightning Strike", "Lightning Strike"] },
+      p2: { battlefield: ["Bear Cub"] },
+    });
+    s = settle(cast(s, "p1", "Case of the Burning Masks", { t: [idOf(s, "p2", "battlefield", "Bear Cub")] }));
+    expect(idsOf(s, "p2", "graveyard", "Bear Cub")).toHaveLength(1);
+    const [a, b] = idsOf(s, "p1", "hand", "Lightning Strike");
+    s = settle(act(s, "p1", { type: "cast", card: a as string, targets: { t: ["p2"] } }));
+    s = settle(act(s, "p1", { type: "cast", card: b as string, targets: { t: ["p2"] } }));
+    s = advanceUntil(s, (x) => x.turn.step === "end" && x.stack.length === 0 && x.triggers.length === 0);
+    expect(s.objects[idOf(s, "p1", "battlefield", "Case of the Burning Masks")]?.solved).toBe(true);
+  });
+});

@@ -866,7 +866,13 @@ export const fx = {
   /** Bouclier (615.7) : « la prochaine fois que [une source de votre choix] devrait… ce tour-ci, … » (New Way Forward). */
   shield: (replacement: EventReplacement, chooseSource = false): Effect => ({ op: "shield", replacement, chooseSource }),
   extraEndStep: { op: "extraEndStep" } as Effect,
-  eachDealsDamage: (filter: ObjectFilter, to: Ref): Effect => ({ op: "eachDealsDamage", filter, to }),
+  /** `amount` : chacune inflige ce nombre de blessures (sinon sa force). */
+  eachDealsDamage: (filter: ObjectFilter, to: Ref, amount?: Amount): Effect => ({
+    op: "eachDealsDamage",
+    filter,
+    to,
+    ...(amount !== undefined ? { amount } : {}),
+  }),
   addManaUntilEndOfTurn: (...mana: ManaType[]): Effect => ({ op: "addManaUntilEndOfTurn", mana }),
   copyNextSpell: {
     op: "playerEffect",
@@ -1675,6 +1681,7 @@ export const when = {
   expend: (n: number): TriggerSpec => ({ on: "expend", n }),
   forage: { on: "forage" } as TriggerSpec,
   collectEvidence: { on: "collectEvidence" } as TriggerSpec,
+  caseSolved: { on: "caseSolved" } as TriggerSpec,
   /** « Chaque fois que vous offrez un cadeau » */
   giveGift: { on: "gift" } as TriggerSpec,
   /** « Chaque fois que vous gagnez ou perdez des points de vie » */

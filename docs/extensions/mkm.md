@@ -102,3 +102,15 @@ Les scripts sont dans `packages/cards/src/mkm/` : `cards` (cartes du méta), `wh
   - le filtre `disguise` (« avec le déguisement ») ; `fx.chooseAmong(…, { anyNumber, anyZone })` (un nombre quelconque ; des cartes hors du champ de bataille, comme celles exilées avec Lazav).
 - **Dette :** l'opération `putFaceDown` sert à plusieurs cartes : son entrée est retirée.
 - **Tests :** 6 tests de règles (« lot B3 »).
+
+## Sous-lot B4 : suspect et Affaires ✅ (245 / 268)
+
+- **Cartes :** Airtight Alibi, Case File Auditor, Case of the Gateway Express, Case of the Burning Masks.
+- **Le moteur gagne :**
+  - le mot-clé de restriction `cantBeSuspected` (« ne peut pas devenir suspecte »), lu par `fx.suspect` (entrée justifiée dans `debt-baseline.json`) ;
+  - l'événement et le déclencheur « chaque fois que vous résolvez une Affaire » (`when.caseSolved`) ;
+  - `spellCost.anyMana` : « vous pouvez dépenser du mana comme s'il était de n'importe quelle couleur pour lancer les sorts [filtre] » ;
+  - `fx.eachDealsDamage(filtre, cible, montant)` : chaque créature inflige ce nombre de blessures (au lieu de sa force) ;
+  - le journal du tour note la source des blessures (`sourceKey`) ; `distinctSources` compte les sources différentes (« trois sources ou plus que vous contrôliez ont infligé des blessures ce tour-ci »).
+- **Interface :** pastille « Suspecte » vérifiée par un script Playwright ponctuel (capture `test-results/mkm/suspect.png`).
+- **Tests :** 4 tests de règles (« lot B4 »).

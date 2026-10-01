@@ -165,7 +165,8 @@ export const HANDLERS: OpHandlers = {
       : s.battlefield.filter((x) => matchesObjectFilter(s, ctx.controller, x, e.filter, ctx.sourceId));
     for (const id of from) {
       const src = sourceFromObject(s, id);
-      for (const t of to) dealDamage(s, src, t, Math.max(0, chars(s, id).power), false);
+      const n = e.amount !== undefined ? evalAmount(s, ctx, e.amount) : chars(s, id).power;
+      for (const t of to) dealDamage(s, src, t, Math.max(0, n), false);
     }
     return;
   },

@@ -55,6 +55,7 @@
     "attacksDespiteDefender": "règle de mot-clé, plusieurs cartes",
     "cantAttack": "règle de mot-clé, plusieurs cartes",
     "cantBeSacrificed": "restriction « ne peut pas être sacrifié » (Zurgo, Thunder's Decree, TDM), lue par le sacrifice, ses coûts et ses choix ; une seule carte pour l'instant",
+    "cantBeSuspected": "restriction « ne peut pas devenir suspecte » (Airtight Alibi, MKM), lue par fx.suspect ; une seule carte pour l'instant",
     "cantBlock": "règle de mot-clé, plusieurs cartes",
     "combatDamageImmune": "prévention { self, combatOnly } (R1.2)",
     "damageHealsFirst": "marquage des blessures (R4.6)",

@@ -74,6 +74,11 @@ const weight = (e: TurnLogEntry, q: TurnLogQuery) => (q.sum && e.e === "damage" 
  * total parmi les joueurs concernés (« un joueur a subi 10 blessures de combat ou plus ce tour-ci »).
  */
 export function countTurnEvents(s: GameState, q: TurnLogQuery, me: PlayerId, subject?: PlayerId): number {
+  if (q.distinctSources) {
+    const keys = new Set<string>();
+    for (const e of s.turnLog) if (e.e === "damage" && matches(e, q, me, subject)) keys.add(e.sourceKey ?? e.sourceController);
+    return keys.size;
+  }
   if (subject !== undefined) return s.turnLog.reduce((n, e) => n + (matches(e, q, me, subject) ? weight(e, q) : 0), 0);
   if (q.perPlayer) {
     return Math.max(0, ...s.playerOrder.map((p) => s.turnLog.reduce((n, e) => n + (matches(e, q, me, p) ? weight(e, q) : 0), 0)));

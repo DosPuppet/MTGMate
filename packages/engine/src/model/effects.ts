@@ -590,7 +590,8 @@ export type Effect =
   | { op: "extraEndStep" }
   /** « Chaque [créature] inflige des blessures égales à sa force à [cible] » (Bartz and Boko). */
   /** `from` : les créatures désignées à la place du filtre (Coordinated Clobbering). */
-  | { op: "eachDealsDamage"; filter: ObjectFilter; to: Ref; from?: Ref }
+  /** `amount` : chacune inflige ce nombre de blessures (Case of the Gateway Express : 1), sinon sa force. */
+  | { op: "eachDealsDamage"; filter: ObjectFilter; to: Ref; from?: Ref; amount?: Amount }
   /** Hauntwoods Shrieker : révélez le permanent face cachée ; si c'est une carte de créature, vous pouvez le retourner. */
   | { op: "revealFaceDown"; what: Ref }
   /** Compte les résolutions de cette capacité ce tour-ci, mémorisé sous `store` (Venom Connoisseur). */

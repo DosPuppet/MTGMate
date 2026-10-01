@@ -407,4 +407,20 @@ export const RED: Record<string, CardScript> = {
       },
     ),
   },
+  "Case of the Burning Masks": {
+    abilities: [
+      triggered(when.entersSelf, [fx.damage(3, ref.target())], {
+        targets: [target.creature("t", { controller: "opponent" })],
+        label: "3 blessures à une créature adverse",
+      }),
+    ],
+    caseToSolve: cond.amountAtLeast(amount.turnEvents({ event: "damage", sourceYours: true, distinctSources: true }), 3),
+    caseSolved: [
+      activated({
+        sacrifice: true,
+        effects: [fx.impulse(3)],
+        label: "Sacrifiez-la : exilez trois cartes, jouez-en une ce tour-ci",
+      }),
+    ],
+  },
 };

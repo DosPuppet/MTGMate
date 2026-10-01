@@ -316,6 +316,10 @@ function logDamage(
     sourceColors: src.colors,
     sourceTypes: src.types,
     sourceSupertypes: src.supertypes,
+    sourceKey:
+      (source.id ? (s.objects[source.id]?.uid ?? s.lki[source.id]?.uid ?? source.id) : undefined) ??
+      source.stackId ??
+      source.defId,
     types: victim?.types,
     subtypes: victim?.subtypes,
   });

@@ -331,7 +331,7 @@ export function spellReduction(
   const view = spellView(d, player);
   // Réductions accordées au joueur (effets « ce tour-ci » : Goblin Maskmaker).
   for (const { ab } of playerStatics(s, player, "spellCost")) {
-    if (ab.spellCost && matchesView(view, ab.spellCost.filter, player)) r += ab.spellCost.reduce;
+    if (ab.spellCost && matchesView(view, ab.spellCost.filter, player)) r += ab.spellCost.reduce ?? 0;
   }
   for (const id of s.battlefield) {
     const o = obj(s, id);
@@ -592,7 +592,13 @@ export function spellCost(
   const cost1 = d.forageOrPay && !alt?.forage ? totalCost(cost0, 0, d.forageOrPay) : cost0;
   // Wild Unraveling : « flétrissez 2 ou payez {1} » — le mana s'ajoute sauf si l'on flétrit (kicker).
   const cost = d.kickerOrPay && !opts.kicked ? totalCost(cost1, 0, d.kickerOrPay) : cost1;
-  if (!opts.anyMana) return cost;
+  // Case File Auditor : « comme s'il était de n'importe quelle couleur » pour les sorts correspondants.
+  const anyMana =
+    opts.anyMana ||
+    playerStatics(s, player, "spellCost").some(
+      ({ ab }) => ab.spellCost?.anyMana && matchesView(spellView(d, player), ab.spellCost.filter, player),
+    );
+  if (!anyMana) return cost;
   const colored =
     Object.values(cost.colored).reduce<number>((n, k) => n + (k ?? 0), 0) +
     (cost.hybrid?.length ?? 0) +

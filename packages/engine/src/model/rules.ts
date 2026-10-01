@@ -381,6 +381,8 @@ export type TriggerSpec =
   | { on: "forage" }
   /** « Chaque fois que vous réunissez des preuves » (Surveillance Monitor). */
   | { on: "collectEvidence" }
+  /** « Chaque fois que vous résolvez une Affaire » (Case File Auditor). */
+  | { on: "caseSolved" }
   /** « Chaque fois que vous offrez un cadeau » (Jolly Gerbils). */
   | { on: "gift" }
   /** « Chaque fois que vous gagnez ou perdez des points de vie » (Wax-Wane Witness). */
