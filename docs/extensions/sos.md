@@ -23,3 +23,9 @@ Les scripts sont dans `packages/cards/src/sos/` : `cards` (cartes du méta), `wh
 - **[règles] Conditions « si » des capacités déclenchées :** un montant lu dans une condition voit l'objet de l'événement (`checkAmount`, `amount.eventManaSpent` : le sort lancé). `RULES_VERSION` = 27.
 - **Couverture :** `npm run coverage -- --text` affiche aussi le sort d'une carte « préparée » (`prepareFace`).
 - **Tests :** 4 tests dans `engine/test/sos.test.ts` (« socle ») ; test de fumée `ai/test/smoke/sos.test.ts`.
+
+## Sous-lot A1 : cartes blanches ✅ (54 / 262)
+
+- **Cartes :** 27 (sur 29), dont 6 cartes préparées (Elite Interceptor, Emeritus of Truce, Honorbound Page, Informed Inkwright, Joined Researchers, Spiritcall Enthusiast…), Repartee (Eager Glyphmage, Rehearsed Debater, Stirring Hopesinger…), le flashback d'Antiquities on the Loose et de Dig Site Inventory (écrit dans le script : il n'est pas lu dans le texte).
+- **Restent :** Group Project (flashback « engagez trois créatures », coût sans mana), Soaring Stoneglider (« exilez deux cartes de votre cimetière ou payez {1}{W} »).
+- **Tests :** 29 tests de règles (« lot A — blanc »).
