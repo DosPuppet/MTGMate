@@ -753,4 +753,30 @@ export const MULTI: Record<string, CardScript> = {
       }),
     ],
   },
+  "Lorehold, the Historian": {
+    abilities: [
+      // Miracle {2} (702.94) accordé aux éphémères et rituels de votre main : la première carte piochée du tour peut être
+      // lancée pour {2} en la piochant.
+      triggered(when.draw(1), [fx.castNow(ref.eventObject, { cost: "{2}" })], {
+        condition: cond.eventObjectMatches(INSTANT_SORCERY),
+        label: "Miracle {2} : lancez l'éphémère ou le rituel pioché pour {2}",
+      }),
+      triggered(
+        { on: "step", step: "upkeep", whose: "opponent" },
+        [fx.discard(1, ref.you, { optional: true, store: "d" }), ...fx.when(cond.v("d"), fx.draw(1))],
+        { label: "Entretien adverse : vous pouvez défausser une carte pour en piocher une" },
+      ),
+    ],
+  },
+  "Quandrix, the Proof": {
+    abilities: [
+      triggered(when.castSelf, [fx.cascade(6)], { label: "Cascade" }),
+      // « Les sorts d'éphémère et de rituel que vous lancez depuis votre main ont la cascade. »
+      triggered(
+        { on: "castSpell", by: "you", filter: INSTANT_SORCERY, fromHand: true },
+        [fx.cascade(amount.manaValueOf(ref.eventObject))],
+        { label: "Cascade du sort d'éphémère ou de rituel lancé depuis votre main" },
+      ),
+    ],
+  },
 };

@@ -88,8 +88,10 @@ export const RECORD_VERSION = 1;
  * - 31 : Secrets of Strixhaven, lot C2 : une copie de sort n'hérite plus des modifications d'arrivée de l'original ; le
  *   jeton copie d'un sort de permanent reçoit les siennes (célérité, sacrifice en fin de tour) ; sort gratuit de la main
  *   une fois par tour ; « ce sort ne peut pas être copié ».
+ * - 32 : Secrets of Strixhaven, lot C3 : cascade (702.85) ; l'événement de pioche désigne la carte piochée (miracle) ;
+ *   « lancer maintenant » pour un coût donné depuis la main.
  */
-export const RULES_VERSION = 31;
+export const RULES_VERSION = 32;
 
 /** Un point de contrôle toutes les N décisions (plus la dernière de la partie). */
 export const CHECKPOINT_EVERY = 25;

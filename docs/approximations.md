@@ -293,6 +293,8 @@ Dans l'ordre où elles ont été ajoutées, extension par extension.
   - `timing` Social Snub : « en contrôlant une créature » est revérifié à la résolution ;
   - `choix auto` Abstract Paintmage : {U}{R} est ajouté en deux choix d'une couleur (deux questions sans alternative) ;
   - `règle` Transcendent Archaic : « si vous piochez une ou plusieurs cartes de cette façon » est « si X vaut 1 ou plus » ;
-  - `règle` Strixhaven Skycoach : la carte cherchée n'est pas révélée.
+  - `règle` Strixhaven Skycoach : la carte cherchée n'est pas révélée ;
+  - `règle` cascade (Quandrix, the Proof) : la carte non lancée va au-dessous après les autres cartes exilées (et non dans un ordre aléatoire avec elles) ;
+  - `règle` Lorehold, the Historian : le miracle accordé est une capacité déclenchée à la première pioche du tour (la carte n'est pas révélée), qui propose de la lancer pour {2}.
 - **Légalité Standard :** instantané des légalités Scryfall au moment de l'import (`legalities.standard` dans `data/<set>.json`). Après une rotation ou une annonce de bannissement, réimporter les sets (`npm run import-cards -- <set>`).
 - **Images des jetons :** celle du jeton Scryfall le plus proche (même nom, puis mêmes F/E et couleurs ; `data/tokens.json`, `npm run import-tokens`) ; un jeton de nom inconnu garde le cadre texte.

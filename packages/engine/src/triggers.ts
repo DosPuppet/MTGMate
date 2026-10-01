@@ -815,8 +815,9 @@ function matchTrigger(s: GameState, ev: RulesEvent, t: TriggerSpec, src: Source)
     case "loseLife":
       return ev.e === "lifeLoss" && whose(t.whose, ev.player, me) ? { player: ev.player, amount: ev.amount } : null;
     case "draw":
+      // La carte piochée est l'objet de l'événement (miracle : Lorehold, the Historian).
       return ev.e === "draw" && whose(t.whose, ev.player, me) && (t.nth === undefined || ev.nth === t.nth)
-        ? { player: ev.player, amount: 1 }
+        ? { player: ev.player, amount: 1, objectId: ev.objectId }
         : null;
     case "taps": {
       if (ev.e !== "tap" || (t.byYou && ev.by !== me)) return null;

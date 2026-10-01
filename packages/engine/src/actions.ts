@@ -73,7 +73,7 @@ export function drawCard(s: GameState, p: PlayerId): void {
   emit({ type: "draw", player: p, objectId: id ?? undefined, defId: s.objects[id ?? ""]?.defId });
   player.turnStats.cardsDrawn += 1;
   bump(s); // Duelist of the Mind : force égale aux cartes piochées ce tour-ci
-  rulesEvent(s, { e: "draw", player: p, nth: player.turnStats.cardsDrawn });
+  rulesEvent(s, { e: "draw", player: p, nth: player.turnStats.cardsDrawn, objectId: id ?? undefined });
 }
 
 /**

@@ -34,7 +34,7 @@ import {
 } from "../state";
 import { addPlayerEffect } from "../statics";
 import { legalTargets, matchesObjectFilter } from "../targets";
-import type { ChoiceValue, GameState, ObjectId, PlayerId, Resolution } from "../types";
+import type { ChoiceValue, GameState, ManaCost, ObjectId, PlayerId, Resolution } from "../types";
 
 export const HANDLERS: OpHandlers = {
   discover(s, r, e, ctx, key) {
@@ -50,7 +50,7 @@ export const HANDLERS: OpHandlers = {
         const d = s.defs[s.objects[lib[0] as string]?.defId ?? ""];
         const id = moveObject(s, lib[0] as string, "exile");
         if (!id) break;
-        if (d && !d.types.includes("Land") && manaValue(d.manaCost) <= n) hit = id;
+        if (d && !d.types.includes("Land") && (e.cascade ? manaValue(d.manaCost) < n : manaValue(d.manaCost) <= n)) hit = id;
         else rest.push(id);
       }
       emit({ type: "reveal", player: p, defIds: [...rest, ...(hit ? [hit] : [])].map((id) => s.objects[id]?.defId ?? "") });
@@ -58,7 +58,7 @@ export const HANDLERS: OpHandlers = {
       for (const id of rest) moveObject(s, id, "library", { position: "bottom" });
       r.vars[key("done")] = [1];
       r.vars[key("hit")] = hit ? [hit] : [];
-      rulesEvent(s, { e: "discover", player: p, n });
+      if (!e.cascade) rulesEvent(s, { e: "discover", player: p, n });
     }
     const hit = r.vars[key("hit")]?.[0] as ObjectId | undefined;
     const storeHit = (id: ObjectId) => {
@@ -87,12 +87,19 @@ export const HANDLERS: OpHandlers = {
             player: p,
             key: key("cast"),
             cards: [hit],
-            prompt: `Découverte : lancer ${nameOf(s, hit)} gratuitement ? (sinon, en main)`,
+            prompt: e.cascade
+              ? `Cascade : lancer ${nameOf(s, hit)} gratuitement ? (sinon, au-dessous de votre bibliothèque)`
+              : `Découverte : lancer ${nameOf(s, hit)} gratuitement ? (sinon, en main)`,
           },
         };
       }
     }
     dropNowPermissions(s);
+    // Cascade : la carte non lancée va au-dessous de la bibliothèque (après les autres, ordre aléatoire approché).
+    if (e.cascade) {
+      moveObject(s, hit, "library", { position: "bottom" });
+      return;
+    }
     const inHand = moveObject(s, hit, "hand");
     storeHit(inHand ?? hit);
     return;
@@ -612,7 +619,7 @@ function castNowLoop(
   player: PlayerId,
   source: ObjectId,
   cards: ObjectId[],
-  opts: { free?: boolean; many?: boolean; exileAfter?: boolean; anyMana?: boolean },
+  opts: { free?: boolean; many?: boolean; exileAfter?: boolean; anyMana?: boolean; cost?: ManaCost },
 ): { ask?: OpResult; cast: ObjectId[]; rest: ObjectId[] } {
   const cast: ObjectId[] = [];
   let declined = false;
@@ -637,6 +644,7 @@ function castNowLoop(
       exileAfter: opts.exileAfter,
       source,
       now: true,
+      ...(opts.cost ? { cost: opts.cost } : {}),
     });
     // Seules les cartes qu'on peut vraiment lancer (cibles, coûts additionnels) sont proposées.
     const castable = open.filter((id) => castTerms(s, player, id));

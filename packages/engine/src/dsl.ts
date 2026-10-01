@@ -690,8 +690,13 @@ export const fx = {
       storeCast?: string;
       storeRest?: string;
       maxManaValue?: Amount;
+      /** Coût remplaçant le coût de mana, ex. "{2}" (miracle). */
+      cost?: string;
     } = {},
-  ): Effect => ({ op: "castNow", what, ...opts }),
+  ): Effect => {
+    const { cost, ...rest } = opts;
+    return { op: "castNow", what, ...rest, ...(cost ? { cost: parseManaCost(cost) } : {}) };
+  },
   castCopiesFree: (what: Ref[], maxTotalManaValue: number, opts: { paid?: boolean; storeCast?: string } = {}): Effect => ({
     op: "castCopiesFree",
     what,
@@ -779,6 +784,8 @@ export const fx = {
   countersAboveBase: (filter: ObjectFilter): Effect => ({ op: "countersAboveBase", filter }),
   /** Découverte N (701.57) ; `who` : « ce joueur découvre N » ; `store` : la carte découverte. */
   discover: (n: Amount, opts: { who?: Ref; store?: string } = {}): Effect => ({ op: "discover", n, ...opts }),
+  /** Cascade (702.85) : `n` est la valeur de mana du sort qui a la cascade. */
+  cascade: (n: Amount): Effect => ({ op: "discover", n, cascade: true }),
   /** « [créature] a la connivence » (701.50). */
   connive: (what: Ref = ref.self): Effect => ({ op: "connive", what }),
   turnFaceUp: (what: Ref): Effect => ({ op: "turnFaceUp", what }),

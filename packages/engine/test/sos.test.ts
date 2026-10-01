@@ -4774,3 +4774,88 @@ describe("Secrets of Strixhaven, lot C2 : sort gratuit une fois par tour, copies
     expect(idsOf(s, "p1", "battlefield", "Bear Cub")).toHaveLength(1);
   });
 });
+
+describe("Secrets of Strixhaven, lot C3 : cascade et miracle", () => {
+  /** Joue la résolution en lançant (ou non) la carte proposée par un « lancer maintenant ». */
+  const resolveAll = (s: S, castIt: boolean, max = 80) => {
+    let cur = s;
+    for (let i = 0; i < max && cur.stack.length + cur.triggers.length + (cur.pending?.kind === "choice" ? 1 : 0) > 0; i++) {
+      const p = cur.pending;
+      if (p?.kind === "priority" && p.castNow) {
+        const card = p.castNow.cards[0] as string;
+        cur = act(cur, p.player, castIt ? { type: "cast", card, targets: { t: ["p2"] } } : { type: "pass" });
+      } else if (p?.kind === "choice") cur = act(cur, p.player, { type: "choose", values: p.request.suggested });
+      else if (p?.kind === "priority") cur = act(cur, p.player, { type: "pass" });
+      else break;
+    }
+    return cur;
+  };
+
+  it("Quandrix, the Proof : cascade (une carte non-terrain de VM inférieure, lancée gratuitement ; le reste dessous)", () => {
+    let s = scenario({
+      p1: {
+        battlefield: [...lands("Forest", 3), ...lands("Island", 3)],
+        hand: ["Quandrix, the Proof"],
+        library: ["Island", "Shivan Dragon", "Lightning Strike", "Forest", "Plains"],
+      },
+    });
+    s = resolveAll(act(s, "p1", { type: "cast", card: idOf(s, "p1", "hand", "Quandrix, the Proof") }), true);
+    expect(idsOf(s, "p1", "battlefield", "Quandrix, the Proof")).toHaveLength(1);
+    // Shivan Dragon (VM 6) n'est pas de VM inférieure à 6 : Lightning Strike est lancée gratuitement.
+    expect(s.players.p2?.life).toBe(17);
+    const lib = s.players.p1?.library.map((id) => nameOf(s, id)) ?? [];
+    expect(lib.slice(0, 2)).toEqual(["Forest", "Plains"]);
+    expect(lib.slice(2).sort()).toEqual(["Island", "Shivan Dragon"]);
+  });
+
+  it("Quandrix, the Proof : vos éphémères et rituels lancés depuis la main ont la cascade ; refusé, la carte va dessous", () => {
+    let s = scenario({
+      p1: {
+        battlefield: ["Quandrix, the Proof", ...lands("Mountain", 2)],
+        hand: ["Lightning Strike"],
+        library: ["Forest", "Opt", "Plains"],
+      },
+    });
+    s = resolveAll(
+      act(s, "p1", { type: "cast", card: idOf(s, "p1", "hand", "Lightning Strike"), targets: { t: ["p2"] } }),
+      false,
+    );
+    expect(s.players.p2?.life).toBe(17);
+    // Opt (VM 1 < 2) proposé et refusé : il va au-dessous, Plains reste au-dessus.
+    const lib = s.players.p1?.library.map((id) => nameOf(s, id)) ?? [];
+    expect(lib[0]).toBe("Plains");
+    expect(lib.slice(1).sort()).toEqual(["Forest", "Opt"]);
+  });
+
+  it("Lorehold, the Historian : la première carte piochée du tour, un éphémère ou un rituel, peut être lancée pour {2}", () => {
+    let s = scenario({
+      turn: 2,
+      active: "p2",
+      p1: {
+        battlefield: ["Lorehold, the Historian", ...lands("Plains", 2)],
+        library: ["Lightning Strike", "Lightning Strike", ...lands("Plains", 5)],
+      },
+    });
+    // Tour 3 de p1 : la pioche de l'étape de pioche est la première du tour.
+    s = advanceUntil(s, (x) => x.turn.number === 3 && !!castNowOf(x));
+    const offer = castNowOf(s);
+    expect(offer).toBeDefined();
+    s = resolveAll(s, true);
+    expect(s.players.p2?.life).toBe(17);
+    // Deux Plaines engagées : le coût de miracle {2} (et non {1}{R}).
+    expect(s.battlefield.filter((id) => nameOf(s, id) === "Plains" && s.objects[id]?.tapped)).toHaveLength(2);
+  });
+
+  it("Lorehold, the Historian : à l'entretien adverse, vous pouvez défausser une carte pour en piocher une", () => {
+    let s = scenario({
+      active: "p1",
+      p1: { battlefield: ["Lorehold, the Historian"], hand: ["Opt"], library: lands("Plains", 5) },
+    });
+    s = advanceUntil(s, (x) => x.turn.number === 4 && x.pending?.kind === "choice" && x.pending.request.intent === "discard");
+    const p = s.pending;
+    if (p?.kind === "choice") s = act(s, "p1", { type: "choose", values: [idOf(s, "p1", "hand", "Opt")] });
+    s = settle(s);
+    expect(idsOf(s, "p1", "graveyard", "Opt")).toHaveLength(1);
+    expect(s.players.p1?.hand.map((id) => nameOf(s, id))).toEqual(["Plains"]);
+  });
+});

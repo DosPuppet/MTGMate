@@ -450,7 +450,11 @@ export type Effect =
    * lancer sans payer son coût de mana ou la mettre en main ; le reste dessous dans un ordre aléatoire.
    * `who` : le joueur qui découvre (vous par défaut) ; `store` : la carte découverte.
    */
-  | { op: "discover"; n: Amount; who?: Ref; store?: string }
+  /**
+   * Découverte N (701.57) ; `cascade` (702.85) : une carte non-terrain de valeur de mana strictement inférieure à N, et
+   * celle qui n'est pas lancée va au-dessous avec les autres (au lieu de la main).
+   */
+  | { op: "discover"; n: Amount; who?: Ref; store?: string; cascade?: boolean }
   /**
    * 608.2g : « vous pouvez lancer [ces cartes] » pendant la résolution. Le joueur lance tout de suite une des cartes
    * (puis une autre si `many`), ou refuse. `free` : sans payer leur coût de mana ; `exileAfter` : exilé au lieu d'aller
@@ -467,6 +471,8 @@ export type Effect =
       storeRest?: string;
       /** Seulement les cartes de valeur de mana au plus égale à ce montant (Kotis). */
       maxManaValue?: Amount;
+      /** Lancée pour ce coût plutôt que pour son coût de mana (miracle : Lorehold, the Historian). */
+      cost?: ManaCost;
     }
   /** Fabrication : « renvoyez cette carte transformée sous le contrôle de son propriétaire » ; les matériaux lui sont liés. */
   | { op: "craftReturn" }

@@ -895,7 +895,7 @@ function baseCastTerms(s: GameState, player: PlayerId, card: ObjectId): CastTerm
     if (o.owner !== player) return null;
     // Buster Sword : un sort de votre main sans payer son coût de mana, ce tour-ci.
     const handPerm = exilePermission(s, player, card);
-    if (handPerm) return { source: "hand", free: handPerm.free, anyTime: handPerm.anyTime };
+    if (handPerm) return { source: "hand", free: handPerm.free, anyTime: handPerm.anyTime, costOverride: handPerm.cost };
     // Omnipresence : seulement si la valeur de mana ne dépasse pas le nombre de créatures que vous contrôlez.
     const creatures = () => s.battlefield.filter((id) => obj(s, id).controller === player && isCreature(s, id)).length;
     const perms = controlledAbilitiesWithSource(s, player).filter(

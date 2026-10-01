@@ -115,3 +115,14 @@ Les scripts sont dans `packages/cards/src/sos/` : `cards` (cartes du méta), `wh
   - `fx.copySpell(…, { haste, sacrificeAtEnd })` : la copie d'un sort de créature (un jeton) a la célérité et est sacrifiée au début de la prochaine étape de fin. Correctif : une copie n'hérite plus des modifications d'arrivée accordées au sort original (707.2), et un jeton copie d'un sort de permanent reçoit les siennes.
 - **[règles]** `RULES_VERSION` = 31.
 - **Tests :** 3 tests de règles (« lot C2 »).
+
+## Sous-lot C3 : cascade et miracle ✅ (262 / 262)
+
+- **Cartes :** Quandrix, the Proof (cascade, et « vos éphémères et rituels lancés depuis votre main ont la cascade »), Lorehold, the Historian (miracle {2} accordé aux éphémères et rituels de votre main).
+- **Le moteur gagne :**
+  - la cascade (702.85) : `fx.cascade(N)`, variante de la découverte (`discover` avec `cascade` : valeur de mana strictement inférieure, la carte non lancée va au-dessous) ;
+  - l'événement de pioche désigne la carte piochée (`ref.eventObject` d'un déclencheur `draw`) ;
+  - `fx.castNow(…, { cost })` : lancer maintenant pour un coût donné, aussi depuis la main (permission `cost` lue pour la main).
+- **[règles]** `RULES_VERSION` = 32.
+- **Écarts :** cascade et miracle approchés (voir `docs/approximations.md`).
+- **Tests :** 4 tests de règles (« lot C3 »).
