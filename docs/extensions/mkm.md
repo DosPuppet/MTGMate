@@ -37,3 +37,9 @@ Les scripts sont dans `packages/cards/src/mkm/` : `cards` (cartes du méta), `wh
 - **Dette :** l'opération `suspect` sert désormais à plusieurs cartes : son entrée est retirée.
 - **Restent :** Forensic Researcher (réunir des preuves en coût de capacité), Surveillance Monitor (« vous pouvez réunir des preuves », « chaque fois que vous réunissez des preuves »), Conspiracy Unraveler (coût alternatif « réunir des preuves 10 »), Cryptic Coat (cape puis attacher l'Équipement), Intrude on the Mind (piles révélées, cartes mises au cimetière comptées).
 - **Tests :** 41 tests de règles (« lot A — bleu »).
+
+## Sous-lot A3 : cartes noires ✅ (101 / 268)
+
+- **Cartes :** 33 (sur 35), dont le suspect (Barbed Servitor, Hunted Bonebrute, Repeat Offender…), le déguisement, les Affaires (Case of the Gorgon's Kiss, Case of the Stashed Skeleton), réunir des preuves (Extract a Confession, Leering Onlooker…), Massacre Girl, Known Killer, Outrageous Robbery.
+- **Restent :** Polygraph Orb (réunir des preuves en coût de capacité), Vein Ripper (garde « sacrifiez une créature »).
+- **Tests :** 42 tests de règles (« lot A — noir »).
