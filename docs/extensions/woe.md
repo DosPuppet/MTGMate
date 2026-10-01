@@ -126,3 +126,13 @@ Les scripts sont dans `packages/cards/src/woe/` : `cards` (cartes du méta), `wh
   - le filtre `notSameNameAs` (« qui n'a pas le même nom qu'un jeton / un autre permanent que vous contrôlez ») ;
   - `becomeCopy` copie aussi une carte hors du champ de bataille (cimetière), avec des mots-clés ajoutés, des capacités de la source gardées (`keepAbilities`, par rang : pas de structure circulaire) et une valeur de mana exigée (`ifManaValue`).
 - **Tests :** 3 tests de règles (« lot C3 »).
+
+## Sous-lot C4 : dessus de la bibliothèque, coûts des capacités, Aventures, exil ✅ (266 / 269)
+
+- **Cartes :** Johann, Apprentice Sorcerer, Agatha of the Vile Cauldron, Agatha's Soul Cauldron, Beluna Grandsquall // Seek Thrills, Extraordinary Journey.
+- **Le moteur gagne :**
+  - `PlayFromZone.oncePerTurn` (« une fois par tour, vous pouvez lancer… depuis le dessus de votre bibliothèque ») : la permission utilisée est notée dans `turn.onceFired` ;
+  - `AbilityCostMod.reduceAmount` (réduction variable, évaluée pour la source de la statique : la force d'Agatha), `minOneMana` (« ne peut pas réduire le mana de ce coût à moins d'un mana ») et `anyMana` (« dépenser le mana comme s'il était de n'importe quelle couleur » pour ces capacités ; {C} reste dû en incolore) ;
+  - le déclencheur d'arrivée `fromZone: "graveyard" | "exile"` (remplace `fromGraveyard`) : arrivé de cette zone ou lancé depuis elle (`GameObject.castFromExile`) ;
+  - le filtre `adventure` s'applique aussi aux sorts (`spellView` : « les sorts de permanent qui ont une Aventure »).
+- **Tests :** 8 tests de règles (« lot C4 »).

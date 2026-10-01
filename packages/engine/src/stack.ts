@@ -258,6 +258,7 @@ export function spellView(d: CardDef, player: PlayerId): LkiSnapshot {
     // « un sort de valeur de mana 4 ou plus » (mana restreint d'Ashling, réductions de coût), « nommé … ».
     name: d.name,
     manaValue: manaValue(d.manaCost),
+    ...(d.layout === "adventure" || d.subtypes.includes("Adventure") ? { adventure: true } : {}),
   };
 }
 
@@ -375,7 +376,10 @@ export function playFromRules(
       if (r.filter && !matchesCard(s, player, card, { ...r.filter, controller: undefined }, id)) return [];
       if (r.payLife && (s.players[player]?.life ?? 0) < r.payLife) return [];
       if (r.forage && !canForage(s, player, card)) return [];
-      return [r];
+      // Johann : « une fois par tour » (la clé de cette permission, notée au lancement).
+      const onceKey = r.oncePerTurn ? `playFrom:${id}` : undefined;
+      if (onceKey && s.turn.onceFired.includes(onceKey)) return [];
+      return [onceKey ? { ...r, onceKey } : r];
     })
     .sort((a, b) => weight(a) - weight(b));
 }
@@ -389,6 +393,7 @@ function playFromTerms(r: PlayFromZone, source: "graveyard" | "library"): CastTe
     ...(r.forage ? { forage: true } : {}),
     ...(r.finality ? { finality: true } : {}),
     ...(r.anyMana ? { anyMana: true } : {}),
+    ...(r.onceKey ? { onceKey: r.onceKey } : {}),
   };
 }
 
@@ -648,7 +653,15 @@ function abilityCostReduction(s: GameState, player: PlayerId, source: ObjectId, 
     if (m.firstThisTurnFree) {
       if (m.ability !== "equip" || countTurnEvents(s, { event: "activate", who: "you", equip: true }, player) > 0) continue;
       n += 99;
-    } else n += m.reduce ?? 0;
+    } else {
+      const by = id ?? source;
+      let k =
+        (m.reduce ?? 0) +
+        (m.reduceAmount ? evalAmount(s, reductionContext(player, by, s.objects[by]?.defId ?? ""), m.reduceAmount) : 0);
+      // « Ne peut pas réduire le mana de ce coût à moins d'un mana » : au plus la valeur de mana moins un.
+      if (m.minOneMana) k = Math.min(k, Math.max(0, manaValue(ab.cost.mana ?? null) - 1));
+      n += Math.max(0, k);
+    }
   }
   return n;
 }
@@ -658,6 +671,25 @@ function abilityCostReduction(s: GameState, player: PlayerId, source: ObjectId, 
  * tour-ci, ce coût diminué du coût de mana de la source (générique et symboles colorés).
  */
 export function abilityMana(s: GameState, source: ObjectId, ab: ActivatedAbilityDef): ManaCost | undefined {
+  const m = printedAbilityMana(s, source, ab);
+  const o = s.objects[source];
+  if (!m || !o) return m;
+  // Agatha's Soul Cauldron : le mana se dépense comme s'il était de n'importe quel type (les symboles colorés deviennent
+  // génériques).
+  const any = playerStatics(s, o.controller, "abilityCost").some(
+    ({ ab: x }) =>
+      x.abilityCost?.anyMana && (!x.abilityCost.source || matchesObjectFilter(s, o.controller, source, x.abilityCost.source)),
+  );
+  if (!any) return m;
+  // « De n'importe quelle couleur » : {C} reste dû en mana incolore.
+  const colored =
+    Object.entries(m.colored).reduce<number>((n, [k, v]) => (k === "C" ? n : n + (v ?? 0)), 0) +
+    (m.hybrid?.length ?? 0) +
+    (m.twoHybrid?.length ?? 0);
+  return { generic: m.generic + colored, colored: m.colored.C ? { C: m.colored.C } : {}, x: m.x };
+}
+
+function printedAbilityMana(s: GameState, source: ObjectId, ab: ActivatedAbilityDef): ManaCost | undefined {
   const m = ab.cost.mana;
   const o = s.objects[source];
   if (!m || !ab.powerUp || !o || o.controlledSince !== s.turn.number) return m;
@@ -2285,6 +2317,7 @@ function finishResolution(
           cast: true,
           castFromHand: item.fromHand,
           castFromGraveyard: item.fromGraveyard,
+          castFromExile: item.fromExile,
           attachTo: d.enchant ? targets[ENCHANT_SPEC]?.[0] : undefined,
           chosen: chosenFrom(vars),
           manaSpent: item.manaSpent,

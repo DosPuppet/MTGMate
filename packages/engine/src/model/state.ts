@@ -97,6 +97,8 @@ export interface GameObject {
   castFromHand?: boolean;
   /** Lancé depuis le cimetière (Undead Sprinter : « si vous le faites, elle arrive avec un marqueur +1/+1 »). */
   castFromGraveyard?: boolean;
+  /** Lancé depuis l'exil (Extraordinary Journey). */
+  castFromExile?: boolean;
   /** Préparé (Reality Fracture) : identifiant de la copie de son sort, en exil. */
   preparedCopy?: ObjectId;
   /** Copie d'un sort préparé (en exil puis sur la pile) : le permanent qui l'a préparée. Cesse d'exister hors de ces zones. */
@@ -526,6 +528,8 @@ export interface LkiSnapshot {
   damagedBy?: ObjectId[];
   name?: string;
   manaValue?: number;
+  /** Sort qui a une Aventure (créature ou Aventure d'une carte à Aventure ; Beluna Grandsquall). */
+  adventure?: boolean;
   tapped?: boolean;
   /** Capacités effectives (imprimées ou accordées) au moment de l'instantané. */
   abilities?: AbilityDef[];

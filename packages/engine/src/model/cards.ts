@@ -755,6 +755,17 @@ export interface AbilityCostMod {
   /** Pas les capacités de la source de la statique (Boom Scholar : « vos autres permanents »). */
   notSelf?: boolean;
   reduce?: number;
+  /**
+   * Réduction variable, évaluée pour la source de la statique (Agatha of the Vile Cauldron : sa force) ; `minOneMana` :
+   * le coût en mana ne descend pas sous un mana.
+   */
+  reduceAmount?: Amount;
+  minOneMana?: boolean;
+  /**
+   * Le mana se dépense pour ces capacités comme s'il était de n'importe quel type (Agatha's Soul Cauldron : capacités
+   * des créatures que vous contrôlez).
+   */
+  anyMana?: boolean;
   /** La première de ces capacités activée ce tour-ci coûte {0} (Kíli the Resourceful, Équiper). */
   firstThisTurnFree?: boolean;
 }
@@ -779,6 +790,9 @@ export interface PlayFromZone {
   anyMana?: boolean;
   /** Sous-types en plus à l'arrivée (The Tomb of Aclazotz : Vampire). */
   addSubtypes?: string[];
+  /** Une fois par tour (Johann, Apprentice Sorcerer) ; `onceKey` : posé par le moteur, la permission utilisée. */
+  oncePerTurn?: boolean;
+  onceKey?: string;
 }
 
 /** Capacité statique qui s'applique à des joueurs (défense talismanique, « ne peut pas perdre »…). */

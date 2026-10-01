@@ -54,7 +54,7 @@ export const BLACK: Record<string, CardScript> = {
       triggered(when.entersSelf, [fx.surveil(2)], { label: "Surveillance 2" }),
       // « Une ou plusieurs autres créatures » : une seule fois par tour, une copie de l'une d'elles (la première).
       triggered(
-        { on: "enters", who: { types: ["Creature"], controller: "you", other: true }, fromGraveyard: true },
+        { on: "enters", who: { types: ["Creature"], controller: "you", other: true }, fromZone: "graveyard" },
         [fx.copyToken(ref.eventObject)],
         { oncePerTurn: true, label: "Une créature revenue du cimetière : jeton copie (une fois par tour)" },
       ),

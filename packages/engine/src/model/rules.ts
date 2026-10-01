@@ -192,8 +192,11 @@ export interface ObjectFilter {
  * vu du contrôleur de la source.
  */
 export type TriggerSpec =
-  /** `fromGraveyard` : seulement un objet arrivé depuis un cimetière ou lancé depuis un cimetière (Twilight Diviner). */
-  | { on: "enters"; who: "self" | ObjectFilter; fromGraveyard?: boolean }
+  /**
+   * `fromZone` : seulement un objet arrivé depuis cette zone, ou lancé depuis elle (Twilight Diviner : un cimetière ;
+   * Extraordinary Journey : l'exil).
+   */
+  | { on: "enters"; who: "self" | ObjectFilter; fromZone?: "graveyard" | "exile" }
   | { on: "dies"; who: "self" | ObjectFilter }
   /** `to` : seulement vers cette zone (« quand cet artefact est mis au cimetière depuis le champ de bataille »). */
   /** `whileCrafting` : exilé comme matériau d'une fabrication (Market Gnome). */

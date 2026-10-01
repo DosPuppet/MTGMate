@@ -372,6 +372,25 @@ export const BLUE: Record<string, CardScript> = {
     costReduction: { generic: amount.turnEvents({ event: "attack" }) },
     spell: spell([], [fx.draw(3)]),
   },
+  "Extraordinary Journey": {
+    abilities: [
+      // « jusqu'à X créatures ciblées » : le nombre de cibles dépend de X, d'où une capacité réflexive.
+      triggered(
+        when.entersSelf,
+        [
+          fx.reflexive(
+            [{ ...target.upTo(1, target.creature()), countAmount: amount.sourceX }],
+            [fx.exileCard(ref.target(), { name: "j" }), fx.grantPlay(ref.stored("j"), { forever: true, forOwner: true })],
+          ),
+        ],
+        { label: "Exilez jusqu'à X créatures ; leurs propriétaires pourront les jouer" },
+      ),
+      triggered({ on: "enters", who: { types: ["Creature"], nontoken: true }, fromZone: "exile" }, [fx.draw(1)], {
+        oncePerTurn: true,
+        label: "Une créature arrive depuis l'exil : piochez une carte (une fois par tour)",
+      }),
+    ],
+  },
   "Storyteller Pixie": {
     abilities: [triggered(CAST_ADVENTURE, [fx.draw(1)], { label: "Sort d'Aventure : piochez une carte" })],
   },

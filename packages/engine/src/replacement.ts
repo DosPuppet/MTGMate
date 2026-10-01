@@ -31,6 +31,7 @@ export interface EntersContext {
   /** Lancé depuis la main (Myojin). */
   castFromHand?: boolean;
   castFromGraveyard?: boolean;
+  castFromExile?: boolean;
   /** Choix fait pendant la résolution (« en arrivant, choisissez… »). */
   chosen?: GameObject["chosen"];
   /** Terrain choc : les points de vie ont été payés (sinon il arrive engagé). */
@@ -250,6 +251,7 @@ export function applyEntersReplacements(s: GameState, o: GameObject, ctx: Enters
   if (ctx.cast) o.cast = true;
   if (ctx.castFromHand) o.castFromHand = true;
   if (ctx.castFromGraveyard) o.castFromGraveyard = true;
+  if (ctx.castFromExile) o.castFromExile = true;
   // Mana dépensé, connu dès l'arrivée (« si aucun mana n'a été dépensé pour la lancer »).
   if (ctx.manaSpent !== undefined) o.manaSpent = ctx.manaSpent;
   if (ctx.spentColors) o.spentColors = ctx.spentColors;

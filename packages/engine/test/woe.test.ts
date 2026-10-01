@@ -4600,3 +4600,145 @@ describe("Wilds of Eldraine, lot C3 : copies non légendaires, copie d'une carte
     void bear;
   });
 });
+
+describe("Wilds of Eldraine, lot C4 : dessus de la bibliothèque, coûts des capacités, Aventures, exil", () => {
+  const settleAll = (s: S) => {
+    while (stateBasedActions(s)) {}
+    return settle(s);
+  };
+  const tapped = (s: S, player: string) =>
+    s.battlefield.filter((id) => s.objects[id]?.controller === player && s.objects[id]?.tapped);
+  const drawer = (name: string, mana: string) =>
+    customCard({
+      name,
+      power: 1,
+      toughness: 1,
+      abilities: [dsl.activated({ mana, effects: [dsl.fx.draw(1)], label: "Piochez une carte" })],
+    });
+
+  it("Johann : un éphémère ou rituel du dessus de la bibliothèque, une seule fois par tour ; pas une créature", () => {
+    let s = scenario({
+      p1: { battlefield: ["Johann, Apprentice Sorcerer", ...lands("Island", 4)], library: ["Opt", "Opt", "Opt", "Bear Cub"] },
+    });
+    const top = s.players.p1?.library[0] as string;
+    expect(castOptions(s, "p1", top)).toHaveLength(1);
+    s = settleAll(act(s, "p1", { type: "cast", card: top }));
+    // Opt (regard 1, puis pioche) : le nouveau dessus n'est plus lançable ce tour-ci.
+    const next = s.players.p1?.library[0] as string;
+    expect(nameOf(s, next)).toBe("Opt");
+    expect(castOptions(s, "p1", next)).toHaveLength(0);
+    const t = scenario({ p1: { battlefield: ["Johann, Apprentice Sorcerer", ...lands("Forest", 2)], library: ["Bear Cub"] } });
+    expect(castOptions(t, "p1", t.players.p1?.library[0] as string)).toHaveLength(0);
+  });
+
+  it("Agatha of the Vile Cauldron : capacités de vos créatures {X} de moins (X = sa force), jamais sous un mana", () => {
+    const three = drawer("Sage à trois", "{3}");
+    const one = drawer("Sage à un", "{1}");
+    let s = scenario({
+      p1: { battlefield: ["Agatha of the Vile Cauldron", three, one, ...lands("Island", 2)], library: lands("Island", 3) },
+    });
+    const sage = idOf(s, "p1", "battlefield", three.name);
+    const small = idOf(s, "p1", "battlefield", one.name);
+    s = settleAll(activate(s, "p1", sage));
+    // {3} - 1 = {2} : les deux Îles.
+    expect(tapped(s, "p1")).toHaveLength(2);
+    s = scenario({ p1: { battlefield: ["Agatha of the Vile Cauldron", one], library: lands("Island", 3) } });
+    // {1} ne descend pas à {0}.
+    expect(legalActions(s, "p1").some((a) => a.type === "activate" && a.source === idOf(s, "p1", "battlefield", one.name))).toBe(
+      false,
+    );
+    void small;
+  });
+
+  it("Agatha of the Vile Cauldron : {4}{R}{G} (réduit par sa propre force) : vos autres créatures +1/+1, piétinement, célérité", () => {
+    let s = scenario({
+      p1: { battlefield: ["Agatha of the Vile Cauldron", "Bear Cub", ...lands("Mountain", 2), ...lands("Forest", 3)] },
+    });
+    const agatha = idOf(s, "p1", "battlefield", "Agatha of the Vile Cauldron");
+    const bear = idOf(s, "p1", "battlefield", "Bear Cub");
+    s = settleAll(activate(s, "p1", agatha));
+    expect(chars(s, bear).power).toBe(3);
+    expect(chars(s, bear).keywords).toEqual(expect.arrayContaining(["trample", "haste"]));
+    expect(chars(s, agatha).power).toBe(1);
+  });
+
+  it("Agatha's Soul Cauldron : carte de créature exilée, marqueur +1/+1 ; ses capacités pour vos créatures à marqueur, mana de n'importe quelle couleur", () => {
+    const mage = drawer("Mage d'essai", "{U}");
+    let s = scenario({
+      p1: { battlefield: ["Agatha's Soul Cauldron", "Bear Cub", "Forest"], library: lands("Forest", 3) },
+      p2: { graveyard: [mage, "Opt"] },
+    });
+    const cauldron = idOf(s, "p1", "battlefield", "Agatha's Soul Cauldron");
+    const bear = idOf(s, "p1", "battlefield", "Bear Cub");
+    expect(chars(s, bear).abilities.some((a) => a.kind === "activated")).toBe(false);
+    s = settleAll(activate(s, "p1", cauldron, { t: [idOf(s, "p2", "graveyard", mage.name)] }));
+    expect(s.objects[bear]?.counters["+1/+1"]).toBe(1);
+    expect(chars(s, bear).abilities.some((a) => a.kind === "activated" && a.label === "Piochez une carte")).toBe(true);
+    // {U} payé avec une Forêt.
+    const hand = s.players.p1?.hand.length ?? 0;
+    s = settleAll(activate(s, "p1", bear));
+    expect(s.players.p1?.hand).toHaveLength(hand + 1);
+  });
+
+  it("Agatha's Soul Cauldron : une carte non-créature exilée ne donne ni marqueur ni capacité", () => {
+    let s = scenario({ p1: { battlefield: ["Agatha's Soul Cauldron", "Bear Cub"] }, p2: { graveyard: ["Opt"] } });
+    const cauldron = idOf(s, "p1", "battlefield", "Agatha's Soul Cauldron");
+    s = settleAll(activate(s, "p1", cauldron, { t: [idOf(s, "p2", "graveyard", "Opt")] }));
+    expect(exiled(s, "Opt")).toHaveLength(1);
+    expect(s.objects[idOf(s, "p1", "battlefield", "Bear Cub")]?.counters["+1/+1"] ?? 0).toBe(0);
+    expect(s.objects[cauldron]?.linked ?? []).toHaveLength(0);
+  });
+
+  it("Beluna Grandsquall : sorts de permanent avec une Aventure {1} de moins ; pas l'Aventure, ni un autre sort", () => {
+    const s = scenario({
+      p1: { battlefield: ["Beluna Grandsquall // Seek Thrills"], hand: ["Bramble Familiar // Fetch Quest", "Bear Cub"] },
+    });
+    const v = projectView(s, "p1");
+    const familiar = idOf(s, "p1", "hand", "Bramble Familiar // Fetch Quest");
+    expect(v.hand.find((c) => c.id === familiar)?.castCost).toEqual({ text: "{G}", delta: -1 });
+    expect(v.hand.find((c) => c.id === idOf(s, "p1", "hand", "Bear Cub"))?.castCost).toBeUndefined();
+  });
+
+  it("Seek Thrills : meulez sept cartes, les cartes avec une Aventure meulées vont dans votre main", () => {
+    let s = scenario({
+      p1: {
+        battlefield: [...lands("Forest", 3), "Island", "Mountain"],
+        hand: ["Beluna Grandsquall // Seek Thrills"],
+        library: [
+          "Opt",
+          "Bramble Familiar // Fetch Quest",
+          "Opt",
+          "Opt",
+          "Bear Cub",
+          "Opt",
+          "Opt",
+          "Bramble Familiar // Fetch Quest",
+        ],
+      },
+    });
+    s = settleAll(act(s, "p1", { type: "cast", card: idOf(s, "p1", "hand", "Beluna Grandsquall // Seek Thrills"), face: 1 }));
+    expect(idsOf(s, "p1", "hand", "Bramble Familiar // Fetch Quest")).toHaveLength(1);
+    expect(idsOf(s, "p1", "graveyard", "Bear Cub")).toHaveLength(1);
+    expect(idsOf(s, "p1", "graveyard", "Opt")).toHaveLength(5);
+    expect(s.players.p1?.library).toHaveLength(1);
+  });
+
+  it("Extraordinary Journey : jusqu'à X créatures exilées, jouables par leur propriétaire ; une créature arrivée de l'exil fait piocher", () => {
+    let s = scenario({
+      p1: { battlefield: lands("Island", 4), hand: ["Extraordinary Journey"], library: lands("Island", 3) },
+      p2: { battlefield: ["Bear Cub", ...lands("Forest", 2)] },
+    });
+    const bear = idOf(s, "p2", "battlefield", "Bear Cub");
+    s = act(s, "p1", { type: "cast", card: idOf(s, "p1", "hand", "Extraordinary Journey"), x: 1 });
+    s = settleAll(s);
+    const card = exiled(s, "Bear Cub")[0] as string;
+    expect(card).toBeDefined();
+    void bear;
+    const hand = s.players.p1?.hand.length ?? 0;
+    s = advanceUntil(s, (x) => x.turn.active === "p2" && x.turn.step === "main1");
+    expect(castOptions(s, "p2", card)).toHaveLength(1);
+    s = settleAll(act(s, "p2", { type: "cast", card }));
+    expect(idsOf(s, "p2", "battlefield", "Bear Cub")).toHaveLength(1);
+    expect(s.players.p1?.hand).toHaveLength(hand + 1);
+  });
+});

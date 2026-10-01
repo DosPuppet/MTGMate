@@ -489,7 +489,11 @@ function matchTrigger(s: GameState, ev: RulesEvent, t: TriggerSpec, src: Source)
         )
       )
         return null;
-      if (t.fromGraveyard && ev.from !== "graveyard" && !(ev.newId && s.objects[ev.newId]?.castFromGraveyard)) return null;
+      if (t.fromZone) {
+        const arrived = ev.newId ? s.objects[ev.newId] : undefined;
+        const cast = t.fromZone === "graveyard" ? arrived?.castFromGraveyard : arrived?.castFromExile;
+        if (ev.from !== t.fromZone && !cast) return null;
+      }
       return v && matchWho(t.who, v, src) ? { objectId: v.id, player: v.controller } : null;
     }
     case "dies": {
