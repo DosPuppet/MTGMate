@@ -73,8 +73,11 @@ export const RECORD_VERSION = 1;
  *   données (`EventReplacement`), doubleurs et drapeaux convertis ; « ces jetons plus un jeton » appliqué une fois par
  *   événement ; un permanent peut ne pas pouvoir être dégagé ; « le terrain enchanté est de la couleur choisie ».
  * - 26 : Wilds of Eldraine, socle : jetons-Auras (Rôles), un seul Rôle par joueur sur un même permanent (704.5y).
+ * - 27 : Secrets of Strixhaven, socle : une condition « si » d'une capacité déclenchée lit les montants de l'objet de
+ *   l'événement (mana dépensé pour le sort lancé : Increment) ; Wilds of Eldraine, lots C4 et C5 : paiement de PV
+ *   centralisé (Ashiok), « une fois par tour » depuis le dessus de la bibliothèque, coûts de capacités réduits.
  */
-export const RULES_VERSION = 26;
+export const RULES_VERSION = 27;
 
 /** Un point de contrôle toutes les N décisions (plus la dernière de la partie). */
 export const CHECKPOINT_EVERY = 25;

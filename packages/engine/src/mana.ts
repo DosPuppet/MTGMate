@@ -1,7 +1,7 @@
 /**
  * Mana : lecture des coûts, sources disponibles et solveur de paiement automatique.
  */
-import { loseLife, payLife, sacrifice } from "./actions";
+import { payLife, sacrifice } from "./actions";
 import { RulesError } from "./errors";
 import { linkedColors } from "./layers";
 import {

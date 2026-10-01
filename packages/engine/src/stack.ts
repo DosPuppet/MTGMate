@@ -8,7 +8,6 @@ import {
   canForage,
   createTokenCopy,
   forage,
-  loseLife,
   payLife as payLife_,
   removeFromCombat,
   sacrifice as sacrificePermanent,

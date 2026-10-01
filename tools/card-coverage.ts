@@ -136,6 +136,11 @@ if (process.argv.includes("--text")) {
         console.log(`[${f.name} — ${f.typeLine}${fpt}]\n${f.text}`);
       }
     } else console.log(c.text);
+    // Disposition « prepare » : le sort de la carte (script `prepareSpell`).
+    if (c.prepareFace)
+      console.log(
+        `[Sort préparé : ${c.prepareFace.name} ${c.prepareFace.manaCost} — ${c.prepareFace.typeLine}]\n${c.prepareFace.text}`,
+      );
   }
 }
 

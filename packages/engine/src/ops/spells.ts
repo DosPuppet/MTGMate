@@ -1,6 +1,6 @@
 /** Effets du moteur : pile et permissions de lancer (contresorts, copies, lancer depuis une autre zone). Chaque clé est un `op` d'`Effect` (voir `runEffect`, effects.ts). */
 
-import { loseLife, payLife, sacrifice } from "../actions";
+import { payLife, sacrifice } from "../actions";
 import type { OpHandlers, OpResult } from "../effects";
 import {
   announceDiscard,

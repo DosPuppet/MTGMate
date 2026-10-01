@@ -5,10 +5,13 @@
  * Discovery, Dissection Practice et les terrains bicolores de l'extension.
  */
 import { describe, expect, it } from "vitest";
+import { INCREMENT, INFUSION, OPUS, opusInstead, REPARTEE } from "../../cards/src/sos/common";
+import { fx, ref, spell, triggered } from "../src/dsl";
 import { legalActions } from "../src/legal";
 import { chars } from "../src/state";
-import type { ChoiceRequest, ChoiceValue, GameState } from "../src/types";
-import { act, advanceUntil, idOf, idsOf, passUntil, scenario } from "./helpers";
+import { checkCondition } from "../src/triggers";
+import type { AbilityDef, ChoiceRequest, ChoiceValue, GameState } from "../src/types";
+import { act, advanceUntil, customCard, idOf, idsOf, passUntil, scenario } from "./helpers";
 
 type S = GameState;
 type Answer = (req: ChoiceRequest, player: string) => ChoiceValue[] | undefined;
@@ -419,5 +422,75 @@ describe("Secrets of Strixhaven", () => {
       expect(play("Stormcarved Coast", 2)).toEqual({ tapped: false, colors: ["R", "U"] });
       expect(play("Deathcap Glade", 2)).toEqual({ tapped: false, colors: ["B", "G"] });
     });
+  });
+});
+
+describe("Secrets of Strixhaven, socle : Increment, Repartee, Opus, Infusion", () => {
+  const tester = (name: string, power: number, toughness: number, ...abilities: AbilityDef[]) =>
+    customCard({ name, power, toughness, abilities });
+  /** Rituel incolore de coût {N} : « piochez une carte ». */
+  const sorcery = (n: number) =>
+    customCard({
+      name: `Rituel à ${n}`,
+      types: ["Sorcery"],
+      typeLine: "Sorcery",
+      manaCost: { generic: n, colored: {}, x: 0 },
+      manaCostText: `{${n}}`,
+      spell: spell([], [fx.draw(1)]),
+    });
+
+  it("Increment : un marqueur si le mana dépensé dépasse la force ou l'endurance (la plus petite des deux), pas sinon", () => {
+    const pupil = tester("Élève d'essai", 1, 3, INCREMENT);
+    let s = scenario({ p1: { battlefield: [pupil, ...lands("Island", 3)], hand: ["Opt", sorcery(2)] } });
+    const id = idOf(s, "p1", "battlefield", pupil.name);
+    // Opt : 1 mana, pas plus que la force 1.
+    s = settle(cast(s, "p1", "Opt"));
+    expect(s.objects[id]?.counters["+1/+1"] ?? 0).toBe(0);
+    // 2 mana > force 1 (mais pas > endurance 3).
+    s = settle(cast(s, "p1", "Rituel à 2"));
+    expect(s.objects[id]?.counters["+1/+1"]).toBe(1);
+  });
+
+  it("Repartee : un éphémère ou rituel qui cible une créature, pas un joueur ; pas un sort de créature", () => {
+    const duelist = tester(
+      "Duelliste d'essai",
+      1,
+      1,
+      triggered(REPARTEE, [fx.addCounters(ref.self, 1)], { label: "Repartee : un marqueur +1/+1" }),
+    );
+    let s = scenario({
+      p1: { battlefield: [duelist, ...lands("Mountain", 6)], hand: ["Lightning Strike", "Lightning Strike"] },
+      p2: { battlefield: ["Bear Cub"] },
+    });
+    const id = idOf(s, "p1", "battlefield", duelist.name);
+    const [a, b] = idsOf(s, "p1", "hand", "Lightning Strike");
+    s = settle(act(s, "p1", { type: "cast", card: a as string, targets: { t: ["p2"] } }));
+    expect(s.objects[id]?.counters["+1/+1"] ?? 0).toBe(0);
+    s = settle(act(s, "p1", { type: "cast", card: b as string, targets: { t: [idOf(s, "p2", "battlefield", "Bear Cub")] } }));
+    expect(s.objects[id]?.counters["+1/+1"]).toBe(1);
+  });
+
+  it("Opus : à chaque éphémère ou rituel ; cinq mana ou plus dépensés : l'effet renforcé", () => {
+    const soloist = tester(
+      "Soliste d'essai",
+      1,
+      3,
+      triggered(OPUS, opusInstead([fx.damage(1, ref.eachOpponent)], [fx.damage(3, ref.eachOpponent)]), {
+        label: "Opus : 1 blessure (3 si cinq mana)",
+      }),
+    );
+    let s = scenario({ p1: { battlefield: [soloist, ...lands("Island", 6)], hand: ["Opt", sorcery(5)] } });
+    s = settle(cast(s, "p1", "Opt"));
+    expect(s.players.p2?.life).toBe(19);
+    s = settle(cast(s, "p1", "Rituel à 5"));
+    expect(s.players.p2?.life).toBe(16);
+  });
+
+  it("Infusion : vrai seulement si vous avez gagné des points de vie ce tour-ci", () => {
+    const s = scenario({});
+    expect(checkCondition(s, INFUSION, "p1")).toBe(false);
+    const pl = s.players.p1;
+    if (pl) pl.turnStats.lifeGained = 1;
+    expect(checkCondition(s, INFUSION, "p1")).toBe(true);
   });
 });

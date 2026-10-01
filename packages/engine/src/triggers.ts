@@ -141,7 +141,7 @@ export function queueLifelink(key: string, controller: PlayerId, amount: number)
 }
 
 /** Montant évalué hors résolution (sommes, force d'un objet, vitesse…), comme pendant une résolution sans cible. */
-function checkAmount(s: GameState, a: Amount, controller: PlayerId, sourceId?: ObjectId): number {
+function checkAmount(s: GameState, a: Amount, controller: PlayerId, sourceId?: ObjectId, eventObject?: ObjectId): number {
   const ctx = {
     controller,
     sourceId: sourceId ?? "",
@@ -150,6 +150,8 @@ function checkAmount(s: GameState, a: Amount, controller: PlayerId, sourceId?: O
     targets: {},
     x: 0,
     kicked: false,
+    // L'objet de l'événement (Increment : « si le mana dépensé pour lancer ce sort »).
+    ...(eventObject ? { event: { objectId: eventObject } } : {}),
   };
   return evalAmount(s, ctx, a);
 }
@@ -416,7 +418,7 @@ export function checkCondition(
         return n >= c.n;
       }
       if (a.kind === "count" || a.kind === "totalPower") return boardAmount(s, a, controller, sourceId) >= c.n;
-      return checkAmount(s, a, controller, sourceId) >= c.n;
+      return checkAmount(s, a, controller, sourceId, eventObject) >= c.n;
     }
     case "any":
       return c.of.some((x) => checkCondition(s, x, controller, sourceId, eventObject));

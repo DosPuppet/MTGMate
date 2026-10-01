@@ -1,5 +1,5 @@
 /** Effets du moteur : contrôle du déroulement (si, peut, réflexif, retardé). Chaque clé est un `op` d'`Effect` (voir `runEffect`, effects.ts). */
-import { canForage, forage, loseLife, payLife } from "../actions";
+import { canForage, forage, payLife } from "../actions";
 import type { OpHandlers } from "../effects";
 import { evalAmount, evalCondition, nameOf, resolveRef, store } from "../effects";
 import { canPay, payMana } from "../mana";
