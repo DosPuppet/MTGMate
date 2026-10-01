@@ -1,4 +1,4 @@
-/** Identifiants (PLAN-R.md, lot F1) : un compteur par préfixe, pour que les décisions enregistrées visent toujours les mêmes objets. */
+/** Identifiants (docs/plans/PLAN-R.md, lot F1) : un compteur par préfixe, pour que les décisions enregistrées visent toujours les mêmes objets. */
 import { describe, expect, it } from "vitest";
 import { newId } from "../src/state";
 import { scenario } from "./helpers";

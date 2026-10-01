@@ -1,5 +1,5 @@
 /**
- * Écarts de règles relevés par l'audit du 30/09/2026 (AUDIT.md, § 3.1) et corrigés par PLAN-R.md : un `describe` par
+ * Écarts de règles relevés par l'audit du 30/09/2026 (docs/audits/2026-09-30.md, § 3.1) et corrigés par docs/plans/PLAN-R.md : un `describe` par
  * écart (numéro de l'audit, ou N… pour ceux trouvés en préparant le plan).
  */
 import { card, type RawCard, toCardDef } from "@mtgx/cards";

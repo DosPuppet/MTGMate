@@ -1,5 +1,5 @@
 /**
- * Parties dorées (`ai/src/golden.ts`, PLAN-R.md lot F1) : à version des règles égale, chacune se rejoue à l'identique,
+ * Parties dorées (`ai/src/golden.ts`, docs/plans/PLAN-R.md lot F1) : à version des règles égale, chacune se rejoue à l'identique,
  * points de contrôle compris. Un lot qui change le comportement du moteur fait avancer `RULES_VERSION` (engine/src/record.ts)
  * et les régénère : `npm run golden -- --update`.
  */

@@ -15,7 +15,7 @@ export const RECORD_FORMAT = "mtgx-game";
 export const RECORD_VERSION = 1;
 
 /**
- * Version des règles du moteur. Elle avance à chaque lot qui change le comportement d'une partie (PLAN-R.md, lots
+ * Version des règles du moteur. Elle avance à chaque lot qui change le comportement d'une partie (docs/plans/PLAN-R.md, lots
  * « [règles] ») : un enregistrement d'une autre version peut ne plus se rejouer à l'identique. Absente d'un
  * enregistrement : 0.
  *

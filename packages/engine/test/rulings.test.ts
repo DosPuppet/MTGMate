@@ -1,6 +1,6 @@
 /**
  * Tests tirés des décisions officielles (rulings Scryfall et règles complètes) pour les interactions fréquentes du méta :
- * lien de vie, copies, remplacements, nettoyage (PLAN-R.md, lot R7).
+ * lien de vie, copies, remplacements, nettoyage (docs/plans/PLAN-R.md, lot R7).
  */
 import { describe, expect, it } from "vitest";
 import { dealDamage, destroy } from "../src/actions";

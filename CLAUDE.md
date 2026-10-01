@@ -46,8 +46,8 @@ Ce fichier sert au suivi du projet entre les sessions : où on en est, les règl
 | Méta Standard, lot M4 : 4c Control, Boros Dragons, Jeskai Artifacts (23 cartes) ; type de terrain choisi en jouant le terrain, exploiter, convergence, maîtrise du feu | ✅ |
 | Méta Standard, lot M5 : Boros Dwarves, Lifegain, Mardu Discard, Boros Tokens (34 cartes) ; Storied, faufilement, chaos, paradigme, équiper digne | ✅ |
 | Méta Standard, lot M6 : les six derniers archétypes (47 cartes) ; maîtrise de l'air, Web-slinging, payer X PV, tours passés. **Phase 1 du plan P4 finie : les 20 archétypes du méta (88,1 %) sont jouables** | ✅ |
-| Phase 2 du plan P4 : Tarkir: Dragonstorm à 100 % (`docs/plans/PLAN-P4.md`) | en attente de `PLAN-R.md` |
-| Plan de remédiation de l'audit du 30/09/2026 (`PLAN-R.md`, lots F1 à R8) : F1 à F3 (fondations), R0 (corrections rapides), R4.0 à R4.6, R2.1 à R2.5, R1 en partie, R3 (copies de sorts, répartition), R5 à R8 faits, `RULES_VERSION` = 19 ; restent R1 en partie (familles E, H, I, boucliers 615.7), R7 (continu) | ✅ (sauf R1 et R7, à poursuivre) |
+| Phase 2 du plan P4 : Tarkir: Dragonstorm à 100 % (`docs/plans/PLAN-P4.md`) | à faire, quand l'utilisateur le demandera |
+| Plan de remédiation de l'audit du 30/09/2026 (`docs/plans/PLAN-R.md`, lots F1 à R8) : F1 à F3 (fondations), R0 (corrections rapides), R4.0 à R4.6, R2.1 à R2.5, R1 en partie, R3 (copies de sorts, répartition), R5 à R8 faits, `RULES_VERSION` = 19 ; restent R1 en partie (familles E, H, I, boucliers 615.7) et R7 (continu), suivis par la section « Ajouter des cartes ou une extension » | ✅ (plan archivé le 01/10/2026) |
 | Autres extensions Standard | à la demande de l'utilisateur, une à la fois |
 
 
@@ -56,7 +56,8 @@ Ce fichier sert au suivi du projet entre les sessions : où on en est, les règl
 - **27/09/2026 :** l'intégration de tout le Standard d'un coup est abandonnée. La branche `standard` (socle multi-extensions, EOE, DFT, OTJ+BIG, FIN, vérification parallélisée) est fusionnée dans `master`.
 - **28/09/2026 :** le travail se fait désormais sur la branche `dev` (créée depuis `master`).
 - Ensuite : **une extension à la fois, sur `dev`, seulement quand l'utilisateur la nomme.**
-- **30/09/2026 :** pas de nouvelles cartes tant que le moteur n'est pas sécurisé et finalisé (`PLAN-R.md`) ; Tarkir: Dragonstorm (phase 2 du P4) attend.
+- **30/09/2026 :** pas de nouvelles cartes tant que le moteur n'est pas sécurisé et finalisé (`docs/plans/PLAN-R.md`) ; Tarkir: Dragonstorm (phase 2 du P4) attend.
+- **01/10/2026 :** PLAN-R terminé (sauf R1 en partie et R7, continu) et archivé avec son audit. Les nouvelles cartes peuvent reprendre, en suivant la section « Ajouter des cartes ou une extension » (fin de ce fichier).
 - **29/09/2026 (plan P4) :** exception décidée par l'utilisateur. On écrit d'abord les cartes des decks du méta Standard (lots M1 à M6, toutes extensions confondues ; des extensions restent donc partielles), puis Tarkir: Dragonstorm à 100 %. Un lot du méta se vérifie avec `npm run verify -- --set META`.
 - Découpage habituel d'une extension :
   - lot A : cartes faisables avec le moteur, jetons et terrains ;
@@ -66,9 +67,10 @@ Ce fichier sert au suivi du projet entre les sessions : où on en est, les règl
 
 ## Documents
 
-- `PLAN-R.md` : **plan en cours**, remédiation de l'audit du 30/09/2026 (lots F1 à R8, ordre, décisions de conception, écarts trouvés en route, version des règles et replays).
-- `docs/plans/` : plans archivés. `PLAN-P4.md` : plan de couverture (méta Standard, fait ; puis Tarkir: Dragonstorm, en attente) ; instantané des decks du méta dans `docs/meta/2026-09-29/`.
-- `AUDIT.md` : audit du 30/09/2026, centré sur les règles du moteur (17 écarts avec les règles officielles, dette de conception, interface face à Arena, sécurité du serveur, comparaison, feuille de route R0 à R8). Les audits précédents sont archivés dans `docs/audits/` (celui du 29/09 et sa feuille de route P0 à P4).
+- `docs/plans/` : plans archivés.
+  - `PLAN-R.md` : remédiation de l'audit du 30/09/2026 (lots F1 à R8, fait le 30/09/2026 ; décisions de conception, écarts trouvés en route, version des règles et replays, « Reporté tant qu'aucune carte ne l'exige »).
+  - `PLAN-P4.md` : plan de couverture (méta Standard, fait ; puis Tarkir: Dragonstorm, à faire) ; instantané des decks du méta dans `docs/meta/2026-09-29/`.
+- `docs/audits/` : audits archivés. `2026-09-30.md` : audit centré sur les règles du moteur (17 écarts avec les règles officielles, dette de conception, interface face à Arena, sécurité du serveur, comparaison, feuille de route R0 à R8, tous marqués corrigés ou non) ; `2026-09-29.md` : l'audit précédent et sa feuille de route P0 à P4.
 - `docs/moteur.md` : **à lire avant d'ajouter une mécanique**. Carte des fichiers du moteur, et où toucher pour un effet, un déclencheur, une condition, un filtre, un statique de joueur ou un mot-clé.
 - `docs/approximations.md` : approximations connues, générales puis carte par carte (à lever si une carte l'exige). **Toute nouvelle approximation y est ajoutée.**
 - `docs/extensions/<ext>.md` : mécaniques et détail des lots de chaque extension :
@@ -135,7 +137,7 @@ Ce fichier sert au suivi du projet entre les sessions : où on en est, les règl
   - les tests d'interface et le bench restent locaux ; les journaux d'un échec sont joints à l'exécution.
 - **Fuzz à la main :** `npm run fuzz -- --games 300 --pool FIN --jobs 10`. Les résultats sont identiques à graine égale, quel que soit `--jobs`.
 - **Bench :** il n'est fiable que sur secteur (le mode éco du CPU fausse les mesures). On juge une régression en comparant avant et après.
-- **Lot qui change le comportement du moteur (« [règles] », `PLAN-R.md`) :** faire avancer `RULES_VERSION` (`engine/src/record.ts`, avec une ligne d'historique), puis régénérer les parties dorées (`npm run golden -- --update`). Le test `ai/test/golden.test.ts` échoue si une partie dorée ne se rejoue plus à l'identique à version égale.
+- **Lot qui change le comportement du moteur (« [règles] », `docs/plans/PLAN-R.md`) :** faire avancer `RULES_VERSION` (`engine/src/record.ts`, avec une ligne d'historique), puis régénérer les parties dorées (`npm run golden -- --update`). Le test `ai/test/golden.test.ts` échoue si une partie dorée ne se rejoue plus à l'identique à version égale.
 - **Nouvelle mécanique visible :** un script Playwright ponctuel, avec captures dans `test-results/`.
 
 ## Pièges connus
@@ -196,7 +198,7 @@ Ce fichier sert au suivi du projet entre les sessions : où on en est, les règl
 
 ## Règle pour la suite : arrêter la croissance des drapeaux propres à une carte
 
-Audit du 30/09/2026, § 3.3 ; `PLAN-R.md`, lots R4.
+Audit du 30/09/2026, § 3.3 ; `docs/plans/PLAN-R.md`, lots R4.
 
 - **Chercher d'abord une forme générique** avant d'ajouter, pour une seule carte, un champ à `PlayerStaticAbilityDef`, un membre à `Keyword`, une opération d'effet ou un champ d'état :
   - une famille paramétrée par un `ObjectFilter` (« ne peut pas être bloquée par [filtre] », « protection contre [filtre] », modificateurs de coût, jouer depuis une zone, restrictions de joueur…) ;
@@ -206,3 +208,21 @@ Audit du 30/09/2026, § 3.3 ; `PLAN-R.md`, lots R4.
 - **Si une carte l'exige vraiment,** l'ajout est justifié dans `packages/cards/data/debt-baseline.json` (raison, famille cible) et signalé dans le lot.
 - **`packages/cards/test/debt.test.ts` le vérifie :** il échoue sur tout drapeau, mot-clé non imprimé ou opération d'une seule carte absent de la référence, et sur toute entrée périmée. Un lot qui supprime un drapeau, ou dont l'opération sert désormais à plusieurs cartes, retire l'entrée : le plafond ne fait que baisser.
 - **Départ au 30/09/2026 :** 96 drapeaux de `PlayerStaticAbilityDef`, 33 mots-clés non imprimés, 61 opérations utilisées par une seule carte. **Après R4 :** 69, 13 et 58 (familles génériques : `BlockRule`, `ProtectionRule`, `PowerRule`, `playFrom`, `abilityCost`, `castLimit`, `triggerMod`, `nextSpell`, `counterOnOrCreate`).
+
+## Ajouter des cartes ou une extension : suivre R1 et R7
+
+Suite de `docs/plans/PLAN-R.md` (lots R1 et R7, non terminés). À appliquer à chaque lot de cartes, extension complète ou lot du méta, en plus de la règle précédente.
+
+**R1 — remplacements et prévention (616, 615) :**
+- Un effet qui modifie un nombre (blessures, marqueurs, PV gagnés, cartes piochées) passe par `modifiers.ts` (`AmountMod`, `chooseReplacementOrder`), dans `dealDamage`, `changeCounters`, `gainLife` ou `drawCards` : jamais un ordre fixe écrit dans le code, ni une pioche qui contourne `drawCards`.
+- Une carte qui apporte un nouveau remplacement des familles E (blessures), H (jetons, marqueurs) ou I (quantités : PV, pioche, meule, mana), marquées ainsi dans `debt-baseline.json` : c'est le moment d'écrire la capacité générique `EventReplacementAbilityDef` prévue en R1 (`event`, filtres, `effectOnly`, `modify : { add, times, atLeast, prevent }`, `condition`) et d'y convertir les drapeaux de la même famille, plutôt que d'ajouter un drapeau.
+- Boucliers « la prochaine fois que… » (615.7) et marqueurs de bouclier (122.1c) : à écrire avec la première carte qui en a besoin (il y en a dans Tarkir: Dragonstorm), sur ce même cadre.
+- Avant d'implémenter une règle reportée, relire « Reporté tant qu'aucune carte ne l'exige » dans `docs/plans/PLAN-R.md` (bloquer plusieurs attaquants, batailles, phasing, couche 3, boucles abrégées, `ChoiceRequest` pour l'ordre des remplacements…).
+- Tout changement de comportement du moteur : `RULES_VERSION` et parties dorées (voir « Vérifications avant de rendre un lot »).
+
+**R7 — justesse des cartes :**
+- **Un fichier de tests de règles par extension :** `packages/engine/test/<ext>.test.ts`, créé dès la première carte gérée de l'extension (même partielle, même par un lot du méta), complété à chaque lot. Chaque test vérifie le texte Oracle (« fait ce que dit la carte »), pas seulement que la carte se joue : au moins les mécaniques nouvelles et les cartes aux effets non triviaux. Modèles : `ecl.test.ts`, `mkm.test.ts`.
+- **Décisions officielles :** une interaction de règles nouvelle ou délicate (copies, remplacements, lien de vie, nettoyage, couches, prouesse…) reçoit un test tiré des rulings Scryfall dans `packages/engine/test/rulings.test.ts`.
+- **Attentes de l'Oracle :** si une forme de texte simple revient dans l'extension (« Destroy target… », « Each opponent… »), ajouter son motif dans `packages/cards/test/oracle-expectations.test.ts` (fonction `clause`).
+- **Écart trouvé :** corriger le moteur ou le script ; sinon, approximation documentée dans `docs/approximations.md` (et dans `cards/data/audit-baseline.json` si l'audit Oracle ↔ script le signale). Ne jamais écrire un test qui fige un comportement faux.
+- **Rendre le lot :** le compte rendu donne le nombre de tests ajoutés et les écarts trouvés.

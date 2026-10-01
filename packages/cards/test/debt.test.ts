@@ -1,5 +1,5 @@
 /**
- * Garde-fou de la dette (audit du 30/09/2026, § 3.3 ; PLAN-R.md, lot F2) : pas de nouveau drapeau, mot-clé ou
+ * Garde-fou de la dette (audit du 30/09/2026, § 3.3 ; docs/plans/PLAN-R.md, lot F2) : pas de nouveau drapeau, mot-clé ou
  * opération propre à une carte sans justification dans data/debt-baseline.json, et la référence ne fait que baisser.
  * Règle : fin de CLAUDE.md.
  */

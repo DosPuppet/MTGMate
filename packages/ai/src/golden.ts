@@ -1,5 +1,5 @@
 /**
- * Parties dorées (PLAN-R.md, lot F1) : quelques parties à graine fixe entre decks du méta, enregistrées avec leurs points
+ * Parties dorées (docs/plans/PLAN-R.md, lot F1) : quelques parties à graine fixe entre decks du méta, enregistrées avec leurs points
  * de contrôle (`ai/test/golden/*.json`). Le test les rejoue : à version des règles égale, elles doivent se rejouer à
  * l'identique. Un lot qui change le comportement du moteur fait avancer `RULES_VERSION` et les régénère
  * (`npm run golden -- --update`).

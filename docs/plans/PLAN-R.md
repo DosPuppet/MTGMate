@@ -1,6 +1,8 @@
 # Plan R — remédiation de l'audit du 30/09/2026
 
-Plan établi le 30/09/2026 (branche `dev`) : il sert de feuille de route aux prochaines sessions. Il détaille et ordonne la feuille de route R0 à R8 d'`AUDIT.md` (§ 9).
+> **Archivé le 01/10/2026.** Plan terminé le 30/09/2026, sauf R1 (en partie) et R7 (continu), désormais suivis par la section « Ajouter des cartes ou une extension : suivre R1 et R7 » de CLAUDE.md.
+
+Plan établi le 30/09/2026 (branche `dev`) : il sert de feuille de route aux prochaines sessions. Il détaille et ordonne la feuille de route R0 à R8 de `docs/audits/2026-09-30.md` (§ 9).
 
 ## Suivi
 
@@ -48,7 +50,7 @@ Plan établi le 30/09/2026 (branche `dev`) : il sert de feuille de route aux pro
 - **Lots marqués [règles] :** ils changent le comportement du moteur. Chacun :
   - fait avancer `RULES_VERSION` ;
   - ajoute un test de règles par écart, dans `engine/test/audit.test.ts` (un `describe` par numéro du § 3.1, qui reprend la mise en scène du script de l'audit) ;
-  - retire sa ligne du § 3.1 d'`AUDIT.md` et de `docs/approximations.md`, et ajoute une ligne au suivi.
+  - retire sa ligne du § 3.1 de `docs/audits/2026-09-30.md` et de `docs/approximations.md`, et ajoute une ligne au suivi.
 - **Ce fichier est tenu à jour à chaque lot :** colonne « État » du tableau d'ordre et du tableau des écarts N, ligne de suivi, section du lot marquée ✅ avec ce qui a été réalisé et les écarts par rapport au prévu.
 - **Décision de l'utilisateur (30/09/2026) : pas de nouvelles cartes tant que le moteur n'est pas sécurisé et finalisé.** La phase 2 du P4 (Tarkir: Dragonstorm) attend la fin de ce plan (au moins R0 à R6).
 - **Ordre d'exécution :**

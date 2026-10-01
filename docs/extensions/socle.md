@@ -180,7 +180,7 @@ Lot 0.25 (P2 de l'audit : match BO3 avec réserve) :
 - client : case « Match en 3 manches (BO3) » (accueil, duel contre l'IA ; page « Contre un joueur », à la création) ; `localMatch` (store) tient le match contre l'IA, `nextGame` relance avec le deck choisi et le perdant en premier joueur (option `startingPlayer` du worker) ; le panneau de fin de partie affiche le score, l'éditeur de réserve (`SideboardEditor`, un exemplaire à la fois, validation en direct) et « Manche suivante », puis l'issue du match ;
 - tests : `server/test/bo3.test.ts` (match complet entre bots, échange refusé), `npm run bo3-smoke`.
 
-Lot F1 (PLAN-R.md : version des règles, parties dorées) :
+Lot F1 (docs/plans/PLAN-R.md : version des règles, parties dorées) :
 - `engine/src/record.ts` : `RULES_VERSION` (1 : un compteur d'identifiants par préfixe ; à faire avancer à chaque lot qui change le comportement du moteur), `GameRecord.rules` (absent : 0) et `checkpoints` (toutes les 25 décisions et à la fin : `[décisions appliquées, outcomeHash]`, ajoutés par `recordDecision`, appelé par `GameHost`) ;
 - `outcomeHash(s)` : empreinte (cyrb53) d'une projection stable de la partie (tour, étape, décision attendue, joueurs et zones en `defId`, champ de bataille, pile), sans identifiant d'objet ni compteur interne : deux versions du moteur qui jouent la même partie donnent la même empreinte ;
 - `replayChecked` : rejeu qui s'arrête à la première divergence (décision refusée, empreinte différente) ;
@@ -190,7 +190,7 @@ Lot F1 (PLAN-R.md : version des règles, parties dorées) :
 - parties dorées : six parties à graine fixe entre decks du méta, dont deux à quatre joueurs (`ai/src/golden.ts`, fichiers `ai/test/golden/`), rejouées par `ai/test/golden.test.ts` ; `npm run golden` les vérifie, `-- --update` les régénère ;
 - tests : `ai/test/record.test.ts` (points de contrôle, divergences, empreinte stable), `engine/test/ids.test.ts`, `server/test/persistence.test.ts` (version différente, empreinte fausse).
 
-Lot F3 (PLAN-R.md : sécurité du serveur) :
+Lot F3 (docs/plans/PLAN-R.md : sécurité du serveur) :
 - une URL mal encodée (`GET /%`) répond 400 ; toute exception d'une requête HTTP répond 500 au lieu d'arrêter le serveur ;
 - adresse du client (`clientIp`) : derrière nginx, `X-Real-IP`, sinon la dernière adresse de `X-Forwarded-For` (le début est fourni par le client, qui contournait le plafond de connexions) ; le site nginx transmet `X-Real-IP` ;
 - WebSocket (`originAllowed`) : sans en-tête Origin, même hôte que la requête, ou origine de `MTGX_ORIGINS` ; le relais de Vite en dev et nginx en production gardent l'hôte ;
@@ -200,7 +200,7 @@ Lot F3 (PLAN-R.md : sécurité du serveur) :
 - reste : jetons de reconnexion en clair dans `data/rooms` ;
 - tests : `server/test/online.test.ts` (adresse, Origin, plafond de salons), `static.test.ts` (URL mal encodée, en-têtes), `images.test.ts` ; `npm run online-smoke` à travers le relais de Vite.
 
-Lot R0.1 (PLAN-R.md ; `RULES_VERSION` = 2) :
+Lot R0.1 (docs/plans/PLAN-R.md ; `RULES_VERSION` = 2) :
 - second partagé (702.61b) : les actions spéciales restent possibles (retourner une carte face visible), dans `activateAbility` comme dans `legalActions` ;
 - protection contre tout : elle ne prévient plus des blessures qui ne peuvent pas être prévenues (Sunspine Lynx) ;
 - 704.5b : l'indicateur de pioche impossible est remis à zéro à chaque vérification ; la défaite par poison est annoncée comme telle (`reason: "poison"`, journal « 10 marqueurs poison ») ;
@@ -210,28 +210,28 @@ Lot R0.1 (PLAN-R.md ; `RULES_VERSION` = 2) :
 - plus de 100 passes d'actions basées sur l'état : une `Error` (au lieu d'un arrêt silencieux), que le fuzz verrait ;
 - tests : `engine/test/audit.test.ts`.
 
-Lot R0.2 (PLAN-R.md ; `RULES_VERSION` = 3) :
+Lot R0.2 (docs/plans/PLAN-R.md ; `RULES_VERSION` = 3) :
 - sorts lancés sans payer leur coût de mana (Découverte, complot, Omniscience) : les augmentations de coût s'appliquent (601.2f, 118.9d ; Thalia, the Survivor), les réductions ne descendent pas sous zéro ; `legalActions` ne propose une option gratuite que si ce reste est payable ;
 - taxes d'attaque et de blocage (Archangel of Tithes) : additionnées (`playerStaticTotal`, `attackTaxFor`) au lieu d'être lues comme des booléens ;
 - 508.1d : une créature qui « attaque si possible » n'est obligée d'attaquer que s'il existe un défenseur sans taxe (`forcedAttackers`) ; l'automatisme déclare les attaques obligées vers un tel défenseur (`forcedAttacks`). Avant, sans mana face à Archangel of Tithes, aucune déclaration n'était acceptée ;
 - limite : l'IA garde `forcedAttackers` et choisit elle-même ses défenseurs ; en multijoueur, elle peut encore viser un joueur taxé (décision refusée, puis décision par défaut) ;
 - tests : `engine/test/audit.test.ts` (#3, #5, N3).
 
-Lot R0.3 (PLAN-R.md ; `RULES_VERSION` = 4) :
+Lot R0.3 (docs/plans/PLAN-R.md ; `RULES_VERSION` = 4) :
 - 514.3a : après les actions de nettoyage (514.1, 514.2), les actions basées sur l'état sont vérifiées ; si l'une est accomplie, qu'une question est posée (règle des légendes) ou qu'une capacité s'est déclenchée, les joueurs reçoivent la priorité (`turn.cleanupAgain`), puis une nouvelle étape de nettoyage a lieu (`endStep`), qui met fin aux effets « jusqu'à la fin du tour » créés entre-temps ;
 - `stateBasedActions` renvoie désormais si quelque chose a été fait ;
 - une créature tenue en vie par un bonus qui expire meurt pendant le nettoyage du même tour, et ses déclencheurs « meurt » s'y résolvent ;
 - tests : `engine/test/audit.test.ts` (#1).
 
-Lot R0.4 (PLAN-R.md ; `RULES_VERSION` = 5) :
+Lot R0.4 (docs/plans/PLAN-R.md ; `RULES_VERSION` = 5) :
 - lien de vie (119.9, 120.3f) : pendant un lot d'événements simultanés (`simultaneously` : un effet de résolution, les blessures de combat d'une étape, les actions basées sur l'état), les gains d'une même source sont additionnés (`queueLifelink`) et appliqués à la fin du lot, en un seul gain par source. Un piétineur bloqué ne déclenche plus deux fois Ajani's Pridemate ; deux sources avec le lien de vie font deux gains ; la double initiative, un par étape de blessures. Hors lot (capacité de mana), le gain est immédiat ;
 - tests : `engine/test/audit.test.ts` (#2).
 
-Lot R0.5 (PLAN-R.md ; `RULES_VERSION` = 6) :
+Lot R0.5 (docs/plans/PLAN-R.md ; `RULES_VERSION` = 6) :
 - 603.6a : des permanents qui arrivent en même temps (jetons créés ensemble, cartes mises sur le champ de bataille par un même effet) se voient arriver. Chaque arrivée d'un lot `simultaneously` est détectée tout de suite, puis revue à la fin du lot pour les seules sources arrivées après elle (`enterBatch`, option `only` de `detectTriggers`) ; rien ne change pour une arrivée isolée ;
 - tests : `engine/test/audit.test.ts` (#6).
 
-Lot R0.6 (PLAN-R.md ; interface, sans changement de règles) :
+Lot R0.6 (docs/plans/PLAN-R.md ; interface, sans changement de règles) :
 - poison : `PlayerView.poison` (absent à 0), pastille ☠ dans la barre du joueur (plus visible à 7 et plus) ;
 - journal : cartes révélées (« Bob révèle … »), marqueurs poison reçus (avec le total), raison de la défaite (bibliothèque vide, poison, abandon) ;
 - « Abandonner » se confirme en deux temps (`ConcedeButton`, barre latérale) ;
@@ -239,18 +239,18 @@ Lot R0.6 (PLAN-R.md ; interface, sans changement de règles) :
 - reste : les messages d'erreur (`RulesError`) nomment encore les cartes en anglais ;
 - tests : `client/test/i18n.test.ts` ; `ui-smoke`.
 
-Lot R4.0 (PLAN-R.md ; `RULES_VERSION` = 7) :
+Lot R4.0 (docs/plans/PLAN-R.md ; `RULES_VERSION` = 7) :
 - `playerStatics(s, p, clé)` : seul accès aux statiques de joueur (condition vérifiée, effets sur le joueur `s.playerEffects` compris) ; `playerStatic` et `playerStaticTotal` reposent dessus. Les lectures qui filtraient `controlledAbilitiesWithSource` à la main (Leyline of Mutation, Valley Floodcaller, Boom Scholar, Mutagen Man, Tannuk, Noctis, Festival of Embers, Doc Aurlock, Inquisitive Glimmer, Angel of Vitality, Artist's Talent, Ojer Axonil, Valley Flamecaller, Draconic Visitor, Worldwalker Helm, Moonlit Meditation, Quina, Bloodletter of Aclazotz, Ultima, Traveling Chocobo, The Water Crystal, The Lunar Whale) y passent : un effet « ce tour-ci » (`fx.thisTurn`) de ces clés s'applique désormais, et leur condition est respectée ;
 - les doubleurs vérifient leur condition (`doublers`, `counterDoublers`) ;
 - tests : `engine/test/audit.test.ts` (N6).
 
-Lot R2.1 (PLAN-R.md ; `RULES_VERSION` = 8) :
+Lot R2.1 (docs/plans/PLAN-R.md ; `RULES_VERSION` = 8) :
 - ce qu'impose l'effet qui met un permanent sur le champ de bataille est en place avant l'événement d'arrivée (614.1c, 614.12) : `EntersContext` porte `tapped`, `attacking` (508.4), `counters`, `mods` (modifications de couches permanentes), `haste` (jusqu'à la fin du tour) et `impending` (Imminence) ; `applyEntersReplacements` les applique d'abord ;
 - `moveWithSpec`, `createTokens`, `createTokenCopy`, `copyToken` et la résolution d'un sort de permanent (`StackItem.arrival`) passent par lui : « chaque fois qu'un Zombie arrive » voit une créature remise en jeu en Zombie, un jeton créé engagé ne déclenche pas « devient engagé », un permanent imminent n'arrive pas en créature ;
 - jetons « engagés et attaquants » : le défenseur est demandé s'il y en a plusieurs (sinon, ou hors de cette opération, `attackingDefender`) ;
 - tests : `engine/test/audit.test.ts` (#14, #17).
 
-Lot R2.2 (PLAN-R.md ; `RULES_VERSION` = 9) :
+Lot R2.2 (docs/plans/PLAN-R.md ; `RULES_VERSION` = 9) :
 - `copiedDefId` : une statique d'un permanent attaché peut faire de son hôte une copie (Assimilation Aegis, qui ne copiait rien) ;
 - valeur de mana vue par les filtres : celle de ce qui est copié (707.2), sinon celle du recto (712.8e) ;
 - `applyEntersReplacements` lit la définition copiée : un Clone de planeswalker arrive avec sa loyauté (au lieu de mourir), un Clone de Saga avec son marqueur de savoir ;
@@ -258,67 +258,67 @@ Lot R2.2 (PLAN-R.md ; `RULES_VERSION` = 9) :
 - reste (R2.5) : exceptions de copie (707.9b) non copiables ;
 - tests : `engine/test/audit.test.ts`.
 
-Lot R2.3 (PLAN-R.md ; `RULES_VERSION` = 10) :
+Lot R2.3 (docs/plans/PLAN-R.md ; `RULES_VERSION` = 10) :
 - un permanent « qui arrive comme une copie » arrive aussi ainsi sans être lancé (réanimé, clignotant) ; une Aura mise en jeu sans être lancée enchante un objet choisi (303.4f) ; les candidats viennent de `copyCandidates` et `auraHosts` ;
 - pendant une résolution, `moveTo` demande ces choix avant de déplacer quoi que ce soit ; hors résolution, choix automatique du premier candidat ;
 - 303.4g : une Aura sans rien de légal à enchanter reste dans sa zone (`moveObject` renvoie null) ;
 - tests : `engine/test/audit.test.ts`.
 
-Lot R1 (PLAN-R.md ; `RULES_VERSION` = 11) :
+Lot R1 (docs/plans/PLAN-R.md ; `RULES_VERSION` = 11) :
 - remplacements qui modifient un nombre (616.1) : `modifiers.ts` (`AmountMod`, `chooseReplacementOrder`) ; blessures, marqueurs et PV gagnés rassemblent leurs remplacements et les appliquent dans l'ordre le plus favorable au joueur affecté (le moins de blessures ; le plus de marqueurs, sauf les nuisibles ; le plus de PV) ;
 - pioche : `drawCards(s, p, n)`, un seul événement de pioche soumis aux remplacements (Vnwxt, Quantum Riddler), pour toutes les pioches de la partie ; `drawBonus` supprimé ;
 - tests : `engine/test/audit.test.ts`.
 
-Lot R3 (PLAN-R.md ; `RULES_VERSION` = 12) :
+Lot R3 (docs/plans/PLAN-R.md ; `RULES_VERSION` = 12) :
 - `stackChoices.ts` : `copyStackItem` pour toute copie (sort ou capacité : Thousand-Year Storm, Pyromancer's Goggles, Teach by Example, Return the Favor, Ertha Jo, Pit Automaton…). Une copie de sort est un objet `cardCopy` sur la pile, qui appartient à qui l'a mise sur la pile : un contresort peut la viser, la défense talismanique contre un type ou une couleur la voit, et elle cesse d'exister en quittant la pile (N11) ;
 - `StackItem.pendingChoices` : choix d'un élément déjà sur la pile, posés par `announceNext` avant les déclencheurs et la priorité (`advance`), avec le but `stackChoice` ;
 - nouvelles cibles d'une copie (707.10c) : une question par mot « cible » (intention `changeTarget`, cibles d'origine proposées, autant de cibles qu'à l'origine, sans `autoOk` : le joueur choisit) ; puis les cibles deviennent celles de la copie (garde, vaillance ; pas l'héroïsme ni le crime, une copie n'étant pas lancée) (#4) ;
 - répartition (601.2d, 602.2b, 603.3d) : demandée dès la mise sur la pile pour un sort, une capacité activée ou déclenchée à au moins deux cibles, gardée dans `StackItem.division` (copiée avec l'élément) ; à la résolution, la part d'une cible devenue illégale est perdue (#15) ; blessures (Chandra, Flameshaper) et marqueurs +1/+1 ;
 - tests : `engine/test/audit.test.ts` (#4, N11, #15).
 
-Lot R2.4 (PLAN-R.md ; `RULES_VERSION` = 13) :
+Lot R2.4 (docs/plans/PLAN-R.md ; `RULES_VERSION` = 13) :
 - couche 2 (`control.ts`) : `GameObject.baseController` (fixé à l'arrivée), effets de contrôle dans `s.effects` (`ContinuousEffect.controller`, `whileControlledBy`), appliqués avec les Auras de contrôle par ordre d'horodatage par `syncControl`, qui sort du combat ce qui change de contrôleur ;
 - `gainControl` (fin du tour), `giveControl`, `exchangeControl` et `gainControlWhileSource` passent par `addControlEffect` ; `s.controlChanges` et `s.auraControl` disparaissent : un vol qui prend fin rend le permanent à qui le contrôlerait sans lui (#12, N10) ;
 - 800.4a : un joueur qui quitte la partie perd ce que ses effets lui donnaient (le permanent revient, au lieu d'être exilé) ;
 - invariant du fuzz : `syncControl` ne change plus rien après une décision ;
 - tests : `engine/test/audit.test.ts` (#12, N10, Confiscate, 800.4a).
 
-Lot R2.5 (PLAN-R.md ; `RULES_VERSION` = 14) :
+Lot R2.5 (docs/plans/PLAN-R.md ; `RULES_VERSION` = 14) :
 - 613.8 par point fixe (`computeBattlefield`) : `collectStatics` puis `applyLayers` ; les statiques qui lisent des permanents (condition qui en lit, « pour chaque » sur le champ de bataille, capacités copiées de Marvin) et les F/E définies par une capacité qui comptent des permanents sont réévaluées sur le résultat provisoire (`provisional`), jusqu'à ce que leur signature ne change plus (trois passes au plus). Kargan Dragonrider voit un Dragon devenu Dragon par un effet ;
 - performances : une condition n'est dépendante que si elle a lu un permanent pendant son évaluation ; les passes suivantes ne réévaluent que les statiques dépendantes ; les vues des permanents sont mises en cache pendant une collecte, avec les permanents équipés précalculés. Bench inchangé ;
 - couche 5 : `addColors` (« en plus de ses autres couleurs » : The Jolly Balloon Man, Possessed Goat) ;
 - 707.9b : les exceptions d'un effet de copie sont marquées `copiable` ; `copiableExceptions` les rend, et `copyToken`, « arrive comme une copie », `becomeCopy` et le choix d'un Clone les reprennent ;
 - tests : `engine/test/audit.test.ts` (R2.5), `layers.test.ts` (613.8).
 
-Lot R4.1 (PLAN-R.md, sans changement de règles) :
+Lot R4.1 (docs/plans/PLAN-R.md, sans changement de règles) :
 - règles de blocage paramétrées par un filtre (`BlockRule`, `block.*`, `blockAbility`) à la place de 11 mots-clés propres à une carte ; affichées en badges de restriction.
 
-Lot R4.2 (PLAN-R.md ; `RULES_VERSION` = 15) :
+Lot R4.2 (docs/plans/PLAN-R.md ; `RULES_VERSION` = 15) :
 - protection et défense talismanique « contre [filtre] » (`ProtectionRule`, `protection.*`, `protectionAbility`, `protectedFrom`) à la place de 5 mots-clés ; `ObjectFilter.colorCount` et `not` ; Sword of Wealth and Power (éphémères et rituels) et Resilient Roadrunner (Coyotes) protégés pour de bon.
 
-Lot R4.3 (PLAN-R.md, sans changement de règles) :
+Lot R4.3 (docs/plans/PLAN-R.md, sans changement de règles) :
 - « utilise son endurance pour » (`PowerRule`, `powerFor.*`, `effectivePower`) à la place de 4 mots-clés et d'un drapeau de joueur : blessures de combat (Ghalta, Loot, Tapestry Warden), équipage (pilotes, Interface Ace), station.
 
-Lot R4.4 (PLAN-R.md ; `RULES_VERSION` = 16) :
+Lot R4.4 (docs/plans/PLAN-R.md ; `RULES_VERSION` = 16) :
 - jouer depuis une zone (`playFrom`, `PlayFromZone`, `playFromRules`) à la place de 11 drapeaux ; coût des capacités activées (`abilityCost`, `AbilityCostMod`) à la place de 5.
 
-Lot R4.5 (PLAN-R.md, sans changement de règles) :
+Lot R4.5 (docs/plans/PLAN-R.md, sans changement de règles) :
 - restrictions de lancer (`castLimit`, `CastLimit`) et déclenchements doublés ou supprimés (`triggerMod`, `TriggerMod`), à la place de 14 drapeaux.
 
-Lot R4.6 (PLAN-R.md, sans changement de règles) :
+Lot R4.6 (docs/plans/PLAN-R.md, sans changement de règles) :
 - `counterOnOrCreate` (renforcer Jace, amasser) ; « le prochain sort que vous lancez ce tour-ci » (`nextSpell`, effet de joueur à usage unique, `consumeNextSpells`) ; `fx.thisTurn` pour la loyauté de Jace en éphémère et le mana des Montagnes. Référence de la dette : 69 drapeaux de joueur, 13 mots-clés non imprimés, 58 opérations d'une seule carte.
 
-Lot R5 (PLAN-R.md ; `RULES_VERSION` = 17) :
+Lot R5 (docs/plans/PLAN-R.md ; `RULES_VERSION` = 17) :
 - blocages des défenseurs gardés (`combat.pendingBlocks`) et appliqués ensemble quand le dernier a déclaré (509.1), invisibles d'ici là ;
 - mulligans tour de table par tour de table (103.5 ; `declareMulligan`, `s.mulliganTaken`).
 
-Lot R6 (PLAN-R.md ; `RULES_VERSION` = 18) :
+Lot R6 (docs/plans/PLAN-R.md ; `RULES_VERSION` = 18) :
 - boucle d'actions obligatoires : partie nulle (104.4b ; `declareLoopDraw`, `watchLoop`, `drawByLoop` pour l'hôte) ;
 - 800.4a : les déclenchements d'un joueur éliminé cessent d'exister (ils bloquaient le nettoyage : parties « inachevées » du fuzz).
 
-Lot R7 (PLAN-R.md ; `RULES_VERSION` = 19) :
+Lot R7 (docs/plans/PLAN-R.md ; `RULES_VERSION` = 19) :
 - un fichier de tests de règles par extension partielle (TDM, WOE, SOS, ECL, TLA, SPM, MSH, TMT, HOB, MKM, BIG), `rulings.test.ts` ;
 - corrigés : dernières informations connues pour `ref.eventObject` et « si la source… » (603.10), « autre » dans `pumpAll`, Thorin, prouesses multiples (702.108b), terrain joué par une permission depuis le cimetière, capacité de mana la plus productive d'une source d'abord.
 
-Lot R8 (PLAN-R.md, sans changement de règles) :
-- moteur : `holdPriority` et `passMode` (automatisme), décision `undoMana` (annuler un engagement de mana, `GameState.manaUndo`) ; le reste est dans le client et l'IA (voir PLAN-R.md et `docs/ia.md`).
+Lot R8 (docs/plans/PLAN-R.md, sans changement de règles) :
+- moteur : `holdPriority` et `passMode` (automatisme), décision `undoMana` (annuler un engagement de mana, `GameState.manaUndo`) ; le reste est dans le client et l'IA (voir docs/plans/PLAN-R.md et `docs/ia.md`).
