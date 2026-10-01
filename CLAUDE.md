@@ -49,6 +49,7 @@ Ce fichier sert au suivi du projet entre les sessions : où on en est, les règl
 | Phase 2 du plan P4 : **Tarkir: Dragonstorm (TDM)** à 100 % (`docs/plans/PLAN-P4.md`, `docs/extensions/tdm.md`) | ✅ **259 / 259** (lots A à D, 01/10/2026) ; lot D : remplacements de blessures génériques (R1, familles E et F), `RULES_VERSION` = 21 |
 | **Lorwyn Eclipsed (ECL, « Lorwyn éclipsé »)** (`docs/extensions/ecl.md`) | ✅ **266 / 266** (lots A à D, 01/10/2026 ; `RULES_VERSION` = 25) |
 | **Wilds of Eldraine (WOE, « Les friches d'Eldraine »)** (`docs/extensions/woe.md`) | ✅ **269 / 269** (socle 0, sous-lots A1 à A6, B1 à B4, C1 à C5, 01/10/2026 ; `RULES_VERSION` = 26) |
+| **Secrets of Strixhaven (SOS, « Les secrets de Strixhaven »)** (`docs/extensions/sos.md`) | ✅ **262 / 262** (socle 0, sous-lots A1 à A6, B1 à B3, C1 à C3, 01/10/2026 ; `RULES_VERSION` = 32) |
 | Plan de remédiation de l'audit du 30/09/2026 (`docs/plans/PLAN-R.md`, lots F1 à R8) : F1 à F3 (fondations), R0 (corrections rapides), R4.0 à R4.6, R2.1 à R2.5, R1 en partie, R3 (copies de sorts, répartition), R5 à R8 faits, `RULES_VERSION` = 19 ; restent R1 en partie (familles E, H, I, boucliers 615.7) et R7 (continu), suivis par la section « Ajouter des cartes ou une extension » | ✅ (plan archivé le 01/10/2026) |
 | Autres extensions Standard | à la demande de l'utilisateur, une à la fois |
 
@@ -62,7 +63,7 @@ Ce fichier sert au suivi du projet entre les sessions : où on en est, les règl
 - **01/10/2026 :** PLAN-R terminé (sauf R1 en partie et R7, continu) et archivé avec son audit. Les nouvelles cartes peuvent reprendre, en suivant la section « Ajouter des cartes ou une extension » (fin de ce fichier).
 - **01/10/2026 :** Tarkir: Dragonstorm faite à la demande de l'utilisateur (phase 2 du plan P4), lots A à D (`docs/extensions/tdm.md`). Prochaine extension : à la demande de l'utilisateur (suggestion du plan P4 : SOS ou TLA).
 - **01/10/2026 :** Lorwyn Eclipsed faite à la demande de l'utilisateur, lots A à D (`docs/extensions/ecl.md`) ; le lot D a fait les familles H et I de R1. Prochaine extension : à la demande de l'utilisateur.
-- **01/10/2026 :** l'utilisateur demande Wilds of Eldraine, Secrets of Strixhaven et Murders at Karlov Manor, dans cet ordre, par lots et sous-lots, un commit par sous-lot, sur `dev` sans fusion dans `master`. Wilds of Eldraine faite (`docs/extensions/woe.md`) ; suivantes : SOS puis MKM.
+- **01/10/2026 :** l'utilisateur demande Wilds of Eldraine, Secrets of Strixhaven et Murders at Karlov Manor, dans cet ordre, par lots et sous-lots, un commit par sous-lot, sur `dev` sans fusion dans `master`. Wilds of Eldraine faite (`docs/extensions/woe.md`), puis Secrets of Strixhaven (`docs/extensions/sos.md`) ; suivante : MKM.
 - **29/09/2026 (plan P4) :** exception décidée par l'utilisateur. On écrit d'abord les cartes des decks du méta Standard (lots M1 à M6, toutes extensions confondues ; des extensions restent donc partielles), puis Tarkir: Dragonstorm à 100 %. Un lot du méta se vérifie avec `npm run verify -- --set META`.
 - Découpage habituel d'une extension :
   - lot A : cartes faisables avec le moteur, jetons et terrains ;
@@ -79,7 +80,7 @@ Ce fichier sert au suivi du projet entre les sessions : où on en est, les règl
 - `docs/moteur.md` : **à lire avant d'ajouter une mécanique**. Carte des fichiers du moteur, et où toucher pour un effet, un déclencheur, une condition, un filtre, un statique de joueur ou un mot-clé.
 - `docs/approximations.md` : approximations connues, générales puis carte par carte (à lever si une carte l'exige). **Toute nouvelle approximation y est ajoutée.**
 - `docs/extensions/<ext>.md` : mécaniques et détail des lots de chaque extension :
-  - `fdn`, `fra`, `eoe`, `dft`, `otj-big`, `fin`, `dsk`, `blb`, `lci`, `tdm`, `ecl` ;
+  - `fdn`, `fra`, `eoe`, `dft`, `otj-big`, `fin`, `dsk`, `blb`, `lci`, `tdm`, `ecl`, `woe`, `sos` ;
   - `socle` pour les lots transverses (faces multiples, Sagas, face cachée…) ;
   - `meta` pour les lots du méta Standard (plan P4, phase 1), avec une section par extension touchée.
   

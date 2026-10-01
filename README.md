@@ -14,7 +14,7 @@ Plateforme pour jouer à Magic: The Gathering contre une ou plusieurs IA (en due
 - jouable sur tablette et sur téléphone en paysage (voir « Tablette et téléphone ») ;
 - images des cartes relayées par le serveur quand le réseau du joueur bloque Scryfall (voir « Images bloquées par le réseau »).
 
-Dernière extension ajoutée : **Wilds of Eldraine (WOE)**, entièrement gérée (269 / 269), avec les Rôles (jetons-Auras, un seul par joueur sur une créature), la Célébration, les Aventures, le Marchandage et la Nourriture. Avant elle : **Lorwyn Eclipsed (ECL)**, 266 / 266.
+Dernière extension ajoutée : **Secrets of Strixhaven (SOS)**, entièrement gérée (262 / 262), avec Repartee, Infusion, Opus, Increment, les créatures préparées, la convergence, le Paradigme, la cascade et le miracle. Avant elle : **Wilds of Eldraine (WOE)**, 269 / 269.
 
 ## Périmètre : le Standard
 
@@ -38,7 +38,7 @@ Les cartes sont couvertes **extension par extension, à 100 % avant de passer à
 | **Tarkir: Dragonstorm (TDM, « Tarkir : Tempête draconique »)** | ✅ 259 / 259 |
 | **Lorwyn Eclipsed (ECL, « Lorwyn éclipsé »)** | ✅ 266 / 266 |
 | **Wilds of Eldraine (WOE, « Les friches d'Eldraine »)** | ✅ 269 / 269 |
-| Secrets of Strixhaven (SOS) | 27 / 262 (cartes du méta) |
+| **Secrets of Strixhaven (SOS, « Les secrets de Strixhaven »)** | ✅ 262 / 262 |
 | Avatar: The Last Airbender (TLA) | 28 / 280 (cartes du méta) |
 | Marvel's Spider-Man (SPM) | 10 / 188 (cartes du méta) |
 | Marvel Super Heroes (MSH) | 20 / 271 (cartes du méta) |
@@ -46,7 +46,7 @@ Les cartes sont couvertes **extension par extension, à 100 % avant de passer à
 | The Hobbit (HOB) | 20 / 188 (cartes du méta) |
 | Murders at Karlov Manor (MKM) | 10 / 268 (cartes du méta) |
 
-Au total, **3 646 cartes jouables** sur 5 161 cartes légales en Standard (71 %).
+Au total, **3 881 cartes jouables** sur 5 161 cartes légales en Standard (75 %).
 
 **Decks du méta (plan P4, phase 1 terminée) :** avant de finir les dernières extensions une à une, on écrit les cartes des decks Standard les plus joués (relevé MTGGoldfish du 29/09/2026, `docs/meta/`). Les **vingt archétypes relevés** (88,1 % du méta) sont jouables, réserve comprise ; les cinq premiers sont proposés comme decks préconstruits (Izzet Spellementals, Mono-Green Landfall, Dimir Midrange, Jund Sacrifice, 4c Control). Quelques réimpressions d'extensions plus anciennes sont aussi légales parce qu'elles figurent dans ces sets.
 
@@ -184,7 +184,7 @@ docs/       guide du moteur, approximations connues, détail des extensions, dé
   - remplacements d'événements chiffrés en données (`eventReplacement`, 616.1) : blessures, perte et gain de PV, pioche, meule, marqueurs, jetons, mana et dégagement (« autant plus N », « le double », prévention, boucliers « la prochaine fois que »), dans l'ordre le plus favorable au joueur affecté ;
   - coûts : hybride, coûts additionnels, flashback, réductions, sacrifice ou marqueurs comme coût, activation depuis le cimetière.
 - **Cartes à plusieurs faces** : aventures et présages, recto-verso (transformation, faces modales, Sagas au verso), cartes scindées et Salles, assemblage ; Sagas, Classes et Affaires ; cartes face cachée (déguisement, cape, manifestation), invisibles pour l'adversaire.
-- **Mécaniques d'extensions** : entre autres, préparé (FRA), distorsion et station (EOE), vitesse, exhaust et Véhicules (DFT), plot, spree et crimes (OTJ), job select et tiered (FIN), Salles, manifestation effroyable, Sinistre, Survie, Délire et Imminence (DSK), Progéniture, Cadeau, Fourrager, Dépense, Vaillance et Saisons (BLB), endurance, rafale, renouveau et présages (TDM), flétrir, Vivid, changelin, contempler, flétrissure et conspiration (ECL), Rôles, Célébration, Aventures et Marchandage (WOE). Le détail par extension est dans `docs/extensions/`.
+- **Mécaniques d'extensions** : entre autres, préparé (FRA), distorsion et station (EOE), vitesse, exhaust et Véhicules (DFT), plot, spree et crimes (OTJ), job select et tiered (FIN), Salles, manifestation effroyable, Sinistre, Survie, Délire et Imminence (DSK), Progéniture, Cadeau, Fourrager, Dépense, Vaillance et Saisons (BLB), endurance, rafale, renouveau et présages (TDM), flétrir, Vivid, changelin, contempler, flétrissure et conspiration (ECL), Rôles, Célébration, Aventures et Marchandage (WOE), Repartee, Infusion, Opus, Increment, cascade et miracle (SOS). Le détail par extension est dans `docs/extensions/`.
 - **Performance** : `submit` copie l'état puis le mute (pas d'Immer) ; les simulations de l'IA utilisent `applyMutable` sur une copie de travail.
 
 ## Ajouter une carte
@@ -215,7 +215,7 @@ Chaque carte gérée est automatiquement jouée par le test de fumée (`packages
 | 4d. FDN, réimpressions (n° 282 et plus) | cartes des decks d'initiation et de la Starter Collection | ✅ **241 / 241** (517 / 517 pour tout FDN) |
 | 4e. Légalité Standard | légalités Scryfall importées, liste des bannies, validation du format dans le deckbuilder | ✅ |
 | 4f. Cartes à plusieurs faces | aventures, recto-verso, cartes scindées et Salles, Sagas, Classes, Affaires, face cachée, assemblage | ✅ |
-| 4g. Autres extensions Standard | une extension à la fois : Reality Fracture ✅, Edge of Eternities ✅, Aetherdrift ✅, Outlaws of Thunder Junction + The Big Score ✅, Final Fantasy ✅, Duskmourn ✅, Bloomburrow ✅, The Lost Caverns of Ixalan ✅, Tarkir: Dragonstorm ✅, Lorwyn Eclipsed ✅, Wilds of Eldraine ✅ ; les suivantes à la demande | en cours |
+| 4g. Autres extensions Standard | une extension à la fois : Reality Fracture ✅, Edge of Eternities ✅, Aetherdrift ✅, Outlaws of Thunder Junction + The Big Score ✅, Final Fantasy ✅, Duskmourn ✅, Bloomburrow ✅, The Lost Caverns of Ixalan ✅, Tarkir: Dragonstorm ✅, Lorwyn Eclipsed ✅, Wilds of Eldraine ✅, Secrets of Strixhaven ✅ ; les suivantes à la demande | en cours |
 | 5. IA | trois niveaux au choix (débutant, moyen, élevé) ; évaluation sur les caractéristiques durables ; attaques et blocages par simulation ; ISMCTS en duel (déterminisation de l'information cachée), budget en temps ; tournoi d'IA (`npm run arena`) ; guide : docs/ia.md | ✅ |
 | 6. JcJ en ligne | duel Standard : serveur Node `ws` (`GameHost`, vues et faces filtrées), code de salon, corde, reconnexion, revanche | ✅ duel ; déploiement pm2 + nginx documenté |
 | 7. Finitions | effets sonores ✅ ; tablette et téléphone ✅ ; relais des images Scryfall ✅ ; replays (graine + décisions) ✅ ; images des jetons ✅ ; musique | en cours |
