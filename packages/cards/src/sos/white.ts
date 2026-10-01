@@ -250,4 +250,12 @@ export const WHITE: Record<string, CardScript> = {
       }),
     ],
   },
+  "Group Project": {
+    // « Flashback—Engagez trois créatures dégagées que vous contrôlez » : flashback sans mana, avec ce coût en plus.
+    flashback: "{0}",
+    flashbackCost: { tap: { filter: { types: ["Creature"], controller: "you" }, count: 3 } },
+    spell: spell([], [fx.createTokens(SPIRIT_RW)]),
+  },
+  // « Exilez deux cartes de votre cimetière ou payez {1}{W} » : lu dans le texte (kicker sans mana ou mana en plus).
+  "Soaring Stoneglider": {},
 };

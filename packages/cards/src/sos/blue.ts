@@ -259,4 +259,8 @@ export const BLUE: Record<string, CardScript> = {
       ],
     ),
   },
+  "Brush Off": {
+    costReduction: { generic: 1, colored: { U: 1 }, condition: cond.targetMatches("t", INSTANT_SORCERY) },
+    spell: spell([target.spell()], [fx.counter(ref.target())]),
+  },
 };

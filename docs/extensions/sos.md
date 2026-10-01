@@ -85,3 +85,12 @@ Les scripts sont dans `packages/cards/src/sos/` : `cards` (cartes du méta), `wh
 - **Le moteur gagne :** `amount.eventColorsSpent` (couleurs de mana dépensées pour le sort de l'événement) ; la convergence « arrive avec » passe par `entersWith({ counters: amount.colorsSpent })` (lot A5). Le helper de test `scenario` accepte des marqueurs sur un permanent (`counters`).
 - **Dette :** l'entrée `spellArrivalCounters` est retirée (l'opération sert à deux cartes).
 - **Tests :** 2 tests de règles (« lot B2 »).
+
+## Sous-lot B3 : coûts ✅ (254 / 262)
+
+- **Cartes :** Group Project, Soaring Stoneglider, Brush Off.
+- **Le moteur gagne :**
+  - `flashbackCost` (un `AdditionalCost` ajouté au flashback) remplace `flashbackDiscard` : « Flashback—engagez trois créatures dégagées » (Group Project, avec un flashback {0}) ; Twinned Vision devient `{ discard: 1 }` ;
+  - « en coût additionnel, exilez N cartes de votre cimetière ou payez [mana] » est lu dans le texte : kicker sans mana `kickerCost.exileGraveyard` (cartes choisies automatiquement, terrains d'abord) et `kickerOrPay`, sur le modèle de « flétrissez N ou payez » ;
+  - la réduction propre au sort peut retirer des symboles colorés (`costReduction.colored`, Brush Off : {1}{U}) et sa condition « s'il cible… » reconnaît un sort ciblé sur la pile.
+- **Tests :** 3 tests de règles (« lot B3 »).

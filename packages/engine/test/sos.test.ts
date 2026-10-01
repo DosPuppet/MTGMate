@@ -4575,3 +4575,70 @@ describe("Secrets of Strixhaven, lot B2 : couleurs dépensées pour le sort déc
     expect(s.objects[bear]?.counters["+1/+1"]).toBe(2);
   });
 });
+
+describe("Secrets of Strixhaven, lot B3 : coûts", () => {
+  it("Group Project : un Esprit 2/2 ; flashback en engageant trois créatures dégagées (sans mana), puis exil", () => {
+    let s = scenario({
+      p1: { battlefield: ["Bear Cub", "Bear Cub", "Llanowar Elves", "Plains", "Plains"], hand: ["Group Project"] },
+    });
+    s = settle(cast(s, "p1", "Group Project"));
+    expect(idsOf(s, "p1", "battlefield", "Spirit")).toHaveLength(1);
+    const card = idOf(s, "p1", "graveyard", "Group Project");
+    // Quatre créatures dégagées (l'Esprit compris) : le flashback est possible sans mana.
+    for (const id of s.battlefield) {
+      const o = s.objects[id];
+      if (o && nameOf(s, id) === "Plains") o.tapped = true;
+    }
+    expect(castOptions(s, "p1", card)).not.toHaveLength(0);
+    s = settle(act(s, "p1", { type: "cast", card }));
+    expect(idsOf(s, "p1", "battlefield", "Spirit")).toHaveLength(2);
+    expect(exiled(s, "Group Project")).toHaveLength(1);
+    const tappedCreatures = s.battlefield.filter((id) => chars(s, id).types.includes("Creature") && s.objects[id]?.tapped);
+    expect(tappedCreatures).toHaveLength(3);
+    // Deux créatures dégagées seulement : pas de flashback.
+    const t = scenario({ p1: { battlefield: ["Bear Cub", "Bear Cub"], graveyard: ["Group Project"] } });
+    expect(castOptions(t, "p1", idOf(t, "p1", "graveyard", "Group Project"))).toHaveLength(0);
+  });
+
+  it("Soaring Stoneglider : exilez deux cartes de votre cimetière ou payez {1}{W} en plus", () => {
+    let s = scenario({ p1: { battlefield: lands("Plains", 3), hand: ["Soaring Stoneglider"], graveyard: ["Opt", "Bear Cub"] } });
+    const card = idOf(s, "p1", "hand", "Soaring Stoneglider");
+    s = settle(act(s, "p1", { type: "cast", card, kicked: true }));
+    expect(idsOf(s, "p1", "battlefield", "Soaring Stoneglider")).toHaveLength(1);
+    expect(s.players.p1?.graveyard).toHaveLength(0);
+    expect(s.exile).toHaveLength(2);
+    // Sans exiler : {2}{W} + {1}{W}.
+    let t = scenario({ p1: { battlefield: lands("Plains", 5), hand: ["Soaring Stoneglider"], graveyard: ["Opt"] } });
+    t = settle(act(t, "p1", { type: "cast", card: idOf(t, "p1", "hand", "Soaring Stoneglider") }));
+    expect(idsOf(t, "p1", "battlefield", "Soaring Stoneglider")).toHaveLength(1);
+    expect(t.battlefield.filter((id) => t.objects[id]?.tapped)).toHaveLength(5);
+    // Un seul terrain de trop peu, une seule carte au cimetière : impossible.
+    const u = scenario({ p1: { battlefield: lands("Plains", 4), hand: ["Soaring Stoneglider"], graveyard: ["Opt"] } });
+    expect(castOptions(u, "p1", idOf(u, "p1", "hand", "Soaring Stoneglider"))).toHaveLength(0);
+  });
+
+  it("Brush Off : {1}{U} de moins s'il cible un sort d'éphémère ou de rituel ; prix plein pour un sort de créature", () => {
+    let s = scenario({
+      active: "p2",
+      p1: { battlefield: lands("Island", 2), hand: ["Brush Off"] },
+      p2: { battlefield: lands("Mountain", 4), hand: ["Lightning Strike", "Bear Cub"] },
+    });
+    s = act(s, "p2", { type: "cast", card: idOf(s, "p2", "hand", "Lightning Strike"), targets: { t: ["p1"] } });
+    s = passUntil(s, (x) => x.pending?.player === "p1");
+    const strike = s.stack[0]?.id as string;
+    s = act(s, "p1", { type: "cast", card: idOf(s, "p1", "hand", "Brush Off"), targets: { t: [strike] } });
+    s = settle(s);
+    expect(s.players.p1?.life).toBe(20);
+    expect(idsOf(s, "p2", "graveyard", "Lightning Strike")).toHaveLength(1);
+    // Un sort de créature : {2}{U}{U}, impayable avec deux Îles.
+    let t = scenario({
+      active: "p2",
+      p1: { battlefield: lands("Island", 2), hand: ["Brush Off"] },
+      p2: { battlefield: lands("Forest", 2), hand: ["Bear Cub"] },
+    });
+    t = act(t, "p2", { type: "cast", card: idOf(t, "p2", "hand", "Bear Cub") });
+    t = passUntil(t, (x) => x.pending?.player === "p1");
+    const bear = t.stack[0]?.id as string;
+    expect(() => act(t, "p1", { type: "cast", card: idOf(t, "p1", "hand", "Brush Off"), targets: { t: [bear] } })).toThrow();
+  });
+});

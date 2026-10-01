@@ -53,11 +53,19 @@ export interface CardScript {
   /** Coût de kicker, ex. "{4}". */
   kicker?: string;
   /** Kicker sans mana (avec `kicker: "{0}"`) : permanent sacrifié ou renvoyé, choisi automatiquement. */
-  kickerCost?: { sacrifice?: ObjectFilter; bounce?: ObjectFilter; blight?: number; tapPower?: number; collectEvidence?: number };
+  kickerCost?: {
+    sacrifice?: ObjectFilter;
+    bounce?: ObjectFilter;
+    blight?: number;
+    tapPower?: number;
+    collectEvidence?: number;
+    /** « Exilez N cartes de votre cimetière ou payez [mana] » (Soaring Stoneglider), avec `kickerOrPay`. */
+    exileGraveyard?: number;
+  };
   /** Coût de flashback, ex. "{4}{R}{R}". */
   flashback?: string;
-  /** « Flashback—[coût], défaussez N cartes. » */
-  flashbackDiscard?: number;
+  /** « Flashback—[coût], défaussez une carte » ou « Flashback—engagez trois créatures » : coûts en plus du flashback. */
+  flashbackCost?: AdditionalCost;
   /** « Ce sort ne peut pas être contrecarré. » */
   cantBeCountered?: boolean;
   /** Aura : « Enchanter [filtre] ». */
@@ -105,7 +113,7 @@ export interface CardScript {
   /** Aura : « Vous contrôlez le permanent enchanté ». */
   controlsEnchanted?: boolean;
   additionalCost?: AdditionalCost;
-  costReduction?: { generic: Amount; condition?: Condition };
+  costReduction?: { generic: Amount; colored?: ManaCost["colored"]; condition?: Condition };
   keywords?: Keyword[];
   /** « Vous ne pouvez pas lancer ce sort à moins que… » */
   castCondition?: Condition;

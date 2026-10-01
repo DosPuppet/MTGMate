@@ -270,6 +270,34 @@ export function spellView(d: CardDef, player: PlayerId): LkiSnapshot {
   };
 }
 
+/** La réduction propre au sort (« ce sort coûte {N} de moins si… ») s'applique-t-elle ? */
+function ownReductionApplies(
+  s: GameState,
+  player: PlayerId,
+  d: CardDef,
+  targets?: Record<string, string[]>,
+  card?: ObjectId,
+  kicked?: boolean,
+): boolean {
+  const cond = d.costReduction?.condition;
+  if (!cond) return true;
+  if (cond.kind === "targetMatches") {
+    // « Ce sort coûte {3} de moins s'il cible une créature engagée » (Luminous Rebuke) ; un sort ciblé sur la pile
+    // (Brush Off : « s'il cible un sort d'éphémère ou de rituel »).
+    const spec = modesOf(d)[0]?.targets.find((t) => t.id === cond.spec);
+    const ids = targets ? (targets[cond.spec] ?? []) : spec ? legalTargets(s, player, spec) : [];
+    return ids.some((id) =>
+      s.stack.some((x) => x.id === id && x.kind === "spell")
+        ? matchesView(snapshot(s, id), cond.filter, player)
+        : matchesObjectFilter(s, player, id, cond.filter),
+    );
+  }
+  // « Ce sort coûte {2} de moins s'il est marchandé » (Hamlet Glutton) : le choix du lanceur.
+  if (cond.kind === "kicked") return !!kicked;
+  // La carte lancée est la source : « contemplez un Gobelin » ne la compte pas elle-même (601.2a).
+  return checkCondition(s, cond, player, card);
+}
+
 /** Réduction de coût générique applicable à ce sort (601.2f). */
 export function spellReduction(
   s: GameState,
@@ -282,20 +310,7 @@ export function spellReduction(
 ): number {
   let r = 0;
   const own = d.costReduction;
-  const cond = own?.condition;
-  let ok = !cond;
-  if (cond?.kind === "targetMatches") {
-    // « Ce sort coûte {3} de moins s'il cible une créature engagée » (Luminous Rebuke).
-    const spec = modesOf(d)[0]?.targets.find((t) => t.id === cond.spec);
-    const ids = targets ? (targets[cond.spec] ?? []) : spec ? legalTargets(s, player, spec) : [];
-    ok = ids.some((id) => matchesObjectFilter(s, player, id, cond.filter));
-  } else if (cond?.kind === "kicked") {
-    // « Ce sort coûte {2} de moins s'il est marchandé » (Hamlet Glutton) : le choix du lanceur.
-    ok = !!kicked;
-  } else if (cond) {
-    // La carte lancée est la source : « contemplez un Gobelin » ne la compte pas elle-même (601.2a).
-    ok = checkCondition(s, cond, player, card);
-  }
+  const ok = ownReductionApplies(s, player, d, targets, card, kicked);
   if (own && ok) {
     r += evalAmount(
       s,
@@ -450,6 +465,18 @@ export function evidenceCards(s: GameState, player: PlayerId, card: ObjectId, n:
   return total >= n ? out : null;
 }
 
+/**
+ * « Exilez N cartes de votre cimetière » (kicker de Soaring Stoneglider) : choisies automatiquement, terrains d'abord puis
+ * les moins chères ; null s'il n'y en a pas assez.
+ */
+export function graveyardToExile(s: GameState, player: PlayerId, card: ObjectId, n: number): ObjectId[] | null {
+  const mv = (id: ObjectId) => manaValue(s.defs[s.objects[id]?.defId ?? ""]?.manaCost);
+  const land = (id: ObjectId) => (s.defs[s.objects[id]?.defId ?? ""]?.types.includes("Land") ? 0 : 1);
+  const pool = (s.players[player]?.graveyard ?? []).filter((id) => id !== card);
+  if (pool.length < n) return null;
+  return [...pool].sort((a, b) => land(a) - land(b) || mv(a) - mv(b)).slice(0, n);
+}
+
 /** Le permanent qui paie le kicker sans mana par défaut, s'il y en a un. */
 export function kickerCostPermanent(
   s: GameState,
@@ -520,8 +547,14 @@ export function spellCost(
         : opts.mayhem
           ? (d.mayhem ?? d.manaCost)
           : (opts.costOverride ?? d.manaCost);
+  // « Ce sort coûte {1}{U} de moins » (Brush Off) : les symboles colorés retirés du coût de base.
+  const ownColored = d.costReduction?.colored;
+  const base1 =
+    base && ownColored && !opts.free && ownReductionApplies(s, player, d, opts.targets, opts.card, opts.kicked)
+      ? withoutColored(base, ownColored)
+      : base;
   const cost0 = totalCost(
-    base,
+    base1,
     opts.free ? 0 : (opts.x ?? 0),
     opts.kicked ? d.kicker : undefined,
     // 601.2f / 118.9d : un sort lancé sans payer son coût de mana paie quand même les augmentations (Thalia, the
@@ -1034,8 +1067,7 @@ export function additionalOptions(
   discard?: { count: number; options: ObjectId[]; orLife?: number; orSacrifice?: boolean };
   sacrifice?: { count: number; options: ObjectId[]; orPay?: ManaCost; orPayAffordable?: boolean };
 } | null {
-  // Twinned Vision : « Flashback—{1}{U/R}{U/R}, défaussez une carte ».
-  let add = flashback && d.flashbackDiscard ? { ...d.additionalCost, discard: d.flashbackDiscard } : d.additionalCost;
+  let add = additionalCostOf(d, flashback);
   // Wickerfolk Indomitable : sacrifice supplémentaire quand elle est lancée depuis le cimetière.
   const gySac = s.objects[card]?.zone === "graveyard" ? d.castFromGraveyard?.sacrifice : undefined;
   if (gySac) add = { ...add, sacrifice: { filter: gySac, count: 1 } };
@@ -1072,14 +1104,20 @@ export function additionalOptions(
  * des permanents dégagés, exiler des cartes de votre cimetière. On paie avec ce qui vaut le moins : jetons et petits
  * permanents d'abord ; pour engager, les créatures avant les terrains. `null` : le coût ne peut pas être payé.
  */
+/** Coûts additionnels du sort, et ceux du flashback quand il est lancé ainsi (Twinned Vision, Group Project). */
+function additionalCostOf(d: CardDef, flashback: boolean): CardDef["additionalCost"] {
+  return flashback && d.flashbackCost ? { ...d.additionalCost, ...d.flashbackCost } : d.additionalCost;
+}
+
 export function autoAdditional(
   s: GameState,
   player: PlayerId,
   card: ObjectId,
   d: CardDef,
+  flashback = false,
 ): { exile: ObjectId[]; bounce: ObjectId[]; tap: ObjectId[]; graveyard: ObjectId[] } | null {
   const out = { exile: [] as ObjectId[], bounce: [] as ObjectId[], tap: [] as ObjectId[], graveyard: [] as ObjectId[] };
-  const add = d.additionalCost;
+  const add = additionalCostOf(d, flashback);
   if (!add) return out;
   const used = new Set<ObjectId>();
   const mine = (f: ObjectFilter) =>
@@ -1202,7 +1240,11 @@ export function castSpell(s: GameState, player: PlayerId, card: ObjectId, choice
   const evidence =
     kicked && d.kickerCost?.collectEvidence ? evidenceCards(s, player, card, d.kickerCost.collectEvidence) : undefined;
   if (evidence === null) throw new RulesError("Pas assez de preuves à réunir dans votre cimetière");
-  if (kicked && d.kickerCost && !teamwork && !evidence && !kickerPermanent) throw new RulesError("Impossible de payer le kicker");
+  const gyExile =
+    kicked && d.kickerCost?.exileGraveyard ? graveyardToExile(s, player, card, d.kickerCost.exileGraveyard) : undefined;
+  if (gyExile === null) throw new RulesError("Pas assez de cartes dans votre cimetière");
+  if (kicked && d.kickerCost && !teamwork && !evidence && !gyExile && !kickerPermanent)
+    throw new RulesError("Impossible de payer le kicker");
   // Travail d'équipe : les créatures engagées (choisies par `tap`, sinon les plus faibles suffisantes).
   const teamTap = teamwork !== undefined ? chosenCrew(s, player, card, teamwork, choices.tap) : [];
   if (teamwork !== undefined && teamTap.length === 0) throw new RulesError("Force totale insuffisante pour le travail d'équipe");
@@ -1218,7 +1260,7 @@ export function castSpell(s: GameState, player: PlayerId, card: ObjectId, choice
   };
   check(discard, opts.discard);
   check(sacrifice, opts.sacrifice);
-  const auto = autoAdditional(s, player, card, d);
+  const auto = autoAdditional(s, player, card, d, flashback);
   if (!auto) throw new RulesError("Impossible de payer le coût additionnel");
   let cost = spellCost(s, player, d, {
     x,
@@ -1297,6 +1339,7 @@ export function castSpell(s: GameState, player: PlayerId, card: ObjectId, choice
   }
   // Réunir des preuves : les cartes du cimetière sont exilées en payant le coût.
   for (const id of evidence ?? []) moveObject(s, id, "exile");
+  for (const id of gyExile ?? []) moveObject(s, id, "exile");
   // Seule une Aventure part « en aventure » ; un présage (même disposition Scryfall) est mélangé dans la bibliothèque.
   const adventure = choices.face !== undefined && cardDef.layout === "adventure" && d.subtypes.includes("Adventure");
   if (choices.face !== undefined) obj(s, stackId).faceDefId = d.id;
@@ -1439,6 +1482,17 @@ export function castSpell(s: GameState, player: PlayerId, card: ObjectId, choice
     for (const n of [4, 8]) if (was < n && was + spent >= n) rulesEvent(s, { e: "expend", player, n });
   }
   announceTargets(s, stackId, player, targets);
+}
+
+/** Retire des symboles colorés d'un coût (sans descendre sous zéro). */
+function withoutColored(cost: ManaCost, colored: ManaCost["colored"]): ManaCost {
+  const out = { ...cost.colored };
+  for (const [k, n] of Object.entries(colored)) {
+    const left = (out[k as ManaType] ?? 0) - (n ?? 0);
+    if (left > 0) out[k as ManaType] = left;
+    else delete out[k as ManaType];
+  }
+  return { ...cost, colored: out };
 }
 
 /** Somme de deux coûts de mana. */

@@ -743,6 +743,12 @@ function singleDef(raw: RawCard, script: CardScript | undefined, set: string): C
   const blight = blightCost && (blightCost[1] || blightCost[3]) ? Number(blightCost[2]) : 0;
   const blightOrPay = blight ? blightCost?.[3] : undefined;
   const blightX = /As an additional cost to cast this spell, blight X\./.test(raw.oracleText);
+  // Strixhaven : « exilez N cartes de votre cimetière ou payez {M} » (kicker ou mana).
+  const exileOrPay =
+    /As an additional cost to cast this spell, exile (one|two|three|four|five) cards? from your graveyard or pay ((?:\{[^}]+\})+)\./.exec(
+      raw.oracleText,
+    );
+  const exileGraveyard = exileOrPay ? ["one", "two", "three", "four", "five"].indexOf(exileOrPay[1] as string) + 1 : 0;
   const teamwork = Number(/^Teamwork (\d+)/m.exec(raw.oracleText)?.[1] ?? 0);
   const harmonize = /^Harmonize ((?:\{[^}]+\})+)/m.exec(raw.oracleText)?.[1];
   const isSpell = types.includes("Instant") || types.includes("Sorcery");
@@ -873,7 +879,7 @@ function singleDef(raw: RawCard, script: CardScript | undefined, set: string): C
       ? parseManaCost(script.kicker)
       : offspring
         ? parseManaCost(offspring)
-        : gift || bargain || blight || teamwork || evidence
+        : gift || bargain || blight || teamwork || evidence || exileGraveyard
           ? parseManaCost("{0}")
           : undefined,
     kickerKind: offspring
@@ -888,7 +894,9 @@ function singleDef(raw: RawCard, script: CardScript | undefined, set: string): C
               ? "teamwork"
               : evidence
                 ? "evidence"
-                : undefined,
+                : exileGraveyard
+                  ? "exileGraveyard"
+                  : undefined,
     gift,
     kickerCost:
       script?.kickerCost ??
@@ -900,11 +908,13 @@ function singleDef(raw: RawCard, script: CardScript | undefined, set: string): C
             ? { tapPower: teamwork }
             : evidence
               ? { collectEvidence: evidence }
-              : undefined),
+              : exileGraveyard
+                ? { exileGraveyard }
+                : undefined),
     // Harmonie (702.180) : lancée depuis le cimetière comme un flashback, pour son coût d'harmonie.
     flashback: script?.flashback ? parseManaCost(script.flashback) : harmonize ? parseManaCost(harmonize) : undefined,
     harmonize: harmonize ? true : undefined,
-    flashbackDiscard: script?.flashbackDiscard,
+    flashbackCost: script?.flashbackCost,
     disguise: parseDisguise(raw.oracleText),
     warp: parseWarp(raw.oracleText),
     plot: parsePlot(raw.oracleText),
@@ -920,7 +930,7 @@ function singleDef(raw: RawCard, script: CardScript | undefined, set: string): C
     paradigm: paradigm || undefined,
     webSlinging: webSlinging ? parseManaCost(webSlinging) : undefined,
     xCost: payLifeX ? "life" : blightX ? "blight" : undefined,
-    kickerOrPay: blightOrPay ? parseManaCost(blightOrPay) : undefined,
+    kickerOrPay: blightOrPay ? parseManaCost(blightOrPay) : exileOrPay ? parseManaCost(exileOrPay[2] as string) : undefined,
     shockLand: /(?:As this land enters, |Then )you may pay (\d+) life\. If you don't, it enters tapped\./.exec(raw.oracleText)
       ? Number(/you may pay (\d+) life/.exec(raw.oracleText)?.[1])
       : undefined,

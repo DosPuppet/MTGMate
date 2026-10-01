@@ -26,6 +26,7 @@ import {
   equipDiscount,
   evidenceCards,
   FACE_DOWN_SPELL,
+  graveyardToExile,
   greatestToughness,
   harmonizeOptions,
   hasConvoke,
@@ -100,6 +101,15 @@ function kickerPrompt(d: CardDef): { title: string; without: string; with: strin
       title: `Travail d'équipe ${n} : engager des créatures de force totale ${n} ou plus ?`,
       without: "Sans travail d'équipe",
       with: `Travail d'équipe ${n}`,
+    };
+  }
+  if (d.kickerKind === "exileGraveyard" && d.kickerCost?.exileGraveyard) {
+    const n = d.kickerCost.exileGraveyard;
+    const pay = d.kickerOrPay ? costToText(d.kickerOrPay) : "";
+    return {
+      title: `Exiler ${n} carte(s) de votre cimetière plutôt que payer ${pay} ?`,
+      without: `Payer ${pay}`,
+      with: `Exiler ${n} carte(s)`,
     };
   }
   if (d.kickerKind === "evidence" && d.kickerCost?.collectEvidence) {
@@ -269,7 +279,7 @@ export function legalActions(s: GameState, player: PlayerId): ActionOption[] {
     const additional = additionalOptions(s, player, card, d, terms.source === "flashback");
     if (!additional) return;
     // Coûts additionnels choisis automatiquement : ces permanents ne peuvent pas servir à payer le mana.
-    const auto = autoAdditional(s, player, card, d);
+    const auto = autoAdditional(s, player, card, d, terms.source === "flashback");
     if (!auto) return;
     const spent = [...auto.tap, ...auto.exile, ...auto.bounce];
     const exclude = spent.length ? new Set(spent) : undefined;
@@ -321,7 +331,9 @@ export function legalActions(s: GameState, player: PlayerId): ActionOption[] {
           ? suggestedCrew(s, player, card, d.kickerCost.tapPower).length > 0
           : d.kickerCost.collectEvidence !== undefined
             ? !!evidenceCards(s, player, card, d.kickerCost.collectEvidence)
-            : !!kickerCostPermanent(s, player, card, d))) &&
+            : d.kickerCost.exileGraveyard !== undefined
+              ? !!graveyardToExile(s, player, card, d.kickerCost.exileGraveyard)
+              : !!kickerCostPermanent(s, player, card, d))) &&
       canPay(s, player, withExtra(spellCost(s, player, d, { ...base, kicked: true, free: terms.free })), undefined, purpose);
     if (!terms.free && !normal && !freeAvailable && !altAvailable && !kickerAffordable) return;
     // Le mana à payer à la place du sacrifice est-il disponible ?
@@ -360,7 +372,7 @@ export function legalActions(s: GameState, player: PlayerId): ActionOption[] {
           ? { ...additional, ...(harmony?.options.length ? { tap: { count: 1, ...harmony, optional: true as const } } : {}) }
           : undefined,
       kickerPermanents:
-        d.kickerCost && !d.kickerCost.tapPower && !d.kickerCost.collectEvidence
+        d.kickerCost && !d.kickerCost.tapPower && !d.kickerCost.collectEvidence && !d.kickerCost.exileGraveyard
           ? kickerCostOptions(s, player, card, d)
           : undefined,
       kickerTap: d.kickerCost?.tapPower ? crewSpec(s, player, card, d.kickerCost.tapPower) : undefined,

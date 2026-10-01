@@ -42,7 +42,15 @@ export interface CardDef {
    * N marqueurs -1/-1 sur une créature que vous contrôlez), ou engager des créatures de force totale N (`tapPower`,
    * Travail d'équipe, Marvel Super Heroes).
    */
-  kickerCost?: { sacrifice?: ObjectFilter; bounce?: ObjectFilter; blight?: number; tapPower?: number; collectEvidence?: number };
+  kickerCost?: {
+    sacrifice?: ObjectFilter;
+    bounce?: ObjectFilter;
+    blight?: number;
+    tapPower?: number;
+    collectEvidence?: number;
+    /** « Exilez N cartes de votre cimetière ou payez [mana] » (Soaring Stoneglider), avec `kickerOrPay`. */
+    exileGraveyard?: number;
+  };
   /**
    * X du sort payé autrement qu'en mana, en coût additionnel : « payez X points de vie » (`life`, Vicious Rivalry),
    * « flétrissez X » (`blight`, Soul Immolation : X au plus la plus grande endurance parmi vos créatures ; la créature
@@ -93,12 +101,13 @@ export interface CardDef {
     /** Les permanents à sacrifier sont non-terrains (Valgavoth). */
     sacrificeNonland?: boolean;
   };
-  /** Flashback avec « défaussez une carte » en plus (Twinned Vision). */
-  flashbackDiscard?: number;
+  /** Coûts en plus du coût de flashback (Twinned Vision : « défaussez une carte » ; Group Project : « engagez trois créatures »). */
+  flashbackCost?: AdditionalCost;
   /** « En coût additionnel pour lancer ce sort, … » (601.2b, 601.2h). */
   additionalCost?: AdditionalCost;
   /** « Ce sort coûte {N} de moins à lancer [si…] » (601.2f). */
-  costReduction?: { generic: Amount; condition?: Condition };
+  /** « Ce sort coûte {N} de moins si… » ; `colored` : symboles colorés retirés aussi (Brush Off : {1}{U}). */
+  costReduction?: { generic: Amount; colored?: ManaCost["colored"]; condition?: Condition };
   /** Coût alternatif (« vous pouvez payer {B} plutôt que le coût de mana de ce sort si… »). */
   altCost?: { mana: ManaCost; condition: Condition; label: string; forage?: boolean };
   /** F/E définies par une capacité (604.3, couche 7a), ex. cartes dans les cimetières adverses. */
@@ -191,7 +200,7 @@ export interface CardDef {
   /** Assemblage (701.42) : les deux parties et la carte assemblée, par nom. */
   meld?: { parts: string[]; result?: string };
   /** Libellé du kicker : Progéniture (702.175) ou Cadeau (702.174), lus dans le texte (Bloomburrow). */
-  kickerKind?: "offspring" | "gift" | "bargain" | "blight" | "teamwork" | "evidence";
+  kickerKind?: "offspring" | "gift" | "bargain" | "blight" | "teamwork" | "evidence" | "exileGraveyard";
   /** Cadeau (702.174) : ce que reçoit l'adversaire choisi si le cadeau est promis. */
   gift?: GiftKind;
   /** « En coût additionnel, fourragez ou payez [mana] » (Feed the Cycle) : le coût alternatif « Fourrager » l'évite. */

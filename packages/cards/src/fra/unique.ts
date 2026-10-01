@@ -615,7 +615,7 @@ export const UNIQUE: Record<string, CardScript> = {
   },
   "Twinned Vision": {
     flashback: "{1}{U/R}{U/R}",
-    flashbackDiscard: 1,
+    flashbackCost: { discard: 1 },
     spell: spell([], [fx.when(cond.spellCastFromHand, fx.draw(1)), fx.when(cond.not(cond.spellCastFromHand), fx.draw(2))]),
   },
   "Twisted Fates": {
