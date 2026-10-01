@@ -20,3 +20,9 @@ Les scripts sont dans `packages/cards/src/woe/` : `cards` (cartes du méta), `wh
 - **Célébration :** `CELEBRATION`, « deux permanents non-terrain ou plus sont arrivés sous votre contrôle ce tour-ci » (journal du tour, jetons compris).
 - **Jetons :** Chevalier 2/2 avec la vigilance, Humain 1/1 ; Rat « ne peut pas bloquer », Nourriture et Trésor viennent des communs.
 - **Tests :** 5 tests dans `engine/test/woe.test.ts` (Monster et Cursed, deux joueurs, Wicked, Young Hero, Célébration) ; test de fumée `ai/test/smoke/woe.test.ts`.
+
+## Sous-lot A1 : cartes blanches ✅ (53 / 269)
+
+- **Cartes :** 42 (sur 45), dont 7 Aventures (deux entrées chacune), les Rôles (Betroth the Beast, Charmed Clothier, Cursed Courtier, Unassuming Sage, Spellbook Vendor, Protective Parents, Return Triumphant), la Célébration (Armory Mice, Gallant Pie-Wielder, Tuinvale Guide, Pests of Honor, Lady of Laughter), le Marchandage (Archon's Glory, Kellan's Lightblades), les Sagas The Princess Takes Flight et Three Blind Mice.
+- **Restent :** Archon of the Wild Rose et A Tale for the Ages (filtre « créature enchantée »), Solitary Sanctuary (qui engage une créature).
+- **Tests :** 38 tests de règles dans `engine/test/woe.test.ts` (« lot A — blanc »).
