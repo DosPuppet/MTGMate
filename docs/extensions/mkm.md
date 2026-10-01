@@ -91,3 +91,14 @@ Les scripts sont dans `packages/cards/src/mkm/` : `cards` (cartes du méta), `wh
 - **[règles]** `RULES_VERSION` = 36.
 - **Dette :** `spellCost` entre dans `debt-baseline.json` comme famille générique (réductions de coût accordées à un joueur, filtrées).
 - **Tests :** 6 tests de règles (« lot B2 »).
+
+## Sous-lot B3 : cape (701.58) ✅ (241 / 268)
+
+- **Cartes :** Cryptic Coat, Expose the Culprit, Yarus, Roar of the Old Gods, Etrata, Deadly Fugitive, Vannifar, Evolved Enigma, Lazav, Wearer of Faces.
+- **Le moteur gagne :**
+  - `fx.cloak(ref, store)` et `fx.putFaceDown(ref, ward, { store, ownerControl })` : les créatures face cachée sont mémorisées (« puis attachez-y cet Équipement ») et peuvent revenir sous le contrôle de leur propriétaire (Yarus) ;
+  - la destination `{ to: "battlefield", cloak: true }` d'un déplacement (« enveloppez d'une cape une carte de votre main ») ;
+  - `fx.turnFaceUp(ref, store)` : une carte d'éphémère ou de rituel, qui ne peut pas être retournée, est exilée et mémorisée (Etrata la lance ensuite gratuitement) ;
+  - le filtre `disguise` (« avec le déguisement ») ; `fx.chooseAmong(…, { anyNumber, anyZone })` (un nombre quelconque ; des cartes hors du champ de bataille, comme celles exilées avec Lazav).
+- **Dette :** l'opération `putFaceDown` sert à plusieurs cartes : son entrée est retirée.
+- **Tests :** 6 tests de règles (« lot B3 »).

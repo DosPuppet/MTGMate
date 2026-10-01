@@ -16,6 +16,7 @@ import {
   mode,
   ref,
   spell,
+  spree,
   staticAbility,
   THOPTER,
   target,
@@ -383,5 +384,27 @@ export const RED: Record<string, CardScript> = {
         label: "Vos sorts face cachée coûtent {1} de moins ce tour-ci",
       }),
     ],
+  },
+  "Expose the Culprit": {
+    // « Un ou les deux » : deux modes sans coût en plus.
+    spell: spree(
+      {
+        cost: "{0}",
+        label: "Retournez face visible une créature face cachée",
+        targets: [{ ...target.creature("a", { faceDown: true }), label: "créature face cachée" }],
+        effects: [fx.turnFaceUp(ref.target("a"))],
+      },
+      {
+        cost: "{0}",
+        label: "Exilez vos créatures face visible avec le déguisement, puis enveloppez-les d'une cape",
+        effects: [
+          fx.chooseAmong(ref.permanentsOf(ref.you, { types: ["Creature"], faceDown: false, disguise: true }), ref.you, "e", {
+            anyNumber: true,
+          }),
+          fx.exileCard(ref.stored("e"), { name: "x" }),
+          fx.cloak(ref.stored("x")),
+        ],
+      },
+    ),
   },
 };

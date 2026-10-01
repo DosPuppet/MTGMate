@@ -9,6 +9,7 @@ import { describe, expect, it } from "vitest";
 import { CLUE, SUSPECTED } from "../../cards/src/mkm/common";
 import { createTokens, destroy } from "../src/actions";
 import * as dsl from "../src/dsl";
+import { putFaceDown } from "../src/effects";
 import { RulesError } from "../src/errors";
 import { bump } from "../src/layers";
 import { legalActions } from "../src/legal";
@@ -4819,5 +4820,116 @@ describe("Murders at Karlov Manor, lot B2 : déguisement", () => {
     // Tour suivant de p1 sans créature face cachée : pas de marqueur de plus.
     s = advanceUntil(s, (x) => x.turn.number === 5 && x.turn.step === "end" && x.stack.length === 0 && x.triggers.length === 0);
     expect(s.objects[mole]?.counters["+1/+1"]).toBe(1);
+  });
+});
+
+describe("Murders at Karlov Manor, lot B3 : cape (701.58)", () => {
+  const lands = (name: string, n: number) => Array(n).fill(name) as string[];
+  /** Met face cachée (cape) une carte de la main du joueur. */
+  const cloakFromHand = (s: S, player: string, name: string) =>
+    putFaceDown(s, player, idOf(s, player, "hand", name), true) as string;
+  const yes: Answer = (req) => (req.type === "yesNo" ? [1] : undefined);
+
+  it("Cryptic Coat : la carte du dessus enveloppée d'une cape, équipée (+1/+0, ne peut pas être bloquée) ; {1}{U} : en main", () => {
+    let s = scenario({ p1: { battlefield: lands("Island", 5), hand: ["Cryptic Coat"], library: ["Bear Cub", "Island"] } });
+    s = settle(cast(s, "p1", "Cryptic Coat"));
+    const cloaked = s.battlefield.find((id) => s.objects[id]?.faceDown) as string;
+    expect(cloaked).toBeDefined();
+    expect(chars(s, cloaked).power).toBe(3);
+    expect(chars(s, cloaked).keywords).toEqual(expect.arrayContaining(["unblockable", "ward"]));
+    const coat = idOf(s, "p1", "battlefield", "Cryptic Coat");
+    expect(s.objects[coat]?.attachedTo).toBe(cloaked);
+    const a = legalActions(s, "p1").find((x) => x.type === "activate" && x.source === coat);
+    s = settle(act(s, "p1", { type: "activate", source: coat, ability: a?.type === "activate" ? a.ability : -1 }));
+    expect(idsOf(s, "p1", "hand", "Cryptic Coat")).toHaveLength(1);
+  });
+
+  it("Expose the Culprit : retourne une créature face cachée ; exile vos créatures à déguisement et les enveloppe d'une cape", () => {
+    let s = scenario({
+      p1: { battlefield: [...lands("Mountain", 2), "Fugitive Codebreaker"], hand: ["Expose the Culprit", "Bear Cub"] },
+    });
+    const card = idOf(s, "p1", "hand", "Expose the Culprit");
+    const opt = legalActions(s, "p1").find((x) => x.type === "cast" && x.card === card);
+    const mode = opt?.type === "cast" ? opt.modes.find((m) => m.label?.startsWith("Exilez vos créatures")) : undefined;
+    s = settle(act(s, "p1", { type: "cast", card, mode: mode?.index }));
+    expect(idsOf(s, "p1", "battlefield", "Fugitive Codebreaker")).toHaveLength(0);
+    const down = s.battlefield.find((id) => s.objects[id]?.faceDown) as string;
+    expect(s.defs[s.objects[down]?.faceDown?.card ?? ""]?.name).toBe("Fugitive Codebreaker");
+    // Mode 1 : retourner une créature face cachée (une Ours enveloppée d'une cape).
+    let t = scenario({ p1: { battlefield: lands("Mountain", 2), hand: ["Expose the Culprit", "Bear Cub"] } });
+    const bear = cloakFromHand(t, "p1", "Bear Cub");
+    const card2 = idOf(t, "p1", "hand", "Expose the Culprit");
+    const opt2 = legalActions(t, "p1").find((x) => x.type === "cast" && x.card === card2);
+    const mode2 =
+      opt2?.type === "cast" ? opt2.modes.find((m) => m.label === "Retournez face visible une créature face cachée") : undefined;
+    t = settle(act(t, "p1", { type: "cast", card: card2, mode: mode2?.index, targets: { a: [bear] } }));
+    expect(t.objects[bear]?.faceDown).toBeUndefined();
+    expect(chars(t, bear).name).toBe("Bear Cub");
+  });
+
+  it("Yarus : une créature face cachée qui meurt revient face cachée sous le contrôle de son propriétaire, puis est retournée face visible", () => {
+    let s = scenario({
+      p1: { battlefield: ["Yarus, Roar of the Old Gods", ...lands("Mountain", 2)], hand: ["Bear Cub", "Lightning Strike"] },
+    });
+    const down = cloakFromHand(s, "p1", "Bear Cub");
+    s = settle(cast(s, "p1", "Lightning Strike", { t: [down] }));
+    const bear = idOf(s, "p1", "battlefield", "Bear Cub");
+    expect(s.objects[bear]?.faceDown).toBeUndefined();
+    expect(chars(s, bear).name).toBe("Bear Cub");
+  });
+
+  it("Etrata : vos créatures face cachée ont « {2}{U}{B} : retournez-la ; si vous ne pouvez pas, exilez-la et lancez-la gratuitement »", () => {
+    let s = scenario({
+      p1: {
+        battlefield: ["Etrata, Deadly Fugitive", ...lands("Island", 2), ...lands("Swamp", 2)],
+        hand: ["Opt"],
+        library: lands("Island", 3),
+      },
+    });
+    const down = cloakFromHand(s, "p1", "Opt");
+    const a = legalActions(s, "p1").find(
+      (x) => x.type === "activate" && x.source === down && (x.label ?? "").startsWith("Retournez-la"),
+    );
+    expect(a).toBeDefined();
+    const hand = s.players.p1?.hand.length ?? 0;
+    s = act(s, "p1", { type: "activate", source: down, ability: a?.type === "activate" ? a.ability : -1 });
+    for (let i = 0; i < 40 && (s.stack.length || s.triggers.length || s.pending?.kind === "choice"); i++) {
+      const p = s.pending;
+      if (p?.kind === "priority" && p.castNow) s = act(s, p.player, { type: "cast", card: p.castNow.cards[0] as string });
+      else if (p?.kind === "choice") s = act(s, p.player, { type: "choose", values: p.request.suggested });
+      else if (p?.kind === "priority") s = act(s, p.player, { type: "pass" });
+    }
+    // Opt (éphémère) ne peut pas être retourné : exilé, lancé gratuitement (regard 1, piochez une carte).
+    expect(idsOf(s, "p1", "graveyard", "Opt")).toHaveLength(1);
+    expect(s.players.p1?.hand).toHaveLength(hand + 1);
+  });
+
+  it("Vannifar : au début de votre combat, enveloppez d'une cape une carte de votre main", () => {
+    let s = scenario({ p1: { battlefield: ["Vannifar, Evolved Enigma"], hand: ["Shivan Dragon"] } });
+    s = advanceUntil(s, (x) => x.pending?.kind === "choice" && x.pending.request.intent === "triggerMode");
+    const p = s.pending;
+    if (p?.kind === "choice")
+      s = act(s, "p1", { type: "choose", values: [p.request.type === "pick" ? (p.request.options[0] as string) : 0] });
+    s = settle(s);
+    const down = s.battlefield.find((id) => s.objects[id]?.faceDown) as string;
+    expect(s.defs[s.objects[down]?.faceDown?.card ?? ""]?.name).toBe("Shivan Dragon");
+    expect(s.players.p1?.hand).toHaveLength(0);
+  });
+
+  it("Lazav : en attaquant, exile une carte d'un cimetière et enquête ; un Indice sacrifié : il peut devenir une copie d'une créature exilée avec lui", () => {
+    let s = scenario({
+      p1: { battlefield: ["Lazav, Wearer of Faces", ...lands("Island", 2)] },
+      p2: { graveyard: ["Shivan Dragon"] },
+    });
+    const lazav = idOf(s, "p1", "battlefield", "Lazav, Wearer of Faces");
+    s = advanceUntil(s, (x) => x.pending?.kind === "declareAttackers");
+    s = act(s, "p1", { type: "declareAttackers", attackers: [{ id: lazav, defender: "p2" }] });
+    s = settle(s);
+    expect(s.exile.map((id) => nameOf(s, id))).toEqual(["Shivan Dragon"]);
+    const clue = idOf(s, "p1", "battlefield", "Clue");
+    s = advanceUntil(s, (x) => x.turn.step === "main2" && x.pending?.player === "p1");
+    const a = legalActions(s, "p1").find((x) => x.type === "activate" && x.source === clue);
+    s = settle(act(s, "p1", { type: "activate", source: clue, ability: a?.type === "activate" ? a.ability : -1 }), yes);
+    expect(chars(s, lazav).name).toBe("Shivan Dragon");
   });
 });

@@ -438,4 +438,13 @@ export const BLUE: Record<string, CardScript> = {
       }),
     ],
   },
+  "Cryptic Coat": {
+    abilities: [
+      triggered(when.entersSelf, [fx.cloak(ref.libraryTop(ref.you), "c"), fx.attach(ref.stored("c"))], {
+        label: "Enveloppez d'une cape la carte du dessus, puis attachez-y cet Équipement",
+      }),
+      staticAbility("attached", { power: 1, addKeywords: ["unblockable"] }, { label: "+1/+0, ne peut pas être bloquée" }),
+      activated({ mana: "{1}{U}", effects: [fx.bounce(ref.self)], label: "Renvoyez cet Équipement dans votre main" }),
+    ],
+  },
 };

@@ -506,12 +506,14 @@ export type Effect =
   /** La source (ou le permanent désigné) devient montée jusqu'à la fin du tour. */
   | { op: "saddle"; what?: Ref }
   /** Met les cartes désignées sur le champ de bataille face cachée (manifester ; `ward` : cape). */
-  | { op: "putFaceDown"; what: Ref; ward: boolean }
+  /** `store` : les créatures face cachée (Cryptic Coat : « puis attachez-y cet Équipement ») ; `ownerControl` : sous le contrôle du propriétaire (Yarus). */
+  | { op: "putFaceDown"; what: Ref; ward: boolean; store?: string; ownerControl?: boolean }
   /** Manifestation effroyable (701.62) : regarder les deux cartes du dessus, en manifester une, l'autre au cimetière. */
   /** Manifestation effroyable (701.62) : `who` manifeste (vous par défaut), `times` fois ; `store` mémorise les créatures face cachée. */
   | { op: "manifestDread"; who?: Ref; times?: Amount; store?: string }
   /** Retourne face visible les permanents désignés (sans payer de coût). */
-  | { op: "turnFaceUp"; what: Ref }
+  /** `orExileCast` : « si vous ne pouvez pas, exilez-la, puis vous pouvez lancer la carte exilée sans payer » (Etrata). */
+  | { op: "turnFaceUp"; what: Ref; orExileCast?: boolean; store?: string }
   /** Distorsion : exile le permanent à la prochaine étape de fin (il pourra être lancé depuis l'exil un tour suivant). */
   | { op: "warpExile"; what: Ref }
   /** Station (702.184a) : des marqueurs de charge égaux à la force de la créature engagée pour le coût. */
@@ -599,7 +601,8 @@ export type Effect =
   /** `to` : lie à cet objet plutôt qu'à la source (un emblème créé par le sort). */
   | { op: "link"; what: Ref; to?: Ref }
   /** « Ce joueur choisit l'un d'eux » : `store` le choisi, `${store}Rest` les autres (Trial of Agony). */
-  | { op: "chooseAmong"; what: Ref; chooser: Ref; store: string }
+  /** `anyNumber` : un nombre quelconque (Expose the Culprit) ; `anyZone` : aussi des cartes hors du champ de bataille (Lazav). */
+  | { op: "chooseAmong"; what: Ref; chooser: Ref; store: string; anyNumber?: boolean; anyZone?: boolean }
   /** Attache une Aura ou un Équipement à un permanent (701.3). */
   | { op: "attach"; what: Ref; to: Ref }
   /** Ajoute du mana à la réserve du contrôleur. */

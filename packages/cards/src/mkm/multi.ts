@@ -590,4 +590,95 @@ export const MULTI: Record<string, CardScript> = {
       }),
     ],
   },
+  "Yarus, Roar of the Old Gods": {
+    abilities: [
+      staticAbility(
+        { types: ["Creature"], controller: "you", other: true },
+        { addKeywords: ["haste"] },
+        {
+          label: "Vos autres créatures ont la célérité",
+        },
+      ),
+      triggered(when.combatDamageBatch({ types: ["Creature"], controller: "you", faceDown: true }), [fx.draw(1)], {
+        label: "Vos créatures face cachée infligent des blessures de combat à un joueur : piochez une carte",
+      }),
+      triggered(
+        when.dies({ types: ["Creature"], controller: "you", faceDown: true }),
+        fx.when(
+          cond.refMatches(ref.eventObject, { permanent: true }),
+          fx.putFaceDown(ref.eventObject, false, { store: "y", ownerControl: true }),
+          fx.turnFaceUp(ref.stored("y")),
+        ),
+        { label: "Une créature face cachée meurt : elle revient face cachée, puis est retournée face visible" },
+      ),
+    ],
+  },
+  "Etrata, Deadly Fugitive": {
+    abilities: [
+      staticAbility(
+        { types: ["Creature"], controller: "you", faceDown: true },
+        {
+          addAbilities: [
+            activated({
+              mana: "{2}{U}{B}",
+              effects: [fx.turnFaceUp(ref.self, "e"), fx.castNow(ref.stored("e"), { free: true })],
+              label: "Retournez-la face visible (sinon, exilez-la et lancez-la gratuitement)",
+            }),
+          ],
+        },
+        { label: "Vos créatures face cachée : « {2}{U}{B} : retournez-la face visible »" },
+      ),
+      triggered(
+        when.combatDamage({ subtype: "Assassin", controller: "you" }, true),
+        [fx.cloak(ref.libraryTop(ref.eventPlayer))],
+        {
+          label: "Un Assassin blesse un adversaire : enveloppez d'une cape la carte du dessus de sa bibliothèque",
+        },
+      ),
+    ],
+  },
+  "Vannifar, Evolved Enigma": {
+    abilities: [
+      triggeredModal(
+        when.yourCombat,
+        [
+          mode(
+            "Enveloppez d'une cape une carte de votre main",
+            [],
+            [
+              fx.pickFromZone(
+                "hand",
+                {},
+                { to: "battlefield", cloak: true },
+                { count: 1, min: 1, prompt: "La carte à envelopper d'une cape" },
+              ),
+            ],
+          ),
+          mode(
+            "Un marqueur +1/+1 sur chaque créature incolore que vous contrôlez",
+            [],
+            [fx.addCountersAll({ types: ["Creature"], controller: "you", colorCount: 0 }, 1)],
+          ),
+        ],
+        { label: "Au début de votre combat : cape ou marqueurs" },
+      ),
+    ],
+  },
+  "Lazav, Wearer of Faces": {
+    abilities: [
+      triggered(when.attacksSelf, [fx.exileCard(ref.target(), { name: "l" }), fx.link(ref.stored("l")), investigate()], {
+        targets: [target.cardInGraveyard("t", {}, "any")],
+        label: "Exilez une carte d'un cimetière, puis enquêtez",
+      }),
+      triggered(
+        when.sacrifice({ subtype: "Clue" }),
+        fx.may(
+          "Lazav devient-il une copie d'une carte de créature exilée avec lui ?",
+          fx.chooseAmong(ref.filtered(ref.linked, { types: ["Creature"] }), ref.you, "m", { anyZone: true }),
+          fx.becomeCopy(ref.self, ref.stored("m"), "endOfTurn"),
+        ),
+        { label: "Vous sacrifiez un Indice : Lazav peut devenir une copie d'une créature exilée avec lui" },
+      ),
+    ],
+  },
 };

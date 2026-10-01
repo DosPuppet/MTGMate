@@ -191,6 +191,8 @@ export interface ObjectFilter {
   suspected?: boolean;
   /** Vous avez mis un marqueur sur lui ce tour-ci (Fractal Tender). */
   countersPutByYouThisTurn?: boolean;
+  /** A le déguisement (Expose the Culprit : « créatures face visible que vous contrôlez avec le déguisement »). */
+  disguise?: boolean;
   /** {X} dans son coût de mana (« un sort avec {X} dans son coût de mana » : Matterbending Mage, Paradox Surveyor). */
   hasX?: boolean;
   /** Carte avec une Aventure (hors du champ de bataille : cimetière, main ; Hearth Elemental). */

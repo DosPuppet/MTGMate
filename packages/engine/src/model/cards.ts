@@ -1026,4 +1026,6 @@ export interface MoveSpec {
   fromTop?: number;
   /** Avec `libraryTop` : « mélangez-le dans la bibliothèque de son propriétaire ». */
   shuffle?: boolean;
+  /** Sur le champ de bataille enveloppé d'une cape (701.58 : face cachée, 2/2, garde {2}) (Vannifar). */
+  cloak?: boolean;
 }

@@ -760,7 +760,14 @@ export const fx = {
   exileFromOwnHand: (who: Ref, store: string): Effect => ({ op: "exileFromOwnHand", who, store }),
   tapOrSacrifice: { op: "tapOrSacrifice" } as Effect,
   /** Manifester (sans garde) ou envelopper d'une cape (`ward`) les cartes désignées. */
-  putFaceDown: (what: Ref, ward = false): Effect => ({ op: "putFaceDown", what, ward }),
+  putFaceDown: (what: Ref, ward = false, opts: { store?: string; ownerControl?: boolean } = {}): Effect => ({
+    op: "putFaceDown",
+    what,
+    ward,
+    ...opts,
+  }),
+  /** Cape (701.58) : face cachée, 2/2 avec la garde {2} ; `store` : les créatures ainsi créées. */
+  cloak: (what: Ref, store?: string): Effect => ({ op: "putFaceDown", what, ward: true, ...(store ? { store } : {}) }),
   manifestDread: { op: "manifestDread" } as Effect,
   revealFaceDown: (what: Ref): Effect => ({ op: "revealFaceDown", what }),
   eachOfDealsDamage: (from: Ref, to: Ref): Effect => ({ op: "eachDealsDamage", filter: {}, to, from }),
@@ -793,7 +800,12 @@ export const fx = {
   cascade: (n: Amount): Effect => ({ op: "discover", n, cascade: true }),
   /** « [créature] a la connivence » (701.50). */
   connive: (what: Ref = ref.self): Effect => ({ op: "connive", what }),
-  turnFaceUp: (what: Ref): Effect => ({ op: "turnFaceUp", what }),
+  /** `orExileStore` : sinon (éphémère ou rituel), la carte est exilée et mémorisée (Etrata). */
+  turnFaceUp: (what: Ref, orExileStore?: string): Effect => ({
+    op: "turnFaceUp",
+    what,
+    ...(orExileStore ? { orExileCast: true, store: orExileStore } : {}),
+  }),
   /** « Transformez [ce permanent] » (recto ↔ verso). */
   transform: (what: Ref = ref.self): Effect => ({ op: "transform", what }),
   /** « Exilez-les, puis assemblez-les » : la source et un permanent nommé `with`, en sa carte assemblée. */
@@ -869,7 +881,13 @@ export const fx = {
   hellkite: { op: "hellkite" } as Effect,
   link: (what: Ref, to?: Ref): Effect => ({ op: "link", what, to }),
   /** « Ce joueur choisit l'un d'eux » : `ref.stored(store)` le choisi, `ref.stored(store + "Rest")` les autres. */
-  chooseAmong: (what: Ref, chooser: Ref, store: string): Effect => ({ op: "chooseAmong", what, chooser, store }),
+  chooseAmong: (what: Ref, chooser: Ref, store: string, opts: { anyNumber?: boolean; anyZone?: boolean } = {}): Effect => ({
+    op: "chooseAmong",
+    what,
+    chooser,
+    store,
+    ...opts,
+  }),
   /** « Vous pouvez payer N points de vie. Si vous le faites, … » */
   mayPayLife: (life: number, prompt: string, ...effects: Effects): Effect[] => {
     const flat = effects.flat();

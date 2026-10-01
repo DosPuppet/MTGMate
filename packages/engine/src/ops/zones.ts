@@ -64,9 +64,34 @@ export const HANDLERS: OpHandlers = {
     return;
   },
   chooseAmong(s, r, e, ctx, key) {
-    const ids = resolveRef(s, ctx, e.what).filter((id) => onBattlefield(s, id));
+    const ids = resolveRef(s, ctx, e.what).filter((id) => (e.anyZone ? !!s.objects[id] : onBattlefield(s, id)));
     if (ids.length === 0) return;
     const chooser = resolveRef(s, ctx, e.chooser).find((x) => isPlayer(s, x)) ?? ctx.controller;
+    // « Un nombre quelconque » (Expose the Culprit) : de zéro à toutes.
+    if (e.anyNumber) {
+      const answer = r.vars[key("among")];
+      if (!answer) {
+        return {
+          ask: {
+            player: chooser,
+            key: key("among"),
+            request: {
+              type: "pick",
+              intent: "pickCards",
+              prompt: "Choisissez un nombre quelconque de ces créatures",
+              options: ids,
+              min: 0,
+              max: ids.length,
+              suggested: ids,
+            },
+          },
+        };
+      }
+      const chosen = answer.map(String).filter((id) => ids.includes(id));
+      r.vars[`$ids:${e.store}`] = chosen;
+      r.vars[`$ids:${e.store}Rest`] = ids.filter((x) => !chosen.includes(x));
+      return;
+    }
     let picked = ids.length === 1 ? ids[0] : r.vars[key("among")]?.map(String)[0];
     if (picked === undefined) {
       // Suggestion : celle qui a la plus grande endurance.
@@ -1603,9 +1628,15 @@ export const HANDLERS: OpHandlers = {
     }
     return;
   },
-  putFaceDown(s, _r, e, ctx) {
-    // Manifester (701.34) / cape (701.58) : face cachée, sous le contrôle du contrôleur de l'effet.
-    for (const id of resolveRef(s, ctx, e.what)) putFaceDown(s, ctx.controller, id, e.ward);
+  putFaceDown(s, r, e, ctx) {
+    // Manifester (701.34) / cape (701.58) : face cachée, sous le contrôle du contrôleur de l'effet (ou du propriétaire).
+    const made: string[] = [];
+    for (const id of resolveRef(s, ctx, e.what)) {
+      const owner = s.objects[id]?.owner ?? ctx.controller;
+      const n = putFaceDown(s, e.ownerControl ? owner : ctx.controller, id, e.ward);
+      if (n) made.push(n);
+    }
+    if (e.store) r.vars[`$ids:${e.store}`] = made;
     return;
   },
   manifestDread(s, r, e, ctx, key) {
@@ -1677,8 +1708,18 @@ export const HANDLERS: OpHandlers = {
     }
     return;
   },
-  turnFaceUp(s, _r, e, ctx) {
-    for (const id of resolveRef(s, ctx, e.what)) turnFaceUp(s, id);
+  turnFaceUp(s, r, e, ctx) {
+    for (const id of resolveRef(s, ctx, e.what)) {
+      const card = s.objects[id]?.faceDown ? s.defs[s.objects[id]?.faceDown?.card ?? ""] : undefined;
+      // Une carte d'éphémère ou de rituel ne peut pas être retournée face visible : Etrata l'exile (`store`), pour la
+      // lancer ensuite sans payer.
+      if (e.orExileCast && card && (card.types.includes("Instant") || card.types.includes("Sorcery"))) {
+        const exiled = moveObject(s, id, "exile");
+        if (exiled && e.store) r.vars[`$ids:${e.store}`] = [exiled];
+        continue;
+      }
+      turnFaceUp(s, id);
+    }
     return;
   },
   warpExile(s, _r, e, ctx) {

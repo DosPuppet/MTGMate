@@ -692,6 +692,8 @@ export function moveWithSpec(
 ): ObjectId | null {
   const o = s.objects[id];
   if (!o) return null;
+  // Vannifar : « enveloppez d'une cape une carte de votre main ».
+  if (spec.to === "battlefield" && spec.cloak) return putFaceDown(s, controller, id, true);
   const zone: Zone = spec.to === "libraryTop" || spec.to === "libraryBottom" ? "library" : (spec.to as Zone);
   emit({ type: "moved", owner: o.owner, objectId: id, defId: o.defId, from: o.zone, to: zone });
   if (o.zone === "battlefield") removeFromCombat(s, id);
