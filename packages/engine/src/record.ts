@@ -93,8 +93,10 @@ export const RECORD_VERSION = 1;
  * - 33 : Murders at Karlov Manor, lot A : une capacité déclenchée « une à N cibles » respecte le minimum (Armament
  *   Dragon n'avait aucune cible sous N créatures) ; la condition d'un déclencheur voit l'événement (montant) ; « s'il
  *   n'a pas de carte en main » hors résolution ; désignation suspect (701.60).
+ * - 34 : Murders at Karlov Manor, lot A6 : un sort ou une capacité à « X cibles » est proposé même sans cible (X = 0) ;
+ *   l'IA ajuste X au nombre de cibles.
  */
-export const RULES_VERSION = 33;
+export const RULES_VERSION = 34;
 
 /** Un point de contrôle toutes les N décisions (plus la dernière de la partie). */
 export const CHECKPOINT_EVERY = 25;

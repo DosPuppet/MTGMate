@@ -157,6 +157,8 @@ export interface TargetOption {
   count?: number;
   /** Nombre minimal de cibles (« une ou deux cibles ») ; `count` par défaut. */
   min?: number;
+  /** Exactement X cibles (`true`), ou jusqu'à X (`"upTo"`), X étant choisi pour le sort ou la capacité. */
+  countX?: boolean | "upTo";
   /** Contrainte entre les cibles : même joueur, ou joueurs différents (avec le joueur de chaque cible). */
   group?: { kind: "same" | "different"; holders: Record<string, string> };
   kickedCount?: number;

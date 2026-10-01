@@ -718,6 +718,15 @@ export const useGame = create<Store>((set, get) => {
         continue;
       }
       let effective = c.kicked && spec.kickedCount ? { ...spec, count: spec.kickedCount } : spec;
+      // « X cibles » (Doppelgang) : autant de cibles que le X choisi (au plus les cibles possibles).
+      if (spec.countX) {
+        const x = Math.min(c.x ?? 0, spec.legal.length);
+        if (x === 0) {
+          c.targets[spec.id] = [];
+          continue;
+        }
+        effective = { ...effective, count: x };
+      }
       // « Équipement attaché à cette créature » : seules les options attachées à la cible déjà choisie.
       const host = spec.attachedToTarget;
       if (host) {

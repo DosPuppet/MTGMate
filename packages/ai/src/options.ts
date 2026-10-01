@@ -23,6 +23,14 @@ export function buildCastDecision(
   choose: <T>(list: T[]) => T | undefined,
   rand: () => number = Math.random,
 ): Decision | null {
+  /** « X cibles » : X ne dépasse pas le nombre de cibles possibles, et les cibles sont ajustées à X. */
+  const withCountX = <D extends { targets?: Record<string, string[]>; x?: number }>(d: D, opts: TargetOption[]): D => {
+    const exact = opts.find((o) => o.countX);
+    if (!exact || d.x === undefined) return d;
+    const pool = [...exact.legal].sort(() => rand() - 0.5);
+    const x = exact.countX === true ? Math.min(d.x, pool.length) : d.x;
+    return { ...d, x, targets: { ...d.targets, [exact.id]: pool.slice(0, Math.min(x, pool.length)) } };
+  };
   const targetsFrom = (opts: TargetOption[]) => {
     const t: Record<string, string[]> = {};
     for (const o of opts) {
@@ -54,23 +62,26 @@ export function buildCastDecision(
         while (out.length < spec.count && pool.length) out.push(pool.splice(Math.floor(rand() * pool.length), 1)[0] as string);
         return out;
       };
-      return {
-        type: "cast",
-        card: a.card,
-        face: a.face,
-        faceDown: a.faceDown,
-        warp: a.warp,
-        mode: mode.index,
-        targets: targetsFrom(mode.targets),
-        x: a.xMax === null ? undefined : Math.floor(rand() * (a.xMax + 1)),
-        kicked:
-          !!mode.requiresKicker ||
-          (a.kickerAffordable && ((!a.normalAvailable && !a.freeAvailable && !a.altAvailable) || rand() < 0.5)),
-        discard: a.additional?.discard?.orLife !== undefined && rand() < 0.5 ? [] : pickN(a.additional?.discard),
-        sacrifice: a.additional?.sacrifice?.orPay && rand() < 0.5 ? [] : pickN(a.additional?.sacrifice),
-        free: a.freeAvailable && (!a.normalAvailable || rand() < 0.7) ? true : undefined,
-        alternative: !a.freeAvailable && a.altAvailable && (!a.normalAvailable || rand() < 0.5) ? true : undefined,
-      };
+      return withCountX(
+        {
+          type: "cast" as const,
+          card: a.card,
+          face: a.face,
+          faceDown: a.faceDown,
+          warp: a.warp,
+          mode: mode.index,
+          targets: targetsFrom(mode.targets),
+          x: a.xMax === null ? undefined : Math.floor(rand() * (a.xMax + 1)),
+          kicked:
+            !!mode.requiresKicker ||
+            (a.kickerAffordable && ((!a.normalAvailable && !a.freeAvailable && !a.altAvailable) || rand() < 0.5)),
+          discard: a.additional?.discard?.orLife !== undefined && rand() < 0.5 ? [] : pickN(a.additional?.discard),
+          sacrifice: a.additional?.sacrifice?.orPay && rand() < 0.5 ? [] : pickN(a.additional?.sacrifice),
+          free: a.freeAvailable && (!a.normalAvailable || rand() < 0.7) ? true : undefined,
+          alternative: !a.freeAvailable && a.altAvailable && (!a.normalAvailable || rand() < 0.5) ? true : undefined,
+        },
+        mode.targets,
+      );
     }
     case "activate": {
       // Station : une créature engagée au hasard parmi celles possibles. Équipage (force minimale) : des créatures au
@@ -81,14 +92,17 @@ export function buildCastDecision(
       const power = () => picked.reduce((n, id) => n + (tap?.powers?.[id] ?? 0), 0);
       const enough = () => (tap?.minPower !== undefined ? power() >= tap.minPower : picked.length >= (tap?.count ?? 0));
       while (tap && !enough() && pool.length) picked.push(pool.splice(Math.floor(rand() * pool.length), 1)[0] as string);
-      return {
-        type: "activate",
-        source: a.source,
-        ability: a.ability,
-        targets: targetsFrom(a.targets),
-        x: a.xMax === null ? undefined : Math.floor(rand() * (a.xMax + 1)),
-        tap: tap ? picked : undefined,
-      };
+      return withCountX(
+        {
+          type: "activate" as const,
+          source: a.source,
+          ability: a.ability,
+          targets: targetsFrom(a.targets),
+          x: a.xMax === null ? undefined : Math.floor(rand() * (a.xMax + 1)),
+          tap: tap ? picked : undefined,
+        },
+        a.targets,
+      );
     }
   }
 }
@@ -119,6 +133,13 @@ export function enumerateDecisions(a: ActionOption, limit = 40, rank?: (ids: str
     }
     return acc;
   };
+  /** « X cibles » : X vaut le nombre de cibles retenues (au plus X maximal). */
+  const fitX = (targets: Record<string, string[]>, opts: TargetOption[], xMax: number | null) => {
+    const o = opts.find((t) => t.countX === true);
+    if (!o || xMax === null) return { targets, x: xMax ?? undefined };
+    const ids = (targets[o.id] ?? []).slice(0, xMax);
+    return { targets: { ...targets, [o.id]: ids }, x: ids.length };
+  };
   switch (a.type) {
     case "cast": {
       const out: Decision[] = [];
@@ -133,8 +154,7 @@ export function enumerateDecisions(a: ActionOption, limit = 40, rank?: (ids: str
             faceDown: a.faceDown,
             warp: a.warp,
             mode: m.index,
-            targets,
-            x: a.xMax ?? undefined,
+            ...fitX(targets, m.targets, a.xMax),
             discard: pick(a.additional?.discard),
             sacrifice: pick(a.additional?.sacrifice),
           };
@@ -167,8 +187,7 @@ export function enumerateDecisions(a: ActionOption, limit = 40, rank?: (ids: str
         type: "activate" as const,
         source: a.source,
         ability: a.ability,
-        targets,
-        x: a.xMax ?? undefined,
+        ...fitX(targets, a.targets, a.xMax),
       }));
       // Station : la plus forte créature (choix par défaut du moteur), ou celle qui a le moins de valeur.
       const tap = a.additional?.tap;

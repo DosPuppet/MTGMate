@@ -147,6 +147,7 @@ function targetOptions(s: GameState, player: PlayerId, specs: TargetSpec[], sour
       legal,
       count: t.count && t.count > 1 ? t.count : undefined,
       min: t.minCount,
+      ...(t.countX ? { countX: t.countX } : {}),
       kickedCount: t.kickedCount,
       kickedLegal: t.kickedFilter ? legalTargets(s, player, { ...t, filter: t.kickedFilter }, sourceId) : undefined,
       otherThan: t.otherThan,
@@ -166,7 +167,8 @@ function targetOptions(s: GameState, player: PlayerId, specs: TargetSpec[], sour
 
 function targetsAvailable(opts: TargetOption[]): boolean {
   return opts.every((t) => {
-    if (t.optional) return true;
+    // « X cibles » : X peut valoir 0.
+    if (t.optional || t.countX) return true;
     const need = t.min ?? t.count ?? 1;
     if (t.group?.kind === "different") return new Set(Object.values(t.group.holders)).size >= need;
     return t.legal.length >= need;

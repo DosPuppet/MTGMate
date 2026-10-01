@@ -56,3 +56,10 @@ Les scripts sont dans `packages/cards/src/mkm/` : `cards` (cartes du méta), `wh
 - **Dette :** l'opération `putFaceDown` (cape) entre dans `debt-baseline.json` tant qu'une seule carte l'utilise.
 - **Restent :** Airtight Alibi (« ne peut pas devenir suspecte »), Axebane Ferox (garde « réunir des preuves 4 »), Culvert Ambusher (« bloque si possible »), Hedge Whisperer, A Killer Among Us (choix secret parmi trois types), Sample Collector (« vous pouvez réunir des preuves »), Tunnel Tipster (créature face cachée arrivée ce tour-ci).
 - **Tests :** 36 tests de règles (« lot A — vert »).
+
+## Sous-lot A6 : multicolores, incolores et terrains ✅ (217 / 268)
+
+- **Cartes :** 44 multicolores (sur 65 : Agrus Kos, Alquist Proft, Teysa, Trostani, Ezrim, Kellan, Rakdos, Doppelgang, Lightning Helix, les cartes scindées Cease // Desist, Fuss // Bother, Push // Pull…) et 16 incolores et terrains (sur 18 : Case of the Shattered Pact, Gravestone Strider, Thinking Cap — « Équiper Détective {1} » écrit à la main —, les sept terrains à surveillance, Public Thoroughfare, Scene of the Crime).
+- **[règles]** Un sort ou une capacité à « X cibles » (`countX`) est proposé même sans cible (X = 0) ; les options de cibles portent `countX`, l'IA ajuste X au nombre de cibles et l'interface demande autant de cibles que le X choisi. `RULES_VERSION` = 34.
+- **Restent :** 21 multicolores (réunir des preuves hors coût de sort : Evidence Examiner, Izoni, Kylox's Voltstrider, Urgent Necropsy ; Aurelia, Buried in the Garden, Ill-Timed Explosion, Judith, Kaya, Lazav, Vannifar, Yarus, Etrata, Kylox, Niv-Mizzet, Officious Interrogation, Tin Street Gossip, Tolsimir, Hustle // Bustle, Treacherous Greed, Flotsam // Jetsam), Cryptex et Branch of Vitu-Ghazi.
+- **Tests :** 56 tests de règles (« lot A — multicolores ») et 20 (« lot A — incolores et terrains »).

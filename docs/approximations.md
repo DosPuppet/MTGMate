@@ -308,6 +308,13 @@ Dans l'ordre où elles ont été ajoutées, extension par extension.
   - `règle` Krenko's Buzzcrusher : les terrains non-base sont ciblés (au plus un par joueur) ; celui qui cherche est le propriétaire du terrain détruit ;
   - `règle` Expedited Inheritance : « son contrôleur » d'une créature morte est son propriétaire ;
   - `règle` Anzrag's Rampage : « les artefacts que vous ne contrôlez pas » sont ceux de vos adversaires ;
-  - `timing` Archdruid's Charm, Flourishing Bloom-Kin : les cartes cherchées passent par la main avant que le terrain arrive engagé ; le mélange a lieu avant.
+  - `timing` Archdruid's Charm, Flourishing Bloom-Kin : les cartes cherchées passent par la main avant que le terrain arrive engagé ; le mélange a lieu avant ;
+  - `timing` Ezrim, Agency Chief : « au choix » est trois capacités (une par mot-clé), le choix se fait à l'activation ;
+  - `timing` Crowd-Control Warden : retournée face visible, les marqueurs viennent d'une capacité déclenchée (à l'arrivée, c'est un remplacement) ;
+  - `timing` Granite Witness : engager ou dégager est un mode choisi quand la capacité est mise sur la pile ;
+  - `règle` Break Out : la créature révélée repasse sur le dessus de la bibliothèque avant d'aller sur le champ de bataille ou en main ;
+  - `choix auto` Worldsoul's Rage : les terrains sont pris dans la main, puis dans le cimetière ;
+  - `règle` Rune-Brand Juggler : « sacrifiez une créature suspecte » ne peut pas sacrifier le Juggler lui-même ;
+  - `règle` Rakdos, Patron of Chaos : un adversaire qui accepte sacrifie ce qu'il peut, et vous piochez quand même.
 - **Légalité Standard :** instantané des légalités Scryfall au moment de l'import (`legalities.standard` dans `data/<set>.json`). Après une rotation ou une annonce de bannissement, réimporter les sets (`npm run import-cards -- <set>`).
 - **Images des jetons :** celle du jeton Scryfall le plus proche (même nom, puis mêmes F/E et couleurs ; `data/tokens.json`, `npm run import-tokens`) ; un jeton de nom inconnu garde le cadre texte.
