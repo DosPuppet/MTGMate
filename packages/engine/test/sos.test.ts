@@ -4542,3 +4542,36 @@ describe("Secrets of Strixhaven, lot B1 : sorts avec {X} dans leur coût", () =>
     expect(s.players.p1?.library.map((id) => nameOf(s, id))[0]).toBe("Shivan Dragon");
   });
 });
+
+describe("Secrets of Strixhaven, lot B2 : couleurs dépensées pour le sort déclencheur", () => {
+  it("Magmablood Archaic : convergence en arrivant ; un éphémère : vos créatures +1/+0 par couleur dépensée pour lui", () => {
+    let s = scenario({
+      p1: {
+        battlefield: ["Mountain", "Forest", "Island", "Plains", "Swamp", "Bear Cub"],
+        hand: ["Magmablood Archaic", "Lightning Strike"],
+      },
+    });
+    s = settle(cast(s, "p1", "Magmablood Archaic"));
+    const archaic = idOf(s, "p1", "battlefield", "Magmablood Archaic");
+    // {2/R}{2/R}{2/R} payé avec cinq terrains de cinq couleurs : cinq marqueurs.
+    expect(s.objects[archaic]?.counters["+1/+1"]).toBe(5);
+    let t = scenario({
+      p1: { battlefield: ["Magmablood Archaic", "Bear Cub", "Mountain", "Forest"], hand: ["Lightning Strike"] },
+    });
+    const bear = idOf(t, "p1", "battlefield", "Bear Cub");
+    t = settle(cast(t, "p1", "Lightning Strike", { t: ["p2"] }));
+    // {1}{R} payé avec une Montagne et une Forêt : deux couleurs.
+    expect(chars(t, bear).power).toBe(4);
+    expect(chars(t, bear).toughness).toBe(2);
+  });
+
+  it("Wildgrowth Archaic : un sort de créature arrive avec un marqueur +1/+1 par couleur dépensée pour lui", () => {
+    // 0/0 : deux marqueurs pour qu'il survive.
+    let s = scenario({
+      p1: { battlefield: [{ name: "Wildgrowth Archaic", counters: { "+1/+1": 2 } }, "Forest", "Island"], hand: ["Bear Cub"] },
+    });
+    s = settle(cast(s, "p1", "Bear Cub"));
+    const bear = idOf(s, "p1", "battlefield", "Bear Cub");
+    expect(s.objects[bear]?.counters["+1/+1"]).toBe(2);
+  });
+});

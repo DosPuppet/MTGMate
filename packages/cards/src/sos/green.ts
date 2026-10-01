@@ -262,4 +262,14 @@ export const GREEN: Record<string, CardScript> = {
       ],
     ),
   },
+  "Wildgrowth Archaic": {
+    abilities: [
+      entersWith({ counters: amount.colorsSpent, label: "Convergence : un marqueur +1/+1 par couleur de mana dépensée" }),
+      triggered(
+        when.castSpell("you", { types: ["Creature"] }),
+        [fx.spellArrivalCounters(ref.eventObject, amount.eventColorsSpent)],
+        { label: "Sort de créature : il arrive avec un marqueur +1/+1 par couleur de mana dépensée" },
+      ),
+    ],
+  },
 };

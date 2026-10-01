@@ -612,6 +612,8 @@ export type Amount =
   | { kind: "pow"; base: number; of: Amount }
   /** X du sort de l'événement (« regardez les X cartes du dessus », Geometer's Arthropod). */
   | { kind: "eventX" }
+  /** Couleurs de mana dépensées pour le sort de l'événement (Magmablood Archaic, Wildgrowth Archaic). */
+  | { kind: "eventColorsSpent" }
   /** Force totale des permanents correspondant au filtre, vus du contrôleur. */
   | { kind: "totalPower"; filter: ObjectFilter }
   /** Valeur mémorisée pendant la résolution (vie perdue de cette façon, blessures en excès…). */

@@ -78,3 +78,10 @@ Les scripts sont dans `packages/cards/src/sos/` : `cards` (cartes du méta), `wh
 - **Cartes :** Matterbending Mage, Geometer's Arthropod, Paradox Surveyor.
 - **Le moteur gagne :** le filtre `hasX` (« un sort / une carte avec {X} dans son coût de mana », lu sur les instantanés et les vues de sorts) et `amount.eventX` (le X du sort déclencheur).
 - **Tests :** 3 tests de règles (« lot B1 »).
+
+## Sous-lot B2 : couleurs dépensées pour le sort déclencheur ✅ (251 / 262)
+
+- **Cartes :** Magmablood Archaic, Wildgrowth Archaic.
+- **Le moteur gagne :** `amount.eventColorsSpent` (couleurs de mana dépensées pour le sort de l'événement) ; la convergence « arrive avec » passe par `entersWith({ counters: amount.colorsSpent })` (lot A5). Le helper de test `scenario` accepte des marqueurs sur un permanent (`counters`).
+- **Dette :** l'entrée `spellArrivalCounters` est retirée (l'opération sert à deux cartes).
+- **Tests :** 2 tests de règles (« lot B2 »).

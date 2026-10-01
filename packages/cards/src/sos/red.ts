@@ -224,4 +224,14 @@ export const RED: Record<string, CardScript> = {
       }),
     ],
   },
+  "Magmablood Archaic": {
+    abilities: [
+      entersWith({ counters: amount.colorsSpent, label: "Convergence : un marqueur +1/+1 par couleur de mana dépensée" }),
+      triggered(
+        when.castSpell("you", INSTANT_SORCERY),
+        [fx.pumpAll({ types: ["Creature"], controller: "you" }, amount.eventColorsSpent, 0)],
+        { label: "Éphémère ou rituel : vos créatures +1/+0 par couleur de mana dépensée pour le lancer" },
+      ),
+    ],
+  },
 };

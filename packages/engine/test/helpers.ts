@@ -13,6 +13,8 @@ export interface Permanent {
   /** Arrivée ce tour-ci (mal d'invocation). */
   sick?: boolean;
   damage?: number;
+  /** Marqueurs déjà posés (une créature 0/0 qui doit survivre). */
+  counters?: Record<string, number>;
 }
 
 export interface Side {
@@ -87,6 +89,7 @@ export function scenario(opts: ScenarioOptions): GameState {
         o.tapped = !!perm.tapped;
         o.damage = perm.damage ?? 0;
         if (d.loyalty) o.counters.loyalty = d.loyalty;
+        if (perm.counters) Object.assign(o.counters, perm.counters);
       }
     }
     if (s.turn.step === "declareAttackers" || s.turn.step === "declareBlockers") s.combat = emptyCombat();

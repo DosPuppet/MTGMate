@@ -432,6 +432,11 @@ export function evalAmount(s: GameState, ctx: EffectContext, a: Amount): number 
       const types = new Set(resolveRef(s, ctx, a.ref).flatMap((id) => s.defs[s.objects[id]?.defId ?? ""]?.types ?? []));
       return types.size;
     }
+    case "eventColorsSpent": {
+      const id = ctx.event?.objectId;
+      const spent = (id ? s.stack.find((x) => x.id === id)?.spentColors : undefined) ?? {};
+      return (["W", "U", "B", "R", "G"] as const).filter((c) => (spent[c] ?? 0) > 0).length;
+    }
     case "eventX": {
       const id = ctx.event?.objectId;
       return (id ? s.stack.find((x) => x.id === id)?.x : undefined) ?? 0;
