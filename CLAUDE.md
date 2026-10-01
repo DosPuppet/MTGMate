@@ -157,6 +157,7 @@ Ce fichier sert au suivi du projet entre les sessions : où on en est, les règl
   - la colonne du plateau est bornée (`grid-template-columns: minmax(0, 1fr)`) : sans cela, le contenu élargit la zone mesurée et la taille des cartes ne se réduit plus ;
   - les jetons d'une pile n'ont pas tous d'élément : chercher un objet à l'écran avec `findObjectEl` (et non `[data-oid]`).
   - cartes jouables hors de la main (exil, cimetières, dessus de la bibliothèque : flashback, Icetill Explorer, sorts préparés, capacités activables depuis le cimetière) : `view.playableElsewhere` (permission sans le timing : `castTerms`, `landPermitted`), présentées au bout de la main avec un liseré et une étiquette de zone (`.from-elsewhere`, `.zone-tag`).
+  - coût de mana modifié (réductions, taxes, flashback…) : `ObjectView.castCost` (texte et écart de VM, calculé par `spellCost` pour les cartes jouables du spectateur), affiché en pastille sur la carte (`.cost-badge`, verte si moins cher, rouge si plus cher).
 - **Tablette et téléphone :**
   - hauteurs en `dvh`, jamais `100vh` (qui compte la barre d'adresse repliée des navigateurs mobiles) ;
   - la main se resserre pour tenir dans sa largeur (`fitHand`, `board/layout.ts`) ; `--hand-peek` règle la part visible des cartes (0,5 sous 560 px de haut) ;

@@ -152,6 +152,14 @@ export function Card({
             loading="lazy"
           />
         )}
+        {obj?.castCost && obj.zone !== "battlefield" && obj.zone !== "stack" && (
+          <div
+            className={`cost-badge ${obj.castCost.delta < 0 ? "cheaper" : obj.castCost.delta > 0 ? "dearer" : ""}`}
+            title={`Coût à payer : ${obj.castCost.text}`}
+          >
+            <ManaCost cost={obj.castCost.text} size={15} />
+          </div>
+        )}
         {showStats && obj && (
           <>
             {power !== undefined && (

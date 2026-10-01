@@ -538,3 +538,19 @@ describe("cartes jouables hors de la main (vue)", () => {
     expect(idsOf(s, "p1", "battlefield", "Forest")).toHaveLength(1);
   });
 });
+
+describe("coût modifié affiché sur les cartes de la main (vue)", () => {
+  it("surcoût, coût normal et flashback : seul un coût différent du coût imprimé est donné", () => {
+    const goblin = "Mudbutton Cursetosser";
+    let s = scenario({ p1: { hand: [goblin, "Bear Cub"], graveyard: ["Bulk Up"] } });
+    let v = projectView(s, "p1");
+    // « Contemplez un Gobelin ou payez {2} » : rien à contempler, {2}{B} (+2).
+    expect(v.hand.find((c) => c.name === goblin)?.castCost).toEqual({ text: "{2}{B}", delta: 2 });
+    expect(v.hand.find((c) => c.name === "Bear Cub")?.castCost).toBeUndefined();
+    expect(v.playableElsewhere.find((c) => c.name === "Bulk Up")?.castCost).toEqual({ text: "{4}{R}{R}", delta: 4 });
+    // Avec un autre Gobelin en main, le coût imprimé.
+    s = scenario({ p1: { hand: [goblin, goblin] } });
+    v = projectView(s, "p1");
+    expect(v.hand.every((c) => c.castCost === undefined)).toBe(true);
+  });
+});

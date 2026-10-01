@@ -914,6 +914,26 @@ button {
   border: 1px solid rgba(255, 255, 255, 0.45);
   clip-path: polygon(0 0, 100% 0, 100% 70%, 50% 100%, 0 70%);
 }
+/* Coût de mana modifié (réduction, taxe, flashback…) : pastille sur le coût imprimé, verte si moins cher, rouge si plus cher. */
+.cost-badge {
+  position: absolute;
+  top: 2.5%;
+  right: 3%;
+  z-index: 3;
+  display: flex;
+  padding: 2px 4px;
+  border-radius: 999px;
+  background: rgba(14, 16, 21, 0.92);
+  border: 2px solid #e6c15a;
+  box-shadow: 0 1px 6px rgba(0, 0, 0, 0.6);
+  pointer-events: none;
+}
+.cost-badge.cheaper {
+  border-color: #5fd68a;
+}
+.cost-badge.dearer {
+  border-color: #ff7a6b;
+}
 /* Cartes jouables depuis une autre zone que la main : liseré pointillé (couleur selon la zone) et étiquette. */
 .hand-card.from-elsewhere .card {
   outline: 2px dashed var(--zone-color);

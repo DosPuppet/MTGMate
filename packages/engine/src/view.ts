@@ -5,8 +5,8 @@
 
 import { copiedDefId } from "./layers";
 import { legalActions } from "./legal";
-import { costToText } from "./mana";
-import { abilitiesOf, castTerms, landPermitted, modesOf } from "./stack";
+import { costToText, manaValue, totalCost } from "./mana";
+import { abilitiesOf, castTerms, landPermitted, modesOf, spellCost } from "./stack";
 import { chars, decider, isCreature, isSummoningSick, obj } from "./state";
 import { playerStatic, playerStatics } from "./statics";
 import { pendingTriggerSource } from "./triggers";
@@ -98,6 +98,11 @@ export interface ObjectView extends CardFace {
    * sont pas en ce moment (coût impayable, cible absente, timing) au lieu de les taire. `index` : celui de `activate`.
    */
   activated?: { index: number; label: string; cost: string }[];
+  /**
+   * Carte jouable de la main du spectateur (ou hors de sa main) dont le coût de mana à payer diffère du coût imprimé :
+   * réductions et taxes, flashback, coût alternatif imposé… `delta` : écart de valeur de mana (négatif : moins cher).
+   */
+  castCost?: { text: string; delta: number };
 }
 
 export interface StackItemView extends CardFace {
@@ -416,6 +421,8 @@ export function projectView(s: GameState, viewer: PlayerId): GameView {
     }
   }
 
+  // Pendant un tour contrôlé, le contrôleur voit et joue la main du joueur contrôlé quand il décide pour lui.
+  const handOwner = actor === viewer && who !== viewer ? who : viewer;
   return {
     viewer,
     opponents: (() => {
@@ -424,8 +431,7 @@ export function projectView(s: GameState, viewer: PlayerId): GameView {
     })(),
     turn: { number: s.turn.number, active: s.turn.active, step: s.turn.step, landsPlayed: s.turn.landsPlayed },
     players,
-    // Pendant un tour contrôlé, le contrôleur voit et joue la main du joueur contrôlé quand il décide pour lui.
-    hand: (s.players[actor === viewer && who !== viewer ? who : viewer]?.hand ?? []).map((id) => objectView(s, id)),
+    hand: (s.players[handOwner]?.hand ?? []).map((id) => withCastCost(s, handOwner, objectView(s, id))),
     controlling: actor === viewer && who !== viewer ? who : undefined,
     battlefield: s.battlefield.map((id) => {
       const o = withFaceDownCard(s, objectView(s, id), viewer);
@@ -452,7 +458,7 @@ export function projectView(s: GameState, viewer: PlayerId): GameView {
       s.players[viewer]?.library[0]
         ? [s.players[viewer]?.library[0] as string]
         : []),
-    ].map((id) => objectView(s, id)),
+    ].map((id) => withCastCost(s, viewer, objectView(s, id))),
     combat: s.combat
       ? { attackers: s.combat.attackers.map((a) => ({ id: a.id, defender: a.defender, blockers: [...a.blockers] })) }
       : null,
@@ -513,4 +519,28 @@ export function visibleFaces(s: GameState, view: GameView, events: GameEvent[]):
     if (d) out[id] = cardFace(d);
   }
   return out;
+}
+
+/** Coût à payer pour lancer cette carte, s'il diffère du coût imprimé (affiché sur la carte dans la main). */
+function withCastCost(s: GameState, player: PlayerId, v: ObjectView): ObjectView {
+  const o = s.objects[v.id];
+  const d = o ? s.defs[o.defId] : undefined;
+  if (!o || !d?.manaCost || d.types.includes("Land")) return v;
+  const terms = castTerms(s, player, v.id);
+  if (!terms) return v;
+  const flashback = terms.source === "flashback";
+  let cost = spellCost(s, player, d, {
+    flashback,
+    mayhem: terms.mayhem,
+    costOverride: terms.costOverride,
+    fromZone: terms.source,
+    free: terms.free,
+    card: v.id,
+  });
+  if (terms.extraCost) cost = totalCost(cost, 0, { generic: terms.extraCost, colored: {}, x: 0 });
+  // Le X reste à choisir : il est affiché tel quel.
+  const shown = { ...cost, x: terms.free ? 0 : ((flashback ? d.flashback : d.manaCost)?.x ?? 0) };
+  const text = costToText(shown);
+  if (text === costToText(d.manaCost)) return v;
+  return { ...v, castCost: { text, delta: manaValue(shown) - manaValue(d.manaCost) } };
 }
