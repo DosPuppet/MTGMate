@@ -26,3 +26,9 @@ Les scripts sont dans `packages/cards/src/woe/` : `cards` (cartes du méta), `wh
 - **Cartes :** 42 (sur 45), dont 7 Aventures (deux entrées chacune), les Rôles (Betroth the Beast, Charmed Clothier, Cursed Courtier, Unassuming Sage, Spellbook Vendor, Protective Parents, Return Triumphant), la Célébration (Armory Mice, Gallant Pie-Wielder, Tuinvale Guide, Pests of Honor, Lady of Laughter), le Marchandage (Archon's Glory, Kellan's Lightblades), les Sagas The Princess Takes Flight et Three Blind Mice.
 - **Restent :** Archon of the Wild Rose et A Tale for the Ages (filtre « créature enchantée »), Solitary Sanctuary (qui engage une créature).
 - **Tests :** 38 tests de règles dans `engine/test/woe.test.ts` (« lot A — blanc »).
+
+## Sous-lot A2 : cartes bleues ✅ (88 / 269)
+
+- **Cartes :** 35 (sur 41), dont 11 Aventures (Aquatic Alchemist, Beluna's Gatekeeper, Galvanic Giant, Horned Loch-Whale, Obyra's Attendants, Picklock Prankster, Vantress Transmuter, Virtue of Knowledge, Frolicking Familiar, Threadbind Clique, Twining Twins), Archive Dragon, Chancellor of Tales, Faerie Slumber Party, Gadwick's First Duel, Into the Fae Court, Storyteller Pixie ; jeton Faerie « ne peut bloquer que les créatures volantes » (local à `blue.ts`).
+- **Restent :** Ice Out et Johann's Stopgap (réduction « si marchandé »), Asinine Antics (un Rôle par créature adverse), Ingenious Prodigy (furtivité), Elusive Otter (X marqueurs répartis), Extraordinary Journey (« lancée depuis l'exil »).
+- **Tests :** 34 tests de règles (« lot A — bleu »).

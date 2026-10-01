@@ -256,6 +256,10 @@ Dans l'ordre où elles ont été ajoutées, extension par extension.
   - `timing` Heartflame Duelist : « les éphémères et rituels que vous contrôlez ont le lien de vie » est donné au lancement par une capacité déclenchée ; une copie de sort ne l'a pas, et le sort le garde si le Duelist part avant la résolution ;
   - `timing` Expel the Interlopers : le nombre de 0 à 10 est choisi au lancement (un mode par nombre), et non à la résolution ;
   - `choix auto` Discerning Financier : « un autre joueur » est le premier adversaire ;
-  - `règle` Virtue of Loyalty : toutes vos créatures sont dégagées, pas seulement celles qui ont reçu un marqueur.
+  - `règle` Virtue of Loyalty : toutes vos créatures sont dégagées, pas seulement celles qui ont reçu un marqueur ;
+  - `règle` Icewrought Sentry : « chaque fois que vous engagez une créature adverse » se déclenche quand une créature adverse devient engagée pendant votre tour (l'événement ne dit pas qui l'engage) ;
+  - `règle` Aquatic Alchemist : la capacité se déclenche à chaque éphémère ou rituel, et ne fait quelque chose qu'au premier du tour ;
+  - `règle` Vantress Visions : la capacité ciblée peut être celle d'un adversaire (le filtre de pile n'a pas de contrôleur) ; elle n'est alors pas copiée ;
+  - `règle` Rowdy Research : une créature qui attaque lors de deux combats compte deux fois.
 - **Légalité Standard :** instantané des légalités Scryfall au moment de l'import (`legalities.standard` dans `data/<set>.json`). Après une rotation ou une annonce de bannissement, réimporter les sets (`npm run import-cards -- <set>`).
 - **Images des jetons :** celle du jeton Scryfall le plus proche (même nom, puis mêmes F/E et couleurs ; `data/tokens.json`, `npm run import-tokens`) ; un jeton de nom inconnu garde le cadre texte.
