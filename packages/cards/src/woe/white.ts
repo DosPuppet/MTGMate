@@ -64,6 +64,25 @@ const TOKEN_YOU_CONTROL: TargetSpec = {
 };
 
 export const WHITE: Record<string, CardScript> = {
+  // Vol lu dans le texte.
+  "Archon of the Wild Rose": {
+    abilities: [
+      staticAbility(
+        { types: ["Creature"], controller: "you", other: true, enchanted: "byYou" },
+        { setPower: 4, setToughness: 4, addKeywords: ["flying"] },
+        { label: "Vos autres créatures enchantées par vos Auras : 4/4 de base, avec le vol" },
+      ),
+    ],
+  },
+  "A Tale for the Ages": {
+    abilities: [
+      staticAbility(
+        { types: ["Creature"], controller: "you", enchanted: true },
+        { power: 2, toughness: 2 },
+        { label: "Vos créatures enchantées : +2/+2" },
+      ),
+    ],
+  },
   "Archon's Glory": {
     spell: spell(
       [target.creature()],

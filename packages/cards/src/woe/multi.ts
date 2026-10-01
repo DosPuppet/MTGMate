@@ -7,11 +7,14 @@ import {
   CELEBRATION,
   cond,
   costReducer,
+  createRole,
   entersWith,
   FOOD,
   fx,
+  MONSTER_ROLE,
   RAT_NO_BLOCK,
   ref,
+  staticAbility,
   target,
   triggered,
   when,
@@ -25,6 +28,36 @@ import {
 const TROYAN_MANA: ManaRestriction = { spell: { minManaValue: 5 } };
 
 export const MULTI: Record<string, CardScript> = {
+  "Eriette of the Charmed Apple": {
+    abilities: [
+      staticAbility(
+        { types: ["Creature"], enchanted: "byYou" },
+        { addBlockRules: [{ cantAttackSourceController: true, label: "Ne peut pas attaquer le contrôleur d'Eriette" }] },
+        { label: "Les créatures enchantées par vos Auras ne peuvent pas vous attaquer" },
+      ),
+      triggered(
+        when.yourEndStep,
+        [
+          fx.loseLife(amount.count({ subtype: "Aura", controller: "you" }), ref.eachOpponent),
+          fx.gainLife(amount.count({ subtype: "Aura", controller: "you" })),
+        ],
+        { label: "Chaque adversaire perd X PV, vous en gagnez X (X : vos Auras)" },
+      ),
+    ],
+  },
+  "Syr Armont, the Redeemer": {
+    abilities: [
+      triggered(when.entersSelf, createRole(MONSTER_ROLE), {
+        targets: [target.creature("t", { controller: "you", other: true })],
+        label: "Un Rôle Monstre attaché à une autre créature que vous contrôlez",
+      }),
+      staticAbility(
+        { types: ["Creature"], controller: "you", enchanted: true },
+        { power: 1, toughness: 1 },
+        { label: "Vos créatures enchantées : +1/+1" },
+      ),
+    ],
+  },
   "Ash, Party Crasher": {
     abilities: [
       triggered(when.attacksSelf, [fx.addCounters(ref.self, 1)], {

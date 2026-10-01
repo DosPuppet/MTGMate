@@ -69,6 +69,10 @@ export function matchesView(v: LkiSnapshot, f: ObjectFilter, perspective: Player
   if (f.name && v.name !== f.name) return false;
   if (f.tapped !== undefined && !!v.tapped !== f.tapped) return false;
   if (f.equipped !== undefined && !!v.equipped !== f.equipped) return false;
+  if (f.enchanted !== undefined) {
+    const by = v.enchantedBy ?? [];
+    if (f.enchanted === "byYou" ? !by.includes(perspective) : by.length > 0 !== f.enchanted) return false;
+  }
   if (f.wasAttachedToSource && !(sourceId && v.lastAttachedTo === sourceId && !v.attachedTo)) return false;
   if (f.crewedBySource && !(sourceId && v.crewedByThisTurn?.includes(sourceId))) return false;
   if (f.colors && !f.colors.some((c) => v.colors.includes(c))) return false;

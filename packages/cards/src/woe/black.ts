@@ -46,6 +46,18 @@ const sacrificeAnyNumber = (store: string) =>
 const YOUR_CREATURE = (id = "c") => target.creature(id, { controller: "you" });
 
 export const BLACK: Record<string, CardScript> = {
+  "Lord Skitter's Blessing": {
+    abilities: [
+      triggered(when.entersSelf, createRole(WICKED_ROLE), {
+        targets: [target.creature("t", { controller: "you" })],
+        label: "Un Rôle Méchant attaché à une créature que vous contrôlez",
+      }),
+      triggered(when.step("draw", "you"), [fx.loseLife(1), fx.draw(1)], {
+        condition: cond.controls({ types: ["Creature"], enchanted: true }),
+        label: "Vous contrôlez une créature enchantée : perdez 1 PV, piochez une carte de plus",
+      }),
+    ],
+  },
   "Ashiok's Reaper": {
     abilities: [
       triggered(YOUR_ENCHANTMENT_TO_GRAVEYARD, [fx.draw(1)], { label: "Un de vos enchantements au cimetière : piochez" }),

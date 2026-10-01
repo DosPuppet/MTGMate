@@ -66,6 +66,8 @@ export interface ObjectFilter {
   attachedToSource?: boolean;
   /** Créature équipée (au moins un Équipement attaché). */
   equipped?: boolean;
+  /** Enchanté par au moins une Aura (`true`), par une Aura que vous contrôlez (`byYou`), ou par aucune (`false`). */
+  enchanted?: boolean | "byYou";
   /** Était attaché à la source quand celle-ci a quitté le champ de bataille (Zack Fair). */
   wasAttachedToSource?: boolean;
   /** Véhicule équipé par la source ce tour-ci (Balthier and Fran). */

@@ -538,6 +538,8 @@ export interface LkiSnapshot {
   attackedTurn?: number;
   /** Un Équipement lui est attaché. */
   equipped?: boolean;
+  /** Contrôleurs des Auras qui lui sont attachées. */
+  enchantedBy?: PlayerId[];
   lastAttachedTo?: ObjectId;
   /** Créatures qui l'ont monté ou équipé ce tour-ci. */
   crewedByThisTurn?: ObjectId[];

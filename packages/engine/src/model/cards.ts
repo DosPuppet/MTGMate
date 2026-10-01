@@ -468,6 +468,12 @@ export interface BlockRule {
   maxBlockers?: number;
   /** Ne peut ni attaquer ni bloquer seule (Toby, Beastie Befriender). */
   notAlone?: boolean;
+  /**
+   * Ne peut pas attaquer ce joueur ni ses planeswalkers. Dans un script : `cantAttackSourceController` (Eriette of the
+   * Charmed Apple : « ne peut pas vous attaquer »), remplacé par le contrôleur de la source quand la statique s'applique.
+   */
+  cantAttackPlayer?: PlayerId;
+  cantAttackSourceController?: boolean;
   label: string;
 }
 

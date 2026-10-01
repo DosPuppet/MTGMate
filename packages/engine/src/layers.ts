@@ -433,7 +433,18 @@ let reads = 0;
 /** Vues des permanents pendant une collecte des statiques (les caractéristiques lues ne changent pas pendant elle). */
 let viewCache: Map<ObjectId, LkiSnapshot> | null = null;
 /** Pendant une collecte : permanents équipés, et s'il existe des copies (sinon la valeur de mana est celle de la carte). */
-let scan: { equipped: Set<ObjectId>; copying: boolean } | null = null;
+let scan: { equipped: Set<ObjectId>; enchanted: Map<ObjectId, PlayerId[]>; copying: boolean } | null = null;
+
+/** Contrôleurs des Auras attachées à chaque permanent (sous-types imprimés : une Aura ne perd pas ce sous-type). */
+function enchantedMap(s: GameState): Map<ObjectId, PlayerId[]> {
+  const out = new Map<ObjectId, PlayerId[]>();
+  for (const x of s.battlefield) {
+    const a = s.objects[x];
+    if (!a?.attachedTo || !s.defs[a.defId]?.subtypes.includes("Aura")) continue;
+    out.set(a.attachedTo, [...(out.get(a.attachedTo) ?? []), a.controller]);
+  }
+  return out;
+}
 
 function view(s: GameState, id: ObjectId, c: Characteristics, o: GameObject, attacking: boolean): LkiSnapshot {
   return {
@@ -478,6 +489,7 @@ function view(s: GameState, id: ObjectId, c: Characteristics, o: GameObject, att
             (x) => s.objects[x]?.attachedTo === id && s.defs[s.objects[x]?.defId ?? ""]?.subtypes.includes("Equipment"),
           )) ||
         undefined,
+    enchantedBy: o.zone === "battlefield" ? (scan ? scan.enchanted : enchantedMap(s)).get(id) : undefined,
   };
 }
 
@@ -574,6 +586,7 @@ function collectStatics(s: GameState, defOfId: (id: ObjectId) => string, previou
         return e?.attachedTo && s.defs[e.defId]?.subtypes.includes("Equipment") ? [e.attachedTo] : [];
       }),
     ),
+    enchanted: enchantedMap(s),
     copying: s.effects.some((e) => e.copyOf) || s.battlefield.some((x) => !!s.objects[x]?.attachedTo && !!staticCopyOf(s, x)),
   };
   try {
@@ -686,6 +699,13 @@ function evalStatic(s: GameState, slot: StaticSlot, sig: (string | number)[]): {
     mods = { ...mods, gainActivatedFrom: undefined, addAbilities: [...(mods.addAbilities ?? []), ...extra] };
     dependent = true;
     sig.push(`a${extra.length}`);
+  }
+  if (mods.addBlockRules?.some((r) => r.cantAttackSourceController)) {
+    const rules = mods.addBlockRules.map((r) =>
+      r.cantAttackSourceController ? { ...r, cantAttackSourceController: undefined, cantAttackPlayer: o.controller } : r,
+    );
+    mods = { ...mods, addBlockRules: rules };
+    sig.push(`ca${o.controller}`);
   }
   if (mods.setColorsChosen) {
     const color = o.chosen?.color;

@@ -72,3 +72,11 @@ Les scripts sont dans `packages/cards/src/woe/` : `cards` (cartes du méta), `wh
 | Réduction de coût « si marchandé » | Ice Out, Johann's Stopgap, Hamlet Glutton |
 | Attaché à la source (Auras et Équipements sur elle) | Kellan, the Fae-Blooded, Faunsbane Troll |
 | Autres | Ingenious Prodigy, Elusive Otter, Extraordinary Journey, Ashiok, Tangled Colony, Imodane, Skewer Slinger, Sentinel of Lost Lore, Agatha of the Vile Cauldron, The Apprentice's Folly, Yenna, Johann, Likeness Looter, Rowan, Talion, Beluna Grandsquall, Agatha's Soul Cauldron |
+
+## Sous-lot B1 : créatures enchantées ✅ (242 / 269)
+
+- **Cartes :** Archon of the Wild Rose, A Tale for the Ages, Lord Skitter's Blessing, Graceful Takedown, Eriette of the Charmed Apple, Syr Armont, the Redeemer.
+- **Le moteur gagne :**
+  - le filtre `enchanted` (`true` : enchantée par au moins une Aura ; `"byYou"` : par une Aura que vous contrôlez ; `false`), lu sur `LkiSnapshot.enchantedBy` (contrôleurs des Auras attachées, calculé comme `equipped`) ;
+  - la règle d'attaque `BlockRule.cantAttackPlayer` (« ne peut pas vous attaquer, ni vos planeswalkers ») ; un script écrit `cantAttackSourceController`, fixé sur le contrôleur de la source quand la statique s'applique.
+- **Tests :** 5 tests de règles (« lot B1 ») : Archon (avec un Rôle Monstre de vous ou de l'adversaire), A Tale for the Ages et Syr Armont, Lord Skitter's Blessing à la pioche, Graceful Takedown, Eriette (attaque refusée, drain).

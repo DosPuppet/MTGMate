@@ -95,6 +95,22 @@ const FERAL_ENCOUNTER_COMBAT: Effect = fx.emblem(
 );
 
 export const GREEN: Record<string, CardScript> = {
+  "Graceful Takedown": {
+    spell: spell(
+      [
+        target.upTo(99, {
+          ...target.creature("e", { controller: "you", enchanted: true }),
+          label: "créature enchantée que vous contrôlez",
+        }),
+        {
+          ...target.upTo(1, { ...target.creature("o", { controller: "you" }), label: "autre créature que vous contrôlez" }),
+          otherThan: ["e"],
+        },
+        { ...target.creature("t", { controller: "opponent" }), label: "créature que vous ne contrôlez pas" },
+      ],
+      [fx.eachOfDealsDamage(ref.target("e"), ref.target("t")), fx.eachOfDealsDamage(ref.target("o"), ref.target("t"))],
+    ),
+  },
   "Agatha's Champion": {
     abilities: [
       triggered(when.entersSelf, [fx.fight(ref.self, ref.target())], {

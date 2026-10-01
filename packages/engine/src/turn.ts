@@ -702,6 +702,10 @@ export function declareAttackers(s: GameState, player: PlayerId, attackers: { id
     seen.add(a.id);
     if (!canAttack(s, a.id) || obj(s, a.id).controller !== player) throw new RulesError("Cette créature ne peut pas attaquer");
     if (!defenders.includes(a.defender)) throw new RulesError("Joueur ou planeswalker défenseur invalide");
+    // Eriette of the Charmed Apple : « ne peut pas vous attaquer, ni vos planeswalkers ».
+    const dp = defendingPlayer(s, a.defender);
+    if (chars(s, a.id).blockRules.some((r) => r.cantAttackPlayer === dp))
+      throw new RulesError(`${chars(s, a.id).name} ne peut pas attaquer ce joueur`);
   }
   // Tomik, Orzhov Lawmage : au plus une créature attaque chacun des planeswalkers de son contrôleur.
   for (const w of new Set(attackers.map((a) => a.defender))) {

@@ -4181,3 +4181,83 @@ describe("Wilds of Eldraine, lot A — multicolores, incolores et terrains", () 
     });
   });
 });
+
+describe("Wilds of Eldraine, lot B1 : créatures enchantées", () => {
+  const settleAll = (s: S) => {
+    while (stateBasedActions(s)) {}
+    return passAccepting(s, (x) => x.stack.length === 0 && x.triggers.length === 0 && x.pending?.kind === "priority");
+  };
+  /** Attache directement un Rôle (jeton Aura) d'un joueur à une créature. */
+  const giveRole = (s: S, token: TokenSpec, to: string, controller = "p1") => {
+    const r = {
+      item: { id: "x", controller, sourceId: to, sourceDefId: s.objects[to]?.defId, targets: { t: [to] } },
+      controller,
+      targets: { t: [to] },
+      vars: {},
+      pc: 0,
+    } as never as Parameters<typeof runEffect>[1];
+    for (const e of createRole(token).flat()) if (e.op !== "if") runEffect(s, r, e);
+  };
+
+  it("Archon of the Wild Rose : vos autres créatures enchantées par vos Auras sont 4/4 avec le vol", () => {
+    const s = scenario({ p1: { battlefield: ["Archon of the Wild Rose", "Bear Cub", "Llanowar Elves"] } });
+    const bear = idOf(s, "p1", "battlefield", "Bear Cub");
+    const elves = idOf(s, "p1", "battlefield", "Llanowar Elves");
+    giveRole(s, MONSTER_ROLE, bear, "p1");
+    giveRole(s, MONSTER_ROLE, elves, "p2");
+    // 4/4 de base, plus le Rôle Monstre : 5/5 volante.
+    expect([chars(s, bear).power, chars(s, bear).toughness]).toEqual([5, 5]);
+    expect(chars(s, bear).keywords).toContain("flying");
+    // L'Aura de l'adversaire ne compte pas.
+    expect(chars(s, elves).power).toBe(2);
+  });
+
+  it("A Tale for the Ages et Syr Armont : vos créatures enchantées, par n'importe quelle Aura, ont le bonus", () => {
+    const s = scenario({ p1: { battlefield: ["A Tale for the Ages", "Syr Armont, the Redeemer", "Bear Cub"] } });
+    const bear = idOf(s, "p1", "battlefield", "Bear Cub");
+    expect(chars(s, bear).power).toBe(2);
+    giveRole(s, MONSTER_ROLE, bear, "p2");
+    expect(chars(s, bear).power).toBe(2 + 1 + 2 + 1);
+  });
+
+  it("Lord Skitter's Blessing : avec une créature enchantée, une carte de plus et 1 PV à votre pioche", () => {
+    let s = scenario({ p1: { battlefield: ["Lord Skitter's Blessing", "Bear Cub"], library: lands("Swamp", 5) }, step: "end" });
+    const bear = idOf(s, "p1", "battlefield", "Bear Cub");
+    giveRole(s, WICKED_ROLE, bear);
+    const hand = s.players.p1?.hand.length ?? 0;
+    s = passAccepting(s, (x) => x.turn.number === 5 && x.turn.step === "main1" && x.stack.length === 0);
+    expect((s.players.p1?.hand.length ?? 0) - hand).toBe(2);
+    expect(s.players.p1?.life).toBe(19);
+  });
+
+  it("Graceful Takedown : chaque créature ciblée inflige des blessures égales à sa force à la cible adverse", () => {
+    let s = scenario({
+      p1: { battlefield: ["Forest", "Forest", "Bear Cub", "Llanowar Elves"], hand: ["Graceful Takedown"] },
+      p2: { battlefield: ["Pelakka Wurm"] },
+    });
+    const bear = idOf(s, "p1", "battlefield", "Bear Cub");
+    const elves = idOf(s, "p1", "battlefield", "Llanowar Elves");
+    const wurm = idOf(s, "p2", "battlefield", "Pelakka Wurm");
+    giveRole(s, MONSTER_ROLE, bear);
+    s = settleAll(s);
+    const card = idOf(s, "p1", "hand", "Graceful Takedown");
+    s = settleAll(act(s, "p1", { type: "cast", card, targets: { e: [bear], o: [elves], t: [wurm] } }));
+    expect(s.objects[wurm]?.damage).toBe(3 + 1);
+  });
+
+  it("Eriette of the Charmed Apple : une créature enchantée par votre Aura ne peut pas vous attaquer ; drain de X", () => {
+    let s = scenario({
+      p1: { battlefield: ["Bear Cub"] },
+      p2: { battlefield: ["Eriette of the Charmed Apple"] },
+    });
+    const bear = idOf(s, "p1", "battlefield", "Bear Cub");
+    giveRole(s, CURSED_ROLE, bear, "p2");
+    s = passAccepting(s, (x) => x.pending?.kind === "declareAttackers");
+    expect(() => act(s, "p1", { type: "declareAttackers", attackers: [{ id: bear, defender: "p2" }] })).toThrow();
+    // À l'étape de fin de p2 : une Aura (le Rôle) → p1 perd 1, p2 gagne 1.
+    s = act(s, "p1", { type: "declareAttackers", attackers: [] });
+    s = advanceUntil(s, (x) => x.turn.number === 5);
+    expect(s.players.p1?.life).toBe(19);
+    expect(s.players.p2?.life).toBe(21);
+  });
+});
