@@ -23,6 +23,8 @@ export interface TargetSpec {
   attachedToTarget?: string;
   /** Cibles contrôlées par des joueurs différents (« contrôlées par des joueurs différents »). */
   differentPlayers?: boolean;
+  /** Les cibles partagent un type de créature (Unbury : « deux cartes de créature ciblées qui partagent un type »). */
+  shareCreatureType?: boolean;
   /** Nombre de cibles variable (« jusqu'à X créatures ciblées ») : remplace `count` au moment de choisir les cibles. */
   countAmount?: Amount;
   /** Filtre si le sort est kické ou si le cadeau est promis (« à la place, un permanent non-terrain ciblé »). */
@@ -182,7 +184,8 @@ export interface ObjectFilter {
  * vu du contrôleur de la source.
  */
 export type TriggerSpec =
-  | { on: "enters"; who: "self" | ObjectFilter }
+  /** `fromGraveyard` : seulement un objet arrivé depuis un cimetière ou lancé depuis un cimetière (Twilight Diviner). */
+  | { on: "enters"; who: "self" | ObjectFilter; fromGraveyard?: boolean }
   | { on: "dies"; who: "self" | ObjectFilter }
   /** `to` : seulement vers cette zone (« quand cet artefact est mis au cimetière depuis le champ de bataille »). */
   /** `whileCrafting` : exilé comme matériau d'une fabrication (Market Gnome). */
@@ -212,6 +215,8 @@ export type TriggerSpec =
       targeting?: { objects?: ObjectFilter; opponent?: boolean; orFilter?: boolean };
       /** « votre deuxième sort de chaque tour » : le N-ième sort lancé par ce joueur ce tour-ci. */
       nth?: number;
+      /** « un sort avec une seule cible » (Spinerock Tyrant). */
+      singleTarget?: boolean;
       /** « …, si ce n'est pas son tour » (Adrenaline Jockey, March of the World Ooze). */
       notTheirTurn?: boolean;
       /** Sort modal (Riku of Many Paths). */
@@ -386,6 +391,11 @@ export type Condition =
   | { kind: "targetMatches"; spec: string; filter: ObjectFilter }
   /** Pendant la résolution : l'objet désigné correspond au filtre (« si c'est un Chat »). */
   | { kind: "refMatches"; ref: Ref; filter: ObjectFilter }
+  /**
+   * Celestial Reunion : vous pouvez contempler `count` créatures (vos créatures, cartes de créature de votre main) d'un
+   * type que l'objet désigné a aussi (pendant la résolution).
+   */
+  | { kind: "beholdSharingType"; ref: Ref; count: number }
   /** L'objet de l'événement (dernières informations connues) correspond au filtre (« s'il attaquait »). */
   | { kind: "eventObjectMatches"; filter: ObjectFilter }
   | { kind: "lifeGainedAtLeast"; n: number }
@@ -517,6 +527,8 @@ export type Ref =
   | { kind: "exiledCardsOf"; who: Ref }
   /** Toutes les cartes des cimetières (Lazav). */
   | { kind: "allGraveyards" }
+  /** Sorts et capacités sur la pile contrôlés par les joueurs désignés (Glen Elendra's Answer), sauf celui qui se résout. */
+  | { kind: "stackItemsOf"; who: Ref }
   /** Créatures qui ont monté ou équipé la source ce tour-ci (Fortune, Calamity, The Gitrog, Luxurious Locomotive). */
   | { kind: "crewedBy" }
   /** Permanents sacrifiés pour payer le coût de la capacité (Ayli). */

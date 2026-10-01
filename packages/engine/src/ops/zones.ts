@@ -16,13 +16,14 @@ import {
   readVar,
   resolveRef,
   store,
+  viewOf,
   zoneCards,
 } from "../effects";
 import { RulesError } from "../errors";
 import { copiableExceptions, copiedDefId, hasKeyword } from "../layers";
 import { manaValue } from "../mana";
 import { auraHosts, copyCandidates, type EntersContext } from "../replacement";
-import { bounceSpell, exileSpell } from "../stack";
+import { bounceSpell, exileSpell, spellToZone } from "../stack";
 import {
   bump,
   changeCounters,
@@ -45,8 +46,8 @@ import {
   untapObject,
 } from "../state";
 import { addPlayerEffect, playerStatic, playerStaticTotal } from "../statics";
-import { matchesCard, matchesObjectFilter } from "../targets";
-import type { CardType, Effect, GameState, ObjectId, Resolution } from "../types";
+import { matchesCard, matchesObjectFilter, shareCreatureType } from "../targets";
+import type { CardType, Effect, GameState, ObjectFilter, ObjectId, Resolution } from "../types";
 
 export const HANDLERS: OpHandlers = {
   destroy(s, r, e, ctx) {
@@ -91,13 +92,19 @@ export const HANDLERS: OpHandlers = {
     return;
   },
   tapChosen(s, r, e, ctx, key) {
+    const shared = e.sharesColorWith ? resolveRef(s, ctx, e.sharesColorWith).flatMap((id) => viewOf(s, id)?.colors ?? []) : null;
     const options = s.battlefield.filter(
       (id) =>
         s.objects[id]?.controller === ctx.controller &&
         !s.objects[id]?.tapped &&
-        matchesObjectFilter(s, ctx.controller, id, e.filter, ctx.sourceId),
+        matchesObjectFilter(s, ctx.controller, id, e.filter, ctx.sourceId) &&
+        (!shared || chars(s, id).colors.some((c) => shared.includes(c))),
     );
     let chosen: string[] = [];
+    if (e.exactly !== undefined && options.length < e.exactly) {
+      store(r, e.store, 0);
+      return;
+    }
     if (options.length) {
       const answer = r.vars[key("tapChosen")];
       if (!answer) {
@@ -108,16 +115,21 @@ export const HANDLERS: OpHandlers = {
             request: {
               type: "pick",
               intent: "pickCards",
-              prompt: "Permanents à engager (autant que vous voulez)",
+              prompt:
+                e.exactly !== undefined
+                  ? `Vous pouvez engager ${e.exactly} permanents`
+                  : "Permanents à engager (autant que vous voulez)",
               options,
               min: 0,
-              max: options.length,
-              suggested: options,
+              max: e.exactly ?? options.length,
+              suggested: e.exactly !== undefined ? options.slice(0, e.exactly) : options,
             },
           },
         };
       }
       chosen = answer.map(String).filter((id) => options.includes(id));
+      if (e.exactly !== undefined && chosen.length !== 0 && chosen.length !== e.exactly)
+        throw new RulesError(`Engagez exactement ${e.exactly} permanents, ou aucun`);
     }
     for (const id of chosen) {
       const o = s.objects[id];
@@ -178,7 +190,37 @@ export const HANDLERS: OpHandlers = {
   exileFromHandLinked(s, r, e, ctx, key) {
     const p = resolveRef(s, ctx, e.who).find((x) => isPlayer(s, x));
     if (!p) return;
-    const hand = s.players[p]?.hand ?? [];
+    const fullHand = s.players[p]?.hand ?? [];
+    // Taster of Wares : « révèle X cartes de sa main » ; le joueur choisit lesquelles (les moins chères suggérées).
+    const n = e.reveal !== undefined ? Math.max(0, evalAmount(s, ctx, e.reveal)) : fullHand.length;
+    let hand = fullHand;
+    if (n < fullHand.length) {
+      const shown = r.vars[key("reveal")];
+      if (!shown) {
+        if (n === 0) return;
+        const cheap = [...fullHand].sort(
+          (a, b) =>
+            manaValue(s.defs[s.objects[a]?.defId ?? ""]?.manaCost) - manaValue(s.defs[s.objects[b]?.defId ?? ""]?.manaCost),
+        );
+        return {
+          ask: {
+            player: p,
+            key: key("reveal"),
+            request: {
+              type: "pick",
+              intent: "pickCards",
+              prompt: `Révélez ${n} carte(s) de votre main`,
+              options: fullHand,
+              min: n,
+              max: n,
+              suggested: cheap.slice(0, n),
+            },
+          },
+        };
+      }
+      hand = shown.map(String).filter((id) => fullHand.includes(id));
+      if (hand.length !== n) throw new RulesError(`Révélez exactement ${n} carte(s)`);
+    }
     const options = hand.filter((id) => matchesCard(s, p, id, { ...e.filter, controller: undefined }));
     if (options.length === 0) return;
     const answer = r.vars[key("pick")];
@@ -262,6 +304,49 @@ export const HANDLERS: OpHandlers = {
     }
     return;
   },
+  keepSharingCreatureType(s, r, e, ctx, key) {
+    const players = resolveRef(s, ctx, e.who).filter((p) => isPlayer(s, p) && !s.players[p]?.lost);
+    const creaturesOf = (p: string) => s.battlefield.filter((id) => s.objects[id]?.controller === p && isCreature(s, id));
+    // Créatures qui partagent un type avec `id` (elle comprise) : on garde le plus chez soi, le moins chez l'adversaire.
+    const keptWith = (p: string, id: string) => creaturesOf(p).filter((x) => x === id || shareCreatureType(s, [id, x])).length;
+    const chosen: Record<string, string> = {};
+    for (const p of players) {
+      const options = creaturesOf(p);
+      if (options.length === 0) continue;
+      const answer = r.vars[key(`winnow-${p}`)];
+      if (answer) {
+        chosen[p] = String(answer[0]);
+        continue;
+      }
+      const sign = p === ctx.controller ? -1 : 1;
+      const best = [...options].sort((a, b) => sign * (keptWith(p, a) - keptWith(p, b)))[0] as string;
+      if (options.length === 1) {
+        chosen[p] = best;
+        continue;
+      }
+      return {
+        ask: {
+          player: ctx.controller,
+          key: key(`winnow-${p}`),
+          request: {
+            type: "pick",
+            intent: "other",
+            prompt: `Choisissez une créature de ${p === ctx.controller ? "vous" : "cet adversaire"} : ses autres créatures sans type en commun seront sacrifiées`,
+            options,
+            min: 1,
+            max: 1,
+            suggested: [best],
+          },
+        },
+      };
+    }
+    const doomed = players.flatMap((p) => {
+      const keep = chosen[p];
+      return keep ? creaturesOf(p).filter((id) => id !== keep && !shareCreatureType(s, [keep, id])) : [];
+    });
+    for (const id of doomed) if (onBattlefield(s, id)) sacrifice(s, id);
+    return;
+  },
   craftReturn(s, _r, _e, ctx) {
     // « Renvoyez cette carte transformée sous le contrôle de son propriétaire » : la carte exilée pour le coût.
     const card = resolveRef(s, ctx, { kind: "selfCard" }).find((id) => s.objects[id]?.zone === "exile");
@@ -292,13 +377,26 @@ export const HANDLERS: OpHandlers = {
     const stored = (e.excludeStored ? r.vars[`$ids:${e.excludeStored}`] : undefined)?.map(String) ?? [];
     const excludedUids = new Set(stored.map((id) => s.objects[id]?.uid ?? s.lki[id]?.uid).filter(Boolean));
     const maxMv = e.maxManaValue !== undefined ? evalAmount(s, ctx, e.maxManaValue) : undefined;
+    // Sanar : les couleurs permises (celles des permanents correspondants), une carte au plus par couleur.
+    const allowed = e.onePerColorOf
+      ? new Set(
+          s.battlefield
+            .filter((id) => matchesObjectFilter(s, ctx.controller, id, e.onePerColorOf as ObjectFilter, ctx.sourceId))
+            .flatMap((id) => chars(s, id).colors),
+        )
+      : null;
+    const colorsOf = (id: string) => (s.defs[s.objects[id]?.defId ?? ""]?.colors ?? []).filter((c) => !allowed || allowed.has(c));
     const pool = (e.pool ? resolveRef(s, ctx, e.pool) : (s.players[ctx.controller]?.[e.zone] ?? [])).filter(
       (id) =>
         !!s.objects[id] &&
         !excludedUids.has(s.objects[id]?.uid) &&
+        (!allowed || colorsOf(id).length > 0) &&
         matchesCard(s, ctx.controller, id, { ...e.filter, controller: undefined, maxManaValue: maxMv }, ctx.sourceId),
     );
-    const count = Math.min(evalAmount(s, ctx, e.count), pool.length);
+    const count = Math.min(
+      allowed ? Math.min(evalAmount(s, ctx, e.count), allowed.size) : evalAmount(s, ctx, e.count),
+      pool.length,
+    );
     if (count <= 0) return;
     const min = Math.min(e.min ?? count, count);
     let picked = pool.length === count && min === count ? pool : null;
@@ -321,13 +419,14 @@ export const HANDLERS: OpHandlers = {
               options: pool,
               min,
               max: count,
-              suggested: pool.slice(0, count),
+              suggested: allowed ? onePerColor(pool, colorsOf).slice(0, count) : pool.slice(0, count),
             },
           },
         };
       }
       picked = answer.map(String);
     }
+    if (allowed && !distinctColors(picked.map(colorsOf))) throw new RulesError("Une carte au plus par couleur");
     const moved = picked.map((id) => moveWithSpec(s, ctx.controller, id, e.to)).filter((x): x is string => !!x);
     if (e.store) r.vars[`$ids:${e.store}`] = moved;
     store(r, e.store, moved.length);
@@ -335,8 +434,10 @@ export const HANDLERS: OpHandlers = {
   },
   libraryTopOrBottom(s, r, e, ctx, key) {
     for (const id of resolveRef(s, ctx, e.what)) {
-      const o = s.objects[id];
-      if (o?.zone !== "battlefield") continue;
+      // Swat Away : un sort ciblé va aussi dans la bibliothèque de son propriétaire.
+      const spell = s.stack.find((x) => x.id === id && x.kind === "spell");
+      const o = s.objects[spell ? spell.sourceId : id];
+      if (!o || (!spell && o.zone !== "battlefield")) continue;
       const answer = r.vars[key(`tb-${id}`)];
       if (!answer) {
         return {
@@ -346,7 +447,7 @@ export const HANDLERS: OpHandlers = {
             request: {
               type: "pick",
               intent: "topOrBottom",
-              prompt: `${nameOf(s, id)} : au-dessus ou au-dessous de votre bibliothèque ?`,
+              prompt: `${nameOf(s, o.id)} : au-dessus ou au-dessous de votre bibliothèque ?`,
               options: ["top", "bottom"],
               labels: { top: "Au-dessus", bottom: "Au-dessous" },
               min: 1,
@@ -357,7 +458,8 @@ export const HANDLERS: OpHandlers = {
         };
       }
       const owner = o.owner;
-      moveWithSpec(s, ctx.controller, id, { to: answer[0] === "top" ? "libraryTop" : "libraryBottom" });
+      if (spell) spellToZone(s, id, answer[0] === "top" ? "libraryTop" : "libraryBottom");
+      else moveWithSpec(s, ctx.controller, id, { to: answer[0] === "top" ? "libraryTop" : "libraryBottom" });
       // Clash of Elements : « si il le fait, [la source] lui inflige 2 blessures ».
       const src = e.topDamage && answer[0] === "top" ? damageSource(s, ctx) : null;
       if (src && e.topDamage) dealDamage(s, src, owner, e.topDamage, false);
@@ -1088,17 +1190,22 @@ export const HANDLERS: OpHandlers = {
     r.vars.$devoured = [chosen.length];
     return;
   },
-  revealUntilN(s, _r, e, ctx) {
+  revealUntilN(s, r, e, ctx) {
     const player = s.players[ctx.controller];
     if (!player) return;
     const found: string[] = [];
+    const n = evalAmount(s, ctx, e.n);
     let i = 0;
-    for (; i < player.library.length && found.length < e.n; i++) {
+    for (; i < player.library.length && found.length < n; i++) {
       const id = player.library[i] as string;
       if (matchesCard(s, ctx.controller, id, { ...e.filter, controller: undefined })) found.push(id);
     }
     const revealed = player.library.slice(0, i);
     emit({ type: "reveal", player: ctx.controller, defIds: revealed.map((id) => s.objects[id]?.defId ?? "") });
+    if (!e.to) {
+      if (e.store) r.vars[`$ids:${e.store}`] = found;
+      return;
+    }
     const rest = revealed.filter((id) => !found.includes(id));
     for (const id of found) moveWithSpec(s, ctx.controller, id, e.to);
     const lib = player.library.filter((id) => !rest.includes(id));
@@ -1257,6 +1364,21 @@ export const HANDLERS: OpHandlers = {
     return;
   },
   exileUntil(s, r, e, ctx) {
+    if (e.untilTotalManaValue !== undefined) {
+      const all: string[] = [];
+      for (const p of resolveRef(s, ctx, e.who ?? { kind: "you" }).filter((x) => isPlayer(s, x))) {
+        const lib = s.players[p]?.library ?? [];
+        let total = 0;
+        while (lib.length && total < e.untilTotalManaValue) {
+          const top = lib[0] as string;
+          total += manaValue(s.defs[s.objects[top]?.defId ?? ""]?.manaCost);
+          const moved = moveWithSpec(s, ctx.controller, top, { to: "exile" });
+          if (moved) all.push(moved);
+        }
+      }
+      r.vars[`$ids:${e.store}`] = all;
+      return;
+    }
     // Exiler depuis le dessus jusqu'à une carte correspondante ; seule cette dernière est mémorisée.
     const lib = s.players[ctx.controller]?.library ?? [];
     let found: string | null = null;
@@ -1642,4 +1764,27 @@ function scryOrSurveil(
     }
   }
   return;
+}
+
+/** Peut-on attribuer à chaque carte une couleur distincte parmi les siennes ? (petits ensembles : recherche exhaustive) */
+function distinctColors(options: string[][], used = new Set<string>()): boolean {
+  const [first, ...rest] = options;
+  if (!first) return true;
+  return first.some((c) => {
+    if (used.has(c)) return false;
+    used.add(c);
+    const ok = distinctColors(rest, used);
+    used.delete(c);
+    return ok;
+  });
+}
+
+/** Suggestion « une carte par couleur » : chaque carte prend une couleur pas encore prise (dans l'ordre). */
+function onePerColor(pool: string[], colorsOf: (id: string) => string[]): string[] {
+  const used = new Set<string>();
+  return pool.filter((id) => {
+    const c = colorsOf(id).find((x) => !used.has(x));
+    if (c) used.add(c);
+    return !!c;
+  });
 }

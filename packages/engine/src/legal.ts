@@ -428,7 +428,9 @@ export function legalActions(s: GameState, player: PlayerId): ActionOption[] {
                 ...(ab.cost.sacrifice
                   ? { sacrifice: { count: ab.cost.sacrifice.count, options: sacrificeOptions(s, player, id, ab) } }
                   : {}),
-                ...(ab.cost.discard ? { discard: { count: ab.cost.discard, options: discardCostOptions(s, player, id) } } : {}),
+                ...(ab.cost.discard
+                  ? { discard: { count: ab.cost.discard, options: discardCostOptions(s, player, id, ab.cost.discardFilter) } }
+                  : {}),
                 // Station : le joueur choisit la créature à engager.
                 ...(ab.cost.tapOthers
                   ? { tap: { count: ab.cost.tapOthers.count, options: tapOthersOptions(s, player, id, ab) } }

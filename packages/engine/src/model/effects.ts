@@ -10,6 +10,7 @@ import type {
   Keyword,
   LayerMods,
   ManaCost,
+  ManaRestriction,
   ManaType,
   MoveSpec,
   ObjectFilter,
@@ -89,7 +90,11 @@ export type Effect =
   /** `store` : les cartes mises au cimetière ainsi (« si une carte de créature est mise dans un cimetière de cette façon »). */
   | { op: "destroy"; what: Ref; store?: string }
   /** « Engagez un nombre quelconque de [permanents] dégagés que vous contrôlez » : `store` mémorise leur nombre. */
-  | { op: "tapChosen"; filter: ObjectFilter; store: string }
+  /**
+   * Engager des permanents dégagés choisis ; `exactly` : aucun ou exactement N (conspiration : « vous pouvez engager deux
+   * créatures ») ; `sharesColorWith` : qui partagent une couleur avec l'objet désigné.
+   */
+  | { op: "tapChosen"; filter: ObjectFilter; store: string; exactly?: number; sharesColorWith?: Ref }
   /** « Mettez ces marqueurs sur [cible] » : les marqueurs qu'avait l'objet de l'événement (dernières informations connues). */
   | { op: "lkiCountersTo"; to: Ref }
   /** « Il ne peut plus gagner de points de vie de la partie » (Screaming Nemesis). */
@@ -315,7 +320,8 @@ export type Effect =
   /** `bind` : objets figés maintenant, relus comme cibles par la capacité réflexive (« cette créature »). */
   | { op: "reflexive"; targets: TargetSpec[]; effects: Effect[]; bind?: Record<string, Ref> }
   /** Contrecarre un sort ou une capacité sur la pile (701.5). */
-  | { op: "counter"; what: Ref; exile?: boolean }
+  /** `store` : nombre de sorts et capacités contrecarrés. */
+  | { op: "counter"; what: Ref; exile?: boolean; store?: string }
   /** « … à moins que [joueur] ne paie X » : s'il paie, les `skip` effets suivants sont ignorés. */
   | {
       op: "unlessPay";
@@ -346,7 +352,11 @@ export type Effect =
   /** Mimeoplasm : la source devient une copie de la carte, 0/0, en gardant ses capacités activées. */
   | { op: "becomeCopyKeepAbilities"; what: Ref }
   /** Révèle des cartes jusqu'à N cartes correspondantes ; celles-ci vont selon `to`, le reste dessous au hasard. */
-  | { op: "revealUntilN"; filter: ObjectFilter; n: number; to: MoveSpec }
+  /**
+   * Révèle jusqu'à N cartes correspondantes ; elles vont dans `to`, le reste au-dessous dans un ordre aléatoire. Sans
+   * `to` : rien ne bouge, les cartes correspondantes sont mémorisées (`store`, Sanar).
+   */
+  | { op: "revealUntilN"; filter: ObjectFilter; n: Amount; to?: MoveSpec; store?: string }
   /** Le contrôleur sépare les N cartes du dessus en deux piles, un adversaire en choisit une (en main), l'autre au cimetière. */
   | { op: "piles"; n: number }
   /** Carte de cimetière qui gagne le flashback jusqu'à la fin du tour (coût : son coût de mana). */
@@ -388,7 +398,12 @@ export type Effect =
       oneOf?: boolean;
     }
   /** Exile les cartes du dessus jusqu'à une carte correspondante (mémorisée) : Territorial Bruntar. */
-  | { op: "exileUntil"; filter: ObjectFilter; store: string }
+  /**
+   * Exile depuis le dessus jusqu'à une carte correspondante (seule celle-ci est mémorisée) ; `untilTotalManaValue` : dans
+   * la bibliothèque de chaque joueur désigné (`who`), jusqu'à une valeur de mana totale de N ou plus, toutes mémorisées
+   * (Dream Harvest).
+   */
+  | { op: "exileUntil"; filter: ObjectFilter; store: string; who?: Ref; untilTotalManaValue?: number }
   /** Spikeshell Harrier : si sa vitesse dépasse celle de chaque autre joueur, elle baisse de 1 (pas sous 1). */
   | { op: "reduceSpeed"; who: Ref }
   /** « Vous contrôlez [le joueur ciblé] pendant son prochain tour » (The Dominion Bracelet). */
@@ -492,7 +507,11 @@ export type Effect =
   /** Dégage jusqu'à N permanents engagés du contrôleur correspondant au filtre (choisis automatiquement). */
   | { op: "untapUpTo"; filter: ObjectFilter; n: number }
   /** Le sort qui se résout est exilé au lieu d'aller au cimetière (« Exilez Finale of Revelation »). */
-  | { op: "exileOnResolve" }
+  /**
+   * Le sort qui se résout est exilé au lieu d'aller au cimetière ; avec `what` et `counter`, les sorts désignés le seront
+   * avec ce marqueur (Goliath Daydreamer : « exilez cette carte avec un marqueur de rêve »).
+   */
+  | { op: "exileOnResolve"; what?: Ref; counter?: string }
   /** Marqueurs poison (122.1f) ; 10 ou plus : le joueur perd. */
   | { op: "poison"; who: Ref; n: Amount }
   /** Détruit l'objet et tous les autres permanents du même nom (Maelstrom Pulse). */
@@ -551,18 +570,25 @@ export type Effect =
   /** « Choisissez un type de créature. Détruisez toutes les créatures qui ne sont pas du type choisi. » */
   | { op: "destroyAllButChosenType" }
   /** Le joueur désigné révèle sa main ; le contrôleur y choisit une carte correspondante, exilée et liée à la source. */
-  | { op: "exileFromHandLinked"; who: Ref; filter: ObjectFilter; untilLeaves?: boolean }
+  /** `reveal` : le joueur ne révèle que ce nombre de cartes de sa main, qu'il choisit (Taster of Wares). */
+  | { op: "exileFromHandLinked"; who: Ref; filter: ObjectFilter; untilLeaves?: boolean; reveal?: Amount }
   /** « Exilez toutes les cartes de la bibliothèque de chaque adversaire, sauf celle du dessous. » */
   /** `keep` : cartes laissées au-dessous (1 par défaut ; Doomsday Excruciator : 6). */
   | { op: "exileLibraryButBottom"; who: Ref; keep?: number }
   /** Ajoute N mana d'une couleur choisie par le contrôleur (`colors` : parmi ces couleurs seulement, Devotees de TDM). */
-  | { op: "addManaChoice"; n: Amount; colors?: ManaType[] }
+  /** `restriction` : mana restreint, gardé à part dans la réserve (Ashling, Rimebound). */
+  | { op: "addManaChoice"; n: Amount; colors?: ManaType[]; restriction?: ManaRestriction }
   /** Exile les N cartes du dessus ; le contrôleur en choisit une qu'il peut jouer ce tour-ci. */
   | { op: "impulse"; n: number; until?: "thisTurn" | "yourNextTurn" }
   /** Blessures réparties comme le contrôleur le désire entre les cibles (au moins 1 chacune). */
   | { op: "damageDivided"; total: Amount; to: Ref }
   /** Chaque joueur désigné garde un permanent de chaque type et sacrifie le reste. */
   | { op: "keepOnePerType"; who: Ref }
+  /**
+   * Winnowing : pour chaque joueur désigné, le contrôleur de l'effet choisit une créature qu'il contrôle ; puis chacun
+   * sacrifie ses autres créatures qui ne partagent aucun type de créature avec elle.
+   */
+  | { op: "keepSharingCreatureType"; who: Ref }
   /** Le contrôleur reçoit un emblème (114) portant ces capacités. */
   | {
       op: "emblem";
@@ -595,6 +621,11 @@ export type Effect =
       store?: string;
       /** Choisir parmi ces objets plutôt que dans la zone (cartes exilées avec la source, mémorisées…). */
       pool?: Ref;
+      /**
+       * « Pour chacune de ces couleurs, une carte de cette couleur » (Sanar) : au plus une carte par couleur parmi celles
+       * des permanents correspondants (les vôtres).
+       */
+      onePerColorOf?: ObjectFilter;
     }
   /** Le propriétaire met l'objet au-dessus ou au-dessous de sa bibliothèque. */
   /** `topDamage` : si le propriétaire la met au-dessus, la source lui inflige N blessures (Clash of Elements). */

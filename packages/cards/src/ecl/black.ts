@@ -4,6 +4,7 @@ import {
   amount,
   beholdOrPay,
   type CardScript,
+  castPermission,
   champion,
   cond,
   ELF_BG,
@@ -34,6 +35,75 @@ const ELF_IN_GRAVEYARD = cond.amountAtLeast(amount.countIn("graveyard", { subtyp
 const YOUR_MAIN_PHASE = cond.all(cond.yourTurn, cond.any(cond.step("main1"), cond.step("main2")));
 
 export const BLACK: Record<string, CardScript> = {
+  "Twilight Diviner": {
+    abilities: [
+      triggered(when.entersSelf, [fx.surveil(2)], { label: "Surveillance 2" }),
+      // « Une ou plusieurs autres créatures » : une seule fois par tour, une copie de l'une d'elles (la première).
+      triggered(
+        { on: "enters", who: { types: ["Creature"], controller: "you", other: true }, fromGraveyard: true },
+        [fx.copyToken(ref.eventObject)],
+        { oncePerTurn: true, label: "Une créature revenue du cimetière : jeton copie (une fois par tour)" },
+      ),
+    ],
+  },
+  "Taster of Wares": {
+    abilities: [
+      triggered(
+        when.entersSelf,
+        [fx.exileFromHandLinked(ref.target(), {}, false, amount.count({ subtype: "Goblin", controller: "you" }))],
+        {
+          targets: [target.player("t", "opponent")],
+          label: "L'adversaire révèle X cartes de sa main ; vous en choisissez une, qu'il exile",
+        },
+      ),
+      castPermission({
+        linkedCards: true,
+        linkedFilter: { types: ["Instant", "Sorcery"] },
+        linkedAnyOwner: true,
+        linkedAnyMana: true,
+        label: "Tant que vous la contrôlez : lancez l'éphémère ou le rituel exilé (mana de n'importe quel type)",
+      }),
+    ],
+  },
+  "Dawnhand Dissident": {
+    abilities: [
+      activated({ tap: true, blight: 1, effects: [fx.surveil(1)], label: "Flétrir 1 : surveillance 1" }),
+      activated({
+        tap: true,
+        blight: 2,
+        targets: [target.cardInGraveyard("t", {}, "any", "carte d'un cimetière")],
+        effects: [fx.exileCard(ref.target(), { name: "x" }), fx.link(ref.stored("x"))],
+        label: "Flétrir 2 : exilez une carte d'un cimetière",
+      }),
+      castPermission({
+        linkedCards: true,
+        linkedFilter: { types: ["Creature"] },
+        linkedRemoveCounters: 3,
+        condition: cond.yourTurn,
+        label: "Pendant votre tour : lancez une créature exilée avec elle en retirant trois marqueurs parmi vos créatures",
+      }),
+    ],
+  },
+  Unbury: {
+    spell: modal(
+      mode(
+        "Renvoyez une carte de créature de votre cimetière dans votre main",
+        [target.cardInGraveyard("t", { types: ["Creature"] }, "you", "carte de créature")],
+        [fx.toHand(ref.target())],
+      ),
+      mode(
+        "Renvoyez deux cartes de créature qui partagent un type de créature",
+        [
+          {
+            ...target.cardInGraveyard("t", { types: ["Creature"] }, "you", "cartes de créature qui partagent un type"),
+            count: 2,
+            shareCreatureType: true,
+          },
+        ],
+        [fx.toHand(ref.target())],
+      ),
+    ),
+  },
   // Flash et équipement lus dans le texte.
   "Barbed Bloodletter": {
     abilities: [

@@ -247,6 +247,9 @@ export function spellView(d: CardDef, player: PlayerId): LkiSnapshot {
     toughness: d.toughness ?? 0,
     keywords: d.keywords,
     isToken: false,
+    // « un sort de valeur de mana 4 ou plus » (mana restreint d'Ashling, réductions de coût), « nommé … ».
+    name: d.name,
+    manaValue: manaValue(d.manaCost),
   };
 }
 
@@ -537,6 +540,8 @@ export interface CastTerms {
   graveyardType?: string;
   /** Quilled Greatwurm : marqueurs à retirer parmi vos créatures. */
   removeCounters?: number;
+  /** Permission utilisable une fois par tour (Maralen) : clé notée dans `turn.onceFired` au lancement. */
+  onceKey?: string;
   /** Points de vie payés en plus (Wickerfolk Indomitable, depuis le cimetière). */
   payLife?: number;
   /** Seulement au moment où l'on pourrait lancer un rituel (carte complotée). */
@@ -873,8 +878,27 @@ function baseCastTerms(s: GameState, player: PlayerId, card: ObjectId): CastTerm
       const ab = chars(s, id).abilities.find((a) => a.kind === "castPermission" && a.linkedCards);
       if (ab?.kind === "castPermission" && (!ab.condition || checkCondition(s, ab.condition, player, id))) {
         if (!ab.linkedFilter) return { source: "exile", anyMana: true };
-        if (o.owner === player && matchesCard(s, player, card, { ...ab.linkedFilter, controller: undefined }, id))
-          return { source: "exile", finality: ab.linkedFinality };
+        const onceKey = ab.linkedOncePerTurn ? `linkedCast:${id}` : undefined;
+        if (onceKey && s.turn.onceFired.includes(onceKey)) continue;
+        if (ab.linkedThisTurn && o.controlledSince !== s.turn.number) continue;
+        if (ab.linkedRemoveCounters && countersAmongCreatures(s, player) < ab.linkedRemoveCounters) continue;
+        const maxMv =
+          ab.linkedMaxManaValue !== undefined
+            ? evalAmount(s, reductionContext(player, id, src.defId), ab.linkedMaxManaValue)
+            : undefined;
+        if (maxMv !== undefined && manaValue(d.manaCost) > maxMv) continue;
+        if (
+          (ab.linkedAnyOwner || o.owner === player) &&
+          matchesCard(s, player, card, { ...ab.linkedFilter, controller: undefined }, id)
+        )
+          return {
+            source: "exile",
+            finality: ab.linkedFinality,
+            free: ab.linkedFree,
+            anyMana: ab.linkedAnyMana,
+            removeCounters: ab.linkedRemoveCounters,
+            onceKey,
+          };
       }
     }
     // Valgavoth : pendant votre tour, les cartes liées ; un sort ainsi lancé coûte des PV égaux à sa valeur de mana.
@@ -1182,6 +1206,7 @@ export function castSpell(s: GameState, player: PlayerId, card: ObjectId, choice
   const once = terms.playFrom && s.playerEffects.find((e) => e.once && e.ability.playFrom === terms.playFrom);
   if (once) s.playerEffects = s.playerEffects.filter((e) => e !== once);
   if (terms.removeCounters) removeCountersAmongCreatures(s, player, terms.removeCounters);
+  if (terms.onceKey) s.turn.onceFired.push(terms.onceKey);
   const view = spellView(d, player);
   // Lancer la copie d'un sort préparé dé-prépare son permanent (même si le sort est ensuite contrecarré).
   const preparedFor = o.preparedFor ? s.objects[o.preparedFor] : undefined;
@@ -1437,11 +1462,19 @@ export function exileSpell(s: GameState, id: string): ObjectId | undefined {
 
 /** « Renvoyez le sort ciblé dans la main de son propriétaire » : une copie cesse d'exister. */
 export function bounceSpell(s: GameState, id: string): void {
+  spellToZone(s, id, "hand");
+}
+
+/** Retire un sort de la pile vers la main ou la bibliothèque de son propriétaire (Swat Away : dessus ou dessous). */
+export function spellToZone(s: GameState, id: string, to: "hand" | "libraryTop" | "libraryBottom"): void {
   const i = s.stack.findIndex((x) => x.id === id);
   const item = s.stack[i];
   if (item?.kind !== "spell" || s.resolving?.item.id === id) return;
   s.stack.splice(i, 1);
-  if (s.objects[item.sourceId]) moveObject(s, item.sourceId, "hand");
+  if (s.objects[item.sourceId]) {
+    if (to === "hand") moveObject(s, item.sourceId, "hand");
+    else moveObject(s, item.sourceId, "library", { position: to === "libraryTop" ? "top" : "bottom" });
+  }
   bump(s);
 }
 
@@ -1753,7 +1786,7 @@ export function canPayNonManaCost(s: GameState, source: ObjectId, ab: ActivatedA
   if (ab.cost.payLife && (s.players[player]?.life ?? 0) < ab.cost.payLife) return false;
   if (ab.cost.sacrifice && sacrificeOptions(s, player, source, ab).length < ab.cost.sacrifice.count) return false;
   if (ab.cost.tapOthers && tapOthersOptions(s, player, source, ab).length < ab.cost.tapOthers.count) return false;
-  if (ab.cost.discard && discardCostOptions(s, player, source).length < ab.cost.discard) return false;
+  if (ab.cost.discard && discardCostOptions(s, player, source, ab.cost.discardFilter).length < ab.cost.discard) return false;
   if (ab.cost.returnUnblockedAttacker && unblockedAttackers(s, player).length === 0) return false;
   if (ab.cost.forage && !canForage(s, player)) return false;
   if (ab.cost.craft && !craftMaterials(s, player, source, ab)) return false;
@@ -1769,8 +1802,10 @@ export function unblockedAttackers(s: GameState, player: PlayerId): ObjectId[] {
 }
 
 /** Cartes de la main qui peuvent être défaussées pour un coût d'activation (pas la source elle-même). */
-export function discardCostOptions(s: GameState, player: PlayerId, source: ObjectId): ObjectId[] {
-  return (s.players[player]?.hand ?? []).filter((id) => id !== source);
+export function discardCostOptions(s: GameState, player: PlayerId, source: ObjectId, filter?: ObjectFilter): ObjectId[] {
+  return (s.players[player]?.hand ?? []).filter(
+    (id) => id !== source && (!filter || matchesCard(s, player, id, { ...filter, controller: undefined }, source)),
+  );
 }
 
 export function activateAbility(s: GameState, player: PlayerId, source: ObjectId, index: number, choices: CastChoices): void {
@@ -1979,7 +2014,7 @@ export function activateAbility(s: GameState, player: PlayerId, source: ObjectId
   }
   // « Défaussez une carte » : choisie par le joueur (sinon la première de la main).
   if (ab.cost.discard) {
-    const options = discardCostOptions(s, player, source);
+    const options = discardCostOptions(s, player, source, ab.cost.discardFilter);
     const chosen = choices.discard?.length ? choices.discard : options.slice(0, ab.cost.discard);
     if (chosen.length !== ab.cost.discard || chosen.some((id) => !options.includes(id)))
       throw new RulesError("Défausse invalide");
@@ -2354,6 +2389,13 @@ function resolvedSpellAway(s: GameState, item: StackItem, d: CardDef | undefined
       emblem.linked = [exiled];
       bump(s);
     }
+    return;
+  }
+  // Goliath Daydreamer : exilé avec un marqueur de rêve au lieu d'aller au cimetière (une copie cesse d'exister).
+  if (item.exileWithCounter !== undefined && !item.copy) {
+    const exiled = moveObject(s, item.sourceId, "exile");
+    const o = exiled ? s.objects[exiled] : undefined;
+    if (o && item.exileWithCounter) changeCounters(s, o, item.exileWithCounter, 1);
     return;
   }
   // « Exilez [ce sort] » (Step Between Worlds).

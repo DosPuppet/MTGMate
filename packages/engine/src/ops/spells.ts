@@ -162,8 +162,10 @@ export const HANDLERS: OpHandlers = {
     }
     return;
   },
-  counter(s, _r, e, ctx) {
-    for (const id of resolveRef(s, ctx, e.what)) counterItem(s, id, ctx.sourceDefId, e.exile);
+  counter(s, r, e, ctx) {
+    let n = 0;
+    for (const id of resolveRef(s, ctx, e.what)) if (counterItem(s, id, ctx.sourceDefId, e.exile)) n++;
+    store(r, e.store, n);
     return;
   },
   unlessPay(s, r, e, ctx, key) {
@@ -392,8 +394,15 @@ export const HANDLERS: OpHandlers = {
     }
     return;
   },
-  exileOnResolve(_s, r) {
-    r.item.flashback = true;
+  exileOnResolve(s, r, e, ctx) {
+    if (!e.what) {
+      r.item.flashback = true;
+      return;
+    }
+    for (const id of resolveRef(s, ctx, e.what)) {
+      const item = s.stack.find((x) => x.id === id && x.kind === "spell");
+      if (item) item.exileWithCounter = e.counter ?? "";
+    }
     return;
   },
   resolveToBattlefieldTransformed(_s, r) {

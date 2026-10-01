@@ -66,8 +66,11 @@ export const RECORD_VERSION = 1;
  *   retire un marqueur d'étourdissement (122.1d) ; les jetons créés sont au journal du tour ; « une autre carte » reconnaît
  *   la source morte ; une réduction de coût voit la carte lancée (contempler) ; « retirez un marqueur » de toute sorte ;
  *   le cache des couches est invalidé après le départ des permanents d'un joueur éliminé (800.4a).
+ * - 24 : Lorwyn Eclipsed, lot C : un sort lancé est vu avec sa valeur de mana et son nom (filtres de mana restreint et de
+ *   réductions de coût) ; mana restreint dans la réserve ; marqueurs mis au journal du tour ; un sort sur la pile peut
+ *   gagner un mot-clé ; « lancer les cartes exilées liées » avec ses variantes (gratuit, une fois par tour, ce tour-ci…).
  */
-export const RULES_VERSION = 23;
+export const RULES_VERSION = 24;
 
 /** Un point de contrôle toutes les N décisions (plus la dernière de la partie). */
 export const CHECKPOINT_EVERY = 25;

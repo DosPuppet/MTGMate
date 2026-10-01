@@ -149,7 +149,18 @@ function explorer(seed: number): Agent {
       if (tried.has(key)) continue;
       tried.add(key);
       const ds = enumerateDecisions(a, 4);
-      const d = ds[Math.floor(ds.length / 2)] ?? ds[0];
+      // Une décision du milieu, sinon la première que le moteur accepte (contraintes de cibles qu'il ne voit pas :
+      // « deux cartes qui partagent un type de créature », Unbury).
+      const mid = Math.floor(ds.length / 2);
+      const d = [...ds.slice(mid), ...ds.slice(0, mid)].find((x) => {
+        try {
+          submit(s, me, x);
+          return true;
+        } catch (e) {
+          if (e instanceof RulesError) return false;
+          throw e;
+        }
+      });
       if (d) return d;
     }
     return { type: "pass" };

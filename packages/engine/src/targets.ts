@@ -344,6 +344,8 @@ export function validateTargets(
     if (spec.samePlayer && new Set(holders).size > 1) throw new RulesError("Les cibles doivent appartenir au même joueur");
     if (spec.differentPlayers && new Set(holders).size !== holders.length)
       throw new RulesError("Les cibles doivent être contrôlées par des joueurs différents");
+    if (spec.shareCreatureType && ids.length > 1 && !shareCreatureType(s, ids))
+      throw new RulesError("Les cibles doivent partager un type de créature");
     if (spec.maxTotalManaValue !== undefined) {
       const total = ids.reduce((n, id) => n + (snapshot(s, id).manaValue ?? 0), 0);
       if (total > spec.maxTotalManaValue) throw new RulesError(`Valeur de mana totale supérieure à ${spec.maxTotalManaValue}`);
@@ -351,4 +353,14 @@ export function validateTargets(
     result[spec.id] = ids;
   }
   return result;
+}
+
+/** Les objets partagent-ils un type de créature ? Un changelin (ou « tous les types ») les a tous. */
+export function shareCreatureType(s: GameState, ids: ObjectId[]): boolean {
+  const views = ids.map((id) => snapshot(s, id));
+  const all = (v: LkiSnapshot) => v.keywords.includes("changeling") || v.subtypes.includes(ALL_CREATURE_TYPES);
+  const [first, ...rest] = views.filter((v) => !all(v));
+  // Que des changelins : ils partagent tous les types. Sinon, un type du premier que les autres ont aussi.
+  if (!first) return true;
+  return first.subtypes.some((t) => !NON_CREATURE_SUBTYPES.has(t) && rest.every((v) => v.subtypes.includes(t)));
 }

@@ -119,6 +119,24 @@ export function evalCondition(s: GameState, ctx: EffectContext, c: Condition): b
         const v = viewOf(s, id);
         return !!v && matchesView(v, c.filter, ctx.controller, ctx.sourceId);
       });
+    case "beholdSharingType": {
+      const found = resolveRef(s, ctx, c.ref);
+      const v = found[0] ? viewOf(s, found[0]) : undefined;
+      if (!v) return false;
+      const pl = s.players[ctx.controller];
+      const candidates = [
+        ...s.battlefield.filter((id) => s.objects[id]?.controller === ctx.controller && isCreature(s, id)),
+        ...(pl?.hand ?? []).filter((id) => s.defs[s.objects[id]?.defId ?? ""]?.types.includes("Creature")),
+      ].filter((id) => !found.includes(id) && id !== ctx.sourceId);
+      const views = candidates.map((id) => viewOf(s, id)).filter((x): x is NonNullable<typeof x> => !!x);
+      // Types possibles : ceux de l'objet, ou (changelin) ceux des créatures à contempler.
+      const types = new Set(
+        (v.keywords.includes("changeling") ? views.flatMap((x) => x.subtypes) : v.subtypes).filter((t) => t !== "*"),
+      );
+      return [...types].some(
+        (t) => views.filter((x) => matchesView(x, { subtype: t }, ctx.controller, ctx.sourceId)).length >= c.count,
+      );
+    }
     case "targetMatches":
       // « Si [la cible] … » pendant la résolution (cible encore présente, ou ses dernières informations).
       return (ctx.targets[c.spec] ?? []).some((id) => {
@@ -209,6 +227,11 @@ export function resolveRef(s: GameState, ctx: EffectContext, ref: Ref): string[]
       );
     case "libraryTop":
       return resolveRef(s, ctx, ref.who).flatMap((p) => (s.players[p]?.library[0] ? [s.players[p]?.library[0] as string] : []));
+    case "stackItemsOf": {
+      const players = resolveRef(s, ctx, ref.who);
+      const resolving = s.resolving?.item.id;
+      return s.stack.filter((x) => x.id !== resolving && players.includes(x.controller)).map((x) => x.id);
+    }
     case "exiledCardsOf": {
       const players = resolveRef(s, ctx, ref.who);
       return s.exile.filter((id) => {

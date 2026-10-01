@@ -50,16 +50,8 @@ const ANOTHER_CREATURE_ENTERED: Condition = cond.any(
 /** « un autre permanent ciblé » */
 const ANOTHER_PERMANENT: TargetSpec = targetObj("t", { other: true }, "autre permanent");
 
-/**
- * Aurora Awakener : « révélez des cartes jusqu'à révéler X cartes de permanent ». X est lu avant de révéler : une branche
- * par valeur, de la plus grande à la plus petite (X ne peut que croître pendant la résolution, une seule branche joue).
- */
-const AURORA_REVEAL: Effect[] = [5, 4, 3, 2, 1].flatMap((n) =>
-  fx.when(
-    cond.all(cond.amountAtLeast(VIVID, n), cond.not(cond.amountAtLeast(VIVID, n + 1))),
-    fx.revealUntilN({ permanent: true }, n, { to: "battlefield" }),
-  ),
-);
+/** Aurora Awakener : « révélez des cartes jusqu'à révéler X cartes de permanent » (toutes vont sur le champ de bataille). */
+const AURORA_REVEAL: Effect[] = [fx.revealUntilN({ permanent: true }, VIVID, { to: "battlefield" })];
 
 /** Trystan, Callous Cultivator : « meulez trois cartes ; puis s'il y a une carte d'Elfe dans votre cimetière, 2 PV ». */
 const TRYSTAN_CULTIVATOR: Effect[] = [fx.mill(3), ...fx.when(ELF_IN_GRAVEYARD, fx.gainLife(2))];
@@ -82,6 +74,17 @@ const SPRY_X = amount.max(
 );
 
 export const GREEN: Record<string, CardScript> = {
+  "Celestial Reunion": {
+    // Le coût additionnel facultatif (choisir un type, contempler deux créatures de ce type) est vérifié à la résolution,
+    // pour un type de la carte trouvée (approximation : le joueur paie toujours ce coût quand il le peut).
+    spell: spell(
+      [],
+      [
+        fx.search({ types: ["Creature"], maxManaValueX: true }, { to: "hand" }, 1, undefined, "f"),
+        ...fx.when(cond.beholdSharingType(ref.stored("f"), 2), fx.moveTo(ref.stored("f"), { to: "battlefield" })),
+      ],
+    ),
+  },
   // Flash et convocation lus dans le texte.
   "Selfless Safewright": {
     abilities: [

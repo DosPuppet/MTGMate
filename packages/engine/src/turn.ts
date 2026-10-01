@@ -436,6 +436,7 @@ function endStep(s: GameState): void {
       }
     }
     player.manaPool = pool;
+    player.restrictedMana = undefined;
   }
   if (s.turn.step === "endCombat") {
     s.combat = null;
@@ -531,7 +532,10 @@ export function endTheTurn(s: GameState, r: { item: StackItem }): void {
   s.combat = null;
   for (const p of s.playerOrder) {
     const pl = s.players[p];
-    if (pl) pl.manaPool = emptyPool();
+    if (pl) {
+      pl.manaPool = emptyPool();
+      pl.restrictedMana = undefined;
+    }
   }
   s.endTurnRequested = true;
   bump(s);

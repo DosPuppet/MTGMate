@@ -33,8 +33,16 @@ export const HANDLERS: OpHandlers = {
         },
       };
     }
-    const pool = s.players[ctx.controller]?.manaPool;
-    if (pool) pool[String(answer[0]) as ManaType] += evalAmount(s, ctx, e.n);
+    const pl = s.players[ctx.controller];
+    const type = String(answer[0]) as ManaType;
+    const n = evalAmount(s, ctx, e.n);
+    const restriction = e.restriction;
+    if (pl && restriction) {
+      pl.restrictedMana = [
+        ...(pl.restrictedMana ?? []),
+        ...Array.from({ length: Math.max(0, n) }, () => ({ type, restriction })),
+      ];
+    } else if (pl) pl.manaPool[type] += n;
     return;
   },
   addManaColorsAmong(s, _r, e, ctx) {

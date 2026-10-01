@@ -10,6 +10,7 @@ import type {
   Keyword,
   LayerMods,
   ManaCost,
+  ManaRestriction,
   ManaType,
   PendingDecision,
   PlayerStaticAbilityDef,
@@ -185,6 +186,8 @@ export interface PlayerState {
   graveyard: ObjectId[];
   command: ObjectId[];
   manaPool: Record<ManaType, number>;
+  /** Mana restreint de la réserve, une entrée par mana (Ashling, Rimebound : « seulement pour des sorts de VM 4 ou plus »). */
+  restrictedMana?: { type: ManaType; restriction: ManaRestriction }[];
   drewFromEmptyLibrary: boolean;
   lost: boolean;
   mulligans: number;
@@ -266,6 +269,8 @@ export interface StackItem {
   fromExile?: boolean;
   /** Rebond (702.88, accordé par Ojer Pakpatiq). */
   rebound?: boolean;
+  /** Exilé en se résolvant au lieu d'aller au cimetière, avec ce marqueur s'il est nommé (Goliath Daydreamer : « rêve »). */
+  exileWithCounter?: string;
   /** Lilah : exilé et comploté au lieu d'aller au cimetière. */
   plotOnResolve?: boolean;
   /** Capacité retardée ou réflexive : ses effets et cibles propres. */
@@ -387,6 +392,8 @@ export type TurnLogEntry =
   /** Attaque d'une créature : `player` attaque `defender` (le joueur attaqué, ou le contrôleur du planeswalker). */
   | { e: "attack"; player: PlayerId; defender: PlayerId; types: CardType[]; subtypes: string[] }
   | { e: "sacrifice"; player: PlayerId; types: CardType[]; subtypes: string[]; supertypes?: string[]; token?: boolean }
+  /** Marqueurs mis sur un permanent ; `player` : celui qui les met (contrôleur de ce qui se résout). */
+  | { e: "counters"; player: PlayerId; kind: string; n: number; types: CardType[]; subtypes: string[] }
   /** Capacité activée (hors mana) ; `equip` : une capacité d'équipement (Kíli the Resourceful). */
   | { e: "activate"; player: PlayerId; equip?: boolean; types?: CardType[]; subtypes?: string[] }
   | {

@@ -48,6 +48,68 @@ const TOTAL_PT_5: { anyOf: { maxPower: number; maxToughness: number }[] } = {
 };
 
 export const RED: Record<string, CardScript> = {
+  // --- Ashling (recto-verso) ---------------------------------------------------
+  "Ashling, Rekindled": {
+    abilities: [
+      ...[when.entersSelf, when.transformsSelf].map((w) =>
+        triggered(w, [fx.discard(1, ref.you, { optional: true, store: "d" }), ...fx.when(cond.v("d"), fx.draw(1))], {
+          label: "Vous pouvez défausser une carte ; si vous le faites, piochez une carte",
+        }),
+      ),
+      triggered(when.step("main1", "you"), fx.mayPay("{U}", "Payer {U} pour transformer Ashling ?", fx.transform()), {
+        label: "Vous pouvez payer {U} : transformez Ashling",
+      }),
+    ],
+  },
+  "Ashling, Rimebound": {
+    abilities: [
+      // « Ajoutez deux mana d'une même couleur ; ne le dépensez que pour des sorts de VM 4 ou plus » (mana restreint).
+      ...[when.transformsSelf, when.step("main1", "you")].map((w) =>
+        triggered(w, [fx.addManaChoice(2, undefined, { spell: { minManaValue: 4 } })], {
+          label: "Deux mana d'une même couleur, pour des sorts de VM 4 ou plus",
+        }),
+      ),
+      triggered(when.step("main1", "you"), fx.mayPay("{R}", "Payer {R} pour transformer Ashling ?", fx.transform()), {
+        label: "Vous pouvez payer {R} : transformez Ashling",
+      }),
+    ],
+  },
+  "Goliath Daydreamer": {
+    abilities: [
+      triggered(
+        { on: "castSpell", by: "you", filter: { types: ["Instant", "Sorcery"] }, fromHand: true },
+        [fx.exileOnResolveWith(ref.eventObject, "dream")],
+        { label: "Le sort sera exilé avec un marqueur de rêve au lieu d'aller au cimetière" },
+      ),
+      triggered(
+        when.attacksSelf,
+        [fx.castNow(ref.filtered(ref.exiledCardsOf(ref.you), { withCounter: "dream" }), { free: true })],
+        { label: "Lancez gratuitement un sort exilé avec un marqueur de rêve" },
+      ),
+    ],
+  },
+  // Vol et flétrissure lus dans le texte.
+  "Spinerock Tyrant": {
+    abilities: [
+      triggered(
+        { on: "castSpell", by: "you", filter: { types: ["Instant", "Sorcery"] }, singleTarget: true },
+        fx.may(
+          "Copier ce sort ? (les deux sorts gagnent la flétrissure)",
+          fx.modify(ref.eventObject, { addKeywords: ["wither"] }),
+          fx.copySpell(ref.eventObject, 1),
+        ),
+        { label: "Copiez le sort à cible unique ; les deux gagnent la flétrissure" },
+      ),
+    ],
+  },
+  "Lasting Tarfire": {
+    abilities: [
+      triggered(when.eachEndStep, [fx.damage(2, ref.eachOpponent)], {
+        condition: cond.amountAtLeast(amount.turnEvents({ event: "counters", who: "you", types: ["Creature"] }), 1),
+        label: "Vous avez mis un marqueur sur une créature ce tour-ci : 2 blessures à chaque adversaire",
+      }),
+    ],
+  },
   // Double initiative lue dans le texte ; Vivid : force égale au nombre de couleurs parmi vos permanents.
   Squawkroaster: { cdaPower: amount.colorsAmong() },
   // « En coût additionnel, flétrissez X » : lu dans le texte (`xCost: "blight"`, X au plus la plus grande endurance).

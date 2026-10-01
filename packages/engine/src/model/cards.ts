@@ -14,6 +14,7 @@ import type {
   PlayerId,
   TargetSpec,
   TriggerSpec,
+  TurnLogQuery,
 } from "../types";
 
 export interface CardDef {
@@ -296,6 +297,15 @@ export interface CostReductionAbilityDef {
   label?: string;
 }
 
+/** Usage permis d'un mana restreint (capacité de mana, ou mana ajouté par un effet : Ashling, Rimebound). */
+export interface ManaRestriction {
+  spell?: ObjectFilter;
+  abilityOfCreature?: ObjectFilter;
+  abilityOfSource?: ObjectFilter;
+  notSpellFromHand?: boolean;
+  spellNotFromHand?: boolean;
+}
+
 export interface ManaAbilityDef {
   kind: "mana";
   cost: CostDef;
@@ -307,13 +317,7 @@ export interface ManaAbilityDef {
   /** `notSpellFromHand` : « ce mana ne peut pas servir à lancer des sorts depuis votre main » (Heartwood Crafter). */
   /** `abilityOfSource` : capacité d'une source quelconque correspondant au filtre (Steelswarm Operator) ; */
   /** `spellNotFromHand` : « seulement pour lancer un sort depuis ailleurs que votre main » (Mm'menon, the Right Hand). */
-  restriction?: {
-    spell?: ObjectFilter;
-    abilityOfCreature?: ObjectFilter;
-    abilityOfSource?: ObjectFilter;
-    notSpellFromHand?: boolean;
-    spellNotFromHand?: boolean;
-  };
+  restriction?: ManaRestriction;
   /** Gene Pollinator : « engagez un permanent dégagé que vous contrôlez » en plus de {T} (choisi automatiquement). */
   /** `"creature"` : une créature dégagée (Springleaf Drum). */
   tapAnother?: boolean | "creature";
@@ -443,6 +447,8 @@ export interface CostDef {
   payLifeX?: boolean;
   /** Défausser N cartes (choisies par le joueur ; par défaut les premières de la main). */
   discard?: number;
+  /** … seulement des cartes correspondantes (Lluwen : « défaussez une carte de terrain »). */
+  discardFilter?: ObjectFilter;
   /** Ninjutsu : renvoyer en main un attaquant non bloqué que vous contrôlez (choisi automatiquement : le plus faible). */
   returnUnblockedAttacker?: boolean;
   /** Fourrager (701.61) : exiler trois cartes de votre cimetière ou sacrifier une Nourriture (choix automatique). */
@@ -637,6 +643,20 @@ export interface CastPermissionAbilityDef {
   linkedFilter?: ObjectFilter;
   /** … et le permanent arrive avec un marqueur de finalité. */
   linkedFinality?: true;
+  /**
+   * Variantes des cartes liées (Lorwyn Eclipsed) : de n'importe quel propriétaire (`linkedAnyOwner`, Maralen) ; sans
+   * payer le coût de mana (`linkedFree`) ; valeur de mana au plus ce montant (`linkedMaxManaValue`) ; une fois par tour
+   * (`linkedOncePerTurn`) ; seulement les cartes exilées ce tour-ci (`linkedThisTurn`) ; en retirant N marqueurs parmi
+   * vos créatures (`linkedRemoveCounters`, Dawnhand Dissident).
+   */
+  linkedAnyOwner?: true;
+  linkedFree?: true;
+  linkedMaxManaValue?: Amount;
+  linkedOncePerTurn?: true;
+  linkedThisTurn?: true;
+  linkedRemoveCounters?: number;
+  /** … avec du mana de n'importe quel type (Taster of Wares). */
+  linkedAnyMana?: true;
   condition?: Condition;
   /** Tinybones : pendant votre tour, jouer les cartes exilées avec un marqueur de butin que vous ne possédez pas (mana de n'importe quel type). */
   stash?: true;
@@ -915,6 +935,8 @@ export interface StaticAbilityDef {
   perLife?: boolean;
   /** F/E multipliées par le nombre de cartes dans la main du contrôleur (Stingerback Terror). */
   perHand?: boolean;
+  /** F/E multipliées par un compte du journal du tour (Kinbinding : « créatures arrivées sous votre contrôle ce tour-ci »). */
+  perTurnEvents?: TurnLogQuery;
   label?: string;
 }
 

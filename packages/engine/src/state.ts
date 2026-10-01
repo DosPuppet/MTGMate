@@ -350,6 +350,17 @@ export function changeCounters(s: GameState, o: GameObject, kind: string, n: num
     const first = o.countersPutTurn !== s.turn.number;
     o.countersPutTurn = s.turn.number;
     rulesEvent(s, { e: "counters", objectId: o.id, kind, amount: after - before, first });
+    // Journal du tour (Lasting Tarfire : « si vous avez mis un marqueur sur une créature ce tour-ci ») : celui qui les
+    // met est le contrôleur de ce qui se résout, sinon (coût, action) le contrôleur du permanent.
+    const c = chars(s, o.id);
+    logTurnEvent(s, {
+      e: "counters",
+      player: s.resolving?.controller ?? o.controller,
+      kind,
+      n: after - before,
+      types: c.types,
+      subtypes: c.subtypes,
+    });
   }
   return after - before;
 }
@@ -660,7 +671,7 @@ export function setPrepared(s: GameState, o: GameObject, on: boolean): void {
 // Caractéristiques calculées : voir layers.ts (réexportées ici pour commodité).
 // ---------------------------------------------------------------------------
 
-import { bump, snapshot } from "./layers";
+import { bump, chars, snapshot } from "./layers";
 import { type AmountMod, chooseReplacementOrder } from "./modifiers";
 import { applyEntersReplacements, auraHosts, type EntersContext, releaseLinkedExile, replaceGraveyard } from "./replacement";
 import { counterDoublers, playerStatics } from "./statics";

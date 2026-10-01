@@ -22,6 +22,7 @@ function subjectOf(e: TurnLogEntry, byOwner?: boolean): PlayerId | undefined {
     case "zone":
       return !byOwner && (e.from === "battlefield" || e.to === "battlefield") ? e.controller : e.owner;
     case "cast":
+    case "counters":
     case "sacrifice":
     case "attack":
     case "activate":

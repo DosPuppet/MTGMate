@@ -244,6 +244,12 @@ Dans l'ordre où elles ont été ajoutées, extension par extension.
   - `choix auto` Temporal Cleansing : le choix « deuxième depuis le dessus ou au-dessous » revient au contrôleur du permanent, pas à son propriétaire ;
   - `règle` Squawkroaster : Vivid compte les couleurs imprimées de vos permanents (un permanent dont un effet change la couleur compte pour sa couleur imprimée) ;
   - `timing` Shadow Urchin : « jusqu'à votre prochaine étape de fin » dure jusqu'à la fin de ce tour (le vôtre) ou de votre prochain tour ;
-  - `règle` Grub, Notorious Auntie : le jeton copie est sacrifié par une capacité retardée, et non par une capacité qu'il porte.
+  - `règle` Grub, Notorious Auntie : le jeton copie est sacrifié par une capacité retardée, et non par une capacité qu'il porte ;
+  - `règle` Swat Away : « si une créature vous attaque » est vrai dès qu'une créature adverse attaque (en multijoueur, même un autre joueur) ;
+  - `règle` Dream Harvest : les terrains exilés peuvent aussi être joués (comme terrain du tour), pas seulement les sorts lancés ;
+  - `règle` Twilight Diviner : la capacité se déclenche pour une créature à la fois (la première revenue d'un cimetière dans le tour), et non pour un groupe ;
+  - `timing` Raiding Schemes : la conspiration passe par une capacité déclenchée ; les deux créatures sont engagées à sa résolution, et non en lançant le sort ;
+  - `timing` Celestial Reunion : le coût additionnel facultatif est vérifié à la résolution, pour un type de la carte trouvée (le joueur le paie toujours quand il le peut) ; la carte passe par la main avant le champ de bataille ;
+  - `règle` Lasting Tarfire : « vous avez mis un marqueur » : le joueur qui met les marqueurs est le contrôleur de ce qui se résout, sinon (coût) le contrôleur du permanent.
 - **Légalité Standard :** instantané des légalités Scryfall au moment de l'import (`legalities.standard` dans `data/<set>.json`). Après une rotation ou une annonce de bannissement, réimporter les sets (`npm run import-cards -- <set>`).
 - **Images des jetons :** celle du jeton Scryfall le plus proche (même nom, puis mêmes F/E et couleurs ; `data/tokens.json`, `npm run import-tokens`) ; un jeton de nom inconnu garde le cadre texte.

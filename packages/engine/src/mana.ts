@@ -20,7 +20,17 @@ import {
 import { playerStatic, playerStaticTotal } from "./statics";
 import { matchesCard, matchesObjectFilter, matchesView, withChosen } from "./targets";
 import { checkCondition } from "./triggers";
-import type { GameState, LkiSnapshot, ManaAbilityDef, ManaCost, ManaType, ObjectId, PlayerId } from "./types";
+import type {
+  GameObject,
+  GameState,
+  LkiSnapshot,
+  ManaAbilityDef,
+  ManaCost,
+  ManaRestriction,
+  ManaType,
+  ObjectId,
+  PlayerId,
+} from "./types";
 import { MANA_TYPES } from "./types";
 
 const SYMBOLS = new Set<string>(["W", "U", "B", "R", "G", "C"]);
@@ -211,6 +221,8 @@ export interface ManaPurpose {
 export const CONVOKE = -1;
 /** Pseudo-capacité de mana d'une carte du cimetière exilée pour la cave. */
 export const DELVE = -2;
+/** Pseudo-capacité : un mana restreint de la réserve (`restrictedMana`, Ashling, Rimebound) ; `id` : `pool:<rang>`. */
+export const RESTRICTED_POOL = -3;
 
 function restrictionAllows(
   s: GameState,
@@ -219,10 +231,20 @@ function restrictionAllows(
   player: PlayerId,
   purpose?: ManaPurpose,
 ): boolean {
-  const r = ab.restriction;
+  return allows(s, ab.restriction, s.objects[sourceId], sourceId, player, purpose);
+}
+
+/** Le mana restreint peut-il servir à ce paiement ? (`source` : ce qui l'a produit, pour « du type choisi »). */
+function allows(
+  s: GameState,
+  r: ManaRestriction | undefined,
+  o: GameObject | undefined,
+  sourceId: ObjectId,
+  player: PlayerId,
+  purpose?: ManaPurpose,
+): boolean {
   if (!r) return true;
   if (!purpose) return false;
-  const o = obj(s, sourceId);
   if (r.notSpellFromHand) return !!purpose.abilitySource || (!!purpose.spell && !purpose.fromHand);
   if (r.spellNotFromHand) return !!purpose.spell && !purpose.fromHand;
   if (r.spell && purpose.spell && matchesView(purpose.spell, withChosen(r.spell, o), player, sourceId)) return true;
@@ -281,6 +303,19 @@ export function manaSources(
       });
     }
   }
+  // Mana restreint de la réserve : seulement pour un paiement permis (utilisé d'abord, il est déjà là).
+  (s.players[player]?.restrictedMana ?? []).forEach((m, i) => {
+    if (!allows(s, m.restriction, undefined, `pool:${i}`, player, purpose)) return;
+    out.push({
+      id: `pool:${i}`,
+      ability: RESTRICTED_POOL,
+      colors: [m.type],
+      amount: 1,
+      isCreature: false,
+      sacrifice: false,
+      key: `pool:${i}`,
+    });
+  });
   // Cave : chaque carte du cimetière paie {1} (utilisée en tout dernier, choix automatique).
   if (purpose?.delve) {
     for (const id of s.players[player]?.graveyard ?? []) {
@@ -289,7 +324,8 @@ export function manaSources(
     }
   }
   // Préférence : terrains, puis créatures, puis sources sacrifiées, puis convocation, puis cave ; les moins flexibles d'abord.
-  const rank = (x: ManaSource) => (x.delve ? 4 : x.convoke ? 3 : x.sacrifice ? 2 : x.isCreature ? 1 : 0);
+  const rank = (x: ManaSource) =>
+    x.ability === RESTRICTED_POOL ? -1 : x.delve ? 4 : x.convoke ? 3 : x.sacrifice ? 2 : x.isCreature ? 1 : 0;
   return out.sort((a, b) => rank(a) - rank(b) || a.colors.length - b.colors.length);
 }
 
@@ -507,7 +543,7 @@ export function payMana(
   if (spent) for (const m of MANA_TYPES) if (plan.spend[m]) spent[m] = plan.spend[m];
   if (sources) {
     for (const t of plan.taps) {
-      const ab = t.ability === CONVOKE || t.ability === DELVE ? undefined : manaAbilitiesOf(s, t.id)[t.ability];
+      const ab = t.ability < 0 ? undefined : manaAbilitiesOf(s, t.id)[t.ability];
       sources.push({ id: t.id, ab, amount: ab ? manaAmount(s, t.id, ab) : 1 });
     }
   }
@@ -518,8 +554,13 @@ export function payMana(
     .filter((a): a is ManaAbilityDef => !!a);
   const pool = s.players[player]?.manaPool;
   if (!pool) throw new Error("Joueur inconnu");
+  const usedRestricted = new Set<number>();
   for (const t of plan.taps) {
-    if (t.ability === CONVOKE) {
+    if (t.ability === RESTRICTED_POOL) {
+      // Mana restreint de la réserve : il rejoint la réserve pour être dépensé aussitôt.
+      usedRestricted.add(Number(t.id.slice("pool:".length)));
+      pool[t.color] += 1;
+    } else if (t.ability === CONVOKE) {
       // La créature engagée paie un mana de sa couleur (ou {1}).
       tapObject(s, obj(s, t.id));
       pool[t.color] += 1;
@@ -530,6 +571,11 @@ export function payMana(
       moveObject(s, t.id, "exile");
       pool.C += 1;
     } else activateManaAbility(s, player, t.id, t.ability, t.color);
+  }
+  const pl = s.players[player];
+  if (pl?.restrictedMana && usedRestricted.size) {
+    pl.restrictedMana = pl.restrictedMana.filter((_, i) => !usedRestricted.has(i));
+    if (pl.restrictedMana.length === 0) pl.restrictedMana = undefined;
   }
   for (const m of MANA_TYPES) {
     // Le solveur a promis ce mana : un manque ici est un bug, pas une décision illégale.

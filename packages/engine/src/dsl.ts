@@ -25,6 +25,7 @@ import type {
   LayerMods,
   ManaAbilityDef,
   ManaCost,
+  ManaRestriction,
   ManaType,
   ModeDef,
   MoveSpec,
@@ -213,6 +214,7 @@ export const ref = {
   exiledWith: { kind: "exiledWith" } as Ref,
   playersWithoutMaxSpeed: { kind: "playersWithoutMaxSpeed" } as Ref,
   libraryTop: (who: Ref): Ref => ({ kind: "libraryTop", who }),
+  stackItemsOf: (who: Ref): Ref => ({ kind: "stackItemsOf", who }),
   exiledCardsOf: (who: Ref): Ref => ({ kind: "exiledCardsOf", who }),
   allGraveyards: { kind: "allGraveyards" } as Ref,
   crewedBy: { kind: "crewedBy" } as Ref,
@@ -377,7 +379,12 @@ export const fx = {
     keywords,
   }),
   destroy: (what: Ref, store?: string): Effect => ({ op: "destroy", what, store }),
-  tapChosen: (filter: ObjectFilter, store: string): Effect => ({ op: "tapChosen", filter, store }),
+  tapChosen: (filter: ObjectFilter, store: string, opts: { exactly?: number; sharesColorWith?: Ref } = {}): Effect => ({
+    op: "tapChosen",
+    filter,
+    store,
+    ...opts,
+  }),
   lkiCountersTo: (to: Ref): Effect => ({ op: "lkiCountersTo", to }),
   cantGainLife: (who: Ref): Effect => ({ op: "cantGainLife", who }),
   millWhileShared: { op: "millWhileShared" } as Effect,
@@ -565,7 +572,7 @@ export const fx = {
     return [{ op: "mayPay", cost: parseManaCost(cost), prompt, skip: flat.length }, ...flat];
   },
   /** Contrecarre le sort ou la capacité désigné. */
-  counter: (what: Ref): Effect => ({ op: "counter", what }),
+  counter: (what: Ref, store?: string): Effect => ({ op: "counter", what, store }),
   /** « Contrecarrez-le ; exilez-le au lieu de le mettre au cimetière » (Syncopate). */
   counterExile: (what: Ref): Effect => ({ op: "counter", what, exile: true }),
   /** « Contrecarrez-le à moins que son contrôleur ne paie X » : le paiement annule les effets qui suivent. */
@@ -591,8 +598,19 @@ export const fx = {
   allowCastFromGraveyard: (what: Ref): Effect => ({ op: "allowCastFromGraveyard", what }),
   addMana: (...mana: ManaType[]): Effect => ({ op: "addMana", mana }),
   /** « Ajoutez N mana d'une couleur au choix » ; `colors` : « {R}, {W} ou {B} ». */
-  addManaChoice: (n: Amount = 1, colors?: ManaType[]): Effect => ({ op: "addManaChoice", n, colors }),
-  revealUntilN: (filter: ObjectFilter, n: number, to: MoveSpec): Effect => ({ op: "revealUntilN", filter, n, to }),
+  addManaChoice: (n: Amount = 1, colors?: ManaType[], restriction?: ManaRestriction): Effect => ({
+    op: "addManaChoice",
+    n,
+    colors,
+    restriction,
+  }),
+  revealUntilN: (filter: ObjectFilter, n: Amount, to?: MoveSpec, store?: string): Effect => ({
+    op: "revealUntilN",
+    filter,
+    n,
+    to,
+    store,
+  }),
   becomeCopyKeepAbilities: (what: Ref): Effect => ({ op: "becomeCopyKeepAbilities", what }),
   /** « Exilez les N cartes du dessus. Choisissez-en une. Vous pouvez la jouer ce tour-ci (ou jusqu'à la fin de votre prochain tour). » */
   impulse: (n: number, until: "thisTurn" | "yourNextTurn" = "thisTurn"): Effect => ({ op: "impulse", n, until }),
@@ -649,6 +667,14 @@ export const fx = {
   }),
   noLegendRuleThisTurn: { op: "noLegendRuleThisTurn" } as Effect,
   exileUntil: (filter: ObjectFilter, store: string): Effect => ({ op: "exileUntil", filter, store }),
+  /** Chaque joueur désigné exile le dessus de sa bibliothèque jusqu'à une valeur de mana totale de N ou plus. */
+  exileUntilTotalManaValue: (who: Ref, n: number, store: string): Effect => ({
+    op: "exileUntil",
+    filter: {},
+    store,
+    who,
+    untilTotalManaValue: n,
+  }),
   setLife: (amount: Amount, who: Ref = ref.you): Effect => ({ op: "setLife", who, amount }),
   /** « Vous contrôlez [le joueur] pendant son prochain tour » (722). */
   controlNextTurn: (who: Ref): Effect => ({ op: "controlNextTurn", who }),
@@ -715,6 +741,7 @@ export const fx = {
   counterAbilitySilence: (what: Ref): Effect => ({ op: "counterAbilitySilence", what }),
   /** « [Ce sort] gagne le rebond » (Ojer Pakpatiq). */
   grantRebound: (what: Ref): Effect => ({ op: "grantRebound", what }),
+  exileOnResolveWith: (what: Ref, counter: string): Effect => ({ op: "exileOnResolve", what, counter }),
   /** Sovereign Okinec Ahau : des marqueurs +1/+1 égaux à l'écart entre force et force de base. */
   countersAboveBase: (filter: ObjectFilter): Effect => ({ op: "countersAboveBase", filter }),
   /** Découverte N (701.57) ; `who` : « ce joueur découvre N » ; `store` : la carte découverte. */
@@ -800,6 +827,7 @@ export const fx = {
   /** Blessures réparties entre les cibles désignées. */
   damageDivided: (total: Amount, to: Ref): Effect => ({ op: "damageDivided", total, to }),
   keepOnePerType: (who: Ref): Effect => ({ op: "keepOnePerType", who }),
+  keepSharingCreatureType: (who: Ref = ref.eachPlayer): Effect => ({ op: "keepSharingCreatureType", who }),
   /** « Vous obtenez un emblème avec … » */
   emblem: (
     name: string,
@@ -821,11 +849,12 @@ export const fx = {
   extraMountainMana: { op: "playerEffect", ability: { extraMountainMana: 1 } } as Effect,
   mayWheel: { op: "mayWheel" } as Effect,
   destroyAllButChosenType: { op: "destroyAllButChosenType" } as Effect,
-  exileFromHandLinked: (who: Ref, filter: ObjectFilter, untilLeaves?: boolean): Effect => ({
+  exileFromHandLinked: (who: Ref, filter: ObjectFilter, untilLeaves?: boolean, reveal?: Amount): Effect => ({
     op: "exileFromHandLinked",
     who,
     filter,
     untilLeaves,
+    reveal,
   }),
   exileLibraryButBottom: (who: Ref, keep?: number): Effect => ({ op: "exileLibraryButBottom", who, keep }),
   /** Attache une Aura ou un Équipement (par défaut la source) au permanent désigné. */
@@ -943,6 +972,7 @@ export const fx = {
       store?: string;
       pool?: Ref;
       random?: boolean;
+      onePerColorOf?: ObjectFilter;
     } = {},
   ): Effect => ({
     op: "pickFromZone",
@@ -957,6 +987,7 @@ export const fx = {
     store: opts.store,
     pool: opts.pool,
     random: opts.random,
+    onePerColorOf: opts.onePerColorOf,
   }),
   topOrBottom: (what: Ref, topDamage?: number): Effect => ({ op: "libraryTopOrBottom", what, topDamage }),
   /** « … perd N points de vie à moins de défausser une carte / sacrifier un permanent » */
@@ -1271,8 +1302,9 @@ export function activated(opts: {
   exileFromGraveyardX?: ObjectFilter;
   /** « Sacrifiez un ou plusieurs [artefacts] » (X ≥ 1). */
   sacrificeX?: ObjectFilter;
-  /** « Défaussez N cartes ». */
+  /** « Défaussez N cartes » (`discardFilter` : seulement des cartes correspondantes). */
   discard?: number;
+  discardFilter?: ObjectFilter;
   /** Ninjutsu : « renvoyez en main un attaquant non bloqué que vous contrôlez ». */
   returnUnblockedAttacker?: boolean;
   /** « Fourragez » (701.61). */
@@ -1309,6 +1341,7 @@ export function activated(opts: {
       exileFromGraveyardX: opts.exileFromGraveyardX,
       sacrificeX: opts.sacrificeX,
       discard: opts.discard,
+      discardFilter: opts.discardFilter,
       returnUnblockedAttacker: opts.returnUnblockedAttacker,
       forage: opts.forage,
       craft: opts.craft,
@@ -1589,6 +1622,7 @@ export const cond = {
   sourceMatches: (filter: ObjectFilter): Condition => ({ kind: "sourceMatches", filter }),
   targetMatches: (spec: string, filter: ObjectFilter): Condition => ({ kind: "targetMatches", spec, filter }),
   refMatches: (r: Ref, filter: ObjectFilter): Condition => ({ kind: "refMatches", ref: r, filter }),
+  beholdSharingType: (r: Ref, count: number): Condition => ({ kind: "beholdSharingType", ref: r, count }),
   eventObjectMatches: (filter: ObjectFilter): Condition => ({ kind: "eventObjectMatches", filter }),
   lifeGainedAtLeast: (n: number): Condition => ({ kind: "lifeGainedAtLeast", n }),
   amountAtLeast: (a: Amount, n: number): Condition => ({ kind: "amountAtLeast", amount: a, n }),
@@ -1858,6 +1892,7 @@ export function staticAbility(
     perSpeed?: boolean;
     perLife?: boolean;
     perHand?: boolean;
+    perTurnEvents?: TurnLogQuery;
   } = {},
 ): StaticAbilityDef {
   return {
@@ -1873,6 +1908,7 @@ export function staticAbility(
     perSpeed: opts.perSpeed,
     perLife: opts.perLife,
     perHand: opts.perHand,
+    perTurnEvents: opts.perTurnEvents,
   };
 }
 

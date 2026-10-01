@@ -4,6 +4,7 @@ import {
   activated,
   amount,
   type CardScript,
+  castPermission,
   cond,
   costReducer,
   ELF_BG,
@@ -15,10 +16,12 @@ import {
   playerStatic,
   protection,
   ref,
+  spell,
   staticAbility,
   TREASURE,
   target,
   triggered,
+  WORM_BG,
   when,
 } from "./common";
 
@@ -88,6 +91,100 @@ const tamHexproof = (Object.keys(COLOR_NAMES) as (keyof typeof COLOR_NAMES)[]).m
 const MERFOLK_YOU: ObjectFilter = { subtype: "Merfolk", controller: "you" };
 
 export const MULTI: Record<string, CardScript> = {
+  "Sanar, Innovative First-Year": {
+    abilities: [
+      triggered(
+        when.step("main1", "you"),
+        [
+          fx.revealUntilN({ nonland: true }, amount.colorsAmong(), undefined, "r"),
+          fx.pickFromZone(
+            "graveyard",
+            {},
+            { to: "exile" },
+            {
+              pool: ref.stored("r"),
+              count: 5,
+              min: 0,
+              onePerColorOf: { permanent: true, controller: "you" },
+              store: "e",
+              prompt: "Pour chaque couleur parmi vos permanents, vous pouvez exiler une carte révélée de cette couleur",
+            },
+          ),
+          fx.shuffle(ref.you),
+          fx.grantPlay(ref.stored("e")),
+        ],
+        { label: "Éclatant — révélez jusqu'à X cartes non-terrain ; exilez-en une par couleur, jouables ce tour-ci" },
+      ),
+    ],
+  },
+  "Raiding Schemes": {
+    // Conspiration (702.78) accordée : les deux créatures sont engagées quand la capacité se résout, pas en lançant.
+    abilities: [
+      triggered(
+        when.castSpell("you", { notTypes: ["Creature"] }),
+        [
+          fx.tapChosen({ types: ["Creature"] }, "c", { exactly: 2, sharesColorWith: ref.eventObject }),
+          ...fx.when(cond.v("c", 2), fx.copySpell(ref.eventObject, 1)),
+        ],
+        { label: "Conspiration : engagez deux créatures qui partagent une couleur avec le sort pour le copier" },
+      ),
+    ],
+  },
+  "Lluwen, Imperfect Naturalist": {
+    abilities: [
+      triggered(
+        when.entersSelf,
+        [
+          fx.mill(4, ref.you, { name: "m" }),
+          fx.pickFromZone(
+            "graveyard",
+            { anyOf: [{ types: ["Creature"] }, { types: ["Land"] }] },
+            { to: "libraryTop" },
+            {
+              pool: ref.stored("m"),
+              min: 0,
+              prompt: "Vous pouvez mettre une carte de créature ou de terrain sur votre bibliothèque",
+            },
+          ),
+        ],
+        { label: "Meulez quatre cartes ; une créature ou un terrain parmi elles sur votre bibliothèque" },
+      ),
+      activated({
+        mana: "{2}{B/G}{B/G}{B/G}",
+        tap: true,
+        discard: 1,
+        discardFilter: { types: ["Land"] },
+        effects: [fx.createTokens(WORM_BG, amount.countIn("graveyard", { types: ["Land"] }))],
+        label: "Défaussez une carte de terrain : un Ver 1/1 par carte de terrain dans votre cimetière",
+      }),
+    ],
+  },
+  "Dream Harvest": {
+    spell: spell([], [fx.exileUntilTotalManaValue(ref.eachOpponent, 5, "h"), fx.grantPlay(ref.stored("h"), { free: true })]),
+  },
+  // Vol lu dans le texte.
+  "Maralen, Fae Ascendant": {
+    abilities: [
+      triggered(
+        when.enters({ controller: "you", anyOf: [{ subtype: "Elf" }, { subtype: "Faerie" }] }),
+        [fx.exileTop(ref.target(), 2, "m"), fx.link(ref.stored("m"))],
+        {
+          targets: [target.player("t", "opponent")],
+          label: "Exilez les deux cartes du dessus de la bibliothèque de l'adversaire ciblé",
+        },
+      ),
+      castPermission({
+        linkedCards: true,
+        linkedFilter: {},
+        linkedAnyOwner: true,
+        linkedFree: true,
+        linkedOncePerTurn: true,
+        linkedThisTurn: true,
+        linkedMaxManaValue: amount.count({ controller: "you", anyOf: [{ subtype: "Elf" }, { subtype: "Faerie" }] }),
+        label: "Une fois par tour : lancez gratuitement un sort exilé avec Maralen ce tour-ci (VM ≤ Elfes et Faeries)",
+      }),
+    ],
+  },
   "Shadow Urchin": {
     abilities: [
       triggered(when.attacksSelf, [fx.blight(1)], { label: "Flétrir 1" }),

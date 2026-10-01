@@ -46,6 +46,21 @@ const removeACounter = (opts: Omit<Parameters<typeof activated>[0], "removeCount
 ];
 
 export const WHITE: Record<string, CardScript> = {
+  // Convocation lue dans le texte.
+  Winnowing: { spell: spell([], [fx.keepSharingCreatureType()]) },
+  Kinbinding: {
+    abilities: [
+      staticAbility(
+        YOUR_CREATURES,
+        { power: 1, toughness: 1 },
+        {
+          perTurnEvents: { event: "zone", to: "battlefield", types: ["Creature"], who: "you" },
+          label: "Vos créatures : +X/+X, X étant le nombre de créatures arrivées sous votre contrôle ce tour-ci",
+        },
+      ),
+      triggered(when.yourCombat, [fx.createTokens(KITHKIN)], { label: "Un jeton Kithkin 1/1" }),
+    ],
+  },
   "Adept Watershaper": {
     abilities: [
       staticAbility(

@@ -388,6 +388,9 @@ export function checkCondition(
       const lki = s.objects[sourceId] ? undefined : s.lki[sourceId];
       return !!lki && matchesView(lki, c.filter, controller, sourceId);
     }
+    // Lue pendant la résolution seulement (`evalCondition`).
+    case "beholdSharingType":
+      return false;
     case "targetMatches":
     case "refMatches":
     case "eventObjectMatches": {
@@ -486,6 +489,7 @@ function matchTrigger(s: GameState, ev: RulesEvent, t: TriggerSpec, src: Source)
         )
       )
         return null;
+      if (t.fromGraveyard && ev.from !== "graveyard" && !(ev.newId && s.objects[ev.newId]?.castFromGraveyard)) return null;
       return v && matchWho(t.who, v, src) ? { objectId: v.id, player: v.controller } : null;
     }
     case "dies": {
@@ -579,6 +583,10 @@ function matchTrigger(s: GameState, ev: RulesEvent, t: TriggerSpec, src: Source)
         );
         // Danitha, Sword of Hope : « un sort d'Équipement ou un sort qui cible… ».
         if (!ok && !(t.targeting.orFilter && f && filterOk)) return null;
+      }
+      if (t.singleTarget) {
+        const item = s.stack.find((x) => x.id === ev.stackId);
+        if (!item || Object.values(item.targets).flat().length !== 1) return null;
       }
       // « votre deuxième sort de chaque tour ».
       if (t.nth !== undefined && s.players[ev.player]?.turnStats.spellsCast !== t.nth) return null;

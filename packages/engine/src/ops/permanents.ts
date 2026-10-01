@@ -68,6 +68,15 @@ export const HANDLERS: OpHandlers = {
     return;
   },
   modify(s, _r, e, ctx) {
+    // Un sort sur la pile qui gagne un mot-clé (Spinerock Tyrant : « ces sorts gagnent la flétrissure ») : ses blessures
+    // sont infligées avec les mots-clés de son instantané de source.
+    for (const id of resolveRef(s, ctx, e.what)) {
+      const item = s.stack.find((x) => x.id === id && x.kind === "spell");
+      if (item && e.mods.addKeywords?.length) {
+        const kw = [...new Set([...item.sourceSnapshot.keywords, ...e.mods.addKeywords])];
+        item.sourceSnapshot = { ...item.sourceSnapshot, keywords: kw };
+      }
+    }
     const ids = resolveRef(s, ctx, e.what).filter((id) => onBattlefield(s, id));
     if (ids.length === 0) return;
     // 611.2b : un effet « tant que [la source] reste… » ne fait rien si elle est déjà partie.

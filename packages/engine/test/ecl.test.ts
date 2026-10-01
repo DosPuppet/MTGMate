@@ -3951,3 +3951,317 @@ describe("Lorwyn Eclipsed, lot B", () => {
     expect(s.players.p2?.life).toBe(16);
   });
 });
+
+describe("Lorwyn Eclipsed, lot C", () => {
+  const settleAll = (s: S) =>
+    passAccepting(s, (x) => x.stack.length === 0 && x.triggers.length === 0 && x.pending?.kind === "priority");
+  const elf = customCard({ name: "Elfe de test", subtypes: ["Elf"], power: 1, toughness: 1 });
+  const goblin = customCard({ name: "Gobelin de test", subtypes: ["Goblin"], power: 1, toughness: 1 });
+  const elfWarrior = customCard({ name: "Elfe guerrier", subtypes: ["Elf", "Warrior"], power: 2, toughness: 2 });
+
+  it("Unbury : deux cartes de créature qui partagent un type, pas deux qui n'en partagent aucun", () => {
+    const s = scenario({ p1: { battlefield: lands("Swamp", 2), hand: ["Unbury"], graveyard: [elf, goblin, elfWarrior] } });
+    const card = idOf(s, "p1", "hand", "Unbury");
+    const [e, g, w] = [elf.name, goblin.name, elfWarrior.name].map((n) => idOf(s, "p1", "graveyard", n));
+    expect(() => act(s, "p1", { type: "cast", card, mode: 1, targets: { t: [e as string, g as string] } })).toThrow();
+    const t = settle(act(s, "p1", { type: "cast", card, mode: 1, targets: { t: [e as string, w as string] } }));
+    expect(t.players.p1?.hand).toHaveLength(2);
+  });
+
+  it("Kinbinding : +X/+X par créature arrivée sous votre contrôle ce tour-ci (jetons compris)", () => {
+    let s = scenario({ p1: { battlefield: ["Kinbinding", "Bear Cub"] } });
+    const bear = idOf(s, "p1", "battlefield", "Bear Cub");
+    expect(chars(s, bear).power).toBe(2);
+    s = passAccepting(s, (x) => x.turn.step === "beginCombat" && x.stack.length === 0 && x.triggers.length === 0);
+    expect(chars(s, bear).power).toBe(3);
+  });
+
+  it("Winnowing : chacun sacrifie ses autres créatures sans type en commun avec celle choisie", () => {
+    let s = scenario({
+      p1: { battlefield: [...lands("Plains", 6), elf, elfWarrior, goblin], hand: ["Winnowing"] },
+      p2: { battlefield: ["Bear Cub", "Shivan Dragon"] },
+    });
+    const keep = idOf(s, "p1", "battlefield", elf.name);
+    const dragon = idOf(s, "p2", "battlefield", "Shivan Dragon");
+    s = chooseWanted(act(s, "p1", { type: "cast", card: idOf(s, "p1", "hand", "Winnowing") }), [keep, dragon]);
+    expect(idsOf(s, "p1", "battlefield", elfWarrior.name)).toHaveLength(1);
+    expect(idsOf(s, "p1", "battlefield", goblin.name)).toHaveLength(0);
+    expect(idsOf(s, "p2", "battlefield", "Shivan Dragon")).toHaveLength(1);
+    expect(idsOf(s, "p2", "battlefield", "Bear Cub")).toHaveLength(0);
+  });
+
+  it("Glen Elendra's Answer : contrecarre tous les sorts adverses, une Faerie par sort contrecarré", () => {
+    let s = scenario({
+      p1: { battlefield: [...lands("Island", 4)], hand: ["Glen Elendra's Answer"] },
+      p2: { battlefield: [...lands("Forest", 2), "Bear Cub"], hand: ["Giant Growth", "Giant Growth"] },
+      active: "p2",
+    });
+    const bear = idOf(s, "p2", "battlefield", "Bear Cub");
+    for (const g of idsOf(s, "p2", "hand", "Giant Growth")) s = act(s, "p2", { type: "cast", card: g, targets: { t: [bear] } });
+    s = act(s, "p2", { type: "pass" });
+    s = settle(act(s, "p1", { type: "cast", card: idOf(s, "p1", "hand", "Glen Elendra's Answer") }));
+    expect(idsOf(s, "p2", "graveyard", "Giant Growth")).toHaveLength(2);
+    expect(chars(s, bear).power).toBe(2);
+    expect(s.battlefield.filter((id) => chars(s, id).name === "Faerie")).toHaveLength(2);
+  });
+
+  it("Swat Away : le propriétaire met le sort ciblé au-dessus ou au-dessous de sa bibliothèque", () => {
+    let s = scenario({
+      p1: { battlefield: lands("Island", 4), hand: ["Swat Away"] },
+      p2: { battlefield: [...lands("Forest", 1), "Bear Cub"], hand: ["Giant Growth"] },
+      active: "p2",
+    });
+    const bear = idOf(s, "p2", "battlefield", "Bear Cub");
+    s = act(s, "p2", { type: "cast", card: idOf(s, "p2", "hand", "Giant Growth"), targets: { t: [bear] } });
+    s = act(s, "p2", { type: "pass" });
+    const growth = s.stack[0]?.id as string;
+    s = chooseWanted(act(s, "p1", { type: "cast", card: idOf(s, "p1", "hand", "Swat Away"), targets: { t: [growth] } }), ["top"]);
+    const top = s.players.p2?.library[0];
+    expect(nameOf(s, top as string)).toBe("Giant Growth");
+    expect(chars(s, bear).power).toBe(2);
+  });
+
+  it("Lasting Tarfire : 2 blessures à chaque adversaire à l'étape de fin, si vous avez mis un marqueur sur une créature", () => {
+    let s = scenario({ p1: { battlefield: ["Lasting Tarfire", "Bear Cub"] }, step: "main2" });
+    s = passAccepting(s, (x) => x.turn.number === 4);
+    expect(s.players.p2?.life).toBe(20);
+    s = scenario({ p1: { battlefield: ["Lasting Tarfire", "Bear Cub"] }, step: "main2" });
+    const bear = idOf(s, "p1", "battlefield", "Bear Cub");
+    runEffect(
+      s,
+      {
+        item: { id: "x", controller: "p1", sourceId: bear, sourceDefId: s.objects[bear]?.defId, targets: {} },
+        controller: "p1",
+        targets: {},
+        vars: {},
+        pc: 0,
+      } as never,
+      dsl.fx.addCounters(dsl.ref.self, 1),
+    );
+    s = passAccepting(s, (x) => x.turn.number === 4);
+    expect(s.players.p2?.life).toBe(18);
+  });
+
+  it("Spinerock Tyrant : copie d'un sort à cible unique ; les deux sorts ont la flétrissure", () => {
+    let s = scenario({
+      p1: { battlefield: ["Spinerock Tyrant", ...lands("Mountain", 2)], hand: ["Lightning Strike"] },
+      p2: { battlefield: ["Pelakka Wurm"] },
+    });
+    const wurm = idOf(s, "p2", "battlefield", "Pelakka Wurm");
+    s = act(s, "p1", { type: "cast", card: idOf(s, "p1", "hand", "Lightning Strike"), targets: { t: [wurm] } });
+    s = chooseWanted(s, [wurm]);
+    expect(s.objects[wurm]?.counters["-1/-1"]).toBe(6);
+    expect(s.objects[wurm]?.damage).toBe(0);
+  });
+
+  const resolutionOf = (s: S, controller: string, sourceId: string) =>
+    ({
+      item: { id: "x", controller, sourceId, sourceDefId: s.objects[sourceId]?.defId, targets: {} },
+      controller,
+      targets: {},
+      vars: {},
+      pc: 0,
+    }) as never as Parameters<typeof runEffect>[1];
+  const castable = (s: S, card: string) => legalActions(s, "p1").some((a) => a.type === "cast" && a.card === card);
+
+  it("Dawnhand Dissident : pendant votre tour, une créature exilée avec lui se lance en retirant trois marqueurs", () => {
+    let s = scenario({
+      p1: { battlefield: ["Dawnhand Dissident", "Pelakka Wurm", ...lands("Swamp", 2)] },
+      p2: { graveyard: ["Bear Cub"] },
+    });
+    const dissident = idOf(s, "p1", "battlefield", "Dawnhand Dissident");
+    const wurm = idOf(s, "p1", "battlefield", "Pelakka Wurm");
+    s = chooseWanted(
+      act(s, "p1", { type: "activate", source: dissident, ability: 1, targets: { t: [idOf(s, "p2", "graveyard", "Bear Cub")] } }),
+      [wurm],
+    );
+    const bear = s.exile.find((id) => nameOf(s, id) === "Bear Cub") as string;
+    expect(s.objects[dissident]?.linked).toContain(bear);
+    // La Bear Cub ne lui appartient pas : rien à lancer. Avec sa propre carte et trois marqueurs, oui.
+    expect(castable(s, bear)).toBe(false);
+    const own = scenario({
+      p1: { battlefield: ["Dawnhand Dissident", "Pelakka Wurm", ...lands("Forest", 2)], graveyard: ["Bear Cub"] },
+    });
+    const d2 = idOf(own, "p1", "battlefield", "Dawnhand Dissident");
+    const w2 = idOf(own, "p1", "battlefield", "Pelakka Wurm");
+    let o = chooseWanted(
+      act(own, "p1", { type: "activate", source: d2, ability: 1, targets: { t: [idOf(own, "p1", "graveyard", "Bear Cub")] } }),
+      [w2],
+    );
+    const exiled = o.exile.find((id) => nameOf(o, id) === "Bear Cub") as string;
+    expect(castable(o, exiled)).toBe(false);
+    const w = o.objects[w2];
+    if (w) w.counters["-1/-1"] = 3;
+    expect(castable(o, exiled)).toBe(true);
+    o = settle(act(o, "p1", { type: "cast", card: exiled }));
+    expect(idsOf(o, "p1", "battlefield", "Bear Cub")).toHaveLength(1);
+    expect(o.objects[w2]?.counters["-1/-1"] ?? 0).toBe(0);
+  });
+
+  it("Maralen : exile les deux cartes du dessus adverses ; une fois par tour, un sort gratuit de VM au plus ses Elfes et Faeries", () => {
+    let s = scenario({
+      p1: { battlefield: ["Swamp", "Island", ...lands("Forest", 3)], hand: ["Maralen, Fae Ascendant"] },
+      p2: { library: ["Bear Cub", "Shivan Dragon", "Forest"] },
+    });
+    s = chooseWanted(act(s, "p1", { type: "cast", card: idOf(s, "p1", "hand", "Maralen, Fae Ascendant") }), ["p2"]);
+    const bear = s.exile.find((id) => nameOf(s, id) === "Bear Cub") as string;
+    const dragon = s.exile.find((id) => nameOf(s, id) === "Shivan Dragon") as string;
+    expect(castable(s, bear)).toBe(false); // VM 2 > un seul Elfe/Faerie (Maralen)
+    const r = resolutionOf(s, "p1", idOf(s, "p1", "battlefield", "Maralen, Fae Ascendant"));
+    runEffect(s, r, dsl.fx.createTokens(ELF_TOKEN));
+    s = settleAll(s);
+    expect(castable(s, bear)).toBe(true);
+    expect(castable(s, dragon)).toBe(false);
+  });
+
+  it("Taster of Wares : l'adversaire révèle X cartes ; un éphémère exilé se lance avec du mana de n'importe quel type", () => {
+    let s = scenario({
+      p1: { battlefield: lands("Swamp", 5), hand: ["Taster of Wares"] },
+      p2: { hand: ["Giant Growth", "Forest", "Bear Cub"] },
+    });
+    s = act(s, "p1", { type: "cast", card: idOf(s, "p1", "hand", "Taster of Wares"), targets: {} });
+    s = chooseWanted(s, ["p2", idOf(s, "p2", "hand", "Giant Growth")]);
+    const growth = s.exile.find((id) => nameOf(s, id) === "Giant Growth") as string;
+    expect(growth).toBeDefined();
+    expect(s.players.p2?.hand).toHaveLength(2);
+    expect(castable(s, growth)).toBe(true);
+  });
+
+  it("Twilight Diviner : une créature revenue du cimetière donne un jeton copie, une fois par tour", () => {
+    let s = scenario({ p1: { battlefield: ["Twilight Diviner"], graveyard: ["Bear Cub", "Bear Cub"] } });
+    const diviner = idOf(s, "p1", "battlefield", "Twilight Diviner");
+    const [a, b] = idsOf(s, "p1", "graveyard", "Bear Cub");
+    runEffect(s, resolutionOf(s, "p1", diviner), dsl.fx.moveTo(dsl.ref.self, { to: "battlefield" }));
+    s.objects[a as string] &&
+      runEffect(
+        s,
+        { ...resolutionOf(s, "p1", diviner), targets: { t: [a as string] } } as never,
+        dsl.fx.toBattlefield(dsl.ref.target()),
+      );
+    s = settleAll(s);
+    s.objects[b as string] &&
+      runEffect(
+        s,
+        { ...resolutionOf(s, "p1", diviner), targets: { t: [b as string] } } as never,
+        dsl.fx.toBattlefield(dsl.ref.target()),
+      );
+    s = settleAll(s);
+    expect(s.battlefield.filter((id) => chars(s, id).name === "Bear Cub")).toHaveLength(3);
+  });
+
+  it("Ashling, Rimebound : deux mana restreints aux sorts de VM 4 ou plus", () => {
+    let s = scenario({ p1: { battlefield: ["Ashling, Rekindled // Ashling, Rimebound"], hand: ["Shivan Dragon", "Bear Cub"] } });
+    const ashling = idOf(s, "p1", "battlefield", "Ashling, Rekindled // Ashling, Rimebound");
+    runEffect(s, resolutionOf(s, "p1", ashling), dsl.fx.transform());
+    s = chooseWanted(settleAll(s), ["R"]);
+    expect(s.players.p1?.restrictedMana).toHaveLength(2);
+    expect(castable(s, idOf(s, "p1", "hand", "Bear Cub"))).toBe(false);
+    const t = scenario({ p1: { battlefield: [...lands("Mountain", 4)], hand: ["Shivan Dragon", "Bear Cub"] } });
+    const pl = t.players.p1;
+    if (pl)
+      pl.restrictedMana = [
+        { type: "R", restriction: { spell: { minManaValue: 4 } } },
+        { type: "R", restriction: { spell: { minManaValue: 4 } } },
+      ];
+    expect(castable(t, idOf(t, "p1", "hand", "Shivan Dragon"))).toBe(true);
+    const cast = settle(act(t, "p1", { type: "cast", card: idOf(t, "p1", "hand", "Shivan Dragon") }));
+    expect(cast.players.p1?.restrictedMana).toBeUndefined();
+    expect(idsOf(cast, "p1", "battlefield", "Shivan Dragon")).toHaveLength(1);
+  });
+
+  it("Goliath Daydreamer : l'éphémère lancé de la main est exilé avec un marqueur de rêve, puis relancé gratuitement en attaquant", () => {
+    let s = scenario({ p1: { battlefield: ["Goliath Daydreamer", "Mountain", "Mountain"], hand: ["Lightning Strike"] } });
+    s = settle(act(s, "p1", { type: "cast", card: idOf(s, "p1", "hand", "Lightning Strike"), targets: { t: ["p2"] } }));
+    s = settleAll(s);
+    const strike = s.exile.find((id) => nameOf(s, id) === "Lightning Strike") as string;
+    expect(s.objects[strike]?.counters.dream).toBe(1);
+    expect(s.players.p2?.life).toBe(17);
+    s = passAccepting(s, (x) => x.pending?.kind === "declareAttackers");
+    s = act(s, "p1", {
+      type: "declareAttackers",
+      attackers: [{ id: idOf(s, "p1", "battlefield", "Goliath Daydreamer"), defender: "p2" }],
+    });
+    s = untilCastNow(s);
+    expect(castNowOf(s)?.cards).toEqual([strike]);
+    s = settleAll(act(s, "p1", { type: "cast", card: strike, targets: { t: ["p2"] } }));
+    expect(s.players.p2?.life).toBe(14);
+  });
+
+  it("Dream Harvest : chaque adversaire exile jusqu'à une VM totale de 5 ; ces cartes se lancent gratuitement", () => {
+    let s = scenario({
+      p1: { battlefield: lands("Island", 7), hand: ["Dream Harvest"] },
+      p2: { library: ["Bear Cub", "Forest", "Bear Cub", "Shivan Dragon", "Forest"] },
+    });
+    s = settle(act(s, "p1", { type: "cast", card: idOf(s, "p1", "hand", "Dream Harvest") }));
+    // Bear Cub (2), Forest (0), Bear Cub (2), Shivan Dragon (6) : total 10 ≥ 5 après le dragon.
+    expect(s.players.p2?.library).toHaveLength(1);
+    const dragon = s.exile.find((id) => nameOf(s, id) === "Shivan Dragon") as string;
+    expect(castable(s, dragon)).toBe(true);
+  });
+
+  it("Lluwen : défaussez une carte de terrain (et seulement de terrain) : un Ver par terrain du cimetière", () => {
+    let s = scenario({
+      p1: {
+        battlefield: ["Lluwen, Imperfect Naturalist", ...lands("Swamp", 5)],
+        hand: ["Bear Cub", "Forest"],
+        graveyard: ["Forest"],
+      },
+    });
+    const lluwen = idOf(s, "p1", "battlefield", "Lluwen, Imperfect Naturalist");
+    expect(() =>
+      act(s, "p1", { type: "activate", source: lluwen, ability: 1, discard: [idOf(s, "p1", "hand", "Bear Cub")] }),
+    ).toThrow();
+    s = settle(act(s, "p1", { type: "activate", source: lluwen, ability: 1, discard: [idOf(s, "p1", "hand", "Forest")] }));
+    expect(s.battlefield.filter((id) => chars(s, id).name === "Worm")).toHaveLength(2);
+  });
+
+  it("Celestial Reunion : la carte trouvée va sur le champ de bataille si vous contemplez deux créatures de son type", () => {
+    let s = scenario({
+      p1: {
+        battlefield: [...lands("Forest", 3), "Llanowar Elves"],
+        hand: ["Celestial Reunion", "Llanowar Elves"],
+        library: [elfWarrior],
+      },
+    });
+    s = chooseWanted(act(s, "p1", { type: "cast", card: idOf(s, "p1", "hand", "Celestial Reunion"), x: 2 }), [
+      s.players.p1?.library[0] as string,
+    ]);
+    expect(idsOf(s, "p1", "battlefield", elfWarrior.name)).toHaveLength(1);
+    let t = scenario({ p1: { battlefield: lands("Forest", 3), hand: ["Celestial Reunion"], library: [elfWarrior] } });
+    t = chooseWanted(act(t, "p1", { type: "cast", card: idOf(t, "p1", "hand", "Celestial Reunion"), x: 2 }), [
+      t.players.p1?.library[0] as string,
+    ]);
+    expect(idsOf(t, "p1", "hand", elfWarrior.name)).toHaveLength(1);
+  });
+
+  it("Raiding Schemes : engager deux créatures de la couleur du sort non-créature le copie", () => {
+    let s = scenario({
+      p1: {
+        battlefield: ["Raiding Schemes", "Mountain", "Mountain", "Shivan Dragon", "Shivan Dragon"],
+        hand: ["Lightning Strike"],
+      },
+    });
+    s = act(s, "p1", { type: "cast", card: idOf(s, "p1", "hand", "Lightning Strike"), targets: { t: ["p2"] } });
+    s = chooseWanted(s, []);
+    expect(s.players.p2?.life).toBe(14);
+  });
+
+  it("Sanar : révèle jusqu'à X cartes non-terrain, en exile une par couleur, jouables ce tour-ci", () => {
+    let s = scenario({
+      p1: {
+        battlefield: ["Sanar, Innovative First-Year", "Llanowar Elves"],
+        library: ["Forest", "Shivan Dragon", "Bear Cub", "Giant Growth", "Opt"],
+      },
+      step: "upkeep",
+    });
+    s = passAccepting(
+      s,
+      (x) => x.turn.step === "main1" && x.stack.length === 0 && x.triggers.length === 0 && x.pending?.kind === "priority",
+    );
+    // Couleurs de vos permanents : rouge, bleu (Sanar), vert (Llanowar) ; X = 3 : Shivan Dragon, Bear Cub, Giant Growth.
+    const exiled = s.exile.map((id) => nameOf(s, id));
+    expect(exiled).toContain("Shivan Dragon");
+    expect(exiled.filter((n) => n === "Bear Cub" || n === "Giant Growth")).toHaveLength(1);
+    expect(s.players.p1?.library.length).toBe(5 - exiled.length - 1);
+  });
+});

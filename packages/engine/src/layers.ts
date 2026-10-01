@@ -17,6 +17,7 @@ import { manaValue } from "./mana";
 import { counterPT, obj } from "./state";
 import { ALL_CREATURE_TYPES, matchesView, withChosen } from "./targets";
 import { checkCondition } from "./triggers";
+import { countTurnEvents } from "./turnlog";
 import type {
   AbilityDef,
   Amount,
@@ -691,9 +692,15 @@ function evalStatic(s: GameState, slot: StaticSlot, sig: (string | number)[]): {
     const defId = card ? s.objects[card]?.defId : undefined;
     mods = defId ? { ...mods, copyOf: defId, copyLinkedExile: undefined } : { ...mods, copyLinkedExile: undefined };
   }
-  if (ab.perSpeed || ab.perLife || ab.perHand) {
+  if (ab.perSpeed || ab.perLife || ab.perHand || ab.perTurnEvents) {
     const pl = s.players[o.controller];
-    const n = ab.perSpeed ? (pl?.speed ?? 0) : ab.perHand ? (pl?.hand.length ?? 0) : Math.max(0, pl?.life ?? 0);
+    const n = ab.perTurnEvents
+      ? countTurnEvents(s, ab.perTurnEvents, o.controller)
+      : ab.perSpeed
+        ? (pl?.speed ?? 0)
+        : ab.perHand
+          ? (pl?.hand.length ?? 0)
+          : Math.max(0, pl?.life ?? 0);
     mods = { ...mods, power: (mods.power ?? 0) * n, toughness: (mods.toughness ?? 0) * n };
     // Aettir and Priwen : « F/E de base X/X, où X est votre total de points de vie ».
     if (mods.setPower !== undefined) mods = { ...mods, setPower: mods.setPower * n };

@@ -8,7 +8,8 @@ Extension demandée par l'utilisateur le 01/10/2026, après Tarkir: Dragonstorm.
 |---|---|
 | Cartes faisables avec le moteur : flétrir (effet et coût), Vivid, changelins, convocation, persistance accordée, Ordres (« choisissez deux »), recto-verso transformables | A |
 | Formes du moteur : contempler et exiler depuis la main, type choisi lu partout (`subtypeChosen`), « quand elle se transforme en… », flétrissure (wither) | B |
-| Légendaires et cartes uniques restantes | C |
+| Cartes uniques : mana restreint, cartes exilées liées, conspiration, sorts qui gagnent un mot-clé… | C |
+| Remplacements des familles H et I (R1) : jetons, marqueurs, pioche, mana | D |
 
 Les scripts sont dans `packages/cards/src/ecl/` : `cards` (cartes du méta, phase 1), `white`, `blue`, `black`, `red`, `green`, `multi`, `artifacts` (incolores et terrain) et `legends`. Les jetons sont dans `ecl/common.ts` : Kithkin vert et blanc, Ondin blanc et bleu, Gobelin noir et rouge, Faerie bleue et noire avec le vol, Changeforme incolore avec le changelin, Elfe noir et vert 2/2, Élan 3/3, Ver noir et vert, Mutavault (terrain qui devient une créature 2/2 de tous les types), Sylvin 3/4 avec la portée.
 
@@ -56,12 +57,30 @@ Les scripts sont dans `packages/cards/src/ecl/` : `cards` (cartes du méta, phas
 - **Approximations levées :** « retirez un marqueur » limité aux −1/−1, Champions sans la main, « contemplez ou payez » qui excluait son propre nom, la transformation de Brigid, Sygg et Trystan, Morcant's Loyalist, Bristlebane Outrider et Thoughtweft Charge, Collective Inferno.
 - **Tests :** 23 tests de règles en plus dans `engine/test/ecl.test.ts` (« Lorwyn Eclipsed, lot B »).
 
-### Reste à faire (23 cartes)
+## Lot C ✅ (261 / 266)
+
+- **Cartes :** 18 nouvelles : Kinbinding, Winnowing, Unbury, Glen Elendra's Answer, Swat Away, Lasting Tarfire, Spinerock Tyrant, Dawnhand Dissident, Maralen, Taster of Wares, Twilight Diviner, Goliath Daydreamer, Dream Harvest, Lluwen, Ashling (recto-verso), Celestial Reunion, Raiding Schemes, Sanar.
+- **Le moteur gagne :**
+  - le mana restreint ajouté par un effet (`restrictedMana` du joueur, `fx.addManaChoice(n, couleurs, restriction)`) : le solveur le dépense d'abord, et seulement pour un paiement permis ; il disparaît quand la réserve se vide (Ashling, Rimebound) ;
+  - la permission « lancer les cartes exilées liées » prend des variantes : n'importe quel propriétaire, gratuit, une fois par tour, seulement ce tour-ci, valeur de mana plafonnée, en retirant des marqueurs parmi vos créatures, avec du mana de n'importe quel type (Dawnhand Dissident, Maralen, Taster of Wares) ;
+  - un statique multiplié par un compte du journal du tour (`perTurnEvents`, Kinbinding) ; les marqueurs mis sur un permanent sont au journal (`event: "counters"`, Lasting Tarfire) ;
+  - un sort sur la pile peut gagner un mot-clé (`fx.modify` sur un sort, Spinerock Tyrant), et le déclencheur « un sort avec une seule cible » (`singleTarget`) ;
+  - `exileOnResolve` généralisé : exiler les sorts désignés en se résolvant, avec un marqueur (Goliath Daydreamer) ;
+  - la Ref `stackItemsOf(joueurs)` et le compte des sorts contrecarrés (`fx.counter(ref, store)`, Glen Elendra's Answer) ;
+  - un sort ciblé mis au-dessus ou au-dessous de la bibliothèque (`spellToZone`, Swat Away) ;
+  - la contrainte de cibles « qui partagent un type de créature » (`shareCreatureType`, Unbury) ;
+  - « exilez jusqu'à une valeur de mana totale de N » pour chaque joueur désigné (Dream Harvest) ; « défaussez une carte de terrain » en coût (`discardFilter`, Lluwen) ; « révélez X cartes de votre main », choisies par leur propriétaire (Taster of Wares) ;
+  - le déclencheur d'arrivée « depuis un cimetière » (`fromGraveyard`, Twilight Diviner) ; « révélez jusqu'à X » avec X variable, et « une carte par couleur » (Sanar ; Aurora Awakener s'en trouve simplifiée) ; engager exactement N créatures qui partagent une couleur avec un sort (conspiration, Raiding Schemes) ; la condition « contempler deux créatures d'un type de [l'objet] » (Celestial Reunion).
+- **Dette :** une seule opération nouvelle, `keepSharingCreatureType` (Winnowing), justifiée dans `debt-baseline.json` ; les autres formes étendent des opérations existantes.
+- **Correctif [règles] :** un sort lancé était vu sans valeur de mana ni nom (`spellView`) : un filtre « sort de VM 4 ou plus » sur un sort en cours de lancement ne correspondait jamais. `RULES_VERSION` = 24, parties dorées régénérées.
+- **Limite d'affichage :** le mana restreint n'apparaît pas encore dans la réserve affichée.
+- **Tests :** 18 tests de règles en plus dans `engine/test/ecl.test.ts` (« Lorwyn Eclipsed, lot C »). Le test de fumée essaie désormais les décisions d'une action jusqu'à la première que le moteur accepte (Unbury : deux cartes qui partagent un type, une contrainte que l'énumération des cibles ne voit pas).
+
+### Reste à faire (5 cartes) : lot D, familles H et I de R1
 
 | Ce qui manque | Cartes |
 |---|---|
-| Mana restreint produit par un effet | Ashling |
-| Donner un mot-clé à des sorts sur la pile | Spinerock Tyrant |
-| Coût additionnel facultatif « choisissez un type et contemplez deux créatures » | Celestial Reunion |
-| Remplacements des familles H et I (jetons, pioche, mana) | Mirrormind Crown, Mornsong Aria, Lavaleaper, Shimmerwilds Growth |
-| Autres | Kinbinding, Winnowing, Blossombind, Glen Elendra's Answer, Swat Away, Dawnhand Dissident, Taster of Wares, Twilight Diviner, Unbury, Goliath Daydreamer, Lasting Tarfire, Dream Harvest, Lluwen, Maralen, Raiding Schemes (conspiration), Sanar |
+| Remplacement de la création de jetons (famille H) | Mirrormind Crown |
+| « Ne peut pas avoir de marqueurs » (famille H) et « ne peut pas être dégagée » | Blossombind |
+| Remplacement de la pioche (famille I) | Mornsong Aria |
+| Mana en plus quand un terrain est engagé (famille I) | Lavaleaper, Shimmerwilds Growth |
