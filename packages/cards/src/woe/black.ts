@@ -46,6 +46,14 @@ const sacrificeAnyNumber = (store: string) =>
 const YOUR_CREATURE = (id = "c") => target.creature(id, { controller: "you" });
 
 export const BLACK: Record<string, CardScript> = {
+  "Tangled Colony": {
+    keywords: ["cantBlock"],
+    abilities: [
+      triggered(when.diesSelf, [fx.createTokens(RAT_NO_BLOCK, amount.lkiDamage)], {
+        label: "Un Rat 1/1 par blessure qui lui a été infligée ce tour-ci",
+      }),
+    ],
+  },
   "Twisted Sewer-Witch": {
     abilities: [
       triggered(

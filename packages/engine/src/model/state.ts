@@ -532,6 +532,8 @@ export interface LkiSnapshot {
   counters?: Record<string, number>;
   /** Choix fait en arrivant (`GameObject.chosen`). */
   chosen?: GameObject["chosen"];
+  /** Blessures marquées (ce tour-ci). */
+  damage?: number;
   /** Copie d'un sort préparé. */
   preparedSpell?: boolean;
   prepared?: boolean;

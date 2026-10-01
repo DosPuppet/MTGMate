@@ -108,3 +108,12 @@ Les scripts sont dans `packages/cards/src/woe/` : `cards` (cartes du méta), `wh
   - `countersDivided` accepte un montant (« répartissez X marqueurs ») ;
   - `amount.lifeLostThisTurn`.
 - **Tests :** 5 tests de règles (« lot C1 »).
+
+## Sous-lot C2 : blessures d'un sort ciblé, blocages, blessures subies ✅ (258 / 269)
+
+- **Cartes :** Imodane, the Pyrohammer, Skewer Slinger, Tangled Colony.
+- **Le moteur gagne :**
+  - un sort qui inflige des blessures est identifié par son élément de pile (`DamageSource.stackId`, événement `damage`) ; le déclencheur `dealsDamage` prend `spellToSoleTarget` (« un sort qui ne cible qu'une créature lui inflige des blessures ») ;
+  - le déclencheur `blocks` peut désigner l'attaquant bloqué comme objet de l'événement (`eventObject: "attacker"`) ;
+  - les dernières informations connues gardent les blessures marquées (`LkiSnapshot.damage`), lues par `amount.lkiDamage`.
+- **Tests :** 3 tests de règles (« lot C2 »).

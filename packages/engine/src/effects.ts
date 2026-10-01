@@ -530,6 +530,8 @@ export function evalAmount(s: GameState, ctx: EffectContext, a: Amount): number 
       const spent = item?.spentColors ?? s.objects[ctx.sourceId]?.spentColors ?? {};
       return (["W", "U", "B", "R", "G"] as const).filter((c) => (spent[c] ?? 0) > 0).length;
     }
+    case "lkiDamage":
+      return s.objects[ctx.sourceId]?.damage ?? s.lki[ctx.sourceId]?.damage ?? 0;
     case "lkiCounters": {
       const counters = s.objects[ctx.sourceId]?.counters ?? s.lki[ctx.sourceId]?.counters ?? {};
       return counters[a.counter] ?? 0;
@@ -587,7 +589,10 @@ export function damageSource(s: GameState, ctx: EffectContext, ref?: Ref): Damag
     if (!ref && onBattlefield(s, ctx.sourceId) && s.objects[ctx.sourceId]?.defId === ctx.sourceDefId) {
       return sourceFromObject(s, ctx.sourceId);
     }
-    return { defId: ctx.sourceDefId, controller: ctx.controller, keywords: ctx.sourceSnapshot.keywords };
+    // Un sort qui se résout : il est identifié par son élément de pile (Imodane, the Pyrohammer).
+    const spell =
+      s.resolving?.item.kind === "spell" && s.resolving.item.sourceId === ctx.sourceId ? s.resolving.item.id : undefined;
+    return { defId: ctx.sourceDefId, controller: ctx.controller, keywords: ctx.sourceSnapshot.keywords, stackId: spell };
   }
   const id = resolveRef(s, ctx, ref)[0];
   if (!id || !onBattlefield(s, id)) return null;

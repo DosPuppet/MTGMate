@@ -465,6 +465,7 @@ function view(s: GameState, id: ObjectId, c: Characteristics, o: GameObject, att
     name: c.name,
     manaValue: scan && !scan.copying ? manaValue(s.defs[o.defId]?.manaCost) : viewManaValue(s, id, o),
     tapped: o.tapped,
+    damage: o.zone === "battlefield" ? o.damage : undefined,
     uid: o.uid,
     linked: o.linked,
     damagedBy: o.damagedBy,

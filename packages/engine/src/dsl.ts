@@ -276,6 +276,7 @@ export const amount = {
   lifeTotal: { kind: "lifeTotal" } as Amount,
   /** Marqueurs sur la source d'après ses dernières informations connues (capacité « quand elle meurt »). */
   lkiCounters: (counter: string): Amount => ({ kind: "lkiCounters", counter }),
+  lkiDamage: { kind: "lkiDamage" } as Amount,
   /** Convergence : couleurs de mana dépensées pour lancer ce sort. */
   colorsSpent: { kind: "colorsSpent" } as Amount,
   plus: (...of: Amount[]): Amount => ({ kind: "sum", of }),

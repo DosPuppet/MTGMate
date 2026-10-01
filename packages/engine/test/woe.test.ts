@@ -7,7 +7,7 @@
 
 import { describe, expect, it } from "vitest";
 import { CELEBRATION, CURSED_ROLE, createRole, MONSTER_ROLE, WICKED_ROLE, YOUNG_HERO_ROLE } from "../../cards/src/woe/common";
-import { destroy } from "../src/actions";
+import { dealDamage, destroy } from "../src/actions";
 import * as dsl from "../src/dsl";
 import { runEffect } from "../src/effects";
 import { legalActions } from "../src/legal";
@@ -4491,5 +4491,49 @@ describe("Wilds of Eldraine, lot C1 : furtivité, X marqueurs répartis, Auras a
     const strike = idOf(s, "p1", "hand", "Lightning Strike");
     // {1}{R} moins {1} : {R}, impayable sans terrain mais coût affiché d'une valeur de mana 1.
     expect(projectView(s, "p1").hand.find((c) => c.id === strike)?.castCost).toEqual({ text: "{R}", delta: -1 });
+  });
+});
+
+describe("Wilds of Eldraine, lot C2 : blessures d'un sort ciblé, blocages, blessures subies", () => {
+  const settleAll = (s: S) => {
+    while (stateBasedActions(s)) {}
+    return passAccepting(s, (x) => x.stack.length === 0 && x.triggers.length === 0 && x.pending?.kind === "priority");
+  };
+
+  it("Imodane : un sort à cible unique qui blesse sa créature blesse autant chaque adversaire ; pas un sort qui vise un joueur", () => {
+    let s = scenario({
+      p1: {
+        battlefield: ["Imodane, the Pyrohammer", "Mountain", "Mountain", "Mountain", "Mountain"],
+        hand: ["Lightning Strike", "Lightning Strike"],
+      },
+      p2: { battlefield: ["Pelakka Wurm"] },
+    });
+    const wurm = idOf(s, "p2", "battlefield", "Pelakka Wurm");
+    const [a, b] = idsOf(s, "p1", "hand", "Lightning Strike");
+    s = settleAll(act(s, "p1", { type: "cast", card: a as string, targets: { t: [wurm] } }));
+    expect(s.players.p2?.life).toBe(17);
+    s = settleAll(act(s, "p1", { type: "cast", card: b as string, targets: { t: ["p2"] } }));
+    expect(s.players.p2?.life).toBe(14);
+  });
+
+  it("Skewer Slinger : 1 blessure à la créature qu'elle bloque, et à celle qui la bloque", () => {
+    let s = scenario({ p1: { battlefield: ["Bear Cub"] }, p2: { battlefield: ["Skewer Slinger"] } });
+    const bear = idOf(s, "p1", "battlefield", "Bear Cub");
+    const slinger = idOf(s, "p2", "battlefield", "Skewer Slinger");
+    s = passAccepting(s, (x) => x.pending?.kind === "declareAttackers");
+    s = act(s, "p1", { type: "declareAttackers", attackers: [{ id: bear, defender: "p2" }] });
+    s = passAccepting(s, (x) => x.pending?.kind === "declareBlockers");
+    s = act(s, "p2", { type: "declareBlockers", blocks: [{ blocker: slinger, attacker: bear }] });
+    s = passAccepting(s, (x) => x.stack.length === 0 && x.triggers.length === 0 && x.turn.step !== "declareBlockers");
+    // 1 blessure du déclencheur, puis 1 de combat : l'Ours (2/2) meurt.
+    expect(idsOf(s, "p1", "battlefield", "Bear Cub")).toHaveLength(0);
+  });
+
+  it("Tangled Colony : en mourant, un Rat par blessure subie ce tour-ci", () => {
+    let s = scenario({ p1: { battlefield: ["Tangled Colony"] } });
+    const colony = idOf(s, "p1", "battlefield", "Tangled Colony");
+    dealDamage(s, { defId: "test", controller: "p2", keywords: [] }, colony, 5, false);
+    s = settleAll(s);
+    expect(s.battlefield.filter((id) => chars(s, id).name === "Rat")).toHaveLength(5);
   });
 });

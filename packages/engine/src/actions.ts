@@ -53,6 +53,8 @@ import type {
 export interface DamageSource {
   /** Objet source, s'il est identifiable (pour les déclencheurs « inflige des blessures »). */
   id?: ObjectId;
+  /** Sort qui se résout et inflige les blessures (Imodane : « un sort qui ne cible qu'une créature »). */
+  stackId?: string;
   defId: string;
   controller: PlayerId;
   keywords: Keyword[];
@@ -441,6 +443,7 @@ export function dealDamage(s: GameState, source: DamageSource, target: string, a
   rulesEvent(s, {
     e: "damage",
     sourceId: source.id ?? null,
+    stackId: source.stackId,
     sourceController: source.controller,
     target,
     amount,

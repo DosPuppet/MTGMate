@@ -69,6 +69,8 @@ export type RulesEvent =
   | {
       e: "damage";
       sourceId: ObjectId | null;
+      /** Sort qui inflige les blessures (élément de pile qui se résout). */
+      stackId?: string;
       sourceController?: PlayerId;
       target: string;
       amount: number;

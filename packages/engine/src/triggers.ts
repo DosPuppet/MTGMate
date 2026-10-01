@@ -543,6 +543,19 @@ function matchTrigger(s: GameState, ev: RulesEvent, t: TriggerSpec, src: Source)
     case "dealsCombatDamage":
     case "dealsDamage": {
       if (ev.e !== "damage") return null;
+      if (t.on === "dealsDamage" && t.spellToSoleTarget) {
+        const item = ev.stackId
+          ? s.resolving?.item.id === ev.stackId
+            ? s.resolving.item
+            : s.stack.find((x) => x.id === ev.stackId)
+          : undefined;
+        const targets = item ? Object.values(item.targets).flat() : [];
+        if (!item || targets.length !== 1 || targets[0] !== ev.target || !s.objects[ev.target] || !isCreature(s, ev.target))
+          return null;
+        const v = liveView(s, item.sourceId) ?? s.lki[item.sourceId] ?? null;
+        if (!v || !matchWho(t.who, v, src)) return null;
+        return { objectId: ev.target, amount: ev.amount };
+      }
       if (t.on === "dealsDamage" && t.anySourceYouControl) {
         if (ev.sourceController !== me || (t.noncombatOnly && ev.combat)) return null;
         const toOpp = !!s.players[ev.target] && ev.target !== me;
@@ -660,7 +673,7 @@ function matchTrigger(s: GameState, ev: RulesEvent, t: TriggerSpec, src: Source)
       // « … bloque une créature avec le vol » (Skystinger).
       const a = liveView(s, ev.attacker);
       if (t.attacker && (!a || !matchesView(a, t.attacker, me, src.id))) return null;
-      return { objectId: ev.blocker, player: v.controller };
+      return { objectId: t.eventObject === "attacker" ? ev.attacker : ev.blocker, player: v.controller };
     }
     case "chapter": {
       // 714.2b : chaque chapitre atteint ou dépassé par les marqueurs de savoir posés.

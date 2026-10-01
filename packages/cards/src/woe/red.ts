@@ -49,6 +49,30 @@ const chitterlordEffects = [
 ];
 
 export const RED: Record<string, CardScript> = {
+  "Imodane, the Pyrohammer": {
+    abilities: [
+      triggered(
+        { on: "dealsDamage", who: { types: ["Instant", "Sorcery"], controller: "you" }, spellToSoleTarget: true },
+        [fx.damage(amount.eventAmount, ref.eachOpponent)],
+        { label: "Votre sort à cible unique blesse sa créature : autant de blessures à chaque adversaire" },
+      ),
+    ],
+  },
+  // Portée lue dans le texte.
+  "Skewer Slinger": {
+    abilities: [
+      triggered({ on: "blocks", who: "self", eventObject: "attacker" }, [fx.damage(1, ref.eventObject, ref.self)], {
+        label: "Elle bloque : 1 blessure à cette créature",
+      }),
+      triggered(
+        { on: "blocks", who: { types: ["Creature"] }, attacker: { self: true } },
+        [fx.damage(1, ref.eventObject, ref.self)],
+        {
+          label: "Elle est bloquée : 1 blessure à cette créature",
+        },
+      ),
+    ],
+  },
   // Double initiative lue dans le texte.
   "Kellan, the Fae-Blooded": {
     abilities: [

@@ -267,6 +267,11 @@ export type TriggerSpec =
       anySourceYouControl?: boolean;
       /** Taii Wakeen : des blessures égales à l'endurance de la créature blessée. */
       exactToughness?: boolean;
+      /**
+       * Imodane : la source est un sort (filtré par `who`) qui ne cible qu'une seule créature, et les blessures sont
+       * infligées à cette créature.
+       */
+      spellToSoleTarget?: boolean;
     }
   /** « Chaque fois qu'un adversaire défausse une carte » */
   | { on: "discard"; whose: "you" | "opponent" | "any" }
@@ -324,7 +329,8 @@ export type TriggerSpec =
   /** « Chaque fois qu'une ou plusieurs [créatures] infligent des blessures de combat à un joueur » : une fois par étape et par joueur. */
   | { on: "combatDamageBatch"; who: ObjectFilter }
   /** « Chaque fois qu'une [créature] bloque » */
-  | { on: "blocks"; who: "self" | ObjectFilter; attacker?: ObjectFilter }
+  /** `eventObject: "attacker"` : l'objet de l'événement est l'attaquant bloqué (Skewer Slinger : « cette créature »). */
+  | { on: "blocks"; who: "self" | ObjectFilter; attacker?: ObjectFilter; eventObject?: "attacker" }
   /** « Chaque fois que [créature] meurt ou est exilée » (depuis le champ de bataille). */
   | { on: "diesOrExiled"; who: "self" | ObjectFilter; minPower?: number }
   /** « Chaque fois que vous jouez un terrain » */
@@ -594,6 +600,8 @@ export type Amount =
   | { kind: "lifeTotal" }
   /** Marqueurs d'un type sur la source, d'après ses dernières informations connues (« si elle avait un marqueur… »). */
   | { kind: "lkiCounters"; counter: string }
+  /** Blessures marquées sur la source (dernières informations connues : Tangled Colony, « les blessures subies ce tour-ci »). */
+  | { kind: "lkiDamage" }
   | { kind: "manaValueOf"; ref: Ref }
   /** Convergence : nombre de couleurs de mana dépensées pour lancer la source (le sort qui se résout). */
   | { kind: "colorsSpent" }
