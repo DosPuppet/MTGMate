@@ -2,7 +2,7 @@
  * Éléments de Tarkir: Dragonstorm (TDM) : jetons, filtres et aides des cycles (Devotees, Dragonstorms, Monuments,
  * terrains). Le DSL et les jetons communs viennent de lci/common.ts.
  */
-import type { AbilityDef, ManaType, ObjectFilter, TokenSpec } from "@mtgx/engine";
+import type { AbilityDef, dsl, ManaType, ObjectFilter, TargetSpec, TokenSpec } from "@mtgx/engine";
 import { activated, cond, entersWith, fx, manaAbility, ref, target, triggered, when } from "../lci/common";
 
 export * from "../lci/common";
@@ -84,4 +84,22 @@ export function entersTappedUnless(lands: string[]): AbilityDef {
 /** Terrains tricolores : « Ce terrain arrive engagé. {T} : ajoutez [l'une de ces couleurs]. » */
 export function triLand(colors: ManaType[]): AbilityDef[] {
   return [entersWith({ tapped: true, label: "Arrive engagé" }), manaAbility(colors)];
+}
+
+/** Rafale (Flurry) : « chaque fois que vous lancez votre deuxième sort de chaque tour, … ». */
+export function flurry(effects: dsl.Effects, label: string, targets: TargetSpec[] = []): AbilityDef {
+  return triggered(when.castNthSpell(2), effects, { targets, label: `Rafale — ${label}` });
+}
+
+/** Renouveau : « [coût], exilez cette carte de votre cimetière : … N'activez qu'en rituel. » */
+export function renew(mana: string, targets: TargetSpec[], effects: dsl.Effects, label: string): AbilityDef {
+  return activated({
+    mana,
+    fromGraveyard: true,
+    exileSelf: true,
+    sorcerySpeed: true,
+    targets,
+    effects,
+    label: `Renouveau — ${label}`,
+  });
 }

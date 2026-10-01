@@ -8,6 +8,7 @@ import {
   DRAGON_CARD,
   devotee,
   dragonstorm,
+  flurry,
   fx,
   MONK,
   modal,
@@ -203,6 +204,53 @@ export const WHITE: Record<string, CardScript> = {
       triggered(when.combatDamageToPlayer, fx.may("chercher un Tempest Hawk ?", fx.search({ name: "Tempest Hawk" })), {
         label: "Cherchez un Tempest Hawk",
       }),
+    ],
+  },
+
+  // --- Lot B ------------------------------------------------------------------
+  "Anafenza, Unyielding Lineage": {
+    abilities: [
+      triggered(when.dies({ types: ["Creature"], controller: "you", nontoken: true, other: true }), [fx.endure(ref.self, 2)], {
+        label: "Une autre de vos créatures non-jeton meurt : endurance 2",
+      }),
+    ],
+  },
+  "Descendant of Storms": {
+    abilities: [
+      triggered(when.attacksSelf, fx.mayPay("{1}{W}", "payer {1}{W} pour l'endurance 1 ?", fx.endure(ref.self, 1)), {
+        label: "{1}{W} : endurance 1",
+      }),
+    ],
+  },
+  "Fortress Kin-Guard": {
+    abilities: [triggered(when.entersSelf, [fx.endure(ref.self, 1)], { label: "Endurance 1" })],
+  },
+  "Poised Practitioner": {
+    abilities: [flurry([fx.addCounters(ref.self, 1), fx.scry(1)], "marqueur +1/+1, regard 1")],
+  },
+  "Riling Dawnbreaker": {
+    abilities: [
+      triggered(when.yourCombat, [fx.pump(ref.target(), 1, 0)], {
+        targets: [target.creature("t", { controller: "you", other: true })],
+        label: "Une autre de vos créatures gagne +1/+0",
+      }),
+    ],
+  },
+  "Signaling Roar": { spell: spell([], [fx.createTokens(SOLDIER_2)]) },
+  "Wayspeaker Bodyguard": {
+    abilities: [
+      triggered(when.entersSelf, [fx.toHand(ref.target())], {
+        targets: [
+          target.cardInGraveyard(
+            "t",
+            { permanent: true, nonland: true, maxManaValue: 2 },
+            "you",
+            "carte de permanent non-terrain de VM 2 ou moins",
+          ),
+        ],
+        label: "Un permanent non-terrain de VM 2 ou moins revient en main",
+      }),
+      flurry([fx.tap(ref.target())], "engagez une créature adverse", [target.creature("t", { controller: "opponent" })]),
     ],
   },
 };

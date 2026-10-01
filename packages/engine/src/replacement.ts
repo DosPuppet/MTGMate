@@ -123,7 +123,7 @@ function amountAtEntry(s: GameState, a: Amount, o: GameObject, ctx: EntersContex
 function defaultChoice(
   s: GameState,
   o: GameObject,
-  kind: "creatureType" | "color" | "cardName" | "landName" | "landType" | "parity",
+  kind: "creatureType" | "color" | "cardName" | "landName" | "landType" | "parity" | "mode",
 ): NonNullable<GameObject["chosen"]> {
   // Multiversal Passage mis en jeu sans avoir été joué : le type de terrain de base le plus présent chez son contrôleur.
   if (kind === "landType") {
@@ -132,6 +132,8 @@ function defaultChoice(
     const best = ["Plains", "Island", "Swamp", "Mountain", "Forest"].sort((a, b) => count(b) - count(a))[0];
     return { landType: best };
   }
+  // Siège mis en jeu sans résolution : le premier mode.
+  if (kind === "mode") return { mode: s.defs[o.defId]?.enterModes?.[0] ?? "—" };
   // Gollum mis en jeu sans résolution : « pair » par défaut.
   if (kind === "parity") return { parity: "even" };
   // Petrified Hamlet : le nom est choisi par sa capacité déclenchée d'arrivée ; rien avant sa résolution.

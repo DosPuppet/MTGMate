@@ -299,6 +299,8 @@ export function checkCondition(
     }
     case "sourceDealtCombatDamage":
       return !!(sourceId && s.objects[sourceId]?.dealtCombatDamage);
+    case "chosenMode":
+      return !!sourceId && s.objects[sourceId]?.chosen?.mode === c.mode;
     case "sourceDealtDamage":
       return !!(sourceId && s.objects[sourceId]?.dealtDamage);
     case "activatedLoyaltyThisTurn":
@@ -958,7 +960,7 @@ function masamunes(s: GameState, sourceId: ObjectId, player: PlayerId): number {
 /**
  * Déclenchements supplémentaires (famille G) : Fractured Realm (vos permanents), Starfield Vocalist (une arrivée),
  * Traveling Chocobo (l'arrivée d'un terrain ou d'un Oiseau à vous), Annie Joins Up (vos créatures légendaires),
- * Roaming Throne (les autres créatures du type choisi).
+ * Roaming Throne (les autres créatures du type choisi), Windcrag Siege (une créature qui attaque).
  */
 function triggerDoublers(s: GameState, src: Source, ev: RulesEvent): number {
   const player = src.view.controller;
@@ -969,6 +971,8 @@ function triggerDoublers(s: GameState, src: Source, ev: RulesEvent): number {
     const m = ab.triggerMod;
     if (m?.effect !== "again") return false;
     if (m.onEnter && !entered) return false;
+    // Windcrag Siege : « si une créature qui attaque fait se déclencher une capacité d'un permanent que vous contrôlez ».
+    if (m.onAttack && ev.e !== "attack" && ev.e !== "attackWith") return false;
     if (m.entering && !(entered && s.objects[entered] && matchesObjectFilter(s, player, entered, m.entering, id))) return false;
     if (!m.sources) return permanent;
     const holder = id ? s.objects[id] : undefined;

@@ -93,7 +93,9 @@ export interface CardDef {
   /** F/E définies par une capacité (604.3, couche 7a), ex. cartes dans les cimetières adverses. */
   cdaPT?: Amount;
   /** « En arrivant, choisissez un type de créature / une couleur » (614.12). */
-  chooseOnEnter?: "creatureType" | "color" | "cardName" | "landName" | "landType" | "parity";
+  chooseOnEnter?: "creatureType" | "color" | "cardName" | "landName" | "landType" | "parity" | "mode";
+  /** Sièges (TDM) : « en arrivant, choisissez Abzan ou Mardu » (avec `chooseOnEnter: "mode"`) ; lu par `cond.chosenMode`. */
+  enterModes?: string[];
   /**
    * Dévorer (702.82) : « en arrivant, sacrifiez des [terrains] ; N marqueurs +1/+1 par permanent sacrifié ».
    * `graveyardUpToX` : « exilez jusqu'à X cartes de votre cimetière » à la place (Mimeoplasm, cartes liées).
@@ -620,6 +622,8 @@ export interface TriggerMod {
   effect: "again" | "none";
   /** Seulement les déclenchements dus à l'arrivée d'un permanent, qui correspond à `entering`. */
   onEnter?: boolean;
+  /** Seulement les déclenchements dus à une créature qui attaque (« chaque fois que … attaque », « … que vous attaquez »). */
+  onAttack?: boolean;
   entering?: ObjectFilter;
   /** Capacités concernées : celles des permanents correspondants (par défaut, vos permanents). */
   sources?: ObjectFilter;

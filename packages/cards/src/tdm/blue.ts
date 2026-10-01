@@ -2,17 +2,21 @@
 import {
   activated,
   amount,
+  BIRD_W,
   type CardScript,
   CREATURE_OPP,
   cond,
   costReducer,
   devotee,
   dragonstorm,
+  flurry,
   fx,
   INSTANT_SORCERY,
   modal,
   mode,
+  playerStatic,
   ref,
+  renew,
   spell,
   staticAbility,
   target,
@@ -239,5 +243,61 @@ export const BLUE: Record<string, CardScript> = {
       staticAbility("attached", { power: 1, toughness: 1, addKeywords: ["flying"] }, { label: "+1/+1 et le vol" }),
       activated({ mana: "{2}{U}", effects: [fx.bounce(ref.self)], label: "Renvoyez cette Aura en main" }),
     ],
+  },
+
+  // --- Lot B ------------------------------------------------------------------
+  "Agent of Kotis": {
+    abilities: [renew("{3}{U}", [target.creature()], [fx.addCounters(ref.target(), 2)], "deux marqueurs +1/+1 sur une créature")],
+  },
+  "Constrictor Sage": {
+    abilities: [
+      triggered(when.entersSelf, [fx.tap(ref.target()), fx.counters(ref.target(), "stun")], {
+        targets: [target.creature("t", { controller: "opponent" })],
+        label: "Engage une créature adverse, marqueur d'étourdissement",
+      }),
+      renew(
+        "{2}{U}",
+        [target.creature("t", { controller: "opponent" })],
+        [fx.tap(ref.target()), fx.counters(ref.target(), "stun")],
+        "engagez une créature adverse, marqueur d'étourdissement",
+      ),
+    ],
+  },
+  "Skimming Strike": { spell: spell([target.optional(target.creature())], [fx.tap(ref.target()), fx.draw(1)]) },
+  "Marang River Regent": {
+    abilities: [
+      triggered(when.entersSelf, [fx.bounce(ref.target())], {
+        targets: [target.upTo(2, target.nonland("t", { other: true }, "autre permanent non-terrain"))],
+        label: "Renvoie jusqu'à deux autres permanents non-terrain",
+      }),
+    ],
+  },
+  "Coil and Catch": { spell: spell([], [fx.draw(3), fx.discard(1)]) },
+  "Naga Fleshcrafter": {
+    entersAsCopyOf: { types: ["Creature"] },
+    entersAsCopyAnyController: true,
+    abilities: [
+      renew(
+        "{2}{U}",
+        [target.creature("t", { controller: "you", legendary: false })],
+        [
+          fx.addCounters(ref.target(), 1),
+          fx.becomeCopy(ref.except(ref.permanentsOf(ref.you, { types: ["Creature"] }), ref.target()), ref.target()),
+        ],
+        "marqueur +1/+1 ; vos autres créatures deviennent des copies de celle-ci",
+      ),
+    ],
+  },
+  "Wingblade Disciple": { abilities: [flurry([fx.createTokens(BIRD_W)], "un Oiseau 1/1 volant")] },
+  "Whirlwing Stormbrood": {
+    abilities: [
+      playerStatic({
+        flashFor: { anyOf: [{ types: ["Sorcery"] }, { subtype: "Dragon" }] },
+        label: "Vos rituels et vos sorts de Dragon ont le flash",
+      }),
+    ],
+  },
+  "Dynamic Soar": {
+    spell: spell([target.creature("t", { controller: "you" })], [fx.addCounters(ref.target(), 3)]),
   },
 };

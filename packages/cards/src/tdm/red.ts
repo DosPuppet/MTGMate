@@ -6,9 +6,12 @@ import {
   CREATURE_YOU_CONTROL,
   cond,
   DRAGON_CARD,
+  devotee,
   dragonstorm,
+  flurry,
   fx,
   GOBLIN,
+  MONK,
   manaAbility,
   modal,
   mode,
@@ -206,5 +209,52 @@ export const RED: Record<string, CardScript> = {
   "Zurgo's Vanguard": {
     // Mobilisation 1 : lue dans le texte.
     cdaPower: amount.count(CREATURE_YOU_CONTROL),
+  },
+
+  // --- Lot B ------------------------------------------------------------------
+  "Cori-Steel Cutter": {
+    abilities: [
+      staticAbility(
+        "attached",
+        { power: 1, toughness: 1, addKeywords: ["trample", "haste"] },
+        { label: "+1/+1, piétinement et célérité" },
+      ),
+      flurry(
+        [fx.createTokens(MONK, 1, undefined, "m"), ...fx.may("attacher cet Équipement au Moine ?", fx.attach(ref.stored("m")))],
+        "un Moine 1/1 avec la prouesse, auquel vous pouvez l'attacher",
+      ),
+    ],
+  },
+  "Devoted Duelist": { abilities: [flurry([fx.damage(1, ref.eachOpponent)], "1 blessure à chaque adversaire")] },
+  "Equilibrium Adept": {
+    abilities: [
+      triggered(when.entersSelf, [fx.exileTop(ref.you, 1, "x"), fx.grantPlay(ref.stored("x"), { untilYourNextTurn: true })], {
+        label: "Exilez la carte du dessus, jouable jusqu'à la fin de votre prochain tour",
+      }),
+      flurry([fx.modify(ref.self, { addKeywords: ["doubleStrike"] })], "double initiative"),
+    ],
+  },
+  "Jeskai Devotee": {
+    abilities: [flurry([fx.pump(ref.self, 1, 1)], "+1/+1"), devotee(["U", "R", "W"])],
+  },
+  "Stormshriek Feral": {
+    abilities: [activated({ mana: "{1}{R}", effects: [fx.pump(ref.self, 1, 0)], label: "+1/+0" })],
+  },
+  "Flush Out": {
+    spell: spell([], [fx.discard(1, ref.you, { store: "d" }), ...fx.when(cond.v("d"), fx.draw(2))]),
+  },
+  "Runescale Stormbrood": {
+    abilities: [
+      triggered(
+        when.castSpell("you", { anyOf: [{ notTypes: ["Creature"] }, { subtype: "Dragon" }] }),
+        [fx.pump(ref.self, 2, 0)],
+        {
+          label: "Sort non-créature ou de Dragon : +2/+0",
+        },
+      ),
+    ],
+  },
+  "Chilling Screech": {
+    spell: spell([target.spell("t", { maxManaValue: 2 }, "sort de VM 2 ou moins")], [fx.counter(ref.target())]),
   },
 };

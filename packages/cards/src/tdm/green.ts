@@ -16,6 +16,7 @@ import {
   mode,
   RELIQUARY_DRAGON,
   ref,
+  renew,
   spell,
   target,
   triggered,
@@ -189,4 +190,103 @@ export const GREEN: Record<string, CardScript> = {
       }),
     ],
   },
+
+  // --- Lot B ------------------------------------------------------------------
+  "Bloomvine Regent": {
+    abilities: [
+      triggered(when.enters({ subtype: "Dragon", controller: "you" }), [fx.gainLife(3)], {
+        label: "Lui ou un autre de vos Dragons arrive : gagnez 3 PV",
+      }),
+    ],
+  },
+  "Claim Territory": {
+    // « Jusqu'à deux Forêts de base : l'une en jeu engagée, l'autre en main » : deux recherches successives.
+    spell: spell(
+      [],
+      [
+        fx.search({ types: ["Land"], basic: true, subtype: "Forest" }, { to: "battlefield", tapped: true }),
+        fx.search({ types: ["Land"], basic: true, subtype: "Forest" }, { to: "hand" }),
+      ],
+    ),
+  },
+  "Champion of Dusan": {
+    abilities: [
+      renew(
+        "{1}{G}",
+        [target.creature()],
+        [fx.addCounters(ref.target(), 1), fx.counters(ref.target(), "trample")],
+        "marqueur +1/+1 et marqueur de piétinement",
+      ),
+    ],
+  },
+  "Dusyut Earthcarver": { abilities: [triggered(when.entersSelf, [fx.endure(ref.self, 3)], { label: "Endurance 3" })] },
+  "Inspirited Vanguard": {
+    abilities: [
+      triggered(when.entersSelf, [fx.endure(ref.self, 2)], { label: "Endurance 2" }),
+      triggered(when.attacksSelf, [fx.endure(ref.self, 2)], { label: "Endurance 2" }),
+    ],
+  },
+  "Lasyd Prowler": {
+    abilities: [
+      triggered(
+        when.entersSelf,
+        fx.may(
+          "meuler autant de cartes que vous contrôlez de terrains ?",
+          fx.mill(amount.count({ types: ["Land"], controller: "you" })),
+        ),
+        { label: "Vous pouvez meuler autant de cartes que de terrains" },
+      ),
+      renew(
+        "{1}{G}",
+        [target.creature()],
+        [fx.addCounters(ref.target(), amount.countIn("graveyard", { types: ["Land"] }))],
+        "X marqueurs +1/+1 (cartes de terrain de votre cimetière)",
+      ),
+    ],
+  },
+  "Sage of the Fang": {
+    abilities: [
+      triggered(when.entersSelf, [fx.addCounters(ref.target(), 1)], {
+        targets: [target.creature()],
+        label: "Marqueur +1/+1 sur une créature",
+      }),
+      renew(
+        "{3}{G}",
+        [target.creature()],
+        [fx.addCounters(ref.target(), 1), fx.doubleCounters(ref.target())],
+        "marqueur +1/+1, puis doublez ses marqueurs +1/+1",
+      ),
+    ],
+  },
+  "Sagu Pummeler": {
+    abilities: [
+      renew(
+        "{4}{G}",
+        [target.creature()],
+        [fx.addCounters(ref.target(), 2), fx.counters(ref.target(), "reach")],
+        "deux marqueurs +1/+1 et un marqueur de portée",
+      ),
+    ],
+  },
+  "Sagu Wildling": { abilities: [triggered(when.entersSelf, [fx.gainLife(3)], { label: "Gagnez 3 PV" })] },
+  "Roost Seek": { spell: spell([], [fx.search(BASIC_LAND)]) },
+  "Warden of the Grove": {
+    abilities: [
+      triggered(when.yourEndStep, [fx.addCounters(ref.self, 1)], { label: "Marqueur +1/+1" }),
+      triggered(
+        when.enters({ types: ["Creature"], controller: "you", nontoken: true, other: true }),
+        [fx.endure(ref.eventObject, amount.countersOn(ref.self, "any"))],
+        { label: "Une autre de vos créatures non-jeton arrive : elle endure X (marqueurs sur Warden)" },
+      ),
+    ],
+  },
+  "Disruptive Stormbrood": {
+    abilities: [
+      triggered(when.entersSelf, [fx.destroy(ref.target())], {
+        targets: [target.optional(target.permanent("t", ["Artifact", "Enchantment"], {}, "artefact ou enchantement"))],
+        label: "Détruisez jusqu'à un artefact ou un enchantement",
+      }),
+    ],
+  },
+  "Petty Revenge": { spell: spell([target.creature("t", { maxPower: 3 })], [fx.destroy(ref.target())]) },
 };

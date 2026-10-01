@@ -766,3 +766,192 @@ describe("Tarkir: Dragonstorm, lot A", () => {
     });
   });
 });
+
+describe("Tarkir: Dragonstorm, lot B", () => {
+  const activate = (s: S, player: string, source: string, targets?: Record<string, string[]>) =>
+    act(s, player, { type: "activate", source, ability: activation(s, player, source) ?? -1, targets });
+  const endureAnswer =
+    (choice: "counters" | "token"): Answer =>
+    (req) =>
+      req.type === "pick" && req.options.includes("counters") ? [choice] : undefined;
+
+  describe("Endurance (701.64)", () => {
+    it("Fortress Kin-Guard : un marqueur +1/+1 sur elle, ou un jeton Esprit blanc 1/1, au choix", () => {
+      const run = (choice: "counters" | "token") => {
+        let s = scenario({ p1: { battlefield: lands("Plains", 2), hand: ["Fortress Kin-Guard"] } });
+        s = settle(cast(s, "p1", "Fortress Kin-Guard"), endureAnswer(choice));
+        return s;
+      };
+      const s = run("counters");
+      expect(s.objects[idOf(s, "p1", "battlefield", "Fortress Kin-Guard")]?.counters["+1/+1"]).toBe(1);
+      expect(idsOf(s, "p1", "battlefield", "Spirit")).toHaveLength(0);
+      const t = run("token");
+      const spirit = idsOf(t, "p1", "battlefield", "Spirit")[0] as string;
+      expect([chars(t, spirit).power, chars(t, spirit).toughness]).toEqual([1, 1]);
+      expect(chars(t, spirit).colors).toEqual(["W"]);
+      expect(t.objects[idOf(t, "p1", "battlefield", "Fortress Kin-Guard")]?.counters["+1/+1"] ?? 0).toBe(0);
+    });
+
+    it("un permanent qui n'est plus sur le champ de bataille crée le jeton (Anafenza morte en même temps)", () => {
+      let s = scenario({
+        p1: {
+          battlefield: [...lands("Mountain", 3), ...lands("Swamp", 4), "Anafenza, Unyielding Lineage", "Bear Cub"],
+          hand: ["Bake into a Pie"],
+        },
+      });
+      const bear = idOf(s, "p1", "battlefield", "Bear Cub");
+      // Bear Cub meurt : Anafenza endure 2 ; on choisit les marqueurs.
+      s = settle(cast(s, "p1", "Bake into a Pie", { t: [bear] }), endureAnswer("counters"));
+      const anafenza = idOf(s, "p1", "battlefield", "Anafenza, Unyielding Lineage");
+      expect(s.objects[anafenza]?.counters["+1/+1"]).toBe(2);
+    });
+
+    it("Warden of the Grove : une autre créature non-jeton arrive, elle endure X (marqueurs sur Warden)", () => {
+      let s = scenario({ p1: { battlefield: ["Warden of the Grove", ...lands("Forest", 2)], hand: ["Bear Cub"] } });
+      const warden = idOf(s, "p1", "battlefield", "Warden of the Grove");
+      (s.objects[warden] as { counters: Record<string, number> }).counters["+1/+1"] = 2;
+      s = settle(cast(s, "p1", "Bear Cub"), endureAnswer("counters"));
+      expect(s.objects[idOf(s, "p1", "battlefield", "Bear Cub")]?.counters["+1/+1"]).toBe(2);
+    });
+
+    it("Sinkhole Surveyor : en attaquant, vous perdez 1 PV et elle endure 1", () => {
+      let s = scenario({ p1: { battlefield: ["Sinkhole Surveyor"] } });
+      s = advanceUntil(s, (x) => x.pending?.kind === "declareAttackers");
+      const sv = idOf(s, "p1", "battlefield", "Sinkhole Surveyor");
+      s = settle(act(s, "p1", { type: "declareAttackers", attackers: [{ id: sv, defender: "p2" }] }), endureAnswer("token"));
+      expect(s.players.p1?.life).toBe(19);
+      expect(idsOf(s, "p1", "battlefield", "Spirit")).toHaveLength(1);
+    });
+  });
+
+  describe("Rafale (Flurry)", () => {
+    it("Devoted Duelist : seulement au deuxième sort du tour", () => {
+      let s = scenario({
+        p1: { battlefield: ["Devoted Duelist", ...lands("Island", 3)], hand: ["Opt", "Opt", "Opt"], library: lands("Forest", 5) },
+      });
+      const opts = idsOf(s, "p1", "hand", "Opt");
+      s = settle(act(s, "p1", { type: "cast", card: opts[0] as string }));
+      expect(s.players.p2?.life).toBe(20);
+      s = settle(act(s, "p1", { type: "cast", card: opts[1] as string }));
+      expect(s.players.p2?.life).toBe(19);
+      s = settle(act(s, "p1", { type: "cast", card: opts[2] as string }));
+      expect(s.players.p2?.life).toBe(19);
+    });
+  });
+
+  describe("Renouveau", () => {
+    it("Sage of the Fang : un marqueur +1/+1, puis doublez les marqueurs +1/+1 de la créature", () => {
+      let s = scenario({ p1: { battlefield: [...lands("Forest", 4), "Bear Cub"], graveyard: ["Sage of the Fang"] } });
+      const bear = idOf(s, "p1", "battlefield", "Bear Cub");
+      (s.objects[bear] as { counters: Record<string, number> }).counters["+1/+1"] = 2;
+      s = settle(activate(s, "p1", idOf(s, "p1", "graveyard", "Sage of the Fang"), { t: [bear] }));
+      expect(s.objects[bear]?.counters["+1/+1"]).toBe(6);
+      expect(exiled(s, "Sage of the Fang")).toHaveLength(1);
+    });
+  });
+
+  describe("Présages", () => {
+    it("Exude Toxin : chaque créature non-Dragon gagne -X/-X ; la carte retourne dans la bibliothèque", () => {
+      let s = scenario({
+        p1: { battlefield: lands("Swamp", 4), hand: ["Scavenger Regent // Exude Toxin"], library: lands("Plains", 2) },
+        p2: { battlefield: ["Bear Cub", "Shivan Dragon"] },
+      });
+      const card = idOf(s, "p1", "hand", "Scavenger Regent // Exude Toxin");
+      s = settle(act(s, "p1", { type: "cast", card, face: 1, x: 2 }));
+      expect(idsOf(s, "p2", "graveyard", "Bear Cub")).toHaveLength(1);
+      expect(idsOf(s, "p2", "battlefield", "Shivan Dragon")).toHaveLength(1);
+      expect(s.players.p1?.library.map((id) => nameOf(s, id))).toContain("Scavenger Regent // Exude Toxin");
+    });
+
+    it("Bloomvine Regent : lui ou un autre de vos Dragons arrive, vous gagnez 3 PV", () => {
+      let s = scenario({
+        p1: {
+          battlefield: [...lands("Forest", 5), ...lands("Mountain", 6)],
+          hand: ["Bloomvine Regent // Claim Territory", "Shivan Dragon"],
+        },
+      });
+      s = settle(cast(s, "p1", "Bloomvine Regent // Claim Territory"));
+      expect(s.players.p1?.life).toBe(23);
+      s = settle(cast(s, "p1", "Shivan Dragon"));
+      expect(s.players.p1?.life).toBe(26);
+    });
+  });
+
+  describe("Sièges", () => {
+    const enterSiege = (
+      name: string,
+      mode: string,
+      battlefield: string[],
+      extra: Partial<Parameters<typeof scenario>[0]> = {},
+    ) => {
+      let s = scenario({ ...extra, p1: { battlefield, hand: [name], ...(extra.p1 ?? {}) } });
+      let options: string[] = [];
+      s = settle(cast(s, "p1", name), (req) => {
+        if (req.intent !== "chooseOnEnter" || req.type !== "pick") return undefined;
+        options = req.options;
+        return [mode];
+      });
+      return { s, options };
+    };
+
+    it("Barrensteppe Siege : choix entre Abzan et Mardu ; Abzan met un marqueur +1/+1 sur vos créatures à votre étape de fin", () => {
+      const { s, options } = enterSiege("Barrensteppe Siege", "Abzan", [...lands("Plains", 2), ...lands("Swamp", 2), "Bear Cub"]);
+      expect(options).toEqual(["Abzan", "Mardu"]);
+      expect(s.objects[idOf(s, "p1", "battlefield", "Barrensteppe Siege")]?.chosen?.mode).toBe("Abzan");
+      const t = advanceUntil(s, (x) => x.turn.active === "p2");
+      expect(t.objects[idOf(t, "p1", "battlefield", "Bear Cub")]?.counters["+1/+1"]).toBe(1);
+    });
+
+    it("Barrensteppe Siege, Mardu : une de vos créatures est morte ce tour-ci, chaque adversaire sacrifie une créature", () => {
+      let { s } = enterSiege(
+        "Barrensteppe Siege",
+        "Mardu",
+        [...lands("Plains", 2), ...lands("Swamp", 2), ...lands("Mountain", 2), "Bear Cub"],
+        {
+          p2: { battlefield: ["Serra Angel"] },
+        },
+      );
+      const t0 = advanceUntil(s, (x) => x.turn.active === "p2");
+      // Sans mort ce tour-ci : rien.
+      expect(idsOf(t0, "p2", "battlefield", "Serra Angel")).toHaveLength(1);
+      s = scenario({
+        p1: { battlefield: [...lands("Mountain", 2), "Bear Cub", "Barrensteppe Siege"], hand: ["Lightning Strike"] },
+        p2: { battlefield: ["Serra Angel"] },
+      });
+      const siege = idOf(s, "p1", "battlefield", "Barrensteppe Siege");
+      (s.objects[siege] as { chosen?: { mode?: string } }).chosen = { mode: "Mardu" };
+      s = settle(cast(s, "p1", "Lightning Strike", { t: [idOf(s, "p1", "battlefield", "Bear Cub")] }));
+      s = advanceUntil(s, (x) => x.turn.active === "p2");
+      expect(idsOf(s, "p2", "graveyard", "Serra Angel")).toHaveLength(1);
+    });
+
+    it("Glacierwood Siege, Sultai : vous pouvez jouer des terrains depuis votre cimetière", () => {
+      const { s } = enterSiege("Glacierwood Siege", "Sultai", [...lands("Forest", 2), "Island"], {
+        p1: { graveyard: ["Swamp"] },
+      });
+      const swamp = idOf(s, "p1", "graveyard", "Swamp");
+      expect(legalActions(s, "p1").some((a) => a.type === "playLand" && a.card === swamp)).toBe(true);
+    });
+
+    it("Windcrag Siege, Mardu : une créature qui attaque fait déclencher deux fois (mobilisation)", () => {
+      let s = scenario({ p1: { battlefield: ["Windcrag Siege", "Shock Brigade"] } });
+      const siege = idOf(s, "p1", "battlefield", "Windcrag Siege");
+      (s.objects[siege] as { chosen?: { mode?: string } }).chosen = { mode: "Mardu" };
+      s = advanceUntil(s, (x) => x.pending?.kind === "declareAttackers");
+      const brigade = idOf(s, "p1", "battlefield", "Shock Brigade");
+      s = settle(act(s, "p1", { type: "declareAttackers", attackers: [{ id: brigade, defender: "p2" }] }));
+      expect(idsOf(s, "p1", "battlefield", "Warrior")).toHaveLength(2);
+    });
+  });
+
+  describe("Whirlwing Stormbrood", () => {
+    it("vos rituels et vos sorts de Dragon se lancent comme s'ils avaient le flash", () => {
+      let s = scenario({
+        active: "p2",
+        p1: { battlefield: ["Whirlwing Stormbrood // Dynamic Soar", ...lands("Mountain", 6)], hand: ["Shivan Dragon"] },
+      });
+      s = passUntil(s, (x) => x.pending?.kind === "priority" && x.pending.player === "p1");
+      expect(legalActions(s, "p1").some((a) => a.type === "cast" && nameOf(s, a.card) === "Shivan Dragon")).toBe(true);
+    });
+  });
+});

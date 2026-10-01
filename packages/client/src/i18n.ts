@@ -66,6 +66,7 @@ export const KEYWORD_LABEL: Record<Keyword, string> = {
   damageHealsFirst: "Chaque blessure guérit les précédentes",
   cantBlock: "Ne peut pas bloquer",
   startYourEngines: "Start your engines!",
+  decayed: "Décomposition",
   cantAttack: "Ne peut pas attaquer",
   unblockable: "Ne peut pas être bloquée",
   mustAttack: "Attaque à chaque combat",

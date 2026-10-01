@@ -719,7 +719,8 @@ export function canBlock(s: GameState, blocker: ObjectId, attacker: ObjectId): b
   if (b?.zone !== "battlefield" || !isCreature(s, blocker) || b.tapped) return false;
   const a = s.combat?.attackers.find((x) => x.id === attacker);
   if (!a || !onBattlefield(s, attacker) || b.controller !== defendingPlayer(s, a.defender)) return false;
-  if (hasKeyword(s, blocker, "cantBlock") || hasKeyword(s, attacker, "unblockable")) return false;
+  if (hasKeyword(s, blocker, "cantBlock") || hasKeyword(s, blocker, "decayed") || hasKeyword(s, attacker, "unblockable"))
+    return false;
   // 702.16f : une créature avec la protection contre [filtre] ne peut pas être bloquée par ce qui y correspond.
   if (protectedFrom(s, attacker, snapshot(s, blocker))) return false;
   if (hasKeyword(s, attacker, "flying") && !hasKeyword(s, blocker, "flying") && !hasKeyword(s, blocker, "reach")) return false;

@@ -56,6 +56,8 @@ export type Effect =
       amount: Amount;
       addSubtypes?: string[];
     }
+  /** Endurance N (701.64) : N marqueurs +1/+1 sur le permanent désigné, ou un jeton Esprit blanc N/N, au choix. */
+  | { op: "endure"; what: Ref; amount: Amount }
   /** « Retirez jusqu'à N marqueurs » (choix automatique : loyauté, +1/+1, puis les autres). */
   | { op: "removeCounters"; what: Ref; n: number; kind?: string; store?: string }
   /** « Vous pouvez jouer un terrain supplémentaire ce tour-ci. » */
@@ -326,7 +328,7 @@ export type Effect =
   /** « Vous pouvez lancer [cette carte] depuis votre cimetière ce tour-ci. » */
   | { op: "allowCastFromGraveyard"; what: Ref }
   /** « En arrivant, choisissez un type de créature / une couleur » (sort de permanent qui se résout). */
-  | { op: "chooseOnEnter"; kind: "creatureType" | "color" | "cardName" | "landName" | "landType" | "parity" }
+  | { op: "chooseOnEnter"; kind: "creatureType" | "color" | "cardName" | "landName" | "landType" | "parity" | "mode" }
   /** Dévorer : pendant la résolution du sort de permanent, sacrifier des permanents (nombre mémorisé). */
   | { op: "devour"; filter: ObjectFilter; graveyardUpToX?: boolean }
   /** Pendant la résolution d'un sort de permanent : choisir le permanent à copier en arrivant. */

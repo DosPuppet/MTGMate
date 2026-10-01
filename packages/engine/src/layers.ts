@@ -72,6 +72,7 @@ const KEYWORD_COUNTERS: Record<string, Keyword> = {
   trample: "trample",
   vigilance: "vigilance",
   haste: "haste",
+  decayed: "decayed",
 };
 
 /** Invalide le cache des caractéristiques. */
@@ -814,6 +815,8 @@ function applyLayers(s: GameState, applied: Applied[], defOfId: (id: ObjectId) =
     if (c.keywords.includes("prowess") && !c.abilities.some((ab) => ab.kind === "triggered" && ab.label === "Prouesse")) {
       c.abilities = [...c.abilities, PROWESS];
     }
+    // 702.147 : la décomposition (imprimée, accordée ou par un marqueur) a sa capacité déclenchée.
+    if (c.keywords.includes("decayed") && !c.abilities.includes(DECAYED)) c.abilities = [...c.abilities, DECAYED];
   }
   // Couche 7b : F/E fixées.
   layer(
@@ -854,6 +857,22 @@ const PROWESS: AbilityDef = {
   targets: [],
   effects: [{ op: "pump", what: { kind: "self" }, power: 1, toughness: 1 }],
   label: "Prouesse",
+};
+
+/** Décomposition (702.147b) : « quand cette créature attaque, sacrifiez-la à la fin du combat ». */
+const DECAYED: AbilityDef = {
+  kind: "triggered",
+  trigger: { on: "attacks", who: "self" },
+  targets: [],
+  effects: [
+    {
+      op: "delayed",
+      at: "endOfCombat",
+      effects: [{ op: "sacrificeIt", what: { kind: "target", id: "d" } }],
+      bind: { d: { kind: "self" } },
+    },
+  ],
+  label: "Décomposition",
 };
 
 function battlefieldChars(s: GameState): Map<ObjectId, Characteristics> {

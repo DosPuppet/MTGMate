@@ -297,6 +297,8 @@ export function evalAmount(s: GameState, ctx: EffectContext, a: Amount): number 
     case "countersOn": {
       const id = resolveRef(s, ctx, a.ref)[0];
       const counters = (id && (s.objects[id]?.counters ?? s.lki[id]?.counters)) || {};
+      // « le nombre de marqueurs sur … » (Warden of the Grove) : tous types confondus.
+      if (a.counter === "any") return Object.values(counters).reduce((n, k) => n + Math.max(0, k), 0);
       return counters[a.counter] ?? 0;
     }
     case "differentManaValues": {

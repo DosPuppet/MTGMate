@@ -78,10 +78,11 @@ export interface ObjectView extends CardFace {
   blocking: ObjectId | null;
   /** Aura ou Équipement : le permanent auquel il est attaché. */
   attachedTo: ObjectId | null;
-  /** Choix fait en arrivant (type de créature, couleur). */
+  /** Choix fait en arrivant (type de créature, couleur, mode d'un Siège). */
   chosen: {
     creatureType?: string;
     color?: Color;
+    mode?: string;
   } | null;
   /** Reality Fracture : permanent préparé (son sort peut être lancé depuis l'exil). */
   prepared?: boolean;

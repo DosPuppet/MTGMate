@@ -193,7 +193,11 @@ async function playLesson(index: number): Promise<void> {
 async function refusalAndResume(): Promise<void> {
   await page.locator(".lesson-tile").nth(1).click();
   await page.locator(".coach-next").click();
-  await page.waitForTimeout(300);
+  // La partie doit être prête (priorité au joueur) : un délai fixe ne suffit pas sur une machine chargée.
+  await page.waitForFunction(() => {
+    const v = (window as unknown as { __mtgx: { getState(): { view: GameView | null } } }).__mtgx.getState().view;
+    return !!v && v.pending?.kind === "priority" && v.pending.player === v.viewer;
+  });
   const v = await gameView(page);
   const plains = v?.hand.find((o) => o.name === "Plains");
   if (plains && v) await clickObj(plains.id, v);

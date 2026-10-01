@@ -82,6 +82,7 @@ const KEYWORD_NAMES: Record<string, Keyword> = {
   indestructible: "indestructible",
   convoke: "convoke",
   "start your engines!": "startYourEngines",
+  decayed: "decayed",
 };
 
 const CARD_TYPES = new Set<CardType>([
@@ -848,6 +849,7 @@ function singleDef(raw: RawCard, script: CardScript | undefined, set: string): C
     impending: parseImpending(raw.oracleText)?.n,
     cdaPT: script?.cdaPT,
     chooseOnEnter: script?.chooseOnEnter,
+    enterModes: script?.enterModes,
     shuffleIntoLibrary: script?.shuffleIntoLibrary,
     graveyardCastRemoveCounters: script?.graveyardCastRemoveCounters,
     castFromGraveyard: script?.castFromGraveyard,

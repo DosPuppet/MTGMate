@@ -425,6 +425,8 @@ export type Condition =
   | { kind: "spellCastFromGraveyard" }
   /** La source a déjà infligé des blessures de combat (Ruric Thar, Magecrusher). */
   | { kind: "sourceDealtCombatDamage" }
+  /** Sièges : la source a choisi ce mode en arrivant. */
+  | { kind: "chosenMode"; mode: string }
   /** La source a déjà infligé des blessures, de combat ou non (Karakyk Guardian). */
   | { kind: "sourceDealtDamage" }
   /** Salle (709.5) : la porte N de la source est verrouillée ; toutes ses portes sont déverrouillées. */

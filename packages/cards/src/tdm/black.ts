@@ -13,11 +13,13 @@ import {
   modal,
   mode,
   ref,
+  renew,
   spell,
   target,
   triggered,
   WARRIOR_R,
   when,
+  ZOMBIE_DRUID,
 } from "./common";
 
 export const BLACK: Record<string, CardScript> = {
@@ -178,5 +180,48 @@ export const BLACK: Record<string, CardScript> = {
         label: "Une de vos créatures à marqueur blesse un joueur : piochez, perdez 1 PV",
       }),
     ],
+  },
+
+  // --- Lot B ------------------------------------------------------------------
+  "Adorned Crocodile": {
+    abilities: [
+      triggered(when.diesSelf, [fx.createTokens(ZOMBIE_DRUID)], { label: "Un Zombie Druide 2/2" }),
+      renew("{B}", [target.creature()], [fx.addCounters(ref.target(), 1)], "marqueur +1/+1 sur une créature"),
+    ],
+  },
+  "Alchemist's Assistant": {
+    abilities: [
+      renew("{1}{B}", [target.creature()], [fx.counters(ref.target(), "lifelink")], "marqueur de lien de vie sur une créature"),
+    ],
+  },
+  "Feral Deathgorger": {
+    abilities: [
+      triggered(when.entersSelf, [fx.exileCard(ref.target())], {
+        targets: [{ ...target.upTo(2, target.cardInGraveyard("t", {}, "any")), samePlayer: true }],
+        label: "Exilez jusqu'à deux cartes d'un même cimetière",
+      }),
+    ],
+  },
+  "Dusk Sight": {
+    spell: spell([target.optional(target.creature())], [fx.addCounters(ref.target(), 1), fx.draw(1)]),
+  },
+  "Kin-Tree Nurturer": { abilities: [triggered(when.entersSelf, [fx.endure(ref.self, 1)], { label: "Endurance 1" })] },
+  "Sandskitter Outrider": { abilities: [triggered(when.entersSelf, [fx.endure(ref.self, 2)], { label: "Endurance 2" })] },
+  "Exude Toxin": {
+    spell: spell([], [fx.pumpAll({ types: ["Creature"], notSubtype: "Dragon" }, amount.neg(amount.x), amount.neg(amount.x))]),
+  },
+  "Sinkhole Surveyor": {
+    abilities: [triggered(when.attacksSelf, [fx.loseLife(1), fx.endure(ref.self, 1)], { label: "Perdez 1 PV ; endurance 1" })],
+  },
+  "Purging Stormbrood": {
+    abilities: [
+      triggered(when.entersSelf, [fx.removeCounters(ref.target(), 1000)], {
+        targets: [target.optional(target.creature())],
+        label: "Retirez tous les marqueurs d'une créature",
+      }),
+    ],
+  },
+  "Absorb Essence": {
+    spell: spell([target.creature()], [fx.pump(ref.target(), 2, 2, ["lifelink", "hexproof"])]),
   },
 };

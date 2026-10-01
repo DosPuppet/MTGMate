@@ -10,12 +10,17 @@ import {
   DRAGON,
   ELEPHANT_5,
   entersWith,
+  flurry,
   fx,
+  GOBLIN,
   mode,
+  playerStatic,
   ref,
+  renew,
   SPIRIT_W,
   spell,
   staticAbility,
+  TREASURE,
   target,
   targetObj,
   triggered,
@@ -383,6 +388,111 @@ export const MULTI: Record<string, CardScript> = {
           ),
         ],
         { condition: cond.wasCast, label: "Meulez quatre cartes : une créature de VM 3 ou moins revient" },
+      ),
+    ],
+  },
+
+  // --- Lot B ------------------------------------------------------------------
+  "Armament Dragon": {
+    abilities: [
+      triggered(when.entersSelf, [fx.countersDivided(3, ref.target())], {
+        targets: [target.between(1, 3, target.creature("t", { controller: "you" }))],
+        label: "Répartissez trois marqueurs +1/+1 entre vos créatures",
+      }),
+    ],
+  },
+  "Barrensteppe Siege": {
+    chooseOnEnter: "mode",
+    enterModes: ["Abzan", "Mardu"],
+    abilities: [
+      triggered(when.yourEndStep, [fx.addCountersAll(CREATURE_YOU_CONTROL, 1)], {
+        condition: cond.chosenMode("Abzan"),
+        label: "Abzan — un marqueur +1/+1 sur chacune de vos créatures",
+      }),
+      triggered(when.yourEndStep, [fx.sacrifice(ref.eachOpponent, { types: ["Creature"] })], {
+        condition: cond.all(cond.chosenMode("Mardu"), cond.amountAtLeast(amount.yourCreaturesDiedThisTurn, 1)),
+        label: "Mardu — une de vos créatures est morte ce tour-ci : chaque adversaire sacrifie une créature",
+      }),
+    ],
+  },
+  "Frostcliff Siege": {
+    chooseOnEnter: "mode",
+    enterModes: ["Jeskai", "Temur"],
+    abilities: [
+      triggered(when.combatDamageBatch(CREATURE_YOU_CONTROL), [fx.draw(1)], {
+        condition: cond.chosenMode("Jeskai"),
+        label: "Jeskai — vos créatures blessent un joueur : piochez une carte",
+      }),
+      staticAbility(
+        CREATURE_YOU_CONTROL,
+        { power: 1, addKeywords: ["trample", "haste"] },
+        { condition: cond.chosenMode("Temur"), label: "Temur — vos créatures : +1/+0, piétinement et célérité" },
+      ),
+    ],
+  },
+  "Glacierwood Siege": {
+    chooseOnEnter: "mode",
+    enterModes: ["Temur", "Sultai"],
+    abilities: [
+      triggered(when.castSpell("you", { types: ["Instant", "Sorcery"] }), [fx.mill(4, ref.target())], {
+        targets: [target.player()],
+        condition: cond.chosenMode("Temur"),
+        label: "Temur — éphémère ou rituel : un joueur meule quatre cartes",
+      }),
+      playerStatic({
+        playFrom: { zone: "graveyard", what: "lands" },
+        condition: cond.chosenMode("Sultai"),
+        label: "Sultai — vous pouvez jouer des terrains depuis votre cimetière",
+      }),
+    ],
+  },
+  "Hollowmurk Siege": {
+    chooseOnEnter: "mode",
+    enterModes: ["Sultai", "Abzan"],
+    abilities: [
+      triggered(when.countersPut(CREATURE_YOU_CONTROL), [fx.draw(1)], {
+        condition: cond.chosenMode("Sultai"),
+        oncePerTurn: true,
+        label: "Sultai — un marqueur est mis sur une de vos créatures : piochez (une fois par tour)",
+      }),
+      triggered(when.attackWith(1), [fx.addCounters(ref.target(), 1), fx.modify(ref.target(), { addKeywords: ["menace"] })], {
+        targets: [target.creature("t", { attacking: true })],
+        condition: cond.chosenMode("Abzan"),
+        label: "Abzan — marqueur +1/+1 et menace sur une créature attaquante",
+      }),
+    ],
+  },
+  "Windcrag Siege": {
+    chooseOnEnter: "mode",
+    enterModes: ["Mardu", "Jeskai"],
+    abilities: [
+      playerStatic({
+        triggerMod: { effect: "again", onAttack: true },
+        condition: cond.chosenMode("Mardu"),
+        label: "Mardu — une créature qui attaque déclenche vos capacités une fois de plus",
+      }),
+      triggered(
+        when.yourUpkeep,
+        [fx.createTokens(GOBLIN, 1, undefined, "g"), fx.modify(ref.stored("g"), { addKeywords: ["lifelink", "haste"] })],
+        { condition: cond.chosenMode("Jeskai"), label: "Jeskai — un Gobelin 1/1 avec le lien de vie et la célérité ce tour-ci" },
+      ),
+    ],
+  },
+  "Cori Mountain Stalwart": {
+    abilities: [flurry([fx.damage(2, ref.eachOpponent), fx.gainLife(2)], "2 blessures à chaque adversaire, gagnez 2 PV")],
+  },
+  "Kheru Goldkeeper": {
+    abilities: [
+      triggered(when.zoneChange(["graveyard"], { whose: "you" }), [fx.createTokens(TREASURE)], {
+        condition: cond.yourTurn,
+        batched: true,
+        label: "Des cartes quittent votre cimetière pendant votre tour : un Trésor",
+      }),
+      renew(
+        "{2}{B}{G}{U}",
+        [target.creature()],
+        [fx.addCounters(ref.target(), 2), fx.counters(ref.target(), "flying")],
+        "deux marqueurs +1/+1 et un marqueur de vol",
       ),
     ],
   },

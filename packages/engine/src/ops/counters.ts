@@ -1,11 +1,23 @@
 /** Effets du moteur : marqueurs, niveaux, stations, portes. Chaque clé est un `op` d'`Effect` (voir `runEffect`, effects.ts). */
 
 import { createTokens } from "../actions";
+import { cardRef } from "../choices";
 import type { OpHandlers } from "../effects";
 import { addEffect, evalAmount, resolveRef, store } from "../effects";
 import { effectivePower } from "../layers";
 import { bump, changeCounters, chars, counterCount, isRoom, onBattlefield, P1P1, rulesEvent, unlockDoor } from "../state";
 import { matchesObjectFilter } from "../targets";
+import type { TokenSpec } from "../types";
+
+/** Jeton de l'endurance (701.64) : Esprit blanc N/N. */
+const ENDURE_SPIRIT: TokenSpec = {
+  name: "Spirit",
+  colors: ["W"],
+  types: ["Creature"],
+  subtypes: ["Spirit"],
+  power: 0,
+  toughness: 0,
+};
 
 export const HANDLERS: OpHandlers = {
   countersAboveBase(s, _r, e, ctx) {
@@ -123,6 +135,40 @@ export const HANDLERS: OpHandlers = {
     }
     // Garnet : « un marqueur +1/+1 pour chaque marqueur de savoir retiré ainsi ».
     store(r, e.store, removed);
+    return;
+  },
+  endure(s, r, e, ctx, key) {
+    // 701.64 : « [ce permanent] endure N » : N marqueurs +1/+1 sur lui, ou un jeton Esprit blanc N/N. S'il n'est plus sur
+    // le champ de bataille, le jeton est créé ; endurer 0 ne fait rien.
+    const n = evalAmount(s, ctx, e.amount);
+    if (n <= 0) return;
+    const id = resolveRef(s, ctx, e.what).find((x) => s.objects[x]?.zone === "battlefield");
+    const o = id ? s.objects[id] : undefined;
+    let choice = o ? undefined : "token";
+    if (o) {
+      const answer = r.vars[key("endure")];
+      if (!answer) {
+        return {
+          ask: {
+            player: ctx.controller,
+            key: key("endure"),
+            request: {
+              type: "pick",
+              intent: "other",
+              prompt: `Endurance ${n} : ${n} marqueur${n > 1 ? "s" : ""} +1/+1 sur ${cardRef(o.defId)}, ou un Esprit ${n}/${n} ?`,
+              options: ["counters", "token"],
+              labels: { counters: `${n} marqueur${n > 1 ? "s" : ""} +1/+1`, token: `Un jeton Esprit ${n}/${n}` },
+              min: 1,
+              max: 1,
+              suggested: ["counters"],
+            },
+          },
+        };
+      }
+      choice = String(answer[0]);
+    }
+    if (choice === "counters" && o) changeCounters(s, o, P1P1, n);
+    else createTokens(s, ctx.controller, { ...ENDURE_SPIRIT, power: n, toughness: n }, 1, true);
     return;
   },
   addCounters(s, _r, e, ctx) {

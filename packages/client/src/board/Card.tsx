@@ -162,7 +162,7 @@ export function Card({
             {obj.damage > 0 && <div className="dmg-badge">−{obj.damage}</div>}
             {obj.chosen && (
               <div className="chosen-badge" title="Choix fait en arrivant">
-                {obj.chosen.creatureType ?? COLOR_NAME[obj.chosen.color ?? ""] ?? ""}
+                {obj.chosen.creatureType ?? obj.chosen.mode ?? COLOR_NAME[obj.chosen.color ?? ""] ?? ""}
               </div>
             )}
             {obj.types.includes("Planeswalker") && (

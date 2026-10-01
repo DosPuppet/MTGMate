@@ -210,6 +210,8 @@ Dans l'ordre où elles ont été ajoutées, extension par extension.
   - `règle` Rite of Renewal : les cartes mélangées viennent d'un même cimetière, et vont dans la bibliothèque de leur propriétaire, que ce soit ou non le joueur ciblé ;
   - `choix auto` Severance Priest : une carte non-terrain est toujours exilée s'il y en a une (« vous pouvez choisir ») ;
   - `règle` Sonic Shrieker : un joueur ciblé défausse une carte même si ses blessures ont été prévenues ;
-  - `choix auto` Rediscover the Way : les cartes non prises vont au-dessous dans un ordre aléatoire.
+  - `choix auto` Rediscover the Way : les cartes non prises vont au-dessous dans un ordre aléatoire ;
+  - `timing` Claim Territory : deux recherches successives (une Forêt en jeu engagée, puis une en main), et non une seule ;
+  - `choix auto` Purging Stormbrood : « retirez tous les marqueurs » retire les marqueurs un par un, sans choix du joueur.
 - **Légalité Standard :** instantané des légalités Scryfall au moment de l'import (`legalities.standard` dans `data/<set>.json`). Après une rotation ou une annonce de bannissement, réimporter les sets (`npm run import-cards -- <set>`).
 - **Images des jetons :** celle du jeton Scryfall le plus proche (même nom, puis mêmes F/E et couleurs ; `data/tokens.json`, `npm run import-tokens`) ; un jeton de nom inconnu garde le cadre texte.

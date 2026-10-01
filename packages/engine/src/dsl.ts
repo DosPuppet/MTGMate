@@ -67,7 +67,9 @@ export interface CardScript {
   altCost?: { mana: string; condition: Condition; label: string };
   /** F/E définies par une capacité (F/E étoilées sur la carte). */
   cdaPT?: Amount;
-  chooseOnEnter?: "creatureType" | "color" | "cardName" | "landName" | "landType" | "parity";
+  chooseOnEnter?: "creatureType" | "color" | "cardName" | "landName" | "landType" | "parity" | "mode";
+  /** Sièges : les modes proposés en arrivant (avec `chooseOnEnter: "mode"`). */
+  enterModes?: string[];
   shuffleIntoLibrary?: boolean;
   graveyardCastRemoveCounters?: number;
   /** Skyseer's Chariot : les capacités activées des sources du nom choisi coûtent {N} de plus. */
@@ -258,6 +260,7 @@ export const amount = {
     whose,
   }),
   lifeGainedThisTurn: { kind: "lifeGainedThisTurn" } as Amount,
+  /** Marqueurs d'un type sur l'objet ; `"any"` : tous les marqueurs. */
   countersOn: (r: Ref, counter = "+1/+1"): Amount => ({ kind: "countersOn", ref: r, counter }),
   differentManaValues: { kind: "differentManaValues" } as Amount,
   lifeTotal: { kind: "lifeTotal" } as Amount,
@@ -394,6 +397,8 @@ export const fx = {
     ...opts,
   }),
   addCounters: (what: Ref, n: Amount): Effect => ({ op: "addCounters", what, amount: n }),
+  /** « [Ce permanent] endure N » (701.64) : N marqueurs +1/+1 sur lui, ou un jeton Esprit blanc N/N. */
+  endure: (what: Ref, n: Amount): Effect => ({ op: "endure", what, amount: n }),
   /** « Exploitez [cette Gemme d'infinité] » (Harness). */
   harness: { op: "harness" } as Effect,
   /** « [Ce joueur] amasse des [Gobelins] X » (701.47). */
@@ -1639,6 +1644,8 @@ export const cond = {
   canForage: { kind: "canForage" } as Condition,
   /** Délire : au moins quatre types de cartes parmi les cartes de votre cimetière. */
   delirium: { kind: "amountAtLeast", amount: { kind: "cardTypesInGraveyard" }, n: 4 } as Condition,
+  /** Sièges : la source a choisi ce mode en arrivant (« • Abzan — … »). */
+  chosenMode: (mode: string): Condition => ({ kind: "chosenMode", mode }),
   /** « si vous êtes descendu ce tour-ci » (une carte de permanent a été mise dans votre cimetière). */
   descended: turnAtLeast(DESCENT),
 };

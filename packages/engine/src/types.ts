@@ -69,7 +69,9 @@ export type Keyword =
   /** Ghalta the Immovable : peut attaquer comme si elle n'avait pas le défenseur. */
   | "attacksDespiteDefender"
   /** « Start your engines! » (702.179) : si vous n'avez pas de vitesse, elle démarre à 1. */
-  | "startYourEngines";
+  | "startYourEngines"
+  /** Décomposition (702.147) : ne peut pas bloquer ; quand elle attaque, sacrifiée à la fin du combat. */
+  | "decayed";
 
 /** Restrictions : affichées différemment des mots-clés. */
 export const RESTRICTIONS: readonly Keyword[] = [
@@ -100,6 +102,7 @@ export const KEYWORDS: readonly Keyword[] = [
   "flash",
   "hexproof",
   "indestructible",
+  "decayed",
 ];
 
 export * from "./model/cards";

@@ -1344,6 +1344,7 @@ function chosenFrom(vars: Record<string, ChoiceValue[]>): GameObject["chosen"] {
   if (!kind || !value) return undefined;
   if (kind === "cardName" || kind === "landName") return { cardName: value };
   if (kind === "parity") return { parity: value === "odd" ? "odd" : "even" };
+  if (kind === "mode") return { mode: value };
   return kind === "color" ? { color: value as Color } : { creatureType: value };
 }
 

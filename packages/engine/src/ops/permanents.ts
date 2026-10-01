@@ -337,6 +337,7 @@ export const HANDLERS: OpHandlers = {
       let options: string[];
       if (kind === "color") options = ["W", "U", "B", "R", "G"];
       else if (kind === "parity") options = ["odd", "even"];
+      else if (kind === "mode") options = s.defs[ctx.sourceDefId]?.enterModes ?? [];
       else if (kind === "landName") {
         // Petrified Hamlet : un nom de carte de terrain, ceux des terrains adverses en tête (non de base d'abord).
         const opp = s.battlefield.filter((id) => s.objects[id]?.controller !== ctx.controller);
@@ -376,7 +377,7 @@ export const HANDLERS: OpHandlers = {
         for (const k of keys) tally.set(k, (tally.get(k) ?? 0) + 1);
       }
       const best =
-        kind === "cardName" || kind === "landName" || kind === "parity"
+        kind === "cardName" || kind === "landName" || kind === "parity" || kind === "mode"
           ? options[0]
           : ([...tally.entries()].sort((a, b) => b[1] - a[1]).find(([k]) => options.includes(k))?.[0] ?? options[0]);
       const COLOR: Record<string, string> = { W: "Blanc", U: "Bleu", B: "Noir", R: "Rouge", G: "Vert" };
@@ -396,7 +397,9 @@ export const HANDLERS: OpHandlers = {
                     ? "Choisissez un nom de carte de terrain (ceux de vos adversaires sont en tête)"
                     : kind === "parity"
                       ? "Choisissez : valeur de mana impaire ou paire"
-                      : "Choisissez un type de créature",
+                      : kind === "mode"
+                        ? `Choisissez : ${options.join(" ou ")}`
+                        : "Choisissez un type de créature",
             options,
             labels:
               kind === "color"
@@ -424,7 +427,9 @@ export const HANDLERS: OpHandlers = {
             ? { creatureType: value }
             : kind === "parity"
               ? { parity: value === "odd" ? ("odd" as const) : ("even" as const) }
-              : { cardName: value }),
+              : kind === "mode"
+                ? { mode: value }
+                : { cardName: value }),
       };
       bump(s);
     }
