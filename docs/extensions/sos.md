@@ -41,3 +41,10 @@ Les scripts sont dans `packages/cards/src/sos/` : `cards` (cartes du méta), `wh
 - **Dette :** l'entrée `payX` de `debt-baseline.json` est retirée (l'opération sert à deux cartes).
 - **Restent :** Brush Off (réduction « s'il cible un sort », colorée), Mana Sculpt (mana dépensé pour le sort ciblé, « au début de votre prochaine phase principale »), Matterbending Mage (« un sort avec {X} dans son coût »).
 - **Tests :** 32 tests de règles (« lot A — bleu »).
+
+## Sous-lot A3 : cartes noires ✅ (110 / 262)
+
+- **Cartes :** 28 (sur 29), dont 7 préparées (sorts lancés depuis l'exil, conditions de préparation), Repartee, Infusion (Foolish Fate, Poisoner's Apprentice…), convergence, End of the Hunt, Postmortem Professor, Withering Curse.
+- **Correctif :** « répartissez X marqueurs » avec moins de marqueurs que de cibles n'exige plus un marqueur par cible (choix impossible trouvé par le fuzz).
+- **Reste :** Pox Plague (montants par joueur : « perdez la moitié de vos PV, arrondie à l'inférieur », « défaussez la moitié de votre main »).
+- **Tests :** 30 tests de règles (« lot A — noir »).

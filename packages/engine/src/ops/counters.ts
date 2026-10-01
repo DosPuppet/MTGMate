@@ -289,7 +289,8 @@ export const HANDLERS: OpHandlers = {
               prompt: `Répartissez ${total} marqueurs +1/+1 entre les cibles`,
               among,
               total: total,
-              minEach: 1,
+              // 601.2d : au moins un marqueur par cible ; avec moins de marqueurs que de cibles (X réduit), sans minimum.
+              minEach: total >= among.length ? 1 : 0,
               suggested: among.map((_, i) => each + (i < total - each * among.length ? 1 : 0)),
             },
           },
