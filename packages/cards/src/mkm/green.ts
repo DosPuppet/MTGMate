@@ -385,4 +385,19 @@ export const GREEN: Record<string, CardScript> = {
       ),
     ],
   },
+  "Culvert Ambusher": {
+    // Déguisement {4}{G} : lu dans le texte.
+    abilities: [
+      ...[when.entersSelf, when.turnedFaceUp].map((w) =>
+        triggered(
+          w,
+          [fx.modify(ref.target(), { addBlockRules: [{ mustBlock: true, label: "Bloque si possible" }] }, "endOfTurn")],
+          {
+            targets: [target.creature()],
+            label: "La créature ciblée bloque ce tour-ci si possible",
+          },
+        ),
+      ),
+    ],
+  },
 };

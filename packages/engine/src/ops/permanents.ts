@@ -106,6 +106,14 @@ export const HANDLERS: OpHandlers = {
       ...(e.untilLeavesExile ? { untilExiledUid: exiledUid(s, ctx, e.untilLeavesExile) } : {}),
       ...(e.whileSource ? { whileSource: ctx.sourceId } : {}),
       ...e.mods,
+      // Tolsimir : « bloque ce Loup si possible » (l'attaquant de l'événement).
+      ...(e.mods.addBlockRules?.some((r) => r.mustBlockEventObject)
+        ? {
+            addBlockRules: e.mods.addBlockRules.map((r) =>
+              r.mustBlockEventObject ? { ...r, mustBlockEventObject: undefined, mustBlockAttacker: ctx.event?.objectId } : r,
+            ),
+          }
+        : {}),
       ...(e.basePT !== undefined ? { setPower: evalAmount(s, ctx, e.basePT), setToughness: evalAmount(s, ctx, e.basePT) } : {}),
     });
     return;

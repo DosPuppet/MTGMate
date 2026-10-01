@@ -15,7 +15,7 @@ import { bump } from "../src/layers";
 import { legalActions } from "../src/legal";
 import { chars, FACE_DOWN_ID, moveObject } from "../src/state";
 import { matchesObjectFilter } from "../src/targets";
-import { canBlock } from "../src/turn";
+import { canBlock, requiredBlocks } from "../src/turn";
 import type { ChoiceRequest, ChoiceValue, Decision, GameState } from "../src/types";
 import { projectView } from "../src/view";
 import { act, advanceUntil, castNowOf, customCard, idOf, idsOf, passBoth, scenario, untilCastNow } from "./helpers";
@@ -5015,5 +5015,59 @@ describe("Murders at Karlov Manor, lot B4 : suspect et Affaires", () => {
     s = settle(act(s, "p1", { type: "cast", card: b as string, targets: { t: ["p2"] } }));
     s = advanceUntil(s, (x) => x.turn.step === "end" && x.stack.length === 0 && x.triggers.length === 0);
     expect(s.objects[idOf(s, "p1", "battlefield", "Case of the Burning Masks")]?.solved).toBe(true);
+  });
+});
+
+describe("Murders at Karlov Manor, lot C1 : exigences de blocage (509.1c)", () => {
+  const lands = (name: string, n: number) => Array(n).fill(name) as string[];
+  const toBlockers = (s: S, attackers: string[]) => {
+    let c = advanceUntil(s, (x) => x.pending?.kind === "declareAttackers");
+    c = act(c, "p1", { type: "declareAttackers", attackers: attackers.map((id) => ({ id, defender: "p2" })) });
+    return advanceUntil(c, (x) => x.pending?.kind === "declareBlockers");
+  };
+
+  it("Culvert Ambusher : la créature ciblée bloque ce tour-ci si possible", () => {
+    let s = scenario({
+      p1: { battlefield: ["Bear Cub", ...lands("Forest", 5)], hand: ["Culvert Ambusher"] },
+      p2: { battlefield: ["Llanowar Elves"] },
+    });
+    const elves = idOf(s, "p2", "battlefield", "Llanowar Elves");
+    s = settle(cast(s, "p1", "Culvert Ambusher", undefined), (req) =>
+      req.type === "pick" && req.options.includes(elves) ? [elves] : undefined,
+    );
+    const bear = idOf(s, "p1", "battlefield", "Bear Cub");
+    const b = toBlockers(s, [bear]);
+    expect(() => act(b, "p2", { type: "declareBlockers", blocks: [] })).toThrow(RulesError);
+    expect(requiredBlocks(b, "p2")).toEqual([{ blocker: elves, attacker: bear }]);
+    expect(() => act(b, "p2", { type: "declareBlockers", blocks: [{ blocker: elves, attacker: bear }] })).not.toThrow();
+  });
+
+  it("Hustle : la créature ciblée attaque ou bloque ce tour-ci si possible", () => {
+    let s = scenario({ p1: { battlefield: ["Bear Cub", "Island"], hand: ["Hustle // Bustle"] } });
+    const bear = idOf(s, "p1", "battlefield", "Bear Cub");
+    const card = idOf(s, "p1", "hand", "Hustle // Bustle");
+    const opt = legalActions(s, "p1").find((a) => a.type === "cast" && a.card === card && a.faceName === "Hustle");
+    s = settle(act(s, "p1", { type: "cast", card, face: opt?.type === "cast" ? opt.face : undefined, targets: { t: [bear] } }));
+    expect(chars(s, bear).keywords).toContain("mustAttack");
+    s = advanceUntil(s, (x) => x.pending?.kind === "declareAttackers");
+    expect(() => act(s, "p1", { type: "declareAttackers", attackers: [] })).toThrow(RulesError);
+  });
+
+  it("Tolsimir : Voja Fenstalker en arrivant ; un Loup qui attaque avec Tolsimir doit être bloqué par la créature ciblée si possible", () => {
+    let s = scenario({
+      p1: { battlefield: lands("Plains", 3).concat(lands("Forest", 2)), hand: ["Tolsimir, Midnight's Light"] },
+      p2: { battlefield: ["Bear Cub"] },
+    });
+    s = settle(cast(s, "p1", "Tolsimir, Midnight's Light"));
+    const voja = idOf(s, "p1", "battlefield", "Voja Fenstalker");
+    expect(chars(s, voja).supertypes).toContain("Legendary");
+    const tolsimir = idOf(s, "p1", "battlefield", "Tolsimir, Midnight's Light");
+    // Mal d'invocation : le tour suivant de p1.
+    s = advanceUntil(s, (x) => x.turn.number === 5 && x.turn.step === "main1");
+    const bear = idOf(s, "p2", "battlefield", "Bear Cub");
+    const b = toBlockers(s, [tolsimir, voja]);
+    // Bloquer Tolsimir plutôt que le Loup n'obéit pas à l'exigence.
+    expect(() => act(b, "p2", { type: "declareBlockers", blocks: [{ blocker: bear, attacker: tolsimir }] })).toThrow(RulesError);
+    expect(() => act(b, "p2", { type: "declareBlockers", blocks: [{ blocker: bear, attacker: voja }] })).not.toThrow();
   });
 });

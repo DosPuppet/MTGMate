@@ -830,10 +830,48 @@ export function unmetBlockRequirement(
   return null;
 }
 
+/** Attaquants qu'une créature soumise à « bloque si possible » pourrait bloquer seule (509.1c). */
+function mustBlockTargets(s: GameState, player: PlayerId, blocker: ObjectId): ObjectId[] {
+  const rules = chars(s, blocker).blockRules.filter((r) => r.mustBlock || r.mustBlockAttacker);
+  if (rules.length === 0) return [];
+  const specific = rules.map((r) => r.mustBlockAttacker).filter((x): x is ObjectId => !!x);
+  return (s.combat?.attackers ?? [])
+    .filter((a) => defendingPlayer(s, a.defender) === player)
+    .filter((a) => rules.some((r) => r.mustBlock) || specific.includes(a.id))
+    .filter((a) => canBlock(s, blocker, a.id) && minBlockers(s, a.id) <= 1)
+    .map((a) => a.id);
+}
+
+/** 509.1c : une créature qui « bloque si possible » et qui ne bloque pas alors qu'elle le pouvait ; null sinon. */
+export function unmetBlockerRequirement(
+  s: GameState,
+  player: PlayerId,
+  blocks: { blocker: ObjectId; attacker: ObjectId }[],
+): ObjectId | null {
+  for (const id of creaturesControlledBy(s, player)) {
+    const able = mustBlockTargets(s, player, id);
+    if (able.length === 0) continue;
+    const blocked = blocks.find((b) => b.blocker === id)?.attacker;
+    if (blocked === undefined) return id;
+    // « Bloque ce Loup si possible » : bloquer un autre attaquant n'obéit pas à l'exigence (on en obéirait à plus).
+    const specific =
+      chars(s, id).blockRules.some((r) => r.mustBlockAttacker) && !chars(s, id).blockRules.some((r) => r.mustBlock);
+    if (specific && !able.includes(blocked)) return id;
+  }
+  return null;
+}
+
 /** Blocages qui respectent les exigences « doit être bloquée » (déclaration par défaut). */
 export function requiredBlocks(s: GameState, player: PlayerId): { blocker: ObjectId; attacker: ObjectId }[] {
   const out: { blocker: ObjectId; attacker: ObjectId }[] = [];
   const used = new Set<ObjectId>();
+  // « Bloque si possible » : chaque créature concernée bloque un attaquant qu'elle peut bloquer.
+  for (const id of creaturesControlledBy(s, player)) {
+    const a = mustBlockTargets(s, player, id)[0];
+    if (!a) continue;
+    used.add(id);
+    out.push({ blocker: id, attacker: a });
+  }
   for (const a of s.combat?.attackers ?? []) {
     if (defendingPlayer(s, a.defender) !== player || !hasKeyword(s, a.id, "mustBeBlocked")) continue;
     const able = creaturesControlledBy(s, player).filter((id) => !used.has(id) && canBlock(s, id, a.id));
@@ -863,6 +901,8 @@ export function declareBlockers(s: GameState, player: PlayerId, blocks: { blocke
     throw new RulesError(`${chars(s, lone).name} ne peut pas bloquer seule`);
   const unmet = unmetBlockRequirement(s, player, blocks);
   if (unmet) throw new RulesError(`${chars(s, unmet).name} doit être bloquée si possible`);
+  const idle = unmetBlockerRequirement(s, player, blocks);
+  if (idle) throw new RulesError(`${chars(s, idle).name} doit bloquer si possible`);
   // Archangel of Tithes (attaquant) : {1} par créature qui bloque.
   const perBlocker = s.playerOrder.filter((p) => p !== player).reduce((n, p) => n + playerStaticTotal(s, p, "blockTax"), 0);
   if (blocks.length && perBlocker > 0) {

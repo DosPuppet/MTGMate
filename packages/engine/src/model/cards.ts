@@ -491,6 +491,13 @@ export interface BlockRule {
    */
   cantAttackPlayer?: PlayerId;
   cantAttackSourceController?: boolean;
+  /**
+   * Exigence de blocage (509.1c) : elle bloque ce tour-ci si possible (Culvert Ambusher, Hustle), ou bloque cet attaquant
+   * si possible (Tolsimir : `mustBlockEventObject` dans un script, remplacé à la résolution par l'objet de l'événement).
+   */
+  mustBlock?: boolean;
+  mustBlockAttacker?: ObjectId;
+  mustBlockEventObject?: boolean;
   label: string;
 }
 

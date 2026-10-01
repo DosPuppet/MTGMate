@@ -114,3 +114,9 @@ Les scripts sont dans `packages/cards/src/mkm/` : `cards` (cartes du méta), `wh
   - le journal du tour note la source des blessures (`sourceKey`) ; `distinctSources` compte les sources différentes (« trois sources ou plus que vous contrôliez ont infligé des blessures ce tour-ci »).
 - **Interface :** pastille « Suspecte » vérifiée par un script Playwright ponctuel (capture `test-results/mkm/suspect.png`).
 - **Tests :** 4 tests de règles (« lot B4 »).
+
+## Sous-lot C1 : exigences de blocage (509.1c) ✅ (248 / 268)
+
+- **Cartes :** Culvert Ambusher, Tolsimir, Midnight's Light (jeton légendaire Voja Fenstalker), Hustle // Bustle.
+- **Le moteur gagne :** les exigences de blocage de la famille `BlockRule` : `mustBlock` (« bloque ce tour-ci si possible ») et `mustBlockAttacker` (« bloque ce Loup si possible » ; `mustBlockEventObject` dans un script, fixé à la résolution) ; la déclaration des bloqueurs les vérifie (bloquer un autre attaquant n'obéit pas à une exigence d'attaquant précis) et le blocage par défaut (`requiredBlocks`) les respecte.
+- **Tests :** 3 tests de règles (« lot C1 »).

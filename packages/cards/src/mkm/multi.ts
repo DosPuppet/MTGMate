@@ -28,6 +28,18 @@ import {
 } from "./common";
 
 const CREATURES_YOU: ObjectFilter = { types: ["Creature"], controller: "you" };
+
+/** Voja Fenstalker : Loup légendaire 5/5 vert et blanc avec le piétinement (Tolsimir, Midnight's Light). */
+const VOJA_FENSTALKER: TokenSpec = {
+  name: "Voja Fenstalker",
+  colors: ["G", "W"],
+  types: ["Creature"],
+  subtypes: ["Wolf"],
+  legendary: true,
+  power: 5,
+  toughness: 5,
+  keywords: ["trample"],
+};
 const ALL_COLORS = ["W", "U", "B", "R", "G"] as const;
 
 /** Plante : créature verte 0/1 (Insidious Roots). */
@@ -680,5 +692,50 @@ export const MULTI: Record<string, CardScript> = {
         { label: "Vous sacrifiez un Indice : Lazav peut devenir une copie d'une créature exilée avec lui" },
       ),
     ],
+  },
+  "Tolsimir, Midnight's Light": {
+    abilities: [
+      triggered(when.entersSelf, [fx.createTokens(VOJA_FENSTALKER)], { label: "Voja Fenstalker, Loup 5/5 légendaire" }),
+      triggered(
+        when.attacks({ subtype: "Wolf", controller: "you" }),
+        [
+          fx.modify(
+            ref.target(),
+            { addBlockRules: [{ mustBlockEventObject: true, label: "Bloque ce Loup si possible" }] },
+            "endOfTurn",
+          ),
+        ],
+        {
+          condition: cond.sourceMatches({ attacking: true }),
+          targets: [target.creature("t", { controller: "opponent" })],
+          label: "Tolsimir attaque : une créature adverse bloque ce Loup si possible",
+        },
+      ),
+    ],
+  },
+  Hustle: {
+    spell: spell(
+      [target.creature()],
+      [
+        fx.modify(
+          ref.target(),
+          { addKeywords: ["mustAttack"], addBlockRules: [{ mustBlock: true, label: "Bloque si possible" }] },
+          "endOfTurn",
+        ),
+      ],
+    ),
+  },
+  Bustle: {
+    spell: spell(
+      [],
+      [
+        fx.pumpAll(CREATURES_YOU, 2, 2, ["trample"]),
+        ...fx.may(
+          "Retourner face visible une créature que vous contrôlez ?",
+          fx.chooseAmong(ref.permanentsOf(ref.you, { types: ["Creature"], faceDown: true }), ref.you, "f"),
+          fx.turnFaceUp(ref.stored("f")),
+        ),
+      ],
+    ),
   },
 };
