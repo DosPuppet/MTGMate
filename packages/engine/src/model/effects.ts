@@ -124,7 +124,8 @@ export type Effect =
     }
   /** Marqueurs (par défaut +1/+1) ; un montant négatif en retire. */
   | { op: "addCounters"; what: Ref; amount: Amount; kind?: string }
-  | { op: "loseLife"; who: Ref; amount: Amount; store?: string }
+  /** `half` : chaque joueur perd la moitié de ses PV, arrondie à l'inférieur (Pox Plague). */
+  | { op: "loseLife"; who: Ref; amount: Amount; store?: string; half?: boolean }
   | { op: "bounce"; what: Ref }
   | { op: "exile"; what: Ref }
   /**
@@ -153,6 +154,8 @@ export type Effect =
       op: "discard";
       who: Ref;
       amount: Amount;
+      /** La moitié des cartes de sa main, arrondie à l'inférieur (Pox Plague). */
+      half?: boolean;
       filter?: ObjectFilter;
       chooser?: "controller";
       optional?: boolean;
@@ -392,8 +395,10 @@ export type Effect =
   | {
       op: "grantPlay";
       what: Ref;
-      /** « jusqu'à la fin de votre prochain tour » */
+      /** « jusqu'à la fin de votre prochain tour » ; avec `forOwner` : « jusqu'à votre prochain tour » (Memory Vessel). */
       untilYourNextTurn?: boolean;
+      /** Avec `forOwner` : « jusqu'à la fin de son prochain tour » (Suspend Aggression). */
+      untilOwnersNextTurn?: boolean;
       free?: boolean;
       anyTime?: boolean;
       forever?: boolean;

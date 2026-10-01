@@ -161,6 +161,8 @@ export interface GameObject {
   suspended?: boolean;
   /** Tour où des marqueurs ont été mis sur lui pour la dernière fois (« la première fois ce tour-ci »). */
   countersPutTurn?: number;
+  /** Joueurs qui ont mis des marqueurs sur lui pendant le tour `countersPutTurn` (Fractal Tender). */
+  countersPutBy?: PlayerId[];
   /** A déjà infligé des blessures, de combat ou non (Karakyk Guardian). */
   dealtDamage?: boolean;
   /** Tour de sa dernière attaque (« créature qui a attaqué ce tour-ci »). */
@@ -327,7 +329,15 @@ export interface InlineAbility {
 }
 
 /** Moment d'une capacité retardée : prochaine étape de fin, étape de fin de votre prochain tour, fin du combat. */
-export type DelayedTiming = "nextEndStep" | "yourNextEndStep" | "yourEndStep" | "endOfCombat" | "nextUpkeep" | "yourNextUpkeep";
+export type DelayedTiming =
+  | "nextEndStep"
+  | "yourNextEndStep"
+  | "yourEndStep"
+  | "endOfCombat"
+  | "nextUpkeep"
+  | "yourNextUpkeep"
+  /** « au début de votre prochaine phase principale » (Mana Sculpt). */
+  | "yourNextMain";
 
 export interface DelayedTrigger {
   id: string;

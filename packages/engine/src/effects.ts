@@ -437,6 +437,8 @@ export function evalAmount(s: GameState, ctx: EffectContext, a: Amount): number 
       const spent = (id ? s.stack.find((x) => x.id === id)?.spentColors : undefined) ?? {};
       return (["W", "U", "B", "R", "G"] as const).filter((c) => (spent[c] ?? 0) > 0).length;
     }
+    case "manaSpentOf":
+      return resolveRef(s, ctx, a.ref).reduce((n, id) => n + (s.stack.find((x) => x.id === id)?.manaSpent ?? 0), 0);
     case "eventX": {
       const id = ctx.event?.objectId;
       return (id ? s.stack.find((x) => x.id === id)?.x : undefined) ?? 0;
@@ -787,7 +789,7 @@ export function grantPlay(
   s: GameState,
   player: PlayerId,
   cards: ObjectId[],
-  until: "thisTurn" | "yourNextTurn" | "forever",
+  until: "thisTurn" | "yourNextTurn" | "forever" | number,
   opts: {
     free?: boolean;
     anyTime?: boolean;
@@ -805,7 +807,14 @@ export function grantPlay(
     cost?: ManaCost;
   },
 ): void {
-  const last = until === "forever" ? Number.MAX_SAFE_INTEGER : until === "thisTurn" ? s.turn.number : nextTurnOf(s, player);
+  const last =
+    typeof until === "number"
+      ? until
+      : until === "forever"
+        ? Number.MAX_SAFE_INTEGER
+        : until === "thisTurn"
+          ? s.turn.number
+          : nextTurnOf(s, player);
   s.playPermissions = [...(s.playPermissions ?? []), ...cards.map((card) => ({ card, player, until: last, ...opts }))];
 }
 

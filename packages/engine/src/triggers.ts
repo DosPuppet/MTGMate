@@ -1015,9 +1015,12 @@ function triggerDoublers(s: GameState, src: Source, ev: RulesEvent): number {
 }
 
 /** Au début de l'étape de fin (ou à la fin du combat) : les capacités retardées dont c'est le moment se déclenchent. */
-export function releaseDelayedTriggers(s: GameState, moment: "end" | "endCombat" | "upkeep" = "end"): void {
+export function releaseDelayedTriggers(s: GameState, moment: "end" | "endCombat" | "upkeep" | "main" = "end"): void {
   const due = s.delayed.filter((d) => {
     if (d.notBeforeTurn > s.turn.number) return false;
+    // Mana Sculpt : « au début de votre prochaine phase principale » (celle d'après combat comprise).
+    if (moment === "main") return d.at === "yourNextMain" && s.turn.active === d.controller;
+    if (d.at === "yourNextMain") return false;
     if (moment === "endCombat") return d.at === "endOfCombat";
     // Firion : « au début du prochain entretien ».
     // Rebond : « au début de votre prochain entretien ».

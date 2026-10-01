@@ -185,10 +185,11 @@ export const HANDLERS: OpHandlers = {
     return;
   },
   loseLife(s, r, e, ctx) {
-    const n = evalAmount(s, ctx, e.amount);
+    const amount = evalAmount(s, ctx, e.amount);
     let lost = 0;
     for (const p of resolveRef(s, ctx, e.who)) {
       if (!isPlayer(s, p)) continue;
+      const n = e.half ? Math.floor(Math.max(0, s.players[p]?.life ?? 0) / 2) : amount;
       loseLife(s, p, n);
       lost += n;
     }

@@ -4642,3 +4642,85 @@ describe("Secrets of Strixhaven, lot B3 : coûts", () => {
     expect(() => act(t, "p1", { type: "cast", card: idOf(t, "p1", "hand", "Brush Off"), targets: { t: [bear] } })).toThrow();
   });
 });
+
+describe("Secrets of Strixhaven, lot C1 : moitiés par joueur, exil jouable, marqueurs mis, prochaine phase principale", () => {
+  it("Pox Plague : chaque joueur perd la moitié de ses PV, défausse la moitié de sa main, sacrifie la moitié de ses permanents (à l'inférieur)", () => {
+    let s = scenario({
+      p1: { battlefield: [...lands("Swamp", 5), "Bear Cub"], hand: ["Pox Plague", "Opt", "Opt", "Opt", "Opt"] },
+      p2: { life: 15, battlefield: ["Bear Cub", "Forest", "Forest"], hand: ["Opt", "Opt", "Opt"] },
+    });
+    s = settle(cast(s, "p1", "Pox Plague"));
+    expect(s.players.p1?.life).toBe(10);
+    expect(s.players.p2?.life).toBe(8);
+    expect(s.players.p1?.hand).toHaveLength(2);
+    expect(s.players.p2?.hand).toHaveLength(2);
+    expect(s.battlefield.filter((id) => s.objects[id]?.controller === "p1")).toHaveLength(3);
+    expect(s.battlefield.filter((id) => s.objects[id]?.controller === "p2")).toHaveLength(2);
+  });
+
+  it("Suspend Aggression : un permanent non-terrain et votre carte du dessus exilés, jouables par leur propriétaire jusqu'à la fin de son prochain tour", () => {
+    let s = scenario({
+      p1: {
+        battlefield: ["Mountain", "Plains", "Island", "Island"],
+        hand: ["Suspend Aggression"],
+        library: ["Opt", ...lands("Island", 8)],
+      },
+      p2: { battlefield: ["Bear Cub", "Forest", "Forest"], library: lands("Forest", 8) },
+    });
+    s = settle(cast(s, "p1", "Suspend Aggression", { t: [idOf(s, "p2", "battlefield", "Bear Cub")] }));
+    const bear = exiled(s, "Bear Cub")[0] as string;
+    const opt = exiled(s, "Opt")[0] as string;
+    expect(bear && opt).toBeTruthy();
+    expect(castOptions(s, "p1", opt)).not.toHaveLength(0);
+    // Tour de l'adversaire (4) : il peut lancer son Ours.
+    s = advanceUntil(s, (x) => x.turn.number === 4 && x.turn.step === "main1");
+    expect(castOptions(s, "p2", bear)).not.toHaveLength(0);
+    // Votre prochain tour (5) : Opt reste jouable ; l'Ours ne l'est plus pour l'adversaire au tour 6.
+    s = advanceUntil(s, (x) => x.turn.number === 5 && x.turn.step === "main1");
+    expect(castOptions(s, "p1", opt)).not.toHaveLength(0);
+    s = advanceUntil(s, (x) => x.turn.number === 6 && x.turn.step === "main1");
+    expect(castOptions(s, "p2", bear)).toHaveLength(0);
+  });
+
+  it("Fractal Tender : à chaque étape de fin, si vous avez mis un marqueur sur elle ce tour-ci, une Fractale avec trois marqueurs", () => {
+    const big = customCard({
+      name: "Rituel à quatre",
+      types: ["Sorcery"],
+      typeLine: "Sorcery",
+      manaCost: { generic: 4, colored: {}, x: 0 },
+      manaCostText: "{4}",
+      spell: spell([], [fx.draw(1)]),
+    });
+    let s = scenario({
+      p1: { battlefield: ["Fractal Tender", ...lands("Island", 4)], hand: [big], library: lands("Island", 5) },
+    });
+    const tender = idOf(s, "p1", "battlefield", "Fractal Tender");
+    s = settle(cast(s, "p1", big.name));
+    // Increment : 4 mana > 3.
+    expect(s.objects[tender]?.counters["+1/+1"]).toBe(1);
+    s = advanceUntil(s, (x) => x.turn.step === "end" && x.stack.length === 0 && x.triggers.length === 0 && x.turn.number === 3);
+    s = settle(s);
+    const fractals = idsOf(s, "p1", "battlefield", "Fractal");
+    expect(fractals).toHaveLength(1);
+    expect(s.objects[fractals[0] as string]?.counters["+1/+1"]).toBe(3);
+    // Tour suivant (adversaire) : aucun marqueur mis, pas de Fractale.
+    s = advanceUntil(s, (x) => x.turn.number === 5);
+    expect(idsOf(s, "p1", "battlefield", "Fractal")).toHaveLength(1);
+  });
+
+  it("Mana Sculpt : contrecarre ; avec un Sorcier, {C} égal au mana dépensé pour ce sort au début de votre prochaine phase principale", () => {
+    let s = scenario({
+      active: "p2",
+      turn: 4,
+      p1: { battlefield: ["Pensive Professor", ...lands("Island", 3)], hand: ["Mana Sculpt"] },
+      p2: { battlefield: lands("Mountain", 2), hand: ["Lightning Strike"] },
+    });
+    s = act(s, "p2", { type: "cast", card: idOf(s, "p2", "hand", "Lightning Strike"), targets: { t: ["p1"] } });
+    s = passUntil(s, (x) => x.pending?.player === "p1");
+    const strike = s.stack[0]?.id as string;
+    s = settle(act(s, "p1", { type: "cast", card: idOf(s, "p1", "hand", "Mana Sculpt"), targets: { t: [strike] } }));
+    expect(s.players.p1?.life).toBe(20);
+    s = advanceUntil(s, (x) => x.turn.number === 5 && x.turn.step === "main1" && x.stack.length === 0 && x.triggers.length === 0);
+    expect(s.players.p1?.manaPool.C).toBe(2);
+  });
+});

@@ -531,11 +531,17 @@ export const HANDLERS: OpHandlers = {
   scry: scryOrSurveil,
   surveil: scryOrSurveil,
   discard(s, r, e, ctx, key) {
-    const n = evalAmount(s, ctx, e.amount);
+    const amount = evalAmount(s, ctx, e.amount);
     const f = e.filter;
     for (const p of resolveRef(s, ctx, e.who)) {
       if (r.vars[key(`done-${p}`)]) continue;
       const hand = (s.players[p]?.hand ?? []).filter((id) => !f || matchesCard(s, p, id, { ...f, controller: undefined }));
+      // Pox Plague : « la moitié des cartes de sa main, arrondie à l'inférieur ».
+      const n = e.half ? Math.floor(hand.length / 2) : amount;
+      if (e.half && n <= 0) {
+        r.vars[key(`done-${p}`)] = [1];
+        continue;
+      }
       const chooser = e.chooser === "controller" ? ctx.controller : p;
       let chosen: string[];
       const unless = e.unlessFilter;

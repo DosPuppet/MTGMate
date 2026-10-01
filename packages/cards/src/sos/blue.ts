@@ -263,4 +263,18 @@ export const BLUE: Record<string, CardScript> = {
     costReduction: { generic: 1, colored: { U: 1 }, condition: cond.targetMatches("t", INSTANT_SORCERY) },
     spell: spell([target.spell()], [fx.counter(ref.target())]),
   },
+  "Mana Sculpt": {
+    spell: spell(
+      [target.spell()],
+      [
+        ...fx.when(
+          cond.controls({ subtype: "Wizard" }),
+          fx.delayedAt("yourNextMain", [fx.addManaTimes(amount.v("m"), "C")], undefined, {
+            m: amount.manaSpentOf(ref.target()),
+          }),
+        ),
+        fx.counter(ref.target()),
+      ],
+    ),
+  },
 };

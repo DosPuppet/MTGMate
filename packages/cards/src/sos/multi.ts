@@ -721,4 +721,24 @@ export const MULTI: Record<string, CardScript> = {
       ),
     ],
   },
+  "Suspend Aggression": {
+    spell: spell(
+      [target.nonland()],
+      [
+        fx.exileCard(ref.target(), { name: "a" }),
+        fx.exileTop(ref.you, 1, "b"),
+        fx.grantPlay(ref.stored("a"), { forOwner: true, untilOwnersNextTurn: true }),
+        fx.grantPlay(ref.stored("b"), { forOwner: true, untilOwnersNextTurn: true }),
+      ],
+    ),
+  },
+  "Fractal Tender": {
+    abilities: [
+      INCREMENT,
+      triggered(when.eachEndStep, [fx.createTokens(FRACTAL, 1, undefined, "f"), fx.addCounters(ref.stored("f"), 3)], {
+        condition: cond.sourceMatches({ countersPutByYouThisTurn: true }),
+        label: "Vous avez mis un marqueur sur elle ce tour-ci : une Fractale avec trois marqueurs +1/+1",
+      }),
+    ],
+  },
 };

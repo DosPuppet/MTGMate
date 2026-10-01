@@ -9,6 +9,7 @@ import {
   grantPlay,
   moveWithSpec,
   nameOf,
+  nextTurnOf,
   resolveRef,
   store,
 } from "../effects";
@@ -506,7 +507,15 @@ export const HANDLERS: OpHandlers = {
     if (e.forOwner) {
       for (const id of ids) {
         const owner = s.objects[id]?.owner ?? ctx.controller;
-        grantPlay(s, owner, [id], e.forever ? "forever" : "thisTurn", {
+        // « jusqu'à votre prochain tour » : le tour qui précède le prochain tour du contrôleur de l'effet.
+        const until = e.forever
+          ? "forever"
+          : e.untilOwnersNextTurn
+            ? "yourNextTurn"
+            : e.untilYourNextTurn
+              ? nextTurnOf(s, ctx.controller) - 1
+              : "thisTurn";
+        grantPlay(s, owner, [id], until, {
           free: e.free,
           anyTime: e.anyTime,
           extraCost: e.extraCost,

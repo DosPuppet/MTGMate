@@ -222,4 +222,14 @@ export const BLACK: Record<string, CardScript> = {
       [...fx.when(cond.not(INFUSION), fx.pumpAll(CREATURE, -2, -2)), ...fx.when(INFUSION, fx.destroyAll(CREATURE))],
     ),
   },
+  "Pox Plague": {
+    spell: spell(
+      [],
+      [
+        fx.loseHalfLife(ref.eachPlayer),
+        fx.discard(0, ref.eachPlayer, { half: true }),
+        fx.sacrifice(ref.eachPlayer, { permanent: true }, 0, { half: true }),
+      ],
+    ),
+  },
 };

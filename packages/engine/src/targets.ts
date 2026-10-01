@@ -249,6 +249,8 @@ export function matchesObjectFilter(
   // « arrivé sous votre contrôle ce tour-ci » (Cloudspire Coordinator).
   if (f.enteredThisTurn && o.controlledSince !== s.turn.number) return false;
   if (f.notOwned && o.owner === o.controller) return false;
+  // Fractal Tender : « si vous avez mis un marqueur sur cette créature ce tour-ci ».
+  if (f.countersPutByYouThisTurn && !(o.countersPutTurn === s.turn.number && o.countersPutBy?.includes(controller))) return false;
   // « autre que la créature enchantée » (Sporogenic Infection, Saw) ; « la créature équipée / le terrain enchanté ».
   if (f.notAttachedToSource && sourceId && s.objects[sourceId]?.attachedTo === id) return false;
   if (f.attachedToSource && (!sourceId || s.objects[sourceId]?.attachedTo !== id)) return false;

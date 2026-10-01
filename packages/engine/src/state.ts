@@ -358,6 +358,8 @@ export function changeCounters(s: GameState, o: GameObject, kind: string, n: num
     // « la première fois que des marqueurs sont mis sur cette créature ce tour-ci » (Stalwart Successor).
     const first = o.countersPutTurn !== s.turn.number;
     o.countersPutTurn = s.turn.number;
+    const by = s.resolving?.controller ?? o.controller;
+    o.countersPutBy = first ? [by] : [...new Set([...(o.countersPutBy ?? []), by])];
     rulesEvent(s, { e: "counters", objectId: o.id, kind, amount: after - before, first });
     // Journal du tour (Lasting Tarfire : « si vous avez mis un marqueur sur une créature ce tour-ci ») : celui qui les
     // met est le contrôleur de ce qui se résout, sinon (coût, action) le contrôleur du permanent.

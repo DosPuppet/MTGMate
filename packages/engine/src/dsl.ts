@@ -293,6 +293,7 @@ export const amount = {
   per: (of: Amount, by: number): Amount => ({ kind: "div", of, by }),
   pow: (base: number, of: Amount): Amount => ({ kind: "pow", base, of }),
   eventX: { kind: "eventX" } as Amount,
+  manaSpentOf: (r: Ref): Amount => ({ kind: "manaSpentOf", ref: r }),
   eventColorsSpent: { kind: "eventColorsSpent" } as Amount,
   manaValueOf: (r: Ref): Amount => ({ kind: "manaValueOf", ref: r }),
   toughnessOf: (r: Ref): Amount => ({ kind: "toughnessOf", ref: r }),
@@ -484,6 +485,8 @@ export const fx = {
     { op: "addCounters", what, amount: n },
   ],
   loseLife: (n: Amount, who: Ref = ref.you, store?: string): Effect => ({ op: "loseLife", who, amount: n, store }),
+  /** « Chaque joueur perd la moitié de ses points de vie, arrondie à l'inférieur. » */
+  loseHalfLife: (who: Ref): Effect => ({ op: "loseLife", who, amount: 0, half: true }),
   bounce: (what: Ref): Effect => ({ op: "bounce", what }),
   /** Maîtrise de l'air : exile ; son propriétaire peut le lancer pour {2} tant qu'il est exilé. */
   airbend: (what: Ref): Effect => ({ op: "airbend", what }),
@@ -541,6 +544,7 @@ export const fx = {
       storeFilter?: ObjectFilter;
       unlessFilter?: ObjectFilter;
       exile?: boolean;
+      half?: boolean;
     } = {},
   ): Effect => ({ op: "discard", who, amount: n, ...opts }),
   sacrifice: (
@@ -651,6 +655,7 @@ export const fx = {
       anyMana?: boolean;
       forever?: boolean;
       untilYourNextTurn?: boolean;
+      untilOwnersNextTurn?: boolean;
       condition?: Condition;
       forOwner?: boolean;
       extraCost?: number;
@@ -1081,14 +1086,16 @@ export const fx = {
   }),
   /** Capacité retardée à un autre moment : étape de fin de votre prochain tour, fin du combat. */
   delayedAt: (
-    at: "yourNextEndStep" | "yourEndStep" | "endOfCombat" | "nextUpkeep" | "yourNextUpkeep",
+    at: "yourNextEndStep" | "yourEndStep" | "endOfCombat" | "nextUpkeep" | "yourNextUpkeep" | "yourNextMain",
     effects: Effects,
     bind?: Record<string, Ref>,
+    vars?: Record<string, Amount>,
   ): Effect => ({
     op: "delayed",
     at,
     effects: effects.flat(),
     bind,
+    ...(vars ? { vars } : {}),
   }),
   reflexive: (targets: TargetSpec[], effects: Effects, bind?: Record<string, Ref>, keepVars?: string[]): Effect => ({
     op: "reflexive",

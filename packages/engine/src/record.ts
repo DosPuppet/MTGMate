@@ -82,8 +82,11 @@ export const RECORD_VERSION = 1;
  * - 29 : Secrets of Strixhaven, lot A6 : le mana dépensé d'un éphémère ou d'un rituel qui se résout est lu (`manaSpent`) ;
  *   une carte lancée depuis l'exil avec « puis exilez-la » y retourne ; filtres de valeur de mana « X » et « couleurs
  *   dépensées ».
+ * - 30 : Secrets of Strixhaven, lot C1 : « jouable jusqu'à votre prochain tour » pour le propriétaire (Memory Vessel ne
+ *   valait que ce tour-ci) et « jusqu'à la fin de son prochain tour » ; qui a mis des marqueurs sur un objet ce tour-ci ;
+ *   moitiés de PV et de main par joueur ; capacités retardées « au début de votre prochaine phase principale ».
  */
-export const RULES_VERSION = 29;
+export const RULES_VERSION = 30;
 
 /** Un point de contrôle toutes les N décisions (plus la dernière de la partie). */
 export const CHECKPOINT_EVERY = 25;

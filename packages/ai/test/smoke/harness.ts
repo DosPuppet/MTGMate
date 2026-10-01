@@ -51,6 +51,7 @@ const EXTRA_P1: Record<string, string[]> = {
   "Hardlight Containment": ["Nutrient Block"],
   // {B}{B}{B}{B}{B} : trois Marais ne suffisent pas.
   "Zodiark, Umbral God": ["Swamp", "Swamp"],
+  "Pox Plague": ["Swamp", "Swamp"],
   // {B}{B}{B}{B}{B}{B} et {X}{X}{B}{B}{B}{B}.
   "Doomsday Excruciator": ["Swamp", "Swamp", "Swamp"],
   "Meathook Massacre II": ["Swamp", "Swamp"],

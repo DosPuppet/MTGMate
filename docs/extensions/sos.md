@@ -94,3 +94,14 @@ Les scripts sont dans `packages/cards/src/sos/` : `cards` (cartes du méta), `wh
   - « en coût additionnel, exilez N cartes de votre cimetière ou payez [mana] » est lu dans le texte : kicker sans mana `kickerCost.exileGraveyard` (cartes choisies automatiquement, terrains d'abord) et `kickerOrPay`, sur le modèle de « flétrissez N ou payez » ;
   - la réduction propre au sort peut retirer des symboles colorés (`costReduction.colored`, Brush Off : {1}{U}) et sa condition « s'il cible… » reconnaît un sort ciblé sur la pile.
 - **Tests :** 3 tests de règles (« lot B3 »).
+
+## Sous-lot C1 : moitiés par joueur, exil jouable, marqueurs mis, prochaine phase principale ✅ (258 / 262)
+
+- **Cartes :** Pox Plague, Suspend Aggression, Fractal Tender, Mana Sculpt.
+- **Le moteur gagne :**
+  - `fx.loseHalfLife(qui)` et `fx.discard(…, { half: true })` : la moitié des PV ou de la main de chaque joueur, arrondie à l'inférieur (comme `sacrifice({ half })`) ;
+  - `fx.grantPlay(…, { forOwner, untilOwnersNextTurn })` : « son propriétaire peut la jouer jusqu'à la fin de son prochain tour » ; avec `forOwner`, `untilYourNextTurn` vaut « jusqu'à votre prochain tour » ;
+  - qui a mis des marqueurs sur un objet ce tour-ci (`GameObject.countersPutBy`) et le filtre `countersPutByYouThisTurn` ;
+  - le moment `yourNextMain` des capacités retardées (« au début de votre prochaine phase principale », celle d'après combat comprise), `fx.delayedAt(…, vars)` et `amount.manaSpentOf(ref)` (mana dépensé pour le sort ciblé).
+- **[règles] Correctif :** Memory Vessel (BIG) ne rendait les cartes jouables que ce tour-ci, au lieu de « jusqu'à votre prochain tour ». `RULES_VERSION` = 30.
+- **Tests :** 4 tests de règles (« lot C1 »).

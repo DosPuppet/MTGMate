@@ -187,6 +187,8 @@ export interface ObjectFilter {
   noCounters?: boolean;
   /** Du nom choisi par la source en arrivant (Petrified Hamlet : « les terrains du nom choisi »). */
   nameChosen?: boolean;
+  /** Vous avez mis un marqueur sur lui ce tour-ci (Fractal Tender). */
+  countersPutByYouThisTurn?: boolean;
   /** {X} dans son coût de mana (« un sort avec {X} dans son coût de mana » : Matterbending Mage, Paradox Surveyor). */
   hasX?: boolean;
   /** Carte avec une Aventure (hors du champ de bataille : cimetière, main ; Hearth Elemental). */
@@ -612,6 +614,8 @@ export type Amount =
   | { kind: "pow"; base: number; of: Amount }
   /** X du sort de l'événement (« regardez les X cartes du dessus », Geometer's Arthropod). */
   | { kind: "eventX" }
+  /** Mana dépensé pour lancer le sort désigné, sur la pile (Mana Sculpt). */
+  | { kind: "manaSpentOf"; ref: Ref }
   /** Couleurs de mana dépensées pour le sort de l'événement (Magmablood Archaic, Wildgrowth Archaic). */
   | { kind: "eventColorsSpent" }
   /** Force totale des permanents correspondant au filtre, vus du contrôleur. */

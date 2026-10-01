@@ -137,6 +137,7 @@ function givePriority(s: GameState): void {
 function stepEvent(s: GameState): void {
   if (s.turn.step === "end") releaseDelayedTriggers(s);
   if (s.turn.step === "endCombat") releaseDelayedTriggers(s, "endCombat");
+  if (s.turn.step === "main1" || s.turn.step === "main2") releaseDelayedTriggers(s, "main");
   if (s.turn.step === "upkeep") {
     releaseDelayedTriggers(s, "upkeep");
     suspendUpkeep(s);
