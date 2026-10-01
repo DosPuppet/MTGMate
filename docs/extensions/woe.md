@@ -38,3 +38,9 @@ Les scripts sont dans `packages/cards/src/woe/` : `cards` (cartes du méta), `wh
 - **Cartes :** 44 (sur 48), dont 8 Aventures, Rankle's Prank (« un ou plusieurs » par des modes à {0}), Lich-Knights' Conquest et Malevolent Witchkite (« sacrifiez un nombre quelconque »), Specter of Mortality (capacité réflexive), Beseech the Mirror (lancement gratuit pendant la résolution).
 - **Restent :** Ashiok, Wicked Manipulator (payer des PV remplacé par un exil ; valeur de mana totale en exil), Lord Skitter's Blessing (créature enchantée), Tangled Colony (blessures subies, dernières informations), Twisted Sewer-Witch (un Rôle par Rat).
 - **Tests :** 45 tests de règles (« lot A — noir »).
+
+## Sous-lot A4 : cartes rouges ✅ (172 / 269)
+
+- **Cartes :** 40 (sur 43), dont des Aventures, la Célébration (Goddric, Redcap Thief…), les Rôles, les Rats, Expensive Taste (cartes adverses exilées et jouables), Become Brutes.
+- **Restent :** Imodane, the Pyrohammer (blessures d'un sort à cible unique sur sa cible), Skewer Slinger (l'attaquant bloqué comme objet de l'événement), Kellan, the Fae-Blooded (compter les Auras et Équipements attachés à la source).
+- **Tests :** 41 tests de règles (« lot A — rouge »). En route, l'audit des cartes face cachée (`ai/test/hidden-info.test.ts`) comptait comme une fuite une main adverse regardée légitimement (Solve for Disappointment, tiré dans un deck aléatoire) : seul le permanent face cachée y est maintenant audité.

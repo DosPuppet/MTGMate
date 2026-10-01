@@ -168,7 +168,14 @@ describe("informations cachées : cartes face cachée (708)", () => {
         if (revealed) break;
         const view = projectView(state, "p2");
         const evs = filterEvents(r.events, "p2");
-        const seen = defIdsIn([view, evs, Object.keys(visibleFaces(state, view, evs)).map((defId) => ({ defId }))]);
+        // Une question qui fait regarder la main ou la bibliothèque adverse (Solve for Disappointment : « choisissez la
+        // carte qu'il défausse ») révèle légitimement ces cartes : seul le permanent face cachée est audité ici.
+        const shown =
+          view.pending?.kind === "choice"
+            ? { ...view.pending, objects: view.pending.objects?.filter((o) => o.zone !== "hand" && o.zone !== "library") }
+            : view.pending;
+        const audited = { ...view, pending: shown } as typeof view;
+        const seen = defIdsIn([audited, evs, Object.keys(visibleFaces(state, audited, evs)).map((defId) => ({ defId }))]);
         if (seen.has(DISGUISED.id)) leaks++;
       }
     }
