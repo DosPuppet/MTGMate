@@ -11,6 +11,7 @@ import {
   DETECTIVE,
   fx,
   GOBLIN,
+  INSTANT_SORCERY,
   investigate,
   mode,
   ref,
@@ -366,6 +367,21 @@ export const RED: Record<string, CardScript> = {
         ),
         { label: "Exilez-le et réunissez des preuves 4 : il revient engagé" },
       ),
+    ],
+  },
+  "Fugitive Codebreaker": {
+    disguiseReduction: amount.countIn("graveyard", INSTANT_SORCERY),
+    abilities: [
+      triggered(when.turnedFaceUp, [fx.discard(amount.cardsIn("hand"), ref.you), fx.draw(3)], {
+        label: "Défaussez votre main, puis piochez trois cartes",
+      }),
+    ],
+  },
+  "Goblin Maskmaker": {
+    abilities: [
+      triggered(when.attacksSelf, [fx.thisTurn({ spellCost: { filter: { faceDown: true }, reduce: 1 } })], {
+        label: "Vos sorts face cachée coûtent {1} de moins ce tour-ci",
+      }),
     ],
   },
 };

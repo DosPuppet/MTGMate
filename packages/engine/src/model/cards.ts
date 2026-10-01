@@ -194,6 +194,8 @@ export interface CardDef {
   impending?: number;
   /** Déguisement (702.168) : coût pour retourner face visible une carte lancée face cachée pour {3}. */
   disguise?: ManaCost;
+  /** « Ce coût est réduit de {1} pour chaque… » (Fugitive Codebreaker) : réduction du coût de déguisement. */
+  disguiseReduction?: Amount;
   /** Saga (714) : numéro du dernier chapitre (lu dans le texte). */
   saga?: { chapters: number };
   /** Classe (716) : capacités des niveaux 2, 3… (coût du niveau et capacités ajoutées). */
@@ -741,6 +743,8 @@ export interface CastLimit {
   maxSpells?: number;
   /** Seulement les sorts lancés d'ailleurs que de la main (Avatar's Wrath). */
   exceptFromHand?: boolean;
+  /** Seulement retourner des permanents face visible (Karlov Watchdog) : ni les sorts ni les capacités ne sont bloqués. */
+  faceUp?: boolean;
   /** Bloque aussi les capacités activées (hors mana) : toutes (Yuriko), ou d'artefacts, de créatures et d'enchantements (Grand Abolisher). */
   abilities?: "all" | "artifactsCreaturesEnchantments";
 }
@@ -821,6 +825,8 @@ export interface PlayerStaticAbilityDef {
   abilityCost?: AbilityCostMod;
   /** Restriction de lancer des sorts (et d'activer des capacités) (famille D, R4.5). */
   castLimit?: CastLimit;
+  /** Sorts du joueur qui coûtent {N} de moins (Goblin Maskmaker : « vos sorts face cachée lancés ce tour-ci »). */
+  spellCost?: { filter: ObjectFilter; reduce: number };
   /** Déclenchements doublés ou supprimés (famille G, R4.5). */
   triggerMod?: TriggerMod;
   /** Remplacement ou prévention d'un événement chiffré, posé par un effet (familles E et F, R1). */

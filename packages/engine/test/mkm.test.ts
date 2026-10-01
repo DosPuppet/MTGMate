@@ -4718,3 +4718,106 @@ describe("Murders at Karlov Manor, lot B1 : réunir des preuves (701.59)", () =>
     expect(chars(s, idOf(s, "p1", "battlefield", "Bear Cub")).keywords).toContain("indestructible");
   });
 });
+
+describe("Murders at Karlov Manor, lot B2 : déguisement", () => {
+  const lands = (name: string, n: number) => Array(n).fill(name) as string[];
+  const faceDown = (s: S, player: string, name: string) =>
+    act(s, player, { type: "cast", card: idOf(s, player, "hand", name), faceDown: true });
+  const faceUpAction = (s: S, player: string, id: string) =>
+    legalActions(s, player).find((a) => a.type === "activate" && a.source === id && a.label === "Retourner face visible");
+  const downId = (s: S, player: string) =>
+    s.battlefield.find((id) => s.objects[id]?.controller === player && s.objects[id]?.faceDown) as string;
+
+  it("Aurelia's Vindicator : déguisement {X}{3}{W} ; retournée, exile jusqu'à X autres créatures (retour en main quand elle part)", () => {
+    let s = scenario({
+      p1: { battlefield: lands("Plains", 8), hand: ["Aurelia's Vindicator"] },
+      p2: { battlefield: ["Bear Cub"], graveyard: ["Llanowar Elves"] },
+    });
+    s = settle(faceDown(s, "p1", "Aurelia's Vindicator"));
+    const angel = downId(s, "p1");
+    const a = faceUpAction(s, "p1", angel);
+    const bear = idOf(s, "p2", "battlefield", "Bear Cub");
+    const elves = idOf(s, "p2", "graveyard", "Llanowar Elves");
+    s = act(s, "p1", { type: "activate", source: angel, ability: a?.type === "activate" ? a.ability : -1, x: 1 });
+    s = settle(s, (req) => (req.type === "pick" && req.options.includes(bear) ? [bear] : undefined));
+    expect(idsOf(s, "p2", "battlefield", "Bear Cub")).toHaveLength(0);
+    // X = 1 : une seule cible ; les Elfes restent au cimetière.
+    expect(idsOf(s, "p2", "graveyard", "Llanowar Elves")).toEqual([elves]);
+    destroy(s, idOf(s, "p1", "battlefield", "Aurelia's Vindicator"));
+    expect(idsOf(s, "p2", "hand", "Bear Cub")).toHaveLength(1);
+  });
+
+  it("Fugitive Codebreaker : coût de déguisement réduit de {1} par éphémère ou rituel au cimetière ; retournée, défaussez votre main et piochez trois cartes", () => {
+    let s = scenario({
+      p1: {
+        battlefield: lands("Mountain", 7),
+        hand: ["Fugitive Codebreaker", "Opt", "Opt"],
+        graveyard: ["Lightning Strike", "Opt"],
+        library: lands("Island", 5),
+      },
+    });
+    s = settle(faceDown(s, "p1", "Fugitive Codebreaker"));
+    const goblin = downId(s, "p1");
+    const a = faceUpAction(s, "p1", goblin);
+    s = settle(act(s, "p1", { type: "activate", source: goblin, ability: a?.type === "activate" ? a.ability : -1 }));
+    // {3} pour le lancer face cachée, puis {5}{R} − 2 = {3}{R} : sept Montagnes engagées.
+    expect(s.battlefield.filter((id) => nameOf(s, id) === "Mountain" && s.objects[id]?.tapped)).toHaveLength(7);
+    expect(idsOf(s, "p1", "graveyard", "Opt")).toHaveLength(3);
+    expect(s.players.p1?.hand.map((id) => nameOf(s, id))).toEqual(["Island", "Island", "Island"]);
+  });
+
+  it("Goblin Maskmaker : en attaquant, vos sorts face cachée coûtent {1} de moins ce tour-ci", () => {
+    let s = scenario({ p1: { battlefield: ["Goblin Maskmaker", ...lands("Mountain", 2)], hand: ["Fugitive Codebreaker"] } });
+    const card = idOf(s, "p1", "hand", "Fugitive Codebreaker");
+    const faceDownOption = (x: S) => legalActions(x, "p1").some((a) => a.type === "cast" && a.card === card && a.faceDown);
+    expect(faceDownOption(s)).toBe(false);
+    const maskmaker = idOf(s, "p1", "battlefield", "Goblin Maskmaker");
+    s = advanceUntil(s, (x) => x.pending?.kind === "declareAttackers");
+    s = act(s, "p1", { type: "declareAttackers", attackers: [{ id: maskmaker, defender: "p2" }] });
+    s = settle(s);
+    expect(faceDownOption(s)).toBe(false); // rituel : pas pendant le combat
+    s = advanceUntil(s, (x) => x.turn.step === "main2" && x.pending?.player === "p1");
+    expect(faceDownOption(s)).toBe(true);
+  });
+
+  it("Karlov Watchdog : pendant votre tour, les permanents adverses ne peuvent pas être retournés face visible", () => {
+    let s = scenario({
+      active: "p2",
+      p1: { battlefield: ["Karlov Watchdog"] },
+      p2: { battlefield: lands("Mountain", 9), hand: ["Fugitive Codebreaker"] },
+    });
+    s = settle(faceDown(s, "p2", "Fugitive Codebreaker"));
+    const goblin = downId(s, "p2");
+    // Pendant le tour de l'adversaire (p2), il peut la retourner.
+    expect(faceUpAction(s, "p2", goblin)).toBeDefined();
+    s = advanceUntil(s, (x) => x.turn.active === "p1" && x.turn.step === "main1" && x.pending?.player === "p1");
+    s = act(s, "p1", { type: "pass" });
+    expect(s.pending?.player).toBe("p2");
+    expect(faceUpAction(s, "p2", goblin)).toBeUndefined();
+  });
+
+  it("Branch of Vitu-Ghazi : un terrain lancé face cachée ; retourné, deux mana d'une couleur gardés jusqu'à la fin du tour", () => {
+    let s = scenario({ p1: { battlefield: lands("Forest", 6), hand: ["Branch of Vitu-Ghazi"] } });
+    s = settle(faceDown(s, "p1", "Branch of Vitu-Ghazi"));
+    const branch = downId(s, "p1");
+    expect(chars(s, branch).power).toBe(2);
+    const a = faceUpAction(s, "p1", branch);
+    s = act(s, "p1", { type: "activate", source: branch, ability: a?.type === "activate" ? a.ability : -1 });
+    s = settle(s, (req) => (req.type === "pick" && req.options.includes("G") ? ["G"] : undefined));
+    expect(chars(s, branch).types).toContain("Land");
+    expect(s.players.p1?.manaPool.G).toBe(2);
+    s = advanceUntil(s, (x) => x.turn.step === "beginCombat");
+    expect(s.players.p1?.manaPool.G).toBe(2);
+  });
+
+  it("Tunnel Tipster : à votre étape de fin, si une créature face cachée est arrivée sous votre contrôle ce tour-ci, un marqueur +1/+1", () => {
+    let s = scenario({ p1: { battlefield: ["Tunnel Tipster", ...lands("Mountain", 3)], hand: ["Fugitive Codebreaker"] } });
+    const mole = idOf(s, "p1", "battlefield", "Tunnel Tipster");
+    s = settle(faceDown(s, "p1", "Fugitive Codebreaker"));
+    s = advanceUntil(s, (x) => x.turn.step === "end" && x.stack.length === 0 && x.triggers.length === 0);
+    expect(s.objects[mole]?.counters["+1/+1"]).toBe(1);
+    // Tour suivant de p1 sans créature face cachée : pas de marqueur de plus.
+    s = advanceUntil(s, (x) => x.turn.number === 5 && x.turn.step === "end" && x.stack.length === 0 && x.triggers.length === 0);
+    expect(s.objects[mole]?.counters["+1/+1"]).toBe(1);
+  });
+});

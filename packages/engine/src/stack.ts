@@ -267,6 +267,8 @@ export function spellView(d: CardDef, player: PlayerId): LkiSnapshot {
     manaValue: manaValue(d.manaCost),
     ...(d.layout === "adventure" || d.subtypes.includes("Adventure") ? { adventure: true } : {}),
     ...((d.manaCost?.x ?? 0) > 0 ? { hasX: true } : {}),
+    // Un sort lancé face cachée (déguisement) : « les sorts face cachée » (Goblin Maskmaker).
+    ...(d.id === FACE_DOWN_ID ? { faceDown: true } : {}),
   };
 }
 
@@ -327,6 +329,10 @@ export function spellReduction(
     );
   }
   const view = spellView(d, player);
+  // Réductions accordées au joueur (effets « ce tour-ci » : Goblin Maskmaker).
+  for (const { ab } of playerStatics(s, player, "spellCost")) {
+    if (ab.spellCost && matchesView(view, ab.spellCost.filter, player)) r += ab.spellCost.reduce;
+  }
   for (const id of s.battlefield) {
     const o = obj(s, id);
     for (const ab of chars(s, id).abilities) {
@@ -866,6 +872,11 @@ function castLimits(s: GameState, player: PlayerId): CastLimit[] {
   return out;
 }
 
+/** Karlov Watchdog : ce joueur peut-il retourner ses permanents face visible ? */
+export function faceUpLocked(s: GameState, player: PlayerId): boolean {
+  return castLimits(s, player).some((l) => l.faceUp);
+}
+
 /** Grand Abolisher, Yuriko : les capacités activées (hors mana) de cette source sont-elles bloquées ? */
 function abilitiesLocked(s: GameState, player: PlayerId, source: ObjectId): boolean {
   return castLimits(s, player).some(
@@ -880,6 +891,7 @@ export function castTerms(s: GameState, player: PlayerId, card: ObjectId): CastT
   const spells = s.players[player]?.turnStats.spellsCast ?? 0;
   const fromHand = s.objects[card]?.zone === "hand";
   for (const l of castLimits(s, player)) {
+    if (l.faceUp) continue;
     if (l.maxSpells !== undefined ? spells >= l.maxSpells : !l.exceptFromHand || !fromHand) return null;
   }
   const terms = baseCastTerms(s, player, card);
@@ -1204,11 +1216,15 @@ export function castSpell(s: GameState, player: PlayerId, card: ObjectId, choice
   if (!terms) throw new RulesError("Vous ne pouvez pas lancer cette carte d'ici");
   const o = obj(s, card);
   const cardDef = s.defs[o.defId];
-  if (!cardDef || (cardDef.types.includes("Land") && cardDef.layout !== "adventure"))
+  // Un terrain avec le déguisement (Branch of Vitu-Ghazi) se lance face cachée.
+  const landFaceDown = !!cardDef?.types.includes("Land") && !!choices.faceDown && !!cardDef.disguise;
+  if (!cardDef || (cardDef.types.includes("Land") && cardDef.layout !== "adventure" && !landFaceDown))
     throw new RulesError("Ce n'est pas un sort");
   if (!cardDef.implemented) throw new RulesError(`${cardDef.name} n'est pas encore géré par le moteur`);
   // Face lancée : la carte elle-même, ou son aventure (715.3).
-  const face = castableFaces(s, card, cardDef).find(([f]) => f === choices.face);
+  const face = landFaceDown
+    ? ([undefined, cardDef] as [number | undefined, CardDef])
+    : castableFaces(s, card, cardDef).find(([f]) => f === choices.face);
   if (!face) throw new RulesError("Cette face ne peut pas être lancée");
   // Déguisement (702.168a) : lancée face cachée comme une créature 2/2 sans nom pour {3}.
   if (choices.faceDown && !cardDef.disguise) throw new RulesError("Cette carte ne peut pas être lancée face cachée");
@@ -1909,6 +1925,8 @@ export function canPayNonManaCost(s: GameState, source: ObjectId, ab: ActivatedA
   if (ab.activationCondition && !checkCondition(s, ab.activationCondition, who, source)) return false;
   // Sorcerous Spyglass : les capacités (non de mana) des sources du nom choisi ne peuvent pas être activées.
   if (spyglassed(s, source)) return false;
+  // Karlov Watchdog : « les permanents de vos adversaires ne peuvent pas être retournés face visible pendant votre tour ».
+  if (ab.effects.some((e) => e.op === "turnFaceUp") && faceUpLocked(s, who)) return false;
   if (ab.cost.crew !== undefined && crewOptions(s, who, source, ab.cost.crew) === null) return false;
   if (ab.cost.tap && (o.tapped || isSummoningSick(s, source))) return false;
   // 606.3 : une seule capacité de loyauté par planeswalker et par tour ; on ne peut pas retirer plus que sa loyauté.
@@ -1993,7 +2011,8 @@ export function activateAbility(s: GameState, player: PlayerId, source: ObjectId
     if (ab.cost.mana) {
       // Doc Aurlock (comploter), Inquisitive Glimmer (déverrouiller) : moins cher.
       try {
-        payMana(s, player, totalCost(ab.cost.mana, 0, undefined, abilityCostReduction(s, player, source, ab)), undefined, {
+        // Le X d'un coût de déguisement (Aurelia's Vindicator) ; la réduction propre à la capacité (Fugitive Codebreaker).
+        payMana(s, player, totalCost(ab.cost.mana, x, undefined, abilityReduction(s, player, source, ab)), undefined, {
           abilitySource: source,
         });
       } catch (e) {
@@ -2002,7 +2021,11 @@ export function activateAbility(s: GameState, player: PlayerId, source: ObjectId
     }
     for (const e of ab.effects) {
       if (e.op === "unlockDoor") unlockDoor(s, source, e.door);
-      if (e.op === "turnFaceUp") turnFaceUp(s, source);
+      if (e.op === "turnFaceUp") {
+        // « jusqu'à X cibles » au retournement : le X payé (`amount.sourceX`).
+        if (ab.cost.mana?.x) o.castX = x;
+        turnFaceUp(s, source);
+      }
       if (e.op === "plot") plotCard(s, source);
     }
     s.priority.passes = 0;

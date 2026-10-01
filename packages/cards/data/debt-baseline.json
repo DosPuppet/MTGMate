@@ -9,6 +9,7 @@
     "cantGainLife": "famille D, restrictions de joueur (R4.5)",
     "cantLose": "famille J, exceptions aux règles (R4.5)",
     "castLimit": "famille D générique (R4.5) : restrictions de lancer (qui, quand, combien, d'où, capacités)",
+    "spellCost": "famille générique : sorts d'un joueur qui coûtent moins, filtrés par un ObjectFilter (Goblin Maskmaker, avec fx.thisTurn)",
     "combatDamageUnpreventable": "famille F, prévention (R1.2)",
     "convokeCreatureSpells": "famille B, dons aux sorts (R4.4)",
     "copyNextExhaust": "famille N, « prochain sort » (R4.6)",

@@ -15,6 +15,7 @@ import {
   DETECTIVE,
   fx,
   investigate,
+  manaAbility,
   modal,
   mode,
   playerStatic,
@@ -352,6 +353,18 @@ export const GREEN: Record<string, CardScript> = {
         ),
         { label: "Vous pouvez réunir des preuves 3 : un marqueur +1/+1" },
       ),
+    ],
+  },
+  "Tunnel Tipster": {
+    abilities: [
+      triggered(when.yourEndStep, [fx.addCounters(ref.self, 1)], {
+        condition: cond.amountAtLeast(
+          amount.turnEvents({ event: "zone", to: "battlefield", who: "you", faceDown: true, types: ["Creature"] }),
+          1,
+        ),
+        label: "Une créature face cachée est arrivée sous votre contrôle : un marqueur +1/+1",
+      }),
+      manaAbility("G"),
     ],
   },
 };

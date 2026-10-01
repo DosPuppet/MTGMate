@@ -47,6 +47,7 @@ function matches(e: TurnLogEntry, q: TurnLogQuery, me: PlayerId, subject?: Playe
   const extra = e as { supertypes?: string[]; token?: boolean };
   if (q.supertype && !extra.supertypes?.includes(q.supertype)) return false;
   if (q.token !== undefined && !!extra.token !== q.token) return false;
+  if (q.faceDown !== undefined && !!(e as { faceDown?: boolean }).faceDown !== q.faceDown) return false;
   if (e.e === "zone") {
     if (q.from && e.from !== q.from) return false;
     if (q.to && e.to !== q.to) return false;
@@ -89,7 +90,17 @@ export function zoneEntry(
   to: Zone,
   owner: PlayerId,
   controller: PlayerId,
-  c: { types: CardType[]; subtypes: string[]; token: boolean },
+  c: { types: CardType[]; subtypes: string[]; token: boolean; faceDown?: boolean },
 ): TurnLogEntry {
-  return { e: "zone", from, to, owner, controller, types: c.types, subtypes: c.subtypes, token: c.token || undefined };
+  return {
+    e: "zone",
+    from,
+    to,
+    owner,
+    controller,
+    types: c.types,
+    subtypes: c.subtypes,
+    token: c.token || undefined,
+    ...(c.faceDown ? { faceDown: true } : {}),
+  };
 }

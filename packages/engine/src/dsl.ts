@@ -70,6 +70,8 @@ export interface CardScript {
   cantBeCountered?: boolean;
   /** « Ce sort ne peut pas être copié. » */
   cantBeCopied?: boolean;
+  /** « Ce coût [de déguisement] est réduit de {1} pour chaque… » (Fugitive Codebreaker). */
+  disguiseReduction?: Amount;
   /** Aura : « Enchanter [filtre] ». */
   /** `player` : « Enchanter un joueur » (Grievous Wound). */
   enchant?: { filter: ObjectFilter; label: string; player?: boolean };
@@ -624,11 +626,12 @@ export const fx = {
   allowCastFromGraveyard: (what: Ref): Effect => ({ op: "allowCastFromGraveyard", what }),
   addMana: (...mana: ManaType[]): Effect => ({ op: "addMana", mana }),
   /** « Ajoutez N mana d'une couleur au choix » ; `colors` : « {R}, {W} ou {B} ». */
-  addManaChoice: (n: Amount = 1, colors?: ManaType[], restriction?: ManaRestriction): Effect => ({
+  addManaChoice: (n: Amount = 1, colors?: ManaType[], restriction?: ManaRestriction, keep?: boolean): Effect => ({
     op: "addManaChoice",
     n,
     colors,
     restriction,
+    ...(keep ? { keep } : {}),
   }),
   revealUntilN: (filter: ObjectFilter, n: Amount, to?: MoveSpec, store?: string): Effect => ({
     op: "revealUntilN",
@@ -1004,7 +1007,8 @@ export const fx = {
     store: opts.store,
     exact: opts.exact,
   }),
-  exileUntilLeaves: (what: Ref): Effect => ({ op: "exileUntilLeaves", what }),
+  /** `toHand` : les cartes reviennent dans la main de leur propriétaire, et des cartes de cimetière peuvent être exilées. */
+  exileUntilLeaves: (what: Ref, toHand?: boolean): Effect => ({ op: "exileUntilLeaves", what, ...(toHand ? { toHand } : {}) }),
   /** Choisir (sans cibler) des cartes de votre cimetière ou de votre main. */
   pickFromZone: (
     zone: "graveyard" | "hand",

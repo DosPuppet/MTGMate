@@ -76,3 +76,18 @@ Les scripts sont dans `packages/cards/src/mkm/` : `cards` (cartes du méta), `wh
 - **[règles] Correctif (fuzz à 3 joueurs) :** « doit être bloquée si possible » tient compte de la menace (509.1c) : l'exigence ne vaut que si le défenseur peut opposer assez de bloqueurs, et le blocage par défaut en met autant (un suspect qui doit être bloqué). Test dans `rulings.test.ts`.
 - **[règles]** `RULES_VERSION` = 35.
 - **Tests :** 8 tests de règles (« lot B1 ») et 1 décision officielle.
+
+## Sous-lot B2 : déguisement ✅ (235 / 268)
+
+- **Cartes :** Aurelia's Vindicator, Fugitive Codebreaker, Goblin Maskmaker, Karlov Watchdog, Branch of Vitu-Ghazi, Tunnel Tipster.
+- **Le moteur gagne :**
+  - un coût de déguisement avec {X} : l'action spéciale « retourner face visible » paie X et le mémorise (`amount.sourceX`, « jusqu'à X cibles ») ;
+  - `disguiseReduction` (« ce coût est réduit de {1} pour chaque… »), appliquée au seul coût de déguisement ;
+  - la famille `playerStatic({ spellCost: { filter, reduce } })` (sorts du joueur moins chers, par exemple ce tour-ci avec `fx.thisTurn`) et le filtre `faceDown` sur un sort lancé face cachée ;
+  - `castLimit.faceUp` : « les permanents de vos adversaires ne peuvent pas être retournés face visible pendant votre tour » ;
+  - une carte de terrain avec le déguisement se lance face cachée ; `fx.addManaChoice(…, keep)` (mana gardé jusqu'à la fin du tour) ;
+  - `fx.exileUntilLeaves(ref, toHand)` : exil, cartes de cimetière comprises, avec retour en main quand la source part ;
+  - le journal du tour note les arrivées face cachée (`faceDown`), comme des créatures sans type.
+- **[règles]** `RULES_VERSION` = 36.
+- **Dette :** `spellCost` entre dans `debt-baseline.json` comme famille générique (réductions de coût accordées à un joueur, filtrées).
+- **Tests :** 6 tests de règles (« lot B2 »).

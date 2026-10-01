@@ -505,11 +505,14 @@ export function moveObject(
         to,
         o.owner,
         lki?.controller ?? (to === "battlefield" ? (opts.controller ?? o.controller) : o.controller),
-        {
-          types: lki?.types ?? d?.types ?? [],
-          subtypes: lki?.subtypes ?? d?.subtypes ?? [],
-          token: o.isToken,
-        },
+        // Face cachée (708) : une créature 2/2 sans type de créature ; la vraie carte n'est pas notée.
+        (opts.faceDown || o.faceDown) && to === "battlefield"
+          ? { types: ["Creature"], subtypes: [], token: o.isToken, faceDown: true }
+          : {
+              types: lki?.types ?? d?.types ?? [],
+              subtypes: lki?.subtypes ?? d?.subtypes ?? [],
+              token: o.isToken,
+            },
       ),
     );
   }

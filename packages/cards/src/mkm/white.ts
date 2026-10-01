@@ -5,6 +5,7 @@
 import type { ObjectFilter } from "@mtgx/engine";
 import {
   activated,
+  amount,
   block,
   type CardScript,
   CLUE,
@@ -300,6 +301,44 @@ export const WHITE: Record<string, CardScript> = {
           ),
         ),
         label: "Réunissez des preuves 4 : devient Mileva, the Stalwart (5/5, vos autres créatures indestructibles)",
+      }),
+    ],
+  },
+  "Aurelia's Vindicator": {
+    abilities: [
+      // « jusqu'à X cibles » : X est celui du coût de déguisement payé (`amount.sourceX`), d'où une capacité réflexive.
+      triggered(
+        when.turnedFaceUp,
+        [
+          fx.reflexive(
+            [
+              {
+                id: "t",
+                label: "autre créature ou carte de créature d'un cimetière",
+                filter: {
+                  objects: { types: ["Creature"], other: true },
+                  cards: { filter: { types: ["Creature"] }, whose: "any" },
+                },
+                count: 1,
+                optional: true,
+                countAmount: amount.sourceX,
+              },
+            ],
+            [fx.exileUntilLeaves(ref.target(), true)],
+          ),
+        ],
+        { label: "Exilez jusqu'à X autres créatures ou cartes de créature (retour en main à son départ)" },
+      ),
+    ],
+  },
+  "Karlov Watchdog": {
+    abilities: [
+      playerStatic({
+        castLimit: { who: "opponents", during: "yourTurn", faceUp: true },
+        label: "Pendant votre tour, les permanents adverses ne peuvent pas être retournés face visible",
+      }),
+      triggered(when.attackWith(3), [fx.pumpAll({ types: ["Creature"], controller: "you" }, 1, 1)], {
+        label: "Vous attaquez avec trois créatures ou plus : vos créatures +1/+1",
       }),
     ],
   },

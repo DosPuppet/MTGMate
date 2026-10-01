@@ -42,7 +42,14 @@ export const HANDLERS: OpHandlers = {
         ...(pl.restrictedMana ?? []),
         ...Array.from({ length: Math.max(0, n) }, () => ({ type, restriction })),
       ];
-    } else if (pl) pl.manaPool[type] += n;
+    } else if (pl) {
+      pl.manaPool[type] += n;
+      // « Jusqu'à la fin du tour, vous ne perdez pas ce mana entre les étapes et phases » (Branch of Vitu-Ghazi).
+      if (e.keep) {
+        pl.manaKeep ??= {};
+        pl.manaKeep[type] = (pl.manaKeep[type] ?? 0) + n;
+      }
+    }
     return;
   },
   addManaColorsAmong(s, _r, e, ctx) {

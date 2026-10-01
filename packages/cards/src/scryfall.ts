@@ -929,6 +929,7 @@ function singleDef(raw: RawCard, script: CardScript | undefined, set: string): C
     harmonize: harmonize ? true : undefined,
     flashbackCost: script?.flashbackCost,
     disguise: parseDisguise(raw.oracleText),
+    disguiseReduction: script?.disguiseReduction,
     warp: parseWarp(raw.oracleText),
     plot: parsePlot(raw.oracleText),
     devour: script?.devour ?? parseDevour(raw.oracleText),

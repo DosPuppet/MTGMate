@@ -98,8 +98,11 @@ export const RECORD_VERSION = 1;
  * - 35 : Murders at Karlov Manor, lot B1 : réunir des preuves en coût de capacité (et de mana), en effet facultatif (N ou
  *   X), en garde, et « chaque fois que vous réunissez des preuves » ; choix automatique des preuves sans gâcher une carte
  *   chère ; garde « sacrifiez [type] » filtrée.
+ * - 36 : Murders at Karlov Manor, lot B2 : X dans un coût de déguisement, coût de déguisement réduit, réduction des sorts
+ *   face cachée, interdiction de retourner face visible, terrain lancé face cachée ; une arrivée face cachée est notée
+ *   au journal du tour comme une créature sans type (la carte reste cachée).
  */
-export const RULES_VERSION = 35;
+export const RULES_VERSION = 36;
 
 /** Un point de contrôle toutes les N décisions (plus la dernière de la partie). */
 export const CHECKPOINT_EVERY = 25;

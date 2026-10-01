@@ -617,7 +617,8 @@ export type Effect =
   | { op: "exileLibraryButBottom"; who: Ref; keep?: number }
   /** Ajoute N mana d'une couleur choisie par le contrôleur (`colors` : parmi ces couleurs seulement, Devotees de TDM). */
   /** `restriction` : mana restreint, gardé à part dans la réserve (Ashling, Rimebound). */
-  | { op: "addManaChoice"; n: Amount; colors?: ManaType[]; restriction?: ManaRestriction }
+  /** `keep` : le mana ne se vide pas entre les étapes et phases de ce tour (Branch of Vitu-Ghazi). */
+  | { op: "addManaChoice"; n: Amount; colors?: ManaType[]; restriction?: ManaRestriction; keep?: boolean }
   /** Exile les N cartes du dessus ; le contrôleur en choisit une qu'il peut jouer ce tour-ci. */
   | { op: "impulse"; n: number; until?: "thisTurn" | "yourNextTurn" }
   /** Blessures réparties comme le contrôleur le désire entre les cibles (au moins 1 chacune). */
@@ -641,7 +642,7 @@ export type Effect =
       store?: string;
     }
   /** Exile jusqu'à ce que la source quitte le champ de bataille (610.3). */
-  | { op: "exileUntilLeaves"; what: Ref }
+  | { op: "exileUntilLeaves"; what: Ref; toHand?: boolean }
   /** Choisir des cartes (non ciblées) dans une zone du contrôleur et les déplacer. */
   | {
       op: "pickFromZone";

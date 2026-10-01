@@ -366,11 +366,12 @@ export const HANDLERS: OpHandlers = {
     if (!onBattlefield(s, ctx.sourceId)) return;
     const cards: string[] = [];
     for (const id of resolveRef(s, ctx, e.what)) {
-      if (!onBattlefield(s, id)) continue;
+      // Aurelia's Vindicator : des cartes de créature des cimetières aussi (elles reviendront en main).
+      if (!onBattlefield(s, id) && !(e.toHand && s.objects[id]?.zone === "graveyard")) continue;
       const n = moveWithSpec(s, ctx.controller, id, { to: "exile" });
       if (n) cards.push(n);
     }
-    if (cards.length) s.linkedExile.push({ sourceId: ctx.sourceId, cards });
+    if (cards.length) s.linkedExile.push({ sourceId: ctx.sourceId, cards, ...(e.toHand ? { toHand: true } : {}) });
     return;
   },
   pickFromZone(s, r, e, ctx, key) {

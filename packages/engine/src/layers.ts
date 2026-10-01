@@ -298,7 +298,7 @@ function base(s: GameState, o: GameObject, defId = o.defId): Characteristics {
   const d = s.defs[defId];
   if (!d) throw new Error(`Définition inconnue : ${o.defId}`);
   if (o.zone === "battlefield" && d.layout === "split" && d.faceDefs) return roomBase(o, d);
-  if (o.faceDown) return faceDownBase(o);
+  if (o.faceDown) return faceDownBase(o, s.defs[o.faceDown.card]);
   const cda = d.cdaPT === undefined ? undefined : cdaValue(s, o, d.cdaPT);
   const cdaPower = d.cdaPower === undefined ? undefined : cdaValue(s, o, d.cdaPower);
   const cdaToughness = d.cdaToughness === undefined ? undefined : cdaValue(s, o, d.cdaToughness);
@@ -364,8 +364,10 @@ const FACE_DOWN_WARD: AbilityDef = {
  * Face cachée (708.2) : créature 2/2 sans nom, sans couleur ni sous-type ; garde {2} s'il y a lieu, et l'action
  * spéciale « retourner face visible » pour chaque coût possible (déguisement, coût de mana d'une carte de créature).
  */
-function faceDownBase(o: GameObject): Characteristics {
+function faceDownBase(o: GameObject, card?: CardDef): Characteristics {
   const fd = o.faceDown as NonNullable<GameObject["faceDown"]>;
+  // Fugitive Codebreaker : « ce coût [de déguisement] est réduit de {1} pour chaque… » (le premier coût, s'il y en a un).
+  const disguiseReduction = card?.disguise && card.disguiseReduction ? { generic: card.disguiseReduction } : undefined;
   return {
     name: "",
     types: ["Creature"],
@@ -378,12 +380,13 @@ function faceDownBase(o: GameObject): Characteristics {
     abilities: [
       ...(fd.ward ? [FACE_DOWN_WARD] : []),
       ...fd.upCosts.map(
-        (cost): AbilityDef => ({
+        (cost, i): AbilityDef => ({
           kind: "activated",
           cost: { mana: cost },
           targets: [],
           effects: [{ op: "turnFaceUp", what: { kind: "self" } }],
           specialAction: true,
+          ...(i === 0 && disguiseReduction ? { reduction: disguiseReduction } : {}),
           label: "Retourner face visible",
         }),
       ),

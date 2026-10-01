@@ -230,8 +230,8 @@ export function legalActions(s: GameState, player: PlayerId): ActionOption[] {
           out.push({ type: "playLand", card, ...extra });
         }
       }
-      // Ville à aventure : l'Aventure reste lançable.
-      if (d.layout !== "adventure") continue;
+      // Ville à aventure : l'Aventure reste lançable ; un terrain déguisé, face cachée (Branch of Vitu-Ghazi).
+      if (d.layout !== "adventure" && !d.disguise) continue;
     }
     const terms = castTerms(s, player, card);
     if (!terms || !d.implemented) continue;

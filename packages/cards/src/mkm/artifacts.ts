@@ -145,4 +145,13 @@ export const ARTIFACTS: Record<string, CardScript> = {
       }),
     ],
   },
+  "Branch of Vitu-Ghazi": {
+    // Déguisement {3} : lu dans le texte ; la carte de terrain se lance face cachée.
+    abilities: [
+      manaAbility("C"),
+      triggered(when.turnedFaceUp, [fx.addManaChoice(2, undefined, undefined, true)], {
+        label: "Deux mana d'une couleur, gardés jusqu'à la fin du tour",
+      }),
+    ],
+  },
 };

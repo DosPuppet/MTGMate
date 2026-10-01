@@ -400,6 +400,8 @@ export type TurnLogEntry =
       subtypes: string[];
       supertypes?: string[];
       token?: boolean;
+      /** Arrivé face cachée (Tunnel Tipster : « une créature face cachée est arrivée sous votre contrôle »). */
+      faceDown?: boolean;
     }
   | {
       e: "cast";
@@ -454,6 +456,8 @@ export interface TurnLogQuery {
   notSubtype?: string;
   supertype?: string;
   token?: boolean;
+  /** Déplacement : arrivé face cachée (ou non). */
+  faceDown?: boolean;
   /** Attaque : contre le joueur qui interroge (« chaque adversaire qui vous a attaqué ce tour-ci »). */
   againstYou?: boolean;
   /** Sort lancé pour son coût de distorsion. */
