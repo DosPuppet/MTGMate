@@ -149,6 +149,8 @@ export interface ObjectFilter {
   maxToughness?: number;
   /** Valeur de mana au plus égale au X du sort qui a mis la source en jeu (Dune Drifter). */
   maxManaValueX?: boolean;
+  /** Valeur de mana au plus égale au nombre de couleurs dépensées pour lancer la source (convergence, Sundering Archaic). */
+  maxManaValueColorsSpent?: boolean;
   /** Contrôlé mais pas possédé (Laughing Jasper Flint). */
   notOwned?: boolean;
   /** Sort modal (Riku of Many Paths). */
@@ -175,7 +177,7 @@ export interface ObjectFilter {
   powerAboveBase?: boolean;
   /** A au moins une capacité activée, autre qu'une capacité de mana (The Enigma Jewel). */
   withActivatedAbility?: boolean;
-  /** Valeur de mana égale au X de la capacité ou du sort (`destroyAll` : Dauntless Dismantler). */
+  /** Valeur de mana égale au X de la capacité ou du sort (`destroyAll` : Dauntless Dismantler ; `moveAll` : Fix What's Broken). */
   manaValueX?: boolean;
   /** Valeur de mana de la parité choisie par la source (Gollum, Riddle Master). */
   parityChosen?: boolean;

@@ -79,8 +79,11 @@ export const RECORD_VERSION = 1;
  * - 28 : Secrets of Strixhaven, lot A : les montants « arrive avec » savent additionner, opposer, prendre un maximum et
  *   compter les couleurs dépensées (Sheriff of Safe Passage arrivait sans marqueur) ; les conditions « arrive avec »
  *   voient X ; « répartissez X marqueurs » sans minimum par cible quand X est plus petit que le nombre de cibles.
+ * - 29 : Secrets of Strixhaven, lot A6 : le mana dépensé d'un éphémère ou d'un rituel qui se résout est lu (`manaSpent`) ;
+ *   une carte lancée depuis l'exil avec « puis exilez-la » y retourne ; filtres de valeur de mana « X » et « couleurs
+ *   dépensées ».
  */
-export const RULES_VERSION = 28;
+export const RULES_VERSION = 29;
 
 /** Un point de contrôle toutes les N décisions (plus la dernière de la partie). */
 export const CHECKPOINT_EVERY = 25;

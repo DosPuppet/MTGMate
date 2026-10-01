@@ -971,6 +971,8 @@ function baseCastTerms(s: GameState, player: PlayerId, card: ObjectId): CastTerm
         extraCost: perm.extraCost,
         anyMana: perm.anyMana,
         costOverride: perm.cost,
+        // « … puis exilez-la » (Nita, Forum Conciliator), comme depuis le cimetière.
+        exileAfter: perm.exileAfter,
       };
     // Tinybones : cartes d'adversaires exilées avec un marqueur de butin, pendant votre tour.
     if (

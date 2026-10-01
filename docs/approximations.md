@@ -285,6 +285,14 @@ Dans l'ordre où elles ont été ajoutées, extension par extension.
 - **Secrets of Strixhaven (`docs/extensions/sos.md`) :**
   - `règle` Echocasting Symposium : le jeton copie est créé par vous puis donné au joueur ciblé (il en est le contrôleur, pas le propriétaire) ;
   - `règle` Wisdom of Ages : « pas de taille de main maximale pour le reste de la partie » est un emblème ;
-  - `règle` Zimone's Experiment : les cartes de terrain révélées passent par la main avant d'arriver engagées sur le champ de bataille.
+  - `règle` Zimone's Experiment : les cartes de terrain révélées passent par la main avant d'arriver engagées sur le champ de bataille ;
+  - `règle` Silverquill, the Disputant : la victime accordée est une capacité déclenchée au lancement (sacrifice d'une créature, puis copie), et non un coût : on peut y répondre ;
+  - `timing` Prismari, the Inspiration : la tempête accordée compte les sorts lancés avant celui-ci à la résolution de la capacité (un sort lancé en réponse est compté) ;
+  - `règle` Dina's Guidance : la carte cherchée va en main, puis vous pouvez la mettre au cimetière ;
+  - `règle` Scolding Administrator : la capacité va sur la pile même sans marqueur (elle ne fait alors rien) ;
+  - `timing` Social Snub : « en contrôlant une créature » est revérifié à la résolution ;
+  - `choix auto` Abstract Paintmage : {U}{R} est ajouté en deux choix d'une couleur (deux questions sans alternative) ;
+  - `règle` Transcendent Archaic : « si vous piochez une ou plusieurs cartes de cette façon » est « si X vaut 1 ou plus » ;
+  - `règle` Strixhaven Skycoach : la carte cherchée n'est pas révélée.
 - **Légalité Standard :** instantané des légalités Scryfall au moment de l'import (`legalities.standard` dans `data/<set>.json`). Après une rotation ou une annonce de bannissement, réimporter les sets (`npm run import-cards -- <set>`).
 - **Images des jetons :** celle du jeton Scryfall le plus proche (même nom, puis mêmes F/E et couleurs ; `data/tokens.json`, `npm run import-tokens`) ; un jeton de nom inconnu garde le cadre texte.

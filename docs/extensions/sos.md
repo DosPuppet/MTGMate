@@ -61,3 +61,14 @@ Les scripts sont dans `packages/cards/src/sos/` : `cards` (cartes du méta), `wh
 - **[règles] Montants et conditions « arrive avec » :** ils savent additionner, opposer et prendre un maximum (Slumbering Trudge : « trois moins X marqueurs d'étourdissement »), compter les couleurs dépensées (convergence), et les conditions voient X (« si X vaut 2 ou moins, elle arrive engagée »). Correctif au passage : Sheriff of Safe Passage (OTJ) arrivait sans marqueur (0/0) ; test ajouté dans `otj.test.ts`. `RULES_VERSION` = 28.
 - **Reste :** Wildgrowth Archaic (« ce sort de créature arrive avec X marqueurs, X étant le nombre de couleurs dépensées pour le lancer » : couleurs dépensées pour le sort déclencheur).
 - **Tests :** 34 tests de règles (« lot A — vert ») et 1 test OTJ.
+
+## Sous-lot A6 : multicolores, incolores et terrains ✅ (246 / 262)
+
+- **Cartes :** 62 multicolores (sur 69 : les cinq collèges, Repartee, Infusion, Opus, Increment, préparées, convergence, les légendaires Silverquill, Prismari, Witherbloom…, Nita, Forum Conciliator, Molten Note, Fix What's Broken) et 18 incolores et terrains (les cinq Archaic incolores, Diary of Dreams, Page, Loose Leaf, Strixhaven Skycoach, terrains à surveillance et terrains « lents »).
+- **Le moteur gagne :**
+  - le filtre `maxManaValueColorsSpent` (« de valeur de mana au plus le nombre de couleurs dépensées pour le lancer », Sundering Archaic) ; `manaValueX` sert aussi à `moveAll` (Fix What's Broken : « chaque carte d'artefact et de créature de valeur de mana X ») ;
+  - une carte rendue lançable depuis l'exil avec « puis exilez-la » y retourne (`exileAfter`, comme depuis le cimetière : Nita) ;
+  - `amount.manaSpent` lit le mana dépensé pour un éphémère ou un rituel qui se résout (Molten Note).
+- **[règles]** `RULES_VERSION` = 29.
+- **Restent :** Suspend Aggression (« jusqu'à la fin du prochain tour de son propriétaire »), Zaffai and the Tempests (sort gratuit une fois par tour), Geometer's Arthropod et Paradox Surveyor (« carte avec {X} dans son coût »), Fractal Tender (« si vous avez mis un marqueur sur elle ce tour-ci »), Lorehold, the Historian (miracle), Quandrix, the Proof (cascade).
+- **Tests :** 59 tests de règles (« lot A — multicolores ») et 19 (« lot A — incolores et terrains »).

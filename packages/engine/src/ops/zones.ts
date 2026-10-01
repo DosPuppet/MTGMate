@@ -958,15 +958,17 @@ export const HANDLERS: OpHandlers = {
   },
   moveAll(s, r, e, ctx) {
     const players = resolveRef(s, ctx, e.whose).filter((p) => isPlayer(s, p));
+    // « de valeur de mana X » (Fix What's Broken) : le X du sort ou de la capacité.
+    const filter = e.filter.manaValueX ? { ...e.filter, manaValueX: undefined, manaValue: ctx.x } : e.filter;
     const ids =
       e.from === "battlefield"
         ? s.battlefield.filter(
             (id) =>
               players.includes(s.objects[id]?.controller ?? "") &&
-              matchesObjectFilter(s, ctx.controller, id, { ...e.filter, controller: undefined }, ctx.sourceId),
+              matchesObjectFilter(s, ctx.controller, id, { ...filter, controller: undefined }, ctx.sourceId),
           )
         : zoneCards(s, players, e.from).filter((id) =>
-            matchesCard(s, ctx.controller, id, { ...e.filter, controller: undefined }, ctx.sourceId),
+            matchesCard(s, ctx.controller, id, { ...filter, controller: undefined }, ctx.sourceId),
           );
     const moved = ids.map((id) => moveWithSpec(s, ctx.controller, id, e.spec)).filter((x): x is string => !!x);
     if (e.store) r.vars[`$ids:${e.store}`] = moved;

@@ -392,8 +392,11 @@ export function evalAmount(s: GameState, ctx: EffectContext, a: Amount): number 
       const p = resolveRef(s, ctx, a.who).find((x) => isPlayer(s, x));
       return p ? Math.ceil(Math.max(0, s.players[p]?.life ?? 0) / 2) : 0;
     }
-    case "manaSpent":
-      return s.objects[ctx.sourceId]?.manaSpent ?? 0;
+    case "manaSpent": {
+      // Un éphémère ou un rituel qui se résout : le mana dépensé est sur l'élément de pile (Molten Note).
+      const item = s.resolving?.item.id === ctx.sourceId ? s.resolving.item : s.stack.find((x) => x.id === ctx.sourceId);
+      return s.objects[ctx.sourceId]?.manaSpent ?? item?.manaSpent ?? 0;
+    }
     case "speed":
       return s.players[ctx.controller]?.speed ?? 0;
     case "spellsCastThisTurn":

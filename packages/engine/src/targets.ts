@@ -194,6 +194,12 @@ export function resolveFilter(s: GameState, f: ObjectFilter, sourceId?: ObjectId
   // Formation Breaker : « de force inférieure à celle de cette créature ».
   if (f.powerBelowSource) f = { ...f, powerBelowSource: undefined, maxPower: sourcePower(s, sourceId) - 1 };
   if (f.powerAboveSource) f = { ...f, powerAboveSource: undefined, minPower: sourcePower(s, sourceId) + 1 };
+  if (f.maxManaValueColorsSpent) {
+    const item = s.resolving?.item.id === sourceId ? s.resolving?.item : s.stack.find((x) => x.id === sourceId);
+    const spent = item?.spentColors ?? (sourceId ? s.objects[sourceId]?.spentColors : undefined) ?? {};
+    const n = (["W", "U", "B", "R", "G"] as const).filter((c) => (spent[c] ?? 0) > 0).length;
+    f = { ...f, maxManaValueColorsSpent: undefined, maxManaValue: n };
+  }
   if (f.maxManaValueX) {
     const x = (sourceId && s.objects[sourceId]?.castX) || 0;
     return { ...f, maxManaValueX: undefined, maxManaValue: x };
