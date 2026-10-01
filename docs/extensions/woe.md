@@ -32,3 +32,9 @@ Les scripts sont dans `packages/cards/src/woe/` : `cards` (cartes du méta), `wh
 - **Cartes :** 35 (sur 41), dont 11 Aventures (Aquatic Alchemist, Beluna's Gatekeeper, Galvanic Giant, Horned Loch-Whale, Obyra's Attendants, Picklock Prankster, Vantress Transmuter, Virtue of Knowledge, Frolicking Familiar, Threadbind Clique, Twining Twins), Archive Dragon, Chancellor of Tales, Faerie Slumber Party, Gadwick's First Duel, Into the Fae Court, Storyteller Pixie ; jeton Faerie « ne peut bloquer que les créatures volantes » (local à `blue.ts`).
 - **Restent :** Ice Out et Johann's Stopgap (réduction « si marchandé »), Asinine Antics (un Rôle par créature adverse), Ingenious Prodigy (furtivité), Elusive Otter (X marqueurs répartis), Extraordinary Journey (« lancée depuis l'exil »).
 - **Tests :** 34 tests de règles (« lot A — bleu »).
+
+## Sous-lot A3 : cartes noires ✅ (132 / 269)
+
+- **Cartes :** 44 (sur 48), dont 8 Aventures, Rankle's Prank (« un ou plusieurs » par des modes à {0}), Lich-Knights' Conquest et Malevolent Witchkite (« sacrifiez un nombre quelconque »), Specter of Mortality (capacité réflexive), Beseech the Mirror (lancement gratuit pendant la résolution).
+- **Restent :** Ashiok, Wicked Manipulator (payer des PV remplacé par un exil ; valeur de mana totale en exil), Lord Skitter's Blessing (créature enchantée), Tangled Colony (blessures subies, dernières informations), Twisted Sewer-Witch (un Rôle par Rat).
+- **Tests :** 45 tests de règles (« lot A — noir »).

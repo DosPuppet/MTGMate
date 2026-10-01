@@ -15,7 +15,7 @@ import { chars } from "../src/state";
 import { checkCondition } from "../src/triggers";
 import { stateBasedActions } from "../src/turn";
 import type { ChoiceRequest, ChoiceValue, GameState, TokenSpec } from "../src/types";
-import { act, advanceUntil, idOf, idsOf, passAccepting, passUntil, scenario } from "./helpers";
+import { act, advanceUntil, castNowOf, idOf, idsOf, passAccepting, passUntil, scenario } from "./helpers";
 
 type S = GameState;
 type Answer = (req: ChoiceRequest, player: string) => ChoiceValue[] | undefined;
@@ -1588,5 +1588,720 @@ describe("Wilds of Eldraine, lot A — bleu", () => {
     s = passUntil(s, (x) => x.pending?.kind === "priority" && x.pending.player === "p1");
     s = settle(cast(s, "p1", "Rowdy Research"));
     expect(s.players.p1?.hand).toHaveLength(3);
+  });
+});
+
+describe("Wilds of Eldraine, lot A — noir", () => {
+  /**
+   * Wilds of Eldraine, lot A — cartes noires : chaque carte au comportement non trivial est confrontée à son texte Oracle
+   * (plan R, lot R7).
+   */
+  type S = GameState;
+  type Answer = (req: ChoiceRequest, player: string) => ChoiceValue[] | undefined;
+  const lands = (name: string, n: number) => Array(n).fill(name) as string[];
+  const nameOf = (s: S, id: string) => s.defs[s.objects[id]?.defId ?? ""]?.name;
+  const names = (s: S, ids: string[] = []) => ids.map((id) => nameOf(s, id)).sort();
+  const exiled = (s: S, name: string) => s.exile.filter((id) => nameOf(s, id) === name);
+  const pt = (s: S, id: string) => [chars(s, id).power, chars(s, id).toughness];
+
+  /** Passe et répond aux choix (réponse suggérée par défaut) jusqu'à une pile vide, sans déclenchement en attente. */
+  const settle = (s: S, answer: Answer = () => undefined): S => {
+    let cur = s;
+    for (let i = 0; i < 300; i++) {
+      const p = cur.pending;
+      if (p?.kind === "priority" && cur.stack.length === 0 && cur.triggers.length === 0 && i > 0) break;
+      if (p?.kind === "priority") cur = act(cur, p.player, { type: "pass" });
+      else if (p?.kind === "choice")
+        cur = act(cur, p.player, { type: "choose", values: answer(p.request, p.player) ?? p.request.suggested });
+      else break;
+    }
+    return cur;
+  };
+  /** Après une modification directe (destruction) : actions basées sur l'état, puis déclenchements résolus. */
+  const settleAll = (s: S) => {
+    while (stateBasedActions(s)) {}
+    return passAccepting(s, (x) => x.stack.length === 0 && x.triggers.length === 0 && x.pending?.kind === "priority");
+  };
+  /** Répond aux choix jusqu'à une priorité « lancer maintenant » (608.2g). */
+  const toCastNow = (s: S, answer: Answer): S => {
+    let cur = s;
+    for (let i = 0; i < 100 && !castNowOf(cur); i++) {
+      const p = cur.pending;
+      if (p?.kind === "priority") cur = act(cur, p.player, { type: "pass" });
+      else if (p?.kind === "choice")
+        cur = act(cur, p.player, { type: "choose", values: answer(p.request, p.player) ?? p.request.suggested });
+      else break;
+    }
+    return cur;
+  };
+  /** Réponse : choisit, parmi les options d'un choix, celles qui sont dans `want`. */
+  const pickIds =
+    (want: string[]): Answer =>
+    (req) => {
+      if (req.type !== "pick") return undefined;
+      const picked = want.filter((w) => req.options.includes(w));
+      return picked.length ? picked : undefined;
+    };
+  const cast = (s: S, player: string, name: string, targets?: Record<string, string[]>, extra: object = {}) =>
+    act(s, player, { type: "cast", card: idOf(s, player, "hand", name), targets, ...extra });
+  const activate = (s: S, player: string, source: string, targets?: Record<string, string[]>, extra: object = {}) => {
+    const a = legalActions(s, player).find((x) => x.type === "activate" && x.source === source);
+    return act(s, player, { type: "activate", source, ability: a?.type === "activate" ? a.ability : -1, targets, ...extra });
+  };
+
+  describe("Enchantements mis au cimetière : Hopeless Nightmare, Ashiok's Reaper, Wicked Visitor, Warehouse Tabby", () => {
+    it("Hopeless Nightmare : en arrivant, chaque adversaire défausse une carte et perd 2 PV", () => {
+      let s = scenario({ p1: { battlefield: ["Swamp"], hand: ["Hopeless Nightmare"] }, p2: { hand: ["Opt"] } });
+      s = settle(cast(s, "p1", "Hopeless Nightmare"));
+      expect(idsOf(s, "p2", "graveyard", "Opt")).toHaveLength(1);
+      expect(s.players.p2?.life).toBe(18);
+    });
+
+    it("{2}{B} : sacrifiée, regard 2 ; le Reaper pioche, le Visitor fait perdre 1 PV, le Tabby crée un Rat", () => {
+      let s = scenario({
+        p1: {
+          battlefield: ["Hopeless Nightmare", "Ashiok's Reaper", "Wicked Visitor", "Warehouse Tabby", ...lands("Swamp", 3)],
+          library: ["Opt", "Island", "Forest", "Plains"],
+        },
+      });
+      let scried = false;
+      s = settle(activate(s, "p1", idOf(s, "p1", "battlefield", "Hopeless Nightmare")), (req) => {
+        if (req.intent === "scryBottom") scried = true;
+        return undefined;
+      });
+      expect(scried).toBe(true);
+      expect(idsOf(s, "p1", "graveyard", "Hopeless Nightmare")).toHaveLength(1);
+      expect(s.players.p1?.hand).toHaveLength(1);
+      expect(s.players.p2?.life).toBe(19);
+      const rat = idOf(s, "p1", "battlefield", "Rat");
+      expect([...pt(s, rat), chars(s, rat).colors]).toEqual([1, 1, ["B"]]);
+    });
+
+    it("un enchantement adverse mis au cimetière ne déclenche rien", () => {
+      let s = scenario({
+        p1: { battlefield: ["Ashiok's Reaper", "Wicked Visitor"] },
+        p2: { battlefield: ["Hopeless Nightmare", ...lands("Swamp", 3)] },
+        active: "p2",
+      });
+      s = settle(activate(s, "p2", idOf(s, "p2", "battlefield", "Hopeless Nightmare")));
+      expect(s.players.p1?.hand).toHaveLength(0);
+      expect(s.players.p2?.life).toBe(20);
+    });
+
+    it("Warehouse Tabby : {1}{B} lui donne le contact mortel jusqu'à la fin du tour", () => {
+      let s = scenario({ p1: { battlefield: ["Warehouse Tabby", ...lands("Swamp", 2)] } });
+      const tabby = idOf(s, "p1", "battlefield", "Warehouse Tabby");
+      s = settle(activate(s, "p1", tabby));
+      expect(chars(s, tabby).keywords).toContain("deathtouch");
+      s = advanceUntil(s, (x) => x.turn.active === "p2");
+      expect(chars(s, tabby).keywords).not.toContain("deathtouch");
+    });
+  });
+
+  describe("Marchandage", () => {
+    it("Back for Seconds : deux cartes de créature reviennent en main", () => {
+      let s = scenario({
+        p1: { battlefield: lands("Swamp", 3), hand: ["Back for Seconds"], graveyard: ["Bear Cub", "Serra Angel"] },
+      });
+      const ids = [idOf(s, "p1", "graveyard", "Bear Cub"), idOf(s, "p1", "graveyard", "Serra Angel")];
+      s = settle(cast(s, "p1", "Back for Seconds", { t: ids }));
+      expect(names(s, s.players.p1?.hand)).toEqual(["Bear Cub", "Serra Angel"]);
+    });
+
+    it("Back for Seconds marchandé : l'une d'elles de VM 4 ou moins arrive sur le champ de bataille", () => {
+      let s = scenario({
+        p1: {
+          battlefield: [...lands("Swamp", 3), "Candy Trail"],
+          hand: ["Back for Seconds"],
+          graveyard: ["Bear Cub", "Serra Angel"],
+        },
+      });
+      const bear = idOf(s, "p1", "graveyard", "Bear Cub");
+      const angel = idOf(s, "p1", "graveyard", "Serra Angel");
+      let offered: string[] = [];
+      s = settle(
+        cast(
+          s,
+          "p1",
+          "Back for Seconds",
+          { t: [bear, angel] },
+          { kicked: true, sacrifice: [idOf(s, "p1", "battlefield", "Candy Trail")] },
+        ),
+        (req) => {
+          if (req.type !== "pick" || req.intent !== "pickCards") return undefined;
+          offered = req.options.map(String);
+          return [bear];
+        },
+      );
+      // L'Ange (VM 5) n'est pas proposé.
+      expect(offered).toEqual([bear]);
+      expect(idsOf(s, "p1", "battlefield", "Bear Cub")).toHaveLength(1);
+      expect(names(s, s.players.p1?.hand)).toEqual(["Serra Angel"]);
+      expect(idsOf(s, "p1", "graveyard", "Candy Trail")).toHaveLength(1);
+    });
+
+    it("Beseech the Mirror marchandé : la carte cherchée (VM 4 ou moins) se lance sans payer son coût", () => {
+      let s = scenario({
+        p1: {
+          battlefield: [...lands("Swamp", 4), "Candy Trail"],
+          hand: ["Beseech the Mirror"],
+          library: ["Island", "Bear Cub", "Island"],
+        },
+      });
+      s = cast(s, "p1", "Beseech the Mirror", undefined, {
+        kicked: true,
+        sacrifice: [idOf(s, "p1", "battlefield", "Candy Trail")],
+      });
+      s = toCastNow(s, (req) => {
+        if (req.intent !== "search" || req.type !== "pick") return undefined;
+        return req.options.filter((id) => nameOf(s, String(id)) === "Bear Cub").slice(0, 1);
+      });
+      const bear = castNowOf(s)?.cards[0] as string;
+      expect(nameOf(s, bear)).toBe("Bear Cub");
+      s = settle(act(s, "p1", { type: "cast", card: bear, free: true }));
+      expect(idsOf(s, "p1", "battlefield", "Bear Cub")).toHaveLength(1);
+      expect(s.players.p1?.hand).toHaveLength(0);
+    });
+
+    it("Beseech the Mirror non marchandé : la carte cherchée va dans la main", () => {
+      let s = scenario({
+        p1: { battlefield: lands("Swamp", 4), hand: ["Beseech the Mirror"], library: ["Island", "Bear Cub", "Island"] },
+      });
+      s = settle(cast(s, "p1", "Beseech the Mirror"), (req) => {
+        if (req.intent !== "search" || req.type !== "pick") return undefined;
+        return req.options.filter((id) => nameOf(s, String(id)) === "Bear Cub").slice(0, 1);
+      });
+      expect(names(s, s.players.p1?.hand)).toEqual(["Bear Cub"]);
+      expect(s.players.p1?.library).toHaveLength(2);
+    });
+
+    it("Candy Grapple : -3/-3, ou -5/-5 si marchandé", () => {
+      const run = (bargain: boolean) => {
+        let s = scenario({
+          p1: { battlefield: [...lands("Swamp", 2), "Candy Trail"], hand: ["Candy Grapple"] },
+          p2: { battlefield: ["Serra Angel"] },
+        });
+        const angel = idOf(s, "p2", "battlefield", "Serra Angel");
+        const extra = bargain ? { kicked: true, sacrifice: [idOf(s, "p1", "battlefield", "Candy Trail")] } : {};
+        s = act(s, "p1", { type: "cast", card: idOf(s, "p1", "hand", "Candy Grapple"), targets: { t: [angel] }, ...extra });
+        s = passAccepting(s, (x) => x.stack.length === 0 && x.pending?.kind === "priority");
+        return s.objects[angel]?.zone === "battlefield" ? pt(s, angel) : "mort";
+      };
+      expect(run(false)).toEqual([1, 1]);
+      expect(run(true)).toBe("mort");
+    });
+
+    it("High Fae Negotiator marchandée : chaque adversaire perd 3 PV et vous gagnez 3 PV ; sinon rien", () => {
+      const run = (bargain: boolean) => {
+        let s = scenario({ p1: { battlefield: [...lands("Swamp", 5), "Candy Trail"], hand: ["High Fae Negotiator"] } });
+        const extra = bargain ? { kicked: true, sacrifice: [idOf(s, "p1", "battlefield", "Candy Trail")] } : {};
+        s = settle(cast(s, "p1", "High Fae Negotiator", undefined, extra));
+        expect(idsOf(s, "p1", "battlefield", "High Fae Negotiator")).toHaveLength(1);
+        return [s.players.p1?.life, s.players.p2?.life];
+      };
+      expect(run(true)).toEqual([23, 17]);
+      expect(run(false)).toEqual([20, 20]);
+    });
+
+    it("Rowan's Grim Search marchandé : deux cartes gardées sur le dessus, deux au cimetière, puis piochez deux et perdez 2 PV", () => {
+      let s = scenario({
+        p1: {
+          battlefield: [...lands("Swamp", 3), "Candy Trail"],
+          hand: ["Rowan's Grim Search"],
+          library: ["Opt", "Bear Cub", "Serra Angel", "Shivan Dragon", "Plains"],
+        },
+      });
+      s = settle(
+        cast(s, "p1", "Rowan's Grim Search", undefined, {
+          kicked: true,
+          sacrifice: [idOf(s, "p1", "battlefield", "Candy Trail")],
+        }),
+        (req) => {
+          if (req.type !== "pick" || req.intent !== "lookAtTop") return undefined;
+          return req.options.filter((id) => ["Bear Cub", "Shivan Dragon"].includes(nameOf(s, String(id)) ?? ""));
+        },
+      );
+      expect(names(s, s.players.p1?.hand)).toEqual(["Bear Cub", "Shivan Dragon"]);
+      expect(names(s, s.players.p1?.graveyard)).toEqual(["Candy Trail", "Opt", "Rowan's Grim Search", "Serra Angel"]);
+      expect(s.players.p1?.library.map((id) => nameOf(s, id))).toEqual(["Plains"]);
+      expect(s.players.p1?.life).toBe(18);
+    });
+  });
+
+  describe("Rôles", () => {
+    it("Price of Beauty : un Rôle Méchant (+1/+1) sur votre créature ; la Sorcière se lance ensuite depuis l'exil", () => {
+      const WITCH = "Conceited Witch // Price of Beauty";
+      let s = scenario({ p1: { battlefield: [...lands("Swamp", 4), "Bear Cub"], hand: [WITCH] } });
+      const bear = idOf(s, "p1", "battlefield", "Bear Cub");
+      s = settle(act(s, "p1", { type: "cast", card: idOf(s, "p1", "hand", WITCH), face: 1, targets: { t: [bear] } }));
+      expect(pt(s, bear)).toEqual([3, 3]);
+      const adv = exiled(s, WITCH)[0] as string;
+      expect(s.objects[adv]?.onAdventure).toBe(true);
+      s = settle(act(s, "p1", { type: "cast", card: adv }));
+      expect(chars(s, idOf(s, "p1", "battlefield", WITCH)).keywords).toContain("menace");
+    });
+
+    it("Eriette's Whisper : l'adversaire défausse deux cartes ; un Rôle Méchant sur jusqu'à une de vos créatures", () => {
+      let s = scenario({
+        p1: { battlefield: [...lands("Swamp", 4), "Bear Cub"], hand: ["Eriette's Whisper"] },
+        p2: { hand: ["Opt", "Island", "Forest"] },
+      });
+      const bear = idOf(s, "p1", "battlefield", "Bear Cub");
+      s = settle(cast(s, "p1", "Eriette's Whisper", { p: ["p2"], c: [bear] }));
+      expect(s.players.p2?.graveyard).toHaveLength(2);
+      expect(pt(s, bear)).toEqual([3, 3]);
+      let t = scenario({ p1: { battlefield: lands("Swamp", 4), hand: ["Eriette's Whisper"] }, p2: { hand: ["Opt"] } });
+      t = settle(cast(t, "p1", "Eriette's Whisper", { p: ["p2"] }));
+      expect(t.players.p2?.graveyard).toHaveLength(1);
+    });
+
+    it("Spiteful Hexmage : un Rôle Maudit (1/1) sur une créature que vous contrôlez", () => {
+      let s = scenario({ p1: { battlefield: ["Swamp", "Serra Angel"], hand: ["Spiteful Hexmage"] } });
+      const angel = idOf(s, "p1", "battlefield", "Serra Angel");
+      s = settle(cast(s, "p1", "Spiteful Hexmage"), pickIds([angel]));
+      expect(pt(s, angel)).toEqual([1, 1]);
+    });
+
+    it("Shatter the Oath : détruit une créature ou un enchantement ; Rôle Méchant sur votre créature", () => {
+      let s = scenario({
+        p1: { battlefield: [...lands("Swamp", 5), "Bear Cub"], hand: ["Shatter the Oath"] },
+        p2: { battlefield: ["Hopeless Nightmare"] },
+      });
+      const bear = idOf(s, "p1", "battlefield", "Bear Cub");
+      s = settle(cast(s, "p1", "Shatter the Oath", { t: [idOf(s, "p2", "battlefield", "Hopeless Nightmare")], c: [bear] }));
+      expect(idsOf(s, "p2", "graveyard", "Hopeless Nightmare")).toHaveLength(1);
+      expect(pt(s, bear)).toEqual([3, 3]);
+    });
+
+    it("Not Dead After All : la créature qui meurt revient engagée avec un Rôle Méchant", () => {
+      let s = scenario({ p1: { battlefield: ["Swamp", "Bear Cub"], hand: ["Not Dead After All"] } });
+      s = settle(cast(s, "p1", "Not Dead After All", { t: [idOf(s, "p1", "battlefield", "Bear Cub")] }));
+      destroy(s, idOf(s, "p1", "battlefield", "Bear Cub"));
+      s = settleAll(s);
+      const bear = idOf(s, "p1", "battlefield", "Bear Cub");
+      expect(s.objects[bear]?.tapped).toBe(true);
+      expect(pt(s, bear)).toEqual([3, 3]);
+      expect(idsOf(s, "p1", "battlefield", "Wicked Role")).toHaveLength(1);
+    });
+
+    it("The Witch's Vanity : I détruit une créature adverse de VM 2 ou moins, II une Nourriture, III un Rôle Méchant", () => {
+      let s = scenario({
+        p1: { battlefield: [...lands("Swamp", 2), "Serra Angel"], hand: ["The Witch's Vanity"] },
+        p2: { battlefield: ["Bear Cub", "Shivan Dragon"] },
+      });
+      s = settle(cast(s, "p1", "The Witch's Vanity"));
+      expect(idsOf(s, "p2", "graveyard", "Bear Cub")).toHaveLength(1);
+      expect(idsOf(s, "p2", "battlefield", "Shivan Dragon")).toHaveLength(1);
+      s = advanceUntil(s, (x) => x.turn.number === 5 && x.turn.step === "main1" && x.pending?.kind === "priority");
+      s = settleAll(s);
+      expect(idsOf(s, "p1", "battlefield", "Food")).toHaveLength(1);
+      s = advanceUntil(s, (x) => x.turn.number === 7 && x.turn.step === "main1" && x.pending?.kind === "priority");
+      s = settleAll(s);
+      expect(pt(s, idOf(s, "p1", "battlefield", "Serra Angel"))).toEqual([5, 5]);
+      expect(idsOf(s, "p1", "graveyard", "The Witch's Vanity")).toHaveLength(1);
+    });
+  });
+
+  describe("Fées", () => {
+    it("Barrow Naughty : le lien de vie seulement avec une autre Fée ; {2}{B} : +1/+0", () => {
+      let s = scenario({ p1: { battlefield: ["Barrow Naughty", ...lands("Swamp", 3)] } });
+      const naughty = idOf(s, "p1", "battlefield", "Barrow Naughty");
+      expect(chars(s, naughty).keywords).not.toContain("lifelink");
+      s = settle(activate(s, "p1", naughty));
+      expect(pt(s, naughty)).toEqual([2, 3]);
+      const t = scenario({ p1: { battlefield: ["Barrow Naughty", "Faerie Dreamthief"] } });
+      expect(chars(t, idOf(t, "p1", "battlefield", "Barrow Naughty")).keywords).toContain("lifelink");
+    });
+
+    it("Dream Spoilers : un sort lancé pendant le tour d'un adversaire donne -1/-1 à une créature adverse ; pas pendant votre tour", () => {
+      let s = scenario({
+        active: "p2",
+        p1: { battlefield: ["Dream Spoilers", "Island"], hand: ["Opt"] },
+        p2: { battlefield: ["Bear Cub"] },
+      });
+      s = act(s, "p2", { type: "pass" });
+      const bear = idOf(s, "p2", "battlefield", "Bear Cub");
+      s = settle(cast(s, "p1", "Opt"), pickIds([bear]));
+      expect(pt(s, bear)).toEqual([1, 1]);
+      let t = scenario({ p1: { battlefield: ["Dream Spoilers", "Island"], hand: ["Opt"] }, p2: { battlefield: ["Bear Cub"] } });
+      t = settle(cast(t, "p1", "Opt"));
+      expect(pt(t, idOf(t, "p2", "battlefield", "Bear Cub"))).toEqual([2, 2]);
+    });
+
+    it("Ego Drain : vous choisissez une carte non-terrain qu'il défausse ; sans Fée, vous exilez une carte de votre main", () => {
+      let s = scenario({
+        p1: { battlefield: ["Swamp"], hand: ["Ego Drain", "Opt"] },
+        p2: { hand: ["Forest", "Bear Cub", "Serra Angel"] },
+      });
+      let options: string[] = [];
+      s = settle(cast(s, "p1", "Ego Drain", { t: ["p2"] }), (req, player) => {
+        if (req.type !== "pick" || player !== "p1" || req.intent === undefined) return undefined;
+        if (req.options.every((id) => s.players.p2?.hand.includes(String(id)))) {
+          options = names(s, req.options.map(String)) as string[];
+          return req.options.filter((id) => nameOf(s, String(id)) === "Serra Angel");
+        }
+        return undefined;
+      });
+      expect(options).toEqual(["Bear Cub", "Serra Angel"]);
+      expect(names(s, s.players.p2?.graveyard)).toEqual(["Serra Angel"]);
+      expect(exiled(s, "Opt")).toHaveLength(1);
+      // Avec une Fée : rien n'est exilé.
+      let t = scenario({
+        p1: { battlefield: ["Swamp", "Faerie Dreamthief"], hand: ["Ego Drain", "Opt"] },
+        p2: { hand: ["Bear Cub"] },
+      });
+      t = settle(cast(t, "p1", "Ego Drain", { t: ["p2"] }));
+      expect(t.players.p1?.hand).toHaveLength(1);
+      expect(idsOf(t, "p2", "graveyard", "Bear Cub")).toHaveLength(1);
+    });
+
+    it("Faerie Dreamthief : surveillance 1 en arrivant ; {2}{B}, exilée du cimetière : piochez, perdez 1 PV", () => {
+      let s = scenario({ p1: { battlefield: lands("Swamp", 4), hand: ["Faerie Dreamthief"], library: ["Opt", "Forest"] } });
+      s = settle(cast(s, "p1", "Faerie Dreamthief"), (req) => (req.type === "pick" ? req.options : undefined));
+      expect(idsOf(s, "p1", "graveyard", "Opt")).toHaveLength(1);
+      destroy(s, idOf(s, "p1", "battlefield", "Faerie Dreamthief"));
+      s = settleAll(s);
+      s = settle(activate(s, "p1", idOf(s, "p1", "graveyard", "Faerie Dreamthief")));
+      expect(names(s, s.players.p1?.hand)).toEqual(["Forest"]);
+      expect(s.players.p1?.life).toBe(19);
+      expect(exiled(s, "Faerie Dreamthief")).toHaveLength(1);
+    });
+
+    it("Faerie Fencing : -X/-X, et -3/-3 de plus si vous contrôlez une Fée", () => {
+      const run = (faerie: boolean) => {
+        let s = scenario({
+          p1: { battlefield: [...lands("Swamp", 2), ...(faerie ? ["Faerie Dreamthief"] : [])], hand: ["Faerie Fencing"] },
+          p2: { battlefield: ["Shivan Dragon"] },
+        });
+        const dragon = idOf(s, "p2", "battlefield", "Shivan Dragon");
+        s = settle(cast(s, "p1", "Faerie Fencing", { t: [dragon] }, { x: 1 }));
+        return pt(s, dragon);
+      };
+      expect(run(false)).toEqual([4, 4]);
+      expect(run(true)).toEqual([1, 1]);
+    });
+
+    it("Stingblade Assassin : détruit une créature adverse blessée ce tour-ci ; une créature intacte n'est pas une cible", () => {
+      let s = scenario({
+        p1: { battlefield: lands("Swamp", 4), hand: ["Stingblade Assassin"] },
+        p2: { battlefield: ["Serra Angel", { name: "Shivan Dragon", damage: 1 }] },
+      });
+      let offered: string[] = [];
+      s = settle(cast(s, "p1", "Stingblade Assassin"), (req) => {
+        if (req.type === "pick") offered = names(s, req.options.map(String)) as string[];
+        return undefined;
+      });
+      expect(offered).not.toContain("Serra Angel");
+      expect(idsOf(s, "p2", "graveyard", "Shivan Dragon")).toHaveLength(1);
+    });
+
+    it("Spellscorn Coven : chaque adversaire défausse ; Take It Back renvoie un sort dans la main de son propriétaire", () => {
+      const COVEN = "Spellscorn Coven // Take It Back";
+      let s = scenario({
+        p1: { battlefield: lands("Mountain", 2), hand: ["Lightning Strike"] },
+        p2: { battlefield: [...lands("Swamp", 4), "Island"], hand: [COVEN, "Opt"] },
+      });
+      s = cast(s, "p1", "Lightning Strike", { t: ["p2"] });
+      const strike = s.stack[0]?.id as string;
+      s = act(s, "p1", { type: "pass" });
+      s = settle(act(s, "p2", { type: "cast", card: idOf(s, "p2", "hand", COVEN), face: 1, targets: { t: [strike] } }));
+      expect(idsOf(s, "p1", "hand", "Lightning Strike")).toHaveLength(1);
+      expect(s.players.p2?.life).toBe(20);
+      s = advanceUntil(s, (x) => x.turn.active === "p2" && x.turn.step === "main1" && x.pending?.kind === "priority");
+      const hand = s.players.p1?.hand.length ?? 0;
+      s = settle(act(s, "p2", { type: "cast", card: exiled(s, COVEN)[0] as string }));
+      expect(s.players.p1?.hand).toHaveLength(hand - 1);
+    });
+  });
+
+  describe("Rats", () => {
+    it("Lord Skitter, Sewer King : un Rat au début de votre combat ; un autre Rat arrive : une carte d'un cimetière adverse exilée", () => {
+      let s = scenario({ p1: { battlefield: ["Lord Skitter, Sewer King"] }, p2: { graveyard: ["Opt"] } });
+      const opt = idOf(s, "p2", "graveyard", "Opt");
+      s = passAccepting(s, (x) => x.turn.step === "beginCombat" && x.pending?.kind === "priority");
+      s = settle(s, pickIds([opt]));
+      expect(idsOf(s, "p1", "battlefield", "Rat")).toHaveLength(1);
+      expect(exiled(s, "Opt")).toHaveLength(1);
+    });
+
+    it("Rat Out : jusqu'à une créature prend -1/-1 ; vous créez un Rat qui ne peut pas bloquer", () => {
+      let s = scenario({ p1: { battlefield: ["Swamp"], hand: ["Rat Out"] }, p2: { battlefield: ["Bear Cub"] } });
+      const bear = idOf(s, "p2", "battlefield", "Bear Cub");
+      s = settle(cast(s, "p1", "Rat Out", { t: [bear] }));
+      expect(pt(s, bear)).toEqual([1, 1]);
+      expect(idsOf(s, "p1", "battlefield", "Rat")).toHaveLength(1);
+    });
+
+    it("Voracious Vermin : un Rat en arrivant ; une autre de vos créatures meurt : un marqueur +1/+1", () => {
+      let s = scenario({ p1: { battlefield: lands("Swamp", 3), hand: ["Voracious Vermin"] }, p2: { battlefield: ["Bear Cub"] } });
+      s = settle(cast(s, "p1", "Voracious Vermin"));
+      const vermin = idOf(s, "p1", "battlefield", "Voracious Vermin");
+      destroy(s, idOf(s, "p1", "battlefield", "Rat"));
+      destroy(s, idOf(s, "p2", "battlefield", "Bear Cub"));
+      s = settleAll(s);
+      expect(s.objects[vermin]?.counters["+1/+1"]).toBe(1);
+    });
+
+    it("Lord Skitter's Butcher : sacrifiez une autre créature, regard 2, puis piochez une carte", () => {
+      let s = scenario({
+        p1: { battlefield: [...lands("Swamp", 3), "Bear Cub"], hand: ["Lord Skitter's Butcher"], library: ["Opt", "Forest"] },
+      });
+      const bear = idOf(s, "p1", "battlefield", "Bear Cub");
+      s = settle(cast(s, "p1", "Lord Skitter's Butcher"), (req) => {
+        if (req.intent === "triggerMode") return ["1"];
+        if (req.type === "pick" && req.intent === "sacrifice") return [bear];
+        return undefined;
+      });
+      expect(idsOf(s, "p1", "graveyard", "Bear Cub")).toHaveLength(1);
+      expect(s.players.p1?.hand).toHaveLength(1);
+    });
+
+    it("Lord Skitter's Butcher : vos créatures gagnent la menace jusqu'à la fin du tour", () => {
+      let s = scenario({ p1: { battlefield: [...lands("Swamp", 3), "Bear Cub"], hand: ["Lord Skitter's Butcher"] } });
+      s = settle(cast(s, "p1", "Lord Skitter's Butcher"), (req) => (req.intent === "triggerMode" ? ["2"] : undefined));
+      expect(chars(s, idOf(s, "p1", "battlefield", "Bear Cub")).keywords).toContain("menace");
+      expect(chars(s, idOf(s, "p1", "battlefield", "Lord Skitter's Butcher")).keywords).toContain("menace");
+    });
+  });
+
+  describe("Nourriture", () => {
+    it("Sweettooth Witch et Experimental Confectioner : sacrifier une Nourriture fait perdre 2 PV et crée un Rat", () => {
+      let s = scenario({
+        p1: { battlefield: [...lands("Swamp", 5), "Experimental Confectioner"], hand: ["Sweettooth Witch"] },
+      });
+      s = settle(cast(s, "p1", "Sweettooth Witch"));
+      expect(idsOf(s, "p1", "battlefield", "Food")).toHaveLength(1);
+      s = settle(activate(s, "p1", idOf(s, "p1", "battlefield", "Sweettooth Witch"), { t: ["p2"] }));
+      expect(s.players.p2?.life).toBe(18);
+      expect(idsOf(s, "p1", "battlefield", "Food")).toHaveLength(0);
+      expect(idsOf(s, "p1", "battlefield", "Rat")).toHaveLength(1);
+    });
+
+    it("Feed the Cauldron : détruit une créature de VM 3 ou moins ; une Nourriture seulement pendant votre tour", () => {
+      let s = scenario({
+        p1: { battlefield: lands("Swamp", 3), hand: ["Feed the Cauldron"] },
+        p2: { battlefield: ["Bear Cub", "Serra Angel"] },
+      });
+      expect(() => cast(s, "p1", "Feed the Cauldron", { t: [idOf(s, "p2", "battlefield", "Serra Angel")] })).toThrow();
+      s = settle(cast(s, "p1", "Feed the Cauldron", { t: [idOf(s, "p2", "battlefield", "Bear Cub")] }));
+      expect(idsOf(s, "p2", "graveyard", "Bear Cub")).toHaveLength(1);
+      expect(idsOf(s, "p1", "battlefield", "Food")).toHaveLength(1);
+      let t = scenario({
+        active: "p2",
+        p1: { battlefield: lands("Swamp", 3), hand: ["Feed the Cauldron"] },
+        p2: { battlefield: ["Bear Cub"] },
+      });
+      t = act(t, "p2", { type: "pass" });
+      t = settle(cast(t, "p1", "Feed the Cauldron", { t: [idOf(t, "p2", "battlefield", "Bear Cub")] }));
+      expect(idsOf(t, "p2", "graveyard", "Bear Cub")).toHaveLength(1);
+      expect(idsOf(t, "p1", "battlefield", "Food")).toHaveLength(0);
+    });
+
+    it("Gumdrop Poisoner : -X/-X, X étant les points de vie gagnés ce tour-ci (Tempt with Treats : une Nourriture)", () => {
+      const POISONER = "Gumdrop Poisoner // Tempt with Treats";
+      let s = scenario({ p1: { battlefield: lands("Swamp", 7), hand: [POISONER] }, p2: { battlefield: ["Serra Angel"] } });
+      s = settle(act(s, "p1", { type: "cast", card: idOf(s, "p1", "hand", POISONER), face: 1 }));
+      s = settle(activate(s, "p1", idOf(s, "p1", "battlefield", "Food")));
+      expect(s.players.p1?.life).toBe(23);
+      const angel = idOf(s, "p2", "battlefield", "Serra Angel");
+      s = settle(act(s, "p1", { type: "cast", card: exiled(s, POISONER)[0] as string }), pickIds([angel]));
+      expect(pt(s, angel)).toEqual([1, 1]);
+    });
+
+    it("Old Flitterfang : une Nourriture à l'étape de fin si une créature est morte ; {2}{B}, sacrifice : +2/+2", () => {
+      let s = scenario({ p1: { battlefield: ["Old Flitterfang", "Bear Cub", ...lands("Swamp", 3)] } });
+      const fang = idOf(s, "p1", "battlefield", "Old Flitterfang");
+      s = settle(activate(s, "p1", fang, undefined, { sacrifice: [idOf(s, "p1", "battlefield", "Bear Cub")] }));
+      expect(pt(s, fang)).toEqual([5, 6]);
+      s = advanceUntil(s, (x) => x.turn.active === "p2" && x.turn.step === "upkeep");
+      expect(idsOf(s, "p1", "battlefield", "Food")).toHaveLength(1);
+      // Aucune créature morte ce tour-ci : rien.
+      s = advanceUntil(s, (x) => x.turn.active === "p1" && x.turn.step === "upkeep");
+      expect(idsOf(s, "p1", "battlefield", "Food")).toHaveLength(1);
+    });
+
+    it("Devouring Sugarmaw : à votre entretien, sans sacrifice elle s'engage ; Have for Dinner : un Humain et une Nourriture", () => {
+      const MAW = "Devouring Sugarmaw // Have for Dinner";
+      let s = scenario({ p1: { battlefield: [...lands("Swamp", 5), "Plains"], hand: [MAW] } });
+      s = settle(act(s, "p1", { type: "cast", card: idOf(s, "p1", "hand", MAW), face: 1 }));
+      expect(idsOf(s, "p1", "battlefield", "Human")).toHaveLength(1);
+      expect(idsOf(s, "p1", "battlefield", "Food")).toHaveLength(1);
+      s = settle(act(s, "p1", { type: "cast", card: exiled(s, MAW)[0] as string }));
+      const maw = idOf(s, "p1", "battlefield", MAW);
+      // Premier entretien : on sacrifie la Nourriture ; second : rien à sacrifier pour garder la créature dégagée.
+      s = advanceUntil(s, (x) => x.turn.active === "p1" && x.turn.step === "upkeep" && x.pending?.kind === "choice");
+      const food = idOf(s, "p1", "battlefield", "Food");
+      s = settle(s, pickIds([food]));
+      expect(s.objects[maw]?.tapped).toBe(false);
+      expect(idsOf(s, "p1", "battlefield", "Food")).toHaveLength(0);
+      s = advanceUntil(s, (x) => x.turn.number === 7 && x.turn.step === "main1");
+      // Le jeton Humain peut encore être sacrifié : on refuse.
+      expect(s.objects[maw]?.tapped).toBe(true);
+    });
+
+    it("Malevolent Witchkite : sacrifiez des artefacts, enchantements et/ou jetons, puis piochez autant", () => {
+      let s = scenario({
+        p1: {
+          battlefield: [...lands("Swamp", 6), "Candy Trail", "Hopeless Nightmare", "Bear Cub"],
+          hand: ["Malevolent Witchkite"],
+        },
+      });
+      const sac = [idOf(s, "p1", "battlefield", "Candy Trail"), idOf(s, "p1", "battlefield", "Hopeless Nightmare")];
+      let options: string[] = [];
+      s = settle(cast(s, "p1", "Malevolent Witchkite"), (req) => {
+        if (req.type !== "pick" || req.intent !== "sacrifice") return undefined;
+        options = req.options.map(String);
+        return sac;
+      });
+      expect(options.sort()).toEqual([...sac].sort());
+      expect(s.players.p1?.hand).toHaveLength(2);
+    });
+  });
+
+  describe("Cimetière", () => {
+    it("Lich-Knights' Conquest : autant de cartes de créature reviennent que de permanents sacrifiés", () => {
+      let s = scenario({
+        p1: {
+          battlefield: [...lands("Swamp", 5), "Candy Trail", "Hopeless Nightmare"],
+          hand: ["Lich-Knights' Conquest"],
+          graveyard: ["Bear Cub", "Serra Angel", "Shivan Dragon"],
+        },
+      });
+      const sac = [idOf(s, "p1", "battlefield", "Candy Trail"), idOf(s, "p1", "battlefield", "Hopeless Nightmare")];
+      const back = [idOf(s, "p1", "graveyard", "Serra Angel"), idOf(s, "p1", "graveyard", "Shivan Dragon")];
+      s = settle(cast(s, "p1", "Lich-Knights' Conquest"), pickIds([...sac, ...back]));
+      expect(idsOf(s, "p1", "battlefield", "Serra Angel")).toHaveLength(1);
+      expect(idsOf(s, "p1", "battlefield", "Shivan Dragon")).toHaveLength(1);
+      expect(idsOf(s, "p1", "graveyard", "Bear Cub")).toHaveLength(1);
+    });
+
+    it("Fell Horseman : quand il meurt, il va au-dessous de la bibliothèque ; Deathly Ride rend une carte de créature", () => {
+      const HORSEMAN = "Fell Horseman // Deathly Ride";
+      let s = scenario({
+        p1: { battlefield: lands("Swamp", 6), hand: [HORSEMAN], graveyard: ["Bear Cub"], library: ["Opt"] },
+      });
+      s = settle(
+        act(s, "p1", {
+          type: "cast",
+          card: idOf(s, "p1", "hand", HORSEMAN),
+          face: 1,
+          targets: { t: [idOf(s, "p1", "graveyard", "Bear Cub")] },
+        }),
+      );
+      expect(idsOf(s, "p1", "hand", "Bear Cub")).toHaveLength(1);
+      s = settle(act(s, "p1", { type: "cast", card: exiled(s, HORSEMAN)[0] as string }));
+      destroy(s, idOf(s, "p1", "battlefield", HORSEMAN));
+      s = settleAll(s);
+      expect(s.players.p1?.library.map((id) => nameOf(s, id))).toEqual(["Opt", HORSEMAN]);
+    });
+
+    it("Specter of Mortality : exilez deux cartes de créature : chaque autre créature prend -2/-2", () => {
+      let s = scenario({
+        p1: {
+          battlefield: [...lands("Swamp", 5), "Bear Cub"],
+          hand: ["Specter of Mortality"],
+          graveyard: ["Opt", "Serra Angel", "Shivan Dragon"],
+        },
+        p2: { battlefield: ["Serra Angel"] },
+      });
+      const angel = idOf(s, "p2", "battlefield", "Serra Angel");
+      let offered: string[] = [];
+      s = settle(cast(s, "p1", "Specter of Mortality"), (req) => {
+        if (req.type !== "pick" || req.intent !== "pickCards") return undefined;
+        offered = names(s, req.options.map(String)) as string[];
+        return req.options;
+      });
+      expect(offered).toEqual(["Serra Angel", "Shivan Dragon"]);
+      expect(idsOf(s, "p1", "graveyard", "Bear Cub")).toHaveLength(1);
+      expect(pt(s, angel)).toEqual([2, 2]);
+      expect(pt(s, idOf(s, "p1", "battlefield", "Specter of Mortality"))).toEqual([3, 3]);
+    });
+
+    it("Virtue of Persistence : à votre entretien, une carte de créature d'un cimetière arrive sous votre contrôle", () => {
+      let s = scenario({ p1: { battlefield: ["Virtue of Persistence // Locthwain Scorn"] }, p2: { graveyard: ["Serra Angel"] } });
+      s = advanceUntil(s, (x) => x.turn.number === 5 && x.turn.step === "main1");
+      expect(idsOf(s, "p1", "battlefield", "Serra Angel")).toHaveLength(1);
+      expect(s.objects[idOf(s, "p1", "battlefield", "Serra Angel")]?.owner).toBe("p2");
+    });
+
+    it("Locthwain Scorn : -3/-3 et vous gagnez 2 PV", () => {
+      const VIRTUE = "Virtue of Persistence // Locthwain Scorn";
+      let s = scenario({ p1: { battlefield: lands("Swamp", 2), hand: [VIRTUE] }, p2: { battlefield: ["Serra Angel"] } });
+      const angel = idOf(s, "p2", "battlefield", "Serra Angel");
+      s = settle(act(s, "p1", { type: "cast", card: idOf(s, "p1", "hand", VIRTUE), face: 1, targets: { t: [angel] } }));
+      expect(pt(s, angel)).toEqual([1, 1]);
+      expect(s.players.p1?.life).toBe(22);
+    });
+
+    it("Cruel Somnophage : F/E égales aux cartes de créature de tous les cimetières ; Can't Wake Up : meule quatre", () => {
+      const SOMNO = "Cruel Somnophage // Can't Wake Up";
+      let s = scenario({
+        p1: { battlefield: [...lands("Swamp", 3), "Island"], hand: [SOMNO], graveyard: ["Bear Cub", "Opt"] },
+        p2: { library: ["Serra Angel", "Shivan Dragon", "Island", "Opt", "Forest"] },
+      });
+      s = settle(act(s, "p1", { type: "cast", card: idOf(s, "p1", "hand", SOMNO), face: 1, targets: { t: ["p2"] } }));
+      expect(s.players.p2?.graveyard).toHaveLength(4);
+      s = settle(act(s, "p1", { type: "cast", card: exiled(s, SOMNO)[0] as string }));
+      expect(pt(s, idOf(s, "p1", "battlefield", SOMNO))).toEqual([3, 3]);
+    });
+  });
+
+  describe("Autres", () => {
+    it("Rankle's Prank : les trois modes ensemble (défausse, perte de PV, sacrifice)", () => {
+      let s = scenario({
+        p1: { battlefield: [...lands("Swamp", 4), "Bear Cub"], hand: ["Rankle's Prank", "Opt", "Island"] },
+        p2: { battlefield: ["Serra Angel", "Shivan Dragon", "Bear Cub"], hand: ["Opt", "Forest", "Island"] },
+      });
+      const card = idOf(s, "p1", "hand", "Rankle's Prank");
+      // Le septième mode : les trois ensemble.
+      s = settle(act(s, "p1", { type: "cast", card, mode: 6 }));
+      expect([s.players.p1?.life, s.players.p2?.life]).toEqual([16, 16]);
+      expect(s.players.p1?.hand).toHaveLength(0);
+      expect(s.players.p2?.hand).toHaveLength(1);
+      expect(idsOf(s, "p1", "graveyard", "Bear Cub")).toHaveLength(1);
+      expect(s.battlefield.filter((id) => s.objects[id]?.controller === "p2")).toHaveLength(1);
+    });
+
+    it("Taken by Nightmares : exile une créature ; regard 2 si vous contrôlez un enchantement", () => {
+      let s = scenario({
+        p1: { battlefield: [...lands("Swamp", 4), "Hopeless Nightmare"], hand: ["Taken by Nightmares"] },
+        p2: { battlefield: ["Serra Angel"] },
+      });
+      let scried = false;
+      s = settle(cast(s, "p1", "Taken by Nightmares", { t: [idOf(s, "p2", "battlefield", "Serra Angel")] }), (req) => {
+        if (req.intent === "scryBottom") scried = true;
+        return undefined;
+      });
+      expect(exiled(s, "Serra Angel")).toHaveLength(1);
+      expect(scried).toBe(true);
+    });
+
+    it("Sugar Rush : +3/+0 et piochez une carte", () => {
+      let s = scenario({ p1: { battlefield: [...lands("Swamp", 2), "Bear Cub"], hand: ["Sugar Rush"] } });
+      const bear = idOf(s, "p1", "battlefield", "Bear Cub");
+      s = settle(cast(s, "p1", "Sugar Rush", { t: [bear] }));
+      expect(pt(s, bear)).toEqual([5, 2]);
+      expect(s.players.p1?.hand).toHaveLength(1);
+    });
+
+    it("Callous Sell-Sword : un marqueur par créature morte sous votre contrôle ce tour-ci ; Burn Together", () => {
+      const SWORD = "Callous Sell-Sword // Burn Together";
+      let s = scenario({
+        p1: { battlefield: [...lands("Swamp", 2), ...lands("Mountain", 2), "Serra Angel", "Bear Cub"], hand: [SWORD] },
+        p2: { battlefield: ["Shivan Dragon"] },
+      });
+      const angel = idOf(s, "p1", "battlefield", "Serra Angel");
+      const card = idOf(s, "p1", "hand", SWORD);
+      // « une autre cible » : la créature elle-même n'est pas une cible légale.
+      expect(() => act(s, "p1", { type: "cast", card, face: 1, targets: { c: [angel], t: [angel] } })).toThrow();
+      s = settle(act(s, "p1", { type: "cast", card, face: 1, targets: { c: [angel], t: ["p2"] } }));
+      expect(s.players.p2?.life).toBe(16);
+      expect(idsOf(s, "p1", "graveyard", "Serra Angel")).toHaveLength(1);
+      destroy(s, idOf(s, "p1", "battlefield", "Bear Cub"));
+      s = settleAll(s);
+      s = settle(act(s, "p1", { type: "cast", card: exiled(s, SWORD)[0] as string }));
+      const sword = idOf(s, "p1", "battlefield", SWORD);
+      expect(s.objects[sword]?.counters["+1/+1"]).toBe(2);
+    });
   });
 });
