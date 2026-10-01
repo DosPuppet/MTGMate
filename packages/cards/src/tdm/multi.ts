@@ -88,13 +88,9 @@ export const MULTI: Record<string, CardScript> = {
     ],
   },
   "Dragonclaw Strike": {
-    // Doubler la F/E : +X/+X, X étant sa force (et +Y pour l'endurance).
     spell: spell(
       [target.creature("a", { controller: "you" }), target.optional(target.creature("b", { controller: "opponent" }))],
-      [
-        fx.pump(ref.target("a"), amount.powerOf(ref.target("a")), amount.toughnessOf(ref.target("a"))),
-        fx.fight(ref.target("a"), ref.target("b")),
-      ],
+      [fx.doublePT(ref.target("a")), fx.fight(ref.target("a"), ref.target("b"))],
     ),
   },
   "Effortless Master": {

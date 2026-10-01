@@ -29,6 +29,8 @@ export interface TargetSpec {
   kickedFilter?: TargetFilter;
   /** Valeur de mana exacte évaluée quand la capacité réflexive est mise sur la pile (Wishing Well). */
   manaValueAmount?: Amount;
+  /** Exactement X cibles, X étant choisi pour le sort ou la capacité (Rot-Curse Rakshasa : « X créatures ciblées »). */
+  countX?: boolean;
 }
 
 export interface TargetFilter {
@@ -169,6 +171,10 @@ export interface ObjectFilter {
   nameChosen?: boolean;
   /** Carte avec une Aventure (hors du champ de bataille : cimetière, main ; Hearth Elemental). */
   adventure?: boolean;
+  /** Permanent arrivé en étant lancé (« si vous l'avez lancée » : The Sibsig Ceremony). */
+  cast?: boolean;
+  /** Force inférieure à celle de la source (Formation Breaker : « les créatures de force inférieure ne peuvent pas la bloquer »). */
+  powerBelowSource?: boolean;
 }
 
 /**
@@ -233,7 +239,8 @@ export type TriggerSpec =
   /** « Chaque fois que vous attaquez [avec au moins N créatures] » */
   | { on: "attackWith"; min?: number; filter?: ObjectFilter }
   /** « Chaque fois que des marqueurs sont placés sur … » */
-  | { on: "countersPut"; who: "self" | ObjectFilter; kind?: string }
+  /** `firstThisTurn` : « si c'est la première fois ce tour-ci que des marqueurs sont mis sur elle » (Stalwart Successor). */
+  | { on: "countersPut"; who: "self" | ObjectFilter; kind?: string; firstThisTurn?: boolean }
   /** Blessures infligées par une source (non de combat seulement si demandé), éventuellement à un adversaire. */
   /** `anySourceYouControl` : toute source (sort compris) contrôlée par le contrôleur de la capacité (Niv-Mizzet). */
   | {
@@ -526,7 +533,9 @@ export type Ref =
   /** Cartes en main d'un joueur, de valeur de mana au plus `maxManaValue` (Buster Sword). */
   | { kind: "handOf"; player: Ref; filter: ObjectFilter; maxManaValue?: Amount }
   /** Le joueur défenseur de la source attaquante (celui qui contrôle le planeswalker attaqué). */
-  | { kind: "defendingPlayer" };
+  | { kind: "defendingPlayer" }
+  /** Réunion de références, sans doublon (Call the Spirit Dragons : les Dragons choisis pour chaque couleur). */
+  | { kind: "union"; of: Ref[] };
 
 export type Amount =
   | number
@@ -651,4 +660,8 @@ export type Amount =
   /** `of` : compter pour ces joueurs (« les cartes meulées par le joueur ciblé ») plutôt que pour le contrôleur. */
   | { kind: "turnEvents"; query: TurnLogQuery; of?: Ref }
   /** Permanents dégagés pendant votre étape de dégagement de ce tour (The Millennium Calendar). */
-  | { kind: "untappedInUntapStep" };
+  | { kind: "untappedInUntapStep" }
+  /** Sortes de marqueurs différentes parmi les permanents correspondants (Hundred-Battle Veteran). */
+  | { kind: "counterKindsAmong"; filter: ObjectFilter }
+  /** Endurance totale des permanents correspondants (Betor, Kin to All). */
+  | { kind: "totalToughness"; filter: ObjectFilter };

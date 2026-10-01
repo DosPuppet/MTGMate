@@ -70,8 +70,10 @@ export type Keyword =
   | "attacksDespiteDefender"
   /** « Start your engines! » (702.179) : si vous n'avez pas de vitesse, elle démarre à 1. */
   | "startYourEngines"
-  /** Décomposition (702.147) : ne peut pas bloquer ; quand elle attaque, sacrifiée à la fin du combat. */
-  | "decayed";
+  /** Décomposition (702.147) : ne peut pas bloquer, et quand elle attaque, elle est sacrifiée à la fin du combat. */
+  | "decayed"
+  /** « Ne peut pas être sacrifié » (Zurgo, Thunder's Decree : ses jetons Guerrier pendant votre étape de fin). */
+  | "cantBeSacrificed";
 
 /** Restrictions : affichées différemment des mots-clés. */
 export const RESTRICTIONS: readonly Keyword[] = [
@@ -85,6 +87,7 @@ export const RESTRICTIONS: readonly Keyword[] = [
   "absorbsDamage",
   "combatDamageImmune",
   "damageHealsFirst",
+  "cantBeSacrificed",
 ];
 
 export const KEYWORDS: readonly Keyword[] = [

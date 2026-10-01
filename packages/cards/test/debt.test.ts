@@ -21,7 +21,9 @@ function playerStaticKeys(): string[] {
 
 /** Membres de Keyword qui ne sont pas des mots-clés imprimés (valeurs de KEYWORD_NAMES dans scryfall.ts). */
 function nonPrintedKeywords(): string[] {
-  const union = /export type Keyword =([\s\S]*?);/.exec(source("engine/src/types.ts"))?.[1];
+  // Commentaires retirés d'abord : un « ; » dans un commentaire couperait l'union.
+  const types = source("engine/src/types.ts").replace(/\/\*[\s\S]*?\*\//g, "");
+  const union = /export type Keyword =([\s\S]*?);/.exec(types)?.[1];
   const names = /const KEYWORD_NAMES[^{]*\{([\s\S]*?)\n\};/.exec(source("cards/src/scryfall.ts"))?.[1];
   if (!union || !names) throw new Error("Keyword ou KEYWORD_NAMES introuvable");
   const printed = new Set([...names.matchAll(/:\s*"(\w+)"/g)].map((m) => m[1]));

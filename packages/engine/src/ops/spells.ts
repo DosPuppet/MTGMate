@@ -18,6 +18,7 @@ import { castTerms, counterItem, dropNowPermissions, plotCard, stackItemSpecs } 
 import { copyStackItem } from "../stackChoices";
 import {
   apnapOrder,
+  changeCounters,
   chars,
   createObject,
   emit,
@@ -95,8 +96,33 @@ export const HANDLERS: OpHandlers = {
     storeHit(inHand ?? hit);
     return;
   },
+  suspend(s, _r, e, ctx) {
+    for (const id of resolveRef(s, ctx, e.what)) {
+      const o = s.objects[id];
+      if (!o) continue;
+      if (o.zone === "stack") {
+        // Le sort quitte la pile sans être contrecarré (une copie cesse simplement d'exister).
+        const i = s.stack.findIndex((x) => x.id === id && x.kind === "spell");
+        const item = s.stack[i];
+        if (!item || item.copy) continue;
+        s.stack.splice(i, 1);
+      } else if (o.zone !== "hand") continue;
+      emit({ type: "moved", owner: o.owner, objectId: id, defId: o.defId, from: o.zone, to: "exile" });
+      const exiled = moveObject(s, id, "exile");
+      const card = exiled ? s.objects[exiled] : undefined;
+      if (card?.zone !== "exile") continue;
+      card.suspended = true;
+      changeCounters(s, card, "time", e.time);
+    }
+    return;
+  },
   castNow(s, r, e, ctx, key) {
-    const step = castNowLoop(s, r, key, ctx.controller, ctx.sourceId, resolveRef(s, ctx, e.what), e);
+    // Kotis : « des sorts de valeur de mana X ou moins parmi elles ».
+    const max = e.maxManaValue === undefined ? undefined : evalAmount(s, ctx, e.maxManaValue);
+    const cards = resolveRef(s, ctx, e.what).filter(
+      (id) => max === undefined || manaValue(s.defs[s.objects[id]?.defId ?? ""]?.manaCost) <= max,
+    );
+    const step = castNowLoop(s, r, key, ctx.controller, ctx.sourceId, cards, e);
     if (step.ask) return step.ask;
     if (e.storeCast) {
       r.vars[`$ids:${e.storeCast}`] = step.cast;
@@ -333,7 +359,12 @@ export const HANDLERS: OpHandlers = {
   grantFlashback(s, _r, e, ctx) {
     // Flashback accordé jusqu'à la fin du tour (et {0} pour Archmage's Newt) : une permission marquée `flashback`.
     const ids = resolveRef(s, ctx, e.what).filter((id) => s.objects[id]?.zone === "graveyard");
-    grantPlay(s, ctx.controller, ids, "thisTurn", { source: ctx.sourceId, flashback: true, free: e.free || undefined });
+    grantPlay(s, ctx.controller, ids, "thisTurn", {
+      source: ctx.sourceId,
+      flashback: true,
+      free: e.free || undefined,
+      harmonize: e.harmonize || undefined,
+    });
     return;
   },
   plot(s, _r, e, ctx) {

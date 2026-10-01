@@ -457,6 +457,7 @@ function view(s: GameState, id: ObjectId, c: Characteristics, o: GameObject, att
     manaSpent: o.manaSpent ?? (o.zone === "stack" ? s.stack.find((x) => x.id === id)?.manaSpent : undefined),
     attackedTurn: o.attackedTurn,
     lastAttachedTo: o.lastAttachedTo,
+    cast: o.cast || undefined,
     crewedByThisTurn: o.crewedBy?.turn === s.turn.number ? o.crewedBy.ids : undefined,
     equipped: scan
       ? (o.zone === "battlefield" && scan.equipped.has(id)) || undefined

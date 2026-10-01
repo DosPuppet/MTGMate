@@ -275,8 +275,9 @@ export const HANDLERS: OpHandlers = {
     }
     return;
   },
-  extraCombat(s) {
-    s.turn.extraCombats = (s.turn.extraCombats ?? 0) + 1;
+  extraCombat(s, _r, e) {
+    if (e.afterMain) s.turn.extraCombatsAfterMain = (s.turn.extraCombatsAfterMain ?? 0) + 1;
+    else s.turn.extraCombats = (s.turn.extraCombats ?? 0) + 1;
     return;
   },
   extraTurn(s, _r, _e, ctx) {

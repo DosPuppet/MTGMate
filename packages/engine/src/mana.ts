@@ -4,7 +4,19 @@
 import { loseLife, sacrifice } from "./actions";
 import { RulesError } from "./errors";
 import { linkedColors } from "./layers";
-import { bump, changeCounters, chars, defOf, isCreature, isSummoningSick, obj, snapshot, tapObject } from "./state";
+import {
+  bump,
+  changeCounters,
+  chars,
+  defOf,
+  emit,
+  isCreature,
+  isSummoningSick,
+  moveObject,
+  obj,
+  snapshot,
+  tapObject,
+} from "./state";
 import { playerStatic, playerStaticTotal } from "./statics";
 import { matchesCard, matchesObjectFilter, matchesView, withChosen } from "./targets";
 import { checkCondition } from "./triggers";
@@ -88,6 +100,8 @@ export interface ManaSource {
   sacrifice: boolean;
   /** Créature engagée pour la convocation. */
   convoke?: boolean;
+  /** Carte de votre cimetière exilée pour la cave (702.66). */
+  delve?: boolean;
   /**
    * Sources exclusives : deux capacités qui engagent ou sacrifient le même permanent (Forêt qui a aussi « {T} : un mana
    * de n'importe quelle couleur ») ont la même clé, et une seule peut servir.
@@ -187,12 +201,16 @@ export interface ManaPurpose {
   abilitySource?: ObjectId;
   /** Convocation (702.51) : les créatures dégagées peuvent payer {1} ou un mana de leur couleur. */
   convoke?: boolean;
+  /** Cave (702.66, Teval) : chaque carte exilée de votre cimetière paie {1}. */
+  delve?: boolean;
   /** Sort lancé depuis la main. */
   fromHand?: boolean;
 }
 
 /** Pseudo-capacité de mana d'une créature engagée pour la convocation. */
 export const CONVOKE = -1;
+/** Pseudo-capacité de mana d'une carte du cimetière exilée pour la cave. */
+export const DELVE = -2;
 
 function restrictionAllows(
   s: GameState,
@@ -263,8 +281,15 @@ export function manaSources(
       });
     }
   }
-  // Préférence : terrains, puis créatures, puis sources sacrifiées, puis convocation ; les moins flexibles d'abord.
-  const rank = (x: ManaSource) => (x.convoke ? 3 : x.sacrifice ? 2 : x.isCreature ? 1 : 0);
+  // Cave : chaque carte du cimetière paie {1} (utilisée en tout dernier, choix automatique).
+  if (purpose?.delve) {
+    for (const id of s.players[player]?.graveyard ?? []) {
+      if (exclude.has(id)) continue;
+      out.push({ id, ability: DELVE, colors: ["C"], amount: 1, isCreature: false, sacrifice: false, delve: true, key: id });
+    }
+  }
+  // Préférence : terrains, puis créatures, puis sources sacrifiées, puis convocation, puis cave ; les moins flexibles d'abord.
+  const rank = (x: ManaSource) => (x.delve ? 4 : x.convoke ? 3 : x.sacrifice ? 2 : x.isCreature ? 1 : 0);
   return out.sort((a, b) => rank(a) - rank(b) || a.colors.length - b.colors.length);
 }
 
@@ -482,12 +507,15 @@ export function payMana(
   if (spent) for (const m of MANA_TYPES) if (plan.spend[m]) spent[m] = plan.spend[m];
   if (sources) {
     for (const t of plan.taps) {
-      const ab = t.ability === CONVOKE ? undefined : manaAbilitiesOf(s, t.id)[t.ability];
+      const ab = t.ability === CONVOKE || t.ability === DELVE ? undefined : manaAbilitiesOf(s, t.id)[t.ability];
       sources.push({ id: t.id, ab, amount: ab ? manaAmount(s, t.id, ab) : 1 });
     }
   }
   // Capacités de mana utilisées (effets associés au mana dépensé : Carnelian Orb…).
-  const used = plan.taps.map((t) => manaAbilitiesOf(s, t.id)[t.ability]).filter((a): a is ManaAbilityDef => !!a);
+  const used = plan.taps
+    .filter((t) => t.ability >= 0)
+    .map((t) => manaAbilitiesOf(s, t.id)[t.ability])
+    .filter((a): a is ManaAbilityDef => !!a);
   const pool = s.players[player]?.manaPool;
   if (!pool) throw new Error("Joueur inconnu");
   for (const t of plan.taps) {
@@ -495,6 +523,12 @@ export function payMana(
       // La créature engagée paie un mana de sa couleur (ou {1}).
       tapObject(s, obj(s, t.id));
       pool[t.color] += 1;
+    } else if (t.ability === DELVE) {
+      // La carte exilée de votre cimetière paie {1} (702.66a).
+      const o = obj(s, t.id);
+      emit({ type: "moved", owner: o.owner, objectId: t.id, defId: o.defId, from: "graveyard", to: "exile" });
+      moveObject(s, t.id, "exile");
+      pool.C += 1;
     } else activateManaAbility(s, player, t.id, t.ability, t.color);
   }
   for (const m of MANA_TYPES) {

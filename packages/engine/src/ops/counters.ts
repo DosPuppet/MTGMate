@@ -121,7 +121,8 @@ export const HANDLERS: OpHandlers = {
     let removed = 0;
     for (const id of resolveRef(s, ctx, e.what)) {
       const o = s.objects[id];
-      if (o?.zone !== "battlefield") continue;
+      // Une carte suspendue perd ses marqueurs de temps en exil (702.62).
+      if (o?.zone !== "battlefield" && !(o?.zone === "exile" && o.suspended)) continue;
       let left = e.n;
       const order = e.kind
         ? [e.kind]

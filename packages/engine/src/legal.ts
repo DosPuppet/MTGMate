@@ -62,6 +62,7 @@ function tapXOptions(s: GameState, player: PlayerId, source: ObjectId, f: Object
 }
 
 import { chars, isCreature, obj } from "./state";
+import { playerStatic } from "./statics";
 import { legalTargets } from "./targets";
 import { checkCondition } from "./triggers";
 import type {
@@ -271,7 +272,12 @@ export function legalActions(s: GameState, player: PlayerId): ActionOption[] {
     if (!auto) return;
     const spent = [...auto.tap, ...auto.exile, ...auto.bounce];
     const exclude = spent.length ? new Set(spent) : undefined;
-    const purpose = { spell: spellView(d, player), convoke: hasConvoke(s, player, d), fromHand: terms.source === "hand" };
+    const purpose = {
+      spell: spellView(d, player),
+      convoke: hasConvoke(s, player, d),
+      delve: playerStatic(s, player, "delveSpells"),
+      fromHand: terms.source === "hand",
+    };
     const base = {
       flashback,
       anyMana: terms.anyMana,
@@ -288,7 +294,9 @@ export function legalActions(s: GameState, player: PlayerId): ActionOption[] {
     };
     // Harmonie : payable aussi en engageant une créature (qui ne sert alors pas à payer le mana).
     const harmony =
-      flashback && d.harmonize ? harmonizeOptions(s, player, card, withExtra(spellCost(s, player, d, base)).generic) : undefined;
+      flashback && (d.harmonize || terms.harmonize)
+        ? harmonizeOptions(s, player, card, withExtra(spellCost(s, player, d, base)).generic)
+        : undefined;
     const payableWith = (c: ManaCost) =>
       canPay(s, player, c, exclude, purpose) ||
       !!harmony?.options.some((id) =>

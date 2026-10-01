@@ -56,10 +56,10 @@ import {
   playerStatic,
   playerStaticTotal,
 } from "./statics";
-import { matchesObjectFilter, matchesView, protectedFrom, sourceView } from "./targets";
-import { checkCondition, processTriggers, releaseDelayedTriggers, simultaneously } from "./triggers";
+import { matchesObjectFilter, matchesView, protectedFrom, resolveFilter, sourceView } from "./targets";
+import { checkCondition, processTriggers, pushInline, releaseDelayedTriggers, simultaneously } from "./triggers";
 import { logTurnEvent } from "./turnlog";
-import type { GameState, ManaType, ObjectFilter, ObjectId, PlayerId, StackItem, Step } from "./types";
+import type { Effect, GameState, ManaType, ObjectFilter, ObjectId, PlayerId, StackItem, Step } from "./types";
 import { STEPS } from "./types";
 
 export const MAX_HAND_SIZE = 7;
@@ -136,8 +136,34 @@ function givePriority(s: GameState): void {
 function stepEvent(s: GameState): void {
   if (s.turn.step === "end") releaseDelayedTriggers(s);
   if (s.turn.step === "endCombat") releaseDelayedTriggers(s, "endCombat");
-  if (s.turn.step === "upkeep") releaseDelayedTriggers(s, "upkeep");
+  if (s.turn.step === "upkeep") {
+    releaseDelayedTriggers(s, "upkeep");
+    suspendUpkeep(s);
+  }
   rulesEvent(s, { e: "step", step: s.turn.step, active: s.turn.active });
+}
+
+/**
+ * Suspension (702.62a) : au début de l'entretien de son propriétaire, chaque carte suspendue en exil perd un marqueur
+ * de temps ; quand le dernier est retiré, il peut la lancer sans payer son coût de mana (une créature a la célérité).
+ */
+const SUSPEND_TICK: Effect[] = [
+  { op: "removeCounters", what: { kind: "self" }, n: 1, kind: "time" },
+  { op: "if", cond: { kind: "not", cond: { kind: "counterAtLeast", counter: "time", n: 1 } }, skip: 2 },
+  { op: "playerEffect", ability: { nextSpell: { filter: { types: ["Creature"] }, haste: true } }, once: true },
+  { op: "castNow", what: { kind: "self" }, free: true },
+];
+
+function suspendUpkeep(s: GameState): void {
+  for (const id of s.exile) {
+    const o = s.objects[id];
+    if (!o?.suspended || o.owner !== s.turn.active || (o.counters.time ?? 0) <= 0) continue;
+    pushInline(s, o.owner, id, o.defId, {
+      targets: [],
+      effects: SUSPEND_TICK,
+      label: "Suspension : retirez un marqueur de temps",
+    });
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -433,6 +459,16 @@ function endStep(s: GameState): void {
   if (s.turn.step === "endCombat" && (s.turn.extraCombats ?? 0) > 0) {
     s.turn.extraCombats = (s.turn.extraCombats ?? 1) - 1;
     next = "beginCombat";
+  } else if (s.turn.step === "endCombat" && s.turn.extraMainAfter) {
+    // All-Out Assault : la phase principale supplémentaire qui suit le combat supplémentaire.
+    next = s.turn.extraMainAfter;
+    delete s.turn.extraMainAfter;
+  }
+  // All-Out Assault : « une phase de combat supplémentaire après cette phase principale, suivie d'une phase principale ».
+  if ((s.turn.step === "main1" || s.turn.step === "main2") && (s.turn.extraCombatsAfterMain ?? 0) > 0) {
+    s.turn.extraCombatsAfterMain = (s.turn.extraCombatsAfterMain ?? 1) - 1;
+    s.turn.extraMainAfter = s.turn.step;
+    next = "beginCombat";
   }
   // Y'shtola Rhul : « il y a une étape de fin supplémentaire après celle-ci ».
   if (s.turn.step === "end" && (s.turn.extraEndSteps ?? 0) > 0) {
@@ -453,6 +489,8 @@ function endStep(s: GameState): void {
       s.turn.active = nextPlayer(s, s.turn.active);
     s.turn.endSteps = 0;
     s.turn.extraEndSteps = 0;
+    delete s.turn.extraCombatsAfterMain;
+    delete s.turn.extraMainAfter;
     s.turn.combats = 0;
     s.turn.step = "untap";
     startTurnOf(s, s.turn.active);
@@ -731,7 +769,8 @@ export function canBlock(s: GameState, blocker: ObjectId, attacker: ObjectId): b
   if (rules.length) {
     const v = snapshot(s, blocker);
     const who = obj(s, attacker).controller;
-    if (rules.some((r) => matchesView(v, r.cantBeBlockedBy as ObjectFilter, who, attacker))) return false;
+    if (rules.some((r) => matchesView(v, resolveFilter(s, r.cantBeBlockedBy as ObjectFilter, attacker), who, attacker)))
+      return false;
   }
   return true;
 }

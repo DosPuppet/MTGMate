@@ -129,7 +129,7 @@ export interface CardDef {
   /** Skyseer's Chariot : les capacités activées des sources du nom choisi coûtent {N} de plus (au lieu d'être interdites). */
   chosenNameTax?: number;
   /** « Vous pouvez lancer cette carte depuis votre cimetière [si…] » (Lightwheel Enhancements : vitesse maximale). */
-  castFromGraveyard?: { condition?: Condition; payLife?: number; sacrifice?: ObjectFilter };
+  castFromGraveyard?: { condition?: Condition; payLife?: number; sacrifice?: ObjectFilter; finality?: boolean };
   /** « Vous ne pouvez pas lancer ce sort à moins que… » (Proft, Sinister Mastermind : seuil). */
   castCondition?: Condition;
   /** Seule l'endurance est définie par une capacité (Tarmogoyf, avec `cdaPower`). */
@@ -419,6 +419,8 @@ export interface CostDef {
   /** Équipage N (702.122) : engager des créatures dégagées de force totale N ou plus (choisies automatiquement). */
   crew?: number;
   payLife?: number;
+  /** « Payez X points de vie » (Krumar Initiate), X étant celui de la capacité. */
+  payLifeX?: boolean;
   /** Défausser N cartes (choisies par le joueur ; par défaut les premières de la main). */
   discard?: number;
   /** Ninjutsu : renvoyer en main un attaquant non bloqué que vous contrôlez (choisi automatiquement : le plus faible). */
@@ -568,6 +570,8 @@ export interface CastPermissionAbilityDef {
   flash?: true;
   /** Omniscience : sorts de votre main sans payer leur coût de mana. */
   freeFromHand?: true;
+  /** Seulement les sorts correspondants (Dracogenesis : « vous pouvez lancer des sorts de Dragon sans payer »). */
+  freeFilter?: ObjectFilter;
   /** Omnipresence : seulement les sorts de valeur de mana ≤ nombre de créatures que vous contrôlez. */
   freeMaxManaValueCreatures?: true;
   /** Null Summoner : lancer les cartes liées exilées (mana de n'importe quel type), sous condition. */
@@ -776,6 +780,8 @@ export interface PlayerStaticAbilityDef {
   walkersSurviveZeroLoyalty?: boolean;
   /** Dazzling Theater : vos sorts de créature ont la convocation. */
   convokeCreatureSpells?: boolean;
+  /** Teval, Arbiter of Virtue : les sorts que vous lancez ont la cave (702.66). */
+  delveSpells?: boolean;
   /** Prop Room : vos créatures se dégagent pendant l'étape de dégagement des autres joueurs. */
   untapCreaturesOnOthersUntap?: boolean;
   /** The Mindskinner : les blessures de vos sources à un adversaire sont prévenues ; chaque adversaire meule autant. */

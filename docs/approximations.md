@@ -212,6 +212,11 @@ Dans l'ordre où elles ont été ajoutées, extension par extension.
   - `règle` Sonic Shrieker : un joueur ciblé défausse une carte même si ses blessures ont été prévenues ;
   - `choix auto` Rediscover the Way : les cartes non prises vont au-dessous dans un ordre aléatoire ;
   - `timing` Claim Territory : deux recherches successives (une Forêt en jeu engagée, puis une en main), et non une seule ;
-  - `choix auto` Purging Stormbrood : « retirez tous les marqueurs » retire les marqueurs un par un, sans choix du joueur.
+  - `choix auto` Purging Stormbrood : « retirez tous les marqueurs » retire les marqueurs un par un, sans choix du joueur ;
+  - `timing` Sidisi, Regent of the Mire : la carte de VM X + 1 est ciblée par une capacité réflexive, une fois le coût payé ;
+  - `règle` Betor, Kin to All, Mardu Siegebreaker : en multijoueur, chaque adversaire perd la moitié des PV du premier adversaire (Betor) ; une seule copie, qui attaque le même joueur que Mardu Siegebreaker ;
+  - `choix auto` Teval (cave) : le solveur paie d'abord avec le mana, puis exile les cartes du cimetière dans l'ordre (sans choix) ; une carte exilée paie {1} générique, mais aussi un {C} ;
+  - `règle` Taigam (suspension) : la célérité est donnée au prochain sort de créature lancé ce tour-ci, même si la carte suspendue n'est pas lancée ;
+  - `règle` Call the Spirit Dragons : le Dragon de chaque couleur est choisi à la résolution, sans ordre entre les couleurs.
 - **Légalité Standard :** instantané des légalités Scryfall au moment de l'import (`legalities.standard` dans `data/<set>.json`). Après une rotation ou une annonce de bannissement, réimporter les sets (`npm run import-cards -- <set>`).
 - **Images des jetons :** celle du jeton Scryfall le plus proche (même nom, puis mêmes F/E et couleurs ; `data/tokens.json`, `npm run import-tokens`) ; un jeton de nom inconnu garde le cadre texte.

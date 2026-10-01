@@ -92,7 +92,7 @@ export interface CardScript {
    */
   entersAsCopyOfGraveyard?: { filter: ObjectFilter; name?: string; power?: number; toughness?: number };
   /** « Vous pouvez lancer cette carte depuis votre cimetière [si…] » */
-  castFromGraveyard?: { condition?: Condition; payLife?: number; sacrifice?: ObjectFilter };
+  castFromGraveyard?: { condition?: Condition; payLife?: number; sacrifice?: ObjectFilter; finality?: boolean };
   /** Seule la force est variable (Enigma Drake). */
   cdaPower?: Amount;
   /** Seule l'endurance est variable (Tarmogoyf, avec `cdaPower`). */
@@ -203,6 +203,8 @@ export const ref = {
   costDiscarded: { kind: "costDiscarded" } as Ref,
   /** Les objets désignés qui correspondent au filtre (Ghost Vacuum : « chaque carte de créature exilée avec… »). */
   filtered: (r: Ref, filter: ObjectFilter): Ref => ({ kind: "filtered", ref: r, filter }),
+  /** Réunion de références, sans doublon. */
+  union: (...of: Ref[]): Ref => ({ kind: "union", of }),
   /** Les objets de `r` sauf ceux de `exclude` (« toutes les autres créatures »). */
   except: (r: Ref, exclude: Ref): Ref => ({ kind: "except", ref: r, exclude }),
   /** Cartes exilées par la source « jusqu'à ce qu'elle quitte le champ de bataille ». */
@@ -252,6 +254,9 @@ export const amount = {
   eventAmount: { kind: "eventAmount" } as Amount,
   count: (filter: ObjectFilter): Amount => ({ kind: "count", filter }),
   totalPower: (filter: ObjectFilter): Amount => ({ kind: "totalPower", filter }),
+  totalToughness: (filter: ObjectFilter): Amount => ({ kind: "totalToughness", filter }),
+  /** Sortes de marqueurs différentes parmi les permanents correspondants. */
+  counterKindsAmong: (filter: ObjectFilter): Amount => ({ kind: "counterKindsAmong", filter }),
   /** Nombre de cartes correspondant au filtre dans une zone (« cartes de créature dans votre cimetière »). */
   countIn: (zone: "graveyard" | "hand", filter: ObjectFilter = {}, whose: "you" | "opponents" | "all" = "you"): Amount => ({
     kind: "count",
@@ -358,6 +363,8 @@ export const fx = {
     toughness,
     keywords,
   }),
+  /** « Doublez la force et l'endurance de [ces créatures] jusqu'à la fin du tour » (chacune selon les siennes). */
+  doublePT: (what: Ref, keywords?: Keyword[]): Effect => ({ op: "pump", what, power: 0, toughness: 0, keywords, double: true }),
   pumpAll: (filter: ObjectFilter, power: Amount, toughness: Amount, keywords?: Keyword[]): Effect => ({
     op: "pumpAll",
     filter,
@@ -397,6 +404,8 @@ export const fx = {
     ...opts,
   }),
   addCounters: (what: Ref, n: Amount): Effect => ({ op: "addCounters", what, amount: n }),
+  /** « Exilez [ce sort] avec N marqueurs de temps ; il gagne la suspension » (702.62). */
+  suspend: (what: Ref, time: number): Effect => ({ op: "suspend", what, time }),
   /** « [Ce permanent] endure N » (701.64) : N marqueurs +1/+1 sur lui, ou un jeton Esprit blanc N/N. */
   endure: (what: Ref, n: Amount): Effect => ({ op: "endure", what, amount: n }),
   /** « Exploitez [cette Gemme d'infinité] » (Harness). */
@@ -583,6 +592,8 @@ export const fx = {
   impulse: (n: number, until: "thisTurn" | "yourNextTurn" = "thisTurn"): Effect => ({ op: "impulse", n, until }),
   piles: (n: number): Effect => ({ op: "piles", n }),
   grantFlashback: (what: Ref): Effect => ({ op: "grantFlashback", what }),
+  /** « [Cette carte] gagne l'harmonie jusqu'à la fin du tour ; son coût d'harmonie est son coût de mana » (702.180). */
+  grantHarmonize: (what: Ref): Effect => ({ op: "grantFlashback", what, harmonize: true }),
   endTurn: { op: "endTurn" } as Effect,
   gainControl: (what: Ref): Effect => ({ op: "gainControl", what }),
   copySpell: (what: Ref, count: Amount): Effect => ({ op: "copySpell", what, count }),
@@ -621,6 +632,7 @@ export const fx = {
       anyMana?: boolean;
       storeCast?: string;
       storeRest?: string;
+      maxManaValue?: Amount;
     } = {},
   ): Effect => ({ op: "castNow", what, ...opts }),
   castCopiesFree: (what: Ref[], maxTotalManaValue: number, opts: { paid?: boolean; storeCast?: string } = {}): Effect => ({
@@ -731,6 +743,8 @@ export const fx = {
   payX: (prompt: string, store: string): Effect => ({ op: "payX", prompt, store }),
   changeTarget: (what: Ref): Effect => ({ op: "changeTarget", what }),
   extraCombat: { op: "extraCombat" } as Effect,
+  /** « Une phase de combat supplémentaire après cette phase principale, suivie d'une phase principale supplémentaire. » */
+  extraCombatAfterMain: { op: "extraCombat", afterMain: true } as Effect,
   extraTurn: { op: "extraTurn" } as Effect,
   tripleTriad: { op: "tripleTriad" } as Effect,
   unattach: (what: Ref, ifAttachedTo?: Ref): Effect => ({ op: "unattach", what, ifAttachedTo }),
@@ -1211,6 +1225,8 @@ export function activated(opts: {
   /** Épuiser la source (« Exert »). */
   exert?: boolean;
   payLife?: number;
+  /** « Payez X points de vie » (X de la capacité). */
+  payLifeX?: boolean;
   targets?: TargetSpec[];
   effects: Effects;
   sorcerySpeed?: boolean;
@@ -1259,6 +1275,7 @@ export function activated(opts: {
       tapAttached: opts.tapAttached,
       exertSelf: opts.exert,
       payLife: opts.payLife,
+      payLifeX: opts.payLifeX,
       exileSelf: opts.exileSelf,
       discardSelf: opts.discardSelf,
       bounceSelf: opts.bounceSelf,
@@ -1423,7 +1440,12 @@ export const when = {
   /** « Chaque fois que vous attaquez [avec N créatures ou plus] » */
   /** `filter` : « … avec un ou plusieurs [Rats] ». */
   attackWith: (min = 1, filter?: ObjectFilter): TriggerSpec => ({ on: "attackWith", min, filter }),
-  countersPut: (who: "self" | ObjectFilter, kind?: string): TriggerSpec => ({ on: "countersPut", who, kind }),
+  countersPut: (who: "self" | ObjectFilter, kind?: string, firstThisTurn?: boolean): TriggerSpec => ({
+    on: "countersPut",
+    who,
+    kind,
+    firstThisTurn,
+  }),
   dealsDamage: (
     who: "self" | ObjectFilter,
     opts: { noncombatOnly?: boolean; toOpponent?: boolean; anySourceYouControl?: boolean } = {},

@@ -146,6 +146,10 @@ export interface GameObject {
   expiresEndOfTurn?: boolean;
   /** A déjà infligé des blessures de combat (Ruric Thar). */
   dealtCombatDamage?: boolean;
+  /** Carte exilée suspendue (702.62) : un marqueur de temps est retiré à chaque entretien de son propriétaire. */
+  suspended?: boolean;
+  /** Tour où des marqueurs ont été mis sur lui pour la dernière fois (« la première fois ce tour-ci »). */
+  countersPutTurn?: number;
   /** A déjà infligé des blessures, de combat ou non (Karakyk Guardian). */
   dealtDamage?: boolean;
   /** Tour de sa dernière attaque (« créature qui a attaqué ce tour-ci »). */
@@ -535,6 +539,8 @@ export interface LkiSnapshot {
   damaged?: boolean;
   /** Mana dépensé pour le lancer (sort sur la pile). */
   manaSpent?: number;
+  /** Arrivé en étant lancé (filtre `cast`). */
+  cast?: boolean;
 }
 
 /** Résolution en cours d'un sort ou d'une capacité, éventuellement suspendue sur un choix. */
@@ -616,6 +622,10 @@ export interface GameState {
     graveyardTypesUsed?: string[];
     /** Combats supplémentaires à venir ce tour-ci (Aurelia). */
     extraCombats?: number;
+    /** All-Out Assault : « une phase de combat supplémentaire après cette phase principale, suivie d'une phase principale supplémentaire ». */
+    extraCombatsAfterMain?: number;
+    /** Phase principale supplémentaire à jouer après le combat supplémentaire en cours (la même étape, rejouée). */
+    extraMainAfter?: Step;
     /** Phases de combat commencées ce tour-ci (Genji Glove : « si c'est la première phase de combat du tour »). */
     combats?: number;
     /** Étapes de fin supplémentaires à venir (Y'shtola Rhul) et étapes de fin déjà commencées ce tour-ci. */
@@ -676,6 +686,8 @@ export interface GameState {
     now?: boolean;
     /** Flashback accordé (702.34) : lancé depuis le cimetière, exilé ensuite (Sphinx of Forgotten Lore, Archmage's Newt). */
     flashback?: boolean;
+    /** Harmonie accordée (702.180, Songcrafter Mage) : avec `flashback`, une créature engagée réduit le coût. */
+    harmonize?: boolean;
     /** Maîtrise de l'air : lançable pour ce coût plutôt que pour son coût de mana. */
     cost?: ManaCost;
   }[];

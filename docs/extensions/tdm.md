@@ -43,3 +43,22 @@ Les scripts sont dans `packages/cards/src/tdm/` : `cards` (cartes du méta, phas
 - **Comportement inchangé** pour les cartes déjà gérées (parties dorées identiques) : pas de nouvelle version des règles.
 - **Tests :** 13 tests de règles en plus dans `engine/test/tdm.test.ts` (endurance au choix, jeton quand le permanent est parti, Warden of the Grove, rafale au deuxième sort seulement, renouveau de Sage of the Fang, Exude Toxin, Bloomvine Regent, Sièges Barrensteppe, Glacierwood et Windcrag, flash de Whirlwing Stormbrood). Vérifié dans le navigateur par un script Playwright ponctuel (captures dans `test-results/tdm/`) : choix du mode d'un Siège, badge du mode, choix de l'endurance.
 - **En route :** `tutorial-smoke` échouait déjà avant ce lot (« action hors guide refusée ») : il cliquait 300 ms après le début de la leçon 2, avant que la partie soit prête. Il attend désormais la priorité du joueur.
+
+## Lot C ✅ (257 / 259)
+
+- **Cartes :** 25 légendaires et cartes uniques, dans `tdm/legends.ts` : Ugin, Eye of the Storms, Elspeth, Storm Slayer, Taigam, Teval, Kotis, Shiko, Ureni, Betor, Narset, Eshki, Felothar, Zurgo, Sidisi, The Sibsig Ceremony, Call the Spirit Dragons, All-Out Assault, Mardu Siegebreaker, Roar of Endless Song, Songcrafter Mage, Stalwart Successor, Hundred-Battle Veteran, Krumar Initiate, Rot-Curse Rakshasa, Dracogenesis, Formation Breaker.
+- **Le moteur gagne :**
+  - la suspension (702.62) : effet `suspend` (`fx.suspend(ref, n)`) ; le sort quitte la pile sans être contrecarré (ou la carte quitte la main) et va en exil avec N marqueurs de temps. À chaque entretien de son propriétaire, une capacité retire un marqueur (`suspendUpkeep`, `turn.ts`) ; au dernier, il peut lancer la carte sans payer (célérité pour une créature) (Taigam) ;
+  - la cave (702.66) accordée aux sorts : `playerStatic({ delveSpells: true })` ; le solveur de mana s'en sert en dernier recours, chaque carte du cimetière exilée payant {1} (Teval) ;
+  - un combat supplémentaire après la phase principale, suivi d'une phase principale (`fx.extraCombatAfterMain`, All-Out Assault) ;
+  - « ne peut pas être sacrifié » (`cantBeSacrificed`, restriction lue par le sacrifice, ses coûts et ses choix : Zurgo) ;
+  - le déclencheur `countersPut(…, firstThisTurn)` (« la première fois ce tour-ci que des marqueurs sont mis sur elle » : Stalwart Successor) ;
+  - `fx.doublePT(ref)` : doubler la force et l'endurance de chaque créature désignée (Roar of Endless Song, Dragonclaw Strike) ;
+  - l'harmonie accordée (`fx.grantHarmonize`, Songcrafter Mage) ;
+  - les montants `counterKindsAmong` (Hundred-Battle Veteran) et `totalToughness` (Betor), la référence `ref.union` (Call the Spirit Dragons), les filtres `cast` (« si vous l'avez lancée » : The Sibsig Ceremony) et `powerBelowSource` (Formation Breaker), `castNow` avec `maxManaValue` (Kotis), `castFromGraveyard.finality` (Hundred-Battle Veteran), `freeFilter` d'une permission de lancer (Dracogenesis), le coût `payLifeX` (Krumar Initiate) et les cibles `countX` (« X créatures ciblées » : Rot-Curse Rakshasa).
+- **Correctifs en route :**
+  - la décomposition accordée par un marqueur n'avait pas sa capacité déclenchée : le filtre rapide des sources de déclenchement ne connaissait que la prouesse ;
+  - le garde-fou de la dette lisait l'union `Keyword` jusqu'au premier « ; », y compris dans un commentaire : il retire désormais les commentaires.
+- **Dette :** trois entrées justifiées (`delveSpells`, `cantBeSacrificed`, `suspend`, une carte chacune), deux retirées (`chooseAmong` et `untapAll` servent désormais à plusieurs cartes).
+- **Comportement inchangé** pour les cartes déjà gérées (parties dorées identiques).
+- **Tests :** 23 tests de règles en plus dans `engine/test/tdm.test.ts`, un par carte au moins (suspension sur quatre tours, cave, combat supplémentaire, victoire de Call the Spirit Dragons…).

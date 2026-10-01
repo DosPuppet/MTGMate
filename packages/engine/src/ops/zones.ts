@@ -19,7 +19,7 @@ import {
   zoneCards,
 } from "../effects";
 import { RulesError } from "../errors";
-import { copiableExceptions, copiedDefId } from "../layers";
+import { copiableExceptions, copiedDefId, hasKeyword } from "../layers";
 import { manaValue } from "../mana";
 import { auraHosts, copyCandidates, type EntersContext } from "../replacement";
 import { bounceSpell, exileSpell } from "../stack";
@@ -525,7 +525,10 @@ export const HANDLERS: OpHandlers = {
     for (const p of resolveRef(s, ctx, e.who)) {
       if (r.vars[key(`done-${p}`)]) continue;
       let candidates = s.battlefield.filter(
-        (id) => s.objects[id]?.controller === p && matchesObjectFilter(s, p, id, e.filter, ctx.sourceId),
+        (id) =>
+          s.objects[id]?.controller === p &&
+          matchesObjectFilter(s, p, id, e.filter, ctx.sourceId) &&
+          !hasKeyword(s, id, "cantBeSacrificed"),
       );
       // Zodiark : « la moitié des créatures qu'il contrôle, arrondie à l'inférieur ».
       const n = e.half ? Math.floor(candidates.length / 2) : all;

@@ -77,6 +77,7 @@ export function matchesView(v: LkiSnapshot, f: ObjectFilter, perspective: Player
   if (f.noCounters && Object.values(v.counters ?? {}).some((n) => n > 0)) return false;
   if (f.withCounter && f.withCounter !== "any" && !((v.counters?.[f.withCounter] ?? 0) > 0)) return false;
   if (f.inCombat && !v.attacking && !v.blocking) return false;
+  if (f.cast !== undefined && !!v.cast !== f.cast) return false;
   if (f.anySubtype && !f.anySubtype.some((t) => hasSubtype(v, t))) return false;
   if (f.notSubtype && hasSubtype(v, f.notSubtype)) return false;
   if (f.token !== undefined && v.isToken !== f.token) return false;
@@ -167,7 +168,9 @@ function sourcePower(s: GameState, sourceId?: ObjectId): number {
 }
 
 /** Remplace les bornes dynamiques du filtre par leur valeur actuelle. */
-function resolveFilter(s: GameState, f: ObjectFilter, sourceId?: ObjectId): ObjectFilter {
+export function resolveFilter(s: GameState, f: ObjectFilter, sourceId?: ObjectId): ObjectFilter {
+  // Formation Breaker : « de force inférieure à celle de cette créature ».
+  if (f.powerBelowSource) f = { ...f, powerBelowSource: undefined, maxPower: sourcePower(s, sourceId) - 1 };
   if (f.maxManaValueX) {
     const x = (sourceId && s.objects[sourceId]?.castX) || 0;
     return { ...f, maxManaValueX: undefined, maxManaValue: x };
@@ -306,12 +309,14 @@ export function validateTargets(
   controller: PlayerId,
   specs: TargetSpec[],
   chosen: Record<string, string[]> = {},
-  opts: { kicked?: boolean; sourceId?: ObjectId } = {},
+  opts: { kicked?: boolean; sourceId?: ObjectId; x?: number } = {},
 ): Record<string, string[]> {
   const result: Record<string, string[]> = {};
   for (const spec of specs) {
     const ids = chosen[spec.id] ?? [];
-    const max = (opts.kicked && spec.kickedCount) || spec.count || 1;
+    // « X créatures ciblées » : exactement X cibles.
+    if (spec.countX && ids.length !== Math.max(0, opts.x ?? 0)) throw new RulesError(`${opts.x ?? 0} cible(s) requise(s)`);
+    const max = spec.countX ? Math.max(0, opts.x ?? 0) : (opts.kicked && spec.kickedCount) || spec.count || 1;
     const hostSpec = spec.attachedToTarget;
     if (hostSpec && ids.some((id) => !(chosen[hostSpec] ?? []).includes(s.objects[id]?.attachedTo ?? ""))) {
       throw new RulesError("La cible doit être attachée à l'autre cible");

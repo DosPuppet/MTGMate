@@ -8,7 +8,7 @@ import { canForage, createTokenCopy, forage, loseLife, removeFromCombat, sacrifi
 import { ask } from "./choices";
 import { announceDiscard, announceDiscardBatch, evalAmount, moveWithSpec, runEffect } from "./effects";
 import { RulesError, rethrowAsRules } from "./errors";
-import { copiableExceptions, copiedDefId, effectivePower } from "./layers";
+import { copiableExceptions, copiedDefId, effectivePower, hasKeyword } from "./layers";
 import { costToText, manaValue, payMana, totalCost } from "./mana";
 import { copyStackItem } from "./stackChoices";
 import {
@@ -540,6 +540,8 @@ export interface CastTerms {
   forage?: boolean;
   /** Permission « jouer depuis une zone » utilisée (famille C) : sous-types à l'arrivée, usage unique consommé. */
   playFrom?: PlayFromZone;
+  /** Harmonie accordée (Songcrafter Mage) à une carte lancée depuis le cimetière. */
+  harmonize?: boolean;
 }
 
 /** 702.170 : la carte (depuis la main ou la pile) est exilée face visible et devient complotée. */
@@ -799,14 +801,16 @@ function baseCastTerms(s: GameState, player: PlayerId, card: ObjectId): CastTerm
       (ab) =>
         ab.kind === "castPermission" &&
         ab.freeFromHand &&
-        (!ab.freeMaxManaValueCreatures || manaValue(d.manaCost) <= creatures()),
+        (!ab.freeMaxManaValueCreatures || manaValue(d.manaCost) <= creatures()) &&
+        // Dracogenesis : seulement les sorts de Dragon.
+        (!ab.freeFilter || matchesView(spellView(d, player), ab.freeFilter, player)),
     );
     return { source: "hand", freeOptional: free || undefined };
   }
   if (o.zone === "graveyard") {
     // Tinybones, the Pickpocket : une carte d'un autre cimetière, lançable avec du mana de n'importe quel type.
     const gyPerm = exilePermission(s, player, card);
-    if (gyPerm?.flashback) return { source: "flashback", free: gyPerm.free };
+    if (gyPerm?.flashback) return { source: "flashback", free: gyPerm.free, harmonize: gyPerm.harmonize };
     if (gyPerm) return { source: "graveyard", anyMana: gyPerm.anyMana, free: gyPerm.free, exileAfter: gyPerm.exileAfter };
     if (o.owner !== player) return null;
     // Timeline Culler : « vous pouvez lancer cette carte depuis votre cimetière avec sa distorsion ».
@@ -826,7 +830,8 @@ function baseCastTerms(s: GameState, player: PlayerId, card: ObjectId): CastTerm
     if (fromGy && (!fromGy.condition || checkCondition(s, fromGy.condition, player, card))) {
       // Wickerfolk Indomitable : « en payant 2 PV et en sacrifiant un artefact ou une créature en plus ».
       if (fromGy.payLife && (s.players[player]?.life ?? 0) < fromGy.payLife) return null;
-      return { source: "graveyard", payLife: fromGy.payLife };
+      // Hundred-Battle Veteran : « si vous le faites, il arrive avec un marqueur de finalité ».
+      return { source: "graveyard", payLife: fromGy.payLife, finality: fromGy.finality };
     }
     if (d.graveyardCastRemoveCounters && countersAmongCreatures(s, player) >= d.graveyardCastRemoveCounters) {
       return { source: "graveyard", removeCounters: d.graveyardCastRemoveCounters };
@@ -1077,7 +1082,11 @@ export function castSpell(s: GameState, player: PlayerId, card: ObjectId, choice
     if (!choices.kicked) throw new RulesError("Ce mode demande de payer le coût additionnel");
   } else if (mode.condition && !checkCondition(s, mode.condition, player, card))
     throw new RulesError("Ce mode n'est pas disponible");
-  const targets = validateTargets(s, player, mode.targets, choices.targets, { kicked: !!choices.kicked, sourceId: card });
+  const targets = validateTargets(s, player, mode.targets, choices.targets, {
+    kicked: !!choices.kicked,
+    sourceId: card,
+    x: choices.x,
+  });
   const hasX = (!free && !!(flashback ? (d.flashback ?? d.manaCost)?.x : d.manaCost?.x)) || !!d.payLifeX;
   const x = hasX ? Math.max(0, Math.floor(choices.x ?? 0)) : 0;
   // Vicious Rivalry : « en coût additionnel, payez X points de vie ».
@@ -1140,7 +1149,7 @@ export function castSpell(s: GameState, player: PlayerId, card: ObjectId, choice
   if (flashExtra) cost = addCosts(cost, flashExtra);
   if (terms.extraCost) cost = addCosts(cost, { generic: terms.extraCost, colored: {}, x: 0 });
   // Harmonie : une créature engagée réduit le coût de sa force (`tap` absent : le choix par défaut ; [] : aucune).
-  const harmonize = flashback && !!d.harmonize;
+  const harmonize = flashback && (!!d.harmonize || !!terms.harmonize);
   if (choices.tap?.length && !harmonize && teamwork === undefined) throw new RulesError("Aucune créature à engager pour ce sort");
   const harmony = harmonize ? harmonizeOptions(s, player, card, cost.generic) : undefined;
   const harmonyTap = harmony ? (choices.tap ?? harmony.suggested) : [];
@@ -1240,7 +1249,12 @@ export function castSpell(s: GameState, player: PlayerId, card: ObjectId, choice
       player,
       cost,
       undefined,
-      { spell: view, convoke: hasConvoke(s, player, d), fromHand: terms.source === "hand" },
+      {
+        spell: view,
+        convoke: hasConvoke(s, player, d),
+        delve: playerStatic(s, player, "delveSpells"),
+        fromHand: terms.source === "hand",
+      },
       taps,
       spent,
     );
@@ -1425,7 +1439,11 @@ export function sacrificeOptions(s: GameState, player: PlayerId, source: ObjectI
   const f = ab.cost.sacrifice?.filter;
   if (!f) return [];
   return s.battlefield.filter(
-    (id) => id !== source && obj(s, id).controller === player && matchesObjectFilter(s, player, id, f, source),
+    (id) =>
+      id !== source &&
+      obj(s, id).controller === player &&
+      matchesObjectFilter(s, player, id, f, source) &&
+      !hasKeyword(s, id, "cantBeSacrificed"),
   );
 }
 
@@ -1718,11 +1736,13 @@ export function activateAbility(s: GameState, player: PlayerId, source: ObjectId
       throw new RulesError("Sacrifice invalide");
     }
   }
-  const targets = validateTargets(s, player, ab.targets, choices.targets, { sourceId: source });
   const x =
     ab.cost.mana?.x || ab.cost.loyaltyX || ab.cost.tapX || ab.cost.exileFromGraveyardX || ab.cost.sacrificeX
       ? Math.max(0, Math.floor(choices.x ?? 0))
       : 0;
+  const targets = validateTargets(s, player, ab.targets, choices.targets, { sourceId: source, x });
+  // Krumar Initiate : « payez X points de vie ».
+  if (ab.cost.payLifeX && (s.players[player]?.life ?? 0) < x) throw new RulesError("Pas assez de points de vie");
   if (ab.cost.sacrificeX && x < 1) throw new RulesError("Sacrifiez au moins un permanent");
   if (ab.cost.loyaltyX && x > (o.counters.loyalty ?? 0)) throw new RulesError("Pas assez de marqueurs de loyauté");
   const c = chars(s, source);
@@ -1836,6 +1856,7 @@ export function activateAbility(s: GameState, player: PlayerId, source: ObjectId
   if (ab.cost.exertSelf) o.exerted = true;
   if (ab.cost.removeCounters) changeCounters(s, o, ab.cost.removeCounters.kind, -ab.cost.removeCounters.n);
   if (ab.cost.payLife) loseLife(s, player, ab.cost.payLife);
+  if (ab.cost.payLifeX && x > 0) loseLife(s, player, x);
   for (const id of tapOthers) tapObject(s, obj(s, id));
   // Les permanents sacrifiés restent consultables (dernières informations connues : « sa endurance »).
   item.sacrificed = sacrificed.length ? [...sacrificed] : undefined;

@@ -56,6 +56,11 @@ export type Effect =
       amount: Amount;
       addSubtypes?: string[];
     }
+  /**
+   * Suspension (702.62) : le sort (retiré de la pile, sans être contrecarré) ou la carte est exilé avec N marqueurs de
+   * temps et devient suspendu (Taigam, Master Opportunist). Voir `suspendUpkeep` (turn.ts).
+   */
+  | { op: "suspend"; what: Ref; time: number }
   /** Endurance N (701.64) : N marqueurs +1/+1 sur le permanent désigné, ou un jeton Esprit blanc N/N, au choix. */
   | { op: "endure"; what: Ref; amount: Amount }
   /** « Retirez jusqu'à N marqueurs » (choix automatique : loyauté, +1/+1, puis les autres). */
@@ -66,7 +71,8 @@ export type Effect =
   | { op: "prepare"; what?: Ref; filter?: ObjectFilter; value: boolean }
   | { op: "damage"; amount: Amount; to: Ref; source?: Ref; storeExcess?: string }
   | { op: "fight"; a: Ref; b: Ref }
-  | { op: "pump"; what: Ref; power: Amount; toughness: Amount; keywords?: Keyword[] }
+  /** `double` : chaque objet gagne +X/+Y, X et Y étant sa force et son endurance (« doublez la force et l'endurance »). */
+  | { op: "pump"; what: Ref; power: Amount; toughness: Amount; keywords?: Keyword[]; double?: boolean }
   | { op: "pumpAll"; filter: ObjectFilter; power: Amount; toughness: Amount; keywords?: Keyword[] }
   /** Effet continu quelconque sur des objets (couches 4 à 7) : « devient 0/1 et perd toutes ses capacités »… */
   /** `untilLeavesExile` : l'effet cesse quand cette carte quitte l'exil (Emrakul). */
@@ -342,7 +348,8 @@ export type Effect =
   | { op: "piles"; n: number }
   /** Carte de cimetière qui gagne le flashback jusqu'à la fin du tour (coût : son coût de mana). */
   /** `free` : flashback {0} (Archmage's Newt montée). */
-  | { op: "grantFlashback"; what: Ref; free?: boolean }
+  /** `harmonize` : l'harmonie à la place (702.180 : une créature engagée réduit le coût ; Songcrafter Mage). */
+  | { op: "grantFlashback"; what: Ref; free?: boolean; harmonize?: boolean }
   /** « Terminez le tour » (723). */
   | { op: "endTurn" }
   /** Le contrôleur de l'effet prend le contrôle de l'objet jusqu'à la fin du tour. */
@@ -423,6 +430,8 @@ export type Effect =
       anyMana?: boolean;
       storeCast?: string;
       storeRest?: string;
+      /** Seulement les cartes de valeur de mana au plus égale à ce montant (Kotis). */
+      maxManaValue?: Amount;
     }
   /** Fabrication : « renvoyez cette carte transformée sous le contrôle de son propriétaire » ; les matériaux lui sont liés. */
   | { op: "craftReturn" }
@@ -491,8 +500,8 @@ export type Effect =
   | { op: "payX"; prompt: string; store: string }
   /** Change la cible d'un sort ou d'une capacité à cible unique (Bolt Bend). */
   | { op: "changeTarget"; what: Ref }
-  /** Combat supplémentaire après celui-ci (Aurelia). */
-  | { op: "extraCombat" }
+  /** Combat supplémentaire après celui-ci (Aurelia) ; `afterMain` : après cette phase principale, suivi d'une phase principale. */
+  | { op: "extraCombat"; afterMain?: boolean }
   /** Le mana ajouté ne se vide pas avant la fin du tour (Savage Ventmaw). */
   | { op: "addManaUntilEndOfTurn"; mana: ManaType[] }
   /** Le contrôleur gagne la partie (Maze's End). */

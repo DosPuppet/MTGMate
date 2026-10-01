@@ -442,6 +442,8 @@ export function putIntoGraveyard(s: GameState, id: ObjectId): void {
 export function sacrifice(s: GameState, id: ObjectId): void {
   const o = s.objects[id];
   if (o?.zone !== "battlefield") return;
+  // Zurgo, Thunder's Decree : « ce jeton ne peut pas être sacrifié ».
+  if (hasKeyword(s, id, "cantBeSacrificed")) return;
   rulesEvent(s, { e: "sacrifice", objectId: id, player: o.controller });
   const c = chars(s, id);
   logTurnEvent(s, {

@@ -82,7 +82,7 @@ export type RulesEvent =
   /** `nth` : rang de cette carte parmi celles piochées par ce joueur ce tour-ci. */
   | { e: "draw"; player: PlayerId; nth: number }
   | { e: "attackWith"; player: PlayerId; count: number }
-  | { e: "counters"; objectId: ObjectId; kind: string; amount: number }
+  | { e: "counters"; objectId: ObjectId; kind: string; amount: number; first: boolean }
   /** Un sort ou une capacité vient d'être mis sur la pile avec ces cibles (identifiant d'élément de pile). */
   | { e: "targeted"; stackId: string; controller: PlayerId; targets: string[] }
   | { e: "untap"; objectId: ObjectId }
@@ -327,7 +327,12 @@ export function changeCounters(s: GameState, o: GameObject, kind: string, n: num
   if (after === 0) delete o.counters[kind];
   else o.counters[kind] = after;
   if (after !== before) bump(s);
-  if (after > before && o.zone === "battlefield") rulesEvent(s, { e: "counters", objectId: o.id, kind, amount: after - before });
+  if (after > before && o.zone === "battlefield") {
+    // « la première fois que des marqueurs sont mis sur cette créature ce tour-ci » (Stalwart Successor).
+    const first = o.countersPutTurn !== s.turn.number;
+    o.countersPutTurn = s.turn.number;
+    rulesEvent(s, { e: "counters", objectId: o.id, kind, amount: after - before, first });
+  }
   return after - before;
 }
 

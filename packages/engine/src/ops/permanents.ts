@@ -26,6 +26,13 @@ import type { Color } from "../types";
 export const HANDLERS: OpHandlers = {
   pump(s, _r, e, ctx) {
     const ids = resolveRef(s, ctx, e.what).filter((id) => onBattlefield(s, id));
+    if (e.double) {
+      // Les valeurs sont lues avant d'appliquer les bonus (tous doublés en même temps) ; une force négative double
+      // aussi (701.10e : -X/-0).
+      const pt = ids.map((id) => [id, chars(s, id).power, chars(s, id).toughness] as const);
+      for (const [id, p, t] of pt) addPump(s, [id], p, t, e.keywords);
+      return;
+    }
     addPump(s, ids, evalAmount(s, ctx, e.power), evalAmount(s, ctx, e.toughness), e.keywords);
     return;
   },

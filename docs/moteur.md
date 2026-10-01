@@ -53,6 +53,7 @@ Moteur pur et déterministe (`packages/engine/src`). L'état est sérialisable ;
 - **Effet sur un joueur jusqu'à la fin du tour** (« les blessures ne peuvent pas être prévenues ce tour-ci ») : `fx.thisTurn({ clé: valeur })`, avec une clé de `PlayerStaticAbilityDef` déjà lue par le moteur ; pas de nouvel effet.
 - **Coûts lus dans le texte :** Harmonie (`CardDef.harmonize`, coût dans `flashback`, créature engagée par `CastChoices.tap`) et Marchandage (kicker {0} avec `kickerCost.sacrifice`, permanent choisi par `CastChoices.sacrifice`) sont déduits dans `scryfall.ts` ; une carte qui les a n'a rien à écrire.
 - **Contempler, maîtrise de la terre :** `cond.behold(filtre)` ; `fx.earthbend(ref, n)`.
+- **Tarkir: Dragonstorm :** endurance `fx.endure(ref, n)` ; rafale `when.castNthSpell(2)` ; mode choisi en arrivant (Sièges) `chooseOnEnter: "mode"`, `enterModes` et `cond.chosenMode` ; suspension `fx.suspend(ref, n)` ; cave accordée `playerStatic({ delveSpells })` ; décomposition (mot-clé et marqueur `decayed`).
 - **Nouveau champ de `GameState` :** l'initialiser dans `game.ts` et, si besoin, dans `engine/test/helpers.ts`. Les champs de tour se remettent à zéro au changement de tour (`turn.ts`).
 
 ## Règles de conception

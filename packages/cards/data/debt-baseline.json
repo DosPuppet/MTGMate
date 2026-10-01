@@ -19,6 +19,7 @@
     "damageTakenDoubled": "famille E, modificateurs de blessures (R1.2)",
     "damageToOpponentsMills": "famille E, modificateurs de blessures (R1.2)",
     "damageUnpreventable": "famille F, prévention (R1.2)",
+    "delveSpells": "famille B, dons aux sorts (R4.4) : Teval, Arbiter of Virtue accorde la cave (702.66), générique dans le solveur de mana (cartes du cimetière en dernier recours) ; une seule carte",
     "doubleOpponentLifeLossYourTurn": "famille E, modificateurs de blessures (R1.2)",
     "drawDouble": "famille I, quantités : pioche, PV, meule, mana (R1.3)",
     "drawPlusOneWhenHandSmall": "famille I, quantités : pioche, PV, meule, mana (R1.3)",
@@ -74,6 +75,7 @@
     "absorbsDamage": "remplacement de redirection des blessures (R1.2)",
     "attacksDespiteDefender": "règle de mot-clé, plusieurs cartes",
     "cantAttack": "règle de mot-clé, plusieurs cartes",
+    "cantBeSacrificed": "restriction « ne peut pas être sacrifié » (Zurgo, Thunder's Decree, TDM), lue par le sacrifice, ses coûts et ses choix ; une seule carte pour l'instant",
     "cantBlock": "règle de mot-clé, plusieurs cartes",
     "changeling": "mot-clé de règle (702.73), plusieurs cartes",
     "combatDamageImmune": "prévention { self, combatOnly } (R1.2)",
@@ -90,7 +92,6 @@
     "becomeCopyKeepAbilities": "Mimeoplasm, Revered One — opération propre à une carte (R4.6)",
     "cantAttackYouThisTurn": "Unstable Glyphbridge // Sandswirl Wanderglyph — effet de joueur (R4.6)",
     "cantGainLife": "Screaming Nemesis — effet de joueur « toute la partie » (R4.6)",
-    "chooseAmong": "Trial of Agony — mécanique générique, une seule carte pour l'instant",
     "chooseCardName": "Ancient Vendetta — mécanique générique, une seule carte pour l'instant",
     "chooseOnEnter": "Petrified Hamlet — mécanique générique, une seule carte pour l'instant",
     "connive": "M.O.D.O.K. — mécanique générique, une seule carte pour l'instant",
@@ -140,8 +141,8 @@
     "setLife": "The Endstone — mécanique générique, une seule carte pour l'instant",
     "solveCase": "Case of the Uneaten Feast — mécanique générique, une seule carte pour l'instant",
     "spellArrivalCounters": "Torgal, A Fine Hound — opération propre à une carte (R4.6)",
+    "suspend": "Taigam, Master Opportunist : suspension (702.62), mécanique générique (marqueurs de temps retirés à l'entretien, `suspendUpkeep`) ; une seule carte pour l'instant",
     "tapOrSacrifice": "Command Bridge — opération propre à une carte (R4.6)",
-    "tripleTriad": "Triple Triad — opération propre à une carte (R4.6)",
-    "untapAll": "Valley Floodcaller — mécanique générique, une seule carte pour l'instant"
+    "tripleTriad": "Triple Triad — opération propre à une carte (R4.6)"
   }
 }

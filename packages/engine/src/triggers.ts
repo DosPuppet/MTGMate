@@ -62,9 +62,12 @@ const hasTriggers = (abilities: AbilityDef[] | undefined) => !!abilities?.some((
 function liveSources(s: GameState): Source[] {
   const out: Source[] = [];
   // Capacités déclenchées accordées, ou copiées (couche 1) : on ne peut pas se fier aux capacités imprimées.
-  // Prouesse (702.108) : la capacité déclenchée est ajoutée par les couches à toute créature qui a le mot-clé.
+  // Prouesse (702.108) et décomposition (702.147) : la capacité déclenchée est ajoutée par les couches à toute créature
+  // qui a le mot-clé (imprimé, accordé ou, pour la décomposition, par un marqueur).
   const grants = (m: { addAbilities?: AbilityDef[]; addKeywords?: string[] }) =>
-    !!m.addAbilities?.some((a) => a.kind === "triggered") || !!m.addKeywords?.includes("prowess");
+    !!m.addAbilities?.some((a) => a.kind === "triggered") ||
+    !!m.addKeywords?.includes("prowess") ||
+    !!m.addKeywords?.includes("decayed");
   const granted =
     s.effects.some((e) => e.copyOf || grants(e)) ||
     s.battlefield.some((id) => (s.defs[obj(s, id).defId]?.abilities ?? []).some((ab) => ab.kind === "static" && grants(ab.mods)));
@@ -79,6 +82,8 @@ function liveSources(s: GameState): Source[] {
       !levels &&
       !hasTriggers(d?.abilities) &&
       !d?.keywords.includes("prowess") &&
+      !d?.keywords.includes("decayed") &&
+      !(o.counters.decayed ?? 0) &&
       !d?.faceDefs?.some((f) => hasTriggers(f.abilities))
     )
       continue;
@@ -834,7 +839,7 @@ function matchTrigger(s: GameState, ev: RulesEvent, t: TriggerSpec, src: Source)
         : null;
     }
     case "countersPut": {
-      if (ev.e !== "counters" || (t.kind && ev.kind !== t.kind)) return null;
+      if (ev.e !== "counters" || (t.kind && ev.kind !== t.kind) || (t.firstThisTurn && !ev.first)) return null;
       const v = liveView(s, ev.objectId);
       return v && matchWho(t.who, v, src) ? { objectId: ev.objectId, amount: ev.amount, player: v.controller } : null;
     }

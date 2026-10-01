@@ -5,6 +5,7 @@ import { BLACK } from "./black";
 import { BLUE } from "./blue";
 import { CARDS } from "./cards";
 import { GREEN } from "./green";
+import { LEGENDS } from "./legends";
 import { MULTI } from "./multi";
 import { RED } from "./red";
 import { WHITE } from "./white";
@@ -18,4 +19,5 @@ export const TDM_SCRIPTS: Record<string, CardScript> = {
   ...GREEN,
   ...MULTI,
   ...ARTIFACTS,
+  ...LEGENDS,
 };

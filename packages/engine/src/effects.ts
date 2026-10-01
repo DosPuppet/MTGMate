@@ -197,6 +197,8 @@ export function resolveRef(s: GameState, ctx: EffectContext, ref: Ref): string[]
       return ctx.sacrificed ?? [];
     case "costDiscarded":
       return (ctx.discarded ?? []).filter((id) => !!s.objects[id]);
+    case "union":
+      return [...new Set(ref.of.flatMap((r) => resolveRef(s, ctx, r)))];
     case "except": {
       const out = new Set(resolveRef(s, ctx, ref.exclude));
       return resolveRef(s, ctx, ref.ref).filter((id) => !out.has(id));
@@ -292,6 +294,16 @@ export function evalAmount(s: GameState, ctx: EffectContext, a: Amount): number 
       return boardAmount(s, a, ctx.controller, ctx.sourceId);
     case "totalPower":
       return boardAmount(s, a, ctx.controller, ctx.sourceId);
+    case "totalToughness":
+      return s.battlefield
+        .filter((id) => matchesObjectFilter(s, ctx.controller, id, a.filter, ctx.sourceId))
+        .reduce((n, id) => n + Math.max(0, chars(s, id).toughness), 0);
+    case "counterKindsAmong": {
+      const kinds = new Set<string>();
+      for (const id of s.battlefield.filter((x) => matchesObjectFilter(s, ctx.controller, x, a.filter, ctx.sourceId)))
+        for (const [k, n] of Object.entries(s.objects[id]?.counters ?? {})) if (n > 0) kinds.add(k);
+      return kinds.size;
+    }
     case "lifeGainedThisTurn":
       return s.players[ctx.controller]?.turnStats.lifeGained ?? 0;
     case "countersOn": {
@@ -725,6 +737,7 @@ export function grantPlay(
     orHand?: boolean;
     now?: boolean;
     flashback?: boolean;
+    harmonize?: boolean;
     cost?: ManaCost;
   },
 ): void {
