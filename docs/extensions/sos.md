@@ -48,3 +48,9 @@ Les scripts sont dans `packages/cards/src/sos/` : `cards` (cartes du méta), `wh
 - **Correctif :** « répartissez X marqueurs » avec moins de marqueurs que de cibles n'exige plus un marqueur par cible (choix impossible trouvé par le fuzz).
 - **Reste :** Pox Plague (montants par joueur : « perdez la moitié de vos PV, arrondie à l'inférieur », « défaussez la moitié de votre main »).
 - **Tests :** 30 tests de règles (« lot A — noir »).
+
+## Sous-lot A4 : cartes rouges ✅ (135 / 262)
+
+- **Cartes :** 25 (sur 27), dont Opus (Thunderdrum Soloist, Pigment Wrangler, Garrison Excavator, Tome Blast…), préparées, Mica (sacrifier un artefact copie le sort), Rubble Rouser (capacité de mana à coût et capacité réflexive), Improvisation Capstone (Paradigme), Archaic's Agony (convergence et blessures en excès), flashback de Duel Tactics et Tome Blast.
+- **Restent :** Magmablood Archaic (convergence « arrive avec » ; couleurs dépensées pour le sort déclencheur), Choreographed Sparks (« ce sort ne peut pas être copié » ; copie d'un sort de créature avec la célérité et sacrifiée en fin de tour).
+- **Tests :** 31 tests de règles (« lot A — rouge »).
