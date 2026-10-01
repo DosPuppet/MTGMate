@@ -312,7 +312,18 @@ export function legalActions(s: GameState, player: PlayerId): ActionOption[] {
     const alt = terms.free ? undefined : altCostFor(s, player, d);
     const altAvailable =
       !!alt && canPay(s, player, withExtra(spellCost(s, player, d, { ...base, alternative: true })), exclude, purpose);
-    if (!terms.free && !normal && !freeAvailable && !altAvailable) return;
+    // Kicker payable (« coûte {2} de moins s'il est marchandé » : Hamlet Glutton peut n'être payable que marchandé).
+    const kickerAffordable =
+      !!d.kicker &&
+      !flashback &&
+      (!d.kickerCost ||
+        (d.kickerCost.tapPower !== undefined
+          ? suggestedCrew(s, player, card, d.kickerCost.tapPower).length > 0
+          : d.kickerCost.collectEvidence !== undefined
+            ? !!evidenceCards(s, player, card, d.kickerCost.collectEvidence)
+            : !!kickerCostPermanent(s, player, card, d))) &&
+      canPay(s, player, withExtra(spellCost(s, player, d, { ...base, kicked: true, free: terms.free })), undefined, purpose);
+    if (!terms.free && !normal && !freeAvailable && !altAvailable && !kickerAffordable) return;
     // Le mana à payer à la place du sacrifice est-il disponible ?
     if (sac?.orPay) {
       sac.orPayAffordable = canPay(s, player, totalCost(spellCost(s, player, d, base), 0, sac.orPay), undefined, purpose);
@@ -335,16 +346,7 @@ export function legalActions(s: GameState, player: PlayerId): ActionOption[] {
       ...(variant === "warp" ? { warp: true } : {}),
       modes,
       xMax: lifeX ?? (hasX && normal ? maxXFor(s, player, (x) => withExtra(spellCost(s, player, d, { ...base, x }))) : null),
-      kickerAffordable:
-        !!d.kicker &&
-        !flashback &&
-        (!d.kickerCost ||
-          (d.kickerCost.tapPower !== undefined
-            ? suggestedCrew(s, player, card, d.kickerCost.tapPower).length > 0
-            : d.kickerCost.collectEvidence !== undefined
-              ? !!evidenceCards(s, player, card, d.kickerCost.collectEvidence)
-              : !!kickerCostPermanent(s, player, card, d))) &&
-        canPay(s, player, withExtra(spellCost(s, player, d, { ...base, kicked: true, free: terms.free })), undefined, purpose),
+      kickerAffordable,
       kickerPrompt: d.kicker ? kickerPrompt(d) : undefined,
       fromGraveyard: terms.source === "graveyard" || terms.source === "flashback" ? true : undefined,
       fromExile: terms.source === "exile" ? true : undefined,

@@ -63,7 +63,9 @@ export function buildCastDecision(
         mode: mode.index,
         targets: targetsFrom(mode.targets),
         x: a.xMax === null ? undefined : Math.floor(rand() * (a.xMax + 1)),
-        kicked: !!mode.requiresKicker || (a.kickerAffordable && rand() < 0.5),
+        kicked:
+          !!mode.requiresKicker ||
+          (a.kickerAffordable && ((!a.normalAvailable && !a.freeAvailable && !a.altAvailable) || rand() < 0.5)),
         discard: a.additional?.discard?.orLife !== undefined && rand() < 0.5 ? [] : pickN(a.additional?.discard),
         sacrifice: a.additional?.sacrifice?.orPay && rand() < 0.5 ? [] : pickN(a.additional?.sacrifice),
         free: a.freeAvailable && (!a.normalAvailable || rand() < 0.7) ? true : undefined,
@@ -138,7 +140,7 @@ export function enumerateDecisions(a: ActionOption, limit = 40, rank?: (ids: str
           };
           // Façons de payer : sans payer (Omniscience), coût alternatif, « sacrifiez ou payez ».
           const variants = [
-            ...(a.normalAvailable || a.free ? [base] : []),
+            ...(a.normalAvailable || a.free || a.kickerAffordable ? [base] : []),
             ...(a.freeAvailable ? [{ ...base, free: true, x: 0 }] : []),
             ...(a.altAvailable ? [{ ...base, alternative: true }] : []),
             ...(a.additional?.sacrifice?.orPay ? [{ ...base, sacrifice: [] }] : []),
@@ -146,7 +148,8 @@ export function enumerateDecisions(a: ActionOption, limit = 40, rank?: (ids: str
           ];
           for (const v of variants) {
             // Mode « les deux » : seulement avec le coût additionnel payé.
-            if (!m.requiresKicker) out.push(v);
+            // Payable seulement avec le kicker (Hamlet Glutton marchandé) : pas de lancement sans lui.
+            if (!m.requiresKicker && (v !== base || a.normalAvailable || a.free)) out.push(v);
             if (a.kickerAffordable && !m.targets.some((t) => t.kickedLegal)) out.push({ ...v, kicked: true });
           }
         }

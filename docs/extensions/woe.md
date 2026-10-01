@@ -92,3 +92,10 @@ Les scripts sont dans `packages/cards/src/woe/` : `cards` (cartes du méta), `wh
 - **Cartes :** Asinine Antics (flash pour {2} de plus, `flashExtraCost`), Twisted Sewer-Witch.
 - **Le moteur gagne :** `createTokens(…, attachTo)` crée les jetons Aura ou Équipement attachés à chaque objet désigné encore sur le champ de bataille ; `createRole` s'en sert (plus de condition ni de variable mémorisée).
 - **Tests :** 2 tests de règles (« lot B3 »).
+
+## Sous-lot B4 : « coûte moins s'il est marchandé » ✅ (250 / 269)
+
+- **Cartes :** Ice Out, Johann's Stopgap, Hamlet Glutton (`costReduction` sous `cond.kicked`).
+- **Le moteur gagne :** une réduction de coût sous `cond.kicked` voit le choix du lanceur (`spellReduction` reçoit `kicked`).
+- **Correctif :** un sort payable seulement avec son kicker (Hamlet Glutton marchandé, avec cinq terrains) n'était jamais proposé. `legalActions` le propose, l'IA le lance avec le kicker, et l'interface pose d'office le marchandage au lieu de demander.
+- **Tests :** 1 test de règles (« lot B4 »).

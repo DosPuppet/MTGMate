@@ -60,6 +60,15 @@ const OPPONENTS_WITH_CREATURES = amount.refCount(
 );
 
 export const BLUE: Record<string, CardScript> = {
+  // Marchandage lu dans le texte ; « coûte {N} de moins s'il est marchandé » : réduction sous `cond.kicked`.
+  "Ice Out": {
+    costReduction: { generic: 1, condition: cond.kicked },
+    spell: spell([target.spell()], [fx.counter(ref.target())]),
+  },
+  "Johann's Stopgap": {
+    costReduction: { generic: 2, condition: cond.kicked },
+    spell: spell([target.nonland()], [fx.bounce(ref.target()), fx.draw(1)]),
+  },
   "Asinine Antics": {
     flashExtraCost: "{2}",
     spell: spell([], createRole(CURSED_ROLE, ref.permanentsOf(ref.eachOpponent, { types: ["Creature"] }))),

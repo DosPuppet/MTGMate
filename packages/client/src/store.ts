@@ -680,8 +680,11 @@ export const useGame = create<Store>((set, get) => {
       c.x = c.payMode === "free" ? 0 : (c.option.xMax ?? 0);
     }
     if (c.option.type === "cast" && c.kicked === null) {
-      if (c.option.kickerAffordable) return set({ casting: { ...c, stage: "kicker" } });
-      c.kicked = false;
+      const o = c.option;
+      // Payable seulement avec le kicker (« coûte {2} de moins s'il est marchandé ») : pas de question.
+      if (o.kickerAffordable && !o.normalAvailable && !o.freeAvailable && !o.altAvailable && !o.free) c.kicked = true;
+      else if (o.kickerAffordable) return set({ casting: { ...c, stage: "kicker" } });
+      else c.kicked = false;
     }
     // Marchandage (kicker sans mana) : le permanent sacrifié, s'il y a le choix.
     if (

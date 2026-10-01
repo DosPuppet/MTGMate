@@ -4369,3 +4369,32 @@ describe("Wilds of Eldraine, lot B3 : un Rôle pour chaque créature", () => {
     expect(chars(s, rats[0] as string).power).toBe(2);
   });
 });
+
+describe("Wilds of Eldraine, lot B4 : « coûte moins s'il est marchandé »", () => {
+  it("Hamlet Glutton : {2} de moins en marchandant (un jeton sacrifié), prix plein sinon", () => {
+    const s = scenario({ p1: { battlefield: [...lands("Forest", 5)], hand: ["Hamlet Glutton"] } });
+    const card = idOf(s, "p1", "hand", "Hamlet Glutton");
+    const opt = legalActions(s, "p1").find((a) => a.type === "cast" && a.card === card);
+    // Cinq terrains et pas de quoi marchander : {5}{G}{G} est hors d'atteinte.
+    expect(opt).toBeUndefined();
+    const food = { name: "Food", colors: [], types: ["Artifact"], subtypes: ["Food"] } as TokenSpec;
+    const t = scenario({ p1: { battlefield: [...lands("Forest", 5)], hand: ["Hamlet Glutton"] } });
+    const r = {
+      item: { id: "x", controller: "p1", sourceId: "none", sourceDefId: "none", targets: {} },
+      controller: "p1",
+      targets: {},
+      vars: {},
+      pc: 0,
+    } as never as Parameters<typeof runEffect>[1];
+    runEffect(t, r, dsl.fx.createTokens(food));
+    const glutton = idOf(t, "p1", "hand", "Hamlet Glutton");
+    const kick = legalActions(t, "p1").find((a) => a.type === "cast" && a.card === glutton);
+    expect(kick?.type === "cast" && kick.kickerAffordable).toBe(true);
+    const after = passAccepting(
+      act(t, "p1", { type: "cast", card: glutton, kicked: true }),
+      (x) => x.stack.length === 0 && x.triggers.length === 0,
+    );
+    expect(idsOf(after, "p1", "battlefield", "Hamlet Glutton")).toHaveLength(1);
+    expect(after.players.p1?.life).toBe(23);
+  });
+});

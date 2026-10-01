@@ -95,6 +95,11 @@ const FERAL_ENCOUNTER_COMBAT: Effect = fx.emblem(
 );
 
 export const GREEN: Record<string, CardScript> = {
+  // Marchandage et piétinement lus dans le texte.
+  "Hamlet Glutton": {
+    costReduction: { generic: 2, condition: cond.kicked },
+    abilities: [triggered(when.entersSelf, [fx.gainLife(3)], { label: "Vous gagnez 3 points de vie" })],
+  },
   "Graceful Takedown": {
     spell: spell(
       [

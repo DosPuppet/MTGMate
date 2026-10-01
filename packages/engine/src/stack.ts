@@ -269,6 +269,7 @@ export function spellReduction(
   targets?: Record<string, string[]>,
   fromZone?: CastTerms["source"],
   card?: ObjectId,
+  kicked?: boolean,
 ): number {
   let r = 0;
   const own = d.costReduction;
@@ -279,6 +280,9 @@ export function spellReduction(
     const spec = modesOf(d)[0]?.targets.find((t) => t.id === cond.spec);
     const ids = targets ? (targets[cond.spec] ?? []) : spec ? legalTargets(s, player, spec) : [];
     ok = ids.some((id) => matchesObjectFilter(s, player, id, cond.filter));
+  } else if (cond?.kind === "kicked") {
+    // « Ce sort coûte {2} de moins s'il est marchandé » (Hamlet Glutton) : le choix du lanceur.
+    ok = !!kicked;
   } else if (cond) {
     // La carte lancée est la source : « contemplez un Gobelin » ne la compte pas elle-même (601.2a).
     ok = checkCondition(s, cond, player, card);
@@ -509,7 +513,7 @@ export function spellCost(
     opts.kicked ? d.kicker : undefined,
     // 601.2f / 118.9d : un sort lancé sans payer son coût de mana paie quand même les augmentations (Thalia, the
     // Survivor) ; une réduction ne descend pas sous zéro.
-    spellReduction(s, player, d, opts.targets, opts.fromZone, opts.card),
+    spellReduction(s, player, d, opts.targets, opts.fromZone, opts.card, opts.kicked),
   );
   // Feed the Cycle : « fourragez ou payez {B} » — le mana s'ajoute sauf si l'on fourrage (coût alternatif).
   const cost1 = d.forageOrPay && !alt?.forage ? totalCost(cost0, 0, d.forageOrPay) : cost0;
