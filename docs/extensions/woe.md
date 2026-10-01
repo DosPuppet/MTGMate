@@ -52,3 +52,23 @@ Les scripts sont dans `packages/cards/src/woe/` : `cards` (cartes du méta), `wh
 - **Restent :** Graceful Takedown (créature enchantée), Hamlet Glutton (réduction « si marchandé »), Sentinel of Lost Lore (cartes exilées d'un autre propriétaire ; « un ou plusieurs » en capacité déclenchée).
 - **Écart relevé :** un remplacement de mana « le double » (`modify.times`) n'est pas appliqué, seul « autant plus N » l'est (lot B).
 - **Tests :** 41 tests de règles (« lot A — vert »).
+
+## Sous-lot A6 : multicolores, incolores et terrains ✅ (236 / 269)
+
+- **Cartes :** 23 (sur 37) :
+  - multicolores : Ash, Party Crasher ; The Goose Mother ; Greta, Sweettooth Scourge ; Neva, Stalked by Nightmares ; Obyra, Dreaming Duelist ; Totentanz, Swarm Piper ; Troyan, Gutsy Explorer ; Will, Scion of Peace ;
+  - incolores : Collector's Vault, Eriette's Tempting Apple, Gingerbrute, Hylda's Crown of Winter, The Irencrag, Prophetic Prism, Scarecrow Guide, Syr Ginger, Three Bowls of Porridge ;
+  - terrains : Crystal Grotto, Edgewall Inn, les quatre terrains « Restless ».
+- **Restent (lot B et suivants) :** Agatha of the Vile Cauldron, The Apprentice's Folly, Yenna, Eriette of the Charmed Apple, Syr Armont, Faunsbane Troll, Hylda of the Icy Crown, Sharae of Numbing Depths, Johann, Likeness Looter, Rowan, Scion of War, Talion, Beluna Grandsquall, Agatha's Soul Cauldron.
+- **Tests :** 28 tests de règles (« lot A — multicolores »).
+
+### Reste à faire (33 cartes) : formes du moteur
+
+| Ce qui manque | Cartes |
+|---|---|
+| Filtre « créature enchantée (par vous) » | Archon of the Wild Rose, A Tale for the Ages, Lord Skitter's Blessing, Graceful Takedown, Eriette of the Charmed Apple, Syr Armont |
+| Qui engage une créature (« vous engagez une créature adverse ») | Solitary Sanctuary, Hylda of the Icy Crown, Sharae of Numbing Depths (et Icewrought Sentry, approximée) |
+| Un effet par objet (un Rôle pour chaque créature) | Asinine Antics, Twisted Sewer-Witch |
+| Réduction de coût « si marchandé » | Ice Out, Johann's Stopgap, Hamlet Glutton |
+| Attaché à la source (Auras et Équipements sur elle) | Kellan, the Fae-Blooded, Faunsbane Troll |
+| Autres | Ingenious Prodigy, Elusive Otter, Extraordinary Journey, Ashiok, Tangled Colony, Imodane, Skewer Slinger, Sentinel of Lost Lore, Agatha of the Vile Cauldron, The Apprentice's Folly, Yenna, Johann, Likeness Looter, Rowan, Talion, Beluna Grandsquall, Agatha's Soul Cauldron |
