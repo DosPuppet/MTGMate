@@ -66,7 +66,7 @@ export type Effect =
   /** Endurance N (701.64) : N marqueurs +1/+1 sur le permanent désigné, ou un jeton Esprit blanc N/N, au choix. */
   | { op: "endure"; what: Ref; amount: Amount }
   /** « Retirez jusqu'à N marqueurs » (choix automatique : loyauté, +1/+1, puis les autres). */
-  | { op: "removeCounters"; what: Ref; n: number; kind?: string; store?: string }
+  | { op: "removeCounters"; what: Ref; n: Amount; kind?: string; store?: string }
   /** « Vous pouvez jouer un terrain supplémentaire ce tour-ci. » */
   | { op: "extraLandThisTurn" }
   /** Devient préparé / dé-préparé (Reality Fracture). */
@@ -86,6 +86,8 @@ export type Effect =
       untilLeavesExile?: Ref;
       /** « tant que [la source] reste sur le champ de bataille » (Kitesail Larcenist). */
       whileSource?: boolean;
+      /** F/E de base fixées à ce montant, évalué à la résolution (couche 7b). */
+      basePT?: Amount;
     }
   /** `store` : les cartes mises au cimetière ainsi (« si une carte de créature est mise dans un cimetière de cette façon »). */
   | { op: "destroy"; what: Ref; store?: string }
@@ -326,7 +328,8 @@ export type Effect =
     }
   /** Capacité déclenchée réflexive (« quand vous le faites, … ») : ses cibles sont choisies à sa mise sur la pile. */
   /** `bind` : objets figés maintenant, relus comme cibles par la capacité réflexive (« cette créature »). */
-  | { op: "reflexive"; targets: TargetSpec[]; effects: Effect[]; bind?: Record<string, Ref> }
+  /** `keepVars` : valeurs mémorisées transmises à la capacité réflexive (« payez {X}. Quand vous le faites, … X … »). */
+  | { op: "reflexive"; targets: TargetSpec[]; effects: Effect[]; bind?: Record<string, Ref>; keepVars?: string[] }
   /** Contrecarre un sort ou une capacité sur la pile (701.5). */
   /** `store` : nombre de sorts et capacités contrecarrés. */
   | { op: "counter"; what: Ref; exile?: boolean; store?: string }

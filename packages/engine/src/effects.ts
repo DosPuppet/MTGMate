@@ -363,6 +363,8 @@ export function evalAmount(s: GameState, ctx: EffectContext, a: Amount): number 
       return -evalAmount(s, ctx, a.of);
     case "div":
       return Math.floor(evalAmount(s, ctx, a.of) / a.by);
+    case "pow":
+      return a.base ** Math.min(20, Math.max(0, evalAmount(s, ctx, a.of)));
     case "var":
       return readVar(ctx, a.name);
     case "lifeTotal":

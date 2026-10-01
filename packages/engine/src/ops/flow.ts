@@ -59,7 +59,7 @@ export const HANDLERS: OpHandlers = {
     createDelayed(s, ctx.controller, ctx.sourceId, ctx.sourceDefId, { targets: [], effects: e.effects, bound, vars }, e.at);
     return;
   },
-  reflexive(s, _r, e, ctx) {
+  reflexive(s, r, e, ctx) {
     // « jusqu'à X cibles » : le nombre de cibles est évalué maintenant (Miasma Demon, The Rollercrusher Ride).
     const targets = e.targets
       .map((t) =>
@@ -85,7 +85,13 @@ export const HANDLERS: OpHandlers = {
     if (targets.some((t) => t.count === 0)) return;
     const bound: Record<string, string[]> = {};
     for (const [k, r] of Object.entries(e.bind ?? {})) bound[k] = resolveRef(s, ctx, r);
-    pushInline(s, ctx.controller, ctx.sourceId, ctx.sourceDefId, { targets, effects: e.effects, bound });
+    const vars = e.keepVars ? Object.fromEntries(e.keepVars.map((k) => [`$${k}`, r.vars[`$${k}`] ?? []])) : undefined;
+    pushInline(s, ctx.controller, ctx.sourceId, ctx.sourceDefId, {
+      targets,
+      effects: e.effects,
+      bound,
+      ...(vars ? { vars } : {}),
+    });
     return;
   },
   may(s, r, e, ctx, key) {

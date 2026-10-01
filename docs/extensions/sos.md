@@ -29,3 +29,15 @@ Les scripts sont dans `packages/cards/src/sos/` : `cards` (cartes du méta), `wh
 - **Cartes :** 27 (sur 29), dont 6 cartes préparées (Elite Interceptor, Emeritus of Truce, Honorbound Page, Informed Inkwright, Joined Researchers, Spiritcall Enthusiast…), Repartee (Eager Glyphmage, Rehearsed Debater, Stirring Hopesinger…), le flashback d'Antiquities on the Loose et de Dig Site Inventory (écrit dans le script : il n'est pas lu dans le texte).
 - **Restent :** Group Project (flashback « engagez trois créatures », coût sans mana), Soaring Stoneglider (« exilez deux cartes de votre cimetière ou payez {1}{W} »).
 - **Tests :** 29 tests de règles (« lot A — blanc »).
+
+## Sous-lot A2 : cartes bleues ✅ (82 / 262)
+
+- **Cartes :** 26 (sur 29), dont 7 préparées (Campus Composer, Encouraging Aviator, Harmonized Trio, Jadzi, Landscape Painter, Skycoach Conductor, Spellbook Seeker), Increment (Pensive Professor, Tester of the Tangential, Textbook Tabulator), Opus (Muse Seeker, Divergent Equation…), Fractalize, Mathemagics.
+- **Le moteur gagne :**
+  - `fx.modify(…, basePT)` : F/E de base fixées à un montant évalué à la résolution (Fractalize : X+1/X+1) ;
+  - `fx.removeCounters` prend un montant ; `amount.pow(base, X)` (Mathemagics : 2^X cartes) ;
+  - `countX: "upTo"` : « jusqu'à X cibles » (Divergent Equation) ;
+  - `fx.reflexive(…, keepVars)` : la capacité réflexive reçoit des valeurs mémorisées (« payez {X}. Quand vous le faites, déplacez X marqueurs », Tester of the Tangential).
+- **Dette :** l'entrée `payX` de `debt-baseline.json` est retirée (l'opération sert à deux cartes).
+- **Restent :** Brush Off (réduction « s'il cible un sort », colorée), Mana Sculpt (mana dépensé pour le sort ciblé, « au début de votre prochaine phase principale »), Matterbending Mage (« un sort avec {X} dans son coût »).
+- **Tests :** 32 tests de règles (« lot A — bleu »).

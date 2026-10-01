@@ -93,6 +93,7 @@ export const HANDLERS: OpHandlers = {
       ...(e.untilLeavesExile ? { untilExiledUid: exiledUid(s, ctx, e.untilLeavesExile) } : {}),
       ...(e.whileSource ? { whileSource: ctx.sourceId } : {}),
       ...e.mods,
+      ...(e.basePT !== undefined ? { setPower: evalAmount(s, ctx, e.basePT), setToughness: evalAmount(s, ctx, e.basePT) } : {}),
     });
     return;
   },

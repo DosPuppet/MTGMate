@@ -349,8 +349,9 @@ export function validateTargets(
   const result: Record<string, string[]> = {};
   for (const spec of specs) {
     const ids = chosen[spec.id] ?? [];
-    // « X créatures ciblées » : exactement X cibles.
-    if (spec.countX && ids.length !== Math.max(0, opts.x ?? 0)) throw new RulesError(`${opts.x ?? 0} cible(s) requise(s)`);
+    // « X créatures ciblées » : exactement X cibles (« jusqu'à X » : au plus X, vérifié plus bas).
+    if (spec.countX === true && ids.length !== Math.max(0, opts.x ?? 0))
+      throw new RulesError(`${opts.x ?? 0} cible(s) requise(s)`);
     const max = spec.countX ? Math.max(0, opts.x ?? 0) : (opts.kicked && spec.kickedCount) || spec.count || 1;
     const hostSpec = spec.attachedToTarget;
     if (hostSpec && ids.some((id) => !(chosen[hostSpec] ?? []).includes(s.objects[id]?.attachedTo ?? ""))) {

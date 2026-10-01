@@ -31,8 +31,11 @@ export interface TargetSpec {
   kickedFilter?: TargetFilter;
   /** Valeur de mana exacte évaluée quand la capacité réflexive est mise sur la pile (Wishing Well). */
   manaValueAmount?: Amount;
-  /** Exactement X cibles, X étant choisi pour le sort ou la capacité (Rot-Curse Rakshasa : « X créatures ciblées »). */
-  countX?: boolean;
+  /**
+   * Exactement X cibles, X étant choisi pour le sort ou la capacité (Rot-Curse Rakshasa : « X créatures ciblées ») ;
+   * `"upTo"` : jusqu'à X cibles (Divergent Equation).
+   */
+  countX?: boolean | "upTo";
 }
 
 export interface TargetFilter {
@@ -601,6 +604,8 @@ export type Amount =
   /** Opposé (« -X/-0 ») et division entière (« pour chaque tranche de sept cartes »). */
   | { kind: "neg"; of: Amount }
   | { kind: "div"; of: Amount; by: number }
+  /** Puissance : `base` à la puissance `of` (Mathemagics : « 2^X cartes »), bornée à 2^20. */
+  | { kind: "pow"; base: number; of: Amount }
   /** Force totale des permanents correspondant au filtre, vus du contrôleur. */
   | { kind: "totalPower"; filter: ObjectFilter }
   /** Valeur mémorisée pendant la résolution (vie perdue de cette façon, blessures en excès…). */

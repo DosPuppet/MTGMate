@@ -283,6 +283,7 @@ export const amount = {
   neg: (of: Amount): Amount => ({ kind: "neg", of }),
   /** Division entière : « pour chaque tranche de N ». */
   per: (of: Amount, by: number): Amount => ({ kind: "div", of, by }),
+  pow: (base: number, of: Amount): Amount => ({ kind: "pow", base, of }),
   manaValueOf: (r: Ref): Amount => ({ kind: "manaValueOf", ref: r }),
   toughnessOf: (r: Ref): Amount => ({ kind: "toughnessOf", ref: r }),
   colorsOf: (r: Ref): Amount => ({ kind: "colorsOf", ref: r }),
@@ -389,11 +390,18 @@ export const fx = {
   lkiCountersTo: (to: Ref): Effect => ({ op: "lkiCountersTo", to }),
   cantGainLife: (who: Ref): Effect => ({ op: "cantGainLife", who }),
   millWhileShared: { op: "millWhileShared" } as Effect,
-  modify: (what: Ref, mods: LayerMods, duration: "endOfTurn" | "permanent" | "untilYourNextTurn" = "endOfTurn"): Effect => ({
+  /** `basePT` : F/E de base fixées à ce montant, évalué à la résolution (Fractalize : « X+1/X+1 »). */
+  modify: (
+    what: Ref,
+    mods: LayerMods,
+    duration: "endOfTurn" | "permanent" | "untilYourNextTurn" = "endOfTurn",
+    basePT?: Amount,
+  ): Effect => ({
     op: "modify",
     what,
     mods,
     duration,
+    ...(basePT !== undefined ? { basePT } : {}),
   }),
   draw: (n: Amount, who: Ref = ref.you): Effect => ({ op: "draw", who, amount: n }),
   gainLife: (n: Amount, who: Ref = ref.you): Effect => ({ op: "gainLife", who, amount: n }),
@@ -871,7 +879,7 @@ export const fx = {
   prepareAll: (filter: ObjectFilter, value = true): Effect => ({ op: "prepare", filter, value }),
   instantJaceLoyalty: { op: "playerEffect", ability: { jaceLoyaltyInstant: true } } as Effect,
   proliferate: (times: Amount = 1): Effect => ({ op: "proliferate", times }),
-  removeCounters: (what: Ref, n: number, kind?: string, store?: string): Effect => ({
+  removeCounters: (what: Ref, n: Amount, kind?: string, store?: string): Effect => ({
     op: "removeCounters",
     what,
     n,
@@ -1072,11 +1080,12 @@ export const fx = {
     effects: effects.flat(),
     bind,
   }),
-  reflexive: (targets: TargetSpec[], effects: Effects, bind?: Record<string, Ref>): Effect => ({
+  reflexive: (targets: TargetSpec[], effects: Effects, bind?: Record<string, Ref>, keepVars?: string[]): Effect => ({
     op: "reflexive",
     targets,
     effects: effects.flat(),
     bind,
+    ...(keepVars ? { keepVars } : {}),
   }),
   /** « Piochez N cartes, puis défaussez N cartes. » */
   loot: (n = 1): Effect[] => [

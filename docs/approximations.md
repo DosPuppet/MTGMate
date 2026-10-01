@@ -282,5 +282,8 @@ Dans l'ordre où elles ont été ajoutées, extension par extension.
   - `règle` Sentinel of Lost Lore : « choisissez un ou plusieurs » : chaque mode est une cible facultative (on peut n'en choisir aucun) ;
   - `règle` Extraordinary Journey : « une ou plusieurs créatures arrivent » : la capacité se déclenche à la première créature arrivée de l'exil (ou lancée depuis l'exil) du tour ;
   - `choix auto` Talion, the Kindly Lord : le nombre proposé est la valeur de mana la plus fréquente parmi les cartes adverses vues.
+- **Secrets of Strixhaven (`docs/extensions/sos.md`) :**
+  - `règle` Echocasting Symposium : le jeton copie est créé par vous puis donné au joueur ciblé (il en est le contrôleur, pas le propriétaire) ;
+  - `règle` Wisdom of Ages : « pas de taille de main maximale pour le reste de la partie » est un emblème.
 - **Légalité Standard :** instantané des légalités Scryfall au moment de l'import (`legalities.standard` dans `data/<set>.json`). Après une rotation ou une annonce de bannissement, réimporter les sets (`npm run import-cards -- <set>`).
 - **Images des jetons :** celle du jeton Scryfall le plus proche (même nom, puis mêmes F/E et couleurs ; `data/tokens.json`, `npm run import-tokens`) ; un jeton de nom inconnu garde le cadre texte.

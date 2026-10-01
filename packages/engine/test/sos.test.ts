@@ -961,3 +961,495 @@ describe("Secrets of Strixhaven, lot A — blanc", () => {
     });
   });
 });
+
+describe("Secrets of Strixhaven, lot A — bleu", () => {
+  /**
+   * Secrets of Strixhaven, lot A — cartes bleues : chaque carte au comportement non trivial est confrontée à son texte
+   * Oracle (plan R, lot R7). Préparation (Campus Composer, Encouraging Aviator, Harmonized Trio, Jadzi, Skycoach
+   * Conductor…), Opus (Deluge Virtuoso, Exhibition Tidecaller, Muse Seeker), Increment (Pensive Professor, Tester of the
+   * Tangential, Textbook Tabulator), marqueurs d'étourdissement, réductions de coût et sorts à X.
+   */
+  type S = GameState;
+  type Answer = (req: ChoiceRequest, player: string, s: S) => ChoiceValue[] | undefined;
+  const lands = (name: string, n: number) => Array(n).fill(name) as string[];
+  const nameOf = (s: S, id: string) => s.defs[s.objects[id]?.defId ?? ""]?.name;
+  const exiled = (s: S, name: string) => s.exile.filter((id) => nameOf(s, id) === name);
+  const castOptions = (s: S, player: string, card: string) =>
+    legalActions(s, player).filter((a) => a.type === "cast" && a.card === card);
+  const pt = (s: S, id: string) => [chars(s, id).power, chars(s, id).toughness];
+
+  /** Passe et répond aux choix (réponse suggérée par défaut) jusqu'à une pile vide, sans déclenchement en attente. */
+  const settle = (s: S, answer: Answer = () => undefined): S => {
+    let cur = s;
+    for (let i = 0; i < 300; i++) {
+      const p = cur.pending;
+      if (p?.kind === "priority" && cur.stack.length === 0 && cur.triggers.length === 0 && i > 0) break;
+      if (p?.kind === "priority") cur = act(cur, p.player, { type: "pass" });
+      else if (p?.kind === "choice")
+        cur = act(cur, p.player, { type: "choose", values: answer(p.request, p.player, cur) ?? p.request.suggested });
+      else break;
+    }
+    return cur;
+  };
+  const cast = (s: S, player: string, name: string, targets?: Record<string, string[]>, extra: object = {}) =>
+    act(s, player, { type: "cast", card: idOf(s, player, "hand", name), targets, ...extra });
+  const castExiled = (s: S, name: string, targets?: Record<string, string[]>, extra: object = {}) =>
+    act(s, "p1", { type: "cast", card: exiled(s, name)[0] as string, targets, ...extra });
+  const activate = (s: S, player: string, source: string, targets?: Record<string, string[]>, extra: object = {}) => {
+    const a = legalActions(s, player).find((x) => x.type === "activate" && x.source === source);
+    return act(s, player, { type: "activate", source, ability: a?.type === "activate" ? a.ability : -1, targets, ...extra });
+  };
+  const setCounters = (s: S, id: string, n: number) => {
+    (s.objects[id] as { counters: Record<string, number> }).counters["+1/+1"] = n;
+  };
+
+  it("Banishing Betrayal : renvoie un permanent non-terrain dans la main de son propriétaire, puis surveillance 1", () => {
+    let s = scenario({
+      p1: { battlefield: lands("Island", 2), hand: ["Banishing Betrayal"], library: ["Opt", "Forest"] },
+      p2: { battlefield: ["Serra Angel", "Plains"] },
+    });
+    const angel = idOf(s, "p2", "battlefield", "Serra Angel");
+    expect(() => cast(s, "p1", "Banishing Betrayal", { t: [idOf(s, "p2", "battlefield", "Plains")] })).toThrow();
+    s = settle(cast(s, "p1", "Banishing Betrayal", { t: [angel] }), (req, _p, cur) =>
+      req.type === "pick" ? req.options.filter((id) => nameOf(cur, id) === "Opt") : undefined,
+    );
+    expect(idsOf(s, "p2", "hand", "Serra Angel")).toHaveLength(1);
+    expect(idsOf(s, "p1", "graveyard", "Opt")).toHaveLength(1);
+    expect(nameOf(s, s.players.p1?.library[0] as string)).toBe("Forest");
+  });
+
+  it("Campus Composer : parade {2} ; arrive préparée, Aqueous Aria crée un Élémental 3/3 bleu et rouge volant", () => {
+    let s = scenario({ p1: { battlefield: lands("Island", 9), hand: ["Campus Composer"] } });
+    s = settle(cast(s, "p1", "Campus Composer"));
+    const composer = idOf(s, "p1", "battlefield", "Campus Composer");
+    expect(chars(s, composer).keywords).toContain("ward");
+    expect(exiled(s, "Aqueous Aria")).toHaveLength(1);
+    s = settle(castExiled(s, "Aqueous Aria"));
+    const elemental = idOf(s, "p1", "battlefield", "Elemental");
+    expect(pt(s, elemental)).toEqual([3, 3]);
+    expect([...chars(s, elemental).colors].sort()).toEqual(["R", "U"]);
+    expect(chars(s, elemental).keywords).toContain("flying");
+    expect(s.objects[composer]?.preparedCopy).toBeUndefined();
+  });
+
+  it("Chase Inspiration : une créature que vous contrôlez gagne +0/+3 et la défense talismanique jusqu'à la fin du tour", () => {
+    let s = scenario({
+      p1: { battlefield: ["Bear Cub", "Island"], hand: ["Chase Inspiration"] },
+      p2: { battlefield: ["Bear Cub"] },
+    });
+    expect(() => cast(s, "p1", "Chase Inspiration", { t: [idOf(s, "p2", "battlefield", "Bear Cub")] })).toThrow();
+    const bear = idOf(s, "p1", "battlefield", "Bear Cub");
+    s = settle(cast(s, "p1", "Chase Inspiration", { t: [bear] }));
+    expect(pt(s, bear)).toEqual([2, 5]);
+    expect(chars(s, bear).keywords).toContain("hexproof");
+    s = advanceUntil(s, (x) => x.turn.active === "p2");
+    expect(pt(s, bear)).toEqual([2, 2]);
+  });
+
+  describe("Deluge Virtuoso", () => {
+    it("en arrivant : engage une créature adverse et y met un marqueur d'étourdissement", () => {
+      let s = scenario({ p1: { battlefield: lands("Island", 3), hand: ["Deluge Virtuoso"] }, p2: { battlefield: ["Bear Cub"] } });
+      const bear = idOf(s, "p2", "battlefield", "Bear Cub");
+      s = settle(cast(s, "p1", "Deluge Virtuoso"), (req) =>
+        req.type === "pick" && req.options.includes(bear) ? [bear] : undefined,
+      );
+      expect(s.objects[bear]?.tapped).toBe(true);
+      expect(s.objects[bear]?.counters.stun).toBe(1);
+      // Le marqueur d'étourdissement remplace le dégagement suivant.
+      s = advanceUntil(s, (x) => x.turn.active === "p2" && x.turn.step === "main1");
+      expect(s.objects[bear]?.tapped).toBe(true);
+      expect(s.objects[bear]?.counters.stun ?? 0).toBe(0);
+    });
+
+    it("Opus : +1/+1 ; cinq mana ou plus dépensés : +2/+2 à la place", () => {
+      let s = scenario({
+        p1: {
+          battlefield: ["Deluge Virtuoso", ...lands("Island", 7)],
+          hand: ["Opt", "Homesickness"],
+          library: lands("Forest", 6),
+        },
+      });
+      const v = idOf(s, "p1", "battlefield", "Deluge Virtuoso");
+      s = settle(cast(s, "p1", "Opt"));
+      expect(pt(s, v)).toEqual([3, 3]);
+      s = settle(cast(s, "p1", "Homesickness", { p: ["p1"], c: [] }));
+      expect(pt(s, v)).toEqual([5, 5]);
+      s = advanceUntil(s, (x) => x.turn.active === "p2");
+      expect(pt(s, v)).toEqual([2, 2]);
+    });
+  });
+
+  it("Divergent Equation : renvoie X cartes d'éphémère et de rituel du cimetière en main, puis s'exile", () => {
+    let s = scenario({
+      p1: { battlefield: lands("Island", 5), hand: ["Divergent Equation"], graveyard: ["Opt", "Boltwave", "Bear Cub"] },
+    });
+    const opt = idOf(s, "p1", "graveyard", "Opt");
+    const bolt = idOf(s, "p1", "graveyard", "Boltwave");
+    expect(() => cast(s, "p1", "Divergent Equation", { t: [idOf(s, "p1", "graveyard", "Bear Cub")] }, { x: 1 })).toThrow();
+    s = settle(cast(s, "p1", "Divergent Equation", { t: [opt, bolt] }, { x: 2 }));
+    expect(idsOf(s, "p1", "hand", "Opt")).toHaveLength(1);
+    expect(idsOf(s, "p1", "hand", "Boltwave")).toHaveLength(1);
+    expect(idsOf(s, "p1", "graveyard", "Bear Cub")).toHaveLength(1);
+    expect(exiled(s, "Divergent Equation")).toHaveLength(1);
+  });
+
+  it("Echocasting Symposium : le joueur ciblé crée un jeton copie d'une créature que vous contrôlez ; Paradigme", () => {
+    let s = scenario({ p1: { battlefield: ["Serra Angel", ...lands("Island", 6)], hand: ["Echocasting Symposium"] } });
+    const angel = idOf(s, "p1", "battlefield", "Serra Angel");
+    s = settle(cast(s, "p1", "Echocasting Symposium", { p: ["p1"], c: [angel] }));
+    const copies = idsOf(s, "p1", "battlefield", "Serra Angel").filter((id) => id !== angel);
+    expect(copies).toHaveLength(1);
+    expect(s.objects[copies[0] as string]?.isToken).toBe(true);
+    expect(exiled(s, "Echocasting Symposium")).toHaveLength(1);
+
+    let t = scenario({ p1: { battlefield: ["Serra Angel", ...lands("Island", 6)], hand: ["Echocasting Symposium"] } });
+    t = settle(cast(t, "p1", "Echocasting Symposium", { p: ["p2"], c: [idOf(t, "p1", "battlefield", "Serra Angel")] }));
+    expect(idsOf(t, "p2", "battlefield", "Serra Angel")).toHaveLength(1);
+  });
+
+  it("Encouraging Aviator : en attaquant, devient préparée ; Jump donne le vol à une créature jusqu'à la fin du tour", () => {
+    let s = scenario({ p1: { battlefield: ["Encouraging Aviator", "Bear Cub", "Island"] } });
+    const aviator = idOf(s, "p1", "battlefield", "Encouraging Aviator");
+    const bear = idOf(s, "p1", "battlefield", "Bear Cub");
+    expect(exiled(s, "Jump")).toHaveLength(0);
+    s = advanceUntil(s, (x) => x.pending?.kind === "declareAttackers");
+    s = settle(act(s, "p1", { type: "declareAttackers", attackers: [{ id: aviator, defender: "p2" }] }));
+    expect(exiled(s, "Jump")).toHaveLength(1);
+    expect(chars(s, bear).keywords).not.toContain("flying");
+    s = settle(castExiled(s, "Jump", { t: [bear] }));
+    expect(chars(s, bear).keywords).toContain("flying");
+  });
+
+  it("Exhibition Tidecaller : Opus, le joueur ciblé meule trois cartes ; dix si cinq mana ou plus", () => {
+    let s = scenario({
+      p1: { battlefield: ["Exhibition Tidecaller", ...lands("Island", 7)], hand: ["Opt", "Homesickness"] },
+      p2: { library: lands("Forest", 20) },
+    });
+    const toP2: Answer = (req) => (req.type === "pick" && req.options.includes("p2") ? ["p2"] : undefined);
+    s = settle(cast(s, "p1", "Opt"), toP2);
+    expect(s.players.p2?.graveyard).toHaveLength(3);
+    s = settle(cast(s, "p1", "Homesickness", { p: ["p1"], c: [] }), toP2);
+    expect(s.players.p2?.graveyard).toHaveLength(13);
+  });
+
+  describe("Flow State", () => {
+    it("regarde trois cartes : une en main, les autres au-dessous", () => {
+      let s = scenario({
+        p1: { battlefield: lands("Island", 2), hand: ["Flow State"], library: ["Opt", "Bear Cub", "Serra Angel", "Forest"] },
+      });
+      s = settle(cast(s, "p1", "Flow State"));
+      expect(s.players.p1?.hand).toHaveLength(1);
+      expect(s.players.p1?.library).toHaveLength(3);
+      expect(nameOf(s, s.players.p1?.library[0] as string)).toBe("Forest");
+    });
+
+    it("avec un éphémère et un rituel au cimetière : deux cartes en main à la place", () => {
+      let s = scenario({
+        p1: {
+          battlefield: lands("Island", 2),
+          hand: ["Flow State"],
+          graveyard: ["Opt", "Boltwave"],
+          library: ["Opt", "Bear Cub", "Serra Angel", "Forest"],
+        },
+      });
+      s = settle(cast(s, "p1", "Flow State"));
+      expect(s.players.p1?.hand).toHaveLength(2);
+      expect(nameOf(s, s.players.p1?.library[0] as string)).toBe("Forest");
+    });
+  });
+
+  it("Fractal Anomaly : une Fractale 0/0 avec un marqueur +1/+1 par carte piochée ce tour-ci (0 : elle meurt)", () => {
+    let s = scenario({ p1: { battlefield: lands("Island", 3), hand: ["Fractal Anomaly", "Opt"], library: lands("Forest", 5) } });
+    s = settle(cast(s, "p1", "Opt"));
+    s = settle(cast(s, "p1", "Fractal Anomaly"));
+    const fractal = idOf(s, "p1", "battlefield", "Fractal");
+    expect(pt(s, fractal)).toEqual([1, 1]);
+    expect([...chars(s, fractal).colors].sort()).toEqual(["G", "U"]);
+
+    let t = scenario({ p1: { battlefield: ["Island"], hand: ["Fractal Anomaly"] } });
+    t = settle(cast(t, "p1", "Fractal Anomaly"));
+    expect(idsOf(t, "p1", "battlefield", "Fractal")).toHaveLength(0);
+  });
+
+  it("Fractalize : jusqu'à la fin du tour, la créature devient une Fractale verte et bleue de F/E de base X+1", () => {
+    let s = scenario({ p1: { battlefield: lands("Island", 4), hand: ["Fractalize"] }, p2: { battlefield: ["Serra Angel"] } });
+    const angel = idOf(s, "p2", "battlefield", "Serra Angel");
+    s = settle(cast(s, "p1", "Fractalize", { t: [angel] }, { x: 3 }));
+    const c = chars(s, angel);
+    expect([c.power, c.toughness]).toEqual([4, 4]);
+    expect([...c.colors].sort()).toEqual(["G", "U"]);
+    expect(c.subtypes).toEqual(["Fractal"]);
+    expect(c.keywords).toContain("flying");
+    s = advanceUntil(s, (x) => x.turn.active === "p2");
+    expect(pt(s, angel)).toEqual([4, 4]);
+    expect(chars(s, angel).subtypes).toEqual(["Angel"]);
+    expect(chars(s, angel).colors).toEqual(["W"]);
+  });
+
+  it("Harmonized Trio : {T} et engager deux créatures, devient préparée ; Brainstorm pioche trois et en remet deux", () => {
+    let s = scenario({
+      p1: {
+        battlefield: ["Harmonized Trio", "Bear Cub", "Serra Angel", "Island"],
+        hand: ["Opt"],
+        library: ["Forest", "Plains", "Swamp", "Mountain"],
+      },
+    });
+    const trio = idOf(s, "p1", "battlefield", "Harmonized Trio");
+    expect(exiled(s, "Brainstorm")).toHaveLength(0);
+    s = settle(activate(s, "p1", trio));
+    expect(s.objects[trio]?.tapped).toBe(true);
+    expect(s.objects[idOf(s, "p1", "battlefield", "Bear Cub")]?.tapped).toBe(true);
+    expect(s.objects[idOf(s, "p1", "battlefield", "Serra Angel")]?.tapped).toBe(true);
+    expect(exiled(s, "Brainstorm")).toHaveLength(1);
+    s = settle(castExiled(s, "Brainstorm"), (req, _p, cur) =>
+      req.type === "pick" && req.options.some((id) => nameOf(cur, id) === "Opt")
+        ? req.options.filter((id) => ["Opt", "Forest"].includes(nameOf(cur, id) ?? ""))
+        : undefined,
+    );
+    expect((s.players.p1?.hand ?? []).map((id) => nameOf(s, id)).sort()).toEqual(["Plains", "Swamp"]);
+    expect(s.players.p1?.library).toHaveLength(3);
+    expect(
+      (s.players.p1?.library ?? [])
+        .slice(0, 2)
+        .map((id) => nameOf(s, id))
+        .sort(),
+    ).toEqual(["Forest", "Opt"]);
+  });
+
+  it("Homesickness : le joueur ciblé pioche deux cartes ; jusqu'à deux créatures engagées avec un marqueur d'étourdissement", () => {
+    let s = scenario({
+      p1: { battlefield: lands("Island", 6), hand: ["Homesickness"] },
+      p2: { battlefield: ["Bear Cub", "Serra Angel"] },
+    });
+    const bear = idOf(s, "p2", "battlefield", "Bear Cub");
+    const angel = idOf(s, "p2", "battlefield", "Serra Angel");
+    s = settle(cast(s, "p1", "Homesickness", { p: ["p1"], c: [bear, angel] }));
+    expect(s.players.p1?.hand).toHaveLength(2);
+    for (const id of [bear, angel]) {
+      expect(s.objects[id]?.tapped).toBe(true);
+      expect(s.objects[id]?.counters.stun).toBe(1);
+    }
+  });
+
+  it("Hydro-Channeler : son mana ne sert qu'aux éphémères et rituels ; {1}, {T} : un mana de n'importe quelle couleur", () => {
+    const s = scenario({ p1: { battlefield: ["Hydro-Channeler", "Forest"], hand: ["Opt", "Boltwave"] } });
+    expect(castOptions(s, "p1", idOf(s, "p1", "hand", "Opt"))).not.toHaveLength(0);
+    // Le Boltwave ({R}) : la seconde capacité, {1} payé par la Forêt, donne {R}.
+    let r = settle(activate(s, "p1", idOf(s, "p1", "battlefield", "Hydro-Channeler")), (req) =>
+      req.type === "pick" && req.options.includes("R") ? ["R"] : undefined,
+    );
+    r = settle(cast(r, "p1", "Boltwave"));
+    expect(r.players.p2?.life).toBe(17);
+    // Son mana ne paie pas un sort de créature.
+    const t = scenario({ p1: { battlefield: ["Hydro-Channeler", "Forest"], hand: ["Bear Cub"] } });
+    expect(castOptions(t, "p1", idOf(t, "p1", "hand", "Bear Cub"))).toHaveLength(0);
+  });
+
+  describe("Jadzi, Steward of Fate", () => {
+    it("en arrivant : piochez deux cartes, puis défaussez-en deux ; arrive préparée", () => {
+      let s = scenario({
+        p1: { battlefield: lands("Island", 3), hand: ["Jadzi, Steward of Fate"], library: lands("Forest", 4) },
+      });
+      s = settle(cast(s, "p1", "Jadzi, Steward of Fate"));
+      expect(s.players.p1?.hand).toHaveLength(0);
+      expect(s.players.p1?.graveyard).toHaveLength(2);
+      expect(exiled(s, "Oracle's Gift")).toHaveLength(1);
+    });
+
+    it("Oracle's Gift : X Fractales, puis X marqueurs +1/+1 sur chaque Fractale que vous contrôlez", () => {
+      let s = scenario({
+        p1: {
+          battlefield: lands("Island", 10),
+          hand: ["Opt", "Fractal Anomaly", "Jadzi, Steward of Fate"],
+          library: lands("Forest", 6),
+        },
+      });
+      // Une Fractale 1/1 déjà présente (une carte piochée par Opt).
+      s = settle(cast(s, "p1", "Opt"));
+      s = settle(cast(s, "p1", "Fractal Anomaly"));
+      const first = idOf(s, "p1", "battlefield", "Fractal");
+      s = settle(cast(s, "p1", "Jadzi, Steward of Fate"));
+      s = settle(castExiled(s, "Oracle's Gift", undefined, { x: 2 }));
+      const fractals = idsOf(s, "p1", "battlefield", "Fractal");
+      expect(fractals).toHaveLength(3);
+      expect(pt(s, first)).toEqual([3, 3]);
+      for (const id of fractals.filter((x) => x !== first)) expect(pt(s, id)).toEqual([2, 2]);
+    });
+  });
+
+  it("Landscape Painter : arrive préparée ; Vibrant Idea pioche deux cartes", () => {
+    let s = scenario({ p1: { battlefield: lands("Island", 7), hand: ["Landscape Painter"], library: lands("Forest", 4) } });
+    s = settle(cast(s, "p1", "Landscape Painter"));
+    s = settle(castExiled(s, "Vibrant Idea"));
+    expect(s.players.p1?.hand).toHaveLength(2);
+  });
+
+  it("Mathemagics : le joueur ciblé pioche 2^X cartes", () => {
+    const run = (x: number) => {
+      let s = scenario({ p1: { battlefield: lands("Island", 8), hand: ["Mathemagics"], library: lands("Forest", 20) } });
+      s = settle(cast(s, "p1", "Mathemagics", { p: ["p1"] }, { x }));
+      return s.players.p1?.hand.length;
+    };
+    expect(run(0)).toBe(1);
+    expect(run(1)).toBe(2);
+    expect(run(3)).toBe(8);
+  });
+
+  /** Défausse une autre carte que Homesickness. */
+  const keepHomesickness: Answer = (req, _p, cur) =>
+    req.type === "pick" && req.options.some((id) => nameOf(cur, id) === "Homesickness")
+      ? req.options.filter((id) => nameOf(cur, id) !== "Homesickness").slice(0, 1)
+      : undefined;
+
+  it("Muse Seeker : Opus, piochez puis défaussez ; pas de défausse si cinq mana ou plus", () => {
+    let s = scenario({
+      p1: { battlefield: ["Muse Seeker", ...lands("Island", 7)], hand: ["Opt", "Homesickness"], library: lands("Forest", 10) },
+    });
+    s = settle(cast(s, "p1", "Opt"), keepHomesickness);
+    // Opt pioche une carte, Muse Seeker en pioche une et en défausse une : Homesickness + une carte.
+    expect(s.players.p1?.hand).toHaveLength(2);
+    expect(s.players.p1?.graveyard).toHaveLength(2);
+    s = settle(cast(s, "p1", "Homesickness", { p: ["p2"], c: [] }));
+    // Homesickness (six mana) : Muse Seeker pioche sans défausser.
+    expect(s.players.p1?.hand).toHaveLength(2);
+    expect(s.players.p1?.graveyard).toHaveLength(3);
+  });
+
+  it("Muse's Encouragement : un Élémental 3/3 volant, puis surveillance 2", () => {
+    let s = scenario({
+      p1: { battlefield: lands("Island", 5), hand: ["Muse's Encouragement"], library: ["Opt", "Opt", "Forest"] },
+    });
+    s = settle(cast(s, "p1", "Muse's Encouragement"), (req) => (req.type === "pick" ? req.options : undefined));
+    expect(idsOf(s, "p1", "battlefield", "Elemental")).toHaveLength(1);
+    expect(s.players.p1?.graveyard.filter((id) => nameOf(s, id) === "Opt")).toHaveLength(2);
+  });
+
+  it("Orysa, Tide Choreographer : coûte {3} de moins avec une endurance totale de 10 ou plus ; pioche deux cartes en arrivant", () => {
+    const wall = customCard({ name: "Mur d'essai", power: 0, toughness: 10 });
+    const s = scenario({ p1: { battlefield: lands("Island", 2), hand: ["Orysa, Tide Choreographer"] } });
+    expect(castOptions(s, "p1", idOf(s, "p1", "hand", "Orysa, Tide Choreographer"))).toHaveLength(0);
+    let t = scenario({
+      p1: { battlefield: [wall, ...lands("Island", 2)], hand: ["Orysa, Tide Choreographer"], library: lands("Forest", 3) },
+    });
+    t = settle(cast(t, "p1", "Orysa, Tide Choreographer"));
+    expect(idsOf(t, "p1", "battlefield", "Orysa, Tide Choreographer")).toHaveLength(1);
+    expect(t.players.p1?.hand).toHaveLength(2);
+  });
+
+  it("Pensive Professor : Increment, puis chaque marqueur +1/+1 mis sur elle fait piocher une carte", () => {
+    let s = scenario({
+      p1: { battlefield: ["Pensive Professor", ...lands("Island", 2)], hand: ["Opt", "Opt"], library: lands("Forest", 5) },
+    });
+    const prof = idOf(s, "p1", "battlefield", "Pensive Professor");
+    s = settle(cast(s, "p1", "Opt"));
+    // 1 mana > force 0 : un marqueur, et une carte piochée (plus celle d'Opt).
+    expect(s.objects[prof]?.counters["+1/+1"]).toBe(1);
+    expect(s.players.p1?.hand).toHaveLength(3);
+    // 1 mana n'est supérieur ni à la force (1) ni à l'endurance (3) : rien.
+    s = settle(cast(s, "p1", "Opt"));
+    expect(s.objects[prof]?.counters["+1/+1"]).toBe(1);
+    expect(s.players.p1?.hand).toHaveLength(3);
+  });
+
+  it("Procrastinate : engage la créature ciblée et y met deux fois X marqueurs d'étourdissement", () => {
+    let s = scenario({ p1: { battlefield: lands("Island", 3), hand: ["Procrastinate"] }, p2: { battlefield: ["Serra Angel"] } });
+    const angel = idOf(s, "p2", "battlefield", "Serra Angel");
+    s = settle(cast(s, "p1", "Procrastinate", { t: [angel] }, { x: 2 }));
+    expect(s.objects[angel]?.tapped).toBe(true);
+    expect(s.objects[angel]?.counters.stun).toBe(4);
+  });
+
+  describe("Run Behind", () => {
+    it("le propriétaire met la créature au-dessus ou au-dessous de sa bibliothèque", () => {
+      let s = scenario({ p1: { battlefield: lands("Island", 4), hand: ["Run Behind"] }, p2: { battlefield: ["Serra Angel"] } });
+      const angel = idOf(s, "p2", "battlefield", "Serra Angel");
+      s = settle(cast(s, "p1", "Run Behind", { t: [angel] }), (req, player) =>
+        req.type === "pick" && player === "p2" ? ["top"] : undefined,
+      );
+      expect(nameOf(s, s.players.p2?.library[0] as string)).toBe("Serra Angel");
+    });
+
+    it("coûte {1} de moins s'il cible une créature attaquante", () => {
+      let s = scenario({
+        p1: { battlefield: lands("Island", 3), hand: ["Run Behind"] },
+        p2: { battlefield: ["Serra Angel"] },
+        active: "p2",
+      });
+      const angel = idOf(s, "p2", "battlefield", "Serra Angel");
+      expect(() => cast(s, "p1", "Run Behind", { t: [angel] })).toThrow();
+      s = advanceUntil(s, (x) => x.pending?.kind === "declareAttackers");
+      s = act(s, "p2", { type: "declareAttackers", attackers: [{ id: angel, defender: "p1" }] });
+      s = advanceUntil(s, (x) => x.pending?.kind === "priority" && x.pending.player === "p1");
+      s = settle(cast(s, "p1", "Run Behind", { t: [angel] }), (req) => (req.type === "pick" ? ["bottom"] : undefined));
+      expect(nameOf(s, s.players.p2?.library.at(-1) as string)).toBe("Serra Angel");
+    });
+  });
+
+  it("Skycoach Conductor : All Aboard exile une créature non-Pilote que vous contrôlez et la renvoie", () => {
+    let s = scenario({
+      p1: { battlefield: [{ name: "Bear Cub", tapped: true }, ...lands("Island", 4)], hand: ["Skycoach Conductor"] },
+    });
+    s = settle(cast(s, "p1", "Skycoach Conductor"));
+    const conductor = idOf(s, "p1", "battlefield", "Skycoach Conductor");
+    expect(chars(s, conductor).keywords).toEqual(expect.arrayContaining(["flash", "flying", "vigilance"]));
+    expect(() => castExiled(s, "All Aboard", { t: [conductor] })).toThrow();
+    const bear = idOf(s, "p1", "battlefield", "Bear Cub");
+    s = settle(castExiled(s, "All Aboard", { t: [bear] }));
+    const back = idOf(s, "p1", "battlefield", "Bear Cub");
+    expect(back).not.toBe(bear);
+    expect(s.objects[back]?.tapped).toBe(false);
+  });
+
+  it("Spellbook Seeker : arrive préparée ; Careful Study pioche deux cartes puis en défausse deux", () => {
+    let s = scenario({ p1: { battlefield: lands("Island", 5), hand: ["Spellbook Seeker"], library: lands("Forest", 4) } });
+    s = settle(cast(s, "p1", "Spellbook Seeker"));
+    s = settle(castExiled(s, "Careful Study"));
+    expect(s.players.p1?.hand).toHaveLength(0);
+    expect(s.players.p1?.graveyard).toHaveLength(2);
+  });
+
+  it("Tester of the Tangential : au début du combat, payez {X} pour déplacer X marqueurs +1/+1 sur une autre créature", () => {
+    let s = scenario({ p1: { battlefield: ["Tester of the Tangential", "Bear Cub", ...lands("Island", 2)] } });
+    const tester = idOf(s, "p1", "battlefield", "Tester of the Tangential");
+    const bear = idOf(s, "p1", "battlefield", "Bear Cub");
+    setCounters(s, tester, 3);
+    s = advanceUntil(s, (x) => x.turn.step === "beginCombat" && x.pending?.kind === "choice");
+    s = settle(s, (req) =>
+      req.type === "number" ? [2] : req.type === "pick" && req.options.includes(bear) ? [bear] : undefined,
+    );
+    expect(s.objects[tester]?.counters["+1/+1"]).toBe(1);
+    expect(s.objects[bear]?.counters["+1/+1"]).toBe(2);
+    expect(s.battlefield.filter((id) => nameOf(s, id) === "Island" && s.objects[id]?.tapped)).toHaveLength(2);
+  });
+
+  it("Textbook Tabulator : surveillance 2 en arrivant ; Increment selon le mana dépensé", () => {
+    let s = scenario({
+      p1: { battlefield: lands("Island", 7), hand: ["Textbook Tabulator", "Opt", "Homesickness"], library: lands("Forest", 6) },
+    });
+    s = settle(cast(s, "p1", "Textbook Tabulator"), (req) => (req.type === "pick" ? req.options : undefined));
+    expect(s.players.p1?.graveyard).toHaveLength(2);
+    const tab = idOf(s, "p1", "battlefield", "Textbook Tabulator");
+    // 1 mana > force 0 : un marqueur.
+    s = settle(cast(s, "p1", "Opt"));
+    expect(s.objects[tab]?.counters["+1/+1"]).toBe(1);
+  });
+
+  it("Wisdom of Ages : toutes les cartes d'éphémère et de rituel du cimetière reviennent en main ; plus de main maximale", () => {
+    let s = scenario({
+      p1: {
+        battlefield: lands("Island", 7),
+        hand: ["Wisdom of Ages", ...lands("Forest", 6)],
+        graveyard: ["Opt", "Boltwave", "Lightning Strike", "Bear Cub"],
+      },
+    });
+    s = settle(cast(s, "p1", "Wisdom of Ages"));
+    expect(s.players.p1?.hand).toHaveLength(9);
+    expect(idsOf(s, "p1", "graveyard", "Bear Cub")).toHaveLength(1);
+    expect(s.players.p1?.graveyard).toHaveLength(1);
+    expect(exiled(s, "Wisdom of Ages")).toHaveLength(1);
+    // Fin du tour : pas de défausse à sept cartes, ni ce tour-ci ni plus tard.
+    s = advanceUntil(s, (x) => x.turn.active === "p2" || x.pending?.kind === "discard");
+    expect(s.pending?.kind).not.toBe("discard");
+    expect(s.players.p1?.hand).toHaveLength(9);
+  });
+});

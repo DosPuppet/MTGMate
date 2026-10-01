@@ -135,7 +135,7 @@ export const HANDLERS: OpHandlers = {
       const o = s.objects[id];
       // Une carte suspendue perd ses marqueurs de temps en exil (702.62).
       if (o?.zone !== "battlefield" && !(o?.zone === "exile" && o.suspended)) continue;
-      let left = e.n;
+      let left = Math.max(0, evalAmount(s, ctx, e.n));
       const order = e.kind
         ? [e.kind]
         : ["loyalty", "+1/+1", ...Object.keys(o.counters).filter((k) => k !== "loyalty" && k !== "+1/+1")];
