@@ -103,7 +103,7 @@ function refIds(v: GameView, ref: string): string[] {
 }
 
 const nameOf = (v: GameView, id: string): string | undefined =>
-  [...v.hand, ...v.battlefield, ...v.playableExile].find((o) => o.id === id)?.name;
+  [...v.hand, ...v.battlefield, ...v.playableElsewhere].find((o) => o.id === id)?.name;
 
 const sameSet = (a: string[], b: string[]) => a.length === b.length && [...a].sort().join("|") === [...b].sort().join("|");
 

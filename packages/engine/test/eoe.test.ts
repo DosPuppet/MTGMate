@@ -518,3 +518,23 @@ describe("Edge of Eternities, lot D", () => {
     expect(idsOf(s, "p2", "battlefield", "Bear Cub")).toHaveLength(0);
   });
 });
+
+describe("cartes jouables hors de la main (vue)", () => {
+  it("Icetill Explorer : les terrains du cimetière sont présentés au bout de la main, et se jouent", () => {
+    let s = scenario({ p1: { battlefield: ["Icetill Explorer"], graveyard: ["Forest", "Bear Cub", "Bulk Up"] } });
+    const forest = idOf(s, "p1", "graveyard", "Forest");
+    const names = projectView(s, "p1").playableElsewhere.map((c) => [c.name, c.zone]);
+    // Le terrain (Icetill Explorer) et le sort à flashback ; pas la créature sans permission.
+    expect(names).toEqual(
+      expect.arrayContaining([
+        ["Forest", "graveyard"],
+        ["Bulk Up", "graveyard"],
+      ]),
+    );
+    expect(names.some(([n]) => n === "Bear Cub")).toBe(false);
+    // L'adversaire ne voit pas ces cartes comme jouables pour lui.
+    expect(projectView(s, "p2").playableElsewhere).toHaveLength(0);
+    s = act(s, "p1", { type: "playLand", card: forest });
+    expect(idsOf(s, "p1", "battlefield", "Forest")).toHaveLength(1);
+  });
+});

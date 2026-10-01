@@ -6,7 +6,7 @@
 import { copiedDefId } from "./layers";
 import { legalActions } from "./legal";
 import { costToText } from "./mana";
-import { canPlayLand, castTerms, modesOf } from "./stack";
+import { abilitiesOf, castTerms, landPermitted, modesOf } from "./stack";
 import { chars, decider, isCreature, isSummoningSick, obj } from "./state";
 import { playerStatic, playerStatics } from "./statics";
 import { pendingTriggerSource } from "./triggers";
@@ -171,8 +171,12 @@ export interface GameView {
    * liées, matériaux d'une fabrication) : identifiant du permanent → cartes exilées. Information publique.
    */
   exiledWith: Record<ObjectId, ObjectId[]>;
-  /** Cartes exilées que le spectateur peut jouer ce tour-ci. */
-  playableExile: ObjectView[];
+  /**
+   * Cartes hors de la main que le spectateur peut jouer (présentées au bout de sa main, `zone` dit d'où elles viennent) :
+   * exilées jouables (Chandra, sorts préparés), du cimetière (flashback, Icetill Explorer, capacités activables depuis le
+   * cimetière), dessus de la bibliothèque (Vizier of the Menagerie).
+   */
+  playableElsewhere: ObjectView[];
   combat: { attackers: { id: ObjectId; defender: string; blockers: ObjectId[] }[] } | null;
   pending: PendingView | null;
   /** Nombre de créatures du spectateur qui pourraient attaquer ce tour-ci (pour l'interface). */
@@ -430,8 +434,17 @@ export function projectView(s: GameState, viewer: PlayerId): GameView {
     stack,
     exile: s.exile.map((id) => objectView(s, id)),
     exiledWith: exiledWith(s),
-    playableExile: [
-      ...s.exile.filter((id) => castTerms(s, viewer, id) || canPlayLand(s, viewer, id)),
+    playableElsewhere: [
+      ...s.exile.filter((id) => castTerms(s, viewer, id) || landPermitted(s, viewer, id)),
+      // Cimetières (le sien, et ceux des autres avec une permission : Tinybones).
+      ...s.playerOrder.flatMap((p) =>
+        (s.players[p]?.graveyard ?? []).filter(
+          (id) =>
+            castTerms(s, viewer, id) ||
+            landPermitted(s, viewer, id) ||
+            (s.objects[id]?.owner === viewer && abilitiesOf(s, id).some((ab) => ab.kind === "activated" && ab.fromGraveyard)),
+        ),
+      ),
       // « Vous pouvez regarder la carte du dessus de votre bibliothèque à tout moment » : Vizier of the Menagerie, et
       // toute permission de jouer depuis le dessus de la bibliothèque (famille C).
       ...((playerStatics(s, viewer, "playFrom").some(({ ab }) => ab.playFrom?.zone === "libraryTop") ||

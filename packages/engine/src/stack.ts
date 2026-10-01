@@ -174,11 +174,19 @@ function graveyardTypeAvailable(s: GameState, player: PlayerId, card: ObjectId):
 const PERMANENT_TYPES: readonly string[] = ["Artifact", "Creature", "Enchantment", "Land", "Planeswalker", "Battle"];
 
 export function canPlayLand(s: GameState, player: PlayerId, card: ObjectId): boolean {
+  return landPermitted(s, player, card) && sorceryTiming(s, player) && s.turn.landsPlayed < landsAllowed(s, player);
+}
+
+/**
+ * Le joueur a-t-il le droit de jouer ce terrain depuis sa zone (main, exil, cimetière, dessus de la bibliothèque), sans
+ * tenir compte du moment ni des terrains déjà joués ? (L'interface présente ces cartes au bout de la main.)
+ */
+export function landPermitted(s: GameState, player: PlayerId, card: ObjectId): boolean {
   const o = s.objects[card];
   if (!o) return false;
   const d = s.defs[o.defId];
   if (!d?.types.includes("Land")) return false;
-  const allowed =
+  return (
     (o.zone === "hand" && o.owner === player) ||
     (o.zone === "exile" && !!exilePermission(s, player, card) && !exilePermission(s, player, card)?.anyTime) ||
     (o.zone === "exile" && valgavothLinked(s, player, card)) ||
@@ -192,8 +200,8 @@ export function canPlayLand(s: GameState, player: PlayerId, card: ObjectId): boo
     (o.zone === "graveyard" && !!exilePermission(s, player, card) && !exilePermission(s, player, card)?.anyTime) ||
     (o.zone === "graveyard" &&
       o.owner === player &&
-      (graveyardTypeAvailable(s, player, card) === "Land" || playFromRules(s, player, card, "graveyard", "lands").length > 0));
-  return allowed && sorceryTiming(s, player) && s.turn.landsPlayed < landsAllowed(s, player);
+      (graveyardTypeAvailable(s, player, card) === "Land" || playFromRules(s, player, card, "graveyard", "lands").length > 0))
+  );
 }
 
 /** Types de terrain de base (205.3i). */

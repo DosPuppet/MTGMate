@@ -297,7 +297,7 @@ interface Store {
  */
 function legendDuplicate(view: GameView | null, option: PlayableOption, sourceId: string): string | null {
   if (!view || option.type !== "cast" || option.faceDown) return null;
-  const card = [...view.hand, ...view.playableExile, ...(view.players[view.viewer]?.graveyard ?? [])].find(
+  const card = [...view.hand, ...view.playableElsewhere, ...(view.players[view.viewer]?.graveyard ?? [])].find(
     (c) => c.id === sourceId,
   );
   if (!card) return null;

@@ -668,6 +668,7 @@ button {
   padding-top: 6px;
 }
 .hand-card {
+  position: relative;
   margin: 0 calc(var(--hand-w) * -0.16);
   transform-origin: 50% 120%;
   cursor: grab;
@@ -913,8 +914,35 @@ button {
   border: 1px solid rgba(255, 255, 255, 0.45);
   clip-path: polygon(0 0, 100% 0, 100% 70%, 50% 100%, 0 70%);
 }
-.hand-card.from-exile .card {
-  outline: 2px dashed rgba(255, 170, 90, 0.9);
+/* Cartes jouables depuis une autre zone que la main : liseré pointillé (couleur selon la zone) et étiquette. */
+.hand-card.from-elsewhere .card {
+  outline: 2px dashed var(--zone-color);
+  filter: saturate(0.85);
+}
+.hand-card.from-exile {
+  --zone-color: rgba(255, 170, 90, 0.9);
+}
+.hand-card.from-graveyard {
+  --zone-color: rgba(170, 140, 255, 0.95);
+}
+.hand-card.from-library {
+  --zone-color: rgba(110, 190, 255, 0.95);
+}
+.hand-card .zone-tag {
+  position: absolute;
+  top: -10px;
+  left: 50%;
+  translate: -50% 0;
+  z-index: 2;
+  pointer-events: none;
+  padding: 1px 7px;
+  border-radius: 9px;
+  font-size: 11px;
+  font-weight: 700;
+  color: #14161b;
+  background: var(--zone-color);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.5);
+  white-space: nowrap;
 }
 .pt-badge.buffed {
   color: #8bf0a8;

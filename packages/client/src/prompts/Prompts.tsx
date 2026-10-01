@@ -537,7 +537,7 @@ function ExileViewer() {
   const player = view.players[open];
   if (!player) return null;
   const cards = view.exile.filter((c) => c.owner === open);
-  const playable = new Set(view.playableExile.map((c) => c.id));
+  const playable = new Set(view.playableElsewhere.map((c) => c.id));
   const holder = new Map<string, string>();
   for (const [source, ids] of Object.entries(view.exiledWith ?? {})) {
     const src = view.battlefield.find((o) => o.id === source);

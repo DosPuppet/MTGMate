@@ -735,6 +735,9 @@ function CenterStrip() {
 // Main et actions
 // ---------------------------------------------------------------------------
 
+/** Étiquette des cartes jouables depuis une autre zone que la main. */
+const ZONE_TAG: Record<string, string> = { exile: "Exil", graveyard: "Cimetière", library: "Bibliothèque" };
+
 function Hand() {
   const view = useGame((s) => s.view) as GameView;
   const clickHandCard = useGame((s) => s.clickHandCard);
@@ -751,9 +754,9 @@ function Hand() {
   const playable = new Set(
     acts.flatMap((a) => (a.type === "cast" || a.type === "playLand" ? [a.card] : a.type === "activate" ? [a.source] : [])),
   );
-  // Cartes exilées jouables ce tour-ci (Chandra) : présentées au bout de la main.
-  const cards = [...view.hand, ...view.playableExile];
-  const exiled = new Set(view.playableExile.map((c) => c.id));
+  // Cartes jouables depuis une autre zone (exil, cimetière, dessus de la bibliothèque) : au bout de la main, marquées.
+  const cards = [...view.hand, ...view.playableElsewhere];
+  const elsewhere = new Map(view.playableElsewhere.map((c) => [c.id, c.zone]));
   const n = cards.length;
 
   // Pas entre les cartes : elles se resserrent pour tenir dans la largeur de la main (voir fitHand).
@@ -795,7 +798,7 @@ function Hand() {
         return (
           <motion.div
             key={c.uid}
-            className={`hand-card ${exiled.has(c.id) ? "from-exile" : ""} ${up ? "lifted" : ""}`}
+            className={`hand-card ${elsewhere.has(c.id) ? `from-elsewhere from-${elsewhere.get(c.id)}` : ""} ${up ? "lifted" : ""}`}
             style={{ zIndex: up ? 40 : i, margin }}
             animate={up ? { rotate: 0, y: "-38%", scale: 1.15 } : { rotate: angle, y: lift, scale: 1 }}
             drag
@@ -847,6 +850,7 @@ function Hand() {
               }
               oid={c.id}
             />
+            {elsewhere.has(c.id) && <span className="zone-tag">{ZONE_TAG[elsewhere.get(c.id) ?? ""] ?? ""}</span>}
           </motion.div>
         );
       })}
