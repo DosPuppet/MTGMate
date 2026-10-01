@@ -30,3 +30,10 @@ Les scripts sont dans `packages/cards/src/mkm/` : `cards` (cartes du méta), `wh
 - **Dette :** l'opération `suspect` (701.60) entre dans `debt-baseline.json` tant qu'une seule carte l'utilise ; `solveCase` (Affaires) en sort, plusieurs cartes s'en servent.
 - **Restent :** Aurelia's Vindicator (X du coût de déguisement), Case File Auditor (« chaque fois que vous résolvez une Affaire »), Case of the Gateway Express (chaque créature inflige 1 blessure), Karlov Watchdog (« ne peuvent pas être retournés face visible »), No Witnesses (« chaque joueur qui contrôle le plus de créatures »), Wojek Investigator (« adversaires qui ont plus de cartes en main »), Tenth District Hero (réunir des preuves en coût de capacité).
 - **Tests :** 35 tests de règles (« lot A — blanc »).
+
+## Sous-lot A2 : cartes bleues ✅ (68 / 268)
+
+- **Cartes :** 31 (sur 36), dont 4 Auras (Behind the Mask, Burden of Proof, Lost in the Maze, Out Cold…), le déguisement (Bubble Smuggler, Living Conundrum…), les Affaires (Case of the Filched Falcon, Case of the Ransacked Lab), Cold Case Cracker, Proft's Eidetic Memory.
+- **Dette :** l'opération `suspect` sert désormais à plusieurs cartes : son entrée est retirée.
+- **Restent :** Forensic Researcher (réunir des preuves en coût de capacité), Surveillance Monitor (« vous pouvez réunir des preuves », « chaque fois que vous réunissez des preuves »), Conspiracy Unraveler (coût alternatif « réunir des preuves 10 »), Cryptic Coat (cape puis attacher l'Équipement), Intrude on the Mind (piles révélées, cartes mises au cimetière comptées).
+- **Tests :** 41 tests de règles (« lot A — bleu »).

@@ -297,6 +297,10 @@ Dans l'ordre où elles ont été ajoutées, extension par extension.
   - `règle` cascade (Quandrix, the Proof) : la carte non lancée va au-dessous après les autres cartes exilées (et non dans un ordre aléatoire avec elles) ;
   - `règle` Lorehold, the Historian : le miracle accordé est une capacité déclenchée à la première pioche du tour (la carte n'est pas révélée), qui propose de la lancer pour {2}.
 - **Murders at Karlov Manor (`docs/extensions/mkm.md`) :**
-  - `règle` suspect (701.60) : la menace et « ne peut pas bloquer » s'ajoutent après les effets de couche 6 ; un effet « perd toutes ses capacités » ne les retire pas.
+  - `règle` suspect (701.60) : la menace et « ne peut pas bloquer » s'ajoutent après les effets de couche 6 ; un effet « perd toutes ses capacités » ne les retire pas ;
+  - `timing` Bubble Smuggler : « en étant retournée face visible, quatre marqueurs +1/+1 » est une capacité déclenchée (on peut y répondre) ;
+  - `règle` Coveted Falcon : « un permanent que vous possédez mais ne contrôlez pas » est « contrôlé par un adversaire et non possédé par lui » (exact en duel) ;
+  - `règle` Living Conundrum : « si votre bibliothèque est vide » est jugé une fois pour toute une pioche de plusieurs cartes ;
+  - `choix auto` Agency Outfitter : chaque nom est cherché dans le cimetière, puis la main, puis la bibliothèque (ordre fixe).
 - **Légalité Standard :** instantané des légalités Scryfall au moment de l'import (`legalities.standard` dans `data/<set>.json`). Après une rotation ou une annonce de bannissement, réimporter les sets (`npm run import-cards -- <set>`).
 - **Images des jetons :** celle du jeton Scryfall le plus proche (même nom, puis mêmes F/E et couleurs ; `data/tokens.json`, `npm run import-tokens`) ; un jeton de nom inconnu garde le cadre texte.
