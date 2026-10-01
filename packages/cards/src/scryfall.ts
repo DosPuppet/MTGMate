@@ -81,6 +81,7 @@ const KEYWORD_NAMES: Record<string, Keyword> = {
   hexproof: "hexproof",
   indestructible: "indestructible",
   convoke: "convoke",
+  changeling: "changeling",
   "start your engines!": "startYourEngines",
   decayed: "decayed",
 };
@@ -734,7 +735,13 @@ function singleDef(raw: RawCard, script: CardScript | undefined, set: string): C
   // Spider-Man : Web-slinging ; Strixhaven : « en coût additionnel, payez X points de vie ».
   const webSlinging = /^Web-slinging ((?:\{[^}]+\})+)/m.exec(raw.oracleText)?.[1];
   const payLifeX = /As an additional cost to cast this spell, pay X life\./.test(raw.oracleText);
-  const blight = Number(/As an additional cost to cast this spell, you may blight (\d+)/.exec(raw.oracleText)?.[1] ?? 0);
+  // Lorwyn Eclipsed : « you may blight N » (kicker), « blight N or pay {M} » (kicker ou mana), « blight X ».
+  const blightCost = /As an additional cost to cast this spell, (you may )?blight (\d+)(?: or pay ((?:\{[^}]+\})+))?/.exec(
+    raw.oracleText,
+  );
+  const blight = blightCost && (blightCost[1] || blightCost[3]) ? Number(blightCost[2]) : 0;
+  const blightOrPay = blight ? blightCost?.[3] : undefined;
+  const blightX = /As an additional cost to cast this spell, blight X\./.test(raw.oracleText);
   const teamwork = Number(/^Teamwork (\d+)/m.exec(raw.oracleText)?.[1] ?? 0);
   const harmonize = /^Harmonize ((?:\{[^}]+\})+)/m.exec(raw.oracleText)?.[1];
   const isSpell = types.includes("Instant") || types.includes("Sorcery");
@@ -911,7 +918,8 @@ function singleDef(raw: RawCard, script: CardScript | undefined, set: string): C
     mayhem: mayhem ? parseManaCost(mayhem) : undefined,
     paradigm: paradigm || undefined,
     webSlinging: webSlinging ? parseManaCost(webSlinging) : undefined,
-    payLifeX: payLifeX || undefined,
+    xCost: payLifeX ? "life" : blightX ? "blight" : undefined,
+    kickerOrPay: blightOrPay ? parseManaCost(blightOrPay) : undefined,
     shockLand: /(?:As this land enters, |Then )you may pay (\d+) life\. If you don't, it enters tapped\./.exec(raw.oracleText)
       ? Number(/you may pay (\d+) life/.exec(raw.oracleText)?.[1])
       : undefined,

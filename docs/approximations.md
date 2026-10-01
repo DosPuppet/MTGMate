@@ -220,5 +220,31 @@ Dans l'ordre où elles ont été ajoutées, extension par extension.
   - `règle` Call the Spirit Dragons : le Dragon de chaque couleur est choisi à la résolution, sans ordre entre les couleurs ;
   - `règle` New Way Forward : un sort choisi comme source est reconnu par sa carte et son contrôleur (une autre copie de la même carte serait aussi concernée) ; les blessures sont toutes prévenues, après les modifications (doublements) qui s'y appliquent ;
   - `règle` Neriv, Heart of the Storm : une créature qui n'est plus sur le champ de bataille n'est pas « arrivée ce tour-ci ».
+- **Lorwyn Eclipsed (`docs/extensions/ecl.md`) :**
+  - `choix auto` Flétrir en coût (« {T}, Blight 1: », « blight X ») : la créature qui reçoit les marqueurs −1/−1 est choisie par le moteur (d'abord une qui survit, la plus résistante ; sinon la moins précieuse) ; flétrir en effet laisse le choix au joueur ;
+  - `règle` « Retirez un marqueur de cette créature » (Burdened Stoneback, Moonlit Lamenter, Gnarlbark Elm, Brambleback Brute, Flitterwing Nuisance, Glen Elendra Guardian, Loch Mare, Hovel Hurler, Reaping Willow) : seuls les marqueurs −1/−1 (et +1/+1 pour Burdened Stoneback et Moonlit Lamenter) paient le coût ; Rhys, the Evermore retire tous les marqueurs −1/−1 de la cible ;
+  - `règle` Contempler et exiler (Champion of the Clachan, Champions of the Shoal) : seulement un permanent que vous contrôlez, choisi par le moteur (jeton d'abord), pas une carte de votre main ;
+  - `règle` « Contemplez un [type] ou payez {N} » (Kinsbaile Aspirant, Silvergill Mentor, Lys Alana Dignitary, Mudbutton Cursetosser, Soulbright Seeker) : vérifié au lancement, sans révéler la carte ; une autre carte du même nom en main ne compte pas ; Kindle the Inner Flame (flashback « contemplez trois Élémentaux ») : condition de lancement ;
+  - `timing` Brigid, Sygg, Trystan : l'effet « quand elle se transforme en [cette face] » est fait par la capacité qui la transforme ; une transformation venue d'un autre effet ne le déclenche pas ;
+  - `règle` Isilu, Carrier of Twilight, Rhys, the Evermore : la persistance accordée est une capacité déclenchée nommée « Persistance » (sans badge de mot-clé) ;
+  - `règle` Kithkeeper, Kirol, Attentive First-Year : « engagez des créatures dégagées que vous contrôlez » ne compte pas la source ; Kirol : la capacité ciblée n'est pas limitée à celles que vous contrôlez ;
+  - `règle` High Perfect Morcant : « engagez trois Elfes dégagés » est écrit en deux capacités (trois autres Elfes, ou {T} et deux autres Elfes) ; Morcant atteinte du mal d'invocation avec seulement deux autres Elfes ne peut pas l'activer ;
+  - `règle` Morcant's Loyalist : « une autre carte d'Elfe ciblée » exclut toute carte du même nom ;
+  - `règle` Nameless Inversion : « perd tous ses types de créature » retire tous les sous-types et le changelin jusqu'à la fin du tour ;
+  - `choix auto` Graveshifter : la carte est ciblée d'office, son retour est facultatif ;
+  - `règle` Eclipsed Realms : le type choisi est pris parmi tous les types de créature ; un terrain joué prend le choix par défaut (le type le plus présent chez vous) ;
+  - `règle` Foraging Wickermaw : cinq capacités (une par couleur), activables seulement tant qu'elle est incolore ;
+  - `timing` Puca's Eye : la couleur est choisie quand la capacité est mise sur la pile, et non après la pioche ;
+  - `règle` Dawn-Blessed Pennant : le type (une des huit tribus) est choisi comme un mode en arrivant ;
+  - `règle` Flamebraider : deux mana d'une même couleur, et non toute combinaison ;
+  - `règle` Hexing Squelcher : vos sorts de créature, d'éphémère et de rituel ne peuvent pas être contrecarrés, les autres si ;
+  - `choix auto` End-Blaze Epiphany : la carte jouable est choisie en la jouant, et non à l'exil ;
+  - `règle` Collective Inferno : les éphémères et rituels de tribu du type choisi ne sont pas doublés ;
+  - `règle` Aurora Awakener : toutes les cartes de permanent révélées vont sur le champ de bataille (et non « un nombre quelconque ») ;
+  - `timing` Prismabasher : les « jusqu'à X cibles » sont choisies par une capacité réflexive ;
+  - `règle` Spry and Mighty : sans deux créatures, la carte ne fait rien ;
+  - `règle` Bristlebane Outrider, Thoughtweft Charge : « une créature est arrivée sous votre contrôle ce tour-ci » ne compte pas un jeton arrivé puis parti, mais compte une créature dont vous avez pris le contrôle ce tour-ci ;
+  - `règle` Flitterwing Nuisance, Sygg (Wanderbrine Shield) : « blessures de combat à un joueur ou un planeswalker » ne compte que les joueurs ;
+  - `choix auto` Temporal Cleansing : le choix « deuxième depuis le dessus ou au-dessous » revient au contrôleur du permanent, pas à son propriétaire.
 - **Légalité Standard :** instantané des légalités Scryfall au moment de l'import (`legalities.standard` dans `data/<set>.json`). Après une rotation ou une annonce de bannissement, réimporter les sets (`npm run import-cards -- <set>`).
 - **Images des jetons :** celle du jeton Scryfall le plus proche (même nom, puis mêmes F/E et couleurs ; `data/tokens.json`, `npm run import-tokens`) ; un jeton de nom inconnu garde le cadre texte.

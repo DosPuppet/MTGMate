@@ -43,6 +43,9 @@ const LIBRARY = [
 
 /** Permanents supplémentaires du joueur 1 pour les cartes qui en exigent (« Enchant artifact you control »). */
 const EXTRA_P1: Record<string, string[]> = {
+  // Lorwyn Eclipsed : « contemplez un Kithkin / un Ondin et exilez-le » (un changelin convient).
+  "Champion of the Clachan": ["Changeling Wayfinder"],
+  "Champions of the Shoal": ["Changeling Wayfinder"],
   "Hardlight Containment": ["Nutrient Block"],
   // {B}{B}{B}{B}{B} : trois Marais ne suffisent pas.
   "Zodiark, Umbral God": ["Swamp", "Swamp"],
@@ -214,5 +217,5 @@ export function smokeTest(codes: string[], shard: [number, number] = [0, 1]): vo
 }
 
 /** Extensions qui ont leur propre fichier de test de fumée ; les autres sont dans `others.test.ts`. */
-export const OWN_FILES = ["FDN", "FRA", "EOE", "DFT", "OTJ", "BIG", "FIN", "DSK", "BLB", "LCI", "TDM"];
+export const OWN_FILES = ["FDN", "FRA", "EOE", "DFT", "OTJ", "BIG", "FIN", "DSK", "BLB", "LCI", "TDM", "ECL"];
 export const OTHER_SETS = (): string[] => SETS.map((s) => s.code).filter((c) => !OWN_FILES.includes(c));

@@ -494,7 +494,9 @@ export function spellCost(
     spellReduction(s, player, d, opts.targets, opts.fromZone),
   );
   // Feed the Cycle : « fourragez ou payez {B} » — le mana s'ajoute sauf si l'on fourrage (coût alternatif).
-  const cost = d.forageOrPay && !alt?.forage ? totalCost(cost0, 0, d.forageOrPay) : cost0;
+  const cost1 = d.forageOrPay && !alt?.forage ? totalCost(cost0, 0, d.forageOrPay) : cost0;
+  // Wild Unraveling : « flétrissez 2 ou payez {1} » — le mana s'ajoute sauf si l'on flétrit (kicker).
+  const cost = d.kickerOrPay && !opts.kicked ? totalCost(cost1, 0, d.kickerOrPay) : cost1;
   if (!opts.anyMana) return cost;
   const colored =
     Object.values(cost.colored).reduce<number>((n, k) => n + (k ?? 0), 0) +
@@ -1087,10 +1089,12 @@ export function castSpell(s: GameState, player: PlayerId, card: ObjectId, choice
     sourceId: card,
     x: choices.x,
   });
-  const hasX = (!free && !!(flashback ? (d.flashback ?? d.manaCost)?.x : d.manaCost?.x)) || !!d.payLifeX;
+  const hasX = (!free && !!(flashback ? (d.flashback ?? d.manaCost)?.x : d.manaCost?.x)) || !!d.xCost;
   const x = hasX ? Math.max(0, Math.floor(choices.x ?? 0)) : 0;
   // Vicious Rivalry : « en coût additionnel, payez X points de vie ».
-  if (d.payLifeX && x > (s.players[player]?.life ?? 0)) throw new RulesError("Pas assez de points de vie");
+  if (d.xCost === "life" && x > (s.players[player]?.life ?? 0)) throw new RulesError("Pas assez de points de vie");
+  // Soul Immolation : « flétrissez X ; X ne peut pas dépasser la plus grande endurance parmi vos créatures ».
+  if (d.xCost === "blight" && x > greatestToughness(s, player)) throw new RulesError("X dépasse la plus grande endurance");
   const kicked = !!choices.kicked && !!d.kicker;
   // Coûts additionnels : vérifiés avant tout changement d'état.
   const opts = additionalOptions(s, player, card, d, flashback);
@@ -1283,7 +1287,11 @@ export function castSpell(s: GameState, player: PlayerId, card: ObjectId, choice
   // Distorsion « Warp—{B}, Pay 2 life » : les points de vie font partie du coût.
   if (warp?.life) loseLife(s, player, warp.life);
   if (terms.payLife) loseLife(s, player, terms.payLife);
-  if (d.payLifeX && x > 0) loseLife(s, player, x);
+  if (d.xCost === "life" && x > 0) loseLife(s, player, x);
+  if (d.xCost === "blight" && x > 0) {
+    const blighted = blightTarget(s, player, x);
+    if (blighted) changeCounters(s, obj(s, blighted), "-1/-1", x, true);
+  }
   if (lifeTax) loseLife(s, player, lifeTax);
   // Pyromancer's Goggles : « copiez ce sort ».
   for (const r of item.riders ?? []) if (r === "copy") copyStackItem(s, item, player);
@@ -1659,6 +1667,28 @@ export function abilityZone(ab: ActivatedAbilityDef): "battlefield" | "graveyard
   return ab.fromGraveyard ? "graveyard" : ab.fromHand ? "hand" : "battlefield";
 }
 
+/** Plus grande endurance parmi les créatures d'un joueur (0 s'il n'en a pas). */
+export function greatestToughness(s: GameState, player: PlayerId): number {
+  let best = 0;
+  for (const id of s.battlefield) {
+    if (obj(s, id).controller === player && isCreature(s, id)) best = Math.max(best, chars(s, id).toughness);
+  }
+  return best;
+}
+
+/**
+ * Créature que `player` flétrit (ECL) quand le choix est fait pour lui : d'abord une qui survit aux N marqueurs −1/−1
+ * (la plus résistante), sinon la moins précieuse (jeton, puis plus petite valeur de mana). Null s'il n'a pas de créature.
+ */
+export function blightTarget(s: GameState, player: PlayerId, n: number): ObjectId | null {
+  const mine = s.battlefield.filter((id) => obj(s, id).controller === player && isCreature(s, id));
+  if (mine.length === 0) return null;
+  const left = (id: ObjectId) => chars(s, id).toughness - (s.objects[id]?.damage ?? 0) - n;
+  const value = (id: ObjectId) => (s.objects[id]?.isToken ? -1 : manaValue(s.defs[s.objects[id]?.defId ?? ""]?.manaCost));
+  const survivors = mine.filter((id) => left(id) > 0).sort((a, b) => left(b) - left(a));
+  return survivors[0] ?? [...mine].sort((a, b) => value(a) - value(b))[0] ?? null;
+}
+
 /** Les coûts non-mana de la capacité peuvent-ils être payés ? */
 export function canPayNonManaCost(s: GameState, source: ObjectId, ab: ActivatedAbilityDef, index = -1): boolean {
   const o = s.objects[source];
@@ -1680,6 +1710,7 @@ export function canPayNonManaCost(s: GameState, source: ObjectId, ab: ActivatedA
   }
   if (ab.cost.exileFromGraveyard && graveyardExileOptions(s, source, ab).length < ab.cost.exileFromGraveyard.count) return false;
   if (ab.cost.removeCounterFrom && !counterSource(s, who, source, ab)) return false;
+  if (ab.cost.blight && !blightTarget(s, o.controller, ab.cost.blight)) return false;
   if (ab.cost.tapAttached) {
     const host = o.attachedTo;
     if (!host || !onBattlefield(s, host) || obj(s, host).tapped || isSummoningSick(s, host)) return false;
@@ -1869,6 +1900,9 @@ export function activateAbility(s: GameState, player: PlayerId, source: ObjectId
     for (const id of graveyardExileOptions(s, source, ab).slice(0, ab.cost.exileFromGraveyard.count)) moveObject(s, id, "exile");
   }
   // « Retirez un marqueur d'une créature que vous contrôlez » : celle qui en porte le plus.
+  // Flétrir N comme coût (ECL) : la créature est choisie automatiquement (`blightTarget`).
+  const blighted = ab.cost.blight ? blightTarget(s, player, ab.cost.blight) : null;
+  if (blighted && ab.cost.blight) changeCounters(s, obj(s, blighted), "-1/-1", ab.cost.blight, true);
   const counterFrom = ab.cost.removeCounterFrom ? counterSource(s, player, source, ab) : null;
   if (counterFrom && ab.cost.removeCounterFrom) changeCounters(s, obj(s, counterFrom), ab.cost.removeCounterFrom.kind, -1);
   // « Engagez X artefacts dégagés » : X choisi à l'activation.

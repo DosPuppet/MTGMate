@@ -59,8 +59,10 @@ export const RECORD_VERSION = 1;
  * - 21 : remplacements des blessures et de la perte de PV en données (`EventReplacement`, R1, familles E et F) ; une
  *   prévention d'un autre joueur que le blessé passe avant les modifications, la sienne après (616.1) ; boucliers « la
  *   prochaine fois que » (615.7, New Way Forward) ; des blessures prévenues ne comptent pas comme infligées.
+ * - 22 : un permanent qui quitte le champ de bataille est toujours retiré du combat (506.4), quel que soit l'effet ou le
+ *   coût qui le déplace (Lorwyn Eclipsed : « contemplez et exilez » un attaquant).
  */
-export const RULES_VERSION = 21;
+export const RULES_VERSION = 22;
 
 /** Un point de contrôle toutes les N décisions (plus la dernière de la partie). */
 export const CHECKPOINT_EVERY = 25;

@@ -270,6 +270,8 @@ export const amount = {
   /** Marqueurs d'un type sur l'objet ; `"any"` : tous les marqueurs. */
   countersOn: (r: Ref, counter = "+1/+1"): Amount => ({ kind: "countersOn", ref: r, counter }),
   differentManaValues: { kind: "differentManaValues" } as Amount,
+  /** Vivid (ECL) : nombre de couleurs parmi les permanents que vous contrôlez (ou correspondant au filtre). */
+  colorsAmong: (filter: ObjectFilter = { permanent: true, controller: "you" }): Amount => ({ kind: "colorsAmong", filter }),
   lifeTotal: { kind: "lifeTotal" } as Amount,
   /** Marqueurs sur la source d'après ses dernières informations connues (capacité « quand elle meurt »). */
   lkiCounters: (counter: string): Amount => ({ kind: "lkiCounters", counter }),
@@ -410,6 +412,8 @@ export const fx = {
   suspend: (what: Ref, time: number): Effect => ({ op: "suspend", what, time }),
   /** « [Ce permanent] endure N » (701.64) : N marqueurs +1/+1 sur lui, ou un jeton Esprit blanc N/N. */
   endure: (what: Ref, n: Amount): Effect => ({ op: "endure", what, amount: n }),
+  /** Flétrir N (ECL) : `who` met N marqueurs −1/−1 sur une créature qu'il contrôle ; `store` : 1 si c'est fait. */
+  blight: (n: Amount, who: Ref = ref.you, store?: string): Effect => ({ op: "blight", who, amount: n, store }),
   /** « Exploitez [cette Gemme d'infinité] » (Harness). */
   harness: { op: "harness" } as Effect,
   /** « [Ce joueur] amasse des [Gobelins] X » (701.47). */
@@ -1259,6 +1263,8 @@ export function activated(opts: {
   reduction?: { generic: Amount; condition?: Condition };
   /** « Retirez un marqueur [+1/+1] d'une créature que vous contrôlez ». */
   removeCounterFrom?: { filter: ObjectFilter; kind: string };
+  /** Flétrir N comme coût (ECL). */
+  blight?: number;
   /** « Engagez X [artefacts] dégagés que vous contrôlez ». */
   tapX?: ObjectFilter;
   /** « Exilez X cartes [d'artefact] de votre cimetière ». */
@@ -1298,6 +1304,7 @@ export function activated(opts: {
         ? { filter: opts.exileFromGraveyard.filter, count: opts.exileFromGraveyard.count ?? 1 }
         : undefined,
       removeCounterFrom: opts.removeCounterFrom,
+      blight: opts.blight,
       tapX: opts.tapX,
       exileFromGraveyardX: opts.exileFromGraveyardX,
       sacrificeX: opts.sacrificeX,

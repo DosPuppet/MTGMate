@@ -557,6 +557,8 @@ export type Amount =
   | { kind: "countersOn"; ref: Ref; counter: string }
   /** Nombre de valeurs de mana différentes parmi les permanents non-terrains du contrôleur. */
   | { kind: "differentManaValues" }
+  /** Vivid (ECL) : nombre de couleurs parmi les permanents correspondants (vus du contrôleur). */
+  | { kind: "colorsAmong"; filter: ObjectFilter }
   | { kind: "sum"; of: Amount[] }
   /** Opposé (« -X/-0 ») et division entière (« pour chaque tranche de sept cartes »). */
   | { kind: "neg"; of: Amount }

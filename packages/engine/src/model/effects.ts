@@ -185,6 +185,8 @@ export type Effect =
   | { op: "damageAll"; amount: Amount; filter?: ObjectFilter; players?: Ref; source?: Ref }
   | { op: "destroyAll"; filter: ObjectFilter; store?: string }
   | { op: "addCountersAll"; filter: ObjectFilter; amount: Amount; kind?: string }
+  /** Flétrir N (ECL) : chaque joueur désigné met N marqueurs −1/−1 sur une créature qu'il contrôle, qu'il choisit ; `store` : 1 si c'est fait. */
+  | { op: "blight"; who: Ref; amount: Amount; store?: string }
   /** Effet continu « jusqu'à la fin du tour » sur tous les permanents correspondant au filtre. */
   | { op: "modifyAll"; filter: ObjectFilter; mods: LayerMods; duration?: "endOfTurn" | "untilYourNextTurn" }
   /** Sacrifier un objet précis (jeton temporaire, « sacrifiez-la »). */

@@ -313,6 +313,14 @@ export function evalAmount(s: GameState, ctx: EffectContext, a: Amount): number 
       if (a.counter === "any") return Object.values(counters).reduce((n, k) => n + Math.max(0, k), 0);
       return counters[a.counter] ?? 0;
     }
+    case "colorsAmong": {
+      const colors = new Set<string>();
+      for (const id of s.battlefield) {
+        if (matchesObjectFilter(s, ctx.controller, id, a.filter, ctx.sourceId))
+          for (const c of chars(s, id).colors) colors.add(c);
+      }
+      return colors.size;
+    }
     case "differentManaValues": {
       const values = new Set<number>();
       for (const id of s.battlefield) {

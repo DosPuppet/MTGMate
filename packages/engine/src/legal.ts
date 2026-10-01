@@ -26,6 +26,7 @@ import {
   equipDiscount,
   evidenceCards,
   FACE_DOWN_SPELL,
+  greatestToughness,
   harmonizeOptions,
   hasConvoke,
   instantLoyalty,
@@ -317,7 +318,14 @@ export function legalActions(s: GameState, player: PlayerId): ActionOption[] {
     }
     const hasX = !terms.free && !!(flashback ? (d.flashback ?? d.manaCost)?.x : d.manaCost?.x);
     // Vicious Rivalry : X se paie en points de vie.
-    const lifeX = d.payLifeX && normal ? (s.players[player]?.life ?? 0) : null;
+    // Soul Immolation : X flétri, au plus la plus grande endurance parmi vos créatures.
+    const lifeX = !normal
+      ? null
+      : d.xCost === "life"
+        ? (s.players[player]?.life ?? 0)
+        : d.xCost === "blight"
+          ? greatestToughness(s, player)
+          : null;
     out.push({
       type: "cast",
       card,

@@ -42,8 +42,17 @@ export interface CardDef {
    * Travail d'équipe, Marvel Super Heroes).
    */
   kickerCost?: { sacrifice?: ObjectFilter; bounce?: ObjectFilter; blight?: number; tapPower?: number; collectEvidence?: number };
-  /** « En coût additionnel, payez X points de vie » (Vicious Rivalry) : le X du sort se paie en PV, pas en mana. */
-  payLifeX?: boolean;
+  /**
+   * X du sort payé autrement qu'en mana, en coût additionnel : « payez X points de vie » (`life`, Vicious Rivalry),
+   * « flétrissez X » (`blight`, Soul Immolation : X au plus la plus grande endurance parmi vos créatures ; la créature
+   * est choisie comme pour un coût de capacité, `blightTarget`).
+   */
+  xCost?: "life" | "blight";
+  /**
+   * Coût additionnel obligatoire « flétrissez N ou payez [mana] » (Wild Unraveling, Bogslither's Embrace) : le kicker
+   * sans mana (`kickerCost.blight`) ou, s'il n'est pas payé, ce mana.
+   */
+  kickerOrPay?: ManaCost;
   /** Web-slinging (Spider-Man) : coût alternatif (dans `altCost`), en renvoyant en main une créature engagée. */
   webSlinging?: ManaCost;
   /** Storied (Le Hobbit) : son contrôleur peut acquérir un récit durable (voir `stateBasedActions`). */
@@ -388,6 +397,8 @@ export interface CostDef {
   };
   /** Sacrifier d'autres permanents (choisis par le joueur). */
   sacrifice?: { filter: ObjectFilter; count: number };
+  /** Flétrir N (ECL) : N marqueurs −1/−1 sur une créature que vous contrôlez (choisie automatiquement : `blightTarget`). */
+  blight?: number;
   /** Retirer des marqueurs de la source. */
   removeCounters?: { kind: string; n: number };
   /** Engager d'autres permanents dégagés que vous contrôlez (choisis automatiquement). */

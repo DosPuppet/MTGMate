@@ -5,7 +5,19 @@ import { cardRef } from "../choices";
 import type { OpHandlers } from "../effects";
 import { addEffect, evalAmount, resolveRef, store } from "../effects";
 import { effectivePower } from "../layers";
-import { bump, changeCounters, chars, counterCount, isRoom, onBattlefield, P1P1, rulesEvent, unlockDoor } from "../state";
+import { blightTarget } from "../stack";
+import {
+  bump,
+  changeCounters,
+  chars,
+  counterCount,
+  isCreature,
+  isRoom,
+  onBattlefield,
+  P1P1,
+  rulesEvent,
+  unlockDoor,
+} from "../state";
 import { matchesObjectFilter } from "../targets";
 import type { TokenSpec } from "../types";
 
@@ -201,6 +213,44 @@ export const HANDLERS: OpHandlers = {
       const o = s.objects[id];
       if (o) changeCounters(s, o, e.kind ?? P1P1, n);
     }
+    return;
+  },
+  blight(s, r, e, ctx, key) {
+    // Flétrir N (ECL) : chaque joueur désigné choisit une créature qu'il contrôle et y met N marqueurs −1/−1.
+    const n = Math.max(0, evalAmount(s, ctx, e.amount));
+    let done = false;
+    for (const p of resolveRef(s, ctx, e.who).filter((x) => !!s.players[x] && !s.players[x]?.lost)) {
+      const options = s.battlefield.filter((id) => s.objects[id]?.controller === p && isCreature(s, id));
+      if (options.length === 0 || n === 0) continue;
+      let pick = options.length === 1 ? options[0] : undefined;
+      if (!pick) {
+        const answer = r.vars[key(`blight-${p}`)];
+        if (!answer) {
+          return {
+            ask: {
+              player: p,
+              key: key(`blight-${p}`),
+              request: {
+                type: "pick",
+                intent: "other",
+                prompt: `Flétrir ${n} : choisissez une créature que vous contrôlez (${n} marqueur(s) −1/−1)`,
+                options,
+                min: 1,
+                max: 1,
+                suggested: [blightTarget(s, p, n) ?? (options[0] as string)],
+              },
+            },
+          };
+        }
+        pick = String(answer[0]);
+      }
+      const o = pick ? s.objects[pick] : undefined;
+      if (o?.zone === "battlefield") {
+        changeCounters(s, o, "-1/-1", n);
+        done = true;
+      }
+    }
+    store(r, e.store, done ? 1 : 0);
     return;
   },
   countersDivided(s, r, e, ctx, key) {
