@@ -570,7 +570,8 @@ export const fx = {
   },
   allowCastFromGraveyard: (what: Ref): Effect => ({ op: "allowCastFromGraveyard", what }),
   addMana: (...mana: ManaType[]): Effect => ({ op: "addMana", mana }),
-  addManaChoice: (n: Amount = 1): Effect => ({ op: "addManaChoice", n }),
+  /** « Ajoutez N mana d'une couleur au choix » ; `colors` : « {R}, {W} ou {B} ». */
+  addManaChoice: (n: Amount = 1, colors?: ManaType[]): Effect => ({ op: "addManaChoice", n, colors }),
   revealUntilN: (filter: ObjectFilter, n: number, to: MoveSpec): Effect => ({ op: "revealUntilN", filter, n, to }),
   becomeCopyKeepAbilities: (what: Ref): Effect => ({ op: "becomeCopyKeepAbilities", what }),
   /** « Exilez les N cartes du dessus. Choisissez-en une. Vous pouvez la jouer ce tour-ci (ou jusqu'à la fin de votre prochain tour). » */
@@ -875,6 +876,8 @@ export const fx = {
       maxManaValue?: Amount;
       maxTotalManaValue?: number;
       store?: string;
+      /** Exactement `count` cartes (« mettez-en une dans votre main »), pas « jusqu'à ». */
+      exact?: boolean;
     } = {},
   ): Effect => ({
     op: "lookAtTop",
@@ -886,6 +889,7 @@ export const fx = {
     maxTotalManaValue: opts.maxTotalManaValue,
     maxManaValue: opts.maxManaValue,
     store: opts.store,
+    exact: opts.exact,
   }),
   exileUntilLeaves: (what: Ref): Effect => ({ op: "exileUntilLeaves", what }),
   /** Choisir (sans cibler) des cartes de votre cimetière ou de votre main. */
@@ -1137,7 +1141,8 @@ export function manaAbility(
     produceChosen?: boolean;
     rider?: ManaAbilityDef["rider"];
     distinctPowers?: boolean;
-    tapAnother?: boolean;
+    /** « Engagez un permanent (une créature : `"creature"`) dégagé que vous contrôlez » en plus de {T}. */
+    tapAnother?: boolean | "creature";
     condition?: Condition;
     /** Autant de mana que la force de la source. */
     selfPower?: boolean;
@@ -1613,6 +1618,8 @@ export const cond = {
   spellCastFromHand: { kind: "spellCastFromHand" } as Condition,
   spellCastFromGraveyard: { kind: "spellCastFromGraveyard" } as Condition,
   sourceDealtCombatDamage: { kind: "sourceDealtCombatDamage" } as Condition,
+  /** La source a déjà infligé des blessures, de combat ou non. */
+  sourceDealtDamage: { kind: "sourceDealtDamage" } as Condition,
   prime: (a: Amount): Condition => ({ kind: "prime", amount: a }),
   step: (step: Step): Condition => ({ kind: "step", step }),
   creatureDiedMatching: (filter: ObjectFilter): Condition => ({ kind: "creatureDiedMatching", filter }),

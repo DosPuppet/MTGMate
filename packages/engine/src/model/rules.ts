@@ -425,6 +425,8 @@ export type Condition =
   | { kind: "spellCastFromGraveyard" }
   /** La source a déjà infligé des blessures de combat (Ruric Thar, Magecrusher). */
   | { kind: "sourceDealtCombatDamage" }
+  /** La source a déjà infligé des blessures, de combat ou non (Karakyk Guardian). */
+  | { kind: "sourceDealtDamage" }
   /** Salle (709.5) : la porte N de la source est verrouillée ; toutes ses portes sont déverrouillées. */
   | { kind: "doorLocked"; door: number }
   /** Classe : la source est exactement à ce niveau. Affaire : la source est résolue. */

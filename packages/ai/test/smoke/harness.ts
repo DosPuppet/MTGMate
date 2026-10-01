@@ -214,5 +214,5 @@ export function smokeTest(codes: string[], shard: [number, number] = [0, 1]): vo
 }
 
 /** Extensions qui ont leur propre fichier de test de fumée ; les autres sont dans `others.test.ts`. */
-export const OWN_FILES = ["FDN", "FRA", "EOE", "DFT", "OTJ", "BIG", "FIN", "DSK", "BLB", "LCI"];
+export const OWN_FILES = ["FDN", "FRA", "EOE", "DFT", "OTJ", "BIG", "FIN", "DSK", "BLB", "LCI", "TDM"];
 export const OTHER_SETS = (): string[] => SETS.map((s) => s.code).filter((c) => !OWN_FILES.includes(c));

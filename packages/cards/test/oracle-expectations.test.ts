@@ -229,7 +229,8 @@ function clause(t: string): Clause | null {
       target: "opponentCreature",
       check: (_b, a) => expect(a.players.p2?.hand.some((id) => a.defs[a.objects[id]?.defId ?? ""]?.name === BIG)).toBe(true),
     };
-  m = /^Return target creature card from your graveyard to (your hand|the battlefield)\.$/.exec(t);
+  // « Return target card from your graveyard to your hand. » (Auroral Procession) : la mise en scène cible la créature.
+  m = /^Return target (?:creature )?card from your graveyard to (your hand|the battlefield)\.$/.exec(t);
   if (m) {
     const zone = m[1] === "your hand" ? "hand" : "battlefield";
     return {

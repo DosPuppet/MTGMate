@@ -33,7 +33,7 @@ Les cartes sont couvertes **extension par extension, à 100 % avant de passer à
 | **Duskmourn: House of Horror (DSK, « Mornebrune : la Maison de l'horreur »)** | ✅ 268 / 268 |
 | **Bloomburrow (BLB)** | ✅ 266 / 266 |
 | **The Lost Caverns of Ixalan (LCI, « Les cavernes oubliées d'Ixalan »)** | ✅ 279 / 279 |
-| Tarkir: Dragonstorm (TDM) | 25 / 259 (cartes du méta) |
+| Tarkir: Dragonstorm (TDM) | en cours : 187 / 259 (lot A) |
 | Wilds of Eldraine (WOE) | 11 / 269 (cartes du méta) |
 | Secrets of Strixhaven (SOS) | 27 / 262 (cartes du méta) |
 | Lorwyn Eclipsed (ECL) | 19 / 266 (cartes du méta) |

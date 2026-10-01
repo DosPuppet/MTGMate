@@ -472,4 +472,17 @@ describe("The Lost Caverns of Ixalan", () => {
       expect(chars(s, myco).power).toBe(2);
     });
   });
+  describe("Aclazotz, Deepest Betrayal (correctif du lot A de TDM)", () => {
+    it("un adversaire défausse une carte de terrain : une Chauve-souris ; une carte non-terrain : rien", () => {
+      const run = (hand: string[]) => {
+        let s = scenario({ p1: { battlefield: ["Aclazotz, Deepest Betrayal // Temple of the Dead"] }, p2: { hand } });
+        s = advanceUntil(s, (x) => x.pending?.kind === "declareAttackers");
+        const a = idOf(s, "p1", "battlefield", "Aclazotz, Deepest Betrayal // Temple of the Dead");
+        s = settle(act(s, "p1", { type: "declareAttackers", attackers: [{ id: a, defender: "p2" }] }));
+        return idsOf(s, "p1", "battlefield", "Bat").length;
+      };
+      expect(run(["Forest"])).toBe(1);
+      expect(run(["Opt"])).toBe(0);
+    });
+  });
 });

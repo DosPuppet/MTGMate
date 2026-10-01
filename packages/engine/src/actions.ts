@@ -286,10 +286,12 @@ export function dealDamage(s: GameState, source: DamageSource, target: string, a
     }
     if (targetObj?.zone === "battlefield" && matchesObjectFilter(s, p.controller, target, p.ab.filter, p.sourceId)) return;
   }
-  // Ruric Thar, Magecrusher : « tant qu'il n'a pas encore infligé de blessures de combat ».
-  const dealer = combat && source.id ? s.objects[source.id] : undefined;
-  if (dealer && !dealer.dealtCombatDamage) {
-    dealer.dealtCombatDamage = true;
+  // Ruric Thar, Magecrusher : « tant qu'il n'a pas encore infligé de blessures de combat » ; Karakyk Guardian : « tant
+  // qu'il n'a pas encore infligé de blessures » (de combat ou non).
+  const dealer = source.id ? s.objects[source.id] : undefined;
+  if (dealer && ((combat && !dealer.dealtCombatDamage) || !dealer.dealtDamage)) {
+    if (combat) dealer.dealtCombatDamage = true;
+    dealer.dealtDamage = true;
     bump(s);
   }
   const victim = isPlayer(s, target) ? target : targetObj?.controller;

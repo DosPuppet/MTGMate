@@ -46,7 +46,7 @@ Ce fichier sert au suivi du projet entre les sessions : où on en est, les règl
 | Méta Standard, lot M4 : 4c Control, Boros Dragons, Jeskai Artifacts (23 cartes) ; type de terrain choisi en jouant le terrain, exploiter, convergence, maîtrise du feu | ✅ |
 | Méta Standard, lot M5 : Boros Dwarves, Lifegain, Mardu Discard, Boros Tokens (34 cartes) ; Storied, faufilement, chaos, paradigme, équiper digne | ✅ |
 | Méta Standard, lot M6 : les six derniers archétypes (47 cartes) ; maîtrise de l'air, Web-slinging, payer X PV, tours passés. **Phase 1 du plan P4 finie : les 20 archétypes du méta (88,1 %) sont jouables** | ✅ |
-| Phase 2 du plan P4 : Tarkir: Dragonstorm à 100 % (`docs/plans/PLAN-P4.md`) | à faire, quand l'utilisateur le demandera |
+| Phase 2 du plan P4 : **Tarkir: Dragonstorm (TDM)** à 100 % (`docs/plans/PLAN-P4.md`, `docs/extensions/tdm.md`) | en cours (01/10/2026) : lot A ✅ (187 / 259) |
 | Plan de remédiation de l'audit du 30/09/2026 (`docs/plans/PLAN-R.md`, lots F1 à R8) : F1 à F3 (fondations), R0 (corrections rapides), R4.0 à R4.6, R2.1 à R2.5, R1 en partie, R3 (copies de sorts, répartition), R5 à R8 faits, `RULES_VERSION` = 19 ; restent R1 en partie (familles E, H, I, boucliers 615.7) et R7 (continu), suivis par la section « Ajouter des cartes ou une extension » | ✅ (plan archivé le 01/10/2026) |
 | Autres extensions Standard | à la demande de l'utilisateur, une à la fois |
 
@@ -58,6 +58,7 @@ Ce fichier sert au suivi du projet entre les sessions : où on en est, les règl
 - Ensuite : **une extension à la fois, sur `dev`, seulement quand l'utilisateur la nomme.**
 - **30/09/2026 :** pas de nouvelles cartes tant que le moteur n'est pas sécurisé et finalisé (`docs/plans/PLAN-R.md`) ; Tarkir: Dragonstorm (phase 2 du P4) attend.
 - **01/10/2026 :** PLAN-R terminé (sauf R1 en partie et R7, continu) et archivé avec son audit. Les nouvelles cartes peuvent reprendre, en suivant la section « Ajouter des cartes ou une extension » (fin de ce fichier).
+- **01/10/2026 :** Tarkir: Dragonstorm commencée à la demande de l'utilisateur (phase 2 du plan P4), lot par lot (`docs/extensions/tdm.md`).
 - **29/09/2026 (plan P4) :** exception décidée par l'utilisateur. On écrit d'abord les cartes des decks du méta Standard (lots M1 à M6, toutes extensions confondues ; des extensions restent donc partielles), puis Tarkir: Dragonstorm à 100 %. Un lot du méta se vérifie avec `npm run verify -- --set META`.
 - Découpage habituel d'une extension :
   - lot A : cartes faisables avec le moteur, jetons et terrains ;
@@ -74,7 +75,7 @@ Ce fichier sert au suivi du projet entre les sessions : où on en est, les règl
 - `docs/moteur.md` : **à lire avant d'ajouter une mécanique**. Carte des fichiers du moteur, et où toucher pour un effet, un déclencheur, une condition, un filtre, un statique de joueur ou un mot-clé.
 - `docs/approximations.md` : approximations connues, générales puis carte par carte (à lever si une carte l'exige). **Toute nouvelle approximation y est ajoutée.**
 - `docs/extensions/<ext>.md` : mécaniques et détail des lots de chaque extension :
-  - `fdn`, `fra`, `eoe`, `dft`, `otj-big`, `fin`, `dsk`, `blb`, `lci` ;
+  - `fdn`, `fra`, `eoe`, `dft`, `otj-big`, `fin`, `dsk`, `blb`, `lci`, `tdm` ;
   - `socle` pour les lots transverses (faces multiples, Sagas, face cachée…) ;
   - `meta` pour les lots du méta Standard (plan P4, phase 1), avec une section par extension touchée.
   

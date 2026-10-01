@@ -53,8 +53,11 @@ export const RECORD_VERSION = 1;
  * - 19 : justesse des cartes (R7) : « l'objet de l'événement » et « si la source… » lisent les dernières informations
  *   connues d'un objet parti (603.10) ; `pumpAll` respecte « autre » ; prouesses multiples ; terrain joué depuis le
  *   cimetière par une permission ; le solveur de mana préfère la capacité qui produit le plus (Tablet of Discovery).
+ * - 20 : Tarkir: Dragonstorm, lot A : un « si » intermédiaire sur l'objet de l'événement est vérifié au déclenchement et
+ *   à la résolution (603.4 ; Aclazotz) ; « a déjà infligé des blessures » (Karakyk Guardian) ; « valeur de mana X ou
+ *   moins » dans une recherche (Nature's Rhythm).
  */
-export const RULES_VERSION = 19;
+export const RULES_VERSION = 20;
 
 /** Un point de contrôle toutes les N décisions (plus la dernière de la partie). */
 export const CHECKPOINT_EVERY = 25;

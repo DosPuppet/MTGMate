@@ -212,6 +212,8 @@ export type Effect =
       maxTotalManaValue?: number;
       /** Mémorise le nombre de cartes prises (« si vous n'avez pas mis de carte dans votre main ainsi »). */
       store?: string;
+      /** Exactement `count` cartes (« mettez-en une dans votre main »), pas « jusqu'à ». */
+      exact?: boolean;
     }
   /** Chercher dans sa bibliothèque jusqu'à `count` cartes correspondant au filtre, puis mélanger. */
   | {
@@ -538,8 +540,8 @@ export type Effect =
   /** « Exilez toutes les cartes de la bibliothèque de chaque adversaire, sauf celle du dessous. » */
   /** `keep` : cartes laissées au-dessous (1 par défaut ; Doomsday Excruciator : 6). */
   | { op: "exileLibraryButBottom"; who: Ref; keep?: number }
-  /** Ajoute N mana d'une couleur choisie par le contrôleur. */
-  | { op: "addManaChoice"; n: Amount }
+  /** Ajoute N mana d'une couleur choisie par le contrôleur (`colors` : parmi ces couleurs seulement, Devotees de TDM). */
+  | { op: "addManaChoice"; n: Amount; colors?: ManaType[] }
   /** Exile les N cartes du dessus ; le contrôleur en choisit une qu'il peut jouer ce tour-ci. */
   | { op: "impulse"; n: number; until?: "thisTurn" | "yourNextTurn" }
   /** Blessures réparties comme le contrôleur le désire entre les cibles (au moins 1 chacune). */

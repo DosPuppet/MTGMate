@@ -907,9 +907,11 @@ export const HANDLERS: OpHandlers = {
             request: {
               type: "pick",
               intent: "lookAtTop",
-              prompt: `Vous regardez les ${top.length} cartes du dessus : choisissez-en jusqu'à ${count}`,
+              prompt: e.exact
+                ? `Vous regardez les ${top.length} cartes du dessus : choisissez-en ${Math.min(count, options.length)}`
+                : `Vous regardez les ${top.length} cartes du dessus : choisissez-en jusqu'à ${count}`,
               options,
-              min: 0,
+              min: e.exact ? Math.min(count, options.length) : 0,
               max: Math.min(count, options.length),
               suggested: withinTotal(options.slice(0, Math.min(count, options.length))),
             },
@@ -946,8 +948,10 @@ export const HANDLERS: OpHandlers = {
       if (!player) continue;
       const count = evalAmount(s, ctx, e.count);
       const exactMv = e.manaValue !== undefined ? evalAmount(s, ctx, e.manaValue) : undefined;
+      // « valeur de mana X ou moins » : le X du sort qui se résout (Nature's Rhythm).
+      const base = e.filter.maxManaValueX ? { ...e.filter, maxManaValueX: undefined, maxManaValue: ctx.x } : e.filter;
       const options = player.library.filter((id) =>
-        matchesCard(s, p, id, exactMv === undefined ? e.filter : { ...e.filter, manaValue: exactMv }, ctx.sourceId),
+        matchesCard(s, p, id, exactMv === undefined ? base : { ...base, manaValue: exactMv }, ctx.sourceId),
       );
       let picked: string[] = [];
       if (options.length > 0 && count > 0) {

@@ -14,6 +14,7 @@ export const HANDLERS: OpHandlers = {
   },
   addManaChoice(s, r, e, ctx, key) {
     const answer = r.vars[key("color")];
+    const options = e.colors ?? ["W", "U", "B", "R", "G"];
     if (!answer) {
       return {
         ask: {
@@ -23,11 +24,11 @@ export const HANDLERS: OpHandlers = {
             type: "pick",
             intent: "manaColor",
             prompt: "Choisissez la couleur du mana",
-            options: ["W", "U", "B", "R", "G"],
+            options,
             labels: { W: "Blanc", U: "Bleu", B: "Noir", R: "Rouge", G: "Vert" },
             min: 1,
             max: 1,
-            suggested: ["G"],
+            suggested: [options.includes("G") ? "G" : (options[0] as string)],
           },
         },
       };

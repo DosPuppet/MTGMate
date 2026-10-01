@@ -146,6 +146,8 @@ export interface GameObject {
   expiresEndOfTurn?: boolean;
   /** A déjà infligé des blessures de combat (Ruric Thar). */
   dealtCombatDamage?: boolean;
+  /** A déjà infligé des blessures, de combat ou non (Karakyk Guardian). */
+  dealtDamage?: boolean;
   /** Tour de sa dernière attaque (« créature qui a attaqué ce tour-ci »). */
   attackedTurn?: number;
   /** Cartes liées (exilées par cette carte, Hoarding Dragon). */

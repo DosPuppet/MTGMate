@@ -186,7 +186,17 @@ export function mostLife(s: GameState, p: PlayerId): boolean {
 /** Créatures mortes ce tour-ci (champ de bataille → cimetière), sous n'importe quel contrôleur. */
 const DIED_QUERY: TurnLogQuery = { event: "zone", from: "battlefield", to: "graveyard", types: ["Creature"] };
 
-export function checkCondition(s: GameState, c: Condition, controller: PlayerId, sourceId?: ObjectId): boolean {
+/**
+ * Condition hors résolution. `eventObject` : l'objet de l'événement déclencheur, pour un « si » intermédiaire qui le
+ * concerne (603.4 : « chaque fois qu'un adversaire défausse une carte, si c'est une carte de terrain »).
+ */
+export function checkCondition(
+  s: GameState,
+  c: Condition,
+  controller: PlayerId,
+  sourceId?: ObjectId,
+  eventObject?: ObjectId,
+): boolean {
   switch (c.kind) {
     case "step":
       return s.turn.step === c.step;
@@ -289,6 +299,8 @@ export function checkCondition(s: GameState, c: Condition, controller: PlayerId,
     }
     case "sourceDealtCombatDamage":
       return !!(sourceId && s.objects[sourceId]?.dealtCombatDamage);
+    case "sourceDealtDamage":
+      return !!(sourceId && s.objects[sourceId]?.dealtDamage);
     case "activatedLoyaltyThisTurn":
       return (s.players[controller]?.turnStats.loyaltyActivations ?? 0) > 0;
     case "behold": {
@@ -353,9 +365,9 @@ export function checkCondition(s: GameState, c: Condition, controller: PlayerId,
     case "opponentLostLifeThisTurn":
       return opponentsOf(s, controller).some((q) => (s.players[q]?.turnStats.lifeLost ?? 0) > 0);
     case "not":
-      return !checkCondition(s, c.cond, controller, sourceId);
+      return !checkCondition(s, c.cond, controller, sourceId, eventObject);
     case "all":
-      return c.of.every((x) => checkCondition(s, x, controller, sourceId));
+      return c.of.every((x) => checkCondition(s, x, controller, sourceId, eventObject));
     case "wasCast":
       return !!(sourceId && s.objects[sourceId]?.cast);
     case "castFromHand":
@@ -371,7 +383,12 @@ export function checkCondition(s: GameState, c: Condition, controller: PlayerId,
     }
     case "targetMatches":
     case "refMatches":
-    case "eventObjectMatches":
+    case "eventObjectMatches": {
+      // Au déclenchement : l'objet de l'événement (ses dernières informations connues s'il est parti).
+      if (!eventObject) return false;
+      const v = s.lki[eventObject] ?? (s.objects[eventObject] ? snapshot(s, eventObject) : undefined);
+      return !!v && matchesView(v, c.filter, controller, sourceId);
+    }
     case "xAtLeast":
       return false; // évalués au lancement (stack.ts) ou pendant la résolution (effects.ts)
     case "lifeGainedAtLeast":
@@ -392,7 +409,7 @@ export function checkCondition(s: GameState, c: Condition, controller: PlayerId,
       return checkAmount(s, a, controller, sourceId) >= c.n;
     }
     case "any":
-      return c.of.some((x) => checkCondition(s, x, controller, sourceId));
+      return c.of.some((x) => checkCondition(s, x, controller, sourceId, eventObject));
     case "opponentHasMore": {
       const measure = (p: PlayerId): number => {
         if (c.what === "life") return s.players[p]?.life ?? 0;
@@ -855,7 +872,7 @@ export function detectTriggers(s: GameState, ev: RulesEvent, only?: (src: Source
         playerStatic(s, ev.controller, "ignoreOpponentsHexproofWard")
       )
         return;
-      if (ab.condition && !checkCondition(s, ab.condition, src.view.controller, src.id)) return;
+      if (ab.condition && !checkCondition(s, ab.condition, src.view.controller, src.id, data.objectId)) return;
       // « une ou plusieurs … » : un seul déclenchement en attente pour ce lot d'événements.
       if (ab.batched && s.triggers.some((t) => t.sourceId === src.id && t.abilityIndex === index)) return;
       if (ab.oncePerTurn) {

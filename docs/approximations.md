@@ -204,5 +204,12 @@ Dans l'ordre où elles ont été ajoutées, extension par extension.
   - `règle` Interdimensional Web Watch : les deux mana sont d'une même couleur, et servent à tout sort lancé ailleurs que depuis la main ;
   - `règle` Realm of Koh : son jeton Esprit ne peut bloquer aucune créature (et non « aucune créature non-Esprit ») ;
   - `timing` Head of the Hunt : le Loup est créé en même temps que l'exil, et non par une capacité réflexive.
+- **Tarkir: Dragonstorm (`docs/extensions/tdm.md`) :**
+  - `timing` Osseous Exhale, Piercing Exhale : contempler un Dragon est vérifié à la résolution, comme Dispelling Exhale ; Caustic Exhale : « contemplez un Dragon ou payez {1} » est vérifié au lancement, sans montrer la carte révélée ;
+  - `timing` Reverberating Summons : la main est défaussée à la résolution, et non en coût ;
+  - `règle` Rite of Renewal : les cartes mélangées viennent d'un même cimetière, et vont dans la bibliothèque de leur propriétaire, que ce soit ou non le joueur ciblé ;
+  - `choix auto` Severance Priest : une carte non-terrain est toujours exilée s'il y en a une (« vous pouvez choisir ») ;
+  - `règle` Sonic Shrieker : un joueur ciblé défausse une carte même si ses blessures ont été prévenues ;
+  - `choix auto` Rediscover the Way : les cartes non prises vont au-dessous dans un ordre aléatoire.
 - **Légalité Standard :** instantané des légalités Scryfall au moment de l'import (`legalities.standard` dans `data/<set>.json`). Après une rotation ou une annonce de bannissement, réimporter les sets (`npm run import-cards -- <set>`).
 - **Images des jetons :** celle du jeton Scryfall le plus proche (même nom, puis mêmes F/E et couleurs ; `data/tokens.json`, `npm run import-tokens`) ; un jeton de nom inconnu garde le cadre texte.
