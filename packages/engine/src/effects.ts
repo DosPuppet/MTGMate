@@ -32,7 +32,7 @@ import {
   shuffle,
   snapshot,
 } from "./state";
-import { matchesCard, matchesObjectFilter, matchesView, protectedFrom, sourceView } from "./targets";
+import { matchesCard, matchesObjectFilter, matchesView, protectedFrom, resolveFilter, sourceView } from "./targets";
 import { checkCondition, mostLife } from "./triggers";
 import { countTurnEvents } from "./turnlog";
 import type {
@@ -114,11 +114,14 @@ export function evalCondition(s: GameState, ctx: EffectContext, c: Condition): b
       const p = resolveRef(s, ctx, c.ref)[0];
       return !!p && s.players[p]?.life === c.equals;
     }
-    case "refMatches":
+    case "refMatches": {
+      // « du type choisi » : le choix de la source (ses dernières informations si elle a été sacrifiée : A Killer Among Us).
+      const f = resolveFilter(s, c.filter, ctx.sourceId);
       return resolveRef(s, ctx, c.ref).some((id) => {
         const v = viewOf(s, id);
-        return !!v && matchesView(v, c.filter, ctx.controller, ctx.sourceId);
+        return !!v && matchesView(v, f, ctx.controller, ctx.sourceId);
       });
+    }
     case "beholdSharingType": {
       const found = resolveRef(s, ctx, c.ref);
       const v = found[0] ? viewOf(s, found[0]) : undefined;
@@ -241,6 +244,8 @@ export function resolveRef(s: GameState, ctx: EffectContext, ref: Ref): string[]
     }
     case "allGraveyards":
       return s.playerOrder.flatMap((p) => s.players[p]?.graveyard ?? []);
+    case "graveyardOf":
+      return resolveRef(s, ctx, ref.who).flatMap((p) => s.players[p]?.graveyard ?? []);
     case "crewedBy": {
       const c = s.objects[ctx.sourceId]?.crewedBy;
       return c && c.turn === s.turn.number ? c.ids.filter((id) => onBattlefield(s, id)) : [];
@@ -578,6 +583,11 @@ export function evalAmount(s: GameState, ctx: EffectContext, a: Amount): number 
       const mine = s.players[ctx.controller]?.hand.length ?? 0;
       return opponentsOf(s, ctx.controller).filter((p) => (s.players[p]?.hand.length ?? 0) > mine).length;
     }
+    case "totalPowerOf":
+      return resolveRef(s, ctx, a.ref).reduce(
+        (n, id) => n + Math.max(0, s.objects[id]?.zone === "battlefield" ? chars(s, id).power : (s.lki[id]?.power ?? 0)),
+        0,
+      );
     case "greatestManaValueOf":
       return Math.max(0, ...resolveRef(s, ctx, a.ref).map((id) => manaValue(s.defs[s.objects[id]?.defId ?? ""]?.manaCost)));
     case "colorPairsAmong": {
@@ -824,6 +834,7 @@ export function grantPlay(
     landsTapped?: boolean;
     anyMana?: boolean;
     exileAfter?: boolean;
+    bottomAfter?: boolean;
     group?: string;
     orHand?: boolean;
     now?: boolean;

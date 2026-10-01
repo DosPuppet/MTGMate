@@ -139,7 +139,9 @@ export const LEGENDS2: Record<string, CardScript> = {
   },
   "Leyline of Mutation": {
     leyline: true,
-    abilities: [playerStatic({ altCostAll: cost("{W}{U}{B}{R}{G}"), label: "Vos sorts : {W}{U}{B}{R}{G} au lieu de leur coût" })],
+    abilities: [
+      playerStatic({ altCostAll: { mana: cost("{W}{U}{B}{R}{G}") }, label: "Vos sorts : {W}{U}{B}{R}{G} au lieu de leur coût" }),
+    ],
   },
   "Monstrous Emergence": {
     // Coût additionnel choisi automatiquement : la plus grande force (créature que vous contrôlez ou carte révélée).

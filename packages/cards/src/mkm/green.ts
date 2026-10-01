@@ -14,7 +14,10 @@ import {
   cond,
   DETECTIVE,
   fx,
+  GOBLIN,
+  HUMAN,
   investigate,
+  MERFOLK_U,
   manaAbility,
   modal,
   mode,
@@ -398,6 +401,59 @@ export const GREEN: Record<string, CardScript> = {
           },
         ),
       ),
+    ],
+  },
+  "Hedge Whisperer": {
+    abilities: [
+      staticAbility("self", { addKeywords: ["mayNotUntap"] }, { label: "Vous pouvez choisir de ne pas la dégager" }),
+      activated({
+        mana: "{3}{G}",
+        tap: true,
+        collectEvidence: 4,
+        sorcerySpeed: true,
+        targets: [target.permanent("t", ["Land"], { controller: "you" }, "terrain que vous contrôlez")],
+        effects: [
+          fx.modifyWhileTapped(ref.target(), {
+            addTypes: ["Creature"],
+            addSubtypes: ["Plant", "Boar"],
+            setColors: ["G"],
+            setPower: 5,
+            setToughness: 5,
+            addKeywords: ["haste"],
+          }),
+        ],
+        label: "Un terrain devient un Sanglier Plante 5/5 avec la célérité tant qu'elle reste engagée",
+      }),
+    ],
+  },
+  "A Killer Among Us": {
+    abilities: [
+      triggered(
+        when.entersSelf,
+        [
+          fx.createTokens(HUMAN),
+          fx.createTokens(MERFOLK_U),
+          fx.createTokens(GOBLIN),
+          fx.chooseForSelf("creatureType", { options: ["Human", "Merfolk", "Goblin"], secret: true }),
+        ],
+        { label: "Un Humain, un Ondin et un Gobelin ; choisissez secrètement l'un de ces types" },
+      ),
+      activated({
+        sacrifice: true,
+        targets: [
+          {
+            id: "t",
+            label: "jeton de créature attaquant",
+            filter: { objects: { types: ["Creature"], token: true, attacking: true } },
+          },
+        ],
+        effects: fx.when(
+          cond.refMatches(ref.target(), { subtypeChosen: true }),
+          fx.addCounters(ref.target(), 3),
+          fx.pump(ref.target(), 0, 0, ["deathtouch"]),
+        ),
+        label: "Sacrifiez-le, révélez le type : trois marqueurs +1/+1 et le contact mortel s'il est de ce type",
+      }),
     ],
   },
 };

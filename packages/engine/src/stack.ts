@@ -85,10 +85,19 @@ export function altCostFor(
   s: GameState,
   player: PlayerId,
   d: CardDef,
-): { mana: ManaCost; label: string; forage?: boolean } | undefined {
+): { mana: ManaCost; label: string; forage?: boolean; collectEvidence?: number } | undefined {
   if (d.altCost && checkCondition(s, d.altCost.condition, player)) return d.altCost;
   for (const { ab } of playerStatics(s, player, "altCostAll")) {
-    if (ab.altCostAll) return { mana: ab.altCostAll, label: `Leyline of Mutation — ${costToText(ab.altCostAll)}` };
+    const a = ab.altCostAll;
+    if (!a) continue;
+    // Conspiracy Unraveler : réunir des preuves N plutôt que payer le coût de mana.
+    if (a.collectEvidence)
+      return {
+        mana: { generic: 0, colored: {}, x: 0 },
+        collectEvidence: a.collectEvidence,
+        label: `Réunir des preuves ${a.collectEvidence}`,
+      };
+    if (a.mana) return { mana: a.mana, label: `Leyline of Mutation — ${costToText(a.mana)}` };
   }
   return undefined;
 }
@@ -644,6 +653,8 @@ export interface CastTerms {
   sorceryTiming?: boolean;
   /** Exilé au lieu d'aller au cimetière (Quistis Trepe). */
   exileAfter?: boolean;
+  /** Au-dessous de la bibliothèque au lieu du cimetière (Kylox's Voltstrider). */
+  bottomAfter?: boolean;
   /** Le permanent arrive avec un marqueur de finalité (Noctis). */
   finality?: boolean;
   /** Il faut fourrager en plus (Osteomancer Adept). */
@@ -1060,6 +1071,7 @@ function baseCastTerms(s: GameState, player: PlayerId, card: ObjectId): CastTerm
         costOverride: perm.cost,
         // « … puis exilez-la » (Nita, Forum Conciliator), comme depuis le cimetière.
         exileAfter: perm.exileAfter,
+        bottomAfter: perm.bottomAfter,
       };
     // Tinybones : cartes d'adversaires exilées avec un marqueur de butin, pendant votre tour.
     if (
@@ -1384,6 +1396,13 @@ export function castSpell(s: GameState, player: PlayerId, card: ObjectId, choice
   // Fourrager en coût (Osteomancer Adept, ou le coût alternatif de Feed the Cycle) : la carte a quitté le cimetière.
   if ((terms.forage || (alternative && altCostFor(s, player, d)?.forage)) && !forage(s, player))
     throw new RulesError("Impossible de fourrager");
+  // Conspiracy Unraveler : « réunir des preuves 10 plutôt que payer le coût de mana ».
+  const altEvidence = alternative ? altCostFor(s, player, d)?.collectEvidence : undefined;
+  if (altEvidence) {
+    const cards = evidenceCards(s, player, card, altEvidence);
+    if (!cards) throw new RulesError("Pas assez de preuves à réunir dans votre cimetière");
+    collectEvidence(s, player, cards);
+  }
   // Coûts additionnels choisis automatiquement (avant le mana : ces permanents ne produisent plus de mana).
   for (const id of [...auto.tap, ...harmonyTap, ...teamTap]) tapObject(s, obj(s, id));
   for (const id of auto.bounce) moveObject(s, id, "hand");
@@ -1437,6 +1456,7 @@ export function castSpell(s: GameState, player: PlayerId, card: ObjectId, choice
     sourceSnapshot: { keywords: d.keywords, power: d.power ?? 0, controller: player },
     // Quistis Trepe : exilé en quittant la pile, comme un flashback.
     flashback: flashback || !!terms.exileAfter,
+    ...(terms.bottomAfter ? { bottomInstead: true } : {}),
     arrival: arrivalFor(terms, next),
     adventure: adventure || undefined,
     warped: warp ? true : undefined,
@@ -1624,8 +1644,7 @@ export function counterItem(s: GameState, id: string, by: string, exile = false)
   emit({ type: "countered", stackId: item.id, defId: item.sourceDefId, by });
   // Dernières informations connues (« son contrôleur crée… »).
   if (item.kind === "spell" && s.objects[item.sourceId]) s.lki[item.id] = snapshot(s, item.sourceId);
-  if (item.kind === "spell" && s.objects[item.sourceId])
-    moveObject(s, item.sourceId, item.flashback || exile ? "exile" : "graveyard");
+  if (item.kind === "spell" && s.objects[item.sourceId]) spellToRest(s, item, exile);
   return true;
 }
 
@@ -2163,7 +2182,10 @@ export function activateAbility(s: GameState, player: PlayerId, source: ObjectId
   const counterFrom = ab.cost.removeCounterFrom ? counterSource(s, player, source, ab) : null;
   if (counterFrom && ab.cost.removeCounterFrom) changeCounters(s, obj(s, counterFrom), ab.cost.removeCounterFrom.kind, -1);
   // Réunir des preuves N comme coût (Forensic Researcher, Polygraph Orb).
-  if (ab.cost.collectEvidence) collectEvidence(s, player, evidenceCards(s, player, source, ab.cost.collectEvidence) ?? []);
+  if (ab.cost.collectEvidence) {
+    const exiled = collectEvidence(s, player, evidenceCards(s, player, source, ab.cost.collectEvidence) ?? []);
+    if (ab.cost.linkEvidence) o.linked = [...(o.linked ?? []), ...exiled];
+  }
   // « Engagez X artefacts dégagés » : X choisi à l'activation.
   if (ab.cost.tapX) {
     const f = ab.cost.tapX;
@@ -2350,7 +2372,7 @@ export function resolveTop(s: GameState): boolean {
   if (chosen > 0 && stillLegal === 0) {
     s.stack.pop();
     emit({ type: "fizzle", stackId: item.id, defId: item.sourceDefId });
-    if (item.kind === "spell" && s.objects[item.sourceId]) moveObject(s, item.sourceId, item.flashback ? "exile" : "graveyard");
+    if (item.kind === "spell" && s.objects[item.sourceId]) spellToRest(s, item);
     return true;
   }
 
@@ -2635,5 +2657,12 @@ function resolvedSpellAway(s: GameState, item: StackItem, d: CardDef | undefined
     if (owner) shuffle(s, s.players[owner]?.library ?? []);
     return;
   }
-  moveObject(s, item.sourceId, item.flashback ? "exile" : "graveyard");
+  spellToRest(s, item);
+}
+
+/** Un sort qui quitte la pile : en exil (flashback, « exilez-la »), au-dessous de la bibliothèque, sinon au cimetière. */
+function spellToRest(s: GameState, item: StackItem, exile = false): void {
+  if (item.flashback || exile) moveObject(s, item.sourceId, "exile");
+  else if (item.bottomInstead) moveObject(s, item.sourceId, "library", { position: "bottom" });
+  else moveObject(s, item.sourceId, "graveyard");
 }

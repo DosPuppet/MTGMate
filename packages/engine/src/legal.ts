@@ -323,7 +323,9 @@ export function legalActions(s: GameState, player: PlayerId): ActionOption[] {
     const freeAvailable = !!terms.freeOptional && freePayable();
     const alt = terms.free ? undefined : altCostFor(s, player, d);
     const altAvailable =
-      !!alt && canPay(s, player, withExtra(spellCost(s, player, d, { ...base, alternative: true })), exclude, purpose);
+      !!alt &&
+      (!alt.collectEvidence || !!evidenceCards(s, player, card, alt.collectEvidence)) &&
+      canPay(s, player, withExtra(spellCost(s, player, d, { ...base, alternative: true })), exclude, purpose);
     // Kicker payable (« coûte {2} de moins s'il est marchandé » : Hamlet Glutton peut n'être payable que marchandé).
     const kickerAffordable =
       !!d.kicker &&

@@ -134,3 +134,20 @@ Les scripts sont dans `packages/cards/src/mkm/` : `cards` (cartes du méta), `wh
   - `when.attackWith(N, filtre, anyPlayer)` (« chaque fois qu'un joueur attaque avec N créatures ou plus »).
 - **Correctif :** Troyan, Gutsy Explorer (WOE) : son mana sert aussi aux sorts avec {X} dans leur coût (filtre `hasX`) ; l'approximation est levée.
 - **Tests :** 10 tests de règles (« lot C2 »).
+
+## Sous-lot C3 : dernières cartes uniques ✅ (268 / 268)
+
+- **Cartes :** Conspiracy Unraveler, Intrude on the Mind, Hedge Whisperer, A Killer Among Us, Kylox's Voltstrider, Judith, Carnage Connoisseur, Kaya, Spirits' Justice, Kylox, Visionary Inventor, Flotsam // Jetsam, Buried in the Garden.
+- **Le moteur gagne :**
+  - `altCostAll` accepte un coût en preuves (« réunir des preuves 10 plutôt que payer le coût de mana de vos sorts ») ; Leyline of Mutation (DSK) passe à la forme `{ mana }` ;
+  - `linkEvidence` : les cartes exilées pour un coût « réunir des preuves » sont liées à la source (« parmi les cartes exilées avec lui ») ;
+  - `castNow` / `grantPlay` : `bottomAfter` (« s'il devait aller au cimetière, mettez-le au-dessous de la bibliothèque à la place ») ; le sort qui quitte la pile (résolu, contrecarré ou sans cible) passe par un seul chemin (`spellToRest`) ;
+  - `fx.piles` : piles révélées et cartes mises au cimetière gardées (`storeGraveyard`) ;
+  - effets « tant que [la source] reste engagée » (`fx.modifyWhileTapped`) et mot-clé de restriction `mayNotUntap` (« vous pouvez choisir de ne pas le dégager » ; entrée justifiée dans `debt-baseline.json`) ;
+  - choix restreint à une liste et choix secret (`fx.chooseForSelf(kind, { options, secret })`), caché aux autres joueurs dans leur vue ;
+  - `ref.graveyardOf(joueurs)` et le montant `totalPowerOf(ref)` (force totale, dernière information connue après sacrifice) ;
+  - déclencheur « quitte [une zone autre que le champ de bataille] » (`from`), avec la nouvelle carte comme objet de l'événement quand elle est exilée ;
+  - `extraMana: "any"` (« un mana de plus de n'importe quelle couleur que ce terrain a produite »).
+- **Correctif :** `cond.refMatches` résout le filtre (types choisis, « de ce type ») comme les autres filtres.
+- **Version des règles :** 37.
+- **Tests :** 10 tests de règles (« lot C3 »).

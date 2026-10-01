@@ -374,7 +374,15 @@ export function activateManaAbility(s: GameState, player: PlayerId, id: ObjectId
     const same = (a.r.extraMana ?? "same") === "same";
     if ((same && !a.r.manaProduced) || (a.r.manaProduced && a.r.manaProduced !== c) || !pool) continue;
     const type: ManaType | undefined =
-      a.r.extraMana === "chosen" ? s.objects[a.sourceId ?? ""]?.chosen?.color : same ? c : (a.r.extraMana as ManaType);
+      a.r.extraMana === "chosen"
+        ? s.objects[a.sourceId ?? ""]?.chosen?.color
+        : a.r.extraMana === "any"
+          ? c === "C"
+            ? undefined
+            : c
+          : same
+            ? c
+            : (a.r.extraMana as ManaType);
     if (!type) continue;
     pool[type] += a.r.modify.add ?? 0;
     if (type !== c) otherBonus = true;

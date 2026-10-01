@@ -101,8 +101,11 @@ export const RECORD_VERSION = 1;
  * - 36 : Murders at Karlov Manor, lot B2 : X dans un coût de déguisement, coût de déguisement réduit, réduction des sorts
  *   face cachée, interdiction de retourner face visible, terrain lancé face cachée ; une arrivée face cachée est notée
  *   au journal du tour comme une créature sans type (la carte reste cachée).
+ * - 37 : Murders at Karlov Manor, lot C3 : un sort qui quitte la pile passe par un seul chemin (exil ou dessous de la
+ *   bibliothèque à la place du cimetière) ; `cond.refMatches` résout son filtre ; un déclencheur « quitte » d'une créature
+ *   exilée suit la nouvelle carte ; effets « tant que la source reste engagée ».
  */
-export const RULES_VERSION = 36;
+export const RULES_VERSION = 37;
 
 /** Un point de contrôle toutes les N décisions (plus la dernière de la partie). */
 export const CHECKPOINT_EVERY = 25;

@@ -428,6 +428,8 @@ export interface CostDef {
   blight?: number;
   /** Réunir des preuves N (701.59, MKM) : cartes du cimetière de valeur de mana totale N ou plus (choisies automatiquement). */
   collectEvidence?: number;
+  /** Les preuves exilées sont liées à la source (Kylox's Voltstrider : « parmi les cartes exilées avec lui »). */
+  linkEvidence?: boolean;
   /**
    * Retirer des marqueurs de la source. `kind: "any"` : « retirez N marqueurs de cette créature », de n'importe quelle
    * sorte (ECL), retirés par le moteur : les −1/−1 d'abord, les +1/+1 en dernier.
@@ -666,7 +668,8 @@ export interface EventReplacement {
    * type (`same`, par défaut), de la couleur choisie par la source (`chosen`, Shimmerwilds Growth) ou de ce type.
    */
   manaProduced?: ManaType;
-  extraMana?: "same" | "chosen" | ManaType;
+  /** `any` : un mana de n'importe quelle couleur (Buried in the Garden) — approché : la couleur du mana produit. */
+  extraMana?: "same" | "chosen" | "any" | ManaType;
   /** true : seulement les blessures de combat ; false : seulement les autres. */
   combat?: boolean;
   /** « autant plus N », « le double », « au moins la force de [la source du remplacement] », « prévenez-les ». */
@@ -919,7 +922,11 @@ export interface PlayerStaticAbilityDef {
   /** Warped Space : une fois par tour, un sort lancé depuis l'exil peut l'être en payant {0}. */
   freeFromExileOncePerTurn?: boolean;
   /** Leyline of Mutation : coût alternatif pour tous vos sorts. */
-  altCostAll?: ManaCost;
+  /**
+   * Coût alternatif de vos sorts : un coût de mana (Leyline of Mutation : {W}{U}{B}{R}{G}) ou réunir des preuves N
+   * (Conspiracy Unraveler : 10) « plutôt que payer le coût de mana ».
+   */
+  altCostAll?: { mana?: ManaCost; collectEvidence?: number };
   /** Winter, Misanthropic Guide : taille de main maximale de chaque adversaire (évaluée pour le contrôleur). */
   opponentMaxHandSize?: Amount;
   /** Valgavoth : pendant votre tour, jouer les cartes liées à la source ; un sort ainsi lancé coûte des PV égaux à sa VM. */

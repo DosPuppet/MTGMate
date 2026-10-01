@@ -9,8 +9,12 @@ import {
   DETECTIVE,
   DOG,
   entersWith,
+  eventReplacement,
   fx,
+  IMP,
+  INSTANT_SORCERY,
   investigate,
+  loyalty,
   manaAbility,
   modal,
   mode,
@@ -809,6 +813,115 @@ export const MULTI: Record<string, CardScript> = {
         tap: true,
         effects: [fx.addManaChoice(1, ["R"], FACE_DOWN_MANA), fx.addManaChoice(1, ["G"], FACE_DOWN_MANA)],
         label: "Ajoutez {R}{G} (sorts face cachée, retournements)",
+      }),
+    ],
+  },
+  "Kylox's Voltstrider": {
+    // Équipage 2 : lu dans le texte.
+    abilities: [
+      activated({
+        collectEvidence: 6,
+        linkEvidence: true,
+        effects: [fx.modify(ref.self, { addTypes: ["Artifact", "Creature"] }, "endOfTurn")],
+        label: "Réunissez des preuves 6 : devient une créature-artefact jusqu'à la fin du tour",
+      }),
+      triggered(when.attacksSelf, [fx.castNow(ref.filtered(ref.linked, INSTANT_SORCERY), { bottomAfter: true })], {
+        label: "Vous pouvez lancer un éphémère ou un rituel parmi les cartes exilées avec lui",
+      }),
+    ],
+  },
+  "Judith, Carnage Connoisseur": {
+    abilities: [
+      triggeredModal(
+        when.castSpell("you", INSTANT_SORCERY),
+        [
+          mode(
+            "Le sort gagne le contact mortel et le lien de vie",
+            [],
+            [fx.modify(ref.eventObject, { addKeywords: ["deathtouch", "lifelink"] })],
+          ),
+          mode("Un Diablotin 2/2", [], [fx.createTokens(IMP)]),
+        ],
+        { label: "Éphémère ou rituel : contact mortel et lien de vie, ou un Diablotin" },
+      ),
+    ],
+  },
+  "Kaya, Spirits' Justice": {
+    abilities: [
+      ...[
+        { on: "leaves" as const, who: { types: ["Creature" as const], controller: "you" as const }, to: "exile" as const },
+        {
+          on: "leaves" as const,
+          who: { types: ["Creature" as const], controller: "you" as const },
+          from: "graveyard" as const,
+          to: "exile" as const,
+        },
+      ].map((w) =>
+        triggered(
+          w,
+          fx.may(
+            "Un jeton devient-il une copie de cette carte de créature (avec le vol) ?",
+            fx.becomeCopy(ref.target(), ref.eventObject, "endOfTurn", { addKeywords: ["flying"] }),
+          ),
+          {
+            targets: [{ id: "t", label: "jeton que vous contrôlez", filter: { objects: { token: true, controller: "you" } } }],
+            label: "Une créature exilée : un jeton devient une copie, avec le vol",
+          },
+        ),
+      ),
+      loyalty(2, {
+        effects: [
+          fx.surveil(2),
+          fx.chooseAmong(ref.allGraveyards, ref.you, "k", { anyZone: true }),
+          fx.exileCard(ref.stored("k")),
+        ],
+        label: "Surveillance 2, puis exilez une carte d'un cimetière",
+      }),
+      loyalty(1, { effects: [fx.createTokens(SPIRIT_WB)], label: "Un Esprit 1/1 volant" }),
+      loyalty(-2, {
+        targets: [target.creature("a", { controller: "you" }), target.upTo(1, target.creature("b", { controller: "opponent" }))],
+        effects: [fx.exile(ref.target("a")), fx.exile(ref.target("b"))],
+        label: "Exilez une de vos créatures et jusqu'à une créature adverse",
+      }),
+    ],
+  },
+  "Kylox, Visionary Inventor": {
+    abilities: [
+      triggered(
+        when.attacksSelf,
+        [
+          fx.chooseAmong(ref.permanentsOf(ref.you, { types: ["Creature"], other: true }), ref.you, "k", { anyNumber: true }),
+          fx.exileTop(ref.you, amount.totalPowerOf(ref.stored("k")), "e"),
+          fx.sacrificeIt(ref.stored("k")),
+          fx.castNow(ref.filtered(ref.stored("e"), INSTANT_SORCERY), { free: true, many: true }),
+        ],
+        { label: "Sacrifiez des créatures, exilez X cartes, lancez-en les éphémères et rituels gratuitement" },
+      ),
+    ],
+  },
+  Flotsam: { spell: spell([], [fx.mill(3), investigate()]) },
+  Jetsam: {
+    spell: spell(
+      [],
+      [
+        fx.mill(3, ref.eachOpponent),
+        fx.castNow(ref.filtered(ref.graveyardOf(ref.eachOpponent), { nonland: true }), { free: true, exileAfter: true }),
+      ],
+    ),
+  },
+  "Buried in the Garden": {
+    enchant: { filter: { types: ["Land"] }, label: "terrain" },
+    abilities: [
+      triggered(when.entersSelf, [fx.exileUntilLeaves(ref.target())], {
+        targets: [target.nonland("t", { controller: "opponent" }, "permanent non-terrain que vous ne contrôlez pas")],
+        label: "Exilez un permanent non-terrain adverse jusqu'à ce que cette Aura parte",
+      }),
+      eventReplacement({
+        event: "mana",
+        source: { attachedToSource: true },
+        extraMana: "any",
+        modify: { add: 1 },
+        label: "Le terrain enchanté engagé pour du mana : un mana de plus",
       }),
     ],
   },

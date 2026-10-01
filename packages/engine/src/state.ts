@@ -327,6 +327,8 @@ export function untapObject(s: GameState, o: GameObject): boolean {
     return false;
   }
   o.tapped = false;
+  // Hedge Whisperer : « tant que cette créature reste engagée ».
+  if (s.effects.some((e) => e.whileSourceTapped === o.id)) s.effects = s.effects.filter((e) => e.whileSourceTapped !== o.id);
   bump(s);
   rulesEvent(s, { e: "untap", objectId: o.id });
   return true;
@@ -532,8 +534,8 @@ export function moveObject(
     return parts[0]?.id ?? null;
   }
   // Possession Engine : les effets qui durent « tant que vous contrôlez [la source] » cessent.
-  if (from0 === "battlefield" && s.effects.some((e) => e.whileSource === id)) {
-    s.effects = s.effects.filter((e) => e.whileSource !== id);
+  if (from0 === "battlefield" && s.effects.some((e) => e.whileSource === id || e.whileSourceTapped === id)) {
+    s.effects = s.effects.filter((e) => e.whileSource !== id && e.whileSourceTapped !== id);
     bump(s);
   }
   // Emrakul : les effets « jusqu'à ce que cette carte soit lancée depuis l'exil » cessent.

@@ -441,7 +441,9 @@ export function projectView(s: GameState, viewer: PlayerId): GameView {
     hand: (s.players[handOwner]?.hand ?? []).map((id) => withCastCost(s, handOwner, objectView(s, id))),
     controlling: actor === viewer && who !== viewer ? who : undefined,
     battlefield: s.battlefield.map((id) => {
-      const o = withFaceDownCard(s, objectView(s, id), viewer);
+      const o0 = withFaceDownCard(s, objectView(s, id), viewer);
+      // A Killer Among Us : un choix secret n'est montré qu'à son contrôleur.
+      const o = s.objects[id]?.chosen?.secret && s.objects[id]?.controller !== viewer ? { ...o0, chosen: null } : o0;
       return s.manaUndo?.some((u) => u.player === viewer && u.source === id) ? { ...o, undoMana: true } : o;
     }),
     stack,

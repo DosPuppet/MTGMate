@@ -6,7 +6,7 @@
 import type { RawCard } from "@mtgx/cards";
 import { toCardDef } from "@mtgx/cards";
 import { describe, expect, it } from "vitest";
-import { CLUE, SUSPECTED } from "../../cards/src/mkm/common";
+import { CLUE, SPIRIT_WB, SUSPECTED } from "../../cards/src/mkm/common";
 import { createTokens, destroy } from "../src/actions";
 import * as dsl from "../src/dsl";
 import { evalAmount, putFaceDown } from "../src/effects";
@@ -5223,5 +5223,181 @@ describe("Murders at Karlov Manor, lot C2 : montants et coûts", () => {
         (x) => x.type === "cast" && x.card === idOf(s, "p1", "hand", "Fugitive Codebreaker") && x.faceDown,
       ),
     ).toBe(true);
+  });
+});
+
+describe("Murders at Karlov Manor, lot C3 : cartes uniques", () => {
+  const lands = (name: string, n: number) => Array(n).fill(name) as string[];
+  const yes: Answer = (req) => (req.type === "yesNo" ? [1] : undefined);
+  const activateLabel = (s: S, source: string, label: string, extra: object = {}) => {
+    const a = legalActions(s, "p1").find((x) => x.type === "activate" && x.source === source && (x.label ?? "").includes(label));
+    return act(s, "p1", { type: "activate", source, ability: a?.type === "activate" ? a.ability : -1, ...extra });
+  };
+  /** Joue la résolution en lançant chaque carte proposée par un « lancer maintenant ». */
+  const castAll = (s: S, targets?: Record<string, string[]>) => {
+    let cur = s;
+    for (let i = 0; i < 60 && (cur.stack.length || cur.triggers.length || cur.pending?.kind === "choice"); i++) {
+      const p = cur.pending;
+      if (p?.kind === "priority" && p.castNow)
+        cur = act(cur, p.player, { type: "cast", card: p.castNow.cards[0] as string, ...(targets ? { targets } : {}) });
+      else if (p?.kind === "choice") cur = act(cur, p.player, { type: "choose", values: p.request.suggested });
+      else if (p?.kind === "priority") cur = act(cur, p.player, { type: "pass" });
+      else break;
+    }
+    return cur;
+  };
+
+  it("Conspiracy Unraveler : réunir des preuves 10 plutôt que payer le coût de mana de vos sorts", () => {
+    let s = scenario({
+      p1: { battlefield: ["Conspiracy Unraveler"], hand: ["Bear Cub"], graveyard: ["Shivan Dragon", "Serra Angel"] },
+    });
+    s = settle(act(s, "p1", { type: "cast", card: idOf(s, "p1", "hand", "Bear Cub"), alternative: true }));
+    expect(idsOf(s, "p1", "battlefield", "Bear Cub")).toHaveLength(1);
+    expect(s.players.p1?.graveyard).toHaveLength(0);
+  });
+
+  it("Intrude on the Mind : deux piles révélées ; un Thopter 0/0 avec un marqueur par carte mise au cimetière", () => {
+    let s = scenario({
+      p1: {
+        battlefield: lands("Island", 5),
+        hand: ["Intrude on the Mind"],
+        library: ["Opt", "Opt", "Bear Cub", "Island", "Shivan Dragon"],
+      },
+    });
+    s = settle(cast(s, "p1", "Intrude on the Mind"), (req) =>
+      req.type === "pick" && req.intent === "piles" && req.options.length === 5 ? req.options.slice(0, 2) : undefined,
+    );
+    const thopter = idOf(s, "p1", "battlefield", "Thopter");
+    const toGraveyard = s.players.p1?.graveyard.filter((id) => nameOf(s, id) !== "Intrude on the Mind").length ?? 0;
+    expect(toGraveyard).toBeGreaterThan(0);
+    expect(s.objects[thopter]?.counters["+1/+1"]).toBe(toGraveyard);
+  });
+
+  it("Hedge Whisperer : un terrain devient un Sanglier 5/5 tant qu'elle reste engagée ; elle peut rester engagée", () => {
+    let s = scenario({ p1: { battlefield: ["Hedge Whisperer", ...lands("Forest", 5)], graveyard: ["Shivan Dragon"] } });
+    const whisperer = idOf(s, "p1", "battlefield", "Hedge Whisperer");
+    const land = idOf(s, "p1", "battlefield", "Forest");
+    s = settle(activateLabel(s, whisperer, "Sanglier", { targets: { t: [land] } }));
+    expect(chars(s, land).types).toEqual(expect.arrayContaining(["Land", "Creature"]));
+    expect(chars(s, land).power).toBe(5);
+    s = advanceUntil(s, (x) => x.turn.number === 5 && x.turn.step === "main1");
+    expect(s.objects[whisperer]?.tapped).toBe(true);
+    expect(chars(s, land).power).toBe(5);
+  });
+
+  it("A Killer Among Us : trois jetons, un type choisi en secret ; sacrifiée, un jeton attaquant du type choisi grandit", () => {
+    let s = scenario({ p1: { battlefield: lands("Forest", 5), hand: ["A Killer Among Us"] } });
+    s = settle(cast(s, "p1", "A Killer Among Us"), (req) =>
+      req.type === "pick" && req.options.includes("Goblin") ? ["Goblin"] : undefined,
+    );
+    const killer = idOf(s, "p1", "battlefield", "A Killer Among Us");
+    expect(s.objects[killer]?.chosen?.creatureType).toBe("Goblin");
+    // Choix secret : l'adversaire ne le voit pas.
+    expect(projectView(s, "p2").battlefield.find((o) => o.id === killer)?.chosen).toBeNull();
+    expect(projectView(s, "p1").battlefield.find((o) => o.id === killer)?.chosen?.creatureType).toBe("Goblin");
+    s = advanceUntil(s, (x) => x.turn.number === 5 && x.pending?.kind === "declareAttackers");
+    const goblin = idOf(s, "p1", "battlefield", "Goblin");
+    s = act(s, "p1", { type: "declareAttackers", attackers: [{ id: goblin, defender: "p2" }] });
+    s = advanceUntil(s, (x) => x.turn.step === "declareAttackers" && x.pending?.kind === "priority" && x.pending.player === "p1");
+    s = settle(activateLabel(s, killer, "Sacrifiez", { targets: { t: [goblin] } }));
+    expect(s.objects[goblin]?.counters["+1/+1"]).toBe(3);
+    expect(chars(s, goblin).keywords).toContain("deathtouch");
+  });
+
+  it("Kylox's Voltstrider : réunissez des preuves 6 (liées à lui) ; en attaquant, lancez un éphémère parmi elles, puis au-dessous de la bibliothèque", () => {
+    let s = scenario({
+      p1: {
+        battlefield: ["Kylox's Voltstrider", ...lands("Mountain", 2)],
+        graveyard: ["Lightning Strike", "Lightning Strike", "Lightning Strike"],
+      },
+    });
+    const vehicle = idOf(s, "p1", "battlefield", "Kylox's Voltstrider");
+    s = settle(activateLabel(s, vehicle, "Réunissez des preuves 6"));
+    expect(chars(s, vehicle).types).toContain("Creature");
+    expect(s.objects[vehicle]?.linked).toHaveLength(3);
+    s = advanceUntil(s, (x) => x.pending?.kind === "declareAttackers");
+    s = act(s, "p1", { type: "declareAttackers", attackers: [{ id: vehicle, defender: "p2" }] });
+    s = castAll(s, { t: ["p2"] });
+    expect(s.players.p2?.life).toBe(17);
+    expect(nameOf(s, s.players.p1?.library.at(-1) as string)).toBe("Lightning Strike");
+  });
+
+  it("Judith : un éphémère lancé gagne le contact mortel et le lien de vie (mode choisi)", () => {
+    let s = scenario({
+      p1: { battlefield: ["Judith, Carnage Connoisseur", ...lands("Mountain", 2)], hand: ["Lightning Strike"] },
+    });
+    s = settle(cast(s, "p1", "Lightning Strike", { t: ["p2"] }), (req) =>
+      req.type === "pick" && req.intent === "triggerMode" ? [req.options[0] as string] : undefined,
+    );
+    expect(s.players.p2?.life).toBe(17);
+    expect(s.players.p1?.life).toBe(23);
+  });
+
+  it("Kaya, Spirits' Justice : une de vos créatures exilée : un jeton que vous contrôlez en devient une copie, avec le vol", () => {
+    let s = scenario({ p1: { battlefield: ["Kaya, Spirits' Justice", "Bear Cub"] } });
+    createTokens(s, "p1", SPIRIT_WB, 1);
+    const kaya = idOf(s, "p1", "battlefield", "Kaya, Spirits' Justice");
+    const spirit = idOf(s, "p1", "battlefield", "Spirit");
+    const bear = idOf(s, "p1", "battlefield", "Bear Cub");
+    s = settle(activateLabel(s, kaya, "Exilez une de vos créatures", { targets: { a: [bear], b: [] } }), yes);
+    expect(chars(s, spirit).name).toBe("Bear Cub");
+    expect(chars(s, spirit).keywords).toContain("flying");
+  });
+
+  it("Kylox, Visionary Inventor : sacrifiez d'autres créatures, exilez X cartes (leur force totale), lancez-en les éphémères gratuitement", () => {
+    let s = scenario({
+      p1: { battlefield: ["Kylox, Visionary Inventor", "Bear Cub"], library: ["Lightning Strike", "Island", "Opt"] },
+    });
+    const kylox = idOf(s, "p1", "battlefield", "Kylox, Visionary Inventor");
+    s = advanceUntil(s, (x) => x.pending?.kind === "declareAttackers");
+    s = act(s, "p1", { type: "declareAttackers", attackers: [{ id: kylox, defender: "p2" }] });
+    s = castAll(s, { t: ["p2"] });
+    expect(idsOf(s, "p1", "graveyard", "Bear Cub")).toHaveLength(1);
+    // Force 2 : Lightning Strike et Island exilées ; Strike lancée gratuitement.
+    expect(s.players.p2?.life).toBe(17);
+    expect(nameOf(s, s.players.p1?.library[0] as string)).toBe("Opt");
+  });
+
+  it("Flotsam // Jetsam : meulez trois cartes et enquêtez ; chaque adversaire meule trois cartes, lancez-en un sort gratuitement (exilé ensuite)", () => {
+    let s = scenario({
+      p1: { battlefield: lands("Island", 6), hand: ["Flotsam // Jetsam"], library: lands("Island", 6) },
+      p2: { library: ["Opt", "Island", "Island", "Island"] },
+    });
+    s = settle(cast(s, "p1", "Flotsam // Jetsam", undefined, { face: 0 }));
+    expect(idsOf(s, "p1", "battlefield", "Clue")).toHaveLength(1);
+    expect(s.players.p1?.graveyard).toHaveLength(4);
+    let t = scenario({
+      p1: { battlefield: lands("Island", 6), hand: ["Flotsam // Jetsam"], library: lands("Island", 6) },
+      p2: { library: ["Opt", "Island", "Island", "Island"] },
+    });
+    const hand = (t.players.p1?.hand.length ?? 0) - 1;
+    t = castAll(cast(t, "p1", "Flotsam // Jetsam", undefined, { face: 1 }));
+    // Opt de l'adversaire lancé gratuitement (vous piochez), puis exilé.
+    expect(t.exile.some((id) => nameOf(t, id) === "Opt")).toBe(true);
+    expect(t.players.p1?.hand).toHaveLength(hand + 1);
+  });
+
+  it("Buried in the Garden : exile un permanent adverse jusqu'à son départ ; le terrain enchanté produit un mana de plus", () => {
+    let s = scenario({
+      p1: { battlefield: lands("Forest", 3).concat(lands("Plains", 1)), hand: ["Buried in the Garden"] },
+      p2: { battlefield: ["Bear Cub"] },
+    });
+    const forest = idOf(s, "p1", "battlefield", "Forest");
+    const bear = idOf(s, "p2", "battlefield", "Bear Cub");
+    s = settle(
+      act(s, "p1", { type: "cast", card: idOf(s, "p1", "hand", "Buried in the Garden"), targets: { enchant: [forest] } }),
+      (req) => (req.type === "pick" && req.options.includes(bear) ? [bear] : undefined),
+    );
+    expect(idsOf(s, "p2", "battlefield", "Bear Cub")).toHaveLength(0);
+    // Un sort plus tard : le terrain enchanté (dégagé au tour suivant) produit deux mana.
+    s = advanceUntil(s, (x) => x.turn.number === 5 && x.turn.step === "main1");
+    const forestNow = s.battlefield.find(
+      (id) => nameOf(s, id) === "Forest" && s.battlefield.some((a) => s.objects[a]?.attachedTo === id),
+    ) as string;
+    const m = legalActions(s, "p1").find((x) => x.type === "tapForMana" && x.source === forestNow);
+    s = act(s, "p1", { type: "tapForMana", source: forestNow, ability: m?.type === "tapForMana" ? m.ability : 0, color: "G" });
+    expect(s.players.p1?.manaPool.G).toBe(2);
+    destroy(s, idOf(s, "p1", "battlefield", "Buried in the Garden"));
+    expect(idsOf(s, "p2", "battlefield", "Bear Cub")).toHaveLength(1);
   });
 });

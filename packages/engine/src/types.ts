@@ -77,7 +77,9 @@ export type Keyword =
   /** « Ne peut pas être sacrifié » (Zurgo, Thunder's Decree : ses jetons Guerrier pendant votre étape de fin). */
   | "cantBeSacrificed"
   /** « Ne peut pas devenir suspecte » (Airtight Alibi, 701.60). */
-  | "cantBeSuspected";
+  | "cantBeSuspected"
+  /** « Vous pouvez choisir de ne pas dégager cette créature lors de votre étape de dégagement » (Hedge Whisperer). */
+  | "mayNotUntap";
 
 /** Restrictions : affichées différemment des mots-clés. */
 export const RESTRICTIONS: readonly Keyword[] = [
@@ -93,6 +95,7 @@ export const RESTRICTIONS: readonly Keyword[] = [
   "damageHealsFirst",
   "cantBeSacrificed",
   "cantBeSuspected",
+  "mayNotUntap",
 ];
 
 export const KEYWORDS: readonly Keyword[] = [

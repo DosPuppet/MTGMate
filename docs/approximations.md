@@ -319,5 +319,9 @@ Dans l'ordre où elles ont été ajoutées, extension par extension.
   - `timing` Ill-Timed Explosion : les blessures suivent la défausse pendant la résolution (pas de capacité réflexive) ; défausser une seule carte ne fait rien ;
   - `timing` Tin Street Gossip : {R}{G} vient d'une capacité activée qui utilise la pile (comme Troyan, Gutsy Explorer) ; le mana sert aussi aux capacités des créatures face cachée ;
   - `règle` Officious Interrogation : au plus huit joueurs ciblés.
+  - `choix auto` Hedge Whisperer : elle reste engagée pendant votre étape de dégagement tant que son effet (le terrain 5/5) dure, et se dégage sinon ;
+  - `règle` Kaya, Spirits' Justice : une capacité par carte exilée (et non une pour « une ou plusieurs » cartes) ; « les cartes de créature que vous possédez » dans un cimetière sont celles du vôtre ;
+  - `règle` A Killer Among Us : le type choisi n'est pas révélé à part ; la capacité vérifie le type à la résolution ;
+  - `règle` Kaya, Spirits' Justice (−2), Jetsam : « pour chaque autre joueur » et « les cimetières de vos adversaires » sont exacts en duel ; à plusieurs, une seule créature adverse est ciblée.
 - **Légalité Standard :** instantané des légalités Scryfall au moment de l'import (`legalities.standard` dans `data/<set>.json`). Après une rotation ou une annonce de bannissement, réimporter les sets (`npm run import-cards -- <set>`).
 - **Images des jetons :** celle du jeton Scryfall le plus proche (même nom, puis mêmes F/E et couleurs ; `data/tokens.json`, `npm run import-tokens`) ; un jeton de nom inconnu garde le cadre texte.

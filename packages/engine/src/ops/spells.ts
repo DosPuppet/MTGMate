@@ -628,7 +628,7 @@ function castNowLoop(
   player: PlayerId,
   source: ObjectId,
   cards: ObjectId[],
-  opts: { free?: boolean; many?: boolean; exileAfter?: boolean; anyMana?: boolean; cost?: ManaCost },
+  opts: { free?: boolean; many?: boolean; exileAfter?: boolean; anyMana?: boolean; cost?: ManaCost; bottomAfter?: boolean },
 ): { ask?: OpResult; cast: ObjectId[]; rest: ObjectId[] } {
   const cast: ObjectId[] = [];
   let declined = false;
@@ -654,6 +654,7 @@ function castNowLoop(
       source,
       now: true,
       ...(opts.cost ? { cost: opts.cost } : {}),
+      ...(opts.bottomAfter ? { bottomAfter: true } : {}),
     });
     // Seules les cartes qu'on peut vraiment lancer (cibles, coûts additionnels) sont proposées.
     const castable = open.filter((id) => castTerms(s, player, id));

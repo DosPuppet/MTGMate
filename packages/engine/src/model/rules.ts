@@ -219,7 +219,8 @@ export type TriggerSpec =
   /** `to` : seulement vers cette zone (« quand cet artefact est mis au cimetière depuis le champ de bataille »). */
   /** `whileCrafting` : exilé comme matériau d'une fabrication (Market Gnome). */
   /** `who` filtre : « chaque fois qu'une créature que vous contrôlez avec un marqueur +1/+1 quitte le champ de bataille ». */
-  | { on: "leaves"; who: "self" | "linked" | ObjectFilter; to?: Zone; whileCrafting?: boolean }
+  /** `from` : une autre zone de départ que le champ de bataille (Kaya : des cartes de créature de votre cimetière exilées). */
+  | { on: "leaves"; who: "self" | "linked" | ObjectFilter; to?: Zone; from?: Zone; whileCrafting?: boolean }
   /**
    * « Quand ce permanent se transforme en [cette face] » : porté par la face visée, il ne se déclenche que lorsque le
    * permanent devient cette face (les capacités sont lues après la transformation).
@@ -568,6 +569,8 @@ export type Ref =
   | { kind: "exiledCardsOf"; who: Ref }
   /** Toutes les cartes des cimetières (Lazav). */
   | { kind: "allGraveyards" }
+  /** Les cartes du cimetière des joueurs désignés (Jetsam : « depuis le cimetière de chaque adversaire »). */
+  | { kind: "graveyardOf"; who: Ref }
   /** Sorts et capacités sur la pile contrôlés par les joueurs désignés (Glen Elendra's Answer), sauf celui qui se résout. */
   | { kind: "stackItemsOf"; who: Ref }
   /** Créatures qui ont monté ou équipé la source ce tour-ci (Fortune, Calamity, The Gitrog, Luxurious Locomotive). */
@@ -718,6 +721,8 @@ export type Amount =
   | { kind: "opponentsWithHandAtMost"; n: number }
   /** Adversaires qui ont plus de cartes en main que vous (Wojek Investigator). */
   | { kind: "opponentsWithMoreInHand" }
+  /** Force totale des objets désignés (dernières informations connues : Kylox, Visionary Inventor). */
+  | { kind: "totalPowerOf"; ref: Ref }
   /** Plus grande valeur de mana parmi les objets désignés (Ill-Timed Explosion : les cartes défaussées). */
   | { kind: "greatestManaValueOf"; ref: Ref }
   /** Paires de couleurs différentes parmi les permanents correspondants qui ont exactement deux couleurs (Niv-Mizzet, Guildpact). */

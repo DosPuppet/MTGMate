@@ -88,6 +88,8 @@ export type Effect =
       untilLeavesExile?: Ref;
       /** « tant que [la source] reste sur le champ de bataille » (Kitesail Larcenist). */
       whileSource?: boolean;
+      /** « tant que cette créature reste engagée » (Hedge Whisperer). */
+      whileSourceTapped?: boolean;
       /** F/E de base fixées à ce montant, évalué à la résolution (couche 7b). */
       basePT?: Amount;
     }
@@ -361,7 +363,13 @@ export type Effect =
   /** « Vous pouvez lancer [cette carte] depuis votre cimetière ce tour-ci. » */
   | { op: "allowCastFromGraveyard"; what: Ref }
   /** « En arrivant, choisissez un type de créature / une couleur » (sort de permanent qui se résout). */
-  | { op: "chooseOnEnter"; kind: "creatureType" | "color" | "cardName" | "landName" | "landType" | "parity" | "mode" | "number" }
+  /** `options` : les seuls choix possibles (A Killer Among Us : Humain, Ondin ou Gobelin) ; `secret` : caché aux adversaires. */
+  | {
+      op: "chooseOnEnter";
+      kind: "creatureType" | "color" | "cardName" | "landName" | "landType" | "parity" | "mode" | "number";
+      options?: string[];
+      secret?: boolean;
+    }
   /** Dévorer : pendant la résolution du sort de permanent, sacrifier des permanents (nombre mémorisé). */
   | { op: "devour"; filter: ObjectFilter; graveyardUpToX?: boolean }
   /** Pendant la résolution d'un sort de permanent : choisir le permanent à copier en arrivant. */
@@ -376,7 +384,8 @@ export type Effect =
    */
   | { op: "revealUntilN"; filter: ObjectFilter; n: Amount; to?: MoveSpec; store?: string }
   /** Le contrôleur sépare les N cartes du dessus en deux piles, un adversaire en choisit une (en main), l'autre au cimetière. */
-  | { op: "piles"; n: number }
+  /** `revealed` : deux piles révélées (Intrude on the Mind) ; `storeGraveyard` : nombre de cartes mises au cimetière. */
+  | { op: "piles"; n: number; revealed?: boolean; storeGraveyard?: string }
   /** Carte de cimetière qui gagne le flashback jusqu'à la fin du tour (coût : son coût de mana). */
   /** `free` : flashback {0} (Archmage's Newt montée). */
   /** `harmonize` : l'harmonie à la place (702.180 : une créature engagée réduit le coût ; Songcrafter Mage). */
@@ -473,6 +482,8 @@ export type Effect =
       anyMana?: boolean;
       storeCast?: string;
       storeRest?: string;
+      /** Au-dessous de la bibliothèque au lieu du cimetière (Kylox's Voltstrider). */
+      bottomAfter?: boolean;
       /** Seulement les cartes de valeur de mana au plus égale à ce montant (Kotis). */
       maxManaValue?: Amount;
       /** Lancée pour ce coût plutôt que pour son coût de mana (miracle : Lorehold, the Historian). */

@@ -292,6 +292,8 @@ function beginStep(s: GameState): void {
         }
         if (!o.tapped) continue;
         if (hasKeyword(s, id, "doesntUntap")) continue;
+        // Hedge Whisperer : « vous pouvez choisir de ne pas la dégager » (choix automatique : tant que son effet dure).
+        if (hasKeyword(s, id, "mayNotUntap") && s.effects.some((e) => e.whileSourceTapped === id)) continue;
         // 122.1d : un marqueur d'étourdissement est retiré à la place du dégagement (`untapObject`).
         if (untapObject(s, o)) {
           const stats = s.players[o.controller]?.turnStats;

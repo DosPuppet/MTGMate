@@ -537,13 +537,27 @@ function matchTrigger(s: GameState, ev: RulesEvent, t: TriggerSpec, src: Source)
     case "controlChange":
       return ev.e === "controlChange" && ev.from === me && ev.to !== me ? { objectId: ev.objectId, player: ev.to } : null;
     case "leaves": {
+      // Depuis une autre zone (Kaya : cartes de votre cimetière exilées) : la carte arrivée, vue dans sa nouvelle zone.
+      if (t.from && t.from !== "battlefield") {
+        if (ev.e !== "zone" || ev.from !== t.from || (t.to && ev.to !== t.to) || !ev.newId || typeof t.who !== "object")
+          return null;
+        const v = liveView(s, ev.newId);
+        return v && matchWho(t.who, v, src) ? { objectId: ev.newId, player: v.controller } : null;
+      }
       if (ev.e !== "zone" || ev.from !== "battlefield" || !ev.lki) return null;
       if (t.to && ev.to !== t.to) return null;
       if (t.whileCrafting && !s.turn.crafting) return null;
       // Zenos yae Galvus : « quand la créature choisie quitte le champ de bataille » (liée à la source).
       if (t.who === "linked") return s.objects[src.id]?.linked?.includes(ev.lki.id) ? { objectId: ev.lki.id } : null;
       if (typeof t.who === "object")
-        return matchWho(t.who, ev.lki, src) ? { objectId: ev.lki.id, player: ev.lki.controller } : null;
+        return matchWho(t.who, ev.lki, src)
+          ? {
+              objectId: ev.lki.id,
+              player: ev.lki.controller,
+              // Vers l'exil (Kaya) : la carte exilée devient l'objet de l'événement.
+              ...(t.to === "exile" && ev.newId ? { newObjectId: ev.newId } : {}),
+            }
+          : null;
       return ev.lki.id === src.id ? { objectId: ev.lki.id, newObjectId: ev.newId ?? undefined } : null;
     }
     case "attacks": {

@@ -105,6 +105,7 @@ export const HANDLERS: OpHandlers = {
       ...(e.duration === "untilYourNextTurn" ? { until: ctx.controller } : {}),
       ...(e.untilLeavesExile ? { untilExiledUid: exiledUid(s, ctx, e.untilLeavesExile) } : {}),
       ...(e.whileSource ? { whileSource: ctx.sourceId } : {}),
+      ...(e.whileSourceTapped ? { whileSourceTapped: ctx.sourceId } : {}),
       ...e.mods,
       // Tolsimir : « bloque ce Loup si possible » (l'attaquant de l'événement).
       ...(e.mods.addBlockRules?.some((r) => r.mustBlockEventObject)
@@ -415,7 +416,8 @@ export const HANDLERS: OpHandlers = {
     const kind = e.kind;
     if (!answer) {
       let options: string[];
-      if (kind === "color") options = ["W", "U", "B", "R", "G"];
+      if (e.options) options = [...e.options];
+      else if (kind === "color") options = ["W", "U", "B", "R", "G"];
       else if (kind === "parity") options = ["odd", "even"];
       // Talion, the Kindly Lord : un nombre de 1 à 10.
       else if (kind === "number") options = Array.from({ length: 10 }, (_, i) => String(i + 1));
@@ -509,6 +511,7 @@ export const HANDLERS: OpHandlers = {
       const value = String(answer[0]);
       src.chosen = {
         ...src.chosen,
+        ...(e.secret ? { secret: true } : {}),
         ...(kind === "color"
           ? { color: value as Color }
           : kind === "creatureType"

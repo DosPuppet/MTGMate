@@ -1262,7 +1262,9 @@ export const HANDLERS: OpHandlers = {
           request: {
             type: "pick",
             intent: "piles",
-            prompt: "Choisissez les cartes de la pile face cachée (les autres forment la pile face visible)",
+            prompt: e.revealed
+              ? "Séparez les cartes révélées en deux piles : choisissez celles de la première pile"
+              : "Choisissez les cartes de la pile face cachée (les autres forment la pile face visible)",
             options: top,
             min: 0,
             max: top.length,
@@ -1277,6 +1279,8 @@ export const HANDLERS: OpHandlers = {
     let pick = r.vars[key("pile")]?.[0];
     if (pick === undefined && opp) {
       const names = faceUp.map((id) => nameOf(s, id)).join(", ") || "aucune carte";
+      const downNames = faceDown.map((id) => nameOf(s, id)).join(", ") || "aucune carte";
+      if (e.revealed) emit({ type: "reveal", player: ctx.controller, defIds: top.map((id) => s.objects[id]?.defId ?? "") });
       return {
         ask: {
           player: opp,
@@ -1286,7 +1290,9 @@ export const HANDLERS: OpHandlers = {
             intent: "piles",
             prompt: `${nameOf(s, ctx.sourceId)} : choisissez la pile que l'adversaire met dans sa main (l'autre va au cimetière)`,
             options: ["down", "up"],
-            labels: { down: `Pile face cachée (${faceDown.length} carte(s))`, up: `Pile face visible : ${names}` },
+            labels: e.revealed
+              ? { down: `Première pile : ${downNames}`, up: `Seconde pile : ${names}` }
+              : { down: `Pile face cachée (${faceDown.length} carte(s))`, up: `Pile face visible : ${names}` },
             min: 1,
             max: 1,
             suggested: [faceDown.length >= faceUp.length ? "up" : "down"],
@@ -1297,6 +1303,7 @@ export const HANDLERS: OpHandlers = {
     pick ??= "down";
     const toHand = pick === "down" ? faceDown : faceUp;
     for (const id of top) moveWithSpec(s, ctx.controller, id, { to: toHand.includes(id) ? "hand" : "graveyard" });
+    store(r, e.storeGraveyard, top.length - toHand.length);
     return;
   },
   flickerChosen(s, r, e, ctx, key) {

@@ -1,4 +1,5 @@
 /** Murders at Karlov Manor — cartes bleues. */
+import type { TokenSpec } from "@mtgx/engine";
 import {
   activated,
   amount,
@@ -52,6 +53,17 @@ const ENCHANTS_YOUR_DETECTIVE = cond.controls({ attachedToSource: true, subtype:
 
 /** Bibliothèque vide (Living Conundrum). */
 const LIBRARY_EMPTY = cond.not(cond.amountAtLeast(amount.cardsIn("library"), 1));
+
+/** Thopter : créature-artefact incolore 0/0 avec le vol (Intrude on the Mind). */
+const THOPTER_0: TokenSpec = {
+  name: "Thopter",
+  colors: [],
+  types: ["Artifact", "Creature"],
+  subtypes: ["Thopter"],
+  power: 0,
+  toughness: 0,
+  keywords: ["flying"],
+};
 
 export const BLUE: Record<string, CardScript> = {
   "Agency Outfitter": {
@@ -446,5 +458,23 @@ export const BLUE: Record<string, CardScript> = {
       staticAbility("attached", { power: 1, addKeywords: ["unblockable"] }, { label: "+1/+0, ne peut pas être bloquée" }),
       activated({ mana: "{1}{U}", effects: [fx.bounce(ref.self)], label: "Renvoyez cet Équipement dans votre main" }),
     ],
+  },
+  "Conspiracy Unraveler": {
+    abilities: [
+      playerStatic({
+        altCostAll: { collectEvidence: 10 },
+        label: "Vous pouvez réunir des preuves 10 plutôt que payer le coût de mana de vos sorts",
+      }),
+    ],
+  },
+  "Intrude on the Mind": {
+    spell: spell(
+      [],
+      [
+        fx.piles(5, { revealed: true, storeGraveyard: "g" }),
+        fx.createTokens(THOPTER_0, 1, undefined, "t"),
+        fx.addCounters(ref.stored("t"), amount.v("g")),
+      ],
+    ),
   },
 };

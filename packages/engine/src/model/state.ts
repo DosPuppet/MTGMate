@@ -100,6 +100,8 @@ export interface GameObject {
     parity?: "odd" | "even";
     mode?: string;
     number?: number;
+    /** Choix secret (A Killer Among Us) : caché aux adversaires jusqu'à ce qu'il soit révélé. */
+    secret?: boolean;
   };
   /** Arrivé depuis un sort lancé depuis la main (Myojin). */
   castFromHand?: boolean;
@@ -260,6 +262,8 @@ export interface StackItem {
   event?: TriggerEventData;
   /** Lancé avec le flashback : exilé au lieu d'aller au cimetière. */
   flashback?: boolean;
+  /** Au-dessous de la bibliothèque de son propriétaire au lieu du cimetière (Kylox's Voltstrider). */
+  bottomInstead?: boolean;
   /** Aventure lancée : exilée « en aventure » après sa résolution. */
   adventure?: boolean;
   /** Lancé pour son coût de distorsion : le permanent sera exilé à la prochaine étape de fin. */
@@ -626,6 +630,8 @@ export interface ContinuousEffect extends LayerMods {
   untilExiledUid?: string;
   /** L'effet cesse quand cette source quitte le champ de bataille (Possession Engine). */
   whileSource?: ObjectId;
+  /** L'effet cesse quand cette source se dégage ou quitte le champ de bataille (Hedge Whisperer). */
+  whileSourceTapped?: ObjectId;
   /**
    * 707.9b : exceptions d'un effet de copie (« sauf que c'est un Zombie ») ; elles font partie des valeurs copiables,
    * qu'une copie de cet objet reprend (`copiableExceptions`).
@@ -731,6 +737,8 @@ export interface GameState {
     anyMana?: boolean;
     /** « S'il devait être mis dans un cimetière, exilez-le à la place » (Quistis Trepe). */
     exileAfter?: boolean;
+    /** « S'il devait aller au cimetière, mettez-le au-dessous de la bibliothèque de son propriétaire » (Kylox's Voltstrider). */
+    bottomAfter?: boolean;
     /** Une seule carte du groupe peut être lancée (Buster Sword : « un sort de votre main »). */
     group?: string;
     /** Découverte : si la carte n'a pas été lancée quand la permission expire, elle va dans la main. */

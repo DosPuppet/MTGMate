@@ -70,6 +70,7 @@ export const KEYWORD_LABEL: Record<Keyword, string> = {
   decayed: "Décomposition",
   cantBeSacrificed: "Ne peut pas être sacrifié",
   cantBeSuspected: "Ne peut pas devenir suspecte",
+  mayNotUntap: "Peut ne pas se dégager",
   cantAttack: "Ne peut pas attaquer",
   unblockable: "Ne peut pas être bloquée",
   mustAttack: "Attaque à chaque combat",

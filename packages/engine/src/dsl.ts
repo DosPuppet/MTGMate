@@ -230,6 +230,7 @@ export const ref = {
   stackItemsOf: (who: Ref): Ref => ({ kind: "stackItemsOf", who }),
   exiledCardsOf: (who: Ref): Ref => ({ kind: "exiledCardsOf", who }),
   allGraveyards: { kind: "allGraveyards" } as Ref,
+  graveyardOf: (who: Ref): Ref => ({ kind: "graveyardOf", who }),
   crewedBy: { kind: "crewedBy" } as Ref,
   stored: (name: string): Ref => ({ kind: "stored", name }),
   /** « chaque [créature] que [le joueur désigné] contrôle » */
@@ -366,6 +367,7 @@ export const amount = {
   opponentsWithHandAtMost: (n: number): Amount => ({ kind: "opponentsWithHandAtMost", n }),
   opponentsWithMoreInHand: { kind: "opponentsWithMoreInHand" } as Amount,
   greatestManaValueOf: (r: Ref): Amount => ({ kind: "greatestManaValueOf", ref: r }),
+  totalPowerOf: (r: Ref): Amount => ({ kind: "totalPowerOf", ref: r }),
   colorPairsAmong: (filter: ObjectFilter): Amount => ({ kind: "colorPairsAmong", filter }),
   lkiPower: { kind: "lkiPower" } as Amount,
   instantSorceryCast: turnEvents({ event: "cast", who: "you", types: ["Instant", "Sorcery"] }),
@@ -423,6 +425,14 @@ export const fx = {
     mods,
     duration,
     ...(basePT !== undefined ? { basePT } : {}),
+  }),
+  /** Modification qui dure « tant que cette créature reste engagée » (Hedge Whisperer). */
+  modifyWhileTapped: (what: Ref, mods: LayerMods): Effect => ({
+    op: "modify",
+    what,
+    mods,
+    duration: "permanent",
+    whileSourceTapped: true,
   }),
   draw: (n: Amount, who: Ref = ref.you): Effect => ({ op: "draw", who, amount: n }),
   gainLife: (n: Amount, who: Ref = ref.you): Effect => ({ op: "gainLife", who, amount: n }),
@@ -649,7 +659,7 @@ export const fx = {
   becomeCopyKeepAbilities: (what: Ref): Effect => ({ op: "becomeCopyKeepAbilities", what }),
   /** « Exilez les N cartes du dessus. Choisissez-en une. Vous pouvez la jouer ce tour-ci (ou jusqu'à la fin de votre prochain tour). » */
   impulse: (n: number, until: "thisTurn" | "yourNextTurn" = "thisTurn"): Effect => ({ op: "impulse", n, until }),
-  piles: (n: number): Effect => ({ op: "piles", n }),
+  piles: (n: number, opts: { revealed?: boolean; storeGraveyard?: string } = {}): Effect => ({ op: "piles", n, ...opts }),
   grantFlashback: (what: Ref): Effect => ({ op: "grantFlashback", what }),
   /** « [Cette carte] gagne l'harmonie jusqu'à la fin du tour ; son coût d'harmonie est son coût de mana » (702.180). */
   grantHarmonize: (what: Ref): Effect => ({ op: "grantFlashback", what, harmonize: true }),
@@ -701,6 +711,8 @@ export const fx = {
       maxManaValue?: Amount;
       /** Coût remplaçant le coût de mana, ex. "{2}" (miracle). */
       cost?: string;
+      /** « S'il devait aller au cimetière, mettez-le au-dessous de la bibliothèque » (Kylox's Voltstrider). */
+      bottomAfter?: boolean;
     } = {},
   ): Effect => {
     const { cost, ...rest } = opts;
@@ -751,7 +763,10 @@ export const fx = {
   /** The End : exile le permanent désigné et ses homonymes (cimetière, main, bibliothèque de son contrôleur). */
   exileWithNamesakes: (of: Ref): Effect => ({ op: "exileNamesakes", of }),
   /** « Quand ce permanent arrive, choisissez [un nom de carte de terrain…] » (capacité déclenchée). */
-  chooseForSelf: (kind: "creatureType" | "color" | "cardName" | "landName"): Effect => ({ op: "chooseOnEnter", kind }),
+  chooseForSelf: (
+    kind: "creatureType" | "color" | "cardName" | "landName",
+    opts: { options?: string[]; secret?: boolean } = {},
+  ): Effect => ({ op: "chooseOnEnter", kind, ...opts }),
   payCostOf: (what: Ref, store: string, prompt: string): Effect => ({ op: "payCostOf", what, store, prompt }),
   reduceSpeed: (who: Ref): Effect => ({ op: "reduceSpeed", who }),
   /** « [Cette Monture] devient montée jusqu'à la fin du tour ». */
@@ -1394,8 +1409,9 @@ export function activated(opts: {
   removeCounterFrom?: { filter: ObjectFilter; kind: string };
   /** Flétrir N comme coût (ECL). */
   blight?: number;
-  /** Réunir des preuves N comme coût (MKM). */
+  /** Réunir des preuves N comme coût (MKM) ; `linkEvidence` : les cartes sont liées à la source. */
   collectEvidence?: number;
+  linkEvidence?: boolean;
   /** « Engagez X [artefacts] dégagés que vous contrôlez ». */
   tapX?: ObjectFilter;
   /** « Exilez X cartes [d'artefact] de votre cimetière ». */
@@ -1438,6 +1454,7 @@ export function activated(opts: {
       removeCounterFrom: opts.removeCounterFrom,
       blight: opts.blight,
       collectEvidence: opts.collectEvidence,
+      linkEvidence: opts.linkEvidence,
       tapX: opts.tapX,
       exileFromGraveyardX: opts.exileFromGraveyardX,
       sacrificeX: opts.sacrificeX,
