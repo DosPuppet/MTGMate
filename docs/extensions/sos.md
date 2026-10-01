@@ -54,3 +54,10 @@ Les scripts sont dans `packages/cards/src/sos/` : `cards` (cartes du méta), `wh
 - **Cartes :** 25 (sur 27), dont Opus (Thunderdrum Soloist, Pigment Wrangler, Garrison Excavator, Tome Blast…), préparées, Mica (sacrifier un artefact copie le sort), Rubble Rouser (capacité de mana à coût et capacité réflexive), Improvisation Capstone (Paradigme), Archaic's Agony (convergence et blessures en excès), flashback de Duel Tactics et Tome Blast.
 - **Restent :** Magmablood Archaic (convergence « arrive avec » ; couleurs dépensées pour le sort déclencheur), Choreographed Sparks (« ce sort ne peut pas être copié » ; copie d'un sort de créature avec la célérité et sacrifiée en fin de tour).
 - **Tests :** 31 tests de règles (« lot A — rouge »).
+
+## Sous-lot A5 : cartes vertes ✅ (166 / 262)
+
+- **Cartes :** 31 (sur 32), dont Increment (Ambitious Augmenter, Topiary Lecturer…), préparées (Emeritus of Abundance, Infirmary Healer, Studious First-Year, Vastlands Scavenger), Infusion, Fractales et convergence (Snarl Song), Slumbering Trudge.
+- **[règles] Montants et conditions « arrive avec » :** ils savent additionner, opposer et prendre un maximum (Slumbering Trudge : « trois moins X marqueurs d'étourdissement »), compter les couleurs dépensées (convergence), et les conditions voient X (« si X vaut 2 ou moins, elle arrive engagée »). Correctif au passage : Sheriff of Safe Passage (OTJ) arrivait sans marqueur (0/0) ; test ajouté dans `otj.test.ts`. `RULES_VERSION` = 28.
+- **Reste :** Wildgrowth Archaic (« ce sort de créature arrive avec X marqueurs, X étant le nombre de couleurs dépensées pour le lancer » : couleurs dépensées pour le sort déclencheur).
+- **Tests :** 34 tests de règles (« lot A — vert ») et 1 test OTJ.

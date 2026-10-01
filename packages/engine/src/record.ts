@@ -76,8 +76,11 @@ export const RECORD_VERSION = 1;
  * - 27 : Secrets of Strixhaven, socle : une condition « si » d'une capacité déclenchée lit les montants de l'objet de
  *   l'événement (mana dépensé pour le sort lancé : Increment) ; Wilds of Eldraine, lots C4 et C5 : paiement de PV
  *   centralisé (Ashiok), « une fois par tour » depuis le dessus de la bibliothèque, coûts de capacités réduits.
+ * - 28 : Secrets of Strixhaven, lot A : les montants « arrive avec » savent additionner, opposer, prendre un maximum et
+ *   compter les couleurs dépensées (Sheriff of Safe Passage arrivait sans marqueur) ; les conditions « arrive avec »
+ *   voient X ; « répartissez X marqueurs » sans minimum par cible quand X est plus petit que le nombre de cibles.
  */
-export const RULES_VERSION = 27;
+export const RULES_VERSION = 28;
 
 /** Un point de contrôle toutes les N décisions (plus la dernière de la partie). */
 export const CHECKPOINT_EVERY = 25;

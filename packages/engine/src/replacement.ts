@@ -18,7 +18,7 @@ import { controlledAbilitiesWithSource, playerStatic } from "./statics";
 import { matchesCard, matchesObjectFilter, protectedFrom, sourceView, withChosen } from "./targets";
 import { checkCondition } from "./triggers";
 import { countTurnEvents } from "./turnlog";
-import type { Amount, Color, GameObject, GameState, LayerMods, ObjectId, PlayerId, TokenSpec, Zone } from "./types";
+import type { Amount, Color, Condition, GameObject, GameState, LayerMods, ObjectId, PlayerId, TokenSpec, Zone } from "./types";
 
 /** Contexte d'arrivée sur le champ de bataille (valeur de X, kicker du sort qui arrive). */
 export interface EntersContext {
@@ -100,6 +100,12 @@ function amountAtEntry(s: GameState, a: Amount, o: GameObject, ctx: EntersContex
   if (a.kind === "x") return ctx.x ?? 0;
   if (a.kind === "kicked") return ctx.kicked ? a.yes : a.no;
   if (a.kind === "manaSpent") return ctx.manaSpent ?? 0;
+  // Convergence : « un marqueur pour chaque couleur de mana dépensée pour le lancer ».
+  if (a.kind === "colorsSpent") return (["W", "U", "B", "R", "G"] as const).filter((c) => (ctx.spentColors?.[c] ?? 0) > 0).length;
+  // Arithmétique (Slumbering Trudge : « 3 moins X »).
+  if (a.kind === "sum") return a.of.reduce<number>((n, x) => n + amountAtEntry(s, x, o, ctx, entering), 0);
+  if (a.kind === "neg") return -amountAtEntry(s, a.of, o, ctx, entering);
+  if (a.kind === "max") return Math.max(...a.of.map((x) => amountAtEntry(s, x, o, ctx, entering)));
   // Bioengineered Future : terrains arrivés ce tour-ci sous le contrôle de la source.
   if (a.kind === "turnEvents") return countTurnEvents(s, a.query, o.controller);
   if (a.kind === "maxPower") {
@@ -118,6 +124,16 @@ function amountAtEntry(s: GameState, a: Amount, o: GameObject, ctx: EntersContex
     return entering && matchesObjectFilter(s, o.controller, entering.id, f, o.id) ? n - 1 : n;
   }
   return 0;
+}
+
+/** Condition d'une capacité « arrive avec » : le kicker et X du sort lancé sont connus à l'arrivée. */
+function conditionAtEntry(s: GameState, c: Condition, o: GameObject, ctx: EntersContext): boolean {
+  if (c.kind === "kicked") return !!ctx.kicked;
+  if (c.kind === "xAtLeast") return (ctx.x ?? 0) >= c.n;
+  if (c.kind === "not") return !conditionAtEntry(s, c.cond, o, ctx);
+  if (c.kind === "all") return c.of.every((x) => conditionAtEntry(s, x, o, ctx));
+  if (c.kind === "any") return c.of.some((x) => conditionAtEntry(s, x, o, ctx));
+  return checkCondition(s, c, o.controller, o.id);
 }
 
 /** Choix par défaut quand un permanent « à choix » arrive sans résolution : le type ou la couleur les plus présents. */
@@ -355,10 +371,7 @@ export function applyEntersReplacements(s: GameState, o: GameObject, ctx: Enters
   }
   for (const ab of eff?.abilities ?? []) {
     if (ab.kind !== "replacement" || ab.affects) continue;
-    if (ab.condition) {
-      const ok = ab.condition.kind === "kicked" ? !!ctx.kicked : checkCondition(s, ab.condition, o.controller, o.id);
-      if (!ok) continue;
-    }
+    if (ab.condition && !conditionAtEntry(s, ab.condition, o, ctx)) continue;
     if (ab.entersTapped) o.tapped = true;
     if (ab.entersPrepared) setPrepared(s, o, true);
     if (ab.entersWithCounters !== undefined)

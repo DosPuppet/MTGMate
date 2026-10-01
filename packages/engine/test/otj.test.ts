@@ -198,3 +198,16 @@ describe("Outlaws of Thunder Junction", () => {
     expect(idsOf(v, "p1", "battlefield", "Map")).toHaveLength(1);
   });
 });
+
+describe("Outlaws of Thunder Junction : montants à l'arrivée", () => {
+  it("Sheriff of Safe Passage : un marqueur +1/+1 plus un par autre créature que vous contrôlez", () => {
+    let s = scenario({
+      p1: { battlefield: ["Bear Cub", "Bear Cub", "Plains", "Plains", "Plains"], hand: ["Sheriff of Safe Passage"] },
+    });
+    s = act(s, "p1", { type: "cast", card: idOf(s, "p1", "hand", "Sheriff of Safe Passage") });
+    s = passAccepting(s, (x) => x.stack.length === 0 && x.triggers.length === 0 && x.pending?.kind === "priority");
+    const sheriff = idOf(s, "p1", "battlefield", "Sheriff of Safe Passage");
+    expect(s.objects[sheriff]?.counters["+1/+1"]).toBe(3);
+    expect(chars(s, sheriff).power).toBe(3);
+  });
+});

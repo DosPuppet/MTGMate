@@ -2452,3 +2452,514 @@ describe("Secrets of Strixhaven, lot A — rouge", () => {
     });
   });
 });
+
+describe("Secrets of Strixhaven, lot A — vert", () => {
+  /**
+   * Secrets of Strixhaven, lot A — cartes vertes : chaque carte au comportement non trivial est confrontée à son texte
+   * Oracle (plan R, lot R7) : Opus et Increment chiffrés, Fractales, Infusion, préparation (Regrowth, Stream of Life,
+   * Rampant Growth, Bind to Life), convergence, marqueurs d'étourdissement d'arrivée.
+   */
+  type S = GameState;
+  type Answer = (req: ChoiceRequest, player: string) => ChoiceValue[] | undefined;
+  const lands = (name: string, n: number) => Array(n).fill(name) as string[];
+  const nameOf = (s: S, id: string) => s.defs[s.objects[id]?.defId ?? ""]?.name;
+  const exiled = (s: S, name: string) => s.exile.filter((id) => nameOf(s, id) === name);
+  const pt = (s: S, id: string) => [chars(s, id).power, chars(s, id).toughness];
+
+  /** Passe et répond aux choix (réponse suggérée par défaut) jusqu'à une pile vide, sans déclenchement en attente. */
+  const settle = (s: S, answer: Answer = () => undefined): S => {
+    let cur = s;
+    for (let i = 0; i < 300; i++) {
+      const p = cur.pending;
+      if (p?.kind === "priority" && cur.stack.length === 0 && cur.triggers.length === 0 && i > 0) break;
+      if (p?.kind === "priority") cur = act(cur, p.player, { type: "pass" });
+      else if (p?.kind === "choice")
+        cur = act(cur, p.player, { type: "choose", values: answer(p.request, p.player) ?? p.request.suggested });
+      else break;
+    }
+    return cur;
+  };
+  const cast = (s: S, player: string, name: string, targets?: Record<string, string[]>, extra: object = {}) =>
+    act(s, player, { type: "cast", card: idOf(s, player, "hand", name), targets, ...extra });
+  /** Active la capacité de `source` dont le libellé contient `label` (la première si absent). */
+  const activate = (s: S, player: string, source: string, label?: string, targets?: Record<string, string[]>) => {
+    const a = legalActions(s, player).find(
+      (x) => x.type === "activate" && x.source === source && (!label || (x.label ?? "").includes(label)),
+    );
+    return act(s, player, { type: "activate", source, ability: a?.type === "activate" ? a.ability : -1, targets });
+  };
+  const canActivate = (s: S, player: string, source: string) =>
+    legalActions(s, player).some((a) => a.type === "activate" && a.source === source);
+  /** Lance le sort préparé de `creature` (sa copie en exil). */
+  const castPrepared = (s: S, creature: string, targets?: Record<string, string[]>, extra: object = {}) => {
+    const copy = s.objects[creature]?.preparedCopy;
+    if (!copy) throw new Error("créature non préparée");
+    return act(s, s.objects[creature]?.controller ?? "p1", { type: "cast", card: copy, targets, ...extra });
+  };
+  /** Déclare `attacker` attaquant le joueur p2. */
+  const attackWith = (s: S, name: string) => {
+    let cur = advanceUntil(s, (x) => x.pending?.kind === "declareAttackers");
+    const id = idOf(cur, "p1", "battlefield", name);
+    cur = act(cur, "p1", { type: "declareAttackers", attackers: [{ id, defender: "p2" }] });
+    return cur;
+  };
+
+  it("Aberrant Manawurm : piétinement ; chaque éphémère ou rituel lancé lui donne +X/+0, X = mana dépensé", () => {
+    let s = scenario({
+      p1: { battlefield: ["Aberrant Manawurm", "Island", ...lands("Mountain", 2)], hand: ["Opt", "Lightning Strike"] },
+    });
+    const wurm = idOf(s, "p1", "battlefield", "Aberrant Manawurm");
+    expect(chars(s, wurm).keywords).toContain("trample");
+    s = settle(cast(s, "p1", "Opt"));
+    expect(pt(s, wurm)).toEqual([3, 5]);
+    s = settle(cast(s, "p1", "Lightning Strike", { t: ["p2"] }));
+    expect(pt(s, wurm)).toEqual([5, 5]);
+    s = advanceUntil(s, (x) => x.turn.active === "p2");
+    expect(pt(s, wurm)).toEqual([2, 5]);
+  });
+
+  it("Additive Evolution : une Fractale 0/0 verte et bleue avec trois marqueurs ; au début du combat, un marqueur et la vigilance", () => {
+    let s = scenario({ p1: { battlefield: lands("Forest", 5), hand: ["Additive Evolution"] } });
+    s = settle(cast(s, "p1", "Additive Evolution"));
+    const fractal = idOf(s, "p1", "battlefield", "Fractal");
+    expect(s.objects[fractal]?.isToken).toBe(true);
+    expect([...chars(s, fractal).colors].sort()).toEqual(["G", "U"]);
+    expect(pt(s, fractal)).toEqual([3, 3]);
+    expect(chars(s, fractal).keywords).not.toContain("vigilance");
+    // La Fractale vient d'arriver : pas d'attaque, le combat de ce tour passe jusqu'à la seconde phase principale.
+    s = advanceUntil(s, (x) => x.turn.step === "main2");
+    expect(s.objects[fractal]?.counters["+1/+1"]).toBe(4);
+    expect(chars(s, fractal).keywords).toContain("vigilance");
+  });
+
+  describe("Ambitious Augmenter", () => {
+    it("Increment, puis en mourant avec des marqueurs : une Fractale qui reçoit ses marqueurs", () => {
+      let s = scenario({ p1: { battlefield: ["Ambitious Augmenter", ...lands("Mountain", 2)], hand: ["Lightning Strike"] } });
+      const augmenter = idOf(s, "p1", "battlefield", "Ambitious Augmenter");
+      // Lightning Strike : 2 mana > force 1 → un marqueur (résolu avant le sort), puis 3 blessures le tuent.
+      s = settle(cast(s, "p1", "Lightning Strike", { t: [augmenter] }));
+      expect(idsOf(s, "p1", "graveyard", "Ambitious Augmenter")).toHaveLength(1);
+      const fractal = idOf(s, "p1", "battlefield", "Fractal");
+      expect(s.objects[fractal]?.counters["+1/+1"]).toBe(1);
+      expect(pt(s, fractal)).toEqual([1, 1]);
+    });
+
+    it("sans marqueur en mourant : pas de Fractale", () => {
+      let s = scenario({
+        active: "p2",
+        p1: { battlefield: ["Ambitious Augmenter"] },
+        p2: { battlefield: lands("Mountain", 2), hand: ["Lightning Strike"] },
+      });
+      s = settle(cast(s, "p2", "Lightning Strike", { t: [idOf(s, "p1", "battlefield", "Ambitious Augmenter")] }));
+      expect(idsOf(s, "p1", "graveyard", "Ambitious Augmenter")).toHaveLength(1);
+      expect(idsOf(s, "p1", "battlefield", "Fractal")).toHaveLength(0);
+    });
+  });
+
+  it("Burrog Barrage : +1/+0 seulement après un autre éphémère ou rituel, puis blessures égales à sa force", () => {
+    const run = (optFirst: boolean) => {
+      let s = scenario({
+        p1: { battlefield: ["Bear Cub", "Island", ...lands("Forest", 2)], hand: ["Opt", "Burrog Barrage"] },
+        p2: { battlefield: ["Serra Angel"] },
+      });
+      if (optFirst) s = settle(cast(s, "p1", "Opt"));
+      const angel = idOf(s, "p2", "battlefield", "Serra Angel");
+      s = settle(cast(s, "p1", "Burrog Barrage", { a: [idOf(s, "p1", "battlefield", "Bear Cub")], b: [angel] }));
+      return s.objects[angel]?.damage;
+    };
+    expect(run(false)).toBe(2);
+    expect(run(true)).toBe(3);
+  });
+
+  it("Chelonian Tackle : +0/+10, puis elle se bat contre une créature adverse", () => {
+    let s = scenario({
+      p1: { battlefield: ["Bear Cub", ...lands("Forest", 3)], hand: ["Chelonian Tackle"] },
+      p2: { battlefield: ["Serra Angel"] },
+    });
+    const bear = idOf(s, "p1", "battlefield", "Bear Cub");
+    const angel = idOf(s, "p2", "battlefield", "Serra Angel");
+    s = settle(cast(s, "p1", "Chelonian Tackle", { a: [bear], b: [angel] }));
+    expect(pt(s, bear)).toEqual([2, 12]);
+    expect(s.objects[bear]?.damage).toBe(4);
+    expect(s.objects[angel]?.damage).toBe(2);
+  });
+
+  it("Comforting Counsel : un marqueur de croissance par gain de PV ; à cinq, vos créatures ont +3/+3", () => {
+    let s = scenario({
+      p1: {
+        battlefield: ["Comforting Counsel", "Bear Cub", ...lands("Forest", 2)],
+        hand: ["Oracle's Restoration", "Oracle's Restoration"],
+      },
+      p2: { battlefield: ["Bear Cub"] },
+    });
+    const counsel = idOf(s, "p1", "battlefield", "Comforting Counsel");
+    const bear = idOf(s, "p1", "battlefield", "Bear Cub");
+    const theirs = idOf(s, "p2", "battlefield", "Bear Cub");
+    s = settle(cast(s, "p1", "Oracle's Restoration", { t: [bear] }));
+    expect(s.objects[counsel]?.counters.growth).toBe(1);
+    expect(pt(s, bear)).toEqual([3, 3]);
+    // Trois gains de plus (mis en place directement), puis le cinquième par un sort.
+    (s.objects[counsel] as { counters: Record<string, number> }).counters.growth = 4;
+    s.version += 1;
+    expect(pt(s, bear)).toEqual([3, 3]);
+    s = settle(cast(s, "p1", "Oracle's Restoration", { t: [bear] }));
+    expect(s.objects[counsel]?.counters.growth).toBe(5);
+    expect(pt(s, bear)).toEqual([2 + 2 + 3, 2 + 2 + 3]);
+    expect(pt(s, theirs)).toEqual([2, 2]);
+  });
+
+  it("Efflorescence : deux marqueurs +1/+1 ; Infusion : piétinement et indestructible jusqu'à la fin du tour", () => {
+    const run = (gain: boolean) => {
+      let s = scenario({
+        p1: { battlefield: ["Bear Cub", ...lands("Forest", 4)], hand: ["Oracle's Restoration", "Efflorescence"] },
+      });
+      const bear = idOf(s, "p1", "battlefield", "Bear Cub");
+      if (gain) s = settle(cast(s, "p1", "Oracle's Restoration", { t: [bear] }));
+      s = settle(cast(s, "p1", "Efflorescence", { t: [bear] }));
+      return { counters: s.objects[bear]?.counters["+1/+1"], keywords: chars(s, bear).keywords };
+    };
+    const plain = run(false);
+    expect(plain.counters).toBe(2);
+    expect(plain.keywords).not.toContain("trample");
+    const infused = run(true);
+    expect(infused.counters).toBe(2);
+    expect(infused.keywords).toEqual(expect.arrayContaining(["trample", "indestructible"]));
+  });
+
+  describe("Emeritus of Abundance", () => {
+    it("vigilance ; arrive préparée : Regrowth renvoie une carte de votre cimetière dans votre main", () => {
+      let s = scenario({
+        p1: { battlefield: lands("Forest", 5), hand: ["Emeritus of Abundance"], graveyard: ["Serra Angel"] },
+      });
+      s = settle(cast(s, "p1", "Emeritus of Abundance"));
+      const emeritus = idOf(s, "p1", "battlefield", "Emeritus of Abundance");
+      expect(chars(s, emeritus).keywords).toContain("vigilance");
+      expect(exiled(s, "Regrowth")).toHaveLength(1);
+      s = settle(castPrepared(s, emeritus, { t: [idOf(s, "p1", "graveyard", "Serra Angel")] }));
+      expect(idsOf(s, "p1", "hand", "Serra Angel")).toHaveLength(1);
+      expect(s.objects[emeritus]?.preparedCopy).toBeUndefined();
+    });
+
+    it("en attaquant avec huit terrains ou plus, elle devient préparée ; avec sept, non", () => {
+      const run = (n: number) => {
+        const s = settle(
+          attackWith(
+            scenario({ p1: { battlefield: ["Emeritus of Abundance", ...lands("Forest", n)] } }),
+            "Emeritus of Abundance",
+          ),
+        );
+        return exiled(s, "Regrowth").length;
+      };
+      expect(run(8)).toBe(1);
+      expect(run(7)).toBe(0);
+    });
+  });
+
+  it("Emil, Vastlands Roamer : piétinement aux créatures à marqueurs +1/+1 ; Fractale avec X marqueurs (noms de terrains)", () => {
+    let s = scenario({
+      p1: { battlefield: ["Emil, Vastlands Roamer", ...lands("Forest", 3), "Island", "Swamp"] },
+    });
+    const emil = idOf(s, "p1", "battlefield", "Emil, Vastlands Roamer");
+    expect(chars(s, emil).keywords).not.toContain("trample");
+    s = settle(activate(s, "p1", emil));
+    const fractal = idOf(s, "p1", "battlefield", "Fractal");
+    // Forest, Island, Swamp : trois noms différents.
+    expect(s.objects[fractal]?.counters["+1/+1"]).toBe(3);
+    expect(chars(s, fractal).keywords).toContain("trample");
+    expect(s.objects[emil]?.tapped).toBe(true);
+  });
+
+  it("Environmental Scientist : en arrivant, vous pouvez chercher une carte de terrain de base et la mettre en main", () => {
+    let s = scenario({
+      p1: { battlefield: lands("Forest", 2), hand: ["Environmental Scientist"], library: ["Bear Cub", "Island", "Opt"] },
+    });
+    s = settle(cast(s, "p1", "Environmental Scientist"), (req) => (req.type === "yesNo" ? [1] : undefined));
+    expect(idsOf(s, "p1", "hand", "Island")).toHaveLength(1);
+    expect(s.players.p1?.library).toHaveLength(2);
+  });
+
+  it("Follow the Lumarets : une créature ou un terrain parmi quatre ; Infusion : jusqu'à deux ; le reste dessous", () => {
+    const run = (gain: boolean) => {
+      let s = scenario({
+        p1: {
+          battlefield: ["Bear Cub", ...lands("Forest", 3)],
+          hand: ["Oracle's Restoration", "Follow the Lumarets"],
+          library: ["Swamp", "Bear Cub", "Opt", "Island", "Serra Angel", "Lightning Strike"],
+        },
+      });
+      if (gain) s = settle(cast(s, "p1", "Oracle's Restoration", { t: [idOf(s, "p1", "battlefield", "Bear Cub")] }));
+      let max = 0;
+      const before = s.players.p1?.hand.length ?? 0;
+      s = settle(cast(s, "p1", "Follow the Lumarets"), (req) => {
+        if (req.type !== "pick") return undefined;
+        max = req.max;
+        // Opt n'est ni une créature ni un terrain.
+        expect(req.options.map((id) => nameOf(s, id))).not.toContain("Opt");
+        return req.options.slice(0, req.max);
+      });
+      return { max, gained: (s.players.p1?.hand.length ?? 0) - (before - 1), lib: s.players.p1?.library.length };
+    };
+    expect(run(false)).toEqual({ max: 1, gained: 1, lib: 5 });
+    // Avec Oracle's Restoration (une carte piochée avant) : deux cartes prises.
+    expect(run(true)).toEqual({ max: 2, gained: 2, lib: 3 });
+  });
+
+  it("Germination Practicum : deux marqueurs +1/+1 sur chacune de vos créatures ; Paradigme (exilé)", () => {
+    let s = scenario({
+      p1: { battlefield: ["Bear Cub", "Bear Cub", ...lands("Forest", 5)], hand: ["Germination Practicum"] },
+      p2: { battlefield: ["Bear Cub"] },
+    });
+    s = settle(cast(s, "p1", "Germination Practicum"));
+    for (const id of idsOf(s, "p1", "battlefield", "Bear Cub")) expect(s.objects[id]?.counters["+1/+1"]).toBe(2);
+    expect(s.objects[idOf(s, "p2", "battlefield", "Bear Cub")]?.counters["+1/+1"] ?? 0).toBe(0);
+    expect(exiled(s, "Germination Practicum")).toHaveLength(1);
+  });
+
+  describe("Glorious Decay", () => {
+    it("4 blessures à une créature avec le vol (une créature sans le vol n'est pas une cible légale)", () => {
+      let s = scenario({
+        p1: { battlefield: lands("Forest", 2), hand: ["Glorious Decay"] },
+        p2: { battlefield: ["Serra Angel", "Bear Cub"] },
+      });
+      expect(() => cast(s, "p1", "Glorious Decay", { t: [idOf(s, "p2", "battlefield", "Bear Cub")] }, { mode: 1 })).toThrow();
+      s = settle(cast(s, "p1", "Glorious Decay", { t: [idOf(s, "p2", "battlefield", "Serra Angel")] }, { mode: 1 }));
+      expect(idsOf(s, "p2", "graveyard", "Serra Angel")).toHaveLength(1);
+    });
+
+    it("exile une carte d'un cimetière et vous piochez une carte", () => {
+      let s = scenario({
+        p1: { battlefield: lands("Forest", 2), hand: ["Glorious Decay"] },
+        p2: { graveyard: ["Serra Angel"] },
+      });
+      s = settle(cast(s, "p1", "Glorious Decay", { t: [idOf(s, "p2", "graveyard", "Serra Angel")] }, { mode: 2 }));
+      expect(exiled(s, "Serra Angel")).toHaveLength(1);
+      expect(s.players.p1?.hand).toHaveLength(1);
+    });
+  });
+
+  it("Infirmary Healer : arrive préparée ; Stream of Life fait gagner X PV au joueur ciblé", () => {
+    let s = scenario({ p1: { battlefield: lands("Forest", 6), hand: ["Infirmary Healer"] } });
+    s = settle(cast(s, "p1", "Infirmary Healer"));
+    const healer = idOf(s, "p1", "battlefield", "Infirmary Healer");
+    s = settle(castPrepared(s, healer, { t: ["p1"] }, { x: 3 }));
+    expect(s.players.p1?.life).toBe(23);
+    expect(exiled(s, "Stream of Life")).toHaveLength(0);
+  });
+
+  it("Lumaret's Favor : +2/+4 ; Infusion : le sort est copié en le lançant", () => {
+    const run = (gain: boolean) => {
+      let s = scenario({
+        p1: { battlefield: ["Bear Cub", ...lands("Forest", 3)], hand: ["Oracle's Restoration", "Lumaret's Favor"] },
+      });
+      const bear = idOf(s, "p1", "battlefield", "Bear Cub");
+      if (gain) s = settle(cast(s, "p1", "Oracle's Restoration", { t: [bear] }));
+      s = settle(cast(s, "p1", "Lumaret's Favor", { t: [bear] }));
+      return pt(s, bear);
+    };
+    expect(run(false)).toEqual([4, 6]);
+    expect(run(true)).toEqual([2 + 1 + 4, 2 + 1 + 8]);
+  });
+
+  it("Mindful Biomancer : 1 PV en arrivant ; {2}{G} : +2/+2, une seule fois par tour", () => {
+    let s = scenario({ p1: { battlefield: lands("Forest", 8), hand: ["Mindful Biomancer"] } });
+    s = settle(cast(s, "p1", "Mindful Biomancer"));
+    expect(s.players.p1?.life).toBe(21);
+    const biomancer = idOf(s, "p1", "battlefield", "Mindful Biomancer");
+    s = settle(activate(s, "p1", biomancer));
+    expect(pt(s, biomancer)).toEqual([4, 4]);
+    expect(canActivate(s, "p1", biomancer)).toBe(false);
+  });
+
+  it("Noxious Newt : contact mortel ; {T} : ajoutez {G}", () => {
+    const s = scenario({ p1: { battlefield: ["Noxious Newt"] } });
+    const newt = idOf(s, "p1", "battlefield", "Noxious Newt");
+    expect(chars(s, newt).keywords).toContain("deathtouch");
+    expect(legalActions(s, "p1").some((a) => a.type === "tapForMana" && a.source === newt && a.colors.includes("G"))).toBe(true);
+  });
+
+  it("Oracle's Restoration : +1/+1 sur votre créature, vous piochez une carte et gagnez 1 PV", () => {
+    let s = scenario({ p1: { battlefield: ["Bear Cub", "Forest"], hand: ["Oracle's Restoration"] } });
+    const bear = idOf(s, "p1", "battlefield", "Bear Cub");
+    s = settle(cast(s, "p1", "Oracle's Restoration", { t: [bear] }));
+    expect(pt(s, bear)).toEqual([3, 3]);
+    expect(s.players.p1?.hand).toHaveLength(1);
+    expect(s.players.p1?.life).toBe(21);
+  });
+
+  it("Pestbrood Sloth : en mourant, deux Nuisibles 1/1 noirs et verts", () => {
+    let s = scenario({
+      p1: { battlefield: [{ name: "Pestbrood Sloth", damage: 1 }, ...lands("Mountain", 2)], hand: ["Lightning Strike"] },
+    });
+    s = settle(cast(s, "p1", "Lightning Strike", { t: [idOf(s, "p1", "battlefield", "Pestbrood Sloth")] }));
+    const pests = idsOf(s, "p1", "battlefield", "Pest");
+    expect(pests).toHaveLength(2);
+    expect([...chars(s, pests[0] as string).colors].sort()).toEqual(["B", "G"]);
+  });
+
+  it("Planar Engineering : sacrifiez deux terrains, puis quatre terrains de base arrivent engagés", () => {
+    let s = scenario({
+      p1: {
+        battlefield: lands("Forest", 4),
+        hand: ["Planar Engineering"],
+        library: [...lands("Island", 2), ...lands("Swamp", 2), "Bear Cub"],
+      },
+    });
+    s = settle(cast(s, "p1", "Planar Engineering"));
+    expect(idsOf(s, "p1", "battlefield", "Forest")).toHaveLength(2);
+    expect(idsOf(s, "p1", "graveyard", "Forest")).toHaveLength(2);
+    const fetched = [...idsOf(s, "p1", "battlefield", "Island"), ...idsOf(s, "p1", "battlefield", "Swamp")];
+    expect(fetched).toHaveLength(4);
+    expect(fetched.every((id) => s.objects[id]?.tapped)).toBe(true);
+    expect(s.players.p1?.library.map((id) => nameOf(s, id))).toEqual(["Bear Cub"]);
+  });
+
+  it("Shopkeeper's Bane : piétinement ; en attaquant, vous gagnez 2 PV", () => {
+    let s = scenario({ p1: { battlefield: ["Shopkeeper's Bane"] } });
+    expect(chars(s, idOf(s, "p1", "battlefield", "Shopkeeper's Bane")).keywords).toContain("trample");
+    s = settle(attackWith(s, "Shopkeeper's Bane"));
+    expect(s.players.p1?.life).toBe(22);
+  });
+
+  it("Slumbering Trudge : arrive avec 3 − X marqueurs d'étourdissement, engagée si X ≤ 2", () => {
+    const run = (x: number) => {
+      let s = scenario({ p1: { battlefield: lands("Forest", x + 1), hand: ["Slumbering Trudge"] } });
+      s = settle(cast(s, "p1", "Slumbering Trudge", undefined, { x }));
+      const o = s.objects[idOf(s, "p1", "battlefield", "Slumbering Trudge")];
+      return [o?.counters.stun ?? 0, o?.tapped];
+    };
+    expect(run(0)).toEqual([3, true]);
+    expect(run(1)).toEqual([2, true]);
+    expect(run(2)).toEqual([1, true]);
+    expect(run(3)).toEqual([0, false]);
+  });
+
+  it("Snarl Song : convergence, deux Fractales avec X marqueurs et X PV (X = couleurs dépensées)", () => {
+    let s = scenario({ p1: { battlefield: [...lands("Forest", 5), "Island"], hand: ["Snarl Song"] } });
+    s = settle(cast(s, "p1", "Snarl Song"));
+    const fractals = idsOf(s, "p1", "battlefield", "Fractal");
+    expect(fractals).toHaveLength(2);
+    for (const id of fractals) expect(pt(s, id)).toEqual([2, 2]);
+    expect(s.players.p1?.life).toBe(22);
+  });
+
+  it("Studious First-Year : arrive préparée ; Rampant Growth met un terrain de base engagé sur le champ de bataille", () => {
+    let s = scenario({ p1: { battlefield: lands("Forest", 3), hand: ["Studious First-Year"], library: ["Bear Cub", "Island"] } });
+    s = settle(cast(s, "p1", "Studious First-Year"));
+    const student = idOf(s, "p1", "battlefield", "Studious First-Year");
+    s = settle(castPrepared(s, student));
+    const island = idOf(s, "p1", "battlefield", "Island");
+    expect(s.objects[island]?.tapped).toBe(true);
+    expect(s.objects[student]?.preparedCopy).toBeUndefined();
+  });
+
+  describe("Tenured Concocter", () => {
+    it("ciblée par un sort adverse : vous pouvez piocher une carte", () => {
+      let s = scenario({
+        active: "p2",
+        p1: { battlefield: ["Tenured Concocter"] },
+        p2: { battlefield: lands("Mountain", 2), hand: ["Lightning Strike"] },
+      });
+      const concocter = idOf(s, "p1", "battlefield", "Tenured Concocter");
+      expect(chars(s, concocter).keywords).toContain("vigilance");
+      s = settle(cast(s, "p2", "Lightning Strike", { t: [concocter] }), (req, p) =>
+        req.type === "yesNo" && p === "p1" ? [1] : undefined,
+      );
+      expect(s.players.p1?.hand).toHaveLength(1);
+      expect(s.objects[concocter]?.damage).toBe(3);
+    });
+
+    it("Infusion : +2/+0 tant que vous avez gagné des PV ce tour-ci ; vos propres sorts ne font pas piocher", () => {
+      let s = scenario({ p1: { battlefield: ["Tenured Concocter", "Forest"], hand: ["Oracle's Restoration"] } });
+      const concocter = idOf(s, "p1", "battlefield", "Tenured Concocter");
+      expect(pt(s, concocter)).toEqual([4, 5]);
+      s = settle(cast(s, "p1", "Oracle's Restoration", { t: [concocter] }));
+      expect(pt(s, concocter)).toEqual([7, 6]);
+      // Seule la pioche de Restoration.
+      expect(s.players.p1?.hand).toHaveLength(1);
+      s = advanceUntil(s, (x) => x.turn.active === "p2");
+      expect(pt(s, concocter)).toEqual([4, 5]);
+    });
+  });
+
+  it("Thornfist Striker : garde {1} ; Infusion : vos créatures ont +1/+0 et le piétinement", () => {
+    let s = scenario({
+      p1: { battlefield: ["Thornfist Striker", "Bear Cub", "Forest"], hand: ["Oracle's Restoration"] },
+      p2: { battlefield: ["Bear Cub"] },
+    });
+    const striker = idOf(s, "p1", "battlefield", "Thornfist Striker");
+    const bear = idOf(s, "p1", "battlefield", "Bear Cub");
+    expect(chars(s, striker).keywords).toContain("ward");
+    expect(chars(s, bear).keywords).not.toContain("trample");
+    s = settle(cast(s, "p1", "Oracle's Restoration", { t: [striker] }));
+    expect(pt(s, bear)).toEqual([3, 2]);
+    expect(chars(s, bear).keywords).toContain("trample");
+    expect(pt(s, striker)).toEqual([5, 4]);
+    expect(pt(s, idOf(s, "p2", "battlefield", "Bear Cub"))).toEqual([2, 2]);
+  });
+
+  it("Topiary Lecturer : Increment ; {T} : autant de {G} que sa force", () => {
+    let s = scenario({ p1: { battlefield: ["Topiary Lecturer", ...lands("Forest", 2)], hand: ["Bear Cub", "Bear Cub"] } });
+    const lecturer = idOf(s, "p1", "battlefield", "Topiary Lecturer");
+    const [a, b] = idsOf(s, "p1", "hand", "Bear Cub");
+    // 2 mana > force 1 : un marqueur.
+    s = settle(act(s, "p1", { type: "cast", card: a as string }));
+    expect(pt(s, lecturer)).toEqual([2, 3]);
+    // Forêts engagées : le Professeur produit {G}{G} à lui seul ; 2 mana n'excède ni sa force ni son endurance.
+    s = settle(act(s, "p1", { type: "cast", card: b as string }));
+    expect(idsOf(s, "p1", "battlefield", "Bear Cub")).toHaveLength(2);
+    expect(s.objects[lecturer]?.tapped).toBe(true);
+    expect(pt(s, lecturer)).toEqual([2, 3]);
+  });
+
+  it("Vastlands Scavenger : contact mortel ; Bind to Life meule sept cartes et une créature meulée arrive", () => {
+    let s = scenario({
+      p1: {
+        battlefield: lands("Forest", 8),
+        hand: ["Vastlands Scavenger"],
+        library: [...lands("Island", 3), "Serra Angel", ...lands("Island", 3), "Bear Cub"],
+      },
+    });
+    s = settle(cast(s, "p1", "Vastlands Scavenger"));
+    const scavenger = idOf(s, "p1", "battlefield", "Vastlands Scavenger");
+    expect(chars(s, scavenger).keywords).toContain("deathtouch");
+    s = settle(castPrepared(s, scavenger));
+    expect(idsOf(s, "p1", "battlefield", "Serra Angel")).toHaveLength(1);
+    // Sept cartes meulées, dont l'Ange reparti sur le champ de bataille.
+    expect(s.players.p1?.graveyard).toHaveLength(6);
+    expect(s.players.p1?.library.map((id) => nameOf(s, id))).toEqual(["Bear Cub"]);
+  });
+
+  it("Wild Hypothesis : une Fractale avec X marqueurs, puis surveillance 2", () => {
+    let s = scenario({
+      p1: { battlefield: lands("Forest", 3), hand: ["Wild Hypothesis"], library: ["Opt", "Island", "Bear Cub"] },
+    });
+    let surveilled = 0;
+    s = settle(cast(s, "p1", "Wild Hypothesis", undefined, { x: 2 }), (req) => {
+      if (req.type !== "pick") return undefined;
+      surveilled = req.options.length;
+      return req.options;
+    });
+    expect(pt(s, idOf(s, "p1", "battlefield", "Fractal"))).toEqual([2, 2]);
+    expect(surveilled).toBe(2);
+    expect(s.players.p1?.library.map((id) => nameOf(s, id))).toEqual(["Bear Cub"]);
+  });
+
+  it("Zimone's Experiment : jusqu'à deux créatures ou terrains parmi cinq : terrains engagés en jeu, créatures en main", () => {
+    let s = scenario({
+      p1: {
+        battlefield: lands("Forest", 4),
+        hand: ["Zimone's Experiment"],
+        library: ["Bear Cub", "Opt", "Island", "Serra Angel", "Lightning Strike", "Swamp"],
+      },
+    });
+    s = settle(cast(s, "p1", "Zimone's Experiment"), (req) =>
+      req.type === "pick" ? req.options.filter((id) => ["Bear Cub", "Island"].includes(nameOf(s, id) ?? "")) : undefined,
+    );
+    expect(idsOf(s, "p1", "hand", "Bear Cub")).toHaveLength(1);
+    const island = idOf(s, "p1", "battlefield", "Island");
+    expect(s.objects[island]?.tapped).toBe(true);
+    const lib = s.players.p1?.library.map((id) => nameOf(s, id)) ?? [];
+    expect(lib[0]).toBe("Swamp");
+    expect([...lib.slice(1)].sort()).toEqual(["Lightning Strike", "Opt", "Serra Angel"]);
+  });
+});

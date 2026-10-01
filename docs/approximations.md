@@ -284,6 +284,7 @@ Dans l'ordre où elles ont été ajoutées, extension par extension.
   - `choix auto` Talion, the Kindly Lord : le nombre proposé est la valeur de mana la plus fréquente parmi les cartes adverses vues.
 - **Secrets of Strixhaven (`docs/extensions/sos.md`) :**
   - `règle` Echocasting Symposium : le jeton copie est créé par vous puis donné au joueur ciblé (il en est le contrôleur, pas le propriétaire) ;
-  - `règle` Wisdom of Ages : « pas de taille de main maximale pour le reste de la partie » est un emblème.
+  - `règle` Wisdom of Ages : « pas de taille de main maximale pour le reste de la partie » est un emblème ;
+  - `règle` Zimone's Experiment : les cartes de terrain révélées passent par la main avant d'arriver engagées sur le champ de bataille.
 - **Légalité Standard :** instantané des légalités Scryfall au moment de l'import (`legalities.standard` dans `data/<set>.json`). Après une rotation ou une annonce de bannissement, réimporter les sets (`npm run import-cards -- <set>`).
 - **Images des jetons :** celle du jeton Scryfall le plus proche (même nom, puis mêmes F/E et couleurs ; `data/tokens.json`, `npm run import-tokens`) ; un jeton de nom inconnu garde le cadre texte.
