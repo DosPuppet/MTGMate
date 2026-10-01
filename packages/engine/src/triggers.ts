@@ -556,13 +556,13 @@ function matchTrigger(s: GameState, ev: RulesEvent, t: TriggerSpec, src: Source)
       return { objectId: ev.attacker, player: ev.defender };
     }
     case "attackWith": {
-      if (ev.e !== "attackWith" || ev.player !== me) return null;
+      if (ev.e !== "attackWith" || (!t.anyPlayer && ev.player !== me)) return null;
       // « Chaque fois que vous attaquez avec un ou plusieurs [Rats] » : seulement les attaquants correspondants.
       const f = t.filter;
       const count = f
         ? (s.combat?.attackers ?? []).filter((a) => {
             const v = liveView(s, a.id);
-            return !!v && v.controller === me && matchesView(v, f, me, src.id);
+            return !!v && v.controller === ev.player && matchesView(v, f, me, src.id);
           }).length
         : ev.count;
       return count >= (t.min ?? 1) ? { player: me, amount: count } : null;

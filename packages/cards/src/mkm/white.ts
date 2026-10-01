@@ -2,7 +2,7 @@
  * Murders at Karlov Manor — cartes blanches (lot A). Le déguisement, la garde, l'Équipement et les mots-clés sont lus
  * dans le texte ; « enquêtez » crée un Indice (`investigate`).
  */
-import type { ObjectFilter } from "@mtgx/engine";
+import type { ObjectFilter, Ref } from "@mtgx/engine";
 import {
   activated,
   amount,
@@ -29,6 +29,9 @@ const YOUR_CREATURES: ObjectFilter = { types: ["Creature"], controller: "you" };
 /** « une autre créature que vous contrôlez de force 2 ou moins ». */
 const ANOTHER_SMALL: ObjectFilter = { ...YOUR_CREATURES, other: true, maxPower: 2 };
 const YOUR_DETECTIVES: ObjectFilter = { subtype: "Detective", controller: "you" };
+
+/** « Chaque joueur désigné enquête » : un Indice pour chacun, sous son contrôle. */
+const investigateFor = (who: Ref) => fx.createTokens(CLUE, 1, who);
 
 export const WHITE: Record<string, CardScript> = {
   "Absolving Lammasu": {
@@ -364,5 +367,15 @@ export const WHITE: Record<string, CardScript> = {
     ],
     caseToSolve: cond.amountAtLeast(amount.turnEvents({ event: "attack" }), 3),
     caseSolved: [staticAbility({ types: ["Creature"], controller: "you" }, { power: 1 }, { label: "Vos créatures +1/+0" })],
+  },
+  "No Witnesses": {
+    spell: spell([], [investigateFor(ref.playersWithMost({ types: ["Creature"] })), fx.destroyAll({ types: ["Creature"] })]),
+  },
+  "Wojek Investigator": {
+    abilities: [
+      triggered(when.yourUpkeep, [investigate(amount.opponentsWithMoreInHand)], {
+        label: "Enquêtez une fois par adversaire qui a plus de cartes en main que vous",
+      }),
+    ],
   },
 };

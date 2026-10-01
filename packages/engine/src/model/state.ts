@@ -161,6 +161,8 @@ export interface GameObject {
   suspended?: boolean;
   /** Tour où des marqueurs ont été mis sur lui pour la dernière fois (« la première fois ce tour-ci »). */
   countersPutTurn?: number;
+  /** Tour où il a infligé des blessures pour la dernière fois (Treacherous Greed). */
+  dealtDamageTurn?: number;
   /** Suspect (701.60, Murders at Karlov Manor) : menace et « ne peut pas bloquer » tant qu'il l'est. */
   suspected?: boolean;
   /** Joueurs qui ont mis des marqueurs sur lui pendant le tour `countersPutTurn` (Fractal Tender). */

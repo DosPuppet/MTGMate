@@ -25,10 +25,9 @@ import {
 
 /**
  * Troyan : « ce mana ne peut servir qu'à lancer des sorts de valeur de mana 5 ou plus, ou des sorts avec {X} dans leur
- * coût de mana ». Approximation : le moteur ne sait pas filtrer un sort sur la présence de {X} ; seule la valeur de mana
- * (sans X) est lue, ce qui est plus restrictif que la carte.
+ * coût de mana ».
  */
-const TROYAN_MANA: ManaRestriction = { spell: { minManaValue: 5 } };
+const TROYAN_MANA: ManaRestriction = { spell: { anyOf: [{ minManaValue: 5 }, { hasX: true }] } };
 
 /** « Chaque fois que vous engagez une créature dégagée qu'un adversaire contrôle » (Hylda, Sharae). */
 const YOU_TAP_OPPONENT_CREATURE: TriggerSpec = {

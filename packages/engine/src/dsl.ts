@@ -70,6 +70,8 @@ export interface CardScript {
   cantBeCountered?: boolean;
   /** « Ce sort ne peut pas être copié. » */
   cantBeCopied?: boolean;
+  /** « Ce sort coûte [mana] de plus pour chaque cible au-delà de la première », ex. "{W}{U}". */
+  costPerExtraTarget?: string;
   /** « Ce coût [de déguisement] est réduit de {1} pour chaque… » (Fugitive Codebreaker). */
   disguiseReduction?: Amount;
   /** Aura : « Enchanter [filtre] ». */
@@ -232,6 +234,7 @@ export const ref = {
   stored: (name: string): Ref => ({ kind: "stored", name }),
   /** « chaque [créature] que [le joueur désigné] contrôle » */
   permanentsOf: (player: Ref, filter: ObjectFilter): Ref => ({ kind: "permanentsOf", player, filter }),
+  playersWithMost: (filter: ObjectFilter): Ref => ({ kind: "playersWithMost", filter }),
   /** Le joueur défenseur de la créature attaquante source (ou le contrôleur du planeswalker attaqué). */
   defendingPlayer: { kind: "defendingPlayer" } as Ref,
   handOf: (player: Ref, filter: ObjectFilter = {}, maxManaValue?: Amount): Ref => ({
@@ -361,6 +364,9 @@ export const amount = {
     who: "opponent",
   }),
   opponentsWithHandAtMost: (n: number): Amount => ({ kind: "opponentsWithHandAtMost", n }),
+  opponentsWithMoreInHand: { kind: "opponentsWithMoreInHand" } as Amount,
+  greatestManaValueOf: (r: Ref): Amount => ({ kind: "greatestManaValueOf", ref: r }),
+  colorPairsAmong: (filter: ObjectFilter): Amount => ({ kind: "colorPairsAmong", filter }),
   lkiPower: { kind: "lkiPower" } as Amount,
   instantSorceryCast: turnEvents({ event: "cast", who: "you", types: ["Instant", "Sorcery"] }),
   cardsLeftGraveyardThisTurn: turnEvents({ event: "zone", from: "graveyard", who: "you" }),
@@ -1590,7 +1596,12 @@ export const when = {
   loseLife: (whose: "you" | "opponent" | "any" = "opponent"): TriggerSpec => ({ on: "loseLife", whose }),
   /** « Chaque fois que vous attaquez [avec N créatures ou plus] » */
   /** `filter` : « … avec un ou plusieurs [Rats] ». */
-  attackWith: (min = 1, filter?: ObjectFilter): TriggerSpec => ({ on: "attackWith", min, filter }),
+  attackWith: (min = 1, filter?: ObjectFilter, anyPlayer?: boolean): TriggerSpec => ({
+    on: "attackWith",
+    min,
+    filter,
+    ...(anyPlayer ? { anyPlayer } : {}),
+  }),
   countersPut: (who: "self" | ObjectFilter, kind?: string, firstThisTurn?: boolean): TriggerSpec => ({
     on: "countersPut",
     who,

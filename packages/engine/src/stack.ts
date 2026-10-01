@@ -580,7 +580,7 @@ export function spellCost(
     base && ownColored && !opts.free && ownReductionApplies(s, player, d, opts.targets, opts.card, opts.kicked)
       ? withoutColored(base, ownColored)
       : base;
-  const cost0 = totalCost(
+  let cost0 = totalCost(
     base1,
     opts.free ? 0 : (opts.x ?? 0),
     opts.kicked ? d.kicker : undefined,
@@ -588,6 +588,9 @@ export function spellCost(
     // Survivor) ; une réduction ne descend pas sous zéro.
     spellReduction(s, player, d, opts.targets, opts.fromZone, opts.card, opts.kicked),
   );
+  // Officious Interrogation : « coûte {W}{U} de plus pour chaque cible au-delà de la première ».
+  const extraTargets = d.costPerExtraTarget && opts.targets ? Math.max(0, flatTargets(opts.targets).length - 1) : 0;
+  for (let i = 0; i < extraTargets && d.costPerExtraTarget; i++) cost0 = totalCost(cost0, 0, d.costPerExtraTarget);
   // Feed the Cycle : « fourragez ou payez {B} » — le mana s'ajoute sauf si l'on fourrage (coût alternatif).
   const cost1 = d.forageOrPay && !alt?.forage ? totalCost(cost0, 0, d.forageOrPay) : cost0;
   // Wild Unraveling : « flétrissez 2 ou payez {1} » — le mana s'ajoute sauf si l'on flétrit (kicker).
@@ -1126,7 +1129,10 @@ export function additionalOptions(
   if (add.discard) {
     const hand = (s.players[player]?.hand ?? []).filter((id) => id !== card);
     // Souls of the Lost : « … ou sacrifiez un permanent ».
-    const perms = add.discardOrSacrifice ? s.battlefield.filter((id) => obj(s, id).controller === player) : [];
+    const sf = typeof add.discardOrSacrifice === "object" ? add.discardOrSacrifice : undefined;
+    const perms = add.discardOrSacrifice
+      ? s.battlefield.filter((id) => obj(s, id).controller === player && (!sf || matchesObjectFilter(s, player, id, sf)))
+      : [];
     const options = [...hand, ...perms];
     // Bitter Triumph : « … ou payez 3 points de vie » (il faut en avoir au moins autant, 119.4).
     const orLife =
@@ -1294,6 +1300,15 @@ export function castSpell(s: GameState, player: PlayerId, card: ObjectId, choice
   const evidence =
     kicked && d.kickerCost?.collectEvidence ? evidenceCards(s, player, card, d.kickerCost.collectEvidence) : undefined;
   if (evidence === null) throw new RulesError("Pas assez de preuves à réunir dans votre cimetière");
+  // Urgent Necropsy : « réunissez des preuves X, X étant la valeur de mana totale des permanents ciblés ».
+  const targetEvidenceX = d.additionalCost?.collectEvidenceTargetsManaValue
+    ? flatTargets(targets).reduce(
+        (n, id) => n + (s.objects[id]?.zone === "battlefield" ? (snapshot(s, id).manaValue ?? 0) : 0),
+        0,
+      )
+    : 0;
+  const targetEvidence = targetEvidenceX > 0 ? evidenceCards(s, player, card, targetEvidenceX) : undefined;
+  if (targetEvidence === null) throw new RulesError("Pas assez de preuves à réunir dans votre cimetière");
   const gyExile =
     kicked && d.kickerCost?.exileGraveyard ? graveyardToExile(s, player, card, d.kickerCost.exileGraveyard) : undefined;
   if (gyExile === null) throw new RulesError("Pas assez de cartes dans votre cimetière");
@@ -1394,6 +1409,7 @@ export function castSpell(s: GameState, player: PlayerId, card: ObjectId, choice
   }
   // Réunir des preuves : les cartes du cimetière sont exilées en payant le coût.
   if (evidence) collectEvidence(s, player, evidence);
+  if (targetEvidence) collectEvidence(s, player, targetEvidence);
   for (const id of gyExile ?? []) moveObject(s, id, "exile");
   // Seule une Aventure part « en aventure » ; un présage (même disposition Scryfall) est mélangé dans la bibliothèque.
   const adventure = choices.face !== undefined && cardDef.layout === "adventure" && d.subtypes.includes("Adventure");

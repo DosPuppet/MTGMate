@@ -423,4 +423,8 @@ export const RED: Record<string, CardScript> = {
       }),
     ],
   },
+  "Demand Answers": {
+    additionalCost: { discard: 1, discardOrSacrifice: { types: ["Artifact"] } },
+    spell: spell([], [fx.draw(2)]),
+  },
 };

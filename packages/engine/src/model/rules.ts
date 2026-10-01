@@ -187,6 +187,8 @@ export interface ObjectFilter {
   noCounters?: boolean;
   /** Du nom choisi par la source en arrivant (Petrified Hamlet : « les terrains du nom choisi »). */
   nameChosen?: boolean;
+  /** A infligé des blessures ce tour-ci (Treacherous Greed). */
+  dealtDamageThisTurn?: boolean;
   /** Suspect ou non (701.60 : « créature suspecte ciblée »). */
   suspected?: boolean;
   /** Vous avez mis un marqueur sur lui ce tour-ci (Fractal Tender). */
@@ -274,7 +276,8 @@ export type TriggerSpec =
   | { on: "draw"; whose: "you" | "opponent" | "any"; nth?: number }
   | { on: "loseLife"; whose: "you" | "opponent" | "any" }
   /** « Chaque fois que vous attaquez [avec au moins N créatures] » */
-  | { on: "attackWith"; min?: number; filter?: ObjectFilter }
+  /** `anyPlayer` : « chaque fois qu'un joueur attaque avec N créatures ou plus » (Aurelia, the Law Above). */
+  | { on: "attackWith"; min?: number; filter?: ObjectFilter; anyPlayer?: boolean }
   /** « Chaque fois que des marqueurs sont placés sur … » */
   /** `firstThisTurn` : « si c'est la première fois ce tour-ci que des marqueurs sont mis sur elle » (Stalwart Successor). */
   | { on: "countersPut"; who: "self" | ObjectFilter; kind?: string; firstThisTurn?: boolean }
@@ -585,6 +588,8 @@ export type Ref =
   | { kind: "stored"; name: string }
   /** Permanents correspondants contrôlés par le joueur désigné (« chaque créature que le joueur ciblé contrôle »). */
   | { kind: "permanentsOf"; player: Ref; filter: ObjectFilter }
+  /** « Chaque joueur qui contrôle le plus de [créatures] » (No Witnesses). */
+  | { kind: "playersWithMost"; filter: ObjectFilter }
   /** Cartes en main d'un joueur, de valeur de mana au plus `maxManaValue` (Buster Sword). */
   | { kind: "handOf"; player: Ref; filter: ObjectFilter; maxManaValue?: Amount }
   /** Le joueur défenseur de la source attaquante (celui qui contrôle le planeswalker attaqué). */
@@ -711,6 +716,12 @@ export type Amount =
   /** Créatures exilées sous le contrôle de vos adversaires ce tour-ci (Vren). */
   /** Adversaires qui ont au plus N cartes en main (Bandit's Talent). */
   | { kind: "opponentsWithHandAtMost"; n: number }
+  /** Adversaires qui ont plus de cartes en main que vous (Wojek Investigator). */
+  | { kind: "opponentsWithMoreInHand" }
+  /** Plus grande valeur de mana parmi les objets désignés (Ill-Timed Explosion : les cartes défaussées). */
+  | { kind: "greatestManaValueOf"; ref: Ref }
+  /** Paires de couleurs différentes parmi les permanents correspondants qui ont exactement deux couleurs (Niv-Mizzet, Guildpact). */
+  | { kind: "colorPairsAmong"; filter: ObjectFilter }
   /** Force de la source quand la capacité s'est déclenchée (« quand cette créature meurt, … égales à sa force »). */
   | { kind: "lkiPower" }
   /** Cartes qui ont quitté votre cimetière ce tour-ci (Bonecache Overseer). */

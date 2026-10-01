@@ -1,5 +1,5 @@
 /** Murders at Karlov Manor — cartes multicolores. */
-import type { ObjectFilter, TokenSpec, TriggerSpec } from "@mtgx/engine";
+import type { ManaRestriction, ObjectFilter, TokenSpec, TriggerSpec } from "@mtgx/engine";
 import {
   activated,
   amount,
@@ -14,6 +14,8 @@ import {
   manaAbility,
   modal,
   mode,
+  protection,
+  protectionAbility,
   ref,
   SPIDER_BG,
   SPIRIT_WB,
@@ -28,6 +30,12 @@ import {
 } from "./common";
 
 const CREATURES_YOU: ObjectFilter = { types: ["Creature"], controller: "you" };
+
+/** Niv-Mizzet, Guildpact : paires de couleurs différentes parmi vos permanents exactement bicolores. */
+const NIV_X = amount.colorPairsAmong({ permanent: true, controller: "you" });
+
+/** Tin Street Gossip : « dépensez ce mana seulement pour lancer des sorts face cachée ou retourner des créatures face visible ». */
+const FACE_DOWN_MANA: ManaRestriction = { spell: { faceDown: true }, abilityOfCreature: { faceDown: true } };
 
 /** Voja Fenstalker : Loup légendaire 5/5 vert et blanc avec le piétinement (Tolsimir, Midnight's Light). */
 const VOJA_FENSTALKER: TokenSpec = {
@@ -737,5 +745,71 @@ export const MULTI: Record<string, CardScript> = {
         ),
       ],
     ),
+  },
+  "Ill-Timed Explosion": {
+    spell: spell(
+      [],
+      [
+        fx.draw(2),
+        fx.discard(2, ref.you, { optional: true, store: "d" }),
+        ...fx.when(cond.v("d", 2), fx.damageAll(amount.greatestManaValueOf(ref.stored("d")), { types: ["Creature"] })),
+      ],
+    ),
+  },
+  "Officious Interrogation": {
+    costPerExtraTarget: "{W}{U}",
+    spell: spell(
+      [{ ...target.player("p"), label: "joueur", count: 8, optional: true }],
+      [investigate(amount.refCount(ref.permanentsOf(ref.target("p"), { types: ["Creature"] })))],
+    ),
+  },
+  "Treacherous Greed": {
+    additionalCost: { sacrifice: { filter: { types: ["Creature"], dealtDamageThisTurn: true }, count: 1 } },
+    spell: spell([], [fx.draw(3), fx.loseLife(3, ref.eachOpponent), fx.gainLife(3)]),
+  },
+  "Urgent Necropsy": {
+    additionalCost: { collectEvidenceTargetsManaValue: true },
+    spell: spell(
+      [
+        target.upTo(1, target.permanent("a", ["Artifact"], {}, "artefact")),
+        target.upTo(1, target.creature("c")),
+        target.upTo(1, target.permanent("e", ["Enchantment"], {}, "enchantement")),
+        target.upTo(1, target.permanent("w", ["Planeswalker"], {}, "planeswalker")),
+      ],
+      [fx.destroy(ref.target("a")), fx.destroy(ref.target("c")), fx.destroy(ref.target("e")), fx.destroy(ref.target("w"))],
+    ),
+  },
+  "Niv-Mizzet, Guildpact": {
+    abilities: [
+      protectionAbility(protection.hexproofFrom({ multicolored: true }, "Défense talismanique contre le multicolore")),
+      triggered(
+        when.combatDamageToPlayer,
+        [fx.damage(NIV_X, ref.target("a")), fx.draw(NIV_X, ref.target("p")), fx.gainLife(NIV_X)],
+        {
+          targets: [target.any("a"), target.player("p")],
+          label: "X blessures, X cartes, X PV (X : paires de couleurs parmi vos permanents bicolores)",
+        },
+      ),
+    ],
+  },
+  "Aurelia, the Law Above": {
+    abilities: [
+      triggered(when.attackWith(3, undefined, true), [fx.draw(1)], {
+        label: "Un joueur attaque avec trois créatures ou plus : piochez une carte",
+      }),
+      triggered(when.attackWith(5, undefined, true), [fx.damage(3, ref.eachOpponent), fx.gainLife(3)], {
+        label: "Un joueur attaque avec cinq créatures ou plus : 3 blessures à chaque adversaire, gagnez 3 PV",
+      }),
+    ],
+  },
+  "Tin Street Gossip": {
+    abilities: [
+      // {R}{G} restreint : une capacité activée (avec la pile) qui ajoute les deux mana, comme Troyan.
+      activated({
+        tap: true,
+        effects: [fx.addManaChoice(1, ["R"], FACE_DOWN_MANA), fx.addManaChoice(1, ["G"], FACE_DOWN_MANA)],
+        label: "Ajoutez {R}{G} (sorts face cachée, retournements)",
+      }),
+    ],
   },
 };

@@ -262,6 +262,14 @@ export function resolveRef(s: GameState, ctx: EffectContext, ref: Ref): string[]
         ),
       );
     }
+    case "playersWithMost": {
+      const alive = s.playerOrder.filter((p) => !s.players[p]?.lost);
+      const f = { ...ref.filter, controller: undefined };
+      const count = (p: string) =>
+        s.battlefield.filter((id) => s.objects[id]?.controller === p && matchesObjectFilter(s, p, id, f, ctx.sourceId)).length;
+      const most = Math.max(0, ...alive.map(count));
+      return alive.filter((p) => count(p) === most);
+    }
     case "permanentsOf": {
       const players = resolveRef(s, ctx, ref.player);
       const f = { ...ref.filter, controller: undefined };
@@ -566,6 +574,21 @@ export function evalAmount(s: GameState, ctx: EffectContext, a: Amount): number 
       return s.players[ctx.controller]?.[a.zone].length ?? 0;
     case "inExile":
       return resolveRef(s, ctx, a.ref).filter((id) => s.objects[id]?.zone === "exile").length;
+    case "opponentsWithMoreInHand": {
+      const mine = s.players[ctx.controller]?.hand.length ?? 0;
+      return opponentsOf(s, ctx.controller).filter((p) => (s.players[p]?.hand.length ?? 0) > mine).length;
+    }
+    case "greatestManaValueOf":
+      return Math.max(0, ...resolveRef(s, ctx, a.ref).map((id) => manaValue(s.defs[s.objects[id]?.defId ?? ""]?.manaCost)));
+    case "colorPairsAmong": {
+      const pairs = new Set<string>();
+      for (const id of s.battlefield) {
+        if (!matchesObjectFilter(s, ctx.controller, id, a.filter, ctx.sourceId)) continue;
+        const colors = chars(s, id).colors;
+        if (colors.length === 2) pairs.add([...colors].sort().join(""));
+      }
+      return pairs.size;
+    }
     case "opponentsWithHandAtMost":
       return opponentsOf(s, ctx.controller).filter((p) => (s.players[p]?.hand.length ?? 0) <= a.n).length;
     case "turnEvents":

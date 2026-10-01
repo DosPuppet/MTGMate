@@ -250,6 +250,7 @@ export function matchesObjectFilter(
   // « arrivé sous votre contrôle ce tour-ci » (Cloudspire Coordinator).
   if (f.enteredThisTurn && o.controlledSince !== s.turn.number) return false;
   if (f.notOwned && o.owner === o.controller) return false;
+  if (f.dealtDamageThisTurn && o.dealtDamageTurn !== s.turn.number) return false;
   if (f.disguise !== undefined && !!s.defs[o.defId]?.disguise !== f.disguise) return false;
   // Fractal Tender : « si vous avez mis un marqueur sur cette créature ce tour-ci ».
   if (f.countersPutByYouThisTurn && !(o.countersPutTurn === s.turn.number && o.countersPutBy?.includes(controller))) return false;

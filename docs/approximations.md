@@ -271,7 +271,6 @@ Dans l'ordre où elles ont été ajoutées, extension par extension.
   - `timing` Feral Encounter : « au début de la prochaine phase de combat de ce tour » passe par un emblème du tour ;
   - `choix auto` Commune with Nature, Feral Encounter : le reste va au-dessous dans un ordre aléatoire ;
   - `timing` Seek the Beast : « jusqu'à votre prochaine étape de fin » dure jusqu'à la fin de ce tour (le vôtre) ou de votre prochain tour ;
-  - `règle` Troyan, Gutsy Explorer : son mana ne sert qu'aux sorts de VM 5 ou plus (pas aux sorts avec {X} dans leur coût) ;
   - `règle` Will, Scion of Peace, Rowan, Scion of War : la réduction « ce tour-ci » est accordée à la créature et cesse si elle quitte le champ de bataille ; X est relu à chaque sort ;
   - `règle` The Irencrag : « perd toutes ses autres capacités » : sa capacité de mana et son déclencheur sont inactifs une fois Équipement, mais restent listés ;
   - `règle` Three Bowls of Porridge : « un mode qui n'a pas déjà été choisi » : trois capacités, chacune activable une seule fois ;
@@ -316,6 +315,9 @@ Dans l'ordre où elles ont été ajoutées, extension par extension.
   - `choix auto` Worldsoul's Rage : les terrains sont pris dans la main, puis dans le cimetière ;
   - `règle` Rune-Brand Juggler : « sacrifiez une créature suspecte » ne peut pas sacrifier le Juggler lui-même ;
   - `règle` Rakdos, Patron of Chaos : un adversaire qui accepte sacrifie ce qu'il peut, et vous piochez quand même ;
-  - `règle` Expose the Culprit : les cartes exilées ne sont pas mélangées en une pile face cachée avant d'être enveloppées d'une cape (vous connaissez chacune de vos cartes face cachée).
+  - `règle` Expose the Culprit : les cartes exilées ne sont pas mélangées en une pile face cachée avant d'être enveloppées d'une cape (vous connaissez chacune de vos cartes face cachée) ;
+  - `timing` Ill-Timed Explosion : les blessures suivent la défausse pendant la résolution (pas de capacité réflexive) ; défausser une seule carte ne fait rien ;
+  - `timing` Tin Street Gossip : {R}{G} vient d'une capacité activée qui utilise la pile (comme Troyan, Gutsy Explorer) ; le mana sert aussi aux capacités des créatures face cachée ;
+  - `règle` Officious Interrogation : au plus huit joueurs ciblés.
 - **Légalité Standard :** instantané des légalités Scryfall au moment de l'import (`legalities.standard` dans `data/<set>.json`). Après une rotation ou une annonce de bannissement, réimporter les sets (`npm run import-cards -- <set>`).
 - **Images des jetons :** celle du jeton Scryfall le plus proche (même nom, puis mêmes F/E et couleurs ; `data/tokens.json`, `npm run import-tokens`) ; un jeton de nom inconnu garde le cadre texte.

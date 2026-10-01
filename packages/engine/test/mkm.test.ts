@@ -9,7 +9,7 @@ import { describe, expect, it } from "vitest";
 import { CLUE, SUSPECTED } from "../../cards/src/mkm/common";
 import { createTokens, destroy } from "../src/actions";
 import * as dsl from "../src/dsl";
-import { putFaceDown } from "../src/effects";
+import { evalAmount, putFaceDown } from "../src/effects";
 import { RulesError } from "../src/errors";
 import { bump } from "../src/layers";
 import { legalActions } from "../src/legal";
@@ -5069,5 +5069,159 @@ describe("Murders at Karlov Manor, lot C1 : exigences de blocage (509.1c)", () =
     // Bloquer Tolsimir plutôt que le Loup n'obéit pas à l'exigence.
     expect(() => act(b, "p2", { type: "declareBlockers", blocks: [{ blocker: bear, attacker: tolsimir }] })).toThrow(RulesError);
     expect(() => act(b, "p2", { type: "declareBlockers", blocks: [{ blocker: bear, attacker: voja }] })).not.toThrow();
+  });
+});
+
+describe("Murders at Karlov Manor, lot C2 : montants et coûts", () => {
+  const lands = (name: string, n: number) => Array(n).fill(name) as string[];
+  const clues = (s: S, p: string) => idsOf(s, p, "battlefield", "Clue").length;
+
+  it("No Witnesses : chaque joueur qui contrôle le plus de créatures enquête, puis toutes les créatures sont détruites", () => {
+    let s = scenario({
+      p1: { battlefield: ["Bear Cub", ...lands("Plains", 4)], hand: ["No Witnesses"] },
+      p2: { battlefield: ["Bear Cub", "Llanowar Elves"] },
+    });
+    s = settle(cast(s, "p1", "No Witnesses"));
+    expect(clues(s, "p2")).toBe(1);
+    expect(clues(s, "p1")).toBe(0);
+    expect(s.battlefield.filter((id) => chars(s, id).types.includes("Creature"))).toHaveLength(0);
+  });
+
+  it("Wojek Investigator : à votre entretien, un Indice par adversaire qui a plus de cartes en main que vous", () => {
+    let s = scenario({
+      turn: 2,
+      active: "p2",
+      p1: { battlefield: ["Wojek Investigator"], hand: [] },
+      p2: { hand: ["Opt", "Opt", "Opt"] },
+    });
+    s = advanceUntil(s, (x) => x.turn.number === 3 && x.turn.step === "draw");
+    expect(clues(s, "p1")).toBe(1);
+  });
+
+  it("Ill-Timed Explosion : piochez deux cartes, défaussez-en deux : X blessures à chaque créature (X : plus grande VM défaussée)", () => {
+    let s = scenario({
+      p1: {
+        battlefield: [...lands("Island", 2), ...lands("Mountain", 2), "Serra Angel"],
+        hand: ["Ill-Timed Explosion"],
+        library: ["Shivan Dragon", "Opt"],
+      },
+      p2: { battlefield: ["Bear Cub"] },
+    });
+    s = settle(cast(s, "p1", "Ill-Timed Explosion"), (req) =>
+      req.type === "pick" && req.intent === "discard" ? req.options.slice(0, 2) : undefined,
+    );
+    // Shivan Dragon (VM 6) défaussé : 6 blessures, l'Ange (4/4) et l'Ours meurent.
+    expect(idsOf(s, "p2", "graveyard", "Bear Cub")).toHaveLength(1);
+    expect(idsOf(s, "p1", "graveyard", "Serra Angel")).toHaveLength(1);
+  });
+
+  it("Officious Interrogation : {W}{U} de plus par cible au-delà de la première ; un Indice par créature des joueurs ciblés", () => {
+    const base = {
+      p1: { battlefield: ["Bear Cub", ...lands("Plains", 2), ...lands("Island", 2)], hand: ["Officious Interrogation"] },
+      p2: { battlefield: ["Bear Cub", "Llanowar Elves"] },
+    };
+    let s = scenario(base);
+    s = settle(cast(s, "p1", "Officious Interrogation", { p: ["p1", "p2"] }));
+    expect(clues(s, "p1")).toBe(3);
+    expect(s.battlefield.filter((id) => s.objects[id]?.tapped)).toHaveLength(4);
+    // Deux cibles avec seulement {W}{U} : impossible.
+    const t = scenario({ ...base, p1: { ...base.p1, battlefield: ["Bear Cub", "Plains", "Island"] } });
+    expect(() => cast(t, "p1", "Officious Interrogation", { p: ["p1", "p2"] })).toThrow(RulesError);
+  });
+
+  it("Demand Answers : en coût additionnel, sacrifiez un artefact ou défaussez une carte ; piochez deux cartes", () => {
+    let s = scenario({
+      p1: { battlefield: [...lands("Mountain", 2), "Bear Cub"], hand: ["Demand Answers"], library: lands("Mountain", 3) },
+    });
+    // Sans carte en main ni artefact : impossible (l'Ours n'est pas un artefact).
+    expect(() => cast(s, "p1", "Demand Answers")).toThrow(RulesError);
+    s = scenario({
+      p1: { battlefield: [...lands("Mountain", 2)], hand: ["Demand Answers", "Opt"], library: lands("Mountain", 3) },
+    });
+    s = settle(cast(s, "p1", "Demand Answers", undefined, { discard: [idOf(s, "p1", "hand", "Opt")] }));
+    expect(s.players.p1?.hand).toHaveLength(2);
+  });
+
+  it("Treacherous Greed : sacrifiez une créature qui a infligé des blessures ce tour-ci ; piochez trois cartes, drain 3", () => {
+    let s = scenario({
+      p1: {
+        battlefield: ["Bear Cub", "Llanowar Elves", ...lands("Plains", 2), "Swamp"],
+        hand: ["Treacherous Greed"],
+        library: lands("Plains", 4),
+      },
+    });
+    const card = idOf(s, "p1", "hand", "Treacherous Greed");
+    expect(legalActions(s, "p1").some((a) => a.type === "cast" && a.card === card)).toBe(false);
+    const bear = idOf(s, "p1", "battlefield", "Bear Cub");
+    s = advanceUntil(s, (x) => x.pending?.kind === "declareAttackers");
+    s = act(s, "p1", { type: "declareAttackers", attackers: [{ id: bear, defender: "p2" }] });
+    s = advanceUntil(s, (x) => x.turn.step === "main2" && x.pending?.player === "p1");
+    s = settle(act(s, "p1", { type: "cast", card, sacrifice: [bear] }));
+    expect(s.players.p1?.hand).toHaveLength(3);
+    expect(s.players.p2?.life).toBe(15);
+    expect(s.players.p1?.life).toBe(23);
+  });
+
+  it("Urgent Necropsy : réunissez des preuves X (VM totale des cibles) ; détruit jusqu'à un artefact, une créature, un enchantement, un planeswalker", () => {
+    let s = scenario({
+      p1: { battlefield: [...lands("Swamp", 2), ...lands("Forest", 2)], hand: ["Urgent Necropsy"], graveyard: ["Shivan Dragon"] },
+      p2: { battlefield: ["Bear Cub", "Serra Angel"] },
+    });
+    const angel = idOf(s, "p2", "battlefield", "Serra Angel");
+    s = settle(cast(s, "p1", "Urgent Necropsy", { a: [], c: [angel], e: [], w: [] }));
+    expect(idsOf(s, "p2", "graveyard", "Serra Angel")).toHaveLength(1);
+    expect(s.exile.map((id) => nameOf(s, id))).toEqual(["Shivan Dragon"]);
+    // VM 5 sans preuves suffisantes : impossible.
+    const t = scenario({
+      p1: { battlefield: [...lands("Swamp", 2), ...lands("Forest", 2)], hand: ["Urgent Necropsy"], graveyard: ["Opt"] },
+      p2: { battlefield: ["Serra Angel"] },
+    });
+    expect(() =>
+      cast(t, "p1", "Urgent Necropsy", { a: [], c: [idOf(t, "p2", "battlefield", "Serra Angel")], e: [], w: [] }),
+    ).toThrow(RulesError);
+  });
+
+  it("Niv-Mizzet, Guildpact : X = paires de couleurs différentes parmi vos permanents exactement bicolores", () => {
+    const t = scenario({ p1: { battlefield: ["Tin Street Gossip", "Agrus Kos, Spirit of Justice", "Bear Cub"] } });
+    const ctx = {
+      controller: "p1",
+      sourceId: "",
+      sourceDefId: "",
+      sourceSnapshot: { keywords: [], power: 0 },
+      targets: {},
+      x: 0,
+      kicked: false,
+    };
+    // R/G (Tin Street Gossip) et R/W (Agrus Kos) : deux paires.
+    expect(evalAmount(t, ctx as never, dsl.amount.colorPairsAmong({ permanent: true, controller: "you" }))).toBe(2);
+  });
+
+  it("Aurelia, the Law Above : un joueur (même un adversaire) attaque avec trois créatures ou plus : vous piochez", () => {
+    let s = scenario({
+      turn: 2,
+      active: "p2",
+      p1: { battlefield: ["Aurelia, the Law Above"], library: lands("Plains", 3) },
+      p2: { battlefield: ["Bear Cub", "Bear Cub", "Llanowar Elves"] },
+    });
+    const hand = s.players.p1?.hand.length ?? 0;
+    s = advanceUntil(s, (x) => x.pending?.kind === "declareAttackers");
+    const attackers = s.battlefield.filter((id) => s.objects[id]?.controller === "p2");
+    s = act(s, "p2", { type: "declareAttackers", attackers: attackers.map((id) => ({ id, defender: "p1" })) });
+    s = settle(s);
+    expect(s.players.p1?.hand).toHaveLength(hand + 1);
+  });
+
+  it("Tin Street Gossip : {R}{G} seulement pour lancer des sorts face cachée", () => {
+    let s = scenario({ p1: { battlefield: ["Tin Street Gossip", "Mountain"], hand: ["Fugitive Codebreaker", "Bear Cub"] } });
+    const gossip = idOf(s, "p1", "battlefield", "Tin Street Gossip");
+    const a = legalActions(s, "p1").find((x) => x.type === "activate" && x.source === gossip);
+    s = settle(act(s, "p1", { type: "activate", source: gossip, ability: a?.type === "activate" ? a.ability : -1 }));
+    // Bear Cub ({1}{G}) : non (mana restreint) ; Fugitive Codebreaker face cachée ({3}) : oui.
+    expect(legalActions(s, "p1").some((x) => x.type === "cast" && x.card === idOf(s, "p1", "hand", "Bear Cub"))).toBe(false);
+    expect(
+      legalActions(s, "p1").some(
+        (x) => x.type === "cast" && x.card === idOf(s, "p1", "hand", "Fugitive Codebreaker") && x.faceDown,
+      ),
+    ).toBe(true);
   });
 });

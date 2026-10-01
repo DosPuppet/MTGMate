@@ -120,3 +120,17 @@ Les scripts sont dans `packages/cards/src/mkm/` : `cards` (cartes du méta), `wh
 - **Cartes :** Culvert Ambusher, Tolsimir, Midnight's Light (jeton légendaire Voja Fenstalker), Hustle // Bustle.
 - **Le moteur gagne :** les exigences de blocage de la famille `BlockRule` : `mustBlock` (« bloque ce tour-ci si possible ») et `mustBlockAttacker` (« bloque ce Loup si possible » ; `mustBlockEventObject` dans un script, fixé à la résolution) ; la déclaration des bloqueurs les vérifie (bloquer un autre attaquant n'obéit pas à une exigence d'attaquant précis) et le blocage par défaut (`requiredBlocks`) les respecte.
 - **Tests :** 3 tests de règles (« lot C1 »).
+
+## Sous-lot C2 : montants et coûts ✅ (258 / 268)
+
+- **Cartes :** No Witnesses, Wojek Investigator, Ill-Timed Explosion, Officious Interrogation, Demand Answers, Treacherous Greed, Urgent Necropsy, Niv-Mizzet, Guildpact, Aurelia, the Law Above, Tin Street Gossip.
+- **Le moteur gagne :**
+  - `ref.playersWithMost(filtre)` (« chaque joueur qui contrôle le plus de créatures ») ;
+  - les montants `opponentsWithMoreInHand`, `greatestManaValueOf(ref)` et `colorPairsAmong(filtre)` ;
+  - `costPerExtraTarget` (« coûte {W}{U} de plus pour chaque cible au-delà de la première ») ;
+  - `discardOrSacrifice` filtré (« défaussez une carte ou sacrifiez un artefact ») ;
+  - `collectEvidenceTargetsManaValue` (« réunissez des preuves X, X étant la valeur de mana totale des permanents ciblés ») ;
+  - le filtre `dealtDamageThisTurn` (« une créature qui a infligé des blessures ce tour-ci ») ;
+  - `when.attackWith(N, filtre, anyPlayer)` (« chaque fois qu'un joueur attaque avec N créatures ou plus »).
+- **Correctif :** Troyan, Gutsy Explorer (WOE) : son mana sert aussi aux sorts avec {X} dans leur coût (filtre `hasX`) ; l'approximation est levée.
+- **Tests :** 10 tests de règles (« lot C2 »).

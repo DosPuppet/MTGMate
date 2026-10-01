@@ -86,6 +86,8 @@ export interface CardDef {
   cantBeCountered?: boolean;
   /** « Ce sort ne peut pas être copié » (Choreographed Sparks). */
   cantBeCopied?: boolean;
+  /** « Ce sort coûte [mana] de plus pour chaque cible au-delà de la première » (Officious Interrogation). */
+  costPerExtraTarget?: ManaCost;
   /** Planeswalker : loyauté de départ (306.5b). */
   loyalty?: number;
   /** Aura : ce qu'elle peut enchanter (cible du sort d'Aura, puis légalité de l'attachement). */
@@ -281,7 +283,10 @@ export interface AdditionalCost {
   /** « Défaussez une carte ou payez N points de vie » (Bitter Triumph) : sans défausse, le joueur paie ces PV. */
   discardOrLife?: number;
   /** « Défaussez une carte ou sacrifiez un permanent » (Souls of the Lost) : un permanent choisi est sacrifié. */
-  discardOrSacrifice?: boolean;
+  /** « … ou sacrifiez un permanent » ; un filtre : « … ou sacrifiez un artefact » (Demand Answers). */
+  discardOrSacrifice?: boolean | ObjectFilter;
+  /** Réunir des preuves X, X étant la valeur de mana totale des permanents ciblés (Urgent Necropsy). */
+  collectEvidenceTargetsManaValue?: boolean;
   /**
    * Choisis automatiquement (Duskmourn) : permanents exilés (liés au permanent), renvoyés, engagés ; cartes du cimetière
    * exilées. `fromHand` : « contemplez un [type] et exilez-le » (Lorwyn Eclipsed) : un permanent que vous contrôlez ou
