@@ -9,7 +9,7 @@ import { dealDamage, sourceFromObject } from "../src/actions";
 import { legalActions } from "../src/legal";
 import { chars } from "../src/state";
 import type { ChoiceRequest, ChoiceValue, GameState } from "../src/types";
-import { act, advanceUntil, castNowOf, idOf, idsOf, passUntil, scenario, untilCastNow } from "./helpers";
+import { act, advanceUntil, castNowOf, idOf, idsOf, passAccepting, passUntil, scenario, untilCastNow } from "./helpers";
 
 type S = GameState;
 type Answer = (req: ChoiceRequest, player: string) => ChoiceValue[] | undefined;
@@ -1398,5 +1398,20 @@ describe("Tarkir: Dragonstorm, lot D (remplacements de blessures, R1)", () => {
       dealDamage(s, sourceFromObject(s, dragon), "p1", 5, true);
       expect(s.players.p1?.life).toBe(11);
     });
+  });
+});
+
+describe("Tarkir: Dragonstorm : cibles « une à trois » d'une capacité déclenchée", () => {
+  it("Armament Dragon : seul sur le champ de bataille, il reçoit les trois marqueurs (une cible suffit)", () => {
+    let s = scenario({
+      p1: {
+        battlefield: [...Array(2).fill("Plains"), ...Array(2).fill("Swamp"), ...Array(2).fill("Forest")],
+        hand: ["Armament Dragon"],
+      },
+    });
+    s = act(s, "p1", { type: "cast", card: idOf(s, "p1", "hand", "Armament Dragon") });
+    s = passAccepting(s, (x) => x.stack.length === 0 && x.triggers.length === 0 && x.pending?.kind === "priority");
+    const dragon = idOf(s, "p1", "battlefield", "Armament Dragon");
+    expect(s.objects[dragon]?.counters["+1/+1"]).toBe(3);
   });
 });

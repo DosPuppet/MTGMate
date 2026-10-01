@@ -11,7 +11,7 @@
 
 import { canForage, gainLife } from "./actions";
 import { ask, cardRef } from "./choices";
-import { boardAmount, evalAmount } from "./effects";
+import { boardAmount, evalAmount, resolveRef } from "./effects";
 import { RulesError, rethrowAsRules } from "./errors";
 import { copiedDefId } from "./layers";
 import {
@@ -141,7 +141,14 @@ export function queueLifelink(key: string, controller: PlayerId, amount: number)
 }
 
 /** Montant évalué hors résolution (sommes, force d'un objet, vitesse…), comme pendant une résolution sans cible. */
-function checkAmount(s: GameState, a: Amount, controller: PlayerId, sourceId?: ObjectId, eventObject?: ObjectId): number {
+function checkAmount(
+  s: GameState,
+  a: Amount,
+  controller: PlayerId,
+  sourceId?: ObjectId,
+  eventObject?: ObjectId,
+  event?: TriggerEventData,
+): number {
   const ctx = {
     controller,
     sourceId: sourceId ?? "",
@@ -151,7 +158,7 @@ function checkAmount(s: GameState, a: Amount, controller: PlayerId, sourceId?: O
     x: 0,
     kicked: false,
     // L'objet de l'événement (Increment : « si le mana dépensé pour lancer ce sort »).
-    ...(eventObject ? { event: { objectId: eventObject } } : {}),
+    ...(event || eventObject ? { event: { ...event, objectId: eventObject ?? event?.objectId } } : {}),
   };
   return evalAmount(s, ctx, a);
 }
@@ -203,6 +210,8 @@ export function checkCondition(
   controller: PlayerId,
   sourceId?: ObjectId,
   eventObject?: ObjectId,
+  /** L'événement déclencheur entier (« si 3 blessures ou plus » : Innocent Bystander). */
+  event?: TriggerEventData,
 ): boolean {
   switch (c.kind) {
     case "step":
@@ -374,9 +383,9 @@ export function checkCondition(
     case "opponentLostLifeThisTurn":
       return opponentsOf(s, controller).some((q) => (s.players[q]?.turnStats.lifeLost ?? 0) > 0);
     case "not":
-      return !checkCondition(s, c.cond, controller, sourceId, eventObject);
+      return !checkCondition(s, c.cond, controller, sourceId, eventObject, event);
     case "all":
-      return c.of.every((x) => checkCondition(s, x, controller, sourceId, eventObject));
+      return c.of.every((x) => checkCondition(s, x, controller, sourceId, eventObject, event));
     case "wasCast":
       return !!(sourceId && s.objects[sourceId]?.cast);
     case "castFromHand":
@@ -418,10 +427,10 @@ export function checkCondition(
         return n >= c.n;
       }
       if (a.kind === "count" || a.kind === "totalPower") return boardAmount(s, a, controller, sourceId) >= c.n;
-      return checkAmount(s, a, controller, sourceId, eventObject) >= c.n;
+      return checkAmount(s, a, controller, sourceId, eventObject, event) >= c.n;
     }
     case "any":
-      return c.of.some((x) => checkCondition(s, x, controller, sourceId, eventObject));
+      return c.of.some((x) => checkCondition(s, x, controller, sourceId, eventObject, event));
     case "opponentHasMore": {
       const measure = (p: PlayerId): number => {
         if (c.what === "life") return s.players[p]?.life ?? 0;
@@ -441,10 +450,22 @@ export function checkCondition(
       if (c.ref) return false;
       return mostLife(s, controller);
     }
+    case "handAtMost": {
+      // « s'il n'a pas de carte en main » hors résolution (« Pour résoudre » d'une Affaire, condition d'un déclencheur).
+      const ctx = {
+        controller,
+        sourceId: sourceId ?? "",
+        sourceDefId: "",
+        sourceSnapshot: { keywords: [], power: 0 },
+        targets: {},
+        x: 0,
+        kicked: false,
+      };
+      return resolveRef(s, ctx, c.ref).some((p) => !!s.players[p] && (s.players[p]?.hand.length ?? 0) <= c.n);
+    }
     case "var":
     case "refLife":
     case "refLostLife":
-    case "handAtMost":
     case "targetChosen":
       return false; // évalué pendant la résolution (effects.ts)
   }
@@ -909,7 +930,7 @@ export function detectTriggers(s: GameState, ev: RulesEvent, only?: (src: Source
         playerStatic(s, ev.controller, "ignoreOpponentsHexproofWard")
       )
         return;
-      if (ab.condition && !checkCondition(s, ab.condition, src.view.controller, src.id, data.objectId)) return;
+      if (ab.condition && !checkCondition(s, ab.condition, src.view.controller, src.id, data.objectId, data)) return;
       // « une ou plusieurs … » : un seul déclenchement en attente pour ce lot d'événements.
       if (ab.batched && s.triggers.some((t) => t.sourceId === src.id && t.abilityIndex === index)) return;
       if (ab.oncePerTurn) {
@@ -1213,11 +1234,13 @@ function chooseTriggerTargets(s: GameState, t: PendingTrigger): boolean {
     const taken = new Set((spec.otherThan ?? []).flatMap((o) => t.targets[o] ?? []));
     const legal = legalTargets(s, t.controller, spec, t.sourceId).filter((id) => !taken.has(id));
     const count = spec.count ?? 1;
-    if (legal.length === 0 || (!spec.optional && legal.length < count)) {
+    // « une à trois cibles » (`target.between`) : au moins `minCount` (Armament Dragon, Glint Weaver).
+    const min = spec.optional ? 0 : (spec.minCount ?? count);
+    if (legal.length === 0 || legal.length < min) {
       t.targets[spec.id] = [];
       continue;
     }
-    if (legal.length === count && !spec.optional && !spec.samePlayer && !spec.differentPlayers) {
+    if (legal.length === count && min === count && !spec.samePlayer && !spec.differentPlayers) {
       t.targets[spec.id] = legal;
       continue;
     }
@@ -1251,7 +1274,7 @@ function chooseTriggerTargets(s: GameState, t: PendingTrigger): boolean {
         intent: "triggerTarget",
         prompt: `${triggerLabel(s, t)} : choisissez ${count > 1 ? `jusqu'à ${count} cibles — ` : ""}${spec.label ?? "une cible"}`,
         options: legal,
-        min: spec.optional ? 0 : count,
+        min: Math.min(min, legal.length),
         max: count,
         suggested,
         group,

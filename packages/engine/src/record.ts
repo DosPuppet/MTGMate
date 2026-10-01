@@ -90,8 +90,11 @@ export const RECORD_VERSION = 1;
  *   une fois par tour ; « ce sort ne peut pas être copié ».
  * - 32 : Secrets of Strixhaven, lot C3 : cascade (702.85) ; l'événement de pioche désigne la carte piochée (miracle) ;
  *   « lancer maintenant » pour un coût donné depuis la main.
+ * - 33 : Murders at Karlov Manor, lot A : une capacité déclenchée « une à N cibles » respecte le minimum (Armament
+ *   Dragon n'avait aucune cible sous N créatures) ; la condition d'un déclencheur voit l'événement (montant) ; « s'il
+ *   n'a pas de carte en main » hors résolution ; désignation suspect (701.60).
  */
-export const RULES_VERSION = 32;
+export const RULES_VERSION = 33;
 
 /** Un point de contrôle toutes les N décisions (plus la dernière de la partie). */
 export const CHECKPOINT_EVERY = 25;

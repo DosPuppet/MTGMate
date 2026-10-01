@@ -2244,7 +2244,7 @@ export function specsAndEffects(s: GameState, item: StackItem): { specs: TargetS
   const ab = d.abilities[item.abilityIndex];
   if (ab?.kind === "triggered") {
     // 603.4 : la condition d'une capacité « si… » est vérifiée à nouveau à la résolution.
-    if (ab.condition && !checkCondition(s, ab.condition, item.controller, item.sourceId, item.event?.objectId))
+    if (ab.condition && !checkCondition(s, ab.condition, item.controller, item.sourceId, item.event?.objectId, item.event))
       return { specs: [], effects: [] };
     if (ab.modes) {
       const mode = ab.modes[item.mode];

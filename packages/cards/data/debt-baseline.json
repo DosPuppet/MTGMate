@@ -101,6 +101,7 @@
     "noLegendRuleThisTurn": "Hall of Echoes — fx.thisTurn (R4.6)",
     "noncombatBonusThisTurn": "Taii Wakeen, Perfect Shot — effet de joueur à montant (R4.6)",
     "piles": "Curator of Destinies — mécanique générique, une seule carte pour l'instant",
+    "suspect": "Suspect (701.60, Murders at Karlov Manor) — opération générique, une seule carte pour l'instant",
     "plotOnResolve": "Lilah, Undefeated Slickshot — opération propre à une carte (R4.6)",
     "portent": "Portent of Calamity — opération propre à une carte (R4.6)",
     "preventCombatDamage": "Fleeting Flight — mécanique générique, une seule carte pour l'instant",
@@ -111,7 +112,6 @@
     "sacrificeElseDiscard": "Momentum Breaker — opération propre à une carte (R4.6)",
     "setLife": "The Endstone — mécanique générique, une seule carte pour l'instant",
     "shield": "New Way Forward : boucliers « la prochaine fois que » (615.7), sur le cadre générique des remplacements (R1) ; une seule carte pour l'instant",
-    "solveCase": "Case of the Uneaten Feast — mécanique générique, une seule carte pour l'instant",
     "suspend": "Taigam, Master Opportunist : suspension (702.62), mécanique générique (marqueurs de temps retirés à l'entretien, `suspendUpkeep`) ; une seule carte pour l'instant",
     "tapOrSacrifice": "Command Bridge — opération propre à une carte (R4.6)",
     "tripleTriad": "Triple Triad — opération propre à une carte (R4.6)"
