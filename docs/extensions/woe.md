@@ -117,3 +117,12 @@ Les scripts sont dans `packages/cards/src/woe/` : `cards` (cartes du méta), `wh
   - le déclencheur `blocks` peut désigner l'attaquant bloqué comme objet de l'événement (`eventObject: "attacker"`) ;
   - les dernières informations connues gardent les blessures marquées (`LkiSnapshot.damage`), lues par `amount.lkiDamage`.
 - **Tests :** 3 tests de règles (« lot C2 »).
+
+## Sous-lot C3 : copies ✅ (261 / 269)
+
+- **Cartes :** The Apprentice's Folly, Yenna, Redtooth Regent, Likeness Looter.
+- **Le moteur gagne :**
+  - `removeSupertypes` (couche 4) et l'option `nonlegendary` de `copyToken` (« sauf qu'elle n'est pas légendaire »), avec `store` ;
+  - le filtre `notSameNameAs` (« qui n'a pas le même nom qu'un jeton / un autre permanent que vous contrôlez ») ;
+  - `becomeCopy` copie aussi une carte hors du champ de bataille (cimetière), avec des mots-clés ajoutés, des capacités de la source gardées (`keepAbilities`, par rang : pas de structure circulaire) et une valeur de mana exigée (`ifManaValue`).
+- **Tests :** 3 tests de règles (« lot C3 »).

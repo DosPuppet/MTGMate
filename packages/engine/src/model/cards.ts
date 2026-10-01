@@ -517,6 +517,8 @@ export interface LayerMods {
   addSubtypes?: string[];
   /** Couche 4 : surtypes ajoutés (« sauf que c'est légendaire »). */
   addSupertypes?: string[];
+  /** Supertypes retirés (« sauf qu'elle n'est pas légendaire », The Apprentice's Folly, Yenna). */
+  removeSupertypes?: string[];
   /** Couche 4 : types remplacés (« est un terrain et perd tous ses autres types »), sous-types remplacés. */
   setTypes?: CardType[];
   setSubtypes?: string[];

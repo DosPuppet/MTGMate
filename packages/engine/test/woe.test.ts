@@ -12,6 +12,7 @@ import * as dsl from "../src/dsl";
 import { runEffect } from "../src/effects";
 import { legalActions } from "../src/legal";
 import { chars } from "../src/state";
+import { legalTargets as legalTargetsOf } from "../src/targets";
 import { checkCondition } from "../src/triggers";
 import { canBlock, stateBasedActions } from "../src/turn";
 import type { CardDef, ChoiceRequest, ChoiceValue, GameState, TokenSpec } from "../src/types";
@@ -4535,5 +4536,67 @@ describe("Wilds of Eldraine, lot C2 : blessures d'un sort ciblé, blocages, bles
     dealDamage(s, { defId: "test", controller: "p2", keywords: [] }, colony, 5, false);
     s = settleAll(s);
     expect(s.battlefield.filter((id) => chars(s, id).name === "Rat")).toHaveLength(5);
+  });
+});
+
+describe("Wilds of Eldraine, lot C3 : copies non légendaires, copie d'une carte du cimetière", () => {
+  const settleAll = (s: S) => {
+    while (stateBasedActions(s)) {}
+    return passAccepting(s, (x) => x.stack.length === 0 && x.triggers.length === 0 && x.pending?.kind === "priority");
+  };
+  const legend = customCard({ name: "Héros d'essai", supertypes: ["Legendary"], power: 3, toughness: 3 });
+
+  it("The Apprentice's Folly : copie non légendaire, Reflet avec la célérité ; pas de cible du nom d'un de vos jetons", () => {
+    let s = scenario({
+      p1: { battlefield: [legend, "Island", "Island", "Mountain", "Mountain"], hand: ["The Apprentice's Folly"] },
+    });
+    const hero = idOf(s, "p1", "battlefield", legend.name);
+    s = act(s, "p1", { type: "cast", card: idOf(s, "p1", "hand", "The Apprentice's Folly") });
+    s = passAccepting(s, (x) => x.stack.length === 0 && x.triggers.length === 0 && x.pending?.kind === "priority");
+    const copies = s.battlefield.filter((id) => s.objects[id]?.isToken && chars(s, id).name === legend.name);
+    expect(copies).toHaveLength(1);
+    const copy = copies[0] as string;
+    expect(chars(s, copy).supertypes).not.toContain("Legendary");
+    expect(chars(s, copy).subtypes).toContain("Reflection");
+    expect(chars(s, copy).keywords).toContain("haste");
+    // Un jeton du même nom : le héros n'est plus une cible légale pour le chapitre II.
+    const spec = {
+      id: "t",
+      filter: {
+        objects: { types: ["Creature"], controller: "you", nontoken: true, notSameNameAs: { token: true, controller: "you" } },
+      },
+    } as const;
+    expect(legalTargetsOf(s, "p1", spec as never)).not.toContain(hero);
+  });
+
+  it("Yenna, Redtooth Regent : copie non légendaire d'un enchantement ; ce n'est pas une Aura : Yenna reste engagée", () => {
+    let s = scenario({
+      p1: { battlefield: ["Yenna, Redtooth Regent", "Forest", "Forest", "Bear Cub", "A Tale for the Ages"] },
+    });
+    const yenna = idOf(s, "p1", "battlefield", "Yenna, Redtooth Regent");
+    const tale = idOf(s, "p1", "battlefield", "A Tale for the Ages");
+    s = settleAll(act(s, "p1", { type: "activate", source: yenna, ability: 0, targets: { t: [tale] } }));
+    expect(s.battlefield.filter((id) => chars(s, id).name === "A Tale for the Ages")).toHaveLength(2);
+    expect(s.objects[yenna]?.tapped).toBe(true);
+  });
+
+  it("Likeness Looter : devient une copie de la carte de VM X, avec le vol et sa capacité ; rien si la VM diffère", () => {
+    let s = scenario({
+      p1: { battlefield: ["Likeness Looter", ...lands("Island", 2)], graveyard: ["Bear Cub", "Shivan Dragon"] },
+    });
+    const looter = idOf(s, "p1", "battlefield", "Likeness Looter");
+    const bear = idOf(s, "p1", "graveyard", "Bear Cub");
+    const dragon = idOf(s, "p1", "graveyard", "Shivan Dragon");
+    s = settleAll(act(s, "p1", { type: "activate", source: looter, ability: 1, x: 2, targets: { t: [dragon] } }));
+    expect(chars(s, looter).name).toBe("Likeness Looter");
+    s = scenario({ p1: { battlefield: ["Likeness Looter", ...lands("Island", 2)], graveyard: ["Bear Cub"] } });
+    const l2 = idOf(s, "p1", "battlefield", "Likeness Looter");
+    s = settleAll(
+      act(s, "p1", { type: "activate", source: l2, ability: 1, x: 2, targets: { t: [idOf(s, "p1", "graveyard", "Bear Cub")] } }),
+    );
+    expect(chars(s, l2).name).toBe("Bear Cub");
+    expect(chars(s, l2).keywords).toContain("flying");
+    expect(chars(s, l2).abilities.some((a) => a.kind === "activated" && a.label?.startsWith("Devient une copie"))).toBe(true);
+    void bear;
   });
 });

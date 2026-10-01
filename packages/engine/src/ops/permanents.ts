@@ -5,6 +5,7 @@ import { addControlEffect } from "../control";
 import type { OpHandlers } from "../effects";
 import { addEffect, addPump, attach, attackingDefender, evalAmount, exiledUid, nameOf, resolveRef } from "../effects";
 import { copiableExceptions, copiedDefId, mergeMods } from "../layers";
+import { manaValue } from "../mana";
 import {
   bump,
   chars,
@@ -23,7 +24,7 @@ import { addPlayerEffect } from "../statics";
 import { matchesCard, matchesObjectFilter } from "../targets";
 import { createDelayed } from "../triggers";
 import { attackableDefenders } from "../turn";
-import type { Color } from "../types";
+import type { AbilityDef, Color } from "../types";
 
 /** Types de créature toujours proposés quand un type est à choisir (tribus de Lorwyn et types les plus courants). */
 const COMMON_CREATURE_TYPES = [
@@ -247,7 +248,8 @@ export const HANDLERS: OpHandlers = {
     r.vars.$name = [String(answer[0])];
     return;
   },
-  copyToken(s, _r, e, ctx) {
+  copyToken(s, r, e, ctx) {
+    const made: string[] = [];
     // Doubling Season s'applique aussi aux jetons copies.
     const base = e.count === undefined ? 1 : evalAmount(s, ctx, e.count);
     for (const id of resolveRef(s, ctx, e.of)) {
@@ -268,6 +270,7 @@ export const HANDLERS: OpHandlers = {
             addKeywords: e.addKeywords?.length ? e.addKeywords : undefined,
             addSubtypes: e.addSubtypes?.length ? e.addSubtypes : undefined,
             addSupertypes: e.legendary ? ["Legendary"] : undefined,
+            removeSupertypes: e.nonlegendary ? ["Legendary"] : undefined,
             addAbilities: e.addAbilities?.length ? e.addAbilities : undefined,
             addColors: e.addColors?.length ? e.addColors : undefined,
             // Ardyn, the Usurper : « sauf que c'est un Démon noir ».
@@ -277,6 +280,7 @@ export const HANDLERS: OpHandlers = {
           }),
           modsCopiable: true,
         });
+        made.push(token);
         // Firion : des capacités d'Équiper moins chères (ajoutées ; la moins chère sera utilisée).
         if (e.equipDiscount) {
           const equips = (s.defs[defId]?.abilities ?? []).flatMap((ab) =>
@@ -330,6 +334,7 @@ export const HANDLERS: OpHandlers = {
         }
       }
     }
+    if (e.store) r.vars[`$ids:${e.store}`] = made;
     return;
   },
   chooseCopy(s, r, e, ctx, key) {
@@ -569,17 +574,28 @@ export const HANDLERS: OpHandlers = {
     return;
   },
   becomeCopy(s, _r, e, ctx) {
-    const model = resolveRef(s, ctx, e.of).find((id) => onBattlefield(s, id));
+    const model = resolveRef(s, ctx, e.of).find((id) => !!s.objects[id]);
     const ids = resolveRef(s, ctx, e.what).filter((id) => onBattlefield(s, id));
     if (!model || ids.length === 0) return;
+    const onField = onBattlefield(s, model);
+    const defId = onField ? copiedDefId(s, model) : (s.objects[model]?.defId as string);
+    if (e.ifManaValue !== undefined && manaValue(s.defs[defId]?.manaCost) !== evalAmount(s, ctx, e.ifManaValue)) return;
+    const own = s.defs[ctx.sourceDefId]?.abilities ?? [];
+    const kept = (e.keepAbilities ?? []).map((i) => own[i]).filter((a): a is AbilityDef => !!a);
     bump(s);
     s.effects.push({
       id: newId(s, "e"),
       timestamp: nextTimestamp(s),
       affected: ids,
       duration: e.duration,
-      copyOf: copiedDefId(s, model),
-      ...copiableExceptions(s, model),
+      copyOf: defId,
+      ...(onField ? copiableExceptions(s, model) : {}),
+      ...(e.addKeywords?.length || kept.length
+        ? mergeMods(onField ? copiableExceptions(s, model) : undefined, {
+            addKeywords: e.addKeywords?.length ? e.addKeywords : undefined,
+            addAbilities: kept.length ? kept : undefined,
+          })
+        : {}),
       copiable: true,
     });
     return;

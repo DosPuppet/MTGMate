@@ -231,6 +231,14 @@ export function matchesObjectFilter(
   // « autre que la créature enchantée » (Sporogenic Infection, Saw) ; « la créature équipée / le terrain enchanté ».
   if (f.notAttachedToSource && sourceId && s.objects[sourceId]?.attachedTo === id) return false;
   if (f.attachedToSource && (!sourceId || s.objects[sourceId]?.attachedTo !== id)) return false;
+  if (f.notSameNameAs) {
+    const name = chars(s, id).name;
+    const other = f.notSameNameAs;
+    if (
+      s.battlefield.some((x) => x !== id && chars(s, x).name === name && matchesObjectFilter(s, controller, x, other, sourceId))
+    )
+      return false;
+  }
   return matchesView(snapshot(s, id), resolveFilter(s, f, sourceId), controller, sourceId);
 }
 

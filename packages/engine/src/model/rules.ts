@@ -64,6 +64,8 @@ export interface ObjectFilter {
   self?: boolean;
   /** Le permanent auquel la source est attachée (« la créature équipée »). */
   attachedToSource?: boolean;
+  /** N'a pas le même nom qu'un autre permanent correspondant (« qu'un jeton que vous contrôlez », Yenna). */
+  notSameNameAs?: ObjectFilter;
   /** Attaché à la source (« chaque Aura et Équipement attaché à Kellan », « une Aura attachée à cette créature »). */
   attachedToSelf?: boolean;
   /** De force supérieure à celle de la source (furtivité : « ne peut pas être bloquée par des créatures de force supérieure »). */

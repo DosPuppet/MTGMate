@@ -276,6 +276,8 @@ Dans l'ordre où elles ont été ajoutées, extension par extension.
   - `règle` The Irencrag : « perd toutes ses autres capacités » : sa capacité de mana et son déclencheur sont inactifs une fois Équipement, mais restent listés ;
   - `règle` Three Bowls of Porridge : « un mode qui n'a pas déjà été choisi » : trois capacités, chacune activable une seule fois ;
   - `timing` Hylda of the Icy Crown : le mode est choisi au déclenchement, puis {1} est payé ou non (et non « payez {1} ; quand vous le faites, choisissez ») ;
-  - `règle` Sharae of Numbing Depths : « une ou plusieurs créatures » : la capacité se déclenche à la première créature engagée du tour.
+  - `règle` Sharae of Numbing Depths : « une ou plusieurs créatures » : la capacité se déclenche à la première créature engagée du tour ;
+  - `timing` Likeness Looter : la valeur de mana X de la carte ciblée est vérifiée à la résolution (rien ne se passe si elle diffère), et non au ciblage ;
+  - `choix auto` Yenna, Redtooth Regent : la copie d'une Aura s'attache à un hôte choisi par le moteur.
 - **Légalité Standard :** instantané des légalités Scryfall au moment de l'import (`legalities.standard` dans `data/<set>.json`). Après une rotation ou une annonce de bannissement, réimporter les sets (`npm run import-cards -- <set>`).
 - **Images des jetons :** celle du jeton Scryfall le plus proche (même nom, puis mêmes F/E et couleurs ; `data/tokens.json`, `npm run import-tokens`) ; un jeton de nom inconnu garde le cadre texte.

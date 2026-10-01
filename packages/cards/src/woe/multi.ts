@@ -5,6 +5,7 @@ import {
   amount,
   type CardScript,
   CELEBRATION,
+  chapter,
   cond,
   costReducer,
   createRole,
@@ -46,6 +47,57 @@ const ELEMENTAL_WU: TokenSpec = {
 };
 
 export const MULTI: Record<string, CardScript> = {
+  "The Apprentice's Folly": {
+    abilities: [
+      chapter([1, 2], [fx.copyToken(ref.target(), { nonlegendary: true, addSubtypes: ["Reflection"], addKeywords: ["haste"] })], {
+        targets: [
+          target.creature("t", {
+            controller: "you",
+            nontoken: true,
+            notSameNameAs: { token: true, controller: "you" },
+          }),
+        ],
+        label: "Chapitres I et II — Un jeton copie (Reflet, non légendaire, célérité)",
+      }),
+      chapter([3], [fx.sacrifice(ref.you, { subtype: "Reflection" }, 99)], { label: "Chapitre III — Sacrifiez vos Reflets" }),
+    ],
+  },
+  "Yenna, Redtooth Regent": {
+    abilities: [
+      activated({
+        mana: "{2}",
+        tap: true,
+        sorcerySpeed: true,
+        targets: [
+          target.permanent("t", ["Enchantment"], { controller: "you", notSameNameAs: { controller: "you" } }, "enchantement"),
+        ],
+        effects: [
+          fx.copyToken(ref.target(), { nonlegendary: true, store: "y" }),
+          ...fx.when(cond.refMatches(ref.stored("y"), { subtype: "Aura" }), fx.untap(ref.self), fx.scry(2)),
+        ],
+        label: "Un jeton copie (non légendaire) d'un de vos enchantements ; une Aura : dégagez Yenna, regard 2",
+      }),
+    ],
+  },
+  // Vol lu dans le texte.
+  "Likeness Looter": {
+    abilities: [
+      activated({ tap: true, effects: fx.loot(1), label: "Piochez une carte, puis défaussez une carte" }),
+      activated({
+        mana: "{X}",
+        sorcerySpeed: true,
+        targets: [target.cardInGraveyard("t", { types: ["Creature"] }, "you", "carte de créature de valeur de mana X")],
+        effects: [
+          fx.becomeCopy(ref.self, ref.target(), "permanent", {
+            addKeywords: ["flying"],
+            keepAbilities: [1],
+            ifManaValue: amount.x,
+          }),
+        ],
+        label: "Devient une copie d'une carte de créature de VM X de votre cimetière (avec le vol et cette capacité)",
+      }),
+    ],
+  },
   "Faunsbane Troll": {
     abilities: [
       triggered(when.entersSelf, createRole(MONSTER_ROLE, ref.self), { label: "Un Rôle Monstre attaché à elle" }),

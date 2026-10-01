@@ -292,8 +292,11 @@ export type Effect =
       sacrificeAtEndStep?: boolean;
       /** « Exilez ce jeton au début de la prochaine étape de fin » (Stormsplitter). */
       exileAtEndStep?: boolean;
-      /** « … sauf que c'est légendaire » (Adagia, Windswept Bastion). */
+      /** « … sauf que c'est légendaire » (Adagia, Windswept Bastion) ; « … sauf qu'elle n'est pas légendaire » (Yenna). */
       legendary?: boolean;
+      nonlegendary?: boolean;
+      /** Mémorise les jetons créés. */
+      store?: string;
       /** Capacités ajoutées à la copie (Face Yourself). */
       addAbilities?: AbilityDef[];
       /** Copie engagée (Kambal). */
@@ -506,7 +509,20 @@ export type Effect =
    */
   | { op: "door"; what: Ref; mode: "unlock" | "toggle" }
   /** « [Ce permanent] devient une copie de [la cible] jusqu'à la fin du tour » (couche 1). */
-  | { op: "becomeCopy"; what: Ref; of: Ref; duration: "endOfTurn" | "permanent" }
+  /**
+   * Devient une copie d'un permanent, ou d'une carte d'une autre zone (Likeness Looter : du cimetière). Exceptions : des
+   * mots-clés ajoutés, les capacités de la source gardées (`keepAbilities` : leurs rangs dans sa définition) ; `ifManaValue` :
+   * rien si la valeur de mana du modèle diffère.
+   */
+  | {
+      op: "becomeCopy";
+      what: Ref;
+      of: Ref;
+      duration: "endOfTurn" | "permanent";
+      addKeywords?: Keyword[];
+      keepAbilities?: number[];
+      ifManaValue?: Amount;
+    }
   /** Donne le contrôle de l'objet à un joueur, sans limite de durée (Harmless Offering). */
   | { op: "giveControl"; what: Ref; to: Ref }
   /** Dégage jusqu'à N permanents engagés du contrôleur correspondant au filtre (choisis automatiquement). */

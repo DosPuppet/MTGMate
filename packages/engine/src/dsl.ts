@@ -755,11 +755,17 @@ export const fx = {
   transform: (what: Ref = ref.self): Effect => ({ op: "transform", what }),
   /** « Exilez-les, puis assemblez-les » : la source et un permanent nommé `with`, en sa carte assemblée. */
   meld: (withName: string): Effect => ({ op: "meld", with: withName }),
-  becomeCopy: (what: Ref, of: Ref, duration: "endOfTurn" | "permanent" = "endOfTurn"): Effect => ({
+  becomeCopy: (
+    what: Ref,
+    of: Ref,
+    duration: "endOfTurn" | "permanent" = "endOfTurn",
+    opts: { addKeywords?: Keyword[]; keepAbilities?: number[]; ifManaValue?: Amount } = {},
+  ): Effect => ({
     op: "becomeCopy",
     what,
     of,
     duration,
+    ...opts,
   }),
   /** Effet continu qui cesse quand la carte désignée quitte l'exil (« jusqu'à ce que cette carte soit lancée depuis l'exil »). */
   modifyWhileExiled: (what: Ref, mods: LayerMods, card: Ref): Effect => ({
@@ -1030,6 +1036,8 @@ export const fx = {
       exileAtEndStep?: boolean;
       addAbilities?: AbilityDef[];
       legendary?: boolean;
+      nonlegendary?: boolean;
+      store?: string;
       tapped?: boolean;
       attacking?: boolean;
       addTypes?: CardType[];

@@ -222,6 +222,7 @@ const LIST_MODS = [
   "addTypes",
   "addSubtypes",
   "addSupertypes",
+  "removeSupertypes",
   "addKeywords",
   "removeKeywords",
   "addColors",
@@ -800,7 +801,17 @@ function applyLayers(s: GameState, applied: Applied[], defOfId: (id: ObjectId) =
 
   // Couche 4 : types (et nom, pour Witness Protection).
   layer(
-    (m) => !!(m.addTypes || m.addSubtypes || m.setTypes || m.setSubtypes || m.setName || m.allCreatureTypes || m.addSupertypes),
+    (m) =>
+      !!(
+        m.addTypes ||
+        m.addSubtypes ||
+        m.setTypes ||
+        m.setSubtypes ||
+        m.setName ||
+        m.allCreatureTypes ||
+        m.addSupertypes ||
+        m.removeSupertypes
+      ),
     (c, m) => {
       if (m.setTypes) {
         c.types = [...m.setTypes];
@@ -808,6 +819,7 @@ function applyLayers(s: GameState, applied: Applied[], defOfId: (id: ObjectId) =
       } else if (m.setSubtypes) c.subtypes = [...m.setSubtypes];
       if (m.setName) c.name = m.setName;
       for (const t of m.addSupertypes ?? []) if (!c.supertypes.includes(t)) c.supertypes.push(t);
+      if (m.removeSupertypes?.length) c.supertypes = c.supertypes.filter((t) => !m.removeSupertypes?.includes(t));
       if (m.allCreatureTypes && !c.subtypes.includes(ALL_CREATURE_TYPES)) c.subtypes.push(ALL_CREATURE_TYPES);
       for (const t of m.addTypes ?? []) if (!c.types.includes(t)) c.types.push(t);
       for (const t of m.addSubtypes ?? []) if (!c.subtypes.includes(t)) c.subtypes.push(t);
