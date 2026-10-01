@@ -49,3 +49,10 @@ Les scripts sont dans `packages/cards/src/mkm/` : `cards` (cartes du méta), `wh
 - **Cartes :** 28 (sur 35), dont le suspect (Convenient Target, Person of Interest, Reckless Detective…), les Affaires (Case of the Crimson Pulse), le déguisement, Krenko, Baron of Tin Street, Innocent Bystander (condition du déclencheur sur les blessures subies, grâce au correctif du lot A1).
 - **Restent :** Case of the Burning Masks (sources distinctes qui ont infligé des blessures), Demand Answers (« défaussez une carte ou sacrifiez un artefact »), Expose the Culprit (« avec le déguisement », exiler puis envelopper d'une cape), Fugitive Codebreaker (coût de déguisement réduit), Goblin Maskmaker (réduction des sorts face cachée ce tour-ci), Incinerator of the Guilty et Lamplight Phoenix (« vous pouvez réunir des preuves »).
 - **Tests :** 34 tests de règles (« lot A — rouge »).
+
+## Sous-lot A5 : cartes vertes ✅ (157 / 268)
+
+- **Cartes :** 28 (sur 35), dont les Affaires (Case of the Locked Hothouse, Case of the Trampled Garden), le déguisement, la cape (Hide in Plain Sight), Glint Weaver et Case of the Trampled Garden (« une à trois cibles », grâce au correctif du lot A1), The Pride of Hull Clade ; jetons Plante 0/1 et Limon 0/0 locaux.
+- **Dette :** l'opération `putFaceDown` (cape) entre dans `debt-baseline.json` tant qu'une seule carte l'utilise.
+- **Restent :** Airtight Alibi (« ne peut pas devenir suspecte »), Axebane Ferox (garde « réunir des preuves 4 »), Culvert Ambusher (« bloque si possible »), Hedge Whisperer, A Killer Among Us (choix secret parmi trois types), Sample Collector (« vous pouvez réunir des preuves »), Tunnel Tipster (créature face cachée arrivée ce tour-ci).
+- **Tests :** 36 tests de règles (« lot A — vert »).
