@@ -954,6 +954,8 @@ export interface TokenSpec {
   tapped?: boolean;
   /** F/E définies par une capacité (Beau : le nombre de terrains que vous contrôlez). */
   cdaPT?: Amount;
+  /** Jeton Aura (Rôles de Wilds of Eldraine) : ce qu'il peut enchanter. */
+  enchant?: CardDef["enchant"];
 }
 
 /** Destination d'un déplacement d'objet. */

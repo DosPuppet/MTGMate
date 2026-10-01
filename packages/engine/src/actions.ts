@@ -561,6 +561,7 @@ export function createTokens(
       power: t.power,
       toughness: t.toughness,
       cdaPT: t.cdaPT,
+      enchant: t.enchant,
       keywords: t.keywords ?? [],
       abilities: t.abilities ?? [],
       text: t.text ?? "",

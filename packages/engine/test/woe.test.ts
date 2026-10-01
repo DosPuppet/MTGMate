@@ -4,11 +4,18 @@
  * Marchandage (Torch the Tower), Song of Totentanz, The End, Restless Cottage, Candy Trail, Sleight of Hand et
  * Disdainful Stroke.
  */
+
 import { describe, expect, it } from "vitest";
+import { CELEBRATION, CURSED_ROLE, createRole, MONSTER_ROLE, WICKED_ROLE, YOUNG_HERO_ROLE } from "../../cards/src/woe/common";
+import { destroy } from "../src/actions";
+import * as dsl from "../src/dsl";
+import { runEffect } from "../src/effects";
 import { legalActions } from "../src/legal";
 import { chars } from "../src/state";
-import type { ChoiceRequest, ChoiceValue, GameState } from "../src/types";
-import { act, advanceUntil, idOf, idsOf, scenario } from "./helpers";
+import { checkCondition } from "../src/triggers";
+import { stateBasedActions } from "../src/turn";
+import type { ChoiceRequest, ChoiceValue, GameState, TokenSpec } from "../src/types";
+import { act, advanceUntil, idOf, idsOf, passAccepting, scenario } from "./helpers";
 
 type S = GameState;
 type Answer = (req: ChoiceRequest, player: string) => ChoiceValue[] | undefined;
@@ -356,5 +363,83 @@ describe("Wilds of Eldraine", () => {
       expect(idsOf(s, "p1", "battlefield", "Shivan Dragon")).toHaveLength(0);
       expect(idsOf(s, "p1", "graveyard", "Shivan Dragon")).toHaveLength(1);
     });
+  });
+});
+
+describe("Wilds of Eldraine : socle (Rôles, Célébration)", () => {
+  /** Actions basées sur l'état, puis on passe jusqu'à ce que la pile et les déclenchements soient vides. */
+  const settleAll = (s: S) => {
+    while (stateBasedActions(s)) {}
+    return passAccepting(s, (x) => x.stack.length === 0 && x.triggers.length === 0 && x.pending?.kind === "priority");
+  };
+  const resolutionOf = (s: S, controller: string, sourceId: string, targets: Record<string, string[]> = {}) =>
+    ({
+      item: { id: "x", controller, sourceId, sourceDefId: s.objects[sourceId]?.defId, targets },
+      controller,
+      targets,
+      vars: {},
+      pc: 0,
+    }) as never as Parameters<typeof runEffect>[1];
+  /** Exécute « créez un Rôle attaché à [la cible] » dans une même résolution (la cible existe : le « si » est vrai). */
+  const giveRole = (s: S, token: TokenSpec, to: string, controller = "p1") => {
+    const r = resolutionOf(s, controller, to, { t: [to] });
+    for (const e of createRole(token).flat()) if (e.op !== "if") runEffect(s, r, e);
+  };
+  const roles = (s: S, host: string) => s.battlefield.filter((id) => s.objects[id]?.attachedTo === host);
+
+  it("Monster Role : +1/+1 et le piétinement ; un nouveau Rôle du même joueur remplace l'ancien (704.5y)", () => {
+    let s = scenario({ p1: { battlefield: ["Bear Cub"] } });
+    const bear = idOf(s, "p1", "battlefield", "Bear Cub");
+    giveRole(s, MONSTER_ROLE, bear);
+    s = settleAll(s);
+    expect(chars(s, bear).power).toBe(3);
+    expect(chars(s, bear).keywords).toContain("trample");
+    giveRole(s, CURSED_ROLE, bear);
+    s = settleAll(s);
+    expect(roles(s, bear)).toHaveLength(1);
+    expect(chars(s, bear).power).toBe(1);
+    expect(chars(s, bear).keywords).not.toContain("trample");
+  });
+
+  it("deux joueurs peuvent chacun attacher un Rôle à la même créature", () => {
+    let s = scenario({ p1: { battlefield: ["Bear Cub"] } });
+    const bear = idOf(s, "p1", "battlefield", "Bear Cub");
+    giveRole(s, MONSTER_ROLE, bear, "p1");
+    giveRole(s, CURSED_ROLE, bear, "p2");
+    s = settleAll(s);
+    expect(roles(s, bear)).toHaveLength(2);
+  });
+
+  it("Wicked Role : mis au cimetière, chaque adversaire perd 1 point de vie", () => {
+    let s = scenario({ p1: { battlefield: ["Bear Cub"] } });
+    const bear = idOf(s, "p1", "battlefield", "Bear Cub");
+    giveRole(s, WICKED_ROLE, bear);
+    s = settleAll(s);
+    expect(chars(s, bear).power).toBe(3);
+    destroy(s, bear);
+    s = settleAll(s);
+    expect(s.players.p2?.life).toBe(19);
+  });
+
+  it("Young Hero Role : en attaquant avec une endurance de 3 ou moins, un marqueur +1/+1", () => {
+    let s = scenario({ p1: { battlefield: ["Bear Cub"] } });
+    const bear = idOf(s, "p1", "battlefield", "Bear Cub");
+    giveRole(s, YOUNG_HERO_ROLE, bear);
+    s = settleAll(s);
+    s = passAccepting(s, (x) => x.pending?.kind === "declareAttackers");
+    s = settleAll(act(s, "p1", { type: "declareAttackers", attackers: [{ id: bear, defender: "p2" }] }));
+    expect(s.objects[bear]?.counters["+1/+1"]).toBe(1);
+  });
+
+  it("Célébration : deux permanents non-terrain arrivés sous votre contrôle ce tour-ci (jetons compris)", () => {
+    const s = scenario({ p1: { battlefield: ["Bear Cub"] } });
+    const r = resolutionOf(s, "p1", idOf(s, "p1", "battlefield", "Bear Cub"));
+    const food = { name: "Food", colors: [], types: ["Artifact"], subtypes: ["Food"] } as TokenSpec;
+    runEffect(s, r, dsl.fx.createTokens({ name: "Forest", colors: [], types: ["Land"], subtypes: ["Forest"] }));
+    runEffect(s, r, dsl.fx.createTokens(food));
+    expect(checkCondition(s, CELEBRATION, "p1")).toBe(false);
+    runEffect(s, r, dsl.fx.createTokens(food));
+    expect(checkCondition(s, CELEBRATION, "p1")).toBe(true);
+    expect(checkCondition(s, CELEBRATION, "p2")).toBe(false);
   });
 });

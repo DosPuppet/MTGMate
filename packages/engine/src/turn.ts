@@ -1313,6 +1313,20 @@ function stateBasedActionsOnce(s: GameState): boolean {
       }
     }
 
+    // 704.5y : plusieurs Rôles d'un même joueur attachés au même permanent : seul le plus récent reste.
+    const roles = new Map<string, ObjectId[]>();
+    for (const id of s.battlefield) {
+      const o = obj(s, id);
+      if (!o.attachedTo || toGraveyard.includes(id) || !chars(s, id).subtypes.includes("Role")) continue;
+      const key = `${o.attachedTo}|${o.controller}`;
+      roles.set(key, [...(roles.get(key) ?? []), id]);
+    }
+    for (const ids of roles.values()) {
+      if (ids.length < 2) continue;
+      const newest = [...ids].sort((a, b) => obj(s, b).timestamp - obj(s, a).timestamp)[0];
+      for (const id of ids) if (id !== newest) toGraveyard.push(id);
+    }
+
     // 704.5j : règle des légendes (v1 : on garde automatiquement le plus récent).
     const legends = new Map<string, ObjectId[]>();
     for (const id of s.battlefield) {

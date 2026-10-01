@@ -72,8 +72,9 @@ export const RECORD_VERSION = 1;
  * - 25 : Lorwyn Eclipsed, lot D : remplacements des familles H et I (jetons, marqueurs, PV gagnés, pioche, meule, mana) en
  *   données (`EventReplacement`), doubleurs et drapeaux convertis ; « ces jetons plus un jeton » appliqué une fois par
  *   événement ; un permanent peut ne pas pouvoir être dégagé ; « le terrain enchanté est de la couleur choisie ».
+ * - 26 : Wilds of Eldraine, socle : jetons-Auras (Rôles), un seul Rôle par joueur sur un même permanent (704.5y).
  */
-export const RULES_VERSION = 25;
+export const RULES_VERSION = 26;
 
 /** Un point de contrôle toutes les N décisions (plus la dernière de la partie). */
 export const CHECKPOINT_EVERY = 25;
