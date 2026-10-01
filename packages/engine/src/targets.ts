@@ -65,6 +65,7 @@ export function matchesView(v: LkiSnapshot, f: ObjectFilter, perspective: Player
   // Un sort (vue de `spellView`) ; pour un objet, `matchesObjectFilter` lit sa définition.
   if (f.adventure !== undefined && !v.id && !!v.adventure !== f.adventure) return false;
   if (f.hasX !== undefined && !!v.hasX !== f.hasX) return false;
+  if (f.suspected !== undefined && !!v.suspected !== f.suspected) return false;
   if (f.minPower !== undefined && v.power < f.minPower) return false;
   if (f.attacking !== undefined && !!v.attacking !== f.attacking) return false;
   if (f.maxManaValue !== undefined && (v.manaValue ?? 0) > f.maxManaValue) return false;

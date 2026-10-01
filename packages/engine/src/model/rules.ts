@@ -187,6 +187,8 @@ export interface ObjectFilter {
   noCounters?: boolean;
   /** Du nom choisi par la source en arrivant (Petrified Hamlet : « les terrains du nom choisi »). */
   nameChosen?: boolean;
+  /** Suspect ou non (701.60 : « créature suspecte ciblée »). */
+  suspected?: boolean;
   /** Vous avez mis un marqueur sur lui ce tour-ci (Fractal Tender). */
   countersPutByYouThisTurn?: boolean;
   /** {X} dans son coût de mana (« un sort avec {X} dans son coût de mana » : Matterbending Mage, Paradox Surveyor). */

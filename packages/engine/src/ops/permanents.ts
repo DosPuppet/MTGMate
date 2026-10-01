@@ -69,6 +69,16 @@ export const HANDLERS: OpHandlers = {
     addPump(s, ids, evalAmount(s, ctx, e.power), evalAmount(s, ctx, e.toughness), e.keywords);
     return;
   },
+  suspect(s, _r, e, ctx) {
+    // 701.60 : seulement un permanent sur le champ de bataille.
+    for (const id of resolveRef(s, ctx, e.what)) {
+      const o = s.objects[id];
+      if (o?.zone !== "battlefield" || !!o.suspected === e.value) continue;
+      o.suspected = e.value || undefined;
+      bump(s);
+    }
+    return;
+  },
   modify(s, _r, e, ctx) {
     // Un sort sur la pile qui gagne un mot-clé (Spinerock Tyrant : « ces sorts gagnent la flétrissure ») : ses blessures
     // sont infligées avec les mots-clés de son instantané de source.

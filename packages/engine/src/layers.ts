@@ -465,6 +465,7 @@ function view(s: GameState, id: ObjectId, c: Characteristics, o: GameObject, att
     attacking,
     name: c.name,
     manaValue: scan && !scan.copying ? manaValue(s.defs[o.defId]?.manaCost) : viewManaValue(s, id, o),
+    suspected: o.suspected || undefined,
     // « un sort avec {X} dans son coût de mana » (Matterbending Mage).
     hasX: (!o.faceDown && (s.defs[o.faceDefId ?? o.defId]?.manaCost?.x ?? 0) > 0) || undefined,
     tapped: o.tapped,
@@ -869,6 +870,8 @@ function applyLayers(s: GameState, applied: Applied[], defOfId: (id: ObjectId) =
       const k = KEYWORD_COUNTERS[kind];
       if (k && n > 0 && !c.keywords.includes(k)) c.keywords.push(k);
     }
+    // 701.60c : un permanent suspect a la menace et « ne peut pas bloquer » tant qu'il est suspect.
+    if (obj(s, id).suspected) for (const k of ["menace", "cantBlock"] as const) if (!c.keywords.includes(k)) c.keywords.push(k);
     // 702.108 : une prouesse accordée (Bria) ou portée par un jeton (Loutre) a sa capacité déclenchée.
     if (c.keywords.includes("prowess") && !c.abilities.some((ab) => ab.kind === "triggered" && ab.label === "Prouesse")) {
       c.abilities = [...c.abilities, PROWESS];

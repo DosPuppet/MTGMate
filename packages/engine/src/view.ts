@@ -87,6 +87,8 @@ export interface ObjectView extends CardFace {
   } | null;
   /** Reality Fracture : permanent préparé (son sort peut être lancé depuis l'exil). */
   prepared?: boolean;
+  /** Murders at Karlov Manor : créature suspecte (menace, ne peut pas bloquer). */
+  suspected?: boolean;
   /** Classe : niveau atteint (au-delà de 1) ; Affaire : résolue. */
   classLevel?: number;
   solved?: boolean;
@@ -294,6 +296,7 @@ export function objectView(s: GameState, id: ObjectId): ObjectView {
     chosen: o.chosen ?? null,
     name: c.name,
     ...(o.preparedCopy && s.objects[o.preparedCopy] ? { prepared: true } : {}),
+    ...(o.suspected && o.zone === "battlefield" ? { suspected: true } : {}),
     ...(o.classLevel && o.classLevel > 1 ? { classLevel: o.classLevel } : {}),
     ...(o.solved ? { solved: true } : {}),
     ...(c.keywords.includes("ward") ? { ward: wardCost(c.abilities) } : {}),

@@ -784,6 +784,8 @@ export const fx = {
   countersAboveBase: (filter: ObjectFilter): Effect => ({ op: "countersAboveBase", filter }),
   /** Découverte N (701.57) ; `who` : « ce joueur découvre N » ; `store` : la carte découverte. */
   discover: (n: Amount, opts: { who?: Ref; store?: string } = {}): Effect => ({ op: "discover", n, ...opts }),
+  /** « Suspectez [la créature] » (701.60) ; `value: false` : « elle n'est plus suspecte ». */
+  suspect: (what: Ref, value = true): Effect => ({ op: "suspect", what, value }),
   /** Cascade (702.85) : `n` est la valeur de mana du sort qui a la cascade. */
   cascade: (n: Amount): Effect => ({ op: "discover", n, cascade: true }),
   /** « [créature] a la connivence » (701.50). */

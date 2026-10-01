@@ -3,10 +3,15 @@
  * texte Oracle (plan R, lot R7).
  */
 import { describe, expect, it } from "vitest";
+import { SUSPECTED } from "../../cards/src/mkm/common";
+import * as dsl from "../src/dsl";
 import { legalActions } from "../src/legal";
-import { chars } from "../src/state";
+import { chars, moveObject } from "../src/state";
+import { matchesObjectFilter } from "../src/targets";
+import { canBlock } from "../src/turn";
 import type { ChoiceRequest, ChoiceValue, GameState } from "../src/types";
-import { act, advanceUntil, idOf, idsOf, scenario } from "./helpers";
+import { projectView } from "../src/view";
+import { act, advanceUntil, customCard, idOf, idsOf, scenario } from "./helpers";
 
 type S = GameState;
 type Answer = (req: ChoiceRequest, player: string) => ChoiceValue[] | undefined;
@@ -234,5 +239,69 @@ describe("Murders at Karlov Manor", () => {
       expect(both.players.p1?.hand).toHaveLength(0);
       expect(both.players.p1?.graveyard).toHaveLength(2);
     });
+  });
+});
+
+describe("Murders at Karlov Manor, socle : suspect (701.60)", () => {
+  /** Créature de test : « en arrivant, suspectez jusqu'à une créature ciblée » ; {1} : « elle n'est plus suspecte ». */
+  const SUSPECTER = customCard({
+    name: "Enquêteur d'essai",
+    power: 1,
+    toughness: 1,
+    abilities: [
+      dsl.triggered(dsl.when.entersSelf, [dsl.fx.suspect(dsl.ref.target())], {
+        targets: [dsl.target.upTo(1, dsl.target.creature())],
+        label: "Suspectez une créature",
+      }),
+      dsl.activated({
+        mana: "{1}",
+        targets: [dsl.target.creature()],
+        effects: [dsl.fx.suspect(dsl.ref.target(), false)],
+        label: "Plus suspecte",
+      }),
+    ],
+  });
+
+  it("une créature suspecte a la menace et ne peut pas bloquer ; la vue le montre ; plus suspecte, elle peut bloquer", () => {
+    let s = scenario({
+      p1: { battlefield: ["Bear Cub", "Island"], hand: [SUSPECTER] },
+      p2: { battlefield: ["Bear Cub"] },
+    });
+    const theirs = idOf(s, "p2", "battlefield", "Bear Cub");
+    s = settle(cast(s, "p1", SUSPECTER.name), (req) =>
+      req.type === "pick" && req.options.includes(theirs) ? [theirs] : undefined,
+    );
+    expect(s.objects[theirs]?.suspected).toBe(true);
+    expect(chars(s, theirs).keywords).toEqual(expect.arrayContaining(["menace", "cantBlock"]));
+    expect(projectView(s, "p1").battlefield.find((o) => o.id === theirs)?.suspected).toBe(true);
+    // Elle ne peut pas bloquer notre Ours qui attaque.
+    const mine = idOf(s, "p1", "battlefield", "Bear Cub");
+    let c = advanceUntil(s, (x) => x.pending?.kind === "declareAttackers");
+    c = act(c, "p1", { type: "declareAttackers", attackers: [{ id: mine, defender: "p2" }] });
+    expect(canBlock(c, theirs, mine)).toBe(false);
+    // « Elle n'est plus suspecte » : elle bloque de nouveau, sans la menace.
+    const source = idOf(s, "p1", "battlefield", SUSPECTER.name);
+    const ab = legalActions(s, "p1").find((a) => a.type === "activate" && a.source === source);
+    s = settle(
+      act(s, "p1", { type: "activate", source, ability: ab?.type === "activate" ? ab.ability : -1, targets: { t: [theirs] } }),
+    );
+    expect(s.objects[theirs]?.suspected).toBeUndefined();
+    expect(chars(s, theirs).keywords).not.toContain("menace");
+    c = advanceUntil(s, (x) => x.pending?.kind === "declareAttackers");
+    c = act(c, "p1", { type: "declareAttackers", attackers: [{ id: mine, defender: "p2" }] });
+    expect(canBlock(c, theirs, mine)).toBe(true);
+  });
+
+  it("le filtre « créature suspecte » ; la désignation se perd en quittant le champ de bataille", () => {
+    const s = scenario({ p1: { battlefield: ["Bear Cub", "Llanowar Elves"] } });
+    const bear = idOf(s, "p1", "battlefield", "Bear Cub");
+    const elves = idOf(s, "p1", "battlefield", "Llanowar Elves");
+    const o = s.objects[bear];
+    if (o) o.suspected = true;
+    expect(matchesObjectFilter(s, "p1", bear, SUSPECTED)).toBe(true);
+    expect(matchesObjectFilter(s, "p1", elves, SUSPECTED)).toBe(false);
+    const back = moveObject(s, bear, "hand") as string;
+    const again = moveObject(s, back, "battlefield") as string;
+    expect(s.objects[again]?.suspected).toBeUndefined();
   });
 });

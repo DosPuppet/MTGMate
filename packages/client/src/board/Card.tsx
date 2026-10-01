@@ -189,6 +189,11 @@ export function Card({
                 Préparée
               </div>
             )}
+            {obj.suspected && (
+              <div className="suspected-badge" title="Suspecte : elle a la menace et ne peut pas bloquer">
+                Suspecte
+              </div>
+            )}
             {obj.sick && obj.types.includes("Creature") && (
               <div className="sick-badge" title="Mal d'invocation">
                 z

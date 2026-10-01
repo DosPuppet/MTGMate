@@ -161,6 +161,8 @@ export interface GameObject {
   suspended?: boolean;
   /** Tour où des marqueurs ont été mis sur lui pour la dernière fois (« la première fois ce tour-ci »). */
   countersPutTurn?: number;
+  /** Suspect (701.60, Murders at Karlov Manor) : menace et « ne peut pas bloquer » tant qu'il l'est. */
+  suspected?: boolean;
   /** Joueurs qui ont mis des marqueurs sur lui pendant le tour `countersPutTurn` (Fractal Tender). */
   countersPutBy?: PlayerId[];
   /** A déjà infligé des blessures, de combat ou non (Karakyk Guardian). */
@@ -549,6 +551,8 @@ export interface LkiSnapshot {
   manaValue?: number;
   /** {X} dans son coût de mana (Matterbending Mage, Paradox Surveyor). */
   hasX?: boolean;
+  /** Suspect (701.60). */
+  suspected?: boolean;
   /** Sort qui a une Aventure (créature ou Aventure d'une carte à Aventure ; Beluna Grandsquall). */
   adventure?: boolean;
   tapped?: boolean;

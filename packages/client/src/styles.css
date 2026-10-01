@@ -1896,6 +1896,21 @@ button {
   pointer-events: none;
   z-index: 2;
 }
+.suspected-badge {
+  position: absolute;
+  top: 32%;
+  left: 50%;
+  translate: -50% 0;
+  padding: 1px 8px;
+  border-radius: 10px;
+  background: rgba(150, 40, 40, 0.92);
+  border: 1px solid #ff9c9c;
+  color: #ffecec;
+  font-size: 11px;
+  font-weight: 700;
+  pointer-events: none;
+  z-index: 2;
+}
 .preview-prepare {
   margin-top: 8px;
   padding-top: 8px;

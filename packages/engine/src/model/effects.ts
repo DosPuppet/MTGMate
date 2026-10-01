@@ -69,6 +69,8 @@ export type Effect =
   | { op: "removeCounters"; what: Ref; n: Amount; kind?: string; store?: string }
   /** « Vous pouvez jouer un terrain supplémentaire ce tour-ci. » */
   | { op: "extraLandThisTurn" }
+  /** Suspecter / ne plus suspecter (701.60). */
+  | { op: "suspect"; what: Ref; value: boolean }
   /** Devient préparé / dé-préparé (Reality Fracture). */
   | { op: "prepare"; what?: Ref; filter?: ObjectFilter; value: boolean }
   | { op: "damage"; amount: Amount; to: Ref; source?: Ref; storeExcess?: string }
