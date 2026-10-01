@@ -303,6 +303,10 @@ Dans l'ordre où elles ont été ajoutées, extension par extension.
   - `règle` Living Conundrum : « si votre bibliothèque est vide » est jugé une fois pour toute une pioche de plusieurs cartes ;
   - `choix auto` Agency Outfitter : chaque nom est cherché dans le cimetière, puis la main, puis la bibliothèque (ordre fixe) ;
   - `règle` Outrageous Robbery : les cartes sont exilées face visible ;
-  - `règle` Illicit Masquerade : « une autre carte de créature ciblée » n'exclut pas la créature morte (la cibler ne ramène rien).
+  - `règle` Illicit Masquerade : « une autre carte de créature ciblée » n'exclut pas la créature morte (la cibler ne ramène rien) ;
+  - `règle` Connecting the Dots : la carte est exilée face visible ; « défaussez votre main » se fait à la résolution, et non en payant le coût ;
+  - `règle` Krenko's Buzzcrusher : les terrains non-base sont ciblés (au plus un par joueur) ; celui qui cherche est le propriétaire du terrain détruit ;
+  - `règle` Expedited Inheritance : « son contrôleur » d'une créature morte est son propriétaire ;
+  - `règle` Anzrag's Rampage : « les artefacts que vous ne contrôlez pas » sont ceux de vos adversaires.
 - **Légalité Standard :** instantané des légalités Scryfall au moment de l'import (`legalities.standard` dans `data/<set>.json`). Après une rotation ou une annonce de bannissement, réimporter les sets (`npm run import-cards -- <set>`).
 - **Images des jetons :** celle du jeton Scryfall le plus proche (même nom, puis mêmes F/E et couleurs ; `data/tokens.json`, `npm run import-tokens`) ; un jeton de nom inconnu garde le cadre texte.

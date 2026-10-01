@@ -43,3 +43,9 @@ Les scripts sont dans `packages/cards/src/mkm/` : `cards` (cartes du méta), `wh
 - **Cartes :** 33 (sur 35), dont le suspect (Barbed Servitor, Hunted Bonebrute, Repeat Offender…), le déguisement, les Affaires (Case of the Gorgon's Kiss, Case of the Stashed Skeleton), réunir des preuves (Extract a Confession, Leering Onlooker…), Massacre Girl, Known Killer, Outrageous Robbery.
 - **Restent :** Polygraph Orb (réunir des preuves en coût de capacité), Vein Ripper (garde « sacrifiez une créature »).
 - **Tests :** 42 tests de règles (« lot A — noir »).
+
+## Sous-lot A4 : cartes rouges ✅ (129 / 268)
+
+- **Cartes :** 28 (sur 35), dont le suspect (Convenient Target, Person of Interest, Reckless Detective…), les Affaires (Case of the Crimson Pulse), le déguisement, Krenko, Baron of Tin Street, Innocent Bystander (condition du déclencheur sur les blessures subies, grâce au correctif du lot A1).
+- **Restent :** Case of the Burning Masks (sources distinctes qui ont infligé des blessures), Demand Answers (« défaussez une carte ou sacrifiez un artefact »), Expose the Culprit (« avec le déguisement », exiler puis envelopper d'une cape), Fugitive Codebreaker (coût de déguisement réduit), Goblin Maskmaker (réduction des sorts face cachée ce tour-ci), Incinerator of the Guilty et Lamplight Phoenix (« vous pouvez réunir des preuves »).
+- **Tests :** 34 tests de règles (« lot A — rouge »).
