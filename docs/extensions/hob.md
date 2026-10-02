@@ -32,3 +32,10 @@ Les scripts sont dans `packages/cards/src/hob/` : `cards` (cartes du méta), `wh
 - **Moteur :** rien de nouveau.
 - **Reste pour plus tard :** Elrond, Moon-Reader (activer une capacité d'une créature), Master's Councillors (nombre de cimetières de N cartes ou plus), Thranduil's Decree (la carte exilée par le contresort, lançable ensuite).
 - **Tests :** 33 tests de règles (« lot A, bleu »).
+
+## Sous-lot A3 : cartes noires ✅ (87 / 188)
+
+- **Cartes (18) :** Along the Crooked Way, Bilbo's Deadly Slice, Crude Bent Blade, Down, Down to Goblin-town, Dreaded Bat-Cloud, Front Porch Sentries, Gathering of Darkness, Gnashing of Teeth, Gollum, Silent Slinker, Meager Meal, Gollum the Abandoned, Great Fierce Bee, Great Ugly-Looking Goblin, Clap! Snap!, Rage into the Valley, Ravening Warg, Reverent Howl, Rhovanion Rampager, Stir Up Trouble, Stony-Voiced Goblins.
+- **Moteur :** rien de nouveau.
+- **Reste pour plus tard :** Inside Information (permission de jouer en payant des PV égaux à la valeur de mana), The Master of Lake-town (nombre de cimetières de sept cartes ou plus), Supper for Spiders (« mises dans un cimetière depuis le champ de bataille ce tour-ci »).
+- **Tests :** 29 tests de règles (« lot A, noir »).
