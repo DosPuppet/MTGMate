@@ -9,6 +9,7 @@ import {
   fx,
   modal,
   mode,
+  playerStatic,
   ref,
   spell,
   staticAbility,
@@ -330,6 +331,18 @@ export const RED: Record<string, CardScript> = {
     abilities: [
       activated({
         mana: "{5}{R}",
+        powerUp: true,
+        effects: [fx.addCounters(ref.self, 2)],
+        label: "Montée en puissance : deux marqueurs +1/+1",
+      }),
+    ],
+  },
+  // Vol : lu dans le texte.
+  "Wonder Man, Hollywood Hero": {
+    abilities: [
+      playerStatic({ powerUpExtraUses: 1, label: "Vos montées en puissance peuvent être activées une fois de plus" }),
+      activated({
+        mana: "{5}{R}{R}",
         powerUp: true,
         effects: [fx.addCounters(ref.self, 2)],
         label: "Montée en puissance : deux marqueurs +1/+1",

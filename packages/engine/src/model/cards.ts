@@ -822,7 +822,7 @@ export interface TriggerMod {
  */
 export interface AbilityCostMod {
   /** Capacités concernées : exhaust, Équiper, déverrouiller une porte, comploter ; sinon toutes. */
-  ability?: "exhaust" | "equip" | "unlock" | "plot";
+  ability?: "exhaust" | "equip" | "unlock" | "plot" | "powerUp";
   /** Sources concernées (Mutagen Man : vos jetons d'artefact). */
   source?: ObjectFilter;
   /** Pas les capacités de la source de la statique (Boom Scholar : « vos autres permanents »). */
@@ -954,6 +954,8 @@ export interface PlayerStaticAbilityDef {
   auraStealsCheaper?: boolean;
   /** Elvish Refueler : pendant votre tour, tant qu'aucune capacité d'exhaust n'a été activée, elles sont réactivables. */
   exhaustReuse?: boolean;
+  /** Wonder Man, Hollywood Hero : chaque montée en puissance de vos permanents peut être activée N fois de plus. */
+  powerUpExtraUses?: number;
   /** Récit durable (Storied, Le Hobbit) : acquis pour le reste de la partie (effet de joueur permanent). */
   enduringStory?: boolean;
   /** Ral Zarek : « passe son prochain tour » (un effet par tour passé, consommé). */

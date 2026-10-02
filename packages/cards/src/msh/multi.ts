@@ -557,4 +557,19 @@ export const MULTI: Record<string, CardScript> = {
       ),
     ],
   },
+  // Portée et piétinement : lus dans le texte.
+  "Hulk, Gamma Goliath": {
+    abilities: [
+      playerStatic({
+        abilityCost: { ability: "powerUp", notSelf: true, reduce: 3, source: { types: ["Creature"] } },
+        label: "Les montées en puissance de vos autres créatures coûtent {3} de moins",
+      }),
+      activated({
+        mana: "{6}{R}{G}",
+        powerUp: true,
+        effects: [fx.addCounters(ref.self, 5)],
+        label: "Montée en puissance : cinq marqueurs +1/+1",
+      }),
+    ],
+  },
 };

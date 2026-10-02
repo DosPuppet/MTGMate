@@ -84,3 +84,13 @@ Les scripts sont dans `packages/cards/src/msh/` : `cards` (cartes du méta), `wh
   - l'événement d'engagement porte sa cause (`cause: "teamwork"` : engagé pour payer un travail d'équipe) et dit s'il s'agit du premier engagement du tour (`tapsThisTurn`) ; le déclencheur `{ on: "taps", cause, firstThisTurn }`.
 - **Version des règles :** 49.
 - **Tests :** 4 tests de règles (« lot B2 »).
+
+## Sous-lot B3 : montée en puissance ✅ (247 / 271)
+
+- **Cartes (2) :** Hulk, Gamma Goliath, Wonder Man, Hollywood Hero.
+- **Le moteur gagne :**
+  - `abilityCost: { ability: "powerUp" }` : les modificateurs de coût des capacités visent les montées en puissance (Hulk : « celles de vos autres créatures coûtent {3} de moins ») ;
+  - les capacités à usage unique comptent leurs activations ; `powerUpExtraUses` permet d'activer chaque montée en puissance N fois de plus (Wonder Man ; entrée de dette justifiée).
+- **Approximation conservée :** Kang the Conqueror (« pendant ce tour, les montées en puissance ne peuvent pas être activées » : un tour supplémentaire ne porte pas encore d'effet).
+- **Version des règles :** 50.
+- **Tests :** 2 tests de règles (« lot B3 »).

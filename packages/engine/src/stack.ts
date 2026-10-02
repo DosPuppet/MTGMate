@@ -778,7 +778,8 @@ function abilityCostReduction(s: GameState, player: PlayerId, source: ObjectId, 
     (m.ability === "exhaust" && !!ab.exhaust) ||
     (m.ability === "equip" && !!ab.equip) ||
     (m.ability === "unlock" && !!ab.specialAction && ab.effects.some((e) => e.op === "unlockDoor")) ||
-    (m.ability === "plot" && ab.effects.some((e) => e.op === "plot"));
+    (m.ability === "plot" && ab.effects.some((e) => e.op === "plot")) ||
+    (m.ability === "powerUp" && !!ab.powerUp);
   let n = 0;
   for (const { id, ab: x } of playerStatics(s, player, "abilityCost")) {
     const m = x.abilityCost;
@@ -862,6 +863,18 @@ export function abilityReduction(s: GameState, player: PlayerId, source: ObjectI
   // « Cette capacité coûte {N} de moins à activer » (Starport Security, Survey Mechan, The Dominion Bracelet).
   if (red.condition && !checkCondition(s, red.condition, player, source)) return 0;
   return -tax + Math.max(0, evalAmount(s, reductionContext(player, source, s.objects[source]?.defId ?? ""), red.generic));
+}
+
+/**
+ * Capacité à usage unique encore disponible : pas encore activée, ou moins de fois que permis (Wonder Man, Hollywood
+ * Hero : « chaque montée en puissance des permanents que vous contrôlez peut être activée une fois de plus »).
+ */
+function onceAvailable(s: GameState, o: GameObject, ab: ActivatedAbilityDef, index: number): boolean {
+  const uses = (o.used ?? []).filter((i) => i === index).length;
+  const extra = ab.powerUp
+    ? playerStatics(s, o.controller, "powerUpExtraUses").reduce((n, { ab: x }) => n + (x.powerUpExtraUses ?? 0), 0)
+    : 0;
+  return uses < 1 + extra;
 }
 
 /** Elvish Refueler : pendant votre tour, tant qu'aucune capacité d'exhaust n'a été activée ce tour-ci. */
@@ -2061,7 +2074,7 @@ export function canPayNonManaCost(s: GameState, source: ObjectId, ab: ActivatedA
   const o = s.objects[source];
   if (!o || o.zone !== abilityZone(ab)) return false;
   if (o.zone === "battlefield" && !ab.specialAction && chars(s, source).keywords.includes("noActivatedAbilities")) return false;
-  if (ab.once && o.used?.includes(index) && !exhaustReusable(s, o.controller, ab)) return false;
+  if (ab.once && !onceAvailable(s, o, ab, index) && !exhaustReusable(s, o.controller, ab)) return false;
   if (o.zone === "battlefield" && abilitiesLocked(s, o.controller, source)) return false;
   if (ab.oncePerTurn && o.activatedTurn?.[index] === s.turn.number) return false;
   const who = abilityZone(ab) !== "battlefield" ? o.owner : o.controller;
@@ -2249,7 +2262,8 @@ export function activateAbility(s: GameState, player: PlayerId, source: ObjectId
     if (pl) pl.turnStats.loyaltyActivations += 1;
     rulesEvent(s, { e: "loyalty", player, sourceId: source, cost });
   }
-  if (ab.once && !o.used?.includes(index)) o.used = [...(o.used ?? []), index];
+  // Une entrée par activation : Wonder Man permet une activation de plus des montées en puissance.
+  if (ab.once) o.used = [...(o.used ?? []), index];
   if (ab.exhaust) {
     const pl = s.players[player];
     const stats = pl?.turnStats;

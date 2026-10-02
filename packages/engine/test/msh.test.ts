@@ -4288,3 +4288,23 @@ describe("lot B2 : marqueurs de bouclier ; B3 : engagements", () => {
     expect(s.objects[bear]?.tapsThisTurn).toBe(1);
   });
 });
+
+describe("lot B3 : montée en puissance", () => {
+  it("Hulk, Gamma Goliath : les montées en puissance de vos autres créatures coûtent {3} de moins (pas la sienne)", () => {
+    // Human Torch : montée en puissance {6}{R} ; avec Hulk, {3}{R}.
+    const s = scenario({ p1: { battlefield: ["Hulk, Gamma Goliath", "Human Torch, Johnny Storm", ...lands("Mountain", 4)] } });
+    const torch = idOf(s, "p1", "battlefield", "Human Torch, Johnny Storm");
+    const hulk = idOf(s, "p1", "battlefield", "Hulk, Gamma Goliath");
+    expect(ability(s, "p1", torch, /Montée en puissance/)).toBeDefined();
+    expect(ability(s, "p1", hulk, /Montée en puissance/)).toBeUndefined();
+  });
+
+  it("Wonder Man, Hollywood Hero : chaque montée en puissance peut être activée une fois de plus (deux fois, pas trois)", () => {
+    let s = scenario({ p1: { battlefield: ["Wonder Man, Hollywood Hero", ...lands("Mountain", 21)] } });
+    const wonder = idOf(s, "p1", "battlefield", "Wonder Man, Hollywood Hero");
+    s = settle(activate(s, "p1", wonder, {}, /Montée en puissance/));
+    s = settle(activate(s, "p1", wonder, {}, /Montée en puissance/));
+    expect(s.objects[wonder]?.counters["+1/+1"]).toBe(4);
+    expect(ability(s, "p1", wonder, /Montée en puissance/)).toBeUndefined();
+  });
+});

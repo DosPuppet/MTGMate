@@ -132,8 +132,10 @@ export const RECORD_VERSION = 1;
  * - 48 : Marvel Super Heroes, lot B1 : improvisation (702.126), imprimée ou donnée aux sorts du joueur.
  * - 49 : Marvel Super Heroes, lot B2 : marqueurs de bouclier (122.1c : blessures et destruction remplacées par le retrait
  *   d'un marqueur) ; l'engagement d'un permanent est noté (cause « travail d'équipe », premier engagement du tour).
+ * - 50 : Marvel Super Heroes, lot B3 : réductions du coût des montées en puissance ; usages comptés des capacités à
+ *   usage unique (Wonder Man : une activation de plus).
  */
-export const RULES_VERSION = 49;
+export const RULES_VERSION = 50;
 
 /** Un point de contrôle toutes les N décisions (plus la dernière de la partie). */
 export const CHECKPOINT_EVERY = 25;
