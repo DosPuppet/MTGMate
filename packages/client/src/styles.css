@@ -342,6 +342,13 @@ button {
   border-radius: 20px;
   border: 1px solid var(--line);
 }
+/* Mana réservé à certains sorts (« ne dépensez ce mana que pour… ») : en retrait, souligné en pointillé. */
+.mana-restricted {
+  margin-left: 6px;
+  padding-bottom: 2px;
+  border-bottom: 2px dotted var(--gold, #d4a24c);
+  opacity: 0.85;
+}
 .opp-hand {
   display: flex;
   margin-left: 10px;

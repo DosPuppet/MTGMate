@@ -467,3 +467,15 @@ describe("correctifs du lot A de Teenage Mutant Ninja Turtles", () => {
     expect(idsOf(s, "p2", "battlefield", "Bear Cub")).toHaveLength(1);
   });
 });
+
+describe("correctifs du lot A de The Hobbit", () => {
+  it("106.6 : un mana restreint produit à la main va dans la réserve restreinte, pas dans la réserve libre", () => {
+    let s = scenario({ p1: { battlefield: ["Castle Doom"], hand: ["Bear Cub"] } });
+    const castle = idOf(s, "p1", "battlefield", "Castle Doom");
+    // Deuxième capacité de mana : une couleur, seulement pour un sort d'artefact.
+    s = act(s, "p1", { type: "tapForMana", source: castle, ability: 1, color: "G" });
+    expect(s.players.p1?.manaPool.G).toBe(0);
+    expect(s.players.p1?.restrictedMana).toEqual([{ type: "G", restriction: { spell: { types: ["Artifact"] } } }]);
+    expect(legalActions(s, "p1").some((a) => a.type === "cast" && a.card === idOf(s, "p1", "hand", "Bear Cub"))).toBe(false);
+  });
+});

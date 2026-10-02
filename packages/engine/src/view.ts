@@ -132,6 +132,8 @@ export interface PlayerView {
   handCount: number;
   graveyard: ObjectView[];
   manaPool: Record<ManaType, number>;
+  /** Mana restreint de la réserve (« ne dépensez ce mana que pour… »), par type ; absent s'il n'y en a pas. */
+  restrictedMana?: ManaType[];
   lost: boolean;
   /** Emblèmes (zone de commandement). */
   emblems: { name: string; text: string }[];
@@ -360,6 +362,7 @@ export function projectView(s: GameState, viewer: PlayerId): GameView {
       ...(pl.poison ? { poison: pl.poison } : {}),
       graveyard: pl.graveyard.map((id) => objectView(s, id)),
       manaPool: { ...pl.manaPool },
+      ...(pl.restrictedMana?.length ? { restrictedMana: pl.restrictedMana.map((m) => m.type) } : {}),
       lost: pl.lost,
       emblems: pl.command.map((id) => {
         const d = s.defs[obj(s, id).defId];

@@ -46,3 +46,9 @@ Les scripts sont dans `packages/cards/src/hob/` : `cards` (cartes du méta), `wh
 - **Moteur :** rien de nouveau.
 - **Reste pour plus tard :** Getaway Barrel (une carte de créature au hasard parmi les cartes révélées).
 - **Tests :** 35 tests de règles (« lot A, rouge »).
+
+## Sous-lot A5 : cartes vertes ✅ (139 / 188)
+
+- **Cartes (27) :** Attercop, Bejeweled Warg, Beorn, Reluctant Host, Till and Tend, Beorn the Fierce, Beorn's Hospitality, Boughside Wanderers, Cantankerous Keepers, Dancing from Dark to Dawn, Down in the Valley, Galion, Elvenking's Butler, Gigantic Big Bear, Guardian of the Halls, Little Bear, Mirkwood Pathmaker, Nasty Little Rabbit, The Notary Hobbits, Old Fat Spider, Part in Friendship, Quarrel, Radagast of Rhosgobel, Through the Forest Gate, Troll Negotiations, Warg Tactics, Wargling, Wilderland Scrounger, Wood Elves, Woodland Weavemaster.
+- **Correctif du moteur :** une capacité de mana restreinte (« ne dépensez ce mana que pour… ») engagée à la main versait son mana dans la réserve libre ; il va désormais dans la réserve restreinte, comme pendant un paiement automatique (Woodland Weavemaster, Castle Doom… ; test dans `rulings.test.ts`). La réserve affichée montre ce mana réservé, souligné en pointillé (`PlayerView.restrictedMana`, vérifié dans le navigateur). `RULES_VERSION` = 57, parties dorées régénérées.
+- **Tests :** 36 tests de règles (« lot A, vert ») et un dans `rulings.test.ts`.

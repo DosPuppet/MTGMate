@@ -29,14 +29,20 @@ import { StackReveal } from "./StackReveal";
 // Joueurs
 // ---------------------------------------------------------------------------
 
-function ManaPool({ pool }: { pool: PlayerView["manaPool"] }) {
+function ManaPool({ pool, restricted }: { pool: PlayerView["manaPool"]; restricted?: PlayerView["restrictedMana"] }) {
   const cost = Object.entries(pool)
     .flatMap(([m, n]) => Array(n).fill(`{${m}}`))
     .join("");
-  if (!cost) return null;
+  const reserved = (restricted ?? []).map((m) => `{${m}}`).join("");
+  if (!cost && !reserved) return null;
   return (
     <div className="mana-pool" title="Réserve de mana">
-      <ManaCost cost={cost} size={18} />
+      {cost && <ManaCost cost={cost} size={18} />}
+      {reserved && (
+        <span className="mana-restricted" title="Mana réservé à certains sorts ou capacités">
+          <ManaCost cost={reserved} size={18} />
+        </span>
+      )}
     </div>
   );
 }
@@ -163,7 +169,7 @@ function PlayerBar({ player, isMe }: { player: PlayerView; isMe: boolean }) {
           ))}
         </div>
       </div>
-      <ManaPool pool={player.manaPool} />
+      <ManaPool pool={player.manaPool} restricted={player.restrictedMana} />
     </div>
   );
 }

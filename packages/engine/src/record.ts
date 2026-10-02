@@ -155,8 +155,10 @@ export const RECORD_VERSION = 1;
  *   la bibliothèque arrondie au supérieur ; couleur choisie figée dans un effet « devient de la couleur choisie » ;
  *   faufilement donné depuis le cimetière ; sorts ciblant vos permanents ; réduction du prochain sort ; marqueurs d'un
  *   sort lancé du dessus de la bibliothèque ; sacrifice qui inclut la source ; cartes homonymes du cimetière.
+ * - 57 : The Hobbit, lot A : un mana restreint produit à la main va dans la réserve restreinte ; le choix d'un type de
+ *   créature propose aussi les types des jetons que créent les cartes de la partie.
  */
-export const RULES_VERSION = 56;
+export const RULES_VERSION = 57;
 
 /** Un point de contrôle toutes les N décisions (plus la dernière de la partie). */
 export const CHECKPOINT_EVERY = 25;

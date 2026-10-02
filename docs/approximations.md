@@ -421,5 +421,6 @@ Dans l'ordre où elles ont été ajoutées, extension par extension.
   - `règle` Old Fat Spider Can't See Me : au chapitre II, la prévention est une capacité donnée à la créature, tant que la Saga reste.
   - `règle` Plunder the Trollshaws : « lancé depuis un cimetière » ne reconnaît que le flashback et les permissions qui exilent ensuite.
   - `règle` Flameshape (Gandalf, Goblins' Bane) : les deux cartes sont exilées face visible (et non face cachée).
+  - `règle` Galion, Elvenking's Butler : « ses F/E de base deviennent celles de Galion » donne des F/E de base X/X (la force de Galion), puis corrige l'endurance d'un bonus ; un effet ultérieur qui fixe les F/E de base garderait ce bonus.
 - **Légalité Standard :** instantané des légalités Scryfall au moment de l'import (`legalities.standard` dans `data/<set>.json`). Après une rotation ou une annonce de bannissement, réimporter les sets (`npm run import-cards -- <set>`).
 - **Images des jetons :** celle du jeton Scryfall le plus proche (même nom, puis mêmes F/E et couleurs ; `data/tokens.json`, `npm run import-tokens`) ; un jeton de nom inconnu garde le cadre texte.

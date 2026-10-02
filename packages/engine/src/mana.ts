@@ -382,7 +382,15 @@ export function manaSources(
   return out.sort((a, b) => rank(a) - rank(b) || a.colors.length - b.colors.length);
 }
 
-export function activateManaAbility(s: GameState, player: PlayerId, id: ObjectId, ability: number, color?: ManaType): void {
+/** `forPayment` : le paiement automatique d'un coût, dont le solveur a vérifié la restriction (mana versé dans la réserve). */
+export function activateManaAbility(
+  s: GameState,
+  player: PlayerId,
+  id: ObjectId,
+  ability: number,
+  color?: ManaType,
+  forPayment = false,
+): void {
   const o = s.objects[id];
   if (!o || o.controller !== player) throw new RulesError("Vous ne contrôlez pas cette source");
   const ab = manaAbilitiesOf(s, id)[ability];
@@ -397,7 +405,8 @@ export function activateManaAbility(s: GameState, player: PlayerId, id: ObjectId
     !ab.cost.sacrificeSelf &&
     !ab.cost.payLife &&
     !ab.addCounter &&
-    !ab.removeCounter;
+    !ab.removeCounter &&
+    !ab.restriction;
   const triggersBefore = s.triggers.length;
   const poolBefore = s.players[player]?.manaPool[c] ?? 0;
   if (ab.cost.tap) tapObject(s, o);
@@ -411,7 +420,14 @@ export function activateManaAbility(s: GameState, player: PlayerId, id: ObjectId
   if (ab.addCounter && s.objects[id]?.zone === "battlefield") changeCounters(s, o, ab.addCounter, 1);
   if (ab.removeCounter && (o.counters[ab.removeCounter] ?? 0) > 0) changeCounters(s, o, ab.removeCounter, -1);
   const pool = s.players[player]?.manaPool;
-  if (pool) pool[c] += manaAmount(s, id, ab);
+  const pl = s.players[player];
+  // Mana restreint (« ne dépensez ce mana que pour… », Woodland Weavemaster) : il va dans la réserve restreinte, comme
+  // quand le moteur paie un coût avec cette source.
+  const restriction = forPayment ? undefined : ab.restriction;
+  if (restriction && pl) {
+    const n = manaAmount(s, id, ab);
+    pl.restrictedMana = [...(pl.restrictedMana ?? []), ...Array.from({ length: n }, () => ({ type: c, restriction }))];
+  } else if (pool) pool[c] += manaAmount(s, id, ab);
   // Mana en plus d'un autre type (Shimmerwilds Growth : la couleur choisie) ou seulement pour ce type (Ultima : {C}).
   let otherBonus = false;
   for (const a of manaReplacements(s, id, ab)) {
@@ -650,7 +666,7 @@ export function payMana(
       emit({ type: "moved", owner: o.owner, objectId: t.id, defId: o.defId, from: "graveyard", to: "exile" });
       moveObject(s, t.id, "exile");
       pool.C += 1;
-    } else activateManaAbility(s, player, t.id, t.ability, t.color);
+    } else activateManaAbility(s, player, t.id, t.ability, t.color, true);
   }
   const pl = s.players[player];
   if (pl?.restrictedMana && usedRestricted.size) {
