@@ -1421,6 +1421,8 @@ export function activated(opts: {
   linkEvidence?: boolean;
   /** Maîtrise de l'eau (Avatar) : le coût de mana est un coût « waterbend » (artefacts et créatures dégagés : {1} chacun). */
   waterbend?: boolean;
+  /** « X ne peut pas être 0 » : plus petite valeur de X permise. */
+  minX?: number;
   /** « Engagez X [artefacts] dégagés que vous contrôlez ». */
   tapX?: ObjectFilter;
   /** « Exilez X cartes [d'artefact] de votre cimetière ». */
@@ -1465,6 +1467,7 @@ export function activated(opts: {
       collectEvidence: opts.collectEvidence,
       linkEvidence: opts.linkEvidence,
       waterbend: opts.waterbend,
+      minX: opts.minX,
       tapX: opts.tapX,
       exileFromGraveyardX: opts.exileFromGraveyardX,
       sacrificeX: opts.sacrificeX,

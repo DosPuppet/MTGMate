@@ -71,6 +71,7 @@ export const LEGENDS4: Record<string, CardScript> = {
       activated({
         mana: "{X}{X}",
         tap: true,
+        minX: 1,
         targets: [
           {
             id: "t",
@@ -78,7 +79,7 @@ export const LEGENDS4: Record<string, CardScript> = {
             filter: { stackItems: { abilitiesOnly: true } },
           } satisfies TargetSpec,
         ],
-        effects: [fx.when(cond.xAtLeast(1), fx.copySpell(ref.target(), amount.x))],
+        effects: [fx.copySpell(ref.target(), amount.x)],
         label: "Copiez une capacité X fois",
       }),
     ],

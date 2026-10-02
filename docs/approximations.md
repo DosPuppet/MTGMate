@@ -336,5 +336,15 @@ Dans l'ordre où elles ont été ajoutées, extension par extension.
   - `timing` Elemental Teachings : les cartes trouvées passent par votre main (révélées), puis l'adversaire en choisit deux ;
   - `règle` Unlucky Cabbage Merchant : le marchand est remis dans la bibliothèque de son propriétaire, qui est mélangée ;
   - `règle` Raucous Audience : deux capacités de mana, chacune sous sa condition.
+  - `règle` Azula, Cunning Usurper : les cartes exilées se lancent pendant votre tour avec du mana de n'importe quel type, mais sans le flash ;
+  - `règle` Bumi, Unleashed : « seules les créatures-terrains peuvent attaquer pendant ce combat » interdit d'attaquer, jusqu'à la fin du tour, aux créatures non-terrains présentes à la résolution ;
+  - `règle` Dragonfly Swarm : les cartes « non-créature, non-terrain » sont les artefacts, enchantements, éphémères, rituels, planeswalkers et batailles (une créature-artefact est comptée à tort : les F/E définies par une capacité ne lisent pas les types exclus) ;
+  - `règle` Hermitic Herbalist : les deux mana sont d'une même couleur (et non « toute combinaison de couleurs »), comme Flamebraider ;
+  - `règle` Iroh, Tea Master : « les permanents que vous possédez et que vos adversaires contrôlent » sont ceux qu'un adversaire contrôle sans les posséder (exact en duel) ;
+  - `règle` Zuko, Conflicted (quatrième chapitre) : Zuko revient sous votre contrôle, puis passe sous celui du premier adversaire ;
+  - `timing` Fire Lord Azula : « tant qu'elle attaque » est revérifié à la résolution ;
+  - `timing` Bender's Waterskin : il se dégage au début de l'entretien de chaque autre joueur (capacité déclenchée), et non pendant son étape de dégagement ;
+  - `règle` Trusty Boomerang : la capacité « {1}, {T} : engagez une créature ciblée, renvoyez le Boomerang » est portée par l'Équipement (elle reste si la créature équipée perd ses capacités) ;
+  - `règle` Aang's Journey (kické) : deux recherches, donc deux mélanges.
 - **Légalité Standard :** instantané des légalités Scryfall au moment de l'import (`legalities.standard` dans `data/<set>.json`). Après une rotation ou une annonce de bannissement, réimporter les sets (`npm run import-cards -- <set>`).
 - **Images des jetons :** celle du jeton Scryfall le plus proche (même nom, puis mêmes F/E et couleurs ; `data/tokens.json`, `npm run import-tokens`) ; un jeton de nom inconnu garde le cadre texte.

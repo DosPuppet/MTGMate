@@ -98,7 +98,8 @@ export function buildCastDecision(
           source: a.source,
           ability: a.ability,
           targets: targetsFrom(a.targets),
-          x: a.xMax === null ? undefined : Math.floor(rand() * (a.xMax + 1)),
+          // « X ne peut pas être 0 » : X tiré entre son minimum et son maximum.
+          x: a.xMax === null ? undefined : (a.xMin ?? 0) + Math.floor(rand() * (a.xMax - (a.xMin ?? 0) + 1)),
           tap: tap ? picked : undefined,
         },
         a.targets,

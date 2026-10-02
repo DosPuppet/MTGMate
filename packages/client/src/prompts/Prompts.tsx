@@ -94,14 +94,14 @@ function PendingPrompt({ view }: { view: GameView }) {
   }
 }
 
-function XPicker({ max }: { max: number }) {
+function XPicker({ max, min = 0 }: { max: number; min?: number }) {
   const chooseX = useGame((s) => s.chooseX);
   const cancel = useGame((s) => s.cancel);
   const [x, setX] = useState(max);
   return (
     <Modal title="Choisissez la valeur de X">
       <div className="x-picker">
-        <input type="range" min={0} max={max} value={x} onChange={(e) => setX(Number(e.target.value))} />
+        <input type="range" min={min} max={max} value={x} onChange={(e) => setX(Number(e.target.value))} />
         <span className="x-value">X = {x}</span>
       </div>
       <div className="modal-actions">
@@ -292,7 +292,8 @@ function CastingPrompt() {
       </Modal>
     );
   }
-  if (casting.stage === "x" && opt.xMax !== null) return <XPicker max={opt.xMax} />;
+  if (casting.stage === "x" && opt.xMax !== null)
+    return <XPicker max={opt.xMax} min={opt.type === "activate" ? (opt.xMin ?? 0) : 0} />;
   if (casting.stage === "target" && casting.spec && view) {
     const onBoard = new Set([...view.battlefield.map((o) => o.id), ...Object.keys(view.players), ...view.stack.map((x) => x.id)]);
     if (casting.spec.legal.some((id) => !onBoard.has(id))) return <TargetCardPicker />;

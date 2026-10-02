@@ -241,6 +241,8 @@ export type ActionOption =
       label?: string;
       targets: TargetOption[];
       xMax: number | null;
+      /** Plus petite valeur de X permise (« X ne peut pas être 0 »). */
+      xMin?: number;
       additional?: {
         sacrifice?: { count: number; options: ObjectId[] };
         /**

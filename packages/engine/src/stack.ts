@@ -2050,6 +2050,7 @@ export function activateAbility(s: GameState, player: PlayerId, source: ObjectId
   // Krumar Initiate : « payez X points de vie ».
   if (ab.cost.payLifeX && (s.players[player]?.life ?? 0) < x) throw new RulesError("Pas assez de points de vie");
   if (ab.cost.sacrificeX && x < 1) throw new RulesError("Sacrifiez au moins un permanent");
+  if (ab.cost.minX !== undefined && x < ab.cost.minX) throw new RulesError(`X doit valoir au moins ${ab.cost.minX}`);
   if (ab.cost.loyaltyX && x > (o.counters.loyalty ?? 0)) throw new RulesError("Pas assez de marqueurs de loyauté");
   const c = chars(s, source);
   // Action spéciale (116.2, déverrouiller une porte) : les coûts sont payés, les effets s'appliquent sans la pile.

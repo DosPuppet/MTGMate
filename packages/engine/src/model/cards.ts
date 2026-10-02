@@ -433,6 +433,8 @@ export interface CostDef {
    * dégagé que vous contrôlez peut être engagé pour payer {1} (choisi par le solveur, comme la convocation).
    */
   waterbend?: boolean;
+  /** « X ne peut pas être 0 » : plus petite valeur de X permise (Katara, Water Tribe's Hope ; Gogo, Master of Mimicry). */
+  minX?: number;
   /** Les preuves exilées sont liées à la source (Kylox's Voltstrider : « parmi les cartes exilées avec lui »). */
   linkEvidence?: boolean;
   /**
