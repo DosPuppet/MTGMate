@@ -128,7 +128,7 @@ function AdditionalCostPicker({
   min,
   title,
 }: {
-  kind: "discard" | "sacrifice" | "tap" | "materials";
+  kind: "discard" | "sacrifice" | "tap" | "materials" | "bounce";
   count: number;
   options: string[];
   /** Équipage, monture : autant de créatures qu'on veut, de force totale au moins `minPower`. */
@@ -350,6 +350,18 @@ function CastingPrompt() {
   if (casting.stage === "sacrifice" && opt.type === "activate" && opt.additional?.sacrifice) {
     const spec = opt.additional.sacrifice;
     return <AdditionalCostPicker kind="sacrifice" count={spec.count} options={spec.options} />;
+  }
+  // Web-slinging : la créature engagée à renvoyer en main.
+  if (casting.stage === "bounce" && opt.type === "cast" && opt.altBounce) {
+    return (
+      <AdditionalCostPicker
+        kind="bounce"
+        count={1}
+        options={opt.altBounce}
+        suggested={opt.altBounce.slice(0, 1)}
+        title="Web-slinging : choisissez la créature engagée à renvoyer dans la main de son propriétaire"
+      />
+    );
   }
   // Marchandage (kicker sans mana) : le permanent à sacrifier.
   if (casting.stage === "sacrifice" && opt.type === "cast" && !opt.additional?.sacrifice && opt.kickerPermanents) {

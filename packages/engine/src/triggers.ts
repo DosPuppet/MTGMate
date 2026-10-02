@@ -350,6 +350,10 @@ export function checkCondition(
       return !!sourceId && !!s.objects[sourceId]?.harnessed;
     case "evoked":
       return !!sourceId && !!s.objects[sourceId]?.evoked;
+    case "castVia": {
+      const item = s.resolving && s.resolving.item.id === sourceId ? s.resolving.item : s.stack.find((x) => x.id === sourceId);
+      return (item?.castVia ?? (sourceId ? s.objects[sourceId]?.castVia : undefined)) === c.via;
+    }
     case "prepared": {
       const src = sourceId ? s.objects[sourceId] : undefined;
       return !!src?.preparedCopy && !!s.objects[src.preparedCopy];

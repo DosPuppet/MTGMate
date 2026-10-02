@@ -87,11 +87,16 @@ export function altCostFor(
   s: GameState,
   player: PlayerId,
   d: CardDef,
-): { mana: ManaCost; label: string; forage?: boolean; collectEvidence?: number } | undefined {
+): { mana: ManaCost; label: string; forage?: boolean; collectEvidence?: number; webSlinging?: boolean } | undefined {
   if (d.altCost && checkCondition(s, d.altCost.condition, player)) return d.altCost;
   for (const { ab } of playerStatics(s, player, "altCostAll")) {
     const a = ab.altCostAll;
-    if (!a) continue;
+    if (!a || (a.filter && !matchesView(spellView(d, player), a.filter, player))) continue;
+    // Web-slinging donné (Amazing Spider-Man) : il faut une créature engagée à renvoyer.
+    if (a.webSlinging && a.mana) {
+      if (webSlingingOptions(s, player).length === 0) continue;
+      return { mana: a.mana, label: `Web-slinging — ${costToText(a.mana)}`, webSlinging: true };
+    }
     // Conspiracy Unraveler : réunir des preuves N plutôt que payer le coût de mana.
     if (a.collectEvidence)
       return {
@@ -227,12 +232,28 @@ export function landPermitted(s: GameState, player: PlayerId, card: ObjectId): b
     (o.zone === "graveyard" && !!exilePermission(s, player, card) && !exilePermission(s, player, card)?.anyTime) ||
     (o.zone === "graveyard" &&
       o.owner === player &&
-      (graveyardTypeAvailable(s, player, card) === "Land" || playFromRules(s, player, card, "graveyard", "lands").length > 0))
+      (graveyardTypeAvailable(s, player, card) === "Land" ||
+        playFromRules(s, player, card, "graveyard", "lands").length > 0 ||
+        // Chaos d'un terrain (Oscorp Industries) : défaussé ce tour-ci, il se joue depuis le cimetière.
+        (!!d.mayhem && o.discardedTurn === s.turn.number)))
   );
 }
 
 /** Types de terrain de base (205.3i). */
 export const BASIC_LAND_TYPES = ["Plains", "Island", "Swamp", "Mountain", "Forest"];
+
+/** Le coût alternatif du sort est un Web-slinging : imprimé, ou donné (Amazing Spider-Man). */
+export function isWebSlinging(s: GameState, player: PlayerId, d: CardDef): boolean {
+  return !!d.webSlinging || !!altCostFor(s, player, d)?.webSlinging;
+}
+
+/** Web-slinging : les créatures engagées que vous contrôlez, la moins chère en premier (le choix par défaut). */
+export function webSlingingOptions(s: GameState, player: PlayerId): ObjectId[] {
+  const mv = (id: ObjectId) => manaValue(s.defs[obj(s, id).defId]?.manaCost);
+  return s.battlefield
+    .filter((id) => obj(s, id).controller === player && obj(s, id).tapped && isCreature(s, id))
+    .sort((a, b) => mv(a) - mv(b));
+}
 
 export function playLand(s: GameState, player: PlayerId, card: ObjectId, payLife = false, landType?: string): void {
   if (!canPlayLand(s, player, card)) throw new RulesError("Vous ne pouvez pas jouer ce terrain maintenant");
@@ -441,6 +462,7 @@ function playFromTerms(r: PlayFromZone, source: "graveyard" | "library"): CastTe
   return {
     // Iroh, Grand Lotus : la carte a le flashback (exilée ensuite), pour son coût de mana ou le coût donné.
     source: r.flashback && source === "graveyard" ? "flashback" : source,
+    ...(r.mayhem ? { mayhem: true } : {}),
     ...(r.cost ? { costOverride: r.cost } : {}),
     playFrom: r,
     ...(r.payLife ? { payLife: r.payLife } : {}),
@@ -1261,8 +1283,10 @@ export function additionalOptions(
 } | null {
   let add = additionalCostOf(d, flashback);
   // Wickerfolk Indomitable : sacrifice supplémentaire quand elle est lancée depuis le cimetière.
-  const gySac = s.objects[card]?.zone === "graveyard" ? d.castFromGraveyard?.sacrifice : undefined;
-  if (gySac) add = { ...add, sacrifice: { filter: gySac, count: 1 } };
+  const gy = s.objects[card]?.zone === "graveyard" ? d.castFromGraveyard : undefined;
+  if (gy?.sacrifice) add = { ...add, sacrifice: { filter: gy.sacrifice, count: 1 } };
+  // Alien Symbiosis : « en défaussant une carte en plus de ses autres coûts ».
+  if (gy?.discard) add = { ...add, discard: gy.discard };
   if (!add) return {};
   const out: ReturnType<typeof additionalOptions> = {};
   if (add.discard) {
@@ -1549,15 +1573,17 @@ export function castSpell(s: GameState, player: PlayerId, card: ObjectId, choice
   for (const id of auto.graveyard) moveObject(s, id, "exile");
   const costExiled = auto.exile.map((id) => moveObject(s, id, "exile")).filter((id): id is string => !!id);
   // Faufilement : l'attaquant non bloqué le plus faible retourne dans la main de son propriétaire.
-  // Web-slinging : une créature engagée que vous contrôlez retourne en main (la moins chère).
-  if (alternative && d.webSlinging) {
-    const mv = (id: ObjectId) => manaValue(s.defs[obj(s, id).defId]?.manaCost);
-    const tapped = s.battlefield
-      .filter((id) => obj(s, id).controller === player && obj(s, id).tapped && isCreature(s, id))
-      .sort((a, b) => mv(a) - mv(b))[0];
-    if (!tapped) throw new RulesError("Aucune créature engagée à renvoyer");
+  // Web-slinging : une créature engagée que vous contrôlez retourne en main (au choix, la moins chère par défaut).
+  const bounced: ObjectId[] = [];
+  const webSlinging = alternative && isWebSlinging(s, player, d);
+  if (webSlinging) {
+    const options = webSlingingOptions(s, player);
+    const tapped = choices.bounce?.length ? choices.bounce[0] : options[0];
+    if (!tapped || !options.includes(tapped) || (choices.bounce?.length ?? 1) !== 1)
+      throw new RulesError("Aucune créature engagée à renvoyer");
     removeFromCombat(s, tapped);
-    moveObject(s, tapped, "hand");
+    const back = moveObject(s, tapped, "hand");
+    if (back) bounced.push(back);
   }
   const sneaked = alternative && !!d.sneak;
   if (sneaked) {
@@ -1603,6 +1629,8 @@ export function castSpell(s: GameState, player: PlayerId, card: ObjectId, choice
     impending: alternative && cardDef.impending ? true : undefined,
     evoked: alternative && cardDef.evoke ? true : undefined,
     sneaked: sneaked || undefined,
+    castVia: webSlinging ? "webSlinging" : terms.mayhem ? "mayhem" : undefined,
+    costBounced: bounced.length ? bounced : undefined,
     manaSpent: free ? 0 : manaValue(cost),
     fromHand: terms.source === "hand" || undefined,
     fromGraveyard: terms.source === "graveyard" || terms.source === "flashback" || undefined,
@@ -2141,9 +2169,18 @@ export function canPayNonManaCost(s: GameState, source: ObjectId, ab: ActivatedA
   if (ab.cost.tapOthers && tapOthersOptions(s, player, source, ab).length < ab.cost.tapOthers.count) return false;
   if (ab.cost.discard && discardCostOptions(s, player, source, ab.cost.discardFilter).length < ab.cost.discard) return false;
   if (ab.cost.returnUnblockedAttacker && unblockedAttackers(s, player).length === 0) return false;
+  if (ab.cost.bounceOther && bounceCostOptions(s, player, source, ab.cost.bounceOther).length === 0) return false;
   if (ab.cost.forage && !canForage(s, player)) return false;
   if (ab.cost.craft && !craftMaterials(s, player, source, ab)) return false;
   return true;
+}
+
+/** Permanents que le joueur peut renvoyer en main pour un coût (`bounceOther`), le moins cher en premier. */
+export function bounceCostOptions(s: GameState, player: PlayerId, source: ObjectId, f: ObjectFilter): ObjectId[] {
+  const mv = (id: ObjectId) => manaValue(s.defs[obj(s, id).defId]?.manaCost);
+  return s.battlefield
+    .filter((id) => id !== source && obj(s, id).controller === player && matchesObjectFilter(s, player, id, f, source))
+    .sort((a, b) => mv(a) - mv(b));
 }
 
 /** Ninjutsu (702.49) : attaquants non bloqués du joueur, une fois les bloqueurs déclarés. */
@@ -2386,6 +2423,15 @@ export function activateAbility(s: GameState, player: PlayerId, source: ObjectId
     if (!weakest) throw new RulesError("Aucun attaquant non bloqué");
     removeFromCombat(s, weakest);
     moveObject(s, weakest, "hand");
+  }
+  // Urban Retreat : « renvoyez une créature engagée que vous contrôlez dans la main de son propriétaire ».
+  if (ab.cost.bounceOther) {
+    const options = bounceCostOptions(s, player, source, ab.cost.bounceOther);
+    const back = choices.bounce?.length ? choices.bounce[0] : options[0];
+    if (!back || !options.includes(back) || (choices.bounce?.length ?? 1) !== 1)
+      throw new RulesError("Aucun permanent à renvoyer");
+    removeFromCombat(s, back);
+    moveObject(s, back, "hand");
   }
   // « Défaussez une carte » : choisie par le joueur (sinon la première de la main).
   if (ab.cost.discard) {
@@ -2676,6 +2722,8 @@ function finishResolution(
           copyChosen: vars.$copyOf !== undefined,
           spentColors: item.spentColors,
           evoked: item.evoked,
+          castVia: item.castVia,
+          costBounced: item.costBounced,
           // Marqueurs, célérité et sous-types d'arrivée (Torgal, Summon: Fenrir, Noctis), Imminence : avant l'événement.
           counters: item.arrival?.counters,
           haste: item.arrival?.haste,

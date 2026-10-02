@@ -778,7 +778,9 @@ function singleDef(raw: RawCard, script: CardScript | undefined, set: string): C
   // Le Hobbit : Storied ; Tortues Ninja : Faufilement ; Spider-Man : Chaos ; Strixhaven : Paradigme.
   const storied = /^Storied\b/m.test(raw.oracleText);
   const sneak = /^Sneak ((?:\{[^}]+\})+)/m.exec(raw.oracleText)?.[1];
-  const mayhem = /^Mayhem ((?:\{[^}]+\})+)/m.exec(raw.oracleText)?.[1];
+  // Un terrain a le chaos sans coût (Oscorp Industries : « vous pouvez jouer cette carte depuis votre cimetière »).
+  const mayhem =
+    /^Mayhem ((?:\{[^}]+\})+)/m.exec(raw.oracleText)?.[1] ?? (/^Mayhem \(You may play/m.test(raw.oracleText) ? "{0}" : undefined);
   const paradigm = /^Paradigm\b/m.test(raw.oracleText);
   // Spider-Man : Web-slinging ; Strixhaven : « en coût additionnel, payez X points de vie ».
   const webSlinging = /^Web-slinging ((?:\{[^}]+\})+)/m.exec(raw.oracleText)?.[1];

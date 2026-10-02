@@ -79,6 +79,8 @@ export interface EffectContext {
   tappedForCost?: ObjectId[];
   /** Cartes exilées pour payer le coût (matériaux d'une fabrication). */
   costExiled?: ObjectId[];
+  /** Créature renvoyée en main pour le Web-slinging. */
+  costBounced?: ObjectId[];
 }
 
 /** Caractéristiques d'un objet vivant, ou ses dernières informations connues. */
@@ -236,6 +238,8 @@ export function resolveRef(s: GameState, ctx: EffectContext, ref: Ref): string[]
       return resolveRef(s, ctx, ref.who).flatMap((p) => (s.players[p]?.library[0] ? [s.players[p]?.library[0] as string] : []));
     case "costExiled":
       return [...(ctx.costExiled ?? [])];
+    case "costBounced":
+      return [...(ctx.costBounced ?? (ctx.sourceId ? s.objects[ctx.sourceId]?.costBounced : undefined) ?? [])];
     case "targetsOfEventObject": {
       // Le sort lancé (l'objet de l'événement) : ses cibles, d'après son élément de pile.
       const id = ctx.event?.objectId;
@@ -752,6 +756,7 @@ export function contextOf(r: Resolution): EffectContext {
     discarded: r.item.discarded,
     tappedForCost: r.item.tappedForCost,
     costExiled: r.item.costExiled,
+    costBounced: r.item.costBounced,
   };
 }
 

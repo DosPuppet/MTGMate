@@ -7,6 +7,7 @@ import { CARDS } from "./cards";
 import { GREEN } from "./green";
 import { MULTI } from "./multi";
 import { RED } from "./red";
+import { UNIQUE } from "./unique";
 import { WHITE } from "./white";
 
 export const SPM_SCRIPTS: Record<string, CardScript> = {
@@ -18,4 +19,5 @@ export const SPM_SCRIPTS: Record<string, CardScript> = {
   ...GREEN,
   ...MULTI,
   ...ARTIFACTS,
+  ...UNIQUE,
 };

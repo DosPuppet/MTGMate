@@ -13,6 +13,7 @@
 import { createTokens, gainLife } from "./actions";
 import { boardAmount } from "./effects";
 import { copiableExceptions, copiedDefId, mergeMods } from "./layers";
+import { manaValue } from "./mana";
 import { changeCounters, chars, moveObject, newId, nextTimestamp, P1P1, setPrepared } from "./state";
 import { controlledAbilitiesWithSource, playerStatic } from "./statics";
 import { matchesCard, matchesObjectFilter, protectedFrom, sourceView, withChosen } from "./targets";
@@ -47,6 +48,9 @@ export interface EntersContext {
   /** Mana dépensé par type et évocation : lus par les conditions des capacités d'arrivée (Deceit). */
   spentColors?: GameObject["spentColors"];
   evoked?: boolean;
+  /** Lancé par Web-slinging ou pour son coût de chaos ; créature renvoyée pour le Web-slinging. */
+  castVia?: GameObject["castVia"];
+  costBounced?: ObjectId[];
   /**
    * Modifications d'arrivée imposées par l'effet qui le met sur le champ de bataille (614.1c, 614.12) : elles sont en
    * place avant l'événement d'arrivée, que les déclencheurs voient donc (« chaque fois qu'un Zombie arrive »).
@@ -100,6 +104,9 @@ function amountAtEntry(s: GameState, a: Amount, o: GameObject, ctx: EntersContex
   if (a.kind === "x") return ctx.x ?? 0;
   if (a.kind === "kicked") return ctx.kicked ? a.yes : a.no;
   if (a.kind === "manaSpent") return ctx.manaSpent ?? 0;
+  // Scarlet Spider, Ben Reilly : « X étant la valeur de mana de la créature renvoyée » (Web-slinging).
+  if (a.kind === "manaValueOf" && a.ref.kind === "costBounced")
+    return manaValue(s.defs[s.objects[ctx.costBounced?.[0] ?? ""]?.defId ?? ""]?.manaCost);
   // Convergence : « un marqueur pour chaque couleur de mana dépensée pour le lancer ».
   if (a.kind === "colorsSpent") return (["W", "U", "B", "R", "G"] as const).filter((c) => (ctx.spentColors?.[c] ?? 0) > 0).length;
   // Arithmétique (Slumbering Trudge : « 3 moins X »).
@@ -274,6 +281,8 @@ export function applyEntersReplacements(s: GameState, o: GameObject, ctx: Enters
   if (ctx.manaSpent !== undefined) o.manaSpent = ctx.manaSpent;
   if (ctx.spentColors) o.spentColors = ctx.spentColors;
   if (ctx.evoked) o.evoked = true;
+  if (ctx.castVia) o.castVia = ctx.castVia;
+  if (ctx.costBounced) o.costBounced = ctx.costBounced;
   const own = s.defs[o.defId];
   // 303.4f : une Aura qui arrive sans être lancée enchante un objet choisi par celui qui la contrôle (automatiquement ici :
   // le premier possible ; les opérations de déplacement le demandent pendant une résolution).

@@ -33,6 +33,7 @@ import {
   hasConvoke,
   hasImprovise,
   instantLoyalty,
+  isWebSlinging,
   kickerCostOptions,
   kickerCostPermanent,
   modesOf,
@@ -46,6 +47,7 @@ import {
   tapOthersOptions,
   warpOf,
   waterbendAmount,
+  webSlingingOptions,
 } from "./stack";
 import { matchesCard, matchesObjectFilter } from "./targets";
 
@@ -439,6 +441,7 @@ export function legalActions(s: GameState, player: PlayerId): ActionOption[] {
         additional.discard || additional.sacrifice || harmony?.options.length
           ? { ...additional, ...(harmony?.options.length ? { tap: { count: 1, ...harmony, optional: true as const } } : {}) }
           : undefined,
+      altBounce: altAvailable && isWebSlinging(s, player, d) ? webSlingingOptions(s, player) : undefined,
       kickerPermanents:
         d.kickerCost && !d.kickerCost.tapPower && !d.kickerCost.collectEvidence && !d.kickerCost.exileGraveyard
           ? kickerCostOptions(s, player, card, d)

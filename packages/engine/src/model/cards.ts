@@ -171,7 +171,8 @@ export interface CardDef {
   /** Skyseer's Chariot : les capacités activées des sources du nom choisi coûtent {N} de plus (au lieu d'être interdites). */
   chosenNameTax?: number;
   /** « Vous pouvez lancer cette carte depuis votre cimetière [si…] » (Lightwheel Enhancements : vitesse maximale). */
-  castFromGraveyard?: { condition?: Condition; payLife?: number; sacrifice?: ObjectFilter; finality?: boolean };
+  /** Lançable depuis le cimetière ; `discard` : en défaussant autant de cartes en plus (Alien Symbiosis). */
+  castFromGraveyard?: { condition?: Condition; payLife?: number; sacrifice?: ObjectFilter; discard?: number; finality?: boolean };
   /** « Vous ne pouvez pas lancer ce sort à moins que… » (Proft, Sinister Mastermind : seuil). */
   castCondition?: Condition;
   /** Seule l'endurance est définie par une capacité (Tarmogoyf, avec `cdaPower`). */
@@ -507,6 +508,9 @@ export interface CostDef {
   discardFilter?: ObjectFilter;
   /** Ninjutsu : renvoyer en main un attaquant non bloqué que vous contrôlez (choisi automatiquement : le plus faible). */
   returnUnblockedAttacker?: boolean;
+  /** « Renvoyez [un permanent] que vous contrôlez dans la main de son propriétaire » (Urban Retreat : une créature
+   * engagée) ; choisi par le joueur (`bounce`), sinon le moins cher. */
+  bounceOther?: ObjectFilter;
   /** Fourrager (701.61) : exiler trois cartes de votre cimetière ou sacrifier une Nourriture (choix automatique). */
   forage?: boolean;
 }
@@ -895,6 +899,8 @@ export interface PlayFromZone {
    * son coût de mana.
    */
   flashback?: boolean;
+  /** La carte a le chaos (Goblin Formula) : lancée depuis le cimetière pour son coût de chaos, son coût de mana. */
+  mayhem?: boolean;
   cost?: ManaCost;
 }
 
@@ -1003,9 +1009,10 @@ export interface PlayerStaticAbilityDef {
   /** Leyline of Mutation : coût alternatif pour tous vos sorts. */
   /**
    * Coût alternatif de vos sorts : un coût de mana (Leyline of Mutation : {W}{U}{B}{R}{G}) ou réunir des preuves N
-   * (Conspiracy Unraveler : 10) « plutôt que payer le coût de mana ».
+   * (Conspiracy Unraveler : 10) « plutôt que payer le coût de mana » ; seulement les sorts correspondant à `filter`, et
+   * avec `webSlinging` en renvoyant une créature engagée (Amazing Spider-Man : « Web-slinging {G}{W}{U} »).
    */
-  altCostAll?: { mana?: ManaCost; collectEvidence?: number };
+  altCostAll?: { mana?: ManaCost; collectEvidence?: number; filter?: ObjectFilter; webSlinging?: boolean };
   /** Winter, Misanthropic Guide : taille de main maximale de chaque adversaire (évaluée pour le contrôleur). */
   opponentMaxHandSize?: Amount;
   /** Valgavoth : pendant votre tour, jouer les cartes liées à la source ; un sort ainsi lancé coûte des PV égaux à sa VM. */

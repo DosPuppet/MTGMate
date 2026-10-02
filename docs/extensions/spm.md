@@ -61,3 +61,15 @@ Les scripts sont dans `packages/cards/src/spm/` : `cards` (cartes du méta), `wh
 - **Moteur :** le journal du tour note les terrains joués avec leur zone de départ (`{ event: "playLand", fromZone }` ; Spider-Man 2099 : « un terrain joué ou un sort lancé depuis ailleurs que votre main » ; test dans `rulings.test.ts`).
 - **Reste pour plus tard :** Cheering Crowd (mana donné au joueur actif), Jackal, Genius Geneticist (copie non légendaire, valeur de mana égale à la force), Kraven the Hunter (« la plus grande force parmi les créatures de son contrôleur »), Mister Negative (échange des totaux de PV), Rhino, Barreling Brute (valeur de mana des sorts lancés dans le journal), Scarlet Spider, Ben Reilly (Web-slinging retenu, créature renvoyée) ; Iron Spider, Stark Upgrade (retirer deux marqueurs répartis), Oscorp Industries (chaos d'un terrain), Urban Retreat (coût « renvoyez une créature engagée »).
 - **Tests :** 61 tests de règles (« lot A, multicolores » et « lot A, incolores et terrains »).
+
+## Sous-lot B1 : Web-slinging et chaos ✅ (170 / 188)
+
+- **Cartes (8) :** Spiders-Man, Heroic Horde, Scarlet Spider, Ben Reilly, Peter Parker // Amazing Spider-Man, Norman Osborn // Green Goblin, Sandman's Quicksand, Alien Symbiosis, Oscorp Industries, Urban Retreat.
+- **Moteur :**
+  - Web-slinging : la créature engagée renvoyée est choisie par le joueur (`bounce` dans la décision ; `altBounce` dans l'option, la moins chère en premier et par défaut). L'interface ouvre une fenêtre de choix quand il y en a plusieurs ;
+  - façon de lancer retenue (`castVia` : `webSlinging` ou `mayhem`, sur l'élément de pile puis sur le permanent) et créature renvoyée (`costBounced`) : `cond.castVia(…)`, `ref.costBounced` (aussi lu en arrivant : « X marqueurs, X étant la valeur de mana de la créature renvoyée ») ;
+  - `altCostAll` accepte un filtre de sort et le Web-slinging (Amazing Spider-Man : « vos sorts légendaires de couleur ont le Web-slinging {G}{W}{U} ») ;
+  - chaos donné par une permission « jouer depuis le cimetière » (`playFrom.mayhem`, filtre `discardedThisTurn` : Goblin Formula) ; chaos d'un terrain, sans coût (Oscorp Industries) ;
+  - lancer depuis le cimetière en défaussant une carte en plus (`castFromGraveyard.discard`, Alien Symbiosis) ;
+  - coût d'activation « renvoyez [un permanent] que vous contrôlez dans la main de son propriétaire » (`bounceOther`, Urban Retreat).
+- **Tests :** 15 tests de règles (« lot B1 ») ; script Playwright ponctuel : fenêtre de choix de la créature renvoyée (Scarlet Spider), captures dans `test-results/spm/`.

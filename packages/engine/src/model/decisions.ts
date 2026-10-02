@@ -124,6 +124,8 @@ export interface CastChoices {
   tap?: ObjectId[];
   /** Matériaux d'une fabrication (702.167), choisis par le joueur. */
   materials?: ObjectId[];
+  /** Créature engagée renvoyée en main pour le Web-slinging, choisie par le joueur (la moins chère par défaut). */
+  bounce?: ObjectId[];
   /** Face lancée d'une carte à plusieurs faces (1 : l'aventure) ; absente : la carte elle-même (recto). */
   face?: number;
   /** Lancée face cachée pour {3} (déguisement). */
@@ -235,6 +237,8 @@ export type ActionOption =
        * premier ; le joueur en désigne un par `sacrifice`.
        */
       kickerPermanents?: ObjectId[];
+      /** Web-slinging : créatures engagées qui peuvent être renvoyées (la moins chère en premier), désignées par `bounce`. */
+      altBounce?: ObjectId[];
       /** Travail d'équipe : créatures à engager si le sort est kické (force totale `minPower`), désignées par `tap`. */
       kickerTap?: {
         count: number;

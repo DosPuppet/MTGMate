@@ -3573,3 +3573,229 @@ describe("lot A, incolores et terrains", () => {
     });
   });
 });
+
+describe("lot B1, Web-slinging et chaos", () => {
+  const ability = (s: S, player: string, source: string, label?: RegExp) =>
+    legalActions(s, player).find(
+      (a): a is Extract<ActionOption, { type: "activate" }> =>
+        a.type === "activate" && a.source === source && (!label || label.test(a.label ?? "")),
+    );
+  const activate = (s: S, player: string, source: string, extra: object = {}, label?: RegExp) =>
+    act(s, player, { type: "activate", source, ability: ability(s, player, source, label)?.ability ?? -1, ...extra });
+  const discarded = (s: S, id: string) => {
+    (s.objects[id] as { discardedTurn?: number }).discardedTurn = s.turn.number;
+  };
+  const castOption = (s: S, player: string, card: string) =>
+    legalActions(s, player).find((a): a is Extract<ActionOption, { type: "cast" }> => a.type === "cast" && a.card === card);
+
+  describe("Spiders-Man, Heroic Horde", () => {
+    it("lancés par Web-slinging : 3 PV et deux Araignées 2/1 avec la portée ; la créature engagée revient en main", () => {
+      let s = scenario({
+        p1: { battlefield: [...lands("Forest", 6), { name: "Bear Cub", tapped: true }], hand: ["Spiders-Man, Heroic Horde"] },
+      });
+      s = settle(cast(s, "p1", "Spiders-Man, Heroic Horde", { alternative: true }));
+      expect(idsOf(s, "p1", "hand", "Bear Cub")).toHaveLength(1);
+      expect(s.players.p1?.life).toBe(23);
+      const spiders = idsOf(s, "p1", "battlefield", "Spider");
+      expect(spiders).toHaveLength(2);
+      expect(pt(s, spiders[0] as string)).toEqual([2, 1]);
+      expect(chars(s, spiders[0] as string).keywords).toContain("reach");
+    });
+
+    it("lancés pour leur coût de mana : rien", () => {
+      let s = scenario({ p1: { battlefield: lands("Forest", 2), hand: ["Spiders-Man, Heroic Horde"] } });
+      s = settle(cast(s, "p1", "Spiders-Man, Heroic Horde"));
+      expect(idsOf(s, "p1", "battlefield", "Spiders-Man, Heroic Horde")).toHaveLength(1);
+      expect(idsOf(s, "p1", "battlefield", "Spider")).toHaveLength(0);
+      expect(s.players.p1?.life).toBe(20);
+    });
+  });
+
+  describe("Scarlet Spider, Ben Reilly", () => {
+    const setup = () =>
+      scenario({
+        p1: {
+          battlefield: ["Mountain", "Forest", { name: "Llanowar Elves", tapped: true }, { name: "Serra Angel", tapped: true }],
+          hand: ["Scarlet Spider, Ben Reilly"],
+        },
+      });
+
+    it("Web-slinging : le joueur choisit la créature renvoyée ; X marqueurs, X étant sa valeur de mana", () => {
+      let s = setup();
+      const card = idOf(s, "p1", "hand", "Scarlet Spider, Ben Reilly");
+      const angel = idOf(s, "p1", "battlefield", "Serra Angel");
+      // La moins chère est proposée en premier (choix par défaut).
+      expect(castOption(s, "p1", card)?.altBounce).toEqual([idOf(s, "p1", "battlefield", "Llanowar Elves"), angel]);
+      s = settle(act(s, "p1", { type: "cast", card, alternative: true, bounce: [angel] }));
+      const spider = idOf(s, "p1", "battlefield", "Scarlet Spider, Ben Reilly");
+      expect(s.objects[spider]?.counters["+1/+1"]).toBe(5);
+      expect(idsOf(s, "p1", "hand", "Serra Angel")).toHaveLength(1);
+      expect(idsOf(s, "p1", "battlefield", "Llanowar Elves")).toHaveLength(1);
+    });
+
+    it("sans choix, la moins chère revient (un marqueur) ; une créature non engagée ne peut pas être renvoyée", () => {
+      let s = setup();
+      const card = idOf(s, "p1", "hand", "Scarlet Spider, Ben Reilly");
+      expect(() =>
+        act(s, "p1", { type: "cast", card, alternative: true, bounce: [idOf(s, "p1", "battlefield", "Mountain")] }),
+      ).toThrow();
+      s = settle(act(s, "p1", { type: "cast", card, alternative: true }));
+      expect(s.objects[idOf(s, "p1", "battlefield", "Scarlet Spider, Ben Reilly")]?.counters["+1/+1"]).toBe(1);
+      expect(idsOf(s, "p1", "hand", "Llanowar Elves")).toHaveLength(1);
+    });
+
+    it("lancé pour son coût de mana : aucun marqueur", () => {
+      let s = scenario({ p1: { battlefield: ["Mountain", "Forest", "Forest"], hand: ["Scarlet Spider, Ben Reilly"] } });
+      s = settle(cast(s, "p1", "Scarlet Spider, Ben Reilly"));
+      expect(s.objects[idOf(s, "p1", "battlefield", "Scarlet Spider, Ben Reilly")]?.counters["+1/+1"] ?? 0).toBe(0);
+    });
+  });
+
+  describe("Sandman's Quicksand", () => {
+    it("lancé de la main : toutes les créatures ont -2/-2", () => {
+      let s = scenario({
+        p1: { battlefield: [...lands("Swamp", 3), "Serra Angel"], hand: ["Sandman's Quicksand"] },
+        p2: { battlefield: ["Bear Cub"] },
+      });
+      s = settle(cast(s, "p1", "Sandman's Quicksand"));
+      expect(pt(s, idOf(s, "p1", "battlefield", "Serra Angel"))).toEqual([2, 2]);
+      expect(idsOf(s, "p2", "graveyard", "Bear Cub")).toHaveLength(1);
+    });
+
+    it("coût de chaos payé : seulement les créatures des adversaires", () => {
+      let s = scenario({
+        p1: { battlefield: [...lands("Swamp", 4), "Llanowar Elves"], graveyard: ["Sandman's Quicksand"] },
+        p2: { battlefield: ["Bear Cub", "Serra Angel"] },
+      });
+      const card = idOf(s, "p1", "graveyard", "Sandman's Quicksand");
+      discarded(s, card);
+      s = settle(act(s, "p1", { type: "cast", card }));
+      expect(idsOf(s, "p1", "battlefield", "Llanowar Elves")).toHaveLength(1);
+      expect(idsOf(s, "p2", "graveyard", "Bear Cub")).toHaveLength(1);
+      expect(pt(s, idOf(s, "p2", "battlefield", "Serra Angel"))).toEqual([2, 2]);
+    });
+  });
+
+  describe("Alien Symbiosis", () => {
+    it("se lance depuis le cimetière en défaussant une carte en plus ; +1/+1, la menace, Symbiote", () => {
+      let s = scenario({
+        p1: { battlefield: [...lands("Swamp", 2), "Bear Cub"], graveyard: ["Alien Symbiosis"], hand: ["Opt"] },
+      });
+      const card = idOf(s, "p1", "graveyard", "Alien Symbiosis");
+      const bear = idOf(s, "p1", "battlefield", "Bear Cub");
+      expect(castOption(s, "p1", card)?.additional?.discard?.count).toBe(1);
+      s = settle(act(s, "p1", { type: "cast", card, targets: { enchant: [bear] }, discard: [idOf(s, "p1", "hand", "Opt")] }));
+      expect(idsOf(s, "p1", "graveyard", "Opt")).toHaveLength(1);
+      expect(pt(s, bear)).toEqual([3, 3]);
+      expect(chars(s, bear).keywords).toContain("menace");
+      expect(chars(s, bear).subtypes).toContain("Symbiote");
+    });
+
+    it("sans carte à défausser, pas de lancer depuis le cimetière", () => {
+      const s = scenario({ p1: { battlefield: [...lands("Swamp", 2), "Bear Cub"], graveyard: ["Alien Symbiosis"] } });
+      expect(castable(s, "p1", idOf(s, "p1", "graveyard", "Alien Symbiosis"))).toBe(false);
+    });
+  });
+
+  describe("Oscorp Industries", () => {
+    it("défaussé ce tour-ci, il se joue depuis le cimetière ; arrivé d'un cimetière, vous perdez 2 PV", () => {
+      let s = scenario({ p1: { graveyard: ["Oscorp Industries"] } });
+      const card = idOf(s, "p1", "graveyard", "Oscorp Industries");
+      expect(legalActions(s, "p1").some((a) => a.type === "playLand" && a.card === card)).toBe(false);
+      discarded(s, card);
+      s = act(s, "p1", { type: "playLand", card });
+      s = passAccepting(s, (x) => x.triggers.length === 0 && x.stack.length === 0);
+      const land = idOf(s, "p1", "battlefield", "Oscorp Industries");
+      expect(s.objects[land]?.tapped).toBe(true);
+      expect(s.players.p1?.life).toBe(18);
+    });
+
+    it("joué de la main : pas de perte de PV", () => {
+      let s = scenario({ p1: { hand: ["Oscorp Industries"] } });
+      s = act(s, "p1", { type: "playLand", card: idOf(s, "p1", "hand", "Oscorp Industries") });
+      s = passAccepting(s, (x) => x.triggers.length === 0 && x.stack.length === 0);
+      expect(s.players.p1?.life).toBe(20);
+    });
+  });
+
+  describe("Norman Osborn // Green Goblin", () => {
+    const goblin = () => {
+      let s = scenario({
+        p1: {
+          battlefield: ["Norman Osborn // Green Goblin", "Island", "Swamp", "Mountain", ...lands("Mountain", 3)],
+          graveyard: ["Shivan Dragon", "Lightning Strike", "Forest"],
+        },
+      });
+      const norman = idOf(s, "p1", "battlefield", "Norman Osborn // Green Goblin");
+      expect(chars(s, norman).keywords).toContain("unblockable");
+      s = settle(activate(s, "p1", norman, {}, /Transform/));
+      expect(chars(s, norman).name).toBe("Green Goblin");
+      return s;
+    };
+
+    it("Formule du Gobelin : une carte non-terrain défaussée ce tour-ci se lance du cimetière, {2} de moins", () => {
+      let s = goblin();
+      const dragon = idOf(s, "p1", "graveyard", "Shivan Dragon");
+      const strike = idOf(s, "p1", "graveyard", "Lightning Strike");
+      const forest = idOf(s, "p1", "graveyard", "Forest");
+      expect(castable(s, "p1", strike)).toBe(false);
+      discarded(s, strike);
+      discarded(s, dragon);
+      discarded(s, forest);
+      expect(castable(s, "p1", strike)).toBe(true);
+      // Un terrain n'a pas le chaos.
+      expect(legalActions(s, "p1").some((a) => a.type === "playLand" && a.card === forest)).toBe(false);
+      // Lightning Strike ({1}{R}) coûte {R} : une seule Montagne dégagée suffit.
+      s = settle(act(s, "p1", { type: "cast", card: strike, targets: { t: ["p2"] } }));
+      expect(s.players.p2?.life).toBe(17);
+      expect(idsOf(s, "p1", "graveyard", "Lightning Strike")).toHaveLength(1);
+    });
+  });
+
+  describe("Peter Parker // Amazing Spider-Man", () => {
+    it("Peter Parker crée une Araignée ; Amazing Spider-Man donne le Web-slinging {G}{W}{U} à vos sorts légendaires de couleur", () => {
+      let s = scenario({
+        p1: {
+          battlefield: ["Plains", "Island", "Forest", "Forest", "Plains", "Island", "Plains"],
+          hand: ["Peter Parker // Amazing Spider-Man", "Kraven, Proud Predator", "Bear Cub"],
+        },
+      });
+      s = settle(cast(s, "p1", "Peter Parker // Amazing Spider-Man"));
+      expect(idsOf(s, "p1", "battlefield", "Spider")).toHaveLength(1);
+      const peter = idOf(s, "p1", "battlefield", "Peter Parker // Amazing Spider-Man");
+      s = settle(activate(s, "p1", peter, {}, /Transform/));
+      expect(chars(s, peter).name).toBe("Amazing Spider-Man");
+      // Toutes les terres sont engagées sauf une : il faut une créature engagée et {G}{W}{U}.
+      const kraven = idOf(s, "p1", "hand", "Kraven, Proud Predator");
+      expect(castOption(s, "p1", kraven)?.altAvailable).toBeUndefined();
+      const spider = idOf(s, "p1", "battlefield", "Spider");
+      s.objects[spider]!.tapped = true;
+      for (const id of s.battlefield) if (nameOf(s, id) !== "Spider" && s.objects[id]?.tapped) s.objects[id]!.tapped = false;
+      expect(castOption(s, "p1", kraven)?.altAvailable).toBe(true);
+      // Un sort non légendaire n'a pas le Web-slinging.
+      expect(castOption(s, "p1", idOf(s, "p1", "hand", "Bear Cub"))?.altAvailable).toBeUndefined();
+      s = settle(act(s, "p1", { type: "cast", card: kraven, alternative: true }));
+      expect(idsOf(s, "p1", "battlefield", "Kraven, Proud Predator")).toHaveLength(1);
+      expect(idsOf(s, "p1", "battlefield", "Spider")).toHaveLength(0);
+    });
+  });
+
+  describe("Urban Retreat", () => {
+    it("{2}, renvoyez une créature engagée : le terrain passe de votre main au champ de bataille, en rituel", () => {
+      let s = scenario({
+        p1: { battlefield: [...lands("Forest", 2), { name: "Bear Cub", tapped: true }], hand: ["Urban Retreat"] },
+      });
+      const card = idOf(s, "p1", "hand", "Urban Retreat");
+      s = settle(activate(s, "p1", card));
+      expect(idsOf(s, "p1", "battlefield", "Urban Retreat")).toHaveLength(1);
+      expect(idsOf(s, "p1", "hand", "Bear Cub")).toHaveLength(1);
+      // Ce n'est pas le terrain joué du tour.
+      expect(s.turn.landsPlayed).toBe(0);
+    });
+
+    it("sans créature engagée, la capacité n'est pas proposée", () => {
+      const s = scenario({ p1: { battlefield: [...lands("Forest", 2), "Bear Cub"], hand: ["Urban Retreat"] } });
+      expect(ability(s, "p1", idOf(s, "p1", "hand", "Urban Retreat"))).toBeUndefined();
+    });
+  });
+});

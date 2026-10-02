@@ -239,6 +239,7 @@ export function matchesCard(s: GameState, controller: PlayerId, id: ObjectId, f:
   if (f.other && sourceId && o.uid && o.uid === (s.objects[sourceId]?.uid ?? s.lki[sourceId]?.uid)) return false;
   // « mise dans un cimetière ce tour-ci » : l'objet a été créé dans sa zone pendant ce tour.
   if (f.enteredThisTurn && o.controlledSince !== s.turn.number) return false;
+  if (f.discardedThisTurn && o.discardedTurn !== s.turn.number) return false;
   // « carte de créature sans capacité » : pas de texte de règles.
   if (f.noAbilities && (s.defs[o.defId]?.text ?? "").trim()) return false;
   if (f.adventure !== undefined && (s.defs[o.defId]?.layout === "adventure") !== f.adventure) return false;

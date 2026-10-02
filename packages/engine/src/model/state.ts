@@ -128,6 +128,10 @@ export interface GameObject {
   discardedTurn?: number;
   /** Exploité (Harness, Marvel Super Heroes) : ses capacités ∞ sont actives. */
   harnessed?: boolean;
+  /** Lancé par Web-slinging ou pour son coût de chaos (« s'il a été lancé par Web-slinging », Spiders-Man). */
+  castVia?: CastVia;
+  /** Créature renvoyée en main pour le coût du sort qui l'a mis sur le champ de bataille (Web-slinging). */
+  costBounced?: ObjectId[];
   /** Évocation (702.74) : lancé pour son coût d'évocation (sacrifié en arrivant). */
   evoked?: boolean;
   /** Mana dépensé pour le lancer, par type (« si {U}{U} a été dépensé pour le lancer », Deceit). */
@@ -289,6 +293,10 @@ export interface StackItem {
   evoked?: boolean;
   /** Lancé pour son coût de faufilement (Sneak). */
   sneaked?: boolean;
+  /** Lancé par Web-slinging ou pour son coût de chaos (Spider-Man). */
+  castVia?: CastVia;
+  /** Créature renvoyée en main pour le Web-slinging (Scarlet Spider, Ben Reilly). */
+  costBounced?: ObjectId[];
   /** Mana dépensé pour le lancer, par type. */
   spentColors?: Partial<Record<ManaType, number>>;
   /** Dont le mana produit par des Cavernes (Bat Colony). */
@@ -400,6 +408,9 @@ export interface TurnStats {
   /** Mana total dépensé pour lancer des sorts ce tour-ci (Dépense, Bloomburrow). */
   manaSpentOnSpells?: number;
 }
+
+/** Façon de lancer un sort que des capacités lisent : Web-slinging, coût de chaos (Mayhem). */
+export type CastVia = "webSlinging" | "mayhem";
 
 /** Événement du tour (`turnlog.ts`) : déplacement, sort lancé, sacrifice, blessures. */
 export type TurnLogEntry =

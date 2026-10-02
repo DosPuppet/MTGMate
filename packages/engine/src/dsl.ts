@@ -13,6 +13,7 @@ import type {
   CardDef,
   CardType,
   CastPermissionAbilityDef,
+  CastVia,
   Color,
   Condition,
   CostReductionAbilityDef,
@@ -108,7 +109,7 @@ export interface CardScript {
    */
   entersAsCopyOfGraveyard?: { filter: ObjectFilter; name?: string; power?: number; toughness?: number };
   /** « Vous pouvez lancer cette carte depuis votre cimetière [si…] » */
-  castFromGraveyard?: { condition?: Condition; payLife?: number; sacrifice?: ObjectFilter; finality?: boolean };
+  castFromGraveyard?: CardDef["castFromGraveyard"];
   /** Seule la force est variable (Enigma Drake). */
   cdaPower?: Amount;
   /** Seule l'endurance est variable (Tarmogoyf, avec `cdaPower`). */
@@ -227,6 +228,8 @@ export const ref = {
   exiledWith: { kind: "exiledWith" } as Ref,
   /** Les cartes exilées pour payer le coût (« copiez ces cartes exilées »). */
   costExiled: { kind: "costExiled" } as Ref,
+  /** La créature renvoyée en main pour le Web-slinging (Scarlet Spider, Ben Reilly). */
+  costBounced: { kind: "costBounced" } as Ref,
   /** Les cibles du sort ou de la capacité de l'événement (« ces créatures »). */
   targetsOfEventObject: { kind: "targetsOfEventObject" } as Ref,
   /** Les capacités sur la pile dont la source est l'objet de l'événement, la plus récente d'abord. */
@@ -1485,6 +1488,8 @@ export function activated(opts: {
   discardFilter?: ObjectFilter;
   /** Ninjutsu : « renvoyez en main un attaquant non bloqué que vous contrôlez ». */
   returnUnblockedAttacker?: boolean;
+  /** « Renvoyez [un permanent] que vous contrôlez dans la main de son propriétaire » (Urban Retreat). */
+  bounceOther?: ObjectFilter;
   /** « Fourragez » (701.61). */
   forage?: boolean;
   /** Fabrication (702.167) : voir `craft()`. */
@@ -1527,6 +1532,7 @@ export function activated(opts: {
       discard: opts.discard,
       discardFilter: opts.discardFilter,
       returnUnblockedAttacker: opts.returnUnblockedAttacker,
+      bounceOther: opts.bounceOther,
       forage: opts.forage,
       craft: opts.craft,
     },
@@ -1865,6 +1871,8 @@ export const cond = {
   /** « Si {U}{U} a été dépensé pour le lancer » : `cond.spent("U", 2)`. */
   spent: (color: ManaType, n: number): Condition => ({ kind: "spentColor", color, n }),
   evoked: { kind: "evoked" } as Condition,
+  /** « S'il a été lancé par Web-slinging », « si le coût de chaos a été payé ». */
+  castVia: (via: CastVia): Condition => ({ kind: "castVia", via }),
   /** Capacité ∞ : la source a été exploitée. */
   harnessed: { kind: "harnessed" } as Condition,
   /** Storied : « tant que vous avez un récit durable ». */

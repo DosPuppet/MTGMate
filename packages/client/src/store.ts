@@ -92,10 +92,12 @@ export interface Casting {
   tap: string[] | null;
   /** Matériaux d'une fabrication. */
   materials: string[] | null;
+  /** Web-slinging : la créature engagée renvoyée en main. */
+  bounce: string[] | null;
   /** Façon de payer le sort : coût normal, sans payer (Omniscience, Etali), coût alternatif. */
   payMode: "normal" | "free" | "alt" | null;
   targets: Record<string, string[]>;
-  stage: "mode" | "pay" | "x" | "kicker" | "target" | "discard" | "sacrifice" | "tap" | "materials";
+  stage: "mode" | "pay" | "x" | "kicker" | "target" | "discard" | "sacrifice" | "tap" | "materials" | "bounce";
   spec: TargetOption | null;
   /** Cibles déjà désignées pour `spec` quand il en accepte plusieurs. */
   picked?: string[];
@@ -269,7 +271,7 @@ interface Store {
   pickTarget(id: string): void;
   /** Valide les cibles déjà désignées (« jusqu'à N »). */
   confirmTargets(): void;
-  chooseAdditional(kind: "discard" | "sacrifice" | "tap" | "materials", ids: string[]): void;
+  chooseAdditional(kind: "discard" | "sacrifice" | "tap" | "materials" | "bounce", ids: string[]): void;
   cancel(): void;
   toggleAttacker(id: string): void;
   /** Cible choisie pour l'attaquant en visée. */
@@ -344,6 +346,7 @@ function buildDecision(c: Casting): Decision {
       discard: c.discard ?? undefined,
       sacrifice: c.sacrifice ?? undefined,
       tap: c.tap ?? undefined,
+      bounce: c.bounce ?? undefined,
       free: c.payMode === "free" && !c.option.free ? true : undefined,
       alternative: c.payMode === "alt" ? true : undefined,
     };
@@ -695,6 +698,9 @@ export const useGame = create<Store>((set, get) => {
       c.sacrifice === null
     )
       return set({ casting: { ...c, stage: "sacrifice", spec: null } });
+    // Web-slinging : la créature engagée à renvoyer, s'il y a le choix.
+    if (c.option.type === "cast" && c.payMode === "alt" && (c.option.altBounce?.length ?? 0) > 1 && c.bounce === null)
+      return set({ casting: { ...c, stage: "bounce", spec: null } });
     // Travail d'équipe : les créatures à engager.
     if (c.option.type === "cast" && c.kicked && c.option.kickerTap && c.tap === null)
       return set({ casting: { ...c, stage: "tap", spec: null } });
@@ -1345,6 +1351,7 @@ export const useGame = create<Store>((set, get) => {
         sacrifice: null,
         tap: null,
         materials: null,
+        bounce: null,
         payMode: null,
         targets: {},
         stage: "mode",

@@ -1,5 +1,5 @@
 /** Types du moteur — Filtres, cibles, déclencheurs, conditions, références et montants. Réexportés par `types.ts`. */
-import type { CardType, Color, Keyword, ManaType, Step, TurnLogQuery, Zone } from "../types";
+import type { CardType, CastVia, Color, Keyword, ManaType, Step, TurnLogQuery, Zone } from "../types";
 
 export interface TargetSpec {
   id: string;
@@ -143,6 +143,8 @@ export interface ObjectFilter {
   colorChosen?: boolean;
   /** Mise dans sa zone actuelle ce tour-ci (« carte mise dans un cimetière ce tour-ci »). */
   enteredThisTurn?: boolean;
+  /** Carte défaussée ce tour-ci (chaos, Mayhem : « si vous l'avez défaussée ce tour-ci »). */
+  discardedThisTurn?: boolean;
   /** Valeur de mana inférieure ou égale à la force de la source (« … inférieure ou égale à la force d'Alesha »). */
   maxManaValueSourcePower?: boolean;
   /** Valeur de mana au plus égale au mana dépensé pour lancer la source (Astelli Reclaimer). */
@@ -506,6 +508,8 @@ export type Condition =
   | { kind: "harnessed" }
   /** La source a été lancée pour son coût d'évocation. */
   | { kind: "evoked" }
+  /** Le sort qui se résout, ou le permanent source, a été lancé ainsi (Web-slinging, chaos). */
+  | { kind: "castVia"; via: CastVia }
   /** Contempler (701.63) : vous contrôlez un permanent correspondant, ou vous révélez une carte correspondante de votre main. */
   | { kind: "behold"; filter: ObjectFilter }
   /** Le contrôleur a activé une capacité de loyauté ce tour-ci. */
@@ -593,6 +597,8 @@ export type Ref =
   | { kind: "exiledWith" }
   /** Les cartes exilées pour payer le coût de ce qui se résout (Baron Helmut Zemo). */
   | { kind: "costExiled" }
+  /** La créature renvoyée en main pour le Web-slinging du sort qui se résout, ou du permanent source. */
+  | { kind: "costBounced" }
   /** Les cibles du sort ou de la capacité de l'événement (Storm, Windrider : « ces créatures »). */
   | { kind: "targetsOfEventObject" }
   /** La capacité la plus récente sur la pile dont la source est l'objet de l'événement (Firebender Ascension). */
