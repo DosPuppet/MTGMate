@@ -155,6 +155,8 @@ export function evalCondition(s: GameState, ctx: EffectContext, c: Condition): b
     }
     case "xAtLeast":
       return ctx.x >= c.n;
+    case "amountGreater":
+      return evalAmount(s, ctx, c.a) > evalAmount(s, ctx, c.b);
     case "amountAtLeast":
       return evalAmount(s, ctx, c.amount) >= c.n;
     case "any":
@@ -232,6 +234,12 @@ export function resolveRef(s: GameState, ctx: EffectContext, ref: Ref): string[]
       );
     case "libraryTop":
       return resolveRef(s, ctx, ref.who).flatMap((p) => (s.players[p]?.library[0] ? [s.players[p]?.library[0] as string] : []));
+    case "targetsOfEventObject": {
+      // Le sort lancé (l'objet de l'événement) : ses cibles, d'après son élément de pile.
+      const id = ctx.event?.objectId;
+      const item = s.stack.find((x) => x.id === id || x.sourceId === id);
+      return item ? Object.values(item.targets).flat() : [];
+    }
     case "abilitiesFromEventObject": {
       const src = ctx.event?.objectId;
       const resolving = s.resolving?.item.id;

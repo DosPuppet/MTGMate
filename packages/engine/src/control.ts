@@ -22,7 +22,7 @@ export function addControlEffect(
   ids: ObjectId[],
   to: PlayerId,
   duration: ContinuousEffect["duration"],
-  extra: Pick<ContinuousEffect, "whileSource" | "whileControlledBy"> = {},
+  extra: Pick<ContinuousEffect, "whileSource" | "whileControlledBy" | "until" | "sinceTurn"> = {},
 ): void {
   if (ids.length === 0) return;
   s.effects.push({ id: newId(s, "e"), timestamp: nextTimestamp(s), affected: [...ids], duration, controller: to, ...extra });

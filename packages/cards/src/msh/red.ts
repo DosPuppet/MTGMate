@@ -363,4 +363,45 @@ export const RED: Record<string, CardScript> = {
       }),
     ],
   },
+  "Evil's Thrall": {
+    spell: spell(
+      [target.creature()],
+      [
+        ...fx.when(
+          cond.amountGreater(amount.maxManaValue({ subtype: "Villain", controller: "you" }), amount.manaValueOf(ref.target())),
+          fx.gainControl(ref.target(), { untilEndOfYourNextTurn: true }),
+        ),
+        ...fx.when(
+          cond.not(
+            cond.amountGreater(amount.maxManaValue({ subtype: "Villain", controller: "you" }), amount.manaValueOf(ref.target())),
+          ),
+          fx.gainControl(ref.target()),
+        ),
+        fx.untap(ref.target()),
+        fx.pump(ref.target(), 0, 0, ["haste"]),
+      ],
+    ),
+  },
+  "Loki Laufeyson": {
+    abilities: [
+      activated({
+        mana: "{1}",
+        tap: true,
+        effects: [
+          {
+            op: "playerEffect",
+            ability: { nextSpell: { filter: { types: ["Instant", "Sorcery"], maxManaValueSourcePower: true }, copy: true } },
+            once: true,
+          },
+        ],
+        label: "Votre prochain éphémère ou rituel de valeur de mana au plus sa force ce tour-ci est copié",
+      }),
+      activated({
+        mana: "{4}{R}",
+        powerUp: true,
+        effects: [fx.addCounters(ref.self, 2)],
+        label: "Montée en puissance : deux marqueurs +1/+1",
+      }),
+    ],
+  },
 };

@@ -1647,6 +1647,12 @@ export const HANDLERS: OpHandlers = {
       const p = o?.controller;
       if (!o || !p || r.vars[key(`connive-${id}-done`)]) continue;
       if (!r.vars[key(`connive-${id}-drew`)]) {
+        // Leader, Super-Genius : « si une créature que vous contrôlez devait comploter, piochez d'abord une carte ».
+        const first = quantityMods(s, "connive", (a) => recipientMatches(s, a, id)).mods.reduce(
+          (n, m) => n + ("add" in m ? (m.add ?? 0) : 0),
+          0,
+        );
+        if (first > 0) drawCards(s, p, first);
         drawCards(s, p, 1);
         r.vars[key(`connive-${id}-drew`)] = [1];
       }

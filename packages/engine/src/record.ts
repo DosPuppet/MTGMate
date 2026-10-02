@@ -137,8 +137,12 @@ export const RECORD_VERSION = 1;
  * - 51 : Marvel Super Heroes, lot C1 : « marqueurs mis par vous ce tour-ci » lu par les statiques (et par sorte) ;
  *   activer malgré le mal d'invocation ; blessures augmentées de la force de la source ; coût « retirez X marqueurs » ;
  *   symboles d'une couleur dans un coût ; prolifération sur une cible.
+ * - 52 : Marvel Super Heroes, lot C2 : copie « jusqu'à votre prochain tour » avec exceptions (707.9b) ; contrôle jusqu'à
+ *   la fin de votre prochain tour ; « devient la cible » pour les joueurs et les seules capacités ; filtre de `nextSpell`
+ *   figé à la résolution ; capacités ciblées par contrôleur et source ; cibles du sort de l'événement ; connivence
+ *   remplacée ; comparaison de deux montants.
  */
-export const RULES_VERSION = 51;
+export const RULES_VERSION = 52;
 
 /** Un point de contrôle toutes les N décisions (plus la dernière de la partie). */
 export const CHECKPOINT_EVERY = 25;

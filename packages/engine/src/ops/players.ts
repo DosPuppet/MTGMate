@@ -12,14 +12,38 @@ import {
   resolveRef,
   store,
 } from "../effects";
-import { apnapOrder, emit, isPlayer, moveObject, onBattlefield, opponentsOf, random, rulesEvent, shuffle } from "../state";
+import { apnapOrder, chars, emit, isPlayer, moveObject, onBattlefield, opponentsOf, random, rulesEvent, shuffle } from "../state";
 import { addPlayerEffect, playerStatic } from "../statics";
 import { matchesObjectFilter } from "../targets";
 import { eliminate, endTheTurn } from "../turn";
 import type { EventReplacement } from "../types";
 
 export const HANDLERS: OpHandlers = {
-  playerEffect(s, _r, e, ctx) {
+  playerEffect(s, _r, e0, ctx) {
+    // Loki Laufeyson : « de valeur de mana au plus la force de Loki » est figé à la résolution.
+    const f = e0.ability.nextSpell?.filter;
+    const e =
+      f?.maxManaValueSourcePower && e0.ability.nextSpell
+        ? {
+            ...e0,
+            ability: {
+              ...e0.ability,
+              nextSpell: {
+                ...e0.ability.nextSpell,
+                filter: {
+                  ...f,
+                  maxManaValueSourcePower: undefined,
+                  maxManaValue: Math.max(
+                    0,
+                    s.objects[ctx.sourceId]?.zone === "battlefield"
+                      ? chars(s, ctx.sourceId).power
+                      : (s.lki[ctx.sourceId]?.power ?? 0),
+                  ),
+                },
+              },
+            },
+          }
+        : e0;
     const who = e.who ? resolveRef(s, ctx, e.who).filter((p) => isPlayer(s, p)) : [ctx.controller];
     const until = e.untilYourNextTurn
       ? nextTurnOf(s, ctx.controller) - 1

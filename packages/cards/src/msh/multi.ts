@@ -8,6 +8,7 @@ import type { Effect, ObjectFilter, TokenSpec } from "@mtgx/engine";
 import {
   activated,
   amount,
+  block,
   type CardScript,
   chapter,
   cond,
@@ -590,6 +591,106 @@ export const MULTI: Record<string, CardScript> = {
         effects: [fx.createTokens(INSECT_G, amount.x)],
         label: "Retirez X marqueurs +1/+1 : X Insectes 1/1",
       }),
+    ],
+  },
+  // Vigilance : lue dans le texte.
+  "Absorbing Man": {
+    abilities: [
+      triggered(
+        { on: "step", step: "main1", whose: "you" },
+        [
+          fx.becomeCopy(ref.self, ref.target(), "untilYourNextTurn", {
+            except: {
+              setName: "Absorbing Man",
+              addTypes: ["Creature"],
+              addSubtypes: ["Human", "Villain"],
+              addSupertypes: ["Legendary"],
+              setPower: 4,
+              setToughness: 4,
+              addKeywords: ["vigilance"],
+            },
+          }),
+        ],
+        {
+          targets: [
+            target.upTo(1, {
+              id: "t",
+              label: "artefact, enchantement non-Aura ou terrain",
+              filter: {
+                objects: {
+                  anyOf: [{ types: ["Artifact"] }, { types: ["Enchantment"], notSubtype: "Aura" }, { types: ["Land"] }],
+                },
+              },
+            }),
+          ],
+          label: "Jusqu'à votre prochain tour, il devient une copie d'un artefact, enchantement non-Aura ou terrain",
+        },
+      ),
+    ],
+  },
+  "Taskmaster, Mercenary Mimic": {
+    abilities: [
+      triggered(
+        { on: "step", step: "main1", whose: "you" },
+        [
+          fx.becomeCopy(ref.self, ref.target(), "untilYourNextTurn", {
+            except: {
+              setName: "Taskmaster, Mercenary Mimic",
+              addTypes: ["Creature"],
+              setSubtypes: ["Human", "Mercenary", "Villain"],
+              addSupertypes: ["Legendary"],
+            },
+          }),
+        ],
+        {
+          targets: [
+            target.upTo(1, {
+              id: "t",
+              label: "créature, ou carte de créature d'un cimetière",
+              filter: { objects: { types: ["Creature"], other: true }, cards: { filter: { types: ["Creature"] }, whose: "any" } },
+            }),
+          ],
+          label: "Jusqu'à votre prochain tour, il devient une copie d'une créature ou d'une carte de créature",
+        },
+      ),
+    ],
+  },
+  "Scientist Supreme of A.I.M.": {
+    abilities: [
+      activated({
+        payLife: 2,
+        oncePerTurn: true,
+        activationCondition: cond.yourTurn,
+        targets: [
+          {
+            id: "t",
+            label: "capacité que vous contrôlez d'une source artefact",
+            filter: { stackItems: { abilitiesOnly: true, controller: "you", source: { types: ["Artifact"] } } },
+          },
+        ],
+        effects: [fx.copySpell(ref.target(), 1)],
+        label: "Payez 2 PV : copiez une capacité d'artefact que vous contrôlez",
+      }),
+    ],
+  },
+  // Vol : lu dans le texte.
+  "Storm, Windrider": {
+    abilities: [
+      staticAbility(
+        { types: ["Creature"], keyword: "flying", controller: "opponent" },
+        { addBlockRules: [{ cantAttackSourceController: true, label: "Ne peut pas attaquer le contrôleur de Storm" }] },
+        { label: "Les créatures avec le vol ne peuvent pas vous attaquer" },
+      ),
+      staticAbility(
+        { types: ["Creature"], controller: "you" },
+        { addBlockRules: [block.notBy({ keyword: "flying" }, "Ne peut pas être bloquée par des créatures avec le vol")] },
+        { label: "Les créatures avec le vol ne peuvent pas bloquer vos créatures" },
+      ),
+      triggered(
+        when.castSpell("you", {}, { objects: { types: ["Creature"] } }),
+        [fx.modify(ref.filtered(ref.targetsOfEventObject, { types: ["Creature"] }), { addKeywords: ["flying"] }, "endOfTurn")],
+        { label: "Un sort qui cible des créatures : elles gagnent le vol" },
+      ),
     ],
   },
 };

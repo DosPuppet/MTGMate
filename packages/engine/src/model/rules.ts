@@ -52,7 +52,14 @@ export interface TargetFilter {
   /** Sorts sur la pile (« contrecarrez le sort de créature ciblé »). */
   spells?: ObjectFilter;
   /** Sorts ou capacités sur la pile à cible unique (Bolt Bend). */
-  stackItems?: { singleTarget?: boolean; abilitiesOnly?: boolean; triggeredOnly?: boolean };
+  /** `controller` : que vous contrôlez ; `source` : dont la source correspond (Scientist Supreme : « d'une source artefact »). */
+  stackItems?: {
+    singleTarget?: boolean;
+    abilitiesOnly?: boolean;
+    triggeredOnly?: boolean;
+    controller?: "you";
+    source?: ObjectFilter;
+  };
 }
 
 export interface ObjectFilter {
@@ -315,6 +322,10 @@ export type TriggerSpec =
       bySpellYouControl?: boolean;
       byYou?: boolean;
       spells?: boolean;
+      /** Un joueur ciblé compte aussi (Loki, God of Mischief : « un joueur ou un permanent »). */
+      players?: boolean;
+      /** Seulement par une capacité (pas un sort). */
+      abilitiesOnly?: boolean;
     }
   /** « Chaque fois que [la créature équipée] se dégage » */
   | { on: "untaps"; who: "self" | ObjectFilter }
@@ -456,6 +467,8 @@ export type Condition =
   | { kind: "lifeGainedAtLeast"; n: number }
   /** Un montant évalué du point de vue du contrôleur atteint N (« force totale 8 ou plus »). */
   | { kind: "amountAtLeast"; amount: Amount; n: number }
+  /** Un montant strictement plus grand qu'un autre, évalués à la résolution (Evil's Thrall). */
+  | { kind: "amountGreater"; a: Amount; b: Amount }
   /** X du sort qui se résout. */
   | { kind: "xAtLeast"; n: number }
   /** « tant que vous avez N mana non dépensé ou plus » (Ozai, the Phoenix King). */
@@ -576,6 +589,8 @@ export type Ref =
   | { kind: "linked" }
   /** Cartes exilées « jusqu'à ce que » la source quitte le champ de bataille (Pinnacle Starcage). */
   | { kind: "exiledWith" }
+  /** Les cibles du sort ou de la capacité de l'événement (Storm, Windrider : « ces créatures »). */
+  | { kind: "targetsOfEventObject" }
   /** La capacité la plus récente sur la pile dont la source est l'objet de l'événement (Firebender Ascension). */
   | { kind: "abilitiesFromEventObject" }
   /** Les joueurs (encore en partie) qui n'ont pas la vitesse maximale (Outpace Oblivion). */

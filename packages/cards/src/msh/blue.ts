@@ -472,4 +472,26 @@ export const BLUE: Record<string, CardScript> = {
       triggered(when.draw(2), [fx.addCounters(ref.self, 1)], { label: "Deuxième carte piochée : un marqueur +1/+1" }),
     ],
   },
+  "Loki, God of Mischief": {
+    abilities: [
+      triggered({ on: "becomesTarget", who: {}, players: true, abilitiesOnly: true, byYou: true }, [fx.draw(1)], {
+        oncePerTurn: true,
+        label: "Un joueur ou un permanent devient la cible d'une de vos capacités : piochez (une fois par tour)",
+      }),
+    ],
+  },
+  "Leader, Super-Genius": {
+    abilities: [
+      eventReplacement({
+        event: "connive",
+        toFilter: { types: ["Creature"], controller: "you" },
+        modify: { add: 1 },
+        label: "Une de vos créatures complote : piochez d'abord une carte",
+      }),
+      triggered({ on: "step", step: "beginCombat", whose: "you" }, [fx.connive(ref.target())], {
+        targets: [target.creature("t", { controller: "you" })],
+        label: "Au début de votre combat, une de vos créatures complote",
+      }),
+    ],
+  },
 };

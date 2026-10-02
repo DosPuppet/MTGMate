@@ -638,10 +638,15 @@ export interface ContinuousEffect extends LayerMods {
   timestamp: number;
   /** Ensemble d'objets verrouillé à la résolution (règle 611.2c). */
   affected: ObjectId[];
-  /** « jusqu'à la fin du tour », tant que les objets restent sur le champ de bataille, ou « jusqu'à votre prochain tour ». */
-  duration: "endOfTurn" | "permanent" | "untilYourNextTurn";
-  /** Pour « jusqu'à votre prochain tour » : le joueur dont le prochain tour met fin à l'effet. */
+  /**
+   * « jusqu'à la fin du tour », tant que les objets restent sur le champ de bataille, « jusqu'à votre prochain tour », ou
+   * « jusqu'à la fin de votre prochain tour » (Evil's Thrall : retiré au nettoyage du prochain tour de `until`).
+   */
+  duration: "endOfTurn" | "permanent" | "untilYourNextTurn" | "endOfYourNextTurn";
+  /** Pour « jusqu'à votre prochain tour » et « jusqu'à la fin de votre prochain tour » : le joueur concerné. */
   until?: PlayerId;
+  /** « jusqu'à la fin de votre prochain tour » : tour de création (l'effet dure au-delà du tour en cours). */
+  sinceTurn?: number;
   /** L'effet cesse quand la carte de cette identité physique quitte l'exil. */
   untilExiledUid?: string;
   /** L'effet cesse quand cette source quitte le champ de bataille (Possession Engine). */

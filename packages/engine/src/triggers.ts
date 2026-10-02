@@ -411,6 +411,7 @@ export function checkCondition(
       return !!v && matchesView(v, c.filter, controller, sourceId);
     }
     case "xAtLeast":
+    case "amountGreater":
       return false; // évalués au lancement (stack.ts) ou pendant la résolution (effects.ts)
     case "lifeGainedAtLeast":
       return (s.players[controller]?.turnStats.lifeGained ?? 0) >= c.n;
@@ -885,11 +886,13 @@ function matchTrigger(s: GameState, ev: RulesEvent, t: TriggerSpec, src: Source)
             ? src.id
             : undefined
           : ev.targets.find((id) => {
+              if (t.players && s.players[id]) return true;
               const v = liveView(s, id);
               const zone = s.objects[id]?.zone;
               return !!v && (zone === "battlefield" || (!!t.spells && zone === "stack")) && matchWho(who, v, src);
             });
       if (!hit) return null;
+      if (t.abilitiesOnly && s.stack.find((x) => x.id === ev.stackId)?.kind === "spell") return null;
       if (t.byOpponent && ev.controller === me) return null;
       // Vaillance : un sort ou une capacité que vous contrôlez.
       if (t.byYou && ev.controller !== me) return null;

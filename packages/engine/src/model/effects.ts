@@ -405,7 +405,8 @@ export type Effect =
   /** « Terminez le tour » (723). */
   | { op: "endTurn" }
   /** Le contrôleur de l'effet prend le contrôle de l'objet jusqu'à la fin du tour. */
-  | { op: "gainControl"; what: Ref }
+  /** `untilEndOfYourNextTurn` : jusqu'à la fin de votre prochain tour (Evil's Thrall), sinon jusqu'à la fin du tour. */
+  | { op: "gainControl"; what: Ref; untilEndOfYourNextTurn?: boolean }
   /** Copies d'un sort sur la pile (mêmes cibles). */
   /** `haste`, `sacrificeAtEnd` : la copie d'un sort de créature a la célérité et est sacrifiée en fin de tour. */
   | { op: "copySpell"; what: Ref; count: Amount; haste?: boolean; sacrificeAtEnd?: boolean }
@@ -563,10 +564,12 @@ export type Effect =
       op: "becomeCopy";
       what: Ref;
       of: Ref;
-      duration: "endOfTurn" | "permanent";
+      duration: "endOfTurn" | "permanent" | "untilYourNextTurn";
       addKeywords?: Keyword[];
       keepAbilities?: number[];
       ifManaValue?: Amount;
+      /** Exceptions de copie (707.9b) : nom, types, surtypes, F/E, mots-clés. */
+      except?: LayerMods;
     }
   /** Donne le contrôle de l'objet à un joueur, sans limite de durée (Harmless Offering). */
   | { op: "giveControl"; what: Ref; to: Ref }

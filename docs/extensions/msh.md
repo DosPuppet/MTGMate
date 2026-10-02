@@ -108,3 +108,18 @@ Les scripts sont dans `packages/cards/src/msh/` : `cards` (cartes du méta), `wh
 - Ares et Super-Adaptoid profitent des correctifs du lot A6 (dernières informations d'une créature attaquante, « légendaire » dans les F/E définies par une capacité).
 - **Version des règles :** 51.
 - **Tests :** 8 tests de règles (« lot C1 »).
+
+## Sous-lot C2 : copies, contrôle et cibles ✅ (263 / 271)
+
+- **Cartes (8) :** Absorbing Man, Taskmaster, Mercenary Mimic, Evil's Thrall, Loki, God of Mischief, Loki Laufeyson, Scientist Supreme of A.I.M., Storm, Windrider, Leader, Super-Genius.
+- **Le moteur gagne :**
+  - `fx.becomeCopy(…, "untilYourNextTurn", { except })` : une copie jusqu'à votre prochain tour, avec des exceptions de copie (707.9b : nom, types, surtypes, F/E, mots-clés) ; une carte de créature d'un cimetière peut être copiée (Taskmaster) ;
+  - la durée `endOfYourNextTurn` (« jusqu'à la fin de votre prochain tour ») et `fx.gainControl(…, { untilEndOfYourNextTurn })` ;
+  - la condition `cond.amountGreater(a, b)` (« un Méchant de valeur de mana supérieure ») ;
+  - `becomesTarget` avec `players` et `abilitiesOnly` (« un joueur ou un permanent devient la cible d'une de vos capacités ») ;
+  - le filtre de `nextSpell` figé à la résolution (Loki Laufeyson : « valeur de mana au plus sa force ») ;
+  - la cible `stackItems` avec `controller` et `source` (« une capacité que vous contrôlez d'une source artefact ») ;
+  - la référence `ref.targetsOfEventObject` (« ces créatures » : les cibles du sort lancé) ;
+  - l'événement remplaçable `connive` (Leader : piocher d'abord une carte).
+- **Version des règles :** 52.
+- **Tests :** 8 tests de règles (« lot C2 »).

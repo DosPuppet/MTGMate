@@ -225,6 +225,8 @@ export const ref = {
   except: (r: Ref, exclude: Ref): Ref => ({ kind: "except", ref: r, exclude }),
   /** Cartes exilées par la source « jusqu'à ce qu'elle quitte le champ de bataille ». */
   exiledWith: { kind: "exiledWith" } as Ref,
+  /** Les cibles du sort ou de la capacité de l'événement (« ces créatures »). */
+  targetsOfEventObject: { kind: "targetsOfEventObject" } as Ref,
   /** Les capacités sur la pile dont la source est l'objet de l'événement, la plus récente d'abord. */
   abilitiesFromEventObject: { kind: "abilitiesFromEventObject" } as Ref,
   playersWithoutMaxSpeed: { kind: "playersWithoutMaxSpeed" } as Ref,
@@ -684,7 +686,7 @@ export const fx = {
   /** « [Cette carte] gagne l'harmonie jusqu'à la fin du tour ; son coût d'harmonie est son coût de mana » (702.180). */
   grantHarmonize: (what: Ref): Effect => ({ op: "grantFlashback", what, harmonize: true }),
   endTurn: { op: "endTurn" } as Effect,
-  gainControl: (what: Ref): Effect => ({ op: "gainControl", what }),
+  gainControl: (what: Ref, opts: { untilEndOfYourNextTurn?: boolean } = {}): Effect => ({ op: "gainControl", what, ...opts }),
   /** `haste`, `sacrificeAtEnd` : la copie d'un sort de créature (un jeton) a la célérité, est sacrifiée en fin de tour. */
   copySpell: (what: Ref, count: Amount, opts: { haste?: boolean; sacrificeAtEnd?: boolean } = {}): Effect => ({
     op: "copySpell",
@@ -858,8 +860,9 @@ export const fx = {
   becomeCopy: (
     what: Ref,
     of: Ref,
-    duration: "endOfTurn" | "permanent" = "endOfTurn",
-    opts: { addKeywords?: Keyword[]; keepAbilities?: number[]; ifManaValue?: Amount } = {},
+    duration: "endOfTurn" | "permanent" | "untilYourNextTurn" = "endOfTurn",
+    /** `except` : exceptions de copie (707.9b : nom, types, F/E…), Absorbing Man, Taskmaster. */
+    opts: { addKeywords?: Keyword[]; keepAbilities?: number[]; ifManaValue?: Amount; except?: LayerMods } = {},
   ): Effect => ({
     op: "becomeCopy",
     what,
@@ -1800,6 +1803,8 @@ export const cond = {
   eventObjectMatches: (filter: ObjectFilter): Condition => ({ kind: "eventObjectMatches", filter }),
   lifeGainedAtLeast: (n: number): Condition => ({ kind: "lifeGainedAtLeast", n }),
   amountAtLeast: (a: Amount, n: number): Condition => ({ kind: "amountAtLeast", amount: a, n }),
+  /** « a > b », évalués à la résolution (Evil's Thrall : un Méchant de valeur de mana supérieure). */
+  amountGreater: (a: Amount, b: Amount): Condition => ({ kind: "amountGreater", a, b }),
   xAtLeast: (n: number): Condition => ({ kind: "xAtLeast", n }),
   /** « tant que vous avez N mana non dépensé ou plus » (la réserve change : `bump` à chaque changement). */
   manaPoolAtLeast: (n: number): Condition => ({ kind: "manaPoolAtLeast", n }),

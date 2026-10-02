@@ -9,6 +9,7 @@ import { describe, expect, it } from "vitest";
 import { destroy } from "../src/actions";
 import { fx, manaAbility, ref, spell, target } from "../src/dsl";
 import { legalActions } from "../src/legal";
+import { manaAbilitiesOf } from "../src/mana";
 import { changeCounters, chars } from "../src/state";
 import type { ActionOption, ChoiceRequest, ChoiceValue, GameState } from "../src/types";
 import {
@@ -4402,5 +4403,159 @@ describe("lot C1 : caractéristiques, filtres et coûts", () => {
     s = settle(activate(s, "p1", broker, { targets: { t: [bear] } }));
     expect(s.objects[bear]?.counters["+1/+1"]).toBe(2);
     expect(s.objects[bear]?.counters.flying).toBe(2);
+  });
+});
+
+describe("lot C2 : copies, contrôle et cibles", () => {
+  /** Va jusqu'à votre prochaine première phase principale, en répondant aux choix. */
+  const nextMain = (s: S, answer: Answer = () => undefined) => {
+    const turn = s.turn.number;
+    let cur = s;
+    for (
+      let i = 0;
+      i < 400 &&
+      !(
+        cur.turn.number > turn &&
+        cur.turn.active === "p1" &&
+        cur.turn.step === "main1" &&
+        cur.stack.length === 0 &&
+        cur.triggers.length === 0 &&
+        cur.pending?.kind === "priority"
+      );
+      i++
+    ) {
+      const p = cur.pending;
+      if (p?.kind === "choice")
+        cur = act(cur, p.player, { type: "choose", values: answer(p.request, p.player, cur) ?? p.request.suggested });
+      else if (p?.kind === "declareAttackers") cur = act(cur, p.player, { type: "declareAttackers", attackers: [] });
+      else if (p?.kind === "declareBlockers") cur = act(cur, p.player, { type: "declareBlockers", blocks: [] });
+      else if (p?.kind === "discard")
+        cur = act(cur, p.player, { type: "discard", cards: (cur.players[p.player]?.hand ?? []).slice(0, p.count) });
+      else if (p) cur = act(cur, p.player, { type: "pass" });
+    }
+    return cur;
+  };
+
+  it("Absorbing Man : à votre première phase principale, copie d'un artefact jusqu'à votre prochain tour, Humain Méchant légendaire 4/4", () => {
+    let s = scenario({ p1: { battlefield: ["Absorbing Man", "Arc Reactor"] } });
+    const man = idOf(s, "p1", "battlefield", "Absorbing Man");
+    const reactor = idOf(s, "p1", "battlefield", "Arc Reactor");
+    s = nextMain(s, (req) => (req.type === "pick" && req.options.includes(reactor) ? [reactor] : undefined));
+    const c = chars(s, man);
+    expect(c.name).toBe("Absorbing Man");
+    expect(c.types).toEqual(expect.arrayContaining(["Artifact", "Creature"]));
+    expect([c.power, c.toughness]).toEqual([4, 4]);
+    expect(c.keywords).toContain("vigilance");
+    expect(manaAbilitiesOf(s, man).length).toBeGreaterThan(0);
+  });
+
+  it("Taskmaster, Mercenary Mimic : copie d'une carte de créature d'un cimetière, mais Taskmaster, Humain Mercenaire Méchant", () => {
+    let s = scenario({ p1: { battlefield: ["Taskmaster, Mercenary Mimic"] }, p2: { graveyard: ["Serra Angel"] } });
+    const task = idOf(s, "p1", "battlefield", "Taskmaster, Mercenary Mimic");
+    const angel = idOf(s, "p2", "graveyard", "Serra Angel");
+    s = nextMain(s, (req) => (req.type === "pick" && req.options.includes(angel) ? [angel] : undefined));
+    const c = chars(s, task);
+    expect(c.name).toBe("Taskmaster, Mercenary Mimic");
+    expect(c.keywords).toEqual(expect.arrayContaining(["flying", "vigilance"]));
+    expect(c.subtypes).toEqual(["Human", "Mercenary", "Villain"]);
+    expect(c.power).toBe(4);
+  });
+
+  it("Evil's Thrall : contrôle jusqu'à la fin du tour, ou de votre prochain tour avec un Méchant de valeur de mana supérieure", () => {
+    const run = (battlefield: string[]) => {
+      let s = scenario({
+        p1: { battlefield: [...lands("Mountain", 3), ...battlefield], hand: ["Evil's Thrall"] },
+        p2: { battlefield: ["Bear Cub"] },
+      });
+      const bear = idOf(s, "p2", "battlefield", "Bear Cub");
+      s = settle(cast(s, "p1", "Evil's Thrall", { targets: { t: [bear] } }));
+      expect(s.objects[bear]?.controller).toBe("p1");
+      s = advanceUntil(s, (x) => x.turn.active === "p2" && x.turn.step === "main1");
+      return s.objects[bear]?.controller;
+    };
+    expect(run([])).toBe("p2");
+    // Crossbones (Méchant, valeur de mana 4) : supérieure à celle de Bear Cub (2).
+    expect(run(["Crossbones, Malicious Mercenary"])).toBe("p1");
+  });
+
+  it("Loki, God of Mischief : une de vos capacités cible un joueur ou un permanent, piochez une carte (une fois par tour)", () => {
+    const pinger = customCard({
+      name: "Test Pinger",
+      types: ["Artifact"],
+      typeLine: "Artifact",
+      abilities: [
+        {
+          kind: "activated",
+          cost: {},
+          targets: [target.player("t")],
+          effects: [fx.damage(1, ref.target())],
+          label: "1 blessure",
+        },
+      ],
+    });
+    let s = scenario({ p1: { battlefield: ["Loki, God of Mischief", pinger], library: lands("Island", 3) } });
+    const ping = idOf(s, "p1", "battlefield", "Test Pinger");
+    const hand = s.players.p1?.hand.length ?? 0;
+    s = settle(activate(s, "p1", ping, { targets: { t: ["p2"] } }));
+    s = settle(activate(s, "p1", ping, { targets: { t: ["p2"] } }));
+    expect(s.players.p1?.hand).toHaveLength(hand + 1);
+    expect(s.players.p2?.life).toBe(18);
+  });
+
+  it("Loki Laufeyson : le prochain éphémère ou rituel de valeur de mana au plus sa force est copié (pas un plus cher)", () => {
+    let s = scenario({ p1: { battlefield: ["Loki Laufeyson", ...lands("Mountain", 4)], hand: ["Lightning Strike"] } });
+    const loki = idOf(s, "p1", "battlefield", "Loki Laufeyson");
+    s.objects[loki]!.controlledSince = 0;
+    s = settle(activate(s, "p1", loki, {}, /prochain/));
+    s = settle(cast(s, "p1", "Lightning Strike", { targets: { t: ["p2"] } }));
+    expect(s.players.p2?.life).toBe(14);
+  });
+
+  it("Scientist Supreme of A.I.M. : payez 2 PV, copiez une capacité d'une source artefact que vous contrôlez", () => {
+    const pinger = customCard({
+      name: "Test Pinger",
+      types: ["Artifact"],
+      typeLine: "Artifact",
+      abilities: [
+        {
+          kind: "activated",
+          cost: {},
+          targets: [target.player("t")],
+          effects: [fx.damage(1, ref.target())],
+          label: "1 blessure",
+        },
+      ],
+    });
+    let s = scenario({ p1: { battlefield: ["Scientist Supreme of A.I.M.", pinger] } });
+    const ping = idOf(s, "p1", "battlefield", "Test Pinger");
+    const sup = idOf(s, "p1", "battlefield", "Scientist Supreme of A.I.M.");
+    s = activate(s, "p1", ping, { targets: { t: ["p2"] } });
+    const item = s.stack[0]?.id as string;
+    s = settle(activate(s, "p1", sup, { targets: { t: [item] } }));
+    expect(s.players.p1?.life).toBe(18);
+    expect(s.players.p2?.life).toBe(18);
+  });
+
+  it("Storm, Windrider : un sort qui cible des créatures leur donne le vol ; les créatures volantes ne peuvent pas vous attaquer", () => {
+    let s = scenario({
+      p1: { battlefield: ["Storm, Windrider", "Bear Cub", "Forest"], hand: ["Giant Growth"] },
+      p2: { battlefield: ["Serra Angel"] },
+    });
+    const bear = idOf(s, "p1", "battlefield", "Bear Cub");
+    s = settle(cast(s, "p1", "Giant Growth", { targets: { t: [bear] } }));
+    expect(chars(s, bear).keywords).toContain("flying");
+    s = advanceUntil(s, (x) => x.turn.active === "p2" && x.pending?.kind === "declareAttackers");
+    const angel = idOf(s, "p2", "battlefield", "Serra Angel");
+    expect(() => act(s, "p2", { type: "declareAttackers", attackers: [{ id: angel, defender: "p1" }] })).toThrow();
+  });
+
+  it("Leader, Super-Genius : au début de votre combat, une de vos créatures complote ; vous piochez d'abord une carte", () => {
+    let s = scenario({ p1: { battlefield: ["Leader, Super-Genius", "Bear Cub"], hand: [], library: lands("Island", 5) } });
+    const bear = idOf(s, "p1", "battlefield", "Bear Cub");
+    s = advanceUntil(s, (x) => x.turn.step === "beginCombat" && x.pending?.kind === "choice");
+    s = settle(s, picking([bear]));
+    // Deux cartes piochées (une d'abord, une pour la connivence), une défaussée.
+    expect(s.players.p1?.hand).toHaveLength(1);
+    expect(s.players.p1?.graveyard).toHaveLength(1);
   });
 });

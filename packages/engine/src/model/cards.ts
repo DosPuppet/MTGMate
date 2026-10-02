@@ -670,7 +670,8 @@ export interface EventReplacement {
    * prévention s'y applique : Blossombind, « ne peut pas être dégagée ») ; `payLife` : des PV payés (Ashiok, Wicked
    * Manipulator : `instead.exileFromLibrary`, autant de cartes du dessus de la bibliothèque exilées à la place).
    */
-  event: "damage" | "lifeLoss" | "lifeGain" | "draw" | "mill" | "counters" | "tokens" | "mana" | "untap" | "payLife";
+  /** `connive` : une créature va comploter ; `modify.add` : son contrôleur pioche d'abord autant de cartes (Leader). */
+  event: "damage" | "lifeLoss" | "lifeGain" | "draw" | "mill" | "counters" | "tokens" | "mana" | "untap" | "payLife" | "connive";
   /** Source des blessures (filtre vu du contrôleur : `controller: "you"` pour « vos sources ») ; mana : le permanent engagé. */
   source?: ObjectFilter;
   /**

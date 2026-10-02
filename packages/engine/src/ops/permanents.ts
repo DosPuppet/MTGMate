@@ -578,8 +578,11 @@ export const HANDLERS: OpHandlers = {
     for (const id of resolveRef(s, ctx, e.what)) {
       const o = s.objects[id];
       if (o?.zone !== "battlefield" || o.controller === ctx.controller) continue;
-      // Vol « jusqu'à la fin du tour » (Involuntary Employment) : l'effet prend fin au nettoyage (couche 2).
-      addControlEffect(s, [id], ctx.controller, "endOfTurn");
+      // Vol « jusqu'à la fin du tour » (Involuntary Employment) : l'effet prend fin au nettoyage (couche 2) ; Evil's
+      // Thrall : au nettoyage de votre prochain tour.
+      if (e.untilEndOfYourNextTurn)
+        addControlEffect(s, [id], ctx.controller, "endOfYourNextTurn", { until: ctx.controller, sinceTurn: s.turn.number });
+      else addControlEffect(s, [id], ctx.controller, "endOfTurn");
     }
     return;
   },
@@ -626,11 +629,15 @@ export const HANDLERS: OpHandlers = {
       timestamp: nextTimestamp(s),
       affected: ids,
       duration: e.duration,
+      ...(e.duration === "untilYourNextTurn" ? { until: ctx.controller } : {}),
       copyOf: defId,
       ...(onField ? copiableExceptions(s, model) : {}),
-      ...(e.addKeywords?.length || kept.length
+      ...(e.addKeywords?.length || kept.length || e.except
         ? mergeMods(onField ? copiableExceptions(s, model) : undefined, {
-            addKeywords: e.addKeywords?.length ? e.addKeywords : undefined,
+            ...(e.except ?? {}),
+            addKeywords: [...(e.except?.addKeywords ?? []), ...(e.addKeywords ?? [])].length
+              ? [...(e.except?.addKeywords ?? []), ...(e.addKeywords ?? [])]
+              : undefined,
             addAbilities: kept.length ? kept : undefined,
           })
         : {}),

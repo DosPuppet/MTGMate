@@ -310,6 +310,13 @@ export function isLegalTarget(s: GameState, controller: PlayerId, spec: TargetSp
       !stackItem.inline
     )
   ) {
+    const si = spec.filter.stackItems;
+    if (si.controller === "you" && stackItem.controller !== controller) return false;
+    if (si.source) {
+      const src =
+        s.objects[stackItem.sourceId]?.zone === "battlefield" ? snapshot(s, stackItem.sourceId) : s.lki[stackItem.sourceId];
+      if (!src || !matchesView(src, si.source, controller, sourceId)) return false;
+    }
     const n = Object.values(stackItem.targets).flat().length;
     return !spec.filter.stackItems.singleTarget || n === 1;
   }

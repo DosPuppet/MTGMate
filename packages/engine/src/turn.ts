@@ -388,7 +388,11 @@ function finishCleanup(s: GameState): void {
     o.damagedBy = undefined;
     o.combatDamagedPlayers = undefined;
   }
-  s.effects = s.effects.filter((e) => e.duration !== "endOfTurn");
+  s.effects = s.effects.filter(
+    (e) =>
+      e.duration !== "endOfTurn" &&
+      !(e.duration === "endOfYourNextTurn" && e.until === s.turn.active && s.turn.number > (e.sinceTurn ?? 0)),
+  );
   s.replacements = [];
   // Emblèmes « jusqu'à la fin du tour » (Jace Reawakened −6, Prairie Dog).
   for (const p of s.playerOrder) {
