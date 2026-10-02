@@ -1,7 +1,8 @@
 import type { GameView, ObjectView, PlayerView } from "@mtgx/engine";
 import { motion } from "motion/react";
-import { type CSSProperties, useEffect, useLayoutEffect, useRef, useState } from "react";
+import { type CSSProperties, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { useShallow } from "zustand/react/shallow";
+import { resolveBoardTheme } from "../boardThemes";
 import { faceName, PHASE_BAR, STEP_LABEL } from "../i18n";
 import { useLocalize } from "../localize";
 import { boardPick, choiceSource, pickValid, shortPrompt } from "../prompts/boardChoice";
@@ -1039,11 +1040,22 @@ function ActionPanel() {
 
 export function Board() {
   const view = useGame((s) => s.view);
-  if (!view) return <div className="board loading">Mélange des bibliothèques…</div>;
+  const choice = useGame((s) => s.boardTheme);
+  const session = useGame((s) => s.session);
+  // « Au hasard » : une texture tirée à chaque partie (nouvelle session), puis gardée jusqu'à la fin de celle-ci.
+  // biome-ignore lint/correctness/useExhaustiveDependencies: un nouveau tirage à chaque nouvelle session.
+  const roll = useMemo(() => Math.random(), [session]);
+  const theme = resolveBoardTheme(choice, roll);
+  if (!view)
+    return (
+      <div className="board loading" data-board={theme}>
+        Mélange des bibliothèques…
+      </div>
+    );
   const me = view.players[view.viewer] as PlayerView;
   const opponents = view.opponents.map((id) => view.players[id]).filter((p): p is PlayerView => !!p);
   return (
-    <div className="board" id="board">
+    <div className="board" id="board" data-board={theme}>
       <div className={`opp-bars n${opponents.length}`}>
         {opponents.map((opp) => (
           <div key={opp.id} className={`top-row ${opp.lost ? "eliminated" : ""}`}>

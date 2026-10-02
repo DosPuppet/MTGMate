@@ -26,6 +26,7 @@ import { create } from "zustand";
 import { soundsFor } from "./audio/eventSounds";
 import { playSound, preloadSounds } from "./audio/sfx";
 import { findObjectEl } from "./board/layout";
+import { type BoardThemeChoice, loadBoardTheme, saveBoardTheme } from "./boardThemes";
 import { fastMode } from "./fast";
 import { describeEvents, type Lang, type LogLine } from "./i18n";
 import { boardPick, togglePick } from "./prompts/boardChoice";
@@ -202,6 +203,9 @@ interface Store {
   /** Rythme des effets (durée pendant laquelle chaque résolution est montrée). */
   pace: Pace;
   setPace(pace: Pace): void;
+  /** Texture du plateau (`boardThemes.ts`), retenue dans `localStorage`. */
+  boardTheme: BoardThemeChoice;
+  setBoardTheme(choice: BoardThemeChoice): void;
 
   startGame(
     playerDeck: DeckEntries,
@@ -824,6 +828,11 @@ export const useGame = create<Store>((set, get) => {
     turnBanner: null,
     spotlight: null,
     resolving: null,
+    boardTheme: loadBoardTheme(),
+    setBoardTheme(boardTheme) {
+      set({ boardTheme });
+      saveBoardTheme(boardTheme);
+    },
     pace: loadPace(),
     setPace(pace) {
       set({ pace });

@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { SoundControl } from "../audio/SoundControl";
+import { BOARD_THEMES } from "../boardThemes";
 import { ImageRelayToggle } from "../ImageRelayToggle";
 import { faceImage, faceName, faceText, faceType, KEYWORD_LABEL } from "../i18n";
 import { imageUrl, useRelayActive } from "../images";
@@ -190,6 +191,41 @@ function PaceControl() {
   );
 }
 
+/** Texture du plateau : une pastille par texture, et « au hasard » (une texture tirée à chaque partie). */
+function BoardThemeControl() {
+  const choice = useGame((s) => s.boardTheme);
+  const setChoice = useGame((s) => s.setBoardTheme);
+  return (
+    <div className="board-theme-control" title="Texture du plateau">
+      <span>Plateau</span>
+      <div className="swatches">
+        {BOARD_THEMES.map((t) => (
+          <button
+            key={t.id}
+            type="button"
+            className={`swatch ${choice === t.id ? "on" : ""}`}
+            data-board={t.id}
+            title={t.label}
+            aria-label={`Plateau : ${t.label}`}
+            aria-pressed={choice === t.id}
+            onClick={() => setChoice(t.id)}
+          />
+        ))}
+        <button
+          type="button"
+          className={`swatch random ${choice === "hasard" ? "on" : ""}`}
+          title="Au hasard (une texture à chaque partie)"
+          aria-label="Plateau : au hasard à chaque partie"
+          aria-pressed={choice === "hasard"}
+          onClick={() => setChoice("hasard")}
+        >
+          ?
+        </button>
+      </div>
+    </div>
+  );
+}
+
 function Settings() {
   const lang = useGame((s) => s.lang);
   const setLang = useGame((s) => s.setLang);
@@ -223,6 +259,7 @@ function Settings() {
         Garder la priorité
       </label>
       <PaceControl />
+      <BoardThemeControl />
       <ImageRelayToggle />
       {!over && !replay && <ConcedeButton onConcede={() => decide({ type: "concede" })} />}
       {/* Enregistrement de la partie (replay, signalement d'un bug) ; en ligne, seulement une fois terminée. */}
