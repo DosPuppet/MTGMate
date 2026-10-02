@@ -179,6 +179,8 @@ export type Effect =
       unlessFilter?: ObjectFilter;
       /** La carte choisie est exilée au lieu d'être défaussée (Intimidation Tactics). */
       exile?: boolean;
+      /** Le joueur révèle d'abord autant de cartes de son choix ; le choix se fait parmi elles (Klaw, Sonic Subjugator). */
+      reveal?: Amount;
     }
   | {
       op: "sacrifice";
@@ -361,6 +363,10 @@ export type Effect =
       collectEvidence?: number;
       /** Le mana est un coût de maîtrise de l'eau (garde de The Unagi of Kyoshi Island, Waterbending Lesson). */
       waterbend?: boolean;
+      /** Recevoir N marqueurs poison (garde de The Serpent Society). */
+      poison?: number;
+      /** Ou ce mana à la place de la défausse (garde de Titania : « défaussez une carte ou payez {2} »). */
+      orMana?: ManaCost;
       who: Ref;
       mana?: ManaCost;
       /** {1} pour chaque… (Swallowed by Leviathan). */
@@ -463,7 +469,8 @@ export type Effect =
    * Copies des cartes désignées, lancées pendant la résolution (valeur de mana totale limitée) ; `paid` : en payant
    * leur coût (Kaervek) ; `storeCast` : nombre de copies lancées.
    */
-  | { op: "castCopiesFree"; what: Ref[]; maxTotalManaValue: number; paid?: boolean; storeCast?: string }
+  /** `maxCount` : au plus N copies lancées (Baron Helmut Zemo : « jusqu'à trois »). */
+  | { op: "castCopiesFree"; what: Ref[]; maxTotalManaValue: number; paid?: boolean; storeCast?: string; maxCount?: number }
   /** « La règle des légendes ne s'applique pas aux permanents que vous contrôlez ce tour-ci. » */
   | { op: "noLegendRuleThisTurn" }
   /** Transforme les permanents recto-verso désignés (712.10 : recto ↔ verso). */
@@ -690,6 +697,8 @@ export type Effect =
   | {
       op: "pickFromZone";
       zone: "graveyard" | "hand";
+      /** Chaque joueur désigné choisit dans sa propre zone (Worlds Within Worlds) ; sinon le contrôleur. */
+      who?: Ref;
       filter: ObjectFilter;
       count: Amount;
       min?: number;
@@ -713,7 +722,8 @@ export type Effect =
     }
   /** Le propriétaire met l'objet au-dessus ou au-dessous de sa bibliothèque. */
   /** `topDamage` : si le propriétaire la met au-dessus, la source lui inflige N blessures (Clash of Elements). */
-  | { op: "libraryTopOrBottom"; what: Ref; topDamage?: number }
+  /** `fromTop` : « N-ième depuis le dessus » au lieu du dessus (Trickster's Stratagem : deuxième). */
+  | { op: "libraryTopOrBottom"; what: Ref; topDamage?: number; fromTop?: number }
   /** Chaque joueur désigné perd N points de vie à moins de défausser une carte ou de sacrifier un permanent. */
   /** `damage` : la source inflige ces blessures au lieu de la perte de points de vie (Osseous Sticktwister). */
   /** `times` : répété N fois (Rottenmouth Viper : pour chaque marqueur de fléau). */

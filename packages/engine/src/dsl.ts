@@ -225,6 +225,8 @@ export const ref = {
   except: (r: Ref, exclude: Ref): Ref => ({ kind: "except", ref: r, exclude }),
   /** Cartes exilées par la source « jusqu'à ce qu'elle quitte le champ de bataille ». */
   exiledWith: { kind: "exiledWith" } as Ref,
+  /** Les cartes exilées pour payer le coût (« copiez ces cartes exilées »). */
+  costExiled: { kind: "costExiled" } as Ref,
   /** Les cibles du sort ou de la capacité de l'événement (« ces créatures »). */
   targetsOfEventObject: { kind: "targetsOfEventObject" } as Ref,
   /** Les capacités sur la pile dont la source est l'objet de l'événement, la plus récente d'abord. */
@@ -581,6 +583,8 @@ export const fx = {
       unlessFilter?: ObjectFilter;
       exile?: boolean;
       half?: boolean;
+      /** Le joueur révèle d'abord autant de cartes de son choix ; le choix se fait parmi elles (Klaw). */
+      reveal?: Amount;
     } = {},
   ): Effect => ({ op: "discard", who, amount: n, ...opts }),
   sacrifice: (
@@ -740,7 +744,11 @@ export const fx = {
     const { cost, ...rest } = opts;
     return { op: "castNow", what, ...rest, ...(cost ? { cost: parseManaCost(cost) } : {}) };
   },
-  castCopiesFree: (what: Ref[], maxTotalManaValue: number, opts: { paid?: boolean; storeCast?: string } = {}): Effect => ({
+  castCopiesFree: (
+    what: Ref[],
+    maxTotalManaValue: number,
+    opts: { paid?: boolean; storeCast?: string; maxCount?: number } = {},
+  ): Effect => ({
     op: "castCopiesFree",
     what,
     maxTotalManaValue,
@@ -1108,9 +1116,11 @@ export const fx = {
       pool?: Ref;
       random?: boolean;
       onePerColorOf?: ObjectFilter;
+      who?: Ref;
     } = {},
   ): Effect => ({
     op: "pickFromZone",
+    ...(opts.who ? { who: opts.who } : {}),
     zone,
     filter,
     to,
@@ -1124,7 +1134,12 @@ export const fx = {
     random: opts.random,
     onePerColorOf: opts.onePerColorOf,
   }),
-  topOrBottom: (what: Ref, topDamage?: number): Effect => ({ op: "libraryTopOrBottom", what, topDamage }),
+  topOrBottom: (what: Ref, topDamage?: number, fromTop?: number): Effect => ({
+    op: "libraryTopOrBottom",
+    what,
+    topDamage,
+    ...(fromTop ? { fromTop } : {}),
+  }),
   /** « … perd N points de vie à moins de défausser une carte / sacrifier un permanent » */
   punisher: (
     who: Ref,
@@ -1456,6 +1471,8 @@ export function activated(opts: {
   /** « X ne peut pas être 0 » : plus petite valeur de X permise. */
   /** « Retirez un nombre quelconque de marqueurs [sorte] de cette créature » (X = le nombre retiré). */
   removeCountersX?: string;
+  /** Exiler des cartes de cette couleur du cimetière totalisant N symboles (vantardise de Baron Helmut Zemo). */
+  exileGraveyardSymbols?: { color: ManaType; n: number };
   minX?: number;
   /** « Engagez X [artefacts] dégagés que vous contrôlez ». */
   tapX?: ObjectFilter;
@@ -1502,6 +1519,7 @@ export function activated(opts: {
       linkEvidence: opts.linkEvidence,
       waterbend: opts.waterbend,
       minX: opts.minX,
+      exileGraveyardSymbols: opts.exileGraveyardSymbols,
       tapX: opts.tapX,
       exileFromGraveyardX: opts.exileFromGraveyardX,
       sacrificeX: opts.sacrificeX,
@@ -1956,6 +1974,8 @@ export function wardAbility(ward: NonNullable<CardDef["ward"]>): TriggeredAbilit
         sacrificeFilter: ward.sacrificeFilter,
         collectEvidence: ward.collectEvidence,
         waterbend: ward.waterbend,
+        poison: ward.poison,
+        orMana: ward.orMana,
         skip: 1,
       },
       { op: "counter", what: { kind: "eventObject" } },

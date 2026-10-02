@@ -141,8 +141,12 @@ export const RECORD_VERSION = 1;
  *   la fin de votre prochain tour ; « devient la cible » pour les joueurs et les seules capacités ; filtre de `nextSpell`
  *   figé à la résolution ; capacités ciblées par contrôleur et source ; cibles du sort de l'événement ; connivence
  *   remplacée ; comparaison de deux montants.
+ * - 53 : Marvel Super Heroes, lot C3 : deuxième depuis le dessus ; « défaussez une carte ou payez {M} » (coût et garde) ;
+ *   garde « recevez N marqueurs poison » ; défausse après une révélation partielle ; choix dans sa propre main pour
+ *   chaque joueur ; exil jusqu'à une carte dans la bibliothèque d'un autre joueur ; coût en symboles de mana du
+ *   cimetière ; nombre maximal de copies lancées.
  */
-export const RULES_VERSION = 52;
+export const RULES_VERSION = 53;
 
 /** Un point de contrôle toutes les N décisions (plus la dernière de la partie). */
 export const CHECKPOINT_EVERY = 25;

@@ -589,6 +589,8 @@ export type Ref =
   | { kind: "linked" }
   /** Cartes exilées « jusqu'à ce que » la source quitte le champ de bataille (Pinnacle Starcage). */
   | { kind: "exiledWith" }
+  /** Les cartes exilées pour payer le coût de ce qui se résout (Baron Helmut Zemo). */
+  | { kind: "costExiled" }
   /** Les cibles du sort ou de la capacité de l'événement (Storm, Windrider : « ces créatures »). */
   | { kind: "targetsOfEventObject" }
   /** La capacité la plus récente sur la pile dont la source est l'objet de l'événement (Firebender Ascension). */

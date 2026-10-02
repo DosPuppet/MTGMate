@@ -116,6 +116,10 @@ export interface CardDef {
     collectEvidence?: number;
     /** « Garde — Maîtrise de l'eau {N} » (The Unagi of Kyoshi Island) : le mana de la garde est un coût de maîtrise de l'eau. */
     waterbend?: boolean;
+    /** « Garde — Recevez N marqueurs poison » (The Serpent Society). */
+    poison?: number;
+    /** « Garde — Défaussez une carte ou payez [mana] » (Titania) : `discard` ou ce mana, au choix. */
+    orMana?: ManaCost;
   };
   /** Coûts en plus du coût de flashback (Twinned Vision : « défaussez une carte » ; Group Project : « engagez trois créatures »). */
   flashbackCost?: AdditionalCost;
@@ -294,6 +298,8 @@ export interface AdditionalCost {
   discard?: number;
   /** « Défaussez une carte ou payez N points de vie » (Bitter Triumph) : sans défausse, le joueur paie ces PV. */
   discardOrLife?: number;
+  /** « Défaussez une carte ou payez [mana] » (Titania) : sans défausse, ce mana s'ajoute au coût. */
+  discardOrPay?: ManaCost;
   /** « Défaussez une carte ou sacrifiez un permanent » (Souls of the Lost) : un permanent choisi est sacrifié. */
   /** « … ou sacrifiez un permanent » ; un filtre : « … ou sacrifiez un artefact » (Demand Answers). */
   discardOrSacrifice?: boolean | ObjectFilter;
@@ -454,6 +460,12 @@ export interface CostDef {
    * sorte (ECL), retirés par le moteur : les −1/−1 d'abord, les +1/+1 en dernier.
    */
   removeCounters?: { kind: string; n: number };
+  /**
+   * « Exilez un nombre quelconque de cartes [couleur] de votre cimetière avec N symboles de mana [couleur] ou plus parmi
+   * leurs coûts » (Baron Helmut Zemo : vantardise) : choisies automatiquement (le moins de cartes), notées dans
+   * `costExiled`.
+   */
+  exileGraveyardSymbols?: { color: ManaType; n: number };
   /** « Retirez un nombre quelconque de marqueurs [sorte] de cette créature » : X marqueurs (The Astonishing Ant-Man). */
   removeCountersX?: string;
   /** Engager d'autres permanents dégagés que vous contrôlez (choisis automatiquement). */

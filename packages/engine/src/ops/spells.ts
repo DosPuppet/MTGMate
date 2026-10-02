@@ -199,7 +199,7 @@ export const HANDLERS: OpHandlers = {
     const canDo =
       (!mana || canPay(s, p, mana, undefined, purpose)) &&
       (s.players[p]?.life ?? 0) >= (life ?? 0) &&
-      (!e.discard || hand.length > 0) &&
+      (!e.discard || hand.length > 0 || (!!e.orMana && canPay(s, p, e.orMana))) &&
       sacrificeable().length >= (e.sacrifice ?? 0) &&
       evidence !== null;
     if (!canDo) return;
@@ -208,7 +208,8 @@ export const HANDLERS: OpHandlers = {
       const what = [
         mana ? `${e.waterbend ? "maîtriser l'eau " : ""}${costToText(mana)}` : "",
         life ? `${life} points de vie` : "",
-        e.discard ? "défausser une carte" : "",
+        e.discard ? (e.orMana ? `défausser une carte ou payer ${costToText(e.orMana)}` : "défausser une carte") : "",
+        e.poison ? `recevoir ${e.poison} marqueurs poison` : "",
         e.sacrifice
           ? `sacrifier ${e.sacrifice} ${e.sacrificeFilter?.types?.includes("Creature") ? "créature(s)" : e.sacrificeFilter?.nonland ? "permanents non-terrains" : "permanents"}`
           : "",
@@ -230,8 +231,40 @@ export const HANDLERS: OpHandlers = {
       };
     }
     if (answer[0] !== 1) return;
+    // Titania : « défaussez une carte ou payez {2} » : le joueur choisit, si les deux sont possibles.
+    let viaMana = false;
+    if (e.discard && e.orMana) {
+      const canMana = canPay(s, p, e.orMana);
+      if (hand.length === 0) viaMana = true;
+      else if (canMana) {
+        const how = r.vars[key("unlessHow")];
+        if (!how) {
+          return {
+            ask: {
+              player: p,
+              key: key("unlessHow"),
+              request: {
+                type: "pick",
+                intent: "unlessPay",
+                prompt: "Comment payer ?",
+                options: ["discard", "mana"],
+                labels: { discard: "Défausser une carte", mana: `Payer ${costToText(e.orMana)}` },
+                min: 1,
+                max: 1,
+                suggested: ["mana"],
+              },
+            },
+          };
+        }
+        viaMana = how[0] === "mana";
+      }
+    }
+    if (viaMana && e.orMana) {
+      if (!canPay(s, p, e.orMana)) return;
+      payMana(s, p, e.orMana);
+    }
     // Garde « défaussez une carte » (Gideon the Oathless) : le joueur choisit la carte.
-    if (e.discard) {
+    if (e.discard && !viaMana) {
       // Garde « défaussez une carte au hasard » (Alpharael, Stonechosen).
       if (e.discardRandom && !r.vars[key("unlessCard")]) {
         const pool = [...hand];
@@ -302,6 +335,12 @@ export const HANDLERS: OpHandlers = {
       if (e.waterbend) bent(s, p, "water");
     }
     if (life) payLife(s, p, life);
+    // The Serpent Society : « Garde — Recevez cinq marqueurs poison ».
+    const pl = s.players[p];
+    if (e.poison && pl) {
+      pl.poison = (pl.poison ?? 0) + e.poison;
+      emit({ type: "poison", player: p, amount: e.poison, total: pl.poison });
+    }
     // « S'il le fait, … » (Divert Disaster).
     store(r, e.paidStore, 1);
     return { skip: e.skip };
@@ -570,13 +609,15 @@ export const HANDLERS: OpHandlers = {
     const cards = [...new Set(e.what.flatMap((w) => resolveRef(s, ctx, w)))].filter((id) => !!s.objects[id]);
     const mv = (id: string) => manaValue(s.defs[s.objects[id]?.defId ?? ""]?.manaCost);
     // Sans limite effective (toutes les cartes tiennent), pas de question : toutes sont copiées.
-    if (!r.vars[key("copies")] && cards.reduce((n, id) => n + mv(id), 0) <= e.maxTotalManaValue) r.vars[key("copies")] = cards;
+    const maxCount = e.maxCount ?? Number.POSITIVE_INFINITY;
+    if (!r.vars[key("copies")] && cards.reduce((n, id) => n + mv(id), 0) <= e.maxTotalManaValue && cards.length <= maxCount)
+      r.vars[key("copies")] = cards;
     const answer = r.vars[key("copies")];
     if (!answer) {
       const suggested: string[] = [];
       let total = 0;
       for (const id of [...cards].sort((a, b) => mv(b) - mv(a))) {
-        if (total + mv(id) > e.maxTotalManaValue) continue;
+        if (total + mv(id) > e.maxTotalManaValue || suggested.length >= maxCount) continue;
         suggested.push(id);
         total += mv(id);
       }
@@ -590,7 +631,7 @@ export const HANDLERS: OpHandlers = {
             prompt: `Copies à lancer gratuitement (valeur de mana totale ${e.maxTotalManaValue} ou moins)`,
             options: cards,
             min: 0,
-            max: cards.length,
+            max: Math.min(cards.length, maxCount),
             suggested,
           },
         },
@@ -602,7 +643,7 @@ export const HANDLERS: OpHandlers = {
       const made: string[] = [];
       for (const id of answer.map(String)) {
         const o = s.objects[id];
-        if (!o || !cards.includes(id) || total + mv(id) > e.maxTotalManaValue) continue;
+        if (!o || !cards.includes(id) || total + mv(id) > e.maxTotalManaValue || made.length >= maxCount) continue;
         total += mv(id);
         const copy = createObject(s, o.defId, ctx.controller, "exile");
         copy.cardCopy = true;

@@ -26,6 +26,7 @@ import { chooseReplacementOrder } from "../modifiers";
 import { auraHosts, copyCandidates, type EntersContext } from "../replacement";
 import { bounceSpell, exileSpell, spellToZone } from "../stack";
 import {
+  apnapOrder,
   bent,
   bump,
   changeCounters,
@@ -444,6 +445,16 @@ export const HANDLERS: OpHandlers = {
     return;
   },
   pickFromZone(s, r, e, ctx, key) {
+    // Worlds Within Worlds : chaque joueur, dans l'ordre APNAP, choisit dans sa propre zone (pour lui-même).
+    if (e.who) {
+      for (const p of apnapOrder(s).filter((x) => resolveRef(s, ctx, e.who as NonNullable<typeof e.who>).includes(x))) {
+        if (r.vars[key(`pz-${p}-done`)]) continue;
+        const res = HANDLERS.pickFromZone?.(s, r, { ...e, who: undefined }, { ...ctx, controller: p }, (x) => key(`${p}-${x}`));
+        if (res && "ask" in res) return res;
+        r.vars[key(`pz-${p}-done`)] = [1];
+      }
+      return;
+    }
     // « une autre carte » : les objets mémorisés, reconnus par leur identité physique (ils ont changé de zone).
     const stored = (e.excludeStored ? r.vars[`$ids:${e.excludeStored}`] : undefined)?.map(String) ?? [];
     const excludedUids = new Set(stored.map((id) => s.objects[id]?.uid ?? s.lki[id]?.uid).filter(Boolean));
@@ -518,9 +529,11 @@ export const HANDLERS: OpHandlers = {
             request: {
               type: "pick",
               intent: "topOrBottom",
-              prompt: `${nameOf(s, o.id)} : au-dessus ou au-dessous de votre bibliothèque ?`,
+              prompt: e.fromTop
+                ? `${nameOf(s, o.id)} : en position ${e.fromTop} depuis le dessus ou au-dessous de votre bibliothèque ?`
+                : `${nameOf(s, o.id)} : au-dessus ou au-dessous de votre bibliothèque ?`,
               options: ["top", "bottom"],
-              labels: { top: "Au-dessus", bottom: "Au-dessous" },
+              labels: { top: e.fromTop ? `${e.fromTop}e depuis le dessus` : "Au-dessus", bottom: "Au-dessous" },
               min: 1,
               max: 1,
               suggested: [o.controller === ctx.controller ? "top" : "bottom"],
@@ -530,7 +543,11 @@ export const HANDLERS: OpHandlers = {
       }
       const owner = o.owner;
       if (spell) spellToZone(s, id, answer[0] === "top" ? "libraryTop" : "libraryBottom");
-      else moveWithSpec(s, ctx.controller, id, { to: answer[0] === "top" ? "libraryTop" : "libraryBottom" });
+      else
+        moveWithSpec(s, ctx.controller, id, {
+          to: answer[0] === "top" ? "libraryTop" : "libraryBottom",
+          ...(answer[0] === "top" && e.fromTop ? { fromTop: e.fromTop } : {}),
+        });
       // Clash of Elements : « si il le fait, [la source] lui inflige 2 blessures ».
       const src = e.topDamage && answer[0] === "top" ? damageSource(s, ctx) : null;
       if (src && e.topDamage) dealDamage(s, src, owner, e.topDamage, false);
@@ -658,9 +675,36 @@ export const HANDLERS: OpHandlers = {
         shuffle(s, pool);
         chosen = pool.slice(0, n);
       } else {
+        // Klaw, Sonic Subjugator : le joueur révèle d'abord N cartes de son choix ; le choix se fait parmi elles.
+        let pool = hand;
+        if (e.reveal !== undefined) {
+          const k = Math.min(Math.max(0, evalAmount(s, ctx, e.reveal)), hand.length);
+          if (k < hand.length) {
+            const shown = r.vars[key(`reveal-${p}`)];
+            if (!shown) {
+              return {
+                ask: {
+                  player: p,
+                  key: key(`reveal-${p}`),
+                  request: {
+                    type: "pick",
+                    intent: "reveal",
+                    prompt: `Révélez ${k} carte(s) de votre main`,
+                    options: [...hand],
+                    min: k,
+                    max: k,
+                    suggested: hand.slice(0, k),
+                  },
+                },
+              };
+            }
+            pool = shown.map(String).filter((id) => hand.includes(id));
+          }
+          emit({ type: "reveal", player: p, defIds: pool.map((id) => s.objects[id]?.defId ?? "") });
+        }
         const answer = r.vars[key(`discard-${p}`)];
         if (!answer) {
-          const max = Math.min(n, hand.length);
+          const max = Math.min(n, pool.length);
           return {
             ask: {
               player: chooser,
@@ -672,10 +716,10 @@ export const HANDLERS: OpHandlers = {
                   chooser === p
                     ? `${e.optional ? "Vous pouvez défausser" : "Défaussez"} ${n} carte(s)`
                     : `Choisissez ${max} carte(s) que ce joueur défausse`,
-                options: [...hand],
+                options: [...pool],
                 min: e.optional ? 0 : max,
                 max,
-                suggested: e.optional ? [] : hand.slice(0, max),
+                suggested: e.optional ? [] : pool.slice(0, max),
               },
             },
           };
@@ -1474,8 +1518,10 @@ export const HANDLERS: OpHandlers = {
       r.vars[`$ids:${e.store}`] = all;
       return;
     }
-    // Exiler depuis le dessus jusqu'à une carte correspondante ; seule cette dernière est mémorisée.
-    const lib = s.players[ctx.controller]?.library ?? [];
+    // Exiler depuis le dessus jusqu'à une carte correspondante ; seule cette dernière est mémorisée. Black Widow, Super
+    // Spy : la bibliothèque du joueur désigné.
+    const whose = e.who ? (resolveRef(s, ctx, e.who).find((x) => isPlayer(s, x)) ?? ctx.controller) : ctx.controller;
+    const lib = s.players[whose]?.library ?? [];
     let found: string | null = null;
     while (lib.length && !found) {
       const top = lib[0] as string;

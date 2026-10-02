@@ -75,7 +75,10 @@ export function buildCastDecision(
           kicked:
             !!mode.requiresKicker ||
             (a.kickerAffordable && ((!a.normalAvailable && !a.freeAvailable && !a.altAvailable) || rand() < 0.5)),
-          discard: a.additional?.discard?.orLife !== undefined && rand() < 0.5 ? [] : pickN(a.additional?.discard),
+          discard:
+            (a.additional?.discard?.orLife !== undefined || a.additional?.discard?.orPayAffordable) && rand() < 0.5
+              ? []
+              : pickN(a.additional?.discard),
           sacrifice: a.additional?.sacrifice?.orPay && rand() < 0.5 ? [] : pickN(a.additional?.sacrifice),
           free: a.freeAvailable && (!a.normalAvailable || rand() < 0.7) ? true : undefined,
           alternative: !a.freeAvailable && a.altAvailable && (!a.normalAvailable || rand() < 0.5) ? true : undefined,
@@ -165,7 +168,9 @@ export function enumerateDecisions(a: ActionOption, limit = 40, rank?: (ids: str
             ...(a.freeAvailable ? [{ ...base, free: true, x: 0 }] : []),
             ...(a.altAvailable ? [{ ...base, alternative: true }] : []),
             ...(a.additional?.sacrifice?.orPay ? [{ ...base, sacrifice: [] }] : []),
-            ...(a.additional?.discard?.orLife !== undefined ? [{ ...base, discard: [] }] : []),
+            ...(a.additional?.discard?.orLife !== undefined || a.additional?.discard?.orPayAffordable
+              ? [{ ...base, discard: [] }]
+              : []),
           ];
           for (const v of variants) {
             // Mode « les deux » : seulement avec le coût additionnel payé.

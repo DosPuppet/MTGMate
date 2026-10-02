@@ -57,6 +57,7 @@ export type ChoiceIntent =
   | "divideDamage"
   | "keepPerType"
   | "keepWithinPower"
+  | "reveal"
   | "discover"
   | "other";
 
@@ -212,7 +213,15 @@ export type ActionOption =
       normalAvailable?: boolean;
       additional?: {
         /** `orLife` : on peut payer ces PV au lieu de défausser ; `orSacrifice` : les options comprennent des permanents. */
-        discard?: { count: number; options: ObjectId[]; orLife?: number; orSacrifice?: boolean };
+        discard?: {
+          count: number;
+          options: ObjectId[];
+          orLife?: number;
+          orSacrifice?: boolean;
+          /** « … ou payez [mana] » (Titania) ; `orPayAffordable` : ce mana est payable. */
+          orPay?: ManaCost;
+          orPayAffordable?: boolean;
+        };
         /** `orPay` : on peut payer ce mana au lieu de sacrifier (Eaten Alive). */
         sacrifice?: { count: number; options: ObjectId[]; orPay?: ManaCost; orPayAffordable?: boolean };
         /**

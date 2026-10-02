@@ -358,7 +358,6 @@ Dans l'ordre où elles ont été ajoutées, extension par extension.
   - `règle` Crowd of True Believers : « attaque seule » demande que la créature attaque un joueur ;
   - `règle` Invisible Woman, Sue Storm : « vous mettez des marqueurs » se lit « des marqueurs sont mis par vous ce tour-ci » ; un seul Mur par lot de marqueurs.
   - `règle` Echo, Perceptive Prodigy : une capacité adverse peut être ciblée mais n'est pas copiée (comme Vantress Visions) ;
-  - `règle` Kang the Conqueror : « pendant ce tour, les montées en puissance ne peuvent pas être activées » n'est pas appliqué au tour supplémentaire ;
   - `règle` Super Intelligence : « l'entretien de son contrôleur » se lit « votre entretien, ou celui d'un adversaire si la créature est chez un adversaire » (exact en duel) ;
   - `règle` Attuma, Atlantean Warlord : une attaque contre un planeswalker compte comme « attaquent un joueur » ;
   - `règle` Tony Stark : les autres cartes vont au-dessous de la bibliothèque sans ordre aléatoire.
@@ -386,5 +385,9 @@ Dans l'ordre où elles ont été ajoutées, extension par extension.
   - `règle` Captain America's Shield : la créature ciblée est une créature adverse (pas forcément au joueur défenseur) ;
   - `règle` Avengers Tower : le reste va au-dessous dans un ordre aléatoire ;
   - `règle` Baxter Building : « quatre mana en n'importe quelle combinaison » est quatre mana d'une même couleur choisie.
+  - `règle` Kang the Conqueror : « pendant ce tour, les montées en puissance ne peuvent pas être activées » n'est pas appliqué au tour supplémentaire ;
+  - `choix auto` Baron Helmut Zemo : les cartes noires exilées pour la vantardise sont choisies par le moteur (les plus riches en {B} d'abord, le moins de cartes possible) ;
+  - `timing` Worlds Within Worlds : chaque joueur choisit et met ses créatures à tour de rôle (ordre APNAP), et non simultanément ;
+  - `règle` The Ruinous Wrecking Crew : « jusqu'à X modes » est écrit en combinaisons de modes, chacune sous la condition X ≥ son nombre de modes.
 - **Légalité Standard :** instantané des légalités Scryfall au moment de l'import (`legalities.standard` dans `data/<set>.json`). Après une rotation ou une annonce de bannissement, réimporter les sets (`npm run import-cards -- <set>`).
 - **Images des jetons :** celle du jeton Scryfall le plus proche (même nom, puis mêmes F/E et couleurs ; `data/tokens.json`, `npm run import-tokens`) ; un jeton de nom inconnu garde le cadre texte.

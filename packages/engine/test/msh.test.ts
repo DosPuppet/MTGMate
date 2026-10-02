@@ -4559,3 +4559,155 @@ describe("lot C2 : copies, contrôle et cibles", () => {
     expect(s.players.p1?.graveyard).toHaveLength(1);
   });
 });
+
+describe("lot C3 : coûts, main et bibliothèque", () => {
+  const exiled = (s: S, name: string) => s.exile.filter((id) => nameOf(s, id) === name);
+  it("Trickster's Stratagem : la créature adverse va en deuxième position de la bibliothèque (ou au-dessous) ; une des vôtres complote", () => {
+    let s = scenario({
+      p1: { battlefield: lands("Island", 4).concat(["Bear Cub"]), hand: ["Trickster's Stratagem"], library: lands("Island", 3) },
+      p2: { battlefield: ["Serra Angel"], library: ["Opt", "Opt", "Opt"] },
+    });
+    const angel = idOf(s, "p2", "battlefield", "Serra Angel");
+    s = settle(
+      cast(s, "p1", "Trickster's Stratagem", { targets: { t: [angel], c: [idOf(s, "p1", "battlefield", "Bear Cub")] } }),
+      (req) => (req.type === "pick" && req.options.includes("top") ? ["top"] : undefined),
+    );
+    expect(nameOf(s, s.players.p2?.library[1] as string)).toBe("Serra Angel");
+    expect(s.players.p1?.graveyard.length).toBeGreaterThan(1);
+  });
+
+  it("Baron Helmut Zemo : vantardise après une attaque, en exilant des cartes noires (15 symboles {B}) ; jusqu'à trois copies gratuites", () => {
+    const heavy = customCard({
+      name: "Test Black Spell",
+      types: ["Sorcery"],
+      typeLine: "Sorcery",
+      colors: ["B"],
+      manaCost: { generic: 0, colored: { B: 5 }, x: 0 },
+      manaCostText: "{B}{B}{B}{B}{B}",
+      spell: spell([], [fx.loseLife(1, ref.eachOpponent)]),
+    });
+    let s = scenario({ p1: { battlefield: ["Baron Helmut Zemo"], graveyard: [heavy, heavy, heavy] } });
+    const zemo = idOf(s, "p1", "battlefield", "Baron Helmut Zemo");
+    s.objects[zemo]!.controlledSince = 0;
+    expect(ability(s, "p1", zemo)).toBeUndefined();
+    s = advanceUntil(s, (x) => x.pending?.kind === "declareAttackers");
+    s = act(s, "p1", { type: "declareAttackers", attackers: [{ id: zemo, defender: "p2" }] });
+    s = advanceUntil(s, (x) => x.turn.step === "main2" && x.pending?.kind === "priority");
+    s = activate(s, "p1", zemo);
+    for (let i = 0; i < 40 && (s.stack.length || s.pending?.kind !== "priority"); i++) {
+      const p = s.pending;
+      const now = castNowOf(s);
+      if (now) s = act(s, "p1", { type: "cast", card: now.cards[0] as string });
+      else if (p?.kind === "choice") s = act(s, p.player, { type: "choose", values: p.request.suggested });
+      else if (p) s = act(s, p.player, { type: "pass" });
+    }
+    expect(s.players.p1?.graveyard).toHaveLength(0);
+    expect(s.players.p2?.life).toBe(20 - 3 - 3);
+  });
+
+  it("Black Widow, Super Spy : le joueur blessé exile jusqu'à une carte non-terrain ; sans marqueur, vous pouvez la lancer", () => {
+    let s = scenario({
+      p1: { battlefield: ["Black Widow, Super Spy", "Mountain", "Mountain"] },
+      p2: { library: ["Island", "Lightning Strike", "Island"] },
+    });
+    const widow = idOf(s, "p1", "battlefield", "Black Widow, Super Spy");
+    s = advanceUntil(s, (x) => x.pending?.kind === "declareAttackers");
+    s = act(s, "p1", { type: "declareAttackers", attackers: [{ id: widow, defender: "p2" }] });
+    // Le marqueur est refusé : la carte non-terrain exilée devient lançable (avec du mana de n'importe quel type).
+    for (let i = 0; i < 60 && s.turn.step !== "main2"; i++) {
+      const p = s.pending;
+      if (p?.kind === "choice")
+        s = act(s, p.player, { type: "choose", values: p.request.type === "yesNo" ? [0] : p.request.suggested });
+      else if (p?.kind === "declareBlockers") s = act(s, p.player, { type: "declareBlockers", blocks: [] });
+      else if (p) s = act(s, p.player, { type: "pass" });
+    }
+    const strike = exiled(s, "Lightning Strike")[0] as string;
+    expect(exiled(s, "Island")).toHaveLength(1);
+    expect(s.objects[widow]?.counters["+1/+1"] ?? 0).toBe(0);
+    expect(castable(s, "p1", strike)).toBe(true);
+  });
+
+  it("Klaw, Sonic Subjugator : le joueur révèle 1 + N cartes de son choix, vous choisissez celle qu'il défausse", () => {
+    let s = scenario({
+      p1: { battlefield: lands("Swamp", 3), hand: ["Klaw, Sonic Subjugator"], graveyard: ["Bear Cub"] },
+      p2: { hand: ["Opt", "Lightning Strike", "Shivan Dragon", "Island"] },
+    });
+    const dragon = idOf(s, "p2", "hand", "Shivan Dragon");
+    const strike = idOf(s, "p2", "hand", "Lightning Strike");
+    const seen: string[][] = [];
+    s = settle(cast(s, "p1", "Klaw, Sonic Subjugator", { targets: { t: ["p2"] } }), (req, p) => {
+      if (req.type !== "pick") return undefined;
+      if (req.intent === "reveal" && p === "p2") return [dragon, strike];
+      if (req.intent !== "discard") return undefined;
+      seen.push([...req.options]);
+      return [dragon];
+    });
+    // Deux cartes révélées (1 + une carte de créature au cimetière) ; le joueur 1 choisit parmi elles.
+    expect(seen[0]?.sort()).toEqual([dragon, strike].sort());
+    expect(idsOf(s, "p2", "graveyard", "Shivan Dragon")).toHaveLength(1);
+    expect(s.players.p2?.hand).toHaveLength(3);
+  });
+
+  it("The Ruinous Wrecking Crew : X marqueurs ; jusqu'à X modes", () => {
+    let s = scenario({
+      p1: { battlefield: lands("Swamp", 2).concat(lands("Mountain", 2)), hand: ["The Ruinous Wrecking Crew"] },
+    });
+    s = act(s, "p1", { type: "cast", card: idOf(s, "p1", "hand", "The Ruinous Wrecking Crew"), x: 2 });
+    let options = 0;
+    s = settle(s, (req) => {
+      if (req.type === "pick" && req.intent === "triggerMode") {
+        options = req.options.length;
+        const i = req.options.find(
+          (o) => (req.labels?.[o] ?? "").includes("perd 2 PV") && !(req.labels?.[o] ?? "").includes("+"),
+        );
+        return i ? [i] : undefined;
+      }
+      return undefined;
+    });
+    const crew = idOf(s, "p1", "battlefield", "The Ruinous Wrecking Crew");
+    expect(s.objects[crew]?.counters["+1/+1"]).toBe(2);
+    // X = 2 : les 4 modes seuls, les 6 paires et « Aucun » (les combinaisons sans cible légale sont écartées).
+    expect(options).toBeGreaterThanOrEqual(5);
+    expect(s.players.p2?.life).toBe(18);
+  });
+
+  it("The Serpent Society : la garde coûte cinq marqueurs poison ; une autre de vos créatures avec le contact mortel meurt, chaque adversaire sacrifie une créature non-jeton", () => {
+    expect(card("The Serpent Society").ward).toEqual({ poison: 5 });
+    const deadly = customCard({ name: "Test Deadly", power: 1, toughness: 1, keywords: ["deathtouch"] });
+    let s = scenario({ p1: { battlefield: ["The Serpent Society", deadly] }, p2: { battlefield: ["Bear Cub"] } });
+    destroy(s, idOf(s, "p1", "battlefield", "Test Deadly"));
+    s = settle(s);
+    expect(idsOf(s, "p2", "battlefield", "Bear Cub")).toHaveLength(0);
+  });
+
+  it("Titania, Rugged Rumbler : en coût additionnel, défaussez une carte ou payez {2}", () => {
+    const run = (lands_: number, hand: string[]) =>
+      scenario({ p1: { battlefield: [...lands("Swamp", lands_)], hand: ["Titania, Rugged Rumbler", ...hand] } });
+    // Trois terrains et une autre carte : défausse.
+    let s = run(3, ["Opt"]);
+    s = settle(cast(s, "p1", "Titania, Rugged Rumbler", { discard: [idOf(s, "p1", "hand", "Opt")] }));
+    expect(idsOf(s, "p1", "battlefield", "Titania, Rugged Rumbler")).toHaveLength(1);
+    // Cinq terrains, rien à défausser : {2} de plus.
+    const short = run(4, []);
+    expect(castable(short, "p1", idOf(short, "p1", "hand", "Titania, Rugged Rumbler"))).toBe(false);
+    s = run(5, []);
+    s = settle(cast(s, "p1", "Titania, Rugged Rumbler", { discard: [] }));
+    expect(idsOf(s, "p1", "battlefield", "Titania, Rugged Rumbler")).toHaveLength(1);
+  });
+
+  it("Worlds Within Worlds : les créatures sont exilées, chaque joueur met des créatures de sa main, puis les exilées reviennent en main", () => {
+    let s = scenario({
+      p1: {
+        battlefield: [...lands("Forest", 4), ...lands("Island", 3), "Bear Cub"],
+        hand: ["Worlds Within Worlds", "Serra Angel"],
+      },
+      p2: { battlefield: ["Shivan Dragon"], hand: ["Llanowar Elves"] },
+    });
+    s = settle(cast(s, "p1", "Worlds Within Worlds"));
+    expect(idsOf(s, "p1", "battlefield", "Serra Angel")).toHaveLength(1);
+    expect(idsOf(s, "p2", "battlefield", "Llanowar Elves")).toHaveLength(1);
+    expect(idsOf(s, "p1", "hand", "Bear Cub")).toHaveLength(1);
+    expect(idsOf(s, "p2", "hand", "Shivan Dragon")).toHaveLength(1);
+    expect(exiled(s, "Worlds Within Worlds")).toHaveLength(1);
+  });
+});

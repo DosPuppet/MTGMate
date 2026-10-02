@@ -366,7 +366,11 @@ function CastingPrompt() {
   if ((casting.stage === "discard" || casting.stage === "sacrifice") && opt.type === "cast") {
     const spec = opt.additional?.[casting.stage];
     const sac = opt.additional?.sacrifice;
-    const orPay = casting.stage === "sacrifice" && sac?.orPayAffordable && sac.orPay;
+    const dis = opt.additional?.discard;
+    const orPay =
+      casting.stage === "sacrifice"
+        ? sac?.orPayAffordable && sac.orPay
+        : casting.stage === "discard" && dis?.orPayAffordable && dis.orPay;
     // Bitter Triumph : « défaussez une carte ou payez 3 points de vie ».
     const orLife = casting.stage === "discard" ? opt.additional?.discard?.orLife : undefined;
     if (spec) {

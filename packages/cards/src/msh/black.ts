@@ -415,4 +415,49 @@ export const BLACK: Record<string, CardScript> = {
       }),
     ],
   },
+  "Baron Helmut Zemo": {
+    abilities: [
+      triggered({ on: "castSpell", by: "you", filter: { colors: ["B"] }, fromHand: true }, [fx.connive(ref.self)], {
+        label: "Vous lancez un sort noir depuis votre main : il complote",
+      }),
+      activated({
+        exileGraveyardSymbols: { color: "B", n: 15 },
+        oncePerTurn: true,
+        activationCondition: cond.sourceMatches({ attackedThisTurn: true }),
+        effects: [fx.castCopiesFree([ref.costExiled], 99, { maxCount: 3 })],
+        label: "Vantardise : exilez des cartes noires (15 symboles {B}), lancez jusqu'à trois copies gratuitement",
+      }),
+    ],
+  },
+  // Menace : lue dans le texte.
+  "Black Widow, Super Spy": {
+    abilities: [
+      triggered(
+        when.combatDamageToPlayer,
+        [
+          { op: "exileUntil", filter: { notTypes: ["Land"] }, store: "w", who: ref.eventPlayer },
+          ...fx.mayForStore(ref.you, "Mettre un marqueur +1/+1 sur Black Widow ?", "bw", fx.addCounters(ref.self, 1)),
+          ...fx.when(cond.not(cond.v("bw")), fx.grantPlay(ref.stored("w"), { anyMana: true })),
+        ],
+        { label: "Blessures de combat : le joueur exile jusqu'à une carte non-terrain ; un marqueur, ou vous pouvez la lancer" },
+      ),
+    ],
+  },
+  "Klaw, Sonic Subjugator": {
+    abilities: [
+      triggered(
+        when.entersSelf,
+        [
+          fx.discard(1, ref.target(), {
+            chooser: "controller",
+            reveal: amount.plus(1, amount.countIn("graveyard", { types: ["Creature"] })),
+          }),
+        ],
+        {
+          targets: [target.player("t")],
+          label: "Le joueur révèle 1 + vos cartes de créature au cimetière ; vous choisissez celle qu'il défausse",
+        },
+      ),
+    ],
+  },
 };

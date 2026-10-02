@@ -234,6 +234,8 @@ export function resolveRef(s: GameState, ctx: EffectContext, ref: Ref): string[]
       );
     case "libraryTop":
       return resolveRef(s, ctx, ref.who).flatMap((p) => (s.players[p]?.library[0] ? [s.players[p]?.library[0] as string] : []));
+    case "costExiled":
+      return [...(ctx.costExiled ?? [])];
     case "targetsOfEventObject": {
       // Le sort lancé (l'objet de l'événement) : ses cibles, d'après son élément de pile.
       const id = ctx.event?.objectId;

@@ -4,7 +4,7 @@
  * être bloquée » et « attaque à chaque combat si possible » sont écrits ici (restrictions). L'extorsion (Extort) est
  * écrite ici comme une capacité déclenchée.
  */
-import type { Effect, ObjectFilter, TokenSpec } from "@mtgx/engine";
+import type { Effect, ModeDef, ObjectFilter, TokenSpec } from "@mtgx/engine";
 import {
   activated,
   amount,
@@ -12,6 +12,7 @@ import {
   type CardScript,
   chapter,
   cond,
+  entersWith,
   eventReplacement,
   fx,
   INSECT_G,
@@ -692,5 +693,76 @@ export const MULTI: Record<string, CardScript> = {
         { label: "Un sort qui cible des créatures : elles gagnent le vol" },
       ),
     ],
+  },
+  "The Ruinous Wrecking Crew": {
+    abilities: [
+      entersWith({ counters: amount.x, label: "Arrive avec X marqueurs +1/+1" }),
+      triggeredModal(
+        when.entersSelf,
+        // « Choisissez jusqu'à X » : chaque combinaison de modes, sous la condition X ≥ son nombre de modes.
+        [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]
+          .map((bits): ModeDef => {
+            const has = (k: number) => (bits & (1 << k)) !== 0;
+            const n = [0, 1, 2, 3].filter(has).length;
+            const labels = ["défausse et pioche", "un adversaire perd 2 PV", "détruire un jeton", "chacun sacrifie une créature"];
+            return {
+              ...mode(
+                [0, 1, 2, 3]
+                  .filter(has)
+                  .map((k) => labels[k])
+                  .join(" + "),
+                [
+                  ...(has(1) ? [target.player("p", "opponent")] : []),
+                  ...(has(2) ? [{ id: "k", label: "jeton", filter: { objects: { token: true } } }] : []),
+                ],
+                [
+                  ...(has(0) ? [fx.discard(1), fx.draw(1)] : []),
+                  ...(has(1) ? [fx.loseLife(2, ref.target("p"))] : []),
+                  ...(has(2) ? [fx.destroy(ref.target("k"))] : []),
+                  ...(has(3) ? [fx.sacrifice(ref.eachPlayer, { types: ["Creature"] })] : []),
+                ],
+              ),
+              condition: cond.amountAtLeast(amount.sourceX, n),
+            };
+          })
+          .concat([mode("Aucun", [], [])]),
+        { label: "Jusqu'à X modes" },
+      ),
+    ],
+  },
+  // Contact mortel et garde (recevez cinq marqueurs poison) : lus dans le texte.
+  "The Serpent Society": {
+    abilities: [
+      triggered(
+        when.dies({ types: ["Creature"], controller: "you", other: true, keyword: "deathtouch" }),
+        [fx.sacrifice(ref.eachOpponent, { types: ["Creature"], nontoken: true })],
+        { label: "Une autre de vos créatures avec le contact mortel meurt : chaque adversaire sacrifie une créature non-jeton" },
+      ),
+    ],
+  },
+  // « Défaussez une carte ou payez {2} » (coût additionnel) et la garde du même nom : la garde est lue dans le texte.
+  "Titania, Rugged Rumbler": {
+    additionalCost: { discard: 1, discardOrPay: { generic: 2, colored: {}, x: 0 } },
+  },
+  "Worlds Within Worlds": {
+    spell: spell(
+      [],
+      [
+        fx.moveTo(ref.permanentsOf(ref.eachPlayer, { types: ["Creature"] }), { to: "exile" }, { name: "w" }),
+        fx.pickFromZone(
+          "hand",
+          { types: ["Creature"] },
+          { to: "battlefield" },
+          {
+            count: 99,
+            min: 0,
+            who: ref.eachPlayer,
+            prompt: "Mettez des cartes de créature de votre main sur le champ de bataille",
+          },
+        ),
+        fx.toHand(ref.stored("w")),
+        fx.exileOnResolve,
+      ],
+    ),
   },
 };

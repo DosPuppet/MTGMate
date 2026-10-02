@@ -494,4 +494,10 @@ export const BLUE: Record<string, CardScript> = {
       }),
     ],
   },
+  "Trickster's Stratagem": {
+    spell: spell(
+      [target.creature("t", { controller: "opponent" }), target.upTo(1, target.creature("c", { controller: "you" }))],
+      [fx.topOrBottom(ref.target("t"), undefined, 2), fx.connive(ref.target("c"))],
+    ),
+  },
 };

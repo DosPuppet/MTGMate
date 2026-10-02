@@ -878,6 +878,28 @@ function onceAvailable(s: GameState, o: GameObject, ab: ActivatedAbilityDef, ind
   return uses < 1 + extra;
 }
 
+/**
+ * Baron Helmut Zemo : les cartes de la couleur au cimetière à exiler pour totaliser N symboles de cette couleur (les plus
+ * riches d'abord), ou null si c'est impossible.
+ */
+export function symbolCards(s: GameState, player: PlayerId, req: { color: ManaType; n: number }): ObjectId[] | null {
+  const symbols = (id: ObjectId) => {
+    const c = s.defs[s.objects[id]?.defId ?? ""]?.manaCost;
+    return c ? (c.colored[req.color] ?? 0) + (c.hybrid ?? []).filter((h) => h.includes(req.color)).length : 0;
+  };
+  const pool = (s.players[player]?.graveyard ?? [])
+    .filter((id) => s.defs[s.objects[id]?.defId ?? ""]?.colors.includes(req.color as Color))
+    .sort((a, b) => symbols(b) - symbols(a));
+  const out: ObjectId[] = [];
+  let total = 0;
+  for (const id of pool) {
+    if (total >= req.n) break;
+    out.push(id);
+    total += symbols(id);
+  }
+  return total >= req.n ? out : null;
+}
+
 /** Elvish Refueler : pendant votre tour, tant qu'aucune capacité d'exhaust n'a été activée ce tour-ci. */
 function exhaustReusable(s: GameState, player: PlayerId, ab: ActivatedAbilityDef): boolean {
   return (
@@ -1224,7 +1246,14 @@ export function additionalOptions(
   d: CardDef,
   flashback = false,
 ): {
-  discard?: { count: number; options: ObjectId[]; orLife?: number; orSacrifice?: boolean };
+  discard?: {
+    count: number;
+    options: ObjectId[];
+    orLife?: number;
+    orSacrifice?: boolean;
+    orPay?: ManaCost;
+    orPayAffordable?: boolean;
+  };
   sacrifice?: { count: number; options: ObjectId[]; orPay?: ManaCost; orPayAffordable?: boolean };
 } | null {
   let add = additionalCostOf(d, flashback);
@@ -1244,11 +1273,12 @@ export function additionalOptions(
     // Bitter Triumph : « … ou payez 3 points de vie » (il faut en avoir au moins autant, 119.4).
     const orLife =
       add.discardOrLife !== undefined && (s.players[player]?.life ?? 0) >= add.discardOrLife ? add.discardOrLife : undefined;
-    if (options.length < add.discard && orLife === undefined) return null;
+    if (options.length < add.discard && orLife === undefined && !add.discardOrPay) return null;
     out.discard = {
       count: add.discard,
       options,
       ...(orLife !== undefined ? { orLife } : {}),
+      ...(add.discardOrPay ? { orPay: add.discardOrPay } : {}),
       ...(add.discardOrSacrifice ? { orSacrifice: true } : {}),
     };
   }
@@ -1469,6 +1499,8 @@ export function castSpell(s: GameState, player: PlayerId, card: ObjectId, choice
   // Spree : les coûts supplémentaires des modes choisis (payés même si le sort est gratuit).
   if (mode.extraCost) cost = addCosts(cost, mode.extraCost);
   if (opts.sacrifice?.orPay && sacrifice.length === 0) cost = addCosts(cost, opts.sacrifice.orPay);
+  // Titania : « défaussez une carte ou payez {2} ».
+  if (opts.discard?.orPay && discard.length === 0) cost = addCosts(cost, opts.discard.orPay);
   if (flashExtra) cost = addCosts(cost, flashExtra);
   if (terms.extraCost) cost = addCosts(cost, { generic: terms.extraCost, colored: {}, x: 0 });
   // Harmonie : une créature engagée réduit le coût de sa force (`tap` absent : le choix par défaut ; [] : aucune).
@@ -2368,6 +2400,12 @@ export function activateAbility(s: GameState, player: PlayerId, source: ObjectId
     const exiled = materials.map((id) => moveObject(s, id, "exile")).filter((id): id is string => !!id);
     delete s.turn.crafting;
     item.costExiled = exiled;
+  }
+  // Baron Helmut Zemo : les cartes exilées du cimetière, notées pour l'effet (« copiez ces cartes »).
+  if (ab.cost.exileGraveyardSymbols) {
+    const cards = symbolCards(s, player, ab.cost.exileGraveyardSymbols);
+    if (!cards) throw new RulesError("Pas assez de symboles de mana dans votre cimetière");
+    item.costExiled = cards.map((id) => moveObject(s, id, "exile")).filter((id): id is string => !!id);
   }
   if (ab.cost.exileSelf) moveObject(s, source, "exile");
   if (ab.cost.discardSelf) {

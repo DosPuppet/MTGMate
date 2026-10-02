@@ -42,6 +42,7 @@ import {
   spellView,
   splitSecondOnStack,
   suggestedCrew,
+  symbolCards,
   tapOthersOptions,
   warpOf,
   waterbendAmount,
@@ -341,8 +342,12 @@ export function legalActions(s: GameState, player: PlayerId): ActionOption[] {
     // « Sacrifiez une créature ou payez {3}{B} » : sans créature à sacrifier, le mana s'ajoute au coût.
     const sac = additional.sacrifice;
     const mustPayInstead = !!sac?.orPay && sac.options.length < sac.count;
+    // Titania : sans carte à défausser, le mana s'ajoute au coût.
+    const dis = additional.discard;
+    const mustPayDiscard = !!dis?.orPay && dis.options.length < dis.count;
     const withExtra = (c: ManaCost) => {
-      const a = mustPayInstead && sac?.orPay ? totalCost(c, 0, sac.orPay) : c;
+      const a0 = mustPayInstead && sac?.orPay ? totalCost(c, 0, sac.orPay) : c;
+      const a = mustPayDiscard && dis?.orPay ? totalCost(a0, 0, dis.orPay) : a0;
       return timingExtra ? totalCost(a, 0, timingExtra) : a;
     };
     // Harmonie : payable aussi en engageant une créature (qui ne sert alors pas à payer le mana).
@@ -388,6 +393,9 @@ export function legalActions(s: GameState, player: PlayerId): ActionOption[] {
       );
     if (!terms.free && !normal && !freeAvailable && !altAvailable && !kickerAffordable) return;
     // Le mana à payer à la place du sacrifice est-il disponible ?
+    if (dis?.orPay) {
+      dis.orPayAffordable = canPay(s, player, totalCost(spellCost(s, player, d, base), 0, dis.orPay), undefined, purpose);
+    }
     if (sac?.orPay) {
       sac.orPayAffordable = canPay(s, player, totalCost(spellCost(s, player, d, base), 0, sac.orPay), undefined, purpose);
     }
@@ -474,6 +482,7 @@ export function legalActions(s: GameState, player: PlayerId): ActionOption[] {
         : byColors +
           abilityReduction(s, player, id, ab) +
           Math.max(0, ...s.battlefield.map((c) => equipDiscount(s, player, ab, c)));
+      if (ab.cost.exileGraveyardSymbols && !symbolCards(s, player, ab.cost.exileGraveyardSymbols)) return;
       const abCost = totalCost(abilityMana(s, id, ab), 0, undefined, reduction);
       if (ab.cost.mana && !canPay(s, player, abCost, exclude, abilityPurpose(id, ab))) return;
       const targets = targetOptions(s, player, ab.targets, id);
