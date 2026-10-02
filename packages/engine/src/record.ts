@@ -161,8 +161,12 @@ export const RECORD_VERSION = 1;
  *   « activer une capacité d'une créature », mana d'un Trésor dépensé, contresort qui exile un permanent, permission
  *   payée en PV, carte révélée au hasard, capacités activées des cartes du cimetière, homonyme d'un permanent, carte
  *   venue du champ de bataille ce tour-ci.
+ * - 59 : le contrôle donné par une Aura (ou un effet « tant que ») revient dès qu'elle quitte le champ de bataille, sans
+ *   attendre les actions basées sur l'état (trouvé par le fuzz « chaos »).
+ * - 60 : plafonds : 100 jetons au plus par événement, aucun au-delà de 400 objets sur le champ de bataille, montants
+ *   remplacés bornés à un million (doubleurs de jetons qui se multiplient, trouvé par le fuzz « niveaux d'IA »).
  */
-export const RULES_VERSION = 58;
+export const RULES_VERSION = 60;
 
 /** Un point de contrôle toutes les N décisions (plus la dernière de la partie). */
 export const CHECKPOINT_EVERY = 25;

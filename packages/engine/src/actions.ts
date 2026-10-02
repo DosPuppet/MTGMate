@@ -90,7 +90,9 @@ export function drawCards(s: GameState, p: PlayerId, n: number): void {
   const mods = q.mods;
   const most = chooseReplacementOrder(n, mods, "max");
   const total = most <= player.library.length ? most : chooseReplacementOrder(n, mods, "min");
-  for (let i = 0; i < total; i++) drawCard(s, p);
+  // Une pioche dans une bibliothèque vide suffit (704.5b) : pas la peine de continuer au-delà.
+  const draws = Math.min(total, player.library.length + 1);
+  for (let i = 0; i < draws; i++) drawCard(s, p);
 }
 
 export function gainLife(s: GameState, p: PlayerId, amount: number): void {
@@ -575,6 +577,16 @@ export function tokenDefId(t: TokenSpec): string {
 }
 
 /** `enters` : modifications d'arrivée imposées par l'effet (engagés, attaquants, marqueurs), avant l'événement d'arrivée. */
+/**
+ * Plafonds des jetons : des doubleurs de jetons qui se multiplient (copies d'Exalted Sunborn) donnent vite un nombre
+ * astronomique, voire infini en JavaScript. Au plus 100 jetons par événement, et aucun quand le champ de bataille compte
+ * déjà 400 objets (voir docs/approximations.md).
+ */
+export const MAX_TOKENS_PER_EVENT = 100;
+export const MAX_BATTLEFIELD = 400;
+const tokenRoom = (s: GameState, n: number) =>
+  Math.max(0, Math.min(n, MAX_TOKENS_PER_EVENT, MAX_BATTLEFIELD - s.battlefield.length));
+
 export function createTokens(
   s: GameState,
   controller: PlayerId,
@@ -605,7 +617,7 @@ export function createTokens(
     const model = s.objects[s.objects[copies.sourceId]?.attachedTo ?? ""];
     if (model) {
       const out: ObjectId[] = [];
-      const n = chooseReplacementOrder(count, tokenModifiers(tokenReps(snapshot(s, model.id))), "max");
+      const n = tokenRoom(s, chooseReplacementOrder(count, tokenModifiers(tokenReps(snapshot(s, model.id))), "max"));
       for (let i = 0; i < n; i++) out.push(createTokenCopy(s, controller, model.defId));
       return out;
     }
@@ -637,7 +649,7 @@ export function createTokens(
   }
   // Doubling Season : « crée deux fois plus de ces jetons » ; Ojer Taq : trois fois plus de jetons de créature.
   const reps = tokenReps(tokenView(t, controller));
-  const n = chooseReplacementOrder(count, tokenModifiers(reps), "max");
+  const n = tokenRoom(s, chooseReplacementOrder(count, tokenModifiers(reps), "max"));
   for (let i = 0; i < n; i++) {
     const o = createObject(s, defId, controller, "battlefield", { isToken: true });
     o.timestamp = nextTimestamp(s);
@@ -708,5 +720,5 @@ export function tokenCopyCount(s: GameState, controller: PlayerId, model: LkiSna
   const reps = eventReplacements(s, "tokens").filter(
     (a) => playerSide(s, a, controller) && (!a.r.toFilter || matchesView(model, a.r.toFilter, a.controller, a.sourceId)),
   );
-  return chooseReplacementOrder(count, tokenModifiers(reps), "max");
+  return tokenRoom(s, chooseReplacementOrder(count, tokenModifiers(reps), "max"));
 }

@@ -74,3 +74,8 @@ Les scripts sont dans `packages/cards/src/hob/` : `cards` (cartes du méta), `wh
   - filtres `sameNameAs` (« du même nom qu'un permanent [filtre] ») et `fromBattlefieldThisTurn` (`GameObject.arrivedFrom`, posé par `moveObject`) ;
   - `RULES_VERSION` = 58, parties dorées régénérées.
 - **Tests :** 11 tests de règles (« lot C1 »).
+
+## Fin d'extension : correctifs trouvés par la vérification complète
+
+- **Contrôle d'une Aura (613.1b) :** le contrôle donné par une Aura (ou un effet « tant que ») revient dès qu'elle quitte le champ de bataille, sans attendre les actions basées sur l'état (Banishing Betrayal renvoie l'Aura puis demande une surveillance ; trouvé par le fuzz « chaos » ; test dans `rulings.test.ts`). `RULES_VERSION` = 59.
+- **Plafonds de sécurité :** une simulation de l'IA experte accumulait des copies d'Exalted Sunborn (doubleur de jetons) jusqu'à demander 2^2058 jetons, soit une boucle sans fin. Un événement crée au plus 100 jetons, aucun au-delà de 400 objets sur le champ de bataille, et un montant remplacé est borné à un million ; une pioche s'arrête à la bibliothèque vide (trouvé par le fuzz « niveaux d'IA » ; approximation générale dans `docs/approximations.md`). `RULES_VERSION` = 60.

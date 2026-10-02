@@ -426,5 +426,6 @@ Dans l'ordre où elles ont été ajoutées, extension par extension.
   - `règle` Eagle's Rescue : l'Aura qui revient du cimetière est d'abord attachée comme toute Aura mise sur le champ de bataille, puis à la cible (une question de trop s'il y a plusieurs hôtes possibles).
   - `règle` The Great Goblin : des marqueurs mis par un adversaire sur vos Gobelins, Orques ou Armées le déclenchent aussi.
   - `règle` Goblin Plate Mail : l'Équipement s'attache à votre première Armée.
+- **Plafonds de sécurité :** un même événement crée au plus 100 jetons, et aucun quand le champ de bataille compte déjà 400 objets ; un montant remplacé (blessures, marqueurs, PV, cartes) est borné à un million. Des doubleurs de jetons qui se multiplient (copies d'Exalted Sunborn) donnaient sinon un nombre infini et une partie bloquée (`MAX_TOKENS_PER_EVENT`, `MAX_BATTLEFIELD` dans `actions.ts`, `MAX_AMOUNT` dans `modifiers.ts`).
 - **Légalité Standard :** instantané des légalités Scryfall au moment de l'import (`legalities.standard` dans `data/<set>.json`). Après une rotation ou une annonce de bannissement, réimporter les sets (`npm run import-cards -- <set>`).
 - **Images des jetons :** celle du jeton Scryfall le plus proche (même nom, puis mêmes F/E et couleurs ; `data/tokens.json`, `npm run import-tokens`) ; un jeton de nom inconnu garde le cadre texte.

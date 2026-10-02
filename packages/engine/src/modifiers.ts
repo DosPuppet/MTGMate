@@ -56,5 +56,10 @@ export function replacementOutcomes(base: number, mods: AmountMod[]): number[] {
  */
 export function chooseReplacementOrder(base: number, mods: AmountMod[], prefer: "min" | "max"): number {
   const outcomes = replacementOutcomes(base, mods);
-  return prefer === "min" ? Math.min(...outcomes) : Math.max(...outcomes);
+  // Des doubleurs qui se multiplient donnent vite un nombre infini en JavaScript (inutilisable dans l'état, sérialisé en
+  // JSON) : le résultat est plafonné (voir docs/approximations.md).
+  return Math.min(MAX_AMOUNT, prefer === "min" ? Math.min(...outcomes) : Math.max(...outcomes));
 }
+
+/** Plafond d'un montant remplacé (blessures, marqueurs, PV, cartes, jetons). */
+export const MAX_AMOUNT = 1_000_000;

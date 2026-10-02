@@ -573,6 +573,9 @@ export function moveObject(
     s.effects = s.effects.filter((e) => e.whileSource !== id && e.whileSourceTapped !== id);
     bump(s);
   }
+  // 613.1b, 611.2 : un changement de contrôle lié à ce permanent (Aura qui donne le contrôle, effet « tant que ») prend
+  // fin dès qu'il part, sans attendre les actions basées sur l'état (une résolution peut encore demander un choix).
+  if (from0 === "battlefield" && (o.attachedTo || s.effects.some((e) => e.controller))) syncControl(s);
   // Emrakul : les effets « jusqu'à ce que cette carte soit lancée depuis l'exil » cessent.
   if (from0 === "exile" && s.effects.some((e) => e.untilExiledUid === o.uid)) {
     s.effects = s.effects.filter((e) => e.untilExiledUid !== o.uid);
@@ -739,6 +742,7 @@ export function setPrepared(s: GameState, o: GameObject, on: boolean): void {
 // Caractéristiques calculées : voir layers.ts (réexportées ici pour commodité).
 // ---------------------------------------------------------------------------
 
+import { syncControl } from "./control";
 import { bump, chars, snapshot } from "./layers";
 import { chooseReplacementOrder } from "./modifiers";
 import { applyEntersReplacements, auraHosts, type EntersContext, releaseLinkedExile, replaceGraveyard } from "./replacement";

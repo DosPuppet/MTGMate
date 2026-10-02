@@ -3,13 +3,13 @@
  * lien de vie, copies, remplacements, nettoyage (docs/plans/PLAN-R.md, lot R7).
  */
 import { describe, expect, it } from "vitest";
-import { dealDamage, destroy, sourceFromObject } from "../src/actions";
+import { createTokens, dealDamage, destroy, sourceFromObject } from "../src/actions";
 import { eventReplacement, fx, graveyardReplacement, ref, triggered, when } from "../src/dsl";
 import { runEffect } from "../src/effects";
 import { bump } from "../src/layers";
 import { legalActions } from "../src/legal";
 import { counterItem } from "../src/stack";
-import { changeCounters, chars } from "../src/state";
+import { changeCounters, chars, moveObject } from "../src/state";
 import { addPlayerEffect } from "../src/statics";
 import { matchesObjectFilter } from "../src/targets";
 import { requiredBlocks, stateBasedActions } from "../src/turn";
@@ -477,5 +477,38 @@ describe("correctifs du lot A de The Hobbit", () => {
     expect(s.players.p1?.manaPool.G).toBe(0);
     expect(s.players.p1?.restrictedMana).toEqual([{ type: "G", restriction: { spell: { types: ["Artifact"] } } }]);
     expect(legalActions(s, "p1").some((a) => a.type === "cast" && a.card === idOf(s, "p1", "hand", "Bear Cub"))).toBe(false);
+  });
+});
+
+describe("correctifs de fin de The Hobbit", () => {
+  it("613.1b : l'Aura qui donne le contrôle part — le contrôle revient aussitôt, avant les actions basées sur l'état", () => {
+    let s = scenario({
+      p1: { battlefield: [...Array(6).fill("Island")], hand: ["Confiscate"] },
+      p2: { battlefield: ["Forest"] },
+    });
+    const forest = idOf(s, "p2", "battlefield", "Forest");
+    s = act(s, "p1", { type: "cast", card: idOf(s, "p1", "hand", "Confiscate"), targets: { enchant: [forest] } });
+    s = passAccepting(s, (x) => x.stack.length === 0 && x.triggers.length === 0);
+    expect(s.objects[forest]?.controller).toBe("p1");
+    // Renvoyée en main au milieu d'une résolution : pas d'actions basées sur l'état entre-temps.
+    moveObject(s, idOf(s, "p1", "battlefield", "Confiscate"), "hand");
+    expect(s.objects[forest]?.controller).toBe("p2");
+  });
+
+  it("plafond : dix doubleurs de jetons ne créent pas 1 024 jetons, mais au plus 100 (approximation documentée)", () => {
+    const doubler = customCard({
+      name: "Test Token Doubler",
+      types: ["Enchantment"],
+      typeLine: "Enchantment",
+      abilities: [eventReplacement({ event: "tokens", to: "you", modify: { times: 2 } })],
+    });
+    const s = scenario({ p1: { battlefield: Array(10).fill(doubler) } });
+    const made = createTokens(
+      s,
+      "p1",
+      { name: "Test Soldier", colors: ["W"], types: ["Creature"], subtypes: ["Soldier"], power: 1, toughness: 1 },
+      1,
+    );
+    expect(made).toHaveLength(100);
   });
 });
