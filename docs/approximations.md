@@ -331,5 +331,6 @@ Dans l'ordre où elles ont été ajoutées, extension par extension.
   - `règle` Boiling Rock Rioter : « engagez un Allié dégagé que vous contrôlez » est deux capacités (un autre Allié, ou le Rioter lui-même) ; s'engager lui-même demande qu'il n'ait pas le mal d'invocation, ce que la règle 302.6 n'exige pas pour un coût autre que {T} ;
   - `règle` Sold Out : « a subi des blessures ce tour-ci » se lit sur les blessures encore marquées ;
   - `timing` The Fire Nation Drill : s'il arrive déjà engagé, la question « vous pouvez l'engager » n'est pas posée.
+  - `règle` Zhao, the Moon Slayer : les terrains non de base prennent le seul sous-type Montagne (une créature-terrain perdrait aussi ses types de créature, alors que 305.7 ne remplace que les types de terrain) ; une capacité statique propre au terrain n'est pas retirée (la perte des capacités par une capacité statique n'atteint pas `staticSlots`).
 - **Légalité Standard :** instantané des légalités Scryfall au moment de l'import (`legalities.standard` dans `data/<set>.json`). Après une rotation ou une annonce de bannissement, réimporter les sets (`npm run import-cards -- <set>`).
 - **Images des jetons :** celle du jeton Scryfall le plus proche (même nom, puis mêmes F/E et couleurs ; `data/tokens.json`, `npm run import-tokens`) ; un jeton de nom inconnu garde le cadre texte.

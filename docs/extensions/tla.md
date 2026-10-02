@@ -41,3 +41,10 @@ Les scripts sont dans `packages/cards/src/tla/` : `cards` (cartes du méta), `wh
 - **Moteur :** rien de nouveau (emblème lié à la source pour Fatal Fissure, cartes liées lancées depuis l'exil pour Boiling Rock Rioter, réduction de coût selon l'Aura ciblée pour Swampsnare Trap).
 - **Reste pour plus tard :** Foggy Swamp Visions et Ruinous Waterbending (maîtrise de l'eau en coût de sort), Koh, the Face Stealer (capacités de la dernière carte choisie), Lo and Li, Twin Tutors (mots-clés donnés aux sorts), The Rise of Sozin // Fire Lord Sozin (valeur de mana totale X des cibles).
 - **Tests :** 34 tests de règles (« lot A, noir »).
+
+## Sous-lot A4 : cartes rouges ✅ (151 / 280)
+
+- **Cartes (29) :** Boar-q-pine, Bumi Bash, The Cave of Two Lovers, Combustion Man, Crescent Island Temple, Cunning Maneuver, Deserter's Disciple, Fire Nation Attacks, Fire Nation Cadets, Fire Nation Raider, Fire Sages, Firebending Student, How to Start a Riot, Jeong Jeong, the Deserter, Jet's Brainwashing, Mai, Jaded Edge, Mongoose Lizard, Ran and Shaw, Rough Rhino Cavalry, Solstice Revelations, Tiger-Dillo, Treetop Freedom Fighters, Twin Blades, Ty Lee, Artful Acrobat, War Balloon, Wartime Protestors, Yuyan Archers, Zhao, the Moon Slayer, Zuko, Exiled Prince.
+- **Moteur :** rien de nouveau ; la maîtrise du feu du socle sert aussi en montant (Firebending Student : « maîtrise du feu X, X étant sa force ») et donnée sous condition (Fire Nation Cadets).
+- **Reste pour plus tard :** Fated Firepower (blessures augmentées du nombre de marqueurs de feu), Firebender Ascension (copier une capacité déclenchée par une attaque), The Last Agni Kai (blessures en excès d'un combat ; garder le mana rouge), Redirect Lightning (coût additionnel « 5 PV ou {2} »), Sozin's Comet (présage).
+- **Tests :** 37 tests de règles (« lot A, rouge »).
