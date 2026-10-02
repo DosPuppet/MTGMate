@@ -12,7 +12,7 @@
  */
 import type { AbilityDef, CardDef } from "@mtgx/engine";
 
-export type ParagraphKind = "keywords" | "triggered" | "activated" | "static" | "chapter" | "spell";
+export type ParagraphKind = "keywords" | "triggered" | "activated" | "static" | "chapter" | "spell" | "mode";
 
 export interface Paragraph {
   kind: ParagraphKind;
@@ -21,8 +21,12 @@ export interface Paragraph {
 
 export interface AuditIssue {
   card: string;
-  /** « déclenchées » : le texte en décrit plus que le script ; « nombre » : un nombre d'effet absent du script. */
-  kind: "triggered" | "activated" | "number";
+  /**
+   * « déclenchées », « activées » : le texte en décrit plus que le script ; « statiques » : le texte décrit plus de
+   * capacités statiques que le script n'en porte (capacités, champs de la définition, mots-clés non imprimés, surplus de
+   * déclenchées ou d'activées qui les réalisent) ; « nombre » : un nombre d'effet absent du script.
+   */
+  kind: "triggered" | "activated" | "static" | "number";
   detail: string;
 }
 
@@ -48,13 +52,13 @@ const NUMBER_WORDS: Record<string, number> = {
 
 /** Mots-clés (et mots-clés à coût) qui peuvent former une ligne de mots-clés. */
 const KEYWORD_LINE =
-  /^(?:(?:flying|first strike|double strike|deathtouch|defender|haste|hexproof|indestructible|lifelink|menace|reach|trample|vigilance|flash|prowess|changeling|convoke|delve|affinity for [a-z]+|fear|intimidate|shroud|skulk|landwalk|[a-z]+walk|protection from [^,.]+|ward(?: \{[^}]+\}|—[^.]+\.?)|equip(?: [^{]*)?\{[^}]*\}(?:\{[^}]*\})*|crew \d+|saddle \d+|station \d*|cycling \{[^}]*\}(?:\{[^}]*\})*|[a-z]+cycling \{[^}]*\}(?:\{[^}]*\})*|kicker \{[^}]*\}(?:\{[^}]*\})*|flashback \{[^}]*\}(?:\{[^}]*\})*|disguise \{[^}]*\}(?:\{[^}]*\})*|warp \{[^}]*\}(?:\{[^}]*\})*|plot \{[^}]*\}(?:\{[^}]*\})*|offspring \{[^}]*\}(?:\{[^}]*\})*|impending \d+—\{[^}]*\}(?:\{[^}]*\})*|craft with [^.]+|max speed|start your engines!|exhaust|mobilize \d+|surveil \d+|ninjutsu \{[^}]*\}(?:\{[^}]*\})*|evoke \{[^}]*\}(?:\{[^}]*\})*|bestow \{[^}]*\}(?:\{[^}]*\})*|mutate \{[^}]*\}(?:\{[^}]*\})*|enchant [^.]+|devour \d+|job select|toxic \d+|infect|wither|annihilator \d+|rebound|cascade|storm|split second|unearth \{[^}]*\}(?:\{[^}]*\})*|embalm \{[^}]*\}(?:\{[^}]*\})*|escape—[^.]+\.?|harmonize \{[^}]*\}(?:\{[^}]*\})*|echo \{[^}]*\}(?:\{[^}]*\})*|dash \{[^}]*\}(?:\{[^}]*\})*|evolve|exploit|riot|undying|persist|training|bargain|backup \d+|forage|gift [^.]+|spree|tiered|hideaway \d+|living weapon|buyback \{[^}]*\}(?:\{[^}]*\})*|mentor|melee|afflict \d+|renew|freerunning \{[^}]*\}(?:\{[^}]*\})*|the ring tempts you)(?:,\s*|\s*$))+$/i;
+  /^(?:(?:flying|first strike|double strike|deathtouch|defender|haste|hexproof|indestructible|lifelink|menace|reach|trample|vigilance|flash|prowess|changeling|convoke|delve|affinity for [a-z]+|fear|intimidate|shroud|skulk|landwalk|[a-z]+walk|protection from [^,.]+|ward(?: \{[^}]+\}|—[^.]+\.?)|equip(?: [^{]*)?\{[^}]*\}(?:\{[^}]*\})*|crew \d+|saddle \d+|station \d*|cycling \{[^}]*\}(?:\{[^}]*\})*|[a-z]+cycling \{[^}]*\}(?:\{[^}]*\})*|kicker \{[^}]*\}(?:\{[^}]*\})*|flashback \{[^}]*\}(?:\{[^}]*\})*|disguise \{[^}]*\}(?:\{[^}]*\})*|warp \{[^}]*\}(?:\{[^}]*\})*|plot \{[^}]*\}(?:\{[^}]*\})*|offspring \{[^}]*\}(?:\{[^}]*\})*|impending \d+—\{[^}]*\}(?:\{[^}]*\})*|craft with [^.]+|max speed|start your engines!|exhaust|mobilize \d+|surveil \d+|ninjutsu \{[^}]*\}(?:\{[^}]*\})*|evoke \{[^}]*\}(?:\{[^}]*\})*|bestow \{[^}]*\}(?:\{[^}]*\})*|mutate \{[^}]*\}(?:\{[^}]*\})*|enchant [^.]+|devour \d+|job select|toxic \d+|infect|wither|annihilator \d+|rebound|cascade|storm|split second|unearth \{[^}]*\}(?:\{[^}]*\})*|embalm \{[^}]*\}(?:\{[^}]*\})*|escape—[^.]+\.?|harmonize \{[^}]*\}(?:\{[^}]*\})*|echo \{[^}]*\}(?:\{[^}]*\})*|dash \{[^}]*\}(?:\{[^}]*\})*|evolve|exploit|riot|undying|persist|training|bargain|backup \d+|forage|gift [^.]+|spree|tiered|hideaway \d+|living weapon|buyback \{[^}]*\}(?:\{[^}]*\})*|mentor|melee|afflict \d+|renew|freerunning \{[^}]*\}(?:\{[^}]*\})*|the ring tempts you|basic landcycling \{[^}]*\}(?:\{[^}]*\})*|increment|mobilize x[^.]*|extort|battle cry|improvise|firebending (?:\d+|x(?:, where x is [^.]+)?))(?:,\s*|\s*$))+$/i;
 
 /** Retire le texte de rappel (entre parenthèses) et les mots d'aptitude (« Landfall — », « Void — »). */
 export function stripReminder(text: string): string {
   return text
     .replace(/\s*\([^)]*\)/g, "")
-    .replace(/^(?:[A-Z][A-Za-z' -]{1,40}|Max speed|\d+\+) — /u, "")
+    .replace(/^(?:[^—.:"{}•]{1,40}) — /u, "")
     .trim();
 }
 
@@ -67,6 +71,11 @@ export function paragraphs(text: string, isSpell: boolean): Paragraph[] {
     // Chapitres de Saga (« I, II — … »), niveaux de Classe et paliers : comptés à part.
     if (/^(?:[IVX]+(?:, [IVX]+)*) —/.test(line) || /^Level \d/.test(line) || /^\d+\+ \|/.test(line)) {
       out.push({ kind: "chapter", text: line });
+      continue;
+    }
+    // Mode d'une capacité ou d'un sort modal (« • … ») : fait partie du paragraphe précédent.
+    if (line.startsWith("•")) {
+      out.push({ kind: "mode", text: stripReminder(line.slice(1).trim()) });
       continue;
     }
     const t = stripReminder(line);
@@ -116,6 +125,57 @@ function countKind(d: CardDef, kind: "triggered" | "activated"): number {
     kind === "triggered" ? a.kind === "triggered" : a.kind === "activated" || a.kind === "mana",
   ).length;
 }
+
+/** Champs d'une définition qui ne décrivent pas une capacité (identité, texte, image, faces, légalité…). */
+const IDENTITY_FIELDS = new Set([
+  "id",
+  "name",
+  "typeLine",
+  "manaCost",
+  "manaCostText",
+  "colors",
+  "supertypes",
+  "types",
+  "subtypes",
+  "power",
+  "toughness",
+  "keywords",
+  "abilities",
+  "spell",
+  "text",
+  "fr",
+  "image",
+  "artCrop",
+  "layout",
+  "faceDefs",
+  "implemented",
+  "set",
+  "number",
+  "rarity",
+  "legalities",
+  "isToken",
+  "prepareFace",
+]);
+
+/** Champs de capacité (coûts, permissions, entrée…) renseignés dans une définition. */
+function abilityFields(d: CardDef): number {
+  return Object.entries(d).filter(([k, v]) => v !== undefined && !IDENTITY_FIELDS.has(k)).length;
+}
+
+/**
+ * Statiques portées par une capacité : une capacité statique ou de joueur réalise souvent plusieurs phrases du texte
+ * (« ont la menace et +1/+0 », « un terrain de plus, depuis le cimetière ») ; on compte ses effets distincts.
+ */
+function staticWeight(a: AbilityDef): number {
+  if (a.kind === "triggered" || a.kind === "activated" || a.kind === "mana") return 0;
+  if (a.kind === "static") return Math.max(1, Object.keys(a.mods).length);
+  if (a.kind === "playerStatic")
+    return Math.max(1, Object.keys(a).filter((k) => k !== "kind" && k !== "label" && k !== "condition").length);
+  return 1;
+}
+
+/** Statiques sans effet de jeu à vérifier (règle de construction du deck). */
+const NO_SCRIPT_STATIC = /^A deck can have any number of cards named/;
 
 /** Nombres d'effet cités par un paragraphe (« deals 3 damage », « draw two cards », « +2/+2 »…). */
 export function effectNumbers(text: string): number[] {
@@ -184,12 +244,25 @@ export function auditCard(d: CardDef): AuditIssue[] {
   for (const f of faces) {
     const isSpell = f.types.includes("Instant") || f.types.includes("Sorcery");
     const paras = paragraphs(f.text ?? "", isSpell);
+    let surplus = 0;
     for (const kind of ["triggered", "activated"] as const) {
       const expected = paras.filter((p) => p.kind === kind).length;
       // Les deux faces partagent parfois les capacités (verso) : on compte celles de la carte entière aussi.
       const have = Math.max(countKind(f, kind), faces.length > 1 ? 0 : countKind(d, kind));
       if (have < expected)
         issues.push({ card: d.name, kind, detail: `${f.name} : ${expected} dans le texte, ${have} dans le script` });
+      surplus += Math.max(0, have - expected);
+    }
+    // Statiques d'un permanent : chacune doit être portée par quelque chose dans le script. Un éphémère ou un rituel
+    // décrit son effet en paragraphes « sort », comptés ailleurs (nombres).
+    if (!isSpell) {
+      const statics = paras.filter((p) => p.kind === "static" && !NO_SCRIPT_STATIC.test(p.text)).length;
+      const printed = paras.filter((p) => p.kind === "keywords").reduce((n, p) => n + p.text.split(",").length, 0);
+      const own = (x: CardDef) =>
+        allAbilities(x).reduce((n, a) => n + staticWeight(a), 0) + abilityFields(x) + Math.max(0, x.keywords.length - printed);
+      const have = own(f) + (f !== d ? own(d) : 0) + surplus;
+      if (have < statics)
+        issues.push({ card: d.name, kind: "static", detail: `${f.name} : ${statics} dans le texte, ${have} dans le script` });
     }
     const nums = scriptNumbers(f);
     if (f !== d) for (const n of scriptNumbers(d)) nums.add(n);

@@ -10,5 +10,13 @@
  "Buried in the Garden | triggered | Buried in the Garden : 2 dans le texte, 1 dans le script": "capacité de mana déclenchée (605.1b, un mana de plus) : remplacement de mana (R1, famille I), comme Shimmerwilds Growth",
  "Badgermole Cub | triggered | Badgermole Cub : 2 dans le texte, 1 dans le script": "capacité de mana déclenchée (605.1b, un {G} de plus pour une créature engagée) : remplacement de mana (R1, famille I), comme Lavaleaper",
  "Raphael's Technique | number | Raphael's Technique : 7 absent(s)": "équivalence : mayWheel défausse la main et pioche sept cartes par construction",
- "Groundchuck & Dirtbag | triggered | Groundchuck & Dirtbag : 1 dans le texte, 0 dans le script": "capacité de mana déclenchée (605.1b, un {G} de plus par terrain engagé) : remplacement de mana (R1, famille I), comme Badgermole Cub"
+ "Groundchuck & Dirtbag | triggered | Groundchuck & Dirtbag : 1 dans le texte, 0 dans le script": "capacité de mana déclenchée (605.1b, un {G} de plus par terrain engagé) : remplacement de mana (R1, famille I), comme Badgermole Cub",
+ "Vizier of the Menagerie | static | Vizier of the Menagerie : 3 dans le texte, 1 dans le script": "une seule permission playFrom (dessus de la bibliothèque, regard permanent compris) avec anyMana pour le mana de n'importe quel type",
+ "Sorcerous Spyglass | static | Sorcerous Spyglass : 2 dans le texte, 1 dans le script": "chooseOnEnter « cardName » : regard de la main à l'arrivée (ops/permanents.ts) et interdiction d'activer les sources du nom choisi (stack.ts)",
+ "Mm'menon, the Right Hand | static | Mm'menon, the Right Hand : 3 dans le texte, 2 dans le script": "la permission playFrom du dessus de la bibliothèque comprend le regard permanent",
+ "Timeline Culler | static | Timeline Culler : 2 dans le texte, 1 dans le script": "distorsion lue dans le texte ; le lancer depuis le cimetière avec la distorsion est porté par le champ warp (stack.ts)",
+ "Tapestry Warden | static | Tapestry Warden : 2 dans le texte, 1 dans le script": "une règle de force (powerFor.combatToughness) pour les deux usages : blessures de combat et station",
+ "Sephiroth, Fabled SOLDIER // Sephiroth, One-Winged Angel | static | Sephiroth, One-Winged Angel : 1 dans le texte, 0 dans le script": "l'emblème est donné par la capacité qui transforme (recto), juste avant la transformation",
+ "Zenos yae Galvus // Shinryu, Transcendent Rival | static | Shinryu, Transcendent Rival : 1 dans le texte, 0 dans le script": "approximation documentée : l'adversaire « choisi » est le premier qui perd la partie (when.opponentLoses)",
+ "Traveling Chocobo | static | Traveling Chocobo : 3 dans le texte, 2 dans le script": "la permission playFrom du dessus de la bibliothèque comprend le regard permanent"
 }

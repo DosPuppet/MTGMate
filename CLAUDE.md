@@ -26,6 +26,7 @@ Ce fichier sert au suivi du projet entre les sessions : état présent, règles 
 - `docs/historique.md` : jalons et chronologie du projet.
 - `docs/deploiement.md` (pm2, nginx), `docs/tutoriel.md` (leçons), `docs/ia.md` (niveaux, ISMCTS, tournoi et mesures).
 - Textes Oracle : `npm run coverage -- --set <ext> --text [--color W|U|B|R|G|M|C|L]` ; une carte : `--card "<nom>"`.
+- Cartes nommées dans un test de règles, par extension : `npm run coverage -- --set all --tests [--meta]` (à citer dans le compte rendu d'un lot de cartes).
 - Audit Oracle ↔ script : `npm run coverage -- --set <ext> --audit` (`cards/src/audit.ts`) ; `cards/test/audit.test.ts` échoue sur tout nouvel écart ; un écart voulu va dans `cards/data/audit-baseline.json` avec sa raison.
 
 ## Conventions
@@ -85,6 +86,7 @@ Ce fichier sert au suivi du projet entre les sessions : état présent, règles 
 - **Test de fumée (`ai/test/smoke/`) :** une carte non jouée fait échouer le test ; une nouvelle extension reçoit son fichier et entre dans `OWN_FILES` ; pour une carte réactive, l'adversaire doit avoir des sorts.
 - **Cache des caractéristiques :** tout ce dont une statique ou une F/E variable dépend fait avancer la version (`bump`) ; le fuzz détecte les oublis.
 - **Biome :** `npx biome check . | tail -1` cache les erreurs (grep « Found ») ; un `*/` dans un commentaire JSDoc le ferme. Biome reformate : préférer un patch tolérant aux espaces.
+- **Vitest 5.0.1 et `/tmp` :** chaque exécution crée `/tmp/<nanoid>/ssr` (environ 60 Mo) sans le supprimer ; le greffon `mtgx-clear-vitest-tmp` de `vitest.config.ts` le supprime à la fermeture (sans lui, `/tmp` a saturé le 02/10/2026). À retirer quand vitest le fera lui-même.
 - **`pgrep -f` / `pkill -f`** avec un motif présent dans la ligne de commande peuvent tuer le shell courant.
 
 ## Règle : pas de dette propre à une carte

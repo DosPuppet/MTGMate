@@ -4739,3 +4739,32 @@ describe("Secrets of Strixhaven, lot C3 : cascade et miracle", () => {
     expect(s.players.p1?.hand.map((id) => nameOf(s, id))).toEqual(["Plains"]);
   });
 });
+
+// Cartes des decks du méta Standard (docs/plans/PLAN-C.md, lot C13).
+describe("Secrets of Strixhaven : cartes du méta Standard", () => {
+  describe("Vibrant Outburst", () => {
+    const setup = () =>
+      scenario({
+        p1: { battlefield: ["Island", "Mountain"], hand: ["Vibrant Outburst"] },
+        p2: { battlefield: ["Serra Angel", "Fire Elemental"] },
+      });
+
+    it("3 blessures à n'importe quelle cible (un joueur) et engage jusqu'à une créature ciblée", () => {
+      let s = setup();
+      const angel = idOf(s, "p2", "battlefield", "Serra Angel");
+      s = settle(cast(s, "p1", "Vibrant Outburst", { d: ["p2"], c: [angel] }));
+      expect(s.players.p2?.life).toBe(17);
+      expect(s.objects[angel]?.tapped).toBe(true);
+      expect(s.objects[idOf(s, "p2", "battlefield", "Fire Elemental")]?.tapped).toBe(false);
+    });
+
+    it("3 blessures à une créature, sans créature à engager", () => {
+      let s = setup();
+      const fire = idOf(s, "p2", "battlefield", "Fire Elemental");
+      s = settle(cast(s, "p1", "Vibrant Outburst", { d: [fire], c: [] }));
+      expect(s.objects[fire]?.damage).toBe(3);
+      expect(s.objects[idOf(s, "p2", "battlefield", "Serra Angel")]?.tapped).toBe(false);
+      expect(s.players.p2?.life).toBe(20);
+    });
+  });
+});

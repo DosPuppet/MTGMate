@@ -202,10 +202,13 @@ export const CARDS: Record<string, CardScript> = {
       activated({
         mana: "{2}{W}",
         tap: true,
-        // « Chaque fois que vous attaquez ce tour-ci » : capacité accordée au terrain jusqu'à la fin du tour.
+        // « Chaque fois que vous attaquez ce tour-ci » : capacité retardée (603.7), portée par un emblème du tour ; elle
+        // ne dépend plus du terrain (qui peut quitter le champ de bataille).
         effects: [
-          fx.modify(ref.self, {
-            addAbilities: [
+          fx.emblem(
+            "Dalkovan Encampment",
+            "Whenever you attack this turn, create two 1/1 red Warrior creature tokens that are tapped and attacking. Sacrifice them at the beginning of the next end step.",
+            [
               triggered(
                 when.attackWith(1),
                 [
@@ -215,7 +218,9 @@ export const CARDS: Record<string, CardScript> = {
                 { label: "Deux Guerriers 1/1 attaquants" },
               ),
             ],
-          }),
+            false,
+            true,
+          ),
         ],
         label: "Ce tour-ci, chaque attaque crée deux Guerriers",
       }),

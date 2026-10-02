@@ -11,7 +11,7 @@ import { legalActions } from "../src/legal";
 import { manaAbilitiesOf } from "../src/mana";
 import { chars, counterCount, onBattlefield } from "../src/state";
 import type { GameEvent, GameState } from "../src/types";
-import { act, idOf, idsOf, passAccepting, passBoth, scenario } from "./helpers";
+import { act, advanceUntil, castable, idOf, idsOf, nameOf, passAccepting, passBoth, picking, scenario, settle } from "./helpers";
 
 type S = ReturnType<typeof scenario>;
 const cast = (s: S, p: string, name: string, extra: Record<string, unknown> = {}) =>
@@ -677,5 +677,307 @@ describe("Foundations : destination réelle d'une créature qui meurt", () => {
     });
     const { events } = castAndResolve(s, "p1", "Burst Lightning", idOf(s, "p2", "battlefield", "Bear Cub"));
     expect(events.find((e) => e.type === "dies")).toMatchObject({ type: "dies", to: "graveyard" });
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Cartes des decks du méta Standard (docs/plans/PLAN-C.md, lot C13) : chaque carte fait ce que dit son texte Oracle.
+// ---------------------------------------------------------------------------
+
+describe("Foundations : cartes du méta Standard", () => {
+  /** Active la capacité de `source` dont l'intitulé commence par `label` (ou la première, sans intitulé). */
+  const activate = (s: S, player: string, source: string, label?: string, targets?: Record<string, string[]>) => {
+    const a = legalActions(s, player).find(
+      (x) => x.type === "activate" && x.source === source && (!label || x.label?.startsWith(label)),
+    );
+    if (a?.type !== "activate") throw new Error(`capacité ${label ?? ""} indisponible`);
+    return act(s, player, { type: "activate", source, ability: a.ability, targets });
+  };
+  const handNames = (s: S, p: string) => (s.players[p]?.hand ?? []).map((id) => nameOf(s, id)).sort();
+  const yardNames = (s: S, p: string) => (s.players[p]?.graveyard ?? []).map((id) => nameOf(s, id)).sort();
+  /** p1 lance `spell` ; p2 reçoit la priorité avec le sort sur la pile. */
+  const onStack = (spell: string, p1Lands: string[], p2Hand: string[]) => {
+    let s = scenario({ p1: { battlefield: p1Lands, hand: [spell] }, p2: { battlefield: lands("Island", 2), hand: p2Hand } });
+    s = cast(s, "p1", spell);
+    return act(s, "p1", { type: "pass" });
+  };
+  const legalSpellTargets = (s: S, player: string, card: string) => {
+    const opt = legalActions(s, player).find((a) => a.type === "cast" && a.card === card);
+    return opt?.type === "cast" ? (opt.modes[0]?.targets[0]?.legal ?? []) : [];
+  };
+
+  it("Duress : l'adversaire révèle sa main ; vous choisissez une carte non-créature non-terrain, qu'il défausse", () => {
+    let s = scenario({
+      p1: { battlefield: ["Swamp"], hand: ["Duress"] },
+      p2: { hand: ["Forest", "Llanowar Elves", "Opt", "Giant Growth"] },
+    });
+    s = cast(s, "p1", "Duress", { targets: { t: ["p2"] } });
+    s = passBoth(s);
+    // C'est le lanceur qui choisit, parmi les seules cartes non-créatures non-terrains.
+    expect(s.pending?.player).toBe("p1");
+    const req = s.pending?.kind === "choice" ? s.pending.request : undefined;
+    expect(req?.type === "pick" && req.options.map((id) => nameOf(s, id)).sort()).toEqual(["Giant Growth", "Opt"]);
+    s = choose(s, [idOf(s, "p2", "hand", "Giant Growth")]);
+    expect(yardNames(s, "p2")).toEqual(["Giant Growth"]);
+    expect(handNames(s, "p2")).toEqual(["Forest", "Llanowar Elves", "Opt"]);
+  });
+
+  it("Duress : rien à défausser si la main ne contient que des créatures et des terrains", () => {
+    let s = scenario({ p1: { battlefield: ["Swamp"], hand: ["Duress"] }, p2: { hand: ["Forest", "Llanowar Elves"] } });
+    s = settle(cast(s, "p1", "Duress", { targets: { t: ["p2"] } }));
+    expect(handNames(s, "p2")).toEqual(["Forest", "Llanowar Elves"]);
+    expect(s.players.p2?.graveyard).toHaveLength(0);
+  });
+
+  it("Flashfreeze contrecarre un sort rouge ou vert, pas un sort bleu", () => {
+    let s = onStack("Overrun", lands("Forest", 5), ["Flashfreeze"]);
+    const spell = s.stack[0]?.id as string;
+    expect(legalSpellTargets(s, "p2", idOf(s, "p2", "hand", "Flashfreeze"))).toEqual([spell]);
+    s = settle(cast(s, "p2", "Flashfreeze", { targets: { t: [spell] } }));
+    expect(idsOf(s, "p1", "graveyard", "Overrun")).toHaveLength(1);
+    expect(s.stack).toHaveLength(0);
+    // Un sort bleu n'est pas une cible légale.
+    const blue = onStack("Opt", ["Island"], ["Flashfreeze"]);
+    expect(castable(blue, "p2", idOf(blue, "p2", "hand", "Flashfreeze"))).toBe(false);
+  });
+
+  it("Negate contrecarre un sort non-créature, pas un sort de créature", () => {
+    let s = onStack("Overrun", lands("Forest", 5), ["Negate"]);
+    s = settle(cast(s, "p2", "Negate", { targets: { t: [s.stack[0]?.id as string] } }));
+    expect(idsOf(s, "p1", "graveyard", "Overrun")).toHaveLength(1);
+    const creature = onStack("Llanowar Elves", ["Forest"], ["Negate"]);
+    expect(castable(creature, "p2", idOf(creature, "p2", "hand", "Negate"))).toBe(false);
+  });
+
+  it("Day of Judgment détruit toutes les créatures, des deux camps, et rien d'autre", () => {
+    let s = scenario({
+      p1: { battlefield: [...lands("Plains", 4), "Serra Angel", "Swiftfoot Boots"], hand: ["Day of Judgment"] },
+      p2: { battlefield: ["Shivan Dragon", "Llanowar Elves", "Vivien Reid"] },
+    });
+    s = settle(cast(s, "p1", "Day of Judgment"));
+    expect(s.battlefield.filter((id) => chars(s, id).types.includes("Creature"))).toHaveLength(0);
+    expect(yardNames(s, "p1")).toEqual(["Day of Judgment", "Serra Angel"]);
+    expect(yardNames(s, "p2")).toEqual(["Llanowar Elves", "Shivan Dragon"]);
+    expect(idsOf(s, "p1", "battlefield", "Swiftfoot Boots")).toHaveLength(1);
+    expect(idsOf(s, "p2", "battlefield", "Vivien Reid")).toHaveLength(1);
+  });
+
+  it("Demolition Field : {C} ; {2}, {T}, sacrifice : détruit un terrain non de base adverse, chacun cherche un terrain de base", () => {
+    let s = scenario({
+      p1: { battlefield: ["Demolition Field", "Forest", "Forest"], library: ["Plains", "Opt", "Opt"] },
+      p2: { battlefield: ["Breeding Pool", "Forest"], library: ["Island", "Opt", "Opt"] },
+    });
+    const field = idOf(s, "p1", "battlefield", "Demolition Field");
+    expect(manaAbilitiesOf(s, field).map((m) => m.produce)).toEqual([["C"]]);
+    // Seul le terrain non de base adverse est une cible.
+    const pool = idOf(s, "p2", "battlefield", "Breeding Pool");
+    expect(() => activate(s, "p1", field, "Détruire", { t: [idOf(s, "p2", "battlefield", "Forest")] })).toThrow();
+    s = activate(s, "p1", field, "Détruire", { t: [pool] });
+    expect(idsOf(s, "p1", "graveyard", "Demolition Field")).toHaveLength(1);
+    s = settle(s);
+    expect(idsOf(s, "p2", "graveyard", "Breeding Pool")).toHaveLength(1);
+    // Le contrôleur du terrain détruit puis l'activateur ont chacun mis un terrain de base sur le champ de bataille.
+    expect(idsOf(s, "p2", "battlefield", "Island")).toHaveLength(1);
+    expect(idsOf(s, "p1", "battlefield", "Plains")).toHaveLength(1);
+  });
+
+  it("Soul-Guide Lantern : à l'arrivée, exile une carte d'un cimetière ; sacrifice : exile les cimetières adverses", () => {
+    let s = scenario({
+      p1: { battlefield: ["Forest", "Forest"], hand: ["Soul-Guide Lantern"], graveyard: ["Opt"] },
+      p2: { graveyard: ["Shivan Dragon", "Llanowar Elves", "Giant Growth"] },
+    });
+    const dragon = idOf(s, "p2", "graveyard", "Shivan Dragon");
+    s = settle(cast(s, "p1", "Soul-Guide Lantern"), picking([dragon]));
+    expect(s.exile.map((id) => nameOf(s, id))).toEqual(["Shivan Dragon"]);
+    expect(s.players.p2?.graveyard).toHaveLength(2);
+    const lantern = idOf(s, "p1", "battlefield", "Soul-Guide Lantern");
+    s = settle(activate(s, "p1", lantern, "Exiler"));
+    expect(s.players.p2?.graveyard).toHaveLength(0);
+    expect(s.exile).toHaveLength(3);
+    // Votre propre cimetière n'est pas touché ; la Lanterne sacrifiée y est allée.
+    expect(yardNames(s, "p1")).toEqual(["Opt", "Soul-Guide Lantern"]);
+  });
+
+  it("Soul-Guide Lantern : {1}, {T}, sacrifice : piochez une carte", () => {
+    let s = scenario({ p1: { battlefield: ["Soul-Guide Lantern", "Forest"] } });
+    const hand = s.players.p1?.hand.length ?? 0;
+    s = settle(activate(s, "p1", idOf(s, "p1", "battlefield", "Soul-Guide Lantern"), "Piochez"));
+    expect(s.players.p1?.hand).toHaveLength(hand + 1);
+    expect(idsOf(s, "p1", "graveyard", "Soul-Guide Lantern")).toHaveLength(1);
+  });
+
+  it("Hinterland Sanctifier : 1 PV quand une autre créature arrive sous votre contrôle (pas lui, pas l'adversaire)", () => {
+    let s = scenario({
+      p1: { battlefield: lands("Plains", 3), hand: ["Hinterland Sanctifier", "Savannah Lions"] },
+      p2: { battlefield: ["Forest"], hand: ["Llanowar Elves"] },
+    });
+    s = settle(cast(s, "p1", "Hinterland Sanctifier"));
+    expect(s.players.p1?.life).toBe(20);
+    s = settle(cast(s, "p1", "Savannah Lions"));
+    expect(s.players.p1?.life).toBe(21);
+    // Une créature adverse ne compte pas.
+    s = advanceUntil(s, (x) => x.turn.active === "p2" && x.turn.step === "main1");
+    s = settle(cast(s, "p2", "Llanowar Elves"));
+    expect(s.players.p1?.life).toBe(21);
+  });
+
+  it("Cathar Commando : flash ; {1}, sacrifice : détruit un artefact ou un enchantement", () => {
+    let s = scenario({
+      active: "p2",
+      p1: { battlefield: lands("Plains", 3), hand: ["Cathar Commando"] },
+      p2: { battlefield: ["Swiftfoot Boots", "Banishing Light", "Llanowar Elves"] },
+    });
+    s = act(s, "p2", { type: "pass" });
+    // Pendant le tour adverse : le flash.
+    expect(s.pending?.player).toBe("p1");
+    s = settle(cast(s, "p1", "Cathar Commando"));
+    s = act(s, "p2", { type: "pass" });
+    expect(s.pending?.player).toBe("p1");
+    const commando = idOf(s, "p1", "battlefield", "Cathar Commando");
+    const sac = { type: "activate", source: commando, ability: 0 } as const;
+    // Une créature n'est pas une cible légale.
+    expect(() => act(s, "p1", { ...sac, targets: { t: [idOf(s, "p2", "battlefield", "Llanowar Elves")] } })).toThrow();
+    s = act(s, "p1", { ...sac, targets: { t: [idOf(s, "p2", "battlefield", "Swiftfoot Boots")] } });
+    expect(idsOf(s, "p1", "graveyard", "Cathar Commando")).toHaveLength(1);
+    s = settle(s);
+    expect(idsOf(s, "p2", "graveyard", "Swiftfoot Boots")).toHaveLength(1);
+    // Un enchantement est aussi une cible légale.
+    let t = scenario({ p1: { battlefield: ["Cathar Commando", "Plains"] }, p2: { battlefield: ["Banishing Light"] } });
+    t = settle(
+      activate(t, "p1", idOf(t, "p1", "battlefield", "Cathar Commando"), undefined, {
+        t: [idOf(t, "p2", "battlefield", "Banishing Light")],
+      }),
+    );
+    expect(idsOf(t, "p2", "graveyard", "Banishing Light")).toHaveLength(1);
+  });
+
+  describe("Boros Charm", () => {
+    const setup = () =>
+      scenario({
+        p1: { battlefield: ["Mountain", "Plains", "Serra Angel", "Swiftfoot Boots"], hand: ["Boros Charm"] },
+        p2: { battlefield: ["Vivien Reid"] },
+      });
+
+    it("mode 1 : 4 blessures à un joueur ou à un planeswalker", () => {
+      let s = settle(cast(setup(), "p1", "Boros Charm", { mode: 0, targets: { t: ["p2"] } }));
+      expect(s.players.p2?.life).toBe(16);
+      s = setup();
+      const vivien = idOf(s, "p2", "battlefield", "Vivien Reid");
+      s = settle(cast(s, "p1", "Boros Charm", { mode: 0, targets: { t: [vivien] } }));
+      expect(s.objects[vivien]?.counters.loyalty).toBe(1); // 5 − 4
+    });
+
+    it("mode 2 : vos permanents gagnent l'indestructible jusqu'à la fin du tour", () => {
+      let s = settle(cast(setup(), "p1", "Boros Charm", { mode: 1 }));
+      const angel = idOf(s, "p1", "battlefield", "Serra Angel");
+      expect(chars(s, angel).keywords).toContain("indestructible");
+      expect(chars(s, idOf(s, "p1", "battlefield", "Swiftfoot Boots")).keywords).toContain("indestructible");
+      expect(chars(s, idOf(s, "p2", "battlefield", "Vivien Reid")).keywords).not.toContain("indestructible");
+      destroy(s, angel);
+      expect(idsOf(s, "p1", "battlefield", "Serra Angel")).toHaveLength(1);
+      s = advanceUntil(s, (x) => x.turn.active === "p2");
+      expect(chars(s, angel).keywords).not.toContain("indestructible");
+    });
+
+    it("mode 3 : une créature gagne la double initiative jusqu'à la fin du tour", () => {
+      let s = setup();
+      const angel = idOf(s, "p1", "battlefield", "Serra Angel");
+      s = settle(cast(s, "p1", "Boros Charm", { mode: 2, targets: { t: [angel] } }));
+      expect(chars(s, angel).keywords).toContain("doubleStrike");
+    });
+  });
+
+  it("Deathmark détruit une créature verte ou blanche, pas une rouge", () => {
+    let s = scenario({
+      p1: { battlefield: ["Swamp"], hand: ["Deathmark"] },
+      p2: { battlefield: ["Llanowar Elves", "Serra Angel", "Shivan Dragon"] },
+    });
+    const legal = legalSpellTargets(s, "p1", idOf(s, "p1", "hand", "Deathmark"))
+      .map((id) => nameOf(s, id))
+      .sort();
+    expect(legal).toEqual(["Llanowar Elves", "Serra Angel"]);
+    s = settle(cast(s, "p1", "Deathmark", { targets: { t: [idOf(s, "p2", "battlefield", "Serra Angel")] } }));
+    expect(idsOf(s, "p2", "graveyard", "Serra Angel")).toHaveLength(1);
+  });
+
+  it("Temple of Deceit arrive engagé, regard 1, et produit {U} ou {B}", () => {
+    let s = scenario({ p1: { hand: ["Temple of Deceit"], library: ["Shivan Dragon", "Opt", "Forest"] } });
+    let asked = false;
+    s = act(s, "p1", { type: "playLand", card: idOf(s, "p1", "hand", "Temple of Deceit") });
+    s = settle(s, (req) => {
+      if (req.intent !== "scryBottom") return undefined;
+      asked = true;
+      return req.type === "pick" ? req.options.slice(0, 1) : undefined;
+    });
+    expect(asked).toBe(true);
+    const temple = idOf(s, "p1", "battlefield", "Temple of Deceit");
+    expect(s.objects[temple]?.tapped).toBe(true);
+    // Le Dragon est passé sous la bibliothèque.
+    expect(nameOf(s, s.players.p1?.library[0] as string)).toBe("Opt");
+    expect(
+      manaAbilitiesOf(s, temple)
+        .flatMap((m) => m.produce)
+        .sort(),
+    ).toEqual(["B", "U"]);
+  });
+
+  it("Maelstrom Pulse détruit le permanent ciblé et tous les autres du même nom, quel que soit leur contrôleur", () => {
+    let s = scenario({
+      p1: { battlefield: ["Swamp", "Forest", "Forest", "Llanowar Elves"], hand: ["Maelstrom Pulse"] },
+      p2: { battlefield: ["Llanowar Elves", "Llanowar Elves", "Pelakka Wurm", "Forest"] },
+    });
+    // Un terrain n'est pas une cible.
+    expect(() => cast(s, "p1", "Maelstrom Pulse", { targets: { t: [idOf(s, "p2", "battlefield", "Forest")] } })).toThrow();
+    s = settle(cast(s, "p1", "Maelstrom Pulse", { targets: { t: [idOf(s, "p2", "battlefield", "Llanowar Elves")] } }));
+    expect(s.battlefield.filter((id) => nameOf(s, id) === "Llanowar Elves")).toHaveLength(0);
+    expect(idsOf(s, "p2", "graveyard", "Llanowar Elves")).toHaveLength(2);
+    expect(idsOf(s, "p1", "graveyard", "Llanowar Elves")).toHaveLength(1);
+    expect(idsOf(s, "p2", "battlefield", "Pelakka Wurm")).toHaveLength(1);
+  });
+
+  describe("Slagstorm", () => {
+    const setup = () =>
+      scenario({
+        p1: { battlefield: [...lands("Mountain", 3), "Llanowar Elves"], hand: ["Slagstorm"] },
+        p2: { battlefield: ["Pelakka Wurm", "Vivien Reid"] },
+      });
+
+    it("mode 1 : 3 blessures à chaque créature (pas aux planeswalkers ni aux joueurs)", () => {
+      const s = settle(cast(setup(), "p1", "Slagstorm", { mode: 0 }));
+      expect(idsOf(s, "p1", "graveyard", "Llanowar Elves")).toHaveLength(1);
+      expect(s.objects[idOf(s, "p2", "battlefield", "Pelakka Wurm")]?.damage).toBe(3);
+      expect(s.objects[idOf(s, "p2", "battlefield", "Vivien Reid")]?.counters.loyalty).toBe(5);
+      expect([s.players.p1?.life, s.players.p2?.life]).toEqual([20, 20]);
+    });
+
+    it("mode 2 : 3 blessures à chaque joueur", () => {
+      const s = settle(cast(setup(), "p1", "Slagstorm", { mode: 1 }));
+      expect([s.players.p1?.life, s.players.p2?.life]).toEqual([17, 17]);
+      expect(idsOf(s, "p1", "battlefield", "Llanowar Elves")).toHaveLength(1);
+      expect(s.objects[idOf(s, "p2", "battlefield", "Pelakka Wurm")]?.damage).toBe(0);
+    });
+  });
+
+  describe("Bushwhack", () => {
+    it("mode 1 : cherche une carte de terrain de base et la met en main", () => {
+      let s = scenario({ p1: { battlefield: ["Forest"], hand: ["Bushwhack"], library: ["Opt", "Shivan Dragon", "Mountain"] } });
+      s = settle(cast(s, "p1", "Bushwhack", { mode: 0 }));
+      expect(handNames(s, "p1")).toEqual(["Mountain"]);
+      expect(s.players.p1?.library).toHaveLength(2);
+    });
+
+    it("mode 2 : votre créature se bat contre une créature adverse", () => {
+      let s = scenario({
+        p1: { battlefield: ["Forest", "Pelakka Wurm"], hand: ["Bushwhack"] },
+        p2: { battlefield: ["Shivan Dragon"] },
+      });
+      const wurm = idOf(s, "p1", "battlefield", "Pelakka Wurm");
+      const dragon = idOf(s, "p2", "battlefield", "Shivan Dragon");
+      // La première cible doit être à vous, la seconde à l'adversaire.
+      expect(() => cast(s, "p1", "Bushwhack", { mode: 1, targets: { a: [dragon], b: [wurm] } })).toThrow();
+      s = settle(cast(s, "p1", "Bushwhack", { mode: 1, targets: { a: [wurm], b: [dragon] } }));
+      expect(idsOf(s, "p2", "graveyard", "Shivan Dragon")).toHaveLength(1);
+      expect(s.objects[wurm]?.damage).toBe(5);
+    });
   });
 });

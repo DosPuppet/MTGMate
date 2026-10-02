@@ -18,6 +18,23 @@ describe("audit Oracle ↔ script", () => {
     // Un rituel ne décrit pas de capacité déclenchée.
     expect(kinds("When you next cast an instant spell this turn, copy it.", true)).toEqual(["spell"]);
     expect(kinds("+1: Draw a card.\n−3: Destroy target creature.")).toEqual(["activated", "activated"]);
+    // Mots d'aptitude à chiffre ou à ponctuation (Descend 4, « No One Dies! ») : la capacité reste déclenchée.
+    expect(
+      kinds("Descend 4 — When this creature enters, if there are four or more permanent cards in your graveyard, draw a card."),
+    ).toEqual(["triggered"]);
+    expect(kinds("No One Dies! — When Spider-Man enters, you may tap him.")).toEqual(["triggered"]);
+    // Les modes appartiennent au paragraphe qui les annonce.
+    expect(kinds("When this creature enters, choose one —\n• Draw a card.\n• Scry 2.")).toEqual(["triggered", "mode", "mode"]);
+    expect(kinds("Firebending 2\nBasic landcycling {2}")).toEqual(["keywords", "keywords"]);
+  });
+
+  it("compte les statiques portées par le script (capacités, champs, effets distincts d'une capacité)", () => {
+    const base = implementedCards().find((c) => c.name === "Frenzied Baloth");
+    expect(base && auditCard(base).filter((i) => i.kind === "static")).toEqual([]);
+    if (!base) return;
+    // Sans son champ « ne peut pas être contrecarré », une statique du texte n'est plus portée.
+    const { cantBeCountered: _c, ...stripped } = base;
+    expect(auditCard(stripped as typeof base).map((i) => i.kind)).toContain("static");
   });
 
   it("repère les nombres d'effet", () => {

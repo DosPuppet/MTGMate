@@ -665,7 +665,8 @@ export type Effect =
   /** `anyNumber` : un nombre quelconque (Expose the Culprit) ; `anyZone` : aussi des cartes hors du champ de bataille (Lazav). */
   | { op: "chooseAmong"; what: Ref; chooser: Ref; store: string; anyNumber?: boolean; anyZone?: boolean }
   /** Attache une Aura ou un Équipement à un permanent (701.3). */
-  | { op: "attach"; what: Ref; to: Ref }
+  /** `store` : nombre d'objets réellement attachés (701.3b : un objet déjà attaché ne « devient » pas attaché ; Thorin). */
+  | { op: "attach"; what: Ref; to: Ref; store?: string }
   /** Ajoute du mana à la réserve du contrôleur. */
   /** `times` : chaque mana est ajouté autant de fois (« {G} pour chaque marqueur »). */
   /** `who` : le joueur qui reçoit le mana (Cheering Crowd : le joueur actif), le contrôleur par défaut. */

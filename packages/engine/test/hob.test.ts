@@ -3771,3 +3771,198 @@ describe("lot C1, cartes uniques", () => {
     expect(s.players.p1?.hand.length).toBe(hand + 1);
   });
 });
+
+describe("The Hobbit : cartes du méta (PLAN-C, lot C13)", () => {
+  describe("Nighthowl Pursuer", () => {
+    /** Attaque avec le Loup et rend sa force et son endurance après les déclencheurs. */
+    const attackWith = (p1: string[], p2: string[] = []) => {
+      let s = scenario({ p1: { battlefield: ["Nighthowl Pursuer", ...p1] }, p2: { battlefield: p2 } });
+      const wolf = idOf(s, "p1", "battlefield", "Nighthowl Pursuer");
+      s = settle(attack(s, [wolf]));
+      return [chars(s, wolf).power, chars(s, wolf).toughness];
+    };
+
+    it("menace", () => {
+      const s = scenario({ p1: { battlefield: ["Nighthowl Pursuer"] } });
+      expect(chars(s, idOf(s, "p1", "battlefield", "Nighthowl Pursuer")).keywords).toContain("menace");
+    });
+
+    it("Férocité : en attaquant alors que vous contrôlez une créature de force 4 ou plus, +2/+2 jusqu'à la fin du tour", () => {
+      expect(attackWith(["Serra Angel"])).toEqual([3, 3]);
+      let s = scenario({ p1: { battlefield: ["Nighthowl Pursuer", "Serra Angel"] } });
+      const wolf = idOf(s, "p1", "battlefield", "Nighthowl Pursuer");
+      s = throughCombat(attack(s, [wolf]));
+      expect(s.players.p2?.life).toBe(17);
+      s = advanceUntil(s, (x) => x.turn.active === "p2");
+      expect([chars(s, wolf).power, chars(s, wolf).toughness]).toEqual([1, 1]);
+    });
+
+    it("Férocité : sans créature de force 4 ou plus, pas de bonus", () => {
+      expect(attackWith(["Bear Cub"])).toEqual([1, 1]);
+    });
+
+    it("Férocité : une créature de force 4 de l'adversaire ne compte pas", () => {
+      expect(attackWith(["Bear Cub"], ["Serra Angel", "Shivan Dragon"])).toEqual([1, 1]);
+    });
+  });
+
+  describe("Thorin, Mountain-king", () => {
+    const THORIN = "Thorin, Mountain-king";
+    /** Lance Thorin ; `pickFor` répond aux cibles de son déclencheur et de la capacité réflexive. */
+    const enter = (s: S, pick: (req: ChoiceRequest, cur: S) => ChoiceValue[] | undefined) =>
+      settle(cast(s, "p1", THORIN), (req, _p, cur) => pick(req, cur));
+
+    it("piétinement", () => {
+      const s = scenario({ p1: { battlefield: [THORIN] } });
+      expect(chars(s, idOf(s, "p1", "battlefield", THORIN)).keywords).toContain("trample");
+    });
+
+    it("en arrivant, attache vos Équipements ciblés à une de vos créatures ; elle inflige sa force (équipée) à une créature", () => {
+      let s = scenario({
+        p1: { battlefield: [...lands("Mountain", 4), "Sword of Vengeance", "Hard-Won Jitte", "Bear Cub"], hand: [THORIN] },
+        p2: { battlefield: ["Serra Angel", "Shivan Dragon"] },
+      });
+      const sword = idOf(s, "p1", "battlefield", "Sword of Vengeance");
+      const jitte = idOf(s, "p1", "battlefield", "Hard-Won Jitte");
+      const bear = idOf(s, "p1", "battlefield", "Bear Cub");
+      const dragon = idOf(s, "p2", "battlefield", "Shivan Dragon");
+      s = enter(s, (req) => {
+        if (req.type !== "pick") return undefined;
+        if (req.options.includes(sword)) return [sword, jitte];
+        if (req.options.includes(dragon)) return [dragon];
+        if (req.options.includes(bear)) return [bear];
+        return undefined;
+      });
+      expect(s.objects[sword]?.attachedTo).toBe(bear);
+      expect(s.objects[jitte]?.attachedTo).toBe(bear);
+      // Bear Cub 2/2 + Sword of Vengeance (+2/+0) : 4 blessures au Dragon 5/5.
+      expect(s.objects[dragon]?.damage).toBe(4);
+      expect(idsOf(s, "p2", "battlefield", "Serra Angel")).toHaveLength(1);
+    });
+
+    it("sans Équipement ciblé, la créature n'inflige aucune blessure", () => {
+      let s = scenario({
+        p1: { battlefield: [...lands("Mountain", 4), "Sword of Vengeance"], hand: [THORIN] },
+        p2: { battlefield: ["Bear Cub"] },
+      });
+      const sword = idOf(s, "p1", "battlefield", "Sword of Vengeance");
+      const bear = idOf(s, "p2", "battlefield", "Bear Cub");
+      s = enter(s, (req) => {
+        if (req.type !== "pick") return undefined;
+        if (req.options.includes(sword)) return [];
+        if (req.options.includes(bear)) return [bear];
+        return undefined;
+      });
+      expect(s.objects[sword]?.attachedTo).toBeUndefined();
+      expect(idsOf(s, "p2", "battlefield", "Bear Cub")).toHaveLength(1);
+      expect(s.objects[bear]?.damage ?? 0).toBe(0);
+    });
+
+    it("si la créature ciblée a quitté le champ de bataille, aucun Équipement ne s'attache et rien n'est blessé", () => {
+      let s = scenario({
+        p1: { battlefield: [...lands("Mountain", 4), "Sword of Vengeance", "Bear Cub"], hand: [THORIN] },
+        p2: { battlefield: ["Serra Angel"] },
+      });
+      const sword = idOf(s, "p1", "battlefield", "Sword of Vengeance");
+      const bear = idOf(s, "p1", "battlefield", "Bear Cub");
+      const angel = idOf(s, "p2", "battlefield", "Serra Angel");
+      s = act(s, "p1", { type: "cast", card: idOf(s, "p1", "hand", THORIN) });
+      // Thorin résout ; son déclencheur va sur la pile (Épée et Ours ciblés).
+      for (let i = 0; i < 20 && s.stack[0]?.kind !== "ability"; i++) {
+        const p = s.pending;
+        if (p?.kind === "priority") s = act(s, p.player, { type: "pass" });
+        else if (p?.kind === "choice") {
+          const req = p.request;
+          const want = req.type === "pick" ? [sword, bear].find((id) => req.options.includes(id)) : undefined;
+          s = act(s, p.player, { type: "choose", values: want ? [want] : req.suggested });
+        } else break;
+      }
+      expect(s.stack[0]?.targets).toEqual({ e: [sword], c: [bear] });
+      destroy(s, bear);
+      s = settle(s, (req) => (req.type === "pick" && req.options.includes(angel) ? [angel] : undefined));
+      expect(s.objects[sword]?.attachedTo).toBeUndefined();
+      expect(s.objects[angel]?.damage ?? 0).toBe(0);
+    });
+
+    // Écart : la capacité réflexive dépend du nombre d'Équipements ciblés (`refCount`), et non d'un Équipement qui
+    // « devient attaché » (701.3b : un Équipement déjà attaché à cette créature ne s'attache pas de nouveau). Une Épée
+    // déjà attachée à l'Ours, ciblée avec lui, fait quand même infliger 4 blessures à Serra Angel.
+    it("701.3b : un Équipement ciblé déjà attaché à la créature ne « devient » pas attaché, donc pas de blessures", () => {
+      let s = scenario({
+        p1: { battlefield: [...lands("Mountain", 4), "Sword of Vengeance", "Bear Cub"], hand: [THORIN] },
+        p2: { battlefield: ["Serra Angel"] },
+      });
+      const sword = idOf(s, "p1", "battlefield", "Sword of Vengeance");
+      const bear = idOf(s, "p1", "battlefield", "Bear Cub");
+      const angel = idOf(s, "p2", "battlefield", "Serra Angel");
+      (s.objects[sword] as { attachedTo?: string }).attachedTo = bear;
+      s = enter(s, (req) => {
+        if (req.type !== "pick") return undefined;
+        if (req.options.includes(sword)) return [sword];
+        if (req.options.includes(angel)) return [angel];
+        return req.options.includes(bear) ? [bear] : undefined;
+      });
+      expect(s.objects[sword]?.attachedTo).toBe(bear);
+      expect(s.battlefield).toContain(angel);
+      expect(s.objects[angel]?.damage ?? 0).toBe(0);
+    });
+  });
+
+  describe("Bofur, Reliable Guardian // Concerted Care", () => {
+    const BOFUR = "Bofur, Reliable Guardian // Concerted Care";
+
+    it("Bofur : créature légendaire 1/1 de coût {W}, avec le lien de vie", () => {
+      let s = scenario({ p1: { battlefield: ["Plains"], hand: [BOFUR] } });
+      s = settle(cast(s, "p1", BOFUR));
+      const bofur = idOf(s, "p1", "battlefield", BOFUR);
+      expect([chars(s, bofur).power, chars(s, bofur).toughness]).toEqual([1, 1]);
+      expect(chars(s, bofur).supertypes).toContain("Legendary");
+      expect(chars(s, bofur).keywords).toContain("lifelink");
+      s = scenario({ p1: { battlefield: [BOFUR] } });
+      s = throughCombat(attack(s, [idOf(s, "p1", "battlefield", BOFUR)]));
+      expect(s.players.p2?.life).toBe(19);
+      expect(s.players.p1?.life).toBe(21);
+    });
+
+    it("Concerted Care (éphémère) : en réponse, votre créature gagne la défense talismanique et l'indestructibilité ; le sort adverse échoue", () => {
+      let s = scenario({
+        active: "p2",
+        p1: { battlefield: [...lands("Plains", 2), "Bear Cub"], hand: [BOFUR] },
+        p2: { battlefield: lands("Mountain", 2), hand: ["Lightning Strike"] },
+      });
+      const bear = idOf(s, "p1", "battlefield", "Bear Cub");
+      s = cast(s, "p2", "Lightning Strike", { targets: { t: [bear] } });
+      s = act(s, "p2", { type: "pass" });
+      s = act(s, "p1", { type: "cast", card: idOf(s, "p1", "hand", BOFUR), face: 1, targets: { t: [bear] } });
+      s = settle(s);
+      expect(chars(s, bear).keywords).toEqual(expect.arrayContaining(["hexproof", "indestructible"]));
+      expect(s.objects[bear]?.damage ?? 0).toBe(0);
+      expect(idsOf(s, "p2", "graveyard", "Lightning Strike")).toHaveLength(1);
+      // Indestructible : la destruction est sans effet.
+      destroy(s, bear);
+      expect(idsOf(s, "p1", "battlefield", "Bear Cub")).toHaveLength(1);
+      // Puis la carte part en aventure ; la créature se lance ensuite depuis l'exil.
+      const card = s.exile.find((id) => nameOf(s, id) === BOFUR) as string;
+      expect(s.objects[card]?.onAdventure).toBe(true);
+      // Jusqu'à la fin du tour.
+      s = advanceUntil(s, (x) => x.turn.active === "p1" && x.turn.step === "main1" && x.stack.length === 0);
+      expect(chars(s, bear).keywords).not.toContain("hexproof");
+      expect(chars(s, bear).keywords).not.toContain("indestructible");
+      s = settle(act(s, "p1", { type: "cast", card }));
+      expect(idsOf(s, "p1", "battlefield", BOFUR)).toHaveLength(1);
+    });
+
+    it("Concerted Care : cible un artefact que vous contrôlez, mais pas une créature adverse", () => {
+      let s = scenario({
+        p1: { battlefield: [...lands("Plains", 2), "Sword of Vengeance"], hand: [BOFUR] },
+        p2: { battlefield: ["Bear Cub"] },
+      });
+      const card = idOf(s, "p1", "hand", BOFUR);
+      const theirs = idOf(s, "p2", "battlefield", "Bear Cub");
+      expect(() => act(s, "p1", { type: "cast", card, face: 1, targets: { t: [theirs] } })).toThrow();
+      const sword = idOf(s, "p1", "battlefield", "Sword of Vengeance");
+      s = settle(act(s, "p1", { type: "cast", card, face: 1, targets: { t: [sword] } }));
+      expect(chars(s, sword).keywords).toEqual(expect.arrayContaining(["hexproof", "indestructible"]));
+    });
+  });
+});

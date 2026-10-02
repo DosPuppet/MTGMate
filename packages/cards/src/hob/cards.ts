@@ -133,9 +133,10 @@ export const CARDS: Record<string, CardScript> = {
       triggered(
         when.entersSelf,
         [
-          fx.attach(ref.target("c"), ref.target("e")),
+          // 701.3b : seuls comptent les Équipements qui deviennent attachés (pas celui qui l'était déjà).
+          fx.attach(ref.target("c"), ref.target("e"), "attached"),
           ...fx.when(
-            cond.amountAtLeast(amount.refCount(ref.target("e")), 1),
+            cond.v("attached"),
             fx.reflexive(
               [target.upTo(1, target.creature("d"))],
               [fx.damage(amount.powerOf(ref.target("c")), ref.target("d"), ref.target("c"))],

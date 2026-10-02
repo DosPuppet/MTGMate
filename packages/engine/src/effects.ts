@@ -909,13 +909,14 @@ export function canAttach(s: GameState, what: ObjectId, to: ObjectId): boolean {
 }
 
 /** 701.3 : attache l'objet ; sans effet si c'est impossible ou s'il y est déjà attaché. */
-export function attach(s: GameState, what: ObjectId, to: ObjectId): void {
+export function attach(s: GameState, what: ObjectId, to: ObjectId): boolean {
   const a = s.objects[what];
-  if (!a || a.attachedTo === to || !canAttach(s, what, to)) return;
+  if (!a || a.attachedTo === to || !canAttach(s, what, to)) return false;
   a.attachedTo = to;
   a.timestamp = nextTimestamp(s); // 613.7e : nouvel horodatage
   bump(s);
   emit({ type: "attach", objectId: what, defId: a.defId, to, toDefId: s.objects[to]?.defId ?? "" });
+  return true;
 }
 
 /** Signale une carte défaussée (déclencheurs « chaque fois qu'un adversaire défausse une carte »). */

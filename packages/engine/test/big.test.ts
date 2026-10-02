@@ -375,3 +375,53 @@ describe("The Big Score", () => {
     });
   });
 });
+
+// Cartes des decks du méta Standard (docs/plans/PLAN-C.md, lot C13).
+describe("The Big Score : cartes du méta Standard", () => {
+  describe("Simulacrum Synthesizer", () => {
+    it("à l'arrivée, regard 2", () => {
+      let s = scenario({
+        p1: { battlefield: lands("Island", 3), hand: ["Simulacrum Synthesizer"], library: ["Opt", "Forest", "Island"] },
+      });
+      let seen = 0;
+      s = settle(cast(s, "p1", "Simulacrum Synthesizer"), (req) => {
+        if (req.intent !== "scryBottom" || req.type !== "pick") return undefined;
+        seen = req.options.length;
+        return [...req.options]; // les deux sous la bibliothèque
+      });
+      expect(seen).toBe(2);
+      // Les deux cartes regardées sont passées sous la troisième.
+      const library = namesIn(s, s.players.p1?.library);
+      expect(library[0]).toBe("Island");
+      expect(library.slice(1).sort()).toEqual(["Forest", "Opt"]);
+    });
+
+    it("un autre artefact de VM 3 ou plus arrive sous votre contrôle : un Assemblage 0/0 qui a +1/+1 par artefact", () => {
+      let s = scenario({
+        p1: { battlefield: ["Simulacrum Synthesizer", ...lands("Forest", 6)], hand: ["Juggernaut", "Swiftfoot Boots"] },
+      });
+      s = settle(cast(s, "p1", "Swiftfoot Boots"));
+      // VM 2 : pas d'Assemblage.
+      expect(idsOf(s, "p1", "battlefield", "Construct")).toHaveLength(0);
+      s = settle(cast(s, "p1", "Juggernaut"));
+      const constructs = idsOf(s, "p1", "battlefield", "Construct");
+      expect(constructs).toHaveLength(1);
+      const construct = constructs[0] as string;
+      expect(chars(s, construct).types).toEqual(expect.arrayContaining(["Artifact", "Creature"]));
+      expect(chars(s, construct).colors).toEqual([]);
+      // Synthétiseur, Bottes, Juggernaut et l'Assemblage lui-même : 4/4.
+      expect([chars(s, construct).power, chars(s, construct).toughness]).toEqual([4, 4]);
+    });
+
+    it("un artefact adverse de VM 3 ou plus ne crée rien", () => {
+      let s = scenario({
+        active: "p2",
+        p1: { battlefield: ["Simulacrum Synthesizer"] },
+        p2: { battlefield: lands("Forest", 4), hand: ["Juggernaut"] },
+      });
+      s = settle(cast(s, "p2", "Juggernaut"));
+      expect(idsOf(s, "p2", "battlefield", "Juggernaut")).toHaveLength(1);
+      expect(s.battlefield.filter((id) => nameOf(s, id) === "Construct")).toHaveLength(0);
+    });
+  });
+});

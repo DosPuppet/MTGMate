@@ -193,8 +193,10 @@ export const RECORD_VERSION = 1;
  *   Nylea se déclenche quelle que soit la façon dont elle est sacrifiée ; défausses en coût (Hallway Heckler, Solitary
  *   Cell, Murmuring Volume, Thunderhead Gunner, Avishkar Raceway) ; Pyrewood Gearhulk, The Earth Crystal, Chandra (+1),
  *   Boommobile (PLAN-C, lot C12).
+ * - 69 : Thorin, Mountain-king ne blesse que si un Équipement devient attaché (701.3b) ; Dalkovan Encampment : capacité
+ *   retardée indépendante du terrain (603.7) ; le jeton Esprit de Realm of Koh peut bloquer un Esprit (PLAN-C, lot C13).
  */
-export const RULES_VERSION = 68;
+export const RULES_VERSION = 69;
 
 /** Un point de contrôle toutes les N décisions (plus la dernière de la partie). */
 export const CHECKPOINT_EVERY = 25;

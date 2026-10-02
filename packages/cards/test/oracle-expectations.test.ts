@@ -14,8 +14,11 @@ const NUM: Record<string, number> = { a: 1, an: 1, one: 1, two: 2, three: 3, fou
 const n = (w: string) => (/^\d+$/.test(w) ? Number(w) : (NUM[w.toLowerCase()] ?? Number.NaN));
 
 /** Une attente : la cible à choisir et ce qui doit avoir changé. */
+type TargetKind = "opponent" | "opponentCreature" | "myCreature" | "myGraveyardCreature";
 interface Expectation {
-  target?: "opponent" | "opponentCreature" | "myCreature" | "myGraveyardCreature";
+  target?: TargetKind;
+  /** Plusieurs cibles de sortes différentes, dans l'ordre du texte (« target creature you control … target creature an opponent controls »). */
+  targets?: TargetKind[];
   check: (before: GameState, after: GameState) => void;
   /** Condition intercalée (603.4, « if you attacked this turn ») : la mise en scène la remplit, puis la vérifie absente. */
   condition?: Condition603;
@@ -166,7 +169,8 @@ function clause(t: string): Clause | null {
       target: "opponentCreature",
       check: (_b, a) => expect(a.objects[idsOf(a, "p1", "battlefield", BIG)[0] ?? ""]).toBeDefined(),
     };
-  m = /^Draw (\w+) cards?\.$/.exec(t);
+  // « Surveil 2, then draw two cards. » (la surveillance ne change pas la main).
+  m = /^(?:Surveil \d+, then )?[Dd]raw (\w+) cards?\.$/.exec(t);
   if (m) {
     const k = n(m[1] as string);
     // La carte lancée a quitté la main.
@@ -224,13 +228,17 @@ function clause(t: string): Clause | null {
     )
   )
     return { target: "opponentCreature", check: (_b, a) => expect(big(a)).toBeUndefined() };
-  if (/^Return target creature to its owner's hand\.$/.test(t))
+  if (/^Return target (?:creature|nonland permanent) to its owner's hand\.$/.test(t))
     return {
       target: "opponentCreature",
       check: (_b, a) => expect(a.players.p2?.hand.some((id) => a.defs[a.objects[id]?.defId ?? ""]?.name === BIG)).toBe(true),
     };
   // « Return target card from your graveyard to your hand. » (Auroral Procession) : la mise en scène cible la créature.
-  m = /^Return target (?:creature )?card from your graveyard to (your hand|the battlefield)\.$/.exec(t);
+  // « Return up to two target creature cards… » : la mise en scène n'en cible qu'une.
+  m =
+    /^Return (?:target (?:creature )?card|up to (?:two|three) target creature cards) from your graveyard to (your hand|the battlefield)\.$/.exec(
+      t,
+    );
   if (m) {
     const zone = m[1] === "your hand" ? "hand" : "battlefield";
     return {
@@ -241,6 +249,18 @@ function clause(t: string): Clause | null {
       },
     };
   }
+  // Enquête (701.16) : un jeton Indice.
+  if (/^Investigate\.$/.test(t)) return { check: (b, a) => expect(tokenCount(a) - tokenCount(b)).toBe(1) };
+  // « Target creature you control deals damage equal to its power to target creature an opponent controls. »
+  if (
+    /^Target creature you control deals damage equal to its power to target creature (?:an opponent controls|or planeswalker you don't control)\.$/.test(
+      t,
+    )
+  )
+    return {
+      targets: ["myCreature", "opponentCreature"],
+      check: (_b, a) => expect(a.objects[big(a) ?? ""]?.damage).toBe(chars(a, mine(a)).power),
+    };
   if (/^Tap target creature(?: an opponent controls)?\.$/.test(t))
     return { target: "opponentCreature", check: (_b, a) => expect(a.objects[big(a) ?? ""]?.tapped).toBe(true) };
   m = /^(Each|Target) opponent mills (\w+) cards?\.$/.exec(t);
@@ -293,8 +313,12 @@ export function expectationFor(text: string, name: string): Expectation | null {
   const real = parts.filter((x): x is Expectation => !!x && x !== "ok");
   const targets = [...new Set(real.map((x) => x.target).filter(Boolean))];
   if (real.length === 0 || targets.length > 1) return null;
+  // Cibles multiples : seulement si c'est la seule phrase vérifiée.
+  const multi = real.find((x) => x.targets);
+  if (multi && (real.length > 1 || targets.length > 0)) return null;
   return {
     target: targets[0],
+    targets: multi?.targets,
     check: (b, a) => {
       for (const x of real) x.check(b, a);
     },
@@ -341,6 +365,8 @@ export function triggerExpectationFor(text: string, name: string, kind: TriggerK
   if (cond !== undefined && !(cond in CONDITIONS)) return null;
   const rest = ((phased ? m[2] : m[1]) as string).replace(/^(?:it|this creature) deals/, "~ deals");
   const e = expectationFor(rest.charAt(0).toUpperCase() + rest.slice(1), "~");
+  // Cibles multiples d'un déclencheur : la mise en scène ne sait en donner qu'une.
+  if (e?.targets) return null;
   return e && cond ? { ...e, condition: cond as Condition603 } : e;
 }
 
@@ -385,9 +411,11 @@ function castAndResolve(c: string | CardDef, e: Expectation): { before: GameStat
   const mode = opt.modes[0];
   const targets: Record<string, string[]> = {};
   const wanted = wantedFor(s, e);
-  for (const spec of mode?.targets ?? []) {
-    if (!wanted || !spec.legal.includes(wanted)) throw new Error(`${name} : cible ${e.target} impossible`);
-    targets[spec.id] = [wanted];
+  for (const [i, spec] of (mode?.targets ?? []).entries()) {
+    const kind = e.targets?.[i] ?? e.target;
+    const id = e.targets ? wantedFor(s, { target: kind, check: () => {} }) : wanted;
+    if (!id || !spec.legal.includes(id)) throw new Error(`${name} : cible ${kind} impossible`);
+    targets[spec.id] = [id];
   }
   s = act(s, "p1", { type: "cast", card, targets, mode: mode?.index });
   castShift = 1;

@@ -11,11 +11,13 @@ import { bump } from "../src/layers";
 import { legalActions } from "../src/legal";
 import { manaAbilitiesOf } from "../src/mana";
 import { chars, decider } from "../src/state";
-import type { ChoiceRequest, ChoiceValue, GameState, ManaType } from "../src/types";
+import { canBlock } from "../src/turn";
+import type { CardDef, ChoiceRequest, ChoiceValue, GameState, ManaType } from "../src/types";
 import {
   type Answer,
   act,
   advanceUntil,
+  attack,
   cast,
   castable,
   castNowOf,
@@ -25,6 +27,7 @@ import {
   idsOf,
   lands,
   nameOf,
+  namesIn,
   passAccepting,
   picking,
   scenario,
@@ -4568,5 +4571,340 @@ describe("lot C3 : cartes uniques", () => {
     expect(s.players.p2?.life).toBe(15);
     expect(idsOf(s, "p1", "battlefield", "Bear Cub")).toHaveLength(1);
     expect(s.players.p2?.graveyard.some((id) => nameOf(s, id) === "Serra Angel")).toBe(true);
+  });
+});
+
+describe("Avatar: The Last Airbender : cartes du méta (PLAN-C, lot C13)", () => {
+  /** Active la capacité de `source` dont le libellé contient `label`. */
+  const activateLabel = (s: S, player: string, source: string, label: string) => {
+    const a = legalActions(s, player).find((x) => x.type === "activate" && x.source === source && x.label?.includes(label));
+    if (a?.type !== "activate") throw new Error(`capacité introuvable : ${label}`);
+    return act(s, player, { type: "activate", source, ability: a.ability });
+  };
+  const playLand = (s: S, name: string) => act(s, "p1", { type: "playLand", card: idOf(s, "p1", "hand", name) });
+  const pt = (s: S, id: string) => [chars(s, id).power, chars(s, id).toughness];
+  const spirit = customCard({ name: "Test Spirit", typeLine: "Creature — Spirit", subtypes: ["Spirit"], power: 1, toughness: 1 });
+
+  describe("Abandon Attachments", () => {
+    it("vous pouvez défausser une carte ; si vous le faites, piochez deux cartes", () => {
+      let s = scenario({
+        p1: { battlefield: lands("Island", 2), hand: ["Abandon Attachments", "Forest"], library: ["Opt", "Plains", "Swamp"] },
+      });
+      s = settle(cast(s, "p1", "Abandon Attachments"), (req, _p, cur) =>
+        req.type === "pick" && req.intent === "discard" ? req.options.filter((id) => nameOf(cur, id) === "Forest") : undefined,
+      );
+      expect(idsOf(s, "p1", "graveyard", "Forest")).toHaveLength(1);
+      expect(s.players.p1?.hand.map((id) => nameOf(s, id)).sort()).toEqual(["Opt", "Plains"]);
+      expect(idsOf(s, "p1", "graveyard", "Abandon Attachments")).toHaveLength(1);
+    });
+
+    it("sans défausse, pas de pioche", () => {
+      let s = scenario({
+        p1: { battlefield: lands("Mountain", 2), hand: ["Abandon Attachments", "Forest"], library: ["Opt", "Plains"] },
+      });
+      s = settle(cast(s, "p1", "Abandon Attachments"), (req) =>
+        req.type === "pick" && req.intent === "discard" ? [] : req.type === "yesNo" ? [0] : undefined,
+      );
+      expect(s.players.p1?.hand.map((id) => nameOf(s, id))).toEqual(["Forest"]);
+      expect(s.players.p1?.library).toHaveLength(2);
+    });
+
+    it("main vide : rien à défausser, donc pas de pioche", () => {
+      let s = scenario({ p1: { battlefield: lands("Island", 2), hand: ["Abandon Attachments"], library: ["Opt", "Plains"] } });
+      s = settle(cast(s, "p1", "Abandon Attachments"));
+      expect(s.players.p1?.hand).toHaveLength(0);
+      expect(s.players.p1?.library).toHaveLength(2);
+    });
+  });
+
+  describe("Abandoned Air Temple", () => {
+    it("arrive engagé sauf si vous contrôlez un terrain de base ; {T} : {W}", () => {
+      const run = (battlefield: string[]) => {
+        const s = playLand(scenario({ p1: { battlefield, hand: ["Abandoned Air Temple"] } }), "Abandoned Air Temple");
+        return s.objects[idOf(s, "p1", "battlefield", "Abandoned Air Temple")]?.tapped;
+      };
+      expect(run([])).toBe(true);
+      expect(run(["Realm of Koh"])).toBe(true);
+      expect(run(["Island"])).toBe(false);
+      let s = scenario({ p1: { battlefield: ["Abandoned Air Temple"], hand: ["Healer's Hawk"] } });
+      s = settle(cast(s, "p1", "Healer's Hawk"));
+      expect(idsOf(s, "p1", "battlefield", "Healer's Hawk")).toHaveLength(1);
+    });
+
+    it("{3}{W}, {T} : un marqueur +1/+1 sur chaque créature que vous contrôlez (pas celles de l'adversaire)", () => {
+      let s = scenario({
+        p1: { battlefield: ["Abandoned Air Temple", ...lands("Plains", 4), "Bear Cub", "Llanowar Elves"] },
+        p2: { battlefield: ["Bear Cub"] },
+      });
+      s = settle(activateLabel(s, "p1", idOf(s, "p1", "battlefield", "Abandoned Air Temple"), "marqueur"));
+      expect(s.objects[idOf(s, "p1", "battlefield", "Bear Cub")]?.counters["+1/+1"]).toBe(1);
+      expect(s.objects[idOf(s, "p1", "battlefield", "Llanowar Elves")]?.counters["+1/+1"]).toBe(1);
+      expect(s.objects[idOf(s, "p2", "battlefield", "Bear Cub")]?.counters["+1/+1"] ?? 0).toBe(0);
+      expect(s.objects[idOf(s, "p1", "battlefield", "Abandoned Air Temple")]?.tapped).toBe(true);
+    });
+  });
+
+  describe("Realm of Koh", () => {
+    /** Crée l'Esprit de p1 au tour 3, puis va à la déclaration des attaquants du tour 5 de p1. */
+    const spiritAttacks = (p2: (string | CardDef)[]) => {
+      let s = scenario({ p1: { battlefield: ["Realm of Koh", ...lands("Swamp", 4)] }, p2: { battlefield: p2 } });
+      s = settle(activateLabel(s, "p1", idOf(s, "p1", "battlefield", "Realm of Koh"), "Esprit"));
+      const token = s.battlefield.find((id) => chars(s, id).name === "Spirit") as string;
+      s = advanceUntil(s, (x) => x.turn.number === 5 && x.pending?.kind === "declareAttackers");
+      s = act(s, "p1", { type: "declareAttackers", attackers: [{ id: token, defender: "p2" }] });
+      return { s, token };
+    };
+
+    it("arrive engagé sauf si vous contrôlez un terrain de base ; {T} : {B}", () => {
+      const run = (battlefield: string[]) => {
+        const s = playLand(scenario({ p1: { battlefield, hand: ["Realm of Koh"] } }), "Realm of Koh");
+        return s.objects[idOf(s, "p1", "battlefield", "Realm of Koh")]?.tapped;
+      };
+      expect(run([])).toBe(true);
+      expect(run(["Swamp"])).toBe(false);
+      let s = scenario({ p1: { battlefield: ["Realm of Koh"], hand: ["Vampiric Rites"] } });
+      s = settle(cast(s, "p1", "Vampiric Rites"));
+      expect(idsOf(s, "p1", "battlefield", "Vampiric Rites")).toHaveLength(1);
+    });
+
+    it("{3}{B}, {T} : un jeton Esprit 1/1 incolore", () => {
+      let s = scenario({ p1: { battlefield: ["Realm of Koh", ...lands("Swamp", 4)] } });
+      s = settle(activateLabel(s, "p1", idOf(s, "p1", "battlefield", "Realm of Koh"), "Esprit"));
+      const tokens = s.battlefield.filter((id) => chars(s, id).name === "Spirit");
+      expect(tokens).toHaveLength(1);
+      const token = tokens[0] as string;
+      expect(s.objects[token]?.isToken).toBe(true);
+      expect(chars(s, token).colors).toEqual([]);
+      expect(chars(s, token).subtypes).toContain("Spirit");
+      expect(pt(s, token)).toEqual([1, 1]);
+    });
+
+    it("le jeton ne peut pas être bloqué par une créature non-Esprit, mais un Esprit peut le bloquer", () => {
+      const { s, token } = spiritAttacks(["Bear Cub", spirit]);
+      expect(canBlock(s, idOf(s, "p2", "battlefield", "Bear Cub"), token)).toBe(false);
+      expect(canBlock(s, idOf(s, "p2", "battlefield", "Test Spirit"), token)).toBe(true);
+    });
+
+    it("le jeton ne peut pas bloquer une créature non-Esprit", () => {
+      let s = scenario({ p1: { battlefield: ["Realm of Koh", ...lands("Swamp", 4)] }, p2: { battlefield: ["Bear Cub"] } });
+      s = settle(activateLabel(s, "p1", idOf(s, "p1", "battlefield", "Realm of Koh"), "Esprit"));
+      const token = s.battlefield.find((id) => chars(s, id).name === "Spirit") as string;
+      s = advanceUntil(s, (x) => x.turn.active === "p2" && x.pending?.kind === "declareAttackers");
+      const bear = idOf(s, "p2", "battlefield", "Bear Cub");
+      s = act(s, "p2", { type: "declareAttackers", attackers: [{ id: bear, defender: "p1" }] });
+      expect(canBlock(s, token, bear)).toBe(false);
+    });
+
+    it("le jeton peut bloquer une créature Esprit", () => {
+      let s = scenario({ p1: { battlefield: ["Realm of Koh", ...lands("Swamp", 4)] }, p2: { battlefield: [spirit] } });
+      s = settle(activateLabel(s, "p1", idOf(s, "p1", "battlefield", "Realm of Koh"), "Esprit"));
+      const token = s.battlefield.find((id) => chars(s, id).name === "Spirit") as string;
+      s = advanceUntil(s, (x) => x.turn.active === "p2" && x.pending?.kind === "declareAttackers");
+      const other = idOf(s, "p2", "battlefield", "Test Spirit");
+      s = act(s, "p2", { type: "declareAttackers", attackers: [{ id: other, defender: "p1" }] });
+      expect(canBlock(s, token, other)).toBe(true);
+    });
+  });
+
+  describe("Aang, at the Crossroads // Aang, Destined Savior", () => {
+    const AANG = "Aang, at the Crossroads // Aang, Destined Savior";
+    const back = (s: S, id: string) => s.defs[s.objects[id]?.faceDefId ?? ""]?.name === "Aang, Destined Savior";
+
+    it("vol ; en arrivant, parmi les cinq du dessus, une créature de VM 4 ou moins peut arriver ; le reste va dessous", () => {
+      let s = scenario({
+        p1: {
+          battlefield: [...lands("Forest", 3), "Plains", "Island"],
+          hand: [AANG],
+          library: ["Shivan Dragon", "Bear Cub", "Serra Angel", "Forest", "Llanowar Elves", "Opt"],
+        },
+      });
+      let offered: (string | undefined)[] = [];
+      s = settle(cast(s, "p1", AANG), (req, _p, cur) => {
+        if (req.type !== "pick" || req.intent !== "lookAtTop") return undefined;
+        offered = req.options.map((id) => nameOf(cur, id));
+        return req.options.filter((id) => nameOf(cur, id) === "Bear Cub");
+      });
+      expect(chars(s, idOf(s, "p1", "battlefield", AANG)).keywords).toContain("flying");
+      expect(offered.sort()).toEqual(["Bear Cub", "Llanowar Elves"]);
+      expect(idsOf(s, "p1", "battlefield", "Bear Cub")).toHaveLength(1);
+      const lib = s.players.p1?.library ?? [];
+      expect(nameOf(s, lib[0] as string)).toBe("Opt");
+      expect(namesIn(s, lib.slice(1)).sort()).toEqual(["Forest", "Llanowar Elves", "Serra Angel", "Shivan Dragon"]);
+    });
+
+    it("« vous pouvez » : aucune créature n'est obligée d'arriver", () => {
+      let s = scenario({
+        p1: { battlefield: [...lands("Forest", 3), "Plains", "Island"], hand: [AANG], library: ["Bear Cub", "Forest"] },
+      });
+      s = settle(cast(s, "p1", AANG), (req) => (req.type === "pick" && req.intent === "lookAtTop" ? [] : undefined));
+      expect(idsOf(s, "p1", "battlefield", "Bear Cub")).toHaveLength(0);
+      expect(s.players.p1?.library).toHaveLength(2);
+    });
+
+    it("quand une autre de vos créatures quitte le champ de bataille, Aang se transforme au début du prochain entretien", () => {
+      let s = scenario({ p1: { battlefield: [AANG, "Bear Cub"] }, p2: { battlefield: ["Llanowar Elves"] } });
+      const aang = idOf(s, "p1", "battlefield", AANG);
+      // Une créature adverse qui meurt ne compte pas.
+      destroy(s, idOf(s, "p2", "battlefield", "Llanowar Elves"));
+      s = settle(s);
+      s = advanceUntil(s, (x) => x.turn.active === "p2" && x.turn.step === "main1");
+      expect(back(s, aang)).toBe(false);
+      destroy(s, idOf(s, "p1", "battlefield", "Bear Cub"));
+      s = settle(s);
+      // Pas tout de suite : au début du prochain entretien (celui de p1).
+      expect(back(s, aang)).toBe(false);
+      s = advanceUntil(s, (x) => x.turn.active === "p1" && x.turn.step === "draw");
+      expect(back(s, aang)).toBe(true);
+      expect(chars(s, aang).name).toBe("Aang, Destined Savior");
+      expect(chars(s, aang).keywords).toContain("flying");
+    });
+
+    it("Aang, Destined Savior : au début du combat, maîtrise de la terre 2 ; vos créatures-terrains ont la vigilance", async () => {
+      const { moveWithSpec } = await import("../src/effects");
+      let s = scenario({ p1: { battlefield: ["Forest"], hand: [AANG] }, p2: { battlefield: ["Forest"] } });
+      moveWithSpec(s, "p1", idOf(s, "p1", "hand", AANG), { to: "battlefield", transformed: true });
+      const forest = idOf(s, "p1", "battlefield", "Forest");
+      s = advanceUntil(s, (x) => x.pending?.kind === "declareAttackers", 600);
+      expect(chars(s, forest).types).toEqual(expect.arrayContaining(["Land", "Creature"]));
+      expect(pt(s, forest)).toEqual([2, 2]);
+      expect(chars(s, forest).keywords).toEqual(expect.arrayContaining(["haste", "vigilance"]));
+      // Un terrain non-créature ou adverse n'a pas la vigilance.
+      expect(chars(s, idOf(s, "p2", "battlefield", "Forest")).keywords).not.toContain("vigilance");
+      s = act(s, "p1", { type: "declareAttackers", attackers: [{ id: forest, defender: "p2" }] });
+      expect(s.objects[forest]?.tapped).toBe(false);
+    });
+  });
+
+  describe("Airbender Ascension", () => {
+    it("en arrivant, maîtrise de l'air sur jusqu'à une créature ciblée : exilée, son propriétaire peut la relancer pour {2}", () => {
+      let s = scenario({
+        p1: { battlefield: lands("Plains", 2), hand: ["Airbender Ascension"] },
+        p2: { battlefield: ["Serra Angel", ...lands("Plains", 2)] },
+      });
+      const angel = idOf(s, "p2", "battlefield", "Serra Angel");
+      s = settle(cast(s, "p1", "Airbender Ascension"), picking([angel]));
+      expect(idsOf(s, "p2", "battlefield", "Serra Angel")).toHaveLength(0);
+      const card = exiled(s, "Serra Angel")[0] as string;
+      s = advanceUntil(s, (x) => x.turn.active === "p2" && x.turn.step === "main1");
+      expect(castable(s, "p2", card)).toBe(true);
+    });
+
+    it("chaque créature qui arrive sous votre contrôle ajoute un marqueur de quête (pas celles de l'adversaire)", () => {
+      let s = scenario({
+        p1: { battlefield: [...lands("Forest", 2), "Airbender Ascension"], hand: ["Llanowar Elves", "Llanowar Elves"] },
+      });
+      const asc = idOf(s, "p1", "battlefield", "Airbender Ascension");
+      s = settle(cast(s, "p1", "Llanowar Elves"));
+      s = settle(cast(s, "p1", "Llanowar Elves"));
+      expect(s.objects[asc]?.counters.quest).toBe(2);
+      s = advanceUntil(s, (x) => x.turn.active === "p2" && x.turn.step === "main1");
+      expect(s.objects[asc]?.counters.quest).toBe(2);
+    });
+
+    it("à votre étape de fin, avec quatre marqueurs de quête ou plus : exile une de vos créatures puis la renvoie", () => {
+      let s = scenario({
+        p1: {
+          battlefield: [
+            { name: "Airbender Ascension", counters: { quest: 4 } },
+            { name: "Bear Cub", damage: 1 },
+          ],
+        },
+      });
+      const asc = idOf(s, "p1", "battlefield", "Airbender Ascension");
+      const bear = idOf(s, "p1", "battlefield", "Bear Cub");
+      s = advanceUntil(s, (x) => x.turn.step === "end" && x.pending?.kind === "choice", 200);
+      s = settle(s, picking([bear]));
+      const back = idOf(s, "p1", "battlefield", "Bear Cub");
+      expect(back).not.toBe(bear);
+      expect(s.objects[back]?.damage).toBe(0);
+      expect(s.objects[back]?.controller).toBe("p1");
+      // La créature revenue arrive sous votre contrôle : un marqueur de plus.
+      expect(s.objects[asc]?.counters.quest).toBe(5);
+    });
+
+    it("avec trois marqueurs de quête, rien ne se passe à l'étape de fin", () => {
+      let s = scenario({ p1: { battlefield: [{ name: "Airbender Ascension", counters: { quest: 3 } }, "Bear Cub"] } });
+      const bear = idOf(s, "p1", "battlefield", "Bear Cub");
+      s = advanceUntil(s, (x) => x.turn.active === "p2");
+      expect(idOf(s, "p1", "battlefield", "Bear Cub")).toBe(bear);
+    });
+  });
+
+  describe("Raven Eagle", () => {
+    it("vol ; en arrivant, exile une carte d'un cimetière : une carte de créature donne un Indice", () => {
+      let s = scenario({ p1: { battlefield: lands("Swamp", 3), hand: ["Raven Eagle"] }, p2: { graveyard: ["Bear Cub", "Opt"] } });
+      const bear = idOf(s, "p2", "graveyard", "Bear Cub");
+      s = settle(cast(s, "p1", "Raven Eagle"), picking([bear]));
+      const eagle = idOf(s, "p1", "battlefield", "Raven Eagle");
+      expect(chars(s, eagle).keywords).toContain("flying");
+      expect(pt(s, eagle)).toEqual([2, 3]);
+      expect(exiled(s, "Bear Cub")).toHaveLength(1);
+      expect(s.battlefield.filter((id) => chars(s, id).name === "Clue" && s.objects[id]?.controller === "p1")).toHaveLength(1);
+    });
+
+    it("une carte non-créature exilée ne donne pas d'Indice ; « jusqu'à une » : la cible est facultative", () => {
+      let s = scenario({ p1: { battlefield: lands("Swamp", 3), hand: ["Raven Eagle"], graveyard: ["Opt"] } });
+      const opt = idOf(s, "p1", "graveyard", "Opt");
+      s = settle(cast(s, "p1", "Raven Eagle"), picking([opt]));
+      expect(exiled(s, "Opt")).toHaveLength(1);
+      expect(s.battlefield.filter((id) => chars(s, id).name === "Clue")).toHaveLength(0);
+      s = scenario({ p1: { battlefield: lands("Swamp", 3), hand: ["Raven Eagle"] }, p2: { graveyard: ["Bear Cub"] } });
+      s = settle(cast(s, "p1", "Raven Eagle"), (req) => (req.type === "pick" ? [] : undefined));
+      expect(idsOf(s, "p2", "graveyard", "Bear Cub")).toHaveLength(1);
+    });
+
+    it("en attaquant, exile aussi une carte d'un cimetière (Indice pour une créature)", () => {
+      let s = scenario({ p1: { battlefield: ["Raven Eagle"] }, p2: { graveyard: ["Bear Cub"] } });
+      const bear = idOf(s, "p2", "graveyard", "Bear Cub");
+      s = attack(s, [idOf(s, "p1", "battlefield", "Raven Eagle")]);
+      s = settle(s, picking([bear]));
+      expect(exiled(s, "Bear Cub")).toHaveLength(1);
+      expect(s.battlefield.filter((id) => chars(s, id).name === "Clue")).toHaveLength(1);
+    });
+
+    it("quand vous piochez votre deuxième carte du tour, chaque adversaire perd 1 PV et vous en gagnez 1 (une fois)", () => {
+      let s = scenario({
+        players: 3,
+        p1: { battlefield: ["Raven Eagle", ...lands("Island", 4)], hand: ["Quick Study", "Opt"], library: lands("Island", 6) },
+      });
+      s = settle(cast(s, "p1", "Quick Study"));
+      expect(s.players.p1?.life).toBe(21);
+      expect(s.players.p2?.life).toBe(19);
+      expect(s.players.p3?.life).toBe(19);
+      // La troisième carte ne déclenche rien.
+      s = settle(cast(s, "p1", "Opt"));
+      expect(s.players.p1?.life).toBe(21);
+      expect(s.players.p2?.life).toBe(19);
+    });
+  });
+
+  describe("Iroh's Demonstration", () => {
+    it("premier mode : 1 blessure à chaque créature de vos adversaires (pas aux vôtres)", () => {
+      let s = scenario({
+        p1: { battlefield: [...lands("Mountain", 2), "Llanowar Elves"], hand: ["Iroh's Demonstration"] },
+        p2: { battlefield: ["Llanowar Elves", "Bear Cub"] },
+      });
+      s = settle(cast(s, "p1", "Iroh's Demonstration", { mode: 0 }));
+      expect(idsOf(s, "p2", "graveyard", "Llanowar Elves")).toHaveLength(1);
+      expect(s.objects[idOf(s, "p2", "battlefield", "Bear Cub")]?.damage).toBe(1);
+      expect(idsOf(s, "p1", "battlefield", "Llanowar Elves")).toHaveLength(1);
+      expect(idsOf(s, "p1", "graveyard", "Iroh's Demonstration")).toHaveLength(1);
+    });
+
+    it("second mode : 4 blessures à une créature ciblée (y compris une des vôtres)", () => {
+      let s = scenario({
+        p1: { battlefield: [...lands("Mountain", 2), "Serra Angel"], hand: ["Iroh's Demonstration"] },
+        p2: { battlefield: ["Shivan Dragon"] },
+      });
+      const dragon = idOf(s, "p2", "battlefield", "Shivan Dragon");
+      s = settle(cast(s, "p1", "Iroh's Demonstration", { mode: 1, targets: { t: [dragon] } }));
+      expect(s.objects[dragon]?.damage).toBe(4);
+      s = scenario({
+        p1: { battlefield: [...lands("Mountain", 2), "Serra Angel"], hand: ["Iroh's Demonstration"] },
+      });
+      const angel = idOf(s, "p1", "battlefield", "Serra Angel");
+      s = settle(cast(s, "p1", "Iroh's Demonstration", { mode: 1, targets: { t: [angel] } }));
+      expect(idsOf(s, "p1", "graveyard", "Serra Angel")).toHaveLength(1);
+    });
   });
 });

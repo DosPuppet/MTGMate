@@ -4525,3 +4525,36 @@ describe("Kid Loki : une créature sans marqueur mis ce tour-ci n'a pas la défe
     expect(chars(s, idOf(s, "p1", "battlefield", "Bear Cub")).keywords).not.toContain("hexproof");
   });
 });
+
+// Cartes des decks du méta Standard (docs/plans/PLAN-C.md, lot C13).
+describe("Marvel Super Heroes : cartes du méta Standard", () => {
+  describe("Gleaming Bastion", () => {
+    const colored = (s: S, id: string) => manaAbilitiesOf(s, id).findIndex((m) => m.produce.includes("W"));
+    const tap = (s: S, id: string, ability: number, color: "C" | "W" | "U") =>
+      act(s, "p1", { type: "tapForMana", source: id, ability, color });
+
+    it("{T} : {C}, toujours", () => {
+      const s = scenario({ p1: { battlefield: ["Gleaming Bastion"] } });
+      const bastion = idOf(s, "p1", "battlefield", "Gleaming Bastion");
+      const c = manaAbilitiesOf(s, bastion).findIndex((m) => m.produce.includes("C"));
+      expect(tap(s, bastion, c, "C").players.p1?.manaPool.C).toBe(1);
+    });
+
+    it("{T} : {W} ou {U}, le tour où il arrive", () => {
+      let s = scenario({ p1: { hand: ["Gleaming Bastion"] } });
+      s = act(s, "p1", { type: "playLand", card: idOf(s, "p1", "hand", "Gleaming Bastion") });
+      const bastion = idOf(s, "p1", "battlefield", "Gleaming Bastion");
+      expect(tap(s, bastion, colored(s, bastion), "W").players.p1?.manaPool.W).toBe(1);
+      expect(tap(s, bastion, colored(s, bastion), "U").players.p1?.manaPool.U).toBe(1);
+    });
+
+    it("{T} : {W} ou {U}, seulement si vous contrôlez un terrain de base, les tours suivants", () => {
+      const without = scenario({ p1: { battlefield: ["Gleaming Bastion", "Hallowed Fountain"] } });
+      const b1 = idOf(without, "p1", "battlefield", "Gleaming Bastion");
+      expect(() => tap(without, b1, colored(without, b1), "W")).toThrow(/indisponible/);
+      const withBasic = scenario({ p1: { battlefield: ["Gleaming Bastion", "Island"] } });
+      const b2 = idOf(withBasic, "p1", "battlefield", "Gleaming Bastion");
+      expect(tap(withBasic, b2, colored(withBasic, b2), "U").players.p1?.manaPool.U).toBe(1);
+    });
+  });
+});

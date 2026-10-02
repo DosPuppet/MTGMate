@@ -1026,7 +1026,7 @@ export const fx = {
   }),
   exileLibraryButBottom: (who: Ref, keep?: number): Effect => ({ op: "exileLibraryButBottom", who, keep }),
   /** Attache une Aura ou un Équipement (par défaut la source) au permanent désigné. */
-  attach: (to: Ref, what: Ref = ref.self): Effect => ({ op: "attach", what, to }),
+  attach: (to: Ref, what: Ref = ref.self, store?: string): Effect => ({ op: "attach", what, to, store }),
   /** « … devient préparé » / « … devient dé-préparé » (Reality Fracture). */
   prepare: (what: Ref, value = true): Effect => ({ op: "prepare", what, value }),
   prepareAll: (filter: ObjectFilter, value = true): Effect => ({ op: "prepare", filter, value }),

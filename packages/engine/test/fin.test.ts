@@ -6,7 +6,22 @@ import { bump } from "../src/layers";
 import { legalActions } from "../src/legal";
 import { chars } from "../src/state";
 import type { GameState } from "../src/types";
-import { act, advanceUntil, idOf, idsOf, passAccepting, passBoth, scenario } from "./helpers";
+import {
+  act,
+  advanceUntil,
+  attack,
+  cast,
+  castNowOf,
+  idOf,
+  idsOf,
+  namesIn,
+  passAccepting,
+  passBoth,
+  scenario,
+  settleNoBlocks,
+  throughCombat,
+  untilCastNow,
+} from "./helpers";
 
 type S = GameState;
 const lands = (name: string, n: number) => Array(n).fill(name) as string[];
@@ -349,5 +364,196 @@ describe("Final Fantasy", () => {
     expect(legalActions(s, "p1").some((a) => a.type === "playLand" && a.card === exiled)).toBe(true);
     s = act(s, "p1", { type: "playLand", card: exiled });
     expect(idsOf(s, "p1", "battlefield", "Lindblum, Industrial Regency // Mage Siege")).toHaveLength(1);
+  });
+});
+
+describe("Final Fantasy, cartes du méta (PLAN-C, lot C13)", () => {
+  it("Starting Town : dégagée pendant vos trois premiers tours, engagée ensuite ; {T}, 1 PV : un mana au choix", () => {
+    const play = (turn: number) => {
+      const s = scenario({ turn, p1: { hand: ["Starting Town"] } });
+      const t = act(s, "p1", { type: "playLand", card: idOf(s, "p1", "hand", "Starting Town") });
+      return { t, town: idOf(t, "p1", "battlefield", "Starting Town") };
+    };
+    // Tour 5 : troisième tour de p1 (1, 3, 5).
+    const early = play(5);
+    expect(early.t.objects[early.town]?.tapped).toBe(false);
+    const late = play(7);
+    expect(late.t.objects[late.town]?.tapped).toBe(true);
+    let s = early.t;
+    const colorless = legalActions(s, "p1").find((a) => a.type === "tapForMana" && a.source === early.town);
+    expect(colorless?.type === "tapForMana" && colorless.colors).toEqual(["C"]);
+    const any = legalActions(s, "p1").find((a) => a.type === "activate" && a.source === early.town);
+    s = act(s, "p1", { type: "activate", source: early.town, ability: any?.type === "activate" ? any.ability : -1 });
+    s = passAccepting(s, (x) => x.pending?.kind !== "choice");
+    expect(s.players.p1?.life).toBe(19);
+    const pool: Record<string, number> = { ...s.players.p1?.manaPool };
+    expect(Object.values(pool).reduce((n, v) => n + v, 0)).toBe(1);
+    expect(pool.C ?? 0).toBe(0);
+  });
+
+  it("Sazh's Chocobo : un marqueur +1/+1 à chaque terrain qui arrive sous votre contrôle", () => {
+    let s = scenario({ p1: { battlefield: ["Sazh's Chocobo"], hand: ["Forest"] } });
+    const bird = idOf(s, "p1", "battlefield", "Sazh's Chocobo");
+    s = settle(act(s, "p1", { type: "playLand", card: idOf(s, "p1", "hand", "Forest") }));
+    expect(s.objects[bird]?.counters["+1/+1"]).toBe(1);
+    expect(chars(s, bird).power).toBe(1);
+  });
+
+  it("Buster Sword : +3/+2 ; blessures de combat à un joueur : piochez, puis lancez gratuitement un sort de VM ≤ blessures", () => {
+    let s = scenario({
+      p1: { battlefield: ["Bear Cub", "Buster Sword", ...lands("Plains", 2)], hand: ["Serra Angel", "Shivan Dragon"] },
+    });
+    const bear = idOf(s, "p1", "battlefield", "Bear Cub");
+    const sword = idOf(s, "p1", "battlefield", "Buster Sword");
+    const equip = legalActions(s, "p1").find((a) => a.type === "activate" && a.source === sword);
+    s = act(s, "p1", {
+      type: "activate",
+      source: sword,
+      ability: equip?.type === "activate" ? equip.ability : -1,
+      targets: { t: [bear] },
+    });
+    s = settle(s);
+    expect(chars(s, bear).power).toBe(5);
+    expect(chars(s, bear).toughness).toBe(4);
+    s = attack(s, [bear]);
+    s = untilCastNow(s);
+    expect(s.players.p2?.life).toBe(15);
+    expect(s.players.p1?.hand).toHaveLength(3);
+    // 5 blessures : Serra Angel (VM 5) est proposée, pas Shivan Dragon (VM 6).
+    const angel = idOf(s, "p1", "hand", "Serra Angel");
+    expect(castNowOf(s)?.cards).toContain(angel);
+    expect(castNowOf(s)?.cards).not.toContain(idOf(s, "p1", "hand", "Shivan Dragon"));
+    s = settle(act(s, "p1", { type: "cast", card: angel }));
+    expect(idsOf(s, "p1", "battlefield", "Serra Angel")).toHaveLength(1);
+    // Lancée sans payer : les deux Plaines ont servi à l'équipement seulement.
+    expect(s.players.p1?.hand).toHaveLength(2);
+  });
+
+  it("Cloud, Midgar Mercenary : cherche un Équipement ; équipé, les déclenchements de son Équipement ont lieu deux fois", () => {
+    let s = scenario({
+      p1: { battlefield: lands("Plains", 2), hand: ["Cloud, Midgar Mercenary"], library: ["Forest", "Buster Sword", "Forest"] },
+    });
+    s = settle(cast(s, "p1", "Cloud, Midgar Mercenary"));
+    expect(namesIn(s, s.players.p1?.hand)).toEqual(["Buster Sword"]);
+    let t = scenario({ p1: { battlefield: ["Cloud, Midgar Mercenary", "Buster Sword"] } });
+    const cloud = idOf(t, "p1", "battlefield", "Cloud, Midgar Mercenary");
+    t.objects[idOf(t, "p1", "battlefield", "Buster Sword")]!.attachedTo = cloud;
+    bump(t);
+    t = attack(t, [cloud]);
+    t = settleNoBlocks(t);
+    t = advanceUntil(t, (x) => x.turn.step === "main2");
+    expect(t.players.p2?.life).toBe(15);
+    // Deux déclenchements de Buster Sword : deux cartes piochées.
+    expect(t.players.p1?.hand).toHaveLength(2);
+  });
+
+  it("Zack Fair : arrive avec un marqueur ; sacrifié, donne l'indestructible, ses marqueurs et son Équipement", () => {
+    let s = scenario({ p1: { battlefield: ["Bear Cub", "Buster Sword", ...lands("Plains", 2)], hand: ["Zack Fair"] } });
+    s = settle(cast(s, "p1", "Zack Fair"));
+    const zack = idOf(s, "p1", "battlefield", "Zack Fair");
+    expect(s.objects[zack]?.counters["+1/+1"]).toBe(1);
+    const sword = idOf(s, "p1", "battlefield", "Buster Sword");
+    s.objects[sword]!.attachedTo = zack;
+    bump(s);
+    const bear = idOf(s, "p1", "battlefield", "Bear Cub");
+    const ab = legalActions(s, "p1").find((a) => a.type === "activate" && a.source === zack);
+    s = act(s, "p1", {
+      type: "activate",
+      source: zack,
+      ability: ab?.type === "activate" ? ab.ability : -1,
+      targets: { t: [bear] },
+    });
+    expect(idsOf(s, "p1", "graveyard", "Zack Fair")).toHaveLength(1);
+    s = settle(s);
+    expect(chars(s, bear).keywords).toContain("indestructible");
+    expect(s.objects[bear]?.counters["+1/+1"]).toBe(1);
+    expect(s.objects[sword]?.attachedTo).toBe(bear);
+    expect(chars(s, bear).power).toBe(6);
+  });
+
+  it("Cecil, Dark Knight : contact mortel ; ses blessures vous font perdre autant de PV, puis il se transforme à 10 PV ou moins", () => {
+    const CECIL = "Cecil, Dark Knight // Cecil, Redeemed Paladin";
+    let s = scenario({ p1: { battlefield: [CECIL] } });
+    let cecil = idOf(s, "p1", "battlefield", CECIL);
+    expect(chars(s, cecil).keywords).toContain("deathtouch");
+    s = throughCombat(attack(s, [cecil]));
+    expect(s.players.p2?.life).toBe(18);
+    expect(s.players.p1?.life).toBe(18);
+    expect(chars(s, cecil).name).not.toBe("Cecil, Redeemed Paladin");
+    expect(s.objects[cecil]?.tapped).toBe(true);
+    let t = scenario({ p1: { life: 12, battlefield: [CECIL] } });
+    cecil = idOf(t, "p1", "battlefield", CECIL);
+    t = throughCombat(attack(t, [cecil]));
+    expect(t.players.p1?.life).toBe(10);
+    expect(chars(t, cecil).name).toBe("Cecil, Redeemed Paladin");
+    expect(t.objects[cecil]?.tapped).toBe(false);
+    expect(chars(t, cecil).keywords).toContain("lifelink");
+  });
+
+  it("Cecil, Redeemed Paladin : quand il attaque, les autres attaquants deviennent indestructibles", () => {
+    const CECIL = "Cecil, Dark Knight // Cecil, Redeemed Paladin";
+    let s = scenario({ p1: { battlefield: [CECIL, "Bear Cub", "Llanowar Elves"] } });
+    const cecil = idOf(s, "p1", "battlefield", CECIL);
+    s.objects[cecil]!.faceDefId = s.defs[s.objects[cecil]!.defId]!.faceDefs![1]!.id;
+    bump(s);
+    const bear = idOf(s, "p1", "battlefield", "Bear Cub");
+    const elves = idOf(s, "p1", "battlefield", "Llanowar Elves");
+    s = settle(attack(s, [cecil, bear]));
+    expect(chars(s, bear).keywords).toContain("indestructible");
+    expect(chars(s, cecil).keywords).not.toContain("indestructible");
+    expect(chars(s, elves).keywords).not.toContain("indestructible");
+  });
+
+  it("Fire Magic : 1, 2 ou 3 blessures à chaque créature selon le palier", () => {
+    const setup = () =>
+      scenario({
+        p1: { battlefield: [...lands("Mountain", 6), "Llanowar Elves", "Bear Cub"], hand: ["Fire Magic"] },
+        p2: { battlefield: ["Serra Angel", "Bear Cub"] },
+      });
+    const fire = (mode: number) => {
+      const s = setup();
+      const card = idOf(s, "p1", "hand", "Fire Magic");
+      return settle(act(s, "p1", { type: "cast", card, mode: castModes(s, card)[mode]?.index }));
+    };
+    let s = fire(0);
+    expect(idsOf(s, "p1", "battlefield", "Llanowar Elves")).toHaveLength(0);
+    expect(s.objects[idOf(s, "p2", "battlefield", "Bear Cub")]?.damage).toBe(1);
+    expect(s.objects[idOf(s, "p2", "battlefield", "Serra Angel")]?.damage).toBe(1);
+    s = fire(1);
+    expect(idsOf(s, "p1", "battlefield", "Bear Cub")).toHaveLength(0);
+    expect(idsOf(s, "p2", "battlefield", "Bear Cub")).toHaveLength(0);
+    expect(s.objects[idOf(s, "p2", "battlefield", "Serra Angel")]?.damage).toBe(2);
+    expect(s.battlefield.filter((id) => s.objects[id]?.tapped)).toHaveLength(3);
+    s = fire(2);
+    expect(s.battlefield.filter((id) => s.objects[id]?.tapped)).toHaveLength(6);
+    expect(s.objects[idOf(s, "p2", "battlefield", "Serra Angel")]?.damage).toBe(3);
+  });
+
+  it("The Fire Crystal : sorts rouges à {1} de moins, célérité, copie temporaire d'une de vos créatures", () => {
+    let s = scenario({
+      p1: {
+        battlefield: ["The Fire Crystal", { name: "Bear Cub", sick: true }, ...lands("Mountain", 5)],
+        hand: ["Shivan Dragon"],
+      },
+    });
+    const bear = idOf(s, "p1", "battlefield", "Bear Cub");
+    expect(chars(s, bear).keywords).toContain("haste");
+    // Shivan Dragon ({4}{R}{R}) pour cinq Montagnes.
+    s = settle(cast(s, "p1", "Shivan Dragon"));
+    expect(idsOf(s, "p1", "battlefield", "Shivan Dragon")).toHaveLength(1);
+    expect(chars(s, idOf(s, "p1", "battlefield", "Shivan Dragon")).keywords).toContain("haste");
+    let t = scenario({ p1: { battlefield: ["The Fire Crystal", "Bear Cub", ...lands("Mountain", 6)] } });
+    const crystal = idOf(t, "p1", "battlefield", "The Fire Crystal");
+    const ab = legalActions(t, "p1").find((a) => a.type === "activate" && a.source === crystal);
+    t = act(t, "p1", {
+      type: "activate",
+      source: crystal,
+      ability: ab?.type === "activate" ? ab.ability : -1,
+      targets: { t: [idOf(t, "p1", "battlefield", "Bear Cub")] },
+    });
+    t = settle(t);
+    expect(idsOf(t, "p1", "battlefield", "Bear Cub")).toHaveLength(2);
+    t = advanceUntil(t, (x) => x.turn.active === "p2");
+    expect(idsOf(t, "p1", "battlefield", "Bear Cub")).toHaveLength(1);
   });
 });

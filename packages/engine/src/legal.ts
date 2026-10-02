@@ -83,7 +83,6 @@ function tapXMax(
 import { snapshot } from "./layers";
 import { enterChoiceRequest } from "./ops/permanents";
 import { obj } from "./state";
-import { playerStatic } from "./statics";
 import { legalTargets } from "./targets";
 import { checkCondition } from "./triggers";
 import type {

@@ -8,7 +8,7 @@ import { dealDamage, destroy, sourceFromObject } from "../src/actions";
 import * as dsl from "../src/dsl";
 import { runEffect } from "../src/effects";
 import { legalActions } from "../src/legal";
-import { manaValue } from "../src/mana";
+import { manaAbilitiesOf, manaValue } from "../src/mana";
 import { spellCost } from "../src/stack";
 import { bump, chars } from "../src/state";
 import { ALL_CREATURE_TYPES, isLegalTarget, matchesObjectFilter } from "../src/targets";
@@ -4336,5 +4336,46 @@ describe("Lorwyn Eclipsed, lot D (remplacements des familles H et I, R1)", () =>
     expect(s.battlefield.filter((id) => chars(s, id).name === "Pelakka Wurm")).toHaveLength(3);
     runEffect(s, resolutionOf(s, "p1", crown), dsl.fx.createTokens(ELF_TOKEN, 1));
     expect(s.battlefield.filter((id) => chars(s, id).name === "Elfe")).toHaveLength(1);
+  });
+});
+
+// Cartes des decks du méta Standard (docs/plans/PLAN-C.md, lot C13).
+describe("Lorwyn Eclipsed : terrains choc du méta Standard", () => {
+  const SHOCKS: [string, string[], [string, string]][] = [
+    ["Hallowed Fountain", ["Plains", "Island"], ["W", "U"]],
+    ["Temple Garden", ["Forest", "Plains"], ["G", "W"]],
+    ["Overgrown Tomb", ["Swamp", "Forest"], ["B", "G"]],
+    ["Blood Crypt", ["Swamp", "Mountain"], ["B", "R"]],
+  ];
+  for (const [name, types, colors] of SHOCKS) {
+    it(`${name} : en arrivant, payez 2 PV, sinon il arrive engagé ; il produit {${colors[0]}} ou {${colors[1]}}`, () => {
+      const base = scenario({ p1: { hand: [name] } });
+      const land = idOf(base, "p1", "hand", name);
+      const plays = legalActions(base, "p1").filter((a) => a.type === "playLand" && a.card === land);
+      expect(plays.map((a) => a.type === "playLand" && !!a.payLife).sort()).toEqual([false, true]);
+      // Payer 2 PV : dégagé.
+      let s = act(base, "p1", { type: "playLand", card: land, payLife: true });
+      const paid = idOf(s, "p1", "battlefield", name);
+      expect(s.players.p1?.life).toBe(18);
+      expect(s.objects[paid]?.tapped).toBe(false);
+      expect(chars(s, paid).subtypes.slice().sort()).toEqual(types.slice().sort());
+      const abilities = manaAbilitiesOf(s, paid);
+      expect(abilities.flatMap((m) => m.produce).sort()).toEqual(colors.slice().sort());
+      for (const color of colors) {
+        const ability = abilities.findIndex((m) => m.produce.includes(color as Color));
+        const t = act(s, "p1", { type: "tapForMana", source: paid, ability, color: color as Color });
+        expect(t.players.p1?.manaPool[color as Color]).toBe(1);
+      }
+      // Ne pas payer : engagé, sans perte de PV.
+      s = act(base, "p1", { type: "playLand", card: land });
+      expect(s.players.p1?.life).toBe(20);
+      expect(s.objects[idOf(s, "p1", "battlefield", name)]?.tapped).toBe(true);
+    });
+  }
+
+  it("on ne peut pas payer 2 PV avec moins de 2 PV : le terrain arrive engagé", () => {
+    const s = scenario({ p1: { life: 1, hand: ["Blood Crypt"] } });
+    const land = idOf(s, "p1", "hand", "Blood Crypt");
+    expect(legalActions(s, "p1").some((a) => a.type === "playLand" && a.card === land && a.payLife)).toBe(false);
   });
 });

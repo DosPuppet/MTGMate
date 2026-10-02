@@ -2,12 +2,30 @@
  * Outlaws of Thunder Junction, lot A : plot (702.170), spree (702.172), crimes (700.13), marqueurs de capacité (122.1b),
  * terrains rapides.
  */
+import { TOKEN_SPECS } from "@mtgx/cards/tokens";
 import { describe, expect, it } from "vitest";
+import { createTokens } from "../src/actions";
 import { legalActions } from "../src/legal";
 import { chars } from "../src/state";
 import { declareAttackers } from "../src/turn";
-import type { GameState } from "../src/types";
-import { act, advanceUntil, idOf, idsOf, passAccepting, passBoth, scenario } from "./helpers";
+import type { GameState, TokenSpec } from "../src/types";
+import {
+  type Answer,
+  act,
+  advanceUntil,
+  canActivate,
+  castable,
+  idOf,
+  idsOf,
+  nameOf,
+  namesIn,
+  passAccepting,
+  passBoth,
+  picking,
+  pickNamed,
+  scenario,
+  settle,
+} from "./helpers";
 
 type S = GameState;
 const lands = (name: string, n: number) => Array(n).fill(name) as string[];
@@ -209,5 +227,295 @@ describe("Outlaws of Thunder Junction : montants à l'arrivée", () => {
     const sheriff = idOf(s, "p1", "battlefield", "Sheriff of Safe Passage");
     expect(s.objects[sheriff]?.counters["+1/+1"]).toBe(3);
     expect(chars(s, sheriff).power).toBe(3);
+  });
+});
+
+describe("Outlaws of Thunder Junction : cartes du méta confrontées à leur texte Oracle (PLAN-C, lot C13)", () => {
+  /** Index du mode (ou de la combinaison de modes d'un sort à spree) dont le libellé est `label`. */
+  const modeOf = (s: S, name: string, label: string) => {
+    const card = idOf(s, "p1", "hand", name);
+    const opt = legalActions(s, "p1").find((a) => a.type === "cast" && a.card === card);
+    const mode = opt?.type === "cast" ? opt.modes.find((m) => m.label === label) : undefined;
+    if (!mode) throw new Error(`mode « ${label} » introuvable pour ${name}`);
+    return mode.index;
+  };
+  const yes: Answer = (req) => (req.type === "yesNo" ? [1] : undefined);
+
+  it("Inspiring Vantage, Spirebluff Canal, Concealed Courtyard : dégagés avec deux autres terrains ou moins ; deux couleurs", () => {
+    const fast: [string, string[]][] = [
+      ["Inspiring Vantage", ["R", "W"]],
+      ["Spirebluff Canal", ["U", "R"]],
+      ["Concealed Courtyard", ["W", "B"]],
+    ];
+    for (const [name, colors] of fast) {
+      let s = scenario({ p1: { battlefield: lands("Swamp", 2), hand: [name] } });
+      s = act(s, "p1", { type: "playLand", card: idOf(s, "p1", "hand", name) });
+      const land = idOf(s, "p1", "battlefield", name);
+      expect(s.objects[land]?.tapped, name).toBe(false);
+      const produced = legalActions(s, "p1").flatMap((a) => (a.type === "tapForMana" && a.source === land ? a.colors : []));
+      expect([...produced].sort(), name).toEqual([...colors].sort());
+      let t = scenario({ p1: { battlefield: lands("Swamp", 3), hand: [name] } });
+      t = act(t, "p1", { type: "playLand", card: idOf(t, "p1", "hand", name) });
+      expect(t.objects[idOf(t, "p1", "battlefield", name)]?.tapped, name).toBe(true);
+    }
+  });
+
+  it("Shoot the Sheriff : détruit une créature qui n'est pas hors-la-loi", () => {
+    let s = scenario({
+      p1: { battlefield: lands("Swamp", 2), hand: ["Shoot the Sheriff"] },
+      p2: { battlefield: ["Bear Cub", "Forsaken Miner"] },
+    });
+    // Forsaken Miner est un Rogue : un hors-la-loi, pas une cible.
+    expect(() =>
+      act(s, "p1", {
+        type: "cast",
+        card: idOf(s, "p1", "hand", "Shoot the Sheriff"),
+        targets: { t: [idOf(s, "p2", "battlefield", "Forsaken Miner")] },
+      }),
+    ).toThrow();
+    const cub = idOf(s, "p2", "battlefield", "Bear Cub");
+    s = act(s, "p1", { type: "cast", card: idOf(s, "p1", "hand", "Shoot the Sheriff"), targets: { t: [cub] } });
+    s = settle(s);
+    expect(s.objects[cub]).toBeUndefined();
+    expect(idsOf(s, "p2", "graveyard", "Bear Cub")).toHaveLength(1);
+  });
+
+  it("Three Steps Ahead : contrecarre un sort ; jeton copie d'une créature à vous ; piochez deux puis défaussez une", () => {
+    let s = scenario({
+      p1: { battlefield: ["Bear Cub", ...lands("Island", 6)], hand: ["Three Steps Ahead"], library: lands("Forest", 3) },
+    });
+    const mode = modeOf(s, "Three Steps Ahead", "Jeton copie + Piochez deux, défaussez une");
+    s = act(s, "p1", {
+      type: "cast",
+      card: idOf(s, "p1", "hand", "Three Steps Ahead"),
+      mode,
+      targets: { c: [idOf(s, "p1", "battlefield", "Bear Cub")] },
+    });
+    s = settle(s);
+    const cubs = idsOf(s, "p1", "battlefield", "Bear Cub");
+    expect(cubs).toHaveLength(2);
+    expect(cubs.filter((id) => s.objects[id]?.isToken)).toHaveLength(1);
+    expect(s.players.p1?.hand).toHaveLength(1);
+    expect(s.players.p1?.graveyard).toHaveLength(2);
+    // Mode « contrecarrez » sur un sort adverse.
+    let t = scenario({
+      active: "p2",
+      p1: { battlefield: lands("Island", 3), hand: ["Three Steps Ahead"] },
+      p2: { battlefield: lands("Mountain", 2), hand: ["Lightning Strike"] },
+    });
+    t = act(t, "p2", { type: "cast", card: idOf(t, "p2", "hand", "Lightning Strike"), targets: { t: ["p1"] } });
+    const spell = t.stack[0]?.id as string;
+    t = act(t, "p2", { type: "pass" });
+    t = act(t, "p1", {
+      type: "cast",
+      card: idOf(t, "p1", "hand", "Three Steps Ahead"),
+      mode: modeOf(t, "Three Steps Ahead", "Contrecarrez un sort"),
+      targets: { s: [spell] },
+    });
+    t = settle(t);
+    expect(t.players.p1?.life).toBe(20);
+    expect(idsOf(t, "p2", "graveyard", "Lightning Strike")).toHaveLength(1);
+  });
+
+  it("Doc Aurlock, Grizzled Genius : sorts depuis le cimetière ou l'exil et complot coûtent {2} de moins", () => {
+    // Think Twice : flashback {2}{U}, donc {U} avec Doc Aurlock.
+    const withDoc = scenario({ p1: { battlefield: ["Doc Aurlock, Grizzled Genius", "Island"], graveyard: ["Think Twice"] } });
+    expect(castable(withDoc, "p1", idOf(withDoc, "p1", "graveyard", "Think Twice"))).toBe(true);
+    const without = scenario({ p1: { battlefield: ["Island"], graveyard: ["Think Twice"] } });
+    expect(castable(without, "p1", idOf(without, "p1", "graveyard", "Think Twice"))).toBe(false);
+    // Longhorn Sharpshooter : complot {3}{R}, donc {1}{R}.
+    let s = scenario({
+      p1: { battlefield: ["Doc Aurlock, Grizzled Genius", ...lands("Mountain", 2)], hand: ["Longhorn Sharpshooter"] },
+    });
+    const card = idOf(s, "p1", "hand", "Longhorn Sharpshooter");
+    const plot = legalActions(s, "p1").find((a) => a.type === "activate" && a.source === card);
+    expect(plot).toBeDefined();
+    s = act(s, "p1", { type: "activate", source: card, ability: plot?.type === "activate" ? plot.ability : -1 });
+    expect(s.exile.some((id) => nameOf(s, id) === "Longhorn Sharpshooter" && s.objects[id]?.plottedTurn !== undefined)).toBe(
+      true,
+    );
+    const noDoc = scenario({ p1: { battlefield: lands("Mountain", 2), hand: ["Longhorn Sharpshooter"] } });
+    expect(canActivate(noDoc, "p1", idOf(noDoc, "p1", "hand", "Longhorn Sharpshooter"))).toBe(false);
+  });
+
+  it("Requisition Raid : détruit un artefact et met un marqueur +1/+1 sur chaque créature d'un joueur ciblé", () => {
+    let s = scenario({
+      p1: { battlefield: ["Bear Cub", "Llanowar Elves", ...lands("Plains", 3)], hand: ["Requisition Raid"] },
+      p2: { battlefield: ["Ghost Vacuum", "Shivan Dragon"] },
+    });
+    const vacuum = idOf(s, "p2", "battlefield", "Ghost Vacuum");
+    s = act(s, "p1", {
+      type: "cast",
+      card: idOf(s, "p1", "hand", "Requisition Raid"),
+      mode: modeOf(s, "Requisition Raid", "Détruisez un artefact + Marqueur +1/+1 sur les créatures d'un joueur"),
+      targets: { a: [vacuum], p: ["p1"] },
+    });
+    s = settle(s);
+    expect(s.objects[vacuum]).toBeUndefined();
+    expect(s.objects[idOf(s, "p1", "battlefield", "Bear Cub")]?.counters["+1/+1"]).toBe(1);
+    expect(s.objects[idOf(s, "p1", "battlefield", "Llanowar Elves")]?.counters["+1/+1"]).toBe(1);
+    expect(s.objects[idOf(s, "p2", "battlefield", "Shivan Dragon")]?.counters["+1/+1"] ?? 0).toBe(0);
+  });
+
+  it("Lively Dirge : une carte de la bibliothèque au cimetière ; jusqu'à deux créatures de VM totale 4 ou moins reviennent", () => {
+    const start = () =>
+      scenario({
+        p1: {
+          battlefield: lands("Swamp", 5),
+          hand: ["Lively Dirge"],
+          graveyard: ["Bear Cub", "Llanowar Elves", "Shivan Dragon"],
+          library: ["Forest", "Serra Angel", "Forest"],
+        },
+      });
+    let s = start();
+    const both = modeOf(
+      s,
+      "Lively Dirge",
+      "Une carte de la bibliothèque au cimetière + Jusqu'à deux créatures (VM totale 4 ou moins)",
+    );
+    // Bear Cub (2) et Shivan Dragon (6) : plus de 4 au total.
+    expect(() =>
+      act(s, "p1", {
+        type: "cast",
+        card: idOf(s, "p1", "hand", "Lively Dirge"),
+        mode: both,
+        targets: { c: [idOf(s, "p1", "graveyard", "Bear Cub"), idOf(s, "p1", "graveyard", "Shivan Dragon")] },
+      }),
+    ).toThrow();
+    s = start();
+    s = act(s, "p1", {
+      type: "cast",
+      card: idOf(s, "p1", "hand", "Lively Dirge"),
+      mode: both,
+      targets: { c: [idOf(s, "p1", "graveyard", "Bear Cub"), idOf(s, "p1", "graveyard", "Llanowar Elves")] },
+    });
+    s = settle(s, (req, _p, x) => pickNamed(x, req, "Serra Angel"));
+    expect(idsOf(s, "p1", "battlefield", "Bear Cub")).toHaveLength(1);
+    expect(idsOf(s, "p1", "battlefield", "Llanowar Elves")).toHaveLength(1);
+    expect(namesIn(s, s.players.p1?.graveyard).sort()).toEqual(["Lively Dirge", "Serra Angel", "Shivan Dragon"]);
+    expect(s.players.p1?.library).toHaveLength(2);
+  });
+
+  it("Forsaken Miner : ne peut pas bloquer ; quand vous commettez un crime, payez {B} pour le renvoyer du cimetière", () => {
+    const board = scenario({ p1: { battlefield: ["Forsaken Miner"] } });
+    expect(chars(board, idOf(board, "p1", "battlefield", "Forsaken Miner")).keywords).toContain("cantBlock");
+    let s = scenario({ p1: { battlefield: ["Mountain", "Swamp"], hand: ["Burst Lightning"], graveyard: ["Forsaken Miner"] } });
+    s = act(s, "p1", { type: "cast", card: idOf(s, "p1", "hand", "Burst Lightning"), targets: { t: ["p2"] } });
+    s = settle(s, yes);
+    expect(idsOf(s, "p1", "battlefield", "Forsaken Miner")).toHaveLength(1);
+    expect(s.players.p2?.life).toBe(18);
+    // Sans crime (cible : vous-même), rien.
+    let t = scenario({ p1: { battlefield: ["Mountain", "Swamp"], hand: ["Burst Lightning"], graveyard: ["Forsaken Miner"] } });
+    t = act(t, "p1", { type: "cast", card: idOf(t, "p1", "hand", "Burst Lightning"), targets: { t: ["p1"] } });
+    t = settle(t, yes);
+    expect(idsOf(t, "p1", "graveyard", "Forsaken Miner")).toHaveLength(1);
+  });
+
+  it("Nurturing Pixie : renvoie un permanent non-Faerie à vous et prend un marqueur +1/+1 ; sans renvoi, pas de marqueur", () => {
+    let s = scenario({ p1: { battlefield: ["Bear Cub", "Plains"], hand: ["Nurturing Pixie"] } });
+    const cub = idOf(s, "p1", "battlefield", "Bear Cub");
+    s = act(s, "p1", { type: "cast", card: idOf(s, "p1", "hand", "Nurturing Pixie") });
+    s = settle(s, picking([cub]));
+    expect(idsOf(s, "p1", "hand", "Bear Cub")).toHaveLength(1);
+    const pixie = idOf(s, "p1", "battlefield", "Nurturing Pixie");
+    expect(chars(s, pixie)).toMatchObject({ power: 2, toughness: 2 });
+    expect(chars(s, pixie).keywords).toContain("flying");
+    let t = scenario({ p1: { battlefield: ["Plains"], hand: ["Nurturing Pixie"] } });
+    t = act(t, "p1", { type: "cast", card: idOf(t, "p1", "hand", "Nurturing Pixie") });
+    t = settle(t);
+    expect(t.objects[idOf(t, "p1", "battlefield", "Nurturing Pixie")]?.counters["+1/+1"] ?? 0).toBe(0);
+  });
+
+  it("Bovine Intervention : détruit un artefact ou une créature ; son contrôleur crée un Bœuf 2/2 blanc", () => {
+    let s = scenario({
+      p1: { battlefield: lands("Plains", 2), hand: ["Bovine Intervention"] },
+      p2: { battlefield: ["Shivan Dragon"] },
+    });
+    const dragon = idOf(s, "p2", "battlefield", "Shivan Dragon");
+    s = act(s, "p1", { type: "cast", card: idOf(s, "p1", "hand", "Bovine Intervention"), targets: { t: [dragon] } });
+    s = settle(s);
+    expect(s.objects[dragon]).toBeUndefined();
+    const ox = idOf(s, "p2", "battlefield", "Ox");
+    expect(chars(s, ox)).toMatchObject({ power: 2, toughness: 2, colors: ["W"] });
+    expect(idsOf(s, "p1", "battlefield", "Ox")).toHaveLength(0);
+  });
+
+  it("Return the Favor : copie un sort (nouvelles cibles possibles) ; change la cible d'un sort à cible unique", () => {
+    let s = scenario({ p1: { battlefield: lands("Mountain", 5), hand: ["Lightning Strike", "Return the Favor"] } });
+    s = act(s, "p1", { type: "cast", card: idOf(s, "p1", "hand", "Lightning Strike"), targets: { t: ["p2"] } });
+    const strike = s.stack[0]?.id as string;
+    s = act(s, "p1", {
+      type: "cast",
+      card: idOf(s, "p1", "hand", "Return the Favor"),
+      mode: modeOf(s, "Return the Favor", "Copiez un sort ou une capacité"),
+      targets: { c: [strike] },
+    });
+    s = settle(s);
+    expect(s.players.p2?.life).toBe(14);
+    // Le sort adverse qui vous vise est renvoyé vers son lanceur.
+    let t = scenario({
+      active: "p2",
+      p1: { battlefield: lands("Mountain", 3), hand: ["Return the Favor"] },
+      p2: { battlefield: lands("Mountain", 2), hand: ["Lightning Strike"] },
+    });
+    t = act(t, "p2", { type: "cast", card: idOf(t, "p2", "hand", "Lightning Strike"), targets: { t: ["p1"] } });
+    const theirs = t.stack[0]?.id as string;
+    t = act(t, "p2", { type: "pass" });
+    t = act(t, "p1", {
+      type: "cast",
+      card: idOf(t, "p1", "hand", "Return the Favor"),
+      mode: modeOf(t, "Return the Favor", "Changez la cible"),
+      targets: { b: [theirs] },
+    });
+    t = settle(t, picking(["p2"]));
+    expect(t.players.p1?.life).toBe(20);
+    expect(t.players.p2?.life).toBe(17);
+  });
+
+  it("Aven Interrupter : exile un sort qui devient comploté ; les sorts adverses depuis l'exil coûtent {2} de plus", () => {
+    let s = scenario({
+      active: "p2",
+      p1: { battlefield: lands("Plains", 3), hand: ["Aven Interrupter"] },
+      p2: { battlefield: lands("Mountain", 6), hand: ["Shivan Dragon"] },
+    });
+    const dragon = idOf(s, "p2", "hand", "Shivan Dragon");
+    s = act(s, "p2", { type: "cast", card: dragon });
+    s = act(s, "p2", { type: "pass" });
+    s = act(s, "p1", { type: "cast", card: idOf(s, "p1", "hand", "Aven Interrupter") });
+    s = settle(s);
+    expect(idsOf(s, "p1", "battlefield", "Aven Interrupter")).toHaveLength(1);
+    const plotted = s.exile.find((id) => nameOf(s, id) === "Shivan Dragon") as string;
+    expect(plotted).toBeDefined();
+    expect(s.objects[plotted]?.plottedTurn).toBeDefined();
+    expect(idsOf(s, "p2", "battlefield", "Shivan Dragon")).toHaveLength(0);
+    // Au tour suivant de p2 : lancé sans payer son coût de mana, mais {2} de plus.
+    s = advanceUntil(s, (x) => x.turn.active === "p2" && x.turn.number > 3 && x.turn.step === "main1" && x.stack.length === 0);
+    s = act(s, "p2", { type: "cast", card: plotted });
+    expect(s.battlefield.filter((id) => s.objects[id]?.controller === "p2" && s.objects[id]?.tapped)).toHaveLength(2);
+    s = settle(s);
+    expect(idsOf(s, "p2", "battlefield", "Shivan Dragon")).toHaveLength(1);
+  });
+
+  it("Magda, the Hoardmaster : un Trésor engagé au premier crime du tour ; trois Trésors sacrifiés pour un Dragon Scorpion 4/4", () => {
+    let s = scenario({
+      p1: { battlefield: ["Magda, the Hoardmaster", ...lands("Mountain", 2)], hand: ["Burst Lightning", "Burst Lightning"] },
+    });
+    for (const card of idsOf(s, "p1", "hand", "Burst Lightning")) {
+      s = act(s, "p1", { type: "cast", card, targets: { t: ["p2"] } });
+      s = settle(s);
+    }
+    const treasures = idsOf(s, "p1", "battlefield", "Treasure");
+    expect(treasures).toHaveLength(1);
+    expect(s.objects[treasures[0] as string]?.tapped).toBe(true);
+    let t = scenario({ p1: { battlefield: ["Magda, the Hoardmaster"] } });
+    createTokens(t, "p1", TOKEN_SPECS.Treasure as TokenSpec, 3);
+    const magda = idOf(t, "p1", "battlefield", "Magda, the Hoardmaster");
+    const ab = legalActions(t, "p1").find((a) => a.type === "activate" && a.source === magda);
+    t = act(t, "p1", { type: "activate", source: magda, ability: ab?.type === "activate" ? ab.ability : -1 });
+    t = settle(t);
+    expect(idsOf(t, "p1", "battlefield", "Treasure")).toHaveLength(0);
+    const dragon = t.battlefield.find((id) => t.objects[id]?.isToken && chars(t, id).subtypes.includes("Dragon")) as string;
+    expect(chars(t, dragon)).toMatchObject({ power: 4, toughness: 4, colors: ["R"] });
+    expect(chars(t, dragon).keywords).toEqual(expect.arrayContaining(["flying", "haste"]));
   });
 });

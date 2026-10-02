@@ -23,8 +23,10 @@ export const SPIRIT_KOH: TokenSpec = {
   subtypes: ["Spirit"],
   power: 1,
   toughness: 1,
-  keywords: ["cantBlock"],
-  abilities: [blockAbility(block.notBy({ notSubtype: "Spirit" }, "Imblocable par les créatures non-Esprits"))],
+  abilities: [
+    blockAbility(block.notBy({ notSubtype: "Spirit" }, "Imblocable par les créatures non-Esprits")),
+    blockAbility(block.onlyBlocks({ subtype: "Spirit" }, "Ne peut bloquer que des Esprits")),
+  ],
   text: "This token can't block or be blocked by non-Spirit creatures.",
 };
 

@@ -6,12 +6,17 @@
  *         npm run coverage -- --set FIN --text [--color W|U|B|R|G|M|C|L]
  *
  * --audit : écarts entre le texte Oracle et le script des cartes gérées (capacités manquantes, nombres absents).
+ * --tests : part des cartes gérées nommées dans un test de règles (`engine/test`, attentes de l'Oracle), par extension ;
+ * avec --set, la liste des cartes jamais nommées (rares et mythiques d'abord) ; --meta : celles des decks du méta.
  * --text : textes Oracle des cartes non gérées (toutes faces), pour préparer un lot ; --color filtre par couleur
  * (M = multicolore, C = incolore, L = terrain).
  */
+import { readdirSync, readFileSync } from "node:fs";
 import { CARDS, isMainSet, SET_BY_CODE, SETS } from "@mtgx/cards";
+import type { CardDef } from "@mtgx/engine";
 import auditBaseline from "../packages/cards/data/audit-baseline.json";
 import { auditCard, issueKey } from "../packages/cards/src/audit";
+import { metaDecks } from "./meta-decks";
 
 const MECHANICS: [string, RegExp][] = [
   ["aura", /^Enchant (creature|land|permanent)/m],
@@ -157,5 +162,49 @@ if (process.argv.includes("--audit")) {
   for (const x of issues) {
     const why = known[issueKey(x)];
     console.log(`  ${why ? "·" : "✗"} [${x.kind}] ${x.card} — ${x.detail}${why ? ` (connu : ${why})` : ""}`);
+  }
+}
+
+// --tests : une carte compte comme testée si son nom (ou celui de sa première face) apparaît, comme mot entier,
+// dans un fichier de `packages/engine/test` ou dans les attentes de l'Oracle (méthode de l'audit du 02/10/2026).
+if (process.argv.includes("--tests")) {
+  const dir = "packages/engine/test";
+  const corpus = [
+    ...readdirSync(dir)
+      .filter((f) => f.endsWith(".ts"))
+      .map((f) => readFileSync(`${dir}/${f}`, "utf8")),
+    readFileSync("packages/cards/test/oracle-expectations.test.ts", "utf8"),
+  ].join("\n");
+  const escapeRe = (x: string) => x.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  const named = (c: CardDef) =>
+    [c.name, c.name.split(" // ")[0] as string].some((n) =>
+      new RegExp(`(^|[^\\p{L}])${escapeRe(n)}($|[^\\p{L}])`, "u").test(corpus),
+    );
+  const pool = done.filter((c) => !c.supertypes.includes("Basic"));
+  const tested = new Set(pool.filter(named).map((c) => c.name));
+  const pct = (a: number, b: number) => `${b ? Math.round((a / b) * 100) : 0} %`;
+  console.log(`\nCartes nommées dans un test : ${tested.size} / ${pool.length} (${pct(tested.size, pool.length)})`);
+  for (const s of SETS) {
+    const inSet = pool.filter((c) => c.set === s.code);
+    if (!inSet.length) continue;
+    const n = inSet.filter((c) => tested.has(c.name)).length;
+    console.log(`  ${s.code.padEnd(4)} ${String(n).padStart(4)} / ${String(inSet.length).padEnd(4)} ${pct(n, inSet.length)}`);
+  }
+  if (process.argv.includes("--meta")) {
+    const copies = new Map<string, number>();
+    for (const d of metaDecks())
+      for (const [n, name] of [...d.main, ...d.sideboard]) copies.set(name, (copies.get(name) ?? 0) + n);
+    const untested = [...copies]
+      .filter(([name]) => CARDS[name] && !CARDS[name].supertypes.includes("Basic") && !tested.has(name))
+      .sort((a, b) => b[1] - a[1]);
+    console.log(`\nCartes du méta jamais nommées dans un test : ${untested.length}`);
+    for (const [name, n] of untested) console.log(`  ${name} (${CARDS[name]?.set}, ×${n})`);
+  } else if (setArg && !main && !standard) {
+    const rank: Record<string, number> = { mythic: 0, rare: 1, uncommon: 2, common: 3 };
+    const untested = pool
+      .filter((c) => !tested.has(c.name))
+      .sort((a, b) => (rank[a.rarity ?? ""] ?? 4) - (rank[b.rarity ?? ""] ?? 4) || a.name.localeCompare(b.name));
+    console.log(`\nJamais nommées (${untested.length}) :`);
+    for (const c of untested) console.log(`  ${c.name} (${c.rarity ?? "?"})`);
   }
 }

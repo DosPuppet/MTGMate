@@ -3,7 +3,7 @@
 import { createTokenCopy, createTokens, tokenCopyCount } from "../actions";
 import { addControlEffect } from "../control";
 import type { OpHandlers } from "../effects";
-import { addEffect, addPump, attach, attackingDefender, evalAmount, exiledUid, nameOf, resolveRef } from "../effects";
+import { addEffect, addPump, attach, attackingDefender, evalAmount, exiledUid, nameOf, resolveRef, store } from "../effects";
 import { copiableExceptions, copiedDefId, mergeMods } from "../layers";
 import { manaValue } from "../mana";
 import {
@@ -261,10 +261,12 @@ export const HANDLERS: OpHandlers = {
     bump(s);
     return;
   },
-  attach(s, _r, e, ctx) {
+  attach(s, r, e, ctx) {
     // Plusieurs Équipements vers une même créature (Beatrix, Loyal General).
     const to = resolveRef(s, ctx, e.to)[0];
-    if (to) for (const what of resolveRef(s, ctx, e.what)) attach(s, what, to);
+    let n = 0;
+    if (to) for (const what of resolveRef(s, ctx, e.what)) if (attach(s, what, to)) n++;
+    store(r, e.store, n);
     return;
   },
   emblem(s, r, e, ctx) {

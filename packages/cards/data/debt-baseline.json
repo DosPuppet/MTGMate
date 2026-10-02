@@ -242,7 +242,7 @@
     "PlayFromZone": 16,
     "LayerMods": 31,
     "Effect": 176,
-    "Effect (champs)": 649,
+    "Effect (champs)": 650,
     "TriggerSpec": 62,
     "TriggerSpec (champs)": 155,
     "Condition": 80,
@@ -255,6 +255,7 @@
   "importCycleMax": 21,
   "ceilingNotes": [
     "PLAN-C C6 : exil face cachée (406.3), champ GameObject.exiledFaceDown et option faceDown de exileTop : GameObject 72 → 73, Effect (champs) 648 → 649",
-    "PLAN-C C12 : déclencheurs « une ou plusieurs » par lot d'événements simultanés (GameState.eventBatch, 603.2c) : GameState 38 → 39"
+    "PLAN-C C12 : déclencheurs « une ou plusieurs » par lot d'événements simultanés (GameState.eventBatch, 603.2c) : GameState 38 → 39",
+    "C13 : attach.store, nombre d'objets réellement attachés (701.3b, Thorin, Mountain-king) : Effect (champs) 649 → 650"
   ]
 }

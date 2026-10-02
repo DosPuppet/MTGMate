@@ -5,7 +5,7 @@
  * Tersa Lightshatter, Sage of the Skies et Mistrise Village.
  */
 import { describe, expect, it } from "vitest";
-import { dealDamage, sourceFromObject } from "../src/actions";
+import { dealDamage, destroy, sourceFromObject } from "../src/actions";
 import { legalActions } from "../src/legal";
 import { chars } from "../src/state";
 import type { GameState } from "../src/types";
@@ -20,6 +20,7 @@ import {
   idsOf,
   lands,
   nameOf,
+  namesIn,
   passAccepting,
   passUntil,
   scenario,
@@ -1409,5 +1410,222 @@ describe("Tarkir: Dragonstorm : cibles « une à trois » d'une capacité décle
     s = passAccepting(s, (x) => x.stack.length === 0 && x.triggers.length === 0 && x.pending?.kind === "priority");
     const dragon = idOf(s, "p1", "battlefield", "Armament Dragon");
     expect(s.objects[dragon]?.counters["+1/+1"]).toBe(3);
+  });
+});
+
+describe("Tarkir: Dragonstorm : cartes du méta (PLAN-C, lot C13)", () => {
+  /** Active la capacité de `source` dont le libellé contient `label`. */
+  const activate = (s: S, player: string, source: string, label: string) => {
+    const a = legalActions(s, player).find((x) => x.type === "activate" && x.source === source && x.label?.includes(label));
+    if (a?.type !== "activate") throw new Error(`capacité introuvable : ${label}`);
+    return act(s, player, { type: "activate", source, ability: a.ability });
+  };
+  const castOk = (s: S, name: string) =>
+    legalActions(s, "p1").some((a) => a.type === "cast" && a.card === idOf(s, "p1", "hand", name));
+
+  describe("Maelstrom of the Spirit Dragon", () => {
+    it("{T} : {C} ; le mana de n'importe quelle couleur ne sert qu'à un sort de Dragon (ou de présage)", () => {
+      let s = scenario({
+        p1: {
+          battlefield: ["Maelstrom of the Spirit Dragon", "Plains", "Plains"],
+          hand: ["Firespitter Whelp", "Goblin Oriflamme"],
+        },
+      });
+      // Goblin Oriflamme {1}{R} : le {R} ne peut venir que du Maelstrom, réservé aux Dragons.
+      expect(castOk(s, "Goblin Oriflamme")).toBe(false);
+      expect(() => cast(s, "p1", "Goblin Oriflamme")).toThrow();
+      // Firespitter Whelp {2}{R}, un Dragon : le Maelstrom donne le {R}.
+      expect(castOk(s, "Firespitter Whelp")).toBe(true);
+      s = settle(cast(s, "p1", "Firespitter Whelp"));
+      expect(idsOf(s, "p1", "battlefield", "Firespitter Whelp")).toHaveLength(1);
+    });
+
+    it("le mana de couleur paie aussi un sort de présage (Charring Bite)", () => {
+      let s = scenario({
+        p1: { battlefield: ["Maelstrom of the Spirit Dragon", "Plains"], hand: ["Twinmaw Stormbrood // Charring Bite"] },
+        p2: { battlefield: ["Bear Cub"] },
+      });
+      const bear = idOf(s, "p2", "battlefield", "Bear Cub");
+      s = settle(cast(s, "p1", "Twinmaw Stormbrood // Charring Bite", { t: [bear] }, { face: 1 }));
+      expect(idsOf(s, "p2", "graveyard", "Bear Cub")).toHaveLength(1);
+    });
+
+    it("{T} : {C} paie le générique de n'importe quel sort", () => {
+      let s = scenario({ p1: { battlefield: ["Maelstrom of the Spirit Dragon", "Mountain"], hand: ["Goblin Oriflamme"] } });
+      s = settle(cast(s, "p1", "Goblin Oriflamme"));
+      expect(idsOf(s, "p1", "battlefield", "Goblin Oriflamme")).toHaveLength(1);
+    });
+
+    it("{4}, {T}, sacrifice : cherche une carte de Dragon (et seulement une), la met en main, puis mélange", () => {
+      let s = scenario({
+        p1: {
+          battlefield: ["Maelstrom of the Spirit Dragon", ...lands("Mountain", 4)],
+          library: ["Forest", "Shivan Dragon", "Bear Cub", "Island"],
+        },
+      });
+      const maelstrom = idOf(s, "p1", "battlefield", "Maelstrom of the Spirit Dragon");
+      let offered: (string | undefined)[] = [];
+      s = settle(activate(s, "p1", maelstrom, "Dragon"), (req, _p, cur) => {
+        if (req.type !== "pick") return undefined;
+        offered = req.options.map((id) => nameOf(cur, id));
+        return req.options.filter((id) => nameOf(cur, id) === "Shivan Dragon").slice(0, 1);
+      });
+      expect(offered).toEqual(["Shivan Dragon"]);
+      expect(idsOf(s, "p1", "graveyard", "Maelstrom of the Spirit Dragon")).toHaveLength(1);
+      expect(idsOf(s, "p1", "hand", "Shivan Dragon")).toHaveLength(1);
+      expect(s.players.p1?.library).toHaveLength(3);
+    });
+  });
+
+  describe("Frontline Rush", () => {
+    it("premier mode : deux jetons Gobelin rouges 1/1", () => {
+      let s = scenario({ p1: { battlefield: ["Mountain", "Plains"], hand: ["Frontline Rush"] } });
+      s = settle(cast(s, "p1", "Frontline Rush", undefined, { mode: 0 }));
+      const goblins = s.battlefield.filter((id) => chars(s, id).name === "Goblin");
+      expect(goblins).toHaveLength(2);
+      for (const g of goblins) {
+        expect(s.objects[g]?.controller).toBe("p1");
+        expect(chars(s, g).colors).toEqual(["R"]);
+        expect(chars(s, g).subtypes).toContain("Goblin");
+        expect([chars(s, g).power, chars(s, g).toughness]).toEqual([1, 1]);
+      }
+      expect(idsOf(s, "p1", "graveyard", "Frontline Rush")).toHaveLength(1);
+    });
+
+    it("second mode : +X/+X à une créature ciblée, X = le nombre de créatures que vous contrôlez (pas celles de l'adversaire)", () => {
+      let s = scenario({
+        p1: { battlefield: ["Mountain", "Plains", "Bear Cub", "Llanowar Elves", "Serra Angel"], hand: ["Frontline Rush"] },
+        p2: { battlefield: ["Bear Cub", "Bear Cub"] },
+      });
+      const bear = idOf(s, "p1", "battlefield", "Bear Cub");
+      s = settle(cast(s, "p1", "Frontline Rush", { t: [bear] }, { mode: 1 }));
+      expect([chars(s, bear).power, chars(s, bear).toughness]).toEqual([5, 5]);
+      // Jusqu'à la fin du tour.
+      s = advanceUntil(s, (x) => x.turn.active === "p2");
+      expect([chars(s, bear).power, chars(s, bear).toughness]).toEqual([2, 2]);
+    });
+
+    it("second mode : peut cibler une créature adverse ; X compte toujours vos créatures", () => {
+      let s = scenario({
+        p1: { battlefield: ["Mountain", "Plains", "Llanowar Elves"], hand: ["Frontline Rush"] },
+        p2: { battlefield: ["Bear Cub", "Serra Angel"] },
+      });
+      const bear = idOf(s, "p2", "battlefield", "Bear Cub");
+      s = settle(cast(s, "p1", "Frontline Rush", { t: [bear] }, { mode: 1 }));
+      expect([chars(s, bear).power, chars(s, bear).toughness]).toEqual([3, 3]);
+    });
+  });
+
+  describe("United Battlefront", () => {
+    it("parmi les sept du dessus, jusqu'à deux permanents non-créatures non-terrains de VM 3 ou moins arrivent ; le reste va dessous", () => {
+      let s = scenario({
+        p1: {
+          battlefield: lands("Plains", 4),
+          hand: ["United Battlefront"],
+          library: [
+            "Goblin Oriflamme",
+            "Hedron Archive",
+            "Shivan Dragon",
+            "Forest",
+            "Opt",
+            "Phyrexian Arena",
+            "Bear Trap",
+            "Feldon's Cane",
+          ],
+        },
+      });
+      let offered: (string | undefined)[] = [];
+      let max = 0;
+      s = settle(cast(s, "p1", "United Battlefront"), (req, _p, cur) => {
+        if (req.type !== "pick") return undefined;
+        offered = req.options.map((id) => nameOf(cur, id));
+        max = req.max;
+        return req.options.filter((id) => ["Goblin Oriflamme", "Phyrexian Arena"].includes(nameOf(cur, id) ?? ""));
+      });
+      // Ni créature, ni terrain, ni éphémère, ni VM 4, ni la huitième carte.
+      expect(offered.sort()).toEqual(["Bear Trap", "Goblin Oriflamme", "Phyrexian Arena"]);
+      expect(max).toBe(2);
+      expect(idsOf(s, "p1", "battlefield", "Goblin Oriflamme")).toHaveLength(1);
+      expect(idsOf(s, "p1", "battlefield", "Phyrexian Arena")).toHaveLength(1);
+      // Les cinq autres sont sous la huitième, désormais au-dessus.
+      const lib = s.players.p1?.library ?? [];
+      expect(lib).toHaveLength(6);
+      expect(nameOf(s, lib[0] as string)).toBe("Feldon's Cane");
+      expect(namesIn(s, lib.slice(1)).sort()).toEqual(["Bear Trap", "Forest", "Hedron Archive", "Opt", "Shivan Dragon"]);
+    });
+  });
+
+  describe("Dalkovan Encampment", () => {
+    it("arrive engagé sauf si vous contrôlez un Marais ou une Montagne ; {T} : {W}", () => {
+      const play = (battlefield: string[]) => {
+        let s = scenario({ p1: { battlefield, hand: ["Dalkovan Encampment"] } });
+        s = act(s, "p1", { type: "playLand", card: idOf(s, "p1", "hand", "Dalkovan Encampment") });
+        return s.objects[idOf(s, "p1", "battlefield", "Dalkovan Encampment")]?.tapped;
+      };
+      expect(play(["Plains"])).toBe(true);
+      expect(play(["Mountain"])).toBe(false);
+      expect(play(["Swamp"])).toBe(false);
+      // Le {W} paie un sort blanc.
+      let s = scenario({ p1: { battlefield: ["Dalkovan Encampment"], hand: ["Healer's Hawk"] } });
+      s = settle(cast(s, "p1", "Healer's Hawk"));
+      expect(idsOf(s, "p1", "battlefield", "Healer's Hawk")).toHaveLength(1);
+    });
+
+    it("{2}{W}, {T} : quand vous attaquez ce tour-ci, deux Guerriers 1/1 rouges engagés et attaquants, sacrifiés à l'étape de fin", () => {
+      let s = scenario({ p1: { battlefield: ["Dalkovan Encampment", ...lands("Plains", 3), "Bear Cub"] } });
+      const camp = idOf(s, "p1", "battlefield", "Dalkovan Encampment");
+      s = settle(activate(s, "p1", camp, "Guerriers"));
+      expect(s.objects[camp]?.tapped).toBe(true);
+      expect(s.battlefield.filter((id) => chars(s, id).name === "Warrior")).toHaveLength(0);
+      s = advanceUntil(s, (x) => x.pending?.kind === "declareAttackers");
+      s = act(s, "p1", {
+        type: "declareAttackers",
+        attackers: [{ id: idOf(s, "p1", "battlefield", "Bear Cub"), defender: "p2" }],
+      });
+      s = settle(s);
+      const warriors = s.battlefield.filter((id) => chars(s, id).name === "Warrior");
+      expect(warriors).toHaveLength(2);
+      for (const w of warriors) {
+        expect(s.objects[w]?.tapped).toBe(true);
+        expect(s.combat?.attackers.some((a) => a.id === w && a.defender === "p2")).toBe(true);
+        expect(chars(s, w).colors).toEqual(["R"]);
+        expect([chars(s, w).power, chars(s, w).toughness]).toEqual([1, 1]);
+      }
+      s = advanceUntil(s, (x) => x.turn.step === "main2");
+      expect(s.players.p2?.life).toBe(16);
+      expect(s.battlefield.filter((id) => chars(s, id).name === "Warrior")).toHaveLength(2);
+      s = advanceUntil(s, (x) => x.turn.active === "p2");
+      expect(s.battlefield.filter((id) => chars(s, id).name === "Warrior")).toHaveLength(0);
+      expect(idsOf(s, "p1", "battlefield", "Bear Cub")).toHaveLength(1);
+    });
+
+    it("sans attaque ce tour-ci, aucun Guerrier ; l'effet ne dure pas jusqu'au tour suivant", () => {
+      let s = scenario({ p1: { battlefield: ["Dalkovan Encampment", ...lands("Plains", 3), "Bear Cub"] } });
+      s = settle(activate(s, "p1", idOf(s, "p1", "battlefield", "Dalkovan Encampment"), "Guerriers"));
+      s = advanceUntil(s, (x) => x.turn.active === "p1" && x.turn.number === 5 && x.pending?.kind === "declareAttackers");
+      s = act(s, "p1", {
+        type: "declareAttackers",
+        attackers: [{ id: idOf(s, "p1", "battlefield", "Bear Cub"), defender: "p2" }],
+      });
+      s = settle(s);
+      expect(s.battlefield.filter((id) => chars(s, id).name === "Warrior")).toHaveLength(0);
+    });
+
+    it("603.7 : capacité retardée, indépendante du terrain ; détruit après l'activation, l'attaque crée quand même les Guerriers", () => {
+      let s = scenario({ p1: { battlefield: ["Dalkovan Encampment", ...lands("Plains", 3), "Bear Cub"] } });
+      const camp = idOf(s, "p1", "battlefield", "Dalkovan Encampment");
+      s = settle(activate(s, "p1", camp, "Guerriers"));
+      s = structuredClone(s);
+      destroy(s, camp);
+      s = settle(s);
+      expect(idsOf(s, "p1", "battlefield", "Dalkovan Encampment")).toHaveLength(0);
+      s = advanceUntil(s, (x) => x.pending?.kind === "declareAttackers");
+      s = act(s, "p1", {
+        type: "declareAttackers",
+        attackers: [{ id: idOf(s, "p1", "battlefield", "Bear Cub"), defender: "p2" }],
+      });
+      s = settle(s);
+      expect(s.battlefield.filter((id) => chars(s, id).name === "Warrior")).toHaveLength(2);
+    });
   });
 });
