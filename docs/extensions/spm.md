@@ -25,3 +25,10 @@ Les scripts sont dans `packages/cards/src/spm/` : `cards` (cartes du méta), `wh
 - **Moteur :** `onPrevent.counters` d'un remplacement de blessures : autant de marqueurs sur la source du remplacement, dans le remplacement même (Anti-Venom ; test dans `rulings.test.ts`).
 - **Reste pour plus tard :** Arachne, Psionic Weaver (type de carte choisi en arrivant, taxe pour tous les joueurs), Peter Parker // Amazing Spider-Man (Web-slinging accordé aux sorts légendaires de couleur), With Great Power . . . (redirection de blessures, permanents attachés à l'hôte).
 - **Tests :** 32 tests de règles (« lot A, blanc »).
+
+## Sous-lot A2 : cartes bleues ✅ (49 / 188)
+
+- **Cartes (19) :** Amazing Acrobatics, Beetle, Legacy Criminal, Doc Ock, Sinister Scientist, Doc Ock's Henchmen, Flying Octobot, Hide on the Ceiling, Impostor Syndrome, Lady Octopus, Inspired Inventor, Madame Web, Clairvoyant, Mysterio, Master of Illusion, Mysterio's Phantasm, Oscorp Research Team, Robotics Mastery, School Daze, Secret Identity, Spider-Byte, Web Warden, Spider-Man No More, Unstable Experiment, Whoosh!.
+- **Moteur :** rien de nouveau (« l'un ou les deux » : un troisième mode « les deux »).
+- **Reste pour plus tard :** Chameleon, Master of Disguise (copie en arrivant, sauf le nom), The Clone Saga (copie non légendaire du prochain sort de créature, nom choisi gardé par un emblème), Norman Osborn // Green Goblin (chaos pour toutes les cartes non-terrain du cimetière).
+- **Tests :** 26 tests de règles (« lot A, bleu »).

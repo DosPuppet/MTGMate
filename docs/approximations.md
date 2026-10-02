@@ -389,5 +389,7 @@ Dans l'ordre où elles ont été ajoutées, extension par extension.
   - `choix auto` Baron Helmut Zemo : les cartes noires exilées pour la vantardise sont choisies par le moteur (les plus riches en {B} d'abord, le moins de cartes possible) ;
   - `timing` Worlds Within Worlds : chaque joueur choisit et met ses créatures à tour de rôle (ordre APNAP), et non simultanément ;
   - `règle` The Ruinous Wrecking Crew : « jusqu'à X modes » est écrit en combinaisons de modes, chacune sous la condition X ≥ son nombre de modes.
+- **Marvel's Spider-Man (`docs/extensions/spm.md`) :**
+  - `règle` Mysterio, Master of Illusion : si Mysterio quitte le champ de bataille avant la résolution de sa capacité d'arrivée, les jetons créés ne sont pas exilés.
 - **Légalité Standard :** instantané des légalités Scryfall au moment de l'import (`legalities.standard` dans `data/<set>.json`). Après une rotation ou une annonce de bannissement, réimporter les sets (`npm run import-cards -- <set>`).
 - **Images des jetons :** celle du jeton Scryfall le plus proche (même nom, puis mêmes F/E et couleurs ; `data/tokens.json`, `npm run import-tokens`) ; un jeton de nom inconnu garde le cadre texte.
