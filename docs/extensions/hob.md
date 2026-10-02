@@ -25,3 +25,10 @@ Les scripts sont dans `packages/cards/src/hob/` : `cards` (cartes du méta), `wh
 - **Correctif du moteur :** le choix d'un type de créature propose aussi les types des jetons que créent les cartes de la partie (An Unexpected Party nomme les Nains que créent ses jetons, sans Nain non-jeton).
 - **Test de fumée :** chaque extension a désormais son fichier ; `smoke/others.test.ts` reste pour une extension ajoutée sans le sien (il n'échoue plus quand il n'a rien à tester).
 - **Tests :** 31 tests de règles (« lot A, blanc »).
+
+## Sous-lot A2 : cartes bleues ✅ (69 / 188)
+
+- **Cartes (25) :** Bilbo, Luckwearer, Burglar's Plot, Bilbo, Thief in the Night, Bilbo Baggins, Burglar, Take a Glance, Confusticate and Bebother, Elven Raft-Steerer, Elvenking's Harper, Enchanted River's Grasp, Fateful Discovery, Gandalf, Wandering Wizard, Great Gilded Boat, Lakeshore Apothecary, Lake-town Mariners, Gone Fishing, Long Lake Nuisance, The Lord of the Eagles, Mirkwood Meditator, Most Decrepit Old Bird, Speak Secrets, Old Fat Spider Can't See Me, Plunder the Trollshaws, Ravenhill Flock, Riddles in the Dark, Roll-Roll-Roll-Roll, Sound the Trumpets, Uncover the Moon-Letters, Uneasy Partings, Wizard's Staff.
+- **Moteur :** rien de nouveau.
+- **Reste pour plus tard :** Elrond, Moon-Reader (activer une capacité d'une créature), Master's Councillors (nombre de cimetières de N cartes ou plus), Thranduil's Decree (la carte exilée par le contresort, lançable ensuite).
+- **Tests :** 33 tests de règles (« lot A, bleu »).

@@ -416,5 +416,9 @@ Dans l'ordre où elles ont été ajoutées, extension par extension.
   - `règle` The Eagles Are Coming! : « une créature que vous possédez » se lit « que vous possédez et contrôlez ».
   - `règle` The Queen of Dale : « leur premier sort non-créature de chaque tour » est une condition revérifiée à la résolution (comme Plan for All Outcomes) ; un deuxième sort lancé en réponse fait perdre le recrutement.
   - `règle` Moment of Glory : « lancé depuis un cimetière » ne reconnaît que le flashback et les permissions qui exilent ensuite.
+  - `règle` Burglar's Plot : « deux permanents non-terrain ciblés qui partagent un type de carte » est un sort modal, un mode par type.
+  - `règle` Bilbo, Thief in the Night : la réduction vaut pour les sorts lancés depuis un cimetière ou l'exil, pas depuis le dessus de la bibliothèque ; un artefact lancé ainsi puis contrecarré serait exilé.
+  - `règle` Old Fat Spider Can't See Me : au chapitre II, la prévention est une capacité donnée à la créature, tant que la Saga reste.
+  - `règle` Plunder the Trollshaws : « lancé depuis un cimetière » ne reconnaît que le flashback et les permissions qui exilent ensuite.
 - **Légalité Standard :** instantané des légalités Scryfall au moment de l'import (`legalities.standard` dans `data/<set>.json`). Après une rotation ou une annonce de bannissement, réimporter les sets (`npm run import-cards -- <set>`).
 - **Images des jetons :** celle du jeton Scryfall le plus proche (même nom, puis mêmes F/E et couleurs ; `data/tokens.json`, `npm run import-tokens`) ; un jeton de nom inconnu garde le cadre texte.
