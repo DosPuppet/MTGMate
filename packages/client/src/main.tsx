@@ -5,7 +5,7 @@ import { App } from "./App";
 import { playSound, unlockAudio, useAudio } from "./audio/sfx";
 import { detectBlockedScryfall } from "./images";
 import { prefetchGameWorker } from "./session";
-import { useGame } from "./store";
+import { flushSave, useGame } from "./store";
 import { useTutorial } from "./tutorial/store";
 import "./styles.css";
 
@@ -60,6 +60,10 @@ document.addEventListener("keydown", (e) => {
 // Images : Scryfall bloqué par le réseau du joueur ? Relais par le serveur (mode auto, voir images.ts).
 void detectBlockedScryfall();
 
-// Jeu en ligne : reprise de la partie de cet onglet (rechargement de la page), lien d'invitation ?room=CODE.
-useGame.getState().resumeOnline();
-if (new URLSearchParams(location.search).has("room") && !useGame.getState().online) useGame.getState().openOnline();
+// Page rouverte : reprise de la partie en ligne, sinon de la partie contre l'IA sauvegardée (sauf lien d'invitation
+// ?room=CODE, qui ouvre le jeu en ligne ; la partie sauvegardée reprendra à la prochaine ouverture).
+const invited = new URLSearchParams(location.search).has("room");
+if (invited && !localStorage.getItem("mtgmate.online")) useGame.getState().openOnline();
+else useGame.getState().resumeAtStartup();
+// Fermeture de la page : la sauvegarde de la partie locale est écrite tout de suite.
+window.addEventListener("pagehide", flushSave);

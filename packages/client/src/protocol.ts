@@ -61,6 +61,17 @@ export type ToWorker =
       /** Niveau des IA adverses (moyen par défaut). */
       aiLevel?: AiLevel;
     }
+  /**
+   * Reprise d'une partie sauvegardée (page rouverte) : l'enregistrement est rejoué, puis la partie continue contre des IA
+   * du niveau indiqué.
+   */
+  | {
+      type: "resume";
+      record: GameRecord;
+      defs: Record<string, CardDef>;
+      aiLevel?: AiLevel;
+      fast?: boolean;
+    }
   /** Tutoriel : l'adversaire attend (explication à l'écran). */
   | { type: "pause"; paused: boolean }
   | { type: "decision"; decision: Decision }
@@ -72,4 +83,11 @@ export type FromWorker =
   | { type: "update"; view: GameView; events: GameEvent[]; faces: Record<string, CardFace> }
   | { type: "error"; message: string }
   /** Enregistrement demandé ; null si la partie n'est pas enregistrée (tutoriel, bac à sable). */
-  | { type: "record"; record: GameRecord | null };
+  | { type: "record"; record: GameRecord | null }
+  /**
+   * Sauvegarde de la partie (reprise à la réouverture de la page) : l'en-tête de l'enregistrement au départ, puis les
+   * décisions nouvelles et les points de contrôle.
+   */
+  | { type: "saved"; header?: GameRecord; decisions: GameRecord["decisions"]; checkpoints: [number, string][] }
+  /** Reprise impossible (la partie ne se rejoue plus à l'identique, par exemple après une mise à jour du moteur). */
+  | { type: "resumeFailed"; message: string };

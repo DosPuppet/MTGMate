@@ -22,6 +22,26 @@ function Toast() {
   );
 }
 
+/** Message important à valider (partie impossible à reprendre, partie en ligne perdue), par-dessus tous les écrans. */
+function Notice() {
+  const notice = useGame((s) => s.notice);
+  const dismiss = useGame((s) => s.dismissNotice);
+  if (!notice) return null;
+  return (
+    <div className="modal-backdrop">
+      <div className="modal notice" role="alertdialog" aria-label={notice.title}>
+        <h2>{notice.title}</h2>
+        <p>{notice.text}</p>
+        <div className="modal-actions">
+          <button type="button" className="btn primary" onClick={dismiss}>
+            OK
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function useShortcuts() {
   const action = useMainAction();
   const endTurn = useGame((s) => s.endTurn);
@@ -88,6 +108,7 @@ export function App() {
         <GameScreen />
       )}
       <Toast />
+      <Notice />
     </>
   );
 }

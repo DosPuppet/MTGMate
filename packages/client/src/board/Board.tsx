@@ -1042,6 +1042,7 @@ export function Board() {
   const view = useGame((s) => s.view);
   const choice = useGame((s) => s.boardTheme);
   const session = useGame((s) => s.session);
+  const resuming = useGame((s) => s.resuming);
   // « Au hasard » : une texture tirée à chaque partie (nouvelle session), puis gardée jusqu'à la fin de celle-ci.
   // biome-ignore lint/correctness/useExhaustiveDependencies: un nouveau tirage à chaque nouvelle session.
   const roll = useMemo(() => Math.random(), [session]);
@@ -1049,7 +1050,7 @@ export function Board() {
   if (!view)
     return (
       <div className="board loading" data-board={theme}>
-        Mélange des bibliothèques…
+        {resuming ? "Reprise de la partie…" : "Mélange des bibliothèques…"}
       </div>
     );
   const me = view.players[view.viewer] as PlayerView;

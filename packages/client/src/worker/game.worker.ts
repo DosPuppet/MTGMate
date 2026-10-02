@@ -11,8 +11,11 @@ import {
   createRecordedGame,
   createTokens,
   GameHost,
+  type GameRecord,
   type GameState,
+  RULES_VERSION,
   registerDef,
+  replayChecked,
   visibleFaces,
 } from "@mtgx/engine";
 import type { FromWorker, Sandbox, ToWorker } from "../protocol";
@@ -20,6 +23,31 @@ import { AI_BUDGET, buildScenario, OPPONENT } from "../scenario";
 
 const HUMAN = "p1";
 let host: GameHost | null = null;
+/** Décisions de l'enregistrement déjà envoyées à l'interface (sauvegarde de la partie). */
+let sent = 0;
+
+/** Envoie à l'interface les décisions enregistrées depuis le dernier envoi (`header` : au départ de la partie). */
+function postProgress(header?: GameRecord): void {
+  const rec = host?.record;
+  if (!rec || (!header && rec.decisions.length <= sent)) return;
+  post({
+    type: "saved",
+    ...(header ? { header: { ...structuredClone(header), decisions: [], checkpoints: [] } } : {}),
+    decisions: rec.decisions.slice(sent),
+    checkpoints: structuredClone(rec.checkpoints ?? []),
+  });
+  sent = rec.decisions.length;
+}
+
+/** IA adverses d'une partie (sièges p2, p3…), avec leur graine dérivée de celle de la partie. */
+function aiAgents(seed: number, opponents: number, level: Parameters<typeof aiAgent>[0] | undefined) {
+  return Object.fromEntries(
+    Array.from({ length: opponents }, (_, i) => [
+      `p${i + 2}`,
+      aiAgent(level ?? "medium", { seed: seed + i + 1, budget: AI_BUDGET, players: opponents + 1 }),
+    ]),
+  );
+}
 /** Définitions reçues avec le message « start » (par nom). */
 let defs: Record<string, CardDef> = {};
 
@@ -140,24 +168,58 @@ async function handle(msg: ToWorker): Promise<void> {
       // Bac à sable : l'état de départ est modifié à la main, la partie ne peut pas être rejouée (pas d'enregistrement).
       const sandboxed = !!msg.sandbox && import.meta.env.DEV;
       if (sandboxed && msg.sandbox) applySandbox(state, msg.sandbox);
+      sent = 0;
       host = new GameHost(
         state,
         {
-          agents: Object.fromEntries(
-            msg.aiDecks.map((_, i) => [
-              `p${i + 2}`,
-              aiAgent(msg.aiLevel ?? "medium", { seed: msg.seed + i + 1, budget: AI_BUDGET, players: msg.aiDecks.length + 1 }),
-            ]),
-          ),
+          agents: aiAgents(msg.seed, msg.aiDecks.length, msg.aiLevel),
           aiDelay: msg.fast && import.meta.env.DEV ? 0 : 900,
           sleep,
           record: sandboxed ? undefined : record,
           // Mêmes faces qu'en ligne : seulement les cartes connues du joueur (pas la decklist adverse).
           frames: true,
-          onUpdate: (_p, view, evts) =>
-            post({ type: "update", view, events: evts, faces: host ? visibleFaces(host.state, view, evts) : {} }),
+          onUpdate: (_p, view, evts) => {
+            post({ type: "update", view, events: evts, faces: host ? visibleFaces(host.state, view, evts) : {} });
+            postProgress();
+          },
         },
         events,
+      );
+      if (!sandboxed) postProgress(record);
+      await host.run();
+      return;
+    }
+    case "resume": {
+      defs = msg.defs;
+      paused = false;
+      const record = structuredClone(msg.record);
+      let replayed: ReturnType<typeof replayChecked>;
+      try {
+        replayed = replayChecked(record, card);
+      } catch (e) {
+        post({ type: "resumeFailed", message: e instanceof Error ? e.message : String(e) });
+        return;
+      }
+      if (replayed.divergence) {
+        const other = (record.rules ?? 0) !== RULES_VERSION ? " (le moteur a été mis à jour depuis)" : "";
+        post({ type: "resumeFailed", message: `la partie ne se rejoue plus à l'identique${other}` });
+        return;
+      }
+      sent = record.decisions.length;
+      host = new GameHost(
+        replayed.state,
+        {
+          agents: aiAgents(record.seed, record.players.length - 1, msg.aiLevel),
+          aiDelay: msg.fast && import.meta.env.DEV ? 0 : 900,
+          sleep,
+          record,
+          frames: true,
+          onUpdate: (_p, view, evts) => {
+            post({ type: "update", view, events: evts, faces: host ? visibleFaces(host.state, view, evts) : {} });
+            postProgress();
+          },
+        },
+        [],
       );
       await host.run();
       return;

@@ -149,7 +149,7 @@ Le serveur compresse lui-même le code de l'interface (brotli ou gzip) et le met
 
 - Le serveur n'écoute que sur `127.0.0.1` : il n'est joignable qu'à travers nginx.
 - Il fait autorité : decks vérifiés (légaux en Standard et jouables), chaque décision contrôlée par le moteur, aucune information cachée envoyée à l'adversaire.
-- Pas de comptes ni de données personnelles : un pseudo par partie, un jeton de reconnexion propre à l'onglet.
+- Pas de comptes ni de données personnelles : un pseudo par partie, un jeton de reconnexion gardé dans le navigateur (`localStorage`), pour reprendre la partie si la page est rouverte.
 - WebSocket accepté seulement depuis le site lui-même (même hôte) ou une origine de `MTGX_ORIGINS` : une page d'un autre site ne peut pas jouer à la place du joueur.
 - Plafonds par adresse IP (connexions simultanées, salons ouverts), d'après `X-Real-IP` transmis par nginx.
 - Une requête mal formée (URL mal encodée…) répond 400 ou 500 sans arrêter le serveur.

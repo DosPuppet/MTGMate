@@ -31,6 +31,7 @@ import { fastMode } from "./fast";
 import { describeEvents, type Lang, type LogLine } from "./i18n";
 import { boardPick, togglePick } from "./prompts/boardChoice";
 import type { FromWorker, Sandbox, ScenarioSpec } from "./protocol";
+import { clearSavedGame, loadSavedGame, SaveWriter } from "./savedGame";
 import { scenarioCards } from "./scenario";
 import { LocalSession, RemoteSession, ReplaySession, type Session } from "./session";
 
@@ -167,6 +168,10 @@ interface Store {
   faces: Record<string, CardFace>;
   log: LogLine[];
   toast: { text: string; id: number } | null;
+  /** Message important à valider (partie impossible à reprendre, partie en ligne perdue). */
+  notice: { title: string; text: string } | null;
+  /** Reprise d'une partie à l'ouverture de la page (locale ou en ligne), en attendant son premier état. */
+  resuming: boolean;
   settings: AutopilotSettings;
   lang: Lang;
   casting: Casting | null;
@@ -226,6 +231,8 @@ interface Store {
   joinRoom(code: string, name: string, deck: DeckEntries, sideboard?: DeckEntries): void;
   /** Reprend la partie en ligne de cet onglet (jeton de reconnexion), au chargement ou après une coupure. */
   resumeOnline(): void;
+  /** Ouverture de la page : reprend la partie en ligne de cette page, sinon la partie locale sauvegardée. */
+  resumeAtStartup(): void;
   leaveRoom(): void;
   rematch(): void;
   receiveOnline(msg: ServerMessage): void;
@@ -253,6 +260,10 @@ interface Store {
   replayPlay(on: boolean): void;
   decide(d: Decision): void;
   notify(text: string): void;
+  showNotice(title: string, text: string): void;
+  dismissNotice(): void;
+  /** Reprend la partie locale sauvegardée (page rouverte) ; `false` s'il n'y en a pas. */
+  resumeLocal(): boolean;
   /** Passer la priorité ; avec du mana flottant qui serait perdu, un premier appui avertit seulement. */
   passPriority(): void;
   /** Décision pour laquelle l'avertissement de mana flottant a déjà été donné. */
@@ -429,7 +440,7 @@ function playEffects(view: GameView, events: GameEvent[], faces: Record<string, 
 }
 
 // ---------------------------------------------------------------------------
-// Jeu en ligne : jeton de reconnexion (propre à l'onglet) et pseudo (retenu)
+// Jeu en ligne : jeton de reconnexion et pseudo (retenus : une page rouverte reprend sa partie)
 // ---------------------------------------------------------------------------
 
 const TOKEN_KEY = "mtgmate.online";
@@ -437,7 +448,7 @@ const NAME_KEY = "mtgmate.name";
 
 function loadToken(): string | null {
   try {
-    return sessionStorage.getItem(TOKEN_KEY);
+    return localStorage.getItem(TOKEN_KEY);
   } catch {
     return null;
   }
@@ -457,10 +468,25 @@ function downloadRecord(record: GameRecord): void {
 /** Lecture automatique du replay : une étape toutes les 700 ms. */
 let replayTimer: ReturnType<typeof setInterval> | null = null;
 
+/** Sauvegarde de la partie locale en cours (null : rien à sauvegarder : tutoriel, bac à sable, partie quittée). */
+let saver: SaveWriter | null = null;
+
+/** Arrête la sauvegarde et efface la partie sauvegardée (partie quittée ou remplacée). */
+function stopSaving(): void {
+  saver?.stop();
+  saver = null;
+  clearSavedGame();
+}
+
+/** Écrit tout de suite la sauvegarde de la partie locale (fermeture de la page). */
+export function flushSave(): void {
+  saver?.flush();
+}
+
 function saveToken(token: string | null): void {
   try {
-    if (token) sessionStorage.setItem(TOKEN_KEY, token);
-    else sessionStorage.removeItem(TOKEN_KEY);
+    if (token) localStorage.setItem(TOKEN_KEY, token);
+    else localStorage.removeItem(TOKEN_KEY);
   } catch {
     // stockage indisponible : pas de reconnexion automatique
   }
@@ -493,6 +519,29 @@ const EMPTY_ONLINE: OnlineState = {
   reconnecting: false,
 };
 
+/**
+ * La partie en ligne est définitivement perdue (salon fermé, partie terminée et supprimée, serveur injoignable) : message
+ * à valider, puis retour à l'accueil. `keepToken` : la partie existe encore, ouverte dans un autre onglet.
+ */
+function onlineLost(title: string, text: string, keepToken = false): void {
+  const store = useGame;
+  retries = 0;
+  if (!keepToken) saveToken(null);
+  store.getState().session?.close();
+  store.setState({
+    online: null,
+    session: null,
+    screen: "lobby",
+    view: null,
+    resuming: false,
+    casting: null,
+    hover: null,
+    peek: null,
+    drawerOpen: false,
+  });
+  store.getState().showNotice(title, text);
+}
+
 /** Délai entre deux tentatives de reconnexion, et nombre de tentatives (≈ délai de retour du serveur). */
 const RETRY_MS = 2000;
 const MAX_RETRIES = 30;
@@ -515,6 +564,11 @@ function connectRemote(keep?: OnlineState | null): RemoteSession {
       if (current !== session || !online || !loadToken()) return;
       store.setState({ online: { ...online, reconnecting: true } });
       if (retries++ < MAX_RETRIES) setTimeout(() => store.getState().resumeOnline(), RETRY_MS);
+      else
+        onlineLost(
+          "Connexion perdue",
+          "Le serveur ne répond plus : la partie en ligne ne peut pas être reprise. Retour à l'accueil.",
+        );
     },
   );
   store.setState({ session, online: keep ? { ...keep, error: null } : { ...EMPTY_ONLINE } });
@@ -779,6 +833,11 @@ export const useGame = create<Store>((set, get) => {
   ): void {
     get().session?.close();
     preloadSounds();
+    // Sauvegarde pour la reprise à la réouverture de la page (pas pour le bac à sable, qui n'est pas enregistré). Le
+    // match est noté tel qu'au début de la manche : celle-ci comptera en se terminant, après une reprise aussi.
+    stopSaving();
+    const match = get().localMatch;
+    saver = sandbox ? null : new SaveWriter(() => ({ aiLevel, match, log: get().log }));
     const session = new LocalSession((m) => get().receive(m));
     const settings = { ...get().settings, passUntilTurn: null };
     set({ screen: "game", session, view: null, log: [], casting: null, attackers: [], blocks: {}, selection: [], settings });
@@ -808,6 +867,8 @@ export const useGame = create<Store>((set, get) => {
     faces: {},
     log: [],
     toast: null,
+    notice: null,
+    resuming: false,
     floatWarned: null,
     settings: loadSettings(),
     lang: loadLang(),
@@ -881,6 +942,7 @@ export const useGame = create<Store>((set, get) => {
 
     localMatch: null,
     startScenario(scenario) {
+      stopSaving();
       get().session?.close();
       preloadSounds();
       const session = new LocalSession((m) => get().receive(m));
@@ -936,6 +998,14 @@ export const useGame = create<Store>((set, get) => {
       saveName(name);
     },
 
+    resumeAtStartup() {
+      if (loadToken()) {
+        set({ screen: "game", resuming: true });
+        return get().resumeOnline();
+      }
+      get().resumeLocal();
+    },
+
     resumeOnline() {
       const token = loadToken();
       if (!token) return;
@@ -971,6 +1041,7 @@ export const useGame = create<Store>((set, get) => {
         case "room": {
           const r = msg.room;
           saveToken(r.token);
+          if (get().resuming && r.status === "waiting") set({ resuming: false });
           const starting = r.status === "playing" && online.status !== "playing";
           set({
             online: {
@@ -1016,13 +1087,14 @@ export const useGame = create<Store>((set, get) => {
           return;
         case "error":
           if (msg.code === "rules") return get().receive({ type: "error", message: msg.message });
-          if (msg.code === "token") {
-            // La partie de cet onglet n'existe plus.
-            saveToken(null);
-            get().session?.close();
-            set({ online: null, session: null, ...(get().screen === "game" ? { screen: "lobby", view: null } : {}) });
-            return;
-          }
+          // La partie de cette page n'existe plus (terminée et supprimée, serveur redémarré sans pouvoir la reprendre).
+          if (msg.code === "token") return onlineLost("Partie en ligne terminée", `${msg.message} Retour à l'accueil.`);
+          // Reprise refusée : la partie est déjà ouverte dans un autre onglet ou un autre navigateur.
+          if (msg.code === "state" && !online.code)
+            return onlineLost("Partie ouverte ailleurs", `${msg.message} Retour à l'accueil.`, true);
+          // Salon fermé par le serveur pendant une partie ou une reprise.
+          if (msg.code === "closed" && (online.code || get().resuming))
+            return onlineLost("Salon fermé", `${msg.message} Retour à l'accueil.`);
           playSound("error");
           set({ online: { ...online, error: msg.message, status: online.code ? online.status : "connecting" } });
           if (!online.code || msg.code === "closed") {
@@ -1122,6 +1194,8 @@ export const useGame = create<Store>((set, get) => {
       replayTimer = null;
       if (get().replay) set({ replay: null });
       if (get().online) return get().leaveRoom();
+      // Partie quittée : plus rien à reprendre.
+      stopSaving();
       get().session?.close();
       set({
         screen: get().tutorialGame && get().screen === "game" ? "tutorial" : "lobby",
@@ -1136,6 +1210,19 @@ export const useGame = create<Store>((set, get) => {
     },
 
     receive(msg) {
+      if (msg.type === "saved") {
+        saver?.apply(msg);
+        return;
+      }
+      if (msg.type === "resumeFailed") {
+        stopSaving();
+        get().session?.close();
+        set({ session: null, screen: "lobby", view: null, resuming: false, localMatch: null });
+        return get().showNotice(
+          "Partie impossible à reprendre",
+          `La partie sauvegardée ne peut pas être reprise : ${msg.message}.`,
+        );
+      }
       if (msg.type === "record") {
         if (msg.record) downloadRecord(msg.record);
         else get().notify("Cette partie n'est pas enregistrée (tutoriel ou bac à sable).");
@@ -1145,6 +1232,7 @@ export const useGame = create<Store>((set, get) => {
         playSound("error");
         return get().notify(msg.message);
       }
+      if (get().resuming) set({ resuming: false });
       // Rejeu : les étapes s'affichent tout de suite (le visionneur a ses propres commandes).
       if (get().replay) return get().applyUpdate(msg);
       playback.push({ msg, session: get().session });
@@ -1225,6 +1313,48 @@ export const useGame = create<Store>((set, get) => {
         return get().notify("Mana inutilisé : il sera perdu à la fin de l'étape. Appuyez de nouveau pour passer.");
       }
       get().decide({ type: "pass" });
+    },
+
+    showNotice(title, text) {
+      playSound("error");
+      set({ notice: { title, text } });
+    },
+
+    dismissNotice() {
+      set({ notice: null });
+    },
+
+    resumeLocal() {
+      const saved = loadSavedGame();
+      if (!saved) return false;
+      get().session?.close();
+      preloadSounds();
+      saver = new SaveWriter(() => ({ aiLevel: saved.aiLevel, match: saved.match, log: get().log }));
+      saver.start(saved.record);
+      const session = new LocalSession((m) => get().receive(m));
+      const settings = { ...get().settings, passUntilTurn: null };
+      // Le journal sauvegardé reprend (identifiants négatifs : ils ne croisent pas ceux des lignes suivantes).
+      const log = (saved.log ?? []).map((l, i) => ({ ...l, id: -(i + 1) }));
+      set({
+        screen: "game",
+        resuming: true,
+        session,
+        online: null,
+        tutorialGame: false,
+        replay: null,
+        localMatch: saved.match,
+        view: null,
+        log: [...log, { id: -(log.length + 1), text: "Partie reprise.", kind: "info" }],
+        casting: null,
+        attackers: [],
+        blocks: {},
+        selection: [],
+        settings,
+      });
+      const decks = saved.record.players.map((p) => p.deck.map((name) => [1, name] as [number, string]));
+      session.send({ type: "resume", record: saved.record, defs: defsFor(decks), aiLevel: saved.aiLevel, fast: fastMode() });
+      session.send({ type: "settings", settings });
+      return true;
     },
 
     notify(text) {
