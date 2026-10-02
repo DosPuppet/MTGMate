@@ -243,11 +243,20 @@ export function createRecordedGame(opts: GameOptions): StepResult & { record: Ga
   return { ...result, record };
 }
 
-/** Ajoute une décision acceptée à l'enregistrement, avec un point de contrôle toutes les `CHECKPOINT_EVERY` décisions. */
-export function recordDecision(record: GameRecord, player: PlayerId, d: Decision, after: GameState): void {
+/**
+ * Ajoute une décision acceptée à l'enregistrement, avec un point de contrôle toutes les `every` décisions
+ * (`CHECKPOINT_EVERY` par défaut ; 1 pour la sauvegarde d'une partie locale, vérifiée décision par décision à la reprise).
+ */
+export function recordDecision(
+  record: GameRecord,
+  player: PlayerId,
+  d: Decision,
+  after: GameState,
+  every: number = CHECKPOINT_EVERY,
+): void {
   record.decisions.push([player, d]);
   const n = record.decisions.length;
-  if (n % CHECKPOINT_EVERY !== 0 && !after.over) return;
+  if (n % every !== 0 && !after.over) return;
   record.checkpoints = [...(record.checkpoints ?? []), [n, outcomeHash(after)]];
 }
 

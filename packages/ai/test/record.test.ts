@@ -86,6 +86,30 @@ describe("enregistrement et rejeu", () => {
     expect(r2.applied).toBe(30);
   }, 60_000);
 
+  it("sauvegarde locale (checkpointEvery: 1) : une empreinte par décision, l'écart est trouvé à la décision près", async () => {
+    const { state, events, record } = createRecordedGame({
+      seed: 99,
+      players: [
+        { id: "p1", name: "Alice", deck: buildDeck(deckById("bienvenue-bleu")) },
+        { id: "p2", name: "Bob", deck: buildDeck(deckById("bienvenue-noir")) },
+      ],
+    });
+    const host = new GameHost(
+      state,
+      { agents: { p1: randomAgent(3), p2: heuristicAgent() }, record, checkpointEvery: 1 },
+      events,
+    );
+    await host.run();
+    const saved = JSON.parse(JSON.stringify(record)) as GameRecord;
+    const n = saved.decisions.length;
+    expect(saved.checkpoints?.map(([i]) => i)).toEqual(Array.from({ length: n }, (_, i) => i + 1));
+    expect(replayChecked(saved, card).divergence).toBeNull();
+    const bad = { ...saved, checkpoints: saved.checkpoints?.map(([i, h]): [number, string] => [i, i === 40 ? "0" : h]) };
+    const r = replayChecked(bad, card);
+    expect(r.divergence).toMatchObject({ reason: "checkpoint", index: 39 });
+    expect(r.applied).toBe(39);
+  }, 60_000);
+
   it("l'empreinte ne dépend ni des identifiants, ni de la version du cache, ni du hasard", async () => {
     const { final } = await recorded();
     const other = structuredClone(final);

@@ -28,6 +28,17 @@ function get(port: number, path: string, encoding?: string): Promise<{ headers: 
 }
 
 describe("fichiers du client", () => {
+  it("politique de contenu (CSP) : scripts du site seulement, images de Scryfall, pas d'encadrement", async () => {
+    dir = mkdtempSync(join(tmpdir(), "mtgx-dist-"));
+    writeFileSync(join(dir, "index.html"), "<!doctype html><title>MTG Mate</title>");
+    srv = await startServer({ port: 0, host: "127.0.0.1", staticDir: dir });
+    const csp = String((await get(srv.port, "/")).headers["content-security-policy"]);
+    expect(csp).toContain("script-src 'self'");
+    expect(csp).toContain("img-src 'self' data: https://cards.scryfall.io");
+    expect(csp).toContain("frame-ancestors 'none'");
+    expect(csp).not.toContain("unsafe-eval");
+  });
+
   it("compressés (brotli, sinon gzip), en cache un an pour /assets/, jamais pour index.html", async () => {
     dir = mkdtempSync(join(tmpdir(), "mtgx-dist-"));
     mkdirSync(join(dir, "assets"));

@@ -13,7 +13,7 @@ import { brotliCompressSync, gzipSync, constants as zlibConstants } from "node:z
 import { RULES_VERSION } from "@mtgx/engine";
 import { WebSocket, WebSocketServer } from "ws";
 import { type ClientMessage, PROTOCOL_VERSION, type ServerMessage } from "./protocol";
-import { ClientError, DEFAULT_CONFIG, type Peer, type Room, type RoomConfig, RoomManager } from "./rooms";
+import { ClientError, DEFAULT_CONFIG, ipKey, type Peer, type Room, type RoomConfig, RoomManager } from "./rooms";
 import { cleanSettings, isDecision } from "./validate";
 
 export type { ClientMessage, Clock, RoomInfo, Seat, ServerMessage } from "./protocol";
@@ -80,8 +80,29 @@ export function originAllowed(req: IncomingMessage, allowed: readonly string[] =
   }
 }
 
+/**
+ * Politique de contenu de l'application : scripts, worker et données du site seulement ; styles en ligne (React) et
+ * polices de Google Fonts ; images du site, en `data:` (textures) et de Scryfall ; aucune page ne peut l'encadrer.
+ * HSTS est posé par nginx (le serveur lui-même ne parle que HTTP, en local).
+ */
+export const CSP = [
+  "default-src 'self'",
+  "script-src 'self'",
+  "worker-src 'self'",
+  "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
+  "font-src 'self' https://fonts.gstatic.com",
+  "img-src 'self' data: https://cards.scryfall.io",
+  "media-src 'self'",
+  "connect-src 'self'",
+  "object-src 'none'",
+  "base-uri 'self'",
+  "form-action 'self'",
+  "frame-ancestors 'none'",
+].join("; ");
+
 /** En-têtes de sécurité des fichiers servis (l'application et ses ressources). */
 const SECURITY_HEADERS: Record<string, string> = {
+  "Content-Security-Policy": CSP,
   "X-Content-Type-Options": "nosniff",
   "X-Frame-Options": "DENY",
   "Referrer-Policy": "no-referrer",
@@ -230,6 +251,34 @@ async function relayImage(
     .pipe(res);
 }
 
+/** Version du serveur : le commit, fixé à la compilation (`tools/build-server.ts`) ; « dev » sous tsx. */
+const BUILD = process.env.MTGX_BUILD ?? "dev";
+
+/**
+ * Santé du serveur. Une requête locale directe (sans en-tête de relais : pm2, `deploy/update.sh`, supervision) reçoit le
+ * détail en JSON (versions, mémoire, salons) ; une requête venue d'ailleurs (par nginx) ne reçoit que « ok ».
+ */
+function healthz(req: IncomingMessage, res: ServerResponse, rooms: RoomManager): void {
+  const local = LOOPBACK.has(req.socket.remoteAddress ?? "") && !req.headers["x-real-ip"] && !req.headers["x-forwarded-for"];
+  if (!local) {
+    res.writeHead(200, { "Content-Type": "text/plain; charset=utf-8", "Cache-Control": "no-store" }).end("ok\n");
+    return;
+  }
+  const m = process.memoryUsage();
+  const mb = (n: number) => Math.round(n / 1_048_576);
+  res.writeHead(200, { "Content-Type": "application/json", "Cache-Control": "no-store" }).end(
+    `${JSON.stringify({
+      ok: true,
+      build: BUILD,
+      protocol: PROTOCOL_VERSION,
+      rules: RULES_VERSION,
+      rooms: rooms.size,
+      memory: { rssMb: mb(m.rss), heapUsedMb: mb(m.heapUsed), heapTotalMb: mb(m.heapTotal) },
+      uptimeS: Math.round(process.uptime()),
+    })}\n`,
+  );
+}
+
 function parse(data: WebSocket.RawData): ClientMessage | null {
   try {
     const msg = JSON.parse(String(data)) as ClientMessage;
@@ -254,7 +303,7 @@ export function startServer(opts: ServerOptions = {}): Promise<RunningServer> {
   });
   const handle = (req: IncomingMessage, res: ServerResponse) => {
     if (req.url === "/healthz") {
-      res.writeHead(200, { "Content-Type": "text/plain; charset=utf-8" }).end(`ok ${rooms.size} salon(s)\n`);
+      healthz(req, res, rooms);
       return;
     }
     if (req.url?.startsWith(SCRY_PREFIX)) {
@@ -287,12 +336,14 @@ export function startServer(opts: ServerOptions = {}): Promise<RunningServer> {
 
   wss.on("connection", (ws, req) => {
     const ip = clientIp(req);
-    const count = (perIp.get(ip) ?? 0) + 1;
+    // Connexions comptées par adresse IPv4, ou par préfixe /64 en IPv6.
+    const key = ipKey(ip);
+    const count = (perIp.get(key) ?? 0) + 1;
     if (count > maxPerIp) {
       ws.close(1013, "Trop de connexions depuis cette adresse");
       return;
     }
-    perIp.set(ip, count);
+    perIp.set(key, count);
     alive.add(ws);
     ws.on("pong", () => alive.add(ws));
     // Seau à jetons : chaque décision coûte une copie de l'état ; un client ne doit pas monopoliser le serveur.
@@ -398,9 +449,9 @@ export function startServer(opts: ServerOptions = {}): Promise<RunningServer> {
     });
 
     ws.on("close", () => {
-      const left = (perIp.get(ip) ?? 1) - 1;
-      if (left > 0) perIp.set(ip, left);
-      else perIp.delete(ip);
+      const left = (perIp.get(key) ?? 1) - 1;
+      if (left > 0) perIp.set(key, left);
+      else perIp.delete(key);
       if (current && current.seat.peer === peer) current.room.disconnect(current.seat);
       current = null;
     });

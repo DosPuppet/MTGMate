@@ -1,11 +1,12 @@
 /** Sauvegarde des parties en ligne : un redémarrage du serveur ne coupe plus les parties (`RoomConfig.dataDir`). */
-import { existsSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { existsSync, mkdtempSync, readdirSync, readFileSync, rmSync, statSync, utimesSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { card } from "@mtgx/cards";
 import { isGameRecord, RULES_VERSION, replayGame } from "@mtgx/engine";
 import { afterEach, describe, expect, it } from "vitest";
 import type { RunningServer } from "../src/index";
+import { digest } from "../src/rooms";
 import { Client, duel, server } from "./helpers";
 
 const servers: RunningServer[] = [];
@@ -130,6 +131,61 @@ describe("parties sauvegardées", () => {
     clients.push(c);
     c.send({ type: "rejoin", token: tokens[0] as string });
     expect((await c.next("error", (m) => m.code === "token")).message).toMatch(/interrompue par une mise à jour du moteur/);
+    // L'interruption survit à un second redémarrage (interrupted.json, empreintes seulement).
+    await srv.close();
+    servers.splice(servers.indexOf(srv), 1);
+    expect(readFileSync(join(dataDir, "interrupted.json"), "utf8")).not.toContain(tokens[0] as string);
+    const again = await server({ dataDir });
+    servers.push(again);
+    const c2 = await Client.connect(again.port);
+    clients.push(c2);
+    c2.send({ type: "rejoin", token: tokens[1] as string });
+    expect((await c2.next("error", (m) => m.code === "token")).message).toMatch(/interrompue par une mise à jour du moteur/);
+  }, 30_000);
+
+  it("la sauvegarde ne contient que l'empreinte des jetons, et n'est lisible que par le serveur", async () => {
+    const dataDir = tempDir();
+    const { file, tokens } = await savedGame(dataDir);
+    const text = readFileSync(file, "utf8");
+    for (const t of tokens) {
+      expect(text).not.toContain(t);
+      expect(text).toContain(digest(t));
+    }
+    expect(statSync(file).mode & 0o777).toBe(0o600);
+  }, 30_000);
+
+  it("une ancienne sauvegarde (jetons en clair) reprend toujours ; les fichiers mis de côté de plus de sept jours disparaissent", async () => {
+    const dataDir = tempDir();
+    const { file, tokens } = await savedGame(dataDir);
+    const [head, ...lines] = readFileSync(file, "utf8").split("\n").filter(Boolean);
+    const old = JSON.parse(head as string);
+    old.seats = old.seats.map(({ tokenHash: _h, ...seat }: { tokenHash: string }, i: number) => ({ ...seat, token: tokens[i] }));
+    writeFileSync(file, `${[JSON.stringify(old), ...lines].join("\n")}\n`);
+    const stale = join(dataDir, "OLDOLD.jsonl.bad");
+    writeFileSync(stale, "x");
+    const week = (Date.now() - 8 * 24 * 3_600_000) / 1000;
+    utimesSync(stale, week, week);
+    writeFileSync(join(dataDir, "NEWNEW.jsonl.bad"), "x");
+    const srv = await server({ dataDir });
+    servers.push(srv);
+    expect(srv.rooms.size).toBe(1);
+    expect(srv.rooms.byToken(tokens[0])).not.toBeNull();
+    expect(existsSync(stale)).toBe(false);
+    expect(existsSync(join(dataDir, "NEWNEW.jsonl.bad"))).toBe(true);
+  }, 30_000);
+
+  it("au plus maxRooms salons repris, les plus récents ; les autres sont mis de côté", async () => {
+    const dataDir = tempDir();
+    const { file } = await savedGame(dataDir);
+    const copy = join(dataDir, "ZZZZZZ.jsonl");
+    writeFileSync(copy, readFileSync(file, "utf8").replace(/"code":"[A-Z0-9]+"/, '"code":"ZZZZZZ"'));
+    const old = (Date.now() - 3_600_000) / 1000;
+    utimesSync(file, old, old);
+    const srv = await server({ dataDir, maxRooms: 1 });
+    servers.push(srv);
+    expect(srv.rooms.size).toBe(1);
+    expect(existsSync(`${file}.bad`)).toBe(true);
+    expect(existsSync(copy)).toBe(true);
   }, 30_000);
 
   it("même version des règles mais empreinte différente : le fichier est mis de côté (moteur non déterministe)", async () => {

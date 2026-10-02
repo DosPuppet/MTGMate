@@ -27,6 +27,7 @@
     "mobile-smoke": "tsx tools/mobile-smoke.ts",
     "proxy-smoke": "tsx tools/proxy-smoke.ts",
     "server": "tsx packages/server/src/main.ts",
+    "build:server": "tsx tools/build-server.ts",
     "online-smoke": "tsx tools/online-smoke.ts",
     "tutorial-smoke": "tsx tools/tutorial-smoke.ts",
     "ai-smoke": "tsx tools/ai-smoke.ts",
@@ -36,6 +37,7 @@
   "devDependencies": {
     "@biomejs/biome": "^2.5.14",
     "@types/node": "^26.6.2",
+    "esbuild": "^0.28.2",
     "playwright": "^1.63.0",
     "tsx": "^4.23.15",
     "typescript": "^7.0.2",

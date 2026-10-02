@@ -61,6 +61,7 @@ Le dépôt n'a pas de dépôt distant. Deux possibilités :
 cd /opt/mtgmate
 npm ci
 npm run build          # construit l'interface dans packages/client/dist
+npm run build:server   # compile le serveur dans packages/server/dist/main.mjs (lancé par pm2, sans tsx)
 ```
 
 ## 5. Lancer avec pm2
@@ -69,14 +70,24 @@ npm run build          # construit l'interface dans packages/client/dist
 pm2 start deploy/ecosystem.config.cjs
 pm2 save
 pm2 startup            # une seule fois par machine : affiche une commande sudo à copier-coller
-curl http://127.0.0.1:8787/healthz     # → « ok 0 salon(s) »
+curl http://127.0.0.1:8787/healthz     # → {"ok":true,"build":"…","rules":…,"rooms":0,"memory":{…}}
 ```
 
 Commandes utiles : `pm2 status`, `pm2 logs mtgmate`, `pm2 restart mtgmate`, `pm2 stop mtgmate`.
 
+**Journaux :** pm2 ne les fait pas tourner de lui-même. Une fois par machine :
+
+```bash
+pm2 install pm2-logrotate
+pm2 set pm2-logrotate:max_size 10M
+pm2 set pm2-logrotate:retain 14
+```
+
+**`/healthz` :** une requête locale directe (`curl` sur le VPS, supervision) reçoit le détail en JSON : commit du serveur, version du protocole et des règles, salons, mémoire. À travers nginx, la réponse n'est que « ok ».
+
 Si le port 8787 est déjà pris sur le VPS, changez `PORT` dans `deploy/ecosystem.config.cjs` **et** dans le site nginx (étape 6), puis `pm2 restart mtgmate --update-env && pm2 save`.
 
-Réglages facultatifs (même fichier, section `env`) : `MTGX_DECISION_MS` (temps par décision, 60 000 ms), `MTGX_GRACE_MS` (délai de retour après une déconnexion, 60 000 ms), `MTGX_MAX_ROOMS` (salons ouverts au plus, 200), `MTGX_DATA_DIR` (sauvegarde des parties en cours, `data/rooms` par défaut, `off` pour la désactiver), `MTGX_MAX_ROOMS_PER_IP` (salons ouverts au plus par adresse de créateur, 4), `MTGX_ORIGINS` (origines admises pour le WebSocket en plus du site lui-même, séparées par des virgules ; inutile en temps normal).
+Réglages facultatifs (même fichier, section `env`) : `MTGX_DECISION_MS` (temps par décision, 60 000 ms), `MTGX_GRACE_MS` (délai de retour après une déconnexion, 60 000 ms), `MTGX_MAX_ROOMS` (salons ouverts au plus, 200), `MTGX_MAX_HEAP_MB` (tas JavaScript au-delà duquel aucun salon n'est plus créé, 384 Mo), `MTGX_DATA_DIR` (sauvegarde des parties en cours, `data/rooms` par défaut, `off` pour la désactiver), `MTGX_MAX_ROOMS_PER_IP` (salons ouverts au plus par adresse de créateur, 4), `MTGX_ORIGINS` (origines admises pour le WebSocket en plus du site lui-même, séparées par des virgules ; inutile en temps normal).
 
 ## 6. nginx et HTTPS
 
@@ -113,21 +124,45 @@ curl -sI https://mtg.mondomaine.fr/scry/small/front/8/d/8d8432a7-1c8a-4cfb-947c-
 
 ## 7. Vérifier
 
-- `https://mtg.mondomaine.fr/healthz` affiche « ok … » ;
+- `https://mtg.mondomaine.fr/healthz` affiche « ok » ;
 - ouvrez `https://mtg.mondomaine.fr` sur deux machines (ou un navigateur normal et une fenêtre privée), « Contre un joueur », créez une partie d'un côté et rejoignez-la de l'autre avec le lien.
 
 ## 8. Mettre à jour
 
 ```bash
 cd /opt/mtgmate
-./deploy/update.sh      # git pull, npm ci, build, pm2 restart, puis attend que /healthz réponde (30 s au plus)
+./deploy/update.sh
 ```
+
+Le script :
+1. sauvegarde les parties en cours dans `data/backups/rooms-<date>-<commit>.tgz` (les dix dernières sont gardées) ;
+2. met à jour le code (`git pull`), les dépendances, l'interface et le serveur compilé ;
+3. rejoue une copie des parties en cours avec le nouveau moteur (`tools/rooms-check.ts`) et dit combien seront interrompues : une mise à jour qui change les règles du moteur interrompt les parties dont les empreintes ne concordent plus. Pour la reporter, arrêtez-vous là (Ctrl+C) et relancez-la quand aucune partie n'est en cours (`/healthz`, `rooms`) ;
+4. redémarre le serveur et attend que `/healthz` réponde (30 s au plus).
+
+### Revenir en arrière
+
+Si la nouvelle version pose problème :
+
+```bash
+cd /opt/mtgmate
+git log --oneline -5                       # le commit précédent
+git checkout <commit précédent>
+npm ci && npm run build && npm run build:server
+pm2 stop mtgmate
+rm -rf data/rooms && tar -xzf data/backups/rooms-<date>-<commit>.tgz -C data   # parties d'avant la mise à jour
+pm2 start mtgmate && pm2 save
+```
+
+Restaurer la sauvegarde n'est utile que si les parties ont été interrompues par la nouvelle version : celles jouées depuis sont perdues. Revenez ensuite sur la branche (`git checkout master`) pour la mise à jour suivante.
 
 **Onglets restés ouverts :** le client envoie sa version (protocole et règles) en créant, rejoignant ou reprenant un salon. Après une mise à jour, un onglet de l'ancienne version reçoit « Une nouvelle version de MTG Mate est disponible » et recharge la page ; le jeton de reconnexion est gardé, la partie reprend avec la nouvelle version.
 
 **Les parties en cours survivent au redémarrage** : chaque salon est sauvegardé dans `data/rooms/` (un fichier par salon : les sièges, puis une décision par ligne) et repris au démarrage, en rejouant ses décisions. Les joueurs se reconnectent seuls (le navigateur réessaie pendant une minute) et ont le délai de retour habituel (`MTGX_GRACE_MS`).
 
-Chaque décision sauvegardée porte une empreinte de l'état obtenu, vérifiée à la reprise. Une mise à jour qui change le comportement du moteur fait avancer sa version des règles (`RULES_VERSION`) : une partie d'une autre version ne reprend que si toutes ses empreintes concordent. Sinon, elle est interrompue : le fichier devient `.rules<N>`, et le joueur qui revient lit « Partie interrompue par une mise à jour du moteur ». Une empreinte différente à version égale (moteur non déterministe) met le fichier de côté (`.bad`).
+Chaque décision sauvegardée porte une empreinte de l'état obtenu, vérifiée à la reprise. Une mise à jour qui change le comportement du moteur fait avancer sa version des règles (`RULES_VERSION`) : une partie d'une autre version ne reprend que si toutes ses empreintes concordent. Sinon, elle est interrompue : le fichier devient `.rules<N>`, et le joueur qui revient lit « Partie interrompue par une mise à jour du moteur » (même après un second redémarrage : `data/rooms/interrupted.json`). Une empreinte différente à version égale (moteur non déterministe) met le fichier de côté (`.bad`). Les fichiers mis de côté sont effacés après sept jours.
+
+Au démarrage, le serveur ne reprend au plus que `MTGX_MAX_ROOMS` salons (les plus récents) : un serveur redémarré faute de mémoire ne doit pas reprendre plus qu'il ne peut tenir.
 
 ## Compression et cache
 
@@ -141,7 +176,7 @@ Le serveur compresse lui-même le code de l'interface (brotli ou gzip) et le met
 | La page s'affiche mais « Contre un joueur » ne se connecte jamais | en-têtes `Upgrade` / `Connection` absents dans `location /ws` |
 | Déconnexions régulières après environ une minute | `proxy_read_timeout` trop court dans `location /ws` |
 | « Trop de connexions depuis cette adresse » | plus de 8 onglets ouverts depuis la même IP |
-| « Serveur complet, réessayez plus tard » | limite `MTGX_MAX_ROOMS` atteinte |
+| « Serveur complet, réessayez plus tard » | limite `MTGX_MAX_ROOMS` atteinte, ou tas au-delà de `MTGX_MAX_HEAP_MB` (`/healthz` en local) |
 | « Trop de salons ouverts depuis cette adresse » | limite `MTGX_MAX_ROOMS_PER_IP` ; si tous les joueurs semblent avoir la même adresse, vérifier `X-Real-IP` dans le site nginx |
 | Jeu en ligne impossible (WebSocket refusé) | page servie depuis une autre adresse que le serveur : ajouter cette origine à `MTGX_ORIGINS` |
 | Cartes sans images chez un joueur, « Images par le serveur MTG Mate » cochée | le VPS ne joint pas `cards.scryfall.io` (`curl -I https://cards.scryfall.io` depuis le VPS), ou `location /scry/` absent |
@@ -151,8 +186,9 @@ Le serveur compresse lui-même le code de l'interface (brotli ou gzip) et le met
 
 - Le serveur n'écoute que sur `127.0.0.1` : il n'est joignable qu'à travers nginx.
 - Il fait autorité : decks vérifiés (légaux en Standard et jouables), chaque décision contrôlée par le moteur, aucune information cachée envoyée à l'adversaire.
-- Pas de comptes ni de données personnelles : un pseudo par partie, un jeton de reconnexion gardé dans le navigateur (`localStorage`), pour reprendre la partie si la page est rouverte.
+- Pas de comptes ni de données personnelles : un pseudo par partie, un jeton de reconnexion gardé dans le navigateur (`localStorage`), pour reprendre la partie si la page est rouverte. Sur le disque, seule son empreinte (SHA-256) est écrite, comme celle de l'adresse du créateur d'un salon ; les fichiers de `data/rooms` ne sont lisibles que par le compte du serveur (600).
+- Politique de contenu (CSP) : scripts et worker du site seulement, images du site et de Scryfall, styles de Google Fonts, aucun encadrement par une autre page.
 - WebSocket accepté seulement depuis le site lui-même (même hôte) ou une origine de `MTGX_ORIGINS` : une page d'un autre site ne peut pas jouer à la place du joueur.
-- Plafonds par adresse IP (connexions simultanées, salons ouverts), d'après `X-Real-IP` transmis par nginx.
+- Plafonds par adresse IP (connexions simultanées, salons ouverts, reprises comprises), d'après `X-Real-IP` transmis par nginx ; en IPv6, par préfixe /64 (un abonné en reçoit souvent un entier).
 - Une requête mal formée (URL mal encodée…) répond 400 ou 500 sans arrêter le serveur.
 - Relais `/scry/` : liste blanche des chemins d'images de cartes, sans la chaîne de requête.

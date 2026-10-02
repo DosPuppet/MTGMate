@@ -31,6 +31,8 @@ export interface HostOptions {
   gate?: () => Promise<void> | null;
   /** Enregistrement de la partie (`createRecordedGame`) : chaque décision appliquée y est ajoutée. */
   record?: GameRecord;
+  /** Écart entre deux points de contrôle de l'enregistrement (`CHECKPOINT_EVERY` par défaut). */
+  checkpointEvery?: number;
   /** Appelé après chaque décision enregistrée (serveur : écriture sur disque). */
   onRecord?: (player: PlayerId, d: Decision, after: GameState) => void;
   /**
@@ -103,7 +105,7 @@ export class GameHost {
     // Mode « étapes » : une résolution est envoyée tout de suite, avant les décisions automatiques suivantes.
     if (this.opts.frames && events.some((e) => FRAME_EVENTS.has(e.type))) this.flush(true);
     // Seules les décisions acceptées sont enregistrées : le rejeu redonne exactement cet état.
-    if (this.opts.record) recordDecision(this.opts.record, player, d, state);
+    if (this.opts.record) recordDecision(this.opts.record, player, d, state, this.opts.checkpointEvery);
     this.opts.onRecord?.(player, d, state);
   }
 

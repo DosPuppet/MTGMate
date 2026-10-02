@@ -45,6 +45,14 @@ Plan établi le 02/10/2026 (branche `dev`) : il sert de feuille de route aux pro
   - **index :** statiques de joueur rangées par clé et remplacements d'événement par sorte, construits avec l'index des capacités ; sources des déclencheurs (`liveSources`) mises en cache ;
   - **gain** (deux passes alternées, même nombre de décisions) : aléatoire +2 à +3 %, IA heuristique +4 % (2 joueurs) et +7 % (4 joueurs), IA élevée +11 % ;
   - **`verify --full`** vert, sauf la cible absolue du bench (non atteinte sous WSL, écartée par le plan).
+- **03/10/2026 : C16 fait** (sans changement de règles) :
+  - **mémoire mesurée** (`tools/load-test.ts`) : un salon de partie en cours occupe 0,2 à 0,3 Mo de tas ; au repos, le serveur compilé occupe environ 210 Mo de RSS (40 Mo de tas, contre 73 Mo sous `tsx`) ; sous une charge intense, le RSS dépasse 500 Mo par la mémoire que V8 garde, d'où des redémarrages en boucle possibles avec la limite pm2 de 400 Mo. Correctifs : `--max-semi-space-size=8 --max-old-space-size=512`, `max_memory_restart` à 768 Mo, et refus de créer un salon au-delà de `maxHeapMb` (384 Mo de tas) ; reprise plafonnée à `maxRooms` salons, les plus récents ;
+  - **serveur compilé** (`npm run build:server`, esbuild, un fichier avec moteur, cartes et ws ; commit affiché par `/healthz`) ; esbuild déclaré en dépendance de développement ; `npm ci --omit=dev` non retenu (le VPS construit lui-même client et serveur), sans effet à l'exécution puisque le serveur compilé n'utilise plus `node_modules` ;
+  - **sécurité :** jetons de reconnexion et adresses des créateurs écrits en empreintes SHA-256, fichiers en 600 ; CSP (scripts et worker du site, images de Scryfall, polices de Google, aucun encadrement) ; HSTS déjà posé par nginx ; plafonds par préfixe /64 en IPv6 (`ipKey`) ; `/healthz` détaillé (commit, protocole, règles, salons, mémoire) pour une requête locale directe seulement ;
+  - **reprise :** jetons interrompus gardés dans `interrupted.json` ; fichiers `.bad` et `.rules<N>` effacés après sept jours ; salons repris comptés dans le plafond par adresse ; `tools/rooms-check.ts` rejoue une copie de `data/rooms` avec le nouveau moteur ;
+  - **exploitation :** `deploy/update.sh` sauvegarde `data/rooms` (dix dernières archives), compile le serveur, lance `rooms-check` ; retour arrière et rotation des journaux (`pm2-logrotate`) dans `docs/deploiement.md` ;
+  - **reprise locale :** une empreinte par décision (`checkpointEvery: 1`, 0,01 ms chacune) ; une carte inconnue donne « Partie impossible à reprendre » au lieu d'un blocage (vérifié dans le navigateur) ; `online-smoke` signale aussi les violations de CSP ;
+  - **tests :** 9 de plus (serveur : jetons hachés et mode 600, interruption persistée, anciennes sauvegardes, nettoyage, plafond de reprise, garde mémoire, `/healthz`, `ipKey`, CSP ; rejeu à la décision près) ; `online-smoke` contre le serveur compilé : vert (la vérification de la corde échoue parfois selon le moment de l'attente, ancienne fragilité) ; `verify --set META --ui` vert.
 
 ## Décisions et ordre
 
@@ -76,7 +84,7 @@ Plan établi le 02/10/2026 (branche `dev`) : il sert de feuille de route aux pro
 | 14 | C13 : justesse des cartes | § 4.5 | C2 | L, continu | ✅ en partie (continu) |
 | 15 | C14 : dette ciblée | § 5.1, § 5.7 | C1 | S/M | ✅ |
 | 16 | C15 : performances | § 5.8 | C10, C11 | M | ✅ |
-| 17 | C16 : serveur et exploitation | § 7 | C3 | M | |
+| 17 | C16 : serveur et exploitation | § 7 | C3 | M | ✅ |
 | 18 | C17 : IA | § 8 | C8, C9 | M | |
 | 19 | C18 : interface | § 9 | C7 | M/L | |
 | 20 | C19 : données | § 7 | — | S | |

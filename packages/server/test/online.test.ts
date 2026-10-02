@@ -1,8 +1,9 @@
 import { CARDS, DECKS } from "@mtgx/cards";
+import { RULES_VERSION } from "@mtgx/engine";
 import { afterEach, describe, expect, it } from "vitest";
 import { WebSocket } from "ws";
 import { type RunningServer, startServer } from "../src/index";
-import { checkDeck } from "../src/rooms";
+import { checkDeck, ipKey } from "../src/rooms";
 import { Client, duel, GREEN, server, VERSION } from "./helpers";
 
 let srv: RunningServer | null = null;
@@ -207,12 +208,24 @@ describe("minuteur et déconnexions", () => {
 });
 
 describe("exposition à Internet", () => {
-  it("/healthz répond avec le nombre de salons", async () => {
+  it("/healthz : détail en JSON pour une requête locale directe, « ok » seulement à travers nginx", async () => {
     const port = await start();
     await pair(port, false);
     const res = await fetch(`http://127.0.0.1:${port}/healthz`);
     expect(res.status).toBe(200);
-    expect(await res.text()).toMatch(/^ok 1 salon/);
+    const body = (await res.json()) as { ok: boolean; rooms: number; rules: number; memory: { heapUsedMb: number } };
+    expect(body).toMatchObject({ ok: true, rooms: 1, rules: RULES_VERSION });
+    expect(body.memory.heapUsedMb).toBeGreaterThan(0);
+    const proxied = await fetch(`http://127.0.0.1:${port}/healthz`, { headers: { "X-Real-IP": "203.0.113.9" } });
+    expect(await proxied.text()).toBe("ok\n");
+  });
+
+  it("clé d'adresse des plafonds : IPv4, ou préfixe /64 en IPv6", () => {
+    expect(ipKey("203.0.113.9")).toBe("203.0.113.9");
+    expect(ipKey("::ffff:203.0.113.9")).toBe("203.0.113.9");
+    expect(ipKey("2001:db8:1:2:aaaa::1")).toBe("2001:db8:1:2::/64");
+    expect(ipKey("2001:0db8:0001:0002:bbbb:cccc:dddd:eeee")).toBe("2001:db8:1:2::/64");
+    expect(ipKey("2001:db8::1")).toBe("2001:db8:0:0::/64");
   });
 
   it("refuse de nouveaux salons au-delà de la limite", async () => {
@@ -224,6 +237,14 @@ describe("exposition à Internet", () => {
     await a.next("room");
     b.send({ type: "create", name: "B", deck: GREEN });
     expect((await b.next("error")).code).toBe("busy");
+  });
+
+  it("refuse de nouveaux salons quand le tas dépasse maxHeapMb (avant que pm2 ne redémarre le serveur)", async () => {
+    const port = await start({ maxHeapMb: 1 });
+    const a = await Client.connect(port);
+    clients.push(a);
+    a.send({ type: "create", name: "A", deck: GREEN });
+    expect((await a.next("error")).code).toBe("busy");
   });
 
   it("limite les connexions simultanées par adresse (nginx : X-Real-IP, sinon la dernière de X-Forwarded-For)", async () => {

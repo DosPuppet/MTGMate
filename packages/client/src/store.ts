@@ -1377,6 +1377,18 @@ export const useGame = create<Store>((set, get) => {
     resumeLocal() {
       const saved = loadSavedGame();
       if (!saved) return false;
+      // Cartes de la partie : une carte retirée ou renommée depuis (mise à jour) rend la reprise impossible, sans bloquer.
+      const decks = saved.record.players.map((p) => p.deck.map((name) => [1, name] as [number, string]));
+      let defs: Record<string, CardDef>;
+      try {
+        defs = defsFor(decks);
+      } catch (e) {
+        get().receive({
+          type: "resumeFailed",
+          message: `une de ses cartes est inconnue de cette version (${e instanceof Error ? e.message : String(e)})`,
+        });
+        return false;
+      }
       get().session?.close();
       preloadSounds();
       saver = new SaveWriter(() => ({ aiLevel: saved.aiLevel, match: saved.match, log: get().log }));
@@ -1401,8 +1413,7 @@ export const useGame = create<Store>((set, get) => {
         selection: [],
         settings,
       });
-      const decks = saved.record.players.map((p) => p.deck.map((name) => [1, name] as [number, string]));
-      session.send({ type: "resume", record: saved.record, defs: defsFor(decks), aiLevel: saved.aiLevel, fast: fastMode() });
+      session.send({ type: "resume", record: saved.record, defs, aiLevel: saved.aiLevel, fast: fastMode() });
       session.send({ type: "settings", settings });
       return true;
     },

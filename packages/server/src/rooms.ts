@@ -2,8 +2,18 @@
  * Salons de duel : deux sièges, une partie (GameHost sans IA), minuteur par décision,
  * déconnexions avec délai de retour, revanche. Le serveur fait autorité sur tout.
  */
-import { randomBytes, randomInt, randomUUID } from "node:crypto";
-import { appendFileSync, existsSync, mkdirSync, readdirSync, readFileSync, renameSync, rmSync, writeFileSync } from "node:fs";
+import { createHash, randomBytes, randomInt, randomUUID } from "node:crypto";
+import {
+  appendFileSync,
+  existsSync,
+  mkdirSync,
+  readdirSync,
+  readFileSync,
+  renameSync,
+  rmSync,
+  statSync,
+  writeFileSync,
+} from "node:fs";
 import { join } from "node:path";
 import { buildDeck, CARDS, card, type DeckEntries, sideboardSwapError, validateDeck } from "@mtgx/cards";
 import {
@@ -52,6 +62,11 @@ export interface RoomConfig {
    * parties en cours y sont reprises : un redémarrage du serveur ne les coupe plus. Absent : parties en mémoire seulement.
    */
   dataDir?: string;
+  /**
+   * Tas JavaScript (Mo) au-delà duquel aucun salon n'est plus créé : le serveur refuse avant que pm2 ne le redémarre
+   * (`max_memory_restart`). Un salon de partie en cours occupe de 0,2 à 0,3 Mo de tas (`tools/load-test.ts`).
+   */
+  maxHeapMb?: number;
 }
 
 export const DEFAULT_CONFIG: RoomConfig = {
@@ -63,7 +78,34 @@ export const DEFAULT_CONFIG: RoomConfig = {
   waitingMs: 30 * 60_000,
   maxRooms: 200,
   maxRoomsPerIp: 4,
+  maxHeapMb: 384,
 };
+
+/** Empreinte d'un secret (jeton de reconnexion, adresse) : seule elle est écrite sur le disque. */
+export const digest = (x: string): string => createHash("sha256").update(x).digest("hex");
+
+/**
+ * Clé d'une adresse pour les plafonds : l'adresse IPv4, ou le préfixe /64 d'une adresse IPv6 (un abonné en reçoit
+ * souvent un /64 entier, et changer d'adresse ne doit pas contourner les plafonds).
+ */
+export function ipKey(ip: string): string {
+  const v4 = /^(?:::ffff:)?(\d+\.\d+\.\d+\.\d+)$/i.exec(ip);
+  if (v4) return v4[1] as string;
+  if (!ip.includes(":")) return ip;
+  const [head = "", tail = ""] = ip.toLowerCase().split("%")[0]?.split("::") ?? [];
+  const h = head ? head.split(":") : [];
+  const t = tail ? tail.split(":") : [];
+  const full = ip.includes("::") ? [...h, ...Array(Math.max(0, 8 - h.length - t.length)).fill("0"), ...t] : h;
+  return `${full
+    .slice(0, 4)
+    .map((x) => x.replace(/^0+(?=.)/, ""))
+    .join(":")}::/64`;
+}
+
+/** Fichiers mis de côté (`.bad`, `.rules<N>`) et jetons interrompus gardés au plus ce temps. */
+const KEEP_ASIDE_MS = 7 * 24 * 3_600_000;
+/** Fichier des jetons interrompus par une mise à jour des règles (empreintes, date). */
+const INTERRUPTED_FILE = "interrupted.json";
 
 /** Erreur destinée au client (message en français). */
 export class ClientError extends Error {
@@ -91,8 +133,12 @@ interface SavedRoom {
     deck: DeckEntries;
     side?: DeckEntries;
     original?: { main: DeckEntries; sideboard: DeckEntries };
-    token: string;
+    /** Empreinte du jeton de reconnexion (`digest`) ; anciennes sauvegardes : le jeton lui-même. */
+    tokenHash?: string;
+    token?: string;
   }[];
+  /** Empreinte de la clé d'adresse du créateur (plafond par adresse, compté aussi après une reprise). */
+  creator?: string;
   record: GameRecord;
   /** Match au début de cette manche (victoires des manches précédentes). */
   match?: MatchInfo;
@@ -108,7 +154,9 @@ interface SeatState {
   original: { main: DeckEntries; sideboard: DeckEntries };
   /** Entre deux manches : réserve validée, prêt pour la suivante. */
   ready: boolean;
+  /** Jeton de reconnexion : connu en mémoire, vide après une reprise tant que le joueur n'est pas revenu. */
   token: string;
+  tokenHash: string;
   peer: Peer | null;
   timeouts: number;
   rematch: boolean;
@@ -209,8 +257,15 @@ export class Room {
     this.waitingTimer.unref?.();
   }
 
+  /** Empreinte de la clé d'adresse du créateur (plafond par adresse). */
+  creator: string | undefined;
+
   seatOf(token: string): SeatState | undefined {
-    return this.seats.find((s) => s.token === token);
+    const h = digest(token);
+    const seat = this.seats.find((s) => s.tokenHash === h);
+    // Après une reprise, le jeton n'est connu que par son empreinte : celui présenté est le bon.
+    if (seat) seat.token = token;
+    return seat;
   }
 
   addPlayer(name: string, deck: DeckEntries, peer: Peer, side: DeckEntries = []): SeatState {
@@ -222,13 +277,16 @@ export class Room {
       side,
       original: { main: deck, sideboard: side },
       ready: false,
-      token: randomUUID(),
+      token: "",
+      tokenHash: "",
       peer,
       timeouts: 0,
       rematch: false,
       graceDeadline: null,
       graceTimer: null,
     };
+    seat.token = randomUUID();
+    seat.tokenHash = digest(seat.token);
     this.seats.push(seat);
     this.cancelCleanup();
     this.broadcastRoom();
@@ -308,7 +366,7 @@ export class Room {
     const file = this.file;
     if (!file || !this.config.dataDir) return;
     try {
-      mkdirSync(this.config.dataDir, { recursive: true });
+      mkdirSync(this.config.dataDir, { recursive: true, mode: 0o700 });
       const saved: SavedRoom = {
         code: this.code,
         seats: this.seats.map((s) => ({
@@ -317,12 +375,14 @@ export class Room {
           deck: s.deck,
           side: s.side,
           original: s.original,
-          token: s.token,
+          tokenHash: s.tokenHash,
         })),
+        ...(this.creator ? { creator: this.creator } : {}),
         record: { ...record, decisions: [], checkpoints: [] },
         match: this.match,
       };
-      writeFileSync(file, `${JSON.stringify(saved)}\n`);
+      // Lisible par le seul compte du serveur : la sauvegarde révèle les decks.
+      writeFileSync(file, `${JSON.stringify(saved)}\n`, { mode: 0o600 });
     } catch (e) {
       console.error(`Salon ${this.code} : sauvegarde impossible`, e);
     }
@@ -360,9 +420,12 @@ export class Room {
       throw new Error(`rejeu différent de la partie jouée (${divergence.message}) : moteur non déterministe ?`);
     }
     const room = new Room(saved.code, config, onClose);
-    for (const s of saved.seats) {
+    room.creator = saved.creator;
+    for (const { token, tokenHash, ...s } of saved.seats) {
       room.seats.push({
         ...s,
+        token: "",
+        tokenHash: tokenHash ?? digest(token ?? ""),
         side: s.side ?? [],
         original: s.original ?? { main: s.deck, sideboard: s.side ?? [] },
         ready: false,
@@ -684,19 +747,59 @@ export class Room {
 
 export class RoomManager {
   private readonly rooms = new Map<string, Room>();
-  /** Jetons des joueurs dont la partie a été interrompue par une mise à jour des règles (au démarrage). */
-  private readonly interrupted = new Set<string>();
-  /** Adresse IP du créateur de chaque salon ouvert (plafond `maxRoomsPerIp`). */
-  private readonly createdBy = new Map<string, string>();
+  /**
+   * Empreintes des jetons des joueurs dont la partie a été interrompue par une mise à jour des règles, avec leur date :
+   * gardées dans `interrupted.json` pour qu'un joueur l'apprenne même après un second redémarrage.
+   */
+  private readonly interrupted = new Map<string, number>();
 
   constructor(private readonly config: RoomConfig = DEFAULT_CONFIG) {
     if (config.dataDir) this.restore(config.dataDir);
   }
 
-  /** Reprend les parties sauvegardées ; un fichier illisible est mis de côté (`.bad`) sans bloquer le démarrage. */
+  /** Salons ouverts par cette adresse (empreinte de sa clé), reprises comprises. */
+  private openedBy(creator: string): number {
+    let n = 0;
+    for (const r of this.rooms.values()) if (r.creator === creator) n++;
+    return n;
+  }
+
+  private saveInterrupted(dir: string): void {
+    try {
+      writeFileSync(join(dir, INTERRUPTED_FILE), JSON.stringify(Object.fromEntries(this.interrupted)), { mode: 0o600 });
+    } catch (e) {
+      console.error("Jetons interrompus : sauvegarde impossible", e);
+    }
+  }
+
+  /**
+   * Reprend les parties sauvegardées ; un fichier illisible est mis de côté (`.bad`) sans bloquer le démarrage. Les
+   * fichiers mis de côté et les jetons interrompus de plus de sept jours disparaissent. Au plus `maxRooms` salons, les plus
+   * récents : un serveur redémarré pour manque de mémoire ne doit pas reprendre plus qu'il ne peut tenir.
+   */
   private restore(dir: string): void {
     if (!existsSync(dir)) return;
-    for (const name of readdirSync(dir).filter((f) => f.endsWith(".jsonl"))) {
+    const now = Date.now();
+    try {
+      const raw = JSON.parse(readFileSync(join(dir, INTERRUPTED_FILE), "utf8")) as Record<string, number>;
+      for (const [h, at] of Object.entries(raw))
+        if (typeof at === "number" && now - at < KEEP_ASIDE_MS) this.interrupted.set(h, at);
+    } catch {
+      // Pas encore de fichier (ou illisible) : aucun jeton interrompu connu.
+    }
+    for (const name of readdirSync(dir).filter((f) => /\.jsonl\.(?:bad|rules\d+)$/.test(f))) {
+      const file = join(dir, name);
+      if (now - statSync(file).mtimeMs > KEEP_ASIDE_MS) rmSync(file, { force: true });
+    }
+    const files = readdirSync(dir)
+      .filter((f) => f.endsWith(".jsonl"))
+      .map((name) => ({ name, mtime: statSync(join(dir, name)).mtimeMs }))
+      .sort((a, b) => b.mtime - a.mtime);
+    for (const { name } of files.slice(this.config.maxRooms)) {
+      console.warn(`Sauvegarde ${name} non reprise (plafond de ${this.config.maxRooms} salons), mise de côté`);
+      renameSync(join(dir, name), join(dir, `${name}.bad`));
+    }
+    for (const { name } of files.slice(0, this.config.maxRooms)) {
       const file = join(dir, name);
       let saved: SavedRoom | null = null;
       try {
@@ -713,7 +816,7 @@ export class RoomManager {
       } catch (e) {
         if (e instanceof RulesChangedError && saved) {
           // Mise à jour du moteur : la partie est interrompue ; ses joueurs l'apprennent en revenant.
-          for (const s of saved.seats) this.interrupted.add(s.token);
+          for (const s of saved.seats) this.interrupted.set(s.tokenHash ?? digest(s.token ?? ""), now);
           console.warn(`Salon ${saved.code} interrompu par la mise à jour des règles : ${e.message}`);
           renameSync(file, `${file}.rules${e.rules}`);
         } else {
@@ -722,11 +825,12 @@ export class RoomManager {
         }
       }
     }
+    this.saveInterrupted(dir);
   }
 
   /** La partie de ce jeton a-t-elle été interrompue par une mise à jour des règles du moteur ? */
   wasInterrupted(token: unknown): boolean {
-    return typeof token === "string" && this.interrupted.has(token);
+    return typeof token === "string" && this.interrupted.has(digest(token));
   }
 
   get size(): number {
@@ -751,15 +855,16 @@ export class RoomManager {
     const d = checkDeck(deck);
     const side = checkSide(d, opts.sideboard);
     if (this.rooms.size >= this.config.maxRooms) throw new ClientError("busy", "Serveur complet, réessayez plus tard.");
+    // Mémoire : refuser un salon plutôt que de laisser pm2 redémarrer le serveur (et couper toutes les parties).
+    const heapMb = process.memoryUsage().heapUsed / 1_048_576;
+    if (this.config.maxHeapMb && heapMb > this.config.maxHeapMb)
+      throw new ClientError("busy", "Serveur complet, réessayez plus tard.");
     // Créer puis abandonner des salons en boucle ne doit pas occuper toutes les places du serveur.
-    const ip = opts.ip;
-    if (ip && [...this.createdBy.values()].filter((x) => x === ip).length >= this.config.maxRoomsPerIp)
+    const creator = opts.ip ? digest(ipKey(opts.ip)) : undefined;
+    if (creator && this.openedBy(creator) >= this.config.maxRoomsPerIp)
       throw new ClientError("busy", "Trop de salons ouverts depuis cette adresse : fermez-en un avant d'en créer un autre.");
-    const room = new Room(this.newCode(), this.config, (r) => {
-      this.rooms.delete(r.code);
-      this.createdBy.delete(r.code);
-    });
-    if (ip) this.createdBy.set(room.code, ip);
+    const room = new Room(this.newCode(), this.config, (r) => this.rooms.delete(r.code));
+    room.creator = creator;
     room.match = { ...room.match, bestOf: opts.bestOf === 3 ? 3 : 1 };
     this.rooms.set(room.code, room);
     return { room, seat: room.addPlayer(n, d, peer, side) };

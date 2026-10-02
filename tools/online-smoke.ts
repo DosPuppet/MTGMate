@@ -27,6 +27,10 @@ function check(ok: boolean, label: string, detail?: unknown): void {
 async function open(browser: Browser, name: string, url: string): Promise<Page> {
   const page = await (await browser.newContext({ viewport: { width: 1400, height: 850 } })).newPage();
   page.on("pageerror", (e) => errors.push(`${name} : ${e.message}`));
+  // Violations de la politique de contenu (CSP du serveur) : signalées dans la console seulement.
+  page.on("console", (m) => {
+    if (m.type() === "error" && /Content Security Policy/i.test(m.text())) errors.push(`${name} : ${m.text()}`);
+  });
   await page.goto(url);
   return page;
 }

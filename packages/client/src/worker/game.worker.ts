@@ -176,6 +176,8 @@ async function handle(msg: ToWorker): Promise<void> {
           aiDelay: msg.fast && import.meta.env.DEV ? 0 : 900,
           sleep,
           record: sandboxed ? undefined : record,
+          // Sauvegarde locale : une empreinte par décision, vérifiée à la reprise (0,01 ms chacune).
+          checkpointEvery: 1,
           // Mêmes faces qu'en ligne : seulement les cartes connues du joueur (pas la decklist adverse).
           frames: true,
           onUpdate: (_p, view, evts) => {
@@ -213,6 +215,7 @@ async function handle(msg: ToWorker): Promise<void> {
           aiDelay: msg.fast && import.meta.env.DEV ? 0 : 900,
           sleep,
           record,
+          checkpointEvery: 1,
           frames: true,
           onUpdate: (_p, view, evts) => {
             post({ type: "update", view, events: evts, faces: host ? visibleFaces(host.state, view, evts) : {} });
