@@ -15,6 +15,7 @@ import { HANDLERS as PLAYERS_HANDLERS } from "./ops/players";
 import { HANDLERS as SPELLS_HANDLERS } from "./ops/spells";
 import { HANDLERS as ZONES_HANDLERS } from "./ops/zones";
 import type { EntersContext } from "./replacement";
+import { spellView } from "./stack";
 import {
   alivePlayers,
   bump,
@@ -32,6 +33,7 @@ import {
   shuffle,
   snapshot,
 } from "./state";
+import { playerStatics } from "./statics";
 import { matchesCard, matchesObjectFilter, matchesView, protectedFrom, resolveFilter, sourceView } from "./targets";
 import { checkCondition, mostLife } from "./triggers";
 import { countTurnEvents } from "./turnlog";
@@ -668,7 +670,17 @@ export function damageSource(s: GameState, ctx: EffectContext, ref?: Ref): Damag
     // Un sort qui se résout : il est identifié par son élément de pile (Imodane, the Pyrohammer).
     const spell =
       s.resolving?.item.kind === "spell" && s.resolving.item.sourceId === ctx.sourceId ? s.resolving.item.id : undefined;
-    return { defId: ctx.sourceDefId, controller: ctx.controller, keywords: ctx.sourceSnapshot.keywords, stackId: spell };
+    // Lo and Li : « vos sorts de Leçon ont le lien de vie » (statique lue au moment des blessures).
+    const d = s.defs[ctx.sourceDefId];
+    const granted = d
+      ? playerStatics(s, ctx.controller, "spellKeywords")
+          .filter(
+            ({ ab }) => ab.spellKeywords && matchesView(spellView(d, ctx.controller), ab.spellKeywords.filter, ctx.controller),
+          )
+          .flatMap(({ ab }) => ab.spellKeywords?.keywords ?? [])
+      : [];
+    const keywords = granted.length ? [...new Set([...ctx.sourceSnapshot.keywords, ...granted])] : ctx.sourceSnapshot.keywords;
+    return { defId: ctx.sourceDefId, controller: ctx.controller, keywords, stackId: spell };
   }
   const id = resolveRef(s, ctx, ref)[0];
   if (!id || !onBattlefield(s, id)) return null;

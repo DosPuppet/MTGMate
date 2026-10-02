@@ -48,7 +48,9 @@
     "untapCreaturesOnOthersUntap": "cas isolé, sans famille (à revoir en R4)",
     "walkersMaxOneAttacker": "famille M, taxes de combat (R0.2)",
     "walkersSurviveZeroLoyalty": "famille J, exceptions aux règles (R4.5)",
-    "winFirstCoinFlips": "cas isolé, sans famille (à revoir en R4)"
+    "winFirstCoinFlips": "cas isolé, sans famille (à revoir en R4)",
+    "spellKeywords": "mots-clés donnés aux sorts du joueur (Lo and Li, Twin Tutors : « vos sorts de Leçon ont le lien de vie »), lus au moment des blessures ; famille générique (filtre de sorts), une seule carte pour l'instant",
+    "keepUnspentMana": "mana non dépensé gardé (500.4) : par type (The Last Agni Kai, posé par fx.thisTurn) ou converti (Ozai, the Phoenix King) ; une seule capacité imprimée pour l'instant"
   },
   "keyword": {
     "absorbsDamage": "remplacement de redirection des blessures (R1.2)",
@@ -113,6 +115,7 @@
     "shield": "New Way Forward : boucliers « la prochaine fois que » (615.7), sur le cadre générique des remplacements (R1) ; une seule carte pour l'instant",
     "suspend": "Taigam, Master Opportunist : suspension (702.62), mécanique générique (marqueurs de temps retirés à l'entretien, `suspendUpkeep`) ; une seule carte pour l'instant",
     "tapOrSacrifice": "Command Bridge — opération propre à une carte (R4.6)",
-    "tripleTriad": "Triple Triad — opération propre à une carte (R4.6)"
+    "tripleTriad": "Triple Triad — opération propre à une carte (R4.6)",
+    "foretell": "présage (702.143, action spéciale lue dans le texte) : une seule carte de Standard (Sozin's Comet) pour l'instant"
   }
 }

@@ -426,7 +426,9 @@ export function playFromRules(
 /** Conditions de lancement données par une permission « jouer depuis une zone ». */
 function playFromTerms(r: PlayFromZone, source: "graveyard" | "library"): CastTerms {
   return {
-    source,
+    // Iroh, Grand Lotus : la carte a le flashback (exilée ensuite), pour son coût de mana ou le coût donné.
+    source: r.flashback && source === "graveyard" ? "flashback" : source,
+    ...(r.cost ? { costOverride: r.cost } : {}),
     playFrom: r,
     ...(r.payLife ? { payLife: r.payLife } : {}),
     ...(r.forage ? { forage: true } : {}),
@@ -580,7 +582,7 @@ export function spellCost(
     : alt
       ? alt.mana
       : opts.flashback
-        ? (d.flashback ?? d.manaCost)
+        ? (opts.costOverride ?? d.flashback ?? d.manaCost)
         : opts.mayhem
           ? (d.mayhem ?? d.manaCost)
           : (opts.costOverride ?? d.manaCost);
@@ -708,6 +710,17 @@ export function plotCard(s: GameState, id: ObjectId): ObjectId | null {
     }
   }
   return card.id;
+}
+
+/** Présage (702.143a) : la carte est exilée de la main ; son propriétaire peut la lancer à un tour ultérieur. */
+export function foretellCard(s: GameState, id: ObjectId): void {
+  const o = s.objects[id];
+  if (o?.zone !== "hand") return;
+  const exiled = moveObject(s, id, "exile");
+  const card = exiled ? s.objects[exiled] : undefined;
+  if (!card) return;
+  card.foretoldTurn = s.turn.number;
+  emit({ type: "foretold", player: card.owner, defId: card.defId });
 }
 
 /** D'où, et à quelles conditions, ce joueur peut-il lancer cette carte ? */
@@ -1044,10 +1057,19 @@ function baseCastTerms(s: GameState, player: PlayerId, card: ObjectId): CastTerm
     // Vizier of the Menagerie (créatures, mana de n'importe quel type), The Lunar Whale, Mm'menon (artefacts)…
     const top = s.players[o.owner]?.library[0];
     if (o.owner !== player || top !== card) return null;
+    // Planetarium of Wan Shi Tong : « vous pouvez lancer cette carte sans payer son coût » (permission, `castNow`).
+    const libPerm = exilePermission(s, player, card);
+    if (libPerm) return { source: "library", anyMana: libPerm.anyMana, free: libPerm.free, exileAfter: libPerm.exileAfter };
     const rule = playFromRules(s, player, card, "libraryTop", "spells")[0];
     return rule ? playFromTerms(rule, "library") : null;
   }
   if (o.zone === "exile") {
+    // 702.143a : une carte présagée se lance à un tour ultérieur pour son coût de présage.
+    if (o.foretoldTurn !== undefined) {
+      return o.owner === player && o.foretoldTurn < s.turn.number && d.foretell
+        ? { source: "exile", costOverride: d.foretell }
+        : null;
+    }
     // 702.170d : une carte complotée se lance sans payer son coût, à un tour ultérieur, au moment d'un rituel.
     if (o.plottedTurn !== undefined) {
       return o.owner === player && o.plottedTurn < s.turn.number ? { source: "exile", free: true, sorceryTiming: true } : null;
@@ -1350,7 +1372,8 @@ export function castSpell(s: GameState, player: PlayerId, card: ObjectId, choice
   if (!opts) throw new RulesError("Impossible de payer le coût additionnel");
   // Kicker sans mana (Marchandage) : le permanent à sacrifier ou à renvoyer, choisi par le joueur (`sacrifice`, quand le
   // sort n'a pas d'autre sacrifice en coût) ; sans choix, le moins cher, jeton d'abord.
-  const kickerOptions = kicked && d.kickerCost ? kickerCostOptions(s, player, card, d, flatTargets(targets)) : [];
+  const kickerOptions =
+    kicked && d.kickerCost && d.kickerCost.life === undefined ? kickerCostOptions(s, player, card, d, flatTargets(targets)) : [];
   const kickerChoice = kicked && d.kickerCost && !opts.sacrifice && choices.sacrifice?.length ? choices.sacrifice : undefined;
   if (kickerChoice && (kickerChoice.length !== 1 || !kickerOptions.includes(kickerChoice[0] as ObjectId)))
     throw new RulesError("Permanent invalide pour ce coût");
@@ -1371,7 +1394,10 @@ export function castSpell(s: GameState, player: PlayerId, card: ObjectId, choice
   const gyExile =
     kicked && d.kickerCost?.exileGraveyard ? graveyardToExile(s, player, card, d.kickerCost.exileGraveyard) : undefined;
   if (gyExile === null) throw new RulesError("Pas assez de cartes dans votre cimetière");
-  if (kicked && d.kickerCost && !teamwork && !evidence && !gyExile && !kickerPermanent)
+  // Redirect Lightning : « payez 5 PV ou payez {2} » (le kicker est le paiement en PV).
+  const kickerLife = kicked ? d.kickerCost?.life : undefined;
+  if (kickerLife !== undefined && (s.players[player]?.life ?? 0) < kickerLife) throw new RulesError("Pas assez de points de vie");
+  if (kicked && d.kickerCost && kickerLife === undefined && !teamwork && !evidence && !gyExile && !kickerPermanent)
     throw new RulesError("Impossible de payer le kicker");
   // Travail d'équipe : les créatures engagées (choisies par `tap`, sinon les plus faibles suffisantes).
   const teamTap = teamwork !== undefined ? chosenCrew(s, player, card, teamwork, choices.tap) : [];
@@ -1572,6 +1598,7 @@ export function castSpell(s: GameState, player: PlayerId, card: ObjectId, choice
   if (warp?.life) payLife_(s, player, warp.life);
   if (terms.payLife) payLife_(s, player, terms.payLife);
   if (d.xCost === "life" && x > 0) payLife_(s, player, x);
+  if (kickerLife) payLife_(s, player, kickerLife);
   if (d.xCost === "blight" && x > 0) {
     const blighted = blightTarget(s, player, x);
     if (blighted) changeCounters(s, obj(s, blighted), "-1/-1", x, true);
@@ -2125,6 +2152,7 @@ export function activateAbility(s: GameState, player: PlayerId, source: ObjectId
         turnFaceUp(s, source);
       }
       if (e.op === "plot") plotCard(s, source);
+      if (e.op === "foretell") foretellCard(s, source);
     }
     s.priority.passes = 0;
     return;

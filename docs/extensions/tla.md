@@ -104,3 +104,17 @@ Les scripts sont dans `packages/cards/src/tla/` : `cards` (cartes du méta), `wh
 - **Avatar Destiny** profite du correctif 608.2h du lot A5 (la force de la créature morte).
 - **Version des règles :** 43.
 - **Tests :** 6 tests de règles (« lot C1 »).
+
+## Sous-lot C2 : lancement et mana ✅ (275 / 280)
+
+- **Cartes (7) :** Redirect Lightning, Sozin's Comet, The Last Agni Kai, Lo and Li, Twin Tutors, Iroh, Grand Lotus, Ozai, the Phoenix King, Planetarium of Wan Shi Tong.
+- **Le moteur gagne :**
+  - le présage (702.143) : « Foretell {2}{R} » lu dans le texte, action spéciale pendant votre tour (payer {2}, exiler la carte de la main), lancement à un tour ultérieur pour le coût de présage (`foretoldTurn`) ; entrée de dette justifiée (une seule carte) ;
+  - « en coût additionnel, payez N PV ou payez {M} » (`kickerCost.life` avec `kickerOrPay`, lu dans le texte) ;
+  - `playFrom` avec `flashback` et `cost` : le flashback donné aux cartes du cimetière (Iroh, Grand Lotus : leur coût de mana, ou {1} pour les Leçons) ;
+  - la carte du dessus de la bibliothèque lancée par une permission (`castNow`, Planetarium of Wan Shi Tong) ;
+  - `fx.fight(a, b, storeExcess)` : les blessures en excès d'un combat ;
+  - la famille `keepUnspentMana` (500.4) : ces types ne se vident pas (The Last Agni Kai, par `fx.thisTurn`), ou tout le mana devient rouge (Ozai) ; la condition `cond.manaPoolAtLeast(n)`, la réserve de mana faisant désormais avancer la version d'état (cache des couches) ;
+  - `spellKeywords` : des mots-clés donnés aux sorts du joueur (Lo and Li : « vos sorts de Leçon ont le lien de vie »), lus au moment des blessures.
+- **Version des règles :** 44.
+- **Tests :** 8 tests de règles (« lot C2 »).

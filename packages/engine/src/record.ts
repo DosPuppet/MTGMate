@@ -118,8 +118,11 @@ export const RECORD_VERSION = 1;
  * - 43 : Avatar: The Last Airbender, lot C1 : F/E définies par des marqueurs sur des permanents, couleurs parmi un filtre
  *   et types exclus lus pendant les couches ; bonus par type de créature de chaque objet touché ; modes d'une capacité
  *   déclenchée sous condition ; regard fait par un joueur ciblé.
+ * - 44 : Avatar: The Last Airbender, lot C2 : présage (702.143) ; « payez N PV ou {M} » ; flashback donné aux cartes du
+ *   cimetière ; carte du dessus de la bibliothèque lancée par une permission ; blessures en excès d'un combat ; mana non
+ *   dépensé gardé ou converti ; mots-clés des sorts ; la réserve de mana fait avancer la version d'état.
  */
-export const RULES_VERSION = 43;
+export const RULES_VERSION = 44;
 
 /** Un point de contrôle toutes les N décisions (plus la dernière de la partie). */
 export const CHECKPOINT_EVERY = 25;

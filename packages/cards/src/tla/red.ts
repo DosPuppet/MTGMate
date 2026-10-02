@@ -322,4 +322,22 @@ export const RED: Record<string, CardScript> = {
       }),
     ],
   },
+  // « Payez 5 points de vie ou payez {2} » : lu dans le texte.
+  "Redirect Lightning": {
+    spell: spell([target.stackItemSingleTarget()], [fx.changeTarget(ref.target())]),
+  },
+  // Présage {2}{R} : lu dans le texte.
+  "Sozin's Comet": {
+    spell: spell([], [fx.modifyAll({ types: ["Creature"], controller: "you" }, { addAbilities: [firebending(5)] })]),
+  },
+  "The Last Agni Kai": {
+    spell: spell(
+      [target.creature("a", { controller: "you" }), target.creature("b", { controller: "opponent" })],
+      [
+        fx.fight(ref.target("a"), ref.target("b"), "excess"),
+        { op: "addManaUntilEndOfTurn", mana: ["R"], times: amount.v("excess") },
+        fx.thisTurn({ keepUnspentMana: { types: ["R"] }, label: "Vous ne perdez pas votre mana rouge non dépensé" }),
+      ],
+    ),
+  },
 };

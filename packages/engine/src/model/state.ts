@@ -179,6 +179,8 @@ export interface GameObject {
   castX?: number;
   /** Plot : tour où la carte est devenue « complotée » (exilée face visible, lançable gratuitement plus tard). */
   plottedTurn?: number;
+  /** Présage (702.143) : tour où la carte a été exilée de la main pour {2}, lançable plus tard pour son coût de présage. */
+  foretoldTurn?: number;
   /** Créatures qui ont monté ou équipé ce permanent (coût payé ce tour-ci). */
   crewedBy?: { turn: number; ids: ObjectId[] };
   /** Sources qui lui ont infligé des blessures ce tour-ci (Predator Ooze). */

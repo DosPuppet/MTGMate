@@ -414,6 +414,11 @@ export function checkCondition(
       return false; // évalués au lancement (stack.ts) ou pendant la résolution (effects.ts)
     case "lifeGainedAtLeast":
       return (s.players[controller]?.turnStats.lifeGained ?? 0) >= c.n;
+    case "manaPoolAtLeast": {
+      const pool = s.players[controller]?.manaPool;
+      const n = pool ? (Object.values(pool) as number[]).reduce((a, b) => a + b, 0) : 0;
+      return n + (s.players[controller]?.restrictedMana?.length ?? 0) >= c.n;
+    }
     case "amountAtLeast": {
       const a = c.amount;
       if (typeof a === "number") return a >= c.n;

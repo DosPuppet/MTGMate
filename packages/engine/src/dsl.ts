@@ -388,7 +388,7 @@ export const amount = {
 
 export const fx = {
   damage: (n: Amount, to: Ref, source?: Ref): Effect => ({ op: "damage", amount: n, to, source }),
-  fight: (a: Ref, b: Ref): Effect => ({ op: "fight", a, b }),
+  fight: (a: Ref, b: Ref, storeExcess?: string): Effect => ({ op: "fight", a, b, ...(storeExcess ? { storeExcess } : {}) }),
   pump: (what: Ref, power: Amount, toughness: Amount, keywords?: Keyword[]): Effect => ({
     op: "pump",
     what,
@@ -1785,6 +1785,8 @@ export const cond = {
   lifeGainedAtLeast: (n: number): Condition => ({ kind: "lifeGainedAtLeast", n }),
   amountAtLeast: (a: Amount, n: number): Condition => ({ kind: "amountAtLeast", amount: a, n }),
   xAtLeast: (n: number): Condition => ({ kind: "xAtLeast", n }),
+  /** « tant que vous avez N mana non dépensé ou plus » (la réserve change : `bump` à chaque changement). */
+  manaPoolAtLeast: (n: number): Condition => ({ kind: "manaPoolAtLeast", n }),
   castFromHand: { kind: "castFromHand" } as Condition,
   wasCast: { kind: "wasCast" } as Condition,
   /** « si vous avez regardé ou surveillé ce tour-ci » */

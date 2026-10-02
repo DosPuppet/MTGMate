@@ -223,4 +223,14 @@ export const ARTIFACTS: Record<string, CardScript> = {
       }),
     ],
   },
+  "Planetarium of Wan Shi Tong": {
+    abilities: [
+      activated({ mana: "{1}", tap: true, effects: [fx.scry(2)], label: "Regard 2" }),
+      triggered(when.scryOrSurveil, [fx.castNow(ref.libraryTop(ref.you), { free: true })], {
+        // « Ne le faites qu'une fois par tour » : pas encore de sort lancé depuis votre bibliothèque ce tour-ci.
+        condition: cond.not(cond.amountAtLeast(amount.turnEvents({ event: "cast", who: "you", fromZone: "library" }), 1)),
+        label: "Vous regardez ou surveillez : vous pouvez lancer gratuitement la carte du dessus",
+      }),
+    ],
+  },
 };

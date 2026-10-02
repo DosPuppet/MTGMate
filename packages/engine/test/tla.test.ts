@@ -4530,3 +4530,130 @@ describe("lot C1 : caractéristiques et montants", () => {
     expect(modes(["Shared Roots", "Firebending Lesson", "Combustion Technique"])).toBe(8);
   });
 });
+
+describe("lot C2 : lancement et mana", () => {
+  it("Redirect Lightning : payez 5 PV (ou {2}) et changez la cible d'un sort à cible unique", () => {
+    let s = scenario({
+      p1: { battlefield: ["Mountain"], hand: ["Redirect Lightning"] },
+      p2: { battlefield: ["Mountain", "Mountain"], hand: ["Lightning Strike"] },
+      active: "p2",
+    });
+    s = cast(s, "p2", "Lightning Strike", { targets: { t: ["p1"] } });
+    s = act(s, "p2", { type: "pass" });
+    const strike = s.stack[0]?.id as string;
+    // Une seule Montagne : {2} est impossible, il faut payer 5 PV (le « kicker »).
+    expect(() => cast(s, "p1", "Redirect Lightning", { targets: { t: [strike] } })).toThrow();
+    s = settle(cast(s, "p1", "Redirect Lightning", { kicked: true, targets: { t: [strike] } }), picking(["p2"]));
+    expect(s.players.p1?.life).toBe(15);
+    expect(s.players.p2?.life).toBe(17);
+  });
+
+  it("Sozin's Comet : présage {2} pendant votre tour, puis lancé à un tour ultérieur pour {2}{R} ; vos créatures ont la maîtrise du feu 5", () => {
+    let s = scenario({ p1: { battlefield: [...lands("Mountain", 3), "Bear Cub"], hand: ["Sozin's Comet"] } });
+    const comet = idOf(s, "p1", "hand", "Sozin's Comet");
+    const foretell = legalActions(s, "p1").find((a) => a.type === "activate" && a.source === comet && a.label === "Présage");
+    expect(foretell).toBeDefined();
+    s = settle(act(s, "p1", { type: "activate", source: comet, ability: foretell?.type === "activate" ? foretell.ability : -1 }));
+    const exiledComet = exiled(s, "Sozin's Comet")[0] as string;
+    expect(exiledComet).toBeDefined();
+    expect(castable(s, "p1", exiledComet)).toBe(false);
+    const turn = s.turn.number;
+    s = advanceUntil(
+      s,
+      (x) => x.turn.active === "p1" && x.turn.number > turn && x.turn.step === "main1" && x.pending?.kind === "priority",
+    );
+    s = settle(act(s, "p1", { type: "cast", card: exiledComet }));
+    const bear = idOf(s, "p1", "battlefield", "Bear Cub");
+    s = advanceUntil(s, (x) => x.pending?.kind === "declareAttackers");
+    s = act(s, "p1", { type: "declareAttackers", attackers: [{ id: bear, defender: "p2" }] });
+    s = advanceUntil(s, (x) => x.turn.step === "declareBlockers" && x.pending?.kind === "priority");
+    expect(s.players.p1?.manaPool.R).toBe(5);
+  });
+
+  it("The Last Agni Kai : combat ; l'excès de blessures donne autant de {R}, et le mana rouge ne se vide pas ce tour-ci", () => {
+    let s = scenario({
+      p1: { battlefield: [...lands("Mountain", 2), "Serra Angel"], hand: ["The Last Agni Kai"] },
+      p2: { battlefield: ["Bear Cub"] },
+    });
+    const angel = idOf(s, "p1", "battlefield", "Serra Angel");
+    const bear = idOf(s, "p2", "battlefield", "Bear Cub");
+    s = settle(cast(s, "p1", "The Last Agni Kai", { targets: { a: [angel], b: [bear] } }));
+    expect(idsOf(s, "p2", "battlefield", "Bear Cub")).toHaveLength(0);
+    expect(s.players.p1?.manaPool.R).toBe(2);
+    s = advanceUntil(s, (x) => x.turn.step === "main2");
+    expect(s.players.p1?.manaPool.R).toBe(2);
+    s = advanceUntil(s, (x) => x.turn.active === "p2");
+    expect(s.players.p1?.manaPool.R).toBe(0);
+  });
+
+  it("Lo and Li, Twin Tutors : cherchez une Leçon ; vos sorts de Leçon ont le lien de vie", () => {
+    let s = scenario({
+      p1: {
+        battlefield: lands("Swamp", 5).concat(lands("Mountain", 1)),
+        hand: ["Lo and Li, Twin Tutors"],
+        library: ["Island", "Firebending Lesson", "Island"],
+        life: 10,
+      },
+      p2: { battlefield: ["Bear Cub"] },
+    });
+    s = settle(cast(s, "p1", "Lo and Li, Twin Tutors"), picking([]));
+    const lesson = idOf(s, "p1", "hand", "Firebending Lesson");
+    s = settle(act(s, "p1", { type: "cast", card: lesson, targets: { t: [idOf(s, "p2", "battlefield", "Bear Cub")] } }));
+    expect(s.players.p1?.life).toBe(12);
+  });
+
+  it("Iroh, Grand Lotus : pendant votre tour, vos éphémères et rituels ont le flashback (les Leçons pour {1})", () => {
+    let s = scenario({
+      p1: { battlefield: ["Iroh, Grand Lotus", ...lands("Mountain", 3)], graveyard: ["Lightning Strike", "Firebending Lesson"] },
+      p2: { battlefield: ["Bear Cub", "Serra Angel"] },
+    });
+    const strike = idOf(s, "p1", "graveyard", "Lightning Strike");
+    s = settle(act(s, "p1", { type: "cast", card: strike, targets: { t: ["p2"] } }));
+    expect(s.players.p2?.life).toBe(17);
+    expect(exiled(s, "Lightning Strike")).toHaveLength(1);
+    // Il reste une Montagne : Firebending Lesson pour {1} (son flashback de Leçon).
+    const lesson = idOf(s, "p1", "graveyard", "Firebending Lesson");
+    s = settle(act(s, "p1", { type: "cast", card: lesson, targets: { t: [idOf(s, "p2", "battlefield", "Bear Cub")] } }));
+    expect(idsOf(s, "p2", "battlefield", "Bear Cub")).toHaveLength(0);
+    expect(exiled(s, "Firebending Lesson")).toHaveLength(1);
+  });
+
+  it("Iroh, Grand Lotus : pas de flashback pendant le tour adverse", () => {
+    const s = scenario({
+      p1: { battlefield: ["Iroh, Grand Lotus", ...lands("Mountain", 3)], graveyard: ["Lightning Strike"] },
+      active: "p2",
+    });
+    expect(castable(s, "p1", idOf(s, "p1", "graveyard", "Lightning Strike"))).toBe(false);
+  });
+
+  it("Ozai, the Phoenix King : le mana non dépensé devient rouge ; six ou plus : vol et indestructible", () => {
+    let s = scenario({ p1: { battlefield: ["Ozai, the Phoenix King", ...lands("Island", 6)] } });
+    const ozai = idOf(s, "p1", "battlefield", "Ozai, the Phoenix King");
+    for (const id of idsOf(s, "p1", "battlefield", "Island")) {
+      const m = legalActions(s, "p1").find((x) => x.type === "tapForMana" && x.source === id);
+      s = act(s, "p1", { type: "tapForMana", source: id, ability: m?.type === "tapForMana" ? m.ability : 0, color: "U" });
+    }
+    expect(chars(s, ozai).keywords).toEqual(expect.arrayContaining(["flying", "indestructible"]));
+    s = advanceUntil(s, (x) => x.turn.step !== "main1");
+    expect(s.players.p1?.manaPool.R).toBe(6);
+    expect(s.players.p1?.manaPool.U).toBe(0);
+  });
+
+  it("Planetarium of Wan Shi Tong : après un regard, lancez gratuitement la carte du dessus (une fois par tour)", () => {
+    let s = scenario({
+      p1: { battlefield: ["Planetarium of Wan Shi Tong", "Island"], library: ["Lightning Strike", "Opt", "Island"] },
+    });
+    const planetarium = idOf(s, "p1", "battlefield", "Planetarium of Wan Shi Tong");
+    s = act(s, "p1", { type: "activate", source: planetarium, ability: 0 });
+    for (let i = 0; i < 40 && !castNowOf(s); i++) {
+      const p = s.pending;
+      if (p?.kind === "choice")
+        s = act(s, p.player, { type: "choose", values: p.request.type === "pick" ? [] : p.request.suggested });
+      else if (p?.kind === "priority") s = act(s, p.player, { type: "pass" });
+    }
+    const now = castNowOf(s);
+    expect(now?.cards).toHaveLength(1);
+    s = settle(act(s, "p1", { type: "cast", card: now?.cards[0] as string, targets: { t: ["p2"] } }));
+    expect(s.players.p2?.life).toBe(17);
+  });
+});

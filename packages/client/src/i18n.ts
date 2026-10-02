@@ -191,6 +191,9 @@ export function describeEvents(
       case "plotted":
         add(`${who(e.player)} ${e.player === me ? "complotez" : "complote"} ${name(e.defId)}.`, kind(e.player));
         break;
+      case "foretold":
+        add(`${who(e.player)} ${e.player === me ? "présagez" : "présage"} ${name(e.defId)}.`, kind(e.player));
+        break;
       case "speed":
         add(
           `${who(e.player)} ${e.player === me ? "passez" : "passe"} à la vitesse ${e.speed}${e.speed >= 4 ? " (maximale)" : ""}.`,

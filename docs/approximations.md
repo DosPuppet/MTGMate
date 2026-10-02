@@ -346,5 +346,8 @@ Dans l'ordre où elles ont été ajoutées, extension par extension.
   - `règle` Aang's Journey (kické) : deux recherches, donc deux mélanges.
   - `règle` Hama, the Bloodbender : la carte non-créature, non-terrain du cimetière est exilée d'office s'il y en a une (« jusqu'à une ») ;
   - `règle` Secret of Bloodbending : sans maîtrise de l'eau, vous contrôlez l'adversaire pendant la première phase de combat de son prochain tour (une phase de combat supplémentaire de ce tour lui revient).
+  - `règle` Présage (Sozin's Comet) : la carte présagée est exilée face visible (l'adversaire la voit) ;
+  - `règle` Planetarium of Wan Shi Tong : « une fois par tour » se lit « si vous n'avez lancé aucun sort depuis votre bibliothèque ce tour-ci » ;
+  - `choix auto` Avatar Destiny : une carte de créature meulée revient d'office s'il y en a une (« jusqu'à une »).
 - **Légalité Standard :** instantané des légalités Scryfall au moment de l'import (`legalities.standard` dans `data/<set>.json`). Après une rotation ou une annonce de bannissement, réimporter les sets (`npm run import-cards -- <set>`).
 - **Images des jetons :** celle du jeton Scryfall le plus proche (même nom, puis mêmes F/E et couleurs ; `data/tokens.json`, `npm run import-tokens`) ; un jeton de nom inconnu garde le cadre texte.

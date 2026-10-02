@@ -590,4 +590,41 @@ export const MULTI: Record<string, CardScript> = {
       ),
     ],
   },
+  // Maîtrise du feu 2 : lue dans le texte.
+  "Iroh, Grand Lotus": {
+    abilities: [
+      playerStatic({
+        playFrom: {
+          zone: "graveyard",
+          what: "spells",
+          filter: { types: ["Instant", "Sorcery"], notSubtype: "Lesson" },
+          flashback: true,
+        },
+        condition: cond.yourTurn,
+        label: "Pendant votre tour, vos éphémères et rituels non-Leçons au cimetière ont le flashback",
+      }),
+      playerStatic({
+        playFrom: {
+          zone: "graveyard",
+          what: "spells",
+          filter: { types: ["Instant", "Sorcery"], subtype: "Lesson" },
+          flashback: true,
+          cost: { generic: 1, colored: {}, x: 0 },
+        },
+        condition: cond.yourTurn,
+        label: "Pendant votre tour, vos Leçons au cimetière ont le flashback {1}",
+      }),
+    ],
+  },
+  // Piétinement, maîtrise du feu 4 et célérité : lus dans le texte.
+  "Ozai, the Phoenix King": {
+    abilities: [
+      playerStatic({ keepUnspentMana: { becomes: "R" }, label: "Votre mana non dépensé devient rouge au lieu de se vider" }),
+      staticAbility(
+        "self",
+        { addKeywords: ["flying", "indestructible"] },
+        { condition: cond.manaPoolAtLeast(6), label: "Vol et indestructible tant que vous avez six mana non dépensé ou plus" },
+      ),
+    ],
+  },
 };

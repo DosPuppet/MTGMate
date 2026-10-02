@@ -50,6 +50,8 @@ export interface CardDef {
     collectEvidence?: number;
     /** « Exilez N cartes de votre cimetière ou payez [mana] » (Soaring Stoneglider), avec `kickerOrPay`. */
     exileGraveyard?: number;
+    /** « Payez N points de vie ou payez [mana] » (Redirect Lightning), avec `kickerOrPay`. */
+    life?: number;
   };
   /**
    * X du sort payé autrement qu'en mana, en coût additionnel : « payez X points de vie » (`life`, Vicious Rivalry),
@@ -160,6 +162,8 @@ export interface CardDef {
   entersAsCopyOfGraveyard?: { filter: ObjectFilter; name?: string; power?: number; toughness?: number };
   /** Plot (702.170) : coût de l'action spéciale « complotez cette carte » (lu dans le texte). */
   plot?: ManaCost;
+  /** Présage (702.143) : coût pour lancer la carte présagée à un tour ultérieur (lu dans le texte). */
+  foretell?: ManaCost;
   /** Skyseer's Chariot : les capacités activées des sources du nom choisi coûtent {N} de plus (au lieu d'être interdites). */
   chosenNameTax?: number;
   /** « Vous pouvez lancer cette carte depuis votre cimetière [si…] » (Lightwheel Enhancements : vitesse maximale). */
@@ -216,7 +220,7 @@ export interface CardDef {
   /** Assemblage (701.42) : les deux parties et la carte assemblée, par nom. */
   meld?: { parts: string[]; result?: string };
   /** Libellé du kicker : Progéniture (702.175) ou Cadeau (702.174), lus dans le texte (Bloomburrow). */
-  kickerKind?: "offspring" | "gift" | "bargain" | "blight" | "teamwork" | "evidence" | "exileGraveyard" | "waterbend";
+  kickerKind?: "offspring" | "gift" | "bargain" | "blight" | "teamwork" | "evidence" | "exileGraveyard" | "waterbend" | "life";
   /** Cadeau (702.174) : ce que reçoit l'adversaire choisi si le cadeau est promis. */
   gift?: GiftKind;
   /** « En coût additionnel, fourragez ou payez [mana] » (Feed the Cycle) : le coût alternatif « Fourrager » l'évite. */
@@ -855,6 +859,12 @@ export interface PlayFromZone {
   /** Une fois par tour (Johann, Apprentice Sorcerer) ; `onceKey` : posé par le moteur, la permission utilisée. */
   oncePerTurn?: boolean;
   onceKey?: string;
+  /**
+   * La carte a le flashback (Iroh, Grand Lotus) : lancée depuis le cimetière, puis exilée ; son coût est `cost`, sinon
+   * son coût de mana.
+   */
+  flashback?: boolean;
+  cost?: ManaCost;
 }
 
 /** Capacité statique qui s'applique à des joueurs (défense talismanique, « ne peut pas perdre »…). */
@@ -866,13 +876,10 @@ export interface PlayerStaticAbilityDef {
   /** Restriction de lancer des sorts (et d'activer des capacités) (famille D, R4.5). */
   castLimit?: CastLimit;
   /**
-   * Sorts du joueur qui coûtent {N} de moins (Goblin Maskmaker : « vos sorts face cachée lancés ce tour-ci ») ; `anyMana` :
-   * le mana se dépense pour eux comme s'il était de n'importe quelle couleur (Case File Auditor : les sorts d'Affaire).
-   */
-  /**
-   * Coût des sorts correspondants : {N} de moins (`reduce`), mana de n'importe quel type (`anyMana`), ou des symboles
-   * colorés de moins (`reduceSymbols`, Aang, Master of Elements : « {W}{U}{B}{R}{G} de moins ») : chacun retire un
-   * symbole de sa couleur, sinon {1} du générique (601.2f).
+   * Coût des sorts correspondants : {N} de moins (`reduce`, Goblin Maskmaker : « vos sorts face cachée lancés ce
+   * tour-ci ») ; le mana se dépense comme s'il était de n'importe quelle couleur (`anyMana`, Case File Auditor) ; des
+   * symboles colorés de moins (`reduceSymbols`, Aang, Master of Elements : « {W}{U}{B}{R}{G} de moins »), chacun retirant
+   * un symbole de sa couleur, sinon {1} du générique (601.2f).
    */
   spellCost?: { filter: ObjectFilter; reduce?: number; anyMana?: boolean; reduceSymbols?: ManaCost["colored"] };
   /** Déclenchements doublés ou supprimés (famille G, R4.5). */
@@ -898,6 +905,13 @@ export interface PlayerStaticAbilityDef {
   cantLose?: boolean;
   /** « Vous n'avez pas de taille de main maximale. » */
   noMaxHandSize?: boolean;
+  /** Mots-clés des sorts correspondants que le joueur contrôle (Lo and Li : « vos sorts de Leçon ont le lien de vie »). */
+  spellKeywords?: { filter: ObjectFilter; keywords: Keyword[] };
+  /**
+   * Mana non dépensé (500.4) : ces types ne se vident pas à la fin des étapes et des phases (The Last Agni Kai, posé par
+   * `fx.thisTurn`) ; `becomes` : il devient de ce type au lieu de se vider (Ozai, the Phoenix King).
+   */
+  keepUnspentMana?: { types?: ManaType[]; becomes?: ManaType };
   /** « Vous pouvez jouer un terrain supplémentaire lors de chacun de vos tours. » */
   extraLands?: number;
   /** « Les terrains que vous contrôlez arrivent dégagés » (The Wandering Minstrel). */

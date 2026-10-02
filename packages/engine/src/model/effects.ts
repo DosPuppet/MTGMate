@@ -23,6 +23,8 @@ import type {
 export type Effect =
   /** Maîtrise de l'air (Avatar) : exile le permanent ou le sort ; son propriétaire peut le lancer pour {2} tant qu'il est exilé. */
   | { op: "airbend"; what: Ref }
+  /** Présage (702.143, action spéciale) : la carte est exilée de la main, lançable à un tour ultérieur. */
+  | { op: "foretell"; what: Ref }
   /** « Vous maîtrisez [l'élément] » (après une maîtrise de la terre ou du feu) : événement et journal du tour. */
   | { op: "bent"; kind: "water" | "earth" | "fire" | "air" }
   /** « Exploitez [cette Gemme d'infinité] » : ses capacités ∞ deviennent actives. */
@@ -76,7 +78,8 @@ export type Effect =
   /** Devient préparé / dé-préparé (Reality Fracture). */
   | { op: "prepare"; what?: Ref; filter?: ObjectFilter; value: boolean }
   | { op: "damage"; amount: Amount; to: Ref; source?: Ref; storeExcess?: string }
-  | { op: "fight"; a: Ref; b: Ref }
+  /** `storeExcess` : blessures en excès infligées à la seconde créature (The Last Agni Kai). */
+  | { op: "fight"; a: Ref; b: Ref; storeExcess?: string }
   /** `double` : chaque objet gagne +X/+Y, X et Y étant sa force et son endurance (« doublez la force et l'endurance »). */
   | { op: "pump"; what: Ref; power: Amount; toughness: Amount; keywords?: Keyword[]; double?: boolean }
   | { op: "pumpAll"; filter: ObjectFilter; power: Amount; toughness: Amount; keywords?: Keyword[] }

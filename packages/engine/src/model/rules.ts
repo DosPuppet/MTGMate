@@ -447,6 +447,8 @@ export type Condition =
   | { kind: "amountAtLeast"; amount: Amount; n: number }
   /** X du sort qui se résout. */
   | { kind: "xAtLeast"; n: number }
+  /** « tant que vous avez N mana non dépensé ou plus » (Ozai, the Phoenix King). */
+  | { kind: "manaPoolAtLeast"; n: number }
   /** Le contrôleur a regardé (scry) ou surveillé ce tour-ci. */
   | { kind: "scriedThisTurn" }
   /** Au moins N créatures sont mortes ce tour-ci. */

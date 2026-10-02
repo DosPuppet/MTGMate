@@ -26,7 +26,7 @@ export const HANDLERS: OpHandlers = {
     }
     return;
   },
-  fight(s, _r, e, ctx) {
+  fight(s, r, e, ctx) {
     const a = resolveRef(s, ctx, e.a)[0];
     const b = resolveRef(s, ctx, e.b)[0];
     // 701.12b : si l'une des créatures n'est plus là, aucune blessure n'est infligée.
@@ -35,6 +35,13 @@ export const HANDLERS: OpHandlers = {
     const pb = chars(s, b).power;
     const sa = sourceFromObject(s, a);
     const sb = sourceFromObject(s, b);
+    if (e.storeExcess) {
+      // 120.4a : blessures au-delà des blessures mortelles infligées à la seconde créature.
+      const lethal = sa.keywords.includes("deathtouch")
+        ? Math.min(1, chars(s, b).toughness - (s.objects[b]?.damage ?? 0))
+        : chars(s, b).toughness - (s.objects[b]?.damage ?? 0);
+      store(r, e.storeExcess, Math.max(0, pa - Math.max(0, lethal)));
+    }
     dealDamage(s, sa, b, pa, false);
     dealDamage(s, sb, a, pb, false);
     return;

@@ -303,6 +303,8 @@ export type GameEvent =
   | { type: "speed"; player: PlayerId; speed: number }
   /** 722 : `by` contrôle le tour de `player`. */
   | { type: "turnControl"; player: PlayerId; by: PlayerId; combatOnly?: boolean }
+  /** Présage (702.143) : une carte de la main est exilée, lançable plus tard. */
+  | { type: "foretold"; player: PlayerId; defId: string }
   /** Un permanent recto-verso se transforme (`defId` : la face désormais visible). */
   | { type: "transform"; objectId: ObjectId; defId: string }
   | { type: "attack"; player: PlayerId; attackers: { id: ObjectId; defId: string }[] }

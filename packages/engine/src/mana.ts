@@ -410,6 +410,8 @@ export function activateManaAbility(s: GameState, player: PlayerId, id: ObjectId
   const amount = (pool?.[c] ?? 0) - poolBefore;
   if (simple && !otherBonus && s.triggers.length === triggersBefore && amount > 0)
     s.manaUndo = [...(s.manaUndo ?? []), { player, source: id, color: c, amount }];
+  // La réserve a changé : une capacité statique peut en dépendre (Ozai, the Phoenix King).
+  bump(s);
 }
 
 /** Annule l'engagement d'une source pour son mana (voir `GameState.manaUndo`) : elle se dégage, le mana disparaît. */
@@ -636,5 +638,7 @@ export function payMana(
     if (pool[m] < plan.spend[m]) throw new Error(`Paiement incohérent : ${m} manquant`);
     pool[m] -= plan.spend[m];
   }
+  // La réserve a changé : une capacité statique peut en dépendre (Ozai, the Phoenix King).
+  bump(s);
   return used;
 }

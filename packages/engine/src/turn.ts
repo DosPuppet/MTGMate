@@ -55,6 +55,7 @@ import {
   controlledAbilitiesWithSource,
   playerEffectValues,
   playerStatic,
+  playerStatics,
   playerStaticTotal,
 } from "./statics";
 import { matchesObjectFilter, matchesView, protectedFrom, resolveFilter, sourceView } from "./targets";
@@ -444,8 +445,18 @@ function endStep(s: GameState): void {
       if (keep && keep[m] !== undefined) keep[m] = k;
       if (keepCombat && keepCombat[m] !== undefined) keepCombat[m] = kc;
     }
+    // The Last Agni Kai : ces types ne se vident pas ; Ozai, the Phoenix King : le mana non dépensé devient rouge.
+    const unspent = playerStatics(s, p, "keepUnspentMana").map(({ ab }) => ab.keepUnspentMana);
+    for (const k of unspent) for (const m of k?.types ?? []) pool[m] = player.manaPool[m];
+    const becomes = unspent.find((k) => k?.becomes)?.becomes;
+    if (becomes) {
+      const total = (Object.keys(player.manaPool) as ManaType[]).reduce((n, m) => n + player.manaPool[m], 0);
+      for (const m of Object.keys(pool) as ManaType[]) pool[m] = 0;
+      pool[becomes] = total;
+    }
     player.manaPool = pool;
     player.restrictedMana = undefined;
+    bump(s);
   }
   if (s.turn.step === "endCombat") {
     // La prochaine phase de combat contrôlée (Secret of Bloodbending) est terminée.

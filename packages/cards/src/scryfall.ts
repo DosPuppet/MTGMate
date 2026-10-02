@@ -212,6 +212,29 @@ function plotAbility(text: string): CardDef["abilities"] {
   ];
 }
 
+/** Présage (702.143) : « Foretell {2}{R} ». */
+export function parseForetell(text: string): ManaCost | undefined {
+  const m = /^Foretell ((?:\{[^}]+\})+)/m.exec(stripReminder(text));
+  return m ? parseManaCost(m[1] as string) : undefined;
+}
+
+/** Action spéciale de présage : pendant votre tour, payez {2} et exilez la carte de votre main. */
+function foretellAbility(text: string): CardDef["abilities"] {
+  if (!parseForetell(text)) return [];
+  return [
+    {
+      kind: "activated",
+      cost: { mana: parseManaCost("{2}") },
+      targets: [],
+      effects: [{ op: "foretell", what: { kind: "self" } }],
+      fromHand: true,
+      specialAction: true,
+      activationCondition: dsl.cond.yourTurn,
+      label: "Présage",
+    },
+  ];
+}
+
 /** Dévorer (702.82) : « Devour 2 », « Devour land 3 », « Devour artifact 1 ». */
 export function parseDevour(text: string): CardDef["devour"] {
   const m = /^Devour(?: (land|artifact))? (\d+)/m.exec(stripReminder(text));
@@ -765,6 +788,8 @@ function singleDef(raw: RawCard, script: CardScript | undefined, set: string): C
     );
   const exileGraveyard = exileOrPay ? ["one", "two", "three", "four", "five"].indexOf(exileOrPay[1] as string) + 1 : 0;
   const teamwork = Number(/^Teamwork (\d+)/m.exec(raw.oracleText)?.[1] ?? 0);
+  // « payez N points de vie ou payez {M} » (Redirect Lightning) : le kicker paie les PV, sinon le mana s'ajoute.
+  const lifeOrPay = /As an additional cost to cast this spell, pay (\d+) life or pay ((?:\{[^}]+\})+)\./.exec(raw.oracleText);
   // Avatar : maîtrise de l'eau en coût additionnel, « waterbend {N} », « waterbend {X} » ou « you may waterbend {N} » (kicker).
   const waterbendCost = /As an additional cost to cast this spell, (you may )?waterbend \{(\d+|X)\}/.exec(raw.oracleText);
   const waterbendKicker = waterbendCost?.[1] ? `{${waterbendCost[2]}}` : undefined;
@@ -842,6 +867,7 @@ function singleDef(raw: RawCard, script: CardScript | undefined, set: string): C
         Math.max(1, [...stripReminder(raw.oracleText).matchAll(/(?:^|, )prowess(?=,|$)/gim)].length),
       ),
       ...plotAbility(raw.oracleText),
+      ...foretellAbility(raw.oracleText),
       ...impendingAbilities(raw.oracleText),
       ...jobSelectAbility(raw.keywords),
       ...(parseCycling(raw.oracleText) ? [parseCycling(raw.oracleText) as CardDef["abilities"][number]] : []),
@@ -899,26 +925,28 @@ function singleDef(raw: RawCard, script: CardScript | undefined, set: string): C
         ? parseManaCost(offspring)
         : waterbendKicker
           ? parseManaCost(waterbendKicker)
-          : gift || bargain || blight || teamwork || evidence || exileGraveyard
+          : gift || bargain || lifeOrPay || blight || teamwork || evidence || exileGraveyard
             ? parseManaCost("{0}")
             : undefined,
     kickerKind: offspring
       ? "offspring"
       : waterbendKicker
         ? "waterbend"
-        : gift
-          ? "gift"
-          : bargain
-            ? "bargain"
-            : blight
-              ? "blight"
-              : teamwork
-                ? "teamwork"
-                : evidence
-                  ? "evidence"
-                  : exileGraveyard
-                    ? "exileGraveyard"
-                    : undefined,
+        : lifeOrPay
+          ? "life"
+          : gift
+            ? "gift"
+            : bargain
+              ? "bargain"
+              : blight
+                ? "blight"
+                : teamwork
+                  ? "teamwork"
+                  : evidence
+                    ? "evidence"
+                    : exileGraveyard
+                      ? "exileGraveyard"
+                      : undefined,
     gift,
     kickerCost:
       script?.kickerCost ??
@@ -932,7 +960,9 @@ function singleDef(raw: RawCard, script: CardScript | undefined, set: string): C
               ? { collectEvidence: evidence }
               : exileGraveyard
                 ? { exileGraveyard }
-                : undefined),
+                : lifeOrPay
+                  ? { life: Number(lifeOrPay[1]) }
+                  : undefined),
     // Harmonie (702.180) : lancée depuis le cimetière comme un flashback, pour son coût d'harmonie.
     flashback: script?.flashback ? parseManaCost(script.flashback) : harmonize ? parseManaCost(harmonize) : undefined,
     harmonize: harmonize ? true : undefined,
@@ -941,6 +971,7 @@ function singleDef(raw: RawCard, script: CardScript | undefined, set: string): C
     disguiseReduction: script?.disguiseReduction,
     warp: parseWarp(raw.oracleText),
     plot: parsePlot(raw.oracleText),
+    foretell: parseForetell(raw.oracleText),
     devour: script?.devour ?? parseDevour(raw.oracleText),
     entersAsCopyOf: script?.entersAsCopyOf,
     doubleTriggersWhenEquipped: script?.doubleTriggersWhenEquipped,
@@ -954,7 +985,13 @@ function singleDef(raw: RawCard, script: CardScript | undefined, set: string): C
     webSlinging: webSlinging ? parseManaCost(webSlinging) : undefined,
     xCost: payLifeX ? "life" : blightX ? "blight" : waterbendX ? "waterbend" : undefined,
     waterbend: waterbendN,
-    kickerOrPay: blightOrPay ? parseManaCost(blightOrPay) : exileOrPay ? parseManaCost(exileOrPay[2] as string) : undefined,
+    kickerOrPay: blightOrPay
+      ? parseManaCost(blightOrPay)
+      : exileOrPay
+        ? parseManaCost(exileOrPay[2] as string)
+        : lifeOrPay
+          ? parseManaCost(lifeOrPay[2] as string)
+          : undefined,
     shockLand: /(?:As this land enters, |Then )you may pay (\d+) life\. If you don't, it enters tapped\./.exec(raw.oracleText)
       ? Number(/you may pay (\d+) life/.exec(raw.oracleText)?.[1])
       : undefined,

@@ -1,6 +1,6 @@
 import type { OpHandlers } from "../effects";
 import { evalAmount } from "../effects";
-import { linkedColors } from "../layers";
+import { bump, linkedColors } from "../layers";
 import { chars } from "../state";
 import { matchesObjectFilter } from "../targets";
 import type { ManaType } from "../types";
@@ -10,6 +10,7 @@ export const HANDLERS: OpHandlers = {
     const pool = s.players[ctx.controller]?.manaPool;
     const times = e.times === undefined ? 1 : evalAmount(s, ctx, e.times);
     if (pool) for (const m of e.mana) pool[m] += times;
+    bump(s);
     return;
   },
   addManaChoice(s, r, e, ctx, key) {
@@ -50,6 +51,7 @@ export const HANDLERS: OpHandlers = {
         pl.manaKeep[type] = (pl.manaKeep[type] ?? 0) + n;
       }
     }
+    bump(s);
     return;
   },
   addManaColorsAmong(s, _r, e, ctx) {
@@ -64,6 +66,7 @@ export const HANDLERS: OpHandlers = {
             .flatMap((id) => chars(s, id).colors),
     );
     for (const c of colors) pool[c] += 1;
+    bump(s);
     return;
   },
   addManaUntilEndOfTurn(s, _r, e, ctx) {
@@ -79,6 +82,7 @@ export const HANDLERS: OpHandlers = {
         keep[m] = (keep[m] ?? 0) + 1;
       }
     }
+    bump(s);
     return;
   },
 };

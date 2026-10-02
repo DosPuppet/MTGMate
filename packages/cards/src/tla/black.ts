@@ -14,6 +14,7 @@ import {
   fx,
   modal,
   mode,
+  playerStatic,
   ref,
   spell,
   staticAbility,
@@ -380,5 +381,21 @@ export const BLACK: Record<string, CardScript> = {
         ),
       ],
     ),
+  },
+  "Lo and Li, Twin Tutors": {
+    abilities: [
+      triggered(when.entersSelf, [fx.search({ anyOf: [{ subtype: "Lesson" }, { subtype: "Noble" }] }, { to: "hand" })], {
+        label: "Cherchez une carte de Leçon ou de Noble",
+      }),
+      staticAbility(
+        { types: ["Creature"], subtype: "Noble", controller: "you" },
+        { addKeywords: ["lifelink"] },
+        { label: "Vos créatures Nobles ont le lien de vie" },
+      ),
+      playerStatic({
+        spellKeywords: { filter: { subtype: "Lesson" }, keywords: ["lifelink"] },
+        label: "Vos sorts de Leçon ont le lien de vie",
+      }),
+    ],
   },
 };

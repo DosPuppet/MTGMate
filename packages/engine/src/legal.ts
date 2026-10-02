@@ -89,6 +89,14 @@ function kickerPrompt(d: CardDef): { title: string; without: string; with: strin
     const c = costToText(d.kicker);
     return { title: `Payer la progéniture ${c} ?`, without: "Sans progéniture", with: `Progéniture ${c}` };
   }
+  if (d.kickerKind === "life" && d.kickerCost?.life) {
+    const pay = d.kickerOrPay ? costToText(d.kickerOrPay) : "";
+    return {
+      title: `Payer ${d.kickerCost.life} points de vie plutôt que ${pay} ?`,
+      without: `Payer ${pay}`,
+      with: `Payer ${d.kickerCost.life} PV`,
+    };
+  }
   if (d.kickerKind === "waterbend" && d.kicker) {
     const c = costToText(d.kicker);
     return {
@@ -364,9 +372,11 @@ export function legalActions(s: GameState, player: PlayerId): ActionOption[] {
           ? suggestedCrew(s, player, card, d.kickerCost.tapPower).length > 0
           : d.kickerCost.collectEvidence !== undefined
             ? !!evidenceCards(s, player, card, d.kickerCost.collectEvidence)
-            : d.kickerCost.exileGraveyard !== undefined
-              ? !!graveyardToExile(s, player, card, d.kickerCost.exileGraveyard)
-              : !!kickerCostPermanent(s, player, card, d))) &&
+            : d.kickerCost.life !== undefined
+              ? (s.players[player]?.life ?? 0) >= d.kickerCost.life
+              : d.kickerCost.exileGraveyard !== undefined
+                ? !!graveyardToExile(s, player, card, d.kickerCost.exileGraveyard)
+                : !!kickerCostPermanent(s, player, card, d))) &&
       canPay(
         s,
         player,
