@@ -34,3 +34,10 @@ Les scripts sont dans `packages/cards/src/tla/` : `cards` (cartes du méta), `wh
 - **Moteur :** rien de nouveau ; la maîtrise de l'eau du socle sert à dix capacités. Le tour supplémentaire (Avatar Kuruk) sert désormais à deux cartes : son entrée de dette est retirée.
 - **Reste pour plus tard :** Benevolent River Spirit, Crashing Wave, Spirit Water Revival, Secret of Bloodbending (maîtrise de l'eau en coût de sort ; contrôle de l'adversaire pendant sa prochaine phase de combat), The Unagi of Kyoshi Island (garde « maîtrise de l'eau {4} »), Waterbending Lesson (« à moins de maîtriser l'eau {2} »).
 - **Tests :** 38 tests de règles (« lot A, bleu »).
+
+## Sous-lot A3 : cartes noires ✅ (122 / 280)
+
+- **Cartes (29) :** Azula Always Lies, Azula, On the Hunt, Beetle-Headed Merchants, Boiling Rock Rioter, Buzzard-Wasp Colony, Canyon Crawler, Cat-Gator, Corrupt Court Official, Dai Li Indoctrination, Epic Downfall, Fatal Fissure, The Fire Nation Drill, Fire Nation Engineer, Fire Navy Trebuchet, Foggy Swamp Hunters, Hog-Monkey, Joo Dee, One of Many, June, Bounty Hunter, Mai, Scornful Striker, Merchant of Many Hats, Northern Air Temple, Ozai's Cruelty, Phoenix Fleet Airship, Pirate Peddlers, Sold Out, Swampsnare Trap, Tundra Tank, Wolfbat, Zuko's Conviction.
+- **Moteur :** rien de nouveau (emblème lié à la source pour Fatal Fissure, cartes liées lancées depuis l'exil pour Boiling Rock Rioter, réduction de coût selon l'Aura ciblée pour Swampsnare Trap).
+- **Reste pour plus tard :** Foggy Swamp Visions et Ruinous Waterbending (maîtrise de l'eau en coût de sort), Koh, the Face Stealer (capacités de la dernière carte choisie), Lo and Li, Twin Tutors (mots-clés donnés aux sorts), The Rise of Sozin // Fire Lord Sozin (valeur de mana totale X des cibles).
+- **Tests :** 34 tests de règles (« lot A, noir »).

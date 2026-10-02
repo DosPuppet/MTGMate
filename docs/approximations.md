@@ -328,5 +328,8 @@ Dans l'ordre où elles ont été ajoutées, extension par extension.
   - `règle` Lost Days : le choix entre la deuxième position et le dessous de la bibliothèque revient au contrôleur de la créature, et non à son propriétaire (comme Temporal Cleansing) ;
   - `règle` Ty Lee, Chi Blocker : la créature ne se dégage pas tant que Ty Lee reste sur le champ de bataille (et non « tant que vous la contrôlez ») ;
   - `règle` Honest Work : la créature enchantée prend le seul sous-type Citoyen (une créature-artefact perdrait aussi ses sous-types d'artefact).
+  - `règle` Boiling Rock Rioter : « engagez un Allié dégagé que vous contrôlez » est deux capacités (un autre Allié, ou le Rioter lui-même) ; s'engager lui-même demande qu'il n'ait pas le mal d'invocation, ce que la règle 302.6 n'exige pas pour un coût autre que {T} ;
+  - `règle` Sold Out : « a subi des blessures ce tour-ci » se lit sur les blessures encore marquées ;
+  - `timing` The Fire Nation Drill : s'il arrive déjà engagé, la question « vous pouvez l'engager » n'est pas posée.
 - **Légalité Standard :** instantané des légalités Scryfall au moment de l'import (`legalities.standard` dans `data/<set>.json`). Après une rotation ou une annonce de bannissement, réimporter les sets (`npm run import-cards -- <set>`).
 - **Images des jetons :** celle du jeton Scryfall le plus proche (même nom, puis mêmes F/E et couleurs ; `data/tokens.json`, `npm run import-tokens`) ; un jeton de nom inconnu garde le cadre texte.
