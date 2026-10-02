@@ -21,7 +21,15 @@ Les scripts sont dans `packages/cards/src/tmt/` : `cards` (cartes du méta), `wh
 
 ## Sous-lot A1 : cartes blanches ✅ (38 / 188)
 
-- **Cartes (26) :** Action News Crew, Agent Bishop,  Man in Black, April O'Neil,  Kunoichi Trainee, Dimensional Exile, East Wind Avatar, Featherbrained Filcher, Grounded for Life, Hamato Guardian Stance, High-Flying Ace, Jennika,  Bad Apple Big Sister, Koya,  Death from Above, Leader's Talent, Leonardo,  Big Brother, Leonardo,  Cutting Edge, Leonardo,  Leader in Blue, Leonardo,  Sewer Samurai, Leonardo's Technique, Lita,  Little Orphan Amphibian, Mighty Mutanimals, Prehistoric Pet, Quintessential Katana, Sally Pride,  Lioness Leader, Triceraton Commander, Turncoat Kunoichi, Turtles Forever, Uneasy Alliance.
+- **Cartes (26) :** Action News Crew, Agent Bishop, Man in Black, April O'Neil, Kunoichi Trainee, Dimensional Exile, East Wind Avatar, Featherbrained Filcher, Grounded for Life, Hamato Guardian Stance, High-Flying Ace, Jennika, Bad Apple Big Sister, Koya, Death from Above, Leader's Talent, Leonardo, Big Brother, Leonardo, Cutting Edge, Leonardo, Leader in Blue, Leonardo, Sewer Samurai, Leonardo's Technique, Lita, Little Orphan Amphibian, Mighty Mutanimals, Prehistoric Pet, Quintessential Katana, Sally Pride, Lioness Leader, Triceraton Commander, Turncoat Kunoichi, Turtles Forever, Uneasy Alliance.
 - **Moteur :** rien de nouveau.
 - **Écart trouvé :** le faufilement n'était pas jouable pour une créature ou un rituel (aucune fenêtre de lancement, pas d'arrivée engagée et attaquante) ; corrigé au sous-lot B1, où les deux tests désactivés (Leonardo, Leader in Blue ; Turncoat Kunoichi) sont réactivés.
 - **Tests :** 37 tests de règles (« lot A, blanc ») ; The Ooze : un Mutagène par marqueur +1/+1 d'une créature qui part (la note qui le disait intestable était périmée).
+
+## Sous-lot A2 : cartes bleues ✅ (62 / 188)
+
+- **Cartes (24) :** April, Reporter of the Weird, Bespoke Bō, Buzz Bots, Crustacean Commando, Does Machines, Donatello, Gadget Master, Donatello, Mutant Mechanic, Donatello, Turtle Techie, Donatello, Way with Machines, Donatello's Technique, Kitsune, Dragon's Daughter, Kitsune's Technique, Krang, Master Mind, Metalhead, Mind Transfer Protocol, Ooze Spill, Ray Fillet, Man Ray, Renet, Temporal Apprentice, Retro-Mutation, Return to the Sewers, Sewer-veillance Cam, Stockman, Mad Fly-entist, Turtles in Time, Utrom Scientists.
+- **Correctif du moteur :** un déclencheur dont les cibles doivent être « contrôlées par des joueurs différents » n'a pas de cible légale quand les créatures possibles sont toutes à un même joueur (603.3d) ; il demandait un choix impossible (Kitsune, Dragon's Daughter, trouvé par le fuzz ; test dans `rulings.test.ts`).
+- **Dette :** « mélangez main et cimetière, puis piochez » sert aussi à Turtles in Time : son entrée est retirée.
+- **Reste pour plus tard :** April O'Neil, Hacktivist (types distincts parmi les sorts lancés ce tour-ci), Fugitive Droid (cibler un sort qui cible vos permanents), Mondo Gecko (défense talismanique contre une couleur choisie).
+- **Tests :** 32 tests de règles (« lot A, bleu ») et un dans `rulings.test.ts`.

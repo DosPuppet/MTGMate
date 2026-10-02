@@ -401,5 +401,8 @@ Dans l'ordre où elles ont été ajoutées, extension par extension.
   - `règle` Black Cat, Cunning Thief : les deux cartes sont exilées face visible (et non face cachée).
 - **Teenage Mutant Ninja Turtles (`docs/extensions/tmt.md`) :**
   - `règle` Turtles Forever : la recherche ne porte que sur la bibliothèque (rien hors de la partie), et « exactement quatre » n'est pas imposé (l'adversaire choisit parmi les cartes trouvées).
+  - `règle` Kitsune's Technique : « la moitié, arrondie au supérieur » est meulée en deux fois (une carte, puis la moitié du reste) ; un remplacement ou un déclencheur de meule s'applique deux fois.
+  - `règle` Kitsune, Dragon's Daughter : l'échange se fait entre votre créature et celle d'un adversaire (deux créatures de deux adversaires ne s'échangent pas, à plus de deux joueurs).
+  - `règle` Renet, Temporal Apprentice : « arrivé ce tour-ci » compte aussi un permanent dont le contrôle a changé ce tour-ci.
 - **Légalité Standard :** instantané des légalités Scryfall au moment de l'import (`legalities.standard` dans `data/<set>.json`). Après une rotation ou une annonce de bannissement, réimporter les sets (`npm run import-cards -- <set>`).
 - **Images des jetons :** celle du jeton Scryfall le plus proche (même nom, puis mêmes F/E et couleurs ; `data/tokens.json`, `npm run import-tokens`) ; un jeton de nom inconnu garde le cadre texte.

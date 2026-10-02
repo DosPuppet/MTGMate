@@ -454,3 +454,16 @@ describe("socle de Marvel's Spider-Man", () => {
     expect(s.stack).toHaveLength(1);
   });
 });
+
+describe("correctifs du lot A de Teenage Mutant Ninja Turtles", () => {
+  it("603.3d : cibles « de joueurs différents » toutes chez un même joueur — pas de cible légale, pas de choix impossible", () => {
+    let s = scenario({
+      p1: { battlefield: Array(6).fill("Island"), hand: ["Kitsune, Dragon's Daughter"] },
+      p2: { battlefield: ["Bear Cub", "Serra Angel"] },
+    });
+    s = act(s, "p1", { type: "cast", card: idOf(s, "p1", "hand", "Kitsune, Dragon's Daughter") });
+    s = passAccepting(s, (x) => x.stack.length === 0 && x.triggers.length === 0 && x.pending?.kind !== "choice");
+    expect(s.pending?.kind).toBe("priority");
+    expect(idsOf(s, "p2", "battlefield", "Bear Cub")).toHaveLength(1);
+  });
+});

@@ -1310,7 +1310,13 @@ function chooseTriggerTargets(s: GameState, t: PendingTrigger): boolean {
     const count = spec.count ?? 1;
     // « une à trois cibles » (`target.between`) : au moins `minCount` (Armament Dragon, Glint Weaver).
     const min = spec.optional ? 0 : (spec.minCount ?? count);
-    if (legal.length === 0 || legal.length < min) {
+    // « contrôlées par des joueurs différents » : il faut autant de joueurs différents que de cibles requises.
+    const holdersOf = (id: string) => {
+      const o = s.objects[id];
+      return o ? (o.zone === "battlefield" ? o.controller : o.owner) : id;
+    };
+    const available = spec.differentPlayers ? new Set(legal.map(holdersOf)).size : legal.length;
+    if (legal.length === 0 || available < min) {
       t.targets[spec.id] = [];
       continue;
     }
