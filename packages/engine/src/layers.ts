@@ -702,11 +702,16 @@ function evalStatic(s: GameState, slot: StaticSlot, sig: (string | number)[]): {
   }
   let mods = ab.mods;
   if (mods.gainLinkedActivated) {
-    // Territory Forge : les capacités activées (et de mana) des cartes liées.
+    // Territory Forge : les capacités activées (et de mana) des cartes liées ; Koh : aussi déclenchées, de la carte choisie.
+    const g = typeof mods.gainLinkedActivated === "object" ? mods.gainLinkedActivated : {};
     const extra = (o.linked ?? [])
       .filter((c) => s.objects[c]?.zone === "exile")
-      .flatMap((c) => s.defs[s.objects[c]?.defId ?? ""]?.abilities ?? [])
-      .filter((a) => a.kind === "activated" || a.kind === "mana");
+      .map((c) => s.defs[s.objects[c]?.defId ?? ""])
+      .filter((d) => !g.chosenName || (!!d && d.name === o.chosen?.cardName))
+      .slice(0, g.chosenName ? 1 : undefined)
+      .flatMap((d) => d?.abilities ?? [])
+      .filter((a) => a.kind === "activated" || a.kind === "mana" || (g.triggered && a.kind === "triggered"));
+    sig.push(`gl${o.chosen?.cardName ?? ""}`);
     mods = { ...mods, gainLinkedActivated: undefined, addAbilities: [...(mods.addAbilities ?? []), ...extra] };
   }
   if (mods.gainActivatedFrom) {

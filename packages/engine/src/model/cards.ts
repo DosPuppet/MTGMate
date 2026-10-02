@@ -598,8 +598,11 @@ export interface LayerMods {
   copyOf?: string;
   /** Assimilation Aegis : copie de la carte exilée par la source (liée par « exilez jusqu'à ce que »). */
   copyLinkedExile?: boolean;
-  /** Territory Forge : a les capacités activées des cartes liées à la source. */
-  gainLinkedActivated?: boolean;
+  /**
+   * Territory Forge : a les capacités activées des cartes liées à la source ; `triggered` : aussi leurs capacités
+   * déclenchées ; `chosenName` : seulement la carte liée dont le nom a été choisi en dernier (Koh, the Face Stealer).
+   */
+  gainLinkedActivated?: boolean | { triggered?: boolean; chosenName?: boolean };
   /** Marvin : a les capacités activées (imprimées) des créatures correspondantes qui n'ont pas son nom. */
   gainActivatedFrom?: ObjectFilter;
   /** Couche 7b : F/E fixées. */
@@ -697,7 +700,11 @@ export interface EventReplacement {
   /** true : seulement les blessures de combat ; false : seulement les autres. */
   combat?: boolean;
   /** « autant plus N », « le double », « au moins la force de [la source du remplacement] », « prévenez-les ». */
-  modify: { add?: number; times?: number; atLeastSourcePower?: boolean; prevent?: boolean };
+  /**
+   * `addSourceCounters` : en plus, autant que de marqueurs de ce type sur la source du remplacement (Fated Firepower :
+   * « plus le nombre de marqueurs de feu sur cet enchantement »).
+   */
+  modify: { add?: number; addSourceCounters?: string; times?: number; atLeastSourcePower?: boolean; prevent?: boolean };
   /** Après une prévention : chaque adversaire du contrôleur meule autant (The Mindskinner) ; capacité réflexive
    * « quand des blessures sont prévenues ainsi » (New Way Forward : `amount.eventAmount` et `ref.eventObject`, la source). */
   onPrevent?: { opponentsMill?: boolean; reflexive?: Effect[] };

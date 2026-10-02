@@ -8,6 +8,7 @@ import {
   chapter,
   cond,
   entersWith,
+  eventReplacement,
   exhaust,
   firebending,
   fx,
@@ -339,5 +340,34 @@ export const RED: Record<string, CardScript> = {
         fx.thisTurn({ keepUnspentMana: { types: ["R"] }, label: "Vous ne perdez pas votre mana rouge non dépensé" }),
       ],
     ),
+  },
+  // Flash : lu dans le texte.
+  "Fated Firepower": {
+    abilities: [
+      entersWith({ counters: amount.x, counterKind: "fire", label: "Arrive avec X marqueurs de feu" }),
+      eventReplacement({
+        event: "damage",
+        source: { controller: "you" },
+        to: "opponentSide",
+        modify: { addSourceCounters: "fire" },
+        label: "Vos sources infligent autant de blessures en plus que de marqueurs de feu",
+      }),
+    ],
+  },
+  "Firebender Ascension": {
+    abilities: [
+      triggered(when.entersSelf, [fx.createTokens(SOLDIER_FIRE)], { label: "Un Soldat 2/2 avec la maîtrise du feu 1" }),
+      triggered(
+        when.attackAbilityTriggered,
+        [
+          fx.counters(ref.self, "quest"),
+          ...fx.when(
+            cond.counterAtLeast("quest", 4),
+            fx.may("Copier cette capacité ?", fx.copySpell(ref.abilitiesFromEventObject, 1)),
+          ),
+        ],
+        { label: "Un marqueur de quête ; à 4 ou plus, vous pouvez copier la capacité" },
+      ),
+    ],
   },
 };

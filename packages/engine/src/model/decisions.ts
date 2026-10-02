@@ -56,6 +56,7 @@ export type ChoiceIntent =
   | "impulse"
   | "divideDamage"
   | "keepPerType"
+  | "keepWithinPower"
   | "discover"
   | "other";
 

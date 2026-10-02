@@ -118,3 +118,16 @@ Les scripts sont dans `packages/cards/src/tla/` : `cards` (cartes du méta), `wh
   - `spellKeywords` : des mots-clés donnés aux sorts du joueur (Lo and Li : « vos sorts de Leçon ont le lien de vie »), lus au moment des blessures.
 - **Version des règles :** 44.
 - **Tests :** 8 tests de règles (« lot C2 »).
+
+## Sous-lot C3 : dernières cartes uniques ✅ (280 / 280)
+
+- **Cartes (5) :** Destined Confrontation, Fated Firepower, Firebender Ascension, Koh, the Face Stealer, The Rise of Sozin // Fire Lord Sozin.
+- **Le moteur gagne :**
+  - `fx.keepWithinTotalPower(joueurs, filtre, N)` : chaque joueur choisit des permanents de force totale N ou moins (un choix au-delà est refusé), puis tous sacrifient les autres en même temps (entrée de dette justifiée, famille « gardez, sacrifiez le reste ») ;
+  - `eventReplacement({ modify: { addSourceCounters } })` : autant de blessures en plus que de marqueurs de ce type sur la source du remplacement (Fated Firepower) ;
+  - l'événement « une créature attaquante a fait se déclencher une de ses capacités » (`when.attackAbilityTriggered`) et la référence `ref.abilitiesFromEventObject` (la capacité à copier) ;
+  - le nom choisi parmi des cartes désignées (`fx.chooseForSelf("cardName", { optionsFrom })`) et `gainLinkedActivated: { triggered, chosenName }` : les capacités activées et déclenchées de la dernière carte liée choisie (Koh) ;
+  - `maxTotalManaValueAmount` : la valeur de mana totale des cibles d'une capacité réflexive, évaluée à sa mise sur la pile (Fire Lord Sozin : le X payé).
+- **Dette :** `chooseCardName` et `exileNamed` servent désormais à deux cartes (Ancient Vendetta, The Rise of Sozin) : leurs entrées sont retirées.
+- **Version des règles :** 45.
+- **Tests :** 6 tests de règles (« lot C3 »).

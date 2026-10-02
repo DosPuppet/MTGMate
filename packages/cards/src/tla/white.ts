@@ -391,4 +391,7 @@ export const WHITE: Record<string, CardScript> = {
       ],
     ),
   },
+  "Destined Confrontation": {
+    spell: spell([], [fx.keepWithinTotalPower(ref.eachPlayer, { types: ["Creature"] }, 4)]),
+  },
 };

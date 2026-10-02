@@ -232,6 +232,14 @@ export function resolveRef(s: GameState, ctx: EffectContext, ref: Ref): string[]
       );
     case "libraryTop":
       return resolveRef(s, ctx, ref.who).flatMap((p) => (s.players[p]?.library[0] ? [s.players[p]?.library[0] as string] : []));
+    case "abilitiesFromEventObject": {
+      const src = ctx.event?.objectId;
+      const resolving = s.resolving?.item.id;
+      return s.stack
+        .filter((x) => x.kind !== "spell" && x.id !== resolving && x.sourceId === src)
+        .map((x) => x.id)
+        .slice(-1);
+    }
     case "stackItemsOf": {
       const players = resolveRef(s, ctx, ref.who);
       const resolving = s.resolving?.item.id;

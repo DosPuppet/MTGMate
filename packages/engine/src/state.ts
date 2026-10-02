@@ -140,7 +140,9 @@ export type RulesEvent =
   | { e: "unlock"; objectId: ObjectId; door: number; player: PlayerId }
   | { e: "blocked"; attacker: ObjectId; player: PlayerId }
   /** Maîtrise des éléments (Avatar) : ce joueur maîtrise l'eau, la terre, le feu ou l'air. */
-  | { e: "bend"; player: PlayerId; kind: BendKind };
+  | { e: "bend"; player: PlayerId; kind: BendKind }
+  /** Une créature attaquante a fait se déclencher une de ses capacités en attaquant (Firebender Ascension). */
+  | { e: "attackTriggered"; player: PlayerId; objectId: ObjectId };
 
 /** Maîtrise des éléments (Avatar) : l'eau (payer un coût), la terre, le feu (la capacité se résout) ou l'air. */
 export type BendKind = "water" | "earth" | "fire" | "air";

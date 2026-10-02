@@ -6,6 +6,8 @@ export interface TargetSpec {
   filter: TargetFilter;
   /** Valeur de mana totale des cibles au plus égale à N (Scout for Survivors). */
   maxTotalManaValue?: number;
+  /** … ou à ce montant, évalué quand la capacité réflexive est mise sur la pile (Fire Lord Sozin : X payé). */
+  maxTotalManaValueAmount?: Amount;
   /** « jusqu'à une cible » */
   optional?: boolean;
   label?: string;
@@ -385,6 +387,8 @@ export type TriggerSpec =
   | { on: "forage" }
   /** « Chaque fois que vous réunissez des preuves » (Surveillance Monitor). */
   | { on: "collectEvidence" }
+  /** « Chaque fois qu'une créature que vous contrôlez fait, en attaquant, se déclencher une de ses capacités. » */
+  | { on: "attackAbilityTriggered" }
   /** « Chaque fois que vous maîtrisez l'eau, la terre, le feu ou l'air » (Avatar) ; `kinds` : seulement ces éléments. */
   | { on: "bend"; kinds?: ("water" | "earth" | "fire" | "air")[] }
   /** « Chaque fois que vous résolvez une Affaire » (Case File Auditor). */
@@ -565,6 +569,8 @@ export type Ref =
   | { kind: "linked" }
   /** Cartes exilées « jusqu'à ce que » la source quitte le champ de bataille (Pinnacle Starcage). */
   | { kind: "exiledWith" }
+  /** La capacité la plus récente sur la pile dont la source est l'objet de l'événement (Firebender Ascension). */
+  | { kind: "abilitiesFromEventObject" }
   /** Les joueurs (encore en partie) qui n'ont pas la vitesse maximale (Outpace Oblivion). */
   | { kind: "playersWithoutMaxSpeed" }
   /** Carte du dessus de la bibliothèque de chaque joueur désigné. */

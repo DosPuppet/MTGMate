@@ -4657,3 +4657,115 @@ describe("lot C2 : lancement et mana", () => {
     expect(s.players.p2?.life).toBe(17);
   });
 });
+
+describe("lot C3 : cartes uniques", () => {
+  it("Destined Confrontation : chaque joueur garde des créatures de force totale 4 ou moins et sacrifie les autres", () => {
+    let s = scenario({
+      p1: { battlefield: [...lands("Plains", 4), "Serra Angel", "Bear Cub", "Llanowar Elves"], hand: ["Destined Confrontation"] },
+      p2: { battlefield: ["Shivan Dragon", "Bear Cub"] },
+    });
+    const keep = [idOf(s, "p1", "battlefield", "Bear Cub"), idOf(s, "p1", "battlefield", "Llanowar Elves")];
+    const tooMuch = [idOf(s, "p1", "battlefield", "Serra Angel"), ...keep];
+    const cast1 = cast(s, "p1", "Destined Confrontation");
+    expect(() => settle(cast1, (req, p) => (req.type === "pick" && p === "p1" ? tooMuch : undefined))).toThrow(/Force totale/);
+    s = settle(cast1, (req, p) => (req.type === "pick" && p === "p1" ? keep : undefined));
+    expect(idsOf(s, "p1", "battlefield", "Serra Angel")).toHaveLength(0);
+    expect(idsOf(s, "p1", "battlefield", "Bear Cub")).toHaveLength(1);
+    expect(idsOf(s, "p1", "battlefield", "Llanowar Elves")).toHaveLength(1);
+    // Suggestion de l'adversaire : le Dragon (force 5) ne tient pas dans la limite.
+    expect(idsOf(s, "p2", "battlefield", "Shivan Dragon")).toHaveLength(0);
+    expect(idsOf(s, "p2", "battlefield", "Bear Cub")).toHaveLength(1);
+  });
+
+  it("Fated Firepower : X marqueurs de feu ; vos sources infligent autant de blessures en plus aux adversaires et à leurs permanents", () => {
+    let s = scenario({
+      p1: { battlefield: lands("Mountain", 7), hand: ["Fated Firepower", "Lightning Strike", "Lightning Strike"] },
+      p2: { battlefield: ["Serra Angel"] },
+    });
+    s = settle(cast(s, "p1", "Fated Firepower", { x: 2 }));
+    expect(s.objects[idOf(s, "p1", "battlefield", "Fated Firepower")]?.counters.fire).toBe(2);
+    s = settle(cast(s, "p1", "Lightning Strike", { targets: { t: ["p2"] } }));
+    expect(s.players.p2?.life).toBe(15);
+  });
+
+  it("Firebender Ascension : la capacité d'une créature qui attaque ajoute un marqueur de quête ; à quatre, elle est copiée", () => {
+    const firebender = customCard({ name: "Test Firebender", power: 2, toughness: 2, abilities: [dsl.firebending(1)] });
+    let s = scenario({ p1: { battlefield: [{ name: "Firebender Ascension", counters: { quest: 3 } }, firebender] } });
+    const asc = idOf(s, "p1", "battlefield", "Firebender Ascension");
+    const attacker = idOf(s, "p1", "battlefield", "Test Firebender");
+    s = advanceUntil(s, (x) => x.pending?.kind === "declareAttackers");
+    s = act(s, "p1", { type: "declareAttackers", attackers: [{ id: attacker, defender: "p2" }] });
+    // L'Ascension se résout d'abord (au-dessus de la maîtrise du feu) : la capacité est copiée.
+    s = settle(s, (req) => {
+      if (req.type === "order") {
+        const first = (id: string) => (/quête/.test(req.labels?.[id] ?? "") ? 0 : 1);
+        return [...req.items].sort((a, b) => first(a) - first(b));
+      }
+      return req.type === "yesNo" ? [1] : undefined;
+    });
+    expect(s.objects[asc]?.counters.quest).toBe(4);
+    expect(s.players.p1?.manaPool.R).toBe(2);
+  });
+
+  it("Koh, the Face Stealer : exile une créature ; payez 1 PV, choisissez-la : Koh a ses capacités activées", () => {
+    let s = scenario({
+      p1: { battlefield: lands("Swamp", 6), hand: ["Koh, the Face Stealer"] },
+      p2: { battlefield: ["Llanowar Elves"] },
+    });
+    const elves = idOf(s, "p2", "battlefield", "Llanowar Elves");
+    s = settle(cast(s, "p1", "Koh, the Face Stealer"), picking([elves]));
+    expect(exiled(s, "Llanowar Elves")).toHaveLength(1);
+    const koh = idOf(s, "p1", "battlefield", "Koh, the Face Stealer");
+    expect(manaAbilitiesOf(s, koh)).toHaveLength(0);
+    s = settle(activate(s, "p1", koh));
+    expect(s.players.p1?.life).toBe(19);
+    expect(s.objects[koh]?.chosen?.cardName).toBe("Llanowar Elves");
+    expect(manaAbilitiesOf(s, koh)).toHaveLength(1);
+  });
+
+  it("The Rise of Sozin : I détruit toutes les créatures ; II exile jusqu'à quatre cartes du nom choisi chez l'adversaire", () => {
+    let s = scenario({
+      p1: { battlefield: lands("Swamp", 6), hand: ["The Rise of Sozin // Fire Lord Sozin"] },
+      p2: {
+        battlefield: ["Bear Cub"],
+        hand: ["Lightning Strike"],
+        library: ["Lightning Strike", "Island"],
+        graveyard: ["Lightning Strike"],
+      },
+    });
+    s = settle(cast(s, "p1", "The Rise of Sozin // Fire Lord Sozin"));
+    expect(idsOf(s, "p2", "battlefield", "Bear Cub")).toHaveLength(0);
+    s = advanceUntil(s, (x) => x.turn.active === "p1" && x.turn.step === "main1" && x.turn.number > 3 && x.stack.length === 0);
+    s = settle(s, (req) => (req.type === "pick" && req.options.includes("Lightning Strike") ? ["Lightning Strike"] : undefined));
+    expect(exiled(s, "Lightning Strike")).toHaveLength(3);
+  });
+
+  it("Fire Lord Sozin : blessures de combat à un joueur, payez X : des créatures de son cimetière, de valeur de mana totale X ou moins", async () => {
+    const { moveWithSpec } = await import("../src/effects");
+    let s = scenario({
+      p1: { battlefield: lands("Swamp", 3), hand: ["The Rise of Sozin // Fire Lord Sozin"] },
+      p2: { graveyard: ["Bear Cub", "Serra Angel"] },
+    });
+    const sozin = moveWithSpec(s, "p1", idOf(s, "p1", "hand", "The Rise of Sozin // Fire Lord Sozin"), {
+      to: "battlefield",
+      transformed: true,
+    }) as string;
+    s.objects[sozin]!.controlledSince = 0;
+    const bear = idOf(s, "p2", "graveyard", "Bear Cub");
+    s = advanceUntil(s, (x) => x.pending?.kind === "declareAttackers");
+    s = act(s, "p1", { type: "declareAttackers", attackers: [{ id: sozin, defender: "p2" }] });
+    // Jusqu'à la seconde phase principale : X = 2, l'Ours (valeur de mana 2) revient ; l'Ange (5) non.
+    for (let i = 0; i < 60 && s.turn.step !== "main2"; i++) {
+      const p = s.pending;
+      if (p?.kind === "choice") {
+        const req = p.request;
+        const v = req.type === "number" ? [2] : req.type === "pick" && req.options.includes(bear) ? [bear] : req.suggested;
+        s = act(s, p.player, { type: "choose", values: v });
+      } else if (p?.kind === "declareBlockers") s = act(s, p.player, { type: "declareBlockers", blocks: [] });
+      else if (p) s = act(s, p.player, { type: "pass" });
+    }
+    expect(s.players.p2?.life).toBe(15);
+    expect(idsOf(s, "p1", "battlefield", "Bear Cub")).toHaveLength(1);
+    expect(s.players.p2?.graveyard.some((id) => nameOf(s, id) === "Serra Angel")).toBe(true);
+  });
+});

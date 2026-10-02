@@ -901,6 +901,8 @@ function matchTrigger(s: GameState, ev: RulesEvent, t: TriggerSpec, src: Source)
       return ev.e === "collectEvidence" && ev.player === me ? { player: me } : null;
     case "bend":
       return ev.e === "bend" && ev.player === me && (!t.kinds || t.kinds.includes(ev.kind)) ? { player: me } : null;
+    case "attackAbilityTriggered":
+      return ev.e === "attackTriggered" && ev.player === me ? { objectId: ev.objectId, player: me } : null;
     case "caseSolved":
       return ev.e === "caseSolved" && ev.player === me ? { player: me, objectId: ev.objectId } : null;
     case "gift":
@@ -989,6 +991,9 @@ export function detectTriggers(s: GameState, ev: RulesEvent, only?: (src: Source
           inline: (s.defs[src.view.defId]?.abilities[index] ?? null) === ab ? undefined : inlineOf(ab),
         });
       }
+      // Firebender Ascension : une créature attaquante fait, en attaquant, se déclencher une de ses capacités.
+      if (ev.e === "attack" && ev.attacker === src.id && src.view.types.includes("Creature"))
+        detectTriggers(s, { e: "attackTriggered", player: src.view.controller, objectId: src.id });
     });
   }
 }

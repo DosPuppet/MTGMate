@@ -74,7 +74,6 @@
     "becomeCopyKeepAbilities": "Mimeoplasm, Revered One — opération propre à une carte (R4.6)",
     "cantAttackYouThisTurn": "Unstable Glyphbridge // Sandswirl Wanderglyph — effet de joueur (R4.6)",
     "cantGainLife": "Screaming Nemesis — effet de joueur « toute la partie » (R4.6)",
-    "chooseCardName": "Ancient Vendetta — mécanique générique, une seule carte pour l'instant",
     "connive": "M.O.D.O.K. — mécanique générique, une seule carte pour l'instant",
     "copyNextExhaust": "Pit Automaton — famille N, « prochain » (R4.6)",
     "counterAbilitySilence": "Tishana's Tidebinder — opération propre à une carte (R4.6)",
@@ -85,7 +84,6 @@
     "destroySameName": "Maelstrom Pulse — mécanique générique, une seule carte pour l'instant",
     "doubleAllCounters": "Zimone, Paradox Sculptor — mécanique générique, une seule carte pour l'instant",
     "exileForManaValue": "Fabrication Foundry — opération propre à une carte (R4.6)",
-    "exileNamed": "Ancient Vendetta — mécanique générique, une seule carte pour l'instant",
     "extraEndStep": "Y'shtola Rhul — mécanique générique, une seule carte pour l'instant",
     "extraUpkeeps": "Obeka, Splitter of Seconds — opération propre à une carte (R4.6)",
     "flickerChosen": "Another Round — opération propre à une carte (R4.6)",
@@ -116,6 +114,7 @@
     "suspend": "Taigam, Master Opportunist : suspension (702.62), mécanique générique (marqueurs de temps retirés à l'entretien, `suspendUpkeep`) ; une seule carte pour l'instant",
     "tapOrSacrifice": "Command Bridge — opération propre à une carte (R4.6)",
     "tripleTriad": "Triple Triad — opération propre à une carte (R4.6)",
-    "foretell": "présage (702.143, action spéciale lue dans le texte) : une seule carte de Standard (Sozin's Comet) pour l'instant"
+    "foretell": "présage (702.143, action spéciale lue dans le texte) : une seule carte de Standard (Sozin's Comet) pour l'instant",
+    "keepWithinTotalPower": "« chaque joueur garde des créatures de force totale N ou moins et sacrifie les autres » (Destined Confrontation), famille « gardez, sacrifiez le reste » avec keepOnePerType et keepSharingCreatureType ; une seule carte pour l'instant"
   }
 }

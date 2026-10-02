@@ -395,6 +395,10 @@ export function dealDamage(s: GameState, source: DamageSource, target: string, a
   for (const a of reps) {
     const m = a.r.modify;
     if (m.add) mods.push({ add: m.add });
+    if (m.addSourceCounters && a.sourceId) {
+      const n = s.objects[a.sourceId]?.counters[m.addSourceCounters] ?? 0;
+      if (n > 0) mods.push({ add: n });
+    }
     if (m.times) mods.push({ times: m.times });
     // Ojer Axonil : « au moins autant de blessures que la force de [cette créature] ».
     if (m.atLeastSourcePower && a.sourceId && s.objects[a.sourceId]?.zone === "battlefield")

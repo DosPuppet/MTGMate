@@ -377,6 +377,8 @@ export type Effect =
       op: "chooseOnEnter";
       kind: "creatureType" | "color" | "cardName" | "landName" | "landType" | "parity" | "mode" | "number";
       options?: string[];
+      /** Nom choisi parmi les cartes désignées (Koh, the Face Stealer : une carte exilée avec lui). */
+      optionsFrom?: Ref;
       secret?: boolean;
     }
   /** Dévorer : pendant la résolution du sort de permanent, sacrifier des permanents (nombre mémorisé). */
@@ -657,6 +659,11 @@ export type Effect =
   | { op: "damageDivided"; total: Amount; to: Ref }
   /** Chaque joueur désigné garde un permanent de chaque type et sacrifie le reste. */
   | { op: "keepOnePerType"; who: Ref }
+  /**
+   * Chaque joueur choisit un nombre quelconque de ses permanents du filtre, de force totale au plus `maxTotalPower`, puis
+   * sacrifie les autres (Destined Confrontation).
+   */
+  | { op: "keepWithinTotalPower"; who: Ref; filter: ObjectFilter; maxTotalPower: Amount }
   /**
    * Winnowing : pour chaque joueur désigné, le contrôleur de l'effet choisit une créature qu'il contrôle ; puis chacun
    * sacrifie ses autres créatures qui ne partagent aucun type de créature avec elle.

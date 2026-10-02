@@ -137,13 +137,19 @@ export const HANDLERS: OpHandlers = {
           },
         };
       });
+    // Fire Lord Sozin : « de valeur de mana totale X ou moins » (évaluée maintenant).
+    const targets2 = targets.map((t) =>
+      t.maxTotalManaValueAmount === undefined
+        ? t
+        : { ...t, maxTotalManaValue: evalAmount(s, ctx, t.maxTotalManaValueAmount), maxTotalManaValueAmount: undefined },
+    );
     // Aucune cible possible (X = 0) : rien ne se passe.
-    if (targets.some((t) => t.count === 0)) return;
+    if (targets2.some((t) => t.count === 0)) return;
     const bound: Record<string, string[]> = {};
     for (const [k, r] of Object.entries(e.bind ?? {})) bound[k] = resolveRef(s, ctx, r);
     const vars = e.keepVars ? Object.fromEntries(e.keepVars.map((k) => [`$${k}`, r.vars[`$${k}`] ?? []])) : undefined;
     pushInline(s, ctx.controller, ctx.sourceId, ctx.sourceDefId, {
-      targets,
+      targets: targets2,
       effects: e.effects,
       bound,
       ...(vars ? { vars } : {}),

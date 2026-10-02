@@ -8,6 +8,7 @@ import {
   amount,
   type CardScript,
   CLUE,
+  chapter,
   cond,
   exhaust,
   FOOD,
@@ -396,6 +397,64 @@ export const BLACK: Record<string, CardScript> = {
         spellKeywords: { filter: { subtype: "Lesson" }, keywords: ["lifelink"] },
         label: "Vos sorts de Leçon ont le lien de vie",
       }),
+    ],
+  },
+  "Koh, the Face Stealer": {
+    abilities: [
+      triggered(when.entersSelf, [fx.exileCard(ref.target(), { name: "k" }), fx.link(ref.stored("k"))], {
+        targets: [target.upTo(1, target.creature("t", { other: true }))],
+        label: "Exilez jusqu'à une autre créature",
+      }),
+      triggered(
+        when.dies({ types: ["Creature"], other: true, nontoken: true }),
+        [fx.may("Exiler cette carte avec Koh ?", fx.exileCard(ref.eventObject, { name: "d" }), fx.link(ref.stored("d")))],
+        { label: "Une autre créature meurt : vous pouvez l'exiler" },
+      ),
+      activated({
+        payLife: 1,
+        effects: [fx.chooseForSelf("cardName", { optionsFrom: ref.filtered(ref.linked, { types: ["Creature"] }) })],
+        label: "Payez 1 PV : choisissez une carte de créature exilée avec Koh",
+      }),
+      staticAbility(
+        "self",
+        { gainLinkedActivated: { triggered: true, chosenName: true } },
+        { label: "A les capacités activées et déclenchées de la dernière carte choisie" },
+      ),
+    ],
+  },
+  "The Rise of Sozin": {
+    abilities: [
+      chapter([1], [fx.destroyAll({ types: ["Creature"] })], { label: "Détruisez toutes les créatures" }),
+      chapter([2], [fx.chooseCardName, fx.exileNamed(ref.target(), 4)], {
+        targets: [target.player("t", "opponent")],
+        label: "Choisissez un nom ; exilez jusqu'à quatre cartes de ce nom de l'adversaire",
+      }),
+      chapter([3], [fx.exileCard(ref.self, { name: "flip" }), fx.toBattlefield(ref.stored("flip"), { transformed: true })], {
+        label: "Revient transformée",
+      }),
+    ],
+  },
+  // Menace et maîtrise du feu 3 : lues dans le texte.
+  "Fire Lord Sozin": {
+    abilities: [
+      triggered(
+        when.combatDamageToPlayer,
+        [
+          fx.payX("Payer {X} pour ramener des créatures de valeur de mana totale X ?", "x"),
+          fx.reflexive(
+            [
+              {
+                ...target.cardInGraveyard("t", { types: ["Creature"] }, "opponent", "carte de créature de son cimetière"),
+                count: 99,
+                optional: true,
+                maxTotalManaValueAmount: amount.v("x"),
+              },
+            ],
+            [fx.toBattlefield(ref.target(), { underYourControl: true })],
+          ),
+        ],
+        { label: "Blessures de combat à un joueur : payez X, ramenez des créatures de son cimetière" },
+      ),
     ],
   },
 };

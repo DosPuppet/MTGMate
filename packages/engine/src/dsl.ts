@@ -225,6 +225,8 @@ export const ref = {
   except: (r: Ref, exclude: Ref): Ref => ({ kind: "except", ref: r, exclude }),
   /** Cartes exilées par la source « jusqu'à ce qu'elle quitte le champ de bataille ». */
   exiledWith: { kind: "exiledWith" } as Ref,
+  /** Les capacités sur la pile dont la source est l'objet de l'événement, la plus récente d'abord. */
+  abilitiesFromEventObject: { kind: "abilitiesFromEventObject" } as Ref,
   playersWithoutMaxSpeed: { kind: "playersWithoutMaxSpeed" } as Ref,
   libraryTop: (who: Ref): Ref => ({ kind: "libraryTop", who }),
   stackItemsOf: (who: Ref): Ref => ({ kind: "stackItemsOf", who }),
@@ -513,6 +515,13 @@ export const fx = {
   bounce: (what: Ref): Effect => ({ op: "bounce", what }),
   /** Maîtrise de l'air : exile ; son propriétaire peut le lancer pour {2} tant qu'il est exilé. */
   airbend: (what: Ref): Effect => ({ op: "airbend", what }),
+  /** « Chaque joueur choisit des [permanents] de force totale N ou moins, puis sacrifie les autres. » */
+  keepWithinTotalPower: (who: Ref, filter: ObjectFilter, maxTotalPower: Amount): Effect => ({
+    op: "keepWithinTotalPower",
+    who,
+    filter,
+    maxTotalPower,
+  }),
   /** Effet de joueur jusqu'à la fin du tour, pour son contrôleur (`damageUnpreventable` : « les blessures ne peuvent pas être prévenues ce tour-ci »). */
   thisTurn: (ability: Omit<PlayerStaticAbilityDef, "kind">, who?: Ref): Effect => ({ op: "playerEffect", ability, who }),
   /** Effet de joueur jusqu'au début de votre prochain tour (Avatar's Wrath). */
@@ -778,7 +787,7 @@ export const fx = {
   /** « Quand ce permanent arrive, choisissez [un nom de carte de terrain…] » (capacité déclenchée). */
   chooseForSelf: (
     kind: "creatureType" | "color" | "cardName" | "landName",
-    opts: { options?: string[]; secret?: boolean } = {},
+    opts: { options?: string[]; optionsFrom?: Ref; secret?: boolean } = {},
   ): Effect => ({ op: "chooseOnEnter", kind, ...opts }),
   payCostOf: (what: Ref, store: string, prompt: string): Effect => ({ op: "payCostOf", what, store, prompt }),
   reduceSpeed: (who: Ref): Effect => ({ op: "reduceSpeed", who }),
@@ -1742,6 +1751,8 @@ export const when = {
   collectEvidence: { on: "collectEvidence" } as TriggerSpec,
   /** « Chaque fois que vous maîtrisez l'eau, la terre, le feu ou l'air » (Avatar). */
   bend: (kinds?: ("water" | "earth" | "fire" | "air")[]): TriggerSpec => ({ on: "bend", ...(kinds ? { kinds } : {}) }),
+  /** « Chaque fois qu'une créature que vous contrôlez fait, en attaquant, se déclencher une de ses capacités. » */
+  attackAbilityTriggered: { on: "attackAbilityTriggered" } as TriggerSpec,
   caseSolved: { on: "caseSolved" } as TriggerSpec,
   /** « Chaque fois que vous offrez un cadeau » */
   giveGift: { on: "gift" } as TriggerSpec,

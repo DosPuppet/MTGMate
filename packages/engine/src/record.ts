@@ -121,8 +121,11 @@ export const RECORD_VERSION = 1;
  * - 44 : Avatar: The Last Airbender, lot C2 : présage (702.143) ; « payez N PV ou {M} » ; flashback donné aux cartes du
  *   cimetière ; carte du dessus de la bibliothèque lancée par une permission ; blessures en excès d'un combat ; mana non
  *   dépensé gardé ou converti ; mots-clés des sorts ; la réserve de mana fait avancer la version d'état.
+ * - 45 : Avatar: The Last Airbender, lot C3 : « gardez des créatures de force totale N ou moins » ; blessures augmentées
+ *   des marqueurs de la source du remplacement ; capacité déclenchée par l'attaque d'une créature (événement) ; capacités
+ *   de la carte liée choisie ; valeur de mana totale des cibles d'une capacité réflexive fixée à sa mise sur la pile.
  */
-export const RULES_VERSION = 44;
+export const RULES_VERSION = 45;
 
 /** Un point de contrôle toutes les N décisions (plus la dernière de la partie). */
 export const CHECKPOINT_EVERY = 25;

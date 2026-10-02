@@ -417,7 +417,12 @@ export const HANDLERS: OpHandlers = {
     if (!answer) {
       let options: string[];
       if (e.options) options = [...e.options];
-      else if (kind === "color") options = ["W", "U", "B", "R", "G"];
+      else if (e.optionsFrom) {
+        // Koh, the Face Stealer : le nom d'une des cartes désignées (s'il n'y en a aucune, rien n'est choisi).
+        const names = resolveRef(s, ctx, e.optionsFrom).map((id) => s.defs[s.objects[id]?.defId ?? ""]?.name);
+        options = [...new Set(names.filter((n): n is string => !!n))];
+        if (options.length === 0) return;
+      } else if (kind === "color") options = ["W", "U", "B", "R", "G"];
       else if (kind === "parity") options = ["odd", "even"];
       // Talion, the Kindly Lord : un nombre de 1 à 10.
       else if (kind === "number") options = Array.from({ length: 10 }, (_, i) => String(i + 1));

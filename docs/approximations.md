@@ -349,5 +349,8 @@ Dans l'ordre où elles ont été ajoutées, extension par extension.
   - `règle` Présage (Sozin's Comet) : la carte présagée est exilée face visible (l'adversaire la voit) ;
   - `règle` Planetarium of Wan Shi Tong : « une fois par tour » se lit « si vous n'avez lancé aucun sort depuis votre bibliothèque ce tour-ci » ;
   - `choix auto` Avatar Destiny : une carte de créature meulée revient d'office s'il y en a une (« jusqu'à une »).
+  - `règle` Firebender Ascension : « cette capacité » est la plus récente capacité de la créature sur la pile ; si elle s'est déjà résolue, rien n'est copié ;
+  - `règle` Fire Lord Sozin : les cartes ciblées sont celles d'un cimetière adverse (exact en duel ; à plusieurs, celui du joueur blessé) ;
+  - `choix auto` Koh, the Face Stealer : une carte exilée et liée ne quitte pas le choix quand une autre carte de même nom est exilée (les capacités sont les mêmes).
 - **Légalité Standard :** instantané des légalités Scryfall au moment de l'import (`legalities.standard` dans `data/<set>.json`). Après une rotation ou une annonce de bannissement, réimporter les sets (`npm run import-cards -- <set>`).
 - **Images des jetons :** celle du jeton Scryfall le plus proche (même nom, puis mêmes F/E et couleurs ; `data/tokens.json`, `npm run import-tokens`) ; un jeton de nom inconnu garde le cadre texte.

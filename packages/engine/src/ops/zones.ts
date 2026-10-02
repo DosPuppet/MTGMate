@@ -331,6 +331,49 @@ export const HANDLERS: OpHandlers = {
     }
     return;
   },
+  keepWithinTotalPower(s, r, e, ctx, key) {
+    const max = evalAmount(s, ctx, e.maxTotalPower);
+    const power = (id: string) => Math.max(0, chars(s, id).power);
+    const players = resolveRef(s, ctx, e.who).filter((p) => isPlayer(s, p) && !s.players[p]?.lost);
+    const mineOf = (p: string) =>
+      s.battlefield.filter((id) => s.objects[id]?.controller === p && matchesObjectFilter(s, p, id, e.filter, ctx.sourceId));
+    // Chaque joueur choisit (dans l'ordre APNAP), puis tous sacrifient ensemble.
+    const kept = new Map<string, Set<string>>();
+    for (const p of players) {
+      const options = mineOf(p);
+      const answer = r.vars[key(`keepPow-${p}`)];
+      if (!answer && options.length > 0) {
+        // Suggestion : les plus fortes qui tiennent dans la limite.
+        const suggested: string[] = [];
+        let total = 0;
+        for (const id of [...options].sort((a, b) => power(b) - power(a))) {
+          if (total + power(id) > max) continue;
+          suggested.push(id);
+          total += power(id);
+        }
+        return {
+          ask: {
+            player: p,
+            key: key(`keepPow-${p}`),
+            request: {
+              type: "pick",
+              intent: "keepWithinPower",
+              prompt: `Choisissez les créatures que vous gardez (force totale ${max} ou moins) ; les autres seront sacrifiées`,
+              options,
+              min: 0,
+              max: options.length,
+              suggested,
+            },
+          },
+        };
+      }
+      const chosen = (answer ?? []).map(String).filter((id) => options.includes(id));
+      if (chosen.reduce((n, id) => n + power(id), 0) > max) throw new RulesError(`Force totale supérieure à ${max}`);
+      kept.set(p, new Set(chosen));
+    }
+    for (const p of players) for (const id of mineOf(p)) if (!kept.get(p)?.has(id) && onBattlefield(s, id)) sacrifice(s, id);
+    return;
+  },
   keepSharingCreatureType(s, r, e, ctx, key) {
     const players = resolveRef(s, ctx, e.who).filter((p) => isPlayer(s, p) && !s.players[p]?.lost);
     const creaturesOf = (p: string) => s.battlefield.filter((id) => s.objects[id]?.controller === p && isCreature(s, id));
