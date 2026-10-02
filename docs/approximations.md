@@ -412,5 +412,9 @@ Dans l'ordre où elles ont été ajoutées, extension par extension.
   - `règle` Mikey & Leo : « chaque fois que vous mettez un marqueur » se lit comme pour The Astonishing Ant-Man (marqueurs mis sur vos créatures, une fois par tour).
   - `règle` North Wind Avatar : le moteur n'a pas de zone « hors de la partie » (pas de réserve en cours de partie) : la capacité d'arrivée est sans effet.
   - `choix auto` Ninja Teen : un sort de créature lancé du cimetière par le faufilement donné renvoie l'attaquant non bloqué le plus faible.
+- **The Hobbit (`docs/extensions/hob.md`) :**
+  - `règle` The Eagles Are Coming! : « une créature que vous possédez » se lit « que vous possédez et contrôlez ».
+  - `règle` The Queen of Dale : « leur premier sort non-créature de chaque tour » est une condition revérifiée à la résolution (comme Plan for All Outcomes) ; un deuxième sort lancé en réponse fait perdre le recrutement.
+  - `règle` Moment of Glory : « lancé depuis un cimetière » ne reconnaît que le flashback et les permissions qui exilent ensuite.
 - **Légalité Standard :** instantané des légalités Scryfall au moment de l'import (`legalities.standard` dans `data/<set>.json`). Après une rotation ou une annonce de bannissement, réimporter les sets (`npm run import-cards -- <set>`).
 - **Images des jetons :** celle du jeton Scryfall le plus proche (même nom, puis mêmes F/E et couleurs ; `data/tokens.json`, `npm run import-tokens`) ; un jeton de nom inconnu garde le cadre texte.

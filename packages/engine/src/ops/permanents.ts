@@ -28,6 +28,17 @@ import { attackableDefenders } from "../turn";
 import type { AbilityDef, Color, GameState } from "../types";
 
 /** Types de créature toujours proposés quand un type est à choisir (tribus de Lorwyn et types les plus courants). */
+/** Sous-types des jetons de créature que décrivent ces capacités (`token: { types, subtypes }` dans leurs effets). */
+function tokenCreatureTypes(v: unknown, out: string[] = []): string[] {
+  if (Array.isArray(v)) for (const x of v) tokenCreatureTypes(x, out);
+  else if (v && typeof v === "object") {
+    const o = v as { token?: { types?: string[]; subtypes?: string[] } };
+    if (o.token?.types?.includes("Creature")) out.push(...(o.token.subtypes ?? []));
+    for (const x of Object.values(v)) if (x && typeof x === "object") tokenCreatureTypes(x, out);
+  }
+  return out;
+}
+
 const COMMON_CREATURE_TYPES = [
   "Angel",
   "Beast",
@@ -463,10 +474,13 @@ export const HANDLERS: OpHandlers = {
           .map((d) => d.name);
         options = [...new Set([...inHand.filter(Boolean), ...s.battlefield.map((id) => chars(s, id).name), ...all.sort()])];
       } else {
-        // Types des créatures connues de la partie, et toujours les plus courants (un deck sans créature en a besoin).
+        // Types des créatures connues de la partie (cartes, et jetons qu'elles créent : An Unexpected Party nomme les
+        // Nains que créent ses jetons), et toujours les plus courants (un deck sans créature en a besoin).
         const set = new Set<string>(COMMON_CREATURE_TYPES);
-        for (const d of Object.values(s.defs))
-          if (d.types.includes("Creature") && !d.isToken) for (const t of d.subtypes) set.add(t);
+        for (const d of Object.values(s.defs)) {
+          if (d.types.includes("Creature")) for (const t of d.subtypes) set.add(t);
+          for (const t of tokenCreatureTypes(d.abilities)) set.add(t);
+        }
         options = [...set].sort();
       }
       // Suggestion : le type ou la couleur les plus présents chez le contrôleur.

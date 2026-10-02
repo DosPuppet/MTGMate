@@ -18,3 +18,10 @@ Les scripts sont dans `packages/cards/src/hob/` : `cards` (cartes du méta), `wh
 - **Jetons :** Humain Soldat 1/1 blanc, Elfe 1/1 vert, Ours 2/2 vert, Oiseau Soldat 4/4 blanc avec le vol, Dragon 6/6 rouge avec le vol, Stone Boulder (Mur 3/1 incolore avec le défenseur), Axe (Équipement « +1/+0 », équiper {2}) ; Nain et Loup existaient ; Trésor et Nourriture viennent des communs.
 - **Moteur :** rien de nouveau.
 - **Tests :** test de fumée `ai/test/smoke/hob.test.ts`.
+
+## Sous-lot A1 : cartes blanches ✅ (44 / 188)
+
+- **Cartes (24) :** Celebrate the Mountain-king, Dáin, Lord of the Iron Hills, Dwarven Provisioner, Dwarven Shortsword, Eagle of the Great Shelf, The Eagles Are Coming!, Esgaroth Garrison, Fíli the Pathfinder, Gleaming Splendor, Iron Hills Blacksmith, Lake-town Lookout, Lake-town Toymaker, Magnificent End, Moment of Glory, The Mountain-king's Return, Ori, Keeper of Songs, The Queen of Dale, Roads Go Ever, Ever On, Settle the Wreckage, Stone by Sunlight, Thorin's Last Stand, An Unexpected Party, At the Door, Velvetwing Butterflies, Gaze in Wonder, Vow to Erebor.
+- **Correctif du moteur :** le choix d'un type de créature propose aussi les types des jetons que créent les cartes de la partie (An Unexpected Party nomme les Nains que créent ses jetons, sans Nain non-jeton).
+- **Test de fumée :** chaque extension a désormais son fichier ; `smoke/others.test.ts` reste pour une extension ajoutée sans le sien (il n'échoue plus quand il n'a rien à tester).
+- **Tests :** 31 tests de règles (« lot A, blanc »).
