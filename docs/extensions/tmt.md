@@ -40,3 +40,9 @@ Les scripts sont dans `packages/cards/src/tmt/` : `cards` (cartes du méta), `wh
 - **Moteur :** rien de nouveau.
 - **Reste pour plus tard :** Ninja Teen (au niveau 3, faufilement donné aux cartes de créature du cimetière), Rat King, Verminister (« la carte ciblée et toutes les autres cartes du même nom »).
 - **Tests :** 29 tests de règles (« lot A, noir »).
+
+## Sous-lot A4 : cartes rouges ✅ (111 / 188)
+
+- **Cartes (25) :** Bot Bashing Time, Broadcast Takeover, Casey Jones, Jury-Rig Justiciar, General Traag, Heart of Stone, Hard-Won Jitte, Improvised Arsenal, Jennika's Technique, Manhole Missile, Mouser Attack!, Mouser Foundry, Mutant Town Musicians, Null Group Biological Assets, Old Hob, Alleycat Blues, Purple Dragon Punks, Raphael, Most Attitude, Raphael, Ninja Destroyer, Raphael, the Nightwatcher, Raphael, Tough Turtle, Raphael's Technique, Ravenous Robots, Rock Soldiers, Slash, Reptile Rampager, Spicy Oatmeal Pizza, Wingnut, Bat on the Belfry, Zog, Triceraton Castaway.
+- **Moteur :** rien de nouveau. « Défaussez votre main et piochez sept cartes » sert aussi à Raphael's Technique : l'entrée de dette de `mayWheel` est retirée ; l'audit Oracle ↔ script la note comme une équivalence (sept cartes par construction).
+- **Tests :** 34 tests de règles (« lot A, rouge »).
