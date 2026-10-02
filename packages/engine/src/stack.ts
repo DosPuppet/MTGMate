@@ -1703,7 +1703,12 @@ export function castSpell(s: GameState, player: PlayerId, card: ObjectId, choice
   // Pyromancer's Goggles : « copiez ce sort ».
   for (const r of item.riders ?? []) if (r === "copy") copyStackItem(s, item, player);
   // Teach by Example : « la prochaine fois que vous lancez un éphémère ou un rituel ce tour-ci, copiez-le ».
-  for (const n of next) if (n.copy) copyStackItem(s, item, player);
+  for (const n of next) {
+    if (!n.copy) continue;
+    const id = copyStackItem(s, item, player);
+    const copy = n.copyNonlegendary && id ? s.stack.find((x) => x.id === id) : undefined;
+    if (copy) copy.arrival = { ...copy.arrival, nonlegendary: true };
+  }
   // Bitter Triumph : sans carte défaussée, les points de vie sont payés.
   if (opts.discard?.orLife !== undefined && discard.length === 0) payLife_(s, player, opts.discard.orLife);
   // Souls of the Lost : un permanent choisi à la place d'une carte est sacrifié.
@@ -2686,6 +2691,7 @@ function finishResolution(
         // Choreographed Sparks : « la copie gagne la célérité ».
         counters: item.arrival?.counters,
         haste: item.arrival?.haste,
+        ...(item.arrival?.nonlegendary ? { mods: { removeSupertypes: ["Legendary"] }, modsCopiable: true } : {}),
       });
       // « … et "au début de l'étape de fin, sacrifiez ce jeton" ».
       if (item.arrival?.sacrificeAtEnd && s.objects[token]?.zone === "battlefield")

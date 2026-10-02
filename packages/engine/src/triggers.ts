@@ -29,7 +29,15 @@ import {
   snapshot,
 } from "./state";
 import { playerStatic, playerStatics } from "./statics";
-import { legalTargets, matchesCard, matchesObjectFilter, matchesView, validateTargets, withChosen } from "./targets";
+import {
+  legalTargets,
+  matchesCard,
+  matchesObjectFilter,
+  matchesView,
+  resolveFilter,
+  validateTargets,
+  withChosen,
+} from "./targets";
 import { countTurnEvents } from "./turnlog";
 import type {
   AbilityDef,
@@ -199,6 +207,9 @@ export function mostLife(s: GameState, p: PlayerId): boolean {
 
 /** Créatures mortes ce tour-ci (champ de bataille → cimetière), sous n'importe quel contrôleur. */
 const DIED_QUERY: TurnLogQuery = { event: "zone", from: "battlefield", to: "graveyard", types: ["Creature"] };
+
+/** Clé « une fois par tour » d'une capacité déclenchée (`TriggeredAbilityDef.oncePerTurn`). */
+export const onceKey = (defId: string, sourceId: string, index: number): string => `${defId}:${sourceId}:${index}`;
 
 /**
  * Condition hors résolution. `eventObject` : l'objet de l'événement déclencheur, pour un « si » intermédiaire qui le
@@ -634,7 +645,7 @@ function matchTrigger(s: GameState, ev: RulesEvent, t: TriggerSpec, src: Source)
       if (ev.e !== "cast" || !whose(t.by, ev.player, me)) return null;
       const v = liveView(s, ev.stackId);
       // « un sort de la couleur choisie » (Diamond Mare) : le choix de la source.
-      const f = t.filter ? withChosen(t.filter, s.objects[src.id]) : undefined;
+      const f = t.filter ? resolveFilter(s, t.filter, src.id) : undefined;
       const filterOk = !f || (!!v && matchesView(v, f, me, src.id));
       if (!filterOk && !t.targeting?.orFilter) return null;
       // « un sort qui cible une créature que vous contrôlez / un adversaire » (Danitha).
@@ -975,9 +986,10 @@ export function detectTriggers(s: GameState, ev: RulesEvent, only?: (src: Source
       // « une ou plusieurs … » : un seul déclenchement en attente pour ce lot d'événements.
       if (ab.batched && s.triggers.some((t) => t.sourceId === src.id && t.abilityIndex === index)) return;
       if (ab.oncePerTurn) {
-        const key = `${src.view.defId}:${src.id}:${index}`;
+        const key = onceKey(src.view.defId, src.id, index);
         if (s.turn.onceFired.includes(key)) return;
-        s.turn.onceFired.push(key);
+        // « Faites ceci une seule fois par tour » : noté quand l'effet est fait (`doneOncePerTurn`).
+        if (ab.oncePerTurn !== "ifDone") s.turn.onceFired.push(key);
       }
       // Cloud, Midgar Mercenary : Cloud équipé, ou un Équipement attaché à Cloud.
       const cloud = (id: string | undefined) =>

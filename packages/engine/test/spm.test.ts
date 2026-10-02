@@ -3799,3 +3799,153 @@ describe("lot B1, Web-slinging et chaos", () => {
     });
   });
 });
+
+describe("lot C1, copies et légendes", () => {
+  const LEGEND_SPIDER = customCard({
+    name: "Test Legendary Spider",
+    supertypes: ["Legendary"],
+    subtypes: ["Spider"],
+    power: 1,
+    toughness: 1,
+    manaCost: { generic: 1, colored: {}, x: 0 },
+  });
+  const LEGEND_HUMAN = customCard({
+    name: "Test Legendary Human",
+    supertypes: ["Legendary"],
+    subtypes: ["Human"],
+    power: 1,
+    toughness: 1,
+  });
+  const pickName =
+    (name: string): Answer =>
+    (req) =>
+      req.type === "pick" && req.intent === "chooseOnEnter" ? [name] : undefined;
+  const nextMain = (s: S) =>
+    advanceUntil(s, (x) => x.turn.active === "p1" && x.turn.step === "main1" && x.turn.number > s.turn.number);
+
+  describe("Chameleon, Master of Disguise", () => {
+    it("arrive comme copie d'une de vos créatures, mais garde son nom (la règle des légendes ne s'applique pas)", () => {
+      let s = scenario({
+        p1: { battlefield: [...lands("Island", 4), "Kraven, Proud Predator"], hand: ["Chameleon, Master of Disguise"] },
+      });
+      const kraven = idOf(s, "p1", "battlefield", "Kraven, Proud Predator");
+      s = settle(cast(s, "p1", "Chameleon, Master of Disguise"), picking([kraven]));
+      const chameleon = idOf(s, "p1", "battlefield", "Chameleon, Master of Disguise");
+      expect(chars(s, chameleon).name).toBe("Chameleon, Master of Disguise");
+      expect(pt(s, chameleon)).toEqual([chars(s, kraven).power, chars(s, kraven).toughness]);
+      expect(chars(s, chameleon).supertypes).toContain("Legendary");
+      expect(idsOf(s, "p1", "battlefield", "Kraven, Proud Predator")).toHaveLength(1);
+    });
+  });
+
+  describe("The Clone Saga", () => {
+    it("II : votre prochain sort de créature ce tour-ci est copié, et la copie n'est pas légendaire", () => {
+      let s = scenario({
+        p1: { battlefield: [{ name: "The Clone Saga", counters: { lore: 1 } }, "Forest"], hand: [LEGEND_SPIDER] },
+      });
+      s = settle(nextMain(s));
+      expect(s.objects[idOf(s, "p1", "battlefield", "The Clone Saga")]?.counters.lore).toBe(2);
+      s = settle(cast(s, "p1", "Test Legendary Spider"));
+      const spiders = idsOf(s, "p1", "battlefield", "Test Legendary Spider");
+      expect(spiders).toHaveLength(2);
+      const token = spiders.find((id) => s.objects[id]?.isToken) as string;
+      expect(chars(s, token).supertypes).not.toContain("Legendary");
+    });
+
+    it("III : une créature du nom choisi qui blesse un joueur ce tour-ci vous fait piocher", () => {
+      let s = scenario({
+        p1: { battlefield: [{ name: "The Clone Saga", counters: { lore: 2 } }, "Bear Cub"], library: lands("Island", 10) },
+      });
+      s = advanceUntil(s, (x) => x.turn.active === "p1" && x.turn.number > s.turn.number && x.pending?.kind === "choice");
+      s = settle(s, pickName("Bear Cub"));
+      const hand = s.players.p1?.hand.length ?? 0;
+      s = advanceUntil(s, (x) => x.pending?.kind === "declareAttackers");
+      s = act(s, "p1", {
+        type: "declareAttackers",
+        attackers: [{ id: idOf(s, "p1", "battlefield", "Bear Cub"), defender: "p2" }],
+      });
+      s = advanceUntil(s, (x) => x.turn.step === "endCombat" || x.turn.step === "main2");
+      s = settle(s);
+      expect(s.players.p2?.life).toBe(18);
+      expect(s.players.p1?.hand.length).toBe(hand + 1);
+    });
+  });
+
+  describe("Jackal, Genius Geneticist", () => {
+    it("un sort de créature de VM égale à sa force est copié (non légendaire), puis Jackal reçoit un marqueur", () => {
+      let s = scenario({
+        p1: {
+          battlefield: ["Jackal, Genius Geneticist", ...lands("Forest", 4)],
+          hand: [LEGEND_SPIDER, "Bear Cub", "Llanowar Elves"],
+        },
+      });
+      const jackal = idOf(s, "p1", "battlefield", "Jackal, Genius Geneticist");
+      s = settle(cast(s, "p1", "Test Legendary Spider"));
+      expect(idsOf(s, "p1", "battlefield", "Test Legendary Spider")).toHaveLength(2);
+      expect(pt(s, jackal)).toEqual([2, 2]);
+      // Force 2 : un sort de VM 1 ne déclenche plus, un sort de VM 2 si.
+      s = settle(cast(s, "p1", "Llanowar Elves"));
+      expect(idsOf(s, "p1", "battlefield", "Llanowar Elves")).toHaveLength(1);
+      s = settle(cast(s, "p1", "Bear Cub"));
+      expect(idsOf(s, "p1", "battlefield", "Bear Cub")).toHaveLength(2);
+      expect(pt(s, jackal)).toEqual([3, 3]);
+    });
+  });
+
+  describe("Spider-Verse", () => {
+    it("la règle des légendes ne s'applique pas à vos Araignées, mais toujours aux autres légendes", () => {
+      let s = scenario({
+        p1: { battlefield: ["Spider-Verse", LEGEND_SPIDER, LEGEND_HUMAN, "Forest"], hand: [LEGEND_SPIDER, LEGEND_HUMAN] },
+      });
+      s = settle(cast(s, "p1", "Test Legendary Spider"));
+      expect(idsOf(s, "p1", "battlefield", "Test Legendary Spider")).toHaveLength(2);
+      s = settle(cast(s, "p1", "Test Legendary Human"), () => undefined);
+      expect(idsOf(s, "p1", "battlefield", "Test Legendary Human")).toHaveLength(1);
+    });
+
+    it("un sort lancé d'ailleurs que de la main peut être copié ; une seule fois par tour, mais refuser ne compte pas", () => {
+      let s = scenario({
+        p1: {
+          battlefield: ["Spider-Verse", ...lands("Island", 9)],
+          graveyard: ["Think Twice", "Think Twice", "Think Twice"],
+          library: lands("Island", 12),
+        },
+      });
+      const decline: Answer = (req) => (req.type === "yesNo" ? [0] : undefined);
+      const accept: Answer = (req) => (req.type === "yesNo" ? [1] : undefined);
+      const flashback = (cur: S) => act(cur, "p1", { type: "cast", card: idOf(cur, "p1", "graveyard", "Think Twice") });
+      const hand0 = s.players.p1?.hand.length ?? 0;
+      s = settle(flashback(s), decline);
+      expect(s.players.p1?.hand.length).toBe(hand0 + 1);
+      s = settle(flashback(s), accept);
+      expect(s.players.p1?.hand.length).toBe(hand0 + 3);
+      // Déjà fait ce tour-ci : plus de copie.
+      s = settle(flashback(s), accept);
+      expect(s.players.p1?.hand.length).toBe(hand0 + 4);
+    });
+  });
+
+  describe("Behold the Sinister Six!", () => {
+    it("renvoie jusqu'à six cartes de créature de noms différents", () => {
+      let s = scenario({
+        p1: {
+          battlefield: lands("Swamp", 7),
+          hand: ["Behold the Sinister Six!"],
+          graveyard: ["Bear Cub", "Bear Cub", "Serra Angel"],
+        },
+      });
+      const [b1, b2] = idsOf(s, "p1", "graveyard", "Bear Cub") as [string, string];
+      const angel = idOf(s, "p1", "graveyard", "Serra Angel");
+      const card = idOf(s, "p1", "hand", "Behold the Sinister Six!");
+      const opt = legalActions(s, "p1").find(
+        (a): a is Extract<ActionOption, { type: "cast" }> => a.type === "cast" && a.card === card,
+      );
+      expect(opt?.modes[0]?.targets[0]?.group?.kind).toBe("different");
+      expect(() => act(s, "p1", { type: "cast", card, targets: { t: [b1, b2] } })).toThrow();
+      s = settle(act(s, "p1", { type: "cast", card, targets: { t: [b1, angel] } }));
+      expect(idsOf(s, "p1", "battlefield", "Bear Cub")).toHaveLength(1);
+      expect(idsOf(s, "p1", "battlefield", "Serra Angel")).toHaveLength(1);
+      expect(idsOf(s, "p1", "graveyard", "Bear Cub")).toHaveLength(1);
+    });
+  });
+});

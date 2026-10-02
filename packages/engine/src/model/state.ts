@@ -258,7 +258,14 @@ export interface StackItem {
   toBattlefieldTransformed?: boolean;
   /** Modifications à l'arrivée du permanent (Torgal, Summon: Fenrir, Summon: Brynhildr, Noctis). */
   /** `sacrificeAtEnd` : le jeton (copie d'un sort de créature) est sacrifié au début de la prochaine étape de fin. */
-  arrival?: { counters?: { kind: string; n: number }[]; haste?: boolean; subtypes?: string[]; sacrificeAtEnd?: boolean };
+  /** `nonlegendary` : la copie n'est pas légendaire (exception de copie, 707.9b ; Jackal, The Clone Saga). */
+  arrival?: {
+    counters?: { kind: string; n: number }[];
+    haste?: boolean;
+    subtypes?: string[];
+    sacrificeAtEnd?: boolean;
+    nonlegendary?: boolean;
+  };
   kind: "spell" | "ability";
   controller: PlayerId;
   /** Sort : l'objet sur la pile. Capacité : le permanent source (peut avoir disparu). */

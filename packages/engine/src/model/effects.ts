@@ -415,7 +415,7 @@ export type Effect =
   | { op: "gainControl"; what: Ref; untilEndOfYourNextTurn?: boolean }
   /** Copies d'un sort sur la pile (mêmes cibles). */
   /** `haste`, `sacrificeAtEnd` : la copie d'un sort de créature a la célérité et est sacrifiée en fin de tour. */
-  | { op: "copySpell"; what: Ref; count: Amount; haste?: boolean; sacrificeAtEnd?: boolean }
+  | { op: "copySpell"; what: Ref; count: Amount; haste?: boolean; sacrificeAtEnd?: boolean; nonlegendary?: boolean }
   /** Chaque joueur désigné révèle des cartes jusqu'à une carte correspondant au filtre, puis les met toutes au cimetière. */
   | { op: "millUntil"; who: Ref; filter: ObjectFilter }
   /** Exile les N cartes du dessus de la bibliothèque de chaque joueur désigné (mémorisées sous `store`). */
@@ -473,6 +473,8 @@ export type Effect =
   | { op: "castCopiesFree"; what: Ref[]; maxTotalManaValue: number; paid?: boolean; storeCast?: string; maxCount?: number }
   /** « La règle des légendes ne s'applique pas aux permanents que vous contrôlez ce tour-ci. » */
   | { op: "noLegendRuleThisTurn" }
+  /** « Faites ceci une seule fois par tour » : la capacité déclenchée qui se résout ne se déclenche plus ce tour-ci. */
+  | { op: "doneOncePerTurn" }
   /** Transforme les permanents recto-verso désignés (712.10 : recto ↔ verso). */
   | { op: "transform"; what: Ref }
   /** « Exilez-les, puis assemblez-les en [carte] » : la source et un permanent du nom donné (701.42). */

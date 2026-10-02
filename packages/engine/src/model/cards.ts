@@ -159,6 +159,8 @@ export interface CardDef {
   exileOnResolve?: boolean;
   /** Visage Bandit : sous-types ajoutés quand elle arrive comme copie. */
   entersAsCopyAddSubtypes?: string[];
+  /** Copie à l'arrivée « sauf que son nom est [le sien] » (Chameleon, Master of Disguise). */
+  entersAsCopyKeepName?: boolean;
   /**
    * Superior Spider-Man (Échange d'esprit) : peut arriver comme copie d'une carte de créature d'un cimetière, sauf son nom
    * et ses F/E (`entersAsCopyAddSubtypes` pour les types en plus) ; la carte copiée est exilée.
@@ -803,6 +805,8 @@ export interface CastPermissionAbilityDef {
 export interface NextSpell {
   filter?: ObjectFilter;
   copy?: boolean;
+  /** La copie n'est pas légendaire (The Clone Saga). */
+  copyNonlegendary?: boolean;
   uncounterable?: boolean;
   counters?: number;
   haste?: boolean;
@@ -926,8 +930,9 @@ export interface PlayerStaticAbilityDef {
   /** « Le prochain sort que vous lancez ce tour-ci… » (famille N, R4.6), posé par un effet à usage unique. */
   nextSpell?: NextSpell;
   kind: "playerStatic";
-  /** Hall of Echoes : la règle des légendes ne s'applique pas à vos permanents. */
-  noLegendRule?: boolean;
+  /** Hall of Echoes : la règle des légendes ne s'applique pas à vos permanents ; seulement à ceux-ci (Spider-Verse : vos
+   * Araignées). */
+  noLegendRule?: boolean | ObjectFilter;
   /** Jace's Machinations : capacités de loyauté de vos Jace à vitesse d'éphémère. */
   jaceLoyaltyInstant?: boolean;
   /** Screaming Nemesis : vous ne pouvez pas gagner de points de vie. */
@@ -1087,8 +1092,9 @@ export interface TriggeredAbilityDef {
   effects: Effect[];
   /** Capacité modale (« choisissez un — ») : le mode est choisi à la mise sur la pile. */
   modes?: ModeDef[];
-  /** « Cette capacité ne se déclenche qu'une fois par tour. » */
-  oncePerTurn?: boolean;
+  /** « Cette capacité ne se déclenche qu'une fois par tour. » ; `ifDone` : « faites ceci une seule fois par tour » (elle se
+   * déclenche tant que l'effet n'a pas été fait, `fx.doneOncePerTurn` le note ; Spider-Verse). */
+  oncePerTurn?: boolean | "ifDone";
   /** Se déclenche depuis le cimetière de son propriétaire (Flamewake Phoenix). */
   fromGraveyard?: boolean;
   /** « Choisissez un mode qui n'a pas déjà été choisi » (Demonic Pact) ; `turn` : ce tour-ci (Monument to Endurance). */

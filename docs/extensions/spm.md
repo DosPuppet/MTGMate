@@ -73,3 +73,16 @@ Les scripts sont dans `packages/cards/src/spm/` : `cards` (cartes du méta), `wh
   - lancer depuis le cimetière en défaussant une carte en plus (`castFromGraveyard.discard`, Alien Symbiosis) ;
   - coût d'activation « renvoyez [un permanent] que vous contrôlez dans la main de son propriétaire » (`bounceOther`, Urban Retreat).
 - **Tests :** 15 tests de règles (« lot B1 ») ; script Playwright ponctuel : fenêtre de choix de la créature renvoyée (Scarlet Spider), captures dans `test-results/spm/`.
+
+## Sous-lot C1 : copies et légendes ✅ (175 / 188)
+
+- **Cartes (5) :** Chameleon, Master of Disguise, The Clone Saga, Jackal, Genius Geneticist, Spider-Verse, Behold the Sinister Six!.
+- **Moteur :**
+  - copie à l'arrivée « sauf que son nom est [le sien] » (`entersAsCopyKeepName`) ;
+  - copie non légendaire d'un sort (`fx.copySpell(…, { nonlegendary })`, `nextSpell.copyNonlegendary`) : exception copiable du jeton (707.9b) ;
+  - un emblème garde le nom de carte choisi (The Clone Saga : `nameChosen` dans le filtre de son déclencheur) ;
+  - filtre `manaValueSourcePower` (« de valeur de mana égale à la force de [la source] ») ; les filtres de « chaque fois que vous lancez un sort » passent par `resolveFilter` ;
+  - `noLegendRule` accepte un filtre (Spider-Verse : vos Araignées) ;
+  - « faites ceci une seule fois par tour » : `oncePerTurn: "ifDone"` et `fx.doneOncePerTurn` (le déclencheur revient tant que l'effet facultatif n'a pas été fait ; entrée de dette justifiée) ;
+  - cibles de noms différents (`differentNames`, présentées comme la contrainte « différents » des options, que l'IA et l'interface respectent).
+- **Tests :** 7 tests de règles (« lot C1 »).

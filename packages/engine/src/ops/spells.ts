@@ -446,11 +446,12 @@ export const HANDLERS: OpHandlers = {
       for (let i = 0; i < n; i++) {
         const id = copyStackItem(s, item, ctx.controller);
         const copy = id ? s.stack.find((x) => x.id === id) : undefined;
-        if (copy && (e.haste || e.sacrificeAtEnd))
+        if (copy && (e.haste || e.sacrificeAtEnd || e.nonlegendary))
           copy.arrival = {
             ...copy.arrival,
             ...(e.haste ? { haste: true } : {}),
             ...(e.sacrificeAtEnd ? { sacrificeAtEnd: true } : {}),
+            ...(e.nonlegendary ? { nonlegendary: true } : {}),
           };
       }
     }

@@ -27,6 +27,8 @@ export interface TargetSpec {
   differentPlayers?: boolean;
   /** Les cibles partagent un type de créature (Unbury : « deux cartes de créature ciblées qui partagent un type »). */
   shareCreatureType?: boolean;
+  /** Cibles de noms différents (Behold the Sinister Six! : « cartes de créature ciblées de noms différents »). */
+  differentNames?: boolean;
   /** Nombre de cibles variable (« jusqu'à X créatures ciblées ») : remplace `count` au moment de choisir les cibles. */
   countAmount?: Amount;
   /** Filtre si le sort est kické ou si le cadeau est promis (« à la place, un permanent non-terrain ciblé »). */
@@ -147,6 +149,8 @@ export interface ObjectFilter {
   discardedThisTurn?: boolean;
   /** Valeur de mana inférieure ou égale à la force de la source (« … inférieure ou égale à la force d'Alesha »). */
   maxManaValueSourcePower?: boolean;
+  /** Valeur de mana égale à la force de la source (Jackal, Genius Geneticist). */
+  manaValueSourcePower?: boolean;
   /** Valeur de mana au plus égale au mana dépensé pour lancer la source (Astelli Reclaimer). */
   maxManaValueManaSpent?: boolean;
   /** Légendaire (true) ou non légendaire (false). */

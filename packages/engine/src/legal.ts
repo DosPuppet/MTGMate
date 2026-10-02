@@ -69,6 +69,7 @@ function tapXOptions(s: GameState, player: PlayerId, source: ObjectId, f: Object
   ).length;
 }
 
+import { snapshot } from "./layers";
 import { chars, isCreature, obj } from "./state";
 import { playerStatic } from "./statics";
 import { legalTargets } from "./targets";
@@ -182,6 +183,12 @@ function targetOptions(s: GameState, player: PlayerId, specs: TargetSpec[], sour
         holders[id] = o ? (o.zone === "battlefield" ? o.controller : o.owner) : id;
       }
       opt.group = { kind: t.samePlayer ? "same" : "different", holders };
+    }
+    // Noms différents : même contrainte « différents », le nom tenant lieu de joueur.
+    if (t.differentNames) {
+      const holders: Record<string, string> = {};
+      for (const id of legal) holders[id] = (s.objects[id] ? snapshot(s, id).name : undefined) ?? id;
+      opt.group = { kind: "different", holders };
     }
     return opt;
   });

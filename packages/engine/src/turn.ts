@@ -1409,7 +1409,13 @@ function stateBasedActionsOnce(s: GameState): boolean {
       // Caractéristiques calculées : une copie (Hall of Echoes) porte le nom et le supertype copiés.
       const c = chars(s, id);
       if (!c.supertypes.includes("Legendary")) continue;
-      if (playerStatic(s, o.controller, "noLegendRule")) continue;
+      if (
+        playerStatics(s, o.controller, "noLegendRule").some(
+          ({ id: src, ab }) =>
+            ab.noLegendRule === true || matchesObjectFilter(s, o.controller, id, ab.noLegendRule as ObjectFilter, src),
+        )
+      )
+        continue;
       const key = `${o.controller}|${c.name}`;
       legends.set(key, [...(legends.get(key) ?? []), id]);
     }

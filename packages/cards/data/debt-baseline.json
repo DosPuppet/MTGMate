@@ -82,6 +82,7 @@
     "damageEachPlayerPer": "Sunspine Lynx — montant par destinataire (R4.6)",
     "destroyAllButChosenType": "Kindred Judgment — « gardez les permanents choisis » (R4.6)",
     "destroyAllButOnePerPlayer": "Unstable Glyphbridge // Sandswirl Wanderglyph — « gardez les permanents choisis » (R4.6)",
+    "doneOncePerTurn": "Spider-Verse — « faites ceci une seule fois par tour » (avec oncePerTurn: \"ifDone\"), générique, une seule carte pour l'instant",
     "destroySameName": "Maelstrom Pulse — mécanique générique, une seule carte pour l'instant",
     "exileForManaValue": "Fabrication Foundry — opération propre à une carte (R4.6)",
     "extraEndStep": "Y'shtola Rhul — mécanique générique, une seule carte pour l'instant",

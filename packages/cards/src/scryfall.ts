@@ -923,6 +923,7 @@ function singleDef(raw: RawCard, script: CardScript | undefined, set: string): C
     flashIf: script?.flashIf,
     exileOnResolve: script?.exileOnResolve,
     entersAsCopyAddSubtypes: script?.entersAsCopyAddSubtypes,
+    entersAsCopyKeepName: script?.entersAsCopyKeepName,
     entersAsCopyOfGraveyard: script?.entersAsCopyOfGraveyard,
     chosenNameTax: script?.chosenNameTax,
     ward,

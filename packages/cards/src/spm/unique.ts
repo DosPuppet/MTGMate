@@ -4,6 +4,7 @@ import {
   activated,
   amount,
   type CardScript,
+  chapter,
   cond,
   entersWith,
   fx,
@@ -13,6 +14,7 @@ import {
   SPIDER_21,
   spell,
   staticAbility,
+  target,
   triggered,
   when,
 } from "./common";
@@ -124,5 +126,77 @@ export const UNIQUE: Record<string, CardScript> = {
         label: "Renvoyez une créature engagée : mettez ce terrain de votre main sur le champ de bataille",
       }),
     ],
+  },
+
+  // --- Lot C1 : copies et légendes ---------------------------------------------
+  "Chameleon, Master of Disguise": {
+    // Chaos {2}{U} : lu dans le texte.
+    entersAsCopyOf: { types: ["Creature"], controller: "you" },
+    entersAsCopyKeepName: true,
+  },
+  "The Clone Saga": {
+    abilities: [
+      chapter([1], [fx.surveil(3)], { label: "I — Surveillance 3" }),
+      chapter(
+        [2],
+        [
+          {
+            op: "playerEffect",
+            ability: { nextSpell: { filter: { types: ["Creature"] }, copy: true, copyNonlegendary: true } },
+            once: true,
+          },
+        ],
+        { label: "II — Votre prochain sort de créature ce tour-ci est copié (copie non légendaire)" },
+      ),
+      chapter(
+        [3],
+        [
+          fx.chooseForSelf("cardName"),
+          fx.emblem(
+            "The Clone Saga",
+            "Whenever a creature with the chosen name deals combat damage to a player this turn, draw a card.",
+            [
+              triggered(when.combatDamage({ types: ["Creature"], nameChosen: true }, true), [fx.draw(1)], {
+                label: "Une créature du nom choisi blesse un joueur : piochez une carte",
+              }),
+            ],
+            false,
+            true,
+          ),
+        ],
+        { label: "III — Choisissez un nom : ses créatures qui blessent un joueur ce tour-ci vous font piocher" },
+      ),
+    ],
+  },
+  "Jackal, Genius Geneticist": {
+    // Piétinement : lu dans le texte.
+    abilities: [
+      triggered(
+        when.castSpell("you", { types: ["Creature"], manaValueSourcePower: true }),
+        [fx.copySpell(ref.eventObject, 1, { nonlegendary: true }), fx.addCounters(ref.self, 1)],
+        { label: "Sort de créature de VM égale à sa force : copiez-le (non légendaire), puis un marqueur +1/+1" },
+      ),
+    ],
+  },
+  "Spider-Verse": {
+    abilities: [
+      playerStatic({ noLegendRule: { subtype: "Spider" }, label: "La règle des légendes ne s'applique pas à vos Araignées" }),
+      triggered(
+        { on: "castSpell", by: "you", notFromHand: true },
+        fx.may("Copier ce sort ?", fx.copySpell(ref.eventObject, 1, { haste: true }), fx.doneOncePerTurn),
+        { oncePerTurn: "ifDone", label: "Sort lancé d'ailleurs que de votre main : vous pouvez le copier (une fois par tour)" },
+      ),
+    ],
+  },
+  "Behold the Sinister Six!": {
+    spell: spell(
+      [
+        {
+          ...target.upTo(6, target.cardInGraveyard("t", { types: ["Creature"] }, "you", "carte de créature de votre cimetière")),
+          differentNames: true,
+        },
+      ],
+      [fx.toBattlefield(ref.target())],
+    ),
   },
 };

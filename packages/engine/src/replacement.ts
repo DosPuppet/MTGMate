@@ -330,7 +330,7 @@ export function applyEntersReplacements(s: GameState, o: GameObject, ctx: Enters
       // Mockingbird : « … et elle a le vol ».
       addKeywords: own?.entersAsCopyAddKeywords,
       // Superior Spider-Man : « sauf que son nom est … et que c'est un 4/4 ».
-      setName: graveyard?.name,
+      setName: graveyard?.name ?? (own?.entersAsCopyKeepName ? own.name : undefined),
       setPower: graveyard?.power,
       setToughness: graveyard?.power !== undefined ? graveyard.toughness : undefined,
     });

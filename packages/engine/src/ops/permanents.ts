@@ -23,7 +23,7 @@ import {
 } from "../state";
 import { addPlayerEffect } from "../statics";
 import { matchesCard, matchesObjectFilter } from "../targets";
-import { createDelayed } from "../triggers";
+import { createDelayed, onceKey } from "../triggers";
 import { attackableDefenders } from "../turn";
 import type { AbilityDef, Color, GameState } from "../types";
 
@@ -158,6 +158,8 @@ export const HANDLERS: OpHandlers = {
     const chosen = r.vars.$chosen;
     if (chosen?.[0] === "creatureType") emblem.chosen = { creatureType: String(chosen[1]) };
     else if (chosen?.[0] === "color") emblem.chosen = { color: String(chosen[1]) as Color };
+    // The Clone Saga : « choisissez un nom de carte ; chaque fois qu'une créature du nom choisi… ce tour-ci ».
+    else if (chosen?.[0] === "cardName") emblem.chosen = { cardName: String(chosen[1]) };
     if (e.store) r.vars[`$ids:${e.store}`] = [emblem.id];
     bump(s);
     return;
@@ -653,6 +655,11 @@ export const HANDLERS: OpHandlers = {
       bump(s);
       rulesEvent(s, { e: "saddled", objectId: o.id });
     }
+    return;
+  },
+  doneOncePerTurn(s, r) {
+    const key = onceKey(r.item.sourceDefId, r.item.sourceId, r.item.abilityIndex);
+    if (!s.turn.onceFired.includes(key)) s.turn.onceFired.push(key);
     return;
   },
   noLegendRuleThisTurn(s, _r, _e, ctx) {

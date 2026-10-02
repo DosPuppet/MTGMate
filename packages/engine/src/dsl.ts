@@ -103,6 +103,8 @@ export interface CardScript {
   flashIf?: Condition;
   exileOnResolve?: boolean;
   entersAsCopyAddSubtypes?: string[];
+  /** Copie à l'arrivée « sauf que son nom est [le sien] » (Chameleon, Master of Disguise). */
+  entersAsCopyKeepName?: boolean;
   /**
    * Superior Spider-Man (Échange d'esprit) : peut arriver comme copie d'une carte de créature d'un cimetière, sauf son nom
    * et ses F/E (`entersAsCopyAddSubtypes` pour les types en plus) ; la carte copiée est exilée.
@@ -695,7 +697,11 @@ export const fx = {
   endTurn: { op: "endTurn" } as Effect,
   gainControl: (what: Ref, opts: { untilEndOfYourNextTurn?: boolean } = {}): Effect => ({ op: "gainControl", what, ...opts }),
   /** `haste`, `sacrificeAtEnd` : la copie d'un sort de créature (un jeton) a la célérité, est sacrifiée en fin de tour. */
-  copySpell: (what: Ref, count: Amount, opts: { haste?: boolean; sacrificeAtEnd?: boolean } = {}): Effect => ({
+  copySpell: (
+    what: Ref,
+    count: Amount,
+    opts: { haste?: boolean; sacrificeAtEnd?: boolean; nonlegendary?: boolean } = {},
+  ): Effect => ({
     op: "copySpell",
     what,
     count,
@@ -758,6 +764,8 @@ export const fx = {
     ...opts,
   }),
   noLegendRuleThisTurn: { op: "noLegendRuleThisTurn" } as Effect,
+  /** « Faites ceci une seule fois par tour » (avec `oncePerTurn: "ifDone"`). */
+  doneOncePerTurn: { op: "doneOncePerTurn" } as Effect,
   exileUntil: (filter: ObjectFilter, store: string): Effect => ({ op: "exileUntil", filter, store }),
   /** Chaque joueur désigné exile le dessus de sa bibliothèque jusqu'à une valeur de mana totale de N ou plus. */
   exileUntilTotalManaValue: (who: Ref, n: number, store: string): Effect => ({
@@ -2153,7 +2161,7 @@ export function triggered(
     targets?: TargetSpec[];
     condition?: Condition;
     label?: string;
-    oncePerTurn?: boolean;
+    oncePerTurn?: boolean | "ifDone";
     /** Se déclenche depuis le cimetière (Flamewake Phoenix). */
     fromGraveyard?: boolean;
     /** « une ou plusieurs … » : un seul déclenchement par lot d'événements. */
