@@ -1,6 +1,6 @@
 # Foundations (FDN)
 
-Lots du set principal et des réimpressions (déplacé de CLAUDE.md).
+**✅ 517 / 517** (set principal, lots A à F : 276 / 276 ; réimpressions : 241 / 241). Lots du set principal et des réimpressions (déplacé de CLAUDE.md).
 
 - A. Longue traîne (primitives du DSL, terrains bicolores)
 - B. Bibliothèque et cimetière (cibles au cimetière, recherche, retour)

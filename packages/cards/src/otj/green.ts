@@ -272,12 +272,6 @@ export const GREEN: Record<string, CardScript> = {
       },
     ),
   },
-  "Snakeskin Veil": {
-    spell: spell(
-      [target.creature("t", { controller: "you" })],
-      [fx.addCounters(ref.target(), 1), fx.pump(ref.target(), 0, 0, ["hexproof"])],
-    ),
-  },
   "Spinewoods Armadillo": {
     abilities: [
       activated({

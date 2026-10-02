@@ -78,21 +78,6 @@ export const BLACK: Record<string, CardScript> = {
       triggered(when.entersSelf, [fx.mill(2, ref.target())], { targets: [target.player("t")], label: "Il meule deux cartes" }),
     ],
   },
-  "Fake Your Own Death": {
-    spell: spell(
-      [target.creature("t")],
-      [
-        fx.modify(ref.target(), {
-          power: 2,
-          addAbilities: [
-            triggered(when.diesSelf, [fx.toBattlefield(ref.selfCard, { tapped: true }), fx.createTokens(TREASURE)], {
-              label: "Revient engagée, Trésor",
-            }),
-          ],
-        }),
-      ],
-    ),
-  },
   "Forsaken Miner": {
     abilities: [
       staticAbility("self", { addKeywords: ["cantBlock"] }, { label: "Ne peut pas bloquer" }),

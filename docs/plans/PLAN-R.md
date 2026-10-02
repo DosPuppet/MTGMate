@@ -34,6 +34,7 @@ Plan établi le 30/09/2026 (branche `dev`) : il sert de feuille de route aux pro
 - **30/09/2026 : R7 fait** (`RULES_VERSION` = 19) : un fichier de tests de règles par extension partielle (11 fichiers, 195 tests), `rulings.test.ts` (10 tests tirés des décisions officielles), deux motifs d'Oracle de plus. Ces tests ont trouvé 7 écarts, corrigés (voir la section R7).
 - **30/09/2026 : R8 fait** (sans changement de règles d'une partie) : interface (garder la priorité, passe douce et passe dure, réglages retenus, annulation d'un terrain engagé, alerte de mana flottant, aperçu des blessures de combat, accessibilité, recherche du deckbuilder, moins de redessins) ; IA (P3). Tournoi sur les decks du méta, élevé contre moyen : 66,8 % ± 3,8 avant, 65,0 % ± 3,8 après (écart non significatif ; `docs/ia.md`).
 - **Le plan est terminé, sauf :** R1 en partie (familles E, H, I et boucliers 615.7, reportés faute de carte qui les exige) et R7, continu.
+- **01/10/2026 :** familles E et F (TDM D), H et I (ECL D) et boucliers 615.7 faits ; R7 se poursuit, suivi par `docs/plans/PLAN-C.md` (lot C13).
 
 ## Le garde-fou de la dette (lot F2)
 
@@ -376,12 +377,16 @@ Lus dans le code ; chacun est confirmé par un test au début de son lot.
 
 ## Reporté tant qu'aucune carte ne l'exige
 
-- bloquer plusieurs attaquants, obligations de blocage (Leurre, « doit bloquer », 509.1c) ;
-- batailles, phasing, couche 3, raccourcis de boucles (732) ;
-- mot-clé second partagé (seul Samut en a besoin) ;
-- couches hors du champ de bataille ;
-- `ChoiceRequest` pour l'ordre des remplacements ;
-- vue du joueur qui contrôle le tour d'un autre (722).
+État au 02/10/2026 (audit du 02/10, § 5.9) :
+
+- bloquer plusieurs attaquants : toujours reporté (aucune carte du pool) ;
+- obligations de blocage : **faites en partie** (« doit être bloquée si possible », « bloque si possible », « bloque cet attaquant si possible », MKM) ; la maximisation de 509.1c manque, voir `PLAN-C.md`, lot C4 ; pas de Leurre dans le pool ;
+- batailles, phasing, couche 3, raccourcis de boucles (732) : toujours reportés (aucune carte du pool) ;
+- mot-clé second partagé (seul Samut en a besoin) : toujours un drapeau ; voir `PLAN-C.md`, lot C11 ;
+- couches hors du champ de bataille : remplacées par les caractéristiques des sorts, `PLAN-C.md`, lot C11 ;
+- `ChoiceRequest` pour l'ordre des remplacements : toujours choisi pour le joueur affecté, au mieux de ses intérêts ;
+- vue du joueur qui contrôle le tour d'un autre (722) : **faite** (`view.ts`) ;
+- boucliers « la prochaine fois que » (615.7) : **faits** (`fx.shield`, TDM).
 
 ## Vérification de chaque lot
 

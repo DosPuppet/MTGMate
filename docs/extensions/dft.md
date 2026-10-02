@@ -1,6 +1,6 @@
 # Aetherdrift (DFT)
 
-Mécaniques et détail des lots (déplacé de CLAUDE.md).
+**✅ 260 / 260** (lots A à C). Mécaniques et détail des lots (déplacé de CLAUDE.md).
 
 | Mécanique | Cartes | Lot |
 |---|---:|---|

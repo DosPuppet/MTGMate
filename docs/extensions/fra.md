@@ -1,6 +1,6 @@
 # Reality Fracture (FRA)
 
-Détail des lots (déplacé de CLAUDE.md).
+**✅ 279 / 279** (lots 0 à G, puis lot 0.1 du socle). Détail des lots (déplacé de CLAUDE.md).
 
 - 285 cartes selon Scryfall, dont 6 réimpressions de FDN (terrains de base, Unsummon), donc 279 cartes propres. Toutes sont légales en Standard.
 - **Sortie le 2 octobre 2026 : pas encore de textes français.** Réimporter après la sortie (`npm run import-cards -- fra`), puis vérifier les noms français dans le deckbuilder.
@@ -14,7 +14,7 @@ Détail des lots (déplacé de CLAUDE.md).
   - statiques de joueur : taxe adverse (Thalia), +1 marqueur (Yoshimaru), +1 blessure non de combat (Tomik), pas de déclencheur d'arrivée (Karn), pas de sorts en combat (Yuriko), jetons d'artefact → Dragons, créatures adverses exilées au lieu de mourir ;
   - Tarmogoyf (`cdaToughness`), Omnipresence, Null Summoner (carte liée lançable), sorts renvoyés en main, Molten Tide, « chaque joueur peut défausser sa main et piocher sept cartes », Kindred Judgment.
   
-  Non gérées : **Emrakul, the Exigent Doom** (terrain qui gagne une capacité jusqu'au lancement depuis l'exil, garde « sacrifiez trois permanents »), **Uldaros Theorix** (copies de cartes de chaque type lancées gratuitement), **Hall of Echoes** (terrain qui devient la copie d'une créature, règle de légende suspendue).
+  Non gérées à ce lot (gérées depuis le lot 0.1 du socle multi-extensions, `docs/extensions/socle.md`) : **Emrakul, the Exigent Doom** (terrain qui gagne une capacité jusqu'au lancement depuis l'exil, garde « sacrifiez trois permanents »), **Uldaros Theorix** (copies de cartes de chaque type lancées gratuitement), **Hall of Echoes** (terrain qui devient la copie d'une créature, règle de légende suspendue).
 - Lot E (**planeswalkers**) : ✅. Il couvre :
   - The Theorist, Jace Beleren ; Ajani Resolute ; Ajani Unrelenting ;
   - les sorts « créature ou planeswalker » ;

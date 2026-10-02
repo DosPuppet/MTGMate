@@ -1,6 +1,6 @@
 /**
  * Avatar: The Last Airbender — cartes des decks du méta (phase 1 du plan P4, lot M1) : maîtrise de la terre
- * (`fx.earthbend`). L'extension n'est pas encore couverte en entier.
+ * (`fx.earthbend`). Les autres cartes de l'extension sont dans les fichiers par couleur.
  */
 import {
   ALLY,

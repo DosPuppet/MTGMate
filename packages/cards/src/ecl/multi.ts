@@ -228,7 +228,6 @@ export const MULTI: Record<string, CardScript> = {
   "Reaping Willow": {
     abilities: [
       entersWith({ counters: 2, counterKind: "-1/-1", label: "Arrive avec deux marqueurs -1/-1" }),
-      // Approximation : seuls des marqueurs -1/-1 peuvent être retirés (« retirez deux marqueurs »).
       activated({
         mana: "{1}{W/B}",
         removeCounters: { kind: "any", n: 2 },
@@ -491,7 +490,6 @@ export const MULTI: Record<string, CardScript> = {
   "Hovel Hurler": {
     abilities: [
       entersWith({ counters: 2, counterKind: "-1/-1", label: "Arrive avec deux marqueurs -1/-1" }),
-      // Approximation : le marqueur retiré est un marqueur -1/-1 (« retirez un marqueur de cette créature »).
       activated({
         mana: "{R/W}{R/W}",
         removeCounters: { kind: "any", n: 1 },

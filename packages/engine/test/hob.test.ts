@@ -1,8 +1,6 @@
 /**
- * The Hobbit (extension partielle : cartes des decks du méta) : chaque carte gérée est confrontée à son texte Oracle
- * (plan R, lot R7). Contempler, Récit (storied), amasser des Gobelins, Nains et Équipements, Loups, Trésors…
- * Thorin, Mountain-king n'est pas testé ici : le moteur n'attache pas ses Équipements (arguments de `fx.attach` inversés
- * dans le script).
+ * The Hobbit : chaque carte gérée est confrontée à son texte Oracle (plan R, lot R7). Contempler, Récit (storied),
+ * amasser des Gobelins, Nains et Équipements, Loups, Trésors…
  */
 import { TOKEN_SPECS } from "@mtgx/cards/tokens";
 import { describe, expect, it } from "vitest";

@@ -18,20 +18,31 @@ Chaque entrée porte sa nature :
   - une statique accordée par un effet de résolution s'applique (Roar of the Fifth People), mais pas une statique accordée par une autre statique (un test de `layers.test.ts` vérifie qu'aucune carte n'en a besoin).
 - `timing` **Répartition (601.2d) et nouvelles cibles d'une copie (707.10c) :** demandées juste après la mise sur la pile (coûts payés), avant que quiconque reçoive la priorité, et non pendant l'annonce ; une copie faite pendant une résolution choisit ses cibles à la fin de celle-ci. Une copie faite avant que l'original ait annoncé sa répartition annonce la sienne (`stackChoices.ts`).
 - `choix auto` **Aura ou « arrive comme une copie » sans être lancé, hors résolution** (retour d'un exil lié, actions basées sur l'état) : le premier hôte ou modèle possible est choisi pour le joueur. Pendant une résolution (`moveTo`), le choix est demandé (303.4f, 707.5).
-- `règle` **Horodatage d'une Aura qui donne le contrôle (Confiscate) :** celui de son arrivée sur le champ de bataille, et non celui de son dernier attachement (613.7e). Eriette, the Beguiler est une statique : le contrôle dure tant que l'Aura reste attachée et que la condition de valeur de mana tient.
+- `règle` **Horodatage d'une Aura qui donne le contrôle (Confiscate) :** celui de son arrivée sur le champ de bataille, et non celui de son dernier attachement (613.7e). Eriette, the Beguiler est une statique : le contrôle dure tant que l'Aura reste attachée, que la condition de valeur de mana tient et qu'Eriette est sur le champ de bataille (sa perte rend les permanents volés ; une nouvelle Eriette vole rétroactivement).
 - `règle` **Convocation :** une créature qui a une capacité de mana ne sert pas à la convocation (elle paie par sa capacité de mana).
-- `choix auto` **Choix « en arrivant » sans résolution** (permanent remis en jeu par un effet) : choix par défaut, le type ou la couleur les plus présents chez le contrôleur.
+- `choix auto` **Choix « en arrivant » sans résolution** (terrain **joué**, comme Cavern of Souls ou Three Tree City, ou permanent remis en jeu par un effet) : choix par défaut, le type ou la couleur les plus présents chez le contrôleur. Seul le type de terrain de base de Multiversal Passage se choisit en jouant le terrain (`docs/plans/PLAN-C.md`, lot C9).
 - `choix auto` **Dégager jusqu'à N terrains :** les terrains sont choisis automatiquement.
 - `choix auto` **Capacités de mana à coût (605.1a) :** elles se résolvent sans la pile, mais seulement activées à la main : le paiement automatique ne s'en sert pas (Ramos, Capital City, Loot, the Pathfinder…).
-- `choix auto` **Mana restreint (Giada, Secluded Courtyard) :** utilisé seulement par le paiement automatique, pour un sort ou une capacité autorisés ; ces sources ne se tapent pas à la main.
+- `choix auto` **Mana restreint (Giada, Secluded Courtyard) :** utilisé par le paiement automatique, pour un sort ou une capacité autorisés. L'interface ne propose pas d'engager ces sources à la main ; le moteur l'accepte (mana mis dans la réserve restreinte), mais ce mana perd sa source et ses cavaliers : une restriction qui dépend de la source (type choisi de Cavern of Souls) ne peut plus être satisfaite (`docs/plans/PLAN-C.md`, lot C5).
 - `choix auto` **Mana « déclencheur » (haste, copie du sort) :** appliqué seulement quand ce mana est dépensé par le paiement automatique.
+- `règle` **« Au début de l'étape de fin, sacrifiez ce jeton » :** modélisé par une capacité retardée plutôt que par une capacité du jeton.
+- `règle` **Terrains choc mis en jeu par un effet** (et non joués) : ils arrivent engagés, sans proposer de payer 2 points de vie.
+- `timing` **Vitesse :** l'augmentation (« quand un adversaire perd des PV pendant votre tour ») est immédiate, sans passer par la pile.
+- `règle` **Déclencheurs « une ou plusieurs … » (Ketramose, Dredger's Insight) :** fusionnés tant qu'une occurrence attend d'être mise sur la pile.
+- `règle` **Marqueurs de capacité :** ils s'appliquent après les autres effets de couche 6.
+- `règle` **Blessures de combat groupées** (« une ou plusieurs créatures… ») : une fois par étape de blessures et par joueur blessé.
+- `règle` **Plafonds de sécurité :** un même événement crée au plus 100 jetons, et aucun quand le champ de bataille compte déjà 400 objets ; un montant remplacé (blessures, marqueurs, PV, cartes) est borné à un million. Des doubleurs de jetons qui se multiplient (copies d'Exalted Sunborn) donnaient sinon un nombre infini et une partie bloquée (`MAX_TOKENS_PER_EVENT`, `MAX_BATTLEFIELD` dans `actions.ts`, `MAX_AMOUNT` dans `modifiers.ts`).
+
+### Hors règles du jeu
+
+- **Légalité Standard :** instantané des légalités Scryfall au moment de l'import (`legalities.standard` dans `data/<set>.json`). Après une rotation ou une annonce de bannissement, réimporter les sets (`npm run import-cards -- <set>`).
+- **Images des jetons :** celle du jeton Scryfall le plus proche (même nom, puis mêmes F/E et couleurs ; `data/tokens.json`, `npm run import-tokens`) ; un jeton de nom inconnu garde le cadre texte.
 
 ## Carte par carte
 
 Dans l'ordre où elles ont été ajoutées, extension par extension.
 
 - **Fishing Pole :** la capacité accordée à la créature équipée est portée par l'Équipement (coût « engager la créature équipée »).
-- **« Au début de l'étape de fin, sacrifiez ce jeton » :** modélisé par une capacité retardée plutôt que par une capacité du jeton.
 - **Coûts retirés automatiquement :**
   - Quilled Greatwurm : les six marqueurs sont retirés d'abord des créatures qui en ont le plus ;
   - Lathril : les Elfes à engager sont choisis automatiquement.
@@ -42,9 +53,9 @@ Dans l'ordre où elles ont été ajoutées, extension par extension.
 - **Soulstone Sanctuary** (« tous les types de créature ») : tout sous-type sauf ceux de terrain, d'artefact et d'enchantement connus.
 - **Bolt Bend :** la nouvelle cible est choisie à la résolution.
 - **Demonic Pact :** les modes déjà choisis sont mémorisés sur le permanent (perdus s'il change de zone, ce qui est conforme).
-- **Ordeal of Nylea :** sacrifiée directement, sans déclencheur séparé.
+- **Ordeal of Nylea :** sacrifiée directement par son déclencheur d'attaque, sans déclencheur « quand vous la sacrifiez » séparé : sacrifiée autrement (Marchandage, effet de sacrifice), elle ne cherche pas de terrains.
 - **Mabel, Bitter Recluse :** les marqueurs retirés sont choisis automatiquement (loyauté, puis +1/+1, puis les autres).
-- **Liliana the Faultless, Massacre Girl :** mêmes approximations que plus haut (défausse à la résolution ; blessures non de combat de vos seules sources).
+- **Liliana the Faultless, Massacre Girl :** mêmes approximations que Hallway Heckler (défausse à la résolution) et Master of Barbs (blessures non de combat de vos seules sources), plus bas.
 - **Empower Jace avec plusieurs jetons Jace :** les marqueurs vont sur le premier jeton (pas de choix).
 - **Contempler un Jace :** toujours fait quand c'est possible (Countersculpt, Theorist's Sanctum), sans révéler la carte.
 - **Hallway Heckler :** la défausse est faite à la résolution, et non comme coût.
@@ -62,7 +73,6 @@ Dans l'ordre où elles ont été ajoutées, extension par extension.
 - **Molten Tide :** le {R} supplémentaire s'ajoute à toute capacité de mana « {T} » d'une Montagne, quelle que soit la couleur produite.
 - **Warrior's Blades :** la légalité de l'Équiper suppose la meilleure réduction possible ; le coût payé dépend de la cible choisie.
 - **Emrakul, the Exigent Doom :** la capacité accordée au terrain cesse dès que la carte quitte l'exil, de quelque façon que ce soit (et pas seulement quand elle est lancée).
-- **Terrains choc mis en jeu par un effet** (et non joués) : ils arrivent engagés, sans proposer de payer 2 points de vie.
 - **Gene Pollinator :** le permanent engagé en plus est choisi automatiquement (d'abord un permanent sans capacité de mana).
 - **Emissary Escort :** le bonus « +X/+0 » est une force de base variable (un effet qui fixe la force l'écrase).
 - **Terrasymbiosis :** se déclenche au plus une fois par tour (même si l'on refuse de piocher), pour tout marqueur +1/+1 mis sur vos créatures, qu'importe qui le met.
@@ -77,7 +87,6 @@ Dans l'ordre où elles ont été ajoutées, extension par extension.
 - **Pyrewood Gearhulk :** « les blessures ne peuvent pas être prévenues ce tour-ci » n'est pas modélisé.
 - **Webstrike Elite :** la cible est un artefact ou enchantement quelconque, détruit seulement si sa valeur de mana vaut X.
 - **Chorale, Grim Javelineer :** « quand cette créature meurt ce tour-ci » est une capacité accordée jusqu'à la fin du tour.
-- **Vitesse :** l'augmentation (« quand un adversaire perd des PV pendant votre tour ») est immédiate, sans passer par la pile.
 - **Boommobile :** les quatre mana ne sont pas restreints aux capacités.
 - **Thunderhead Gunner, Avishkar Raceway :** la carte est défaussée à la résolution, et non comme coût (comme Solitary Cell).
 - **Cursecloth Wrappings :** l'embaumement accordé est payé tout de suite (en rituel) et le jeton garde les couleurs de la carte.
@@ -86,11 +95,9 @@ Dans l'ordre où elles ont été ajoutées, extension par extension.
 - **Winter, Cursed Rider :** les X cartes d'artefact exilées sont choisies automatiquement.
 - **Full Throttle :** deux combats supplémentaires après le combat normal (et non juste après la phase principale).
 - **Oviya :** le piétinement vaut pour vos créatures attaquantes (quel que soit le joueur attaqué).
-- **Déclencheurs « une ou plusieurs … » (Ketramose, Dredger's Insight) :** fusionnés tant qu'une occurrence attend d'être mise sur la pile.
 - **Hollow Marauder :** une carte piochée si au moins un adversaire ciblé n'a pas défaussé de carte de VM 4 ou plus.
 - **Giant Beaver, Rambling Possum :** la créature qui reçoit le marqueur est ciblée parmi les vôtres ; Rambling Possum ne renvoie pas les créatures qui l'ont montée.
 - **Arid Archway :** le terrain renvoyé est ciblé.
-- **Marqueurs de capacité :** ils s'appliquent après les autres effets de couche 6.
 - **Fortune, Calamity, The Gitrog :** toutes les créatures qui ont monté la Monture sont concernées (et non une au plus, au choix).
 - **Fblthp, Lost on the Range :** comploter la carte du dessus passe par une capacité (sur la pile) qui paie son coût de mana.
 - **Kellan, the Kid :** le permanent est mis sur le champ de bataille au lieu d'être lancé.
@@ -98,7 +105,6 @@ Dans l'ordre où elles ont été ajoutées, extension par extension.
 - **Riku of Many Paths :** un seul mode, quel que soit le nombre de modes du sort.
 - **Great Train Heist :** le combat supplémentaire a lieu après le combat normal ; les Trésors viennent des blessures infligées à n'importe quel adversaire.
 - **Collector's Cage (hideaway) :** la carte est exilée face visible. **Memory Vessel :** on peut encore jouer les cartes de sa main. **Transmutation Font :** les trois jetons sacrifiés n'ont pas à avoir des noms différents. **Grand Abolisher :** les capacités de mana ne sont pas bloquées.
-- **Blessures de combat groupées** (« une ou plusieurs créatures… ») : une fois par étape de blessures et par joueur blessé.
 - **Demon Wall :** « a un marqueur » est lu comme « a un marqueur +1/+1 ».
 - **Haste Magic, Opera Love Song :** les cartes exilées sont jouables jusqu'à la fin de votre prochain tour (et non jusqu'à votre prochaine étape de fin).
 - **Freya Crescent :** son mana sert à toute capacité d'un Équipement, pas seulement à Équiper.
@@ -123,6 +129,7 @@ Dans l'ordre où elles ont été ajoutées, extension par extension.
 - **Sidequest: Raise a Chocobo :** la recherche de terrain de Black Chocobo (« quand il se transforme ») est faite par l'effet qui le transforme.
 - **Summoner's Grimoire :** le joueur choisit d'abord parmi les cartes de créature non-enchantement ; s'il n'en prend aucune, il peut mettre une créature-enchantement engagée et attaquante.
 - **Duskmourn (DSK) :**
+  - `règle` Doomsday Excruciator : les bibliothèques sont exilées face visible (et non face cachée), donc visibles de tous (`docs/plans/PLAN-C.md`, lot C6) ;
   - Survie : se déclenche au début de chaque phase principale d'après-combat (combats supplémentaires compris), pas seulement la seconde ;
   - Acrobatic Cheerleader (« ne se déclenche qu'une fois ») : tant qu'elle n'a pas de marqueur de vol ;
   - coûts additionnels choisis automatiquement : Fear of Abduction, Abhorrent Oculus, Fear of Isolation, Fear of Exposure (ce qui vaut le moins : jetons et petits permanents d'abord ; les créatures avant les terrains) ; Monstrous Emergence prend la plus grande force (créature ou carte en main) ; Kaito renvoie l'attaquant non bloqué le plus faible et attaque le joueur qu'attaque une de vos créatures ;
@@ -193,11 +200,9 @@ Dans l'ordre où elles ont été ajoutées, extension par extension.
   - `timing` Superior Spider-Man : la carte copiée est exilée en arrivant, et non par une capacité réflexive.
   - `règle` Momo, Friendly Flier : la réduction s'applique si vous n'avez lancé aucun sort de créature ce tour-ci (et non « aucun sort de créature non-Lémurien avec le vol ») ;
   - `timing` Dispelling Exhale : contempler un Dragon est vérifié à la résolution (vous en contrôlez un ou en avez un en main) ;
-  - `choix auto` Faufilement : l'attaquant non bloqué renvoyé en main est choisi par le moteur (le plus faible) ;
   - `règle` Dalkovan Encampment : « chaque fois que vous attaquez ce tour-ci » est une capacité accordée au terrain jusqu'à la fin du tour (perdue s'il quitte le champ de bataille) ;
   - `timing` Moseo, Vein's New Dean : la carte ciblée est une carte de créature quelconque ; sa valeur de mana (au plus les PV gagnés) est vérifiée à la résolution ;
   - `choix auto` Kíli the Resourceful : la première capacité d'équipement du tour coûte {0} d'office.
-  - `choix auto` Web-slinging : la créature engagée renvoyée en main est choisie par le moteur (la moins chère) ;
   - `règle` Mosswood Dreadknight : depuis le cimetière, la carte peut être lancée comme créature aussi, pas seulement en Aventure ;
   - `règle` Interdimensional Web Watch : les deux mana sont d'une même couleur, et servent à tout sort lancé ailleurs que depuis la main ;
   - `règle` Realm of Koh : son jeton Esprit ne peut bloquer aucune créature (et non « aucune créature non-Esprit ») ;
@@ -426,6 +431,3 @@ Dans l'ordre où elles ont été ajoutées, extension par extension.
   - `règle` Eagle's Rescue : l'Aura qui revient du cimetière est d'abord attachée comme toute Aura mise sur le champ de bataille, puis à la cible (une question de trop s'il y a plusieurs hôtes possibles).
   - `règle` The Great Goblin : des marqueurs mis par un adversaire sur vos Gobelins, Orques ou Armées le déclenchent aussi.
   - `règle` Goblin Plate Mail : l'Équipement s'attache à votre première Armée.
-- **Plafonds de sécurité :** un même événement crée au plus 100 jetons, et aucun quand le champ de bataille compte déjà 400 objets ; un montant remplacé (blessures, marqueurs, PV, cartes) est borné à un million. Des doubleurs de jetons qui se multiplient (copies d'Exalted Sunborn) donnaient sinon un nombre infini et une partie bloquée (`MAX_TOKENS_PER_EVENT`, `MAX_BATTLEFIELD` dans `actions.ts`, `MAX_AMOUNT` dans `modifiers.ts`).
-- **Légalité Standard :** instantané des légalités Scryfall au moment de l'import (`legalities.standard` dans `data/<set>.json`). Après une rotation ou une annonce de bannissement, réimporter les sets (`npm run import-cards -- <set>`).
-- **Images des jetons :** celle du jeton Scryfall le plus proche (même nom, puis mêmes F/E et couleurs ; `data/tokens.json`, `npm run import-tokens`) ; un jeton de nom inconnu garde le cadre texte.

@@ -279,7 +279,6 @@ export const BLACK: Record<string, CardScript> = {
   "Gnarlbark Elm": {
     abilities: [
       entersWith({ counters: 2, counterKind: "-1/-1", label: "Arrive avec deux marqueurs -1/-1" }),
-      // « Retirez deux marqueurs de cette créature » : seulement des marqueurs -1/-1 (approximation).
       activated({
         mana: "{2}{B}",
         removeCounters: { kind: "any", n: 2 },

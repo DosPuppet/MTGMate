@@ -1,6 +1,6 @@
 # Outlaws of Thunder Junction + The Big Score (OTJ, BIG)
 
-Mécaniques et détail des lots (déplacé de CLAUDE.md).
+**✅ 269 / 269 et 30 / 30** (lots A à C). Mécaniques et détail des lots (déplacé de CLAUDE.md).
 
 | Mécanique | Cartes | Lot |
 |---|---:|---|

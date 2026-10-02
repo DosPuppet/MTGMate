@@ -1,7 +1,7 @@
 {
- "Ordeal of Nylea | triggered | Ordeal of Nylea : 2 dans le texte, 1 dans le script": "approximation documentée : sacrifiée directement, sans déclencheur séparé",
+ "Ordeal of Nylea | triggered | Ordeal of Nylea : 2 dans le texte, 1 dans le script": "approximation documentée : sacrifiée directement par le déclencheur d'attaque, sans déclencheur « quand vous la sacrifiez » séparé ; sacrifiée autrement (Marchandage, effet de sacrifice), elle ne cherche pas de terrains (PLAN-C, lot C12)",
  "Assimilation Aegis | triggered | Assimilation Aegis : 2 dans le texte, 1 dans le script": "copie tant qu'il reste attaché : modélisée par une statique (copyLinkedExile)",
- "Eriette, the Beguiler | triggered | Eriette, the Beguiler : 1 dans le texte, 0 dans le script": "vol de contrôle tant que l'Aura reste attachée : statique de joueur auraStealsCheaper",
+ "Eriette, the Beguiler | triggered | Eriette, the Beguiler : 1 dans le texte, 0 dans le script": "vol de contrôle tant que l'Aura reste attachée : statique de joueur auraStealsCheaper ; le contrôle dépend aussi de la présence d'Eriette (sa perte rend les permanents volés, une nouvelle Eriette vole rétroactivement ; PLAN-C, lot C12)",
  "Smoky Lounge // Misty Salon | triggered | Smoky Lounge : 1 dans le texte, 0 dans le script": "approximation documentée : capacité de mana utilisable pendant la première phase principale",
  "Ultima, Origin of Oblivion | triggered | Ultima, Origin of Oblivion : 2 dans le texte, 1 dans le script": "capacité de mana déclenchée ({C} en plus) : remplacement de mana (R1, famille I)",
  "Sidequest: Raise a Chocobo // Black Chocobo | triggered | Black Chocobo : 2 dans le texte, 1 dans le script": "approximation documentée : la recherche « quand il se transforme » est faite par l'effet qui le transforme",

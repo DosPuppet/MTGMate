@@ -1,7 +1,7 @@
 /**
  * Wilds of Eldraine — cartes des decks du méta (phase 1 du plan P4, lot M1). Le Marchandage (702.166) est lu dans le
- * texte (`scryfall.ts` : kicker « sacrifiez un artefact, un enchantement ou un jeton »). L'extension n'est pas encore
- * couverte en entier.
+ * texte (`scryfall.ts` : kicker « sacrifiez un artefact, un enchantement ou un jeton »). Les autres cartes de
+ * l'extension sont dans les fichiers par couleur.
  */
 import {
   activated,

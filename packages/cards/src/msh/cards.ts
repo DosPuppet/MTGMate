@@ -1,7 +1,7 @@
 /**
  * Marvel Super Heroes — cartes des decks du méta (phase 1 du plan P4). Le Travail d'équipe (Teamwork) est lu dans le
- * texte (`scryfall.ts` : kicker « engagez des créatures de force totale N »). L'extension n'est pas encore couverte en
- * entier.
+ * texte (`scryfall.ts` : kicker « engagez des créatures de force totale N »). Les autres cartes de l'extension sont
+ * dans les fichiers par couleur.
  */
 import {
   activated,

@@ -1,6 +1,6 @@
 /**
- * Murders at Karlov Manor — cartes des decks du méta (phase 1 du plan P4, lot M1). L'extension n'est pas encore couverte
- * en entier.
+ * Murders at Karlov Manor — cartes des decks du méta (phase 1 du plan P4, lot M1). Les autres cartes de l'extension
+ * sont dans les fichiers par couleur.
  */
 import { activated, type CardScript, cond, entersWith, fx, ref, spell, staticAbility, target, triggered, when } from "./common";
 

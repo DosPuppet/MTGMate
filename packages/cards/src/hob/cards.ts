@@ -1,6 +1,6 @@
 /**
- * The Hobbit — cartes des decks du méta (phase 1 du plan P4, lot M1) : contempler (`cond.behold`). L'extension n'est pas
- * encore couverte en entier.
+ * The Hobbit — cartes des decks du méta (phase 1 du plan P4, lot M1) : contempler (`cond.behold`). Les autres cartes
+ * de l'extension sont dans les fichiers par couleur.
  */
 import {
   activated,

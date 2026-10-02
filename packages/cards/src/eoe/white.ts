@@ -44,14 +44,6 @@ export const WHITE: Record<string, CardScript> = {
       staticAbility("attached", { power: 1, toughness: 2, addKeywords: ["flying"] }, { label: "+1/+2 et le vol" }),
     ],
   },
-  "Banishing Light": {
-    abilities: [
-      triggered(when.entersSelf, [fx.exileUntilLeaves(ref.target())], {
-        targets: [target.nonland("t", { controller: "opponent" })],
-        label: "Exilez un permanent jusqu'à son départ",
-      }),
-    ],
-  },
   "Beyond the Quiet": {
     spell: spell([], [fx.moveAll("battlefield", ref.eachPlayer, CREATURE_OR_SPACECRAFT, { to: "exile" })]),
   },

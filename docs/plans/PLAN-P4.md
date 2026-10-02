@@ -1,5 +1,7 @@
 # Plan P4 — couverture guidée par le méta, puis Tarkir: Dragonstorm
 
+> **Archivé le 02/10/2026.** Phase 1 (lots M1 à M6 du méta) faite le 29/09/2026, phase 2 (Tarkir: Dragonstorm à 100 %) faite le 01/10/2026. Tout le Standard est jouable depuis le 02/10/2026.
+
 Plan établi le 29/09/2026 (branche `dev`) : il sert de feuille de route aux prochaines sessions.
 
 ## Suivi

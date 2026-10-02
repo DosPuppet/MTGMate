@@ -32,6 +32,11 @@ Moteur pur et déterministe (`packages/engine/src`). L'état est sérialisable ;
 | `view.ts` | Projection de l'état pour un joueur (information cachée). |
 | `scenario.ts` | `createScenario` : partie mise en scène (bibliothèques dans l'ordre, mains, permanents, tour de départ, mulligan facultatif) pour le tutoriel ; l'état vide vient de `blankState` (`game.ts`). |
 | `host.ts` | `GameHost` : IA, automatisme et humains ; l'option `gate` met l'IA en pause (explications du tutoriel). |
+| `game.ts` | API publique : `createGame`, `submit` (copie de travail, l'état reçu n'est jamais modifié), `applyMutable` ; détection des boucles d'actions obligatoires (104.4b). |
+| `choices.ts` | Choix génériques : validation des réponses (`validateChoice`), construction des demandes, `cardRef` (repère d'une carte dans un texte, localisé par le client). |
+| `autopilot.ts` | Automatisme « façon Arena » : réponses aux décisions triviales (arrêts, contrôle total, passes douce et dure) ; le moteur reste strict. |
+| `record.ts` | Enregistrement d'une partie (graine, decks, décisions, points de contrôle) et rejeu vérifié (`replayChecked`) ; `RULES_VERSION` et son historique. |
+| `fingerprint.ts` | `outcomeHash` : empreinte canonique d'un état, sans identifiants internes (points de contrôle, boucles obligatoires). |
 | `decisionShape.ts` | Forme d'une décision reçue (types des champs, objets inconnus, doublons), vérifiée par `apply` (`game.ts`) avant les règles. |
 | `errors.ts` | `RulesError` et `rethrowAsRules`. |
 | `turnlog.ts` | Journal des événements du tour (`s.turnLog` : déplacements publics, sorts lancés, sacrifices, blessures) et requêtes (`countTurnEvents`). |
@@ -56,6 +61,23 @@ Moteur pur et déterministe (`packages/engine/src`). L'état est sérialisable ;
 - **Contempler, maîtrise de la terre :** `cond.behold(filtre)` ; `fx.earthbend(ref, n)`.
 - **Tarkir: Dragonstorm :** endurance `fx.endure(ref, n)` ; rafale `when.castNthSpell(2)` ; mode choisi en arrivant (Sièges) `chooseOnEnter: "mode"`, `enterModes` et `cond.chosenMode` ; suspension `fx.suspend(ref, n)` ; cave accordée `playerStatic({ delveSpells })` ; décomposition (mot-clé et marqueur `decayed`).
 - **Nouveau champ de `GameState` :** l'initialiser dans `game.ts` et, si besoin, dans `engine/test/helpers.ts`. Les champs de tour se remettent à zéro au changement de tour (`turn.ts`).
+
+## Plafonds de sécurité
+
+Des gardes empêchent une partie de boucler ou d'exploser ; elles déclarent la partie nulle ou coupent un montant.
+
+| Plafond | Où | Valeur | Effet |
+|---|---|---|---|
+| Étapes du déroulement | `turn.ts` | 100 000 | partie nulle |
+| Passes d'actions basées sur l'état | `turn.ts` | 100 | partie nulle |
+| Boucle d'actions obligatoires (104.4b) | `game.ts` | même empreinte 3 fois | partie nulle |
+| Décisions automatiques par tour | `host.ts` | 10 000 | partie nulle |
+| Jetons créés | `actions.ts` | 100 par événement, aucun au-delà de 400 objets | coupure |
+| Montant remplacé | `modifiers.ts` | 1 000 000 | coupure |
+| Ordre des remplacements chiffrés | `modifiers.ts` | 5 remplacements | ordre du code au-delà |
+| Passes de couches (613.8) | `layers.ts` | 3 | arrêt du point fixe |
+
+Tout plafond nouveau est ajouté à ce tableau et à `docs/approximations.md`.
 
 ## Règles de conception
 

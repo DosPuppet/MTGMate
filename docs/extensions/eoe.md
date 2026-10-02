@@ -1,6 +1,6 @@
 # Edge of Eternities (EOE)
 
-Mécaniques et détail des lots (déplacé de CLAUDE.md).
+**✅ 260 / 260** (lots A à D). Mécaniques et détail des lots (déplacé de CLAUDE.md).
 
 | Mécanique | Cartes | Lot |
 |---|---:|---|

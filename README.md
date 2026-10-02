@@ -1,6 +1,6 @@
 # MTGX — MTG Mate
 
-Plateforme pour jouer à Magic: The Gathering contre une ou plusieurs IA (en duel ou en multijoueur), et bientôt contre d'autres joueurs. Elle repose sur un **moteur de règles maison en TypeScript** et une interface 2D pensée pour être aussi fluide que MTG Arena :
+Plateforme pour jouer à Magic: The Gathering contre une ou plusieurs IA (en duel ou en multijoueur) et en ligne contre un autre joueur (duel, BO3). Elle repose sur un **moteur de règles maison en TypeScript** et une interface 2D pensée pour être aussi fluide que MTG Arena :
 
 - passage automatique de la priorité ;
 - paiement automatique du mana ;
@@ -20,7 +20,7 @@ Dernière extension ajoutée : **The Hobbit (HOB)**, entièrement gérée (188 /
 
 Le périmètre visé avant toute extension est le **format Standard** : construit, 60 cartes minimum, 4 exemplaires maximum (sauf terrains de base et cartes « n'importe quel nombre »), réserve de 15 cartes.
 
-Les cartes sont couvertes **extension par extension, à 100 % avant de passer à la suivante**, sauf pendant la phase « méta » du plan P4 (voir plus bas). Toutes les extensions Standard sont importées (textes, légalités, faces), mais une carte n'est jouable que lorsqu'elle est gérée par le moteur. Les autres apparaissent grisées dans le deckbuilder, avec la mention « bientôt » (un filtre n'affiche que les cartes jouables).
+Les cartes ont été couvertes **extension par extension, à 100 % avant de passer à la suivante** (sauf pendant la phase « méta » du plan P4, voir plus bas) : toutes les cartes légales en Standard sont jouables. Toutes les extensions Standard sont importées (textes, légalités, faces) ; une carte qui ne serait pas gérée par le moteur apparaîtrait grisée dans le deckbuilder, avec la mention « bientôt ».
 
 **Extensions légales en Standard au 25/09/2026** (source : Scryfall, à revérifier à chaque rotation) :
 
@@ -46,7 +46,7 @@ Les cartes sont couvertes **extension par extension, à 100 % avant de passer à
 | **Teenage Mutant Ninja Turtles (TMT)** | ✅ 188 / 188 |
 | **The Hobbit (HOB)** | ✅ 188 / 188 |
 
-Au total, **5 161 cartes jouables** sur 5 161 cartes légales en Standard (100 %).
+Au total, **5 161 cartes jouables** sur 5 161 cartes légales en Standard (100 %). Les lignes ci-dessus font 5 174 cartes : elles comptent aussi les 13 cartes bannies, gérées mais refusées par la validation des decks.
 
 **Decks du méta (plan P4, phase 1 terminée) :** avant de finir les dernières extensions une à une, on écrit les cartes des decks Standard les plus joués (relevé MTGGoldfish du 29/09/2026, `docs/meta/`). Les **vingt archétypes relevés** (88,1 % du méta) sont jouables, réserve comprise ; les cinq premiers sont proposés comme decks préconstruits (Izzet Spellementals, Mono-Green Landfall, Dimir Midrange, Jund Sacrifice, 4c Control). Quelques réimpressions d'extensions plus anciennes sont aussi légales parce qu'elles figurent dans ces sets.
 
@@ -119,8 +119,8 @@ Les images des cartes viennent de Scryfall (`cards.scryfall.io`). Certains rése
 
 | Commande | Rôle |
 |---|---|
-| `npm run verify -- --set <EXT>` | Vérification d'un lot, parallélisée (~70 s) : types, Biome, couverture, tous les tests, fuzz ciblé sur l'extension à 2, 3 et 4 joueurs ; tests d'interface si le client a changé |
-| `npm run verify -- --full` | Vérification complète (~3 min) : fuzz sur tout le pool, bench et tests d'interface. Durée de chaque étape affichée, journaux dans `test-results/verify/` |
+| `npm run verify -- --set <EXT>` | Vérification d'un lot, parallélisée (environ 2 min) : types, Biome, couverture, tous les tests, fuzz ciblé sur l'extension à 2, 3 et 4 joueurs ; tests d'interface si le client a changé |
+| `npm run verify -- --full` | Vérification complète (environ 7 min) : fuzz sur tout le pool, bench et tests d'interface. Durée de chaque étape affichée, journaux dans `test-results/verify/` |
 | `npm run verify -- --ci` | Vérification de l'intégration continue (GitHub Actions, à chaque push) : types, Biome, couverture, tests et fuzz courts sur tout le pool, sans interface ni bench |
 | `npm test` | Tests de règles, d'IA, et test de fumée de chaque carte gérée (Vitest, un fichier par extension) |
 | `npm run golden [-- --update]` | Parties dorées (`ai/src/golden.ts`) : vérifie qu'elles se rejouent à l'identique ; `--update` les régénère après un changement de `RULES_VERSION` |
@@ -215,12 +215,12 @@ Chaque carte gérée est automatiquement jouée par le test de fumée (`packages
 | 4d. FDN, réimpressions (n° 282 et plus) | cartes des decks d'initiation et de la Starter Collection | ✅ **241 / 241** (517 / 517 pour tout FDN) |
 | 4e. Légalité Standard | légalités Scryfall importées, liste des bannies, validation du format dans le deckbuilder | ✅ |
 | 4f. Cartes à plusieurs faces | aventures, recto-verso, cartes scindées et Salles, Sagas, Classes, Affaires, face cachée, assemblage | ✅ |
-| 4g. Autres extensions Standard | une extension à la fois : Reality Fracture ✅, Edge of Eternities ✅, Aetherdrift ✅, Outlaws of Thunder Junction + The Big Score ✅, Final Fantasy ✅, Duskmourn ✅, Bloomburrow ✅, The Lost Caverns of Ixalan ✅, Tarkir: Dragonstorm ✅, Lorwyn Eclipsed ✅, Wilds of Eldraine ✅, Secrets of Strixhaven ✅, Murders at Karlov Manor ✅, Avatar: The Last Airbender ✅, Marvel Super Heroes ✅, Marvel's Spider-Man ✅, Teenage Mutant Ninja Turtles ✅, The Hobbit ✅ : tout le Standard est couvert | en cours |
+| 4g. Autres extensions Standard | une extension à la fois : Reality Fracture ✅, Edge of Eternities ✅, Aetherdrift ✅, Outlaws of Thunder Junction + The Big Score ✅, Final Fantasy ✅, Duskmourn ✅, Bloomburrow ✅, The Lost Caverns of Ixalan ✅, Tarkir: Dragonstorm ✅, Lorwyn Eclipsed ✅, Wilds of Eldraine ✅, Secrets of Strixhaven ✅, Murders at Karlov Manor ✅, Avatar: The Last Airbender ✅, Marvel Super Heroes ✅, Marvel's Spider-Man ✅, Teenage Mutant Ninja Turtles ✅, The Hobbit ✅ : tout le Standard est couvert | ✅ |
 | 5. IA | trois niveaux au choix (débutant, moyen, élevé) ; évaluation sur les caractéristiques durables ; attaques et blocages par simulation ; ISMCTS en duel (déterminisation de l'information cachée), budget en temps ; tournoi d'IA (`npm run arena`) ; guide : docs/ia.md | ✅ |
 | 6. JcJ en ligne | duel Standard : serveur Node `ws` (`GameHost`, vues et faces filtrées), code de salon, corde, reconnexion, revanche | ✅ duel ; déploiement pm2 + nginx documenté |
 | 7. Finitions | effets sonores ✅ ; tablette et téléphone ✅ ; relais des images Scryfall ✅ ; replays (graine + décisions) ✅ ; images des jetons ✅ ; musique | en cours |
 
-Le suivi (avancement, conventions, pièges) est dans [CLAUDE.md](CLAUDE.md). Les approximations connues sont dans [docs/approximations.md](docs/approximations.md), et le détail de chaque extension dans [docs/extensions/](docs/extensions/).
+Le suivi (état, conventions, pièges) est dans [CLAUDE.md](CLAUDE.md), l'historique dans [docs/historique.md](docs/historique.md), le plan en cours dans [docs/plans/PLAN-C.md](docs/plans/PLAN-C.md). Les approximations connues sont dans [docs/approximations.md](docs/approximations.md), et le détail de chaque extension dans [docs/extensions/](docs/extensions/).
 
 ## Cadre légal
 
