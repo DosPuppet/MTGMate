@@ -416,8 +416,8 @@ export interface TurnStats {
   manaSpentOnSpells?: number;
 }
 
-/** Façon de lancer un sort que des capacités lisent : Web-slinging, coût de chaos (Mayhem). */
-export type CastVia = "webSlinging" | "mayhem";
+/** Façon de lancer un sort que des capacités lisent : Web-slinging, coût de chaos (Mayhem), faufilement (Sneak). */
+export type CastVia = "webSlinging" | "mayhem" | "sneak";
 
 /** Événement du tour (`turnlog.ts`) : déplacement, sort lancé, sacrifice, blessures. */
 export type TurnLogEntry =

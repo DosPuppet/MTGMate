@@ -33,3 +33,53 @@ export const NINJA_TURTLE_SPIRIT: TokenSpec = {
   power: 1,
   toughness: 1,
 };
+
+/** Mutant : créature rouge 2/2. */
+export const MUTANT: TokenSpec = {
+  name: "Mutant",
+  colors: ["R"],
+  types: ["Creature"],
+  subtypes: ["Mutant"],
+  power: 2,
+  toughness: 2,
+};
+
+/** Ninja : créature noire 1/1. */
+export const NINJA: TokenSpec = {
+  name: "Ninja",
+  colors: ["B"],
+  types: ["Creature"],
+  subtypes: ["Ninja"],
+  power: 1,
+  toughness: 1,
+};
+
+/** Robot : créature-artefact incolore 1/1. */
+export const ROBOT_1: TokenSpec = {
+  name: "Robot",
+  colors: [],
+  types: ["Artifact", "Creature"],
+  subtypes: ["Robot"],
+  power: 1,
+  toughness: 1,
+};
+
+/** Insecte Guerrier : créature noire 1/1. */
+export const INSECT_WARRIOR: TokenSpec = {
+  name: "Insect Warrior",
+  colors: ["B"],
+  types: ["Creature"],
+  subtypes: ["Insect", "Warrior"],
+  power: 1,
+  toughness: 1,
+};
+
+/** Dinosaure Soldat : créature blanche 2/2. */
+export const DINOSAUR_SOLDIER: TokenSpec = {
+  name: "Dinosaur Soldier",
+  colors: ["W"],
+  types: ["Creature"],
+  subtypes: ["Dinosaur", "Soldier"],
+  power: 2,
+  toughness: 2,
+};

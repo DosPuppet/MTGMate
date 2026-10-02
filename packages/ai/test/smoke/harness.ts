@@ -256,5 +256,6 @@ export const OWN_FILES = [
   "TLA",
   "MSH",
   "SPM",
+  "TMT",
 ];
 export const OTHER_SETS = (): string[] => SETS.map((s) => s.code).filter((c) => !OWN_FILES.includes(c));

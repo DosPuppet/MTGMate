@@ -1653,7 +1653,7 @@ export function castSpell(s: GameState, player: PlayerId, card: ObjectId, choice
     impending: alternative && cardDef.impending ? true : undefined,
     evoked: alternative && cardDef.evoke ? true : undefined,
     sneaked: sneaked || undefined,
-    castVia: webSlinging ? "webSlinging" : terms.mayhem ? "mayhem" : undefined,
+    castVia: webSlinging ? "webSlinging" : terms.mayhem ? "mayhem" : sneaked ? "sneak" : undefined,
     costBounced: bounced.length ? bounced : undefined,
     manaSpent: free ? 0 : manaValue(cost),
     fromHand: terms.source === "hand" || undefined,
