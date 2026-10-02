@@ -21,8 +21,7 @@ import {
   type ObjectId,
   opponentsOf,
   type PlayerId,
-  requiredBlocks,
-  unmetBlockRequirement,
+  repairBlocks,
 } from "@mtgx/engine";
 import { heuristicChoice, keepValue } from "./choices";
 import { searchAttackers, searchBlocks } from "./combat";
@@ -99,16 +98,13 @@ export function chooseDefenders(s: GameState, me: PlayerId, attackers: string[])
   return attackers.map((id) => ({ id, defender: out.get(id) as string }));
 }
 
-/** Complète les blocages pour respecter les exigences « doit être bloquée si possible ». */
+/** Complète les blocages pour respecter le plus d'exigences de blocage possible (509.1c, `repairBlocks`). */
 export function withRequiredBlocks(
   s: GameState,
   me: PlayerId,
   blocks: { blocker: string; attacker: string }[],
 ): { blocker: string; attacker: string }[] {
-  if (!unmetBlockRequirement(s, me, blocks)) return blocks;
-  const req = requiredBlocks(s, me);
-  const kept = blocks.filter((b) => !req.some((r) => r.blocker === b.blocker));
-  return [...kept, ...req];
+  return repairBlocks(s, me, blocks);
 }
 
 // ---------------------------------------------------------------------------

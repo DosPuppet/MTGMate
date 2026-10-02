@@ -173,8 +173,12 @@ export const RECORD_VERSION = 1;
  *   capacité de mana sans couleur possible ne produit rien (106.7).
  * - 62 : les sources « engagez un autre permanent » (Springleaf Drum) se partagent les permanents à engager ; l'harmonie
  *   engage par défaut une créature sans capacité de mana (PLAN-C, lot C3, fuzz strict).
+ * - 63 : 509.1c par maximisation : une déclaration de blocage n'est refusée que si une autre en respecte plus
+ *   d'exigences (« bloque ce Loup si possible » et « doit être bloquée si possible » ne se bloquent plus l'une l'autre) ;
+ *   509.1d : une taxe de blocage lève les exigences ; la déclaration d'attaque par défaut fait attaquer les créatures
+ *   qui le doivent (sur le serveur, une corde expirée avec Juggernaut faisait abandonner la partie). PLAN-C, lot C4.
  */
-export const RULES_VERSION = 62;
+export const RULES_VERSION = 63;
 
 /** Un point de contrôle toutes les N décisions (plus la dernière de la partie). */
 export const CHECKPOINT_EVERY = 25;

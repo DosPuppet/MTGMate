@@ -834,81 +834,139 @@ function hasAnyLegalBlock(s: GameState, player: PlayerId): boolean {
   });
 }
 
+type Block = { blocker: ObjectId; attacker: ObjectId };
+
 /**
- * 509.1c : attaquant « qui doit être bloqué si possible » laissé sans bloqueur alors qu'une créature
- * pouvait le bloquer sans renoncer à une autre exigence. Renvoie cet attaquant, ou null.
+ * 509.1c : une exigence de blocage d'un défenseur — un attaquant « qui doit être bloqué si possible », ou une créature
+ * qui « bloque si possible » (`attackers` : seulement ces attaquants, « bloque ce Loup si possible »).
  */
-export function unmetBlockRequirement(
-  s: GameState,
-  player: PlayerId,
-  blocks: { blocker: ObjectId; attacker: ObjectId }[],
-): ObjectId | null {
-  const required = (s.combat?.attackers ?? []).filter(
-    (a) => defendingPlayer(s, a.defender) === player && hasKeyword(s, a.id, "mustBeBlocked"),
-  );
-  const blockingRequired = new Set(blocks.filter((b) => required.some((a) => a.id === b.attacker)).map((b) => b.blocker));
-  for (const a of required) {
-    if (blocks.some((b) => b.attacker === a.id)) continue;
-    // Avec la menace (un suspect qui doit être bloqué), il faut pouvoir le bloquer avec assez de créatures.
-    const able = creaturesControlledBy(s, player).filter((id) => canBlock(s, id, a.id) && !blockingRequired.has(id));
-    if (able.length >= minBlockers(s, a.id)) return a.id;
-  }
-  return null;
-}
+export type BlockRequirement =
+  | { kind: "attacker"; attacker: ObjectId }
+  | { kind: "blocker"; blocker: ObjectId; attackers?: ObjectId[] };
 
-/** Attaquants qu'une créature soumise à « bloque si possible » pourrait bloquer seule (509.1c). */
-function mustBlockTargets(s: GameState, player: PlayerId, blocker: ObjectId): ObjectId[] {
-  const rules = chars(s, blocker).blockRules.filter((r) => r.mustBlock || r.mustBlockAttacker);
-  if (rules.length === 0) return [];
-  const specific = rules.map((r) => r.mustBlockAttacker).filter((x): x is ObjectId => !!x);
-  return (s.combat?.attackers ?? [])
-    .filter((a) => defendingPlayer(s, a.defender) === player)
-    .filter((a) => rules.some((r) => r.mustBlock) || specific.includes(a.id))
-    .filter((a) => canBlock(s, blocker, a.id) && minBlockers(s, a.id) <= 1)
-    .map((a) => a.id);
-}
-
-/** 509.1c : une créature qui « bloque si possible » et qui ne bloque pas alors qu'elle le pouvait ; null sinon. */
-export function unmetBlockerRequirement(
-  s: GameState,
-  player: PlayerId,
-  blocks: { blocker: ObjectId; attacker: ObjectId }[],
-): ObjectId | null {
+/** Les exigences de blocage de `player` ; aucune si bloquer coûte quelque chose (509.1d, Archangel of Tithes). */
+export function blockRequirements(s: GameState, player: PlayerId): BlockRequirement[] {
+  const tax = s.playerOrder.filter((p) => p !== player).reduce((n, p) => n + playerStaticTotal(s, p, "blockTax"), 0);
+  if (tax > 0) return [];
+  const attackers = (s.combat?.attackers ?? []).filter((a) => defendingPlayer(s, a.defender) === player).map((a) => a.id);
+  const out: BlockRequirement[] = attackers
+    .filter((a) => hasKeyword(s, a, "mustBeBlocked"))
+    .map((attacker) => ({ kind: "attacker" as const, attacker }));
   for (const id of creaturesControlledBy(s, player)) {
-    const able = mustBlockTargets(s, player, id);
-    if (able.length === 0) continue;
-    const blocked = blocks.find((b) => b.blocker === id)?.attacker;
-    if (blocked === undefined) return id;
-    // « Bloque ce Loup si possible » : bloquer un autre attaquant n'obéit pas à l'exigence (on en obéirait à plus).
-    const specific =
-      chars(s, id).blockRules.some((r) => r.mustBlockAttacker) && !chars(s, id).blockRules.some((r) => r.mustBlock);
-    if (specific && !able.includes(blocked)) return id;
-  }
-  return null;
-}
-
-/** Blocages qui respectent les exigences « doit être bloquée » (déclaration par défaut). */
-export function requiredBlocks(s: GameState, player: PlayerId): { blocker: ObjectId; attacker: ObjectId }[] {
-  const out: { blocker: ObjectId; attacker: ObjectId }[] = [];
-  const used = new Set<ObjectId>();
-  // « Bloque si possible » : chaque créature concernée bloque un attaquant qu'elle peut bloquer.
-  for (const id of creaturesControlledBy(s, player)) {
-    const a = mustBlockTargets(s, player, id)[0];
-    if (!a) continue;
-    used.add(id);
-    out.push({ blocker: id, attacker: a });
-  }
-  for (const a of s.combat?.attackers ?? []) {
-    if (defendingPlayer(s, a.defender) !== player || !hasKeyword(s, a.id, "mustBeBlocked")) continue;
-    const able = creaturesControlledBy(s, player).filter((id) => !used.has(id) && canBlock(s, id, a.id));
-    const need = minBlockers(s, a.id);
-    if (able.length < need) continue;
-    for (const b of able.slice(0, need)) {
-      used.add(b);
-      out.push({ blocker: b, attacker: a.id });
+    const rules = chars(s, id).blockRules.filter((r) => r.mustBlock || r.mustBlockAttacker);
+    if (rules.length === 0) continue;
+    if (rules.some((r) => r.mustBlock)) out.push({ kind: "blocker", blocker: id });
+    else {
+      const specific = rules.map((r) => r.mustBlockAttacker).filter((x): x is ObjectId => !!x && attackers.includes(x));
+      if (specific.length) out.push({ kind: "blocker", blocker: id, attackers: specific });
     }
   }
   return out;
+}
+
+/** Exigences respectées par une déclaration. */
+function obeyedRequirements(reqs: BlockRequirement[], blocks: Block[]): BlockRequirement[] {
+  return reqs.filter((r) => {
+    if (r.kind === "attacker") return blocks.some((b) => b.attacker === r.attacker);
+    const b = blocks.find((x) => x.blocker === r.blocker);
+    return !!b && (!r.attackers || r.attackers.includes(b.attacker));
+  });
+}
+
+/** La déclaration respecte-t-elle le nombre de bloqueurs de chaque attaquant (menace, « pas plus d'une ») et « pas seule » ? */
+function blockShapeLegal(s: GameState, blocks: Block[]): boolean {
+  const per = new Map<ObjectId, number>();
+  for (const b of blocks) per.set(b.attacker, (per.get(b.attacker) ?? 0) + 1);
+  for (const [a, n] of per) if (n < minBlockers(s, a) || n > maxBlockers(s, a)) return false;
+  const lone = blocks.length === 1 ? blocks[0]?.blocker : undefined;
+  return !lone || !chars(s, lone).blockRules.some((r) => r.notAlone);
+}
+
+/** Nœuds au plus de la recherche du maximum : au-delà, le meilleur trouvé (qui ne peut que sous-estimer le maximum). */
+const BLOCK_SEARCH_NODES = 50_000;
+
+/**
+ * 509.1c : le plus grand nombre d'exigences qu'une déclaration légale peut respecter, et une telle déclaration (pour les
+ * seules créatures concernées). `prefer` : les blocages voulus, essayés d'abord (l'IA qui répare ses blocages).
+ */
+function bestRequiredBlocks(
+  s: GameState,
+  player: PlayerId,
+  reqs: BlockRequirement[],
+  prefer: Block[] = [],
+): { max: number; best: Block[] } {
+  if (reqs.length === 0) return { max: 0, best: [] };
+  const attackers = (s.combat?.attackers ?? []).filter((a) => defendingPlayer(s, a.defender) === player).map((a) => a.id);
+  const required = new Set(reqs.flatMap((r) => (r.kind === "attacker" ? [r.attacker] : [])));
+  const own = new Map(reqs.flatMap((r) => (r.kind === "blocker" ? [[r.blocker, r] as const] : [])));
+  const relevant = creaturesControlledBy(s, player).filter((id) => own.has(id) || [...required].some((a) => canBlock(s, id, a)));
+  const domains = relevant.map((id) => {
+    const r = own.get(id);
+    const useful = attackers.filter(
+      (a) => canBlock(s, id, a) && (required.has(a) || (r?.kind === "blocker" && (!r.attackers || r.attackers.includes(a)))),
+    );
+    const wanted = prefer.find((b) => b.blocker === id)?.attacker;
+    const options: (ObjectId | null)[] = [null, ...useful];
+    // Le blocage voulu d'abord (s'il est utile) ; sinon « ne bloque pas » d'abord.
+    if (wanted && useful.includes(wanted)) options.sort((x, y) => (x === wanted ? -1 : y === wanted ? 1 : 0));
+    return options;
+  });
+  let best: Block[] = [];
+  let max = -1;
+  let nodes = 0;
+  const current: Block[] = [];
+  const visit = (i: number): void => {
+    if (++nodes > BLOCK_SEARCH_NODES || max === reqs.length) return;
+    if (i === relevant.length) {
+      if (!blockShapeLegal(s, current)) return;
+      const n = obeyedRequirements(reqs, current).length;
+      if (n > max) {
+        max = n;
+        best = [...current];
+      }
+      return;
+    }
+    for (const a of domains[i] ?? [null]) {
+      if (a) current.push({ blocker: relevant[i] as ObjectId, attacker: a });
+      visit(i + 1);
+      if (a) current.pop();
+    }
+  };
+  visit(0);
+  return { max: Math.max(0, max), best };
+}
+
+/**
+ * 509.1c : la première exigence non respectée par cette déclaration alors qu'une autre déclaration légale en respecte
+ * plus ; null si la déclaration respecte le maximum possible.
+ */
+export function unmetBlockRequirement(s: GameState, player: PlayerId, blocks: Block[]): BlockRequirement | null {
+  const reqs = blockRequirements(s, player);
+  if (reqs.length === 0) return null;
+  const obeyed = obeyedRequirements(reqs, blocks);
+  if (obeyed.length >= bestRequiredBlocks(s, player, reqs).max) return null;
+  return reqs.find((r) => !obeyed.includes(r)) ?? null;
+}
+
+/** Blocages par défaut : ceux qui respectent le plus d'exigences (509.1c) ; vide sans exigence. */
+export function requiredBlocks(s: GameState, player: PlayerId): Block[] {
+  return bestRequiredBlocks(s, player, blockRequirements(s, player)).best;
+}
+
+/**
+ * Blocages voulus (par l'IA) complétés pour respecter le plus d'exigences possible : les créatures concernées reprennent
+ * le meilleur blocage proche de celui voulu, les autres gardent le leur.
+ */
+export function repairBlocks(s: GameState, player: PlayerId, blocks: Block[]): Block[] {
+  if (!unmetBlockRequirement(s, player, blocks)) return blocks;
+  const { best } = bestRequiredBlocks(s, player, blockRequirements(s, player), blocks);
+  const fixed = new Set(best.map((b) => b.blocker));
+  const reqs = blockRequirements(s, player);
+  const own = new Set(reqs.flatMap((r) => (r.kind === "blocker" ? [r.blocker] : [])));
+  const required = reqs.flatMap((r) => (r.kind === "attacker" ? [r.attacker] : []));
+  const relevant = (id: ObjectId) => own.has(id) || required.some((a) => canBlock(s, id, a));
+  const merged = [...blocks.filter((b) => !fixed.has(b.blocker) && !relevant(b.blocker)), ...best];
+  return blockShapeLegal(s, merged) ? merged : best;
 }
 
 export function declareBlockers(s: GameState, player: PlayerId, blocks: { blocker: ObjectId; attacker: ObjectId }[]): void {
@@ -925,10 +983,10 @@ export function declareBlockers(s: GameState, player: PlayerId, blocks: { blocke
   const lone = blocks.length === 1 ? blocks[0]?.blocker : undefined;
   if (lone && chars(s, lone).blockRules.some((r) => r.notAlone))
     throw new RulesError(`${chars(s, lone).name} ne peut pas bloquer seule`);
+  // 509.1c : la déclaration respecte autant d'exigences de blocage que possible (sans payer de coût, 509.1d).
   const unmet = unmetBlockRequirement(s, player, blocks);
-  if (unmet) throw new RulesError(`${chars(s, unmet).name} doit être bloquée si possible`);
-  const idle = unmetBlockerRequirement(s, player, blocks);
-  if (idle) throw new RulesError(`${chars(s, idle).name} doit bloquer si possible`);
+  if (unmet?.kind === "attacker") throw new RulesError(`${chars(s, unmet.attacker).name} doit être bloquée si possible`);
+  if (unmet?.kind === "blocker") throw new RulesError(`${chars(s, unmet.blocker).name} doit bloquer si possible`);
   // Archangel of Tithes (attaquant) : {1} par créature qui bloque.
   const perBlocker = s.playerOrder.filter((p) => p !== player).reduce((n, p) => n + playerStaticTotal(s, p, "blockTax"), 0);
   if (blocks.length && perBlocker > 0) {

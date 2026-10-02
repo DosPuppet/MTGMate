@@ -380,7 +380,7 @@ Lus dans le code ; chacun est confirmé par un test au début de son lot.
 État au 02/10/2026 (audit du 02/10, § 5.9) :
 
 - bloquer plusieurs attaquants : toujours reporté (aucune carte du pool) ;
-- obligations de blocage : **faites en partie** (« doit être bloquée si possible », « bloque si possible », « bloque cet attaquant si possible », MKM) ; la maximisation de 509.1c manque, voir `PLAN-C.md`, lot C4 ; pas de Leurre dans le pool ;
+- obligations de blocage : **faites** (« doit être bloquée si possible », « bloque si possible », « bloque cet attaquant si possible », MKM ; maximisation de 509.1c et 509.1d : `PLAN-C.md`, lot C4) ; pas de Leurre dans le pool ;
 - batailles, phasing, couche 3, raccourcis de boucles (732) : toujours reportés (aucune carte du pool) ;
 - mot-clé second partagé (seul Samut en a besoin) : toujours un drapeau ; voir `PLAN-C.md`, lot C11 ;
 - couches hors du champ de bataille : remplacées par les caractéristiques des sorts, `PLAN-C.md`, lot C11 ;

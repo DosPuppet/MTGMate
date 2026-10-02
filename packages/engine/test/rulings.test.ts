@@ -5,14 +5,16 @@
 import { describe, expect, it } from "vitest";
 import { createTokens, dealDamage, destroy, sourceFromObject } from "../src/actions";
 import { eventReplacement, fx, graveyardReplacement, ref, triggered, when } from "../src/dsl";
-import { runEffect } from "../src/effects";
+import { addEffect, runEffect } from "../src/effects";
+import { RulesError } from "../src/errors";
+import { fallbackDecision } from "../src/host";
 import { bump } from "../src/layers";
 import { legalActions } from "../src/legal";
 import { counterItem } from "../src/stack";
 import { changeCounters, chars, moveObject } from "../src/state";
 import { addPlayerEffect } from "../src/statics";
 import { matchesObjectFilter } from "../src/targets";
-import { requiredBlocks, stateBasedActions } from "../src/turn";
+import { blockRequirements, requiredBlocks, stateBasedActions } from "../src/turn";
 import { countTurnEvents } from "../src/turnlog";
 import type { CardDef, GameState } from "../src/types";
 import { act, advanceUntil, customCard, idOf, idsOf, passAccepting, passUntil, scenario } from "./helpers";
@@ -510,5 +512,77 @@ describe("correctifs de fin de The Hobbit", () => {
       1,
     );
     expect(made).toHaveLength(100);
+  });
+});
+
+describe("509.1c et 509.1d : respecter autant d'exigences de blocage que possible (PLAN-C, lot C4)", () => {
+  /** p1 attaque p2 avec `attackers` ; renvoie la position de la déclaration des bloqueurs. */
+  const toBlocks = (p1: (string | CardDef)[], p2: (string | CardDef)[], extra: Partial<Parameters<typeof scenario>[0]> = {}) => {
+    let s = scenario({ p1: { battlefield: p1 }, p2: { battlefield: p2 }, ...extra });
+    const attackers = s.battlefield.filter((id) => s.objects[id]?.controller === "p1" && chars(s, id).types.includes("Creature"));
+    s = advanceUntil(s, (x) => x.pending?.kind === "declareAttackers");
+    s = act(s, "p1", { type: "declareAttackers", attackers: attackers.map((id) => ({ id, defender: "p2" })) });
+    return advanceUntil(s, (x) => x.pending?.kind === "declareBlockers");
+  };
+  const wolf = customCard({ name: "Loup de test", power: 2, toughness: 2, subtypes: ["Wolf"] });
+  const lure = customCard({ name: "Appât de test", power: 2, toughness: 2, keywords: ["mustBeBlocked"] });
+  const guard = customCard({ name: "Garde de test", power: 1, toughness: 5 });
+
+  it("« bloque ce Loup si possible » et un attaquant « doit être bloqué » : chacun des deux blocages est accepté", () => {
+    let s = toBlocks([wolf, lure], [guard]);
+    const [w, l, g] = [
+      idOf(s, "p1", "battlefield", wolf.name),
+      idOf(s, "p1", "battlefield", lure.name),
+      idOf(s, "p2", "battlefield", guard.name),
+    ];
+    // Tolsimir : la créature doit bloquer ce Loup si possible.
+    addEffect(s, [g], { addBlockRules: [{ mustBlockAttacker: w, label: "Bloque ce Loup si possible" }] }, "endOfTurn");
+    // Une seule exigence peut être respectée : bloquer le Loup ou l'appât ; ne pas bloquer en respecte zéro.
+    expect(() => act(s, "p2", { type: "declareBlockers", blocks: [{ blocker: g, attacker: w }] })).not.toThrow();
+    expect(() => act(s, "p2", { type: "declareBlockers", blocks: [{ blocker: g, attacker: l }] })).not.toThrow();
+    expect(() => act(s, "p2", { type: "declareBlockers", blocks: [] })).toThrow(RulesError);
+    // Le blocage par défaut (repli de l'hôte, automatisme) est accepté.
+    const fallback = requiredBlocks(s, "p2");
+    expect(fallback).toHaveLength(1);
+    s = act(s, "p2", { type: "declareBlockers", blocks: fallback });
+    expect(s.pending?.kind).not.toBe("declareBlockers");
+  });
+
+  it("deux créatures qui bloquent si possible, un seul attaquant : les deux doivent bloquer", () => {
+    const eager = (name: string) => customCard({ name, power: 1, toughness: 1 });
+    const s = toBlocks([wolf], [eager("Zélé A"), eager("Zélé B")]);
+    const [a, b] = ["Zélé A", "Zélé B"].map((n) => idOf(s, "p2", "battlefield", n)) as [string, string];
+    addEffect(s, [a, b], { addBlockRules: [{ mustBlock: true, label: "Bloque si possible" }] }, "endOfTurn");
+    const w = idOf(s, "p1", "battlefield", wolf.name);
+    expect(() => act(s, "p2", { type: "declareBlockers", blocks: [{ blocker: a, attacker: w }] })).toThrow(RulesError);
+    expect(() =>
+      act(s, "p2", {
+        type: "declareBlockers",
+        blocks: [
+          { blocker: a, attacker: w },
+          { blocker: b, attacker: w },
+        ],
+      }),
+    ).not.toThrow();
+  });
+
+  it("509.1d : avec une taxe de blocage, aucune exigence ne s'impose (Archangel of Tithes)", () => {
+    const s = toBlocks(["Archangel of Tithes", lure], [guard]);
+    expect(blockRequirements(s, "p2")).toEqual([]);
+    expect(requiredBlocks(s, "p2")).toEqual([]);
+    expect(() => act(s, "p2", { type: "declareBlockers", blocks: [] })).not.toThrow();
+  });
+
+  it("la déclaration d'attaque par défaut fait attaquer ce qui doit attaquer (Juggernaut : corde expirée en ligne)", () => {
+    let s = scenario({ p1: { battlefield: ["Juggernaut"] }, p2: { battlefield: [guard] } });
+    s = advanceUntil(s, (x) => x.pending?.kind === "declareAttackers");
+    const p = s.pending;
+    if (p?.kind !== "declareAttackers") throw new Error("pas de déclaration des attaquants");
+    const d = fallbackDecision(s, p);
+    expect(d).toEqual({
+      type: "declareAttackers",
+      attackers: [{ id: idOf(s, "p1", "battlefield", "Juggernaut"), defender: "p2" }],
+    });
+    expect(() => act(s, "p1", d)).not.toThrow();
   });
 });

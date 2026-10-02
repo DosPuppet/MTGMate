@@ -15,6 +15,7 @@ Plan établi le 02/10/2026 (branche `dev`) : il sert de feuille de route aux pro
   - aides de test communes dans `engine/test/helpers.ts` (`settle`, `cast`, `castTargets`, `throughCombat`, `picking`…) : 1 485 lignes retirées des neuf fichiers d'extension récents ;
   - 13 tests (`engine/test/offers.test.ts`, Emrakul dans `fra-lotf.test.ts`).
 - **02/10/2026 : C3 fait** (`RULES_VERSION` = 62) : bundle mesuré (worker 411 Ko sans carte depuis C2 : B5 réglé ; application 1,8 Mo, données 5,6 Mo), budget de taille vérifié par `verify` et donc par la CI (`tools/bundle-size.ts`) ; `update.sh` attend `/healthz` 30 s ; poignée de main client-serveur (`PROTOCOL_VERSION` et `RULES_VERSION`, erreur `version`, rechargement de la page, test serveur) ; deux désaccords de plus trouvés par le fuzz strict sur le méta (Springleaf Drum : les sources « engagez un autre permanent » se partagent les permanents ; harmonie : par défaut une créature sans capacité de mana), 2 tests. `online-smoke` et tous les tests d'interface passent.
+- **02/10/2026 : C4 fait** (`RULES_VERSION` = 63) : exigences de blocage par maximisation (`blockRequirements`, `bestRequiredBlocks` : recherche bornée à 50 000 nœuds, seulement s'il y a des exigences) ; `unmetBlockRequirement` ne refuse une déclaration que si une autre en respecte plus ; taxe de blocage : aucune exigence (509.1d) ; `requiredBlocks` (repli de l'hôte) légal par construction ; `repairBlocks` pour l'IA. Le nouvel invariant du fuzz strict (la déclaration par défaut est acceptée) a trouvé un autre bug : la déclaration d'attaque par défaut n'attaquait avec rien, refusée avec Juggernaut ; **sur le serveur, une corde expirée faisait alors abandonner la partie**. Corrigé (`forcedAttacks`). 4 tests (`rulings.test.ts`).
 
 ## Décisions et ordre
 
@@ -34,7 +35,7 @@ Plan établi le 02/10/2026 (branche `dev`) : il sert de feuille de route aux pro
 | 2 | C1 : garde-fous (dette élargie, plafonds) | § 5.1, § 5.4, § 5.6 | C0 | M | ✅ |
 | 3 | C2 : vérification qui détecte | § 6 | — | M | ✅ |
 | 4 | C3 : plateforme, correctifs rapides | B5, B6, § 7 | — | S | ✅ |
-| 5 | C4 : [règles] exigences de blocage | B1 | C2 | M | |
+| 5 | C4 : [règles] exigences de blocage | B1 | C2 | M | ✅ |
 | 6 | C5 : [règles] mana marqué | B2 | C2 | S/M | |
 | 7 | C6 : information cachée | B3, B4 | C2 | M | |
 | 8 | C7 : couche des coûts (sans changement de règles) | § 5.2 | C2 | L | |

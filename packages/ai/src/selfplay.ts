@@ -215,6 +215,15 @@ export function playGame(opts: {
     const p = state.pending;
     if (opts.offers && p.kind === "priority" && i % opts.offers === 0)
       checkOffers(state, p.player, `seed ${opts.seed}, décision ${i}`);
+    // La déclaration par défaut de l'hôte (exigences de blocage 509.1c, attaques obligées) est toujours acceptée.
+    if (opts.offers && (p.kind === "declareBlockers" || p.kind === "declareAttackers")) {
+      try {
+        submit(state, p.player, fallbackDecision(state, p));
+      } catch (e) {
+        if (!(e instanceof RulesError)) throw e;
+        throw new Error(`Déclaration par défaut refusée (seed ${opts.seed}, décision ${i}) : ${p.kind} — ${e.message}`);
+      }
+    }
     let d = (agents[p.player] as Agent)(state, p.player);
     if (chaosRand && opts.chaos) probe(state, p.player, d, chaosRand, opts.chaos.perDecision, `seed ${opts.seed}, décision ${i}`);
     let step: ReturnType<typeof submit>;

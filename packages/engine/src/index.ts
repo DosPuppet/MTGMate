@@ -63,6 +63,7 @@ export {
   forcedAttackers,
   forcedAttacks,
   MAX_HAND_SIZE,
+  repairBlocks,
   requiredBlocks,
   unmetBlockRequirement,
 } from "./turn";

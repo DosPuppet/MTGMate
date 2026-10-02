@@ -10,7 +10,7 @@ import { MAX_AUTOMATIC_DECISIONS } from "./limits";
 import { type GameRecord, recordDecision } from "./record";
 import { RulesError } from "./stack";
 import { decider } from "./state";
-import { requiredBlocks } from "./turn";
+import { forcedAttacks, requiredBlocks } from "./turn";
 import type { Decision, GameEvent, GameState, PendingDecision, PlayerId } from "./types";
 import { filterEvents, type GameView, projectView } from "./view";
 
@@ -57,7 +57,8 @@ export function fallbackDecision(s: GameState, p: PendingDecision): Decision {
     case "discard":
       return { type: "discard", cards: hand.slice(0, p.count) };
     case "declareAttackers":
-      return { type: "declareAttackers", attackers: [] };
+      // Les créatures qui doivent attaquer si possible attaquent (un défenseur sans taxe d'attaque).
+      return { type: "declareAttackers", attackers: forcedAttacks(s, p.player) };
     case "declareBlockers":
       return { type: "declareBlockers", blocks: requiredBlocks(s, p.player) };
     case "priority":
