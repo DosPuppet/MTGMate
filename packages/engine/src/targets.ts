@@ -255,6 +255,16 @@ export function matchesCard(s: GameState, controller: PlayerId, id: ObjectId, f:
   // « mise dans un cimetière ce tour-ci » : l'objet a été créé dans sa zone pendant ce tour.
   if (f.enteredThisTurn && o.controlledSince !== s.turn.number) return false;
   if (f.discardedThisTurn && o.discardedTurn !== s.turn.number) return false;
+  // « mise dans un cimetière depuis le champ de bataille ce tour-ci » (Supper for Spiders).
+  if (f.fromBattlefieldThisTurn && (o.arrivedFrom !== "battlefield" || o.controlledSince !== s.turn.number)) return false;
+  if (f.sameNameAs) {
+    const name = s.defs[o.defId]?.name;
+    const like = f.sameNameAs;
+    if (
+      !s.battlefield.some((x) => x !== id && chars(s, x).name === name && matchesObjectFilter(s, controller, x, like, sourceId))
+    )
+      return false;
+  }
   // « carte de créature sans capacité » : pas de texte de règles.
   if (f.noAbilities && (s.defs[o.defId]?.text ?? "").trim()) return false;
   if (f.adventure !== undefined && (s.defs[o.defId]?.layout === "adventure") !== f.adventure) return false;

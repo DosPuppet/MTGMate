@@ -82,6 +82,9 @@ export interface ObjectFilter {
   self?: boolean;
   /** Le permanent auquel la source est attachée (« la créature équipée »). */
   attachedToSource?: boolean;
+  /** A le même nom qu'un permanent correspondant (Key to the Side-Door : « une carte légendaire du même nom qu'un
+   * permanent légendaire que vous contrôlez »). */
+  sameNameAs?: ObjectFilter;
   /** N'a pas le même nom qu'un autre permanent correspondant (« qu'un jeton que vous contrôlez », Yenna). */
   notSameNameAs?: ObjectFilter;
   /** Attaché à la source (« chaque Aura et Équipement attaché à Kellan », « une Aura attachée à cette créature »). */
@@ -153,6 +156,8 @@ export interface ObjectFilter {
   /** Attaché au permanent auquel la source est attachée (With Great Power : « chaque Aura et Équipement attachés à
    * elle »). */
   attachedToSourceHost?: boolean;
+  /** Mise dans sa zone depuis le champ de bataille ce tour-ci (Supper for Spiders). */
+  fromBattlefieldThisTurn?: boolean;
   /** Carte défaussée ce tour-ci (chaos, Mayhem : « si vous l'avez défaussée ce tour-ci »). */
   discardedThisTurn?: boolean;
   /** Valeur de mana inférieure ou égale à la force de la source (« … inférieure ou égale à la force d'Alesha »). */
@@ -292,6 +297,9 @@ export type TriggerSpec =
       firstOf?: string[];
       /** « en utilisant du mana produit par [cette source] » (Tecutlan, Barracks of the Thousand). */
       usingManaFromSelf?: boolean;
+      /** « si du mana d'un [Trésor] a été dépensé pour le lancer » (Smaug, Wicked Worm) : une source correspondante, vue
+       * par ses dernières informations si elle est partie. */
+      usingManaFrom?: ObjectFilter;
       /** Lancé depuis l'exil (Quintorius Kand). */
       fromExile?: boolean;
       /** Lancé depuis la main (Ojer Pakpatiq). */
@@ -435,8 +443,9 @@ export type TriggerSpec =
   | { on: "leavesWithoutDying"; who: ObjectFilter }
   /** « Chaque fois que vous découvrez » (`amount.eventAmount` : la valeur N). */
   | { on: "discover" }
-  /** « Chaque fois que vous activez une capacité qui n'est pas une capacité de mana » (l'objet : la capacité sur la pile). */
-  | { on: "activateAbility" };
+  /** « Chaque fois que vous activez une capacité qui n'est pas une capacité de mana » (l'objet : la capacité sur la pile) ;
+   * `source` : seulement celle d'un permanent correspondant (Elrond, Moon-Reader : « d'une créature »). */
+  | { on: "activateAbility"; source?: ObjectFilter };
 
 /** Conditions (« if intermédiaire » 603.4, « tant que »…). */
 export type Condition =
@@ -761,6 +770,8 @@ export type Amount =
   | { kind: "max"; of: Amount[] }
   /** Plus grande force parmi les cartes de créature de votre main (Monstrous Emergence). */
   | { kind: "maxPowerInHand" }
+  /** Nombre de cimetières qui contiennent au moins N cartes (Master's Councillors, The Master of Lake-town). */
+  | { kind: "graveyardsWithAtLeast"; n: number }
   /** Adversaires qui ont perdu des points de vie ce tour-ci (Kaito). */
   | { kind: "opponentsLostLife" }
   /** X du sort qui a mis la source en jeu (Meathook Massacre II). */

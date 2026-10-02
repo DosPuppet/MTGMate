@@ -415,6 +415,8 @@ export function evalAmount(s: GameState, ctx: EffectContext, a: Amount): number 
       return readVar(ctx, a.name);
     case "lifeTotal":
       return Math.max(0, s.players[ctx.controller]?.life ?? 0);
+    case "graveyardsWithAtLeast":
+      return s.playerOrder.filter((p) => !s.players[p]?.lost && (s.players[p]?.graveyard.length ?? 0) >= a.n).length;
     case "manaValueOf": {
       const id = resolveRef(s, ctx, a.ref)[0];
       return id ? (viewOf(s, id)?.manaValue ?? manaValue(s.defs[s.objects[id]?.defId ?? ""]?.manaCost)) : 0;
@@ -917,6 +919,7 @@ export function grantPlay(
     flashback?: boolean;
     harmonize?: boolean;
     cost?: ManaCost;
+    payLifeManaValue?: boolean;
   },
 ): void {
   const last =

@@ -614,6 +614,8 @@ export function moveObject(
     if (back) moved.faceDefId = back.id;
   }
   if (to === "battlefield" && opts.tapped) moved.tapped = true;
+  // « mise dans un cimetière depuis le champ de bataille ce tour-ci » (Supper for Spiders).
+  if (from0 === "battlefield") moved.arrivedFrom = "battlefield";
   if (to === "battlefield") applyEntersReplacements(s, moved, opts.enters ?? {});
   const linker = linkTo ? s.objects[linkTo] : undefined;
   if (linker) {

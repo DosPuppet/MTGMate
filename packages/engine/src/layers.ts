@@ -130,6 +130,9 @@ function cdaValue(s: GameState, o: GameObject, a: Amount): number {
   if (a.kind === "linkedTotalPower") return linkedTotalPower(s, o.linked);
   if (a.kind === "linkedColors") return linkedColors(s, o.linked).length;
   if (a.kind === "sum") return a.of.reduce<number>((n, x) => n + cdaValue(s, o, x), 0);
+  // Master's Councillors : cimetières de N cartes ou plus.
+  if (a.kind === "graveyardsWithAtLeast")
+    return s.playerOrder.filter((p) => !s.players[p]?.lost && (s.players[p]?.graveyard.length ?? 0) >= a.n).length;
   if (a.kind === "cardTypesInGraveyards") {
     const types = new Set<string>();
     for (const p of s.playerOrder)
@@ -721,6 +724,17 @@ function evalStatic(s: GameState, slot: StaticSlot, sig: (string | number)[]): {
     sig.push(`gl${o.chosen?.cardName ?? ""}`);
     mods = { ...mods, gainLinkedActivated: undefined, addAbilities: [...(mods.addAbilities ?? []), ...extra] };
   }
+  if (mods.gainActivatedFromGraveyard) {
+    // Thranduil, the Elvenking : les capacités activées imprimées des cartes d'Elfe de votre cimetière.
+    const f = mods.gainActivatedFromGraveyard;
+    const extra = (s.players[o.controller]?.graveyard ?? [])
+      .filter((x) => matchesView(snapshot(s, x), { ...f, controller: undefined }, o.controller, id))
+      .flatMap((x) => s.defs[s.objects[x]?.defId ?? ""]?.abilities ?? [])
+      .filter((a) => (a.kind === "activated" && !a.specialAction && !a.fromHand && !a.fromGraveyard) || a.kind === "mana");
+    mods = { ...mods, gainActivatedFromGraveyard: undefined, addAbilities: [...(mods.addAbilities ?? []), ...extra] };
+    dependent = true;
+    sig.push(`ag${extra.length}`);
+  }
   if (mods.gainActivatedFrom) {
     // Marvin, Murderous Mimic : les capacités activées imprimées des créatures correspondantes qui n'ont pas son nom.
     const f = mods.gainActivatedFrom;
@@ -924,11 +938,18 @@ function applyLayers(s: GameState, applied: Applied[], defOfId: (id: ObjectId) =
       if (m.setToughness !== undefined) c.toughness = m.setToughness;
     },
   );
-  // Couche 7c : marqueurs, puis modifications (tout est additif : l'ordre n'importe pas).
+  // Couche 7c : marqueurs, puis modifications (tout est additif : l'ordre n'importe pas). 122.1 : chaque marqueur
+  // d'affûtage sur un Équipement donne +1/+0 à la créature équipée (Dwalin, Sting).
+  const hone = new Map<string, number>();
+  for (const x of s.battlefield) {
+    const e = s.objects[x];
+    const n = e?.counters.hone ?? 0;
+    if (n > 0 && e?.attachedTo) hone.set(e.attachedTo, (hone.get(e.attachedTo) ?? 0) + n);
+  }
   for (const [id, c] of out) {
     const o = obj(s, id);
     c.basePower = c.power;
-    c.power += counterPT(o);
+    c.power += counterPT(o) + (hone.get(id) ?? 0);
     c.toughness += counterPT(o);
   }
   layer(

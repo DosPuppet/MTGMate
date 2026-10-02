@@ -1136,7 +1136,11 @@ export const HANDLERS: OpHandlers = {
       });
     };
     let picked: string[] = [];
-    if (options.length > 0 && count > 0) {
+    if (e.random && options.length > 0 && count > 0) {
+      const pool = [...options];
+      shuffle(s, pool);
+      picked = pool.slice(0, count);
+    } else if (options.length > 0 && count > 0) {
       const answer = r.vars[key("look")];
       if (!answer) {
         return {

@@ -690,6 +690,15 @@ function matchTrigger(s: GameState, ev: RulesEvent, t: TriggerSpec, src: Source)
       if (t.fromExile && !s.stack.find((x) => x.id === ev.stackId)?.fromExile) return null;
       if (t.fromHand && !s.stack.find((x) => x.id === ev.stackId)?.fromHand) return null;
       if (t.usingManaFromSelf && !s.stack.find((x) => x.id === ev.stackId)?.manaSources?.includes(src.id)) return null;
+      if (t.usingManaFrom) {
+        const f = t.usingManaFrom;
+        const sources = s.stack.find((x) => x.id === ev.stackId)?.manaSources ?? [];
+        const ok = sources.some((id) => {
+          const v = s.objects[id]?.zone === "battlefield" ? snapshot(s, id) : s.lki[id];
+          return !!v && matchesView(v, f, me, src.id);
+        });
+        if (!ok) return null;
+      }
       if (t.minManaSpent !== undefined && (s.stack.find((x) => x.id === ev.stackId)?.manaSpent ?? 0) < t.minManaSpent)
         return null;
       if (t.notOwned && s.objects[ev.stackId]?.owner === ev.player) return null;
@@ -767,7 +776,12 @@ function matchTrigger(s: GameState, ev: RulesEvent, t: TriggerSpec, src: Source)
     case "activateAbility": {
       if (ev.e !== "activated" || ev.player !== me) return null;
       const item = s.stack.find((x) => x.id === ev.stackId);
-      return item && !item.copy ? { objectId: item.id, player: me } : null;
+      if (!item || item.copy) return null;
+      if (t.source) {
+        const v = s.objects[item.sourceId]?.zone === "battlefield" ? snapshot(s, item.sourceId) : s.lki[item.sourceId];
+        if (!v || !matchesView(v, t.source, me, src.id)) return null;
+      }
+      return { objectId: item.id, player: me };
     }
     case "discover":
       return ev.e === "discover" && ev.player === me ? { player: me, amount: ev.n } : null;

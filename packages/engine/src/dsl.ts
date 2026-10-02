@@ -317,6 +317,8 @@ export const amount = {
   manaSpentOf: (r: Ref): Amount => ({ kind: "manaSpentOf", ref: r }),
   eventColorsSpent: { kind: "eventColorsSpent" } as Amount,
   manaValueOf: (r: Ref): Amount => ({ kind: "manaValueOf", ref: r }),
+  /** « pour chaque cimetière qui contient N cartes ou plus » */
+  graveyardsWithAtLeast: (n: number): Amount => ({ kind: "graveyardsWithAtLeast", n }),
   toughnessOf: (r: Ref): Amount => ({ kind: "toughnessOf", ref: r }),
   colorsOf: (r: Ref): Amount => ({ kind: "colorsOf", ref: r }),
   maxPower: (filter: ObjectFilter, zone?: "graveyard"): Amount => ({ kind: "maxPower", filter, ...(zone ? { zone } : {}) }),
@@ -728,6 +730,7 @@ export const fx = {
       exileAfter?: boolean;
       oneOf?: boolean;
       replacePrevious?: boolean;
+      payLifeManaValue?: boolean;
     } = {},
   ): Effect => ({
     op: "grantPlay",
@@ -1104,11 +1107,14 @@ export const fx = {
       exact?: boolean;
       /** La bibliothèque d'un autre joueur (Black Cat : un adversaire ciblé). */
       who?: Ref;
+      /** Les cartes prises sont tirées au hasard (Getaway Barrel). */
+      random?: boolean;
     } = {},
   ): Effect => ({
     op: "lookAtTop",
     n,
     ...(opts.who ? { who: opts.who } : {}),
+    ...(opts.random ? { random: true } : {}),
     filter: opts.filter,
     count: opts.count ?? 1,
     to: opts.to ?? { to: "hand" },

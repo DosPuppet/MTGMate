@@ -4,13 +4,14 @@
  * Thorin, Mountain-king n'est pas testé ici : le moteur n'attache pas ses Équipements (arguments de `fx.attach` inversés
  * dans le script).
  */
+import { TOKEN_SPECS } from "@mtgx/cards/tokens";
 import { describe, expect, it } from "vitest";
-import { destroy } from "../src/actions";
+import { createTokens, destroy } from "../src/actions";
 import { legalActions } from "../src/legal";
 import { chars } from "../src/state";
 import { playerStatic } from "../src/statics";
 import { canBlock } from "../src/turn";
-import type { ActionOption, CardDef, ChoiceRequest, ChoiceValue, GameState, PlayerId } from "../src/types";
+import type { ActionOption, CardDef, ChoiceRequest, ChoiceValue, GameState, PlayerId, TokenSpec } from "../src/types";
 import { act, advanceUntil, castNowOf, customCard, idOf, idsOf, scenario, untilCastNow } from "./helpers";
 
 type S = GameState;
@@ -3824,5 +3825,176 @@ describe("lot A, incolores et terrains", () => {
         expect(idsOf(s, "p1", "graveyard", "Hobbit Hole")).toHaveLength(1);
       });
     });
+  });
+});
+
+describe("lot C1, cartes uniques", () => {
+  const LEGEND = customCard({ name: "Test Legend", supertypes: ["Legendary"], power: 1, toughness: 1 });
+  const ELF_WITH_ABILITY = customCard({
+    name: "Test Elf Pinger",
+    subtypes: ["Elf"],
+    power: 1,
+    toughness: 1,
+    abilities: [
+      {
+        kind: "activated",
+        cost: { mana: { generic: 0, colored: {}, x: 0 } },
+        targets: [],
+        effects: [{ op: "gainLife", who: { kind: "you" }, amount: 1 }],
+        label: "Vous gagnez 1 PV",
+      } as never,
+    ],
+  });
+
+  it("Elrond : activer une capacité d'une créature fait piocher (une fois par tour), pas celle d'un artefact", () => {
+    let s = scenario({
+      p1: {
+        battlefield: ["Elrond, Moon-Reader", "Key to the Side-Door", ...lands("Island", 9), "Bear Cub"],
+        library: lands("Island", 5),
+      },
+    });
+    const hand = s.players.p1?.hand.length ?? 0;
+    s = settle(
+      activate(s, "p1", idOf(s, "p1", "battlefield", "Key to the Side-Door"), "bloquée", {
+        targets: { t: [idOf(s, "p1", "battlefield", "Bear Cub")] },
+      }),
+    );
+    expect(s.players.p1?.hand.length).toBe(hand);
+    s = settle(activate(s, "p1", idOf(s, "p1", "battlefield", "Elrond, Moon-Reader"), "Exilez", { targets: { t: [] } }));
+    expect(s.players.p1?.hand.length).toBe(hand + 1);
+  });
+
+  it("Master's Councillors : +2/+0 par cimetière de sept cartes ou plus", () => {
+    const s = scenario({ p1: { battlefield: ["Master's Councillors"] }, p2: { graveyard: lands("Island", 7) } });
+    expect(chars(s, idOf(s, "p1", "battlefield", "Master's Councillors")).power).toBe(3);
+  });
+
+  it("Thranduil's Decree : un sort de permanent contrecarré est exilé, et se lance ensuite sans payer", () => {
+    let s = scenario({
+      p1: { battlefield: lands("Island", 6), hand: ["Thranduil's Decree"] },
+      p2: { battlefield: ["Forest", "Forest"], hand: ["Bear Cub"] },
+    });
+    s = advanceUntil(s, (x) => x.turn.active === "p2" && x.turn.step === "main1" && x.pending?.player === "p2");
+    s = act(s, "p2", { type: "cast", card: idOf(s, "p2", "hand", "Bear Cub") });
+    s = act(s, "p2", { type: "pass" });
+    s = settle(
+      act(s, "p1", {
+        type: "cast",
+        card: idOf(s, "p1", "hand", "Thranduil's Decree"),
+        targets: { t: [s.stack[0]?.id as string] },
+      }),
+    );
+    const cub = s.exile.find((id) => nameOf(s, id) === "Bear Cub") as string;
+    expect(cub).toBeDefined();
+    s = advanceUntil(s, (x) => x.turn.active === "p1" && x.turn.step === "main1" && x.pending?.player === "p1");
+    s = settle(act(s, "p1", { type: "cast", card: cub }));
+    expect(idsOf(s, "p1", "battlefield", "Bear Cub")).toHaveLength(1);
+  });
+
+  it("Inside Information : les cartes exilées se jouent ce tour-ci, un sort en payant des PV égaux à sa VM", () => {
+    let s = scenario({
+      p1: { battlefield: lands("Swamp", 4), hand: ["Inside Information"] },
+      p2: { library: ["Lightning Strike", "Forest", "Island"] },
+    });
+    s = settle(cast(s, "p1", "Inside Information", { x: 2, targets: { t: ["p2"] } }));
+    const strike = s.exile.find((id) => nameOf(s, id) === "Lightning Strike") as string;
+    const forest = s.exile.find((id) => nameOf(s, id) === "Forest") as string;
+    s = settle(act(s, "p1", { type: "cast", card: strike, targets: { t: ["p2"] } }));
+    expect(s.players.p1?.life).toBe(18);
+    expect(s.players.p2?.life).toBe(17);
+    s = act(s, "p1", { type: "playLand", card: forest });
+    expect(idsOf(s, "p1", "battlefield", "Forest")).toHaveLength(1);
+  });
+
+  it("The Master of Lake-town : un joueur qui perd des PV meule autant de cartes", () => {
+    let s = scenario({
+      p1: { battlefield: ["The Master of Lake-town", "Mountain", "Mountain"], hand: ["Lightning Strike"] },
+      p2: { library: lands("Island", 6) },
+    });
+    s = settle(cast(s, "p1", "Lightning Strike", { targets: { t: ["p2"] } }));
+    expect(s.players.p2?.graveyard).toHaveLength(3);
+  });
+
+  it("Supper for Spiders : les créatures adverses mortes ce tour-ci reviennent chez vous, en Nourritures", () => {
+    let s = scenario({
+      p1: { battlefield: ["Swamp", "Swamp"], hand: ["Supper for Spiders"] },
+      p2: { battlefield: ["Bear Cub"], graveyard: ["Serra Angel"] },
+    });
+    destroy(s, idOf(s, "p2", "battlefield", "Bear Cub"));
+    s = settle(cast(s, "p1", "Supper for Spiders"));
+    const cub = idOf(s, "p1", "battlefield", "Bear Cub");
+    expect(chars(s, cub).types).toEqual(["Artifact"]);
+    expect(chars(s, cub).subtypes).toEqual(["Food"]);
+    // Le Serra Angel n'est pas mort ce tour-ci.
+    expect(idsOf(s, "p2", "graveyard", "Serra Angel")).toHaveLength(1);
+  });
+
+  it("Getaway Barrel : mis au cimetière depuis le champ de bataille, une créature au hasard parmi les treize du dessus", () => {
+    let s = scenario({
+      p1: { battlefield: ["Getaway Barrel"], library: ["Island", "Bear Cub", "Island", "Serra Angel", ...lands("Island", 12)] },
+    });
+    destroy(s, idOf(s, "p1", "battlefield", "Getaway Barrel"));
+    s = settle(s);
+    const creatures = s.battlefield.filter((id) => ["Bear Cub", "Serra Angel"].includes(nameOf(s, id) ?? ""));
+    expect(creatures).toHaveLength(1);
+    expect(s.players.p1?.library).toHaveLength(15);
+  });
+
+  it("Dwalin : un marqueur d'affûtage sur chacun de vos Équipements, +1/+0 par marqueur à la créature équipée", () => {
+    let s = scenario({
+      p1: { battlefield: ["Sting, Bilbo's Sword", "Bear Cub", "Mountain", "Plains"], hand: ["Dwalin, Weaponmaster"] },
+    });
+    const sting = idOf(s, "p1", "battlefield", "Sting, Bilbo's Sword");
+    const bear = idOf(s, "p1", "battlefield", "Bear Cub");
+    s.objects[sting]!.attachedTo = bear;
+    s.version += 1;
+    s = settle(cast(s, "p1", "Dwalin, Weaponmaster"));
+    expect(s.objects[sting]?.counters.hone).toBe(1);
+    expect(chars(s, bear).power).toBe(3);
+  });
+
+  it("Smaug, Wicked Worm : un sort payé avec le mana d'un Trésor fait piocher et perdre 1 PV ; sans Trésor, rien", () => {
+    let s = scenario({ p1: { battlefield: ["Smaug, Wicked Worm", "Forest"], hand: ["Bear Cub"], library: lands("Island", 3) } });
+    createTokens(s, "p1", TOKEN_SPECS.Treasure as TokenSpec, 1);
+    const hand = s.players.p1?.hand.length ?? 0;
+    // {1}{G} : la Forêt et le Trésor.
+    s = settle(cast(s, "p1", "Bear Cub"));
+    expect(idsOf(s, "p1", "battlefield", "Treasure")).toHaveLength(0);
+    expect(s.players.p1?.hand.length).toBe(hand);
+    expect(s.players.p1?.life).toBe(19);
+    let t = scenario({
+      p1: { battlefield: ["Smaug, Wicked Worm", "Forest", "Forest"], hand: ["Bear Cub"], library: lands("Island", 3) },
+    });
+    t = settle(cast(t, "p1", "Bear Cub"));
+    expect(t.players.p1?.life).toBe(20);
+  });
+
+  it("Thranduil, the Elvenking : les capacités activées des cartes d'Elfe de votre cimetière", () => {
+    let s = scenario({ p1: { battlefield: ["Thranduil, the Elvenking"], graveyard: [ELF_WITH_ABILITY] } });
+    const t = idOf(s, "p1", "battlefield", "Thranduil, the Elvenking");
+    s = settle(activate(s, "p1", t, "PV"));
+    expect(s.players.p1?.life).toBe(21);
+  });
+
+  it("Key to the Side-Door : défausser une carte légendaire du même nom qu'une de vos légendes pour piocher deux cartes", () => {
+    let s = scenario({
+      p1: { battlefield: ["Key to the Side-Door", "Island", LEGEND], hand: [LEGEND, "Serra Angel"], library: lands("Island", 3) },
+    });
+    const key = idOf(s, "p1", "battlefield", "Key to the Side-Door");
+    const opt = legalActions(s, "p1").find(
+      (a): a is Extract<ActionOption, { type: "activate" }> =>
+        a.type === "activate" && a.source === key && !!a.label?.includes("piochez"),
+    );
+    expect(opt?.additional?.discard?.options).toEqual([idOf(s, "p1", "hand", "Test Legend")]);
+    const hand = s.players.p1?.hand.length ?? 0;
+    s = settle(
+      act(s, "p1", {
+        type: "activate",
+        source: key,
+        ability: opt?.ability ?? -1,
+        discard: [idOf(s, "p1", "hand", "Test Legend")],
+      }),
+    );
+    expect(s.players.p1?.hand.length).toBe(hand + 1);
   });
 });

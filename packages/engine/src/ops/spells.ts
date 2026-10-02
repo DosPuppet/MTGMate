@@ -15,7 +15,16 @@ import {
 } from "../effects";
 import { bump } from "../layers";
 import { availableMana, canPay, costToText, manaValue, payMana } from "../mana";
-import { castTerms, collectEvidence, counterItem, dropNowPermissions, evidenceCards, plotCard, stackItemSpecs } from "../stack";
+import {
+  castTerms,
+  collectEvidence,
+  counterItem,
+  dropNowPermissions,
+  evidenceCards,
+  isPermanentCard,
+  plotCard,
+  stackItemSpecs,
+} from "../stack";
 import { copyStackItem } from "../stackChoices";
 import {
   apnapOrder,
@@ -173,8 +182,19 @@ export const HANDLERS: OpHandlers = {
   },
   counter(s, r, e, ctx) {
     let n = 0;
-    for (const id of resolveRef(s, ctx, e.what)) if (counterItem(s, id, ctx.sourceDefId, e.exile)) n++;
+    const moved: string[] = [];
+    for (const id of resolveRef(s, ctx, e.what)) {
+      const item = s.stack.find((x) => x.id === id);
+      const d = item ? s.defs[item.sourceDefId] : undefined;
+      const perm = !!e.exilePermanents && item?.kind === "spell" && !item.copy && !!d && isPermanentCard(d);
+      const uid = item ? s.objects[item.sourceId]?.uid : undefined;
+      if (!counterItem(s, id, ctx.sourceDefId, e.exile || perm)) continue;
+      n++;
+      const card = perm && uid ? s.exile.find((x) => s.objects[x]?.uid === uid) : undefined;
+      if (card) moved.push(card);
+    }
     store(r, e.store, n);
+    if (e.storeMoved) r.vars[`$ids:${e.storeMoved}`] = moved;
     return;
   },
   unlessPay(s, r, e, ctx, key) {
@@ -601,6 +621,7 @@ export const HANDLERS: OpHandlers = {
       condition: e.condition,
       source: ctx.sourceId,
       exileAfter: e.exileAfter,
+      payLifeManaValue: e.payLifeManaValue,
       group: e.oneOf ? newId(s, "g") : undefined,
     });
     return;

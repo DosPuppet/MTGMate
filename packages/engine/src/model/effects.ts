@@ -245,6 +245,8 @@ export type Effect =
       n: Amount;
       /** La bibliothèque regardée : celle de ce joueur (Black Cat : un adversaire ciblé), la vôtre par défaut. */
       who?: Ref;
+      /** Les cartes prises sont tirées au hasard parmi celles qui correspondent (Getaway Barrel). */
+      random?: boolean;
       filter?: ObjectFilter;
       count: Amount;
       to: MoveSpec;
@@ -352,7 +354,9 @@ export type Effect =
   | { op: "reflexive"; targets: TargetSpec[]; effects: Effect[]; bind?: Record<string, Ref>; keepVars?: string[] }
   /** Contrecarre un sort ou une capacité sur la pile (701.5). */
   /** `store` : nombre de sorts et capacités contrecarrés. */
-  | { op: "counter"; what: Ref; exile?: boolean; store?: string }
+  /** `exilePermanents` : un sort de permanent contrecarré est exilé, la carte mémorisée sous `storeMoved` (Thranduil's
+   * Decree). */
+  | { op: "counter"; what: Ref; exile?: boolean; store?: string; exilePermanents?: boolean; storeMoved?: string }
   /** « … à moins que [joueur] ne paie X » : s'il paie, les `skip` effets suivants sont ignorés. */
   | {
       op: "unlessPay";
@@ -441,6 +445,8 @@ export type Effect =
       /** « … jusqu'à ce que vous exiliez une autre carte avec cette créature » : les permissions précédentes de la source
        * prennent fin (Superior Foes of Spider-Man). */
       replacePrevious?: boolean;
+      /** « Si vous lancez un sort ainsi, payez des PV égaux à sa valeur de mana plutôt que son coût » (Inside Information). */
+      payLifeManaValue?: boolean;
       condition?: Condition;
       forOwner?: boolean;
       extraCost?: number;

@@ -126,6 +126,8 @@ export interface GameObject {
   impending?: boolean;
   /** Tour où la carte a été défaussée (Chaos / Mayhem : « si vous l'avez défaussée ce tour-ci »). */
   discardedTurn?: number;
+  /** Zone d'où l'objet est venu dans sa zone actuelle (Supper for Spiders : « depuis le champ de bataille »). */
+  arrivedFrom?: Zone;
   /** Exploité (Harness, Marvel Super Heroes) : ses capacités ∞ sont actives. */
   harnessed?: boolean;
   /** Lancé par Web-slinging ou pour son coût de chaos (« s'il a été lancé par Web-slinging », Spiders-Man). */
@@ -792,6 +794,8 @@ export interface GameState {
     anyMana?: boolean;
     /** « S'il devait être mis dans un cimetière, exilez-le à la place » (Quistis Trepe). */
     exileAfter?: boolean;
+    /** « Payez des PV égaux à sa valeur de mana plutôt que son coût de mana » (Inside Information). */
+    payLifeManaValue?: boolean;
     /** « S'il devait aller au cimetière, mettez-le au-dessous de la bibliothèque de son propriétaire » (Kylox's Voltstrider). */
     bottomAfter?: boolean;
     /** Une seule carte du groupe peut être lancée (Buster Sword : « un sort de votre main »). */

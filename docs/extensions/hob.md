@@ -60,3 +60,17 @@ Les scripts sont dans `packages/cards/src/hob/` : `cards` (cartes du méta), `wh
 - **Moteur :** rien de nouveau. Le recrutement (« piochez, défaussez ; une carte non-terrain défaussée donne un Humain Soldat 1/1 »), écrit trois fois en lot A, est réuni dans `hob/common.ts` (`recruit()`).
 - **Reste pour plus tard :** Dwalin, Weaponmaster (marqueurs d'affûtage sur les Équipements), Smaug, Wicked Worm (« si du mana d'un Trésor a été dépensé pour le lancer »), Thranduil, the Elvenking (capacités activées des cartes d'Elfe du cimetière), Key to the Side-Door (« une carte légendaire du même nom qu'un permanent légendaire que vous contrôlez »).
 - **Tests :** 57 tests de règles (« lot A, multicolores » et « lot A, incolores et terrains »).
+
+## Sous-lot C1 : cartes uniques ✅ (188 / 188)
+
+- **Cartes (11) :** Elrond, Moon-Reader, Master's Councillors, Thranduil's Decree, Inside Information, The Master of Lake-town, Supper for Spiders, Getaway Barrel, Dwalin, Weaponmaster, Smaug, Wicked Worm, Thranduil, the Elvenking, Key to the Side-Door.
+- **Moteur :**
+  - marqueurs d'affûtage (122.1) : chaque marqueur sur un Équipement donne +1/+0 à la créature équipée, en couche 7c (Dwalin ; Sting n'a plus besoin de sa propre statique, approximation levée) ;
+  - `amount.graveyardsWithAtLeast(n)` (aussi dans les F/E calculées par les couches) ;
+  - déclencheur « chaque fois que vous activez une capacité d'[une créature] » (`activateAbility.source`) ; « si du mana d'un [Trésor] a été dépensé pour le lancer » (`castSpell.usingManaFrom`, dernières informations du Trésor sacrifié) ;
+  - contresort qui exile un sort de permanent et mémorise la carte (`counter.exilePermanents`, `storeMoved`) ; permission de jouer en payant des PV égaux à la valeur de mana (`grantPlay.payLifeManaValue`) ;
+  - `lookAtTop.random` (une carte au hasard parmi celles qui correspondent) ;
+  - capacités activées des cartes correspondantes du cimetière (`gainActivatedFromGraveyard`) ;
+  - filtres `sameNameAs` (« du même nom qu'un permanent [filtre] ») et `fromBattlefieldThisTurn` (`GameObject.arrivedFrom`, posé par `moveObject`) ;
+  - `RULES_VERSION` = 58, parties dorées régénérées.
+- **Tests :** 11 tests de règles (« lot C1 »).

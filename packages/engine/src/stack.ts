@@ -1251,6 +1251,12 @@ function baseCastTerms(s: GameState, player: PlayerId, card: ObjectId): CastTerm
     // 702.185a : exilée par la distorsion, lançable depuis l'exil à partir du tour suivant.
     if (o.warpExiledTurn !== undefined && o.owner === player && s.turn.number > o.warpExiledTurn) return { source: "exile" };
     const perm = exilePermission(s, player, card);
+    // Inside Information : des PV égaux à sa valeur de mana plutôt que son coût de mana (comme Valgavoth).
+    if (perm?.payLifeManaValue && !d.types.includes("Land")) {
+      const life = manaValue(d.manaCost);
+      if ((s.players[player]?.life ?? 0) < life) return null;
+      return { source: "exile", free: true, payLife: life || undefined };
+    }
     if (perm)
       return {
         source: "exile",

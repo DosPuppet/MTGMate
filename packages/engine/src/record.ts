@@ -157,8 +157,12 @@ export const RECORD_VERSION = 1;
  *   sort lancé du dessus de la bibliothèque ; sacrifice qui inclut la source ; cartes homonymes du cimetière.
  * - 57 : The Hobbit, lot A : un mana restreint produit à la main va dans la réserve restreinte ; le choix d'un type de
  *   créature propose aussi les types des jetons que créent les cartes de la partie.
+ * - 58 : The Hobbit, lot C1 : marqueurs d'affûtage (+1/+0 à la créature équipée), cimetières de N cartes, déclencheur
+ *   « activer une capacité d'une créature », mana d'un Trésor dépensé, contresort qui exile un permanent, permission
+ *   payée en PV, carte révélée au hasard, capacités activées des cartes du cimetière, homonyme d'un permanent, carte
+ *   venue du champ de bataille ce tour-ci.
  */
-export const RULES_VERSION = 57;
+export const RULES_VERSION = 58;
 
 /** Un point de contrôle toutes les N décisions (plus la dernière de la partie). */
 export const CHECKPOINT_EVERY = 25;

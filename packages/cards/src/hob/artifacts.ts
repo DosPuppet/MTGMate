@@ -189,8 +189,8 @@ export const ARTIFACTS: Record<string, CardScript> = {
     ],
   },
   "Sting, Bilbo's Sword": {
-    // Flash et Équiper {3} : lus dans le texte. Marqueur d'affûtage (« chaque marqueur d'affûtage sur un Équipement
-    // donne +1/+0 à la créature équipée ») : écrit comme une capacité de Dard.
+    // Flash et Équiper {3} : lus dans le texte. Marqueurs d'affûtage : règle générale du moteur (+1/+0 à la créature
+    // équipée par marqueur sur l'Équipement).
     abilities: [
       triggered(
         when.entersSelf,
@@ -203,7 +203,6 @@ export const ARTIFACTS: Record<string, CardScript> = {
           label: "Un marqueur d'affûtage par créature adverse ; attachez Dard",
         },
       ),
-      staticAbility("attached", { power: 1 }, { perCounter: "hone", label: "+1/+0 par marqueur d'affûtage" }),
     ],
   },
   "Thrór's Map": {

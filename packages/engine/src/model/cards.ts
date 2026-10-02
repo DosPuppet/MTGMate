@@ -631,6 +631,8 @@ export interface LayerMods {
   gainLinkedActivated?: boolean | { triggered?: boolean; chosenName?: boolean };
   /** Marvin : a les capacités activées (imprimées) des créatures correspondantes qui n'ont pas son nom. */
   gainActivatedFrom?: ObjectFilter;
+  /** Les capacités activées des cartes correspondantes du cimetière de son contrôleur (Thranduil, the Elvenking). */
+  gainActivatedFromGraveyard?: ObjectFilter;
   /** Couche 7b : F/E fixées. */
   setPower?: number;
   setToughness?: number;
