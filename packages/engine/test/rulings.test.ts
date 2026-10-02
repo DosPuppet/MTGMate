@@ -315,3 +315,16 @@ describe("509.1c : « doit être bloquée si possible » et la menace", () => {
     ).not.toThrow();
   });
 });
+
+describe("608.2h : dernières informations connues de la créature qui meurt", () => {
+  it("Rakdos Joins Up : les blessures valent la force de la créature légendaire au moment de mourir, marqueurs compris", () => {
+    const hero = customCard({ name: "Test Hero", supertypes: ["Legendary"], power: 2, toughness: 2 });
+    let s = scenario({
+      p1: { battlefield: ["Rakdos Joins Up", { name: hero, counters: { "+1/+1": 2 } }] },
+      p2: { life: 20 },
+    });
+    destroy(s, idOf(s, "p1", "battlefield", "Test Hero"));
+    s = settle(s, (x) => x.stack.length === 0 && x.triggers.length === 0);
+    expect(s.players.p2?.life).toBe(16);
+  });
+});

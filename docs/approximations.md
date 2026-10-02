@@ -332,5 +332,9 @@ Dans l'ordre où elles ont été ajoutées, extension par extension.
   - `règle` Sold Out : « a subi des blessures ce tour-ci » se lit sur les blessures encore marquées ;
   - `timing` The Fire Nation Drill : s'il arrive déjà engagé, la question « vous pouvez l'engager » n'est pas posée.
   - `règle` Zhao, the Moon Slayer : les terrains non de base prennent le seul sous-type Montagne (une créature-terrain perdrait aussi ses types de créature, alors que 305.7 ne remplace que les types de terrain) ; une capacité statique propre au terrain n'est pas retirée (la perte des capacités par une capacité statique n'atteint pas `staticSlots`).
+  - `règle` Earth Kingdom General : « vous mettez des marqueurs +1/+1 sur une créature » est lu « des marqueurs sont mis sur une créature que vous contrôlez » ; la limite d'une fois par tour est consommée même si vous refusez le gain de PV ;
+  - `timing` Elemental Teachings : les cartes trouvées passent par votre main (révélées), puis l'adversaire en choisit deux ;
+  - `règle` Unlucky Cabbage Merchant : le marchand est remis dans la bibliothèque de son propriétaire, qui est mélangée ;
+  - `règle` Raucous Audience : deux capacités de mana, chacune sous sa condition.
 - **Légalité Standard :** instantané des légalités Scryfall au moment de l'import (`legalities.standard` dans `data/<set>.json`). Après une rotation ou une annonce de bannissement, réimporter les sets (`npm run import-cards -- <set>`).
 - **Images des jetons :** celle du jeton Scryfall le plus proche (même nom, puis mêmes F/E et couleurs ; `data/tokens.json`, `npm run import-tokens`) ; un jeton de nom inconnu garde le cadre texte.

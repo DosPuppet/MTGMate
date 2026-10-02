@@ -305,6 +305,11 @@ export function evalAmount(s: GameState, ctx: EffectContext, a: Amount): number 
     case "kicked":
       return ctx.kicked ? a.yes : a.no;
     case "powerOf": {
+      // La créature de l'événement qui a quitté le champ de bataille (« quand elle meurt, X étant sa force ») : sa force au
+      // moment de partir (608.2h, dernières informations connues), pas celle de la carte qu'elle est devenue.
+      const gone = a.ref.kind === "eventObject" ? ctx.event?.objectId : undefined;
+      const lki = gone && !s.objects[gone] ? s.lki[gone] : undefined;
+      if (lki) return Math.max(0, lki.power);
       const id = resolveRef(s, ctx, a.ref)[0];
       if (!id) return 0;
       if (onBattlefield(s, id)) return Math.max(0, chars(s, id).power);
@@ -387,6 +392,9 @@ export function evalAmount(s: GameState, ctx: EffectContext, a: Amount): number 
       return id ? (viewOf(s, id)?.manaValue ?? manaValue(s.defs[s.objects[id]?.defId ?? ""]?.manaCost)) : 0;
     }
     case "toughnessOf": {
+      const gone = a.ref.kind === "eventObject" ? ctx.event?.objectId : undefined;
+      const lki = gone && !s.objects[gone] ? s.lki[gone] : undefined;
+      if (lki) return Math.max(0, lki.toughness);
       const id = resolveRef(s, ctx, a.ref)[0];
       return id ? Math.max(0, viewOf(s, id)?.toughness ?? 0) : 0;
     }

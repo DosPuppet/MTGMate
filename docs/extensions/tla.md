@@ -48,3 +48,12 @@ Les scripts sont dans `packages/cards/src/tla/` : `cards` (cartes du méta), `wh
 - **Moteur :** rien de nouveau ; la maîtrise du feu du socle sert aussi en montant (Firebending Student : « maîtrise du feu X, X étant sa force ») et donnée sous condition (Fire Nation Cadets).
 - **Reste pour plus tard :** Fated Firepower (blessures augmentées du nombre de marqueurs de feu), Firebender Ascension (copier une capacité déclenchée par une attaque), The Last Agni Kai (blessures en excès d'un combat ; garder le mana rouge), Redirect Lightning (coût additionnel « 5 PV ou {2} »), Sozin's Comet (présage).
 - **Tests :** 37 tests de règles (« lot A, rouge »).
+
+## Sous-lot A5 : cartes vertes ✅ (182 / 280)
+
+- **Cartes (31) :** Allies at Last, Badgermole, Badgermole Cub, The Boulder, Ready to Rumble, Cycle of Renewal, The Earth King, Earth Kingdom General, Earth Rumble, Earthbending Lesson, Elemental Teachings, Flopsie, Bumi's Buddy, Foggy Swamp Vinebender, Great Divide Guide, Haru, Hidden Talent, Invasion Tactics, Kyoshi Island Plaza, Leaves from the Vine, The Legend of Kyoshi // Avatar Kyoshi, Origin of Metalbending, Ostrich-Horse, Pillar Launch, Raucous Audience, Rebellious Captives, Rockalanche, Rocky Rebuke, Seismic Sense, Sparring Dummy, True Ancestry, Turtle-Duck, Unlucky Cabbage Merchant, Walltop Sentries.
+- **Correctif du moteur (608.2h) :** la force et l'endurance de la créature d'un événement qui a quitté le champ de bataille (« quand elle meurt, X étant sa force ») sont ses dernières informations connues, et non celles de la carte qu'elle est devenue. Le défaut touchait aussi des cartes déjà gérées (Rakdos Joins Up, cartes d'ECL, de MKM, de FIN et de LCI). Test tiré des règles dans `rulings.test.ts`.
+- **Badgermole Cub :** sa capacité de mana déclenchée est un remplacement de mana (R1, famille I), comme Lavaleaper (entrée de l'audit justifiée).
+- **Reste pour plus tard :** Avatar Destiny, Toph, the Blind Bandit (F/E définies par le nombre de marqueurs), Earthen Ally (+1/+0 par couleur parmi vos Alliés), Diligent Zookeeper (+1/+1 par type de créature de chacune), Bumi, King of Three Trials (« jusqu'à X modes » pour une capacité déclenchée).
+- **Version des règles :** 39.
+- **Tests :** 33 tests de règles (« lot A, vert ») et 1 test tiré des règles.

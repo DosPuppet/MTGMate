@@ -106,8 +106,10 @@ export const RECORD_VERSION = 1;
  *   exilée suit la nouvelle carte ; effets « tant que la source reste engagée ».
  * - 38 : Avatar: The Last Airbender, socle : le mana de la maîtrise du feu reste jusqu'à la fin du combat (et non du tour) ;
  *   maîtrise de l'eau (artefacts et créatures engagés pour {1}) dans les coûts des capacités activées.
+ * - 39 : Avatar: The Last Airbender, lot A5 : la force et l'endurance de la créature d'un événement qui a quitté le champ de
+ *   bataille (« quand elle meurt, X étant sa force ») sont ses dernières informations connues (608.2h).
  */
-export const RULES_VERSION = 38;
+export const RULES_VERSION = 39;
 
 /** Un point de contrôle toutes les N décisions (plus la dernière de la partie). */
 export const CHECKPOINT_EVERY = 25;
