@@ -82,11 +82,51 @@ async function group(steps: Step[]): Promise<boolean> {
   return results.every((r) => r.ok);
 }
 
-const fuzz = (name: string, args: string): Step => ({
-  name,
-  cmd: `npx tsx tools/fuzz.ts ${args} --jobs ${jobs}`,
-  show: /^résultats : .*$/,
-});
+/** Une série de fuzz ; toutes les séries tournent ensemble (`runFuzz`). */
+const fuzz = (name: string, args: string) => ({ name, args });
+const FUZZ_SHOW = /^résultats : .*$/;
+
+/**
+ * Toutes les séries de fuzz sur un seul groupe de processus (`fuzz.ts --batch`) : pas de démarrage ni d'attente du plus
+ * lent entre deux séries. Une ligne par série, dans l'ordre où elles se terminent ; la durée d'une série court de son
+ * premier paquet au dernier (les séries se chevauchent un peu).
+ */
+async function runFuzz(series: { name: string; args: string }[]): Promise<boolean> {
+  const file = `${LOGS}/fuzz-batch.json`;
+  writeFileSync(file, JSON.stringify(series));
+  return new Promise((resolve) => {
+    const child = spawn("npx", ["tsx", "tools/fuzz.ts", "--batch", file, "--jobs", String(jobs)], {
+      env: { ...process.env, FORCE_COLOR: "0" },
+    });
+    let ok = true;
+    let buf = "";
+    let stderr = "";
+    const reported = new Set<string>();
+    child.stdout.on("data", (d) => {
+      buf += d;
+      for (let i = buf.indexOf("\n"); i >= 0; i = buf.indexOf("\n")) {
+        const line = buf.slice(0, i);
+        buf = buf.slice(i + 1);
+        if (!line.startsWith("{")) continue;
+        const r = JSON.parse(line) as { name: string; ok: boolean; seconds: number; out: string };
+        const step: Step = { name: r.name, cmd: "", show: FUZZ_SHOW };
+        writeFileSync(`${LOGS}/${step.name.replace(/\W+/g, "-")}.log`, r.out);
+        report({ step, ok: r.ok, seconds: r.seconds, out: r.out });
+        reported.add(r.name);
+        ok &&= r.ok;
+      }
+    });
+    child.stderr.on("data", (d) => {
+      stderr += d;
+    });
+    child.on("close", (code) => {
+      // Arrêt brutal (processus tué, mémoire) : les séries sans bilan sont en échec.
+      for (const s of series.filter((x) => !reported.has(x.name)))
+        report({ step: { name: s.name, cmd: "" }, ok: false, seconds: 0, out: stderr || `fuzz arrêté (code ${code})` });
+      resolve(ok && code === 0 && reported.size === series.length);
+    });
+  });
+}
 
 /** Fichiers modifiés depuis le dernier commit (suivis ou non). */
 async function changedFiles(): Promise<string[]> {
@@ -121,8 +161,8 @@ ok &&= await group([
 ]);
 ok &&= await group([{ name: "vitest", cmd: "npx vitest run", show: /^\s*Tests .*$/ }]);
 
-// 2. Fuzz, l'un après l'autre (chacun sur tous les cœurs).
-const fuzzes: Step[] = ci
+// 2. Fuzz : toutes les séries ensemble, sur tous les cœurs.
+const fuzzes = ci
   ? [
       fuzz("fuzz 2 j.", "--games 150 --pool all --seed 1"),
       fuzz("fuzz 3 joueurs", "--games 40 --pool all --players 3"),
@@ -152,7 +192,7 @@ const fuzzes: Step[] = ci
         fuzz("fuzz tout le pool", "--games 200 --pool all --seed 2000"),
         fuzz(`fuzz ${set} chaos`, `--games 150 --pool ${pool} --ai chaos`),
       ];
-for (const f of fuzzes) ok = (await group([f])) && ok;
+ok = (await runFuzz(fuzzes)) && ok;
 
 // 3. Bench (vérification complète seulement : il juge mal une régression d'un lot, surtout sur batterie).
 if (full && !flag("no-bench"))
@@ -163,7 +203,8 @@ const changed = await changedFiles();
 const uiTouched = changed.some((f) => /packages\/client\/|engine\/src\/view\.ts|server\/src\/protocol\.ts/.test(f));
 if (!ci && !flag("no-ui") && (full || flag("ui") || uiTouched)) {
   if (await viteUp()) {
-    // Deux files en parallèle, de durées voisines : ui-smoke et mobile-smoke d'un côté, les autres de l'autre.
+    // Deux files en parallèle, de durées voisines (environ 100 s chacune) : ui-smoke, mobile-smoke et tutorial-smoke
+    // d'un côté, les autres de l'autre.
     // Pas plus : sous une charge plus forte, les parties jouées dans le navigateur manquent de temps.
     const chain = async (steps: Step[]) => {
       let chainOk = true;
@@ -174,6 +215,7 @@ if (!ci && !flag("no-ui") && (full || flag("ui") || uiTouched)) {
       chain([
         { name: "ui-smoke", cmd: "npx tsx tools/ui-smoke.ts", show: /^Aucune erreur de page\.$/ },
         { name: "mobile-smoke", cmd: "npx tsx tools/mobile-smoke.ts", show: /^ok : aucune erreur de page$/ },
+        { name: "tutorial-smoke", cmd: "npx tsx tools/tutorial-smoke.ts", show: /^ok : tutoriel suivi de bout en bout$/ },
       ]),
       chain([
         { name: "deck-smoke", cmd: "npx tsx tools/deck-smoke.ts", show: /^ok : partie lancée.*$/ },
@@ -181,7 +223,6 @@ if (!ci && !flag("no-ui") && (full || flag("ui") || uiTouched)) {
         { name: "proxy-smoke", cmd: "npx tsx tools/proxy-smoke.ts", show: /^ok : aucune erreur de page$/ },
         { name: "replay-smoke", cmd: "npx tsx tools/replay-smoke.ts", show: /^ok : replay .*$/ },
         { name: "bo3-smoke", cmd: "npx tsx tools/bo3-smoke.ts", show: /^ok : BO3 .*$/ },
-        { name: "tutorial-smoke", cmd: "npx tsx tools/tutorial-smoke.ts", show: /^ok : tutoriel suivi de bout en bout$/ },
       ]),
     ]);
     ok = results.every(Boolean) && ok;

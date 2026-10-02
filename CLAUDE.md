@@ -133,7 +133,7 @@ Ce fichier sert au suivi du projet entre les sessions : où on en est, les règl
   - le fuzz ciblé sur l'extension (`--pool <EXT>`, à 2, 3 et 4 joueurs, en IA mixte et en mode « chaos ») ;
   - un fuzz sur tout le pool ;
   - les tests d'interface seulement si le client, `view.ts` ou le protocole ont changé (`--ui` pour les forcer). Vite doit tourner. Ils tournent en deux files parallèles (environ 50 s ; `verify --set X --ui` : environ 125 s).
-- **En fin d'extension ou avant une fusion :** `npm run verify -- --full` (environ 3 min). Il lance :
+- **En fin d'extension ou avant une fusion :** `npm run verify -- --full` (environ 7 min, dont 3 de tests d'interface et de bench). Il lance :
   - trois graines sur tout le pool, puis 3 et 4 joueurs, et l'IA mixte ;
   - le bench ;
   - les tests d'interface (dont `tutorial-smoke` et `ai-smoke`).
@@ -142,7 +142,8 @@ Ce fichier sert au suivi du projet entre les sessions : où on en est, les règl
   - à chaque push sur `dev` ou `master` et à chaque pull request : `npm run verify -- --ci` (contrôles, vitest, fuzz courts sur tout le pool, chaos compris ; environ 1 min en local) ;
   - chaque nuit : `verify --full --no-ui --no-bench` ;
   - les tests d'interface et le bench restent locaux ; les journaux d'un échec sont joints à l'exécution.
-- **Fuzz à la main :** `npm run fuzz -- --games 300 --pool FIN --jobs 10`. Les résultats sont identiques à graine égale, quel que soit `--jobs`.
+- **Fuzz à la main :** `npm run fuzz -- --games 300 --pool FIN --jobs 10`. Les résultats sont identiques à graine égale, quel que soit `--jobs` (chaque partie ne dépend que de son numéro dans la série). `verify` lance toutes ses séries ensemble (`fuzz.ts --batch`) : un seul groupe de processus, qui prend les parties par petits paquets.
+- **Coût des invariants :** `checkInvariants` (`ai/src/selfplay.ts`) tourne à chaque décision du fuzz et de la fumée. Ce qui s'y ajoute se paie des milliers de fois : un seul parcours des objets, pas de `JSON.stringify` ni de copie d'état sans nécessité. Ses contrôles sont testés dans `ai/test/invariants.test.ts`.
 - **Bench :** il n'est fiable que sur secteur (le mode éco du CPU fausse les mesures). On juge une régression en comparant avant et après.
 - **Lot qui change le comportement du moteur (« [règles] », `docs/plans/PLAN-R.md`) :** faire avancer `RULES_VERSION` (`engine/src/record.ts`, avec une ligne d'historique), puis régénérer les parties dorées (`npm run golden -- --update`). Le test `ai/test/golden.test.ts` échoue si une partie dorée ne se rejoue plus à l'identique à version égale.
 - **Nouvelle mécanique visible :** un script Playwright ponctuel, avec captures dans `test-results/`.

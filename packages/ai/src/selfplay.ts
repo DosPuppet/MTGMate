@@ -44,27 +44,42 @@ export function checkInvariants(s: GameState, deckSizes: Record<string, number>)
   for (const id of s.exile) place(id, "exile");
   // Un sort sur la pile, copie comprise (objet sans carte, 707.10).
   for (const item of s.stack) if (item.kind === "spell") place(item.sourceId, "stack");
-  for (const [id, o] of Object.entries(s.objects)) {
-    if (!seen.has(id)) errors.push(`${id} (${o.defId}) n'est dans aucune zone`);
-    const where = seen.get(id) ?? "";
-    if (!where.endsWith(o.zone)) errors.push(`${id} : zone ${o.zone} mais rangé dans ${where}`);
+  // Un seul parcours des objets (à chaque décision) : zone, nombres, cartes de chaque joueur.
+  // Ni les jetons, ni les copies de sorts préparés (Reality Fracture) ne sont des cartes. Un permanent assemblé
+  // représente ses deux cartes.
+  const owned: Record<string, number> = {};
+  for (const id in s.objects) {
+    const o = s.objects[id] as GameState["objects"][string];
+    const where = seen.get(id);
+    if (where === undefined) errors.push(`${id} (${o.defId}) n'est dans aucune zone`);
+    if (!(where ?? "").endsWith(o.zone)) errors.push(`${id} : zone ${o.zone} mais rangé dans ${where ?? ""}`);
     if (o.damage < 0) errors.push(`${id} : blessures négatives`);
+    if (!Number.isFinite(o.damage)) errors.push(`${id} : blessures ${o.damage}`);
+    for (const k in o.counters) {
+      const n = o.counters[k] as number;
+      if (!(Number.isFinite(n) && n >= 0)) errors.push(`${id} : marqueurs ${k} = ${n}`);
+    }
+    if (!o.isToken && !o.preparedFor && !o.cardCopy) owned[o.owner] = (owned[o.owner] ?? 0) + (o.melded?.length ?? 1);
   }
   // Les cartes des joueurs éliminés quittent la partie (800.4a) ; les autres sont conservées.
   for (const p of s.playerOrder) {
-    // Ni les jetons, ni les copies de sorts préparés (Reality Fracture) ne sont des cartes.
-    // Un permanent assemblé représente ses deux cartes.
-    const owned = Object.values(s.objects)
-      .filter((o) => o.owner === p && !o.isToken && !o.preparedFor && !o.cardCopy)
-      .reduce((n, o) => n + (o.melded?.length ?? 1), 0);
+    const n = owned[p] ?? 0;
     const size = deckSizes[p] ?? 0;
     // Éliminé en cours de partie : 0 carte ; éliminé par le coup final : ses cartes restent.
-    const ok = s.players[p]?.lost ? owned === 0 || owned === size : owned === size;
-    if (!ok) errors.push(`${p} : ${owned} cartes au lieu de ${size}`);
+    const ok = s.players[p]?.lost ? n === 0 || n === size : n === size;
+    if (!ok) errors.push(`${p} : ${n} cartes au lieu de ${size}`);
   }
   // Couche 2 : le contrôle est déjà à jour (un nouveau calcul ne change rien). Partie finie : les objets du perdant
   // restent en place, ses effets de contrôle aussi.
-  const probe = s.over ? null : cloneState(s);
+  // La copie coûte cher : seulement s'il existe une source de contrôle (effet de contrôle, contrôleur de base d'origine,
+  // Aura attachée), c'est-à-dire tout ce que lit `controlClaims`.
+  const controlInPlay =
+    s.effects.some((e) => e.controller) ||
+    s.battlefield.some((id) => {
+      const o = s.objects[id];
+      return !!o && ((o.baseController !== undefined && o.baseController !== o.controller) || !!o.attachedTo);
+    });
+  const probe = s.over || !controlInPlay ? null : cloneState(s);
   if (probe && syncControl(probe)) {
     const moved = s.battlefield.filter((id) => probe.objects[id]?.controller !== s.objects[id]?.controller);
     for (const id of moved) {
@@ -77,7 +92,7 @@ export function checkInvariants(s: GameState, deckSizes: Record<string, number>)
   for (const id of s.battlefield) {
     const cached = chars(s, id) as unknown as Record<string, unknown>;
     const now = fresh.get(id) as unknown as Record<string, unknown> | undefined;
-    if (JSON.stringify(cached) !== JSON.stringify(now)) {
+    if (!sameJson(cached, now)) {
       // Champs divergents, pour trouver le `bump` manquant.
       const diff = Object.keys({ ...cached, ...now }).filter((k) => JSON.stringify(cached[k]) !== JSON.stringify(now?.[k]));
       errors.push(`${id} (${s.objects[id]?.defId}) : cache des caractéristiques périmé (${diff.join(", ")})`);
@@ -89,11 +104,6 @@ export function checkInvariants(s: GameState, deckSizes: Record<string, number>)
     if (!pl) continue;
     if (!Number.isFinite(pl.life)) errors.push(`${p} : points de vie ${pl.life}`);
     for (const [m, n] of Object.entries(pl.manaPool)) if (!(Number.isFinite(n) && n >= 0)) errors.push(`${p} : mana ${m} = ${n}`);
-  }
-  for (const [id, o] of Object.entries(s.objects)) {
-    for (const [k, n] of Object.entries(o.counters))
-      if (!(Number.isFinite(n) && n >= 0)) errors.push(`${id} : marqueurs ${k} = ${n}`);
-    if (!Number.isFinite(o.damage)) errors.push(`${id} : blessures ${o.damage}`);
   }
   // Références : une Aura ou un Équipement est attaché à un permanent (ou à un joueur) ; les combattants sont en jeu.
   // L'attachement n'est vérifié qu'à la priorité : en pleine résolution, les actions basées sur l'état (704.5m-n)
@@ -118,25 +128,54 @@ export function checkInvariants(s: GameState, deckSizes: Record<string, number>)
   return errors;
 }
 
+/** Égalité au sens de JSON.stringify (clés absentes et `undefined` confondues), sans construire les chaînes. */
+function sameJson(a: unknown, b: unknown): boolean {
+  if (a === b) return true;
+  if (typeof a !== "object" || typeof b !== "object" || a === null || b === null) return false;
+  if (Array.isArray(a)) {
+    if (!Array.isArray(b) || a.length !== b.length) return false;
+    for (let i = 0; i < a.length; i++) if (!sameJson(a[i] ?? null, b[i] ?? null)) return false;
+    return true;
+  }
+  if (Array.isArray(b)) return false;
+  const x = a as Record<string, unknown>;
+  const y = b as Record<string, unknown>;
+  for (const k in x) if (x[k] !== undefined && !sameJson(x[k], y[k])) return false;
+  for (const k in y) if (y[k] !== undefined && x[k] === undefined) return false;
+  return true;
+}
+
 /** Chemin du premier élément de `v` qui ne survivrait pas à JSON.stringify / JSON.parse, ou null. */
-function nonJson(v: unknown, path = "état"): string | null {
-  if (v === null || v === undefined || typeof v === "string" || typeof v === "boolean") return null;
-  if (typeof v === "number") return Number.isFinite(v) ? null : `${path} = ${v}`;
-  if (typeof v !== "object") return `${path} : ${typeof v}`;
-  if (Array.isArray(v)) {
-    for (let i = 0; i < v.length; i++) {
-      const r = nonJson(v[i], `${path}[${i}]`);
-      if (r) return r;
+function nonJson(v: unknown): string | null {
+  // Le chemin n'est construit qu'en cas d'échec (le parcours de tout l'état à chaque décision doit rester léger).
+  const path: (string | number)[] = [];
+  const walk = (x: unknown): string | null => {
+    if (x === null || x === undefined || typeof x === "string" || typeof x === "boolean") return null;
+    if (typeof x === "number") return Number.isFinite(x) ? null : ` = ${x}`;
+    if (typeof x !== "object") return ` : ${typeof x}`;
+    if (Array.isArray(x)) {
+      for (let i = 0; i < x.length; i++) {
+        const r = walk(x[i]);
+        if (r) {
+          path.unshift(i);
+          return r;
+        }
+      }
+      return null;
+    }
+    const proto = Object.getPrototypeOf(x);
+    if (proto !== Object.prototype && proto !== null) return ` : instance de ${proto?.constructor?.name ?? "?"}`;
+    for (const k in x) {
+      const r = walk((x as Record<string, unknown>)[k]);
+      if (r) {
+        path.unshift(k);
+        return r;
+      }
     }
     return null;
-  }
-  const proto = Object.getPrototypeOf(v);
-  if (proto !== Object.prototype && proto !== null) return `${path} : instance de ${proto?.constructor?.name ?? "?"}`;
-  for (const k in v) {
-    const r = nonJson((v as Record<string, unknown>)[k], `${path}.${k}`);
-    if (r) return r;
-  }
-  return null;
+  };
+  const r = walk(v);
+  return r ? `état${path.map((k) => (typeof k === "number" ? `[${k}]` : `.${k}`)).join("")}${r}` : null;
 }
 
 /** Joue une partie entre IA (2 joueurs ou plus : un deck et un agent par joueur). */
