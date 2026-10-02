@@ -68,12 +68,7 @@ export function matchesView(v: LkiSnapshot, f: ObjectFilter, perspective: Player
   if (f.self && v.id !== sourceId) return false;
   if (f.nontoken && v.isToken) return false;
   // Kid Loki : « chaque créature sur laquelle vous avez mis des marqueurs +1/+1 ce tour-ci ».
-  if (
-    f.countersPutByYouThisTurn &&
-    v.countersPutThisTurn &&
-    !countersPutBy(v.countersPutThisTurn, perspective, f.countersPutByYouThisTurn)
-  )
-    return false;
+  if (f.countersPutByYouThisTurn && !countersPutBy(v.countersPutThisTurn, perspective, f.countersPutByYouThisTurn)) return false;
   // Un sort (vue de `spellView`) ; pour un objet, `matchesObjectFilter` lit sa définition.
   if (f.adventure !== undefined && !v.id && !!v.adventure !== f.adventure) return false;
   if (f.hasX !== undefined && !!v.hasX !== f.hasX) return false;

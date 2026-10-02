@@ -4711,3 +4711,10 @@ describe("lot C3 : coûts, main et bibliothèque", () => {
     expect(exiled(s, "Worlds Within Worlds")).toHaveLength(1);
   });
 });
+
+describe("Kid Loki : une créature sans marqueur mis ce tour-ci n'a pas la défense talismanique", () => {
+  it("le filtre « marqueurs mis par vous ce tour-ci » exclut les créatures sans marqueur", () => {
+    const s = scenario({ p1: { battlefield: ["Kid Loki", "Bear Cub"] } });
+    expect(chars(s, idOf(s, "p1", "battlefield", "Bear Cub")).keywords).not.toContain("hexproof");
+  });
+});

@@ -52,6 +52,7 @@ Ce fichier sert au suivi du projet entre les sessions : où on en est, les règl
 | **Secrets of Strixhaven (SOS, « Les secrets de Strixhaven »)** (`docs/extensions/sos.md`) | ✅ **262 / 262** (socle 0, sous-lots A1 à A6, B1 à B3, C1 à C3, 01/10/2026 ; `RULES_VERSION` = 32) |
 | **Murders at Karlov Manor (MKM, « Meurtres au manoir Karlov »)** (`docs/extensions/mkm.md`) | ✅ **268 / 268** (socle 0, sous-lots A1 à A6, B1 à B4, C1 à C3, 02/10/2026 ; `RULES_VERSION` = 37) |
 | **Avatar: The Last Airbender (TLA)** (`docs/extensions/tla.md`) | ✅ **280 / 280** (socle 0, sous-lots A1 à A6, B1 et B2, C1 à C3, 02/10/2026 ; `RULES_VERSION` = 45) |
+| **Marvel Super Heroes (MSH)** (`docs/extensions/msh.md`) | ✅ **271 / 271** (socle 0, sous-lots A1 à A6, B1 à B3, C1 à C3, 02/10/2026 ; `RULES_VERSION` = 53) |
 | Plan de remédiation de l'audit du 30/09/2026 (`docs/plans/PLAN-R.md`, lots F1 à R8) : F1 à F3 (fondations), R0 (corrections rapides), R4.0 à R4.6, R2.1 à R2.5, R1 en partie, R3 (copies de sorts, répartition), R5 à R8 faits, `RULES_VERSION` = 19 ; restent R1 en partie (familles E, H, I, boucliers 615.7) et R7 (continu), suivis par la section « Ajouter des cartes ou une extension » | ✅ (plan archivé le 01/10/2026) |
 | Autres extensions Standard | à la demande de l'utilisateur, une à la fois |
 
@@ -66,7 +67,7 @@ Ce fichier sert au suivi du projet entre les sessions : où on en est, les règl
 - **01/10/2026 :** Tarkir: Dragonstorm faite à la demande de l'utilisateur (phase 2 du plan P4), lots A à D (`docs/extensions/tdm.md`). Prochaine extension : à la demande de l'utilisateur (suggestion du plan P4 : SOS ou TLA).
 - **01/10/2026 :** Lorwyn Eclipsed faite à la demande de l'utilisateur, lots A à D (`docs/extensions/ecl.md`) ; le lot D a fait les familles H et I de R1. Prochaine extension : à la demande de l'utilisateur.
 - **01/10/2026 :** l'utilisateur demande Wilds of Eldraine, Secrets of Strixhaven et Murders at Karlov Manor, dans cet ordre, par lots et sous-lots, un commit par sous-lot, sur `dev` sans fusion dans `master`. Wilds of Eldraine faite (`docs/extensions/woe.md`), puis Secrets of Strixhaven (`docs/extensions/sos.md`), puis Murders at Karlov Manor (`docs/extensions/mkm.md`, terminée le 02/10/2026). Prochaine extension : à la demande de l'utilisateur.
-- **02/10/2026 :** l'utilisateur demande Avatar: The Last Airbender puis Marvel Super Heroes, par lots et sous-lots, un commit par sous-lot, sur `dev` sans fusion dans `master`. Avatar: The Last Airbender faite (`docs/extensions/tla.md`) ; suivante : MSH.
+- **02/10/2026 :** l'utilisateur demande Avatar: The Last Airbender puis Marvel Super Heroes, par lots et sous-lots, un commit par sous-lot, sur `dev` sans fusion dans `master`. Avatar: The Last Airbender faite (`docs/extensions/tla.md`), puis Marvel Super Heroes (`docs/extensions/msh.md`). Prochaine extension : à la demande de l'utilisateur.
 - **29/09/2026 (plan P4) :** exception décidée par l'utilisateur. On écrit d'abord les cartes des decks du méta Standard (lots M1 à M6, toutes extensions confondues ; des extensions restent donc partielles), puis Tarkir: Dragonstorm à 100 %. Un lot du méta se vérifie avec `npm run verify -- --set META`.
 - Découpage habituel d'une extension :
   - lot A : cartes faisables avec le moteur, jetons et terrains ;
@@ -83,7 +84,7 @@ Ce fichier sert au suivi du projet entre les sessions : où on en est, les règl
 - `docs/moteur.md` : **à lire avant d'ajouter une mécanique**. Carte des fichiers du moteur, et où toucher pour un effet, un déclencheur, une condition, un filtre, un statique de joueur ou un mot-clé.
 - `docs/approximations.md` : approximations connues, générales puis carte par carte (à lever si une carte l'exige). **Toute nouvelle approximation y est ajoutée.**
 - `docs/extensions/<ext>.md` : mécaniques et détail des lots de chaque extension :
-  - `fdn`, `fra`, `eoe`, `dft`, `otj-big`, `fin`, `dsk`, `blb`, `lci`, `tdm`, `ecl`, `woe`, `sos`, `mkm`, `tla` ;
+  - `fdn`, `fra`, `eoe`, `dft`, `otj-big`, `fin`, `dsk`, `blb`, `lci`, `tdm`, `ecl`, `woe`, `sos`, `mkm`, `tla`, `msh` ;
   - `socle` pour les lots transverses (faces multiples, Sagas, face cachée…) ;
   - `meta` pour les lots du méta Standard (plan P4, phase 1), avec une section par extension touchée.
   

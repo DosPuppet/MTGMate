@@ -467,6 +467,9 @@ function enchantedMap(s: GameState): Map<ObjectId, PlayerId[]> {
   return out;
 }
 
+/** Vue sans marqueur mis ce tour-ci : un tableau partagé (pas d'allocation, forme d'objet constante pour V8). */
+const NO_COUNTERS_PUT: string[] = [];
+
 function view(s: GameState, id: ObjectId, c: Characteristics, o: GameObject, attacking: boolean): LkiSnapshot {
   return {
     id,
@@ -482,7 +485,7 @@ function view(s: GameState, id: ObjectId, c: Characteristics, o: GameObject, att
     basePower: c.basePower,
     keywords: c.keywords,
     isToken: o.isToken,
-    countersPutThisTurn: o.countersPutTurn === s.turn.number ? (o.countersPutKinds ?? []) : [],
+    countersPutThisTurn: o.countersPutTurn === s.turn.number && o.countersPutKinds ? o.countersPutKinds : NO_COUNTERS_PUT,
     attacking,
     name: c.name,
     manaValue: scan && !scan.copying ? manaValue(s.defs[o.defId]?.manaCost) : viewManaValue(s, id, o),

@@ -14,7 +14,7 @@ Plateforme pour jouer à Magic: The Gathering contre une ou plusieurs IA (en due
 - jouable sur tablette et sur téléphone en paysage (voir « Tablette et téléphone ») ;
 - images des cartes relayées par le serveur quand le réseau du joueur bloque Scryfall (voir « Images bloquées par le réseau »).
 
-Dernière extension ajoutée : **Avatar: The Last Airbender (TLA)**, entièrement gérée (280 / 280), avec la maîtrise de l'eau, de la terre, du feu et de l'air, les Leçons, les Alliés et le présage. Avant elle : **Murders at Karlov Manor (MKM)**, 268 / 268.
+Dernière extension ajoutée : **Marvel Super Heroes (MSH)**, entièrement gérée (271 / 271), avec la montée en puissance, le travail d'équipe, l'exploitation, l'improvisation, les marqueurs de bouclier, les Héros et les Méchants. Avant elle : **Avatar: The Last Airbender (TLA)**, 280 / 280.
 
 ## Périmètre : le Standard
 
@@ -41,12 +41,12 @@ Les cartes sont couvertes **extension par extension, à 100 % avant de passer à
 | **Secrets of Strixhaven (SOS, « Les secrets de Strixhaven »)** | ✅ 262 / 262 |
 | **Murders at Karlov Manor (MKM, « Meurtres au manoir Karlov »)** | ✅ 268 / 268 |
 | **Avatar: The Last Airbender (TLA)** | ✅ 280 / 280 |
+| **Marvel Super Heroes (MSH)** | ✅ 271 / 271 |
 | Marvel's Spider-Man (SPM) | 10 / 188 (cartes du méta) |
-| Marvel Super Heroes (MSH) | 20 / 271 (cartes du méta) |
 | Teenage Mutant Ninja Turtles (TMT) | 12 / 188 (cartes du méta) |
 | The Hobbit (HOB) | 20 / 188 (cartes du méta) |
 
-Au total, **4 388 cartes jouables** sur 5 161 cartes légales en Standard (85 %).
+Au total, **4 639 cartes jouables** sur 5 161 cartes légales en Standard (90 %).
 
 **Decks du méta (plan P4, phase 1 terminée) :** avant de finir les dernières extensions une à une, on écrit les cartes des decks Standard les plus joués (relevé MTGGoldfish du 29/09/2026, `docs/meta/`). Les **vingt archétypes relevés** (88,1 % du méta) sont jouables, réserve comprise ; les cinq premiers sont proposés comme decks préconstruits (Izzet Spellementals, Mono-Green Landfall, Dimir Midrange, Jund Sacrifice, 4c Control). Quelques réimpressions d'extensions plus anciennes sont aussi légales parce qu'elles figurent dans ces sets.
 
@@ -184,7 +184,7 @@ docs/       guide du moteur, approximations connues, détail des extensions, dé
   - remplacements d'événements chiffrés en données (`eventReplacement`, 616.1) : blessures, perte et gain de PV, pioche, meule, marqueurs, jetons, mana et dégagement (« autant plus N », « le double », prévention, boucliers « la prochaine fois que »), dans l'ordre le plus favorable au joueur affecté ;
   - coûts : hybride, coûts additionnels, flashback, réductions, sacrifice ou marqueurs comme coût, activation depuis le cimetière.
 - **Cartes à plusieurs faces** : aventures et présages, recto-verso (transformation, faces modales, Sagas au verso), cartes scindées et Salles, assemblage ; Sagas, Classes et Affaires ; cartes face cachée (déguisement, cape, manifestation), invisibles pour l'adversaire.
-- **Mécaniques d'extensions** : entre autres, préparé (FRA), distorsion et station (EOE), vitesse, exhaust et Véhicules (DFT), plot, spree et crimes (OTJ), job select et tiered (FIN), Salles, manifestation effroyable, Sinistre, Survie, Délire et Imminence (DSK), Progéniture, Cadeau, Fourrager, Dépense, Vaillance et Saisons (BLB), endurance, rafale, renouveau et présages (TDM), flétrir, Vivid, changelin, contempler, flétrissure et conspiration (ECL), Rôles, Célébration, Aventures et Marchandage (WOE), Repartee, Infusion, Opus, Increment, cascade et miracle (SOS), suspect, déguisement, cape et réunir des preuves (MKM), maîtrise de l'eau, de la terre, du feu et de l'air et présage (TLA). Le détail par extension est dans `docs/extensions/`.
+- **Mécaniques d'extensions** : entre autres, préparé (FRA), distorsion et station (EOE), vitesse, exhaust et Véhicules (DFT), plot, spree et crimes (OTJ), job select et tiered (FIN), Salles, manifestation effroyable, Sinistre, Survie, Délire et Imminence (DSK), Progéniture, Cadeau, Fourrager, Dépense, Vaillance et Saisons (BLB), endurance, rafale, renouveau et présages (TDM), flétrir, Vivid, changelin, contempler, flétrissure et conspiration (ECL), Rôles, Célébration, Aventures et Marchandage (WOE), Repartee, Infusion, Opus, Increment, cascade et miracle (SOS), suspect, déguisement, cape et réunir des preuves (MKM), maîtrise de l'eau, de la terre, du feu et de l'air et présage (TLA), montée en puissance, travail d'équipe, improvisation et marqueurs de bouclier (MSH). Le détail par extension est dans `docs/extensions/`.
 - **Performance** : `submit` copie l'état puis le mute (pas d'Immer) ; les simulations de l'IA utilisent `applyMutable` sur une copie de travail.
 
 ## Ajouter une carte
@@ -215,7 +215,7 @@ Chaque carte gérée est automatiquement jouée par le test de fumée (`packages
 | 4d. FDN, réimpressions (n° 282 et plus) | cartes des decks d'initiation et de la Starter Collection | ✅ **241 / 241** (517 / 517 pour tout FDN) |
 | 4e. Légalité Standard | légalités Scryfall importées, liste des bannies, validation du format dans le deckbuilder | ✅ |
 | 4f. Cartes à plusieurs faces | aventures, recto-verso, cartes scindées et Salles, Sagas, Classes, Affaires, face cachée, assemblage | ✅ |
-| 4g. Autres extensions Standard | une extension à la fois : Reality Fracture ✅, Edge of Eternities ✅, Aetherdrift ✅, Outlaws of Thunder Junction + The Big Score ✅, Final Fantasy ✅, Duskmourn ✅, Bloomburrow ✅, The Lost Caverns of Ixalan ✅, Tarkir: Dragonstorm ✅, Lorwyn Eclipsed ✅, Wilds of Eldraine ✅, Secrets of Strixhaven ✅, Murders at Karlov Manor ✅, Avatar: The Last Airbender ✅ ; les suivantes à la demande | en cours |
+| 4g. Autres extensions Standard | une extension à la fois : Reality Fracture ✅, Edge of Eternities ✅, Aetherdrift ✅, Outlaws of Thunder Junction + The Big Score ✅, Final Fantasy ✅, Duskmourn ✅, Bloomburrow ✅, The Lost Caverns of Ixalan ✅, Tarkir: Dragonstorm ✅, Lorwyn Eclipsed ✅, Wilds of Eldraine ✅, Secrets of Strixhaven ✅, Murders at Karlov Manor ✅, Avatar: The Last Airbender ✅, Marvel Super Heroes ✅ ; les suivantes à la demande | en cours |
 | 5. IA | trois niveaux au choix (débutant, moyen, élevé) ; évaluation sur les caractéristiques durables ; attaques et blocages par simulation ; ISMCTS en duel (déterminisation de l'information cachée), budget en temps ; tournoi d'IA (`npm run arena`) ; guide : docs/ia.md | ✅ |
 | 6. JcJ en ligne | duel Standard : serveur Node `ws` (`GameHost`, vues et faces filtrées), code de salon, corde, reconnexion, revanche | ✅ duel ; déploiement pm2 + nginx documenté |
 | 7. Finitions | effets sonores ✅ ; tablette et téléphone ✅ ; relais des images Scryfall ✅ ; replays (graine + décisions) ✅ ; images des jetons ✅ ; musique | en cours |
