@@ -162,7 +162,10 @@ export const WHITE: Record<string, CardScript> = {
   // Vol et lien de vie lus dans le texte.
   "Eirdu, Carrier of Dawn": {
     abilities: [
-      playerStatic({ convokeCreatureSpells: true, label: "Vos sorts de créature ont la convocation" }),
+      playerStatic({
+        spellKeywords: { filter: { types: ["Creature"] }, keywords: ["convoke"] },
+        label: "Vos sorts de créature ont la convocation",
+      }),
       triggered(when.step("main1", "you"), fx.mayPay("{B}", "Payer {B} pour transformer Eirdu ?", fx.transform()), {
         label: "Payez {B} : transformez Eirdu",
       }),

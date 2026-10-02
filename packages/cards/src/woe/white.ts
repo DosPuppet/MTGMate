@@ -19,6 +19,7 @@ import {
   KNIGHT_VIGILANCE,
   modal,
   mode,
+  playerStatic,
   ROYAL_ROLE,
   ref,
   SORCERER_ROLE,
@@ -399,10 +400,9 @@ export const WHITE: Record<string, CardScript> = {
     ],
   },
   "Heartflame Duelist": {
-    // Approximation : la statique « les sorts d'éphémère et de rituel que vous contrôlez ont le lien de vie » est rendue
-    // par un déclenchement au lancement (les statiques ne s'appliquent pas aux sorts sur la pile).
     abilities: [
-      triggered(when.castSpell("you", INSTANT_SORCERY), [fx.modify(ref.eventObject, { addKeywords: ["lifelink"] })], {
+      playerStatic({
+        spellKeywords: { filter: INSTANT_SORCERY, keywords: ["lifelink"] },
         label: "Vos éphémères et rituels ont le lien de vie",
       }),
     ],

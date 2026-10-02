@@ -70,6 +70,10 @@ export type Keyword =
   | "convoke"
   /** Improvisation (702.126) : les artefacts dégagés peuvent payer {1} chacun du coût du sort. */
   | "improvise"
+  /** Cave (702.66) : chaque carte exilée de votre cimetière paie {1} du coût du sort. */
+  | "delve"
+  /** Second partagé (702.61) : tant que ce sort est sur la pile, ni sorts ni capacités (hors mana). */
+  | "splitSecond"
   /** Émeute (702.136) : il arrive avec un marqueur +1/+1 ou la célérité, au choix de son contrôleur. */
   | "riot"
   /** Ghalta the Immovable : peut attaquer comme si elle n'avait pas le défenseur. */

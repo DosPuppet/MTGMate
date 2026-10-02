@@ -269,7 +269,7 @@ export const GREEN: Record<string, CardScript> = {
         condition: NO_CREATURE_SPELL_YET,
       }),
       playerStatic({
-        flashFor: { types: ["Creature"] },
+        spellKeywords: { filter: { types: ["Creature"] }, keywords: ["flash"] },
         condition: NO_CREATURE_SPELL_YET,
         label: "Le premier sort de créature du tour a le flash",
       }),

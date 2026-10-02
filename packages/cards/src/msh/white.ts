@@ -107,7 +107,7 @@ export const WHITE: Record<string, CardScript> = {
   "Captain Mar-Vell, Space-Born": {
     abilities: [
       playerStatic({
-        flashFor: {},
+        spellKeywords: { filter: {}, keywords: ["flash"] },
         condition: cond.amountAtLeast(amount.turnEvents({ event: "cast", who: "opponent" }), 1),
         label: "Conscience cosmique — vos sorts ont le flash si un adversaire a lancé un sort ce tour-ci",
       }),

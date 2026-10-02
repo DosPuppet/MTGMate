@@ -995,8 +995,6 @@ export interface PlayerStaticAbilityDef {
   grantWarp?: { filter: ObjectFilter; cost: ManaCost };
   /** Tomik, Orzhov Lawmage : au plus une créature peut attaquer chacun de vos planeswalkers à chaque combat. */
   walkersMaxOneAttacker?: boolean;
-  /** Samut, Tyrant of Naktamun : « les éphémères et rituels que vous contrôlez ont le second partagé ». */
-  splitSecondInstantsSorceries?: boolean;
   /** « Max speed — … » : la capacité ne s'applique que si la condition est remplie. */
   condition?: Condition;
   /** Fblthp, Lost on the Range : vous pouvez regarder la carte du dessus de votre bibliothèque à tout moment. */
@@ -1021,10 +1019,6 @@ export interface PlayerStaticAbilityDef {
   skipTurn?: boolean;
   /** Sanctum Lurker : vos planeswalkers ne vont pas au cimetière faute de loyauté. */
   walkersSurviveZeroLoyalty?: boolean;
-  /** Dazzling Theater : vos sorts de créature ont la convocation. */
-  convokeCreatureSpells?: boolean;
-  /** Teval, Arbiter of Virtue : les sorts que vous lancez ont la cave (702.66). */
-  delveSpells?: boolean;
   /** Prop Room : vos créatures se dégagent pendant l'étape de dégagement des autres joueurs. */
   untapCreaturesOnOthersUntap?: boolean;
   /** Nowhere to Run : les créatures adverses sont ciblables malgré la défense talismanique ; leur garde ne se déclenche pas. */
@@ -1050,8 +1044,6 @@ export interface PlayerStaticAbilityDef {
   noLoseForLife?: boolean;
   /** Sunspine Lynx (tous) : les blessures ne peuvent pas être prévenues. */
   damageUnpreventable?: boolean;
-  /** Valley Floodcaller : les sorts correspondants ont le flash. */
-  flashFor?: ObjectFilter;
   /** Twists and Turns : « si une créature que vous contrôlez devait explorer, regardez 1 d'abord ». */
   scryBeforeExplore?: boolean;
   label?: string;

@@ -416,7 +416,10 @@ export const BLUE: Record<string, CardScript> = {
   },
   "Valley Floodcaller": {
     abilities: [
-      playerStatic({ flashFor: { notTypes: ["Creature"] }, label: "Sorts non-créature avec le flash" }),
+      playerStatic({
+        spellKeywords: { filter: { notTypes: ["Creature"] }, keywords: ["flash"] },
+        label: "Sorts non-créature avec le flash",
+      }),
       triggered(
         when.castSpell("you", { notTypes: ["Creature"] }),
         [fx.pumpAll(kin(BIRD_FROG_OTTER_RAT), 1, 1), fx.untapAll(kin(BIRD_FROG_OTTER_RAT))],

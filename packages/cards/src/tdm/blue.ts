@@ -292,7 +292,7 @@ export const BLUE: Record<string, CardScript> = {
   "Whirlwing Stormbrood": {
     abilities: [
       playerStatic({
-        flashFor: { anyOf: [{ types: ["Sorcery"] }, { subtype: "Dragon" }] },
+        spellKeywords: { filter: { anyOf: [{ types: ["Sorcery"] }, { subtype: "Dragon" }] }, keywords: ["flash"] },
         label: "Vos rituels et vos sorts de Dragon ont le flash",
       }),
     ],

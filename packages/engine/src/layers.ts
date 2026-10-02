@@ -15,6 +15,7 @@
  */
 import { capReached, MAX_LAYER_PASSES } from "./limits";
 import { manaValue } from "./mana";
+import { grantedSpellKeywords } from "./stack";
 import { counterPT, obj } from "./state";
 import { playerStatics } from "./statics";
 import { ALL_CREATURE_TYPES, matchesObjectFilter, matchesView, withChosen } from "./targets";
@@ -1034,6 +1035,14 @@ function battlefieldChars(s: GameState): Map<ObjectId, Characteristics> {
 export function chars(s: GameState, id: ObjectId): Characteristics {
   const o = obj(s, id);
   // Pendant le calcul (conditions des capacités statiques), on lit la passe précédente, sinon les caractéristiques de base.
+  // Un sort sur la pile : ses mots-clés comprennent ceux que lui accordent les statiques de son contrôleur (« vos éphémères
+  // et rituels ont le lien de vie », Heartflame Duelist ; PLAN-C, lot C11).
+  if (o.zone === "stack" && !computing) {
+    const c = base(s, o, o.faceDefId ?? o.defId);
+    const d = s.defs[o.faceDefId ?? o.defId];
+    const granted = d ? grantedSpellKeywords(s, o.controller, d) : [];
+    return granted.length ? { ...c, keywords: [...c.keywords, ...granted] } : c;
+  }
   if (o.zone !== "battlefield" || computing) {
     if (computing && o.zone === "battlefield") reads++;
     return provisional?.get(id) ?? base(s, o, o.faceDefId ?? o.defId);

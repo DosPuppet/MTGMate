@@ -186,8 +186,11 @@ export const RECORD_VERSION = 1;
  *   `blightTarget` (PLAN-C, lots C7 et C8).
  * - 66 : « en arrivant, choisissez… » demandé au joueur pour un terrain joué (`playLand.chosen`, Cavern of Souls) et
  *   pour un permanent mis en jeu par un effet (`moveTo`) (PLAN-C, lot C9).
+ * - 67 : mots-clés accordés aux sorts (`spellKeywords`, `spellHasKeyword`) à la place de quatre drapeaux (flash, convocation,
+ *   cave, second partagé) ; un sort sur la pile a les mots-clés que lui accordent les statiques de son contrôleur (Heartflame
+ *   Duelist : lien de vie, copies comprises) (PLAN-C, lot C11).
  */
-export const RULES_VERSION = 66;
+export const RULES_VERSION = 67;
 
 /** Un point de contrôle toutes les N décisions (plus la dernière de la partie). */
 export const CHECKPOINT_EVERY = 25;

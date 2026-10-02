@@ -354,7 +354,7 @@ export const LEGENDS: Record<string, CardScript> = {
   },
   "Teval, Arbiter of Virtue": {
     abilities: [
-      playerStatic({ delveSpells: true, label: "Les sorts que vous lancez ont la cave" }),
+      playerStatic({ spellKeywords: { filter: {}, keywords: ["delve"] }, label: "Les sorts que vous lancez ont la cave" }),
       triggered(when.castSpell("you"), [fx.loseLife(amount.manaValueOf(ref.eventObject))], {
         label: "Vous perdez autant de PV que la valeur de mana du sort",
       }),

@@ -42,6 +42,7 @@ import {
   sneakTiming,
   sorceryTiming,
   spellCost,
+  spellHasKeyword,
   spellPicks,
   spellView,
   splitSecondOnStack,
@@ -401,7 +402,7 @@ export function legalActions(s: GameState, player: PlayerId): ActionOption[] {
       spell: spellView(d, player),
       convoke: hasConvoke(s, player, d),
       improvise: hasImprovise(s, player, d) || undefined,
-      delve: playerStatic(s, player, "delveSpells"),
+      delve: spellHasKeyword(s, player, d, "delve"),
       fromHand: terms.source === "hand",
     };
     // Maîtrise de l'eau en coût additionnel : sa part du coût, selon le kicker et X.

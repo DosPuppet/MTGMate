@@ -69,6 +69,7 @@ import type {
   Effect,
   GameObject,
   GameState,
+  Keyword,
   LkiSnapshot,
   ManaAbilityDef,
   ManaCost,
@@ -114,16 +115,33 @@ export function altCostFor(
 
 /** Convocation : le sort l'a, ou Dazzling Theater la donne à vos sorts de créature. */
 /** Improvisation (702.126) : imprimée, ou donnée aux sorts du joueur (Ironheart : « vos sorts non-créature »). */
-export function hasImprovise(s: GameState, player: PlayerId, d: CardDef): boolean {
-  if (d.keywords.includes("improvise")) return true;
+/**
+ * Le sort a-t-il ce mot-clé, imprimé ou accordé aux sorts par une statique du joueur (`spellKeywords` : « vos sorts de
+ * créature ont la convocation », « vos rituels ont le flash »…) ? Seule lecture des mots-clés d'un sort hors du champ de
+ * bataille (PLAN-C, lot C11).
+ */
+export function spellHasKeyword(s: GameState, player: PlayerId, d: CardDef, kw: Keyword): boolean {
+  if (d.keywords.includes(kw)) return true;
   return playerStatics(s, player, "spellKeywords").some(
-    ({ ab }) =>
-      !!ab.spellKeywords?.keywords.includes("improvise") && matchesView(spellView(d, player), ab.spellKeywords.filter, player),
+    ({ ab }) => !!ab.spellKeywords?.keywords.includes(kw) && matchesView(spellView(d, player), ab.spellKeywords.filter, player),
   );
 }
 
+/** Mots-clés accordés à ce sort par les statiques de son contrôleur (`spellKeywords`), sans ceux qu'il a déjà. */
+export function grantedSpellKeywords(s: GameState, player: PlayerId, d: CardDef): Keyword[] {
+  const out = new Set<Keyword>();
+  for (const { ab } of playerStatics(s, player, "spellKeywords"))
+    if (ab.spellKeywords && matchesView(spellView(d, player), ab.spellKeywords.filter, player))
+      for (const k of ab.spellKeywords.keywords) if (!d.keywords.includes(k)) out.add(k);
+  return [...out];
+}
+
+export function hasImprovise(s: GameState, player: PlayerId, d: CardDef): boolean {
+  return spellHasKeyword(s, player, d, "improvise");
+}
+
 export function hasConvoke(s: GameState, player: PlayerId, d: CardDef): boolean {
-  return d.keywords.includes("convoke") || (d.types.includes("Creature") && playerStatic(s, player, "convokeCreatureSpells"));
+  return spellHasKeyword(s, player, d, "convoke");
 }
 
 export function isPermanentCard(d: CardDef): boolean {
@@ -152,10 +170,7 @@ export function canCastTiming(s: GameState, player: PlayerId, d: CardDef): boole
   if (d.flashIf && checkCondition(s, d.flashIf, player)) return true;
   if (sorceryTiming(s, player)) return true;
   // Valley Floodcaller : « vous pouvez lancer des sorts non-créature comme s'ils avaient le flash ».
-  const flashFor = playerStatics(s, player, "flashFor").some(
-    ({ ab }) => !!ab.flashFor && matchesView(spellView(d, player), ab.flashFor, player),
-  );
-  if (flashFor) return true;
+  if (spellHasKeyword(s, player, d, "flash")) return true;
   // « Vous pouvez lancer des sorts comme s'ils avaient le flash. »
   return s.battlefield.some(
     (id) => obj(s, id).controller === player && chars(s, id).abilities.some((ab) => ab.kind === "castPermission" && ab.flash),
@@ -838,8 +853,7 @@ export function splitSecondOnStack(s: GameState): boolean {
   return s.stack.some((item) => {
     if (item.kind !== "spell") return false;
     const d = s.defs[item.sourceDefId];
-    const instantOrSorcery = !!d && (d.types.includes("Instant") || d.types.includes("Sorcery"));
-    return instantOrSorcery && playerStatic(s, item.controller, "splitSecondInstantsSorceries");
+    return !!d && spellHasKeyword(s, item.controller, d, "splitSecond");
   });
 }
 
@@ -1768,7 +1782,7 @@ export function castSpell(s: GameState, player: PlayerId, card: ObjectId, choice
         spell: view,
         convoke: hasConvoke(s, player, d),
         improvise: hasImprovise(s, player, d) || undefined,
-        delve: playerStatic(s, player, "delveSpells"),
+        delve: spellHasKeyword(s, player, d, "delve"),
         fromHand: terms.source === "hand",
         ...(bendPaid ? { waterbend: bendPaid } : {}),
         ...(onlyChosen(validHelperPicks(s, player, stackId, d, choices)) ? { only: onlyChosen(choices.picks) } : {}),
@@ -2526,7 +2540,7 @@ export function spellPicks(s: GameState, player: PlayerId, card: ObjectId, d: Ca
       convoke: hasConvoke(s, player, d),
       improvise: hasImprovise(s, player, d),
       waterbend: d.waterbend !== undefined || d.xCost === "waterbend",
-      delve: playerStatic(s, player, "delveSpells"),
+      delve: spellHasKeyword(s, player, d, "delve"),
     }),
   );
   if (d.xCost === "blight") {

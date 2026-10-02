@@ -80,7 +80,12 @@ const LETS_PLAY = {
 export const LEGENDS: Record<string, CardScript> = {
   // Blanc
   "Dazzling Theater": {
-    abilities: [playerStatic({ convokeCreatureSpells: true, label: "Vos sorts de créature ont la convocation" })],
+    abilities: [
+      playerStatic({
+        spellKeywords: { filter: { types: ["Creature"] }, keywords: ["convoke"] },
+        label: "Vos sorts de créature ont la convocation",
+      }),
+    ],
   },
   "Prop Room": {
     abilities: [

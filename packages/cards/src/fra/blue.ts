@@ -157,7 +157,12 @@ export const BLUE: Record<string, CardScript> = {
     abilities: [activated({ mana: "{2}", effects: [fx.pump(ref.self, 1, -1)], label: "+1/-1" })],
   },
   "Samut, Tyrant of Naktamun": {
-    abilities: [playerStatic({ splitSecondInstantsSorceries: true, label: "Vos éphémères et rituels ont le second partagé" })],
+    abilities: [
+      playerStatic({
+        spellKeywords: { filter: { types: ["Instant", "Sorcery"] }, keywords: ["splitSecond"] },
+        label: "Vos éphémères et rituels ont le second partagé",
+      }),
+    ],
   },
   "Diviner of Victory": {
     prepareSpell: spell(

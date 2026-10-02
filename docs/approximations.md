@@ -248,7 +248,6 @@ Dans l'ordre où elles ont été ajoutées, extension par extension.
   - `règle` Lasting Tarfire : « vous avez mis un marqueur » : le joueur qui met les marqueurs est le contrôleur de ce qui se résout, sinon (coût) le contrôleur du permanent ;
   - `timing` Lavaleaper, Shimmerwilds Growth : le mana en plus (capacité de mana déclenchée, 605.1b) est ajouté avec le mana du terrain, comme un remplacement ; le solveur de paiement compte celui du même type, pas celui d'une autre couleur (Shimmerwilds Growth).
 - **Wilds of Eldraine (`docs/extensions/woe.md`) :**
-  - `timing` Heartflame Duelist : « les éphémères et rituels que vous contrôlez ont le lien de vie » est donné au lancement par une capacité déclenchée ; une copie de sort ne l'a pas, et le sort le garde si le Duelist part avant la résolution ;
   - `timing` Expel the Interlopers : le nombre de 0 à 10 est choisi au lancement (un mode par nombre), et non à la résolution ;
   - `choix auto` Discerning Financier : « un autre joueur » est le premier adversaire ;
   - `règle` Virtue of Loyalty : toutes vos créatures sont dégagées, pas seulement celles qui ont reçu un marqueur ;
