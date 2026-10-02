@@ -46,3 +46,9 @@ Les scripts sont dans `packages/cards/src/tmt/` : `cards` (cartes du méta), `wh
 - **Cartes (25) :** Bot Bashing Time, Broadcast Takeover, Casey Jones, Jury-Rig Justiciar, General Traag, Heart of Stone, Hard-Won Jitte, Improvised Arsenal, Jennika's Technique, Manhole Missile, Mouser Attack!, Mouser Foundry, Mutant Town Musicians, Null Group Biological Assets, Old Hob, Alleycat Blues, Purple Dragon Punks, Raphael, Most Attitude, Raphael, Ninja Destroyer, Raphael, the Nightwatcher, Raphael, Tough Turtle, Raphael's Technique, Ravenous Robots, Rock Soldiers, Slash, Reptile Rampager, Spicy Oatmeal Pizza, Wingnut, Bat on the Belfry, Zog, Triceraton Castaway.
 - **Moteur :** rien de nouveau. « Défaussez votre main et piochez sept cartes » sert aussi à Raphael's Technique : l'entrée de dette de `mayWheel` est retirée ; l'audit Oracle ↔ script la note comme une équivalence (sept cartes par construction).
 - **Tests :** 34 tests de règles (« lot A, rouge »).
+
+## Sous-lot A5 : cartes vertes ✅ (135 / 188)
+
+- **Cartes (24) :** Courier of Comestibles, Cowabunga!, Frog Butler, Groundchuck & Dirtbag, Guac & Marshmallow Pizza, Michelangelo, Game Master, Michelangelo, Improviser, Michelangelo, Mutant BFF, Michelangelo, Weirdness to 11, Mona Lisa, Science Geek, Mutant Chain Reaction, New Generation's Technique, Novel Nunchaku, Party Dude, Primordial Pachyderm, Ragamuffin Raptor, Rocksteady, Crash Courser, Saved by the Shell, Tenderize, Transdimensional Bovine, Turtle Power!, Venus, Torn Between Worlds, West Wind Avatar, Zoo Escapees.
+- **Moteur :** rien de nouveau (Groundchuck & Dirtbag : la capacité de mana déclenchée est un remplacement de mana, comme Badgermole Cub ; écart voulu dans `audit-baseline.json`).
+- **Tests :** 33 tests de règles (« lot A, vert »).

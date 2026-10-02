@@ -10,5 +10,6 @@
  "Shimmerwilds Growth | triggered | Shimmerwilds Growth : 1 dans le texte, 0 dans le script": "capacité de mana déclenchée (605.1b, un mana de la couleur choisie) : remplacement de mana (R1, famille I)",
  "Buried in the Garden | triggered | Buried in the Garden : 2 dans le texte, 1 dans le script": "capacité de mana déclenchée (605.1b, un mana de plus) : remplacement de mana (R1, famille I), comme Shimmerwilds Growth",
  "Badgermole Cub | triggered | Badgermole Cub : 2 dans le texte, 1 dans le script": "capacité de mana déclenchée (605.1b, un {G} de plus pour une créature engagée) : remplacement de mana (R1, famille I), comme Lavaleaper",
- "Raphael's Technique | number | Raphael's Technique : 7 absent(s)": "équivalence : mayWheel défausse la main et pioche sept cartes par construction"
+ "Raphael's Technique | number | Raphael's Technique : 7 absent(s)": "équivalence : mayWheel défausse la main et pioche sept cartes par construction",
+ "Groundchuck & Dirtbag | triggered | Groundchuck & Dirtbag : 1 dans le texte, 0 dans le script": "capacité de mana déclenchée (605.1b, un {G} de plus par terrain engagé) : remplacement de mana (R1, famille I), comme Badgermole Cub"
 }
