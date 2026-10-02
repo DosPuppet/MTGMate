@@ -325,5 +325,8 @@ Dans l'ordre où elles ont été ajoutées, extension par extension.
 - **Avatar: The Last Airbender (`docs/extensions/tla.md`) :**
   - `choix auto` Maîtrise de l'eau : les artefacts et créatures engagés pour payer sont choisis par le moteur, après les terrains (comme pour la convocation).
   - `règle` The Legend of Yangchen (chapitre I) : vous seul choisissez un permanent adverse de valeur de mana 3 ou plus (exact en duel ; à plusieurs, chaque joueur devrait en choisir un à tour de rôle), et le choix est obligatoire s'il en existe un.
+  - `règle` Lost Days : le choix entre la deuxième position et le dessous de la bibliothèque revient au contrôleur de la créature, et non à son propriétaire (comme Temporal Cleansing) ;
+  - `règle` Ty Lee, Chi Blocker : la créature ne se dégage pas tant que Ty Lee reste sur le champ de bataille (et non « tant que vous la contrôlez ») ;
+  - `règle` Honest Work : la créature enchantée prend le seul sous-type Citoyen (une créature-artefact perdrait aussi ses sous-types d'artefact).
 - **Légalité Standard :** instantané des légalités Scryfall au moment de l'import (`legalities.standard` dans `data/<set>.json`). Après une rotation ou une annonce de bannissement, réimporter les sets (`npm run import-cards -- <set>`).
 - **Images des jetons :** celle du jeton Scryfall le plus proche (même nom, puis mêmes F/E et couleurs ; `data/tokens.json`, `npm run import-tokens`) ; un jeton de nom inconnu garde le cadre texte.
