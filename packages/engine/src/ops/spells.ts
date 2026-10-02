@@ -19,6 +19,7 @@ import { castTerms, collectEvidence, counterItem, dropNowPermissions, evidenceCa
 import { copyStackItem } from "../stackChoices";
 import {
   apnapOrder,
+  bent,
   changeCounters,
   chars,
   createObject,
@@ -298,6 +299,7 @@ export const HANDLERS: OpHandlers = {
     if (mana) {
       if (!canPay(s, p, mana, undefined, purpose)) return;
       payMana(s, p, mana, undefined, purpose);
+      if (e.waterbend) bent(s, p, "water");
     }
     if (life) payLife(s, p, life);
     // « S'il le fait, … » (Divert Disaster).

@@ -385,6 +385,8 @@ export type TriggerSpec =
   | { on: "forage" }
   /** « Chaque fois que vous réunissez des preuves » (Surveillance Monitor). */
   | { on: "collectEvidence" }
+  /** « Chaque fois que vous maîtrisez l'eau, la terre, le feu ou l'air » (Avatar) ; `kinds` : seulement ces éléments. */
+  | { on: "bend"; kinds?: ("water" | "earth" | "fire" | "air")[] }
   /** « Chaque fois que vous résolvez une Affaire » (Case File Auditor). */
   | { on: "caseSolved" }
   /** « Chaque fois que vous offrez un cadeau » (Jolly Gerbils). */

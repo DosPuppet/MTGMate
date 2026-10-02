@@ -138,7 +138,21 @@ export type RulesEvent =
   | { e: "gift"; player: PlayerId }
   /** Une porte de Salle est déverrouillée. */
   | { e: "unlock"; objectId: ObjectId; door: number; player: PlayerId }
-  | { e: "blocked"; attacker: ObjectId; player: PlayerId };
+  | { e: "blocked"; attacker: ObjectId; player: PlayerId }
+  /** Maîtrise des éléments (Avatar) : ce joueur maîtrise l'eau, la terre, le feu ou l'air. */
+  | { e: "bend"; player: PlayerId; kind: BendKind };
+
+/** Maîtrise des éléments (Avatar) : l'eau (payer un coût), la terre, le feu (la capacité se résout) ou l'air. */
+export type BendKind = "water" | "earth" | "fire" | "air";
+
+/**
+ * « Vous maîtrisez [l'élément] » : déclencheurs (« chaque fois que vous maîtrisez… ») et journal du tour (« si vous
+ * avez fait les quatre ce tour-ci »).
+ */
+export function bent(s: GameState, player: PlayerId, kind: BendKind): void {
+  logTurnEvent(s, { e: "bend", player, kind });
+  rulesEvent(s, { e: "bend", player, kind });
+}
 
 /** Signale un événement de règles : les capacités déclenchées correspondantes sont mises en attente. */
 export function rulesEvent(s: GameState, ev: RulesEvent): void {

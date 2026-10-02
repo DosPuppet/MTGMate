@@ -429,6 +429,8 @@ export type TurnLogEntry =
   | { e: "counters"; player: PlayerId; kind: string; n: number; types: CardType[]; subtypes: string[] }
   /** Capacité activée (hors mana) ; `equip` : une capacité d'équipement (Kíli the Resourceful). */
   | { e: "activate"; player: PlayerId; equip?: boolean; types?: CardType[]; subtypes?: string[] }
+  /** Maîtrise des éléments (Avatar). */
+  | { e: "bend"; player: PlayerId; kind: "water" | "earth" | "fire" | "air"; types?: CardType[]; subtypes?: string[] }
   | {
       e: "damage";
       /** Joueur blessé, ou contrôleur du permanent blessé. */
@@ -487,6 +489,9 @@ export interface TurnLogQuery {
   perPlayer?: boolean;
   /** Blessures : le nombre de sources différentes (Case of the Burning Masks). */
   distinctSources?: boolean;
+  /** Maîtrise des éléments : seulement cette sorte ; `distinctKinds` : le nombre de sortes différentes (Avatar Aang). */
+  bendKind?: "water" | "earth" | "fire" | "air";
+  distinctKinds?: boolean;
 }
 
 export interface CombatState {

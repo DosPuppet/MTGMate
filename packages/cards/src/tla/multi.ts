@@ -558,4 +558,42 @@ export const MULTI: Record<string, CardScript> = {
       }),
     ],
   },
+  // Vol et maîtrise du feu 2 : lus dans le texte.
+  "Avatar Aang": {
+    abilities: [
+      triggered(
+        when.bend(),
+        [
+          fx.draw(1),
+          ...fx.when(
+            cond.amountAtLeast(amount.turnEvents({ event: "bend", who: "you", distinctKinds: true }), 4),
+            fx.transform(ref.self),
+          ),
+        ],
+        { label: "Vous maîtrisez un élément : piochez ; les quatre ce tour-ci, transformez Aang" },
+      ),
+    ],
+  },
+  "Aang, Master of Elements": {
+    abilities: [
+      playerStatic({
+        spellCost: { filter: {}, reduceSymbols: { W: 1, U: 1, B: 1, R: 1, G: 1 } },
+        label: "Vos sorts coûtent {W}{U}{B}{R}{G} de moins",
+      }),
+      triggered(
+        { on: "step", step: "upkeep", whose: "any" },
+        [
+          fx.may(
+            "Transformer Aang (4 PV, quatre cartes, quatre marqueurs +1/+1, 4 blessures à chaque adversaire) ?",
+            fx.transform(ref.self),
+            fx.gainLife(4),
+            fx.draw(4),
+            fx.addCounters(ref.self, 4),
+            fx.damage(4, ref.eachOpponent),
+          ),
+        ],
+        { label: "Au début de chaque entretien, vous pouvez transformer Aang" },
+      ),
+    ],
+  },
 };

@@ -19,6 +19,7 @@ import { copiableExceptions, copiedDefId, effectivePower, hasKeyword } from "./l
 import { costToText, type ManaPurpose, manaValue, payMana, totalCost } from "./mana";
 import { copyStackItem } from "./stackChoices";
 import {
+  bent,
   bump,
   changeCounters,
   chars,
@@ -607,7 +608,22 @@ export function spellCost(
   // Feed the Cycle : « fourragez ou payez {B} » — le mana s'ajoute sauf si l'on fourrage (coût alternatif).
   const cost1 = d.forageOrPay && !alt?.forage ? totalCost(cost0, 0, d.forageOrPay) : cost0;
   // Wild Unraveling : « flétrissez 2 ou payez {1} » — le mana s'ajoute sauf si l'on flétrit (kicker).
-  const cost = d.kickerOrPay && !opts.kicked ? totalCost(cost1, 0, d.kickerOrPay) : cost1;
+  const cost2 = d.kickerOrPay && !opts.kicked ? totalCost(cost1, 0, d.kickerOrPay) : cost1;
+  // Aang, Master of Elements : « {W}{U}{B}{R}{G} de moins » ; un symbole sans pendant dans le coût réduit le générique.
+  const symbols = playerStatics(s, player, "spellCost").filter(
+    ({ ab }) => ab.spellCost?.reduceSymbols && matchesView(spellView(d, player), ab.spellCost.filter, player),
+  );
+  const cost = symbols.length ? { ...cost2, colored: { ...cost2.colored } } : cost2;
+  for (const { ab } of symbols) {
+    for (const [m, n] of Object.entries(ab.spellCost?.reduceSymbols ?? {}) as [ManaType, number][]) {
+      for (let i = 0; i < n; i++) {
+        const left = cost.colored[m] ?? 0;
+        if (left > 1) cost.colored[m] = left - 1;
+        else if (left === 1) delete cost.colored[m];
+        else if (cost.generic > 0) cost.generic -= 1;
+      }
+    }
+  }
   // Case File Auditor : « comme s'il était de n'importe quelle couleur » pour les sorts correspondants.
   const anyMana =
     opts.anyMana ||
@@ -1523,6 +1539,14 @@ export function castSpell(s: GameState, player: PlayerId, card: ObjectId, choice
       spent,
     );
     if (Object.keys(spent).length) item.spentColors = spent;
+    // Un coût de maîtrise de l'eau a été payé (« chaque fois que vous maîtrisez l'eau »).
+    if (
+      d.waterbend !== undefined ||
+      d.xCost === "waterbend" ||
+      (kicked && d.kickerKind === "waterbend") ||
+      (terms.waterbendOverride && !free && !alternative)
+    )
+      bent(s, player, "water");
     // Mana des Cavernes (Bat Colony) et sources utilisées (Tecutlan, Barracks of the Thousand).
     if (taps.length) {
       item.manaSources = taps.flatMap((t) => Array(t.amount).fill(t.id) as ObjectId[]);
@@ -2163,6 +2187,7 @@ export function activateAbility(s: GameState, player: PlayerId, source: ObjectId
         equipDiscount(s, player, ab, targets.t?.[0]);
       const cost = totalCost(abilityMana(s, source, ab), x, undefined, reduction);
       payMana(s, player, cost, reserved, abilityPurpose(source, ab));
+      if (ab.cost.waterbend) bent(s, player, "water");
     } catch (e) {
       rethrowAsRules(e, "Mana insuffisant");
     }

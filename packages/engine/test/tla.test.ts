@@ -4378,3 +4378,73 @@ describe("lot B1 : maîtrise de l'eau en coût de sort", () => {
     expect(idsOf(s, "p1", "battlefield", "Bear Cub").every((id) => s.objects[id]?.tapped)).toBe(true);
   });
 });
+
+describe("lot B2 : « chaque fois que vous maîtrisez » (Avatar Aang)", () => {
+  const AANG = "Avatar Aang // Aang, Master of Elements";
+  /** Une capacité par élément : maîtrise de l'eau {1}, de la terre 1 et de l'air (sur un permanent ciblé). */
+  const benders = customCard({
+    name: "Test Benders",
+    types: ["Enchantment"],
+    typeLine: "Enchantment",
+    abilities: [
+      dsl.activated({ mana: "{1}", waterbend: true, effects: [], label: "eau" }),
+      dsl.activated({
+        targets: [dsl.target.permanent("t", ["Land"], { controller: "you" }, "terrain")],
+        effects: [...dsl.fx.earthbend(dsl.ref.target(), 1)],
+        label: "terre",
+      }),
+      dsl.activated({ targets: [dsl.target.nonland("t")], effects: [dsl.fx.airbend(dsl.ref.target())], label: "air" }),
+    ],
+  });
+  /** Face visible : le verso a sa propre définition (`faceDefId`). */
+  const back = (s: S, id: string) => s.defs[s.objects[id]?.faceDefId ?? ""]?.name === "Aang, Master of Elements";
+  const use = (s: S, label: string, targets?: Record<string, string[]>) => {
+    const src = idOf(s, "p1", "battlefield", "Test Benders");
+    const a = legalActions(s, "p1").find((x) => x.type === "activate" && x.source === src && x.label === label);
+    return settle(act(s, "p1", { type: "activate", source: src, ability: a?.type === "activate" ? a.ability : -1, targets }));
+  };
+
+  it("chaque maîtrise (eau, terre, air, puis feu en attaquant) fait piocher ; les quatre ce tour-ci transforment Aang", () => {
+    let s = scenario({
+      p1: { battlefield: [AANG, benders, "Island", "Forest", "Bear Cub"], library: lands("Island", 8) },
+      p2: { battlefield: ["Bear Cub"] },
+    });
+    const aang = idOf(s, "p1", "battlefield", AANG);
+    const hand = () => s.players.p1?.hand.length ?? 0;
+    const h0 = hand();
+    s = use(s, "eau");
+    s = use(s, "terre", { t: [idOf(s, "p1", "battlefield", "Forest")] });
+    s = use(s, "air", { t: [idOf(s, "p2", "battlefield", "Bear Cub")] });
+    expect(hand()).toBe(h0 + 3);
+    expect(back(s, aang)).toBe(false);
+    s = advanceUntil(s, (x) => x.pending?.kind === "declareAttackers");
+    s = act(s, "p1", { type: "declareAttackers", attackers: [{ id: aang, defender: "p2" }] });
+    s = settle(s);
+    expect(hand()).toBe(h0 + 4);
+    expect(back(s, aang)).toBe(true);
+  });
+
+  it("Aang, Master of Elements : vos sorts coûtent {W}{U}{B}{R}{G} de moins (le reste réduit le générique)", async () => {
+    const { moveWithSpec } = await import("../src/effects");
+    let s = scenario({ p1: { battlefield: ["Mountain"], hand: [AANG, "Shivan Dragon"] } });
+    moveWithSpec(s, "p1", idOf(s, "p1", "hand", AANG), { to: "battlefield", transformed: true });
+    // Shivan Dragon {4}{R}{R} : {R} retiré par le {R}, {4} par {W}{U}{B}{G} : reste {R}.
+    const dragon = idOf(s, "p1", "hand", "Shivan Dragon");
+    expect(castable(s, "p1", dragon)).toBe(true);
+    s = settle(act(s, "p1", { type: "cast", card: dragon }));
+    expect(idsOf(s, "p1", "battlefield", "Shivan Dragon")).toHaveLength(1);
+  });
+
+  it("Aang, Master of Elements : à l'entretien, transformé, 4 PV, quatre cartes, quatre marqueurs, 4 blessures à chaque adversaire", async () => {
+    const { moveWithSpec } = await import("../src/effects");
+    let s = scenario({ p1: { hand: [AANG], library: lands("Island", 8) }, active: "p2", step: "untap" });
+    const aang = moveWithSpec(s, "p1", idOf(s, "p1", "hand", AANG), { to: "battlefield", transformed: true }) as string;
+    s = advanceUntil(s, (x) => x.turn.active === "p2" && x.turn.step === "upkeep" && x.pending?.kind === "choice");
+    s = settle(s, (req) => (req.type === "yesNo" ? [1] : undefined));
+    expect(back(s, aang)).toBe(false);
+    expect(s.players.p1?.life).toBe(24);
+    expect(s.players.p1?.hand).toHaveLength(4);
+    expect(s.objects[aang]?.counters["+1/+1"]).toBe(4);
+    expect(s.players.p2?.life).toBe(16);
+  });
+});

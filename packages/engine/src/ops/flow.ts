@@ -4,7 +4,7 @@ import type { OpHandlers } from "../effects";
 import { evalAmount, evalCondition, nameOf, resolveRef, store } from "../effects";
 import { canPay, manaValue, payMana } from "../mana";
 import { collectEvidence, pickEvidence } from "../stack";
-import { isPlayer } from "../state";
+import { bent, isPlayer } from "../state";
 import { createDelayed, pushInline } from "../triggers";
 import type { ChoiceValue, ObjectFilter } from "../types";
 
@@ -26,6 +26,7 @@ export const HANDLERS: OpHandlers = {
     if (answer[0] !== 1 || !canPay(s, ctx.controller, e.cost, undefined, purpose)) return { skip: e.skip };
     if (e.life && (s.players[ctx.controller]?.life ?? 0) < e.life) return { skip: e.skip };
     payMana(s, ctx.controller, e.cost, undefined, purpose);
+    if (e.waterbend) bent(s, ctx.controller, "water");
     if (e.life) payLife(s, ctx.controller, e.life);
     return;
   },

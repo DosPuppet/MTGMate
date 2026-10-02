@@ -23,6 +23,8 @@ import type {
 export type Effect =
   /** Maîtrise de l'air (Avatar) : exile le permanent ou le sort ; son propriétaire peut le lancer pour {2} tant qu'il est exilé. */
   | { op: "airbend"; what: Ref }
+  /** « Vous maîtrisez [l'élément] » (après une maîtrise de la terre ou du feu) : événement et journal du tour. */
+  | { op: "bent"; kind: "water" | "earth" | "fire" | "air" }
   /** « Exploitez [cette Gemme d'infinité] » : ses capacités ∞ deviennent actives. */
   | { op: "harness" }
   /**

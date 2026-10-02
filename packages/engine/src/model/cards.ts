@@ -864,7 +864,12 @@ export interface PlayerStaticAbilityDef {
    * Sorts du joueur qui coûtent {N} de moins (Goblin Maskmaker : « vos sorts face cachée lancés ce tour-ci ») ; `anyMana` :
    * le mana se dépense pour eux comme s'il était de n'importe quelle couleur (Case File Auditor : les sorts d'Affaire).
    */
-  spellCost?: { filter: ObjectFilter; reduce?: number; anyMana?: boolean };
+  /**
+   * Coût des sorts correspondants : {N} de moins (`reduce`), mana de n'importe quel type (`anyMana`), ou des symboles
+   * colorés de moins (`reduceSymbols`, Aang, Master of Elements : « {W}{U}{B}{R}{G} de moins ») : chacun retire un
+   * symbole de sa couleur, sinon {1} du générique (601.2f).
+   */
+  spellCost?: { filter: ObjectFilter; reduce?: number; anyMana?: boolean; reduceSymbols?: ManaCost["colored"] };
   /** Déclenchements doublés ou supprimés (famille G, R4.5). */
   triggerMod?: TriggerMod;
   /** Remplacement ou prévention d'un événement chiffré, posé par un effet (familles E et F, R1). */

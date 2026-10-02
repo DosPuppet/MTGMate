@@ -503,6 +503,7 @@ export const fx = {
       duration: "permanent",
     },
     { op: "addCounters", what, amount: n },
+    { op: "bent", kind: "earth" },
   ],
   loseLife: (n: Amount, who: Ref = ref.you, store?: string): Effect => ({ op: "loseLife", who, amount: n, store }),
   /** « Chaque joueur perd la moitié de ses points de vie, arrondie à l'inférieur. » */
@@ -1737,6 +1738,8 @@ export const when = {
   expend: (n: number): TriggerSpec => ({ on: "expend", n }),
   forage: { on: "forage" } as TriggerSpec,
   collectEvidence: { on: "collectEvidence" } as TriggerSpec,
+  /** « Chaque fois que vous maîtrisez l'eau, la terre, le feu ou l'air » (Avatar). */
+  bend: (kinds?: ("water" | "earth" | "fire" | "air")[]): TriggerSpec => ({ on: "bend", ...(kinds ? { kinds } : {}) }),
   caseSolved: { on: "caseSolved" } as TriggerSpec,
   /** « Chaque fois que vous offrez un cadeau » */
   giveGift: { on: "gift" } as TriggerSpec,
@@ -2120,7 +2123,7 @@ export function triggered(
  * combat ». N peut être un montant (« maîtrise du feu X, X étant la force de Zuko »).
  */
 export function firebending(n: Amount): TriggeredAbilityDef {
-  return triggered(when.attacksSelf, [fx.addManaUntilEndOfCombat(["R"], n)], {
+  return triggered(when.attacksSelf, [fx.addManaUntilEndOfCombat(["R"], n), { op: "bent", kind: "fire" }], {
     label: typeof n === "number" ? `Maîtrise du feu ${n}` : "Maîtrise du feu X",
   });
 }

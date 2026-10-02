@@ -26,6 +26,7 @@ import { chooseReplacementOrder } from "../modifiers";
 import { auraHosts, copyCandidates, type EntersContext } from "../replacement";
 import { bounceSpell, exileSpell, spellToZone } from "../stack";
 import {
+  bent,
   bump,
   changeCounters,
   chars,
@@ -518,6 +519,11 @@ export const HANDLERS: OpHandlers = {
       if (!card || card.isToken) continue;
       grantPlay(s, card.owner, [card.id], "forever", { cost: { generic: 2, colored: {}, x: 0 }, source: ctx.sourceId });
     }
+    bent(s, ctx.controller, "air");
+    return;
+  },
+  bent(s, _r, e, ctx) {
+    bent(s, ctx.controller, e.kind);
     return;
   },
   bounce(s, _r, e, ctx) {

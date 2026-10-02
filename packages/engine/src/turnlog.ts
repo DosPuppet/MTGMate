@@ -26,6 +26,7 @@ function subjectOf(e: TurnLogEntry, byOwner?: boolean): PlayerId | undefined {
     case "sacrifice":
     case "attack":
     case "activate":
+    case "bend":
       return e.player;
     case "damage":
       return e.player;
@@ -55,6 +56,7 @@ function matches(e: TurnLogEntry, q: TurnLogQuery, me: PlayerId, subject?: Playe
   if (e.e === "cast" && q.fromZone && e.fromZone !== q.fromZone) return false;
   if (e.e === "cast" && q.warped && !e.warped) return false;
   if (e.e === "activate" && q.equip && !e.equip) return false;
+  if (e.e === "bend" && q.bendKind && e.kind !== q.bendKind) return false;
   if (e.e === "attack" && q.againstYou && e.defender !== me) return false;
   if (e.e === "damage") {
     if (q.combat !== undefined && e.combat !== q.combat) return false;
@@ -78,6 +80,11 @@ export function countTurnEvents(s: GameState, q: TurnLogQuery, me: PlayerId, sub
     const keys = new Set<string>();
     for (const e of s.turnLog) if (e.e === "damage" && matches(e, q, me, subject)) keys.add(e.sourceKey ?? e.sourceController);
     return keys.size;
+  }
+  if (q.distinctKinds) {
+    const kinds = new Set<string>();
+    for (const e of s.turnLog) if (e.e === "bend" && matches(e, q, me, subject)) kinds.add(e.kind);
+    return kinds.size;
   }
   if (subject !== undefined) return s.turnLog.reduce((n, e) => n + (matches(e, q, me, subject) ? weight(e, q) : 0), 0);
   if (q.perPlayer) {

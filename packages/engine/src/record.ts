@@ -113,8 +113,10 @@ export const RECORD_VERSION = 1;
  * - 41 : Avatar: The Last Airbender, lot B1 : maîtrise de l'eau en coût de sort (additionnel, X, facultatif), en garde,
  *   « à moins de payer » et en coût de remplacement des cartes liées ; contrôle d'un joueur limité à sa prochaine phase de
  *   combat ; marqueurs répartis d'une autre sorte, entre un nombre quelconque d'objets.
+ * - 42 : Avatar: The Last Airbender, lot B2 : événement « vous maîtrisez [l'élément] » (eau payée, terre, feu résolu, air),
+ *   noté au journal du tour ; réduction de coût par symboles colorés (Aang, Master of Elements).
  */
-export const RULES_VERSION = 41;
+export const RULES_VERSION = 42;
 
 /** Un point de contrôle toutes les N décisions (plus la dernière de la partie). */
 export const CHECKPOINT_EVERY = 25;

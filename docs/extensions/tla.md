@@ -78,3 +78,14 @@ Les scripts sont dans `packages/cards/src/tla/` : `cards` (cartes du méta), `wh
 - **Dette :** le contrôle d'un autre joueur (`controlNextTurn`) sert désormais à deux cartes : son entrée est retirée.
 - **Version des règles :** 41.
 - **Tests :** 9 tests de règles (« lot B1 »).
+
+## Sous-lot B2 : « chaque fois que vous maîtrisez » ✅ (262 / 280)
+
+- **Carte :** Avatar Aang // Aang, Master of Elements.
+- **Le moteur gagne :**
+  - l'événement « vous maîtrisez [l'élément] » (`bent`, `RulesEvent` `bend`) : l'eau quand un coût de maîtrise de l'eau est payé (capacité, sort, garde, « à moins de », « vous pouvez »), la terre et l'air quand l'effet se fait, le feu quand la capacité de maîtrise du feu se résout ; noté au journal du tour ;
+  - le déclencheur `when.bend(sortes?)` et la requête du journal `{ event: "bend", distinctKinds: true }` (« si vous avez fait les quatre ce tour-ci ») ;
+  - la réduction de coût par symboles (`spellCost.reduceSymbols`) : chaque symbole retire un symbole de sa couleur, sinon {1} du générique (601.2f).
+- **Approximation levée :** Aang, Swift Savior (méta) paie maintenant « maîtrise de l'eau {8} » en engageant aussi ses artefacts et créatures.
+- **Version des règles :** 42.
+- **Tests :** 3 tests de règles (« lot B2 »).

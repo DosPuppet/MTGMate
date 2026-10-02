@@ -261,8 +261,12 @@ export const CARDS: Record<string, CardScript> = {
         ],
         label: "Maîtrise de l'air",
       }),
-      // Maîtrise de l'eau {8} : payée en mana (les artefacts et créatures engagés n'aident pas).
-      activated({ mana: "{8}", effects: [fx.transform(ref.self)], label: "Maîtrise de l'eau 8 : transformez Aang" }),
+      activated({
+        mana: "{8}",
+        waterbend: true,
+        effects: [fx.transform(ref.self)],
+        label: "Maîtrise de l'eau {8} : transformez Aang",
+      }),
     ],
   },
   "Aang and La, Ocean's Fury": {

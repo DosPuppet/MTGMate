@@ -198,7 +198,6 @@ Dans l'ordre où elles ont été ajoutées, extension par extension.
   - `timing` Moseo, Vein's New Dean : la carte ciblée est une carte de créature quelconque ; sa valeur de mana (au plus les PV gagnés) est vérifiée à la résolution ;
   - `choix auto` Kíli the Resourceful : la première capacité d'équipement du tour coûte {0} d'office.
   - `choix auto` Web-slinging : la créature engagée renvoyée en main est choisie par le moteur (la moins chère) ;
-  - `règle` Maîtrise de l'eau (Aang, Swift Savior) : le coût se paie en mana, sans engager d'artefacts ni de créatures ;
   - `règle` Mosswood Dreadknight : depuis le cimetière, la carte peut être lancée comme créature aussi, pas seulement en Aventure ;
   - `règle` Interdimensional Web Watch : les deux mana sont d'une même couleur, et servent à tout sort lancé ailleurs que depuis la main ;
   - `règle` Realm of Koh : son jeton Esprit ne peut bloquer aucune créature (et non « aucune créature non-Esprit ») ;
