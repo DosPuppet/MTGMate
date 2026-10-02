@@ -589,10 +589,14 @@ export function spellCost(
     base && ownColored && !opts.free && ownReductionApplies(s, player, d, opts.targets, opts.card, opts.kicked)
       ? withoutColored(base, ownColored)
       : base;
+  // Maîtrise de l'eau en coût additionnel (Avatar) : {N} ou {X} de plus, à payer même sans payer le coût de mana.
+  const bend = (d.waterbend ?? 0) + (d.xCost === "waterbend" ? Math.max(0, opts.x ?? 0) : 0);
+  const bendCost: ManaCost | undefined = bend ? { generic: bend, colored: {}, x: 0 } : undefined;
+  const extra = opts.kicked && d.kicker ? (bendCost ? totalCost(d.kicker, 0, bendCost) : d.kicker) : bendCost;
   let cost0 = totalCost(
     base1,
     opts.free ? 0 : (opts.x ?? 0),
-    opts.kicked ? d.kicker : undefined,
+    extra,
     // 601.2f / 118.9d : un sort lancé sans payer son coût de mana paie quand même les augmentations (Thalia, the
     // Survivor) ; une réduction ne descend pas sous zéro.
     spellReduction(s, player, d, opts.targets, opts.fromZone, opts.card, opts.kicked),
@@ -628,6 +632,8 @@ export interface CastTerms {
   mayhem?: boolean;
   /** Maîtrise de l'air : lancée pour ce coût plutôt que pour son coût de mana. */
   costOverride?: ManaCost;
+  /** Le coût de remplacement est un coût de maîtrise de l'eau (Hama, the Bloodbender). */
+  waterbendOverride?: boolean;
   source: "hand" | "graveyard" | "exile" | "flashback" | "library";
   /** Doit être lancée sans payer son coût de mana (Etali). */
   free?: boolean;
@@ -760,6 +766,18 @@ function abilityCostReduction(s: GameState, player: PlayerId, source: ObjectId, 
  * Coût de mana d'une capacité activée : celui qui est imprimé, ou, pour une montée en puissance d'une source arrivée ce
  * tour-ci, ce coût diminué du coût de mana de la source (générique et symboles colorés).
  */
+/**
+ * Part d'un sort payable par la maîtrise de l'eau : son coût additionnel « waterbend {N} » ou « {X} », et son kicker s'il
+ * en est un (« you may waterbend {N} »).
+ */
+export function waterbendAmount(d: CardDef, kicked: boolean, x: number): number {
+  return (
+    (d.waterbend ?? 0) +
+    (d.xCost === "waterbend" ? Math.max(0, x) : 0) +
+    (kicked && d.kickerKind === "waterbend" && d.kicker ? d.kicker.generic : 0)
+  );
+}
+
 /** À quoi sert le mana d'une capacité activée : sa source, et la maîtrise de l'eau (tout le coût en est une, X compris). */
 export function abilityPurpose(source: ObjectId, ab: ActivatedAbilityDef): ManaPurpose {
   return { abilitySource: source, ...(ab.cost.waterbend ? { waterbend: Number.POSITIVE_INFINITY } : {}) };
@@ -1031,6 +1049,10 @@ function baseCastTerms(s: GameState, player: PlayerId, card: ObjectId): CastTerm
       if (src.controller !== player || !src.linked?.includes(card)) continue;
       const ab = chars(s, id).abilities.find((a) => a.kind === "castPermission" && a.linkedCards);
       if (ab?.kind === "castPermission" && (!ab.condition || checkCondition(s, ab.condition, player, id))) {
+        if (ab.linkedWaterbend) {
+          const generic = manaValue(d.manaCost);
+          return { source: "exile", costOverride: { generic, colored: {}, x: 0 }, waterbendOverride: true };
+        }
         if (!ab.linkedFilter) return { source: "exile", anyMana: true };
         const onceKey = ab.linkedOncePerTurn ? `linkedCast:${id}` : undefined;
         if (onceKey && s.turn.onceFired.includes(onceKey)) continue;
@@ -1303,6 +1325,10 @@ export function castSpell(s: GameState, player: PlayerId, card: ObjectId, choice
   // Soul Immolation : « flétrissez X ; X ne peut pas dépasser la plus grande endurance parmi vos créatures ».
   if (d.xCost === "blight" && x > greatestToughness(s, player)) throw new RulesError("X dépasse la plus grande endurance");
   const kicked = !!choices.kicked && !!d.kicker;
+  // Part du coût payable par la maîtrise de l'eau : coût additionnel, kicker, ou coût de remplacement (Hama).
+  const bendPaid =
+    waterbendAmount(d, kicked, x) +
+    (terms.waterbendOverride && terms.costOverride && !free && !alternative ? terms.costOverride.generic : 0);
   // Coûts additionnels : vérifiés avant tout changement d'état.
   const opts = additionalOptions(s, player, card, d, flashback);
   if (!opts) throw new RulesError("Impossible de payer le coût additionnel");
@@ -1491,6 +1517,7 @@ export function castSpell(s: GameState, player: PlayerId, card: ObjectId, choice
         convoke: hasConvoke(s, player, d),
         delve: playerStatic(s, player, "delveSpells"),
         fromHand: terms.source === "hand",
+        ...(bendPaid ? { waterbend: bendPaid } : {}),
       },
       taps,
       spent,

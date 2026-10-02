@@ -56,7 +56,13 @@ export interface CardDef {
    * « flétrissez X » (`blight`, Soul Immolation : X au plus la plus grande endurance parmi vos créatures ; la créature
    * est choisie comme pour un coût de capacité, `blightTarget`).
    */
-  xCost?: "life" | "blight";
+  xCost?: "life" | "blight" | "waterbend";
+  /**
+   * Maîtrise de l'eau en coût additionnel du sort (Avatar) : « waterbend {N} » (`waterbend: N`), « waterbend {X} »
+   * (`xCost: "waterbend"`), ou facultatif « you may waterbend {N} » (le kicker, `kickerKind: "waterbend"`). Ce mana-là
+   * peut être payé en engageant des artefacts et créatures dégagés ({1} chacun).
+   */
+  waterbend?: number;
   /**
    * Coût additionnel obligatoire « flétrissez N ou payez [mana] » (Wild Unraveling, Bogslither's Embrace) : le kicker
    * sans mana (`kickerCost.blight`) ou, s'il n'est pas payé, ce mana.
@@ -106,6 +112,8 @@ export interface CardDef {
     sacrificeFilter?: ObjectFilter;
     /** « Garde — Réunissez des preuves N » (Axebane Ferox). */
     collectEvidence?: number;
+    /** « Garde — Maîtrise de l'eau {N} » (The Unagi of Kyoshi Island) : le mana de la garde est un coût de maîtrise de l'eau. */
+    waterbend?: boolean;
   };
   /** Coûts en plus du coût de flashback (Twinned Vision : « défaussez une carte » ; Group Project : « engagez trois créatures »). */
   flashbackCost?: AdditionalCost;
@@ -208,7 +216,7 @@ export interface CardDef {
   /** Assemblage (701.42) : les deux parties et la carte assemblée, par nom. */
   meld?: { parts: string[]; result?: string };
   /** Libellé du kicker : Progéniture (702.175) ou Cadeau (702.174), lus dans le texte (Bloomburrow). */
-  kickerKind?: "offspring" | "gift" | "bargain" | "blight" | "teamwork" | "evidence" | "exileGraveyard";
+  kickerKind?: "offspring" | "gift" | "bargain" | "blight" | "teamwork" | "evidence" | "exileGraveyard" | "waterbend";
   /** Cadeau (702.174) : ce que reçoit l'adversaire choisi si le cadeau est promis. */
   gift?: GiftKind;
   /** « En coût additionnel, fourragez ou payez [mana] » (Feed the Cycle) : le coût alternatif « Fourrager » l'évite. */
@@ -713,6 +721,11 @@ export interface CastPermissionAbilityDef {
   freeMaxManaValueCreatures?: true;
   /** Null Summoner : lancer les cartes liées exilées (mana de n'importe quel type), sous condition. */
   linkedCards?: true;
+  /**
+   * Hama, the Bloodbender : les cartes liées se lancent en maîtrisant l'eau {X} plutôt qu'en payant leur coût de mana,
+   * X étant leur valeur de mana.
+   */
+  linkedWaterbend?: true;
   /** Intrepid Paleontologist : seulement les cartes liées que vous possédez et qui correspondent (mana ordinaire). */
   linkedFilter?: ObjectFilter;
   /** … et le permanent arrive avec un marqueur de finalité. */

@@ -635,12 +635,23 @@ export function unlockDoor(s: GameState, id: ObjectId, door: number): void {
 }
 
 /** Salle : carte scindée dont les moitiés sont des enchantements (portes). */
+const COMBAT_STEPS = new Set([
+  "beginCombat",
+  "declareAttackers",
+  "declareBlockers",
+  "firstStrikeDamage",
+  "combatDamage",
+  "endCombat",
+]);
+
 /** 722 : le joueur qui prend la décision en attente (le contrôleur du tour, s'il y en a un). */
 export function decider(s: GameState): PlayerId | undefined {
   const p = s.pending;
   if (!p) return undefined;
   const tc = s.turnControl;
-  if (tc && tc.turn === s.turn.number && p.player === tc.player && !s.players[tc.by]?.lost) return tc.by;
+  const inCombat = COMBAT_STEPS.has(s.turn.step);
+  if (tc && tc.turn === s.turn.number && p.player === tc.player && !s.players[tc.by]?.lost && (!tc.combatOnly || inCombat))
+    return tc.by;
   return p.player;
 }
 

@@ -114,7 +114,7 @@ function stripReminder(text: string): string {
 
 /** Garde : « Ward {2} », « Ward—Pay 7 life. » ou « Ward—{3}, Pay 3 life. » */
 const WARD =
-  /\bward(?: ((?:\{[^}]+\})+)|—(?:((?:\{[^}]+\})+), )?pay (\d+) life\.?|—discard a card( at random)?\.?|—sacrifice (an?|two|three|four) (nonland permanents?|permanents?|creatures?)\.?|—collect evidence (\d+)\.?)/i;
+  /\bward(?: ((?:\{[^}]+\})+)|—(?:((?:\{[^}]+\})+), )?pay (\d+) life\.?|—discard a card( at random)?\.?|—sacrifice (an?|two|three|four) (nonland permanents?|permanents?|creatures?)\.?|—collect evidence (\d+)\.?|—waterbend ((?:\{[^}]+\})+)\.?)/i;
 
 /** « Equip {3}{W} » (702.6) : capacité activée en rituel, cible une créature que vous contrôlez. */
 /** « Equip {2} » ou, avec un nom de capacité, « Gae Bolg — Equip {4} ». */
@@ -181,6 +181,8 @@ export function parseWard(text: string): CardDef["ward"] {
   }
   // « Ward—Collect evidence 4. » (Axebane Ferox)
   if (m[7]) return { collectEvidence: Number(m[7]) };
+  // « Ward—Waterbend {4}. » (The Unagi of Kyoshi Island)
+  if (m[8]) return { mana: parseManaCost(m[8]), waterbend: true };
   // « Ward—Discard a card [at random]. » (Gideon the Oathless, Alpharael, Stonechosen)
   if (!m[3]) return m[4] ? { discard: true, discardRandom: true } : { discard: true };
   return { mana: m[2] ? parseManaCost(m[2]) : undefined, life: Number(m[3]) };
@@ -763,6 +765,11 @@ function singleDef(raw: RawCard, script: CardScript | undefined, set: string): C
     );
   const exileGraveyard = exileOrPay ? ["one", "two", "three", "four", "five"].indexOf(exileOrPay[1] as string) + 1 : 0;
   const teamwork = Number(/^Teamwork (\d+)/m.exec(raw.oracleText)?.[1] ?? 0);
+  // Avatar : maîtrise de l'eau en coût additionnel, « waterbend {N} », « waterbend {X} » ou « you may waterbend {N} » (kicker).
+  const waterbendCost = /As an additional cost to cast this spell, (you may )?waterbend \{(\d+|X)\}/.exec(raw.oracleText);
+  const waterbendKicker = waterbendCost?.[1] ? `{${waterbendCost[2]}}` : undefined;
+  const waterbendX = !!waterbendCost && !waterbendCost[1] && waterbendCost[2] === "X";
+  const waterbendN = waterbendCost && !waterbendCost[1] && !waterbendX ? Number(waterbendCost[2]) : undefined;
   const harmonize = /^Harmonize ((?:\{[^}]+\})+)/m.exec(raw.oracleText)?.[1];
   const isSpell = types.includes("Instant") || types.includes("Sorcery");
   const bloomburrowAbilities: CardDef["abilities"] = [];
@@ -890,24 +897,28 @@ function singleDef(raw: RawCard, script: CardScript | undefined, set: string): C
       ? parseManaCost(script.kicker)
       : offspring
         ? parseManaCost(offspring)
-        : gift || bargain || blight || teamwork || evidence || exileGraveyard
-          ? parseManaCost("{0}")
-          : undefined,
+        : waterbendKicker
+          ? parseManaCost(waterbendKicker)
+          : gift || bargain || blight || teamwork || evidence || exileGraveyard
+            ? parseManaCost("{0}")
+            : undefined,
     kickerKind: offspring
       ? "offspring"
-      : gift
-        ? "gift"
-        : bargain
-          ? "bargain"
-          : blight
-            ? "blight"
-            : teamwork
-              ? "teamwork"
-              : evidence
-                ? "evidence"
-                : exileGraveyard
-                  ? "exileGraveyard"
-                  : undefined,
+      : waterbendKicker
+        ? "waterbend"
+        : gift
+          ? "gift"
+          : bargain
+            ? "bargain"
+            : blight
+              ? "blight"
+              : teamwork
+                ? "teamwork"
+                : evidence
+                  ? "evidence"
+                  : exileGraveyard
+                    ? "exileGraveyard"
+                    : undefined,
     gift,
     kickerCost:
       script?.kickerCost ??
@@ -941,7 +952,8 @@ function singleDef(raw: RawCard, script: CardScript | undefined, set: string): C
     mayhem: mayhem ? parseManaCost(mayhem) : undefined,
     paradigm: paradigm || undefined,
     webSlinging: webSlinging ? parseManaCost(webSlinging) : undefined,
-    xCost: payLifeX ? "life" : blightX ? "blight" : undefined,
+    xCost: payLifeX ? "life" : blightX ? "blight" : waterbendX ? "waterbend" : undefined,
+    waterbend: waterbendN,
     kickerOrPay: blightOrPay ? parseManaCost(blightOrPay) : exileOrPay ? parseManaCost(exileOrPay[2] as string) : undefined,
     shockLand: /(?:As this land enters, |Then )you may pay (\d+) life\. If you don't, it enters tapped\./.exec(raw.oracleText)
       ? Number(/you may pay (\d+) life/.exec(raw.oracleText)?.[1])

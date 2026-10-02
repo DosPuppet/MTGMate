@@ -198,7 +198,10 @@ export function describeEvents(
         );
         break;
       case "turnControl":
-        add(`${who(e.by)} ${e.by === me ? "contrôlez" : "contrôle"} le tour de ${whom(e.player)}.`, "info");
+        add(
+          `${who(e.by)} ${e.by === me ? "contrôlez" : "contrôle"} ${e.combatOnly ? "la prochaine phase de combat" : "le tour"} de ${whom(e.player)}.`,
+          "info",
+        );
         break;
       case "attach":
         add(`${name(e.defId)} est attaché à ${name(e.toDefId)}.`, "info");

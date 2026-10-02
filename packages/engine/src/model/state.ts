@@ -758,7 +758,8 @@ export interface GameState {
    * 722 : « vous contrôlez [ce joueur] pendant son prochain tour » (The Dominion Bracelet). `turn` est fixé au début
    * de ce tour ; pendant ce tour, les décisions de `player` sont prises par `by`.
    */
-  turnControl?: { player: PlayerId; by: PlayerId; turn?: number };
+  /** `combatOnly` : seulement pendant la prochaine phase de combat de ce joueur (Secret of Bloodbending). */
+  turnControl?: { player: PlayerId; by: PlayerId; turn?: number; combatOnly?: boolean };
   /** Tours supplémentaires à venir (500.7 : le plus récent d'abord). */
   extraTurns?: PlayerId[];
   /** « Terminez le tour » (Time Stop) : le tour passe directement à l'étape de nettoyage. */

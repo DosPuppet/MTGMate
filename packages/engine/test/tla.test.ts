@@ -9,7 +9,7 @@ import * as dsl from "../src/dsl";
 import { bump } from "../src/layers";
 import { legalActions } from "../src/legal";
 import { manaAbilitiesOf } from "../src/mana";
-import { chars } from "../src/state";
+import { chars, decider } from "../src/state";
 import type { ChoiceRequest, ChoiceValue, GameState, ManaType } from "../src/types";
 import { act, advanceUntil, castNowOf, customCard, idOf, idsOf, passAccepting, scenario, untilCastNow } from "./helpers";
 
@@ -4236,5 +4236,145 @@ describe("lot A, incolores et terrains", () => {
         expect(chars(s, angel).keywords).not.toContain("unblockable");
       });
     });
+  });
+});
+
+describe("lot B1 : maîtrise de l'eau en coût de sort", () => {
+  const yesTo =
+    (intent: string, value = 1): Answer =>
+    (req) =>
+      req.type === "yesNo" && req.intent === intent ? [value] : undefined;
+
+  it("Benevolent River Spirit : maîtrise de l'eau {5} en plus de {U}{U}, payable en engageant ses créatures", () => {
+    const run = (bears: number) =>
+      scenario({
+        p1: {
+          battlefield: [...lands("Island", 2), ...Array(bears).fill("Bear Cub")],
+          hand: ["Benevolent River Spirit"],
+          library: lands("Island", 3),
+        },
+      });
+    const short = run(4);
+    expect(castable(short, "p1", idOf(short, "p1", "hand", "Benevolent River Spirit"))).toBe(false);
+    let s = run(5);
+    s = settle(cast(s, "p1", "Benevolent River Spirit"));
+    expect(idsOf(s, "p1", "battlefield", "Benevolent River Spirit")).toHaveLength(1);
+    expect(idsOf(s, "p1", "battlefield", "Bear Cub").every((id) => s.objects[id]?.tapped)).toBe(true);
+  });
+
+  it("Crashing Wave : maîtrise de l'eau {X}, engage X créatures ciblées, puis trois marqueurs d'étourdissement répartis", () => {
+    let s = scenario({
+      p1: { battlefield: [...lands("Island", 2), "Bear Cub", "Bear Cub"], hand: ["Crashing Wave"] },
+      p2: { battlefield: ["Serra Angel", "Fire Elemental"] },
+    });
+    const foes = [idOf(s, "p2", "battlefield", "Serra Angel"), idOf(s, "p2", "battlefield", "Fire Elemental")];
+    s = settle(cast(s, "p1", "Crashing Wave", { x: 2, targets: { t: foes } }));
+    expect(foes.every((id) => s.objects[id]?.tapped)).toBe(true);
+    expect(foes.reduce((n, id) => n + (s.objects[id]?.counters.stun ?? 0), 0)).toBe(3);
+  });
+
+  it("Spirit Water Revival : sans maîtrise, piochez deux cartes ; avec maîtrise de l'eau {6}, cimetière mélangé, sept cartes, pas de main maximale", () => {
+    const setup = () =>
+      scenario({
+        p1: {
+          battlefield: [...lands("Island", 3), ...Array(6).fill("Bear Cub")],
+          hand: ["Spirit Water Revival"],
+          graveyard: ["Opt", "Opt"],
+          library: lands("Island", 10),
+        },
+      });
+    let s = settle(cast(setup(), "p1", "Spirit Water Revival"));
+    expect(s.players.p1?.hand).toHaveLength(2);
+    expect(exiled(s, "Spirit Water Revival")).toHaveLength(1);
+    s = settle(cast(setup(), "p1", "Spirit Water Revival", { kicked: true }));
+    expect(s.players.p1?.hand).toHaveLength(7);
+    expect(s.players.p1?.graveyard.filter((id) => nameOf(s, id) === "Opt")).toHaveLength(0);
+    expect(s.players.p1?.library).toHaveLength(5);
+    expect(s.players.p1?.command.some((id) => nameOf(s, id) === "Spirit Water Revival")).toBe(true);
+  });
+
+  it("Secret of Bloodbending : vous contrôlez l'adversaire seulement pendant sa prochaine phase de combat", () => {
+    let s = scenario({
+      p1: { battlefield: lands("Island", 4), hand: ["Secret of Bloodbending"] },
+      p2: { battlefield: ["Bear Cub"] },
+    });
+    s = settle(cast(s, "p1", "Secret of Bloodbending", { targets: { t: ["p2"] } }));
+    expect(s.turnControl).toMatchObject({ player: "p2", by: "p1", combatOnly: true });
+    s = advanceUntil(s, (x) => x.turn.active === "p2" && x.turn.step === "main1" && x.pending?.kind === "priority");
+    expect(decider(s)).toBe("p2");
+    s = advanceUntil(s, (x) => x.turn.active === "p2" && x.pending?.kind === "declareAttackers");
+    expect(decider(s)).toBe("p1");
+    s = advanceUntil(s, (x) => x.turn.active === "p2" && x.turn.step === "main2" && x.pending?.kind === "priority");
+    expect(decider(s)).toBe("p2");
+    expect(s.turnControl).toBeUndefined();
+  });
+
+  it("The Unagi of Kyoshi Island : la garde se paie en maîtrisant l'eau {4} (artefacts et créatures de l'adversaire engagés)", () => {
+    let s = scenario({
+      p1: { battlefield: ["The Unagi of Kyoshi Island"], library: lands("Island", 4) },
+      p2: { battlefield: ["Mountain", "Mountain", ...Array(4).fill("Bear Cub")], hand: ["Lightning Strike"] },
+      active: "p2",
+    });
+    const unagi = idOf(s, "p1", "battlefield", "The Unagi of Kyoshi Island");
+    s = settle(cast(s, "p2", "Lightning Strike", { targets: { t: [unagi] } }), yesTo("unlessPay"));
+    expect(idsOf(s, "p2", "battlefield", "Bear Cub").filter((id) => s.objects[id]?.tapped)).toHaveLength(4);
+    expect(s.objects[unagi]?.damage).toBe(3);
+  });
+
+  it("Waterbending Lesson : piochez trois cartes, puis défaussez-en une à moins de maîtriser l'eau {2}", () => {
+    const setup = () =>
+      scenario({
+        p1: {
+          battlefield: [...lands("Island", 4), "Bear Cub", "Bear Cub"],
+          hand: ["Waterbending Lesson"],
+          library: lands("Island", 5),
+        },
+      });
+    let s = settle(cast(setup(), "p1", "Waterbending Lesson"), yesTo("unlessPay"));
+    expect(s.players.p1?.hand).toHaveLength(3);
+    expect(idsOf(s, "p1", "battlefield", "Bear Cub").every((id) => s.objects[id]?.tapped)).toBe(true);
+    s = settle(cast(setup(), "p1", "Waterbending Lesson"), yesTo("unlessPay", 0));
+    expect(s.players.p1?.hand).toHaveLength(2);
+  });
+
+  it("Foggy Swamp Visions : exilez X cartes de créature des cimetières, un jeton copie de chacune, sacrifié à votre prochaine étape de fin", () => {
+    let s = scenario({
+      p1: { battlefield: [...lands("Swamp", 3), "Bear Cub"], hand: ["Foggy Swamp Visions"] },
+      p2: { graveyard: ["Serra Angel"] },
+    });
+    const angel = idOf(s, "p2", "graveyard", "Serra Angel");
+    s = settle(cast(s, "p1", "Foggy Swamp Visions", { x: 1, targets: { t: [angel] } }));
+    expect(exiled(s, "Serra Angel")).toHaveLength(1);
+    expect(idsOf(s, "p1", "battlefield", "Serra Angel")).toHaveLength(1);
+    s = advanceUntil(s, (x) => x.turn.step === "cleanup");
+    expect(idsOf(s, "p1", "battlefield", "Serra Angel")).toHaveLength(0);
+  });
+
+  it("Ruinous Waterbending : toutes les créatures -2/-2 ; maîtrise de l'eau {4} payée : 1 PV par créature qui meurt ce tour-ci", () => {
+    let s = scenario({
+      p1: { battlefield: [...lands("Swamp", 3), ...Array(4).fill("Bear Cub")], hand: ["Ruinous Waterbending"] },
+      p2: { battlefield: ["Bear Cub", "Serra Angel"] },
+    });
+    s = settle(cast(s, "p1", "Ruinous Waterbending", { kicked: true }));
+    expect(idsOf(s, "p1", "battlefield", "Bear Cub")).toHaveLength(0);
+    expect(idsOf(s, "p2", "battlefield", "Bear Cub")).toHaveLength(0);
+    expect(chars(s, idOf(s, "p2", "battlefield", "Serra Angel")).power).toBe(2);
+    expect(s.players.p1?.life).toBe(25);
+  });
+
+  it("Hama, the Bloodbender : l'adversaire meule trois cartes ; la carte non-créature exilée se lance pendant votre tour en maîtrisant l'eau {X}", () => {
+    let s = scenario({
+      p1: { battlefield: [...lands("Island", 5), "Bear Cub", "Bear Cub"], hand: ["Hama, the Bloodbender"] },
+      p2: { library: ["Lightning Strike", "Bear Cub", "Mountain", "Island"] },
+    });
+    s = settle(cast(s, "p1", "Hama, the Bloodbender", { targets: { t: ["p2"] } }));
+    expect(s.players.p2?.library).toHaveLength(1);
+    const strike = exiled(s, "Lightning Strike")[0] as string;
+    expect(strike).toBeDefined();
+    // Lightning Strike (valeur de mana 2) : maîtrise de l'eau {2}, payée en engageant les deux Ours.
+    expect(castable(s, "p1", strike)).toBe(true);
+    s = settle(act(s, "p1", { type: "cast", card: strike, targets: { t: ["p2"] } }));
+    expect(s.players.p2?.life).toBe(17);
+    expect(idsOf(s, "p1", "battlefield", "Bear Cub").every((id) => s.objects[id]?.tapped)).toBe(true);
   });
 });

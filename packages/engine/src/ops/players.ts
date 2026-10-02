@@ -210,7 +210,7 @@ export const HANDLERS: OpHandlers = {
   },
   controlNextTurn(s, _r, e, ctx) {
     const p = resolveRef(s, ctx, e.who).find((x) => isPlayer(s, x));
-    if (p) s.turnControl = { player: p, by: ctx.controller };
+    if (p) s.turnControl = { player: p, by: ctx.controller, ...(e.combatOnly ? { combatOnly: true } : {}) };
     return;
   },
   endTurn(s, r) {

@@ -43,6 +43,7 @@ import {
   suggestedCrew,
   tapOthersOptions,
   warpOf,
+  waterbendAmount,
 } from "./stack";
 import { matchesCard, matchesObjectFilter } from "./targets";
 
@@ -87,6 +88,14 @@ function kickerPrompt(d: CardDef): { title: string; without: string; with: strin
   if (d.kickerKind === "offspring" && d.kicker) {
     const c = costToText(d.kicker);
     return { title: `Payer la progéniture ${c} ?`, without: "Sans progéniture", with: `Progéniture ${c}` };
+  }
+  if (d.kickerKind === "waterbend" && d.kicker) {
+    const c = costToText(d.kicker);
+    return {
+      title: `Maîtriser l'eau ${c} (vos artefacts et créatures dégagés peuvent payer {1} chacun) ?`,
+      without: "Sans maîtriser l'eau",
+      with: `Maîtriser l'eau ${c}`,
+    };
   }
   if (d.kickerKind === "blight" && d.kickerCost?.blight) {
     const n = d.kickerCost.blight;
@@ -177,9 +186,15 @@ function targetsAvailable(opts: TargetOption[]): boolean {
 }
 
 /** Plus grande valeur de X payable pour un coût qui dépend de X. */
-function maxXFor(s: GameState, player: PlayerId, costAt: (x: number) => ManaCost): number {
-  const upper = availableMana(s, player) - manaValue(costAt(0));
-  for (let x = upper; x > 0; x--) if (canPay(s, player, costAt(x))) return x;
+function maxXFor(
+  s: GameState,
+  player: PlayerId,
+  costAt: (x: number) => ManaCost,
+  /** À quoi sert le mana pour cette valeur de X (maîtrise de l'eau {X}). */
+  purposeAt?: (x: number) => ManaPurpose,
+): number {
+  const upper = availableMana(s, player, undefined, purposeAt?.(Number.MAX_SAFE_INTEGER)) - manaValue(costAt(0));
+  for (let x = upper; x > 0; x--) if (canPay(s, player, costAt(x), undefined, purposeAt?.(x))) return x;
   return 0;
 }
 
@@ -293,12 +308,18 @@ export function legalActions(s: GameState, player: PlayerId): ActionOption[] {
     if (!auto) return;
     const spent = [...auto.tap, ...auto.exile, ...auto.bounce];
     const exclude = spent.length ? new Set(spent) : undefined;
-    const purpose = {
+    const purpose0: ManaPurpose = {
       spell: spellView(d, player),
       convoke: hasConvoke(s, player, d),
       delve: playerStatic(s, player, "delveSpells"),
       fromHand: terms.source === "hand",
     };
+    // Maîtrise de l'eau en coût additionnel : sa part du coût, selon le kicker et X.
+    const purposeFor = (kicked: boolean, x: number): ManaPurpose => {
+      const w = waterbendAmount(d, kicked, x) + (terms.waterbendOverride ? (terms.costOverride?.generic ?? 0) : 0);
+      return w ? { ...purpose0, waterbend: w } : purpose0;
+    };
+    const purpose = purposeFor(false, 0);
     const base = {
       flashback,
       anyMana: terms.anyMana,
@@ -346,13 +367,19 @@ export function legalActions(s: GameState, player: PlayerId): ActionOption[] {
             : d.kickerCost.exileGraveyard !== undefined
               ? !!graveyardToExile(s, player, card, d.kickerCost.exileGraveyard)
               : !!kickerCostPermanent(s, player, card, d))) &&
-      canPay(s, player, withExtra(spellCost(s, player, d, { ...base, kicked: true, free: terms.free })), undefined, purpose);
+      canPay(
+        s,
+        player,
+        withExtra(spellCost(s, player, d, { ...base, kicked: true, free: terms.free })),
+        undefined,
+        purposeFor(true, 0),
+      );
     if (!terms.free && !normal && !freeAvailable && !altAvailable && !kickerAffordable) return;
     // Le mana à payer à la place du sacrifice est-il disponible ?
     if (sac?.orPay) {
       sac.orPayAffordable = canPay(s, player, totalCost(spellCost(s, player, d, base), 0, sac.orPay), undefined, purpose);
     }
-    const hasX = !terms.free && !!(flashback ? (d.flashback ?? d.manaCost)?.x : d.manaCost?.x);
+    const hasX = (!terms.free && !!(flashback ? (d.flashback ?? d.manaCost)?.x : d.manaCost?.x)) || d.xCost === "waterbend";
     // Vicious Rivalry : X se paie en points de vie.
     // Soul Immolation : X flétri, au plus la plus grande endurance parmi vos créatures.
     const lifeX = !normal
@@ -369,7 +396,16 @@ export function legalActions(s: GameState, player: PlayerId): ActionOption[] {
       ...(variant === "faceDown" ? { faceDown: true, faceName: "Face cachée" } : {}),
       ...(variant === "warp" ? { warp: true } : {}),
       modes,
-      xMax: lifeX ?? (hasX && normal ? maxXFor(s, player, (x) => withExtra(spellCost(s, player, d, { ...base, x }))) : null),
+      xMax:
+        lifeX ??
+        (hasX && (normal || terms.free)
+          ? maxXFor(
+              s,
+              player,
+              (x) => withExtra(spellCost(s, player, d, { ...base, x, free: terms.free })),
+              (x) => purposeFor(false, x),
+            )
+          : null),
       kickerAffordable,
       kickerPrompt: d.kicker ? kickerPrompt(d) : undefined,
       fromGraveyard: terms.source === "graveyard" || terms.source === "flashback" ? true : undefined,

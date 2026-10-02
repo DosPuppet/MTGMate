@@ -55,6 +55,8 @@ const EXTRA_P1: Record<string, string[]> = {
   // {B}{B}{B}{B}{B}{B} et {X}{X}{B}{B}{B}{B}.
   "Doomsday Excruciator": ["Swamp", "Swamp", "Swamp"],
   "Meathook Massacre II": ["Swamp", "Swamp"],
+  // {U}{U}{U}{U} : trois Îles ne suffisent pas.
+  "Secret of Bloodbending": ["Island"],
   // « un Équipement ciblé ».
   "Stolen Uniform": ["Monk's Fist"],
   // « copies d'un jeton ciblé » : Fountainport crée un Poisson.

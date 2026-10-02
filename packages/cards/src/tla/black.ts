@@ -349,4 +349,36 @@ export const BLACK: Record<string, CardScript> = {
       ],
     ),
   },
+  // Maîtrise de l'eau {X} en coût additionnel : lue dans le texte.
+  "Foggy Swamp Visions": {
+    spell: spell(
+      [
+        {
+          ...target.cardInGraveyard("t", { types: ["Creature"] }, "any", "carte de créature d'un cimetière"),
+          count: 99,
+          countX: true,
+        },
+      ],
+      [fx.exileCard(ref.target(), { name: "v" }), fx.copyToken(ref.stored("v"), { sacrificeAtEndStep: true })],
+    ),
+  },
+  // « vous pouvez maîtriser l'eau {4} » : un kicker lu dans le texte.
+  "Ruinous Waterbending": {
+    spell: spell(
+      [],
+      [
+        fx.pumpAll({ types: ["Creature"] }, -2, -2),
+        ...fx.when(
+          cond.kicked,
+          fx.emblem(
+            "Ruinous Waterbending",
+            "Chaque fois qu'une créature meurt ce tour-ci, vous gagnez 1 point de vie.",
+            [triggered(when.dies({ types: ["Creature"] }), [fx.gainLife(1)], { label: "Une créature meurt : gagnez 1 PV" })],
+            false,
+            true,
+          ),
+        ),
+      ],
+    ),
+  },
 };

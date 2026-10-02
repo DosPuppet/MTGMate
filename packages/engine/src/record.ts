@@ -110,8 +110,11 @@ export const RECORD_VERSION = 1;
  *   bataille (« quand elle meurt, X étant sa force ») sont ses dernières informations connues (608.2h).
  * - 40 : Avatar: The Last Airbender, lot A6 : « X ne peut pas être 0 » (`minX`) refuse une activation avec un X trop petit
  *   (Katara, Water Tribe's Hope ; Gogo, Master of Mimicry).
+ * - 41 : Avatar: The Last Airbender, lot B1 : maîtrise de l'eau en coût de sort (additionnel, X, facultatif), en garde,
+ *   « à moins de payer » et en coût de remplacement des cartes liées ; contrôle d'un joueur limité à sa prochaine phase de
+ *   combat ; marqueurs répartis d'une autre sorte, entre un nombre quelconque d'objets.
  */
-export const RULES_VERSION = 40;
+export const RULES_VERSION = 41;
 
 /** Un point de contrôle toutes les N décisions (plus la dernière de la partie). */
 export const CHECKPOINT_EVERY = 25;

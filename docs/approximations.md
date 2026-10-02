@@ -346,5 +346,7 @@ Dans l'ordre où elles ont été ajoutées, extension par extension.
   - `timing` Bender's Waterskin : il se dégage au début de l'entretien de chaque autre joueur (capacité déclenchée), et non pendant son étape de dégagement ;
   - `règle` Trusty Boomerang : la capacité « {1}, {T} : engagez une créature ciblée, renvoyez le Boomerang » est portée par l'Équipement (elle reste si la créature équipée perd ses capacités) ;
   - `règle` Aang's Journey (kické) : deux recherches, donc deux mélanges.
+  - `règle` Hama, the Bloodbender : la carte non-créature, non-terrain du cimetière est exilée d'office s'il y en a une (« jusqu'à une ») ;
+  - `règle` Secret of Bloodbending : sans maîtrise de l'eau, vous contrôlez l'adversaire pendant la première phase de combat de son prochain tour (une phase de combat supplémentaire de ce tour lui revient).
 - **Légalité Standard :** instantané des légalités Scryfall au moment de l'import (`legalities.standard` dans `data/<set>.json`). Après une rotation ou une annonce de bannissement, réimporter les sets (`npm run import-cards -- <set>`).
 - **Images des jetons :** celle du jeton Scryfall le plus proche (même nom, puis mêmes F/E et couleurs ; `data/tokens.json`, `npm run import-tokens`) ; un jeton de nom inconnu garde le cadre texte.

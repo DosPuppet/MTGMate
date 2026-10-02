@@ -615,6 +615,11 @@ export const fx = {
     const flat = effects.flat();
     return [{ op: "mayPay", cost: parseManaCost(cost), prompt, skip: flat.length }, ...flat];
   },
+  /** « Vous pouvez maîtriser l'eau {N}. Si vous le faites, … » : les artefacts et créatures dégagés paient {1} chacun. */
+  mayWaterbend: (cost: string, prompt: string, ...effects: Effects): Effect[] => {
+    const flat = effects.flat();
+    return [{ op: "mayPay", cost: parseManaCost(cost), prompt, skip: flat.length, waterbend: true }, ...flat];
+  },
   /** Contrecarre le sort ou la capacité désigné. */
   counter: (what: Ref, store?: string): Effect => ({ op: "counter", what, store }),
   /** « Contrecarrez-le ; exilez-le au lieu de le mettre au cimetière » (Syncopate). */
@@ -622,7 +627,7 @@ export const fx = {
   /** « Contrecarrez-le à moins que son contrôleur ne paie X » : le paiement annule les effets qui suivent. */
   unlessPays: (
     who: Ref,
-    cost: { mana?: string; life?: number; paidStore?: string; genericAmount?: Amount },
+    cost: { mana?: string; life?: number; paidStore?: string; genericAmount?: Amount; waterbend?: boolean },
     ...effects: Effects
   ): Effect[] => {
     const flat = effects.flat();
@@ -634,6 +639,7 @@ export const fx = {
         genericAmount: cost.genericAmount,
         life: cost.life,
         paidStore: cost.paidStore,
+        waterbend: cost.waterbend,
         skip: flat.length,
       },
       ...flat,
@@ -736,7 +742,11 @@ export const fx = {
   }),
   setLife: (amount: Amount, who: Ref = ref.you): Effect => ({ op: "setLife", who, amount }),
   /** « Vous contrôlez [le joueur] pendant son prochain tour » (722). */
-  controlNextTurn: (who: Ref): Effect => ({ op: "controlNextTurn", who }),
+  controlNextTurn: (who: Ref, combatOnly?: boolean): Effect => ({
+    op: "controlNextTurn",
+    who,
+    ...(combatOnly ? { combatOnly } : {}),
+  }),
   /** La carte ou le sort est exilé et devient comploté. */
   plot: (what: Ref): Effect => ({ op: "plot", what }),
   addManaColorsAmong: (filter: ObjectFilter): Effect => ({ op: "addManaColorsAmong", filter }),
@@ -856,7 +866,12 @@ export const fx = {
   exileOnResolve: { op: "exileOnResolve" } as Effect,
   poison: (who: Ref, n: Amount): Effect => ({ op: "poison", who, n }),
   destroySameName: (what: Ref): Effect => ({ op: "destroySameName", what }),
-  countersDivided: (total: Amount, to: Ref): Effect => ({ op: "countersDivided", total, to }),
+  countersDivided: (total: Amount, to: Ref, opts: { counter?: string; anyNumber?: boolean } = {}): Effect => ({
+    op: "countersDivided",
+    total,
+    to,
+    ...opts,
+  }),
   payX: (prompt: string, store: string): Effect => ({ op: "payX", prompt, store }),
   changeTarget: (what: Ref): Effect => ({ op: "changeTarget", what }),
   extraCombat: { op: "extraCombat" } as Effect,
@@ -1912,6 +1927,7 @@ export function wardAbility(ward: NonNullable<CardDef["ward"]>): TriggeredAbilit
         sacrifice: ward.sacrifice,
         sacrificeFilter: ward.sacrificeFilter,
         collectEvidence: ward.collectEvidence,
+        waterbend: ward.waterbend,
         skip: 1,
       },
       { op: "counter", what: { kind: "eventObject" } },

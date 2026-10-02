@@ -448,6 +448,8 @@ function endStep(s: GameState): void {
     player.restrictedMana = undefined;
   }
   if (s.turn.step === "endCombat") {
+    // La prochaine phase de combat contrôlée (Secret of Bloodbending) est terminée.
+    if (s.turnControl?.combatOnly && s.turnControl.turn === s.turn.number) s.turnControl = undefined;
     s.combat = null;
     bump(s);
   }
@@ -556,7 +558,7 @@ export function startTurnOf(s: GameState, p: PlayerId): void {
   if (s.turnControl?.turn !== undefined && s.turnControl.turn !== s.turn.number) s.turnControl = undefined;
   if (s.turnControl && s.turnControl.turn === undefined && s.turnControl.player === p) {
     s.turnControl.turn = s.turn.number;
-    emit({ type: "turnControl", player: p, by: s.turnControl.by });
+    emit({ type: "turnControl", player: p, by: s.turnControl.by, combatOnly: s.turnControl.combatOnly });
   }
   const player = s.players[p];
   if (player) {

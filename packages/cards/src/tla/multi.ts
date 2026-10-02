@@ -533,4 +533,29 @@ export const MULTI: Record<string, CardScript> = {
       ),
     ],
   },
+  "Hama, the Bloodbender": {
+    abilities: [
+      triggered(
+        when.entersSelf,
+        [
+          fx.mill(3, ref.target()),
+          fx.chooseAmong(ref.filtered(ref.graveyardOf(ref.target()), { notTypes: ["Creature", "Land"] }), ref.you, "h", {
+            anyZone: true,
+          }),
+          fx.exileCard(ref.stored("h"), { name: "hx" }),
+          fx.link(ref.stored("hx")),
+        ],
+        {
+          targets: [target.player("t", "opponent")],
+          label: "Un adversaire meule trois cartes ; exilez jusqu'à une carte non-créature, non-terrain de son cimetière",
+        },
+      ),
+      castPermission({
+        linkedCards: true,
+        linkedWaterbend: true,
+        condition: cond.yourTurn,
+        label: "Pendant votre tour, lancez la carte exilée en maîtrisant l'eau {X} (X : sa valeur de mana)",
+      }),
+    ],
+  },
 };

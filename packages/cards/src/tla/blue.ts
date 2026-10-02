@@ -12,6 +12,7 @@ import {
   manaAbility,
   modal,
   mode,
+  playerStatic,
   ref,
   SPIRIT_KOH,
   spell,
@@ -354,5 +355,62 @@ export const BLUE: Record<string, CardScript> = {
         label: "Maîtrise de l'eau {5} : lancez gratuitement un sort non-créature de votre main",
       }),
     ],
+  },
+  // Maîtrise de l'eau {5} en coût additionnel : lue dans le texte.
+  "Benevolent River Spirit": {
+    abilities: [triggered(when.entersSelf, [fx.scry(2)], { label: "Regard 2" })],
+  },
+  // Maîtrise de l'eau {X} en coût additionnel : lue dans le texte.
+  "Crashing Wave": {
+    spell: spell(
+      [{ ...target.creature(), count: 99, optional: true, countX: "upTo" }],
+      [
+        fx.tap(ref.target()),
+        fx.countersDivided(3, ref.permanentsOf(ref.eachOpponent, { types: ["Creature"], tapped: true }), {
+          counter: "stun",
+          anyNumber: true,
+        }),
+      ],
+    ),
+  },
+  // « vous pouvez maîtriser l'eau {6} » : un kicker lu dans le texte.
+  "Spirit Water Revival": {
+    spell: spell(
+      [],
+      [
+        ...fx.when(
+          cond.kicked,
+          fx.moveTo(ref.graveyardOf(ref.you), { to: "libraryTop", shuffle: true }),
+          fx.draw(7),
+          fx.emblem("Spirit Water Revival", "Vous n'avez pas de taille maximale de main.", [
+            playerStatic({ noMaxHandSize: true, label: "Pas de taille maximale de main" }),
+          ]),
+        ),
+        ...fx.when(cond.not(cond.kicked), fx.draw(2)),
+        fx.exileOnResolve,
+      ],
+    ),
+  },
+  // « vous pouvez maîtriser l'eau {10} » : un kicker lu dans le texte.
+  "Secret of Bloodbending": {
+    spell: spell(
+      [target.player("t", "opponent")],
+      [
+        ...fx.when(cond.kicked, fx.controlNextTurn(ref.target())),
+        ...fx.when(cond.not(cond.kicked), fx.controlNextTurn(ref.target(), true)),
+        fx.exileOnResolve,
+      ],
+    ),
+  },
+  // Garde — maîtrise de l'eau {4} : lue dans le texte.
+  "The Unagi of Kyoshi Island": {
+    abilities: [
+      triggered(when.draw(2, "opponent"), [fx.draw(2)], {
+        label: "Un adversaire pioche sa deuxième carte du tour : piochez deux cartes",
+      }),
+    ],
+  },
+  "Waterbending Lesson": {
+    spell: spell([], [fx.draw(3), ...fx.unlessPays(ref.you, { mana: "{2}", waterbend: true }, fx.discard(1))]),
   },
 };

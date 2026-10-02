@@ -267,14 +267,14 @@ export const HANDLERS: OpHandlers = {
       const legal = new Set(resolveRef(s, ctx, e.to));
       (r.item.targets[e.to.id] ?? []).forEach((id, i) => {
         const o = s.objects[id];
-        if (o && legal.has(id) && onBattlefield(s, id)) changeCounters(s, o, P1P1, division[i] ?? 0);
+        if (o && legal.has(id) && onBattlefield(s, id)) changeCounters(s, o, e.counter ?? P1P1, division[i] ?? 0);
       });
       return;
     }
     const among = resolveRef(s, ctx, e.to).filter((id) => onBattlefield(s, id));
     if (among.length === 0) return;
     let split: number[];
-    if (among.length === 1) split = [total];
+    if (among.length === 1 && !e.anyNumber) split = [total];
     else {
       const answer = r.vars[key("cdivide")];
       if (!answer) {
@@ -286,11 +286,11 @@ export const HANDLERS: OpHandlers = {
             request: {
               type: "divide",
               intent: "divideCounters",
-              prompt: `Répartissez ${total} marqueurs +1/+1 entre les cibles`,
+              prompt: `Répartissez ${total} marqueurs ${e.counter ?? P1P1} entre ${e.anyNumber ? "ces créatures" : "les cibles"}`,
               among,
               total: total,
               // 601.2d : au moins un marqueur par cible ; avec moins de marqueurs que de cibles (X réduit), sans minimum.
-              minEach: total >= among.length ? 1 : 0,
+              minEach: !e.anyNumber && total >= among.length ? 1 : 0,
               suggested: among.map((_, i) => each + (i < total - each * among.length ? 1 : 0)),
             },
           },
@@ -300,7 +300,7 @@ export const HANDLERS: OpHandlers = {
     }
     among.forEach((id, i) => {
       const o = s.objects[id];
-      if (o) changeCounters(s, o, P1P1, split[i] ?? 0);
+      if (o) changeCounters(s, o, e.counter ?? P1P1, split[i] ?? 0);
     });
     return;
   },

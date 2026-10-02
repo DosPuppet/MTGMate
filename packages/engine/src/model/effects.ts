@@ -190,7 +190,8 @@ export type Effect =
       greatestPower?: boolean;
     }
   /** « Vous pouvez payer {X}. Si vous le faites, … » : les `skip` effets suivants sont ignorés sinon. */
-  | { op: "mayPay"; cost: ManaCost; prompt: string; skip: number; life?: number }
+  /** `waterbend` : le mana est un coût de maîtrise de l'eau (artefacts et créatures dégagés : {1} chacun). */
+  | { op: "mayPay"; cost: ManaCost; prompt: string; skip: number; life?: number; waterbend?: boolean }
   /** « Vous pouvez » : si le contrôleur refuse, les `skip` effets suivants sont ignorés. */
   | { op: "may"; prompt: string; skip: number; who?: Ref; store?: string }
   /** « Si cette créature devait mourir ce tour-ci, exilez-la à la place. » */
@@ -351,6 +352,8 @@ export type Effect =
       sacrificeFilter?: ObjectFilter;
       /** Réunir des preuves N (garde d'Axebane Ferox). */
       collectEvidence?: number;
+      /** Le mana est un coût de maîtrise de l'eau (garde de The Unagi of Kyoshi Island, Waterbending Lesson). */
+      waterbend?: boolean;
       who: Ref;
       mana?: ManaCost;
       /** {1} pour chaque… (Swallowed by Leviathan). */
@@ -437,7 +440,8 @@ export type Effect =
   /** Spikeshell Harrier : si sa vitesse dépasse celle de chaque autre joueur, elle baisse de 1 (pas sous 1). */
   | { op: "reduceSpeed"; who: Ref }
   /** « Vous contrôlez [le joueur ciblé] pendant son prochain tour » (The Dominion Bracelet). */
-  | { op: "controlNextTurn"; who: Ref }
+  /** `combatOnly` : seulement pendant la prochaine phase de combat de ce joueur. */
+  | { op: "controlNextTurn"; who: Ref; combatOnly?: boolean }
   /** « Votre total de points de vie devient N » (The Endstone). */
   | { op: "setLife"; who: Ref; amount: Amount }
   /** Chaque joueur désigné exile une carte de sa main (à son choix), mémorisée (Lightstall Inquisitor). */
@@ -570,7 +574,11 @@ export type Effect =
   /** Détruit l'objet et tous les autres permanents du même nom (Maelstrom Pulse). */
   | { op: "destroySameName"; what: Ref }
   /** Marqueurs +1/+1 répartis entre les cibles (au moins 1 chacune). */
-  | { op: "countersDivided"; total: Amount; to: Ref }
+  /**
+   * Répartir des marqueurs (+1/+1 par défaut, `counter`) entre les cibles, ou à la résolution entre les objets désignés ;
+   * `anyNumber` : « entre un nombre quelconque de » (pas de minimum par objet, Crashing Wave).
+   */
+  | { op: "countersDivided"; total: Amount; to: Ref; counter?: string; anyNumber?: boolean }
   /** Choisir X, puis payer {X} ; mémorisé sous `store` (Wildborn Preserver). */
   | { op: "payX"; prompt: string; store: string }
   /** Change la cible d'un sort ou d'une capacité à cible unique (Bolt Bend). */

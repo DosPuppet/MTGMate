@@ -192,9 +192,11 @@ export const HANDLERS: OpHandlers = {
         (id) => s.objects[id]?.controller === p && (!e.sacrificeFilter || matchesObjectFilter(s, p, id, e.sacrificeFilter)),
       );
     // Garde « réunissez des preuves N » : les cartes du cimetière du joueur qui la paie.
+    // Garde « maîtrise de l'eau {4} », Waterbending Lesson : artefacts et créatures dégagés paient {1} chacun.
+    const purpose = e.waterbend ? { waterbend: Number.POSITIVE_INFINITY } : undefined;
     const evidence = e.collectEvidence ? evidenceCards(s, p, "", e.collectEvidence) : undefined;
     const canDo =
-      (!mana || canPay(s, p, mana)) &&
+      (!mana || canPay(s, p, mana, undefined, purpose)) &&
       (s.players[p]?.life ?? 0) >= (life ?? 0) &&
       (!e.discard || hand.length > 0) &&
       sacrificeable().length >= (e.sacrifice ?? 0) &&
@@ -203,7 +205,7 @@ export const HANDLERS: OpHandlers = {
     const answer = r.vars[key("unless")];
     if (!answer) {
       const what = [
-        mana ? costToText(mana) : "",
+        mana ? `${e.waterbend ? "maîtriser l'eau " : ""}${costToText(mana)}` : "",
         life ? `${life} points de vie` : "",
         e.discard ? "défausser une carte" : "",
         e.sacrifice
@@ -294,8 +296,8 @@ export const HANDLERS: OpHandlers = {
     }
     if (evidence) collectEvidence(s, p, evidence);
     if (mana) {
-      if (!canPay(s, p, mana)) return;
-      payMana(s, p, mana);
+      if (!canPay(s, p, mana, undefined, purpose)) return;
+      payMana(s, p, mana, undefined, purpose);
     }
     if (life) payLife(s, p, life);
     // « S'il le fait, … » (Divert Disaster).

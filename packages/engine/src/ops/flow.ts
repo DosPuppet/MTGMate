@@ -10,7 +10,9 @@ import type { ChoiceValue, ObjectFilter } from "../types";
 
 export const HANDLERS: OpHandlers = {
   mayPay(s, r, e, ctx, key) {
-    if (!canPay(s, ctx.controller, e.cost)) return { skip: e.skip };
+    // Maîtrise de l'eau : artefacts et créatures dégagés paient {1} chacun.
+    const purpose = e.waterbend ? { waterbend: Number.POSITIVE_INFINITY } : undefined;
+    if (!canPay(s, ctx.controller, e.cost, undefined, purpose)) return { skip: e.skip };
     const answer = r.vars[key("pay")];
     if (!answer) {
       return {
@@ -21,9 +23,9 @@ export const HANDLERS: OpHandlers = {
         },
       };
     }
-    if (answer[0] !== 1 || !canPay(s, ctx.controller, e.cost)) return { skip: e.skip };
+    if (answer[0] !== 1 || !canPay(s, ctx.controller, e.cost, undefined, purpose)) return { skip: e.skip };
     if (e.life && (s.players[ctx.controller]?.life ?? 0) < e.life) return { skip: e.skip };
-    payMana(s, ctx.controller, e.cost);
+    payMana(s, ctx.controller, e.cost, undefined, purpose);
     if (e.life) payLife(s, ctx.controller, e.life);
     return;
   },

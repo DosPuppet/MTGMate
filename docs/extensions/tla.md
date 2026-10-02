@@ -65,3 +65,16 @@ Les scripts sont dans `packages/cards/src/tla/` : `cards` (cartes du méta), `wh
 - **Moteur :** « X ne peut pas être 0 » (`activated({ minX: 1 })`) : la capacité n'est proposée que si X peut atteindre son minimum, une activation avec un X plus petit est refusée, l'IA et l'interface (curseur de X) le respectent. Sans lui, l'IA aléatoire activait Katara, Water Tribe's Hope pour X = 0 sans fin (parties inachevées du fuzz). Gogo, Master of Mimicry (FIN) en profite. Version des règles : 40. Fire Lord Zuko (« un permanent arrive depuis l'exil », sans les sorts lancés depuis l'exil, déjà comptés par sa première moitié) passe par un changement de zone exil → champ de bataille ; Fire Nation Warship meurt aussi quand il n'est pas une créature (700.4, `putIntoGraveyardSelf`).
 - **Reste pour plus tard :** Avatar Aang (« chaque fois que vous maîtrisez… »), Hama, the Bloodbender (maîtrise de l'eau en coût alternatif), Iroh, Grand Lotus (flashback donné aux cartes du cimetière), Ozai, the Phoenix King (mana non dépensé qui devient rouge), Planetarium of Wan Shi Tong (lancer la carte du dessus de la bibliothèque), White Lotus Tile (plus grand nombre de créatures partageant un type).
 - **Tests :** 43 tests de règles (« lot A, multicolores ») et 19 (« lot A, incolores et terrains »).
+
+## Sous-lot B1 : maîtrise de l'eau en coût de sort ✅ (261 / 280)
+
+- **Cartes (9) :** Benevolent River Spirit, Crashing Wave, Spirit Water Revival, Secret of Bloodbending, The Unagi of Kyoshi Island, Waterbending Lesson, Foggy Swamp Visions, Ruinous Waterbending, Hama, the Bloodbender.
+- **Le moteur gagne :**
+  - la maîtrise de l'eau en coût additionnel de sort, lue dans le texte : obligatoire (« waterbend {5} », `CardDef.waterbend`), en X (« waterbend {X} », `xCost: "waterbend"`) ou facultative (« you may waterbend {N} », un kicker `kickerKind: "waterbend"`, lu par `cond.kicked`) ; la part payable en engageant artefacts et créatures est exactement celle de la maîtrise (`waterbendAmount`, `ManaPurpose.waterbend`), selon le kicker et X ;
+  - la garde « Ward—Waterbend {4} » (`ward.waterbend`), « à moins de maîtriser l'eau {2} » (`fx.unlessPays(…, { waterbend: true })`) et « vous pouvez maîtriser l'eau » (`fx.mayWaterbend`) ;
+  - les cartes liées lancées en maîtrisant l'eau {X}, X étant leur valeur de mana (`castPermission({ linkedCards, linkedWaterbend })`, Hama) ;
+  - le contrôle d'un joueur pendant sa seule prochaine phase de combat (`fx.controlNextTurn(who, true)`, `turnControl.combatOnly`), annoncé au journal ;
+  - `fx.countersDivided(total, objets, { counter, anyNumber })` : une autre sorte de marqueur (étourdissement), répartie à la résolution entre un nombre quelconque d'objets.
+- **Dette :** le contrôle d'un autre joueur (`controlNextTurn`) sert désormais à deux cartes : son entrée est retirée.
+- **Version des règles :** 41.
+- **Tests :** 9 tests de règles (« lot B1 »).
