@@ -151,7 +151,8 @@ export type Effect =
   /** Retire un marqueur de chacun de N permanents correspondants (choisis automatiquement) ; `store` : 1 si fait. */
   | { op: "removeCounterFromEach"; filter: ObjectFilter; n: number; kind: string; store?: string }
   /** Effets avec choix pendant la résolution. */
-  | { op: "scry"; amount: Amount }
+  /** `who` : le joueur qui regarde (« le joueur ciblé regarde 3 », Bumi) ; vous par défaut. */
+  | { op: "scry"; amount: Amount; who?: Ref }
   /** `toHand` : les cartes ainsi mises au cimetière et correspondantes vont ensuite en main (Enlightened Confidant). */
   /** `store` : le nombre de cartes remises au-dessus (Starving Revenant). */
   | { op: "surveil"; amount: Amount; toHand?: { filter?: ObjectFilter; maxManaValue?: Amount }; store?: string }

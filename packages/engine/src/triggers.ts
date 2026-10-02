@@ -1223,6 +1223,8 @@ function chooseTriggerMode(s: GameState, t: PendingTrigger): boolean {
   const possible = modes
     .map((m, i) => ({ m, i }))
     .filter(({ i }) => !used.includes(i))
+    // Bumi, King of Three Trials : un mode sous condition (« jusqu'à X modes ») n'est proposé que si elle est remplie.
+    .filter(({ m }) => !m.condition || checkCondition(s, m.condition, t.controller, t.sourceId))
     .filter(({ m }) => m.targets.every((spec) => spec.optional || legalTargets(s, t.controller, spec).length > 0));
   if (possible.length <= 1) {
     t.mode = possible[0]?.i ?? modes.findIndex((_, i) => !used.includes(i));

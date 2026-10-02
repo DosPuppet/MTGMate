@@ -5,6 +5,7 @@
  */
 import { card } from "@mtgx/cards";
 import { describe, expect, it } from "vitest";
+import { destroy } from "../src/actions";
 import * as dsl from "../src/dsl";
 import { bump } from "../src/layers";
 import { legalActions } from "../src/legal";
@@ -4446,5 +4447,86 @@ describe("lot B2 : « chaque fois que vous maîtrisez » (Avatar Aang)", () => {
     expect(s.players.p1?.hand).toHaveLength(4);
     expect(s.objects[aang]?.counters["+1/+1"]).toBe(4);
     expect(s.players.p2?.life).toBe(16);
+  });
+});
+
+describe("lot C1 : caractéristiques et montants", () => {
+  it("Toph, the Blind Bandit : maîtrise de la terre 2 en arrivant ; sa force vaut les marqueurs +1/+1 de vos terrains", () => {
+    let s = scenario({
+      p1: {
+        battlefield: [...lands("Forest", 3), { name: "Plains", counters: { "+1/+1": 1 } }],
+        hand: ["Toph, the Blind Bandit"],
+      },
+    });
+    const forest = idOf(s, "p1", "battlefield", "Forest");
+    s = settle(cast(s, "p1", "Toph, the Blind Bandit"), picking([forest]));
+    const toph = idOf(s, "p1", "battlefield", "Toph, the Blind Bandit");
+    expect(s.objects[forest]?.counters["+1/+1"]).toBe(2);
+    expect(chars(s, toph).power).toBe(3);
+  });
+
+  it("Earthen Ally : +1/+0 pour chaque couleur parmi les Alliés que vous contrôlez", () => {
+    const s = scenario({ p1: { battlefield: ["Earthen Ally", "Kyoshi Warriors", "Llanowar Elves", "Shivan Dragon"] } });
+    // Alliés : Earthen Ally (vert) et Kyoshi Warriors (blanc) ; ni l'Elfe ni le Dragon ne comptent.
+    expect(chars(s, idOf(s, "p1", "battlefield", "Earthen Ally")).power).toBe(2);
+  });
+
+  it("Diligent Zookeeper : vos créatures non-Humains ont +1/+1 par type de créature (un changelin est Humain)", () => {
+    const s = scenario({ p1: { battlefield: ["Diligent Zookeeper", "Bear Cub", "Llanowar Elves", "Changeling Wayfinder"] } });
+    expect(chars(s, idOf(s, "p1", "battlefield", "Bear Cub")).power).toBe(3);
+    expect(chars(s, idOf(s, "p1", "battlefield", "Llanowar Elves")).power).toBe(3);
+    // Un changelin a tous les types de créature, Humain compris : il n'est pas concerné.
+    expect(chars(s, idOf(s, "p1", "battlefield", "Changeling Wayfinder")).power).toBe(1);
+    expect(chars(s, idOf(s, "p1", "battlefield", "Diligent Zookeeper")).power).toBe(4);
+  });
+
+  it("Avatar Destiny : +1/+1 par carte de créature au cimetière ; morte, meulez sa force, l'Aura revient, une créature meulée arrive", () => {
+    let s = scenario({
+      p1: {
+        battlefield: [...lands("Forest", 4), "Bear Cub"],
+        hand: ["Avatar Destiny"],
+        graveyard: ["Serra Angel", "Llanowar Elves"],
+        library: ["Shivan Dragon", "Island", "Island", "Island", "Island", "Island"],
+      },
+    });
+    const bear = idOf(s, "p1", "battlefield", "Bear Cub");
+    s = settle(cast(s, "p1", "Avatar Destiny", { targets: { enchant: [bear] } }));
+    expect(chars(s, bear).power).toBe(4);
+    expect(chars(s, bear).subtypes).toContain("Avatar");
+    destroy(s, bear);
+    s = settle(s);
+    // Force 4 au moment de mourir : quatre cartes meulées, dont Shivan Dragon, qui arrive sous votre contrôle.
+    expect(s.players.p1?.library).toHaveLength(2);
+    expect(idsOf(s, "p1", "hand", "Avatar Destiny")).toHaveLength(1);
+    expect(idsOf(s, "p1", "battlefield", "Shivan Dragon")).toHaveLength(1);
+  });
+
+  it("White Lotus Tile : arrive engagé ; {T} : X mana d'une couleur, X le plus de créatures partageant un type", () => {
+    let s = scenario({
+      p1: { hand: ["White Lotus Tile"], battlefield: [...lands("Plains", 4), "Kyoshi Warriors", "Kyoshi Warriors", "Bear Cub"] },
+    });
+    s = settle(cast(s, "p1", "White Lotus Tile"));
+    const tile = idOf(s, "p1", "battlefield", "White Lotus Tile");
+    expect(s.objects[tile]?.tapped).toBe(true);
+    s.objects[tile]!.tapped = false;
+    s = settle(activate(s, "p1", tile), (req) => (req.type === "pick" && req.options.includes("G") ? ["G"] : undefined));
+    // Deux Kyoshi Warriors (Humains Guerriers Alliés) partagent un type : deux mana vert.
+    expect(s.players.p1?.manaPool.G).toBe(2);
+  });
+
+  it("Bumi, King of Three Trials : jusqu'à X modes, X étant le nombre de Leçons dans votre cimetière", () => {
+    const modes = (graveyard: string[]) => {
+      const s = scenario({ p1: { battlefield: lands("Forest", 6), hand: ["Bumi, King of Three Trials"], graveyard } });
+      const after = act(s, "p1", { type: "cast", card: idOf(s, "p1", "hand", "Bumi, King of Three Trials") });
+      const resolved = passAccepting(after, (x) => x.pending?.kind === "choice" || x.stack.length + x.triggers.length === 0);
+      const p = resolved.pending;
+      return p?.kind === "choice" && p.request.type === "pick" ? p.request.options.length : 0;
+    };
+    // Sans Leçon : le seul mode « Aucun » (pas de question).
+    expect(modes([])).toBe(0);
+    // Une Leçon : chaque mode seul, ou aucun.
+    expect(modes(["Shared Roots"])).toBe(4);
+    // Trois Leçons : toutes les combinaisons.
+    expect(modes(["Shared Roots", "Firebending Lesson", "Combustion Technique"])).toBe(8);
   });
 });

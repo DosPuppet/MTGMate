@@ -147,13 +147,7 @@ export const MULTI: Record<string, CardScript> = {
     ],
   },
   "Dragonfly Swarm": {
-    // Approximation : les F/E définies par une capacité ne lisent pas `notTypes` ; « non-créature, non-terrain » devient
-    // « artefact, enchantement, éphémère, rituel, planeswalker ou bataille, non-terrain » (une carte de créature-artefact
-    // ou de créature-enchantement est comptée à tort).
-    cdaPower: amount.countIn("graveyard", {
-      types: ["Artifact", "Enchantment", "Instant", "Sorcery", "Planeswalker", "Battle"],
-      nonland: true,
-    }),
+    cdaPower: amount.countIn("graveyard", { notTypes: ["Creature", "Land"] }),
     abilities: [
       triggered(when.diesSelf, [fx.draw(1)], {
         condition: cond.amountAtLeast(LESSON_IN_GRAVEYARD, 1),

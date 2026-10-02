@@ -485,6 +485,17 @@ export function evalAmount(s: GameState, ctx: EffectContext, a: Amount): number 
           .filter((id) => matchesObjectFilter(s, ctx.controller, id, a.filter, ctx.sourceId))
           .map((id) => manaValue(s.defs[s.objects[id]?.defId ?? ""]?.manaCost)),
       );
+    case "maxSharingCreatureType": {
+      const ids = s.battlefield.filter((id) => matchesObjectFilter(s, ctx.controller, id, a.filter, ctx.sourceId));
+      const changelings = ids.filter((id) => chars(s, id).keywords.includes("changeling")).length;
+      const per = new Map<string, number>();
+      for (const id of ids) {
+        const c = chars(s, id);
+        if (c.keywords.includes("changeling")) continue;
+        for (const t of new Set(c.subtypes)) per.set(t, (per.get(t) ?? 0) + 1);
+      }
+      return changelings + Math.max(0, ...per.values());
+    }
     case "countersAmong":
       return s.battlefield
         .filter((id) => matchesObjectFilter(s, ctx.controller, id, a.filter, ctx.sourceId))

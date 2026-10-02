@@ -560,7 +560,11 @@ export const HANDLERS: OpHandlers = {
     if (e.store) store(r, e.store.name, f ? matching : n);
     return;
   },
-  scry: scryOrSurveil,
+  scry(s, r, e, ctx, key) {
+    // « Le joueur ciblé regarde N » : le regard est fait par ce joueur.
+    const who = e.who ? resolveRef(s, ctx, e.who).find((x) => isPlayer(s, x)) : ctx.controller;
+    return who ? scryOrSurveil(s, r, e, who === ctx.controller ? ctx : { ...ctx, controller: who }, key) : undefined;
+  },
   surveil: scryOrSurveil,
   discard(s, r, e, ctx, key) {
     const amount = evalAmount(s, ctx, e.amount);

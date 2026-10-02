@@ -1,5 +1,5 @@
 /** Avatar: The Last Airbender — cartes vertes (lot A). */
-import type { Effect, ObjectFilter } from "@mtgx/engine";
+import type { Effect, ModeDef, ObjectFilter } from "@mtgx/engine";
 import {
   activated,
   amount,
@@ -23,6 +23,7 @@ import {
   staticAbility,
   target,
   triggered,
+  triggeredModal,
   when,
 } from "./common";
 
@@ -371,6 +372,97 @@ export const GREEN: Record<string, CardScript> = {
         condition: cond.amountAtLeast(LESSONS, 1),
         label: "Une Leçon au cimetière : vous gagnez 2 points de vie",
       }),
+    ],
+  },
+  "Toph, the Blind Bandit": {
+    cdaPower: amount.countersAmong({ types: ["Land"], controller: "you" }, "+1/+1"),
+    abilities: [
+      triggered(when.entersSelf, [...fx.earthbend(ref.target(), 2)], {
+        targets: [LAND_YOU_CONTROL],
+        label: "Maîtrise de la terre 2",
+      }),
+    ],
+  },
+  "Earthen Ally": {
+    abilities: [
+      staticAbility(
+        "self",
+        { power: 1 },
+        {
+          perAmount: amount.colorsAmong({ subtype: "Ally", controller: "you" }),
+          label: "+1/+0 pour chaque couleur parmi vos Alliés",
+        },
+      ),
+      activated({
+        mana: "{2}{W}{U}{B}{R}{G}",
+        targets: [LAND_YOU_CONTROL],
+        effects: [...fx.earthbend(ref.target(), 5)],
+        label: "Maîtrise de la terre 5",
+      }),
+    ],
+  },
+  "Diligent Zookeeper": {
+    abilities: [
+      staticAbility(
+        { types: ["Creature"], controller: "you", notSubtype: "Human" },
+        { power: 1, toughness: 1, perOwnCreatureTypes: 10 },
+        { label: "Vos créatures non-Humains : +1/+1 par type de créature (au plus 10)" },
+      ),
+    ],
+  },
+  "Avatar Destiny": {
+    enchant: { filter: { types: ["Creature"], controller: "you" }, label: "créature que vous contrôlez" },
+    abilities: [
+      staticAbility(
+        "attached",
+        { power: 1, toughness: 1, addSubtypes: ["Avatar"] },
+        { perGraveyard: { types: ["Creature"] }, label: "+1/+1 par carte de créature de votre cimetière ; Avatar" },
+      ),
+      triggered(
+        when.dies({ attachedToSource: true }),
+        [
+          fx.mill(amount.powerOf(ref.eventObject), ref.you, { name: "m" }),
+          fx.toHand(ref.selfCard),
+          fx.chooseAmong(ref.filtered(ref.stored("m"), { types: ["Creature"] }), ref.you, "c", { anyZone: true }),
+          fx.toBattlefield(ref.stored("c")),
+        ],
+        { label: "Meulez autant que sa force ; l'Aura revient en main, une créature meulée sur le champ de bataille" },
+      ),
+    ],
+  },
+  "Bumi, King of Three Trials": {
+    abilities: [
+      triggeredModal(
+        when.entersSelf,
+        // « Choisissez jusqu'à X » (X : Leçons dans votre cimetière) : chaque combinaison sous condition.
+        [
+          { counters: true, scry: false, earth: false },
+          { counters: false, scry: true, earth: false },
+          { counters: false, scry: false, earth: true },
+          { counters: true, scry: true, earth: false },
+          { counters: true, scry: false, earth: true },
+          { counters: false, scry: true, earth: true },
+          { counters: true, scry: true, earth: true },
+        ]
+          .map((c): ModeDef => {
+            const n = Number(c.counters) + Number(c.scry) + Number(c.earth);
+            const labels = [c.counters && "trois marqueurs", c.scry && "regard 3", c.earth && "terre 3"].filter(Boolean);
+            return {
+              ...mode(
+                labels.join(" + "),
+                [...(c.scry ? [target.player("p")] : []), ...(c.earth ? [LAND_YOU_CONTROL] : [])],
+                [
+                  ...(c.counters ? [fx.addCounters(ref.self, 3)] : []),
+                  ...(c.scry ? [fx.scry(3, ref.target("p"))] : []),
+                  ...(c.earth ? fx.earthbend(ref.target(), 3) : []),
+                ],
+              ),
+              condition: cond.amountAtLeast(LESSONS, n),
+            };
+          })
+          .concat([mode("Aucun", [], [])]) as ModeDef[],
+        { label: "Jusqu'à X modes (X : Leçons dans votre cimetière)" },
+      ),
     ],
   },
 };

@@ -550,6 +550,11 @@ export interface PowerRule {
 }
 
 export interface LayerMods {
+  /**
+   * Couche 7c : `power`/`toughness` multipliés, pour chaque objet touché, par son nombre de types de créature, au plus
+   * cette valeur (Diligent Zookeeper : « +1/+1 pour chacun de ses types de créature, au maximum 10 » ; changelin : tous).
+   */
+  perOwnCreatureTypes?: number;
   /** Couche 6 : règles « utilise son endurance pour » accordées. */
   addPowerRules?: PowerRule[];
   /** Couche 6 : protections et défenses talismaniques « contre [filtre] » accordées. */
@@ -1009,6 +1014,11 @@ export interface StaticAbilityDef {
   perHand?: boolean;
   /** F/E multipliées par un compte du journal du tour (Kinbinding : « créatures arrivées sous votre contrôle ce tour-ci »). */
   perTurnEvents?: TurnLogQuery;
+  /**
+   * F/E multipliées par un montant calculé comme une F/E définie par une capacité (Earthen Ally : « pour chaque couleur
+   * parmi les Alliés que vous contrôlez ») : montants lisibles pendant les couches (`colorsAmong`, `count`…).
+   */
+  perAmount?: Amount;
   label?: string;
 }
 

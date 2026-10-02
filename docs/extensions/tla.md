@@ -89,3 +89,18 @@ Les scripts sont dans `packages/cards/src/tla/` : `cards` (cartes du méta), `wh
 - **Approximation levée :** Aang, Swift Savior (méta) paie maintenant « maîtrise de l'eau {8} » en engageant aussi ses artefacts et créatures.
 - **Version des règles :** 42.
 - **Tests :** 3 tests de règles (« lot B2 »).
+
+## Sous-lot C1 : caractéristiques et montants ✅ (268 / 280)
+
+- **Cartes (6) :** Toph, the Blind Bandit, Earthen Ally, Diligent Zookeeper, Avatar Destiny, White Lotus Tile, Bumi, King of Three Trials.
+- **Le moteur gagne :**
+  - dans les F/E définies par une capacité : les marqueurs sur des permanents (`countersAmong`, Toph), les couleurs parmi les permanents d'un filtre complet (`colorsAmong`, « parmi vos Alliés »), les types et sous-types exclus (`notTypes`, `notSubtype`) ;
+  - `staticAbility(…, { perAmount })` : F/E multipliées par un montant calculé comme une F/E de CDA (Earthen Ally) ;
+  - `LayerMods.perOwnCreatureTypes` : un bonus multiplié, pour chaque objet touché, par son nombre de types de créature, avec un plafond (Diligent Zookeeper ; un changelin est aussi Humain) ;
+  - le montant `maxSharingCreatureType(filtre)` (« le plus grand nombre de créatures qui ont un type en commun », changelins compris) ;
+  - les modes d'une capacité déclenchée sous condition (« jusqu'à X modes » écrit en combinaisons, chacune avec sa condition, comme les « l'un ou les deux » déjà en place) ;
+  - `fx.scry(n, joueur)` : le regard fait par un joueur ciblé.
+- **Approximation levée :** Dragonfly Swarm compte les cartes « non-créature, non-terrain » exactement.
+- **Avatar Destiny** profite du correctif 608.2h du lot A5 (la force de la créature morte).
+- **Version des règles :** 43.
+- **Tests :** 6 tests de règles (« lot C1 »).

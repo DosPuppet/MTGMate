@@ -3,6 +3,7 @@ import type { ManaType } from "@mtgx/engine";
 import {
   ALLY,
   activated,
+  amount,
   BASIC_LAND,
   type CardScript,
   CLUE,
@@ -210,6 +211,16 @@ export const ARTIFACTS: Record<string, CardScript> = {
       manaAbility("C"),
       manaAbility(ANY_COLOR, 1, { restriction: { spell: { anyOf: [{ subtype: "Lesson" }, { subtype: "Shrine" }] } } }),
       filterAnyColor,
+    ],
+  },
+  "White Lotus Tile": {
+    abilities: [
+      entersWith({ tapped: true }),
+      activated({
+        tap: true,
+        effects: [fx.addManaChoice(amount.maxSharingCreatureType({ types: ["Creature"], controller: "you" }))],
+        label: "X mana d'une même couleur (X : le plus de créatures partageant un type)",
+      }),
     ],
   },
 };

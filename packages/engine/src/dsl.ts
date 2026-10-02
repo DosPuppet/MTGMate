@@ -335,6 +335,8 @@ export const amount = {
   maxManaValueInGraveyard: { kind: "maxManaValueInGraveyard" } as Amount,
   distinctColors: (filter: ObjectFilter): Amount => ({ kind: "distinctColors", filter }),
   countersAmong: (filter: ObjectFilter, counter: string): Amount => ({ kind: "countersAmong", filter, counter }),
+  /** Plus grand nombre de permanents du filtre qui ont un type de créature en commun (White Lotus Tile). */
+  maxSharingCreatureType: (filter: ObjectFilter): Amount => ({ kind: "maxSharingCreatureType", filter }),
   halfLife: (who: Ref): Amount => ({ kind: "halfLife", who }),
   landsEnteredThisTurn: turnEvents({ event: "zone", to: "battlefield", types: ["Land"], who: "you" }),
   manaSpent: { kind: "manaSpent" } as Amount,
@@ -546,7 +548,7 @@ export const fx = {
     kind,
     store,
   }),
-  scry: (n: Amount): Effect => ({ op: "scry", amount: n }),
+  scry: (n: Amount, who?: Ref): Effect => ({ op: "scry", amount: n, ...(who ? { who } : {}) }),
   surveil: (n: Amount, toHand?: { filter?: ObjectFilter; maxManaValue?: Amount }, store?: string): Effect => ({
     op: "surveil",
     amount: n,
@@ -2047,6 +2049,7 @@ export function staticAbility(
     perLife?: boolean;
     perHand?: boolean;
     perTurnEvents?: TurnLogQuery;
+    perAmount?: Amount;
   } = {},
 ): StaticAbilityDef {
   return {
@@ -2063,6 +2066,7 @@ export function staticAbility(
     perLife: opts.perLife,
     perHand: opts.perHand,
     perTurnEvents: opts.perTurnEvents,
+    perAmount: opts.perAmount,
   };
 }
 

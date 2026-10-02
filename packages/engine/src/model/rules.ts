@@ -663,6 +663,8 @@ export type Amount =
   | { kind: "basicLandTypes" }
   /** Marqueurs d'un type parmi les permanents correspondants (« marqueurs de loyauté parmi les Jace »). */
   | { kind: "countersAmong"; filter: ObjectFilter; counter: string }
+  /** Plus grand nombre de permanents du filtre qui ont un type de créature en commun (White Lotus Tile ; changelins). */
+  | { kind: "maxSharingCreatureType"; filter: ObjectFilter }
   /** La moitié des points de vie du joueur désigné, arrondie à l'unité supérieure (Alpharael). */
   | { kind: "halfLife"; who: Ref }
   /** Mana dépensé pour lancer la source (Astelli Reclaimer, Dyadrine). */

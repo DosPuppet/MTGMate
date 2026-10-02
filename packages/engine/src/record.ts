@@ -115,8 +115,11 @@ export const RECORD_VERSION = 1;
  *   combat ; marqueurs répartis d'une autre sorte, entre un nombre quelconque d'objets.
  * - 42 : Avatar: The Last Airbender, lot B2 : événement « vous maîtrisez [l'élément] » (eau payée, terre, feu résolu, air),
  *   noté au journal du tour ; réduction de coût par symboles colorés (Aang, Master of Elements).
+ * - 43 : Avatar: The Last Airbender, lot C1 : F/E définies par des marqueurs sur des permanents, couleurs parmi un filtre
+ *   et types exclus lus pendant les couches ; bonus par type de créature de chaque objet touché ; modes d'une capacité
+ *   déclenchée sous condition ; regard fait par un joueur ciblé.
  */
-export const RULES_VERSION = 42;
+export const RULES_VERSION = 43;
 
 /** Un point de contrôle toutes les N décisions (plus la dernière de la partie). */
 export const CHECKPOINT_EVERY = 25;

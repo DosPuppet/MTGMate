@@ -96,7 +96,9 @@ export function linkedColors(s: GameState, linked: ObjectId[] | undefined): Colo
 function printedMatch(d: Pick<CardDef, "types" | "subtypes"> | undefined, f: ObjectFilter): boolean {
   if (!d) return false;
   if (f.types && !f.types.some((t) => d.types.includes(t))) return false;
+  if (f.notTypes?.some((t) => d.types.includes(t))) return false;
   if (f.subtype && !d.subtypes.includes(f.subtype)) return false;
+  if (f.notSubtype && d.subtypes.includes(f.notSubtype)) return false;
   if (f.anySubtype && !f.anySubtype.some((t) => d.subtypes.includes(t))) return false;
   if (f.anyOf && !f.anyOf.some((g) => printedMatch(d, g))) return false;
   const permanentTypes: CardType[] = ["Artifact", "Battle", "Creature", "Enchantment", "Land", "Planeswalker"];
@@ -109,7 +111,8 @@ function printedMatch(d: Pick<CardDef, "types" | "subtypes"> | undefined, f: Obj
 function readsBattlefield(a: Amount): boolean {
   if (typeof a === "number") return false;
   if (a.kind === "sum") return a.of.some(readsBattlefield);
-  if (a.kind === "basicLandTypes" || a.kind === "maxManaValue" || a.kind === "colorsAmong") return true;
+  if (a.kind === "basicLandTypes" || a.kind === "maxManaValue" || a.kind === "colorsAmong" || a.kind === "countersAmong")
+    return true;
   return a.kind === "count" && (!a.zone || a.zone === "battlefield");
 }
 
@@ -148,9 +151,20 @@ function cdaValue(s: GameState, o: GameObject, a: Amount): number {
     for (const id of s.battlefield) {
       const x = obj(s, id);
       if (a.filter.controller === "you" && x.controller !== o.controller) continue;
+      // Earthen Ally : « parmi les Alliés que vous contrôlez » (types de la passe précédente, sinon imprimés).
+      if (!printedMatch(typesOf(s, id), a.filter)) continue;
       for (const c of s.defs[x.faceDefId ?? x.defId]?.colors ?? []) colors.add(c);
     }
     return colors.size;
+  }
+  // Toph, the Blind Bandit : marqueurs +1/+1 sur les terrains que vous contrôlez.
+  if (a.kind === "countersAmong") {
+    return s.battlefield.reduce((n, id) => {
+      const x = obj(s, id);
+      if (a.filter.controller === "you" && x.controller !== o.controller) return n;
+      if (!printedMatch(typesOf(s, id), a.filter)) return n;
+      return n + Math.max(0, x.counters[a.counter] ?? 0);
+    }, 0);
   }
   // Duelist of the Mind : cartes piochées ce tour-ci.
   if (a.kind === "cardsDrawnThisTurn") return s.players[o.controller]?.turnStats.cardsDrawn ?? 0;
@@ -737,6 +751,14 @@ function evalStatic(s: GameState, slot: StaticSlot, sig: (string | number)[]): {
     // Aettir and Priwen : « F/E de base X/X, où X est votre total de points de vie ».
     if (mods.setPower !== undefined) mods = { ...mods, setPower: mods.setPower * n };
     if (mods.setToughness !== undefined) mods = { ...mods, setToughness: mods.setToughness * n };
+  } else if (ab.perAmount !== undefined) {
+    // Earthen Ally : « +1/+0 pour chaque couleur parmi les Alliés que vous contrôlez » (calculé comme une F/E de CDA).
+    const n = cdaValue(s, o, ab.perAmount);
+    if (readsBattlefield(ab.perAmount)) {
+      dependent = true;
+      sig.push(`a${n}`);
+    }
+    mods = { ...mods, power: (mods.power ?? 0) * n, toughness: (mods.toughness ?? 0) * n };
   } else if (ab.per || ab.perCounter || ab.perGraveyard) {
     // « +1/+1 pour chaque Forêt » / « pour chaque marqueur de camaraderie » / « pour chaque carte de créature de votre cimetière ».
     const f = ab.per ? withChosen(ab.per, o) : null;
@@ -900,8 +922,13 @@ function applyLayers(s: GameState, applied: Applied[], defOfId: (id: ObjectId) =
   layer(
     (m) => !!(m.power || m.toughness),
     (c, m) => {
-      c.power += m.power ?? 0;
-      c.toughness += m.toughness ?? 0;
+      // Diligent Zookeeper : multiplié par le nombre de types de créature de l'objet touché (changelin : tous).
+      const k =
+        m.perOwnCreatureTypes === undefined
+          ? 1
+          : Math.min(m.perOwnCreatureTypes, c.keywords.includes("changeling") ? m.perOwnCreatureTypes : c.subtypes.length);
+      c.power += (m.power ?? 0) * k;
+      c.toughness += (m.toughness ?? 0) * k;
     },
   );
   // Couche 7d : échange.
