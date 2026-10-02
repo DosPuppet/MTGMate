@@ -18,3 +18,10 @@ Les scripts sont dans `packages/cards/src/spm/` : `cards` (cartes du méta), `wh
 - **Jetons :** Citoyen humain 1/1 vert et blanc, Araignée 2/1 verte avec la portée, Robot 1/1 incolore (artefact) avec le vol, Illusion Méchant 3/3 bleue ; Trésor et Nourriture viennent des communs.
 - **Moteur :** filtre `modified` (700.9) : un permanent qui porte un marqueur, est équipé, ou est enchanté par une Aura que son contrôleur contrôle.
 - **Tests :** test de fumée `ai/test/smoke/spm.test.ts` ; filtre « modifié » dans `rulings.test.ts`.
+
+## Sous-lot A1 : cartes blanches ✅ (30 / 188)
+
+- **Cartes (20) :** Anti-Venom, Horrifying Healer, City Pigeon, Costume Closet, Daily Bugle Reporters, Flash Thompson, Spider-Fan, Friendly Neighborhood, Origin of Spider-Man, Rent Is Due, Selfless Police Captain, Silver Sable, Mercenary Leader, Spectacular Spider-Man, Spectacular Tactics, Spider-Man, Web-Slinger, Spider-UK, Starling, Aerial Ally, Sudden Strike, Thwip!, Web Up, Web-Shooters, Wild Pack Squad.
+- **Moteur :** `onPrevent.counters` d'un remplacement de blessures : autant de marqueurs sur la source du remplacement, dans le remplacement même (Anti-Venom ; test dans `rulings.test.ts`).
+- **Reste pour plus tard :** Arachne, Psionic Weaver (type de carte choisi en arrivant, taxe pour tous les joueurs), Peter Parker // Amazing Spider-Man (Web-slinging accordé aux sorts légendaires de couleur), With Great Power . . . (redirection de blessures, permanents attachés à l'hôte).
+- **Tests :** 32 tests de règles (« lot A, blanc »).

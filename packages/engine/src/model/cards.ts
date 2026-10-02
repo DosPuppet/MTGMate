@@ -729,8 +729,9 @@ export interface EventReplacement {
     prevent?: boolean;
   };
   /** Après une prévention : chaque adversaire du contrôleur meule autant (The Mindskinner) ; capacité réflexive
-   * « quand des blessures sont prévenues ainsi » (New Way Forward : `amount.eventAmount` et `ref.eventObject`, la source). */
-  onPrevent?: { opponentsMill?: boolean; reflexive?: Effect[] };
+   * « quand des blessures sont prévenues ainsi » (New Way Forward : `amount.eventAmount` et `ref.eventObject`, la source) ;
+   * autant de marqueurs de ce type sur la source du remplacement, dans le même remplacement (Anti-Venom). */
+  onPrevent?: { opponentsMill?: boolean; reflexive?: Effect[]; counters?: string };
   /** Bouclier : seulement cette source, choisie à la création (`sourceDefIs` pour un sort sans objet). */
   sourceIs?: ObjectId;
   sourceDefIs?: string;

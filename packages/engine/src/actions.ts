@@ -249,7 +249,8 @@ function damageReplacementApplies(
 
 /**
  * Prévention par un remplacement (615) : un bouclier « la prochaine fois que » est retiré ; The Mindskinner fait meuler
- * les adversaires, New Way Forward a une capacité réflexive (« quand des blessures sont prévenues ainsi »).
+ * les adversaires, New Way Forward a une capacité réflexive (« quand des blessures sont prévenues ainsi »), Anti-Venom
+ * reçoit autant de marqueurs +1/+1.
  */
 function preventByReplacement(s: GameState, a: ActiveReplacement, source: DamageSource, amount: number): void {
   consumeReplacement(s, a);
@@ -263,6 +264,8 @@ function preventByReplacement(s: GameState, a: ActiveReplacement, source: Damage
       }
     }
   }
+  if (after?.counters && a.sourceId && s.objects[a.sourceId]?.zone === "battlefield")
+    changeCounters(s, obj(s, a.sourceId), after.counters, amount);
   if (after?.reflexive) {
     const origin = a.r.origin ?? (a.sourceId ? { id: a.sourceId, defId: obj(s, a.sourceId).defId } : undefined);
     if (origin)

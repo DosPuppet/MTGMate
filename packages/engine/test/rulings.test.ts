@@ -413,4 +413,14 @@ describe("socle de Marvel's Spider-Man", () => {
     bump(s);
     expect(modified("Serra Angel")).toBe(true);
   });
+
+  it("615 : Anti-Venom reçoit les marqueurs dans le remplacement même, sans capacité sur la pile", () => {
+    const s = scenario({ p1: { battlefield: ["Anti-Venom, Horrifying Healer"] }, p2: { battlefield: ["Bear Cub"] } });
+    const venom = idOf(s, "p1", "battlefield", "Anti-Venom, Horrifying Healer");
+    dealDamage(s, sourceFromObject(s, idOf(s, "p2", "battlefield", "Bear Cub")), venom, 2, true);
+    expect(s.objects[venom]?.damage ?? 0).toBe(0);
+    expect(s.objects[venom]?.counters["+1/+1"]).toBe(2);
+    expect(s.stack).toHaveLength(0);
+    expect(s.triggers).toHaveLength(0);
+  });
 });
