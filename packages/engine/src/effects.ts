@@ -427,6 +427,13 @@ export function evalAmount(s: GameState, ctx: EffectContext, a: Amount): number 
       return id ? (viewOf(s, id)?.colors.length ?? 0) : 0;
     }
     case "maxPower":
+      if (a.zone === "graveyard")
+        return Math.max(
+          0,
+          ...(s.players[ctx.controller]?.graveyard ?? [])
+            .filter((id) => matchesCard(s, ctx.controller, id, a.filter, ctx.sourceId))
+            .map((id) => s.defs[s.objects[id]?.defId ?? ""]?.power ?? 0),
+        );
       return Math.max(
         0,
         ...s.battlefield

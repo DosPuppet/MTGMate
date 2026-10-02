@@ -56,6 +56,7 @@ function matches(e: TurnLogEntry, q: TurnLogQuery, me: PlayerId, subject?: Playe
   }
   if ((e.e === "cast" || e.e === "playLand") && q.fromZone && e.fromZone !== q.fromZone) return false;
   if (e.e === "cast" && q.warped && !e.warped) return false;
+  if (e.e === "cast" && q.minManaValue !== undefined && (e.manaValue ?? 0) < q.minManaValue) return false;
   if (e.e === "activate" && q.equip && !e.equip) return false;
   if (e.e === "bend" && q.bendKind && e.kind !== q.bendKind) return false;
   if (e.e === "attack" && q.againstYou && e.defender !== me) return false;

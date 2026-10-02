@@ -444,6 +444,8 @@ export type TurnLogEntry =
       supertypes: string[];
       fromZone: Zone;
       token?: boolean;
+      /** Valeur de mana du sort (Rhino, Barreling Brute : « un sort de valeur de mana 4 ou plus »). */
+      manaValue?: number;
       /** Lancé pour son coût de distorsion (Vide, Edge of Eternities). */
       warped?: boolean;
     }
@@ -501,6 +503,8 @@ export interface TurnLogQuery {
   againstYou?: boolean;
   /** Sort lancé pour son coût de distorsion. */
   warped?: boolean;
+  /** Sort de valeur de mana au moins égale. */
+  minManaValue?: number;
   /** Capacité activée : seulement les capacités d'équipement. */
   equip?: boolean;
   from?: Zone;
@@ -748,6 +752,12 @@ export interface GameState {
    * mana encore dans la réserve. Vidé par toute décision autre que produire ou annuler du mana (`undoMana`, mana.ts).
    */
   manaUndo?: { player: PlayerId; source: ObjectId; color: ManaType; amount: number }[];
+  /**
+   * Permanents partis du champ de bataille pendant la décision en cours (leurs dernières informations dans `lki`) : ceux
+   * qui partent en même temps se voient les uns les autres (Kraven the Hunter : « la plus grande force parmi les
+   * créatures de ce joueur »). Vidé au début de chaque décision.
+   */
+  leftBatch?: ObjectId[];
   /**
    * 104.4b : passes enchaînées pile non vide, sans autre décision, et empreintes relevées au-delà de 20 (game.ts) ; une
    * même empreinte trois fois, ou plus de 2 000 passes, et la partie est nulle.

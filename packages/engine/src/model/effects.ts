@@ -473,6 +473,9 @@ export type Effect =
   | { op: "castCopiesFree"; what: Ref[]; maxTotalManaValue: number; paid?: boolean; storeCast?: string; maxCount?: number }
   /** « La règle des légendes ne s'applique pas aux permanents que vous contrôlez ce tour-ci. » */
   | { op: "noLegendRuleThisTurn" }
+  /** Deux joueurs échangent leurs totaux de points de vie (701.12b : chacun gagne ou perd la différence) ; `store` : les
+   * points de vie perdus ainsi par le contrôleur (Mister Negative : « piochez autant de cartes »). */
+  | { op: "exchangeLife"; a: Ref; b: Ref; store?: string }
   /** « Faites ceci une seule fois par tour » : la capacité déclenchée qui se résout ne se déclenche plus ce tour-ci. */
   | { op: "doneOncePerTurn" }
   /** Transforme les permanents recto-verso désignés (712.10 : recto ↔ verso). */
@@ -651,7 +654,8 @@ export type Effect =
   | { op: "attach"; what: Ref; to: Ref }
   /** Ajoute du mana à la réserve du contrôleur. */
   /** `times` : chaque mana est ajouté autant de fois (« {G} pour chaque marqueur »). */
-  | { op: "addMana"; mana: ManaType[]; times?: Amount }
+  /** `who` : le joueur qui reçoit le mana (Cheering Crowd : le joueur actif), le contrôleur par défaut. */
+  | { op: "addMana"; mana: ManaType[]; times?: Amount; who?: Ref }
   /** Chaque joueur peut défausser sa main et piocher sept cartes (Arc of Fortune). */
   | { op: "mayWheel" }
   /** « Choisissez un type de créature. Détruisez toutes les créatures qui ne sont pas du type choisi. » */

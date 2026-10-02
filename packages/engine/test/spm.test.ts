@@ -3949,3 +3949,179 @@ describe("lot C1, copies et légendes", () => {
     });
   });
 });
+
+describe("lot C2, coûts, montants et joueurs", () => {
+  const ability = (s: S, player: string, source: string, label?: RegExp) =>
+    legalActions(s, player).find(
+      (a): a is Extract<ActionOption, { type: "activate" }> =>
+        a.type === "activate" && a.source === source && (!label || label.test(a.label ?? "")),
+    );
+  const activate = (s: S, player: string, source: string, label?: RegExp) =>
+    act(s, player, { type: "activate", source, ability: ability(s, player, source, label)?.ability ?? -1 });
+  const yes: Answer = (req) => (req.type === "yesNo" ? [1] : undefined);
+
+  it("The Soul Stone : exilez une créature pour l'exploiter ; ∞ à votre entretien, une créature de votre cimetière revient", () => {
+    let s = scenario({
+      p1: {
+        battlefield: ["The Soul Stone", ...lands("Swamp", 7), "Bear Cub"],
+        graveyard: ["Serra Angel"],
+        library: lands("Swamp", 5),
+      },
+    });
+    const stone = idOf(s, "p1", "battlefield", "The Soul Stone");
+    s = settle(activate(s, "p1", stone, /exploiter/));
+    expect(s.exile.some((id) => nameOf(s, id) === "Bear Cub")).toBe(true);
+    expect(s.objects[stone]?.harnessed).toBe(true);
+    s = advanceUntil(s, (x) => x.turn.active === "p1" && x.turn.number > s.turn.number && x.turn.step === "main1");
+    expect(idsOf(s, "p1", "battlefield", "Serra Angel")).toHaveLength(1);
+  });
+
+  it("The Soul Stone : sans créature à exiler, pas d'exploitation", () => {
+    const s = scenario({ p1: { battlefield: ["The Soul Stone", ...lands("Swamp", 7)] } });
+    expect(ability(s, "p1", idOf(s, "p1", "battlefield", "The Soul Stone"), /exploiter/)).toBeUndefined();
+  });
+
+  it("Iron Spider : {T} met un marqueur sur vos artefacts-créatures ; {2} retire deux marqueurs répartis pour piocher", () => {
+    let s = scenario({
+      p1: {
+        battlefield: [
+          "Iron Spider, Stark Upgrade",
+          { name: "Spider-Bot", counters: { "+1/+1": 1 } },
+          "Bear Cub",
+          ...lands("Island", 2),
+        ],
+        library: lands("Island", 3),
+      },
+    });
+    const iron = idOf(s, "p1", "battlefield", "Iron Spider, Stark Upgrade");
+    const bot = idOf(s, "p1", "battlefield", "Spider-Bot");
+    const bear = idOf(s, "p1", "battlefield", "Bear Cub");
+    // Un seul marqueur parmi vos artefacts : pas assez.
+    expect(ability(s, "p1", iron, /piochez/)).toBeUndefined();
+    s = settle(activate(s, "p1", iron, /chacun/));
+    expect(s.objects[iron]?.counters["+1/+1"]).toBe(1);
+    expect(s.objects[bot]?.counters["+1/+1"]).toBe(2);
+    expect(s.objects[bear]?.counters["+1/+1"] ?? 0).toBe(0);
+    const hand = s.players.p1?.hand.length ?? 0;
+    s = settle(activate(s, "p1", iron, /piochez/));
+    expect(s.players.p1?.hand.length).toBe(hand + 1);
+    expect((s.objects[iron]?.counters["+1/+1"] ?? 0) + (s.objects[bot]?.counters["+1/+1"] ?? 0)).toBe(1);
+  });
+
+  it("Cheering Crowd : au début de la première phase principale de chaque joueur, il peut y mettre un marqueur et ajoute {C} par marqueur", () => {
+    let s = scenario({ p1: { battlefield: [{ name: "Cheering Crowd", counters: { "+1/+1": 1 } }] }, turn: 1 });
+    s = advanceUntil(s, (x) => x.turn.active === "p2" && x.pending?.kind === "choice");
+    expect(s.pending?.kind === "choice" && s.pending.player).toBe("p2");
+    s = act(s, "p2", { type: "choose", values: [1] });
+    s = passAccepting(s, (x) => x.stack.length === 0 && x.triggers.length === 0);
+    const crowd = idOf(s, "p1", "battlefield", "Cheering Crowd");
+    expect(s.objects[crowd]?.counters["+1/+1"]).toBe(2);
+    expect(s.players.p2?.manaPool.C).toBe(2);
+    expect(s.players.p1?.manaPool.C ?? 0).toBe(0);
+  });
+
+  describe("Mister Negative", () => {
+    it("échange les totaux de PV avec un adversaire ciblé ; vous piochez autant que vous en avez perdu", () => {
+      let s = scenario({
+        p1: { battlefield: [...lands("Plains", 6), "Swamp"], hand: ["Mister Negative"], library: lands("Plains", 6) },
+      });
+      s.players.p1!.life = 10;
+      s.players.p2!.life = 7;
+      const hand = (s.players.p1?.hand.length ?? 0) - 1;
+      s = settle(cast(s, "p1", "Mister Negative"), yes);
+      expect(s.players.p1?.life).toBe(7);
+      expect(s.players.p2?.life).toBe(10);
+      expect(s.players.p1?.hand.length).toBe(hand + 3);
+    });
+
+    it("si vous gagnez des PV, vous ne piochez pas", () => {
+      let s = scenario({
+        p1: { battlefield: [...lands("Plains", 6), "Swamp"], hand: ["Mister Negative"], library: lands("Plains", 6) },
+      });
+      s.players.p1!.life = 4;
+      const hand = (s.players.p1?.hand.length ?? 0) - 1;
+      s = settle(cast(s, "p1", "Mister Negative"), yes);
+      expect(s.players.p1?.life).toBe(20);
+      expect(s.players.p2?.life).toBe(4);
+      expect(s.players.p1?.hand.length).toBe(hand);
+    });
+  });
+
+  describe("Rhino, Barreling Brute", () => {
+    const attack = (s: S) => {
+      let cur = advanceUntil(s, (x) => x.pending?.kind === "declareAttackers");
+      cur = act(cur, "p1", {
+        type: "declareAttackers",
+        attackers: [{ id: idOf(cur, "p1", "battlefield", "Rhino, Barreling Brute"), defender: "p2" }],
+      });
+      return settle(cur);
+    };
+    it("s'il attaque après un sort de VM 4 ou plus ce tour-ci : piochez une carte", () => {
+      let s = scenario({
+        p1: {
+          battlefield: ["Rhino, Barreling Brute", ...lands("Mountain", 6)],
+          hand: ["Shivan Dragon"],
+          library: lands("Mountain", 3),
+        },
+      });
+      s = settle(cast(s, "p1", "Shivan Dragon"));
+      const hand = s.players.p1?.hand.length ?? 0;
+      s = attack(s);
+      expect(s.players.p1?.hand.length).toBe(hand + 1);
+    });
+    it("après un sort de VM 3 ou moins seulement : rien", () => {
+      let s = scenario({
+        p1: { battlefield: ["Rhino, Barreling Brute", ...lands("Forest", 2)], hand: ["Bear Cub"], library: lands("Mountain", 3) },
+      });
+      s = settle(cast(s, "p1", "Bear Cub"));
+      const hand = s.players.p1?.hand.length ?? 0;
+      s = attack(s);
+      expect(s.players.p1?.hand.length).toBe(hand);
+    });
+  });
+
+  it("Kraven's Last Hunt : I meule cinq cartes, puis blessures égales à la plus grande force de votre cimetière", () => {
+    let s = scenario({
+      p1: {
+        battlefield: lands("Forest", 4),
+        hand: ["Kraven's Last Hunt"],
+        library: ["Bear Cub", "Serra Angel", "Forest", "Forest", "Llanowar Elves", "Shivan Dragon"],
+      },
+      p2: { battlefield: ["Shivan Dragon"] },
+    });
+    const dragon = idOf(s, "p2", "battlefield", "Shivan Dragon");
+    s = settle(cast(s, "p1", "Kraven's Last Hunt"), picking([dragon]));
+    expect(s.players.p1?.graveyard).toHaveLength(5);
+    // Serra Angel (4) est la plus forte des cartes meulées ; le Shivan Dragon resté dans la bibliothèque ne compte pas.
+    expect(s.objects[dragon]?.damage).toBe(4);
+  });
+
+  describe("Kraven the Hunter", () => {
+    it("la créature adverse de plus grande force meurt : piochez une carte et un marqueur ; pas pour une plus petite", () => {
+      let s = scenario({
+        p1: { battlefield: ["Kraven the Hunter"], library: lands("Swamp", 4) },
+        p2: { battlefield: ["Serra Angel", "Bear Cub"] },
+      });
+      const kraven = idOf(s, "p1", "battlefield", "Kraven the Hunter");
+      const hand = s.players.p1?.hand.length ?? 0;
+      destroy(s, idOf(s, "p2", "battlefield", "Bear Cub"));
+      // Le Serra Angel est plus fort : rien ne se déclenche.
+      expect(s.triggers).toHaveLength(0);
+      destroy(s, idOf(s, "p2", "battlefield", "Serra Angel"));
+      s = settle(passAccepting(s, (x) => x.triggers.length === 0 && x.stack.length === 0));
+      expect(s.players.p1?.hand.length).toBe(hand + 1);
+      expect(s.objects[kraven]?.counters["+1/+1"]).toBe(1);
+    });
+
+    it("mortes en même temps : seule la plus grande compte (les autres sont vues par leurs dernières informations)", () => {
+      let s = scenario({
+        p1: { battlefield: ["Kraven the Hunter"], library: lands("Swamp", 4) },
+        p2: { battlefield: ["Bear Cub", "Serra Angel", "Llanowar Elves"] },
+      });
+      const hand = s.players.p1?.hand.length ?? 0;
+      for (const name of ["Bear Cub", "Serra Angel", "Llanowar Elves"]) destroy(s, idOf(s, "p2", "battlefield", name));
+      s = settle(passAccepting(s, (x) => x.triggers.length === 0 && x.stack.length === 0));
+      expect(s.players.p1?.hand.length).toBe(hand + 1);
+    });
+  });
+});

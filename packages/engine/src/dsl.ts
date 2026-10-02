@@ -317,7 +317,7 @@ export const amount = {
   manaValueOf: (r: Ref): Amount => ({ kind: "manaValueOf", ref: r }),
   toughnessOf: (r: Ref): Amount => ({ kind: "toughnessOf", ref: r }),
   colorsOf: (r: Ref): Amount => ({ kind: "colorsOf", ref: r }),
-  maxPower: (filter: ObjectFilter): Amount => ({ kind: "maxPower", filter }),
+  maxPower: (filter: ObjectFilter, zone?: "graveyard"): Amount => ({ kind: "maxPower", filter, ...(zone ? { zone } : {}) }),
   distinctNames: (filter: ObjectFilter): Amount => ({ kind: "distinctNames", filter }),
   cardsIn: (zone: "hand" | "graveyard" | "library"): Amount => ({ kind: "cardsIn", zone }),
   lifeLostThisTurn: { kind: "lifeLostThisTurn" } as Amount,
@@ -764,6 +764,7 @@ export const fx = {
     ...opts,
   }),
   noLegendRuleThisTurn: { op: "noLegendRuleThisTurn" } as Effect,
+  exchangeLife: (a: Ref, b: Ref, store?: string): Effect => ({ op: "exchangeLife", a, b, store }),
   /** « Faites ceci une seule fois par tour » (avec `oncePerTurn: "ifDone"`). */
   doneOncePerTurn: { op: "doneOncePerTurn" } as Effect,
   exileUntil: (filter: ObjectFilter, store: string): Effect => ({ op: "exileUntil", filter, store }),
@@ -1471,7 +1472,7 @@ export function activated(opts: {
   /** « Cette capacité coûte {N} de moins [si …] ». */
   reduction?: { generic: Amount; condition?: Condition };
   /** « Retirez un marqueur [+1/+1] d'une créature que vous contrôlez ». */
-  removeCounterFrom?: { filter: ObjectFilter; kind: string };
+  removeCounterFrom?: { filter: ObjectFilter; kind: string; n?: number };
   /** Flétrir N comme coût (ECL). */
   blight?: number;
   /** Réunir des preuves N comme coût (MKM) ; `linkEvidence` : les cartes sont liées à la source. */
@@ -1498,6 +1499,8 @@ export function activated(opts: {
   returnUnblockedAttacker?: boolean;
   /** « Renvoyez [un permanent] que vous contrôlez dans la main de son propriétaire » (Urban Retreat). */
   bounceOther?: ObjectFilter;
+  /** « Exilez [un permanent] que vous contrôlez » (The Soul Stone). */
+  exileOther?: ObjectFilter;
   /** « Fourragez » (701.61). */
   forage?: boolean;
   /** Fabrication (702.167) : voir `craft()`. */
@@ -1541,6 +1544,7 @@ export function activated(opts: {
       discardFilter: opts.discardFilter,
       returnUnblockedAttacker: opts.returnUnblockedAttacker,
       bounceOther: opts.bounceOther,
+      exileOther: opts.exileOther,
       forage: opts.forage,
       craft: opts.craft,
     },
@@ -1879,6 +1883,8 @@ export const cond = {
   /** « Si {U}{U} a été dépensé pour le lancer » : `cond.spent("U", 2)`. */
   spent: (color: ManaType, n: number): Condition => ({ kind: "spentColor", color, n }),
   evoked: { kind: "evoked" } as Condition,
+  /** « … avec la plus grande force parmi les créatures que ce joueur contrôle » (l'objet de l'événement, parti). */
+  eventObjectGreatestPower: { kind: "eventObjectGreatestPower" } as Condition,
   /** « S'il a été lancé par Web-slinging », « si le coût de chaos a été payé ». */
   castVia: (via: CastVia): Condition => ({ kind: "castVia", via }),
   /** Capacité ∞ : la source a été exploitée. */

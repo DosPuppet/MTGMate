@@ -220,6 +220,24 @@ export const HANDLERS: OpHandlers = {
     store(r, e.store, lost);
     return;
   },
+  exchangeLife(s, r, e, ctx) {
+    const a = resolveRef(s, ctx, e.a).find((x) => isPlayer(s, x));
+    const b = resolveRef(s, ctx, e.b).find((x) => isPlayer(s, x));
+    if (!a || !b || a === b) return;
+    const before = s.players[ctx.controller]?.life ?? 0;
+    // 701.12b : chaque joueur gagne ou perd la différence (déclencheurs et remplacements compris).
+    const la = s.players[a]?.life ?? 0;
+    const lb = s.players[b]?.life ?? 0;
+    for (const [p, delta] of [
+      [a, lb - la],
+      [b, la - lb],
+    ] as const) {
+      if (delta > 0) gainLife(s, p, delta);
+      else if (delta < 0) loseLife(s, p, -delta);
+    }
+    store(r, e.store, Math.max(0, before - (s.players[ctx.controller]?.life ?? 0)));
+    return;
+  },
   extraLandThisTurn(s, _r, _e, ctx) {
     addPlayerEffect(s, ctx.controller, { extraLands: 1 }, s.turn.number);
     return;

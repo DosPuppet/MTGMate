@@ -482,7 +482,8 @@ export interface CostDef {
   /** « −X » : X marqueurs de loyauté retirés (X choisi à l'activation). */
   loyaltyX?: boolean;
   /** Retirer un marqueur d'un permanent que vous contrôlez (choisi automatiquement : Sunstar Chaplain). */
-  removeCounterFrom?: { filter: ObjectFilter; kind: string };
+  /** Retirer `n` marqueurs (1 par défaut) parmi des permanents correspondants que vous contrôlez (Iron Spider : deux). */
+  removeCounterFrom?: { filter: ObjectFilter; kind: string; n?: number };
   /** Engager X permanents dégagés que vous contrôlez (X choisi à l'activation : Secluded Starforge). */
   tapX?: ObjectFilter;
   /** Exiler X cartes correspondantes de votre cimetière (X choisi à l'activation, cartes choisies automatiquement : Winter). */
@@ -513,6 +514,8 @@ export interface CostDef {
   /** « Renvoyez [un permanent] que vous contrôlez dans la main de son propriétaire » (Urban Retreat : une créature
    * engagée) ; choisi par le joueur (`bounce`), sinon le moins cher. */
   bounceOther?: ObjectFilter;
+  /** « Exilez [un permanent] que vous contrôlez » (The Soul Stone : une créature), le moins cher par défaut. */
+  exileOther?: ObjectFilter;
   /** Fourrager (701.61) : exiler trois cartes de votre cimetière ou sacrifier une Nourriture (choix automatique). */
   forage?: boolean;
 }

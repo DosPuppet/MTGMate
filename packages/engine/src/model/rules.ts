@@ -512,6 +512,9 @@ export type Condition =
   | { kind: "harnessed" }
   /** La source a été lancée pour son coût d'évocation. */
   | { kind: "evoked" }
+  /** L'objet de l'événement (parti du champ de bataille) avait la plus grande force parmi les créatures de son contrôleur,
+   * en comptant celles parties en même temps (Kraven the Hunter). */
+  | { kind: "eventObjectGreatestPower" }
   /** Le sort qui se résout, ou le permanent source, a été lancé ainsi (Web-slinging, chaos). */
   | { kind: "castVia"; via: CastVia }
   /** Contempler (701.63) : vous contrôlez un permanent correspondant, ou vous révélez une carte correspondante de votre main. */
@@ -696,7 +699,8 @@ export type Amount =
   /** Nombre de couleurs de l'objet (Ramos). */
   | { kind: "colorsOf"; ref: Ref }
   /** Plus grande force parmi les permanents correspondants. */
-  | { kind: "maxPower"; filter: ObjectFilter }
+  /** `zone: "graveyard"` : parmi les cartes du cimetière du contrôleur (Kraven's Last Hunt). */
+  | { kind: "maxPower"; filter: ObjectFilter; zone?: "graveyard" }
   /** Nombre de noms différents parmi les permanents correspondants (Maze's End). */
   | { kind: "distinctNames"; filter: ObjectFilter }
   /** Nombre de cartes dans une zone du contrôleur. */

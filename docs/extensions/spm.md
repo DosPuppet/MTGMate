@@ -86,3 +86,16 @@ Les scripts sont dans `packages/cards/src/spm/` : `cards` (cartes du méta), `wh
   - « faites ceci une seule fois par tour » : `oncePerTurn: "ifDone"` et `fx.doneOncePerTurn` (le déclencheur revient tant que l'effet facultatif n'a pas été fait ; entrée de dette justifiée) ;
   - cibles de noms différents (`differentNames`, présentées comme la contrainte « différents » des options, que l'IA et l'interface respectent).
 - **Tests :** 7 tests de règles (« lot C1 »).
+
+## Sous-lot C2 : coûts, montants et joueurs ✅ (182 / 188)
+
+- **Cartes (7) :** The Soul Stone, Iron Spider, Stark Upgrade, Cheering Crowd, Mister Negative, Rhino, Barreling Brute, Kraven's Last Hunt, Kraven the Hunter.
+- **Moteur :**
+  - coûts d'activation : « exilez [un permanent] que vous contrôlez » (`exileOther`) ; « retirez N marqueurs parmi [vos artefacts] » (`removeCounterFrom.n`, répartis, ceux qui en portent le plus d'abord) ;
+  - `addMana` vers un autre joueur (`who` : Cheering Crowd, le joueur dont c'est la phase principale) ;
+  - `fx.exchangeLife(a, b, store)` : échange des totaux de PV (701.12b), chacun gagne ou perd la différence ; la perte du contrôleur est retenue (entrée de dette justifiée) ;
+  - journal du tour : la valeur de mana des sorts lancés (`minManaValue` dans la requête) ;
+  - `amount.maxPower(filtre, "graveyard")` : la plus grande force parmi les cartes de votre cimetière ;
+  - permanents partis pendant la décision en cours (`GameState.leftBatch`, vidé à chaque décision) et `cond.eventObjectGreatestPower` : « la créature de plus grande force parmi celles de ce joueur » voit celles mortes en même temps par leurs dernières informations (une seule pioche après une destruction massive).
+- **Dette :** « exploiter » sert désormais à deux cartes (The Mind Stone, The Soul Stone) : son entrée est retirée.
+- **Tests :** 11 tests de règles (« lot C2 »).

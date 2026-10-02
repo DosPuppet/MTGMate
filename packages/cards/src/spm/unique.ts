@@ -199,4 +199,114 @@ export const UNIQUE: Record<string, CardScript> = {
       [fx.toBattlefield(ref.target())],
     ),
   },
+
+  // --- Lot C2 : coûts, montants et joueurs --------------------------------------
+  "The Soul Stone": {
+    // Indestructible : lu dans le texte.
+    abilities: [
+      manaAbility("B"),
+      activated({
+        mana: "{6}{B}",
+        tap: true,
+        exileOther: { types: ["Creature"] },
+        effects: [fx.harness],
+        label: "Exilez une créature : exploiter la Gemme de l'Âme",
+      }),
+      triggered(when.yourUpkeep, [fx.toBattlefield(ref.target())], {
+        condition: cond.harnessed,
+        targets: [target.cardInGraveyard("t", { types: ["Creature"] }, "you", "carte de créature de votre cimetière")],
+        label: "∞ — Une carte de créature de votre cimetière revient sur le champ de bataille",
+      }),
+    ],
+  },
+  "Iron Spider, Stark Upgrade": {
+    // Vigilance : lue dans le texte.
+    abilities: [
+      activated({
+        tap: true,
+        effects: [
+          fx.addCountersAll({
+            controller: "you",
+            anyOf: [{ types: ["Artifact"], anyOf: [{ types: ["Creature"] }, { subtype: "Vehicle" }] }],
+          }),
+        ],
+        label: "Un marqueur +1/+1 sur chacun de vos artefacts-créatures et Véhicules",
+      }),
+      activated({
+        mana: "{2}",
+        removeCounterFrom: { filter: { types: ["Artifact"] }, kind: "+1/+1", n: 2 },
+        effects: [fx.draw(1)],
+        label: "Retirez deux marqueurs +1/+1 de vos artefacts : piochez une carte",
+      }),
+    ],
+  },
+  "Cheering Crowd": {
+    abilities: [
+      triggered(
+        when.step("main1", "any"),
+        fx.mayFor(ref.eventPlayer, "Mettre un marqueur +1/+1 sur Cheering Crowd ?", fx.addCounters(ref.self, 1), {
+          op: "addMana",
+          mana: ["C"],
+          times: amount.countersOn(ref.self),
+          who: ref.eventPlayer,
+        }),
+        { label: "Ce joueur peut y mettre un marqueur +1/+1 ; il ajoute alors {C} par marqueur" },
+      ),
+    ],
+  },
+  "Mister Negative": {
+    // Vigilance et lien de vie : lus dans le texte.
+    abilities: [
+      triggered(
+        when.entersSelf,
+        fx.may(
+          "Échanger vos points de vie avec l'adversaire ciblé ?",
+          fx.exchangeLife(ref.you, ref.target(), "lost"),
+          fx.draw(amount.v("lost")),
+        ),
+        {
+          targets: [target.player("t", "opponent")],
+          label: "Inversion de la Force noire — Échangez vos PV avec un adversaire ; piochez autant que vous en avez perdu",
+        },
+      ),
+    ],
+  },
+  "Rhino, Barreling Brute": {
+    // Vigilance, piétinement et célérité : lus dans le texte.
+    abilities: [
+      triggered(when.attacksSelf, [fx.draw(1)], {
+        condition: cond.amountAtLeast(amount.turnEvents({ event: "cast", who: "you", minManaValue: 4 }), 1),
+        label: "Si vous avez lancé un sort de VM 4 ou plus ce tour-ci : piochez une carte",
+      }),
+    ],
+  },
+  "Kraven's Last Hunt": {
+    abilities: [
+      chapter(
+        [1],
+        [
+          fx.mill(5),
+          fx.reflexive([target.creature()], [fx.damage(amount.maxPower({ types: ["Creature"] }, "graveyard"), ref.target())]),
+        ],
+        { label: "I — Meulez cinq cartes ; blessures égales à la plus grande force de votre cimetière à une créature" },
+      ),
+      chapter([2], [fx.pump(ref.target(), 2, 2)], {
+        targets: [target.creature("t", { controller: "you" })],
+        label: "II — +2/+2 jusqu'à la fin du tour",
+      }),
+      chapter([3], [fx.moveTo(ref.target(), { to: "hand" })], {
+        targets: [target.cardInGraveyard("t", { types: ["Creature"] }, "you", "carte de créature de votre cimetière")],
+        label: "III — Une carte de créature de votre cimetière en main",
+      }),
+    ],
+  },
+  "Kraven the Hunter": {
+    // Piétinement : lu dans le texte.
+    abilities: [
+      triggered(when.dies({ types: ["Creature"], controller: "opponent" }), [fx.draw(1), fx.addCounters(ref.self, 1)], {
+        condition: cond.eventObjectGreatestPower,
+        label: "La plus grande créature d'un adversaire meurt : piochez une carte et un marqueur +1/+1",
+      }),
+    ],
+  },
 };

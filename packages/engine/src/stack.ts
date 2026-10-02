@@ -1744,6 +1744,7 @@ export function castSpell(s: GameState, player: PlayerId, card: ObjectId, choice
       subtypes: d.subtypes,
       supertypes: d.supertypes,
       fromZone: terms.source === "flashback" ? "graveyard" : terms.source,
+      manaValue: manaValue(d.manaCost) + (x && d.manaCost?.x ? x * d.manaCost.x : 0),
       warped: warp ? true : undefined,
     });
     bump(s); // des capacités statiques en dépendent (« si vous avez lancé deux sorts ce tour-ci »)
@@ -2078,8 +2079,11 @@ export function craftMaterials(s: GameState, player: PlayerId, source: ObjectId,
   return all.length >= c.count ? all.slice(0, c.count) : null;
 }
 
-/** Permanent dont on retire un marqueur pour le coût (celui qui en porte le plus). */
-function counterSource(s: GameState, player: PlayerId, source: ObjectId, ab: ActivatedAbilityDef): ObjectId | null {
+/**
+ * Permanents dont on retire les marqueurs du coût, un identifiant par marqueur (ceux qui en portent le plus d'abord) ;
+ * `null` s'il n'y en a pas assez.
+ */
+function counterSources(s: GameState, player: PlayerId, source: ObjectId, ab: ActivatedAbilityDef): ObjectId[] | null {
   const c = ab.cost.removeCounterFrom;
   if (!c) return null;
   const ids = s.battlefield
@@ -2090,7 +2094,9 @@ function counterSource(s: GameState, player: PlayerId, source: ObjectId, ab: Act
         matchesObjectFilter(s, player, id, c.filter, source),
     )
     .sort((a, b) => (obj(s, b).counters[c.kind] ?? 0) - (obj(s, a).counters[c.kind] ?? 0));
-  return ids[0] ?? null;
+  const out = ids.flatMap((id) => Array<ObjectId>(obj(s, id).counters[c.kind] ?? 0).fill(id));
+  const n = c.n ?? 1;
+  return out.length >= n ? out.slice(0, n) : null;
 }
 
 /** Zone d'où s'active une capacité : champ de bataille, cimetière ou main. */
@@ -2160,7 +2166,7 @@ export function canPayNonManaCost(s: GameState, source: ObjectId, ab: ActivatedA
     if (ab.cost.loyalty < 0 && (o.counters.loyalty ?? 0) < -ab.cost.loyalty) return false;
   }
   if (ab.cost.exileFromGraveyard && graveyardExileOptions(s, source, ab).length < ab.cost.exileFromGraveyard.count) return false;
-  if (ab.cost.removeCounterFrom && !counterSource(s, who, source, ab)) return false;
+  if (ab.cost.removeCounterFrom && !counterSources(s, who, source, ab)) return false;
   if (ab.cost.blight && !blightTarget(s, o.controller, ab.cost.blight)) return false;
   if (ab.cost.collectEvidence && !evidenceCards(s, who, source, ab.cost.collectEvidence)) return false;
   if (ab.cost.tapAttached) {
@@ -2175,6 +2181,7 @@ export function canPayNonManaCost(s: GameState, source: ObjectId, ab: ActivatedA
   if (ab.cost.discard && discardCostOptions(s, player, source, ab.cost.discardFilter).length < ab.cost.discard) return false;
   if (ab.cost.returnUnblockedAttacker && unblockedAttackers(s, player).length === 0) return false;
   if (ab.cost.bounceOther && bounceCostOptions(s, player, source, ab.cost.bounceOther).length === 0) return false;
+  if (ab.cost.exileOther && bounceCostOptions(s, player, source, ab.cost.exileOther).length === 0) return false;
   if (ab.cost.forage && !canForage(s, player)) return false;
   if (ab.cost.craft && !craftMaterials(s, player, source, ab)) return false;
   return true;
@@ -2384,8 +2391,9 @@ export function activateAbility(s: GameState, player: PlayerId, source: ObjectId
   // Flétrir N comme coût (ECL) : la créature est choisie automatiquement (`blightTarget`).
   const blighted = ab.cost.blight ? blightTarget(s, player, ab.cost.blight) : null;
   if (blighted && ab.cost.blight) changeCounters(s, obj(s, blighted), "-1/-1", ab.cost.blight, true);
-  const counterFrom = ab.cost.removeCounterFrom ? counterSource(s, player, source, ab) : null;
-  if (counterFrom && ab.cost.removeCounterFrom) changeCounters(s, obj(s, counterFrom), ab.cost.removeCounterFrom.kind, -1);
+  const counterFrom = ab.cost.removeCounterFrom ? counterSources(s, player, source, ab) : null;
+  if (ab.cost.removeCounterFrom)
+    for (const id of counterFrom ?? []) changeCounters(s, obj(s, id), ab.cost.removeCounterFrom.kind, -1, true);
   // Réunir des preuves N comme coût (Forensic Researcher, Polygraph Orb).
   if (ab.cost.collectEvidence) {
     const exiled = collectEvidence(s, player, evidenceCards(s, player, source, ab.cost.collectEvidence) ?? []);
@@ -2437,6 +2445,13 @@ export function activateAbility(s: GameState, player: PlayerId, source: ObjectId
       throw new RulesError("Aucun permanent à renvoyer");
     removeFromCombat(s, back);
     moveObject(s, back, "hand");
+  }
+  // The Soul Stone : « exilez une créature que vous contrôlez ».
+  if (ab.cost.exileOther) {
+    const gone = bounceCostOptions(s, player, source, ab.cost.exileOther)[0];
+    if (!gone) throw new RulesError("Aucun permanent à exiler");
+    removeFromCombat(s, gone);
+    moveObject(s, gone, "exile");
   }
   // « Défaussez une carte » : choisie par le joueur (sinon la première de la main).
   if (ab.cost.discard) {

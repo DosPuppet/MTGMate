@@ -158,6 +158,7 @@ function apply(s: GameState, submitter: PlayerId, d: Decision): void {
   checkDecisionShape(s, d);
   // Toute autre décision que produire ou annuler du mana rend les engagements de mana définitifs.
   if (d.type !== "tapForMana" && d.type !== "undoMana") s.manaUndo = undefined;
+  s.leftBatch = undefined;
   if (d.type === "concede") {
     const player = submitter;
     const pl = s.players[player];

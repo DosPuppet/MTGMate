@@ -1,5 +1,5 @@
 import type { OpHandlers } from "../effects";
-import { evalAmount } from "../effects";
+import { evalAmount, resolveRef } from "../effects";
 import { bump, linkedColors } from "../layers";
 import { chars } from "../state";
 import { matchesObjectFilter } from "../targets";
@@ -7,7 +7,8 @@ import type { ManaType } from "../types";
 
 export const HANDLERS: OpHandlers = {
   addMana(s, _r, e, ctx) {
-    const pool = s.players[ctx.controller]?.manaPool;
+    const who = e.who ? resolveRef(s, ctx, e.who)[0] : ctx.controller;
+    const pool = who ? s.players[who]?.manaPool : undefined;
     const times = e.times === undefined ? 1 : evalAmount(s, ctx, e.times);
     if (pool) for (const m of e.mana) pool[m] += times;
     bump(s);

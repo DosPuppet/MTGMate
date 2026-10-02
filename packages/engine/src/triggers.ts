@@ -361,6 +361,22 @@ export function checkCondition(
       return !!sourceId && !!s.objects[sourceId]?.harnessed;
     case "evoked":
       return !!sourceId && !!s.objects[sourceId]?.evoked;
+    case "eventObjectGreatestPower": {
+      const id = eventObject;
+      const v = id ? (s.lki[id] ?? (s.objects[id]?.zone === "battlefield" ? snapshot(s, id) : undefined)) : undefined;
+      if (!v) return false;
+      const others = [
+        ...s.battlefield
+          .filter((x) => x !== id && s.objects[x]?.controller === v.controller && isCreature(s, x))
+          .map((x) => chars(s, x).power),
+        ...(s.leftBatch ?? [])
+          .filter((x) => x !== id)
+          .map((x) => s.lki[x])
+          .filter((l) => !!l && l.controller === v.controller && l.types.includes("Creature"))
+          .map((l) => l?.power ?? 0),
+      ];
+      return others.every((p) => v.power >= p);
+    }
     case "castVia": {
       const item = s.resolving && s.resolving.item.id === sourceId ? s.resolving.item : s.stack.find((x) => x.id === sourceId);
       return (item?.castVia ?? (sourceId ? s.objects[sourceId]?.castVia : undefined)) === c.via;

@@ -159,6 +159,10 @@ export function bent(s: GameState, player: PlayerId, kind: BendKind): void {
 
 /** Signale un événement de règles : les capacités déclenchées correspondantes sont mises en attente. */
 export function rulesEvent(s: GameState, ev: RulesEvent): void {
+  if (ev.e === "zone" && ev.from === "battlefield" && ev.lki) {
+    s.leftBatch ??= [];
+    s.leftBatch.push(ev.lki.id);
+  }
   if (ev.e === "discard") {
     const pl = s.players[ev.player];
     if (pl) pl.turnStats.cardsDiscarded += ev.cards.length;
