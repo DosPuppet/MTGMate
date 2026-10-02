@@ -380,8 +380,8 @@ export type TriggerSpec =
   | { on: "blocks"; who: "self" | ObjectFilter; attacker?: ObjectFilter; eventObject?: "attacker" }
   /** « Chaque fois que [créature] meurt ou est exilée » (depuis le champ de bataille). */
   | { on: "diesOrExiled"; who: "self" | ObjectFilter; minPower?: number }
-  /** « Chaque fois que vous jouez un terrain » */
-  | { on: "playLand" }
+  /** « Chaque fois que vous jouez un terrain » ; `from` : seulement depuis ces zones (« depuis l'exil », Ghost-Spider). */
+  | { on: "playLand"; from?: Zone[] }
   /** « Chaque fois que [vous] défaussez une ou plusieurs cartes » (montant : leur nombre). */
   | { on: "discardBatch"; whose: "you" | "opponent" | "any" }
   /** « Quand vous cyclez cette carte » (depuis le cimetière ; montant : le X du coût de cycle). */

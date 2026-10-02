@@ -808,7 +808,8 @@ function matchTrigger(s: GameState, ev: RulesEvent, t: TriggerSpec, src: Source)
         : null;
     }
     case "playLand":
-      return ev.e === "playLand" && ev.player === me ? { objectId: ev.objectId, player: me } : null;
+      if (ev.e !== "playLand" || ev.player !== me || (t.from && !t.from.includes(ev.from))) return null;
+      return { objectId: ev.objectId, player: me };
     case "castSelf":
       return ev.e === "cast" && ev.stackId === src.id ? { objectId: src.id, player: me } : null;
     case "zoneChange": {

@@ -39,3 +39,10 @@ Les scripts sont dans `packages/cards/src/spm/` : `cards` (cartes du méta), `wh
 - **Moteur :** rien de nouveau.
 - **Reste pour plus tard :** Alien Symbiosis (lancer depuis le cimetière en défaussant une carte), Behold the Sinister Six! (cibles de noms différents), Black Cat, Cunning Thief (regarder la bibliothèque d'un adversaire, exil face cachée), Gwenom, Remorseless (payer des PV au lieu du mana), Sandman's Quicksand (« si le coût de chaos a été payé »), The Soul Stone (coût « exilez une créature que vous contrôlez »).
 - **Tests :** 30 tests de règles (« lot A, noir »).
+
+## Sous-lot A4 : cartes rouges ✅ (90 / 188)
+
+- **Cartes (21, et Shock de MKM) :** Angry Rabble, Electro, Assaulting Battery, Electro's Bolt, Gwen Stacy // Ghost-Spider, Heroes' Hangout, Hobgoblin, Mantled Marauder, J. Jonah Jameson, Masked Meower, Maximum Carnage, Molten Man, Inferno Incarnate, Raging Goblinoids, Romantic Rendezvous, Shadow of the Goblin, Shock, Shocker, Unshakable, Spider-Gwen, Free Spirit, Spider-Islanders, Spinneret and Spiderling, Stegron the Dinosaur Man, Taxi Driver, Wisecrack.
+- **Moteur :** le déclencheur « chaque fois que vous jouez un terrain » accepte `from` (zones d'origine : « depuis l'exil », Ghost-Spider ; « d'ailleurs que votre main », Shadow of the Goblin) ; l'événement `playLand` porte sa zone de départ (test dans `rulings.test.ts`).
+- **Reste pour plus tard :** Spider-Punk (émeute accordée, sorts et capacités qui ne peuvent pas être contrecarrés), Spider-Verse (règle des légendes levée pour les Araignées, « une seule fois par tour »), Superior Foes of Spider-Man (permission qui prend fin quand la source exile une autre carte).
+- **Tests :** 31 tests de règles (« lot A, rouge »).

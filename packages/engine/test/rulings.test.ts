@@ -423,4 +423,17 @@ describe("socle de Marvel's Spider-Man", () => {
     expect(s.stack).toHaveLength(0);
     expect(s.triggers).toHaveLength(0);
   });
+
+  it("305.1 : « jouez un terrain depuis l'exil » ne compte pas un terrain joué depuis la main", () => {
+    const watcher = customCard({
+      name: "Test Exile Watcher",
+      types: ["Enchantment"],
+      typeLine: "Enchantment",
+      abilities: [triggered({ on: "playLand", from: ["exile"] }, [fx.addCounters(ref.self, 1)])],
+    });
+    let s = scenario({ p1: { battlefield: [watcher], hand: ["Forest"] } });
+    const w = idOf(s, "p1", "battlefield", "Test Exile Watcher");
+    s = passAccepting(act(s, "p1", { type: "playLand", card: idOf(s, "p1", "hand", "Forest") }), (x) => x.triggers.length === 0);
+    expect(s.objects[w]?.counters["+1/+1"] ?? 0).toBe(0);
+  });
 });

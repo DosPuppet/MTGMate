@@ -247,6 +247,7 @@ export function playLand(s: GameState, player: PlayerId, card: ObjectId, payLife
   if (payLife && shock) payLife_(s, player, shock);
   if (o.zone === "graveyard") s.turn.graveyardTypesUsed = [...(s.turn.graveyardTypesUsed ?? []), "Land"];
   const defId = o.defId;
+  const fromZone = o.zone;
   const fromExile = o.zone === "exile" ? exilePermission(s, player, card) : undefined;
   const id = moveObject(s, card, "battlefield", {
     controller: player,
@@ -254,7 +255,7 @@ export function playLand(s: GameState, player: PlayerId, card: ObjectId, payLife
   });
   s.turn.landsPlayed += 1;
   emit({ type: "playLand", player, objectId: id as string, defId });
-  if (id) rulesEvent(s, { e: "playLand", player, objectId: id });
+  if (id) rulesEvent(s, { e: "playLand", player, objectId: id, from: fromZone });
   // Lightstall Inquisitor : un terrain joué depuis l'exil ainsi arrive engagé.
   const landed = id ? s.objects[id] : undefined;
   if (landed && fromExile?.landsTapped) {

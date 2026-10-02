@@ -126,7 +126,7 @@ export type RulesEvent =
   /** Une Classe atteint un niveau. */
   | { e: "classLevel"; objectId: ObjectId; level: number }
   /** Un joueur joue un terrain. */
-  | { e: "playLand"; player: PlayerId; objectId: ObjectId }
+  | { e: "playLand"; player: PlayerId; objectId: ObjectId; from: Zone }
   /** Dépense N (Bloomburrow) : ce joueur vient de dépenser son N-ième mana total pour lancer des sorts ce tour-ci. */
   | { e: "expend"; player: PlayerId; n: number }
   /** Un joueur fourrage (701.61). */

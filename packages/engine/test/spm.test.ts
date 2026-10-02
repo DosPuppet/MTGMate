@@ -1585,3 +1585,485 @@ describe("lot A, noir", () => {
     });
   });
 });
+
+describe("lot A, rouge", () => {
+  type S = GameState;
+  type Answer = (req: ChoiceRequest, player: string, cur: S) => ChoiceValue[] | undefined;
+  const lands = (name: string, n: number) => Array(n).fill(name) as string[];
+  const nameOf = (s: S, id: string) => s.defs[s.objects[id]?.defId ?? ""]?.name;
+  const exiled = (s: S, name: string) => s.exile.find((id) => nameOf(s, id) === name) as string;
+
+  /** Passe et répond aux choix (réponse suggérée par défaut) jusqu'à une pile vide, sans déclenchement en attente. */
+  const settle = (s: S, answer: Answer = () => undefined): S => {
+    let cur = s;
+    for (let i = 0; i < 300; i++) {
+      const p = cur.pending;
+      if (p?.kind === "priority" && cur.stack.length === 0 && cur.triggers.length === 0 && i > 0) break;
+      if (p?.kind === "priority") cur = act(cur, p.player, { type: "pass" });
+      else if (p?.kind === "choice")
+        cur = act(cur, p.player, { type: "choose", values: answer(p.request, p.player, cur) ?? p.request.suggested });
+      else break;
+    }
+    return cur;
+  };
+  /** Réponse qui choisit les objets (ou joueurs) voulus quand ils font partie des options. */
+  const picking =
+    (want: string[]): Answer =>
+    (req) => {
+      if (req.type !== "pick") return undefined;
+      const picked = want.filter((w) => req.options.includes(w));
+      return picked.length > 0 ? picked : undefined;
+    };
+  const cast = (s: S, player: string, name: string, extra: object = {}) =>
+    act(s, player, { type: "cast", card: idOf(s, player, "hand", name), ...extra });
+  const castable = (s: S, player: string, card: string) =>
+    legalActions(s, player).some((a) => a.type === "cast" && a.card === card);
+  const playable = (s: S, player: string, card: string) =>
+    legalActions(s, player).some((a) => a.type === "playLand" && a.card === card);
+  /** Capacité activable de `source` dont le libellé correspond (la première sinon). */
+  const ability = (s: S, player: string, source: string, label?: RegExp) =>
+    legalActions(s, player).find(
+      (a): a is Extract<ActionOption, { type: "activate" }> =>
+        a.type === "activate" && a.source === source && (!label || label.test(a.label ?? "")),
+    );
+  const activate = (s: S, player: string, source: string, extra: object = {}, label?: RegExp) =>
+    act(s, player, { type: "activate", source, ability: ability(s, player, source, label)?.ability ?? -1, ...extra });
+  const pt = (s: S, id: string) => [chars(s, id).power, chars(s, id).toughness];
+  const setCounters = (s: S, id: string, kind: string, n: number) => {
+    (s.objects[id] as { counters: Record<string, number> }).counters[kind] = n;
+    s.version += 1;
+  };
+  /** Déclare les attaquants contre p2, puis avance jusqu'à la seconde phase principale. */
+  const attack = (s: S, ids: string[], answer?: Answer): S => {
+    let cur = passAccepting(s, (x) => x.pending?.kind === "declareAttackers");
+    cur = act(cur, "p1", { type: "declareAttackers", attackers: ids.map((id) => ({ id, defender: "p2" })) });
+    cur = settle(cur, answer);
+    return advanceUntil(cur, (x) => x.turn.step === "main2");
+  };
+
+  describe("Marvel's Spider-Man, lot A — rouge", () => {
+    describe("Angry Rabble", () => {
+      it("un sort de valeur de mana 4 ou plus : 1 blessure à chaque adversaire ; pas un sort moins cher", () => {
+        let s = scenario({
+          p1: { battlefield: ["Angry Rabble", ...lands("Plains", 5), "Mountain"], hand: ["Serra Angel", "Shock"] },
+        });
+        s = settle(cast(s, "p1", "Shock", { targets: { t: ["p2"] } }));
+        expect(s.players.p2?.life).toBe(18);
+        s = settle(cast(s, "p1", "Serra Angel"));
+        expect(s.players.p2?.life).toBe(17);
+      });
+
+      it("{5}{R}, en rituel : deux marqueurs +1/+1", () => {
+        let s = scenario({ p1: { battlefield: ["Angry Rabble", ...lands("Mountain", 6)] } });
+        const rabble = idOf(s, "p1", "battlefield", "Angry Rabble");
+        s = settle(activate(s, "p1", rabble));
+        expect(pt(s, rabble)).toEqual([4, 4]);
+      });
+    });
+
+    describe("Electro, Assaulting Battery", () => {
+      it("un éphémère ajoute {R}, et le mana rouge non dépensé ne se vide pas entre les étapes", () => {
+        let s = scenario({ p1: { battlefield: ["Electro, Assaulting Battery", "Mountain"], hand: ["Shock"] } });
+        s = settle(cast(s, "p1", "Shock", { targets: { t: ["p2"] } }));
+        expect(s.players.p1?.manaPool.R).toBe(1);
+        s = advanceUntil(s, (x) => x.turn.step === "main2");
+        expect(s.players.p1?.manaPool.R).toBe(1);
+      });
+
+      it("quand il quitte le champ de bataille, vous pouvez payer {X} : X blessures à un joueur ciblé", () => {
+        let s = scenario({
+          p1: { battlefield: ["Electro, Assaulting Battery", ...lands("Mountain", 6)], hand: ["Electro's Bolt"] },
+        });
+        const electro = idOf(s, "p1", "battlefield", "Electro, Assaulting Battery");
+        s = settle(cast(s, "p1", "Electro's Bolt", { targets: { t: [electro] } }), (req) =>
+          req.type === "number" ? [2] : req.type === "pick" && req.options.includes("p2") ? ["p2"] : undefined,
+        );
+        expect(idsOf(s, "p1", "graveyard", "Electro, Assaulting Battery")).toHaveLength(1);
+        expect(s.players.p2?.life).toBe(18);
+      });
+    });
+
+    describe("Electro's Bolt et Romantic Rendezvous", () => {
+      it("défaussez une carte puis piochez deux cartes ; le Bolt défaussé se lance depuis le cimetière pour {1}{R} (chaos)", () => {
+        let s = scenario({
+          p1: { battlefield: lands("Mountain", 4), hand: ["Romantic Rendezvous", "Electro's Bolt"] },
+          p2: { battlefield: ["Serra Angel"] },
+        });
+        const bolt = idOf(s, "p1", "hand", "Electro's Bolt");
+        s = settle(cast(s, "p1", "Romantic Rendezvous"), picking([bolt]));
+        expect(s.players.p1?.hand).toHaveLength(2);
+        const inGy = idOf(s, "p1", "graveyard", "Electro's Bolt");
+        const angel = idOf(s, "p2", "battlefield", "Serra Angel");
+        s = settle(act(s, "p1", { type: "cast", card: inGy, targets: { t: [angel] } }));
+        expect(idsOf(s, "p2", "graveyard", "Serra Angel")).toHaveLength(1);
+        // Deux terrains engagés pour le sort à {1}{R}, deux pour le chaos.
+        expect(s.battlefield.filter((id) => s.objects[id]?.tapped)).toHaveLength(4);
+      });
+    });
+
+    describe("Gwen Stacy // Ghost-Spider", () => {
+      it("Gwen Stacy : la carte exilée en arrivant est jouable tant que vous la contrôlez", () => {
+        let s = scenario({
+          p1: { battlefield: lands("Mountain", 3), hand: ["Gwen Stacy // Ghost-Spider", "Shock"], library: lands("Island", 5) },
+        });
+        s = settle(cast(s, "p1", "Gwen Stacy // Ghost-Spider"));
+        const island = exiled(s, "Island");
+        expect(island).toBeDefined();
+        expect(playable(s, "p1", island)).toBe(true);
+        const gwen = idOf(s, "p1", "battlefield", "Gwen Stacy // Ghost-Spider");
+        s = settle(cast(s, "p1", "Shock", { targets: { t: [gwen] } }));
+        expect(idsOf(s, "p1", "graveyard", "Gwen Stacy // Ghost-Spider")).toHaveLength(1);
+        expect(playable(s, "p1", island)).toBe(false);
+      });
+
+      it("se transforme en Ghost-Spider ; un sort lancé ou un terrain joué depuis l'exil lui donne un marqueur +1/+1", () => {
+        let s = scenario({
+          p1: {
+            battlefield: [...lands("Mountain", 6), "Island", "Plains"],
+            hand: ["Gwen Stacy // Ghost-Spider"],
+            library: ["Shock", ...lands("Island", 5)],
+          },
+        });
+        s = settle(cast(s, "p1", "Gwen Stacy // Ghost-Spider"));
+        const gwen = idOf(s, "p1", "battlefield", "Gwen Stacy // Ghost-Spider");
+        s = settle(activate(s, "p1", gwen, {}, /Transformez/));
+        expect(chars(s, gwen).name).toBe("Ghost-Spider");
+        expect(pt(s, gwen)).toEqual([4, 4]);
+        expect(chars(s, gwen).keywords).toEqual(expect.arrayContaining(["flying", "vigilance", "haste"]));
+        // La permission de Gwen Stacy dure : vous contrôlez toujours cette créature.
+        const shock = exiled(s, "Shock");
+        expect(castable(s, "p1", shock)).toBe(true);
+        s = settle(act(s, "p1", { type: "cast", card: shock, targets: { t: ["p2"] } }));
+        expect(s.objects[gwen]?.counters["+1/+1"]).toBe(1);
+        // Retirez deux marqueurs : exile la carte du dessus, jouable ce tour-ci (un terrain : un marqueur de plus).
+        setCounters(s, gwen, "+1/+1", 2);
+        s = settle(activate(s, "p1", gwen, {}, /carte du dessus/));
+        expect(s.objects[gwen]?.counters["+1/+1"] ?? 0).toBe(0);
+        const island = exiled(s, "Island");
+        expect(playable(s, "p1", island)).toBe(true);
+        s = settle(act(s, "p1", { type: "playLand", card: island }));
+        expect(s.objects[gwen]?.counters["+1/+1"]).toBe(1);
+      });
+
+      it("Ghost-Spider : la carte exilée par sa capacité n'est plus jouable au tour suivant", () => {
+        let s = scenario({
+          p1: {
+            battlefield: [...lands("Mountain", 4), "Island", "Plains", "Gwen Stacy // Ghost-Spider"],
+            library: lands("Island", 8),
+          },
+        });
+        const gwen = idOf(s, "p1", "battlefield", "Gwen Stacy // Ghost-Spider");
+        s = settle(activate(s, "p1", gwen, {}, /Transformez/));
+        setCounters(s, gwen, "+1/+1", 2);
+        s = settle(activate(s, "p1", gwen, {}, /carte du dessus/));
+        const island = exiled(s, "Island");
+        expect(playable(s, "p1", island)).toBe(true);
+        s = advanceUntil(s, (x) => x.turn.active === "p1" && x.turn.step === "main1" && x.turn.number > 3);
+        expect(s.exile).toContain(island);
+        expect(playable(s, "p1", island)).toBe(false);
+      });
+    });
+
+    describe("Heroes' Hangout", () => {
+      it("Rendez-vous : exile deux cartes, une seule jouable, jusqu'à la fin de votre prochain tour", () => {
+        let s = scenario({
+          p1: { battlefield: ["Mountain"], hand: ["Heroes' Hangout"], library: ["Shock", "Opt", ...lands("Forest", 6)] },
+        });
+        let shock = "";
+        s = settle(cast(s, "p1", "Heroes' Hangout", { mode: 0 }), (req, _p, cur) => {
+          shock = exiled(cur, "Shock") ?? "";
+          return req.type === "pick" && req.options.includes(shock) ? [shock] : undefined;
+        });
+        const opt = exiled(s, "Opt");
+        expect(castable(s, "p1", opt)).toBe(false);
+        s = advanceUntil(s, (x) => x.turn.active === "p2" && x.turn.step === "main1");
+        s = advanceUntil(s, (x) => x.turn.active === "p1" && x.turn.step === "main1");
+        expect(castable(s, "p1", shock)).toBe(true);
+        s = advanceUntil(s, (x) => x.turn.active === "p2" && x.turn.step === "main1");
+        s = advanceUntil(s, (x) => x.turn.active === "p1" && x.turn.step === "main1");
+        expect(castable(s, "p1", shock)).toBe(false);
+      });
+
+      it("Patrouille : une ou deux créatures gagnent +1/+0 et l'initiative jusqu'à la fin du tour", () => {
+        let s = scenario({ p1: { battlefield: ["Mountain", "Bear Cub", "Llanowar Elves"], hand: ["Heroes' Hangout"] } });
+        const bear = idOf(s, "p1", "battlefield", "Bear Cub");
+        const elves = idOf(s, "p1", "battlefield", "Llanowar Elves");
+        s = settle(cast(s, "p1", "Heroes' Hangout", { mode: 1, targets: { t: [bear, elves] } }));
+        expect(pt(s, bear)).toEqual([3, 2]);
+        expect(pt(s, elves)).toEqual([2, 1]);
+        expect(chars(s, bear).keywords).toContain("firstStrike");
+        s = advanceUntil(s, (x) => x.turn.active === "p2");
+        expect(pt(s, bear)).toEqual([2, 2]);
+      });
+    });
+
+    describe("Hobgoblin, Mantled Marauder", () => {
+      it("chaque carte défaussée lui donne +2/+0 jusqu'à la fin du tour", () => {
+        let s = scenario({
+          p1: { battlefield: ["Hobgoblin, Mantled Marauder", ...lands("Mountain", 2)], hand: ["Romantic Rendezvous", "Opt"] },
+        });
+        const hob = idOf(s, "p1", "battlefield", "Hobgoblin, Mantled Marauder");
+        s = settle(cast(s, "p1", "Romantic Rendezvous"));
+        expect(pt(s, hob)).toEqual([3, 2]);
+        s = advanceUntil(s, (x) => x.turn.active === "p2");
+        expect(pt(s, hob)).toEqual([1, 2]);
+      });
+    });
+
+    describe("J. Jonah Jameson", () => {
+      it("suspecte jusqu'à une créature ; une de vos créatures avec la menace qui attaque crée un Trésor", () => {
+        let s = scenario({ p1: { battlefield: [...lands("Mountain", 3), "Bear Cub"], hand: ["J. Jonah Jameson"] } });
+        const bear = idOf(s, "p1", "battlefield", "Bear Cub");
+        s = settle(cast(s, "p1", "J. Jonah Jameson"), picking([bear]));
+        expect(chars(s, bear).keywords).toEqual(expect.arrayContaining(["menace", "cantBlock"]));
+        s = attack(s, [bear]);
+        expect(idsOf(s, "p1", "battlefield", "Treasure")).toHaveLength(1);
+      });
+
+      it("une créature sans la menace qui attaque ne crée rien", () => {
+        let s = scenario({ p1: { battlefield: ["J. Jonah Jameson", "Bear Cub"] } });
+        s = attack(s, [idOf(s, "p1", "battlefield", "Bear Cub")]);
+        expect(idsOf(s, "p1", "battlefield", "Treasure")).toHaveLength(0);
+      });
+    });
+
+    describe("Masked Meower", () => {
+      it("défaussez une carte, sacrifiez-le : piochez une carte", () => {
+        let s = scenario({ p1: { battlefield: ["Masked Meower"], hand: ["Opt"] } });
+        const meower = idOf(s, "p1", "battlefield", "Masked Meower");
+        s = settle(activate(s, "p1", meower, { discard: [idOf(s, "p1", "hand", "Opt")] }));
+        expect(idsOf(s, "p1", "graveyard", "Masked Meower")).toHaveLength(1);
+        expect(idsOf(s, "p1", "graveyard", "Opt")).toHaveLength(1);
+        expect(s.players.p1?.hand).toHaveLength(1);
+      });
+    });
+
+    describe("Maximum Carnage", () => {
+      it("I : jusqu'à votre prochain tour, chaque créature attaque si possible", () => {
+        let s = scenario({
+          p1: { battlefield: lands("Mountain", 5), hand: ["Maximum Carnage"] },
+          p2: { battlefield: ["Bear Cub"] },
+        });
+        s = settle(cast(s, "p1", "Maximum Carnage"));
+        const bear = idOf(s, "p2", "battlefield", "Bear Cub");
+        expect(chars(s, bear).keywords).toContain("mustAttack");
+        s = advanceUntil(s, (x) => x.turn.active === "p2" && x.pending?.kind === "declareAttackers");
+        expect(() => act(s, "p2", { type: "declareAttackers", attackers: [] })).toThrow();
+        s = act(s, "p2", { type: "declareAttackers", attackers: [{ id: bear, defender: "p1" }] });
+        s = advanceUntil(s, (x) => x.turn.active === "p1" && x.turn.step === "main1");
+        expect(chars(s, bear).keywords).not.toContain("mustAttack");
+      });
+
+      it("II : ajoutez {R}{R}{R} ; III : 5 blessures à chaque adversaire, puis elle est sacrifiée", () => {
+        let s = scenario({
+          p1: { battlefield: [{ name: "Maximum Carnage", counters: { lore: 1 } }] },
+          active: "p2",
+          step: "end",
+        });
+        s = settle(advanceUntil(s, (x) => x.turn.active === "p1" && x.turn.step === "main1"));
+        expect(s.players.p1?.manaPool.R).toBe(3);
+        s = advanceUntil(s, (x) => x.turn.active === "p1" && x.turn.step === "main1" && x.turn.number > 4);
+        s = settle(s);
+        expect(s.players.p2?.life).toBe(15);
+        expect(idsOf(s, "p1", "graveyard", "Maximum Carnage")).toHaveLength(1);
+      });
+    });
+
+    describe("Molten Man, Inferno Incarnate", () => {
+      it("cherche une Montagne de base (engagée), gagne +1/+1 par Montagne ; en partant, sacrifiez un terrain", () => {
+        let s = scenario({
+          p1: {
+            battlefield: lands("Mountain", 3),
+            hand: ["Molten Man, Inferno Incarnate"],
+            library: ["Forest", "Mountain", "Forest"],
+          },
+          p2: { battlefield: [] },
+        });
+        s = settle(cast(s, "p1", "Molten Man, Inferno Incarnate"));
+        const molten = idOf(s, "p1", "battlefield", "Molten Man, Inferno Incarnate");
+        const mountains = idsOf(s, "p1", "battlefield", "Mountain");
+        expect(mountains).toHaveLength(4);
+        expect(mountains.filter((id) => s.objects[id]?.tapped)).toHaveLength(4);
+        expect(pt(s, molten)).toEqual([4, 4]);
+        expect(s.players.p1?.library.map((id) => nameOf(s, id))).not.toContain("Mountain");
+      });
+
+      it("quand il quitte le champ de bataille, vous sacrifiez un terrain", () => {
+        // Deux Montagnes : 2/2 ; un troisième terrain pour lancer le Bolt.
+        let s = scenario({
+          p1: { battlefield: ["Molten Man, Inferno Incarnate", ...lands("Mountain", 2), "Plains"], hand: ["Electro's Bolt"] },
+        });
+        const molten = idOf(s, "p1", "battlefield", "Molten Man, Inferno Incarnate");
+        expect(pt(s, molten)).toEqual([2, 2]);
+        s = settle(cast(s, "p1", "Electro's Bolt", { targets: { t: [molten] } }));
+        expect(idsOf(s, "p1", "graveyard", "Molten Man, Inferno Incarnate")).toHaveLength(1);
+        expect(s.battlefield.filter((id) => chars(s, id).types.includes("Land"))).toHaveLength(2);
+      });
+    });
+
+    describe("Shadow of the Goblin", () => {
+      it("au début de votre première phase principale : défaussez une carte, puis piochez une carte", () => {
+        let s = scenario({
+          p1: { battlefield: ["Shadow of the Goblin"], hand: ["Opt"] },
+          active: "p2",
+          step: "end",
+        });
+        s = settle(advanceUntil(s, (x) => x.turn.active === "p1" && x.turn.step === "main1"));
+        expect(idsOf(s, "p1", "graveyard", "Opt")).toHaveLength(1);
+        // L'Opt défaussée remplacée : la pioche du tour et celle de la capacité.
+        expect(s.players.p1?.hand).toHaveLength(2);
+      });
+
+      it("sans carte en main, rien n'est pioché", () => {
+        let s = scenario({ p1: { battlefield: ["Shadow of the Goblin"] }, active: "p2", step: "end" });
+        s = settle(advanceUntil(s, (x) => x.turn.active === "p1" && x.turn.step === "draw"));
+        // La pioche du tour, défaussée par la capacité : pas de carte en plus.
+        s = settle(advanceUntil(s, (x) => x.turn.active === "p1" && x.turn.step === "main1"));
+        expect(s.players.p1?.hand).toHaveLength(1);
+      });
+
+      it("un sort lancé ailleurs que depuis la main : 1 blessure à chaque adversaire ; pas depuis la main", () => {
+        let s = scenario({
+          p1: { battlefield: ["Shadow of the Goblin", ...lands("Mountain", 6)], hand: ["Romantic Rendezvous", "Electro's Bolt"] },
+          p2: { battlefield: ["Serra Angel"] },
+        });
+        const bolt = idOf(s, "p1", "hand", "Electro's Bolt");
+        s = settle(cast(s, "p1", "Romantic Rendezvous"), picking([bolt]));
+        expect(s.players.p2?.life).toBe(20);
+        const angel = idOf(s, "p2", "battlefield", "Serra Angel");
+        s = settle(act(s, "p1", { type: "cast", card: idOf(s, "p1", "graveyard", "Electro's Bolt"), targets: { t: [angel] } }));
+        expect(s.players.p2?.life).toBe(19);
+      });
+    });
+
+    describe("Shocker, Unshakable", () => {
+      it("en arrivant, 2 blessures à une créature et 2 à son contrôleur ; l'initiative pendant votre tour seulement", () => {
+        let s = scenario({
+          p1: { battlefield: lands("Mountain", 6), hand: ["Shocker, Unshakable"] },
+          p2: { battlefield: ["Bear Cub"] },
+        });
+        const bear = idOf(s, "p2", "battlefield", "Bear Cub");
+        s = settle(cast(s, "p1", "Shocker, Unshakable"), picking([bear]));
+        expect(idsOf(s, "p2", "graveyard", "Bear Cub")).toHaveLength(1);
+        expect(s.players.p2?.life).toBe(18);
+        const shocker = idOf(s, "p1", "battlefield", "Shocker, Unshakable");
+        expect(chars(s, shocker).keywords).toContain("firstStrike");
+        s = advanceUntil(s, (x) => x.turn.active === "p2");
+        expect(chars(s, shocker).keywords).not.toContain("firstStrike");
+      });
+    });
+
+    describe("Shock", () => {
+      it("2 blessures à n'importe quelle cible", () => {
+        let s = scenario({ p1: { battlefield: ["Mountain"], hand: ["Shock"] }, p2: { battlefield: ["Bear Cub"] } });
+        s = settle(cast(s, "p1", "Shock", { targets: { t: [idOf(s, "p2", "battlefield", "Bear Cub")] } }));
+        expect(idsOf(s, "p2", "graveyard", "Bear Cub")).toHaveLength(1);
+      });
+    });
+
+    describe("Spider-Gwen, Free Spirit", () => {
+      it("quand elle devient engagée, vous pouvez défausser une carte pour en piocher une", () => {
+        let s = scenario({ p1: { battlefield: ["Spider-Gwen, Free Spirit"], hand: ["Opt"] } });
+        const gwen = idOf(s, "p1", "battlefield", "Spider-Gwen, Free Spirit");
+        const opt = idOf(s, "p1", "hand", "Opt");
+        s = attack(s, [gwen], picking([opt]));
+        expect(idsOf(s, "p1", "graveyard", "Opt")).toHaveLength(1);
+        expect(s.players.p1?.hand).toHaveLength(1);
+        expect(nameOf(s, s.players.p1?.hand[0] ?? "")).toBe("Forest");
+      });
+
+      it("sans défausse, pas de pioche", () => {
+        let s = scenario({ p1: { battlefield: ["Spider-Gwen, Free Spirit"], hand: ["Opt"] } });
+        const gwen = idOf(s, "p1", "battlefield", "Spider-Gwen, Free Spirit");
+        s = attack(s, [gwen], (req) => (req.type === "pick" ? [] : undefined));
+        expect(idsOf(s, "p1", "hand", "Opt")).toHaveLength(1);
+        expect(s.players.p1?.hand).toHaveLength(1);
+      });
+    });
+
+    describe("Spinneret and Spiderling", () => {
+      it("attaquer avec deux Araignées : un marqueur +1/+1 ; 4 blessures ou plus : la carte du dessus est jouable", () => {
+        let s = scenario({
+          p1: {
+            battlefield: [{ name: "Spinneret and Spiderling", counters: { "+1/+1": 2 } }, "Spider-Gwen, Free Spirit"],
+            library: ["Shock", ...lands("Forest", 5)],
+          },
+        });
+        const spin = idOf(s, "p1", "battlefield", "Spinneret and Spiderling");
+        const gwen = idOf(s, "p1", "battlefield", "Spider-Gwen, Free Spirit");
+        s = attack(s, [spin, gwen], (req) => (req.type === "pick" ? [] : undefined));
+        // 1/2 avec trois marqueurs : 4 blessures.
+        expect(s.objects[spin]?.counters["+1/+1"]).toBe(3);
+        expect(s.players.p2?.life).toBe(20 - 4 - 2);
+        const shock = exiled(s, "Shock");
+        expect(s.exile).toContain(shock);
+        // Jouable jusqu'à la fin de votre prochain tour (sans mana ici : la permission seule est vérifiée).
+        expect(s.playPermissions?.some((p) => p.card === shock && p.player === "p1" && p.until > s.turn.number)).toBe(true);
+      });
+
+      it("moins de 4 blessures : rien n'est exilé ; une seule Araignée qui attaque : pas de marqueur", () => {
+        let s = scenario({ p1: { battlefield: ["Spinneret and Spiderling"], library: lands("Forest", 5) } });
+        const spin = idOf(s, "p1", "battlefield", "Spinneret and Spiderling");
+        s = attack(s, [spin]);
+        expect(s.objects[spin]?.counters["+1/+1"] ?? 0).toBe(0);
+        expect(s.exile).toHaveLength(0);
+      });
+    });
+
+    describe("Stegron the Dinosaur Man", () => {
+      it("{1}{R}, défaussez-le : une de vos créatures gagne +3/+1 et devient un Dinosaure jusqu'à la fin du tour", () => {
+        let s = scenario({ p1: { battlefield: [...lands("Mountain", 2), "Bear Cub"], hand: ["Stegron the Dinosaur Man"] } });
+        const bear = idOf(s, "p1", "battlefield", "Bear Cub");
+        const stegron = idOf(s, "p1", "hand", "Stegron the Dinosaur Man");
+        s = settle(activate(s, "p1", stegron, { targets: { t: [bear] } }));
+        expect(idsOf(s, "p1", "graveyard", "Stegron the Dinosaur Man")).toHaveLength(1);
+        expect(pt(s, bear)).toEqual([5, 3]);
+        expect(chars(s, bear).subtypes).toEqual(expect.arrayContaining(["Bear", "Dinosaur"]));
+        s = advanceUntil(s, (x) => x.turn.active === "p2");
+        expect(pt(s, bear)).toEqual([2, 2]);
+        expect(chars(s, bear).subtypes).not.toContain("Dinosaur");
+      });
+    });
+
+    describe("Taxi Driver", () => {
+      it("{1}, {T} : une créature gagne la célérité", () => {
+        let s = scenario({
+          p1: { battlefield: ["Taxi Driver", "Mountain", { name: "Bear Cub", sick: true }] },
+        });
+        const bear = idOf(s, "p1", "battlefield", "Bear Cub");
+        s = settle(activate(s, "p1", idOf(s, "p1", "battlefield", "Taxi Driver"), { targets: { t: [bear] } }));
+        expect(chars(s, bear).keywords).toContain("haste");
+        s = attack(s, [bear]);
+        expect(s.players.p2?.life).toBe(18);
+      });
+    });
+
+    describe("Wisecrack", () => {
+      it("la créature s'inflige des blessures égales à sa force ; non attaquante, son contrôleur ne subit rien", () => {
+        let s = scenario({
+          p1: { battlefield: lands("Mountain", 3), hand: ["Wisecrack"] },
+          p2: { battlefield: ["Bear Cub"] },
+        });
+        const bear = idOf(s, "p2", "battlefield", "Bear Cub");
+        s = settle(cast(s, "p1", "Wisecrack", { targets: { t: [bear] } }));
+        expect(idsOf(s, "p2", "graveyard", "Bear Cub")).toHaveLength(1);
+        expect(s.players.p2?.life).toBe(20);
+      });
+
+      it("sur une créature attaquante, elle meurt et son contrôleur subit 2 blessures", () => {
+        let s = scenario({
+          p1: { battlefield: lands("Mountain", 3), hand: ["Wisecrack"] },
+          p2: { battlefield: ["Bear Cub"] },
+          active: "p2",
+        });
+        const bear = idOf(s, "p2", "battlefield", "Bear Cub");
+        s = passAccepting(s, (x) => x.pending?.kind === "declareAttackers");
+        s = act(s, "p2", { type: "declareAttackers", attackers: [{ id: bear, defender: "p1" }] });
+        s = passAccepting(s, (x) => x.pending?.kind === "priority" && x.pending.player === "p1");
+        s = settle(cast(s, "p1", "Wisecrack", { targets: { t: [bear] } }));
+        expect(idsOf(s, "p2", "graveyard", "Bear Cub")).toHaveLength(1);
+        expect(s.players.p2?.life).toBe(18);
+      });
+    });
+  });
+});
