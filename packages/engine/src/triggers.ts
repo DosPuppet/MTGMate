@@ -126,6 +126,8 @@ function liveSources(s: GameState): Source[] {
 // ---------------------------------------------------------------------------
 
 let batchBefore: Source[] | null = null;
+/** Numéro du lot d'événements simultanés en cours (`GameState.eventBatch`), null hors d'un lot. */
+let currentBatch: number | null = null;
 /**
  * Lien de vie pendant un lot d'événements simultanés : un seul gain de points de vie par source (120.3f, 119.9). Une
  * créature qui blesse plusieurs objets ou joueurs en même temps (piétinement, plusieurs bloqueurs) déclenche une seule
@@ -165,6 +167,8 @@ function checkAmount(
 export function simultaneously<T>(s: GameState, fn: () => T): T {
   if (batchBefore) return fn();
   batchBefore = liveSources(s);
+  s.eventBatch = (s.eventBatch ?? 0) + 1;
+  currentBatch = s.eventBatch;
   lifelinkBatch = new Map();
   enterBatch = [];
   try {
@@ -182,6 +186,7 @@ export function simultaneously<T>(s: GameState, fn: () => T): T {
     batchBefore = null;
     lifelinkBatch = null;
     enterBatch = null;
+    currentBatch = null;
   }
 }
 
@@ -995,8 +1000,11 @@ export function detectTriggers(s: GameState, ev: RulesEvent, only?: (src: Source
       )
         return;
       if (ab.condition && !checkCondition(s, ab.condition, src.view.controller, src.id, data.objectId, data)) return;
-      // « une ou plusieurs … » : un seul déclenchement en attente pour ce lot d'événements.
-      if (ab.batched && s.triggers.some((t) => t.sourceId === src.id && t.abilityIndex === index)) return;
+      // « une ou plusieurs … » : un seul déclenchement par lot d'événements simultanés (un effet d'une résolution, une étape
+      // de blessures de combat, une passe d'actions basées sur l'état) ; hors d'un lot (coûts payés en lançant), les
+      // événements partagent le numéro courant.
+      const batch = currentBatch ?? s.eventBatch ?? 0;
+      if (ab.batched && s.triggers.some((t) => t.sourceId === src.id && t.abilityIndex === index && t.batch === batch)) return;
       if (ab.oncePerTurn) {
         const key = onceKey(src.view.defId, src.id, index);
         if (s.turn.onceFired.includes(key)) return;
@@ -1027,6 +1035,7 @@ export function detectTriggers(s: GameState, ev: RulesEvent, only?: (src: Source
           targets: {},
           // Capacité accordée (pas dans la définition) : on la transporte avec le déclenchement.
           inline: (s.defs[src.view.defId]?.abilities[index] ?? null) === ab ? undefined : inlineOf(ab),
+          ...(ab.batched ? { batch } : {}),
         });
       }
       // Firebender Ascension : une créature attaquante fait, en attaquant, se déclencher une de ses capacités.

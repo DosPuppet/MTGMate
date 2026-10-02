@@ -234,7 +234,7 @@
     "GameObject": 73,
     "StackItem": 44,
     "PlayerState": 21,
-    "GameState": 38,
+    "GameState": 39,
     "ObjectFilter": 90,
     "CostDef": 36,
     "ActivatedAbilityDef": 19,
@@ -254,6 +254,7 @@
   },
   "importCycleMax": 21,
   "ceilingNotes": [
-    "PLAN-C C6 : exil face cachée (406.3), champ GameObject.exiledFaceDown et option faceDown de exileTop : GameObject 72 → 73, Effect (champs) 648 → 649"
+    "PLAN-C C6 : exil face cachée (406.3), champ GameObject.exiledFaceDown et option faceDown de exileTop : GameObject 72 → 73, Effect (champs) 648 → 649",
+    "PLAN-C C12 : déclencheurs « une ou plusieurs » par lot d'événements simultanés (GameState.eventBatch, 603.2c) : GameState 38 → 39"
   ]
 }

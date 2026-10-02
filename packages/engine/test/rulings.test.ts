@@ -2,16 +2,17 @@
  * Tests tirés des décisions officielles (rulings Scryfall et règles complètes) pour les interactions fréquentes du méta :
  * lien de vie, copies, remplacements, nettoyage (docs/plans/PLAN-R.md, lot R7).
  */
+import { card } from "@mtgx/cards";
 import { describe, expect, it } from "vitest";
-import { createTokens, dealDamage, destroy, sourceFromObject } from "../src/actions";
-import { eventReplacement, fx, graveyardReplacement, ref, triggered, when } from "../src/dsl";
+import { createTokens, dealDamage, destroy, sacrifice, sourceFromObject } from "../src/actions";
+import { eventReplacement, fx, graveyardReplacement, ref, spell, target, triggered, when } from "../src/dsl";
 import { addEffect, runEffect } from "../src/effects";
 import { RulesError } from "../src/errors";
 import { fallbackDecision } from "../src/host";
 import { bump } from "../src/layers";
 import { legalActions } from "../src/legal";
 import { counterItem } from "../src/stack";
-import { changeCounters, chars, moveObject } from "../src/state";
+import { changeCounters, chars, createObject, moveObject, registerDef } from "../src/state";
 import { addPlayerEffect } from "../src/statics";
 import { matchesObjectFilter } from "../src/targets";
 import { blockRequirements, requiredBlocks, stateBasedActions } from "../src/turn";
@@ -634,5 +635,58 @@ describe("106.6 : mana marqué engagé à la main (PLAN-C, lot C5)", () => {
     moveObject(s, cavern, "graveyard");
     s = act(s, "p1", { type: "cast", card: idOf(s, "p1", "hand", "Elfe de test") });
     expect(s.stack[0]?.uncounterable).toBe(true);
+  });
+});
+
+describe("approximations levées (PLAN-C, lot C12)", () => {
+  it("Ordeal of Nylea : sacrifiée par un autre moyen, elle cherche quand même deux terrains de base", () => {
+    let s = scenario({ p1: { battlefield: ["Bear Cub"], library: ["Forest", "Island", "Plains"] } });
+    const def = card("Ordeal of Nylea");
+    registerDef(s, def);
+    const o = createObject(s, def.id, "p1", "battlefield");
+    o.attachedTo = idOf(s, "p1", "battlefield", "Bear Cub");
+    const ordeal = o.id;
+    sacrifice(s, ordeal);
+    s = passAccepting(s, (x) => x.stack.length === 0 && x.triggers.length === 0);
+    const lands = s.battlefield.filter((id) => s.objects[id]?.controller === "p1" && chars(s, id).types.includes("Land"));
+    expect(lands).toHaveLength(2);
+  });
+
+  it("« une ou plusieurs … » : un déclenchement par lot d'événements simultanés (un par effet d'une résolution)", () => {
+    const watcher = customCard({
+      name: "Veilleur de test",
+      types: ["Enchantment"],
+      typeLine: "Enchantment",
+      abilities: [
+        triggered(when.zoneChange(["graveyard"], { whose: "you" }), [fx.gainLife(1)], {
+          batched: true,
+          label: "Des cartes quittent votre cimetière : 1 PV",
+        }),
+      ],
+    });
+    const twoEffects = customCard({
+      name: "Deux exils",
+      types: ["Sorcery"],
+      typeLine: "Sorcery",
+      spell: spell(
+        [target.cardInGraveyard("a", {}, "you"), target.cardInGraveyard("b", {}, "you")],
+        [fx.exileCard(ref.target("a")), fx.exileCard(ref.target("b"))],
+      ),
+    });
+    const oneEffect = customCard({
+      name: "Un exil",
+      types: ["Sorcery"],
+      typeLine: "Sorcery",
+      spell: spell([target.upTo(2, target.cardInGraveyard("t", {}, "you"))], [fx.exileCard(ref.target())]),
+    });
+    const run = (sorcery: CardDef, targets: (s: GameState, gy: string[]) => Record<string, string[]>) => {
+      let s = scenario({ p1: { battlefield: [watcher], hand: [sorcery], graveyard: ["Opt", "Opt"] } });
+      const gy = s.players.p1?.graveyard ?? [];
+      s = act(s, "p1", { type: "cast", card: idOf(s, "p1", "hand", sorcery.name), targets: targets(s, gy) });
+      s = passAccepting(s, (x) => x.stack.length === 0 && x.triggers.length === 0);
+      return s.players.p1?.life;
+    };
+    expect(run(twoEffects, (_s, gy) => ({ a: [gy[0] as string], b: [gy[1] as string] }))).toBe(22);
+    expect(run(oneEffect, (_s, gy) => ({ t: [...gy] }))).toBe(21);
   });
 });

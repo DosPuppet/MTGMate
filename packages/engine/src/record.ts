@@ -189,8 +189,12 @@ export const RECORD_VERSION = 1;
  * - 67 : mots-clés accordés aux sorts (`spellKeywords`, `spellHasKeyword`) à la place de quatre drapeaux (flash, convocation,
  *   cave, second partagé) ; un sort sur la pile a les mots-clés que lui accordent les statiques de son contrôleur (Heartflame
  *   Duelist : lien de vie, copies comprises) (PLAN-C, lot C11).
+ * - 68 : déclencheurs « une ou plusieurs … » : un par lot d'événements simultanés (`GameState.eventBatch`) ; Ordeal of
+ *   Nylea se déclenche quelle que soit la façon dont elle est sacrifiée ; défausses en coût (Hallway Heckler, Solitary
+ *   Cell, Murmuring Volume, Thunderhead Gunner, Avishkar Raceway) ; Pyrewood Gearhulk, The Earth Crystal, Chandra (+1),
+ *   Boommobile (PLAN-C, lot C12).
  */
-export const RULES_VERSION = 67;
+export const RULES_VERSION = 68;
 
 /** Un point de contrôle toutes les N décisions (plus la dernière de la partie). */
 export const CHECKPOINT_EVERY = 25;

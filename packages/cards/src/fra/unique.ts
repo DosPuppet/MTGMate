@@ -251,7 +251,10 @@ export const UNIQUE: Record<string, CardScript> = {
         effects: [fx.surveil(1, { filter: { notTypes: ["Creature", "Land"] } })],
         label: "Surveillance 1 ; un non-créature non-terrain revient en main",
       }),
-      loyalty(1, { effects: [fx.addMana("U")], label: "Ajoutez {U}" }),
+      loyalty(1, {
+        effects: [fx.addManaChoice(1, ["U"], { spell: { notTypes: ["Creature"] } })],
+        label: "Ajoutez {U} (seulement pour un sort non-créature)",
+      }),
       loyaltyX({
         targets: [target.permanent("t", ["Artifact", "Creature"], {}, "artefact ou créature")],
         effects: [fx.tap(ref.target()), fx.counters(ref.target(), "stun", amount.x)],

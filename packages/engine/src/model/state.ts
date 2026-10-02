@@ -596,6 +596,8 @@ export interface PendingTrigger {
   mode?: number;
   /** Capacité retardée ou réflexive. */
   inline?: InlineAbility;
+  /** Lot d'événements simultanés qui l'a déclenchée (« une ou plusieurs … » : un seul déclenchement par lot). */
+  batch?: number;
 }
 
 /** Caractéristiques d'un objet au moment où il a quitté le champ de bataille (dernières informations connues). */
@@ -713,6 +715,8 @@ export interface ContinuousEffect extends LayerMods {
 export type Flow = "mulligan" | "stepStart" | "tba" | "priority" | "resolving" | "stepEnd" | "over";
 
 export interface GameState {
+  /** Compteur des lots d'événements simultanés (déclencheurs « une ou plusieurs … »). */
+  eventBatch?: number;
   /** Incrémenté à chaque changement pouvant affecter les caractéristiques (invalide le cache des couches). */
   version: number;
   rng: number;

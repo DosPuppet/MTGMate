@@ -76,13 +76,7 @@ export const ARTIFACTS: Record<string, CardScript> = {
   "Murmuring Volume": {
     abilities: [
       manaAbility(["W", "U", "B", "R", "G"]),
-      // Approximation : la défausse est faite à la résolution (pas comme coût).
-      activated({
-        mana: "{2}",
-        tap: true,
-        effects: [fx.discard(1, ref.you, { store: "d" }), ...fx.when(cond.v("d"), fx.draw(1))],
-        label: "Défaussez puis piochez",
-      }),
+      activated({ mana: "{2}", tap: true, discard: 1, effects: [fx.draw(1)], label: "Défaussez une carte : piochez" }),
     ],
   },
   "Traxos, Scourge Eternal": {

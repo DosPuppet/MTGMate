@@ -174,11 +174,12 @@ export const MULTI: Record<string, CardScript> = {
         ],
         label: "exile jusqu'à son départ",
       }),
-      // Approximation : la défausse d'une carte légendaire est faite à la résolution (pas comme coût).
       activated({
         mana: "{1}",
         tap: true,
-        effects: [fx.discard(1, ref.you, { filter: { legendary: true }, store: "d" }), ...fx.when(cond.v("d"), fx.draw(1))],
+        discard: 1,
+        discardFilter: { legendary: true },
+        effects: [fx.draw(1)],
         label: "Défausser une carte légendaire : piochez",
       }),
     ],

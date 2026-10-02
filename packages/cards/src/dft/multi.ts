@@ -182,10 +182,13 @@ export const MULTI: Record<string, CardScript> = {
   },
   "Pyrewood Gearhulk": {
     abilities: [
-      // Approximation : « les blessures ne peuvent pas être prévenues ce tour-ci » n'est pas modélisé.
-      triggered(when.entersSelf, [fx.pumpAll(OTHER_CREATURE_YOU_CONTROL, 2, 2, ["vigilance", "menace"])], {
-        label: "+2/+2, vigilance et menace",
-      }),
+      triggered(
+        when.entersSelf,
+        [fx.pumpAll(OTHER_CREATURE_YOU_CONTROL, 2, 2, ["vigilance", "menace"]), fx.thisTurn({ damageUnpreventable: true })],
+        {
+          label: "+2/+2, vigilance et menace",
+        },
+      ),
     ],
   },
   "Thundering Broodwagon": {

@@ -26,7 +26,7 @@ Chaque entrée porte sa nature :
 - `règle` **« Au début de l'étape de fin, sacrifiez ce jeton » :** modélisé par une capacité retardée plutôt que par une capacité du jeton.
 - `règle` **Terrains choc mis en jeu par un effet** (et non joués) : ils arrivent engagés, sans proposer de payer 2 points de vie.
 - `timing` **Vitesse :** l'augmentation (« quand un adversaire perd des PV pendant votre tour ») est immédiate, sans passer par la pile.
-- `règle` **Déclencheurs « une ou plusieurs … » (Ketramose, Dredger's Insight) :** fusionnés tant qu'une occurrence attend d'être mise sur la pile.
+- `règle` **Déclencheurs « une ou plusieurs … » (Ketramose, Dredger's Insight) :** un déclenchement par lot d'événements simultanés (un effet d'une résolution, une étape de blessures de combat, une passe d'actions basées sur l'état) ; les événements hors d'un lot (coûts payés en lançant un sort ou en activant une capacité) comptent comme un seul lot.
 - `règle` **Marqueurs de capacité :** ils s'appliquent après les autres effets de couche 6.
 - `règle` **Blessures de combat groupées** (« une ou plusieurs créatures… ») : une fois par étape de blessures et par joueur blessé.
 - `règle` **Plafonds de sécurité :** un même événement crée au plus 100 jetons, et aucun quand le champ de bataille compte déjà 400 objets ; un montant remplacé (blessures, marqueurs, PV, cartes) est borné à un million. Des doubleurs de jetons qui se multiplient (copies d'Exalted Sunborn) donnaient sinon un nombre infini et une partie bloquée (`engine/src/limits.ts`). Chaque coupure est notée au journal de la partie (« Plafond de sécurité atteint »).
@@ -50,17 +50,13 @@ Dans l'ordre où elles ont été ajoutées, extension par extension.
 - **Soulstone Sanctuary** (« tous les types de créature ») : tout sous-type sauf ceux de terrain, d'artefact et d'enchantement connus.
 - **Bolt Bend :** la nouvelle cible est choisie à la résolution.
 - **Demonic Pact :** les modes déjà choisis sont mémorisés sur le permanent (perdus s'il change de zone, ce qui est conforme).
-- **Ordeal of Nylea :** sacrifiée directement par son déclencheur d'attaque, sans déclencheur « quand vous la sacrifiez » séparé : sacrifiée autrement (Marchandage, effet de sacrifice), elle ne cherche pas de terrains.
 - **Mabel, Bitter Recluse :** les marqueurs retirés sont choisis automatiquement (loyauté, puis +1/+1, puis les autres).
-- **Liliana the Faultless, Massacre Girl :** mêmes approximations que Hallway Heckler (défausse à la résolution) et Master of Barbs (blessures non de combat de vos seules sources), plus bas.
+- **Liliana the Faultless, Massacre Girl :** défausse à la résolution ; blessures non de combat de vos seules sources (comme Master of Barbs).
 - **Empower Jace avec plusieurs jetons Jace :** les marqueurs vont sur le premier jeton (pas de choix).
 - **Contempler un Jace :** toujours fait quand c'est possible (Countersculpt, Theorist's Sanctum), sans révéler la carte.
-- **Hallway Heckler :** la défausse est faite à la résolution, et non comme coût.
 - **Master of Barbs :** seules les blessures non de combat infligées par vos sources (sorts compris) comptent, pas celles d'une source adverse.
 - **Something Worth Saving :** les quatre cartes sont regardées puis mises au cimetière, ce qui n'est pas une meule au sens strict (pas de déclencheur de meule).
-- **Solitary Cell, Murmuring Volume :** la carte défaussée l'est à la résolution, et non comme coût d'activation.
 - **Extrapolate the Impossible :** ne fait rien, comme sur Arena en BO1 (pas de cartes « hors du jeu »).
-- **Chandra, Chill of Compliance +1 ({U}) :** mana sans restriction (pas de réserve de mana restreint).
 - **Fblthp, Impossibly Lost :** une seule fois par tour (et non une fois par étape de blessures de combat).
 - **Garruk, Veiled Butcher −3 :** pioche si le total de cartes non-terrain défaussées est inférieur à deux (exact à 2 joueurs, approché en multijoueur).
 - **Garruk, Curse Breaker −4, Jace, Reality Sculptor −3 :** emblèmes temporaires ; Garruk utilise « chaque fois que vous attaquez ».
@@ -81,11 +77,8 @@ Dans l'ordre où elles ont été ajoutées, extension par extension.
 - **Moonlit Meditation, Mirrormind Crown :** les copies sont toujours créées (pas de choix « vous pouvez »).
 - **Dyadrine, Synthesis Amalgam :** les deux créatures dont on retire un marqueur sont choisies automatiquement (celles qui en ont le plus).
 - **Caradora, Heart of Alacria :** le marqueur supplémentaire ne vaut que pour vos créatures (Véhicules animés compris).
-- **Pyrewood Gearhulk :** « les blessures ne peuvent pas être prévenues ce tour-ci » n'est pas modélisé.
 - **Webstrike Elite :** la cible est un artefact ou enchantement quelconque, détruit seulement si sa valeur de mana vaut X.
 - **Chorale, Grim Javelineer :** « quand cette créature meurt ce tour-ci » est une capacité accordée jusqu'à la fin du tour.
-- **Boommobile :** les quatre mana ne sont pas restreints aux capacités.
-- **Thunderhead Gunner, Avishkar Raceway :** la carte est défaussée à la résolution, et non comme coût (comme Solitary Cell).
 - **Cursecloth Wrappings :** l'embaumement accordé est payé tout de suite (en rituel) et le jeton garde les couleurs de la carte.
 - **Radiant Lotus :** c'est son contrôleur qui ajoute le mana (pas de joueur ciblé).
 - **Full Throttle :** deux combats supplémentaires après le combat normal (et non juste après la phase principale).
@@ -117,7 +110,6 @@ Dans l'ordre où elles ont été ajoutées, extension par extension.
 - **Ultima, Origin of Oblivion :** l'effet sur les terrains avec un marqueur de fléau cesse si Ultima quitte le champ de bataille.
 - **Zenos, Shinryu :** la créature choisie est une cible ; l'adversaire choisi est le premier qui perd la partie.
 - **Zell Dincht :** le terrain renvoyé est ciblé (comme Arid Archway).
-- **The Earth Crystal :** tous les marqueurs mis sur vos créatures sont doublés, pas seulement les marqueurs +1/+1.
 - **Rydia, Summoner of Mist :** la Saga ciblée a une valeur de mana d'au plus X (et non exactement X).
 - **Beatrix, Loyal General :** tous vos Équipements ou aucun (pas de choix un par un).
 - **Lightning, Security Sergeant :** la carte reste jouable tant que vous contrôlez une créature nommée Lightning, Security Sergeant.

@@ -190,12 +190,7 @@ export const RED: Record<string, CardScript> = {
     prepareSpell: VICIOUS_VERSE,
     abilities: [
       entersWith({ prepared: true }),
-      // Approximation : la défausse est faite à la résolution (pas comme coût).
-      activated({
-        tap: true,
-        effects: [fx.discard(1, ref.you, { store: "d" }), ...fx.when(cond.v("d"), fx.draw(1))],
-        label: "Défaussez puis piochez",
-      }),
+      activated({ tap: true, discard: 1, effects: [fx.draw(1)], label: "Défaussez une carte : piochez" }),
     ],
   },
   "Pompous Battlemage": {

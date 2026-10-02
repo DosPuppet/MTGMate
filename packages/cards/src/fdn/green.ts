@@ -441,14 +441,14 @@ export const GREEN: Record<string, CardScript> = {
         when.attacks({ attachedToSource: true }),
         [
           fx.addCounters(ref.attached, 1),
-          ...fx.when(
-            cond.amountAtLeast(amount.countersOn(ref.attached), 3),
-            fx.sacrificeIt(ref.self),
-            fx.search(BASIC_LAND, { to: "battlefield", tapped: true }, 2),
-          ),
+          ...fx.when(cond.amountAtLeast(amount.countersOn(ref.attached), 3), fx.sacrificeIt(ref.self)),
         ],
-        { label: "marqueur ; à 3, deux terrains de base" },
+        { label: "marqueur ; à 3, sacrifiez l'Ordalie" },
       ),
+      // « Quand vous sacrifiez l'Ordalie » : quelle que soit la façon (Marchandage, effet de sacrifice).
+      triggered(when.sacrifice({ self: true }), [fx.search(BASIC_LAND, { to: "battlefield", tapped: true }, 2)], {
+        label: "Sacrifiée : deux terrains de base",
+      }),
     ],
   },
   "Predator Ooze": {

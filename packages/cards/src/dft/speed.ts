@@ -254,7 +254,10 @@ export const SPEED: Record<string, CardScript> = {
   Boommobile: {
     abilities: [
       // Approximation : le mana n'est pas restreint aux capacités.
-      triggered(when.entersSelf, [fx.addManaChoice(4)], { label: "Quatre mana d'une couleur" }),
+      // « Ne dépensez ce mana que pour activer des capacités » : réserve marquée, toute capacité activée.
+      triggered(when.entersSelf, [fx.addManaChoice(4, undefined, { abilityOfSource: {} })], {
+        label: "Quatre mana d'une couleur (seulement pour des capacités)",
+      }),
       exhaust({
         mana: "{X}{2}{R}",
         targets: [target.any("t")],
@@ -373,12 +376,11 @@ export const SPEED: Record<string, CardScript> = {
   },
   "Thunderhead Gunner": {
     abilities: [
-      // Approximation : la défausse a lieu à la résolution (comme Solitary Cell).
       activated({
         sorcerySpeed: true,
         oncePerTurn: true,
-        activationCondition: cond.amountAtLeast(amount.cardsIn("hand"), 1),
-        effects: [fx.discard(1), fx.draw(1)],
+        discard: 1,
+        effects: [fx.draw(1)],
         label: "Défaussez une carte : piochez",
       }),
     ],
@@ -569,12 +571,12 @@ export const SPEED: Record<string, CardScript> = {
   "Avishkar Raceway": {
     abilities: [
       manaAbility("C"),
-      // Approximation : la défausse a lieu à la résolution.
       activated({
         mana: "{3}",
         tap: true,
-        activationCondition: cond.all(MAX, cond.amountAtLeast(amount.cardsIn("hand"), 1)),
-        effects: [fx.discard(1), fx.draw(1)],
+        discard: 1,
+        activationCondition: MAX,
+        effects: [fx.draw(1)],
         label: "Vitesse max : défaussez, piochez",
       }),
     ],

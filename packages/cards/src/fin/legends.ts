@@ -261,8 +261,9 @@ export const LEGENDS: Record<string, CardScript> = {
         event: "counters",
         to: "yourSide",
         toFilter: YOURS,
+        counter: "+1/+1",
         modify: { times: 2 },
-        label: "Marqueurs doublés sur vos créatures",
+        label: "Marqueurs +1/+1 doublés sur vos créatures",
       }),
       activated({
         mana: "{4}{G}{G}",
