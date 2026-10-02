@@ -39,3 +39,10 @@ Les scripts sont dans `packages/cards/src/hob/` : `cards` (cartes du méta), `wh
 - **Moteur :** rien de nouveau.
 - **Reste pour plus tard :** Inside Information (permission de jouer en payant des PV égaux à la valeur de mana), The Master of Lake-town (nombre de cimetières de sept cartes ou plus), Supper for Spiders (« mises dans un cimetière depuis le champ de bataille ce tour-ci »).
 - **Tests :** 29 tests de règles (« lot A, noir »).
+
+## Sous-lot A4 : cartes rouges ✅ (112 / 188)
+
+- **Cartes (25) :** Balin, Loremaster, Bombur, Gentle Dreamer, Bothersome Noisemaker, Burn, Burn, Tree and Fern, Dáin Ironfoot, Desert Were-Worm, Desolation of Smaug, Dori, Bearer of Friends, Gandalf, Goblins' Bane, Flameshape, Gandalf, Spark Starter, Glóin the Mighty, Easy Pickings, Goblin-town Flunkies, Gundabad Opportunist, Iron Hills Stalwart, Last Light of Durin's Day, The Misty Mountains Cold, Misty Mountains Raider, Óin the Brave, Pinecone Strike, Ragged Short Spear, Smaug, the Great Calamity, Spew Flame, Smaug's Fury, Snowslope Hunter, Stone-Giant of High Pass, Tidings of War.
+- **Moteur :** rien de nouveau.
+- **Reste pour plus tard :** Getaway Barrel (une carte de créature au hasard parmi les cartes révélées).
+- **Tests :** 35 tests de règles (« lot A, rouge »).
