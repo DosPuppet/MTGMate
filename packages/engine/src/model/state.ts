@@ -177,6 +177,9 @@ export interface GameObject {
   linked?: ObjectId[];
   /** X du sort qui a mis ce permanent sur le champ de bataille (Dune Drifter). */
   castX?: number;
+  /** Engagements de ce tour (`tapTurn` : le tour du décompte), pour « la première fois qu'elle devient engagée ce tour-ci ». */
+  tapTurn?: number;
+  tapsThisTurn?: number;
   /** Plot : tour où la carte est devenue « complotée » (exilée face visible, lançable gratuitement plus tard). */
   plottedTurn?: number;
   /** Présage (702.143) : tour où la carte a été exilée de la main pour {2}, lançable plus tard pour son coût de présage. */

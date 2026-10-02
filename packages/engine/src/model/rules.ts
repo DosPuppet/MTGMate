@@ -317,7 +317,11 @@ export type TriggerSpec =
   | { on: "untaps"; who: "self" | ObjectFilter }
   /** « Chaque fois que [cette créature] devient engagée » */
   /** `byYou` : « chaque fois que vous engagez [une créature] » (Solitary Sanctuary : une créature adverse). */
-  | { on: "taps"; who: "self" | ObjectFilter; byYou?: boolean }
+  /**
+   * `cause: "teamwork"` : engagé pour payer un travail d'équipe (Agent Maria Hill) ; `firstThisTurn` : la première fois
+   * qu'il devient engagé ce tour-ci (Captain America, Living Legend).
+   */
+  | { on: "taps"; who: "self" | ObjectFilter; byYou?: boolean; cause?: "teamwork"; firstThisTurn?: boolean }
   /** « Chaque fois que vous regardez (scry) ou surveillez » (Reality Fracture). */
   | { on: "scryOrSurveil" }
   /** « Quand vous défaussez cette carte » (se déclenche depuis le cimetière). */

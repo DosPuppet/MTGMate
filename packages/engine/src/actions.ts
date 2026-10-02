@@ -412,6 +412,12 @@ export function dealDamage(s: GameState, source: DamageSource, target: string, a
     return;
   }
   if (amount <= 0) return;
+  // 122.1c : un permanent avec un marqueur de bouclier qui devrait subir des blessures perd ce marqueur à la place
+  // (un remplacement, pas une prévention : « ne peut pas être prévenu » ne l'empêche pas).
+  if (targetObj?.zone === "battlefield" && (targetObj.counters.shield ?? 0) > 0) {
+    changeCounters(s, targetObj, "shield", -1);
+    return;
+  }
   // Ruric Thar, Magecrusher : « tant qu'il n'a pas encore infligé de blessures de combat » ; Karakyk Guardian : « tant
   // qu'il n'a pas encore infligé de blessures » (de combat ou non).
   const dealer = source.id ? s.objects[source.id] : undefined;
@@ -495,6 +501,11 @@ export function destroy(s: GameState, id: ObjectId): boolean {
   const o = s.objects[id];
   if (o?.zone !== "battlefield") return false;
   if (hasKeyword(s, id, "indestructible")) return false;
+  // 122.1c : un permanent avec un marqueur de bouclier qui devrait être détruit perd ce marqueur à la place.
+  if ((o.counters.shield ?? 0) > 0) {
+    changeCounters(s, o, "shield", -1);
+    return false;
+  }
   emit({ type: "destroy", objectId: id, defId: o.defId });
   putIntoGraveyard(s, id);
   return true;

@@ -91,7 +91,8 @@ export type RulesEvent =
   /** Un permanent recto-verso s'est transformé (701.28) : il a désormais les capacités de la face visible. */
   | { e: "transformed"; objectId: ObjectId }
   /** `by` : le joueur qui l'engage (contrôleur de ce qui se résout ; sinon, coût ou mana, son contrôleur). */
-  | { e: "tap"; objectId: ObjectId; by: PlayerId }
+  /** `cause` : engagé pour payer un travail d'équipe ; `first` : la première fois de ce tour. */
+  | { e: "tap"; objectId: ObjectId; by: PlayerId; cause?: "teamwork"; first?: boolean }
   /** Un joueur vient de regarder (scry) ou de surveiller. */
   | { e: "scry"; player: PlayerId }
   /** Un joueur a cherché dans sa bibliothèque (Wan Shi Tong). */
@@ -323,11 +324,23 @@ export function counterPT(o: { counters: Record<string, number> }): number {
 }
 
 /** Engage un permanent (« chaque fois qu'il devient engagé »). */
-export function tapObject(s: GameState, o: GameObject): void {
+export function tapObject(s: GameState, o: GameObject, cause?: "teamwork"): void {
   if (o.tapped) return;
   o.tapped = true;
+  // Captain America, Living Legend : « si c'est la première fois que cette créature devient engagée ce tour-ci ».
+  if (o.tapTurn !== s.turn.number) {
+    o.tapTurn = s.turn.number;
+    o.tapsThisTurn = 0;
+  }
+  o.tapsThisTurn = (o.tapsThisTurn ?? 0) + 1;
   bump(s); // des capacités statiques peuvent en dépendre (« vos créatures légendaires engagées »)
-  rulesEvent(s, { e: "tap", objectId: o.id, by: s.resolving?.controller ?? o.controller });
+  rulesEvent(s, {
+    e: "tap",
+    objectId: o.id,
+    by: s.resolving?.controller ?? o.controller,
+    ...(cause ? { cause } : {}),
+    first: o.tapsThisTurn === 1,
+  });
 }
 
 /**

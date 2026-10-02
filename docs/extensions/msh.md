@@ -75,3 +75,12 @@ Les scripts sont dans `packages/cards/src/msh/` : `cards` (cartes du méta), `wh
 - **Le moteur gagne :** l'improvisation (702.126), lue dans le texte (mot-clé `improvise`) : en payant le sort, chaque artefact dégagé peut payer {1} du générique (source du solveur de mana, comme la maîtrise de l'eau, sans plafond) ; elle peut aussi être donnée aux sorts du joueur (`playerStatic({ spellKeywords: { filter, keywords: ["improvise"] } })`, Ironheart : « vos sorts non-créature »).
 - **Version des règles :** 48.
 - **Tests :** 2 tests de règles (« lot B1 »).
+
+## Sous-lot B2 : marqueurs de bouclier et engagements ✅ (245 / 271)
+
+- **Cartes (3) :** Captain America, Super-Soldier, Agent Maria Hill, Captain America, Living Legend.
+- **Le moteur gagne :**
+  - les marqueurs de bouclier (122.1c), règle du marqueur appliquée par le moteur : un permanent qui devrait subir des blessures ou être détruit perd un marqueur de bouclier à la place (un remplacement, pas une prévention) ;
+  - l'événement d'engagement porte sa cause (`cause: "teamwork"` : engagé pour payer un travail d'équipe) et dit s'il s'agit du premier engagement du tour (`tapsThisTurn`) ; le déclencheur `{ on: "taps", cause, firstThisTurn }`.
+- **Version des règles :** 49.
+- **Tests :** 4 tests de règles (« lot B2 »).

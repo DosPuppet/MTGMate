@@ -1493,7 +1493,9 @@ export function castSpell(s: GameState, player: PlayerId, card: ObjectId, choice
     collectEvidence(s, player, cards);
   }
   // Coûts additionnels choisis automatiquement (avant le mana : ces permanents ne produisent plus de mana).
-  for (const id of [...auto.tap, ...harmonyTap, ...teamTap]) tapObject(s, obj(s, id));
+  for (const id of [...auto.tap, ...harmonyTap]) tapObject(s, obj(s, id));
+  // Agent Maria Hill : « engagée pour payer un coût de travail d'équipe ».
+  for (const id of teamTap) tapObject(s, obj(s, id), "teamwork");
   for (const id of auto.bounce) moveObject(s, id, "hand");
   for (const id of auto.graveyard) moveObject(s, id, "exile");
   const costExiled = auto.exile.map((id) => moveObject(s, id, "exile")).filter((id): id is string => !!id);

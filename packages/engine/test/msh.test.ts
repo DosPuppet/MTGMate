@@ -6,6 +6,7 @@
 
 import { card } from "@mtgx/cards";
 import { describe, expect, it } from "vitest";
+import { destroy } from "../src/actions";
 import { fx, manaAbility, ref, spell, target } from "../src/dsl";
 import { legalActions } from "../src/legal";
 import { chars } from "../src/state";
@@ -4222,5 +4223,68 @@ describe("lot B1 : improvisation", () => {
     expect(castable(s, "p1", idOf(s, "p1", "hand", "Test Divination"))).toBe(true);
     // Créature à {3} : pas d'improvisation pour un sort de créature (une seule Île).
     expect(castable(s, "p1", idOf(s, "p1", "hand", "Test Golem"))).toBe(false);
+  });
+});
+
+describe("lot B2 : marqueurs de bouclier ; B3 : engagements", () => {
+  it("Captain America, Super-Soldier : le marqueur de bouclier remplace des blessures, puis une destruction ; défense talismanique tant qu'il en a", () => {
+    let s = scenario({
+      p1: { battlefield: [...lands("Plains", 3), "Agent Phil Coulson"], hand: ["Captain America, Super-Soldier"] },
+      p2: { battlefield: lands("Mountain", 4), hand: ["Lightning Strike", "Lightning Strike"] },
+    });
+    s = settle(cast(s, "p1", "Captain America, Super-Soldier"));
+    const cap = idOf(s, "p1", "battlefield", "Captain America, Super-Soldier");
+    expect(s.objects[cap]?.counters.shield).toBe(1);
+    expect(chars(s, idOf(s, "p1", "battlefield", "Agent Phil Coulson")).keywords).toContain("hexproof");
+    s = advanceUntil(s, (x) => x.turn.active === "p2" && x.turn.step === "main1" && x.pending?.kind === "priority");
+    // Le joueur 1 a la défense talismanique : la Foudre ne peut pas le cibler ; Captain America, si (il n'est pas un « autre » Héros).
+    expect(() => cast(s, "p2", "Lightning Strike", { targets: { t: ["p1"] } })).toThrow();
+    s = settle(cast(s, "p2", "Lightning Strike", { targets: { t: [cap] } }));
+    expect(s.objects[cap]?.damage).toBe(0);
+    expect(s.objects[cap]?.counters.shield ?? 0).toBe(0);
+    expect(chars(s, idOf(s, "p1", "battlefield", "Agent Phil Coulson")).keywords).not.toContain("hexproof");
+    s = settle(cast(s, "p2", "Lightning Strike", { targets: { t: [cap] } }));
+    expect(idsOf(s, "p1", "battlefield", "Captain America, Super-Soldier")).toHaveLength(0);
+  });
+
+  it("marqueur de bouclier : une destruction est remplacée par le retrait du marqueur (122.1c)", () => {
+    const s = scenario({ p1: { battlefield: [{ name: "Bear Cub", counters: { shield: 1 } }] } });
+    const bear = idOf(s, "p1", "battlefield", "Bear Cub");
+    expect(destroy(s, bear)).toBe(false);
+    expect(idsOf(s, "p1", "battlefield", "Bear Cub")).toHaveLength(1);
+    expect(s.objects[bear]?.counters.shield ?? 0).toBe(0);
+  });
+
+  it("Agent Maria Hill : engagée pour payer un travail d'équipe, un marqueur +1/+1 et une carte", () => {
+    let s = scenario({
+      p1: {
+        battlefield: [...lands("Plains", 2), "Agent Maria Hill", "Serra Angel"],
+        hand: ["Murdock's Crusade"],
+        library: lands("Plains", 3),
+      },
+      p2: { battlefield: ["Serra Angel"] },
+    });
+    const hill = idOf(s, "p1", "battlefield", "Agent Maria Hill");
+    const angel = idOf(s, "p1", "battlefield", "Serra Angel");
+    const hand = (s.players.p1?.hand.length ?? 0) - 1;
+    s = settle(
+      cast(s, "p1", "Murdock's Crusade", {
+        kicked: true,
+        tap: [hill, angel],
+        targets: { t: [idOf(s, "p2", "battlefield", "Serra Angel")] },
+      }),
+    );
+    expect(s.objects[hill]?.counters["+1/+1"]).toBe(1);
+    expect(s.players.p1?.hand).toHaveLength(hand + 1);
+  });
+
+  it("Captain America, Living Legend : pendant votre tour, une créature engagée pour la première fois ce tour-ci se dégage", () => {
+    let s = scenario({ p1: { battlefield: ["Captain America, Living Legend", "Bear Cub"] } });
+    const bear = idOf(s, "p1", "battlefield", "Bear Cub");
+    s = advanceUntil(s, (x) => x.pending?.kind === "declareAttackers");
+    s = act(s, "p1", { type: "declareAttackers", attackers: [{ id: bear, defender: "p2" }] });
+    s = settle(s);
+    expect(s.objects[bear]?.tapped).toBe(false);
+    expect(s.objects[bear]?.tapsThisTurn).toBe(1);
   });
 });

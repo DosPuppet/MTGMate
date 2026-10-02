@@ -547,4 +547,14 @@ export const MULTI: Record<string, CardScript> = {
       }),
     ],
   },
+  // Vigilance : lue dans le texte.
+  "Captain America, Living Legend": {
+    abilities: [
+      triggered(
+        { on: "taps", who: { types: ["Creature"], controller: "you" }, firstThisTurn: true },
+        [fx.untap(ref.eventObject)],
+        { condition: cond.yourTurn, label: "Une de vos créatures engagée pour la première fois de votre tour : dégagez-la" },
+      ),
+    ],
+  },
 };

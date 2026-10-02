@@ -7,6 +7,7 @@ import {
   CLUE,
   chapter,
   cond,
+  entersWith,
   fx,
   HERO,
   investigate,
@@ -415,6 +416,29 @@ export const WHITE: Record<string, CardScript> = {
           ),
         ],
         { label: "Marqueurs +1/+1, ou un artefact ou un enchantement de votre cimetière" },
+      ),
+    ],
+  },
+  "Agent Maria Hill": {
+    abilities: [
+      triggered({ on: "taps", who: "self", cause: "teamwork" }, [fx.addCounters(ref.self, 1), fx.draw(1)], {
+        label: "Engagée pour un travail d'équipe : un marqueur +1/+1 et piochez une carte",
+      }),
+    ],
+  },
+  // Initiative : lue dans le texte.
+  "Captain America, Super-Soldier": {
+    abilities: [
+      entersWith({ counters: 1, counterKind: "shield", label: "Arrive avec un marqueur de bouclier" }),
+      playerStatic({
+        hexproof: true,
+        condition: cond.counterAtLeast("shield", 1),
+        label: "Vous avez la défense talismanique tant qu'il a un marqueur de bouclier",
+      }),
+      staticAbility(
+        { types: ["Creature"], subtype: "Hero", controller: "you", other: true },
+        { addKeywords: ["hexproof"] },
+        { condition: cond.counterAtLeast("shield", 1), label: "Vos autres Héros ont la défense talismanique" },
       ),
     ],
   },

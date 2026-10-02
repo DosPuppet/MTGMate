@@ -130,8 +130,10 @@ export const RECORD_VERSION = 1;
  *   une créature attaquante meurt ») ; un Équipement devenu créature se détache (301.5c) ; une carte de la bibliothèque
  *   lancée par une permission suit son timing ; les F/E définies par une capacité lisent « légendaire ».
  * - 48 : Marvel Super Heroes, lot B1 : improvisation (702.126), imprimée ou donnée aux sorts du joueur.
+ * - 49 : Marvel Super Heroes, lot B2 : marqueurs de bouclier (122.1c : blessures et destruction remplacées par le retrait
+ *   d'un marqueur) ; l'engagement d'un permanent est noté (cause « travail d'équipe », premier engagement du tour).
  */
-export const RULES_VERSION = 48;
+export const RULES_VERSION = 49;
 
 /** Un point de contrôle toutes les N décisions (plus la dernière de la partie). */
 export const CHECKPOINT_EVERY = 25;
