@@ -82,7 +82,7 @@ export const HANDLERS: OpHandlers = {
     }
     return;
   },
-  modify(s, _r, e, ctx) {
+  modify(s, r, e, ctx) {
     // Un sort sur la pile qui gagne un mot-clé (Spinerock Tyrant : « ces sorts gagnent la flétrissure ») : ses blessures
     // sont infligées avec les mots-clés de son instantané de source.
     for (const id of resolveRef(s, ctx, e.what)) {
@@ -96,6 +96,19 @@ export const HANDLERS: OpHandlers = {
     if (ids.length === 0) return;
     // 611.2b : un effet « tant que [la source] reste… » ne fait rien si elle est déjà partie.
     if (e.whileSource && !onBattlefield(s, ctx.sourceId)) return;
+    // « Devient de la couleur choisie et gagne la défense talismanique contre elle » (Mondo Gecko) : la couleur choisie
+    // par cet effet est figée dans l'effet (une autre activation en choisit une autre).
+    const chosen = r.vars.$chosen?.[0] === "color" ? (String(r.vars.$chosen[1]) as Color) : undefined;
+    let mods = e.mods;
+    if (chosen && (mods.setColorsChosen || mods.addProtections?.some((p) => p.from.colorChosen)))
+      mods = {
+        ...mods,
+        setColorsChosen: undefined,
+        setColors: mods.setColorsChosen ? [chosen] : mods.setColors,
+        addProtections: mods.addProtections?.map((p) =>
+          p.from.colorChosen ? { ...p, from: { ...p.from, colorChosen: undefined, colors: [chosen] } } : p,
+        ),
+      };
     bump(s);
     s.effects.push({
       id: newId(s, "e"),
@@ -106,7 +119,7 @@ export const HANDLERS: OpHandlers = {
       ...(e.untilLeavesExile ? { untilExiledUid: exiledUid(s, ctx, e.untilLeavesExile) } : {}),
       ...(e.whileSource ? { whileSource: ctx.sourceId } : {}),
       ...(e.whileSourceTapped ? { whileSourceTapped: ctx.sourceId } : {}),
-      ...e.mods,
+      ...mods,
       // Tolsimir : « bloque ce Loup si possible » (l'attaquant de l'événement).
       ...(e.mods.addBlockRules?.some((r) => r.mustBlockEventObject)
         ? {

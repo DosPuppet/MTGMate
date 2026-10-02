@@ -446,7 +446,8 @@ export interface CostDef {
     distinctColors?: boolean;
   };
   /** Sacrifier d'autres permanents (choisis par le joueur). */
-  sacrifice?: { filter: ObjectFilter; count: number };
+  /** `includeSelf` : la source peut faire partie des permanents sacrifiés (Rat King : « sacrifiez trois Rats »). */
+  sacrifice?: { filter: ObjectFilter; count: number; includeSelf?: boolean };
   /** Flétrir N (ECL) : N marqueurs −1/−1 sur une créature que vous contrôlez (choisie automatiquement : `blightTarget`). */
   blight?: number;
   /** Réunir des preuves N (701.59, MKM) : cartes du cimetière de valeur de mana totale N ou plus (choisies automatiquement). */
@@ -814,6 +815,8 @@ export interface NextSpell {
   copy?: boolean;
   /** La copie n'est pas légendaire (The Clone Saga). */
   copyNonlegendary?: boolean;
+  /** Réduction du coût générique de ce sort (Don & Raph : l'affinité pour les artefacts, `amount.count(…)`). */
+  reduce?: Amount;
   uncounterable?: boolean;
   counters?: number;
   haste?: boolean;
@@ -910,6 +913,11 @@ export interface PlayFromZone {
    * son coût de mana.
    */
   flashback?: boolean;
+  /** Un sort de créature lancé ainsi arrive avec N marqueurs +1/+1 de plus (Mikey & Don, Party Planners). */
+  counters?: number;
+  /** Faufilement donné (Ninja Teen : « vos cartes de créature du cimetière ont le faufilement {3}{B} ») : la carte se
+   * lance pour ce coût pendant la fenêtre de faufilement, en renvoyant un attaquant non bloqué. */
+  sneak?: ManaCost;
   /** « Payez des PV égaux à sa valeur de mana plutôt que son coût de mana » (Gwenom, Remorseless). */
   payLifeManaValue?: boolean;
   /** La carte a le chaos (Goblin Formula) : lancée depuis le cimetière pour son coût de chaos, son coût de mana. */

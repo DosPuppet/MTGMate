@@ -83,6 +83,11 @@ export function countTurnEvents(s: GameState, q: TurnLogQuery, me: PlayerId, sub
     for (const e of s.turnLog) if (e.e === "damage" && matches(e, q, me, subject)) keys.add(e.sourceKey ?? e.sourceController);
     return keys.size;
   }
+  if (q.distinctTypes) {
+    const types = new Set<string>();
+    for (const e of s.turnLog) if (matches(e, q, me, subject)) for (const t of e.types ?? []) types.add(t);
+    return types.size;
+  }
   if (q.distinctKinds) {
     const kinds = new Set<string>();
     for (const e of s.turnLog) if (e.e === "bend" && matches(e, q, me, subject)) kinds.add(e.kind);

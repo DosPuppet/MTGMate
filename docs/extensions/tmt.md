@@ -69,3 +69,18 @@ Les scripts sont dans `packages/cards/src/tmt/` : `cards` (cartes du méta), `wh
   - un permanent faufilé arrive engagé et attaquant ce qu'attaquait la créature renvoyée ;
   - `RULES_VERSION` = 55, parties dorées régénérées.
 - **Tests :** 2 tests de règles (« lot B1 ») ; les deux tests désactivés du lot A (Leonardo, Leader in Blue ; Turncoat Kunoichi) sont réactivés et Karai est faufilée pour de bon.
+
+## Sous-lot C1 : cartes uniques ✅ (188 / 188)
+
+- **Cartes (8) :** April O'Neil, Hacktivist, Fugitive Droid, Mondo Gecko, Ninja Teen, Rat King, Verminister, Don & Raph, Hard Science, Mikey & Don, Party Planners, North Wind Avatar.
+- **Moteur :**
+  - journal du tour : `distinctTypes` (types de carte différents parmi les sorts lancés) ;
+  - cible « sort qui cible [un permanent correspondant] » (`spellsTargeting`) ;
+  - un effet « devient de la couleur choisie et gagne la défense talismanique contre elle » fige la couleur choisie (chaque activation garde la sienne) ; la protection lit aussi un filtre « choisi » (`resolveFilter`) ;
+  - faufilement donné depuis le cimetière (`playFrom.sneak`, Ninja Teen) ;
+  - réduction du prochain sort (`nextSpell.reduce`, affinité pour les artefacts) ; marqueurs d'un sort de créature lancé du dessus de la bibliothèque (`playFrom.counters`) ;
+  - sacrifice en coût qui peut inclure la source (`sacrificeOther.includeSelf`) ; `ref.sameNameInGraveyard` (la carte et ses homonymes) ;
+  - approximations levées : « chaque adversaire exile jusqu'à… » vaut pour chaque joueur désigné (Krang & Shredder) ; « la moitié, arrondie au supérieur » en une seule meule (`fx.millHalf(…, true)`, Kitsune's Technique) ;
+  - `RULES_VERSION` = 56, parties dorées régénérées.
+- **Approximations :** North Wind Avatar (pas de zone « hors de la partie ») ; Ninja Teen (l'attaquant renvoyé par le faufilement donné est le plus faible).
+- **Tests :** 8 tests de règles (« lot C1 »).

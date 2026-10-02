@@ -230,6 +230,8 @@ export const ref = {
   exiledWith: { kind: "exiledWith" } as Ref,
   /** Les cartes exilées pour payer le coût (« copiez ces cartes exilées »). */
   costExiled: { kind: "costExiled" } as Ref,
+  /** Les cartes de votre cimetière du même nom que la carte désignée, elle comprise (Rat King, Verminister). */
+  sameNameInGraveyard: (r: Ref): Ref => ({ kind: "sameNameInGraveyard", ref: r }),
   /** La créature renvoyée en main pour le Web-slinging (Scarlet Spider, Ben Reilly). */
   costBounced: { kind: "costBounced" } as Ref,
   /** Les cibles du sort ou de la capacité de l'événement (« ces créatures »). */
@@ -557,7 +559,8 @@ export const fx = {
     store,
   }),
   /** Chaque joueur désigné meule la moitié de sa bibliothèque, arrondie à l'inférieur. */
-  millHalf: (who: Ref): Effect => ({ op: "mill", who, amount: 0, halfLibrary: true }),
+  /** « La moitié de sa bibliothèque », arrondie à l'inférieur (ou au supérieur : `roundUp`). */
+  millHalf: (who: Ref, roundUp = false): Effect => ({ op: "mill", who, amount: 0, halfLibrary: roundUp ? "up" : true }),
   /** Chaque joueur désigné meule autant de cartes qu'il y en a dans son cimetière. */
   millGraveyardSize: (who: Ref): Effect => ({ op: "mill", who, amount: 0, graveyardSize: true }),
   sacrificeElseDiscard: (who: Ref, filter: ObjectFilter): Effect => ({ op: "sacrificeElseDiscard", who, filter }),
@@ -1449,7 +1452,7 @@ export function activated(opts: {
   /** Sacrifier la source. */
   sacrifice?: boolean;
   /** Sacrifier d'autres permanents (« Sacrifiez une autre créature »). */
-  sacrificeOther?: { filter: ObjectFilter; count?: number };
+  sacrificeOther?: { filter: ObjectFilter; count?: number; includeSelf?: boolean };
   removeCounters?: { kind: string; n: number };
   tapOthers?: { filter: ObjectFilter; count: number };
   /** Engager la créature équipée (« {T} » de la créature, pour une capacité portée par l'Équipement). */
@@ -1519,7 +1522,13 @@ export function activated(opts: {
       mana: opts.mana ? parseManaCost(opts.mana) : undefined,
       tap: opts.tap,
       sacrificeSelf: opts.sacrifice,
-      sacrifice: opts.sacrificeOther ? { filter: opts.sacrificeOther.filter, count: opts.sacrificeOther.count ?? 1 } : undefined,
+      sacrifice: opts.sacrificeOther
+        ? {
+            filter: opts.sacrificeOther.filter,
+            count: opts.sacrificeOther.count ?? 1,
+            ...(opts.sacrificeOther.includeSelf ? { includeSelf: true } : {}),
+          }
+        : undefined,
       removeCounters: opts.removeCounters,
       tapOthers: opts.tapOthers,
       tapAttached: opts.tapAttached,

@@ -43,7 +43,9 @@ export function protectedFrom(s: GameState, id: ObjectId, source: LkiSnapshot | 
   if (o?.zone !== "battlefield") return false;
   for (const r of chars(s, id).protections) {
     if (r.hexproofOnly && !targetedByOpponent) continue;
-    if (source ? matchesView(source, r.from, o.controller, id) : Object.keys(r.from).length === 0) return true;
+    // « défense talismanique contre la couleur choisie » (Mondo Gecko) : le choix du permanent protégé.
+    const from = resolveFilter(s, r.from, id);
+    if (source ? matchesView(source, from, o.controller, id) : Object.keys(from).length === 0) return true;
   }
   return false;
 }
@@ -341,7 +343,10 @@ export function isLegalTarget(s: GameState, controller: PlayerId, spec: TargetSp
   if (o && o.zone === "stack") {
     // Sort sur la pile (l'identifiant de l'objet est celui de l'élément de pile).
     const f = spec.filter.spells;
-    return !!f && s.stack.some((x) => x.id === id && x.kind === "spell") && matchesView(snapshot(s, id), f, controller, sourceId);
+    const item = s.stack.find((x) => x.id === id && x.kind === "spell");
+    if (!f || !item || !matchesView(snapshot(s, id), f, controller, sourceId)) return false;
+    const tg = spec.filter.spellsTargeting;
+    return !tg || Object.values(item.targets).some((ids) => ids.some((t) => matchesObjectFilter(s, controller, t, tg, sourceId)));
   }
   if (o && o.zone === "exile") {
     const ex = spec.filter.exiled;

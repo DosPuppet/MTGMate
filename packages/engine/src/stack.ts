@@ -405,6 +405,12 @@ export function spellReduction(
   for (const { ab } of playerStatics(s, player, "spellCost")) {
     if (ab.spellCost && matchesView(view, ab.spellCost.filter, player)) r += ab.spellCost.reduce ?? 0;
   }
+  // « Le prochain sort non-créature que vous lancez ce tour-ci a l'affinité pour les artefacts » (Don & Raph).
+  for (const e of s.playerEffects) {
+    const n = e.player === player && e.once ? e.ability.nextSpell : undefined;
+    if (n?.reduce !== undefined && (!n.filter || matchesView(view, n.filter, player)))
+      r += evalAmount(s, reductionContext(player, "", d.id), n.reduce);
+  }
   for (const id of s.battlefield) {
     const o = obj(s, id);
     for (const ab of chars(s, id).abilities) {
@@ -427,6 +433,8 @@ export function spellReduction(
 /** Modifications à l'arrivée d'un sort (Noctis ; prochain sort de créature : Summon: Fenrir, Summon: Brynhildr). */
 function arrivalFor(terms: CastTerms, next: NextSpell[]): StackItem["arrival"] {
   const counters: { kind: string; n: number }[] = terms.finality ? [{ kind: "finality", n: 1 }] : [];
+  // Mikey & Don : « si vous lancez ainsi un sort de créature, elle arrive avec un marqueur +1/+1 de plus ».
+  if (terms.playFrom?.counters) counters.push({ kind: "+1/+1", n: terms.playFrom.counters });
   for (const n of next) if (n.counters) counters.push({ kind: "+1/+1", n: n.counters });
   const haste = next.some((n) => n.haste) || undefined;
   // The Tomb of Aclazotz : « c'est un Vampire en plus de ses autres types ».
@@ -477,6 +485,8 @@ export function playFromRules(
       if (r.filter && !matchesCard(s, player, card, { ...r.filter, controller: undefined }, id)) return [];
       if (r.payLife && (s.players[player]?.life ?? 0) < r.payLife) return [];
       if (r.forage && !canForage(s, player, card)) return [];
+      // Faufilement donné : seulement pendant la fenêtre de faufilement, avec un attaquant à renvoyer.
+      if (r.sneak && !(sneakOptions(s, player).length > 0 && checkCondition(s, { kind: "sneakWindow" }, player))) return [];
       // Johann : « une fois par tour » (la clé de cette permission, notée au lancement).
       const onceKey = r.oncePerTurn ? `playFrom:${id}` : undefined;
       if (onceKey && s.turn.onceFired.includes(onceKey)) return [];
@@ -491,6 +501,8 @@ function playFromTerms(r: PlayFromZone, source: "graveyard" | "library"): CastTe
     // Iroh, Grand Lotus : la carte a le flashback (exilée ensuite), pour son coût de mana ou le coût donné.
     source: r.flashback && source === "graveyard" ? "flashback" : source,
     ...(r.mayhem ? { mayhem: true } : {}),
+    // Faufilement donné : son coût, à l'étape des bloqueurs (le moment est déjà vérifié par `playFromRules`).
+    ...(r.sneak ? { costOverride: r.sneak, sneakGranted: true, anyTime: true } : {}),
     ...(r.cost ? { costOverride: r.cost } : {}),
     playFrom: r,
     ...(r.payLife ? { payLife: r.payLife } : {}),
@@ -705,6 +717,8 @@ export function spellCost(
 
 /** Conditions de lancement d'une carte depuis sa zone actuelle. */
 export interface CastTerms {
+  /** Lancée pour un faufilement donné (Ninja Teen) : un attaquant non bloqué est renvoyé, le permanent arrive attaquant. */
+  sneakGranted?: boolean;
   /** {N} de plus (Lightstall Inquisitor). */
   extraCost?: number;
   /** Lançable d'ici seulement avec la distorsion (Timeline Culler, depuis le cimetière). */
@@ -1621,7 +1635,7 @@ export function castSpell(s: GameState, player: PlayerId, card: ObjectId, choice
     const back = moveObject(s, tapped, "hand");
     if (back) bounced.push(back);
   }
-  const sneaked = alternative && !!d.sneak;
+  const sneaked = (alternative && !!d.sneak) || !!terms.sneakGranted;
   let sneakDefender: string | undefined;
   if (sneaked) {
     // L'attaquant non bloqué renvoyé : au choix (`bounce`), le plus faible par défaut.
@@ -1921,9 +1935,10 @@ export function activatedAbility(s: GameState, source: ObjectId, index: number):
 export function sacrificeOptions(s: GameState, player: PlayerId, source: ObjectId, ab: ActivatedAbilityDef): ObjectId[] {
   const f = ab.cost.sacrifice?.filter;
   if (!f) return [];
+  const self = !!ab.cost.sacrifice?.includeSelf;
   return s.battlefield.filter(
     (id) =>
-      id !== source &&
+      (self || id !== source) &&
       obj(s, id).controller === player &&
       matchesObjectFilter(s, player, id, f, source) &&
       !hasKeyword(s, id, "cantBeSacrificed"),

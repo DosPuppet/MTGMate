@@ -525,6 +525,8 @@ export interface TurnLogQuery {
   /** Maîtrise des éléments : seulement cette sorte ; `distinctKinds` : le nombre de sortes différentes (Avatar Aang). */
   bendKind?: "water" | "earth" | "fire" | "air";
   distinctKinds?: boolean;
+  /** Le nombre de types de carte différents parmi les entrées (April O'Neil : « chaque type parmi les sorts lancés »). */
+  distinctTypes?: boolean;
 }
 
 export interface CombatState {

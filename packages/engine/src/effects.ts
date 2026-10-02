@@ -238,6 +238,10 @@ export function resolveRef(s: GameState, ctx: EffectContext, ref: Ref): string[]
       return resolveRef(s, ctx, ref.who).flatMap((p) => (s.players[p]?.library[0] ? [s.players[p]?.library[0] as string] : []));
     case "costExiled":
       return [...(ctx.costExiled ?? [])];
+    case "sameNameInGraveyard": {
+      const names = new Set(resolveRef(s, ctx, ref.ref).map((id) => s.defs[s.objects[id]?.defId ?? ""]?.name));
+      return (s.players[ctx.controller]?.graveyard ?? []).filter((id) => names.has(s.defs[s.objects[id]?.defId ?? ""]?.name));
+    }
     case "costBounced":
       return [...(ctx.costBounced ?? (ctx.sourceId ? s.objects[ctx.sourceId]?.costBounced : undefined) ?? [])];
     case "targetsOfEventObject": {

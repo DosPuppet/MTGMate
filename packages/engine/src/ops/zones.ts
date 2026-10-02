@@ -603,7 +603,11 @@ export const HANDLERS: OpHandlers = {
     const f = e.store?.filter;
     for (const p of resolveRef(s, ctx, e.who)) {
       const library = s.players[p]?.library ?? [];
-      const base = e.halfLibrary ? Math.floor(library.length / 2) : e.graveyardSize ? (s.players[p]?.graveyard.length ?? 0) : n;
+      const base = e.halfLibrary
+        ? (e.halfLibrary === "up" ? Math.ceil : Math.floor)(library.length / 2)
+        : e.graveyardSize
+          ? (s.players[p]?.graveyard.length ?? 0)
+          : n;
       // Remplacements de la meule (R1, famille I) : The Water Crystal (« il en meule autant plus quatre »).
       const q = quantityMods(s, "mill", (a) => recipientMatches(s, a, p));
       const count = base > 0 && !q.prevented ? chooseReplacementOrder(base, q.mods, "min") : 0;
@@ -1521,16 +1525,21 @@ export const HANDLERS: OpHandlers = {
     }
     // Exiler depuis le dessus jusqu'à une carte correspondante ; seule cette dernière est mémorisée. Black Widow, Super
     // Spy : la bibliothèque du joueur désigné.
-    const whose = e.who ? (resolveRef(s, ctx, e.who).find((x) => isPlayer(s, x)) ?? ctx.controller) : ctx.controller;
-    const lib = s.players[whose]?.library ?? [];
-    let found: string | null = null;
-    while (lib.length && !found) {
-      const top = lib[0] as string;
-      const match = matchesCard(s, ctx.controller, top, { ...e.filter, controller: undefined });
-      const moved = moveWithSpec(s, ctx.controller, top, { to: "exile" });
-      if (match) found = moved;
+    // Krang & Shredder : « chaque adversaire exile… » : chacun, les cartes trouvées réunies.
+    const players = e.who ? resolveRef(s, ctx, e.who).filter((x) => isPlayer(s, x)) : [ctx.controller];
+    const all: string[] = [];
+    for (const whose of players) {
+      const lib = s.players[whose]?.library ?? [];
+      let found: string | null = null;
+      while (lib.length && !found) {
+        const top = lib[0] as string;
+        const match = matchesCard(s, ctx.controller, top, { ...e.filter, controller: undefined });
+        const moved = moveWithSpec(s, ctx.controller, top, { to: "exile" });
+        if (match) found = moved;
+      }
+      if (found) all.push(found);
     }
-    r.vars[`$ids:${e.store}`] = found ? [found] : [];
+    r.vars[`$ids:${e.store}`] = all;
     return;
   },
   exileFromOwnHand(s, r, e, ctx, key) {

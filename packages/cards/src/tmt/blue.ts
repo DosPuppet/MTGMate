@@ -174,9 +174,8 @@ export const BLUE: Record<string, CardScript> = {
     ],
   },
   "Kitsune's Technique": {
-    // Faufilement {1}{U} : lu dans le texte. « La moitié, arrondie au supérieur » : une carte, puis la moitié du reste
-    // arrondie à l'inférieur (même nombre ; approximation : deux événements de meule).
-    spell: spell([target.player("t", "opponent")], [fx.mill(1, ref.target()), fx.millHalf(ref.target())]),
+    // Faufilement {1}{U} : lu dans le texte.
+    spell: spell([target.player("t", "opponent")], [fx.millHalf(ref.target(), true)]),
   },
   "Krang, Master Mind": {
     costReduction: { generic: amount.count({ types: ["Artifact"], controller: "you" }) },

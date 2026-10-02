@@ -401,7 +401,6 @@ Dans l'ordre où elles ont été ajoutées, extension par extension.
   - `règle` Black Cat, Cunning Thief : les deux cartes sont exilées face visible (et non face cachée).
 - **Teenage Mutant Ninja Turtles (`docs/extensions/tmt.md`) :**
   - `règle` Turtles Forever : la recherche ne porte que sur la bibliothèque (rien hors de la partie), et « exactement quatre » n'est pas imposé (l'adversaire choisit parmi les cartes trouvées).
-  - `règle` Kitsune's Technique : « la moitié, arrondie au supérieur » est meulée en deux fois (une carte, puis la moitié du reste) ; un remplacement ou un déclencheur de meule s'applique deux fois.
   - `règle` Kitsune, Dragon's Daughter : l'échange se fait entre votre créature et celle d'un adversaire (deux créatures de deux adversaires ne s'échangent pas, à plus de deux joueurs).
   - `règle` Renet, Temporal Apprentice : « arrivé ce tour-ci » compte aussi un permanent dont le contrôle a changé ce tour-ci.
   - `règle` Madame Null : « payez des PV égaux à sa force » est une perte de PV facultative, proposée seulement si vos PV suffisent.
@@ -411,6 +410,7 @@ Dans l'ordre où elles ont été ajoutées, extension par extension.
   - `règle` Turtle Van : la créature qui reçoit le marqueur est choisie parmi celles qui ont piloté le Véhicule ce tour-ci, sans être ciblée (défense talismanique et garde ignorées).
   - `règle` Northampton Farm, The Neutrinos : « une créature que vous possédez » se lit « que vous contrôlez et possédez, ou qu'un adversaire contrôle sans la posséder » (Northampton Farm, exact en duel) ou « que vous contrôlez et possédez » (The Neutrinos).
   - `règle` Mikey & Leo : « chaque fois que vous mettez un marqueur » se lit comme pour The Astonishing Ant-Man (marqueurs mis sur vos créatures, une fois par tour).
-  - `règle` Krang & Shredder : à plus de deux joueurs, seul le premier adversaire exile ses cartes.
+  - `règle` North Wind Avatar : le moteur n'a pas de zone « hors de la partie » (pas de réserve en cours de partie) : la capacité d'arrivée est sans effet.
+  - `choix auto` Ninja Teen : un sort de créature lancé du cimetière par le faufilement donné renvoie l'attaquant non bloqué le plus faible.
 - **Légalité Standard :** instantané des légalités Scryfall au moment de l'import (`legalities.standard` dans `data/<set>.json`). Après une rotation ou une annonce de bannissement, réimporter les sets (`npm run import-cards -- <set>`).
 - **Images des jetons :** celle du jeton Scryfall le plus proche (même nom, puis mêmes F/E et couleurs ; `data/tokens.json`, `npm run import-tokens`) ; un jeton de nom inconnu garde le cadre texte.

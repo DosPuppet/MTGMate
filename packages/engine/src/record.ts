@@ -151,8 +151,12 @@ export const RECORD_VERSION = 1;
  * - 55 : Teenage Mutant Ninja Turtles, lot B1 : faufilement lançable à l'étape des bloqueurs pour les créatures et les
  *   rituels, attaquant renvoyé au choix, permanent faufilé arrivant engagé et attaquant ; cibles « de joueurs différents »
  *   sans assez de joueurs : pas de cible légale.
+ * - 56 : Teenage Mutant Ninja Turtles, lot C1 : « chaque adversaire exile jusqu'à… » pour chaque joueur désigné ; moitié de
+ *   la bibliothèque arrondie au supérieur ; couleur choisie figée dans un effet « devient de la couleur choisie » ;
+ *   faufilement donné depuis le cimetière ; sorts ciblant vos permanents ; réduction du prochain sort ; marqueurs d'un
+ *   sort lancé du dessus de la bibliothèque ; sacrifice qui inclut la source ; cartes homonymes du cimetière.
  */
-export const RULES_VERSION = 55;
+export const RULES_VERSION = 56;
 
 /** Un point de contrôle toutes les N décisions (plus la dernière de la partie). */
 export const CHECKPOINT_EVERY = 25;

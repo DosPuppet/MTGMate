@@ -147,7 +147,8 @@ export type Effect =
       who: Ref;
       amount: Amount;
       store?: { name: string; filter?: ObjectFilter };
-      halfLibrary?: boolean;
+      /** `"up"` : la moitié arrondie au supérieur (Kitsune's Technique). */
+      halfLibrary?: boolean | "up";
       graveyardSize?: boolean;
     }
   /** Chaque joueur désigné sacrifie un permanent correspondant ; celui qui ne peut pas défausse une carte (Momentum Breaker). */

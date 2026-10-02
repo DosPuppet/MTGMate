@@ -53,6 +53,9 @@ export interface TargetFilter {
   exiled?: { filter?: ObjectFilter; withWarp?: boolean; own?: boolean; linked?: boolean };
   /** Sorts sur la pile (« contrecarrez le sort de créature ciblé »). */
   spells?: ObjectFilter;
+  /** … qui ciblent un permanent correspondant (Fugitive Droid : « un sort qui cible un artefact ou une créature que vous
+   * contrôlez »). */
+  spellsTargeting?: ObjectFilter;
   /** Sorts ou capacités sur la pile à cible unique (Bolt Bend). */
   /** `controller` : que vous contrôlez ; `source` : dont la source correspond (Scientist Supreme : « d'une source artefact »). */
   stackItems?: {
@@ -611,6 +614,8 @@ export type Ref =
   | { kind: "costExiled" }
   /** La créature renvoyée en main pour le Web-slinging du sort qui se résout, ou du permanent source. */
   | { kind: "costBounced" }
+  /** Les cartes de votre cimetière du même nom que la carte désignée, elle comprise (Rat King, Verminister). */
+  | { kind: "sameNameInGraveyard"; ref: Ref }
   /** Les cibles du sort ou de la capacité de l'événement (Storm, Windrider : « ces créatures »). */
   | { kind: "targetsOfEventObject" }
   /** La capacité la plus récente sur la pile dont la source est l'objet de l'événement (Firebender Ascension). */

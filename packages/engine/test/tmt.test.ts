@@ -4192,3 +4192,167 @@ describe("lot B1, faufilement", () => {
     expect(idsOf(s, "p1", "hand", "Bear Cub")).toHaveLength(1);
   });
 });
+
+describe("lot C1, cartes uniques", () => {
+  const settleAll = (s: S, answer: (req: ChoiceRequest) => ChoiceValue[] | undefined = () => undefined): S => {
+    let cur = s;
+    for (let i = 0; i < 300; i++) {
+      const p = cur.pending;
+      if (p?.kind === "priority" && cur.stack.length === 0 && cur.triggers.length === 0 && i > 0) break;
+      if (p?.kind === "priority") cur = act(cur, p.player, { type: "pass" });
+      else if (p?.kind === "choice")
+        cur = act(cur, p.player, { type: "choose", values: answer(p.request) ?? p.request.suggested });
+      else break;
+    }
+    return cur;
+  };
+  const castCard = (s: S, name: string, extra: object = {}) =>
+    act(s, "p1", { type: "cast", card: idOf(s, "p1", "hand", name), ...extra });
+  const activateFirst = (s: S, source: string, extra: object = {}) => {
+    const a = legalActions(s, "p1").find(
+      (x): x is Extract<ActionOption, { type: "activate" }> => x.type === "activate" && x.source === source,
+    );
+    return act(s, "p1", { type: "activate", source, ability: a?.ability ?? -1, ...extra });
+  };
+  const toBlockers = (s: S, attackers: string[]) => {
+    let cur = advanceUntil(s, (x) => x.pending?.kind === "declareAttackers");
+    cur = act(cur, "p1", { type: "declareAttackers", attackers: attackers.map((id) => ({ id, defender: "p2" })) });
+    return advanceUntil(
+      cur,
+      (x) => x.turn.step === "declareBlockers" && x.pending?.kind === "priority" && x.pending.player === "p1",
+    );
+  };
+
+  it("April O'Neil, Hacktivist : une carte par type de carte parmi vos sorts lancés ce tour-ci", () => {
+    let s = scenario({
+      p1: {
+        battlefield: ["April O'Neil, Hacktivist", "Mountain", "Mountain", "Forest"],
+        hand: ["Lightning Strike", "Llanowar Elves"],
+        library: Array(6).fill("Island"),
+      },
+    });
+    s = settleAll(castCard(s, "Lightning Strike", { targets: { t: ["p2"] } }));
+    s = settleAll(castCard(s, "Llanowar Elves"));
+    const hand = s.players.p1?.hand.length ?? 0;
+    s = advanceUntil(s, (x) => x.turn.step === "end" && x.stack.length > 0);
+    s = settleAll(s);
+    expect(s.players.p1?.hand.length).toBe(hand + 2);
+  });
+
+  it("Fugitive Droid : ne contrecarre qu'un sort qui cible un de vos artefacts ou créatures", () => {
+    let s = scenario({
+      p1: { battlefield: ["Fugitive Droid", "Island", "Bear Cub"] },
+      p2: { battlefield: ["Mountain", "Mountain", "Mountain", "Mountain"], hand: ["Lightning Strike", "Lightning Strike"] },
+    });
+    s = advanceUntil(s, (x) => x.turn.active === "p2" && x.turn.step === "main1" && x.pending?.player === "p2");
+    const bear = idOf(s, "p1", "battlefield", "Bear Cub");
+    const [toPlayer, toBearCard] = idsOf(s, "p2", "hand", "Lightning Strike") as [string, string];
+    s = act(s, "p2", { type: "cast", card: toPlayer, targets: { t: ["p1"] } });
+    s = act(s, "p2", { type: "cast", card: toBearCard, targets: { t: [bear] } });
+    const droid = idOf(s, "p1", "battlefield", "Fugitive Droid");
+    s = act(s, "p2", { type: "pass" });
+    const opt = legalActions(s, "p1").find(
+      (a): a is Extract<ActionOption, { type: "activate" }> => a.type === "activate" && a.source === droid,
+    );
+    const onBear = s.stack.find((x) => x.targets.t?.includes(bear))?.id as string;
+    expect(opt?.targets[0]?.legal).toEqual([onBear]);
+    s = settleAll(act(s, "p1", { type: "activate", source: droid, ability: opt?.ability ?? -1, targets: { t: [onBear] } }));
+    expect(idsOf(s, "p1", "battlefield", "Bear Cub")).toHaveLength(1);
+    expect(s.players.p1?.life).toBe(17);
+  });
+
+  it("Mondo Gecko : de la couleur choisie et défense talismanique contre elle jusqu'à la fin du tour", () => {
+    let s = scenario({
+      p1: { battlefield: ["Mondo Gecko", "Island"], hand: ["Opt"] },
+      p2: { battlefield: ["Mountain", "Mountain"], hand: ["Lightning Strike"] },
+    });
+    const gecko = idOf(s, "p1", "battlefield", "Mondo Gecko");
+    s = settleAll(activateFirst(s, gecko, { discard: [idOf(s, "p1", "hand", "Opt")] }), (req) =>
+      req.type === "pick" && req.options.includes("R") ? ["R"] : undefined,
+    );
+    expect(chars(s, gecko).colors).toEqual(["R"]);
+    // Le sort rouge de l'adversaire ne peut pas le cibler.
+    s = act(s, "p1", { type: "pass" });
+    const strike = legalActions(s, "p2").find((a): a is Extract<ActionOption, { type: "cast" }> => a.type === "cast");
+    expect(strike?.modes[0]?.targets[0]?.legal ?? []).not.toContain(gecko);
+  });
+
+  describe("Ninja Teen", () => {
+    it("niveau 3 : une carte de créature du cimetière se lance par son faufilement {3}{B} à l'étape des bloqueurs", () => {
+      let s = scenario({
+        p1: { battlefield: ["Ninja Teen", "Bear Cub", ...Array(4).fill("Swamp")], graveyard: ["Serra Angel"] },
+      });
+      const teen = idOf(s, "p1", "battlefield", "Ninja Teen");
+      (s.objects[teen] as { classLevel?: number }).classLevel = 3;
+      s.version += 1;
+      const angel = idOf(s, "p1", "graveyard", "Serra Angel");
+      expect(legalActions(s, "p1").some((a) => a.type === "cast" && a.card === angel)).toBe(false);
+      s = toBlockers(s, [idOf(s, "p1", "battlefield", "Bear Cub")]);
+      s = act(s, "p1", { type: "cast", card: angel });
+      s = passAccepting(s, (x) => x.stack.length === 0 && x.triggers.length === 0);
+      const a = idOf(s, "p1", "battlefield", "Serra Angel");
+      expect(s.objects[a]?.tapped).toBe(true);
+      expect(s.combat?.attackers.some((x) => x.id === a)).toBe(true);
+      expect(idsOf(s, "p1", "hand", "Bear Cub")).toHaveLength(1);
+      // Une de vos créatures est partie (l'Ourson renvoyé) : l'adversaire a perdu 1 PV.
+      expect(s.players.p2?.life).toBe(19);
+    });
+  });
+
+  it("Rat King, Verminister : sacrifiez trois Rats (lui compris) ; la carte ciblée et ses homonymes reviennent engagés", () => {
+    const rat = customCard({ name: "Test Rat", subtypes: ["Rat"], power: 1, toughness: 1 });
+    let s = scenario({
+      p1: { battlefield: ["Rat King, Verminister", rat, rat], graveyard: ["Bear Cub", "Bear Cub", "Serra Angel"] },
+    });
+    const king = idOf(s, "p1", "battlefield", "Rat King, Verminister");
+    const [bear] = idsOf(s, "p1", "graveyard", "Bear Cub") as [string];
+    const rats = idsOf(s, "p1", "battlefield", "Test Rat");
+    s = settleAll(activateFirst(s, king, { sacrifice: [king, ...rats], targets: { t: [bear] } }));
+    const bears = idsOf(s, "p1", "battlefield", "Bear Cub");
+    expect(bears).toHaveLength(2);
+    expect(bears.every((id) => s.objects[id]?.tapped)).toBe(true);
+    expect(idsOf(s, "p1", "graveyard", "Serra Angel")).toHaveLength(1);
+    expect(idsOf(s, "p1", "graveyard", "Rat King, Verminister")).toHaveLength(1);
+  });
+
+  it("Don & Raph, Hard Science : en attaquant, le prochain sort non-créature a l'affinité pour les artefacts", () => {
+    let s = scenario({
+      p1: { battlefield: ["Don & Raph, Hard Science", "Buzz Bots", "Buzz Bots", "Mountain"], hand: ["Lightning Strike"] },
+    });
+    s = advanceUntil(s, (x) => x.pending?.kind === "declareAttackers");
+    s = act(s, "p1", {
+      type: "declareAttackers",
+      attackers: [{ id: idOf(s, "p1", "battlefield", "Don & Raph, Hard Science"), defender: "p2" }],
+    });
+    s = advanceUntil(s, (x) => x.turn.step === "main2");
+    // Lightning Strike ({1}{R}) coûte {R} de moins deux : une seule Montagne suffit.
+    const life = s.players.p2?.life ?? 20;
+    s = settleAll(castCard(s, "Lightning Strike", { targets: { t: ["p2"] } }));
+    expect(s.players.p2?.life).toBe(life - 3);
+  });
+
+  it("Mikey & Don : un sort de Tortue lancé du dessus de la bibliothèque arrive avec un marqueur +1/+1 de plus", () => {
+    let s = scenario({
+      p1: {
+        battlefield: ["Mikey & Don, Party Planners", "Plains", "Plains"],
+        library: ["Lita, Little Orphan Amphibian", "Forest"],
+      },
+    });
+    const lita = s.players.p1?.library[0] as string;
+    s = settleAll(act(s, "p1", { type: "cast", card: lita }));
+    const on = idOf(s, "p1", "battlefield", "Lita, Little Orphan Amphibian");
+    expect(s.objects[on]?.counters["+1/+1"]).toBe(1);
+    const forest = s.players.p1?.library[0] as string;
+    s = act(s, "p1", { type: "playLand", card: forest });
+    expect(idsOf(s, "p1", "battlefield", "Forest")).toHaveLength(1);
+  });
+
+  it("Kitsune's Technique : la moitié de la bibliothèque, arrondie au supérieur, en une seule meule", () => {
+    let s = scenario({
+      p1: { battlefield: Array(6).fill("Island"), hand: ["Kitsune's Technique"] },
+      p2: { library: Array(5).fill("Island") },
+    });
+    s = settleAll(castCard(s, "Kitsune's Technique", { targets: { t: ["p2"] } }));
+    expect(s.players.p2?.graveyard).toHaveLength(3);
+  });
+});
