@@ -12,6 +12,7 @@ import {
   costReducer,
   eventReplacement,
   fx,
+  MERFOLK_BLUE,
   manaAbility,
   modal,
   mode,
@@ -448,6 +449,27 @@ export const BLUE: Record<string, CardScript> = {
         spellKeywords: { filter: { notTypes: ["Creature"] }, keywords: ["improvise"] },
         label: "Vos sorts non-créature ont l'improvisation",
       }),
+    ],
+  },
+  // Vol : lu dans le texte.
+  "Namor the Sub-Mariner": {
+    cdaPower: amount.count({ subtype: "Merfolk", controller: "you" }),
+    abilities: [
+      triggered(
+        when.castSpell("you", { notTypes: ["Creature"] }),
+        [fx.createTokens(MERFOLK_BLUE, amount.manaSymbolsOf(ref.eventObject, "U"))],
+        { label: "Sort non-créature : un Ondin 1/1 par symbole {U} de son coût" },
+      ),
+    ],
+  },
+  "Kid Loki": {
+    abilities: [
+      staticAbility(
+        { types: ["Creature"], controller: "you", countersPutByYouThisTurn: "+1/+1" },
+        { addKeywords: ["hexproof"] },
+        { label: "Vos créatures sur lesquelles vous avez mis des marqueurs +1/+1 ce tour-ci ont la défense talismanique" },
+      ),
+      triggered(when.draw(2), [fx.addCounters(ref.self, 1)], { label: "Deuxième carte piochée : un marqueur +1/+1" }),
     ],
   },
 };

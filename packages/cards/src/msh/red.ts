@@ -6,6 +6,7 @@ import {
   type CardScript,
   cond,
   costReducer,
+  eventReplacement,
   fx,
   modal,
   mode,
@@ -346,6 +347,19 @@ export const RED: Record<string, CardScript> = {
         powerUp: true,
         effects: [fx.addCounters(ref.self, 2)],
         label: "Montée en puissance : deux marqueurs +1/+1",
+      }),
+    ],
+  },
+  // Portée : lue dans le texte.
+  "Hawkeye, Young Avenger": {
+    abilities: [
+      eventReplacement({
+        event: "damage",
+        source: { controller: "you" },
+        to: "opponentSide",
+        combat: false,
+        modify: { addSourcePower: true },
+        label: "Vos sources infligent autant de blessures non de combat en plus que sa force",
       }),
     ],
   },

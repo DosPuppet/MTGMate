@@ -48,7 +48,8 @@ export type Effect =
       once?: boolean;
     }
   /** Proliférer N fois (701.34), choix automatique : vos permanents qui ont des marqueurs, et chez les adversaires marqueurs -1/-1, d'étourdissement et de poison. */
-  | { op: "proliferate"; times: Amount }
+  /** `what` : seulement les objets ou joueurs désignés, sans choix (Powerful Broker). */
+  | { op: "proliferate"; times: Amount; what?: Ref }
   /**
    * N marqueurs sur un permanent correspondant du joueur ; s'il n'en a pas, il crée d'abord le jeton (famille R4.6 :
    * renforcer Jace, amasser). `addSubtypes` : le permanent reçoit ces sous-types (701.47a).

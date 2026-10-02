@@ -572,4 +572,24 @@ export const MULTI: Record<string, CardScript> = {
       }),
     ],
   },
+  "Ares, God of War": {
+    keywords: ["mustAttack"],
+    abilities: [
+      triggered(when.dies({ types: ["Creature"], controller: "you", attacking: true }), [fx.toHand(ref.eventObject)], {
+        label: "Une de vos créatures attaquantes meurt : elle revient dans la main de son propriétaire",
+      }),
+    ],
+  },
+  "The Astonishing Ant-Man": {
+    abilities: [
+      triggered(when.draw(), [fx.addCounters(ref.self, 1)], { label: "Vous piochez : un marqueur +1/+1" }),
+      activated({
+        mana: "{2}{G}",
+        tap: true,
+        removeCountersX: "+1/+1",
+        effects: [fx.createTokens(INSECT_G, amount.x)],
+        label: "Retirez X marqueurs +1/+1 : X Insectes 1/1",
+      }),
+    ],
+  },
 };

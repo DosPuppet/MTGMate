@@ -193,8 +193,11 @@ export interface ObjectFilter {
   dealtDamageThisTurn?: boolean;
   /** Suspect ou non (701.60 : « créature suspecte ciblée »). */
   suspected?: boolean;
-  /** Vous avez mis un marqueur sur lui ce tour-ci (Fractal Tender). */
-  countersPutByYouThisTurn?: boolean;
+  /**
+   * Vous avez mis un marqueur sur lui ce tour-ci (Fractal Tender) ; une sorte : un marqueur de cette sorte (Kid Loki :
+   * « un ou plusieurs marqueurs +1/+1 »). Lu aussi par les capacités statiques.
+   */
+  countersPutByYouThisTurn?: boolean | string;
   /** A le déguisement (Expose the Culprit : « créatures face visible que vous contrôlez avec le déguisement »). */
   disguise?: boolean;
   /** {X} dans son coût de mana (« un sort avec {X} dans son coût de mana » : Matterbending Mage, Paradox Surveyor). */
@@ -675,6 +678,8 @@ export type Amount =
   | { kind: "basicLandTypes" }
   /** Marqueurs d'un type parmi les permanents correspondants (« marqueurs de loyauté parmi les Jace »). */
   | { kind: "countersAmong"; filter: ObjectFilter; counter: string }
+  /** Symboles de mana de cette couleur dans le coût de mana de l'objet désigné, hybrides compris (Namor). */
+  | { kind: "manaSymbolsOf"; ref: Ref; color: ManaType }
   /** Plus grand nombre de permanents du filtre qui ont un type de créature en commun (White Lotus Tile ; changelins). */
   | { kind: "maxSharingCreatureType"; filter: ObjectFilter }
   /** La moitié des points de vie du joueur désigné, arrondie à l'unité supérieure (Alpharael). */

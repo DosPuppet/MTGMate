@@ -495,6 +495,17 @@ export function evalAmount(s: GameState, ctx: EffectContext, a: Amount): number 
           .filter((id) => matchesObjectFilter(s, ctx.controller, id, a.filter, ctx.sourceId))
           .map((id) => manaValue(s.defs[s.objects[id]?.defId ?? ""]?.manaCost)),
       );
+    case "manaSymbolsOf": {
+      // Namor the Sub-Mariner : « autant que de symboles de mana bleu dans son coût de mana » (le sort de l'événement).
+      const id = resolveRef(s, ctx, a.ref)[0];
+      const cost = id ? s.defs[s.objects[id]?.defId ?? s.lki[id]?.defId ?? ""]?.manaCost : undefined;
+      if (!cost) return 0;
+      return (
+        (cost.colored[a.color] ?? 0) +
+        (cost.hybrid ?? []).filter((h) => h.includes(a.color)).length +
+        (cost.twoHybrid ?? []).filter((m) => m === a.color).length
+      );
+    }
     case "maxSharingCreatureType": {
       const ids = s.battlefield.filter((id) => matchesObjectFilter(s, ctx.controller, id, a.filter, ctx.sourceId));
       const changelings = ids.filter((id) => chars(s, id).keywords.includes("changeling")).length;

@@ -525,4 +525,24 @@ export const GREEN: Record<string, CardScript> = {
       }),
     ],
   },
+  "Shang-Chi, Master of Kung Fu": {
+    abilities: [
+      playerStatic({
+        activateAsThoughHaste: { types: ["Creature"], controller: "you" },
+        label: "Vous activez les capacités de vos créatures comme si elles avaient la célérité",
+      }),
+      manaAbility([...ANY_COLOR], 2, { restriction: { abilityOfCreature: {} } }),
+    ],
+  },
+  "Powerful Broker": {
+    abilities: [
+      activated({
+        tap: true,
+        sorcerySpeed: true,
+        targets: [{ id: "t", label: "permanent ou joueur", filter: { objects: { permanent: true }, players: "any" } }],
+        effects: [fx.proliferate(1, ref.target())],
+        label: "Un marqueur de plus de chaque sorte sur le permanent ou joueur ciblé",
+      }),
+    ],
+  },
 };

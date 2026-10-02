@@ -454,6 +454,8 @@ export interface CostDef {
    * sorte (ECL), retirés par le moteur : les −1/−1 d'abord, les +1/+1 en dernier.
    */
   removeCounters?: { kind: string; n: number };
+  /** « Retirez un nombre quelconque de marqueurs [sorte] de cette créature » : X marqueurs (The Astonishing Ant-Man). */
+  removeCountersX?: string;
   /** Engager d'autres permanents dégagés que vous contrôlez (choisis automatiquement). */
   tapOthers?: { filter: ObjectFilter; count: number };
   /** Engager la créature à laquelle la source est attachée (elle doit pouvoir utiliser {T}). */
@@ -704,7 +706,15 @@ export interface EventReplacement {
    * `addSourceCounters` : en plus, autant que de marqueurs de ce type sur la source du remplacement (Fated Firepower :
    * « plus le nombre de marqueurs de feu sur cet enchantement »).
    */
-  modify: { add?: number; addSourceCounters?: string; times?: number; atLeastSourcePower?: boolean; prevent?: boolean };
+  modify: {
+    add?: number;
+    addSourceCounters?: string;
+    /** En plus, autant que la force de la source du remplacement (Hawkeye, Young Avenger). */
+    addSourcePower?: boolean;
+    times?: number;
+    atLeastSourcePower?: boolean;
+    prevent?: boolean;
+  };
   /** Après une prévention : chaque adversaire du contrôleur meule autant (The Mindskinner) ; capacité réflexive
    * « quand des blessures sont prévenues ainsi » (New Way Forward : `amount.eventAmount` et `ref.eventObject`, la source). */
   onPrevent?: { opponentsMill?: boolean; reflexive?: Effect[] };
@@ -954,6 +964,8 @@ export interface PlayerStaticAbilityDef {
   auraStealsCheaper?: boolean;
   /** Elvish Refueler : pendant votre tour, tant qu'aucune capacité d'exhaust n'a été activée, elles sont réactivables. */
   exhaustReuse?: boolean;
+  /** Shang-Chi : les capacités des créatures correspondantes s'activent comme si elles avaient la célérité (pas l'attaque). */
+  activateAsThoughHaste?: ObjectFilter;
   /** Wonder Man, Hollywood Hero : chaque montée en puissance de vos permanents peut être activée N fois de plus. */
   powerUpExtraUses?: number;
   /** Récit durable (Storied, Le Hobbit) : acquis pour le reste de la partie (effet de joueur permanent). */

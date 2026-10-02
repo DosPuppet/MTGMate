@@ -395,6 +395,7 @@ export function changeCounters(s: GameState, o: GameObject, kind: string, n: num
     o.countersPutTurn = s.turn.number;
     const by = s.resolving?.controller ?? o.controller;
     o.countersPutBy = first ? [by] : [...new Set([...(o.countersPutBy ?? []), by])];
+    o.countersPutKinds = [...new Set([...(first ? [] : (o.countersPutKinds ?? [])), `${by}|${kind}`])];
     rulesEvent(s, { e: "counters", objectId: o.id, kind, amount: after - before, first });
     // Journal du tour (Lasting Tarfire : « si vous avez mis un marqueur sur une créature ce tour-ci ») : celui qui les
     // met est le contrôleur de ce qui se résout, sinon (coût, action) le contrôleur du permanent.
@@ -748,5 +749,6 @@ export {
   hasType,
   isCreature,
   isSummoningSick,
+  sickForActivation,
   snapshot,
 } from "./layers";

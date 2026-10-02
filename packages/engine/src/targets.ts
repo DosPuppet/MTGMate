@@ -51,6 +51,11 @@ export function protectedFrom(s: GameState, id: ObjectId, source: LkiSnapshot | 
 const PERMANENT_TYPES: readonly CardType[] = ["Artifact", "Creature", "Enchantment", "Land", "Planeswalker", "Battle"];
 
 /** Le filtre s'applique-t-il à ces caractéristiques (objet vivant ou dernières informations connues) ? */
+/** Marqueurs (d'une sorte donnée, ou de toute sorte) mis par ce joueur, d'après les entrées « joueur|sorte ». */
+export function countersPutBy(entries: string[] | undefined, player: PlayerId, kind: boolean | string): boolean {
+  return !!entries?.some((x) => (kind === true ? x.startsWith(`${player}|`) : x === `${player}|${kind}`));
+}
+
 export function matchesView(v: LkiSnapshot, f: ObjectFilter, perspective: PlayerId, sourceId?: ObjectId): boolean {
   if (f.types && !f.types.some((t) => v.types.includes(t))) return false;
   if (f.notTypes?.some((t) => v.types.includes(t))) return false;
@@ -62,6 +67,13 @@ export function matchesView(v: LkiSnapshot, f: ObjectFilter, perspective: Player
   if (f.other && v.id === sourceId) return false;
   if (f.self && v.id !== sourceId) return false;
   if (f.nontoken && v.isToken) return false;
+  // Kid Loki : « chaque créature sur laquelle vous avez mis des marqueurs +1/+1 ce tour-ci ».
+  if (
+    f.countersPutByYouThisTurn &&
+    v.countersPutThisTurn &&
+    !countersPutBy(v.countersPutThisTurn, perspective, f.countersPutByYouThisTurn)
+  )
+    return false;
   // Un sort (vue de `spellView`) ; pour un objet, `matchesObjectFilter` lit sa définition.
   if (f.adventure !== undefined && !v.id && !!v.adventure !== f.adventure) return false;
   if (f.hasX !== undefined && !!v.hasX !== f.hasX) return false;
@@ -253,7 +265,11 @@ export function matchesObjectFilter(
   if (f.dealtDamageThisTurn && o.dealtDamageTurn !== s.turn.number) return false;
   if (f.disguise !== undefined && !!s.defs[o.defId]?.disguise !== f.disguise) return false;
   // Fractal Tender : « si vous avez mis un marqueur sur cette créature ce tour-ci ».
-  if (f.countersPutByYouThisTurn && !(o.countersPutTurn === s.turn.number && o.countersPutBy?.includes(controller))) return false;
+  if (
+    f.countersPutByYouThisTurn &&
+    !countersPutBy(o.countersPutTurn === s.turn.number ? o.countersPutKinds : undefined, controller, f.countersPutByYouThisTurn)
+  )
+    return false;
   // « autre que la créature enchantée » (Sporogenic Infection, Saw) ; « la créature équipée / le terrain enchanté ».
   if (f.notAttachedToSource && sourceId && s.objects[sourceId]?.attachedTo === id) return false;
   if (f.attachedToSource && (!sourceId || s.objects[sourceId]?.attachedTo !== id)) return false;

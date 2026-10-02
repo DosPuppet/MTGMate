@@ -134,8 +134,11 @@ export const RECORD_VERSION = 1;
  *   d'un marqueur) ; l'engagement d'un permanent est noté (cause « travail d'équipe », premier engagement du tour).
  * - 50 : Marvel Super Heroes, lot B3 : réductions du coût des montées en puissance ; usages comptés des capacités à
  *   usage unique (Wonder Man : une activation de plus).
+ * - 51 : Marvel Super Heroes, lot C1 : « marqueurs mis par vous ce tour-ci » lu par les statiques (et par sorte) ;
+ *   activer malgré le mal d'invocation ; blessures augmentées de la force de la source ; coût « retirez X marqueurs » ;
+ *   symboles d'une couleur dans un coût ; prolifération sur une cible.
  */
-export const RULES_VERSION = 50;
+export const RULES_VERSION = 51;
 
 /** Un point de contrôle toutes les N décisions (plus la dernière de la partie). */
 export const CHECKPOINT_EVERY = 25;

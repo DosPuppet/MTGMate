@@ -337,6 +337,8 @@ export const amount = {
   maxManaValueInGraveyard: { kind: "maxManaValueInGraveyard" } as Amount,
   distinctColors: (filter: ObjectFilter): Amount => ({ kind: "distinctColors", filter }),
   countersAmong: (filter: ObjectFilter, counter: string): Amount => ({ kind: "countersAmong", filter, counter }),
+  /** Symboles de mana de cette couleur dans le coût de l'objet désigné (Namor : le sort de l'événement). */
+  manaSymbolsOf: (r: Ref, color: ManaType): Amount => ({ kind: "manaSymbolsOf", ref: r, color }),
   /** Plus grand nombre de permanents du filtre qui ont un type de créature en commun (White Lotus Tile). */
   maxSharingCreatureType: (filter: ObjectFilter): Amount => ({ kind: "maxSharingCreatureType", filter }),
   halfLife: (who: Ref): Amount => ({ kind: "halfLife", who }),
@@ -992,7 +994,7 @@ export const fx = {
   prepare: (what: Ref, value = true): Effect => ({ op: "prepare", what, value }),
   prepareAll: (filter: ObjectFilter, value = true): Effect => ({ op: "prepare", filter, value }),
   instantJaceLoyalty: { op: "playerEffect", ability: { jaceLoyaltyInstant: true } } as Effect,
-  proliferate: (times: Amount = 1): Effect => ({ op: "proliferate", times }),
+  proliferate: (times: Amount = 1, what?: Ref): Effect => ({ op: "proliferate", times, ...(what ? { what } : {}) }),
   removeCounters: (what: Ref, n: Amount, kind?: string, store?: string): Effect => ({
     op: "removeCounters",
     what,
@@ -1449,6 +1451,8 @@ export function activated(opts: {
   /** Maîtrise de l'eau (Avatar) : le coût de mana est un coût « waterbend » (artefacts et créatures dégagés : {1} chacun). */
   waterbend?: boolean;
   /** « X ne peut pas être 0 » : plus petite valeur de X permise. */
+  /** « Retirez un nombre quelconque de marqueurs [sorte] de cette créature » (X = le nombre retiré). */
+  removeCountersX?: string;
   minX?: number;
   /** « Engagez X [artefacts] dégagés que vous contrôlez ». */
   tapX?: ObjectFilter;
@@ -1498,6 +1502,7 @@ export function activated(opts: {
       tapX: opts.tapX,
       exileFromGraveyardX: opts.exileFromGraveyardX,
       sacrificeX: opts.sacrificeX,
+      removeCountersX: opts.removeCountersX,
       discard: opts.discard,
       discardFilter: opts.discardFilter,
       returnUnblockedAttacker: opts.returnUnblockedAttacker,

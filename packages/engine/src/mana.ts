@@ -12,9 +12,9 @@ import {
   defOf,
   emit,
   isCreature,
-  isSummoningSick,
   moveObject,
   obj,
+  sickForActivation,
   snapshot,
   tapObject,
 } from "./state";
@@ -150,7 +150,7 @@ function canActivateMana(s: GameState, id: ObjectId, ab: ManaAbilityDef): boolea
   const o = obj(s, id);
   if (ab.cost.mana) return false;
   if (chars(s, id).keywords.includes("noActivatedAbilities")) return false;
-  if (ab.cost.tap && (o.tapped || isSummoningSick(s, id))) return false;
+  if (ab.cost.tap && (o.tapped || sickForActivation(s, id))) return false;
   if (ab.tapAnother && !otherToTap(s, id)) return false;
   if (ab.condition && !checkCondition(s, ab.condition, o.controller, id)) return false;
   if (ab.oncePerTurn && s.turn.onceFired.includes(`mana:${id}`)) return false;

@@ -15,7 +15,8 @@
  */
 import { manaValue } from "./mana";
 import { counterPT, obj } from "./state";
-import { ALL_CREATURE_TYPES, matchesView, withChosen } from "./targets";
+import { playerStatics } from "./statics";
+import { ALL_CREATURE_TYPES, matchesObjectFilter, matchesView, withChosen } from "./targets";
 import { checkCondition } from "./triggers";
 import { countTurnEvents } from "./turnlog";
 import type {
@@ -481,6 +482,7 @@ function view(s: GameState, id: ObjectId, c: Characteristics, o: GameObject, att
     basePower: c.basePower,
     keywords: c.keywords,
     isToken: o.isToken,
+    countersPutThisTurn: o.countersPutTurn === s.turn.number ? (o.countersPutKinds ?? []) : [],
     attacking,
     name: c.name,
     manaValue: scan && !scan.copying ? manaValue(s.defs[o.defId]?.manaCost) : viewManaValue(s, id, o),
@@ -1024,6 +1026,18 @@ export function isCreature(s: GameState, id: ObjectId): boolean {
  * Mal d'invocation (302.6) : une créature ne peut attaquer ni utiliser {T} que si son contrôleur
  * la contrôle sans interruption depuis le début de son tour le plus récent.
  */
+/**
+ * Mal d'invocation pour activer une capacité avec {T} : Shang-Chi, Master of Kung Fu (« comme si elles avaient la
+ * célérité ») le lève, mais pas pour attaquer.
+ */
+export function sickForActivation(s: GameState, id: ObjectId): boolean {
+  if (!isSummoningSick(s, id)) return false;
+  const controller = obj(s, id).controller;
+  return !playerStatics(s, controller, "activateAsThoughHaste").some(
+    ({ id: src, ab }) => !!ab.activateAsThoughHaste && matchesObjectFilter(s, controller, id, ab.activateAsThoughHaste, src),
+  );
+}
+
 export function isSummoningSick(s: GameState, id: ObjectId): boolean {
   const o = obj(s, id);
   if (!isCreature(s, id) || hasKeyword(s, id, "haste")) return false;

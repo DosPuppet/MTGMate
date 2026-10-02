@@ -480,13 +480,15 @@ export function legalActions(s: GameState, player: PlayerId): ActionOption[] {
       if (!targetsAvailable(targets)) return;
       const xMax = ab.cost.loyaltyX
         ? (o.counters.loyalty ?? 0)
-        : ab.cost.tapX
-          ? tapXOptions(s, player, id, ab.cost.tapX)
-          : ab.cost.exileFromGraveyardX
-            ? graveyardXOptions(s, player, id, ab.cost.exileFromGraveyardX)
-            : ab.cost.sacrificeX
-              ? sacrificeXOptions(s, player, id, ab.cost.sacrificeX)
-              : maxX(s, player, ab.cost.mana, exclude, abilityPurpose(id, ab));
+        : ab.cost.removeCountersX
+          ? (o.counters[ab.cost.removeCountersX] ?? 0)
+          : ab.cost.tapX
+            ? tapXOptions(s, player, id, ab.cost.tapX)
+            : ab.cost.exileFromGraveyardX
+              ? graveyardXOptions(s, player, id, ab.cost.exileFromGraveyardX)
+              : ab.cost.sacrificeX
+                ? sacrificeXOptions(s, player, id, ab.cost.sacrificeX)
+                : maxX(s, player, ab.cost.mana, exclude, abilityPurpose(id, ab));
       // « X ne peut pas être 0 » : la capacité n'est proposée que si X peut atteindre son minimum.
       if (ab.cost.minX !== undefined && (xMax ?? 0) < ab.cost.minX) return;
       out.push({

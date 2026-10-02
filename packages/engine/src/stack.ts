@@ -37,6 +37,7 @@ import {
   removeFromGame,
   rulesEvent,
   shuffle,
+  sickForActivation,
   snapshot,
   tapObject,
   turnFaceUp,
@@ -2084,7 +2085,7 @@ export function canPayNonManaCost(s: GameState, source: ObjectId, ab: ActivatedA
   // Karlov Watchdog : « les permanents de vos adversaires ne peuvent pas être retournés face visible pendant votre tour ».
   if (ab.effects.some((e) => e.op === "turnFaceUp") && faceUpLocked(s, who)) return false;
   if (ab.cost.crew !== undefined && crewOptions(s, who, source, ab.cost.crew) === null) return false;
-  if (ab.cost.tap && (o.tapped || isSummoningSick(s, source))) return false;
+  if (ab.cost.tap && (o.tapped || sickForActivation(s, source))) return false;
   // 606.3 : une seule capacité de loyauté par planeswalker et par tour ; on ne peut pas retirer plus que sa loyauté.
   if (ab.cost.loyalty !== undefined) {
     if (o.loyaltyTurn === s.turn.number) return false;
@@ -2153,7 +2154,12 @@ export function activateAbility(s: GameState, player: PlayerId, source: ObjectId
     }
   }
   const x =
-    ab.cost.mana?.x || ab.cost.loyaltyX || ab.cost.tapX || ab.cost.exileFromGraveyardX || ab.cost.sacrificeX
+    ab.cost.mana?.x ||
+    ab.cost.loyaltyX ||
+    ab.cost.tapX ||
+    ab.cost.exileFromGraveyardX ||
+    ab.cost.sacrificeX ||
+    ab.cost.removeCountersX
       ? Math.max(0, Math.floor(choices.x ?? 0))
       : 0;
   const targets = validateTargets(s, player, ab.targets, choices.targets, { sourceId: source, x });
@@ -2162,6 +2168,7 @@ export function activateAbility(s: GameState, player: PlayerId, source: ObjectId
   if (ab.cost.sacrificeX && x < 1) throw new RulesError("Sacrifiez au moins un permanent");
   if (ab.cost.minX !== undefined && x < ab.cost.minX) throw new RulesError(`X doit valoir au moins ${ab.cost.minX}`);
   if (ab.cost.loyaltyX && x > (o.counters.loyalty ?? 0)) throw new RulesError("Pas assez de marqueurs de loyauté");
+  if (ab.cost.removeCountersX && x > (o.counters[ab.cost.removeCountersX] ?? 0)) throw new RulesError("Pas assez de marqueurs");
   const c = chars(s, source);
   // Action spéciale (116.2, déverrouiller une porte) : les coûts sont payés, les effets s'appliquent sans la pile.
   if (ab.specialAction) {
@@ -2253,6 +2260,7 @@ export function activateAbility(s: GameState, player: PlayerId, source: ObjectId
     }
   }
   if (ab.cost.tap) tapObject(s, o);
+  if (ab.cost.removeCountersX && x > 0) changeCounters(s, o, ab.cost.removeCountersX, -x);
   if (ab.cost.tapAttached && o.attachedTo) tapObject(s, obj(s, o.attachedTo));
   if (ab.cost.loyalty !== undefined) {
     o.loyaltyTurn = s.turn.number;

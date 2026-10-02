@@ -288,4 +288,36 @@ export const ARTIFACTS: Record<string, CardScript> = {
   "Arc Reactor": {
     abilities: [entersWith({ tapped: true }), manaAbility("C", 3)],
   },
+  "Super-Adaptoid": {
+    cdaPower: amount.count({ types: ["Creature"], controller: "you", legendary: true }),
+    abilities: [when.entersSelf, when.attacksSelf].map((w) =>
+      triggered(
+        w,
+        (
+          [
+            "haste",
+            "flying",
+            "firstStrike",
+            "doubleStrike",
+            "deathtouch",
+            "indestructible",
+            "lifelink",
+            "menace",
+            "reach",
+            "trample",
+            "vigilance",
+          ] as const
+        ).flatMap((k) =>
+          fx.when(
+            cond.all(cond.targetMatches("t", { keyword: k }), cond.not(cond.sourceMatches({ keyword: k }))),
+            fx.counters(ref.self, k),
+          ),
+        ),
+        {
+          targets: [target.creature("t", { other: true })],
+          label: "Un marqueur de chaque capacité de la créature ciblée qu'il n'a pas",
+        },
+      ),
+    ),
+  },
 };

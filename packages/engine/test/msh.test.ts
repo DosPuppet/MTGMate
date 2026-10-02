@@ -9,7 +9,7 @@ import { describe, expect, it } from "vitest";
 import { destroy } from "../src/actions";
 import { fx, manaAbility, ref, spell, target } from "../src/dsl";
 import { legalActions } from "../src/legal";
-import { chars } from "../src/state";
+import { changeCounters, chars } from "../src/state";
 import type { ActionOption, ChoiceRequest, ChoiceValue, GameState } from "../src/types";
 import {
   act,
@@ -4306,5 +4306,101 @@ describe("lot B3 : montée en puissance", () => {
     s = settle(activate(s, "p1", wonder, {}, /Montée en puissance/));
     expect(s.objects[wonder]?.counters["+1/+1"]).toBe(4);
     expect(ability(s, "p1", wonder, /Montée en puissance/)).toBeUndefined();
+  });
+});
+
+describe("lot C1 : caractéristiques, filtres et coûts", () => {
+  it("Super-Adaptoid : sa force vaut vos créatures légendaires ; il copie en marqueurs les capacités qu'il n'a pas", () => {
+    let s = scenario({
+      p1: { battlefield: ["Wonder Man, Hollywood Hero", "Bear Cub", "Mountain", "Mountain"], hand: ["Super-Adaptoid"] },
+      p2: { battlefield: ["Serra Angel"] },
+    });
+    const angel = idOf(s, "p2", "battlefield", "Serra Angel");
+    s = settle(cast(s, "p1", "Super-Adaptoid"), picking([angel]));
+    const robot = idOf(s, "p1", "battlefield", "Super-Adaptoid");
+    // Légendaires : Wonder Man et Super-Adaptoid lui-même.
+    expect(chars(s, robot).power).toBe(2);
+    expect(s.objects[robot]?.counters.flying).toBe(1);
+    expect(s.objects[robot]?.counters.vigilance).toBe(1);
+    expect(s.objects[robot]?.counters.trample).toBeUndefined();
+  });
+
+  it("Ares, God of War : une de vos créatures attaquantes meurt, elle revient en main", () => {
+    let s = scenario({ p1: { battlefield: ["Ares, God of War", "Bear Cub"] }, p2: { battlefield: ["Serra Angel"] } });
+    const bear = idOf(s, "p1", "battlefield", "Bear Cub");
+    const ares = idOf(s, "p1", "battlefield", "Ares, God of War");
+    s = advanceUntil(s, (x) => x.pending?.kind === "declareAttackers");
+    s = act(s, "p1", {
+      type: "declareAttackers",
+      attackers: [
+        { id: bear, defender: "p2" },
+        { id: ares, defender: "p2" },
+      ],
+    });
+    s = advanceUntil(s, (x) => x.pending?.kind === "declareBlockers");
+    s = act(s, "p2", {
+      type: "declareBlockers",
+      blocks: [{ blocker: idOf(s, "p2", "battlefield", "Serra Angel"), attacker: bear }],
+    });
+    s = settle(s);
+    s = advanceUntil(s, (x) => x.turn.step === "main2");
+    expect(idsOf(s, "p1", "hand", "Bear Cub")).toHaveLength(1);
+  });
+
+  it("Namor the Sub-Mariner : un Ondin par symbole {U} d'un sort non-créature ; sa force vaut vos Ondins", () => {
+    let s = scenario({
+      p1: { battlefield: ["Namor the Sub-Mariner", "Island", "Island", "Island"], hand: ["Opt"], library: lands("Island", 3) },
+    });
+    s = settle(cast(s, "p1", "Opt"));
+    expect(idsOf(s, "p1", "battlefield", "Merfolk")).toHaveLength(1);
+    // Namor est lui-même un Ondin.
+    expect(chars(s, idOf(s, "p1", "battlefield", "Namor the Sub-Mariner")).power).toBe(2);
+  });
+
+  it("Kid Loki : vos créatures sur lesquelles vous avez mis des marqueurs +1/+1 ce tour-ci ont la défense talismanique", () => {
+    const s = scenario({ p1: { battlefield: ["Kid Loki", "Bear Cub", "Serra Angel"] } });
+    const bear = idOf(s, "p1", "battlefield", "Bear Cub");
+    const angel = idOf(s, "p1", "battlefield", "Serra Angel");
+    changeCounters(s, s.objects[bear]!, "+1/+1", 1);
+    changeCounters(s, s.objects[angel]!, "-1/-1", 1);
+    expect(chars(s, bear).keywords).toContain("hexproof");
+    expect(chars(s, angel).keywords).not.toContain("hexproof");
+  });
+
+  it("The Astonishing Ant-Man : retirez X marqueurs +1/+1 : X Insectes 1/1", () => {
+    let s = scenario({
+      p1: { battlefield: [{ name: "The Astonishing Ant-Man", counters: { "+1/+1": 3 } }, ...lands("Forest", 3)] },
+    });
+    const ant = idOf(s, "p1", "battlefield", "The Astonishing Ant-Man");
+    s.objects[ant]!.controlledSince = 0;
+    expect(ability(s, "p1", ant)?.xMax).toBe(3);
+    s = settle(activate(s, "p1", ant, { x: 2 }));
+    expect(idsOf(s, "p1", "battlefield", "Insect")).toHaveLength(2);
+    expect(s.objects[ant]?.counters["+1/+1"]).toBe(1);
+  });
+
+  it("Hawkeye, Young Avenger : vos blessures non de combat aux adversaires augmentent de sa force", () => {
+    let s = scenario({ p1: { battlefield: ["Hawkeye, Young Avenger", "Mountain", "Mountain"], hand: ["Lightning Strike"] } });
+    s = settle(cast(s, "p1", "Lightning Strike", { targets: { t: ["p2"] } }));
+    expect(s.players.p2?.life).toBe(15);
+  });
+
+  it("Shang-Chi, Master of Kung Fu : les capacités {T} de vos créatures s'activent malgré le mal d'invocation", () => {
+    const s = scenario({ p1: { battlefield: ["Shang-Chi, Master of Kung Fu", { name: "Llanowar Elves", sick: true }] } });
+    const elves = idOf(s, "p1", "battlefield", "Llanowar Elves");
+    expect(legalActions(s, "p1").some((a) => a.type === "tapForMana" && a.source === elves)).toBe(true);
+    const without = scenario({ p1: { battlefield: [{ name: "Llanowar Elves", sick: true }] } });
+    const lone = idOf(without, "p1", "battlefield", "Llanowar Elves");
+    expect(legalActions(without, "p1").some((a) => a.type === "tapForMana" && a.source === lone)).toBe(false);
+  });
+
+  it("Powerful Broker : un marqueur de plus de chaque sorte sur le permanent ciblé", () => {
+    let s = scenario({ p1: { battlefield: ["Powerful Broker", { name: "Bear Cub", counters: { "+1/+1": 1, flying: 1 } }] } });
+    const broker = idOf(s, "p1", "battlefield", "Powerful Broker");
+    s.objects[broker]!.controlledSince = 0;
+    const bear = idOf(s, "p1", "battlefield", "Bear Cub");
+    s = settle(activate(s, "p1", broker, { targets: { t: [bear] } }));
+    expect(s.objects[bear]?.counters["+1/+1"]).toBe(2);
+    expect(s.objects[bear]?.counters.flying).toBe(2);
   });
 });

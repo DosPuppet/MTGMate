@@ -169,6 +169,8 @@ export interface GameObject {
   suspected?: boolean;
   /** Joueurs qui ont mis des marqueurs sur lui pendant le tour `countersPutTurn` (Fractal Tender). */
   countersPutBy?: PlayerId[];
+  /** … et les sortes de marqueurs mis, « joueur|sorte » (Kid Loki). */
+  countersPutKinds?: string[];
   /** A déjà infligé des blessures, de combat ou non (Karakyk Guardian). */
   dealtDamage?: boolean;
   /** Tour de sa dernière attaque (« créature qui a attaqué ce tour-ci »). */
@@ -552,6 +554,8 @@ export interface PendingTrigger {
 
 /** Caractéristiques d'un objet au moment où il a quitté le champ de bataille (dernières informations connues). */
 export interface LkiSnapshot {
+  /** Marqueurs mis sur lui ce tour-ci, « joueur|sorte » (filtre `countersPutByYouThisTurn`). */
+  countersPutThisTurn?: string[];
   id: ObjectId;
   defId: string;
   owner: PlayerId;

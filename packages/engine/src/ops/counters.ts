@@ -88,6 +88,9 @@ export const HANDLERS: OpHandlers = {
       const poisoned = s.playerOrder.filter((p) => !s.players[p]?.lost && (s.players[p]?.poison ?? 0) > 0);
       const options = [...withCounters, ...poisoned];
       if (options.length === 0) return;
+      // Powerful Broker : « donnez au permanent ou joueur ciblé un marqueur de plus de chaque sorte » (sans choix).
+      if (e.what && !r.vars[key(`pick${t}`)])
+        r.vars[key(`pick${t}`)] = resolveRef(s, ctx, e.what).filter((x) => options.includes(x));
       const answer = r.vars[key(`pick${t}`)];
       if (!answer) {
         const good = (id: string) => {
