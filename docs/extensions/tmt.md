@@ -52,3 +52,11 @@ Les scripts sont dans `packages/cards/src/tmt/` : `cards` (cartes du méta), `wh
 - **Cartes (24) :** Courier of Comestibles, Cowabunga!, Frog Butler, Groundchuck & Dirtbag, Guac & Marshmallow Pizza, Michelangelo, Game Master, Michelangelo, Improviser, Michelangelo, Mutant BFF, Michelangelo, Weirdness to 11, Mona Lisa, Science Geek, Mutant Chain Reaction, New Generation's Technique, Novel Nunchaku, Party Dude, Primordial Pachyderm, Ragamuffin Raptor, Rocksteady, Crash Courser, Saved by the Shell, Tenderize, Transdimensional Bovine, Turtle Power!, Venus, Torn Between Worlds, West Wind Avatar, Zoo Escapees.
 - **Moteur :** rien de nouveau (Groundchuck & Dirtbag : la capacité de mana déclenchée est un remplacement de mana, comme Badgermole Cub ; écart voulu dans `audit-baseline.json`).
 - **Tests :** 33 tests de règles (« lot A, vert »).
+
+## Sous-lot A6 : cartes multicolores, incolores et terrains ✅ (180 / 188)
+
+- **Cartes multicolores (29) :** Baxter Stockman, Bebop & Rocksteady, Brilliance Unleashed, Dark Leo & Shredder, Don & Leo, Problem Solvers, EPF Point Squad, Foot Elite, Foot Ninjas, Genghis Frog, Go Ninja Go, Ice Cream Kitty, Karai, Future of the Foot, Karai's Technique, Krang & Shredder, The Last Ronin, Lessons from Life, Mechanized Ninja Cavalry, Mikey & Leo, Chaos & Order, Mouser Mark III, The Neutrinos, Nobody, Pizza Face, Gastromancer, Putrid Pals, Raph & Leo, Sibling Rivals, Raph & Mikey, Troublemakers, Slithering Cryptid, Splinter, Radical Rat, Tainted Treats, Tokka & Rahzar, Terrible Twos.
+- **Cartes incolores et terrains (16) :** Chrome Dome, Everything Pizza, Henchbots, Krang, Utrom Warlord, Omni-Cheese Pizza, Technodrome, Turtle Blimp, Turtle Van, Weather Maker, Dimension X, Foot Headquarters, Illegitimate Business, Mutant Town, Northampton Farm, TCRI Building, Turtle Lair.
+- **Moteur :** rien de nouveau.
+- **Reste pour plus tard :** Don & Raph, Hard Science (affinité pour les artefacts donnée au prochain sort non-créature), Mikey & Don, Party Planners (un marqueur de plus pour une créature lancée depuis le dessus de la bibliothèque), North Wind Avatar (une carte hors de la partie).
+- **Tests :** 63 tests de règles (« lot A, multicolores » et « lot A, incolores et terrains ») ; la branche faufilée de Karai est simulée en attendant le sous-lot B1.

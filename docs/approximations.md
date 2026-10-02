@@ -408,5 +408,9 @@ Dans l'ordre où elles ont été ajoutées, extension par extension.
   - `règle` Shark Shredder : la carte est ciblée dans le cimetière d'un adversaire, pas forcément celui du joueur blessé (exact en duel).
   - `règle` Shredder's Technique : « si un enchantement a été détruit » se lit « la cible était un enchantement et n'est plus sur le champ de bataille ».
   - `règle` Party Dude : au niveau 3, « chaque fois qu'un ou plusieurs de vos adversaires sont attaqués » se lit « chaque fois que vous attaquez » (exact en duel, sauf une attaque contre un planeswalker seul).
+  - `règle` Turtle Van : la créature qui reçoit le marqueur est choisie parmi celles qui ont piloté le Véhicule ce tour-ci, sans être ciblée (défense talismanique et garde ignorées).
+  - `règle` Northampton Farm, The Neutrinos : « une créature que vous possédez » se lit « que vous contrôlez et possédez, ou qu'un adversaire contrôle sans la posséder » (Northampton Farm, exact en duel) ou « que vous contrôlez et possédez » (The Neutrinos).
+  - `règle` Mikey & Leo : « chaque fois que vous mettez un marqueur » se lit comme pour The Astonishing Ant-Man (marqueurs mis sur vos créatures, une fois par tour).
+  - `règle` Krang & Shredder : à plus de deux joueurs, seul le premier adversaire exile ses cartes.
 - **Légalité Standard :** instantané des légalités Scryfall au moment de l'import (`legalities.standard` dans `data/<set>.json`). Après une rotation ou une annonce de bannissement, réimporter les sets (`npm run import-cards -- <set>`).
 - **Images des jetons :** celle du jeton Scryfall le plus proche (même nom, puis mêmes F/E et couleurs ; `data/tokens.json`, `npm run import-tokens`) ; un jeton de nom inconnu garde le cadre texte.
