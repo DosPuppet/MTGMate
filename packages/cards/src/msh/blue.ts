@@ -441,4 +441,13 @@ export const BLUE: Record<string, CardScript> = {
       }),
     ],
   },
+  // Improvisation et vol : lus dans le texte.
+  "Ironheart, Clever Champion": {
+    abilities: [
+      playerStatic({
+        spellKeywords: { filter: { notTypes: ["Creature"] }, keywords: ["improvise"] },
+        label: "Vos sorts non-créature ont l'improvisation",
+      }),
+    ],
+  },
 };

@@ -129,8 +129,9 @@ export const RECORD_VERSION = 1;
  * - 47 : Marvel Super Heroes, lot A6 : dernières informations d'un permanent prises avant son retrait du combat (« quand
  *   une créature attaquante meurt ») ; un Équipement devenu créature se détache (301.5c) ; une carte de la bibliothèque
  *   lancée par une permission suit son timing ; les F/E définies par une capacité lisent « légendaire ».
+ * - 48 : Marvel Super Heroes, lot B1 : improvisation (702.126), imprimée ou donnée aux sorts du joueur.
  */
-export const RULES_VERSION = 47;
+export const RULES_VERSION = 48;
 
 /** Un point de contrôle toutes les N décisions (plus la dernière de la partie). */
 export const CHECKPOINT_EVERY = 25;

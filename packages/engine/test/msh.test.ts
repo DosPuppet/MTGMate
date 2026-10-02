@@ -4185,3 +4185,42 @@ describe("lot A, incolores et terrains", () => {
     return cur;
   }
 });
+
+describe("lot B1 : improvisation", () => {
+  const relic = customCard({ name: "Test Relic", types: ["Artifact"], typeLine: "Artifact" });
+
+  it("Arc Reactor : improvisation (vos artefacts dégagés paient {1} chacun) ; arrive engagé ; {T} : {C}{C}{C}", () => {
+    const short = scenario({ p1: { battlefield: [...lands("Island", 2), relic, relic], hand: ["Arc Reactor"] } });
+    expect(castable(short, "p1", idOf(short, "p1", "hand", "Arc Reactor"))).toBe(false);
+    let s = scenario({ p1: { battlefield: [...lands("Island", 2), relic, relic, relic], hand: ["Arc Reactor"] } });
+    s = settle(cast(s, "p1", "Arc Reactor"));
+    const reactor = idOf(s, "p1", "battlefield", "Arc Reactor");
+    expect(s.objects[reactor]?.tapped).toBe(true);
+    expect(idsOf(s, "p1", "battlefield", "Test Relic").every((id) => s.objects[id]?.tapped)).toBe(true);
+  });
+
+  it("Ironheart, Clever Champion : vos sorts non-créature ont l'improvisation, pas vos sorts de créature", () => {
+    const divination = customCard({
+      name: "Test Divination",
+      types: ["Sorcery"],
+      typeLine: "Sorcery",
+      manaCost: { generic: 2, colored: { U: 1 }, x: 0 },
+      manaCostText: "{2}{U}",
+      colors: ["U"],
+      spell: spell([], [fx.draw(1)]),
+    });
+    const golem = customCard({
+      name: "Test Golem",
+      manaCost: { generic: 3, colored: {}, x: 0 },
+      manaCostText: "{3}",
+      power: 3,
+      toughness: 3,
+    });
+    const s = scenario({
+      p1: { battlefield: ["Ironheart, Clever Champion", "Island", relic, relic], hand: [divination, golem] },
+    });
+    expect(castable(s, "p1", idOf(s, "p1", "hand", "Test Divination"))).toBe(true);
+    // Créature à {3} : pas d'improvisation pour un sort de créature (une seule Île).
+    expect(castable(s, "p1", idOf(s, "p1", "hand", "Test Golem"))).toBe(false);
+  });
+});

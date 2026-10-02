@@ -68,6 +68,8 @@ export type Keyword =
   | "combatDamageImmune"
   /** Convocation (702.51) : les créatures peuvent aider à payer le sort. */
   | "convoke"
+  /** Improvisation (702.126) : les artefacts dégagés peuvent payer {1} chacun du coût du sort. */
+  | "improvise"
   /** Ghalta the Immovable : peut attaquer comme si elle n'avait pas le défenseur. */
   | "attacksDespiteDefender"
   /** « Start your engines! » (702.179) : si vous n'avez pas de vitesse, elle démarre à 1. */

@@ -115,6 +115,8 @@ export interface ManaSource {
   delve?: boolean;
   /** Artefact ou créature engagé pour la maîtrise de l'eau : ne paie que du générique. */
   waterbend?: boolean;
+  /** Artefact engagé pour l'improvisation (702.126) : ne paie que du générique. */
+  improvise?: boolean;
   /**
    * Sources exclusives : deux capacités qui engagent ou sacrifient le même permanent (Forêt qui a aussi « {T} : un mana
    * de n'importe quelle couleur ») ont la même clé, et une seule peut servir.
@@ -231,6 +233,8 @@ export interface ManaPurpose {
    * chacun).
    */
   waterbend?: number;
+  /** Improvisation (702.126) : chaque artefact dégagé peut payer {1} du générique. */
+  improvise?: boolean;
 }
 
 /** Pseudo-capacité de mana d'une créature engagée pour la convocation. */
@@ -331,6 +335,16 @@ export function manaSources(
       out.push({ id, ability: WATERBEND, colors: [], amount: 1, isCreature: false, sacrifice: false, waterbend: true, key: id });
     }
   }
+  // Improvisation : chaque artefact dégagé paie {1} (sans plafond ; même clé que ses capacités de mana).
+  if (purpose?.improvise) {
+    const taken = new Set(out.filter((x) => x.waterbend).map((x) => x.id));
+    for (const id of s.battlefield) {
+      const o = obj(s, id);
+      if (o.controller !== player || exclude.has(id) || o.tapped || taken.has(id)) continue;
+      if (!chars(s, id).types.includes("Artifact")) continue;
+      out.push({ id, ability: WATERBEND, colors: [], amount: 1, isCreature: false, sacrifice: false, improvise: true, key: id });
+    }
+  }
   // Mana restreint de la réserve : seulement pour un paiement permis (utilisé d'abord, il est déjà là).
   (s.players[player]?.restrictedMana ?? []).forEach((m, i) => {
     if (!allows(s, m.restriction, undefined, `pool:${i}`, player, purpose)) return;
@@ -354,7 +368,17 @@ export function manaSources(
   // Préférence : terrains, puis créatures, puis sources sacrifiées, puis convocation et maîtrise de l'eau, puis cave ; les
   // moins flexibles d'abord.
   const rank = (x: ManaSource) =>
-    x.ability === RESTRICTED_POOL ? -1 : x.delve ? 4 : x.convoke || x.waterbend ? 3 : x.sacrifice ? 2 : x.isCreature ? 1 : 0;
+    x.ability === RESTRICTED_POOL
+      ? -1
+      : x.delve
+        ? 4
+        : x.convoke || x.waterbend || x.improvise
+          ? 3
+          : x.sacrifice
+            ? 2
+            : x.isCreature
+              ? 1
+              : 0;
   return out.sort((a, b) => rank(a) - rank(b) || a.colors.length - b.colors.length);
 }
 

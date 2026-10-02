@@ -80,6 +80,7 @@ export const KEYWORD_LABEL: Record<Keyword, string> = {
   keepsDamage: "Blessures conservées",
   absorbsDamage: "Encaisse les blessures",
   convoke: "Convocation",
+  improvise: "Improvisation",
   attacksDespiteDefender: "Attaque malgré le défenseur",
 };
 

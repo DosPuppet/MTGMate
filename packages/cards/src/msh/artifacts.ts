@@ -284,4 +284,8 @@ export const ARTIFACTS: Record<string, CardScript> = {
       }),
     ],
   },
+  // Improvisation : lue dans le texte.
+  "Arc Reactor": {
+    abilities: [entersWith({ tapped: true }), manaAbility("C", 3)],
+  },
 };

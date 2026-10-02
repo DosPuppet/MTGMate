@@ -31,6 +31,7 @@ import {
   greatestToughness,
   harmonizeOptions,
   hasConvoke,
+  hasImprovise,
   instantLoyalty,
   kickerCostOptions,
   kickerCostPermanent,
@@ -319,6 +320,7 @@ export function legalActions(s: GameState, player: PlayerId): ActionOption[] {
     const purpose0: ManaPurpose = {
       spell: spellView(d, player),
       convoke: hasConvoke(s, player, d),
+      improvise: hasImprovise(s, player, d) || undefined,
       delve: playerStatic(s, player, "delveSpells"),
       fromHand: terms.source === "hand",
     };

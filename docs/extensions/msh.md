@@ -68,3 +68,10 @@ Les scripts sont dans `packages/cards/src/msh/` : `cards` (cartes du méta), `wh
 - **Reste pour plus tard :** Ares, God of War, Absorbing Man, Taskmaster, The Astonishing Ant-Man, Captain America, Living Legend, Hulk, Gamma Goliath, The Ruinous Wrecking Crew, Scientist Supreme of A.I.M., The Serpent Society, Storm, Windrider, Titania, Rugged Rumbler, Worlds Within Worlds, Arc Reactor, Super-Adaptoid.
 - **Version des règles :** 47.
 - **Tests :** 34 tests de règles (« lot A, multicolores »), 24 (« lot A, incolores et terrains ») et 3 tests tirés des règles.
+
+## Sous-lot B1 : improvisation ✅ (242 / 271)
+
+- **Cartes (2) :** Arc Reactor, Ironheart, Clever Champion.
+- **Le moteur gagne :** l'improvisation (702.126), lue dans le texte (mot-clé `improvise`) : en payant le sort, chaque artefact dégagé peut payer {1} du générique (source du solveur de mana, comme la maîtrise de l'eau, sans plafond) ; elle peut aussi être donnée aux sorts du joueur (`playerStatic({ spellKeywords: { filter, keywords: ["improvise"] } })`, Ironheart : « vos sorts non-créature »).
+- **Version des règles :** 48.
+- **Tests :** 2 tests de règles (« lot B1 »).

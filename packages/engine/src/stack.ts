@@ -104,6 +104,15 @@ export function altCostFor(
 }
 
 /** Convocation : le sort l'a, ou Dazzling Theater la donne à vos sorts de créature. */
+/** Improvisation (702.126) : imprimée, ou donnée aux sorts du joueur (Ironheart : « vos sorts non-créature »). */
+export function hasImprovise(s: GameState, player: PlayerId, d: CardDef): boolean {
+  if (d.keywords.includes("improvise")) return true;
+  return playerStatics(s, player, "spellKeywords").some(
+    ({ ab }) =>
+      !!ab.spellKeywords?.keywords.includes("improvise") && matchesView(spellView(d, player), ab.spellKeywords.filter, player),
+  );
+}
+
 export function hasConvoke(s: GameState, player: PlayerId, d: CardDef): boolean {
   return d.keywords.includes("convoke") || (d.types.includes("Creature") && playerStatic(s, player, "convokeCreatureSpells"));
 }
@@ -1564,6 +1573,7 @@ export function castSpell(s: GameState, player: PlayerId, card: ObjectId, choice
       {
         spell: view,
         convoke: hasConvoke(s, player, d),
+        improvise: hasImprovise(s, player, d) || undefined,
         delve: playerStatic(s, player, "delveSpells"),
         fromHand: terms.source === "hand",
         ...(bendPaid ? { waterbend: bendPaid } : {}),
