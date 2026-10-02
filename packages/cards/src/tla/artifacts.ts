@@ -1,5 +1,6 @@
 /** Avatar: The Last Airbender — cartes incolores et terrains. */
 import type { ManaType } from "@mtgx/engine";
+import { BASIC_LAND_TYPES } from "@mtgx/engine";
 import {
   ALLY,
   activated,
@@ -63,14 +64,7 @@ export const ARTIFACTS: Record<string, CardScript> = {
   Energybending: {
     spell: spell(
       [],
-      [
-        fx.modifyAll(
-          { types: ["Land"], controller: "you" },
-          { addSubtypes: ["Plains", "Island", "Swamp", "Mountain", "Forest"] },
-          "endOfTurn",
-        ),
-        fx.draw(1),
-      ],
+      [fx.modifyAll({ types: ["Land"], controller: "you" }, { addSubtypes: [...BASIC_LAND_TYPES] }, "endOfTurn"), fx.draw(1)],
     ),
   },
   "Zuko's Exile": {

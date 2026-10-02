@@ -13,7 +13,6 @@ import {
   additionalOptions,
   altCostFor,
   autoAdditional,
-  BASIC_LAND_TYPES,
   canCastTiming,
   canPayNonManaCost,
   canPlayLand,
@@ -96,6 +95,7 @@ import type {
   TargetOption,
   TargetSpec,
 } from "./types";
+import { BASIC_LAND_TYPES } from "./types";
 
 const GIFT_TEXT = { card: "une carte", food: "une Nourriture", fish: "un Poisson engagé", treasure: "un Trésor" } as const;
 

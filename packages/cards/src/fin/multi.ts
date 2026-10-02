@@ -2,9 +2,7 @@
 import type { CardScript, TokenSpec } from "@mtgx/engine";
 import { activated, amount, cond, FOOD, fx, ref, target, triggered, when } from "./common";
 
-const PERMANENT_CARD = {
-  anyOf: (["Artifact", "Creature", "Enchantment", "Land", "Planeswalker", "Battle"] as const).map((t) => ({ types: [t] })),
-};
+const PERMANENT_CARD = { permanent: true };
 const CREATURE_OR_ARTIFACT = { anyOf: [{ types: ["Creature" as const] }, { types: ["Artifact" as const] }] };
 
 const ANGELO: TokenSpec = {

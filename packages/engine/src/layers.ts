@@ -39,6 +39,7 @@ import type {
   PowerRule,
   ProtectionRule,
 } from "./types";
+import { BASIC_LAND_TYPES, PERMANENT_TYPES } from "./types";
 
 export interface Characteristics {
   name: string;
@@ -106,8 +107,7 @@ function printedMatch(d: Pick<CardDef, "types" | "subtypes"> | undefined, f: Obj
   if (f.legendary && !(d as { supertypes?: string[] }).supertypes?.includes("Legendary")) return false;
   if (f.anySubtype && !f.anySubtype.some((t) => d.subtypes.includes(t))) return false;
   if (f.anyOf && !f.anyOf.some((g) => printedMatch(d, g))) return false;
-  const permanentTypes: CardType[] = ["Artifact", "Battle", "Creature", "Enchantment", "Land", "Planeswalker"];
-  if (f.permanent && !d.types.some((t) => permanentTypes.includes(t))) return false;
+  if (f.permanent && !d.types.some((t) => PERMANENT_TYPES.includes(t))) return false;
   if (f.nonland && d.types.includes("Land")) return false;
   return true;
 }
@@ -169,7 +169,7 @@ function cdaValue(s: GameState, o: GameObject, a: Amount): number {
         return x.controller === o.controller && d?.types.includes("Land") ? d.subtypes : [];
       }),
     );
-    return ["Plains", "Island", "Swamp", "Mountain", "Forest"].filter((t) => subtypes.has(t)).length;
+    return BASIC_LAND_TYPES.filter((t) => subtypes.has(t)).length;
   }
   if (a.kind === "colorsAmong") {
     // Vivid (Squawkroaster) : couleurs parmi les permanents du contrôleur, couleurs imprimées (pendant le calcul des
@@ -532,7 +532,6 @@ function view(s: GameState, id: ObjectId, c: Characteristics, o: GameObject, att
     faceDown: !!o.faceDown || undefined,
     // Sort sur la pile : le mana dépensé est porté par l'élément de pile (Unravel).
     manaSpent: o.manaSpent ?? (o.zone === "stack" ? s.stack.find((x) => x.id === id)?.manaSpent : undefined),
-    attackedTurn: o.attackedTurn,
     lastAttachedTo: o.lastAttachedTo,
     cast: o.cast || undefined,
     crewedByThisTurn: o.crewedBy?.turn === s.turn.number ? o.crewedBy.ids : undefined,

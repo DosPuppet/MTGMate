@@ -22,9 +22,7 @@ import {
   when,
 } from "./common";
 
-const PERMANENT_CARD = {
-  anyOf: (["Artifact", "Creature", "Enchantment", "Land", "Planeswalker", "Battle"] as const).map((t) => ({ types: [t] })),
-};
+const PERMANENT_CARD = { permanent: true };
 const BASIC_OR_TOWN = { types: ["Land" as const], anyOf: [{ basic: true }, TOWN] };
 
 export const GREEN: Record<string, CardScript> = {

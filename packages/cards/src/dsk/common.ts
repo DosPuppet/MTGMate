@@ -3,6 +3,7 @@
  * Survie et Sinistre, filtres courants. Le DSL vient de Foundations (via fin/common.ts).
  */
 import type { CardScript, Condition, dsl, ObjectFilter, TokenSpec } from "@mtgx/engine";
+import { BASIC_LAND_TYPES } from "@mtgx/engine";
 import { cond, entersWith, fx, manaAbility, triggered, when } from "../fin/common";
 
 type Effects = dsl.Effects;
@@ -34,7 +35,7 @@ export const EVERYWHERE: TokenSpec = {
   name: "Everywhere",
   colors: [],
   types: ["Land"],
-  subtypes: ["Plains", "Island", "Swamp", "Mountain", "Forest"],
+  subtypes: [...BASIC_LAND_TYPES],
   abilities: [manaAbility(["W", "U", "B", "R", "G"])],
   text: "({T}: Add {W}, {U}, {B}, {R}, or {G}.)",
 };

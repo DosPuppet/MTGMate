@@ -442,11 +442,6 @@ export function dealDamage(s: GameState, source: DamageSource, target: string, a
   // Ruric Thar, Magecrusher : « tant qu'il n'a pas encore infligé de blessures de combat » ; Karakyk Guardian : « tant
   // qu'il n'a pas encore infligé de blessures » (de combat ou non).
   const dealer = source.id ? s.objects[source.id] : undefined;
-  // Treacherous Greed : « une créature qui a infligé des blessures ce tour-ci ».
-  if (dealer && dealer.dealtDamageTurn !== s.turn.number) {
-    dealer.dealtDamageTurn = s.turn.number;
-    bump(s);
-  }
   if (dealer && ((combat && !dealer.dealtCombatDamage) || !dealer.dealtDamage)) {
     if (combat) dealer.dealtCombatDamage = true;
     dealer.dealtDamage = true;

@@ -4,6 +4,7 @@
  * crée un Indice (`investigate`).
  */
 import type { ObjectFilter, TokenSpec } from "@mtgx/engine";
+import { BASIC_LAND_TYPES } from "@mtgx/engine";
 import {
   activated,
   amount,
@@ -36,7 +37,7 @@ const CREATURE_OR_LAND: ObjectFilter = { anyOf: [{ types: ["Creature"] }, { type
 /** « une carte de terrain avec un type de terrain de base ». */
 const LAND_WITH_BASIC_TYPE: ObjectFilter = {
   types: ["Land"],
-  anySubtype: ["Plains", "Island", "Swamp", "Mountain", "Forest"],
+  anySubtype: [...BASIC_LAND_TYPES],
 };
 /** Slime Against Humanity : « des Limons ou des cartes nommées Slime Against Humanity ». */
 const OOZE_OR_SLIME: ObjectFilter = { anyOf: [{ subtype: "Ooze" }, { name: "Slime Against Humanity" }] };

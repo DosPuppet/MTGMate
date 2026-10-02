@@ -56,6 +56,7 @@ import type {
   TriggerEventData,
   Zone,
 } from "./types";
+import { BASIC_LAND_TYPES } from "./types";
 
 export interface EffectContext {
   controller: PlayerId;
@@ -641,7 +642,7 @@ export function evalAmount(s: GameState, ctx: EffectContext, a: Amount): number 
           .flatMap((id) => chars(s, id).subtypes),
       ).size;
     case "basicLandTypes": {
-      const basics = ["Plains", "Island", "Swamp", "Mountain", "Forest"];
+      const basics = BASIC_LAND_TYPES;
       const lands = s.battlefield.filter(
         (id) => s.objects[id]?.controller === ctx.controller && chars(s, id).types.includes("Land"),
       );

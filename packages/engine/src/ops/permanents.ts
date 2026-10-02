@@ -26,6 +26,7 @@ import { matchesCard, matchesObjectFilter } from "../targets";
 import { createDelayed, onceKey } from "../triggers";
 import { attackableDefenders } from "../turn";
 import type { AbilityDef, CardDef, ChoiceRequest, Color, GameState, PlayerId } from "../types";
+import { BASIC_LAND_TYPES } from "../types";
 
 /** Types de créature toujours proposés quand un type est à choisir (tribus de Lorwyn et types les plus courants). */
 /** Sous-types des jetons de créature que décrivent ces capacités (`token: { types, subtypes }` dans leurs effets). */
@@ -77,7 +78,7 @@ export function enterChoiceRequest(
   {
     let options: string[];
     if (preset) options = preset;
-    else if (kind === "landType") options = ["Plains", "Island", "Swamp", "Mountain", "Forest"];
+    else if (kind === "landType") options = [...BASIC_LAND_TYPES];
     else if (kind === "color") options = ["W", "U", "B", "R", "G"];
     else if (kind === "parity") options = ["odd", "even"];
     // Talion, the Kindly Lord : un nombre de 1 à 10.

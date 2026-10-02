@@ -2,6 +2,8 @@
  * Final Fantasy, lot A : job select, tiered, « si au moins quatre mana ont été dépensés », Syncopate, Villes à aventure.
  */
 import { describe, expect, it } from "vitest";
+import { destroy } from "../src/actions";
+import { fx, spell, triggered, when } from "../src/dsl";
 import { bump } from "../src/layers";
 import { legalActions } from "../src/legal";
 import { chars } from "../src/state";
@@ -12,12 +14,14 @@ import {
   attack,
   cast,
   castNowOf,
+  customCard,
   idOf,
   idsOf,
   namesIn,
   passAccepting,
   passBoth,
   scenario,
+  settle as settleAll,
   settleNoBlocks,
   throughCombat,
   untilCastNow,
@@ -445,6 +449,46 @@ describe("Final Fantasy, cartes du méta (PLAN-C, lot C13)", () => {
     expect(t.players.p2?.life).toBe(15);
     // Deux déclenchements de Buster Sword : deux cartes piochées.
     expect(t.players.p1?.hand).toHaveLength(2);
+  });
+
+  it("The Masamune : la mort d'une créature fait se déclencher une fois de plus les capacités de la créature équipée et de vos emblèmes", () => {
+    // Deux créatures identiques, « quand cette créature meurt, vous gagnez 3 PV » ; seule la première est équipée.
+    const mourner = customCard({
+      name: "Pleureur",
+      power: 2,
+      toughness: 2,
+      abilities: [triggered(when.dies({ self: true }), [fx.gainLife(3)], { label: "3 PV" })],
+    });
+    let s = scenario({ p1: { battlefield: ["The Masamune", mourner, mourner] } });
+    const [equipped, bare] = idsOf(s, "p1", "battlefield", "Pleureur") as [string, string];
+    s.objects[idOf(s, "p1", "battlefield", "The Masamune")]!.attachedTo = equipped;
+    bump(s);
+    destroy(s, equipped);
+    s = settleAll(s);
+    expect(s.players.p1?.life).toBe(26);
+    s = structuredClone(s);
+    destroy(s, bare);
+    s = settleAll(s);
+    expect(s.players.p1?.life).toBe(29);
+    // Emblème : « chaque fois qu'une créature meurt, vous gagnez 1 PV », deux fois tant que The Masamune est en jeu.
+    const giver = customCard({
+      name: "Donneur d'emblème",
+      typeLine: "Sorcery",
+      types: ["Sorcery"],
+      spell: spell(
+        [],
+        [
+          fx.emblem("Deuil", "Whenever a creature dies, you gain 1 life.", [
+            triggered(when.dies({ types: ["Creature"] }), [fx.gainLife(1)], { label: "1 PV" }),
+          ]),
+        ],
+      ),
+    });
+    let t = scenario({ p1: { battlefield: ["The Masamune", "Bear Cub"], hand: [giver] } });
+    t = structuredClone(settleAll(cast(t, "p1", "Donneur d'emblème")));
+    destroy(t, idOf(t, "p1", "battlefield", "Bear Cub"));
+    t = settleAll(t);
+    expect(t.players.p1?.life).toBe(22);
   });
 
   it("Zack Fair : arrive avec un marqueur ; sacrifié, donne l'indestructible, ses marqueurs et son Équipement", () => {

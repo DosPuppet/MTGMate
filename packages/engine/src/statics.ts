@@ -216,6 +216,8 @@ export function consumePlayerEffect(s: GameState, player: PlayerId, key: PlayerS
   const live = liveEffects(s, player).find((e) => e.once && !!e.ability[key]);
   if (!live) return false;
   s.playerEffects = s.playerEffects.filter((e) => e !== live);
+  // Des capacités statiques ou des F/E peuvent dépendre des effets du joueur (comme `consumeReplacement`).
+  s.version += 1;
   return true;
 }
 

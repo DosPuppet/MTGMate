@@ -26,6 +26,11 @@ export interface ManaCost {
 
 export type CardType = "Land" | "Creature" | "Artifact" | "Enchantment" | "Instant" | "Sorcery" | "Planeswalker" | "Battle";
 
+/** Types de permanent (110.4). */
+export const PERMANENT_TYPES: readonly CardType[] = ["Artifact", "Creature", "Enchantment", "Land", "Planeswalker", "Battle"];
+/** Types de terrain de base (305.6). */
+export const BASIC_LAND_TYPES: readonly string[] = ["Plains", "Island", "Swamp", "Mountain", "Forest"];
+
 export type Keyword =
   | "flying"
   | "reach"

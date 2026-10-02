@@ -23,9 +23,7 @@ import {
 } from "./common";
 
 const YOURS = { types: ["Creature" as const], controller: "you" as const };
-const PERMANENT_CARD = {
-  anyOf: (["Artifact", "Creature", "Enchantment", "Land", "Planeswalker", "Battle"] as const).map((t) => ({ types: [t] })),
-};
+const PERMANENT_CARD = { permanent: true };
 const CREATURE_OR_ARTIFACT = { anyOf: [{ types: ["Creature" as const] }, { types: ["Artifact" as const] }] };
 const ALL_COLORS_ELEMENTAL: TokenSpec = {
   name: "Elemental",
@@ -50,8 +48,14 @@ export const LEGENDS2: Record<string, CardScript> = {
     ],
   },
   "Cloud, Midgar Mercenary": {
-    doubleTriggersWhenEquipped: true,
-    abilities: [triggered(when.entersSelf, [fx.search({ subtype: "Equipment" })], { label: "Cherchez un Équipement" })],
+    abilities: [
+      triggered(when.entersSelf, [fx.search({ subtype: "Equipment" })], { label: "Cherchez un Équipement" }),
+      playerStatic({
+        triggerMod: { effect: "again", sources: { anyOf: [{ self: true }, { attachedToSelf: true }] } },
+        condition: cond.sourceMatches({ equipped: true }),
+        label: "Équipée : ses déclencheurs et ceux de ses Équipements, une fois de plus",
+      }),
+    ],
   },
   "The Lunar Whale": {
     abilities: [

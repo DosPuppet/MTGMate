@@ -170,8 +170,6 @@ export interface GameObject {
   suspended?: boolean;
   /** Tour où des marqueurs ont été mis sur lui pour la dernière fois (« la première fois ce tour-ci »). */
   countersPutTurn?: number;
-  /** Tour où il a infligé des blessures pour la dernière fois (Treacherous Greed). */
-  dealtDamageTurn?: number;
   /** Suspect (701.60, Murders at Karlov Manor) : menace et « ne peut pas bloquer » tant qu'il l'est. */
   suspected?: boolean;
   /** Joueurs qui ont mis des marqueurs sur lui pendant le tour `countersPutTurn` (Fractal Tender). */
@@ -180,8 +178,6 @@ export interface GameObject {
   countersPutKinds?: string[];
   /** A déjà infligé des blessures, de combat ou non (Karakyk Guardian). */
   dealtDamage?: boolean;
-  /** Tour de sa dernière attaque (« créature qui a attaqué ce tour-ci »). */
-  attackedTurn?: number;
   /** Cartes liées (exilées par cette carte, Hoarding Dragon). */
   linked?: ObjectId[];
   /** X du sort qui a mis ce permanent sur le champ de bataille (Dune Drifter). */
@@ -472,7 +468,8 @@ export type TurnLogEntry =
   /** Terrain joué (305.1), avec sa zone de départ (« joué un terrain depuis ailleurs que votre main », Spider-Man 2099). */
   | { e: "playLand"; player: PlayerId; fromZone: Zone; types: CardType[]; subtypes: string[] }
   /** Attaque d'une créature : `player` attaque `defender` (le joueur attaqué, ou le contrôleur du planeswalker). */
-  | { e: "attack"; player: PlayerId; defender: PlayerId; types: CardType[]; subtypes: string[] }
+  /** `id` : l'attaquant (« une créature qui a attaqué ce tour-ci »). */
+  | { e: "attack"; player: PlayerId; defender: PlayerId; types: CardType[]; subtypes: string[]; id?: ObjectId }
   | { e: "sacrifice"; player: PlayerId; types: CardType[]; subtypes: string[]; supertypes?: string[]; token?: boolean }
   /** Marqueurs mis sur un permanent ; `player` : celui qui les met (contrôleur de ce qui se résout). */
   | { e: "counters"; player: PlayerId; kind: string; n: number; types: CardType[]; subtypes: string[] }
@@ -644,7 +641,6 @@ export interface LkiSnapshot {
   /** Copie d'un sort préparé. */
   preparedSpell?: boolean;
   prepared?: boolean;
-  attackedTurn?: number;
   /** Un Équipement lui est attaché. */
   equipped?: boolean;
   /** Contrôleurs des Auras qui lui sont attachées. */

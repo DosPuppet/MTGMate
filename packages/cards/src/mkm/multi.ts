@@ -1,5 +1,6 @@
 /** Murders at Karlov Manor — cartes multicolores. */
 import type { ManaRestriction, ObjectFilter, TokenSpec, TriggerSpec } from "@mtgx/engine";
+import { BASIC_LAND_TYPES } from "@mtgx/engine";
 import {
   activated,
   amount,
@@ -559,7 +560,7 @@ export const MULTI: Record<string, CardScript> = {
       ),
       staticAbility(
         { types: ["Land"], controller: "you" },
-        { addSubtypes: ["Plains", "Island", "Swamp", "Mountain", "Forest"] },
+        { addSubtypes: [...BASIC_LAND_TYPES] },
         { label: "Vos terrains ont tous les types de terrain de base" },
       ),
     ],

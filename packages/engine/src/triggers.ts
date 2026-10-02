@@ -13,7 +13,6 @@ import { canForage, gainLife } from "./actions";
 import { ask, cardRef } from "./choices";
 import { boardAmount, evalAmount, resolveRef, staticContext } from "./effects";
 import { RulesError, rethrowAsRules } from "./errors";
-import { copiedDefId } from "./layers";
 import {
   apnapOrder,
   chars,
@@ -59,6 +58,7 @@ import type {
   TriggerSpec,
   TurnLogQuery,
 } from "./types";
+import { PERMANENT_TYPES } from "./types";
 
 interface Source {
   id: ObjectId;
@@ -852,6 +852,7 @@ function matchTrigger(s: GameState, ev: RulesEvent, t: TriggerSpec, src: Source)
       if (t.filter) {
         const d = s.defs[card?.defId ?? ev.lki?.defId ?? ""];
         if (!d || (t.filter.types && !t.filter.types.some((x) => d.types.includes(x)))) return null;
+        if (t.filter.permanent && !d.types.some((x) => PERMANENT_TYPES.includes(x))) return null;
         // « une ou plusieurs cartes de créature » (Robot Domination, Moonshadow) : un jeton n'est pas une carte.
         const token = card?.isToken ?? ev.lki?.isToken ?? false;
         if (t.filter.nontoken && token) return null;
@@ -1011,18 +1012,7 @@ export function detectTriggers(s: GameState, ev: RulesEvent, only?: (src: Source
         // « Faites ceci une seule fois par tour » : noté quand l'effet est fait (`doneOncePerTurn`).
         if (ab.oncePerTurn !== "ifDone") s.turn.onceFired.push(key);
       }
-      // Cloud, Midgar Mercenary : Cloud équipé, ou un Équipement attaché à Cloud.
-      const cloud = (id: string | undefined) =>
-        !!id && onBattlefield(s, id) && !!s.defs[copiedDefId(s, id)]?.doubleTriggersWhenEquipped && !!snapshot(s, id).equipped;
-      const equippedCloud =
-        (src.view.equipped && cloud(src.id)) || (src.view.subtypes.includes("Equipment") && cloud(src.view.attachedTo));
-      const again =
-        1 +
-        (equippedCloud ? 1 : 0) +
-        triggerDoublers(s, src, ev) +
-        (ev.e === "zone" && ev.from === "battlefield" && ev.to === "graveyard" && ev.lki?.types.includes("Creature")
-          ? masamunes(s, src.id, src.view.controller)
-          : 0);
+      const again = 1 + triggerDoublers(s, src, ev);
       for (let k = 0; k < again; k++) {
         s.triggers.push({
           id: newId(s, "t"),
@@ -1079,21 +1069,12 @@ export function createDelayed(
   });
 }
 
-/** The Masamune : Équipements « doubleurs de morts » attachés à la source, ou (pour un emblème) à une créature de son propriétaire. */
-function masamunes(s: GameState, sourceId: ObjectId, player: PlayerId): number {
-  const flagged = (id: ObjectId) => !!s.defs[s.objects[id]?.defId ?? ""]?.doubleDeathTriggersForEquipped;
-  const emblem = s.objects[sourceId]?.zone === "command";
-  return s.battlefield.filter((id) => {
-    const host = s.objects[id]?.attachedTo;
-    if (!host || !flagged(id)) return false;
-    return emblem ? s.objects[host]?.controller === player : host === sourceId;
-  }).length;
-}
-
 /**
  * Déclenchements supplémentaires (famille G) : Fractured Realm (vos permanents), Starfield Vocalist (une arrivée),
  * Traveling Chocobo (l'arrivée d'un terrain ou d'un Oiseau à vous), Annie Joins Up (vos créatures légendaires),
- * Roaming Throne (les autres créatures du type choisi), Windcrag Siege (une créature qui attaque).
+ * Roaming Throne (les autres créatures du type choisi), Windcrag Siege (une créature qui attaque), Cloud, Midgar
+ * Mercenary (elle-même et ses Équipements, tant qu'elle est équipée), The Masamune (morts : la créature équipée et vos
+ * emblèmes).
  */
 function triggerDoublers(s: GameState, src: Source, ev: RulesEvent): number {
   const player = src.view.controller;
@@ -1107,8 +1088,17 @@ function triggerDoublers(s: GameState, src: Source, ev: RulesEvent): number {
     // Windcrag Siege : « si une créature qui attaque fait se déclencher une capacité d'un permanent que vous contrôlez ».
     if (m.onAttack && ev.e !== "attack" && ev.e !== "attackWith") return false;
     if (m.entering && !(entered && s.objects[entered] && matchesObjectFilter(s, player, entered, m.entering, id))) return false;
+    if (
+      m.onDies &&
+      !(ev.e === "zone" && ev.from === "battlefield" && ev.to === "graveyard" && ev.lki?.types.includes("Creature"))
+    )
+      return false;
+    if (m.emblems && s.objects[src.id]?.zone === "command") return true;
     if (!m.sources) return permanent;
     const holder = id ? s.objects[id] : undefined;
+    // L'hôte de la source peut avoir quitté le champ de bataille (sa capacité « quand elle meurt ») : l'attache n'est
+    // défaite qu'aux actions basées sur l'état.
+    if (m.sources.attachedToSource && holder?.attachedTo !== src.id) return false;
     return matchesView(src.view, holder ? withChosen(m.sources, holder) : m.sources, player, id);
   }).length;
 }

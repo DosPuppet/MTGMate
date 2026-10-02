@@ -31,6 +31,14 @@ Plan établi le 02/10/2026 (branche `dev`) : il sert de feuille de route aux pro
   - **outil :** `npm run coverage -- --set all --tests [--meta]`, part des cartes nommées dans un test par extension (51 % → 54 %) ; avec `--set <EXT>`, les cartes jamais nommées, rares et mythiques d'abord ;
   - **environnement :** vitest 5.0.1 laissait `/tmp/<nanoid>/ssr` (60 Mo) à chaque exécution et avait saturé `/tmp` ; greffon de nettoyage dans `vitest.config.ts` ;
   - **reste (continu) :** point 2, extensions d'avant R7 et TDM à 50 % (FDN 41 %, FRA 23 %, EOE 23 %, DFT 17 %, OTJ 13 %, BLB 19 %, TDM 35 %, DSK 15 %, LCI 18 %, FIN 14 %).
+- **03/10/2026 : C14 fait** (`RULES_VERSION` = 70) :
+  - **chemin chaud :** Cloud, Midgar Mercenary et The Masamune passent par `triggerMod` (`sources` avec `self`, `attachedToSelf`, `attachedToSource` ; nouveaux champs `onDies` et `emblems`, justifiés) ; deux drapeaux de `CardDef` retirés (96 → 94) ; The Masamune double aussi les déclencheurs de vos emblèmes quand il n'est attaché à rien (Oracle) ; test de règles ajouté ;
+  - **traitements au nom d'une carte :** `hellkite`, `tripleTriad`, `graveyardCreatureOnce`, `jaceLoyaltyInstant` restent, déjà justifiés dans la référence (aucune famille existante ne les couvre sans champ d'une seule carte) ; `valgavothLinked` lit le drapeau générique `playLinkedPayLife` ;
+  - **libellé de Leyline :** tiré du nom de la carte qui accorde le coût ; plus aucun nom de carte en dur dans le moteur (`engineCardLiterals` vide) ;
+  - **listes dupliquées :** `PERMANENT_TYPES` et `BASIC_LAND_TYPES` dans `types.ts`, utilisées par le moteur (8 copies retirées) et les scripts (filtre `permanent: true` pour les cartes de permanent de FIN et d'ECL ; le déclencheur `zoneChange` le lit) ;
+  - **champs « ce tour-ci » :** `attackedTurn` et `dealtDamageTurn` remplacés par le journal du tour (`attackedThisTurn`, `dealtDamageThisTurn` ; l'entrée « attaque » porte l'attaquant) ; `GameObject` 73 → 71. Restent : les marqueurs mis ce tour-ci (lus par la photographie des objets, chemin chaud), et les champs qui durent au-delà du tour (`plottedTurn`, `foretoldTurn`, `warpExiledTurn`, `expiresEndOfTurn`…), que le journal ne peut pas porter ;
+  - **`consumePlayerEffect`** fait avancer la version, comme `consumeReplacement` ;
+  - **vérification :** parties dorées identiques ; bench à nombre de décisions égal, dans le bruit (−2,5 % à 0 %).
 
 ## Décisions et ordre
 
@@ -60,7 +68,7 @@ Plan établi le 02/10/2026 (branche `dev`) : il sert de feuille de route aux pro
 | 12 | C11 : [règles] caractéristiques des sorts | § 5.5 | C1 | M | ✅ |
 | 13 | C12 : [règles] approximations groupées | § 4.2, § 4.3 | C10 | M/L | ✅ en partie |
 | 14 | C13 : justesse des cartes | § 4.5 | C2 | L, continu | ✅ en partie (continu) |
-| 15 | C14 : dette ciblée | § 5.1, § 5.7 | C1 | S/M | |
+| 15 | C14 : dette ciblée | § 5.1, § 5.7 | C1 | S/M | ✅ |
 | 16 | C15 : performances | § 5.8 | C10, C11 | M | |
 | 17 | C16 : serveur et exploitation | § 7 | C3 | M | |
 | 18 | C17 : IA | § 8 | C8, C9 | M | |

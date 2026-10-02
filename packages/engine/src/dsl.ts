@@ -94,9 +94,6 @@ export interface CardScript {
   /** Dévorer écrit dans le script (Mimeoplasm : « exilez jusqu'à X cartes de créature de votre cimetière »). */
   devour?: { filter: ObjectFilter; n: number; graveyardUpToX?: boolean };
   equipDiscountWhenTargeted?: number;
-  doubleDeathTriggersForEquipped?: boolean;
-  /** Cloud, Midgar Mercenary : déclencheurs doublés tant qu'elle est équipée. */
-  doubleTriggersWhenEquipped?: boolean;
   /** « Vous pouvez faire arriver cette créature comme copie d'un [permanent] que vous contrôlez ». */
   entersAsCopyOf?: ObjectFilter;
   /** « [Cette carte] a le flash tant que … » */

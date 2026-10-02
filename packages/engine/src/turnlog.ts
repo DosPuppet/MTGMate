@@ -5,7 +5,18 @@
  *
  * Le journal est vidé au début de chaque tour. Ses entrées sont petites et en JSON pur (invariants du fuzz).
  */
-import type { CardType, Color, GameState, PlayerId, TurnLogEntry, TurnLogQuery, Zone } from "./types";
+import type { CardType, Color, GameState, ObjectId, PlayerId, TurnLogEntry, TurnLogQuery, Zone } from "./types";
+
+/** L'objet a-t-il attaqué ce tour-ci (sous cette identité : un objet revenu sur le champ de bataille est neuf) ? */
+export function attackedThisTurn(s: GameState, id: ObjectId): boolean {
+  return s.turnLog.some((e) => e.e === "attack" && e.id === id);
+}
+
+/** L'objet a-t-il infligé des blessures ce tour-ci ? (même identité que `sourceKey`, voir `logDamage`) */
+export function dealtDamageThisTurn(s: GameState, id: ObjectId): boolean {
+  const key = s.objects[id]?.uid ?? id;
+  return s.turnLog.some((e) => e.e === "damage" && e.sourceKey === key);
+}
 
 export function logTurnEvent(s: GameState, entry: TurnLogEntry): void {
   s.turnLog.push(entry);

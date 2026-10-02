@@ -195,8 +195,11 @@ export const RECORD_VERSION = 1;
  *   Boommobile (PLAN-C, lot C12).
  * - 69 : Thorin, Mountain-king ne blesse que si un Équipement devient attaché (701.3b) ; Dalkovan Encampment : capacité
  *   retardée indépendante du terrain (603.7) ; le jeton Esprit de Realm of Koh peut bloquer un Esprit (PLAN-C, lot C13).
+ * - 70 : Cloud, Midgar Mercenary et The Masamune passent par `triggerMod` ; The Masamune double aussi les déclencheurs de
+ *   vos emblèmes quand il n'est attaché à rien (Oracle) ; « a attaqué / a infligé des blessures ce tour-ci » lus dans le
+ *   journal du tour (PLAN-C, lot C14).
  */
-export const RULES_VERSION = 69;
+export const RULES_VERSION = 70;
 
 /** Un point de contrôle toutes les N décisions (plus la dernière de la partie). */
 export const CHECKPOINT_EVERY = 25;

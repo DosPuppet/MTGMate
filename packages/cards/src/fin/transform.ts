@@ -26,9 +26,7 @@ import {
   when,
 } from "./common";
 
-const PERMANENT_CARD = {
-  anyOf: (["Artifact", "Creature", "Enchantment", "Land", "Planeswalker", "Battle"] as const).map((t) => ({ types: [t] })),
-};
+const PERMANENT_CARD = { permanent: true };
 const YOURS = { types: ["Creature" as const], controller: "you" as const };
 const OTHERS = { ...YOURS, other: true };
 const CREATURE_OR_ARTIFACT = { anyOf: [{ types: ["Creature" as const] }, { types: ["Artifact" as const] }] };

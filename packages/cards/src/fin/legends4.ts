@@ -228,8 +228,11 @@ export const LEGENDS4: Record<string, CardScript> = {
     ],
   },
   "The Masamune": {
-    doubleDeathTriggersForEquipped: true,
     abilities: [
+      playerStatic({
+        triggerMod: { effect: "again", onDies: true, emblems: true, sources: { attachedToSource: true } },
+        label: "Morts : déclencheurs de la créature équipée et de vos emblèmes, une fois de plus",
+      }),
       staticAbility(
         "attached",
         { addKeywords: ["firstStrike", "mustBeBlocked"] },

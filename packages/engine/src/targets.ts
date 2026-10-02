@@ -5,7 +5,9 @@ import { RulesError } from "./errors";
 import { chars, hasKeyword, snapshot } from "./layers";
 import { obj } from "./state";
 import { playerStatic } from "./statics";
+import { attackedThisTurn, dealtDamageThisTurn } from "./turnlog";
 import type { CardType, Color, GameState, LkiSnapshot, ObjectFilter, ObjectId, PlayerId, TargetSpec } from "./types";
+import { PERMANENT_TYPES } from "./types";
 
 /**
  * Vue d'une source (sort, source d'une capacité ou de blessures) : l'objet, ses dernières informations connues, sinon
@@ -49,8 +51,6 @@ export function protectedFrom(s: GameState, id: ObjectId, source: LkiSnapshot | 
   }
   return false;
 }
-
-const PERMANENT_TYPES: readonly CardType[] = ["Artifact", "Creature", "Enchantment", "Land", "Planeswalker", "Battle"];
 
 /** Le filtre s'applique-t-il à ces caractéristiques (objet vivant ou dernières informations connues) ? */
 /** Marqueurs (d'une sorte donnée, ou de toute sorte) mis par ce joueur, d'après les entrées « joueur|sorte ». */
@@ -283,7 +283,7 @@ export function matchesObjectFilter(
 ): boolean {
   const o = s.objects[id];
   if (o?.zone !== "battlefield") return false;
-  if (f.attackedThisTurn && o.attackedTurn !== s.turn.number) return false;
+  if (f.attackedThisTurn && !attackedThisTurn(s, id)) return false;
   if (f.attachedToSourceHost) {
     const host = sourceId ? s.objects[sourceId]?.attachedTo : undefined;
     if (!host || o.attachedTo !== host) return false;
@@ -291,7 +291,8 @@ export function matchesObjectFilter(
   // « arrivé sous votre contrôle ce tour-ci » (Cloudspire Coordinator).
   if (f.enteredThisTurn && o.controlledSince !== s.turn.number) return false;
   if (f.notOwned && o.owner === o.controller) return false;
-  if (f.dealtDamageThisTurn && o.dealtDamageTurn !== s.turn.number) return false;
+  // Treacherous Greed : « une créature qui a infligé des blessures ce tour-ci ».
+  if (f.dealtDamageThisTurn && !dealtDamageThisTurn(s, id)) return false;
   if (f.disguise !== undefined && !!s.defs[o.defId]?.disguise !== f.disguise) return false;
   // Fractal Tender : « si vous avez mis un marqueur sur cette créature ce tour-ci ».
   if (

@@ -141,12 +141,8 @@ export interface CardDef {
    * `graveyardUpToX` : « exilez jusqu'à X cartes de votre cimetière » à la place (Mimeoplasm, cartes liées).
    */
   devour?: { filter: ObjectFilter; n: number; graveyardUpToX?: boolean };
-  /** The Masamune : les capacités déclenchées par une mort, de la créature équipée ou de vos emblèmes, se déclenchent une fois de plus. */
-  doubleDeathTriggersForEquipped?: boolean;
   /** Cloud, Planet's Champion : « les capacités d'équipement que vous activez qui la ciblent coûtent {N} de moins ». */
   equipDiscountWhenTargeted?: number;
-  /** Cloud, Midgar Mercenary : tant qu'elle est équipée, ses capacités déclenchées et celles de ses Équipements se déclenchent une fois de plus. */
-  doubleTriggersWhenEquipped?: boolean;
   /** « Vous pouvez faire arriver cette créature comme copie d'un [permanent] que vous contrôlez » (Waxen Shapethief). */
   entersAsCopyOf?: ObjectFilter;
   /** « Si cette carte devait être mise dans un cimetière de n'importe où, mélangez-la dans la bibliothèque à la place. » */
@@ -855,8 +851,15 @@ export interface TriggerMod {
   /** Seulement les déclenchements dus à une créature qui attaque (« chaque fois que … attaque », « … que vous attaquez »). */
   onAttack?: boolean;
   entering?: ObjectFilter;
-  /** Capacités concernées : celles des permanents correspondants (par défaut, vos permanents). */
+  /** Seulement les déclenchements dus à la mort d'une créature (The Masamune). */
+  onDies?: boolean;
+  /**
+   * Capacités concernées : celles des permanents correspondants (par défaut, vos permanents). `attachedToSource` : le
+   * permanent auquel la source de la statique est attachée, y compris s'il vient de quitter le champ de bataille.
+   */
   sources?: ObjectFilter;
+  /** Aussi les capacités de vos emblèmes (The Masamune : « … ou d'un emblème que vous possédez »). */
+  emblems?: boolean;
   /** Concerne les capacités de tous les joueurs (Torpor Orb). */
   everyone?: boolean;
 }

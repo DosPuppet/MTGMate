@@ -20,6 +20,7 @@ import { matchesCard, matchesObjectFilter, protectedFrom, sourceView, withChosen
 import { checkCondition } from "./triggers";
 import { countTurnEvents } from "./turnlog";
 import type { Amount, Color, Condition, GameObject, GameState, LayerMods, ObjectId, PlayerId, TokenSpec, Zone } from "./types";
+import { BASIC_LAND_TYPES } from "./types";
 
 /** Contexte d'arrivée sur le champ de bataille (valeur de X, kicker du sort qui arrive). */
 export interface EntersContext {
@@ -162,7 +163,7 @@ function defaultChoice(
   if (kind === "landType") {
     const count = (t: string) =>
       s.battlefield.filter((id) => s.objects[id]?.controller === o.controller && chars(s, id).subtypes.includes(t)).length;
-    const best = ["Plains", "Island", "Swamp", "Mountain", "Forest"].sort((a, b) => count(b) - count(a))[0];
+    const best = [...BASIC_LAND_TYPES].sort((a, b) => count(b) - count(a))[0];
     return { landType: best };
   }
   // Siège mis en jeu sans résolution : le premier mode.

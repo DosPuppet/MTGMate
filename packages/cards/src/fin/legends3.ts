@@ -20,9 +20,7 @@ import {
 
 const YOURS = { types: ["Creature" as const], controller: "you" as const };
 const ALL_COLORS = ["W", "U", "B", "R", "G"] as const;
-const PERMANENT_CARD = {
-  anyOf: (["Artifact", "Creature", "Enchantment", "Land", "Planeswalker", "Battle"] as const).map((t) => ({ types: [t] })),
-};
+const PERMANENT_CARD = { permanent: true };
 const SAGA_YOU = { subtype: "Saga", controller: "you" as const };
 
 /** Sin : exilez une carte de permanent au hasard, copie engagée ; recommencez si c'était un terrain (au plus six fois). */

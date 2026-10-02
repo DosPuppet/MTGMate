@@ -51,6 +51,7 @@ import {
 import { addPlayerEffect, playerStatic, quantityMods, recipientMatches } from "../statics";
 import { matchesCard, matchesObjectFilter, shareCreatureType } from "../targets";
 import type { CardType, Effect, GameState, ObjectFilter, ObjectId, Resolution } from "../types";
+import { PERMANENT_TYPES } from "../types";
 import { enterChoiceRequest } from "./permanents";
 
 export const HANDLERS: OpHandlers = {
@@ -301,12 +302,11 @@ export const HANDLERS: OpHandlers = {
     return;
   },
   keepOnePerType(s, r, e, ctx, key) {
-    const TYPES = ["Artifact", "Creature", "Enchantment", "Land", "Planeswalker", "Battle"] as const;
     for (const p of resolveRef(s, ctx, e.who)) {
       if (!isPlayer(s, p) || r.vars[key(`kdone-${p}`)]) continue;
       const mine = s.battlefield.filter((id) => s.objects[id]?.controller === p);
       const kept = new Set<string>();
-      for (const t of TYPES) {
+      for (const t of PERMANENT_TYPES) {
         const ofType = mine.filter((id) => chars(s, id).types.includes(t));
         if (ofType.length === 0) continue;
         if (ofType.length === 1) {

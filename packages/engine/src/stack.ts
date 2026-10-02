@@ -83,17 +83,18 @@ import type {
   StackItem,
   TargetSpec,
 } from "./types";
+import { BASIC_LAND_TYPES, PERMANENT_TYPES } from "./types";
 
 export { RulesError };
 
-/** Coût alternatif disponible : celui de la carte (si sa condition est remplie), sinon Leyline of Mutation. */
+/** Coût alternatif disponible : celui de la carte (si sa condition est remplie), sinon celui accordé à vos sorts (`altCostAll`). */
 export function altCostFor(
   s: GameState,
   player: PlayerId,
   d: CardDef,
 ): { mana: ManaCost; label: string; forage?: boolean; collectEvidence?: number; webSlinging?: boolean } | undefined {
   if (d.altCost && checkCondition(s, d.altCost.condition, player)) return d.altCost;
-  for (const { ab } of playerStatics(s, player, "altCostAll")) {
+  for (const { id, ab } of playerStatics(s, player, "altCostAll")) {
     const a = ab.altCostAll;
     if (!a || (a.filter && !matchesView(spellView(d, player), a.filter, player))) continue;
     // Web-slinging donné (Amazing Spider-Man) : il faut une créature engagée à renvoyer.
@@ -108,7 +109,9 @@ export function altCostFor(
         collectEvidence: a.collectEvidence,
         label: `Réunir des preuves ${a.collectEvidence}`,
       };
-    if (a.mana) return { mana: a.mana, label: `Leyline of Mutation — ${costToText(a.mana)}` };
+    // Libellé : le nom de la carte qui accorde le coût (Leyline of Mutation : « Leyline of Mutation — {W}{U}{B}{R}{G} »).
+    const giver = id ? (s.defs[s.objects[id]?.defId ?? ""]?.name ?? "") : "";
+    if (a.mana) return { mana: a.mana, label: `${giver || "Coût alternatif"} — ${costToText(a.mana)}` };
   }
   return undefined;
 }
@@ -231,8 +234,6 @@ function graveyardTypeAvailable(s: GameState, player: PlayerId, card: ObjectId):
   return d?.types.find((t) => PERMANENT_TYPES.includes(t) && !used.includes(t)) ?? null;
 }
 
-const PERMANENT_TYPES: readonly string[] = ["Artifact", "Creature", "Enchantment", "Land", "Planeswalker", "Battle"];
-
 export function canPlayLand(s: GameState, player: PlayerId, card: ObjectId): boolean {
   return landPermitted(s, player, card) && sorceryTiming(s, player) && s.turn.landsPlayed < landsAllowed(s, player);
 }
@@ -268,7 +269,6 @@ export function landPermitted(s: GameState, player: PlayerId, card: ObjectId): b
 }
 
 /** Types de terrain de base (205.3i). */
-export const BASIC_LAND_TYPES = ["Plains", "Island", "Swamp", "Mountain", "Forest"];
 
 /** Le coût alternatif du sort est un Web-slinging : imprimé, ou donné (Amazing Spider-Man). */
 export function isWebSlinging(s: GameState, player: PlayerId, d: CardDef): boolean {
