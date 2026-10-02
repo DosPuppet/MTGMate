@@ -1,5 +1,5 @@
 /** The Hobbit — cartes blanches (lot A). */
-import type { Effect, ObjectFilter, TargetSpec } from "@mtgx/engine";
+import type { ObjectFilter, TargetSpec } from "@mtgx/engine";
 import {
   AXE,
   activated,
@@ -11,10 +11,10 @@ import {
   cond,
   DWARF,
   fx,
-  HUMAN_SOLDIER,
   modal,
   mode,
   playerStatic,
+  recruit,
   ref,
   spell,
   staticAbility,
@@ -25,16 +25,6 @@ import {
 } from "./common";
 
 const CREATURES_YOU_CONTROL: ObjectFilter = { types: ["Creature"], controller: "you" };
-
-/**
- * Recruter : « piochez une carte, puis défaussez une carte ; si vous avez défaussé une carte non-terrain, créez un jeton
- * de créature 1/1 blanche Humain et Soldat ».
- */
-const recruit = (): Effect[] => [
-  fx.draw(1),
-  fx.discard(1, ref.you, { store: "recruited", storeFilter: { notTypes: ["Land"] } }),
-  ...fx.when(cond.v("recruited"), fx.createTokens(HUMAN_SOLDIER)),
-];
 
 /** « Pour chaque adversaire, jusqu'à un permanent non-terrain ciblé que ce joueur contrôle » : au plus un par joueur. */
 const ONE_NONLAND_PER_OPPONENT: TargetSpec = {

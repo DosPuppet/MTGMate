@@ -1,8 +1,8 @@
 /**
  * The Hobbit — cartes bleues (lot A). Recrutement : « piochez une carte, puis défaussez une carte ; si vous avez défaussé
- * une carte non-terrain, créez un jeton Humain Soldat 1/1 blanc » (`recruit`, ci-dessous).
+ * une carte non-terrain, créez un jeton Humain Soldat 1/1 blanc » (`recruit`, dans hob/common.ts).
  */
-import type { CardType, Effect, ModeDef, ObjectFilter } from "@mtgx/engine";
+import type { CardType, ModeDef, ObjectFilter } from "@mtgx/engine";
 import {
   activated,
   amount,
@@ -11,10 +11,10 @@ import {
   cond,
   eventReplacement,
   fx,
-  HUMAN_SOLDIER,
   modal,
   mode,
   playerStatic,
+  recruit,
   ref,
   spell,
   staticAbility,
@@ -27,12 +27,6 @@ import {
 const INSTANT_SORCERY: ObjectFilter = { types: ["Instant", "Sorcery"] };
 
 /** Recrutement : piochez, défaussez ; une carte non-terrain défaussée donne un Humain Soldat 1/1. */
-const recruit = (v = "recruit"): Effect[] => [
-  fx.draw(1),
-  fx.discard(1, ref.you, { store: v, storeFilter: { notTypes: ["Land"] } }),
-  ...fx.when(cond.v(v), fx.createTokens(HUMAN_SOLDIER)),
-];
-
 /** « Exilez [la cible] ; si vous le faites, renvoyez-la au début de la prochaine étape de fin. » */
 const FLICKER_UNTIL_END_STEP = [
   fx.exileCard(ref.target(), { name: "k" }),

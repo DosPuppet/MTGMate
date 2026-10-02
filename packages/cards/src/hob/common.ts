@@ -1,6 +1,6 @@
 /** Éléments de The Hobbit (HOB) : jetons. Le DSL et les jetons communs viennent de lci/common.ts. */
-import type { AbilityDef, TokenSpec } from "@mtgx/engine";
-import { activated, fx, ref, staticAbility, target } from "../lci/common";
+import type { AbilityDef, Effect, TokenSpec } from "@mtgx/engine";
+import { activated, cond, fx, ref, staticAbility, target } from "../lci/common";
 
 export * from "../lci/common";
 
@@ -84,3 +84,14 @@ export const AXE: TokenSpec = {
   abilities: [staticAbility("attached", { power: 1 }, { label: "+1/+0" }), equip("{2}")],
   text: "Equipped creature gets +1/+0.\nEquip {2}",
 };
+
+/**
+ * Recruter (The Hobbit) : « piochez une carte, puis défaussez une carte ; si vous défaussez ainsi une carte non-terrain,
+ * créez un jeton Humain Soldat 1/1 » ; `v` : la variable de la carte défaussée (un nom propre à chaque recrutement d'une
+ * même capacité).
+ */
+export const recruit = (v = "recruited"): Effect[] => [
+  fx.draw(1),
+  fx.discard(1, ref.you, { store: v, storeFilter: { notTypes: ["Land"] } }),
+  ...fx.when(cond.v(v), fx.createTokens(HUMAN_SOLDIER)),
+];
