@@ -37,6 +37,14 @@ export const PHASE_BAR: { step: Step; short: string }[] = [
 ];
 
 /** Raison d'une défaite, ajoutée au journal (« Bob perd (10 marqueurs poison). »). */
+/** Plafonds de sécurité du moteur (`engine/src/limits.ts`). */
+const CAPS: Record<"tokens" | "amount" | "permutations" | "layers", string> = {
+  tokens: "jetons",
+  amount: "montant",
+  permutations: "ordre des remplacements",
+  layers: "dépendances de couches",
+};
+
 const LOSS_REASON: Record<"life" | "draw" | "poison" | "concede", string> = {
   life: "",
   draw: " (bibliothèque vide)",
@@ -280,6 +288,9 @@ export function describeEvents(
           `${who(e.player)} ${e.player === me ? "regardez" : "regarde"} : ${e.top} au-dessus, ${e.bottom} au-dessous.`,
           kind(e.player),
         );
+        break;
+      case "capReached":
+        add(`Plafond de sécurité atteint (${CAPS[e.cap]}) : le résultat est approché.`, "info");
         break;
       case "gameOver":
         add(e.winner === me ? "Victoire !" : e.winner ? "Défaite." : "Match nul.", e.winner === me ? "win" : "lose");

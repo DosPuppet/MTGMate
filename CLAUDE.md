@@ -89,7 +89,7 @@ Ce fichier sert au suivi du projet entre les sessions : état présent, règles 
 
 - **Chercher d'abord une forme générique** avant d'ajouter, pour une seule carte, un champ, un membre d'union, une opération d'effet ou un champ d'état : famille paramétrée par un `ObjectFilter` (`BlockRule`, `ProtectionRule`, `playFrom`, `abilityCost`, `castLimit`, `triggerMod`…), journal du tour (`amount.turnEvents`) plutôt qu'un champ « ce tour-ci », effets sur les joueurs (`fx.thisTurn`), effet ou déclencheur existant.
 - **Si une carte l'exige vraiment,** l'ajout est justifié dans `packages/cards/data/debt-baseline.json` (raison, famille cible) et signalé dans le lot.
-- **`packages/cards/test/debt.test.ts` le vérifie** et échoue sur toute entrée nouvelle ou périmée : le plafond ne fait que baisser. Chiffres à jour : la référence elle-même.
+- **`packages/cards/test/debt.test.ts` le vérifie** et échoue sur toute entrée nouvelle ou périmée : drapeaux de joueur, mots-clés non imprimés, opérations et propriétés d'une seule carte, champs « ce tour-ci » de `GameObject`, noms de cartes dans le code du moteur. Il suit aussi la taille des surfaces du modèle (`ceilings`) et le plus grand cycle d'imports du moteur (`importCycleMax`) : les relever se justifie dans le lot, les baisser est obligatoire dès qu'elles baissent. Chiffres à jour : la référence elle-même.
 
 ## Ajouter des cartes : remplacements (R1) et justesse (R7)
 

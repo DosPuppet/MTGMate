@@ -80,15 +80,17 @@ interface Tally {
   turns: number;
   illegal: number;
   decisions: number;
+  caps: number;
 }
 
-const emptyTally = (): Tally => ({ wins: { nul: 0, inachevée: 0 }, turns: 0, illegal: 0, decisions: 0 });
+const emptyTally = (): Tally => ({ wins: { nul: 0, inachevée: 0 }, turns: 0, illegal: 0, decisions: 0, caps: 0 });
 
 function addTally(total: Tally, r: Tally): void {
   for (const [k, n] of Object.entries(r.wins)) total.wins[k] = (total.wins[k] ?? 0) + n;
   total.turns += r.turns;
   total.illegal += r.illegal;
   total.decisions += r.decisions;
+  total.caps += r.caps;
 }
 
 /** Joue `count` parties de la série à partir de la graine `first` (dans ce processus). */
@@ -110,17 +112,18 @@ function run(spec: Spec, first: number, count: number): Tally {
     tally.turns += r.turns;
     tally.illegal += r.illegal;
     tally.decisions += r.decisions.length;
+    tally.caps += r.caps;
   }
   return tally;
 }
 
 /** Bilan d'une série, au format attendu par verify (`résultats : …`). */
 function summary(spec: Spec, total: Tally, ms: number): string {
-  const { wins, turns, illegal, decisions } = total;
+  const { wins, turns, illegal, decisions, caps } = total;
   return [
     `${spec.games} parties à ${spec.players} joueurs (${spec.mode}, pool ${spec.pool}) en ${(ms / 1000).toFixed(1)} s — ${(ms / Math.max(1, decisions)).toFixed(2)} ms/décision`,
     `résultats : ${inspect(wins)}`,
-    `tours moyens : ${(turns / spec.games).toFixed(1)}, décisions illégales de l'IA : ${illegal}`,
+    `tours moyens : ${(turns / spec.games).toFixed(1)}, décisions illégales de l'IA : ${illegal}, plafonds atteints : ${caps}`,
   ].join("\n");
 }
 

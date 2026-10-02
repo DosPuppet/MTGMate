@@ -4,6 +4,7 @@
  * affecté (ou le contrôleur de l'objet affecté). Rien ne peut suspendre le moteur au milieu d'un événement : le choix est
  * fait pour ce joueur, au mieux de ses intérêts (`prefer`), et documenté comme choix automatique.
  */
+import { capReached, MAX_AMOUNT, MAX_PERMUTED } from "./limits";
 
 /** Un remplacement : « autant plus N », « le double », « au moins N » (Ojer Axonil). */
 export interface AmountMod {
@@ -11,9 +12,6 @@ export interface AmountMod {
   times?: number;
   atLeast?: number;
 }
-
-/** Au-delà, l'ordre du code (celui des sources) : trop de permutations, et aucune carte n'en demande autant. */
-const MAX_PERMUTED = 5;
 
 function applyOne(v: number, m: AmountMod): number {
   // Un événement sans quantité (0 blessure, 0 marqueur) n'a rien à remplacer.
@@ -43,8 +41,12 @@ function* permutations<T>(items: T[]): Generator<T[]> {
 export function replacementOutcomes(base: number, mods: AmountMod[]): number[] {
   const kinds = new Set(mods.map((m) => (m.add !== undefined ? "add" : m.times !== undefined ? "times" : "atLeast")));
   // Des remplacements tous du même genre commutent (sommes, produits) : l'ordre ne change rien.
-  if (mods.length <= 1 || (kinds.size === 1 && !kinds.has("atLeast")) || mods.length > MAX_PERMUTED)
+  if (mods.length <= 1 || (kinds.size === 1 && !kinds.has("atLeast"))) return [applyInOrder(base, mods)];
+  // Au-delà, l'ordre du code (celui des sources) : trop de permutations, et aucune carte n'en demande autant.
+  if (mods.length > MAX_PERMUTED) {
+    capReached("permutations");
     return [applyInOrder(base, mods)];
+  }
   const out = new Set<number>();
   for (const order of permutations(mods)) out.add(applyInOrder(base, order));
   return [...out];
@@ -58,8 +60,7 @@ export function chooseReplacementOrder(base: number, mods: AmountMod[], prefer: 
   const outcomes = replacementOutcomes(base, mods);
   // Des doubleurs qui se multiplient donnent vite un nombre infini en JavaScript (inutilisable dans l'état, sérialisé en
   // JSON) : le résultat est plafonné (voir docs/approximations.md).
-  return Math.min(MAX_AMOUNT, prefer === "min" ? Math.min(...outcomes) : Math.max(...outcomes));
+  const best = prefer === "min" ? Math.min(...outcomes) : Math.max(...outcomes);
+  if (best > MAX_AMOUNT) capReached("amount");
+  return Math.min(MAX_AMOUNT, best);
 }
-
-/** Plafond d'un montant remplacé (blessures, marqueurs, PV, cartes, jetons). */
-export const MAX_AMOUNT = 1_000_000;

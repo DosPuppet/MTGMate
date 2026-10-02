@@ -39,6 +39,8 @@ Moteur pur et déterministe (`packages/engine/src`). L'état est sérialisable ;
 | `fingerprint.ts` | `outcomeHash` : empreinte canonique d'un état, sans identifiants internes (points de contrôle, boucles obligatoires). |
 | `decisionShape.ts` | Forme d'une décision reçue (types des champs, objets inconnus, doublons), vérifiée par `apply` (`game.ts`) avant les règles. |
 | `errors.ts` | `RulesError` et `rethrowAsRules`. |
+| `events.ts` | Collecteur des événements d'affichage (`collectEvents`, `emit`), sans dépendance : tout fichier peut émettre. |
+| `limits.ts` | Plafonds de sécurité (voir plus bas) et `capReached`. |
 | `turnlog.ts` | Journal des événements du tour (`s.turnLog` : déplacements publics, sorts lancés, sacrifices, blessures) et requêtes (`countTurnEvents`). |
 
 ## Recettes
@@ -64,7 +66,7 @@ Moteur pur et déterministe (`packages/engine/src`). L'état est sérialisable ;
 
 ## Plafonds de sécurité
 
-Des gardes empêchent une partie de boucler ou d'exploser ; elles déclarent la partie nulle ou coupent un montant.
+Des gardes empêchent une partie de boucler ou d'exploser ; elles déclarent la partie nulle ou coupent un montant. Toutes les constantes sont dans `limits.ts` ; une coupure émet l'événement `capReached` (journal de la partie) et le fuzz compte les coupures (« plafonds atteints »).
 
 | Plafond | Où | Valeur | Effet |
 |---|---|---|---|
@@ -77,7 +79,7 @@ Des gardes empêchent une partie de boucler ou d'exploser ; elles déclarent la 
 | Ordre des remplacements chiffrés | `modifiers.ts` | 5 remplacements | ordre du code au-delà |
 | Passes de couches (613.8) | `layers.ts` | 3 | arrêt du point fixe |
 
-Tout plafond nouveau est ajouté à ce tableau et à `docs/approximations.md`.
+Tout plafond nouveau va dans `limits.ts`, dans ce tableau et dans `docs/approximations.md`.
 
 ## Règles de conception
 
@@ -96,7 +98,7 @@ Tout plafond nouveau est ajouté à ce tableau et à `docs/approximations.md`.
   
   Un nouveau champ d'état doit les respecter.
 - Tout ce dont une statique ou une F/E variable dépend fait avancer la version d'état (`bump`). Le fuzz détecte les oublis (« cache des caractéristiques périmé »).
-- Pas de nouveau drapeau, mot-clé ou opération propre à une carte sans justification : règle en fin de CLAUDE.md, vérifiée par `cards/test/debt.test.ts` (référence `cards/data/debt-baseline.json`).
+- Pas de nouveau drapeau, mot-clé, opération, propriété ou champ propre à une carte sans justification : règle en fin de CLAUDE.md, vérifiée par `cards/test/debt.test.ts` (référence `cards/data/debt-baseline.json`). Le test suit aussi la taille de chaque surface du modèle (`ceilings` : champs de `CardDef`, `GameObject`, `ObjectFilter`…, variantes d'`Effect`, `Amount`, `Condition`…), les champs « ce tour-ci » de `GameObject`, les noms de cartes écrits dans le code du moteur et le plus grand cycle d'imports (`importCycleMax`) : aucun ne peut grandir sans que la référence soit modifiée dans le lot.
 - Préférer un mécanisme générique et nommé à un drapeau « pour une carte » :
   - réutiliser les remplacements d'événements chiffrés (`eventReplacement` : blessures, perte et gain de PV, pioche, meule, marqueurs, jetons, mana, dégagement ; R1) et les multiplicateurs de déclenchements (`triggers.ts`) ;
   - réutiliser les permissions de lancer (`grantPlay`, `castTerms`) et les modifications à l'arrivée (`StackItem.arrival`).

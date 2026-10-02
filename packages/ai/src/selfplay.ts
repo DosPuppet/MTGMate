@@ -24,6 +24,8 @@ export interface SelfPlayResult {
   decisions: { player: string; decision: Decision }[];
   illegal: number;
   turns: number;
+  /** Coupures par un plafond de sécurité du moteur (événements `capReached`, `engine/src/limits.ts`). */
+  caps: number;
 }
 
 /** Vérifie la cohérence de l'état ; renvoie la liste des violations. */
@@ -199,27 +201,31 @@ export function playGame(opts: {
   const agents: Record<string, Agent> = Object.fromEntries(ids.map((id, i) => [id, opts.agents[i] as Agent]));
   const decisions: SelfPlayResult["decisions"] = [];
   let illegal = 0;
+  let caps = 0;
   const max = opts.maxDecisions ?? 5000;
   const chaosRand = opts.chaos ? mulberry32(opts.chaos.seed) : null;
   for (let i = 0; i < max && state.pending && !state.over; i++) {
     const p = state.pending;
     let d = (agents[p.player] as Agent)(state, p.player);
     if (chaosRand && opts.chaos) probe(state, p.player, d, chaosRand, opts.chaos.perDecision, `seed ${opts.seed}, décision ${i}`);
+    let step: ReturnType<typeof submit>;
     try {
-      state = submit(state, p.player, d).state;
+      step = submit(state, p.player, d);
     } catch (e) {
       if (!(e instanceof RulesError)) throw e;
       illegal++;
       d = fallbackDecision(state, p);
-      state = submit(state, p.player, d).state;
+      step = submit(state, p.player, d);
     }
+    state = step.state;
+    caps += step.events.filter((e) => e.type === "capReached").length;
     decisions.push({ player: p.player, decision: d });
     if (opts.check) {
       const errors = checkInvariants(state, deckSizes);
       if (errors.length) throw new Error(`Invariants violés (seed ${opts.seed}, décision ${i}) :\n${errors.join("\n")}`);
     }
   }
-  return { state, decisions, illegal, turns: state.turn.number };
+  return { state, decisions, illegal, turns: state.turn.number, caps };
 }
 
 /** État sans les définitions (partagées, immuables) : sert à vérifier qu'une soumission n'a rien modifié. */

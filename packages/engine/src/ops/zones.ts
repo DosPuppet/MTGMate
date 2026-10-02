@@ -167,8 +167,9 @@ export const HANDLERS: OpHandlers = {
     return;
   },
   millWhileShared(s, _r, _e, ctx) {
-    // The Tale of Tamiyo : on recommence tant que les deux cartes meulées partagent un type de carte.
-    for (let i = 0; i < 100; i++) {
+    // The Tale of Tamiyo : on recommence tant que les deux cartes meulées partagent un type de carte (la bibliothèque,
+    // qui perd deux cartes à chaque tour de boucle, la borne).
+    for (;;) {
       const top = (s.players[ctx.controller]?.library ?? []).slice(0, 2);
       if (top.length === 0) return;
       const types = top.map((id) => s.defs[s.objects[id]?.defId ?? ""]?.types ?? []);
@@ -176,7 +177,6 @@ export const HANDLERS: OpHandlers = {
       if (top.length < 2 || !types[0]?.some((t) => types[1]?.includes(t))) return;
       drawCards(s, ctx.controller, 1);
     }
-    return;
   },
   destroyAllButChosenType(s, r, _e, ctx, key) {
     const creatures = s.battlefield.filter((id) => isCreature(s, id));

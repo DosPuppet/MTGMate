@@ -18,6 +18,7 @@ import { syncControl } from "./control";
 import { announceDiscard, announceDiscardBatch, evalAmount } from "./effects";
 import { rethrowAsRules } from "./errors";
 import { copiedDefId, effectivePower, snapshot } from "./layers";
+import { MAX_FLOW_STEPS, MAX_SBA_PASSES } from "./limits";
 import { payMana } from "./mana";
 import { RulesError, resolveTop } from "./stack";
 import { announceNext } from "./stackChoices";
@@ -86,7 +87,7 @@ export function declareLoopDraw(s: GameState): void {
 export function advance(s: GameState): void {
   let guard = 0;
   while (!s.pending && !s.over) {
-    if (++guard > 100_000) {
+    if (++guard > MAX_FLOW_STEPS) {
       declareLoopDraw(s);
       return;
     }
@@ -1289,7 +1290,7 @@ function stateBasedActionsOnce(s: GameState): boolean {
   const alive = () => s.playerOrder.filter((p) => !s.players[p]?.lost).length;
   const before = alive();
   let acted = false;
-  for (let guard = 0; guard < 100; guard++) {
+  for (let guard = 0; guard < MAX_SBA_PASSES; guard++) {
     checkGameOver(s);
     if (s.over) return true;
     if (alive() !== before) acted = true;
@@ -1469,7 +1470,7 @@ function stateBasedActionsOnce(s: GameState): boolean {
     }
     return acted;
   }
-  // Toujours des actions à faire après 100 passes : une boucle d'actions obligatoires (104.4b).
+  // Toujours des actions à faire après `MAX_SBA_PASSES` passes : une boucle d'actions obligatoires (104.4b).
   declareLoopDraw(s);
   return true;
 }

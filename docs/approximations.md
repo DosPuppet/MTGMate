@@ -31,7 +31,7 @@ Chaque entrée porte sa nature :
 - `règle` **Déclencheurs « une ou plusieurs … » (Ketramose, Dredger's Insight) :** fusionnés tant qu'une occurrence attend d'être mise sur la pile.
 - `règle` **Marqueurs de capacité :** ils s'appliquent après les autres effets de couche 6.
 - `règle` **Blessures de combat groupées** (« une ou plusieurs créatures… ») : une fois par étape de blessures et par joueur blessé.
-- `règle` **Plafonds de sécurité :** un même événement crée au plus 100 jetons, et aucun quand le champ de bataille compte déjà 400 objets ; un montant remplacé (blessures, marqueurs, PV, cartes) est borné à un million. Des doubleurs de jetons qui se multiplient (copies d'Exalted Sunborn) donnaient sinon un nombre infini et une partie bloquée (`MAX_TOKENS_PER_EVENT`, `MAX_BATTLEFIELD` dans `actions.ts`, `MAX_AMOUNT` dans `modifiers.ts`).
+- `règle` **Plafonds de sécurité :** un même événement crée au plus 100 jetons, et aucun quand le champ de bataille compte déjà 400 objets ; un montant remplacé (blessures, marqueurs, PV, cartes) est borné à un million. Des doubleurs de jetons qui se multiplient (copies d'Exalted Sunborn) donnaient sinon un nombre infini et une partie bloquée (`engine/src/limits.ts`). Chaque coupure est notée au journal de la partie (« Plafond de sécurité atteint »).
 
 ### Hors règles du jeu
 

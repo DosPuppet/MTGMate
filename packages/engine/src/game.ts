@@ -2,10 +2,12 @@
  * API publique du moteur : création de partie et soumission de décisions.
  * Chaque appel renvoie un nouvel état (copie de travail, l'état reçu n'est jamais modifié) et les événements produits.
  */
+
 import { drawCard } from "./actions";
 import { divisionOf, validateChoice } from "./choices";
 import { checkDecisionShape } from "./decisionShape";
 import { outcomeHash } from "./fingerprint";
+import { LOOP_LIMIT, LOOP_SUSPECT } from "./limits";
 import { activateManaAbility, undoMana } from "./mana";
 import { activateAbility, answerCastNow, answerResolutionChoice, castSpell, playLand, RulesError } from "./stack";
 import { answerStackChoice } from "./stackChoices";
@@ -307,10 +309,6 @@ export function submit(state: GameState, player: PlayerId, decision: Decision): 
   });
   return { state: next, events };
 }
-
-/** Passes pile non vide au-delà desquelles on relève l'empreinte de l'état, puis limite absolue. */
-const LOOP_SUSPECT = 20;
-const LOOP_LIMIT = 2000;
 
 /**
  * 104.4b : détection d'une boucle d'actions obligatoires. Tant que les joueurs ne font que passer alors que la pile n'est

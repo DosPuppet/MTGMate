@@ -6,6 +6,7 @@
 
 import { type AutopilotSettings, autopilotDecision, DEFAULT_AUTOPILOT } from "./autopilot";
 import { drawByLoop, submit } from "./game";
+import { MAX_AUTOMATIC_DECISIONS } from "./limits";
 import { type GameRecord, recordDecision } from "./record";
 import { RulesError } from "./stack";
 import { decider } from "./state";
@@ -65,9 +66,6 @@ export function fallbackDecision(s: GameState, p: PendingDecision): Decision {
       return { type: "choose", values: p.request.suggested };
   }
 }
-
-/** Décisions automatiques (IA, autopilot) enchaînées dans un même tour au-delà desquelles on suppose une boucle. */
-const MAX_AUTOMATIC_DECISIONS = 10_000;
 
 export class GameHost {
   state: GameState;

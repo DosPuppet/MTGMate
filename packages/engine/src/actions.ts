@@ -2,6 +2,7 @@
  * Actions de jeu élémentaires, partagées par les effets, le combat et les actions basées sur l'état.
  */
 
+import { capReached, MAX_BATTLEFIELD, MAX_TOKENS_PER_EVENT } from "./limits";
 import { type AmountMod, chooseReplacementOrder } from "./modifiers";
 import { applyEntersReplacements, type EntersContext, preventsCombatDamage } from "./replacement";
 import {
@@ -578,14 +579,14 @@ export function tokenDefId(t: TokenSpec): string {
 
 /** `enters` : modifications d'arrivée imposées par l'effet (engagés, attaquants, marqueurs), avant l'événement d'arrivée. */
 /**
- * Plafonds des jetons : des doubleurs de jetons qui se multiplient (copies d'Exalted Sunborn) donnent vite un nombre
- * astronomique, voire infini en JavaScript. Au plus 100 jetons par événement, et aucun quand le champ de bataille compte
- * déjà 400 objets (voir docs/approximations.md).
+ * Plafonds des jetons (`limits.ts`) : des doubleurs de jetons qui se multiplient (copies d'Exalted Sunborn) donnent vite un
+ * nombre astronomique, voire infini en JavaScript (voir docs/approximations.md).
  */
-export const MAX_TOKENS_PER_EVENT = 100;
-export const MAX_BATTLEFIELD = 400;
-const tokenRoom = (s: GameState, n: number) =>
-  Math.max(0, Math.min(n, MAX_TOKENS_PER_EVENT, MAX_BATTLEFIELD - s.battlefield.length));
+function tokenRoom(s: GameState, n: number): number {
+  const room = Math.max(0, Math.min(n, MAX_TOKENS_PER_EVENT, MAX_BATTLEFIELD - s.battlefield.length));
+  if (room < n) capReached("tokens");
+  return room;
+}
 
 export function createTokens(
   s: GameState,

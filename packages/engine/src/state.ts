@@ -4,7 +4,6 @@
  */
 import type {
   CardDef,
-  GameEvent,
   GameObject,
   GameState,
   LkiSnapshot,
@@ -19,26 +18,10 @@ import type {
 
 /** Types de permanent (Descente : « une carte de permanent a été mise dans votre cimetière »). */
 
-// ---------------------------------------------------------------------------
-// Événements : le moteur est synchrone, un collecteur global suffit.
-// ---------------------------------------------------------------------------
+// Événements d'affichage : `events.ts` (sans dépendance), réexportés ici.
+export { collectEvents, emit } from "./events";
 
-let sink: GameEvent[] | null = null;
-
-export function collectEvents<T>(fn: () => T): [T, GameEvent[]] {
-  const previous = sink;
-  const events: GameEvent[] = [];
-  sink = events;
-  try {
-    return [fn(), events];
-  } finally {
-    sink = previous;
-  }
-}
-
-export function emit(event: GameEvent): void {
-  sink?.push(event);
-}
+import { emit } from "./events";
 
 // ---------------------------------------------------------------------------
 // Événements de règles : écoutés par le module des déclencheurs (triggers.ts).

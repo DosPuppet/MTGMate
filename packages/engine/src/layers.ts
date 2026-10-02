@@ -13,6 +13,7 @@
  * (contrôle) est calculée à part (`control.ts`). Dépendances (613.8) : par point fixe (`computeBattlefield`) ; limite :
  * une statique accordée par une autre statique n'est pas gérée.
  */
+import { capReached, MAX_LAYER_PASSES } from "./limits";
 import { manaValue } from "./mana";
 import { counterPT, obj } from "./state";
 import { playerStatics } from "./statics";
@@ -537,9 +538,6 @@ function snapshotBase(s: GameState, id: ObjectId): LkiSnapshot {
   return v;
 }
 
-/** Au plus trois applications des couches pour résoudre les dépendances (613.8). */
-const MAX_PASSES = 3;
-
 /**
  * Calcule, sans cache, les caractéristiques de tous les objets du champ de bataille.
  *
@@ -556,10 +554,15 @@ export function computeBattlefield(s: GameState): Map<ObjectId, Characteristics>
     provisional = null;
     let collected = collectStatics(s, defOfId);
     let out = applyLayers(s, collected.applied, defOfId);
-    for (let pass = 1; pass < MAX_PASSES && collected.dependent; pass++) {
+    for (let pass = 1; collected.dependent; pass++) {
       provisional = out;
       const next = collectStatics(s, defOfId, collected);
       if (next.signature === collected.signature) break;
+      // Au plus `MAX_LAYER_PASSES` applications des couches (613.8) : au-delà, une dépendance circulaire.
+      if (pass >= MAX_LAYER_PASSES) {
+        capReached("layers");
+        break;
+      }
       collected = next;
       out = applyLayers(s, next.applied, defOfId);
     }
