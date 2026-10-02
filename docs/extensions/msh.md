@@ -40,3 +40,10 @@ Les scripts sont dans `packages/cards/src/msh/` : `cards` (cartes du méta), `wh
 - **Reste pour plus tard :** Baron Helmut Zemo (vantardise et coût en symboles noirs), Black Widow, Super Spy (exil jusqu'à une carte dans la bibliothèque d'un autre joueur), Klaw, Sonic Subjugator (défausse après une révélation partielle).
 - **Version des règles :** 46.
 - **Tests :** 41 tests de règles (« lot A, noir ») et 1 test tiré des règles.
+
+## Sous-lot A4 : cartes rouges ✅ (147 / 271)
+
+- **Cartes (27) :** Crimson Operative, Death to Our Enemies, Fin Fang Foom, Hawkeye, Master Marksman, Hawkeye's Bow, Hex Magic, Hire a Crew, HULK SMASH!, Human Torch, Johnny Storm, HYDRA Assault Robot, Iron Fist, Living Weapon, Jessica Jones, Private Eye, K'un-Lun Warrior, Machinesmith Automaton, Misty Knight, Hero for Hire, Photon Blast Barrage, Quicksilver, Brash Blur, Red Hulk, Repulsor Blast, The Scarlet Witch, Speed, Young Avenger, Stark Industries Executive, Super Speed, Team Tactics, Truck Toss, Vision of Love, Volcanic Villain.
+- **Moteur :** rien de nouveau (Plans à marqueurs comme Political Triumph, copies de sorts avec nouvelles cibles, « ne peut être bloquée que par des créatures avec la célérité »).
+- **Reste pour plus tard :** Evil's Thrall (contrôle jusqu'à la fin de votre prochain tour), Hawkeye, Young Avenger (blessures augmentées de la force de la source), Loki Laufeyson (« le prochain sort de valeur de mana au plus sa force »), Wonder Man, Hollywood Hero (réactiver une montée en puissance).
+- **Tests :** 34 tests de règles (« lot A, rouge »).
