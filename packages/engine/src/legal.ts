@@ -80,6 +80,7 @@ function tapXMax(
 }
 
 import { snapshot } from "./layers";
+import { enterChoiceRequest } from "./ops/permanents";
 import { obj } from "./state";
 import { playerStatic } from "./statics";
 import { legalTargets } from "./targets";
@@ -316,8 +317,11 @@ export function legalActions(s: GameState, player: PlayerId): ActionOption[] {
         // Terrain choc : payer les points de vie (dégagé) ou non (engagé).
         // Multiversal Passage : une option par type de terrain de base choisi.
         const types = d.chooseOnEnter === "landType" ? BASIC_LAND_TYPES : [undefined];
+        // « En arrivant, choisissez… » (Cavern of Souls) : la question posée en jouant le terrain.
+        const kind = d.chooseOnEnter;
+        const choose = kind && kind !== "landType" ? { choose: enterChoiceRequest(s, player, d.id, kind) } : {};
         for (const landType of types) {
-          const extra = landType ? { landType } : {};
+          const extra = landType ? { landType, ...choose } : choose;
           if (d.shockLand && (s.players[player]?.life ?? 0) >= d.shockLand)
             out.push({ type: "playLand", card, payLife: true, ...extra });
           out.push({ type: "playLand", card, ...extra });

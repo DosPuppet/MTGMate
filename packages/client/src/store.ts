@@ -291,6 +291,12 @@ interface Store {
   beginCasting(option: PlayableOption, sourceId: string, preset?: string): void;
   /** Lancement d'un légendaire dont vous contrôlez déjà un exemplaire : en attente de confirmation. */
   legendConfirm: { option: PlayableOption; sourceId: string; preset?: string; name: string } | null;
+  /** Terrain joué avec une question « en arrivant, choisissez… » (Cavern of Souls) : la réponse attendue. */
+  landChoice: Extract<ActionOption, { type: "playLand" }> | null;
+  /** Joue un terrain (la question « en arrivant » est posée d'abord, s'il en a une). */
+  playLand(option: Extract<ActionOption, { type: "playLand" }>): void;
+  /** Réponse à la question du terrain (`null` : annuler). */
+  answerLandChoice(value: string | null): void;
   confirmLegend(): void;
   cancelLegend(): void;
   chooseMode(index: number): void;
@@ -1421,7 +1427,8 @@ export const useGame = create<Store>((set, get) => {
       // Terrain choc : payer les points de vie (dégagé) ou non (engagé) ; Ville à aventure : jouer le terrain ou lancer l'Aventure.
       if (lands.length > 1 || (lands.length === 1 && casts.length > 0))
         return set({ abilityMenu: { sourceId: id, options: [...lands, ...casts] } });
-      if (lands.length === 1) return get().decide({ type: "playLand", card: id });
+      const land = lands[0];
+      if (lands.length === 1 && land?.type === "playLand") return get().playLand(land);
       const cast = casts[0];
       // Capacités activées depuis la main (cycle, « défaussez cette carte : … »), ou plusieurs faces (aventure).
       const fromHand = acts.filter((a): a is ActivateOption => a.type === "activate" && a.source === id);
@@ -1545,6 +1552,20 @@ export const useGame = create<Store>((set, get) => {
     },
 
     legendConfirm: null,
+    landChoice: null,
+
+    playLand(option) {
+      if (option.choose) return set({ landChoice: option, abilityMenu: null });
+      set({ abilityMenu: null });
+      get().decide({ type: "playLand", card: option.card, payLife: option.payLife, landType: option.landType });
+    },
+
+    answerLandChoice(value) {
+      const option = get().landChoice;
+      set({ landChoice: null });
+      if (!option || value === null) return;
+      get().decide({ type: "playLand", card: option.card, payLife: option.payLife, landType: option.landType, chosen: value });
+    },
 
     confirmLegend() {
       const c = get().legendConfirm;

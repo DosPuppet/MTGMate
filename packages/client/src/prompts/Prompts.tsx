@@ -548,6 +548,7 @@ function AbilityMenu() {
   const menu = useGame((s) => s.abilityMenu);
   const view = useGame((s) => s.view);
   const beginCasting = useGame((s) => s.beginCasting);
+  const playLand = useGame((s) => s.playLand);
   const decide = useGame((s) => s.decide);
   const cancel = useGame((s) => s.cancel);
   const lang = useGame((s) => s.lang);
@@ -574,12 +575,7 @@ function AbilityMenu() {
           }
           if (o.type === "playLand") {
             return (
-              <button
-                key={i}
-                type="button"
-                className="btn choice"
-                onClick={() => decide({ type: "playLand", card: o.card, payLife: o.payLife, landType: o.landType })}
-              >
+              <button key={i} type="button" className="btn choice" onClick={() => playLand(o)}>
                 {o.payLife
                   ? "Jouer ce terrain en payant 2 points de vie (dégagé)"
                   : menu.options.some((x) => x.type === "playLand" && x.payLife)
@@ -820,6 +816,41 @@ function GameOver({ view }: { view: GameView }) {
   );
 }
 
+/** Terrain joué avec une question « en arrivant, choisissez… » (Cavern of Souls : un type de créature). */
+function LandChoice() {
+  const option = useGame((s) => s.landChoice);
+  const answer = useGame((s) => s.answerLandChoice);
+  const [filter, setFilter] = useState("");
+  const request = option?.choose;
+  if (request?.type !== "pick") return null;
+  const suggested = String(request.suggested[0] ?? "");
+  const label = (v: string) => request.labels?.[v] ?? v;
+  const shown = request.options
+    .map(String)
+    .filter((v) => !filter || label(v).toLowerCase().includes(filter.toLowerCase()))
+    .sort((a, b) => (a === suggested ? -1 : b === suggested ? 1 : 0));
+  return (
+    <Modal title={request.prompt}>
+      {request.options.length > 12 && (
+        <input className="choice-filter" placeholder="Filtrer…" value={filter} onChange={(e) => setFilter(e.target.value)} />
+      )}
+      <div className="choice-list scroll">
+        {shown.slice(0, 60).map((v) => (
+          <button key={v} type="button" className={`btn choice ${v === suggested ? "suggested" : ""}`} onClick={() => answer(v)}>
+            {label(v)}
+            {v === suggested ? " (suggestion)" : ""}
+          </button>
+        ))}
+      </div>
+      <div className="modal-actions">
+        <button type="button" className="btn ghost" onClick={() => answer(null)}>
+          Annuler
+        </button>
+      </div>
+    </Modal>
+  );
+}
+
 /** Règle des légendaires : confirmation avant de lancer un légendaire dont vous contrôlez déjà un exemplaire. */
 function LegendConfirm() {
   const pending = useGame((s) => s.legendConfirm);
@@ -857,6 +888,7 @@ export function Prompts() {
       <CastingPrompt />
       <AbilityMenu />
       <LegendConfirm />
+      <LandChoice />
       <GraveyardViewer />
       <ExileViewer />
       <GameOver view={view} />

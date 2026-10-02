@@ -25,7 +25,7 @@ import { addPlayerEffect } from "../statics";
 import { matchesCard, matchesObjectFilter } from "../targets";
 import { createDelayed, onceKey } from "../triggers";
 import { attackableDefenders } from "../turn";
-import type { AbilityDef, Color, GameState } from "../types";
+import type { AbilityDef, CardDef, ChoiceRequest, Color, GameState, PlayerId } from "../types";
 
 /** Types de créature toujours proposés quand un type est à choisir (tribus de Lorwyn et types les plus courants). */
 /** Sous-types des jetons de créature que décrivent ces capacités (`token: { types, subtypes }` dans leurs effets). */
@@ -60,6 +60,117 @@ const COMMON_CREATURE_TYPES = [
   "Wizard",
   "Zombie",
 ];
+
+/**
+ * 614.12 : la question « en arrivant, choisissez… » d'un permanent (type de créature, couleur, nom, nombre, mode…), avec
+ * sa suggestion : pendant la résolution d'un sort de permanent, en jouant un terrain, ou quand un effet le met en jeu.
+ * `preset` : les options imposées par l'effet.
+ */
+export function enterChoiceRequest(
+  s: GameState,
+  controller: PlayerId,
+  sourceDefId: string,
+  kind: NonNullable<CardDef["chooseOnEnter"]>,
+  preset?: string[],
+): ChoiceRequest {
+  const ctx = { controller, sourceDefId };
+  {
+    let options: string[];
+    if (preset) options = preset;
+    else if (kind === "landType") options = ["Plains", "Island", "Swamp", "Mountain", "Forest"];
+    else if (kind === "color") options = ["W", "U", "B", "R", "G"];
+    else if (kind === "parity") options = ["odd", "even"];
+    // Talion, the Kindly Lord : un nombre de 1 à 10.
+    else if (kind === "number") options = Array.from({ length: 10 }, (_, i) => String(i + 1));
+    else if (kind === "mode") options = s.defs[ctx.sourceDefId]?.enterModes ?? [];
+    else if (kind === "landName") {
+      // Petrified Hamlet : un nom de carte de terrain, ceux des terrains adverses en tête (non de base d'abord).
+      const opp = s.battlefield.filter((id) => s.objects[id]?.controller !== ctx.controller);
+      const oppLands = opp.map((id) => s.defs[s.objects[id]?.defId ?? ""]).filter((d) => d?.types.includes("Land"));
+      const lands = Object.values(s.defs).filter((d) => d.types.includes("Land") && !d.isToken);
+      options = [
+        ...new Set([
+          ...oppLands.filter((d) => !d?.supertypes.includes("Basic")).map((d) => d?.name ?? ""),
+          ...oppLands.map((d) => d?.name ?? ""),
+          ...lands.map((d) => d.name).sort(),
+        ]),
+      ].filter(Boolean);
+    } else if (kind === "cardName") {
+      // Sorcerous Spyglass : on regarde la main d'un adversaire (ses cartes d'abord), puis on nomme une carte.
+      const opp = opponentsOf(s, ctx.controller)[0];
+      const inHand = (opp ? (s.players[opp]?.hand ?? []) : []).map((id) => s.defs[s.objects[id]?.defId ?? ""]?.name ?? "");
+      const all = Object.values(s.defs)
+        .filter((d) => !d.isToken)
+        .map((d) => d.name);
+      options = [...new Set([...inHand.filter(Boolean), ...s.battlefield.map((id) => chars(s, id).name), ...all.sort()])];
+    } else {
+      // Types des créatures connues de la partie (cartes, et jetons qu'elles créent : An Unexpected Party nomme les
+      // Nains que créent ses jetons), et toujours les plus courants (un deck sans créature en a besoin).
+      const set = new Set<string>(COMMON_CREATURE_TYPES);
+      for (const d of Object.values(s.defs)) {
+        if (d.types.includes("Creature")) for (const t of d.subtypes) set.add(t);
+        for (const t of tokenCreatureTypes(d.abilities)) set.add(t);
+      }
+      options = [...set].sort();
+    }
+    // Suggestion : le type ou la couleur les plus présents chez le contrôleur.
+    const tally = new Map<string, number>();
+    const pl = s.players[ctx.controller];
+    for (const id of [
+      ...s.battlefield.filter((x) => s.objects[x]?.controller === ctx.controller),
+      ...(pl?.hand ?? []),
+      ...(pl?.library ?? []),
+    ]) {
+      const d = s.defs[s.objects[id]?.defId ?? ""];
+      const keys = kind === "color" ? (d?.colors ?? []) : d?.types.includes("Creature") ? d.subtypes : [];
+      for (const k of keys) tally.set(k, (tally.get(k) ?? 0) + 1);
+    }
+    // Type de terrain de base : le plus présent parmi les terrains du joueur (comme `defaultChoice`).
+    const landCount = (t: string) =>
+      s.battlefield.filter((id) => s.objects[id]?.controller === ctx.controller && chars(s, id).subtypes.includes(t)).length;
+    const best =
+      kind === "landType"
+        ? [...options].sort((a, b) => landCount(b) - landCount(a))[0]
+        : kind === "number"
+          ? suggestedNumber(s, ctx.controller)
+          : kind === "cardName" || kind === "landName" || kind === "parity" || kind === "mode"
+            ? options[0]
+            : ([...tally.entries()].sort((a, b) => b[1] - a[1]).find(([k]) => options.includes(k))?.[0] ?? options[0]);
+    const COLOR: Record<string, string> = { W: "Blanc", U: "Bleu", B: "Noir", R: "Rouge", G: "Vert" };
+    return {
+      type: "pick",
+      intent: "chooseOnEnter",
+      prompt:
+        kind === "color"
+          ? "Choisissez une couleur"
+          : kind === "cardName"
+            ? "Choisissez un nom de carte (les cartes de la main adverse sont en tête)"
+            : kind === "landName"
+              ? "Choisissez un nom de carte de terrain (ceux de vos adversaires sont en tête)"
+              : kind === "parity"
+                ? "Choisissez : valeur de mana impaire ou paire"
+                : kind === "mode"
+                  ? `Choisissez : ${options.join(" ou ")}`
+                  : kind === "number"
+                    ? "Choisissez un nombre entre 1 et 10"
+                    : kind === "landType"
+                      ? "Choisissez un type de terrain de base"
+                      : "Choisissez un type de créature",
+      options,
+      labels:
+        kind === "color"
+          ? COLOR
+          : kind === "parity"
+            ? { odd: "Impaire", even: "Paire" }
+            : kind === "landType"
+              ? { Plains: "Plaine", Island: "Île", Swamp: "Marais", Mountain: "Montagne", Forest: "Forêt" }
+              : Object.fromEntries(options.map((o) => [o, o])),
+      min: 1,
+      max: 1,
+      suggested: [best as string],
+    };
+  }
+}
 
 export const HANDLERS: OpHandlers = {
   pump(s, _r, e, ctx) {
@@ -441,99 +552,19 @@ export const HANDLERS: OpHandlers = {
     const answer = r.vars[key("chosen")];
     const kind = e.kind;
     if (!answer) {
-      let options: string[];
-      if (e.options) options = [...e.options];
+      let preset: string[] | undefined;
+      if (e.options) preset = [...e.options];
       else if (e.optionsFrom) {
         // Koh, the Face Stealer : le nom d'une des cartes désignées (s'il n'y en a aucune, rien n'est choisi).
         const names = resolveRef(s, ctx, e.optionsFrom).map((id) => s.defs[s.objects[id]?.defId ?? ""]?.name);
-        options = [...new Set(names.filter((n): n is string => !!n))];
-        if (options.length === 0) return;
-      } else if (kind === "color") options = ["W", "U", "B", "R", "G"];
-      else if (kind === "parity") options = ["odd", "even"];
-      // Talion, the Kindly Lord : un nombre de 1 à 10.
-      else if (kind === "number") options = Array.from({ length: 10 }, (_, i) => String(i + 1));
-      else if (kind === "mode") options = s.defs[ctx.sourceDefId]?.enterModes ?? [];
-      else if (kind === "landName") {
-        // Petrified Hamlet : un nom de carte de terrain, ceux des terrains adverses en tête (non de base d'abord).
-        const opp = s.battlefield.filter((id) => s.objects[id]?.controller !== ctx.controller);
-        const oppLands = opp.map((id) => s.defs[s.objects[id]?.defId ?? ""]).filter((d) => d?.types.includes("Land"));
-        const lands = Object.values(s.defs).filter((d) => d.types.includes("Land") && !d.isToken);
-        options = [
-          ...new Set([
-            ...oppLands.filter((d) => !d?.supertypes.includes("Basic")).map((d) => d?.name ?? ""),
-            ...oppLands.map((d) => d?.name ?? ""),
-            ...lands.map((d) => d.name).sort(),
-          ]),
-        ].filter(Boolean);
-      } else if (kind === "cardName") {
-        // Sorcerous Spyglass : on regarde la main d'un adversaire (ses cartes d'abord), puis on nomme une carte.
-        const opp = opponentsOf(s, ctx.controller)[0];
-        const inHand = (opp ? (s.players[opp]?.hand ?? []) : []).map((id) => s.defs[s.objects[id]?.defId ?? ""]?.name ?? "");
-        const all = Object.values(s.defs)
-          .filter((d) => !d.isToken)
-          .map((d) => d.name);
-        options = [...new Set([...inHand.filter(Boolean), ...s.battlefield.map((id) => chars(s, id).name), ...all.sort()])];
-      } else {
-        // Types des créatures connues de la partie (cartes, et jetons qu'elles créent : An Unexpected Party nomme les
-        // Nains que créent ses jetons), et toujours les plus courants (un deck sans créature en a besoin).
-        const set = new Set<string>(COMMON_CREATURE_TYPES);
-        for (const d of Object.values(s.defs)) {
-          if (d.types.includes("Creature")) for (const t of d.subtypes) set.add(t);
-          for (const t of tokenCreatureTypes(d.abilities)) set.add(t);
-        }
-        options = [...set].sort();
+        preset = [...new Set(names.filter((n): n is string => !!n))];
+        if (preset.length === 0) return;
       }
-      // Suggestion : le type ou la couleur les plus présents chez le contrôleur.
-      const tally = new Map<string, number>();
-      const pl = s.players[ctx.controller];
-      for (const id of [
-        ...s.battlefield.filter((x) => s.objects[x]?.controller === ctx.controller),
-        ...(pl?.hand ?? []),
-        ...(pl?.library ?? []),
-      ]) {
-        const d = s.defs[s.objects[id]?.defId ?? ""];
-        const keys = kind === "color" ? (d?.colors ?? []) : d?.types.includes("Creature") ? d.subtypes : [];
-        for (const k of keys) tally.set(k, (tally.get(k) ?? 0) + 1);
-      }
-      const best =
-        kind === "number"
-          ? suggestedNumber(s, ctx.controller)
-          : kind === "cardName" || kind === "landName" || kind === "parity" || kind === "mode"
-            ? options[0]
-            : ([...tally.entries()].sort((a, b) => b[1] - a[1]).find(([k]) => options.includes(k))?.[0] ?? options[0]);
-      const COLOR: Record<string, string> = { W: "Blanc", U: "Bleu", B: "Noir", R: "Rouge", G: "Vert" };
       return {
         ask: {
           player: ctx.controller,
           key: key("chosen"),
-          request: {
-            type: "pick",
-            intent: "chooseOnEnter",
-            prompt:
-              kind === "color"
-                ? "Choisissez une couleur"
-                : kind === "cardName"
-                  ? "Choisissez un nom de carte (les cartes de la main adverse sont en tête)"
-                  : kind === "landName"
-                    ? "Choisissez un nom de carte de terrain (ceux de vos adversaires sont en tête)"
-                    : kind === "parity"
-                      ? "Choisissez : valeur de mana impaire ou paire"
-                      : kind === "mode"
-                        ? `Choisissez : ${options.join(" ou ")}`
-                        : kind === "number"
-                          ? "Choisissez un nombre entre 1 et 10"
-                          : "Choisissez un type de créature",
-            options,
-            labels:
-              kind === "color"
-                ? COLOR
-                : kind === "parity"
-                  ? { odd: "Impaire", even: "Paire" }
-                  : Object.fromEntries(options.map((o) => [o, o])),
-            min: 1,
-            max: 1,
-            suggested: [best as string],
-          },
+          request: enterChoiceRequest(s, ctx.controller, ctx.sourceDefId, kind, preset),
         },
       };
     }

@@ -799,7 +799,7 @@ export function moveWithSpec(
   controller: PlayerId,
   id: ObjectId,
   spec: MoveSpec,
-  choices?: Pick<EntersContext, "copyOf" | "copyMods" | "copyChosen" | "attachTo">,
+  choices?: Pick<EntersContext, "copyOf" | "copyMods" | "copyChosen" | "attachTo" | "chosen">,
 ): ObjectId | null {
   const o = s.objects[id];
   if (!o) return null;

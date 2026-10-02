@@ -24,7 +24,7 @@ import { copiableExceptions, copiedDefId, hasKeyword } from "../layers";
 import { manaValue } from "../mana";
 import { chooseReplacementOrder } from "../modifiers";
 import { auraHosts, copyCandidates, type EntersContext } from "../replacement";
-import { bounceSpell, exileSpell, spellToZone } from "../stack";
+import { bounceSpell, chosenValue, exileSpell, spellToZone } from "../stack";
 import {
   apnapOrder,
   bent,
@@ -51,6 +51,7 @@ import {
 import { addPlayerEffect, playerStatic, quantityMods, recipientMatches } from "../statics";
 import { matchesCard, matchesObjectFilter, shareCreatureType } from "../targets";
 import type { CardType, Effect, GameState, ObjectFilter, ObjectId, Resolution } from "../types";
+import { enterChoiceRequest } from "./permanents";
 
 export const HANDLERS: OpHandlers = {
   destroy(s, r, e, ctx) {
@@ -964,7 +965,7 @@ export const HANDLERS: OpHandlers = {
       );
     // Choix d'arrivée d'un permanent qui n'est pas lancé, demandés avant tout déplacement (la résolution reprend l'effet
     // depuis le début une fois la réponse donnée) : ce que copie un Clone (707.5), ce qu'enchante une Aura (303.4f).
-    const choices: Record<string, Pick<EntersContext, "copyOf" | "copyMods" | "copyChosen" | "attachTo">> = {};
+    const choices: Record<string, Pick<EntersContext, "copyOf" | "copyMods" | "copyChosen" | "attachTo" | "chosen">> = {};
     if (e.spec.to === "battlefield") {
       for (const id of ids) {
         const o = s.objects[id];
@@ -997,6 +998,16 @@ export const HANDLERS: OpHandlers = {
             copyMods: copiableExceptions(s, picked),
             copyChosen: true,
           };
+        }
+        // 614.12 : « en arrivant, choisissez… » (type de créature, couleur, nom…), demandé au joueur qui le contrôlera.
+        const kind = d.chooseOnEnter;
+        if (kind && !d.entersAsCopyOf) {
+          const k = key(`enter-${id}`);
+          const request = enterChoiceRequest(s, who, d.id, kind);
+          if (!r.vars[k]) return { ask: { player: who, key: k, request } };
+          const value = String(r.vars[k]?.[0] ?? "");
+          if (request.type === "pick" && request.options.includes(value))
+            choices[id] = { ...choices[id], chosen: chosenValue(kind, value) };
         }
         if (d.enchant && !d.enchant.player) {
           const options = auraHosts(s, who, id);

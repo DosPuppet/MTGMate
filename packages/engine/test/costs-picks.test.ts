@@ -3,10 +3,11 @@
  * (`picks`), le moteur applique ceux du joueur ou, à défaut, sa suggestion, et refuse un choix invalide.
  */
 import { describe, expect, it } from "vitest";
+import { fx, ref, spell, target } from "../src/dsl";
 import { RulesError } from "../src/errors";
 import { legalActions } from "../src/legal";
 import type { ActionOption, GameState } from "../src/types";
-import { act, customCard, idOf, lands, scenario } from "./helpers";
+import { act, customCard, idOf, lands, scenario, settle } from "./helpers";
 
 const activation = (s: GameState, source: string, label: string) =>
   legalActions(s, "p1").find(
@@ -109,5 +110,43 @@ describe("objets payés en coût, au choix du joueur", () => {
         picks: { convoke: [...all, idOf(t, "p1", "battlefield", "Mountain")] },
       }),
     ).toThrow(RulesError);
+  });
+});
+
+describe("614.12 : « en arrivant, choisissez… » demandé au joueur (PLAN-C, lot C9)", () => {
+  it("Cavern of Souls jouée : le type choisi en la jouant, sinon le choix par défaut ; un choix hors des options est refusé", () => {
+    let s = scenario({ p1: { hand: ["Cavern of Souls"] } });
+    const cavern = idOf(s, "p1", "hand", "Cavern of Souls");
+    const option = legalActions(s, "p1").find(
+      (a): a is Extract<ActionOption, { type: "playLand" }> => a.type === "playLand" && a.card === cavern,
+    );
+    expect(option?.choose?.type).toBe("pick");
+    expect(() => act(s, "p1", { type: "playLand", card: cavern, chosen: "Pas un type" })).toThrow(RulesError);
+    s = act(s, "p1", { type: "playLand", card: cavern, chosen: "Elf" });
+    expect(s.objects[idOf(s, "p1", "battlefield", "Cavern of Souls")]?.chosen).toEqual({ creatureType: "Elf" });
+    // Sans choix : le choix par défaut, comme avant.
+    let t = scenario({ p1: { hand: ["Cavern of Souls"] } });
+    t = act(t, "p1", { type: "playLand", card: idOf(t, "p1", "hand", "Cavern of Souls") });
+    expect(t.objects[idOf(t, "p1", "battlefield", "Cavern of Souls")]?.chosen?.creatureType).toBeDefined();
+  });
+
+  it("un permanent mis en jeu par un effet : la question est posée à son nouveau contrôleur", () => {
+    const raise = customCard({
+      name: "Rappel de test",
+      types: ["Sorcery"],
+      typeLine: "Sorcery",
+      spell: spell([target.cardInGraveyard("t", { types: ["Land"] })], [fx.toBattlefield(ref.target())]),
+    });
+    let s = scenario({ p1: { hand: [raise], graveyard: ["Cavern of Souls"] } });
+    const cavern = idOf(s, "p1", "graveyard", "Cavern of Souls");
+    s = act(s, "p1", { type: "cast", card: idOf(s, "p1", "hand", "Rappel de test"), targets: { t: [cavern] } });
+    let asked = false;
+    s = settle(s, (req) => {
+      if (req.intent !== "chooseOnEnter") return undefined;
+      asked = true;
+      return ["Goblin"];
+    });
+    expect(asked).toBe(true);
+    expect(s.objects[idOf(s, "p1", "battlefield", "Cavern of Souls")]?.chosen).toEqual({ creatureType: "Goblin" });
   });
 });

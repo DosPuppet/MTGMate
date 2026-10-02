@@ -186,7 +186,8 @@ export type Decision =
   | { type: "bottom"; cards: ObjectId[] }
   | { type: "pass" }
   /** `landType` : type de terrain de base choisi en arrivant (Multiversal Passage). */
-  | { type: "playLand"; card: ObjectId; payLife?: boolean; landType?: string }
+  /** `chosen` : « en arrivant, choisissez… » (Cavern of Souls : un type de créature), parmi les options de l'action. */
+  | { type: "playLand"; card: ObjectId; payLife?: boolean; landType?: string; chosen?: string }
   | ({ type: "cast"; card: ObjectId } & CastChoices)
   | ({ type: "activate"; source: ObjectId; ability: number } & CastChoices)
   | { type: "tapForMana"; source: ObjectId; ability: number; color?: ManaType }
@@ -238,7 +239,8 @@ export interface ModeOption {
 export type ActionOption =
   | { type: "pass" }
   /** `landType` : type de terrain de base choisi en arrivant (Multiversal Passage). */
-  | { type: "playLand"; card: ObjectId; payLife?: boolean; landType?: string }
+  /** `choose` : la question « en arrivant, choisissez… » du terrain, à poser en le jouant (réponse : `chosen`). */
+  | { type: "playLand"; card: ObjectId; payLife?: boolean; landType?: string; choose?: ChoiceRequest }
   | {
       type: "cast";
       card: ObjectId;

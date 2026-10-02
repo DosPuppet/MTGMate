@@ -17,6 +17,7 @@ import { announceDiscard, announceDiscardBatch, evalAmount, moveWithSpec, runEff
 import { RulesError, rethrowAsRules } from "./errors";
 import { copiableExceptions, copiedDefId, effectivePower, hasKeyword } from "./layers";
 import { costToText, type ManaPurpose, manaAbilitiesOf, manaValue, payMana, totalCost } from "./mana";
+import { enterChoiceRequest } from "./ops/permanents";
 import { copyStackItem } from "./stackChoices";
 import {
   bent,
@@ -285,13 +286,30 @@ export function webSlingingOptions(s: GameState, player: PlayerId): ObjectId[] {
     .sort((a, b) => mv(a) - mv(b));
 }
 
-export function playLand(s: GameState, player: PlayerId, card: ObjectId, payLife = false, landType?: string): void {
+export function playLand(
+  s: GameState,
+  player: PlayerId,
+  card: ObjectId,
+  payLife = false,
+  landType?: string,
+  chosen?: string,
+): void {
   if (!canPlayLand(s, player, card)) throw new RulesError("Vous ne pouvez pas jouer ce terrain maintenant");
   const o = obj(s, card);
   // Multiversal Passage : « en arrivant, choisissez un type de terrain de base » (choisi avec la décision).
   const choosesType = s.defs[o.defId]?.chooseOnEnter === "landType";
   if (landType !== undefined && (!choosesType || !BASIC_LAND_TYPES.includes(landType)))
     throw new RulesError("Type de terrain de base invalide");
+  // 614.12 : « en arrivant, choisissez… » (Cavern of Souls) : le choix du joueur, parmi les options ; sans choix, le
+  // choix par défaut (`defaultChoice`).
+  const kind = s.defs[o.defId]?.chooseOnEnter;
+  let enterChosen: GameObject["chosen"] | undefined;
+  if (chosen !== undefined) {
+    if (!kind || kind === "landType") throw new RulesError("Ce terrain ne demande pas de choix");
+    const request = enterChoiceRequest(s, player, o.defId, kind);
+    if (request.type !== "pick" || !request.options.includes(chosen)) throw new RulesError("Choix invalide");
+    enterChosen = chosenValue(kind, chosen);
+  }
   // Terrains choc : « vous pouvez payer 2 points de vie ; sinon, il arrive engagé ».
   const shock = s.defs[o.defId]?.shockLand;
   if (payLife && !shock) throw new RulesError("Ce terrain ne demande pas de points de vie");
@@ -302,7 +320,7 @@ export function playLand(s: GameState, player: PlayerId, card: ObjectId, payLife
   const fromExile = o.zone === "exile" ? exilePermission(s, player, card) : undefined;
   const id = moveObject(s, card, "battlefield", {
     controller: player,
-    enters: { shockPaid: payLife, chosen: landType ? { landType } : undefined },
+    enters: { shockPaid: payLife, chosen: landType ? { landType } : enterChosen },
   });
   s.turn.landsPlayed += 1;
   emit({ type: "playLand", player, objectId: id as string, defId });
@@ -1914,10 +1932,16 @@ function addCosts(a: ManaCost, b: ManaCost): ManaCost {
 function chosenFrom(vars: Record<string, ChoiceValue[]>): GameObject["chosen"] {
   const [kind, value] = (vars.$chosen ?? []).map(String);
   if (!kind || !value) return undefined;
+  return chosenValue(kind, value);
+}
+
+/** Le choix « en arrivant » noté sur le permanent, d'après sa sorte et la réponse. */
+export function chosenValue(kind: string, value: string): GameObject["chosen"] {
   if (kind === "cardName" || kind === "landName") return { cardName: value };
   if (kind === "parity") return { parity: value === "odd" ? "odd" : "even" };
   if (kind === "mode") return { mode: value };
   if (kind === "number") return { number: Number(value) };
+  if (kind === "landType") return { landType: value };
   return kind === "color" ? { color: value as Color } : { creatureType: value };
 }
 

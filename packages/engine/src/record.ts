@@ -184,8 +184,10 @@ export const RECORD_VERSION = 1;
  *   sacrifier X, exiler un permanent, ninjutsu, convocation, improvisation, maîtrise de l'eau, cave ; sans choix, la
  *   suggestion du moteur, inchangée) ; le flétrir en kicker prend par défaut une créature qui survit, comme
  *   `blightTarget` (PLAN-C, lots C7 et C8).
+ * - 66 : « en arrivant, choisissez… » demandé au joueur pour un terrain joué (`playLand.chosen`, Cavern of Souls) et
+ *   pour un permanent mis en jeu par un effet (`moveTo`) (PLAN-C, lot C9).
  */
-export const RULES_VERSION = 65;
+export const RULES_VERSION = 66;
 
 /** Un point de contrôle toutes les N décisions (plus la dernière de la partie). */
 export const CHECKPOINT_EVERY = 25;
