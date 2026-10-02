@@ -164,7 +164,7 @@ ok &&= await group([{ name: "vitest", cmd: "npx vitest run", show: /^\s*Tests .*
 // 2. Fuzz : toutes les séries ensemble, sur tous les cœurs.
 const fuzzes = ci
   ? [
-      fuzz("fuzz 2 j.", "--games 150 --pool all --seed 1"),
+      fuzz("fuzz 2 j.", "--games 150 --pool all --seed 1 --offers 4"),
       fuzz("fuzz 3 joueurs", "--games 40 --pool all --players 3"),
       fuzz("fuzz niveaux d'IA", "--games 20 --pool all --ai levels"),
       fuzz("fuzz chaos 2 j.", "--games 100 --pool all --ai chaos --seed 3000"),
@@ -172,7 +172,7 @@ const fuzzes = ci
     ]
   : full
     ? [
-        fuzz("fuzz 2 j. graine 1", "--games 300 --pool all --seed 1"),
+        fuzz("fuzz 2 j. graine 1", "--games 300 --pool all --seed 1 --offers 4"),
         fuzz("fuzz 2 j. graine 1000", "--games 300 --pool all --seed 1000"),
         fuzz("fuzz 2 j. graine 5000", "--games 300 --pool all --seed 5000"),
         fuzz("fuzz 3 joueurs", "--games 200 --pool all --players 3"),
@@ -184,7 +184,7 @@ const fuzzes = ci
         fuzz("fuzz méta", "--games 100 --pool meta --ai levels"),
       ]
     : [
-        fuzz(`fuzz ${set} 2 joueurs`, `--games 300 --pool ${pool} --seed 1`),
+        fuzz(`fuzz ${set} 2 joueurs`, `--games 300 --pool ${pool} --seed 1 --offers 4`),
         fuzz(`fuzz ${set} 3 joueurs`, `--games 100 --pool ${pool} --players 3`),
         fuzz(`fuzz ${set} 4 joueurs`, `--games 60 --pool ${pool} --players 4`),
         fuzz(`fuzz ${set} IA mixte`, `--games 60 --pool ${pool} --ai mixed`),

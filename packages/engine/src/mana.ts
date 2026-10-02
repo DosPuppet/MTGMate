@@ -235,6 +235,21 @@ export interface ManaPurpose {
   waterbend?: number;
   /** Improvisation (702.126) : chaque artefact dégagé peut payer {1} du générique. */
   improvise?: boolean;
+  /**
+   * Permanents sacrifiés pour payer le coût : leurs capacités de mana peuvent servir avant (601.2g, 602.2b), sauf celles qui
+   * les sacrifient eux-mêmes (Trésor).
+   */
+  sacrificedForCost?: ReadonlySet<ObjectId>;
+  /**
+   * Cartes que le paiement ne doit pas consommer (preuves, cave) : la carte de cimetière qui s'exile pour payer le coût de
+   * sa propre capacité (renouveau de Sage of the Fang, payé avec Cryptex).
+   */
+  keep?: readonly ObjectId[];
+}
+
+/** Cartes que le paiement ne consomme pas : celles de `keep`, et la source de la capacité payée (qui peut s'exiler). */
+function kept(purpose?: ManaPurpose): ObjectId[] {
+  return [...(purpose?.keep ?? []), ...(purpose?.abilitySource ? [purpose.abilitySource] : [])];
 }
 
 /** Pseudo-capacité de mana d'une créature engagée pour la convocation. */
@@ -295,6 +310,10 @@ export function manaSources(
       // Mana restreint : seulement utilisable par le solveur pour un paiement autorisé.
       if (!restrictionAllows(s, id, ab, player, purpose)) return;
       if (ab.tapAnother && !otherToTap(s, id, true)) return;
+      if (ab.cost.sacrificeSelf && purpose?.sacrificedForCost?.has(id)) return;
+      if (ab.cost.collectEvidence && !evidenceCards(s, o.controller, id, ab.cost.collectEvidence, kept(purpose))) return;
+      // Aucune couleur possible (Pit of Offerings sans carte exilée colorée) : la capacité ne produit rien (106.7).
+      if (ab.produce.length === 0) return;
       out.push({
         id,
         ability: i,
@@ -360,8 +379,9 @@ export function manaSources(
   });
   // Cave : chaque carte du cimetière paie {1} (utilisée en tout dernier, choix automatique).
   if (purpose?.delve) {
+    const keep = kept(purpose);
     for (const id of s.players[player]?.graveyard ?? []) {
-      if (exclude.has(id)) continue;
+      if (exclude.has(id) || keep.includes(id)) continue;
       out.push({ id, ability: DELVE, colors: ["C"], amount: 1, isCreature: false, sacrifice: false, delve: true, key: id });
     }
   }
@@ -390,6 +410,7 @@ export function activateManaAbility(
   ability: number,
   color?: ManaType,
   forPayment = false,
+  keep: readonly ObjectId[] = [],
 ): void {
   const o = s.objects[id];
   if (!o || o.controller !== player) throw new RulesError("Vous ne contrôlez pas cette source");
@@ -416,7 +437,7 @@ export function activateManaAbility(
   // Haunted Screen : « {T}, payez 1 point de vie » ; Twitching Doll : « mettez un marqueur de nid sur cette créature ».
   if (ab.cost.payLife) payLife(s, player, ab.cost.payLife);
   // Cryptex : « {T}, réunissez des preuves 3 : ajoutez un mana… ».
-  if (ab.cost.collectEvidence) collectEvidence(s, player, evidenceCards(s, player, id, ab.cost.collectEvidence) ?? []);
+  if (ab.cost.collectEvidence) collectEvidence(s, player, evidenceCards(s, player, id, ab.cost.collectEvidence, keep) ?? []);
   if (ab.addCounter && s.objects[id]?.zone === "battlefield") changeCounters(s, o, ab.addCounter, 1);
   if (ab.removeCounter && (o.counters[ab.removeCounter] ?? 0) > 0) changeCounters(s, o, ab.removeCounter, -1);
   const pool = s.players[player]?.manaPool;
@@ -666,7 +687,7 @@ export function payMana(
       emit({ type: "moved", owner: o.owner, objectId: t.id, defId: o.defId, from: "graveyard", to: "exile" });
       moveObject(s, t.id, "exile");
       pool.C += 1;
-    } else activateManaAbility(s, player, t.id, t.ability, t.color, true);
+    } else activateManaAbility(s, player, t.id, t.ability, t.color, true, kept(purpose));
   }
   const pl = s.players[player];
   if (pl?.restrictedMana && usedRestricted.size) {

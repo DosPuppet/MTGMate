@@ -165,8 +165,14 @@ export const RECORD_VERSION = 1;
  *   attendre les actions basées sur l'état (trouvé par le fuzz « chaos »).
  * - 60 : plafonds : 100 jetons au plus par événement, aucun au-delà de 400 objets sur le champ de bataille, montants
  *   remplacés bornés à un million (doubleurs de jetons qui se multiplient, trouvé par le fuzz « niveaux d'IA »).
+ * - 61 : options proposées et décisions acceptées alignées (PLAN-C, lot C2, fuzz strict `--offers`) : « X cibles » avec
+ *   X = 0, une cible peut payer le kicker (flétrir, Marchandage), un permanent sacrifié pour le coût d'une capacité peut
+ *   d'abord produire son mana, payer 0 PV avec un total négatif, les preuves d'un mana ne prennent pas la carte qui
+ *   s'exile pour sa capacité (plantage du moteur), sacrifices et « engagez X » par défaut d'abord sans capacité de mana
+ *   (et réservés au paiement), Emrakul : la capacité du terrain dure jusqu'à ce que le sort soit lancé (601.2i), une
+ *   capacité de mana sans couleur possible ne produit rien (106.7).
  */
-export const RULES_VERSION = 60;
+export const RULES_VERSION = 61;
 
 /** Un point de contrôle toutes les N décisions (plus la dernière de la partie). */
 export const CHECKPOINT_EVERY = 25;

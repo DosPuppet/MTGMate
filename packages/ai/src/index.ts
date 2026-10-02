@@ -1,5 +1,4 @@
 export { creatureValue, evaluate, lifeValue, rollout, targetOpponent, trySubmit } from "./evaluate";
-export { GOLDEN_GAMES, type GoldenSpec, playGolden } from "./golden";
 export { duel, heuristicAgent } from "./heuristic";
 export { AI_LEVELS, type AiBudget, type AiLevel, type AiOptions, aiAgent } from "./levels";
 export { buildCastDecision, enumerateDecisions } from "./options";

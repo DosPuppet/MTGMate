@@ -16,7 +16,7 @@ import { ask } from "./choices";
 import { announceDiscard, announceDiscardBatch, evalAmount, moveWithSpec, runEffect } from "./effects";
 import { RulesError, rethrowAsRules } from "./errors";
 import { copiableExceptions, copiedDefId, effectivePower, hasKeyword } from "./layers";
-import { costToText, type ManaPurpose, manaValue, payMana, totalCost } from "./mana";
+import { costToText, type ManaPurpose, manaAbilitiesOf, manaValue, payMana, totalCost } from "./mana";
 import { copyStackItem } from "./stackChoices";
 import {
   bent,
@@ -522,33 +522,36 @@ export function kickerCostOptions(
   player: PlayerId,
   card: ObjectId,
   d: CardDef,
-  exclude: ObjectId[] = [],
+  targeted: ObjectId[] = [],
 ): ObjectId[] {
   const f =
     d.kickerCost?.sacrifice ??
     d.kickerCost?.bounce ??
     (d.kickerCost?.blight ? ({ types: ["Creature"] } as ObjectFilter) : undefined);
   if (!f) return [];
+  // Un coût se paie après le choix des cibles (601.2h) : une cible peut le payer. Les cibles viennent en dernier (choix par
+  // défaut), puis le moins cher, jeton d'abord.
   const mv = (id: ObjectId) => (s.objects[id]?.isToken ? -1 : manaValue(s.defs[s.objects[id]?.defId ?? ""]?.manaCost));
+  const rank = (id: ObjectId) => (targeted.includes(id) ? 1000 : 0) + mv(id);
   return s.battlefield
-    .filter(
-      (id) =>
-        id !== card &&
-        !exclude.includes(id) &&
-        s.objects[id]?.controller === player &&
-        matchesObjectFilter(s, player, id, f, card),
-    )
-    .sort((a, b) => mv(a) - mv(b));
+    .filter((id) => id !== card && s.objects[id]?.controller === player && matchesObjectFilter(s, player, id, f, card))
+    .sort((a, b) => rank(a) - rank(b));
 }
 
 /**
  * Réunir des preuves N (701.59, Meurtres au manoir Karlov) : cartes de votre cimetière de valeur de mana totale N ou
  * plus, choisies automatiquement ; null si impossible.
  */
-export function evidenceCards(s: GameState, player: PlayerId, card: ObjectId, n: number): ObjectId[] | null {
+export function evidenceCards(
+  s: GameState,
+  player: PlayerId,
+  card: ObjectId,
+  n: number,
+  keep: readonly ObjectId[] = [],
+): ObjectId[] | null {
   return pickEvidence(
     s,
-    (s.players[player]?.graveyard ?? []).filter((id) => id !== card),
+    (s.players[player]?.graveyard ?? []).filter((id) => id !== card && !keep.includes(id)),
     n,
   );
 }
@@ -923,6 +926,45 @@ function printedAbilityMana(s: GameState, source: ObjectId, ab: ActivatedAbility
   return { ...m, generic: Math.max(0, m.generic - own.generic), colored };
 }
 
+/** Réduction propre à la cible d'une capacité (Warrior's Blades, Dragonfire Blade, Équiper réduit par la créature ciblée). */
+function targetReduction(s: GameState, player: PlayerId, ab: ActivatedAbilityDef, target: ObjectId | undefined): number {
+  if (!target || !s.objects[target]) return 0;
+  return (
+    (ab.reduceByTargetColors ? chars(s, target).colors.length : 0) +
+    (ab.reduceByTargetCounters ? (s.objects[target]?.counters["+1/+1"] ?? 0) : 0) +
+    equipDiscount(s, player, ab, target)
+  );
+}
+
+/** La capacité a-t-elle un coût qui dépend de sa cible ? */
+export function costDependsOnTarget(ab: ActivatedAbilityDef): boolean {
+  return !!ab.reduceByTargetColors || !!ab.reduceByTargetCounters || !!ab.label?.startsWith("Équiper");
+}
+
+/**
+ * Coût de mana d'une capacité activée, réductions comprises (seul calcul, partagé par `legal.ts` et `activateAbility`) :
+ * pour une cible donnée, ou `"best"` (la cible la plus favorable, pour savoir si la capacité peut être proposée).
+ */
+export function abilityManaCost(
+  s: GameState,
+  player: PlayerId,
+  source: ObjectId,
+  ab: ActivatedAbilityDef,
+  target: ObjectId | undefined | "best",
+  x = 0,
+): ManaCost {
+  const byTarget =
+    target === "best"
+      ? costDependsOnTarget(ab)
+        ? Math.max(0, ...s.battlefield.map((c) => targetReduction(s, player, ab, c)))
+        : 0
+      : targetReduction(s, player, ab, target);
+  // Une action spéciale (retourner face visible, comploter, déverrouiller) n'est pas une capacité activée : Agatha's Soul
+  // Cauldron (« pour activer des capacités ») ne s'y applique pas.
+  const mana = ab.specialAction ? ab.cost.mana : abilityMana(s, source, ab);
+  return totalCost(mana, x, undefined, byTarget + abilityReduction(s, player, source, ab));
+}
+
 export function abilityReduction(s: GameState, player: PlayerId, source: ObjectId, ab: ActivatedAbilityDef): number {
   const mods = abilityCostReduction(s, player, source, ab);
   const red = ab.reduction;
@@ -1183,7 +1225,7 @@ function baseCastTerms(s: GameState, player: PlayerId, card: ObjectId): CastTerm
     // Gwenom : des PV égaux à sa valeur de mana plutôt que son coût de mana (comme Valgavoth).
     if (rule?.payLifeManaValue) {
       const life = manaValue(d.manaCost);
-      if ((s.players[player]?.life ?? 0) < life) return null;
+      if (life > 0 && (s.players[player]?.life ?? 0) < life) return null;
       return { source: "library", free: true, payLife: life || undefined, playFrom: rule };
     }
     return rule ? playFromTerms(rule, "library") : null;
@@ -1243,7 +1285,7 @@ function baseCastTerms(s: GameState, player: PlayerId, card: ObjectId): CastTerm
     // Valgavoth : pendant votre tour, les cartes liées ; un sort ainsi lancé coûte des PV égaux à sa valeur de mana.
     if (valgavothLinked(s, player, card)) {
       const life = manaValue(d.manaCost);
-      if ((s.players[player]?.life ?? 0) < life) return null;
+      if (life > 0 && (s.players[player]?.life ?? 0) < life) return null;
       return { source: "exile", free: true, payLife: life || undefined };
     }
     // 715.4 : la carte « en aventure » : son propriétaire peut lancer la créature.
@@ -1254,7 +1296,7 @@ function baseCastTerms(s: GameState, player: PlayerId, card: ObjectId): CastTerm
     // Inside Information : des PV égaux à sa valeur de mana plutôt que son coût de mana (comme Valgavoth).
     if (perm?.payLifeManaValue && !d.types.includes("Land")) {
       const life = manaValue(d.manaCost);
-      if ((s.players[player]?.life ?? 0) < life) return null;
+      if (life > 0 && (s.players[player]?.life ?? 0) < life) return null;
       return { source: "exile", free: true, payLife: life || undefined };
     }
     if (perm)
@@ -1578,7 +1620,8 @@ export function castSpell(s: GameState, player: PlayerId, card: ObjectId, choice
     if (t?.zone !== "battlefield" || t.controller === player) return n;
     return n + chars(s, id).abilities.reduce((m, ab) => m + (ab.kind === "playerStatic" ? (ab.targetLifeTax ?? 0) : 0), 0);
   }, 0);
-  if (lifeTax > (s.players[player]?.life ?? 0)) throw new RulesError("Pas assez de points de vie");
+  // Payer 0 PV est toujours possible (119.4), même avec un total négatif (Herald of Eternal Dawn).
+  if (lifeTax > 0 && lifeTax > (s.players[player]?.life ?? 0)) throw new RulesError("Pas assez de points de vie");
   // Spree : les coûts supplémentaires des modes choisis (payés même si le sort est gratuit).
   if (mode.extraCost) cost = addCosts(cost, mode.extraCost);
   if (opts.sacrifice?.orPay && sacrifice.length === 0) cost = addCosts(cost, opts.sacrifice.orPay);
@@ -1762,6 +1805,13 @@ export function castSpell(s: GameState, player: PlayerId, card: ObjectId, choice
     if (blighted) changeCounters(s, obj(s, blighted), "-1/-1", x, true);
   }
   if (lifeTax) payLife_(s, player, lifeTax);
+  // Emrakul, the Exigent Doom : « jusqu'à ce que cette carte soit lancée depuis l'exil » — les coûts sont payés, le sort
+  // est lancé (601.2i) ; la capacité accordée au terrain a pu servir à les payer.
+  const uid = s.objects[item.id]?.uid;
+  if (uid && s.effects.some((e) => e.untilExiledUid === uid)) {
+    s.effects = s.effects.filter((e) => e.untilExiledUid !== uid);
+    bump(s);
+  }
   // Pyromancer's Goggles : « copiez ce sort ».
   for (const r of item.riders ?? []) if (r === "copy") copyStackItem(s, item, player);
   // Teach by Example : « la prochaine fois que vous lancez un éphémère ou un rituel ce tour-ci, copiez-le ».
@@ -1942,13 +1992,29 @@ export function sacrificeOptions(s: GameState, player: PlayerId, source: ObjectI
   const f = ab.cost.sacrifice?.filter;
   if (!f) return [];
   const self = !!ab.cost.sacrifice?.includeSelf;
-  return s.battlefield.filter(
+  const ids = s.battlefield.filter(
     (id) =>
       (self || id !== source) &&
       obj(s, id).controller === player &&
       matchesObjectFilter(s, player, id, f, source) &&
       !hasKeyword(s, id, "cantBeSacrificed"),
   );
+  // Choix par défaut (les premiers) : d'abord ce qui ne produit pas de mana (un Trésor peut encore payer le coût).
+  const makesMana = (id: ObjectId) => manaAbilitiesOf(s, id).length > 0;
+  return [...ids.filter((id) => !makesMana(id)), ...ids.filter(makesMana)];
+}
+
+/**
+ * « Engagez X [permanents] dégagés » (Secluded Starforge) : les candidats, d'abord ceux qui ne produisent pas de mana (les
+ * X premiers sont le choix par défaut ; ils ne paient pas le mana de la capacité).
+ */
+export function tapXCandidates(s: GameState, player: PlayerId, source: ObjectId, f: ObjectFilter): ObjectId[] {
+  const ids = s.battlefield.filter(
+    (id) =>
+      id !== source && obj(s, id).controller === player && !obj(s, id).tapped && matchesObjectFilter(s, player, id, f, source),
+  );
+  const makesMana = (id: ObjectId) => manaAbilitiesOf(s, id).length > 0;
+  return [...ids.filter((id) => !makesMana(id)), ...ids.filter(makesMana)];
 }
 
 export function tapOthersOptions(s: GameState, player: PlayerId, source: ObjectId, ab: ActivatedAbilityDef): ObjectId[] {
@@ -2312,11 +2378,16 @@ export function activateAbility(s: GameState, player: PlayerId, source: ObjectId
       : 0;
   const targets = validateTargets(s, player, ab.targets, choices.targets, { sourceId: source, x });
   // Krumar Initiate : « payez X points de vie ».
-  if (ab.cost.payLifeX && (s.players[player]?.life ?? 0) < x) throw new RulesError("Pas assez de points de vie");
+  if (ab.cost.payLifeX && x > 0 && (s.players[player]?.life ?? 0) < x) throw new RulesError("Pas assez de points de vie");
   if (ab.cost.sacrificeX && x < 1) throw new RulesError("Sacrifiez au moins un permanent");
   if (ab.cost.minX !== undefined && x < ab.cost.minX) throw new RulesError(`X doit valoir au moins ${ab.cost.minX}`);
   if (ab.cost.loyaltyX && x > (o.counters.loyalty ?? 0)) throw new RulesError("Pas assez de marqueurs de loyauté");
   if (ab.cost.removeCountersX && x > (o.counters[ab.cost.removeCountersX] ?? 0)) throw new RulesError("Pas assez de marqueurs");
+  // « Engagez X artefacts dégagés » : choisis maintenant, ils ne paient pas le mana de la capacité.
+  const tapXOptions = ab.cost.tapX ? tapXCandidates(s, player, source, ab.cost.tapX) : [];
+  const tapXChosen = ab.cost.tapX ? (choices.tap?.length === x ? choices.tap : tapXOptions.slice(0, x)) : [];
+  if (tapXChosen.length < (ab.cost.tapX ? x : 0) || tapXChosen.some((id) => !tapXOptions.includes(id)))
+    throw new RulesError("Pas assez de permanents à engager");
   const c = chars(s, source);
   // Action spéciale (116.2, déverrouiller une porte) : les coûts sont payés, les effets s'appliquent sans la pile.
   if (ab.specialAction) {
@@ -2324,9 +2395,7 @@ export function activateAbility(s: GameState, player: PlayerId, source: ObjectId
       // Doc Aurlock (comploter), Inquisitive Glimmer (déverrouiller) : moins cher.
       try {
         // Le X d'un coût de déguisement (Aurelia's Vindicator) ; la réduction propre à la capacité (Fugitive Codebreaker).
-        payMana(s, player, totalCost(ab.cost.mana, x, undefined, abilityReduction(s, player, source, ab)), undefined, {
-          abilitySource: source,
-        });
+        payMana(s, player, abilityManaCost(s, player, source, ab, undefined, x), undefined, { abilitySource: source });
       } catch (e) {
         rethrowAsRules(e, "Mana insuffisant");
       }
@@ -2385,23 +2454,17 @@ export function activateAbility(s: GameState, player: PlayerId, source: ObjectId
   if (!materials) throw new RulesError("Matériaux de fabrication insuffisants");
   if (ab.cost.mana) {
     const reserved = new Set([
-      ...sacrificed,
       ...tapOthers,
+      ...tapXChosen,
       ...crew,
       ...materials,
       ...(ab.cost.tap || ab.cost.craft ? [source] : []),
     ]);
     try {
-      // Warrior's Blades : {1} de moins par marqueur +1/+1 sur la créature ciblée.
-      const t = ab.reduceByTargetCounters ? targets.t?.[0] : undefined;
-      const colored = ab.reduceByTargetColors && targets.t?.[0] ? chars(s, targets.t[0]).colors.length : 0;
-      const reduction =
-        colored +
-        (t ? (s.objects[t]?.counters["+1/+1"] ?? 0) : 0) +
-        abilityReduction(s, player, source, ab) +
-        equipDiscount(s, player, ab, targets.t?.[0]);
-      const cost = totalCost(abilityMana(s, source, ab), x, undefined, reduction);
-      payMana(s, player, cost, reserved, abilityPurpose(source, ab));
+      // Warrior's Blades, Dragonfire Blade : le coût dépend de la créature ciblée.
+      const cost = abilityManaCost(s, player, source, ab, targets.t?.[0], x);
+      const purpose = abilityPurpose(source, ab);
+      payMana(s, player, cost, reserved, sacrificed.length ? { ...purpose, sacrificedForCost: new Set(sacrificed) } : purpose);
       if (ab.cost.waterbend) bent(s, player, "water");
     } catch (e) {
       rethrowAsRules(e, "Mana insuffisant");
@@ -2463,18 +2526,8 @@ export function activateAbility(s: GameState, player: PlayerId, source: ObjectId
     const exiled = collectEvidence(s, player, evidenceCards(s, player, source, ab.cost.collectEvidence) ?? []);
     if (ab.cost.linkEvidence) o.linked = [...(o.linked ?? []), ...exiled];
   }
-  // « Engagez X artefacts dégagés » : X choisi à l'activation.
-  if (ab.cost.tapX) {
-    const f = ab.cost.tapX;
-    const options = s.battlefield.filter(
-      (id) =>
-        id !== source && obj(s, id).controller === player && !obj(s, id).tapped && matchesObjectFilter(s, player, id, f, source),
-    );
-    const chosen = choices.tap?.length === x ? choices.tap : options.slice(0, x);
-    if (chosen.length < x || chosen.some((id) => !options.includes(id)))
-      throw new RulesError("Pas assez de permanents à engager");
-    for (const id of chosen) tapObject(s, obj(s, id));
-  }
+  // « Engagez X artefacts dégagés » : X choisi à l'activation (permanents choisis avant le paiement du mana).
+  for (const id of tapXChosen) tapObject(s, obj(s, id));
   // Winter, Cursed Rider : « exilez X cartes d'artefact de votre cimetière » (choisies automatiquement).
   if (ab.cost.exileFromGraveyardX) {
     const f = ab.cost.exileFromGraveyardX;

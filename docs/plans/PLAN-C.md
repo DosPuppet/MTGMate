@@ -7,6 +7,13 @@ Plan établi le 02/10/2026 (branche `dev`) : il sert de feuille de route aux pro
 - **02/10/2026 :** plan écrit. L'utilisateur demande de l'exécuter, lot par lot, dans l'ordre.
 - **02/10/2026 : C0 fait** (sans changement de règles) : CLAUDE.md allégé (250 → 120 lignes ; historique dans `docs/historique.md`), README, `moteur.md` (fichiers manquants, plafonds), PLAN-R (« Reporté »), PLAN-P4 archivé, `approximations.md` (2 entrées périmées retirées, entrées générales regroupées, mana restreint, choix en arrivant, Doomsday Excruciator, Ordeal of Nylea, Eriette), en-têtes et commentaires périmés, 3 scripts morts retirés (Banishing Light d'EOE, Fake Your Own Death et Snakeskin Veil d'OTJ).
 - **02/10/2026 : C1 fait** (sans changement de règles) : garde-fou de la dette élargi (`debtSurface.ts` : analyseur des types du moteur, le paquet `typescript` 7 n'ayant pas d'API de compilateur) : 98 propriétés d'une seule carte, 14 champs « ce tour-ci », 1 nom de carte dans le code, plafonds de 21 surfaces, cycle d'imports de 21 fichiers ; plafonds de sécurité réunis dans `limits.ts`, événement `capReached` au journal, compté par le fuzz ; collecteur d'événements sorti dans `events.ts`. **Écart au plan :** une coupure ne fait pas échouer le fuzz (certaines sont des approximations connues, comme les doubleurs de jetons qui se multiplient) ; elle est comptée (« plafonds atteints ») ; 3 tests (`limits.test.ts`).
+- **02/10/2026 : C2 fait** (`RULES_VERSION` = 61) :
+  - parties dorées détectrices : déplacées dans `tools/golden.ts` (le paquet `@mtgx/ai` n'importe plus les cartes, cause probable de B5), le test lit le dossier et n'échoue que sur une divergence, `--update` ne régénère que les parties qui divergent ; 4 parties de plus sur les extensions récentes (IA heuristique, parties finies). Les 10 se rejouent à l'identique en version 61 sans régénération ;
+  - decks du fuzz : trois couleurs une fois sur quatre, incolores, jusqu'à 8 terrains non basiques ;
+  - **fuzz strict** (`--offers N`, `checkOffers`) : il a trouvé 25 désaccords entre `legal.ts` et `stack.ts`, dont un **plantage du moteur** (Cryptex exilait comme preuve Sage of the Fang, qui payait sa propre capacité) et 8 écarts de règles corrigés (X = 0 cibles, une cible paie le kicker, sacrifié qui produit d'abord son mana, payer 0 PV avec un total négatif, Emrakul jusqu'au lancer, 106.7, sacrifices et « engagez X » par défaut, Agatha et les actions spéciales) ; les autres : options mal bornées (cibles qui donnent la réduction, cibles en plus, valeur de mana totale, type partagé, même joueur, cibles distinctes, X maximal, surcoût d'une permission, flash payant contre une permission de rituel) et générateur de décisions de l'IA ; `--offers` tourne dans `verify` (2 joueurs) et chaque nuit sur une extension en rotation ;
+  - `abilityManaCost` : un seul calcul du coût d'une capacité pour `legal.ts` et `stack.ts` (début de C7) ;
+  - aides de test communes dans `engine/test/helpers.ts` (`settle`, `cast`, `castTargets`, `throughCombat`, `picking`…) : 1 485 lignes retirées des neuf fichiers d'extension récents ;
+  - 13 tests (`engine/test/offers.test.ts`, Emrakul dans `fra-lotf.test.ts`).
 
 ## Décisions et ordre
 
@@ -24,7 +31,7 @@ Plan établi le 02/10/2026 (branche `dev`) : il sert de feuille de route aux pro
 |---|---|---|---|---|---|
 | 1 | C0 : documentation et nettoyage | § 4.2, § 10 | — | S | ✅ |
 | 2 | C1 : garde-fous (dette élargie, plafonds) | § 5.1, § 5.4, § 5.6 | C0 | M | ✅ |
-| 3 | C2 : vérification qui détecte | § 6 | — | M | |
+| 3 | C2 : vérification qui détecte | § 6 | — | M | ✅ |
 | 4 | C3 : plateforme, correctifs rapides | B5, B6, § 7 | — | S | |
 | 5 | C4 : [règles] exigences de blocage | B1 | C2 | M | |
 | 6 | C5 : [règles] mana marqué | B2 | C2 | S/M | |

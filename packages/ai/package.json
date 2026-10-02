@@ -8,5 +8,8 @@
   },
   "dependencies": {
     "@mtgx/engine": "^0.1.0"
+  },
+  "devDependencies": {
+    "@mtgx/cards": "^0.1.0"
   }
 }

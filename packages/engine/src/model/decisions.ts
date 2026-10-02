@@ -170,6 +170,15 @@ export interface TargetOption {
   kickedLegal?: string[];
   otherThan?: string[];
   attachedToTarget?: string;
+  /** « Valeur de mana totale N ou moins » (Scout for Survivors) : N et la valeur de mana de chaque cible légale. */
+  maxTotalManaValue?: { max: number; values: Record<string, number> };
+  /**
+   * « Qui partagent un type de créature » (Secret Tunnel) : les types de créature de chaque cible légale (`"*"` : tous,
+   * changelin).
+   */
+  shareCreatureType?: Record<string, string[]>;
+  /** Au moins une des cibles doit être l'une de celles-ci (la réduction de coût qui rend le sort payable). */
+  requiredAmong?: string[];
 }
 
 export interface ModeOption {

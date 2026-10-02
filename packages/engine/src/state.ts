@@ -559,8 +559,9 @@ export function moveObject(
   // 613.1b, 611.2 : un changement de contrôle lié à ce permanent (Aura qui donne le contrôle, effet « tant que ») prend
   // fin dès qu'il part, sans attendre les actions basées sur l'état (une résolution peut encore demander un choix).
   if (from0 === "battlefield" && (o.attachedTo || s.effects.some((e) => e.controller))) syncControl(s);
-  // Emrakul : les effets « jusqu'à ce que cette carte soit lancée depuis l'exil » cessent.
-  if (from0 === "exile" && s.effects.some((e) => e.untilExiledUid === o.uid)) {
+  // Emrakul : les effets « jusqu'à ce que cette carte soit lancée depuis l'exil » cessent. Lancée, la carte passe sur la
+  // pile avant le paiement (601.2a) : l'effet dure jusqu'à ce que le sort soit lancé (601.2i, `castSpell`).
+  if (from0 === "exile" && to !== "stack" && s.effects.some((e) => e.untilExiledUid === o.uid)) {
     s.effects = s.effects.filter((e) => e.untilExiledUid !== o.uid);
     bump(s);
   }

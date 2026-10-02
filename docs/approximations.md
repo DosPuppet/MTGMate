@@ -72,7 +72,7 @@ Dans l'ordre où elles ont été ajoutées, extension par extension.
 - **Gallia, Tragic Host :** la carte exilée du cimetière est choisie automatiquement (la moins chère).
 - **Molten Tide :** le {R} supplémentaire s'ajoute à toute capacité de mana « {T} » d'une Montagne, quelle que soit la couleur produite.
 - **Warrior's Blades :** la légalité de l'Équiper suppose la meilleure réduction possible ; le coût payé dépend de la cible choisie.
-- **Emrakul, the Exigent Doom :** la capacité accordée au terrain cesse dès que la carte quitte l'exil, de quelque façon que ce soit (et pas seulement quand elle est lancée).
+- **Emrakul, the Exigent Doom :** la capacité accordée au terrain cesse dès que la carte quitte l'exil, de quelque façon que ce soit (et pas seulement quand elle est lancée) ; lancée, elle dure jusqu'à ce que le sort soit lancé (601.2i) et peut servir à le payer.
 - **Gene Pollinator :** le permanent engagé en plus est choisi automatiquement (d'abord un permanent sans capacité de mana).
 - **Emissary Escort :** le bonus « +X/+0 » est une force de base variable (un effet qui fixe la force l'écrase).
 - **Terrasymbiosis :** se déclenche au plus une fois par tour (même si l'on refuse de piocher), pour tout marqueur +1/+1 mis sur vos créatures, qu'importe qui le met.

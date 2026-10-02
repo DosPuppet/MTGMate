@@ -13,41 +13,28 @@ import { chars } from "../src/state";
 import { checkCondition } from "../src/triggers";
 import type { AbilityDef, CardDef, ChoiceRequest, ChoiceValue, GameState } from "../src/types";
 import {
+  type Answer,
   act,
   advanceUntil,
+  castTargets as cast,
   castNowOf,
   customCard,
+  exiled,
   idOf,
   idsOf,
+  lands,
+  nameOf,
   passAccepting,
   passUntil,
   scenario,
+  settle,
   untilCastNow,
 } from "./helpers";
 
 type S = GameState;
-type Answer = (req: ChoiceRequest, player: string) => ChoiceValue[] | undefined;
-const lands = (name: string, n: number) => Array(n).fill(name) as string[];
-const nameOf = (s: S, id: string) => s.defs[s.objects[id]?.defId ?? ""]?.name;
-const exiled = (s: S, name: string) => s.exile.filter((id) => nameOf(s, id) === name);
 const castOptions = (s: S, player: string, card: string) =>
   legalActions(s, player).filter((a) => a.type === "cast" && a.card === card);
 
-/** Passe et répond aux choix (réponse suggérée par défaut) jusqu'à une pile vide, sans déclenchement en attente. */
-const settle = (s: S, answer: Answer = () => undefined): S => {
-  let cur = s;
-  for (let i = 0; i < 300; i++) {
-    const p = cur.pending;
-    if (p?.kind === "priority" && cur.stack.length === 0 && cur.triggers.length === 0 && i > 0) break;
-    if (p?.kind === "priority") cur = act(cur, p.player, { type: "pass" });
-    else if (p?.kind === "choice")
-      cur = act(cur, p.player, { type: "choose", values: answer(p.request, p.player) ?? p.request.suggested });
-    else break;
-  }
-  return cur;
-};
-const cast = (s: S, player: string, name: string, targets?: Record<string, string[]>, extra: object = {}) =>
-  act(s, player, { type: "cast", card: idOf(s, player, "hand", name), targets, ...extra });
 /** Active la capacité de `source` dont le libellé contient `label` (la première si absent). */
 const activate = (
   s: S,
@@ -514,32 +501,13 @@ describe("Secrets of Strixhaven, lot A — blanc", () => {
    * flashback, retour depuis le cimetière, exil temporaire.
    */
   type S = GameState;
-  type Answer = (req: ChoiceRequest, player: string) => ChoiceValue[] | undefined;
-  const lands = (name: string, n: number) => Array(n).fill(name) as string[];
-  const nameOf = (s: S, id: string) => s.defs[s.objects[id]?.defId ?? ""]?.name;
-  const exiled = (s: S, name: string) => s.exile.filter((id) => nameOf(s, id) === name);
   const pt = (s: S, id: string) => [chars(s, id).power, chars(s, id).toughness];
 
-  /** Passe et répond aux choix (réponse suggérée par défaut) jusqu'à une pile vide, sans déclenchement en attente. */
-  const settle = (s: S, answer: Answer = () => undefined): S => {
-    let cur = s;
-    for (let i = 0; i < 300; i++) {
-      const p = cur.pending;
-      if (p?.kind === "priority" && cur.stack.length === 0 && cur.triggers.length === 0 && i > 0) break;
-      if (p?.kind === "priority") cur = act(cur, p.player, { type: "pass" });
-      else if (p?.kind === "choice")
-        cur = act(cur, p.player, { type: "choose", values: answer(p.request, p.player) ?? p.request.suggested });
-      else break;
-    }
-    return cur;
-  };
   /** Répond `ids` à la première demande « pick » qui les propose tous. */
   const pickIds =
     (...ids: string[]): Answer =>
     (req) =>
       req.type === "pick" && ids.every((id) => req.options.includes(id)) ? ids : undefined;
-  const cast = (s: S, player: string, name: string, targets?: Record<string, string[]>, extra: object = {}) =>
-    act(s, player, { type: "cast", card: idOf(s, player, "hand", name), targets, ...extra });
   /** Lance le sort préparé (la copie exilée) de la carte. */
   const castPrepared = (s: S, player: string, spellName: string, targets?: Record<string, string[]>) =>
     act(s, player, { type: "cast", card: exiled(s, spellName)[0] as string, targets });
@@ -982,9 +950,6 @@ describe("Secrets of Strixhaven, lot A — bleu", () => {
    */
   type S = GameState;
   type Answer = (req: ChoiceRequest, player: string, s: S) => ChoiceValue[] | undefined;
-  const lands = (name: string, n: number) => Array(n).fill(name) as string[];
-  const nameOf = (s: S, id: string) => s.defs[s.objects[id]?.defId ?? ""]?.name;
-  const exiled = (s: S, name: string) => s.exile.filter((id) => nameOf(s, id) === name);
   const castOptions = (s: S, player: string, card: string) =>
     legalActions(s, player).filter((a) => a.type === "cast" && a.card === card);
   const pt = (s: S, id: string) => [chars(s, id).power, chars(s, id).toughness];
@@ -1002,8 +967,6 @@ describe("Secrets of Strixhaven, lot A — bleu", () => {
     }
     return cur;
   };
-  const cast = (s: S, player: string, name: string, targets?: Record<string, string[]>, extra: object = {}) =>
-    act(s, player, { type: "cast", card: idOf(s, player, "hand", name), targets, ...extra });
   const castExiled = (s: S, name: string, targets?: Record<string, string[]>, extra: object = {}) =>
     act(s, "p1", { type: "cast", card: exiled(s, name)[0] as string, targets, ...extra });
   const activate = (s: S, player: string, source: string, targets?: Record<string, string[]>, extra: object = {}) => {
@@ -1472,26 +1435,6 @@ describe("Secrets of Strixhaven, lot A — noir", () => {
    * Shadelock, Scheming Silvertongue), Repartee, Infusion, convergence et sorts de la couleur.
    */
   type S = GameState;
-  type Answer = (req: ChoiceRequest, player: string) => ChoiceValue[] | undefined;
-  const lands = (name: string, n: number) => Array(n).fill(name) as string[];
-  const nameOf = (s: S, id: string) => s.defs[s.objects[id]?.defId ?? ""]?.name;
-  const exiled = (s: S, name: string) => s.exile.filter((id) => nameOf(s, id) === name);
-
-  /** Passe et répond aux choix (réponse suggérée par défaut) jusqu'à une pile vide, sans déclenchement en attente. */
-  const settle = (s: S, answer: Answer = () => undefined): S => {
-    let cur = s;
-    for (let i = 0; i < 300; i++) {
-      const p = cur.pending;
-      if (p?.kind === "priority" && cur.stack.length === 0 && cur.triggers.length === 0 && i > 0) break;
-      if (p?.kind === "priority") cur = act(cur, p.player, { type: "pass" });
-      else if (p?.kind === "choice")
-        cur = act(cur, p.player, { type: "choose", values: answer(p.request, p.player) ?? p.request.suggested });
-      else break;
-    }
-    return cur;
-  };
-  const cast = (s: S, player: string, name: string, targets?: Record<string, string[]>, extra: object = {}) =>
-    act(s, player, { type: "cast", card: idOf(s, player, "hand", name), targets, ...extra });
   /** Lance la copie du sort préparé de `source` (elle attend en exil). */
   const castPrepared = (s: S, player: string, source: string, targets?: Record<string, string[]>) => {
     const copy = s.objects[source]?.preparedCopy;
@@ -1929,29 +1872,10 @@ describe("Secrets of Strixhaven, lot A — rouge", () => {
    * History), copies (Mica), sorts de blessures et de pioche.
    */
   type S = GameState;
-  type Answer = (req: ChoiceRequest, player: string) => ChoiceValue[] | undefined;
-  const lands = (name: string, n: number) => Array(n).fill(name) as string[];
-  const nameOf = (s: S, id: string) => s.defs[s.objects[id]?.defId ?? ""]?.name;
-  const exiled = (s: S, name: string) => s.exile.filter((id) => nameOf(s, id) === name);
   const pt = (s: S, id: string) => [chars(s, id).power, chars(s, id).toughness];
   const castOptions = (s: S, player: string, card: string) =>
     legalActions(s, player).filter((a) => a.type === "cast" && a.card === card);
 
-  /** Passe et répond aux choix (réponse suggérée par défaut) jusqu'à une pile vide, sans déclenchement en attente. */
-  const settle = (s: S, answer: Answer = () => undefined): S => {
-    let cur = s;
-    for (let i = 0; i < 300; i++) {
-      const p = cur.pending;
-      if (p?.kind === "priority" && cur.stack.length === 0 && cur.triggers.length === 0 && i > 0) break;
-      if (p?.kind === "priority") cur = act(cur, p.player, { type: "pass" });
-      else if (p?.kind === "choice")
-        cur = act(cur, p.player, { type: "choose", values: answer(p.request, p.player) ?? p.request.suggested });
-      else break;
-    }
-    return cur;
-  };
-  const cast = (s: S, player: string, name: string, targets?: Record<string, string[]>, extra: object = {}) =>
-    act(s, player, { type: "cast", card: idOf(s, player, "hand", name), targets, ...extra });
   /** Active la capacité de `source` dont le libellé contient `label` (la première si absent). */
   const activate = (s: S, player: string, source: string, label?: string, extra: object = {}) => {
     const a = legalActions(s, player).find(
@@ -2460,27 +2384,8 @@ describe("Secrets of Strixhaven, lot A — vert", () => {
    * Rampant Growth, Bind to Life), convergence, marqueurs d'étourdissement d'arrivée.
    */
   type S = GameState;
-  type Answer = (req: ChoiceRequest, player: string) => ChoiceValue[] | undefined;
-  const lands = (name: string, n: number) => Array(n).fill(name) as string[];
-  const nameOf = (s: S, id: string) => s.defs[s.objects[id]?.defId ?? ""]?.name;
-  const exiled = (s: S, name: string) => s.exile.filter((id) => nameOf(s, id) === name);
   const pt = (s: S, id: string) => [chars(s, id).power, chars(s, id).toughness];
 
-  /** Passe et répond aux choix (réponse suggérée par défaut) jusqu'à une pile vide, sans déclenchement en attente. */
-  const settle = (s: S, answer: Answer = () => undefined): S => {
-    let cur = s;
-    for (let i = 0; i < 300; i++) {
-      const p = cur.pending;
-      if (p?.kind === "priority" && cur.stack.length === 0 && cur.triggers.length === 0 && i > 0) break;
-      if (p?.kind === "priority") cur = act(cur, p.player, { type: "pass" });
-      else if (p?.kind === "choice")
-        cur = act(cur, p.player, { type: "choose", values: answer(p.request, p.player) ?? p.request.suggested });
-      else break;
-    }
-    return cur;
-  };
-  const cast = (s: S, player: string, name: string, targets?: Record<string, string[]>, extra: object = {}) =>
-    act(s, player, { type: "cast", card: idOf(s, player, "hand", name), targets, ...extra });
   /** Active la capacité de `source` dont le libellé contient `label` (la première si absent). */
   const activate = (s: S, player: string, source: string, label?: string, targets?: Record<string, string[]>) => {
     const a = legalActions(s, player).find(
@@ -2971,28 +2876,11 @@ describe("Secrets of Strixhaven, lot A — multicolores", () => {
    * charmes des collèges et légendaires.
    */
   type S = GameState;
-  type Answer = (req: ChoiceRequest, player: string) => ChoiceValue[] | undefined;
-  const lands = (name: string, n: number) => Array(n).fill(name) as string[];
-  const nameOf = (s: S, id: string) => s.defs[s.objects[id]?.defId ?? ""]?.name;
-  const exiled = (s: S, name: string) => s.exile.filter((id) => nameOf(s, id) === name);
   const castOptions = (s: S, player: string, card: string) =>
     legalActions(s, player).filter((a) => a.type === "cast" && a.card === card);
   const pt = (s: S, id: string) => [chars(s, id).power, chars(s, id).toughness];
   const counters = (s: S, id: string, kind = "+1/+1") => s.objects[id]?.counters[kind] ?? 0;
 
-  /** Passe et répond aux choix (réponse suggérée par défaut) jusqu'à une pile vide, sans déclenchement en attente. */
-  const settle = (s: S, answer: Answer = () => undefined): S => {
-    let cur = s;
-    for (let i = 0; i < 300; i++) {
-      const p = cur.pending;
-      if (p?.kind === "priority" && cur.stack.length === 0 && cur.triggers.length === 0 && i > 0) break;
-      if (p?.kind === "priority") cur = act(cur, p.player, { type: "pass" });
-      else if (p?.kind === "choice")
-        cur = act(cur, p.player, { type: "choose", values: answer(p.request, p.player) ?? p.request.suggested });
-      else break;
-    }
-    return cur;
-  };
   /** Réponse : choisir ces objets quand ils sont proposés ; « oui » aux questions. */
   const pickIds =
     (...ids: string[]): Answer =>
@@ -3002,8 +2890,6 @@ describe("Secrets of Strixhaven, lot A — multicolores", () => {
       const hit = ids.filter((id) => req.options.includes(id));
       return hit.length ? hit.slice(0, req.max) : undefined;
     };
-  const cast = (s: S, player: string, name: string, targets?: Record<string, string[]>, extra: object = {}) =>
-    act(s, player, { type: "cast", card: idOf(s, player, "hand", name), targets, ...extra });
   /** Active la capacité de `source` dont le libellé contient `label` (la première si absent). */
   const activate = (
     s: S,
@@ -4099,11 +3985,7 @@ describe("Secrets of Strixhaven, lot A — incolores et terrains", () => {
    * Strixhaven Skycoach et les terrains.
    */
   type S = GameState;
-  type Answer = (req: ChoiceRequest, player: string) => ChoiceValue[] | undefined;
-  const lands = (name: string, n: number) => Array(n).fill(name) as string[];
   const FIVE_COLORS = ["Plains", "Island", "Swamp", "Mountain", "Forest"];
-  const nameOf = (s: S, id: string) => s.defs[s.objects[id]?.defId ?? ""]?.name;
-  const exiled = (s: S, name: string) => s.exile.filter((id) => nameOf(s, id) === name);
   const pt = (s: S, id: string) => [chars(s, id).power, chars(s, id).toughness];
   /** Rituel incolore à {0} : « rien ». */
   const FREE_SORCERY = customCard({
@@ -4122,15 +4004,13 @@ describe("Secrets of Strixhaven, lot A — incolores et terrains", () => {
       if (p?.kind === "priority" && p.castNow) break;
       if (p?.kind === "priority") cur = act(cur, p.player, { type: "pass" });
       else if (p?.kind === "choice")
-        cur = act(cur, p.player, { type: "choose", values: answer(p.request, p.player) ?? p.request.suggested });
+        cur = act(cur, p.player, { type: "choose", values: answer(p.request, p.player, cur) ?? p.request.suggested });
       else break;
     }
     return cur;
   };
   const yes: Answer = (req) => (req.intent === "may" ? [1] : undefined);
   const no: Answer = (req) => (req.intent === "may" ? [0] : undefined);
-  const cast = (s: S, player: string, name: string, targets?: Record<string, string[]>, extra: object = {}) =>
-    act(s, player, { type: "cast", card: idOf(s, player, "hand", name), targets, ...extra });
   const canCast = (s: S, player: string, name: string) =>
     legalActions(s, player).some((a) => a.type === "cast" && a.card === idOf(s, player, "hand", name));
   const activation = (s: S, player: string, source: string, label?: string) =>

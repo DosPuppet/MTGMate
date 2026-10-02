@@ -10,47 +10,28 @@ import { chars } from "../src/state";
 import { playerStatic } from "../src/statics";
 import { canBlock } from "../src/turn";
 import type { ActionOption, CardDef, ChoiceRequest, ChoiceValue, GameState, PlayerId, TokenSpec } from "../src/types";
-import { act, advanceUntil, castNowOf, customCard, idOf, idsOf, scenario, untilCastNow } from "./helpers";
+import {
+  type Answer,
+  act,
+  advanceUntil,
+  attack,
+  canActivate,
+  cast,
+  castNowOf,
+  customCard,
+  idOf,
+  idsOf,
+  lands,
+  nameOf,
+  namesIn,
+  pickNamed,
+  scenario,
+  settleNoBlocks as settle,
+  throughCombat,
+  untilCastNow,
+} from "./helpers";
 
 type S = GameState;
-/** Réponse à un choix (`undefined` : la suggestion), selon la position courante. */
-type Answer = (req: ChoiceRequest, cur: S) => ChoiceValue[] | undefined;
-const lands = (name: string, n: number) => Array(n).fill(name) as string[];
-const nameOf = (s: S, id: string) => s.defs[s.objects[id]?.defId ?? ""]?.name;
-const namesIn = (s: S, ids: string[] | undefined) => (ids ?? []).map((id) => nameOf(s, id));
-
-/**
- * Passe et répond aux choix (réponse suggérée par défaut) jusqu'à une pile vide, sans déclenchement en attente. Les
- * défenseurs ne bloquent pas.
- */
-const settle = (s: S, answer: Answer = () => undefined): S => {
-  let cur = s;
-  for (let i = 0; i < 300; i++) {
-    const p = cur.pending;
-    if (p?.kind === "priority" && cur.stack.length === 0 && cur.triggers.length === 0 && i > 0) break;
-    if (p?.kind === "priority") cur = act(cur, p.player, { type: "pass" });
-    else if (p?.kind === "choice")
-      cur = act(cur, p.player, { type: "choose", values: answer(p.request, cur) ?? p.request.suggested });
-    else if (p?.kind === "declareBlockers") cur = act(cur, p.player, { type: "declareBlockers", blocks: [] });
-    else break;
-  }
-  return cur;
-};
-/** Joue (sans attaquer ni bloquer) jusqu'à la seconde phase principale, en répondant aux choix. */
-const throughCombat = (s: S, answer: Answer = () => undefined): S => {
-  let cur = s;
-  for (let i = 0; i < 300 && cur.turn.step !== "main2"; i++) {
-    const p = cur.pending;
-    if (p?.kind === "priority") cur = act(cur, p.player, { type: "pass" });
-    else if (p?.kind === "choice")
-      cur = act(cur, p.player, { type: "choose", values: answer(p.request, cur) ?? p.request.suggested });
-    else if (p?.kind === "declareBlockers") cur = act(cur, p.player, { type: "declareBlockers", blocks: [] });
-    else break;
-  }
-  return cur;
-};
-const cast = (s: S, player: string, name: string, extra: object = {}) =>
-  act(s, player, { type: "cast", card: idOf(s, player, "hand", name), ...extra });
 /** Active la capacité de `source` dont le libellé contient `label` (la première sinon). */
 const activate = (s: S, player: string, source: string, label?: string, extra: object = {}) => {
   const a = legalActions(s, player).find(
@@ -59,22 +40,11 @@ const activate = (s: S, player: string, source: string, label?: string, extra: o
   if (a?.type !== "activate") throw new Error(`capacité introuvable : ${label ?? source}`);
   return act(s, player, { type: "activate", source, ability: a.ability, ...extra });
 };
-const canActivate = (s: S, player: string, source: string) =>
-  legalActions(s, player).some((x) => x.type === "activate" && x.source === source);
-/** Va à la déclaration des attaquants de p1 et attaque p2 avec `attackers`. */
-const attack = (s: S, attackers: string[]) => {
-  const cur = advanceUntil(s, (x) => x.pending?.kind === "declareAttackers");
-  return act(cur, "p1", { type: "declareAttackers", attackers: attackers.map((id) => ({ id, defender: "p2" })) });
-};
-/** Sélectionne dans les options d'un choix l'objet nommé `name`. */
-const pickNamed = (s: S, req: ChoiceRequest, name: string) =>
-  req.type === "pick" ? req.options.filter((id) => nameOf(s, id) === name).slice(0, 1) : undefined;
-
 describe("The Hobbit", () => {
   it("Elven Passage : 1 PV et sacrifice ; le terrain cherché arrive engagé, puis est dégagé en contemplant un Elfe en jeu", () => {
     const run = (battlefield: string[]) => {
       let s = scenario({ p1: { battlefield: ["Elven Passage", ...battlefield], library: ["Opt", "Forest", "Island"] } });
-      s = settle(activate(s, "p1", idOf(s, "p1", "battlefield", "Elven Passage")), (req, cur) =>
+      s = settle(activate(s, "p1", idOf(s, "p1", "battlefield", "Elven Passage")), (req, _player, cur) =>
         req.intent === "search" ? pickNamed(cur, req, "Forest") : undefined,
       );
       expect(idsOf(s, "p1", "graveyard", "Elven Passage")).toHaveLength(1);
@@ -238,7 +208,7 @@ describe("The Hobbit", () => {
         },
       });
       let seen: (string | undefined)[] = [];
-      s = settle(cast(s, "p1", "Dáin's Company"), (req, cur) => {
+      s = settle(cast(s, "p1", "Dáin's Company"), (req, _player, cur) => {
         if (req.type !== "pick") return undefined;
         seen = namesIn(cur, req.options);
         return pickNamed(cur, req, "Dwarven Mauler");
@@ -317,28 +287,9 @@ describe("The Hobbit", () => {
 
 describe("lot A, blanc", () => {
   type S = GameState;
-  /** Réponse à un choix (`undefined` : la suggestion), selon l'état courant. */
-  type Answer = (req: ChoiceRequest, cur: S) => ChoiceValue[] | undefined;
-  const lands = (name: string, n: number) => Array(n).fill(name) as string[];
-  const nameOf = (s: S, id: string) => s.defs[s.objects[id]?.defId ?? ""]?.name;
-  const namesIn = (s: S, ids: string[] | undefined) => (ids ?? []).map((id) => nameOf(s, id));
   const pt = (s: S, id: string) => [chars(s, id).power, chars(s, id).toughness];
   const tokens = (s: S, player: string, name: string) => idsOf(s, player, "battlefield", name);
 
-  /** Passe et répond aux choix jusqu'à une pile vide, sans déclenchement en attente. Personne ne bloque. */
-  const settle = (s: S, answer: Answer = () => undefined): S => {
-    let cur = s;
-    for (let i = 0; i < 300; i++) {
-      const p = cur.pending;
-      if (p?.kind === "priority" && cur.stack.length === 0 && cur.triggers.length === 0 && i > 0) break;
-      if (p?.kind === "priority") cur = act(cur, p.player, { type: "pass" });
-      else if (p?.kind === "choice")
-        cur = act(cur, p.player, { type: "choose", values: answer(p.request, cur) ?? p.request.suggested });
-      else if (p?.kind === "declareBlockers") cur = act(cur, p.player, { type: "declareBlockers", blocks: [] });
-      else break;
-    }
-    return cur;
-  };
   /** Choisit les options voulues quand elles sont proposées. */
   const picking =
     (want: string[]): Answer =>
@@ -347,8 +298,6 @@ describe("lot A, blanc", () => {
       const picked = want.filter((w) => req.options.includes(w));
       return picked.length > 0 ? picked : undefined;
     };
-  const cast = (s: S, player: string, name: string, extra: object = {}) =>
-    act(s, player, { type: "cast", card: idOf(s, player, "hand", name), ...extra });
   const ability = (s: S, player: string, source: string) =>
     legalActions(s, player).find(
       (a): a is Extract<ActionOption, { type: "activate" }> => a.type === "activate" && a.source === source,
@@ -399,8 +348,8 @@ describe("lot A, blanc", () => {
       });
       const angel = idOf(s, "p2", "battlefield", "Serra Angel");
       // Le recrutement défausse l'Opt piochée.
-      s = settle(cast(s, "p1", "Celebrate the Mountain-king"), (req, cur) =>
-        picking([angel, ...idsOf(cur, "p1", "hand", "Opt")])(req, cur),
+      s = settle(cast(s, "p1", "Celebrate the Mountain-king"), (req, _player, cur) =>
+        picking([angel, ...idsOf(cur, "p1", "hand", "Opt")])(req, "p1", cur),
       );
       expect(idsOf(s, "p2", "battlefield", "Serra Angel")).toHaveLength(0);
       expect(namesIn(s, s.exile)).toContain("Serra Angel");
@@ -811,28 +760,8 @@ describe("lot A, blanc", () => {
 
 describe("lot A, bleu", () => {
   type S = GameState;
-  type Answer = (req: ChoiceRequest, cur: S) => ChoiceValue[] | undefined;
-  const lands = (name: string, n: number) => Array(n).fill(name) as string[];
-  const nameOf = (s: S, id: string) => s.defs[s.objects[id]?.defId ?? ""]?.name;
-  const namesIn = (s: S, ids: string[] | undefined) => (ids ?? []).map((id) => nameOf(s, id));
   const pt = (s: S, id: string) => [chars(s, id).power, chars(s, id).toughness];
 
-  /** Passe et répond aux choix (suggestion par défaut) jusqu'à une pile vide, sans déclenchement en attente. */
-  const settle = (s: S, answer: Answer = () => undefined): S => {
-    let cur = s;
-    for (let i = 0; i < 300; i++) {
-      const p = cur.pending;
-      if (p?.kind === "priority" && cur.stack.length === 0 && cur.triggers.length === 0 && i > 0) break;
-      if (p?.kind === "priority") cur = act(cur, p.player, { type: "pass" });
-      else if (p?.kind === "choice")
-        cur = act(cur, p.player, { type: "choose", values: answer(p.request, cur) ?? p.request.suggested });
-      else if (p?.kind === "declareBlockers") cur = act(cur, p.player, { type: "declareBlockers", blocks: [] });
-      else break;
-    }
-    return cur;
-  };
-  const cast = (s: S, player: string, name: string, extra: object = {}) =>
-    act(s, player, { type: "cast", card: idOf(s, player, "hand", name), ...extra });
   /** Active la capacité de `source` dont le libellé contient `label` (la première sinon). */
   const activate = (s: S, player: string, source: string, label?: string, extra: object = {}) => {
     const a = legalActions(s, player).find(
@@ -841,11 +770,6 @@ describe("lot A, bleu", () => {
     if (a?.type !== "activate") throw new Error(`capacité introuvable : ${label ?? source}`);
     return act(s, player, { type: "activate", source, ability: a.ability, ...extra });
   };
-  /** Va à la déclaration des attaquants de p1 et attaque p2 avec `attackers`. */
-  const attack = (s: S, attackers: string[]) => {
-    const cur = advanceUntil(s, (x) => x.pending?.kind === "declareAttackers");
-    return act(cur, "p1", { type: "declareAttackers", attackers: attackers.map((id) => ({ id, defender: "p2" })) });
-  };
   /** Joue jusqu'à la seconde phase principale (sans bloquer), en répondant aux choix. */
   const toMain2 = (s: S, answer: Answer = () => undefined): S => {
     let cur = s;
@@ -853,19 +777,16 @@ describe("lot A, bleu", () => {
       const p = cur.pending;
       if (p?.kind === "priority") cur = act(cur, p.player, { type: "pass" });
       else if (p?.kind === "choice")
-        cur = act(cur, p.player, { type: "choose", values: answer(p.request, cur) ?? p.request.suggested });
+        cur = act(cur, p.player, { type: "choose", values: answer(p.request, p.player, cur) ?? p.request.suggested });
       else if (p?.kind === "declareBlockers") cur = act(cur, p.player, { type: "declareBlockers", blocks: [] });
       else break;
     }
     return cur;
   };
-  /** Choisit dans les options l'objet nommé `name`. */
-  const pickNamed = (s: S, req: ChoiceRequest, name: string) =>
-    req.type === "pick" ? req.options.filter((id) => nameOf(s, id) === name).slice(0, 1) : undefined;
   /** Défausse : la carte nommée. */
   const discarding =
     (name: string): Answer =>
-    (req, cur) =>
+    (req, _player, cur) =>
       req.type === "pick" && req.options.some((id) => nameOf(cur, id) === name) ? pickNamed(cur, req, name) : undefined;
 
   const TRINKET = customCard({
@@ -940,7 +861,7 @@ describe("lot A, bleu", () => {
       const BAGGINS = "Bilbo Baggins, Burglar // Take a Glance";
       let s = scenario({ p1: { battlefield: lands("Island", 4), hand: [BAGGINS], library: ["Opt", "Forest", "Island"] } });
       let scried = 0;
-      s = settle(cast(s, "p1", BAGGINS, { face: 1 }), (req, cur) => {
+      s = settle(cast(s, "p1", BAGGINS, { face: 1 }), (req, _player, cur) => {
         if (req.type !== "pick" || !req.prompt.startsWith("Regard")) return undefined;
         scried = req.options.length;
         return pickNamed(cur, req, "Opt");
@@ -1247,7 +1168,7 @@ describe("lot A, bleu", () => {
           library: ["Opt", "Bear Cub", "Forest", "Island", "Serra Angel"],
         },
       });
-      s = settle(cast(s, "p1", "Riddles in the Dark"), (req, cur) => {
+      s = settle(cast(s, "p1", "Riddles in the Dark"), (req, _player, cur) => {
         if (req.type !== "pick" || req.intent !== "piles") return undefined;
         // p1 : la pile face cachée est l'Opt seul ; p2 donne la pile face cachée.
         if (req.options.includes("down")) return ["down"];
@@ -1372,10 +1293,6 @@ describe("lot A, noir", () => {
   type S = GameState;
   /** Réponse à un choix (`undefined` : la suggestion), selon la position courante. */
   type Answer = (req: ChoiceRequest, cur: S, player: PlayerId) => ChoiceValue[] | undefined;
-  const lands = (name: string, n: number) => Array(n).fill(name) as string[];
-  const nameOf = (s: S, id: string) => s.defs[s.objects[id]?.defId ?? ""]?.name;
-  const namesIn = (s: S, ids: string[] | undefined) => (ids ?? []).map((id) => nameOf(s, id));
-
   /** Passe et répond aux choix jusqu'à une pile vide, sans déclenchement en attente. Les défenseurs ne bloquent pas. */
   const settle = (s: S, answer: Answer = () => undefined): S => {
     let cur = s;
@@ -1408,8 +1325,6 @@ describe("lot A, noir", () => {
     }
     return cur;
   };
-  const cast = (s: S, player: string, name: string, extra: object = {}) =>
-    act(s, player, { type: "cast", card: idOf(s, player, "hand", name), ...extra });
   /** Active la capacité de `source` dont le libellé contient `label` (la première sinon). */
   const activate = (s: S, player: string, source: string, label?: string, extra: object = {}) => {
     const a = legalActions(s, player).find(
@@ -1815,28 +1730,6 @@ describe("lot A, noir", () => {
 
 describe("lot A, rouge", () => {
   type S = GameState;
-  /** Réponse à un choix (`undefined` : la suggestion), selon la position courante. */
-  type Answer = (req: ChoiceRequest, cur: S) => ChoiceValue[] | undefined;
-  const lands = (name: string, n: number) => Array(n).fill(name) as string[];
-  const nameOf = (s: S, id: string) => s.defs[s.objects[id]?.defId ?? ""]?.name;
-  const namesIn = (s: S, ids: string[] | undefined) => (ids ?? []).map((id) => nameOf(s, id));
-
-  /** Passe et répond aux choix (suggestion par défaut) jusqu'à une pile vide, sans déclenchement en attente. */
-  const settle = (s: S, answer: Answer = () => undefined): S => {
-    let cur = s;
-    for (let i = 0; i < 300; i++) {
-      const p = cur.pending;
-      if (p?.kind === "priority" && cur.stack.length === 0 && cur.triggers.length === 0 && i > 0) break;
-      if (p?.kind === "priority") cur = act(cur, p.player, { type: "pass" });
-      else if (p?.kind === "choice")
-        cur = act(cur, p.player, { type: "choose", values: answer(p.request, cur) ?? p.request.suggested });
-      else if (p?.kind === "declareBlockers") cur = act(cur, p.player, { type: "declareBlockers", blocks: [] });
-      else break;
-    }
-    return cur;
-  };
-  const cast = (s: S, player: string, name: string, extra: object = {}) =>
-    act(s, player, { type: "cast", card: idOf(s, player, "hand", name), ...extra });
   /** Active la capacité de `source` dont le libellé contient `label` (la première sinon). */
   const activate = (s: S, player: string, source: string, label?: string, extra: object = {}) => {
     const a = legalActions(s, player).find(
@@ -1844,13 +1737,6 @@ describe("lot A, rouge", () => {
     );
     if (a?.type !== "activate") throw new Error(`capacité introuvable : ${label ?? source}`);
     return act(s, player, { type: "activate", source, ability: a.ability, ...extra });
-  };
-  const canActivate = (s: S, player: string, source: string) =>
-    legalActions(s, player).some((x) => x.type === "activate" && x.source === source);
-  /** Va à la déclaration des attaquants de p1 et attaque p2 avec `attackers`. */
-  const attack = (s: S, attackers: string[]) => {
-    const cur = advanceUntil(s, (x) => x.pending?.kind === "declareAttackers");
-    return act(cur, "p1", { type: "declareAttackers", attackers: attackers.map((id) => ({ id, defender: "p2" })) });
   };
   /** Réponse « oui » à une question facultative (« vous pouvez »). */
   const yes: Answer = (req) => (req.type === "yesNo" ? [1] : undefined);
@@ -2159,7 +2045,7 @@ describe("lot A, rouge", () => {
         expect(s.objects[idOf(s, "p1", "battlefield", "Last Light of Durin's Day")]?.counters.quest).toBe(5);
         // Au tour suivant, la sixième Montagne.
         s = advanceUntil(s, (x) => x.turn.active === "p1" && x.turn.step === "main1" && x.turn.number > 3);
-        s = settle(act(s, "p1", { type: "playLand", card: idOf(s, "p1", "hand", "Mountain") }), (req, cur) =>
+        s = settle(act(s, "p1", { type: "playLand", card: idOf(s, "p1", "hand", "Mountain") }), (req, _player, cur) =>
           req.type === "pick" ? req.options.filter((id) => nameOf(cur, String(id)) === "Shivan Dragon") : undefined,
         );
         expect(idsOf(s, "p1", "graveyard", "Last Light of Durin's Day")).toHaveLength(1);
@@ -2174,7 +2060,7 @@ describe("lot A, rouge", () => {
             library: ["Island", "Shivan Dragon", "Island"],
           },
         });
-        s = settle(act(s, "p1", { type: "playLand", card: idOf(s, "p1", "hand", "Mountain") }), (req, cur) =>
+        s = settle(act(s, "p1", { type: "playLand", card: idOf(s, "p1", "hand", "Mountain") }), (req, _player, cur) =>
           req.type === "pick" ? req.options.filter((id) => nameOf(cur, String(id)) === "Shivan Dragon") : undefined,
         );
         expect(idsOf(s, "p1", "battlefield", "Shivan Dragon")).toHaveLength(1);
@@ -2332,45 +2218,8 @@ describe("lot A, rouge", () => {
 
 describe("lot A, vert", () => {
   type S = GameState;
-  /** Réponse à un choix (`undefined` : la suggestion), selon la position courante. */
-  type Answer = (req: ChoiceRequest, cur: S) => ChoiceValue[] | undefined;
-  const lands = (name: string, n: number) => Array(n).fill(name) as string[];
-  const nameOf = (s: S, id: string) => s.defs[s.objects[id]?.defId ?? ""]?.name;
-  const namesIn = (s: S, ids: string[] | undefined) => (ids ?? []).map((id) => nameOf(s, id));
   const pt = (s: S, id: string) => [chars(s, id).power, chars(s, id).toughness];
 
-  /**
-   * Passe et répond aux choix (réponse suggérée par défaut) jusqu'à une pile vide, sans déclenchement en attente. Les
-   * défenseurs ne bloquent pas.
-   */
-  const settle = (s: S, answer: Answer = () => undefined): S => {
-    let cur = s;
-    for (let i = 0; i < 300; i++) {
-      const p = cur.pending;
-      if (p?.kind === "priority" && cur.stack.length === 0 && cur.triggers.length === 0 && i > 0) break;
-      if (p?.kind === "priority") cur = act(cur, p.player, { type: "pass" });
-      else if (p?.kind === "choice")
-        cur = act(cur, p.player, { type: "choose", values: answer(p.request, cur) ?? p.request.suggested });
-      else if (p?.kind === "declareBlockers") cur = act(cur, p.player, { type: "declareBlockers", blocks: [] });
-      else break;
-    }
-    return cur;
-  };
-  /** Joue (sans bloquer) jusqu'à la seconde phase principale, en répondant aux choix. */
-  const throughCombat = (s: S, answer: Answer = () => undefined): S => {
-    let cur = s;
-    for (let i = 0; i < 300 && cur.turn.step !== "main2"; i++) {
-      const p = cur.pending;
-      if (p?.kind === "priority") cur = act(cur, p.player, { type: "pass" });
-      else if (p?.kind === "choice")
-        cur = act(cur, p.player, { type: "choose", values: answer(p.request, cur) ?? p.request.suggested });
-      else if (p?.kind === "declareBlockers") cur = act(cur, p.player, { type: "declareBlockers", blocks: [] });
-      else break;
-    }
-    return cur;
-  };
-  const cast = (s: S, player: string, name: string, extra: object = {}) =>
-    act(s, player, { type: "cast", card: idOf(s, player, "hand", name), ...extra });
   /** Active la capacité de `source` dont le libellé contient `label` (la première sinon). */
   const activate = (s: S, player: string, source: string, label?: string, extra: object = {}) => {
     const a = legalActions(s, player).find(
@@ -2381,14 +2230,6 @@ describe("lot A, vert", () => {
   };
   const canCast = (s: S, player: string, card: string) =>
     legalActions(s, player).some((x) => x.type === "cast" && x.card === card);
-  /** Va à la déclaration des attaquants de p1 et attaque p2 avec `attackers`. */
-  const attack = (s: S, attackers: string[]) => {
-    const cur = advanceUntil(s, (x) => x.pending?.kind === "declareAttackers");
-    return act(cur, "p1", { type: "declareAttackers", attackers: attackers.map((id) => ({ id, defender: "p2" })) });
-  };
-  /** Sélectionne dans les options d'un choix l'objet nommé `name`. */
-  const pickNamed = (s: S, req: ChoiceRequest, name: string) =>
-    req.type === "pick" ? req.options.filter((id) => nameOf(s, id) === name).slice(0, 1) : undefined;
   /** Choisit l'option dont l'identifiant est `id`, si elle est proposée. */
   const pickId = (id: string) => (req: ChoiceRequest) => (req.type === "pick" && req.options.includes(id) ? [id] : undefined);
   /** Choisit l'option (mode…) dont le libellé contient `text`. */
@@ -2504,7 +2345,7 @@ describe("lot A, vert", () => {
         },
       });
       let seen: (string | undefined)[] = [];
-      s = settle(cast(s, "p1", "Boughside Wanderers"), (req, cur) => {
+      s = settle(cast(s, "p1", "Boughside Wanderers"), (req, _player, cur) => {
         if (req.type !== "pick") return undefined;
         seen = namesIn(cur, req.options);
         return pickNamed(cur, req, "Bear Cub");
@@ -2574,7 +2415,7 @@ describe("lot A, vert", () => {
       let s = scenario({
         p1: { battlefield: lands("Forest", 3), hand: ["Down in the Valley"], library: ["Island", "Opt", ...lands("Plains", 6)] },
       });
-      s = settle(cast(s, "p1", "Down in the Valley"), (req, cur) => pickNamed(cur, req, "Island"));
+      s = settle(cast(s, "p1", "Down in the Valley"), (req, _player, cur) => pickNamed(cur, req, "Island"));
       expect(namesIn(s, s.players.p1?.hand)).toEqual(["Island"]);
       const saga = idOf(s, "p1", "battlefield", "Down in the Valley");
       s = advanceUntil(s, (x) => x.turn.active === "p1" && x.turn.step === "main1" && x.turn.number > 3);
@@ -2858,7 +2699,7 @@ describe("lot A, vert", () => {
         p1: { battlefield: lands("Forest", 3), hand: ["Wood Elves"], library: ["Island", "Plains", "Forest", "Opt"] },
       });
       let options: (string | undefined)[] = [];
-      s = settle(cast(s, "p1", "Wood Elves"), (req, cur) => {
+      s = settle(cast(s, "p1", "Wood Elves"), (req, _player, cur) => {
         if (req.type !== "pick") return undefined;
         options = namesIn(cur, req.options);
         return pickNamed(cur, req, "Forest");
@@ -2898,38 +2739,12 @@ describe("lot A, vert", () => {
 
 describe("lot A, multicolores", () => {
   type S = GameState;
-  /** Réponse à un choix (`undefined` : la suggestion), selon la position courante. */
-  type Answer = (req: ChoiceRequest, cur: S) => ChoiceValue[] | undefined;
-  const lands = (name: string, n: number) => Array(n).fill(name) as string[];
-  const nameOf = (s: S, id: string) => s.defs[s.objects[id]?.defId ?? ""]?.name;
-  const namesIn = (s: S, ids: string[] | undefined) => (ids ?? []).map((id) => nameOf(s, id));
   const pt = (s: S, id: string) => [chars(s, id).power, chars(s, id).toughness];
 
-  /** Passe et répond aux choix (suggestion par défaut) jusqu'à une pile vide, sans déclenchement en attente. */
-  const settle = (s: S, answer: Answer = () => undefined): S => {
-    let cur = s;
-    for (let i = 0; i < 300; i++) {
-      const p = cur.pending;
-      if (p?.kind === "priority" && cur.stack.length === 0 && cur.triggers.length === 0 && i > 0) break;
-      if (p?.kind === "priority") cur = act(cur, p.player, { type: "pass" });
-      else if (p?.kind === "choice")
-        cur = act(cur, p.player, { type: "choose", values: answer(p.request, cur) ?? p.request.suggested });
-      else if (p?.kind === "declareBlockers") cur = act(cur, p.player, { type: "declareBlockers", blocks: [] });
-      else break;
-    }
-    return cur;
-  };
-  const cast = (s: S, player: string, name: string, extra: object = {}) =>
-    act(s, player, { type: "cast", card: idOf(s, player, "hand", name), ...extra });
   const activate = (s: S, player: string, source: string, extra: object = {}) => {
     const a = legalActions(s, player).find((x) => x.type === "activate" && x.source === source);
     if (a?.type !== "activate") throw new Error(`capacité introuvable : ${source}`);
     return act(s, player, { type: "activate", source, ability: a.ability, ...extra });
-  };
-  /** Va à la déclaration des attaquants de p1 et attaque p2 avec `attackers`. */
-  const attack = (s: S, attackers: string[]) => {
-    const cur = advanceUntil(s, (x) => x.pending?.kind === "declareAttackers");
-    return act(cur, "p1", { type: "declareAttackers", attackers: attackers.map((id) => ({ id, defender: "p2" })) });
   };
   /** Répond à tout choix d'objets en prenant `id` s'il est proposé. */
   const pick =
@@ -3052,7 +2867,7 @@ describe("lot A, multicolores", () => {
         const fire = idOf(s, "p1", "battlefield", "Fire Elemental");
         const bear = idOf(s, "p2", "battlefield", "Bear Cub");
         s = settle(cast(s, "p1", "Bolg of the North"), (req) =>
-          req.type === "pick" && req.options.includes(fire) ? [fire] : pick(bear)(req, s),
+          req.type === "pick" && req.options.includes(fire) ? [fire] : pick(bear)(req, "p1", s),
         );
         expect(idsOf(s, "p1", "graveyard", "Fire Elemental")).toHaveLength(1);
         expect(idsOf(s, "p2", "graveyard", "Bear Cub")).toHaveLength(1);
@@ -3079,7 +2894,7 @@ describe("lot A, multicolores", () => {
         const bear = idOf(t, "p1", "battlefield", "Bear Cub");
         const fire = idOf(t, "p2", "battlefield", "Fire Elemental");
         t = settle(cast(t, "p1", "Bolg of the North"), (req) =>
-          req.type === "pick" && req.options.includes(bear) ? [bear] : pick(fire)(req, t),
+          req.type === "pick" && req.options.includes(bear) ? [bear] : pick(fire)(req, "p1", t),
         );
         expect(t.objects[fire]?.damage).toBe(2);
         expect(armies(t)).toHaveLength(0);
@@ -3272,7 +3087,7 @@ describe("lot A, multicolores", () => {
           p1: { battlefield: lands("Forest", 3), hand: [THRANDUIL], library: ["Opt", "Island", "Bear Cub", "Swamp", "Mountain"] },
         });
         s = act(s, "p1", { type: "cast", card: idOf(s, "p1", "hand", THRANDUIL), face: 1 });
-        s = settle(s, (req, cur) => {
+        s = settle(s, (req, _player, cur) => {
           if (req.type !== "pick") return undefined;
           // Seules les cartes de terrain meulées sont proposées (pas la Montagne, cinquième carte, restée en bibliothèque).
           expect(namesIn(cur, req.options.map(String)).sort()).toEqual(["Island", "Swamp"]);
@@ -3336,41 +3151,6 @@ describe("lot A, multicolores", () => {
 
 describe("lot A, incolores et terrains", () => {
   type S = GameState;
-  /** Réponse à un choix (`undefined` : la suggestion), selon la position courante. */
-  type Answer = (req: ChoiceRequest, cur: S) => ChoiceValue[] | undefined;
-  const lands = (name: string, n: number) => Array(n).fill(name) as string[];
-  const nameOf = (s: S, id: string) => s.defs[s.objects[id]?.defId ?? ""]?.name;
-  const namesIn = (s: S, ids: string[] | undefined) => (ids ?? []).map((id) => nameOf(s, id));
-
-  /** Passe et répond aux choix jusqu'à une pile vide, sans déclenchement en attente. Les défenseurs ne bloquent pas. */
-  const settle = (s: S, answer: Answer = () => undefined): S => {
-    let cur = s;
-    for (let i = 0; i < 300; i++) {
-      const p = cur.pending;
-      if (p?.kind === "priority" && cur.stack.length === 0 && cur.triggers.length === 0 && i > 0) break;
-      if (p?.kind === "priority") cur = act(cur, p.player, { type: "pass" });
-      else if (p?.kind === "choice")
-        cur = act(cur, p.player, { type: "choose", values: answer(p.request, cur) ?? p.request.suggested });
-      else if (p?.kind === "declareBlockers") cur = act(cur, p.player, { type: "declareBlockers", blocks: [] });
-      else break;
-    }
-    return cur;
-  };
-  /** Joue (sans bloquer) jusqu'à la seconde phase principale, en répondant aux choix. */
-  const throughCombat = (s: S, answer: Answer = () => undefined): S => {
-    let cur = s;
-    for (let i = 0; i < 300 && cur.turn.step !== "main2"; i++) {
-      const p = cur.pending;
-      if (p?.kind === "priority") cur = act(cur, p.player, { type: "pass" });
-      else if (p?.kind === "choice")
-        cur = act(cur, p.player, { type: "choose", values: answer(p.request, cur) ?? p.request.suggested });
-      else if (p?.kind === "declareBlockers") cur = act(cur, p.player, { type: "declareBlockers", blocks: [] });
-      else break;
-    }
-    return cur;
-  };
-  const cast = (s: S, player: string, name: string, extra: object = {}) =>
-    act(s, player, { type: "cast", card: idOf(s, player, "hand", name), ...extra });
   /** Active la capacité de `source` dont le libellé contient `label` (la première sinon). */
   const activate = (s: S, player: string, source: string, label?: string, extra: object = {}) => {
     const a = legalActions(s, player).find(
@@ -3381,11 +3161,6 @@ describe("lot A, incolores et terrains", () => {
   };
   const canActivate = (s: S, player: string, source: string, label?: string) =>
     legalActions(s, player).some((x) => x.type === "activate" && x.source === source && (!label || x.label?.includes(label)));
-  /** Va à la déclaration des attaquants de p1 et attaque p2 avec `attackers`. */
-  const attack = (s: S, attackers: string[]) => {
-    const cur = advanceUntil(s, (x) => x.pending?.kind === "declareAttackers");
-    return act(cur, "p1", { type: "declareAttackers", attackers: attackers.map((id) => ({ id, defender: "p2" })) });
-  };
   /** Sélectionne dans les options d'un choix les objets nommés (un exemplaire par nom donné). */
   const pickNamed = (s: S, req: ChoiceRequest, ...names: string[]) => {
     if (req.type !== "pick") return undefined;
@@ -3417,7 +3192,7 @@ describe("lot A, incolores et terrains", () => {
       let s = scenario({
         p1: { battlefield: lands("Wastes", 2), hand: ["Old Thrush"], library: ["Opt", "Swamp", "Serra Angel", "Island"] },
       });
-      s = settle(cast(s, "p1", "Old Thrush"), (req, cur) =>
+      s = settle(cast(s, "p1", "Old Thrush"), (req, _player, cur) =>
         req.type === "pick" && req.intent === "search" ? pickNamed(cur, req, "Swamp") : undefined,
       );
       expect(s.players.p1?.life).toBe(22);
@@ -3431,7 +3206,7 @@ describe("lot A, incolores et terrains", () => {
         p1: { battlefield: ["Troop of Ponies", ...lands("Wastes", 2)], library: ["Opt", "Forest", "Island", "Swamp"] },
       });
       const troop = idOf(s, "p1", "battlefield", "Troop of Ponies");
-      s = settle(activate(s, "p1", troop), (req, cur) => {
+      s = settle(activate(s, "p1", troop), (req, _player, cur) => {
         if (req.type !== "pick") return undefined;
         return req.intent === "search" ? pickNamed(cur, req, "Forest", "Island") : pickNamed(cur, req, "Island");
       });
@@ -3464,7 +3239,7 @@ describe("lot A, incolores et terrains", () => {
         });
         const card = idOf(s, "p1", "hand", "The Arkenstone // Seek the Heart");
         let seen: (string | undefined)[] = [];
-        s = settle(act(s, "p1", { type: "cast", card, face: 1 }), (req, cur) => {
+        s = settle(act(s, "p1", { type: "cast", card, face: 1 }), (req, _player, cur) => {
           if (req.type !== "pick" || req.intent !== "search") return undefined;
           seen = namesIn(cur, req.options as string[]);
           return pickNamed(cur, req, "Thorin Oakenshield");
@@ -3539,7 +3314,7 @@ describe("lot A, incolores et terrains", () => {
       it("en arrivant, regard 2", () => {
         let s = scenario({ p1: { battlefield: ["Wastes"], hand: ["Giant's Boulder"], library: ["Opt", "Island", "Swamp"] } });
         let asked = false;
-        s = settle(cast(s, "p1", "Giant's Boulder"), (req, cur) => {
+        s = settle(cast(s, "p1", "Giant's Boulder"), (req, _player, cur) => {
           if (req.type === "pick" && req.options.length === 2) {
             asked = true;
             expect(namesIn(cur, req.options as string[]).sort()).toEqual(["Island", "Opt"]);
@@ -3715,11 +3490,11 @@ describe("lot A, incolores et terrains", () => {
       let s = scenario({
         p1: { battlefield: lands("Wastes", 4), hand: ["Thrór's Map"], library: ["Opt", "Forest", "Island", "Swamp"] },
       });
-      s = settle(cast(s, "p1", "Thrór's Map"), (req, cur) =>
+      s = settle(cast(s, "p1", "Thrór's Map"), (req, _player, cur) =>
         req.type === "pick" && req.intent === "search" ? pickNamed(cur, req, "Forest") : undefined,
       );
       expect(namesIn(s, s.players.p1?.hand)).toEqual(["Forest"]);
-      s = settle(activate(s, "p1", idOf(s, "p1", "battlefield", "Thrór's Map")), (req, cur) =>
+      s = settle(activate(s, "p1", idOf(s, "p1", "battlefield", "Thrór's Map")), (req, _player, cur) =>
         req.type === "pick" ? pickNamed(cur, req, "Forest") : undefined,
       );
       expect(s.players.p1?.hand).toHaveLength(1);
@@ -3799,7 +3574,7 @@ describe("lot A, incolores et terrains", () => {
     describe("Hobbit Hole", () => {
       it("{T}, sacrifiez-le : un terrain de base sur le champ de bataille engagé", () => {
         let s = scenario({ p1: { battlefield: ["Hobbit Hole"], library: ["Opt", "Plains", "Island"] } });
-        s = settle(activate(s, "p1", idOf(s, "p1", "battlefield", "Hobbit Hole")), (req, cur) =>
+        s = settle(activate(s, "p1", idOf(s, "p1", "battlefield", "Hobbit Hole")), (req, _player, cur) =>
           req.type === "pick" && req.intent === "search" ? pickNamed(cur, req, "Plains") : undefined,
         );
         expect(idsOf(s, "p1", "graveyard", "Hobbit Hole")).toHaveLength(1);
@@ -3813,7 +3588,7 @@ describe("lot A, incolores et terrains", () => {
         });
         const hole = idOf(s, "p1", "hand", "Hobbit Hole");
         let seen: (string | undefined)[] = [];
-        s = settle(activate(s, "p1", hole), (req, cur) => {
+        s = settle(activate(s, "p1", hole), (req, _player, cur) => {
           if (req.type !== "pick" || req.intent !== "search") return undefined;
           seen = namesIn(cur, req.options as string[]);
           return undefined;

@@ -1,7 +1,7 @@
 /**
  * Fuzzing du moteur : parties IA contre IA avec vérification d'invariants à chaque décision.
  *
- * Usage : npm run fuzz -- [--games 200] [--seed 1] [--ai random|heuristic|mixed|beginner|medium|expert|levels|chaos] [--players 2]
+ * Usage : npm run fuzz -- [--games 200] [--seed 1] [--ai random|heuristic|mixed|beginner|medium|expert|levels|chaos] [--players 2] [--offers 4]
  *                        [--pool decks|all|meta|<SET>]
  *                        [--jobs N]
  *         npx tsx tools/fuzz.ts --batch <fichier.json> --jobs N    (plusieurs séries, utilisé par verify)
@@ -34,6 +34,8 @@ interface Spec {
   mode: string;
   players: number;
   pool: string;
+  /** Toutes les N priorités, chaque option proposée doit être acceptée avec ses choix par défaut (0 : jamais). */
+  offers: number;
 }
 
 const argOf = (argv: string[], name: string, def: string) => {
@@ -46,6 +48,7 @@ const specOf = (argv: string[]): Spec => ({
   mode: argOf(argv, "ai", "random"),
   players: Math.max(2, Number(argOf(argv, "players", "2"))),
   pool: argOf(argv, "pool", "decks"),
+  offers: Number(argOf(argv, "offers", "0")),
 });
 
 const LEVELS: AiLevel[] = ["beginner", "medium", "expert"];
@@ -106,6 +109,7 @@ function run(spec: Spec, first: number, count: number): Tally {
       maxDecisions: 5000 * spec.players,
       check: true,
       chaos: spec.mode === "chaos" ? { seed: seed * 13 + 5, perDecision: 3 } : undefined,
+      offers: spec.offers || undefined,
     });
     const key = !r.state.over ? "inachevée" : (r.state.winner ?? "nul");
     tally.wins[key] = (tally.wins[key] ?? 0) + 1;

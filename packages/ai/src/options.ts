@@ -4,15 +4,51 @@
 import type { ActionOption, Decision, TargetOption } from "@mtgx/engine";
 
 /** Cibles multiples (« jusqu'à N ») : N cibles compatibles avec la contrainte de groupe, en suivant l'ordre donné. */
-export function multiTargets(o: TargetOption, order: string[] = o.legal): string[] {
+export function multiTargets(o: TargetOption, order0: string[] = o.legal): string[] {
+  // Une cible obligatoire parmi `requiredAmong` (réduction de coût) : en tête.
+  const must = o.requiredAmong;
+  const order = must?.length
+    ? [...order0.filter((id) => must.includes(id)), ...order0.filter((id) => !must.includes(id))]
+    : order0;
+  // « Qui partagent un type de créature » : d'abord un groupe complet qui partage un type, en partant de chaque cible.
+  const share = o.shareCreatureType;
+  if (share) {
+    const fits = (picked: string[], id: string) => {
+      const sets = [...picked, id].map((x) => share[x] ?? []).filter((t) => !t.includes("*"));
+      const [first, ...rest] = sets;
+      return !first || first.some((t) => rest.every((r) => r.includes(t)));
+    };
+    const want = Math.min(o.min ?? o.count ?? 1, order.length);
+    let best: string[] = [];
+    for (let i = 0; i < order.length && best.length < want; i++) {
+      const picked: string[] = [];
+      for (const id of [...order.slice(i), ...order.slice(0, i)])
+        if (picked.length < (o.count ?? 1) && fits(picked, id)) picked.push(id);
+      if (picked.length > best.length) best = picked;
+    }
+    return best;
+  }
   const max = o.count ?? 1;
   const out: string[] = [];
   const g = o.group;
+  // « Contrôlées par un même joueur » : commencer par un joueur qui a assez de cibles (Trial of Agony).
+  if (g?.kind === "same") {
+    const want = o.min ?? max;
+    const per = new Map<string, number>();
+    for (const id of order) per.set(g.holders[id] ?? id, (per.get(g.holders[id] ?? id) ?? 0) + 1);
+    const start = order.find((id) => (per.get(g.holders[id] ?? id) ?? 0) >= want);
+    if (start) out.push(start);
+  }
+  const mv = o.maxTotalManaValue;
+  let total = 0;
   for (const id of order) {
     if (out.length >= max) break;
+    if (out.includes(id)) continue;
+    if (mv && total + (mv.values[id] ?? 0) > mv.max) continue;
     if (g?.kind === "different" && out.some((x) => g.holders[x] === g.holders[id])) continue;
     if (g?.kind === "same" && out.length > 0 && g.holders[out[0] as string] !== g.holders[id]) continue;
     out.push(id);
+    total += mv?.values[id] ?? 0;
   }
   return out;
 }
@@ -35,11 +71,15 @@ export function buildCastDecision(
     const t: Record<string, string[]> = {};
     for (const o of opts) {
       if (o.count) {
-        const order = [...o.legal].sort(() => rand() - 0.5);
+        const taken = (o.otherThan ?? []).flatMap((k) => t[k] ?? []);
+        const order = [...o.legal].filter((id) => !taken.includes(id)).sort(() => rand() - 0.5);
         t[o.id] = o.optional && rand() < 0.2 ? [] : multiTargets(o, order);
         continue;
       }
-      const list = o.optional ? [null, ...o.legal] : o.legal;
+      // « Une autre cible » : pas une cible déjà prise par un autre mot « cible ».
+      const taken = (o.otherThan ?? []).flatMap((k) => t[k] ?? []);
+      const free = taken.length ? o.legal.filter((id) => !taken.includes(id)) : o.legal;
+      const list = o.optional ? [null, ...free] : free;
       const v = choose(list as (string | null)[]);
       t[o.id] = v ? [v] : [];
     }
@@ -55,6 +95,15 @@ export function buildCastDecision(
     case "cast": {
       const mode = choose(a.modes);
       if (!mode) return null;
+      // Cadeau ou kicker qui change les cibles (Long River's Pull) : sans cible légale autrement, il faut le promettre.
+      const needsKicker = mode.targets.some(
+        (t) => !t.optional && !t.countX && t.legal.length === 0 && (t.kickedLegal?.length ?? 0) > 0,
+      );
+      const kicked =
+        !!mode.requiresKicker ||
+        needsKicker ||
+        (a.kickerAffordable && ((!a.normalAvailable && !a.freeAvailable && !a.altAvailable) || rand() < 0.5));
+      const targetOpts = kicked ? mode.targets.map((t) => (t.kickedLegal ? { ...t, legal: t.kickedLegal } : t)) : mode.targets;
       const pickN = (spec?: { count: number; options: string[] }) => {
         if (!spec) return undefined;
         const pool = [...spec.options];
@@ -70,20 +119,23 @@ export function buildCastDecision(
           faceDown: a.faceDown,
           warp: a.warp,
           mode: mode.index,
-          targets: targetsFrom(mode.targets),
+          targets: targetsFrom(targetOpts),
           x: a.xMax === null ? undefined : Math.floor(rand() * (a.xMax + 1)),
-          kicked:
-            !!mode.requiresKicker ||
-            (a.kickerAffordable && ((!a.normalAvailable && !a.freeAvailable && !a.altAvailable) || rand() < 0.5)),
+          kicked,
           discard:
             (a.additional?.discard?.orLife !== undefined || a.additional?.discard?.orPayAffordable) && rand() < 0.5
               ? []
               : pickN(a.additional?.discard),
-          sacrifice: a.additional?.sacrifice?.orPay && rand() < 0.5 ? [] : pickN(a.additional?.sacrifice),
+          sacrifice:
+            a.additional?.sacrifice?.orPay &&
+            (a.additional.sacrifice.orPayAffordable || a.additional.sacrifice.options.length < a.additional.sacrifice.count) &&
+            rand() < 0.5
+              ? []
+              : pickN(a.additional?.sacrifice),
           free: a.freeAvailable && (!a.normalAvailable || rand() < 0.7) ? true : undefined,
           alternative: !a.freeAvailable && a.altAvailable && (!a.normalAvailable || rand() < 0.5) ? true : undefined,
         },
-        mode.targets,
+        targetOpts,
       );
     }
     case "activate": {

@@ -17,13 +17,25 @@ import { checkCondition } from "../src/triggers";
 import { canBlock, stateBasedActions } from "../src/turn";
 import type { CardDef, ChoiceRequest, ChoiceValue, GameState, TokenSpec } from "../src/types";
 import { projectView } from "../src/view";
-import { act, advanceUntil, castNowOf, customCard, idOf, idsOf, passAccepting, passUntil, scenario } from "./helpers";
+import {
+  type Answer,
+  act,
+  advanceUntil,
+  castTargets as cast,
+  castNowOf,
+  customCard,
+  exiled,
+  idOf,
+  idsOf,
+  lands,
+  nameOf,
+  passAccepting,
+  passUntil,
+  scenario,
+  settle,
+} from "./helpers";
 
 type S = GameState;
-type Answer = (req: ChoiceRequest, player: string) => ChoiceValue[] | undefined;
-const lands = (name: string, n: number) => Array(n).fill(name) as string[];
-const nameOf = (s: S, id: string) => s.defs[s.objects[id]?.defId ?? ""]?.name;
-const exiled = (s: S, name: string) => s.exile.filter((id) => nameOf(s, id) === name);
 /** La carte partie en aventure (715.4) : nouvel objet en exil. */
 const onAdventure = (s: S, name: string) => {
   const id = exiled(s, name)[0] as string;
@@ -33,21 +45,6 @@ const onAdventure = (s: S, name: string) => {
 const castOptions = (s: S, player: string, card: string) =>
   legalActions(s, player).filter((a) => a.type === "cast" && a.card === card);
 
-/** Passe et répond aux choix (réponse suggérée par défaut) jusqu'à une pile vide, sans déclenchement en attente. */
-const settle = (s: S, answer: Answer = () => undefined): S => {
-  let cur = s;
-  for (let i = 0; i < 300; i++) {
-    const p = cur.pending;
-    if (p?.kind === "priority" && cur.stack.length === 0 && cur.triggers.length === 0 && i > 0) break;
-    if (p?.kind === "priority") cur = act(cur, p.player, { type: "pass" });
-    else if (p?.kind === "choice")
-      cur = act(cur, p.player, { type: "choose", values: answer(p.request, p.player) ?? p.request.suggested });
-    else break;
-  }
-  return cur;
-};
-const cast = (s: S, player: string, name: string, targets?: Record<string, string[]>, extra: object = {}) =>
-  act(s, player, { type: "cast", card: idOf(s, player, "hand", name), targets, ...extra });
 const activate = (s: S, player: string, source: string, targets?: Record<string, string[]>, extra: object = {}) => {
   const a = legalActions(s, player).find((x) => x.type === "activate" && x.source === source);
   return act(s, player, { type: "activate", source, ability: a?.type === "activate" ? a.ability : -1, targets, ...extra });
@@ -452,28 +449,11 @@ describe("Wilds of Eldraine, lot A — blanc", () => {
    * Rôles, Célébration, Marchandage, Aventures, Sagas et exils « jusqu'à ce que ».
    */
   type S = GameState;
-  type Answer = (req: ChoiceRequest, player: string) => ChoiceValue[] | undefined;
-  const lands = (name: string, n: number) => Array(n).fill(name) as string[];
-  const nameOf = (s: S, id: string) => s.defs[s.objects[id]?.defId ?? ""]?.name;
-  const exiled = (s: S, name: string) => s.exile.filter((id) => nameOf(s, id) === name);
   const pt = (s: S, id: string) => [chars(s, id).power, chars(s, id).toughness];
   /** Rôles (et autres Auras) attachés à un permanent. */
   const attachedTo = (s: S, host: string) =>
     s.battlefield.filter((id) => s.objects[id]?.attachedTo === host).map((id) => nameOf(s, id));
 
-  /** Passe et répond aux choix (réponse suggérée par défaut) jusqu'à une pile vide, sans déclenchement en attente. */
-  const settle = (s: S, answer: Answer = () => undefined): S => {
-    let cur = s;
-    for (let i = 0; i < 300; i++) {
-      const p = cur.pending;
-      if (p?.kind === "priority" && cur.stack.length === 0 && cur.triggers.length === 0 && i > 0) break;
-      if (p?.kind === "priority") cur = act(cur, p.player, { type: "pass" });
-      else if (p?.kind === "choice")
-        cur = act(cur, p.player, { type: "choose", values: answer(p.request, p.player) ?? p.request.suggested });
-      else break;
-    }
-    return cur;
-  };
   /** Répond aux cibles de déclenchement par `want` (s'il fait partie des options). */
   const targetWith =
     (...want: string[]): Answer =>
@@ -1059,9 +1039,6 @@ describe("Wilds of Eldraine, lot A — bleu", () => {
    */
   type S = GameState;
   type Answer = (req: ChoiceRequest, player: string, s: S) => ChoiceValue[] | undefined;
-  const lands = (name: string, n: number) => Array(n).fill(name) as string[];
-  const nameOf = (s: S, id: string) => s.defs[s.objects[id]?.defId ?? ""]?.name;
-  const exiled = (s: S, name: string) => s.exile.filter((id) => nameOf(s, id) === name);
   const handNames = (s: S, p: string) => (s.players[p]?.hand ?? []).map((id) => nameOf(s, id));
   const pt = (s: S, id: string) => [chars(s, id).power, chars(s, id).toughness];
 
@@ -1086,8 +1063,6 @@ describe("Wilds of Eldraine, lot A — bleu", () => {
       const wanted = ids.filter((id) => req.options.includes(id));
       return wanted.length ? wanted : undefined;
     };
-  const cast = (s: S, player: string, name: string, targets?: Record<string, string[]>, extra: object = {}) =>
-    act(s, player, { type: "cast", card: idOf(s, player, "hand", name), targets, ...extra });
   /** Lance l'Aventure (face 1) d'une carte de la main. */
   const castAdventure = (s: S, player: string, name: string, targets?: Record<string, string[]>, extra: object = {}) =>
     cast(s, player, name, targets, { face: 1, ...extra });
@@ -1599,26 +1574,9 @@ describe("Wilds of Eldraine, lot A — noir", () => {
    * (plan R, lot R7).
    */
   type S = GameState;
-  type Answer = (req: ChoiceRequest, player: string) => ChoiceValue[] | undefined;
-  const lands = (name: string, n: number) => Array(n).fill(name) as string[];
-  const nameOf = (s: S, id: string) => s.defs[s.objects[id]?.defId ?? ""]?.name;
   const names = (s: S, ids: string[] = []) => ids.map((id) => nameOf(s, id)).sort();
-  const exiled = (s: S, name: string) => s.exile.filter((id) => nameOf(s, id) === name);
   const pt = (s: S, id: string) => [chars(s, id).power, chars(s, id).toughness];
 
-  /** Passe et répond aux choix (réponse suggérée par défaut) jusqu'à une pile vide, sans déclenchement en attente. */
-  const settle = (s: S, answer: Answer = () => undefined): S => {
-    let cur = s;
-    for (let i = 0; i < 300; i++) {
-      const p = cur.pending;
-      if (p?.kind === "priority" && cur.stack.length === 0 && cur.triggers.length === 0 && i > 0) break;
-      if (p?.kind === "priority") cur = act(cur, p.player, { type: "pass" });
-      else if (p?.kind === "choice")
-        cur = act(cur, p.player, { type: "choose", values: answer(p.request, p.player) ?? p.request.suggested });
-      else break;
-    }
-    return cur;
-  };
   /** Après une modification directe (destruction) : actions basées sur l'état, puis déclenchements résolus. */
   const settleAll = (s: S) => {
     while (stateBasedActions(s)) {}
@@ -1631,7 +1589,7 @@ describe("Wilds of Eldraine, lot A — noir", () => {
       const p = cur.pending;
       if (p?.kind === "priority") cur = act(cur, p.player, { type: "pass" });
       else if (p?.kind === "choice")
-        cur = act(cur, p.player, { type: "choose", values: answer(p.request, p.player) ?? p.request.suggested });
+        cur = act(cur, p.player, { type: "choose", values: answer(p.request, p.player, cur) ?? p.request.suggested });
       else break;
     }
     return cur;
@@ -1644,8 +1602,6 @@ describe("Wilds of Eldraine, lot A — noir", () => {
       const picked = want.filter((w) => req.options.includes(w));
       return picked.length ? picked : undefined;
     };
-  const cast = (s: S, player: string, name: string, targets?: Record<string, string[]>, extra: object = {}) =>
-    act(s, player, { type: "cast", card: idOf(s, player, "hand", name), targets, ...extra });
   const activate = (s: S, player: string, source: string, targets?: Record<string, string[]>, extra: object = {}) => {
     const a = legalActions(s, player).find((x) => x.type === "activate" && x.source === source);
     return act(s, player, { type: "activate", source, ability: a?.type === "activate" ? a.ability : -1, targets, ...extra });
@@ -2315,10 +2271,6 @@ describe("Wilds of Eldraine, lot A — rouge", () => {
    * jeton Trésor : deux permanents non-terrain).
    */
   type S = GameState;
-  type Answer = (req: ChoiceRequest, player: string) => ChoiceValue[] | undefined;
-  const lands = (name: string, n: number) => Array(n).fill(name) as string[];
-  const nameOf = (s: S, id: string) => s.defs[s.objects[id]?.defId ?? ""]?.name;
-  const exiled = (s: S, name: string) => s.exile.filter((id) => nameOf(s, id) === name);
   const pt = (s: S, id: string) => [chars(s, id).power, chars(s, id).toughness];
 
   /** Répond aux choix avec les valeurs voulues quand elles sont proposées (sinon la suggestion). */
@@ -2338,7 +2290,7 @@ describe("Wilds of Eldraine, lot A — rouge", () => {
       const p = cur.pending;
       if (p?.kind === "priority") cur = act(cur, p.player, { type: "pass" });
       else if (p?.kind === "choice")
-        cur = act(cur, p.player, { type: "choose", values: answer(p.request, p.player) ?? p.request.suggested });
+        cur = act(cur, p.player, { type: "choose", values: answer(p.request, p.player, cur) ?? p.request.suggested });
       else break;
     }
     return cur;
@@ -2350,7 +2302,7 @@ describe("Wilds of Eldraine, lot A — rouge", () => {
     const p = cur.pending;
     if (p?.kind === "priority") cur = act(cur, p.player, { type: "pass" });
     else if (p?.kind === "choice")
-      cur = act(cur, p.player, { type: "choose", values: answer(p.request, p.player) ?? p.request.suggested });
+      cur = act(cur, p.player, { type: "choose", values: answer(p.request, p.player, cur) ?? p.request.suggested });
     return drive(cur, stable, answer);
   };
   /** Jusqu'au début du combat du joueur actif, déclenchements résolus. */
@@ -3031,27 +2983,10 @@ describe("Wilds of Eldraine, lot A — vert", () => {
    * (plan R, lot R7) en jouant par des décisions.
    */
   type S = GameState;
-  type Answer = (req: ChoiceRequest, player: string) => ChoiceValue[] | undefined;
-  const lands = (name: string, n: number) => Array(n).fill(name) as string[];
-  const nameOf = (s: S, id: string) => s.defs[s.objects[id]?.defId ?? ""]?.name;
-  const exiled = (s: S, name: string) => s.exile.filter((id) => nameOf(s, id) === name);
   const handNames = (s: S, p = "p1") => (s.players[p]?.hand ?? []).map((id) => nameOf(s, id));
   const castOptions = (s: S, player: string, card: string) =>
     legalActions(s, player).filter((a) => a.type === "cast" && a.card === card);
 
-  /** Passe et répond aux choix (réponse suggérée par défaut) jusqu'à une pile vide, sans déclenchement en attente. */
-  const settle = (s: S, answer: Answer = () => undefined): S => {
-    let cur = s;
-    for (let i = 0; i < 300; i++) {
-      const p = cur.pending;
-      if (p?.kind === "priority" && cur.stack.length === 0 && cur.triggers.length === 0 && i > 0) break;
-      if (p?.kind === "priority") cur = act(cur, p.player, { type: "pass" });
-      else if (p?.kind === "choice")
-        cur = act(cur, p.player, { type: "choose", values: answer(p.request, p.player) ?? p.request.suggested });
-      else break;
-    }
-    return cur;
-  };
   /** Actions basées sur l'état, puis résolution de la pile et des déclenchements. */
   const settleAll = (s: S, answer?: Answer) => {
     while (stateBasedActions(s)) {}
@@ -3070,8 +3005,6 @@ describe("Wilds of Eldraine, lot A — vert", () => {
       }
       return out.length > 0 ? out : undefined;
     };
-  const cast = (s: S, player: string, name: string, targets?: Record<string, string[]>, extra: object = {}) =>
-    act(s, player, { type: "cast", card: idOf(s, player, "hand", name), targets, ...extra });
   const activate = (s: S, player: string, source: string, targets?: Record<string, string[]>, extra: object = {}) => {
     const a = legalActions(s, player).find((x) => x.type === "activate" && x.source === source);
     return act(s, player, { type: "activate", source, ability: a?.type === "activate" ? a.ability : -1, targets, ...extra });
@@ -3683,24 +3616,6 @@ describe("Wilds of Eldraine, lot A — multicolores, incolores et terrains", () 
    * Wilds of Eldraine, lot A : cartes multicolores, incolores et terrains, confrontées à leur texte Oracle (R7).
    */
   type S = GameState;
-  type Answer = (req: ChoiceRequest, player: string) => ChoiceValue[] | undefined;
-  const lands = (name: string, n: number) => Array(n).fill(name) as string[];
-
-  /** Passe et répond aux choix (réponse suggérée par défaut) jusqu'à une pile vide, sans déclenchement en attente. */
-  const settle = (s: S, answer: Answer = () => undefined): S => {
-    let cur = s;
-    for (let i = 0; i < 300; i++) {
-      const p = cur.pending;
-      if (p?.kind === "priority" && cur.stack.length === 0 && cur.triggers.length === 0 && i > 0) break;
-      if (p?.kind === "priority") cur = act(cur, p.player, { type: "pass" });
-      else if (p?.kind === "choice")
-        cur = act(cur, p.player, { type: "choose", values: answer(p.request, p.player) ?? p.request.suggested });
-      else break;
-    }
-    return cur;
-  };
-  const cast = (s: S, player: string, name: string, targets?: Record<string, string[]>, extra: object = {}) =>
-    act(s, player, { type: "cast", card: idOf(s, player, "hand", name), targets, ...extra });
   /** Options d'activation de la source (une par capacité activable). */
   const activations = (s: S, player: string, source: string) =>
     legalActions(s, player).flatMap((a) => (a.type === "activate" && a.source === source ? [a] : []));

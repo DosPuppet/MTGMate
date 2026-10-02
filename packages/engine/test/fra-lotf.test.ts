@@ -282,8 +282,24 @@ describe("Reality Fracture, lot 0.1 (Standard) : Emrakul, Uldaros Theorix, Hall 
     expect(exiled).toBeDefined();
     expect(chars(s, land).abilities.some((a) => a.kind === "mana" && a.amount === 2)).toBe(true);
     expect(s.playPermissions?.some((p) => p.card === exiled && p.until > 1000)).toBe(true);
-    // Quand la carte quitte l'exil, le terrain perd la capacité.
-    moveObject(s, exiled, "stack");
+    // Quand la carte quitte l'exil sans être lancée, le terrain perd la capacité.
+    const moved = structuredClone(s);
+    moveObject(moved, exiled, "graveyard");
+    expect(chars(moved, land).abilities.some((a) => a.kind === "mana" && a.amount === 2)).toBe(false);
+  });
+
+  it("Emrakul lancée depuis l'exil : la capacité du terrain sert à payer, puis cesse une fois le sort lancé (601.2i)", () => {
+    // {10} : 8 Forêts plus le {C}{C} du terrain désigné (12 Forêts, dont 3 engagées pour la capacité).
+    let s = scenario({ p1: { battlefield: lands("Forest", 12), hand: ["Emrakul, the Exigent Doom"] } });
+    const emrakul = idOf(s, "p1", "hand", "Emrakul, the Exigent Doom");
+    const land = idsOf(s, "p1", "battlefield", "Forest").at(-1) as string;
+    const index = card("Emrakul, the Exigent Doom").abilities.findIndex((a) => a.kind === "activated" && a.fromHand);
+    s = act(s, "p1", { type: "activate", source: emrakul, ability: index, targets: { t: [land] } });
+    s = passBoth(s);
+    const exiled = s.exile.find((id) => s.objects[id]?.defId === card("Emrakul, the Exigent Doom").id) as string;
+    expect(legalActions(s, "p1").some((a) => a.type === "cast" && a.card === exiled)).toBe(true);
+    s = act(s, "p1", { type: "cast", card: exiled });
+    expect(s.stack.some((x) => x.kind === "spell" && s.objects[x.id]?.defId === card("Emrakul, the Exigent Doom").id)).toBe(true);
     expect(chars(s, land).abilities.some((a) => a.kind === "mana" && a.amount === 2)).toBe(false);
   });
 

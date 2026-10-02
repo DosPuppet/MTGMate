@@ -3,9 +3,10 @@
  */
 import { card } from "@mtgx/cards";
 import { createGame, submit } from "../src/game";
+import { legalActions } from "../src/legal";
 import { cloneState, createObject, registerDef } from "../src/state";
 import { advance, emptyCombat } from "../src/turn";
-import type { CardDef, CastNowRequest, Decision, GameState, PlayerId, Step } from "../src/types";
+import type { CardDef, CastNowRequest, ChoiceRequest, ChoiceValue, Decision, GameState, PlayerId, Step } from "../src/types";
 
 export interface Permanent {
   name: string | CardDef;
@@ -193,4 +194,88 @@ export function advanceUntil(s: GameState, until: (s: GameState) => boolean, max
     else break;
   }
   return cur;
+}
+
+// ---------------------------------------------------------------------------
+// Aides des fichiers de tests d'extension (docs/plans/PLAN-C.md, lot C2) : une seule écriture, importée par chacun.
+// ---------------------------------------------------------------------------
+
+/** Réponse à un choix pendant `settle` : `undefined` prend la réponse suggérée. */
+export type Answer = (req: ChoiceRequest, player: PlayerId, s: GameState) => ChoiceValue[] | undefined;
+
+export const lands = (name: string, n: number) => Array(n).fill(name) as string[];
+export const nameOf = (s: GameState, id: string) => s.defs[s.objects[id]?.defId ?? ""]?.name;
+export const namesIn = (s: GameState, ids: string[] | undefined) => (ids ?? []).map((id) => nameOf(s, id));
+export const exiled = (s: GameState, name: string) => s.exile.filter((id) => nameOf(s, id) === name);
+
+function settleWith(s: GameState, answer: Answer, noBlocks: boolean): GameState {
+  let cur = s;
+  for (let i = 0; i < 300; i++) {
+    const p = cur.pending;
+    if (p?.kind === "priority" && cur.stack.length === 0 && cur.triggers.length === 0 && i > 0) break;
+    if (p?.kind === "priority") cur = act(cur, p.player, { type: "pass" });
+    else if (p?.kind === "choice")
+      cur = act(cur, p.player, { type: "choose", values: answer(p.request, p.player, cur) ?? p.request.suggested });
+    else if (noBlocks && p?.kind === "declareBlockers") cur = act(cur, p.player, { type: "declareBlockers", blocks: [] });
+    else break;
+  }
+  return cur;
+}
+
+/** Passe et répond aux choix (réponse suggérée par défaut) jusqu'à une pile vide, sans déclenchement en attente. */
+export const settle = (s: GameState, answer: Answer = () => undefined): GameState => settleWith(s, answer, false);
+
+/** Comme `settle`, et les défenseurs ne bloquent pas. */
+export const settleNoBlocks = (s: GameState, answer: Answer = () => undefined): GameState => settleWith(s, answer, true);
+
+/** Joue (sans attaquer ni bloquer) jusqu'à la seconde phase principale, en répondant aux choix. */
+export function throughCombat(s: GameState, answer: Answer = () => undefined): GameState {
+  let cur = s;
+  for (let i = 0; i < 300 && cur.turn.step !== "main2"; i++) {
+    const p = cur.pending;
+    if (p?.kind === "priority") cur = act(cur, p.player, { type: "pass" });
+    else if (p?.kind === "choice")
+      cur = act(cur, p.player, { type: "choose", values: answer(p.request, p.player, cur) ?? p.request.suggested });
+    else if (p?.kind === "declareBlockers") cur = act(cur, p.player, { type: "declareBlockers", blocks: [] });
+    else break;
+  }
+  return cur;
+}
+
+/** Lance la carte nommée depuis la main ; `extra` complète la décision (cibles, X, kicker…). */
+export const cast = (s: GameState, player: PlayerId, name: string, extra: object = {}) =>
+  act(s, player, { type: "cast", card: idOf(s, player, "hand", name), ...extra });
+
+/** Variante de `cast` avec les cibles en paramètre. */
+export const castTargets = (
+  s: GameState,
+  player: PlayerId,
+  name: string,
+  targets?: Record<string, string[]>,
+  extra: object = {},
+) => act(s, player, { type: "cast", card: idOf(s, player, "hand", name), targets, ...extra });
+
+export const castable = (s: GameState, player: PlayerId, card: string) =>
+  legalActions(s, player).some((a) => a.type === "cast" && a.card === card);
+
+export const canActivate = (s: GameState, player: PlayerId, source: string) =>
+  legalActions(s, player).some((x) => x.type === "activate" && x.source === source);
+
+/** Réponse qui choisit les objets (ou joueurs) voulus quand ils font partie des options. */
+export const picking =
+  (want: string[]) =>
+  (req: ChoiceRequest, _player?: PlayerId, _s?: GameState): ChoiceValue[] | undefined => {
+    if (req.type !== "pick") return undefined;
+    const picked = want.filter((w) => req.options.includes(w));
+    return picked.length > 0 ? picked : undefined;
+  };
+
+/** Sélectionne dans les options d'un choix l'objet nommé `name`. */
+export const pickNamed = (s: GameState, req: ChoiceRequest, name: string) =>
+  req.type === "pick" ? req.options.filter((id) => nameOf(s, id) === name).slice(0, 1) : undefined;
+
+/** Va à la déclaration des attaquants de p1 et attaque p2 avec `attackers`. */
+export function attack(s: GameState, attackers: string[]): GameState {
+  const cur = advanceUntil(s, (x) => x.pending?.kind === "declareAttackers");
+  return act(cur, "p1", { type: "declareAttackers", attackers: attackers.map((id) => ({ id, defender: "p2" })) });
 }

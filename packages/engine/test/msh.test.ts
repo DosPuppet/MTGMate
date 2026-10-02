@@ -11,51 +11,28 @@ import { fx, manaAbility, ref, spell, target } from "../src/dsl";
 import { legalActions } from "../src/legal";
 import { manaAbilitiesOf } from "../src/mana";
 import { changeCounters, chars } from "../src/state";
-import type { ActionOption, ChoiceRequest, ChoiceValue, GameState } from "../src/types";
+import type { ActionOption, ChoiceValue, GameState } from "../src/types";
 import {
+  type Answer,
   act,
   advanceUntil,
+  cast,
+  castable,
   castNowOf,
   customCard,
   idOf,
   idsOf,
+  lands,
+  nameOf,
   passAccepting,
   passUntil,
+  picking,
   scenario,
+  settle,
   untilCastNow,
 } from "./helpers";
 
 type S = GameState;
-/** Réponse à un choix, avec l'état courant (les cartes changent d'identifiant en changeant de zone). */
-type Answer = (req: ChoiceRequest, player: string, cur: S) => ChoiceValue[] | undefined;
-const lands = (name: string, n: number) => Array(n).fill(name) as string[];
-const nameOf = (s: S, id: string) => s.defs[s.objects[id]?.defId ?? ""]?.name;
-
-/** Passe et répond aux choix (réponse suggérée par défaut) jusqu'à une pile vide, sans déclenchement en attente. */
-const settle = (s: S, answer: Answer = () => undefined): S => {
-  let cur = s;
-  for (let i = 0; i < 300; i++) {
-    const p = cur.pending;
-    if (p?.kind === "priority" && cur.stack.length === 0 && cur.triggers.length === 0 && i > 0) break;
-    if (p?.kind === "priority") cur = act(cur, p.player, { type: "pass" });
-    else if (p?.kind === "choice")
-      cur = act(cur, p.player, { type: "choose", values: answer(p.request, p.player, cur) ?? p.request.suggested });
-    else break;
-  }
-  return cur;
-};
-/** Réponse qui choisit les objets (ou joueurs) voulus quand ils font partie des options. */
-const picking =
-  (want: string[]): Answer =>
-  (req) => {
-    if (req.type !== "pick") return undefined;
-    const picked = want.filter((w) => req.options.includes(w));
-    return picked.length > 0 ? picked : undefined;
-  };
-const cast = (s: S, player: string, name: string, extra: object = {}) =>
-  act(s, player, { type: "cast", card: idOf(s, player, "hand", name), ...extra });
-const castable = (s: S, player: string, card: string) =>
-  legalActions(s, player).some((a) => a.type === "cast" && a.card === card);
 /** Capacité activable de `source` dont le libellé correspond (la première sinon). */
 const ability = (s: S, player: string, source: string, label?: RegExp) =>
   legalActions(s, player).find(
@@ -335,34 +312,6 @@ describe("Marvel Super Heroes", () => {
 
 describe("lot A, blanc", () => {
   type S = GameState;
-  type Answer = (req: ChoiceRequest, player: string, cur: S) => ChoiceValue[] | undefined;
-  const lands = (name: string, n: number) => Array(n).fill(name) as string[];
-
-  /** Passe et répond aux choix (réponse suggérée par défaut) jusqu'à une pile vide, sans déclenchement en attente. */
-  const settle = (s: S, answer: Answer = () => undefined): S => {
-    let cur = s;
-    for (let i = 0; i < 300; i++) {
-      const p = cur.pending;
-      if (p?.kind === "priority" && cur.stack.length === 0 && cur.triggers.length === 0 && i > 0) break;
-      if (p?.kind === "priority") cur = act(cur, p.player, { type: "pass" });
-      else if (p?.kind === "choice")
-        cur = act(cur, p.player, { type: "choose", values: answer(p.request, p.player, cur) ?? p.request.suggested });
-      else break;
-    }
-    return cur;
-  };
-  /** Réponse qui choisit les objets (ou joueurs) voulus quand ils font partie des options. */
-  const picking =
-    (want: string[]): Answer =>
-    (req) => {
-      if (req.type !== "pick") return undefined;
-      const picked = want.filter((w) => req.options.includes(w));
-      return picked.length > 0 ? picked : undefined;
-    };
-  const cast = (s: S, player: string, name: string, extra: object = {}) =>
-    act(s, player, { type: "cast", card: idOf(s, player, "hand", name), ...extra });
-  const castable = (s: S, player: string, card: string) =>
-    legalActions(s, player).some((a) => a.type === "cast" && a.card === card);
   const ability = (s: S, player: string, source: string, label?: RegExp) =>
     legalActions(s, player).find(
       (a): a is Extract<ActionOption, { type: "activate" }> =>
@@ -906,33 +855,8 @@ describe("lot A, blanc", () => {
 
 describe("lot A, bleu", () => {
   type S = GameState;
-  /** Réponse à un choix, avec l'état courant (les cartes changent d'identifiant en changeant de zone). */
-  type Answer = (req: ChoiceRequest, player: string, cur: S) => ChoiceValue[] | undefined;
-  const lands = (name: string, n: number) => Array(n).fill(name) as string[];
-  const nameOf = (s: S, id: string) => s.defs[s.objects[id]?.defId ?? ""]?.name;
   const handNames = (s: S, p = "p1") => (s.players[p]?.hand ?? []).map((id) => nameOf(s, id));
 
-  /** Passe et répond aux choix (réponse suggérée par défaut) jusqu'à une pile vide, sans déclenchement en attente. */
-  const settle = (s: S, answer: Answer = () => undefined): S => {
-    let cur = s;
-    for (let i = 0; i < 300; i++) {
-      const p = cur.pending;
-      if (p?.kind === "priority" && cur.stack.length === 0 && cur.triggers.length === 0 && i > 0) break;
-      if (p?.kind === "priority") cur = act(cur, p.player, { type: "pass" });
-      else if (p?.kind === "choice")
-        cur = act(cur, p.player, { type: "choose", values: answer(p.request, p.player, cur) ?? p.request.suggested });
-      else break;
-    }
-    return cur;
-  };
-  /** Réponse qui choisit les objets (ou joueurs) voulus quand ils font partie des options. */
-  const picking =
-    (want: string[]): Answer =>
-    (req) => {
-      if (req.type !== "pick") return undefined;
-      const picked = want.filter((w) => req.options.includes(w));
-      return picked.length > 0 ? picked : undefined;
-    };
   /** Réponse qui choisit, parmi les options, les cartes portant ces noms. */
   const pickingNamed =
     (names: string[]): Answer =>
@@ -941,10 +865,6 @@ describe("lot A, bleu", () => {
       const picked = req.options.filter((o) => names.includes(nameOf(cur, String(o)) ?? ""));
       return picked.length > 0 ? picked : undefined;
     };
-  const cast = (s: S, player: string, name: string, extra: object = {}) =>
-    act(s, player, { type: "cast", card: idOf(s, player, "hand", name), ...extra });
-  const castable = (s: S, player: string, card: string) =>
-    legalActions(s, player).some((a) => a.type === "cast" && a.card === card);
   /** Capacité activable de `source` dont le libellé correspond (la première sinon). */
   const ability = (s: S, player: string, source: string, label?: RegExp) =>
     legalActions(s, player).find(
@@ -1458,25 +1378,9 @@ describe("lot A, bleu", () => {
 
 describe("lot A, noir", () => {
   type S = GameState;
-  type Answer = (req: ChoiceRequest, player: string, cur: S) => ChoiceValue[] | undefined;
-  const lands = (name: string, n: number) => Array(n).fill(name) as string[];
-  const nameOf = (s: S, id: string) => s.defs[s.objects[id]?.defId ?? ""]?.name;
   const exiled = (s: S, name: string) => s.exile.filter((id) => nameOf(s, id) === name);
   const handNames = (s: S, p = "p1") => (s.players[p]?.hand ?? []).map((id) => nameOf(s, id));
 
-  /** Passe et répond aux choix (réponse suggérée par défaut) jusqu'à une pile vide, sans déclenchement en attente. */
-  const settle = (s: S, answer: Answer = () => undefined): S => {
-    let cur = s;
-    for (let i = 0; i < 300; i++) {
-      const p = cur.pending;
-      if (p?.kind === "priority" && cur.stack.length === 0 && cur.triggers.length === 0 && i > 0) break;
-      if (p?.kind === "priority") cur = act(cur, p.player, { type: "pass" });
-      else if (p?.kind === "choice")
-        cur = act(cur, p.player, { type: "choose", values: answer(p.request, p.player, cur) ?? p.request.suggested });
-      else break;
-    }
-    return cur;
-  };
   /** Répond oui aux questions et choisit les objets voulus (par identifiant ou par nom) quand ils sont proposés. */
   const answering =
     (want: string[] = [], yes = true): Answer =>
@@ -1486,8 +1390,6 @@ describe("lot A, noir", () => {
       const picked = req.options.filter((o) => want.includes(o) || want.includes(nameOf(cur, o) ?? ""));
       return picked.length > 0 ? picked.slice(0, Math.max(1, req.max)) : undefined;
     };
-  const cast = (s: S, player: string, name: string, extra: object = {}) =>
-    act(s, player, { type: "cast", card: idOf(s, player, "hand", name), ...extra });
   const castOption = (s: S, player: string, card: string) =>
     legalActions(s, player).find((a): a is Extract<ActionOption, { type: "cast" }> => a.type === "cast" && a.card === card);
   const ability = (s: S, player: string, source: string, label?: RegExp) =>
@@ -2104,25 +2006,8 @@ describe("lot A, noir", () => {
 
 describe("lot A, rouge", () => {
   type S = GameState;
-  /** Réponse à un choix, avec l'état courant (les cartes changent d'identifiant en changeant de zone). */
-  type Answer = (req: ChoiceRequest, player: string, cur: S) => ChoiceValue[] | undefined;
-  const lands = (name: string, n: number) => Array(n).fill(name) as string[];
-  const nameOf = (s: S, id: string) => s.defs[s.objects[id]?.defId ?? ""]?.name;
   const exiled = (s: S, name: string) => s.exile.filter((id) => nameOf(s, id) === name);
 
-  /** Passe et répond aux choix (réponse suggérée par défaut) jusqu'à une pile vide, sans déclenchement en attente. */
-  const settle = (s: S, answer: Answer = () => undefined): S => {
-    let cur = s;
-    for (let i = 0; i < 300; i++) {
-      const p = cur.pending;
-      if (p?.kind === "priority" && cur.stack.length === 0 && cur.triggers.length === 0 && i > 0) break;
-      if (p?.kind === "priority") cur = act(cur, p.player, { type: "pass" });
-      else if (p?.kind === "choice")
-        cur = act(cur, p.player, { type: "choose", values: answer(p.request, p.player, cur) ?? p.request.suggested });
-      else break;
-    }
-    return cur;
-  };
   /** Réponse qui choisit les objets (ou joueurs) voulus quand ils font partie des options. */
   const picking =
     (want: string[]): Answer =>
@@ -2144,8 +2029,6 @@ describe("lot A, rouge", () => {
     (prompt: RegExp, rest: Answer = () => undefined): Answer =>
     (req, p, cur) =>
       req.type === "yesNo" && prompt.test(req.prompt ?? "") ? [0] : rest(req, p, cur);
-  const cast = (s: S, player: string, name: string, extra: object = {}) =>
-    act(s, player, { type: "cast", card: idOf(s, player, "hand", name), ...extra });
   const castable = (s: S, player: string, c: string) => legalActions(s, player).some((a) => a.type === "cast" && a.card === c);
   /** Capacité activable de `source` dont le libellé correspond (la première sinon). */
   const ability = (s: S, player: string, source: string, label?: RegExp) =>
@@ -2592,41 +2475,11 @@ describe("lot A, rouge", () => {
 
 describe("lot A, vert", () => {
   type S = GameState;
-  /** Réponse à un choix, avec l'état courant. */
-  type Answer = (req: ChoiceRequest, player: string, cur: S) => ChoiceValue[] | undefined;
-  const lands = (name: string, n: number) => Array(n).fill(name) as string[];
-  const nameOf = (s: S, id: string) => s.defs[s.objects[id]?.defId ?? ""]?.name;
-
-  /** Passe et répond aux choix (réponse suggérée par défaut) jusqu'à une pile vide, sans déclenchement en attente. */
-  const settle = (s: S, answer: Answer = () => undefined): S => {
-    let cur = s;
-    for (let i = 0; i < 300; i++) {
-      const p = cur.pending;
-      if (p?.kind === "priority" && cur.stack.length === 0 && cur.triggers.length === 0 && i > 0) break;
-      if (p?.kind === "priority") cur = act(cur, p.player, { type: "pass" });
-      else if (p?.kind === "choice")
-        cur = act(cur, p.player, { type: "choose", values: answer(p.request, p.player, cur) ?? p.request.suggested });
-      else break;
-    }
-    return cur;
-  };
-  /** Réponse qui choisit les options voulues quand elles sont proposées. */
-  const picking =
-    (want: string[]): Answer =>
-    (req) => {
-      if (req.type !== "pick") return undefined;
-      const picked = want.filter((w) => req.options.includes(w));
-      return picked.length > 0 ? picked : undefined;
-    };
   /** Choisit le mode d'une capacité déclenchée modale. */
   const triggerMode =
     (index: number): Answer =>
     (req) =>
       req.type === "pick" && req.intent === "triggerMode" ? [String(index)] : undefined;
-  const cast = (s: S, player: string, name: string, extra: object = {}) =>
-    act(s, player, { type: "cast", card: idOf(s, player, "hand", name), ...extra });
-  const castable = (s: S, player: string, card: string) =>
-    legalActions(s, player).some((a) => a.type === "cast" && a.card === card);
   /** Capacité activable de `source` dont le libellé correspond (la première sinon). */
   const ability = (s: S, player: string, source: string, label?: RegExp) =>
     legalActions(s, player).find(
@@ -3184,25 +3037,9 @@ describe("lot A, vert", () => {
 
 describe("lot A, multicolores", () => {
   type S = GameState;
-  type Answer = (req: ChoiceRequest, player: string, cur: S) => ChoiceValue[] | undefined;
-  const lands = (name: string, n: number) => Array(n).fill(name) as string[];
-  const nameOf = (s: S, id: string) => s.defs[s.objects[id]?.defId ?? ""]?.name;
   const exiled = (s: S, name: string) => s.exile.filter((id) => nameOf(s, id) === name);
   const handNames = (s: S, p = "p1") => (s.players[p]?.hand ?? []).map((id) => nameOf(s, id));
 
-  /** Passe et répond aux choix (réponse suggérée par défaut) jusqu'à une pile vide, sans déclenchement en attente. */
-  const settle = (s: S, answer: Answer = () => undefined): S => {
-    let cur = s;
-    for (let i = 0; i < 300; i++) {
-      const p = cur.pending;
-      if (p?.kind === "priority" && cur.stack.length === 0 && cur.triggers.length === 0 && i > 0) break;
-      if (p?.kind === "priority") cur = act(cur, p.player, { type: "pass" });
-      else if (p?.kind === "choice")
-        cur = act(cur, p.player, { type: "choose", values: answer(p.request, p.player, cur) ?? p.request.suggested });
-      else break;
-    }
-    return cur;
-  };
   /** Répond oui (ou non) aux questions et choisit les objets voulus (par identifiant ou par nom) quand ils sont proposés. */
   const answering =
     (want: string[] = [], yes = true): Answer =>
@@ -3212,8 +3049,6 @@ describe("lot A, multicolores", () => {
       const picked = req.options.filter((o) => want.includes(o) || want.includes(nameOf(cur, o) ?? ""));
       return picked.length > 0 ? picked.slice(0, Math.max(1, req.max)) : undefined;
     };
-  const cast = (s: S, player: string, name: string, extra: object = {}) =>
-    act(s, player, { type: "cast", card: idOf(s, player, "hand", name), ...extra });
   const ability = (s: S, player: string, source: string, label?: RegExp) =>
     legalActions(s, player).find(
       (a): a is Extract<ActionOption, { type: "activate" }> =>
@@ -3790,37 +3625,9 @@ describe("lot A, multicolores", () => {
 
 describe("lot A, incolores et terrains", () => {
   type S = GameState;
-  type Answer = (req: ChoiceRequest, player: string, cur: S) => ChoiceValue[] | undefined;
-  const lands = (name: string, n: number) => Array(n).fill(name) as string[];
-  const nameOf = (s: S, id: string) => s.defs[s.objects[id]?.defId ?? ""]?.name;
   const handNames = (s: S, p = "p1") => (s.players[p]?.hand ?? []).map((id) => nameOf(s, id));
   const libraryNames = (s: S, p = "p1") => (s.players[p]?.library ?? []).map((id) => nameOf(s, id));
 
-  /** Passe et répond aux choix (réponse suggérée par défaut) jusqu'à une pile vide, sans déclenchement en attente. */
-  const settle = (s: S, answer: Answer = () => undefined): S => {
-    let cur = s;
-    for (let i = 0; i < 300; i++) {
-      const p = cur.pending;
-      if (p?.kind === "priority" && cur.stack.length === 0 && cur.triggers.length === 0 && i > 0) break;
-      if (p?.kind === "priority") cur = act(cur, p.player, { type: "pass" });
-      else if (p?.kind === "choice")
-        cur = act(cur, p.player, { type: "choose", values: answer(p.request, p.player, cur) ?? p.request.suggested });
-      else break;
-    }
-    return cur;
-  };
-  /** Réponse qui choisit les objets (ou joueurs) voulus quand ils font partie des options. */
-  const picking =
-    (want: string[]): Answer =>
-    (req) => {
-      if (req.type !== "pick") return undefined;
-      const picked = want.filter((w) => req.options.includes(w));
-      return picked.length > 0 ? picked : undefined;
-    };
-  const cast = (s: S, player: string, name: string, extra: object = {}) =>
-    act(s, player, { type: "cast", card: idOf(s, player, "hand", name), ...extra });
-  const castable = (s: S, player: string, card: string) =>
-    legalActions(s, player).some((a) => a.type === "cast" && a.card === card);
   /** Capacité activable de `source` dont le libellé correspond (la première sinon). */
   const ability = (s: S, player: string, source: string, label?: RegExp) =>
     legalActions(s, player).find(

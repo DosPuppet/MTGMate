@@ -5,9 +5,8 @@
 import { availableMana, canPay, costToText, type ManaPurpose, manaAbilitiesOf, manaSources, manaValue, totalCost } from "./mana";
 import {
   abilitiesOf,
-  abilityMana,
+  abilityManaCost,
   abilityPurpose,
-  abilityReduction,
   abilityZone,
   activatedAbility,
   additionalOptions,
@@ -19,12 +18,12 @@ import {
   canPlayLand,
   castableFaces,
   castTerms,
+  costDependsOnTarget,
   craftMaterials,
   craftSpec,
   crewCandidates,
   crewPower,
   discardCostOptions,
-  equipDiscount,
   evidenceCards,
   FACE_DOWN_SPELL,
   graveyardToExile,
@@ -47,11 +46,12 @@ import {
   suggestedCrew,
   symbolCards,
   tapOthersOptions,
+  tapXCandidates,
   warpOf,
   waterbendAmount,
   webSlingingOptions,
 } from "./stack";
-import { matchesCard, matchesObjectFilter } from "./targets";
+import { ALL_CREATURE_TYPES, matchesCard, matchesObjectFilter, NON_CREATURE_SUBTYPES } from "./targets";
 
 /** Winter, Cursed Rider : nombre de cartes exilables pour « exilez X cartes … de votre cimetière ». */
 function graveyardXOptions(s: GameState, player: PlayerId, source: ObjectId, f: ObjectFilter): number {
@@ -64,15 +64,21 @@ function sacrificeXOptions(s: GameState, player: PlayerId, source: ObjectId, f: 
 }
 
 /** Secluded Starforge : nombre de permanents dégagés engageables pour « engagez X … ». */
-function tapXOptions(s: GameState, player: PlayerId, source: ObjectId, f: ObjectFilter): number {
-  return s.battlefield.filter(
-    (id) =>
-      id !== source && obj(s, id).controller === player && !obj(s, id).tapped && matchesObjectFilter(s, player, id, f, source),
-  ).length;
+/** « Engagez X [permanents] dégagés » : X maximal, les permanents engagés ne payant pas le mana (`tapXCandidates`). */
+function tapXMax(
+  s: GameState,
+  player: PlayerId,
+  source: ObjectId,
+  f: ObjectFilter,
+  pays: (exclude: Set<ObjectId>, x: number) => boolean,
+): number {
+  const ids = tapXCandidates(s, player, source, f);
+  for (let x = ids.length; x > 0; x--) if (pays(new Set(ids.slice(0, x)), x)) return x;
+  return 0;
 }
 
 import { snapshot } from "./layers";
-import { chars, isCreature, obj } from "./state";
+import { obj } from "./state";
 import { playerStatic } from "./statics";
 import { legalTargets } from "./targets";
 import { checkCondition } from "./triggers";
@@ -162,9 +168,23 @@ function kickerPrompt(d: CardDef): { title: string; without: string; with: strin
   return undefined;
 }
 
+/** Types de créature de chaque objet, pour « qui partagent un type de créature » (`"*"` : tous les types). */
+function creatureTypesOf(s: GameState, ids: ObjectId[]): Record<string, string[]> {
+  return Object.fromEntries(
+    ids.map((id) => {
+      const v = snapshot(s, id);
+      const all = v.keywords.includes("changeling") || v.subtypes.includes(ALL_CREATURE_TYPES);
+      return [id, all ? ["*"] : v.subtypes.filter((t) => !NON_CREATURE_SUBTYPES.has(t))];
+    }),
+  );
+}
+
 function targetOptions(s: GameState, player: PlayerId, specs: TargetSpec[], sourceId?: ObjectId): TargetOption[] {
   return specs.map((t) => {
-    const legal = legalTargets(s, player, t, sourceId);
+    const all = legalTargets(s, player, t, sourceId);
+    // « Valeur de mana totale N ou moins » : une cible qui dépasse N à elle seule n'est jamais choisissable.
+    const cap = t.maxTotalManaValue;
+    const legal = cap === undefined ? all : all.filter((id) => (snapshot(s, id).manaValue ?? 0) <= cap);
     const opt: TargetOption = {
       id: t.id,
       label: t.label,
@@ -177,6 +197,10 @@ function targetOptions(s: GameState, player: PlayerId, specs: TargetSpec[], sour
       kickedLegal: t.kickedFilter ? legalTargets(s, player, { ...t, filter: t.kickedFilter }, sourceId) : undefined,
       otherThan: t.otherThan,
       attachedToTarget: t.attachedToTarget,
+      ...(t.shareCreatureType ? { shareCreatureType: creatureTypesOf(s, legal) } : {}),
+      ...(cap !== undefined
+        ? { maxTotalManaValue: { max: cap, values: Object.fromEntries(legal.map((id) => [id, snapshot(s, id).manaValue ?? 0])) } }
+        : {}),
     };
     if (t.samePlayer || t.differentPlayers) {
       const holders: Record<string, string> = {};
@@ -197,12 +221,35 @@ function targetOptions(s: GameState, player: PlayerId, specs: TargetSpec[], sour
 }
 
 function targetsAvailable(opts: TargetOption[]): boolean {
+  const need = (t: TargetOption) => (t.optional || t.countX ? 0 : (t.min ?? t.count ?? 1));
+  // « Une autre cible » : assez de cibles distinctes pour tous les mots « cible » liés (Betrayal at the Vault).
+  for (const t of opts) {
+    if (!t.otherThan?.length) continue;
+    const group = [t, ...opts.filter((o) => t.otherThan?.includes(o.id))];
+    if (new Set(group.flatMap((o) => o.legal)).size < group.reduce((n, o) => n + need(o), 0)) return false;
+  }
   return opts.every((t) => {
     // « X cibles » : X peut valoir 0.
     if (t.optional || t.countX) return true;
     const need = t.min ?? t.count ?? 1;
     if (t.group?.kind === "different") return new Set(Object.values(t.group.holders)).size >= need;
-    return t.legal.length >= need;
+    // « Ciblant le même joueur » : assez de cibles chez un même joueur.
+    if (t.group?.kind === "same") {
+      const per = new Map<string, number>();
+      for (const h of Object.values(t.group.holders)) per.set(h, (per.get(h) ?? 0) + 1);
+      return [...per.values()].some((n) => n >= need);
+    }
+    if (t.legal.length < need) return false;
+    // « Qui partagent un type de créature » : assez de cibles qui en partagent un.
+    const share = t.shareCreatureType;
+    if (share && need > 1) {
+      const wild = t.legal.filter((id) => share[id]?.includes("*")).length;
+      const count = new Map<string, number>();
+      for (const id of t.legal)
+        if (!share[id]?.includes("*")) for (const ty of share[id] ?? []) count.set(ty, (count.get(ty) ?? 0) + 1);
+      return wild >= need || [...count.values()].some((n) => n + wild >= need);
+    }
+    return true;
   });
 }
 
@@ -301,7 +348,8 @@ export function legalActions(s: GameState, player: PlayerId): ActionOption[] {
     const onTime = terms.anyTime || (terms.sorceryTiming ? sorceryTiming(s, player) : canCastTiming(s, player, d));
     // Faufilement : hors de son moment habituel, le sort ne se lance que pour son coût de faufilement.
     const sneakOnly = !onTime && !terms.free && sneakTiming(s, player, d);
-    if (!onTime && !d.flashExtraCost && !sneakOnly) return;
+    // Une permission « au moment d'un rituel » (carte complotée) l'emporte sur le flash payant (Mystical Tether).
+    if (!onTime && (!d.flashExtraCost || terms.sorceryTiming) && !sneakOnly) return;
     const timingExtra = onTime || sneakOnly ? undefined : d.flashExtraCost;
     const flashback = terms.source === "flashback";
     const modes = modesOf(d)
@@ -321,7 +369,19 @@ export function legalActions(s: GameState, player: PlayerId): ActionOption[] {
           (!!d.kicker && targetsAvailable(m.targets.map((t) => (t.kickedLegal ? { ...t, legal: t.kickedLegal } : t)))),
       )
       // Spree : le coût supplémentaire du mode doit être payable.
-      .filter((m) => !m.extra || canPay(s, player, totalCost(spellCost(s, player, d, { free: terms.free }), 0, m.extra)))
+      .filter(
+        (m) =>
+          !m.extra ||
+          canPay(
+            s,
+            player,
+            totalCost(
+              totalCost(spellCost(s, player, d, { free: terms.free }), 0, m.extra),
+              0,
+              terms.extraCost ? { generic: terms.extraCost, colored: {}, x: 0 } : undefined,
+            ),
+          ),
+      )
       .map(({ extra: _, ok: __, ...m }) => m);
     if (modes.length === 0) return;
     const additional = additionalOptions(s, player, card, d, terms.source === "flashback");
@@ -360,7 +420,9 @@ export function legalActions(s: GameState, player: PlayerId): ActionOption[] {
     const mustPayDiscard = !!dis?.orPay && dis.options.length < dis.count;
     const withExtra = (c: ManaCost) => {
       const a0 = mustPayInstead && sac?.orPay ? totalCost(c, 0, sac.orPay) : c;
-      const a = mustPayDiscard && dis?.orPay ? totalCost(a0, 0, dis.orPay) : a0;
+      const a1 = mustPayDiscard && dis?.orPay ? totalCost(a0, 0, dis.orPay) : a0;
+      // Surcoût de la permission (Lightstall Inquisitor : « coûte {1} de plus »), comme dans `castSpell`.
+      const a = terms.extraCost ? totalCost(a1, 0, { generic: terms.extraCost, colored: {}, x: 0 }) : a1;
       return timingExtra ? totalCost(a, 0, timingExtra) : a;
     };
     // Harmonie : payable aussi en engageant une créature (qui ne sert alors pas à payer le mana).
@@ -384,13 +446,15 @@ export function legalActions(s: GameState, player: PlayerId): ActionOption[] {
       (!alt.collectEvidence || !!evidenceCards(s, player, card, alt.collectEvidence)) &&
       canPay(s, player, withExtra(spellCost(s, player, d, { ...base, alternative: true })), exclude, purpose);
     // Kicker payable (« coûte {2} de moins s'il est marchandé » : Hamlet Glutton peut n'être payable que marchandé).
+    // Travail d'équipe : les créatures engagées pour le kicker ne paient pas le mana.
+    const kickerCrew = d.kickerCost?.tapPower !== undefined ? suggestedCrew(s, player, card, d.kickerCost.tapPower) : [];
     const kickerAffordable =
       !sneakOnly &&
       !!d.kicker &&
       !flashback &&
       (!d.kickerCost ||
         (d.kickerCost.tapPower !== undefined
-          ? suggestedCrew(s, player, card, d.kickerCost.tapPower).length > 0
+          ? kickerCrew.length > 0
           : d.kickerCost.collectEvidence !== undefined
             ? !!evidenceCards(s, player, card, d.kickerCost.collectEvidence)
             : d.kickerCost.life !== undefined
@@ -402,10 +466,42 @@ export function legalActions(s: GameState, player: PlayerId): ActionOption[] {
         s,
         player,
         withExtra(spellCost(s, player, d, { ...base, kicked: true, free: terms.free })),
-        undefined,
+        kickerCrew.length ? new Set([...(exclude ?? []), ...kickerCrew]) : undefined,
         purposeFor(true, 0),
       );
     if (!terms.free && !normal && !freeAvailable && !altAvailable && !kickerAffordable) return;
+    // Un mode qui n'a de cibles qu'avec le kicker ou le cadeau (Too Evil to Stay Dead) demande un kicker payable.
+    if (!kickerAffordable)
+      for (let i = modes.length - 1; i >= 0; i--)
+        if (!targetsAvailable((modes[i] as (typeof modes)[number]).targets)) modes.splice(i, 1);
+    if (modes.length === 0) return;
+    // « Ce sort coûte {W}{U} de plus pour chaque cible au-delà de la première » (Officious Interrogation) : pas plus de
+    // cibles que le mana disponible n'en permet.
+    if (d.costPerExtraTarget && normal && !freeAvailable && !altAvailable)
+      for (const m of modes)
+        for (const t of m.targets) {
+          let n = t.count ?? 1;
+          const dummy = (k: number) => ({ [t.id]: Array.from({ length: k }, (_, i) => `#${i}`) });
+          while (n > 1 && !payableWith(withExtra(spellCost(s, player, d, { ...base, targets: dummy(n) })))) n--;
+          t.count = n > 1 ? n : undefined;
+        }
+    // « Ce sort coûte {N} de moins s'il cible… » (Luminous Rebuke) : payable seulement grâce à la réduction, le sort ne
+    // propose que les cibles qui la donnent (sinon le joueur choisirait une cible et le paiement échouerait).
+    const reduction = d.costReduction?.condition;
+    if (normal && !freeAvailable && !altAvailable && reduction?.kind === "targetMatches") {
+      const full = payableWith(withExtra(spellCost(s, player, d, { ...base, targets: { [reduction.spec]: [] } })));
+      if (!full)
+        for (const m of modes)
+          for (const t of m.targets) {
+            if (t.id !== reduction.spec) continue;
+            const giving = t.legal.filter((id) =>
+              payableWith(withExtra(spellCost(s, player, d, { ...base, targets: { [t.id]: [id] } }))),
+            );
+            // Plusieurs cibles (« jusqu'à deux », This Town Ain't Big Enough) : au moins une qui donne la réduction.
+            if ((t.count ?? 1) > 1) Object.assign(t, { requiredAmong: giving, optional: false, min: 1 });
+            else Object.assign(t, { legal: giving, optional: false });
+          }
+    }
     // Le mana à payer à la place du sacrifice est-il disponible ?
     if (dis?.orPay) {
       dis.orPayAffordable = canPay(s, player, totalCost(spellCost(s, player, d, base), 0, dis.orPay), undefined, purpose);
@@ -485,42 +581,55 @@ export function legalActions(s: GameState, player: PlayerId): ActionOption[] {
         : ab.cost.tap
           ? new Set([id])
           : undefined;
-      // Warrior's Blades : au mieux, la créature qui porte le plus de marqueurs +1/+1.
-      // Dragonfire Blade : au mieux, la créature qui a le plus de couleurs.
-      const byColors = ab.reduceByTargetColors
-        ? Math.max(
-            0,
-            ...s.battlefield
-              .filter((c) => obj(s, c).controller === player && isCreature(s, c))
-              .map((c) => chars(s, c).colors.length),
-          )
-        : 0;
-      const reduction = ab.reduceByTargetCounters
-        ? Math.max(
-            0,
-            ...s.battlefield.filter((c) => obj(s, c).controller === player).map((c) => obj(s, c).counters["+1/+1"] ?? 0),
-          )
-        : byColors +
-          abilityReduction(s, player, id, ab) +
-          Math.max(0, ...s.battlefield.map((c) => equipDiscount(s, player, ab, c)));
+      // Warrior's Blades, Dragonfire Blade : au mieux, la cible la plus favorable.
       if (ab.cost.exileGraveyardSymbols && !symbolCards(s, player, ab.cost.exileGraveyardSymbols)) return;
-      const abCost = totalCost(abilityMana(s, id, ab), 0, undefined, reduction);
-      if (ab.cost.mana && !canPay(s, player, abCost, exclude, abilityPurpose(id, ab))) return;
+      const abCost = abilityManaCost(s, player, id, ab, "best");
+      // Les permanents sacrifiés par défaut peuvent payer par une capacité qui ne les sacrifie pas (Trésor : non).
+      const sacrificed = ab.cost.sacrifice ? sacrificeOptions(s, player, id, ab).slice(0, ab.cost.sacrifice.count) : [];
+      const purpose = sacrificed.length
+        ? { ...abilityPurpose(id, ab), sacrificedForCost: new Set(sacrificed) }
+        : abilityPurpose(id, ab);
+      if (ab.cost.mana && !canPay(s, player, abCost, exclude, purpose)) return;
       const targets = targetOptions(s, player, ab.targets, id);
+      // Coût qui dépend de la cible : seules les cibles qui rendent la capacité payable sont proposées.
+      if (ab.cost.mana && costDependsOnTarget(ab))
+        for (const t of targets)
+          if (t.id === "t")
+            t.legal = t.legal.filter((c) =>
+              canPay(s, player, abilityManaCost(s, player, id, ab, c), exclude, abilityPurpose(id, ab)),
+            );
       if (!targetsAvailable(targets)) return;
-      const xMax = ab.cost.loyaltyX
+      const xMax0 = ab.cost.loyaltyX
         ? (o.counters.loyalty ?? 0)
         : ab.cost.removeCountersX
           ? (o.counters[ab.cost.removeCountersX] ?? 0)
           : ab.cost.tapX
-            ? tapXOptions(s, player, id, ab.cost.tapX)
+            ? tapXMax(
+                s,
+                player,
+                id,
+                ab.cost.tapX,
+                (tapped, x) =>
+                  !ab.cost.mana ||
+                  canPay(
+                    s,
+                    player,
+                    abilityManaCost(s, player, id, ab, "best", x),
+                    new Set([...(exclude ?? []), ...tapped]),
+                    purpose,
+                  ),
+              )
             : ab.cost.exileFromGraveyardX
               ? graveyardXOptions(s, player, id, ab.cost.exileFromGraveyardX)
               : ab.cost.sacrificeX
                 ? sacrificeXOptions(s, player, id, ab.cost.sacrificeX)
                 : maxX(s, player, ab.cost.mana, exclude, abilityPurpose(id, ab));
-      // « X ne peut pas être 0 » : la capacité n'est proposée que si X peut atteindre son minimum.
-      if (ab.cost.minX !== undefined && (xMax ?? 0) < ab.cost.minX) return;
+      // Krumar Initiate : « payez X points de vie » — X ne dépasse pas les points de vie.
+      const xMax = ab.cost.payLifeX && xMax0 !== null ? Math.min(xMax0, Math.max(0, s.players[player]?.life ?? 0)) : xMax0;
+      // « X ne peut pas être 0 » (et « sacrifiez X permanents », Radiant Lotus) : proposée seulement si X peut atteindre son
+      // minimum.
+      const minX = ab.cost.minX ?? (ab.cost.sacrificeX ? 1 : undefined);
+      if (minX !== undefined && (xMax ?? 0) < minX) return;
       out.push({
         type: "activate",
         source: id,
@@ -528,7 +637,7 @@ export function legalActions(s: GameState, player: PlayerId): ActionOption[] {
         label: ab.label,
         targets,
         xMax,
-        ...(ab.cost.minX !== undefined ? { xMin: ab.cost.minX } : {}),
+        ...(minX !== undefined ? { xMin: minX } : {}),
         additional:
           ab.cost.sacrifice || ab.cost.tapOthers || ab.cost.discard || ab.cost.crew !== undefined || ab.cost.craft
             ? {

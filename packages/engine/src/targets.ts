@@ -139,7 +139,7 @@ export function matchesView(v: LkiSnapshot, f: ObjectFilter, perspective: Player
 export const ALL_CREATURE_TYPES = "*";
 
 /** Sous-types qui ne sont pas des types de créature (terrains, artefacts, enchantements). */
-const NON_CREATURE_SUBTYPES = new Set([
+export const NON_CREATURE_SUBTYPES = new Set([
   "Plains",
   "Island",
   "Swamp",
@@ -429,7 +429,9 @@ export function validateTargets(
     }
     if (ids.length > max) throw new RulesError(max === 1 ? "Une seule cible par mot « cible »" : `${max} cibles au maximum`);
     if (new Set(ids).size !== ids.length) throw new RulesError("Même cible choisie deux fois");
-    if (ids.length === 0 && !spec.optional) throw new RulesError(`Cible manquante : ${spec.label ?? spec.id}`);
+    // « X cibles » avec X = 0 : aucune cible (601.2c).
+    if (ids.length === 0 && !spec.optional && !(spec.countX && max === 0))
+      throw new RulesError(`Cible manquante : ${spec.label ?? spec.id}`);
     const min = spec.minCount ?? max;
     if (!spec.optional && !spec.kickedCount && ids.length < min)
       throw new RulesError(min === max ? `${max} cibles requises` : `Au moins ${min} cible(s)`);

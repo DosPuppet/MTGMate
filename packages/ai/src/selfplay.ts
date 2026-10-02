@@ -12,11 +12,13 @@ import {
   type Decision,
   fallbackDecision,
   type GameState,
+  legalActions,
   RulesError,
   submit,
   syncControl,
 } from "@mtgx/engine";
 import { corruptDecision } from "./chaos";
+import { buildCastDecision } from "./options";
 import { mulberry32 } from "./random";
 
 export interface SelfPlayResult {
@@ -190,6 +192,11 @@ export function playGame(opts: {
   startingLife?: number;
   /** Fuzz « chaos » : avant chaque décision, `perDecision` variantes corrompues sont soumises et doivent être refusées proprement. */
   chaos?: { seed: number; perDecision: number };
+  /**
+   * Toutes les `offers` priorités, chaque option de `legalActions`, construite avec ses choix par défaut (première cible,
+   * premier mode…), doit être acceptée par le moteur : `legal.ts` ne propose rien que `stack.ts` refuse (PLAN-C, lot C2).
+   */
+  offers?: number;
 }): SelfPlayResult {
   const ids = opts.decks.map((_, i) => `p${i + 1}`);
   const deckSizes = Object.fromEntries(ids.map((id, i) => [id, opts.decks[i]?.length ?? 0]));
@@ -206,6 +213,8 @@ export function playGame(opts: {
   const chaosRand = opts.chaos ? mulberry32(opts.chaos.seed) : null;
   for (let i = 0; i < max && state.pending && !state.over; i++) {
     const p = state.pending;
+    if (opts.offers && p.kind === "priority" && i % opts.offers === 0)
+      checkOffers(state, p.player, `seed ${opts.seed}, décision ${i}`);
     let d = (agents[p.player] as Agent)(state, p.player);
     if (chaosRand && opts.chaos) probe(state, p.player, d, chaosRand, opts.chaos.perDecision, `seed ${opts.seed}, décision ${i}`);
     let step: ReturnType<typeof submit>;
@@ -226,6 +235,26 @@ export function playGame(opts: {
     }
   }
   return { state, decisions, illegal, turns: state.turn.number, caps };
+}
+
+/** Chaque option proposée, avec ses choix par défaut, est acceptée (sinon : `legal.ts` et `stack.ts` divergent). */
+export function checkOffers(state: GameState, player: string, where: string): void {
+  for (const [k, a] of legalActions(state, player).entries()) {
+    if (a.type === "pass") continue;
+    const d = buildCastDecision(a, (list) => list[0], mulberry32(k + 1));
+    if (!d) continue;
+    try {
+      submit(state, player, d);
+    } catch (e) {
+      const id = "card" in a ? a.card : "source" in a ? a.source : "";
+      const name = state.defs[state.objects[id]?.defId ?? ""]?.name ?? id;
+      if (!(e instanceof RulesError))
+        throw new Error(`Erreur du moteur sur une option proposée (${where}) : ${a.type} ${name}\n${JSON.stringify(d)}`, {
+          cause: e,
+        });
+      throw new Error(`Option proposée puis refusée (${where}) : ${a.type} ${name} — ${e.message}\n${JSON.stringify(d)}`);
+    }
+  }
 }
 
 /** État sans les définitions (partagées, immuables) : sert à vérifier qu'une soumission n'a rien modifié. */

@@ -16,31 +16,26 @@ import { legalActions } from "../src/legal";
 import { chars, FACE_DOWN_ID, moveObject } from "../src/state";
 import { matchesObjectFilter } from "../src/targets";
 import { canBlock, requiredBlocks } from "../src/turn";
-import type { ChoiceRequest, ChoiceValue, Decision, GameState } from "../src/types";
+import type { ChoiceRequest, Decision, GameState } from "../src/types";
 import { projectView } from "../src/view";
-import { act, advanceUntil, castNowOf, customCard, idOf, idsOf, passBoth, scenario, untilCastNow } from "./helpers";
+import {
+  type Answer,
+  act,
+  advanceUntil,
+  castTargets as cast,
+  castNowOf,
+  customCard,
+  idOf,
+  idsOf,
+  lands,
+  nameOf,
+  passBoth,
+  scenario,
+  settle,
+  untilCastNow,
+} from "./helpers";
 
 type S = GameState;
-type Answer = (req: ChoiceRequest, player: string) => ChoiceValue[] | undefined;
-const lands = (name: string, n: number) => Array(n).fill(name) as string[];
-const nameOf = (s: S, id: string) => s.defs[s.objects[id]?.defId ?? ""]?.name;
-
-/** Passe et répond aux choix (réponse suggérée par défaut) jusqu'à une pile vide, sans déclenchement en attente. */
-const settle = (s: S, answer: Answer = () => undefined): S => {
-  let cur = s;
-  for (let i = 0; i < 300; i++) {
-    const p = cur.pending;
-    if (p?.kind === "priority" && cur.stack.length === 0 && cur.triggers.length === 0 && i > 0) break;
-    if (p?.kind === "priority") cur = act(cur, p.player, { type: "pass" });
-    else if (p?.kind === "choice")
-      cur = act(cur, p.player, { type: "choose", values: answer(p.request, p.player) ?? p.request.suggested });
-    else break;
-  }
-  return cur;
-};
-const cast = (s: S, player: string, name: string, targets?: Record<string, string[]>, extra: object = {}) =>
-  act(s, player, { type: "cast", card: idOf(s, player, "hand", name), targets, ...extra });
-
 describe("Murders at Karlov Manor", () => {
   describe("terrains à surveillance (Thundering Falls, Meticulous Archive, Underground Mortuary)", () => {
     it("arrivent engagés, puis surveillance 1 : la carte du dessus peut aller au cimetière", () => {
@@ -319,30 +314,11 @@ describe("Murders at Karlov Manor, lot A — blanc", () => {
    * Oracle (plan R, lot R7).
    */
   type S = GameState;
-  type Answer = (req: ChoiceRequest, player: string) => ChoiceValue[] | undefined;
-  const lands = (name: string, n: number) => Array(n).fill(name) as string[];
-  const nameOf = (s: S, id: string) => s.defs[s.objects[id]?.defId ?? ""]?.name;
-
-  /** Passe et répond aux choix (réponse suggérée par défaut) jusqu'à une pile vide, sans déclenchement en attente. */
-  const settle = (s: S, answer: Answer = () => undefined): S => {
-    let cur = s;
-    for (let i = 0; i < 300; i++) {
-      const p = cur.pending;
-      if (p?.kind === "priority" && cur.stack.length === 0 && cur.triggers.length === 0 && i > 0) break;
-      if (p?.kind === "priority") cur = act(cur, p.player, { type: "pass" });
-      else if (p?.kind === "choice")
-        cur = act(cur, p.player, { type: "choose", values: answer(p.request, p.player) ?? p.request.suggested });
-      else break;
-    }
-    return cur;
-  };
   /** Répond aux choix de cibles en désignant ces objets. */
   const picking =
     (...ids: string[]): Answer =>
     (req) =>
       req.type === "pick" && ids.every((id) => req.options.includes(id)) ? ids : undefined;
-  const cast = (s: S, player: string, name: string, targets?: Record<string, string[]>, extra: object = {}) =>
-    act(s, player, { type: "cast", card: idOf(s, player, "hand", name), targets, ...extra });
   /** Active la capacité de la source dont le libellé contient `label` (la première sinon). */
   const activate = (s: S, player: string, source: string, label?: string, targets?: Record<string, string[]>) => {
     const a = legalActions(s, player).find(
@@ -927,10 +903,6 @@ describe("Murders at Karlov Manor, lot A — bleu", () => {
    * Murders at Karlov Manor, lot A : cartes bleues, confrontées à leur texte Oracle (plan R, lot R7).
    */
   type S = GameState;
-  type Answer = (req: ChoiceRequest, player: string) => ChoiceValue[] | undefined;
-  const lands = (name: string, n: number) => Array(n).fill(name) as string[];
-  const nameOf = (s: S, id: string) => s.defs[s.objects[id]?.defId ?? ""]?.name;
-
   /**
    * Passe et répond aux choix (réponse suggérée par défaut) jusqu'à une pile vide, sans déclenchement en attente ; une
    * défausse demandée défausse les dernières cartes de la main (les dernières piochées).
@@ -942,16 +914,13 @@ describe("Murders at Karlov Manor, lot A — bleu", () => {
       if (p?.kind === "priority" && cur.stack.length === 0 && cur.triggers.length === 0 && i > 0) break;
       if (p?.kind === "priority") cur = act(cur, p.player, { type: "pass" });
       else if (p?.kind === "choice")
-        cur = act(cur, p.player, { type: "choose", values: answer(p.request, p.player) ?? p.request.suggested });
+        cur = act(cur, p.player, { type: "choose", values: answer(p.request, p.player, cur) ?? p.request.suggested });
       else if (p?.kind === "discard")
         cur = act(cur, p.player, { type: "discard", cards: (cur.players[p.player]?.hand ?? []).slice(-p.count) });
       else break;
     }
     return cur;
   };
-  const cast = (s: S, player: string, name: string, targets?: Record<string, string[]>, extra: object = {}) =>
-    act(s, player, { type: "cast", card: idOf(s, player, "hand", name), targets, ...extra });
-
   /** Capacité activée de la source dont le libellé contient `label`. */
   const activate = (s: S, player: string, source: string, label: string, extra: Partial<Decision> = {}) => {
     const a = legalActions(s, player).find(
@@ -1573,26 +1542,7 @@ describe("Murders at Karlov Manor, lot A — noir", () => {
    * Murders at Karlov Manor, lot A : cartes noires, confrontées à leur texte Oracle (plan R, lot R7).
    */
   type S = GameState;
-  type Answer = (req: ChoiceRequest, player: string) => ChoiceValue[] | undefined;
-  const lands = (name: string, n: number) => Array(n).fill(name) as string[];
-  const nameOf = (s: S, id: string) => s.defs[s.objects[id]?.defId ?? ""]?.name;
   const names = (s: S, ids: string[] = []) => ids.map((id) => nameOf(s, id));
-
-  /** Passe et répond aux choix (réponse suggérée par défaut) jusqu'à une pile vide, sans déclenchement en attente. */
-  const settle = (s: S, answer: Answer = () => undefined): S => {
-    let cur = s;
-    for (let i = 0; i < 300; i++) {
-      const p = cur.pending;
-      if (p?.kind === "priority" && cur.stack.length === 0 && cur.triggers.length === 0 && i > 0) break;
-      if (p?.kind === "priority") cur = act(cur, p.player, { type: "pass" });
-      else if (p?.kind === "choice")
-        cur = act(cur, p.player, { type: "choose", values: answer(p.request, p.player) ?? p.request.suggested });
-      else break;
-    }
-    return cur;
-  };
-  const cast = (s: S, player: string, name: string, targets?: Record<string, string[]>, extra: object = {}) =>
-    act(s, player, { type: "cast", card: idOf(s, player, "hand", name), targets, ...extra });
 
   /** Capacité activée de la source dont le libellé contient `label`. */
   const activation = (s: S, player: string, source: string, label: string) =>
@@ -1629,7 +1579,7 @@ describe("Murders at Karlov Manor, lot A — noir", () => {
       if (p.kind === "priority") cur = act(cur, p.player, { type: "pass" });
       else if (p.kind === "declareBlockers") cur = act(cur, p.player, { type: "declareBlockers", blocks });
       else if (p.kind === "choice")
-        cur = act(cur, p.player, { type: "choose", values: answer(p.request, p.player) ?? p.request.suggested });
+        cur = act(cur, p.player, { type: "choose", values: answer(p.request, p.player, cur) ?? p.request.suggested });
       else break;
     }
     return cur;
@@ -2181,26 +2131,7 @@ describe("Murders at Karlov Manor, lot A — rouge", () => {
    * Murders at Karlov Manor, lot A : cartes rouges, confrontées à leur texte Oracle (plan R, lot R7).
    */
   type S = GameState;
-  type Answer = (req: ChoiceRequest, player: string) => ChoiceValue[] | undefined;
-  const lands = (name: string, n: number) => Array(n).fill(name) as string[];
-  const nameOf = (s: S, id: string) => s.defs[s.objects[id]?.defId ?? ""]?.name;
   const names = (s: S, ids: string[] = []) => ids.map((id) => nameOf(s, id));
-
-  /** Passe et répond aux choix (réponse suggérée par défaut) jusqu'à une pile vide, sans déclenchement en attente. */
-  const settle = (s: S, answer: Answer = () => undefined): S => {
-    let cur = s;
-    for (let i = 0; i < 300; i++) {
-      const p = cur.pending;
-      if (p?.kind === "priority" && cur.stack.length === 0 && cur.triggers.length === 0 && i > 0) break;
-      if (p?.kind === "priority") cur = act(cur, p.player, { type: "pass" });
-      else if (p?.kind === "choice")
-        cur = act(cur, p.player, { type: "choose", values: answer(p.request, p.player) ?? p.request.suggested });
-      else break;
-    }
-    return cur;
-  };
-  const cast = (s: S, player: string, name: string, targets?: Record<string, string[]>, extra: object = {}) =>
-    act(s, player, { type: "cast", card: idOf(s, player, "hand", name), targets, ...extra });
 
   const activation = (s: S, player: string, source: string, label: string) =>
     legalActions(s, player).find(
@@ -2812,28 +2743,10 @@ describe("Murders at Karlov Manor, lot A — vert", () => {
    * Oracle (plan R, lot R7).
    */
   type S = GameState;
-  type Answer = (req: ChoiceRequest, player: string) => ChoiceValue[] | undefined;
-  const lands = (name: string, n: number) => Array(n).fill(name) as string[];
-  const nameOf = (s: S, id: string) => s.defs[s.objects[id]?.defId ?? ""]?.name;
   const names = (s: S, ids: readonly string[] = []) => ids.map((id) => nameOf(s, id)).sort();
   const pt = (s: S, id: string) => [chars(s, id).power, chars(s, id).toughness];
   const onBattlefield = (s: S, player: string, name: string) => idsOf(s, player, "battlefield", name);
 
-  /** Passe et répond aux choix (réponse suggérée par défaut) jusqu'à une pile vide, sans déclenchement en attente. */
-  const settle = (s: S, answer: Answer = () => undefined): S => {
-    let cur = s;
-    for (let i = 0; i < 300; i++) {
-      const p = cur.pending;
-      if (p?.kind === "priority" && cur.stack.length === 0 && cur.triggers.length === 0 && i > 0) break;
-      if (p?.kind === "priority") cur = act(cur, p.player, { type: "pass" });
-      else if (p?.kind === "choice")
-        cur = act(cur, p.player, { type: "choose", values: answer(p.request, p.player) ?? p.request.suggested });
-      else break;
-    }
-    return cur;
-  };
-  const cast = (s: S, player: string, name: string, targets?: Record<string, string[]>, extra: object = {}) =>
-    act(s, player, { type: "cast", card: idOf(s, player, "hand", name), targets, ...extra });
   /** Active la capacité de `source` dont le libellé contient `label` (la première si absent). */
   const activate = (s: S, player: string, source: string, label?: string, targets?: Record<string, string[]>) => {
     const a = legalActions(s, player).find(
@@ -3395,26 +3308,10 @@ describe("Murders at Karlov Manor, lot A — multicolores", () => {
    * Murders at Karlov Manor, lot A — cartes multicolores : chaque carte est confrontée à son texte Oracle (plan R, lot R7).
    */
   type S = GameState;
-  type Answer = (req: ChoiceRequest, player: string) => ChoiceValue[] | undefined;
-  const lands = (name: string, n: number) => Array(n).fill(name) as string[];
-  const nameOf = (s: S, id: string) => s.defs[s.objects[id]?.defId ?? ""]?.name;
   const names = (s: S, ids: string[] | undefined) => (ids ?? []).map((id) => nameOf(s, id));
   const exiled = (s: S, name: string) => s.exile.some((id) => nameOf(s, id) === name);
   const pt = (s: S, id: string) => [chars(s, id).power, chars(s, id).toughness];
 
-  /** Passe et répond aux choix (réponse suggérée par défaut) jusqu'à une pile vide, sans déclenchement en attente. */
-  const settle = (s: S, answer: Answer = () => undefined): S => {
-    let cur = s;
-    for (let i = 0; i < 300; i++) {
-      const p = cur.pending;
-      if (p?.kind === "priority" && cur.stack.length === 0 && cur.triggers.length === 0 && i > 0) break;
-      if (p?.kind === "priority") cur = act(cur, p.player, { type: "pass" });
-      else if (p?.kind === "choice")
-        cur = act(cur, p.player, { type: "choose", values: answer(p.request, p.player) ?? p.request.suggested });
-      else break;
-    }
-    return cur;
-  };
   const cast = (s: S, player: string, name: string, extra: Partial<Extract<Decision, { type: "cast" }>> = {}) =>
     act(s, player, { type: "cast", card: idOf(s, player, "hand", name), ...extra });
   /** Active la capacité de la source dont le libellé contient `label` (la première sinon). */
@@ -4289,26 +4186,6 @@ describe("Murders at Karlov Manor, lot A — incolores et terrains", () => {
    * Murders at Karlov Manor, lot A : cartes incolores et terrains, confrontées à leur texte Oracle (plan R, lot R7).
    */
   type S = GameState;
-  type Answer = (req: ChoiceRequest, player: string) => ChoiceValue[] | undefined;
-  const lands = (name: string, n: number) => Array(n).fill(name) as string[];
-  const nameOf = (s: S, id: string) => s.defs[s.objects[id]?.defId ?? ""]?.name;
-
-  /** Passe et répond aux choix (réponse suggérée par défaut) jusqu'à une pile vide, sans déclenchement en attente. */
-  const settle = (s: S, answer: Answer = () => undefined): S => {
-    let cur = s;
-    for (let i = 0; i < 300; i++) {
-      const p = cur.pending;
-      if (p?.kind === "priority" && cur.stack.length === 0 && cur.triggers.length === 0 && i > 0) break;
-      if (p?.kind === "priority") cur = act(cur, p.player, { type: "pass" });
-      else if (p?.kind === "choice")
-        cur = act(cur, p.player, { type: "choose", values: answer(p.request, p.player) ?? p.request.suggested });
-      else break;
-    }
-    return cur;
-  };
-  const cast = (s: S, player: string, name: string, targets?: Record<string, string[]>, extra: object = {}) =>
-    act(s, player, { type: "cast", card: idOf(s, player, "hand", name), targets, ...extra });
-
   /** Capacité activée de la source dont le libellé contient `label` (indice et option proposée). */
   const activation = (s: S, player: string, source: string, label: string) =>
     legalActions(s, player).find(
@@ -4567,7 +4444,6 @@ describe("Murders at Karlov Manor, lot A — incolores et terrains", () => {
 });
 
 describe("Murders at Karlov Manor, lot B1 : réunir des preuves (701.59)", () => {
-  const lands = (name: string, n: number) => Array(n).fill(name) as string[];
   const yes: Answer = (req) => (req.type === "yesNo" ? [1] : undefined);
   const activateFirst = (s: S, source: string, label: string, targets?: Record<string, string[]>) => {
     const a = legalActions(s, "p1").find((x) => x.type === "activate" && x.source === source && (x.label ?? "").includes(label));
@@ -4721,7 +4597,6 @@ describe("Murders at Karlov Manor, lot B1 : réunir des preuves (701.59)", () =>
 });
 
 describe("Murders at Karlov Manor, lot B2 : déguisement", () => {
-  const lands = (name: string, n: number) => Array(n).fill(name) as string[];
   const faceDown = (s: S, player: string, name: string) =>
     act(s, player, { type: "cast", card: idOf(s, player, "hand", name), faceDown: true });
   const faceUpAction = (s: S, player: string, id: string) =>
@@ -4824,7 +4699,6 @@ describe("Murders at Karlov Manor, lot B2 : déguisement", () => {
 });
 
 describe("Murders at Karlov Manor, lot B3 : cape (701.58)", () => {
-  const lands = (name: string, n: number) => Array(n).fill(name) as string[];
   /** Met face cachée (cape) une carte de la main du joueur. */
   const cloakFromHand = (s: S, player: string, name: string) =>
     putFaceDown(s, player, idOf(s, player, "hand", name), true) as string;
@@ -4935,7 +4809,6 @@ describe("Murders at Karlov Manor, lot B3 : cape (701.58)", () => {
 });
 
 describe("Murders at Karlov Manor, lot B4 : suspect et Affaires", () => {
-  const lands = (name: string, n: number) => Array(n).fill(name) as string[];
   const castOptions = (s: S, player: string, card: string) =>
     legalActions(s, player).filter((a) => a.type === "cast" && a.card === card);
 
@@ -5019,7 +4892,6 @@ describe("Murders at Karlov Manor, lot B4 : suspect et Affaires", () => {
 });
 
 describe("Murders at Karlov Manor, lot C1 : exigences de blocage (509.1c)", () => {
-  const lands = (name: string, n: number) => Array(n).fill(name) as string[];
   const toBlockers = (s: S, attackers: string[]) => {
     let c = advanceUntil(s, (x) => x.pending?.kind === "declareAttackers");
     c = act(c, "p1", { type: "declareAttackers", attackers: attackers.map((id) => ({ id, defender: "p2" })) });
@@ -5073,7 +4945,6 @@ describe("Murders at Karlov Manor, lot C1 : exigences de blocage (509.1c)", () =
 });
 
 describe("Murders at Karlov Manor, lot C2 : montants et coûts", () => {
-  const lands = (name: string, n: number) => Array(n).fill(name) as string[];
   const clues = (s: S, p: string) => idsOf(s, p, "battlefield", "Clue").length;
 
   it("No Witnesses : chaque joueur qui contrôle le plus de créatures enquête, puis toutes les créatures sont détruites", () => {
@@ -5227,7 +5098,6 @@ describe("Murders at Karlov Manor, lot C2 : montants et coûts", () => {
 });
 
 describe("Murders at Karlov Manor, lot C3 : cartes uniques", () => {
-  const lands = (name: string, n: number) => Array(n).fill(name) as string[];
   const yes: Answer = (req) => (req.type === "yesNo" ? [1] : undefined);
   const activateLabel = (s: S, source: string, label: string, extra: object = {}) => {
     const a = legalActions(s, "p1").find((x) => x.type === "activate" && x.source === source && (x.label ?? "").includes(label));

@@ -218,7 +218,7 @@ export const HANDLERS: OpHandlers = {
     const evidence = e.collectEvidence ? evidenceCards(s, p, "", e.collectEvidence) : undefined;
     const canDo =
       (!mana || canPay(s, p, mana, undefined, purpose)) &&
-      (s.players[p]?.life ?? 0) >= (life ?? 0) &&
+      (!life || (s.players[p]?.life ?? 0) >= life) &&
       (!e.discard || hand.length > 0 || (!!e.orMana && canPay(s, p, e.orMana))) &&
       sacrificeable().length >= (e.sacrifice ?? 0) &&
       evidence !== null;

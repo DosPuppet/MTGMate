@@ -8,30 +8,26 @@ import { describe, expect, it } from "vitest";
 import { dealDamage, sourceFromObject } from "../src/actions";
 import { legalActions } from "../src/legal";
 import { chars } from "../src/state";
-import type { ChoiceRequest, ChoiceValue, GameState } from "../src/types";
-import { act, advanceUntil, castNowOf, idOf, idsOf, passAccepting, passUntil, scenario, untilCastNow } from "./helpers";
+import type { GameState } from "../src/types";
+import {
+  type Answer,
+  act,
+  advanceUntil,
+  castTargets as cast,
+  castNowOf,
+  exiled,
+  idOf,
+  idsOf,
+  lands,
+  nameOf,
+  passAccepting,
+  passUntil,
+  scenario,
+  settle,
+  untilCastNow,
+} from "./helpers";
 
 type S = GameState;
-type Answer = (req: ChoiceRequest, player: string) => ChoiceValue[] | undefined;
-const lands = (name: string, n: number) => Array(n).fill(name) as string[];
-const nameOf = (s: S, id: string) => s.defs[s.objects[id]?.defId ?? ""]?.name;
-const exiled = (s: S, name: string) => s.exile.filter((id) => nameOf(s, id) === name);
-
-/** Passe et répond aux choix (réponse suggérée par défaut) jusqu'à une pile vide, sans déclenchement en attente. */
-const settle = (s: S, answer: Answer = () => undefined): S => {
-  let cur = s;
-  for (let i = 0; i < 300; i++) {
-    const p = cur.pending;
-    if (p?.kind === "priority" && cur.stack.length === 0 && cur.triggers.length === 0 && i > 0) break;
-    if (p?.kind === "priority") cur = act(cur, p.player, { type: "pass" });
-    else if (p?.kind === "choice")
-      cur = act(cur, p.player, { type: "choose", values: answer(p.request, p.player) ?? p.request.suggested });
-    else break;
-  }
-  return cur;
-};
-const cast = (s: S, player: string, name: string, targets?: Record<string, string[]>, extra: object = {}) =>
-  act(s, player, { type: "cast", card: idOf(s, player, "hand", name), targets, ...extra });
 const activation = (s: S, player: string, source: string) => {
   const a = legalActions(s, player).find((x) => x.type === "activate" && x.source === source);
   return a?.type === "activate" ? a.ability : undefined;
