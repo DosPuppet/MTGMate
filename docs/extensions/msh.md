@@ -25,3 +25,10 @@ Les scripts sont dans `packages/cards/src/msh/` : `cards` (cartes du méta), `wh
 - **Moteur :** rien de nouveau (« les deux si le travail d'équipe a été payé » : un mode sous `cond.kicked` ; flash sous condition par `playerStatic({ flashFor })`).
 - **Reste pour plus tard :** Agent Maria Hill (engagée pour payer un travail d'équipe), Captain America, Super-Soldier (marqueur de bouclier).
 - **Tests :** 35 tests de règles (« lot A, blanc »).
+
+## Sous-lot A2 : cartes bleues ✅ (86 / 271)
+
+- **Cartes (34) :** Aerial Doombot, A.I.M. Scientists, Atlantean Cavalry, Atlantis Attacks, Attuma, Atlantean Warlord, Bold Biochemist, Bruce Banner // The Incredible Hulk, Depower, Echo, Perceptive Prodigy, Falcon, Winged Wonder, Falcon's Wing Harness, Frozen in Ice, Futurist Forge, Giant-Sized Flying Ant, Hydraulic Helper, I Am Iron Man, Iron Lad, Diverging Destiny, Justice, Vance Astrovik, Kang the Conqueror, Mister Fantastic, Reed Richards, Ms. Marvel, Kamala Khan, Multiversal Incursion, Pym Particles, Rewrite History, Secret Invasion, S.H.I.E.L.D. Deployment Drone, S.H.I.E.L.D. Flying Car, Shuri, Wakandan Inventor, Stature, Size Shifter, Super Intelligence, Super Suit, Thirst for Knowledge, Tony Stark // The Invincible Iron Man, Wiccan, Rising Magician.
+- **Moteur :** rien de nouveau. La connivence sert désormais à plusieurs cartes : son entrée de dette est retirée.
+- **Reste pour plus tard :** Ironheart, Clever Champion (improvisation), Kid Loki (« les créatures sur lesquelles vous avez mis des marqueurs ce tour-ci » dans une capacité statique), Leader, Super-Genius (remplacement de la connivence), Loki, God of Mischief (une capacité qui cible), Namor the Sub-Mariner (symboles bleus du coût d'un sort), Trickster's Stratagem (deuxième depuis le dessus).
+- **Tests :** 40 tests de règles (« lot A, bleu »).
