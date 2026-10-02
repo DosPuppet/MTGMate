@@ -8,7 +8,7 @@ import { describe, expect, it } from "vitest";
 import { destroy } from "../src/actions";
 import { legalActions } from "../src/legal";
 import { chars } from "../src/state";
-import type { ChoiceRequest, ChoiceValue, GameState, ManaType } from "../src/types";
+import type { ActionOption, ChoiceRequest, ChoiceValue, GameState, ManaType } from "../src/types";
 import { act, advanceUntil, castNowOf, customCard, idOf, idsOf, passAccepting, scenario, untilCastNow } from "./helpers";
 
 type S = GameState;
@@ -720,10 +720,7 @@ describe("lot A, blanc", () => {
     });
 
     describe("Leonardo, Leader in Blue", () => {
-      // Le faufilement n'est pas encore lançable : `canCastTiming` (stack.ts) ignore la fenêtre de faufilement (un sort de
-      // créature ou de rituel est refusé à l'étape de déclaration des bloqueurs), et rien ne fait arriver le permanent
-      // engagé et attaquant. À réactiver quand le moteur le fera.
-      it.skip("faufilé : il arrive engagé et attaquant, et vos créatures gagnent +2/+0", () => {
+      it("faufilé : il arrive engagé et attaquant, et vos créatures gagnent +2/+0", () => {
         let s = scenario({
           p1: { battlefield: ["Bear Cub", "Llanowar Elves", ...lands("Plains", 5)], hand: ["Leonardo, Leader in Blue"] },
         });
@@ -953,10 +950,7 @@ describe("lot A, blanc", () => {
         expect(idsOf(s, "p2", "battlefield", "Serra Angel")).toHaveLength(1);
       });
 
-      // Le faufilement n'est pas encore lançable : `canCastTiming` (stack.ts) ignore la fenêtre de faufilement (un sort de
-      // créature ou de rituel est refusé à l'étape de déclaration des bloqueurs), et rien ne fait arriver le permanent
-      // engagé et attaquant. À réactiver quand le moteur le fera.
-      it.skip("faufilé : la créature est exilée pour de bon", () => {
+      it("faufilé : la créature est exilée pour de bon", () => {
         let s = scenario({
           p1: { battlefield: ["Bear Cub", ...lands("Plains", 2), ...lands("Swamp", 2)], hand: ["Turncoat Kunoichi"] },
           p2: { battlefield: ["Serra Angel"] },
@@ -3475,24 +3469,41 @@ describe("lot A, multicolores", () => {
         expect(namesIn(s, s.players.p1?.hand)).toEqual(["Bear Cub"]);
       });
 
-      // Le faufilement d'une créature n'est pas encore lançable pendant l'étape des bloqueurs (moteur) : la créature
-      // faufilée est simulée (lancée ainsi, arrivée ce tour-ci).
+      /** Karai faufilée ce tour-ci (vrai lancer à l'étape des bloqueurs), ou lors d'un tour précédent (simulé). */
       const sneaked = (thisTurn: boolean) => {
-        let s = scenario({ p1: { battlefield: ["Karai, Future of the Foot"], graveyard: ["Serra Angel"] } });
-        const karai = idOf(s, "p1", "battlefield", "Karai, Future of the Foot");
-        s = attack(s, [karai]);
-        const o = s.objects[karai] as { castVia?: string; controlledSince: number };
-        o.castVia = "sneak";
-        o.controlledSince = thisTurn ? s.turn.number : s.turn.number - 2;
-        s.version += 1;
-        return toMain2(s, (req, cur) => pickNamed(cur, req, "Serra Angel"));
+        if (!thisTurn) {
+          let s = scenario({ p1: { battlefield: ["Karai, Future of the Foot"], graveyard: ["Serra Angel"] } });
+          const karai = idOf(s, "p1", "battlefield", "Karai, Future of the Foot");
+          s = attack(s, [karai]);
+          (s.objects[karai] as { castVia?: string }).castVia = "sneak";
+          s.version += 1;
+          return toMain2(s, (req, cur) => pickNamed(cur, req, "Serra Angel"));
+        }
+        let s = scenario({
+          p1: {
+            battlefield: ["Bear Cub", "Plains", "Swamp", "Swamp", "Swamp"],
+            hand: ["Karai, Future of the Foot"],
+            graveyard: ["Serra Angel"],
+          },
+        });
+        s = attack(s, [idOf(s, "p1", "battlefield", "Bear Cub")]);
+        s = advanceUntil(
+          s,
+          (x) => x.turn.step === "declareBlockers" && x.pending?.kind === "priority" && x.pending.player === "p1",
+        );
+        s = cast(s, "p1", "Karai, Future of the Foot", { alternative: true });
+        const out = toMain2(s, (req, cur) => pickNamed(cur, req, "Serra Angel"));
+        // L'Ourson est revenu en main ; Karai est arrivée engagée et attaquante.
+        expect(idsOf(out, "p1", "hand", "Bear Cub")).toHaveLength(1);
+        return out;
       };
 
       it("faufilée ce tour-ci : la carte revient sur le champ de bataille à la place", () => {
         const s = sneaked(true);
         expect(s.players.p2?.life).toBe(17);
         expect(idsOf(s, "p1", "battlefield", "Serra Angel")).toHaveLength(1);
-        expect(s.players.p1?.hand).toHaveLength(0);
+        // Seul l'attaquant renvoyé pour le faufilement est en main.
+        expect(namesIn(s, s.players.p1?.hand)).toEqual(["Bear Cub"]);
       });
 
       it("faufilée lors d'un tour précédent : la carte revient en main", () => {
@@ -4127,5 +4138,57 @@ describe("lot A, incolores et terrains", () => {
         expect(chars(s, turtle).keywords).toContain("unblockable");
       });
     });
+  });
+});
+
+describe("lot B1, faufilement", () => {
+  const toBlockers = (s: S, attackers: string[]) => {
+    let cur = advanceUntil(s, (x) => x.pending?.kind === "declareAttackers");
+    cur = act(cur, "p1", { type: "declareAttackers", attackers: attackers.map((id) => ({ id, defender: "p2" })) });
+    return advanceUntil(
+      cur,
+      (x) => x.turn.step === "declareBlockers" && x.pending?.kind === "priority" && x.pending.player === "p1",
+    );
+  };
+  const castOpt = (s: S, card: string) =>
+    legalActions(s, "p1").find((a): a is Extract<ActionOption, { type: "cast" }> => a.type === "cast" && a.card === card);
+
+  it("702.190a : à l'étape des bloqueurs, une créature ne se lance que pour son faufilement ; l'attaquant renvoyé est au choix", () => {
+    let s = scenario({
+      p1: { battlefield: ["Bear Cub", "Serra Angel", ...Array(5).fill("Plains")], hand: ["Leonardo, Leader in Blue"] },
+    });
+    const card = idOf(s, "p1", "hand", "Leonardo, Leader in Blue");
+    // En phase principale, pas de faufilement.
+    expect(() => act(s, "p1", { type: "cast", card, alternative: true })).toThrow();
+    const bear = idOf(s, "p1", "battlefield", "Bear Cub");
+    const angel = idOf(s, "p1", "battlefield", "Serra Angel");
+    s = toBlockers(s, [bear, angel]);
+    const opt = castOpt(s, card);
+    expect(opt?.altAvailable).toBe(true);
+    expect(opt?.normalAvailable).toBeUndefined();
+    expect(opt?.altBounce).toEqual([bear, angel]);
+    s = act(s, "p1", { type: "cast", card, alternative: true, bounce: [angel] });
+    expect(idsOf(s, "p1", "hand", "Serra Angel")).toHaveLength(1);
+    s = passAccepting(s, (x) => x.stack.length === 0 && x.triggers.length === 0);
+    const leo = idOf(s, "p1", "battlefield", "Leonardo, Leader in Blue");
+    expect(s.objects[leo]?.tapped).toBe(true);
+    expect(s.combat?.attackers.find((a) => a.id === leo)?.defender).toBe("p2");
+  });
+
+  it("un rituel faufilé se lance à l'étape des bloqueurs (Leonardo's Technique)", () => {
+    let s = scenario({
+      p1: { battlefield: ["Bear Cub", "Plains", "Plains"], hand: ["Leonardo's Technique"], graveyard: ["Llanowar Elves"] },
+    });
+    s = toBlockers(s, [idOf(s, "p1", "battlefield", "Bear Cub")]);
+    const elves = idOf(s, "p1", "graveyard", "Llanowar Elves");
+    s = act(s, "p1", {
+      type: "cast",
+      card: idOf(s, "p1", "hand", "Leonardo's Technique"),
+      alternative: true,
+      targets: { t: [elves] },
+    });
+    s = passAccepting(s, (x) => x.stack.length === 0 && x.triggers.length === 0);
+    expect(idsOf(s, "p1", "battlefield", "Llanowar Elves")).toHaveLength(1);
+    expect(idsOf(s, "p1", "hand", "Bear Cub")).toHaveLength(1);
   });
 });

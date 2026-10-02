@@ -148,8 +148,11 @@ export const RECORD_VERSION = 1;
  * - 54 : Marvel's Spider-Man, lots B1 à C3 : créature renvoyée par le Web-slinging au choix, chaos donné et chaos d'un
  *   terrain, « ne peut pas être contrecarré » généralisé (Chimil et Hexing Squelcher protègent désormais tous vos sorts),
  *   émeute, redirection de blessures, permanents partis pendant une même décision (`leftBatch`).
+ * - 55 : Teenage Mutant Ninja Turtles, lot B1 : faufilement lançable à l'étape des bloqueurs pour les créatures et les
+ *   rituels, attaquant renvoyé au choix, permanent faufilé arrivant engagé et attaquant ; cibles « de joueurs différents »
+ *   sans assez de joueurs : pas de cible légale.
  */
-export const RULES_VERSION = 54;
+export const RULES_VERSION = 55;
 
 /** Un point de contrôle toutes les N décisions (plus la dernière de la partie). */
 export const CHECKPOINT_EVERY = 25;

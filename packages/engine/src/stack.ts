@@ -159,6 +159,16 @@ export function canCastTiming(s: GameState, player: PlayerId, d: CardDef): boole
   );
 }
 
+/** Faufilement (702.190a) : le sort se lance pour son coût de faufilement pendant l'étape de déclaration des bloqueurs. */
+export function sneakTiming(s: GameState, player: PlayerId, d: CardDef): boolean {
+  return !!d.sneak && sneakOptions(s, player).length > 0 && checkCondition(s, { kind: "sneakWindow" }, player);
+}
+
+/** Faufilement : les attaquants non bloqués que vous pouvez renvoyer, le plus faible en premier (le choix par défaut). */
+export function sneakOptions(s: GameState, player: PlayerId): ObjectId[] {
+  return [...unblockedAttackers(s, player)].sort((a, b) => chars(s, a).power - chars(s, b).power);
+}
+
 /** Capacités (sur le champ de bataille) des permanents que ce joueur contrôle. */
 function controlledAbilities(s: GameState, player: PlayerId): CardDef["abilities"] {
   return controlledAbilitiesWithSource(s, player).map((e) => e.ab);
@@ -1439,7 +1449,9 @@ export function castSpell(s: GameState, player: PlayerId, card: ObjectId, choice
   if (splitSecondOnStack(s)) throw new RulesError("Aucun sort ni capacité maintenant (second partagé ou combat)");
   // Harbinger of the Tides : « comme s'il avait le flash si vous payez {2} de plus ».
   const flashExtra = !terms.anyTime && !canCastTiming(s, player, d) ? d.flashExtraCost : undefined;
-  if (!terms.anyTime && !canCastTiming(s, player, d) && !flashExtra)
+  // Faufilement (702.190a) : à l'étape de déclaration des bloqueurs, quand vous avez la priorité.
+  const sneakNow = !!choices.alternative && sneakTiming(s, player, d);
+  if (!terms.anyTime && !canCastTiming(s, player, d) && !flashExtra && !sneakNow)
     throw new RulesError("Vous ne pouvez pas lancer ce sort maintenant");
   if (terms.sorceryTiming && !sorceryTiming(s, player)) throw new RulesError("Seulement au moment d'un rituel");
   const flashback = terms.source === "flashback";
@@ -1610,11 +1622,16 @@ export function castSpell(s: GameState, player: PlayerId, card: ObjectId, choice
     if (back) bounced.push(back);
   }
   const sneaked = alternative && !!d.sneak;
+  let sneakDefender: string | undefined;
   if (sneaked) {
-    const weakest = [...unblockedAttackers(s, player)].sort((a, b) => chars(s, a).power - chars(s, b).power)[0];
-    if (!weakest) throw new RulesError("Aucun attaquant non bloqué");
-    removeFromCombat(s, weakest);
-    moveObject(s, weakest, "hand");
+    // L'attaquant non bloqué renvoyé : au choix (`bounce`), le plus faible par défaut.
+    const options = sneakOptions(s, player);
+    const back = choices.bounce?.length ? choices.bounce[0] : options[0];
+    if (!back || !options.includes(back) || (choices.bounce?.length ?? 1) !== 1)
+      throw new RulesError("Aucun attaquant non bloqué");
+    sneakDefender = s.combat?.attackers.find((a) => a.id === back)?.defender;
+    removeFromCombat(s, back);
+    moveObject(s, back, "hand");
   }
   // Réunir des preuves : les cartes du cimetière sont exilées en payant le coût.
   if (evidence) collectEvidence(s, player, evidence);
@@ -1653,6 +1670,7 @@ export function castSpell(s: GameState, player: PlayerId, card: ObjectId, choice
     impending: alternative && cardDef.impending ? true : undefined,
     evoked: alternative && cardDef.evoke ? true : undefined,
     sneaked: sneaked || undefined,
+    sneakDefender,
     castVia: webSlinging ? "webSlinging" : terms.mayhem ? "mayhem" : sneaked ? "sneak" : undefined,
     costBounced: bounced.length ? bounced : undefined,
     manaSpent: free ? 0 : manaValue(cost),
@@ -2774,6 +2792,8 @@ function finishResolution(
           evoked: item.evoked,
           castVia: item.castVia,
           costBounced: item.costBounced,
+          // Faufilement : il arrive engagé et attaquant ce qu'attaquait la créature renvoyée.
+          ...(item.sneaked && item.sneakDefender ? { tapped: true, attacking: item.sneakDefender } : {}),
           // Marqueurs, célérité et sous-types d'arrivée (Torgal, Summon: Fenrir, Noctis), Imminence : avant l'événement.
           counters: item.arrival?.counters,
           haste: item.arrival?.haste,

@@ -38,6 +38,8 @@ import {
   kickerCostPermanent,
   modesOf,
   sacrificeOptions,
+  sneakOptions,
+  sneakTiming,
   sorceryTiming,
   spellCost,
   spellView,
@@ -297,8 +299,10 @@ export function legalActions(s: GameState, player: PlayerId): ActionOption[] {
   ) {
     // Timing : normal, ignoré (Etali), ou flash moyennant un surcoût (Harbinger of the Tides).
     const onTime = terms.anyTime || (terms.sorceryTiming ? sorceryTiming(s, player) : canCastTiming(s, player, d));
-    if (!onTime && !d.flashExtraCost) return;
-    const timingExtra = onTime ? undefined : d.flashExtraCost;
+    // Faufilement : hors de son moment habituel, le sort ne se lance que pour son coût de faufilement.
+    const sneakOnly = !onTime && !terms.free && sneakTiming(s, player, d);
+    if (!onTime && !d.flashExtraCost && !sneakOnly) return;
+    const timingExtra = onTime || sneakOnly ? undefined : d.flashExtraCost;
     const flashback = terms.source === "flashback";
     const modes = modesOf(d)
       .map((m, index) => ({
@@ -369,11 +373,11 @@ export function legalActions(s: GameState, player: PlayerId): ActionOption[] {
       !!harmony?.options.some((id) =>
         canPay(s, player, totalCost(c, 0, undefined, harmony.powers[id] ?? 0), new Set([...(exclude ?? []), id]), purpose),
       );
-    const normal = !terms.free && payableWith(withExtra(spellCost(s, player, d, base)));
+    const normal = !sneakOnly && !terms.free && payableWith(withExtra(spellCost(s, player, d, base)));
     // Sans payer son coût de mana : les taxes (Thalia, the Survivor) et coûts supplémentaires restent à payer.
     const freePayable = () => payableWith(withExtra(spellCost(s, player, d, { ...base, free: true })));
     if (terms.free && !freePayable()) return;
-    const freeAvailable = !!terms.freeOptional && freePayable();
+    const freeAvailable = !sneakOnly && !!terms.freeOptional && freePayable();
     const alt = terms.free ? undefined : altCostFor(s, player, d);
     const altAvailable =
       !!alt &&
@@ -381,6 +385,7 @@ export function legalActions(s: GameState, player: PlayerId): ActionOption[] {
       canPay(s, player, withExtra(spellCost(s, player, d, { ...base, alternative: true })), exclude, purpose);
     // Kicker payable (« coûte {2} de moins s'il est marchandé » : Hamlet Glutton peut n'être payable que marchandé).
     const kickerAffordable =
+      !sneakOnly &&
       !!d.kicker &&
       !flashback &&
       (!d.kickerCost ||
@@ -448,7 +453,13 @@ export function legalActions(s: GameState, player: PlayerId): ActionOption[] {
         additional.discard || additional.sacrifice || harmony?.options.length
           ? { ...additional, ...(harmony?.options.length ? { tap: { count: 1, ...harmony, optional: true as const } } : {}) }
           : undefined,
-      altBounce: altAvailable && isWebSlinging(s, player, d) ? webSlingingOptions(s, player) : undefined,
+      altBounce: !altAvailable
+        ? undefined
+        : isWebSlinging(s, player, d)
+          ? webSlingingOptions(s, player)
+          : d.sneak
+            ? sneakOptions(s, player)
+            : undefined,
       kickerPermanents:
         d.kickerCost && !d.kickerCost.tapPower && !d.kickerCost.collectEvidence && !d.kickerCost.exileGraveyard
           ? kickerCostOptions(s, player, card, d)

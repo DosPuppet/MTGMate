@@ -60,3 +60,12 @@ Les scripts sont dans `packages/cards/src/tmt/` : `cards` (cartes du méta), `wh
 - **Moteur :** rien de nouveau.
 - **Reste pour plus tard :** Don & Raph, Hard Science (affinité pour les artefacts donnée au prochain sort non-créature), Mikey & Don, Party Planners (un marqueur de plus pour une créature lancée depuis le dessus de la bibliothèque), North Wind Avatar (une carte hors de la partie).
 - **Tests :** 63 tests de règles (« lot A, multicolores » et « lot A, incolores et terrains ») ; la branche faufilée de Karai est simulée en attendant le sous-lot B1.
+
+## Sous-lot B1 : faufilement ✅ (180 / 188)
+
+- **Moteur :**
+  - le faufilement (702.190a) se lance à l'étape de déclaration des bloqueurs, quand vous avez la priorité, aussi pour une créature ou un rituel (`sneakTiming`) ; hors de son moment habituel, l'option n'offre que le coût de faufilement ;
+  - l'attaquant non bloqué renvoyé est au choix (`bounce` dans la décision, `altBounce` dans l'option, le plus faible par défaut ; la fenêtre de l'interface sert aussi au Web-slinging) ;
+  - un permanent faufilé arrive engagé et attaquant ce qu'attaquait la créature renvoyée ;
+  - `RULES_VERSION` = 55, parties dorées régénérées.
+- **Tests :** 2 tests de règles (« lot B1 ») ; les deux tests désactivés du lot A (Leonardo, Leader in Blue ; Turncoat Kunoichi) sont réactivés et Karai est faufilée pour de bon.

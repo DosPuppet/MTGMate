@@ -298,8 +298,10 @@ export interface StackItem {
   manaSpent?: number;
   /** Lancé pour son coût d'évocation. */
   evoked?: boolean;
-  /** Lancé pour son coût de faufilement (Sneak). */
+  /** Lancé pour son coût de faufilement (Sneak) ; `sneakDefender` : ce qu'attaquait la créature renvoyée (le permanent
+   * arrive engagé et attaquant ce joueur ou ce planeswalker). */
   sneaked?: boolean;
+  sneakDefender?: string;
   /** Lancé par Web-slinging ou pour son coût de chaos (Spider-Man). */
   castVia?: CastVia;
   /** Créature renvoyée en main pour le Web-slinging (Scarlet Spider, Ben Reilly). */

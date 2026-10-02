@@ -698,7 +698,7 @@ export const useGame = create<Store>((set, get) => {
       c.sacrifice === null
     )
       return set({ casting: { ...c, stage: "sacrifice", spec: null } });
-    // Web-slinging : la créature engagée à renvoyer, s'il y a le choix.
+    // Web-slinging ou faufilement : la créature à renvoyer, s'il y a le choix.
     if (c.option.type === "cast" && c.payMode === "alt" && (c.option.altBounce?.length ?? 0) > 1 && c.bounce === null)
       return set({ casting: { ...c, stage: "bounce", spec: null } });
     // Travail d'équipe : les créatures à engager.

@@ -351,15 +351,20 @@ function CastingPrompt() {
     const spec = opt.additional.sacrifice;
     return <AdditionalCostPicker kind="sacrifice" count={spec.count} options={spec.options} />;
   }
-  // Web-slinging : la créature engagée à renvoyer en main.
+  // Web-slinging (une créature engagée) ou faufilement (un attaquant non bloqué) : la créature à renvoyer en main.
   if (casting.stage === "bounce" && opt.type === "cast" && opt.altBounce) {
+    const sneak = opt.altLabel?.startsWith("Faufilement");
     return (
       <AdditionalCostPicker
         kind="bounce"
         count={1}
         options={opt.altBounce}
         suggested={opt.altBounce.slice(0, 1)}
-        title="Web-slinging : choisissez la créature engagée à renvoyer dans la main de son propriétaire"
+        title={
+          sneak
+            ? "Faufilement : choisissez l'attaquant non bloqué à renvoyer dans la main de son propriétaire"
+            : "Web-slinging : choisissez la créature engagée à renvoyer dans la main de son propriétaire"
+        }
       />
     );
   }
