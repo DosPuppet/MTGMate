@@ -22,6 +22,7 @@ function subjectOf(e: TurnLogEntry, byOwner?: boolean): PlayerId | undefined {
     case "zone":
       return !byOwner && (e.from === "battlefield" || e.to === "battlefield") ? e.controller : e.owner;
     case "cast":
+    case "playLand":
     case "counters":
     case "sacrifice":
     case "attack":
@@ -53,7 +54,7 @@ function matches(e: TurnLogEntry, q: TurnLogQuery, me: PlayerId, subject?: Playe
     if (q.from && e.from !== q.from) return false;
     if (q.to && e.to !== q.to) return false;
   }
-  if (e.e === "cast" && q.fromZone && e.fromZone !== q.fromZone) return false;
+  if ((e.e === "cast" || e.e === "playLand") && q.fromZone && e.fromZone !== q.fromZone) return false;
   if (e.e === "cast" && q.warped && !e.warped) return false;
   if (e.e === "activate" && q.equip && !e.equip) return false;
   if (e.e === "bend" && q.bendKind && e.kind !== q.bendKind) return false;

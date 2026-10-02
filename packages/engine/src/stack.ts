@@ -256,6 +256,8 @@ export function playLand(s: GameState, player: PlayerId, card: ObjectId, payLife
   s.turn.landsPlayed += 1;
   emit({ type: "playLand", player, objectId: id as string, defId });
   if (id) rulesEvent(s, { e: "playLand", player, objectId: id, from: fromZone });
+  const land = s.defs[defId];
+  logTurnEvent(s, { e: "playLand", player, fromZone, types: land?.types ?? [], subtypes: land?.subtypes ?? [] });
   // Lightstall Inquisitor : un terrain joué depuis l'exil ainsi arrive engagé.
   const landed = id ? s.objects[id] : undefined;
   if (landed && fromExile?.landsTapped) {

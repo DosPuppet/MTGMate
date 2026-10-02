@@ -396,5 +396,7 @@ Dans l'ordre où elles ont été ajoutées, extension par extension.
   - `règle` Maximum Carnage : au chapitre I, l'obligation d'attaquer ne vise que les créatures adverses présentes à la résolution, et « un joueur autre que vous si possible » n'est pas imposé (exact en duel, sauf pour attaquer vos planeswalkers) ;
   - `règle` Spinneret and Spiderling : le seuil de 4 blessures se lit par blessure infligée ; des blessures de combat réparties entre plusieurs bloqueurs (2 + 2) ne le déclenchent pas.
   - `règle` Supportive Parents : « engagez deux créatures dégagées que vous contrôlez » ne peut pas l'engager elle-même (comme Kirol).
+  - `règle` Doctor Octopus, Master Planner : « votre taille de main maximale est de huit » se lit « vous n'avez pas de taille de main maximale » (comme The Ten Rings) ;
+  - `règle` Spider-Slayer, Hatred Honed : « chaque fois qu'il inflige des blessures à une Araignée » se lit « chaque fois qu'une Araignée blessée par lui ce tour-ci reçoit des blessures » ; une Araignée indestructible déjà blessée par lui ferait déclencher la capacité si une autre source la blesse.
 - **Légalité Standard :** instantané des légalités Scryfall au moment de l'import (`legalities.standard` dans `data/<set>.json`). Après une rotation ou une annonce de bannissement, réimporter les sets (`npm run import-cards -- <set>`).
 - **Images des jetons :** celle du jeton Scryfall le plus proche (même nom, puis mêmes F/E et couleurs ; `data/tokens.json`, `npm run import-tokens`) ; un jeton de nom inconnu garde le cadre texte.

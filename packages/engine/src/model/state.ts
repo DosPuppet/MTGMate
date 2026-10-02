@@ -429,6 +429,8 @@ export type TurnLogEntry =
       /** Lancé pour son coût de distorsion (Vide, Edge of Eternities). */
       warped?: boolean;
     }
+  /** Terrain joué (305.1), avec sa zone de départ (« joué un terrain depuis ailleurs que votre main », Spider-Man 2099). */
+  | { e: "playLand"; player: PlayerId; fromZone: Zone; types: CardType[]; subtypes: string[] }
   /** Attaque d'une créature : `player` attaque `defender` (le joueur attaqué, ou le contrôleur du planeswalker). */
   | { e: "attack"; player: PlayerId; defender: PlayerId; types: CardType[]; subtypes: string[] }
   | { e: "sacrifice"; player: PlayerId; types: CardType[]; subtypes: string[]; supertypes?: string[]; token?: boolean }

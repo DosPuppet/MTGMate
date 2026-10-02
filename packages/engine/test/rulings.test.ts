@@ -13,6 +13,7 @@ import { changeCounters, chars } from "../src/state";
 import { addPlayerEffect } from "../src/statics";
 import { matchesObjectFilter } from "../src/targets";
 import { requiredBlocks, stateBasedActions } from "../src/turn";
+import { countTurnEvents } from "../src/turnlog";
 import type { CardDef, GameState } from "../src/types";
 import { act, advanceUntil, customCard, idOf, idsOf, passAccepting, passUntil, scenario } from "./helpers";
 
@@ -435,5 +436,13 @@ describe("socle de Marvel's Spider-Man", () => {
     const w = idOf(s, "p1", "battlefield", "Test Exile Watcher");
     s = passAccepting(act(s, "p1", { type: "playLand", card: idOf(s, "p1", "hand", "Forest") }), (x) => x.triggers.length === 0);
     expect(s.objects[w]?.counters["+1/+1"] ?? 0).toBe(0);
+  });
+
+  it("journal du tour : un terrain joué est noté avec sa zone de départ (Spider-Man 2099)", () => {
+    let s = scenario({ p1: { hand: ["Forest"] } });
+    s = act(s, "p1", { type: "playLand", card: idOf(s, "p1", "hand", "Forest") });
+    expect(countTurnEvents(s, { event: "playLand", who: "you", fromZone: "hand" }, "p1")).toBe(1);
+    expect(countTurnEvents(s, { event: "playLand", who: "you", fromZone: "graveyard" }, "p1")).toBe(0);
+    expect(countTurnEvents(s, { event: "playLand", who: "opponent" }, "p1")).toBe(0);
   });
 });
