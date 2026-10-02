@@ -69,10 +69,15 @@ export const HANDLERS: OpHandlers = {
   addManaUntilEndOfTurn(s, _r, e, ctx) {
     const pl = s.players[ctx.controller];
     if (!pl) return;
-    pl.manaKeep ??= {};
-    for (const m of e.mana) {
-      pl.manaPool[m] += 1;
-      pl.manaKeep[m] = (pl.manaKeep[m] ?? 0) + 1;
+    if (e.untilEndOfCombat) pl.manaKeepCombat ??= {};
+    else pl.manaKeep ??= {};
+    const keep = (e.untilEndOfCombat ? pl.manaKeepCombat : pl.manaKeep) as Partial<Record<ManaType, number>>;
+    const times = e.times === undefined ? 1 : Math.max(0, evalAmount(s, ctx, e.times));
+    for (let i = 0; i < times; i++) {
+      for (const m of e.mana) {
+        pl.manaPool[m] += 1;
+        keep[m] = (keep[m] ?? 0) + 1;
+      }
     }
     return;
   },

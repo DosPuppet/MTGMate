@@ -738,8 +738,9 @@ function singleDef(raw: RawCard, script: CardScript | undefined, set: string): C
   // Évocation (702.74) et Mobilisation (702.181, Tarkir: Dragonstorm).
   const evoke = /^Evoke ((?:\{[^}]+\})+)/m.exec(raw.oracleText)?.[1];
   const mobilize = Number(/^Mobilize (\d+)/m.exec(raw.oracleText)?.[1] ?? 0);
-  // Maîtrise du feu N (Avatar) : « chaque fois que cette créature attaque, ajoutez N {R} » (jusqu'à la fin du tour).
-  const firebending = Number(/^Firebending (\d+)/m.exec(raw.oracleText)?.[1] ?? 0);
+  // Maîtrise du feu N (Avatar) : « chaque fois que cette créature attaque, ajoutez N {R} » (jusqu'à la fin du combat), seule
+  // sur sa ligne ou parmi d'autres mots-clés (« Flying, firebending 2 », « Trample, firebending 4, haste »).
+  const firebending = Number(/^(?:[A-Z][a-z]+(?: [a-z]+)?, )*[Ff]irebending (\d+)(?:,| \(|$)/m.exec(raw.oracleText)?.[1] ?? 0);
   // Le Hobbit : Storied ; Tortues Ninja : Faufilement ; Spider-Man : Chaos ; Strixhaven : Paradigme.
   const storied = /^Storied\b/m.test(raw.oracleText);
   const sneak = /^Sneak ((?:\{[^}]+\})+)/m.exec(raw.oracleText)?.[1];
@@ -774,11 +775,7 @@ function singleDef(raw: RawCard, script: CardScript | undefined, set: string): C
     );
   }
   if (firebending) {
-    bloomburrowAbilities.push(
-      dsl.triggered(dsl.when.attacksSelf, [dsl.fx.addManaUntilEndOfTurn(...Array<"R">(firebending).fill("R"))], {
-        label: `Maîtrise du feu ${firebending}`,
-      }),
-    );
+    bloomburrowAbilities.push(dsl.firebending(firebending));
   }
   if (mobilize) {
     bloomburrowAbilities.push(

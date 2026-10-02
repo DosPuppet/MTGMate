@@ -16,7 +16,7 @@ import { ask } from "./choices";
 import { announceDiscard, announceDiscardBatch, evalAmount, moveWithSpec, runEffect } from "./effects";
 import { RulesError, rethrowAsRules } from "./errors";
 import { copiableExceptions, copiedDefId, effectivePower, hasKeyword } from "./layers";
-import { costToText, manaValue, payMana, totalCost } from "./mana";
+import { costToText, type ManaPurpose, manaValue, payMana, totalCost } from "./mana";
 import { copyStackItem } from "./stackChoices";
 import {
   bump,
@@ -760,6 +760,11 @@ function abilityCostReduction(s: GameState, player: PlayerId, source: ObjectId, 
  * Coût de mana d'une capacité activée : celui qui est imprimé, ou, pour une montée en puissance d'une source arrivée ce
  * tour-ci, ce coût diminué du coût de mana de la source (générique et symboles colorés).
  */
+/** À quoi sert le mana d'une capacité activée : sa source, et la maîtrise de l'eau (tout le coût en est une, X compris). */
+export function abilityPurpose(source: ObjectId, ab: ActivatedAbilityDef): ManaPurpose {
+  return { abilitySource: source, ...(ab.cost.waterbend ? { waterbend: Number.POSITIVE_INFINITY } : {}) };
+}
+
 export function abilityMana(s: GameState, source: ObjectId, ab: ActivatedAbilityDef): ManaCost | undefined {
   const m = printedAbilityMana(s, source, ab);
   const o = s.objects[source];
@@ -2128,7 +2133,8 @@ export function activateAbility(s: GameState, player: PlayerId, source: ObjectId
         (t ? (s.objects[t]?.counters["+1/+1"] ?? 0) : 0) +
         abilityReduction(s, player, source, ab) +
         equipDiscount(s, player, ab, targets.t?.[0]);
-      payMana(s, player, totalCost(abilityMana(s, source, ab), x, undefined, reduction), reserved, { abilitySource: source });
+      const cost = totalCost(abilityMana(s, source, ab), x, undefined, reduction);
+      payMana(s, player, cost, reserved, abilityPurpose(source, ab));
     } catch (e) {
       rethrowAsRules(e, "Mana insuffisant");
     }

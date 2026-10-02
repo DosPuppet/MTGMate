@@ -895,6 +895,13 @@ export const fx = {
     ...(amount !== undefined ? { amount } : {}),
   }),
   addManaUntilEndOfTurn: (...mana: ManaType[]): Effect => ({ op: "addManaUntilEndOfTurn", mana }),
+  /** Mana qui reste jusqu'à la fin du combat, `times` fois (maîtrise du feu). */
+  addManaUntilEndOfCombat: (mana: ManaType[], times?: Amount): Effect => ({
+    op: "addManaUntilEndOfTurn",
+    mana,
+    untilEndOfCombat: true,
+    ...(times !== undefined ? { times } : {}),
+  }),
   copyNextSpell: {
     op: "playerEffect",
     ability: { nextSpell: { filter: { types: ["Instant", "Sorcery"] }, copy: true } },
@@ -1412,6 +1419,8 @@ export function activated(opts: {
   /** Réunir des preuves N comme coût (MKM) ; `linkEvidence` : les cartes sont liées à la source. */
   collectEvidence?: number;
   linkEvidence?: boolean;
+  /** Maîtrise de l'eau (Avatar) : le coût de mana est un coût « waterbend » (artefacts et créatures dégagés : {1} chacun). */
+  waterbend?: boolean;
   /** « Engagez X [artefacts] dégagés que vous contrôlez ». */
   tapX?: ObjectFilter;
   /** « Exilez X cartes [d'artefact] de votre cimetière ». */
@@ -1455,6 +1464,7 @@ export function activated(opts: {
       blight: opts.blight,
       collectEvidence: opts.collectEvidence,
       linkEvidence: opts.linkEvidence,
+      waterbend: opts.waterbend,
       tapX: opts.tapX,
       exileFromGraveyardX: opts.exileFromGraveyardX,
       sacrificeX: opts.sacrificeX,
@@ -2084,6 +2094,16 @@ export function triggered(
     fromGraveyard: opts.fromGraveyard,
     batched: opts.batched,
   };
+}
+
+/**
+ * Maîtrise du feu N (Avatar) : « chaque fois que cette créature attaque, ajoutez N {R} ; ce mana reste jusqu'à la fin du
+ * combat ». N peut être un montant (« maîtrise du feu X, X étant la force de Zuko »).
+ */
+export function firebending(n: Amount): TriggeredAbilityDef {
+  return triggered(when.attacksSelf, [fx.addManaUntilEndOfCombat(["R"], n)], {
+    label: typeof n === "number" ? `Maîtrise du feu ${n}` : "Maîtrise du feu X",
+  });
 }
 
 /** Chapitre(s) de Saga (714.2) : « I, II — [effets] ». */

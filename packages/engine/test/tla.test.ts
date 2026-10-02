@@ -3,11 +3,13 @@
  * texte Oracle (plan R, lot R7). Maîtrise de l'air (Avatar's Wrath, Appa), maîtrise de la terre (Ba Sing Se), Leçons
  * (Combustion Technique, Accumulate Wisdom), kicker, coûts additionnels et contresorts.
  */
+import { card } from "@mtgx/cards";
 import { describe, expect, it } from "vitest";
+import * as dsl from "../src/dsl";
 import { legalActions } from "../src/legal";
 import { chars } from "../src/state";
 import type { ChoiceRequest, ChoiceValue, GameState } from "../src/types";
-import { act, advanceUntil, idOf, idsOf, scenario } from "./helpers";
+import { act, advanceUntil, customCard, idOf, idsOf, scenario } from "./helpers";
 
 type S = GameState;
 type Answer = (req: ChoiceRequest, player: string) => ChoiceValue[] | undefined;
@@ -338,5 +340,82 @@ describe("Avatar: The Last Airbender", () => {
     s = settle(s, picking([bear]));
     expect(s.objects[bear]?.counters["+1/+1"]).toBe(1);
     expect(chars(s, bear).keywords).not.toContain("lifelink");
+  });
+});
+
+describe("Avatar: The Last Airbender, socle : maîtrise de l'eau et du feu", () => {
+  /** « Waterbend {3} : piochez une carte » (enchantement de test). */
+  const fountain = customCard({
+    name: "Test Fountain",
+    types: ["Enchantment"],
+    typeLine: "Enchantment",
+    abilities: [
+      dsl.activated({
+        mana: "{3}",
+        waterbend: true,
+        effects: [dsl.fx.draw(1)],
+        label: "Maîtrise de l'eau {3} : piochez une carte",
+      }),
+    ],
+  });
+  const drawn = (s: S) => s.players.p1?.hand.length ?? 0;
+  /** Rituel ordinaire à {1}{U}. */
+  const divination = customCard({
+    name: "Test Divination",
+    types: ["Sorcery"],
+    typeLine: "Sorcery",
+    manaCost: { generic: 1, colored: { U: 1 }, x: 0 },
+    manaCostText: "{1}{U}",
+    colors: ["U"],
+    spell: dsl.spell([], [dsl.fx.draw(1)]),
+  });
+
+  it("maîtrise de l'eau : chaque artefact ou créature dégagé paie {1}, après les terrains", () => {
+    let s = scenario({ p1: { battlefield: [fountain, "Island", "Bear Cub", "Bear Cub"], library: lands("Island", 3) } });
+    const source = idOf(s, "p1", "battlefield", "Test Fountain");
+    const hand = drawn(s);
+    s = settle(activate(s, "p1", source));
+    expect(drawn(s)).toBe(hand + 1);
+    expect(idsOf(s, "p1", "battlefield", "Bear Cub").every((id) => s.objects[id]?.tapped)).toBe(true);
+    expect(s.objects[idOf(s, "p1", "battlefield", "Island")]?.tapped).toBe(true);
+  });
+
+  it("maîtrise de l'eau : les créatures engagées ne paient rien ; un sort ordinaire ne peut pas s'en servir", () => {
+    const s = scenario({
+      p1: { battlefield: [fountain, "Island", "Bear Cub", { name: "Bear Cub", tapped: true }], hand: [divination] },
+    });
+    const source = idOf(s, "p1", "battlefield", "Test Fountain");
+    expect(legalActions(s, "p1").some((a) => a.type === "activate" && a.source === source)).toBe(false);
+    expect(castable(s, "p1", idOf(s, "p1", "hand", "Test Divination"))).toBe(false);
+  });
+
+  it("maîtrise de l'eau {X} : X peut monter avec les artefacts et créatures dégagés", () => {
+    const katara = customCard({
+      name: "Test Tide",
+      types: ["Enchantment"],
+      typeLine: "Enchantment",
+      abilities: [dsl.activated({ mana: "{X}", waterbend: true, effects: [dsl.fx.draw(1)], label: "Maîtrise de l'eau {X}" })],
+    });
+    const s = scenario({ p1: { battlefield: [katara, "Island", "Bear Cub", "Bear Cub"] } });
+    const a = legalActions(s, "p1").find((x) => x.type === "activate" && x.source === idOf(s, "p1", "battlefield", "Test Tide"));
+    expect(a?.type === "activate" ? a.xMax : null).toBe(3);
+  });
+
+  it("maîtrise du feu N lue parmi d'autres mots-clés (« Trample, firebending 4, haste »)", () => {
+    const ozai = card("Ozai, the Phoenix King");
+    expect(ozai.abilities.some((ab) => ab.kind === "triggered" && ab.label === "Maîtrise du feu 4")).toBe(true);
+    expect(card("Ran and Shaw").abilities.some((ab) => ab.kind === "triggered" && ab.label === "Maîtrise du feu 2")).toBe(true);
+  });
+
+  it("maîtrise du feu : le mana reste pendant le combat, puis se vide à la fin du combat", () => {
+    const firebender = customCard({ name: "Test Firebender", power: 2, toughness: 2, abilities: [dsl.firebending(2)] });
+    let s = scenario({ p1: { battlefield: [firebender] } });
+    const id = idOf(s, "p1", "battlefield", "Test Firebender");
+    s = advanceUntil(s, (x) => x.pending?.kind === "declareAttackers" && x.pending.player === "p1");
+    s = act(s, "p1", { type: "declareAttackers", attackers: [{ id, defender: "p2" }] });
+    s = advanceUntil(s, (x) => x.turn.step === "declareBlockers" && x.pending?.kind === "priority");
+    expect(s.players.p1?.manaPool.R).toBe(2);
+    s = advanceUntil(s, (x) => x.turn.step === "main2");
+    expect(s.players.p1?.manaPool.R).toBe(0);
   });
 });

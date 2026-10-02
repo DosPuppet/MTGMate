@@ -397,7 +397,10 @@ function finishCleanup(s: GameState): void {
   syncControl(s);
   for (const p of s.playerOrder) {
     const pl = s.players[p];
-    if (pl) pl.manaKeep = undefined;
+    if (pl) {
+      pl.manaKeep = undefined;
+      pl.manaKeepCombat = undefined;
+    }
   }
   bump(s);
   // 514.3a : si des actions basées sur l'état sont accomplies ou que des capacités se déclenchent pendant le nettoyage,
@@ -428,15 +431,18 @@ function endStep(s: GameState): void {
   for (const p of s.playerOrder) {
     const player = s.players[p];
     if (!player) continue;
-    // Savage Ventmaw : le mana gardé jusqu'à la fin du tour (et pas encore dépensé) reste dans la réserve.
+    // Savage Ventmaw : le mana gardé jusqu'à la fin du tour (et pas encore dépensé) reste dans la réserve ; celui de la
+    // maîtrise du feu, jusqu'à la fin du combat. Le mana dépensé est compté d'abord sur celui qui se vide le plus tôt.
     const keep = player.manaKeep;
+    const keepCombat = s.turn.step === "endCombat" ? undefined : player.manaKeepCombat;
+    if (s.turn.step === "endCombat") player.manaKeepCombat = undefined;
     const pool = emptyPool();
-    if (keep) {
-      for (const m of Object.keys(keep) as ManaType[]) {
-        const k = Math.min(keep[m] ?? 0, player.manaPool[m]);
-        pool[m] = k;
-        keep[m] = k;
-      }
+    for (const m of Object.keys(player.manaPool) as ManaType[]) {
+      const k = Math.min(keep?.[m] ?? 0, player.manaPool[m]);
+      const kc = Math.min(keepCombat?.[m] ?? 0, player.manaPool[m] - k);
+      pool[m] = k + kc;
+      if (keep && keep[m] !== undefined) keep[m] = k;
+      if (keepCombat && keepCombat[m] !== undefined) keepCombat[m] = kc;
     }
     player.manaPool = pool;
     player.restrictedMana = undefined;

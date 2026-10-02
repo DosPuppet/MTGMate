@@ -247,5 +247,6 @@ export const OWN_FILES = [
   "WOE",
   "SOS",
   "MKM",
+  "TLA",
 ];
 export const OTHER_SETS = (): string[] => SETS.map((s) => s.code).filter((c) => !OWN_FILES.includes(c));

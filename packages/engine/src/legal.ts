@@ -2,10 +2,11 @@
  * Énumération exhaustive des actions légales pour le joueur qui a la priorité.
  * L'interface ne met en surbrillance que ces options ; l'IA et l'autopilot s'en servent aussi.
  */
-import { availableMana, canPay, costToText, manaAbilitiesOf, manaSources, manaValue, totalCost } from "./mana";
+import { availableMana, canPay, costToText, type ManaPurpose, manaAbilitiesOf, manaSources, manaValue, totalCost } from "./mana";
 import {
   abilitiesOf,
   abilityMana,
+  abilityPurpose,
   abilityReduction,
   abilityZone,
   activatedAbility,
@@ -183,10 +184,17 @@ function maxXFor(s: GameState, player: PlayerId, costAt: (x: number) => ManaCost
 }
 
 /** Plus grande valeur de X payable (null si le coût n'a pas de X). */
-function maxX(s: GameState, player: PlayerId, cost: ManaCost | null | undefined, exclude?: ReadonlySet<ObjectId>): number | null {
+function maxX(
+  s: GameState,
+  player: PlayerId,
+  cost: ManaCost | null | undefined,
+  exclude?: ReadonlySet<ObjectId>,
+  /** À quoi sert le mana (capacité activée : sa source, maîtrise de l'eau). */
+  purpose?: ManaPurpose,
+): number | null {
   if (!cost?.x) return null;
-  const upper = Math.floor((availableMana(s, player, exclude) - manaValue(cost)) / cost.x);
-  for (let x = upper; x > 0; x--) if (canPay(s, player, totalCost(cost, x), exclude)) return x;
+  const upper = Math.floor((availableMana(s, player, exclude, purpose) - manaValue(cost)) / cost.x);
+  for (let x = upper; x > 0; x--) if (canPay(s, player, totalCost(cost, x), exclude, purpose)) return x;
   return 0;
 }
 
@@ -418,11 +426,8 @@ export function legalActions(s: GameState, player: PlayerId): ActionOption[] {
         : byColors +
           abilityReduction(s, player, id, ab) +
           Math.max(0, ...s.battlefield.map((c) => equipDiscount(s, player, ab, c)));
-      if (
-        ab.cost.mana &&
-        !canPay(s, player, totalCost(abilityMana(s, id, ab), 0, undefined, reduction), exclude, { abilitySource: id })
-      )
-        return;
+      const abCost = totalCost(abilityMana(s, id, ab), 0, undefined, reduction);
+      if (ab.cost.mana && !canPay(s, player, abCost, exclude, abilityPurpose(id, ab))) return;
       const targets = targetOptions(s, player, ab.targets, id);
       if (!targetsAvailable(targets)) return;
       out.push({
@@ -439,7 +444,7 @@ export function legalActions(s: GameState, player: PlayerId): ActionOption[] {
               ? graveyardXOptions(s, player, id, ab.cost.exileFromGraveyardX)
               : ab.cost.sacrificeX
                 ? sacrificeXOptions(s, player, id, ab.cost.sacrificeX)
-                : maxX(s, player, ab.cost.mana, exclude),
+                : maxX(s, player, ab.cost.mana, exclude, abilityPurpose(id, ab)),
         additional:
           ab.cost.sacrifice || ab.cost.tapOthers || ab.cost.discard || ab.cost.crew !== undefined || ab.cost.craft
             ? {

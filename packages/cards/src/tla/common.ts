@@ -2,13 +2,13 @@
 export * from "../lci/common";
 
 import type { TokenSpec } from "@mtgx/engine";
-import { block, blockAbility } from "../fdn/common";
-import { DRAGON, fx, triggered, when } from "../lci/common";
+import { block, blockAbility, firebending } from "../fdn/common";
+import { DRAGON } from "../lci/common";
 
 /** Dragon 4/4 volant avec la maîtrise du feu 4 (Avatar Roku). */
 export const DRAGON_FIREBENDING: TokenSpec = {
   ...DRAGON,
-  abilities: [triggered(when.attacksSelf, [fx.addManaUntilEndOfTurn("R", "R", "R", "R")], { label: "Maîtrise du feu 4" })],
+  abilities: [firebending(4)],
   text: "Flying\nFirebending 4",
 };
 
@@ -27,3 +27,29 @@ export const SPIRIT_KOH: TokenSpec = {
   abilities: [blockAbility(block.notBy({ notSubtype: "Spirit" }, "Imblocable par les créatures non-Esprits"))],
   text: "This token can't block or be blocked by non-Spirit creatures.",
 };
+
+/** Soldat : créature rouge 2/2 avec la maîtrise du feu 1. */
+export const SOLDIER_FIRE: TokenSpec = {
+  name: "Soldier",
+  colors: ["R"],
+  types: ["Creature"],
+  subtypes: ["Soldier"],
+  power: 2,
+  toughness: 2,
+  abilities: [firebending(1)],
+  text: "Firebending 1",
+};
+
+/** Moine : créature rouge 1/1 avec la prouesse. */
+export const MONK_R: TokenSpec = {
+  name: "Monk",
+  colors: ["R"],
+  types: ["Creature"],
+  subtypes: ["Monk"],
+  power: 1,
+  toughness: 1,
+  keywords: ["prowess"],
+};
+
+/** Ours : créature verte 4/4. */
+export const BEAR_4: TokenSpec = { name: "Bear", colors: ["G"], types: ["Creature"], subtypes: ["Bear"], power: 4, toughness: 4 };

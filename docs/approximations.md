@@ -191,7 +191,6 @@ Dans l'ordre où elles ont été ajoutées, extension par extension.
   - `choix auto` Réunir des preuves : les cartes exilées du cimetière sont choisies par le moteur (la moins chère qui suffit, sinon la plus chère) ;
   - `choix auto` Deceit : le type du mana dépensé suit le paiement automatique ; pour payer {U}{U} ou {B}{B}, engagez vos terrains à la main avant de lancer le sort ;
   - `timing` Superior Spider-Man : la carte copiée est exilée en arrivant, et non par une capacité réflexive.
-  - `règle` Maîtrise du feu : le mana ajouté reste jusqu'à la fin du tour, et non jusqu'à la fin du combat ;
   - `règle` Momo, Friendly Flier : la réduction s'applique si vous n'avez lancé aucun sort de créature ce tour-ci (et non « aucun sort de créature non-Lémurien avec le vol ») ;
   - `timing` Dispelling Exhale : contempler un Dragon est vérifié à la résolution (vous en contrôlez un ou en avez un en main) ;
   - `choix auto` Faufilement : l'attaquant non bloqué renvoyé en main est choisi par le moteur (le plus faible) ;
@@ -323,5 +322,7 @@ Dans l'ordre où elles ont été ajoutées, extension par extension.
   - `règle` Kaya, Spirits' Justice : une capacité par carte exilée (et non une pour « une ou plusieurs » cartes) ; « les cartes de créature que vous possédez » dans un cimetière sont celles du vôtre ;
   - `règle` A Killer Among Us : le type choisi n'est pas révélé à part ; la capacité vérifie le type à la résolution ;
   - `règle` Kaya, Spirits' Justice (−2), Jetsam : « pour chaque autre joueur » et « les cimetières de vos adversaires » sont exacts en duel ; à plusieurs, une seule créature adverse est ciblée.
+- **Avatar: The Last Airbender (`docs/extensions/tla.md`) :**
+  - `choix auto` Maîtrise de l'eau : les artefacts et créatures engagés pour payer sont choisis par le moteur, après les terrains (comme pour la convocation).
 - **Légalité Standard :** instantané des légalités Scryfall au moment de l'import (`legalities.standard` dans `data/<set>.json`). Après une rotation ou une annonce de bannissement, réimporter les sets (`npm run import-cards -- <set>`).
 - **Images des jetons :** celle du jeton Scryfall le plus proche (même nom, puis mêmes F/E et couleurs ; `data/tokens.json`, `npm run import-tokens`) ; un jeton de nom inconnu garde le cadre texte.

@@ -113,6 +113,8 @@ export interface ManaSource {
   convoke?: boolean;
   /** Carte de votre cimetière exilée pour la cave (702.66). */
   delve?: boolean;
+  /** Artefact ou créature engagé pour la maîtrise de l'eau : ne paie que du générique. */
+  waterbend?: boolean;
   /**
    * Sources exclusives : deux capacités qui engagent ou sacrifient le même permanent (Forêt qui a aussi « {T} : un mana
    * de n'importe quelle couleur ») ont la même clé, et une seule peut servir.
@@ -224,12 +226,19 @@ export interface ManaPurpose {
   delve?: boolean;
   /** Sort lancé depuis la main. */
   fromHand?: boolean;
+  /**
+   * Maîtrise de l'eau N : au plus N du générique peut être payé en engageant des artefacts et créatures dégagés (un {1}
+   * chacun).
+   */
+  waterbend?: number;
 }
 
 /** Pseudo-capacité de mana d'une créature engagée pour la convocation. */
 export const CONVOKE = -1;
 /** Pseudo-capacité de mana d'une carte du cimetière exilée pour la cave. */
 export const DELVE = -2;
+/** Pseudo-capacité : un artefact ou une créature engagé pour la maîtrise de l'eau ({1}). */
+export const WATERBEND = -4;
 /** Pseudo-capacité : un mana restreint de la réserve (`restrictedMana`, Ashling, Rimebound) ; `id` : `pool:<rang>`. */
 export const RESTRICTED_POOL = -3;
 
@@ -312,6 +321,16 @@ export function manaSources(
       });
     }
   }
+  // Maîtrise de l'eau : chaque artefact ou créature dégagé paie {1} (même clé que ses capacités de mana : une seule sert).
+  if (purpose?.waterbend) {
+    for (const id of s.battlefield) {
+      const o = obj(s, id);
+      if (o.controller !== player || exclude.has(id) || o.tapped) continue;
+      const types = chars(s, id).types;
+      if (!types.includes("Artifact") && !types.includes("Creature")) continue;
+      out.push({ id, ability: WATERBEND, colors: [], amount: 1, isCreature: false, sacrifice: false, waterbend: true, key: id });
+    }
+  }
   // Mana restreint de la réserve : seulement pour un paiement permis (utilisé d'abord, il est déjà là).
   (s.players[player]?.restrictedMana ?? []).forEach((m, i) => {
     if (!allows(s, m.restriction, undefined, `pool:${i}`, player, purpose)) return;
@@ -332,9 +351,10 @@ export function manaSources(
       out.push({ id, ability: DELVE, colors: ["C"], amount: 1, isCreature: false, sacrifice: false, delve: true, key: id });
     }
   }
-  // Préférence : terrains, puis créatures, puis sources sacrifiées, puis convocation, puis cave ; les moins flexibles d'abord.
+  // Préférence : terrains, puis créatures, puis sources sacrifiées, puis convocation et maîtrise de l'eau, puis cave ; les
+  // moins flexibles d'abord.
   const rank = (x: ManaSource) =>
-    x.ability === RESTRICTED_POOL ? -1 : x.delve ? 4 : x.convoke ? 3 : x.sacrifice ? 2 : x.isCreature ? 1 : 0;
+    x.ability === RESTRICTED_POOL ? -1 : x.delve ? 4 : x.convoke || x.waterbend ? 3 : x.sacrifice ? 2 : x.isCreature ? 1 : 0;
   return out.sort((a, b) => rank(a) - rank(b) || a.colors.length - b.colors.length);
 }
 
@@ -508,10 +528,14 @@ export function solvePayment(
       generic -= n;
     }
   }
+  // Maîtrise de l'eau : au plus `purpose.waterbend` artefacts et créatures engagés.
+  let waterbent = 0;
   for (let k = 0; k < sources.length && generic > 0; k++) {
     const src = sources[k] as ManaSource;
     if (used.has(src.key)) continue;
-    const m = src.colors[0] as ManaType;
+    if (src.waterbend && waterbent >= (purpose?.waterbend ?? 0)) continue;
+    if (src.waterbend) waterbent += 1;
+    const m = (src.colors[0] ?? "C") as ManaType;
     used.add(src.key);
     taps.push({ id: src.id, ability: src.ability, color: m });
     const n = Math.min(generic, src.amount);
@@ -586,6 +610,10 @@ export function payMana(
       // Mana restreint de la réserve : il rejoint la réserve pour être dépensé aussitôt.
       usedRestricted.add(Number(t.id.slice("pool:".length)));
       pool[t.color] += 1;
+    } else if (t.ability === WATERBEND) {
+      // L'artefact ou la créature engagé paie {1}.
+      tapObject(s, obj(s, t.id));
+      pool.C += 1;
     } else if (t.ability === CONVOKE) {
       // La créature engagée paie un mana de sa couleur (ou {1}).
       tapObject(s, obj(s, t.id));

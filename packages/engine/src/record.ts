@@ -104,8 +104,10 @@ export const RECORD_VERSION = 1;
  * - 37 : Murders at Karlov Manor, lot C3 : un sort qui quitte la pile passe par un seul chemin (exil ou dessous de la
  *   bibliothèque à la place du cimetière) ; `cond.refMatches` résout son filtre ; un déclencheur « quitte » d'une créature
  *   exilée suit la nouvelle carte ; effets « tant que la source reste engagée ».
+ * - 38 : Avatar: The Last Airbender, socle : le mana de la maîtrise du feu reste jusqu'à la fin du combat (et non du tour) ;
+ *   maîtrise de l'eau (artefacts et créatures engagés pour {1}) dans les coûts des capacités activées.
  */
-export const RULES_VERSION = 37;
+export const RULES_VERSION = 38;
 
 /** Un point de contrôle toutes les N décisions (plus la dernière de la partie). */
 export const CHECKPOINT_EVERY = 25;

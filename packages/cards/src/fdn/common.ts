@@ -42,6 +42,7 @@ export const {
   protectionAbility,
   powerFor,
   powerRuleAbility,
+  firebending,
 } = dsl;
 
 /** Cible quelconque décrite par un filtre d'objets. */

@@ -222,6 +222,8 @@ export interface PlayerState {
   speed?: number;
   /** Mana qui ne se vide pas avant la fin du tour (Savage Ventmaw). */
   manaKeep?: Partial<Record<ManaType, number>>;
+  /** Mana qui ne se vide pas avant la fin du combat (maîtrise du feu). */
+  manaKeepCombat?: Partial<Record<ManaType, number>>;
 }
 
 /**

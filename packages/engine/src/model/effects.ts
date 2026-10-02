@@ -577,8 +577,11 @@ export type Effect =
   | { op: "changeTarget"; what: Ref }
   /** Combat supplémentaire après celui-ci (Aurelia) ; `afterMain` : après cette phase principale, suivi d'une phase principale. */
   | { op: "extraCombat"; afterMain?: boolean }
-  /** Le mana ajouté ne se vide pas avant la fin du tour (Savage Ventmaw). */
-  | { op: "addManaUntilEndOfTurn"; mana: ManaType[] }
+  /**
+   * Le mana ajouté ne se vide pas avant la fin du tour (Savage Ventmaw), ou avant la fin du combat (`untilEndOfCombat` :
+   * maîtrise du feu). `times` : la liste est ajoutée autant de fois (« maîtrise du feu X »).
+   */
+  | { op: "addManaUntilEndOfTurn"; mana: ManaType[]; times?: Amount; untilEndOfCombat?: boolean }
   /** Le contrôleur gagne la partie (Maze's End). */
   | { op: "winGame" }
   | { op: "loseGame"; who?: Ref }

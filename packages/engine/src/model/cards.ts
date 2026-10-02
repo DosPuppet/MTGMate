@@ -428,6 +428,11 @@ export interface CostDef {
   blight?: number;
   /** Réunir des preuves N (701.59, MKM) : cartes du cimetière de valeur de mana totale N ou plus (choisies automatiquement). */
   collectEvidence?: number;
+  /**
+   * Maîtrise de l'eau (Avatar) : le coût de mana est un coût « waterbend » ; en le payant, chaque artefact ou créature
+   * dégagé que vous contrôlez peut être engagé pour payer {1} (choisi par le solveur, comme la convocation).
+   */
+  waterbend?: boolean;
   /** Les preuves exilées sont liées à la source (Kylox's Voltstrider : « parmi les cartes exilées avec lui »). */
   linkEvidence?: boolean;
   /**
