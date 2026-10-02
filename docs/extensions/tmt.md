@@ -33,3 +33,10 @@ Les scripts sont dans `packages/cards/src/tmt/` : `cards` (cartes du méta), `wh
 - **Dette :** « mélangez main et cimetière, puis piochez » sert aussi à Turtles in Time : son entrée est retirée.
 - **Reste pour plus tard :** April O'Neil, Hacktivist (types distincts parmi les sorts lancés ce tour-ci), Fugitive Droid (cibler un sort qui cible vos permanents), Mondo Gecko (défense talismanique contre une couleur choisie).
 - **Tests :** 32 tests de règles (« lot A, bleu ») et un dans `rulings.test.ts`.
+
+## Sous-lot A3 : cartes noires ✅ (86 / 188)
+
+- **Cartes (24) :** Anchovy & Banana Pizza, Armaggon, Future Shark, Bebop, Warthog Warrior, The Cloning of Shredder, Death in the Family, Foot Mystic, Insectoid Exterminator, Lord Dregg, Insect Invader, Madame Null, Power Broker, Oroku Saki, Shredder Rising, Pain 101, Paramecia Coloniex, Savanti Romero, Time's Exile, Shark Shredder, Killer Clone, Shredder, Unrelenting, Shredder's Armor, Shredder's Revenge, Shredder's Technique, South Wind Avatar, Splinter, Hamato Yoshi, Splinter's Technique, Stomped by the Foot, Super Shredder, Tunnel Rats.
+- **Moteur :** rien de nouveau.
+- **Reste pour plus tard :** Ninja Teen (au niveau 3, faufilement donné aux cartes de créature du cimetière), Rat King, Verminister (« la carte ciblée et toutes les autres cartes du même nom »).
+- **Tests :** 29 tests de règles (« lot A, noir »).

@@ -404,5 +404,8 @@ Dans l'ordre où elles ont été ajoutées, extension par extension.
   - `règle` Kitsune's Technique : « la moitié, arrondie au supérieur » est meulée en deux fois (une carte, puis la moitié du reste) ; un remplacement ou un déclencheur de meule s'applique deux fois.
   - `règle` Kitsune, Dragon's Daughter : l'échange se fait entre votre créature et celle d'un adversaire (deux créatures de deux adversaires ne s'échangent pas, à plus de deux joueurs).
   - `règle` Renet, Temporal Apprentice : « arrivé ce tour-ci » compte aussi un permanent dont le contrôle a changé ce tour-ci.
+  - `règle` Madame Null : « payez des PV égaux à sa force » est une perte de PV facultative, proposée seulement si vos PV suffisent.
+  - `règle` Shark Shredder : la carte est ciblée dans le cimetière d'un adversaire, pas forcément celui du joueur blessé (exact en duel).
+  - `règle` Shredder's Technique : « si un enchantement a été détruit » se lit « la cible était un enchantement et n'est plus sur le champ de bataille ».
 - **Légalité Standard :** instantané des légalités Scryfall au moment de l'import (`legalities.standard` dans `data/<set>.json`). Après une rotation ou une annonce de bannissement, réimporter les sets (`npm run import-cards -- <set>`).
 - **Images des jetons :** celle du jeton Scryfall le plus proche (même nom, puis mêmes F/E et couleurs ; `data/tokens.json`, `npm run import-tokens`) ; un jeton de nom inconnu garde le cadre texte.

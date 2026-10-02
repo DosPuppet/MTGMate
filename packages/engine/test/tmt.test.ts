@@ -7,7 +7,7 @@ import { destroy } from "../src/actions";
 import { legalActions } from "../src/legal";
 import { chars } from "../src/state";
 import type { ChoiceRequest, ChoiceValue, GameState } from "../src/types";
-import { act, advanceUntil, idOf, idsOf, passAccepting, scenario } from "./helpers";
+import { act, advanceUntil, customCard, idOf, idsOf, passAccepting, scenario } from "./helpers";
 
 type S = GameState;
 /** Réponse à un choix (`undefined` : la suggestion), selon la position courante. */
@@ -1549,6 +1549,511 @@ describe("lot A, bleu", () => {
       s = advanceUntil(s, (x) => x.turn.active === "p2" && x.turn.step === "main1");
       expect(s.objects[angel]?.tapped).toBe(true);
       expect(s.objects[angel]?.counters.stun ?? 0).toBe(0);
+    });
+  });
+});
+
+describe("lot A, noir", () => {
+  type S = GameState;
+  /** Réponse à un choix (`undefined` : la suggestion), selon la position courante. */
+  type Answer = (req: ChoiceRequest, cur: S) => ChoiceValue[] | undefined;
+  const lands = (name: string, n: number) => Array(n).fill(name) as string[];
+  const nameOf = (s: S, id: string) => s.defs[s.objects[id]?.defId ?? ""]?.name;
+  const namesIn = (s: S, ids: string[] | undefined) => (ids ?? []).map((id) => nameOf(s, id));
+
+  /** Passe et répond aux choix jusqu'à `until` (les défenseurs ne bloquent pas, personne n'attaque). */
+  const playUntil = (s: S, until: (x: S) => boolean, answer: Answer = () => undefined): S => {
+    let cur = s;
+    for (let i = 0; i < 400 && !until(cur); i++) {
+      const p = cur.pending;
+      if (p?.kind === "priority") cur = act(cur, p.player, { type: "pass" });
+      else if (p?.kind === "choice")
+        cur = act(cur, p.player, { type: "choose", values: answer(p.request, cur) ?? p.request.suggested });
+      else if (p?.kind === "declareBlockers") cur = act(cur, p.player, { type: "declareBlockers", blocks: [] });
+      else if (p?.kind === "declareAttackers") cur = act(cur, p.player, { type: "declareAttackers", attackers: [] });
+      else break;
+    }
+    return cur;
+  };
+  /** Résout la pile et les déclenchements en attente, en répondant aux choix. */
+  const settle = (s: S, answer: Answer = () => undefined): S =>
+    playUntil(s, (x) => x.pending?.kind === "priority" && x.stack.length === 0 && x.triggers.length === 0, answer);
+  const throughCombat = (s: S, answer: Answer = () => undefined): S => playUntil(s, (x) => x.turn.step === "main2", answer);
+  const cast = (s: S, player: string, name: string, extra: object = {}) =>
+    act(s, player, { type: "cast", card: idOf(s, player, "hand", name), ...extra });
+  /** Active la capacité de `source` dont le libellé contient `label` (la première sinon). */
+  const activate = (s: S, player: string, source: string, label?: string, extra: object = {}) => {
+    const a = legalActions(s, player).find(
+      (x) => x.type === "activate" && x.source === source && (!label || x.label?.includes(label)),
+    );
+    if (a?.type !== "activate") throw new Error(`capacité introuvable : ${label ?? source}`);
+    return act(s, player, { type: "activate", source, ability: a.ability, ...extra });
+  };
+  const canActivate = (s: S, player: string, source: string) =>
+    legalActions(s, player).some((x) => x.type === "activate" && x.source === source);
+  /** Va à la déclaration des attaquants de p1 et attaque p2 avec `attackers`. */
+  const attack = (s: S, attackers: string[]) => {
+    const cur = advanceUntil(s, (x) => x.pending?.kind === "declareAttackers");
+    return act(cur, "p1", { type: "declareAttackers", attackers: attackers.map((id) => ({ id, defender: "p2" })) });
+  };
+  /** Sélectionne dans les options d'un choix les objets nommés `name` (au plus `n`). */
+  const pickNamed = (s: S, req: ChoiceRequest, name: string, n = 1) =>
+    req.type === "pick" ? req.options.filter((id) => nameOf(s, id) === name).slice(0, n) : undefined;
+  const answerNamed =
+    (name: string, n = 1): Answer =>
+    (req, cur) => {
+      const picked = pickNamed(cur, req, name, n);
+      return picked?.length ? picked : undefined;
+    };
+  const pt = (s: S, id: string) => [chars(s, id).power, chars(s, id).toughness];
+  /** Quelque chose a quitté le champ de bataille sous le contrôle de p1 (Disparition). */
+  const disappear = (s: S, name = "Llanowar Elves") => {
+    destroy(s, idOf(s, "p1", "battlefield", name));
+    return settle(s);
+  };
+  /** Va à l'étape de fin de p1, tous ses déclenchements résolus. */
+  const toEndStep = (s: S, answer: Answer = () => undefined) =>
+    playUntil(
+      s,
+      (x) =>
+        x.turn.step === "end" &&
+        x.pending?.kind === "priority" &&
+        x.pending.player === "p1" &&
+        x.stack.length === 0 &&
+        x.triggers.length === 0,
+      answer,
+    );
+
+  describe("Teenage Mutant Ninja Turtles, lot A — noir", () => {
+    it("Anchovy & Banana Pizza : détruit une créature en arrivant ; Nourriture : {2}, {T}, sacrifiez-la : 3 PV", () => {
+      let s = scenario({
+        p1: { battlefield: lands("Swamp", 6), hand: ["Anchovy & Banana Pizza"] },
+        p2: { battlefield: ["Serra Angel"] },
+      });
+      s = settle(cast(s, "p1", "Anchovy & Banana Pizza"), answerNamed("Serra Angel"));
+      expect(idsOf(s, "p2", "graveyard", "Serra Angel")).toHaveLength(1);
+      const pizza = idOf(s, "p1", "battlefield", "Anchovy & Banana Pizza");
+      expect(chars(s, pizza).subtypes).toContain("Food");
+      s = settle(activate(s, "p1", pizza));
+      expect(s.players.p1?.life).toBe(23);
+      expect(idsOf(s, "p1", "graveyard", "Anchovy & Banana Pizza")).toHaveLength(1);
+    });
+
+    it("Armaggon, Future Shark : détruit jusqu'à trois créatures ciblées", () => {
+      let s = scenario({
+        p1: { battlefield: lands("Swamp", 8), hand: ["Armaggon, Future Shark"] },
+        p2: { battlefield: ["Bear Cub", "Bear Cub", "Bear Cub", "Serra Angel"] },
+      });
+      s = settle(cast(s, "p1", "Armaggon, Future Shark"), answerNamed("Bear Cub", 3));
+      expect(idsOf(s, "p2", "graveyard", "Bear Cub")).toHaveLength(3);
+      expect(idsOf(s, "p2", "battlefield", "Serra Angel")).toHaveLength(1);
+      expect(pt(s, idOf(s, "p1", "battlefield", "Armaggon, Future Shark"))).toEqual([9, 6]);
+    });
+
+    it("Bebop, Warthog Warrior : menace ; vos Rhinocéros ont la menace (pas les autres créatures)", () => {
+      const rhino = customCard({ name: "Test Rhino", typeLine: "Creature — Rhino", subtypes: ["Rhino"], power: 3, toughness: 3 });
+      const s = scenario({ p1: { battlefield: ["Bebop, Warthog Warrior", rhino, "Bear Cub"] }, p2: { battlefield: [rhino] } });
+      expect(chars(s, idOf(s, "p1", "battlefield", "Bebop, Warthog Warrior")).keywords).toContain("menace");
+      expect(chars(s, idOf(s, "p1", "battlefield", "Test Rhino")).keywords).toContain("menace");
+      expect(chars(s, idOf(s, "p1", "battlefield", "Bear Cub")).keywords).not.toContain("menace");
+      expect(chars(s, idOf(s, "p2", "battlefield", "Test Rhino")).keywords).not.toContain("menace");
+    });
+
+    it("The Cloning of Shredder : I exile une carte de créature et en crée une copie Mutant non légendaire ; II en recrée une", () => {
+      let s = scenario({
+        p1: { battlefield: lands("Swamp", 6), hand: ["The Cloning of Shredder"], graveyard: ["Splinter, Hamato Yoshi"] },
+      });
+      s = settle(cast(s, "p1", "The Cloning of Shredder"), answerNamed("Splinter, Hamato Yoshi"));
+      expect(s.players.p1?.graveyard).toHaveLength(0);
+      expect(namesIn(s, s.exile)).toEqual(["Splinter, Hamato Yoshi"]);
+      const first = idOf(s, "p1", "battlefield", "Splinter, Hamato Yoshi");
+      expect(s.objects[first]?.isToken).toBe(true);
+      expect(chars(s, first).supertypes).not.toContain("Legendary");
+      expect(chars(s, first).subtypes).toEqual(expect.arrayContaining(["Mutant", "Ninja", "Rat"]));
+      expect(pt(s, first)).toEqual([1, 3]);
+      // Chapitre II, après la pioche du tour suivant de p1 : une seconde copie ; pas de règle des légendes.
+      s = playUntil(s, (x) => x.turn.active === "p1" && x.turn.step === "main1" && x.turn.number > 3 && x.stack.length === 0);
+      s = settle(s);
+      const copies = idsOf(s, "p1", "battlefield", "Splinter, Hamato Yoshi");
+      expect(copies).toHaveLength(2);
+      // Chaque copie donne +1/+1 à l'autre Ninja.
+      for (const id of copies) expect(pt(s, id)).toEqual([2, 4]);
+    });
+
+    it("Death in the Family : exile une créature de valeur de mana 3 ou moins", () => {
+      let s = scenario({
+        p1: { battlefield: lands("Swamp", 2), hand: ["Death in the Family"] },
+        p2: { battlefield: ["Bear Cub", "Serra Angel"] },
+      });
+      const angel = idOf(s, "p2", "battlefield", "Serra Angel");
+      expect(() => cast(s, "p1", "Death in the Family", { targets: { t: [angel] } })).toThrow();
+      s = settle(cast(s, "p1", "Death in the Family", { targets: { t: [idOf(s, "p2", "battlefield", "Bear Cub")] } }));
+      expect(namesIn(s, s.exile)).toEqual(["Bear Cub"]);
+      expect(s.players.p2?.graveyard).toHaveLength(0);
+    });
+
+    it("Foot Mystic : lien de vie ; Disparition — un Ninja 1/1 noir seulement si un permanent vous a quitté ce tour-ci", () => {
+      const setup = () =>
+        scenario({
+          p1: { battlefield: [...lands("Swamp", 4), "Llanowar Elves"], hand: ["Foot Mystic"] },
+          p2: { battlefield: ["Bear Cub"] },
+        });
+      let s = settle(cast(setup(), "p1", "Foot Mystic"));
+      expect(idsOf(s, "p1", "battlefield", "Ninja")).toHaveLength(0);
+      expect(chars(s, idOf(s, "p1", "battlefield", "Foot Mystic")).keywords).toContain("lifelink");
+      // Une créature adverse qui meurt ne compte pas.
+      let t = setup();
+      destroy(t, idOf(t, "p2", "battlefield", "Bear Cub"));
+      t = settle(cast(settle(t), "p1", "Foot Mystic"));
+      expect(idsOf(t, "p1", "battlefield", "Ninja")).toHaveLength(0);
+      s = settle(cast(disappear(setup()), "p1", "Foot Mystic"));
+      const ninja = idOf(s, "p1", "battlefield", "Ninja");
+      expect(pt(s, ninja)).toEqual([1, 1]);
+      expect(chars(s, ninja).colors).toEqual(["B"]);
+    });
+
+    it("Insectoid Exterminator : Disparition — regard 1 à votre étape de fin", () => {
+      const setup = () =>
+        scenario({ p1: { battlefield: ["Insectoid Exterminator", "Llanowar Elves"], library: ["Opt", "Island", "Swamp"] } });
+      let asked = false;
+      const bottom: Answer = (req) => {
+        if (req.intent !== "scryBottom" || req.type !== "pick") return undefined;
+        asked = true;
+        return req.options;
+      };
+      let s = toEndStep(setup(), bottom);
+      expect(asked).toBe(false);
+      s = toEndStep(disappear(setup()), bottom);
+      expect(asked).toBe(true);
+      expect(namesIn(s, s.players.p1?.library)).toEqual(["Island", "Swamp", "Opt"]);
+      expect(chars(s, idOf(s, "p1", "battlefield", "Insectoid Exterminator")).keywords).toContain("flying");
+    });
+
+    it("Lord Dregg : Disparition — un Insecte Guerrier 1/1 volant à l'étape de fin ; {3}{G}, sacrifiez un jeton : piochez", () => {
+      let s = scenario({ p1: { battlefield: ["Lord Dregg, Insect Invader", "Llanowar Elves", ...lands("Forest", 4)] } });
+      s = toEndStep(disappear(s));
+      const insect = idOf(s, "p1", "battlefield", "Insect Warrior");
+      expect(pt(s, insect)).toEqual([1, 1]);
+      expect(chars(s, insect).colors).toEqual(["B"]);
+      expect(chars(s, insect).keywords).toContain("flying");
+      const dregg = idOf(s, "p1", "battlefield", "Lord Dregg, Insect Invader");
+      const hand = s.players.p1?.hand.length ?? 0;
+      // Lord Dregg n'est pas un jeton : il ne peut pas payer ce coût.
+      expect(() => activate(s, "p1", dregg, "jeton", { sacrifice: [dregg] })).toThrow();
+      s = settle(activate(s, "p1", dregg, "jeton", { sacrifice: [insect] }));
+      expect(idsOf(s, "p1", "battlefield", "Insect Warrior")).toHaveLength(0);
+      expect(s.players.p1?.hand).toHaveLength(hand + 1);
+      // Sans jeton, plus d'activation possible.
+      expect(canActivate(s, "p1", dregg)).toBe(false);
+    });
+
+    describe("Madame Null, Power Broker", () => {
+      const setup = (life = 20) =>
+        scenario({ p1: { life, battlefield: ["Madame Null, Power Broker", ...lands("Forest", 2)], hand: ["Bear Cub"] } });
+
+      it("une autre créature arrive : payez des PV égaux à sa force pour autant de marqueurs +1/+1", () => {
+        let asked = false;
+        const s = settle(cast(setup(), "p1", "Bear Cub"), (req) => {
+          if (req.intent !== "may") return undefined;
+          asked = true;
+          return [1];
+        });
+        expect(asked).toBe(true);
+        expect(s.players.p1?.life).toBe(18);
+        const bear = idOf(s, "p1", "battlefield", "Bear Cub");
+        expect(s.objects[bear]?.counters["+1/+1"]).toBe(2);
+        expect(pt(s, bear)).toEqual([4, 4]);
+      });
+
+      it("refuser : ni PV payés ni marqueurs ; pas de proposition si vos PV ne suffisent pas", () => {
+        let s = settle(cast(setup(), "p1", "Bear Cub"), (req) => (req.intent === "may" ? [0] : undefined));
+        expect(s.players.p1?.life).toBe(20);
+        expect(s.objects[idOf(s, "p1", "battlefield", "Bear Cub")]?.counters["+1/+1"] ?? 0).toBe(0);
+        let asked = false;
+        s = settle(cast(setup(1), "p1", "Bear Cub"), (req) => {
+          if (req.intent === "may") asked = true;
+          return undefined;
+        });
+        expect(asked).toBe(false);
+        expect(s.players.p1?.life).toBe(1);
+      });
+    });
+
+    it("Oroku Saki, Shredder Rising : blessures de combat à un joueur — vous piochez une carte et perdez 1 PV", () => {
+      let s = scenario({ p1: { battlefield: ["Oroku Saki, Shredder Rising"] } });
+      s = throughCombat(attack(s, [idOf(s, "p1", "battlefield", "Oroku Saki, Shredder Rising")]));
+      expect(s.players.p2?.life).toBe(17);
+      expect(s.players.p1?.life).toBe(19);
+      expect(s.players.p1?.hand).toHaveLength(1);
+    });
+
+    it("Pain 101 : contact mortel ; quand elle meurt, elle revient engagée sous le contrôle de son propriétaire", () => {
+      let s = scenario({ p1: { battlefield: lands("Swamp", 2), hand: ["Pain 101"] }, p2: { battlefield: ["Bear Cub"] } });
+      const bear = idOf(s, "p2", "battlefield", "Bear Cub");
+      s = settle(cast(s, "p1", "Pain 101", { targets: { t: [bear] } }));
+      expect(chars(s, bear).keywords).toContain("deathtouch");
+      destroy(s, bear);
+      s = settle(s);
+      const back = idOf(s, "p2", "battlefield", "Bear Cub");
+      expect(s.objects[back]?.tapped).toBe(true);
+      expect(s.objects[back]?.controller).toBe("p2");
+      // Nouvel objet : l'effet ne s'applique plus.
+      expect(chars(s, back).keywords).not.toContain("deathtouch");
+      destroy(s, back);
+      s = settle(s);
+      expect(idsOf(s, "p2", "graveyard", "Bear Cub")).toHaveLength(1);
+    });
+
+    describe("Paramecia Coloniex", () => {
+      it("en arrivant, meulez trois cartes", () => {
+        let s = scenario({
+          p1: { battlefield: lands("Swamp", 2), hand: ["Paramecia Coloniex"], library: ["Opt", "Island", "Swamp", "Forest"] },
+        });
+        s = settle(cast(s, "p1", "Paramecia Coloniex"));
+        expect(namesIn(s, s.players.p1?.graveyard).sort()).toEqual(["Island", "Opt", "Swamp"]);
+        expect(namesIn(s, s.players.p1?.library)).toEqual(["Forest"]);
+      });
+
+      it("quand elle meurt, exilez-la : une carte de créature de votre cimetière au-dessus de la bibliothèque", () => {
+        let s = scenario({
+          p1: { battlefield: ["Paramecia Coloniex"], graveyard: ["Serra Angel", "Bear Cub", "Opt"], library: ["Island"] },
+        });
+        destroy(s, idOf(s, "p1", "battlefield", "Paramecia Coloniex"));
+        let options: (string | undefined)[] = [];
+        s = settle(s, (req, cur) => {
+          if (req.intent === "may") return [1];
+          if (req.type === "pick") {
+            options = namesIn(cur, req.options);
+            return pickNamed(cur, req, "Serra Angel");
+          }
+          return undefined;
+        });
+        // Seules les cartes de créature restées au cimetière sont proposées.
+        expect(options.sort()).toEqual(["Bear Cub", "Serra Angel"]);
+        expect(namesIn(s, s.exile)).toEqual(["Paramecia Coloniex"]);
+        expect(namesIn(s, s.players.p1?.library)).toEqual(["Serra Angel", "Island"]);
+      });
+
+      it("si vous ne l'exilez pas, rien ne bouge", () => {
+        let s = scenario({ p1: { battlefield: ["Paramecia Coloniex"], graveyard: ["Serra Angel"], library: ["Island"] } });
+        destroy(s, idOf(s, "p1", "battlefield", "Paramecia Coloniex"));
+        s = settle(s, (req) => (req.intent === "may" ? [0] : undefined));
+        expect(namesIn(s, s.players.p1?.graveyard).sort()).toEqual(["Paramecia Coloniex", "Serra Angel"]);
+        expect(namesIn(s, s.players.p1?.library)).toEqual(["Island"]);
+      });
+    });
+
+    it("Savanti Romero : au début du combat, un marqueur +1/+1, puis piochez X et perdez X PV (X : ses marqueurs)", () => {
+      let s = scenario({ p1: { battlefield: [{ name: "Savanti Romero, Time's Exile", counters: { "+1/+1": 2 } }] } });
+      s = throughCombat(s);
+      const savanti = idOf(s, "p1", "battlefield", "Savanti Romero, Time's Exile");
+      expect(s.objects[savanti]?.counters["+1/+1"]).toBe(3);
+      expect(s.players.p1?.hand).toHaveLength(3);
+      expect(s.players.p1?.life).toBe(17);
+      expect(chars(s, savanti).keywords).toContain("trample");
+    });
+
+    it("Shark Shredder : blessures de combat — une carte de créature de son cimetière arrive sous votre contrôle, engagée et attaquante", () => {
+      let s = scenario({ p1: { battlefield: ["Shark Shredder, Killer Clone"] }, p2: { graveyard: ["Serra Angel", "Opt"] } });
+      const shark = idOf(s, "p1", "battlefield", "Shark Shredder, Killer Clone");
+      expect(chars(s, shark).keywords).toContain("firstStrike");
+      let options: (string | undefined)[] = [];
+      s = playUntil(
+        attack(s, [shark]),
+        (x) => idsOf(x, "p1", "battlefield", "Serra Angel").length > 0 && x.stack.length === 0,
+        (req, cur) => {
+          if (req.type !== "pick") return undefined;
+          options = namesIn(cur, req.options);
+          return pickNamed(cur, req, "Serra Angel");
+        },
+      );
+      expect(options).toContain("Serra Angel");
+      expect(options).not.toContain("Opt");
+      const angel = idOf(s, "p1", "battlefield", "Serra Angel");
+      expect(s.objects[angel]?.controller).toBe("p1");
+      expect(s.objects[angel]?.owner).toBe("p2");
+      expect(s.objects[angel]?.tapped).toBe(true);
+      expect(s.combat?.attackers.some((a) => a.id === angel && a.defender === "p2")).toBe(true);
+      expect(s.players.p2?.life).toBe(16);
+      // Arrivé après les blessures de l'initiative, l'Ange non bloqué blesse à l'étape de blessures normale (510.4).
+      s = throughCombat(s);
+      expect(s.players.p2?.life).toBe(12);
+    });
+
+    it("Shredder, Unrelenting : en arrivant ou en attaquant, une autre de vos créatures gagne le contact mortel", () => {
+      let s = scenario({ p1: { battlefield: [...lands("Swamp", 5), "Bear Cub"], hand: ["Shredder, Unrelenting"] } });
+      const bear = idOf(s, "p1", "battlefield", "Bear Cub");
+      let options: string[] = [];
+      s = settle(cast(s, "p1", "Shredder, Unrelenting"), (req) => {
+        if (req.type !== "pick") return undefined;
+        options = req.options as string[];
+        return [bear];
+      });
+      const shredder = idOf(s, "p1", "battlefield", "Shredder, Unrelenting");
+      expect(options).not.toContain(shredder);
+      expect(chars(s, bear).keywords).toContain("deathtouch");
+      expect(chars(s, shredder).keywords).toContain("deathtouch");
+      // En attaquant (un tour plus tard) : l'Ourson regagne le contact mortel.
+      let t = scenario({ p1: { battlefield: ["Shredder, Unrelenting", "Bear Cub"] } });
+      const bear2 = idOf(t, "p1", "battlefield", "Bear Cub");
+      expect(chars(t, bear2).keywords).not.toContain("deathtouch");
+      t = settle(attack(t, [idOf(t, "p1", "battlefield", "Shredder, Unrelenting")]), (req) =>
+        req.type === "pick" && req.options.includes(bear2) ? [bear2] : undefined,
+      );
+      expect(chars(t, bear2).keywords).toContain("deathtouch");
+    });
+
+    describe("Shredder's Armor", () => {
+      it("en arrivant, s'attache à une de vos créatures : +2/+1", () => {
+        let s = scenario({ p1: { battlefield: [...lands("Swamp", 2), "Bear Cub"], hand: ["Shredder's Armor"] } });
+        const bear = idOf(s, "p1", "battlefield", "Bear Cub");
+        s = settle(cast(s, "p1", "Shredder's Armor"), (req) =>
+          req.type === "pick" && req.options.includes(bear) ? [bear] : undefined,
+        );
+        expect(s.objects[idOf(s, "p1", "battlefield", "Shredder's Armor")]?.attachedTo).toBe(bear);
+        expect(pt(s, bear)).toEqual([4, 3]);
+      });
+
+      it("Équiper — sacrifiez un autre permanent non-terrain, une seule fois par tour", () => {
+        let s = scenario({
+          p1: { battlefield: ["Shredder's Armor", "Bear Cub", "Llanowar Elves", "Llanowar Elves", "Swamp"] },
+        });
+        const armor = idOf(s, "p1", "battlefield", "Shredder's Armor");
+        const bear = idOf(s, "p1", "battlefield", "Bear Cub");
+        const [elf1, elf2] = idsOf(s, "p1", "battlefield", "Llanowar Elves") as [string, string];
+        // Un terrain ne paie pas ce coût.
+        expect(() =>
+          activate(s, "p1", armor, "Équiper", { targets: { t: [bear] }, sacrifice: [idOf(s, "p1", "battlefield", "Swamp")] }),
+        ).toThrow();
+        s = settle(activate(s, "p1", armor, "Équiper", { targets: { t: [bear] }, sacrifice: [elf1] }));
+        expect(s.objects[armor]?.attachedTo).toBe(bear);
+        expect(idsOf(s, "p1", "graveyard", "Llanowar Elves")).toHaveLength(1);
+        expect(pt(s, bear)).toEqual([4, 3]);
+        // Une seule fois par tour, même avec un autre Elfe à sacrifier.
+        expect(() => activate(s, "p1", armor, "Équiper", { targets: { t: [elf2] }, sacrifice: [elf2] })).toThrow();
+      });
+    });
+
+    describe("Shredder's Revenge", () => {
+      it("mode 1 : le joueur ciblé défausse deux cartes", () => {
+        let s = scenario({
+          p1: { battlefield: lands("Swamp", 3), hand: ["Shredder's Revenge"] },
+          p2: { hand: ["Opt", "Opt", "Island"] },
+        });
+        s = settle(cast(s, "p1", "Shredder's Revenge", { mode: 0, targets: { t: ["p2"] } }));
+        expect(s.players.p2?.hand).toHaveLength(1);
+        expect(s.players.p2?.graveyard).toHaveLength(2);
+      });
+
+      it("mode 2 : le joueur ciblé pioche deux cartes et perd 2 PV", () => {
+        let s = scenario({ p1: { battlefield: lands("Swamp", 3), hand: ["Shredder's Revenge"] } });
+        s = settle(cast(s, "p1", "Shredder's Revenge", { mode: 1, targets: { t: ["p1"] } }));
+        expect(s.players.p1?.hand).toHaveLength(2);
+        expect(s.players.p1?.life).toBe(18);
+        expect(s.players.p2?.life).toBe(20);
+      });
+    });
+
+    it("Shredder's Technique : détruit une créature ou un enchantement ; un enchantement détruit vous coûte 2 PV", () => {
+      const setup = () =>
+        scenario({
+          p1: { battlefield: lands("Swamp", 3), hand: ["Shredder's Technique"] },
+          p2: { battlefield: ["Bear Cub", "Warleader's Call"] },
+        });
+      let s = setup();
+      s = settle(cast(s, "p1", "Shredder's Technique", { targets: { t: [idOf(s, "p2", "battlefield", "Warleader's Call")] } }));
+      expect(idsOf(s, "p2", "graveyard", "Warleader's Call")).toHaveLength(1);
+      expect(s.players.p1?.life).toBe(18);
+      let t = setup();
+      t = settle(cast(t, "p1", "Shredder's Technique", { targets: { t: [idOf(t, "p2", "battlefield", "Bear Cub")] } }));
+      expect(idsOf(t, "p2", "graveyard", "Bear Cub")).toHaveLength(1);
+      expect(t.players.p1?.life).toBe(20);
+    });
+
+    it("South Wind Avatar : une autre de vos créatures meurt — PV égaux à son endurance ; chaque gain fait perdre 1 PV à chaque adversaire", () => {
+      let s = scenario({
+        players: 3,
+        p1: { battlefield: ["South Wind Avatar", "Serra Angel"] },
+        p2: { battlefield: ["Bear Cub"] },
+      });
+      destroy(s, idOf(s, "p1", "battlefield", "Serra Angel"));
+      s = settle(s);
+      expect([s.players.p1?.life, s.players.p2?.life, s.players.p3?.life]).toEqual([24, 19, 19]);
+      // Une créature adverse qui meurt ne rapporte rien.
+      destroy(s, idOf(s, "p2", "battlefield", "Bear Cub"));
+      s = settle(s);
+      expect([s.players.p1?.life, s.players.p2?.life]).toEqual([24, 19]);
+    });
+
+    it("Splinter, Hamato Yoshi : menace ; vos autres Ninjas ont +1/+1", () => {
+      const s = scenario({
+        p1: { battlefield: ["Splinter, Hamato Yoshi", "Foot Mystic", "Bear Cub"] },
+        p2: { battlefield: ["Foot Mystic"] },
+      });
+      const splinter = idOf(s, "p1", "battlefield", "Splinter, Hamato Yoshi");
+      expect(pt(s, splinter)).toEqual([1, 3]);
+      expect(chars(s, splinter).keywords).toContain("menace");
+      expect(pt(s, idOf(s, "p1", "battlefield", "Foot Mystic"))).toEqual([3, 5]);
+      expect(pt(s, idOf(s, "p1", "battlefield", "Bear Cub"))).toEqual([2, 2]);
+      expect(pt(s, idOf(s, "p2", "battlefield", "Foot Mystic"))).toEqual([2, 4]);
+    });
+
+    it("Splinter's Technique : cherchez une carte, mettez-la dans votre main", () => {
+      let s = scenario({
+        p1: { battlefield: lands("Swamp", 4), hand: ["Splinter's Technique"], library: ["Island", "Serra Angel", "Opt"] },
+      });
+      s = settle(cast(s, "p1", "Splinter's Technique"), answerNamed("Serra Angel"));
+      expect(namesIn(s, s.players.p1?.hand)).toEqual(["Serra Angel"]);
+      expect(s.players.p1?.library).toHaveLength(2);
+    });
+
+    it("Stomped by the Foot : -2/-2 ; kické en sacrifiant un artefact ou une créature, -5/-5", () => {
+      let s = scenario({
+        p1: { battlefield: lands("Swamp", 2), hand: ["Stomped by the Foot"] },
+        p2: { battlefield: ["Serra Angel"] },
+      });
+      const angel = idOf(s, "p2", "battlefield", "Serra Angel");
+      s = settle(cast(s, "p1", "Stomped by the Foot", { targets: { t: [angel] } }));
+      expect(pt(s, angel)).toEqual([2, 2]);
+      let t = scenario({
+        p1: { battlefield: [...lands("Swamp", 2), "Bear Cub"], hand: ["Stomped by the Foot"] },
+        p2: { battlefield: ["Serra Angel"] },
+      });
+      const angel2 = idOf(t, "p2", "battlefield", "Serra Angel");
+      t = act(t, "p1", {
+        type: "cast",
+        card: idOf(t, "p1", "hand", "Stomped by the Foot"),
+        kicked: true,
+        targets: { t: [angel2] },
+      });
+      expect(idsOf(t, "p1", "graveyard", "Bear Cub")).toHaveLength(1);
+      t = settle(t);
+      expect(idsOf(t, "p2", "graveyard", "Serra Angel")).toHaveLength(1);
+    });
+
+    it("Super Shredder : chaque fois qu'un autre permanent quitte le champ de bataille, un marqueur +1/+1", () => {
+      let s = scenario({
+        p1: { battlefield: ["Super Shredder", "Bear Cub"] },
+        p2: { battlefield: ["Llanowar Elves", "Warleader's Call"] },
+      });
+      destroy(s, idOf(s, "p1", "battlefield", "Bear Cub"));
+      destroy(s, idOf(s, "p2", "battlefield", "Llanowar Elves"));
+      destroy(s, idOf(s, "p2", "battlefield", "Warleader's Call"));
+      s = settle(s);
+      const shredder = idOf(s, "p1", "battlefield", "Super Shredder");
+      expect(s.objects[shredder]?.counters["+1/+1"]).toBe(3);
+      expect(pt(s, shredder)).toEqual([4, 4]);
+    });
+
+    it("Tunnel Rats : {4}{B} depuis le cimetière, elle revient engagée", () => {
+      let s = scenario({ p1: { battlefield: lands("Swamp", 5), graveyard: ["Tunnel Rats"] } });
+      const rats = idOf(s, "p1", "graveyard", "Tunnel Rats");
+      s = settle(activate(s, "p1", rats));
+      const back = idOf(s, "p1", "battlefield", "Tunnel Rats");
+      expect(s.objects[back]?.tapped).toBe(true);
+      expect(s.players.p1?.graveyard).toHaveLength(0);
+      // Depuis le champ de bataille, la capacité n'est pas proposée.
+      expect(canActivate(s, "p1", back)).toBe(false);
     });
   });
 });
