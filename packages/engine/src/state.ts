@@ -614,6 +614,9 @@ export function moveObject(
   return moved.id;
 }
 
+/** Carte cachée au spectateur (exilée face cachée, 406.3) : la vue ne montre que son dos. */
+export const HIDDEN_CARD_ID = "hidden-card";
+
 /** Identifiant de la définition générique d'un objet face cachée (708.2). */
 export const FACE_DOWN_ID = "face-down";
 

@@ -193,6 +193,8 @@ export interface GameObject {
   plottedTurn?: number;
   /** Présage (702.143) : tour où la carte a été exilée de la main pour {2}, lançable plus tard pour son coût de présage. */
   foretoldTurn?: number;
+  /** Exilée face cachée (406.3) : les joueurs qui peuvent la regarder (vide : personne). */
+  exiledFaceDown?: PlayerId[];
   /** Créatures qui ont monté ou équipé ce permanent (coût payé ce tour-ci). */
   crewedBy?: { turn: number; ids: ObjectId[] };
   /** Sources qui lui ont infligé des blessures ce tour-ci (Predator Ooze). */

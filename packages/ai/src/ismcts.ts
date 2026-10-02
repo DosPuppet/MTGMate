@@ -47,11 +47,13 @@ const BASICS: Record<string, string> = { W: "Plains", U: "Island", B: "Swamp", R
  * Cartes vues d'un adversaire : ce qu'il possède sur le champ de bataille, dans son cimetière, en exil (face visible)
  * et ses sorts sur la pile. Ses terrains de base, ceux des couleurs vues.
  */
-function seenCards(s: GameState, p: PlayerId): { spells: string[]; lands: string[] } {
+function seenCards(s: GameState, p: PlayerId, me: PlayerId): { spells: string[]; lands: string[] } {
+  // Une carte exilée face cachée que `me` ne peut pas regarder n'est pas vue (406.3).
+  const hidden = (id: string) => !!s.objects[id]?.exiledFaceDown && !s.objects[id]?.exiledFaceDown?.includes(me);
   const visible = [
     ...s.battlefield,
     ...(s.players[p]?.graveyard ?? []),
-    ...s.exile,
+    ...s.exile.filter((id) => !hidden(id)),
     ...s.stack.filter((i) => i.kind === "spell" && !i.copy).map((i) => i.sourceId),
   ]
     .map((id) => s.objects[id])
@@ -81,7 +83,17 @@ export function determinize(s: GameState, me: PlayerId, rand: () => number): Gam
   for (const p of opponentsOf(d, me)) {
     const pl = d.players[p];
     if (!pl) continue;
-    const { spells, lands } = seenCards(s, p);
+    const { spells, lands } = seenCards(s, p, me);
+    // Ses permanents face cachée (déguisement, cape, manifestation) : la carte cachée est tirée aussi.
+    for (const id of d.battlefield) {
+      const o = d.objects[id];
+      if (o?.faceDown && o.controller === p && spells.length) o.faceDown = { ...o.faceDown, card: pick(spells) };
+    }
+    // Ses cartes exilées face cachée que `me` ne peut pas regarder (présage, Hideaway…).
+    for (const id of d.exile) {
+      const o = d.objects[id];
+      if (o?.owner === p && o.exiledFaceDown && !o.exiledFaceDown.includes(me) && spells.length) o.defId = pick(spells);
+    }
     for (const id of [...pl.hand, ...pl.library]) {
       const o = d.objects[id];
       if (!o) continue;

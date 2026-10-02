@@ -7,7 +7,7 @@ import { copiedDefId } from "./layers";
 import { legalActions } from "./legal";
 import { costToText, manaValue, totalCost } from "./mana";
 import { abilitiesOf, castTerms, landPermitted, modesOf, spellCost } from "./stack";
-import { chars, decider, isCreature, isSummoningSick, obj } from "./state";
+import { chars, decider, HIDDEN_CARD_ID, isCreature, isSummoningSick, obj } from "./state";
 import { playerStatic, playerStatics } from "./statics";
 import { pendingTriggerSource } from "./triggers";
 import { attackableDefenders, attackCandidates, blockCandidates } from "./turn";
@@ -347,6 +347,44 @@ function withFaceDownCard(s: GameState, v: ObjectView, viewer: PlayerId): Object
   return card ? { ...v, faceDownCard: cardFace(card) } : v;
 }
 
+/** Une carte exilée face cachée que le spectateur ne peut pas regarder : son dos seulement (406.3). */
+function hiddenTo(s: GameState, id: ObjectId, viewer: PlayerId): boolean {
+  const seen = s.objects[id]?.exiledFaceDown;
+  return !!seen && !seen.includes(viewer);
+}
+
+function exiledView(s: GameState, id: ObjectId, viewer: PlayerId): ObjectView {
+  const v = objectView(s, id);
+  if (!hiddenTo(s, id, viewer)) return v;
+  // Rien que l'objet lui-même : ni nom, ni types, ni capacités ; ses marqueurs restent visibles.
+  return {
+    defId: HIDDEN_CARD_ID,
+    name: "",
+    typeLine: "Carte face cachée",
+    manaCost: "",
+    text: "",
+    implemented: true,
+    isToken: false,
+    id: v.id,
+    uid: v.uid,
+    owner: v.owner,
+    controller: v.controller,
+    zone: v.zone,
+    types: [],
+    subtypes: [],
+    colors: [],
+    tapped: false,
+    damage: 0,
+    counters: v.counters,
+    keywords: [],
+    sick: false,
+    attacking: false,
+    blocking: null,
+    attachedTo: null,
+    chosen: null,
+  };
+}
+
 export function projectView(s: GameState, viewer: PlayerId): GameView {
   const players: Record<PlayerId, PlayerView> = {};
   for (const p of s.playerOrder) {
@@ -450,7 +488,7 @@ export function projectView(s: GameState, viewer: PlayerId): GameView {
       return s.manaUndo?.some((u) => u.player === viewer && u.source === id) ? { ...o, undoMana: true } : o;
     }),
     stack,
-    exile: s.exile.map((id) => objectView(s, id)),
+    exile: s.exile.map((id) => exiledView(s, id, viewer)),
     exiledWith: exiledWith(s),
     playableElsewhere: [
       ...s.exile.filter((id) => castTerms(s, viewer, id) || landPermitted(s, viewer, id)),
@@ -494,6 +532,12 @@ export function filterEvents(events: GameEvent[], viewer: PlayerId): GameEvent[]
     if (e.type === "moved" && e.owner !== viewer && HIDDEN_ZONES.has(e.from) && HIDDEN_ZONES.has(e.to)) {
       return { type: "moved", owner: e.owner, from: e.from, to: e.to };
     }
+    // Exilée face cachée (406.3) : seuls les joueurs qui peuvent la regarder la voient passer.
+    if (e.type === "moved" && e.faceDown && !e.faceDown.includes(viewer)) {
+      return { type: "moved", owner: e.owner, objectId: e.objectId, from: e.from, to: e.to };
+    }
+    // Présage : la carte exilée n'est connue que de son propriétaire.
+    if (e.type === "foretold" && e.player !== viewer) return { type: "foretold", player: e.player, defId: HIDDEN_CARD_ID };
     return e;
   });
 }
@@ -529,6 +573,8 @@ export function visibleFaces(s: GameState, view: GameView, events: GameEvent[]):
   for (const id of ids) {
     const d = s.defs[id];
     if (d) out[id] = cardFace(d);
+    else if (id === HIDDEN_CARD_ID)
+      out[id] = { defId: id, name: "", typeLine: "Carte face cachée", manaCost: "", text: "", implemented: true, isToken: false };
   }
   return out;
 }

@@ -340,7 +340,8 @@ export type GameEvent =
     }
   | { type: "discard"; player: PlayerId; defIds: string[] }
   /** `objectId` et `defId` sont retirés (filterEvents) pour un déplacement caché → caché d'une carte adverse. */
-  | { type: "moved"; owner: PlayerId; objectId?: ObjectId; defId?: string; from: Zone; to: Zone }
+  /** `faceDown` : exilée face cachée, visible des seuls joueurs listés (filtré par `filterEvents`). */
+  | { type: "moved"; owner: PlayerId; objectId?: ObjectId; defId?: string; from: Zone; to: Zone; faceDown?: PlayerId[] }
   | { type: "scry"; player: PlayerId; top: number; bottom: number }
   | { type: "choice"; player: PlayerId; intent: ChoiceIntent }
   | { type: "trigger"; player: PlayerId; stackId: string; defId: string; targets: string[] }

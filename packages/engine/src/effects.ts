@@ -806,7 +806,24 @@ export function moveWithSpec(
   // Vannifar : « enveloppez d'une cape une carte de votre main ».
   if (spec.to === "battlefield" && spec.cloak) return putFaceDown(s, controller, id, true);
   const zone: Zone = spec.to === "libraryTop" || spec.to === "libraryBottom" ? "library" : (spec.to as Zone);
-  emit({ type: "moved", owner: o.owner, objectId: id, defId: o.defId, from: o.zone, to: zone });
+  // Exilée face cachée (406.3) : les joueurs qui peuvent la regarder.
+  const viewers =
+    zone === "exile" && spec.faceDown
+      ? spec.faceDown === "you"
+        ? [controller]
+        : spec.faceDown === "owner"
+          ? [o.owner]
+          : []
+      : undefined;
+  emit({
+    type: "moved",
+    owner: o.owner,
+    objectId: id,
+    defId: o.defId,
+    from: o.zone,
+    to: zone,
+    ...(viewers ? { faceDown: viewers } : {}),
+  });
   if (o.zone === "battlefield") removeFromCombat(s, id);
   const newController = spec.to === "battlefield" ? (spec.underYourControl ? controller : o.owner) : undefined;
   const mods = { addTypes: spec.addTypes, addSubtypes: spec.addSubtypes, addKeywords: spec.addKeywords };
@@ -839,6 +856,7 @@ export function moveWithSpec(
   const moved = newId_ ? s.objects[newId_] : undefined;
   // Marqueurs sur une carte exilée (« exilez-la avec un marqueur de butin », Tinybones).
   if (moved && zone === "exile" && spec.counters) changeCounters(s, moved, spec.counters.kind, spec.counters.n);
+  if (moved && zone === "exile" && viewers) moved.exiledFaceDown = viewers;
   // Le verso (712.14), l'état engagé, les marqueurs, les types et l'attaque sont posés par `moveObject` avant l'événement
   // d'arrivée (voir `EntersContext`).
   return newId_;

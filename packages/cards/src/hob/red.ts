@@ -125,7 +125,7 @@ export const RED: Record<string, CardScript> = {
     spell: spell(
       [],
       [
-        fx.exileTop(ref.you, 2, "e"),
+        fx.exileTop(ref.you, 2, "e", "you"),
         fx.grantPlay(ref.stored("e"), { forever: true, condition: cond.controls({ subtype: "Wizard" }) }),
       ],
     ),

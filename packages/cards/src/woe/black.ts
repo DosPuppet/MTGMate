@@ -122,7 +122,7 @@ export const BLACK: Record<string, CardScript> = {
     spell: spell(
       [],
       [
-        fx.search({}, { to: "exile" }, 1, undefined, "s"),
+        fx.search({}, { to: "exile", faceDown: "you" }, 1, undefined, "s"),
         ...fx.when(cond.kicked, fx.castNow(ref.stored("s"), { free: true, maxManaValue: 4 })),
         ...fx.when(cond.amountAtLeast(amount.inExile(ref.stored("s")), 1), fx.toHand(ref.stored("s"))),
       ],

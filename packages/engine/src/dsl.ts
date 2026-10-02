@@ -713,7 +713,14 @@ export const fx = {
     ...opts,
   }),
   millUntil: (who: Ref, filter: ObjectFilter): Effect => ({ op: "millUntil", who, filter }),
-  exileTop: (who: Ref, n: Amount, store: string): Effect => ({ op: "exileTop", who, n, store }),
+  /** « Exilez les N cartes du dessus » ; `faceDown` : face cachée, et qui peut les regarder (406.3). */
+  exileTop: (who: Ref, n: Amount, store: string, faceDown?: MoveSpec["faceDown"]): Effect => ({
+    op: "exileTop",
+    who,
+    n,
+    store,
+    ...(faceDown ? { faceDown } : {}),
+  }),
   grantPlay: (
     what: Ref,
     opts: {

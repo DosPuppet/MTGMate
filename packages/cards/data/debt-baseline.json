@@ -235,7 +235,7 @@
   },
   "ceilings": {
     "CardDef": 96,
-    "GameObject": 72,
+    "GameObject": 73,
     "StackItem": 44,
     "PlayerState": 21,
     "GameState": 38,
@@ -246,7 +246,7 @@
     "PlayFromZone": 16,
     "LayerMods": 31,
     "Effect": 176,
-    "Effect (champs)": 648,
+    "Effect (champs)": 649,
     "TriggerSpec": 62,
     "TriggerSpec (champs)": 155,
     "Condition": 80,
@@ -256,5 +256,8 @@
     "Ref": 34,
     "Ref (champs)": 53
   },
-  "importCycleMax": 21
+  "importCycleMax": 21,
+  "ceilingNotes": [
+    "PLAN-C C6 : exil face cachée (406.3), champ GameObject.exiledFaceDown et option faceDown de exileTop : GameObject 72 → 73, Effect (champs) 648 → 649"
+  ]
 }

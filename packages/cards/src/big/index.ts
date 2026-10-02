@@ -87,7 +87,10 @@ export const BIG_SCRIPTS: Record<string, CardScript> = {
       // Hideaway 5 (approximation : la carte est exilée face visible).
       triggered(
         when.entersSelf,
-        [fx.lookAtTop(5, { count: 1, to: { to: "exile" }, rest: "bottom", store: "h" }), fx.link(ref.stored("h"))],
+        [
+          fx.lookAtTop(5, { count: 1, to: { to: "exile", faceDown: "you" }, rest: "bottom", store: "h" }),
+          fx.link(ref.stored("h")),
+        ],
         { label: "Hideaway 5" },
       ),
       activated({

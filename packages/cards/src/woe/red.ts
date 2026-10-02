@@ -392,10 +392,9 @@ export const RED: Record<string, CardScript> = {
     abilities: [triggered(when.attacksSelf, [fx.createTokens(TREASURE)], { label: "Un jeton Trésor" })],
   },
   "Expensive Taste": {
-    // Approximation : les cartes sont exilées face visible (le moteur n'exile pas face cachée depuis une bibliothèque).
     spell: spell(
       [target.player("t", "opponent")],
-      [fx.exileTop(ref.target(), 2, "e"), fx.grantPlay(ref.stored("e"), { forever: true })],
+      [fx.exileTop(ref.target(), 2, "e", "you"), fx.grantPlay(ref.stored("e"), { forever: true })],
     ),
   },
   "Imodane's Recruiter": {

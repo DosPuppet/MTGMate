@@ -97,7 +97,7 @@ export const RED: Record<string, CardScript> = {
       // Approximation : la carte est exilée face visible.
       triggered(
         when.attacks({ types: ["Creature"], controller: "you" }),
-        [fx.exileTop(ref.you, 1, "x"), fx.link(ref.stored("x"))],
+        [fx.exileTop(ref.you, 1, "x", "nobody"), fx.link(ref.stored("x"))],
         { label: "Exilez la carte du dessus de votre bibliothèque" },
       ),
       // Approximation : la main est défaussée à la résolution (et non en payant le coût).

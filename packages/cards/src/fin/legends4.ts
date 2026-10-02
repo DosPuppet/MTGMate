@@ -242,7 +242,10 @@ export const LEGENDS4: Record<string, CardScript> = {
       // Hideaway 4 (approximation : la carte est exilée face visible, comme Collector's Cage).
       triggered(
         when.entersSelf,
-        [fx.lookAtTop(4, { count: 1, to: { to: "exile" }, rest: "bottom", store: "h" }), fx.link(ref.stored("h"))],
+        [
+          fx.lookAtTop(4, { count: 1, to: { to: "exile", faceDown: "you" }, rest: "bottom", store: "h" }),
+          fx.link(ref.stored("h")),
+        ],
         { label: "Hideaway 4" },
       ),
       manaAbility("C"),

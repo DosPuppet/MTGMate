@@ -426,7 +426,7 @@ export type Effect =
   /** Chaque joueur désigné révèle des cartes jusqu'à une carte correspondant au filtre, puis les met toutes au cimetière. */
   | { op: "millUntil"; who: Ref; filter: ObjectFilter }
   /** Exile les N cartes du dessus de la bibliothèque de chaque joueur désigné (mémorisées sous `store`). */
-  | { op: "exileTop"; who: Ref; n: Amount; store: string }
+  | { op: "exileTop"; who: Ref; n: Amount; store: string; faceDown?: MoveSpec["faceDown"] }
   /** Permet au contrôleur de jouer ces cartes exilées ce tour-ci. `spellsOnly` : lancer seulement, sans timing, gratuitement. */
   /**
    * `forever` : « tant qu'elle reste exilée » (Emrakul) ; `condition` : seulement tant qu'elle est remplie ;

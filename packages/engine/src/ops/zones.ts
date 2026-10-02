@@ -290,7 +290,12 @@ export const HANDLERS: OpHandlers = {
   exileLibraryButBottom(s, _r, e, ctx) {
     for (const p of resolveRef(s, ctx, e.who)) {
       const lib = s.players[p]?.library ?? [];
-      for (const id of lib.slice(0, Math.max(0, lib.length - (e.keep ?? 1)))) moveObject(s, id, "exile");
+      // Face cachée : personne ne les regarde (Doomsday Excruciator).
+      for (const id of lib.slice(0, Math.max(0, lib.length - (e.keep ?? 1)))) {
+        const moved = moveObject(s, id, "exile");
+        const o = moved ? s.objects[moved] : undefined;
+        if (o) o.exiledFaceDown = [];
+      }
     }
     return;
   },
@@ -1482,7 +1487,7 @@ export const HANDLERS: OpHandlers = {
     for (const p of resolveRef(s, ctx, e.who)) {
       const n = evalAmount(s, ctx, e.n);
       for (const id of (s.players[p]?.library ?? []).slice(0, n)) {
-        const n = moveWithSpec(s, ctx.controller, id, { to: "exile" });
+        const n = moveWithSpec(s, ctx.controller, id, { to: "exile", ...(e.faceDown ? { faceDown: e.faceDown } : {}) });
         if (n) exiled.push(n);
       }
     }

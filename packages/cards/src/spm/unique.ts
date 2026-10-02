@@ -382,7 +382,14 @@ export const UNIQUE: Record<string, CardScript> = {
       triggered(
         when.entersSelf,
         [
-          fx.lookAtTop(9, { who: ref.target(), count: 2, exact: true, to: { to: "exile" }, rest: "bottom", store: "bc" }),
+          fx.lookAtTop(9, {
+            who: ref.target(),
+            count: 2,
+            exact: true,
+            to: { to: "exile", faceDown: "you" },
+            rest: "bottom",
+            store: "bc",
+          }),
           fx.grantPlay(ref.stored("bc"), { forever: true, anyMana: true }),
         ],
         {

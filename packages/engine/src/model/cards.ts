@@ -1169,4 +1169,9 @@ export interface MoveSpec {
   shuffle?: boolean;
   /** Sur le champ de bataille enveloppé d'une cape (701.58 : face cachée, 2/2, garde {2}) (Vannifar). */
   cloak?: boolean;
+  /**
+   * Exilée face cachée (406.3) : qui peut la regarder — le contrôleur de l'effet (« vous pouvez la regarder »), son
+   * propriétaire (présage) ou personne (Doomsday Excruciator).
+   */
+  faceDown?: "you" | "owner" | "nobody";
 }

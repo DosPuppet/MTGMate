@@ -1,7 +1,8 @@
 /**
  * ISMCTS (niveau élevé) : reproductible, aveugle à l'information cachée, et capable de trouver un coup évident.
  */
-import { cloneState, type GameState } from "@mtgx/engine";
+import { card } from "@mtgx/cards";
+import { cloneState, createObject, type GameState, registerDef } from "@mtgx/engine";
 import { describe, expect, it } from "vitest";
 import { scenario } from "../../engine/test/helpers";
 import { aiAgent, mulberry32 } from "../src";
@@ -92,5 +93,25 @@ describe("ISMCTS", () => {
     for (const id of lib) (other.objects[id] as { zone: string }).zone = "library";
     const d2 = determinize(other, "p1", mulberry32(9));
     expect(names(d2, hidden(d2))).toEqual(names(d, hidden(d)));
+  });
+});
+
+describe("ISMCTS : faces cachées (PLAN-C, lot C6)", () => {
+  it("la déterminisation tire aussi les permanents face cachée et les cartes exilées face cachée de l'adversaire", () => {
+    const s = cloneState(scenario({ p1: { battlefield: ["Forest"] }, p2: { battlefield: ["Bear Cub"], graveyard: ["Opt"] } }));
+    const bear = s.battlefield.find((id) => s.objects[id]?.controller === "p2") as string;
+    const hiddenDef = card("Doomsday Excruciator");
+    registerDef(s, hiddenDef);
+    // Un permanent face cachée de p2, et une carte exilée face cachée qu'il est seul à pouvoir regarder.
+    const o = s.objects[bear];
+    if (o) o.faceDown = { card: hiddenDef.id, ward: false, upCosts: [] };
+    const exObj = createObject(s, hiddenDef.id, "p2", "exile");
+    exObj.exiledFaceDown = ["p2"];
+    const ex = exObj.id;
+    for (let seed = 1; seed <= 20; seed++) {
+      const d = determinize(s, "p1", mulberry32(seed));
+      expect(d.objects[bear]?.faceDown?.card).not.toBe(hiddenDef.id);
+      expect(d.objects[ex]?.defId).not.toBe(hiddenDef.id);
+    }
   });
 });

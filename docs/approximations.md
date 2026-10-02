@@ -67,6 +67,7 @@ Dans l'ordre où elles ont été ajoutées, extension par extension.
 - **Garruk, Curse Breaker −4, Jace, Reality Sculptor −3 :** emblèmes temporaires ; Garruk utilise « chaque fois que vous attaquez ».
 - **Hapatra, the Desert Fang :** une seule cible adverse, même en multijoueur.
 - **Seasoned Cryomancer :** le nombre de cibles est choisi d'après les cartes non-terrain défaussées (1 ou 2), via deux déclencheurs réflexifs exclusifs.
+- **Gonti, Night Minister :** la carte exilée se joue sans pouvoir dépenser du mana de n'importe quel type.
 - **Gallia, Tragic Host :** la carte exilée du cimetière est choisie automatiquement (la moins chère).
 - **Molten Tide :** le {R} supplémentaire s'ajoute à toute capacité de mana « {T} » d'une Montagne, quelle que soit la couleur produite.
 - **Warrior's Blades :** la légalité de l'Équiper suppose la meilleure réduction possible ; le coût payé dépend de la cible choisie.
@@ -88,7 +89,6 @@ Dans l'ordre où elles ont été ajoutées, extension par extension.
 - **Boommobile :** les quatre mana ne sont pas restreints aux capacités.
 - **Thunderhead Gunner, Avishkar Raceway :** la carte est défaussée à la résolution, et non comme coût (comme Solitary Cell).
 - **Cursecloth Wrappings :** l'embaumement accordé est payé tout de suite (en rituel) et le jeton garde les couleurs de la carte.
-- **Gonti, Night Minister :** la carte est exilée face visible, jouable par le contrôleur de Gonti, sans mana de n'importe quel type.
 - **Radiant Lotus :** c'est son contrôleur qui ajoute le mana (pas de joueur ciblé) ; les artefacts sacrifiés sont choisis automatiquement (la source en dernier).
 - **Winter, Cursed Rider :** les X cartes d'artefact exilées sont choisies automatiquement.
 - **Full Throttle :** deux combats supplémentaires après le combat normal (et non juste après la phase principale).
@@ -102,7 +102,7 @@ Dans l'ordre où elles ont été ajoutées, extension par extension.
 - **Obeka :** les étapes d'entretien supplémentaires ne font que déclencher les capacités « au début de votre entretien ».
 - **Riku of Many Paths :** un seul mode, quel que soit le nombre de modes du sort.
 - **Great Train Heist :** le combat supplémentaire a lieu après le combat normal ; les Trésors viennent des blessures infligées à n'importe quel adversaire.
-- **Collector's Cage (hideaway) :** la carte est exilée face visible. **Memory Vessel :** on peut encore jouer les cartes de sa main. **Transmutation Font :** les trois jetons sacrifiés n'ont pas à avoir des noms différents. **Grand Abolisher :** les capacités de mana ne sont pas bloquées.
+- **Memory Vessel :** on peut encore jouer les cartes de sa main. **Transmutation Font :** les trois jetons sacrifiés n'ont pas à avoir des noms différents. **Grand Abolisher :** les capacités de mana ne sont pas bloquées.
 - **Demon Wall :** « a un marqueur » est lu comme « a un marqueur +1/+1 ».
 - **Haste Magic, Opera Love Song :** les cartes exilées sont jouables jusqu'à la fin de votre prochain tour (et non jusqu'à votre prochaine étape de fin).
 - **Freya Crescent :** son mana sert à toute capacité d'un Équipement, pas seulement à Équiper.
@@ -127,7 +127,6 @@ Dans l'ordre où elles ont été ajoutées, extension par extension.
 - **Sidequest: Raise a Chocobo :** la recherche de terrain de Black Chocobo (« quand il se transforme ») est faite par l'effet qui le transforme.
 - **Summoner's Grimoire :** le joueur choisit d'abord parmi les cartes de créature non-enchantement ; s'il n'en prend aucune, il peut mettre une créature-enchantement engagée et attaquante.
 - **Duskmourn (DSK) :**
-  - `règle` Doomsday Excruciator : les bibliothèques sont exilées face visible (et non face cachée), donc visibles de tous (`docs/plans/PLAN-C.md`, lot C6) ;
   - Survie : se déclenche au début de chaque phase principale d'après-combat (combats supplémentaires compris), pas seulement la seconde ;
   - Acrobatic Cheerleader (« ne se déclenche qu'une fois ») : tant qu'elle n'a pas de marqueur de vol ;
   - coûts additionnels choisis automatiquement : Fear of Abduction, Abhorrent Oculus, Fear of Isolation, Fear of Exposure (ce qui vaut le moins : jetons et petits permanents d'abord ; les créatures avant les terrains) ; Monstrous Emergence prend la plus grande force (créature ou carte en main) ; Kaito renvoie l'attaquant non bloqué le plus faible et attaque le joueur qu'attaque une de vos créatures ;
@@ -260,10 +259,8 @@ Dans l'ordre où elles ont été ajoutées, extension par extension.
   - `règle` Aquatic Alchemist : la capacité se déclenche à chaque éphémère ou rituel, et ne fait quelque chose qu'au premier du tour ;
   - `règle` Vantress Visions : la capacité ciblée peut être celle d'un adversaire (le filtre de pile n'a pas de contrôleur) ; elle n'est alors pas copiée ;
   - `règle` Rowdy Research : une créature qui attaque lors de deux combats compte deux fois ;
-  - `règle` Beseech the Mirror : la carte cherchée est exilée face visible ;
   - `timing` Faerie Fencing : la Faerie est vérifiée à la résolution ;
   - `choix auto` Rowan's Grim Search : l'ordre des cartes remises sur la bibliothèque n'est pas choisi ;
-  - `règle` Expensive Taste : les deux cartes sont exilées face visible ;
   - `règle` Goddric, Cloaked Reveler : le vol (lu dans les mots-clés Scryfall) est retiré par une statique tant qu'il n'y a pas de Célébration ; un vol accordé par un effet plus ancien serait aussi retiré ;
   - `règle` Witchstalker Frenzy : une créature qui attaque lors de deux combats compte deux fois ;
   - `règle` Virtue of Strength : « trois fois plus de mana » est « deux mana de plus » (exact pour un terrain de base qui produit un mana) ;
@@ -301,9 +298,8 @@ Dans l'ordre où elles ont été ajoutées, extension par extension.
   - `règle` Coveted Falcon : « un permanent que vous possédez mais ne contrôlez pas » est « contrôlé par un adversaire et non possédé par lui » (exact en duel) ;
   - `règle` Living Conundrum : « si votre bibliothèque est vide » est jugé une fois pour toute une pioche de plusieurs cartes ;
   - `choix auto` Agency Outfitter : chaque nom est cherché dans le cimetière, puis la main, puis la bibliothèque (ordre fixe) ;
-  - `règle` Outrageous Robbery : les cartes sont exilées face visible ;
   - `règle` Illicit Masquerade : « une autre carte de créature ciblée » n'exclut pas la créature morte (la cibler ne ramène rien) ;
-  - `règle` Connecting the Dots : la carte est exilée face visible ; « défaussez votre main » se fait à la résolution, et non en payant le coût ;
+  - `règle` Connecting the Dots : « défaussez votre main » se fait à la résolution, et non en payant le coût ;
   - `règle` Krenko's Buzzcrusher : les terrains non-base sont ciblés (au plus un par joueur) ; celui qui cherche est le propriétaire du terrain détruit ;
   - `règle` Expedited Inheritance : « son contrôleur » d'une créature morte est son propriétaire ;
   - `règle` Anzrag's Rampage : « les artefacts que vous ne contrôlez pas » sont ceux de vos adversaires ;
@@ -348,7 +344,6 @@ Dans l'ordre où elles ont été ajoutées, extension par extension.
   - `règle` Aang's Journey (kické) : deux recherches, donc deux mélanges.
   - `règle` Hama, the Bloodbender : la carte non-créature, non-terrain du cimetière est exilée d'office s'il y en a une (« jusqu'à une ») ;
   - `règle` Secret of Bloodbending : sans maîtrise de l'eau, vous contrôlez l'adversaire pendant la première phase de combat de son prochain tour (une phase de combat supplémentaire de ce tour lui revient).
-  - `règle` Présage (Sozin's Comet) : la carte présagée est exilée face visible (l'adversaire la voit) ;
   - `règle` Planetarium of Wan Shi Tong : « une fois par tour » se lit « si vous n'avez lancé aucun sort depuis votre bibliothèque ce tour-ci » ;
   - `choix auto` Avatar Destiny : une carte de créature meulée revient d'office s'il y en a une (« jusqu'à une »).
   - `règle` Firebender Ascension : « cette capacité » est la plus récente capacité de la créature sur la pile ; si elle s'est déjà résolue, rien n'est copié ;
@@ -401,7 +396,6 @@ Dans l'ordre où elles ont été ajoutées, extension par extension.
   - `règle` Doctor Octopus, Master Planner : « votre taille de main maximale est de huit » se lit « vous n'avez pas de taille de main maximale » (comme The Ten Rings) ;
   - `règle` Spider-Slayer, Hatred Honed : « chaque fois qu'il inflige des blessures à une Araignée » se lit « chaque fois qu'une Araignée blessée par lui ce tour-ci reçoit des blessures » ; une Araignée indestructible déjà blessée par lui ferait déclencher la capacité si une autre source la blesse.
   - `règle` Arachne, Psionic Weaver : la main de l'adversaire n'est pas montrée avant le choix du type ; le type est choisi comme un mode d'arrivée ;
-  - `règle` Black Cat, Cunning Thief : les deux cartes sont exilées face visible (et non face cachée).
 - **Teenage Mutant Ninja Turtles (`docs/extensions/tmt.md`) :**
   - `règle` Turtles Forever : la recherche ne porte que sur la bibliothèque (rien hors de la partie), et « exactement quatre » n'est pas imposé (l'adversaire choisit parmi les cartes trouvées).
   - `règle` Kitsune, Dragon's Daughter : l'échange se fait entre votre créature et celle d'un adversaire (deux créatures de deux adversaires ne s'échangent pas, à plus de deux joueurs).
@@ -423,7 +417,6 @@ Dans l'ordre où elles ont été ajoutées, extension par extension.
   - `règle` Bilbo, Thief in the Night : la réduction vaut pour les sorts lancés depuis un cimetière ou l'exil, pas depuis le dessus de la bibliothèque ; un artefact lancé ainsi puis contrecarré serait exilé.
   - `règle` Old Fat Spider Can't See Me : au chapitre II, la prévention est une capacité donnée à la créature, tant que la Saga reste.
   - `règle` Plunder the Trollshaws : « lancé depuis un cimetière » ne reconnaît que le flashback et les permissions qui exilent ensuite.
-  - `règle` Flameshape (Gandalf, Goblins' Bane) : les deux cartes sont exilées face visible (et non face cachée).
   - `règle` Galion, Elvenking's Butler : « ses F/E de base deviennent celles de Galion » donne des F/E de base X/X (la force de Galion), puis corrige l'endurance d'un bonus ; un effet ultérieur qui fixe les F/E de base garderait ce bonus.
   - `règle` Bard, King of Dale : « la première carte que vous piochez pendant chacune de vos étapes de pioche » se lit « une pioche pendant votre étape de pioche, si vous n'avez encore pioché aucune carte ce tour-ci ».
   - `règle` Eagle's Rescue : l'Aura qui revient du cimetière est d'abord attachée comme toute Aura mise sur le champ de bataille, puis à la cible (une question de trop s'il y a plusieurs hôtes possibles).

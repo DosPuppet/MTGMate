@@ -804,6 +804,8 @@ export function foretellCard(s: GameState, id: ObjectId): void {
   const card = exiled ? s.objects[exiled] : undefined;
   if (!card) return;
   card.foretoldTurn = s.turn.number;
+  // Exilée face cachée : seul son propriétaire peut la regarder (702.143a).
+  card.exiledFaceDown = [card.owner];
   emit({ type: "foretold", player: card.owner, defId: card.defId });
 }
 

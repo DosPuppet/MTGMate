@@ -44,6 +44,7 @@ export {
   createObject,
   creaturesControlledBy,
   decider,
+  HIDDEN_CARD_ID,
   hasKeyword,
   isAlive,
   isCreature,

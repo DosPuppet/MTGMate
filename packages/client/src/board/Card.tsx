@@ -1,4 +1,4 @@
-import type { CardFace, ObjectView } from "@mtgx/engine";
+import { type CardFace, HIDDEN_CARD_ID, type ObjectView } from "@mtgx/engine";
 import { motion } from "motion/react";
 import { type CSSProperties, useState } from "react";
 import { faceImage, faceName, faceText, faceType } from "../i18n";
@@ -102,6 +102,14 @@ export function Card({
   const [failedSrc, setFailedSrc] = useState<string | undefined>();
   const failed = failedSrc !== undefined && failedSrc === src;
   const height = `calc(${width} * 1.395)`;
+
+  // Carte exilée face cachée que le joueur ne peut pas regarder (406.3) : son dos.
+  if (face.defId === HIDDEN_CARD_ID)
+    return (
+      <div className={`card-slot ${className ?? ""}`} style={{ width, height }} data-oid={oid}>
+        <CardBack width={width} />
+      </div>
+    );
 
   const power = obj?.power;
   const toughness = obj?.toughness;

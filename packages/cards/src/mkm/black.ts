@@ -243,10 +243,9 @@ export const BLACK: Record<string, CardScript> = {
     abilities: [triggered(when.entersSelf, [fx.loseLife(3)], { label: "Vous perdez 3 PV" })],
   },
   "Outrageous Robbery": {
-    // Approximation : les cartes sont exilées face visible (le moteur n'exile pas face cachée).
     spell: spell(
       [target.player("t", "opponent")],
-      [fx.exileTop(ref.target(), amount.x, "r"), fx.grantPlay(ref.stored("r"), { forever: true, anyMana: true })],
+      [fx.exileTop(ref.target(), amount.x, "r", "you"), fx.grantPlay(ref.stored("r"), { forever: true, anyMana: true })],
     ),
   },
   "Persuasive Interrogators": {

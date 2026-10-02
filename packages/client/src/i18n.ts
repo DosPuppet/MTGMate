@@ -1,7 +1,7 @@
 /** Libellés français et mise en forme du journal. */
 
 import { tokenImage } from "@mtgx/cards";
-import type { CardFace, GameEvent, GameView, Keyword, Step } from "@mtgx/engine";
+import { type CardFace, type GameEvent, type GameView, HIDDEN_CARD_ID, type Keyword, type Step } from "@mtgx/engine";
 import { imageUrl } from "./images";
 
 export type Lang = "fr" | "en";
@@ -202,7 +202,11 @@ export function describeEvents(
         add(`${who(e.player)} ${e.player === me ? "complotez" : "complote"} ${name(e.defId)}.`, kind(e.player));
         break;
       case "foretold":
-        add(`${who(e.player)} ${e.player === me ? "présagez" : "présage"} ${name(e.defId)}.`, kind(e.player));
+        // La carte présagée d'un adversaire est cachée (exilée face cachée).
+        add(
+          `${who(e.player)} ${e.player === me ? "présagez" : "présage"} ${e.defId === HIDDEN_CARD_ID ? "une carte" : name(e.defId)}.`,
+          kind(e.player),
+        );
         break;
       case "speed":
         add(

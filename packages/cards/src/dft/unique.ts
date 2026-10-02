@@ -125,7 +125,7 @@ export const UNIQUE: Record<string, CardScript> = {
       // Approximation : la carte est exilée face visible.
       triggered(
         when.combatDamageToOpponent({ types: ["Creature"] }),
-        [fx.exileTop(ref.eventPlayer, 1, "g"), fx.grantPlay(ref.stored("g"), { forever: true })],
+        [fx.exileTop(ref.eventPlayer, 1, "g", "you"), fx.grantPlay(ref.stored("g"), { forever: true })],
         { label: "Exilez la carte du dessus de sa bibliothèque, jouable" },
       ),
     ],
