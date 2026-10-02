@@ -43,7 +43,6 @@ Dans l'ordre où elles ont été ajoutées, extension par extension.
 - **Fishing Pole :** la capacité accordée à la créature équipée est portée par l'Équipement (coût « engager la créature équipée »).
 - **Coûts retirés automatiquement :**
   - Quilled Greatwurm : les six marqueurs sont retirés d'abord des créatures qui en ont le plus ;
-  - Lathril : les Elfes à engager sont choisis automatiquement.
 - **Muldrotha :** une carte à plusieurs types de permanent utilise automatiquement le premier type encore libre.
 - **Abyssal Harvester :** les autres jetons Cauchemar sont exilés avant la création de la copie (même résultat).
 - **Curator of Destinies :** en multijoueur, c'est l'adversaire suivant qui choisit la pile.
@@ -68,7 +67,6 @@ Dans l'ordre où elles ont été ajoutées, extension par extension.
 - **Hapatra, the Desert Fang :** une seule cible adverse, même en multijoueur.
 - **Seasoned Cryomancer :** le nombre de cibles est choisi d'après les cartes non-terrain défaussées (1 ou 2), via deux déclencheurs réflexifs exclusifs.
 - **Gonti, Night Minister :** la carte exilée se joue sans pouvoir dépenser du mana de n'importe quel type.
-- **Gallia, Tragic Host :** la carte exilée du cimetière est choisie automatiquement (la moins chère).
 - **Molten Tide :** le {R} supplémentaire s'ajoute à toute capacité de mana « {T} » d'une Montagne, quelle que soit la couleur produite.
 - **Warrior's Blades :** la légalité de l'Équiper suppose la meilleure réduction possible ; le coût payé dépend de la cible choisie.
 - **Emrakul, the Exigent Doom :** la capacité accordée au terrain cesse dès que la carte quitte l'exil, de quelque façon que ce soit (et pas seulement quand elle est lancée) ; lancée, elle dure jusqu'à ce que le sort soit lancé (601.2i) et peut servir à le payer.
@@ -89,8 +87,7 @@ Dans l'ordre où elles ont été ajoutées, extension par extension.
 - **Boommobile :** les quatre mana ne sont pas restreints aux capacités.
 - **Thunderhead Gunner, Avishkar Raceway :** la carte est défaussée à la résolution, et non comme coût (comme Solitary Cell).
 - **Cursecloth Wrappings :** l'embaumement accordé est payé tout de suite (en rituel) et le jeton garde les couleurs de la carte.
-- **Radiant Lotus :** c'est son contrôleur qui ajoute le mana (pas de joueur ciblé) ; les artefacts sacrifiés sont choisis automatiquement (la source en dernier).
-- **Winter, Cursed Rider :** les X cartes d'artefact exilées sont choisies automatiquement.
+- **Radiant Lotus :** c'est son contrôleur qui ajoute le mana (pas de joueur ciblé).
 - **Full Throttle :** deux combats supplémentaires après le combat normal (et non juste après la phase principale).
 - **Oviya :** le piétinement vaut pour vos créatures attaquantes (quel que soit le joueur attaqué).
 - **Hollow Marauder :** une carte piochée si au moins un adversaire ciblé n'a pas défaussé de carte de VM 4 ou plus.
@@ -129,7 +126,7 @@ Dans l'ordre où elles ont été ajoutées, extension par extension.
 - **Duskmourn (DSK) :**
   - Survie : se déclenche au début de chaque phase principale d'après-combat (combats supplémentaires compris), pas seulement la seconde ;
   - Acrobatic Cheerleader (« ne se déclenche qu'une fois ») : tant qu'elle n'a pas de marqueur de vol ;
-  - coûts additionnels choisis automatiquement : Fear of Abduction, Abhorrent Oculus, Fear of Isolation, Fear of Exposure (ce qui vaut le moins : jetons et petits permanents d'abord ; les créatures avant les terrains) ; Monstrous Emergence prend la plus grande force (créature ou carte en main) ; Kaito renvoie l'attaquant non bloqué le plus faible et attaque le joueur qu'attaque une de vos créatures ;
+  - coûts additionnels choisis automatiquement : Fear of Abduction, Abhorrent Oculus, Fear of Isolation, Fear of Exposure (ce qui vaut le moins : jetons et petits permanents d'abord ; les créatures avant les terrains) ; Monstrous Emergence prend la plus grande force (créature ou carte en main) ; Kaito attaque le joueur qu'attaque une de vos créatures ;
   - « le joueur défenseur », « ce joueur » : Fear of Falling et Fear of Burning Alive ciblent une créature adverse ; Fear of the Dark vérifie qu'aucun adversaire ne contrôle de Lueur ;
   - « une ou deux cibles » : jusqu'à deux (Get Out, Coordinated Clobbering, Omnivorous Flytrap) ; Get Out renvoie ce que vous contrôlez (et non ce que vous possédez) ;
   - « avait des marqueurs » : seulement les marqueurs +1/+1, -1/-1, d'étourdissement (et de possession pour Unwilling Vessel, de nid pour Twitching Doll) ;
@@ -192,7 +189,7 @@ Dans l'ordre où elles ont été ajoutées, extension par extension.
   - `timing` Earthbender Ascension : « s'il a quatre marqueurs de quête ou plus » est vérifié à la résolution de la capacité de landfall, et non comme condition de la capacité réflexive.
   - `règle` Travail d'équipe : la force des créatures engagées est comptée comme pour l'équipage (un pilote compte 2 de plus) ;
   - `timing` Azog, Moria's Ruin : « si vous contrôliez cette créature, piochez une carte » est fait avant la destruction.
-  - `choix auto` Réunir des preuves : les cartes exilées du cimetière sont choisies par le moteur (la moins chère qui suffit, sinon la plus chère) ;
+  - `choix auto` Réunir des preuves « X, X étant la valeur de mana totale des permanents ciblés » (Urgent Necropsy) : les cartes exilées sont choisies par le moteur (la moins chère qui suffit, sinon la plus chère) ; ailleurs, le joueur les choisit ;
   - `choix auto` Deceit : le type du mana dépensé suit le paiement automatique ; pour payer {U}{U} ou {B}{B}, engagez vos terrains à la main avant de lancer le sort ;
   - `timing` Superior Spider-Man : la carte copiée est exilée en arrivant, et non par une capacité réflexive.
   - `règle` Momo, Friendly Flier : la réduction s'applique si vous n'avez lancé aucun sort de créature ce tour-ci (et non « aucun sort de créature non-Lémurien avec le vol ») ;
@@ -221,7 +218,6 @@ Dans l'ordre où elles ont été ajoutées, extension par extension.
   - `règle` New Way Forward : un sort choisi comme source est reconnu par sa carte et son contrôleur (une autre copie de la même carte serait aussi concernée) ; les blessures sont toutes prévenues, après les modifications (doublements) qui s'y appliquent ;
   - `règle` Neriv, Heart of the Storm : une créature qui n'est plus sur le champ de bataille n'est pas « arrivée ce tour-ci ».
 - **Lorwyn Eclipsed (`docs/extensions/ecl.md`) :**
-  - `choix auto` Flétrir en coût (« {T}, Blight 1: », « blight N or pay », « blight X ») : la créature qui reçoit les marqueurs −1/−1 est choisie par le moteur (d'abord une qui survit, la plus résistante ; sinon la moins précieuse) ; flétrir en effet laisse le choix au joueur ;
   - `choix auto` « Retirez un marqueur de cette créature » : les marqueurs retirés sont choisis par le moteur (−1/−1 d'abord, +1/+1 en dernier) ; Rhys, the Evermore retire tous les marqueurs −1/−1 de la cible ;
   - `choix auto` Contempler et exiler (les Champions) : le permanent ou la carte de la main est choisi par le moteur (un jeton, puis une carte de la main, puis un permanent, le moins cher chaque fois) ;
   - `timing` « Contemplez un [type] ou payez {N} » (Kinsbaile Aspirant, Silvergill Mentor, Lys Alana Dignitary, Mudbutton Cursetosser, Soulbright Seeker) : vérifié au lancement, sans révéler la carte ; Kindle the Inner Flame (flashback « contemplez trois Élémentaux ») : condition de lancement ;
@@ -320,7 +316,7 @@ Dans l'ordre où elles ont été ajoutées, extension par extension.
   - `règle` A Killer Among Us : le type choisi n'est pas révélé à part ; la capacité vérifie le type à la résolution ;
   - `règle` Kaya, Spirits' Justice (−2), Jetsam : « pour chaque autre joueur » et « les cimetières de vos adversaires » sont exacts en duel ; à plusieurs, une seule créature adverse est ciblée.
 - **Avatar: The Last Airbender (`docs/extensions/tla.md`) :**
-  - `choix auto` Maîtrise de l'eau : les artefacts et créatures engagés pour payer sont choisis par le moteur, après les terrains (comme pour la convocation).
+  - `choix auto` Maîtrise de l'eau, convocation, improvisation, cave : hors contrôle total, les objets qui paient sont choisis par le paiement automatique, après les terrains (comme sur Arena) ; en contrôle total, le joueur les choisit.
   - `règle` The Legend of Yangchen (chapitre I) : vous seul choisissez un permanent adverse de valeur de mana 3 ou plus (exact en duel ; à plusieurs, chaque joueur devrait en choisir un à tour de rôle), et le choix est obligatoire s'il en existe un.
   - `règle` Lost Days : le choix entre la deuxième position et le dessous de la bibliothèque revient au contrôleur de la créature, et non à son propriétaire (comme Temporal Cleansing) ;
   - `règle` Ty Lee, Chi Blocker : la créature ne se dégage pas tant que Ty Lee reste sur le champ de bataille (et non « tant que vous la contrôlez ») ;

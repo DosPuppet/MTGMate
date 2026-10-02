@@ -180,8 +180,12 @@ export const RECORD_VERSION = 1;
  * - 64 : mana marqué : une source restreinte ou porteuse d'un effet (Cavern of Souls) engagée à la main met son mana dans
  *   la réserve marquée avec sa source, son choix et son effet ; ces sources sont proposées à l'engagement manuel
  *   (PLAN-C, lot C5).
+ * - 65 : objets payés en coût choisis par le joueur (`CastChoices.picks` : flétrir, marqueurs, exil du cimetière, preuves,
+ *   sacrifier X, exiler un permanent, ninjutsu, convocation, improvisation, maîtrise de l'eau, cave ; sans choix, la
+ *   suggestion du moteur, inchangée) ; le flétrir en kicker prend par défaut une créature qui survit, comme
+ *   `blightTarget` (PLAN-C, lots C7 et C8).
  */
-export const RULES_VERSION = 64;
+export const RULES_VERSION = 65;
 
 /** Un point de contrôle toutes les N décisions (plus la dernière de la partie). */
 export const CHECKPOINT_EVERY = 25;

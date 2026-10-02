@@ -3338,3 +3338,19 @@ button {
     scroll-behavior: auto !important;
   }
 }
+
+/* Objets payés en coût (CostPickPicker) : compteur des marqueurs retirés d'un même permanent. */
+.pick-slot {
+  position: relative;
+}
+.pick-count {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  padding: 1px 6px;
+  border-radius: 8px;
+  background: var(--accent, #d4a64a);
+  color: #111;
+  font-weight: 700;
+  font-size: 0.85rem;
+}

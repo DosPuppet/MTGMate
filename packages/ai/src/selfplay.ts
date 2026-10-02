@@ -250,8 +250,18 @@ export function playGame(opts: {
 export function checkOffers(state: GameState, player: string, where: string): void {
   for (const [k, a] of legalActions(state, player).entries()) {
     if (a.type === "pass") continue;
-    const d = buildCastDecision(a, (list) => list[0], mulberry32(k + 1));
-    if (!d) continue;
+    const d0 = buildCastDecision(a, (list) => list[0], mulberry32(k + 1));
+    if (!d0) continue;
+    // Objets payés en coût : un autre choix que la suggestion (les dernières options) doit aussi être accepté.
+    const picks =
+      (a.type === "cast" || a.type === "activate") && a.picks
+        ? Object.fromEntries(
+            a.picks
+              .filter((p) => !p.when && !p.countIsX && !p.repeat && !p.atMost)
+              .map((p) => [p.slot, p.minTotal ? p.options : p.options.slice(-p.count)]),
+          )
+        : {};
+    const d = Object.keys(picks).length && (d0.type === "cast" || d0.type === "activate") ? { ...d0, picks } : d0;
     try {
       submit(state, player, d);
     } catch (e) {

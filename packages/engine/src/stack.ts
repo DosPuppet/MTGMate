@@ -63,6 +63,8 @@ import type {
   CastLimit,
   ChoiceValue,
   Color,
+  CostPick,
+  CostSlot,
   Effect,
   GameObject,
   GameState,
@@ -532,7 +534,11 @@ export function kickerCostOptions(
   // Un coût se paie après le choix des cibles (601.2h) : une cible peut le payer. Les cibles viennent en dernier (choix par
   // défaut), puis le moins cher, jeton d'abord.
   const mv = (id: ObjectId) => (s.objects[id]?.isToken ? -1 : manaValue(s.defs[s.objects[id]?.defId ?? ""]?.manaCost));
-  const rank = (id: ObjectId) => (targeted.includes(id) ? 1000 : 0) + mv(id);
+  // Flétrir : comme `blightTarget`, d'abord une créature qui survit (la plus résistante), sinon la moins précieuse.
+  const n = d.kickerCost?.blight ?? 0;
+  const left = (id: ObjectId) => chars(s, id).toughness - (s.objects[id]?.damage ?? 0) - n;
+  const value = (id: ObjectId) => (n > 0 ? (left(id) > 0 ? -left(id) - 100 : mv(id)) : mv(id));
+  const rank = (id: ObjectId) => (targeted.includes(id) ? 1000 : 0) + value(id);
   return s.battlefield
     .filter((id) => id !== card && s.objects[id]?.controller === player && matchesObjectFilter(s, player, id, f, card))
     .sort((a, b) => rank(a) - rank(b));
@@ -1571,7 +1577,7 @@ export function castSpell(s: GameState, player: PlayerId, card: ObjectId, choice
   const kickerPermanent = kickerChoice?.[0] ?? kickerOptions[0];
   const teamwork = kicked ? d.kickerCost?.tapPower : undefined;
   const evidence =
-    kicked && d.kickerCost?.collectEvidence ? evidenceCards(s, player, card, d.kickerCost.collectEvidence) : undefined;
+    kicked && d.kickerCost?.collectEvidence ? spellPickNow(s, player, card, d, x, "evidence", "kicked", choices) : undefined;
   if (evidence === null) throw new RulesError("Pas assez de preuves à réunir dans votre cimetière");
   // Urgent Necropsy : « réunissez des preuves X, X étant la valeur de mana totale des permanents ciblés ».
   const targetEvidenceX = d.additionalCost?.collectEvidenceTargetsManaValue
@@ -1583,7 +1589,7 @@ export function castSpell(s: GameState, player: PlayerId, card: ObjectId, choice
   const targetEvidence = targetEvidenceX > 0 ? evidenceCards(s, player, card, targetEvidenceX) : undefined;
   if (targetEvidence === null) throw new RulesError("Pas assez de preuves à réunir dans votre cimetière");
   const gyExile =
-    kicked && d.kickerCost?.exileGraveyard ? graveyardToExile(s, player, card, d.kickerCost.exileGraveyard) : undefined;
+    kicked && d.kickerCost?.exileGraveyard ? spellPickNow(s, player, card, d, x, "graveyardExile", "kicked", choices) : undefined;
   if (gyExile === null) throw new RulesError("Pas assez de cartes dans votre cimetière");
   // Redirect Lightning : « payez 5 PV ou payez {2} » (le kicker est le paiement en PV).
   const kickerLife = kicked ? d.kickerCost?.life : undefined;
@@ -1666,7 +1672,7 @@ export function castSpell(s: GameState, player: PlayerId, card: ObjectId, choice
   // Conspiracy Unraveler : « réunir des preuves 10 plutôt que payer le coût de mana ».
   const altEvidence = alternative ? altCostFor(s, player, d)?.collectEvidence : undefined;
   if (altEvidence) {
-    const cards = evidenceCards(s, player, card, altEvidence);
+    const cards = spellPickNow(s, player, stackId, d, x, "evidence", "alternative", choices);
     if (!cards) throw new RulesError("Pas assez de preuves à réunir dans votre cimetière");
     collectEvidence(s, player, cards);
   }
@@ -1767,6 +1773,7 @@ export function castSpell(s: GameState, player: PlayerId, card: ObjectId, choice
         delve: playerStatic(s, player, "delveSpells"),
         fromHand: terms.source === "hand",
         ...(bendPaid ? { waterbend: bendPaid } : {}),
+        ...(onlyChosen(validHelperPicks(s, player, stackId, d, choices)) ? { only: onlyChosen(choices.picks) } : {}),
       },
       taps,
       spent,
@@ -1808,7 +1815,7 @@ export function castSpell(s: GameState, player: PlayerId, card: ObjectId, choice
   if (d.xCost === "life" && x > 0) payLife_(s, player, x);
   if (kickerLife) payLife_(s, player, kickerLife);
   if (d.xCost === "blight" && x > 0) {
-    const blighted = blightTarget(s, player, x);
+    const blighted = spellPickNow(s, player, item.id, d, x, "blight", undefined, choices)?.[0];
     if (blighted) changeCounters(s, obj(s, blighted), "-1/-1", x, true);
   }
   if (lifeTax) payLife_(s, player, lifeTax);
@@ -2347,6 +2354,317 @@ export function discardCostOptions(s: GameState, player: PlayerId, source: Objec
   );
 }
 
+// ---------------------------------------------------------------------------
+// Objets payés en coût, choisis par le joueur (PLAN-C, lots C7 et C8)
+// ---------------------------------------------------------------------------
+
+const manaValueOf = (s: GameState, id: ObjectId) => manaValue(s.defs[s.objects[id]?.defId ?? ""]?.manaCost);
+
+/**
+ * Coûts d'une capacité payés avec des objets à choisir, avec la suggestion du moteur (son choix quand le joueur ne choisit
+ * pas). `x` : le X de l'activation ; absent (`legalActions`), les coûts « X » valent `countIsX`. Calculé au moment du
+ * paiement de chaque coût : la suggestion est celle qu'appliquait le moteur à cet instant.
+ */
+export function activationPicks(
+  s: GameState,
+  player: PlayerId,
+  source: ObjectId,
+  ab: ActivatedAbilityDef,
+  x?: number,
+): CostPick[] {
+  const c = ab.cost;
+  const out: CostPick[] = [];
+  const mine = (id: ObjectId) => s.objects[id]?.controller === player;
+  if (c.blight) {
+    const best = blightTarget(s, player, c.blight);
+    const options = s.battlefield.filter((id) => mine(id) && isCreature(s, id));
+    if (best)
+      out.push({
+        slot: "blight",
+        label: `Flétrir ${c.blight} : la créature qui reçoit ${c.blight > 1 ? `${c.blight} marqueurs` : "le marqueur"} −1/−1`,
+        count: 1,
+        options: [best, ...options.filter((id) => id !== best)],
+        suggested: [best],
+      });
+  }
+  if (c.removeCounterFrom) {
+    const r = c.removeCounterFrom;
+    const options = s.battlefield.filter(
+      (id) => mine(id) && (obj(s, id).counters[r.kind] ?? 0) > 0 && matchesObjectFilter(s, player, id, r.filter, source),
+    );
+    const suggested = counterSources(s, player, source, ab);
+    if (suggested)
+      out.push({
+        slot: "counterFrom",
+        label: `Retirez ${r.n ?? 1} marqueur(s) ${r.kind}`,
+        count: r.n ?? 1,
+        options,
+        suggested,
+        repeat: Object.fromEntries(options.map((id) => [id, obj(s, id).counters[r.kind] ?? 0])),
+      });
+  }
+  if (c.exileFromGraveyard) {
+    const options = graveyardExileOptions(s, source, ab);
+    const n = c.exileFromGraveyard.count;
+    if (options.length >= n)
+      out.push({
+        slot: "graveyardExile",
+        label: `Exilez ${n} carte(s) de votre cimetière`,
+        count: n,
+        options,
+        suggested: options.slice(0, n),
+      });
+  }
+  if (c.exileFromGraveyardX) {
+    const f = c.exileFromGraveyardX;
+    const options = (s.players[player]?.graveyard ?? []).filter((id) => id !== source && matchesCard(s, player, id, f, source));
+    out.push({
+      slot: "graveyardExileX",
+      label: "Exilez X cartes de votre cimetière",
+      count: x ?? 0,
+      countIsX: x === undefined,
+      options,
+      suggested: options.slice(0, x ?? 0),
+    });
+  }
+  if (c.sacrificeX) {
+    const f = c.sacrificeX;
+    // Les autres d'abord, la source en dernier (Radiant Lotus).
+    const options = s.battlefield
+      .filter((id) => mine(id) && matchesObjectFilter(s, player, id, f, source))
+      .sort((a, b) => (a === source ? 1 : 0) - (b === source ? 1 : 0));
+    out.push({
+      slot: "sacrificeX",
+      label: "Sacrifiez X permanents",
+      count: x ?? 0,
+      countIsX: x === undefined,
+      options,
+      suggested: options.slice(0, x ?? 0),
+    });
+  }
+  if (c.exileOther) {
+    const options = bounceCostOptions(s, player, source, c.exileOther);
+    if (options.length)
+      out.push({ slot: "exileOther", label: "Exilez un permanent", count: 1, options, suggested: options.slice(0, 1) });
+  }
+  if (c.returnUnblockedAttacker) {
+    const options = [...unblockedAttackers(s, player)].sort((a, b) => chars(s, a).power - chars(s, b).power);
+    if (options.length)
+      out.push({
+        slot: "returnAttacker",
+        label: "Renvoyez un attaquant non bloqué dans la main de son propriétaire",
+        count: 1,
+        options,
+        suggested: options.slice(0, 1),
+      });
+  }
+  if (c.waterbend) out.push(...manaHelperPicks(s, player, source, { waterbend: true }));
+  if (c.collectEvidence) {
+    const options = (s.players[player]?.graveyard ?? []).filter((id) => id !== source);
+    const suggested = evidenceCards(s, player, source, c.collectEvidence);
+    if (suggested)
+      out.push({
+        slot: "evidence",
+        label: `Réunissez des preuves ${c.collectEvidence} (valeur de mana totale ${c.collectEvidence} ou plus)`,
+        count: suggested.length,
+        options,
+        suggested,
+        minTotal: { n: c.collectEvidence, values: Object.fromEntries(options.map((id) => [id, manaValueOf(s, id)])) },
+      });
+  }
+  return out;
+}
+
+/**
+ * Coûts d'un sort payés avec des objets à choisir : preuves (kicker, coût alternatif), exil de cartes du cimetière
+ * (kicker), flétrir X. `x` absent (`legalActions`) : la suggestion de flétrir X suppose X = 1.
+ */
+export function spellPicks(s: GameState, player: PlayerId, card: ObjectId, d: CardDef, x?: number): CostPick[] {
+  const out: CostPick[] = [];
+  const graveyard = (s.players[player]?.graveyard ?? []).filter((id) => id !== card);
+  const evidencePick = (n: number, when: CostPick["when"]): CostPick | null => {
+    const suggested = evidenceCards(s, player, card, n);
+    if (!suggested) return null;
+    return {
+      slot: "evidence",
+      label: `Réunissez des preuves ${n} (valeur de mana totale ${n} ou plus)`,
+      count: suggested.length,
+      options: graveyard,
+      suggested,
+      minTotal: { n, values: Object.fromEntries(graveyard.map((id) => [id, manaValueOf(s, id)])) },
+      when,
+    };
+  };
+  const altEvidence = altCostFor(s, player, d)?.collectEvidence;
+  if (altEvidence) {
+    const p = evidencePick(altEvidence, "alternative");
+    if (p) out.push(p);
+  }
+  if (d.kickerCost?.collectEvidence) {
+    const p = evidencePick(d.kickerCost.collectEvidence, "kicked");
+    if (p) out.push(p);
+  }
+  if (d.kickerCost?.exileGraveyard) {
+    const n = d.kickerCost.exileGraveyard;
+    const suggested = graveyardToExile(s, player, card, n);
+    if (suggested)
+      out.push({
+        slot: "graveyardExile",
+        label: `Exilez ${n} carte(s) de votre cimetière`,
+        count: n,
+        options: graveyard,
+        suggested,
+        when: "kicked",
+      });
+  }
+  out.push(
+    ...manaHelperPicks(s, player, card, {
+      convoke: hasConvoke(s, player, d),
+      improvise: hasImprovise(s, player, d),
+      waterbend: d.waterbend !== undefined || d.xCost === "waterbend",
+      delve: playerStatic(s, player, "delveSpells"),
+    }),
+  );
+  if (d.xCost === "blight") {
+    const best = blightTarget(s, player, Math.max(1, x ?? 1));
+    const options = s.battlefield.filter((id) => s.objects[id]?.controller === player && isCreature(s, id));
+    if (best)
+      out.push({
+        slot: "blight",
+        label: "Flétrir X : la créature qui reçoit les X marqueurs −1/−1",
+        count: 1,
+        options: [best, ...options.filter((id) => id !== best)],
+        suggested: [best],
+      });
+  }
+  return out;
+}
+
+/**
+ * Objets qui peuvent aider à payer le mana (convocation, improvisation, maîtrise de l'eau, cave) : au choix du joueur,
+ * sinon du paiement automatique (`atMost`, suggestion vide).
+ */
+function manaHelperPicks(
+  s: GameState,
+  player: PlayerId,
+  except: ObjectId,
+  kinds: { convoke?: boolean; improvise?: boolean; waterbend?: boolean; delve?: boolean },
+): CostPick[] {
+  const out: CostPick[] = [];
+  const untapped = (id: ObjectId) =>
+    id !== except && s.objects[id]?.controller === player && !s.objects[id]?.tapped && s.objects[id]?.zone === "battlefield";
+  const add = (slot: CostSlot, label: string, options: ObjectId[]) => {
+    if (options.length) out.push({ slot, label, count: options.length, options, suggested: [], atMost: true });
+  };
+  if (kinds.convoke)
+    add(
+      "convoke",
+      "Convocation : les créatures à engager (chacune paie {1} ou un mana de sa couleur)",
+      s.battlefield.filter((id) => untapped(id) && isCreature(s, id) && manaAbilitiesOf(s, id).length === 0),
+    );
+  if (kinds.improvise)
+    add(
+      "improvise",
+      "Improvisation : les artefacts à engager (chacun paie {1})",
+      s.battlefield.filter((id) => untapped(id) && chars(s, id).types.includes("Artifact")),
+    );
+  if (kinds.waterbend)
+    add(
+      "waterbend",
+      "Maîtrise de l'eau : les artefacts et créatures à engager (chacun paie {1})",
+      s.battlefield.filter((id) => untapped(id) && (chars(s, id).types.includes("Artifact") || isCreature(s, id))),
+    );
+  if (kinds.delve)
+    add(
+      "delve",
+      "Cave : les cartes de votre cimetière à exiler (chacune paie {1})",
+      (s.players[player]?.graveyard ?? []).filter((id) => id !== except),
+    );
+  return out;
+}
+
+/** Les choix de convocation, d'improvisation, de maîtrise de l'eau et de cave d'un sort, vérifiés (sinon `RulesError`). */
+function validHelperPicks(
+  s: GameState,
+  player: PlayerId,
+  card: ObjectId,
+  d: CardDef,
+  choices: CastChoices,
+): CastChoices["picks"] {
+  for (const p of spellPicks(s, player, card, d).filter((x) => x.atMost)) {
+    const chosen = choices.picks?.[p.slot];
+    if (chosen) resolvePick(s, p, chosen);
+  }
+  for (const k of ["convoke", "improvise", "waterbend", "delve"] as const)
+    if (choices.picks?.[k] && !spellPicks(s, player, card, d).some((p) => p.slot === k))
+      throw new RulesError("Ce sort ne se paie pas ainsi");
+  return choices.picks;
+}
+
+/** Contrainte de paiement : les objets choisis par le joueur pour la convocation, l'improvisation, la cave… */
+function onlyChosen(picks: CastChoices["picks"]): ManaPurpose["only"] | undefined {
+  const only: NonNullable<ManaPurpose["only"]> = {};
+  for (const k of ["convoke", "improvise", "waterbend", "delve"] as const) if (picks?.[k]) only[k] = picks[k];
+  return Object.keys(only).length ? only : undefined;
+}
+
+/** Les objets d'un emplacement de coût d'un sort, choisis au moment de payer ce coût. */
+function spellPickNow(
+  s: GameState,
+  player: PlayerId,
+  card: ObjectId,
+  d: CardDef,
+  x: number,
+  slot: CostSlot,
+  when: CostPick["when"],
+  choices: CastChoices,
+): ObjectId[] | null {
+  const pick = spellPicks(s, player, card, d, x).find((p) => p.slot === slot && p.when === when);
+  if (!pick) return null;
+  return resolvePick(s, pick, choices.picks?.[slot]);
+}
+
+/** Objets choisis pour un coût : ceux du joueur s'ils sont valides (sinon `RulesError`), à défaut la suggestion. */
+export function resolvePick(s: GameState, pick: CostPick, chosen: ObjectId[] | undefined): ObjectId[] {
+  if (chosen === undefined) return pick.suggested;
+  if (chosen.some((id) => !pick.options.includes(id))) throw new RulesError(`Choix invalide : ${pick.label}`);
+  if (pick.atMost) {
+    if (new Set(chosen).size !== chosen.length || chosen.length > pick.count)
+      throw new RulesError(`Choix invalide : ${pick.label}`);
+    return chosen;
+  }
+  if (pick.minTotal) {
+    const total = chosen.reduce((n, id) => n + (pick.minTotal?.values[id] ?? 0), 0);
+    if (new Set(chosen).size !== chosen.length || total < pick.minTotal.n)
+      throw new RulesError(`Valeur de mana totale insuffisante : ${pick.label}`);
+    return chosen;
+  }
+  if (chosen.length !== pick.count) throw new RulesError(`${pick.count} objet(s) à choisir : ${pick.label}`);
+  const times = new Map<ObjectId, number>();
+  for (const id of chosen) times.set(id, (times.get(id) ?? 0) + 1);
+  for (const [id, n] of times) if (n > (pick.repeat?.[id] ?? 1)) throw new RulesError(`Choix invalide : ${pick.label}`);
+  void s;
+  return chosen;
+}
+
+/** Les objets d'un emplacement de coût d'une capacité, choisis au moment de payer ce coût. */
+function pickNow(
+  s: GameState,
+  player: PlayerId,
+  source: ObjectId,
+  ab: ActivatedAbilityDef,
+  x: number,
+  slot: CostSlot,
+  choices: CastChoices,
+): ObjectId[] {
+  const pick = activationPicks(s, player, source, ab, x).find((p) => p.slot === slot);
+  if (!pick) {
+    if (choices.picks?.[slot]?.length) throw new RulesError("Ce coût ne demande pas ce choix");
+    return [];
+  }
+  return resolvePick(s, pick, choices.picks?.[slot]);
+}
+
 export function activateAbility(s: GameState, player: PlayerId, source: ObjectId, index: number, choices: CastChoices): void {
   const o = s.objects[source];
   const ab = activatedAbility(s, source, index);
@@ -2470,7 +2788,13 @@ export function activateAbility(s: GameState, player: PlayerId, source: ObjectId
     try {
       // Warrior's Blades, Dragonfire Blade : le coût dépend de la créature ciblée.
       const cost = abilityManaCost(s, player, source, ab, targets.t?.[0], x);
-      const purpose = abilityPurpose(source, ab);
+      const purpose0 = abilityPurpose(source, ab);
+      // Maîtrise de l'eau : les objets choisis par le joueur (vérifiés), sinon le paiement automatique.
+      const only =
+        ab.cost.waterbend && choices.picks?.waterbend
+          ? { waterbend: pickNow(s, player, source, ab, x, "waterbend", choices) }
+          : undefined;
+      const purpose = { ...purpose0, ...(only ? { only } : {}) };
       payMana(s, player, cost, reserved, sacrificed.length ? { ...purpose, sacrificedForCost: new Set(sacrificed) } : purpose);
       if (ab.cost.waterbend) bent(s, player, "water");
     } catch (e) {
@@ -2518,45 +2842,40 @@ export function activateAbility(s: GameState, player: PlayerId, source: ObjectId
   if (ab.cost.sacrificeSelf) sacrificePermanent(s, source);
   // La source quitte sa zone pour payer le coût : on garde ses dernières informations (« cette carte », où qu'elle soit).
   if (ab.cost.exileSelf || ab.cost.discardSelf || ab.cost.bounceSelf) s.lki[source] ??= snapshot(s, source);
-  if (ab.cost.exileFromGraveyard) {
-    for (const id of graveyardExileOptions(s, source, ab).slice(0, ab.cost.exileFromGraveyard.count)) moveObject(s, id, "exile");
-  }
-  // « Retirez un marqueur d'une créature que vous contrôlez » : celle qui en porte le plus.
-  // Flétrir N comme coût (ECL) : la créature est choisie automatiquement (`blightTarget`).
-  const blighted = ab.cost.blight ? blightTarget(s, player, ab.cost.blight) : null;
+  // Coûts payés avec des objets choisis par le joueur (sinon la suggestion du moteur) : `activationPicks`.
+  const pick = (slot: CostSlot) => pickNow(s, player, source, ab, x, slot, choices);
+  if (ab.cost.exileFromGraveyard) for (const id of pick("graveyardExile")) moveObject(s, id, "exile");
+  // Flétrir N comme coût (ECL) : par défaut, `blightTarget`.
+  const blighted = ab.cost.blight ? pick("blight")[0] : undefined;
   if (blighted && ab.cost.blight) changeCounters(s, obj(s, blighted), "-1/-1", ab.cost.blight, true);
-  const counterFrom = ab.cost.removeCounterFrom ? counterSources(s, player, source, ab) : null;
+  // « Retirez un marqueur d'une créature que vous contrôlez » : par défaut, celle qui en porte le plus.
   if (ab.cost.removeCounterFrom)
-    for (const id of counterFrom ?? []) changeCounters(s, obj(s, id), ab.cost.removeCounterFrom.kind, -1, true);
+    for (const id of pick("counterFrom")) changeCounters(s, obj(s, id), ab.cost.removeCounterFrom.kind, -1, true);
   // Réunir des preuves N comme coût (Forensic Researcher, Polygraph Orb).
   if (ab.cost.collectEvidence) {
-    const exiled = collectEvidence(s, player, evidenceCards(s, player, source, ab.cost.collectEvidence) ?? []);
+    const exiled = collectEvidence(s, player, pick("evidence"));
     if (ab.cost.linkEvidence) o.linked = [...(o.linked ?? []), ...exiled];
   }
   // « Engagez X artefacts dégagés » : X choisi à l'activation (permanents choisis avant le paiement du mana).
   for (const id of tapXChosen) tapObject(s, obj(s, id));
-  // Winter, Cursed Rider : « exilez X cartes d'artefact de votre cimetière » (choisies automatiquement).
+  // Winter, Cursed Rider : « exilez X cartes d'artefact de votre cimetière ».
   if (ab.cost.exileFromGraveyardX) {
-    const f = ab.cost.exileFromGraveyardX;
-    const options = (s.players[player]?.graveyard ?? []).filter((id) => id !== source && matchesCard(s, player, id, f, source));
-    if (options.length < x) throw new RulesError("Pas assez de cartes à exiler");
-    for (const id of options.slice(0, x)) moveObject(s, id, "exile");
+    const chosen = pick("graveyardExileX");
+    if (chosen.length < x) throw new RulesError("Pas assez de cartes à exiler");
+    for (const id of chosen) moveObject(s, id, "exile");
   }
-  // Radiant Lotus : « sacrifiez un ou plusieurs artefacts » (les autres d'abord, la source en dernier).
+  // Radiant Lotus : « sacrifiez un ou plusieurs artefacts » (par défaut, les autres d'abord, la source en dernier).
   if (ab.cost.sacrificeX) {
-    const f = ab.cost.sacrificeX;
-    const options = s.battlefield
-      .filter((id) => obj(s, id).controller === player && matchesObjectFilter(s, player, id, f, source))
-      .sort((a, b) => (a === source ? 1 : 0) - (b === source ? 1 : 0));
-    if (options.length < x) throw new RulesError("Pas assez de permanents à sacrifier");
-    item.sacrificed = options.slice(0, x);
-    for (const id of options.slice(0, x)) sacrificePermanent(s, id);
+    const chosen = pick("sacrificeX");
+    if (chosen.length < x) throw new RulesError("Pas assez de permanents à sacrifier");
+    item.sacrificed = chosen;
+    for (const id of chosen) sacrificePermanent(s, id);
   }
   // Fourrager (701.61) : trois cartes du cimetière ou une Nourriture (choix automatique).
   if (ab.cost.forage && !forage(s, player)) throw new RulesError("Impossible de fourrager");
-  // Ninjutsu : l'attaquant non bloqué le plus faible retourne dans la main de son propriétaire.
+  // Ninjutsu : un attaquant non bloqué retourne dans la main de son propriétaire (par défaut, le plus faible).
   if (ab.cost.returnUnblockedAttacker) {
-    const weakest = [...unblockedAttackers(s, player)].sort((a, b) => chars(s, a).power - chars(s, b).power)[0];
+    const weakest = pick("returnAttacker")[0];
     if (!weakest) throw new RulesError("Aucun attaquant non bloqué");
     removeFromCombat(s, weakest);
     moveObject(s, weakest, "hand");
@@ -2572,7 +2891,7 @@ export function activateAbility(s: GameState, player: PlayerId, source: ObjectId
   }
   // The Soul Stone : « exilez une créature que vous contrôlez ».
   if (ab.cost.exileOther) {
-    const gone = bounceCostOptions(s, player, source, ab.cost.exileOther)[0];
+    const gone = pick("exileOther")[0];
     if (!gone) throw new RulesError("Aucun permanent à exiler");
     removeFromCombat(s, gone);
     moveObject(s, gone, "exile");

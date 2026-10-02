@@ -1,6 +1,6 @@
 /** Fenêtres de choix : réservées aux vraies décisions (mulligan, modes, X, kicker, défausse…). */
 
-import { costToText, type GameView, type ObjectView } from "@mtgx/engine";
+import { type CostPick, costToText, type GameView, type ObjectView } from "@mtgx/engine";
 import { useState } from "react";
 import { Card } from "../board/Card";
 import { faceName, type Lang } from "../i18n";
@@ -210,6 +210,74 @@ function AdditionalCostPicker({
   );
 }
 
+/**
+ * Objets payés en coût (`CostPick`) : flétrir, retirer des marqueurs, exiler des cartes du cimetière, réunir des preuves,
+ * sacrifier X permanents… La suggestion est le choix du moteur ; un objet peut revenir pour les marqueurs (`repeat`).
+ */
+function CostPickPicker({ pick }: { pick: CostPick }) {
+  const view = useGame((s) => s.view);
+  const choose = useGame((s) => s.choosePick);
+  const cancel = useGame((s) => s.cancel);
+  const [picked, setPicked] = useState<string[]>([]);
+  if (!view) return null;
+  const all = [...view.hand, ...view.battlefield, ...Object.values(view.players).flatMap((p) => p.graveyard), ...view.exile];
+  const total = pick.minTotal ? picked.reduce((n, id) => n + (pick.minTotal?.values[id] ?? 0), 0) : 0;
+  const ready = pick.atMost ? true : pick.minTotal ? total >= pick.minTotal.n : picked.length === pick.count;
+  const times = (id: string) => picked.filter((x) => x === id).length;
+  const toggle = (id: string) =>
+    setPicked((cur) => {
+      const max = pick.repeat?.[id] ?? 1;
+      // Marqueurs : chaque clic en retire un de plus, jusqu'à épuisement, puis on recommence.
+      if (pick.repeat && times(id) < max && cur.length < pick.count) return [...cur, id];
+      if (cur.includes(id)) return cur.filter((x) => x !== id);
+      return pick.minTotal || cur.length < pick.count ? [...cur, id] : cur;
+    });
+  return (
+    <Modal title={`Coût : ${pick.label}`} wide>
+      <div className="hand-picker">
+        {pick.options.map((id) => {
+          const o = all.find((x) => x.id === id);
+          return o ? (
+            <div key={id} className="pick-slot">
+              <Card
+                face={o}
+                obj={o}
+                width="var(--pick-w)"
+                glow={picked.includes(id) ? "selected" : null}
+                onClick={() => toggle(id)}
+              />
+              {pick.repeat && times(id) > 0 && <span className="pick-count">×{times(id)}</span>}
+            </div>
+          ) : null;
+        })}
+      </div>
+      <div className="modal-actions">
+        <button type="button" className="btn ghost" onClick={cancel}>
+          Annuler
+        </button>
+        <button type="button" className="btn" onClick={() => setPicked(pick.suggested)}>
+          Suggestion
+        </button>
+        <button
+          type="button"
+          className="btn primary"
+          disabled={!ready}
+          // Aucun objet choisi pour la convocation (et autres) : le paiement automatique décide.
+          onClick={() => (pick.atMost && picked.length === 0 ? choose(pick.slot, undefined) : choose(pick.slot, picked))}
+        >
+          {pick.atMost
+            ? picked.length
+              ? `Valider (${picked.length})`
+              : "Paiement automatique"
+            : pick.minTotal
+              ? `Valider (valeur ${total}/${pick.minTotal.n})`
+              : `Valider (${picked.length}/${pick.count})`}
+        </button>
+      </div>
+    </Modal>
+  );
+}
+
 /** Cibles hors du champ de bataille (cartes dans un cimetière ou en exil) : choisies dans une fenêtre. */
 function TargetCardPicker() {
   const view = useGame((s) => s.view);
@@ -292,6 +360,7 @@ function CastingPrompt() {
       </Modal>
     );
   }
+  if (casting.stage === "pick" && casting.pick) return <CostPickPicker key={casting.pick.slot} pick={casting.pick} />;
   if (casting.stage === "x" && opt.xMax !== null)
     return <XPicker max={opt.xMax} min={opt.type === "activate" ? (opt.xMin ?? 0) : 0} />;
   if (casting.stage === "target" && casting.spec && view) {

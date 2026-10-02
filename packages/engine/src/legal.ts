@@ -9,6 +9,7 @@ import {
   abilityPurpose,
   abilityZone,
   activatedAbility,
+  activationPicks,
   additionalOptions,
   altCostFor,
   autoAdditional,
@@ -41,6 +42,7 @@ import {
   sneakTiming,
   sorceryTiming,
   spellCost,
+  spellPicks,
   spellView,
   splitSecondOnStack,
   suggestedCrew,
@@ -561,6 +563,16 @@ export function legalActions(s: GameState, player: PlayerId): ActionOption[] {
           ? kickerCostOptions(s, player, card, d)
           : undefined,
       kickerTap: d.kickerCost?.tapPower ? crewSpec(s, player, card, d.kickerCost.tapPower) : undefined,
+      // Objets payés en coût (preuves, exil du cimetière, flétrir X), quand le joueur a un choix à faire.
+      ...(() => {
+        const picks = spellPicks(s, player, card, d).filter(
+          (p) =>
+            (p.when !== "kicked" || kickerAffordable) &&
+            (p.when !== "alternative" || altAvailable) &&
+            (p.atMost || p.minTotal || p.options.length > p.count),
+        );
+        return picks.length ? { picks } : {};
+      })(),
     });
   }
 
@@ -638,6 +650,13 @@ export function legalActions(s: GameState, player: PlayerId): ActionOption[] {
         targets,
         xMax,
         ...(minX !== undefined ? { xMin: minX } : {}),
+        // Objets payés en coût, quand le joueur a un choix à faire.
+        ...(() => {
+          const picks = activationPicks(s, player, id, ab).filter(
+            (p) => p.atMost || p.countIsX || p.minTotal || p.options.length > p.count || (p.repeat && p.options.length > 1),
+          );
+          return picks.length ? { picks } : {};
+        })(),
         additional:
           ab.cost.sacrifice || ab.cost.tapOthers || ab.cost.discard || ab.cost.crew !== undefined || ab.cost.craft
             ? {

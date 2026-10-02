@@ -11,6 +11,8 @@ import {
   autoTarget,
   type CardDef,
   type CardFace,
+  type CostPick,
+  type CostSlot,
   DEFAULT_AUTOPILOT,
   type Decision,
   type GameEvent,
@@ -104,10 +106,16 @@ export interface Casting {
   materials: string[] | null;
   /** Web-slinging : la créature engagée renvoyée en main. */
   bounce: string[] | null;
+  /** Objets payés en coût choisis par emplacement (flétrir, preuves, exil du cimetière…). */
+  picks: Partial<Record<CostSlot, string[]>>;
+  /** Emplacements déjà traités sans choix (paiement automatique). */
+  skippedPicks?: Partial<Record<CostSlot, boolean>>;
   /** Façon de payer le sort : coût normal, sans payer (Omniscience, Etali), coût alternatif. */
   payMode: "normal" | "free" | "alt" | null;
   targets: Record<string, string[]>;
-  stage: "mode" | "pay" | "x" | "kicker" | "target" | "discard" | "sacrifice" | "tap" | "materials" | "bounce";
+  stage: "mode" | "pay" | "x" | "kicker" | "target" | "discard" | "sacrifice" | "tap" | "materials" | "bounce" | "pick";
+  /** Étape « pick » : l'emplacement de coût à choisir. */
+  pick?: CostPick;
   spec: TargetOption | null;
   /** Cibles déjà désignées pour `spec` quand il en accepte plusieurs. */
   picked?: string[];
@@ -295,6 +303,8 @@ interface Store {
   /** Valide les cibles déjà désignées (« jusqu'à N »). */
   confirmTargets(): void;
   chooseAdditional(kind: "discard" | "sacrifice" | "tap" | "materials" | "bounce", ids: string[]): void;
+  /** Objets choisis pour un coût (`CostPick`). */
+  choosePick(slot: CostSlot, ids: string[] | undefined): void;
   cancel(): void;
   toggleAttacker(id: string): void;
   /** Cible choisie pour l'attaquant en visée. */
@@ -372,6 +382,7 @@ function buildDecision(c: Casting): Decision {
       bounce: c.bounce ?? undefined,
       free: c.payMode === "free" && !c.option.free ? true : undefined,
       alternative: c.payMode === "alt" ? true : undefined,
+      ...(Object.keys(c.picks).length ? { picks: c.picks } : {}),
     };
   }
   return {
@@ -384,6 +395,7 @@ function buildDecision(c: Casting): Decision {
     sacrifice: c.sacrifice ?? undefined,
     tap: c.tap ?? undefined,
     materials: c.materials ?? undefined,
+    ...(Object.keys(c.picks).length ? { picks: c.picks } : {}),
   };
 }
 
@@ -825,6 +837,16 @@ export const useGame = create<Store>((set, get) => {
     if (extra && "tap" in extra && extra.tap && c.tap === null) return set({ casting: { ...c, stage: "tap", spec: null } });
     if (extra && "materials" in extra && extra.materials && c.materials === null)
       return set({ casting: { ...c, stage: "materials", spec: null } });
+    // Objets payés en coût (flétrir, preuves, exil du cimetière…), quand le coût s'applique et que le choix compte.
+    for (const p of c.option.picks ?? []) {
+      if (c.picks[p.slot] !== undefined || c.skippedPicks?.[p.slot]) continue;
+      if ((p.when === "kicked" && !c.kicked) || (p.when === "alternative" && c.payMode !== "alt")) continue;
+      // Convocation, improvisation, maîtrise de l'eau, cave : le paiement automatique choisit, sauf en contrôle total.
+      if (p.atMost && !get().settings.fullControl) continue;
+      const count = p.countIsX ? (c.x ?? 0) : p.count;
+      if (p.countIsX && count === 0) continue;
+      return set({ casting: { ...c, stage: "pick", spec: null, pick: { ...p, count } } });
+    }
     get().decide(buildDecision(c));
   };
 
@@ -1513,6 +1535,7 @@ export const useGame = create<Store>((set, get) => {
         tap: null,
         materials: null,
         bounce: null,
+        picks: {},
         payMode: null,
         targets: {},
         stage: "mode",
@@ -1558,6 +1581,15 @@ export const useGame = create<Store>((set, get) => {
     chooseAdditional(kind, ids) {
       const c = get().casting;
       if (c) continueCasting({ ...c, [kind]: ids });
+    },
+
+    choosePick(slot, ids) {
+      const c = get().casting;
+      if (!c) return;
+      // `undefined` : pas de choix (paiement automatique) ; l'emplacement est noté comme traité.
+      const skipped = { ...(c.skippedPicks ?? {}), [slot]: true };
+      if (ids === undefined) return continueCasting({ ...c, skippedPicks: skipped, pick: undefined });
+      continueCasting({ ...c, picks: { ...c.picks, [slot]: ids }, skippedPicks: skipped, pick: undefined });
     },
 
     pickTarget(id) {

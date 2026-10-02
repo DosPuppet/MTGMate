@@ -248,6 +248,11 @@ export interface ManaPurpose {
   keep?: readonly ObjectId[];
   /** Sources proposées à l'engagement manuel (`legalActions`) : les sources restreintes aussi. */
   manual?: boolean;
+  /**
+   * Objets choisis par le joueur pour la convocation, l'improvisation, la maîtrise de l'eau ou la cave : seuls ceux-là
+   * servent pour ce mode de paiement, en premier, et tous doivent servir.
+   */
+  only?: Partial<Record<"convoke" | "improvise" | "waterbend" | "delve", ObjectId[]>>;
 }
 
 /** Cartes que le paiement ne consomme pas : celles de `keep`, et la source de la capacité payée (qui peut s'exiler). */
@@ -336,6 +341,7 @@ export function manaSources(
       const o = obj(s, id);
       if (o.controller !== player || exclude.has(id) || o.tapped || !isCreature(s, id)) continue;
       if (manaAbilitiesOf(s, id).length) continue;
+      if (purpose.only?.convoke && !purpose.only.convoke.includes(id)) continue;
       const colors = chars(s, id).colors;
       out.push({
         id,
@@ -356,6 +362,7 @@ export function manaSources(
       if (o.controller !== player || exclude.has(id) || o.tapped) continue;
       const types = chars(s, id).types;
       if (!types.includes("Artifact") && !types.includes("Creature")) continue;
+      if (purpose.only?.waterbend && !purpose.only.waterbend.includes(id)) continue;
       out.push({ id, ability: WATERBEND, colors: [], amount: 1, isCreature: false, sacrifice: false, waterbend: true, key: id });
     }
   }
@@ -366,6 +373,7 @@ export function manaSources(
       const o = obj(s, id);
       if (o.controller !== player || exclude.has(id) || o.tapped || taken.has(id)) continue;
       if (!chars(s, id).types.includes("Artifact")) continue;
+      if (purpose.only?.improvise && !purpose.only.improvise.includes(id)) continue;
       out.push({ id, ability: WATERBEND, colors: [], amount: 1, isCreature: false, sacrifice: false, improvise: true, key: id });
     }
   }
@@ -387,23 +395,32 @@ export function manaSources(
     const keep = kept(purpose);
     for (const id of s.players[player]?.graveyard ?? []) {
       if (exclude.has(id) || keep.includes(id)) continue;
+      if (purpose.only?.delve && !purpose.only.delve.includes(id)) continue;
       out.push({ id, ability: DELVE, colors: ["C"], amount: 1, isCreature: false, sacrifice: false, delve: true, key: id });
     }
   }
   // Préférence : terrains, puis créatures, puis sources sacrifiées, puis convocation et maîtrise de l'eau, puis cave ; les
   // moins flexibles d'abord.
+  // Objets choisis par le joueur (convocation, improvisation, maîtrise de l'eau, cave) : en premier, ils doivent servir.
+  const chosen = (x: ManaSource) =>
+    (x.convoke && purpose?.only?.convoke) ||
+    (x.waterbend && purpose?.only?.waterbend) ||
+    (x.improvise && purpose?.only?.improvise) ||
+    (x.delve && purpose?.only?.delve);
   const rank = (x: ManaSource) =>
-    x.ability === RESTRICTED_POOL
-      ? -1
-      : x.delve
-        ? 4
-        : x.convoke || x.waterbend || x.improvise
-          ? 3
-          : x.sacrifice
-            ? 2
-            : x.isCreature
-              ? 1
-              : 0;
+    chosen(x)
+      ? -2
+      : x.ability === RESTRICTED_POOL
+        ? -1
+        : x.delve
+          ? 4
+          : x.convoke || x.waterbend || x.improvise
+            ? 3
+            : x.sacrifice
+              ? 2
+              : x.isCreature
+                ? 1
+                : 0;
   return out.sort((a, b) => rank(a) - rank(b) || a.colors.length - b.colors.length);
 }
 
@@ -698,6 +715,10 @@ export function payMana(
 ): ManaAbilityDef[] {
   const plan = solvePayment(s, player, cost, exclude, purpose);
   if (!plan) throw new RulesError("Mana insuffisant");
+  // Les objets choisis par le joueur pour la convocation (ou l'improvisation, la maîtrise de l'eau, la cave) servent tous.
+  const tapped = new Set(plan.taps.map((t) => t.id));
+  for (const ids of Object.values(purpose?.only ?? {}))
+    if (ids?.some((id) => !tapped.has(id))) throw new RulesError("Trop d'objets choisis pour payer ce coût");
   if (spent) for (const m of MANA_TYPES) if (plan.spend[m]) spent[m] = plan.spend[m];
   if (sources) {
     for (const t of plan.taps) {

@@ -132,6 +132,52 @@ export interface CastChoices {
   faceDown?: boolean;
   /** Lancée pour son coût de distorsion (702.185). */
   warp?: boolean;
+  /**
+   * Objets payés en coût, choisis par le joueur, par emplacement (`CostPick.slot`) ; un emplacement absent prend la
+   * suggestion du moteur (PLAN-C, lots C7 et C8).
+   */
+  picks?: Partial<Record<CostSlot, ObjectId[]>>;
+}
+
+/**
+ * Coûts payés avec des objets choisis : flétrir, retirer des marqueurs, exiler des cartes du cimetière (fixe ou X), réunir
+ * des preuves, sacrifier X permanents, exiler un autre permanent, renvoyer un attaquant non bloqué (ninjutsu).
+ */
+export type CostSlot =
+  | "blight"
+  | "counterFrom"
+  | "graveyardExile"
+  | "graveyardExileX"
+  | "evidence"
+  | "sacrificeX"
+  | "exileOther"
+  | "returnAttacker"
+  | "convoke"
+  | "improvise"
+  | "waterbend"
+  | "delve";
+
+/** Un coût payé avec des objets, tel que proposé au joueur (`legalActions`) et vérifié au paiement. */
+export interface CostPick {
+  slot: CostSlot;
+  label: string;
+  /** Nombre d'objets ; `countIsX` : autant que le X choisi. */
+  count: number;
+  countIsX?: boolean;
+  options: ObjectId[];
+  /** Le choix par défaut (celui du moteur quand le joueur ne choisit pas). */
+  suggested: ObjectId[];
+  /** Retirer des marqueurs : un même objet peut revenir, au plus autant de fois que ses marqueurs. */
+  repeat?: Record<ObjectId, number>;
+  /** Réunir des preuves N : des cartes de valeur de mana totale N ou plus (`count` ignoré). */
+  minTotal?: { n: number; values: Record<ObjectId, number> };
+  /** Sort : seulement s'il est kické (ou marchandé…), ou lancé pour son coût alternatif. */
+  when?: "kicked" | "alternative";
+  /**
+   * Au plus `count` objets, tous utilisés pour payer (convocation, improvisation, maîtrise de l'eau, cave) ; aucun choix :
+   * le paiement automatique décide (`suggested` vide).
+   */
+  atMost?: boolean;
 }
 
 export type Decision =
@@ -256,6 +302,8 @@ export type ActionOption =
         powers: Record<ObjectId, number>;
         suggested: ObjectId[];
       };
+      /** Objets payés en coût à choisir (preuves, exil du cimetière, flétrir X), quand il y a un choix. */
+      picks?: CostPick[];
     }
   | {
       type: "activate";
@@ -283,6 +331,8 @@ export type ActionOption =
         /** Fabrication : entre `min` et `max` matériaux parmi `options` (cimetière et permanents). */
         materials?: { min: number; max: number; options: ObjectId[]; suggested: ObjectId[] };
       };
+      /** Objets payés en coût à choisir (flétrir, preuves, exil du cimetière…), quand il y a un choix. */
+      picks?: CostPick[];
     }
   | { type: "tapForMana"; source: ObjectId; ability: number; colors: ManaType[] };
 
