@@ -96,7 +96,8 @@ for (let i = 0; i < MAX; i++) {
       await page.waitForTimeout(200);
       await shot("ciblage");
     }
-    await target.click({ force: true });
+    // La cible peut disparaître entre-temps (l'IA joue vite en mode rapide) : on retente au tour suivant.
+    await target.click({ force: true, timeout: 3000 }).catch(() => {});
     continue;
   }
   // Cible optionnelle : si rien n'est ciblable, « Aucune cible ».
