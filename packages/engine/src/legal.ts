@@ -661,7 +661,9 @@ export function legalActions(s: GameState, player: PlayerId): ActionOption[] {
     });
   }
 
-  for (const src of manaSources(s, player)) {
+  // Les sources restreintes aussi (Cavern of Souls) : engagées à la main, leur mana va dans la réserve marquée.
+  for (const src of manaSources(s, player, undefined, { manual: true })) {
+    if (src.ability < 0) continue;
     const ab = manaAbilitiesOf(s, src.id)[src.ability];
     if (ab) out.push({ type: "tapForMana", source: src.id, ability: src.ability, colors: ab.produce });
   }

@@ -9,6 +9,7 @@ import type {
   Effect,
   Keyword,
   LayerMods,
+  ManaAbilityDef,
   ManaCost,
   ManaRestriction,
   ManaType,
@@ -206,6 +207,15 @@ export interface GameObject {
   usedModesTurn?: number;
 }
 
+/** Un mana marqué de la réserve (`PlayerState.restrictedMana`). */
+export interface TaggedMana {
+  type: ManaType;
+  restriction?: ManaRestriction;
+  source?: ObjectId;
+  chosen?: GameObject["chosen"];
+  rider?: ManaAbilityDef["rider"];
+}
+
 export interface PlayerState {
   id: PlayerId;
   name: string;
@@ -217,8 +227,12 @@ export interface PlayerState {
   graveyard: ObjectId[];
   command: ObjectId[];
   manaPool: Record<ManaType, number>;
-  /** Mana restreint de la réserve, une entrée par mana (Ashling, Rimebound : « seulement pour des sorts de VM 4 ou plus »). */
-  restrictedMana?: { type: ManaType; restriction: ManaRestriction }[];
+  /**
+   * Mana marqué de la réserve, une entrée par mana : restreint (Ashling, Rimebound : « seulement pour des sorts de VM 4 ou
+   * plus ») ou porteur d'un effet (Cavern of Souls : « ne peut pas être contrecarré »). `source` et `chosen` : la source
+   * qui l'a produit et son choix (« du type choisi »), figés à la production.
+   */
+  restrictedMana?: TaggedMana[];
   drewFromEmptyLibrary: boolean;
   lost: boolean;
   mulligans: number;

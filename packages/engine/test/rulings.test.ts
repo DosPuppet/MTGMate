@@ -477,7 +477,9 @@ describe("correctifs du lot A de The Hobbit", () => {
     // Deuxième capacité de mana : une couleur, seulement pour un sort d'artefact.
     s = act(s, "p1", { type: "tapForMana", source: castle, ability: 1, color: "G" });
     expect(s.players.p1?.manaPool.G).toBe(0);
-    expect(s.players.p1?.restrictedMana).toEqual([{ type: "G", restriction: { spell: { types: ["Artifact"] } } }]);
+    expect(s.players.p1?.restrictedMana).toEqual([
+      { type: "G", restriction: { spell: { types: ["Artifact"] } }, source: castle },
+    ]);
     expect(legalActions(s, "p1").some((a) => a.type === "cast" && a.card === idOf(s, "p1", "hand", "Bear Cub"))).toBe(false);
   });
 });
@@ -584,5 +586,53 @@ describe("509.1c et 509.1d : respecter autant d'exigences de blocage que possibl
       attackers: [{ id: idOf(s, "p1", "battlefield", "Juggernaut"), defender: "p2" }],
     });
     expect(() => act(s, "p1", d)).not.toThrow();
+  });
+});
+
+describe("106.6 : mana marqué engagé à la main (PLAN-C, lot C5)", () => {
+  const elf = customCard({
+    name: "Elfe de test",
+    power: 1,
+    toughness: 1,
+    subtypes: ["Elf"],
+    typeLine: "Creature — Elf",
+    manaCost: { generic: 1, colored: {}, x: 0 },
+    manaCostText: "{1}",
+  });
+  const bear = customCard({
+    name: "Ours de test",
+    power: 2,
+    toughness: 2,
+    subtypes: ["Bear"],
+    typeLine: "Creature — Bear",
+    manaCost: { generic: 1, colored: {}, x: 0 },
+    manaCostText: "{1}",
+  });
+  const withCavern = () => {
+    const s = scenario({ p1: { battlefield: ["Cavern of Souls"], hand: [elf, bear] } });
+    const cavern = idOf(s, "p1", "battlefield", "Cavern of Souls");
+    const o = s.objects[cavern];
+    if (o) o.chosen = { creatureType: "Elf" };
+    return { s, cavern };
+  };
+
+  it("Cavern of Souls engagée à la main : son mana coloré est proposé, garde le type choisi et rend le sort incontrecarrable", () => {
+    let { s, cavern } = withCavern();
+    expect(legalActions(s, "p1").some((a) => a.type === "tapForMana" && a.source === cavern && a.ability === 1)).toBe(true);
+    s = act(s, "p1", { type: "tapForMana", source: cavern, ability: 1, color: "G" });
+    expect(s.players.p1?.restrictedMana?.[0]).toMatchObject({ type: "G", source: cavern, chosen: { creatureType: "Elf" } });
+    // Le mana ne sert pas à l'Ours (autre type), il sert à l'Elfe.
+    expect(legalActions(s, "p1").some((a) => a.type === "cast" && a.card === idOf(s, "p1", "hand", "Ours de test"))).toBe(false);
+    s = act(s, "p1", { type: "cast", card: idOf(s, "p1", "hand", "Elfe de test") });
+    expect(s.players.p1?.restrictedMana).toBeUndefined();
+    expect(s.stack[0]?.uncounterable).toBe(true);
+  });
+
+  it("le type reste celui choisi à la production, même si la Caverne quitte le champ de bataille", () => {
+    let { s, cavern } = withCavern();
+    s = act(s, "p1", { type: "tapForMana", source: cavern, ability: 1, color: "G" });
+    moveObject(s, cavern, "graveyard");
+    s = act(s, "p1", { type: "cast", card: idOf(s, "p1", "hand", "Elfe de test") });
+    expect(s.stack[0]?.uncounterable).toBe(true);
   });
 });

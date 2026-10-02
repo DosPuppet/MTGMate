@@ -177,8 +177,11 @@ export const RECORD_VERSION = 1;
  *   d'exigences (« bloque ce Loup si possible » et « doit être bloquée si possible » ne se bloquent plus l'une l'autre) ;
  *   509.1d : une taxe de blocage lève les exigences ; la déclaration d'attaque par défaut fait attaquer les créatures
  *   qui le doivent (sur le serveur, une corde expirée avec Juggernaut faisait abandonner la partie). PLAN-C, lot C4.
+ * - 64 : mana marqué : une source restreinte ou porteuse d'un effet (Cavern of Souls) engagée à la main met son mana dans
+ *   la réserve marquée avec sa source, son choix et son effet ; ces sources sont proposées à l'engagement manuel
+ *   (PLAN-C, lot C5).
  */
-export const RULES_VERSION = 63;
+export const RULES_VERSION = 64;
 
 /** Un point de contrôle toutes les N décisions (plus la dernière de la partie). */
 export const CHECKPOINT_EVERY = 25;

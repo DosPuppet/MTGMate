@@ -31,6 +31,7 @@ import type {
   ManaType,
   ObjectId,
   PlayerId,
+  TaggedMana,
 } from "./types";
 import { MANA_TYPES } from "./types";
 
@@ -245,6 +246,8 @@ export interface ManaPurpose {
    * sa propre capacité (renouveau de Sage of the Fang, payé avec Cryptex).
    */
   keep?: readonly ObjectId[];
+  /** Sources proposées à l'engagement manuel (`legalActions`) : les sources restreintes aussi. */
+  manual?: boolean;
 }
 
 /** Cartes que le paiement ne consomme pas : celles de `keep`, et la source de la capacité payée (qui peut s'exiler). */
@@ -268,6 +271,8 @@ function restrictionAllows(
   player: PlayerId,
   purpose?: ManaPurpose,
 ): boolean {
+  // Engagée à la main, une source restreinte remplit la réserve marquée (`activateManaAbility`).
+  if (purpose?.manual) return true;
   return allows(s, ab.restriction, s.objects[sourceId], sourceId, player, purpose);
 }
 
@@ -275,7 +280,7 @@ function restrictionAllows(
 function allows(
   s: GameState,
   r: ManaRestriction | undefined,
-  o: GameObject | undefined,
+  o: { chosen?: GameObject["chosen"] } | undefined,
   sourceId: ObjectId,
   player: PlayerId,
   purpose?: ManaPurpose,
@@ -366,7 +371,7 @@ export function manaSources(
   }
   // Mana restreint de la réserve : seulement pour un paiement permis (utilisé d'abord, il est déjà là).
   (s.players[player]?.restrictedMana ?? []).forEach((m, i) => {
-    if (!allows(s, m.restriction, undefined, `pool:${i}`, player, purpose)) return;
+    if (!allows(s, m.restriction, m.chosen ? { chosen: m.chosen } : undefined, m.source ?? `pool:${i}`, player, purpose)) return;
     out.push({
       id: `pool:${i}`,
       ability: RESTRICTED_POOL,
@@ -427,7 +432,8 @@ export function activateManaAbility(
     !ab.cost.payLife &&
     !ab.addCounter &&
     !ab.removeCounter &&
-    !ab.restriction;
+    !ab.restriction &&
+    !ab.rider;
   const triggersBefore = s.triggers.length;
   const poolBefore = s.players[player]?.manaPool[c] ?? 0;
   if (ab.cost.tap) tapObject(s, o);
@@ -442,12 +448,19 @@ export function activateManaAbility(
   if (ab.removeCounter && (o.counters[ab.removeCounter] ?? 0) > 0) changeCounters(s, o, ab.removeCounter, -1);
   const pool = s.players[player]?.manaPool;
   const pl = s.players[player];
-  // Mana restreint (« ne dépensez ce mana que pour… », Woodland Weavemaster) : il va dans la réserve restreinte, comme
-  // quand le moteur paie un coût avec cette source.
-  const restriction = forPayment ? undefined : ab.restriction;
-  if (restriction && pl) {
+  // Mana restreint (« ne dépensez ce mana que pour… », Woodland Weavemaster) ou porteur d'un effet (Cavern of Souls : « ne
+  // peut pas être contrecarré ») engagé à la main : il va dans la réserve marquée avec sa source et son choix, pour que la
+  // restriction et l'effet s'appliquent quand il sera dépensé.
+  if (!forPayment && (ab.restriction || ab.rider) && pl) {
     const n = manaAmount(s, id, ab);
-    pl.restrictedMana = [...(pl.restrictedMana ?? []), ...Array.from({ length: n }, () => ({ type: c, restriction }))];
+    const tag: TaggedMana = {
+      type: c,
+      ...(ab.restriction ? { restriction: ab.restriction } : {}),
+      source: id,
+      ...(o.chosen ? { chosen: o.chosen } : {}),
+      ...(ab.rider ? { rider: ab.rider } : {}),
+    };
+    pl.restrictedMana = [...(pl.restrictedMana ?? []), ...Array.from({ length: n }, () => ({ ...tag }))];
   } else if (pool) pool[c] += manaAmount(s, id, ab);
   // Mana en plus d'un autre type (Shimmerwilds Growth : la couleur choisie) ou seulement pour ce type (Ultima : {C}).
   let otherBonus = false;
@@ -679,7 +692,7 @@ export function payMana(
   exclude?: ReadonlySet<ObjectId>,
   purpose?: ManaPurpose,
   /** Reçoit les activations du paiement automatique : source, capacité et quantité produite. */
-  sources?: { id: ObjectId; ab?: ManaAbilityDef; amount: number }[],
+  sources?: { id: ObjectId; ab?: ManaAbilityDef; amount: number; chosen?: GameObject["chosen"] }[],
   /** Reçoit le mana dépensé, par type (« si {U}{U} a été dépensé pour le lancer »). */
   spent?: Partial<Record<ManaType, number>>,
 ): ManaAbilityDef[] {
@@ -688,6 +701,17 @@ export function payMana(
   if (spent) for (const m of MANA_TYPES) if (plan.spend[m]) spent[m] = plan.spend[m];
   if (sources) {
     for (const t of plan.taps) {
+      if (t.ability === RESTRICTED_POOL) {
+        // Mana marqué : sa source et son effet (Cavern of Souls), avec le choix figé à la production.
+        const m = s.players[player]?.restrictedMana?.[Number(t.id.slice("pool:".length))];
+        sources.push({
+          id: m?.source ?? t.id,
+          ab: m?.rider ? ({ rider: m.rider } as ManaAbilityDef) : undefined,
+          amount: 1,
+          chosen: m?.chosen,
+        });
+        continue;
+      }
       const ab = t.ability < 0 ? undefined : manaAbilitiesOf(s, t.id)[t.ability];
       sources.push({ id: t.id, ab, amount: ab ? manaAmount(s, t.id, ab) : 1 });
     }

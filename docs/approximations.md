@@ -23,8 +23,6 @@ Chaque entrée porte sa nature :
 - `choix auto` **Choix « en arrivant » sans résolution** (terrain **joué**, comme Cavern of Souls ou Three Tree City, ou permanent remis en jeu par un effet) : choix par défaut, le type ou la couleur les plus présents chez le contrôleur. Seul le type de terrain de base de Multiversal Passage se choisit en jouant le terrain (`docs/plans/PLAN-C.md`, lot C9).
 - `choix auto` **Dégager jusqu'à N terrains :** les terrains sont choisis automatiquement.
 - `choix auto` **Capacités de mana à coût (605.1a) :** elles se résolvent sans la pile, mais seulement activées à la main : le paiement automatique ne s'en sert pas (Ramos, Capital City, Loot, the Pathfinder…).
-- `choix auto` **Mana restreint (Giada, Secluded Courtyard) :** utilisé par le paiement automatique, pour un sort ou une capacité autorisés. L'interface ne propose pas d'engager ces sources à la main ; le moteur l'accepte (mana mis dans la réserve restreinte), mais ce mana perd sa source et ses cavaliers : une restriction qui dépend de la source (type choisi de Cavern of Souls) ne peut plus être satisfaite (`docs/plans/PLAN-C.md`, lot C5).
-- `choix auto` **Mana « déclencheur » (haste, copie du sort) :** appliqué seulement quand ce mana est dépensé par le paiement automatique.
 - `règle` **« Au début de l'étape de fin, sacrifiez ce jeton » :** modélisé par une capacité retardée plutôt que par une capacité du jeton.
 - `règle` **Terrains choc mis en jeu par un effet** (et non joués) : ils arrivent engagés, sans proposer de payer 2 points de vie.
 - `timing` **Vitesse :** l'augmentation (« quand un adversaire perd des PV pendant votre tour ») est immédiate, sans passer par la pile.

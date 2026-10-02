@@ -1751,7 +1751,7 @@ export function castSpell(s: GameState, player: PlayerId, card: ObjectId, choice
   };
   s.stack.push(item);
   try {
-    const taps: { id: ObjectId; ab?: ManaAbilityDef; amount: number }[] = [];
+    const taps: { id: ObjectId; ab?: ManaAbilityDef; amount: number; chosen?: GameObject["chosen"] }[] = [];
     const spent: Partial<Record<ManaType, number>> = {};
     payMana(
       s,
@@ -1788,10 +1788,11 @@ export function castSpell(s: GameState, player: PlayerId, card: ObjectId, choice
     }
     // Effets associés au mana dépensé, si ce sort correspond (Carnelian Orb, Pyromancer's Goggles ; Cavern of Souls :
     // « du type choisi » se lit sur la source).
-    const riders = taps.flatMap(({ id, ab }) => {
+    const riders = taps.flatMap(({ id, ab, chosen }) => {
       const rider = ab?.rider;
       if (!rider) return [];
-      const src = s.objects[id];
+      // Mana marqué de la réserve : le choix de sa source, figé à la production (Cavern of Souls).
+      const src = chosen ? { chosen } : s.objects[id];
       return matchesView(view, src ? withChosen(rider.spell, src) : rider.spell, player, id) ? [rider.effect] : [];
     });
     if (riders.length) item.riders = riders;
