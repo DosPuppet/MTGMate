@@ -3,7 +3,7 @@
  */
 import { payLife, sacrifice } from "./actions";
 import { RulesError } from "./errors";
-import { linkedColors } from "./layers";
+import { bumpFor, linkedColors } from "./layers";
 import { collectEvidence, evidenceCards } from "./stack";
 import {
   bump,
@@ -502,7 +502,7 @@ export function activateManaAbility(
   if (simple && !otherBonus && s.triggers.length === triggersBefore && amount > 0)
     s.manaUndo = [...(s.manaUndo ?? []), { player, source: id, color: c, amount }];
   // La réserve a changé : une capacité statique peut en dépendre (Ozai, the Phoenix King).
-  bump(s);
+  bumpFor(s, "mana");
 }
 
 /** Annule l'engagement d'une source pour son mana (voir `GameState.manaUndo`) : elle se dégage, le mana disparaît. */
@@ -777,6 +777,6 @@ export function payMana(
     pool[m] -= plan.spend[m];
   }
   // La réserve a changé : une capacité statique peut en dépendre (Ozai, the Phoenix King).
-  bump(s);
+  bumpFor(s, "mana");
   return used;
 }

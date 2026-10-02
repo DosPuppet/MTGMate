@@ -17,7 +17,7 @@ import { ask, cardRef } from "./choices";
 import { syncControl } from "./control";
 import { announceDiscard, announceDiscardBatch, evalAmount, staticContext } from "./effects";
 import { rethrowAsRules } from "./errors";
-import { copiedDefId, effectivePower, snapshot } from "./layers";
+import { bumpFor, copiedDefId, effectivePower, snapshot } from "./layers";
 import { MAX_FLOW_STEPS, MAX_SBA_PASSES } from "./limits";
 import { payMana } from "./mana";
 import { RulesError, resolveTop } from "./stack";
@@ -459,9 +459,12 @@ function endStep(s: GameState): void {
       for (const m of Object.keys(pool) as ManaType[]) pool[m] = 0;
       pool[becomes] = total;
     }
+    // La réserve ne change le cache des couches que si elle a changé (une réserve vide le reste à chaque étape).
+    const changed =
+      !!player.restrictedMana?.length || (Object.keys(pool) as ManaType[]).some((m) => pool[m] !== player.manaPool[m]);
     player.manaPool = pool;
     player.restrictedMana = undefined;
-    bump(s);
+    if (changed) bumpFor(s, "mana");
   }
   if (s.turn.step === "endCombat") {
     // La prochaine phase de combat contrôlée (Secret of Bloodbending) est terminée.

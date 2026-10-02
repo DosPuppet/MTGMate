@@ -15,13 +15,23 @@ import type {
 
 type Entry = { id: ObjectId; ab: AbilityDef };
 
-/** Index des capacités par contrôleur, recalculé seulement quand l'état change (même clé que le cache des couches). */
-const cache = new WeakMap<GameState, { key: string; byPlayer: Map<PlayerId, Entry[]> }>();
+/**
+ * Index des capacités par contrôleur, recalculé seulement quand l'état change (même clé que le cache des couches) ; les
+ * statiques de joueur y sont aussi rangées par clé, et les remplacements d'événement par sorte d'événement (PLAN-C, C15).
+ */
+interface Index {
+  key: string;
+  byPlayer: Map<PlayerId, Entry[]>;
+  statics: Map<PlayerId, Map<string, Entry[]>>;
+  replacements: Map<string, { p: PlayerId; e: Entry }[]>;
+}
+const cache = new WeakMap<GameState, Index>();
+const NOT_KEYS = new Set(["kind", "label", "condition"]);
 
-function index(s: GameState): Map<PlayerId, Entry[]> {
+function current(s: GameState): Index {
   const key = `${s.version}|${s.turn.number}|${s.turn.active}|${s.turn.step}`;
   const hit = cache.get(s);
-  if (hit && hit.key === key) return hit.byPlayer;
+  if (hit && hit.key === key) return hit;
   const byPlayer = new Map<PlayerId, Entry[]>();
   const add = (p: PlayerId, e: Entry) => {
     const list = byPlayer.get(p);
@@ -37,8 +47,33 @@ function index(s: GameState): Map<PlayerId, Entry[]> {
       for (const ab of s.defs[obj(s, id).defId]?.abilities ?? []) add(p, { id, ab });
     }
   }
-  cache.set(s, { key, byPlayer });
-  return byPlayer;
+  const statics = new Map<PlayerId, Map<string, Entry[]>>();
+  const replacements = new Map<string, { p: PlayerId; e: Entry }[]>();
+  for (const [p, list] of byPlayer) {
+    const byKey = new Map<string, Entry[]>();
+    for (const e of list) {
+      if (e.ab.kind === "playerStatic") {
+        for (const k of Object.keys(e.ab)) {
+          if (NOT_KEYS.has(k) || !(e.ab as unknown as Record<string, unknown>)[k]) continue;
+          const l = byKey.get(k);
+          if (l) l.push(e);
+          else byKey.set(k, [e]);
+        }
+      } else if (e.ab.kind === "eventReplacement") {
+        const l = replacements.get(e.ab.event);
+        if (l) l.push({ p, e });
+        else replacements.set(e.ab.event, [{ p, e }]);
+      }
+    }
+    statics.set(p, byKey);
+  }
+  const out = { key, byPlayer, statics, replacements };
+  cache.set(s, out);
+  return out;
+}
+
+function index(s: GameState): Map<PlayerId, Entry[]> {
+  return current(s).byPlayer;
 }
 
 /** Capacités des permanents (et emblèmes) que contrôle ce joueur, avec leur source. */
@@ -65,9 +100,8 @@ export function playerStatics(
   key: PlayerStaticKey,
 ): { id?: ObjectId; ab: PlayerStaticAbilityDef }[] {
   const out: { id?: ObjectId; ab: PlayerStaticAbilityDef }[] = [];
-  for (const { id, ab } of controlledAbilitiesWithSource(s, player))
-    if (ab.kind === "playerStatic" && ab[key] && (!ab.condition || checkCondition(s, ab.condition, player, id)))
-      out.push({ id, ab });
+  for (const { id, ab } of current(s).statics.get(player)?.get(key) ?? [])
+    if (ab.kind === "playerStatic" && (!ab.condition || checkCondition(s, ab.condition, player, id))) out.push({ id, ab });
   for (const e of liveEffects(s, player)) if (e.ability[key]) out.push({ ab: e.ability });
   return out;
 }
@@ -88,11 +122,14 @@ export interface ActiveReplacement {
  */
 export function eventReplacements(s: GameState, event: EventReplacement["event"]): ActiveReplacement[] {
   const out: ActiveReplacement[] = [];
+  const printed = current(s).replacements.get(event) ?? [];
   for (const p of s.playerOrder) {
     if (s.players[p]?.lost) continue;
-    for (const { id, ab } of controlledAbilitiesWithSource(s, p))
-      if (ab.kind === "eventReplacement" && ab.event === event && (!ab.condition || checkCondition(s, ab.condition, p, id)))
+    for (const { p: q, e } of printed) {
+      const { id, ab } = e;
+      if (q === p && ab.kind === "eventReplacement" && (!ab.condition || checkCondition(s, ab.condition, p, id)))
         out.push({ r: ab, controller: p, sourceId: id });
+    }
     for (const e of liveEffects(s, p)) {
       const r = e.ability.replacement;
       if (r?.event === event) out.push({ r, controller: p, effectId: e.id, once: e.once });

@@ -39,6 +39,12 @@ Plan établi le 02/10/2026 (branche `dev`) : il sert de feuille de route aux pro
   - **champs « ce tour-ci » :** `attackedTurn` et `dealtDamageTurn` remplacés par le journal du tour (`attackedThisTurn`, `dealtDamageThisTurn` ; l'entrée « attaque » porte l'attaquant) ; `GameObject` 73 → 71. Restent : les marqueurs mis ce tour-ci (lus par la photographie des objets, chemin chaud), et les champs qui durent au-delà du tour (`plottedTurn`, `foretoldTurn`, `warpExiledTurn`, `expiresEndOfTurn`…), que le journal ne peut pas porter ;
   - **`consumePlayerEffect`** fait avancer la version, comme `consumeReplacement` ;
   - **vérification :** parties dorées identiques ; bench à nombre de décisions égal, dans le bruit (−2,5 % à 0 %).
+- **03/10/2026 : C15 fait** (sans changement de règles ; parties dorées identiques) :
+  - **mesure :** profil CPU du bench ; 39 % des `bump` venaient du vidage des réserves à chaque étape, et l'engagement, le dégagement et le mana en faisaient 27 % de plus, chacun invalidant tout le cache des couches ;
+  - **`bump` ciblé** (`bumpFor`) : le cache des couches note s'il dépend de l'état engagé ou de la réserve ; sinon, engager, dégager et payer ne l'invalident plus ; le vidage de la réserve ne le fait que si elle a changé ; 3 tests (`layers.test.ts`) ;
+  - **index :** statiques de joueur rangées par clé et remplacements d'événement par sorte, construits avec l'index des capacités ; sources des déclencheurs (`liveSources`) mises en cache ;
+  - **gain** (deux passes alternées, même nombre de décisions) : aléatoire +2 à +3 %, IA heuristique +4 % (2 joueurs) et +7 % (4 joueurs), IA élevée +11 % ;
+  - **`verify --full`** vert, sauf la cible absolue du bench (non atteinte sous WSL, écartée par le plan).
 
 ## Décisions et ordre
 
@@ -69,7 +75,7 @@ Plan établi le 02/10/2026 (branche `dev`) : il sert de feuille de route aux pro
 | 13 | C12 : [règles] approximations groupées | § 4.2, § 4.3 | C10 | M/L | ✅ en partie |
 | 14 | C13 : justesse des cartes | § 4.5 | C2 | L, continu | ✅ en partie (continu) |
 | 15 | C14 : dette ciblée | § 5.1, § 5.7 | C1 | S/M | ✅ |
-| 16 | C15 : performances | § 5.8 | C10, C11 | M | |
+| 16 | C15 : performances | § 5.8 | C10, C11 | M | ✅ |
 | 17 | C16 : serveur et exploitation | § 7 | C3 | M | |
 | 18 | C17 : IA | § 8 | C8, C9 | M | |
 | 19 | C18 : interface | § 9 | C7 | M/L | |

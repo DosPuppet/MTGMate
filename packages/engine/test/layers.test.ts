@@ -1,9 +1,9 @@
 import { CARDS } from "@mtgx/cards";
 import { describe, expect, it } from "vitest";
-import { fx, ref, spell, staticAbility, target } from "../src/dsl";
-import { chars } from "../src/state";
+import { cond, fx, ref, spell, staticAbility, target } from "../src/dsl";
+import { chars, obj, tapObject, untapObject } from "../src/state";
 import type { LayerMods } from "../src/types";
-import { act, customCard, idOf, passBoth, passUntil, scenario } from "./helpers";
+import { act, customCard, idOf, idsOf, passBoth, passUntil, scenario } from "./helpers";
 
 /** « La créature ciblée devient 0/1 et perd toutes ses capacités jusqu'à la fin du tour. » */
 const HEX = customCard({
@@ -316,5 +316,48 @@ describe("limites connues du moteur, gardées par un test", () => {
     };
     for (const def of Object.values(CARDS)) walk(def, def.name);
     expect([...new Set(offenders)]).toEqual([]);
+  });
+});
+
+describe("cache des couches : invalidation ciblée (PLAN-C, lot C15)", () => {
+  const tappedAnthem = customCard({
+    name: "Hymne des engagés",
+    typeLine: "Enchantment",
+    types: ["Enchantment"],
+    abilities: [staticAbility({ types: ["Creature"], controller: "you", tapped: true }, { power: 1, toughness: 1 })],
+  });
+  const poolLord = customCard({
+    name: "Seigneur de la réserve",
+    power: 1,
+    toughness: 1,
+    abilities: [staticAbility("self", { power: 5, toughness: 0 }, { condition: cond.manaPoolAtLeast(2) })],
+  });
+
+  it("engager ou dégager une créature met à jour une statique qui lit l'état engagé", () => {
+    const s = scenario({ p1: { battlefield: [tappedAnthem, "Bear Cub"] } });
+    const bear = idOf(s, "p1", "battlefield", "Bear Cub");
+    expect(chars(s, bear).power).toBe(2);
+    tapObject(s, obj(s, bear));
+    expect(chars(s, bear).power).toBe(3);
+    untapObject(s, obj(s, bear));
+    expect(chars(s, bear).power).toBe(2);
+  });
+
+  it("sans statique qui le lit, engager ne recalcule pas les caractéristiques", () => {
+    const s = scenario({ p1: { battlefield: ["Bear Cub", "Forest"] } });
+    const bear = idOf(s, "p1", "battlefield", "Bear Cub");
+    chars(s, bear);
+    const v = s.version;
+    tapObject(s, obj(s, bear));
+    expect(s.version).toBe(v);
+  });
+
+  it("produire du mana met à jour une statique qui lit la réserve", () => {
+    let s = scenario({ p1: { battlefield: [poolLord, "Forest", "Forest"] } });
+    const lord = idOf(s, "p1", "battlefield", "Seigneur de la réserve");
+    expect(chars(s, lord).power).toBe(1);
+    for (const land of idsOf(s, "p1", "battlefield", "Forest"))
+      s = act(s, "p1", { type: "tapForMana", source: land, ability: 0 });
+    expect(chars(s, lord).power).toBe(6);
   });
 });

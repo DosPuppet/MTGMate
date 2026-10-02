@@ -470,7 +470,80 @@ interface Applied {
   affected: ObjectId[] | { sourceId: ObjectId; controller: PlayerId; filter: "self" | "attached" | ObjectFilter };
 }
 
-const cache = new WeakMap<GameState, { key: string; map: Map<ObjectId, Characteristics> }>();
+/**
+ * Ce dont dépend le calcul en cache (PLAN-C, lot C15) : l'état engagé des permanents (filtre `tapped`, condition « tant
+ * qu'elle est engagée ») et la réserve de mana (`manaPoolAtLeast`). Engager, dégager ou payer du mana n'invalide le cache
+ * que si une capacité statique, un effet ou une F/E définie par une capacité en vigueur les lit (`bumpFor`).
+ */
+interface CacheDeps {
+  tapped: boolean;
+  mana: boolean;
+}
+const cache = new WeakMap<GameState, { key: string; map: Map<ObjectId, Characteristics>; deps: CacheDeps }>();
+const depsMemo = new WeakMap<object, CacheDeps>();
+
+function scanDeps(x: unknown, out: CacheDeps): void {
+  if (Array.isArray(x)) {
+    for (const v of x) scanDeps(v, out);
+    return;
+  }
+  if (!x || typeof x !== "object") {
+    if (x === "manaPoolAtLeast") out.mana = true;
+    return;
+  }
+  for (const [k, v] of Object.entries(x)) {
+    if (k === "tapped" || k === "whileSourceTapped") out.tapped = true;
+    scanDeps(v, out);
+  }
+}
+
+/** Dépendances d'une définition immuable (capacité, définition de carte), mémorisées. */
+function depsOf(x: object, pick?: (x: object) => unknown): CacheDeps {
+  const hit = depsMemo.get(x);
+  if (hit) return hit;
+  const out = { tapped: false, mana: false };
+  scanDeps(pick ? pick(x) : x, out);
+  depsMemo.set(x, out);
+  return out;
+}
+
+const cdaOf = (d: object) => {
+  const c = d as CardDef;
+  return [c.cdaPT, c.cdaPower, c.cdaToughness];
+};
+
+function cacheDeps(s: GameState, map: Map<ObjectId, Characteristics>): CacheDeps {
+  const out = { tapped: false, mana: false };
+  const merge = (d: CacheDeps) => {
+    out.tapped ||= d.tapped;
+    out.mana ||= d.mana;
+  };
+  for (const e of s.effects) scanDeps(e, out);
+  for (const [id, c] of map) {
+    for (const ab of c.abilities) if (ab.kind === "static") merge(depsOf(ab));
+    const o = s.objects[id];
+    for (const defId of o ? [o.defId, o.faceDefId, copiedDefId(s, id)] : []) {
+      const d = defId ? s.defs[defId] : undefined;
+      if (d) merge(depsOf(d, cdaOf));
+    }
+  }
+  for (const p of s.playerOrder)
+    for (const id of s.players[p]?.command ?? [])
+      for (const ab of s.defs[s.objects[id]?.defId ?? ""]?.abilities ?? []) if (ab.kind === "static") merge(depsOf(ab));
+  return out;
+}
+
+const cacheKey = (s: GameState) => `${s.version}|${s.turn.number}|${s.turn.active}|${s.turn.step}`;
+
+/**
+ * Invalide le cache des couches seulement s'il dépend de cet aspect de l'état (engagement, réserve de mana) ; un cache
+ * déjà périmé l'est de toute façon.
+ */
+export function bumpFor(s: GameState, dep: keyof CacheDeps): void {
+  const hit = cache.get(s);
+  if (hit && hit.key === cacheKey(s) && !hit.deps[dep]) return;
+  bump(s);
+}
 let computing = false;
 /** Caractéristiques de la passe précédente (613.8), lues pendant le calcul à la place des caractéristiques imprimées. */
 let provisional: Map<ObjectId, Characteristics> | null = null;
@@ -1023,11 +1096,11 @@ const DECAYED: AbilityDef = {
 };
 
 function battlefieldChars(s: GameState): Map<ObjectId, Characteristics> {
-  const key = `${s.version}|${s.turn.number}|${s.turn.active}|${s.turn.step}`;
+  const key = cacheKey(s);
   const hit = cache.get(s);
   if (hit && hit.key === key) return hit.map;
   const map = computeBattlefield(s);
-  cache.set(s, { key, map });
+  cache.set(s, { key, map, deps: cacheDeps(s, map) });
   return map;
 }
 

@@ -320,7 +320,7 @@ export function tapObject(s: GameState, o: GameObject, cause?: "teamwork"): void
     o.tapsThisTurn = 0;
   }
   o.tapsThisTurn = (o.tapsThisTurn ?? 0) + 1;
-  bump(s); // des capacités statiques peuvent en dépendre (« vos créatures légendaires engagées »)
+  bumpFor(s, "tapped"); // des capacités statiques peuvent en dépendre (« vos créatures légendaires engagées »)
   rulesEvent(s, {
     e: "tap",
     objectId: o.id,
@@ -344,8 +344,10 @@ export function untapObject(s: GameState, o: GameObject): boolean {
   }
   o.tapped = false;
   // Hedge Whisperer : « tant que cette créature reste engagée ».
-  if (s.effects.some((e) => e.whileSourceTapped === o.id)) s.effects = s.effects.filter((e) => e.whileSourceTapped !== o.id);
-  bump(s);
+  if (s.effects.some((e) => e.whileSourceTapped === o.id)) {
+    s.effects = s.effects.filter((e) => e.whileSourceTapped !== o.id);
+    bump(s);
+  } else bumpFor(s, "tapped");
   rulesEvent(s, { e: "untap", objectId: o.id });
   return true;
 }
@@ -730,7 +732,7 @@ export function setPrepared(s: GameState, o: GameObject, on: boolean): void {
 // ---------------------------------------------------------------------------
 
 import { syncControl } from "./control";
-import { bump, chars, snapshot } from "./layers";
+import { bump, bumpFor, chars, snapshot } from "./layers";
 import { chooseReplacementOrder } from "./modifiers";
 import { applyEntersReplacements, auraHosts, type EntersContext, releaseLinkedExile, replaceGraveyard } from "./replacement";
 import { quantityMods, recipientMatches } from "./statics";

@@ -67,7 +67,34 @@ interface Source {
 
 const hasTriggers = (abilities: AbilityDef[] | undefined) => !!abilities?.some((a) => a.kind === "triggered");
 
+/**
+ * Sources en vigueur, mises en cache tant que l'état n'a pas changé (PLAN-C, lot C15) : version du cache des couches,
+ * moment du tour, et composition des zones lues (par prudence, au cas où un déplacement ne ferait pas avancer la version).
+ */
+const sourcesCache = new WeakMap<GameState, { key: string; out: Source[] }>();
+
+function sourcesKey(s: GameState): string {
+  let zones = `${s.battlefield.length}:${s.battlefield[s.battlefield.length - 1] ?? ""}|${s.stack.length}:${s.stack[s.stack.length - 1]?.id ?? ""}|${s.effects.length}`;
+  for (const p of s.playerOrder) {
+    const pl = s.players[p];
+    zones += `|${pl?.graveyard.length ?? 0}:${pl?.graveyard[pl.graveyard.length - 1] ?? ""}:${pl?.command.length ?? 0}`;
+  }
+  // Les vues des sources portent l'état engagé, qui ne fait pas toujours avancer la version (`bumpFor`).
+  let tapped = "";
+  for (const id of s.battlefield) tapped += s.objects[id]?.tapped ? "1" : "0";
+  return `${s.version}|${s.turn.number}|${s.turn.active}|${s.turn.step}|${zones}|${tapped}`;
+}
+
 function liveSources(s: GameState): Source[] {
+  const key = sourcesKey(s);
+  const hit = sourcesCache.get(s);
+  if (hit && hit.key === key) return hit.out;
+  const out = computeLiveSources(s);
+  sourcesCache.set(s, { key, out });
+  return out;
+}
+
+function computeLiveSources(s: GameState): Source[] {
   const out: Source[] = [];
   // Capacités déclenchées accordées, ou copiées (couche 1) : on ne peut pas se fier aux capacités imprimées.
   // Prouesse (702.108) et décomposition (702.147) : la capacité déclenchée est ajoutée par les couches à toute créature
