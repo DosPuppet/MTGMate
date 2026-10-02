@@ -46,3 +46,10 @@ Les scripts sont dans `packages/cards/src/spm/` : `cards` (cartes du méta), `wh
 - **Moteur :** le déclencheur « chaque fois que vous jouez un terrain » accepte `from` (zones d'origine : « depuis l'exil », Ghost-Spider ; « d'ailleurs que votre main », Shadow of the Goblin) ; l'événement `playLand` porte sa zone de départ (test dans `rulings.test.ts`).
 - **Reste pour plus tard :** Spider-Punk (émeute accordée, sorts et capacités qui ne peuvent pas être contrecarrés), Spider-Verse (règle des légendes levée pour les Araignées, « une seule fois par tour »), Superior Foes of Spider-Man (permission qui prend fin quand la source exile une autre carte).
 - **Tests :** 31 tests de règles (« lot A, rouge »).
+
+## Sous-lot A5 : cartes vertes ✅ (110 / 188)
+
+- **Cartes (20) :** Damage Control Crew, Ezekiel Sims, Spider-Totem, Grow Extra Arms, Guy in the Chair, Kapow!, Kraven's Cats, Lizard, Connors's Curse, Lurking Lizards, Miles Morales // Ultimate Spider-Man, Pictures of Spider-Man, Professional Wrestler, Radioactive Spider, Scout the City, Spider-Ham, Peter Porker, Spider-Man, Brooklyn Visionary, Strength of Will, Supportive Parents, Terrific Team-Up, Wall Crawl, Web of Life and Destiny.
+- **Moteur :** rien de nouveau. Le doublement de tous les marqueurs (Zimone, Paradox Sculptor) sert aussi à Ultimate Spider-Man : son entrée de dette est retirée.
+- **Reste pour plus tard :** Spiders-Man, Heroic Horde (« s'il a été lancé par Web-slinging »), Kraven's Last Hunt (la plus grande force parmi les cartes de créature de votre cimetière).
+- **Tests :** 26 tests de règles (« lot A, vert »).

@@ -2067,3 +2067,490 @@ describe("lot A, rouge", () => {
     });
   });
 });
+
+describe("lot A, vert", () => {
+  type S = GameState;
+  type Answer = (req: ChoiceRequest, player: string, cur: S) => ChoiceValue[] | undefined;
+  const lands = (name: string, n: number) => Array(n).fill(name) as string[];
+  const nameOf = (s: S, id: string) => s.defs[s.objects[id]?.defId ?? ""]?.name;
+
+  /** Joue (passes et réponses aux choix, suggérées par défaut) jusqu'à la condition. */
+  const runUntil = (s: S, until: (x: S) => boolean, answer: Answer = () => undefined): S => {
+    let cur = s;
+    for (let i = 0; i < 300 && !until(cur); i++) {
+      const p = cur.pending;
+      if (p?.kind === "priority") cur = act(cur, p.player, { type: "pass" });
+      else if (p?.kind === "choice")
+        cur = act(cur, p.player, { type: "choose", values: answer(p.request, p.player, cur) ?? p.request.suggested });
+      else break;
+    }
+    return cur;
+  };
+  /** Passe et répond aux choix jusqu'à une pile vide, sans déclenchement en attente. */
+  const settle = (s: S, answer: Answer = () => undefined): S => {
+    let cur = s;
+    for (let i = 0; i < 300; i++) {
+      const p = cur.pending;
+      if (p?.kind === "priority" && cur.stack.length === 0 && cur.triggers.length === 0 && i > 0) break;
+      if (p?.kind === "priority") cur = act(cur, p.player, { type: "pass" });
+      else if (p?.kind === "choice")
+        cur = act(cur, p.player, { type: "choose", values: answer(p.request, p.player, cur) ?? p.request.suggested });
+      else break;
+    }
+    return cur;
+  };
+  /** Réponse qui choisit les objets voulus quand ils font partie des options. */
+  const picking =
+    (want: string[]): Answer =>
+    (req) => {
+      if (req.type !== "pick") return undefined;
+      const picked = want.filter((w) => req.options.includes(w));
+      return picked.length > 0 ? picked : undefined;
+    };
+  /** Réponse qui choisit les cartes de ces noms quand elles font partie des options. */
+  const pickingNames =
+    (names: string[]): Answer =>
+    (req, _p, cur) => {
+      if (req.type !== "pick") return undefined;
+      const picked = req.options.filter((o) => names.includes(nameOf(cur, String(o)) ?? ""));
+      return picked.length > 0 ? picked.slice(0, req.max ?? picked.length) : undefined;
+    };
+  const triggerMode =
+    (index: number): Answer =>
+    (req) =>
+      req.type === "pick" && req.intent === "triggerMode" ? [String(index)] : undefined;
+  const cast = (s: S, player: string, name: string, extra: object = {}) =>
+    act(s, player, { type: "cast", card: idOf(s, player, "hand", name), ...extra });
+  const ability = (s: S, player: string, source: string, label?: RegExp) =>
+    legalActions(s, player).find(
+      (a): a is Extract<ActionOption, { type: "activate" }> =>
+        a.type === "activate" && a.source === source && (!label || label.test(a.label ?? "")),
+    );
+  const activate = (s: S, player: string, source: string, extra: object = {}, label?: RegExp) =>
+    act(s, player, { type: "activate", source, ability: ability(s, player, source, label)?.ability ?? -1, ...extra });
+  const pt = (s: S, id: string) => [chars(s, id).power, chars(s, id).toughness];
+  const plusOnes = (s: S, id: string) => s.objects[id]?.counters["+1/+1"] ?? 0;
+  const handNames = (s: S, p = "p1") => (s.players[p]?.hand ?? []).map((id) => nameOf(s, id));
+
+  describe("Marvel's Spider-Man, lot A — vert", () => {
+    describe("Damage Control Crew", () => {
+      it("Réparation : une carte de VM 4 ou plus de votre cimetière revient en main (pas une de VM 2)", () => {
+        let s = scenario({
+          p1: { battlefield: lands("Forest", 4), hand: ["Damage Control Crew"], graveyard: ["Shivan Dragon", "Bear Cub"] },
+        });
+        const dragon = idOf(s, "p1", "graveyard", "Shivan Dragon");
+        const bear = idOf(s, "p1", "graveyard", "Bear Cub");
+        let offered: ChoiceValue[] = [];
+        s = settle(cast(s, "p1", "Damage Control Crew"), (req, p, cur) => {
+          if (req.type === "pick" && req.intent !== "triggerMode") offered = req.options;
+          return triggerMode(0)(req, p, cur) ?? picking([dragon])(req, p, cur);
+        });
+        expect(offered).not.toContain(bear);
+        expect(handNames(s)).toEqual(["Shivan Dragon"]);
+      });
+
+      it("Fourrière : exile un artefact ou un enchantement", () => {
+        let s = scenario({
+          p1: { battlefield: lands("Forest", 4), hand: ["Damage Control Crew"] },
+          p2: { battlefield: ["Gleaming Barrier"] },
+        });
+        s = settle(cast(s, "p1", "Damage Control Crew"), triggerMode(1));
+        expect(idsOf(s, "p2", "battlefield", "Gleaming Barrier")).toHaveLength(0);
+        expect(s.exile.map((id) => nameOf(s, id))).toContain("Gleaming Barrier");
+        // Exilée, elle ne meurt pas : pas de Trésor.
+        expect(idsOf(s, "p2", "battlefield", "Treasure")).toHaveLength(0);
+      });
+    });
+
+    it("Ezekiel Sims : au début du combat de votre tour, une Araignée que vous contrôlez gagne +2/+2", () => {
+      let s = scenario({ p1: { battlefield: ["Ezekiel Sims, Spider-Totem", "Radioactive Spider", "Bear Cub"] } });
+      const spider = idOf(s, "p1", "battlefield", "Radioactive Spider");
+      const bear = idOf(s, "p1", "battlefield", "Bear Cub");
+      let offered: ChoiceValue[] = [];
+      s = runUntil(
+        s,
+        (x) => x.pending?.kind === "declareAttackers",
+        (req, p, cur) => {
+          if (req.type === "pick") offered = req.options;
+          return picking([spider])(req, p, cur);
+        },
+      );
+      expect(offered).not.toContain(bear);
+      expect(pt(s, spider)).toEqual([3, 3]);
+      s = advanceUntil(s, (x) => x.turn.active === "p2");
+      expect(pt(s, spider)).toEqual([1, 1]);
+    });
+
+    it("Grow Extra Arms : +4/+4 ; coûte {1} de moins s'il cible une Araignée", () => {
+      const s = scenario({ p1: { battlefield: ["Forest", "Radioactive Spider", "Bear Cub"], hand: ["Grow Extra Arms"] } });
+      const spider = idOf(s, "p1", "battlefield", "Radioactive Spider");
+      const bear = idOf(s, "p1", "battlefield", "Bear Cub");
+      expect(() => cast(s, "p1", "Grow Extra Arms", { targets: { t: [bear] } })).toThrow();
+      const t = settle(cast(s, "p1", "Grow Extra Arms", { targets: { t: [spider] } }));
+      expect(pt(t, spider)).toEqual([5, 5]);
+    });
+
+    it("Guy in the Chair : Soutien en ligne met un marqueur +1/+1 sur une Araignée seulement, en rituel", () => {
+      let s = scenario({ p1: { battlefield: ["Guy in the Chair", "Radioactive Spider", "Bear Cub", ...lands("Forest", 3)] } });
+      const guy = idOf(s, "p1", "battlefield", "Guy in the Chair");
+      const spider = idOf(s, "p1", "battlefield", "Radioactive Spider");
+      const web = ability(s, "p1", guy, /Soutien/);
+      // Bear Cub n'est pas une Araignée.
+      expect(web?.targets[0]?.legal).toEqual([spider]);
+      s = settle(activate(s, "p1", guy, { targets: { t: [spider] } }, /Soutien/));
+      expect(plusOnes(s, spider)).toBe(1);
+      expect(s.objects[guy]?.tapped).toBe(true);
+    });
+
+    it("Kapow! : un marqueur +1/+1 sur votre créature, puis elle se bat contre une créature adverse", () => {
+      let s = scenario({
+        p1: { battlefield: [...lands("Forest", 3), "Bear Cub"], hand: ["Kapow!"] },
+        p2: { battlefield: ["Bear Cub"] },
+      });
+      const bear = idOf(s, "p1", "battlefield", "Bear Cub");
+      const other = idOf(s, "p2", "battlefield", "Bear Cub");
+      s = settle(cast(s, "p1", "Kapow!", { targets: { a: [bear], b: [other] } }));
+      // Le marqueur est posé avant le combat : 3/3 contre 2/2, seule la créature adverse meurt.
+      expect(plusOnes(s, bear)).toBe(1);
+      expect(s.objects[bear]?.damage).toBe(2);
+      expect(idsOf(s, "p2", "graveyard", "Bear Cub")).toHaveLength(1);
+    });
+
+    it("Kraven's Cats : {2}{G} : +2/+2, une seule fois par tour", () => {
+      let s = scenario({ p1: { battlefield: ["Kraven's Cats", ...lands("Forest", 6)] } });
+      const cats = idOf(s, "p1", "battlefield", "Kraven's Cats");
+      s = settle(activate(s, "p1", cats));
+      expect(pt(s, cats)).toEqual([4, 4]);
+      expect(ability(s, "p1", cats)).toBeUndefined();
+    });
+
+    it("Lizard, Connors's Curse : une autre créature perd ses capacités et devient un Lézard vert 4/4 de base", () => {
+      let s = scenario({
+        p1: { battlefield: lands("Forest", 4), hand: ["Lizard, Connors's Curse"] },
+        p2: { battlefield: ["Serra Angel"] },
+      });
+      const angel = idOf(s, "p2", "battlefield", "Serra Angel");
+      s = settle(cast(s, "p1", "Lizard, Connors's Curse"), picking([angel]));
+      const c = chars(s, angel);
+      expect(pt(s, angel)).toEqual([4, 4]);
+      expect(c.colors).toEqual(["G"]);
+      expect(c.subtypes).toEqual(["Lizard"]);
+      expect(c.keywords).not.toContain("flying");
+      expect(c.keywords).not.toContain("vigilance");
+      // L'effet n'a pas de fin.
+      s = advanceUntil(s, (x) => x.turn.active === "p2" && x.turn.step === "main1");
+      expect(chars(s, angel).subtypes).toEqual(["Lizard"]);
+    });
+
+    it("Lurking Lizards : un marqueur +1/+1 pour chaque sort de VM 4 ou plus que vous lancez", () => {
+      let s = scenario({
+        p1: { battlefield: ["Lurking Lizards", ...lands("Mountain", 6), "Forest"], hand: ["Shivan Dragon", "Llanowar Elves"] },
+      });
+      const lizards = idOf(s, "p1", "battlefield", "Lurking Lizards");
+      s = settle(cast(s, "p1", "Llanowar Elves"));
+      expect(plusOnes(s, lizards)).toBe(0);
+      s = settle(cast(s, "p1", "Shivan Dragon"));
+      expect(plusOnes(s, lizards)).toBe(1);
+    });
+
+    describe("Miles Morales // Ultimate Spider-Man", () => {
+      it("en arrivant, un marqueur +1/+1 sur chacune de jusqu'à deux créatures", () => {
+        let s = scenario({
+          p1: { battlefield: [...lands("Forest", 2), "Bear Cub"], hand: ["Miles Morales // Ultimate Spider-Man"] },
+          p2: { battlefield: ["Serra Angel"] },
+        });
+        const bear = idOf(s, "p1", "battlefield", "Bear Cub");
+        const angel = idOf(s, "p2", "battlefield", "Serra Angel");
+        s = settle(cast(s, "p1", "Miles Morales // Ultimate Spider-Man"), picking([bear, angel]));
+        expect(plusOnes(s, bear)).toBe(1);
+        expect(plusOnes(s, angel)).toBe(1);
+      });
+
+      it("se transforme en rituel ; en attaquant, double les marqueurs des Araignées et créatures légendaires", () => {
+        let s = scenario({
+          p1: {
+            battlefield: [
+              { name: "Miles Morales // Ultimate Spider-Man", counters: { "+1/+1": 1 } },
+              { name: "Radioactive Spider", counters: { "+1/+1": 2 } },
+              { name: "Bear Cub", counters: { "+1/+1": 1 } },
+              "Mountain",
+              "Plains",
+              ...lands("Forest", 4),
+            ],
+          },
+        });
+        const miles = s.battlefield.find((id) => nameOf(s, id) === "Miles Morales // Ultimate Spider-Man") as string;
+        const spider = idOf(s, "p1", "battlefield", "Radioactive Spider");
+        const bear = idOf(s, "p1", "battlefield", "Bear Cub");
+        s = settle(activate(s, "p1", miles, {}, /Transform/));
+        expect(chars(s, miles).name).toBe("Ultimate Spider-Man");
+        expect(chars(s, miles).keywords).toEqual(expect.arrayContaining(["firstStrike", "haste"]));
+        expect(pt(s, miles)).toEqual([5, 4]);
+        s = runUntil(s, (x) => x.pending?.kind === "declareAttackers");
+        s = act(s, "p1", { type: "declareAttackers", attackers: [{ id: bear, defender: "p2" }] });
+        s = settle(s);
+        expect(plusOnes(s, miles)).toBe(2);
+        expect(plusOnes(s, spider)).toBe(4);
+        expect(plusOnes(s, bear)).toBe(1);
+      });
+
+      it("Camouflage : un marqueur +1/+1, défense talismanique et incolore jusqu'à la fin du tour", () => {
+        let s = scenario({
+          p1: { battlefield: ["Miles Morales // Ultimate Spider-Man", ...lands("Forest", 6), "Mountain", "Plains"] },
+        });
+        const miles = s.battlefield.find((id) => nameOf(s, id) === "Miles Morales // Ultimate Spider-Man") as string;
+        s = settle(activate(s, "p1", miles, {}, /Transform/));
+        s = settle(activate(s, "p1", miles, {}, /Camouflage/));
+        expect(plusOnes(s, miles)).toBe(1);
+        expect(chars(s, miles).keywords).toContain("hexproof");
+        expect(chars(s, miles).colors).toEqual([]);
+        s = advanceUntil(s, (x) => x.turn.active === "p2");
+        expect(chars(s, miles).keywords).not.toContain("hexproof");
+        expect([...chars(s, miles).colors].sort()).toEqual(["G", "R", "W"]);
+      });
+    });
+
+    it("Pictures of Spider-Man : jusqu'à deux cartes de créature parmi les cinq du dessus ; {1}, {T}, sacrifice : un Trésor", () => {
+      let s = scenario({
+        p1: {
+          battlefield: lands("Forest", 4),
+          hand: ["Pictures of Spider-Man"],
+          library: ["Bear Cub", "Opt", "Serra Angel", "Llanowar Elves", "Forest", "Shivan Dragon"],
+        },
+      });
+      s = settle(cast(s, "p1", "Pictures of Spider-Man"), pickingNames(["Bear Cub", "Serra Angel"]));
+      expect(handNames(s).sort()).toEqual(["Bear Cub", "Serra Angel"]);
+      // Le reste va au-dessous : Shivan Dragon (sixième carte) est maintenant sur le dessus.
+      expect(nameOf(s, s.players.p1?.library[0] as string)).toBe("Shivan Dragon");
+      const pictures = idOf(s, "p1", "battlefield", "Pictures of Spider-Man");
+      s = settle(activate(s, "p1", pictures));
+      expect(idsOf(s, "p1", "graveyard", "Pictures of Spider-Man")).toHaveLength(1);
+      expect(idsOf(s, "p1", "battlefield", "Treasure")).toHaveLength(1);
+    });
+
+    it("Professional Wrestler : un Trésor en arrivant ; ne peut pas être bloqué par plus d'une créature", () => {
+      let s = scenario({
+        p1: { battlefield: [{ name: "Professional Wrestler" }] },
+        p2: { battlefield: ["Bear Cub", "Llanowar Elves"] },
+      });
+      const wrestler = idOf(s, "p1", "battlefield", "Professional Wrestler");
+      s = runUntil(s, (x) => x.pending?.kind === "declareAttackers");
+      s = act(s, "p1", { type: "declareAttackers", attackers: [{ id: wrestler, defender: "p2" }] });
+      s = runUntil(s, (x) => x.pending?.kind === "declareBlockers");
+      const bear = idOf(s, "p2", "battlefield", "Bear Cub");
+      const elves = idOf(s, "p2", "battlefield", "Llanowar Elves");
+      expect(() =>
+        act(s, "p2", {
+          type: "declareBlockers",
+          blocks: [
+            { blocker: bear, attacker: wrestler },
+            { blocker: elves, attacker: wrestler },
+          ],
+        }),
+      ).toThrow();
+      expect(() => act(s, "p2", { type: "declareBlockers", blocks: [{ blocker: bear, attacker: wrestler }] })).not.toThrow();
+
+      let t = scenario({ p1: { battlefield: lands("Forest", 4), hand: ["Professional Wrestler"] } });
+      t = settle(cast(t, "p1", "Professional Wrestler"));
+      expect(idsOf(t, "p1", "battlefield", "Treasure")).toHaveLength(1);
+    });
+
+    it("Radioactive Spider : {2}, sacrifice, en rituel : cherche une carte d'Araignée Héros (pas une simple Araignée)", () => {
+      let s = scenario({
+        p1: {
+          battlefield: ["Radioactive Spider", ...lands("Forest", 2)],
+          library: ["Spider Manifestation", "Bear Cub", "Spider-Man, Brooklyn Visionary", "Forest"],
+        },
+      });
+      const spider = idOf(s, "p1", "battlefield", "Radioactive Spider");
+      let offered: string[] = [];
+      s = settle(activate(s, "p1", spider), (req, _p, cur) => {
+        if (req.type === "pick") offered = req.options.map((o) => nameOf(cur, String(o)) ?? "");
+        return undefined;
+      });
+      expect(offered).toEqual(["Spider-Man, Brooklyn Visionary"]);
+      expect(handNames(s)).toEqual(["Spider-Man, Brooklyn Visionary"]);
+      expect(idsOf(s, "p1", "graveyard", "Radioactive Spider")).toHaveLength(1);
+    });
+
+    describe("Scout the City", () => {
+      it("Coup d'œil : meulez trois cartes, une carte de permanent parmi elles en main, et 3 PV", () => {
+        let s = scenario({
+          p1: { battlefield: lands("Forest", 2), hand: ["Scout the City"], library: ["Opt", "Bear Cub", "Forest", "Island"] },
+        });
+        let offered: string[] = [];
+        s = settle(cast(s, "p1", "Scout the City", { mode: 0 }), (req, _p, cur) => {
+          if (req.type === "pick") offered = req.options.map((o) => nameOf(cur, String(o)) ?? "");
+          return pickingNames(["Bear Cub"])(req, _p, cur);
+        });
+        expect(offered.sort()).toEqual(["Bear Cub", "Forest"]);
+        expect(handNames(s)).toEqual(["Bear Cub"]);
+        expect(idsOf(s, "p1", "graveyard", "Opt")).toHaveLength(1);
+        expect(s.players.p1?.life).toBe(23);
+      });
+
+      it("Abattre : détruit une créature avec le vol, pas une autre", () => {
+        const s = scenario({
+          p1: { battlefield: lands("Forest", 2), hand: ["Scout the City"] },
+          p2: { battlefield: ["Serra Angel", "Bear Cub"] },
+        });
+        const angel = idOf(s, "p2", "battlefield", "Serra Angel");
+        const bear = idOf(s, "p2", "battlefield", "Bear Cub");
+        expect(() => cast(s, "p1", "Scout the City", { mode: 1, targets: { t: [bear] } })).toThrow();
+        const t = settle(cast(s, "p1", "Scout the City", { mode: 1, targets: { t: [angel] } }));
+        expect(idsOf(t, "p2", "graveyard", "Serra Angel")).toHaveLength(1);
+      });
+    });
+
+    it("Spider-Ham : une Nourriture en arrivant ; vos autres Araignées, Ours… gagnent +1/+1, pas les Elfes", () => {
+      let s = scenario({
+        p1: {
+          battlefield: [...lands("Forest", 2), "Bear Cub", "Radioactive Spider", "Llanowar Elves"],
+          hand: ["Spider-Ham, Peter Porker"],
+        },
+        p2: { battlefield: ["Bear Cub"] },
+      });
+      s = settle(cast(s, "p1", "Spider-Ham, Peter Porker"));
+      const ham = idOf(s, "p1", "battlefield", "Spider-Ham, Peter Porker");
+      expect(idsOf(s, "p1", "battlefield", "Food")).toHaveLength(1);
+      expect(pt(s, ham)).toEqual([2, 2]);
+      expect(pt(s, idOf(s, "p1", "battlefield", "Bear Cub"))).toEqual([3, 3]);
+      expect(pt(s, idOf(s, "p1", "battlefield", "Radioactive Spider"))).toEqual([2, 2]);
+      expect(pt(s, idOf(s, "p1", "battlefield", "Llanowar Elves"))).toEqual([1, 1]);
+      expect(pt(s, idOf(s, "p2", "battlefield", "Bear Cub"))).toEqual([2, 2]);
+    });
+
+    it("Spider-Man, Brooklyn Visionary : lancé par web-slinging, il cherche un terrain de base qui arrive engagé", () => {
+      let s = scenario({
+        p1: {
+          battlefield: [...lands("Forest", 3), { name: "Bear Cub", tapped: true }],
+          hand: ["Spider-Man, Brooklyn Visionary"],
+          library: ["Opt", "Island", "Serra Angel"],
+        },
+      });
+      s = settle(cast(s, "p1", "Spider-Man, Brooklyn Visionary", { alternative: true }));
+      expect(idsOf(s, "p1", "battlefield", "Spider-Man, Brooklyn Visionary")).toHaveLength(1);
+      expect(handNames(s)).toEqual(["Bear Cub"]);
+      const island = idOf(s, "p1", "battlefield", "Island");
+      expect(s.objects[island]?.tapped).toBe(true);
+    });
+
+    it("Strength of Will : indestructible, et autant de marqueurs +1/+1 que de blessures subies, jusqu'à la fin du tour", () => {
+      let s = scenario({
+        p1: {
+          battlefield: [...lands("Forest", 2), ...lands("Mountain", 2), "Bear Cub"],
+          hand: ["Strength of Will", "Lightning Strike"],
+        },
+      });
+      const bear = idOf(s, "p1", "battlefield", "Bear Cub");
+      s = settle(cast(s, "p1", "Strength of Will", { targets: { t: [bear] } }));
+      expect(chars(s, bear).keywords).toContain("indestructible");
+      s = settle(cast(s, "p1", "Lightning Strike", { targets: { t: [bear] } }));
+      expect(idsOf(s, "p1", "battlefield", "Bear Cub")).toHaveLength(1);
+      expect(plusOnes(s, bear)).toBe(3);
+      s = advanceUntil(s, (x) => x.turn.active === "p2");
+      expect(chars(s, bear).keywords).not.toContain("indestructible");
+      expect(plusOnes(s, bear)).toBe(3);
+    });
+
+    it("Supportive Parents : engagez deux créatures dégagées que vous contrôlez : un mana de n'importe quelle couleur", () => {
+      let s = scenario({ p1: { battlefield: ["Supportive Parents", "Bear Cub", "Llanowar Elves"] } });
+      const parents = idOf(s, "p1", "battlefield", "Supportive Parents");
+      s = activate(s, "p1", parents);
+      s = runUntil(s, (x) => x.pending?.kind === "priority");
+      expect(s.objects[idOf(s, "p1", "battlefield", "Bear Cub")]?.tapped).toBe(true);
+      expect(s.objects[idOf(s, "p1", "battlefield", "Llanowar Elves")]?.tapped).toBe(true);
+      const pool: number[] = Object.values(s.players.p1?.manaPool ?? {});
+      expect(pool.reduce((a, b) => a + b, 0)).toBe(1);
+    });
+
+    describe("Terrific Team-Up", () => {
+      it("coûte {2} de moins avec un permanent de VM 4 ou plus ; chaque créature gagne +1/+0 et blesse la cible", () => {
+        let s = scenario({
+          p1: { battlefield: [...lands("Forest", 2), "Bear Cub", "Shivan Dragon"], hand: ["Terrific Team-Up"] },
+          p2: { battlefield: ["Serra Angel"] },
+        });
+        const bear = idOf(s, "p1", "battlefield", "Bear Cub");
+        const angel = idOf(s, "p2", "battlefield", "Serra Angel");
+        s = settle(cast(s, "p1", "Terrific Team-Up", { targets: { a: [bear], b: [angel] } }));
+        expect(pt(s, bear)).toEqual([3, 2]);
+        expect(idsOf(s, "p2", "battlefield", "Serra Angel")).toHaveLength(1);
+        expect(s.objects[angel]?.damage).toBe(3);
+      });
+
+      it("deux créatures : chacune inflige des blessures égales à sa force ; sans VM 4, pas de réduction", () => {
+        const base = { battlefield: [...lands("Forest", 2), "Bear Cub", "Llanowar Elves"], hand: ["Terrific Team-Up"] };
+        const s = scenario({ p1: base, p2: { battlefield: ["Serra Angel"] } });
+        const bear = idOf(s, "p1", "battlefield", "Bear Cub");
+        const elves = idOf(s, "p1", "battlefield", "Llanowar Elves");
+        const angel = idOf(s, "p2", "battlefield", "Serra Angel");
+        expect(() => cast(s, "p1", "Terrific Team-Up", { targets: { a: [bear, elves], b: [angel] } })).toThrow();
+        let t = scenario({
+          p1: { ...base, battlefield: [...lands("Forest", 4), "Bear Cub", "Llanowar Elves"] },
+          p2: { battlefield: ["Serra Angel"] },
+        });
+        const bear2 = idOf(t, "p1", "battlefield", "Bear Cub");
+        const elves2 = idOf(t, "p1", "battlefield", "Llanowar Elves");
+        t = settle(
+          cast(t, "p1", "Terrific Team-Up", {
+            targets: { a: [bear2, elves2], b: [idOf(t, "p2", "battlefield", "Serra Angel")] },
+          }),
+        );
+        // 3 + 2 blessures : Serra Angel (4/4) meurt.
+        expect(idsOf(t, "p2", "graveyard", "Serra Angel")).toHaveLength(1);
+      });
+    });
+
+    it("Wall Crawl : une Araignée 2/1, 1 PV par Araignée ; vos Araignées +1/+1 et imblocables par les défenseurs", () => {
+      let s = scenario({
+        p1: { battlefield: [...lands("Forest", 4), "Radioactive Spider", "Bear Cub"], hand: ["Wall Crawl"] },
+        p2: { battlefield: ["Gleaming Barrier"] },
+      });
+      s = settle(cast(s, "p1", "Wall Crawl"));
+      const token = idOf(s, "p1", "battlefield", "Spider");
+      const spider = idOf(s, "p1", "battlefield", "Radioactive Spider");
+      const bear = idOf(s, "p1", "battlefield", "Bear Cub");
+      expect(s.players.p1?.life).toBe(22);
+      expect(pt(s, token)).toEqual([3, 2]);
+      expect(pt(s, spider)).toEqual([2, 2]);
+      expect(pt(s, bear)).toEqual([2, 2]);
+      s = runUntil(s, (x) => x.pending?.kind === "declareAttackers");
+      s = act(s, "p1", {
+        type: "declareAttackers",
+        attackers: [
+          { id: spider, defender: "p2" },
+          { id: bear, defender: "p2" },
+        ],
+      });
+      s = runUntil(s, (x) => x.pending?.kind === "declareBlockers");
+      const wall = idOf(s, "p2", "battlefield", "Gleaming Barrier");
+      expect(() => act(s, "p2", { type: "declareBlockers", blocks: [{ blocker: wall, attacker: spider }] })).toThrow();
+      expect(() => act(s, "p2", { type: "declareBlockers", blocks: [{ blocker: wall, attacker: bear }] })).not.toThrow();
+    });
+
+    it("Web of Life and Destiny : au début du combat, une carte de créature parmi les cinq du dessus sur le champ de bataille", () => {
+      let s = scenario({
+        p1: {
+          // Une créature : la déclaration des attaquants a lieu ce tour-ci.
+          battlefield: ["Web of Life and Destiny", "Llanowar Elves"],
+          library: ["Forest", "Opt", "Serra Angel", "Island", "Forest", "Bear Cub"],
+        },
+      });
+      s = runUntil(s, (x) => x.pending?.kind === "declareAttackers", pickingNames(["Serra Angel"]));
+      expect(idsOf(s, "p1", "battlefield", "Serra Angel")).toHaveLength(1);
+      // Le reste va au-dessous : Bear Cub (sixième carte) est maintenant sur le dessus.
+      expect(nameOf(s, s.players.p1?.library[0] as string)).toBe("Bear Cub");
+    });
+
+    it("Web of Life and Destiny : la convocation permet de le lancer en engageant des créatures", () => {
+      const s = scenario({
+        p1: {
+          battlefield: [...lands("Forest", 4), "Bear Cub", "Llanowar Elves", "Bear Cub", "Kraven's Cats"],
+          hand: ["Web of Life and Destiny"],
+        },
+      });
+      const t = settle(cast(s, "p1", "Web of Life and Destiny"));
+      expect(idsOf(t, "p1", "battlefield", "Web of Life and Destiny")).toHaveLength(1);
+    });
+  });
+});

@@ -395,5 +395,6 @@ Dans l'ordre où elles ont été ajoutées, extension par extension.
   - `règle` The Death of Gwen Stacy : au chapitre II, chaque joueur choisit puis agit à son tour (pas de choix en APNAP suivis d'actions simultanées) ; au chapitre III, « n'importe quel nombre de joueurs ciblés » s'écrit « jusqu'à quatre ».
   - `règle` Maximum Carnage : au chapitre I, l'obligation d'attaquer ne vise que les créatures adverses présentes à la résolution, et « un joueur autre que vous si possible » n'est pas imposé (exact en duel, sauf pour attaquer vos planeswalkers) ;
   - `règle` Spinneret and Spiderling : le seuil de 4 blessures se lit par blessure infligée ; des blessures de combat réparties entre plusieurs bloqueurs (2 + 2) ne le déclenchent pas.
+  - `règle` Supportive Parents : « engagez deux créatures dégagées que vous contrôlez » ne peut pas l'engager elle-même (comme Kirol).
 - **Légalité Standard :** instantané des légalités Scryfall au moment de l'import (`legalities.standard` dans `data/<set>.json`). Après une rotation ou une annonce de bannissement, réimporter les sets (`npm run import-cards -- <set>`).
 - **Images des jetons :** celle du jeton Scryfall le plus proche (même nom, puis mêmes F/E et couleurs ; `data/tokens.json`, `npm run import-tokens`) ; un jeton de nom inconnu garde le cadre texte.
