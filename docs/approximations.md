@@ -391,5 +391,7 @@ Dans l'ordre où elles ont été ajoutées, extension par extension.
   - `règle` The Ruinous Wrecking Crew : « jusqu'à X modes » est écrit en combinaisons de modes, chacune sous la condition X ≥ son nombre de modes.
 - **Marvel's Spider-Man (`docs/extensions/spm.md`) :**
   - `règle` Mysterio, Master of Illusion : si Mysterio quitte le champ de bataille avant la résolution de sa capacité d'arrivée, les jetons créés ne sont pas exilés.
+  - `règle` Parker Luck : la carte du dessus n'est pas révélée explicitement ; chaque joueur perd ses PV puis la met en main (même résultat) ;
+  - `règle` The Death of Gwen Stacy : au chapitre II, chaque joueur choisit puis agit à son tour (pas de choix en APNAP suivis d'actions simultanées) ; au chapitre III, « n'importe quel nombre de joueurs ciblés » s'écrit « jusqu'à quatre ».
 - **Légalité Standard :** instantané des légalités Scryfall au moment de l'import (`legalities.standard` dans `data/<set>.json`). Après une rotation ou une annonce de bannissement, réimporter les sets (`npm run import-cards -- <set>`).
 - **Images des jetons :** celle du jeton Scryfall le plus proche (même nom, puis mêmes F/E et couleurs ; `data/tokens.json`, `npm run import-tokens`) ; un jeton de nom inconnu garde le cadre texte.

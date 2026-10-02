@@ -32,3 +32,10 @@ Les scripts sont dans `packages/cards/src/spm/` : `cards` (cartes du méta), `wh
 - **Moteur :** rien de nouveau (« l'un ou les deux » : un troisième mode « les deux »).
 - **Reste pour plus tard :** Chameleon, Master of Disguise (copie en arrivant, sauf le nom), The Clone Saga (copie non légendaire du prochain sort de créature, nom choisi gardé par un emblème), Norman Osborn // Green Goblin (chaos pour toutes les cartes non-terrain du cimetière).
 - **Tests :** 26 tests de règles (« lot A, bleu »).
+
+## Sous-lot A3 : cartes noires ✅ (69 / 188)
+
+- **Cartes (20) :** Agent Venom, Common Crook, The Death of Gwen Stacy, Eddie Brock // Venom, Lethal Protector, Inner Demons Gangsters, Merciless Enforcers, Morlun, Devourer of Spiders, Parker Luck, Prison Break, Risky Research, Scorpion, Seething Striker, Scorpion's Sting, Spider-Man Noir, The Spot's Portal, Swarm, Being of Bees, Tombstone, Career Criminal, Venom, Evil Unleashed, Venomized Cat, Venom's Hunger, Villainous Wrath.
+- **Moteur :** rien de nouveau.
+- **Reste pour plus tard :** Alien Symbiosis (lancer depuis le cimetière en défaussant une carte), Behold the Sinister Six! (cibles de noms différents), Black Cat, Cunning Thief (regarder la bibliothèque d'un adversaire, exil face cachée), Gwenom, Remorseless (payer des PV au lieu du mana), Sandman's Quicksand (« si le coût de chaos a été payé »), The Soul Stone (coût « exilez une créature que vous contrôlez »).
+- **Tests :** 30 tests de règles (« lot A, noir »).
