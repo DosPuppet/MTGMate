@@ -1,0 +1,4 @@
+/** Marvel's Spider-Man — cartes incolores et terrains (lot A). */
+import type { CardScript } from "./common";
+
+export const ARTIFACTS: Record<string, CardScript> = {};

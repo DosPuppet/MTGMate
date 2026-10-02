@@ -85,6 +85,8 @@ export interface ObjectFilter {
   powerAboveSource?: boolean;
   /** Créature équipée (au moins un Équipement attaché). */
   equipped?: boolean;
+  /** Modifié (700.9) : porte un marqueur, est équipé, ou enchanté par une Aura que son contrôleur contrôle. */
+  modified?: boolean;
   /** Enchanté par au moins une Aura (`true`), par une Aura que vous contrôlez (`byYou`), ou par aucune (`false`). */
   enchanted?: boolean | "byYou";
   /** Était attaché à la source quand celle-ci a quitté le champ de bataille (Zack Fair). */

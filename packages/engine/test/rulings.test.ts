@@ -6,10 +6,12 @@ import { describe, expect, it } from "vitest";
 import { dealDamage, destroy, sourceFromObject } from "../src/actions";
 import { eventReplacement, fx, graveyardReplacement, ref, triggered, when } from "../src/dsl";
 import { runEffect } from "../src/effects";
+import { bump } from "../src/layers";
 import { legalActions } from "../src/legal";
 import { counterItem } from "../src/stack";
 import { changeCounters, chars } from "../src/state";
 import { addPlayerEffect } from "../src/statics";
+import { matchesObjectFilter } from "../src/targets";
 import { requiredBlocks, stateBasedActions } from "../src/turn";
 import type { CardDef, GameState } from "../src/types";
 import { act, advanceUntil, customCard, idOf, idsOf, passAccepting, passUntil, scenario } from "./helpers";
@@ -389,5 +391,26 @@ describe("correctifs du lot A6 de Marvel Super Heroes", () => {
     const hero = customCard({ name: "Test Legend", supertypes: ["Legendary"], power: 1, toughness: 1 });
     const s = scenario({ p1: { battlefield: [adaptoid, hero, "Bear Cub"] } });
     expect(chars(s, idOf(s, "p1", "battlefield", "Test Adaptoid")).power).toBe(1);
+  });
+});
+
+describe("socle de Marvel's Spider-Man", () => {
+  it("700.9 : modifié = un marqueur, un Équipement, ou une Aura contrôlée par le contrôleur de la créature", () => {
+    const aura = customCard({ name: "Test Aura", types: ["Enchantment"], subtypes: ["Aura"], typeLine: "Enchantment — Aura" });
+    const s = scenario({
+      p1: { battlefield: ["Bear Cub", { name: "Llanowar Elves", counters: { "+1/+1": 1 } }, "Serra Angel"] },
+      p2: { battlefield: [aura] },
+    });
+    const modified = (name: string) => matchesObjectFilter(s, "p1", idOf(s, "p1", "battlefield", name), { modified: true });
+    expect(modified("Bear Cub")).toBe(false);
+    expect(modified("Llanowar Elves")).toBe(true);
+    // Aura de l'adversaire : la créature n'est pas modifiée.
+    const a = idOf(s, "p2", "battlefield", "Test Aura");
+    s.objects[a]!.attachedTo = idOf(s, "p1", "battlefield", "Serra Angel");
+    bump(s);
+    expect(modified("Serra Angel")).toBe(false);
+    s.objects[a]!.controller = "p1";
+    bump(s);
+    expect(modified("Serra Angel")).toBe(true);
   });
 });

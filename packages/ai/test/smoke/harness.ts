@@ -253,5 +253,6 @@ export const OWN_FILES = [
   "MKM",
   "TLA",
   "MSH",
+  "SPM",
 ];
 export const OTHER_SETS = (): string[] => SETS.map((s) => s.code).filter((c) => !OWN_FILES.includes(c));
