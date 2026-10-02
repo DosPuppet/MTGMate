@@ -1,4 +1,550 @@
-/** Marvel Super Heroes — cartes multicolores. */
-import type { CardScript } from "./common";
+/**
+ * Marvel Super Heroes — cartes multicolores (lot A). Le vol, le piétinement, la vigilance, la portée, la menace, le
+ * contact mortel, le lien de vie, la double initiative, le flash et la célérité sont lus dans le texte ; « ne peut pas
+ * être bloquée » et « attaque à chaque combat si possible » sont écrits ici (restrictions). L'extorsion (Extort) est
+ * écrite ici comme une capacité déclenchée.
+ */
+import type { Effect, ObjectFilter, TokenSpec } from "@mtgx/engine";
+import {
+  activated,
+  amount,
+  type CardScript,
+  chapter,
+  cond,
+  eventReplacement,
+  fx,
+  INSECT_G,
+  mode,
+  playerStatic,
+  powerFor,
+  ref,
+  SOLDIER,
+  spell,
+  staticAbility,
+  TREASURE,
+  target,
+  triggered,
+  triggeredModal,
+  VILLAIN,
+  when,
+} from "./common";
 
-export const MULTI: Record<string, CardScript> = {};
+const ARTIFACT: ObjectFilter = { types: ["Artifact"] };
+const YOUR_CREATURES: ObjectFilter = { types: ["Creature"], controller: "you" };
+/** Carte de créature-artefact (les deux types). */
+const ARTIFACT_CREATURE: ObjectFilter = { types: ["Artifact"], anyOf: [{ types: ["Creature"] }] };
+const NONLAND_CARD: ObjectFilter = { notTypes: ["Land"] };
+
+/** Alien (Alien Invasion) : créature rouge 1/1 avec la célérité, qui attaque à chaque combat si possible. */
+const ALIEN: TokenSpec = {
+  name: "Alien",
+  colors: ["R"],
+  types: ["Creature"],
+  subtypes: ["Alien"],
+  power: 1,
+  toughness: 1,
+  keywords: ["haste", "mustAttack"],
+  text: "Haste\nThis token attacks each combat if able.",
+};
+
+/** Galactus (The Coming of Galactus) : créature légendaire noire 16/16 Ancien Alien, vol, piétinement. */
+const GALACTUS: TokenSpec = {
+  name: "Galactus",
+  colors: ["B"],
+  types: ["Creature"],
+  subtypes: ["Elder", "Alien"],
+  power: 16,
+  toughness: 16,
+  legendary: true,
+  keywords: ["flying", "trample"],
+  abilities: [
+    triggered(when.attacksSelf, [fx.destroy(ref.target())], {
+      targets: [target.permanent("t", ["Land"], {}, "terrain")],
+      label: "Détruit un terrain",
+    }),
+  ],
+  text: "Flying, trample\nWhenever Galactus attacks, destroy target land.",
+};
+
+/** Sturdy Shield (U.S.Agent) : Équipement incolore, « la créature équipée gagne +1/+2 », équiper {2}. */
+const STURDY_SHIELD: TokenSpec = {
+  name: "Sturdy Shield",
+  colors: [],
+  types: ["Artifact"],
+  subtypes: ["Equipment"],
+  abilities: [
+    staticAbility("attached", { power: 1, toughness: 2 }, { label: "+1/+2" }),
+    {
+      ...activated({
+        mana: "{2}",
+        sorcerySpeed: true,
+        targets: [target.creature("t", { controller: "you" })],
+        effects: [fx.attach(ref.target())],
+        label: "Équiper {2}",
+      }),
+      equip: true,
+    },
+  ],
+  text: "Equipped creature gets +1/+2.\nEquip {2}",
+};
+
+/** « Choisissez pair ou impair » à la résolution (Thanos) : le choix est gardé sur la source (`parityChosen`). */
+const CHOOSE_PARITY: Effect = { op: "chooseOnEnter", kind: "parity" };
+
+/** « Vous pouvez sacrifier un artefact ou défausser une carte non-terrain. » : `s` ou `d` vaut 1 si c'est fait. */
+const SACRIFICE_ARTIFACT_OR_DISCARD = [
+  fx.sacrifice(ref.you, ARTIFACT, 1, { optional: true, store: "s" }),
+  ...fx.when(cond.not(cond.v("s")), fx.discard(1, ref.you, { filter: NONLAND_CARD, optional: true, store: "d" })),
+];
+
+export const MULTI: Record<string, CardScript> = {
+  "Abomination, Terrifying Titan": {
+    abilities: [
+      activated({
+        mana: "{5}{R/G}{R/G}",
+        powerUp: true,
+        targets: [target.upTo(1, target.creature("t", { controller: "opponent" }))],
+        effects: [fx.addCounters(ref.self, 1), fx.fight(ref.self, ref.target())],
+        label: "Montée en puissance : un marqueur +1/+1, se bat contre une créature adverse",
+      }),
+    ],
+  },
+  "Alien Invasion": {
+    abilities: [
+      triggered(
+        when.yourCombat,
+        [
+          fx.createTokens(ALIEN, 1, undefined, "a"),
+          fx.addCounters(ref.stored("a"), amount.countersOn(ref.self, "invasion")),
+          fx.counters(ref.self, "invasion"),
+        ],
+        { label: "Un Alien 1/1, un marqueur +1/+1 par marqueur d'invasion, puis un marqueur d'invasion" },
+      ),
+    ],
+  },
+  "Ant-Man, Colony Commander": {
+    abilities: [
+      triggered(
+        when.attacksSelf,
+        fx.mayPay(
+          "{1}",
+          "Payer {1} pour mettre un marqueur +1/+1 sur une créature ?",
+          fx.reflexive([target.creature()], [fx.addCounters(ref.target(), 1)]),
+        ),
+        { label: "Payez {1} : un marqueur +1/+1 sur une créature" },
+      ),
+      // « Chaque fois que vous mettez un marqueur +1/+1 sur une créature » : sur une créature que vous contrôlez, et vous
+      // avez mis des marqueurs sur une de vos créatures ce tour-ci (voir docs/approximations.md).
+      triggered(when.countersPut(YOUR_CREATURES, "+1/+1"), [fx.createTokens(INSECT_G)], {
+        condition: cond.controls({ types: ["Creature"], countersPutByYouThisTurn: true }),
+        oncePerTurn: true,
+        label: "Un Insecte 1/1 (une fois par tour)",
+      }),
+    ],
+  },
+  "Armor Wars": {
+    abilities: [
+      chapter(
+        [1],
+        fx.when(
+          cond.controls(ARTIFACT),
+          fx.may(
+            "Piocher une carte par artefact que vous contrôlez (chaque adversaire pioche une carte) ?",
+            fx.draw(amount.count({ ...ARTIFACT, controller: "you" })),
+            fx.draw(1, ref.eachOpponent),
+          ),
+        ),
+        { label: "Chapitre I — Une carte par artefact ; chaque adversaire pioche" },
+      ),
+      chapter([2], [fx.thisTurn({ spellCost: { filter: ARTIFACT, reduce: 1 } })], {
+        label: "Chapitre II — Vos sorts d'artefact coûtent {1} de moins ce tour-ci",
+      }),
+      chapter([3], [fx.damage(amount.maxManaValue({ ...ARTIFACT, controller: "you" }), ref.target())], {
+        targets: [target.player("t", "opponent")],
+        label: "Chapitre III — X blessures à un adversaire (plus grande valeur de mana de vos artefacts)",
+      }),
+    ],
+  },
+  "Avengers: Under Siege": {
+    abilities: [
+      chapter([1], [fx.createTokens(VILLAIN, 2)], { label: "Chapitre I — Deux Méchants 2/1 avec la menace" }),
+      chapter([2], [fx.damageAll(2, { types: ["Creature"], notSubtype: "Villain" }, ref.eachOpponent)], {
+        label: "Chapitre II — 2 blessures à chaque créature non-Méchant et à chaque adversaire",
+      }),
+      chapter([3], [fx.createTokens(TREASURE, amount.count({ subtype: "Villain", controller: "you" }))], {
+        label: "Chapitre III — Un Trésor par Méchant que vous contrôlez",
+      }),
+    ],
+  },
+  "Beast, Erudite Aerialist": {
+    abilities: [
+      staticAbility(
+        "self",
+        { addKeywords: ["flying"] },
+        {
+          condition: cond.sourceMatches({ countersPutByYouThisTurn: true }),
+          label: "Vole si vous avez mis des marqueurs sur lui ce tour-ci",
+        },
+      ),
+      triggered(when.combatDamageToPlayer, [fx.draw(1)], { label: "Piochez une carte" }),
+    ],
+  },
+  "Black Panther, Vanguard": {
+    abilities: [
+      triggeredModal(
+        when.enters({ subtype: "Hero", nontoken: true, controller: "you", other: true }),
+        [
+          mode("Un Soldat 1/1", [], [fx.createTokens(SOLDIER)]),
+          mode("Vos créatures gagnent +1/+1", [], [fx.pumpAll(YOUR_CREATURES, 1, 1)]),
+        ],
+        { label: "Un autre Héros non-jeton arrive" },
+      ),
+    ],
+  },
+  "Black Widow, Double Agent": {
+    abilities: [
+      triggered(when.attacksAlone(YOUR_CREATURES), [fx.pump(ref.eventObject, 0, 0, ["firstStrike", "menace"])], {
+        label: "Attaque seule : initiative et menace",
+      }),
+    ],
+  },
+  "Bullseye, Death Dealer": {
+    abilities: [
+      triggered(
+        when.entersSelf,
+        [
+          ...SACRIFICE_ARTIFACT_OR_DISCARD,
+          ...fx.when(cond.any(cond.v("s"), cond.v("d")), fx.reflexive([target.any()], [fx.damage(2, ref.target())])),
+        ],
+        { label: "Sacrifiez un artefact ou défaussez une carte non-terrain : 2 blessures" },
+      ),
+      // Coût « sacrifiez un artefact ou défaussez une carte non-terrain » : une capacité par branche du coût.
+      activated({
+        mana: "{3}",
+        tap: true,
+        sacrificeOther: { filter: ARTIFACT },
+        targets: [target.any()],
+        effects: [fx.damage(2, ref.target())],
+        label: "2 blessures (sacrifiez un artefact)",
+      }),
+      activated({
+        mana: "{3}",
+        tap: true,
+        discard: 1,
+        discardFilter: NONLAND_CARD,
+        targets: [target.any()],
+        effects: [fx.damage(2, ref.target())],
+        label: "2 blessures (défaussez une carte non-terrain)",
+      }),
+    ],
+  },
+  "Cloak and Dagger, Entwined": {
+    abilities: [
+      triggered(
+        when.entersSelf,
+        [
+          // Une carte non-terrain de sa main, sinon la créature choisie, jusqu'à ce que Cloak and Dagger partent.
+          fx.exileFromHandLinked(ref.target("p"), NONLAND_CARD, true),
+          ...fx.when(
+            cond.not(cond.amountAtLeast(amount.refCount(ref.exiledWith), 1)),
+            fx.may("Exiler la créature choisie ?", fx.exileUntilLeaves(ref.target("c"))),
+          ),
+        ],
+        {
+          targets: [target.player("p", "opponent"), target.upTo(1, target.creature("c", { controller: "opponent" }))],
+          label: "Exile une carte non-terrain de sa main ou la créature choisie",
+        },
+      ),
+    ],
+  },
+  "The Coming of Galactus": {
+    abilities: [
+      chapter([1], [fx.destroy(ref.target())], {
+        targets: [target.upTo(1, target.nonland())],
+        label: "Chapitre I — Détruit jusqu'à un permanent non-terrain",
+      }),
+      chapter([2, 3], [fx.loseLife(2, ref.eachOpponent)], { label: "Chapitres II, III — Chaque adversaire perd 2 PV" }),
+      chapter([4], [fx.createTokens(GALACTUS)], { label: "Chapitre IV — Galactus 16/16" }),
+    ],
+  },
+  "Daredevil, Man Without Fear": {
+    abilities: [
+      playerStatic({ lookAtTopCard: true, label: "Sens radar — Vous pouvez regarder le dessus de votre bibliothèque" }),
+      triggered(
+        when.attackWith(),
+        fx.may(
+          "Exiler la carte du dessus de votre bibliothèque ?",
+          fx.exileTop(ref.you, 1, "d"),
+          fx.when(cond.refMatches(ref.stored("d"), { subtype: "Hero" }), fx.pump(ref.self, 2, 1)),
+          fx.grantPlay(ref.stored("d")),
+        ),
+        { label: "Exile le dessus : jouable ce tour-ci (+2/+1 si c'est un Héros)" },
+      ),
+    ],
+  },
+  "Ghost, Spectral Saboteur": { keywords: ["unblockable"] },
+  "Iron Man, Master of Machines": {
+    abilities: [
+      staticAbility(
+        "self",
+        { power: 1 },
+        { per: { ...ARTIFACT, controller: "you", other: true }, label: "+1/+0 par autre artefact que vous contrôlez" },
+      ),
+      triggered(when.attacksSelf, [fx.draw(1)], {
+        condition: cond.amountAtLeast(
+          amount.turnEvents({ event: "zone", to: "battlefield", types: ["Artifact"], who: "you" }),
+          1,
+        ),
+        label: "Piochez si un artefact est arrivé sous votre contrôle ce tour-ci",
+      }),
+    ],
+  },
+  "Kang, Temporal Tyrant": {
+    abilities: [
+      triggered(when.attacksSelf, [fx.connive(ref.self)], { label: "Complote" }),
+      triggered(when.draw(2), fx.drain(1), { label: "Deuxième carte piochée : drain 1" }),
+    ],
+  },
+  "Killmonger, Scourge of Wakanda": {
+    abilities: [
+      triggered(
+        when.entersSelf,
+        [
+          fx.sacrifice(ref.you, { types: ["Creature"], other: true }, 1, { optional: true, store: "s" }),
+          ...fx.when(cond.v("s"), fx.reflexive([target.nonland("t", { controller: "opponent" })], [fx.destroy(ref.target())])),
+        ],
+        { label: "Sacrifiez une autre créature : détruit un permanent non-terrain adverse" },
+      ),
+      staticAbility(
+        "self",
+        { power: 2, toughness: 1 },
+        {
+          condition: cond.amountAtLeast(amount.countIn("graveyard", { types: ["Creature"] }), 2),
+          label: "+2/+1 avec deux cartes de créature ou plus dans votre cimetière",
+        },
+      ),
+    ],
+  },
+  "King T'Challa": {
+    abilities: [
+      triggered(when.draw(2, "any"), [fx.draw(1)], { label: "Un joueur pioche sa deuxième carte : piochez" }),
+      activated({ mana: "{4}{W}{U}", sorcerySpeed: true, effects: [fx.transform(ref.self)], label: "Transformez-le" }),
+    ],
+  },
+  "Black Panther, Hope Enduring": {
+    abilities: [
+      eventReplacement({
+        event: "damage",
+        toFilter: { self: true },
+        modify: { prevent: true },
+        label: "Prévenez toutes les blessures qui lui seraient infligées",
+      }),
+      triggered(when.combatDamageToPlayer, [fx.draw(1)], { label: "Piochez une carte" }),
+    ],
+  },
+  "The Kingpin of Crime": {
+    abilities: [
+      // Extorsion (702.101).
+      triggered(
+        when.castSpell("you"),
+        fx.mayPay("{W/B}", "Extorsion : payer {W/B} ?", fx.loseLife(1, ref.eachOpponent, "l"), fx.gainLife(amount.v("l"))),
+        { label: "Extorsion" },
+      ),
+      // Les créatures arrivées après la résolution ne sont pas concernées (voir docs/approximations.md).
+      triggered(
+        when.attackWith(),
+        fx.mayPayLife(
+          2,
+          "Payer 2 PV : vos créatures blessent selon leur endurance si elle est plus grande ?",
+          fx.modifyAll(YOUR_CREATURES, { addPowerRules: [powerFor.combatToughness] }),
+        ),
+        { label: "Payez 2 PV : blessures de combat selon l'endurance" },
+      ),
+    ],
+  },
+  "Madame Hydra": {
+    abilities: [
+      triggered(when.castSpell("you", { subtype: "Villain" }), [fx.createTokens(VILLAIN)], {
+        label: "Sort de Méchant : un Méchant 2/1 avec la menace",
+      }),
+    ],
+  },
+  "The Mighty Thor, Jane Foster": {
+    abilities: [
+      triggered(
+        when.attacksSelf,
+        [fx.exileCard(ref.target(), { name: "f" }), fx.toBattlefield(ref.stored("f"), { tapped: true })],
+        {
+          targets: [
+            target.upTo(1, target.permanent("t", ["Artifact", "Creature"], { nontoken: true }, "artefact ou créature non-jeton")),
+          ],
+          label: "Exile puis renvoie engagé un artefact ou une créature",
+        },
+      ),
+      triggered(when.enters({ subtype: "Equipment", controller: "you" }), [fx.draw(1)], {
+        label: "Un Équipement arrive : piochez",
+      }),
+    ],
+  },
+  "Moon Girl and Devil Dinosaur": {
+    abilities: [
+      triggered(when.draw(2), [fx.modify(ref.self, { setPower: 6, setToughness: 6, addKeywords: ["trample"] })], {
+        label: "Deuxième carte piochée : 6/6 et piétinement",
+      }),
+      triggered(when.enters({ ...ARTIFACT, controller: "you" }), [fx.draw(1)], {
+        oncePerTurn: true,
+        label: "Un artefact arrive : piochez (une fois par tour)",
+      }),
+    ],
+  },
+  "Speedball, New Warrior": {
+    abilities: [
+      // Nouvelles cibles : seulement pour un sort à une seule cible (`changeTarget`, voir docs/approximations.md).
+      triggered(
+        when.castSpell("any", undefined, { objects: { self: true } }),
+        [fx.pump(ref.self, 2, 2), fx.changeTarget(ref.eventObject)],
+        { label: "Ciblé par un sort : +2/+2, vous pouvez changer la cible" },
+      ),
+    ],
+  },
+  "Spider-Man, To the Rescue": {
+    abilities: [
+      triggered(
+        when.entersSelf,
+        fx.when(
+          cond.sourceMatches({ tapped: false }),
+          fx.may(
+            "Engager Spider-Man pour rendre une autre créature indestructible ?",
+            fx.tap(ref.self),
+            fx.reflexive(
+              [target.creature("t", { controller: "you", other: true, attacking: false })],
+              [fx.modify(ref.target(), { addKeywords: ["indestructible"] })],
+            ),
+          ),
+        ),
+        { label: "Personne ne meurt ! — Engagez-le : une autre créature indestructible" },
+      ),
+    ],
+  },
+  "Spider-Woman, Secret Agent": {
+    abilities: [
+      triggered(
+        when.entersSelf,
+        [
+          fx.tap(ref.target()),
+          fx.modifyWhileSource(ref.target(), {
+            addAbilities: [
+              eventReplacement({
+                event: "untap",
+                toFilter: { self: true },
+                modify: { prevent: true },
+                label: "Ne peut pas être dégagée",
+              }),
+            ],
+          }),
+        ],
+        {
+          targets: [target.creature("t", { controller: "opponent" })],
+          label: "Engage une créature adverse, qui ne peut plus être dégagée",
+        },
+      ),
+    ],
+  },
+  "The Super Hero Civil War": {
+    abilities: [
+      chapter([1], [fx.gainControlWhileSource(ref.target())], {
+        targets: [{ ...target.upTo(2, target.creature()), maxTotalManaValue: 6 }],
+        label: "Chapitre I — Contrôle de jusqu'à deux créatures de valeur de mana totale 6 ou moins",
+      }),
+      chapter([2], [fx.pumpAll(YOUR_CREATURES, 1, 1, ["vigilance"])], {
+        label: "Chapitre II — Vos créatures gagnent +1/+1 et la vigilance",
+      }),
+      chapter([3], [fx.fight(ref.target("a"), ref.target("b"))], {
+        targets: [
+          target.creature("a", { controller: "you" }),
+          { ...target.upTo(1, target.creature("b")), otherThan: ["a"], label: "autre créature" },
+        ],
+        label: "Chapitre III — Une de vos créatures se bat contre une autre créature",
+      }),
+    ],
+  },
+  "Thanos, the Mad Titan": {
+    abilities: [
+      activated({
+        mana: "{C}{W}{U}{B}{R}{G}",
+        powerUp: true,
+        effects: [
+          fx.addCounters(ref.self, 2),
+          CHOOSE_PARITY,
+          fx.destroyAll({ types: ["Creature"], other: true, parityChosen: true }),
+        ],
+        label: "Montée en puissance : deux marqueurs +1/+1, détruit les créatures de la parité choisie",
+      }),
+    ],
+  },
+  "U.S.Agent, John Walker": {
+    abilities: [
+      triggered(when.entersSelf, [fx.createTokens(STURDY_SHIELD, 1, undefined, undefined, ref.self)], {
+        label: "Sturdy Shield, attaché à lui",
+      }),
+    ],
+  },
+  "Vision Quest": {
+    // Cimetière d'abord, sinon bibliothèque (une seule carte en tout) ; les marqueurs sont mis dès l'arrivée.
+    spell: spell(
+      [],
+      [
+        fx.pickFromZone(
+          "graveyard",
+          ARTIFACT_CREATURE,
+          { to: "battlefield" },
+          {
+            min: 0,
+            maxManaValue: amount.x,
+            store: "v",
+            prompt: "Vous pouvez choisir une carte de créature-artefact de votre cimetière (sinon, de votre bibliothèque)",
+          },
+        ),
+        ...fx.when(
+          cond.not(cond.v("v")),
+          fx.search({ ...ARTIFACT_CREATURE, maxManaValueX: true }, { to: "battlefield" }, 1, undefined, "v"),
+        ),
+        fx.addCounters(ref.stored("v"), amount.x),
+        ...fx.when(cond.xAtLeast(4), fx.modify(ref.stored("v"), { addKeywords: ["haste"] })),
+      ],
+    ),
+  },
+  "War Machine, Legacy of Iron": {
+    abilities: [
+      triggered(when.yourCombat, [fx.pump(ref.target(), amount.powerOf(ref.self), 0)], {
+        targets: [target.creature("t", { controller: "you", other: true })],
+        label: "Une autre créature gagne +X/+0 (X : sa force)",
+      }),
+    ],
+  },
+  "Winter Soldier, Icy Assassin": {
+    abilities: [
+      staticAbility(
+        "self",
+        { power: 2 },
+        { per: { subtype: "Equipment", attachedToSelf: true }, label: "+2/+0 par Équipement attaché" },
+      ),
+      activated({
+        mana: "{3}{W}{B}",
+        fromGraveyard: true,
+        effects: [
+          fx.moveTo(ref.self, { to: "battlefield", counters: { kind: "finality", n: 1 } }, { name: "w" }),
+          ...fx.when(
+            cond.controls({ subtype: "Equipment" }),
+            fx.may(
+              "Attacher un Équipement que vous contrôlez à Winter Soldier ?",
+              fx.chooseAmong(ref.permanentsOf(ref.you, { subtype: "Equipment" }), ref.you, "e"),
+              fx.attach(ref.stored("w"), ref.stored("e")),
+            ),
+          ),
+        ],
+        label: "Revient du cimetière avec un marqueur de finalité",
+      }),
+    ],
+  },
+};

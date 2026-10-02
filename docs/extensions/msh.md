@@ -54,3 +54,17 @@ Les scripts sont dans `packages/cards/src/msh/` : `cards` (cartes du méta), `wh
 - **Moteur :** rien de nouveau (remplacement de marqueurs de Doc Samson sur le cadre `eventReplacement`, terrains joués depuis la bibliothèque et le cimetière, F/E de base et types remplacés de Reptil).
 - **Reste pour plus tard :** Shang-Chi, Master of Kung Fu (activer comme si elles avaient la célérité), Powerful Broker (prolifération limitée à une cible).
 - **Tests :** 40 tests de règles (« lot A, vert »).
+
+## Sous-lot A6 : multicolores, incolores et terrains ✅ (240 / 271)
+
+- **Multicolores (30) :** Abomination, Terrifying Titan, Alien Invasion, Ant-Man, Colony Commander, Armor Wars, Avengers: Under Siege, Beast, Erudite Aerialist, Black Panther, Vanguard, Black Widow, Double Agent, Bullseye, Death Dealer, Cloak and Dagger, Entwined, The Coming of Galactus, Daredevil, Man Without Fear, Ghost, Spectral Saboteur, Iron Man, Master of Machines, Kang, Temporal Tyrant, Killmonger, Scourge of Wakanda, King T'Challa // Black Panther, Hope Enduring, The Kingpin of Crime, Madame Hydra, The Mighty Thor, Jane Foster, Moon Girl and Devil Dinosaur, Speedball, New Warrior, Spider-Man, To the Rescue, Spider-Woman, Secret Agent, The Super Hero Civil War, Thanos, the Mad Titan, U.S.Agent, John Walker, Vision Quest, War Machine, Legacy of Iron, Winter Soldier, Icy Assassin.
+- **Incolores et terrains (30) :** A.I.M. Synthoids, Captain America's Shield, Cosmic Cube, Dependable Quinjet, H.E.R.B.I.E. Scout Unit, Iron Man Armor, S.H.I.E.L.D. Helicarrier, The Ten Rings, Ultron, Artificial Malevolence, Ultron Drone, Vibranium Energy Daggers, The Vision, Viv Vision, Teen Synthezoid, A.I.M. Labs, Asgardian Citadel, Avengers Hangar, Avengers Tower, Baxter Building, Birnin Zana Plaza, Dark Fortress, Fisk Tower, Gathering Place, Hell's Kitchen, Los Diablos Missile Base, Pym Technologies, Stark Industries, Subterranean Cavern, Surveillance Room, Training Compound, Villainous Hideout.
+- **Correctifs du moteur (tests tirés des règles dans `rulings.test.ts`) :**
+  - les dernières informations d'un permanent sont prises avant son retrait du combat (506.4) : « quand une créature attaquante meurt » se déclenche enfin ;
+  - un Équipement qui devient une créature se détache (301.5c, 704.5n) : Iron Man Armor animée ;
+  - une carte de la bibliothèque lancée par une permission (« lancez-la maintenant ») suit le timing de la permission ;
+  - les F/E définies par une capacité lisent « légendaire » dans leurs filtres.
+- **Dette :** le contrôle « tant que [la source] » (`gainControlWhileSource`) sert désormais à plusieurs cartes : son entrée est retirée.
+- **Reste pour plus tard :** Ares, God of War, Absorbing Man, Taskmaster, The Astonishing Ant-Man, Captain America, Living Legend, Hulk, Gamma Goliath, The Ruinous Wrecking Crew, Scientist Supreme of A.I.M., The Serpent Society, Storm, Windrider, Titania, Rugged Rumbler, Worlds Within Worlds, Arc Reactor, Super-Adaptoid.
+- **Version des règles :** 47.
+- **Tests :** 34 tests de règles (« lot A, multicolores »), 24 (« lot A, incolores et terrains ») et 3 tests tirés des règles.

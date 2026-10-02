@@ -10,7 +10,7 @@ import { legalActions } from "../src/legal";
 import { counterItem } from "../src/stack";
 import { changeCounters, chars } from "../src/state";
 import { addPlayerEffect } from "../src/statics";
-import { requiredBlocks } from "../src/turn";
+import { requiredBlocks, stateBasedActions } from "../src/turn";
 import type { CardDef, GameState } from "../src/types";
 import { act, advanceUntil, customCard, idOf, idsOf, passAccepting, passUntil, scenario } from "./helpers";
 
@@ -342,5 +342,52 @@ describe("« carte » : un jeton qui change de zone n'est pas une carte", () => 
     destroy(s, idOf(s, "p1", "battlefield", "Bear Cub"));
     s = settle(s, (x) => x.stack.length === 0 && x.triggers.length === 0);
     expect(s.objects[shadow]?.counters["-1/-1"]).toBe(5);
+  });
+});
+
+describe("correctifs du lot A6 de Marvel Super Heroes", () => {
+  it("608.2h : « quand une créature attaquante meurt » voit qu'elle attaquait (dernières informations avant 506.4)", () => {
+    const mourner = ench(
+      "Deuil d'attaquant",
+      triggered(when.dies({ types: ["Creature"], attacking: true }), [fx.gainLife(5)], { label: "deuil" }),
+    );
+    let s = scenario({ p1: { battlefield: [mourner, "Bear Cub"] } });
+    const bear = idOf(s, "p1", "battlefield", "Bear Cub");
+    s = advanceUntil(s, (x) => x.pending?.kind === "declareAttackers");
+    s = act(s, "p1", { type: "declareAttackers", attackers: [{ id: bear, defender: "p2" }] });
+    destroy(s, bear);
+    s = settle(s, (x) => x.stack.length === 0 && x.triggers.length === 0);
+    expect(s.players.p1?.life).toBe(25);
+  });
+
+  it("301.5c : un Équipement qui devient une créature se détache", () => {
+    const gear = customCard({
+      name: "Test Gear",
+      types: ["Artifact"],
+      subtypes: ["Equipment"],
+      typeLine: "Artifact — Equipment",
+    });
+    const s = scenario({ p1: { battlefield: [gear, "Bear Cub"] } });
+    const g = idOf(s, "p1", "battlefield", "Test Gear");
+    s.objects[g]!.attachedTo = idOf(s, "p1", "battlefield", "Bear Cub");
+    runEffect(
+      s,
+      { ...resolution("p1"), item: { ...resolution("p1").item, sourceId: g } } as never,
+      fx.modify(ref.self, { addTypes: ["Creature"], setPower: 2, setToughness: 2 }),
+    );
+    stateBasedActions(s);
+    expect(s.objects[g]?.attachedTo).toBeUndefined();
+  });
+
+  it("F/E définies par une capacité : « créatures légendaires que vous contrôlez » ne compte que les légendaires", () => {
+    const adaptoid = customCard({
+      name: "Test Adaptoid",
+      power: 0,
+      toughness: 4,
+      cdaPower: { kind: "count", filter: { types: ["Creature"], controller: "you", legendary: true } },
+    });
+    const hero = customCard({ name: "Test Legend", supertypes: ["Legendary"], power: 1, toughness: 1 });
+    const s = scenario({ p1: { battlefield: [adaptoid, hero, "Bear Cub"] } });
+    expect(chars(s, idOf(s, "p1", "battlefield", "Test Adaptoid")).power).toBe(1);
   });
 });

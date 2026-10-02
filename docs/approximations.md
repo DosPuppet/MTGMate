@@ -373,5 +373,18 @@ Dans l'ordre où elles ont été ajoutées, extension par extension.
   - `règle` The Thing, Ben Grimm : « blessent un joueur » se lit « blessent un adversaire » ; un seul déclenchement par lot ;
   - `règle` World War Hulk (chapitre I) : le sort gratuit vient seulement de la main, et un sort de créature payé normalement ne consomme pas la permission ;
   - `règle` Go Nuts! : avec le travail d'équipe payé, un seul mode reste permis.
+  - `règle` Ant-Man, Colony Commander : la capacité ne se déclenche que pour un marqueur +1/+1 mis sur une de vos créatures, et demande que vous ayez mis un marqueur sur une de vos créatures ce tour-ci ;
+  - `règle` Beast, Erudite Aerialist : il vole si vous avez mis un marqueur de n'importe quelle sorte sur lui ce tour-ci ;
+  - `règle` Bullseye, Death Dealer : « sacrifiez un artefact ou défaussez une carte non-terrain » est deux capacités ;
+  - `règle` Cloak and Dagger, Entwined : la créature ciblée est adverse sans être forcément au joueur ciblé ; la main n'est montrée qu'à travers ses cartes non-terrain proposées ;
+  - `règle` The Kingpin of Crime : l'extorsion est écrite dans le script ; « blesse selon son endurance » ne touche que les créatures présentes à la résolution ;
+  - `règle` Speedball, New Warrior : seule la cible d'un sort à une seule cible peut être changée ;
+  - `règle` Spider-Woman, Secret Agent : la créature ne se dégage pas tant que Spider-Woman reste sur le champ de bataille (et non « tant que vous la contrôlez ») ;
+  - `timing` Vision Quest : le cimetière est proposé avant la bibliothèque ; les X marqueurs sont mis juste après l'arrivée ;
+  - `règle` The Ten Rings : « taille de main maximale de dix » devient « pas de taille de main maximale » ;
+  - `règle` Cosmic Cube : la carte choisie parmi les six passe par l'exil le temps d'être lancée (visible de tous), puis va au-dessous si vous renoncez ;
+  - `règle` Captain America's Shield : la créature ciblée est une créature adverse (pas forcément au joueur défenseur) ;
+  - `règle` Avengers Tower : le reste va au-dessous dans un ordre aléatoire ;
+  - `règle` Baxter Building : « quatre mana en n'importe quelle combinaison » est quatre mana d'une même couleur choisie.
 - **Légalité Standard :** instantané des légalités Scryfall au moment de l'import (`legalities.standard` dans `data/<set>.json`). Après une rotation ou une annonce de bannissement, réimporter les sets (`npm run import-cards -- <set>`).
 - **Images des jetons :** celle du jeton Scryfall le plus proche (même nom, puis mêmes F/E et couleurs ; `data/tokens.json`, `npm run import-tokens`) ; un jeton de nom inconnu garde le cadre texte.

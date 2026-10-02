@@ -503,15 +503,16 @@ export function moveObject(
     const i = from.indexOf(id);
     if (i >= 0) from.splice(i, 1);
   }
+  // Dernières informations connues (608.2h), prises avant le retrait du combat : « quand une créature attaquante meurt ».
+  const lki = o.zone === "battlefield" ? snapshot(s, id) : null;
+  if (lki) {
+    s.lki[id] = lki;
+  }
   // 506.4 : un permanent qui quitte le champ de bataille est retiré du combat, quel que soit l'effet qui le déplace.
   if (o.zone === "battlefield" && s.combat) {
     s.combat.attackers = s.combat.attackers.filter((a) => a.id !== id);
     s.combat.blockers = s.combat.blockers.filter((b) => b.id !== id);
     for (const a of s.combat.attackers) a.blockers = a.blockers.filter((b) => b !== id);
-  }
-  const lki = o.zone === "battlefield" ? snapshot(s, id) : null;
-  if (lki) {
-    s.lki[id] = lki;
   }
   // Journal du tour : « créatures exilées ce tour-ci » (Vren), « cartes qui ont quitté votre cimetière » (Bonecache)…
   // Seulement les déplacements publics : une pioche (bibliothèque → main) n'y figure pas (information cachée).

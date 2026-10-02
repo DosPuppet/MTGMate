@@ -1059,7 +1059,14 @@ function baseCastTerms(s: GameState, player: PlayerId, card: ObjectId): CastTerm
     if (o.owner !== player || top !== card) return null;
     // Planetarium of Wan Shi Tong : « vous pouvez lancer cette carte sans payer son coût » (permission, `castNow`).
     const libPerm = exilePermission(s, player, card);
-    if (libPerm) return { source: "library", anyMana: libPerm.anyMana, free: libPerm.free, exileAfter: libPerm.exileAfter };
+    if (libPerm)
+      return {
+        source: "library",
+        anyMana: libPerm.anyMana,
+        free: libPerm.free,
+        exileAfter: libPerm.exileAfter,
+        anyTime: libPerm.anyTime,
+      };
     const rule = playFromRules(s, player, card, "libraryTop", "spells")[0];
     return rule ? playFromTerms(rule, "library") : null;
   }

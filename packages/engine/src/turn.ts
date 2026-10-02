@@ -1372,6 +1372,8 @@ function stateBasedActionsOnce(s: GameState): boolean {
           onBattlefield(s, o.attachedTo) &&
           isCreature(s, o.attachedTo) &&
           hasType(s, id, "Artifact") &&
+          // 301.5c : un Équipement qui est aussi une créature ne peut pas équiper une créature (Iron Man Armor animée).
+          !isCreature(s, id) &&
           !protectedFrom(s, o.attachedTo, sourceView(s, id))
         )
       ) {

@@ -126,8 +126,11 @@ export const RECORD_VERSION = 1;
  *   de la carte liée choisie ; valeur de mana totale des cibles d'une capacité réflexive fixée à sa mise sur la pile.
  * - 46 : Marvel Super Heroes, lot A3 : le déclencheur « [cartes] mises dans une zone » respecte `nontoken` et `token`
  *   (un jeton n'est pas une carte : Moonshadow, Robot Domination).
+ * - 47 : Marvel Super Heroes, lot A6 : dernières informations d'un permanent prises avant son retrait du combat (« quand
+ *   une créature attaquante meurt ») ; un Équipement devenu créature se détache (301.5c) ; une carte de la bibliothèque
+ *   lancée par une permission suit son timing ; les F/E définies par une capacité lisent « légendaire ».
  */
-export const RULES_VERSION = 46;
+export const RULES_VERSION = 47;
 
 /** Un point de contrôle toutes les N décisions (plus la dernière de la partie). */
 export const CHECKPOINT_EVERY = 25;

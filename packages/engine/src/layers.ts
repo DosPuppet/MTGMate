@@ -99,6 +99,8 @@ function printedMatch(d: Pick<CardDef, "types" | "subtypes"> | undefined, f: Obj
   if (f.notTypes?.some((t) => d.types.includes(t))) return false;
   if (f.subtype && !d.subtypes.includes(f.subtype)) return false;
   if (f.notSubtype && d.subtypes.includes(f.notSubtype)) return false;
+  // Super-Adaptoid : « le nombre de créatures légendaires que vous contrôlez ».
+  if (f.legendary && !(d as { supertypes?: string[] }).supertypes?.includes("Legendary")) return false;
   if (f.anySubtype && !f.anySubtype.some((t) => d.subtypes.includes(t))) return false;
   if (f.anyOf && !f.anyOf.some((g) => printedMatch(d, g))) return false;
   const permanentTypes: CardType[] = ["Artifact", "Battle", "Creature", "Enchantment", "Land", "Planeswalker"];
