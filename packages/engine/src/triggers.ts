@@ -11,7 +11,7 @@
 
 import { canForage, gainLife } from "./actions";
 import { ask, cardRef } from "./choices";
-import { boardAmount, evalAmount, resolveRef } from "./effects";
+import { boardAmount, evalAmount, resolveRef, staticContext } from "./effects";
 import { RulesError, rethrowAsRules } from "./errors";
 import { copiedDefId } from "./layers";
 import {
@@ -157,18 +157,8 @@ function checkAmount(
   eventObject?: ObjectId,
   event?: TriggerEventData,
 ): number {
-  const ctx = {
-    controller,
-    sourceId: sourceId ?? "",
-    sourceDefId: (sourceId && s.objects[sourceId]?.defId) || "",
-    sourceSnapshot: { keywords: [], power: 0 },
-    targets: {},
-    x: 0,
-    kicked: false,
-    // L'objet de l'événement (Increment : « si le mana dépensé pour lancer ce sort »).
-    ...(event || eventObject ? { event: { ...event, objectId: eventObject ?? event?.objectId } } : {}),
-  };
-  return evalAmount(s, ctx, a);
+  // L'objet de l'événement (Increment : « si le mana dépensé pour lancer ce sort »).
+  return evalAmount(s, staticContext(s, controller, sourceId, { event, eventObject }), a);
 }
 
 /** Exécute `fn` comme un ensemble d'événements simultanés (actions basées sur l'état, un effet…). */
@@ -489,15 +479,7 @@ export function checkCondition(
     }
     case "handAtMost": {
       // « s'il n'a pas de carte en main » hors résolution (« Pour résoudre » d'une Affaire, condition d'un déclencheur).
-      const ctx = {
-        controller,
-        sourceId: sourceId ?? "",
-        sourceDefId: "",
-        sourceSnapshot: { keywords: [], power: 0 },
-        targets: {},
-        x: 0,
-        kicked: false,
-      };
+      const ctx = staticContext(s, controller, sourceId, { sourceDefId: "" });
       return resolveRef(s, ctx, c.ref).some((p) => !!s.players[p] && (s.players[p]?.hand.length ?? 0) <= c.n);
     }
     case "var":

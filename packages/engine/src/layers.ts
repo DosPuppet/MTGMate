@@ -125,6 +125,25 @@ function typesOf(s: GameState, id: ObjectId): { types: CardType[]; subtypes: str
   return provisional?.get(id) ?? s.defs[obj(s, id).defId];
 }
 
+/**
+ * Sortes de montants que `cdaValue` sait calculer pendant le calcul des couches (F/E définies par une capacité, bonus
+ * « pour chaque »). Toute autre sorte vaudrait 0 : `cards/test/cda.test.ts` vérifie qu'aucune carte n'en utilise
+ * (PLAN-C, lot C10).
+ */
+export const CDA_AMOUNT_KINDS: ReadonlySet<string> = new Set([
+  "linkedTotalPower",
+  "linkedColors",
+  "sum",
+  "graveyardsWithAtLeast",
+  "cardTypesInGraveyards",
+  "basicLandTypes",
+  "colorsAmong",
+  "countersAmong",
+  "cardsDrawnThisTurn",
+  "maxManaValue",
+  "count",
+]);
+
 function cdaValue(s: GameState, o: GameObject, a: Amount): number {
   if (typeof a === "number") return a;
   // Fabrication : cartes exilées pour fabriquer ce permanent (Mastercraft Raptor, Sunbird Effigy).
@@ -190,6 +209,7 @@ function cdaValue(s: GameState, o: GameObject, a: Amount): number {
         .map((id) => manaValue(s.defs[obj(s, id).defId]?.manaCost)),
     );
   }
+  // Sorte non prise en charge (`CDA_AMOUNT_KINDS`) : aucune carte n'en utilise (cards/test/cda.test.ts).
   if (a.kind !== "count") return 0;
   if (a.zone === "exile") {
     // Cosmogoyf : cartes que vous possédez en exil.

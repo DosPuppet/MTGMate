@@ -13,7 +13,7 @@ import {
   sacrifice as sacrificePermanent,
 } from "./actions";
 import { ask } from "./choices";
-import { announceDiscard, announceDiscardBatch, evalAmount, moveWithSpec, runEffect } from "./effects";
+import { announceDiscard, announceDiscardBatch, evalAmount, moveWithSpec, runEffect, staticContext } from "./effects";
 import { RulesError, rethrowAsRules } from "./errors";
 import { copiableExceptions, copiedDefId, effectivePower, hasKeyword } from "./layers";
 import { costToText, type ManaPurpose, manaAbilitiesOf, manaValue, payMana, totalCost } from "./mana";
@@ -406,19 +406,7 @@ export function spellReduction(
   const own = d.costReduction;
   const ok = ownReductionApplies(s, player, d, targets, card, kicked);
   if (own && ok) {
-    r += evalAmount(
-      s,
-      {
-        controller: player,
-        sourceId: "",
-        sourceDefId: d.id,
-        sourceSnapshot: { keywords: [], power: 0 },
-        targets: {},
-        x: 0,
-        kicked: false,
-      },
-      own.generic,
-    );
+    r += evalAmount(s, staticContext(s, player, "", { sourceDefId: d.id }), own.generic);
   }
   const view = spellView(d, player);
   // Réductions accordées au joueur (effets « ce tour-ci » : Goblin Maskmaker).
@@ -429,7 +417,7 @@ export function spellReduction(
   for (const e of s.playerEffects) {
     const n = e.player === player && e.once ? e.ability.nextSpell : undefined;
     if (n?.reduce !== undefined && (!n.filter || matchesView(view, n.filter, player)))
-      r += evalAmount(s, reductionContext(player, "", d.id), n.reduce);
+      r += evalAmount(s, reductionContext(s, player, "", d.id), n.reduce);
   }
   for (const id of s.battlefield) {
     const o = obj(s, id);
@@ -444,7 +432,7 @@ export function spellReduction(
       const zone = fromZone === "flashback" ? "graveyard" : fromZone;
       if (ab.fromZones && !(zone === "graveyard" || zone === "exile" ? ab.fromZones.includes(zone) : false)) continue;
       r += ab.generic;
-      if (ab.genericAmount !== undefined) r += evalAmount(s, reductionContext(o.controller, id, o.defId), ab.genericAmount);
+      if (ab.genericAmount !== undefined) r += evalAmount(s, reductionContext(s, o.controller, id, o.defId), ab.genericAmount);
     }
   }
   return r;
@@ -856,16 +844,8 @@ export function splitSecondOnStack(s: GameState): boolean {
 }
 
 /** Contexte minimal pour évaluer un montant hors résolution (réductions de coût). */
-function reductionContext(controller: PlayerId, sourceId: string, sourceDefId: string) {
-  return {
-    controller,
-    sourceId,
-    sourceDefId,
-    sourceSnapshot: { keywords: [], power: 0 },
-    targets: {},
-    x: 0,
-    kicked: false,
-  };
+function reductionContext(s: GameState, controller: PlayerId, sourceId: string, sourceDefId: string) {
+  return staticContext(s, controller, sourceId, { sourceDefId });
 }
 
 /**
@@ -893,7 +873,7 @@ function abilityCostReduction(s: GameState, player: PlayerId, source: ObjectId, 
       const by = id ?? source;
       let k =
         (m.reduce ?? 0) +
-        (m.reduceAmount ? evalAmount(s, reductionContext(player, by, s.objects[by]?.defId ?? ""), m.reduceAmount) : 0);
+        (m.reduceAmount ? evalAmount(s, reductionContext(s, player, by, s.objects[by]?.defId ?? ""), m.reduceAmount) : 0);
       // « Ne peut pas réduire le mana de ce coût à moins d'un mana » : au plus la valeur de mana moins un.
       if (m.minOneMana) k = Math.min(k, Math.max(0, manaValue(ab.cost.mana ?? null) - 1));
       n += Math.max(0, k);
@@ -1002,7 +982,7 @@ export function abilityReduction(s: GameState, player: PlayerId, source: ObjectI
   if (!red) return -tax;
   // « Cette capacité coûte {N} de moins à activer » (Starport Security, Survey Mechan, The Dominion Bracelet).
   if (red.condition && !checkCondition(s, red.condition, player, source)) return 0;
-  return -tax + Math.max(0, evalAmount(s, reductionContext(player, source, s.objects[source]?.defId ?? ""), red.generic));
+  return -tax + Math.max(0, evalAmount(s, reductionContext(s, player, source, s.objects[source]?.defId ?? ""), red.generic));
 }
 
 /**
@@ -1295,7 +1275,7 @@ function baseCastTerms(s: GameState, player: PlayerId, card: ObjectId): CastTerm
         if (ab.linkedRemoveCounters && countersAmongCreatures(s, player) < ab.linkedRemoveCounters) continue;
         const maxMv =
           ab.linkedMaxManaValue !== undefined
-            ? evalAmount(s, reductionContext(player, id, src.defId), ab.linkedMaxManaValue)
+            ? evalAmount(s, reductionContext(s, player, id, src.defId), ab.linkedMaxManaValue)
             : undefined;
         if (maxMv !== undefined && manaValue(d.manaCost) > maxMv) continue;
         if (

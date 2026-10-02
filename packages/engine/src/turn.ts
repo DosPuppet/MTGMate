@@ -15,7 +15,7 @@ import {
 } from "./actions";
 import { ask, cardRef } from "./choices";
 import { syncControl } from "./control";
-import { announceDiscard, announceDiscardBatch, evalAmount } from "./effects";
+import { announceDiscard, announceDiscardBatch, evalAmount, staticContext } from "./effects";
 import { rethrowAsRules } from "./errors";
 import { copiedDefId, effectivePower, snapshot } from "./layers";
 import { MAX_FLOW_STEPS, MAX_SBA_PASSES } from "./limits";
@@ -706,15 +706,7 @@ function maxHandSize(s: GameState, player: PlayerId): number {
     for (const { id, ab } of controlledAbilitiesWithSource(s, q)) {
       if (ab.kind !== "playerStatic" || ab.opponentMaxHandSize === undefined) continue;
       if (ab.condition && !checkCondition(s, ab.condition, q, id)) continue;
-      const ctx = {
-        controller: q,
-        sourceId: id,
-        sourceDefId: "",
-        sourceSnapshot: { keywords: [], power: 0 },
-        targets: {},
-        x: 0,
-        kicked: false,
-      };
+      const ctx = staticContext(s, q, id, { sourceDefId: "" });
       max = Math.min(max, Math.max(0, evalAmount(s, ctx, ab.opponentMaxHandSize)));
     }
   }

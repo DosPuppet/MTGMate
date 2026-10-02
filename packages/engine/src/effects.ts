@@ -100,6 +100,30 @@ export function readVar(ctx: EffectContext, name: string): number {
 }
 
 /** Condition évaluée pendant la résolution (elle peut dépendre du kicker ou des valeurs mémorisées). */
+/**
+ * Contexte d'évaluation hors résolution (statiques, coûts, conditions de déclenchement, taille de main…) : ni cibles, ni
+ * X, ni valeurs mémorisées. Le seul constructeur de ce contexte (PLAN-C, lot C10) ; `kicked` : celui de la source.
+ */
+export function staticContext(
+  s: GameState,
+  controller: PlayerId,
+  sourceId = "",
+  opts: { sourceDefId?: string; event?: TriggerEventData; eventObject?: ObjectId } = {},
+): EffectContext {
+  const event =
+    opts.event || opts.eventObject ? { ...opts.event, objectId: opts.eventObject ?? opts.event?.objectId } : undefined;
+  return {
+    controller,
+    sourceId,
+    sourceDefId: opts.sourceDefId ?? ((sourceId && s.objects[sourceId]?.defId) || ""),
+    sourceSnapshot: { keywords: [], power: 0 },
+    targets: {},
+    x: 0,
+    kicked: false,
+    ...(event ? { event: event as TriggerEventData } : {}),
+  };
+}
+
 export function evalCondition(s: GameState, ctx: EffectContext, c: Condition): boolean {
   switch (c.kind) {
     case "kicked":
