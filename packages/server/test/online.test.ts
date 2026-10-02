@@ -3,7 +3,7 @@ import { afterEach, describe, expect, it } from "vitest";
 import { WebSocket } from "ws";
 import { type RunningServer, startServer } from "../src/index";
 import { checkDeck } from "../src/rooms";
-import { Client, duel, GREEN, server } from "./helpers";
+import { Client, duel, GREEN, server, VERSION } from "./helpers";
 
 let srv: RunningServer | null = null;
 const clients: Client[] = [];
@@ -63,6 +63,18 @@ describe("salons", () => {
     const { code } = await pair(port, false);
     c.send({ type: "join", code, name: "Eve", deck: GREEN });
     expect((await c.next("error")).code).toBe("full");
+  });
+
+  it("refuse un client d'une autre version (protocole ou règles) : il doit recharger la page", async () => {
+    const port = await start();
+    const c = await Client.connect(port);
+    clients.push(c);
+    c.send({ type: "create", name: "Eve", deck: GREEN }, true);
+    expect((await c.next("error")).code).toBe("version");
+    c.send({ type: "create", name: "Eve", deck: GREEN, version: { protocol: VERSION.protocol, rules: VERSION.rules - 1 } });
+    expect((await c.next("error")).code).toBe("version");
+    c.send({ type: "rejoin", token: "x", version: { protocol: VERSION.protocol + 1, rules: VERSION.rules } });
+    expect((await c.next("error")).code).toBe("version");
   });
 
   it("accepte un deck de bienvenue de 40 cartes tel quel, pas un deck quelconque de 40 cartes", () => {
@@ -290,7 +302,7 @@ describe("exposition à Internet", () => {
     // Client « mort » : il ne répond pas aux pings.
     const dead = new WebSocket(`ws://127.0.0.1:${port}/ws`, { autoPong: false });
     await new Promise((ok) => dead.once("open", ok));
-    dead.send(JSON.stringify({ type: "join", code: room.code, name: "Bob", deck: GREEN }));
+    dead.send(JSON.stringify({ type: "join", code: room.code, name: "Bob", deck: GREEN, version: VERSION }));
     const off = await a.next("opponent", (m) => !m.connected, 3_000);
     expect(off.remainingMs).toBeGreaterThan(0);
     dead.terminate();

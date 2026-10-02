@@ -158,4 +158,40 @@ describe("options proposées, décisions acceptées", () => {
     expect(taps.map((a) => (a.type === "tapForMana" ? a.colors : []))).toEqual([["C"]]);
     expect(chars(s, pit).name).toBe("Pit of Offerings");
   });
+
+  it("deux Springleaf Drum se partagent la créature à engager (paiement)", () => {
+    const spell = customCard({
+      name: "Sort de test",
+      types: ["Sorcery"],
+      typeLine: "Sorcery",
+      manaCost: { generic: 2, colored: { W: 1 }, x: 0 },
+      manaCostText: "{2}{W}",
+      colors: ["W"],
+    });
+    const base = ["Plains", "Springleaf Drum", "Springleaf Drum", bear("Ours A")];
+    let s = scenario({ p1: { battlefield: base, hand: [spell] } });
+    expect(castOption(s, "p1", idOf(s, "p1", "hand", "Sort de test"))).toBeUndefined();
+    s = scenario({ p1: { battlefield: [...base, bear("Ours B")], hand: [spell] } });
+    expect(castOption(s, "p1", idOf(s, "p1", "hand", "Sort de test"))).toBeDefined();
+    s = act(s, "p1", { type: "cast", card: idOf(s, "p1", "hand", "Sort de test") });
+    expect(s.stack).toHaveLength(1);
+  });
+
+  it("harmonie : par défaut, une créature sans capacité de mana (la créature-terrain paie le reste)", () => {
+    const reef = customCard({
+      name: "Récif de test",
+      types: ["Land", "Creature"],
+      typeLine: "Land Creature",
+      power: 4,
+      toughness: 4,
+      abilities: [manaAbility("U")],
+    });
+    const giant = customCard({ name: "Géant de test", power: 9, toughness: 9 });
+    let s = scenario({ p1: { battlefield: [reef, giant], graveyard: ["Winternight Stories"] } });
+    const stories = idOf(s, "p1", "graveyard", "Winternight Stories");
+    const option = castOption(s, "p1", stories);
+    expect(option?.additional?.tap?.suggested).toEqual([idOf(s, "p1", "battlefield", "Géant de test")]);
+    s = act(s, "p1", { type: "cast", card: stories });
+    expect(s.stack).toHaveLength(1);
+  });
 });

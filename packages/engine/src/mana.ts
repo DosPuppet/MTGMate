@@ -511,6 +511,38 @@ export function solvePayment(
   exclude: ReadonlySet<ObjectId> = new Set(),
   purpose?: ManaPurpose,
 ): PaymentPlan | null {
+  // « {T}, engagez une créature dégagée : ajoutez un mana » (Springleaf Drum) : les sources de ce genre se partagent les
+  // permanents à engager. Un plan qui en utilise plus qu'il n'y a de permanents disponibles est refait sans l'une d'elles.
+  let without = new Set(exclude);
+  for (let tries = 0; tries < 8; tries++) {
+    const plan = solvePaymentOnce(s, player, cost, without, purpose);
+    if (!plan) return null;
+    const sharing = plan.taps.filter((t) => t.ability >= 0 && manaAbilitiesOf(s, t.id)[t.ability]?.tapAnother);
+    if (sharing.length <= 1) return plan;
+    const inPlan = new Set(plan.taps.map((t) => t.id));
+    const creature = sharing.some((t) => manaAbilitiesOf(s, t.id)[t.ability]?.tapAnother === "creature");
+    const others = s.battlefield.filter(
+      (x) =>
+        !inPlan.has(x) &&
+        !without.has(x) &&
+        !obj(s, x).tapped &&
+        obj(s, x).controller === player &&
+        (!creature || isCreature(s, x)) &&
+        manaAbilitiesOf(s, x).length === 0,
+    );
+    if (sharing.length <= others.length) return plan;
+    without = new Set([...without, (sharing.at(-1) as { id: ObjectId }).id]);
+  }
+  return null;
+}
+
+function solvePaymentOnce(
+  s: GameState,
+  player: PlayerId,
+  cost: ManaCost,
+  exclude: ReadonlySet<ObjectId>,
+  purpose?: ManaPurpose,
+): PaymentPlan | null {
   // Hybrides monocolores {2/W} : on essaie d'abord de tout payer en couleur, puis avec de plus en plus de génériques.
   const two = cost.twoHybrid ?? [];
   if (two.length > 0) {

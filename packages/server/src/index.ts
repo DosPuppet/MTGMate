@@ -10,8 +10,9 @@ import type { AddressInfo } from "node:net";
 import { extname, join, normalize, resolve, sep } from "node:path";
 import { Readable } from "node:stream";
 import { brotliCompressSync, gzipSync, constants as zlibConstants } from "node:zlib";
+import { RULES_VERSION } from "@mtgx/engine";
 import { WebSocket, WebSocketServer } from "ws";
-import type { ClientMessage, ServerMessage } from "./protocol";
+import { type ClientMessage, PROTOCOL_VERSION, type ServerMessage } from "./protocol";
 import { ClientError, DEFAULT_CONFIG, type Peer, type Room, type RoomConfig, RoomManager } from "./rooms";
 import { cleanSettings, isDecision } from "./validate";
 
@@ -338,6 +339,8 @@ export function startServer(opts: ServerOptions = {}): Promise<RunningServer> {
           case "join":
           case "rejoin": {
             if (current) throw new ClientError("state", "Vous êtes déjà dans un salon.");
+            if (msg.version?.protocol !== PROTOCOL_VERSION || msg.version?.rules !== RULES_VERSION)
+              throw new ClientError("version", "Une nouvelle version de MTG Mate est disponible : rechargez la page.");
             if (msg.type === "create")
               current = rooms.create(msg.name, msg.deck, peer, { sideboard: msg.sideboard, bestOf: msg.bestOf, ip });
             else if (msg.type === "join") current = rooms.join(msg.code, msg.name, msg.deck, peer, msg.sideboard);

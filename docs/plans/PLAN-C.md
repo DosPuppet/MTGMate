@@ -14,6 +14,7 @@ Plan établi le 02/10/2026 (branche `dev`) : il sert de feuille de route aux pro
   - `abilityManaCost` : un seul calcul du coût d'une capacité pour `legal.ts` et `stack.ts` (début de C7) ;
   - aides de test communes dans `engine/test/helpers.ts` (`settle`, `cast`, `castTargets`, `throughCombat`, `picking`…) : 1 485 lignes retirées des neuf fichiers d'extension récents ;
   - 13 tests (`engine/test/offers.test.ts`, Emrakul dans `fra-lotf.test.ts`).
+- **02/10/2026 : C3 fait** (`RULES_VERSION` = 62) : bundle mesuré (worker 411 Ko sans carte depuis C2 : B5 réglé ; application 1,8 Mo, données 5,6 Mo), budget de taille vérifié par `verify` et donc par la CI (`tools/bundle-size.ts`) ; `update.sh` attend `/healthz` 30 s ; poignée de main client-serveur (`PROTOCOL_VERSION` et `RULES_VERSION`, erreur `version`, rechargement de la page, test serveur) ; deux désaccords de plus trouvés par le fuzz strict sur le méta (Springleaf Drum : les sources « engagez un autre permanent » se partagent les permanents ; harmonie : par défaut une créature sans capacité de mana), 2 tests. `online-smoke` et tous les tests d'interface passent.
 
 ## Décisions et ordre
 
@@ -32,7 +33,7 @@ Plan établi le 02/10/2026 (branche `dev`) : il sert de feuille de route aux pro
 | 1 | C0 : documentation et nettoyage | § 4.2, § 10 | — | S | ✅ |
 | 2 | C1 : garde-fous (dette élargie, plafonds) | § 5.1, § 5.4, § 5.6 | C0 | M | ✅ |
 | 3 | C2 : vérification qui détecte | § 6 | — | M | ✅ |
-| 4 | C3 : plateforme, correctifs rapides | B5, B6, § 7 | — | S | |
+| 4 | C3 : plateforme, correctifs rapides | B5, B6, § 7 | — | S | ✅ |
 | 5 | C4 : [règles] exigences de blocage | B1 | C2 | M | |
 | 6 | C5 : [règles] mana marqué | B2 | C2 | S/M | |
 | 7 | C6 : information cachée | B3, B4 | C2 | M | |

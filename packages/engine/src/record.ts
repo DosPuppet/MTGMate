@@ -171,8 +171,10 @@ export const RECORD_VERSION = 1;
  *   s'exile pour sa capacité (plantage du moteur), sacrifices et « engagez X » par défaut d'abord sans capacité de mana
  *   (et réservés au paiement), Emrakul : la capacité du terrain dure jusqu'à ce que le sort soit lancé (601.2i), une
  *   capacité de mana sans couleur possible ne produit rien (106.7).
+ * - 62 : les sources « engagez un autre permanent » (Springleaf Drum) se partagent les permanents à engager ; l'harmonie
+ *   engage par défaut une créature sans capacité de mana (PLAN-C, lot C3, fuzz strict).
  */
-export const RULES_VERSION = 61;
+export const RULES_VERSION = 62;
 
 /** Un point de contrôle toutes les N décisions (plus la dernière de la partie). */
 export const CHECKPOINT_EVERY = 25;

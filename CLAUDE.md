@@ -45,13 +45,14 @@ Ce fichier sert au suivi du projet entre les sessions : état présent, règles 
   - le serveur fait autorité : il valide le deck et chaque décision (`RulesError` renvoyée au client) ;
   - un joueur ne reçoit que sa vue (`projectView`), ses événements filtrés (`filterEvents`) et les faces qu'il connaît (`visibleFaces`) ;
   - tout nouvel événement ou champ de vue qui peut citer une carte cachée est filtré ; `ai/test/hidden-info.test.ts` le vérifie ;
-  - le protocole est dans `server/src/protocol.ts`, que le client importe en `import type`.
+  - le protocole est dans `server/src/protocol.ts`, que le client importe en `import type` (sauf la constante `PROTOCOL_VERSION`) ;
+  - poignée de main : création, arrivée et reprise d'un salon portent `{ protocol: PROTOCOL_VERSION, rules: RULES_VERSION }` ; un client d'une autre version reçoit l'erreur `version` et recharge la page. Faire avancer `PROTOCOL_VERSION` à tout changement incompatible des messages.
 - **Données :** `packages/cards/data/fdn.json` est indenté avec **1 espace** (le réécrire à l'identique) ; réimport : `npm run import-cards -- <set>|all` (`all` exclut FDN et FRA, retouchés à la main).
 - **Commits :** uniquement quand l'utilisateur le demande ; message en anglais, terminé par `Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>` ; remote `origin` (github.com/DosPuppet/MTGMate) : c'est l'utilisateur qui pousse.
 
 ## Vérifications avant de rendre un lot
 
-- **Par lot :** `npm run verify -- --set <EXT>` (environ 2 min ; `--set META` pour les decks du méta) : `tsc`, Biome, couverture ; vitest (test de fumée par extension) ; fuzz ciblé à 2, 3 et 4 joueurs, IA mixte et « chaos » ; fuzz sur tout le pool ; tests d'interface seulement si le client, `view.ts` ou le protocole ont changé (`--ui` pour les forcer ; Vite doit tourner).
+- **Par lot :** `npm run verify -- --set <EXT>` (environ 2 min ; `--set META` pour les decks du méta) : `tsc`, Biome, couverture, budget du bundle (`tools/bundle-size.ts` : build du client, taille de chaque chunk, aucune carte dans le worker) ; vitest (test de fumée par extension) ; fuzz ciblé à 2, 3 et 4 joueurs, IA mixte et « chaos » ; fuzz sur tout le pool ; tests d'interface seulement si le client, `view.ts` ou le protocole ont changé (`--ui` pour les forcer ; Vite doit tourner).
 - **En fin de série ou avant une fusion :** `npm run verify -- --full` (environ 7 min) : trois graines sur tout le pool, 3 et 4 joueurs, IA mixte, bench, tests d'interface (dont `tutorial-smoke` et `ai-smoke`).
 - **Résultat :** une ligne par étape avec sa durée ; détail en cas d'échec seulement ; journaux dans `test-results/verify/`.
 - **CI** (`.github/workflows/ci.yml`) : `verify --ci` à chaque push sur `dev` ou `master` et à chaque pull request ; `verify --full --no-ui --no-bench` chaque nuit.
@@ -64,7 +65,7 @@ Ce fichier sert au suivi du projet entre les sessions : état présent, règles 
 
 ## Pièges connus
 
-- **Bundle :** données des cartes dans un chunk à part (`cartes-*.js`, `client/vite.config.ts`) ; le serveur compresse (brotli ou gzip) et met `/assets/` en cache un an ; un service worker (`client/public/sw.js`) permet de jouer hors ligne. Le worker ne doit pas importer `@mtgx/cards` (il reçoit ses définitions dans `start`) ; seul `@mtgx/cards/tokens` est permis. Premier chargement lent en dev : relancer un test d'interface qui échoue par délai juste après un redémarrage de Vite.
+- **Bundle :** données des cartes dans un chunk à part (`cartes-*.js`, `client/vite.config.ts`), scripts des cartes dans celui de l'application (`index-*.js`, environ 1,8 Mo) ; budgets dans `tools/bundle-size.ts` ; le serveur compresse (brotli ou gzip) et met `/assets/` en cache un an ; un service worker (`client/public/sw.js`) permet de jouer hors ligne. Le worker ne doit pas importer `@mtgx/cards` (il reçoit ses définitions dans `start`) ; seul `@mtgx/cards/tokens` est permis. Premier chargement lent en dev : relancer un test d'interface qui échoue par délai juste après un redémarrage de Vite.
 - **Vite sous WSL :** il peut servir une version périmée d'un module du moteur. Redémarrer `npm run dev` avant tout test dans le navigateur.
 - **Champ de bataille (`client/src/board/layout.ts`) :** disposition en pur TypeScript, testée (`layout.test.ts`) ; chaque camp dimensionné indépendamment ; placement par type d'après MTGA (`battlefield-smoke` le vérifie) ; constantes d'espacement alignées avec `styles.css` ; colonne bornée (`minmax(0, 1fr)`) ; chercher un objet à l'écran avec `findObjectEl` (les jetons d'une pile n'ont pas tous d'élément) ; cartes exilées par un permanent (`view.exiledWith`) empilées derrière lui ; cartes jouables hors de la main (`view.playableElsewhere`) au bout de la main ; coût modifié en pastille (`ObjectView.castCost`).
 - **Tablette et téléphone :** hauteurs en `dvh`, jamais `100vh` ; `fitHand` resserre la main ; tactile dans `client/src/touch.ts` (appui long = aperçu, premier tap lève la carte) ; tiroir sous 1100 px ; « Tournez votre appareil » en portrait sous 600 px ; `mobile-smoke` émule les appareils, mais tester la barre d'adresse sur un vrai appareil (`npm run dev -- --host`).

@@ -17,11 +17,19 @@ import {
   type GameRecord,
   type GameView,
   type ObjectView,
+  RULES_VERSION,
   type StackItemView,
   type Step,
   type TargetOption,
 } from "@mtgx/engine";
-import type { Clock, MatchInfo, RoomInfo, Seat, ServerMessage } from "@mtgx/server/protocol";
+import {
+  type Clock,
+  type MatchInfo,
+  PROTOCOL_VERSION,
+  type RoomInfo,
+  type Seat,
+  type ServerMessage,
+} from "@mtgx/server/protocol";
 import { create } from "zustand";
 import { soundsFor } from "./audio/eventSounds";
 import { playSound, preloadSounds } from "./audio/sfx";
@@ -523,6 +531,9 @@ const EMPTY_ONLINE: OnlineState = {
  * La partie en ligne est définitivement perdue (salon fermé, partie terminée et supprimée, serveur injoignable) : message
  * à valider, puis retour à l'accueil. `keepToken` : la partie existe encore, ouverte dans un autre onglet.
  */
+/** Versions de ce client, envoyées au serveur de parties (refus d'un client périmé). */
+const VERSION = { protocol: PROTOCOL_VERSION, rules: RULES_VERSION };
+
 function onlineLost(title: string, text: string, keepToken = false): void {
   const store = useGame;
   retries = 0;
@@ -988,13 +999,13 @@ export const useGame = create<Store>((set, get) => {
 
     createRoom(name, deck, opts = {}) {
       set({ localMatch: null });
-      connectRemote().raw({ type: "create", name, deck, sideboard: opts.sideboard, bestOf: opts.bestOf });
+      connectRemote().raw({ type: "create", name, deck, sideboard: opts.sideboard, bestOf: opts.bestOf, version: VERSION });
       saveName(name);
     },
 
     joinRoom(code, name, deck, sideboard) {
       set({ localMatch: null });
-      connectRemote().raw({ type: "join", code, name, deck, sideboard });
+      connectRemote().raw({ type: "join", code, name, deck, sideboard, version: VERSION });
       saveName(name);
     },
 
@@ -1009,7 +1020,11 @@ export const useGame = create<Store>((set, get) => {
     resumeOnline() {
       const token = loadToken();
       if (!token) return;
-      connectRemote(get().online?.status === "connecting" ? undefined : get().online).raw({ type: "rejoin", token });
+      connectRemote(get().online?.status === "connecting" ? undefined : get().online).raw({
+        type: "rejoin",
+        token,
+        version: VERSION,
+      });
     },
 
     leaveRoom() {
@@ -1087,6 +1102,13 @@ export const useGame = create<Store>((set, get) => {
           return;
         case "error":
           if (msg.code === "rules") return get().receive({ type: "error", message: msg.message });
+          // Client d'une autre version que le serveur : la page se recharge (elle est servie réseau d'abord, sw.js), le
+          // jeton est gardé pour reprendre la partie avec la nouvelle version.
+          if (msg.code === "version") {
+            onlineLost("Nouvelle version", `${msg.message} La page va se recharger.`, true);
+            setTimeout(() => location.reload(), 3000);
+            return;
+          }
           // La partie de cette page n'existe plus (terminée et supprimée, serveur redémarré sans pouvoir la reprendre).
           if (msg.code === "token") return onlineLost("Partie en ligne terminée", `${msg.message} Retour à l'accueil.`);
           // Reprise refusée : la partie est déjà ouverte dans un autre onglet ou un autre navigateur.

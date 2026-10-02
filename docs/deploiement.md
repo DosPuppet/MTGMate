@@ -120,8 +120,10 @@ curl -sI https://mtg.mondomaine.fr/scry/small/front/8/d/8d8432a7-1c8a-4cfb-947c-
 
 ```bash
 cd /opt/mtgmate
-./deploy/update.sh      # git pull, npm ci, build, pm2 restart
+./deploy/update.sh      # git pull, npm ci, build, pm2 restart, puis attend que /healthz réponde (30 s au plus)
 ```
+
+**Onglets restés ouverts :** le client envoie sa version (protocole et règles) en créant, rejoignant ou reprenant un salon. Après une mise à jour, un onglet de l'ancienne version reçoit « Une nouvelle version de MTG Mate est disponible » et recharge la page ; le jeton de reconnexion est gardé, la partie reprend avec la nouvelle version.
 
 **Les parties en cours survivent au redémarrage** : chaque salon est sauvegardé dans `data/rooms/` (un fichier par salon : les sièges, puis une décision par ligne) et repris au démarrage, en rejouant ses décisions. Les joueurs se reconnectent seuls (le navigateur réessaie pendant une minute) et ont le délai de retour habituel (`MTGX_GRACE_MS`).
 

@@ -1,9 +1,13 @@
 /** Clients de test : vrais WebSockets vers un serveur lancé sur un port libre, bot qui ne voit que sa vue. */
 import { type DeckEntries, deckById } from "@mtgx/cards";
-import type { ActionOption, Decision, GameView } from "@mtgx/engine";
+import { type ActionOption, type Decision, type GameView, RULES_VERSION } from "@mtgx/engine";
 import { WebSocket } from "ws";
 import type { ClientMessage, RoomConfig, ServerMessage } from "../src/index";
 import { type RunningServer, startServer } from "../src/index";
+import { PROTOCOL_VERSION } from "../src/protocol";
+
+/** Versions d'un client à jour (poignée de main). */
+export const VERSION = { protocol: PROTOCOL_VERSION, rules: RULES_VERSION };
 
 export const GREEN: DeckEntries = deckById("bienvenue-vert").main;
 export const RED: DeckEntries = deckById("bienvenue-rouge").main;
@@ -46,8 +50,10 @@ export class Client {
     });
   }
 
-  send(msg: ClientMessage): void {
-    this.ws.send(JSON.stringify(msg));
+  /** Envoie un message ; création, arrivée et reprise portent la version d'un client à jour, sauf `raw`. */
+  send(msg: ClientMessage, raw = false): void {
+    const versioned = !raw && (msg.type === "create" || msg.type === "join" || msg.type === "rejoin");
+    this.ws.send(JSON.stringify(versioned && !msg.version ? { ...msg, version: VERSION } : msg));
   }
 
   close(): Promise<void> {

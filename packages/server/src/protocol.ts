@@ -5,6 +5,19 @@
 import type { DeckEntries } from "@mtgx/cards";
 import type { AutopilotSettings, CardFace, Decision, GameEvent, GameRecord, GameView } from "@mtgx/engine";
 
+/**
+ * Version du protocole : avec `RULES_VERSION`, envoyée par le client à la création, à l'arrivée et à la reprise d'un
+ * salon. Un client d'une autre version (onglet resté ouvert, service worker périmé) est refusé et invité à recharger
+ * la page. À faire avancer à tout changement incompatible des messages.
+ */
+export const PROTOCOL_VERSION = 1;
+
+/** Versions du client (protocole et règles du moteur). */
+export interface ClientVersion {
+  protocol: number;
+  rules: number;
+}
+
 /** Sièges d'un duel : identifiants des joueurs dans le moteur. */
 export type Seat = "p1" | "p2";
 
@@ -49,9 +62,9 @@ export interface RoomInfo {
 }
 
 export type ClientMessage =
-  | { type: "create"; name: string; deck: DeckEntries; sideboard?: DeckEntries; bestOf?: 1 | 3 }
-  | { type: "join"; code: string; name: string; deck: DeckEntries; sideboard?: DeckEntries }
-  | { type: "rejoin"; token: string }
+  | { type: "create"; name: string; deck: DeckEntries; sideboard?: DeckEntries; bestOf?: 1 | 3; version?: ClientVersion }
+  | { type: "join"; code: string; name: string; deck: DeckEntries; sideboard?: DeckEntries; version?: ClientVersion }
+  | { type: "rejoin"; token: string; version?: ClientVersion }
   | { type: "leave" }
   | { type: "decision"; decision: Decision }
   | { type: "settings"; settings: Partial<AutopilotSettings> }
@@ -61,8 +74,11 @@ export type ClientMessage =
   /** Enregistrement de la partie terminée (replay, signalement d'un bug) ; refusé pendant la partie (decks, graine). */
   | { type: "export" };
 
-/** `busy` : serveur complet ; `closed` : salon fermé par le serveur (attente trop longue). */
-export type ErrorCode = "deck" | "name" | "room" | "full" | "busy" | "closed" | "token" | "rules" | "state";
+/**
+ * `busy` : serveur complet ; `closed` : salon fermé par le serveur (attente trop longue) ; `version` : client d'une autre
+ * version que le serveur (recharger la page).
+ */
+export type ErrorCode = "deck" | "name" | "room" | "full" | "busy" | "closed" | "token" | "rules" | "state" | "version";
 
 export type ServerMessage =
   | { type: "room"; room: RoomInfo }

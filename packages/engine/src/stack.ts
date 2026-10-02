@@ -622,7 +622,11 @@ export function harmonizeOptions(
   });
   const powers = Object.fromEntries(options.map((id) => [id, chars(s, id).power]));
   const byPower = [...options].sort((a, b) => (powers[a] ?? 0) - (powers[b] ?? 0));
-  const best = byPower.find((id) => (powers[id] ?? 0) >= generic) ?? byPower[byPower.length - 1];
+  // Par défaut : la plus faible qui suffit, d'abord parmi les créatures sans capacité de mana (une créature-terrain
+  // engagée pour l'harmonie ne paierait plus le reste du coût, Restless Reef).
+  const pick = (ids: ObjectId[]) => ids.find((id) => (powers[id] ?? 0) >= generic) ?? ids[ids.length - 1];
+  const plain = byPower.filter((id) => manaAbilitiesOf(s, id).length === 0);
+  const best = plain.find((id) => (powers[id] ?? 0) >= generic) ?? pick(byPower);
   return { options, powers, suggested: generic > 0 && best ? [best] : [] };
 }
 

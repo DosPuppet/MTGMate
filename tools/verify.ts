@@ -158,6 +158,7 @@ ok &&= await group([
     cmd: `npx tsx tools/card-coverage.ts --set ${set && set !== "META" ? set : "standard"}`,
     show: /^.* cartes gérées .*$/,
   },
+  { name: "bundle", cmd: "npx tsx tools/bundle-size.ts", show: /^bundle : .*$/ },
 ]);
 ok &&= await group([{ name: "vitest", cmd: "npx vitest run", show: /^\s*Tests .*$/ }]);
 
