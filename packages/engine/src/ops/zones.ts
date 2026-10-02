@@ -1111,7 +1111,8 @@ export const HANDLERS: OpHandlers = {
     return;
   },
   lookAtTop(s, r, e, ctx, key) {
-    const player = s.players[ctx.controller];
+    const whose = e.who ? resolveRef(s, ctx, e.who).find((x) => isPlayer(s, x)) : ctx.controller;
+    const player = whose ? s.players[whose] : undefined;
     if (!player) return;
     const top = player.library.slice(0, evalAmount(s, ctx, e.n));
     if (top.length === 0) return;

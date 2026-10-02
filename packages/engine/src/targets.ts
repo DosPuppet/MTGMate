@@ -163,12 +163,22 @@ function hasSubtype(v: LkiSnapshot, t: string): boolean {
 export function withChosen(
   f: ObjectFilter,
   source:
-    | { chosen?: { creatureType?: string; color?: Color; cardName?: string; parity?: "odd" | "even"; number?: number } }
+    | {
+        chosen?: {
+          creatureType?: string;
+          color?: Color;
+          cardName?: string;
+          parity?: "odd" | "even";
+          number?: number;
+          mode?: string;
+        };
+      }
     | undefined,
 ): ObjectFilter {
-  if (!f.subtypeChosen && !f.colorChosen && !f.nameChosen && !f.parityChosen && !f.numberChosen) return f;
+  if (!f.subtypeChosen && !f.colorChosen && !f.nameChosen && !f.parityChosen && !f.numberChosen && !f.typeChosen) return f;
   const out: ObjectFilter = {
     ...f,
+    typeChosen: undefined,
     subtypeChosen: undefined,
     colorChosen: undefined,
     nameChosen: undefined,
@@ -189,6 +199,8 @@ export function withChosen(
   // Sans choix (arrivée sans résolution), rien ne correspond.
   if (f.subtypeChosen) out.subtype = source?.chosen?.creatureType ?? "—";
   if (f.colorChosen) out.colors = source?.chosen?.color ? [source.chosen.color] : [];
+  // Sans choix, aucun type ne correspond.
+  if (f.typeChosen) out.types = [(source?.chosen?.mode ?? "—") as CardType];
   return out;
 }
 
@@ -202,7 +214,7 @@ function sourcePower(s: GameState, sourceId?: ObjectId): number {
 /** Remplace les bornes dynamiques du filtre par leur valeur actuelle. */
 export function resolveFilter(s: GameState, f: ObjectFilter, sourceId?: ObjectId): ObjectFilter {
   // « Du type / de la couleur choisis » : le choix de la source (en jeu, sort qui se résout, sinon dernière information).
-  if (f.subtypeChosen || f.colorChosen || f.nameChosen || f.parityChosen || f.numberChosen)
+  if (f.subtypeChosen || f.colorChosen || f.nameChosen || f.parityChosen || f.numberChosen || f.typeChosen)
     f = withChosen(f, sourceId ? (s.objects[sourceId] ?? s.lki[sourceId]) : undefined);
   // Formation Breaker : « de force inférieure à celle de cette créature ».
   if (f.powerBelowSource) f = { ...f, powerBelowSource: undefined, maxPower: sourcePower(s, sourceId) - 1 };
@@ -260,6 +272,10 @@ export function matchesObjectFilter(
   const o = s.objects[id];
   if (o?.zone !== "battlefield") return false;
   if (f.attackedThisTurn && o.attackedTurn !== s.turn.number) return false;
+  if (f.attachedToSourceHost) {
+    const host = sourceId ? s.objects[sourceId]?.attachedTo : undefined;
+    if (!host || o.attachedTo !== host) return false;
+  }
   // « arrivé sous votre contrôle ce tour-ci » (Cloudspire Coordinator).
   if (f.enteredThisTurn && o.controlledSince !== s.turn.number) return false;
   if (f.notOwned && o.owner === o.controller) return false;

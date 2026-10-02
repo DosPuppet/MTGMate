@@ -145,8 +145,11 @@ export const RECORD_VERSION = 1;
  *   garde « recevez N marqueurs poison » ; défausse après une révélation partielle ; choix dans sa propre main pour
  *   chaque joueur ; exil jusqu'à une carte dans la bibliothèque d'un autre joueur ; coût en symboles de mana du
  *   cimetière ; nombre maximal de copies lancées.
+ * - 54 : Marvel's Spider-Man, lots B1 à C3 : créature renvoyée par le Web-slinging au choix, chaos donné et chaos d'un
+ *   terrain, « ne peut pas être contrecarré » généralisé (Chimil et Hexing Squelcher protègent désormais tous vos sorts),
+ *   émeute, redirection de blessures, permanents partis pendant une même décision (`leftBatch`).
  */
-export const RULES_VERSION = 53;
+export const RULES_VERSION = 54;
 
 /** Un point de contrôle toutes les N décisions (plus la dernière de la partie). */
 export const CHECKPOINT_EVERY = 25;

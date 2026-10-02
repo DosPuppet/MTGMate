@@ -99,3 +99,17 @@ Les scripts sont dans `packages/cards/src/spm/` : `cards` (cartes du méta), `wh
   - permanents partis pendant la décision en cours (`GameState.leftBatch`, vidé à chaque décision) et `cond.eventObjectGreatestPower` : « la créature de plus grande force parmi celles de ce joueur » voit celles mortes en même temps par leurs dernières informations (une seule pioche après une destruction massive).
 - **Dette :** « exploiter » sert désormais à deux cartes (The Mind Stone, The Soul Stone) : son entrée est retirée.
 - **Tests :** 11 tests de règles (« lot C2 »).
+
+## Sous-lot C3 : cartes uniques ✅ (188 / 188)
+
+- **Cartes (6) :** Arachne, Psionic Weaver, With Great Power . . ., Spider-Punk, Superior Foes of Spider-Man, Black Cat, Cunning Thief, Gwenom, Remorseless.
+- **Moteur :**
+  - filtre `typeChosen` (le type de carte choisi comme mode d'arrivée) et taxe pour tous les joueurs (`costReduction.everyone`) ;
+  - filtre `attachedToSourceHost` (« chaque Aura et Équipement attachés à elle ») ; remplacement de blessures `redirectToAttached` (« infligées à la créature enchantée à la place ») ;
+  - émeute (702.136, `riot`, mot-clé imprimé) : le choix se fait en résolvant le sort de créature (« Émeute : un marqueur +1/+1 ou la célérité ? »), aussi quand l'émeute est donnée par un permanent (Spider-Punk) ; sans résolution, la célérité si la créature peut encore attaquer ce tour-ci ;
+  - statique `uncounterable` (`filter`, `abilities`, `everyone`) : remplace `protectSpells` et `protectCreatureSpells` (un drapeau de moins). Chimil, the Inner Sun et Hexing Squelcher protègent désormais tous vos sorts, comme le dit leur texte (approximation levée, test dans `rulings.test.ts`) ;
+  - `grantPlay.replacePrevious` (« jusqu'à ce que vous exiliez une autre carte avec cette créature ») ; `lookAtTop.who` (la bibliothèque d'un adversaire) ;
+  - jouer depuis le dessus de la bibliothèque en payant des PV égaux à la valeur de mana (`playFrom.payLifeManaValue`, comme Valgavoth) ;
+  - `RULES_VERSION` = 54, parties dorées régénérées.
+- **Approximations :** Arachne (la main adverse n'est pas montrée), Black Cat (exil face visible).
+- **Tests :** 8 tests de règles (« lot C3 ») et un dans `rulings.test.ts`.

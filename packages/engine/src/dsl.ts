@@ -724,6 +724,7 @@ export const fx = {
       landsTapped?: boolean;
       exileAfter?: boolean;
       oneOf?: boolean;
+      replacePrevious?: boolean;
     } = {},
   ): Effect => ({
     op: "grantPlay",
@@ -1098,10 +1099,13 @@ export const fx = {
       store?: string;
       /** Exactement `count` cartes (« mettez-en une dans votre main »), pas « jusqu'à ». */
       exact?: boolean;
+      /** La bibliothèque d'un autre joueur (Black Cat : un adversaire ciblé). */
+      who?: Ref;
     } = {},
   ): Effect => ({
     op: "lookAtTop",
     n,
+    ...(opts.who ? { who: opts.who } : {}),
     filter: opts.filter,
     count: opts.count ?? 1,
     to: opts.to ?? { to: "hand" },

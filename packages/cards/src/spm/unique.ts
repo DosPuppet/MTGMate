@@ -7,6 +7,7 @@ import {
   chapter,
   cond,
   entersWith,
+  eventReplacement,
   fx,
   manaAbility,
   playerStatic,
@@ -306,6 +307,96 @@ export const UNIQUE: Record<string, CardScript> = {
       triggered(when.dies({ types: ["Creature"], controller: "opponent" }), [fx.draw(1), fx.addCounters(ref.self, 1)], {
         condition: cond.eventObjectGreatestPower,
         label: "La plus grande créature d'un adversaire meurt : piochez une carte et un marqueur +1/+1",
+      }),
+    ],
+  },
+
+  // --- Lot C3 : cartes uniques --------------------------------------------------
+  "Arachne, Psionic Weaver": {
+    // Web-slinging {W} : lu dans le texte. Le type de carte est choisi comme un mode d'arrivée.
+    chooseOnEnter: "mode",
+    enterModes: ["Artifact", "Battle", "Enchantment", "Instant", "Kindred", "Planeswalker", "Sorcery"],
+    abilities: [
+      {
+        kind: "costReduction",
+        filter: { typeChosen: true },
+        generic: -1,
+        everyone: true,
+        label: "Les sorts du type choisi coûtent {1} de plus",
+      },
+    ],
+  },
+  "With Great Power . . .": {
+    enchant: { filter: { types: ["Creature"], controller: "you" }, label: "créature que vous contrôlez" },
+    abilities: [
+      staticAbility(
+        "attached",
+        { power: 2, toughness: 2 },
+        {
+          per: { anyOf: [{ subtype: "Aura" }, { subtype: "Equipment" }], attachedToSourceHost: true },
+          label: "+2/+2 pour chaque Aura et Équipement attachés à elle",
+        },
+      ),
+      eventReplacement({
+        event: "damage",
+        to: "you",
+        modify: {},
+        redirectToAttached: true,
+        label: "Les blessures qui vous seraient infligées sont infligées à la créature enchantée à la place",
+      }),
+    ],
+  },
+  "Spider-Punk": {
+    // Émeute : lue dans le texte.
+    abilities: [
+      staticAbility(
+        { subtype: "Spider", controller: "you", other: true },
+        { addKeywords: ["riot"] },
+        {
+          label: "Vos autres Araignées ont l'émeute",
+        },
+      ),
+      playerStatic({
+        uncounterable: { abilities: true, everyone: true },
+        label: "Les sorts et les capacités ne peuvent pas être contrecarrés",
+      }),
+      playerStatic({ damageUnpreventable: true, label: "Les blessures ne peuvent pas être prévenues" }),
+    ],
+  },
+  "Superior Foes of Spider-Man": {
+    // Piétinement : lu dans le texte.
+    abilities: [
+      triggered(
+        when.castSpell("you", { minManaValue: 4 }),
+        fx.may(
+          "Exiler la carte du dessus de votre bibliothèque ?",
+          fx.exileTop(ref.you, 1, "e"),
+          fx.grantPlay(ref.stored("e"), { forever: true, replacePrevious: true }),
+        ),
+        { label: "Sort de VM 4 ou plus : exilez la carte du dessus, jouable jusqu'à la prochaine exilée ainsi" },
+      ),
+    ],
+  },
+  "Black Cat, Cunning Thief": {
+    abilities: [
+      triggered(
+        when.entersSelf,
+        [
+          fx.lookAtTop(9, { who: ref.target(), count: 2, exact: true, to: { to: "exile" }, rest: "bottom", store: "bc" }),
+          fx.grantPlay(ref.stored("bc"), { forever: true, anyMana: true }),
+        ],
+        {
+          targets: [target.player("t", "opponent")],
+          label: "Regardez les neuf cartes du dessus d'un adversaire : exilez-en deux, jouables (mana de n'importe quel type)",
+        },
+      ),
+    ],
+  },
+  "Gwenom, Remorseless": {
+    // Contact mortel et lien de vie : lus dans le texte.
+    abilities: [
+      triggered(when.attacksSelf, [fx.thisTurn({ playFrom: { zone: "libraryTop", payLifeManaValue: true } })], {
+        label: "Jusqu'à la fin du tour, jouez les cartes du dessus de votre bibliothèque (sorts : des PV égaux à leur VM)",
       }),
     ],
   },

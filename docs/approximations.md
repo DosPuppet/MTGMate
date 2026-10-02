@@ -233,7 +233,6 @@ Dans l'ordre où elles ont été ajoutées, extension par extension.
   - `timing` Puca's Eye : la couleur est choisie quand la capacité est mise sur la pile, et non après la pioche ;
   - `règle` Dawn-Blessed Pennant : le type (une des huit tribus) est choisi comme un mode en arrivant ;
   - `règle` Flamebraider : deux mana d'une même couleur, et non toute combinaison ;
-  - `règle` Hexing Squelcher : vos sorts de créature, d'éphémère et de rituel ne peuvent pas être contrecarrés, les autres si ;
   - `choix auto` End-Blaze Epiphany : la carte jouable est choisie en la jouant, et non à l'exil ;
   - `règle` Aurora Awakener : toutes les cartes de permanent révélées vont sur le champ de bataille (et non « un nombre quelconque ») ;
   - `timing` Prismabasher : les « jusqu'à X cibles » sont choisies par une capacité réflexive ;
@@ -398,5 +397,7 @@ Dans l'ordre où elles ont été ajoutées, extension par extension.
   - `règle` Supportive Parents : « engagez deux créatures dégagées que vous contrôlez » ne peut pas l'engager elle-même (comme Kirol).
   - `règle` Doctor Octopus, Master Planner : « votre taille de main maximale est de huit » se lit « vous n'avez pas de taille de main maximale » (comme The Ten Rings) ;
   - `règle` Spider-Slayer, Hatred Honed : « chaque fois qu'il inflige des blessures à une Araignée » se lit « chaque fois qu'une Araignée blessée par lui ce tour-ci reçoit des blessures » ; une Araignée indestructible déjà blessée par lui ferait déclencher la capacité si une autre source la blesse.
+  - `règle` Arachne, Psionic Weaver : la main de l'adversaire n'est pas montrée avant le choix du type ; le type est choisi comme un mode d'arrivée ;
+  - `règle` Black Cat, Cunning Thief : les deux cartes sont exilées face visible (et non face cachée).
 - **Légalité Standard :** instantané des légalités Scryfall au moment de l'import (`legalities.standard` dans `data/<set>.json`). Après une rotation ou une annonce de bannissement, réimporter les sets (`npm run import-cards -- <set>`).
 - **Images des jetons :** celle du jeton Scryfall le plus proche (même nom, puis mêmes F/E et couleurs ; `data/tokens.json`, `npm run import-tokens`) ; un jeton de nom inconnu garde le cadre texte.

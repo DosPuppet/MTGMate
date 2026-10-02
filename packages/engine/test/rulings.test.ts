@@ -445,4 +445,12 @@ describe("socle de Marvel's Spider-Man", () => {
     expect(countTurnEvents(s, { event: "playLand", who: "you", fromZone: "graveyard" }, "p1")).toBe(0);
     expect(countTurnEvents(s, { event: "playLand", who: "opponent" }, "p1")).toBe(0);
   });
+
+  it("Chimil, the Inner Sun : « les sorts que vous contrôlez » couvre aussi un sort de créature", () => {
+    let s = scenario({ p1: { battlefield: ["Chimil, the Inner Sun", "Forest", "Forest"], hand: ["Bear Cub"] } });
+    s = act(s, "p1", { type: "cast", card: idOf(s, "p1", "hand", "Bear Cub") });
+    const item = s.stack[0]?.id as string;
+    expect(counterItem(s, item, "test")).toBe(false);
+    expect(s.stack).toHaveLength(1);
+  });
 });

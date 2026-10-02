@@ -48,6 +48,8 @@ export interface EntersContext {
   /** Mana dépensé par type et évocation : lus par les conditions des capacités d'arrivée (Deceit). */
   spentColors?: GameObject["spentColors"];
   evoked?: boolean;
+  /** Émeute (702.136) : le choix fait en résolvant le sort (sinon le choix par défaut, `defaultRiot`). */
+  riot?: "counter" | "haste";
   /** Lancé par Web-slinging ou pour son coût de chaos ; créature renvoyée pour le Web-slinging. */
   castVia?: GameObject["castVia"];
   costBounced?: ObjectId[];
@@ -93,6 +95,13 @@ export function auraHosts(s: GameState, controller: PlayerId, cardId: ObjectId):
       !protectedFrom(s, id, sourceView(s, cardId)) &&
       matchesObjectFilter(s, controller, id, enchant.filter, cardId),
   );
+}
+
+/** Émeute sans choix fait en résolvant le sort : la célérité si la créature peut encore attaquer ce tour-ci, sinon le
+ * marqueur. */
+export function defaultRiot(s: GameState, o: GameObject): "counter" | "haste" {
+  const early = ["untap", "upkeep", "draw", "main1", "beginCombat"].includes(s.turn.step);
+  return s.turn.active === o.controller && early && !chars(s, o.id).keywords.includes("haste") ? "haste" : "counter";
 }
 
 /**
@@ -317,6 +326,19 @@ export function applyEntersReplacements(s: GameState, o: GameObject, ctx: Enters
       addKeywords: ["haste"],
     });
     s.version += 1;
+  }
+  // 702.136 : émeute, imprimée ou donnée (Spider-Punk : « vos autres Araignées ont l'émeute »).
+  if (chars(s, o.id).keywords.includes("riot")) {
+    if ((ctx.riot ?? defaultRiot(s, o)) === "haste") {
+      s.effects.push({
+        id: newId(s, "e"),
+        timestamp: nextTimestamp(s),
+        affected: [o.id],
+        duration: "permanent",
+        addKeywords: ["haste"],
+      });
+      s.version += 1;
+    } else changeCounters(s, o, P1P1, 1);
   }
   if (ctx.attacking && s.combat) s.combat.attackers.push({ id: o.id, defender: ctx.attacking, blockers: [], blocked: false });
   // 707.9 : « arrive comme copie de … » (Waxen Shapethief). Les exceptions du modèle, puis les siennes, sont copiables

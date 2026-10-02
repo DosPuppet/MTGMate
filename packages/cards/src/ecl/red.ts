@@ -289,8 +289,7 @@ export const RED: Record<string, CardScript> = {
     // Sa propre garde (« Payez 2 PV ») est lue dans le texte.
     cantBeCountered: true,
     abilities: [
-      // Approximation : seuls vos sorts d'éphémère, de rituel et de créature sont protégés.
-      playerStatic({ protectSpells: true, protectCreatureSpells: true, label: "Vos sorts ne peuvent pas être contrecarrés" }),
+      playerStatic({ uncounterable: {}, label: "Vos sorts ne peuvent pas être contrecarrés" }),
       staticAbility(
         { types: ["Creature"], controller: "you", other: true },
         { addKeywords: ["ward"], addAbilities: [wardAbility({ life: 2 })] },

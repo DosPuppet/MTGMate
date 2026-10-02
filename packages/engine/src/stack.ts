@@ -247,6 +247,24 @@ export function isWebSlinging(s: GameState, player: PlayerId, d: CardDef): boole
   return !!d.webSlinging || !!altCostFor(s, player, d)?.webSlinging;
 }
 
+/** Le sort de créature aura-t-il l'émeute en arrivant : imprimée, ou donnée par un de vos permanents (Spider-Punk) ? */
+export function willHaveRiot(s: GameState, player: PlayerId, d: CardDef): boolean {
+  if (d.keywords.includes("riot")) return true;
+  if (!d.types.includes("Creature")) return false;
+  const view = spellView(d, player);
+  return s.battlefield.some(
+    (id) =>
+      s.objects[id]?.controller === player &&
+      chars(s, id).abilities.some(
+        (ab) =>
+          ab.kind === "static" &&
+          typeof ab.affects === "object" &&
+          !!ab.mods.addKeywords?.includes("riot") &&
+          matchesView(view, { ...ab.affects, other: undefined }, player, id),
+      ),
+  );
+}
+
 /** Web-slinging : les créatures engagées que vous contrôlez, la moins chère en premier (le choix par défaut). */
 export function webSlingingOptions(s: GameState, player: PlayerId): ObjectId[] {
   const mv = (id: ObjectId) => manaValue(s.defs[obj(s, id).defId]?.manaCost);
@@ -382,7 +400,7 @@ export function spellReduction(
     for (const ab of chars(s, id).abilities) {
       if (ab.kind !== "costReduction") continue;
       // Réductions de vos permanents ; taxes des permanents adverses sur vos sorts (Thalia, the Survivor).
-      const applies = ab.opponents ? o.controller !== player : o.controller === player;
+      const applies = ab.everyone || (ab.opponents ? o.controller !== player : o.controller === player);
       // Gathering Stone : « les sorts du type choisi ».
       if (!applies || !matchesView(view, withChosen(ab.filter, o), player)) continue;
       if (ab.condition && !checkCondition(s, ab.condition, o.controller, id)) continue;
@@ -1138,6 +1156,12 @@ function baseCastTerms(s: GameState, player: PlayerId, card: ObjectId): CastTerm
         anyTime: libPerm.anyTime,
       };
     const rule = playFromRules(s, player, card, "libraryTop", "spells")[0];
+    // Gwenom : des PV égaux à sa valeur de mana plutôt que son coût de mana (comme Valgavoth).
+    if (rule?.payLifeManaValue) {
+      const life = manaValue(d.manaCost);
+      if ((s.players[player]?.life ?? 0) < life) return null;
+      return { source: "library", free: true, payLife: life || undefined, playFrom: rule };
+    }
     return rule ? playFromTerms(rule, "library") : null;
   }
   if (o.zone === "exile") {
@@ -1802,29 +1826,30 @@ export function announceTargets(s: GameState, stackId: string, controller: Playe
   checkCrime(s, controller, all);
 }
 
+/**
+ * Statiques « ne peut pas être contrecarré » : les sorts du contrôleur (Sphinx of the Final Word, Frenzied Baloth,
+ * Chimil), ou les sorts et capacités de tous (Spider-Punk).
+ */
+function protectedFromCounter(s: GameState, item: StackItem): boolean {
+  const d = s.defs[item.sourceDefId];
+  for (const p of s.playerOrder) {
+    for (const { ab } of playerStatics(s, p, "uncounterable")) {
+      const u = ab.uncounterable;
+      if (!u || (!u.everyone && p !== item.controller)) continue;
+      if (item.kind === "ability" ? u.abilities : !u.filter || (!!d && matchesView(spellView(d, item.controller), u.filter, p)))
+        return true;
+    }
+  }
+  return false;
+}
+
 /** 701.5 : contrecarre l'élément de pile ; un sort contrecarré va au cimetière (exil s'il a été lancé en flashback). */
 export function counterItem(s: GameState, id: string, by: string, exile = false): boolean {
   const i = s.stack.findIndex((x) => x.id === id);
   const item = s.stack[i];
   if (!item || s.resolving?.item.id === id) return false;
   if (item.kind === "spell" && (s.defs[item.sourceDefId]?.cantBeCountered || item.uncounterable)) return false;
-  // Frenzied Baloth : « les sorts de créature que vous contrôlez ne peuvent pas être contrecarrés ».
-  if (
-    item.kind === "spell" &&
-    s.defs[item.sourceDefId]?.types.includes("Creature") &&
-    playerStatic(s, item.controller, "protectCreatureSpells")
-  ) {
-    return false;
-  }
-  // Sphinx of the Final Word : « les éphémères et rituels que vous contrôlez ne peuvent pas être contrecarrés ».
-  const types = s.defs[item.sourceDefId]?.types ?? [];
-  if (
-    item.kind === "spell" &&
-    (types.includes("Instant") || types.includes("Sorcery")) &&
-    playerStatic(s, item.controller, "protectSpells")
-  ) {
-    return false;
-  }
+  if (protectedFromCounter(s, item)) return false;
   s.stack.splice(i, 1);
   emit({ type: "countered", stackId: item.id, defId: item.sourceDefId, by });
   // Dernières informations connues (« son contrôleur crée… »).
@@ -2541,7 +2566,9 @@ export function specsAndEffects(s: GameState, item: StackItem): { specs: TargetS
   if (!d) return { specs: [], effects: [] };
   if (item.kind === "spell") {
     const mode = modesOf(d)[item.mode];
-    const effects = mode?.effects ?? [];
+    // 702.136 : émeute — le choix (marqueur ou célérité) se fait en résolvant le sort de créature.
+    const riot: Effect[] = isPermanentCard(d) && willHaveRiot(s, item.controller, d) ? [{ op: "chooseRiot" }] : [];
+    const effects = [...(mode?.effects ?? []), ...riot];
     // 614.12 : « en arrivant, choisissez… » — le choix se fait pendant la résolution du sort de permanent.
     // Une copie d'un sort de permanent fait aussi ces choix : elle devient un jeton qui arrive de la même façon (707.10).
     if (d.chooseOnEnter && isPermanentCard(d)) {
@@ -2700,6 +2727,7 @@ function finishResolution(
         x: item.x,
         kicked: item.kicked,
         chosen: chosenFrom(vars),
+        riot: vars.$riot?.[0] === "haste" ? "haste" : vars.$riot?.[0] === "counter" ? "counter" : undefined,
         copyOf: vars.$copyOf?.[0] !== undefined ? String(vars.$copyOf[0]) : undefined,
         copyMods: copiableExceptions(s, vars.$copyOf?.[1] !== undefined ? String(vars.$copyOf[1]) : undefined),
         copyChosen: vars.$copyOf !== undefined,
@@ -2736,6 +2764,7 @@ function finishResolution(
           castFromExile: item.fromExile,
           attachTo: d.enchant ? targets[ENCHANT_SPEC]?.[0] : undefined,
           chosen: chosenFrom(vars),
+          riot: vars.$riot?.[0] === "haste" ? "haste" : vars.$riot?.[0] === "counter" ? "counter" : undefined,
           manaSpent: item.manaSpent,
           devoured: Number(vars.$devoured?.[0] ?? 0),
           copyOf: vars.$copyOf?.[0] !== undefined ? String(vars.$copyOf[0]) : undefined,

@@ -657,6 +657,30 @@ export const HANDLERS: OpHandlers = {
     }
     return;
   },
+  chooseRiot(s, r, _e, ctx, key) {
+    const answer = r.vars[key("riot")];
+    if (!answer) {
+      const early = ["untap", "upkeep", "draw", "main1", "beginCombat"].includes(s.turn.step);
+      return {
+        ask: {
+          player: ctx.controller,
+          key: key("riot"),
+          request: {
+            type: "pick",
+            intent: "other",
+            prompt: "Émeute : un marqueur +1/+1 ou la célérité ?",
+            options: ["counter", "haste"],
+            labels: { counter: "Un marqueur +1/+1", haste: "La célérité" },
+            min: 1,
+            max: 1,
+            suggested: [s.turn.active === ctx.controller && early ? "haste" : "counter"],
+          },
+        },
+      };
+    }
+    r.vars.$riot = [String(answer[0])];
+    return;
+  },
   doneOncePerTurn(s, r) {
     const key = onceKey(r.item.sourceDefId, r.item.sourceId, r.item.abilityIndex);
     if (!s.turn.onceFired.includes(key)) s.turn.onceFired.push(key);

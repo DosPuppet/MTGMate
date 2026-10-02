@@ -326,8 +326,10 @@ export interface CostReductionAbilityDef {
   kind: "costReduction";
   filter: ObjectFilter;
   generic: number;
-  /** S'applique aux sorts des adversaires (Thalia, the Survivor : générique négatif = taxe). */
+  /** S'applique aux sorts des adversaires (Thalia, the Survivor : générique négatif = taxe) ; `everyone` : à ceux de
+   * tous les joueurs (Arachne, Psionic Weaver). */
   opponents?: boolean;
+  everyone?: boolean;
   /** Réduction variable (affinité pour les artefacts : Sami, Wildcat Captain), ajoutée à `generic`. */
   genericAmount?: Amount;
   /** Seulement si la condition est remplie (Uthros Psionicist : « le deuxième sort que vous lancez chaque tour »). */
@@ -741,6 +743,8 @@ export interface EventReplacement {
    * « quand des blessures sont prévenues ainsi » (New Way Forward : `amount.eventAmount` et `ref.eventObject`, la source) ;
    * autant de marqueurs de ce type sur la source du remplacement, dans le même remplacement (Anti-Venom). */
   onPrevent?: { opponentsMill?: boolean; reflexive?: Effect[]; counters?: string };
+  /** Blessures : infligées à la place au permanent auquel la source est attachée (With Great Power). */
+  redirectToAttached?: boolean;
   /** Bouclier : seulement cette source, choisie à la création (`sourceDefIs` pour un sort sans objet). */
   sourceIs?: ObjectId;
   sourceDefIs?: string;
@@ -906,6 +910,8 @@ export interface PlayFromZone {
    * son coût de mana.
    */
   flashback?: boolean;
+  /** « Payez des PV égaux à sa valeur de mana plutôt que son coût de mana » (Gwenom, Remorseless). */
+  payLifeManaValue?: boolean;
   /** La carte a le chaos (Goblin Formula) : lancée depuis le cimetière pour son coût de chaos, son coût de mana. */
   mayhem?: boolean;
   cost?: ManaCost;
@@ -965,12 +971,15 @@ export interface PlayerStaticAbilityDef {
   protectionFromOpponents?: boolean;
   /** « La première fois que vous lancez des pièces chaque tour, vous gagnez ces lancers » (Edgar, King of Figaro). */
   winFirstCoinFlips?: boolean;
-  /** « Les éphémères et rituels que vous contrôlez ne peuvent pas être contrecarrés. » */
-  protectSpells?: boolean;
+  /**
+   * « [Les sorts] que vous contrôlez ne peuvent pas être contrecarrés » (`filter` : éphémères et rituels, Sphinx of the
+   * Final Word ; créatures, Frenzied Baloth ; absent : tous, Chimil) ; `abilities` : les capacités non plus ; `everyone` :
+   * ceux de tous les joueurs (Spider-Punk : « les sorts et les capacités ne peuvent pas être contrecarrés »).
+   */
+  uncounterable?: { filter?: ObjectFilter; abilities?: boolean; everyone?: boolean };
   /** Weftwalking (s'applique à tous) : le premier sort de chaque joueur pendant son tour peut être lancé sans payer. */
   firstSpellFree?: boolean;
-  /** Frenzied Baloth : vos sorts de créature ne peuvent pas être contrecarrés ; les blessures de combat ne peuvent pas être prévenues (tous). */
-  protectCreatureSpells?: boolean;
+  /** Frenzied Baloth : les blessures de combat ne peuvent pas être prévenues (tous). */
   combatDamageUnpreventable?: boolean;
   /** Tannuk, Steadfast Second : les cartes de votre main correspondant au filtre ont la distorsion à ce coût. */
   grantWarp?: { filter: ObjectFilter; cost: ManaCost };

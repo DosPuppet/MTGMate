@@ -4125,3 +4125,151 @@ describe("lot C2, coûts, montants et joueurs", () => {
     });
   });
 });
+
+describe("lot C3, cartes uniques", () => {
+  const playable = (s: S, player: string, card: string) =>
+    legalActions(s, player).some((a) => (a.type === "cast" || a.type === "playLand") && a.card === card);
+  const yes: Answer = (req) => (req.type === "yesNo" ? [1] : undefined);
+
+  it("Arachne : le type choisi en arrivant (pas créature) coûte {1} de plus pour tous les joueurs", () => {
+    let s = scenario({
+      p1: { battlefield: lands("Plains", 3), hand: ["Arachne, Psionic Weaver", "Lightning Strike"] },
+      p2: { battlefield: lands("Mountain", 2), hand: ["Lightning Strike"] },
+    });
+    s = settle(cast(s, "p1", "Arachne, Psionic Weaver"), (req) =>
+      req.type === "pick" && req.intent === "chooseOnEnter" ? ["Instant"] : undefined,
+    );
+    const arachne = idOf(s, "p1", "battlefield", "Arachne, Psionic Weaver");
+    expect(s.objects[arachne]?.chosen?.mode).toBe("Instant");
+    expect(legalActions(s, "p1").some((o) => o.type === "cast" && o.card === idOf(s, "p1", "hand", "Lightning Strike"))).toBe(
+      false,
+    );
+    // Deux Montagnes ne suffisent plus à l'adversaire pour {1}{R} + {1}.
+    s = advanceUntil(s, (x) => x.turn.active === "p2" && x.turn.step === "main1");
+    expect(castable(s, "p2", idOf(s, "p2", "hand", "Lightning Strike"))).toBe(false);
+  });
+
+  describe("With Great Power . . .", () => {
+    it("+2/+2 pour chaque Aura et Équipement attachés à la créature enchantée", () => {
+      let s = scenario({ p1: { battlefield: [...lands("Plains", 4), "Bear Cub"], hand: ["With Great Power . . ."] } });
+      const bear = idOf(s, "p1", "battlefield", "Bear Cub");
+      s = settle(cast(s, "p1", "With Great Power . . .", { targets: { enchant: [bear] } }));
+      expect(pt(s, bear)).toEqual([4, 4]);
+    });
+
+    it("les blessures qui vous seraient infligées sont infligées à la créature enchantée à la place", () => {
+      let s = scenario({
+        p1: { battlefield: [...lands("Plains", 4), "Serra Angel"], hand: ["With Great Power . . ."] },
+        p2: { battlefield: lands("Mountain", 2), hand: ["Lightning Strike"] },
+      });
+      const angel = idOf(s, "p1", "battlefield", "Serra Angel");
+      s = settle(cast(s, "p1", "With Great Power . . .", { targets: { enchant: [angel] } }));
+      s = advanceUntil(s, (x) => x.turn.active === "p2" && x.turn.step === "main1");
+      s = settle(act(s, "p2", { type: "cast", card: idOf(s, "p2", "hand", "Lightning Strike"), targets: { t: ["p1"] } }));
+      expect(s.players.p1?.life).toBe(20);
+      expect(s.objects[angel]?.damage).toBe(3);
+    });
+  });
+
+  describe("Spider-Punk", () => {
+    it("vos autres Araignées ont l'émeute : marqueur ou célérité, au choix en résolvant le sort", () => {
+      let s = scenario({
+        p1: { battlefield: ["Spider-Punk", ...lands("Forest", 4)], hand: ["Radioactive Spider", "Radioactive Spider"] },
+      });
+      expect(chars(s, idOf(s, "p1", "battlefield", "Spider-Punk")).keywords).toContain("riot");
+      const pick =
+        (v: string): Answer =>
+        (req) =>
+          req.type === "pick" && req.options.includes("haste") ? [v] : undefined;
+      s = settle(cast(s, "p1", "Radioactive Spider"), pick("counter"));
+      s = settle(cast(s, "p1", "Radioactive Spider"), pick("haste"));
+      const [a, b] = idsOf(s, "p1", "battlefield", "Radioactive Spider") as [string, string];
+      expect(s.objects[a]?.counters["+1/+1"]).toBe(1);
+      expect(chars(s, a).keywords).not.toContain("haste");
+      expect(s.objects[b]?.counters["+1/+1"] ?? 0).toBe(0);
+      expect(chars(s, b).keywords).toContain("haste");
+    });
+
+    it("les sorts et les capacités ne peuvent pas être contrecarrés, pour tous les joueurs", () => {
+      let s = scenario({
+        p1: { battlefield: ["Spider-Punk", "Mountain", "Mountain"], hand: ["Lightning Strike"] },
+        p2: { battlefield: ["Island", "Island", "Island"], hand: ["Spider-Sense"] },
+      });
+      s = act(s, "p1", { type: "cast", card: idOf(s, "p1", "hand", "Lightning Strike"), targets: { t: ["p2"] } });
+      s = act(s, "p1", { type: "pass" });
+      s = settle(
+        act(s, "p2", { type: "cast", card: idOf(s, "p2", "hand", "Spider-Sense"), targets: { t: [s.stack[0]?.id as string] } }),
+      );
+      expect(s.players.p2?.life).toBe(17);
+    });
+  });
+
+  it("Superior Foes of Spider-Man : la carte exilée reste jouable jusqu'à ce qu'une autre soit exilée ainsi", () => {
+    let s = scenario({
+      p1: {
+        battlefield: ["Superior Foes of Spider-Man", ...lands("Plains", 10)],
+        hand: ["Serra Angel", "Serra Angel"],
+        library: ["Forest", "Island", "Swamp"],
+      },
+    });
+    s = settle(cast(s, "p1", "Serra Angel"), yes);
+    const forest = s.exile.find((id) => nameOf(s, id) === "Forest") as string;
+    expect(playable(s, "p1", forest)).toBe(true);
+    s = settle(cast(s, "p1", "Serra Angel"), yes);
+    const island = s.exile.find((id) => nameOf(s, id) === "Island") as string;
+    expect(playable(s, "p1", island)).toBe(true);
+    expect(playable(s, "p1", forest)).toBe(false);
+  });
+
+  it("Black Cat : deux des neuf cartes du dessus d'un adversaire exilées, jouables avec du mana de n'importe quel type", () => {
+    const lib = [
+      "Lightning Strike",
+      "Opt",
+      "Bear Cub",
+      "Mountain",
+      "Island",
+      "Swamp",
+      "Forest",
+      "Plains",
+      "Island",
+      "Shivan Dragon",
+    ];
+    let s = scenario({
+      p1: { battlefield: [...lands("Swamp", 5), "Plains", "Plains"], hand: ["Black Cat, Cunning Thief"] },
+      p2: { library: lib },
+    });
+    const wanted = (s.players.p2?.library ?? []).filter((id) => ["Lightning Strike", "Opt"].includes(nameOf(s, id) ?? ""));
+    s = settle(cast(s, "p1", "Black Cat, Cunning Thief"), (req) =>
+      req.type === "pick" && req.intent === "lookAtTop" ? wanted : undefined,
+    );
+    const strike = s.exile.find((id) => nameOf(s, id) === "Lightning Strike") as string;
+    expect(s.exile.some((id) => nameOf(s, id) === "Opt")).toBe(true);
+    expect(s.players.p2?.library).toHaveLength(8);
+    // Le dixième (Shivan Dragon) reste au-dessus ; les sept autres vont au-dessous.
+    expect(nameOf(s, s.players.p2?.library[0] as string)).toBe("Shivan Dragon");
+    // Deux Plaines payent {1}{R} : mana de n'importe quel type.
+    s = settle(act(s, "p1", { type: "cast", card: strike, targets: { t: ["p2"] } }));
+    expect(s.players.p2?.life).toBe(17);
+  });
+
+  it("Gwenom : en attaquant, les cartes du dessus de votre bibliothèque se jouent ; un sort se paie en PV égaux à sa VM", () => {
+    let s = scenario({ p1: { battlefield: ["Gwenom, Remorseless"], library: ["Serra Angel", "Forest", "Island"] } });
+    s = advanceUntil(s, (x) => x.pending?.kind === "declareAttackers");
+    s = act(s, "p1", {
+      type: "declareAttackers",
+      attackers: [{ id: idOf(s, "p1", "battlefield", "Gwenom, Remorseless"), defender: "p2" }],
+    });
+    s = advanceUntil(s, (x) => x.turn.step === "main2");
+    const angel = s.players.p1?.library[0] as string;
+    expect(nameOf(s, angel)).toBe("Serra Angel");
+    expect(playable(s, "p1", angel)).toBe(true);
+    // Lien de vie : 4 blessures, +4 PV ; le Serra Angel coûte 5 PV.
+    const life = s.players.p1?.life ?? 0;
+    s = settle(act(s, "p1", { type: "cast", card: angel }));
+    expect(s.players.p1?.life).toBe(life - 5);
+    expect(idsOf(s, "p1", "battlefield", "Serra Angel")).toHaveLength(1);
+    const forest = s.players.p1?.library[0] as string;
+    s = act(s, "p1", { type: "playLand", card: forest });
+    expect(idsOf(s, "p1", "battlefield", "Forest")).toHaveLength(1);
+  });
+});

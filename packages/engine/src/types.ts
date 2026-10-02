@@ -70,6 +70,8 @@ export type Keyword =
   | "convoke"
   /** Improvisation (702.126) : les artefacts dégagés peuvent payer {1} chacun du coût du sort. */
   | "improvise"
+  /** Émeute (702.136) : il arrive avec un marqueur +1/+1 ou la célérité, au choix de son contrôleur. */
+  | "riot"
   /** Ghalta the Immovable : peut attaquer comme si elle n'avait pas le défenseur. */
   | "attacksDespiteDefender"
   /** « Start your engines! » (702.179) : si vous n'avez pas de vitesse, elle démarre à 1. */

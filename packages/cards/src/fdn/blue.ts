@@ -362,7 +362,12 @@ export const BLUE: Record<string, CardScript> = {
   },
   "Sphinx of the Final Word": {
     cantBeCountered: true,
-    abilities: [playerStatic({ protectSpells: true, label: "Vos éphémères et rituels ne peuvent pas être contrecarrés" })],
+    abilities: [
+      playerStatic({
+        uncounterable: { filter: { types: ["Instant", "Sorcery"] } },
+        label: "Vos éphémères et rituels ne peuvent pas être contrecarrés",
+      }),
+    ],
   },
   "Starlight Snare": {
     enchant: { filter: { types: ["Creature"] }, label: "créature" },

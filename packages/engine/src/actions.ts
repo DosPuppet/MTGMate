@@ -348,6 +348,15 @@ export function dealDamage(s: GameState, source: DamageSource, target: string, a
       )
     : undefined;
   if (absorber) target = absorber;
+  // With Great Power… : « les blessures qui vous seraient infligées sont infligées à la créature enchantée à la place ».
+  for (const a of eventReplacements(s, "damage")) {
+    if (!a.r.redirectToAttached || !a.sourceId || !damageReplacementApplies(s, a, source, target, combat)) continue;
+    const host = s.objects[a.sourceId]?.attachedTo;
+    if (host && s.objects[host]?.zone === "battlefield" && host !== target) {
+      target = host;
+      break;
+    }
+  }
   // Frenzied Baloth : « les blessures de combat ne peuvent pas être prévenues ».
   // Sunspine Lynx : « les blessures ne peuvent pas être prévenues ».
   const unpreventable =
@@ -369,7 +378,9 @@ export function dealDamage(s: GameState, source: DamageSource, target: string, a
   // Remplacements et préventions des blessures (R1, 616.1) : le joueur blessé choisit l'ordre, le moins de blessures
   // pour lui. Une prévention d'un autre joueur passe donc avant les modifications (The Mindskinner meule le moins), la
   // sienne après (New Way Forward renvoie le plus).
-  const reps = eventReplacements(s, "damage").filter((a) => damageReplacementApplies(s, a, source, target, combat));
+  const reps = eventReplacements(s, "damage").filter(
+    (a) => !a.r.redirectToAttached && damageReplacementApplies(s, a, source, target, combat),
+  );
   const foreignPrevention = unpreventable ? undefined : reps.find((a) => a.r.modify.prevent && a.controller !== victim);
   if (foreignPrevention) {
     preventByReplacement(s, foreignPrevention, source, amount);

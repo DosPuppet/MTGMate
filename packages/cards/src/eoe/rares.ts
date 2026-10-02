@@ -324,7 +324,7 @@ export const RARES: Record<string, CardScript> = {
     cantBeCountered: true,
     abilities: [
       playerStatic({
-        protectCreatureSpells: true,
+        uncounterable: { filter: { types: ["Creature"] } },
         combatDamageUnpreventable: true,
         label: "Sorts de créature incontrecarrables, blessures de combat imprévenables",
       }),

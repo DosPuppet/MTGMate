@@ -306,7 +306,7 @@ export const ARTIFACTS: Record<string, CardScript> = {
   },
   "Chimil, the Inner Sun": {
     abilities: [
-      playerStatic({ protectSpells: true, label: "Vos sorts ne peuvent pas être contrecarrés" }),
+      playerStatic({ uncounterable: {}, label: "Vos sorts ne peuvent pas être contrecarrés" }),
       triggered(when.yourEndStep, [fx.discover(5)], { label: "Découverte 5" }),
     ],
   },

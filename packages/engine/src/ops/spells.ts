@@ -573,6 +573,7 @@ export const HANDLERS: OpHandlers = {
     const ids = resolveRef(s, ctx, e.what).filter(
       (id) => s.objects[id]?.zone === "exile" || s.objects[id]?.zone === "graveyard" || s.objects[id]?.zone === "hand",
     );
+    if (e.replacePrevious && ids.length) s.playPermissions = (s.playPermissions ?? []).filter((p) => p.source !== ctx.sourceId);
     if (e.forOwner) {
       for (const id of ids) {
         const owner = s.objects[id]?.owner ?? ctx.controller;

@@ -242,6 +242,8 @@ export type Effect =
   | {
       op: "lookAtTop";
       n: Amount;
+      /** La bibliothèque regardée : celle de ce joueur (Black Cat : un adversaire ciblé), la vôtre par défaut. */
+      who?: Ref;
       filter?: ObjectFilter;
       count: Amount;
       to: MoveSpec;
@@ -435,6 +437,9 @@ export type Effect =
       free?: boolean;
       anyTime?: boolean;
       forever?: boolean;
+      /** « … jusqu'à ce que vous exiliez une autre carte avec cette créature » : les permissions précédentes de la source
+       * prennent fin (Superior Foes of Spider-Man). */
+      replacePrevious?: boolean;
       condition?: Condition;
       forOwner?: boolean;
       extraCost?: number;
@@ -473,6 +478,8 @@ export type Effect =
   | { op: "castCopiesFree"; what: Ref[]; maxTotalManaValue: number; paid?: boolean; storeCast?: string; maxCount?: number }
   /** « La règle des légendes ne s'applique pas aux permanents que vous contrôlez ce tour-ci. » */
   | { op: "noLegendRuleThisTurn" }
+  /** Émeute (702.136) : le contrôleur du sort de créature qui se résout choisit un marqueur +1/+1 ou la célérité. */
+  | { op: "chooseRiot" }
   /** Deux joueurs échangent leurs totaux de points de vie (701.12b : chacun gagne ou perd la différence) ; `store` : les
    * points de vie perdus ainsi par le contrôleur (Mister Negative : « piochez autant de cartes »). */
   | { op: "exchangeLife"; a: Ref; b: Ref; store?: string }
