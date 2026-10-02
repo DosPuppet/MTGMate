@@ -368,5 +368,10 @@ Dans l'ordre où elles ont été ajoutées, extension par extension.
   - `règle` Construct a Cosmic Cube, Doom Reigns Supreme, Robot Domination : la suite « quand vous le faites » ne vérifie pas que le sacrifice a eu lieu.
   - `timing` Hawkeye, Master Marksman : « payez {1} jusqu'à trois fois, puis choisissez autant de modes » est trois propositions successives (payer {1} pour chaque mode), chacune avec sa capacité réflexive ;
   - `règle` HULK SMASH! : avec le travail d'équipe payé, un seul mode reste permis (l'Oracle impose les deux).
+  - `règle` Knight of Wundagore : « vous mettez un marqueur +1/+1 sur une autre créature » se lit « un marqueur +1/+1 est mis sur une autre créature que vous contrôlez » ;
+  - `choix auto` Mister Hyde (deuxième mode) : la sorte de marqueur retirée est fixe (loyauté, puis +1/+1, puis les autres) ;
+  - `règle` The Thing, Ben Grimm : « blessent un joueur » se lit « blessent un adversaire » ; un seul déclenchement par lot ;
+  - `règle` World War Hulk (chapitre I) : le sort gratuit vient seulement de la main, et un sort de créature payé normalement ne consomme pas la permission ;
+  - `règle` Go Nuts! : avec le travail d'équipe payé, un seul mode reste permis.
 - **Légalité Standard :** instantané des légalités Scryfall au moment de l'import (`legalities.standard` dans `data/<set>.json`). Après une rotation ou une annonce de bannissement, réimporter les sets (`npm run import-cards -- <set>`).
 - **Images des jetons :** celle du jeton Scryfall le plus proche (même nom, puis mêmes F/E et couleurs ; `data/tokens.json`, `npm run import-tokens`) ; un jeton de nom inconnu garde le cadre texte.

@@ -47,3 +47,10 @@ Les scripts sont dans `packages/cards/src/msh/` : `cards` (cartes du méta), `wh
 - **Moteur :** rien de nouveau (Plans à marqueurs comme Political Triumph, copies de sorts avec nouvelles cibles, « ne peut être bloquée que par des créatures avec la célérité »).
 - **Reste pour plus tard :** Evil's Thrall (contrôle jusqu'à la fin de votre prochain tour), Hawkeye, Young Avenger (blessures augmentées de la force de la source), Loki Laufeyson (« le prochain sort de valeur de mana au plus sa force »), Wonder Man, Hollywood Hero (réactiver une montée en puissance).
 - **Tests :** 34 tests de règles (« lot A, rouge »).
+
+## Sous-lot A5 : cartes vertes ✅ (180 / 271)
+
+- **Cartes (33) :** Ant-Man's Army, Call Damage Control, Claim the Kingdom, Doc Samson, Super Psychiatrist, Earth's Mightiest Heroes, Epic Fight, Go Nuts!, Guerrilla Gorilla, Hellcat, Undying Vigilante, Hercules, Prince of Power, Heroic Feast, Hulkling, Burgeoning Bruiser, Ka-Zar of the Savage Land, Knight of Wundagore, Mister Hyde, Monster Within, Mole Man, Moloid Master, Pet Avengers, Punishing Punch, Rapid Rescue, Reptil, Dinomorpher, Restorative Technique, Rick Jones, Destined Sidekick, Serpent Specialist, She-Hulk, Jade Defender, Super Strength, The Thing, Ben Grimm, Tigra, Feline Fury, Training Regimen, The Unbeatable Squirrel Girl, Undercover Skrull, Wakandan Royal Guard, White Tiger, Ava Ayala, World War Hulk.
+- **Moteur :** rien de nouveau (remplacement de marqueurs de Doc Samson sur le cadre `eventReplacement`, terrains joués depuis la bibliothèque et le cimetière, F/E de base et types remplacés de Reptil).
+- **Reste pour plus tard :** Shang-Chi, Master of Kung Fu (activer comme si elles avaient la célérité), Powerful Broker (prolifération limitée à une cible).
+- **Tests :** 40 tests de règles (« lot A, vert »).
