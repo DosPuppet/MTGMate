@@ -124,8 +124,10 @@ export const RECORD_VERSION = 1;
  * - 45 : Avatar: The Last Airbender, lot C3 : « gardez des créatures de force totale N ou moins » ; blessures augmentées
  *   des marqueurs de la source du remplacement ; capacité déclenchée par l'attaque d'une créature (événement) ; capacités
  *   de la carte liée choisie ; valeur de mana totale des cibles d'une capacité réflexive fixée à sa mise sur la pile.
+ * - 46 : Marvel Super Heroes, lot A3 : le déclencheur « [cartes] mises dans une zone » respecte `nontoken` et `token`
+ *   (un jeton n'est pas une carte : Moonshadow, Robot Domination).
  */
-export const RULES_VERSION = 45;
+export const RULES_VERSION = 46;
 
 /** Un point de contrôle toutes les N décisions (plus la dernière de la partie). */
 export const CHECKPOINT_EVERY = 25;

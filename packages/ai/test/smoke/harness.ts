@@ -66,6 +66,8 @@ const EXTRA_P1: Record<string, string[]> = {
 const EXTRA_P1_GRAVEYARD: Record<string, string[]> = {
   "Tune Up": ["Nutrient Block"],
   "Abuelo's Awakening": ["Nutrient Block"],
+  // « carte de Méchant ou de Héros ciblée de votre cimetière ».
+  "Decoy Ploy": ["Swordsman, Sharp Scoundrel"],
 };
 
 /** Cartes supplémentaires dans la main du joueur 2 (contresorts qui visent un sort de VM 4 ou plus). */

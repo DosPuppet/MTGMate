@@ -362,5 +362,9 @@ Dans l'ordre où elles ont été ajoutées, extension par extension.
   - `règle` Super Intelligence : « l'entretien de son contrôleur » se lit « votre entretien, ou celui d'un adversaire si la créature est chez un adversaire » (exact en duel) ;
   - `règle` Attuma, Atlantean Warlord : une attaque contre un planeswalker compte comme « attaquent un joueur » ;
   - `règle` Tony Stark : les autres cartes vont au-dessous de la bibliothèque sans ordre aléatoire.
+  - `règle` Baron Strucker, HYDRA Overlord : « une seule fois par tour » est consommé même si vous refusez la connivence ;
+  - `règle` Ronin, Shadow Stalker : le mana restreint paie aussi les autres capacités d'un Équipement, pas seulement « Équiper » ;
+  - `règle` Widow's Bite : avec le travail d'équipe payé, un seul mode reste permis (l'Oracle impose les deux) ;
+  - `règle` Construct a Cosmic Cube, Doom Reigns Supreme, Robot Domination : la suite « quand vous le faites » ne vérifie pas que le sacrifice a eu lieu.
 - **Légalité Standard :** instantané des légalités Scryfall au moment de l'import (`legalities.standard` dans `data/<set>.json`). Après une rotation ou une annonce de bannissement, réimporter les sets (`npm run import-cards -- <set>`).
 - **Images des jetons :** celle du jeton Scryfall le plus proche (même nom, puis mêmes F/E et couleurs ; `data/tokens.json`, `npm run import-tokens`) ; un jeton de nom inconnu garde le cadre texte.

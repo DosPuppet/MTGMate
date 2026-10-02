@@ -156,7 +156,8 @@ export const CARDS: Record<string, CardScript> = {
         when.zoneChange(["battlefield", "hand", "library", "exile", "stack"], {
           to: ["graveyard"],
           whose: "you",
-          filter: { types: ["Artifact", "Creature", "Enchantment", "Land", "Planeswalker", "Battle"] },
+          // « cartes de permanent » : pas les jetons.
+          filter: { types: ["Artifact", "Creature", "Enchantment", "Land", "Planeswalker", "Battle"], nontoken: true },
         }),
         [fx.removeCounters(ref.self, 1, "-1/-1")],
         { condition: cond.counterAtLeast("-1/-1", 1), batched: true, label: "Retire un marqueur -1/-1" },

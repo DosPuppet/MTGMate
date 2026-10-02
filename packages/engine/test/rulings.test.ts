@@ -328,3 +328,19 @@ describe("608.2h : dernières informations connues de la créature qui meurt", (
     expect(s.players.p2?.life).toBe(16);
   });
 });
+
+describe("« carte » : un jeton qui change de zone n'est pas une carte", () => {
+  it("Moonshadow : un jeton mis au cimetière ne retire pas de marqueur -1/-1 ; une carte de permanent, si", () => {
+    const token = customCard({ name: "Test Token", power: 1, toughness: 1 });
+    let s = scenario({ p1: { battlefield: [{ name: "Moonshadow", counters: { "-1/-1": 6 } }, "Bear Cub", token] } });
+    const shadow = idOf(s, "p1", "battlefield", "Moonshadow");
+    const tok = idOf(s, "p1", "battlefield", "Test Token");
+    s.objects[tok]!.isToken = true;
+    destroy(s, tok);
+    s = settle(s, (x) => x.stack.length === 0 && x.triggers.length === 0);
+    expect(s.objects[shadow]?.counters["-1/-1"]).toBe(6);
+    destroy(s, idOf(s, "p1", "battlefield", "Bear Cub"));
+    s = settle(s, (x) => x.stack.length === 0 && x.triggers.length === 0);
+    expect(s.objects[shadow]?.counters["-1/-1"]).toBe(5);
+  });
+});
