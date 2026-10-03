@@ -148,12 +148,16 @@ export function Lobby() {
   const newcomer = useTutorial((t) => t.progress.done.length === 0 && !t.progress.current);
   const decks = useAllDecks();
   const [mine, setMine] = useState(decks[0]?.id ?? "");
-  const [ai, setAi] = useState(decks[1]?.id ?? "");
+  // Un deck par IA (au plus trois) ; au départ, des decks différents pour varier les adversaires.
+  const [ai, setAi] = useState(() => [1, 2, 3].map((i) => decks[i]?.id ?? decks[1]?.id ?? ""));
+  const [aiCount, setAiCount] = useState(1);
+  // IA dont on choisit le deck (multijoueur).
+  const [editing, setEditing] = useState(0);
+  const slot = Math.min(editing, aiCount - 1);
   const byId = (id: string) => decks.find((d) => d.id === id);
   const me = byId(mine);
-  const them = byId(ai);
-  const canStart = !!me && !!them && deckStatus(me).ok && deckStatus(them).ok;
-  const [aiCount, setAiCount] = useState(1);
+  const them = ai.slice(0, aiCount).map(byId);
+  const canStart = !!me && deckStatus(me).ok && them.every((d) => !!d && deckStatus(d).ok);
   // Match au meilleur des trois manches (duel), retenu d'une partie à l'autre.
   const [bo3, setBo3] = useState(() => localStorageFlag("mtgmate.bo3"));
   useEffect(() => saveFlag("mtgmate.bo3", bo3), [bo3]);
@@ -175,7 +179,6 @@ export function Lobby() {
       </header>
       <div className="lobby-body">
         <DeckChoice label="Votre deck" value={mine} onChange={setMine} />
-        <DeckChoice label="Deck de l'IA" value={ai} onChange={setAi} />
         <div className="ai-count">
           <span>Adversaires IA</span>
           <div className="seg">
@@ -193,6 +196,28 @@ export function Lobby() {
             </label>
           )}
         </div>
+        {aiCount > 1 && (
+          <div className="seg ai-decks" role="tablist" aria-label="Deck de chaque IA">
+            {them.map((d, i) => (
+              <button
+                key={i}
+                type="button"
+                role="tab"
+                aria-selected={slot === i}
+                className={slot === i ? "on" : ""}
+                onClick={() => setEditing(i)}
+              >
+                IA {i + 1} <span className="ai-deck-name">{d?.name ?? "—"}</span>
+              </button>
+            ))}
+          </div>
+        )}
+        <DeckChoice
+          key={slot}
+          label={aiCount > 1 ? `Deck de l'IA ${slot + 1}` : "Deck de l'IA"}
+          value={ai[slot] ?? ""}
+          onChange={(id) => setAi((prev) => prev.map((v, i) => (i === slot ? id : v)))}
+        />
         <div className="ai-level">
           <div className="ai-count">
             <span>Niveau de l'IA</span>
@@ -217,11 +242,10 @@ export function Lobby() {
             className="btn primary big"
             disabled={!canStart}
             onClick={() =>
-              me &&
-              them &&
+              canStart &&
               startGame(
                 me.main,
-                Array.from({ length: aiCount }, () => them.main),
+                them.map((d) => (d as DeckList).main),
                 undefined,
                 level,
                 bo3 && aiCount === 1 ? { bestOf: 3, sideboard: me.sideboard ?? [] } : undefined,

@@ -1900,6 +1900,20 @@ button {
   padding: 4px 14px;
   font-size: 14px;
 }
+/* Accueil, multijoueur : une IA à la fois, avec le nom de son deck. */
+.ai-decks {
+  align-self: center;
+  flex-wrap: wrap;
+  max-width: 100%;
+}
+.ai-decks button {
+  padding: 6px 12px;
+  font-size: 13px;
+}
+.ai-deck-name {
+  color: var(--dim);
+  margin-left: 4px;
+}
 .lobby-actions {
   display: flex;
   gap: 12px;
