@@ -73,6 +73,12 @@ const hasTriggers = (abilities: AbilityDef[] | undefined) => !!abilities?.some((
  */
 const sourcesCache = new WeakMap<GameState, { key: string; out: Source[] }>();
 
+/** Copie de l'état : la copie reprend les sources de l'original, validées par leur clé (voir `carryLayerCache`). */
+export function carrySourcesCache(from: GameState, to: GameState): void {
+  const hit = sourcesCache.get(from);
+  if (hit) sourcesCache.set(to, hit);
+}
+
 function sourcesKey(s: GameState): string {
   let zones = `${s.battlefield.length}:${s.battlefield[s.battlefield.length - 1] ?? ""}|${s.stack.length}:${s.stack[s.stack.length - 1]?.id ?? ""}|${s.effects.length}`;
   for (const p of s.playerOrder) {

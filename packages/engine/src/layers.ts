@@ -481,6 +481,16 @@ interface CacheDeps {
 const cache = new WeakMap<GameState, { key: string; map: Map<ObjectId, Characteristics>; deps: CacheDeps }>();
 const depsMemo = new WeakMap<object, CacheDeps>();
 
+/**
+ * Copie de l'état (`cloneState`) : la copie reprend le cache de l'original (PLAN-S, P1). Il reste validé par sa clé
+ * (version, tour, étape) : une modification de la copie qui fait avancer la version l'invalide comme avant. Les
+ * caractéristiques en cache ne sont jamais modifiées par ceux qui les lisent.
+ */
+export function carryLayerCache(from: GameState, to: GameState): void {
+  const hit = cache.get(from);
+  if (hit) cache.set(to, hit);
+}
+
 function scanDeps(x: unknown, out: CacheDeps): void {
   if (Array.isArray(x)) {
     for (const v of x) scanDeps(v, out);

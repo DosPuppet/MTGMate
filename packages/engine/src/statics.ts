@@ -26,6 +26,12 @@ interface Index {
   replacements: Map<string, { p: PlayerId; e: Entry }[]>;
 }
 const cache = new WeakMap<GameState, Index>();
+
+/** Copie de l'état : la copie reprend l'index de l'original, validé par sa clé (voir `carryLayerCache`). */
+export function carryStaticsCache(from: GameState, to: GameState): void {
+  const hit = cache.get(from);
+  if (hit) cache.set(to, hit);
+}
 const NOT_KEYS = new Set(["kind", "label", "condition"]);
 
 function current(s: GameState): Index {

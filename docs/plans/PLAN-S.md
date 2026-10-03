@@ -34,7 +34,8 @@ Côté performance, les caches des couches et des statiques sont des `WeakMap` i
 | S8 | ObjectFilter : un seul évaluateur, comparaisons, négations, choix, relations | |
 | S9 | CostDef, `activated()`, `manaAbility()`, permissions liées | |
 | S10 | Rangement de `dsl.ts` et des `common.ts`, GameState | |
-| P1 à P5 | Performance (caches suivis au clone, invalidation par dépendance, filtres compilés, index des déclencheurs, définitions partagées) | |
+| P1 | Les caches (couches, statiques de joueur, sources des déclencheurs) suivent la copie de l'état (`cloneState`), toujours validés par leur clé : bench aléatoire 2 j. 4 801 → 5 375 déc/s, 4 j. 3 419 → 4 226, IA heuristique 2 j. 2 379 → 2 734 (mesures avant et après, même session) ; les cibles du bench sont atteintes ; empreintes identiques | ✅ |
+| P2 à P5 | Performance (invalidation par dépendance, filtres compilés, index des déclencheurs, définitions partagées) | |
 
 ## Principes (valent pour tous les lots)
 

@@ -176,6 +176,9 @@ export function cloneState(s: GameState): GameState {
   const { defs, ...rest } = s;
   const copy = deepClone(rest) as GameState;
   copy.defs = { ...defs };
+  carryLayerCache(s, copy);
+  carryStaticsCache(s, copy);
+  carrySourcesCache(s, copy);
   return copy;
 }
 
@@ -753,11 +756,11 @@ export function setPrepared(s: GameState, o: GameObject, on: boolean): void {
 // ---------------------------------------------------------------------------
 
 import { syncControl } from "./control";
-import { bump, bumpFor, chars, snapshot } from "./layers";
+import { bump, bumpFor, carryLayerCache, chars, snapshot } from "./layers";
 import { chooseReplacementOrder } from "./modifiers";
 import { applyEntersReplacements, auraHosts, type EntersContext, releaseLinkedExile, replaceGraveyard } from "./replacement";
-import { quantityMods, recipientMatches } from "./statics";
-import { detectTriggers } from "./triggers";
+import { carryStaticsCache, quantityMods, recipientMatches } from "./statics";
+import { carrySourcesCache, detectTriggers } from "./triggers";
 import { logTurnEvent, zoneEntry } from "./turnlog";
 
 export {
