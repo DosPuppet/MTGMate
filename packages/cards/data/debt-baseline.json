@@ -223,7 +223,7 @@
     "GameObject": 60,
     "StackItem": 29,
     "PlayerState": 21,
-    "GameState": 39,
+    "GameState": 38,
     "ObjectFilter": 84,
     "CostDef": 37,
     "ActivatedAbilityDef": 19,
@@ -270,6 +270,7 @@
     "PLAN-S S6c : les effets « toutes les … » agissent sur une référence de zone ; exileTop{allBut} : Effect 166 → 161, Effect (champs) 650 → 632",
     "PLAN-S S6d-e : extra, spellFate, gainControl, grantPlay{flashback}, moveTo{warp}, référence sameName (Ref +1 champ : zone), durée des emblèmes : Effect 161 → 150, Effect (champs) 632 → 611, Ref (champs) 46 → 47",
     "PLAN-S S7 : déclencheurs life, isDealtDamage attaché au joueur, leaves sans mourir : TriggerSpec 62 → 58, TriggerSpec (champs) 156 → 153",
-    "PLAN-S S8a : négations d'ObjectFilter exprimées par les champs existants (token, notTypes, basic, not, anyOf) : ObjectFilter 90 → 84"
+    "PLAN-S S8a : négations d'ObjectFilter exprimées par les champs existants (token, notTypes, basic, not, anyOf) : ObjectFilter 90 → 84",
+    "PLAN-S S10 : le compteur des objets rejoint idCounters : GameState 39 → 38"
   ]
 }

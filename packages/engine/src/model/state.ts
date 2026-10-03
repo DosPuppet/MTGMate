@@ -713,11 +713,9 @@ export interface GameState {
   /** Incrémenté à chaque changement pouvant affecter les caractéristiques (invalide le cache des couches). */
   version: number;
   rng: number;
-  /** Prochain numéro d'objet (`o…`). */
-  nextId: number;
   /**
-   * Prochain numéro par préfixe pour tout le reste (effets `e…`, déclencheurs `t…`, capacités `a…`…) : un effet de plus
-   * ne décale pas les identifiants des objets, que citent les décisions enregistrées.
+   * Prochain numéro par préfixe (objets `o…`, effets `e…`, déclencheurs `t…`, capacités `a…`…) : un effet de plus ne
+   * décale pas les identifiants des objets, que citent les décisions enregistrées.
    */
   idCounters: Record<string, number>;
   timestamp: number;

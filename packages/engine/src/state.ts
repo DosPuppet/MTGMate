@@ -199,7 +199,6 @@ export function castInfoOf(s: GameState, sourceId: ObjectId | undefined, permane
 // ---------------------------------------------------------------------------
 
 export function newId(s: GameState, prefix = "o"): string {
-  if (prefix === "o") return `o${s.nextId++}`;
   // Un compteur par préfixe : créer un effet ou un déclencheur de plus ne décale pas les identifiants des objets.
   const n = s.idCounters[prefix] ?? 1;
   s.idCounters[prefix] = n + 1;
