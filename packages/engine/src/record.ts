@@ -245,8 +245,11 @@ export const RECORD_VERSION = 1;
  * - 85 : une capacité déclenchée de palier (station) se déclenche même sans capacité déclenchée imprimée (Dawnsire,
  *   Entropic Battlecruiser, Sledge-Class Seedship, Synthesizer Labship) ; Edge of Eternities (lot K8) : Archenemy's
  *   Charm (une ou deux cibles), Pain for All (« une autre cible »), Broodguard Elite (tous ses marqueurs).
+ * - 86 : « arrive avec » un nombre de marqueurs lu dans l'état de la partie (Gev, Scaled Scorch) ; remplacement de
+ *   marqueurs « si vous deviez mettre » (`byYou`, Innkeeper's Talent) ; Bloomburrow (lot K8) : Dragonhawk (jusqu'à votre
+ *   prochaine étape de fin), Kitnap (pas de marqueurs d'étourdissement si le cadeau est promis), Gev (vos créatures).
  */
-export const RULES_VERSION = 85;
+export const RULES_VERSION = 86;
 
 /** Un point de contrôle toutes les N décisions (plus la dernière de la partie). */
 export const CHECKPOINT_EVERY = 25;

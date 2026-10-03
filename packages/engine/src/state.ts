@@ -374,7 +374,12 @@ export function changeCounters(s: GameState, o: GameObject, kind: string, n: num
     const q = quantityMods(
       s,
       "counters",
-      (a) => (!a.r.counter || a.r.counter === kind) && !(asCost && a.r.effectOnly) && recipientMatches(s, a, o.id),
+      (a) =>
+        (!a.r.counter || a.r.counter === kind) &&
+        !(asCost && a.r.effectOnly) &&
+        // « si vous deviez mettre » : celui qui les met (contrôleur de ce qui se résout, sinon du permanent).
+        (!a.r.byYou || (s.resolving?.controller ?? o.controller) === a.controller) &&
+        recipientMatches(s, a, o.id),
     );
     if (q.prevented) return 0;
     n = chooseReplacementOrder(n, q.mods, HARMFUL_COUNTERS.has(kind) ? "min" : "max");

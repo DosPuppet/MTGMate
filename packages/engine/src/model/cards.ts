@@ -718,6 +718,8 @@ export interface EventReplacement {
   counter?: string;
   /** Marqueurs : pas ceux mis pour payer un coût (Doubling Season : « si un effet devait mettre des marqueurs »). */
   effectOnly?: boolean;
+  /** Marqueurs : seulement ceux que met le contrôleur du remplacement (Innkeeper's Talent : « si vous deviez mettre »). */
+  byYou?: boolean;
   /**
    * Jetons : d'autres jetons à la place (Draconic Visitor : un Dragon 5/5) ou des copies du permanent auquel la source est
    * attachée (Moonlit Meditation, Mirrormind Crown) ; `firstEachTurn` : seulement la première fois de chaque tour.

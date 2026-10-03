@@ -135,9 +135,10 @@ export const RED: Record<string, CardScript> = {
           w,
           [
             fx.exileTop(ref.you, amount.count({ types: ["Creature"], controller: "you", minPower: 4 }), "d"),
-            fx.grantPlay(ref.stored("d"), { untilYourNextTurn: true }),
+            // « Jusqu'à votre prochaine étape de fin » : celle de ce tour-ci, si c'est le vôtre.
+            fx.grantPlay(ref.stored("d"), { untilYourNextEndStep: true }),
             fx.delayedAt(
-              "yourNextEndStep",
+              "yourEndStep",
               [fx.damage(amount.plus(amount.inExile(ref.target("d")), amount.inExile(ref.target("d"))), ref.eachOpponent)],
               { d: ref.stored("d") },
             ),

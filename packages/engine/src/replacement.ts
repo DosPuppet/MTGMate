@@ -11,7 +11,7 @@
  */
 
 import { createTokens, gainLife } from "./actions";
-import { boardAmount } from "./effects";
+import { boardAmount, evalAmount, staticContext } from "./effects";
 import { copiableExceptions, copiedDefId, mergeMods } from "./layers";
 import { manaValue } from "./mana";
 import { changeCounters, chars, moveObject, newId, nextTimestamp, P1P1, setPrepared } from "./state";
@@ -140,7 +140,9 @@ function amountAtEntry(s: GameState, a: Amount, o: GameObject, ctx: EntersContex
     const n = boardAmount(s, { ...a, filter: f }, o.controller, o.id);
     return entering && matchesObjectFilter(s, o.controller, entering.id, f, o.id) ? n - 1 : n;
   }
-  return 0;
+  // Les autres montants ne dépendent que de l'état de la partie (Gev, Scaled Scorch : « un marqueur pour chaque
+  // adversaire qui a perdu des points de vie ce tour-ci »), vus de la source.
+  return evalAmount(s, staticContext(s, o.controller, o.id), a);
 }
 
 /** Condition d'une capacité « arrive avec » : le kicker et X du sort lancé sont connus à l'arrivée. */

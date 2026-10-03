@@ -229,7 +229,7 @@ export const GREEN: Record<string, CardScript> = {
           { label: "Garde {1}" },
         ),
       ],
-      [eventReplacement({ event: "counters", to: "yourSide", modify: { times: 2 }, label: "Marqueurs doublés" })],
+      [eventReplacement({ event: "counters", byYou: true, modify: { times: 2 }, label: "Marqueurs doublés" })],
     ],
   },
   "Keen-Eyed Curator": {

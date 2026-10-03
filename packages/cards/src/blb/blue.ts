@@ -71,7 +71,7 @@ export const BLUE: Record<string, CardScript> = {
     spell: spell([target.upTo(2, target.creature())], [fx.bounce(ref.target()), fx.draw(2), fx.discard(1)]),
   },
   "Daring Waverider": {
-    // Approximation : le sort est lançable gratuitement jusqu'à la fin du tour (puis exilé).
+    // Lancé pendant la résolution (608.2g), exilé au lieu d'aller au cimetière.
     abilities: [
       triggered(when.entersSelf, [fx.castNow(ref.target(), { free: true, exileAfter: true })], {
         targets: [
@@ -193,8 +193,11 @@ export const BLUE: Record<string, CardScript> = {
     enchant: { filter: { types: ["Creature"] }, label: "créature" },
     controlsEnchanted: true,
     abilities: [
-      triggered(when.entersSelf, [fx.tap(ref.attached), ...fx.when(cond.not(cond.gift), fx.counters(ref.attached, "stun", 3))], {
-        label: "Engage la créature (3 marqueurs d'étourdissement sans cadeau)",
+      triggered(when.entersSelf, [fx.tap(ref.attached)], { label: "Engage la créature" }),
+      // « Si le cadeau n'a pas été promis » : lu sur l'Aura (le cadeau d'un permanent n'est pas connu de ses effets).
+      triggered(when.entersSelf, [fx.counters(ref.attached, "stun", 3)], {
+        condition: cond.not(cond.gift),
+        label: "Trois marqueurs d'étourdissement (sans cadeau)",
       }),
     ],
   },

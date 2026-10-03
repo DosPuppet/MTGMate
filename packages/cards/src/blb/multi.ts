@@ -159,7 +159,7 @@ export const MULTI: Record<string, CardScript> = {
   "Gev, Scaled Scorch": {
     abilities: [
       entersWith({
-        affects: { types: ["Creature"], other: true },
+        affects: { types: ["Creature"], controller: "you", other: true },
         counters: amount.opponentsLostLife,
         label: "Marqueurs par adversaire ayant perdu des PV",
       }),
