@@ -462,3 +462,27 @@ describe("Prolifération : un choix (701.34a)", () => {
     expect(s.objects[jace]?.counters.loyalty).toBe(jaceLoyalty);
   });
 });
+
+describe("Liliana the Faultless (lot K4)", () => {
+  it("« {1}, {T}, défaussez une carte » : la défausse est un coût ; sans carte en main, la capacité ne s'active pas", () => {
+    const setup = (hand: string[]) => scenario({ p1: { battlefield: ["Liliana the Faultless", "Bear Cub", "Plains"], hand } });
+    const empty = setup([]);
+    const lili0 = idOf(empty, "p1", "battlefield", "Liliana the Faultless");
+    expect(legalActions(empty, "p1").some((a) => a.type === "activate" && a.source === lili0)).toBe(false);
+    let s = setup(["Island"]);
+    const lili = idOf(s, "p1", "battlefield", "Liliana the Faultless");
+    const bear = idOf(s, "p1", "battlefield", "Bear Cub");
+    const opt = legalActions(s, "p1").find((a) => a.type === "activate" && a.source === lili);
+    s = act(s, "p1", {
+      type: "activate",
+      source: lili,
+      ability: opt?.type === "activate" ? opt.ability : -1,
+      targets: { t: [bear] },
+    });
+    // Capacité sur la pile : la carte est déjà défaussée.
+    expect(s.stack).toHaveLength(1);
+    expect(s.players.p1?.hand).toHaveLength(0);
+    s = passBoth(s);
+    expect(chars(s, bear).keywords).toContain("hexproof");
+  });
+});

@@ -211,8 +211,9 @@ export const RECORD_VERSION = 1;
  *   Journal) ; une capacité déclenchée accordée « si… » revérifie sa condition à la résolution (603.4) ; moments corrigés
  *   par script (Earthbender Ascension, Fire Lord Azula, Azog, Puca's Eye, Ill-Timed Explosion, Granite Witness, Ezrim,
  *   Sewer-veillance Cam, Rattleback Apothecary) (lot K3).
+ * - 75 : Liliana the Faultless : « défaussez une carte » est un coût (lot K4).
  */
-export const RULES_VERSION = 74;
+export const RULES_VERSION = 75;
 
 /** Un point de contrôle toutes les N décisions (plus la dernière de la partie). */
 export const CHECKPOINT_EVERY = 25;

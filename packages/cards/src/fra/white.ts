@@ -239,15 +239,12 @@ export const WHITE: Record<string, CardScript> = {
         [fx.gainLife(1)],
         { label: "+1 PV" },
       ),
-      // Approximation : la défausse est faite à la résolution (pas comme coût).
       activated({
         mana: "{1}",
         tap: true,
+        discard: 1,
         targets: [target.creatureOrPlaneswalker("t", { controller: "you", other: true })],
-        effects: [
-          fx.discard(1, ref.you, { store: "d" }),
-          ...fx.when(cond.v("d"), fx.modify(ref.target(), { addKeywords: ["hexproof"] })),
-        ],
+        effects: [fx.modify(ref.target(), { addKeywords: ["hexproof"] })],
         label: "Défausser : défense talismanique",
       }),
     ],

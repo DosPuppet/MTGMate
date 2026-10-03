@@ -175,8 +175,7 @@ export const ARTIFACTS: Record<string, CardScript> = {
 
   // --- Terrain --------------------------------------------------------------------
   "Eclipsed Realms": {
-    // Approximation : le type est choisi parmi tous les types de créature, et sans résolution (terrain joué), c'est le
-    // choix par défaut (le type le plus présent chez son contrôleur).
+    // Approximation : le type est choisi parmi tous les types de créature.
     chooseOnEnter: "creatureType",
     abilities: [
       manaAbility("C"),
