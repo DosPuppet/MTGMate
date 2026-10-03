@@ -5,13 +5,13 @@
  */
 
 import { describe, expect, it } from "vitest";
-import { dealDamage, destroy, sourceFromObject } from "../src/actions";
+import { createTokens, dealDamage, destroy, sourceFromObject } from "../src/actions";
 import { legalActions } from "../src/legal";
 import { spellCost } from "../src/stack";
 import { chars, setPrepared } from "../src/state";
 import { countTurnEvents } from "../src/turnlog";
 import type { GameState } from "../src/types";
-import { act, idOf, passAccepting, passBoth, scenario } from "./helpers";
+import { act, idOf, passAccepting, passBoth, scenario, settle } from "./helpers";
 
 type S = GameState;
 const cast = (s: S, p: string, name: string, extra: Record<string, unknown> = {}) =>
@@ -484,5 +484,28 @@ describe("Liliana the Faultless (lot K4)", () => {
     expect(s.players.p1?.hand).toHaveLength(0);
     s = passBoth(s);
     expect(chars(s, bear).keywords).toContain("hexproof");
+  });
+});
+
+describe("Reality Fracture, lot K6 : Renforcez Jace avec plusieurs jetons Jace", () => {
+  it("le joueur choisit le jeton Jace qui reçoit les marqueurs (choix non ciblé, à la résolution)", () => {
+    const s0 = scenario({ p1: { hand: ["No Admittance"], battlefield: lands("Mountain", 2) } });
+    const [a, b] = createTokens(s0, "p1", { name: "Jace", colors: ["U"], types: ["Planeswalker"], subtypes: ["Jace"] }, 2) as [
+      string,
+      string,
+    ];
+    for (const id of [a, b]) (s0.objects[id] as { counters: Record<string, number> }).counters.loyalty = 2;
+    let offered: string[] = [];
+    const s = settle(cast(s0, "p1", "No Admittance", { targets: { t: ["p2"] } }), (req) => {
+      if (req.type !== "pick" || !req.options.includes(a)) return undefined;
+      offered = req.options;
+      return [b];
+    });
+    expect([...offered].sort()).toEqual([a, b].sort());
+    expect(s.players.p2?.life).toBe(17);
+    expect(s.objects[a]?.counters.loyalty).toBe(2);
+    expect(s.objects[b]?.counters.loyalty).toBe(3);
+    // Aucun nouveau jeton : vous en contrôlez déjà.
+    expect(s.battlefield.filter((id) => s.objects[id]?.isToken)).toHaveLength(2);
   });
 });

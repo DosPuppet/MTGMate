@@ -252,13 +252,19 @@ export function checkOffers(state: GameState, player: string, where: string): vo
     if (a.type === "pass") continue;
     const d0 = buildCastDecision(a, (list) => list[0], mulberry32(k + 1));
     if (!d0) continue;
-    // Objets payés en coût : un autre choix que la suggestion (les dernières options) doit aussi être accepté.
+    // Objets payés en coût : un autre choix que la suggestion (les dernières options) doit aussi être accepté. Sauf pour
+    // les coûts additionnels qui engagent, renvoient ou exilent des permanents : ils peuvent prendre une source de mana
+    // dont le sort a besoin (un tel choix est refusé à juste titre), la suggestion est gardée.
+    const keepSuggestion = new Set(["costTap", "costBounce", "costExile"]);
     const picks =
       (a.type === "cast" || a.type === "activate") && a.picks
         ? Object.fromEntries(
             a.picks
               .filter((p) => !p.when && !p.countIsX && !p.repeat && !p.atMost)
-              .map((p) => [p.slot, p.minTotal ? p.options : p.options.slice(-p.count)]),
+              .map((p) => [
+                p.slot,
+                keepSuggestion.has(p.slot) ? p.suggested : p.minTotal ? p.options : p.options.slice(-p.count),
+              ]),
           )
         : {};
     const d = Object.keys(picks).length && (d0.type === "cast" || d0.type === "activate") ? { ...d0, picks } : d0;

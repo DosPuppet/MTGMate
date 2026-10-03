@@ -1699,6 +1699,20 @@ describe("Lorwyn Eclipsed, lot A — noir", () => {
       expect(chars(s, shifter).keywords).toContain("changeling");
     });
 
+    it("Graveshifter : la carte est ciblée à la mise sur la pile (« target »), le retour est facultatif à la résolution", () => {
+      let s = scenario({ p1: { battlefield: lands("Swamp", 4), hand: ["Graveshifter"], graveyard: ["Serra Angel"] } });
+      const angel = idOf(s, "p1", "graveyard", "Serra Angel");
+      s = cast(s, "p1", "Graveshifter");
+      for (let i = 0; i < 20 && s.pending?.kind === "priority"; i++) s = act(s, s.pending.player, { type: "pass" });
+      // La question « vous pouvez » : la capacité, encore sur la pile, cible déjà la carte (choisie à sa mise sur la pile).
+      expect(s.pending?.kind === "choice" && s.pending.request.type).toBe("yesNo");
+      const item = s.stack.find((i) => i.kind === "ability" && s.defs[i.sourceDefId]?.name === "Graveshifter");
+      expect(Object.values(item?.targets ?? {}).flat()).toEqual([angel]);
+      s = settle(s, answers({ yes: false }));
+      expect(idsOf(s, "p1", "graveyard", "Serra Angel")).toHaveLength(1);
+      expect(idsOf(s, "p1", "hand", "Serra Angel")).toHaveLength(0);
+    });
+
     it("Moonglove Extractor : quand elle attaque, vous piochez une carte et perdez 1 PV", () => {
       let s = scenario({ p1: { battlefield: ["Moonglove Extractor"] } });
       const ex = idOf(s, "p1", "battlefield", "Moonglove Extractor");

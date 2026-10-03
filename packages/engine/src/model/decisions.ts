@@ -161,7 +161,12 @@ export type CostSlot =
   | "improvise"
   | "waterbend"
   | "delve"
-  | "sacrificeToPay";
+  | "sacrificeToPay"
+  /** Coûts additionnels d'un sort (Duskmourn, contempler et exiler) : permanents exilés, renvoyés, engagés ; cartes du cimetière. */
+  | "costExile"
+  | "costBounce"
+  | "costTap"
+  | "costGraveyard";
 
 /** Un coût payé avec des objets, tel que proposé au joueur (`legalActions`) et vérifié au paiement. */
 export interface CostPick {

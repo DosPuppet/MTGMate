@@ -1651,3 +1651,31 @@ describe("« Défaussez votre main » en coût (lot K3)", () => {
     expect(run([]).players.p1?.hand).toHaveLength(2);
   });
 });
+
+describe("Severance Priest (lot K6)", () => {
+  it("« vous pouvez choisir une carte non-terrain » : le joueur peut n'en choisir aucune", () => {
+    const run = (take: boolean) => {
+      let s = scenario({
+        p1: { battlefield: ["Plains", "Swamp", "Forest"], hand: ["Severance Priest"] },
+        p2: { hand: ["Shivan Dragon", "Forest"] },
+      });
+      s = act(s, "p1", { type: "cast", card: idOf(s, "p1", "hand", "Severance Priest") });
+      let min: number | undefined;
+      for (let i = 0; i < 30 && !(s.stack.length === 0 && s.pending?.kind === "priority"); i++) {
+        const p = s.pending;
+        if (p?.kind === "priority") s = act(s, p.player, { type: "pass" });
+        else if (p?.kind === "choice" && p.request.type === "pick" && p.request.intent === "pickCards") {
+          min = p.request.min;
+          s = act(s, p.player, { type: "choose", values: take ? p.request.suggested : [] });
+        } else if (p?.kind === "choice") s = act(s, p.player, { type: "choose", values: p.request.suggested });
+        else break;
+      }
+      return { s, min };
+    };
+    const no = run(false);
+    expect(no.min).toBe(0);
+    expect(namesIn(no.s, no.s.players.p2?.hand)).toContain("Shivan Dragon");
+    const yes = run(true);
+    expect(namesIn(yes.s, yes.s.players.p2?.hand)).not.toContain("Shivan Dragon");
+  });
+});

@@ -575,7 +575,7 @@ export function legalActions(s: GameState, player: PlayerId): ActionOption[] {
       kickerTap: d.kickerCost?.tapPower ? crewSpec(s, player, card, d.kickerCost.tapPower) : undefined,
       // Objets payés en coût (preuves, exil du cimetière, flétrir X), quand le joueur a un choix à faire.
       ...(() => {
-        const picks = spellPicks(s, player, card, d).filter(
+        const picks = spellPicks(s, player, card, d, undefined, flashback).filter(
           (p) =>
             (p.when !== "kicked" || kickerAffordable) &&
             (p.when !== "alternative" || altAvailable) &&

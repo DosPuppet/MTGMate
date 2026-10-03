@@ -316,10 +316,13 @@ export const BLUE: Record<string, CardScript> = {
       {
         pips: 2,
         label: "Copie d'un artefact ou d'une créature",
-        targets: [
-          target.permanent("t", ["Artifact", "Creature"], { controller: "you" }, "artefact ou créature que vous contrôlez"),
+        // « Choisissez un artefact ou une créature que vous contrôlez » : choix non ciblé, à la résolution.
+        effects: [
+          fx.chooseAmong(ref.permanentsOf(ref.you, { types: ["Artifact", "Creature"] }), ref.you, "w", {
+            prompt: "Choisissez l'artefact ou la créature à copier",
+          }),
+          fx.copyToken(ref.stored("w")),
         ],
-        effects: [fx.copyToken(ref.target())],
       },
       {
         pips: 3,

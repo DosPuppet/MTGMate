@@ -300,6 +300,10 @@ export function matchesObjectFilter(
     !countersPutBy(o.countersPutTurn === s.turn.number ? o.countersPutKinds : undefined, controller, f.countersPutByYouThisTurn)
   )
     return false;
+  if (f.crewedSource) {
+    const c = sourceId ? s.objects[sourceId]?.crewedBy : undefined;
+    if (!c || c.turn !== s.turn.number || !c.ids.includes(id)) return false;
+  }
   // « autre que la créature enchantée » (Sporogenic Infection, Saw) ; « la créature équipée / le terrain enchanté ».
   if (f.notAttachedToSource && sourceId && s.objects[sourceId]?.attachedTo === id) return false;
   if (f.attachedToSource && (!sourceId || s.objects[sourceId]?.attachedTo !== id)) return false;

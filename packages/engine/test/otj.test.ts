@@ -13,6 +13,7 @@ import {
   type Answer,
   act,
   advanceUntil,
+  attack,
   canActivate,
   castable,
   idOf,
@@ -548,5 +549,105 @@ describe("« Au choix » choisi à la résolution (lot K3)", () => {
     const b = run(0);
     expect(b).toContain("lifelink");
     expect(b).not.toContain("menace");
+  });
+});
+
+describe("Outlaws of Thunder Junction, lot K6 : choix rendus au joueur", () => {
+  /** Joue Arid Archway, renvoie le terrain nommé `back` et note les choix posés. */
+  const archway = (back: string) => {
+    let s = scenario({ p1: { battlefield: ["Plains", "Forlorn Flats"], hand: ["Arid Archway"] } });
+    s = act(s, "p1", { type: "playLand", card: idOf(s, "p1", "hand", "Arid Archway") });
+    const intents: string[] = [];
+    let options: string[] = [];
+    let targets: string[] = [];
+    s = settle(s, (req, _p, cur) => {
+      intents.push(req.intent);
+      if (req.type === "pick" && req.intent === "pickCards") {
+        options = req.options.map((id) => nameOf(cur, id) ?? "");
+        const item = cur.stack.find((i) => cur.defs[i.sourceDefId]?.name === "Arid Archway");
+        targets = Object.values(item?.targets ?? {}).flat();
+        return pickNamed(cur, req, back);
+      }
+      return undefined;
+    });
+    return { s, intents, options, targets };
+  };
+
+  it("Arid Archway : le terrain renvoyé est choisi à la résolution (pas ciblé), elle-même comprise", () => {
+    const self = archway("Arid Archway");
+    expect(self.options.sort()).toEqual(["Arid Archway", "Forlorn Flats", "Plains"]);
+    expect(self.targets).toHaveLength(0);
+    expect(idsOf(self.s, "p1", "hand", "Arid Archway")).toHaveLength(1);
+    // Elle-même n'est pas « un autre Désert » : pas de surveillance.
+    expect(self.intents).not.toContain("surveilGraveyard");
+  });
+
+  it("Arid Archway : un autre Désert renvoyé, surveillance 1 ; un terrain qui n'est pas un Désert, rien", () => {
+    const desert = archway("Forlorn Flats");
+    expect(idsOf(desert.s, "p1", "hand", "Forlorn Flats")).toHaveLength(1);
+    expect(desert.intents).toContain("surveilGraveyard");
+    const plains = archway("Plains");
+    expect(idsOf(plains.s, "p1", "hand", "Plains")).toHaveLength(1);
+    expect(idsOf(plains.s, "p1", "battlefield", "Arid Archway")).toHaveLength(1);
+    expect(plains.intents).not.toContain("surveilGraveyard");
+  });
+});
+
+describe("Montures : « une créature qui l'a montée ce tour-ci » (lot K6)", () => {
+  /** Monte la Monture (engage les créatures suggérées), puis attaque avec elle ; `answer` répond aux choix. */
+  const saddleAndAttack = (
+    s0: GameState,
+    mountName: string,
+    answer: (req: { type: string; options?: string[] }) => unknown[],
+    tap?: string[],
+  ) => {
+    let s = s0;
+    const mount = idOf(s, "p1", "battlefield", mountName);
+    const saddle = legalActions(s, "p1").find((a) => a.type === "activate" && a.source === mount);
+    s = act(s, "p1", {
+      type: "activate",
+      source: mount,
+      ability: saddle?.type === "activate" ? saddle.ability : -1,
+      ...(tap ? { tap } : {}),
+    });
+    s = passBoth(s);
+    s = attack(s, [mount]);
+    for (let i = 0; i < 30 && !(s.stack.length === 0 && s.pending?.kind === "priority"); i++) {
+      const p = s.pending;
+      if (p?.kind === "priority") s = act(s, p.player, { type: "pass" });
+      else if (p?.kind === "choice")
+        s = act(s, p.player, { type: "choose", values: answer(p.request as never) as (string | number)[] });
+      else break;
+    }
+    return s;
+  };
+
+  it("Giant Beaver : le marqueur va sur une créature qui l'a montée (seule cible possible)", () => {
+    let s = scenario({ p1: { battlefield: ["Giant Beaver", "Serra Angel", "Bear Cub"] } });
+    const angel = idOf(s, "p1", "battlefield", "Serra Angel");
+    const bear = idOf(s, "p1", "battlefield", "Bear Cub");
+    const targetOptions: string[][] = [];
+    s = saddleAndAttack(
+      s,
+      "Giant Beaver",
+      (req) => {
+        if (req.type === "pick" && req.options?.includes(angel)) targetOptions.push(req.options);
+        return req.type === "pick" ? (req.options?.includes(angel) ? [angel] : (req.options ?? []).slice(0, 1)) : [0];
+      },
+      [angel],
+    );
+    // La Monture 3 engage l'Ange (force 4) ; l'Ours ne l'a pas montée.
+    expect(targetOptions.every((o) => !o.includes(bear))).toBe(true);
+    expect(s.objects[angel]?.counters["+1/+1"]).toBe(1);
+  });
+
+  it("Rambling Possum : +1/+2, puis vous pouvez renvoyer en main celles qui l'ont montée", () => {
+    const setup = () => scenario({ p1: { battlefield: ["Rambling Possum", "Bear Cub"] } });
+    const back = saddleAndAttack(setup(), "Rambling Possum", (req) => (req.type === "pick" ? (req.options ?? []) : [1]));
+    expect(idOf(back, "p1", "hand", "Bear Cub")).toBeDefined();
+    const stay = saddleAndAttack(setup(), "Rambling Possum", (req) =>
+      req.type === "pick" && (req.options?.length ?? 0) > 0 && (req as { min?: number }).min === 0 ? [] : [],
+    );
+    expect(idOf(stay, "p1", "battlefield", "Bear Cub")).toBeDefined();
   });
 });

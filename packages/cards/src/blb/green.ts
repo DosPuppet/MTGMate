@@ -267,18 +267,22 @@ export const GREEN: Record<string, CardScript> = {
     ],
   },
   "Mistbreath Elder": {
-    // Approximation : la créature renvoyée est choisie quand la capacité se déclenche.
+    // La créature renvoyée est choisie à la résolution (pas une cible) ; renvoyer est obligatoire s'il y en a une.
     abilities: [
       triggered(
         when.yourUpkeep,
         [
-          ...fx.when(cond.targetChosen("t"), fx.bounce(ref.target()), fx.addCounters(ref.self, 1)),
-          ...fx.when(cond.not(cond.targetChosen("t")), ...fx.may("Renvoyer cette créature en main ?", fx.bounce(ref.self))),
+          fx.chooseAmong(ref.permanentsOf(ref.you, { types: ["Creature"], other: true }), ref.you, "m", {
+            prompt: "Choisissez la créature à renvoyer en main",
+          }),
+          fx.bounce(ref.stored("m")),
+          ...fx.when(cond.amountAtLeast(amount.refCount(ref.stored("m")), 1), fx.addCounters(ref.self, 1)),
+          ...fx.when(
+            cond.not(cond.amountAtLeast(amount.refCount(ref.stored("m")), 1)),
+            ...fx.may("Renvoyer cette créature en main ?", fx.bounce(ref.self)),
+          ),
         ],
-        {
-          targets: [target.upTo(1, target.creature("t", { controller: "you", other: true }))],
-          label: "Renvoie une autre créature (marqueur +1/+1)",
-        },
+        { label: "Renvoie une autre créature (marqueur +1/+1)" },
       ),
     ],
   },
@@ -298,8 +302,7 @@ export const GREEN: Record<string, CardScript> = {
   "Pawpatch Recruit": {
     abilities: [
       triggered(when.targetedByOpponent(CREATURE_YOU_CONTROL), [fx.addCounters(ref.target(), 1)], {
-        // Approximation : la créature ciblée par l'adversaire peut recevoir le marqueur.
-        targets: [target.creature("t", { controller: "you" })],
+        targets: [{ ...target.creature("t", { controller: "you" }), notEventObject: true }],
         label: "Marqueur +1/+1 sur une autre créature",
       }),
     ],
@@ -334,8 +337,14 @@ export const GREEN: Record<string, CardScript> = {
       {
         pips: 1,
         label: "Marqueur +1/+1, vigilance et piétinement",
-        targets: [target.creature("t", { controller: "you" })],
-        effects: [fx.addCounters(ref.target(), 1), fx.pump(ref.target(), 0, 0, ["vigilance", "trample"])],
+        // « Une créature que vous contrôlez » : choix non ciblé, à la résolution.
+        effects: [
+          fx.chooseAmong(ref.permanentsOf(ref.you, { types: ["Creature"] }), ref.you, "g", {
+            prompt: "Choisissez la créature qui reçoit le marqueur",
+          }),
+          fx.addCounters(ref.stored("g"), 1),
+          fx.pump(ref.stored("g"), 0, 0, ["vigilance", "trample"]),
+        ],
       },
       {
         pips: 2,

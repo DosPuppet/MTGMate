@@ -1339,6 +1339,7 @@ function chooseTriggerTargets(s: GameState, t: PendingTrigger): boolean {
   for (const spec of triggerTargetSpecs(s, t)) {
     if (t.targets[spec.id] !== undefined) continue;
     const taken = new Set((spec.otherThan ?? []).flatMap((o) => t.targets[o] ?? []));
+    if (spec.notEventObject && t.event?.objectId) taken.add(t.event.objectId);
     const legal = legalTargets(s, t.controller, spec, t.sourceId).filter((id) => !taken.has(id));
     const count = spec.count ?? 1;
     // « une à trois cibles » (`target.between`) : au moins `minCount` (Armament Dragon, Glint Weaver).
@@ -1421,6 +1422,8 @@ export function answerTriggerTarget(s: GameState, triggerId: string, specId: str
   if (!t) throw new RulesError("Capacité déclenchée introuvable");
   const spec = triggerTargetSpecs(s, t).find((x) => x.id === specId);
   if (!spec) throw new RulesError("Cible inconnue");
+  if (spec.notEventObject && t.event?.objectId && values.includes(t.event.objectId))
+    throw new RulesError("Une autre cible que la créature de l'événement");
   try {
     t.targets[specId] =
       validateTargets(

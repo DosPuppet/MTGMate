@@ -5025,3 +5025,63 @@ describe("« Vous mettez des marqueurs » (lot K2)", () => {
     expect(counterFrom(b, "p1", idOf(b, "p2", "battlefield", "Bear Cub")).triggered).toEqual(["Earth Kingdom General"]);
   });
 });
+
+describe("« Jusqu'à une » rendu au joueur (lot K6)", () => {
+  const prompts =
+    (asked: string[]): Answer =>
+    (req) => {
+      asked.push(req.type);
+      return req.type === "yesNo" ? [0] : undefined;
+    };
+
+  it("Hama, the Bloodbender : exiler la carte non-créature, non-terrain meulée est facultatif", () => {
+    const setup = () =>
+      scenario({
+        p1: { battlefield: lands("Island", 5), hand: ["Hama, the Bloodbender"] },
+        p2: { library: ["Lightning Strike", "Bear Cub", "Mountain", "Island"] },
+      });
+    const asked: string[] = [];
+    let s = settle(cast(setup(), "p1", "Hama, the Bloodbender", { targets: { t: ["p2"] } }), prompts(asked));
+    expect(asked).toEqual(["yesNo"]);
+    expect(exiled(s, "Lightning Strike")).toHaveLength(0);
+    expect(namesIn(s, s.players.p2?.graveyard)).toContain("Lightning Strike");
+    // Sans carte non-créature, non-terrain meulée, aucune question.
+    const none: string[] = [];
+    s = scenario({
+      p1: { battlefield: lands("Island", 5), hand: ["Hama, the Bloodbender"] },
+      p2: { library: ["Bear Cub", "Mountain", "Island", "Island"] },
+    });
+    s = settle(cast(s, "p1", "Hama, the Bloodbender", { targets: { t: ["p2"] } }), prompts(none));
+    expect(none).toEqual([]);
+    expect(s.exile).toHaveLength(0);
+  });
+
+  it("Avatar Destiny : la carte de créature meulée qui revient est facultative, et choisie parmi celles meulées", () => {
+    const setup = () => {
+      const s = scenario({
+        p1: {
+          battlefield: [...lands("Forest", 4), "Bear Cub"],
+          hand: ["Avatar Destiny"],
+          library: ["Shivan Dragon", "Serra Angel", "Island", "Island", "Island", "Island"],
+        },
+      });
+      const bear = idOf(s, "p1", "battlefield", "Bear Cub");
+      const out = settle(cast(s, "p1", "Avatar Destiny", { targets: { enchant: [bear] } }));
+      destroy(out, bear);
+      return out;
+    };
+    // Refus : l'Aura revient en main, aucune créature meulée n'arrive.
+    const asked: string[] = [];
+    let s = settle(setup(), prompts(asked));
+    expect(asked).toEqual(["yesNo"]);
+    expect(idsOf(s, "p1", "hand", "Avatar Destiny")).toHaveLength(1);
+    expect(idsOf(s, "p1", "battlefield", "Shivan Dragon")).toHaveLength(0);
+    expect(idsOf(s, "p1", "battlefield", "Serra Angel")).toHaveLength(0);
+    // Accepté : le joueur choisit Serra Angel parmi les deux cartes de créature meulées.
+    s = settle(setup(), (req, _p, cur) =>
+      req.type === "pick" ? req.options.filter((id) => nameOf(cur, String(id)) === "Serra Angel") : undefined,
+    );
+    expect(idsOf(s, "p1", "battlefield", "Serra Angel")).toHaveLength(1);
+    expect(idsOf(s, "p1", "battlefield", "Shivan Dragon")).toHaveLength(0);
+  });
+});

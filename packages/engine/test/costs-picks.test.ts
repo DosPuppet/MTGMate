@@ -150,3 +150,37 @@ describe("614.12 : « en arrivant, choisissez… » demandé au joueur (PLAN-C, 
     expect(s.objects[idOf(s, "p1", "battlefield", "Cavern of Souls")]?.chosen).toEqual({ creatureType: "Goblin" });
   });
 });
+
+describe("Coûts additionnels d'un sort choisis par le joueur (lot K6)", () => {
+  const castOpt = (s: GameState, name: string) =>
+    legalActions(s, "p1").find((a) => a.type === "cast" && a.card === idOf(s, "p1", "hand", name));
+
+  it("Fear of Isolation : le joueur choisit le permanent renvoyé ; sans choix, la suggestion du moteur", () => {
+    const setup = () =>
+      scenario({ p1: { battlefield: [...lands("Island", 2), "Bear Cub", "Serra Angel"], hand: ["Fear of Isolation"] } });
+    let s = setup();
+    const opt = castOpt(s, "Fear of Isolation");
+    const pick = opt?.type === "cast" ? opt.picks?.find((p) => p.slot === "costBounce") : undefined;
+    expect(pick?.count).toBe(1);
+    const angel = idOf(s, "p1", "battlefield", "Serra Angel");
+    expect(pick?.options).toContain(angel);
+    s = settle(act(s, "p1", { type: "cast", card: idOf(s, "p1", "hand", "Fear of Isolation"), picks: { costBounce: [angel] } }));
+    expect(idOf(s, "p1", "hand", "Serra Angel")).toBeDefined();
+    expect(idOf(s, "p1", "battlefield", "Bear Cub")).toBeDefined();
+    // Un objet hors des options est refusé.
+    const t = setup();
+    expect(() =>
+      act(t, "p1", { type: "cast", card: idOf(t, "p1", "hand", "Fear of Isolation"), picks: { costBounce: ["inconnu"] } }),
+    ).toThrow(RulesError);
+  });
+
+  it("Abhorrent Oculus : le joueur choisit les six cartes exilées du cimetière", () => {
+    const gy = ["Bear Cub", "Serra Angel", "Opt", "Shock", "Island", "Forest", "Swamp"];
+    let s = scenario({ p1: { battlefield: lands("Island", 3), hand: ["Abhorrent Oculus"], graveyard: gy } });
+    const keep = idOf(s, "p1", "graveyard", "Serra Angel");
+    const six = (s.players.p1?.graveyard ?? []).filter((id) => id !== keep);
+    s = settle(act(s, "p1", { type: "cast", card: idOf(s, "p1", "hand", "Abhorrent Oculus"), picks: { costGraveyard: six } }));
+    expect(s.players.p1?.graveyard).toEqual([keep]);
+    expect(idOf(s, "p1", "battlefield", "Abhorrent Oculus")).toBeDefined();
+  });
+});

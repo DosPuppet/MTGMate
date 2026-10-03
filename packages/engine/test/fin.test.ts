@@ -4,11 +4,13 @@
 import { describe, expect, it } from "vitest";
 import { destroy } from "../src/actions";
 import { fx, spell, triggered, when } from "../src/dsl";
+import { moveWithSpec } from "../src/effects";
 import { bump } from "../src/layers";
 import { legalActions } from "../src/legal";
 import { chars } from "../src/state";
 import type { GameState } from "../src/types";
 import {
+  type Answer,
   act,
   advanceUntil,
   attack,
@@ -17,6 +19,7 @@ import {
   customCard,
   idOf,
   idsOf,
+  nameOf,
   namesIn,
   passAccepting,
   passBoth,
@@ -614,5 +617,104 @@ describe("Mana en n'importe quelle combinaison (lot K2)", () => {
     s = act(s, "p1", { type: "cast", card: barrage, targets: { t: [bear] } });
     s = passAccepting(s, (x) => x.stack.length === 0 && x.pending?.kind === "priority");
     expect(idsOf(s, "p2", "graveyard", "Bear Cub")).toHaveLength(1);
+  });
+});
+
+describe("Final Fantasy, lot K6 : choix rendus au joueur", () => {
+  /** Joue (sans attaquer) en répondant aux choix jusqu'à `until`. */
+  const runUntil = (s0: S, answer: Answer, until: (s: S) => boolean): S => {
+    let s = s0;
+    for (let i = 0; i < 300 && !until(s); i++) {
+      const p = s.pending;
+      if (p?.kind === "priority") s = act(s, p.player, { type: "pass" });
+      else if (p?.kind === "choice")
+        s = act(s, p.player, { type: "choose", values: answer(p.request, p.player, s) ?? p.request.suggested });
+      else if (p?.kind === "declareAttackers") s = act(s, p.player, { type: "declareAttackers", attackers: [] });
+      else break;
+    }
+    return s;
+  };
+
+  const TERRA = "Terra, Magical Adept // Esper Terra";
+
+  it("Esper Terra : « jusqu'à trois » marqueurs de savoir sur la copie de Saga, de zéro à trois", () => {
+    for (const yes of [0, 1, 2, 3]) {
+      const s0 = scenario({ p1: { battlefield: ["Summon: Shiva"], hand: [TERRA] } });
+      const shiva = idOf(s0, "p1", "battlefield", "Summon: Shiva");
+      moveWithSpec(s0, "p1", idOf(s0, "p1", "hand", TERRA), { to: "battlefield", transformed: true });
+      let asked = 0;
+      const copyOf = (s: S) => s.battlefield.find((id) => s.objects[id]?.isToken && nameOf(s, id) === "Summon: Shiva");
+      const s = runUntil(
+        s0,
+        (req) => {
+          if (req.type === "yesNo") return [asked++ < yes ? 1 : 0];
+          return req.type === "pick" && req.options.includes(shiva) ? [shiva] : undefined;
+        },
+        (x) => !!copyOf(x) && !x.stack.some((i) => x.defs[i.sourceDefId]?.name === TERRA),
+      );
+      const copy = copyOf(s) as string;
+      expect(copy).toBeDefined();
+      // Le marqueur d'arrivée de la Saga (714.3a), plus les marqueurs choisis.
+      expect(s.objects[copy]?.counters.lore).toBe(1 + yes);
+      expect(asked).toBe(Math.min(yes + 1, 3));
+      expect(chars(s, copy).keywords).toContain("haste");
+    }
+  });
+
+  it("Beatrix, Loyal General : un nombre quelconque de vos Équipements, choisis un par un, sur la créature ciblée", () => {
+    const s0 = scenario({ p1: { battlefield: ["Beatrix, Loyal General", "Bear Cub", "Black Mage's Rod", "Black Mage's Rod"] } });
+    const bear = idOf(s0, "p1", "battlefield", "Bear Cub");
+    const [rod1, rod2] = idsOf(s0, "p1", "battlefield", "Black Mage's Rod") as [string, string];
+    let offered: string[] = [];
+    const s = runUntil(
+      s0,
+      (req) => {
+        if (req.type !== "pick") return undefined;
+        if (req.options.includes(bear)) return [bear];
+        if (req.options.includes(rod1)) {
+          offered = req.options;
+          expect(req.min).toBe(0);
+          return [rod2];
+        }
+        return undefined;
+      },
+      (x) => x.turn.step === "declareAttackers",
+    );
+    expect(offered.sort()).toEqual([rod1, rod2].sort());
+    expect(s.objects[rod2]?.attachedTo).toBe(bear);
+    expect(s.objects[rod1]?.attachedTo).toBeFalsy();
+
+    // Aucun : rien n'est attaché.
+    const none = runUntil(
+      s0,
+      (req) =>
+        req.type === "pick" ? (req.options.includes(bear) ? [bear] : req.options.includes(rod1) ? [] : undefined) : undefined,
+      (x) => x.turn.step === "declareAttackers",
+    );
+    expect(none.objects[rod1]?.attachedTo).toBeFalsy();
+    expect(none.objects[rod2]?.attachedTo).toBeFalsy();
+  });
+
+  it("Zell Dincht : le terrain renvoyé n'est pas ciblé, il est choisi à la résolution", () => {
+    const s0 = scenario({ p1: { battlefield: ["Zell Dincht", "Mountain", "Forest"] } });
+    const forest = idOf(s0, "p1", "battlefield", "Forest");
+    let onStack: S | undefined;
+    const s = runUntil(
+      s0,
+      (req, _p, cur) => {
+        if (req.type === "pick" && req.options.includes(forest)) {
+          onStack = cur;
+          expect(req.options).toHaveLength(2);
+          return [forest];
+        }
+        return undefined;
+      },
+      (x) => x.turn.step === "end" && x.stack.length === 0 && !!onStack,
+    );
+    const item = onStack?.stack.find((i) => onStack?.defs[i.sourceDefId]?.name === "Zell Dincht");
+    expect(item).toBeDefined();
+    expect(Object.values(item?.targets ?? {}).flat()).toHaveLength(0);
+    expect(idsOf(s, "p1", "hand", "Forest")).toHaveLength(1);
+    expect(idsOf(s, "p1", "battlefield", "Mountain")).toHaveLength(1);
   });
 });

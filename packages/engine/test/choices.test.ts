@@ -117,3 +117,36 @@ describe("règle des légendes", () => {
     expect(s.pending).toEqual({ kind: "priority", player: "p1" });
   });
 });
+
+describe("Sorte de marqueur retirée choisie par le joueur (lot K6)", () => {
+  const RETRAIT = customCard({
+    name: "Retrait d'essai",
+    typeLine: "Sorcery",
+    types: ["Sorcery"],
+    spell: spell([target.creature()], [fx.removeCounters(ref.target(), 1)]),
+  });
+  const run = (answer: string | null) => {
+    let s = scenario({
+      p1: { battlefield: [{ name: "Bear Cub", counters: { "+1/+1": 2, stun: 1 } }], hand: [RETRAIT] },
+    });
+    const bear = idOf(s, "p1", "battlefield", "Bear Cub");
+    s = act(s, "p1", { type: "cast", card: idOf(s, "p1", "hand", RETRAIT.name), targets: { t: [bear] } });
+    const asked: string[][] = [];
+    for (let i = 0; i < 20 && !(s.stack.length === 0 && s.pending?.kind === "priority"); i++) {
+      const p = s.pending;
+      if (p?.kind === "priority") s = act(s, p.player, { type: "pass" });
+      else if (p?.kind === "choice" && p.request.type === "pick") {
+        asked.push(p.request.options);
+        s = act(s, p.player, { type: "choose", values: answer ? [answer] : p.request.suggested });
+      } else break;
+    }
+    return { counters: s.objects[bear]?.counters, asked };
+  };
+
+  it("deux sortes : la question propose les deux, la suggestion garde l'ordre d'avant (+1/+1 d'abord)", () => {
+    const stun = run("stun");
+    expect(stun.asked).toEqual([["+1/+1", "stun"]]);
+    expect(stun.counters).toEqual({ "+1/+1": 2 });
+    expect(run(null).counters).toEqual({ "+1/+1": 1, stun: 1 });
+  });
+});

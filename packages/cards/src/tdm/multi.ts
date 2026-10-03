@@ -307,7 +307,7 @@ export const MULTI: Record<string, CardScript> = {
   },
   "Severance Priest": {
     abilities: [
-      triggered(when.entersSelf, [fx.exileFromHandLinked(ref.target(), { nonland: true })], {
+      triggered(when.entersSelf, [fx.exileFromHandLinked(ref.target(), { nonland: true }, false, undefined, true)], {
         targets: [target.player("t", "opponent")],
         label: "Exilez une carte non-terrain de la main d'un adversaire",
       }),

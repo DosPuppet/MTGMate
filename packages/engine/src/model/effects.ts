@@ -665,7 +665,8 @@ export type Effect =
   | { op: "link"; what: Ref; to?: Ref }
   /** « Ce joueur choisit l'un d'eux » : `store` le choisi, `${store}Rest` les autres (Trial of Agony). */
   /** `anyNumber` : un nombre quelconque (Expose the Culprit) ; `anyZone` : aussi des cartes hors du champ de bataille (Lazav). */
-  | { op: "chooseAmong"; what: Ref; chooser: Ref; store: string; anyNumber?: boolean; anyZone?: boolean }
+  /** `prompt` : le texte de la question (« Choisissez le terrain à renvoyer ») ; par défaut, « ces créatures ». */
+  | { op: "chooseAmong"; what: Ref; chooser: Ref; store: string; anyNumber?: boolean; anyZone?: boolean; prompt?: string }
   /** Attache une Aura ou un Équipement à un permanent (701.3). */
   /** `store` : nombre d'objets réellement attachés (701.3b : un objet déjà attaché ne « devient » pas attaché ; Thorin). */
   | { op: "attach"; what: Ref; to: Ref; store?: string }
@@ -679,7 +680,8 @@ export type Effect =
   | { op: "destroyAllButChosenType" }
   /** Le joueur désigné révèle sa main ; le contrôleur y choisit une carte correspondante, exilée et liée à la source. */
   /** `reveal` : le joueur ne révèle que ce nombre de cartes de sa main, qu'il choisit (Taster of Wares). */
-  | { op: "exileFromHandLinked"; who: Ref; filter: ObjectFilter; untilLeaves?: boolean; reveal?: Amount }
+  /** `optional` : « vous pouvez choisir une carte » (Severance Priest). */
+  | { op: "exileFromHandLinked"; who: Ref; filter: ObjectFilter; untilLeaves?: boolean; reveal?: Amount; optional?: boolean }
   /** « Exilez toutes les cartes de la bibliothèque de chaque adversaire, sauf celle du dessous. » */
   /** `keep` : cartes laissées au-dessous (1 par défaut ; Doomsday Excruciator : 6). */
   | { op: "exileLibraryButBottom"; who: Ref; keep?: number }

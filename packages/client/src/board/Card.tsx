@@ -1,4 +1,4 @@
-import { type CardFace, HIDDEN_CARD_ID, type ObjectView } from "@mtgx/engine";
+import { type CardFace, counterLabel, HIDDEN_CARD_ID, type ObjectView } from "@mtgx/engine";
 import { motion } from "motion/react";
 import { type CSSProperties, useState } from "react";
 import { faceImage, faceName, faceText, faceType } from "../i18n";
@@ -214,71 +214,6 @@ export function Card({
   );
 }
 
-/** Noms des marqueurs (toutes les sortes nommées par les cartes du Standard) ; une sorte inconnue garde son nom anglais. */
-const COUNTER_LABEL: Record<string, string> = {
-  stun: "Étourdi",
-  loyalty: "Loyauté",
-  lore: "Histoire",
-  finality: "Finalité",
-  charge: "Charge",
-  time: "Temps",
-  plan: "Plan",
-  quest: "Quête",
-  flying: "Vol",
-  first: "Initiative",
-  "first strike": "Initiative",
-  "double strike": "Double initiative",
-  indestructible: "Indestructible",
-  lifelink: "Lien de vie",
-  deathtouch: "Contact mortel",
-  trample: "Piétinement",
-  hexproof: "Défense talismanique",
-  reach: "Portée",
-  haste: "Célérité",
-  menace: "Menace",
-  vigilance: "Vigilance",
-  page: "Page",
-  dread: "Effroi",
-  stash: "Butin",
-  blight: "Flétrissure",
-  fire: "Feu",
-  hone: "Affûtage",
-  net: "Filet",
-  bore: "Forage",
-  landmark: "Repère",
-  revival: "Résurrection",
-  divinity: "Divinité",
-  flood: "Crue",
-  strike: "Frappe",
-  shield: "Bouclier",
-  incubation: "Incubation",
-  fellowship: "Camaraderie",
-  bait: "Appât",
-  soul: "Âme",
-  wish: "Souhait",
-  loot: "Pillage",
-  coin: "Pièce",
-  supply: "Provision",
-  skewer: "Embrochement",
-  growth: "Croissance",
-  dream: "Rêve",
-  conqueror: "Conquérant",
-  ingenuity: "Ingéniosité",
-  film: "Pellicule",
-  invasion: "Invasion",
-  impostor: "Imposteur",
-  bloodstain: "Tache de sang",
-  unlock: "Déverrouillage",
-  rev: "Régime",
-  chorus: "Chœur",
-  point: "Point",
-  decayed: "Décomposition",
-  possession: "Possession",
-  nest: "Nid",
-  oil: "Huile",
-  shell: "Carapace",
-  speed: "Vitesse",
-};
 const COLOR_NAME: Record<string, string> = { W: "Blanc", U: "Bleu", B: "Noir", R: "Rouge", G: "Vert" };
 
 /** Pastilles de marqueurs : +N pour les +1/+1, -N pour les -1/-1, nom et nombre pour les autres. */
@@ -289,8 +224,8 @@ function CounterBadges({ counters }: { counters: Record<string, number> }) {
     <div className="counter-badges">
       {net !== 0 && <span className={`counter-badge ${net < 0 ? "minus" : ""}`}>{net > 0 ? `+${net}` : net}</span>}
       {others.map(([k, n]) => (
-        <span key={k} className="counter-badge other" title={COUNTER_LABEL[k] ?? k}>
-          {COUNTER_LABEL[k] ?? k} {n}
+        <span key={k} className="counter-badge other" title={counterLabel(k)}>
+          {counterLabel(k)} {n}
         </span>
       ))}
     </div>

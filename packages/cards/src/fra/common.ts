@@ -118,15 +118,19 @@ export const JACE_TOKEN: TokenSpec = {
   text: "[−1]: Surveil 1.\n[−3]: Draw a card.",
 };
 
-/** « Renforcez Jace N » : N marqueurs de loyauté sur votre jeton Jace (créé s'il n'y en a pas). */
-export const empower = (n: Amount): Effect => ({
-  op: "counterOnOrCreate",
-  who: { kind: "you" },
-  find: { types: ["Planeswalker"], subtype: "Jace", token: true, controller: "you" },
-  token: JACE_TOKEN,
-  kind: "loyalty",
-  amount: n,
-});
+const JACE_TOKEN_YOURS = { types: ["Planeswalker" as const], subtype: "Jace", token: true, controller: "you" as const };
+
+/**
+ * « Renforcez Jace N » : N marqueurs de loyauté sur un jeton Jace que vous contrôlez, créé d'abord s'il n'y en a pas.
+ * Avec plusieurs jetons Jace, le joueur choisit lequel à la résolution (choix non ciblé).
+ */
+export const empower = (n: Amount): Effect[] => [
+  { op: "counterOnOrCreate", who: refs.you, find: JACE_TOKEN_YOURS, token: JACE_TOKEN, kind: "loyalty", amount: 0 },
+  fxs.chooseAmong(refs.permanentsOf(refs.you, JACE_TOKEN_YOURS), refs.you, "empowered", {
+    prompt: "Choisissez le jeton Jace qui reçoit les marqueurs",
+  }),
+  fxs.counters(refs.stored("empowered"), "loyalty", n),
+];
 
 /** « Les planeswalkers que vous contrôlez ont "[capacité de loyauté]". » */
 export const walkersHave = (ability: ReturnType<typeof dsl.loyalty>, label: string) =>

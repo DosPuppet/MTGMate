@@ -1516,6 +1516,89 @@ export function autoAdditional(
   return out;
 }
 
+/** Emplacement de chaque coût additionnel choisi par le joueur. */
+const ADDITIONAL_SLOTS = { exile: "costExile", bounce: "costBounce", tap: "costTap", graveyard: "costGraveyard" } as const;
+
+/**
+ * Coûts additionnels payés avec des objets (exiler, renvoyer ou engager des permanents, exiler des cartes du cimetière) :
+ * le joueur les choisit ; la suggestion est le choix automatique (`autoAdditional`).
+ */
+export function additionalPicks(s: GameState, player: PlayerId, card: ObjectId, d: CardDef, flashback = false): CostPick[] {
+  const add = additionalCostOf(d, flashback);
+  const auto = add ? autoAdditional(s, player, card, d, flashback) : null;
+  if (!add || !auto) return [];
+  const mine = (f: ObjectFilter) =>
+    s.battlefield.filter((id) => obj(s, id).controller === player && matchesObjectFilter(s, player, id, f));
+  const out: CostPick[] = [];
+  if (add.exile) {
+    const f = add.exile.filter;
+    const hand = add.exile.fromHand
+      ? (s.players[player]?.hand ?? []).filter((id) => id !== card && matchesCard(s, player, id, f, card))
+      : [];
+    out.push({
+      slot: "costExile",
+      label: add.exile.fromHand
+        ? `Contemplez et exilez ${add.exile.count} carte(s) (en jeu ou de votre main)`
+        : `Exilez ${add.exile.count} permanent(s) que vous contrôlez`,
+      count: add.exile.count,
+      options: [...mine(f), ...hand],
+      suggested: auto.exile,
+    });
+  }
+  if (add.bounce)
+    out.push({
+      slot: "costBounce",
+      label: `Renvoyez ${add.bounce.count} permanent(s) que vous contrôlez en main`,
+      count: add.bounce.count,
+      options: mine(add.bounce.filter),
+      suggested: auto.bounce,
+    });
+  if (add.tap)
+    out.push({
+      slot: "costTap",
+      label: `Engagez ${add.tap.count} permanent(s) dégagé(s) que vous contrôlez`,
+      count: add.tap.count,
+      options: mine({ ...add.tap.filter, tapped: false }),
+      suggested: auto.tap,
+    });
+  if (add.exileGraveyard)
+    out.push({
+      slot: "costGraveyard",
+      label: `Exilez ${add.exileGraveyard} carte(s) de votre cimetière`,
+      count: add.exileGraveyard,
+      options: (s.players[player]?.graveyard ?? []).filter((id) => id !== card),
+      suggested: auto.graveyard,
+    });
+  return out;
+}
+
+/** Les objets des coûts additionnels : ceux choisis par le joueur (vérifiés, sans doublon d'un coût à l'autre), sinon le choix automatique. */
+function chosenAdditional(
+  s: GameState,
+  player: PlayerId,
+  card: ObjectId,
+  d: CardDef,
+  flashback: boolean,
+  auto: NonNullable<ReturnType<typeof autoAdditional>>,
+  picks: CastChoices["picks"],
+): NonNullable<ReturnType<typeof autoAdditional>> {
+  const out = { ...auto };
+  const offered = additionalPicks(s, player, card, d, flashback);
+  for (const slot of Object.values(ADDITIONAL_SLOTS))
+    if (picks?.[slot] && !offered.some((p) => p.slot === slot)) throw new RulesError("Ce sort n'a pas ce coût additionnel");
+  const used = new Set<ObjectId>();
+  for (const [key, slot] of Object.entries(ADDITIONAL_SLOTS) as [keyof typeof ADDITIONAL_SLOTS, CostSlot][]) {
+    const p = offered.find((x) => x.slot === slot);
+    if (!p) continue;
+    const chosen = resolvePick(s, p, picks?.[slot]);
+    if (new Set(chosen).size !== chosen.length || chosen.some((id) => used.has(id)))
+      throw new RulesError("Un même objet ne paie pas deux coûts");
+    for (const id of chosen) used.add(id);
+    out[key] = chosen;
+  }
+  return out;
+}
+
 /**
  * Couleurs proposées pour le mana hybride d'un sort, seulement si une de ses capacités lit les couleurs dépensées (`spentColor`) :
  * sinon le paiement automatique choisit sans que le résultat change.
@@ -1651,8 +1734,9 @@ export function castSpell(s: GameState, player: PlayerId, card: ObjectId, choice
   };
   check(discard, opts.discard);
   check(sacrifice, opts.sacrifice);
-  const auto = autoAdditional(s, player, card, d, flashback);
-  if (!auto) throw new RulesError("Impossible de payer le coût additionnel");
+  const autoPaid = autoAdditional(s, player, card, d, flashback);
+  if (!autoPaid) throw new RulesError("Impossible de payer le coût additionnel");
+  const auto = chosenAdditional(s, player, card, d, flashback, autoPaid, choices.picks);
   let cost = spellCost(s, player, d, {
     x,
     kicked,
@@ -1721,7 +1805,7 @@ export function castSpell(s: GameState, player: PlayerId, card: ObjectId, choice
     if (!cards) throw new RulesError("Pas assez de preuves à réunir dans votre cimetière");
     collectEvidence(s, player, cards);
   }
-  // Coûts additionnels choisis automatiquement (avant le mana : ces permanents ne produisent plus de mana).
+  // Coûts additionnels, choisis par le joueur ou automatiquement (avant le mana : ces permanents ne produisent plus de mana).
   for (const id of [...auto.tap, ...harmonyTap]) tapObject(s, obj(s, id));
   // Agent Maria Hill : « engagée pour payer un coût de travail d'équipe ».
   for (const id of teamTap) tapObject(s, obj(s, id), "teamwork");
@@ -2536,8 +2620,15 @@ export function activationPicks(
  * Coûts d'un sort payés avec des objets à choisir : preuves (kicker, coût alternatif), exil de cartes du cimetière
  * (kicker), flétrir X. `x` absent (`legalActions`) : la suggestion de flétrir X suppose X = 1.
  */
-export function spellPicks(s: GameState, player: PlayerId, card: ObjectId, d: CardDef, x?: number): CostPick[] {
-  const out: CostPick[] = [];
+export function spellPicks(
+  s: GameState,
+  player: PlayerId,
+  card: ObjectId,
+  d: CardDef,
+  x?: number,
+  flashback = false,
+): CostPick[] {
+  const out: CostPick[] = additionalPicks(s, player, card, d, flashback);
   const graveyard = (s.players[player]?.graveyard ?? []).filter((id) => id !== card);
   const evidencePick = (n: number, when: CostPick["when"]): CostPick | null => {
     const suggested = evidenceCards(s, player, card, n);

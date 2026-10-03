@@ -120,9 +120,8 @@ export const GREEN: Record<string, CardScript> = {
   },
   "Giant Beaver": {
     abilities: [
-      // Approximation : une créature ciblée que vous contrôlez (et non une de celles qui l'ont montée).
       whileSaddled([fx.addCounters(ref.target(), 1)], {
-        targets: [target.creature("t", { controller: "you", other: true })],
+        targets: [{ ...target.creature("t", { crewedSource: true }), label: "créature qui l'a montée ce tour-ci" }],
         label: "Marqueur +1/+1",
       }),
     ],
@@ -223,7 +222,19 @@ export const GREEN: Record<string, CardScript> = {
     ],
   },
   "Rambling Possum": {
-    abilities: [whileSaddled([fx.pump(ref.self, 1, 2)], { label: "+1/+2" })],
+    abilities: [
+      whileSaddled(
+        [
+          fx.pump(ref.self, 1, 2),
+          fx.chooseAmong(ref.crewedBy, ref.you, "r", {
+            anyNumber: true,
+            prompt: "Choisissez les créatures qui l'ont montée à renvoyer en main",
+          }),
+          fx.bounce(ref.stored("r")),
+        ],
+        { label: "+1/+2, puis renvoyez celles qui l'ont montée" },
+      ),
+    ],
   },
   "Raucous Entertainer": {
     abilities: [

@@ -291,7 +291,6 @@ export const GREEN: Record<string, CardScript> = {
         when.yourUpkeep,
         [
           mode("Un marqueur +1/+1 sur Mister Hyde", [], [fx.addCounters(ref.self, 1)]),
-          // Approximation : la sorte de marqueur retirée n'est pas choisie (loyauté, puis +1/+1, puis les autres).
           mode(
             "Retirez un marqueur d'une de vos créatures : piochez",
             [],

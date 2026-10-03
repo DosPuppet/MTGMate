@@ -2,6 +2,7 @@ export { createTokens } from "./actions";
 export { type AutopilotSettings, autopilotDecision, autoTarget, DEFAULT_AUTOPILOT } from "./autopilot";
 export { cardRef, divisionOf, validateChoice } from "./choices";
 export { syncControl } from "./control";
+export { COUNTER_LABELS, counterLabel } from "./counterLabels";
 export type { CardScript } from "./dsl";
 export * as dsl from "./dsl";
 export {

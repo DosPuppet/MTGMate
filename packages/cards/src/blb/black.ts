@@ -370,12 +370,19 @@ export const BLACK: Record<string, CardScript> = {
     abilities: [
       triggered(
         when.enters(kin(["Rat"])),
-        [...fx.when(cond.not(cond.controls({ subtype: "Snail" })), fx.createTokens(SNAIL)), fx.addCounters(ref.target(), 1)],
-        {
-          // Le marqueur va sur l'Escargot choisi quand la capacité se déclenche (s'il y en a un).
-          targets: [target.upTo(1, target.creature("t", { controller: "you", subtype: "Snail" }))],
-          label: "Escargot 1/1, ou un marqueur +1/+1 sur un Escargot",
-        },
+        [
+          // « Un Escargot que vous contrôlez » : choix non ciblé, à la résolution. Le marqueur d'abord, sans quoi le
+          // jeton tout juste créé rendrait vraie la condition du marqueur.
+          ...fx.when(
+            cond.controls({ subtype: "Snail" }),
+            fx.chooseAmong(ref.permanentsOf(ref.you, { subtype: "Snail" }), ref.you, "s", {
+              prompt: "Choisissez l'Escargot qui reçoit le marqueur",
+            }),
+            fx.addCounters(ref.stored("s"), 1),
+          ),
+          ...fx.when(cond.not(cond.controls({ subtype: "Snail" })), fx.createTokens(SNAIL)),
+        ],
+        { label: "Escargot 1/1, ou un marqueur +1/+1 sur un Escargot" },
       ),
       activated({
         mana: "{U}{B}{R}",

@@ -538,11 +538,22 @@ export const MULTI: Record<string, CardScript> = {
         when.entersSelf,
         [
           fx.mill(3, ref.target()),
-          fx.chooseAmong(ref.filtered(ref.graveyardOf(ref.target()), { notTypes: ["Creature", "Land"] }), ref.you, "h", {
-            anyZone: true,
-          }),
-          fx.exileCard(ref.stored("h"), { name: "hx" }),
-          fx.link(ref.stored("hx")),
+          // « Exilez jusqu'à une carte » : la question n'est posée que s'il y en a une.
+          ...fx.when(
+            cond.amountAtLeast(
+              amount.refCount(ref.filtered(ref.graveyardOf(ref.target()), { notTypes: ["Creature", "Land"] })),
+              1,
+            ),
+            ...fx.may(
+              "Exiler une carte non-créature, non-terrain de son cimetière ?",
+              fx.chooseAmong(ref.filtered(ref.graveyardOf(ref.target()), { notTypes: ["Creature", "Land"] }), ref.you, "h", {
+                anyZone: true,
+                prompt: "Choisissez la carte à exiler",
+              }),
+              fx.exileCard(ref.stored("h"), { name: "hx" }),
+              fx.link(ref.stored("hx")),
+            ),
+          ),
         ],
         {
           targets: [target.player("t", "opponent")],

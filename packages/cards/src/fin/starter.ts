@@ -7,14 +7,15 @@ const EQUIPMENT_YOU = { subtype: "Equipment", controller: "you" as const };
 export const STARTER: Record<string, CardScript> = {
   "Beatrix, Loyal General": {
     abilities: [
-      // Approximation : tous vos Équipements ou aucun (pas de choix un par un).
+      // « Un nombre quelconque d'Équipements » : choisis à la résolution, aucun si vous le voulez.
       triggered(
         when.yourCombat,
         [
-          fx.may(
-            "Attacher tous vos Équipements à cette créature ?",
-            fx.attach(ref.target(), ref.permanentsOf(ref.you, EQUIPMENT_YOU)),
-          ),
+          fx.chooseAmong(ref.permanentsOf(ref.you, EQUIPMENT_YOU), ref.you, "eq", {
+            anyNumber: true,
+            prompt: "Choisissez les Équipements à attacher",
+          }),
+          fx.attach(ref.target(), ref.stored("eq")),
         ],
         { targets: [target.creature("t", { controller: "you" })], label: "Attachez vos Équipements" },
       ),

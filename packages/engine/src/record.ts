@@ -212,8 +212,13 @@ export const RECORD_VERSION = 1;
  *   par script (Earthbender Ascension, Fire Lord Azula, Azog, Puca's Eye, Ill-Timed Explosion, Granite Witness, Ezrim,
  *   Sewer-veillance Cam, Rattleback Apothecary) (lot K3).
  * - 75 : Liliana the Faultless : « défaussez une carte » est un coût (lot K4).
+ * - 76 : choix rendus au joueur : sorte des marqueurs retirés par un effet ; objets des coûts additionnels d'un sort
+ *   (exiler, renvoyer, engager, exiler du cimetière, contempler et exiler) ; choix non ciblés à la résolution (Seasons,
+ *   Wick, Mistbreath Elder, Zell Dincht, Arid Archway, Renforcez Jace) ; « vous pouvez », « jusqu'à » (Esper Terra,
+ *   Beatrix, Hama, Avatar Destiny, Severance Priest, Rambling Possum) ; cibles « autre que cette créature » (Pawpatch
+ *   Recruit) et « qui l'a montée » (Giant Beaver) (lot K6).
  */
-export const RULES_VERSION = 75;
+export const RULES_VERSION = 76;
 
 /** Un point de contrôle toutes les N décisions (plus la dernière de la partie). */
 export const CHECKPOINT_EVERY = 25;

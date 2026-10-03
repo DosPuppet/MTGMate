@@ -419,14 +419,17 @@ export const MULTI: Record<string, CardScript> = {
   "Arid Archway": {
     abilities: [
       entersWith({ tapped: true }),
-      // Approximation : le terrain renvoyé est ciblé.
+      // Le terrain n'est pas ciblé (choisi à la résolution) et peut être celui-ci ; un autre Désert renvoyé : surveillance 1.
       triggered(
         when.entersSelf,
-        [fx.when(cond.targetMatches("t", { subtype: "Desert" }), fx.surveil(1)), fx.bounce(ref.target())],
-        {
-          targets: [target.permanent("t", ["Land"], { controller: "you", other: true }, "terrain que vous contrôlez")],
-          label: "Renvoyez un terrain",
-        },
+        [
+          fx.chooseAmong(ref.permanentsOf(ref.you, { types: ["Land"] }), ref.you, "land", {
+            prompt: "Choisissez le terrain à renvoyer en main",
+          }),
+          fx.bounce(ref.stored("land")),
+          fx.when(cond.refMatches(ref.stored("land"), { subtype: "Desert", other: true }), fx.surveil(1)),
+        ],
+        { label: "Renvoyez un terrain" },
       ),
       manaAbility("C", 2),
     ],

@@ -131,7 +131,7 @@ export const HANDLERS: OpHandlers = {
             request: {
               type: "pick",
               intent: "pickCards",
-              prompt: "Choisissez un nombre quelconque de ces créatures",
+              prompt: e.prompt ?? "Choisissez un nombre quelconque de ces créatures",
               options: ids,
               min: 0,
               max: ids.length,
@@ -156,7 +156,7 @@ export const HANDLERS: OpHandlers = {
           request: {
             type: "pick",
             intent: "pickCards",
-            prompt: "Choisissez l'une de ces créatures",
+            prompt: e.prompt ?? "Choisissez l'une de ces créatures",
             options: ids,
             min: 1,
             max: 1,
@@ -314,9 +314,9 @@ export const HANDLERS: OpHandlers = {
           request: {
             type: "pick",
             intent: "pickCards",
-            prompt: e.untilLeaves ? "Vous pouvez exiler une carte" : "Choisissez la carte à exiler",
+            prompt: e.untilLeaves || e.optional ? "Vous pouvez exiler une carte" : "Choisissez la carte à exiler",
             options,
-            min: e.untilLeaves ? 0 : 1,
+            min: e.untilLeaves || e.optional ? 0 : 1,
             max: 1,
             suggested: best.slice(0, 1),
           },

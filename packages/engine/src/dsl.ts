@@ -987,7 +987,12 @@ export const fx = {
   hellkite: { op: "hellkite" } as Effect,
   link: (what: Ref, to?: Ref): Effect => ({ op: "link", what, to }),
   /** « Ce joueur choisit l'un d'eux » : `ref.stored(store)` le choisi, `ref.stored(store + "Rest")` les autres. */
-  chooseAmong: (what: Ref, chooser: Ref, store: string, opts: { anyNumber?: boolean; anyZone?: boolean } = {}): Effect => ({
+  chooseAmong: (
+    what: Ref,
+    chooser: Ref,
+    store: string,
+    opts: { anyNumber?: boolean; anyZone?: boolean; prompt?: string } = {},
+  ): Effect => ({
     op: "chooseAmong",
     what,
     chooser,
@@ -1023,12 +1028,13 @@ export const fx = {
   addManaTimes: (times: Amount, ...mana: ManaType[]): Effect => ({ op: "addMana", mana, times }),
   mayWheel: { op: "mayWheel" } as Effect,
   destroyAllButChosenType: { op: "destroyAllButChosenType" } as Effect,
-  exileFromHandLinked: (who: Ref, filter: ObjectFilter, untilLeaves?: boolean, reveal?: Amount): Effect => ({
+  exileFromHandLinked: (who: Ref, filter: ObjectFilter, untilLeaves?: boolean, reveal?: Amount, optional?: boolean): Effect => ({
     op: "exileFromHandLinked",
     who,
     filter,
     untilLeaves,
     reveal,
+    ...(optional ? { optional } : {}),
   }),
   exileLibraryButBottom: (who: Ref, keep?: number): Effect => ({ op: "exileLibraryButBottom", who, keep }),
   /** Attache une Aura ou un Équipement (par défaut la source) au permanent désigné. */

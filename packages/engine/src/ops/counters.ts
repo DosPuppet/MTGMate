@@ -2,8 +2,10 @@
 
 import { createTokens } from "../actions";
 import { cardRef } from "../choices";
+import { counterLabel } from "../counterLabels";
 import type { OpHandlers } from "../effects";
 import { addEffect, evalAmount, resolveRef, store } from "../effects";
+import { RulesError } from "../errors";
 import { effectivePower } from "../layers";
 import { blightTarget } from "../stack";
 import {
@@ -19,7 +21,7 @@ import {
   unlockDoor,
 } from "../state";
 import { matchesObjectFilter } from "../targets";
-import type { ObjectId, TokenSpec } from "../types";
+import type { GameObject, ObjectId, TokenSpec } from "../types";
 
 /** Jeton de l'endurance (701.64) : Esprit blanc N/N. */
 const ENDURE_SPIRIT: TokenSpec = {
@@ -30,6 +32,12 @@ const ENDURE_SPIRIT: TokenSpec = {
   power: 0,
   toughness: 0,
 };
+
+/** Ordre proposé par défaut : loyauté, +1/+1, puis les autres sortes. */
+const DEFAULT_ORDER = (kinds: string[]): string[] => [
+  ...["loyalty", "+1/+1"].filter((k) => kinds.includes(k)),
+  ...kinds.filter((k) => k !== "loyalty" && k !== "+1/+1"),
+];
 
 export const HANDLERS: OpHandlers = {
   countersAboveBase(s, _r, e, ctx) {
@@ -132,20 +140,59 @@ export const HANDLERS: OpHandlers = {
     }
     return;
   },
-  removeCounters(s, r, e, ctx) {
-    let removed = 0;
+  removeCounters(s, r, e, ctx, key) {
+    // « Retirez N marqueurs » sans sorte imposée : le joueur choisit la sorte de chacun (une question par marqueur, tant
+    // qu'il reste plusieurs sortes), avant tout retrait ; l'opération est rejouée avec les réponses.
+    const plans: [GameObject, string[]][] = [];
     for (const id of resolveRef(s, ctx, e.what)) {
       const o = s.objects[id];
       // Une carte suspendue perd ses marqueurs de temps en exil (702.62).
       if (o?.zone !== "battlefield" && !(o?.zone === "exile" && o.suspended)) continue;
-      let left = Math.max(0, evalAmount(s, ctx, e.n));
-      const order = e.kind
-        ? [e.kind]
-        : ["loyalty", "+1/+1", ...Object.keys(o.counters).filter((k) => k !== "loyalty" && k !== "+1/+1")];
-      for (const kind of order) {
-        const take = Math.min(left, o.counters[kind] ?? 0);
-        if (take > 0) changeCounters(s, o, kind, -take);
-        left -= take;
+      const n = Math.max(0, evalAmount(s, ctx, e.n));
+      const left: Record<string, number> = e.kind
+        ? { [e.kind]: o.counters[e.kind] ?? 0 }
+        : (Object.fromEntries(Object.entries(o.counters).filter(([, c]) => (c ?? 0) > 0)) as Record<string, number>);
+      const plan: string[] = [];
+      for (let i = 0; i < n; i++) {
+        const kinds = DEFAULT_ORDER(Object.keys(left).filter((k) => (left[k] ?? 0) > 0));
+        if (kinds.length === 0) break;
+        let kind = kinds[0] as string;
+        if (kinds.length > 1) {
+          const k = key(`rc-${id}-${i}`);
+          const answer = r.vars[k];
+          if (!answer) {
+            return {
+              ask: {
+                player: ctx.controller,
+                key: k,
+                request: {
+                  type: "pick",
+                  intent: "other",
+                  prompt: `${cardRef(o.defId)} : quel marqueur retirer${n > 1 ? ` (${i + 1} sur ${n})` : ""} ?`,
+                  options: kinds,
+                  labels: Object.fromEntries(kinds.map((x) => [x, `${counterLabel(x)} (${left[x]})`])),
+                  min: 1,
+                  max: 1,
+                  suggested: [kind],
+                },
+              },
+            };
+          }
+          const picked = String(answer[0]);
+          if (!kinds.includes(picked)) throw new RulesError("Sorte de marqueur invalide");
+          kind = picked;
+        }
+        plan.push(kind);
+        left[kind] = (left[kind] ?? 0) - 1;
+      }
+      plans.push([o, plan]);
+    }
+    let removed = 0;
+    for (const [o, plan] of plans) {
+      const counts: Record<string, number> = {};
+      for (const kind of plan) counts[kind] = (counts[kind] ?? 0) + 1;
+      for (const [kind, take] of Object.entries(counts)) {
+        changeCounters(s, o, kind, -take);
         removed += take;
       }
     }

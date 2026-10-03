@@ -422,8 +422,18 @@ export const GREEN: Record<string, CardScript> = {
         [
           fx.mill(amount.powerOf(ref.eventObject), ref.you, { name: "m" }),
           fx.toHand(ref.selfCard),
-          fx.chooseAmong(ref.filtered(ref.stored("m"), { types: ["Creature"] }), ref.you, "c", { anyZone: true }),
-          fx.toBattlefield(ref.stored("c")),
+          // « Jusqu'à une carte de créature meulée » : la question n'est posée que s'il y en a une.
+          ...fx.when(
+            cond.amountAtLeast(amount.refCount(ref.filtered(ref.stored("m"), { types: ["Creature"] })), 1),
+            ...fx.may(
+              "Mettre une carte de créature meulée sur le champ de bataille ?",
+              fx.chooseAmong(ref.filtered(ref.stored("m"), { types: ["Creature"] }), ref.you, "c", {
+                anyZone: true,
+                prompt: "Choisissez la carte de créature meulée à mettre sur le champ de bataille",
+              }),
+              fx.toBattlefield(ref.stored("c")),
+            ),
+          ),
         ],
         { label: "Meulez autant que sa force ; l'Aura revient en main, une créature meulée sur le champ de bataille" },
       ),

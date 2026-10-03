@@ -529,14 +529,22 @@ export const TRANSFORM: Record<string, CardScript> = {
       chapter(
         [1, 2, 3],
         [
-          fx.copyToken(ref.target(), { addKeywords: ["haste"], sacrificeAtEndStep: true }),
-          // Approximation : jusqu'à trois marqueurs → trois marqueurs si c'est une Saga, au choix (tous ou aucun).
+          fx.copyToken(ref.target(), { addKeywords: ["haste"], sacrificeAtEndStep: true, store: "copy" }),
+          // « Jusqu'à trois marqueurs de savoir » : de zéro à trois, mis en une seule fois sur la copie si c'est une Saga.
           fx.when(
-            cond.targetMatches("t", { subtype: "Saga" }),
-            fx.may(
-              "Mettre trois marqueurs de savoir sur la copie ?",
-              fx.counters(ref.permanentsOf(ref.you, { token: true, enteredThisTurn: true, subtype: "Saga" }), "lore", 3),
+            cond.refMatches(ref.stored("copy"), { subtype: "Saga" }),
+            fx.mayForStore(
+              ref.you,
+              "Mettre au moins un marqueur de savoir sur la copie ?",
+              "lore1",
+              fx.mayForStore(
+                ref.you,
+                "Au moins deux marqueurs ?",
+                "lore2",
+                fx.mayForStore(ref.you, "Trois marqueurs ?", "lore3"),
+              ),
             ),
+            fx.counters(ref.stored("copy"), "lore", amount.plus(amount.v("lore1"), amount.v("lore2"), amount.v("lore3"))),
           ),
         ],
         {

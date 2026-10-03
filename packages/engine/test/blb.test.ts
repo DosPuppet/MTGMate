@@ -6,6 +6,7 @@
 import { TOKEN_SPECS } from "@mtgx/cards";
 import { describe, expect, it } from "vitest";
 import { createTokens, destroy } from "../src/actions";
+import { protection, protectionAbility } from "../src/dsl";
 import { RulesError } from "../src/errors";
 import { legalActions } from "../src/legal";
 import { chars } from "../src/state";
@@ -19,6 +20,7 @@ import {
   cast,
   castNowOf,
   counterFrom,
+  customCard,
   idOf,
   idsOf,
   namesIn,
@@ -809,5 +811,126 @@ describe("Mana en n'importe quelle combinaison (lot K2)", () => {
     s = act(s, "p1", { type: "choose", values: [1, 1] });
     expect(s.players.p1?.manaPool.R).toBe(1);
     expect(s.players.p1?.manaPool.G).toBe(1);
+  });
+});
+
+describe("Choix non ciblés rendus au joueur (lot K6)", () => {
+  /** Une créature que les sorts de la couleur `c` ne peuvent pas cibler : seul un choix non ciblé la désigne. */
+  const shielded = (name: string, c: "G" | "U") =>
+    customCard({
+      name,
+      power: 2,
+      toughness: 2,
+      abilities: [protectionAbility(protection.from({ colors: [c] }, "Protection contre une couleur"))],
+    });
+  const counters = (s: S, id: string) => s.objects[id]?.counters["+1/+1"] ?? 0;
+
+  it("Season of Gathering : la créature qui reçoit le marqueur est choisie à la résolution, sans la cibler", () => {
+    const ward = shielded("Test Green Ward", "G");
+    let s = scenario({ p1: { battlefield: [...lands("Forest", 6), ward, "Bear Cub"], hand: ["Season of Gathering"] } });
+    const { card, opt } = castOption(s, "Season of Gathering");
+    const one = opt?.modes.find((m) => m.label === "Marqueur +1/+1, vigilance et piétinement");
+    expect(one?.targets).toEqual([]);
+    const wardId = idOf(s, "p1", "battlefield", "Test Green Ward");
+    let options: string[] = [];
+    s = resolve(act(s, "p1", { type: "cast", card, mode: one?.index }), (req) => {
+      if (req.type !== "pick") return undefined;
+      options = req.options.map(String);
+      return [wardId];
+    });
+    expect(namesIn(s, options).sort()).toEqual(["Bear Cub", "Test Green Ward"]);
+    // Protection contre le vert : la créature n'est pas ciblée, elle reçoit le marqueur, la vigilance et le piétinement.
+    expect(counters(s, wardId)).toBe(1);
+    expect(chars(s, wardId).keywords).toEqual(expect.arrayContaining(["vigilance", "trample"]));
+    expect(counters(s, idOf(s, "p1", "battlefield", "Bear Cub"))).toBe(0);
+  });
+
+  it("Season of Weaving : l'artefact ou la créature copié est choisi à la résolution, sans le cibler", () => {
+    const ward = shielded("Test Blue Ward", "U");
+    let s = scenario({ p1: { battlefield: [...lands("Island", 6), ward, "Bear Cub"], hand: ["Season of Weaving"] } });
+    const { card, opt } = castOption(s, "Season of Weaving");
+    const copy = opt?.modes.find((m) => m.label === "Copie d'un artefact ou d'une créature");
+    expect(copy?.targets).toEqual([]);
+    const wardId = idOf(s, "p1", "battlefield", "Test Blue Ward");
+    s = resolve(act(s, "p1", { type: "cast", card, mode: copy?.index }), (req) => (req.type === "pick" ? [wardId] : undefined));
+    expect(idsOf(s, "p1", "battlefield", "Test Blue Ward")).toHaveLength(2);
+    expect(idsOf(s, "p1", "battlefield", "Bear Cub")).toHaveLength(1);
+  });
+
+  it("Wick, the Whorled Mind : le marqueur va sur un Escargot choisi à la résolution ; sans Escargot, un jeton", () => {
+    const snail = customCard({ name: "Test Snail", subtypes: ["Snail"], power: 1, toughness: 1 });
+    let s = scenario({ p1: { battlefield: [...lands("Swamp", 4), snail, snail], hand: ["Wick, the Whorled Mind"] } });
+    const [a, b] = idsOf(s, "p1", "battlefield", "Test Snail") as [string, string];
+    let options: string[] = [];
+    s = resolve(cast(s, "p1", "Wick, the Whorled Mind"), (req) => {
+      if (req.type !== "pick") return undefined;
+      options = req.options.map(String);
+      return [b];
+    });
+    expect(options.sort()).toEqual([a, b].sort());
+    expect([counters(s, a), counters(s, b)]).toEqual([0, 1]);
+    expect(idsOf(s, "p1", "battlefield", "Snail")).toHaveLength(0);
+
+    s = scenario({ p1: { battlefield: lands("Swamp", 4), hand: ["Wick, the Whorled Mind"] } });
+    s = resolve(cast(s, "p1", "Wick, the Whorled Mind"));
+    const token = idOf(s, "p1", "battlefield", "Snail");
+    expect(counters(s, token)).toBe(0);
+  });
+
+  describe("Mistbreath Elder", () => {
+    const upkeep = (battlefield: string[]) => {
+      const s = scenario({ active: "p2", step: "end", p1: { battlefield: ["Mistbreath Elder", ...battlefield] } });
+      return passAccepting(s, (x) => x.pending?.kind === "choice" || (x.turn.active === "p1" && x.turn.step === "main1"));
+    };
+
+    it("l'autre créature renvoyée est choisie à la résolution (renvoi obligatoire) ; l'Aînée reçoit un marqueur", () => {
+      let s = upkeep(["Bear Cub", "Llanowar Elves"]);
+      const p = s.pending;
+      expect(p?.kind === "choice" && p.request.type === "pick" && p.request.min).toBe(1);
+      expect(p?.kind === "choice" && p.request.type === "pick" && namesIn(s, p.request.options.map(String)).sort()).toEqual([
+        "Bear Cub",
+        "Llanowar Elves",
+      ]);
+      s = resolve(act(s, "p1", { type: "choose", values: [idOf(s, "p1", "battlefield", "Llanowar Elves")] }));
+      expect(namesIn(s, s.players.p1?.hand)).toContain("Llanowar Elves");
+      expect(idsOf(s, "p1", "battlefield", "Bear Cub")).toHaveLength(1);
+      expect(counters(s, idOf(s, "p1", "battlefield", "Mistbreath Elder"))).toBe(1);
+    });
+
+    it("sans autre créature, vous pouvez la renvoyer elle-même (refus : elle reste, sans marqueur)", () => {
+      const ask = upkeep([]);
+      expect(ask.pending?.kind === "choice" && ask.pending.request.type).toBe("yesNo");
+      const no = resolve(act(ask, "p1", { type: "choose", values: [0] }));
+      expect(counters(no, idOf(no, "p1", "battlefield", "Mistbreath Elder"))).toBe(0);
+      const yes = resolve(act(ask, "p1", { type: "choose", values: [1] }));
+      expect(idsOf(yes, "p1", "battlefield", "Mistbreath Elder")).toHaveLength(0);
+      expect(namesIn(yes, yes.players.p1?.hand)).toContain("Mistbreath Elder");
+    });
+  });
+});
+
+describe("Pawpatch Recruit (lot K6)", () => {
+  it("le marqueur va sur une créature autre que celle ciblée par l'adversaire", () => {
+    let s = scenario({
+      active: "p2",
+      p1: { battlefield: ["Pawpatch Recruit", "Bear Cub", "Llanowar Elves"] },
+      p2: { battlefield: ["Mountain"], hand: ["Shock"] },
+    });
+    const bear = idOf(s, "p1", "battlefield", "Bear Cub");
+    const recruit = idOf(s, "p1", "battlefield", "Pawpatch Recruit");
+    s = act(s, "p2", { type: "cast", card: idOf(s, "p2", "hand", "Shock"), targets: { t: [bear] } });
+    let options: string[] = [];
+    for (let i = 0; i < 20 && !(s.stack.length === 0 && s.pending?.kind === "priority"); i++) {
+      const p = s.pending;
+      if (p?.kind === "choice" && p.request.type === "pick" && p.request.intent === "triggerTarget") {
+        options = p.request.options;
+        expect(() => act(s, "p1", { type: "choose", values: [bear] })).toThrow();
+        s = act(s, "p1", { type: "choose", values: [recruit] });
+      } else if (p?.kind === "choice") s = act(s, p.player, { type: "choose", values: p.request.suggested });
+      else if (p?.kind === "priority") s = act(s, p.player, { type: "pass" });
+      else break;
+    }
+    expect(options).not.toContain(bear);
+    expect(s.objects[recruit]?.counters["+1/+1"]).toBe(1);
   });
 });

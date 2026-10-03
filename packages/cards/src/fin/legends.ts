@@ -245,11 +245,17 @@ export const LEGENDS: Record<string, CardScript> = {
     abilities: [
       playerStatic({ extraLands: 1, label: "Un terrain supplémentaire" }),
       staticAbility("self", { power: 1 }, { per: { types: ["Land"], controller: "you" }, label: "+1/+0 par terrain" }),
-      // Approximation : le terrain renvoyé est ciblé (comme Arid Archway).
-      triggered(when.yourEndStep, [fx.bounce(ref.target())], {
-        targets: [targetObj("t", { types: ["Land"], controller: "you" }, "terrain que vous contrôlez")],
-        label: "Renvoyez un terrain",
-      }),
+      // Le terrain n'est pas ciblé : il est choisi à la résolution.
+      triggered(
+        when.yourEndStep,
+        [
+          fx.chooseAmong(ref.permanentsOf(ref.you, { types: ["Land"] }), ref.you, "land", {
+            prompt: "Choisissez le terrain à renvoyer en main",
+          }),
+          fx.bounce(ref.stored("land")),
+        ],
+        { label: "Renvoyez un terrain" },
+      ),
     ],
   },
 

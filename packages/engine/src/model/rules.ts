@@ -21,6 +21,8 @@ export interface TargetSpec {
   kickedCount?: number;
   /** Ces cibles doivent être différentes de celles d'autres mots « cible » (« deux autres cibles »). */
   otherThan?: string[];
+  /** Capacité déclenchée : la cible n'est pas l'objet de l'événement (« une créature autre que cette créature »). */
+  notEventObject?: boolean;
   /** Chaque cible doit être attachée à une cible d'un autre mot « cible » (« Équipement attaché à cette créature »). */
   attachedToTarget?: string;
   /** Cibles contrôlées par des joueurs différents (« contrôlées par des joueurs différents »). */
@@ -101,6 +103,8 @@ export interface ObjectFilter {
   wasAttachedToSource?: boolean;
   /** Véhicule équipé par la source ce tour-ci (Balthier and Fran). */
   crewedBySource?: boolean;
+  /** A piloté ou monté la source ce tour-ci (Giant Beaver : « une créature qui l'a montée ce tour-ci »). */
+  crewedSource?: boolean;
   nontoken?: boolean;
   /** Force minimale (« créature de force 4 ou plus »). */
   minPower?: number;
