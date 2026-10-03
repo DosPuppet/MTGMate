@@ -632,6 +632,24 @@ export const fx = {
     const flat = effects.flat();
     return [{ op: "may", prompt, skip: flat.length, who, store: storeAs }, ...flat];
   },
+  /**
+   * « Au choix » (608.2d) : le joueur choisit une branche pendant la résolution (« gagne au choix la double initiative
+   * ou le lien de vie ») ; `store` : le nom de la variable qui retient le rang choisi.
+   */
+  yourChoice: (prompt: string, store: string, branches: { label: string; effects: Effects }[]): Effect[] => [
+    { op: "chooseOption", prompt, labels: branches.map((b) => b.label), store },
+    ...branches.flatMap((b, i) => {
+      const flat = b.effects.flat();
+      const c: Condition = {
+        kind: "all",
+        of: [
+          { kind: "var", name: store, atLeast: i + 1 },
+          { kind: "not", cond: { kind: "var", name: store, atLeast: i + 2 } },
+        ],
+      };
+      return [{ op: "if", cond: c, skip: flat.length } as Effect, ...flat];
+    }),
+  ],
   /** « Si [condition], … » : les effets ne s'appliquent que si la condition est vraie à la résolution. */
   when: (c: Condition, ...effects: Effects): Effect[] => {
     const flat = effects.flat();

@@ -214,7 +214,12 @@ describe("Secrets of Strixhaven", () => {
       const card = idOf(s, "p1", "graveyard", "Practiced Offense");
       const bear = idOf(s, "p1", "battlefield", "Bear Cub");
       expect(castOptions(s, "p1", card)).not.toHaveLength(0);
-      s = settle(act(s, "p1", { type: "cast", card, mode: 1, targets: { p: ["p1"], c: [bear] } }));
+      s = act(s, "p1", { type: "cast", card, targets: { p: ["p1"], c: [bear] } });
+      // « Au choix » : demandé à la résolution (608.2d), ce n'est pas un mode.
+      s = passAccepting(s, (x) => x.pending?.kind === "choice");
+      const p = s.pending;
+      expect(p?.kind === "choice" && p.request.type === "pick" && p.request.labels?.["1"]).toBe("Le lien de vie");
+      s = settle(act(s, "p1", { type: "choose", values: ["1"] }));
       expect(s.objects[bear]?.counters["+1/+1"]).toBe(1);
       expect(chars(s, bear).keywords).toContain("lifelink");
       expect(exiled(s, "Practiced Offense")).toHaveLength(1);

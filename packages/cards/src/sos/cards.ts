@@ -224,23 +224,16 @@ export const CARDS: Record<string, CardScript> = {
   },
   "Practiced Offense": {
     flashback: "{1}{W}",
-    spell: modal(
-      mode(
-        "Marqueurs +1/+1, double initiative",
-        [target.player("p"), target.creature("c")],
-        [
-          fx.addCounters(ref.permanentsOf(ref.target("p"), { types: ["Creature"] }), 1),
-          fx.modify(ref.target("c"), { addKeywords: ["doubleStrike"] }),
-        ],
-      ),
-      mode(
-        "Marqueurs +1/+1, lien de vie",
-        [target.player("p"), target.creature("c")],
-        [
-          fx.addCounters(ref.permanentsOf(ref.target("p"), { types: ["Creature"] }), 1),
-          fx.modify(ref.target("c"), { addKeywords: ["lifelink"] }),
-        ],
-      ),
+    // « Au choix » : choisi à la résolution (608.2d), ce n'est pas un sort modal.
+    spell: spell(
+      [target.player("p"), target.creature("c")],
+      [
+        fx.addCounters(ref.permanentsOf(ref.target("p"), { types: ["Creature"] }), 1),
+        ...fx.yourChoice("la créature ciblée gagne…", "k", [
+          { label: "La double initiative", effects: [fx.modify(ref.target("c"), { addKeywords: ["doubleStrike"] })] },
+          { label: "Le lien de vie", effects: [fx.modify(ref.target("c"), { addKeywords: ["lifelink"] })] },
+        ]),
+      ],
     ),
   },
   "Shattered Sanctum": {

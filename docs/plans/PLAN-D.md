@@ -10,7 +10,7 @@ Ascendant (4), Dispelling Exhale (3), Moseo, Vein's New Dean (3), Elven Passage 
 
 | Lot | Contenu | Coût | État |
 |---|---|---|---|
-| D1 | « Au choix » choisi à la résolution (608.2d) au lieu d'un mode : Practiced Offense, Wingnut, Manifold Mouse, Iceberg Titan | petit, scripts | |
+| D1 | « Au choix » choisi à la résolution (608.2d) au lieu d'un mode : Practiced Offense, Wingnut, Manifold Mouse, Iceberg Titan | petit, scripts |✅ |
 | D2 [règles] | Contempler : coût additionnel facultatif choisi au lancement (permanent ou carte de la main révélée, événement filtré), noté sur la pile (`cond.beheld`), variante « ou payez {N} », choix pendant une résolution (Sarkhan, Elven Passage) ; Exhales, cinq cartes d'ECL, Kindle the Inner Flame, Countersculpt, Theorist's Sanctum ; client et IA | moyen à gros | |
 | D3 [règles] | Capacités réflexives après une arrivée ou un remplacement : Superior Spider-Man (exil de la carte copiée), Head of the Hunt (le Loup) | moyen | |
 | D4 [règles] | Valeurs évaluées au ciblage : filtre de cible à valeur de mana calculée (Moseo, Likeness Looter), X annoncé pour une capacité sans {X} et respecté par le sacrifice (Sidisi) | moyen | |
@@ -33,3 +33,5 @@ Hors série, à la demande de l'utilisateur : décisions officielles de Scryfall
 ## Suivi
 
 - **03/10/2026 :** plan écrit à la demande de l'utilisateur.
+- **03/10/2026, D1** (règles 87) : opération générique `chooseOption` et aide `fx.yourChoice(prompt, store, branches)` (« au choix », 608.2d : l'option est choisie pendant la résolution, parmi des libellés) ; Practiced Offense n'est plus un sort modal (il déclenchait à tort ce qui compte les sorts modaux) ; Wingnut et Manifold Mouse choisissent leur mot-clé à la résolution ; Iceberg Titan cible au déclenchement et engage ou dégage à la résolution (entrée retirée d'`approximations.md`) ; 1 test ajouté, 3 adaptés ; plafond « Effect (champs) » 658 → 662 ; parties dorées identiques ; suite complète, fuzz strict de SOS, TMT, BLB, LCI et `verify --set META` verts.
+

@@ -2,6 +2,7 @@
 import { canForage, forage, payLife } from "../actions";
 import type { OpHandlers } from "../effects";
 import { evalAmount, evalCondition, nameOf, resolveRef, store } from "../effects";
+import { RulesError } from "../errors";
 import { canPay, manaValue, payMana } from "../mana";
 import { collectEvidence, pickEvidence } from "../stack";
 import { bent, isPlayer } from "../state";
@@ -154,6 +155,32 @@ export const HANDLERS: OpHandlers = {
       bound,
       ...(vars ? { vars } : {}),
     });
+    return;
+  },
+  chooseOption(s, r, e, ctx, key) {
+    const answer = r.vars[key("option")];
+    const options = e.labels.map((_, i) => String(i));
+    if (!answer) {
+      return {
+        ask: {
+          player: ctx.controller,
+          key: key("option"),
+          request: {
+            type: "pick",
+            intent: "other",
+            prompt: `${nameOf(s, ctx.sourceId)} : ${e.prompt}`,
+            options,
+            labels: Object.fromEntries(e.labels.map((l, i) => [String(i), l])),
+            min: 1,
+            max: 1,
+            suggested: ["0"],
+          },
+        },
+      };
+    }
+    const i = options.indexOf(String(answer[0]));
+    if (i < 0) throw new RulesError("Option inconnue");
+    store(r, e.store, i + 1);
     return;
   },
   may(s, r, e, ctx, key) {

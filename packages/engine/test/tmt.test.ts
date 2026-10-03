@@ -2444,10 +2444,16 @@ describe("lot A, rouge", () => {
       expect(pt(s, idOf(s, "p1", "battlefield", "Llanowar Elves"))).toEqual([1, 1]);
     });
 
-    it("Wingnut : l'autre mode choisi (la célérité)", () => {
+    it("Wingnut : « au choix » choisi à la résolution (la célérité)", () => {
       let s = scenario({ p1: { battlefield: ["Wingnut, Bat on the Belfry", "Forest"], hand: ["Llanowar Elves"] } });
       const wingnut = idOf(s, "p1", "battlefield", "Wingnut, Bat on the Belfry");
-      s = settle(cast(s, "p1", "Llanowar Elves"), triggerMode(2));
+      let asked = false;
+      s = settle(cast(s, "p1", "Llanowar Elves"), (req) => {
+        if (req.type !== "pick" || !req.labels) return undefined;
+        asked = req.intent !== "triggerMode";
+        return Object.keys(req.labels).filter((k) => req.labels?.[k] === "La célérité");
+      });
+      expect(asked).toBe(true);
       expect(chars(s, wingnut).keywords).toContain("haste");
       expect(chars(s, wingnut).keywords).not.toContain("flying");
     });

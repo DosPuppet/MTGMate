@@ -3,6 +3,7 @@
  * Découverte, mana des Cavernes, terrains « Restless », transformation (Treasure Map), exil au lieu de mourir.
  */
 
+import { card } from "@mtgx/cards";
 import { describe, expect, it } from "vitest";
 import { destroy, drawCards, gainLife } from "../src/actions";
 import { amount } from "../src/dsl";
@@ -3232,5 +3233,36 @@ describe("Blessures à chaque créature et chaque planeswalker (lot K8)", () => 
     // Deux Cavernes : 2 blessures ; le planeswalker perd 2 marqueurs de loyauté.
     expect(s.objects[wId]?.counters.loyalty).toBe(3);
     expect(s.objects[idOf(s, "p2", "battlefield", "Serra Angel")]?.damage).toBe(2);
+  });
+});
+
+describe("Iceberg Titan (lot D1)", () => {
+  it("en attaquant : vous pouvez engager ou dégager l'artefact ou la créature ciblée (choisi à la résolution)", () => {
+    const run = (yes: boolean) => {
+      // Le verso de Inverted Iceberg, posé tel quel sur le champ de bataille.
+      const titan = card("Inverted Iceberg // Iceberg Titan").faceDefs?.[1];
+      if (!titan) throw new Error("verso introuvable");
+      let s = scenario({ p1: { battlefield: [titan] }, p2: { battlefield: ["Serra Angel"] } });
+      const angel = idOf(s, "p2", "battlefield", "Serra Angel");
+      s = attack(s, [idOf(s, "p1", "battlefield", titan.name)]);
+      let modes = 0;
+      for (let i = 0; i < 20 && s.turn.step === "declareAttackers"; i++) {
+        const p = s.pending;
+        if (p?.kind === "choice") {
+          if (p.request.type === "pick" && p.request.intent === "triggerMode") modes++;
+          const values =
+            p.request.type === "yesNo"
+              ? [yes ? 1 : 0]
+              : p.request.type === "pick" && p.request.options.includes(angel)
+                ? [angel]
+                : p.request.suggested;
+          s = act(s, p.player, { type: "choose", values });
+        } else if (p?.kind === "priority") s = act(s, p.player, { type: "pass" });
+        else break;
+      }
+      return { tapped: s.objects[angel]?.tapped, modes };
+    };
+    expect(run(true)).toEqual({ tapped: true, modes: 0 });
+    expect(run(false).tapped).toBe(false);
   });
 });

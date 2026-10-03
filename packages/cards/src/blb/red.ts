@@ -24,7 +24,6 @@ import {
   target,
   targetObj,
   triggered,
-  triggeredModal,
   valiant,
   when,
 } from "./common";
@@ -234,18 +233,18 @@ export const RED: Record<string, CardScript> = {
   },
   "Manifold Mouse": {
     abilities: [
-      triggeredModal(when.yourCombat, [
-        mode(
-          "Double initiative",
-          [target.creature("t", { controller: "you", subtype: "Mouse" })],
-          [fx.pump(ref.target(), 0, 0, ["doubleStrike"])],
-        ),
-        mode(
-          "Piétinement",
-          [target.creature("t", { controller: "you", subtype: "Mouse" })],
-          [fx.pump(ref.target(), 0, 0, ["trample"])],
-        ),
-      ]),
+      // La cible au déclenchement, le mot-clé « au choix » à la résolution (608.2d).
+      triggered(
+        when.yourCombat,
+        fx.yourChoice("la Souris ciblée gagne…", "k", [
+          { label: "La double initiative", effects: [fx.pump(ref.target(), 0, 0, ["doubleStrike"])] },
+          { label: "Le piétinement", effects: [fx.pump(ref.target(), 0, 0, ["trample"])] },
+        ]),
+        {
+          targets: [target.creature("t", { controller: "you", subtype: "Mouse" })],
+          label: "Une Souris gagne la double initiative ou le piétinement",
+        },
+      ),
     ],
   },
   "Might of the Meek": {

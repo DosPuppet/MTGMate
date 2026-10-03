@@ -969,9 +969,11 @@ const answer =
   (req) => {
     if (req.type === "yesNo") return o.yes === undefined ? undefined : [o.yes ? 1 : 0];
     if (req.type !== "pick") return undefined;
-    if (req.intent === "triggerMode") {
-      const hit = Object.entries(req.labels ?? {}).find(([, l]) => !!o.mode && l.includes(o.mode));
-      return hit ? [hit[0]] : undefined;
+    // Mode d'une capacité, ou option « au choix » (608.2d) : par libellé.
+    if (req.intent === "triggerMode" || (o.mode && req.labels)) {
+      const mode = o.mode?.toLowerCase();
+      const hit = Object.entries(req.labels ?? {}).find(([, l]) => !!mode && l.toLowerCase().includes(mode));
+      if (hit || req.intent === "triggerMode") return hit ? [hit[0]] : undefined;
     }
     const picked = (o.pick ?? []).filter((w) => req.options.includes(w));
     return picked.length > 0 ? picked : undefined;

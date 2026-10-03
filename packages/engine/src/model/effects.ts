@@ -208,6 +208,8 @@ export type Effect =
   | { op: "mayPay"; cost: ManaCost; prompt: string; skip: number; life?: number; waterbend?: boolean }
   /** « Vous pouvez » : si le contrôleur refuse, les `skip` effets suivants sont ignorés. */
   | { op: "may"; prompt: string; skip: number; who?: Ref; store?: string }
+  /** « Au choix » (608.2d) : le joueur choisit une option pendant la résolution ; `store` reçoit son rang (1, 2…). */
+  | { op: "chooseOption"; prompt: string; labels: string[]; store: string }
   /** « Si cette créature devait mourir ce tour-ci, exilez-la à la place. » */
   | { op: "exileIfDies"; what: Ref }
   /** « Prévenez toutes les blessures de combat qui devraient être infligées à … ce tour-ci. » */

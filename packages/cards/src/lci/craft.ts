@@ -14,13 +14,11 @@ import {
   GNOME,
   GOLEM_4,
   manaAbility,
-  mode,
   ref,
   staticAbility,
   target,
   targetObj,
   triggered,
-  triggeredModal,
   when,
 } from "./common";
 
@@ -117,13 +115,20 @@ export const CRAFT: Record<string, CardScript> = {
   },
   "Iceberg Titan": {
     abilities: [
-      triggeredModal(
+      // « Vous pouvez engager ou dégager » : la cible au déclenchement, l'action à la résolution (comme Granite Witness).
+      triggered(
         when.attacksSelf,
         [
-          mode("Engagez un artefact ou une créature", [ARTIFACT_OR_CREATURE_TARGET], [fx.tap(ref.target())]),
-          mode("Dégagez un artefact ou une créature", [ARTIFACT_OR_CREATURE_TARGET], [fx.untap(ref.target())]),
+          ...fx.when(
+            cond.refMatches(ref.target(), { tapped: false }),
+            fx.mayForStore(ref.you, "Engager la cible ?", "e", fx.tap(ref.target())),
+          ),
+          ...fx.when(
+            cond.all(cond.not(cond.v("e")), cond.refMatches(ref.target(), { tapped: true })),
+            fx.may("Dégager la cible ?", fx.untap(ref.target())),
+          ),
         ],
-        { label: "Engagez ou dégagez" },
+        { targets: [ARTIFACT_OR_CREATURE_TARGET], label: "Vous pouvez engager ou dégager un artefact ou une créature" },
       ),
     ],
   },

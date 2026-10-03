@@ -17,7 +17,6 @@ import {
   staticAbility,
   target,
   triggered,
-  triggeredModal,
   when,
 } from "./common";
 
@@ -237,13 +236,14 @@ export const RED: Record<string, CardScript> = {
   },
   "Wingnut, Bat on the Belfry": {
     abilities: [
-      triggeredModal(
+      // « Au choix » : choisi à la résolution (608.2d).
+      triggered(
         ALLIANCE,
-        [
-          mode("Le vol", [], [fx.pump(ref.self, 0, 0, ["flying"])]),
-          mode("La menace", [], [fx.pump(ref.self, 0, 0, ["menace"])]),
-          mode("La célérité", [], [fx.pump(ref.self, 0, 0, ["haste"])]),
-        ],
+        fx.yourChoice("Wingnut gagne…", "k", [
+          { label: "Le vol", effects: [fx.pump(ref.self, 0, 0, ["flying"])] },
+          { label: "La menace", effects: [fx.pump(ref.self, 0, 0, ["menace"])] },
+          { label: "La célérité", effects: [fx.pump(ref.self, 0, 0, ["haste"])] },
+        ]),
         { label: "Alliance : le vol, la menace ou la célérité" },
       ),
       triggered(when.attacksSelf, [fx.pumpAll({ types: ["Creature"], attacking: true, other: true }, 1, 0)], {
