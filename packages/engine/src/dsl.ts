@@ -1317,6 +1317,8 @@ export const fx = {
     bind,
     ...(keepVars ? { keepVars } : {}),
   }),
+  /** « Quand vous le faites, choisissez un — » : capacité réflexive modale, le mode choisi à sa mise sur la pile (Hylda). */
+  reflexiveModal: (modes: ModeDef[]): Effect => ({ op: "reflexive", targets: [], effects: [], modes }),
   /** « Piochez N cartes, puis défaussez N cartes. » */
   loot: (n = 1): Effect[] => [
     { op: "draw", who: ref.you, amount: n },

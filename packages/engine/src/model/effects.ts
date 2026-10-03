@@ -12,6 +12,7 @@ import type {
   ManaCost,
   ManaRestriction,
   ManaType,
+  ModeDef,
   MoveSpec,
   ObjectFilter,
   PlayerStaticAbilityDef,
@@ -359,7 +360,15 @@ export type Effect =
   /** Capacité déclenchée réflexive (« quand vous le faites, … ») : ses cibles sont choisies à sa mise sur la pile. */
   /** `bind` : objets figés maintenant, relus comme cibles par la capacité réflexive (« cette créature »). */
   /** `keepVars` : valeurs mémorisées transmises à la capacité réflexive (« payez {X}. Quand vous le faites, … X … »). */
-  | { op: "reflexive"; targets: TargetSpec[]; effects: Effect[]; bind?: Record<string, Ref>; keepVars?: string[] }
+  | {
+      op: "reflexive";
+      targets: TargetSpec[];
+      effects: Effect[];
+      bind?: Record<string, Ref>;
+      keepVars?: string[];
+      /** « Quand vous le faites, choisissez un — » : modes choisis à la mise sur la pile (Hylda). */
+      modes?: ModeDef[];
+    }
   /** Contrecarre un sort ou une capacité sur la pile (701.5). */
   /** `store` : nombre de sorts et capacités contrecarrés. */
   /** `exilePermanents` : un sort de permanent contrecarré est exilé, la carte mémorisée sous `storeMoved` (Thranduil's

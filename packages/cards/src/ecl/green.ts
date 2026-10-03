@@ -281,17 +281,11 @@ export const GREEN: Record<string, CardScript> = {
   },
   Prismabasher: {
     abilities: [
-      // « jusqu'à X créatures ciblées » : le nombre de cibles dépend de X, d'où une capacité réflexive.
-      triggered(
-        when.entersSelf,
-        [
-          fx.reflexive(
-            [{ ...target.upTo(1, target.creature("t", { controller: "you" })), countAmount: VIVID }],
-            [fx.pump(ref.target(), VIVID, VIVID)],
-          ),
-        ],
-        { label: "Éclatant — jusqu'à X créatures gagnent +X/+X" },
-      ),
+      // « jusqu'à X créatures ciblées » : X est évalué au ciblage (`countAmount`).
+      triggered(when.entersSelf, [fx.pump(ref.target(), VIVID, VIVID)], {
+        targets: [{ ...target.upTo(1, target.creature("t", { controller: "you" })), countAmount: VIVID }],
+        label: "Éclatant — jusqu'à X créatures gagnent +X/+X",
+      }),
     ],
   },
   "Prismatic Undercurrents": {

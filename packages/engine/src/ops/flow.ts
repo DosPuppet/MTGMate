@@ -130,6 +130,7 @@ export const HANDLERS: OpHandlers = {
       effects: e.effects,
       bound,
       ...(vars ? { vars } : {}),
+      ...(e.modes ? { modes: e.modes } : {}),
     });
     return;
   },

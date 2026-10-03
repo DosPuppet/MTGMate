@@ -1246,11 +1246,12 @@ describe("Duskmourn, lot K8 : rares (1)", () => {
     s = act(s, "p1", { type: "cast", card: idOf(s, "p1", "hand", "Ghostly Dancers") });
     s = settle(s);
     expect(namesIn(s, s.players.p1?.hand)).toEqual(["Nowhere to Run"]);
-    // Deuxième mode : la porte verrouillée s'ouvre, la Salle est entièrement déverrouillée (sinistre).
+    // « … ou … » choisi à la résolution (PLAN-D, D6) : la porte verrouillée s'ouvre, la Salle est entièrement
+    // déverrouillée (sinistre).
     let t = scenario({ p1: { battlefield: [ROOM, ...lands("Plains", 5)], hand: ["Ghostly Dancers"] } });
     const room = openDoors(t, ROOM, [0]);
     t = act(t, "p1", { type: "cast", card: idOf(t, "p1", "hand", "Ghostly Dancers") });
-    t = settleAnswering(t, (req) => (req.type === "pick" && req.intent === "triggerMode" ? ["1"] : undefined));
+    t = settleAnswering(t, (req) => (req.type === "pick" && req.intent === "other" ? ["1"] : undefined));
     expect(t.objects[room]?.unlocked).toEqual([0, 1]);
     const spirit = idOf(t, "p1", "battlefield", "Spirit");
     expect(chars(t, spirit)).toMatchObject({ power: 3, toughness: 1, colors: ["W"] });

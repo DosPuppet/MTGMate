@@ -3256,7 +3256,8 @@ export function specsAndEffects(s: GameState, item: StackItem): { specs: TargetS
     const c = item.inline.condition;
     if (c && !checkCondition(s, c, item.controller, item.sourceId, item.event?.objectId, item.event))
       return { specs: [], effects: [] };
-    return { specs: item.inline.targets, effects: item.inline.effects };
+    const m = item.inline.modes?.[item.mode];
+    return m ? { specs: m.targets, effects: m.effects } : { specs: item.inline.targets, effects: item.inline.effects };
   }
   const ab = d.abilities[item.abilityIndex];
   if (ab?.kind === "triggered") {

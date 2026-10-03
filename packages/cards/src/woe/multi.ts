@@ -19,7 +19,6 @@ import {
   staticAbility,
   target,
   triggered,
-  triggeredModal,
   when,
 } from "./common";
 
@@ -132,17 +131,22 @@ export const MULTI: Record<string, CardScript> = {
   // Le mode est choisi au déclenchement, puis {1} est payé ou non (au lieu de « payez {1} ; quand vous le faites, choisissez »).
   "Hylda of the Icy Crown": {
     abilities: [
-      triggeredModal(
+      // « Vous pouvez payer {1}. Quand vous le faites, choisissez un — » : le mode est choisi par la capacité réflexive.
+      triggered(
         YOU_TAP_OPPONENT_CREATURE,
-        [
-          mode("Un Élémental 4/4", [], fx.mayPay("{1}", "Payer {1} ?", fx.createTokens(ELEMENTAL_WU))),
-          mode(
-            "Un marqueur +1/+1 sur chaque créature que vous contrôlez",
-            [],
-            fx.mayPay("{1}", "Payer {1} ?", fx.addCountersAll({ types: ["Creature"], controller: "you" }, 1)),
-          ),
-          mode("Regard 2, puis piochez une carte", [], fx.mayPay("{1}", "Payer {1} ?", fx.scry(2), fx.draw(1))),
-        ],
+        fx.mayPay(
+          "{1}",
+          "Payer {1} ?",
+          fx.reflexiveModal([
+            mode("Un Élémental 4/4", [], [fx.createTokens(ELEMENTAL_WU)]),
+            mode(
+              "Un marqueur +1/+1 sur chaque créature que vous contrôlez",
+              [],
+              [fx.addCountersAll({ types: ["Creature"], controller: "you" }, 1)],
+            ),
+            mode("Regard 2, puis piochez une carte", [], [fx.scry(2), fx.draw(1)]),
+          ]),
+        ),
         { label: "Vous engagez une créature adverse : vous pouvez payer {1}" },
       ),
     ],

@@ -13,6 +13,7 @@ import type {
   ManaCost,
   ManaRestriction,
   ManaType,
+  ModeDef,
   PendingDecision,
   PlayerStaticAbilityDef,
   TargetSpec,
@@ -379,6 +380,9 @@ export interface InlineAbility {
   vars?: Record<string, ChoiceValue[]>;
   /** Capacité déclenchée accordée « si… » : la condition, revérifiée à la résolution (603.4). */
   condition?: Condition;
+  /** Capacité modale (« quand vous le faites, choisissez un — », Hylda ; capacité modale accordée) : le mode est choisi à la
+   * mise sur la pile, puis ses cibles ; `targets` et `effects` sont alors ignorés. */
+  modes?: ModeDef[];
 
   label?: string;
 }

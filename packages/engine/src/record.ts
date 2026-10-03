@@ -259,8 +259,11 @@ export const RECORD_VERSION = 1;
  *   puis à la résolution (Moseo, Vein's New Dean) (PLAN-D, lot D4).
  * - 91 : condition retenue au lancement (`whenCast`, Faerie Fencing, Steer Clear) ; condition du déclencheur vérifiée au
  *   déclenchement seulement (`triggerCondition`, Social Snub) (PLAN-D, lot D5).
+ * - 92 : « jusqu'à X cibles » d'une capacité déclenchée choisies au déclenchement (Prismabasher, Heroic Feast, Rollercrusher
+ *   Ride…) ; modes d'une capacité réflexive (Hylda) et d'une capacité modale accordée ; Ghostly Dancers choisit à la
+ *   résolution (PLAN-D, lot D6).
  */
-export const RULES_VERSION = 91;
+export const RULES_VERSION = 92;
 
 /** Un point de contrôle toutes les N décisions (plus la dernière de la partie). */
 export const CHECKPOINT_EVERY = 25;

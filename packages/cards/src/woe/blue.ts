@@ -374,16 +374,14 @@ export const BLUE: Record<string, CardScript> = {
   },
   "Extraordinary Journey": {
     abilities: [
-      // « jusqu'à X créatures ciblées » : le nombre de cibles dépend de X, d'où une capacité réflexive.
+      // « jusqu'à X créatures ciblées » : X est évalué au ciblage (`countAmount`).
       triggered(
         when.entersSelf,
-        [
-          fx.reflexive(
-            [{ ...target.upTo(1, target.creature()), countAmount: amount.sourceX }],
-            [fx.exileCard(ref.target(), { name: "j" }), fx.grantPlay(ref.stored("j"), { forever: true, forOwner: true })],
-          ),
-        ],
-        { label: "Exilez jusqu'à X créatures ; leurs propriétaires pourront les jouer" },
+        [fx.exileCard(ref.target(), { name: "j" }), fx.grantPlay(ref.stored("j"), { forever: true, forOwner: true })],
+        {
+          targets: [{ ...target.upTo(1, target.creature()), countAmount: amount.sourceX }],
+          label: "Exilez jusqu'à X créatures ; leurs propriétaires pourront les jouer",
+        },
       ),
       triggered({ on: "enters", who: { types: ["Creature"], nontoken: true }, fromZone: "exile" }, [fx.draw(1)], {
         oncePerTurn: true,

@@ -4251,16 +4251,70 @@ describe("Wilds of Eldraine, lot B2 : « vous engagez une créature adverse »",
     expect(chars(s, sentry).power).toBe(4);
   });
 
-  it("Hylda of the Icy Crown : mode choisi, {1} payé : un Élémental 4/4", () => {
-    let s = scenario({ p1: { battlefield: ["Hylda of the Icy Crown", "Plains"] }, p2: { battlefield: ["Pelakka Wurm"] } });
-    tapBy(s, "p1", idOf(s, "p2", "battlefield", "Pelakka Wurm"));
-    s = passAccepting(s, (x) => x.pending?.kind === "choice" || (x.stack.length === 0 && x.triggers.length === 0));
-    for (let i = 0; i < 4 && s.pending?.kind === "choice"; i++) {
-      const p = s.pending;
-      s = act(s, p.player, { type: "choose", values: p.request.suggested });
-      s = passAccepting(s, (x) => x.pending?.kind === "choice" || (x.stack.length === 0 && x.triggers.length === 0));
-    }
+  it("Hylda of the Icy Crown : vous pouvez payer {1} ; quand vous le faites, choisissez un mode (PLAN-D, D6)", () => {
+    const start = () => {
+      const s = scenario({ p1: { battlefield: ["Hylda of the Icy Crown", "Plains"] }, p2: { battlefield: ["Pelakka Wurm"] } });
+      tapBy(s, "p1", idOf(s, "p2", "battlefield", "Pelakka Wurm"));
+      return s;
+    };
+    // {1} d'abord, puis le mode, choisi à la mise sur la pile de la capacité réflexive.
+    const asked: string[] = [];
+    let s = settle(start(), (req) => {
+      asked.push(req.intent);
+      if (req.type === "yesNo") return [1];
+      if (req.type === "pick" && req.intent === "triggerMode") {
+        expect(req.options).toEqual(["0", "1", "2"]);
+        return ["1"];
+      }
+      return undefined;
+    });
+    expect(asked).toEqual(["may", "triggerMode"]);
+    const hylda = idOf(s, "p1", "battlefield", "Hylda of the Icy Crown");
+    expect(s.objects[hylda]?.counters["+1/+1"]).toBe(1);
+    expect(s.objects[idOf(s, "p1", "battlefield", "Plains")]?.tapped).toBe(true);
+    // Sans payer : aucun mode n'est demandé.
+    const asked2: string[] = [];
+    s = settle(start(), (req) => {
+      asked2.push(req.intent);
+      return req.type === "yesNo" ? [0] : undefined;
+    });
+    expect(asked2).toEqual(["may"]);
+    expect(s.objects[idOf(s, "p1", "battlefield", "Hylda of the Icy Crown")]?.counters["+1/+1"]).toBeUndefined();
+    // Mode par défaut : l'Élémental 4/4.
+    s = settle(start());
     expect(s.battlefield.filter((id) => chars(s, id).name === "Elemental")).toHaveLength(1);
+  });
+
+  it("Une capacité déclenchée modale accordée garde ses modes (PLAN-D, D6)", () => {
+    const banner = customCard({
+      name: "Bannière modale",
+      types: ["Enchantment"],
+      typeLine: "Enchantment",
+      abilities: [
+        dsl.staticAbility(
+          { types: ["Creature"], controller: "you" },
+          {
+            addAbilities: [
+              dsl.triggeredModal(dsl.when.attacksSelf, [
+                dsl.mode("Gagnez 2 PV", [], [dsl.fx.gainLife(2)]),
+                dsl.mode("Piochez une carte", [], [dsl.fx.draw(1)]),
+              ]),
+            ],
+          },
+        ),
+      ],
+    });
+    let s = scenario({ p1: { battlefield: [banner, "Bear Cub"], library: lands("Island", 3) } });
+    s = advanceUntil(s, (x) => x.pending?.kind === "declareAttackers");
+    s = act(s, "p1", { type: "declareAttackers", attackers: [{ id: idOf(s, "p1", "battlefield", "Bear Cub"), defender: "p2" }] });
+    const asked: string[] = [];
+    s = settle(s, (req) => {
+      asked.push(req.intent);
+      return req.intent === "triggerMode" ? ["1"] : undefined;
+    });
+    expect(asked[0]).toBe("triggerMode");
+    expect(s.players.p1?.hand).toHaveLength(1);
+    expect(s.players.p1?.life).toBe(20);
   });
 });
 

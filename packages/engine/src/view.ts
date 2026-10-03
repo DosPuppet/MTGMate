@@ -216,7 +216,10 @@ function playedEffect(s: GameState, item: GameState["stack"][number]): string | 
     const modes = modesOf(d);
     return modes.length > 1 ? modes[item.mode]?.label : undefined;
   }
-  if (item.inline) return item.inline.label ?? "Capacité";
+  if (item.inline) {
+    const mode = item.inline.modes?.[item.mode]?.label;
+    return [item.inline.label, mode].filter(Boolean).join(" — ") || "Capacité";
+  }
   const ab = d.abilities[item.abilityIndex];
   if (ab?.kind === "triggered" && ab.modes) {
     const mode = ab.modes[item.mode]?.label;

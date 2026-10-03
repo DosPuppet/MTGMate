@@ -13,14 +13,12 @@ import {
   fx,
   INSECT_2_1,
   manaAbility,
-  mode,
   ROOM,
   ref,
   SPIRIT_3_1,
   staticAbility,
   target,
   triggered,
-  triggeredModal,
   when,
 } from "./common";
 
@@ -193,16 +191,18 @@ export const SPECIAL: Record<string, CardScript> = {
   // Portes
   "Ghostly Dancers": {
     abilities: [
-      triggeredModal(
+      // « … ou … » : choisi à la résolution (608.2d), pas un mode.
+      triggered(
         when.entersSelf,
-        [
-          mode(
-            "Un enchantement de votre cimetière en main",
-            [],
-            [fx.pickFromZone("graveyard", { types: ["Enchantment"] }, { to: "hand" }, { prompt: "Carte d'enchantement" })],
-          ),
-          mode("Déverrouillez une porte", [], [fx.door(ref.permanentsOf(ref.you, ROOM))]),
-        ],
+        fx.yourChoice("Ghostly Dancers…", "k", [
+          {
+            label: "Un enchantement de votre cimetière en main",
+            effects: [
+              fx.pickFromZone("graveyard", { types: ["Enchantment"] }, { to: "hand" }, { prompt: "Carte d'enchantement" }),
+            ],
+          },
+          { label: "Déverrouillez une porte", effects: [fx.door(ref.permanentsOf(ref.you, ROOM))] },
+        ]),
         { label: "Enchantement en main, ou porte déverrouillée" },
       ),
       eerie([fx.createTokens(SPIRIT_3_1)], { label: "Esprit 3/1 volant" }),

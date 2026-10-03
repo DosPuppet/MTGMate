@@ -133,7 +133,6 @@ Dans l'ordre où elles ont été ajoutées, extension par extension.
   - `règle` Unable to Scream : la créature face cachée peut encore être retournée ;
   - `règle` Leyline of Transformation : seulement les créatures sur le champ de bataille (pas les sorts ni les cartes) ;
   - `règle` Smoky Lounge : le {R}{R} est une capacité de mana utilisable pendant votre première phase principale (et non ajouté au début de celle-ci) ;
-  - `timing` Miasma Demon, The Rollercrusher Ride : les cibles sont choisies par une capacité réflexive, à la résolution ; Ghostly Dancers : le choix est fait à la mise sur la pile ;
   - `choix auto` Say Its Name : Altanak est cherché dans le cimetière, puis la main, puis la bibliothèque ;
   - `règle` Marvin, Murderous Mimic : seulement les capacités activées imprimées des autres créatures (pas celles accordées) ;
   - `choix auto` Haunted Screen : le paiement automatique peut payer le point de vie de la capacité {G}/{U}/{R} ;
@@ -207,7 +206,6 @@ Dans l'ordre où elles ont été ajoutées, extension par extension.
   - `règle` Dawn-Blessed Pennant : le type (une des huit tribus) est choisi comme un mode en arrivant ;
   - `choix auto` End-Blaze Epiphany : la carte jouable est choisie en la jouant, et non à l'exil ;
   - `règle` Aurora Awakener : toutes les cartes de permanent révélées vont sur le champ de bataille (et non « un nombre quelconque ») ;
-  - `timing` Prismabasher : les « jusqu'à X cibles » sont choisies par une capacité réflexive ;
   - `règle` Spry and Mighty : sans deux créatures, la carte ne fait rien ;
   - `règle` Flitterwing Nuisance, Sygg (Wanderbrine Shield) : « blessures de combat à un joueur ou un planeswalker » ne compte que les joueurs ;
   - `choix auto` Temporal Cleansing : le choix « deuxième depuis le dessus ou au-dessous » revient au contrôleur du permanent, pas à son propriétaire ;
@@ -237,7 +235,6 @@ Dans l'ordre où elles ont été ajoutées, extension par extension.
   - `règle` Will, Scion of Peace, Rowan, Scion of War : la réduction « ce tour-ci » est accordée à la créature et cesse si elle quitte le champ de bataille ; X est relu à chaque sort ;
   - `règle` The Irencrag : « perd toutes ses autres capacités » : sa capacité de mana et son déclencheur sont inactifs une fois Équipement, mais restent listés ;
   - `règle` Three Bowls of Porridge : « un mode qui n'a pas déjà été choisi » : trois capacités, chacune activable une seule fois ;
-  - `timing` Hylda of the Icy Crown : le mode est choisi au déclenchement, puis {1} est payé ou non (et non « payez {1} ; quand vous le faites, choisissez ») ;
   - `règle` Sharae of Numbing Depths : « une ou plusieurs créatures » : la capacité se déclenche à la première créature engagée du tour ;
   - `timing` Likeness Looter : la valeur de mana X de la carte ciblée est vérifiée à la résolution (rien ne se passe si elle diffère), et non au ciblage ;
   - `choix auto` Yenna, Redtooth Regent : la copie d'une Aura s'attache à un hôte choisi par le moteur ;

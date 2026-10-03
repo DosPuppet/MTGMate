@@ -1084,7 +1084,13 @@ export function detectTriggers(s: GameState, ev: RulesEvent, only?: (src: Source
 }
 
 function inlineOf(ab: TriggeredAbilityDef): InlineAbility {
-  return { targets: ab.targets, effects: ab.effects, label: ab.label, ...(ab.condition ? { condition: ab.condition } : {}) };
+  return {
+    targets: ab.targets,
+    effects: ab.effects,
+    label: ab.label,
+    ...(ab.condition ? { condition: ab.condition } : {}),
+    ...(ab.modes ? { modes: ab.modes } : {}),
+  };
 }
 
 // ---------------------------------------------------------------------------
@@ -1216,9 +1222,21 @@ export function triggerTargetSpecs(
   },
 ): TargetSpec[] {
   const ab = t.inline ? undefined : triggeredAbility(s, t);
-  const specs = t.inline ? t.inline.targets : !ab ? [] : ab.modes ? (ab.modes[t.mode ?? 0]?.targets ?? []) : ab.targets;
-  // Valeurs évaluées au ciblage (Moseo : « valeur de mana X ou moins, X étant les PV gagnés ce tour-ci »).
-  if (!t.controller || !specs.some((x) => x.maxManaValueAmount !== undefined || x.manaValueAmount !== undefined)) return specs;
+  const modes = t.inline ? t.inline.modes : ab?.modes;
+  const specs = modes ? (modes[t.mode ?? 0]?.targets ?? []) : t.inline ? t.inline.targets : (ab?.targets ?? []);
+  // Valeurs évaluées au ciblage (Moseo : « valeur de mana X ou moins, X étant les PV gagnés ce tour-ci » ; Prismabasher :
+  // « jusqu'à X créatures ciblées »).
+  if (
+    !t.controller ||
+    !specs.some(
+      (x) =>
+        x.maxManaValueAmount !== undefined ||
+        x.manaValueAmount !== undefined ||
+        x.countAmount !== undefined ||
+        x.maxTotalManaValueAmount !== undefined,
+    )
+  )
+    return specs;
   const ctx = staticContext(s, t.controller, t.sourceId ?? "", { sourceDefId: t.sourceDefId, event: t.event });
   return specs.map((x) => concreteSpec(s, ctx, x));
 }
@@ -1313,11 +1331,12 @@ export function processTriggers(s: GameState): boolean {
 
 /** Capacité modale : le contrôleur choisit le mode (603.3c). Renvoie false si une question a été posée. */
 function chooseTriggerMode(s: GameState, t: PendingTrigger): boolean {
-  if (t.inline || t.mode !== undefined) return true;
-  const modes = triggeredAbility(s, t)?.modes;
+  if (t.mode !== undefined) return true;
+  // Capacité réflexive ou accordée : ses modes voyagent avec elle.
+  const ab = t.inline ? undefined : triggeredAbility(s, t);
+  const modes = t.inline ? t.inline.modes : ab?.modes;
   if (!modes) return true;
   // Seuls les modes dont les cibles requises existent sont proposés (et, pour Demonic Pact, pas encore choisis).
-  const ab = triggeredAbility(s, t);
   const o = s.objects[t.sourceId];
   const used = !ab?.uniqueModes
     ? []
@@ -1363,6 +1382,11 @@ function chooseTriggerTargets(s: GameState, t: PendingTrigger): boolean {
     if (spec.notEventObject && t.event?.objectId) taken.add(t.event.objectId);
     const legal = legalTargets(s, t.controller, spec, t.sourceId).filter((id) => !taken.has(id));
     const count = spec.count ?? 1;
+    // « jusqu'à X cibles » avec X = 0 : aucune cible.
+    if (count === 0) {
+      t.targets[spec.id] = [];
+      continue;
+    }
     // « une à trois cibles » (`target.between`) : au moins `minCount` (Armament Dragon, Glint Weaver).
     const min = spec.optional ? 0 : (spec.minCount ?? count);
     // « contrôlées par des joueurs différents » : il faut autant de joueurs différents que de cibles requises.
@@ -1468,7 +1492,7 @@ export function answerTriggerMode(s: GameState, triggerId: string, mode: number)
 
 /** « Choisissez un mode qui n'a pas déjà été choisi » : on retient le mode sur la source. */
 function markModeUsed(s: GameState, t: PendingTrigger): void {
-  if (t.mode === undefined || t.mode < 0 || !triggeredAbility(s, t)?.uniqueModes) return;
+  if (t.inline || t.mode === undefined || t.mode < 0 || !triggeredAbility(s, t)?.uniqueModes) return;
   const o = s.objects[t.sourceId];
   if (!o) return;
   // « … ce tour-ci » : la liste repart de zéro à chaque tour.

@@ -309,29 +309,23 @@ export const WHITE: Record<string, CardScript> = {
   },
   "Aurelia's Vindicator": {
     abilities: [
-      // « jusqu'à X cibles » : X est celui du coût de déguisement payé (`amount.sourceX`), d'où une capacité réflexive.
-      triggered(
-        when.turnedFaceUp,
-        [
-          fx.reflexive(
-            [
-              {
-                id: "t",
-                label: "autre créature ou carte de créature d'un cimetière",
-                filter: {
-                  objects: { types: ["Creature"], other: true },
-                  cards: { filter: { types: ["Creature"] }, whose: "any" },
-                },
-                count: 1,
-                optional: true,
-                countAmount: amount.sourceX,
-              },
-            ],
-            [fx.exileUntilLeaves(ref.target(), true)],
-          ),
+      // « jusqu'à X cibles » : X est celui du coût de déguisement payé (`amount.sourceX`), évalué au ciblage.
+      triggered(when.turnedFaceUp, [fx.exileUntilLeaves(ref.target(), true)], {
+        targets: [
+          {
+            id: "t",
+            label: "autre créature ou carte de créature d'un cimetière",
+            filter: {
+              objects: { types: ["Creature"], other: true },
+              cards: { filter: { types: ["Creature"] }, whose: "any" },
+            },
+            count: 1,
+            optional: true,
+            countAmount: amount.sourceX,
+          },
         ],
-        { label: "Exilez jusqu'à X autres créatures ou cartes de créature (retour en main à son départ)" },
-      ),
+        label: "Exilez jusqu'à X autres créatures ou cartes de créature (retour en main à son départ)",
+      }),
     ],
   },
   "Karlov Watchdog": {

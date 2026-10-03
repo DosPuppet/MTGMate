@@ -2529,8 +2529,9 @@ describe("Lorwyn Eclipsed, lot A — vert", () => {
     const angel = idOf(s, "p1", "battlefield", "Serra Angel");
     s = cast(s, "Prismabasher");
     s = passAccepting(s, (x) => x.pending?.kind === "choice" || x.stack.some((i) => Object.keys(i.targets ?? {}).length > 0));
-    // X = 2 (blanc, vert) : on ne peut pas choisir trois cibles.
+    // X = 2 (blanc, vert) : on ne peut pas choisir trois cibles ; elles sont choisies au déclenchement (PLAN-D, D6).
     const pending = s.pending;
+    expect(pending?.kind === "choice" && pending.request.type === "pick" && pending.request.intent).toBe("triggerTarget");
     if (pending?.kind === "choice" && pending.request.type === "pick") {
       expect(pending.request.max).toBe(2);
       s = act(s, pending.player, { type: "choose", values: [bear, elves] });

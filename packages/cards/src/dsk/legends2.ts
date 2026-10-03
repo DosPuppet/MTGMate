@@ -98,16 +98,10 @@ export const LEGENDS2: Record<string, CardScript> = {
         condition: cond.delirium,
         label: "Délire — blessures non de combat doublées",
       }),
-      triggered(
-        when.entersSelf,
-        [
-          fx.reflexive(
-            [{ ...target.upTo(1, target.creature()), countAmount: amount.sourceX }],
-            [fx.damage(amount.sourceX, ref.target())],
-          ),
-        ],
-        { label: "X blessures à chacune de jusqu'à X créatures" },
-      ),
+      triggered(when.entersSelf, [fx.damage(amount.sourceX, ref.target())], {
+        targets: [{ ...target.upTo(1, target.creature()), countAmount: amount.sourceX }],
+        label: "X blessures à chacune de jusqu'à X créatures",
+      }),
     ],
   },
   "Trial of Agony": {

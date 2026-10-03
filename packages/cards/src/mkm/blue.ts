@@ -321,19 +321,14 @@ export const BLUE: Record<string, CardScript> = {
   },
   "Lost in the Maze": {
     abilities: [
-      // « X créatures ciblées » : le nombre de cibles dépend du X du sort, d'où une capacité réflexive.
+      // « X créatures ciblées » : le X du sort, évalué au ciblage (`countAmount`).
       triggered(
         when.entersSelf,
-        [
-          fx.reflexive(
-            [{ ...target.creature(), count: 1, countAmount: amount.sourceX }],
-            [
-              fx.tap(ref.target()),
-              fx.counters(ref.except(ref.target(), ref.permanentsOf(ref.you, { types: ["Creature"] })), "stun"),
-            ],
-          ),
-        ],
-        { label: "Engagez X créatures ; marqueur d'étourdissement sur celles des adversaires" },
+        [fx.tap(ref.target()), fx.counters(ref.except(ref.target(), ref.permanentsOf(ref.you, { types: ["Creature"] })), "stun")],
+        {
+          targets: [{ ...target.creature(), count: 1, countAmount: amount.sourceX }],
+          label: "Engagez X créatures ; marqueur d'étourdissement sur celles des adversaires",
+        },
       ),
       staticAbility(
         { types: ["Creature"], controller: "you", tapped: true },

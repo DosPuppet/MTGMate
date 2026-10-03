@@ -247,16 +247,10 @@ export const GREEN: Record<string, CardScript> = {
   "Heroic Feast": {
     abilities: [
       triggered(when.entersSelf, [fx.createTokens(FOOD)], { label: "Un jeton Nourriture" }),
-      triggered(
-        when.gainLife,
-        [
-          fx.reflexive(
-            [{ ...target.upTo(1, YOUR_CREATURE()), countAmount: amount.eventAmount }],
-            [fx.addCounters(ref.target(), 1)],
-          ),
-        ],
-        { label: "Un marqueur +1/+1 sur jusqu'à autant de vos créatures que de PV gagnés" },
-      ),
+      triggered(when.gainLife, [fx.addCounters(ref.target(), 1)], {
+        targets: [{ ...target.upTo(1, YOUR_CREATURE()), countAmount: amount.eventAmount }],
+        label: "Un marqueur +1/+1 sur jusqu'à autant de vos créatures que de PV gagnés",
+      }),
     ],
   },
   "Hulkling, Burgeoning Bruiser": {
