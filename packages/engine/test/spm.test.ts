@@ -4197,3 +4197,29 @@ describe("lot C3, cartes uniques", () => {
     expect(idsOf(s, "p1", "battlefield", "Forest")).toHaveLength(1);
   });
 });
+
+describe("Marvel's Spider-Man, PLAN-D D9 : dernières cartes", () => {
+  it("Raging Goblinoids : 5/4, célérité ; chaos {2}{R} depuis le cimetière seulement si elle a été défaussée ce tour-ci", () => {
+    // Dans le cimetière sans avoir été défaussée ce tour-ci : pas de chaos.
+    const stale = scenario({ p1: { battlefield: lands("Mountain", 3), graveyard: ["Raging Goblinoids"] } });
+    expect(castable(stale, "p1", idOf(stale, "p1", "graveyard", "Raging Goblinoids"))).toBe(false);
+
+    let s = scenario({
+      p1: { battlefield: lands("Mountain", 5), hand: ["Romantic Rendezvous", "Raging Goblinoids"], library: lands("Island", 5) },
+    });
+    const goblinoids = idOf(s, "p1", "hand", "Raging Goblinoids");
+    s = settle(cast(s, "p1", "Romantic Rendezvous"), picking([goblinoids]));
+    const inGy = idOf(s, "p1", "graveyard", "Raging Goblinoids");
+    s = settle(act(s, "p1", { type: "cast", card: inGy }));
+    const id = idOf(s, "p1", "battlefield", "Raging Goblinoids");
+    expect(pt(s, id)).toEqual([5, 4]);
+    // Deux Montagnes pour Romantic Rendezvous, trois pour le chaos {2}{R}.
+    expect(s.battlefield.filter((x) => s.objects[x]?.tapped)).toHaveLength(5);
+    // Célérité : elle attaque le tour où elle arrive.
+    expect(chars(s, id).keywords).toContain("haste");
+    s = advanceUntil(s, (x) => x.pending?.kind === "declareAttackers");
+    s = act(s, "p1", { type: "declareAttackers", attackers: [{ id, defender: "p2" }] });
+    s = advanceUntil(s, (x) => x.turn.step === "main2");
+    expect(s.players.p2?.life).toBe(15);
+  });
+});

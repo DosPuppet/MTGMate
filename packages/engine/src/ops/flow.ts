@@ -100,7 +100,44 @@ export const HANDLERS: OpHandlers = {
       }
       if (answer[0] !== 1) return { skip: e.skip };
     }
-    collectEvidence(s, ctx.controller, pickEvidence(s, pool, n) ?? []);
+    // Les cartes exilées sont choisies par le joueur (par défaut : la moins chère qui suffit) ; si leur total n'atteint pas
+    // N, le choix du moteur complète.
+    const suggested = pickEvidence(s, pool, n) ?? [];
+    let chosen = suggested;
+    if (suggested.length < pool.length) {
+      const answer = r.vars[key("evidence")];
+      if (!answer) {
+        return {
+          ask: {
+            player: ctx.controller,
+            key: key("evidence"),
+            request: {
+              type: "pick",
+              intent: "pickCards",
+              prompt: `${nameOf(s, ctx.sourceId)} : réunir des preuves ${n} — cartes de votre cimetière à exiler (valeur de mana totale ${n} ou plus)`,
+              options: pool,
+              min: 1,
+              max: pool.length,
+              suggested,
+            },
+          },
+        };
+      }
+      const picked = [...new Set(answer.map(String).filter((id) => pool.includes(id)))];
+      const total = picked.reduce((t, id) => t + mv(id), 0);
+      chosen =
+        total >= n
+          ? picked
+          : [
+              ...picked,
+              ...(pickEvidence(
+                s,
+                pool.filter((id) => !picked.includes(id)),
+                n - total,
+              ) ?? []),
+            ];
+    }
+    collectEvidence(s, ctx.controller, chosen);
     store(r, e.store, n);
     return;
   },

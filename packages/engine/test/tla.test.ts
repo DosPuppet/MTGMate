@@ -5103,3 +5103,137 @@ describe("« Jusqu'à une » rendu au joueur (lot K6)", () => {
     expect(idsOf(s, "p1", "battlefield", "Shivan Dragon")).toHaveLength(0);
   });
 });
+
+describe("Avatar: The Last Airbender, PLAN-D D9 : dernières cartes", () => {
+  const pt = (s: S, id: string) => [chars(s, id).power, chars(s, id).toughness];
+  /** Rituel de Leçon de test à {U}{R}. */
+  const lesson = customCard({
+    name: "Test Lesson",
+    types: ["Sorcery"],
+    subtypes: ["Lesson"],
+    typeLine: "Sorcery — Lesson",
+    manaCost: { generic: 0, colored: { U: 1, R: 1 }, x: 0 },
+    manaCostText: "{U}{R}",
+    colors: ["U", "R"],
+  });
+  /** Rituel de test à {U}{R}, sans sous-type. */
+  const sorcery = customCard({
+    name: "Test Sorcery",
+    types: ["Sorcery"],
+    typeLine: "Sorcery",
+    manaCost: { generic: 0, colored: { U: 1, R: 1 }, x: 0 },
+    manaCostText: "{U}{R}",
+    colors: ["U", "R"],
+  });
+  /** Rituel de test à {B}. */
+  const blackOne = customCard({
+    name: "Test Black One",
+    types: ["Sorcery"],
+    typeLine: "Sorcery",
+    manaCost: { generic: 0, colored: { B: 1 }, x: 0 },
+    manaCostText: "{B}",
+    colors: ["B"],
+  });
+  /** Artefact de test : « Sacrifiez un permanent : rien. » */
+  const altar = customCard({
+    name: "Test Altar",
+    types: ["Artifact"],
+    typeLine: "Artifact",
+    abilities: [dsl.activated({ sacrificeOther: { filter: {} }, effects: [], label: "Sacrifiez un permanent" })],
+  });
+  const sacrificeWith = (s: S, player: PlayerId, altarId: string, victim: string) => {
+    const a = legalActions(s, player).find((x) => x.type === "activate" && x.source === altarId);
+    return act(s, player, {
+      type: "activate",
+      source: altarId,
+      ability: a?.type === "activate" ? a.ability : -1,
+      sacrifice: [victim],
+    });
+  };
+
+  it("Hermitic Herbalist : un mana de n'importe quelle couleur, ou deux mana de couleurs au choix seulement pour une Leçon", () => {
+    const s = scenario({ p1: { battlefield: ["Hermitic Herbalist"], hand: [lesson, sorcery, blackOne] } });
+    // {T} : un mana de n'importe quelle couleur, pour n'importe quel sort.
+    expect(castable(s, "p1", idOf(s, "p1", "hand", "Test Black One"))).toBe(true);
+    // {T} : deux mana, seulement pour un sort de Leçon.
+    expect(castable(s, "p1", idOf(s, "p1", "hand", "Test Sorcery"))).toBe(false);
+    expect(castable(s, "p1", idOf(s, "p1", "hand", "Test Lesson"))).toBe(true);
+    const after = settle(cast(s, "p1", "Test Lesson"));
+    expect(idsOf(after, "p1", "graveyard", "Test Lesson")).toHaveLength(1);
+    expect(after.objects[idOf(after, "p1", "battlefield", "Hermitic Herbalist")]?.tapped).toBe(true);
+  });
+
+  it("Invasion Reinforcements : flash ; en arrivant, un jeton Allié blanc 1/1", () => {
+    let s = scenario({ active: "p2", p1: { battlefield: lands("Plains", 2), hand: ["Invasion Reinforcements"] } });
+    s = act(s, "p2", { type: "pass" });
+    // Flash : lancée pendant le tour de l'adversaire.
+    expect(castable(s, "p1", idOf(s, "p1", "hand", "Invasion Reinforcements"))).toBe(true);
+    s = settle(cast(s, "p1", "Invasion Reinforcements"));
+    expect(pt(s, idOf(s, "p1", "battlefield", "Invasion Reinforcements"))).toEqual([1, 1]);
+    const token = idOf(s, "p1", "battlefield", "Ally");
+    expect(s.objects[token]?.isToken).toBe(true);
+    expect(pt(s, token)).toEqual([1, 1]);
+    expect(chars(s, token).colors).toEqual(["W"]);
+    expect(chars(s, token).subtypes).toEqual(["Ally"]);
+  });
+
+  it("White Lotus Reinforcements : vigilance ; vos autres Alliés gagnent +1/+1", () => {
+    const s = scenario({
+      p1: { battlefield: ["White Lotus Reinforcements", "Invasion Reinforcements", "Bear Cub"] },
+      p2: { battlefield: ["Invasion Reinforcements"] },
+    });
+    const lotus = idOf(s, "p1", "battlefield", "White Lotus Reinforcements");
+    expect(chars(s, lotus).keywords).toContain("vigilance");
+    // Pas elle-même.
+    expect(pt(s, lotus)).toEqual([2, 3]);
+    expect(pt(s, idOf(s, "p1", "battlefield", "Invasion Reinforcements"))).toEqual([2, 2]);
+    // Ni une créature qui n'est pas un Allié, ni un Allié adverse.
+    expect(pt(s, idOf(s, "p1", "battlefield", "Bear Cub"))).toEqual([2, 2]);
+    expect(pt(s, idOf(s, "p2", "battlefield", "Invasion Reinforcements"))).toEqual([1, 1]);
+  });
+
+  describe("Zhao, Ruthless Admiral", () => {
+    it("maîtrise du feu 2 : en attaquant, {R}{R} qui restent jusqu'à la fin du combat", () => {
+      let s = scenario({ p1: { battlefield: ["Zhao, Ruthless Admiral"] } });
+      const zhao = idOf(s, "p1", "battlefield", "Zhao, Ruthless Admiral");
+      s = attack(s, [zhao]);
+      s = advanceUntil(s, (x) => x.turn.step === "declareBlockers" && x.pending?.kind === "priority");
+      expect(s.players.p1?.manaPool.R).toBe(2);
+      s = advanceUntil(s, (x) => x.turn.step === "main2");
+      expect(s.players.p1?.manaPool.R ?? 0).toBe(0);
+    });
+
+    it("chaque fois que vous sacrifiez un autre permanent, vos créatures gagnent +1/+0 jusqu'à la fin du tour", () => {
+      let s = scenario({
+        p1: { battlefield: ["Zhao, Ruthless Admiral", "Serra Angel", "Bear Cub", "Plains", altar] },
+        p2: { battlefield: ["Bear Cub"] },
+      });
+      const zhao = idOf(s, "p1", "battlefield", "Zhao, Ruthless Admiral");
+      const angel = idOf(s, "p1", "battlefield", "Serra Angel");
+      const altarId = idOf(s, "p1", "battlefield", "Test Altar");
+      // Un terrain sacrifié compte : « un autre permanent ».
+      s = settle(sacrificeWith(s, "p1", altarId, idOf(s, "p1", "battlefield", "Plains")));
+      expect(pt(s, zhao)).toEqual([4, 4]);
+      expect(pt(s, angel)).toEqual([5, 4]);
+      s = settle(sacrificeWith(s, "p1", altarId, idOf(s, "p1", "battlefield", "Bear Cub")));
+      expect(pt(s, zhao)).toEqual([5, 4]);
+      expect(pt(s, angel)).toEqual([6, 4]);
+      // Les créatures de l'adversaire ne gagnent rien.
+      expect(pt(s, idOf(s, "p2", "battlefield", "Bear Cub"))).toEqual([2, 2]);
+      // Jusqu'à la fin du tour.
+      s = advanceUntil(s, (x) => x.turn.active === "p2" && x.turn.step === "main1");
+      expect(pt(s, zhao)).toEqual([3, 4]);
+    });
+
+    it("un permanent sacrifié par l'adversaire ne le déclenche pas", () => {
+      let s = scenario({
+        active: "p2",
+        p1: { battlefield: ["Zhao, Ruthless Admiral"] },
+        p2: { battlefield: ["Bear Cub", altar] },
+      });
+      s = settle(sacrificeWith(s, "p2", idOf(s, "p2", "battlefield", "Test Altar"), idOf(s, "p2", "battlefield", "Bear Cub")));
+      expect(idsOf(s, "p2", "graveyard", "Bear Cub")).toHaveLength(1);
+      expect(pt(s, idOf(s, "p1", "battlefield", "Zhao, Ruthless Admiral"))).toEqual([3, 4]);
+    });
+  });
+});

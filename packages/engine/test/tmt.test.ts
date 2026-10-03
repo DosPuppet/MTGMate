@@ -4181,3 +4181,28 @@ describe("« Vous mettez des marqueurs » (lot K2)", () => {
     expect(counterFrom(b, "p1", idOf(b, "p2", "battlefield", "Bear Cub")).triggered).toEqual([]);
   });
 });
+
+describe("Teenage Mutant Ninja Turtles, PLAN-D D9 : dernières cartes", () => {
+  it("North Wind Avatar : 5/5 volant ; la capacité d'arrivée ne se déclenche que s'il a été lancé", () => {
+    let s = scenario({ p1: { battlefield: [...lands("Island", 4), "Mountain"], hand: ["North Wind Avatar"] } });
+    s = cast(s, "p1", "North Wind Avatar");
+    // Le sort se résout : la capacité « s'il a été lancé » attend sur la pile.
+    s = passAccepting(s, (x) => !x.stack.some((i) => i.kind === "spell"));
+    const avatar = idOf(s, "p1", "battlefield", "North Wind Avatar");
+    expect(s.stack.map((i) => (i.kind === "ability" ? s.defs[i.sourceDefId]?.name : undefined))).toEqual(["North Wind Avatar"]);
+    expect([chars(s, avatar).power, chars(s, avatar).toughness]).toEqual([5, 5]);
+    expect(chars(s, avatar).keywords).toContain("flying");
+    expect([...chars(s, avatar).subtypes].sort()).toEqual(["Avatar", "Dragon", "Spirit"]);
+    // Approximation (docs/approximations.md) : pas de zone « hors de la partie », la capacité est sans effet.
+    const hand = s.players.p1?.hand.length ?? 0;
+    s = settle(s);
+    expect(s.players.p1?.hand).toHaveLength(hand);
+    // Mis sur le champ de bataille sans être lancé (Zombify) : aucun déclenchement.
+    let t = scenario({ p1: { battlefield: lands("Swamp", 4), hand: ["Zombify"], graveyard: ["North Wind Avatar"] } });
+    t = cast(t, "p1", "Zombify", { targets: { t: [idOf(t, "p1", "graveyard", "North Wind Avatar")] } });
+    t = passAccepting(t, (x) => !x.stack.some((i) => i.kind === "spell"));
+    expect(idsOf(t, "p1", "battlefield", "North Wind Avatar")).toHaveLength(1);
+    expect(t.stack).toHaveLength(0);
+    expect(t.triggers).toHaveLength(0);
+  });
+});

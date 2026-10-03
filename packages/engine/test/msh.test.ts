@@ -4603,3 +4603,53 @@ describe("« Vous mettez des marqueurs » (lot K2)", () => {
     expect(counterFrom(b, "p1", idOf(b, "p2", "battlefield", "Bear Cub")).triggered).toEqual(["Ant-Man, Colony Commander"]);
   });
 });
+
+describe("Marvel Super Heroes, PLAN-D D9 : dernières cartes", () => {
+  /** Rituel de test d'une couleur, à un mana. */
+  const oneOf = (color: "W" | "R" | "G", name = `Test ${color} Sorcery`) =>
+    customCard({
+      name,
+      types: ["Sorcery"],
+      typeLine: "Sorcery",
+      manaCost: { generic: 0, colored: { [color]: 1 }, x: 0 },
+      manaCostText: `{${color}}`,
+      colors: [color],
+    });
+  /** Rituel incolore de test à {1}. */
+  const generic = customCard({
+    name: "Test Generic Sorcery",
+    types: ["Sorcery"],
+    typeLine: "Sorcery",
+    manaCost: { generic: 1, colored: {}, x: 0 },
+    manaCostText: "{1}",
+  });
+
+  /** Terrain rapide de MSH : {C} toujours ; ses deux couleurs s'il est arrivé ce tour-ci ou avec un terrain de base. */
+  const checkFastLand = (land: string, colors: ("W" | "R" | "G")[]) => {
+    const spells = colors.map((c) => oneOf(c));
+    const castableAll = (s: S) => spells.map((sp) => castable(s, "p1", idOf(s, "p1", "hand", sp.name)));
+    // Ni arrivé ce tour-ci ni terrain de base (un terrain non-base ne compte pas) : seulement {C}.
+    const without = scenario({
+      p1: { battlefield: [land, { name: "Dark Fortress", tapped: true }], hand: [...spells, generic] },
+    });
+    expect(castableAll(without)).toEqual([false, false]);
+    expect(castable(without, "p1", idOf(without, "p1", "hand", "Test Generic Sorcery"))).toBe(true);
+    // Avec un terrain de base, même engagé : ses deux couleurs.
+    const withBasic = scenario({ p1: { battlefield: [land, { name: "Island", tapped: true }], hand: spells } });
+    expect(castableAll(withBasic)).toEqual([true, true]);
+    // Arrivé ce tour-ci : ses deux couleurs.
+    let fresh = scenario({ p1: { hand: [land, ...spells] } });
+    fresh = act(fresh, "p1", { type: "playLand", card: idOf(fresh, "p1", "hand", land) });
+    expect(castableAll(fresh)).toEqual([true, true]);
+    fresh = settle(cast(fresh, "p1", spells[1]?.name as string));
+    expect(idsOf(fresh, "p1", "graveyard", spells[1]?.name as string)).toHaveLength(1);
+  };
+
+  it("Gathering Place : {C} ; {G} ou {W} seulement s'il est arrivé ce tour-ci ou si vous contrôlez un terrain de base", () => {
+    checkFastLand("Gathering Place", ["G", "W"]);
+  });
+
+  it("Training Compound : {C} ; {R} ou {G} seulement s'il est arrivé ce tour-ci ou si vous contrôlez un terrain de base", () => {
+    checkFastLand("Training Compound", ["R", "G"]);
+  });
+});

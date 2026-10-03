@@ -4517,3 +4517,257 @@ describe("Contempler ou payer (PLAN-D, D2)", () => {
     ).toThrow();
   });
 });
+
+describe("Lorwyn Eclipsed, PLAN-D D9 : dernières rares et peu communes", () => {
+  type Pick = Extract<ChoiceRequest, { type: "pick" }>;
+  const done = (x: S) => x.stack.length === 0 && x.triggers.length === 0 && x.pending?.kind === "priority";
+  const pickPending = (x: S) => x.pending?.kind === "choice" && x.pending.request.type === "pick";
+  /** Passe (réponses suggérées) jusqu'au prochain choix « pick » ou jusqu'à une pile vide. */
+  const toPick = (s: S) => passAccepting(s, (x) => pickPending(x) || done(x));
+  const pickRequest = (s: S) => (s.pending?.kind === "choice" ? (s.pending.request as Pick) : undefined);
+  /** Répond `values` au choix en attente, puis laisse tout se résoudre. */
+  const answer = (s: S, values: string[]) => {
+    if (s.pending?.kind !== "choice") throw new Error("aucun choix en attente");
+    return passAccepting(act(s, s.pending.player, { type: "choose", values }), done);
+  };
+  const cast = (s: S, name: string, extra: Record<string, unknown> = {}, player = "p1") =>
+    act(s, player, { type: "cast", card: idOf(s, player, "hand", name), ...extra });
+  const pt = (s: S, id: string) => [chars(s, id).power, chars(s, id).toughness];
+  const handNames = (s: S, p = "p1") => (s.players[p]?.hand ?? []).map((id) => nameOf(s, id));
+  const libNames = (s: S) => (s.players.p1?.library ?? []).map((id) => nameOf(s, id));
+  const exiledNames = (s: S) => s.exile.map((id) => nameOf(s, id));
+  const leave = (s: S, id: string) => {
+    simultaneously(s, () => destroy(s, id));
+    return passAccepting(act(s, "p1", { type: "pass" }), done);
+  };
+
+  it("Champion of the Path : exile un Élémental en coût ; chacun de vos autres Élémentaux qui arrive blesse chaque adversaire de sa force ; la carte exilée revient en main", () => {
+    let s = scenario({
+      p1: {
+        battlefield: [...lands("Mountain", 4), ...lands("Island", 3), ...lands("Forest", 2)],
+        hand: ["Champion of the Path", "Fire Elemental", "Rimekin Recluse", "Bear Cub"],
+      },
+    });
+    // Sans Élémental à exiler, il ne peut pas être lancé.
+    const none = scenario({ p1: { battlefield: [...lands("Mountain", 4), "Bear Cub"], hand: ["Champion of the Path"] } });
+    expect(castOption(none, idOf(none, "p1", "hand", "Champion of the Path"))).toBeUndefined();
+    // Une carte d'Élémental de la main est exilée ; le Champion (un Élémental) ne se déclenche pas lui-même.
+    const fire = idOf(s, "p1", "hand", "Fire Elemental");
+    s = passAccepting(cast(s, "Champion of the Path", { picks: { costExile: [fire] } }), done);
+    expect(exiledNames(s)).toEqual(["Fire Elemental"]);
+    const champ = idOf(s, "p1", "battlefield", "Champion of the Path");
+    expect(pt(s, champ)).toEqual([7, 3]);
+    expect(s.players.p2?.life).toBe(20);
+    // Un autre Élémental arrive : blessures égales à SA force (3), pas à celle du Champion.
+    s = toPick(cast(s, "Rimekin Recluse"));
+    if (pickPending(s)) s = answer(s, []);
+    expect(s.players.p2?.life).toBe(17);
+    // Une créature qui n'est pas un Élémental : rien.
+    s = passAccepting(cast(s, "Bear Cub"), done);
+    expect(s.players.p2?.life).toBe(17);
+    // Le Champion part : la carte exilée revient dans la main de son propriétaire.
+    s = leave(s, champ);
+    expect(handNames(s)).toContain("Fire Elemental");
+    expect(s.exile).toHaveLength(0);
+
+    // Un Élémental adverse qui arrive ne déclenche rien.
+    let t = scenario({
+      p1: { battlefield: ["Champion of the Path"] },
+      p2: { battlefield: lands("Mountain", 5), hand: ["Fire Elemental"] },
+      active: "p2",
+    });
+    t = passAccepting(cast(t, "Fire Elemental", {}, "p2"), done);
+    expect(idsOf(t, "p2", "battlefield", "Fire Elemental")).toHaveLength(1);
+    expect([t.players.p1?.life, t.players.p2?.life]).toEqual([20, 20]);
+  });
+
+  it("Champions of the Perfect : exile un Elfe en coût ; chaque sort de créature lancé fait piocher ; la carte exilée revient en main", () => {
+    let s = scenario({
+      p1: {
+        battlefield: [...lands("Forest", 7), "Llanowar Elves"],
+        hand: ["Champions of the Perfect", "Bear Cub", "Giant Growth"],
+        library: ["Opt", "Island", "Plains", "Swamp"],
+      },
+    });
+    const none = scenario({ p1: { battlefield: [...lands("Forest", 4), "Bear Cub"], hand: ["Champions of the Perfect"] } });
+    expect(castOption(none, idOf(none, "p1", "hand", "Champions of the Perfect"))).toBeUndefined();
+    // Un Elfe que vous contrôlez est exilé ; lancer les Champions eux-mêmes ne fait pas piocher.
+    const elves = idOf(s, "p1", "battlefield", "Llanowar Elves");
+    s = passAccepting(cast(s, "Champions of the Perfect", { picks: { costExile: [elves] } }), done);
+    expect(exiledNames(s)).toEqual(["Llanowar Elves"]);
+    expect(idsOf(s, "p1", "battlefield", "Llanowar Elves")).toHaveLength(0);
+    const champ = idOf(s, "p1", "battlefield", "Champions of the Perfect");
+    expect(pt(s, champ)).toEqual([6, 6]);
+    expect(handNames(s).sort()).toEqual(["Bear Cub", "Giant Growth"]);
+    // Un sort de créature : la capacité se déclenche au lancement (la créature est encore sur la pile).
+    s = cast(s, "Bear Cub");
+    expect(s.stack.map((i) => i.kind)).toEqual(["spell", "ability"]);
+    s = passAccepting(s, done);
+    expect(handNames(s).sort()).toEqual(["Giant Growth", "Opt"]);
+    // Un sort qui n'est pas de créature : pas de pioche.
+    const bear = idOf(s, "p1", "battlefield", "Bear Cub");
+    s = passAccepting(cast(s, "Giant Growth", { targets: { t: [bear] } }), done);
+    expect(handNames(s)).toEqual(["Opt"]);
+    // Les Champions partent : l'Elfe exilé revient dans la main.
+    s = leave(s, champ);
+    expect(handNames(s).sort()).toEqual(["Llanowar Elves", "Opt"]);
+  });
+
+  it("Disruptor of Currents : flash et convocation ; en arrivant, renvoie jusqu'à un autre permanent non-terrain", () => {
+    let s = scenario({
+      p1: { battlefield: [...lands("Island", 2), "Bear Cub", "Bear Cub", "Bear Cub"], hand: ["Disruptor of Currents"] },
+      p2: { battlefield: ["Serra Angel", "Fishing Pole", "Forest"] },
+      active: "p2",
+    });
+    // Flash : lancé pendant le tour adverse.
+    s = act(s, "p2", { type: "pass" });
+    expect(s.pending?.kind === "priority" && s.pending.player).toBe("p1");
+    const disruptor = idOf(s, "p1", "hand", "Disruptor of Currents");
+    expect(castOption(s, disruptor)).toBeDefined();
+    // Convocation : deux Îles pour {U}{U}, trois créatures pour {3}.
+    const bears = idsOf(s, "p1", "battlefield", "Bear Cub");
+    s = toPick(act(s, "p1", { type: "cast", card: disruptor, picks: { convoke: bears } }));
+    expect(bears.map((id) => s.objects[id]?.tapped)).toEqual([true, true, true]);
+    // Cibles : un autre permanent non-terrain (les créatures et l'artefact), ni un terrain ni lui-même.
+    const req = pickRequest(s);
+    const self = idOf(s, "p1", "battlefield", "Disruptor of Currents");
+    const pole = idOf(s, "p2", "battlefield", "Fishing Pole");
+    const angel = idOf(s, "p2", "battlefield", "Serra Angel");
+    expect(req?.options).toEqual(expect.arrayContaining([pole, angel, ...bears]));
+    expect(req?.options).not.toContain(self);
+    expect(req?.options).not.toContain(idOf(s, "p2", "battlefield", "Forest"));
+    expect(req?.options).not.toContain(idOf(s, "p1", "battlefield", "Island"));
+    expect(req?.min ?? 0).toBe(0);
+    s = answer(s, [pole]);
+    expect(handNames(s, "p2")).toEqual(["Fishing Pole"]);
+    expect(idsOf(s, "p2", "battlefield", "Serra Angel")).toHaveLength(1);
+  });
+
+  it("Blossoming Defense : une créature que vous contrôlez gagne +2/+2 et la défense talismanique jusqu'à la fin du tour", () => {
+    let s = scenario({
+      p1: { battlefield: ["Forest", "Bear Cub"], hand: ["Blossoming Defense"] },
+      p2: { battlefield: ["Serra Angel", ...lands("Mountain", 2)], hand: ["Lightning Strike"] },
+    });
+    const bear = idOf(s, "p1", "battlefield", "Bear Cub");
+    const angel = idOf(s, "p2", "battlefield", "Serra Angel");
+    // Pas une créature adverse.
+    expect(() => cast(s, "Blossoming Defense", { targets: { t: [angel] } })).toThrow(RulesError);
+    s = passAccepting(cast(s, "Blossoming Defense", { targets: { t: [bear] } }), done);
+    expect(pt(s, bear)).toEqual([4, 4]);
+    expect(chars(s, bear).keywords).toContain("hexproof");
+    // L'adversaire ne peut plus la cibler.
+    s = act(s, "p1", { type: "pass" });
+    expect(s.pending?.kind === "priority" && s.pending.player).toBe("p2");
+    expect(() => cast(s, "Lightning Strike", { targets: { t: [bear] } }, "p2")).toThrow(RulesError);
+    // Jusqu'à la fin du tour seulement.
+    s = advanceUntil(s, (x) => x.turn.number === 4);
+    expect(pt(s, bear)).toEqual([2, 2]);
+    expect(chars(s, bear).keywords).not.toContain("hexproof");
+  });
+
+  it("Chomping Changeling : changelin (tous les types de créature) ; en arrivant, détruit jusqu'à un artefact ou enchantement", () => {
+    let s = scenario({
+      p1: { battlefield: lands("Forest", 3), hand: ["Chomping Changeling"] },
+      p2: { battlefield: ["Serra Angel", "Fishing Pole"] },
+    });
+    s = toPick(cast(s, "Chomping Changeling"));
+    const changeling = idOf(s, "p1", "battlefield", "Chomping Changeling");
+    for (const subtype of ["Goblin", "Elf", "Merfolk", "Elemental", "Kithkin"])
+      expect(matchesObjectFilter(s, "p1", changeling, { subtype })).toBe(true);
+    const pole = idOf(s, "p2", "battlefield", "Fishing Pole");
+    const req = pickRequest(s);
+    expect(req?.options).toEqual([pole]);
+    expect(req?.min ?? 0).toBe(0);
+    s = answer(s, [pole]);
+    expect(idsOf(s, "p2", "graveyard", "Fishing Pole")).toHaveLength(1);
+    expect(idsOf(s, "p2", "battlefield", "Serra Angel")).toHaveLength(1);
+    // « Jusqu'à un » : sans cible, la capacité ne fait rien.
+    let t = scenario({ p1: { battlefield: lands("Forest", 3), hand: ["Chomping Changeling"] } });
+    t = passAccepting(cast(t, "Chomping Changeling"), done);
+    expect(idsOf(t, "p1", "battlefield", "Chomping Changeling")).toHaveLength(1);
+  });
+
+  /**
+   * Cycle des « Eclipsed » : regarder les quatre cartes du dessus, révéler au plus une carte des types donnés (une carte
+   * de changelin ou de tribu compte), le reste dessous dans un ordre aléatoire.
+   */
+  const eclipsed = (card: string, mana: string[], library: string[], fits: string[], take: string) => {
+    let s = scenario({ p1: { battlefield: mana, hand: [card], library } });
+    const top4 = s.players.p1?.library.slice(0, 4) as string[];
+    s = toPick(cast(s, card));
+    const req = pickRequest(s);
+    expect((req?.options ?? []).map((id) => nameOf(s, id)).sort()).toEqual(fits.slice().sort());
+    expect(req?.min ?? 0).toBe(0);
+    expect(req?.max).toBe(1);
+    const chosen = (req?.options ?? []).find((id) => nameOf(s, id) === take) as string;
+    s = answer(s, [chosen]);
+    expect(handNames(s)).toEqual([take]);
+    // Le reste : sous la bibliothèque (la cinquième carte passe dessus).
+    const lib = s.players.p1?.library ?? [];
+    expect(nameOf(s, lib[0] as string)).toBe(library[4]);
+    expect(lib.slice(-3).sort()).toEqual(top4.filter((id) => id !== chosen).sort());
+    // « Vous pouvez » : ne rien prendre, les quatre cartes vont dessous.
+    let t = scenario({ p1: { battlefield: mana, hand: [card], library } });
+    t = answer(toPick(cast(t, card)), []);
+    expect(t.players.p1?.hand).toHaveLength(0);
+    expect(libNames(t)[0]).toBe(library[4]);
+    expect(libNames(t).slice(-4).sort()).toEqual(library.slice(0, 4).sort());
+  };
+
+  it("Eclipsed Boggart : parmi quatre cartes, un Gobelin, un Marais ou une Montagne en main ; le reste dessous", () => {
+    eclipsed(
+      "Eclipsed Boggart",
+      lands("Swamp", 3),
+      ["Boggart Mischief", "Blood Crypt", "Bear Cub", "Chomping Changeling", "Mountain"],
+      ["Boggart Mischief", "Blood Crypt", "Chomping Changeling"],
+      "Blood Crypt",
+    );
+  });
+
+  it("Eclipsed Flamekin : parmi quatre cartes, un Élémental, une Île ou une Montagne en main ; le reste dessous", () => {
+    eclipsed(
+      "Eclipsed Flamekin",
+      lands("Island", 3),
+      ["Fire Elemental", "Forest", "Island", "Silvergill Peddler", "Mountain"],
+      ["Fire Elemental", "Island"],
+      "Fire Elemental",
+    );
+  });
+
+  it("Eclipsed Merrow : parmi quatre cartes, un Ondin, une Plaine ou une Île en main ; le reste dessous", () => {
+    eclipsed(
+      "Eclipsed Merrow",
+      lands("Plains", 3),
+      ["Silvergill Peddler", "Hallowed Fountain", "Swamp", "Goldmeadow Nomad", "Plains"],
+      ["Silvergill Peddler", "Hallowed Fountain"],
+      "Silvergill Peddler",
+    );
+  });
+
+  it("Rimekin Recluse : en arrivant, renvoie jusqu'à une autre créature dans la main de son propriétaire", () => {
+    let s = scenario({
+      p1: { battlefield: [...lands("Island", 3), "Bear Cub"], hand: ["Rimekin Recluse"] },
+      p2: { battlefield: ["Serra Angel", "Fishing Pole"] },
+    });
+    s = toPick(cast(s, "Rimekin Recluse"));
+    const recluse = idOf(s, "p1", "battlefield", "Rimekin Recluse");
+    const angel = idOf(s, "p2", "battlefield", "Serra Angel");
+    const bear = idOf(s, "p1", "battlefield", "Bear Cub");
+    const req = pickRequest(s);
+    // Une créature seulement (pas l'artefact), et pas elle-même.
+    expect(req?.options.slice().sort()).toEqual([angel, bear].sort());
+    expect(req?.options).not.toContain(recluse);
+    expect(req?.min ?? 0).toBe(0);
+    s = answer(s, [angel]);
+    expect(handNames(s, "p2")).toEqual(["Serra Angel"]);
+    expect(pt(s, recluse)).toEqual([3, 2]);
+    // « Jusqu'à une » : aucune cible choisie, rien ne revient.
+    let t = scenario({
+      p1: { battlefield: lands("Island", 3), hand: ["Rimekin Recluse"] },
+      p2: { battlefield: ["Serra Angel"] },
+    });
+    t = toPick(cast(t, "Rimekin Recluse"));
+    t = answer(t, []);
+    expect(idsOf(t, "p2", "battlefield", "Serra Angel")).toHaveLength(1);
+  });
+});

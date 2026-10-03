@@ -4023,3 +4023,35 @@ describe("Head of the Hunt (PLAN-D, D3)", () => {
     expect(idsOf(s, "p1", "battlefield", "Wolf")).toHaveLength(1);
   });
 });
+
+describe("The Hobbit, PLAN-D D9 : dernières cartes", () => {
+  it("Large Bear : 5/5 hybride noir ou vert ; célérité (attaque le tour où il arrive), piétinement, portée", () => {
+    // {3}{B/G}{B/G} : payable en noir comme en vert.
+    for (const color of ["Swamp", "Forest"]) {
+      const s = scenario({ p1: { battlefield: lands(color, 5), hand: ["Large Bear"] } });
+      expect(legalActions(s, "p1").some((a) => a.type === "cast" && a.card === idOf(s, "p1", "hand", "Large Bear"))).toBe(true);
+    }
+    let s = scenario({
+      p1: { battlefield: [...lands("Swamp", 3), ...lands("Forest", 2)], hand: ["Large Bear"] },
+      p2: { battlefield: ["Bear Cub"] },
+    });
+    s = settle(cast(s, "p1", "Large Bear"));
+    const bear = idOf(s, "p1", "battlefield", "Large Bear");
+    expect([chars(s, bear).power, chars(s, bear).toughness]).toEqual([5, 5]);
+    expect(chars(s, bear).keywords).toEqual(expect.arrayContaining(["reach", "trample", "haste"]));
+    // Célérité : il attaque tout de suite ; piétinement : 2 blessures au Bear Cub qui bloque, 3 au joueur.
+    const cub = idOf(s, "p2", "battlefield", "Bear Cub");
+    s = advanceUntil(attack(s, [bear]), (x) => x.pending?.kind === "declareBlockers");
+    s = act(s, "p2", { type: "declareBlockers", blocks: [{ blocker: cub, attacker: bear }] });
+    s = throughCombat(s);
+    expect(idsOf(s, "p2", "graveyard", "Bear Cub")).toHaveLength(1);
+    expect(s.players.p2?.life).toBe(17);
+    // Portée : il peut bloquer une créature volante.
+    let t = scenario({ active: "p2", p1: { battlefield: ["Large Bear", "Bear Cub"] }, p2: { battlefield: ["Serra Angel"] } });
+    const angel = idOf(t, "p2", "battlefield", "Serra Angel");
+    t = advanceUntil(t, (x) => x.pending?.kind === "declareAttackers");
+    t = act(t, "p2", { type: "declareAttackers", attackers: [{ id: angel, defender: "p1" }] });
+    expect(canBlock(t, idOf(t, "p1", "battlefield", "Large Bear"), angel)).toBe(true);
+    expect(canBlock(t, idOf(t, "p1", "battlefield", "Bear Cub"), angel)).toBe(false);
+  });
+});

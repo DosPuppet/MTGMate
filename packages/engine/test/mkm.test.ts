@@ -33,6 +33,7 @@ import {
   passBoth,
   scenario,
   settle,
+  settleNoBlocks,
   untilCastNow,
 } from "./helpers";
 
@@ -5453,5 +5454,174 @@ describe("Murders at Karlov Manor : promotions légales en Standard (PLAN-C, lot
     for (const elf of idsOf(s, "p1", "battlefield", "Llanowar Elves")) expect(s.objects[elf]?.counters["+1/+1"]).toBe(2);
     // Voja est le seul Loup : une carte.
     expect(s.players.p1?.hand).toHaveLength(1);
+  });
+});
+
+describe("Murders at Karlov Manor, PLAN-D D9 : dernières cartes", () => {
+  const yes: Answer = (req) => (req.type === "yesNo" ? [1] : undefined);
+  const no: Answer = (req) => (req.type === "yesNo" ? [0] : undefined);
+  const activateLabel = (s: S, source: string, label: string) => {
+    const a = legalActions(s, "p1").find((x) => x.type === "activate" && x.source === source && (x.label ?? "").includes(label));
+    if (a?.type !== "activate") throw new Error(`capacité introuvable : ${label}`);
+    return act(s, "p1", { type: "activate", source, ability: a.ability });
+  };
+  const attackWith = (s: S, ...ids: string[]) => {
+    const cur = advanceUntil(s, (x) => x.pending?.kind === "declareAttackers");
+    return act(cur, "p1", { type: "declareAttackers", attackers: ids.map((id) => ({ id, defender: "p2" })) });
+  };
+
+  it("Izoni, Center of the Web : menace ; en arrivant ou en attaquant, preuves 4 : deux Araignées 2/1 ; quatre jetons sacrifiés : surveillance 2, deux cartes, 2 PV", () => {
+    const IZONI = "Izoni, Center of the Web";
+    let s = scenario({
+      p1: {
+        battlefield: [...lands("Swamp", 3), ...lands("Forest", 3)],
+        hand: [IZONI],
+        graveyard: ["Shivan Dragon", "Pelakka Wurm"],
+        library: ["Forest", "Opt", "Opt", "Island", "Island"],
+      },
+    });
+    s = settle(cast(s, "p1", IZONI), yes);
+    const izoni = idOf(s, "p1", "battlefield", IZONI);
+    expect([chars(s, izoni).power, chars(s, izoni).toughness]).toEqual([5, 4]);
+    expect(chars(s, izoni).keywords).toContain("menace");
+    // En arrivant : preuves 4 réunies, deux Araignées. Avec la suggestion (la moins chère qui suffit), une seule des deux
+    // cartes est exilée.
+    expect(s.players.p1?.graveyard).toHaveLength(1);
+    expect(s.exile).toHaveLength(1);
+    const spiders = idsOf(s, "p1", "battlefield", "Spider");
+    expect(spiders).toHaveLength(2);
+    for (const id of spiders) {
+      const c = chars(s, id);
+      expect([c.power, c.toughness]).toEqual([2, 1]);
+      expect([...c.colors].sort()).toEqual(["B", "G"]);
+      expect(c.subtypes).toContain("Spider");
+      expect(c.keywords).toEqual(expect.arrayContaining(["reach", "menace"]));
+      expect(s.objects[id]?.isToken).toBe(true);
+    }
+    // Trois jetons seulement (Izoni n'en est pas un) : la dernière capacité ne s'active pas.
+    expect(legalActions(s, "p1").some((x) => x.type === "activate" && x.source === izoni)).toBe(false);
+    // Au tour suivant (Forest piochée), en attaquant : de nouveau preuves 4 (la carte restante), deux Araignées de plus.
+    s = settleNoBlocks(attackWith(s, izoni), yes);
+    s = advanceUntil(s, (x) => x.turn.step === "main2" && x.pending?.kind === "priority");
+    expect(s.players.p1?.graveyard).toHaveLength(0);
+    expect(idsOf(s, "p1", "battlefield", "Spider")).toHaveLength(4);
+    expect(s.players.p2?.life).toBe(15);
+    // Sacrifiez quatre jetons : surveillance 2 (les deux Opt au cimetière), puis piochez deux cartes, et 2 PV.
+    s = settle(activateLabel(s, izoni, "Sacrifiez quatre jetons"), (req) =>
+      req.intent === "surveilGraveyard" && req.type === "pick" ? req.options : undefined,
+    );
+    expect(idsOf(s, "p1", "battlefield", "Spider")).toHaveLength(0);
+    expect(s.players.p1?.graveyard.map((id) => nameOf(s, id)).filter((n) => n === "Opt")).toHaveLength(2);
+    expect(s.players.p1?.hand.map((id) => nameOf(s, id))).toEqual(["Forest", "Island", "Island"]);
+    expect(s.players.p1?.life).toBe(22);
+
+    // « Vous pouvez » : refusé, ou sans preuves suffisantes, aucune Araignée.
+    const run = (graveyard: string[], answer: Answer) => {
+      let t = scenario({ p1: { battlefield: [...lands("Swamp", 3), ...lands("Forest", 3)], hand: [IZONI], graveyard } });
+      t = settle(cast(t, "p1", IZONI), answer);
+      return [idsOf(t, "p1", "battlefield", "Spider").length, t.players.p1?.graveyard.length];
+    };
+    expect(run(["Shivan Dragon"], no)).toEqual([0, 1]);
+    expect(run(["Opt", "Bear Cub"], yes)).toEqual([0, 2]);
+  });
+
+  it("Evidence Examiner : au début du combat de votre tour, vous pouvez réunir des preuves 4 ; chaque fois que vous en réunissez, enquêtez", () => {
+    let s = scenario({
+      p1: {
+        battlefield: ["Evidence Examiner", ...lands("Island", 4)],
+        graveyard: ["Shivan Dragon", "Opt"],
+        library: lands("Island", 5),
+      },
+    });
+    s = advanceUntil(s, (x) => x.turn.step === "beginCombat" && x.stack.length > 0);
+    s = settle(s, yes);
+    // Shivan Dragon (VM 6) exilé (Opt seul ne suffit pas ; la suggestion garde Opt) ; un Indice.
+    expect(s.exile.map((id) => nameOf(s, id))).toEqual(["Shivan Dragon"]);
+    expect(idsOf(s, "p1", "graveyard", "Opt")).toHaveLength(1);
+    const clue = idOf(s, "p1", "battlefield", "Clue");
+    expect(chars(s, clue).types).toContain("Artifact");
+    // Indice : {2}, sacrifiez-le : piochez une carte.
+    const hand = s.players.p1?.hand.length ?? 0;
+    s = settle(activateLabel(s, clue, "Piochez"));
+    expect(s.players.p1?.hand).toHaveLength(hand + 1);
+    expect(idsOf(s, "p1", "battlefield", "Clue")).toHaveLength(0);
+
+    // Les cartes exilées sont choisies par le joueur (PLAN-D, D9) : Shivan Dragon plutôt que Serra Angel, suggérée ; un
+    // choix qui ne suffit pas (Opt seul) est complété par la suggestion.
+    const pickExile = (names: string[]) => (req: ChoiceRequest, _p: string, cur: GameState) =>
+      req.type === "pick" && req.intent === "pickCards"
+        ? req.options.filter((id) => names.includes(nameOf(cur, String(id)) ?? ""))
+        : req.type === "yesNo"
+          ? [1]
+          : undefined;
+    const examiner = () =>
+      advanceUntil(
+        scenario({ p1: { battlefield: ["Evidence Examiner"], graveyard: ["Shivan Dragon", "Serra Angel", "Opt"] } }),
+        (x) => x.turn.step === "beginCombat" && x.stack.length > 0,
+      );
+    let c = settle(examiner(), pickExile(["Shivan Dragon"]));
+    expect(c.exile.map((id) => nameOf(c, id))).toEqual(["Shivan Dragon"]);
+    c = settle(examiner(), pickExile(["Opt"]));
+    expect(c.exile.map((id) => nameOf(c, id)).sort()).toEqual(["Opt", "Serra Angel"]);
+
+    // Refusé : rien n'est exilé, pas d'Indice.
+    let r = scenario({ p1: { battlefield: ["Evidence Examiner"], graveyard: ["Shivan Dragon"] } });
+    r = advanceUntil(r, (x) => x.turn.step === "beginCombat" && x.stack.length > 0);
+    r = settle(r, no);
+    expect(r.players.p1?.graveyard).toHaveLength(1);
+    expect(idsOf(r, "p1", "battlefield", "Clue")).toHaveLength(0);
+
+    // Au combat de l'adversaire : pas de déclenchement.
+    let t = scenario({ active: "p2", p1: { battlefield: ["Evidence Examiner"], graveyard: ["Shivan Dragon"] } });
+    t = advanceUntil(t, (x) => x.turn.active === "p2" && x.turn.step === "main2");
+    expect(t.players.p1?.graveyard).toHaveLength(1);
+    expect(idsOf(t, "p1", "battlefield", "Clue")).toHaveLength(0);
+
+    // Preuves réunies par un autre effet (Surveillance Monitor) : enquêtez aussi.
+    let u = scenario({
+      p1: {
+        battlefield: ["Evidence Examiner", ...lands("Island", 4)],
+        hand: ["Surveillance Monitor"],
+        graveyard: ["Shivan Dragon"],
+      },
+    });
+    u = settle(cast(u, "p1", "Surveillance Monitor"), yes);
+    expect(idsOf(u, "p1", "battlefield", "Thopter")).toHaveLength(1);
+    expect(idsOf(u, "p1", "battlefield", "Clue")).toHaveLength(1);
+  });
+
+  it("Sample Collector : en attaquant, vous pouvez réunir des preuves 3 ; si vous le faites, un marqueur +1/+1 sur une créature ciblée que vous contrôlez", () => {
+    const run = (graveyard: string[], answer: Answer) => {
+      let s = scenario({
+        p1: { battlefield: ["Sample Collector", "Bear Cub"], graveyard },
+        p2: { battlefield: ["Llanowar Elves"] },
+      });
+      const collector = idOf(s, "p1", "battlefield", "Sample Collector");
+      const bear = idOf(s, "p1", "battlefield", "Bear Cub");
+      const elves = idOf(s, "p2", "battlefield", "Llanowar Elves");
+      let options: string[] = [];
+      s = settleNoBlocks(attackWith(s, collector), (req, player, cur) => {
+        if (req.type === "pick" && req.options.includes(bear)) {
+          options = req.options.map(String);
+          return [bear];
+        }
+        return answer(req, player, cur);
+      });
+      return { s, bear, elves, collector, options };
+    };
+    // Opt (1) + Bear Cub (2) = 3 : preuves réunies, marqueur sur le Bear Cub.
+    const a = run(["Opt", "Bear Cub"], yes);
+    expect(a.s.players.p1?.graveyard).toHaveLength(0);
+    expect(a.s.objects[a.bear]?.counters["+1/+1"]).toBe(1);
+    // Seulement une créature que vous contrôlez.
+    expect(a.options).toEqual(expect.arrayContaining([a.bear, a.collector]));
+    expect(a.options).not.toContain(a.elves);
+    // Refusé, ou VM totale 2 seulement : ni exil ni marqueur.
+    const b = run(["Opt", "Bear Cub"], no);
+    expect(b.s.players.p1?.graveyard).toHaveLength(2);
+    expect(b.s.objects[b.bear]?.counters["+1/+1"] ?? 0).toBe(0);
+    const c = run(["Opt", "Opt"], yes);
+    expect(c.s.players.p1?.graveyard).toHaveLength(2);
+    expect(c.s.objects[c.bear]?.counters["+1/+1"] ?? 0).toBe(0);
   });
 });

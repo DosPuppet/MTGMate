@@ -4881,3 +4881,37 @@ describe("Faerie Fencing (PLAN-D, D5)", () => {
     expect(run(false)).toBe(0);
   });
 });
+
+describe("Wilds of Eldraine, PLAN-D D9 : dernières cartes", () => {
+  it("Gingerbread Hunter : Puny Snack donne -2/-2 jusqu'à la fin du tour puis part à l'aventure ; le Géant 5/5 lancé de l'exil crée une Nourriture", () => {
+    const HUNTER = "Gingerbread Hunter // Puny Snack";
+    let s = scenario({
+      p1: { battlefield: [...lands("Swamp", 3), ...lands("Forest", 5)], hand: [HUNTER] },
+      p2: { battlefield: ["Bear Cub", "Serra Angel"] },
+    });
+    const angel = idOf(s, "p2", "battlefield", "Serra Angel");
+    // Puny Snack : éphémère ({2}{B}), une créature ciblée gagne -2/-2.
+    s = settle(cast(s, "p1", HUNTER, { t: [angel] }, { face: 1 }));
+    expect([chars(s, angel).power, chars(s, angel).toughness]).toEqual([2, 2]);
+    const adv = onAdventure(s, HUNTER);
+    // Jusqu'à la fin du tour seulement.
+    s = advanceUntil(s, (x) => x.turn.active === "p2" && x.turn.step === "main1");
+    expect([chars(s, angel).power, chars(s, angel).toughness]).toEqual([4, 4]);
+    // -2/-2 tue une créature 2/2.
+    let t = scenario({ p1: { battlefield: lands("Swamp", 3), hand: [HUNTER] }, p2: { battlefield: ["Bear Cub"] } });
+    t = settle(cast(t, "p1", HUNTER, { t: [idOf(t, "p2", "battlefield", "Bear Cub")] }, { face: 1 }));
+    expect(idsOf(t, "p2", "graveyard", "Bear Cub")).toHaveLength(1);
+    // Retour au tour de p1 : la créature se lance depuis l'exil ({4}{G}), 5/5, et crée une Nourriture en arrivant.
+    s = advanceUntil(s, (x) => x.turn.active === "p1" && x.turn.step === "main1" && x.pending?.kind === "priority");
+    s = settle(act(s, "p1", { type: "cast", card: adv }));
+    const hunter = idOf(s, "p1", "battlefield", HUNTER);
+    expect([chars(s, hunter).power, chars(s, hunter).toughness]).toEqual([5, 5]);
+    expect(chars(s, hunter).subtypes).toContain("Giant");
+    const food = idOf(s, "p1", "battlefield", "Food");
+    expect(chars(s, food).types).toContain("Artifact");
+    // Nourriture : {2}, {T}, sacrifiez-la : 3 PV.
+    s = settle(activate(s, "p1", food));
+    expect(s.players.p1?.life).toBe(23);
+    expect(idsOf(s, "p1", "battlefield", "Food")).toHaveLength(0);
+  });
+});

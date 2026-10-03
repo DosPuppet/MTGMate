@@ -271,8 +271,10 @@ export const RECORD_VERSION = 1;
  *   le flash (Tinybones, the Pickpocket) ; X figé à la défausse (Ill-Timed Explosion) ; « tant que ce terrain a un
  *   marqueur de fléau » (Ultima) ; permission liée à l'objet (Lightning) ; Glowcap Lantern attachée ; Faller's Faithful,
  *   Sunstar Expansionist, Singularity Rupture.
+ * - 95 : « réunir des preuves » par un effet : le joueur choisit les cartes exilées (Izoni, Evidence Examiner, Sample
+ *   Collector… ; PLAN-D, lot D9).
  */
-export const RULES_VERSION = 94;
+export const RULES_VERSION = 95;
 
 /** Un point de contrôle toutes les N décisions (plus la dernière de la partie). */
 export const CHECKPOINT_EVERY = 25;
