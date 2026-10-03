@@ -87,7 +87,8 @@ export const BLUE: Record<string, CardScript> = {
       mode(
         "Renvoyez une ou deux créatures ou enchantements",
         [
-          target.upTo(
+          target.between(
+            1,
             2,
             target.permanent("b", ["Creature", "Enchantment"], { controller: "you" }, "créature ou enchantement à vous"),
           ),

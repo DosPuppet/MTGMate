@@ -124,7 +124,7 @@ Dans l'ordre où elles ont été ajoutées, extension par extension.
   - `règle` Acrobatic Cheerleader (« ne se déclenche qu'une fois ») : tant qu'elle n'a pas de marqueur de vol ;
   - `choix auto` Monstrous Emergence : la créature ou la carte de la main de plus grande force est choisie par le moteur ; Kaito attaque le joueur qu'attaque une de vos créatures ;
   - `règle` « le joueur défenseur », « ce joueur » : Fear of Falling et Fear of Burning Alive ciblent une créature adverse ; Fear of the Dark vérifie qu'aucun adversaire ne contrôle de Lueur ;
-  - `règle` « une ou deux cibles » : jusqu'à deux (Get Out, Coordinated Clobbering, Omnivorous Flytrap) ; Get Out renvoie ce que vous contrôlez (et non ce que vous possédez) ;
+  - `règle` Get Out renvoie ce que vous contrôlez (et non ce que vous possédez) ;
   - `règle` « avait des marqueurs » : seulement les marqueurs +1/+1, -1/-1, d'étourdissement (et de possession pour Unwilling Vessel, de nid pour Twitching Doll) ;
   - `règle` Fear of Missing Out (« la première fois chaque tour ») et Irreverent Gremlin : une fois par tour, même si la défausse est refusée ; Vengeful Possession et Irreverent Gremlin piochent même sans carte à défausser ;
   - `règle` conditions non vérifiées : les créatures non-Jouets (Dollmaker's Shop, qui se déclenche à chaque attaque), la Salle d'un nom différent (Central Elevator), les forces différentes (Rip, Spawn Hunter), « une seule créature ciblée » (Leyline of Resonance : un sort qui cible une de vos créatures) ;

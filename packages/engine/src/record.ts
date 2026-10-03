@@ -222,8 +222,10 @@ export const RECORD_VERSION = 1;
  *   (Braided Net), emblème « jusqu'à la fin de votre prochain tour » (Season of the Bold) (lot K7).
  * - 78 : un jeton décrit engagé (`TokenSpec.tapped`) arrive engagé (Tenured Tethermage) ; Dread Summons et Revenge of the
  *   Rats créent des jetons engagés ; Biogenic Upgrade demande une à trois cibles (lot K8, FDN).
+ * - 79 : « une ou deux cibles » : au moins une (Get Out, Coordinated Clobbering, Omnivorous Flytrap, Untimely
+ *   Malfunction) (lot K8, DSK).
  */
-export const RULES_VERSION = 78;
+export const RULES_VERSION = 79;
 
 /** Un point de contrôle toutes les N décisions (plus la dernière de la partie). */
 export const CHECKPOINT_EVERY = 25;

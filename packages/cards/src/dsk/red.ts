@@ -223,7 +223,7 @@ export const RED: Record<string, CardScript> = {
       ),
       mode(
         "Une ou deux créatures ne peuvent pas bloquer",
-        [target.upTo(2, target.creature("c"))],
+        [target.between(1, 2, target.creature("c"))],
         [fx.pump(ref.target("c"), 0, 0, ["cantBlock"])],
       ),
     ),

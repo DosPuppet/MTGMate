@@ -529,7 +529,7 @@ export const LEGENDS: Record<string, CardScript> = {
   "Coordinated Clobbering": {
     spell: spell(
       [
-        target.upTo(2, target.creature("a", { controller: "you", tapped: false })),
+        target.between(1, 2, target.creature("a", { controller: "you", tapped: false })),
         target.creature("t", { controller: "opponent" }),
       ],
       [fx.tap(ref.target("a")), fx.eachOfDealsDamage(ref.target("a"), ref.target("t"))],
@@ -600,7 +600,7 @@ export const LEGENDS: Record<string, CardScript> = {
           ],
           {
             condition: cond.delirium,
-            targets: [target.upTo(2, target.creature())],
+            targets: [target.between(1, 2, target.creature())],
             label: "Délire — deux marqueurs +1/+1 répartis",
           },
         ),
