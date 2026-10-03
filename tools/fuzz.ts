@@ -84,9 +84,21 @@ interface Tally {
   illegal: number;
   decisions: number;
   caps: number;
+  /**
+   * Empreinte des parties (somme modulo 2³² d'une empreinte par partie : décisions, gagnant, points de vie) : indépendante
+   * de `--jobs` ; égale avant et après un remaniement qui ne doit pas changer le jeu (PLAN-S).
+   */
+  print: number;
 }
 
-const emptyTally = (): Tally => ({ wins: { nul: 0, inachevée: 0 }, turns: 0, illegal: 0, decisions: 0, caps: 0 });
+const emptyTally = (): Tally => ({ wins: { nul: 0, inachevée: 0 }, turns: 0, illegal: 0, decisions: 0, caps: 0, print: 0 });
+
+/** FNV-1a 32 bits. */
+function fnv(text: string): number {
+  let h = 0x811c9dc5;
+  for (let i = 0; i < text.length; i++) h = Math.imul(h ^ text.charCodeAt(i), 0x01000193);
+  return h >>> 0;
+}
 
 function addTally(total: Tally, r: Tally): void {
   for (const [k, n] of Object.entries(r.wins)) total.wins[k] = (total.wins[k] ?? 0) + n;
@@ -94,6 +106,7 @@ function addTally(total: Tally, r: Tally): void {
   total.illegal += r.illegal;
   total.decisions += r.decisions;
   total.caps += r.caps;
+  total.print = (total.print + r.print) >>> 0;
 }
 
 /** Joue `count` parties de la série à partir de la graine `first` (dans ce processus). */
@@ -117,17 +130,20 @@ function run(spec: Spec, first: number, count: number): Tally {
     tally.illegal += r.illegal;
     tally.decisions += r.decisions.length;
     tally.caps += r.caps;
+    const life = Object.values(r.state.players).map((p) => p.life);
+    tally.print = (tally.print + fnv(JSON.stringify([seed, key, r.turns, life, r.decisions]))) >>> 0;
   }
   return tally;
 }
 
 /** Bilan d'une série, au format attendu par verify (`résultats : …`). */
 function summary(spec: Spec, total: Tally, ms: number): string {
-  const { wins, turns, illegal, decisions, caps } = total;
+  const { wins, turns, illegal, decisions, caps, print } = total;
   return [
     `${spec.games} parties à ${spec.players} joueurs (${spec.mode}, pool ${spec.pool}) en ${(ms / 1000).toFixed(1)} s — ${(ms / Math.max(1, decisions)).toFixed(2)} ms/décision`,
     `résultats : ${inspect(wins)}`,
     `tours moyens : ${(turns / spec.games).toFixed(1)}, décisions illégales de l'IA : ${illegal}, plafonds atteints : ${caps}`,
+    `empreinte : ${print.toString(16).padStart(8, "0")} (${decisions} décisions)`,
   ].join("\n");
 }
 
