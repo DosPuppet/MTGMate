@@ -6,6 +6,7 @@
  *
  * IA : random, beginner, medium, expert ; « expert:200 » donne un budget propre
  * à cette IA (« expert:0 » : sans ISMCTS).
+ * --players 4 : parties à quatre, sièges A, B, A, B tournant d'une partie à l'autre ; compte les victoires de A et de B.
  * Les parties vont par paires : même graine et mêmes decks, places et decks échangés (l'avantage du premier joueur
  * et des decks s'annule). --budget : itérations de l'ISMCTS (un budget en itérations rend le tournoi reproductible).
  * --pool decks : decks préconstruits ; all : decks aléatoires bicolores ; mix : moitié-moitié ; meta : les decks du
@@ -30,13 +31,18 @@ const pool = arg("pool", "mix");
 const jobs = Math.max(1, Number(arg("jobs", "1")));
 const budget = Number(arg("budget", "150"));
 const worker = process.argv.includes("--worker");
+const players = Math.max(2, Number(arg("players", "2")));
 
 /** « expert:200 » : niveau et budget propre (itérations de l'ISMCTS ; 0 = sans ISMCTS). */
 function agent(spec: string, seed: number): Agent {
   const [name, own] = spec.split(":");
   if (name === "random") return randomAgent(seed);
   if (name === "beginner" || name === "medium" || name === "expert")
-    return aiAgent(name as AiLevel, { seed, budget: { iterations: own === undefined ? budget : Number(own) }, players: 2 });
+    return aiAgent(name as AiLevel, {
+      seed,
+      budget: { iterations: own === undefined ? budget : Number(own) },
+      players,
+    });
   throw new Error(`IA inconnue : ${spec}`);
 }
 
@@ -79,7 +85,29 @@ function timed(inner: Agent, into: number[]): Agent {
   };
 }
 
+/** Partie à plusieurs : sièges A, B, A, B… décalés d'un cran à chaque partie, decks aléatoires. */
+function runMulti(first: number, count: number): Tally {
+  const t: Tally = { a: 0, b: 0, draws: 0, unfinished: 0, turns: 0, time: { a: [], b: [] } };
+  for (let g = first; g < first + count; g++) {
+    const seed = seed0 + g;
+    const decks = Array.from({ length: players }, (_, i) => randomDeck(seed0 * 7919 + g * players + i));
+    const shift = g % 2;
+    const isA = (seat: number) => (seat + shift) % 2 === 0;
+    const agents = decks.map((_, seat) =>
+      isA(seat) ? timed(agent(A, seed * 8 + seat), t.time.a) : timed(agent(B, seed * 8 + seat), t.time.b),
+    );
+    const r = playGame({ seed, decks, agents, maxDecisions: 12000 });
+    t.turns += r.turns;
+    if (!r.state.over) t.unfinished++;
+    else if (!r.state.winner) t.draws++;
+    else if (isA(Number(String(r.state.winner).slice(1)) - 1)) t.a++;
+    else t.b++;
+  }
+  return t;
+}
+
 function run(first: number, count: number): Tally {
+  if (players > 2) return runMulti(first, count);
   const t: Tally = { a: 0, b: 0, draws: 0, unfinished: 0, turns: 0, time: { a: [], b: [] } };
   for (let g = first; g < first + count; g++) {
     const pair = Math.floor(g / 2);
@@ -115,7 +143,7 @@ function report(t: Tally, ms: number): void {
     return `${mean.toFixed(2)} ms/déc (p95 ${(sorted[Math.floor(sorted.length * 0.95)] ?? 0).toFixed(1)}, max ${(sorted.at(-1) ?? 0).toFixed(0)})`;
   };
   console.log(
-    `${A} contre ${B} : ${games} parties (pool ${pool}${[A, B].some((x) => x.startsWith("expert")) ? `, budget ${budget}` : ""}) en ${(ms / 1000).toFixed(0)} s`,
+    `${A} contre ${B} : ${games} parties${players > 2 ? ` à ${players} joueurs` : ""} (pool ${pool}${[A, B].some((x) => x.startsWith("expert")) ? `, budget ${budget}` : ""}) en ${(ms / 1000).toFixed(0)} s`,
   );
   console.log(
     `  ${A} gagne ${pct(p)} % ± ${pct(ci)} (${t.a} / ${decided}) · nuls ${t.draws} · inachevées ${t.unfinished} · ${(t.turns / games).toFixed(1)} tours en moyenne`,

@@ -27,7 +27,13 @@ L'IA joue contre l'humain dans le navigateur (Web Worker) : on choisit son nivea
 ## Choix et mulligan
 
 - **Choix génériques** (`choices.ts`) : cibles d'un déclenchement et nouvelles cibles d'une copie, « vous pouvez » et « à moins que … ne paie » (oui ou non), petits nombres (X à payer, jusqu'à 6 valeurs) et choix d'une option parmi 6 au plus : chaque réponse est essayée par une simulation courte (`bestBySimulation`), la meilleure position l'emporte ; sinon la réponse suggérée par le moteur.
-- **Mulligan** (`heuristic.ts`, profil « normal ») : 2 à 5 terrains sur 7, et au moins un sort dont les symboles colorés sont tous produits par les terrains de la main.
+- **Choix multiples, répartitions, ordre des déclencheurs** (PLAN-C, C17) : quelques candidats, simulés jusqu'à la pile vide en répondant aux questions suivantes par la suggestion (`bestSettled`) :
+  - répartition (blessures de combat, blessures ou marqueurs répartis) : la suggestion, tout sur un destinataire, et pour des blessures, de quoi détruire d'abord les créatures adverses les plus précieuses, le reste au joueur ;
+  - choix de plusieurs options (regard, recherche, piles, prolifération, cibles multiples) : la suggestion, les plus et les moins précieuses, les siennes seules, celles des adversaires seules ;
+  - ordre des déclencheurs : toutes les permutations jusqu'à trois capacités.
+- **Coûts choisis et choix en arrivant** (C8, C9) : la suggestion du moteur, qui classe déjà les objets (flétrir la créature qui survit, sacrifier la moins précieuse…).
+- **Mulligan** (`heuristic.ts`, profil « normal ») : 2 à 5 terrains sur 7 ; courbe : avec deux terrains, un sort de valeur 2 ou moins, avec plus, un sort jouable au tour qui suit (C17) ; au moins un sort dont les symboles colorés sont tous produits par les terrains de la main, types de terrain de base compris (305.6 ; avant C17, les terrains de base, qui n'impriment pas leur capacité, sautaient ce contrôle).
+- **Attaques en multijoueur** (`attackTarget`, C17) : le joueur que l'attaque peut tuer, sinon le plus menaçant (force, planeswalkers, main), et non plus toujours celui qui a le moins de points de vie.
 
 ## Évaluation (`evaluate.ts`)
 
@@ -113,11 +119,27 @@ Temps de décision de l'élevé à 100 itérations : environ 30 ms en moyenne (l
 
 L'« IA d'origine » est l'IA heuristique d'avant les niveaux : une copie figée a servi à la mesure, puis a été retirée.
 
+Changements du lot C17 (choix, mulligan, attaques en multijoueur), mesurés à graines appariées contre le comportement d'avant (bascule temporaire, retirée ensuite), le 03/10/2026 :
+
+| Mesure | Parties | Taux de victoire du nouveau |
+|---|---|---|
+| Moyen, tout le pool | 600 | 50,2 % ± 4,0 |
+| Moyen, méta | 800 | 50,2 % ± 3,5 |
+| Moyen, quatre joueurs (sièges A, B, A, B) | 400 | 49,8 % ± 4,9 |
+| Couleurs des terrains de base au mulligan, tout le pool | 800 | 50,2 % ± 3,5 |
+| Idem, méta | 800 | 51,2 % ± 3,5 |
+
+Aucun écart significatif, et pas de régression : ces choix sont rares en partie (sur 80 parties du méta, la réponse ne change que 2 fois au mulligan, 4 fois pour l'ordre des déclencheurs, 10 fois pour des cibles multiples, jamais pour la répartition des blessures de combat). Ils sont gardés pour leur justesse.
+
+`npm run arena -- … --players 4` joue des parties à quatre (sièges A, B, A, B, décalés d'une partie à l'autre, decks aléatoires).
+
 Essais sans gain mesurable, écartés :
 - réglages de l'ISMCTS (exploration, échelle de la récompense, 4 ou 8 options, horizon d'un tour de plus) ;
 - ISMCTS sur les attaques (53 %) : l'adversaire des simulations bloque naïvement, ce qui rend les attaques trop agressives.
 
 ## Pièges
+
+- **Multijoueur, grands plateaux :** une décision de priorité du niveau moyen prend 1,5 à 4 s quand le champ de bataille compte 50 à 90 permanents (parties à quatre longues, mesuré au tournoi le 03/10/2026) ; c'était déjà le cas avant C17. Le niveau moyen n'a pas de budget en temps : à borner si l'interface en souffre.
 
 - **Information cachée.** Le code de l'IA ne doit jamais lire la main adverse, la liste de son deck ni l'ordre des bibliothèques. Il passe par `determinize` (ISMCTS), qui ne tire que de ce qui a été vu. Les simulations à un coup (`rollout`, `simulate`) ne piochent pas. `ai/test/ismcts.test.ts` vérifie qu'une autre répartition, ou d'autres cartes cachées, ne changent ni la déterminisation ni la décision.
 - **`applyMutable` n'est pas transactionnel.** Une décision illégale laisse l'état à moitié modifié. Dans une simulation, on passe par `step` (`evaluate.ts`) : « passer » est appliqué sur place, le reste par `submit`, qui travaille sur une copie.

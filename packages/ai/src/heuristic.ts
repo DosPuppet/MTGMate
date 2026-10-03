@@ -75,7 +75,7 @@ export function decide(s: GameState, me: PlayerId, pr: Profile): Decision {
  * Si les attaquants suffisent à tuer le joueur, tout va sur le joueur.
  */
 export function chooseDefenders(s: GameState, me: PlayerId, attackers: string[]): { id: string; defender: string }[] {
-  const opp = targetOpponent(s, me);
+  const opp = attackTarget(s, me, attackers);
   const power = (id: string) => Math.max(0, chars(s, id).power);
   const total = attackers.reduce((n, id) => n + power(id), 0);
   const out = new Map(attackers.map((id) => [id, opp as string]));
@@ -98,6 +98,31 @@ export function chooseDefenders(s: GameState, me: PlayerId, attackers: string[])
   return attackers.map((id) => ({ id, defender: out.get(id) as string }));
 }
 
+/**
+ * Joueur attaqué (multijoueur, PLAN-C C17) : celui que l'attaque peut tuer (le moins de points de vie d'abord) ; sinon
+ * le plus menaçant (force sur le champ de bataille, planeswalkers, main), à points de vie bas départagés en faveur de
+ * celui qui en a le moins. En duel, le seul adversaire.
+ */
+function attackTarget(s: GameState, me: PlayerId, attackers: string[]): PlayerId {
+  const opps = opponentsOf(s, me);
+  if (opps.length <= 1) return opps[0] ?? targetOpponent(s, me);
+  const total = attackers.reduce((n, id) => n + Math.max(0, chars(s, id).power), 0);
+  const life = (p: PlayerId) => s.players[p]?.life ?? 0;
+  const killable = opps.filter((p) => total >= life(p)).sort((a, b) => life(a) - life(b));
+  if (killable[0]) return killable[0];
+  const threat = (p: PlayerId) => {
+    let t = (s.players[p]?.hand.length ?? 0) * 0.5;
+    for (const id of s.battlefield) {
+      if (s.objects[id]?.controller !== p) continue;
+      const c = chars(s, id);
+      if (c.types.includes("Creature")) t += Math.max(0, c.power);
+      if (c.types.includes("Planeswalker")) t += 3;
+    }
+    return t - life(p) / 10;
+  };
+  return [...opps].sort((a, b) => threat(b) - threat(a))[0] ?? targetOpponent(s, me);
+}
+
 /** Complète les blocages pour respecter le plus d'exigences de blocage possible (509.1c, `repairBlocks`). */
 export function withRequiredBlocks(
   s: GameState,
@@ -113,12 +138,20 @@ export function withRequiredBlocks(
 
 const isLand = (s: GameState, id: ObjectId) => !!s.defs[s.objects[id]?.defId ?? ""]?.types.includes("Land");
 
-/** Couleurs que produisent les terrains de la main (capacités de mana imprimées). */
+const BASIC_MANA: Record<string, string> = { Plains: "W", Island: "U", Swamp: "B", Mountain: "R", Forest: "G" };
+
+/** Couleurs que produisent les terrains de la main (capacités de mana imprimées, types de terrain de base). */
 function landColors(s: GameState, hand: ObjectId[]): Set<string> {
   const out = new Set<string>();
   for (const id of hand.filter((x) => isLand(s, x))) {
-    for (const ab of s.defs[s.objects[id]?.defId ?? ""]?.abilities ?? []) {
+    const d = s.defs[s.objects[id]?.defId ?? ""];
+    for (const ab of d?.abilities ?? []) {
       if (ab.kind === "mana") for (const c of ab.produce) out.add(c);
+    }
+    // 305.6 : un type de terrain de base donne sa capacité de mana (les terrains de base n'en impriment pas).
+    for (const t of d?.subtypes ?? []) {
+      const c = BASIC_MANA[t];
+      if (c) out.add(c);
     }
   }
   return out;
@@ -133,7 +166,12 @@ function keepHand(s: GameState, me: PlayerId, pr: Profile): boolean {
   // Couleurs (P3) : au moins un sort de la main dont les symboles colorés sont tous produits par ses terrains.
   const colors = landColors(s, hand);
   const spells = hand.filter((id) => !isLand(s, id));
-  if (spells.length === 0 || colors.size === 0) return true;
+  if (spells.length === 0) return true;
+  // Courbe de mana (PLAN-C C17) : avec deux terrains, un sort de valeur 2 ou moins ; avec plus, un sort jouable au
+  // tour qui suit l'arrivée du dernier terrain (pas une main de sorts à 6 avec trois terrains).
+  const mv = (id: ObjectId) => manaValue(s.defs[s.objects[id]?.defId ?? ""]?.manaCost ?? { generic: 0, colored: {}, x: 0 });
+  if (Math.min(...spells.map(mv)) > (lands <= 2 ? 2 : lands + 1)) return false;
+  if (colors.size === 0) return true;
   return spells.some((id) => {
     const cost = s.defs[s.objects[id]?.defId ?? ""]?.manaCost;
     return Object.entries(cost?.colored ?? {}).every(([c, n]) => !n || colors.has(c));

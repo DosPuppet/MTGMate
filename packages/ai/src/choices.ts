@@ -1,7 +1,7 @@
 /**
  * Réponses de l'IA aux choix génériques (regard, défausse, sacrifice, répartition des blessures…).
  */
-import { type ChoiceRequest, type ChoiceValue, type GameState, manaValue, type PlayerId } from "@mtgx/engine";
+import { type ChoiceRequest, type ChoiceValue, chars, type GameState, manaValue, type PlayerId } from "@mtgx/engine";
 import { creatureValue, evaluate, rollout, stackEmpty, trySubmit } from "./evaluate";
 
 const isLand = (s: GameState, id: string) => !!s.defs[s.objects[id]?.defId ?? ""]?.types.includes("Land");
@@ -41,8 +41,121 @@ function bestBySimulation(s: GameState, me: PlayerId, candidates: ChoiceValue[][
   return best;
 }
 
+/**
+ * Suite d'une réponse simulée jusqu'à la pile vide : les questions suivantes (cibles des déclencheurs ordonnés, choix
+ * d'une résolution) reçoivent leur réponse suggérée, au lieu d'arrêter la simulation à la première question.
+ */
+function settle(s: GameState): GameState {
+  let cur = s;
+  for (let i = 0; i < 30 && !cur.over; i++) {
+    const p = cur.pending;
+    if (p?.kind === "choice") {
+      const next = trySubmit(cur, p.player, { type: "choose", values: p.request.suggested });
+      if (!next) break;
+      cur = next;
+    } else if (p?.kind === "priority" && !stackEmpty(cur)) cur = rollout(cur, stackEmpty);
+    else break;
+    if (cur.pending?.kind === "priority" && stackEmpty(cur)) break;
+  }
+  return cur;
+}
+
+/** Comme `bestBySimulation`, en menant chaque simulation jusqu'à la pile vide (`settle`). */
+function bestSettled(s: GameState, me: PlayerId, candidates: ChoiceValue[][]): ChoiceValue[] | null {
+  let best: ChoiceValue[] | null = null;
+  let bestScore = Number.NEGATIVE_INFINITY;
+  const seen = new Set<string>();
+  for (const values of candidates) {
+    const key = JSON.stringify(values);
+    if (seen.has(key)) continue;
+    seen.add(key);
+    const next = trySubmit(s, me, { type: "choose", values });
+    if (!next) continue;
+    const score = evaluate(settle(next), me);
+    if (score > bestScore) {
+      bestScore = score;
+      best = values;
+    }
+  }
+  return best;
+}
+
+/** Blessures qui détruisent ce destinataire (créature : endurance moins les blessures ; contact mortel non compté). */
+function lethalNeed(s: GameState, id: string): number {
+  const o = s.objects[id];
+  if (o?.zone !== "battlefield") return Number.POSITIVE_INFINITY;
+  const c = chars(s, id);
+  if (c.types.includes("Planeswalker")) return Math.max(1, o.counters.loyalty ?? 0);
+  if (!c.types.includes("Creature")) return Number.POSITIVE_INFINITY;
+  return Math.max(1, c.toughness - (o.damage ?? 0));
+}
+
+/**
+ * Répartitions candidates : la suggestion du moteur, tout sur un destinataire (le minimum aux autres), et pour des
+ * blessures, de quoi détruire d'abord les créatures adverses les plus précieuses, le reste au joueur s'il en fait partie.
+ */
+function divideCandidates(s: GameState, me: PlayerId, req: Extract<ChoiceRequest, { type: "divide" }>): ChoiceValue[][] {
+  const out: ChoiceValue[][] = [req.suggested];
+  const n = req.among.length;
+  const minEach = req.minEach ?? 0;
+  const rest = req.total - minEach * n;
+  if (rest < 0) return out;
+  for (let i = 0; i < n && i < 6; i++) out.push(req.among.map((_, j) => minEach + (j === i ? rest : 0)));
+  if (req.intent !== "combatDamage" && req.intent !== "divideDamage") return out;
+  const value = (id: string) => {
+    const d = s.defs[s.objects[id]?.defId ?? ""];
+    return d ? creatureValue(d) : 0;
+  };
+  const hostile = (id: string) => !!s.objects[id] && s.objects[id]?.controller !== me;
+  const order = req.among
+    .map((id, i) => ({ id, i }))
+    .filter(({ id }) => !s.players[id] && hostile(id))
+    .sort((a, b) => value(b.id) - value(a.id));
+  const values = req.among.map(() => minEach);
+  let left = rest;
+  for (const { id, i } of order) {
+    const need = Math.max(0, (req.lethal?.needs[id] ?? lethalNeed(s, id)) - minEach);
+    if (!Number.isFinite(need) || need > left) continue;
+    values[i] = (values[i] ?? 0) + need;
+    left -= need;
+  }
+  const player = req.among.findIndex((id) => !!s.players[id] && id !== me);
+  const sink = player >= 0 ? player : (order[0]?.i ?? 0);
+  values[sink] = (values[sink] ?? 0) + left;
+  out.push(values);
+  return out;
+}
+
+/**
+ * Choix de plusieurs options (regard, recherche, piles, prolifération…) : le sens d'un bon choix dépend de l'effet
+ * (garder ses meilleures cartes, exiler les pires de l'adversaire). Candidats : la suggestion du moteur, les options les
+ * plus et les moins précieuses, et pour des permanents ou des joueurs, les siens seuls ou ceux des adversaires seuls ;
+ * la simulation départage.
+ */
+function pickCandidates(s: GameState, me: PlayerId, req: Extract<ChoiceRequest, { type: "pick" }>): ChoiceValue[][] {
+  const out: ChoiceValue[][] = [req.suggested];
+  const byValue = [...req.options].sort((a, b) => keepValue(s, me, b) - keepValue(s, me, a));
+  out.push(byValue.slice(0, req.max), byValue.slice(-Math.max(req.min, 1)).reverse().slice(0, req.max));
+  if (req.min === 0) out.push([]);
+  const mine = (id: string) => id === me || s.objects[id]?.controller === me || s.objects[id]?.owner === me;
+  out.push(req.options.filter(mine).slice(0, req.max), req.options.filter((id) => !mine(id)).slice(0, req.max));
+  return out.filter((v) => v.length >= req.min && v.length <= req.max);
+}
+
+/** Toutes les permutations (petits ensembles seulement). */
+function permutations<T>(xs: T[]): T[][] {
+  if (xs.length <= 1) return [xs];
+  return xs.flatMap((x, i) => permutations([...xs.slice(0, i), ...xs.slice(i + 1)]).map((p) => [x, ...p]));
+}
+
 export function heuristicChoice(s: GameState, me: PlayerId, req: ChoiceRequest): ChoiceValue[] {
-  // Cibles d'une capacité déclenchée, nouvelles cibles d'une copie : on essaie chacune.
+  // Répartition (blessures de combat, blessures ou marqueurs répartis) : candidats simulés (PLAN-C, C17).
+  if (req.type === "divide") return bestSettled(s, me, divideCandidates(s, me, req)) ?? req.suggested;
+  // Ordre des déclencheurs : chaque ordre essayé jusqu'à trois capacités (six ordres).
+  if (req.type === "order" && req.intent === "triggerOrder" && req.items.length <= 3)
+    return bestSettled(s, me, permutations(req.items)) ?? req.suggested;
+  if (req.type === "pick" && req.max > 1 && !["discard", "sacrifice", "scryBottom", "surveilGraveyard"].includes(req.intent))
+    return bestSettled(s, me, pickCandidates(s, me, req)) ?? req.suggested;
   if (req.type === "pick" && (req.intent === "triggerTarget" || req.intent === "changeTarget") && req.max === 1) {
     const candidates = req.options.map((o) => [o] as ChoiceValue[]);
     if (req.min === 0) candidates.push([]);

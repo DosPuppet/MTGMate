@@ -3,7 +3,7 @@
  */
 import { type GameState, submit } from "@mtgx/engine";
 import { describe, expect, it } from "vitest";
-import { act, idOf, passAccepting, passUntil, scenario } from "../../engine/test/helpers";
+import { act, customCard, idOf, passAccepting, passUntil, scenario } from "../../engine/test/helpers";
 import { aiAgent } from "../src";
 
 const expert = () => aiAgent("expert", { seed: 1, budget: { iterations: 40 }, players: 2 });
@@ -78,5 +78,44 @@ describe("IA débutante", () => {
     expect(aiAgent("beginner", { seed: 1 })(s, "p1").type).toBe("pass");
     // Le moyen, lui, sauve son Ourson.
     expect(aiAgent("medium")(s, "p1").type).toBe("cast");
+  });
+});
+
+describe("choix de l'IA (PLAN-C, lot C17)", () => {
+  const medium = () => aiAgent("medium", { seed: 1, players: 2 });
+  const brute = customCard({ name: "Brute", power: 3, toughness: 3 });
+
+  it("répartition des blessures de combat : détruit le bloqueur le plus précieux plutôt que le plus fragile", () => {
+    let s = scenario({ p1: { battlefield: [brute] }, p2: { battlefield: ["Vampire Nighthawk", "Llanowar Elves"] } });
+    s = passUntil(s, (x) => x.pending?.kind === "declareAttackers");
+    const b = idOf(s, "p1", "battlefield", "Brute");
+    s = act(s, "p1", { type: "declareAttackers", attackers: [{ id: b, defender: "p2" }] });
+    s = passUntil(s, (x) => x.pending?.kind === "declareBlockers");
+    const hawk = idOf(s, "p2", "battlefield", "Vampire Nighthawk");
+    const elves = idOf(s, "p2", "battlefield", "Llanowar Elves");
+    s = act(s, "p2", {
+      type: "declareBlockers",
+      blocks: [
+        { blocker: hawk, attacker: b },
+        { blocker: elves, attacker: b },
+      ],
+    });
+    s = passUntil(s, (x) => x.pending?.kind === "choice");
+    const p = s.pending;
+    expect(p?.kind === "choice" && p.request.type === "divide" && p.request.intent).toBe("combatDamage");
+    // Suggestion du moteur : la moindre endurance d'abord (l'Elfe).
+    const req = p?.kind === "choice" && p.request.type === "divide" ? p.request : null;
+    expect(req?.suggested[req.among.indexOf(elves)]).toBe(1);
+    const d = medium()(s, "p1");
+    const values = d.type === "choose" ? (d.values as number[]) : [];
+    expect(values[req?.among.indexOf(hawk) ?? -1]).toBe(3);
+  });
+
+  it("mulligan : rend une main à deux terrains sans sort de valeur 2 ou moins", () => {
+    let s = scenario({
+      p1: { hand: ["Forest", "Forest", "Serra Angel", "Serra Angel", "Shivan Dragon", "Shivan Dragon", "Gigantosaurus"] },
+    });
+    s = { ...s, pending: { kind: "mulligan", player: "p1", mulligans: 0 } } as GameState;
+    expect(medium()(s, "p1")).toEqual({ type: "mulligan" });
   });
 });

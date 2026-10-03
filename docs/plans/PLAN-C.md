@@ -53,6 +53,14 @@ Plan établi le 02/10/2026 (branche `dev`) : il sert de feuille de route aux pro
   - **exploitation :** `deploy/update.sh` sauvegarde `data/rooms` (dix dernières archives), compile le serveur, lance `rooms-check` ; retour arrière et rotation des journaux (`pm2-logrotate`) dans `docs/deploiement.md` ;
   - **reprise locale :** une empreinte par décision (`checkpointEvery: 1`, 0,01 ms chacune) ; une carte inconnue donne « Partie impossible à reprendre » au lieu d'un blocage (vérifié dans le navigateur) ; `online-smoke` signale aussi les violations de CSP ;
   - **tests :** 9 de plus (serveur : jetons hachés et mode 600, interruption persistée, anciennes sauvegardes, nettoyage, plafond de reprise, garde mémoire, `/healthz`, `ipKey`, CSP ; rejeu à la décision près) ; `online-smoke` contre le serveur compilé : vert (la vérification de la corde échoue parfois selon le moment de l'attente, ancienne fragilité) ; `verify --set META --ui` vert.
+- **03/10/2026 : C17 fait** (sans changement de règles) :
+  - **choix :** répartitions (blessures de combat, blessures et marqueurs répartis), choix multiples (regard, recherche, piles, prolifération, cibles multiples) et ordre des déclencheurs (jusqu'à trois) par candidats simulés jusqu'à la pile vide ; coûts choisis et choix en arrivant : suggestions du moteur (déjà classées en C8 et C9) ;
+  - **mulligan :** courbe de mana ; couleurs des terrains de base enfin comptées (elles ne l'étaient pas : les terrains de base n'impriment pas leur capacité) ;
+  - **multijoueur :** joueur attaqué selon le létal, puis la menace ;
+  - **mesure :** tournois A/B à graines appariées (1 400 parties en duel, 400 à quatre, 1 600 pour les couleurs) : neutres, sans régression (ces choix changent rarement la réponse) ; `ai-arena --players N` ; résultats dans `docs/ia.md` ;
+  - **tests :** 2 (répartition des blessures de combat, mulligan sur la courbe) ;
+  - **remarque :** des décisions de priorité du niveau moyen prennent 1,5 à 4 s sur des plateaux de 50 à 90 permanents (parties à quatre), déjà avant C17 (`docs/ia.md`, « Pièges ») ;
+  - **tournoi de référence** (élevé contre moyen, tout le pool et méta) : en cours, consigné dans `docs/ia.md` au lot suivant.
 
 ## Décisions et ordre
 
@@ -85,7 +93,7 @@ Plan établi le 02/10/2026 (branche `dev`) : il sert de feuille de route aux pro
 | 15 | C14 : dette ciblée | § 5.1, § 5.7 | C1 | S/M | ✅ |
 | 16 | C15 : performances | § 5.8 | C10, C11 | M | ✅ |
 | 17 | C16 : serveur et exploitation | § 7 | C3 | M | ✅ |
-| 18 | C17 : IA | § 8 | C8, C9 | M | |
+| 18 | C17 : IA | § 8 | C8, C9 | M | ✅ |
 | 19 | C18 : interface | § 9 | C7 | M/L | |
 | 20 | C19 : données | § 7 | — | S | |
 | 21 | C20 (facultatif) : découpage de `stack.ts` | § 5.2 | C7 à C12 | M | |
