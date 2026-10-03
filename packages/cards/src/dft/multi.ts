@@ -293,11 +293,11 @@ export const MULTI: Record<string, CardScript> = {
   },
   "Wreck Remover": {
     abilities: [
-      triggered(when.entersSelf, [fx.exile(ref.target()), fx.gainLife(1)], {
+      triggered(when.entersSelf, [fx.exileCard(ref.target()), fx.gainLife(1)], {
         targets: [target.upTo(1, target.cardInGraveyard("t", {}, "any", "carte"))],
         label: "Exilez une carte d'un cimetière, +1 PV",
       }),
-      triggered(when.attacksSelf, [fx.exile(ref.target()), fx.gainLife(1)], {
+      triggered(when.attacksSelf, [fx.exileCard(ref.target()), fx.gainLife(1)], {
         targets: [target.upTo(1, target.cardInGraveyard("t", {}, "any", "carte"))],
         label: "Exilez une carte d'un cimetière, +1 PV",
       }),

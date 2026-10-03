@@ -49,7 +49,7 @@ export const ARTIFACTS: Record<string, CardScript> = {
         mana: "{2}",
         tap: true,
         targets: [target.cardInGraveyard("t", {}, "any", "carte")],
-        effects: [fx.exile(ref.target())],
+        effects: [fx.exileCard(ref.target())],
         label: "Exilez une carte d'un cimetière",
       }),
     ],

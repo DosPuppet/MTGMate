@@ -85,7 +85,11 @@ export const MULTI: Record<string, CardScript> = {
         mana: "{1}{G}{U}",
         tap: true,
         targets: [target.cardInGraveyard("t", {}, "any", "carte")],
-        effects: [fx.when(cond.targetMatches("t", { types: ["Creature"] }), fx.createTokens(FOOD)), fx.exile(ref.target())],
+        // `exile` ne vise que les permanents : une carte d'un cimetière passe par `exileCard`.
+        effects: [
+          fx.exileCard(ref.target(), { name: "c", filter: { types: ["Creature"] } }),
+          fx.when(cond.v("c"), fx.createTokens(FOOD)),
+        ],
         label: "Exilez une carte d'un cimetière",
       }),
     ],

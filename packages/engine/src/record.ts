@@ -233,8 +233,11 @@ export const RECORD_VERSION = 1;
  *   Justice) ; The Lost Caverns of Ixalan (lot K8) : The Ancient One, Dire Blunderbuss, Sunfire Torch (objets liés aux
  *   capacités réflexives), Cosmium Confluence (Caverne choisie, non ciblée), The Myriad Pools (mana du terrain), Jade
  *   Seedstones (une à trois cibles), Hurl into History (contrecarre, puis découvre).
+ * - 82 : un choix dans une zone garde la valeur de mana maximale de son filtre ; Wreck Remover exile bien la carte du
+ *   cimetière ; Final Fantasy (lot K8) : Ambrosia Whiteheart (renvoi non ciblé), Delivery Moogle, Eden (« un autre »),
+ *   Ignis Scientia, Qutrub Forayer et Magic Pot (exil depuis le cimetière), Rydia (X vérifié à la résolution).
  */
-export const RULES_VERSION = 81;
+export const RULES_VERSION = 82;
 
 /** Un point de contrôle toutes les N décisions (plus la dernière de la partie). */
 export const CHECKPOINT_EVERY = 25;

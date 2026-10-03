@@ -69,7 +69,8 @@ Dans l'ordre où elles ont été ajoutées, extension par extension.
   - `règle` Stolen Uniform, Unexpected Request : l'Équipement est détaché à l'étape de fin ; pour Unexpected Request, il est ciblé au lancement ;
   - `règle` Ultima, Origin of Oblivion : l'effet sur les terrains avec un marqueur de fléau cesse si Ultima quitte le champ de bataille ;
   - `règle` Zenos, Shinryu : la créature choisie est une cible ; l'adversaire choisi est le premier qui perd la partie ;
-  - `règle` Rydia, Summoner of Mist : la Saga ciblée a une valeur de mana d'au plus X (et non exactement X) ;
+  - `règle` Rydia, Summoner of Mist : toute carte de Saga de votre cimetière peut être ciblée ; elle ne revient que si sa valeur de mana vaut X ;
+  - `règle` Dion, Bahamut's Dominant : le recto a le vol en permanence (l'import lit le vol dans « … have flying »), et non seulement pendant votre tour ;
   - `règle` Lightning, Security Sergeant : la carte reste jouable tant que vous contrôlez une créature nommée Lightning, Security Sergeant ;
   - `règle` Sidequest: Raise a Chocobo : la recherche de terrain de Black Chocobo (« quand il se transforme ») est faite par l'effet qui le transforme ;
   - `timing` Summoner's Grimoire : le joueur choisit d'abord parmi les cartes de créature non-enchantement ; s'il n'en prend aucune, il peut mettre une créature-enchantement engagée et attaquante.

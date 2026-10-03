@@ -45,7 +45,8 @@ export const LANDS: Record<string, CardScript> = {
             "Sacrifier ce terrain pour renvoyer une carte de permanent ?",
             fx.sacrificeIt(ref.self),
             fx.reflexive(
-              [target.cardInGraveyard("t", { permanent: true }, "you", "carte de permanent")],
+              // « une autre carte » : pas Eden elle-même, sacrifiée juste avant.
+              [target.cardInGraveyard("t", { permanent: true, other: true }, "you", "autre carte de permanent")],
               [fx.toHand(ref.target())],
             ),
           ),

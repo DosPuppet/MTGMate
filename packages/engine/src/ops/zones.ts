@@ -528,7 +528,13 @@ export const HANDLERS: OpHandlers = {
         !!s.objects[id] &&
         !excludedUids.has(s.objects[id]?.uid) &&
         (!allowed || colorsOf(id).length > 0) &&
-        matchesCard(s, ctx.controller, id, { ...e.filter, controller: undefined, maxManaValue: maxMv }, ctx.sourceId),
+        matchesCard(
+          s,
+          ctx.controller,
+          id,
+          { ...e.filter, controller: undefined, maxManaValue: maxMv ?? e.filter.maxManaValue },
+          ctx.sourceId,
+        ),
     );
     const count = Math.min(
       allowed ? Math.min(evalAmount(s, ctx, e.count), allowed.size) : evalAmount(s, ctx, e.count),

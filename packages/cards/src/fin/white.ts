@@ -39,15 +39,20 @@ export const WHITE: Record<string, CardScript> = {
   },
   "Ambrosia Whiteheart": {
     abilities: [
-      triggered(when.entersSelf, [fx.bounce(ref.target())], {
-        targets: [
-          target.upTo(
-            1,
-            targetObj("t", { permanent: true, controller: "you", other: true }, "autre permanent que vous contrôlez"),
+      // Le permanent n'est pas ciblé : il est choisi à la résolution.
+      triggered(
+        when.entersSelf,
+        [
+          fx.may(
+            "Renvoyer un autre permanent que vous contrôlez dans la main de son propriétaire ?",
+            fx.chooseAmong(ref.permanentsOf(ref.you, { other: true }), ref.you, "r", {
+              prompt: "Choisissez le permanent à renvoyer",
+            }),
+            fx.bounce(ref.stored("r")),
           ),
         ],
-        label: "Renvoyez un autre permanent",
-      }),
+        { label: "Renvoyez un autre permanent" },
+      ),
       triggered(when.landfall, [fx.pump(ref.self, 1, 0)], { label: "Landfall : +1/+0" }),
     ],
   },
@@ -96,7 +101,8 @@ export const WHITE: Record<string, CardScript> = {
       triggered(
         when.entersSelf,
         [
-          fx.pickFromZone("graveyard", { types: ["Artifact"], maxManaValue: 2 }, { to: "hand" }, { min: 0, store: "g" }),
+          // La VM maximale passe par l'option : `pickFromZone` remplace celle du filtre.
+          fx.pickFromZone("graveyard", { types: ["Artifact"] }, { to: "hand" }, { min: 0, store: "g", maxManaValue: 2 }),
           fx.when(cond.not(cond.v("g")), fx.search({ types: ["Artifact"], maxManaValue: 2 })),
         ],
         { label: "Un artefact de VM 2 ou moins" },

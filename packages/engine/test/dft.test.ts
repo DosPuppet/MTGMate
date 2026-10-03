@@ -4161,3 +4161,24 @@ describe("Aetherdrift, lot K8 : peu communes (4)", () => {
     expect(canActivate(s, "p1", doll)).toBe(false);
   });
 });
+
+describe("Wreck Remover (lot K8)", () => {
+  it("en arrivant : exile jusqu'à une carte ciblée d'un cimetière, et vous gagnez 1 PV", () => {
+    let s = scenario({ p1: { battlefield: lands("Forest", 6), hand: ["Wreck Remover"] }, p2: { graveyard: ["Serra Angel"] } });
+    const angel = idOf(s, "p2", "graveyard", "Serra Angel");
+    s = act(s, "p1", { type: "cast", card: idOf(s, "p1", "hand", "Wreck Remover") });
+    for (let i = 0; i < 20 && !(s.stack.length === 0 && s.pending?.kind === "priority"); i++) {
+      const p = s.pending;
+      if (p?.kind === "priority") s = act(s, p.player, { type: "pass" });
+      else if (p?.kind === "choice")
+        s = act(s, p.player, {
+          type: "choose",
+          values: p.request.type === "pick" && p.request.options.includes(angel) ? [angel] : p.request.suggested,
+        });
+      else break;
+    }
+    expect(s.players.p2?.graveyard).toHaveLength(0);
+    expect(s.exile.some((id) => s.defs[s.objects[id]?.defId ?? ""]?.name === "Serra Angel")).toBe(true);
+    expect(s.players.p1?.life).toBe(21);
+  });
+});

@@ -150,3 +150,28 @@ describe("Sorte de marqueur retirée choisie par le joueur (lot K6)", () => {
     expect(run(null).counters).toEqual({ "+1/+1": 1, stun: 1 });
   });
 });
+
+describe("Choix dans une zone : le filtre garde sa valeur de mana maximale (lot K8)", () => {
+  it("« une carte de valeur de mana 2 ou moins de votre cimetière » : les plus chères ne sont pas proposées", () => {
+    const RAPPEL = customCard({
+      name: "Rappel d'essai",
+      typeLine: "Sorcery",
+      types: ["Sorcery"],
+      spell: spell([], [fx.pickFromZone("graveyard", { maxManaValue: 2 }, { to: "hand" }, { min: 0 })]),
+    });
+    let s = scenario({ p1: { hand: [RAPPEL], graveyard: ["Bear Cub", "Serra Angel"] } });
+    s = act(s, "p1", { type: "cast", card: idOf(s, "p1", "hand", RAPPEL.name) });
+    let options: string[] = [];
+    for (let i = 0; i < 10 && !(s.stack.length === 0 && s.pending?.kind === "priority"); i++) {
+      const p = s.pending;
+      if (p?.kind === "priority") s = act(s, p.player, { type: "pass" });
+      else if (p?.kind === "choice" && p.request.type === "pick") {
+        options = p.request.options.map((id) => s.defs[s.objects[id]?.defId ?? ""]?.name ?? id);
+        s = act(s, p.player, { type: "choose", values: p.request.suggested });
+      } else break;
+    }
+    expect(options).toEqual(["Bear Cub"]);
+    expect(idsOf(s, "p1", "hand", "Bear Cub")).toHaveLength(1);
+    expect(idsOf(s, "p1", "graveyard", "Serra Angel")).toHaveLength(1);
+  });
+});

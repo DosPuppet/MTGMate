@@ -329,10 +329,18 @@ export const LEGENDS: Record<string, CardScript> = {
         mana: "{X}",
         tap: true,
         sorcerySpeed: true,
-        targets: [target.cardInGraveyard("t", { subtype: "Saga", maxManaValueX: true }, "you", "carte de Saga")],
+        // Un filtre de cible ne lit pas le X d'une capacité activée (`maxManaValueX` lit celui du sort qui a créé la
+        // source) : la valeur de mana de la Saga est comparée à X à la résolution.
+        targets: [target.cardInGraveyard("t", { subtype: "Saga" }, "you", "carte de Saga")],
         effects: [
-          fx.moveTo(ref.target(), { to: "battlefield", counters: { kind: "finality", n: 1 } }, { name: "r" }),
-          fx.pump(ref.stored("r"), 0, 0, ["haste"]),
+          fx.when(
+            cond.all(
+              cond.amountAtLeast(amount.plus(amount.x, 1, amount.neg(amount.manaValueOf(ref.target()))), 1),
+              cond.amountAtLeast(amount.plus(amount.manaValueOf(ref.target()), 1, amount.neg(amount.x)), 1),
+            ),
+            fx.moveTo(ref.target(), { to: "battlefield", counters: { kind: "finality", n: 1 } }, { name: "r" }),
+            fx.pump(ref.stored("r"), 0, 0, ["haste"]),
+          ),
         ],
         label: "Invocation : une Saga du cimetière",
       }),

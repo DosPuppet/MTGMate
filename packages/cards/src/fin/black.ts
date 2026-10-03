@@ -203,7 +203,7 @@ export const BLACK: Record<string, CardScript> = {
           mode(
             "Exilez jusqu'à deux cartes d'un cimetière",
             [{ ...target.upTo(2, target.cardInGraveyard("t", {}, "any", "carte")), samePlayer: true }],
-            [fx.exile(ref.target())],
+            [fx.exileCard(ref.target())],
           ),
         ],
         { label: "Choisissez un" },
