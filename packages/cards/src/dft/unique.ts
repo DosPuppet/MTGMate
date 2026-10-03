@@ -114,7 +114,11 @@ export const UNIQUE: Record<string, CardScript> = {
     abilities: [
       triggered(
         when.entersSelf,
-        [fx.when(cond.targetMatches("t", { controller: "you" }), fx.addCounters(ref.self, 2)), fx.destroy(ref.target())],
+        // « Si une créature que vous contrôliez a été détruite de cette façon » : la carte mise au cimetière.
+        [
+          fx.destroy(ref.target(), "d"),
+          fx.when(cond.refMatches(ref.stored("d"), { controller: "you" }), fx.addCounters(ref.self, 2)),
+        ],
         { targets: [onePerPlayer(target.creature("t"))], label: "Une créature par joueur détruite" },
       ),
     ],
@@ -122,10 +126,10 @@ export const UNIQUE: Record<string, CardScript> = {
   "Gonti, Night Minister": {
     abilities: [
       triggered(when.castSpellNotOwned, [fx.createTokens(TREASURE, 1, ref.eventPlayer)], { label: "Trésor" }),
-      // Approximation : la carte est exilée face visible.
+      // Exilée face cachée (visible pour vous) ; jouable tant qu'elle reste exilée, avec du mana de n'importe quel type.
       triggered(
         when.combatDamageToOpponent({ types: ["Creature"] }),
-        [fx.exileTop(ref.eventPlayer, 1, "g", "you"), fx.grantPlay(ref.stored("g"), { forever: true })],
+        [fx.exileTop(ref.eventPlayer, 1, "g", "you"), fx.grantPlay(ref.stored("g"), { forever: true, anyMana: true })],
         { label: "Exilez la carte du dessus de sa bibliothèque, jouable" },
       ),
     ],
@@ -203,7 +207,7 @@ export const UNIQUE: Record<string, CardScript> = {
           [
             triggered(
               when.step("beginCombat"),
-              [fx.untap(ref.permanentsOf(ref.you, { types: ["Creature"], attackedThisTurn: true }))],
+              [fx.untap(ref.permanentsOf(ref.eachPlayer, { types: ["Creature"], attackedThisTurn: true }))],
               { label: "Dégagez les créatures qui ont attaqué" },
             ),
           ],
@@ -215,13 +219,12 @@ export const UNIQUE: Record<string, CardScript> = {
   "Gastal Thrillroller": {
     abilities: [
       triggered(when.entersSelf, [fx.animateVehicle()], { label: "Créature-artefact jusqu'à la fin du tour" }),
-      // Approximation : la défausse a lieu à la résolution.
       activated({
         mana: "{2}{R}",
+        discard: 1,
         fromGraveyard: true,
         sorcerySpeed: true,
-        activationCondition: cond.amountAtLeast(amount.cardsIn("hand"), 1),
-        effects: [fx.discard(1), fx.toBattlefield(ref.self, { counters: { kind: "finality", n: 1 } })],
+        effects: [fx.toBattlefield(ref.self, { counters: { kind: "finality", n: 1 } })],
         label: "Revenir avec un marqueur de finalité",
       }),
     ],
@@ -361,7 +364,16 @@ export const UNIQUE: Record<string, CardScript> = {
       triggered(when.entersSelf, [fx.scry(2)], { label: "Regard 2" }),
       activated({
         tap: true,
-        effects: [fx.createTokens(PILOT, amount.count({ ...MOUNT_OR_VEHICLE, controller: "you", enteredThisTurn: true }))],
+        // Journal du tour : celles qui sont reparties comptent aussi (une Monture-Véhicule n'est comptée qu'une fois).
+        effects: [
+          fx.createTokens(
+            PILOT,
+            amount.plus(
+              amount.turnEvents({ event: "zone", to: "battlefield", subtype: "Mount", who: "you" }),
+              amount.turnEvents({ event: "zone", to: "battlefield", subtype: "Vehicle", notSubtype: "Mount", who: "you" }),
+            ),
+          ),
+        ],
         label: "Un Pilote par Monture ou Véhicule arrivé ce tour-ci",
       }),
     ],
@@ -563,8 +575,10 @@ export const UNIQUE: Record<string, CardScript> = {
   "Lifecraft Engine": {
     chooseOnEnter: "creatureType",
     abilities: [
+      // Approximation : tous vos Véhicules (créatures ou non) ont le type choisi ; un filtre « créature » serait figé
+      // avant l'équipage, plus récent (dépendance 613.8a non gérée pour l'ensemble affecté en couche 4).
       staticAbility(
-        { subtype: "Vehicle", types: ["Creature"], controller: "you" },
+        { subtype: "Vehicle", controller: "you" },
         { addChosenSubtype: true },
         {
           label: "Vos Véhicules créatures ont le type choisi",

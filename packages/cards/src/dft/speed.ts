@@ -124,7 +124,12 @@ export const SPEED: Record<string, CardScript> = {
   "Rangers' Refueler": {
     abilities: [
       triggered(when.exhaustActivated, [fx.draw(1)], { label: "Piochez" }),
-      exhaust({ mana: "{4}", effects: [fx.animateVehicle(), counters(1)], label: "créature-artefact, marqueur +1/+1" }),
+      // « Ce Véhicule devient une créature-artefact » : sans durée, l'effet dure indéfiniment (611.2a).
+      exhaust({
+        mana: "{4}",
+        effects: [fx.modify(ref.self, { addTypes: ["Artifact", "Creature"] }, "permanent"), counters(1)],
+        label: "créature-artefact, marqueur +1/+1",
+      }),
     ],
   },
   "Riverchurn Monument": {
@@ -369,7 +374,11 @@ export const SPEED: Record<string, CardScript> = {
     abilities: [
       exhaust({
         tapOthers: { filter: { ...MOUNT_OR_VEHICLE, controller: "you", other: true }, count: 1 },
-        effects: [fx.animateVehicle(), counters(amount.count({ ...MOUNT_OR_VEHICLE, controller: "you", other: true }))],
+        // Sans durée : créature-artefact pour de bon (611.2a).
+        effects: [
+          fx.modify(ref.self, { addTypes: ["Artifact", "Creature"] }, "permanent"),
+          counters(amount.count({ ...MOUNT_OR_VEHICLE, controller: "you", other: true })),
+        ],
         label: "créature-artefact, marqueurs",
       }),
     ],
@@ -435,7 +444,8 @@ export const SPEED: Record<string, CardScript> = {
       }),
       exhaust({
         mana: "{4}{R}{G}",
-        effects: [fx.pumpAll({ ...CREATURE_OR_VEHICLE, controller: "you" }, 0, 0, ["trample"]), counters(2)],
+        // « Créatures et Véhicules » : un Véhicule non animé gagne aussi le piétinement (pumpAll ne vise que les créatures).
+        effects: [fx.pump(ref.permanentsOf(ref.you, CREATURE_OR_VEHICLE), 0, 0, ["trample"]), counters(2)],
         label: "piétinement, deux marqueurs",
       }),
     ],
@@ -497,7 +507,12 @@ export const SPEED: Record<string, CardScript> = {
   "Rocketeer Boostbuggy": {
     abilities: [
       triggered(when.attacksSelf, [fx.createTokens(TREASURE)], { label: "Trésor" }),
-      exhaust({ mana: "{3}", effects: [fx.animateVehicle(), counters(1)], label: "créature-artefact, marqueur +1/+1" }),
+      // « Ce Véhicule devient une créature-artefact » : sans durée, l'effet dure indéfiniment (611.2a).
+      exhaust({
+        mana: "{3}",
+        effects: [fx.modify(ref.self, { addTypes: ["Artifact", "Creature"] }, "permanent"), counters(1)],
+        label: "créature-artefact, marqueur +1/+1",
+      }),
     ],
   },
   "Samut, the Driving Force": {
@@ -532,7 +547,8 @@ export const SPEED: Record<string, CardScript> = {
       triggered(when.entersSelf, [fx.search({ types: ["Land"], basic: true })], { label: "Terrain de base en main" }),
       exhaust({
         mana: "{W}{U}{B}{R}{G}",
-        effects: [fx.animateVehicle(), counters(2)],
+        // Sans durée : créature-artefact pour de bon (611.2a).
+        effects: [fx.modify(ref.self, { addTypes: ["Artifact", "Creature"] }, "permanent"), counters(2)],
         label: "créature-artefact, deux marqueurs",
       }),
     ],

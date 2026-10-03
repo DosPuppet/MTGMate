@@ -74,7 +74,7 @@ Dans l'ordre où elles ont été ajoutées, extension par extension.
   - `règle` Sidequest: Raise a Chocobo : la recherche de terrain de Black Chocobo (« quand il se transforme ») est faite par l'effet qui le transforme ;
   - `timing` Summoner's Grimoire : le joueur choisit d'abord parmi les cartes de créature non-enchantement ; s'il n'en prend aucune, il peut mettre une créature-enchantement engagée et attaquante.
 - **Aetherdrift (`docs/extensions/dft.md`) :**
-  - `règle` Gonti, Night Minister : la carte exilée se joue sans pouvoir dépenser du mana de n'importe quel type ;
+  - `règle` Lifecraft Engine : tous vos Véhicules, même non-créatures, ont le type choisi (l'ensemble affecté en couche 4 ne suit pas la dépendance 613.8a envers l'équipage, plus récent) ;
   - `règle` Caradora, Heart of Alacria : le marqueur supplémentaire ne vaut que pour vos créatures (Véhicules animés compris) ;
   - `règle` Webstrike Elite : la cible est un artefact ou enchantement quelconque, détruit seulement si sa valeur de mana vaut X ;
   - `règle` Grim Javelineer : « quand cette créature meurt ce tour-ci » est une capacité accordée jusqu'à la fin du tour ;

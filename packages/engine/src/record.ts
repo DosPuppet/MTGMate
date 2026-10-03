@@ -224,8 +224,12 @@ export const RECORD_VERSION = 1;
  *   Rats créent des jetons engagés ; Biogenic Upgrade demande une à trois cibles (lot K8, FDN).
  * - 79 : « une ou deux cibles » : au moins une (Get Out, Coordinated Clobbering, Omnivorous Flytrap, Untimely
  *   Malfunction) (lot K8, DSK).
+ * - 80 : Aetherdrift (lot K8) : un Véhicule devenu créature par l'exhaust le reste ; Boom Scholar donne aussi le
+ *   piétinement aux Véhicules ; Cloudspire Skycycle (une ou deux cibles), Cloudspire Coordinator (journal du tour),
+ *   Demonic Junker (seulement si la créature est détruite), Gastal Thrillroller (défausse en coût), Gonti (mana de
+ *   n'importe quel type), Full Throttle (toutes les créatures qui ont attaqué), Lifecraft Engine (Véhicules pilotés).
  */
-export const RULES_VERSION = 79;
+export const RULES_VERSION = 80;
 
 /** Un point de contrôle toutes les N décisions (plus la dernière de la partie). */
 export const CHECKPOINT_EVERY = 25;

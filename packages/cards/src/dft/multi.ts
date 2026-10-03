@@ -117,7 +117,7 @@ export const MULTI: Record<string, CardScript> = {
   "Cloudspire Skycycle": {
     abilities: [
       triggered(when.entersSelf, [fx.countersDivided(2, ref.target())], {
-        targets: [target.upTo(2, targetCreatureOrVehicle("t", { controller: "you", other: true }))],
+        targets: [target.between(1, 2, targetCreatureOrVehicle("t", { controller: "you", other: true }))],
         label: "Répartissez deux marqueurs +1/+1",
       }),
     ],
