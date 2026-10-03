@@ -1616,7 +1616,12 @@ export function manaAbility(
 ): ManaAbilityDef {
   return {
     kind: "mana",
-    cost: { tap: !opts.noTap, sacrificeSelf: opts.sacrifice, payLife: opts.payLife, collectEvidence: opts.collectEvidence },
+    cost: {
+      tap: !opts.noTap,
+      self: opts.sacrifice ? "sacrifice" : undefined,
+      payLife: opts.payLife,
+      collectEvidence: opts.collectEvidence,
+    },
     addCounter: opts.addCounter,
     removeCounter: opts.removeCounter,
     produceLinkedColors: opts.linkedColors,
@@ -1723,7 +1728,17 @@ export function activated(opts: {
     cost: {
       mana: opts.mana ? parseManaCost(opts.mana) : undefined,
       tap: opts.tap,
-      sacrificeSelf: opts.sacrifice,
+      self: opts.sacrifice
+        ? "sacrifice"
+        : opts.exileSelf
+          ? "exile"
+          : opts.discardSelf
+            ? "discard"
+            : opts.bounceSelf
+              ? "bounce"
+              : opts.exert
+                ? "exert"
+                : undefined,
       sacrifice: opts.sacrificeOther
         ? {
             filter: opts.sacrificeOther.filter,
@@ -1734,12 +1749,8 @@ export function activated(opts: {
       removeCounters: opts.removeCounters,
       tapOthers: opts.tapOthers,
       tapAttached: opts.tapAttached,
-      exertSelf: opts.exert,
       payLife: opts.payLife,
       payLifeX: opts.payLifeX,
-      exileSelf: opts.exileSelf,
-      discardSelf: opts.discardSelf,
-      bounceSelf: opts.bounceSelf,
       addCounters: opts.addCounters,
       exileFromGraveyard: opts.exileFromGraveyard
         ? { filter: opts.exileFromGraveyard.filter, count: opts.exileFromGraveyard.count ?? 1 }

@@ -443,7 +443,12 @@ export interface ActivatedAbilityDef {
 export interface CostDef {
   mana?: ManaCost;
   tap?: boolean;
-  sacrificeSelf?: boolean;
+  /**
+   * Ce qu'on fait de la source pour payer : la sacrifier, l'exiler (du champ de bataille ou du cimetière), la défausser
+   * (capacité activée depuis la main), la renvoyer dans la main (Maze's End), l'épuiser (701.43 : elle ne se dégagera pas
+   * lors de la prochaine étape de dégagement de son contrôleur).
+   */
+  self?: "sacrifice" | "exile" | "discard" | "bounce" | "exert";
   /**
    * Fabrication (702.167) : exiler des matériaux parmi les autres permanents que vous contrôlez et/ou les cartes de votre
    * cimetière (choisis automatiquement, cartes du cimetière d'abord). `each` : un matériau par filtre (The Grim Captain) ;
@@ -492,8 +497,6 @@ export interface CostDef {
   tapOthers?: { filter: ObjectFilter; count: number; includeSelf?: boolean };
   /** Engager la créature à laquelle la source est attachée (elle doit pouvoir utiliser {T}). */
   tapAttached?: boolean;
-  /** Épuiser la source (701.43) : elle ne se dégagera pas lors de la prochaine étape de dégagement de son contrôleur. */
-  exertSelf?: boolean;
   /** Capacité de loyauté (606) : marqueurs de loyauté ajoutés (+N) ou retirés (−N). */
   loyalty?: number;
   /** « −X » : X marqueurs de loyauté retirés (X choisi à l'activation). */
@@ -509,12 +512,6 @@ export interface CostDef {
   sacrificeX?: ObjectFilter;
   /** Exiler d'autres cartes de votre cimetière (choisies automatiquement : Gallia). */
   exileFromGraveyard?: { filter: ObjectFilter; count: number };
-  /** Exiler la source (depuis le champ de bataille ou le cimetière). */
-  exileSelf?: boolean;
-  /** « Défaussez cette carte » (capacité activée depuis la main). */
-  discardSelf?: boolean;
-  /** Renvoyer la source dans la main de son propriétaire (Maze's End). */
-  bounceSelf?: boolean;
   /** Mettre des marqueurs sur la source (Mazemind Tome : marqueur de page). */
   addCounters?: { kind: string; n: number };
   /** Équipage N (702.122) : engager des créatures dégagées de force totale N ou plus (choisies automatiquement). */

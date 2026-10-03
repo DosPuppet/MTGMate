@@ -75,7 +75,13 @@ function producesAll(c: CardDef, colors: ManaType[]): boolean {
   const s = scenario({ p1: { battlefield: [c] } });
   const id = idOf(s, "p1", "battlefield", c.name);
   return manaAbilitiesOf(s, id).some(
-    (a) => a.cost.tap && !a.cost.mana && !a.cost.payLife && !a.cost.sacrificeSelf && a.amount === 1 && sameSet(a.produce, colors),
+    (a) =>
+      a.cost.tap &&
+      !a.cost.mana &&
+      !a.cost.payLife &&
+      a.cost.self !== "sacrifice" &&
+      a.amount === 1 &&
+      sameSet(a.produce, colors),
   );
 }
 

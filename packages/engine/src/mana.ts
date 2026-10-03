@@ -335,7 +335,7 @@ export function manaSources(
       // Mana restreint : seulement utilisable par le solveur pour un paiement autorisé.
       if (!restrictionAllows(s, id, ab, player, purpose)) return;
       if (ab.tapAnother && !otherToTap(s, id, true)) return;
-      if (ab.cost.sacrificeSelf && purpose?.sacrificedForCost?.has(id)) return;
+      if (ab.cost.self === "sacrifice" && purpose?.sacrificedForCost?.has(id)) return;
       if (ab.cost.collectEvidence && !evidenceCards(s, o.controller, id, ab.cost.collectEvidence, kept(purpose, exclude))) return;
       // Aucune couleur possible (Pit of Offerings sans carte exilée colorée) : la capacité ne produit rien (106.7).
       if (ab.produce.length === 0) return;
@@ -346,8 +346,8 @@ export function manaSources(
         amount: manaAmount(s, id, ab),
         ...(ab.combination && ab.produce.length > 1 ? { combination: true } : {}),
         isCreature: defOf(s, id).types.includes("Creature"),
-        sacrifice: !!ab.cost.sacrificeSelf,
-        key: ab.cost.tap || ab.cost.sacrificeSelf ? id : `${id}#${i}`,
+        sacrifice: ab.cost.self === "sacrifice",
+        key: ab.cost.tap || ab.cost.self === "sacrifice" ? id : `${id}#${i}`,
       });
     });
   }
@@ -493,7 +493,7 @@ export function activateManaAbility(
     !!ab.cost.tap &&
     !ab.oncePerTurn &&
     !ab.tapAnother &&
-    !ab.cost.sacrificeSelf &&
+    ab.cost.self !== "sacrifice" &&
     !ab.cost.payLife &&
     !ab.addCounter &&
     !ab.removeCounter &&
@@ -504,12 +504,12 @@ export function activateManaAbility(
   // Source sacrifiée pour son coût (Trésor) : la quantité et les remplacements de mana se lisent d'après sa dernière
   // information connue, avant le sacrifice (Roxanne, Starfall Savant et un Trésor : deux mana), comme le solveur les a
   // comptés.
-  const before = ab.cost.sacrificeSelf ? { amount: manaAmount(s, id, ab), reps: manaReplacements(s, id, ab) } : null;
+  const before = ab.cost.self === "sacrifice" ? { amount: manaAmount(s, id, ab), reps: manaReplacements(s, id, ab) } : null;
   const amountNow = () => before?.amount ?? manaAmount(s, id, ab);
   if (ab.cost.tap) tapObject(s, o);
   if (ab.oncePerTurn) s.turn.onceFired.push(`mana:${id}`);
   if (ab.tapAnother) tapObject(s, obj(s, otherToTap(s, id) as ObjectId));
-  if (ab.cost.sacrificeSelf) sacrifice(s, id);
+  if (ab.cost.self === "sacrifice") sacrifice(s, id);
   // Haunted Screen : « {T}, payez 1 point de vie » ; Twitching Doll : « mettez un marqueur de nid sur cette créature ».
   if (ab.cost.payLife) payLife(s, player, ab.cost.payLife);
   // Cryptex : « {T}, réunissez des preuves 3 : ajoutez un mana… ».

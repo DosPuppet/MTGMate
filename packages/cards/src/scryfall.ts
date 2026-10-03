@@ -340,7 +340,7 @@ export function parseCycling(text: string): CardDef["abilities"][number] | undef
           : undefined;
   return {
     kind: "activated",
-    cost: { mana: parseManaCost(m[2] as string), discardSelf: true },
+    cost: { mana: parseManaCost(m[2] as string), self: "discard" },
     targets: [],
     effects: filter
       ? [{ op: "search", filter, count: 1, to: { to: "hand" } }]

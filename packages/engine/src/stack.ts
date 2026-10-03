@@ -3109,7 +3109,7 @@ export function activateAbility(s: GameState, player: PlayerId, source: ObjectId
     o.crewedBy = { turn: s.turn.number, ids: [...crew] };
     rulesEvent(s, { e: "crewed", vehicle: source, crew: [...crew] });
   }
-  if (ab.cost.exertSelf) o.exerted = true;
+  if (ab.cost.self === "exert") o.exerted = true;
   // « Retirez un marqueur de cette créature » : les sortes choisies (`counterKind`), sinon le choix par défaut.
   if (ab.cost.removeCounters?.kind === "any") {
     const n = ab.cost.removeCounters.n;
@@ -3127,9 +3127,9 @@ export function activateAbility(s: GameState, player: PlayerId, source: ObjectId
     tapped: tapOthers.length ? [...tapOthers] : undefined,
   };
   for (const id of sacrificed) sacrificePermanent(s, id);
-  if (ab.cost.sacrificeSelf) sacrificePermanent(s, source);
+  if (ab.cost.self === "sacrifice") sacrificePermanent(s, source);
   // La source quitte sa zone pour payer le coût : on garde ses dernières informations (« cette carte », où qu'elle soit).
-  if (ab.cost.exileSelf || ab.cost.discardSelf || ab.cost.bounceSelf) s.lki[source] ??= snapshot(s, source);
+  if (ab.cost.self === "exile" || ab.cost.self === "discard" || ab.cost.self === "bounce") s.lki[source] ??= snapshot(s, source);
   // Coûts payés avec des objets choisis par le joueur (sinon la suggestion du moteur) : `activationPicks`.
   const pick = (slot: CostSlot) => pickNow(s, player, source, ab, x, slot, choices);
   if (ab.cost.exileFromGraveyard) for (const id of pick("graveyardExile")) moveObject(s, id, "exile");
@@ -3216,14 +3216,14 @@ export function activateAbility(s: GameState, player: PlayerId, source: ObjectId
     if (!cards) throw new RulesError("Pas assez de symboles de mana dans votre cimetière");
     item.paid = { ...item.paid, exiled: cards.map((id) => moveObject(s, id, "exile")).filter((id): id is string => !!id) };
   }
-  if (ab.cost.exileSelf) moveObject(s, source, "exile");
-  if (ab.cost.discardSelf) {
+  if (ab.cost.self === "exile") moveObject(s, source, "exile");
+  if (ab.cost.self === "discard") {
     const card = moveObject(s, source, "graveyard");
     announceDiscard(s, player, card);
     announceDiscardBatch(s, player, 1);
     if (ab.cycling && card) rulesEvent(s, { e: "cycled", player, card, x });
   }
-  if (ab.cost.bounceSelf) moveObject(s, source, "hand");
+  if (ab.cost.self === "bounce") moveObject(s, source, "hand");
   s.priority.passes = 0;
   emit({ type: "activate", player, stackId: item.id, defId: o.defId, targets: flatTargets(targets) });
   logTurnEvent(s, {
