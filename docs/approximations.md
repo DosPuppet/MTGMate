@@ -151,6 +151,7 @@ Dans l'ordre où elles ont été ajoutées, extension par extension.
   - `choix auto` Kastral (premier mode) : un Oiseau de votre main, sinon de votre cimetière ;
   - `règle` Thought-Stalker Warlock : « si il a perdu des points de vie ce tour-ci » est vérifié pour l'adversaire ciblé.
 - **The Lost Caverns of Ixalan (`docs/extensions/lci.md`) :**
+  - `règle` Guardian of the Great Door : n'est proposé que si les quatre permanents engagés par défaut (choisis sans tenir compte du paiement) laissent de quoi payer {W}{W} ; un choix explicite est accepté ;
   - `règle` mana des Cavernes (Bat Colony) et « en utilisant du mana produit par [source] » (Tecutlan, The Myriad Pools) : seulement le mana engagé par le paiement automatique ;
   - `règle` Warden of the Inner Sky : seuls les marqueurs +1/+1 comptent (« trois marqueurs ou plus ») ;
   - `règle` Glowcap Lantern : on peut regarder la carte du dessus tant qu'on contrôle l'Équipement, même non attaché ;

@@ -194,7 +194,9 @@ export const CRAFT: Record<string, CardScript> = {
           fx.sacrifice(ref.you, { types: ["Artifact"], other: true }, 1, { optional: true, store: "s" }),
           ...fx.when(
             cond.v("s"),
-            fx.reflexive([target.creature()], [fx.damage(amount.powerOf(ref.eventObject), ref.target(), ref.eventObject)]),
+            fx.reflexive([target.creature()], [fx.damage(amount.powerOf(ref.target("a")), ref.target(), ref.target("a"))], {
+              a: ref.eventObject,
+            }),
           ),
         ],
         { label: "Sacrifiez un artefact : blessures égales à sa force" },
@@ -229,7 +231,7 @@ export const CRAFT: Record<string, CardScript> = {
   "Jade Seedstones": {
     abilities: [
       triggered(when.entersSelf, [fx.countersDivided(3, ref.target())], {
-        targets: [{ ...target.upTo(3, target.creature("t", { controller: "you" })), optional: false }],
+        targets: [target.between(1, 3, target.creature("t", { controller: "you" }))],
         label: "Répartissez trois marqueurs +1/+1",
       }),
       craft("{5}{G}{G}", { ...CREATURE, preferHighManaValue: true }),

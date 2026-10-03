@@ -212,7 +212,7 @@ export const BLUE: Record<string, CardScript> = {
   "Hurl into History": {
     spell: spell(
       [target.spell("t", { anyOf: [{ types: ["Artifact"] }, { types: ["Creature"] }] }, "sort d'artefact ou de créature")],
-      [fx.discover(amount.manaValueOf(ref.target())), fx.counter(ref.target())],
+      [fx.counter(ref.target()), fx.discover(amount.manaValueOf(ref.target()))],
     ),
   },
   "Zoetic Glyph": {
@@ -235,10 +235,14 @@ export const BLUE: Record<string, CardScript> = {
   "The Myriad Pools": {
     abilities: [
       manaAbility("U"),
-      triggered(when.castSpell("you", { permanent: true }), [fx.becomeCopy(ref.target(), ref.eventObject)], {
-        targets: [target.optional(targetObj("t", { controller: "you", other: true }, "autre permanent que vous contrôlez"))],
-        label: "Un permanent devient une copie du sort",
-      }),
+      triggered(
+        { on: "castSpell", by: "you", filter: { permanent: true }, usingManaFromSelf: true },
+        [fx.becomeCopy(ref.target(), ref.eventObject)],
+        {
+          targets: [target.optional(targetObj("t", { controller: "you", other: true }, "autre permanent que vous contrôlez"))],
+          label: "Un permanent devient une copie du sort",
+        },
+      ),
     ],
   },
 };

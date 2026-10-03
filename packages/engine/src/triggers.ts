@@ -460,6 +460,9 @@ export function checkCondition(
     case "eventObjectMatches": {
       // Au déclenchement : l'objet de l'événement (ses dernières informations connues s'il est parti).
       if (!eventObject) return false;
+      // Encore sur le champ de bataille : le filtre complet (« arrivée ce tour-ci », marqueurs mis ce tour-ci…).
+      if (s.objects[eventObject]?.zone === "battlefield" && !s.lki[eventObject])
+        return matchesObjectFilter(s, controller, eventObject, c.filter, sourceId);
       const v = s.lki[eventObject] ?? (s.objects[eventObject] ? snapshot(s, eventObject) : undefined);
       return !!v && matchesView(v, c.filter, controller, sourceId);
     }

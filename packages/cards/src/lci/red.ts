@@ -242,7 +242,8 @@ export const RED: Record<string, CardScript> = {
           ...fx.may(
             "Sacrifier Sunfire Torch ?",
             fx.sacrificeIt(ref.self),
-            fx.reflexive([target.any()], [fx.damage(2, ref.target(), ref.eventObject)]),
+            // La créature attaquante, liée à la capacité réflexive (l'objet de l'événement n'y est plus connu).
+            fx.reflexive([target.any()], [fx.damage(2, ref.target(), ref.target("a"))], { a: ref.eventObject }),
           ),
         ],
         { label: "Sacrifiez-la : 2 blessures" },
@@ -366,6 +367,7 @@ export const RED: Record<string, CardScript> = {
       ],
       [
         fx.moveTo(ref.target(), { to: "libraryTop", shuffle: true }, { name: "z" }),
+        // Le propriétaire de la carte mélangée découvre (fixé au premier passage de la découverte).
         fx.discover(amount.manaValueOf(ref.stored("z")), { who: ref.controllerOf(ref.stored("z")) }),
       ],
     ),

@@ -63,8 +63,11 @@ const temple = (c: "W" | "U" | "B" | "R" | "G", condition: Parameters<typeof con
 
 /** Cosmium Confluence : « choisissez trois ; le même mode peut être choisi plusieurs fois » (toutes les combinaisons). */
 const confluence = (): ModeDef[] => {
+  /** « sur une Caverne que vous contrôlez » : choisie à la résolution, sans cibler (le même mode peut viser la même). */
   const cave = (i: number) =>
-    target.permanent(`c${i}`, ["Land"], { subtype: "Cave", controller: "you" }, "Caverne que vous contrôlez");
+    fx.chooseAmong(ref.permanentsOf(ref.you, { types: ["Land"], subtype: "Cave" }), ref.you, `c${i}`, {
+      prompt: "Caverne qui reçoit trois marqueurs +1/+1",
+    });
   const ench = (i: number) => targetObj(`e${i}`, { types: ["Enchantment"] }, "enchantement");
   const modes: { label: string; targets: (i: number) => TargetSpec[]; effects: (i: number) => Effect[] }[] = [
     {
@@ -74,11 +77,12 @@ const confluence = (): ModeDef[] => {
     },
     {
       label: "Caverne 0/0 avec trois marqueurs",
-      targets: (i) => [cave(i)],
+      targets: () => [],
       effects: (i) => [
-        fx.counters(ref.target(`c${i}`), "+1/+1", 3),
+        cave(i),
+        fx.counters(ref.stored(`c${i}`), "+1/+1", 3),
         fx.modify(
-          ref.target(`c${i}`),
+          ref.stored(`c${i}`),
           { addTypes: ["Creature"], addSubtypes: ["Elemental"], setPower: 0, setToughness: 0, addKeywords: ["haste"] },
           "permanent",
         ),

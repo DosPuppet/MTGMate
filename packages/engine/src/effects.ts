@@ -172,6 +172,8 @@ export function evalCondition(s: GameState, ctx: EffectContext, c: Condition): b
     case "targetMatches":
       // « Si [la cible] … » pendant la résolution (cible encore présente, ou ses dernières informations).
       return (ctx.targets[c.spec] ?? []).some((id) => {
+        // Encore sur le champ de bataille : le filtre complet (« arrivée ce tour-ci »… : Malamet Battle Glyph).
+        if (s.objects[id]?.zone === "battlefield") return matchesObjectFilter(s, ctx.controller, id, c.filter, ctx.sourceId);
         const v = s.lki[id] && !s.objects[id] ? s.lki[id] : viewOf(s, id);
         return !!v && matchesView(v, c.filter, ctx.controller, ctx.sourceId);
       });

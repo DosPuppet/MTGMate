@@ -228,8 +228,13 @@ export const RECORD_VERSION = 1;
  *   piétinement aux Véhicules ; Cloudspire Skycycle (une ou deux cibles), Cloudspire Coordinator (journal du tour),
  *   Demonic Junker (seulement si la créature est détruite), Gastal Thrillroller (défausse en coût), Gonti (mana de
  *   n'importe quel type), Full Throttle (toutes les créatures qui ont attaqué), Lifecraft Engine (Véhicules pilotés).
+ * - 81 : une condition sur une cible ou l'objet de l'événement encore sur le champ de bataille lit le filtre complet
+ *   (« arrivée ce tour-ci », Malamet Battle Glyph) ; le joueur qui découvre est fixé au premier passage (Zoyowa's
+ *   Justice) ; The Lost Caverns of Ixalan (lot K8) : The Ancient One, Dire Blunderbuss, Sunfire Torch (objets liés aux
+ *   capacités réflexives), Cosmium Confluence (Caverne choisie, non ciblée), The Myriad Pools (mana du terrain), Jade
+ *   Seedstones (une à trois cibles), Hurl into History (contrecarre, puis découvre).
  */
-export const RULES_VERSION = 80;
+export const RULES_VERSION = 81;
 
 /** Un point de contrôle toutes les N décisions (plus la dernière de la partie). */
 export const CHECKPOINT_EVERY = 25;

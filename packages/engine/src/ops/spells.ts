@@ -48,8 +48,13 @@ import type { ChoiceValue, GameState, ManaCost, ObjectId, PlayerId, Resolution }
 
 export const HANDLERS: OpHandlers = {
   discover(s, r, e, ctx, key) {
-    const p = e.who ? resolveRef(s, ctx, e.who).find((x) => isPlayer(s, x)) : ctx.controller;
+    // Le joueur qui découvre est fixé au premier passage : à la reprise, la carte qui le désignait a pu changer de zone
+    // (Zoyowa's Justice : « le contrôleur de la créature » renvoyée en bibliothèque).
+    const p =
+      (r.vars[key("who")]?.[0] as string | undefined) ??
+      (e.who ? resolveRef(s, ctx, e.who).find((x) => isPlayer(s, x)) : ctx.controller);
     if (!p) return;
+    r.vars[key("who")] = [p];
     // La résolution peut reprendre après la question : l'exil n'a lieu qu'une fois.
     if (!r.vars[key("done")]) {
       const n = evalAmount(s, ctx, e.n);

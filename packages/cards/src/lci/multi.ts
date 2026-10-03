@@ -123,7 +123,7 @@ export const MULTI: Record<string, CardScript> = {
         effects: [
           fx.draw(1),
           fx.discard(1, ref.you, { store: "d" }),
-          fx.reflexive([target.player()], [fx.mill(amount.manaValueOf(ref.stored("d")), ref.target())]),
+          fx.reflexive([target.player()], [fx.mill(amount.manaValueOf(ref.target("d")), ref.target())], { d: ref.stored("d") }),
         ],
         label: "Pillage ; un joueur meule",
       }),
