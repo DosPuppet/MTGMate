@@ -1,7 +1,7 @@
 import { useEffect } from "react";
 import { Board, useMainAction } from "./board/Board";
 import { ReplayBar } from "./board/ReplayBar";
-import { DrawerToggle, Sidebar, TouchPreview } from "./board/Sidebar";
+import { DrawerToggle, HoverPreview, Sidebar, TouchPreview } from "./board/Sidebar";
 import { DeckBuilder } from "./decks/DeckBuilder";
 import { Lobby } from "./lobby/Lobby";
 import { Online } from "./lobby/Online";
@@ -55,7 +55,8 @@ function useShortcuts() {
       } else if (e.code === "Enter" || e.code === "NumpadEnter") {
         e.preventDefault();
         const v = useGame.getState().view;
-        if (v && v.turn.active === v.viewer && v.pending?.player === v.viewer) endTurn(e.shiftKey);
+        // À votre tour : jusqu'à la fin du tour ; au tour adverse : jusqu'à votre tour.
+        if (v && v.pending?.player === v.viewer) endTurn(e.shiftKey);
       } else if (e.code === "Escape") {
         const s = useGame.getState();
         if (s.peek) s.setPeek(null);
@@ -83,6 +84,7 @@ function GameScreen() {
       <DrawerToggle />
       <Prompts />
       <TouchPreview />
+      <HoverPreview />
       <Coach />
       <div className="rotate-hint">
         <div className="rotate-icon">⟳</div>

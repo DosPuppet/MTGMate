@@ -125,6 +125,8 @@ export interface LogLine {
   id: number;
   text: string;
   kind: "turn" | "me" | "opp" | "info" | "win" | "lose";
+  /** Cartes nommées dans la ligne : leur nom y est survolable (aperçu). */
+  cards?: CardFace[];
 }
 
 let nextLine = 1;
@@ -142,7 +144,13 @@ export function describeEvents(
   const who = (p: string) => (p === me ? "Vous" : (view.players[p]?.name ?? "L'adversaire"));
   const whom = (p: string) => (p === me ? "vous" : (view.players[p]?.name ?? "l'adversaire"));
   const kind = (p: string): LogLine["kind"] => (p === me ? "me" : "opp");
-  const name = (defId?: string) => faceName(defId ? faces[defId] : undefined, lang);
+  // Cartes citées par la ligne en cours (noms survolables dans le journal).
+  let cited: CardFace[] = [];
+  const cite = (f: CardFace | undefined) => {
+    if (f && f.defId !== "face-down" && f.defId !== HIDDEN_CARD_ID && !cited.some((c) => c.defId === f.defId)) cited.push(f);
+    return f;
+  };
+  const name = (defId?: string) => faceName(cite(defId ? faces[defId] : undefined), lang);
   const targetName = (id: string) => {
     if (view.players[id]) return whom(id);
     const o =
@@ -153,11 +161,17 @@ export function describeEvents(
       Object.values(view.players)
         .flatMap((p) => p.graveyard)
         .find((x) => x.id === id);
-    return o ? faceName(o, lang) : "une cible";
+    return o ? faceName(cite(faces[o.defId] ?? o), lang) : "une cible";
   };
   const out: LogLine[] = [];
-  const add = (text: string, k: LogLine["kind"]) => out.push({ id: nextLine++, text, kind: k });
+  const add = (text: string, k: LogLine["kind"]) => {
+    out.push({ id: nextLine++, text, kind: k, ...(cited.length ? { cards: cited } : {}) });
+    cited = [];
+  };
+  // Blessures à un joueur : la perte de PV qui suit est la même (déjà dite par la ligne des blessures).
+  let hurt: { player: string; amount: number } | null = null;
   for (const e of events) {
+    cited = [];
     switch (e.type) {
       case "gameStart":
         add(`${who(e.startingPlayer)} commence${e.startingPlayer === me ? "z" : ""}.`, "info");
@@ -230,10 +244,15 @@ export function describeEvents(
         break;
       case "damage":
         add(`${name(e.sourceDefId)} inflige ${e.amount} à ${e.targetDefId ? name(e.targetDefId) : whom(e.target)}.`, "info");
+        if (!e.targetDefId) hurt = { player: e.target, amount: e.amount };
         break;
       case "life":
         if (e.delta > 0)
           add(`${who(e.player)} ${e.player === me ? "gagnez" : "gagne"} ${e.delta} PV (${e.life}).`, kind(e.player));
+        else if (e.delta < 0) {
+          if (hurt && hurt.player === e.player && hurt.amount === -e.delta) hurt = null;
+          else add(`${who(e.player)} ${e.player === me ? "perdez" : "perd"} ${-e.delta} PV (${e.life}).`, kind(e.player));
+        }
         break;
       case "dies":
         // Un remplacement peut changer la destination : exilée au lieu de mourir, mélangée dans la bibliothèque.

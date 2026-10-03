@@ -928,6 +928,11 @@ export function useMainAction(): { label: string; run?: () => void; disabled?: b
     }
     case "declareBlockers": {
       const entries = Object.entries(s.blocks);
+      // Menace (702.110) signalée pendant la déclaration : un seul bloqueur sur une créature qui a la menace.
+      const per = new Map<string, number>();
+      for (const [, a] of entries) per.set(a, (per.get(a) ?? 0) + 1);
+      const menace = [...per].find(([a, n]) => n === 1 && v.battlefield.find((o) => o.id === a)?.keywords.includes("menace"));
+      if (menace) return { label: "Menace : deux bloqueurs ou plus", disabled: true };
       return {
         label: entries.length ? `Bloquer (${entries.length})` : "Pas de blocage",
         hot: true,
@@ -1019,15 +1024,19 @@ function ActionPanel() {
             Pas d'attaque
           </button>
         )}
-      {myTurn && mine && !view.over && (
+      {mine && !view.over && (
         <button
           type="button"
           className="btn small ghost"
           data-tuto="end-turn"
           onClick={(e) => endTurn(e.shiftKey)}
-          title="Entrée : passer jusqu'à la fin du tour (s'arrête si un adversaire agit) ; Maj+Entrée ou Maj+clic : tout laisser passer"
+          title={
+            myTurn
+              ? "Entrée : passer jusqu'à la fin du tour (s'arrête si un adversaire agit) ; Maj+Entrée ou Maj+clic : tout laisser passer"
+              : "Entrée : passer jusqu'à votre tour (s'arrête si l'adversaire lance un sort, et pour vos blocages) ; Maj+Entrée ou Maj+clic : tout laisser passer"
+          }
         >
-          Passer le tour ⏎
+          {myTurn ? "Passer le tour ⏎" : "Jusqu'à mon tour ⏎"}
         </button>
       )}
     </div>

@@ -1156,7 +1156,9 @@ function nextCombatAssignment(s: GameState): void {
         ? { player: a.defender, needs: Object.fromEntries(blockers.map((b) => [b, lethalFor(s, b, deathtouch)])) }
         : undefined,
       suggested: among.map((id) => suggestedMap[id] ?? 0),
-      autoOk: true,
+      // Plusieurs bloqueurs : le joueur répartit (suggestion préremplie) ; un bloqueur et le piétinement : l'automatisme
+      // donne les blessures mortelles au bloqueur et le reste au joueur (PLAN-C, C18).
+      autoOk: blockers.length <= 1,
     },
     { kind: "combatDamage", attacker },
   );

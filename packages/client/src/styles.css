@@ -1168,6 +1168,41 @@ button {
 .glow-activatable {
   box-shadow: 0 0 0 2px rgba(140, 240, 160, 0.8);
 }
+/* Accessibilité : une forme en plus de la couleur (PLAN-C, C18). Attaque et blocage : pastille d'épée ou de bouclier ;
+   sélectionnable et sélectionnée : contour pointillé ou plein ; cible : pulsation ; choisie : coche. */
+.card.glow-attacking::before,
+.card.glow-blocking::before {
+  position: absolute;
+  top: 4%;
+  left: 50%;
+  translate: -50% 0;
+  z-index: 3;
+  width: 24%;
+  aspect-ratio: 1;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  color: #fff;
+  font-size: clamp(10px, 2vh, 18px);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.6);
+  pointer-events: none;
+}
+.card.glow-attacking::before {
+  content: "⚔";
+  background: color-mix(in srgb, var(--attack) 85%, black);
+}
+.card.glow-blocking::before {
+  content: "⛨";
+  background: color-mix(in srgb, var(--block) 85%, black);
+}
+.card.glow-selectable {
+  outline: 2px dashed rgba(255, 255, 255, 0.8);
+  outline-offset: 3px;
+}
+.card.glow-selected {
+  outline: 2px solid var(--gold);
+  outline-offset: 3px;
+}
 .avatar.glow-target {
   border-color: var(--target);
 }
@@ -1515,6 +1550,22 @@ button {
 .log-line.lose {
   color: #ff8d80;
   font-weight: 700;
+}
+/* Nom de carte du journal : survolable (aperçu dans la barre latérale). */
+.log-card {
+  all: unset;
+  cursor: help;
+  text-decoration: underline dotted;
+  text-decoration-color: color-mix(in srgb, currentColor 45%, transparent);
+  text-underline-offset: 2px;
+}
+.log-card:hover,
+.log-card:focus-visible {
+  color: var(--gold);
+}
+.log-card:focus-visible {
+  outline: 1px solid var(--gold);
+  outline-offset: 1px;
 }
 
 /* ------------------------------------------------------------------------ */
@@ -2177,6 +2228,35 @@ button {
 }
 
 /* Aperçu d'une carte au doigt (appui long), en surimpression. */
+/* Choix du mode d'un sort modal : la carte à côté de ses modes. */
+.mode-pick {
+  --mode-card-w: clamp(120px, 20vh, 180px);
+  display: flex;
+  gap: 14px;
+  align-items: flex-start;
+}
+.mode-pick .choice-list {
+  flex: 1;
+}
+/* Question oui / non : la carte qui la pose. */
+.yes-no-source {
+  --board-choice-w: clamp(110px, 17vh, 170px);
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  margin-bottom: 10px;
+}
+.yes-no-source .board-choice-effect {
+  max-width: 280px;
+}
+/* Aperçu à la souris sur écran étroit (barre latérale en tiroir) : suit le pointeur. */
+.hover-preview {
+  position: fixed;
+  z-index: 150;
+  pointer-events: none;
+  border-radius: 12px;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.6);
+}
 .touch-preview {
   position: fixed;
   inset: 0;

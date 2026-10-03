@@ -61,6 +61,18 @@ Plan établi le 02/10/2026 (branche `dev`) : il sert de feuille de route aux pro
   - **tests :** 2 (répartition des blessures de combat, mulligan sur la courbe) ;
   - **remarque :** des décisions de priorité du niveau moyen prennent 1,5 à 4 s sur des plateaux de 50 à 90 permanents (parties à quatre), déjà avant C17 (`docs/ia.md`, « Pièges ») ;
   - **tournoi de référence** (élevé contre moyen, tout le pool et méta) : en cours, consigné dans `docs/ia.md` au lot suivant.
+- **03/10/2026 : correctif hors lot** (`RULES_VERSION` = 71) : le tournoi de référence a trouvé une erreur interne (« Paiement incohérent ») : un Trésor sacrifié pour son mana produisait sans les remplacements de mana (Roxanne, Starfall Savant), que le solveur avait comptés. Quantité et remplacements lus d'après la dernière information connue ; test tiré des décisions officielles ; `ai-arena --first N` et partie fautive signalée.
+- **03/10/2026 : C18 fait en partie** (sans changement de règles) :
+  - **journal :** perte de PV hors blessures (sans répéter celle des blessures) ; noms de cartes survolables (aperçu gardé comme pour les cartes du plateau ; au toucher, en surimpression ; au clavier, focus) ;
+  - **« Jusqu'à mon tour »** pendant le tour adverse (bouton et Entrée), qui s'arrête aux blocages et, en passe douce, à un sort adverse ;
+  - **aperçu à la souris sous 1 100 px**, près du pointeur ;
+  - **ordre des déclencheurs** proposé hors contrôle total quand les capacités diffèrent ; **répartition des blessures de combat** proposée à partir de deux bloqueurs (suggestion préremplie) ; la répartition contrôle le minimum par destinataire et le létal du piétinement ;
+  - **menace** signalée pendant la déclaration des bloqueurs ; « Attaquer avec tous » vers la dernière cible choisie ;
+  - **carte source** dans les questions oui / non ; **modes illustrés** par la carte lancée ;
+  - **libellés** de toutes les sortes de marqueurs du Standard (8 → 60) ;
+  - **accessibilité :** formes en plus des couleurs (épée, bouclier, contours pointillé ou plein) ; règles de Biome `noNoninteractiveElementInteractions` et `useKeyWithClickEvents` réactivées (équivalents clavier : Échap, focus) ;
+  - **non fait :** choix des terrains au paiement et de l'hybride (l'engagement manuel des terrains avant de lancer, C5, permet déjà de choisir) ; regard et surveillance par glisser ; `Card` mémoïsé (les vues sont recréées à chaque mise à jour : une comparaison sur mesure, à mesurer) ; tailles en `rem` ; `noStaticElementInteractions` (12 cas) ;
+  - **vérification :** test du journal (perte de PV, cartes citées) ; script Playwright ponctuel avec captures (aperçu étroit, noms du journal, « Jusqu'à mon tour », pastille d'attaque) ; `verify --set META --ui` vert (dont `tutorial-smoke`).
 
 ## Décisions et ordre
 
@@ -94,7 +106,7 @@ Plan établi le 02/10/2026 (branche `dev`) : il sert de feuille de route aux pro
 | 16 | C15 : performances | § 5.8 | C10, C11 | M | ✅ |
 | 17 | C16 : serveur et exploitation | § 7 | C3 | M | ✅ |
 | 18 | C17 : IA | § 8 | C8, C9 | M | ✅ |
-| 19 | C18 : interface | § 9 | C7 | M/L | |
+| 19 | C18 : interface | § 9 | C7 | M/L | ✅ en partie |
 | 20 | C19 : données | § 7 | — | S | |
 | 21 | C20 (facultatif) : découpage de `stack.ts` | § 5.2 | C7 à C12 | M | |
 

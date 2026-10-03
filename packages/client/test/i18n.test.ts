@@ -35,4 +35,20 @@ describe("textes de l'interface", () => {
       "Bob perd (10 marqueurs poison).",
     ]);
   });
+
+  it("journal : perte de PV hors blessures, sans répéter celle des blessures ; noms de cartes cités par ligne", () => {
+    const lines = describeEvents(
+      [
+        { type: "damage", sourceDefId: "bolt", target: "p2", amount: 3, combat: false },
+        { type: "life", player: "p2", delta: -3, life: 17 },
+        { type: "life", player: "p1", delta: -2, life: 18 },
+      ],
+      view,
+      faces,
+      "fr",
+    );
+    expect(lines.map((l) => l.text)).toEqual(["Foudre inflige 3 à Bob.", "Vous perdez 2 PV (18)."]);
+    expect(lines[0]?.cards?.map((c) => c.defId)).toEqual(["bolt"]);
+    expect(lines[1]?.cards).toBeUndefined();
+  });
 });

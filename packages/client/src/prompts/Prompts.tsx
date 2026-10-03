@@ -343,14 +343,19 @@ function CastingPrompt() {
   if (!casting) return null;
   const opt = casting.option;
   if (casting.stage === "mode" && opt.type === "cast") {
+    // La carte lancée, à côté de ses modes (survolable : texte complet dans l'aperçu).
+    const card = view && [...view.hand, ...view.playableElsewhere, ...view.battlefield].find((o) => o.id === opt.card);
     return (
       <Modal title="Choisissez un mode">
-        <div className="choice-list">
-          {opt.modes.map((m) => (
-            <button key={m.index} type="button" className="btn choice" onClick={() => chooseMode(m.index)}>
-              {m.label ?? `Mode ${m.index + 1}`}
-            </button>
-          ))}
+        <div className="mode-pick">
+          {card && <Card face={card} obj={card} width="var(--mode-card-w)" hoverable />}
+          <div className="choice-list">
+            {opt.modes.map((m) => (
+              <button key={m.index} type="button" className="btn choice" onClick={() => chooseMode(m.index)}>
+                {m.label ?? `Mode ${m.index + 1}`}
+              </button>
+            ))}
+          </div>
         </div>
         <div className="modal-actions">
           <button type="button" className="btn ghost" onClick={cancel}>
@@ -631,8 +636,8 @@ function ExileViewer() {
     if (src) for (const id of ids) holder.set(id, faceName(src, lang));
   }
   return (
-    <div className="modal-backdrop" onClick={() => close(null)}>
-      <div className="modal wide" onClick={(e) => e.stopPropagation()}>
+    <div className="modal-backdrop" onClick={() => close(null)} onKeyDown={(e) => e.key === "Escape" && close(null)}>
+      <div className="modal wide" role="dialog" onClick={(e) => e.stopPropagation()} onKeyDown={(e) => e.stopPropagation()}>
         <h2>
           Exil — {open === view.viewer ? "vous" : player.name} ({cards.length})
         </h2>
@@ -678,8 +683,8 @@ function GraveyardViewer() {
   const player = view.players[open];
   if (!player) return null;
   return (
-    <div className="modal-backdrop" onClick={() => close(null)}>
-      <div className="modal wide" onClick={(e) => e.stopPropagation()}>
+    <div className="modal-backdrop" onClick={() => close(null)} onKeyDown={(e) => e.key === "Escape" && close(null)}>
+      <div className="modal wide" role="dialog" onClick={(e) => e.stopPropagation()} onKeyDown={(e) => e.stopPropagation()}>
         <h2>
           Cimetière — {open === view.viewer ? "vous" : player.name} ({player.graveyard.length})
         </h2>

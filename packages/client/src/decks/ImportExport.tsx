@@ -8,8 +8,14 @@ const INDEX = new CardIndex(CARDS);
 
 function Modal({ title, children, onClose }: { title: string; children: React.ReactNode; onClose: () => void }) {
   return (
-    <div className="modal-backdrop full" onClick={onClose}>
-      <div className="modal wide deck-modal" role="dialog" aria-label={title} onClick={(e) => e.stopPropagation()}>
+    <div className="modal-backdrop full" onClick={onClose} onKeyDown={(e) => e.key === "Escape" && onClose()}>
+      <div
+        className="modal wide deck-modal"
+        role="dialog"
+        aria-label={title}
+        onClick={(e) => e.stopPropagation()}
+        onKeyDown={(e) => e.stopPropagation()}
+      >
         <h2>{title}</h2>
         {children}
       </div>

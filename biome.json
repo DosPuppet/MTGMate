@@ -22,9 +22,7 @@
     "rules": {
       "preset": "recommended",
       "a11y": {
-        "useKeyWithClickEvents": "off",
-        "noStaticElementInteractions": "off",
-        "noNoninteractiveElementInteractions": "off"
+        "noStaticElementInteractions": "off"
       },
       "style": {
         "noNonNullAssertion": "off"

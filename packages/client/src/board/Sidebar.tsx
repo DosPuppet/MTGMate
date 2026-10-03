@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { SoundControl } from "../audio/SoundControl";
 import { BOARD_THEMES } from "../boardThemes";
 import { ImageRelayToggle } from "../ImageRelayToggle";
-import { faceImage, faceName, faceText, faceType, KEYWORD_LABEL } from "../i18n";
+import { faceImage, faceName, faceText, faceType, KEYWORD_LABEL, type LogLine } from "../i18n";
 import { imageUrl, useRelayActive } from "../images";
 import { PACES, useGame } from "../store";
 import { isTouch, justLongPressed } from "../touch";
@@ -127,6 +127,44 @@ export function Preview() {
   );
 }
 
+/**
+ * Texte d'une ligne du journal, les noms de cartes survolables (aperçu dans la barre latérale, gardé après le survol
+ * comme pour les cartes du plateau ; au toucher, en surimpression).
+ */
+function LogText({ line }: { line: LogLine }) {
+  const lang = useGame((s) => s.lang);
+  const setHover = useGame((s) => s.setHover);
+  const setPeek = useGame((s) => s.setPeek);
+  const cards = line.cards ?? [];
+  if (!cards.length) return <>{line.text}</>;
+  const named = cards
+    .map((face) => ({ face, label: faceName(face, lang) }))
+    .filter((x) => x.label && line.text.includes(x.label))
+    .sort((a, b) => b.label.length - a.label.length);
+  if (!named.length) return <>{line.text}</>;
+  const pattern = new RegExp(`(${named.map((x) => x.label.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")).join("|")})`);
+  return (
+    <>
+      {line.text.split(pattern).map((part, i) => {
+        const hit = named.find((x) => x.label === part);
+        if (!hit) return part;
+        return (
+          <button
+            type="button"
+            key={i}
+            className="log-card"
+            onMouseEnter={() => setHover({ face: hit.face })}
+            onFocus={() => setHover({ face: hit.face })}
+            onClick={() => isTouch() && setPeek({ face: hit.face })}
+          >
+            {part}
+          </button>
+        );
+      })}
+    </>
+  );
+}
+
 function Log() {
   const log = useGame((s) => s.log);
   const ref = useRef<HTMLDivElement>(null);
@@ -138,7 +176,7 @@ function Log() {
     <div className="log" ref={ref}>
       {log.map((l) => (
         <div key={l.id} className={`log-line ${l.kind}`}>
-          {l.text}
+          <LogText line={l} />
         </div>
       ))}
     </div>
@@ -314,10 +352,45 @@ export function TouchPreview() {
     <div
       className="touch-preview"
       onClick={(e) => !justLongPressed() && !(e.target as HTMLElement).closest("button") && setPeek(null)}
+      onKeyDown={(e) => e.key === "Escape" && setPeek(null)}
     >
       <Preview />
     </div>
   );
+}
+
+/**
+ * Écran étroit à la souris (sous 1 100 px, barre latérale en tiroir) : l'aperçu de la carte survolée suit le pointeur,
+ * du côté où il y a la place. Il ne capte pas la souris.
+ */
+export function HoverPreview() {
+  const hover = useGame((s) => s.hover);
+  const drawerOpen = useGame((s) => s.drawerOpen);
+  const lang = useGame((s) => s.lang);
+  useRelayActive();
+  const [narrow, setNarrow] = useState(() => window.matchMedia("(max-width: 1100px)").matches);
+  const [pos, setPos] = useState<{ x: number; y: number } | null>(null);
+  useEffect(() => {
+    const mq = window.matchMedia("(max-width: 1100px)");
+    const onChange = () => setNarrow(mq.matches);
+    mq.addEventListener("change", onChange);
+    return () => mq.removeEventListener("change", onChange);
+  }, []);
+  const active = narrow && !drawerOpen && !!hover && !isTouch();
+  useEffect(() => {
+    if (!active) return;
+    const onMove = (e: MouseEvent) => setPos({ x: e.clientX, y: e.clientY });
+    window.addEventListener("mousemove", onMove);
+    return () => window.removeEventListener("mousemove", onMove);
+  }, [active]);
+  if (!active || !hover || !pos) return null;
+  const src = faceImage(hover.obj?.faceDownCard ?? hover.face, lang);
+  if (!src) return null;
+  const w = 240;
+  const h = Math.round((w * 680) / 488);
+  const left = pos.x + 24 + w < window.innerWidth ? pos.x + 24 : Math.max(8, pos.x - 24 - w);
+  const top = Math.min(Math.max(8, pos.y - h / 2), window.innerHeight - h - 8);
+  return <img className="hover-preview" src={src} alt={faceName(hover.face, lang)} style={{ left, top, width: w, height: h }} />;
 }
 
 /** Écran étroit : bouton qui ouvre la barre latérale (réglages, journal) en tiroir. */
@@ -329,7 +402,13 @@ export function DrawerToggle() {
       <button type="button" className="drawer-toggle" onClick={() => setDrawerOpen(!open)} aria-label="Journal et réglages">
         ☰
       </button>
-      {open && <div className="drawer-scrim" onClick={() => setDrawerOpen(false)} />}
+      {open && (
+        <div
+          className="drawer-scrim"
+          onClick={() => setDrawerOpen(false)}
+          onKeyDown={(e) => e.key === "Escape" && setDrawerOpen(false)}
+        />
+      )}
     </>
   );
 }

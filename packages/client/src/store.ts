@@ -1682,8 +1682,10 @@ export const useGame = create<Store>((set, get) => {
     allAttack() {
       const p = get().view?.pending;
       if (p?.kind !== "declareAttackers") return;
-      // Tous attaquent le premier adversaire, sauf ceux dont la cible est déjà choisie.
-      const target = p.defenders?.[0];
+      // Tous attaquent la dernière cible choisie (un planeswalker visé, un adversaire), sinon le premier adversaire ;
+      // ceux dont la cible est déjà choisie la gardent.
+      const chosen = Object.values(get().attackTargets).at(-1);
+      const target = chosen && p.defenders?.includes(chosen) ? chosen : p.defenders?.[0];
       const ids = p.candidates ?? [];
       set({
         attackers: [...ids],

@@ -204,10 +204,18 @@ function ChoiceModal({ view }: { view: GameView }) {
       );
       break;
     }
-    case "yesNo":
+    case "yesNo": {
+      // La carte qui pose la question (sort ou capacité qui se résout), comme dans le panneau des choix sur le plateau.
+      const source = choiceSource(view);
       return (
         <div className="modal-backdrop">
           <div className="modal" role="dialog" aria-label={req.prompt}>
+            {source && (
+              <div className="yes-no-source">
+                <Card face={source.face} width="var(--board-choice-w)" hoverable />
+                {source.effect && <div className="board-choice-effect">{source.effect}</div>}
+              </div>
+            )}
             <h2>{req.prompt}</h2>
             <div className="modal-actions">
               <button type="button" className="btn" onClick={() => send([0])}>
@@ -220,6 +228,7 @@ function ChoiceModal({ view }: { view: GameView }) {
           </div>
         </div>
       );
+    }
     case "number": {
       const v = Number(values[0] ?? req.min);
       body = (
@@ -233,7 +242,15 @@ function ChoiceModal({ view }: { view: GameView }) {
     case "divide": {
       const nums = req.among.map((_, i) => Number(values[i] ?? 0));
       const sum = nums.reduce((a, b) => a + b, 0);
-      valid = sum === req.total;
+      // Mêmes contrôles que le moteur : au moins `minEach` chacun ; piétinement, le joueur seulement après des blessures
+      // mortelles à chaque bloqueur.
+      const tooFew = !!req.minEach && nums.some((n) => n < (req.minEach as number));
+      const lethal = req.lethal;
+      const trampleTooEarly =
+        !!lethal &&
+        (nums[req.among.indexOf(lethal.player)] ?? 0) > 0 &&
+        Object.entries(lethal.needs).some(([id, need]) => (nums[req.among.indexOf(id)] ?? 0) < need);
+      valid = sum === req.total && !tooFew && !trampleTooEarly;
       const bump = (i: number, d: number) => setValues(nums.map((n, k) => (k === i ? Math.max(0, n + d) : n)));
       body = (
         <>
@@ -256,6 +273,8 @@ function ChoiceModal({ view }: { view: GameView }) {
           </div>
           <p className="hint">
             Réparti : {sum} / {req.total}
+            {trampleTooEarly && " — piétinement : d'abord des blessures mortelles à chaque bloqueur"}
+            {tooFew && ` — au moins ${req.minEach} pour chacun`}
           </p>
         </>
       );

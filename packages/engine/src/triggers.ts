@@ -1231,7 +1231,9 @@ export function processTriggers(s: GameState): boolean {
           items: mine.map((t) => t.id),
           labels: Object.fromEntries(mine.map((t) => [t.id, triggerLabel(s, t)])),
           suggested: mine.map((t) => t.id),
-          autoOk: true,
+          // L'automatisme ne choisit que si l'ordre est indifférent : la même capacité plusieurs fois. Des capacités
+          // différentes sont proposées au joueur, l'ordre suggéré prérempli (PLAN-C, C18).
+          autoOk: mine.every((t) => t.sourceDefId === mine[0]?.sourceDefId && t.abilityIndex === mine[0]?.abilityIndex),
         },
         { kind: "triggerOrder", player: p },
       );
