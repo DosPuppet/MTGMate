@@ -21,8 +21,6 @@ export const DETECTIVE: TokenSpec = creature("Detective", ["W", "U"], 2, 2);
 export const SKELETON_B: TokenSpec = creature("Skeleton", ["B"], 2, 1);
 /** Esprit : créature blanche et noire 1/1 avec le vol. */
 export const SPIRIT_WB: TokenSpec = creature("Spirit", ["W", "B"], 1, 1, { keywords: ["flying"] });
-/** Loup : créature verte et blanche 5/5 avec le piétinement. */
-export const WOLF_GW: TokenSpec = creature("Wolf", ["G", "W"], 5, 5, { keywords: ["trample"] });
 /** Araignée : créature noire et verte 2/1 avec la portée et la menace. */
 export const SPIDER_BG: TokenSpec = creature("Spider", ["B", "G"], 2, 1, { keywords: ["reach", "menace"] });
 /** Diablotin : créature rouge 2/2 avec « quand ce jeton meurt, il inflige 2 blessures à chaque adversaire ». */

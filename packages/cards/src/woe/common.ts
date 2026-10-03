@@ -63,18 +63,6 @@ export const SORCERER_ROLE = role(
   ],
   'Enchanted creature gets +1/+1 and has "Whenever this creature attacks, scry 1."',
 );
-/** Virtuous Role : +1/+1 pour chaque enchantement que vous contrôlez. */
-export const VIRTUOUS_ROLE = role(
-  "Virtuous",
-  [
-    staticAbility(
-      "attached",
-      { power: 1, toughness: 1 },
-      { per: { types: ["Enchantment"], controller: "you" }, label: "+1/+1 pour chaque enchantement que vous contrôlez" },
-    ),
-  ],
-  "Enchanted creature gets +1/+1 for each enchantment you control.",
-);
 /** Wicked Role : +1/+1 ; mis dans un cimetière, chaque adversaire perd 1 point de vie. */
 export const WICKED_ROLE = role(
   "Wicked",
