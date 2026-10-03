@@ -4801,3 +4801,29 @@ describe("Wilds of Eldraine, lot C5 : payer des PV, nombre choisi, cartes à Ave
     expect(exiled(s, "Opt")).toHaveLength(1);
   });
 });
+
+describe("Faerie Fencing (PLAN-D, D5)", () => {
+  it("le -3/-3 en plus dépend de la Fée contrôlée en lançant le sort, même si elle part avant la résolution", () => {
+    const faerie = customCard({
+      name: "Fée d'essai",
+      typeLine: "Creature — Faerie",
+      subtypes: ["Faerie"],
+      power: 1,
+      toughness: 1,
+    });
+    const run = (withFaerie: boolean) => {
+      let s = scenario({
+        p1: { battlefield: [...lands("Swamp", 2), ...(withFaerie ? [faerie] : [])], hand: ["Faerie Fencing"] },
+        p2: { battlefield: ["Serra Angel"] },
+      });
+      const angel = idOf(s, "p2", "battlefield", "Serra Angel");
+      s = act(s, "p1", { type: "cast", card: idOf(s, "p1", "hand", "Faerie Fencing"), x: 1, targets: { t: [angel] } });
+      // La Fée quitte le champ de bataille avant la résolution.
+      if (withFaerie) destroy(s, idOf(s, "p1", "battlefield", faerie.name));
+      s = settle(s);
+      return idsOf(s, "p2", "graveyard", "Serra Angel").length;
+    };
+    expect(run(true)).toBe(1);
+    expect(run(false)).toBe(0);
+  });
+});

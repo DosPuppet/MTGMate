@@ -98,6 +98,8 @@ export interface CardScript {
   entersAsCopyOf?: ObjectFilter;
   /** « [Cette carte] a le flash tant que … » */
   flashIf?: Condition;
+  /** « … si vous contrôliez [X] en lançant ce sort » : évaluée au lancement (`cond.metWhenCast`). */
+  whenCast?: Condition;
   exileOnResolve?: boolean;
   entersAsCopyAddSubtypes?: string[];
   /** Copie à l'arrivée « sauf que son nom est [le sien] » (Chameleon, Master of Disguise). */
@@ -1977,6 +1979,8 @@ export const cond = {
   beholdJace: { kind: "behold", filter: { subtype: "Jace" } } as Condition,
   /** Le sort a été lancé en contemplant (coût additionnel `behold`). */
   beheld: { kind: "beheld" } as Condition,
+  /** La condition `whenCast` de la carte était remplie au lancement. */
+  metWhenCast: { kind: "metWhenCast" } as Condition,
   /** « Si {U}{U} a été dépensé pour le lancer » : `cond.spent("U", 2)`. */
   spent: (color: ManaType, n: number): Condition => ({ kind: "spentColor", color, n }),
   evoked: { kind: "evoked" } as Condition,
@@ -2263,6 +2267,8 @@ export function triggered(
   opts: {
     targets?: TargetSpec[];
     condition?: Condition;
+    /** Condition vérifiée au déclenchement seulement (« quand vous lancez ce sort en contrôlant une créature »). */
+    triggerCondition?: Condition;
     label?: string;
     oncePerTurn?: boolean | "ifDone";
     /** Se déclenche depuis le cimetière (Flamewake Phoenix). */
@@ -2277,6 +2283,7 @@ export function triggered(
     effects: effects.flat(),
     targets: opts.targets ?? [],
     condition: opts.condition,
+    ...(opts.triggerCondition ? { triggerCondition: opts.triggerCondition } : {}),
     label: opts.label,
     oncePerTurn: opts.oncePerTurn,
     fromGraveyard: opts.fromGraveyard,

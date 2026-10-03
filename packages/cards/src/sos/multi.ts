@@ -181,7 +181,8 @@ export const MULTI: Record<string, CardScript> = {
     spell: spell([], [fx.sacrifice(ref.eachPlayer, { types: ["Creature"] }), ...fx.drain(1)]),
     abilities: [
       triggered(when.castSelf, fx.may("Copier Social Snub ?", fx.copySpell(ref.self, 1)), {
-        condition: cond.controls({ types: ["Creature"] }),
+        // « en contrôlant une créature » : au déclenchement seulement (pas un « si » revérifié à la résolution).
+        triggerCondition: cond.controls({ types: ["Creature"] }),
         label: "Lancé en contrôlant une créature : vous pouvez le copier",
       }),
     ],

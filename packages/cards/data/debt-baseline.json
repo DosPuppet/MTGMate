@@ -207,6 +207,7 @@
     "spellToSoleTarget": "Imodane, the Pyrohammer — propriété d'une seule carte (audit du 02/10/2026, § 5.1) : à rattacher à une famille dès qu'une autre carte en a besoin",
     "stash": "Tinybones, Bauble Burglar — propriété d'une seule carte (audit du 02/10/2026, § 5.1) : à rattacher à une famille dès qu'une autre carte en a besoin",
     "supertype": "Serah Farron // Crystallized Serah — propriété d'une seule carte (audit du 02/10/2026, § 5.1) : à rattacher à une famille dès qu'une autre carte en a besoin",
+    "triggerCondition": "Social Snub — condition du déclencheur vérifiée au déclenchement seulement (« quand vous lancez ce sort en contrôlant une créature », PLAN-D D5) : famille des conditions de déclencheur (`condition` pour un « si » 603.4), à réutiliser pour tout déclencheur « … en contrôlant / tant que … »",
     "typeChosen": "Arachne, Psionic Weaver — propriété d'une seule carte (audit du 02/10/2026, § 5.1) : à rattacher à une famille dès qu'une autre carte en a besoin",
     "untilLeavesExile": "Emrakul, the Exigent Doom — propriété d'une seule carte (audit du 02/10/2026, § 5.1) : à rattacher à une famille dès qu'une autre carte en a besoin",
     "usingManaFrom": "Smaug, Wicked Worm — propriété d'une seule carte (audit du 02/10/2026, § 5.1) : à rattacher à une famille dès qu'une autre carte en a besoin",
@@ -234,9 +235,9 @@
   },
   "engineCardLiterals": {},
   "ceilings": {
-    "CardDef": 94,
+    "CardDef": 95,
     "GameObject": 71,
-    "StackItem": 45,
+    "StackItem": 46,
     "PlayerState": 21,
     "GameState": 39,
     "ObjectFilter": 91,
@@ -249,8 +250,8 @@
     "Effect (champs)": 665,
     "TriggerSpec": 62,
     "TriggerSpec (champs)": 157,
-    "Condition": 81,
-    "Condition (champs)": 137,
+    "Condition": 82,
+    "Condition (champs)": 138,
     "Amount": 77,
     "Amount (champs)": 131,
     "Ref": 34,
@@ -270,6 +271,7 @@
     "lot K6 : crewedSource (Giant Beaver), prompt de chooseAmong, optional d'exileFromHandLinked (Severance Priest) : ObjectFilter 90 → 91, Effect (champs) 652 → 654",
     "lot K7 : durées d'effet (untilYourNextEndStep sur grantPlay, untilEndOfYourNextTurn sur emblem, whileYouControlSource et whileTapped sur modify) : Effect (champs) 654 → 658",
     "PLAN-D D1 : opération chooseOption (« au choix », 608.2d), générique : Effect 176 → 177, Effect (champs) 658 → 662",
-    "PLAN-D D2 : contempler (additionalCost.behold, StackItem.beheld, cond.beheld, opération behold), une quinzaine de cartes : StackItem 44 → 45, Effect 177 → 178, Effect (champs) 662 → 665, Condition 80 → 81, Condition (champs) 136 → 137"
+    "PLAN-D D2 : contempler (additionalCost.behold, StackItem.beheld, cond.beheld, opération behold), une quinzaine de cartes : StackItem 44 → 45, Effect 177 → 178, Effect (champs) 662 → 665, Condition 80 → 81, Condition (champs) 136 → 137",
+    "PLAN-D D5 : whenCast (condition retenue au lancement, 2 cartes), triggerCondition (Social Snub) : CardDef 94 → 95, StackItem 45 → 46, Condition 81 → 82, Condition (champs) 137 → 138"
   ]
 }

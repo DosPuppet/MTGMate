@@ -289,12 +289,11 @@ export const WHITE: Record<string, CardScript> = {
     ],
   },
   "Steer Clear": {
+    // « si vous contrôliez une Monture en lançant ce sort » : vérifié au lancement.
+    whenCast: cond.controls({ subtype: "Mount" }),
     spell: spell(
       [target.creature("t", { inCombat: true })],
-      [
-        fx.when(cond.controls({ subtype: "Mount" }), fx.damage(4, ref.target())),
-        fx.when(cond.not(cond.controls({ subtype: "Mount" })), fx.damage(2, ref.target())),
-      ],
+      [fx.when(cond.metWhenCast, fx.damage(4, ref.target())), fx.when(cond.not(cond.metWhenCast), fx.damage(2, ref.target()))],
     ),
   },
   "Sterling Keykeeper": {

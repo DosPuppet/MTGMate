@@ -227,7 +227,6 @@ Dans l'ordre où elles ont été ajoutées, extension par extension.
   - `règle` Aquatic Alchemist : la capacité se déclenche à chaque éphémère ou rituel, et ne fait quelque chose qu'au premier du tour ;
   - `règle` Vantress Visions : la capacité ciblée peut être celle d'un adversaire (le filtre de pile n'a pas de contrôleur) ; elle n'est alors pas copiée ;
   - `règle` Rowdy Research : une créature qui attaque lors de deux combats compte deux fois ;
-  - `timing` Faerie Fencing : la Faerie est vérifiée à la résolution ;
   - `choix auto` Rowan's Grim Search : l'ordre des cartes remises sur la bibliothèque n'est pas choisi ;
   - `règle` Goddric, Cloaked Reveler : le vol (lu dans les mots-clés Scryfall) est retiré par une statique tant qu'il n'y a pas de Célébration ; un vol accordé par un effet plus ancien serait aussi retiré ;
   - `règle` Witchstalker Frenzy : une créature qui attaque lors de deux combats compte deux fois ;
@@ -253,7 +252,6 @@ Dans l'ordre où elles ont été ajoutées, extension par extension.
   - `timing` Prismari, the Inspiration : la tempête accordée compte les sorts lancés avant celui-ci à la résolution de la capacité (un sort lancé en réponse est compté) ;
   - `règle` Dina's Guidance : la carte cherchée va en main, puis vous pouvez la mettre au cimetière ;
   - `règle` Scolding Administrator : la capacité va sur la pile même sans marqueur (elle ne fait alors rien) ;
-  - `timing` Social Snub : « en contrôlant une créature » est revérifié à la résolution ;
   - `choix auto` Abstract Paintmage : {U}{R} est ajouté en deux choix d'une couleur (deux questions sans alternative) ;
   - `règle` Transcendent Archaic : « si vous piochez une ou plusieurs cartes de cette façon » est « si X vaut 1 ou plus » ;
   - `règle` Strixhaven Skycoach : la carte cherchée n'est pas révélée ;

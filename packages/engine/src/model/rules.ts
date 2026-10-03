@@ -553,6 +553,8 @@ export type Condition =
   | { kind: "behold"; filter: ObjectFilter }
   /** Le sort a été lancé en contemplant (coût additionnel `behold`). */
   | { kind: "beheld" }
+  /** La condition `whenCast` de la carte était remplie quand le sort a été lancé. */
+  | { kind: "metWhenCast" }
   /** Le contrôleur a activé une capacité de loyauté ce tour-ci. */
   | { kind: "activatedLoyaltyThisTurn" }
   /** Une seule créature attaque, et elle attaque un joueur (« attaque seule un joueur »). */

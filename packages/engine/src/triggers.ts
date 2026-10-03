@@ -362,10 +362,11 @@ export function checkCondition(
         here || (s.players[controller]?.hand ?? []).some((id) => id !== sourceId && matchesCard(s, controller, id, f, sourceId))
       );
     }
-    case "beheld": {
-      // Le sort qui se résout (ou sur la pile) a été lancé en contemplant.
+    case "beheld":
+    case "metWhenCast": {
+      // Le sort qui se résout (ou sur la pile) : ce qui a été retenu au lancement.
       const item = s.resolving && s.resolving.item.id === sourceId ? s.resolving.item : s.stack.find((x) => x.id === sourceId);
-      return !!item?.beheld;
+      return c.kind === "beheld" ? !!item?.beheld : !!item?.metWhenCast;
     }
     case "spentColor": {
       const item = s.resolving && s.resolving.item.id === sourceId ? s.resolving.item : s.stack.find((x) => x.id === sourceId);
@@ -1046,6 +1047,8 @@ export function detectTriggers(s: GameState, ev: RulesEvent, only?: (src: Source
       )
         return;
       if (ab.condition && !checkCondition(s, ab.condition, src.view.controller, src.id, data.objectId, data)) return;
+      if (ab.triggerCondition && !checkCondition(s, ab.triggerCondition, src.view.controller, src.id, data.objectId, data))
+        return;
       // « une ou plusieurs … » : un seul déclenchement par lot d'événements simultanés (un effet d'une résolution, une étape
       // de blessures de combat, une passe d'actions basées sur l'état) ; hors d'un lot (coûts payés en lançant), les
       // événements partagent le numéro courant.

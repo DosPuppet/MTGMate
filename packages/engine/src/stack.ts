@@ -1779,6 +1779,8 @@ export function castSpell(s: GameState, player: PlayerId, card: ObjectId, choice
   if (!autoPaid) throw new RulesError("Impossible de payer le coût additionnel");
   const auto = chosenAdditional(s, player, card, d, flashback, autoPaid, choices.picks);
   const beheldId = beholdChoice(s, player, card, d, choices.picks?.behold);
+  // « … si vous contrôliez une Fée en lançant ce sort » : évaluée maintenant (601.2), avant le paiement.
+  const metWhenCast = d.whenCast ? checkCondition(s, d.whenCast, player, card) : undefined;
   // Molten Exhale : « comme s'il avait le flash si vous contemplez » : lancé ainsi, il faut contempler.
   if (d.additionalCost?.behold && d.flashIf && !beheldId && !canCastTiming(s, player, { ...d, flashIf: undefined }))
     throw new RulesError("Sans contempler, ce sort ne se lance qu'au moment d'un rituel");
@@ -1932,6 +1934,7 @@ export function castSpell(s: GameState, player: PlayerId, card: ObjectId, choice
     costExiled: costExiled.length ? costExiled : undefined,
     uncounterable: uncounterable || undefined,
     beheld: beheldId ? true : undefined,
+    metWhenCast: metWhenCast || undefined,
   };
   s.stack.push(item);
   // Contempler une carte de la main : elle est révélée.

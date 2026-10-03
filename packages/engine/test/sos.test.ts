@@ -7,6 +7,7 @@
 
 import { describe, expect, it } from "vitest";
 import { INCREMENT, INFUSION, OPUS, opusInstead, REPARTEE } from "../../cards/src/sos/common";
+import { destroy } from "../src/actions";
 import { fx, ref, spell, triggered } from "../src/dsl";
 import { legalActions } from "../src/legal";
 import { chars } from "../src/state";
@@ -3191,6 +3192,26 @@ describe("Secrets of Strixhaven, lot A — multicolores", () => {
       t = settle(cast(t, "p1", "Social Snub"), (req) => (req.type === "yesNo" ? [1] : undefined));
       expect([t.players.p1?.life, t.players.p2?.life]).toEqual([21, 19]);
       expect(t.battlefield.filter((id) => chars(t, id).types.includes("Creature"))).toHaveLength(1);
+    });
+
+    it("Social Snub : « en contrôlant une créature » se vérifie au déclenchement ; la créature partie ensuite, la copie reste possible (PLAN-D, D5)", () => {
+      let s = scenario({
+        p1: { battlefield: ["Bear Cub", ...lands("Plains", 2), "Swamp"], hand: ["Social Snub"] },
+        p2: { battlefield: ["Serra Angel", "Bear Cub"] },
+      });
+      s = act(s, "p1", { type: "cast", card: idOf(s, "p1", "hand", "Social Snub") });
+      // Le déclencheur attend sur la pile ; la créature quitte le champ de bataille en réponse.
+      destroy(s, idOf(s, "p1", "battlefield", "Bear Cub"));
+      let asked = false;
+      s = settle(s, (req) => {
+        if (req.type === "yesNo") {
+          asked = true;
+          return [1];
+        }
+        return undefined;
+      });
+      expect(asked).toBe(true);
+      expect([s.players.p1?.life, s.players.p2?.life]).toEqual([22, 18]);
     });
   });
 

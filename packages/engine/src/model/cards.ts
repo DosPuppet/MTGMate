@@ -151,6 +151,11 @@ export interface CardDef {
   graveyardCastRemoveCounters?: number;
   /** « [Cette carte] a le flash tant que … » (Take for a Ride, Colossal Rattlewurm). */
   flashIf?: Condition;
+  /**
+   * « … si vous contrôliez une Fée en lançant ce sort » (Faerie Fencing, Steer Clear) : évaluée au lancement, retenue par
+   * le sort (`cond.metWhenCast`).
+   */
+  whenCast?: Condition;
   /** « Exilez [ce sort] » à la résolution, au lieu du cimetière (Step Between Worlds). */
   exileOnResolve?: boolean;
   /** Visage Bandit : sous-types ajoutés quand elle arrive comme copie. */
@@ -1123,6 +1128,11 @@ export interface TriggeredAbilityDef {
   trigger: TriggerSpec;
   /** Condition vérifiée au déclenchement et à la résolution. */
   condition?: Condition;
+  /**
+   * Condition du déclencheur lui-même, vérifiée au déclenchement seulement (« quand vous lancez ce sort en contrôlant une
+   * créature », Social Snub) : ce n'est pas un « si » (603.4), la résolution ne la revérifie pas.
+   */
+  triggerCondition?: Condition;
   targets: TargetSpec[];
   effects: Effect[];
   /** Capacité modale (« choisissez un — ») : le mode est choisi à la mise sur la pile. */

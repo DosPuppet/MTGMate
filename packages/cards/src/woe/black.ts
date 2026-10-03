@@ -169,12 +169,13 @@ export const BLACK: Record<string, CardScript> = {
     ],
   },
   "Faerie Fencing": {
-    // Approximation : la Fée est vérifiée à la résolution (et non au moment du lancement).
+    // « si vous contrôliez une Fée en lançant ce sort » : vérifié au lancement.
+    whenCast: cond.controls({ subtype: "Faerie" }),
     spell: spell(
       [target.creature()],
       [
         fx.pump(ref.target(), amount.neg(amount.x), amount.neg(amount.x)),
-        ...fx.when(cond.controls({ subtype: "Faerie" }), fx.pump(ref.target(), -3, -3)),
+        ...fx.when(cond.metWhenCast, fx.pump(ref.target(), -3, -3)),
       ],
     ),
   },

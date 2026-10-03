@@ -292,6 +292,8 @@ export interface StackItem {
   kicked: boolean;
   /** Contempler en coût additionnel : fait au lancement (`cond.beheld`). */
   beheld?: boolean;
+  /** `CardDef.whenCast` remplie au lancement (« si vous contrôliez une Fée en lançant ce sort »). */
+  metWhenCast?: boolean;
   /** Informations de dernière connaissance de la source (capacités). */
   sourceSnapshot: { keywords: Keyword[]; power: number; controller: PlayerId };
   /** Capacité déclenchée : ce qui l'a déclenchée. */

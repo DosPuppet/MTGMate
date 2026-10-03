@@ -257,8 +257,10 @@ export const RECORD_VERSION = 1;
  *   Exhales, Countersculpt, les cinq « contemplez ou payez {2} » d'ECL, Sarkhan, Elven Passage (PLAN-D, lot D2).
  * - 90 : une valeur de mana de cible calculée (`maxManaValueAmount`) est évaluée au ciblage d'une capacité déclenchée,
  *   puis à la résolution (Moseo, Vein's New Dean) (PLAN-D, lot D4).
+ * - 91 : condition retenue au lancement (`whenCast`, Faerie Fencing, Steer Clear) ; condition du déclencheur vérifiée au
+ *   déclenchement seulement (`triggerCondition`, Social Snub) (PLAN-D, lot D5).
  */
-export const RULES_VERSION = 90;
+export const RULES_VERSION = 91;
 
 /** Un point de contrôle toutes les N décisions (plus la dernière de la partie). */
 export const CHECKPOINT_EVERY = 25;

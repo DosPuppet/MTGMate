@@ -892,6 +892,7 @@ function singleDef(raw: RawCard, script: CardScript | undefined, set: string): C
     cdaPower: script?.cdaPower,
     cdaToughness: script?.cdaToughness,
     castCondition: script?.castCondition,
+    whenCast: script?.whenCast,
     flashExtraCost: script?.flashExtraCost ? parseManaCost(script.flashExtraCost) : undefined,
     opponentDiscardToBattlefield: script?.opponentDiscardToBattlefield,
     controlsEnchanted: script?.controlsEnchanted,
