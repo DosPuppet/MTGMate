@@ -315,6 +315,11 @@ export interface AdditionalCost {
   exileGraveyard?: number;
   /** `orPay` : « sacrifiez une créature ou payez {3}{B} » (sans sacrifice, ce mana s'ajoute au coût). */
   sacrifice?: { filter: ObjectFilter; count: number; orPay?: ManaCost };
+  /**
+   * « Vous pouvez sacrifier un nombre quelconque de [filtre]. Ce sort coûte {1} de moins pour chaque permanent sacrifié
+   * ainsi » (Rottenmouth Viper) : chaque sacrifice paie {1} du générique, au choix du joueur (sinon le moins possible).
+   */
+  sacrificeToPay?: ObjectFilter;
 }
 
 /** « Les sorts de [filtre] que vous lancez coûtent {N} de moins. » */

@@ -487,6 +487,38 @@ describe("Méta, lot M3", () => {
     expect(idsOf(s, "p1", "graveyard", "Deceit")).toHaveLength(1);
   });
 
+  it("Deceit évoqué : le joueur choisit la couleur du mana hybride ({U}{U} : renvoi seul ; {B}{B} : défausse seule)", () => {
+    const setup = () =>
+      scenario({
+        p1: { battlefield: [...lands("Island", 2), ...lands("Swamp", 2)], hand: ["Deceit"] },
+        p2: { battlefield: ["Bear Cub"], hand: ["Shivan Dragon"] },
+      });
+    const run = (s: GameState, hybridAs: "U" | "B" | "G") => {
+      const bear = idOf(s, "p2", "battlefield", "Bear Cub");
+      let t = act(s, "p1", { type: "cast", card: idOf(s, "p1", "hand", "Deceit"), alternative: true, hybridAs });
+      t = passAccepting(t, (x) => x.pending?.kind === "choice" || (x.stack.length === 0 && x.pending?.kind === "priority"));
+      for (let i = 0; i < 10 && t.pending?.kind === "choice"; i++) {
+        const r = t.pending.request;
+        t = act(t, t.pending.player, {
+          type: "choose",
+          values: r.type === "pick" && r.options.includes(bear) ? [bear] : r.suggested,
+        });
+      }
+      return settle(t);
+    };
+    const s0 = setup();
+    const opt = castOption(s0, idOf(s0, "p1", "hand", "Deceit"));
+    expect(opt?.type === "cast" && opt.hybridColors).toEqual(["U", "B"]);
+    const u = run(setup(), "U");
+    expect(idsOf(u, "p2", "hand", "Bear Cub")).toHaveLength(1);
+    expect(idsOf(u, "p2", "hand", "Shivan Dragon")).toHaveLength(1);
+    const b = run(setup(), "B");
+    expect(idsOf(b, "p2", "battlefield", "Bear Cub")).toHaveLength(1);
+    expect(idsOf(b, "p2", "graveyard", "Shivan Dragon")).toHaveLength(1);
+    // Une couleur que l'hybride ne permet pas est refusée.
+    expect(() => run(setup(), "G")).toThrow(/hybride/);
+  });
+
   it("Captain Marvel : la montée en puissance coûte {2} le tour de son arrivée, une seule fois", () => {
     let s = scenario({ p1: { battlefield: lands("Plains", 7), hand: ["Captain Marvel, Earth's Protector"] } });
     s = settle(act(s, "p1", { type: "cast", card: idOf(s, "p1", "hand", "Captain Marvel, Earth's Protector") }));

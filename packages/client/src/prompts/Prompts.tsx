@@ -2,7 +2,7 @@
 
 import { type CostPick, costToText, type GameView, type ObjectView } from "@mtgx/engine";
 import { useState } from "react";
-import { Card } from "../board/Card";
+import { Card, ManaCost } from "../board/Card";
 import { faceName, type Lang } from "../i18n";
 import { myActions, type PlayableOption, useGame } from "../store";
 import { useTutorial } from "../tutorial/store";
@@ -338,6 +338,7 @@ function CastingPrompt() {
   const view = useGame((s) => s.view);
   const chooseMode = useGame((s) => s.chooseMode);
   const chooseKicker = useGame((s) => s.chooseKicker);
+  const chooseHybrid = useGame((s) => s.chooseHybrid);
   const choosePayMode = useGame((s) => s.choosePayMode);
   const cancel = useGame((s) => s.cancel);
   if (!casting) return null;
@@ -495,6 +496,29 @@ function CastingPrompt() {
               {opt.altLabel ?? "Coût alternatif"}
             </button>
           )}
+        </div>
+        <div className="modal-actions">
+          <button type="button" className="btn ghost" onClick={cancel}>
+            Annuler
+          </button>
+        </div>
+      </Modal>
+    );
+  }
+  if (casting.stage === "hybrid" && casting.option.type === "cast") {
+    const names: Record<string, string> = { W: "blanc", U: "bleu", B: "noir", R: "rouge", G: "vert" };
+    return (
+      <Modal title="Payer le mana hybride en…">
+        <p className="hint">Le résultat du sort dépend du mana dépensé.</p>
+        <div className="choice-list">
+          {(casting.option.hybridColors ?? []).map((c) => (
+            <button key={c} type="button" className="btn choice" onClick={() => chooseHybrid(c)}>
+              <ManaCost cost={`{${c}}`} /> Tout en {names[c] ?? c}
+            </button>
+          ))}
+          <button type="button" className="btn choice ghost" onClick={() => chooseHybrid("auto")}>
+            Automatique
+          </button>
         </div>
         <div className="modal-actions">
           <button type="button" className="btn ghost" onClick={cancel}>

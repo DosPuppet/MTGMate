@@ -149,7 +149,12 @@ export const CARDS: Record<string, CardScript> = {
         {
           condition: cond.all(
             cond.yourTurn,
-            cond.not(cond.amountAtLeast(amount.turnEvents({ event: "cast", who: "you", types: ["Creature"] }), 1)),
+            cond.not(
+              cond.amountAtLeast(
+                amount.turnEvents({ event: "cast", who: "you", types: ["Creature"], keyword: "flying", notSubtype: "Lemur" }),
+                1,
+              ),
+            ),
           ),
         },
       ),

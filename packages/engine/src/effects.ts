@@ -964,6 +964,7 @@ export function grantPlay(
     harmonize?: boolean;
     cost?: ManaCost;
     payLifeManaValue?: boolean;
+    adventureOnly?: boolean;
   },
 ): void {
   const last =

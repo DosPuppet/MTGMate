@@ -751,6 +751,8 @@ export function spellCost(
 
 /** Conditions de lancement d'une carte depuis sa zone actuelle. */
 export interface CastTerms {
+  /** Seulement l'Aventure de la carte (permission « lancez-la en Aventure », Mosswood Dreadknight). */
+  adventureOnly?: boolean;
   /** Lancée pour un faufilement donné (Ninja Teen) : un attaquant non bloqué est renvoyé, le permanent arrive attaquant. */
   sneakGranted?: boolean;
   /** {N} de plus (Lightstall Inquisitor). */
@@ -1204,7 +1206,14 @@ function baseCastTerms(s: GameState, player: PlayerId, card: ObjectId): CastTerm
     // Tinybones, the Pickpocket : une carte d'un autre cimetière, lançable avec du mana de n'importe quel type.
     const gyPerm = exilePermission(s, player, card);
     if (gyPerm?.flashback) return { source: "flashback", free: gyPerm.free, harmonize: gyPerm.harmonize };
-    if (gyPerm) return { source: "graveyard", anyMana: gyPerm.anyMana, free: gyPerm.free, exileAfter: gyPerm.exileAfter };
+    if (gyPerm)
+      return {
+        source: "graveyard",
+        anyMana: gyPerm.anyMana,
+        free: gyPerm.free,
+        exileAfter: gyPerm.exileAfter,
+        ...(gyPerm.adventureOnly ? { adventureOnly: true } : {}),
+      };
     if (o.owner !== player) return null;
     // Timeline Culler : « vous pouvez lancer cette carte depuis votre cimetière avec sa distorsion ».
     if (d.warp?.fromGraveyard) return { source: "graveyard", warpOnly: true };
@@ -1507,6 +1516,23 @@ export function autoAdditional(
   return out;
 }
 
+/**
+ * Couleurs proposées pour le mana hybride d'un sort, seulement si une de ses capacités lit les couleurs dépensées (`spentColor`) :
+ * sinon le paiement automatique choisit sans que le résultat change.
+ */
+export function hybridColors(d: CardDef): ManaType[] {
+  const pairs = [...(d.manaCost?.hybrid ?? []), ...((d.evoke ?? d.altCost?.mana)?.hybrid ?? [])];
+  if (!pairs.length || !JSON.stringify(d.abilities).includes('"kind":"spentColor"')) return [];
+  return [...new Set(pairs.flat())];
+}
+
+/** Le coût, chaque symbole hybride qui contient cette couleur payé de cette couleur. */
+export function hybridPaidAs(cost: ManaCost, color: ManaType): ManaCost {
+  const keep = (cost.hybrid ?? []).filter((h) => !h.includes(color));
+  const n = (cost.hybrid ?? []).length - keep.length;
+  return { ...cost, colored: { ...cost.colored, [color]: (cost.colored[color] ?? 0) + n }, hybrid: keep };
+}
+
 export function castSpell(s: GameState, player: PlayerId, card: ObjectId, choices: CastChoices): void {
   const terms = castTerms(s, player, card);
   if (!terms) throw new RulesError("Vous ne pouvez pas lancer cette carte d'ici");
@@ -1522,6 +1548,8 @@ export function castSpell(s: GameState, player: PlayerId, card: ObjectId, choice
     ? ([undefined, cardDef] as [number | undefined, CardDef])
     : castableFaces(s, card, cardDef).find(([f]) => f === choices.face);
   if (!face) throw new RulesError("Cette face ne peut pas être lancée");
+  if (terms.adventureOnly && !(face[0] === 1 && face[1].subtypes.includes("Adventure")))
+    throw new RulesError("Cette carte ne se lance d'ici qu'en Aventure");
   // Déguisement (702.168a) : lancée face cachée comme une créature 2/2 sans nom pour {3}.
   if (choices.faceDown && !cardDef.disguise) throw new RulesError("Cette carte ne peut pas être lancée face cachée");
   // Distorsion (702.185) : depuis la main (ou le cimetière si la carte le permet), pour son coût de distorsion.
@@ -1661,6 +1689,11 @@ export function castSpell(s: GameState, player: PlayerId, card: ObjectId, choice
   if (harmonyTap.length > 1 || harmonyTap.some((id) => !harmony?.options.includes(id)))
     throw new RulesError("Créature invalide pour l'harmonie");
   for (const id of harmonyTap) cost = totalCost(cost, 0, undefined, harmony?.powers[id] ?? 0);
+  // Mana hybride payé d'une couleur choisie (Deceit : « si {U}{U} a été dépensé »).
+  if (choices.hybridAs) {
+    if (!hybridColors(d).includes(choices.hybridAs)) throw new RulesError("Ce mana hybride ne se paie pas de cette couleur");
+    cost = hybridPaidAs(cost, choices.hybridAs);
+  }
 
   // 601.2a : le sort passe sur la pile (nouvel objet), puis on paie les coûts (601.2g–h).
   if (terms.graveyardType) s.turn.graveyardTypesUsed = [...(s.turn.graveyardTypesUsed ?? []), terms.graveyardType];
@@ -1783,6 +1816,7 @@ export function castSpell(s: GameState, player: PlayerId, card: ObjectId, choice
         convoke: hasConvoke(s, player, d),
         improvise: hasImprovise(s, player, d) || undefined,
         delve: spellHasKeyword(s, player, d, "delve"),
+        sacrificeToPay: d.additionalCost?.sacrificeToPay,
         fromHand: terms.source === "hand",
         ...(bendPaid ? { waterbend: bendPaid } : {}),
         ...(onlyChosen(validHelperPicks(s, player, stackId, d, choices)) ? { only: onlyChosen(choices.picks) } : {}),
@@ -1884,6 +1918,7 @@ export function castSpell(s: GameState, player: PlayerId, card: ObjectId, choice
       fromZone: terms.source === "flashback" ? "graveyard" : terms.source,
       manaValue: manaValue(d.manaCost) + (x && d.manaCost?.x ? x * d.manaCost.x : 0),
       warped: warp ? true : undefined,
+      keywords: chars(s, stackId).keywords,
     });
     bump(s); // des capacités statiques en dépendent (« si vous avez lancé deux sorts ce tour-ci »)
   }
@@ -2541,6 +2576,7 @@ export function spellPicks(s: GameState, player: PlayerId, card: ObjectId, d: Ca
       improvise: hasImprovise(s, player, d),
       waterbend: d.waterbend !== undefined || d.xCost === "waterbend",
       delve: spellHasKeyword(s, player, d, "delve"),
+      sacrificeToPay: d.additionalCost?.sacrificeToPay,
     }),
   );
   if (d.xCost === "blight") {
@@ -2566,7 +2602,7 @@ function manaHelperPicks(
   s: GameState,
   player: PlayerId,
   except: ObjectId,
-  kinds: { convoke?: boolean; improvise?: boolean; waterbend?: boolean; delve?: boolean },
+  kinds: { convoke?: boolean; improvise?: boolean; waterbend?: boolean; delve?: boolean; sacrificeToPay?: ObjectFilter },
 ): CostPick[] {
   const out: CostPick[] = [];
   const untapped = (id: ObjectId) =>
@@ -2592,6 +2628,16 @@ function manaHelperPicks(
       "Maîtrise de l'eau : les artefacts et créatures à engager (chacun paie {1})",
       s.battlefield.filter((id) => untapped(id) && (chars(s, id).types.includes("Artifact") || isCreature(s, id))),
     );
+  if (kinds.sacrificeToPay) {
+    const f = kinds.sacrificeToPay;
+    add(
+      "sacrificeToPay",
+      "Coût additionnel : les permanents à sacrifier (chacun réduit le coût de {1})",
+      s.battlefield.filter(
+        (id) => id !== except && s.objects[id]?.controller === player && matchesObjectFilter(s, player, id, f),
+      ),
+    );
+  }
   if (kinds.delve)
     add(
       "delve",
@@ -2613,7 +2659,7 @@ function validHelperPicks(
     const chosen = choices.picks?.[p.slot];
     if (chosen) resolvePick(s, p, chosen);
   }
-  for (const k of ["convoke", "improvise", "waterbend", "delve"] as const)
+  for (const k of ["convoke", "improvise", "waterbend", "delve", "sacrificeToPay"] as const)
     if (choices.picks?.[k] && !spellPicks(s, player, card, d).some((p) => p.slot === k))
       throw new RulesError("Ce sort ne se paie pas ainsi");
   return choices.picks;
@@ -2622,7 +2668,7 @@ function validHelperPicks(
 /** Contrainte de paiement : les objets choisis par le joueur pour la convocation, l'improvisation, la cave… */
 function onlyChosen(picks: CastChoices["picks"]): ManaPurpose["only"] | undefined {
   const only: NonNullable<ManaPurpose["only"]> = {};
-  for (const k of ["convoke", "improvise", "waterbend", "delve"] as const) if (picks?.[k]) only[k] = picks[k];
+  for (const k of ["convoke", "improvise", "waterbend", "delve", "sacrificeToPay"] as const) if (picks?.[k]) only[k] = picks[k];
   return Object.keys(only).length ? only : undefined;
 }
 

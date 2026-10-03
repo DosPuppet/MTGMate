@@ -31,6 +31,7 @@ import {
   harmonizeOptions,
   hasConvoke,
   hasImprovise,
+  hybridColors,
   instantLoyalty,
   isWebSlinging,
   kickerCostOptions,
@@ -333,7 +334,10 @@ export function legalActions(s: GameState, player: PlayerId): ActionOption[] {
     const terms = castTerms(s, player, card);
     if (!terms || !d.implemented) continue;
     // Chaque face lançable (la carte, son aventure) donne une option distincte ; le déguisement, face cachée.
-    if (!terms.warpOnly) for (const [face, faceDef] of castableFaces(s, card, d)) castOption(card, face, faceDef, terms);
+    if (!terms.warpOnly)
+      for (const [face, faceDef] of castableFaces(s, card, d))
+        if (!terms.adventureOnly || (face === 1 && faceDef.subtypes.includes("Adventure")))
+          castOption(card, face, faceDef, terms);
     if (d.disguise) castOption(card, undefined, FACE_DOWN_SPELL, terms, "faceDown");
     // Distorsion (702.185) : depuis la main, ou le cimetière si la carte le permet.
     const warp = warpOf(s, player, card, d);
@@ -402,6 +406,7 @@ export function legalActions(s: GameState, player: PlayerId): ActionOption[] {
       convoke: hasConvoke(s, player, d),
       improvise: hasImprovise(s, player, d) || undefined,
       delve: spellHasKeyword(s, player, d, "delve"),
+      sacrificeToPay: d.additionalCost?.sacrificeToPay,
       fromHand: terms.source === "hand",
     };
     // Maîtrise de l'eau en coût additionnel : sa part du coût, selon le kicker et X.
@@ -544,6 +549,7 @@ export function legalActions(s: GameState, player: PlayerId): ActionOption[] {
           : null),
       kickerAffordable,
       kickerPrompt: d.kicker ? kickerPrompt(d) : undefined,
+      ...(hybridColors(d).length ? { hybridColors: hybridColors(d) } : {}),
       fromGraveyard: terms.source === "graveyard" || terms.source === "flashback" ? true : undefined,
       fromExile: terms.source === "exile" ? true : undefined,
       free: terms.free || undefined,

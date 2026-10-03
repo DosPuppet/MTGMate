@@ -320,6 +320,17 @@ describe("Avatar: The Last Airbender", () => {
     expect([chars(s, momo).power, chars(s, momo).toughness]).toEqual([1, 1]);
   });
 
+  it("Momo : un sort de créature sans le vol lancé d'abord ne consomme pas la réduction (premier non-Lémurien avec le vol)", () => {
+    let s = scenario({
+      p1: { battlefield: ["Momo, Friendly Flier", ...lands("Plains", 6)], hand: ["Savannah Lions", "Serra Angel"] },
+    });
+    s = settle(cast(s, "p1", "Savannah Lions"));
+    // Cinq Plaines restantes : l'Ange ({3}{W}{W}) coûte {1} de moins et en laisse une dégagée.
+    s = settle(cast(s, "p1", "Serra Angel"));
+    expect(idsOf(s, "p1", "battlefield", "Serra Angel")).toHaveLength(1);
+    expect(s.battlefield.filter((id) => nameOf(s, id) === "Plains" && !s.objects[id]?.tapped)).toHaveLength(1);
+  });
+
   it("Obsessive Pursuit : en arrivant, perdez 1 PV et créez un Indice ; X marqueurs sur un attaquant (permanents sacrifiés)", () => {
     let s = scenario({ p1: { battlefield: [...lands("Swamp", 4), "Bear Cub"], hand: ["Obsessive Pursuit"] } });
     s = settle(cast(s, "p1", "Obsessive Pursuit"));

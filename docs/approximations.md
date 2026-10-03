@@ -144,7 +144,7 @@ Dans l'ordre où elles ont été ajoutées, extension par extension.
   - Whiskervale Forerunner : pendant votre tour, la créature révélée va toujours sur le champ de bataille ; Fecund Greenshell : un terrain refusé va en main ;
   - Thornvault Forager : deux mana d'une même couleur ; Muerra ajoute des mana d'une seule couleur, au choix ;
   - Helga : son mana ne sert pas aux sorts de créature avec {X} de valeur de mana inférieure à 4 ; Heirloom Epic : les créatures ne peuvent pas aider à payer ;
-  - Rottenmouth Viper : le coût additionnel facultatif (sacrifier des permanents non-terrains pour réduire le coût) n'est pas proposé ;
+  - Rottenmouth Viper : on sacrifie au plus autant de permanents que le coût générique à payer (un sacrifice de plus ne réduirait rien, mais compterait pour « chaque fois que vous sacrifiez ») ;
   - Eluge : l'Île ajoutée par le marqueur d'inondation dure toute la partie ; la réduction de coût est générique ;
   - Alania : les sorts de Loutre (des créatures) ne sont pas copiés ; Ral (emblème) : la réplique compte vos seuls sorts ;
   - Season of the Bold (troisième mode) : l'emblème cesse au début de votre prochain tour, et non à sa fin ;
@@ -182,13 +182,10 @@ Dans l'ordre où elles ont été ajoutées, extension par extension.
   - `règle` Travail d'équipe : la force des créatures engagées est comptée comme pour l'équipage (un pilote compte 2 de plus) ;
   - `timing` Azog, Moria's Ruin : « si vous contrôliez cette créature, piochez une carte » est fait avant la destruction.
   - `choix auto` Réunir des preuves « X, X étant la valeur de mana totale des permanents ciblés » (Urgent Necropsy) : les cartes exilées sont choisies par le moteur (la moins chère qui suffit, sinon la plus chère) ; ailleurs, le joueur les choisit ;
-  - `choix auto` Deceit : le type du mana dépensé suit le paiement automatique ; pour payer {U}{U} ou {B}{B}, engagez vos terrains à la main avant de lancer le sort ;
   - `timing` Superior Spider-Man : la carte copiée est exilée en arrivant, et non par une capacité réflexive.
-  - `règle` Momo, Friendly Flier : la réduction s'applique si vous n'avez lancé aucun sort de créature ce tour-ci (et non « aucun sort de créature non-Lémurien avec le vol ») ;
   - `timing` Dispelling Exhale : contempler un Dragon est vérifié à la résolution (vous en contrôlez un ou en avez un en main) ;
   - `timing` Moseo, Vein's New Dean : la carte ciblée est une carte de créature quelconque ; sa valeur de mana (au plus les PV gagnés) est vérifiée à la résolution ;
   - `choix auto` Kíli the Resourceful : la première capacité d'équipement du tour coûte {0} d'office.
-  - `règle` Mosswood Dreadknight : depuis le cimetière, la carte peut être lancée comme créature aussi, pas seulement en Aventure ;
   - `règle` Interdimensional Web Watch : les deux mana sont d'une même couleur, et servent à tout sort lancé ailleurs que depuis la main ;
   - `timing` Head of the Hunt : le Loup est créé en même temps que l'exil, et non par une capacité réflexive.
 - **Tarkir: Dragonstorm (`docs/extensions/tdm.md`) :**

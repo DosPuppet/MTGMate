@@ -107,8 +107,9 @@ describe("Wilds of Eldraine", () => {
       });
       s = settle(cast(s, "p1", "Lightning Strike", { t: [idOf(s, "p1", "battlefield", KNIGHT)] }));
       const card = idOf(s, "p1", "graveyard", KNIGHT);
-      // L'aventure se lance depuis le cimetière (la créature aussi : approximation documentée).
-      expect(castOptions(s, "p1", card).some((o) => o.type === "cast" && o.face === 1)).toBe(true);
+      // Seule l'Aventure se lance depuis le cimetière : la créature, non.
+      expect(castOptions(s, "p1", card).map((o) => o.type === "cast" && o.face)).toEqual([1]);
+      expect(() => act(s, "p1", { type: "cast", card })).toThrow(/qu'en Aventure/);
       const hand = s.players.p1?.hand.length ?? 0;
       s = settle(act(s, "p1", { type: "cast", card, face: 1 }));
       expect(s.players.p1?.hand).toHaveLength(hand + 1);

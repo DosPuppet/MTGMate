@@ -95,7 +95,7 @@ export const CARDS: Record<string, CardScript> = {
   },
   "Mosswood Dreadknight": {
     abilities: [
-      triggered(when.diesSelf, [fx.grantPlay(ref.selfCard, { untilYourNextTurn: true })], {
+      triggered(when.diesSelf, [fx.grantPlay(ref.selfCard, { untilYourNextTurn: true, adventureOnly: true })], {
         label: "Lançable depuis le cimetière (en Aventure) jusqu'à la fin de votre prochain tour",
       }),
     ],

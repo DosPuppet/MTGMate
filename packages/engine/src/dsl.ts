@@ -735,6 +735,7 @@ export const fx = {
       oneOf?: boolean;
       replacePrevious?: boolean;
       payLifeManaValue?: boolean;
+      adventureOnly?: boolean;
     } = {},
   ): Effect => ({
     op: "grantPlay",

@@ -623,6 +623,7 @@ export const HANDLERS: OpHandlers = {
       exileAfter: e.exileAfter,
       payLifeManaValue: e.payLifeManaValue,
       group: e.oneOf ? newId(s, "g") : undefined,
+      adventureOnly: e.adventureOnly,
     });
     return;
   },

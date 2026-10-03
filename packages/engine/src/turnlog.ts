@@ -57,6 +57,7 @@ function matches(e: TurnLogEntry, q: TurnLogQuery, me: PlayerId, subject?: Playe
   if (q.notTypes?.some((x) => e.types?.includes(x))) return false;
   if (q.subtype && !e.subtypes?.includes(q.subtype)) return false;
   if (q.notSubtype && e.subtypes?.includes(q.notSubtype)) return false;
+  if (q.keyword && !(e as { keywords?: string[] }).keywords?.includes(q.keyword)) return false;
   const extra = e as { supertypes?: string[]; token?: boolean };
   if (q.supertype && !extra.supertypes?.includes(q.supertype)) return false;
   if (q.token !== undefined && !!extra.token !== q.token) return false;

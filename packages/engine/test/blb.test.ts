@@ -704,6 +704,46 @@ describe("Bloomburrow : cartes des decks du méta (PLAN-C, lot C13)", () => {
       expect(s.players.p2?.life).toBe(16);
     });
 
+    it("coût additionnel : sacrifier des permanents non-terrain le réduit de {1} chacun, au choix du joueur", () => {
+      // Deux Marais seulement : quatre sacrifices sont nécessaires ({5}{B} - 4 = {1}{B}).
+      let s = scenario({
+        p1: {
+          battlefield: [...lands("Swamp", 2), "Bear Cub", "Llanowar Elves", "Fountainport", "Vampire Neonate", "Savannah Lions"],
+          hand: ["Rottenmouth Viper"],
+        },
+        p2: { hand: [] },
+      });
+      const { card, opt } = castOption(s, "Rottenmouth Viper");
+      expect(opt).toBeDefined();
+      const pick = opt?.picks?.find((p) => p.slot === "sacrificeToPay");
+      expect(pick?.options).not.toContain(idOf(s, "p1", "battlefield", "Fountainport"));
+      expect(pick?.options).toHaveLength(4);
+      const chosen = ["Bear Cub", "Llanowar Elves", "Vampire Neonate", "Savannah Lions"].map((n) =>
+        idOf(s, "p1", "battlefield", n),
+      );
+      s = act(s, "p1", { type: "cast", card, picks: { sacrificeToPay: chosen } });
+      for (const n of ["Bear Cub", "Llanowar Elves", "Vampire Neonate", "Savannah Lions"])
+        expect(idsOf(s, "p1", "graveyard", n)).toHaveLength(1);
+      s = resolve(s);
+      expect(idsOf(s, "p1", "battlefield", "Rottenmouth Viper")).toHaveLength(1);
+    });
+
+    it("sans choix, le paiement automatique ne sacrifie rien si le mana suffit, et le moins possible sinon", () => {
+      let s = scenario({
+        p1: { battlefield: [...lands("Swamp", 6), "Bear Cub"], hand: ["Rottenmouth Viper"] },
+        p2: { hand: [] },
+      });
+      s = resolve(cast(s, "p1", "Rottenmouth Viper"));
+      expect(idsOf(s, "p1", "battlefield", "Bear Cub")).toHaveLength(1);
+      let t = scenario({
+        p1: { battlefield: [...lands("Swamp", 5), "Bear Cub", "Savannah Lions"], hand: ["Rottenmouth Viper"] },
+        p2: { hand: [] },
+      });
+      t = resolve(cast(t, "p1", "Rottenmouth Viper"));
+      expect(idsOf(t, "p1", "graveyard", "Bear Cub").length + idsOf(t, "p1", "graveyard", "Savannah Lions").length).toBe(1);
+      expect(idsOf(t, "p1", "battlefield", "Rottenmouth Viper")).toHaveLength(1);
+    });
+
     it("en attaquant : un marqueur de plus, puis 4 PV par marqueur (ou une défausse à la place)", () => {
       let s = scenario({
         p1: { battlefield: [{ name: "Rottenmouth Viper", counters: { blight: 1 } }] },

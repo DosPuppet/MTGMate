@@ -457,6 +457,8 @@ export type Effect =
       exileAfter?: boolean;
       /** Une seule des cartes désignées peut être lancée (Buster Sword). */
       oneOf?: boolean;
+      /** Seulement en Aventure (Mosswood Dreadknight : « vous pouvez la lancer depuis votre cimetière en Aventure »). */
+      adventureOnly?: boolean;
     }
   /** Exile les cartes du dessus jusqu'à une carte correspondante (mémorisée) : Territorial Bruntar. */
   /**

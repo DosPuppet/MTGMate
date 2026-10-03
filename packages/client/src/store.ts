@@ -18,6 +18,7 @@ import {
   type GameEvent,
   type GameRecord,
   type GameView,
+  type ManaType,
   type ObjectView,
   RULES_VERSION,
   type StackItemView,
@@ -112,8 +113,22 @@ export interface Casting {
   skippedPicks?: Partial<Record<CostSlot, boolean>>;
   /** Façon de payer le sort : coût normal, sans payer (Omniscience, Etali), coût alternatif. */
   payMode: "normal" | "free" | "alt" | null;
+  /** Couleur du mana hybride (« si {U}{U} a été dépensé », Deceit) ; « auto » : le paiement automatique décide. */
+  hybrid?: ManaType | "auto";
   targets: Record<string, string[]>;
-  stage: "mode" | "pay" | "x" | "kicker" | "target" | "discard" | "sacrifice" | "tap" | "materials" | "bounce" | "pick";
+  stage:
+    | "mode"
+    | "pay"
+    | "x"
+    | "kicker"
+    | "hybrid"
+    | "target"
+    | "discard"
+    | "sacrifice"
+    | "tap"
+    | "materials"
+    | "bounce"
+    | "pick";
   /** Étape « pick » : l'emplacement de coût à choisir. */
   pick?: CostPick;
   spec: TargetOption | null;
@@ -302,6 +317,7 @@ interface Store {
   chooseMode(index: number): void;
   chooseX(x: number): void;
   chooseKicker(kicked: boolean): void;
+  chooseHybrid(color: ManaType | "auto"): void;
   chooseNoTarget(): void;
   choosePayMode(mode: "normal" | "free" | "alt"): void;
   /** Désigne une cible (ou la retire, pour un mot « cible » qui en accepte plusieurs). */
@@ -388,6 +404,7 @@ function buildDecision(c: Casting): Decision {
       bounce: c.bounce ?? undefined,
       free: c.payMode === "free" && !c.option.free ? true : undefined,
       alternative: c.payMode === "alt" ? true : undefined,
+      ...(c.hybrid && c.hybrid !== "auto" ? { hybridAs: c.hybrid } : {}),
       ...(Object.keys(c.picks).length ? { picks: c.picks } : {}),
     };
   }
@@ -776,6 +793,9 @@ export const useGame = create<Store>((set, get) => {
       else if (o.kickerAffordable) return set({ casting: { ...c, stage: "kicker" } });
       else c.kicked = false;
     }
+    // Mana hybride dont le résultat dépend (Deceit) : la couleur à dépenser, sauf sans payer.
+    if (c.option.type === "cast" && c.option.hybridColors?.length && c.payMode !== "free" && c.hybrid === undefined)
+      return set({ casting: { ...c, stage: "hybrid" } });
     // Marchandage (kicker sans mana) : le permanent sacrifié, s'il y a le choix.
     if (
       c.option.type === "cast" &&
@@ -1608,6 +1628,11 @@ export const useGame = create<Store>((set, get) => {
     chooseKicker(kicked) {
       const c = get().casting;
       if (c) continueCasting({ ...c, kicked });
+    },
+
+    chooseHybrid(color) {
+      const c = get().casting;
+      if (c) continueCasting({ ...c, hybrid: color });
     },
 
     chooseAdditional(kind, ids) {

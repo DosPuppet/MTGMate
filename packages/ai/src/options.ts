@@ -230,6 +230,9 @@ export function enumerateDecisions(a: ActionOption, limit = 40, rank?: (ids: str
             if (!m.requiresKicker && (v !== base || a.normalAvailable || a.free)) out.push(v);
             if (a.kickerAffordable && !m.targets.some((t) => t.kickedLegal)) out.push({ ...v, kicked: true });
           }
+          // Mana hybride dont le résultat dépend (Deceit) : une variante par couleur, la simulation départage.
+          if (a.normalAvailable) for (const c of a.hybridColors ?? []) out.push({ ...base, hybridAs: c });
+          if (a.altAvailable) for (const c of a.hybridColors ?? []) out.push({ ...base, alternative: true, hybridAs: c });
         }
         // Cibles propres au cadeau promis : combinaisons calculées à part.
         if (a.kickerAffordable && m.targets.some((t) => t.kickedLegal)) {

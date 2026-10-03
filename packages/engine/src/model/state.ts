@@ -464,6 +464,8 @@ export type TurnLogEntry =
       manaValue?: number;
       /** Lancé pour son coût de distorsion (Vide, Edge of Eternities). */
       warped?: boolean;
+      /** Mots-clés du sort lancé (Momo, Friendly Flier : « sort de créature avec le vol »). */
+      keywords?: Keyword[];
     }
   /** Terrain joué (305.1), avec sa zone de départ (« joué un terrain depuis ailleurs que votre main », Spider-Man 2099). */
   | { e: "playLand"; player: PlayerId; fromZone: Zone; types: CardType[]; subtypes: string[] }
@@ -513,6 +515,8 @@ export interface TurnLogQuery {
   subtype?: string;
   notSubtype?: string;
   supertype?: string;
+  /** Un sort lancé qui a ce mot-clé (« sort de créature avec le vol »). */
+  keyword?: Keyword;
   token?: boolean;
   /** Déplacement : arrivé face cachée (ou non). */
   faceDown?: boolean;
@@ -826,6 +830,8 @@ export interface GameState {
     harmonize?: boolean;
     /** Maîtrise de l'air : lançable pour ce coût plutôt que pour son coût de mana. */
     cost?: ManaCost;
+    /** Seulement l'Aventure de la carte (Mosswood Dreadknight). */
+    adventureOnly?: boolean;
   }[];
   /**
    * 722 : « vous contrôlez [ce joueur] pendant son prochain tour » (The Dominion Bracelet). `turn` est fixé au début

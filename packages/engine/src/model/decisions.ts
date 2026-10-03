@@ -111,6 +111,11 @@ export type ChoicePurpose =
 export interface CastChoices {
   /** Sans payer le coût de mana (Omniscience). */
   free?: boolean;
+  /**
+   * Le mana hybride du sort est payé de cette couleur (« si {U}{U} a été dépensé », Deceit) ; sans choix, le paiement
+   * automatique décide. Proposé par `legalActions` (`hybridColors`) quand une capacité du sort dépend du mana dépensé.
+   */
+  hybridAs?: ManaType;
   /** Coût alternatif de la carte. */
   alternative?: boolean;
   mode?: number;
@@ -155,7 +160,8 @@ export type CostSlot =
   | "convoke"
   | "improvise"
   | "waterbend"
-  | "delve";
+  | "delve"
+  | "sacrificeToPay";
 
 /** Un coût payé avec des objets, tel que proposé au joueur (`legalActions`) et vérifié au paiement. */
 export interface CostPick {
@@ -256,6 +262,8 @@ export type ActionOption =
       kickerAffordable: boolean;
       /** Coût optionnel propre à l'extension (Bloomburrow) : question et réponses affichées à la place de « kicker ». */
       kickerPrompt?: { title: string; without: string; with: string };
+      /** Couleurs possibles pour payer le mana hybride, quand le résultat en dépend (`CastChoices.hybridAs`). */
+      hybridColors?: ManaType[];
       /** Lancée depuis le cimetière grâce au flashback. */
       fromGraveyard?: boolean;
       /** Carte exilée jouable (impulsion, Etali, Tinybones). */

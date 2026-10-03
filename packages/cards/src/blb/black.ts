@@ -230,7 +230,8 @@ export const BLACK: Record<string, CardScript> = {
     abilities: [activated({ mana: "{1}{B}", effects: [fx.pump(ref.self, 1, 1)], label: "+1/+1" })],
   },
   "Rottenmouth Viper": {
-    // Approximation : le coût additionnel facultatif (sacrifier des permanents non-terrains) n'est pas proposé.
+    // Coût additionnel facultatif : chaque permanent non-terrain sacrifié réduit le coût de {1} (au choix du joueur).
+    additionalCost: { sacrificeToPay: { nonland: true } },
     abilities: [
       ...[when.entersSelf, when.attacksSelf].map((w) =>
         triggered(

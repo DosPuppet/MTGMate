@@ -200,8 +200,11 @@ export const RECORD_VERSION = 1;
  *   journal du tour (PLAN-C, lot C14).
  * - 71 : une source sacrifiée pour son coût de mana (Trésor) produit d'après sa dernière information connue : les
  *   remplacements de mana s'appliquent (Roxanne, Starfall Savant), comme le solveur les comptait (« Paiement incohérent »).
+ * - 72 : coût additionnel « sacrifiez un nombre quelconque de permanents », chacun réduisant le coût de {1} (Rottenmouth
+ *   Viper) ; permission de lancer depuis le cimetière limitée à l'Aventure (Mosswood Dreadknight) ; sort lancé avec un
+ *   mot-clé dans le journal du tour (Momo, Friendly Flier) ; couleur du mana hybride choisie au lancer (Deceit) (lot K1).
  */
-export const RULES_VERSION = 71;
+export const RULES_VERSION = 72;
 
 /** Un point de contrôle toutes les N décisions (plus la dernière de la partie). */
 export const CHECKPOINT_EVERY = 25;

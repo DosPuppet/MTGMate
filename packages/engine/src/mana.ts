@@ -29,6 +29,7 @@ import type {
   ManaCost,
   ManaRestriction,
   ManaType,
+  ObjectFilter,
   ObjectId,
   PlayerId,
   TaggedMana,
@@ -118,6 +119,8 @@ export interface ManaSource {
   waterbend?: boolean;
   /** Artefact engagé pour l'improvisation (702.126) : ne paie que du générique. */
   improvise?: boolean;
+  /** Permanent sacrifié en coût additionnel, qui réduit le coût de {1} (Rottenmouth Viper) : ne paie que du générique. */
+  sacrificeToPay?: boolean;
   /**
    * Sources exclusives : deux capacités qui engagent ou sacrifient le même permanent (Forêt qui a aussi « {T} : un mana
    * de n'importe quelle couleur ») ont la même clé, et une seule peut servir.
@@ -237,6 +240,11 @@ export interface ManaPurpose {
   /** Improvisation (702.126) : chaque artefact dégagé peut payer {1} du générique. */
   improvise?: boolean;
   /**
+   * « En coût additionnel, vous pouvez sacrifier un nombre quelconque de [filtre] ; ce sort coûte {1} de moins pour
+   * chacun » (Rottenmouth Viper) : chaque permanent correspondant sacrifié paie {1} du générique.
+   */
+  sacrificeToPay?: ObjectFilter;
+  /**
    * Permanents sacrifiés pour payer le coût : leurs capacités de mana peuvent servir avant (601.2g, 602.2b), sauf celles qui
    * les sacrifient eux-mêmes (Trésor).
    */
@@ -252,7 +260,7 @@ export interface ManaPurpose {
    * Objets choisis par le joueur pour la convocation, l'improvisation, la maîtrise de l'eau ou la cave : seuls ceux-là
    * servent pour ce mode de paiement, en premier, et tous doivent servir.
    */
-  only?: Partial<Record<"convoke" | "improvise" | "waterbend" | "delve", ObjectId[]>>;
+  only?: Partial<Record<"convoke" | "improvise" | "waterbend" | "delve" | "sacrificeToPay", ObjectId[]>>;
 }
 
 /** Cartes que le paiement ne consomme pas : celles de `keep`, et la source de la capacité payée (qui peut s'exiler). */
@@ -266,6 +274,8 @@ export const CONVOKE = -1;
 export const DELVE = -2;
 /** Pseudo-capacité : un artefact ou une créature engagé pour la maîtrise de l'eau ({1}). */
 export const WATERBEND = -4;
+/** Pseudo-capacité : un permanent sacrifié en coût additionnel paie {1} (Rottenmouth Viper). */
+export const SACRIFICE_PAY = -5;
 /** Pseudo-capacité : un mana restreint de la réserve (`restrictedMana`, Ashling, Rimebound) ; `id` : `pool:<rang>`. */
 export const RESTRICTED_POOL = -3;
 
@@ -377,6 +387,27 @@ export function manaSources(
       out.push({ id, ability: WATERBEND, colors: [], amount: 1, isCreature: false, sacrifice: false, improvise: true, key: id });
     }
   }
+  // Sacrifice en coût additionnel : chaque permanent correspondant paie {1} (en dernier recours : on sacrifie le moins
+  // possible ; même clé que ses capacités de mana).
+  if (purpose?.sacrificeToPay) {
+    const taken = new Set(out.filter((x) => x.ability < 0).map((x) => x.id));
+    for (const id of s.battlefield) {
+      const o = obj(s, id);
+      if (o.controller !== player || exclude.has(id) || taken.has(id)) continue;
+      if (!matchesObjectFilter(s, player, id, purpose.sacrificeToPay)) continue;
+      if (purpose.only?.sacrificeToPay && !purpose.only.sacrificeToPay.includes(id)) continue;
+      out.push({
+        id,
+        ability: SACRIFICE_PAY,
+        colors: [],
+        amount: 1,
+        isCreature: false,
+        sacrifice: true,
+        sacrificeToPay: true,
+        key: id,
+      });
+    }
+  }
   // Mana restreint de la réserve : seulement pour un paiement permis (utilisé d'abord, il est déjà là).
   (s.players[player]?.restrictedMana ?? []).forEach((m, i) => {
     if (!allows(s, m.restriction, m.chosen ? { chosen: m.chosen } : undefined, m.source ?? `pool:${i}`, player, purpose)) return;
@@ -406,21 +437,24 @@ export function manaSources(
     (x.convoke && purpose?.only?.convoke) ||
     (x.waterbend && purpose?.only?.waterbend) ||
     (x.improvise && purpose?.only?.improvise) ||
-    (x.delve && purpose?.only?.delve);
+    (x.delve && purpose?.only?.delve) ||
+    (x.sacrificeToPay && purpose?.only?.sacrificeToPay);
   const rank = (x: ManaSource) =>
     chosen(x)
       ? -2
       : x.ability === RESTRICTED_POOL
         ? -1
-        : x.delve
-          ? 4
-          : x.convoke || x.waterbend || x.improvise
-            ? 3
-            : x.sacrifice
-              ? 2
-              : x.isCreature
-                ? 1
-                : 0;
+        : x.sacrificeToPay
+          ? 5
+          : x.delve
+            ? 4
+            : x.convoke || x.waterbend || x.improvise
+              ? 3
+              : x.sacrifice
+                ? 2
+                : x.isCreature
+                  ? 1
+                  : 0;
   return out.sort((a, b) => rank(a) - rank(b) || a.colors.length - b.colors.length);
 }
 
@@ -763,6 +797,10 @@ export function payMana(
       // La créature engagée paie un mana de sa couleur (ou {1}).
       tapObject(s, obj(s, t.id));
       pool[t.color] += 1;
+    } else if (t.ability === SACRIFICE_PAY) {
+      // Le permanent sacrifié en coût additionnel paie {1} (Rottenmouth Viper).
+      sacrifice(s, t.id);
+      pool.C += 1;
     } else if (t.ability === DELVE) {
       // La carte exilée de votre cimetière paie {1} (702.66a).
       const o = obj(s, t.id);

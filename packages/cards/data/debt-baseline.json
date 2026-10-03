@@ -115,6 +115,7 @@
     "addChosenLandType": "Multiversal Passage — propriété d'une seule carte (audit du 02/10/2026, § 5.1) : à rattacher à une famille dès qu'une autre carte en a besoin",
     "addSourceCounters": "Fated Firepower — propriété d'une seule carte (audit du 02/10/2026, § 5.1) : à rattacher à une famille dès qu'une autre carte en a besoin",
     "addSourcePower": "Hawkeye, Young Avenger — propriété d'une seule carte (audit du 02/10/2026, § 5.1) : à rattacher à une famille dès qu'une autre carte en a besoin",
+    "adventureOnly": "Mosswood Dreadknight — permission de lancer depuis le cimetière limitée à la face Aventure (lot K1) : famille des permissions de jeu (`grantPlay`), à réutiliser pour toute permission limitée à une face",
     "amountCounters": "The Eternity Elevator — propriété d'une seule carte (audit du 02/10/2026, § 5.1) : à rattacher à une famille dès qu'une autre carte en a besoin",
     "atLeastSourcePower": "Ojer Axonil, Deepest Might // Temple of Power — propriété d'une seule carte (audit du 02/10/2026, § 5.1) : à rattacher à une famille dès qu'une autre carte en a besoin",
     "attachedToSourceHost": "With Great Power . . . — propriété d'une seule carte (audit du 02/10/2026, § 5.1) : à rattacher à une famille dès qu'une autre carte en a besoin",
@@ -193,6 +194,7 @@
     "replacePrevious": "Superior Foes of Spider-Man — propriété d'une seule carte (audit du 02/10/2026, § 5.1) : à rattacher à une famille dès qu'une autre carte en a besoin",
     "sacrificeAtEnd": "Choreographed Sparks — propriété d'une seule carte (audit du 02/10/2026, § 5.1) : à rattacher à une famille dès qu'une autre carte en a besoin",
     "sacrificeAtNextUpkeep": "Firion, Wild Rose Warrior — propriété d'une seule carte (audit du 02/10/2026, § 5.1) : à rattacher à une famille dès qu'une autre carte en a besoin",
+    "sacrificeToPay": "Rottenmouth Viper — coût additionnel « sacrifiez un nombre quelconque de permanents non-terrain », chacun réduisant le coût de {1} (lot K1) : famille des coûts additionnels qui réduisent le coût (convocation, délve), à réutiliser pour toute carte « sacrifiez … ; ce sort coûte {1} de moins par … »",
     "sameNameAs": "Key to the Side-Door — propriété d'une seule carte (audit du 02/10/2026, § 5.1) : à rattacher à une famille dès qu'une autre carte en a besoin",
     "secret": "A Killer Among Us — propriété d'une seule carte (audit du 02/10/2026, § 5.1) : à rattacher à une famille dès qu'une autre carte en a besoin",
     "sourceColors": "Ojer Axonil, Deepest Might // Temple of Power — propriété d'une seule carte (audit du 02/10/2026, § 5.1) : à rattacher à une famille dès qu'une autre carte en a besoin",
@@ -240,7 +242,7 @@
     "PlayFromZone": 16,
     "LayerMods": 31,
     "Effect": 176,
-    "Effect (champs)": 650,
+    "Effect (champs)": 651,
     "TriggerSpec": 62,
     "TriggerSpec (champs)": 156,
     "Condition": 80,
@@ -257,6 +259,7 @@
     "C13 : attach.store, nombre d'objets réellement attachés (701.3b, Thorin, Mountain-king) : Effect (champs) 649 → 650",
     "C14 : drapeaux de Cloud et de The Masamune remplacés par triggerMod (onDies, emblems) : CardDef 96 → 94",
     "C14 : attackedTurn et dealtDamageTurn remplacés par le journal du tour (attackedThisTurn, dealtDamageThisTurn) : GameObject 73 → 71",
-    "C19 : attackWith.defending (« un adversaire vous attaque avec N créatures », Tomik, Wielder of Law) : TriggerSpec (champs) 155 → 156"
+    "C19 : attackWith.defending (« un adversaire vous attaque avec N créatures », Tomik, Wielder of Law) : TriggerSpec (champs) 155 → 156",
+    "lot K1 : adventureOnly sur grantPlay (Mosswood Dreadknight) : Effect (champs) 650 → 651"
   ]
 }
