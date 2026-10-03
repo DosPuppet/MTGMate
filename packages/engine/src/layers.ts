@@ -314,6 +314,7 @@ const EFFECT_FIELDS = new Set([
   "controller",
   "whileControlledBy",
   "whileAffectedTapped",
+  "whileAffectedHasCounter",
   "copyOf",
 ]);
 

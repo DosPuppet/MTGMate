@@ -778,8 +778,9 @@ export const MULTI: Record<string, CardScript> = {
           fx.may(
             "Défausser deux cartes ?",
             fx.discard(2, ref.you, { store: "d" }),
-            fx.reflexive([], [fx.damageAll(amount.greatestManaValueOf(ref.target("d")), { types: ["Creature"] })], {
-              d: ref.stored("d"),
+            // X est fixé quand les cartes sont défaussées (elles peuvent quitter le cimetière avant la résolution).
+            fx.reflexive([], [fx.damageAll(amount.v("x"), { types: ["Creature"] })], undefined, undefined, {
+              x: amount.greatestManaValueOf(ref.stored("d")),
             }),
           ),
         ),

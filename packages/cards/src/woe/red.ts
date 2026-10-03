@@ -201,12 +201,7 @@ export const RED: Record<string, CardScript> = {
   },
   "Goddric, Cloaked Reveler": {
     abilities: [
-      // Scryfall liste le vol parmi les mots-clés de la carte : il n'est actif qu'avec la Célébration.
-      staticAbility(
-        "self",
-        { removeKeywords: ["flying"] },
-        { condition: cond.not(CELEBRATION), label: "Sans Célébration : pas de vol" },
-      ),
+      // Le vol, cité dans la phrase, n'est pas un mot-clé imprimé (l'import ne le lit pas) : seulement avec la Célébration.
       staticAbility(
         "self",
         {

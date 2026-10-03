@@ -252,6 +252,17 @@ export function canPlayLand(s: GameState, player: PlayerId, card: ObjectId): boo
  * Le joueur a-t-il le droit de jouer ce terrain depuis sa zone (main, exil, cimetière, dessus de la bibliothèque), sans
  * tenir compte du moment ni des terrains déjà joués ? (L'interface présente ces cartes au bout de la main.)
  */
+/** Tinybones, Bauble Burglar : pendant votre tour, les cartes exilées avec un marqueur de butin que vous ne possédez pas. */
+function stashPlayable(s: GameState, player: PlayerId, o: GameObject): boolean {
+  return (
+    o.zone === "exile" &&
+    o.owner !== player &&
+    (o.counters.stash ?? 0) > 0 &&
+    s.turn.active === player &&
+    controlledAbilities(s, player).some((ab) => ab.kind === "castPermission" && ab.stash)
+  );
+}
+
 export function landPermitted(s: GameState, player: PlayerId, card: ObjectId): boolean {
   const o = s.objects[card];
   if (!o) return false;
@@ -261,6 +272,8 @@ export function landPermitted(s: GameState, player: PlayerId, card: ObjectId): b
     (o.zone === "hand" && o.owner === player) ||
     (o.zone === "exile" && !!exilePermission(s, player, card) && !exilePermission(s, player, card)?.anyTime) ||
     (o.zone === "exile" && valgavothLinked(s, player, card)) ||
+    // Tinybones : « jouer » les cartes de butin, terrains compris.
+    stashPlayable(s, player, o) ||
     (o.zone === "library" &&
       o.owner === player &&
       s.players[player]?.library[0] === card &&
@@ -1227,6 +1240,8 @@ function baseCastTerms(s: GameState, player: PlayerId, card: ObjectId): CastTerm
         source: "graveyard",
         anyMana: gyPerm.anyMana,
         free: gyPerm.free,
+        // « Vous pouvez lancer [la carte] » pendant une résolution (608.2g) : le moment de lancement est ignoré.
+        anyTime: gyPerm.anyTime,
         exileAfter: gyPerm.exileAfter,
         ...(gyPerm.adventureOnly ? { adventureOnly: true } : {}),
       };
@@ -1361,14 +1376,7 @@ function baseCastTerms(s: GameState, player: PlayerId, card: ObjectId): CastTerm
         bottomAfter: perm.bottomAfter,
       };
     // Tinybones : cartes d'adversaires exilées avec un marqueur de butin, pendant votre tour.
-    if (
-      o.owner !== player &&
-      (o.counters.stash ?? 0) > 0 &&
-      s.turn.active === player &&
-      controlledAbilities(s, player).some((ab) => ab.kind === "castPermission" && ab.stash)
-    ) {
-      return { source: "exile", anyMana: true };
-    }
+    if (stashPlayable(s, player, o)) return { source: "exile", anyMana: true };
   }
   return null;
 }

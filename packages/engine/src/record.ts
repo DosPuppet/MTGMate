@@ -266,8 +266,13 @@ export const RECORD_VERSION = 1;
  *   Meditation et Mirrormind Crown ; Équipement ou hôte choisi à la résolution (Light of Judgment, Unexpected Request,
  *   One Last Job : `chooseAmong.optional`, `moveTo.attachTo`) ; coût « engagez quatre permanents » qui garde le mana
  *   nécessaire (Guardian of the Great Door) (PLAN-D, lot D7).
+ * - 94 : petits écarts (PLAN-D, lot D8) : mots-clés lus seulement s'ils sont imprimés (Dion, Peter Parker, Goddric,
+ *   Reluctant Role Model) ; terrains de butin jouables (Tinybones) ; carte du cimetière lancée pendant une résolution sans
+ *   le flash (Tinybones, the Pickpocket) ; X figé à la défausse (Ill-Timed Explosion) ; « tant que ce terrain a un
+ *   marqueur de fléau » (Ultima) ; permission liée à l'objet (Lightning) ; Glowcap Lantern attachée ; Faller's Faithful,
+ *   Sunstar Expansionist, Singularity Rupture.
  */
-export const RULES_VERSION = 93;
+export const RULES_VERSION = 94;
 
 /** Un point de contrôle toutes les N décisions (plus la dernière de la partie). */
 export const CHECKPOINT_EVERY = 25;

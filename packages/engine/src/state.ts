@@ -389,6 +389,15 @@ export function changeCounters(s: GameState, o: GameObject, kind: string, n: num
   if (after === 0) delete o.counters[kind];
   else o.counters[kind] = after;
   if (after !== before) bump(s);
+  // « Tant que ce terrain a un marqueur de fléau » (Ultima) : l'effet cesse pour lui quand il n'en a plus.
+  if (after === 0 && before > 0 && s.effects.some((e) => e.whileAffectedHasCounter === kind && e.affected.includes(o.id)))
+    s.effects = s.effects.flatMap((e) =>
+      e.whileAffectedHasCounter === kind && e.affected.includes(o.id)
+        ? e.affected.length > 1
+          ? [{ ...e, affected: e.affected.filter((x) => x !== o.id) }]
+          : []
+        : [e],
+    );
   if (after > before && o.zone === "battlefield") {
     // « la première fois que des marqueurs sont mis sur cette créature ce tour-ci » (Stalwart Successor).
     const first = o.countersPutTurn !== s.turn.number;

@@ -713,6 +713,9 @@ export interface ContinuousEffect extends LayerMods {
   whileSourceTapped?: ObjectId;
   /** L'effet cesse, pour chaque objet touché, quand il se dégage (« tant qu'il reste engagé », Braided Net). */
   whileAffectedTapped?: boolean;
+  /** L'effet cesse, pour chaque objet touché, quand il n'a plus de marqueur de cette sorte (Ultima : « tant que ce terrain a
+   * un marqueur de fléau »). */
+  whileAffectedHasCounter?: string;
   /**
    * 707.9b : exceptions d'un effet de copie (« sauf que c'est un Zombie ») ; elles font partie des valeurs copiables,
    * qu'une copie de cet objet reprend (`copiableExceptions`).

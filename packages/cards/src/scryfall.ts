@@ -697,6 +697,28 @@ function addManaCosts(
 }
 
 /** Données brutes d'une face, au format d'une carte simple. */
+/**
+ * Mot-clé imprimé : en début de ligne, ou dans une liste de mots-clés (« Flying, vigilance », « Ward {2} »), et non cité
+ * dans une phrase (« Dion et les autres Chevaliers ont le vol », « un jeton Araignée avec la portée », « Goddric est un
+ * Dragon 4/4 avec le vol »). Scryfall liste aussi ces mots cités, et ceux de toutes les faces de la carte.
+ */
+function printedKeyword(text: string, keyword: string): boolean {
+  const k = keyword.toLowerCase();
+  // Un élément de liste qui n'est qu'un mot-clé (avec son coût, son nombre ou son rappel) : la liste continue.
+  const bare = /^[a-z][a-z' -]*?( \{[^}]*\}(\{[^}]*\})*| \d+| x)?( \(.*\))?$/;
+  return text
+    .toLowerCase()
+    .split("\n")
+    .some((line) => {
+      for (const part of line.split(/,\s*/)) {
+        const p = part.trim();
+        if (p.startsWith(k) && (p.length === k.length || /^[\s,;:(—{]/.test(p.slice(k.length)))) return true;
+        if (!bare.test(p)) return false;
+      }
+      return false;
+    });
+}
+
 function faceRaw(raw: RawCard, f: RawFace): RawCard {
   const text = f.oracleText.toLowerCase();
   return {
@@ -750,7 +772,7 @@ function singleDef(raw: RawCard, script: CardScript | undefined, set: string): C
   const partialHexproof = raw.keywords.includes("Hexproof from");
   for (const k of raw.keywords) {
     const kw = KEYWORD_NAMES[k.toLowerCase()];
-    if (kw && !(kw === "hexproof" && partialHexproof)) keywords.add(kw);
+    if (kw && !(kw === "hexproof" && partialHexproof) && printedKeyword(raw.oracleText, k)) keywords.add(kw);
   }
   for (const k of script?.keywords ?? []) keywords.add(k);
   // « Enchanted permanent has ward {1} » (Hardlight Containment) : garde accordée, pas celle de la carte.

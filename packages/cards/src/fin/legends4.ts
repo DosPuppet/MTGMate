@@ -29,15 +29,21 @@ const LANDS_AND_BIRDS = { anyOf: [{ types: ["Land" as const] }, { types: ["Creat
 export const LEGENDS4: Record<string, CardScript> = {
   "Ultima, Origin of Oblivion": {
     abilities: [
-      triggered(when.attacksSelf, [fx.counters(ref.target(), "blight", 1)], {
-        targets: [targetObj("t", { types: ["Land"] }, "terrain")],
-        label: "Marqueur de fléau sur un terrain",
-      }),
-      // Approximation : l'effet sur les terrains avec un marqueur de fléau cesse si Ultima quitte le champ de bataille.
-      staticAbility(
-        { types: ["Land"], withCounter: "blight" },
-        { setSubtypes: [], loseAllAbilities: true, addAbilities: [manaAbility("C")] },
-        { label: "Terrains flétris : « {T} : Ajoutez {C} »" },
+      // « Tant que ce terrain a un marqueur de fléau » : l'effet ne dépend plus d'Ultima.
+      triggered(
+        when.attacksSelf,
+        [
+          fx.counters(ref.target(), "blight", 1),
+          fx.modifyWhileCounter(
+            ref.target(),
+            { setSubtypes: [], loseAllAbilities: true, addAbilities: [manaAbility("C")] },
+            "blight",
+          ),
+        ],
+        {
+          targets: [targetObj("t", { types: ["Land"] }, "terrain")],
+          label: "Marqueur de fléau sur un terrain : il perd ses types et capacités, et produit {C}",
+        },
       ),
       eventReplacement({
         event: "mana",

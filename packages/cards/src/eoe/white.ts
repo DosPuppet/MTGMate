@@ -215,13 +215,7 @@ export const WHITE: Record<string, CardScript> = {
   "Sunstar Expansionist": {
     abilities: [
       triggered(when.entersSelf, [lander()], {
-        condition: cond.amountAtLeast(
-          amount.plus(
-            amount.count({ types: ["Land"], controller: "opponent" }),
-            amount.neg(amount.count({ types: ["Land"], controller: "you" })),
-          ),
-          1,
-        ),
+        condition: cond.opponentHasMore("lands"),
         label: "Lander (un adversaire a plus de terrains)",
       }),
       triggered(when.landfall, [fx.pump(ref.self, 1, 0)], { label: "Landfall : +1/+0" }),

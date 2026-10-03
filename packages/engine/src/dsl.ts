@@ -446,6 +446,14 @@ export const fx = {
     duration,
     ...(basePT !== undefined ? { basePT } : {}),
   }),
+  /** Modification qui dure « tant qu'il a un marqueur [sorte] » (Ultima : « tant que ce terrain a un marqueur de fléau »). */
+  modifyWhileCounter: (what: Ref, mods: LayerMods, kind: string): Effect => ({
+    op: "modify",
+    what,
+    mods,
+    duration: "permanent",
+    whileHasCounter: kind,
+  }),
   /** Modification qui dure « tant que cette créature reste engagée » (Hedge Whisperer). */
   modifyWhileTapped: (what: Ref, mods: LayerMods): Effect => ({
     op: "modify",
@@ -1313,12 +1321,19 @@ export const fx = {
     bind,
     ...(vars ? { vars } : {}),
   }),
-  reflexive: (targets: TargetSpec[], effects: Effects, bind?: Record<string, Ref>, keepVars?: string[]): Effect => ({
+  reflexive: (
+    targets: TargetSpec[],
+    effects: Effects,
+    bind?: Record<string, Ref>,
+    keepVars?: string[],
+    vars?: Record<string, Amount>,
+  ): Effect => ({
     op: "reflexive",
     targets,
     effects: effects.flat(),
     bind,
     ...(keepVars ? { keepVars } : {}),
+    ...(vars ? { vars } : {}),
   }),
   /** « Quand vous le faites, choisissez un — » : capacité réflexive modale, le mode choisi à sa mise sur la pile (Hylda). */
   reflexiveModal: (modes: ModeDef[]): Effect => ({ op: "reflexive", targets: [], effects: [], modes }),

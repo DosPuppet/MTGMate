@@ -5091,6 +5091,8 @@ describe("Murders at Karlov Manor, lot C2 : montants et coûts", () => {
     expect(s.stack).toHaveLength(1);
     expect(s.stack[0]?.kind).toBe("ability");
     expect(idsOf(s, "p2", "battlefield", "Bear Cub")).toHaveLength(1);
+    // Shivan Dragon quitte le cimetière avant la résolution (PLAN-D, D8) : X reste celui des cartes défaussées.
+    moveObject(s, idOf(s, "p1", "graveyard", "Shivan Dragon"), "exile");
     s = settle(s);
     // Shivan Dragon (VM 6) parmi les cartes défaussées : 6 blessures à chaque créature.
     expect(idsOf(s, "p2", "graveyard", "Bear Cub")).toHaveLength(1);

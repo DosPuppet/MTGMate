@@ -124,7 +124,12 @@ export const HANDLERS: OpHandlers = {
     if (targets2.some((t) => t.count === 0)) return;
     const bound: Record<string, string[]> = {};
     for (const [k, r] of Object.entries(e.bind ?? {})) bound[k] = resolveRef(s, ctx, r);
-    const vars = e.keepVars ? Object.fromEntries(e.keepVars.map((k) => [`$${k}`, r.vars[`$${k}`] ?? []])) : undefined;
+    const kept = e.keepVars ? Object.fromEntries(e.keepVars.map((k) => [`$${k}`, r.vars[`$${k}`] ?? []])) : undefined;
+    // Valeurs figées maintenant, lues ensuite avec amount.v(nom) (comme pour une capacité retardée).
+    const frozen = e.vars
+      ? Object.fromEntries(Object.entries(e.vars).map(([k, a]) => [`$${k}`, [evalAmount(s, ctx, a)]]))
+      : undefined;
+    const vars = kept || frozen ? { ...kept, ...frozen } : undefined;
     pushInline(s, ctx.controller, ctx.sourceId, ctx.sourceDefId, {
       targets: targets2,
       effects: e.effects,

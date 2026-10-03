@@ -101,6 +101,8 @@ export type Effect =
       whileYouControlSource?: boolean;
       /** « tant qu'il reste engagé » : l'effet cesse pour chaque objet touché qui se dégage (Braided Net). */
       whileTapped?: boolean;
+      /** « tant qu'il a un marqueur [sorte] » : l'effet cesse pour chaque objet touché qui n'en a plus (Ultima). */
+      whileHasCounter?: string;
       /** F/E de base fixées à ce montant, évalué à la résolution (couche 7b). */
       basePT?: Amount;
     }
@@ -367,6 +369,8 @@ export type Effect =
       effects: Effect[];
       bind?: Record<string, Ref>;
       keepVars?: string[];
+      /** Valeurs figées à la création (« la plus grande valeur de mana parmi les cartes défaussées », Ill-Timed Explosion). */
+      vars?: Record<string, Amount>;
       /** « Quand vous le faites, choisissez un — » : modes choisis à la mise sur la pile (Hylda). */
       modes?: ModeDef[];
     }

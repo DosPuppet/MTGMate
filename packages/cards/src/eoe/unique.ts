@@ -299,7 +299,8 @@ export const UNIQUE: Record<string, CardScript> = {
     ],
   },
   "Singularity Rupture": {
-    spell: spell([target.upTo(4, target.player("t"))], [fx.destroyAll(CREATURES), fx.millHalf(ref.target())]),
+    // « Un nombre quelconque de joueurs ciblés ».
+    spell: spell([target.upTo(99, target.player("t"))], [fx.destroyAll(CREATURES), fx.millHalf(ref.target())]),
   },
 
   // --- Incolores -------------------------------------------------------------

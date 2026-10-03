@@ -103,9 +103,10 @@ export const BLACK: Record<string, CardScript> = {
     abilities: [
       triggered(
         when.entersSelf,
+        // Détruite d'abord ; « si elle n'a pas subi de blessures ce tour-ci » et son contrôleur : ses dernières informations.
         [
-          fx.when(cond.not(cond.targetMatches("t", { damaged: true })), fx.draw(2, ref.controllerOf(ref.target()))),
           fx.destroy(ref.target()),
+          fx.when(cond.not(cond.targetMatches("t", { damaged: true })), fx.draw(2, ref.controllerOf(ref.target()))),
         ],
         { targets: [target.upTo(1, target.creature("t", { other: true }))], label: "Détruisez une autre créature" },
       ),

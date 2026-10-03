@@ -226,7 +226,9 @@ export const HANDLERS: OpHandlers = {
         item.sourceSnapshot = { ...item.sourceSnapshot, keywords: kw };
       }
     }
-    const ids = resolveRef(s, ctx, e.what).filter((id) => onBattlefield(s, id));
+    const ids = resolveRef(s, ctx, e.what).filter(
+      (id) => onBattlefield(s, id) && (!e.whileHasCounter || (s.objects[id]?.counters[e.whileHasCounter] ?? 0) > 0),
+    );
     if (ids.length === 0) return;
     // 611.2b : un effet « tant que [la source] reste… » ne fait rien si elle est déjà partie.
     if (e.whileSource && !onBattlefield(s, ctx.sourceId)) return;
@@ -255,6 +257,7 @@ export const HANDLERS: OpHandlers = {
       ...(e.whileYouControlSource ? { whileControlledBy: ctx.controller } : {}),
       ...(e.whileSourceTapped ? { whileSourceTapped: ctx.sourceId } : {}),
       ...(e.whileTapped ? { whileAffectedTapped: true } : {}),
+      ...(e.whileHasCounter ? { whileAffectedHasCounter: e.whileHasCounter } : {}),
       ...mods,
       // Tolsimir : « bloque ce Loup si possible » (l'attaquant de l'événement).
       ...(e.mods.addBlockRules?.some((r) => r.mustBlockEventObject)

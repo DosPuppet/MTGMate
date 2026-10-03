@@ -2870,6 +2870,16 @@ describe("Edge of Eternities, lot K8 : peu communes (4)", () => {
     expect(chars(s, idOf(s, "p1", "battlefield", "Sunstar Expansionist")).power).toBe(3);
     const t = settle(cast(setup(2), "p1", "Sunstar Expansionist"));
     expect(tokensOf(t, "p1", "Lander")).toHaveLength(0);
+    // À trois (PLAN-D, D8) : « un adversaire » en a plus, pas tous les adversaires ensemble.
+    const three = (opp: number) =>
+      scenario({
+        players: 3,
+        p1: { battlefield: lands("Plains", 2), hand: ["Sunstar Expansionist"] },
+        p2: { battlefield: lands("Forest", 2) },
+        p3: { battlefield: lands("Forest", opp) },
+      });
+    expect(tokensOf(settle(cast(three(2), "p1", "Sunstar Expansionist")), "p1", "Lander")).toHaveLength(0);
+    expect(tokensOf(settle(cast(three(3), "p1", "Sunstar Expansionist")), "p1", "Lander")).toHaveLength(1);
   });
 
   it("Sunstar Lightsmith : à votre deuxième sort du tour, un marqueur +1/+1 et une pioche", () => {

@@ -153,12 +153,17 @@ export const GREEN: Record<string, CardScript> = {
   },
   "Glowcap Lantern": {
     abilities: [
+      // Les deux capacités sont celles de la créature équipée : son contrôleur regarde le dessus de sa bibliothèque.
       staticAbility(
         "attached",
-        { addAbilities: [triggered(when.attacksSelf, [fx.explore()], { label: "Explore" })] },
-        { label: "Explore en attaquant" },
+        {
+          addAbilities: [
+            playerStatic({ lookAtTopCard: true, label: "Vous pouvez regarder la carte du dessus" }),
+            triggered(when.attacksSelf, [fx.explore()], { label: "Explore" }),
+          ],
+        },
+        { label: "Regard sur la carte du dessus ; explore en attaquant" },
       ),
-      playerStatic({ lookAtTopCard: true, label: "Vous pouvez regarder la carte du dessus" }),
     ],
   },
   "Growing Rites of Itlimoc": {

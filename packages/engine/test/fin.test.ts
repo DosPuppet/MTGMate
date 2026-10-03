@@ -7,7 +7,7 @@ import { activated, fx, spell, triggered, when } from "../src/dsl";
 import { moveWithSpec } from "../src/effects";
 import { bump } from "../src/layers";
 import { legalActions } from "../src/legal";
-import { chars } from "../src/state";
+import { changeCounters, chars, moveObject } from "../src/state";
 import type { GameState } from "../src/types";
 import {
   type Answer,
@@ -1355,8 +1355,9 @@ describe("Final Fantasy, lot K8 : cartes mythiques, rares et peu communes", () =
       expect(chars(s, knight).keywords).toContain("flying");
       expect(chars(s, idOf(s, "p1", "battlefield", "Bear Cub")).keywords).not.toContain("flying");
       s = advanceUntil(s, (x) => x.turn.active === "p2");
-      // Le recto de Dion garde le vol hors de votre tour (lu dans « have flying » par l'import) : seul le jeton est vérifié.
+      // Hors de votre tour, ni Dion ni le Chevalier ne volent (PLAN-D, D8 : le vol du verso n'est plus lu sur le recto).
       expect(chars(s, knight).keywords).not.toContain("flying");
+      expect(chars(s, dion).keywords).not.toContain("flying");
     });
 
     it("Bahamut, Warden of Light : I un marqueur et le vol à chacune de vos autres créatures ; III détruit un permanent ciblé et revient sur son recto", () => {
@@ -1704,6 +1705,15 @@ describe("Final Fantasy, lot K8 : cartes mythiques, rares et peu communes", () =
       expect(legalActions(s, "p1").some((a) => a.type === "playLand" && a.card === forest)).toBe(true);
       destroy(s, light);
       expect(legalActions(s, "p1").some((a) => a.type === "playLand" && a.card === forest)).toBe(false);
+      // Lightning sortie puis revenue est un nouvel objet : la permission ne revient pas (PLAN-D, D8).
+      let t = scenario({ p1: { battlefield: ["Lightning, Security Sergeant"], library: ["Forest", "Opt"] } });
+      t = throughCombat(attack(t, [idOf(t, "p1", "battlefield", "Lightning, Security Sergeant")]));
+      const card = exiled(t, "Forest")[0] as string;
+      expect(legalActions(t, "p1").some((a) => a.type === "playLand" && a.card === card)).toBe(true);
+      const away = moveObject(t, idOf(t, "p1", "battlefield", "Lightning, Security Sergeant"), "exile") as string;
+      moveObject(t, away, "battlefield");
+      expect(idsOf(t, "p1", "battlefield", "Lightning, Security Sergeant")).toHaveLength(1);
+      expect(legalActions(t, "p1").some((a) => a.type === "playLand" && a.card === card)).toBe(false);
     });
 
     it("Machinist's Arsenal : la créature équipée est un Artificier et gagne +2/+2 par artefact que vous contrôlez", () => {
@@ -2290,6 +2300,16 @@ describe("Final Fantasy, lot K8 : cartes mythiques, rares et peu communes", () =
       const opt = legalActions(s, "p1").find((a) => a.type === "tapForMana" && a.source === forest);
       expect(opt?.type === "tapForMana" && opt.colors).toEqual(["C"]);
       expect(tapMana(s, forest, "C").players.p1?.manaPool.C).toBe(2);
+      // « Tant que ce terrain a un marqueur de fléau » (PLAN-D, D8) : Ultima partie, l'effet reste ; sans le marqueur, il
+      // cesse.
+      destroy(s, ultima);
+      expect(chars(s, forest).subtypes).toEqual([]);
+      const colors = (x: S) =>
+        legalActions(x, "p1").flatMap((a) => (a.type === "tapForMana" && a.source === forest ? a.colors : []));
+      expect(colors(s)).toEqual(["C"]);
+      changeCounters(s, s.objects[forest]!, "blight", -1);
+      expect(chars(s, forest).subtypes).toEqual(["Forest"]);
+      expect(colors(s)).toEqual(["G"]);
       const t = scenario({ p1: { battlefield: ["Ultima, Origin of Oblivion", "Capital City"] } });
       const u = tapMana(t, idOf(t, "p1", "battlefield", "Capital City"), "C");
       expect(u.players.p1?.manaPool.C).toBe(2);

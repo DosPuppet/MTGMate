@@ -52,11 +52,8 @@ export const STARTER: Record<string, CardScript> = {
         when.combatDamageToPlayer,
         [
           fx.exileTop(ref.you, 1, "l"),
-          // Approximation : jouable tant que vous contrôlez une créature nommée Lightning, Security Sergeant.
-          fx.grantPlay(ref.stored("l"), {
-            forever: true,
-            condition: cond.controls({ types: ["Creature"], name: "Lightning, Security Sergeant" }),
-          }),
+          // « Tant que vous contrôlez Lightning » : cet objet-là (une autre Lightning ne compte pas).
+          fx.grantPlay(ref.stored("l"), { forever: true, condition: cond.controls({ self: true }) }),
         ],
         { label: "Exilez la carte du dessus, jouable" },
       ),

@@ -1461,6 +1461,8 @@ describe("Duskmourn, lot K8 : rares (2)", () => {
 
   it("Reluctant Role Model : survie, un marqueur au choix ; une créature à vous qui meurt avec des marqueurs les donne à une créature", () => {
     let s = scenario({ p1: { battlefield: [{ name: "Reluctant Role Model", tapped: true }] } });
+    // « un marqueur de vol, de lien de vie ou +1/+1 » : pas de lien de vie imprimé (PLAN-D, D8 : mot-clé cité, pas imprimé).
+    expect(chars(s, idOf(s, "p1", "battlefield", "Reluctant Role Model")).keywords).not.toContain("lifelink");
     s = advanceUntil(s, (x) => x.turn.step === "main2" && x.pending?.kind === "choice");
     let modes: string[] = [];
     s = settleAnswering(s, (req) => {

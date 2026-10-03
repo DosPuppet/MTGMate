@@ -1057,8 +1057,6 @@ describe("Outlaws of Thunder Junction, lot K8 : mythiques", () => {
   });
 
   it("Tinybones, the Pickpocket : blessures de combat à un joueur, lancez un permanent non-terrain de son cimetière avec tout mana", () => {
-    // Une créature avec le flash : le lancement d'une carte sans flash pendant la résolution est refusé par le moteur
-    // (écart signalé dans le compte rendu du lot K8).
     let s = scenario({
       p1: { battlefield: ["Tinybones, the Pickpocket", ...lands("Island", 2)] },
       p2: { graveyard: ["Cathar Commando", "Forest", "Bear Cub"] },
@@ -1087,6 +1085,22 @@ describe("Outlaws of Thunder Junction, lot K8 : mythiques", () => {
     s = settle(s);
     expect(idsOf(s, "p1", "battlefield", "Cathar Commando")).toHaveLength(1);
     expect(s.players.p2?.life).toBe(19);
+    // Une carte sans le flash se lance aussi pendant la résolution (608.2g ; PLAN-D, D8).
+    let t = scenario({
+      p1: { battlefield: ["Tinybones, the Pickpocket", ...lands("Island", 2)] },
+      p2: { graveyard: ["Bear Cub"] },
+    });
+    t = attack(t, [idOf(t, "p1", "battlefield", "Tinybones, the Pickpocket")]);
+    for (let i = 0; i < 80 && !castNowOf(t); i++) {
+      const p = t.pending;
+      if (p?.kind === "choice") t = act(t, p.player, { type: "choose", values: p.request.suggested });
+      else if (p?.kind === "declareBlockers") t = act(t, p.player, { type: "declareBlockers", blocks: [] });
+      else if (p?.kind === "priority") t = act(t, p.player, { type: "pass" });
+      else break;
+    }
+    expect(namesIn(t, castNowOf(t)?.cards)).toEqual(["Bear Cub"]);
+    t = settle(act(t, "p1", { type: "cast", card: castNowOf(t)?.cards[0] as string }));
+    expect(idsOf(t, "p1", "battlefield", "Bear Cub")).toHaveLength(1);
   });
 
   it("Vraska, the Silencer : une créature non-jeton adverse meurt, payer {1} la ramène engagée sous votre contrôle, Trésor artefact seulement", () => {

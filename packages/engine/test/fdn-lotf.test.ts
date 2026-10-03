@@ -222,6 +222,12 @@ describe("Lot F : jouer depuis d'autres zones", () => {
     expect(castOption(s, "p1", dragon)).toBeUndefined();
   });
 
+  /** La capacité activée de Tinybones (« chaque adversaire défausse une carte »). */
+  const opt0 = (s: GameState) => {
+    const tiny = idOf(s, "p1", "battlefield", "Tinybones, Bauble Burglar");
+    const a = legalActions(s, "p1").find((x) => x.type === "activate" && x.source === tiny);
+    return a?.type === "activate" ? a.ability : -1;
+  };
   it("Tinybones : la carte défaussée est exilée avec un marqueur de butin, jouable avec n'importe quel mana", () => {
     let s = scenario({
       p1: { battlefield: ["Tinybones, Bauble Burglar", ...lands("Swamp", 5), "Forest"] },
@@ -241,6 +247,18 @@ describe("Lot F : jouer depuis d'autres zones", () => {
     for (const id of s.battlefield) if (nameOf(s, id) === "Forest") (s.objects[id] as { tapped: boolean }).tapped = true;
     const opt = castOption(s, "p1", growth);
     expect(opt).toBeDefined();
+    // « Jouer » : un terrain défaussé se joue aussi (PLAN-D, D8).
+    let t = scenario({
+      p1: { battlefield: ["Tinybones, Bauble Burglar", ...lands("Swamp", 4)] },
+      p2: { hand: ["Island"] },
+    });
+    t = act(t, "p1", { type: "activate", source: idOf(t, "p1", "battlefield", "Tinybones, Bauble Burglar"), ability: opt0(t) });
+    t = passAccepting(t, (x) => x.stack.length === 0);
+    const island = t.exile.find((id) => nameOf(t, id) === "Island") as string;
+    expect(counters(t, island).stash).toBe(1);
+    expect(legalActions(t, "p1").some((a) => a.type === "playLand" && a.card === island)).toBe(true);
+    t = act(t, "p1", { type: "playLand", card: island });
+    expect(idsOf(t, "p1", "battlefield", "Island")).toHaveLength(1);
   });
 
   it("Muldrotha : un permanent de chaque type depuis le cimetière, une fois par tour", () => {

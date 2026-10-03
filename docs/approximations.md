@@ -51,7 +51,6 @@ Dans l'ordre où elles ont été ajoutées, extension par extension.
   - `choix auto` Muldrotha : une carte à plusieurs types de permanent utilise automatiquement le premier type encore libre ;
   - `timing` Abyssal Harvester : les autres jetons Cauchemar sont exilés avant la création de la copie (même résultat) ;
   - `choix auto` Curator of Destinies : en multijoueur, c'est l'adversaire suivant qui choisit la pile ;
-  - `règle` Tinybones : seuls les sorts avec un marqueur de butin sont jouables, pas les terrains ;
   - `timing` Bolt Bend : la nouvelle cible est choisie à la résolution.
 - **Final Fantasy (`docs/extensions/fin.md`) :**
   - `règle` Demon Wall : « a un marqueur » est lu comme « a un marqueur +1/+1 » ;
@@ -66,11 +65,8 @@ Dans l'ordre où elles ont été ajoutées, extension par extension.
   - `règle` Sin, Spira's Punishment : six copies au plus par déclenchement ;
   - `règle` Zack Fair : tous les Équipements qui lui étaient attachés sont déplacés (et non un seul) ;
   - `règle` Stolen Uniform : l'Équipement est détaché à l'étape de fin ;
-  - `règle` Ultima, Origin of Oblivion : l'effet sur les terrains avec un marqueur de fléau cesse si Ultima quitte le champ de bataille ;
   - `règle` Zenos, Shinryu : la créature choisie est une cible ; l'adversaire choisi est le premier qui perd la partie ;
   - `règle` Rydia, Summoner of Mist : toute carte de Saga de votre cimetière peut être ciblée ; elle ne revient que si sa valeur de mana vaut X ;
-  - `règle` Dion, Bahamut's Dominant : le recto a le vol en permanence (l'import lit le vol dans « … have flying »), et non seulement pendant votre tour ;
-  - `règle` Lightning, Security Sergeant : la carte reste jouable tant que vous contrôlez une créature nommée Lightning, Security Sergeant ;
   - `règle` Sidequest: Raise a Chocobo : la recherche de terrain de Black Chocobo (« quand il se transforme ») est faite par l'effet qui le transforme ;
   - `timing` Summoner's Grimoire : le joueur choisit d'abord parmi les cartes de créature non-enchantement ; s'il n'en prend aucune, il peut mettre une créature-enchantement engagée et attaquante.
 - **Aetherdrift (`docs/extensions/dft.md`) :**
@@ -86,7 +82,6 @@ Dans l'ordre où elles ont été ajoutées, extension par extension.
   - `règle` Hollow Marauder : une carte piochée si au moins un adversaire ciblé n'a pas défaussé de carte de VM 4 ou plus ;
   - `règle` Giant Beaver, Rambling Possum : seules les créatures de la dernière activation de Monture du tour comptent comme l'ayant montée ;
   - `règle` Fortune, The Gitrog : toutes les créatures qui ont monté la Monture sont concernées (et non une au plus, au choix) ;
-  - `règle` Tinybones, the Pickpocket : une carte de permanent sans le flash du cimetière adverse ne peut pas être lancée pendant la résolution (la permission « lancer maintenant » ne lève pas le moment de lancement pour le cimetière) ;
   - `règle` Fblthp, Lost on the Range : comploter la carte du dessus passe par une capacité (sur la pile) qui paie son coût de mana ;
   - `règle` Kellan, the Kid : le permanent est mis sur le champ de bataille au lieu d'être lancé ;
   - `règle` Obeka : les étapes d'entretien supplémentaires ne font que déclencher les capacités « au début de votre entretien » ;
@@ -152,7 +147,6 @@ Dans l'ordre où elles ont été ajoutées, extension par extension.
 - **The Lost Caverns of Ixalan (`docs/extensions/lci.md`) :**
   - `règle` mana des Cavernes (Bat Colony) et « en utilisant du mana produit par [source] » (Tecutlan, The Myriad Pools) : seulement le mana engagé par le paiement automatique ;
   - `règle` Warden of the Inner Sky : seuls les marqueurs +1/+1 comptent (« trois marqueurs ou plus ») ;
-  - `règle` Glowcap Lantern : on peut regarder la carte du dessus tant qu'on contrôle l'Équipement, même non attaché ;
   - `règle` In the Presence of Ages : jusqu'à deux cartes de créature et/ou de terrain (deux créatures possibles) ;
   - `règle` Journey On : une Carte de plus si au moins un adversaire contrôle un artefact (pas une par adversaire) ;
   - `règle` Kellan, Daring Traveler : une carte révélée qui ne va pas en main reste sur la bibliothèque ;
@@ -223,7 +217,6 @@ Dans l'ordre où elles ont été ajoutées, extension par extension.
   - `règle` Vantress Visions : la capacité ciblée peut être celle d'un adversaire (le filtre de pile n'a pas de contrôleur) ; elle n'est alors pas copiée ;
   - `règle` Rowdy Research : une créature qui attaque lors de deux combats compte deux fois ;
   - `choix auto` Rowan's Grim Search : l'ordre des cartes remises sur la bibliothèque n'est pas choisi ;
-  - `règle` Goddric, Cloaked Reveler : le vol (lu dans les mots-clés Scryfall) est retiré par une statique tant qu'il n'y a pas de Célébration ; un vol accordé par un effet plus ancien serait aussi retiré ;
   - `règle` Witchstalker Frenzy : une créature qui attaque lors de deux combats compte deux fois ;
   - `règle` Virtue of Strength : « trois fois plus de mana » est « deux mana de plus » (exact pour un terrain de base qui produit un mana) ;
   - `règle` Brave the Wilds : la cible « terrain que vous contrôlez » est proposée même sans Marchandage, sans effet alors ;
@@ -252,7 +245,6 @@ Dans l'ordre où elles ont été ajoutées, extension par extension.
   - `règle` cascade (Quandrix, the Proof) : la carte non lancée va au-dessous après les autres cartes exilées (et non dans un ordre aléatoire avec elles) ;
   - `règle` Lorehold, the Historian : le miracle accordé est une capacité déclenchée à la première pioche du tour (la carte n'est pas révélée), qui propose de la lancer pour {2}.
 - **Murders at Karlov Manor (`docs/extensions/mkm.md`) :**
-  - `règle` Ill-Timed Explosion : une carte défaussée qui quitte le cimetière avant la résolution de la capacité réflexive ne compte plus pour X ;
   - `règle` suspect (701.60) : la menace et « ne peut pas bloquer » s'ajoutent après les effets de couche 6 ; un effet « perd toutes ses capacités » ne les retire pas ;
   - `timing` Bubble Smuggler : « en étant retournée face visible, quatre marqueurs +1/+1 » est une capacité déclenchée (on peut y répondre) ;
   - `règle` Coveted Falcon : « un permanent que vous possédez mais ne contrôlez pas » est « contrôlé par un adversaire et non possédé par lui » (exact en duel) ;

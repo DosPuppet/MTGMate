@@ -3684,6 +3684,9 @@ describe("lot B1, Web-slinging et chaos", () => {
       s = settle(cast(s, "p1", "Peter Parker // Amazing Spider-Man"));
       expect(idsOf(s, "p1", "battlefield", "Spider")).toHaveLength(1);
       const peter = idOf(s, "p1", "battlefield", "Peter Parker // Amazing Spider-Man");
+      // La portée est celle du jeton, pas de Peter Parker (PLAN-D, D8 : mots-clés lus face par face).
+      expect(chars(s, peter).keywords).not.toContain("reach");
+      expect(chars(s, idOf(s, "p1", "battlefield", "Spider")).keywords).toContain("reach");
       s = settle(activate(s, "p1", peter, {}, /Transform/));
       expect(chars(s, peter).name).toBe("Amazing Spider-Man");
       // Toutes les terres sont engagées sauf une : il faut une créature engagée et {G}{W}{U}.

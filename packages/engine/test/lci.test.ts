@@ -10,6 +10,7 @@ import { amount } from "../src/dsl";
 import { moveWithSpec } from "../src/effects";
 import { legalActions } from "../src/legal";
 import { bump, chars, untapObject } from "../src/state";
+import { playerStatic } from "../src/statics";
 import { countTurnEvents } from "../src/turnlog";
 import type { GameState } from "../src/types";
 import {
@@ -2591,10 +2592,13 @@ describe("Lost Caverns of Ixalan, lot K8 : cartes mythiques, rares et peu commun
       expect(t.players.p1?.library).toHaveLength(2);
     });
 
-    it("Glowcap Lantern : la créature équipée explore quand elle attaque", () => {
+    it("Glowcap Lantern : la créature équipée explore quand elle attaque ; son contrôleur regarde la carte du dessus", () => {
       let s = scenario({ p1: { battlefield: ["Glowcap Lantern", "Bear Cub", "Forest", "Forest"], library: ["Opt", "Island"] } });
       const bear = idOf(s, "p1", "battlefield", "Bear Cub");
+      // Non attachée, la Lanterne ne donne rien (PLAN-D, D8) ; attachée, la créature équipée a « vous pouvez regarder ».
+      expect(playerStatic(s, "p1", "lookAtTopCard")).toBe(false);
       s = resolve(activateLabel(s, "p1", idOf(s, "p1", "battlefield", "Glowcap Lantern"), "Équiper", { targets: { t: [bear] } }));
+      expect(playerStatic(s, "p1", "lookAtTopCard")).toBe(true);
       s = resolve(attack(s, [bear]));
       expect(s.objects[bear]?.counters["+1/+1"]).toBe(1);
     });
