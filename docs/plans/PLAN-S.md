@@ -40,7 +40,7 @@ Côté performance, les caches des couches et des statiques sont des `WeakMap` i
 | P1 | Les caches (couches, statiques de joueur, sources des déclencheurs) suivent la copie de l'état (`cloneState`), toujours validés par leur clé : bench aléatoire 2 j. 4 801 → 5 375 déc/s, 4 j. 3 419 → 4 226, IA heuristique 2 j. 2 379 → 2 734 (mesures avant et après, même session) ; les cibles du bench sont atteintes ; empreintes identiques | ✅ |
 | P2 | Une entrée du journal du tour n'invalide le cache des couches que s'il lit le journal (dépendance `turnLog` : `turnEvents`, `perTurnEvents`, filtres « a attaqué / infligé des blessures ce tour-ci ») ; fonction d'invalidation installée par `layers.ts` (`onTurnLogged`) pour ne pas allonger le cycle d'imports : IA heuristique 4 j. 715 → 823 déc/s ; empreintes identiques, 1 800 parties de fuzz de plus sans écart de cache | ✅ |
 | P5 (écarté) | Geler les définitions et partager les morceaux gelés dans `deepClone` : mesuré plus lent (aléatoire 2 j. 5 575 → 5 162 déc/s, IA heuristique 4 j. 736 → 669, mesures consécutives) ; abandonné. Partager les dernières informations connues et les entrées du journal (écrites une fois) au lieu de les recopier : gain dans le bruit de mesure (+0 à +2 %), abandonné aussi | ✗ |
-| P3, P4 | Performance (filtres compilés, index des déclencheurs) | |
+| P3, P4 (reportés) | Filtres compilés une fois, index des déclencheurs par événement : moins de 4 % et 8 % du temps au profil, après P1 et P2 ; reportés | — |
 
 ## Principes (valent pour tous les lots)
 
@@ -306,3 +306,26 @@ P1 et P4 peuvent se faire tout de suite ; P2 vient avec ou après S2, P3 après 
   - le commit dit quelles parties dorées ont été régénérées.
 - **Lots P :** bench avant et après (`git stash`), plus les mêmes contrôles à l'identique.
 - **En fin de phase :** `npm run verify -- --full`.
+
+
+## Bilan (04/10/2026)
+
+| Surface | Avant | Après |
+|---|---|---|
+| Effect | 178 / 670 | 150 / 611 |
+| Condition | 82 / 138 | 52 / 96 |
+| Amount | 77 / 131 | 31 / 67 |
+| Ref | 35 / 55 | 27 / 47 |
+| TriggerSpec | 62 / 157 | 58 / 153 |
+| ObjectFilter | 91 | 84 |
+| GameObject | 71 | 60 |
+| StackItem | 46 | 29 |
+| GameState | 39 | 38 |
+| CostDef | 37 | 33 |
+| CardDef | 95 | 94 |
+| `singleCardKeys` / `op` | 109 / 42 | 106 / 27 |
+
+- **Règles :** 95 → 102 (96 : bug Cryptex trouvé par le fuzz de départ ; 97 à 102 : lots S2, S3, S4, S6c, S6d-e, S8b). Chaque lot sans changement de règles a gardé les empreintes du fuzz identiques ; les parties dorées se rejouent toutes à l'identique.
+- **Performance :** bench aléatoire 2 joueurs 4 801 → 5 446 déc/s, 4 joueurs 3 419 → 4 256, IA heuristique 4 joueurs 622 → 823 (P1, P2) ; les cibles du bench sont atteintes.
+- **Écarts corrigés en route :** Cryptex exilait en preuve un matériau de fabrication (erreur non `RulesError`) ; « un adversaire » du journal comptait un joueur éliminé ; une copie avait la valeur de mana de la carte qui copie ; un champ propre à l'objet dans `anyOf` ou `not` d'un filtre était ignoré ; les statiques qui lisaient les compteurs du tour pouvaient être périmées.
+- **Reports** (forme générique pas plus simple, ou risque trop grand pour le gain) : les quatre « gardez … » et `destroyAllButChosenType` (questions de forme différente) ; `exileNamesakes`, `millUntil`, `chooseCardName`, `becomeCopyKeepAbilities`, la paire de « roues », `chooseRiot`, `shield`, `noncombatBonusThisTurn`, `setBasePTAll`, `diesOrExiled` ; les bornes dynamiques des filtres en `Amount` (X du permanent hors résolution, de la capacité pendant) ; `notSubtype` (lu par `printedMatch`) ; les comparaisons en intervalles (des centaines de littéraux pour peu de gain) ; `GameState.over` (garde implicite contre l'écrasement de `flow`) ; les champs « ce tour-ci » de `GameObject` ; la famille « payer » et la refonte de `CardDef` (option finale du plan) ; P3 et P4.
