@@ -1905,12 +1905,12 @@ export const when = {
   eachEndStep: { on: "step", step: "end", whose: "any" } as TriggerSpec,
   yourCombat: { on: "step", step: "beginCombat", whose: "you" } as TriggerSpec,
   landfall: { on: "landfall" } as TriggerSpec,
-  gainLife: { on: "gainLife" } as TriggerSpec,
+  gainLife: { on: "life", change: "gain" } as TriggerSpec,
   /** « Chaque fois que vous gagnez des points de vie pour la première fois ce tour-ci » */
-  gainLifeFirst: { on: "gainLife", first: true } as TriggerSpec,
+  gainLifeFirst: { on: "life", change: "gain", first: true } as TriggerSpec,
   /** « Chaque fois que vous piochez une carte » / « votre N-ième carte à chaque tour » */
   draw: (nth?: number, whose: "you" | "opponent" | "any" = "you"): TriggerSpec => ({ on: "draw", whose, nth }),
-  loseLife: (whose: "you" | "opponent" | "any" = "opponent"): TriggerSpec => ({ on: "loseLife", whose }),
+  loseLife: (whose: "you" | "opponent" | "any" = "opponent"): TriggerSpec => ({ on: "life", change: "loss", whose }),
   /** « Chaque fois que vous attaquez [avec N créatures ou plus] » */
   /** `filter` : « … avec un ou plusieurs [Rats] ». */
   attackWith: (min = 1, filter?: ObjectFilter, anyPlayer?: boolean): TriggerSpec => ({
@@ -1971,7 +1971,8 @@ export const when = {
   /** « Chaque fois qu'une [créature] devient bloquée » */
   becomesBlocked: (who: ObjectFilter): TriggerSpec => ({ on: "becomesBlocked", who }),
   /** « Chaque fois que le joueur enchanté subit des blessures » */
-  attachedPlayerDamaged: { on: "attachedPlayerDamaged" } as TriggerSpec,
+  /** « Chaque fois que le joueur enchanté subit des blessures » (Aura de joueur). */
+  attachedPlayerDamaged: { on: "isDealtDamage", who: "attached" } as TriggerSpec,
   /** « Chaque fois que vous manifestez l'effroi » (l'objet de l'événement : la carte mise au cimetière). */
   manifestDread: { on: "manifestDread" } as TriggerSpec,
   /** « Chaque fois que vous découvrez » (`amount.eventAmount` : la valeur N). */
@@ -2021,9 +2022,9 @@ export const when = {
   /** « Chaque fois que vous offrez un cadeau » */
   giveGift: { on: "gift" } as TriggerSpec,
   /** « Chaque fois que vous gagnez ou perdez des points de vie » */
-  lifeChange: { on: "lifeChange" } as TriggerSpec,
+  lifeChange: { on: "life" } as TriggerSpec,
   /** « Chaque fois qu'une [créature] quitte le champ de bataille sans mourir » */
-  leavesWithoutDying: (who: ObjectFilter): TriggerSpec => ({ on: "leavesWithoutDying", who }),
+  leavesWithoutDying: (who: ObjectFilter): TriggerSpec => ({ on: "leaves", who, withoutDying: true }),
   loyaltyActivated: (minRemoved?: number, byOpponent?: boolean): TriggerSpec => ({
     on: "loyaltyActivated",
     minRemoved,

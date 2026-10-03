@@ -260,7 +260,21 @@ export type TriggerSpec =
   /** `whileCrafting` : exilé comme matériau d'une fabrication (Market Gnome). */
   /** `who` filtre : « chaque fois qu'une créature que vous contrôlez avec un marqueur +1/+1 quitte le champ de bataille ». */
   /** `from` : une autre zone de départ que le champ de bataille (Kaya : des cartes de créature de votre cimetière exilées). */
-  | { on: "leaves"; who: "self" | "linked" | ObjectFilter; to?: Zone; from?: Zone; whileCrafting?: boolean }
+  /** `withoutDying` : « quitte le champ de bataille sans mourir » (Dour Port-Mage, Three Tree Scribe). */
+  | {
+      on: "leaves";
+      who: "self" | "linked" | ObjectFilter;
+      to?: Zone;
+      from?: Zone;
+      whileCrafting?: boolean;
+      withoutDying?: boolean;
+    }
+  /**
+   * « Chaque fois que vous gagnez des points de vie [pour la première fois ce tour] », « chaque fois qu'un adversaire perd
+   * des points de vie », « chaque fois que vous gagnez ou perdez des points de vie » (`change` absent) ; `whose` relatif au
+   * contrôleur, vous par défaut.
+   */
+  | { on: "life"; change?: "gain" | "loss"; whose?: "you" | "opponent" | "any"; first?: boolean }
   /**
    * « Quand ce permanent se transforme en [cette face] » : porté par la face visée, il ne se déclenche que lorsque le
    * permanent devient cette face (les capacités sont lues après la transformation).
@@ -314,11 +328,8 @@ export type TriggerSpec =
     }
   | { on: "step"; step: Step; whose: "you" | "opponent" | "any" }
   | { on: "landfall" }
-  /** « Chaque fois que vous gagnez des points de vie [pour la première fois ce tour] » */
-  | { on: "gainLife"; first?: boolean }
   /** « Chaque fois que vous piochez [votre deuxième carte ce tour] » ; `whose` relatif au contrôleur. */
   | { on: "draw"; whose: "you" | "opponent" | "any"; nth?: number }
-  | { on: "loseLife"; whose: "you" | "opponent" | "any" }
   /** « Chaque fois que vous attaquez [avec au moins N créatures] » */
   /** `anyPlayer` : « chaque fois qu'un joueur attaque avec N créatures ou plus » (Aurelia, the Law Above). */
   /**
@@ -393,8 +404,6 @@ export type TriggerSpec =
   | { on: "crews"; mainPhase?: boolean }
   /** « Quand cette créature est retournée face visible » ; `who` : « chaque fois qu'un permanent [filtre] est retourné face visible ». */
   | { on: "turnedFaceUp"; who?: ObjectFilter }
-  /** « Chaque fois que le joueur enchanté subit des blessures » (Aura de joueur). */
-  | { on: "attachedPlayerDamaged" }
   /** « Chaque fois qu'une [créature] devient bloquée » (Norin). */
   | { on: "becomesBlocked"; who: ObjectFilter }
   /** « Chaque fois que vous manifestez l'effroi » : l'objet de l'événement est la carte mise au cimetière. */
@@ -405,6 +414,7 @@ export type TriggerSpec =
   | { on: "eerie" }
   /** « Chaque fois que cette créature (ou la créature enchantée/équipée) subit des blessures » */
   /** Filtre : « chaque fois qu'une créature que vous contrôlez subit des blessures » (The Sensational She-Hulk). */
+  /** `attached` : la créature enchantée ou équipée, ou le joueur enchanté (Aura de joueur, Grievous Wound). */
   | { on: "isDealtDamage"; who: "self" | "attached" | ObjectFilter }
   /** « Chaque fois qu'une ou plusieurs [créatures] subissent des blessures en excès [non de combat] » (120.4a). */
   | { on: "excessDamage"; who: ObjectFilter; noncombatOnly?: boolean }
@@ -450,10 +460,6 @@ export type TriggerSpec =
   | { on: "caseSolved" }
   /** « Chaque fois que vous offrez un cadeau » (Jolly Gerbils). */
   | { on: "gift" }
-  /** « Chaque fois que vous gagnez ou perdez des points de vie » (Wax-Wane Witness). */
-  | { on: "lifeChange" }
-  /** « Chaque fois qu'une [créature] quitte le champ de bataille sans mourir » (Dour Port-Mage, Three Tree Scribe). */
-  | { on: "leavesWithoutDying"; who: ObjectFilter }
   /** « Chaque fois que vous découvrez » (`amount.eventAmount` : la valeur N). */
   | { on: "discover" }
   /** « Chaque fois que vous activez une capacité qui n'est pas une capacité de mana » (l'objet : la capacité sur la pile) ;

@@ -521,6 +521,8 @@ function matchTrigger(s: GameState, ev: RulesEvent, t: TriggerSpec, src: Source)
       if (ev.e !== "zone" || ev.from !== "battlefield" || !ev.lki) return null;
       if (t.to && ev.to !== t.to) return null;
       if (t.whileCrafting && !s.turn.crafting) return null;
+      // « Sans mourir » : pas une créature mise au cimetière.
+      if (t.withoutDying && ev.to === "graveyard" && ev.lki.types.includes("Creature")) return null;
       // Zenos yae Galvus : « quand la créature choisie quitte le champ de bataille » (liée à la source).
       if (t.who === "linked") return s.objects[src.id]?.linked?.includes(ev.lki.id) ? { objectId: ev.lki.id } : null;
       if (typeof t.who === "object")
@@ -528,8 +530,8 @@ function matchTrigger(s: GameState, ev: RulesEvent, t: TriggerSpec, src: Source)
           ? {
               objectId: ev.lki.id,
               player: ev.lki.controller,
-              // Vers l'exil (Kaya) : la carte exilée devient l'objet de l'événement.
-              ...(t.to === "exile" && ev.newId ? { newObjectId: ev.newId } : {}),
+              // Vers l'exil (Kaya) ou une autre zone (sans mourir) : la carte devient l'objet de l'événement.
+              ...((t.to === "exile" || t.withoutDying) && ev.newId ? { newObjectId: ev.newId } : {}),
             }
           : null;
       return ev.lki.id === src.id ? { objectId: ev.lki.id, newObjectId: ev.newId ?? undefined } : null;
@@ -681,14 +683,26 @@ function matchTrigger(s: GameState, ev: RulesEvent, t: TriggerSpec, src: Source)
       if (t.minRemoved !== undefined && -ev.cost < t.minRemoved) return null;
       return { objectId: ev.sourceId, player: ev.player };
     }
+    case "life": {
+      const changed =
+        t.change === "gain"
+          ? ev.e === "lifeGain"
+          : t.change === "loss"
+            ? ev.e === "lifeLoss"
+            : ev.e === "lifeGain" || ev.e === "lifeLoss";
+      if (!changed || (ev.e !== "lifeGain" && ev.e !== "lifeLoss") || !whose(t.whose ?? "you", ev.player, me)) return null;
+      if (t.first && !(ev.e === "lifeGain" && ev.first)) return null;
+      return { player: ev.player, amount: ev.amount };
+    }
     case "isDealtDamage": {
       if (typeof t.who === "object") {
         if (ev.e !== "damage" || ev.amount <= 0) return null;
         const v = liveView(s, ev.target);
         return v && matchWho(t.who, v, src) ? { objectId: ev.target, amount: ev.amount, player: me } : null;
       }
-      // La créature enchantée ou équipée (Cryoshatter, Pain for All), ou la source elle-même.
+      // La créature enchantée ou équipée (Cryoshatter, Pain for All), le joueur enchanté (Grievous Wound), ou la source.
       const who = t.who === "attached" ? src.view.attachedTo : src.id;
+      if (who && isPlayer(s, who)) return ev.e === "damage" && ev.target === who ? { player: who, amount: ev.amount } : null;
       return ev.e === "damage" && who && ev.target === who && ev.amount > 0
         ? { objectId: who, amount: ev.amount, player: me }
         : null;
@@ -768,10 +782,6 @@ function matchTrigger(s: GameState, ev: RulesEvent, t: TriggerSpec, src: Source)
     }
     case "manifestDread":
       return ev.e === "manifestDread" && ev.player === me ? { objectId: ev.graveyard?.[0], player: me } : null;
-    case "attachedPlayerDamaged":
-      return ev.e === "damage" && ev.target === src.view.attachedTo && isPlayer(s, ev.target)
-        ? { player: ev.target, amount: ev.amount }
-        : null;
     case "becomesBlocked": {
       if (ev.e !== "blocked") return null;
       const v = liveView(s, ev.attacker);
@@ -846,12 +856,8 @@ function matchTrigger(s: GameState, ev: RulesEvent, t: TriggerSpec, src: Source)
       const v = liveView(s, ev.newId);
       return v?.types.includes("Land") && v.controller === me ? { objectId: v.id, player: me } : null;
     }
-    case "gainLife":
-      return ev.e === "lifeGain" && ev.player === me && (!t.first || ev.first) ? { player: me, amount: ev.amount } : null;
     case "scryOrSurveil":
       return ev.e === "scry" && ev.player === me ? { player: me } : null;
-    case "loseLife":
-      return ev.e === "lifeLoss" && whose(t.whose, ev.player, me) ? { player: ev.player, amount: ev.amount } : null;
     case "draw":
       // La carte piochée est l'objet de l'événement (miracle : Lorehold, the Historian).
       return ev.e === "draw" && whose(t.whose, ev.player, me) && (t.nth === undefined || ev.nth === t.nth)
@@ -909,15 +915,6 @@ function matchTrigger(s: GameState, ev: RulesEvent, t: TriggerSpec, src: Source)
       return ev.e === "caseSolved" && ev.player === me ? { player: me, objectId: ev.objectId } : null;
     case "gift":
       return ev.e === "gift" && ev.player === me ? { player: me } : null;
-    case "lifeChange":
-      return (ev.e === "lifeGain" || ev.e === "lifeLoss") && ev.player === me ? { player: me, amount: ev.amount } : null;
-    case "leavesWithoutDying": {
-      if (ev.e !== "zone" || ev.from !== "battlefield" || !ev.lki) return null;
-      if (ev.to === "graveyard" && ev.lki.types.includes("Creature")) return null;
-      return matchWho(t.who, ev.lki, src)
-        ? { objectId: ev.lki.id, newObjectId: ev.newId ?? undefined, player: ev.lki.controller }
-        : null;
-    }
     case "countersPut": {
       if (ev.e !== "counters" || (t.kind && ev.kind !== t.kind) || (t.firstThisTurn && !ev.first)) return null;
       if (t.by === "you" && ev.by !== me) return null;
