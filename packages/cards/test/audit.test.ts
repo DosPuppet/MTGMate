@@ -1,7 +1,10 @@
 /** Audit Oracle ↔ script (`src/audit.ts`) : pas de nouvel écart, et la liste des écarts connus reste à jour. */
+
+import { dsl } from "@mtgx/engine";
 import { describe, expect, it } from "vitest";
+import { customCard } from "../../engine/test/helpers";
 import baseline from "../data/audit-baseline.json";
-import { auditCard, effectNumbers, issueKey, paragraphs } from "../src/audit";
+import { auditCard, auditTargets, effectNumbers, issueKey, paragraphs, targetWords } from "../src/audit";
 import { implementedCards } from "../src/index";
 
 describe("audit Oracle ↔ script", () => {
@@ -35,6 +38,25 @@ describe("audit Oracle ↔ script", () => {
     // Sans son champ « ne peut pas être contrecarré », une statique du texte n'est plus portée.
     const { cantBeCountered: _c, ...stripped } = base;
     expect(auditCard(stripped as typeof base).map((i) => i.kind)).toContain("static");
+  });
+
+  it("repère un sort dont les cibles ne suivent pas le texte (« each opponent » ciblé, cible oubliée)", () => {
+    const sort = (text: string, targets: number) =>
+      customCard({
+        name: "Sort d'essai",
+        typeLine: "Sorcery",
+        types: ["Sorcery"],
+        text,
+        spell: dsl.spell(
+          Array.from({ length: targets }, (_, i) => dsl.target.creature(`t${i}`)),
+          [],
+        ),
+      });
+    expect(targetWords("Change the target of target spell or ability with a single target.")).toBe(1);
+    expect(targetWords("Earthbend 2. (Target land you control becomes a 0/0 creature.)")).toBe(1);
+    expect(auditTargets(sort("Each opponent loses 2 life.", 1)).map((i) => i.kind)).toEqual(["target"]);
+    expect(auditTargets(sort("Destroy target creature. Draw a card.", 0)).map((i) => i.kind)).toEqual(["target"]);
+    expect(auditTargets(sort("Destroy target creature. Draw a card.", 1))).toEqual([]);
   });
 
   it("repère les nombres d'effet", () => {

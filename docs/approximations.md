@@ -54,6 +54,7 @@ Dans l'ordre où elles ont été ajoutées, extension par extension.
   - `règle` Tinybones : seuls les sorts avec un marqueur de butin sont jouables, pas les terrains ;
   - `timing` Bolt Bend : la nouvelle cible est choisie à la résolution.
 - **Final Fantasy (`docs/extensions/fin.md`) :**
+  - `règle` Light of Judgment : l'Équipement à détruire est ciblé au lancement (attaché à la créature ciblée), et non choisi à la résolution ;
   - `règle` Demon Wall : « a un marqueur » est lu comme « a un marqueur +1/+1 » ;
   - `règle` Haste Magic, Opera Love Song : les cartes exilées sont jouables jusqu'à la fin de votre prochain tour (et non jusqu'à votre prochaine étape de fin) ;
   - `règle` Freya Crescent : son mana sert à toute capacité d'un Équipement, pas seulement à Équiper ;

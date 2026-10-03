@@ -18,5 +18,21 @@
  "Tapestry Warden | static | Tapestry Warden : 2 dans le texte, 1 dans le script": "une règle de force (powerFor.combatToughness) pour les deux usages : blessures de combat et station",
  "Sephiroth, Fabled SOLDIER // Sephiroth, One-Winged Angel | static | Sephiroth, One-Winged Angel : 1 dans le texte, 0 dans le script": "l'emblème est donné par la capacité qui transforme (recto), juste avant la transformation",
  "Zenos yae Galvus // Shinryu, Transcendent Rival | static | Shinryu, Transcendent Rival : 1 dans le texte, 0 dans le script": "approximation documentée : l'adversaire « choisi » est le premier qui perd la partie (when.opponentLoses)",
- "Traveling Chocobo | static | Traveling Chocobo : 3 dans le texte, 2 dans le script": "la permission playFrom du dessus de la bibliothèque comprend le regard permanent"
+ "Traveling Chocobo | static | Traveling Chocobo : 3 dans le texte, 2 dans le script": "la permission playFrom du dessus de la bibliothèque comprend le regard permanent",
+ "Divine Resilience | target | 2 « target » dans le texte, 1 dans le script": "cible remplacée (« instead ») : un seul mot cible, dont le nombre ou le filtre dépend du coût payé (kicker, cadeau, travail d'équipe)",
+ "Dewdrop Cure | target | 2 « target » dans le texte, 1 dans le script": "cible remplacée (« instead ») : un seul mot cible, dont le nombre ou le filtre dépend du coût payé (kicker, cadeau, travail d'équipe)",
+ "Into the Flood Maw | target | 2 « target » dans le texte, 1 dans le script": "cible remplacée (« instead ») : un seul mot cible, dont le nombre ou le filtre dépend du coût payé (kicker, cadeau, travail d'équipe)",
+ "Long River's Pull | target | 2 « target » dans le texte, 1 dans le script": "cible remplacée (« instead ») : un seul mot cible, dont le nombre ou le filtre dépend du coût payé (kicker, cadeau, travail d'équipe)",
+ "Peerless Recycling | target | 2 « target » dans le texte, 1 dans le script": "cible remplacée (« instead ») : un seul mot cible, dont le nombre ou le filtre dépend du coût payé (kicker, cadeau, travail d'équipe)",
+ "Wear Down | target | 2 « target » dans le texte, 1 dans le script": "cible remplacée (« instead ») : un seul mot cible, dont le nombre ou le filtre dépend du coût payé (kicker, cadeau, travail d'équipe)",
+ "Twin Bolt | target | 0 « target » dans le texte, 1 dans le script": "« divided as you choose among one or two targets » : une cible à répartition, sans le mot « target »",
+ "Feral Encounter | target | 2 « target » dans le texte, 0 dans le script": "les cibles sont celles de l'emblème du tour (approximation documentée, `timing`)",
+ "Become Brutes | target | 1 « target » dans le texte, 2 dans le script": "« one or two target creatures » : deux mots cible dans le script, le second facultatif",
+ "Fatal Fissure | target | 2 « target » dans le texte, 1 dans le script": "maîtrise de la terre d'une capacité retardée : sa cible est choisie par l'effet",
+ "Cruel Alliance | target | 2 « target » dans le texte, 1 dans le script": "cible remplacée (« instead ») : un seul mot cible, dont le nombre ou le filtre dépend du coût payé (kicker, cadeau, travail d'équipe)",
+ "Too Evil to Stay Dead | target | 2 « target » dans le texte, 1 dans le script": "cible remplacée (« instead ») : un seul mot cible, dont le nombre ou le filtre dépend du coût payé (kicker, cadeau, travail d'équipe)",
+ "The Eagles Are Coming! | target | 2 « target » dans le texte, 1 dans le script": "cible remplacée (« instead ») : un seul mot cible, dont le nombre ou le filtre dépend du coût payé (kicker, cadeau, travail d'équipe)",
+ "Officious Interrogation | target | 2 « target » dans le texte, 1 dans le script": "« for each target beyond the first » : mention du nombre de cibles, pas une cible",
+ "Light of Judgment | target | 1 « target » dans le texte, 2 dans le script": "l'Équipement est ciblé, et non choisi à la résolution (approximation documentée)",
+ "Unexpected Request | target | 1 « target » dans le texte, 2 dans le script": "l'Équipement est ciblé au lancement, et non choisi à la résolution (approximation documentée)"
 }

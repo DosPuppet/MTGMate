@@ -24,9 +24,11 @@ export interface AuditIssue {
   /**
    * « déclenchées », « activées » : le texte en décrit plus que le script ; « statiques » : le texte décrit plus de
    * capacités statiques que le script n'en porte (capacités, champs de la définition, mots-clés non imprimés, surplus de
-   * déclenchées ou d'activées qui les réalisent) ; « nombre » : un nombre d'effet absent du script.
+   * déclenchées ou d'activées qui les réalisent) ; « nombre » : un nombre d'effet absent du script ; « cible » : un
+   * éphémère ou un rituel dont le script n'a pas autant de cibles que de mots « target » dans le texte (une cible de
+   * trop : un choix fait à la résolution, ou « chaque », est ciblé ; une de moins : une cible oubliée).
    */
-  kind: "triggered" | "activated" | "static" | "number";
+  kind: "triggered" | "activated" | "static" | "number" | "target";
   detail: string;
 }
 
@@ -269,7 +271,78 @@ export function auditCard(d: CardDef): AuditIssue[] {
     const missing = [...new Set(paras.flatMap((p) => effectNumbers(p.text)))].filter((n) => !nums.has(n));
     if (missing.length) issues.push({ card: d.name, kind: "number", detail: `${f.name} : ${missing.join(", ")} absent(s)` });
   }
+  issues.push(...auditTargets(d));
   return issues;
+}
+
+/**
+ * Mots « target » d'un sort : hors capacités citées entre guillemets (jetons) et texte de rappel, hors « change the
+ * target of … with a single target » (la cible d'un autre sort n'en est pas une de celui-ci) ; la maîtrise de la terre
+ * compte pour une cible.
+ */
+export function targetWords(text: string): number {
+  const t = text
+    .replace(/"[^"]*"/g, "")
+    .replace(/\(([^)]*)\)/g, "")
+    .replace(/\bthe targets? of\b|\bwith a single target\b/gi, "");
+  // Maîtrise de la terre N : « terrain ciblé que vous contrôlez » (texte de rappel).
+  const earthbend = (t.match(/\bearthbend (?:\d+|X)\b/gi) ?? []).length;
+  return (t.match(/\btarget\b/gi) ?? []).length + earthbend;
+}
+
+/** Mots « up to N target », « any number of target », « one or two target » d'un sort (cibles facultatives). */
+export function upToWords(text: string): number {
+  const t = text.replace(/"[^"]*"/g, "").replace(/\(([^)]*)\)/g, "");
+  return (
+    t.match(
+      /\b(?:up to (?:one|two|three|four|five|six|seven|X|\d+)|any number of|one or two|one, two, or three) (?:other |another )?target\b/gi,
+    ) ?? []
+  ).length;
+}
+
+/** Cibles du script d'un sort à un seul mode : celles du sort, plus celles de ses capacités réflexives et retardées. */
+function scriptTargets(d: CardDef): number {
+  const mode = d.spell?.modes[0];
+  if (!mode) return 0;
+  let nested = 0;
+  const visit = (x: unknown, inToken: boolean): void => {
+    if (Array.isArray(x)) for (const y of x) visit(y, inToken);
+    else if (x && typeof x === "object") {
+      const o = x as Record<string, unknown>;
+      // Capacités d'un jeton créé : les siennes, pas celles du sort.
+      const token = inToken || o.op === "createTokens" || o.op === "createTokenCopy";
+      if (!token && Array.isArray(o.targets) && (o.op === "reflexive" || o.op === "delayed")) nested += o.targets.length;
+      for (const v of Object.values(o)) visit(v, token);
+    }
+  };
+  visit(mode.effects, false);
+  return mode.targets.length + nested;
+}
+
+/** Audit des cibles d'un éphémère ou d'un rituel à un seul mode (sans faces). */
+export function auditTargets(d: CardDef): AuditIssue[] {
+  if (d.faceDefs?.length || !d.spell || d.spell.modes.length !== 1) return [];
+  if (!d.types.includes("Instant") && !d.types.includes("Sorcery")) return [];
+  const words = targetWords(d.text ?? "");
+  const have = scriptTargets(d);
+  if (words !== have)
+    return [{ card: d.name, kind: "target", detail: `${words} « target » dans le texte, ${have} dans le script` }];
+  // « jusqu'à N cibles » : autant de cibles facultatives dans le script (sort sans capacité réflexive ni retardée).
+  const specs = d.spell.modes[0]?.targets ?? [];
+  const upTo = upToWords(d.text ?? "");
+  // Nombre de cibles variable : facultatives, ou entre un minimum et un maximum (« one or two »).
+  const optional = specs.filter((t) => t.optional || (t.minCount !== undefined && t.minCount < (t.count ?? 1))).length;
+  // Cible conditionnée par un coût (cadeau promis, marchandage) : facultative dans le script, sans « up to ».
+  const conditional = /\bif the gift was promised\b|\bif this spell was (?:bargained|kicked)\b/i.test(d.text ?? "");
+  if (have === specs.length && !conditional && upTo !== optional)
+    return [
+      {
+        card: d.name,
+        kind: "target",
+        detail: `${upTo} nombre(s) de cibles variable(s) dans le texte, ${optional} dans le script`,
+      },
+    ];
+  return [];
 }
 
 /** Clé stable d'un écart (pour la liste des écarts connus). */
