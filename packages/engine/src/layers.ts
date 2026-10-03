@@ -20,7 +20,7 @@ import { counterPT, obj } from "./state";
 import { playerStatics } from "./statics";
 import { ALL_CREATURE_TYPES, matchesObjectFilter, matchesView, withChosen } from "./targets";
 import { checkCondition } from "./triggers";
-import { countTurnEvents } from "./turnlog";
+import { countTurnEvents, onTurnLogged } from "./turnlog";
 import type {
   AbilityDef,
   Amount,
@@ -477,6 +477,8 @@ interface Applied {
 interface CacheDeps {
   tapped: boolean;
   mana: boolean;
+  /** Le journal du tour (`amount.turnEvents`, filtres « a attaqué / infligé des blessures ce tour-ci »). */
+  turnLog: boolean;
 }
 const cache = new WeakMap<GameState, { key: string; map: Map<ObjectId, Characteristics>; deps: CacheDeps }>();
 const depsMemo = new WeakMap<object, CacheDeps>();
@@ -498,10 +500,12 @@ function scanDeps(x: unknown, out: CacheDeps): void {
   }
   if (!x || typeof x !== "object") {
     if (x === "manaPoolAtLeast") out.mana = true;
+    if (x === "turnEvents") out.turnLog = true;
     return;
   }
   for (const [k, v] of Object.entries(x)) {
     if (k === "tapped" || k === "whileSourceTapped") out.tapped = true;
+    if (k === "attackedThisTurn" || k === "dealtDamageThisTurn" || k === "perTurnEvents") out.turnLog = true;
     scanDeps(v, out);
   }
 }
@@ -510,7 +514,7 @@ function scanDeps(x: unknown, out: CacheDeps): void {
 function depsOf(x: object, pick?: (x: object) => unknown): CacheDeps {
   const hit = depsMemo.get(x);
   if (hit) return hit;
-  const out = { tapped: false, mana: false };
+  const out = { tapped: false, mana: false, turnLog: false };
   scanDeps(pick ? pick(x) : x, out);
   depsMemo.set(x, out);
   return out;
@@ -522,10 +526,11 @@ const cdaOf = (d: object) => {
 };
 
 function cacheDeps(s: GameState, map: Map<ObjectId, Characteristics>): CacheDeps {
-  const out = { tapped: false, mana: false };
+  const out = { tapped: false, mana: false, turnLog: false };
   const merge = (d: CacheDeps) => {
     out.tapped ||= d.tapped;
     out.mana ||= d.mana;
+    out.turnLog ||= d.turnLog;
   };
   for (const e of s.effects) scanDeps(e, out);
   for (const [id, c] of map) {
@@ -553,6 +558,7 @@ export function bumpFor(s: GameState, dep: keyof CacheDeps): void {
   if (hit && hit.key === cacheKey(s) && !hit.deps[dep]) return;
   bump(s);
 }
+onTurnLogged((s) => bumpFor(s, "turnLog"));
 let computing = false;
 /** Caractéristiques de la passe précédente (613.8), lues pendant le calcul à la place des caractéristiques imprimées. */
 let provisional: Map<ObjectId, Characteristics> | null = null;

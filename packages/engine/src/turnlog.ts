@@ -18,10 +18,21 @@ export function dealtDamageThisTurn(s: GameState, id: ObjectId): boolean {
   return s.turnLog.some((e) => e.e === "damage" && e.sourceKey === key);
 }
 
+/**
+ * Invalidation du cache des couches après une entrée : installée par `layers.ts` (qui dépend de ce module) pour ne
+ * l'invalider que s'il lit le journal (PLAN-S, P2) ; par défaut, toujours.
+ */
+let invalidate = (s: GameState): void => {
+  s.version += 1;
+};
+export function onTurnLogged(fn: (s: GameState) => void): void {
+  invalidate = fn;
+}
+
 export function logTurnEvent(s: GameState, entry: TurnLogEntry): void {
   s.turnLog.push(entry);
-  // Des capacités statiques en dépendent (raid, « si vous avez attaqué avec un Vaisseau ») : cache des couches (`bump`).
-  s.version += 1;
+  // Des capacités statiques en dépendent (raid, « si vous avez attaqué avec un Vaisseau »).
+  invalidate(s);
 }
 
 /**
