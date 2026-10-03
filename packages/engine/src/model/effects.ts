@@ -73,8 +73,6 @@ export type Effect =
   | { op: "endure"; what: Ref; amount: Amount }
   /** « Retirez jusqu'à N marqueurs » (choix automatique : loyauté, +1/+1, puis les autres). */
   | { op: "removeCounters"; what: Ref; n: Amount; kind?: string; store?: string }
-  /** « Vous pouvez jouer un terrain supplémentaire ce tour-ci. » */
-  | { op: "extraLandThisTurn" }
   /** Suspecter / ne plus suspecter (701.60). */
   | { op: "suspect"; what: Ref; value: boolean }
   /** Devient préparé / dé-préparé (Reality Fracture). */
@@ -219,7 +217,8 @@ export type Effect =
   /** « Prévenez toutes les blessures de combat qui devraient être infligées à … ce tour-ci. » */
   | { op: "preventCombatDamage"; what: Ref }
   /** Double le nombre de marqueurs +1/+1. */
-  | { op: "doubleCounters"; what: Ref }
+  /** Double les marqueurs +1/+1 (ou, `all`, chaque sorte de marqueur) sur les permanents désignés. */
+  | { op: "doubleCounters"; what: Ref; all?: boolean }
   | { op: "tap"; what: Ref; untap?: boolean }
   /** Blessures à chaque créature correspondant au filtre (et éventuellement à des joueurs). */
   | { op: "damageAll"; amount: Amount; filter?: ObjectFilter; players?: Ref; source?: Ref }
@@ -234,8 +233,6 @@ export type Effect =
   /** Déplace un objet (retour en main, exil, retour du cimetière sur le champ de bataille…). */
   /** `attachTo` : une Aura ou un Équipement qui arrive attaché à l'objet désigné, s'il peut l'être (One Last Job). */
   | { op: "moveTo"; what: Ref; spec: MoveSpec; store?: { name: string; filter?: ObjectFilter }; attachTo?: Ref }
-  /** Double les marqueurs de chaque type (ou d'un type donné). */
-  | { op: "doubleAllCounters"; what: Ref }
   /** Déplace tous les objets d'une zone correspondant au filtre. */
   | {
       op: "moveAll";
@@ -291,8 +288,6 @@ export type Effect =
   | { op: "gainControlWhileSource"; what: Ref; restrict?: boolean }
   /** Base de F/E de chaque permanent correspondant égale au montant, jusqu'à la fin du tour (Sita Varma). */
   | { op: "setBasePTAll"; filter: ObjectFilter; amount: Amount; powerOnly?: boolean }
-  /** Pit Automaton : la prochaine capacité d'exhaust (non de mana) activée ce tour-ci est copiée. */
-  | { op: "copyNextExhaust" }
   /** La carte (ou le sort) est exilée et devient complotée (702.170). */
   | { op: "plot"; what: Ref }
   /** Tarnation Vista : un mana de chaque couleur présente parmi les permanents correspondants. */
@@ -403,8 +398,6 @@ export type Effect =
       life?: number;
       skip: number;
     }
-  /** « Vous pouvez lancer [cette carte] depuis votre cimetière ce tour-ci. » */
-  | { op: "allowCastFromGraveyard"; what: Ref }
   /** « En arrivant, choisissez un type de créature / une couleur » (sort de permanent qui se résout). */
   /** `options` : les seuls choix possibles (A Killer Among Us : Humain, Ondin ou Gobelin) ; `secret` : caché aux adversaires. */
   | {
@@ -495,7 +488,11 @@ export type Effect =
   /** `combatOnly` : seulement pendant la prochaine phase de combat de ce joueur. */
   | { op: "controlNextTurn"; who: Ref; combatOnly?: boolean }
   /** « Votre total de points de vie devient N » (The Endstone). */
-  | { op: "setLife"; who: Ref; amount: Amount }
+  /**
+   * Les joueurs désignés ont `amount` points de vie, ou (`exchange`) échangent leurs points de vie avec ce joueur ; chaque
+   * joueur gagne ou perd la différence (701.12b, 118.5). `store` : la vie perdue par le contrôleur.
+   */
+  | { op: "setLife"; who: Ref; amount?: Amount; exchange?: Ref; store?: string }
   /** Chaque joueur désigné exile une carte de sa main (à son choix), mémorisée (Lightstall Inquisitor). */
   | { op: "exileFromOwnHand"; who: Ref; store: string }
   /** « Sacrifiez-le à moins d'engager un permanent dégagé que vous contrôlez » (Command Bridge). */
@@ -507,13 +504,10 @@ export type Effect =
    */
   /** `maxCount` : au plus N copies lancées (Baron Helmut Zemo : « jusqu'à trois »). */
   | { op: "castCopiesFree"; what: Ref[]; maxTotalManaValue: number; paid?: boolean; storeCast?: string; maxCount?: number }
-  /** « La règle des légendes ne s'applique pas aux permanents que vous contrôlez ce tour-ci. » */
-  | { op: "noLegendRuleThisTurn" }
   /** Émeute (702.136) : le contrôleur du sort de créature qui se résout choisit un marqueur +1/+1 ou la célérité. */
   | { op: "chooseRiot" }
   /** Deux joueurs échangent leurs totaux de points de vie (701.12b : chacun gagne ou perd la différence) ; `store` : les
    * points de vie perdus ainsi par le contrôleur (Mister Negative : « piochez autant de cartes »). */
-  | { op: "exchangeLife"; a: Ref; b: Ref; store?: string }
   /** « Faites ceci une seule fois par tour » : la capacité déclenchée qui se résout ne se déclenche plus ce tour-ci. */
   | { op: "doneOncePerTurn" }
   /** Transforme les permanents recto-verso désignés (712.10 : recto ↔ verso). */
@@ -569,8 +563,6 @@ export type Effect =
    * d'abord) ; `store` vaut 1 si c'est fait.
    */
   | { op: "exileForManaValue"; filter: ObjectFilter; atLeast: Amount; store: string }
-  /** The Tomb of Aclazotz : « vous pouvez lancer un sort de créature depuis votre cimetière ce tour-ci » (finalité, Vampire). */
-  | { op: "graveyardCreatureOnce" }
   /** « [Ce sort] gagne le rebond » (702.88). */
   | { op: "grantRebound"; what: Ref }
   /** Sovereign Okinec Ahau : autant de marqueurs +1/+1 que l'écart entre sa force et sa force de base. */
@@ -796,8 +788,6 @@ export type Effect =
       damage?: Amount;
       times?: Amount;
     }
-  /** Révéler jusqu'à une carte correspondant au filtre : elle va en main, le reste au-dessous dans un ordre aléatoire. */
-  | { op: "revealUntil"; filter: ObjectFilter; to: MoveSpec }
   /**
    * Fourrager (701.61, Bloomburrow) : exiler trois cartes de son cimetière ou sacrifier une Nourriture (choix automatique).
    * `skip` : « vous pouvez fourrager ; si vous le faites, … » (les `skip` effets suivants sont ignorés sinon).
@@ -810,8 +800,6 @@ export type Effect =
   | { op: "collectEvidence"; n?: Amount; skip: number; store?: string; exclude?: Ref }
   /** Cadeau (702.174) : l'adversaire choisi reçoit le cadeau promis. */
   | { op: "gift"; kind: GiftKind; token?: TokenSpec }
-  /** Dégage tous les permanents correspondants du contrôleur. */
-  | { op: "untapAll"; filter: ObjectFilter }
   /** Chaque joueur subit des blessures égales au nombre de ses permanents correspondants (Sunspine Lynx). */
   | { op: "damageEachPlayerPer"; filter: ObjectFilter }
   /**

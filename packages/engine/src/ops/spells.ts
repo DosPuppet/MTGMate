@@ -42,7 +42,6 @@ import {
   setPrepared,
   shuffle,
 } from "../state";
-import { addPlayerEffect } from "../statics";
 import { legalTargets, matchesObjectFilter } from "../targets";
 import type { ChoiceValue, GameState, ManaCost, ObjectId, PlayerId, Resolution } from "../types";
 
@@ -404,12 +403,6 @@ export const HANDLERS: OpHandlers = {
     grantPlay(s, ctx.controller, chosen, e.until ?? "thisTurn", {});
     return;
   },
-  allowCastFromGraveyard(s, _r, e, ctx) {
-    // Zul Ashur : ces cartes de votre cimetière sont lançables ce tour-ci (permission ordinaire).
-    const ids = resolveRef(s, ctx, e.what).filter((id) => s.objects[id]?.zone === "graveyard");
-    grantPlay(s, ctx.controller, ids, "thisTurn", { source: ctx.sourceId });
-    return;
-  },
   prepare(s, _r, e, ctx) {
     const f = e.filter;
     const ids = f
@@ -456,10 +449,6 @@ export const HANDLERS: OpHandlers = {
   },
   plot(s, _r, e, ctx) {
     for (const id of resolveRef(s, ctx, e.what)) plotCard(s, id);
-    return;
-  },
-  copyNextExhaust(s, _r, _e, ctx) {
-    addPlayerEffect(s, ctx.controller, { copyNextExhaust: true }, s.turn.number, true);
     return;
   },
   copySpell(s, _r, e, ctx) {

@@ -54,18 +54,12 @@ export const HANDLERS: OpHandlers = {
     }
     return;
   },
-  doubleAllCounters(s, _r, e, ctx) {
-    for (const id of resolveRef(s, ctx, e.what)) {
-      const o = s.objects[id];
-      if (o?.zone !== "battlefield") continue;
-      for (const [kind, n] of Object.entries({ ...o.counters })) if (n > 0) changeCounters(s, o, kind, n);
-    }
-    return;
-  },
   doubleCounters(s, _r, e, ctx) {
     for (const id of resolveRef(s, ctx, e.what)) {
       const o = s.objects[id];
-      if (o?.zone === "battlefield") changeCounters(s, o, P1P1, counterCount(o, P1P1));
+      if (o?.zone !== "battlefield") continue;
+      if (!e.all) changeCounters(s, o, P1P1, counterCount(o, P1P1));
+      else for (const [kind, n] of Object.entries({ ...o.counters })) if (n > 0) changeCounters(s, o, kind, n);
     }
     return;
   },

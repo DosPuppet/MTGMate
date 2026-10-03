@@ -30,9 +30,7 @@ import {
   opponentsOf,
   rulesEvent,
   snapshot,
-  untapObject,
 } from "../state";
-import { addPlayerEffect } from "../statics";
 import { matchesCard, matchesObjectFilter } from "../targets";
 import { createDelayed, onceKey } from "../triggers";
 import { attackableDefenders } from "../turn";
@@ -406,15 +404,6 @@ export const HANDLERS: OpHandlers = {
     });
     return;
   },
-  untapAll(s, _r, e, ctx) {
-    for (const id of s.battlefield) {
-      const o = s.objects[id];
-      if (o?.controller !== ctx.controller || !o.tapped || !matchesObjectFilter(s, ctx.controller, id, e.filter, ctx.sourceId))
-        continue;
-      untapObject(s, o);
-    }
-    return;
-  },
   chooseCardName(s, r, _e, ctx, key) {
     if (r.vars.$name) return;
     const answer = r.vars[key("name")];
@@ -784,10 +773,6 @@ export const HANDLERS: OpHandlers = {
   doneOncePerTurn(s, r) {
     const key = onceKey(r.item.sourceDefId, r.item.sourceId, r.item.abilityIndex);
     if (!s.turn.onceFired.includes(key)) s.turn.onceFired.push(key);
-    return;
-  },
-  noLegendRuleThisTurn(s, _r, _e, ctx) {
-    addPlayerEffect(s, ctx.controller, { noLegendRule: true }, s.turn.number);
     return;
   },
 };

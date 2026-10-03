@@ -48,7 +48,7 @@ import {
   turnFaceUp,
   untapObject,
 } from "../state";
-import { addPlayerEffect, playerStatic, quantityMods, recipientMatches } from "../statics";
+import { playerStatic, quantityMods, recipientMatches } from "../statics";
 import { matchesCard, matchesObjectFilter, shareCreatureType } from "../targets";
 import { logTurnEvent } from "../turnlog";
 import type { CardType, Effect, GameState, MoveSpec, ObjectFilter, ObjectId, PlayerId, Resolution } from "../types";
@@ -650,21 +650,6 @@ export const HANDLERS: OpHandlers = {
     }
     return;
   },
-  revealUntil(s, r, e, ctx, key) {
-    const player = s.players[ctx.controller];
-    if (!player) return;
-    const i = player.library.findIndex((id) => matchesCard(s, ctx.controller, id, { ...e.filter, controller: undefined }));
-    const revealed = i < 0 ? [...player.library] : player.library.slice(0, i + 1);
-    const found = i < 0 ? null : (player.library[i] as string);
-    const rest = revealed.filter((id) => id !== found);
-    const shock = shockLandChoices(s, r, found ? [found] : [], e.to, ownerOr(s, e.to, ctx.controller), key);
-    if (!(shock instanceof Set)) return shock;
-    if (found) moveWithSpec(s, ctx.controller, found, e.to, shock.has(found) ? { shockPaid: true } : undefined);
-    const lib = player.library.filter((id) => !rest.includes(id));
-    shuffle(s, rest);
-    player.library = [...lib, ...rest];
-    return;
-  },
   airbend(s, _r, e, ctx) {
     for (const id of resolveRef(s, ctx, e.what)) {
       const exiled = onBattlefield(s, id)
@@ -952,25 +937,6 @@ export const HANDLERS: OpHandlers = {
     }
     for (const id of chosen) moveObject(s, id, "exile");
     store(r, e.store, 1);
-    return;
-  },
-  graveyardCreatureOnce(s, _r, _e, ctx) {
-    // The Tomb of Aclazotz : un sort de créature depuis votre cimetière, une fois ; finalité et Vampire.
-    addPlayerEffect(
-      s,
-      ctx.controller,
-      {
-        playFrom: {
-          zone: "graveyard",
-          filter: { types: ["Creature"] },
-          what: "spells",
-          finality: true,
-          addSubtypes: ["Vampire"],
-        },
-      },
-      s.turn.number,
-      true,
-    );
     return;
   },
   destroyAllButOnePerPlayer(s, r, e, ctx, key) {

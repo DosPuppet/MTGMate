@@ -426,7 +426,22 @@ export const LEGENDS: Record<string, CardScript> = {
       manaAbility("B"),
       activated({
         tap: true,
-        effects: [{ op: "graveyardCreatureOnce" }],
+        // Un sort de créature depuis votre cimetière, une fois ce tour-ci ; finalité et Vampire en plus.
+        effects: [
+          {
+            op: "playerEffect",
+            ability: {
+              playFrom: {
+                zone: "graveyard",
+                filter: { types: ["Creature"] },
+                what: "spells",
+                finality: true,
+                addSubtypes: ["Vampire"],
+              },
+            },
+            once: true,
+          },
+        ],
         label: "Un sort de créature depuis votre cimetière",
       }),
     ],

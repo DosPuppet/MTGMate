@@ -220,28 +220,6 @@ export const HANDLERS: OpHandlers = {
     store(r, e.store, lost);
     return;
   },
-  exchangeLife(s, r, e, ctx) {
-    const a = resolveRef(s, ctx, e.a).find((x) => isPlayer(s, x));
-    const b = resolveRef(s, ctx, e.b).find((x) => isPlayer(s, x));
-    if (!a || !b || a === b) return;
-    const before = s.players[ctx.controller]?.life ?? 0;
-    // 701.12b : chaque joueur gagne ou perd la différence (déclencheurs et remplacements compris).
-    const la = s.players[a]?.life ?? 0;
-    const lb = s.players[b]?.life ?? 0;
-    for (const [p, delta] of [
-      [a, lb - la],
-      [b, la - lb],
-    ] as const) {
-      if (delta > 0) gainLife(s, p, delta);
-      else if (delta < 0) loseLife(s, p, -delta);
-    }
-    store(r, e.store, Math.max(0, before - (s.players[ctx.controller]?.life ?? 0)));
-    return;
-  },
-  extraLandThisTurn(s, _r, _e, ctx) {
-    addPlayerEffect(s, ctx.controller, { extraLands: 1 }, s.turn.number);
-    return;
-  },
   reduceSpeed(s, _r, e, ctx) {
     for (const p of resolveRef(s, ctx, e.who).filter((x) => isPlayer(s, x))) {
       const speed = s.players[p]?.speed ?? 0;
@@ -350,14 +328,29 @@ export const HANDLERS: OpHandlers = {
     );
     return;
   },
-  setLife(s, _r, e, ctx) {
-    const n = evalAmount(s, ctx, e.amount);
-    for (const p of resolveRef(s, ctx, e.who)) {
+  setLife(s, r, e, ctx) {
+    const before = s.players[ctx.controller]?.life ?? 0;
+    // 701.12b, 118.5 : chaque joueur gagne ou perd la différence (déclencheurs et remplacements compris).
+    const change = (p: string, life: number) => {
       const pl = s.players[p];
-      if (!pl) continue;
-      if (n < pl.life) loseLife(s, p, pl.life - n);
-      else if (n > pl.life) gainLife(s, p, n - pl.life);
+      if (!pl) return;
+      if (life < pl.life) loseLife(s, p, pl.life - life);
+      else if (life > pl.life) gainLife(s, p, life - pl.life);
+    };
+    if (e.exchange) {
+      // Échange (Mister Negative) : les deux totaux sont lus avant le changement.
+      const a = resolveRef(s, ctx, e.who).find((x) => isPlayer(s, x));
+      const b = resolveRef(s, ctx, e.exchange).find((x) => isPlayer(s, x));
+      if (!a || !b || a === b) return;
+      const la = s.players[a]?.life ?? 0;
+      const lb = s.players[b]?.life ?? 0;
+      change(a, lb);
+      change(b, la);
+    } else {
+      const n = evalAmount(s, ctx, e.amount ?? 0);
+      for (const p of resolveRef(s, ctx, e.who)) change(p, n);
     }
+    store(r, e.store, Math.max(0, before - (s.players[ctx.controller]?.life ?? 0)));
     return;
   },
 };

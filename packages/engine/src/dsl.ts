@@ -754,7 +754,8 @@ export const fx = {
       ...flat,
     ];
   },
-  allowCastFromGraveyard: (what: Ref): Effect => ({ op: "allowCastFromGraveyard", what }),
+  /** Ces cartes de votre cimetière sont lançables ce tour-ci (permission ordinaire, Zul Ashur). */
+  allowCastFromGraveyard: (what: Ref): Effect => ({ op: "grantPlay", what }),
   addMana: (...mana: ManaType[]): Effect => ({ op: "addMana", mana }),
   /** « Ajoutez N mana d'une couleur au choix » ; `colors` : « {R}, {W} ou {B} ». */
   addManaChoice: (n: Amount = 1, colors?: ManaType[], restriction?: ManaRestriction, keep?: boolean): Effect => ({
@@ -871,8 +872,8 @@ export const fx = {
     maxTotalManaValue,
     ...opts,
   }),
-  noLegendRuleThisTurn: { op: "noLegendRuleThisTurn" } as Effect,
-  exchangeLife: (a: Ref, b: Ref, store?: string): Effect => ({ op: "exchangeLife", a, b, store }),
+  noLegendRuleThisTurn: { op: "playerEffect", ability: { noLegendRule: true } } as Effect,
+  exchangeLife: (a: Ref, b: Ref, store?: string): Effect => ({ op: "setLife", who: a, exchange: b, store }),
   /** « Faites ceci une seule fois par tour » (avec `oncePerTurn: "ifDone"`). */
   doneOncePerTurn: { op: "doneOncePerTurn" } as Effect,
   exileUntil: (filter: ObjectFilter, store: string): Effect => ({ op: "exileUntil", filter, store }),
@@ -909,7 +910,7 @@ export const fx = {
     amount,
     powerOnly,
   }),
-  copyNextExhaust: { op: "copyNextExhaust" } as Effect,
+  copyNextExhaust: { op: "playerEffect", ability: { copyNextExhaust: true }, once: true } as Effect,
   chooseCardName: { op: "chooseCardName" } as Effect,
   exileNamed: (who: Ref, max: number): Effect => ({ op: "exileNamed", who, max }),
   /** Deadly Cover-Up : une carte d'un cimetière adverse, et toutes ses homonymes (cimetière, main, bibliothèque). */
@@ -1157,7 +1158,7 @@ export const fx = {
     kind,
     store,
   }),
-  extraLandThisTurn: { op: "extraLandThisTurn" } as Effect,
+  extraLandThisTurn: { op: "playerEffect", ability: { extraLands: 1 } } as Effect,
   nextSpellUncounterable: { op: "playerEffect", ability: { nextSpell: { uncounterable: true } }, once: true } as Effect,
   tap: (what: Ref): Effect => ({ op: "tap", what }),
   untap: (what: Ref): Effect => ({ op: "tap", what, untap: true }),
@@ -1302,8 +1303,9 @@ export const fx = {
     loseLife,
     ...opts,
   }),
-  revealUntil: (filter: ObjectFilter, to: MoveSpec = { to: "hand" }): Effect => ({ op: "revealUntil", filter, to }),
-  doubleAllCounters: (what: Ref): Effect => ({ op: "doubleAllCounters", what }),
+  /** Révèle jusqu'à une carte correspondante, la met dans `to`, le reste au-dessous dans un ordre aléatoire. */
+  revealUntil: (filter: ObjectFilter, to: MoveSpec = { to: "hand" }): Effect => ({ op: "revealUntilN", filter, n: 1, to }),
+  doubleAllCounters: (what: Ref): Effect => ({ op: "doubleCounters", what, all: true }),
   search: (
     filter: ObjectFilter,
     to: MoveSpec = { to: "hand" },
@@ -1409,7 +1411,12 @@ export const fx = {
     const flat = effects.flat();
     return [{ op: "mayPay", cost: parseManaCost(mana), life, prompt, skip: flat.length }, ...flat];
   },
-  untapAll: (filter: ObjectFilter): Effect => ({ op: "untapAll", filter }),
+  /** Dégage les permanents correspondants que vous contrôlez. */
+  untapAll: (filter: ObjectFilter): Effect => ({
+    op: "tap",
+    what: { kind: "zone", zone: "battlefield", who: { kind: "you" }, filter },
+    untap: true,
+  }),
   damageEachPlayerPer: (filter: ObjectFilter): Effect => ({ op: "damageEachPlayerPer", filter }),
   portent: { op: "portent" } as Effect,
   drain: (n: Amount, who: Ref = ref.eachOpponent): Effect[] => [
