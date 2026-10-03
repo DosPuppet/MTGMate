@@ -82,7 +82,6 @@ export interface ObjectFilter {
   subtype?: string;
   controller?: "you" | "opponent";
   keyword?: Keyword;
-  notKeyword?: Keyword;
   /** « un autre » : exclut la source de la capacité. */
   other?: boolean;
   /** La source elle-même (« quand cette créature meurt, si ce n'était pas un Démon »). */
@@ -110,7 +109,6 @@ export interface ObjectFilter {
   crewedBySource?: boolean;
   /** A piloté ou monté la source ce tour-ci (Giant Beaver : « une créature qui l'a montée ce tour-ci »). */
   crewedSource?: boolean;
-  nontoken?: boolean;
   /** Force minimale (« créature de force 4 ou plus »). */
   minPower?: number;
   maxManaValue?: number;
@@ -134,25 +132,20 @@ export interface ObjectFilter {
   manaSpentBelowValue?: boolean;
   /** A subi des blessures ce tour-ci. */
   damaged?: boolean;
-  /** Créature attaquante ou bloqueuse. */
-  inCombat?: boolean;
   /** Au moins un de ces sous-types (« Chat ou Chien »…). */
   anySubtype?: string[];
   notSubtype?: string;
   minManaValue?: number;
   maxPower?: number;
-  /** « de base » (terrain de base). */
+  /** Terrain de base (`false` : « non de base »). */
   basic?: boolean;
   /** Carte permanente (hors pile) : artefact, créature, enchantement, terrain, planeswalker, bataille. */
   permanent?: boolean;
-  nonland?: boolean;
   /** Au moins un de ces filtres (« artefact, enchantement ou créature avec le vol »). */
   anyOf?: ObjectFilter[];
-  /** Jeton seulement. */
+  /** Jeton (`false` : « non-jeton »). */
   token?: boolean;
   minToughness?: number;
-  /** Non de base (« terrain non de base »). */
-  nonbasic?: boolean;
   /** A reçu des blessures de la source ce tour-ci (Predator Ooze). */
   damagedBySource?: boolean;
   /** Du type de créature / de la couleur choisis par la source en arrivant. */
@@ -220,8 +213,6 @@ export interface ObjectFilter {
   parityChosen?: boolean;
   /** Valeur de mana, force ou endurance égale au nombre choisi par la source (Talion, the Kindly Lord). */
   numberChosen?: boolean;
-  /** Sans aucun marqueur (Heartless Act). */
-  noCounters?: boolean;
   /** Du nom choisi par la source en arrivant (Petrified Hamlet : « les terrains du nom choisi »). */
   nameChosen?: boolean;
   /** A infligé des blessures ce tour-ci (Treacherous Greed). */

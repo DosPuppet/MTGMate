@@ -33,7 +33,7 @@ export const RED: Record<string, CardScript> = {
       triggered(
         when.entersSelf,
         [
-          fx.exileUntil({ nonland: true }, "x"),
+          fx.exileUntil({ notTypes: ["Land"] }, "x"),
           // Valeur de mana 9 ou plus : en main ; sinon on peut la lancer sans payer, et elle va en main si on refuse.
           fx.toHand(ref.filtered(ref.stored("x"), { minManaValue: 9 })),
           fx.castNow(ref.filtered(ref.stored("x"), { maxManaValue: 8 }), { free: true, storeRest: "r" }),

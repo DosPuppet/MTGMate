@@ -186,7 +186,7 @@ export const target = {
   nonland: (id = "t", extra: ObjectFilter = {}, label = "permanent non-terrain"): TargetSpec => ({
     id,
     label,
-    filter: { objects: { nonland: true, ...extra } },
+    filter: { objects: { ...extra, notTypes: ["Land", ...(extra.notTypes ?? [])] } },
   }),
   /** « sort ou capacité ciblé avec une seule cible » (Bolt Bend) */
   stackItemSingleTarget: (id = "t"): TargetSpec => ({
@@ -362,7 +362,7 @@ export const amount = {
   /** Marqueurs d'un type sur l'objet ; `"any"` : tous les marqueurs. */
   countersOn: (r: Ref, counter = "+1/+1"): Amount => ({ kind: "countersOn", ref: r, counter }),
   /** Valeurs de mana différentes parmi vos permanents non-terrains. */
-  differentManaValues: agg("distinct", "manaValue", { filter: { controller: "you", nonland: true } }),
+  differentManaValues: agg("distinct", "manaValue", { filter: { controller: "you", notTypes: ["Land"] } }),
   /** Vivid (ECL) : nombre de couleurs parmi les permanents que vous contrôlez (ou correspondant au filtre). */
   colorsAmong: (filter: ObjectFilter = { permanent: true, controller: "you" }): Amount => agg("distinct", "color", { filter }),
   lifeTotal: { kind: "lifeTotal" } as Amount,

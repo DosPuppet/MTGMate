@@ -294,7 +294,7 @@ export const RARES: Record<string, CardScript> = {
   },
   "Territorial Bruntar": {
     abilities: [
-      triggered(when.landfall, [fx.exileUntil({ nonland: true }, "b"), fx.grantPlay(ref.stored("b"))], {
+      triggered(when.landfall, [fx.exileUntil({ notTypes: ["Land"] }, "b"), fx.grantPlay(ref.stored("b"))], {
         label: "Exilez jusqu'à une carte non-terrain, lançable ce tour-ci",
       }),
     ],

@@ -401,7 +401,7 @@ export const BLUE: Record<string, CardScript> = {
       [
         target.cardInGraveyard(
           "t",
-          { nonland: true, enteredThisTurn: true },
+          { notTypes: ["Land"], enteredThisTurn: true },
           "any",
           "carte non-terrain mise dans un cimetière ce tour-ci",
         ),
@@ -411,7 +411,7 @@ export const BLUE: Record<string, CardScript> = {
   },
   "Sudden Setback": {
     spell: spell(
-      [{ id: "t", label: "sort ou permanent non-terrain", filter: { spells: {}, objects: { nonland: true } } }],
+      [{ id: "t", label: "sort ou permanent non-terrain", filter: { spells: {}, objects: { notTypes: ["Land"] } } }],
       [fx.topOrBottom(ref.target())],
     ),
   },

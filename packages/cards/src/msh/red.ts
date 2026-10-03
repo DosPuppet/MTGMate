@@ -289,7 +289,7 @@ export const RED: Record<string, CardScript> = {
             [
               fx.modify(ref.target(), {
                 addBlockRules: [
-                  block.notBy({ notKeyword: "haste" }, "Ne peut être bloquée que par des créatures avec la célérité"),
+                  block.notBy({ not: { keyword: "haste" } }, "Ne peut être bloquée que par des créatures avec la célérité"),
                 ],
               }),
             ],

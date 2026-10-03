@@ -212,7 +212,7 @@ export const MULTI: Record<string, CardScript> = {
       triggered(
         when.combatDamageToPlayer,
         [
-          fx.exileUntil({ nonland: true }, "c"),
+          fx.exileUntil({ notTypes: ["Land"] }, "c"),
           ...fx.may(
             "Défausser une carte pour lancer la carte exilée ?",
             fx.discard(1, ref.you, { store: "d" }),
@@ -351,7 +351,7 @@ export const MULTI: Record<string, CardScript> = {
   },
   "Starseer Mentor": {
     abilities: [
-      triggered(when.yourEndStep, [fx.punisher(ref.target(), 3, { discard: true, sacrifice: { nonland: true } })], {
+      triggered(when.yourEndStep, [fx.punisher(ref.target(), 3, { discard: true, sacrifice: { notTypes: ["Land"] } })], {
         condition: GAINED_OR_LOST,
         targets: [target.player("t", "opponent")],
         label: "Perd 3 PV sauf sacrifice ou défausse",
@@ -421,7 +421,7 @@ export const MULTI: Record<string, CardScript> = {
               [
                 target.cardInGraveyard(
                   "t",
-                  { nonland: true, permanent: true, maxManaValue: 3 },
+                  { notTypes: ["Land"], permanent: true, maxManaValue: 3 },
                   "you",
                   "permanent non-terrain de VM 3 ou moins",
                 ),

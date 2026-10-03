@@ -238,7 +238,7 @@ export const LEGENDS: Record<string, CardScript> = {
     abilities: [
       entersWith({ tapped: true, label: "Arrive engagé" }),
       manaAbility("C", 2, { restriction: { abilityOfSource: {} } }),
-      craft("{8}{U}", { filter: { nonland: true, withActivatedAbility: true }, count: 4 }),
+      craft("{8}{U}", { filter: { notTypes: ["Land"], withActivatedAbility: true }, count: 4 }),
     ],
   },
   "Locus of Enlightenment": {
@@ -361,7 +361,7 @@ export const LEGENDS: Record<string, CardScript> = {
   },
   "Deep-Cavern Bat": {
     abilities: [
-      triggered(when.entersSelf, [fx.exileFromHandLinked(ref.target(), { nonland: true }, true)], {
+      triggered(when.entersSelf, [fx.exileFromHandLinked(ref.target(), { notTypes: ["Land"] }, true)], {
         targets: [target.player("t", "opponent")],
         label: "Exilez une carte non-terrain de sa main",
       }),
@@ -518,7 +518,7 @@ export const LEGENDS: Record<string, CardScript> = {
     costReduction: { generic: amount.maxPower(CREATURE_YOU_CONTROL) },
     abilities: [
       triggered(
-        when.dies({ ...CREATURE_YOU_CONTROL, nontoken: true }),
+        when.dies({ ...CREATURE_YOU_CONTROL, token: false }),
         [fx.createXXToken(FUNGUS_DINOSAUR, amount.powerOf(ref.eventObject))],
         { label: "Champignon Dinosaure" },
       ),

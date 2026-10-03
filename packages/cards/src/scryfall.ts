@@ -185,7 +185,7 @@ export function parseWard(text: string): CardDef["ward"] {
     const n = ({ a: 1, an: 1, two: 2, three: 3, four: 4 } as Record<string, number>)[m[5].toLowerCase()];
     const kind = (m[6] ?? "").toLowerCase();
     const filter: ObjectFilter | undefined = kind.startsWith("nonland")
-      ? { nonland: true }
+      ? { notTypes: ["Land"] }
       : kind.startsWith("creature")
         ? { types: ["Creature"] }
         : undefined;

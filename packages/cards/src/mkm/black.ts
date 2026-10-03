@@ -124,7 +124,7 @@ export const BLACK: Record<string, CardScript> = {
       mode(
         "Un adversaire révèle sa main ; vous choisissez une carte non-terrain qu'il défausse",
         [target.player("t", "opponent")],
-        [fx.discard(1, ref.target(), { filter: { nonland: true }, chooser: "controller" })],
+        [fx.discard(1, ref.target(), { filter: { notTypes: ["Land"] }, chooser: "controller" })],
       ),
     ),
   },
@@ -157,7 +157,7 @@ export const BLACK: Record<string, CardScript> = {
   },
   "Homicide Investigator": {
     abilities: [
-      triggered(when.dies({ types: ["Creature"], controller: "you", nontoken: true }), [investigate(1)], {
+      triggered(when.dies({ types: ["Creature"], controller: "you", token: false }), [investigate(1)], {
         batched: true,
         oncePerTurn: true,
         label: "Enquêtez",

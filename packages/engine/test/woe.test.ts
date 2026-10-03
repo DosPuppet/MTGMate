@@ -4542,7 +4542,7 @@ describe("Wilds of Eldraine, lot C3 : copies non légendaires, copie d'une carte
     const spec = {
       id: "t",
       filter: {
-        objects: { types: ["Creature"], controller: "you", nontoken: true, notSameNameAs: { token: true, controller: "you" } },
+        objects: { types: ["Creature"], controller: "you", token: false, notSameNameAs: { token: true, controller: "you" } },
       },
     } as const;
     expect(legalTargetsOf(s, "p1", spec as never)).not.toContain(hero);

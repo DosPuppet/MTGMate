@@ -151,7 +151,10 @@ export const GREEN: Record<string, CardScript> = {
   "Pull Through the Weft": {
     spell: spell(
       [
-        target.upTo(2, target.cardInGraveyard("a", { permanent: true, nonland: true }, "you", "carte de permanent non-terrain")),
+        target.upTo(
+          2,
+          target.cardInGraveyard("a", { permanent: true, notTypes: ["Land"] }, "you", "carte de permanent non-terrain"),
+        ),
         target.upTo(2, target.cardInGraveyard("b", { types: ["Land"] }, "you", "carte de terrain")),
       ],
       [fx.toHand(ref.target("a")), fx.toBattlefield(ref.target("b"), { tapped: true })],

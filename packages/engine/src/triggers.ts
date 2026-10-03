@@ -830,7 +830,7 @@ function matchTrigger(s: GameState, ev: RulesEvent, t: TriggerSpec, src: Source)
         if (t.filter.permanent && !d.types.some((x) => PERMANENT_TYPES.includes(x))) return null;
         // « une ou plusieurs cartes de créature » (Robot Domination, Moonshadow) : un jeton n'est pas une carte.
         const token = card?.isToken ?? ev.lki?.isToken ?? false;
-        if (t.filter.nontoken && token) return null;
+        if (t.filter.token === false && token) return null;
         if (t.filter.token && !token) return null;
       }
       return { objectId: ev.newId ?? undefined, player: owner ?? me };

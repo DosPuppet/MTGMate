@@ -189,7 +189,7 @@ export const RED: Record<string, CardScript> = {
           "Gnawing Crescendo",
           'Whenever a nontoken creature you control dies this turn, create a 1/1 black Rat creature token with "This token can\'t block."',
           [
-            triggered(when.dies({ types: ["Creature"], controller: "you", nontoken: true }), [fx.createTokens(RAT_NO_BLOCK)], {
+            triggered(when.dies({ types: ["Creature"], controller: "you", token: false }), [fx.createTokens(RAT_NO_BLOCK)], {
               label: "Un Rat 1/1 qui ne peut pas bloquer",
             }),
           ],

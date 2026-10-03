@@ -103,7 +103,7 @@ export const WHITE: Record<string, CardScript> = {
     // « En coût additionnel, vous pouvez contempler un Dragon » : fait au lancement, retenu par le sort.
     additionalCost: { behold: { filter: DRAGON_CARD } },
     spell: spell(
-      [target.creature("t", { inCombat: true })],
+      [target.creature("t", { anyOf: [{ attacking: true }, { blocking: true }] })],
       [fx.damage(5, ref.target()), ...fx.when(cond.beheld, fx.gainLife(2))],
     ),
   },
@@ -211,7 +211,7 @@ export const WHITE: Record<string, CardScript> = {
   // --- Lot B ------------------------------------------------------------------
   "Anafenza, Unyielding Lineage": {
     abilities: [
-      triggered(when.dies({ types: ["Creature"], controller: "you", nontoken: true, other: true }), [fx.endure(ref.self, 2)], {
+      triggered(when.dies({ types: ["Creature"], controller: "you", token: false, other: true }), [fx.endure(ref.self, 2)], {
         label: "Une autre de vos créatures non-jeton meurt : endurance 2",
       }),
     ],
@@ -244,7 +244,7 @@ export const WHITE: Record<string, CardScript> = {
         targets: [
           target.cardInGraveyard(
             "t",
-            { permanent: true, nonland: true, maxManaValue: 2 },
+            { permanent: true, notTypes: ["Land"], maxManaValue: 2 },
             "you",
             "carte de permanent non-terrain de VM 2 ou moins",
           ),

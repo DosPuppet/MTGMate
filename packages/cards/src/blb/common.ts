@@ -92,7 +92,7 @@ export const kin = (subtypes: string[], extra: ObjectFilter = {}): ObjectFilter 
   ...extra,
 });
 export const FLYER_YOU: ObjectFilter = { types: ["Creature"], controller: "you", keyword: "flying" };
-export const NONFLYER_YOU: ObjectFilter = { types: ["Creature"], controller: "you", notKeyword: "flying" };
+export const NONFLYER_YOU: ObjectFilter = { types: ["Creature"], controller: "you", not: { keyword: "flying" } };
 export const TOKEN_YOU: ObjectFilter = { token: true, controller: "you" };
 
 /** Vaillance : « chaque fois que cette créature devient la cible d'un sort ou d'une capacité que vous contrôlez pour la première fois chaque tour ». */

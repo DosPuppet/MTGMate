@@ -81,7 +81,7 @@ export const WHITE: Record<string, CardScript> = {
       activated({
         mana: "{3}{W}",
         sorcerySpeed: true,
-        targets: [{ ...target.creature("t", { notKeyword: "flying" }), label: "créature sans le vol" }],
+        targets: [{ ...target.creature("t", { not: { keyword: "flying" } }), label: "créature sans le vol" }],
         effects: [fx.modify(ref.target(), { addKeywords: ["flying"] })],
         label: "Une créature sans le vol gagne le vol",
       }),
@@ -242,7 +242,7 @@ export const WHITE: Record<string, CardScript> = {
   },
   "Sally Pride, Lioness Leader": {
     abilities: [
-      triggered(when.entersSelf, [fx.createTokens(MUTANT, amount.count({ ...CREATURES_YOU_CONTROL, nontoken: true }))], {
+      triggered(when.entersSelf, [fx.createTokens(MUTANT, amount.count({ ...CREATURES_YOU_CONTROL, token: false }))], {
         label: "X Mutants 2/2 (X : vos créatures non-jetons)",
       }),
       triggered(when.attacksSelf, [fx.addCountersAll(CREATURES_YOU_CONTROL, 1)], {

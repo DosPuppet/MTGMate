@@ -199,7 +199,7 @@ export const MULTI: Record<string, CardScript> = {
         [
           fx.pickFromZone(
             "hand",
-            { nonland: true, maxManaValue: 3 },
+            { notTypes: ["Land"], maxManaValue: 3 },
             { to: "exile" },
             { min: 0, store: "k", prompt: "Vous pouvez comploter une carte" },
           ),

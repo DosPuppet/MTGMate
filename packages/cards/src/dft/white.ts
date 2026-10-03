@@ -123,7 +123,7 @@ export const WHITE: Record<string, CardScript> = {
   },
   "Guardian Sunmare": {
     abilities: [
-      whileSaddled([fx.search({ permanent: true, nonland: true, maxManaValue: 3 }, { to: "battlefield" })], {
+      whileSaddled([fx.search({ permanent: true, notTypes: ["Land"], maxManaValue: 3 }, { to: "battlefield" })], {
         label: "Un permanent non-terrain de VM 3 ou moins",
       }),
     ],

@@ -274,7 +274,7 @@ export const RED: Record<string, CardScript> = {
           fx.search({ types: ["Land"], basic: true }, { to: "battlefield", tapped: true }, 1, ref.controllerOf(ref.stored("d"))),
         ],
         {
-          targets: [onePerPlayer(target.permanent("t", ["Land"], { nonbasic: true }, "terrain non-base"))],
+          targets: [onePerPlayer(target.permanent("t", ["Land"], { basic: false }, "terrain non-base"))],
           label: "Détruisez jusqu'à un terrain non-base par joueur ; son contrôleur cherche un terrain de base",
         },
       ),

@@ -106,7 +106,7 @@ export const LEGENDS4: Record<string, CardScript> = {
       costReducer({ colors: ["B"] }, 1, "Sorts noirs : {1} de moins"),
       graveyardReplacement({
         fromBattlefield: true,
-        filter: { types: ["Creature"], controller: "opponent", nontoken: true },
+        filter: { types: ["Creature"], controller: "opponent", token: false },
         link: "uid",
         gainLife: 2,
         label: "Créatures adverses exilées au lieu de mourir, +2 PV",
@@ -137,7 +137,7 @@ export const LEGENDS4: Record<string, CardScript> = {
     abilities: [
       staticAbility({ ...YOURS, equipped: true }, { addKeywords: ["haste"] }, { label: "Créatures équipées : célérité" }),
       triggered(
-        when.enters({ ...EQUIPMENT_YOU, nontoken: true }),
+        when.enters({ ...EQUIPMENT_YOU, token: false }),
         [fx.copyToken(ref.eventObject, { equipDiscount: 2, sacrificeAtNextUpkeep: true })],
         { label: "Copie de l'Équipement (Équiper {2} de moins)" },
       ),

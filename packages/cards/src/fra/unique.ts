@@ -89,7 +89,10 @@ export const UNIQUE: Record<string, CardScript> = {
         ],
         {
           targets: ULDAROS_TYPES.map((t) => ({
-            ...target.upTo(1, target.cardInGraveyard(uldarosId(t), { types: [t], nonland: true }, "you", `carte de type ${t}`)),
+            ...target.upTo(
+              1,
+              target.cardInGraveyard(uldarosId(t), { types: [t], notTypes: ["Land"] }, "you", `carte de type ${t}`),
+            ),
             otherThan: ULDAROS_TYPES.filter((x) => x !== t).map(uldarosId),
           })),
           condition: cond.wasCast,
@@ -219,7 +222,7 @@ export const UNIQUE: Record<string, CardScript> = {
   "Sphinx of False Conclusions": {
     abilities: [
       triggered(when.attacksSelf, fx.loot(1), { label: "Piochez, puis défaussez" }),
-      triggered(when.diesSelf, fx.when(cond.eventObjectMatches({ nontoken: true }), fx.copyToken(ref.eventObject)), {
+      triggered(when.diesSelf, fx.when(cond.eventObjectMatches({ token: false }), fx.copyToken(ref.eventObject)), {
         label: "Jeton copie",
       }),
     ],
@@ -598,7 +601,7 @@ export const UNIQUE: Record<string, CardScript> = {
   },
   "Null Summoner": {
     abilities: [
-      triggered(when.entersSelf, [fx.exileFromHandLinked(ref.target(), { nonland: true })], {
+      triggered(when.entersSelf, [fx.exileFromHandLinked(ref.target(), { notTypes: ["Land"] })], {
         targets: [target.player("t", "opponent")],
         condition: cond.wasCast,
         label: "Exilez une carte non-terrain de sa main",

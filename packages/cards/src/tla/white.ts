@@ -277,7 +277,7 @@ export const WHITE: Record<string, CardScript> = {
   },
   "Razor Rings": {
     spell: spell(
-      [target.creature("t", { inCombat: true })],
+      [target.creature("t", { anyOf: [{ attacking: true }, { blocking: true }] })],
       [fx.damageStoringExcess(4, ref.target(), "excess"), fx.gainLife(amount.v("excess"))],
     ),
   },

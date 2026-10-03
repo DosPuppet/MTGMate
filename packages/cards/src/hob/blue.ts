@@ -48,8 +48,8 @@ const exchangeModes: ModeDef[] = SHARED_TYPES.map(([type, label]) =>
   mode(
     `Échangez le contrôle de deux ${label}`,
     [
-      target.permanent("a", [type], { nonland: true }, `${label} non-terrain`),
-      { ...target.permanent("b", [type], { nonland: true }, `${label} non-terrain`), otherThan: ["a"] },
+      target.permanent("a", [type], { notTypes: ["Land"] }, `${label} non-terrain`),
+      { ...target.permanent("b", [type], { notTypes: ["Land"] }, `${label} non-terrain`), otherThan: ["a"] },
     ],
     [fx.exchangeControl(ref.target("a"), ref.target("b"))],
   ),
@@ -287,7 +287,7 @@ export const BLUE: Record<string, CardScript> = {
     ],
   },
   "Uneasy Partings": {
-    costReduction: { generic: 1, condition: cond.targetMatches("t", { attacking: true, nontoken: true }) },
+    costReduction: { generic: 1, condition: cond.targetMatches("t", { attacking: true, token: false }) },
     spell: spell([target.creature()], [fx.topOrBottom(ref.target())]),
   },
   "Wizard's Staff": {

@@ -281,7 +281,7 @@ export const ARTIFACTS: Record<string, CardScript> = {
         mana: "{1}",
         tap: true,
         sacrifice: true,
-        targets: [targetObj("t", { types: ["Land"], nonbasic: true, controller: "opponent" }, "terrain non de base adverse")],
+        targets: [targetObj("t", { types: ["Land"], basic: false, controller: "opponent" }, "terrain non de base adverse")],
         effects: [
           fx.destroy(ref.target()),
           fx.search(BASIC_LAND, { to: "battlefield" }, 1, ref.controllerOf(ref.target())),

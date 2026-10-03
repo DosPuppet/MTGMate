@@ -148,7 +148,7 @@ export const LANDS: Record<string, CardScript> = {
         mana: "{2}",
         tap: true,
         sacrifice: true,
-        targets: [target.permanent("t", ["Land"], { controller: "opponent", nonbasic: true }, "terrain non de base adverse")],
+        targets: [target.permanent("t", ["Land"], { controller: "opponent", basic: false }, "terrain non de base adverse")],
         effects: [
           fx.destroy(ref.target()),
           fx.search(BASIC_LAND, { to: "battlefield" }, 1, ref.controllerOf(ref.target())),

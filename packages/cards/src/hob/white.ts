@@ -113,7 +113,7 @@ export const WHITE: Record<string, CardScript> = {
         },
       ),
       // « Fíli ou un autre Nain non-jeton que vous contrôlez » : Fíli est elle-même un Nain non-jeton.
-      triggered(when.enters({ subtype: "Dwarf", nontoken: true, controller: "you" }), [fx.createTokens(DWARF)], {
+      triggered(when.enters({ subtype: "Dwarf", token: false, controller: "you" }), [fx.createTokens(DWARF)], {
         label: "Un Nain 2/2",
       }),
     ],

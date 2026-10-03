@@ -83,7 +83,7 @@ export const CARDS: Record<string, CardScript> = {
         targets: [target.upTo(1, target.nonland("t", { other: true }))],
         label: "{U}{U} dépensé : renvoie un permanent non-terrain",
       }),
-      triggered(when.entersSelf, [fx.discard(1, ref.target(), { filter: { nonland: true }, chooser: "controller" })], {
+      triggered(when.entersSelf, [fx.discard(1, ref.target(), { filter: { notTypes: ["Land"] }, chooser: "controller" })], {
         condition: cond.spent("B", 2),
         targets: [target.player("t", "opponent")],
         label: "{B}{B} dépensé : défausse d'une carte non-terrain choisie",
@@ -157,7 +157,7 @@ export const CARDS: Record<string, CardScript> = {
           to: ["graveyard"],
           whose: "you",
           // « cartes de permanent » : pas les jetons.
-          filter: { permanent: true, nontoken: true },
+          filter: { permanent: true, token: false },
         }),
         [fx.removeCounters(ref.self, 1, "-1/-1")],
         { condition: cond.counterAtLeast("-1/-1", 1), batched: true, label: "Retire un marqueur -1/-1" },

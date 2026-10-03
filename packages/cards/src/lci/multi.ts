@@ -254,7 +254,7 @@ export const MULTI: Record<string, CardScript> = {
   },
   "Squirming Emergence": {
     spell: spell(
-      [target.cardInGraveyard("t", { permanent: true, nonland: true }, "you", "carte de permanent non-terrain")],
+      [target.cardInGraveyard("t", { permanent: true, notTypes: ["Land"] }, "you", "carte de permanent non-terrain")],
       [
         ...fx.when(
           cond.amountAtLeast(amount.plus(PERMANENT_CARDS, amount.neg(amount.manaValueOf(ref.target()))), 0),
@@ -314,7 +314,7 @@ export const MULTI: Record<string, CardScript> = {
           [
             targetObj(
               "b",
-              { nonland: true, notTypes: ["Creature"], maxManaValue: 1 },
+              { notTypes: ["Land", "Creature"], maxManaValue: 1 },
               "permanent non-créature non-terrain de VM 1 ou moins",
             ),
           ],
@@ -327,7 +327,7 @@ export const MULTI: Record<string, CardScript> = {
               target.creatureOrPlaneswalker("a"),
               targetObj(
                 "b",
-                { nonland: true, notTypes: ["Creature"], maxManaValue: 1 },
+                { notTypes: ["Land", "Creature"], maxManaValue: 1 },
                 "permanent non-créature non-terrain de VM 1 ou moins",
               ),
             ],

@@ -227,7 +227,7 @@ export const GREEN: Record<string, CardScript> = {
   "Gruff Triplets": {
     abilities: [
       triggered(when.entersSelf, [fx.copyToken(ref.self, { count: 2 })], {
-        condition: cond.sourceMatches({ nontoken: true }),
+        condition: cond.sourceMatches({ token: false }),
         label: "Deux jetons copies d'elle",
       }),
       triggered(

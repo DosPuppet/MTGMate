@@ -141,7 +141,13 @@ export const WHITE: Record<string, CardScript> = {
   "Helicarrier Strike": {
     // Travail d'équipe 2 : lu dans le texte.
     spell: spell(
-      [{ id: "t", label: "créature attaquante ou bloqueuse", filter: { objects: { types: ["Creature"], inCombat: true } } }],
+      [
+        {
+          id: "t",
+          label: "créature attaquante ou bloqueuse",
+          filter: { objects: { types: ["Creature"], anyOf: [{ attacking: true }, { blocking: true }] } },
+        },
+      ],
       [fx.damage(amount.kicked(4, 2), ref.target())],
     ),
   },

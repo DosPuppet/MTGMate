@@ -531,7 +531,7 @@ export const SPEED: Record<string, CardScript> = {
         effects: [fx.surveil(1)],
         label: "Surveillance 1",
       }),
-      triggered(when.dies({ types: ["Creature"], controller: "you", nontoken: true }), [fx.createTappedTokens(ZOMBIE)], {
+      triggered(when.dies({ types: ["Creature"], controller: "you", token: false }), [fx.createTappedTokens(ZOMBIE)], {
         condition: MAX,
         label: "Vitesse max : Zombie 2/2 engagé",
       }),

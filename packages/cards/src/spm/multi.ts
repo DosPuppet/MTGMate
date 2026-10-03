@@ -299,7 +299,7 @@ export const MULTI: Record<string, CardScript> = {
               1,
               target.cardInGraveyard(
                 "g",
-                { permanent: true, nonland: true },
+                { permanent: true, notTypes: ["Land"] },
                 "any",
                 "carte de permanent non-terrain d'un cimetière",
               ),

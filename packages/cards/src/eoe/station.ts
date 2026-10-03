@@ -172,7 +172,7 @@ export const STATION: Record<string, CardScript> = {
   },
   "Susurian Dirgecraft": {
     abilities: [
-      triggered(when.entersSelf, [fx.sacrifice(ref.eachOpponent, { types: ["Creature"], nontoken: true })], {
+      triggered(when.entersSelf, [fx.sacrifice(ref.eachOpponent, { types: ["Creature"], token: false })], {
         label: "Chaque adversaire sacrifie une créature",
       }),
     ],

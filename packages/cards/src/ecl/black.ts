@@ -182,7 +182,7 @@ export const BLACK: Record<string, CardScript> = {
       mode(
         "L'adversaire révèle sa main ; il se défausse de la carte de permanent non-terrain choisie",
         [target.player("p", "opponent")],
-        [fx.discard(1, ref.target("p"), { chooser: "controller", filter: { permanent: true, nonland: true } })],
+        [fx.discard(1, ref.target("p"), { chooser: "controller", filter: { permanent: true, notTypes: ["Land"] } })],
       ),
       mode("Une créature gagne -2/-2", [target.creature("c")], [fx.pump(ref.target("c"), -2, -2)]),
     ),

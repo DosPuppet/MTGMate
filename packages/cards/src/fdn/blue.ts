@@ -134,7 +134,7 @@ export const BLUE: Record<string, CardScript> = {
   "Extravagant Replication": {
     abilities: [
       triggered(when.yourUpkeep, [fx.copyToken(ref.target())], {
-        targets: [targetObj("t", { controller: "you", nonland: true, other: true }, "autre permanent non-terrain à vous")],
+        targets: [targetObj("t", { controller: "you", notTypes: ["Land"], other: true }, "autre permanent non-terrain à vous")],
         label: "jeton copie",
       }),
     ],
@@ -350,7 +350,7 @@ export const BLUE: Record<string, CardScript> = {
     spell: spell([target.creature()], [fx.copyToken(ref.target(), { count: amount.kicked(5, 1) })]),
   },
   "River's Rebuke": {
-    spell: spell([target.player()], [fx.moveAll("battlefield", ref.target(), { nonland: true }, { to: "hand" })]),
+    spell: spell([target.player()], [fx.moveAll("battlefield", ref.target(), { notTypes: ["Land"] }, { to: "hand" })]),
   },
   "Shipwreck Dowser": {
     abilities: [

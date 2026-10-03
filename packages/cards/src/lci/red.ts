@@ -40,7 +40,7 @@ export const RED: Record<string, CardScript> = {
             fx.createTokens(DINOSAUR_3_1),
           ),
           ...fx.when(
-            cond.amountAtLeast(amount.refCount(ref.filtered(ref.stored("x"), { nonland: true })), 1),
+            cond.amountAtLeast(amount.refCount(ref.filtered(ref.stored("x"), { notTypes: ["Land"] })), 1),
             fx.createTokens(TREASURE),
           ),
         ],

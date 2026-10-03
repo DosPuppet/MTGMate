@@ -63,7 +63,7 @@ export const WHITE: Record<string, CardScript> = {
   },
   "Attentive Sunscribe": { abilities: [triggered(when.tapsSelf, [fx.scry(1)], { label: "Regard 1" })] },
   "Cosmium Blast": {
-    spell: spell([target.creature("t", { inCombat: true })], [fx.damage(4, ref.target())]),
+    spell: spell([target.creature("t", { anyOf: [{ attacking: true }, { blocking: true }] })], [fx.damage(4, ref.target())]),
   },
   "Deconstruction Hammer": {
     abilities: [

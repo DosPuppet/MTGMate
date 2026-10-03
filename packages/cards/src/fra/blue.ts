@@ -84,7 +84,7 @@ export const BLUE: Record<string, CardScript> = {
   },
   "Arni, Humble Scribe": {
     abilities: [
-      triggered(when.enters({ types: ["Creature"], controller: "you", other: true, nontoken: true }), [fx.untap(ref.self)], {
+      triggered(when.enters({ types: ["Creature"], controller: "you", other: true, token: false }), [fx.untap(ref.self)], {
         label: "se dégage",
       }),
       activated({ tap: true, effects: fx.loot(1), label: "Piochez puis défaussez" }),

@@ -272,7 +272,7 @@ export const GREEN: Record<string, CardScript> = {
     abilities: [
       triggered(when.yourEndStep, [fx.addCounters(ref.self, 1)], { label: "Marqueur +1/+1" }),
       triggered(
-        when.enters({ types: ["Creature"], controller: "you", nontoken: true, other: true }),
+        when.enters({ types: ["Creature"], controller: "you", token: false, other: true }),
         [fx.endure(ref.eventObject, amount.countersOn(ref.self, "any"))],
         { label: "Une autre de vos créatures non-jeton arrive : elle endure X (marqueurs sur Warden)" },
       ),

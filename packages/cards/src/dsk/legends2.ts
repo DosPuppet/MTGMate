@@ -57,7 +57,7 @@ export const LEGENDS2: Record<string, CardScript> = {
       graveyardReplacement({
         graveyardOf: "opponent",
         notControlledByYou: true,
-        filter: { nontoken: true },
+        filter: { token: false },
         link: "object",
         label: "Les cartes adverses sont exilées",
       }),

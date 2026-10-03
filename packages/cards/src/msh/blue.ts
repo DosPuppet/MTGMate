@@ -233,11 +233,11 @@ export const BLUE: Record<string, CardScript> = {
   "Justice, Vance Astrovik": {
     abilities: [
       triggered(when.entersSelf, [fx.bounce(ref.target())], {
-        targets: [target.upTo(1, target.nonland("t", { nontoken: true }, "permanent non-terrain qui n'est pas un jeton"))],
+        targets: [target.upTo(1, target.nonland("t", { token: false }, "permanent non-terrain qui n'est pas un jeton"))],
         label: "Renvoyez un permanent non-terrain",
       }),
       triggered(
-        { on: "leaves", who: { nonland: true, controller: "you", other: true }, to: "hand" },
+        { on: "leaves", who: { notTypes: ["Land"], controller: "you", other: true }, to: "hand" },
         [fx.addCounters(ref.self, 1)],
         { label: "Un permanent renvoyé en main : un marqueur +1/+1" },
       ),
@@ -280,7 +280,7 @@ export const BLUE: Record<string, CardScript> = {
     ],
   },
   "Multiversal Incursion": {
-    spell: spell([], [fx.copyToken(ref.permanentsOf(ref.you, { types: ["Creature"], nontoken: true }), { nonlegendary: true })]),
+    spell: spell([], [fx.copyToken(ref.permanentsOf(ref.you, { types: ["Creature"], token: false }), { nonlegendary: true })]),
   },
   "Pym Particles": {
     spell: spell([target.creature()], [fx.pump(ref.target(), 0, 0, ["vigilance", "unblockable"]), fx.draw(1)]),
@@ -437,7 +437,7 @@ export const BLUE: Record<string, CardScript> = {
   "Wiccan, Rising Magician": {
     abilities: [
       triggered(when.castSpell("you", { notTypes: ["Creature"] }), FLICKER_UNTIL_END_STEP, {
-        targets: [target.nonland("t", { other: true, nontoken: true }, "autre permanent non-terrain qui n'est pas un jeton")],
+        targets: [target.nonland("t", { other: true, token: false }, "autre permanent non-terrain qui n'est pas un jeton")],
         label: "Exilez un autre permanent jusqu'à l'étape de fin",
       }),
     ],

@@ -116,7 +116,7 @@ export const WHITE: Record<string, CardScript> = {
       {
         cost: "{1}",
         label: "Exilez une créature non-jeton, elle revient",
-        targets: [target.creature("e", { nontoken: true })],
+        targets: [target.creature("e", { token: false })],
         effects: [
           fx.exileCard(ref.target("e"), { name: "g" }),
           fx.delayed([fx.toBattlefield(ref.target("g"))], { g: ref.stored("g") }),
@@ -297,7 +297,7 @@ export const WHITE: Record<string, CardScript> = {
     // « si vous contrôliez une Monture en lançant ce sort » : vérifié au lancement.
     whenCast: cond.controls({ subtype: "Mount" }),
     spell: spell(
-      [target.creature("t", { inCombat: true })],
+      [target.creature("t", { anyOf: [{ attacking: true }, { blocking: true }] })],
       [fx.when(cond.metWhenCast, fx.damage(4, ref.target())), fx.when(cond.not(cond.metWhenCast), fx.damage(2, ref.target()))],
     ),
   },

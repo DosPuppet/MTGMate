@@ -278,7 +278,7 @@ export const RED: Record<string, CardScript> = {
       }),
     ],
   },
-  "Seismic Rupture": { spell: spell([], [fx.damageAll(2, { notKeyword: "flying" })]) },
+  "Seismic Rupture": { spell: spell([], [fx.damageAll(2, { not: { keyword: "flying" } })]) },
   Slagstorm: {
     spell: modal(
       mode("3 blessures à chaque créature", [], [fx.damageAll(3, {})]),
@@ -482,7 +482,7 @@ export const RED: Record<string, CardScript> = {
   "Lathliss, Dragon Queen": {
     abilities: [
       triggered(
-        when.enters({ types: ["Creature"], subtype: "Dragon", controller: "you", nontoken: true, other: true }),
+        when.enters({ types: ["Creature"], subtype: "Dragon", controller: "you", token: false, other: true }),
         [fx.createTokens(DRAGON_5)],
         {
           label: "Dragon 5/5 volant",

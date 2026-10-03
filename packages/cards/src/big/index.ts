@@ -371,14 +371,14 @@ export const BIG_SCRIPTS: Record<string, CardScript> = {
       triggered(
         when.yourUpkeep,
         [
-          fx.exileTop(ref.you, amount.cardTypesAmong({ controller: "you", nonland: true, other: true }), "l"),
+          fx.exileTop(ref.you, amount.cardTypesAmong({ controller: "you", notTypes: ["Land"], other: true }), "l"),
           fx.grantPlay(ref.stored("l")),
         ],
         { label: "Exilez X cartes, jouables ce tour-ci" },
       ),
     ],
   },
-  "Pest Control": { spell: spell([], [fx.destroyAll({ nonland: true, permanent: true, maxManaValue: 1 })]) },
+  "Pest Control": { spell: spell([], [fx.destroyAll({ notTypes: ["Land"], permanent: true, maxManaValue: 1 })]) },
   "Lost Jitte": {
     abilities: [
       triggered(when.combatDamage({ types: ["Creature"], attachedToSource: true }), [fx.counters(ref.self, "charge", 1)], {

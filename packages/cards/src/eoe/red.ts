@@ -212,7 +212,7 @@ export const RED: Record<string, CardScript> = {
   },
   "Weapons Manufacturing": {
     abilities: [
-      triggered(when.enters({ types: ["Artifact"], controller: "you", nontoken: true }), [fx.createTokens(MUNITIONS)], {
+      triggered(when.enters({ types: ["Artifact"], controller: "you", token: false }), [fx.createTokens(MUNITIONS)], {
         label: "Jeton Munitions",
       }),
     ],

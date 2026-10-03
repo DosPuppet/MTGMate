@@ -61,7 +61,7 @@ export const WHITE: Record<string, CardScript> = {
   "Arahbo, the First Fang": {
     abilities: [
       staticAbility({ types: ["Creature"], subtype: "Cat", controller: "you", other: true }, { power: 1, toughness: 1 }),
-      triggered(when.enters({ types: ["Creature"], subtype: "Cat", controller: "you", nontoken: true }), [fx.createTokens(CAT)], {
+      triggered(when.enters({ types: ["Creature"], subtype: "Cat", controller: "you", token: false }), [fx.createTokens(CAT)], {
         label: "Chat 1/1",
       }),
     ],
@@ -130,7 +130,13 @@ export const WHITE: Record<string, CardScript> = {
   },
   "Joust Through": {
     spell: spell(
-      [targetObj("t", { types: ["Creature"], inCombat: true }, "créature attaquante ou bloqueuse")],
+      [
+        targetObj(
+          "t",
+          { types: ["Creature"], anyOf: [{ attacking: true }, { blocking: true }] },
+          "créature attaquante ou bloqueuse",
+        ),
+      ],
       [fx.damage(3, ref.target()), fx.gainLife(1)],
     ),
   },
@@ -161,7 +167,7 @@ export const WHITE: Record<string, CardScript> = {
     kicker: "{1}{W}",
     abilities: [
       triggered(when.entersSelf, [fx.toBattlefield(ref.target())], {
-        targets: [target.cardInGraveyard("t", { permanent: true, nonland: true, maxManaValue: 2 })],
+        targets: [target.cardInGraveyard("t", { permanent: true, notTypes: ["Land"], maxManaValue: 2 })],
         condition: cond.kicked,
         label: "Kicker : retour d'un permanent",
       }),
@@ -170,7 +176,7 @@ export const WHITE: Record<string, CardScript> = {
   "Valkyrie's Call": {
     abilities: [
       triggered(
-        when.dies({ types: ["Creature"], controller: "you", nontoken: true, notSubtype: "Angel" }),
+        when.dies({ types: ["Creature"], controller: "you", token: false, notSubtype: "Angel" }),
         [
           fx.toBattlefield(ref.eventObject, {
             counters: { kind: "+1/+1", n: 1 },
@@ -365,7 +371,13 @@ export const WHITE: Record<string, CardScript> = {
   },
   "Elspeth's Smite": {
     spell: spell(
-      [targetObj("t", { types: ["Creature"], inCombat: true }, "créature attaquante ou bloqueuse")],
+      [
+        targetObj(
+          "t",
+          { types: ["Creature"], anyOf: [{ attacking: true }, { blocking: true }] },
+          "créature attaquante ou bloqueuse",
+        ),
+      ],
       [fx.exileIfDies(ref.target()), fx.damage(3, ref.target())],
     ),
   },

@@ -314,7 +314,11 @@ export const CARDS: Record<string, CardScript> = {
   },
   "Heartless Act": {
     spell: modal(
-      mode("Détruit une créature sans marqueur", [target.creature("t", { noCounters: true })], [fx.destroy(ref.target())]),
+      mode(
+        "Détruit une créature sans marqueur",
+        [target.creature("t", { not: { withCounter: "any" } })],
+        [fx.destroy(ref.target())],
+      ),
       mode("Retire jusqu'à trois marqueurs", [target.creature("u")], [fx.removeCounters(ref.target("u"), 3)]),
     ),
   },

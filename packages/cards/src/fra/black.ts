@@ -178,7 +178,7 @@ export const BLACK: Record<string, CardScript> = {
   "Solve for Disappointment": {
     spell: spell(
       [target.player("t", "opponent")],
-      [fx.discard(1, ref.target(), { filter: { permanent: true, nonland: true }, chooser: "controller" }), empower(1)],
+      [fx.discard(1, ref.target(), { filter: { permanent: true, notTypes: ["Land"] }, chooser: "controller" }), empower(1)],
     ),
   },
   "Vraska's Final Mercy": {

@@ -113,7 +113,7 @@ export const WHITE: Record<string, CardScript> = {
   },
   "Focus Fire": {
     spell: spell(
-      [target.creature("t", { inCombat: true })],
+      [target.creature("t", { anyOf: [{ attacking: true }, { blocking: true }] })],
       [fx.damage(amount.plus(2, amount.count({ ...CREATURE_OR_SPACECRAFT, controller: "you" })), ref.target())],
     ),
   },
@@ -160,7 +160,7 @@ export const WHITE: Record<string, CardScript> = {
         label: "Marqueur +1/+1",
       }),
       triggered(
-        when.dies({ types: ["Creature"], controller: "you", nontoken: true, withCounter: "+1/+1" }),
+        when.dies({ types: ["Creature"], controller: "you", token: false, withCounter: "+1/+1" }),
         [fx.createTokens(HUMAN_SOLDIER)],
         { label: "Soldat humain 1/1" },
       ),

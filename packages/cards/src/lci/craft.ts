@@ -57,7 +57,7 @@ export const CRAFT: Record<string, CardScript> = {
   "Oteclan Levitator": {
     abilities: [
       triggered(when.attacksSelf, [fx.pump(ref.target(), 0, 0, ["flying"])], {
-        targets: [target.creature("t", { attacking: true, notKeyword: "flying" })],
+        targets: [target.creature("t", { attacking: true, not: { keyword: "flying" } })],
         label: "Vol",
       }),
     ],
@@ -300,7 +300,7 @@ export const CRAFT: Record<string, CardScript> = {
       triggered(
         when.attacksSelf,
         [
-          fx.sacrifice(ref.eachOpponent, { nonland: true }),
+          fx.sacrifice(ref.eachOpponent, { notTypes: ["Land"] }),
           fx.pickFromZone(
             "graveyard",
             { types: ["Creature"] },

@@ -73,7 +73,7 @@ export const BLACK: Record<string, CardScript> = {
         ],
         { label: "sacrifice possible : marqueur +1/+1" },
       ),
-      triggered(when.dies({ types: ["Creature"], nontoken: true, other: true }), [fx.draw(1)], { label: "piochez une carte" }),
+      triggered(when.dies({ types: ["Creature"], token: false, other: true }), [fx.draw(1)], { label: "piochez une carte" }),
     ],
   },
   "Hungry Ghoul": {
@@ -220,7 +220,7 @@ export const BLACK: Record<string, CardScript> = {
   Pilfer: {
     spell: spell(
       [target.player("t", "opponent")],
-      [fx.discard(1, ref.target(), { filter: { nonland: true }, chooser: "controller" })],
+      [fx.discard(1, ref.target(), { filter: { notTypes: ["Land"] }, chooser: "controller" })],
     ),
   },
   "Reassembling Skeleton": {
@@ -492,7 +492,7 @@ export const BLACK: Record<string, CardScript> = {
   },
   "Midnight Reaper": {
     abilities: [
-      triggered(when.dies({ ...CREATURE_YOU_CONTROL, nontoken: true }), [fx.damage(1, ref.you, ref.self), fx.draw(1)], {
+      triggered(when.dies({ ...CREATURE_YOU_CONTROL, token: false }), [fx.damage(1, ref.you, ref.self), fx.draw(1)], {
         label: "1 blessure, piochez",
       }),
     ],

@@ -105,7 +105,9 @@ export const ARTIFACTS: Record<string, CardScript> = {
         mana: "{1}",
         effects: [
           fx.modify(ref.self, {
-            addBlockRules: [block.notBy({ notKeyword: "haste" }, "Ne peut être bloquée que par des créatures avec la célérité")],
+            addBlockRules: [
+              block.notBy({ not: { keyword: "haste" } }, "Ne peut être bloquée que par des créatures avec la célérité"),
+            ],
           }),
         ],
         label: "Ne peut être bloquée que par des créatures avec la célérité ce tour-ci",

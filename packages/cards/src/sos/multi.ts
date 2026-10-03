@@ -60,7 +60,7 @@ function reckoningModes(): ModeDef[] {
         targets.push(
           target.cardInGraveyard(
             `g${i}`,
-            { permanent: true, nonland: true },
+            { permanent: true, notTypes: ["Land"] },
             "you",
             "carte de permanent non-terrain de votre cimetière",
           ),
@@ -131,7 +131,10 @@ export const MULTI: Record<string, CardScript> = {
   "Render Speechless": {
     spell: spell(
       [target.player("p", "opponent"), target.upTo(1, target.creature("c"))],
-      [fx.discard(1, ref.target("p"), { filter: { nonland: true }, chooser: "controller" }), fx.addCounters(ref.target("c"), 2)],
+      [
+        fx.discard(1, ref.target("p"), { filter: { notTypes: ["Land"] }, chooser: "controller" }),
+        fx.addCounters(ref.target("c"), 2),
+      ],
     ),
   },
   // Menace lue dans le texte.
@@ -257,7 +260,7 @@ export const MULTI: Record<string, CardScript> = {
       mode(
         "Chaque adversaire sacrifie un artefact non-jeton",
         [],
-        [fx.sacrifice(ref.eachOpponent, { types: ["Artifact"], nontoken: true })],
+        [fx.sacrifice(ref.eachOpponent, { types: ["Artifact"], token: false })],
       ),
       mode(
         "Renvoyez un artefact ou une créature de VM 2 ou moins",

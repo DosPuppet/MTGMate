@@ -162,7 +162,7 @@ export const WHITE: Record<string, CardScript> = {
         targets: [
           target.cardInGraveyard(
             "t",
-            { permanent: true, nonland: true, maxManaValue: 3 },
+            { permanent: true, notTypes: ["Land"], maxManaValue: 3 },
             "you",
             "carte de permanent non-terrain de VM 3 ou moins",
           ),
@@ -192,7 +192,7 @@ export const WHITE: Record<string, CardScript> = {
   "Restoration Seminar": {
     // Paradigme : lu dans le texte.
     spell: spell(
-      [target.cardInGraveyard("t", { permanent: true, nonland: true }, "you", "carte de permanent non-terrain")],
+      [target.cardInGraveyard("t", { permanent: true, notTypes: ["Land"] }, "you", "carte de permanent non-terrain")],
       [fx.toBattlefield(ref.target())],
     ),
   },

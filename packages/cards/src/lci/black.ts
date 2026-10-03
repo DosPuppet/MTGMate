@@ -182,7 +182,7 @@ export const BLACK: Record<string, CardScript> = {
       [
         targetObj(
           "t",
-          { anyOf: [{ types: ["Creature"] }, { subtype: "Vehicle" }, { types: ["Land"], nonbasic: true }] },
+          { anyOf: [{ types: ["Creature"] }, { subtype: "Vehicle" }, { types: ["Land"], basic: false }] },
           "créature, Véhicule ou terrain non de base",
         ),
       ],

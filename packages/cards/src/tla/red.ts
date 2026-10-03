@@ -48,7 +48,7 @@ export const RED: Record<string, CardScript> = {
           target.permanent(
             "u",
             ["Land"],
-            { anyOf: [{ types: ["Creature"] }, { nonbasic: true }] },
+            { anyOf: [{ types: ["Creature"] }, { basic: false }] },
             "créature-terrain ou terrain non de base",
           ),
         ],
@@ -216,7 +216,7 @@ export const RED: Record<string, CardScript> = {
     spell: spell(
       [],
       [
-        fx.exileUntil({ nonland: true }, "x"),
+        fx.exileUntil({ notTypes: ["Land"] }, "x"),
         // Lancée sans payer si sa VM est inférieure au nombre de vos Montagnes ; sinon (ou si vous refusez), en main.
         fx.castNow(ref.stored("x"), {
           free: true,
@@ -301,13 +301,13 @@ export const RED: Record<string, CardScript> = {
     abilities: [
       entersWith({
         tapped: true,
-        affects: { types: ["Land"], nonbasic: true },
+        affects: { types: ["Land"], basic: false },
         label: "Les terrains non de base arrivent engagés",
       }),
       activated({ mana: "{7}", effects: [fx.counters(ref.self, "conqueror")], label: "Un marqueur de conquérant" }),
       // Le type Montagne donne « {T} : ajoutez {R} » (305.6).
       staticAbility(
-        { types: ["Land"], nonbasic: true },
+        { types: ["Land"], basic: false },
         { setSubtypes: ["Mountain"], loseAllAbilities: true },
         { condition: cond.counterAtLeast("conqueror", 1), label: "Les terrains non de base sont des Montagnes" },
       ),

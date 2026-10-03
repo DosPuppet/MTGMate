@@ -183,7 +183,7 @@ export const UNIQUE: Record<string, CardScript> = {
         sorcerySpeed: true,
         effects: [
           fx.when(
-            cond.refMatches(ref.libraryTop(ref.you), { nonland: true }),
+            cond.refMatches(ref.libraryTop(ref.you), { notTypes: ["Land"] }),
             fx.payCostOf(ref.libraryTop(ref.you), "p", "Payer le coût de mana de la carte du dessus pour la comploter ?"),
             fx.when(cond.v("p"), fx.plot(ref.libraryTop(ref.you))),
           ),
@@ -198,7 +198,7 @@ export const UNIQUE: Record<string, CardScript> = {
         when.combatDamage({ types: ["Creature"], attachedToSource: true }, true),
         [
           fx.lookAtTop(amount.eventAmount, {
-            filter: { nonland: true },
+            filter: { notTypes: ["Land"] },
             count: 1,
             to: { to: "exile" },
             rest: "bottom",
@@ -223,7 +223,7 @@ export const UNIQUE: Record<string, CardScript> = {
         effects: [
           fx.pickFromZone(
             "hand",
-            { nonland: true, maxManaValue: 3 },
+            { notTypes: ["Land"], maxManaValue: 3 },
             { to: "exile" },
             { min: 0, store: "j", prompt: "Vous pouvez comploter une carte" },
           ),
@@ -251,7 +251,7 @@ export const UNIQUE: Record<string, CardScript> = {
     spell: spell(
       [target.player("t", "opponent")],
       [
-        fx.discard(1, ref.target(), { filter: { nonland: true }, chooser: "controller", optional: true, store: "d" }),
+        fx.discard(1, ref.target(), { filter: { notTypes: ["Land"] }, chooser: "controller", optional: true, store: "d" }),
         fx.when(
           cond.not(cond.v("d")),
           fx.pickFromZone(
@@ -309,7 +309,9 @@ export const UNIQUE: Record<string, CardScript> = {
   "Tinybones, the Pickpocket": {
     abilities: [
       triggered(when.combatDamage("self", true), [fx.castNow(ref.target(), { anyMana: true })], {
-        targets: [target.cardInGraveyard("t", { permanent: true, nonland: true }, "opponent", "carte de permanent non-terrain")],
+        targets: [
+          target.cardInGraveyard("t", { permanent: true, notTypes: ["Land"] }, "opponent", "carte de permanent non-terrain"),
+        ],
         label: "Lancez une carte de son cimetière",
       }),
     ],
@@ -376,7 +378,9 @@ export const UNIQUE: Record<string, CardScript> = {
         mana: "{3}",
         effects: [
           fx.modify(ref.self, {
-            addBlockRules: [block.notBy({ notKeyword: "haste" }, "Ne peut être bloquée que par des créatures avec la célérité")],
+            addBlockRules: [
+              block.notBy({ not: { keyword: "haste" } }, "Ne peut être bloquée que par des créatures avec la célérité"),
+            ],
           }),
         ],
         label: "Bloquée seulement par la célérité",
@@ -500,7 +504,7 @@ export const UNIQUE: Record<string, CardScript> = {
   "Ghired, Mirror of the Wilds": {
     abilities: [
       staticAbility(
-        { types: ["Creature"], controller: "you", nontoken: true },
+        { types: ["Creature"], controller: "you", token: false },
         {
           addAbilities: [
             activated({
@@ -553,7 +557,7 @@ export const UNIQUE: Record<string, CardScript> = {
         [
           fx.pickFromZone(
             "hand",
-            { permanent: true, nonland: true },
+            { permanent: true, notTypes: ["Land"] },
             { to: "battlefield" },
             {
               min: 0,
@@ -626,7 +630,7 @@ export const UNIQUE: Record<string, CardScript> = {
     spell: spell(
       [],
       [
-        fx.lookAtTop(3, { filter: { nonland: true }, count: 1, to: { to: "exile" }, rest: "hand", store: "m" }),
+        fx.lookAtTop(3, { filter: { notTypes: ["Land"] }, count: 1, to: { to: "exile" }, rest: "hand", store: "m" }),
         fx.plot(ref.stored("m")),
       ],
     ),
@@ -650,7 +654,7 @@ export const UNIQUE: Record<string, CardScript> = {
       }),
       loyalty(-1, { effects: [fx.createTokens(ELK)], label: "Élan 3/3" }),
       loyalty(-5, {
-        effects: [fx.copyToken(ref.permanentsOf(ref.you, { nonland: true, other: true }))],
+        effects: [fx.copyToken(ref.permanentsOf(ref.you, { notTypes: ["Land"], other: true }))],
         label: "Copiez vos autres permanents non-terrain",
       }),
     ],
@@ -703,7 +707,7 @@ export const UNIQUE: Record<string, CardScript> = {
   "Satoru, the Infiltrator": {
     abilities: [
       triggered(
-        when.enters({ types: ["Creature"], controller: "you", nontoken: true }),
+        when.enters({ types: ["Creature"], controller: "you", token: false }),
         [fx.when(cond.eventObjectMatches({ noManaSpent: true }), fx.draw(1))],
         { batched: true, label: "Piochez" },
       ),
@@ -724,7 +728,7 @@ export const UNIQUE: Record<string, CardScript> = {
   "Vraska, the Silencer": {
     abilities: [
       triggered(
-        when.dies({ types: ["Creature"], controller: "opponent", nontoken: true }),
+        when.dies({ types: ["Creature"], controller: "opponent", token: false }),
         fx.mayPay(
           "{1}",
           "Payer {1} pour la ramener en Trésor ?",

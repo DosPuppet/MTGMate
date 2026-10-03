@@ -408,7 +408,13 @@ export const LEGENDS: Record<string, CardScript> = {
     abilities: [
       triggered(
         when.yourEndStep,
-        [fx.punisher(ref.eachOpponent, 0, { discard: true, sacrifice: { nonland: true }, damage: amount.powerOf(ref.self) })],
+        [
+          fx.punisher(ref.eachOpponent, 0, {
+            discard: true,
+            sacrifice: { notTypes: ["Land"] },
+            damage: amount.powerOf(ref.self),
+          }),
+        ],
         { condition: cond.delirium, label: "Délire — sacrifice, défausse ou blessures" },
       ),
     ],

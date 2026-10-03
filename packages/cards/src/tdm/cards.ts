@@ -157,7 +157,7 @@ export const CARDS: Record<string, CardScript> = {
           ),
         ],
         {
-          targets: [target.permanent("t", ["Land"], { nonbasic: true, controller: "opponent" }, "terrain non de base adverse")],
+          targets: [target.permanent("t", ["Land"], { basic: false, controller: "opponent" }, "terrain non de base adverse")],
           label: "Détruit un terrain non de base",
         },
       ),
@@ -173,7 +173,7 @@ export const CARDS: Record<string, CardScript> = {
     ],
   },
   "Twinmaw Stormbrood": { abilities: [triggered(when.entersSelf, [fx.gainLife(5)], { label: "Gagnez 5 PV" })] },
-  "Charring Bite": { spell: spell([target.creature("t", { notKeyword: "flying" })], [fx.damage(5, ref.target())]) },
+  "Charring Bite": { spell: spell([target.creature("t", { not: { keyword: "flying" } })], [fx.damage(5, ref.target())]) },
   "United Battlefront": {
     spell: spell(
       [],

@@ -191,7 +191,7 @@ export const MULTI: Record<string, CardScript> = {
   "Black Panther, Vanguard": {
     abilities: [
       triggeredModal(
-        when.enters({ subtype: "Hero", nontoken: true, controller: "you", other: true }),
+        when.enters({ subtype: "Hero", token: false, controller: "you", other: true }),
         [
           mode("Un Soldat 1/1", [], [fx.createTokens(SOLDIER)]),
           mode("Vos créatures gagnent +1/+1", [], [fx.pumpAll(YOUR_CREATURES, 1, 1)]),
@@ -375,7 +375,7 @@ export const MULTI: Record<string, CardScript> = {
         [fx.exileCard(ref.target(), { name: "f" }), fx.toBattlefield(ref.stored("f"), { tapped: true })],
         {
           targets: [
-            target.upTo(1, target.permanent("t", ["Artifact", "Creature"], { nontoken: true }, "artefact ou créature non-jeton")),
+            target.upTo(1, target.permanent("t", ["Artifact", "Creature"], { token: false }, "artefact ou créature non-jeton")),
           ],
           label: "Exile puis renvoie engagé un artefact ou une créature",
         },
@@ -732,7 +732,7 @@ export const MULTI: Record<string, CardScript> = {
     abilities: [
       triggered(
         when.dies({ types: ["Creature"], controller: "you", other: true, keyword: "deathtouch" }),
-        [fx.sacrifice(ref.eachOpponent, { types: ["Creature"], nontoken: true })],
+        [fx.sacrifice(ref.eachOpponent, { types: ["Creature"], token: false })],
         { label: "Une autre de vos créatures avec le contact mortel meurt : chaque adversaire sacrifie une créature non-jeton" },
       ),
     ],

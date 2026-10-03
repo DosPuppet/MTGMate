@@ -75,7 +75,7 @@ export const BLUE: Record<string, CardScript> = {
   "Deeproot Pilgrimage": {
     abilities: [
       triggered(
-        { on: "taps", who: { types: ["Creature"], subtype: "Merfolk", nontoken: true, controller: "you" } },
+        { on: "taps", who: { types: ["Creature"], subtype: "Merfolk", token: false, controller: "you" } },
         [fx.createTokens(MERFOLK_HEXPROOF)],
         { batched: true, label: "Ondin 1/1 avec la défense talismanique" },
       ),

@@ -131,7 +131,7 @@ export const BLACK: Record<string, CardScript> = {
       mode(
         "Main révélée : défausse d'une carte de permanent non-terrain",
         [target.player("p", "opponent")],
-        [fx.discard(1, ref.target("p"), { filter: { permanent: true, nonland: true }, chooser: "controller" })],
+        [fx.discard(1, ref.target("p"), { filter: { permanent: true, notTypes: ["Land"] }, chooser: "controller" })],
       ),
       mode("Maîtrise de la terre 2", [LAND_YOU_CONTROL], fx.earthbend(ref.target(), 2)),
     ),
@@ -403,7 +403,7 @@ export const BLACK: Record<string, CardScript> = {
         label: "Exilez jusqu'à une autre créature",
       }),
       triggered(
-        when.dies({ types: ["Creature"], other: true, nontoken: true }),
+        when.dies({ types: ["Creature"], other: true, token: false }),
         [fx.may("Exiler cette carte avec Koh ?", fx.exileCard(ref.eventObject, { name: "d" }), fx.link(ref.stored("d")))],
         { label: "Une autre créature meurt : vous pouvez l'exiler" },
       ),

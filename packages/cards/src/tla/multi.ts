@@ -68,9 +68,9 @@ export const MULTI: Record<string, CardScript> = {
       triggered(
         when.entersSelf,
         [
-          fx.sacrifice(ref.target("p"), { types: ["Creature"], nontoken: true }, 1, { exile: true, store: "c" }),
+          fx.sacrifice(ref.target("p"), { types: ["Creature"], token: false }, 1, { exile: true, store: "c" }),
           fx.link(ref.stored("c")),
-          fx.chooseAmong(ref.filtered(ref.graveyardOf(ref.target("p")), { nonland: true }), ref.target("p"), "g", {
+          fx.chooseAmong(ref.filtered(ref.graveyardOf(ref.target("p")), { notTypes: ["Land"] }), ref.target("p"), "g", {
             anyZone: true,
           }),
           fx.exileCard(ref.stored("g"), { name: "e" }),
@@ -475,7 +475,7 @@ export const MULTI: Record<string, CardScript> = {
   "Toph, the First Metalbender": {
     abilities: [
       staticAbility(
-        { types: ["Artifact"], controller: "you", nontoken: true },
+        { types: ["Artifact"], controller: "you", token: false },
         { addTypes: ["Land"] },
         { label: "Vos artefacts non-jetons sont aussi des terrains" },
       ),

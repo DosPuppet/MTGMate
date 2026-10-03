@@ -24,11 +24,9 @@ const VILLAIN_CARD = target.cardInGraveyard("t", { subtype: "Villain" }, "you", 
 export const BLACK: Record<string, CardScript> = {
   "Agent Venom": {
     abilities: [
-      triggered(
-        when.dies({ types: ["Creature"], controller: "you", other: true, nontoken: true }),
-        [fx.draw(1), fx.loseLife(1)],
-        { label: "Piochez une carte et perdez 1 PV" },
-      ),
+      triggered(when.dies({ types: ["Creature"], controller: "you", other: true, token: false }), [fx.draw(1), fx.loseLife(1)], {
+        label: "Piochez une carte et perdez 1 PV",
+      }),
     ],
   },
   "Common Crook": {

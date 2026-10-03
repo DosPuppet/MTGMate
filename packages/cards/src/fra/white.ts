@@ -110,7 +110,7 @@ export const WHITE: Record<string, CardScript> = {
     ),
   },
   "Return to the Light Realms": {
-    spell: spell([], [fx.moveAll("graveyard", ref.you, { permanent: true, nonland: true }, { to: "battlefield" })]),
+    spell: spell([], [fx.moveAll("graveyard", ref.you, { permanent: true, notTypes: ["Land"] }, { to: "battlefield" })]),
   },
   "Shatterwing Pegasus": {
     abilities: [activated({ mana: "{4}{W}", effects: [fx.pumpAll(CREATURE_YOU_CONTROL, 1, 1)], label: "Vos créatures +1/+1" })],
@@ -174,7 +174,7 @@ export const WHITE: Record<string, CardScript> = {
         mana: "{1}{W}",
         fromHand: true,
         discardSelf: true,
-        targets: [target.creature("t", { inCombat: true })],
+        targets: [target.creature("t", { anyOf: [{ attacking: true }, { blocking: true }] })],
         effects: [fx.damage(4, ref.target())],
         label: "Défaussez : 4 blessures à une créature attaquante ou bloqueuse",
       }),

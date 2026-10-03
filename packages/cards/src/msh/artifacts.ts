@@ -70,7 +70,7 @@ export const ARTIFACTS: Record<string, CardScript> = {
           // On choisit parmi les six cartes du dessus celle à lancer, le reste va au-dessous. Approximation : la carte
           // choisie est exilée le temps de la lancer (elle est donc vue de tous, même si vous renoncez à la lancer).
           fx.lookAtTop(6, {
-            filter: { nonland: true },
+            filter: { notTypes: ["Land"] },
             maxManaValue: amount.maxPower({ types: ["Creature"], controller: "you", attacking: true }),
             to: { to: "exile" },
             rest: "bottom",
@@ -156,7 +156,7 @@ export const ARTIFACTS: Record<string, CardScript> = {
   "Ultron, Artificial Malevolence": {
     abilities: [
       triggered(
-        when.enters({ types: ["Artifact"], controller: "you", nontoken: true, other: true }),
+        when.enters({ types: ["Artifact"], controller: "you", token: false, other: true }),
         fx.mayPay(
           "{2}",
           "Payer {2} pour créer un jeton copie de cet artefact ?",

@@ -228,7 +228,7 @@ export const HANDLERS: OpHandlers = {
         e.discard ? (e.orMana ? `défausser une carte ou payer ${costToText(e.orMana)}` : "défausser une carte") : "",
         e.poison ? `recevoir ${e.poison} marqueurs poison` : "",
         e.sacrifice
-          ? `sacrifier ${e.sacrifice} ${e.sacrificeFilter?.types?.includes("Creature") ? "créature(s)" : e.sacrificeFilter?.nonland ? "permanents non-terrains" : "permanents"}`
+          ? `sacrifier ${e.sacrifice} ${e.sacrificeFilter?.types?.includes("Creature") ? "créature(s)" : e.sacrificeFilter?.notTypes?.includes("Land") ? "permanents non-terrains" : "permanents"}`
           : "",
         e.collectEvidence ? `réunir des preuves ${e.collectEvidence}` : "",
       ]

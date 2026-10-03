@@ -141,7 +141,7 @@ export const RED: Record<string, CardScript> = {
   },
   // Célérité lue dans le texte ; sort préparé : Rocket Volley.
   "Maelstrom Artisan": {
-    prepareSpell: spell([target.permanent("t", ["Land"], { nonbasic: true }, "terrain non-base")], [fx.destroy(ref.target())]),
+    prepareSpell: spell([target.permanent("t", ["Land"], { basic: false }, "terrain non-base")], [fx.destroy(ref.target())]),
     abilities: [entersWith({ prepared: true })],
   },
   // Garde (payez 3 points de vie) lue dans le texte.

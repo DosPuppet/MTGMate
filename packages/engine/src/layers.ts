@@ -108,7 +108,6 @@ function printedMatch(d: Pick<CardDef, "types" | "subtypes"> | undefined, f: Obj
   if (f.anySubtype && !f.anySubtype.some((t) => d.subtypes.includes(t))) return false;
   if (f.anyOf && !f.anyOf.some((g) => printedMatch(d, g))) return false;
   if (f.permanent && !d.types.some((t) => PERMANENT_TYPES.includes(t))) return false;
-  if (f.nonland && d.types.includes("Land")) return false;
   return true;
 }
 

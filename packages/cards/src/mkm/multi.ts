@@ -258,7 +258,7 @@ export const MULTI: Record<string, CardScript> = {
           ...fx.mayFor(
             ref.target(),
             "Sacrifier deux permanents non-terrain qui ne sont pas des jetons (sinon, l'adversaire pioche deux cartes) ?",
-            fx.sacrifice(ref.target(), { nonland: true, nontoken: true }, 2, { store: "sac" }),
+            fx.sacrifice(ref.target(), { notTypes: ["Land"], token: false }, 2, { store: "sac" }),
           ),
           // « S'il ne le fait pas » : deux permanents n'ont pas été sacrifiés.
           ...fx.when(cond.not(cond.amountAtLeast(amount.refCount(ref.stored("sac")), 2)), fx.draw(2)),
@@ -416,7 +416,7 @@ export const MULTI: Record<string, CardScript> = {
     spell: spell(
       [target.player("t", "opponent")],
       [
-        fx.discard(1, ref.target(), { chooser: "controller", filter: { nonland: true }, exile: true, store: "e" }),
+        fx.discard(1, ref.target(), { chooser: "controller", filter: { notTypes: ["Land"] }, exile: true, store: "e" }),
         ...fx.when(cond.refMatches(ref.stored("e"), { maxManaValue: 1 }), fx.createTokens(SPIRIT_WB)),
       ],
     ),
@@ -567,7 +567,7 @@ export const MULTI: Record<string, CardScript> = {
     leyline: true,
     abilities: [
       staticAbility(
-        { nonland: true, controller: "you" },
+        { notTypes: ["Land"], controller: "you" },
         { setColors: [...ALL_COLORS] },
         {
           label: "Vos permanents non-terrains sont de toutes les couleurs",
@@ -932,7 +932,7 @@ export const MULTI: Record<string, CardScript> = {
       [],
       [
         fx.mill(3, ref.eachOpponent),
-        fx.castNow(ref.filtered(ref.graveyardOf(ref.eachOpponent), { nonland: true }), { free: true, exileAfter: true }),
+        fx.castNow(ref.filtered(ref.graveyardOf(ref.eachOpponent), { notTypes: ["Land"] }), { free: true, exileAfter: true }),
       ],
     ),
   },

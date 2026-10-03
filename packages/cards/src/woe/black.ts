@@ -145,7 +145,7 @@ export const BLACK: Record<string, CardScript> = {
     spell: spell(
       [target.player("t", "opponent")],
       [
-        fx.discard(1, ref.target(), { filter: { nonland: true }, chooser: "controller" }),
+        fx.discard(1, ref.target(), { filter: { notTypes: ["Land"] }, chooser: "controller" }),
         ...fx.when(cond.not(cond.controls({ subtype: "Faerie" })), fx.exileFromOwnHand(ref.you, "e")),
       ],
     ),

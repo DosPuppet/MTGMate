@@ -247,7 +247,7 @@ export const WHITE: Record<string, CardScript> = {
   },
   "Kellan's Lightblades": {
     spell: spell(
-      [target.creature("t", { inCombat: true })],
+      [target.creature("t", { anyOf: [{ attacking: true }, { blocking: true }] })],
       [...fx.when(cond.kicked, fx.destroy(ref.target())), ...fx.when(cond.not(cond.kicked), fx.damage(3, ref.target()))],
     ),
   },
@@ -297,7 +297,7 @@ export const WHITE: Record<string, CardScript> = {
       }),
     ],
   },
-  "Regal Bunnicorn": { cdaPT: amount.count({ nonland: true, controller: "you" }) },
+  "Regal Bunnicorn": { cdaPT: amount.count({ notTypes: ["Land"], controller: "you" }) },
   "Return Triumphant": {
     spell: spell(
       [target.cardInGraveyard("t", { types: ["Creature"], maxManaValue: 3 }, "you", "carte de créature de VM 3 ou moins")],

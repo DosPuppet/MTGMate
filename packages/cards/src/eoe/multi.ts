@@ -160,7 +160,7 @@ export const MULTI: Record<string, CardScript> = {
   "Virulent Silencer": {
     abilities: [
       triggered(
-        when.combatDamage({ types: ["Artifact"], controller: "you", nontoken: true, anyOf: [{ types: ["Creature"] }] }, true),
+        when.combatDamage({ types: ["Artifact"], controller: "you", token: false, anyOf: [{ types: ["Creature"] }] }, true),
         [fx.poison(ref.eventPlayer, 2)],
         { label: "Deux marqueurs poison" },
       ),

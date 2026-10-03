@@ -347,7 +347,7 @@ export const BLUE: Record<string, CardScript> = {
   "Twining Twins": {},
   "Swift Spiral": {
     spell: spell(
-      [target.creature("t", { nontoken: true })],
+      [target.creature("t", { token: false })],
       [fx.exileCard(ref.target(), { name: "k" }), fx.delayed([fx.toBattlefield(ref.target("k"))], { k: ref.stored("k") })],
     ),
   },
@@ -383,7 +383,7 @@ export const BLUE: Record<string, CardScript> = {
           label: "Exilez jusqu'à X créatures ; leurs propriétaires pourront les jouer",
         },
       ),
-      triggered({ on: "enters", who: { types: ["Creature"], nontoken: true }, fromZone: "exile" }, [fx.draw(1)], {
+      triggered({ on: "enters", who: { types: ["Creature"], token: false }, fromZone: "exile" }, [fx.draw(1)], {
         oncePerTurn: true,
         label: "Une créature arrive depuis l'exil : piochez une carte (une fois par tour)",
       }),

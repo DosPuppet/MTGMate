@@ -96,7 +96,7 @@ export const MULTI: Record<string, CardScript> = {
       triggered(
         when.step("main1", "you"),
         [
-          fx.revealUntilN({ nonland: true }, amount.colorsAmong(), undefined, "r"),
+          fx.revealUntilN({ notTypes: ["Land"] }, amount.colorsAmong(), undefined, "r"),
           fx.pickFromZone(
             "graveyard",
             {},
@@ -443,7 +443,7 @@ export const MULTI: Record<string, CardScript> = {
       triggered(
         when.yourEndStep,
         [
-          fx.exileUntil({ nonland: true }, "x"),
+          fx.exileUntil({ notTypes: ["Land"] }, "x"),
           // Lancée gratuitement si sa VM ne dépasse pas les PV gagnés ce tour-ci ; sinon (ou refusée), en main.
           fx.castNow(ref.stored("x"), { free: true, maxManaValue: amount.lifeGainedThisTurn }),
           fx.toHand(ref.stored("x")),

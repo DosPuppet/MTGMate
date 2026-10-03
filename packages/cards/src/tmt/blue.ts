@@ -236,7 +236,7 @@ export const BLUE: Record<string, CardScript> = {
     abilities: [
       triggered(
         when.entersSelf,
-        [fx.bounce(ref.permanentsOf(ref.eachPlayer, { nonland: true, other: true, enteredThisTurn: true }))],
+        [fx.bounce(ref.permanentsOf(ref.eachPlayer, { notTypes: ["Land"], other: true, enteredThisTurn: true }))],
         { label: "Renvoyez chaque autre permanent non-terrain arrivé ce tour-ci" },
       ),
     ],

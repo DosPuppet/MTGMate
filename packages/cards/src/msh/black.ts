@@ -269,7 +269,7 @@ export const BLACK: Record<string, CardScript> = {
         [fx.draw(1), fx.loseLife(1), fx.counters(ref.self, "plan")],
         {
           // « cartes de créature » : un jeton mis au cimetière ne compte pas.
-          condition: cond.eventObjectMatches({ nontoken: true }),
+          condition: cond.eventObjectMatches({ token: false }),
           batched: true,
           label: "Piochez, perdez 1 PV, un marqueur de plan",
         },

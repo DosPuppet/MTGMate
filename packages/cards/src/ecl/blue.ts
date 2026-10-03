@@ -410,7 +410,7 @@ export const BLUE: Record<string, CardScript> = {
   Mirrorform: {
     spell: spell(
       [targetObj("t", { permanent: true, notSubtype: "Aura" }, "permanent non-Aura")],
-      [fx.becomeCopy(ref.permanentsOf(ref.you, { nonland: true }), ref.target(), "permanent")],
+      [fx.becomeCopy(ref.permanentsOf(ref.you, { notTypes: ["Land"] }), ref.target(), "permanent")],
     ),
   },
   "Rime Chill": {

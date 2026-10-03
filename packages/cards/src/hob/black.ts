@@ -59,7 +59,7 @@ export const BLACK: Record<string, CardScript> = {
   },
   "Down, Down to Goblin-town": {
     abilities: [
-      chapter([1], [fx.discard(1, ref.target(), { chooser: "controller", filter: { nonland: true } })], {
+      chapter([1], [fx.discard(1, ref.target(), { chooser: "controller", filter: { notTypes: ["Land"] } })], {
         targets: [target.player("t", "opponent")],
         label: "Chapitre I — Un adversaire défausse la carte non-terrain de votre choix",
       }),

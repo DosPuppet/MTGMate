@@ -123,7 +123,7 @@ export const MULTI: Record<string, CardScript> = {
       [],
       [
         fx.draw(1),
-        fx.discard(1, ref.you, { optional: true, store: "d", storeFilter: { nonland: true } }),
+        fx.discard(1, ref.you, { optional: true, store: "d", storeFilter: { notTypes: ["Land"] } }),
         ...fx.when(cond.v("d"), fx.reflexive([target.creature()], [fx.damage(3, ref.target())])),
       ],
     ),
@@ -220,7 +220,7 @@ export const MULTI: Record<string, CardScript> = {
       triggered(when.entersSelf, [fx.moveTo(ref.target(), { to: "libraryTop" })], {
         targets: [
           target.optional(
-            target.cardInGraveyard("t", { nonland: true, notTypes: ["Creature"] }, "you", "carte non-créature non-terrain"),
+            target.cardInGraveyard("t", { notTypes: ["Land", "Creature"] }, "you", "carte non-créature non-terrain"),
           ),
         ],
         label: "Une carte non-créature non-terrain de votre cimetière sur votre bibliothèque",
@@ -307,7 +307,7 @@ export const MULTI: Record<string, CardScript> = {
   },
   "Severance Priest": {
     abilities: [
-      triggered(when.entersSelf, [fx.exileFromHandLinked(ref.target(), { nonland: true }, false, undefined, true)], {
+      triggered(when.entersSelf, [fx.exileFromHandLinked(ref.target(), { notTypes: ["Land"] }, false, undefined, true)], {
         targets: [target.player("t", "opponent")],
         label: "Exilez une carte non-terrain de la main d'un adversaire",
       }),

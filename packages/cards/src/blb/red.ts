@@ -360,7 +360,7 @@ export const RED: Record<string, CardScript> = {
         label: "Les joueurs ne peuvent pas gagner de points de vie",
       }),
       playerStatic({ damageUnpreventable: true, label: "Les blessures ne peuvent pas être prévenues" }),
-      triggered(when.entersSelf, [fx.damageEachPlayerPer({ types: ["Land"], nonbasic: true })], {
+      triggered(when.entersSelf, [fx.damageEachPlayerPer({ types: ["Land"], basic: false })], {
         label: "Blessures selon les terrains non de base",
       }),
     ],

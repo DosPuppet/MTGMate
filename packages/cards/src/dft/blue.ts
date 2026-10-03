@@ -127,7 +127,7 @@ export const BLUE: Record<string, CardScript> = {
   "Trip Up": { spell: spell([target.nonland("t")], [fx.topOrBottom(ref.target())]) },
   "Unstoppable Plan": {
     abilities: [
-      triggered(when.yourEndStep, [fx.untap(ref.permanentsOf(ref.you, { nonland: true }))], {
+      triggered(when.yourEndStep, [fx.untap(ref.permanentsOf(ref.you, { notTypes: ["Land"] }))], {
         label: "Dégagez vos permanents non-terrain",
       }),
     ],

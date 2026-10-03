@@ -248,7 +248,7 @@ export const WHITE: Record<string, CardScript> = {
   },
   "Parting Gust": {
     spell: spell(
-      [target.creature("t", { nontoken: true })],
+      [target.creature("t", { token: false })],
       [
         fx.exileCard(ref.target(), { name: "k" }),
         ...fx.when(

@@ -38,7 +38,7 @@ export const BLACK: Record<string, CardScript> = {
     spell: spell(
       [target.player("p", "opponent"), target.optional(target.creature("c", { controller: "you" }))],
       [
-        fx.discard(1, ref.target("p"), { chooser: "controller", filter: { nonland: true }, exile: true }),
+        fx.discard(1, ref.target("p"), { chooser: "controller", filter: { notTypes: ["Land"] }, exile: true }),
         fx.addCounters(ref.target("c"), 1),
       ],
     ),

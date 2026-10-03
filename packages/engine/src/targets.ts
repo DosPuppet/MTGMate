@@ -65,10 +65,8 @@ export function matchesView(v: LkiSnapshot, f: ObjectFilter, perspective: Player
   if (f.controller === "you" && v.controller !== perspective) return false;
   if (f.controller === "opponent" && v.controller === perspective) return false;
   if (f.keyword && !v.keywords.includes(f.keyword)) return false;
-  if (f.notKeyword && v.keywords.includes(f.notKeyword)) return false;
   if (f.other && v.id === sourceId) return false;
   if (f.self && v.id !== sourceId) return false;
-  if (f.nontoken && v.isToken) return false;
   // Kid Loki : « chaque créature sur laquelle vous avez mis des marqueurs +1/+1 ce tour-ci ».
   if (f.countersPutByYouThisTurn && !countersPutBy(v.countersPutThisTurn, perspective, f.countersPutByYouThisTurn)) return false;
   // Un sort (vue de `spellView`) ; pour un objet, `matchesObjectFilter` lit sa définition.
@@ -96,21 +94,17 @@ export function matchesView(v: LkiSnapshot, f: ObjectFilter, perspective: Player
   if (f.colors && !f.colors.some((c) => v.colors.includes(c))) return false;
   // « avec un marqueur » : `any` accepte n'importe quel type de marqueur.
   if (f.withCounter === "any" && !Object.values(v.counters ?? {}).some((n) => n > 0)) return false;
-  if (f.noCounters && Object.values(v.counters ?? {}).some((n) => n > 0)) return false;
   if (f.withCounter && f.withCounter !== "any" && !((v.counters?.[f.withCounter] ?? 0) > 0)) return false;
-  if (f.inCombat && !v.attacking && !v.blocking) return false;
   if (f.cast !== undefined && !!v.cast !== f.cast) return false;
   if (f.anySubtype && !f.anySubtype.some((t) => hasSubtype(v, t))) return false;
   if (f.notSubtype && hasSubtype(v, f.notSubtype)) return false;
   if (f.token !== undefined && v.isToken !== f.token) return false;
   if (f.minToughness !== undefined && v.toughness < f.minToughness) return false;
-  if (f.nonbasic && v.supertypes.includes("Basic")) return false;
   if (f.damagedBySource && !(sourceId && v.damagedBy?.includes(sourceId))) return false;
   if (f.minManaValue !== undefined && (v.manaValue ?? 0) < f.minManaValue) return false;
   if (f.maxPower !== undefined && v.power > f.maxPower) return false;
-  if (f.basic && !v.supertypes.includes("Basic")) return false;
+  if (f.basic !== undefined && v.supertypes.includes("Basic") !== f.basic) return false;
   if (f.permanent && !v.types.some((t) => PERMANENT_TYPES.includes(t))) return false;
-  if (f.nonland && v.types.includes("Land")) return false;
   if (f.anyOf && !f.anyOf.some((g) => matchesView(v, g, perspective, sourceId))) return false;
   if (f.legendary !== undefined && v.supertypes.includes("Legendary") !== f.legendary) return false;
   if (f.maxToughness !== undefined && v.toughness > f.maxToughness) return false;

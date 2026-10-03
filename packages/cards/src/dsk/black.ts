@@ -41,7 +41,7 @@ export const BLACK: Record<string, CardScript> = {
     abilities: [
       triggered(
         when.entersSelf,
-        [fx.discard(1, ref.target(), { chooser: "controller", filter: { nonland: true }, optional: true })],
+        [fx.discard(1, ref.target(), { chooser: "controller", filter: { notTypes: ["Land"] }, optional: true })],
         { targets: [target.player()], label: "Regardez sa main, il défausse une carte non-terrain" },
       ),
       triggered(when.attachedIsDealtDamage, [fx.destroy(ref.attached)], { label: "Détruisez la créature enchantée" }),
@@ -211,8 +211,8 @@ export const BLACK: Record<string, CardScript> = {
       triggered(
         when.entersSelf,
         [
-          fx.sacrifice(ref.eachOpponent, { types: ["Enchantment"], nontoken: true }),
-          fx.sacrifice(ref.eachOpponent, { types: ["Creature"], nontoken: true }),
+          fx.sacrifice(ref.eachOpponent, { types: ["Enchantment"], token: false }),
+          fx.sacrifice(ref.eachOpponent, { types: ["Creature"], token: false }),
         ],
         { label: "Chaque adversaire sacrifie un enchantement et une créature" },
       ),

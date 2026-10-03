@@ -104,7 +104,7 @@ export const MULTI: Record<string, CardScript> = {
   },
   "Perforating Artist": {
     abilities: [
-      triggered(when.yourEndStep, [fx.punisher(ref.eachOpponent, 3, { discard: true, sacrifice: { nonland: true } })], {
+      triggered(when.yourEndStep, [fx.punisher(ref.eachOpponent, 3, { discard: true, sacrifice: { notTypes: ["Land"] } })], {
         condition: cond.raid,
         label: "Raid : 3 PV sauf sacrifice ou défausse",
       }),

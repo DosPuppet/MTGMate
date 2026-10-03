@@ -202,7 +202,7 @@ export const MULTI: Record<string, CardScript> = {
   "Stinging Vitriol": {
     spell: spell(
       [target.player("t", "opponent")],
-      [fx.damage(2, ref.target()), fx.discard(1, ref.target(), { filter: { nonland: true }, chooser: "controller" })],
+      [fx.damage(2, ref.target()), fx.discard(1, ref.target(), { filter: { notTypes: ["Land"] }, chooser: "controller" })],
     ),
   },
   "Tenured Tethermage": {

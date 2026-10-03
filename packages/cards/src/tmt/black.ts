@@ -211,7 +211,7 @@ export const BLACK: Record<string, CardScript> = {
         label: "Attachez-le à une de vos créatures",
       }),
       activated({
-        sacrificeOther: { filter: { nonland: true } },
+        sacrificeOther: { filter: { notTypes: ["Land"] } },
         oncePerTurn: true,
         sorcerySpeed: true,
         targets: [target.creature("t", { controller: "you" })],

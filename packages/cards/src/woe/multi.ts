@@ -51,7 +51,7 @@ export const MULTI: Record<string, CardScript> = {
         targets: [
           target.creature("t", {
             controller: "you",
-            nontoken: true,
+            token: false,
             notSameNameAs: { token: true, controller: "you" },
           }),
         ],
@@ -266,7 +266,7 @@ export const MULTI: Record<string, CardScript> = {
   "Totentanz, Swarm Piper": {
     abilities: [
       // « Totentanz ou une autre créature non-jeton que vous contrôlez » : Totentanz est elle-même non-jeton.
-      triggered(when.dies({ types: ["Creature"], controller: "you", nontoken: true }), [fx.createTokens(RAT_NO_BLOCK)], {
+      triggered(when.dies({ types: ["Creature"], controller: "you", token: false }), [fx.createTokens(RAT_NO_BLOCK)], {
         label: "Un Rat 1/1 qui ne peut pas bloquer",
       }),
       activated({

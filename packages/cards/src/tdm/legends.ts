@@ -39,7 +39,7 @@ const COLORS = ["W", "U", "B", "R", "G"] as const;
 
 /** Felothar : « vous pouvez sacrifier un permanent non-terrain ; quand vous le faites, un marqueur +1/+1 sur chacune de vos créatures ». */
 const FELOTHAR = [
-  fx.sacrifice(ref.you, { nonland: true }, 1, { optional: true, store: "s" }),
+  fx.sacrifice(ref.you, { notTypes: ["Land"] }, 1, { optional: true, store: "s" }),
   ...fx.when(cond.v("s"), fx.reflexive([], [fx.addCountersAll(CREATURE_YOU_CONTROL, 1)])),
 ];
 
@@ -59,7 +59,7 @@ export const LEGENDS: Record<string, CardScript> = {
       loyalty(0, { effects: [fx.addMana("C", "C", "C")], label: "Ajoutez {C}{C}{C}" }),
       loyalty(-11, {
         effects: [
-          fx.search({ colorCount: 0, nonland: true }, { to: "exile" }, 99, undefined, "u"),
+          fx.search({ colorCount: 0, notTypes: ["Land"] }, { to: "exile" }, 99, undefined, "u"),
           fx.grantPlay(ref.stored("u"), { free: true }),
         ],
         label: "Exilez des cartes incolores non-terrain : lancez-les gratuitement ce tour-ci",
@@ -332,7 +332,9 @@ export const LEGENDS: Record<string, CardScript> = {
   "Shiko, Paragon of the Way": {
     abilities: [
       triggered(when.entersSelf, [fx.exileCard(ref.target(), { name: "x" }), fx.castCopiesFree([ref.stored("x")], 3)], {
-        targets: [target.cardInGraveyard("t", { nonland: true, maxManaValue: 3 }, "you", "carte non-terrain de VM 3 ou moins")],
+        targets: [
+          target.cardInGraveyard("t", { notTypes: ["Land"], maxManaValue: 3 }, "you", "carte non-terrain de VM 3 ou moins"),
+        ],
         label: "Exilez une carte de VM 3 ou moins : lancez-en une copie gratuitement",
       }),
     ],

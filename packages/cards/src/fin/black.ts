@@ -137,7 +137,7 @@ export const BLACK: Record<string, CardScript> = {
           mode(
             "Chaque joueur sacrifie une créature non-jeton",
             [],
-            [fx.sacrifice(ref.eachPlayer, { types: ["Creature"], nontoken: true })],
+            [fx.sacrifice(ref.eachPlayer, { types: ["Creature"], token: false })],
           ),
           mode("Chaque joueur sacrifie un enchantement", [], [fx.sacrifice(ref.eachPlayer, { types: ["Enchantment"] })]),
         ],

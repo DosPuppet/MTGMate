@@ -98,8 +98,8 @@ export const LEGENDS3: Record<string, CardScript> = {
         when.entersSelf,
         [
           fx.tap(ref.target()),
-          fx.counters(ref.target(), "stun", amount.count({ types: ["Land"], nonbasic: true, controller: "you" })),
-          fx.gainLife(amount.count({ types: ["Land"], nonbasic: true, controller: "you" })),
+          fx.counters(ref.target(), "stun", amount.count({ types: ["Land"], basic: false, controller: "you" })),
+          fx.gainLife(amount.count({ types: ["Land"], basic: false, controller: "you" })),
         ],
         {
           targets: [{ ...target.upTo(8, target.nonland("t", { controller: "opponent" })), differentPlayers: true }],

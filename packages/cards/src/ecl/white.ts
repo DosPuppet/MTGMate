@@ -81,7 +81,7 @@ export const WHITE: Record<string, CardScript> = {
       loyalty(-8, {
         effects: [
           fx.lookAtTop(amount.lifeTotal, {
-            filter: { permanent: true, nonland: true },
+            filter: { permanent: true, notTypes: ["Land"] },
             maxManaValue: 3,
             count: amount.lifeTotal,
             to: { to: "battlefield" },
@@ -174,7 +174,7 @@ export const WHITE: Record<string, CardScript> = {
   "Isilu, Carrier of Twilight": {
     abilities: [
       staticAbility(
-        { ...YOUR_CREATURES, other: true, nontoken: true },
+        { ...YOUR_CREATURES, other: true, token: false },
         { addAbilities: [PERSIST] },
         { label: "Vos autres créatures non-jetons ont la persistance" },
       ),
@@ -345,7 +345,9 @@ export const WHITE: Record<string, CardScript> = {
     ),
   },
   // Convocation lue dans le texte.
-  "Protective Response": { spell: spell([target.creature("t", { inCombat: true })], [fx.destroy(ref.target())]) },
+  "Protective Response": {
+    spell: spell([target.creature("t", { anyOf: [{ attacking: true }, { blocking: true }] })], [fx.destroy(ref.target())]),
+  },
   "Reluctant Dounguard": {
     abilities: [
       entersWith({ counters: 2, counterKind: "-1/-1", label: "Arrive avec deux marqueurs -1/-1" }),

@@ -223,7 +223,7 @@ export const BLACK: Record<string, CardScript> = {
     costReduction: { generic: 2, condition: cond.void },
     spell: spell(
       [target.player("t", "opponent")],
-      [fx.discard(1, ref.target(), { filter: { nonland: true }, chooser: "controller" })],
+      [fx.discard(1, ref.target(), { filter: { notTypes: ["Land"] }, chooser: "controller" })],
     ),
   },
   "Timeline Culler": {},

@@ -183,7 +183,7 @@ export const BLUE: Record<string, CardScript> = {
       [
         {
           ...target.creature("t", { controller: "opponent" }),
-          kickedFilter: { objects: { nonland: true, controller: "opponent" } },
+          kickedFilter: { objects: { notTypes: ["Land"], controller: "opponent" } },
         },
       ],
       [fx.bounce(ref.target())],
@@ -218,7 +218,7 @@ export const BLUE: Record<string, CardScript> = {
   },
   Knightfisher: {
     abilities: [
-      triggered(when.enters(kin(["Bird"], { other: true, nontoken: true })), [fx.createTokens(FISH)], { label: "Poisson 1/1" }),
+      triggered(when.enters(kin(["Bird"], { other: true, token: false })), [fx.createTokens(FISH)], { label: "Poisson 1/1" }),
     ],
   },
   "Long River Lurker": {
@@ -330,7 +330,7 @@ export const BLUE: Record<string, CardScript> = {
       {
         pips: 3,
         label: "Renvoie chaque permanent non-terrain non-jeton",
-        effects: [fx.moveAll("battlefield", ref.eachPlayer, { nonland: true, nontoken: true }, { to: "hand" })],
+        effects: [fx.moveAll("battlefield", ref.eachPlayer, { notTypes: ["Land"], token: false }, { to: "hand" })],
       },
     ),
   },

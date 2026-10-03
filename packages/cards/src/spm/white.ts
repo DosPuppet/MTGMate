@@ -225,7 +225,13 @@ export const WHITE: Record<string, CardScript> = {
   },
   "Sudden Strike": {
     spell: spell(
-      [{ id: "t", label: "créature attaquante ou bloqueuse", filter: { objects: { types: ["Creature"], inCombat: true } } }],
+      [
+        {
+          id: "t",
+          label: "créature attaquante ou bloqueuse",
+          filter: { objects: { types: ["Creature"], anyOf: [{ attacking: true }, { blocking: true }] } },
+        },
+      ],
       [fx.destroy(ref.target())],
     ),
   },

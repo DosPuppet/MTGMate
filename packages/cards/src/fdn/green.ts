@@ -197,7 +197,7 @@ export const GREEN: Record<string, CardScript> = {
   "Spinner of Souls": {
     abilities: [
       triggered(
-        when.dies({ types: ["Creature"], controller: "you", nontoken: true, other: true }),
+        when.dies({ types: ["Creature"], controller: "you", token: false, other: true }),
         fx.may("Révéler jusqu'à une carte de créature ?", fx.revealUntil({ types: ["Creature"] })),
         { label: "révèle jusqu'à une créature" },
       ),

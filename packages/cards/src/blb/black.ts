@@ -37,7 +37,7 @@ export const BLACK: Record<string, CardScript> = {
   },
   "Bandit's Talent": {
     abilities: [
-      triggered(when.entersSelf, [fx.discard(2, ref.eachOpponent, { unlessFilter: { nonland: true } })], {
+      triggered(when.entersSelf, [fx.discard(2, ref.eachOpponent, { unlessFilter: { notTypes: ["Land"] } })], {
         label: "Chaque adversaire défausse deux cartes (ou une non-terrain)",
       }),
     ],
@@ -104,7 +104,7 @@ export const BLACK: Record<string, CardScript> = {
     spell: spell(
       [target.player("t", "opponent")],
       [
-        fx.discard(1, ref.target(), { chooser: "controller", filter: { nonland: true }, exile: true, store: "e" }),
+        fx.discard(1, ref.target(), { chooser: "controller", filter: { notTypes: ["Land"] }, exile: true, store: "e" }),
         ...fx.when(cond.gift, fx.grantPlay(ref.stored("e"), { forever: true, anyMana: true })),
       ],
     ),
@@ -231,7 +231,7 @@ export const BLACK: Record<string, CardScript> = {
   },
   "Rottenmouth Viper": {
     // Coût additionnel facultatif : chaque permanent non-terrain sacrifié réduit le coût de {1} (au choix du joueur).
-    additionalCost: { sacrificeToPay: { nonland: true } },
+    additionalCost: { sacrificeToPay: { notTypes: ["Land"] } },
     abilities: [
       ...[when.entersSelf, when.attacksSelf].map((w) =>
         triggered(
@@ -240,7 +240,7 @@ export const BLACK: Record<string, CardScript> = {
             fx.counters(ref.self, "blight", 1),
             fx.punisher(ref.eachOpponent, 4, {
               discard: true,
-              sacrifice: { nonland: true },
+              sacrifice: { notTypes: ["Land"] },
               times: amount.countersOn(ref.self, "blight"),
             }),
           ],
@@ -280,7 +280,7 @@ export const BLACK: Record<string, CardScript> = {
         triggered(
           when.yourEndStep,
           [
-            fx.sacrifice(ref.you, { nonland: true, other: true }, 3, { optional: true, store: "s" }),
+            fx.sacrifice(ref.you, { notTypes: ["Land"], other: true }, 3, { optional: true, store: "s" }),
             ...fx.when(
               cond.v("s", 3),
               fx.pickFromZone("graveyard", { types: ["Creature"] }, { to: "battlefield", counters: { kind: "finality", n: 1 } }),
@@ -338,7 +338,7 @@ export const BLACK: Record<string, CardScript> = {
   },
   "Thornplate Intimidator": {
     abilities: [
-      triggered(when.entersSelf, [fx.punisher(ref.target(), 3, { discard: true, sacrifice: { nonland: true } })], {
+      triggered(when.entersSelf, [fx.punisher(ref.target(), 3, { discard: true, sacrifice: { notTypes: ["Land"] } })], {
         targets: [target.player("t", "opponent")],
         label: "Perd 3 PV sauf sacrifice ou défausse",
       }),
@@ -351,7 +351,7 @@ export const BLACK: Record<string, CardScript> = {
         [
           ...fx.when(
             cond.refLostLife(ref.target()),
-            fx.discard(1, ref.target(), { chooser: "controller", filter: { nonland: true } }),
+            fx.discard(1, ref.target(), { chooser: "controller", filter: { notTypes: ["Land"] } }),
           ),
           ...fx.when(cond.not(cond.refLostLife(ref.target())), fx.discard(1, ref.target())),
         ],
