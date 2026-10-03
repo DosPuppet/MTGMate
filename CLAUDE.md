@@ -18,7 +18,7 @@ Ce fichier sert au suivi du projet entre les sessions : état présent, règles 
 
 ## Documents
 
-- `docs/plans/` : **`PLAN-C.md`, en cours** ; archivés : `PLAN-R.md` (remédiation de l'audit du 30/09 ; « Reporté tant qu'aucune carte ne l'exige »), `PLAN-P4.md` (méta Standard puis Tarkir: Dragonstorm ; decks du méta dans `docs/meta/2026-09-29/`).
+- `docs/plans/` : **`PLAN-D.md`, en cours** (reports de l'analyse des cartes du 03/10/2026, lots D1 à D9) ; `PLAN-C.md` (fait le 03/10/2026) ; archivés : `PLAN-R.md` (remédiation de l'audit du 30/09 ; « Reporté tant qu'aucune carte ne l'exige »), `PLAN-P4.md` (méta Standard puis Tarkir: Dragonstorm ; decks du méta dans `docs/meta/2026-09-29/`).
 - `docs/audits/` : **`2026-10-03-cartes.md`** (exactitude des cartes M/R/U : couverture des tests, familles d'approximations, options ; lots K0 à K8 faits le 03/10/2026, bilan et reports en fin de document) ; **`2026-10-02.md`** (audit général après la couverture du Standard : bugs B1 à B6, choix faits à la place du joueur, approximations, dette, architecture, plateforme) ; archivés : `2026-09-30.md`, `2026-09-29.md`.
 - `docs/moteur.md` : **à lire avant d'ajouter une mécanique.** Carte des fichiers du moteur, recettes, règles de conception, plafonds.
 - `docs/approximations.md` : approximations connues, générales puis carte par carte. **Toute nouvelle approximation y est ajoutée** ; toute approximation levée en est retirée.
