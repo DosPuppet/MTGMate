@@ -218,9 +218,6 @@ function contextOfItem(item: StackItem): EffectContext {
     kicked: item.kicked,
     event: item.event,
     vars: {},
-    sacrificed: item.sacrificed,
-    discarded: item.discarded,
-    tappedForCost: item.tappedForCost,
-    costExiled: item.costExiled,
+    paid: item.paid,
   };
 }

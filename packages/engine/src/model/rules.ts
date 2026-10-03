@@ -605,10 +605,6 @@ export type Ref =
   | { kind: "linked" }
   /** Cartes exilées « jusqu'à ce que » la source quitte le champ de bataille (Pinnacle Starcage). */
   | { kind: "exiledWith" }
-  /** Les cartes exilées pour payer le coût de ce qui se résout (Baron Helmut Zemo). */
-  | { kind: "costExiled" }
-  /** La créature renvoyée en main pour le Web-slinging du sort qui se résout, ou du permanent source. */
-  | { kind: "costBounced" }
   /** Les cartes de votre cimetière du même nom que la carte désignée, elle comprise (Rat King, Verminister). */
   | { kind: "sameNameInGraveyard"; ref: Ref }
   /** Les cibles du sort ou de la capacité de l'événement (Storm, Windrider : « ces créatures »). */
@@ -617,20 +613,8 @@ export type Ref =
   | { kind: "abilitiesFromEventObject" }
   /** Carte du dessus de la bibliothèque de chaque joueur désigné. */
   | { kind: "libraryTop"; who: Ref }
-  /** Cartes exilées face visible appartenant aux joueurs désignés (Binding Negotiation). */
-  | { kind: "exiledCardsOf"; who: Ref }
-  /** Toutes les cartes des cimetières (Lazav). */
-  | { kind: "allGraveyards" }
-  /** Les cartes du cimetière des joueurs désignés (Jetsam : « depuis le cimetière de chaque adversaire »). */
-  | { kind: "graveyardOf"; who: Ref }
-  /** Sorts et capacités sur la pile contrôlés par les joueurs désignés (Glen Elendra's Answer), sauf celui qui se résout. */
-  | { kind: "stackItemsOf"; who: Ref }
   /** Créatures qui ont monté ou équipé la source ce tour-ci (Fortune, Calamity, The Gitrog, Luxurious Locomotive). */
   | { kind: "crewedBy" }
-  /** Permanents sacrifiés pour payer le coût de la capacité (Ayli). */
-  | { kind: "costSacrificed" }
-  /** Cartes défaussées pour payer le coût additionnel du sort (Grab the Prize). */
-  | { kind: "costDiscarded" }
   /** Les objets désignés qui correspondent au filtre, dans n'importe quelle zone (Ghost Vacuum : les cartes de créature). */
   | { kind: "filtered"; ref: Ref; filter: ObjectFilter }
   /** Les objets de `ref` moins ceux de `exclude` (« toutes les autres créatures »). */
@@ -641,12 +625,8 @@ export type Ref =
   | { kind: "controllerOf"; ref: Ref }
   /** Objets déplacés plus tôt pendant la résolution (`store` d'un déplacement), sous leur nouvel identifiant. */
   | { kind: "stored"; name: string }
-  /** Permanents correspondants contrôlés par le joueur désigné (« chaque créature que le joueur ciblé contrôle »). */
-  | { kind: "permanentsOf"; player: Ref; filter: ObjectFilter }
   /** « Chaque joueur qui contrôle le plus de [créatures] » (No Witnesses). */
   | { kind: "playersWithMost"; filter: ObjectFilter }
-  /** Cartes en main d'un joueur, de valeur de mana au plus `maxManaValue` (Buster Sword). */
-  | { kind: "handOf"; player: Ref; filter: ObjectFilter; maxManaValue?: Amount }
   /** Le joueur défenseur de la source attaquante (celui qui contrôle le planeswalker attaqué). */
   | { kind: "defendingPlayer" }
   /**
@@ -654,6 +634,23 @@ export type Ref =
    * une carte en main », « les joueurs qui n'ont pas la vitesse maximale »).
    */
   | { kind: "playersWhere"; of: Ref; where: Condition }
+  /**
+   * Ce qui a été payé en objets pour le coût du sort ou de la capacité qui se résout (dernières informations connues) :
+   * permanents sacrifiés, cartes défaussées (encore présentes), cartes exilées, créature renvoyée pour le Web-slinging.
+   */
+  | { kind: "cost"; paid: "sacrificed" | "discarded" | "exiled" | "bounced" }
+  /**
+   * Les objets d'une zone des joueurs désignés, correspondant au filtre : permanents qu'ils contrôlent, cartes de leur
+   * cimetière, de leur main (valeur de mana au plus `maxManaValue`), cartes qu'ils possèdent exilées face visible, sorts et
+   * capacités qu'ils contrôlent sur la pile (sauf ce qui se résout).
+   */
+  | {
+      kind: "zone";
+      zone: "battlefield" | "graveyard" | "hand" | "exile" | "stack";
+      who: Ref;
+      filter?: ObjectFilter;
+      maxManaValue?: Amount;
+    }
   /** Réunion de références, sans doublon (Call the Spirit Dragons : les Dragons choisis pour chaque couleur). */
   | { kind: "union"; of: Ref[] };
 

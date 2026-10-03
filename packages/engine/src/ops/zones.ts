@@ -509,8 +509,9 @@ export const HANDLERS: OpHandlers = {
     const back = moveWithSpec(s, s.objects[card]?.owner ?? ctx.controller, card, { to: "battlefield", transformed: true });
     const o = back ? s.objects[back] : undefined;
     // Les matériaux sont liés au verso (Mastercraft Raptor, Sunbird Effigy, The Grim Captain…).
-    if (o && ctx.costExiled?.length) {
-      o.linked = [...(o.linked ?? []), ...ctx.costExiled];
+    const exiled = ctx.paid?.exiled ?? [];
+    if (o && exiled.length) {
+      o.linked = [...(o.linked ?? []), ...exiled];
       bump(s);
     }
     return;

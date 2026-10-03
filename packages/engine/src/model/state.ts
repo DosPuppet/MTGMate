@@ -283,10 +283,8 @@ export interface StackItem {
   bottomInstead?: boolean;
   /** Aventure lancée : exilée « en aventure » après sa résolution. */
   adventure?: boolean;
-  /** Cartes défaussées pour payer un coût additionnel (Grab the Prize). */
-  discarded?: ObjectId[];
-  /** Cartes exilées pour payer un coût additionnel (Fear of Abduction : liées au permanent). */
-  costExiled?: ObjectId[];
+  /** Objets payés pour le coût. */
+  paid?: CostPaid;
   /** Sources dont le mana a servi à le lancer (« en utilisant du mana produit par [cette source] »). */
   manaSources?: ObjectId[];
   /** Rebond (702.88, accordé par Ojer Pakpatiq). */
@@ -311,10 +309,6 @@ export interface StackItem {
   division?: Record<string, number[]>;
   /** « Ce sort ne peut pas être contrecarré » (accordé au lancement). */
   uncounterable?: boolean;
-  /** Permanents sacrifiés pour le coût (dernières informations connues disponibles). */
-  sacrificed?: ObjectId[];
-  /** Permanents engagés pour payer le coût (station). */
-  tappedForCost?: ObjectId[];
   /** Effets de mana dépensé (Carnelian Orb, Pyromancer's Goggles). */
   riders?: ("haste" | "copy" | "uncounterable")[];
 }
@@ -385,6 +379,17 @@ export interface TurnStats {
  * Web-slinging, chaos (Mayhem), faufilement (Sneak), évocation (702.74), distorsion (Warp), imminence (702.176).
  */
 export type CastVia = "webSlinging" | "mayhem" | "sneak" | "evoke" | "warp" | "impending";
+
+/** Objets payés pour le coût d'un sort ou d'une capacité (dernières informations connues disponibles). */
+export interface CostPaid {
+  sacrificed?: ObjectId[];
+  /** Cartes défaussées (Grab the Prize). */
+  discarded?: ObjectId[];
+  /** Cartes exilées (matériaux d'une fabrication, Fear of Abduction : liées au permanent). */
+  exiled?: ObjectId[];
+  /** Permanents engagés (station). */
+  tapped?: ObjectId[];
+}
 
 /**
  * Comment un sort a été lancé : noté sur la pile (`StackItem.cast`), puis sur le permanent qu'il devient

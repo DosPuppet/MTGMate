@@ -44,6 +44,7 @@ import type {
   ChoiceRequest,
   ChoiceValue,
   Condition,
+  CostPaid,
   Effect,
   GameState,
   Keyword,
@@ -77,15 +78,40 @@ export interface EffectContext {
   event?: TriggerEventData;
   /** Valeurs mémorisées pendant la résolution (voir `store`). */
   vars?: Record<string, ChoiceValue[]>;
-  /** Permanents sacrifiés pour le coût de la capacité. */
-  sacrificed?: ObjectId[];
-  /** Cartes défaussées pour payer le coût additionnel du sort. */
-  discarded?: ObjectId[];
-  tappedForCost?: ObjectId[];
-  /** Cartes exilées pour payer le coût (matériaux d'une fabrication). */
-  costExiled?: ObjectId[];
-  /** Créature renvoyée en main pour le Web-slinging. */
-  costBounced?: ObjectId[];
+  /** Objets payés pour le coût de ce qui se résout ; créature renvoyée en main pour le Web-slinging. */
+  paid?: CostPaid & { bounced?: ObjectId[] };
+}
+
+/** La référence `zone` : les objets d'une zone des joueurs désignés, correspondant au filtre. */
+function zoneObjects(s: GameState, ctx: EffectContext, ref: Extract<Ref, { kind: "zone" }>): string[] {
+  const players = resolveRef(s, ctx, ref.who);
+  const f = ref.filter ? { ...ref.filter, controller: undefined } : undefined;
+  const card = (id: ObjectId) => !f || matchesCard(s, ctx.controller, id, f, ctx.sourceId);
+  switch (ref.zone) {
+    case "battlefield":
+      return s.battlefield.filter(
+        (id) =>
+          players.includes(s.objects[id]?.controller ?? "") && matchesObjectFilter(s, ctx.controller, id, f ?? {}, ctx.sourceId),
+      );
+    case "graveyard":
+      return players.flatMap((p) => s.players[p]?.graveyard ?? []).filter(card);
+    case "hand": {
+      const max = ref.maxManaValue !== undefined ? evalAmount(s, ctx, ref.maxManaValue) : Number.POSITIVE_INFINITY;
+      return players.flatMap((p) =>
+        (s.players[p]?.hand ?? []).filter((id) => card(id) && manaValue(s.defs[s.objects[id]?.defId ?? ""]?.manaCost) <= max),
+      );
+    }
+    case "exile":
+      // Face visible seulement ; ni les copies de cartes ni les copies de sorts préparés.
+      return s.exile.filter((id) => {
+        const o = s.objects[id];
+        return !!o && players.includes(o.owner) && !o.faceDown && !o.cardCopy && !o.preparedFor && card(id);
+      });
+    case "stack": {
+      const resolving = s.resolving?.item.id;
+      return s.stack.filter((x) => x.id !== resolving && players.includes(x.controller)).map((x) => x.id);
+    }
+  }
 }
 
 /** Caractéristiques d'un objet vivant, ou ses dernières informations connues. */
@@ -281,10 +307,6 @@ export function resolveRef(s: GameState, ctx: EffectContext, ref: Ref): string[]
       const linked = s.objects[ctx.sourceId]?.linked ?? s.lki[ctx.sourceId]?.linked ?? [];
       return linked.filter((id) => !!s.objects[id]);
     }
-    case "costSacrificed":
-      return ctx.sacrificed ?? [];
-    case "costDiscarded":
-      return (ctx.discarded ?? []).filter((id) => !!s.objects[id]);
     case "union":
       return [...new Set(ref.of.flatMap((r) => resolveRef(s, ctx, r)))];
     case "except": {
@@ -297,14 +319,10 @@ export function resolveRef(s: GameState, ctx: EffectContext, ref: Ref): string[]
       );
     case "libraryTop":
       return resolveRef(s, ctx, ref.who).flatMap((p) => (s.players[p]?.library[0] ? [s.players[p]?.library[0] as string] : []));
-    case "costExiled":
-      return [...(ctx.costExiled ?? [])];
     case "sameNameInGraveyard": {
       const names = new Set(resolveRef(s, ctx, ref.ref).map((id) => s.defs[s.objects[id]?.defId ?? ""]?.name));
       return (s.players[ctx.controller]?.graveyard ?? []).filter((id) => names.has(s.defs[s.objects[id]?.defId ?? ""]?.name));
     }
-    case "costBounced":
-      return [...(ctx.costBounced ?? (ctx.sourceId ? s.objects[ctx.sourceId]?.cast?.costBounced : undefined) ?? [])];
     case "targetsOfEventObject": {
       // Le sort lancé (l'objet de l'événement) : ses cibles, d'après son élément de pile.
       const id = ctx.event?.objectId;
@@ -319,22 +337,6 @@ export function resolveRef(s: GameState, ctx: EffectContext, ref: Ref): string[]
         .map((x) => x.id)
         .slice(-1);
     }
-    case "stackItemsOf": {
-      const players = resolveRef(s, ctx, ref.who);
-      const resolving = s.resolving?.item.id;
-      return s.stack.filter((x) => x.id !== resolving && players.includes(x.controller)).map((x) => x.id);
-    }
-    case "exiledCardsOf": {
-      const players = resolveRef(s, ctx, ref.who);
-      return s.exile.filter((id) => {
-        const o = s.objects[id];
-        return !!o && players.includes(o.owner) && !o.faceDown && !o.cardCopy && !o.preparedFor;
-      });
-    }
-    case "allGraveyards":
-      return s.playerOrder.flatMap((p) => s.players[p]?.graveyard ?? []);
-    case "graveyardOf":
-      return resolveRef(s, ctx, ref.who).flatMap((p) => s.players[p]?.graveyard ?? []);
     case "playersWhere":
       return resolveRef(s, ctx, ref.of).filter((p) => isPlayer(s, p) && evalCondition(s, { ...ctx, controller: p }, ref.where));
     case "crewedBy": {
@@ -346,16 +348,6 @@ export function resolveRef(s: GameState, ctx: EffectContext, ref: Ref): string[]
         .filter((l) => l.sourceId === ctx.sourceId)
         .flatMap((l) => l.cards)
         .filter((id) => s.objects[id]?.zone === "exile");
-    case "handOf": {
-      const max = ref.maxManaValue !== undefined ? evalAmount(s, ctx, ref.maxManaValue) : Number.POSITIVE_INFINITY;
-      return resolveRef(s, ctx, ref.player).flatMap((p) =>
-        (s.players[p]?.hand ?? []).filter(
-          (id) =>
-            matchesCard(s, ctx.controller, id, { ...ref.filter, controller: undefined }, ctx.sourceId) &&
-            manaValue(s.defs[s.objects[id]?.defId ?? ""]?.manaCost) <= max,
-        ),
-      );
-    }
     case "playersWithMost": {
       const alive = s.playerOrder.filter((p) => !s.players[p]?.lost);
       const f = { ...ref.filter, controller: undefined };
@@ -364,13 +356,6 @@ export function resolveRef(s: GameState, ctx: EffectContext, ref: Ref): string[]
       const most = Math.max(0, ...alive.map(count));
       return alive.filter((p) => count(p) === most);
     }
-    case "permanentsOf": {
-      const players = resolveRef(s, ctx, ref.player);
-      const f = { ...ref.filter, controller: undefined };
-      return s.battlefield.filter(
-        (id) => players.includes(s.objects[id]?.controller ?? "") && matchesObjectFilter(s, ctx.controller, id, f, ctx.sourceId),
-      );
-    }
     case "defendingPlayer": {
       const atk = s.combat?.attackers.find((a) => a.id === ctx.sourceId);
       if (!atk) return [];
@@ -378,6 +363,20 @@ export function resolveRef(s: GameState, ctx: EffectContext, ref: Ref): string[]
       const pw = s.objects[atk.defender];
       return pw ? [pw.controller] : [];
     }
+    case "cost":
+      switch (ref.paid) {
+        case "sacrificed":
+          return ctx.paid?.sacrificed ?? [];
+        case "discarded":
+          return (ctx.paid?.discarded ?? []).filter((id) => !!s.objects[id]);
+        case "exiled":
+          return [...(ctx.paid?.exiled ?? [])];
+        case "bounced":
+          return [...(ctx.paid?.bounced ?? s.objects[ctx.sourceId]?.cast?.costBounced ?? [])];
+      }
+      return [];
+    case "zone":
+      return zoneObjects(s, ctx, ref);
     case "attachmentsOf": {
       const hosts = new Set(resolveRef(s, ctx, ref.ref));
       return s.battlefield.filter((id) => hosts.has(s.objects[id]?.attachedTo ?? ""));
@@ -702,11 +701,7 @@ export function contextOf(r: Resolution): EffectContext {
     kicked: r.item.kicked,
     event: r.item.event,
     vars: r.vars,
-    sacrificed: r.item.sacrificed,
-    discarded: r.item.discarded,
-    tappedForCost: r.item.tappedForCost,
-    costExiled: r.item.costExiled,
-    costBounced: r.item.cast?.costBounced,
+    paid: { ...r.item.paid, bounced: r.item.cast?.costBounced },
   };
 }
 

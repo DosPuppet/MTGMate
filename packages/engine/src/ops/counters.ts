@@ -358,7 +358,7 @@ export const HANDLERS: OpHandlers = {
     // 702.184a : des marqueurs de charge égaux à la force de la créature engagée (Tapestry Warden : son endurance si
     // elle est plus grande).
     const o = s.objects[ctx.sourceId];
-    const tapped = ctx.tappedForCost?.[0];
+    const tapped = ctx.paid?.tapped?.[0];
     if (o?.zone !== "battlefield" || !tapped) return;
     const c = s.objects[tapped] ? chars(s, tapped) : s.lki[tapped];
     if (!c) return;

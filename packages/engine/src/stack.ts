@@ -1969,8 +1969,10 @@ export function castSpell(s: GameState, player: PlayerId, card: ObjectId, choice
       metWhenCast: metWhenCast || undefined,
     },
     // Permanents sacrifiés comme coût additionnel (« si le permanent sacrifié était un Véhicule »).
-    sacrificed: sacrifice.length ? [...sacrifice] : undefined,
-    costExiled: costExiled.length ? costExiled : undefined,
+    paid: {
+      sacrificed: sacrifice.length ? [...sacrifice] : undefined,
+      exiled: costExiled.length ? costExiled : undefined,
+    },
     uncounterable: uncounterable || undefined,
   };
   s.stack.push(item);
@@ -2067,7 +2069,7 @@ export function castSpell(s: GameState, player: PlayerId, card: ObjectId, choice
     for (const id of discarded) announceDiscard(s, player, id);
     announceDiscardBatch(s, player, handDiscard.length);
     // Grab the Prize : « si la carte défaussée n'était pas une carte de terrain ».
-    item.discarded = discarded.filter((id): id is string => !!id);
+    item.paid = { ...item.paid, discarded: discarded.filter((id): id is string => !!id) };
   }
   for (const id of sacrifice) sacrificePermanent(s, id);
   if (kicked && kickerPermanent && d.kickerCost?.sacrifice) sacrificePermanent(s, kickerPermanent);
@@ -3120,8 +3122,10 @@ export function activateAbility(s: GameState, player: PlayerId, source: ObjectId
   if (ab.cost.payLifeX && x > 0) payLife_(s, player, x);
   for (const id of tapOthers) tapObject(s, obj(s, id));
   // Les permanents sacrifiés restent consultables (dernières informations connues : « sa endurance »).
-  item.sacrificed = sacrificed.length ? [...sacrificed] : undefined;
-  item.tappedForCost = tapOthers.length ? [...tapOthers] : undefined;
+  item.paid = {
+    sacrificed: sacrificed.length ? [...sacrificed] : undefined,
+    tapped: tapOthers.length ? [...tapOthers] : undefined,
+  };
   for (const id of sacrificed) sacrificePermanent(s, id);
   if (ab.cost.sacrificeSelf) sacrificePermanent(s, source);
   // La source quitte sa zone pour payer le coût : on garde ses dernières informations (« cette carte », où qu'elle soit).
@@ -3152,7 +3156,7 @@ export function activateAbility(s: GameState, player: PlayerId, source: ObjectId
   if (ab.cost.sacrificeX) {
     const chosen = pick("sacrificeX");
     if (chosen.length < x) throw new RulesError("Pas assez de permanents à sacrifier");
-    item.sacrificed = chosen;
+    item.paid = { ...item.paid, sacrificed: chosen };
     for (const id of chosen) sacrificePermanent(s, id);
   }
   // Fourrager (701.61) : trois cartes du cimetière ou une Nourriture (choix automatique).
@@ -3204,13 +3208,13 @@ export function activateAbility(s: GameState, player: PlayerId, source: ObjectId
     s.turn.crafting = true;
     const exiled = materials.map((id) => moveObject(s, id, "exile")).filter((id): id is string => !!id);
     delete s.turn.crafting;
-    item.costExiled = exiled;
+    item.paid = { ...item.paid, exiled };
   }
   // Baron Helmut Zemo : les cartes exilées du cimetière, notées pour l'effet (« copiez ces cartes »).
   if (ab.cost.exileGraveyardSymbols) {
     const cards = symbolCards(s, player, ab.cost.exileGraveyardSymbols);
     if (!cards) throw new RulesError("Pas assez de symboles de mana dans votre cimetière");
-    item.costExiled = cards.map((id) => moveObject(s, id, "exile")).filter((id): id is string => !!id);
+    item.paid = { ...item.paid, exiled: cards.map((id) => moveObject(s, id, "exile")).filter((id): id is string => !!id) };
   }
   if (ab.cost.exileSelf) moveObject(s, source, "exile");
   if (ab.cost.discardSelf) {
@@ -3517,7 +3521,8 @@ function finishResolution(
       if (arrived && vars["$ids:devoured"]?.length)
         arrived.linked = [...(arrived.linked ?? []), ...vars["$ids:devoured"].map(String)];
       // Fear of Abduction : les cartes exilées pour payer le coût additionnel sont liées au permanent.
-      if (arrived && item.costExiled?.length) arrived.linked = [...(arrived.linked ?? []), ...item.costExiled];
+      const exiled = item.paid?.exiled ?? [];
+      if (arrived && exiled.length) arrived.linked = [...(arrived.linked ?? []), ...exiled];
       // Superior Spider-Man : « quand vous le faites, exilez cette carte » : une capacité réflexive (603.12).
       const copied = vars.$copyCard?.[0];
       if (arrived && copied !== undefined && s.objects[String(copied)]?.zone === "graveyard")

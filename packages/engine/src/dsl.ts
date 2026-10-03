@@ -220,8 +220,10 @@ export const ref = {
   /** « cette carte », où qu'elle soit (Angelic Destiny). */
   selfCard: { kind: "selfCard" } as Ref,
   linked: { kind: "linked" } as Ref,
-  costSacrificed: { kind: "costSacrificed" } as Ref,
-  costDiscarded: { kind: "costDiscarded" } as Ref,
+  /** Ce qui a été payé en objets pour le coût (permanents sacrifiés, cartes défaussées…). */
+  cost: (paid: Extract<Ref, { kind: "cost" }>["paid"]): Ref => ({ kind: "cost", paid }),
+  costSacrificed: { kind: "cost", paid: "sacrificed" } as Ref,
+  costDiscarded: { kind: "cost", paid: "discarded" } as Ref,
   /** Les objets désignés qui correspondent au filtre (Ghost Vacuum : « chaque carte de créature exilée avec… »). */
   filtered: (r: Ref, filter: ObjectFilter): Ref => ({ kind: "filtered", ref: r, filter }),
   /** Réunion de références, sans doublon. */
@@ -231,11 +233,11 @@ export const ref = {
   /** Cartes exilées par la source « jusqu'à ce qu'elle quitte le champ de bataille ». */
   exiledWith: { kind: "exiledWith" } as Ref,
   /** Les cartes exilées pour payer le coût (« copiez ces cartes exilées »). */
-  costExiled: { kind: "costExiled" } as Ref,
+  costExiled: { kind: "cost", paid: "exiled" } as Ref,
   /** Les cartes de votre cimetière du même nom que la carte désignée, elle comprise (Rat King, Verminister). */
   sameNameInGraveyard: (r: Ref): Ref => ({ kind: "sameNameInGraveyard", ref: r }),
   /** La créature renvoyée en main pour le Web-slinging (Scarlet Spider, Ben Reilly). */
-  costBounced: { kind: "costBounced" } as Ref,
+  costBounced: { kind: "cost", paid: "bounced" } as Ref,
   /** Les cibles du sort ou de la capacité de l'événement (« ces créatures »). */
   targetsOfEventObject: { kind: "targetsOfEventObject" } as Ref,
   /** Les capacités sur la pile dont la source est l'objet de l'événement, la plus récente d'abord. */
@@ -248,22 +250,30 @@ export const ref = {
     where: { kind: "not", cond: { kind: "maxSpeed" } },
   } as Ref,
   libraryTop: (who: Ref): Ref => ({ kind: "libraryTop", who }),
-  stackItemsOf: (who: Ref): Ref => ({ kind: "stackItemsOf", who }),
-  exiledCardsOf: (who: Ref): Ref => ({ kind: "exiledCardsOf", who }),
-  allGraveyards: { kind: "allGraveyards" } as Ref,
-  graveyardOf: (who: Ref): Ref => ({ kind: "graveyardOf", who }),
+  /** Les objets d'une zone des joueurs désignés (voir la référence `zone`). */
+  zone: (zone: Extract<Ref, { kind: "zone" }>["zone"], who: Ref, filter?: ObjectFilter): Ref => ({
+    kind: "zone",
+    zone,
+    who,
+    ...(filter ? { filter } : {}),
+  }),
+  stackItemsOf: (who: Ref): Ref => ({ kind: "zone", zone: "stack", who }),
+  exiledCardsOf: (who: Ref): Ref => ({ kind: "zone", zone: "exile", who }),
+  allGraveyards: { kind: "zone", zone: "graveyard", who: { kind: "eachPlayer" } } as Ref,
+  graveyardOf: (who: Ref): Ref => ({ kind: "zone", zone: "graveyard", who }),
   crewedBy: { kind: "crewedBy" } as Ref,
   stored: (name: string): Ref => ({ kind: "stored", name }),
   /** « chaque [créature] que [le joueur désigné] contrôle » */
-  permanentsOf: (player: Ref, filter: ObjectFilter): Ref => ({ kind: "permanentsOf", player, filter }),
+  permanentsOf: (player: Ref, filter: ObjectFilter): Ref => ({ kind: "zone", zone: "battlefield", who: player, filter }),
   playersWithMost: (filter: ObjectFilter): Ref => ({ kind: "playersWithMost", filter }),
   /** Le joueur défenseur de la créature attaquante source (ou le contrôleur du planeswalker attaqué). */
   defendingPlayer: { kind: "defendingPlayer" } as Ref,
   handOf: (player: Ref, filter: ObjectFilter = {}, maxManaValue?: Amount): Ref => ({
-    kind: "handOf",
-    player,
+    kind: "zone",
+    zone: "hand",
+    who: player,
     filter,
-    maxManaValue,
+    ...(maxManaValue !== undefined ? { maxManaValue } : {}),
   }),
 };
 
