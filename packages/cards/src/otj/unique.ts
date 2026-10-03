@@ -318,10 +318,16 @@ export const UNIQUE: Record<string, CardScript> = {
   // --- Rouge -----------------------------------------------------------------
   "Calamity, Galloping Inferno": {
     abilities: [
-      // Approximation : toutes les créatures non légendaires qui l'ont montée.
-      whileSaddled([fx.copyToken(ref.crewedBy, { attacking: true, sacrificeAtEndStep: true })], {
-        label: "Copies attaquantes des créatures qui l'ont montée",
-      }),
+      // Deux fois : une créature non légendaire qui l'a montée, au choix, et une copie engagée et attaquante.
+      whileSaddled(
+        ["a", "b"].flatMap((k) => [
+          fx.chooseAmong(ref.filtered(ref.crewedBy, { types: ["Creature"], legendary: false }), ref.you, k, {
+            prompt: "Choisissez une créature non légendaire qui l'a montée",
+          }),
+          fx.copyToken(ref.stored(k), { tapped: true, attacking: true, sacrificeAtEndStep: true }),
+        ]),
+        { label: "Deux copies attaquantes d'une créature qui l'a montée" },
+      ),
     ],
   },
   "Great Train Heist": {
@@ -593,7 +599,13 @@ export const UNIQUE: Record<string, CardScript> = {
             { to: "exile" },
             { pool: ref.allGraveyards, min: 0, store: "l", prompt: "Vous pouvez exiler une carte d'un cimetière" },
           ),
-          fx.when(cond.refMatches(ref.stored("l"), { types: ["Creature"] }), fx.becomeCopy(ref.self, ref.stored("l"))),
+          fx.when(
+            cond.refMatches(ref.stored("l"), { types: ["Creature"] }),
+            fx.may(
+              "Lazav devient-il une copie de cette carte jusqu'à la fin du tour ?",
+              fx.becomeCopy(ref.self, ref.stored("l")),
+            ),
+          ),
         ],
         { oncePerTurn: true, label: "Marqueur, exilez une carte, copiez-la" },
       ),
@@ -601,9 +613,11 @@ export const UNIQUE: Record<string, CardScript> = {
   },
   "Lilah, Undefeated Slickshot": {
     abilities: [
+      // « lancé depuis votre main » : lu sur le sort au moment du lancement (la condition `spellCastFromHand` porterait
+      // sur la capacité qui se résout).
       triggered(
-        when.castSpell("you", { types: ["Instant", "Sorcery"], multicolored: true }),
-        [fx.when(cond.spellCastFromHand, fx.plotOnResolve(ref.eventObject))],
+        { on: "castSpell", by: "you", filter: { types: ["Instant", "Sorcery"], multicolored: true }, fromHand: true },
+        [fx.plotOnResolve(ref.eventObject)],
         { label: "Le sort sera comploté" },
       ),
     ],
@@ -626,7 +640,7 @@ export const UNIQUE: Record<string, CardScript> = {
   },
   "Oko, the Ringleader": {
     abilities: [
-      triggered(when.step("beginCombat"), [fx.becomeCopy(ref.self, ref.target()), fx.pump(ref.self, 0, 0, ["hexproof"])], {
+      triggered(when.step("beginCombat"), [fx.becomeCopy(ref.self, ref.target(), "endOfTurn", { addKeywords: ["hexproof"] })], {
         targets: [target.upTo(1, target.creature("t", { controller: "you" }))],
         label: "Devient une copie d'une de vos créatures",
       }),
@@ -647,7 +661,7 @@ export const UNIQUE: Record<string, CardScript> = {
         when.sacrifice({ types: ["Creature"], other: true }),
         [
           fx.exileTop(ref.target(), amount.manaValueOf(ref.eventObject), "r"),
-          fx.grantPlay(ref.stored("r"), { untilYourNextTurn: true, anyMana: true }),
+          fx.grantPlay(ref.stored("r"), { untilYourNextEndStep: true, anyMana: true }),
         ],
         { targets: [target.player("t")], label: "Exilez des cartes de sa bibliothèque, jouables" },
       ),

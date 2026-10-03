@@ -86,7 +86,9 @@ Dans l'ordre où elles ont été ajoutées, extension par extension.
 - **Outlaws of Thunder Junction (`docs/extensions/otj-big.md`) :**
   - `règle` Hollow Marauder : une carte piochée si au moins un adversaire ciblé n'a pas défaussé de carte de VM 4 ou plus ;
   - `règle` Giant Beaver, Rambling Possum : seules les créatures de la dernière activation de Monture du tour comptent comme l'ayant montée ;
-  - `règle` Fortune, Calamity, The Gitrog : toutes les créatures qui ont monté la Monture sont concernées (et non une au plus, au choix) ;
+  - `règle` Fortune, The Gitrog : toutes les créatures qui ont monté la Monture sont concernées (et non une au plus, au choix) ;
+  - `règle` Tinybones, the Pickpocket : une carte de permanent sans le flash du cimetière adverse ne peut pas être lancée pendant la résolution (la permission « lancer maintenant » ne lève pas le moment de lancement pour le cimetière) ;
+  - `règle` One Last Job : la créature à laquelle l'Aura ou l'Équipement revient attaché est ciblée au lancement (et non choisie à la résolution ; la créature renvoyée par le premier mode ne peut pas être choisie) ;
   - `règle` Fblthp, Lost on the Range : comploter la carte du dessus passe par une capacité (sur la pile) qui paie son coût de mana ;
   - `règle` Kellan, the Kid : le permanent est mis sur le champ de bataille au lieu d'être lancé ;
   - `règle` Obeka : les étapes d'entretien supplémentaires ne font que déclencher les capacités « au début de votre entretien » ;

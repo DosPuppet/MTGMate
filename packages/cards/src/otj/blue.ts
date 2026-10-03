@@ -81,9 +81,10 @@ export const BLUE: Record<string, CardScript> = {
       triggered(
         when.enters({ subtype: "Zombie", controller: "you" }),
         [
+          // Journal du tour : les Zombies arrivés ce tour-ci, même partis depuis, moins celui qui arrive.
           fx.addCounters(
             ref.eventObject,
-            amount.count({ subtype: "Zombie", controller: "you", enteredThisTurn: true, other: true }),
+            amount.plus(amount.turnEvents({ event: "zone", to: "battlefield", subtype: "Zombie", who: "you" }), amount.neg(1)),
           ),
         ],
         { label: "Un marqueur par autre Zombie arrivé ce tour-ci" },

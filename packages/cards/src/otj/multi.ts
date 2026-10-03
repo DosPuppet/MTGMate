@@ -218,7 +218,7 @@ export const MULTI: Record<string, CardScript> = {
   "Malcolm, the Eyes": { abilities: [triggered(when.castNthSpell(2), [investigate()], { label: "Enquêtez" })] },
   "Marchesa, Dealer of Death": {
     abilities: [
-      triggered(when.crime, fx.mayPay("{1}", "Payer {1} ?", fx.lookAtTop(2, { count: 1, rest: "graveyard" })), {
+      triggered(when.crime, fx.mayPay("{1}", "Payer {1} ?", fx.lookAtTop(2, { count: 1, rest: "graveyard", exact: true })), {
         label: "Une des deux cartes du dessus en main",
       }),
     ],
@@ -241,7 +241,7 @@ export const MULTI: Record<string, CardScript> = {
       [
         fx.lookAtTop(
           amount.plus(amount.count({ types: ["Land"], controller: "you" }), amount.count({ types: ["Land"], controller: "you" })),
-          { count: 1, rest: "bottom" },
+          { count: 1, rest: "bottom", exact: true },
         ),
       ],
     ),
@@ -465,7 +465,16 @@ export const MULTI: Record<string, CardScript> = {
       activated({
         mana: "{3}",
         tap: true,
-        effects: [fx.lookAtTop(1, { filter: { subtype: "Mount" }, count: 1, rest: "top" })],
+        // « Si vous ne la mettez pas dans votre main, vous pouvez la mettre au-dessous de votre bibliothèque. »
+        effects: [
+          fx.lookAtTop(1, { filter: { subtype: "Mount" }, count: 1, rest: "top", store: "m" }),
+          fx.when(
+            cond.not(cond.v("m")),
+            fx.may("Mettre la carte du dessus au-dessous de votre bibliothèque ?", [
+              fx.moveTo(ref.libraryTop(ref.you), { to: "libraryBottom" }),
+            ]),
+          ),
+        ],
         label: "Une Monture du dessus en main",
       }),
     ],

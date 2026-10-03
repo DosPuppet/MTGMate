@@ -64,7 +64,7 @@ export const RED: Record<string, CardScript> = {
         { power: 1, toughness: 1, addKeywords: ["menace", "trample"] },
         { label: "+1/+1, menace et piétinement" },
       ),
-      triggered(when.putIntoGraveyardSelf, [fx.draw(1)], { fromGraveyard: true, label: "Piochez" }),
+      triggered(when.putIntoGraveyardSelf, [fx.draw(1)], { label: "Piochez" }),
     ],
   },
   "Discerning Peddler": {

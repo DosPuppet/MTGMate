@@ -85,8 +85,13 @@ export const WHITE: Record<string, CardScript> = {
       {
         cost: "{1}",
         label: "Une de vos créatures devient indestructible",
-        targets: [target.creature("i", { controller: "you" })],
-        effects: [fx.pump(ref.target("i"), 0, 0, ["indestructible"])],
+        // « Choisissez » : pas de cible, le choix se fait à la résolution.
+        effects: [
+          fx.chooseAmong(ref.permanentsOf(ref.you, { types: ["Creature"] }), ref.you, "i", {
+            prompt: "Choisissez une créature que vous contrôlez",
+          }),
+          fx.pump(ref.stored("i"), 0, 0, ["indestructible"]),
+        ],
       },
       { cost: "{3}{W}{W}", label: "Détruisez toutes les créatures", effects: [fx.destroyAll({ types: ["Creature"] })] },
     ),

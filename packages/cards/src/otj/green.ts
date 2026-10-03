@@ -250,7 +250,7 @@ export const GREEN: Record<string, CardScript> = {
     enchant: { filter: { types: ["Creature"] }, label: "créature" },
     abilities: [
       staticAbility("attached", { power: 3, toughness: 2, addKeywords: ["reach"] }, { label: "+3/+2 et la portée" }),
-      triggered(when.putIntoGraveyardSelf, [fx.draw(1)], { fromGraveyard: true, label: "Piochez" }),
+      triggered(when.putIntoGraveyardSelf, [fx.draw(1)], { label: "Piochez" }),
     ],
   },
   "Rise of the Varmints": {

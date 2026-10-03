@@ -236,8 +236,10 @@ export const RECORD_VERSION = 1;
  * - 82 : un choix dans une zone garde la valeur de mana maximale de son filtre ; Wreck Remover exile bien la carte du
  *   cimetière ; Final Fantasy (lot K8) : Ambrosia Whiteheart (renvoi non ciblé), Delivery Moogle, Eden (« un autre »),
  *   Ignis Scientia, Qutrub Forayer et Magic Pot (exil depuis le cimetière), Rydia (X vérifié à la résolution).
+ * - 83 : Outlaws of Thunder Junction (lot K8) : Final Showdown, Pillage the Bog, Marchesa, Oko, Rakdos, Geralf, Calamity,
+ *   Lazav, Lilah, Bucolic Ranch, Demonic Ruckus, Reach for the Sky.
  */
-export const RULES_VERSION = 82;
+export const RULES_VERSION = 83;
 
 /** Un point de contrôle toutes les N décisions (plus la dernière de la partie). */
 export const CHECKPOINT_EVERY = 25;
