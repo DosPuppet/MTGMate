@@ -4,6 +4,7 @@
  */
 import type {
   CardDef,
+  ContinuousEffect,
   GameObject,
   GameState,
   LkiSnapshot,
@@ -343,9 +344,14 @@ export function untapObject(s: GameState, o: GameObject): boolean {
     return false;
   }
   o.tapped = false;
-  // Hedge Whisperer : « tant que cette créature reste engagée ».
-  if (s.effects.some((e) => e.whileSourceTapped === o.id)) {
-    s.effects = s.effects.filter((e) => e.whileSourceTapped !== o.id);
+  // Hedge Whisperer : « tant que cette créature reste engagée » ; Braided Net : « tant qu'il reste engagé ».
+  const whileTapped = (e: ContinuousEffect) => e.whileAffectedTapped && e.affected.includes(o.id);
+  if (s.effects.some((e) => e.whileSourceTapped === o.id || whileTapped(e))) {
+    s.effects = s.effects
+      .filter((e) => e.whileSourceTapped !== o.id)
+      .flatMap((e) =>
+        whileTapped(e) ? (e.affected.length > 1 ? [{ ...e, affected: e.affected.filter((x) => x !== o.id) }] : []) : [e],
+      );
     bump(s);
   } else bumpFor(s, "tapped");
   rulesEvent(s, { e: "untap", objectId: o.id });

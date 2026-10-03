@@ -431,7 +431,7 @@ export const MULTI: Record<string, CardScript> = {
         when.entersSelf,
         [
           fx.tap(ref.target()),
-          fx.modifyWhileSource(ref.target(), {
+          fx.modifyWhileYouControl(ref.target(), {
             addAbilities: [
               eventReplacement({
                 event: "untap",

@@ -3,7 +3,18 @@
 import { createTokenCopy, createTokens, tokenCopyCount } from "../actions";
 import { addControlEffect } from "../control";
 import type { OpHandlers } from "../effects";
-import { addEffect, addPump, attach, attackingDefender, evalAmount, exiledUid, nameOf, resolveRef, store } from "../effects";
+import {
+  addEffect,
+  addPump,
+  attach,
+  attackingDefender,
+  evalAmount,
+  exiledUid,
+  nameOf,
+  nextTurnOf,
+  resolveRef,
+  store,
+} from "../effects";
 import { copiableExceptions, copiedDefId, mergeMods } from "../layers";
 import { manaValue } from "../mana";
 import {
@@ -240,8 +251,10 @@ export const HANDLERS: OpHandlers = {
       duration: e.duration,
       ...(e.duration === "untilYourNextTurn" ? { until: ctx.controller } : {}),
       ...(e.untilLeavesExile ? { untilExiledUid: exiledUid(s, ctx, e.untilLeavesExile) } : {}),
-      ...(e.whileSource ? { whileSource: ctx.sourceId } : {}),
+      ...(e.whileSource || e.whileYouControlSource ? { whileSource: ctx.sourceId } : {}),
+      ...(e.whileYouControlSource ? { whileControlledBy: ctx.controller } : {}),
       ...(e.whileSourceTapped ? { whileSourceTapped: ctx.sourceId } : {}),
+      ...(e.whileTapped ? { whileAffectedTapped: true } : {}),
       ...mods,
       // Tolsimir : « bloque ce Loup si possible » (l'attaquant de l'événement).
       ...(e.mods.addBlockRules?.some((r) => r.mustBlockEventObject)
@@ -290,7 +303,8 @@ export const HANDLERS: OpHandlers = {
     };
     const emblem = createObject(s, defId, ctx.controller, "command", { isToken: true });
     if (e.untilYourNextTurn) emblem.expiresAtTurnOf = ctx.controller;
-    if (e.thisTurn) emblem.expiresEndOfTurn = true;
+    if (e.thisTurn) emblem.expiresEndOfTurn = s.turn.number;
+    if (e.untilEndOfYourNextTurn) emblem.expiresEndOfTurn = nextTurnOf(s, ctx.controller);
     // Oko, Shadowmoor Scion : « choisissez un type de créature ; vous obtenez un emblème avec "les créatures du type
     // choisi…" » : l'emblème garde le choix fait par l'effet.
     const chosen = r.vars.$chosen;

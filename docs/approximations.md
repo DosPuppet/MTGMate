@@ -56,7 +56,6 @@ Dans l'ordre où elles ont été ajoutées, extension par extension.
 - **Final Fantasy (`docs/extensions/fin.md`) :**
   - `règle` Light of Judgment : l'Équipement à détruire est ciblé au lancement (attaché à la créature ciblée), et non choisi à la résolution ;
   - `règle` Demon Wall : « a un marqueur » est lu comme « a un marqueur +1/+1 » ;
-  - `règle` Haste Magic, Opera Love Song : les cartes exilées sont jouables jusqu'à la fin de votre prochain tour (et non jusqu'à votre prochaine étape de fin) ;
   - `règle` Freya Crescent : son mana sert à toute capacité d'un Équipement, pas seulement à Équiper ;
   - `règle` Sorceress's Schemes : seulement une carte d'éphémère ou de rituel du cimetière (pas une carte exilée avec flashback) ;
   - `règle` Tellah, Great Sage : trois déclenchements séparés (Héros, pioche, sacrifice) ;
@@ -149,7 +148,6 @@ Dans l'ordre où elles ont été ajoutées, extension par extension.
   - `règle` Rottenmouth Viper : on sacrifie au plus autant de permanents que le coût générique à payer (un sacrifice de plus ne réduirait rien, mais compterait pour « chaque fois que vous sacrifiez ») ;
   - `règle` Eluge : l'Île ajoutée par le marqueur d'inondation dure toute la partie ; la réduction de coût est générique ;
   - `règle` Alania : les sorts de Loutre (des créatures) ne sont pas copiés ; Ral (emblème) : la réplique compte vos seuls sorts ;
-  - `règle` Season of the Bold (troisième mode) : l'emblème cesse au début de votre prochain tour, et non à sa fin ;
   - `choix auto` Kastral (premier mode) : un Oiseau de votre main, sinon de votre cimetière ;
   - `règle` Thought-Stalker Warlock : « si il a perdu des points de vie ce tour-ci » est vérifié pour l'adversaire ciblé.
 - **The Lost Caverns of Ixalan (`docs/extensions/lci.md`) :**
@@ -164,7 +162,7 @@ Dans l'ordre où elles ont été ajoutées, extension par extension.
   - `timing` Squirming Emergence : la valeur de mana n'est vérifiée qu'à la résolution ; Abuelo's Awakening : les marqueurs sont posés juste après l'arrivée ;
   - `règle` Brass's Tunnel-Grinder : « défaussez autant de cartes que voulu » est une défausse facultative ;
   - `règle` Zoyowa's Justice : le propriétaire découvre après avoir mélangé la carte ; The Myriad Pools : le permanent devient une copie du sort sur la pile ;
-  - `règle` Braided Net : les capacités activées du permanent engagé sont bloquées jusqu'à la fin du tour (et non tant qu'il reste engagé) ; Iceberg Titan : engager ou dégager est un mode choisi au déclenchement ;
+  - `timing` Iceberg Titan : engager ou dégager est un mode choisi au déclenchement ;
   - `timing` Thousand Moons Infantry : se dégage au début de l'entretien de chaque adversaire (et non pendant son étape de dégagement) ; The Millennium Calendar : ses marqueurs de temps sont posés au début de votre entretien ;
   - `règle` Thousand Moons Smithy : on choisit librement les permanents engagés (elle ne se transforme qu'avec cinq) ;
   - `règle` Unstable Glyphbridge : le choix des créatures épargnées se fait à la résolution ; Sandswirl Wanderglyph : « pendant son tour » est vérifié comme « pendant le tour d'un adversaire » ;
@@ -217,7 +215,6 @@ Dans l'ordre où elles ont été ajoutées, extension par extension.
   - `règle` Flitterwing Nuisance, Sygg (Wanderbrine Shield) : « blessures de combat à un joueur ou un planeswalker » ne compte que les joueurs ;
   - `choix auto` Temporal Cleansing : le choix « deuxième depuis le dessus ou au-dessous » revient au contrôleur du permanent, pas à son propriétaire ;
   - `règle` Squawkroaster : Vivid compte les couleurs imprimées de vos permanents (un permanent dont un effet change la couleur compte pour sa couleur imprimée) ;
-  - `timing` Shadow Urchin : « jusqu'à votre prochaine étape de fin » dure jusqu'à la fin de ce tour (le vôtre) ou de votre prochain tour ;
   - `règle` Grub, Notorious Auntie : le jeton copie est sacrifié par une capacité retardée, et non par une capacité qu'il porte ;
   - `règle` Swat Away : « si une créature vous attaque » est vrai dès qu'une créature adverse attaque (en multijoueur, même un autre joueur) ;
   - `règle` Dream Harvest : les terrains exilés peuvent aussi être joués (comme terrain du tour), pas seulement les sorts lancés ;
@@ -241,7 +238,6 @@ Dans l'ordre où elles ont été ajoutées, extension par extension.
   - `règle` Brave the Wilds : la cible « terrain que vous contrôlez » est proposée même sans Marchandage, sans effet alors ;
   - `timing` Feral Encounter : « au début de la prochaine phase de combat de ce tour » passe par un emblème du tour ;
   - `choix auto` Commune with Nature, Feral Encounter : le reste va au-dessous dans un ordre aléatoire ;
-  - `timing` Seek the Beast : « jusqu'à votre prochaine étape de fin » dure jusqu'à la fin de ce tour (le vôtre) ou de votre prochain tour ;
   - `règle` Will, Scion of Peace, Rowan, Scion of War : la réduction « ce tour-ci » est accordée à la créature et cesse si elle quitte le champ de bataille ; X est relu à chaque sort ;
   - `règle` The Irencrag : « perd toutes ses autres capacités » : sa capacité de mana et son déclencheur sont inactifs une fois Équipement, mais restent listés ;
   - `règle` Three Bowls of Porridge : « un mode qui n'a pas déjà été choisi » : trois capacités, chacune activable une seule fois ;
@@ -294,7 +290,6 @@ Dans l'ordre où elles ont été ajoutées, extension par extension.
   - `choix auto` Maîtrise de l'eau, convocation, improvisation, cave : hors contrôle total, les objets qui paient sont choisis par le paiement automatique, après les terrains (comme sur Arena) ; en contrôle total, le joueur les choisit ;
   - `règle` The Legend of Yangchen (chapitre I) : vous seul choisissez un permanent adverse de valeur de mana 3 ou plus (exact en duel ; à plusieurs, chaque joueur devrait en choisir un à tour de rôle), et le choix est obligatoire s'il en existe un ;
   - `règle` Lost Days : le choix entre la deuxième position et le dessous de la bibliothèque revient au contrôleur de la créature, et non à son propriétaire (comme Temporal Cleansing) ;
-  - `règle` Ty Lee, Chi Blocker : la créature ne se dégage pas tant que Ty Lee reste sur le champ de bataille (et non « tant que vous la contrôlez ») ;
   - `règle` Honest Work : la créature enchantée prend le seul sous-type Citoyen (une créature-artefact perdrait aussi ses sous-types d'artefact) ;
   - `règle` Sold Out : « a subi des blessures ce tour-ci » se lit sur les blessures encore marquées ;
   - `timing` The Fire Nation Drill : s'il arrive déjà engagé, la question « vous pouvez l'engager » n'est pas posée ;
@@ -337,7 +332,6 @@ Dans l'ordre où elles ont été ajoutées, extension par extension.
   - `règle` Cloak and Dagger, Entwined : la créature ciblée est adverse sans être forcément au joueur ciblé ; la main n'est montrée qu'à travers ses cartes non-terrain proposées ;
   - `règle` The Kingpin of Crime : l'extorsion est écrite dans le script ; « blesse selon son endurance » ne touche que les créatures présentes à la résolution ;
   - `règle` Speedball, New Warrior : seule la cible d'un sort à une seule cible peut être changée ;
-  - `règle` Spider-Woman, Secret Agent : la créature ne se dégage pas tant que Spider-Woman reste sur le champ de bataille (et non « tant que vous la contrôlez ») ;
   - `timing` Vision Quest : le cimetière est proposé avant la bibliothèque ; les X marqueurs sont mis juste après l'arrivée ;
   - `règle` The Ten Rings : « taille de main maximale de dix » devient « pas de taille de main maximale » ;
   - `règle` Cosmic Cube : la carte choisie parmi les six passe par l'exil le temps d'être lancée (visible de tous), puis va au-dessous si vous renoncez ;

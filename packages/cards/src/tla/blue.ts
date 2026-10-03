@@ -298,12 +298,16 @@ export const BLUE: Record<string, CardScript> = {
     ],
   },
   "Ty Lee, Chi Blocker": {
-    // Flash et prouesse lus dans le texte. L'effet cesse quand Ty Lee quitte le champ de bataille.
+    // Flash et prouesse lus dans le texte.
     abilities: [
-      triggered(when.entersSelf, [fx.tap(ref.target()), fx.modifyWhileSource(ref.target(), { addKeywords: ["doesntUntap"] })], {
-        targets: [target.upTo(1, target.creature())],
-        label: "Engagez une créature ; elle ne se dégage plus tant que vous contrôlez Ty Lee",
-      }),
+      triggered(
+        when.entersSelf,
+        [fx.tap(ref.target()), fx.modifyWhileYouControl(ref.target(), { addKeywords: ["doesntUntap"] })],
+        {
+          targets: [target.upTo(1, target.creature())],
+          label: "Engagez une créature ; elle ne se dégage plus tant que vous contrôlez Ty Lee",
+        },
+      ),
     ],
   },
   "Waterbender Ascension": {

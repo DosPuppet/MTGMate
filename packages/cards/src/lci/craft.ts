@@ -90,7 +90,7 @@ export const CRAFT: Record<string, CardScript> = {
         tap: true,
         removeCounters: { kind: "net", n: 1 },
         targets: [target.nonland("t", { other: true })],
-        effects: [fx.tap(ref.target()), fx.modify(ref.target(), { addKeywords: ["noActivatedAbilities"] })],
+        effects: [fx.tap(ref.target()), fx.modifyWhileAffectedTapped(ref.target(), { addKeywords: ["noActivatedAbilities"] })],
         label: "Engagez un permanent non-terrain",
       }),
       craft("{1}{U}", ARTIFACT),

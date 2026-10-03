@@ -934,3 +934,21 @@ describe("Pawpatch Recruit (lot K6)", () => {
     expect(s.objects[recruit]?.counters["+1/+1"]).toBe(1);
   });
 });
+
+describe("Season of the Bold (lot K7)", () => {
+  it("{P}{P}{P} : l'emblème dure jusqu'à la fin de votre prochain tour (et non jusqu'à son début)", () => {
+    let s = scenario({ p1: { battlefield: lands("Mountain", 5), hand: ["Season of the Bold"] } });
+    const card = idOf(s, "p1", "hand", "Season of the Bold");
+    const opt = legalActions(s, "p1").find((a) => a.type === "cast" && a.card === card);
+    const three =
+      opt?.type === "cast" ? opt.modes.find((m) => m.label === "Chaque sort : 2 blessures à une créature") : undefined;
+    expect(three).toBeDefined();
+    s = resolve(act(s, "p1", { type: "cast", card, mode: three?.index }));
+    const emblems = (x: S) => (x.players.p1?.command ?? []).length;
+    expect(emblems(s)).toBe(1);
+    s = advanceUntil(s, (x) => x.turn.number === 5 && x.turn.step === "main2" && x.pending?.kind === "priority");
+    expect(emblems(s)).toBe(1);
+    s = advanceUntil(s, (x) => x.turn.number === 6 && x.pending?.kind === "priority");
+    expect(emblems(s)).toBe(0);
+  });
+});

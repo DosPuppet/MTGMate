@@ -188,13 +188,11 @@ export const MULTI: Record<string, CardScript> = {
   "Shadow Urchin": {
     abilities: [
       triggered(when.attacksSelf, [fx.blight(1)], { label: "Flétrir 1" }),
-      // « Jusqu'à votre prochaine étape de fin » : ce tour-ci si c'est le vôtre, sinon jusqu'à la fin de votre prochain tour.
       triggered(
         when.dies({ types: ["Creature"], controller: "you", withCounter: "any" }),
         [
           fx.exileTop(ref.you, amount.countersOn(ref.eventObject, "any"), "u"),
-          ...fx.when(cond.yourTurn, fx.grantPlay(ref.stored("u"))),
-          ...fx.when(cond.not(cond.yourTurn), fx.grantPlay(ref.stored("u"), { untilYourNextTurn: true })),
+          fx.grantPlay(ref.stored("u"), { untilYourNextEndStep: true }),
         ],
         { label: "Exilez autant de cartes que de marqueurs ; jouables jusqu'à votre prochaine étape de fin" },
       ),

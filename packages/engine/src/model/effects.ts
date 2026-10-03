@@ -96,6 +96,10 @@ export type Effect =
       whileSource?: boolean;
       /** « tant que cette créature reste engagée » (Hedge Whisperer). */
       whileSourceTapped?: boolean;
+      /** « tant que vous contrôlez [la source] » (Ty Lee, Spider-Woman) : cesse si elle part ou change de contrôleur. */
+      whileYouControlSource?: boolean;
+      /** « tant qu'il reste engagé » : l'effet cesse pour chaque objet touché qui se dégage (Braided Net). */
+      whileTapped?: boolean;
       /** F/E de base fixées à ce montant, évalué à la résolution (couche 7b). */
       basePT?: Amount;
     }
@@ -439,6 +443,8 @@ export type Effect =
       untilYourNextTurn?: boolean;
       /** Avec `forOwner` : « jusqu'à la fin de son prochain tour » (Suspend Aggression). */
       untilOwnersNextTurn?: boolean;
+      /** « jusqu'à votre prochaine étape de fin » (Shadow Urchin). */
+      untilYourNextEndStep?: boolean;
       free?: boolean;
       anyTime?: boolean;
       forever?: boolean;
@@ -691,7 +697,7 @@ export type Effect =
   /** `combination` : « N mana en n'importe quelle combinaison de ces couleurs » (répartis par le joueur). */
   | { op: "addManaChoice"; n: Amount; colors?: ManaType[]; restriction?: ManaRestriction; keep?: boolean; combination?: boolean }
   /** Exile les N cartes du dessus ; le contrôleur en choisit une qu'il peut jouer ce tour-ci. */
-  | { op: "impulse"; n: number; until?: "thisTurn" | "yourNextTurn" }
+  | { op: "impulse"; n: number; until?: "thisTurn" | "yourNextTurn" | "yourNextEndStep" }
   /** Blessures réparties comme le contrôleur le désire entre les cibles (au moins 1 chacune). */
   | { op: "damageDivided"; total: Amount; to: Ref }
   /** Chaque joueur désigné garde un permanent de chaque type et sacrifie le reste. */
@@ -714,6 +720,8 @@ export type Effect =
       text: string;
       untilYourNextTurn?: boolean;
       thisTurn?: boolean;
+      /** « Jusqu'à la fin de votre prochain tour » (Season of the Bold). */
+      untilEndOfYourNextTurn?: boolean;
       /** Mémorise l'emblème (pour y lier des objets). */
       store?: string;
     }

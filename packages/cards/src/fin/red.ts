@@ -65,8 +65,7 @@ export const RED: Record<string, CardScript> = {
     ],
   },
   "Haste Magic": {
-    // Approximation : la carte est jouable jusqu'à la fin de votre prochain tour (et non jusqu'à votre prochaine étape de fin).
-    spell: spell([target.creature("t")], [fx.pump(ref.target(), 3, 1, ["haste"]), fx.impulse(1, "yourNextTurn")]),
+    spell: spell([target.creature("t")], [fx.pump(ref.target(), 3, 1, ["haste"]), fx.impulse(1, "yourNextEndStep")]),
   },
   "Laughing Mad": { additionalCost: { discard: 1 }, flashback: "{3}{R}", spell: spell([], [fx.draw(2)]) },
   "Light of Judgment": {
@@ -81,7 +80,7 @@ export const RED: Record<string, CardScript> = {
   "Mysidian Elder": { abilities: [triggered(when.entersSelf, [wizard()], { label: "Sorcier 0/1" })] },
   "Opera Love Song": {
     spell: modal(
-      mode("Exilez les deux cartes du dessus, jouables", [], [fx.impulse(2, "yourNextTurn")]),
+      mode("Exilez les deux cartes du dessus, jouables", [], [fx.impulse(2, "yourNextEndStep")]),
       mode("Une ou deux créatures gagnent +2/+0", [target.upTo(2, target.creature("t"))], [fx.pump(ref.target(), 2, 0)]),
     ),
   },

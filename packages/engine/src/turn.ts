@@ -397,7 +397,10 @@ function finishCleanup(s: GameState): void {
   s.replacements = [];
   // Emblèmes « jusqu'à la fin du tour » (Jace Reawakened −6, Prairie Dog).
   for (const p of s.playerOrder) {
-    for (const id of [...(s.players[p]?.command ?? [])]) if (s.objects[id]?.expiresEndOfTurn) moveObject(s, id, "exile");
+    for (const id of [...(s.players[p]?.command ?? [])]) {
+      const until = s.objects[id]?.expiresEndOfTurn;
+      if (until !== undefined && s.turn.number >= until) moveObject(s, id, "exile");
+    }
   }
   // Fin des changements de contrôle « jusqu'à la fin du tour » (Involuntary Employment) : couche 2 recalculée.
   syncControl(s);

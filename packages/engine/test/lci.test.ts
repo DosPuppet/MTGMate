@@ -7,7 +7,7 @@ import { describe, expect, it } from "vitest";
 import { destroy } from "../src/actions";
 import { amount } from "../src/dsl";
 import { legalActions } from "../src/legal";
-import { chars } from "../src/state";
+import { chars, untapObject } from "../src/state";
 import { countTurnEvents } from "../src/turnlog";
 import type { GameState } from "../src/types";
 import {
@@ -662,6 +662,9 @@ describe("The Lost Caverns of Ixalan : cartes des decks du méta (PLAN-C, lot C1
     s = act(s, "p1", { type: "pass" });
     expect(s.pending?.player).toBe("p2");
     expect(canActivate(s, "p2", curator)).toBe(false);
+    // « tant qu'il reste engagé » : dégagé, il retrouve ses capacités activées (lot K7).
+    untapObject(s, s.objects[curator] as never);
+    expect(canActivate(s, "p2", curator)).toBe(true);
   });
 
   it("Dusk Rose Reliquary : sacrifice en coût additionnel ; exile un artefact ou une créature adverse jusqu'à son départ", () => {

@@ -212,6 +212,7 @@
     "warped": "Full Bore — propriété d'une seule carte (audit du 02/10/2026, § 5.1) : à rattacher à une famille dès qu'une autre carte en a besoin",
     "wasAttachedToSource": "Zack Fair — propriété d'une seule carte (audit du 02/10/2026, § 5.1) : à rattacher à une famille dès qu'une autre carte en a besoin",
     "whileSourceTapped": "Hedge Whisperer — propriété d'une seule carte (audit du 02/10/2026, § 5.1) : à rattacher à une famille dès qu'une autre carte en a besoin",
+    "whileTapped": "Braided Net — « tant qu'il reste engagé » : l'effet cesse pour chaque objet touché qui se dégage (lot K7, descripteur de durée) : famille des durées d'effet (whileSource, whileSourceTapped, whileYouControlSource), à réutiliser pour toute carte « tant qu'il reste engagé »",
     "withActivatedAbility": "The Enigma Jewel // Locus of Enlightenment — propriété d'une seule carte (audit du 02/10/2026, § 5.1) : à rattacher à une famille dès qu'une autre carte en a besoin",
     "onDies": "The Masamune — champ générique de la famille triggerMod (R4.5), remplace le drapeau de CardDef doubleDeathTriggersForEquipped (PLAN-C, C14)",
     "emblems": "The Masamune — champ générique de la famille triggerMod (R4.5) : capacités des emblèmes du joueur (PLAN-C, C14)"
@@ -244,7 +245,7 @@
     "PlayFromZone": 16,
     "LayerMods": 31,
     "Effect": 176,
-    "Effect (champs)": 654,
+    "Effect (champs)": 658,
     "TriggerSpec": 62,
     "TriggerSpec (champs)": 157,
     "Condition": 80,
@@ -265,6 +266,7 @@
     "lot K1 : adventureOnly sur grantPlay (Mosswood Dreadknight) : Effect (champs) 650 → 651",
     "lot K2 : combination sur addManaChoice (mana en n'importe quelle combinaison, 6 cartes) ; by sur le déclencheur countersPut (« vous mettez des marqueurs », 9 cartes) : Effect (champs) 651 → 652, TriggerSpec (champs) 156 → 157",
     "lot K3 : discardHand sur CostDef (« défaussez votre main » en coût, 3 cartes) : CostDef 36 → 37",
-    "lot K6 : crewedSource (Giant Beaver), prompt de chooseAmong, optional d'exileFromHandLinked (Severance Priest) : ObjectFilter 90 → 91, Effect (champs) 652 → 654"
+    "lot K6 : crewedSource (Giant Beaver), prompt de chooseAmong, optional d'exileFromHandLinked (Severance Priest) : ObjectFilter 90 → 91, Effect (champs) 652 → 654",
+    "lot K7 : durées d'effet (untilYourNextEndStep sur grantPlay, untilEndOfYourNextTurn sur emblem, whileYouControlSource et whileTapped sur modify) : Effect (champs) 654 → 658"
   ]
 }

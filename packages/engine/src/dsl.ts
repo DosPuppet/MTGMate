@@ -699,7 +699,11 @@ export const fx = {
   }),
   becomeCopyKeepAbilities: (what: Ref): Effect => ({ op: "becomeCopyKeepAbilities", what }),
   /** « Exilez les N cartes du dessus. Choisissez-en une. Vous pouvez la jouer ce tour-ci (ou jusqu'à la fin de votre prochain tour). » */
-  impulse: (n: number, until: "thisTurn" | "yourNextTurn" = "thisTurn"): Effect => ({ op: "impulse", n, until }),
+  impulse: (n: number, until: "thisTurn" | "yourNextTurn" | "yourNextEndStep" = "thisTurn"): Effect => ({
+    op: "impulse",
+    n,
+    until,
+  }),
   piles: (n: number, opts: { revealed?: boolean; storeGraveyard?: string } = {}): Effect => ({ op: "piles", n, ...opts }),
   grantFlashback: (what: Ref): Effect => ({ op: "grantFlashback", what }),
   /** « [Cette carte] gagne l'harmonie jusqu'à la fin du tour ; son coût d'harmonie est son coût de mana » (702.180). */
@@ -734,6 +738,8 @@ export const fx = {
       anyMana?: boolean;
       forever?: boolean;
       untilYourNextTurn?: boolean;
+      /** « Jusqu'à votre prochaine étape de fin » (Shadow Urchin). */
+      untilYourNextEndStep?: boolean;
       untilOwnersNextTurn?: boolean;
       condition?: Condition;
       forOwner?: boolean;
@@ -871,6 +877,22 @@ export const fx = {
     mods,
     duration: "permanent",
     whileSource: true,
+  }),
+  /** « … tant que vous contrôlez [cette source] » (Ty Lee, Spider-Woman). */
+  modifyWhileYouControl: (what: Ref, mods: LayerMods): Effect => ({
+    op: "modify",
+    what,
+    mods,
+    duration: "permanent",
+    whileYouControlSource: true,
+  }),
+  /** « … tant qu'il reste engagé » : pour chaque objet touché, jusqu'à ce qu'il se dégage (Braided Net). */
+  modifyWhileAffectedTapped: (what: Ref, mods: LayerMods): Effect => ({
+    op: "modify",
+    what,
+    mods,
+    duration: "permanent",
+    whileTapped: true,
   }),
   /** Tishana's Tidebinder : contrecarre la capacité ; son permanent perd ses capacités tant que la source reste. */
   counterAbilitySilence: (what: Ref): Effect => ({ op: "counterAbilitySilence", what }),
@@ -1016,6 +1038,7 @@ export const fx = {
     untilYourNextTurn?: boolean,
     thisTurn?: boolean,
     store?: string,
+    untilEndOfYourNextTurn?: boolean,
   ): Effect => ({
     op: "emblem",
     name,
@@ -1024,6 +1047,7 @@ export const fx = {
     untilYourNextTurn,
     thisTurn,
     store,
+    ...(untilEndOfYourNextTurn ? { untilEndOfYourNextTurn } : {}),
   }),
   addManaTimes: (times: Amount, ...mana: ManaType[]): Effect => ({ op: "addMana", mana, times }),
   mayWheel: { op: "mayWheel" } as Effect,

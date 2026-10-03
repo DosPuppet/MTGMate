@@ -950,7 +950,7 @@ export function grantPlay(
   s: GameState,
   player: PlayerId,
   cards: ObjectId[],
-  until: "thisTurn" | "yourNextTurn" | "forever" | number,
+  until: "thisTurn" | "yourNextTurn" | "yourNextEndStep" | "forever" | number,
   opts: {
     free?: boolean;
     anyTime?: boolean;
@@ -976,10 +976,26 @@ export function grantPlay(
       ? until
       : until === "forever"
         ? Number.MAX_SAFE_INTEGER
-        : until === "thisTurn"
+        : until === "thisTurn" || (until === "yourNextEndStep" && beforeYourEndStep(s, player))
           ? s.turn.number
           : nextTurnOf(s, player);
-  s.playPermissions = [...(s.playPermissions ?? []), ...cards.map((card) => ({ card, player, until: last, ...opts }))];
+  const endStep = until === "yourNextEndStep" ? { beforeEndStep: true } : {};
+  s.playPermissions = [
+    ...(s.playPermissions ?? []),
+    ...cards.map((card) => ({ card, player, until: last, ...endStep, ...opts })),
+  ];
+}
+
+/** C'est le tour de ce joueur, avant son étape de fin : « votre prochaine étape de fin » est celle de ce tour. */
+function beforeYourEndStep(s: GameState, player: PlayerId): boolean {
+  return s.turn.active === player && s.turn.step !== "end" && s.turn.step !== "cleanup";
+}
+
+/** Une permission de jouer encore valable : avant la fin de son dernier tour, ou avant son étape de fin. */
+export function permissionActive(s: GameState, p: { until: number; beforeEndStep?: boolean }): boolean {
+  if (p.until > s.turn.number) return true;
+  if (p.until < s.turn.number) return false;
+  return !(p.beforeEndStep && (s.turn.step === "end" || s.turn.step === "cleanup"));
 }
 
 /** Identité physique de la carte désignée (pour un effet qui dure tant qu'elle reste exilée). */

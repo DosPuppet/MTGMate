@@ -396,7 +396,7 @@ export const HANDLERS: OpHandlers = {
         },
       };
     }
-    grantPlay(s, ctx.controller, chosen, e.until === "yourNextTurn" ? "yourNextTurn" : "thisTurn", {});
+    grantPlay(s, ctx.controller, chosen, e.until ?? "thisTurn", {});
     return;
   },
   allowCastFromGraveyard(s, _r, e, ctx) {
@@ -614,7 +614,14 @@ export const HANDLERS: OpHandlers = {
       }
       return;
     }
-    grantPlay(s, ctx.controller, ids, e.forever ? "forever" : e.untilYourNextTurn ? "yourNextTurn" : "thisTurn", {
+    const until = e.forever
+      ? "forever"
+      : e.untilYourNextTurn
+        ? "yourNextTurn"
+        : e.untilYourNextEndStep
+          ? "yourNextEndStep"
+          : "thisTurn";
+    grantPlay(s, ctx.controller, ids, until, {
       free: e.free,
       anyTime: e.anyTime,
       anyMana: e.anyMana,

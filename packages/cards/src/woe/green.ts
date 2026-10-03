@@ -480,15 +480,7 @@ export const GREEN: Record<string, CardScript> = {
     ],
   },
   "Seek the Beast": {
-    // « Jusqu'à votre prochaine étape de fin » : ce tour-ci si c'est le vôtre, sinon jusqu'à la fin de votre prochain tour.
-    spell: spell(
-      [],
-      [
-        fx.exileTop(ref.you, 2, "e"),
-        ...fx.when(cond.yourTurn, fx.grantPlay(ref.stored("e"))),
-        ...fx.when(cond.not(cond.yourTurn), fx.grantPlay(ref.stored("e"), { untilYourNextTurn: true })),
-      ],
-    ),
+    spell: spell([], [fx.exileTop(ref.you, 2, "e"), fx.grantPlay(ref.stored("e"), { untilYourNextEndStep: true })]),
   },
 
   // --- Tempest Hart // Scan the Clouds ----------------------------------------

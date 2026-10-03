@@ -3564,6 +3564,16 @@ describe("Wilds of Eldraine, lot A — vert", () => {
       expect(s.exile).toContain(cub);
       expect(castOptions(s, "p1", cub)).toHaveLength(0);
     });
+
+    it("Seek the Beast lancé pendant votre tour : plus jouables dès votre étape de fin (lot K7)", () => {
+      let s = scenario({ p1: { battlefield: lands("Mountain", 5), hand: [CARD], library: ["Shock", "Opt", "Island"] } });
+      s = settle(act(s, "p1", { type: "cast", card: idOf(s, "p1", "hand", CARD), face: 1 }));
+      const shock = exiled(s, "Shock")[0] as string;
+      expect(castOptions(s, "p1", shock)).toHaveLength(1);
+      s = advanceUntil(s, (x) => x.turn.step === "end" && x.pending?.kind === "priority" && x.pending.player === "p1");
+      expect(s.turn.number).toBe(3);
+      expect(castOptions(s, "p1", shock)).toHaveLength(0);
+    });
   });
 
   it("Scan the Clouds : piochez deux cartes, puis défaussez-en deux", () => {

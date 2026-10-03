@@ -6,6 +6,7 @@
 import { card } from "@mtgx/cards";
 import { describe, expect, it } from "vitest";
 import { destroy } from "../src/actions";
+import { addControlEffect, syncControl } from "../src/control";
 import * as dsl from "../src/dsl";
 import { bump } from "../src/layers";
 import { legalActions } from "../src/legal";
@@ -1450,6 +1451,23 @@ describe("lot A, bleu", () => {
       s = advanceUntil(s, (x) => x.turn.active === "p2" && x.turn.step === "main1");
       expect(s.objects[bear]?.tapped).toBe(true);
       expect(chars(s, idOf(s, "p1", "battlefield", "Ty Lee, Chi Blocker")).keywords).toContain("prowess");
+    });
+
+    it("Ty Lee : « tant que vous contrôlez Ty Lee » : un adversaire en prend le contrôle, la créature se dégage de nouveau (lot K7)", () => {
+      let s = scenario({
+        active: "p2",
+        p1: { battlefield: lands("Island", 3), hand: ["Ty Lee, Chi Blocker"] },
+        p2: { battlefield: ["Bear Cub"] },
+      });
+      s = act(s, "p2", { type: "pass" });
+      const bear = idOf(s, "p2", "battlefield", "Bear Cub");
+      s = settle(cast(s, "p1", "Ty Lee, Chi Blocker"), picking([bear]));
+      const tyLee = idOf(s, "p1", "battlefield", "Ty Lee, Chi Blocker");
+      addControlEffect(s, [tyLee], "p2", "permanent");
+      syncControl(s);
+      s = advanceUntil(s, (x) => x.turn.active === "p1" && x.turn.step === "main1");
+      s = advanceUntil(s, (x) => x.turn.active === "p2" && x.turn.step === "main1");
+      expect(s.objects[bear]?.tapped).toBe(false);
     });
 
     describe("Waterbender Ascension", () => {

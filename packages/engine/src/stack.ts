@@ -13,7 +13,15 @@ import {
   sacrifice as sacrificePermanent,
 } from "./actions";
 import { ask } from "./choices";
-import { announceDiscard, announceDiscardBatch, evalAmount, moveWithSpec, runEffect, staticContext } from "./effects";
+import {
+  announceDiscard,
+  announceDiscardBatch,
+  evalAmount,
+  moveWithSpec,
+  permissionActive,
+  runEffect,
+  staticContext,
+} from "./effects";
 import { RulesError, rethrowAsRules } from "./errors";
 import { copiableExceptions, copiedDefId, effectivePower, hasKeyword } from "./layers";
 import { costToText, type ManaPurpose, manaAbilitiesOf, manaValue, payMana, totalCost } from "./mana";
@@ -206,7 +214,7 @@ function exilePermission(s: GameState, player: PlayerId, card: ObjectId) {
     (p) =>
       p.card === card &&
       p.player === player &&
-      p.until >= s.turn.number &&
+      permissionActive(s, p) &&
       // Possibility Technician : « tant que vous contrôlez un Kavu ».
       (!p.condition || checkCondition(s, p.condition, player, p.source)),
   );

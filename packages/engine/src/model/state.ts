@@ -162,8 +162,8 @@ export interface GameObject {
   cardCopy?: boolean;
   /** Emblème temporaire : disparaît au début du prochain tour de ce joueur. */
   expiresAtTurnOf?: PlayerId;
-  /** Emblème qui disparaît à la fin du tour. */
-  expiresEndOfTurn?: boolean;
+  /** Emblème qui disparaît à la fin de ce tour (son numéro) : ce tour-ci, ou la fin de votre prochain tour. */
+  expiresEndOfTurn?: number;
   /** A déjà infligé des blessures de combat (Ruric Thar). */
   dealtCombatDamage?: boolean;
   /** Carte exilée suspendue (702.62) : un marqueur de temps est retiré à chaque entretien de son propriétaire. */
@@ -703,6 +703,8 @@ export interface ContinuousEffect extends LayerMods {
   whileSource?: ObjectId;
   /** L'effet cesse quand cette source se dégage ou quitte le champ de bataille (Hedge Whisperer). */
   whileSourceTapped?: ObjectId;
+  /** L'effet cesse, pour chaque objet touché, quand il se dégage (« tant qu'il reste engagé », Braided Net). */
+  whileAffectedTapped?: boolean;
   /**
    * 707.9b : exceptions d'un effet de copie (« sauf que c'est un Zombie ») ; elles font partie des valeurs copiables,
    * qu'une copie de cet objet reprend (`copiableExceptions`).
@@ -807,6 +809,8 @@ export interface GameState {
     card: ObjectId;
     player: PlayerId;
     until: number;
+    /** « Jusqu'à votre prochaine étape de fin » : la permission cesse au début de l'étape de fin du tour `until`. */
+    beforeEndStep?: boolean;
     free?: boolean;
     anyTime?: boolean;
     condition?: Condition;

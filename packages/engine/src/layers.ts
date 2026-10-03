@@ -313,6 +313,7 @@ const EFFECT_FIELDS = new Set([
   "copiable",
   "controller",
   "whileControlledBy",
+  "whileAffectedTapped",
   "copyOf",
 ]);
 
