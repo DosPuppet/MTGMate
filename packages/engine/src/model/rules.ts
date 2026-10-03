@@ -192,8 +192,6 @@ export interface ObjectFilter {
   maxManaValueColorsSpent?: boolean;
   /** Contrôlé mais pas possédé (Laughing Jasper Flint). */
   notOwned?: boolean;
-  /** Sort modal (Riku of Many Paths). */
-  modal?: boolean;
   /** Aucun mana n'a été dépensé pour le lancer (ou il n'a pas été lancé) : Satoru. */
   noManaSpent?: boolean;
   /** Aucun de ces sous-types (« non-hors-la-loi » : Shoot the Sheriff). */
@@ -446,8 +444,8 @@ export type TriggerSpec =
   | { on: "collectEvidence" }
   /** « Chaque fois qu'une créature que vous contrôlez fait, en attaquant, se déclencher une de ses capacités. » */
   | { on: "attackAbilityTriggered" }
-  /** « Chaque fois que vous maîtrisez l'eau, la terre, le feu ou l'air » (Avatar) ; `kinds` : seulement ces éléments. */
-  | { on: "bend"; kinds?: ("water" | "earth" | "fire" | "air")[] }
+  /** « Chaque fois que vous maîtrisez l'eau, la terre, le feu ou l'air » (Avatar). */
+  | { on: "bend" }
   /** « Chaque fois que vous résolvez une Affaire » (Case File Auditor). */
   | { on: "caseSolved" }
   /** « Chaque fois que vous offrez un cadeau » (Jolly Gerbils). */
@@ -465,15 +463,11 @@ export type TriggerSpec =
 /** Conditions (« if intermédiaire » 603.4, « tant que »…). */
 export type Condition =
   | { kind: "attackedThisTurn"; subtype?: string }
-  | { kind: "creatureDiedThisTurn" }
   | { kind: "controls"; filter: ObjectFilter; atLeast?: number }
   /** Le sort qui met l'objet en jeu a été kické. */
   | { kind: "kicked" }
-  | { kind: "lifeAtLeast"; amount: number }
   | { kind: "yourTurn" }
   | { kind: "opponentsTurn" }
-  /** Seuil : au moins 7 cartes dans votre cimetière. */
-  | { kind: "threshold" }
   /** La source a au moins N marqueurs de ce type. */
   | { kind: "counterAtLeast"; counter: string; n: number }
   /** Votre total de vie dépasse votre total de départ d'au moins `by`. */
@@ -515,8 +509,6 @@ export type Condition =
   | { kind: "manaPoolAtLeast"; n: number }
   /** Le contrôleur a regardé (scry) ou surveillé ce tour-ci. */
   | { kind: "scriedThisTurn" }
-  /** Au moins N créatures sont mortes ce tour-ci. */
-  | { kind: "creaturesDiedAtLeast"; n: number; underOpponent?: boolean }
   /** C'est la première étape de fin de ce tour (Y'shtola Rhul). */
   | { kind: "firstEndStep" }
   /** C'est la première phase de combat du tour (Genji Glove). */
@@ -538,8 +530,6 @@ export type Condition =
   | { kind: "sneakWindow" }
   /** Vous avez un récit durable (Storied). */
   | { kind: "enduringStory" }
-  /** Le sort qui se résout a été lancé pour son coût de faufilement. */
-  | { kind: "sneaked" }
   /** La source a été exploitée (Harness) : ses capacités ∞ sont actives. */
   | { kind: "harnessed" }
   /** La source a été lancée pour son coût d'évocation. */
@@ -579,7 +569,6 @@ export type Condition =
   /** Vide : un permanent non-terrain a quitté le champ de bataille ou un sort a été lancé avec la distorsion ce tour-ci. */
   | { kind: "void" }
   | { kind: "solved" }
-  | { kind: "fullyUnlocked" }
   /** Un joueur (encore en partie) ne contrôle aucune créature (Sothera, the Supervoid). */
   | { kind: "playerWithoutCreatures" }
   /** Un adversaire a N points de vie ou moins (Bloodghast). */
@@ -598,8 +587,6 @@ export type Condition =
   | { kind: "castFromGraveyard" }
   /** C'est cette étape (Smoky Lounge : « votre première phase principale »). */
   | { kind: "step"; step: Step }
-  /** Une créature correspondant au filtre est morte ce tour-ci (Undead Sprinter : non-Zombie). */
-  | { kind: "creatureDiedMatching"; filter: ObjectFilter }
   /** Le montant est un nombre premier (Zimone, All-Questioning). */
   | { kind: "prime"; amount: Amount }
   /** Un permanent est arrivé face cachée sous votre contrôle ou vous avez retourné un permanent face visible ce tour-ci. */
@@ -614,11 +601,6 @@ export type Condition =
   | { kind: "refLostLife"; ref: Ref }
   /** Le joueur désigné a au plus N cartes en main (évalué pendant la résolution). */
   | { kind: "handAtMost"; ref: Ref; n: number }
-  /** Une cible a été choisie pour ce mot « cible » (« jusqu'à une … »). */
-  | { kind: "targetChosen"; spec: string }
-  /** Vous avez sacrifié une Nourriture ce tour-ci (Bonecache Overseer). */
-  /** Vous pouvez fourrager (trois cartes dans votre cimetière ou une Nourriture). */
-  | { kind: "canForage" }
   /** Le joueur désigné (vous par défaut) a le plus de points de vie, ou est à égalité (Preacher of the Schism). */
   | { kind: "mostLife"; ref?: Ref };
 /** Référence à un joueur ou à un objet, résolue au moment de l'effet. */
@@ -728,8 +710,6 @@ export type Amount =
   /** Valeur mémorisée pendant la résolution (vie perdue de cette façon, blessures en excès…). */
   | { kind: "var"; name: string }
   | { kind: "lifeTotal" }
-  /** Marqueurs d'un type sur la source, d'après ses dernières informations connues (« si elle avait un marqueur… »). */
-  | { kind: "lkiCounters"; counter: string }
   /** Blessures marquées sur la source (dernières informations connues : Tangled Colony, « les blessures subies ce tour-ci »). */
   | { kind: "lkiDamage" }
   | { kind: "manaValueOf"; ref: Ref }
@@ -761,11 +741,8 @@ export type Amount =
   | { kind: "manaSpent" }
   /** Votre vitesse (0 si vous n'en avez pas). */
   | { kind: "speed" }
-  /** Sorts que vous avez lancés ce tour-ci. */
-  | { kind: "spellsCastThisTurn" }
   /** Cartes que vous avez piochées ce tour-ci (Duelist of the Mind). */
   | { kind: "cardsDrawnThisTurn" }
-  | { kind: "creaturesDiedThisTurn" }
   /** Somme des valeurs de mana des permanents correspondants (Summon: Bahamut). */
   /** `zone: "exile"` : les cartes que vous possédez en exil (Ashiok, Wicked Manipulator). */
   | { kind: "totalManaValue"; filter: ObjectFilter; zone?: "exile" }
@@ -806,13 +783,10 @@ export type Amount =
   | { kind: "maxToughness"; filter: ObjectFilter }
   /** Plus grande valeur de mana parmi les cartes de votre cimetière (Hapatra). */
   | { kind: "maxManaValueInGraveyard" }
-  /** Couleurs différentes parmi les permanents correspondants (Karn, Gilded Guardian). */
-  | { kind: "distinctColors"; filter: ObjectFilter }
   /** Nombre de sous-types différents parmi les permanents correspondants (« types de planeswalker », Tam). */
   | { kind: "distinctSubtypes"; filter: ObjectFilter }
   /** Objets désignés encore en exil (Dragonhawk : « celles de ces cartes encore exilées »). */
   | { kind: "inExile"; ref: Ref }
-  /** Créatures exilées sous le contrôle de vos adversaires ce tour-ci (Vren). */
   /** Adversaires qui ont au plus N cartes en main (Bandit's Talent). */
   | { kind: "opponentsWithHandAtMost"; n: number }
   /** Adversaires qui ont plus de cartes en main que vous (Wojek Investigator). */
@@ -825,19 +799,14 @@ export type Amount =
   | { kind: "colorPairsAmong"; filter: ObjectFilter }
   /** Force de la source quand la capacité s'est déclenchée (« quand cette créature meurt, … égales à sa force »). */
   | { kind: "lkiPower" }
-  /** Cartes qui ont quitté votre cimetière ce tour-ci (Bonecache Overseer). */
   /** Mana produit par des Cavernes dépensé pour lancer la source (Bat Colony). */
   | { kind: "caveManaSpent" }
   /** Force totale des cartes liées à la source (matériaux d'une fabrication : Mastercraft Raptor). */
   | { kind: "linkedTotalPower" }
   /** Nombre de couleurs parmi les cartes liées à la source (Sunbird Effigy). */
   | { kind: "linkedColors" }
-  /** Créatures qui ont quitté le champ de bataille sous votre contrôle ce tour-ci. */
-  /** Créatures avec lesquelles vous avez attaqué ce tour-ci. */
-  | { kind: "attackersThisTurn" }
   /** Types de permanent parmi les cartes de votre cimetière (Matzalantli). */
   | { kind: "permanentTypesInGraveyard" }
-  /** Blessures non de combat infligées par vos sources rouges ce tour-ci (Temple of Power). */
   /** Journal du tour (`turnlog.ts`) : entrées correspondantes, vues du contrôleur de la capacité. */
   /** `of` : compter pour ces joueurs (« les cartes meulées par le joueur ciblé ») plutôt que pour le contrôleur. */
   | { kind: "turnEvents"; query: TurnLogQuery; of?: Ref }

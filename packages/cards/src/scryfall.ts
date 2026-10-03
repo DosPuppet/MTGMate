@@ -627,7 +627,6 @@ function sagaClassCase(
     };
     return {
       layout: "case",
-      caseToSolve: script?.caseToSolve,
       caseSolved: script?.caseSolved ?? [],
       extraAbilities: [solve],
     };

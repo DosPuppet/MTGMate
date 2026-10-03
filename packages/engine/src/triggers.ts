@@ -9,7 +9,7 @@
  * - Capacités retardées (603.7) et réflexives (603.12) : créées par des effets, avec leurs propres effets et cibles.
  */
 
-import { canForage, gainLife } from "./actions";
+import { gainLife } from "./actions";
 import { ask, cardRef } from "./choices";
 import { boardAmount, concreteSpec, evalAmount, resolveRef, staticContext } from "./effects";
 import { RulesError, rethrowAsRules } from "./errors";
@@ -56,7 +56,6 @@ import type {
   TriggerEventData,
   TriggeredAbilityDef,
   TriggerSpec,
-  TurnLogQuery,
 } from "./types";
 import { PERMANENT_TYPES } from "./types";
 
@@ -228,9 +227,6 @@ export function mostLife(s: GameState, p: PlayerId): boolean {
   return s.playerOrder.every((x) => s.players[x]?.lost || life(p) >= life(x));
 }
 
-/** Créatures mortes ce tour-ci (champ de bataille → cimetière), sous n'importe quel contrôleur. */
-const DIED_QUERY: TurnLogQuery = { event: "zone", from: "battlefield", to: "graveyard", types: ["Creature"] };
-
 /** Clé « une fois par tour » d'une capacité déclenchée (`TriggeredAbilityDef.oncePerTurn`). */
 export const onceKey = (defId: string, sourceId: string, index: number): string => `${defId}:${sourceId}:${index}`;
 
@@ -250,8 +246,6 @@ export function checkCondition(
   switch (c.kind) {
     case "step":
       return s.turn.step === c.step;
-    case "creatureDiedMatching":
-      return countTurnEvents(s, { ...DIED_QUERY, subtype: c.filter.subtype, notSubtype: c.filter.notSubtype }, controller) > 0;
     case "castFromGraveyard":
       return !!(sourceId && s.objects[sourceId]?.castFromGraveyard);
     case "faceDownOrUpThisTurn":
@@ -284,8 +278,6 @@ export function checkCondition(
       return (
         s.turn.active === controller && countTurnEvents(s, { event: "attack", who: "you", subtype: c.subtype }, controller) > 0
       );
-    case "creatureDiedThisTurn":
-      return countTurnEvents(s, DIED_QUERY, controller) > 0;
     case "firstEndStep":
       return (s.turn.endSteps ?? 0) <= 1;
     case "firstCombat":
@@ -295,16 +287,6 @@ export function checkCondition(
       const best = Math.max(-Infinity, ...creatures.map((id) => chars(s, id).power));
       return creatures.some((id) => s.objects[id]?.controller === controller && chars(s, id).power === best);
     }
-    case "creaturesDiedAtLeast":
-      if (c.underOpponent)
-        return (
-          countTurnEvents(
-            s,
-            { event: "zone", from: "battlefield", to: "graveyard", types: ["Creature"], who: "opponent" },
-            controller,
-          ) >= c.n
-        );
-      return countTurnEvents(s, DIED_QUERY, controller) >= c.n;
     case "scriedThisTurn":
       return (s.players[controller]?.turnStats.scried ?? 0) > 0;
     case "opponentDealtNoncombatDamage":
@@ -343,10 +325,6 @@ export function checkCondition(
       return !!s.objects[sourceId ?? ""]?.solved;
     case "doorLocked":
       return !!sourceId && !s.objects[sourceId]?.unlocked?.includes(c.door);
-    case "fullyUnlocked": {
-      const faces = sourceId ? (s.defs[s.objects[sourceId]?.defId ?? ""]?.faceDefs?.length ?? 0) : 0;
-      return faces > 0 && (s.objects[sourceId ?? ""]?.unlocked?.length ?? 0) >= faces;
-    }
     case "sourceDealtCombatDamage":
       return !!(sourceId && s.objects[sourceId]?.dealtCombatDamage);
     case "chosenMode":
@@ -382,10 +360,6 @@ export function checkCondition(
       );
     case "enduringStory":
       return playerStatic(s, controller, "enduringStory");
-    case "sneaked": {
-      const item = s.resolving && s.resolving.item.id === sourceId ? s.resolving.item : s.stack.find((x) => x.id === sourceId);
-      return !!item?.sneaked;
-    }
     case "harnessed":
       return !!sourceId && !!s.objects[sourceId]?.harnessed;
     case "evoked":
@@ -420,8 +394,6 @@ export function checkCondition(
       ).length;
       return n >= (c.atLeast ?? 1);
     }
-    case "lifeAtLeast":
-      return (s.players[controller]?.life ?? 0) >= c.amount;
     case "kicked":
       // Permanent arrivé depuis un sort kické (sinon : évalué à l'arrivée ou à la résolution).
       return !!(sourceId && s.objects[sourceId]?.kicked);
@@ -429,8 +401,6 @@ export function checkCondition(
       return s.turn.active === controller;
     case "opponentsTurn":
       return s.turn.active !== controller;
-    case "threshold":
-      return (s.players[controller]?.graveyard.length ?? 0) >= 7;
     case "counterAtLeast": {
       // La source, ou ses dernières informations connues (« si elle avait un marqueur… » en mourant).
       const counters = sourceId ? (s.objects[sourceId]?.counters ?? s.lki[sourceId]?.counters) : undefined;
@@ -512,8 +482,6 @@ export function checkCondition(
     }
     case "lostLifeThisTurn":
       return (s.players[controller]?.turnStats.lifeLost ?? 0) > 0;
-    case "canForage":
-      return canForage(s, controller);
     case "mostLife": {
       // Avec une référence (le joueur défenseur…) : évaluée pendant la résolution (effects.ts).
       if (c.ref) return false;
@@ -527,7 +495,6 @@ export function checkCondition(
     case "var":
     case "refLife":
     case "refLostLife":
-    case "targetChosen":
       return false; // évalué pendant la résolution (effects.ts)
   }
 }
@@ -988,7 +955,7 @@ function matchTrigger(s: GameState, ev: RulesEvent, t: TriggerSpec, src: Source)
     case "collectEvidence":
       return ev.e === "collectEvidence" && ev.player === me ? { player: me } : null;
     case "bend":
-      return ev.e === "bend" && ev.player === me && (!t.kinds || t.kinds.includes(ev.kind)) ? { player: me } : null;
+      return ev.e === "bend" && ev.player === me ? { player: me } : null;
     case "attackAbilityTriggered":
       return ev.e === "attackTriggered" && ev.player === me ? { objectId: ev.objectId, player: me } : null;
     case "caseSolved":

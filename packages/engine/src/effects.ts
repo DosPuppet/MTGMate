@@ -230,8 +230,6 @@ export function evalCondition(s: GameState, ctx: EffectContext, c: Condition): b
       return resolveRef(s, ctx, c.ref).some((p) => (s.players[p]?.turnStats.lifeLost ?? 0) > 0);
     case "handAtMost":
       return resolveRef(s, ctx, c.ref).some((p) => !!s.players[p] && (s.players[p]?.hand.length ?? 0) <= c.n);
-    case "targetChosen":
-      return (ctx.targets[c.spec] ?? []).length > 0;
     default:
       return checkCondition(s, c, ctx.controller, ctx.sourceId);
   }
@@ -524,12 +522,8 @@ export function evalAmount(s: GameState, ctx: EffectContext, a: Amount): number 
     }
     case "speed":
       return s.players[ctx.controller]?.speed ?? 0;
-    case "spellsCastThisTurn":
-      return s.players[ctx.controller]?.turnStats.spellsCast ?? 0;
     case "cardsDrawnThisTurn":
       return s.players[ctx.controller]?.turnStats.cardsDrawn ?? 0;
-    case "creaturesDiedThisTurn":
-      return countTurnEvents(s, { event: "zone", from: "battlefield", to: "graveyard", types: ["Creature"] }, ctx.controller);
     case "totalManaValue":
       if (a.zone === "exile")
         return (
@@ -671,12 +665,6 @@ export function evalAmount(s: GameState, ctx: EffectContext, a: Amount): number 
         0,
         ...(s.players[ctx.controller]?.graveyard ?? []).map((id) => manaValue(s.defs[s.objects[id]?.defId ?? ""]?.manaCost)),
       );
-    case "distinctColors":
-      return new Set(
-        s.battlefield
-          .filter((id) => matchesObjectFilter(s, ctx.controller, id, a.filter, ctx.sourceId))
-          .flatMap((id) => chars(s, id).colors),
-      ).size;
     case "distinctSubtypes":
       return new Set(
         s.battlefield
@@ -703,10 +691,6 @@ export function evalAmount(s: GameState, ctx: EffectContext, a: Amount): number 
     }
     case "lkiDamage":
       return s.objects[ctx.sourceId]?.damage ?? s.lki[ctx.sourceId]?.damage ?? 0;
-    case "lkiCounters": {
-      const counters = s.objects[ctx.sourceId]?.counters ?? s.lki[ctx.sourceId]?.counters ?? {};
-      return counters[a.counter] ?? 0;
-    }
     case "lifeLostThisTurn":
       return s.players[ctx.controller]?.turnStats.lifeLost ?? 0;
     case "cardsIn":
@@ -748,8 +732,6 @@ export function evalAmount(s: GameState, ctx: EffectContext, a: Amount): number 
       return linkedTotalPower(s, s.objects[ctx.sourceId]?.linked);
     case "linkedColors":
       return linkedColors(s, s.objects[ctx.sourceId]?.linked).length;
-    case "attackersThisTurn":
-      return s.players[ctx.controller]?.turnStats.attackers ?? 0;
     case "untappedInUntapStep":
       return s.players[ctx.controller]?.turnStats.untappedInUntapStep ?? 0;
     case "permanentTypesInGraveyard": {

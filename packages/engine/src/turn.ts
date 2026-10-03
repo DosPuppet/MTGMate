@@ -770,11 +770,7 @@ export function declareAttackers(s: GameState, player: PlayerId, attackers: { id
     const defender = defendingPlayer(s, a.defender) ?? a.defender;
     logTurnEvent(s, { e: "attack", player, defender, types: c.types, subtypes: c.subtypes, id: a.id });
   }
-  if (attackers.length > 0) {
-    const stats = s.players[player]?.turnStats;
-    if (stats) stats.attackers = (stats.attackers ?? 0) + attackers.length;
-    rulesEvent(s, { e: "attackWith", player, count: attackers.length });
-  }
+  if (attackers.length > 0) rulesEvent(s, { e: "attackWith", player, count: attackers.length });
   if (attackers.length > 0) {
     emit({ type: "attack", player, attackers: attackers.map((a) => ({ id: a.id, defId: obj(s, a.id).defId })) });
   }

@@ -207,8 +207,7 @@ export type Effect =
       greatestPower?: boolean;
     }
   /** « Vous pouvez payer {X}. Si vous le faites, … » : les `skip` effets suivants sont ignorés sinon. */
-  /** `waterbend` : le mana est un coût de maîtrise de l'eau (artefacts et créatures dégagés : {1} chacun). */
-  | { op: "mayPay"; cost: ManaCost; prompt: string; skip: number; life?: number; waterbend?: boolean }
+  | { op: "mayPay"; cost: ManaCost; prompt: string; skip: number; life?: number }
   /** « Vous pouvez » : si le contrôleur refuse, les `skip` effets suivants sont ignorés. */
   | { op: "may"; prompt: string; skip: number; who?: Ref; store?: string }
   /** « Vous pouvez contempler [filtre]. Si vous le faites, … » pendant la résolution : sinon, les `skip` effets sont sautés. */
@@ -279,7 +278,6 @@ export type Effect =
       count: Amount;
       to: MoveSpec;
       who?: Ref;
-      optional?: boolean;
       store?: string;
       /** « … cartes de terrain de base avec des noms différents » */
       distinctNames?: boolean;

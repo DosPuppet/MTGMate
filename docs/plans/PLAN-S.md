@@ -21,7 +21,7 @@ Côté performance, les caches des couches et des statiques sont des `WeakMap` i
 | Lot | Contenu | État |
 |---|---|---|
 | S0 | Plan, recensement (`tools/dsl-census.ts`), empreinte du fuzz (`empreinte :` dans le bilan de `tools/fuzz.ts`, indépendante de `--jobs`), mesures de départ. Le fuzz de départ a trouvé un bug corrigé à part (règles 96 : Cryptex exilait en preuve un matériau de fabrication) | ✅ |
-| S1 | Code mort et alias exacts | |
+| S1 | Code mort et alias exacts : Condition 82 → 73 variantes, Amount 77 → 72 ; `exileAtLeast` et `allGraveyards` gardés (pas équivalents : cartes face cachée, joueurs sortis) ; empreintes identiques | ✅ |
 | S2 | Journal du tour : seule source de « ce tour-ci » | |
 | S3 | Familles de quantités (`aggregate`, `spent`, `manaSymbols`, `playersWhere`) | |
 | S4 | Sorts lancés : `castInfo` commun, `cond.cast` | |

@@ -430,8 +430,6 @@ export interface TurnStats {
   exhaustActivated?: number;
   /** Crimes commis ce tour-ci (700.13). */
   crimes?: number;
-  /** Créatures avec lesquelles ce joueur a attaqué ce tour-ci (Temple of Civilization). */
-  attackers?: number;
   /** Permanents dégagés pendant l'étape de dégagement de ce joueur (The Millennium Calendar). */
   untappedInUntapStep?: number;
   /** Warped Space : un sort lancé depuis l'exil sans payer son coût de mana ce tour-ci. */

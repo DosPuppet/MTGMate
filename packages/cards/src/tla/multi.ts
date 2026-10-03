@@ -572,7 +572,7 @@ export const MULTI: Record<string, CardScript> = {
   "Avatar Aang": {
     abilities: [
       triggered(
-        when.bend(),
+        when.bend,
         [
           fx.draw(1),
           ...fx.when(

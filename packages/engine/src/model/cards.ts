@@ -222,8 +222,7 @@ export interface CardDef {
   saga?: { chapters: number };
   /** Classe (716) : capacités des niveaux 2, 3… (coût du niveau et capacités ajoutées). */
   classLevels?: { cost: ManaCost | null; abilities: AbilityDef[] }[];
-  /** Affaire (719) : condition « Pour résoudre » et capacités « Résolue ». */
-  caseToSolve?: Condition;
+  /** Affaire (719) : capacités « Résolue » (la condition « Pour résoudre » est compilée dans la capacité `solveCase`). */
   caseSolved?: AbilityDef[];
   /** Assemblage (701.42) : les deux parties et la carte assemblée, par nom. */
   meld?: { parts: string[]; result?: string };

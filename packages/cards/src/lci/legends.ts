@@ -182,7 +182,7 @@ export const LEGENDS: Record<string, CardScript> = {
       returnsAsTemple(),
     ],
   },
-  "Temple of Civilization": temple("W", cond.amountAtLeast({ kind: "attackersThisTurn" }, 3)),
+  "Temple of Civilization": temple("W", cond.amountAtLeast(amount.attackersThisTurn, 3)),
   "Thousand Moons Infantry": {
     abilities: [triggered(when.step("upkeep", "opponent"), [fx.untap(ref.self)], { label: "Se dégage pendant le tour adverse" })],
   },

@@ -280,6 +280,9 @@ function turnAtLeast(query: TurnLogQuery, n = 1): Condition {
   return { kind: "amountAtLeast", amount: turnEvents(query), n };
 }
 
+/** Créatures mortes ce tour-ci (champ de bataille → cimetière), sous n'importe quel contrôleur. */
+const DIED: TurnLogQuery = { event: "zone", from: "battlefield", to: "graveyard", types: ["Creature"] };
+
 export const amount = {
   x: { kind: "x" } as Amount,
   kicked: (yes: number, no: number): Amount => ({ kind: "kicked", yes, no }),
@@ -305,7 +308,8 @@ export const amount = {
   colorsAmong: (filter: ObjectFilter = { permanent: true, controller: "you" }): Amount => ({ kind: "colorsAmong", filter }),
   lifeTotal: { kind: "lifeTotal" } as Amount,
   /** Marqueurs sur la source d'après ses dernières informations connues (capacité « quand elle meurt »). */
-  lkiCounters: (counter: string): Amount => ({ kind: "lkiCounters", counter }),
+  /** Marqueurs d'un type sur la source, ou d'après ses dernières informations connues (« si elle avait un marqueur… »). */
+  lkiCounters: (counter: string): Amount => ({ kind: "countersOn", ref: { kind: "self" }, counter }),
   lkiDamage: { kind: "lkiDamage" } as Amount,
   /** Convergence : couleurs de mana dépensées pour lancer ce sort. */
   colorsSpent: { kind: "colorsSpent" } as Amount,
@@ -349,7 +353,7 @@ export const amount = {
   cardsDiscardedThisTurn: { kind: "cardsDiscardedThisTurn" } as Amount,
   maxToughness: (filter: ObjectFilter): Amount => ({ kind: "maxToughness", filter }),
   maxManaValueInGraveyard: { kind: "maxManaValueInGraveyard" } as Amount,
-  distinctColors: (filter: ObjectFilter): Amount => ({ kind: "distinctColors", filter }),
+  distinctColors: (filter: ObjectFilter): Amount => ({ kind: "colorsAmong", filter }),
   countersAmong: (filter: ObjectFilter, counter: string): Amount => ({ kind: "countersAmong", filter, counter }),
   /** Symboles de mana de cette couleur dans le coût de l'objet désigné (Namor : le sort de l'événement). */
   manaSymbolsOf: (r: Ref, color: ManaType): Amount => ({ kind: "manaSymbolsOf", ref: r, color }),
@@ -360,9 +364,11 @@ export const amount = {
   manaSpent: { kind: "manaSpent" } as Amount,
   /** Votre vitesse. */
   speed: { kind: "speed" } as Amount,
-  spellsCastThisTurn: { kind: "spellsCastThisTurn" } as Amount,
+  spellsCastThisTurn: turnEvents({ event: "cast", who: "you" }),
   cardsDrawnThisTurn: { kind: "cardsDrawnThisTurn" } as Amount,
-  creaturesDiedThisTurn: { kind: "creaturesDiedThisTurn" } as Amount,
+  creaturesDiedThisTurn: turnEvents(DIED),
+  /** Créatures avec lesquelles vous avez attaqué ce tour-ci. */
+  attackersThisTurn: turnEvents({ event: "attack", who: "you" }),
   totalManaValue: (filter: ObjectFilter, zone?: "exile"): Amount => ({ kind: "totalManaValue", filter, zone }),
   eventManaSpent: { kind: "eventManaSpent" } as Amount,
   cardTypesOf: (r: Ref): Amount => ({ kind: "cardTypesOf", ref: r }),
@@ -676,11 +682,6 @@ export const fx = {
   mayPay: (cost: string, prompt: string, ...effects: Effects): Effect[] => {
     const flat = effects.flat();
     return [{ op: "mayPay", cost: parseManaCost(cost), prompt, skip: flat.length }, ...flat];
-  },
-  /** « Vous pouvez maîtriser l'eau {N}. Si vous le faites, … » : les artefacts et créatures dégagés paient {1} chacun. */
-  mayWaterbend: (cost: string, prompt: string, ...effects: Effects): Effect[] => {
-    const flat = effects.flat();
-    return [{ op: "mayPay", cost: parseManaCost(cost), prompt, skip: flat.length, waterbend: true }, ...flat];
   },
   /** Contrecarre le sort ou la capacité désigné. */
   counter: (what: Ref, store?: string): Effect => ({ op: "counter", what, store }),
@@ -1911,7 +1912,7 @@ export const when = {
   forage: { on: "forage" } as TriggerSpec,
   collectEvidence: { on: "collectEvidence" } as TriggerSpec,
   /** « Chaque fois que vous maîtrisez l'eau, la terre, le feu ou l'air » (Avatar). */
-  bend: (kinds?: ("water" | "earth" | "fire" | "air")[]): TriggerSpec => ({ on: "bend", ...(kinds ? { kinds } : {}) }),
+  bend: { on: "bend" } as TriggerSpec,
   /** « Chaque fois qu'une créature que vous contrôlez fait, en attaquant, se déclencher une de ses capacités. » */
   attackAbilityTriggered: { on: "attackAbilityTriggered" } as TriggerSpec,
   caseSolved: { on: "caseSolved" } as TriggerSpec,
@@ -1932,18 +1933,19 @@ export const when = {
 export const cond = {
   raid: { kind: "attackedThisTurn" } as Condition,
   attackedWith: (subtype: string): Condition => ({ kind: "attackedThisTurn", subtype }),
-  morbid: { kind: "creatureDiedThisTurn" } as Condition,
+  morbid: turnAtLeast(DIED),
   kicked: { kind: "kicked" } as Condition,
   controls: (filter: ObjectFilter, atLeast = 1): Condition => ({ kind: "controls", filter, atLeast }),
   /** Férocité : vous contrôlez une créature de force 4 ou plus. */
   ferocious: { kind: "controls", filter: { types: ["Creature"], minPower: 4 } } as Condition,
-  threshold: { kind: "threshold" } as Condition,
+  /** Seuil : au moins 7 cartes dans votre cimetière. */
+  threshold: { kind: "amountAtLeast", amount: { kind: "cardsIn", zone: "graveyard" }, n: 7 } as Condition,
   yourTurn: { kind: "yourTurn" } as Condition,
   opponentsTurn: { kind: "opponentsTurn" } as Condition,
   opponentLostLife: { kind: "opponentLostLifeThisTurn" } as Condition,
   lifeAboveStart: (by: number): Condition => ({ kind: "lifeAboveStart", by }),
   counterAtLeast: (counter: string, n: number): Condition => ({ kind: "counterAtLeast", counter, n }),
-  lifeAtLeast: (amount: number): Condition => ({ kind: "lifeAtLeast", amount }),
+  lifeAtLeast: (n: number): Condition => ({ kind: "amountAtLeast", amount: { kind: "lifeTotal" }, n }),
   v: (name: string, atLeast = 1): Condition => ({ kind: "var", name, atLeast }),
   not: (c: Condition): Condition => ({ kind: "not", cond: c }),
   all: (...of: Condition[]): Condition => ({ kind: "all", of }),
@@ -1984,7 +1986,8 @@ export const cond = {
     cond: turnAtLeast({ event: "cast", who: "you", types: ["Creature"], supertype: "Legendary" }),
   } as Condition,
   controlsGreatestPower: { kind: "controlsGreatestPower" } as Condition,
-  creaturesDied: (n: number, underOpponent?: boolean): Condition => ({ kind: "creaturesDiedAtLeast", n, underOpponent }),
+  creaturesDied: (n: number, underOpponent?: boolean): Condition =>
+    turnAtLeast(underOpponent ? { ...DIED, who: "opponent" } : DIED, n),
   opponentDealtNoncombatDamage: { kind: "opponentDealtNoncombatDamage" } as Condition,
   drewAtLeast: (n: number): Condition => ({ kind: "drewAtLeast", n }),
   castThisTurn: (n: number, noncreature = false, exactly = false): Condition => ({
@@ -2013,20 +2016,15 @@ export const cond = {
   /** Storied : « tant que vous avez un récit durable ». */
   enduringStory: { kind: "enduringStory" } as Condition,
   /** « Si le coût de faufilement de ce sort a été payé ». */
-  sneaked: { kind: "sneaked" } as Condition,
+  sneaked: { kind: "castVia", via: "sneak" } as Condition,
   sneakWindow: { kind: "sneakWindow" } as Condition,
   activatedLoyalty: { kind: "activatedLoyaltyThisTurn" } as Condition,
   /** La source est préparée. */
   prepared: { kind: "prepared" } as Condition,
   /** Vide (Edge of Eternities) : un permanent non-terrain a quitté le champ de bataille ou un sort a été lancé avec la distorsion ce tour-ci. */
   void: { kind: "void" } as Condition,
-  /** Classe : exactement à ce niveau ; Affaire : résolue. */
-  classLevel: (level: number): Condition => ({ kind: "classLevel", level }),
-  solved: { kind: "solved" } as Condition,
   /** Monture : montée ce tour-ci. */
   saddled: { kind: "saddled" } as Condition,
-  /** Salle : toutes ses portes sont déverrouillées. */
-  fullyUnlocked: { kind: "fullyUnlocked" } as Condition,
   /** Une seule créature attaque, et elle attaque un joueur. */
   attackingAlone: { kind: "attackingAlone" } as Condition,
   playerWithoutCreatures: { kind: "playerWithoutCreatures" } as Condition,
@@ -2048,7 +2046,9 @@ export const cond = {
   sourceDealtDamage: { kind: "sourceDealtDamage" } as Condition,
   prime: (a: Amount): Condition => ({ kind: "prime", amount: a }),
   step: (step: Step): Condition => ({ kind: "step", step }),
-  creatureDiedMatching: (filter: ObjectFilter): Condition => ({ kind: "creatureDiedMatching", filter }),
+  /** Une créature correspondant au filtre (sous-type) est morte ce tour-ci (Undead Sprinter : non-Zombie). */
+  creatureDiedMatching: (filter: ObjectFilter): Condition =>
+    turnAtLeast({ ...DIED, subtype: filter.subtype, notSubtype: filter.notSubtype }),
   castFromGraveyard: { kind: "castFromGraveyard" } as Condition,
   faceDownOrUp: { kind: "faceDownOrUpThisTurn" } as Condition,
   sacrificedThisTurn: turnAtLeast({ event: "sacrifice", who: "you" }),
@@ -2060,9 +2060,21 @@ export const cond = {
   lostLife: { kind: "lostLifeThisTurn" } as Condition,
   refLostLife: (r: Ref): Condition => ({ kind: "refLostLife", ref: r }),
   handAtMost: (r: Ref, n: number): Condition => ({ kind: "handAtMost", ref: r, n }),
-  targetChosen: (spec: string): Condition => ({ kind: "targetChosen", spec }),
+  /** Une cible a été choisie pour ce mot « cible » (« jusqu'à une … »). */
+  targetChosen: (spec: string): Condition => ({
+    kind: "amountAtLeast",
+    amount: { kind: "refCount", ref: { kind: "target", id: spec } },
+    n: 1,
+  }),
   sacrificedFood: turnAtLeast({ event: "sacrifice", who: "you", subtype: "Food" }),
-  canForage: { kind: "canForage" } as Condition,
+  /** Vous pouvez fourrager (trois cartes dans votre cimetière ou une Nourriture). */
+  canForage: {
+    kind: "any",
+    of: [
+      { kind: "amountAtLeast", amount: { kind: "cardsIn", zone: "graveyard" }, n: 3 },
+      { kind: "controls", filter: { subtype: "Food" }, atLeast: 1 },
+    ],
+  } as Condition,
   /** Délire : au moins quatre types de cartes parmi les cartes de votre cimetière. */
   delirium: { kind: "amountAtLeast", amount: { kind: "cardTypesInGraveyard" }, n: 4 } as Condition,
   /** Sièges : la source a choisi ce mode en arrivant (« • Abzan — … »). */

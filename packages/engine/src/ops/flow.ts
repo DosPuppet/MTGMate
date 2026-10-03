@@ -5,15 +5,13 @@ import { concreteSpec, evalAmount, evalCondition, nameOf, resolveRef, store } fr
 import { RulesError } from "../errors";
 import { canPay, manaValue, payMana } from "../mana";
 import { beholdOptions, collectEvidence, pickEvidence } from "../stack";
-import { bent, emit, isPlayer } from "../state";
+import { emit, isPlayer } from "../state";
 import { createDelayed, pushInline } from "../triggers";
 import type { ChoiceValue } from "../types";
 
 export const HANDLERS: OpHandlers = {
   mayPay(s, r, e, ctx, key) {
-    // Maîtrise de l'eau : artefacts et créatures dégagés paient {1} chacun.
-    const purpose = e.waterbend ? { waterbend: Number.POSITIVE_INFINITY } : undefined;
-    if (!canPay(s, ctx.controller, e.cost, undefined, purpose)) return { skip: e.skip };
+    if (!canPay(s, ctx.controller, e.cost)) return { skip: e.skip };
     const answer = r.vars[key("pay")];
     if (!answer) {
       return {
@@ -24,10 +22,9 @@ export const HANDLERS: OpHandlers = {
         },
       };
     }
-    if (answer[0] !== 1 || !canPay(s, ctx.controller, e.cost, undefined, purpose)) return { skip: e.skip };
+    if (answer[0] !== 1 || !canPay(s, ctx.controller, e.cost)) return { skip: e.skip };
     if (e.life && (s.players[ctx.controller]?.life ?? 0) < e.life) return { skip: e.skip };
-    payMana(s, ctx.controller, e.cost, undefined, purpose);
-    if (e.waterbend) bent(s, ctx.controller, "water");
+    payMana(s, ctx.controller, e.cost);
     if (e.life) payLife(s, ctx.controller, e.life);
     return;
   },
