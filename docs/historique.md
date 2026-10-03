@@ -43,7 +43,7 @@ Historique du projet, sorti de CLAUDE.md le 02/10/2026 (lot C0 de `docs/plans/PL
 | **Lorwyn Eclipsed (ECL, « Lorwyn éclipsé »)** (`docs/extensions/ecl.md`) | ✅ **266 / 266** (lots A à D, 01/10/2026 ; `RULES_VERSION` = 25) |
 | **Wilds of Eldraine (WOE, « Les friches d'Eldraine »)** (`docs/extensions/woe.md`) | ✅ **269 / 269** (socle 0, sous-lots A1 à A6, B1 à B4, C1 à C5, 01/10/2026 ; `RULES_VERSION` = 26) |
 | **Secrets of Strixhaven (SOS, « Les secrets de Strixhaven »)** (`docs/extensions/sos.md`) | ✅ **262 / 262** (socle 0, sous-lots A1 à A6, B1 à B3, C1 à C3, 01/10/2026 ; `RULES_VERSION` = 32) |
-| **Murders at Karlov Manor (MKM, « Meurtres au manoir Karlov »)** (`docs/extensions/mkm.md`) | ✅ **268 / 268** (socle 0, sous-lots A1 à A6, B1 à B4, C1 à C3, 02/10/2026 ; `RULES_VERSION` = 37) |
+| **Murders at Karlov Manor (MKM, « Meurtres au manoir Karlov »)** (`docs/extensions/mkm.md`) | ✅ **271 / 271** (socle 0, sous-lots A1 à A6, B1 à B4, C1 à C3, 02/10/2026 ; `RULES_VERSION` = 37 ; trois promotions légales ajoutées le 03/10/2026, PLAN-C C19) |
 | **Avatar: The Last Airbender (TLA)** (`docs/extensions/tla.md`) | ✅ **280 / 280** (socle 0, sous-lots A1 à A6, B1 et B2, C1 à C3, 02/10/2026 ; `RULES_VERSION` = 45) |
 | **Marvel Super Heroes (MSH)** (`docs/extensions/msh.md`) | ✅ **271 / 271** (socle 0, sous-lots A1 à A6, B1 à B3, C1 à C3, 02/10/2026 ; `RULES_VERSION` = 53) |
 | **Marvel's Spider-Man (SPM)** (`docs/extensions/spm.md`) | ✅ **188 / 188** (socle 0, sous-lots A1 à A6, B1, C1 à C3, 02/10/2026 ; `RULES_VERSION` = 54) |

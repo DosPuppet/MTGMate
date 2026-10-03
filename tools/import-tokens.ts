@@ -9,6 +9,7 @@
 import { writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
+import { SET_INFO } from "../packages/cards/src/setRegistry";
 
 /** Extensions dont on prend les jetons (les plus récentes d'abord : leur image est préférée à nom égal). */
 const SETS = [
@@ -32,6 +33,10 @@ const SETS = [
   "msh",
   "tmt",
 ];
+// Toutes les extensions du registre (`cards/src/setRegistry.ts`) sauf FRA, sans jetons chez Scryfall : une extension
+// ajoutée au registre doit prendre sa place dans cet ordre de préférence.
+const missing = SET_INFO.map((x) => x.code.toLowerCase()).filter((c) => c !== "fra" && !SETS.includes(c));
+if (missing.length) throw new Error(`Extensions du registre absentes de la liste des jetons : ${missing.join(", ")}`);
 const OUT = join(dirname(fileURLToPath(import.meta.url)), "..", "packages", "cards", "data", "tokens.json");
 const HEADERS = { "User-Agent": "MTGX/0.1 (projet non commercial)", Accept: "application/json" };
 

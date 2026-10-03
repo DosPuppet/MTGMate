@@ -151,3 +151,13 @@ Les scripts sont dans `packages/cards/src/mkm/` : `cards` (cartes du méta), `wh
 - **Correctif :** `cond.refMatches` résout le filtre (types choisis, « de ce type ») comme les autres filtres.
 - **Version des règles :** 37.
 - **Tests :** 10 tests de règles (« lot C3 »).
+
+## Promotions légales en Standard ✅ (271 / 271, 03/10/2026, PLAN-C C19)
+
+La comparaison hebdomadaire avec Scryfall (`tools/check-legality.ts`) a trouvé trois cartes légales en Standard absentes des données : elles n'existent qu'en impressions promotionnelles de MKM, que l'import écartait. L'import garde désormais une promotion quand c'est la seule impression de la carte dans le set.
+
+- **Melek, Reforged Researcher :** F/E égales à deux fois les éphémères et rituels du cimetière (`amount.plus`) ; le premier éphémère ou rituel du tour coûte {3} de moins (journal du tour).
+- **Tomik, Wielder of Law :** affinité pour les planeswalkers (réduction du coût générique par planeswalker) ; « un adversaire qui vous attaque, vous ou vos planeswalkers, avec deux créatures ou plus » (`when.opponentAttacksYouWith`, champ `defending: "you"` du déclencheur `attackWith`).
+- **Voja, Jaws of the Conclave :** marqueurs par Elfe sur chacune de vos créatures, une carte par Loup.
+
+Trois tests de règles dans `engine/test/mkm.test.ts`.

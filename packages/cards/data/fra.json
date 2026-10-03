@@ -22,6 +22,11 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/c/3/c3ff8dd3-88a8-49dc-a59b-e2748680623c.jpg?1789060137",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Emrakul, la Fatalité exigente",
+   "text": "Quand vous lancez ce sort, dégagez tous les terrains que vous contrôlez.\nVol, piétinement\nParade - Sacrifiez trois permanents.\n{3}, exilez cette carte depuis votre main : Un terrain ciblé acquiert « {T} : Ajoutez {C}{C} » jusqu'à ce que cette carte soit lancée depuis l'exil. Vous pouvez lancer cette carte tant qu'elle reste exilée.",
+   "image": "https://cards.scryfall.io/normal/front/3/a/3a190fb3-b73e-4ba8-975c-8e6da8d8a5e0.jpg?1790680749"
   }
  },
  {
@@ -42,6 +47,11 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/7/3/730d8c28-1e58-4b8e-89e9-445d154d2e83.jpg?1788878081",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Ascension académique",
+   "text": "Une créature ciblée gagne +2/+2 et acquiert le vol jusqu'à la fin du tour.\nRenforcez Jace 2. (Mettez deux marqueurs « loyauté » sur un jeton Jace que vous contrôlez. Si vous n'en contrôlez pas, créez d'abord un jeton de planeswalker bleu Jace avec « [-1] : Surveillez 1 » et « [-3] : Piochez une carte. »)",
+   "image": "https://cards.scryfall.io/normal/front/7/0/70330189-b852-4749-a68e-f57cc1459c54.jpg?1790680781"
   }
  },
  {
@@ -71,7 +81,13 @@
    "name": "Seed Suture",
    "manaCost": "{G/W}",
    "typeLine": "Sorcery",
-   "oracleText": "Put a +1/+1 counter on target creature. You gain 1 life."
+   "oracleText": "Put a +1/+1 counter on target creature. You gain 1 life.",
+   "fr": {}
+  },
+  "fr": {
+   "name": "Ange béni par les fleurs",
+   "text": "Vol, vigilance\nCette créature arrive préparée. (Tant qu'elle est préparée, vous pouvez lancer une copie de son sort. Faire ainsi déprépare la créature.)",
+   "image": "https://cards.scryfall.io/normal/front/c/d/cd7874ad-3302-4636-bea2-3aeaa04465d4.jpg?1790680812"
   }
  },
  {
@@ -94,6 +110,11 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/6/0/6047b14c-91d5-4f8e-af3f-057a541e2546.jpg?1788878120",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Crieur du campus",
+   "text": "{1}, exilez cette carte depuis votre cimetière : Renforcez Jace 2. (Mettez deux marqueurs « loyauté » sur un jeton Jace que vous contrôlez. Si vous n'en contrôlez pas, créez d'abord un jeton de planeswalker bleu Jace avec « [-1] : Surveillez 1 » et « [-3] : Piochez une carte. »)",
+   "image": "https://cards.scryfall.io/normal/front/6/e/6eb52282-c393-4aac-a99e-1da4a5a58eee.jpg?1790680855"
   }
  },
  {
@@ -117,6 +138,11 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/4/8/483fcc58-cc6e-4452-a696-7b38e117c837.jpg?1788329184",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Confident éclairé",
+   "text": "Lien de vie\nAu début de votre étape de fin, si vous avez gagné des points de vie ce tour-ci, surveillez 1. Si vous mettez dans votre cimetière de cette manière une carte avec une valeur de mana inférieure ou égale au nombre de points de vie que vous avez gagnés ce tour-ci, mettez cette carte dans votre main.",
+   "image": "https://cards.scryfall.io/normal/front/9/b/9b41eae0-3b73-4bc2-bff4-e51bed4633bb.jpg?1790680899"
   }
  },
  {
@@ -137,6 +163,11 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/f/0/f0c8400d-824f-4d79-84bc-7615a0deb831.jpg?1789556683",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Aspirant forge-destin",
+   "text": "Quand cette créature arrive, choisissez l'un -\n* Renvoyez une carte légendaire ciblée depuis votre cimetière dans votre main.\n* Mettez un marqueur +1/+1 sur une créature ciblée. Elle acquiert la vigilance et l'indestructible jusqu'à la fin du tour. (Les blessures et les effets qui disent « détruisez » ne la détruisent pas.)",
+   "image": "https://cards.scryfall.io/normal/front/3/5/35701df4-f47f-4803-8f7a-9e175ec75346.jpg?1790680926"
   }
  },
  {
@@ -157,6 +188,11 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/6/8/686f3a25-305d-4f02-8972-eba7b8e9635f.jpg?1789470769",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Chien scintillant",
+   "text": "À chaque fois que vous lancez un sort de créature, exilez jusqu'à une autre créature ciblée que vous contrôlez, puis renvoyez cette carte sur le champ de bataille sous le contrôle de son propriétaire.",
+   "image": "https://cards.scryfall.io/normal/front/9/6/962b6f25-b3c3-4c7e-ada8-ce9520af3a3a.jpg?1790680957"
   }
  },
  {
@@ -177,6 +213,11 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/f/8/f82f181b-a43b-4cec-b8f6-f6c1dd4c64fd.jpg?1788433351",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Réanimation généreuse",
+   "text": "Renvoyez sur le champ de bataille une carte de créature ciblée avec une valeur de mana inférieure ou égale à 3 depuis votre cimetière avec un marqueur +1/+1 supplémentaire sur elle.\nFlashback {4}{W} (Vous pouvez lancer cette carte depuis votre cimetière pour son coût de flashback. Exilez-la ensuite.)",
+   "image": "https://cards.scryfall.io/normal/front/7/2/7252a8c9-7f71-48ab-89cf-75cae8633580.jpg?1790680993"
   }
  },
  {
@@ -195,6 +236,11 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/1/b/1b5d7d19-b32a-4786-ae9a-00da5e6658ad.jpg?1789644810",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Germination de recrues",
+   "text": "Créez X jetons de créature 2/2 incolore Sorcier et Soldat appelés Cadet, X étant le nombre de points de vie que vous avez gagnés ce tour-ci.",
+   "image": "https://cards.scryfall.io/normal/front/4/8/480bc12f-48fe-4071-8470-f0ccdc1e90c4.jpg?1790681027"
   }
  },
  {
@@ -215,6 +261,11 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/3/2/32a7a905-11bf-4b66-a28e-1066a0e372b8.jpg?1789644811",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Chirurgienne greffeuse",
+   "text": "Cette créature arrive avec un marqueur +1/+1 sur elle.\nQuand cette créature meurt, mettez ses marqueurs sur jusqu'à une créature ciblée que vous contrôlez.",
+   "image": "https://cards.scryfall.io/normal/front/a/b/ab9bcdaf-4b4f-4881-96d3-9b8ce54ea86b.jpg?1790681060"
   }
  },
  {
@@ -235,6 +286,11 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/a/5/a53eb840-039d-4c45-b701-d58cb26b1a6c.jpg?1789644816",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Hydre conseillère",
+   "text": "Cette créature arrive avec X marqueurs +1/+1 sur elle.\nAu début du combat pendant votre tour, vous pouvez retirer un marqueur +1/+1 de cette créature. Si vous faites ainsi, mettez un marqueur +1/+1 sur chaque autre créature que vous contrôlez.",
+   "image": "https://cards.scryfall.io/normal/front/f/3/f361ac27-f117-4741-9dd7-1ddf0495a50f.jpg?1790681093"
   }
  },
  {
@@ -259,6 +315,11 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/3/b/3b6ac80e-c726-4bd0-893a-e666041a04a6.jpg?1789556695",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Bataillon de Hexhaven",
+   "text": "Créez trois jetons de créature 2/2 incolore Sorcier et Soldat appelés Cadet. Renforcez Jace 2. (Mettez deux marqueurs « loyauté » sur un jeton Jace que vous contrôlez. Si vous n'en contrôlez pas, créez d'abord un jeton de planeswalker bleu Jace avec « [-1] : Surveillez 1 » et « [-3] : Piochez une carte. »)\nRecyclage de terrain de base {2} ({2}, défaussez-vous de cette carte : Cherchez dans votre bibliothèque une carte de terrain de base, révélez-la, mettez-la dans votre main, puis mélangez.)",
+   "image": "https://cards.scryfall.io/normal/front/1/9/19e08c3d-f929-46bb-bb04-044ce08e4392.jpg?1790681125"
   }
  },
  {
@@ -277,6 +338,11 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/6/f/6f9f814b-8249-4e48-a05e-4c84060fe6fb.jpg?1789470776",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Jugement de congénères",
+   "text": "Choisissez un type de créature. Détruisez toutes les créatures qui ne sont pas du type choisi.",
+   "image": "https://cards.scryfall.io/normal/front/4/c/4ccdc65c-0c86-43f3-b21f-31ec8295cb7d.jpg?1790681160"
   }
  },
  {
@@ -295,6 +361,11 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/4/9/490dae91-94ce-42a9-a11f-6c5e77c4e486.jpg?1788878096",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Tuteur loyal",
+   "text": "Cherchez dans votre bibliothèque une carte de planeswalker, révélez-la, puis mélangez et mettez cette carte au-dessus de votre bibliothèque.",
+   "image": "https://cards.scryfall.io/normal/front/d/d/dde4823d-1d9b-454c-a9c1-cad6d3749182.jpg?1790681194"
   }
  },
  {
@@ -313,6 +384,11 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/2/f/2f5345ae-4489-4d05-b2d5-c71285254f05.jpg?1788866058",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Piège mémoriel",
+   "text": "Quand cet enchantement arrive, exilez un permanent non-terrain ciblé qu'un adversaire contrôle jusqu'à ce que cet enchantement quitte le champ de bataille.",
+   "image": "https://cards.scryfall.io/normal/front/9/8/98010170-b003-4b3f-85ce-e63151dcbb20.jpg?1790681219"
   }
  },
  {
@@ -333,6 +409,11 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/5/0/50a0e5f0-3c39-4f16-9a73-eec8ef71f12e.jpg?1789556696",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Préparatifs prédictifs",
+   "text": "Ciblez une ou deux créatures. Mettez un marqueur +1/+1 sur chacune d'elles.\nFlashback {3}{W} (Vous pouvez lancer cette carte depuis votre cimetière pour son coût de flashback. Exilez-la ensuite.)",
+   "image": "https://cards.scryfall.io/normal/front/5/3/538b96f2-23e7-49bd-8488-19a5569ecb30.jpg?1790681256"
   }
  },
  {
@@ -351,6 +432,11 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/1/f/1f95399a-9766-4f3d-aa6a-ece55e0530d9.jpg?1788951920",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Fin prophétisée",
+   "text": "Détruisez une créature ciblée. Si elle n'était pas attaquante, son contrôleur pioche une carte.",
+   "image": "https://cards.scryfall.io/normal/front/b/2/b2d64455-7006-4747-96fa-f873e6d91ffd.jpg?1790681288"
   }
  },
  {
@@ -371,6 +457,11 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/2/c/2c588954-c6eb-4aae-a2fa-0651ccf2d90a.jpg?1789470778",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Réfuter la destinée",
+   "text": "Exilez une cible, créature ou planeswalker, verte ou bleue. Surveillez 1. (Regardez la carte du dessus de votre bibliothèque. Vous pouvez la mettre dans votre cimetière.)",
+   "image": "https://cards.scryfall.io/normal/front/e/5/e508ec06-7f2a-4236-910f-de77dde2460a.jpg?1790681328"
   }
  },
  {
@@ -393,6 +484,11 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/3/5/35000e93-85d3-44f8-976a-5918ee4c71e0.jpg?1788878108",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Argousin recyclé",
+   "text": "À chaque fois que cette créature attaque, renforcez Jace X, X étant le nombre de créatures que vous contrôlez. (Mettez autant de marqueurs « loyauté » sur un jeton Jace que vous contrôlez. Si vous n'en contrôlez pas, créez d'abord un jeton de planeswalker bleu Jace avec « [-1] : Surveillez 1 » et « [-3] : Piochez une carte. »)",
+   "image": "https://cards.scryfall.io/normal/front/4/e/4ed69d2f-0b6e-47e2-bf7c-d1d906d74989.jpg?1790681366"
   }
  },
  {
@@ -411,6 +507,11 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/9/e/9e72f397-2384-40f1-882b-f627664d97df.jpg?1788878107",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Retour aux Royaumes lumineux",
+   "text": "Renvoyez sur le champ de bataille toutes les cartes de permanent non-terrain depuis votre cimetière.",
+   "image": "https://cards.scryfall.io/normal/front/c/a/ca20f815-7c89-4926-a454-caeb06697978.jpg?1790681393"
   }
  },
  {
@@ -433,6 +534,11 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/e/2/e29095de-59ec-4562-ba8e-73f952e457ae.jpg?1789385580",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Pégase fracassaile",
+   "text": "Vol\n{4}{W} : Les créatures que vous contrôlez gagnent +1/+1 jusqu'à la fin du tour.",
+   "image": "https://cards.scryfall.io/normal/front/1/5/15f2950a-1759-46e0-b93b-4975c0effe5e.jpg?1790681425"
   }
  },
  {
@@ -451,6 +557,11 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/d/3/d3acf176-ef02-4729-88c4-0f0dfbfdada4.jpg?1789385570",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Précision chirurgicale",
+   "text": "Choisissez l'un -\n* Détruisez une créature ciblée avec une endurance supérieure ou égale à 4. Vous gagnez 1 point de vie.\n* Vous piochez une carte et vous gagnez 2 points de vie.",
+   "image": "https://cards.scryfall.io/normal/front/1/4/1430ea5d-c84a-45f9-ae3c-cb6747239230.jpg?1790681475"
   }
  },
  {
@@ -473,6 +584,11 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/6/3/63f82985-c9c2-4d0a-ac4f-560166bebd9f.jpg?1789556741",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Hortomancien inébranlable",
+   "text": "Parade {1} (À chaque fois que cette créature devient la cible d'un sort ou d'une capacité qu'un adversaire contrôle, contrecarrez ce sort ou cette capacité à moins que ce joueur ne paie {1}.)\nÀ chaque fois que vous gagnez des points de vie, mettez un marqueur +1/+1 sur cette créature.",
+   "image": "https://cards.scryfall.io/normal/front/a/8/a82e859d-ea7d-4f66-b1c8-528da039afc9.jpg?1790681514"
   }
  },
  {
@@ -493,6 +609,11 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/2/5/25000a17-b701-4d69-b2ef-2c74029199d3.jpg?1789729751",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Votre destin s'achève ici",
+   "text": "Détruisez une cible, créature ou planeswalker, dont la valeur de mana est supérieure ou égale à 3. Surveillez 1. (Regardez la carte du dessus de votre bibliothèque. Vous pouvez la mettre dans votre cimetière.)",
+   "image": "https://cards.scryfall.io/normal/front/e/a/ea1a2136-5662-4a9a-861b-c94cd623a5e7.jpg?1790681548"
   }
  },
  {
@@ -514,6 +635,11 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/1/4/145b928d-a7ff-4fe5-ae4d-bbae7b1d955b.jpg?1788878107",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Contre-sculpture",
+   "text": "En tant que coût supplémentaire pour lancer ce sort, contemplez un Jace ou payez {1}. (Pour contempler un Jace, choisissez un Jace que vous contrôlez ou révélez une carte de Jace de votre main.)\nContrecarrez un sort ciblé. Renforcez Jace 1. (Mettez un marqueur « loyauté » sur un jeton Jace que vous contrôlez. Si vous n'en contrôlez pas, créez d'abord un jeton de planeswalker bleu Jace avec « [-1] : Surveillez 1 » et « [-3] : Piochez une carte. »)",
+   "image": "https://cards.scryfall.io/normal/front/4/5/4511cdd4-04e5-4a0a-ac1b-b153fff5a882.jpg?1790681574"
   }
  },
  {
@@ -532,6 +658,11 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/f/7/f76c4d8e-3e1f-4264-99af-1b8adb9a06be.jpg?1789127482",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Calculs cruels",
+   "text": "Piochez X cartes, X étant le nombre de cartes qui ont été mises dans le cimetière d'un joueur ciblé depuis sa bibliothèque ce tour-ci.",
+   "image": "https://cards.scryfall.io/normal/front/d/5/d524b4bd-3e91-490c-9b9f-6a5a91e87b49.jpg?1790681610"
   }
  },
  {
@@ -554,6 +685,11 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/9/b/9ba1f7ce-3404-4932-9795-22967707f762.jpg?1789556701",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Experte en cryothéorie",
+   "text": "Prouesse (À chaque fois que vous lancez un sort non-créature, cette créature gagne +1/+1 jusqu'à la fin du tour.)\n{3}{U}, exilez cette carte de votre cimetière : Engagez une créature ciblée et mettez un marqueur « étourdissement » sur elle. N'activez que lorsque vous pourriez lancer un rituel. (Si un permanent avec un marqueur « étourdissement » devait devenir dégagé, retirez-lui-en un à la place.)",
+   "image": "https://cards.scryfall.io/normal/front/2/0/207be491-6e55-4e3e-9daf-56b55a19868c.jpg?1790681648"
   }
  },
  {
@@ -582,7 +718,13 @@
    "name": "Unwind History",
    "manaCost": "{1}{U}",
    "typeLine": "Sorcery",
-   "oracleText": "Return target creature an opponent controls with mana value 3 or less to its owner's hand. Surveil 1."
+   "oracleText": "Return target creature an opponent controls with mana value 3 or less to its owner's hand. Surveil 1.",
+   "fr": {}
+  },
+  "fr": {
+   "name": "Devineresse de la victoire",
+   "text": "Cette créature arrive préparée. (Tant qu'elle est préparée, vous pouvez lancer une copie de son sort. Faire ainsi déprépare la créature.)\nÀ chaque fois que vous appliquez le regard ou que vous surveillez, cette créature gagne +1/+1 jusqu'à la fin du tour.",
+   "image": "https://cards.scryfall.io/normal/front/6/a/6a7dd58f-be91-459c-9e33-24c39d17201d.jpg?1790681682"
   }
  },
  {
@@ -605,6 +747,11 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/9/6/960c7335-331d-488b-be68-2ad1c1c695dc.jpg?1789556709",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Duelliste de divination",
+   "text": "Flash\nQuand cette créature arrive, choisissez l'un -\n* Engagez une créature ciblée.\n* Dégagez une créature ciblée.\n* Piochez une carte, puis défaussez-vous d'une carte.",
+   "image": "https://cards.scryfall.io/normal/front/0/c/0cc04f16-a17e-4927-9714-7e44559554b7.jpg?1790681719"
   }
  },
  {
@@ -623,6 +770,11 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/8/d/8d754b96-5e44-45af-9c7a-b0da59fbe4c3.jpg?1788779540",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Accueil glacial",
+   "text": "Choisissez l'un -\n* Contrecarrez un sort de créature ou légendaire ciblé à moins que son contrôleur ne paie {3}.\n* Une créature ciblée gagne -5/-0 jusqu'à la fin du tour.",
+   "image": "https://cards.scryfall.io/normal/front/8/2/82a11f29-b729-4f70-acee-e0fd169fb429.jpg?1790681750"
   }
  },
  {
@@ -644,6 +796,11 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/a/5/a5988272-faaa-463d-a0a1-a8e96b946bad.jpg?1789385916",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Devoirs infinis",
+   "text": "Enchanter : créature\nQuand cette aura arrive, engagez la créature enchantée. Elle devient dépréparée.\nLa créature enchantée perd toutes ses capacités et ne se dégage pas pendant l'étape de dégagement de son contrôleur.",
+   "image": "https://cards.scryfall.io/normal/front/d/f/df877340-426c-4ffd-bfb7-ff8b4c23e464.jpg?1790681777"
   }
  },
  {
@@ -664,6 +821,11 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/2/8/282588b9-3656-453b-aa25-2419e078ddc1.jpg?1788878150",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Machinations de Jace",
+   "text": "Jusqu'à la fin du tour, vous pouvez activer les capacités de loyauté des planeswalkers Jace que vous contrôlez pendant le tour de n'importe quel joueur à tout moment où vous pourriez lancer un éphémère.\nRenforcez Jace 8. (Mettez huit marqueurs « loyauté » sur un jeton Jace que vous contrôlez. Si vous n'en contrôlez pas, créez d'abord un jeton de planeswalker bleu Jace avec « [-1] : Surveillez 1 » et « [-3] : Piochez une carte. »)",
+   "image": "https://cards.scryfall.io/normal/front/7/0/70429faa-7617-43a9-8489-04aa6f14ed02.jpg?1790681803"
   }
  },
  {
@@ -686,6 +848,11 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/f/5/f5324741-353a-4a70-adb2-b631b00806dd.jpg?1789556707",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Oculus cherche-esprit",
+   "text": "Quand cette créature arrive, renforcez Jace 4. (Mettez quatre marqueurs « loyauté » sur un jeton Jace que vous contrôlez. Si vous n'en contrôlez pas, créez d'abord un jeton de planeswalker bleu Jace avec « [-1] : Surveillez 1 » et « [-3] : Piochez une carte. »)",
+   "image": "https://cards.scryfall.io/normal/front/3/c/3c966690-9122-4fa2-972f-c9a0595ceb08.jpg?1790681835"
   }
  },
  {
@@ -704,6 +871,11 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/d/0/d0ecae06-bc5a-4886-84df-c2900816f226.jpg?1788329222",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Théorie perfectionnée",
+   "text": "Choisissez l'un -\n* Une créature ciblée a une force et une endurance de base de 1/1 jusqu'à la fin du tour.\n* Une créature ciblée a une force et une endurance de base de 4/5 jusqu'à la fin du tour.",
+   "image": "https://cards.scryfall.io/normal/front/e/d/ed54523d-da86-47a7-9c93-60ffaf66ac9d.jpg?1790681867"
   }
  },
  {
@@ -724,6 +896,11 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/c/4/c4effc17-0d0e-423a-b5f2-597ea6c71f67.jpg?1789576786",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Parer à toute éventualité",
+   "text": "Quand cet enchantement arrive, le propriétaire de jusqu'à un autre permanent non-terrain ciblé le met, selon son choix, au-dessus ou au-dessous de sa bibliothèque.\nÀ chaque fois que vous lancez votre premier sort non-créature à chaque tour, renforcez Jace 1. (Mettez un marqueur « loyauté » sur un jeton Jace que vous contrôlez. Si vous n'en contrôlez pas, créez d'abord un jeton de planeswalker bleu Jace avec « [-1] : Surveillez 1 » et « [-3] : Piochez une carte. »)",
+   "image": "https://cards.scryfall.io/normal/front/e/0/e07df69f-9825-44d4-833b-c2f6ec737835.jpg?1790681897"
   }
  },
  {
@@ -742,6 +919,11 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/9/2/9244efad-35ab-45c0-b173-4bc68276cb67.jpg?1789470790",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Rédaction précise",
+   "text": "Contrecarrez un sort blanc ou noir ciblé.",
+   "image": "https://cards.scryfall.io/normal/front/e/5/e5ae8da5-5c8c-4ffa-9c4b-36693040138d.jpg?1790681929"
   }
  },
  {
@@ -762,6 +944,11 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/a/0/a08c7ec2-4c6a-4db2-85a7-41afe8731523.jpg?1788878176",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Éveil de la protégée",
+   "text": "Renforcez Jace 6. (Mettez six marqueurs « loyauté » sur un jeton Jace que vous contrôlez. Si vous n'en contrôlez pas, créez d'abord un jeton de planeswalker bleu Jace avec « [-1] : Surveillez 1 » et « [-3] : Piochez une carte. »)\nPiochez une carte.",
+   "image": "https://cards.scryfall.io/normal/front/b/b/bb7780fc-8b13-4179-bc9e-c6d032c1cbc6.jpg?1790681960"
   }
  },
  {
@@ -782,6 +969,11 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/5/1/51d86875-420d-4e82-b69c-4feeb99c9428.jpg?1789470781",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Cryomancien aguerri",
+   "text": "Quand cette créature arrive, piochez deux cartes, puis défaussez-vous de deux cartes. Quand vous vous défaussez d'au moins une carte non-terrain de cette manière, engagez jusqu'à autant de créatures ciblées et mettez un marqueur « étourdissement » sur chacune d'elles.\n{3}{U}{U}, exilez cette carte depuis votre cimetière : Piochez deux cartes.",
+   "image": "https://cards.scryfall.io/normal/front/a/6/a6a2d9d8-01d2-43a6-9407-e2eda3018d36.jpg?1790681994"
   }
  },
  {
@@ -810,7 +1002,13 @@
    "name": "Peer Review",
    "manaCost": "{2}{W/U}",
    "typeLine": "Sorcery",
-   "oracleText": "Create a 2/2 colorless Wizard Soldier creature token named Cadet. Surveil 1."
+   "oracleText": "Create a 2/2 colorless Wizard Soldier creature token named Cadet. Surveil 1.",
+   "fr": {}
+  },
+  "fr": {
+   "name": "Voyant du semestre",
+   "text": "Cette créature arrive préparée. (Tant qu'elle est préparée, vous pouvez lancer une copie de son sort. Faire ainsi déprépare la créature.)\nQuand cette créature arrive, surveillez 1.",
+   "image": "https://cards.scryfall.io/normal/front/d/8/d8000c88-2b50-4505-aedd-ba79866d85a9.jpg?1790682027"
   }
  },
  {
@@ -834,6 +1032,11 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/0/8/08ffbd51-2bd3-4262-8809-09576ce2b6f5.jpg?1789385594",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Sphinx des fausses conclusions",
+   "text": "Flash\nVol\nÀ chaque fois que cette créature attaque, piochez une carte, puis défaussez-vous d'une carte.\nQuand cette créature meurt, si elle n'est pas un jeton, créez un jeton qui en est une copie.",
+   "image": "https://cards.scryfall.io/normal/front/5/a/5af230d7-07db-472b-8059-45edd6b9faa6.jpg?1790682070"
   }
  },
  {
@@ -852,6 +1055,11 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/f/4/f49be090-c745-40e5-bc1c-605b8d98acdf.jpg?1789644816",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Approche du sphinx",
+   "text": "Piochez deux cartes. Vous pouvez ensuite exiler ce sort et quatre cartes appelées Approche du sphinx de votre cimetière. Si vous faites ainsi, cherchez dans votre bibliothèque une carte de créature Sphinx, mettez-la sur le champ de bataille, puis mélangez.\nUn deck peut contenir n'importe quel nombre de cartes appelées Approche du sphinx.",
+   "image": "https://cards.scryfall.io/normal/front/e/b/eb468f4a-3a29-42dd-9fd6-ece2583bfd60.jpg?1790682100"
   }
  },
  {
@@ -877,6 +1085,11 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/9/d/9df8a06d-c7de-49af-8c01-06dca3dfef4b.jpg?1789385597",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Phantasme de surveillance",
+   "text": "Défenseur, vol, vigilance\nTant que vous avez appliqué le regard ou surveillé ce tour-ci, cette créature peut attaquer comme si elle n'avait pas le défenseur.\n{3}{U} : Surveillez 1. (Regardez la carte du dessus de votre bibliothèque. Vous pouvez la mettre dans votre cimetière.)",
+   "image": "https://cards.scryfall.io/normal/front/4/a/4a5d9aed-e007-4f20-bb5b-8029eb422090.jpg?1790682128"
   }
  },
  {
@@ -896,6 +1109,11 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/2/0/20bb8c55-4b0b-425f-8201-b54fa2fdde86.jpg?1788329228",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Le Théoricien, Jace Beleren",
+   "text": "Au début de l'étape de pioche de chaque adversaire, vous piochez une carte.\n+1: Créez un jeton de créature 1/1 bleue Illusion.\n-2: Pour chaque adversaire, renvoyez jusqu'à un artefact ciblé ou une créature ciblée que ce joueur contrôle dans la main de son propriétaire.\n-6: Piochez trois cartes. Puis mettez X marqueurs +1/+1 sur chaque créature que vous contrôlez, X étant le nombre de cartes dans votre main.",
+   "image": "https://cards.scryfall.io/normal/front/e/a/eaefa524-90de-4304-998c-18b453b150c6.jpg?1790682158"
   }
  },
  {
@@ -919,6 +1137,11 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/7/1/710302ca-c4be-4069-8ce1-f531414c74e9.jpg?1788878151",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Mandataire du Théoricien",
+   "text": "Flash\nQuand cette créature arrive, renforcez Jace 3. (Mettez trois marqueurs « loyauté » sur un jeton Jace que vous contrôlez. Si vous n'en contrôlez pas, créez d'abord un jeton de planeswalker bleu Jace avec « [-1] : Surveillez 1 » et « [-3] : Piochez une carte. »)\n{U}, sacrifiez cette créature : Le prochain sort que vous lancez ce tour-ci ne peut pas être contrecarré.",
+   "image": "https://cards.scryfall.io/normal/front/0/1/01fedf57-d46c-496c-a88f-276b25ce9a90.jpg?1790682189"
   }
  },
  {
@@ -945,6 +1168,11 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/0/a/0adbb4b2-a142-48da-8f4b-fa91529dbac4.jpg?1789556706",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Témoin ondulant",
+   "text": "Vol\n{2} : Cette créature gagne +1/-1 jusqu'à la fin du tour.\nRecyclage de terrain de base {2} ({2}, défaussez-vous de cette carte : Cherchez dans votre bibliothèque une carte de terrain de base, révélez-la, mettez-la dans votre main, puis mélangez.)",
+   "image": "https://cards.scryfall.io/normal/front/2/7/27c49df8-696b-4982-a8d4-3b2a160039e3.jpg?1790682221"
   }
  },
  {
@@ -963,6 +1191,11 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/d/d/ddad9f16-52d5-49de-82b0-b1a5294a9c44.jpg?1789556722",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Désinvocation",
+   "text": "Renvoyez une créature ciblée dans la main de son propriétaire.",
+   "image": "https://cards.scryfall.io/normal/front/1/d/1da0e568-ba1c-4563-98c8-11401ae2eb77.jpg?1790682250"
   }
  },
  {
@@ -992,7 +1225,13 @@
    "name": "Arc of Fortune",
    "manaCost": "{2}{U}",
    "typeLine": "Sorcery",
-   "oracleText": "Each player may discard their hand and draw seven cards."
+   "oracleText": "Each player may discard their hand and draw seven cards.",
+   "fr": {}
+  },
+  "fr": {
+   "name": "Chasseur de variables",
+   "text": "Vol, prouesse\nCette créature arrive préparée. (Tant qu'elle est préparée, vous pouvez lancer une copie de son sort. Faire ainsi déprépare la créature.)",
+   "image": "https://cards.scryfall.io/normal/front/0/5/057cd17f-3524-42d7-8160-7a1702c473b2.jpg?1790682272"
   }
  },
  {
@@ -1019,6 +1258,11 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/c/d/cd56f047-6bdc-4e83-8a7c-923ebad26302.jpg?1789556710",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Pisteur de sorcière du zénith",
+   "text": "Menace (Cette créature ne peut pas être bloquée excepté par deux créatures ou plus.)\nQuand cette créature arrive ou meurt, vous gagnez 2 points de vie.\nRecyclage de terrain de base {2} ({2}, défaussez-vous de cette carte : Cherchez dans votre bibliothèque une carte de terrain de base, révélez-la, mettez-la dans votre main, puis mélangez.)",
+   "image": "https://cards.scryfall.io/normal/front/1/b/1b41524a-8bb4-49ff-9aad-d9de93dd4946.jpg?1790682296"
   }
  },
  {
@@ -1046,7 +1290,13 @@
    "name": "Ancestral Craving",
    "manaCost": "{B}",
    "typeLine": "Instant",
-   "oracleText": "Target player draws three cards and loses 3 life."
+   "oracleText": "Target player draws three cards and loses 3 life.",
+   "fr": {}
+  },
+  "fr": {
+   "name": "Rappeleuse de la lignée",
+   "text": "Au début de chaque étape de fin, si au moins trois créatures sont mortes ce tour-ci, cette créature devient préparée. (Tant qu'elle est préparée, vous pouvez lancer une copie de son sort. Faire ainsi déprépare la créature.)",
+   "image": "https://cards.scryfall.io/normal/front/2/f/2f504593-6299-4991-b780-83b544aede5b.jpg?1790682326"
   }
  },
  {
@@ -1065,6 +1315,11 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/4/6/46974d94-e900-43e4-92b5-4fb9b9f7cf46.jpg?1789385622",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Plier sous la pression",
+   "text": "Un adversaire ciblé sacrifie une créature ou un planeswalker avec la valeur de mana la plus élevée parmi les créatures et les planeswalkers qu'il contrôle. Vous gagnez 2 points de vie.",
+   "image": "https://cards.scryfall.io/normal/front/2/a/2ab43f7e-a8d3-46b3-bd24-4c6115f0d6de.jpg?1790682349"
   }
  },
  {
@@ -1083,6 +1338,11 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/3/b/3b5b28a4-0abd-4dc2-9856-c9a8d27f6a2d.jpg?1788353191",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Dissiper le doute",
+   "text": "Piochez deux cartes. Dissiper le doute inflige 2 blessures à chaque joueur.",
+   "image": "https://cards.scryfall.io/normal/front/3/1/319e9f4e-3568-49aa-b59d-533f786a6138.jpg?1790682379"
   }
  },
  {
@@ -1105,6 +1365,11 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/4/e/4ec912d5-cbe7-4d07-9ece-b03ac02d3055.jpg?1789385959",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Manipulateur de matière noire",
+   "text": "Quand cette créature arrive, meulez trois cartes.\nCette créature gagne +2/+0 pour chaque groupe de sept cartes dans votre cimetière.",
+   "image": "https://cards.scryfall.io/normal/front/d/5/d5327916-4ca0-4dfe-af2d-186b4ee770a2.jpg?1790682402"
   }
  },
  {
@@ -1128,6 +1393,11 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/e/c/ec454979-3839-4be3-a34a-9d25482948ba.jpg?1789470810",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Phénix de lumière noire",
+   "text": "Vol, célérité\nAu début du combat pendant votre tour, si au moins deux créatures sont mortes ce tour-ci, renvoyez cette carte sur le champ de bataille depuis votre cimetière.",
+   "image": "https://cards.scryfall.io/normal/front/c/8/c850fa9b-036c-4e38-87c0-0b135dc2eaf2.jpg?1790682429"
   }
  },
  {
@@ -1146,6 +1416,11 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/e/b/eb4b6ed8-782e-4473-abc9-d50bf2275c6a.jpg?1789556713",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Absence étendue",
+   "text": "Exilez une cible, créature ou planeswalker. L'Absence étendue inflige 1 blessure à chaque adversaire et vous gagnez 1 point de vie.",
+   "image": "https://cards.scryfall.io/normal/front/b/5/b585048c-4372-4c77-b25c-01b2a97fdf81.jpg?1790682453"
   }
  },
  {
@@ -1164,6 +1439,11 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/1/7/17fb6538-493c-41aa-ad13-3e63d3ad3317.jpg?1789729624",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Extrapoler l'impossible",
+   "text": "Vous pouvez révéler exactement deux cartes avec des noms différents que vous possédez en dehors de la partie. Un adversaire choisit l'une d'elles. Vous mettez cette carte dans votre main.",
+   "image": "https://cards.scryfall.io/normal/front/9/1/91822e75-cfde-4b40-b453-33578674ab44.jpg?1790682476"
   }
  },
  {
@@ -1182,6 +1462,11 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/2/3/2381d123-d8c7-4822-98fe-b1c365beb5ed.jpg?1789127524",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Expiration",
+   "text": "Une créature ciblée gagne -3/-3 jusqu'à la fin du tour.",
+   "image": "https://cards.scryfall.io/normal/front/1/f/1ff95a23-a00a-4d7a-b172-06ffc65ea25a.jpg?1790682504"
   }
  },
  {
@@ -1202,6 +1487,11 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/b/1/b105511d-5022-4a84-b6ce-4bb433e93a62.jpg?1789644819",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Relique de liche",
+   "text": "Quand cet équipement arrive, vous pouvez payer {2}. Quand vous faites ainsi, pour chaque adversaire, détruisez jusqu'à une cible que ce joueur contrôle créature ou planeswalker.\nLa créature équipée gagne +2/+1.\nÉquipement {2}",
+   "image": "https://cards.scryfall.io/normal/front/4/3/430e3ef9-022d-41fe-b682-e03d4e95e2f8.jpg?1790682524"
   }
  },
  {
@@ -1220,6 +1510,11 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/9/0/90d684a4-9639-4792-8760-2011a7a85370.jpg?1789644823",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Multiplier par zéro",
+   "text": "Une créature ciblée a une force et une endurance de base de 0/0 jusqu'à la fin du tour.",
+   "image": "https://cards.scryfall.io/normal/front/5/4/54e4eaee-f344-4dca-ba8d-934dc8bad501.jpg?1790682552"
   }
  },
  {
@@ -1240,6 +1535,11 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/c/4/c4554f5b-791b-48f6-bf54-ad28699e1beb.jpg?1788952080",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Réécrire le Multivers",
+   "text": "Exilez toutes les créatures. Renforcez Jace X, X étant le nombre de créatures exilées de cette manière. (Mettez autant de marqueurs « loyauté » sur un jeton Jace que vous contrôlez. Si vous n'en contrôlez pas, créez d'abord un jeton de planeswalker bleu Jace avec « [-1] : Surveillez 1 » et « [-3] : Piochez une carte. »)",
+   "image": "https://cards.scryfall.io/normal/front/7/5/75f7f201-0c04-4f67-a0af-a7b3e79ec0a9.jpg?1790682576"
   }
  },
  {
@@ -1262,6 +1562,11 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/f/4/f4a80225-7459-4151-86bb-8fdea31c39a6.jpg?1789127211",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Chasseur des remparts",
+   "text": "Contact mortel\nQuand cette créature arrive, une créature ciblée gagne +2/+2 et acquiert le contact mortel jusqu'à la fin du tour.",
+   "image": "https://cards.scryfall.io/normal/front/3/5/35d3603d-ff3e-4d43-b8c7-e0e89b8e6322.jpg?1790682600"
   }
  },
  {
@@ -1282,6 +1587,11 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/4/f/4ff6da82-d7dd-4b59-b7e6-30670cea7169.jpg?1789556727",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Rat nauséabond",
+   "text": "Quand cette créature arrive, chaque adversaire se défausse d'une carte.",
+   "image": "https://cards.scryfall.io/normal/front/7/c/7c7f3c18-a746-4a72-ae4b-2af25b1272ef.jpg?1790682633"
   }
  },
  {
@@ -1302,6 +1612,11 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/4/5/453cfde7-c460-4b55-9472-b714e16f24bb.jpg?1788952087",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Réécrire ses regrets",
+   "text": "Renvoyez sur le champ de bataille, depuis votre cimetière, une carte de créature ou de planeswalker ciblée avec une valeur de mana inférieure ou égale à 6.\nRenforcez Jace 2. (Mettez deux marqueurs « loyauté » sur un jeton Jace que vous contrôlez. Si vous n'en contrôlez pas, créez d'abord un jeton de planeswalker bleu Jace avec « [-1] : Surveillez 1 » et « [-3] : Piochez une carte. »)",
+   "image": "https://cards.scryfall.io/normal/front/c/6/c6fa07ce-fc15-4ed9-be7c-b182189cd864.jpg?1790682666"
   }
  },
  {
@@ -1320,6 +1635,11 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/8/1/811719ad-b5a3-4d31-8c6f-5dbdfccf7c1f.jpg?1789470807",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Ascension du portemort",
+   "text": "Choisissez l'un -\n* Piochez un nombre de cartes égal à la force la plus élevée parmi les créatures que vous contrôlez. Vous perdez un nombre de points de vie égal au nombre de cartes piochées de cette manière.\n* Toutes les créatures gagnent -3/-3 jusqu'à la fin du tour.",
+   "image": "https://cards.scryfall.io/normal/front/b/c/bc4192ed-4e38-467f-a547-86134dbc2639.jpg?1790682695"
   }
  },
  {
@@ -1340,6 +1660,11 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/2/1/2185c08f-bb4d-49d5-8b6c-c629a48bb61c.jpg?1789556729",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Guetteur du Sanctum",
+   "text": "Quand cette créature arrive, renforcez Jace 1.\nLes planeswalkers que vous contrôlez ne sont pas mis dans les cimetières de leurs propriétaires parce qu'ils ont une loyauté de 0.\nLes planeswalkers que vous contrôlez ont « [+2] : Ce planeswalker inflige 1 blessure à chaque adversaire et vous gagnez 1 point de vie. »",
+   "image": "https://cards.scryfall.io/normal/front/6/1/61898d54-21e2-482a-86b7-41dd74fbeacb.jpg?1790682726"
   }
  },
  {
@@ -1362,6 +1687,11 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/7/3/738667a1-c184-43ea-829f-49fbb69b6fc0.jpg?1789385960",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Brise-âmes grinçante",
+   "text": "Vol\nÀ chaque fois que cette créature attaque, elle inflige 1 blessure à chaque adversaire et vous gagnez 1 point de vie.",
+   "image": "https://cards.scryfall.io/normal/front/c/f/cf319715-7765-4393-a0b7-50ef541c43d8.jpg?1790682746"
   }
  },
  {
@@ -1380,6 +1710,11 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/f/1/f1d274db-751b-4414-a38d-762198168e91.jpg?1789385640",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Réduire l'écho au silence",
+   "text": "En tant que coût supplémentaire pour lancer ce sort, sacrifiez une créature ou un planeswalker ou payez {3}.\nDétruisez une cible, créature ou planeswalker.",
+   "image": "https://cards.scryfall.io/normal/front/e/4/e47bd452-98e4-4fcf-8cf5-fb45f1f487dc.jpg?1790682774"
   }
  },
  {
@@ -1400,6 +1735,11 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/7/b/7beaa8c9-1a2c-4c88-b579-91e371d8d9e3.jpg?1788878155",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Équation de la déception",
+   "text": "Un adversaire ciblé révèle sa main. Choisissez-y une carte de permanent non-terrain. Ce joueur se défausse de cette carte.\nRenforcez Jace 1. (Mettez un marqueur « loyauté » sur un jeton Jace que vous contrôlez. Si vous n'en contrôlez pas, créez d'abord un jeton de planeswalker bleu Jace avec « [-1] : Surveillez 1 » et « [-3] : Piochez une carte. »)",
+   "image": "https://cards.scryfall.io/normal/front/4/d/4d596028-1cd5-4d4e-bf17-4f710bbe6700.jpg?1790682799"
   }
  },
  {
@@ -1418,6 +1758,11 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/7/e/7ebd7e38-b27c-4c6e-aaea-e8ee5ba5e5df.jpg?1789470810",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Critique terminale",
+   "text": "Détruisez une cible, créature ou planeswalker, bleue ou rouge. Vous gagnez 1 point de vie.",
+   "image": "https://cards.scryfall.io/normal/front/4/6/463907fb-8cb8-4962-abe7-e8684e9df31e.jpg?1790682827"
   }
  },
  {
@@ -1438,6 +1783,11 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/e/3/e36a7908-1e22-494b-adb4-e72ac0974d62.jpg?1789556734",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Nécromancienne théorique",
+   "text": "{3}{B}, exilez cette carte depuis votre cimetière : Renvoyez une autre carte de créature ciblée depuis votre cimetière dans votre main.",
+   "image": "https://cards.scryfall.io/normal/front/3/e/3ef47efc-c29b-4e58-a207-c08bf4458380.jpg?1790682857"
   }
  },
  {
@@ -1467,7 +1817,13 @@
    "name": "Omit Variables",
    "manaCost": "{U/B}",
    "typeLine": "Sorcery",
-   "oracleText": "Mill three cards. (Put the top three cards of your library into your graveyard.)"
+   "oracleText": "Mill three cards. (Put the top three cards of your library into your graveyard.)",
+   "fr": {}
+  },
+  "fr": {
+   "name": "Extrapolateur du vide",
+   "text": "Cette créature arrive préparée. (Tant qu'elle est préparée, vous pouvez lancer une copie de son sort. Faire ainsi déprépare la créature.)\nSeuil - Cette créature gagne +1/+1 tant qu'il y a au moins sept cartes dans votre cimetière.",
+   "image": "https://cards.scryfall.io/normal/front/8/d/8d8862c8-48fd-47a1-bb5b-dfa02d3be31b.jpg?1790682881"
   }
  },
  {
@@ -1488,6 +1844,11 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/9/9/992bd991-7cfb-459f-bafd-9a44f3c925c5.jpg?1789699369",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Ultime clémence de Vraska",
+   "text": "Choisissez l'un -\n* Vous perdez 2 points de vie. Détruisez une cible, créature ou planeswalker.\n* Vous perdez 2 points de vie. Renforcez Jace 6. (Mettez six marqueurs « loyauté » sur un jeton Jace que vous contrôlez. Si vous n'en contrôlez pas, créez d'abord un jeton de planeswalker bleu Jace avec « [-1] : Surveillez 1 » et « [-3] : Piochez une carte. »)",
+   "image": "https://cards.scryfall.io/normal/front/e/4/e48d6cd9-0e92-425e-8e77-420adcc89e1f.jpg?1790682906"
   }
  },
  {
@@ -1506,6 +1867,11 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/d/9/d9039a58-2f17-4b8a-b714-3a2f0b46f057.jpg?1789470674",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Angoisse d'Ajani",
+   "text": "Quand cet enchantement arrive, il inflige X blessures à n'importe quelle cible.\nLes créatures que vous contrôlez ont le piétinement.",
+   "image": "https://cards.scryfall.io/normal/front/f/7/f7f661e0-ab60-4ca9-91cd-e14bf4e70c41.jpg?1790682934"
   }
  },
  {
@@ -1524,6 +1890,11 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/7/d/7d3b720d-f27c-462a-8f80-15748e5086e1.jpg?1789729762",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Expertise de l'artefice",
+   "text": "Les créatures que vous contrôlez acquièrent l'initiative jusqu'à la fin du tour.\nPiochez une carte.",
+   "image": "https://cards.scryfall.io/normal/front/1/b/1b3cdcfc-fac1-4e5b-bab2-18dbd3f2730b.jpg?1790682952"
   }
  },
  {
@@ -1547,6 +1918,11 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/c/5/c596c4ec-8480-4be9-a45d-700398a126f6.jpg?1789556812",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Éveil de la fournaise",
+   "text": "L'Éveil de la fournaise inflige 6 blessures à une cible qu'un adversaire contrôle, créature ou planeswalker. Ciblez jusqu'à une créature que vous contrôlez. Mettez un marqueur +1/+1 sur elle.\nRecyclage de terrain de base {2} ({2}, défaussez-vous de cette carte : Cherchez dans votre bibliothèque une carte de terrain de base, révélez-la, mettez-la dans votre main, puis mélangez.)",
+   "image": "https://cards.scryfall.io/normal/front/2/c/2c048789-b478-46a2-8174-7f843acd2a1d.jpg?1790683045"
   }
  },
  {
@@ -1565,6 +1941,11 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/8/4/8414a98c-0c79-4884-bc9b-061a6456b392.jpg?1789060147",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Crescendo brûlant",
+   "text": "Une créature ciblée gagne +3/+1 jusqu'à la fin du tour. Exilez la carte du dessus de votre bibliothèque. Jusqu'à la fin de votre prochain tour, vous pouvez jouer cette carte.",
+   "image": "https://cards.scryfall.io/normal/front/f/9/f9de1653-ed07-4eb9-9a2c-af3d639bbdc2.jpg?1790683024"
   }
  },
  {
@@ -1587,6 +1968,11 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/3/a/3a64c5f4-9cfc-4d19-bd99-13d619b1aa9d.jpg?1789385708",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Braiselin de Chandra",
+   "text": "Célérité\nÀ chaque fois que vous lancez un sort non-créature, mettez un marqueur +1/+1 sur cette créature.",
+   "image": "https://cards.scryfall.io/normal/front/5/2/52a5006c-ee39-43b5-bb00-2528df5e24d6.jpg?1790683065"
   }
  },
  {
@@ -1605,6 +1991,11 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/f/3/f3307da2-6dad-4ef2-9614-a7d34f38088e.jpg?1789644825",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Être sur le devant de la scène",
+   "text": "Créez un jeton de créature 2/2 incolore Sorcier et Soldat appelé Cadet, puis mettez un marqueur +1/+1 sur chaque autre jeton Sorcier que vous contrôlez.\nAu début de chaque entretien, si un adversaire a subi des blessures non-combat au tour précédent, renvoyez cette carte depuis votre cimetière dans votre main.",
+   "image": "https://cards.scryfall.io/normal/front/c/f/cf0475e7-ebfe-4c1f-844f-afb0abd359d7.jpg?1790683084"
   }
  },
  {
@@ -1627,6 +2018,11 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/4/7/47793a51-08c6-4ad2-a7e5-a4484d83a5cd.jpg?1788329298",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Colosse lacérateur de cratères",
+   "text": "Célérité\nQuand cette créature arrive, les créatures que vous contrôlez acquièrent le piétinement et gagnent +X/+0 jusqu'à la fin du tour, X étant le nombre d'artefacts que vous contrôlez.",
+   "image": "https://cards.scryfall.io/normal/front/b/9/b98e4d42-25c4-45e0-8f5a-2171c7cda682.jpg?1790683128"
   }
  },
  {
@@ -1650,6 +2046,11 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/8/f/8f827e50-0a08-4bc8-98b1-b26c9af15ef2.jpg?1789470818",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Démon scarifié de malédictions",
+   "text": "Vol, piétinement\nQuand cette créature arrive, cherchez une carte dans votre bibliothèque, mettez-la dans votre main, mélangez, puis défaussez-vous d'une carte au hasard.",
+   "image": "https://cards.scryfall.io/normal/front/e/7/e7b05a63-1569-43e3-8f8e-450bdf90f90e.jpg?1790683171"
   }
  },
  {
@@ -1672,6 +2073,11 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/1/1/112f8478-bd89-4a14-9721-8ab750613129.jpg?1789470842",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Visiteur draconique",
+   "text": "Vol\nSi au moins un jeton d'artefact devait être créé sous votre contrôle, autant de jetons de créature 5/5 rouge Dragon avec le vol sont créés à la place.",
+   "image": "https://cards.scryfall.io/normal/front/a/4/a45e9be8-6bab-4ce7-a5b5-9fa17ac34416.jpg?1790683192"
   }
  },
  {
@@ -1692,6 +2098,11 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/5/f/5f8771f9-8128-4818-a11d-41ea368cf697.jpg?1789127173",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Secoueuse de tympan",
+   "text": "{1}, {T} : Une autre créature ciblée de force inférieure ou égale à 2 que vous contrôlez ne peut pas être bloquée ce tour-ci.",
+   "image": "https://cards.scryfall.io/normal/front/e/6/e6efb480-9d54-4866-aa58-33c262562b7b.jpg?1790683235"
   }
  },
  {
@@ -1710,6 +2121,11 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/d/2/d2e958de-70de-4156-8f9b-b2c0c1ba704a.jpg?1789470825",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Brûlure d'essence",
+   "text": "La Brûlure d'essence inflige 5 blessures à une cible, créature ou planeswalker, noire ou verte. Si ce permanent devait mourir ce tour-ci, exilez-le à la place.",
+   "image": "https://cards.scryfall.io/normal/front/7/7/77798740-72b5-4b2e-adbb-7016b8ad4963.jpg?1790683267"
   }
  },
  {
@@ -1728,6 +2144,11 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/3/c/3ccf8f64-19bd-4fdf-b70a-30a042bacf2f.jpg?1789127528",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "S'affronter soi-même",
+   "text": "Pour chaque créature qu'un joueur ciblé contrôle, créez un jeton qui est une copie de cette créature, excepté qu'il a la célérité et « Au début de l'étape de fin, si vous ne contrôlez pas de planeswalker, sacrifiez cette créature. »",
+   "image": "https://cards.scryfall.io/normal/front/e/6/e6097c4f-7c2d-4fa6-8df0-aa8515dab1cd.jpg?1790683304"
   }
  },
  {
@@ -1746,6 +2167,11 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/1/9/19acb2b5-3b3e-43f0-bd81-8426ed3d9c55.jpg?1789614832",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Point fort fulminant",
+   "text": "Choisissez l'un -\n* Le Point fort fulminant inflige 1 blessure à chaque créature et à chaque planeswalker que vos adversaires contrôlent.\n* Le Point fort fulminant inflige 5 blessures à une cible, créature ou planeswalker.",
+   "image": "https://cards.scryfall.io/normal/front/4/b/4bce7171-f1e7-4a86-87db-fb9faa6e40ab.jpg?1790683342"
   }
  },
  {
@@ -1773,7 +2199,13 @@
    "name": "Vicious Verse",
    "manaCost": "{B/R}",
    "typeLine": "Sorcery",
-   "oracleText": "Vicious Verse deals 1 damage to target opponent."
+   "oracleText": "Vicious Verse deals 1 damage to target opponent.",
+   "fr": {}
+  },
+  "fr": {
+   "name": "Perturbatrice des couloirs",
+   "text": "Cette créature arrive préparée. (Tant qu'elle est préparée, vous pouvez lancer une copie de son sort. Faire ainsi déprépare la créature.)\n{T}, défaussez-vous d'une carte : Piochez une carte.",
+   "image": "https://cards.scryfall.io/normal/front/b/f/bf7eef85-1b68-45d7-8b08-1cf78eda3682.jpg?1790683365"
   }
  },
  {
@@ -1796,6 +2228,11 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/c/b/cbfe3354-7ced-4773-9a4e-a937ae9f94f8.jpg?1789556808",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Tireuse de corde sensible",
+   "text": "Piétinement\nQuand cette créature arrive, créez un jeton de créature 2/2 incolore Sorcier et Soldat appelé Cadet.",
+   "image": "https://cards.scryfall.io/normal/front/f/3/f3e4c2a9-2d83-42d1-81a8-63b642d957ba.jpg?1790683395"
   }
  },
  {
@@ -1814,6 +2251,11 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/e/6/e600b33b-8916-43dd-95d3-d7cbf874933d.jpg?1789385968",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Écho d'identité",
+   "text": "{3}{R} : Exilez une cible que vous contrôlez, créature ou planeswalker. Révélez les cartes du dessus de votre bibliothèque jusqu'à ce que vous révéliez une carte de créature ou de planeswalker. Mettez cette carte sur le champ de bataille et le reste au-dessous de votre bibliothèque dans un ordre aléatoire. N'activez que lorsque vous pourriez lancer un rituel.",
+   "image": "https://cards.scryfall.io/normal/front/5/c/5c39bcb6-d433-4290-9081-938326fe664e.jpg?1790683427"
   }
  },
  {
@@ -1836,6 +2278,11 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/4/4/4404d9d4-9cdd-4dad-a4f6-574d90db5052.jpg?1789127596",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Maître des ardillons",
+   "text": "Menace\nÀ chaque fois qu'au moins un adversaire subit des blessures non-combat, les créatures que vous contrôlez gagnent +1/+0 jusqu'à la fin du tour.",
+   "image": "https://cards.scryfall.io/normal/front/2/b/2bcfe0af-e8a7-4031-868b-e412e64e4e6b.jpg?1790683451"
   }
  },
  {
@@ -1856,6 +2303,11 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/1/1/11ba4fdd-cc03-4bb6-a493-91a9785771d0.jpg?1788878170",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Admission interdite",
+   "text": "L'Admission interdite inflige 3 blessures à n'importe quelle cible.\nRenforcez Jace 1. (Mettez un marqueur « loyauté » sur un jeton Jace que vous contrôlez. Si vous n'en contrôlez pas, créez d'abord un jeton de planeswalker bleu Jace avec « [-1] : Surveillez 1 » et « [-3] : Piochez une carte. »)",
+   "image": "https://cards.scryfall.io/normal/front/1/f/1fb006ef-2d6e-4597-95e2-bcefc1147a1e.jpg?1790683479"
   }
  },
  {
@@ -1884,7 +2336,13 @@
    "name": "Improvised Act",
    "manaCost": "{R}",
    "typeLine": "Sorcery",
-   "oracleText": "You may discard a card. If you do, draw a card."
+   "oracleText": "You may discard a card. If you do, draw a card.",
+   "fr": {}
+  },
+  "fr": {
+   "name": "Mage de bataille pompeux",
+   "text": "Prouesse\nCette créature arrive préparée. (Tant qu'elle est préparée, vous pouvez lancer une copie de son sort. Faire ainsi déprépare la créature.)",
+   "image": "https://cards.scryfall.io/normal/front/0/d/0d05d177-8b79-4717-9f16-ff3230101c4d.jpg?1790683507"
   }
  },
  {
@@ -1916,7 +2374,13 @@
    "name": "Molten Tide",
    "manaCost": "{R}",
    "typeLine": "Instant",
-   "oracleText": "Until end of turn, whenever you tap a Mountain for mana, add an additional {R}."
+   "oracleText": "Until end of turn, whenever you tap a Mountain for mana, add an additional {R}.",
+   "fr": {}
+  },
+  "fr": {
+   "name": "Rimailleuse du bûcher",
+   "text": "Prouesse\nCette créature arrive préparée. (Tant qu'elle est préparée, vous pouvez lancer une copie de son sort. Faire ainsi déprépare la créature.)",
+   "image": "https://cards.scryfall.io/normal/front/4/a/4a4e8cce-326b-406f-b907-3766118eea8e.jpg?1790683536"
   }
  },
  {
@@ -1937,6 +2401,11 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/0/e/0e44f959-1322-4abd-b6eb-dea992307c0c.jpg?1789556811",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Graveuse de bataille douée",
+   "text": "Pendant votre tour, cette créature a l'initiative.\n{1}{R} : Cette créature gagne +1/+0 jusqu'à la fin du tour.",
+   "image": "https://cards.scryfall.io/normal/front/f/0/f0030e55-ee9b-407d-8c99-e9bc0f5282f7.jpg?1790683558"
   }
  },
  {
@@ -1959,6 +2428,11 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/2/d/2d8e8e5f-3bf5-490d-aa9c-9df2b26f1460.jpg?1788329303",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Mage lance-ardillon",
+   "text": "Célérité\nQuand cette créature arrive, une carte d'éphémère ou de rituel ciblée de votre cimetière acquiert le flashback jusqu'à la fin du tour. Le coût de flashback est égal à son coût de mana. (Vous pouvez lancer cette carte depuis votre cimetière pour son coût de flashback. Exilez-la ensuite.)",
+   "image": "https://cards.scryfall.io/normal/front/c/5/c5ad7371-ca09-464e-a902-92b824d33021.jpg?1790683593"
   }
  },
  {
@@ -1981,6 +2455,11 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/b/7/b75bbf46-a421-467a-9433-6cf22398a3a5.jpg?1789556839",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Technicien d'ancrage",
+   "text": "Portée\nQuand cette créature arrive, vous pouvez vous défausser d'une carte. Quand vous faites ainsi, cette créature inflige 2 blessures à n'importe quelle cible.",
+   "image": "https://cards.scryfall.io/normal/front/d/8/d8f974d7-6163-4ffe-bd16-fcece86ee595.jpg?1790683616"
   }
  },
  {
@@ -2001,6 +2480,11 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/a/d/ad03ba90-2442-4a71-94df-2088b5b63662.jpg?1789127599",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Échos violents",
+   "text": "Les Échos violents infligent 6 blessures à une cible, créature ou planeswalker. Si un surplus de blessures a été infligé à ce permanent de cette manière, renforcez Jace X, X étant ce surplus de blessures. (Mettez autant de marqueurs « loyauté » sur un jeton Jace que vous contrôlez. Si vous n'en contrôlez pas, créez d'abord un jeton de planeswalker bleu Jace avec « [-1] : Surveillez 1 » et « [-3] : Piochez une carte. »)",
+   "image": "https://cards.scryfall.io/normal/front/1/d/1d96d1ca-5f4f-4a32-831f-188589cd50ff.jpg?1790683647"
   }
  },
  {
@@ -2019,6 +2503,11 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/b/5/b5b55617-684a-4036-be9b-a3b24fc9cd5a.jpg?1789385820",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Colère de Crinièresang",
+   "text": "Ce sort coûte {1} de moins à lancer si vous contrôlez une créature légendaire.\nLa Colère de Crinièresang inflige 4 blessures à une cible, créature ou planeswalker.",
+   "image": "https://cards.scryfall.io/normal/front/2/9/292002c7-24bd-42d1-ad1f-44911112aa1d.jpg?1790683666"
   }
  },
  {
@@ -2042,6 +2531,11 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/1/b/1bf923c4-f0b7-4271-978c-fd2e79fe1cc8.jpg?1788878190",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Amphisbène ésotérique",
+   "text": "Contact mortel\nQuand cette créature arrive, renforcez Jace 2. (Mettez deux marqueurs « loyauté » sur un jeton Jace que vous contrôlez. Si vous n'en contrôlez pas, créez d'abord un jeton de planeswalker bleu Jace avec « [-1] : Surveillez 1 » et « [-3] : Piochez une carte. »)",
+   "image": "https://cards.scryfall.io/normal/front/3/1/31565995-58a8-4d6e-80a6-acf25fc1f9eb.jpg?1790683699"
   }
  },
  {
@@ -2062,6 +2556,11 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/e/0/e0de5f66-f0df-4866-9f73-104ce50411b4.jpg?1789127248",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Incursion bestiale",
+   "text": "Créez un jeton de créature 4/4 verte Bête avec le piétinement.\nFlashback {5}{G} (Vous pouvez lancer cette carte depuis votre cimetière pour son coût de flashback. Exilez-la ensuite.)",
+   "image": "https://cards.scryfall.io/normal/front/9/7/973406dc-23f8-420b-acb7-c90af201903d.jpg?1790683718"
   }
  },
  {
@@ -2084,6 +2583,11 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/1/8/18c59d60-2640-4576-9375-3ba38aa3ecb7.jpg?1789127120",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Insurgée bourgeonnante",
+   "text": "Vigilance\nSacrifiez cette créature : Détruisez une cible, artefact ou enchantement. Si ce permanent était un enchantement légendaire, piochez une carte. N'activez que lorsque vous pourriez lancer un rituel.",
+   "image": "https://cards.scryfall.io/normal/front/4/c/4cecbd1f-a73e-4e5d-ad1c-4dc76ddaf9ca.jpg?1790683746"
   }
  },
  {
@@ -2112,7 +2616,13 @@
    "name": "Enroot",
    "manaCost": "{G}",
    "typeLine": "Sorcery",
-   "oracleText": "Search your library for a land card, put it into your graveyard, then shuffle."
+   "oracleText": "Search your library for a land card, put it into your graveyard, then shuffle.",
+   "fr": {}
+  },
+  "fr": {
+   "name": "Cultivateur carnivore",
+   "text": "Contact mortel\nCette créature arrive préparée.\nÀ chaque fois que cette créature inflige des blessures de combat à un joueur, renvoyez une carte de terrain ciblée depuis votre cimetière dans votre main.",
+   "image": "https://cards.scryfall.io/normal/front/e/b/ebf420d8-760f-4ce2-a134-6fed2a7235ab.jpg?1790683770"
   }
  },
  {
@@ -2131,6 +2641,11 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/b/d/bd32d736-7a58-46b9-90b4-2cac3c3e80a1.jpg?1788521235",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Brutalité forcée",
+   "text": "Choisissez l'un -\n* Une créature ciblée que vous contrôlez inflige un nombre de blessures égal à sa force à une cible qu'un adversaire contrôle, créature ou planeswalker.\n* Un planeswalker ciblé que vous contrôlez inflige un nombre de blessures égal à sa loyauté à une cible qu'un adversaire contrôle, créature ou planeswalker.",
+   "image": "https://cards.scryfall.io/normal/front/7/e/7ecabf9a-d34d-486c-a1b1-09cf06e0d86e.jpg?1790683795"
   }
  },
  {
@@ -2149,6 +2664,11 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/f/7/f71958e9-6d6d-4393-8b49-567103b50877.jpg?1789470852",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Saisie florissante",
+   "text": "Une cible qu'un adversaire contrôle, créature ou planeswalker, rouge ou blanche, perd toutes ses capacités jusqu'à la fin du tour. Une créature ciblée que vous contrôlez inflige un nombre de blessures égal à sa force à ce permanent.",
+   "image": "https://cards.scryfall.io/normal/front/0/8/08790319-c7cb-4e47-a6a4-d0c0cec23b46.jpg?1790683826"
   }
  },
  {
@@ -2170,6 +2690,11 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/9/3/930b89c3-4433-48de-829f-20fc3dbfced9.jpg?1789644837",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Jardiniser",
+   "text": "À chaque fois qu'une créature que vous contrôlez meurt, mettez un marqueur « charge » sur cet enchantement.\nAu début de votre première phase principale, ajoutez {G} pour chaque marqueur « charge » sur cet enchantement.",
+   "image": "https://cards.scryfall.io/normal/front/8/3/835b7e81-e61e-4388-afec-546fb7b62330.jpg?1790683857"
   }
  },
  {
@@ -2193,6 +2718,11 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/a/5/a56e0f91-b128-4693-a949-53cb403f4fbf.jpg?1789127136",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Propagateur en serre",
+   "text": "À chaque fois qu'une autre créature que vous contrôlez arrive, vous gagnez 1 point de vie.\n{T} : Ajoutez {G}.",
+   "image": "https://cards.scryfall.io/normal/front/0/a/0ac3da4a-8f65-4159-948d-fc75897c2f15.jpg?1790683886"
   }
  },
  {
@@ -2223,7 +2753,13 @@
    "name": "Soul Tether",
    "manaCost": "{2}{R/G}",
    "typeLine": "Sorcery",
-   "oracleText": "Create a Heartwood token. (It's a red and green artifact with \"{T}: Add {R} or {G}.\")"
+   "oracleText": "Create a Heartwood token. (It's a red and green artifact with \"{T}: Add {R} or {G}.\")",
+   "fr": {}
+  },
+  "fr": {
+   "name": "Façonneur de boiscœur",
+   "text": "Cette créature arrive préparée. (Tant qu'elle est préparée, vous pouvez lancer une copie de son sort. Faire ainsi déprépare la créature.)\n{T} : Ajoutez {C}. Ce mana ne peut pas être dépensé pour lancer des sorts depuis votre main.",
+   "image": "https://cards.scryfall.io/normal/front/5/f/5f5c9a0f-e7ea-4ee5-8ff5-88bc52765798.jpg?1790683915"
   }
  },
  {
@@ -2246,6 +2782,11 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/9/a/9a446cae-e93c-4574-8ffd-7688f9729a8a.jpg?1788878191",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Invigorateur de Hexaven",
+   "text": "Vigilance\nÀ chaque fois que cette créature subit des blessures, vous pouvez chercher dans votre bibliothèque jusqu'à autant de cartes de terrain, les mettre sur le champ de bataille engagées, puis mélanger.",
+   "image": "https://cards.scryfall.io/normal/front/b/e/beaebe90-2561-4649-8968-ec9edd761c69.jpg?1790683943"
   }
  },
  {
@@ -2270,6 +2811,11 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/3/d/3db2da7a-8088-4117-916b-f9c905d1b45b.jpg?1789127646",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Pantebête affamée",
+   "text": "Quand cette créature arrive, créez un jeton Boiscœur. (C'est un artefact rouge et vert avec « {T} : Ajoutez {R} ou {G}. »)\n{1}, sacrifiez un autre artefact : Mettez un marqueur +1/+1 sur cette créature. Elle gagne, selon votre choix, le piétinement, la défense talismanique ou la célérité jusqu'à la fin du tour.",
+   "image": "https://cards.scryfall.io/normal/front/b/3/b3c3592f-5286-4543-85e0-7cba672f7e67.jpg?1790683974"
   }
  },
  {
@@ -2290,6 +2836,11 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/a/2/a2cc5d0e-9643-4ee2-81de-fa2c3bd1ab09.jpg?1789556822",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Hache du chasseur",
+   "text": "La créature équipée gagne +2/+0 et a « À chaque fois que cette créature attaque, elle gagne, selon votre choix, le piétinement ou le contact mortel jusqu'à la fin du tour. »\nÉquipement {2} ({2} : Attachez à une créature ciblée que vous contrôlez. N'attachez l'équipement que lorsque vous pourriez lancer un rituel.)",
+   "image": "https://cards.scryfall.io/normal/front/2/e/2e3f21e2-344e-47c9-a44b-fc822dc8c356.jpg?1790684000"
   }
  },
  {
@@ -2312,6 +2863,11 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/0/7/073f4998-a204-447b-93d5-746ae87fd6a1.jpg?1788878192",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Ancremage inspiré",
+   "text": "À chaque fois que vous mettez au moins un marqueur « loyauté » sur un planeswalker, mettez un marqueur +1/+1 sur cette créature.\n{6} : Renforcez Jace 2. (Mettez deux marqueurs « loyauté » sur un jeton Jace que vous contrôlez. Si vous n'en contrôlez pas, créez d'abord un jeton de planeswalker bleu Jace avec « [-1] : Surveillez 1 » et « [-3] : Piochez une carte. »)",
+   "image": "https://cards.scryfall.io/normal/front/9/9/99e4465b-8bf0-4270-b977-673d7f6d2336.jpg?1790684024"
   }
  },
  {
@@ -2330,6 +2886,11 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/e/a/eaf9dc77-c83b-49cf-84be-6bd791cb925e.jpg?1789470856",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Omniprésence",
+   "text": "Vous pouvez lancer des sorts avec une valeur de mana inférieure ou égale au nombre de créatures que vous contrôlez depuis votre main sans payer leur coût de mana.",
+   "image": "https://cards.scryfall.io/normal/front/2/d/2de74a4d-6759-4f20-acf0-9c38b27d0929.jpg?1790684053"
   }
  },
  {
@@ -2350,6 +2911,11 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/6/b/6b8789a6-3b63-4198-af5f-c2f2f49fafd9.jpg?1789470736",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Fabrication de marionnettes",
+   "text": "Enchanter : artefact ou enchantement non-Aura\nLe permanent enchanté est une créature Construction avec une force et une endurance de base de 5/5 en plus de ses autres types.\n{4}{G} : Renvoyez cette carte depuis votre cimetière dans votre main.",
+   "image": "https://cards.scryfall.io/normal/front/6/1/615b04ef-5625-4729-86eb-0e9b0d7726a1.jpg?1790684081"
   }
  },
  {
@@ -2368,6 +2934,11 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/3/5/3546b93b-a7d1-451d-a369-22cc8ddcd00d.jpg?1788865848",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Restaurer avec empathie",
+   "text": "Renvoyez une carte de permanent ciblée depuis votre cimetière dans votre main. Vous gagnez 4 points de vie.",
+   "image": "https://cards.scryfall.io/normal/front/0/c/0c23a5d1-b91c-4b43-9cb4-8bf3327e447f.jpg?1790684111"
   }
  },
  {
@@ -2388,6 +2959,11 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/7/c/7c725702-8696-4e5a-8318-62f5e2616d52.jpg?1789470857",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Forgeuse de simulacre",
+   "text": "Quand cette créature arrive, vous pouvez chercher une carte de terrain de base dans votre bibliothèque, la mettre sur le champ de bataille engagée, puis mélanger.\nQuand cette créature meurt, piochez une carte.",
+   "image": "https://cards.scryfall.io/normal/front/6/3/63cb17ee-032c-4377-90ed-6917116098ba.jpg?1790684145"
   }
  },
  {
@@ -2408,6 +2984,11 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/0/2/02ee7817-40af-4fcf-a2df-eb218b669281.jpg?1788878199",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Digne d'être sauvé",
+   "text": "Meulez quatre cartes. Vous pouvez mettre une carte de permanent parmi elles dans votre main. Vous gagnez 1 point de vie. (Pour meuler quatre cartes, mettez les quatre cartes du dessus de votre bibliothèque dans votre cimetière.)",
+   "image": "https://cards.scryfall.io/normal/front/8/7/875125c4-11bb-4ace-b264-5c6871cffc9f.jpg?1790684175"
   }
  },
  {
@@ -2430,6 +3011,11 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/b/6/b635389c-e286-4edb-80d1-23dbe4a18857.jpg?1789614751",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Semeuse buteuse",
+   "text": "Portée\n{3}{G}, défaussez-vous de cette carte : Détruisez une créature avec le vol ciblée.",
+   "image": "https://cards.scryfall.io/normal/front/b/6/b615248d-adef-4c5a-815a-b0644e46710b.jpg?1790684207"
   }
  },
  {
@@ -2450,6 +3036,11 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/8/b/8be5ee47-8f8a-4e3c-b1a1-9ca0e1fdec7f.jpg?1789127270",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Tarmogoyf",
+   "text": "La force du Tarmogoyf est égale au nombre de types de carte parmi les cartes de tous les cimetières, et son endurance est égale à ce nombre plus 1.",
+   "image": "https://cards.scryfall.io/normal/front/e/d/ed31ae78-66d4-4791-ae2e-a4de72b063bf.jpg?1790684246"
   }
  },
  {
@@ -2468,6 +3059,11 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/3/8/38589a7c-9cfb-4bcc-845e-9dc205095853.jpg?1789129937",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Avantage de l'ancremage",
+   "text": "Une créature ciblée gagne +2/+2 et acquiert la portée jusqu'à la fin du tour. Dégagez-la.",
+   "image": "https://cards.scryfall.io/normal/front/f/a/fafd9479-36db-43ab-9ea2-53a7994d42a3.jpg?1790684290"
   }
  },
  {
@@ -2491,6 +3087,11 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/2/b/2bb7a8eb-227f-410b-859f-750ef0aea2f0.jpg?1789644841",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Kraken verdoyant",
+   "text": "Au début de l'entretien de chaque joueur, vous créez un jeton de créature-terrain 3/3 verte Forêt et Tentacule. (Il a « {T} : Ajoutez {G}. » Il est affecté par le mal d'invocation jusqu'à votre prochain tour.)",
+   "image": "https://cards.scryfall.io/normal/front/5/3/53effab6-99b5-4855-a7b2-677ab5ea78bc.jpg?1790684320"
   }
  },
  {
@@ -2517,6 +3118,11 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/e/5/e5ed142b-2b61-4ef5-8b23-2db2a0a0319d.jpg?1789556814",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Expert fouettevigne",
+   "text": "Portée\nQuand cette créature arrive, mettez trois marqueurs +1/+1 sur une créature ciblée.\nRecyclage de terrain de base {2} ({2}, défaussez-vous de cette carte : Cherchez dans votre bibliothèque une carte de terrain de base, révélez-la, mettez-la dans votre main, puis mélangez.)",
+   "image": "https://cards.scryfall.io/normal/front/a/9/a96880ff-255a-4091-bb3c-bc7303f40a2e.jpg?1790684346"
   }
  },
  {
@@ -2539,6 +3145,11 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/3/d/3d693cb0-681e-480a-8f70-07e94c39225c.jpg?1789385843",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Gecko ravageur",
+   "text": "Parade {2} (À chaque fois que cette créature devient la cible d'un sort ou d'une capacité qu'un adversaire contrôle, contrecarrez ce sort ou cette capacité à moins que ce joueur ne paie {2}.)\n{6}{G}{G} : Cette créature gagne +4/+4 et acquiert le piétinement jusqu'à la fin du tour.",
+   "image": "https://cards.scryfall.io/normal/front/0/5/053e1ad5-618a-4ee9-9d67-236d7189ffe7.jpg?1790684374"
   }
  },
  {
@@ -2566,6 +3177,11 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/f/1/f17d2792-b075-4c47-ad38-e7a7eaee5f8c.jpg?1788878199",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Aerid Konstrari",
+   "text": "Vol\nQuand Aerid Konstrari arrive ou meurt, créez un jeton Boiscœur. (C'est un artefact rouge et vert avec « {T} : Ajoutez {R} ou {G}. »)\n{6} : Créez un jeton Boiscœur. Puis Aerid Konstrari gagne +X/+0 jusqu'à la fin du tour, X étant le nombre d'artefacts que vous contrôlez.",
+   "image": "https://cards.scryfall.io/normal/front/7/7/771199b4-822d-46a9-bbb9-29ca7574bb14.jpg?1790684399"
   }
  },
  {
@@ -2590,6 +3206,11 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/5/9/5905995b-7a20-4602-a7cc-90aa5089a082.jpg?1788878208",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Avatar des échos bourgeonnants",
+   "text": "Toucheterre - À chaque fois qu'un terrain que vous contrôlez arrive, renforcez Jace 2. (Mettez deux marqueurs « loyauté » sur un jeton Jace que vous contrôlez. Si vous n'en contrôlez pas, créez d'abord un jeton de planeswalker bleu Jace avec « [-1] : Surveillez 1 » et « [-3] : Piochez une carte. »)\nLes planeswalkers que vous contrôlez ont « [-10]: Mettez un marqueur +1/+1 sur une créature ciblée pour chaque terrain que vous contrôlez. »",
+   "image": "https://cards.scryfall.io/normal/front/f/e/fe12f8c0-ad2e-4325-a26e-636b58be990d.jpg?1790684431"
   }
  },
  {
@@ -2613,6 +3234,11 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/b/b/bb975803-9bf2-401e-9414-d272df314398.jpg?1789556847",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Goule bénie",
+   "text": "Lien de vie\n{2}{W/B} : Renvoyez cette carte depuis votre cimetière dans votre main.",
+   "image": "https://cards.scryfall.io/normal/front/2/b/2b1856a3-e112-4767-bf35-88bfbaf1c5c2.jpg?1790684467"
   }
  },
  {
@@ -2634,6 +3260,11 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/6/b/6b804503-9c70-4b1f-bb13-a65fb6dd3ef8.jpg?1789644843",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Bruteflore",
+   "text": "À chaque fois que vous gagnez des points de vie, piochez une carte. Cette capacité ne se déclenche qu'une seule fois par tour.\n{4}{G}{W} : Une créature ciblée acquiert le piétinement et le lien de vie jusqu'à la fin du tour.",
+   "image": "https://cards.scryfall.io/normal/front/4/2/42538a59-56b9-4535-a029-975e27ca18a1.jpg?1790684502"
   }
  },
  {
@@ -2653,6 +3284,11 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/8/7/87b40df5-5c0a-41f5-a09c-a04f17066a91.jpg?1788521570",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Charger le Sanctum",
+   "text": "Choisissez l'un -\n* Les créatures que vous contrôlez gagnent +2/+0 jusqu'à la fin du tour.\n* Une créature ciblée gagne +2/+0 et acquiert l'initiative jusqu'à la fin du tour. Mettez un marqueur +1/+1 sur elle.",
+   "image": "https://cards.scryfall.io/normal/front/f/a/fa1afa67-39c2-45d3-834d-5779fd3307df.jpg?1790684528"
   }
  },
  {
@@ -2672,6 +3308,11 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/b/6/b61bcef7-5832-45e6-a2bc-26d4f23707fc.jpg?1788878210",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Choc des éléments",
+   "text": "Choisissez un permanent non-terrain ciblé. Son propriétaire peut le mettre au-dessus de sa bibliothèque. S'il fait ainsi, le Choc des éléments lui inflige 2 blessures. S'il n'a pas mis la carte au-dessus de sa bibliothèque, il la met au-dessous.",
+   "image": "https://cards.scryfall.io/normal/front/3/a/3a1b0f80-c3d5-4d0c-a402-099bf4ef7a80.jpg?1790684554"
   }
  },
  {
@@ -2695,6 +3336,11 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/0/3/03f9839c-aa07-4ee7-847b-091e47ab80c4.jpg?1789470711",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Écrabouilleur artisanal",
+   "text": "Piétinement\nQuand cette créature arrive, choisissez deux -\n* Cette créature inflige 4 blessures à une cible, créature ou planeswalker.\n* Créez un jeton de créature 2/2 incolore Sorcier et Soldat appelé Cadet.\n* Piochez une carte.",
+   "image": "https://cards.scryfall.io/normal/front/4/7/47fe9969-9402-4981-93a1-56e6f8585b71.jpg?1790684580"
   }
  },
  {
@@ -2719,6 +3365,11 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/9/8/986f9e98-9d8d-428b-9187-860745cf3269.jpg?1788878215",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Denzilore Fortefin",
+   "text": "Flash\nVol\nÀ chaque fois que vous appliquez le regard ou que vous surveillez, mettez un marqueur +1/+1 sur chaque créature que vous contrôlez.",
+   "image": "https://cards.scryfall.io/normal/front/6/6/6634c8e1-3dca-44a8-a256-df31c604c740.jpg?1790684606"
   }
  },
  {
@@ -2742,6 +3393,11 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/c/f/cfaa3ebd-5c21-4e99-a0dd-8426d19b53a5.jpg?1789644852",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Scribe du futur désespérée",
+   "text": "Vol\nAu début du combat pendant votre tour, une autre créature ciblée que vous contrôlez gagne +1/+1 jusqu'à la fin du tour. Si vous avez appliqué le regard ou surveillé ce tour-ci, mettez un marqueur +1/+1 sur cette créature à la place.",
+   "image": "https://cards.scryfall.io/normal/front/5/5/558d29f7-19c3-4625-8d51-a1e3c8ce5d2f.jpg?1790684632"
   }
  },
  {
@@ -2770,7 +3426,13 @@
    "name": "Seed Suture",
    "manaCost": "{G/W}",
    "typeLine": "Sorcery",
-   "oracleText": "Put a +1/+1 counter on target creature. You gain 1 life."
+   "oracleText": "Put a +1/+1 counter on target creature. You gain 1 life.",
+   "fr": {}
+  },
+  "fr": {
+   "name": "Phyto-carabin d'urgence",
+   "text": "Cette créature arrive préparée. (Tant qu'elle est préparée, vous pouvez lancer une copie de son sort. Faire ainsi déprépare la créature.)",
+   "image": "https://cards.scryfall.io/normal/front/2/a/2ac30067-ec74-4bea-aaa8-389bd7ff1954.jpg?1790684656"
   }
  },
  {
@@ -2790,6 +3452,11 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/c/a/ca894d25-b9fc-4cd6-8746-70d8c2868721.jpg?1789614779",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Croire en l'étincelle",
+   "text": "Vous pouvez sacrifier un planeswalker. Si vous faites ainsi, cherchez dans votre bibliothèque une carte de planeswalker, mettez-la sur le champ de bataille, puis mélangez.",
+   "image": "https://cards.scryfall.io/normal/front/3/c/3c861fc7-640a-4d8d-b595-22c12c9bd827.jpg?1790684685"
   }
  },
  {
@@ -2809,6 +3476,11 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/c/f/cfc54011-647e-4428-bcdb-59400e1da49d.jpg?1789127637",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Charme de Fortefin",
+   "text": "Choisissez l'un -\n* Piochez une carte. Renforcez Jace 2.\n* Renvoyez une cible, sort ou créature, dans la main de son propriétaire.\n* Les créatures que vous contrôlez gagnent +1/+2 jusqu'à la fin du tour.",
+   "image": "https://cards.scryfall.io/normal/front/7/2/723e2793-2cdc-4614-aa2c-b0853ac33c15.jpg?1790684709"
   }
  },
  {
@@ -2839,7 +3511,13 @@
    "name": "Peer Review",
    "manaCost": "{2}{W/U}",
    "typeLine": "Sorcery",
-   "oracleText": "Create a 2/2 colorless Wizard Soldier creature token named Cadet. Surveil 1."
+   "oracleText": "Create a 2/2 colorless Wizard Soldier creature token named Cadet. Surveil 1.",
+   "fr": {}
+  },
+  "fr": {
+   "name": "Chronologue de Fortefin",
+   "text": "Vol\nCette créature arrive préparée. (Tant qu'elle est préparée, vous pouvez lancer une copie de son sort. Faire ainsi déprépare la créature.)",
+   "image": "https://cards.scryfall.io/normal/front/b/e/be122833-354f-424d-b0ef-fb62bc82e6e0.jpg?1790684739"
   }
  },
  {
@@ -2862,6 +3540,11 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/a/9/a9793ce9-5a0b-41fe-b9ad-02f6f7da2481.jpg?1789644856",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Férocité de la chasse",
+   "text": "Flash\nEnchanter : créature\nLa créature enchantée gagne +1/+0 et a le contact mortel.\nQuand la créature enchantée meurt, renvoyez cette carte sur le champ de bataille, engagée, sous le contrôle de son propriétaire.",
+   "image": "https://cards.scryfall.io/normal/front/0/6/06b95874-0530-4d16-9e32-40ac782f4816.jpg?1790684762"
   }
  },
  {
@@ -2886,6 +3569,11 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/7/a/7a44581f-8fc4-457d-888a-1e211090ee7e.jpg?1789470870",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Pyromentaire de gel",
+   "text": "Piétinement, célérité\nÀ chaque fois que cette créature inflige des blessures de combat à un joueur, piochez deux cartes.\nAu début de l'étape de fin, sacrifiez cette créature.",
+   "image": "https://cards.scryfall.io/normal/front/a/5/a5d57aa3-d458-4acd-b0e7-e5cd4825443b.jpg?1790684791"
   }
  },
  {
@@ -2909,6 +3597,11 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/8/2/8295c48c-b4dd-4bc1-a206-04cf12b79bbd.jpg?1789470746",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Interprète sinistre",
+   "text": "Prouesse (À chaque fois que vous lancez un sort non-créature, cette créature gagne +1/+1 jusqu'à la fin du tour.)\n{B}{R} : Renvoyez cette carte sur le champ de bataille depuis votre cimetière avec un marqueur « fatalité » sur elle. N'activez que si un adversaire a subi des blessures non-combat ce tour-ci. (Si une créature avec un marqueur « fatalité » sur elle devait mourir, exilez-la à la place.)",
+   "image": "https://cards.scryfall.io/normal/front/0/7/0740658b-c90d-481e-84bd-0b0543066a91.jpg?1790684819"
   }
  },
  {
@@ -2932,6 +3625,11 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/6/4/6471b135-33a8-4005-9a07-ebb74e0bf145.jpg?1788878212",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Ingris Plumedard",
+   "text": "Vol\nÀ chaque fois qu'une créature que vous contrôlez attaque, elle inflige 1 blessure à chaque adversaire.\n{4} : Créez un jeton de créature 2/2 incolore Sorcier et Soldat appelé Cadet. Puis les créatures que vous contrôlez acquièrent la célérité jusqu'à la fin du tour.",
+   "image": "https://cards.scryfall.io/normal/front/5/7/57095d30-00f3-42d3-bcfd-8444a3d176f2.jpg?1790684842"
   }
  },
  {
@@ -2954,6 +3652,11 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/7/d/7d29dfa1-9582-47bc-8f42-62b611bdcc4e.jpg?1789127645",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Charme de Konstrari",
+   "text": "Choisissez l'un -\n* Le Charme de Konstrari inflige 6 blessures à une créature avec le vol ciblée.\n* Mettez deux marqueurs +1/+1 sur une créature ciblée. Elle acquiert le piétinement jusqu'à la fin du tour.\n* Ajoutez {C}{C}{C}.",
+   "image": "https://cards.scryfall.io/normal/front/6/d/6d428d19-f6d6-4955-b099-2d4d90174ec5.jpg?1790684868"
   }
  },
  {
@@ -2986,7 +3689,13 @@
    "name": "Soul Tether",
    "manaCost": "{2}{R/G}",
    "typeLine": "Sorcery",
-   "oracleText": "Create a Heartwood token. (It's a red and green artifact with \"{T}: Add {R} or {G}.\")"
+   "oracleText": "Create a Heartwood token. (It's a red and green artifact with \"{T}: Add {R} or {G}.\")",
+   "fr": {}
+  },
+  "fr": {
+   "name": "Improvisatrice de Konstrari",
+   "text": "Cette créature arrive préparée. (Tant qu'elle est préparée, vous pouvez lancer une copie de son sort. Faire ainsi déprépare la créature.)",
+   "image": "https://cards.scryfall.io/normal/front/5/6/560d0d37-07b6-4a86-b95f-1b53341aa7b1.jpg?1790684894"
   }
  },
  {
@@ -3020,6 +3729,11 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/2/d/2d6ff182-a853-4898-895b-072c89324ca7.jpg?1788878236",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Kwia Vivefleur",
+   "text": "Vol, vigilance, lien de vie, parade {2}\nÀ chaque fois que vous gagnez des points de vie, créez un jeton d'artefact incolore appelé Lotus avec « {T}, sacrifiez ce jeton : Ajoutez trois manas d'une seule couleur de votre choix. » Cette capacité ne se déclenche qu'une seule fois par tour.",
+   "image": "https://cards.scryfall.io/normal/front/d/d/ddf506be-1a63-4109-afd1-a8e61743114b.jpg?1790684919"
   }
  },
  {
@@ -3044,6 +3758,11 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/9/4/94c290ce-252c-42b3-bcb0-c1ef621df566.jpg?1789470861",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Vagabond de l'esprit",
+   "text": "Vol\nCette créature a la vigilance tant que vous contrôlez un planeswalker Jace.\nQuand cette créature arrive, elle se bat contre jusqu'à une créature ciblée qu'un adversaire contrôle. (Chacune inflige un nombre de blessures égal à sa force à l'autre.)",
+   "image": "https://cards.scryfall.io/normal/front/1/1/11aa0c12-164c-4f97-ba14-382fd498a9d1.jpg?1790684947"
   }
  },
  {
@@ -3067,6 +3786,11 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/3/a/3afdc75a-1bf5-4f2f-84eb-d82f77a095cd.jpg?1789127648",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Invocatrice de vide",
+   "text": "Quand cette créature arrive, si vous l'avez lancée, un adversaire ciblé révèle sa main. Vous y choisissez une carte non-terrain. Exilez cette carte.\nSeuil - Tant qu'il y a au moins sept cartes dans votre cimetière, vous pouvez lancer la carte exilée, et du mana de n'importe quel type peut être dépensé pour lancer ce sort.",
+   "image": "https://cards.scryfall.io/normal/front/e/3/e3aca02e-b5a1-4e82-ac90-c51c05a4cc0c.jpg?1790684968"
   }
  },
  {
@@ -3096,7 +3820,13 @@
    "name": "Omit Variables",
    "manaCost": "{U/B}",
    "typeLine": "Sorcery",
-   "oracleText": "Mill three cards. (Put the top three cards of your library into your graveyard.)"
+   "oracleText": "Mill three cards. (Put the top three cards of your library into your graveyard.)",
+   "fr": {}
+  },
+  "fr": {
+   "name": "Façonneuse de paradoxe",
+   "text": "Au début de votre entretien, si cette créature n'est pas préparée, elle devient préparée.\n{2} : Mettez une carte ciblée depuis votre cimetière au-dessous de votre bibliothèque.",
+   "image": "https://cards.scryfall.io/normal/front/6/9/69e69b37-73d5-4b45-86f5-10036057fc85.jpg?1790684997"
   }
  },
  {
@@ -3121,6 +3851,11 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/0/4/04e64af7-cca1-499e-8951-f386e84c8b5b.jpg?1789644850",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Pisteur de sorcière primitif",
+   "text": "Menace (Cette créature ne peut pas être bloquée excepté par deux créatures ou plus.)\nQuand cette créature arrive, meulez quatre cartes. Quand vous faites ainsi, renvoyez sur le champ de bataille, engagée, une carte de terrain ciblée depuis votre cimetière. (Pour meuler quatre cartes, mettez les quatre cartes du dessus de votre bibliothèque dans votre cimetière.)",
+   "image": "https://cards.scryfall.io/normal/front/6/f/6f04bfa6-cd3a-4f41-bef3-9ba184cc5e58.jpg?1790685033"
   }
  },
  {
@@ -3144,6 +3879,11 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/c/f/cf0eec8c-0475-4050-8144-481a9bb13a0f.jpg?1789127661",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Questeuse de potentiel",
+   "text": "À chaque fois que cette créature ou qu'une autre créature que vous contrôlez arrive, surveillez 1. (Regardez la carte du dessus de votre bibliothèque. Vous pouvez la mettre dans votre cimetière.)\n{W}{U} : Renvoyez cette carte sur le champ de bataille depuis votre cimetière avec un marqueur « fatalité » sur elle. N'activez que si vous avez appliqué le regard ou surveillé ce tour-ci. (Si une créature avec un marqueur « fatalité » sur elle devait mourir, exilez-la à la place.)",
+   "image": "https://cards.scryfall.io/normal/front/5/4/542e9443-855b-467b-bd66-28bb8534b187.jpg?1790685063"
   }
  },
  {
@@ -3173,7 +3913,13 @@
    "name": "Peer Review",
    "manaCost": "{2}{W/U}",
    "typeLine": "Sorcery",
-   "oracleText": "Create a 2/2 colorless Wizard Soldier creature token named Cadet. Surveil 1."
+   "oracleText": "Create a 2/2 colorless Wizard Soldier creature token named Cadet. Surveil 1.",
+   "fr": {}
+  },
+  "fr": {
+   "name": "Scrutedestin prudent",
+   "text": "Cette créature arrive préparée.\nÀ chaque fois que vous appliquez le regard ou que vous surveillez, les créatures que vous contrôlez gagnent +1/+0 jusqu'à la fin du tour. Cette capacité ne se déclenche qu'une seule fois par tour.",
+   "image": "https://cards.scryfall.io/normal/front/b/d/bd04c386-dd02-4dfa-8717-24046cbaa8f6.jpg?1790685095"
   }
  },
  {
@@ -3195,6 +3941,11 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/6/8/68fddb6a-86d4-4ebb-907d-fdcaadebc4b3.jpg?1789556898",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Recrutement récursif",
+   "text": "Créez deux jetons de créature 2/2 incolore Sorcier et Soldat appelés Cadet. Si ce sort a été lancé depuis un cimetière, mettez un marqueur +1/+1 sur chacun d'entre eux pour chaque groupe de trois cartes dans votre cimetière.\nFlashback {6}{U}{B} (Vous pouvez lancer cette carte depuis votre cimetière pour son coût de flashback. Exilez-la ensuite.)",
+   "image": "https://cards.scryfall.io/normal/front/9/a/9a55e2f5-e0dc-40c7-9e2b-f0ab411e595e.jpg?1790685135"
   }
  },
  {
@@ -3216,6 +3967,11 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/1/e/1ef12dcf-df50-4da6-8c4c-e2937ba9698e.jpg?1789127651",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Sentinelle du solarium",
+   "text": "À chaque fois qu'un adversaire lance un sort avec une valeur de mana inférieure ou égale à 2, vous gagnez 2 points de vie.",
+   "image": "https://cards.scryfall.io/normal/front/4/3/432ffc1e-3dc3-426f-bd99-af2dc56f5302.jpg?1790685162"
   }
  },
  {
@@ -3235,6 +3991,11 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/5/1/5142bbb6-194c-4b12-b11a-1a21c9fe81a6.jpg?1788260690",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Cellule solitaire",
+   "text": "Quand cet artefact arrive, exilez un permanent non-terrain ciblé avec une valeur de mana inférieure ou égale à 3 qu'un adversaire contrôle jusqu'à ce que cet artefact quitte le champ de bataille.\n{1}, {T}, défaussez-vous d'une carte légendaire : Piochez une carte.",
+   "image": "https://cards.scryfall.io/normal/front/c/d/cd084a0e-2ffe-4294-b109-46616236674b.jpg?1790685185"
   }
  },
  {
@@ -3254,6 +4015,11 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/8/1/81733ff7-e611-43ee-bf38-6bb700676017.jpg?1789127652",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Charme de Plumedard",
+   "text": "Choisissez l'un -\n* Le Charme de Plumedard inflige 3 blessures à n'importe quelle cible.\n* Une créature ciblée acquiert l'initiative et le contact mortel jusqu'à la fin du tour.\n* Créez un jeton de créature 2/2 incolore Sorcier et Soldat appelé Cadet. Il acquiert la célérité jusqu'à la fin du tour.",
+   "image": "https://cards.scryfall.io/normal/front/e/f/ef391741-6075-46fe-9eb5-793f188a3dc1.jpg?1790685213"
   }
  },
  {
@@ -3282,7 +4048,13 @@
    "name": "Vicious Verse",
    "manaCost": "{B/R}",
    "typeLine": "Sorcery",
-   "oracleText": "Vicious Verse deals 1 damage to target opponent."
+   "oracleText": "Vicious Verse deals 1 damage to target opponent.",
+   "fr": {}
+  },
+  "fr": {
+   "name": "Voxmancien de Plumedard",
+   "text": "Au début de votre entretien, si cette créature n'est pas préparée, elle devient préparée. (Tant qu'elle est préparée, vous pouvez lancer une copie de son sort. Faire ainsi déprépare la créature.)",
+   "image": "https://cards.scryfall.io/normal/front/f/c/fc66fd58-bb18-452f-8f40-e9740cdcec4e.jpg?1790685236"
   }
  },
  {
@@ -3302,6 +4074,11 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/a/7/a7d78297-7411-4ec5-8931-a25146869d5b.jpg?1789385971",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Vitriol piquant",
+   "text": "Le Vitriol piquant inflige 2 blessures à un adversaire ciblé. Ce joueur révèle sa main. Vous y choisissez une carte non-terrain. Il se défausse de cette carte.",
+   "image": "https://cards.scryfall.io/normal/front/a/e/aea12d8a-a9e2-4699-9e31-4610adff168f.jpg?1790685264"
   }
  },
  {
@@ -3323,6 +4100,11 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/b/3/b3d33df2-a77b-4c2e-ba7f-2cc9c1505f9b.jpg?1788878215",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Résistance de Tam",
+   "text": "Ciblez jusqu'à une créature. Mettez un marqueur +1/+1 sur elle. Elle acquiert la vigilance jusqu'à la fin du tour.\nRenforcez Jace 4. (Mettez quatre marqueurs « loyauté » sur un jeton Jace que vous contrôlez. Si vous n'en contrôlez pas, créez d'abord un jeton de planeswalker bleu Jace avec « [-1] : Surveillez 1 » et « [-3] : Piochez une carte. »)",
+   "image": "https://cards.scryfall.io/normal/front/c/c/cc23f3a4-94ec-467b-8abc-b3dea200470e.jpg?1790685292"
   }
  },
  {
@@ -3348,6 +4130,11 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/1/7/1703306d-6a3d-4ab8-bf58-a9992236ef0f.jpg?1789385792",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Ancremage titulaire",
+   "text": "Quand cette créature arrive, vous pouvez sacrifier un terrain. Si vous faites ainsi, créez deux jetons Boiscœur engagés. (Ce sont des artefacts rouges et verts avec « {T} : Ajoutez {R} ou {G}. »)\nEngagez deux artefacts dégagés que vous contrôlez : Mettez deux marqueurs +1/+1 sur cette créature.",
+   "image": "https://cards.scryfall.io/normal/front/3/a/3afb44de-e9f6-41f1-965f-2a4287a89952.jpg?1790685320"
   }
  },
  {
@@ -3369,6 +4156,11 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/2/8/2835c9aa-0904-44db-8da2-e8c4e04201aa.jpg?1789127659",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Charme de Théorix",
+   "text": "Choisissez l'un -\n* Contrecarrez un sort non-créature ciblé à moins que son contrôleur ne paie {2}.\n* Une créature ciblée gagne -2/-2 jusqu'à la fin du tour.\n* Meulez trois cartes, puis piochez une carte. (Pour meuler trois cartes, mettez les trois cartes du dessus de votre bibliothèque dans votre cimetière.)",
+   "image": "https://cards.scryfall.io/normal/front/6/7/6715be08-4174-4931-991b-7077de8aa63d.jpg?1790685349"
   }
  },
  {
@@ -3399,7 +4191,13 @@
    "name": "Omit Variables",
    "manaCost": "{U/B}",
    "typeLine": "Sorcery",
-   "oracleText": "Mill three cards. (Put the top three cards of your library into your graveyard.)"
+   "oracleText": "Mill three cards. (Put the top three cards of your library into your graveyard.)",
+   "fr": {}
+  },
+  "fr": {
+   "name": "Métamage de Théorix",
+   "text": "Cette créature arrive préparée. (Tant qu'elle est préparée, vous pouvez lancer une copie de son sort. Faire ainsi déprépare la créature.)\nSeuil - Cette créature gagne +1/+0 et a le vol tant qu'il y a au moins sept cartes dans votre cimetière.",
+   "image": "https://cards.scryfall.io/normal/front/d/9/d9ca86c9-de3e-4373-82de-bd8f69221944.jpg?1790685371"
   }
  },
  {
@@ -3421,6 +4219,11 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/5/5/55f85984-0137-4899-8993-bbc8c4794d33.jpg?1789556940",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Vision jumelée",
+   "text": "Piochez une carte. Si ce sort n'a pas été lancé depuis votre main, piochez deux cartes à la place.\nFlashback-{1}{U/R}{U/R}, défaussez-vous d'une carte. (Vous pouvez lancer cette carte depuis votre cimetière pour son coût de flashback. Exilez-la ensuite.)",
+   "image": "https://cards.scryfall.io/normal/front/5/f/5f060a22-fb0b-4dd3-9188-8fe47e18b917.jpg?1790685403"
   }
  },
  {
@@ -3440,6 +4243,11 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/c/7/c7c0765d-38fd-4d7b-bfb4-49b10ff5939b.jpg?1789614785",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Destins corrompus",
+   "text": "Détruisez un permanent non-terrain ciblé. Mettez un marqueur +1/+1 sur chaque créature qu'un joueur ciblé contrôle.",
+   "image": "https://cards.scryfall.io/normal/front/7/4/74be53fa-4207-41d1-88ab-c231a18ff1c0.jpg?1790685427"
   }
  },
  {
@@ -3463,6 +4271,11 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/a/7/a7ad622a-42ff-48fa-ae95-12e0a5bd9387.jpg?1788878220",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Uldaros Théorix",
+   "text": "Vol\nQuand Uldaros Théorix arrive, si vous l'avez lancé, exilez jusqu'à une carte non-terrain ciblée de chaque type de carte depuis votre cimetière. Copiez ces cartes. Vous pouvez lancer n'importe quel nombre de sorts avec une valeur de mana totale inférieure ou égale à 6 parmi ces copies sans payer leur coût de mana. (Les sorts de permanent lancés de cette manière deviennent des jetons.)",
+   "image": "https://cards.scryfall.io/normal/front/c/0/c0e3defa-889a-4e64-9d87-dd664e79f1d3.jpg?1790685458"
   }
  },
  {
@@ -3484,6 +4297,11 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/2/b/2b198e10-b507-4314-a29c-a219f06e48b7.jpg?1789127656",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Charme de Vivefleur",
+   "text": "Choisissez l'un -\n* Un permanent ciblé que vous contrôlez acquiert la défense talismanique et l'indestructible jusqu'à la fin du tour.\n* Vous piochez une carte et vous gagnez 3 points de vie.\n* Mettez un marqueur +1/+1 sur une créature ciblée que vous contrôlez. Elle se bat ensuite contre une créature ciblée qu'un adversaire contrôle. (Chacune inflige un nombre de blessures égal à sa force à l'autre.)",
+   "image": "https://cards.scryfall.io/normal/front/3/c/3cbba9fc-baba-4de0-b858-288a4a4cd48d.jpg?1790685483"
   }
  },
  {
@@ -3512,7 +4330,13 @@
    "name": "Seed Suture",
    "manaCost": "{G/W}",
    "typeLine": "Sorcery",
-   "oracleText": "Put a +1/+1 counter on target creature. You gain 1 life."
+   "oracleText": "Put a +1/+1 counter on target creature. You gain 1 life.",
+   "fr": {}
+  },
+  "fr": {
+   "name": "Avant-garde de Vivefleur",
+   "text": "Cette créature arrive préparée. (Tant qu'elle est préparée, vous pouvez lancer une copie de son sort. Faire ainsi déprépare la créature.)\nChaque créature que vous contrôlez avec un marqueur +1/+1 sur elle a la vigilance.",
+   "image": "https://cards.scryfall.io/normal/front/d/d/ddf43bf0-09f0-44a3-85e8-50d0a83b9aa4.jpg?1790685511"
   }
  },
  {
@@ -3532,6 +4356,11 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/a/8/a803dbe7-153a-4e92-ad4d-c2babebe003d.jpg?1789127665",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Triomphe vindicatif",
+   "text": "Exilez une cible, créature ou planeswalker. Si la valeur de mana de ce permanent était inférieure ou égale à 3, renvoyez-le sur le champ de bataille, engagé et sous votre contrôle. Exilez-le au début de la prochaine étape de fin.",
+   "image": "https://cards.scryfall.io/normal/front/1/2/12201b6b-59c8-40be-bf51-2b795150a5b3.jpg?1790685538"
   }
  },
  {
@@ -3553,6 +4382,11 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/c/6/c63d5b0e-ee72-42ed-aa7e-484ba84507cd.jpg?1789007648",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Lames du guerrier",
+   "text": "Quand cet équipement arrive, il inflige 3 blessures à n'importe quelle cible et vous gagnez 3 points de vie.\nLa créature équipée gagne +2/+1.\nÉquipement {3}. Cette capacité coûte {1} de moins à activer pour chaque marqueur +1/+1 sur la créature qu'elle cible.",
+   "image": "https://cards.scryfall.io/normal/front/a/3/a3009975-7b35-4a1a-807f-a72cfe4a9b26.jpg?1790685565"
   }
  },
  {
@@ -3581,7 +4415,13 @@
    "name": "Vicious Verse",
    "manaCost": "{B/R}",
    "typeLine": "Sorcery",
-   "oracleText": "Vicious Verse deals 1 damage to target opponent."
+   "oracleText": "Vicious Verse deals 1 damage to target opponent.",
+   "fr": {}
+  },
+  "fr": {
+   "name": "Forgemots cingleuse",
+   "text": "Cette créature arrive préparée. (Tant qu'elle est préparée, vous pouvez lancer une copie de son sort. Faire ainsi déprépare la créature.)\nTant qu'un adversaire a subi des blessures non-combat ce tour-ci, cette créature a le vol et la célérité.",
+   "image": "https://cards.scryfall.io/normal/front/8/7/8768f4a9-b85f-4332-81b5-2d44904bfc24.jpg?1790685590"
   }
  },
  {
@@ -3614,7 +4454,13 @@
    "name": "Soul Tether",
    "manaCost": "{2}{R/G}",
    "typeLine": "Sorcery",
-   "oracleText": "Create a Heartwood token. (It's a red and green artifact with \"{T}: Add {R} or {G}.\")"
+   "oracleText": "Create a Heartwood token. (It's a red and green artifact with \"{T}: Add {R} or {G}.\")",
+   "fr": {}
+  },
+  "fr": {
+   "name": "Prodige menuisière",
+   "text": "Au début de votre entretien, si cette créature n'est pas préparée, elle devient préparée. (Tant qu'elle est préparée, vous pouvez lancer une copie de son sort. Faire ainsi déprépare la créature.)",
+   "image": "https://cards.scryfall.io/normal/front/e/a/ea5bd751-7b4f-4f8e-9abb-60ea92c27f30.jpg?1790685619"
   }
  },
  {
@@ -3633,6 +4479,11 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/4/d/4d4b3bf7-a149-4099-b97d-4e36a87dfa60.jpg?1789385875",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Sentinelle d'arrière-pensée",
+   "text": "{2} : Cette créature acquiert le vol jusqu'à la fin du tour.\nÀ chaque fois que cette créature attaque, exilez jusqu'à une carte ciblée depuis un cimetière.",
+   "image": "https://cards.scryfall.io/normal/front/e/e/eea34f52-89b0-4b5b-8652-61b9a9eff658.jpg?1790685652"
   }
  },
  {
@@ -3653,6 +4504,11 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/0/2/024bce1e-a5f3-4292-bc17-d0355a5d65e1.jpg?1789614867",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Arbitre des archives",
+   "text": "Vol\nQuand cette créature arrive, choisissez l'un -\n* Détruisez un permanent non-créature, non-terrain ciblé.\n* Vous gagnez 4 points de vie.",
+   "image": "https://cards.scryfall.io/normal/front/b/d/bda8a7ac-0064-49a8-9240-67932b68d3b5.jpg?1790685683"
   }
  },
  {
@@ -3673,6 +4529,11 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/c/3/c3192390-1518-49fc-8716-f2c7a0384f39.jpg?1789646811",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Codie, codex vorace",
+   "text": "À chaque fois que vous lancez un sort préparé, copiez-le. Vous pouvez choisir de nouvelles cibles pour cette copie.\n{W}{U}{B}{R}{G}, {T} : Chaque créature que vous contrôlez devient préparée. (Seules les créatures avec des sorts de préparation peuvent devenir préparées.)",
+   "image": "https://cards.scryfall.io/normal/front/4/3/43dc88fc-8b16-4347-9a3a-c69b2bff65f8.jpg?1790685708"
   }
  },
  {
@@ -3689,6 +4550,11 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/d/7/d71d250f-c0e0-44b2-877c-76f3bcab4f34.jpg?1789385887",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Le pivot de l'Échovers",
+   "text": "Quand Le pivot de l'Échovers arrive, piochez une carte, puis défaussez-vous d'une carte.\n{5}, {T}, exilez Le pivot de l'Échovers : Détruisez toutes les créatures. N'activez que lorsque vous pourriez lancer un rituel.",
+   "image": "https://cards.scryfall.io/normal/front/0/e/0eaa1205-073b-46fb-9cfc-d35a25fac8c6.jpg?1790685739"
   }
  },
  {
@@ -3707,6 +4573,11 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/0/e/0edba64a-39cf-4a8d-ba20-4f7da10b6c3d.jpg?1789614864",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Œil de Jace",
+   "text": "Au début de votre entretien, surveillez 1. Puis, s'il y a au moins sept cartes dans votre cimetière, sacrifiez cet artefact, il inflige 2 blessures à chaque adversaire, et vous gagnez 2 points de vie. (Pour surveiller 1, regardez la carte du dessus de votre bibliothèque. Vous pouvez la mettre dans votre cimetière.)",
+   "image": "https://cards.scryfall.io/normal/front/b/8/b8e9c3df-9295-4f94-8168-fca668653e32.jpg?1790685761"
   }
  },
  {
@@ -3727,6 +4598,11 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/b/6/b6331218-dbb8-44a9-8ba5-5fb1ab41c5c0.jpg?1788878239",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Gardien de l'Heure de silence",
+   "text": "Quand cette créature arrive, renforcez Jace 2. (Mettez deux marqueurs « loyauté » sur un jeton Jace que vous contrôlez. Si vous n'en contrôlez pas, créez d'abord un jeton de planeswalker bleu Jace avec « [-1] : Surveillez 1 » et « [-3] : Piochez une carte. »)",
+   "image": "https://cards.scryfall.io/normal/front/d/f/dffb71b1-8e76-4493-a599-f944f8c1a016.jpg?1790685794"
   }
  },
  {
@@ -3745,6 +4621,11 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/5/d/5d4a8e5f-0024-4da3-a2f5-edb48b12e733.jpg?1789556949",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Bibliothèque vivante",
+   "text": "{6}, sacrifiez cette créature : choisissez une cible qu'un adversaire contrôle, créature ou planeswalker. Son propriétaire la mélange dans sa bibliothèque.",
+   "image": "https://cards.scryfall.io/normal/front/0/a/0a925977-a132-4af5-b802-fba79983a1e9.jpg?1790685819"
   }
  },
  {
@@ -3763,6 +4644,11 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/8/b/8b07409a-1dce-461d-95e4-1130521ff4c4.jpg?1789556945",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Voile volante de carabin",
+   "text": "La créature équipée gagne +1/+0 et a le vol et « À chaque fois que cette créature attaque, vous gagnez 1 point de vie. »\nÉquipement {2} ({2} : Attachez à une créature ciblée que vous contrôlez. N'attachez l'équipement que lorsque vous pourriez lancer un rituel.)",
+   "image": "https://cards.scryfall.io/normal/front/1/b/1bf8f898-83c0-4500-adf0-da66b2979c9d.jpg?1790685846"
   }
  },
  {
@@ -3786,6 +4672,11 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/d/6/d68eab2e-89dd-4377-b7af-01512b1804a0.jpg?1789385977",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Volume murmurant",
+   "text": "{T} : Ajoutez un mana de la couleur de votre choix.\n{2}, {T}, défaussez-vous d'une carte : Piochez une carte.",
+   "image": "https://cards.scryfall.io/normal/front/f/8/f8abc442-fcd7-41d5-9b6f-af0413db6ce9.jpg?1790685869"
   }
  },
  {
@@ -3806,6 +4697,11 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/3/2/3223e5db-5cc4-42f9-ae9e-ff58abc7c390.jpg?1789556950",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Salle commune dédiée",
+   "text": "Ce terrain arrive engagé à moins que vous ne contrôliez un planeswalker.\n{T} : Ajoutez {R} ou {W}.",
+   "image": "https://cards.scryfall.io/normal/front/8/e/8e68cd42-618b-47f0-8850-af51448b48a9.jpg?1790685900"
   }
  },
  {
@@ -3826,6 +4722,11 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/5/6/56dae4c4-3e71-4a32-979b-4e26d9c9e96c.jpg?1788878239",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Plage désertée",
+   "text": "Ce terrain arrive engagé à moins que vous ne contrôliez au moins deux autres terrains.\n{T} : Ajoutez {W} ou {U}.",
+   "image": "https://cards.scryfall.io/normal/front/c/1/c1f908e7-9759-40f5-9415-6bd167f147fe.jpg?1790685927"
   }
  },
  {
@@ -3846,6 +4747,11 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/5/1/5140f962-62f3-40fd-a322-44896c7e2613.jpg?1789556955",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Annexe de Fortefin",
+   "text": "Ce terrain arrive engagé à moins que vous ne contrôliez un planeswalker.\n{T} : Ajoutez {W} ou {U}.",
+   "image": "https://cards.scryfall.io/normal/front/5/7/57b918ba-a786-4b1f-a748-d86e9a8a1eee.jpg?1790685952"
   }
  },
  {
@@ -3866,6 +4772,11 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/e/6/e6ca6c3e-f145-42d6-8a17-90770c15afaf.jpg?1789556960",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Salle commune redoutable",
+   "text": "Ce terrain arrive engagé à moins que vous ne contrôliez un planeswalker.\n{T} : Ajoutez {B} ou {G}.",
+   "image": "https://cards.scryfall.io/normal/front/e/e/eea1b1b6-be30-4824-aba0-0d5fbe97ce2e.jpg?1790685978"
   }
  },
  {
@@ -3885,6 +4796,11 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/4/a/4a771010-b397-4849-ac9b-08e4dd5d6a72.jpg?1789644859",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Salle des échos",
+   "text": "{T} : Ajoutez {C}.\n{5} : Ce terrain devient une copie d'une créature ciblée que vous contrôlez jusqu'à la fin du tour. La « règle de légende » ne s'applique pas aux permanents que vous contrôlez ce tour-ci.",
+   "image": "https://cards.scryfall.io/normal/front/4/2/42f2f429-1416-440d-95f4-22c94f4a9613.jpg?1790686005"
   }
  },
  {
@@ -3905,6 +4821,11 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/a/4/a4e4966b-8963-4fac-a8bf-e778e063c7dd.jpg?1788878241",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Contreforts hantés",
+   "text": "Ce terrain arrive engagé à moins que vous ne contrôliez au moins deux autres terrains.\n{T} : Ajoutez {B} ou {R}.",
+   "image": "https://cards.scryfall.io/normal/front/8/0/80f7aaba-91cd-47bf-b9b3-531b0b557465.jpg?1790686032"
   }
  },
  {
@@ -3926,6 +4847,11 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/9/1/9128ce00-6744-4d36-bfbe-ef75d78110b0.jpg?1789556985",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Arène de duels de Hexhaven",
+   "text": "{T} : Ajoutez {C}.\n{2}, {T} : Une créature ciblée qui a attaqué ce tour-ci devient préparée. N'activez que lorsque vous pourriez lancer un rituel. (Seules les créatures avec des sorts de préparation peuvent devenir préparées.)\n{4}, {T} : Une créature ciblée devient préparée.",
+   "image": "https://cards.scryfall.io/normal/front/4/6/46330f36-2d1f-4c7a-a782-505512ab0881.jpg?1790686054"
   }
  },
  {
@@ -3946,6 +4872,11 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/8/4/84ea799a-faa2-4ff1-a933-432d4ee31a3b.jpg?1789556991",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Salle commune novatrice",
+   "text": "Ce terrain arrive engagé à moins que vous ne contrôliez un planeswalker.\n{T} : Ajoutez {U} ou {R}.",
+   "image": "https://cards.scryfall.io/normal/front/e/d/edfa1765-bf16-4954-84b5-f498e387ca7e.jpg?1790686084"
   }
  },
  {
@@ -3966,6 +4897,11 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/3/9/39c805e3-82cd-42a9-80fe-8d81712a94ea.jpg?1789556993",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Annexe de Konstrari",
+   "text": "Ce terrain arrive engagé à moins que vous ne contrôliez un planeswalker.\n{T} : Ajoutez {R} ou {G}.",
+   "image": "https://cards.scryfall.io/normal/front/5/6/56304ef6-146d-45c5-bb4d-2c5935349624.jpg?1790686106"
   }
  },
  {
@@ -3986,6 +4922,11 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/9/3/93ac525e-1919-43dd-aba4-073b7e4c1768.jpg?1789557002",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Salle commune méticuleuse",
+   "text": "Ce terrain arrive engagé à moins que vous ne contrôliez un planeswalker.\n{T} : Ajoutez {W} ou {B}.",
+   "image": "https://cards.scryfall.io/normal/front/b/9/b967d914-9e3e-4c15-9d76-889b97dc71b9.jpg?1790686139"
   }
  },
  {
@@ -4006,6 +4947,11 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/1/7/178e61e4-472f-42cd-9d3b-4880c2acc527.jpg?1788878246",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Terre agricole envahie",
+   "text": "Ce terrain arrive engagé à moins que vous ne contrôliez au moins deux autres terrains.\n{T} : Ajoutez {G} ou {W}.",
+   "image": "https://cards.scryfall.io/normal/front/7/6/76042cb5-e3e0-45b6-82ad-05add22de1ec.jpg?1790686164"
   }
  },
  {
@@ -4026,6 +4972,11 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/e/3/e3c8a8b6-23ba-45ad-80d1-8e2dc79897f7.jpg?1788878243",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Val de Rocheruine",
+   "text": "Ce terrain arrive engagé à moins que vous ne contrôliez au moins deux autres terrains.\n{T} : Ajoutez {R} ou {G}.",
+   "image": "https://cards.scryfall.io/normal/front/d/d/dd390420-bb52-424e-a878-ba9ce4e785a7.jpg?1790686188"
   }
  },
  {
@@ -4045,6 +4996,11 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/d/b/db61361b-bd12-453e-abc2-bbe09b66e3d9.jpg?1789514074",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Canopée du Roulis",
+   "text": "Ce terrain arrive engagé.\nÀ chaque fois qu'une forêt que vous contrôlez arrive, si vous contrôlez au moins cinq autres forêts, une créature ciblée que vous contrôlez gagne +3/+3 jusqu'à la fin du tour.\n{T} : Ajoutez {G}.",
+   "image": "https://cards.scryfall.io/normal/front/5/8/5807bdc0-190b-4793-b20f-05233042bc72.jpg?1790686223"
   }
  },
  {
@@ -4068,6 +5024,11 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/9/a/9a467560-6676-4fc2-9400-768a79650aa4.jpg?1789557010",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Salle de refuge",
+   "text": "Ce terrain arrive engagé. Au moment où il arrive, choisissez une couleur.\n{T} : Ajoutez un mana de la couleur choisie.\n{5}, {T}, sacrifiez ce terrain : Mettez deux marqueurs +1/+1 sur une créature ciblée. N'activez que lorsque vous pourriez lancer un rituel.",
+   "image": "https://cards.scryfall.io/normal/front/4/1/41c1d44a-b991-4b4c-8dea-b08dde9efdc5.jpg?1790686255"
   }
  },
  {
@@ -4088,6 +5049,11 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/9/e/9e944c5b-68ac-4a30-bbd4-09a4288319ce.jpg?1788878245",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Marécage aux épaves",
+   "text": "Ce terrain arrive engagé à moins que vous ne contrôliez au moins deux autres terrains.\n{T} : Ajoutez {U} ou {B}.",
+   "image": "https://cards.scryfall.io/normal/front/7/b/7bba62f3-56c0-430c-80bc-dd82d5ab0c6e.jpg?1790686283"
   }
  },
  {
@@ -4108,6 +5074,11 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/6/e/6ede3143-69ac-4cbe-922a-d25b07c26da7.jpg?1789557046",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Annexe de Plumedard",
+   "text": "Ce terrain arrive engagé à moins que vous ne contrôliez un planeswalker.\n{T} : Ajoutez {B} ou {R}.",
+   "image": "https://cards.scryfall.io/normal/front/d/e/de6f712e-728a-423f-8b34-482775de5c2b.jpg?1790686316"
   }
  },
  {
@@ -4129,6 +5100,11 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/2/2/22db5bba-46c9-4a26-821d-303ddb386ea4.jpg?1788878256",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Sanctum du Théoricien",
+   "text": "({T} : Ajoutez {U}.)\nAu moment où ce terrain arrive, vous pouvez contempler un Jace. Si vous ne le faites pas, ce terrain arrive engagé. (Pour contempler un Jace, choisissez un Jace que vous contrôlez ou révélez une carte de Jace de votre main.)\n{2}{U}, {T} : Renforcez Jace 2.",
+   "image": "https://cards.scryfall.io/normal/front/1/f/1feeb11c-3c92-470e-abcf-95ef98c1fc86.jpg?1790686339"
   }
  },
  {
@@ -4149,6 +5125,11 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/9/7/97bbbd23-ecb1-4407-ac14-dede08532a1e.jpg?1789557008",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Annexe de Théorix",
+   "text": "Ce terrain arrive engagé à moins que vous ne contrôliez un planeswalker.\n{T} : Ajoutez {U} ou {B}.",
+   "image": "https://cards.scryfall.io/normal/front/2/0/20d85dd7-5b40-4987-8fb3-c66d26cefe40.jpg?1790686370"
   }
  },
  {
@@ -4169,6 +5150,11 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/b/5/b57d5be7-3157-4b49-aeb8-d7368ca7e9dd.jpg?1789557014",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Salle commune changeante",
+   "text": "Ce terrain arrive engagé à moins que vous ne contrôliez un planeswalker.\n{T} : Ajoutez {G} ou {U}.",
+   "image": "https://cards.scryfall.io/normal/front/2/f/2feb7d6f-681b-4d09-9b5e-1e2e6836fd2d.jpg?1790686393"
   }
  },
  {
@@ -4189,6 +5175,11 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/d/b/db8c7bdd-76cd-4be0-ae0d-d430e9a5fe7a.jpg?1789557019",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Annexe de Vivefleur",
+   "text": "Ce terrain arrive engagé à moins que vous ne contrôliez un planeswalker.\n{T} : Ajoutez {G} ou {W}.",
+   "image": "https://cards.scryfall.io/normal/front/e/8/e80f103d-6e12-4212-a2d5-847b55666a5e.jpg?1790686423"
   }
  },
  {
@@ -4208,6 +5199,11 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/a/5/a5e1a7dd-8c49-4435-935c-bcc78704082b.jpg?1788329189",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Ajani résolu",
+   "text": "À chaque fois que vous gagnez des points de vie, mettez un marqueur « loyauté » sur Ajani.\n0: Vous gagnez 1 point de vie.\n-4: Créez un jeton de créature 2/2 blanche Chat et Soldat appelé Frère de bande d'Ajani avec « À chaque fois que vous gagnez des points de vie, mettez un marqueur +1/+1 sur ce jeton. »\n-10: Vous gagnez un emblème avec « Les créatures que vous contrôlez gagnent +2/+2. »",
+   "image": "https://cards.scryfall.io/normal/front/4/1/410dd526-e36e-4296-afe3-502b2f4b04e1.jpg?1790686452"
   }
  },
  {
@@ -4230,6 +5226,11 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/d/5/d5cb9810-3c2d-4ae4-b8b6-0155ca3f47ad.jpg?1789127178",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Danitha, épée d'espoir",
+   "text": "Initiative\nÀ chaque fois que vous lancez un sort d'équipement ou un sort qui cible une créature que vous contrôlez, piochez une carte. Cette capacité ne se déclenche qu'une seule fois par tour.",
+   "image": "https://cards.scryfall.io/normal/front/c/4/c4365c37-8ab2-4856-b8d2-523fc31be3dc.jpg?1790686477"
   }
  },
  {
@@ -4250,6 +5251,11 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/a/9/a9f3aa55-908f-42db-8135-4201433df850.jpg?1789014423",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Ghalta l'inamovible",
+   "text": "Ce sort coûte {X} de moins à lancer, X étant l'endurance la plus élevée parmi les créatures que vous contrôlez.\nLes créatures que vous contrôlez peuvent attaquer comme si elles n'avaient pas le défenseur.\nChaque créature que vous contrôlez avec une endurance supérieure à sa force attribue un nombre de blessures de combat égal à son endurance à la place de sa force.",
+   "image": "https://cards.scryfall.io/normal/front/7/f/7f609a65-ea6a-41d6-b841-58f9c9fe6525.jpg?1790686505"
   }
  },
  {
@@ -4275,6 +5281,11 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/7/6/768c0e64-9907-417a-a763-c836fdf36883.jpg?1789127685",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Mémorial de Gideon",
+   "text": "Les jetons de créature que vous contrôlez gagnent +1/+0 et ont la vigilance.\n{T} : Ajoutez un mana de la couleur de votre choix. Ne dépensez ce mana que pour lancer un sort de planeswalker.\n{1}{W}, défaussez-vous de cette carte : Elle inflige 4 blessures à une créature attaquante ou bloqueuse ciblée.",
+   "image": "https://cards.scryfall.io/normal/front/d/9/d94aa343-1658-48d1-abbb-4e89850b5273.jpg?1790686526"
   }
  },
  {
@@ -4297,6 +5308,11 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/9/2/920703fd-2a2f-454b-8829-af8f2afda4f4.jpg?1789568532",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Koth de la ferme",
+   "text": "Toucheterre - À chaque fois qu'un terrain que vous contrôlez arrive, vous gagnez 1 point de vie.\nÀ chaque fois qu'une plaine que vous contrôlez arrive, mettez un marqueur +1/+1 sur une créature ciblée.",
+   "image": "https://cards.scryfall.io/normal/front/e/1/e1d904c3-aa0a-407e-877e-60f83a26ae56.jpg?1790686556"
   }
  },
  {
@@ -4317,6 +5333,11 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/7/0/70d8c400-87dc-4f15-808f-e54a95d779fc.jpg?1788329194",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Liliana la vertueuse",
+   "text": "À chaque fois qu'une autre créature ou qu'un autre planeswalker que vous contrôlez arrive, vous gagnez 1 point de vie.\n{1}, {T}, défaussez-vous d'une carte : Une autre cible que vous contrôlez, créature ou planeswalker, acquiert la défense talismanique jusqu'à la fin du tour.",
+   "image": "https://cards.scryfall.io/normal/front/c/a/ca497a03-2b5f-4539-abaa-4fb81757a2f8.jpg?1790686580"
   }
  },
  {
@@ -4339,6 +5360,11 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/8/6/86a3866e-68a8-402c-baf0-1908e98e3995.jpg?1789127693",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Lyra, archange de l'aube",
+   "text": "Vol\nÀ chaque fois que vous gagnez des points de vie, mettez un marqueur +1/+1 sur chaque ange que vous contrôlez.",
+   "image": "https://cards.scryfall.io/normal/front/9/7/97bedd27-21db-418c-8990-1becf102057a.jpg?1790686608"
   }
  },
  {
@@ -4361,6 +5387,11 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/6/9/699874e3-1ccf-4a6c-8371-61040de82d08.jpg?1789645598",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "La Sauveteuse, première intervenante",
+   "text": "Vol\n{T} : Renvoyez un autre permanent ciblé que vous contrôlez dans la main de son propriétaire. N'activez que pendant votre tour.",
+   "image": "https://cards.scryfall.io/normal/front/9/1/910a9422-4354-452a-aaf5-597a83ebea94.jpg?1790686632"
   }
  },
  {
@@ -4383,6 +5414,11 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/0/7/07572be0-6610-493c-a21e-14b78e9805c9.jpg?1789645608",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Saheeli, consule de la supervision",
+   "text": "Vol\nÀ chaque fois que vous appliquez le regard ou que vous surveillez, créez un jeton de créature-artefact 1/1 incolore Mécanoptère avec le vol. Cette capacité ne se déclenche qu'une seule fois par tour.",
+   "image": "https://cards.scryfall.io/normal/front/3/f/3f722687-283a-45f9-8f76-a8548a8d950b.jpg?1790686659"
   }
  },
  {
@@ -4405,6 +5441,11 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/5/f/5f7521d7-9f1f-4f03-b2ea-dd2a1b1e4e5b.jpg?1789471515",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Teyo, expert en boucliers de lumière",
+   "text": "Flash\nQuand Teyo arrive, un permanent ciblé que vous contrôlez acquiert la défense talismanique jusqu'à la fin du tour. Mettez un marqueur +1/+1 sur lui si c'est une créature. Mettez un marqueur « loyauté » sur lui si c'est un planeswalker. (Il ne peut pas être la cible de sorts ou de capacités que vos adversaires contrôlent.)",
+   "image": "https://cards.scryfall.io/normal/front/b/5/b58006f4-c12d-43f3-b2e4-1fce7c9b0555.jpg?1790686686"
   }
  },
  {
@@ -4427,6 +5468,11 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/8/0/80226231-9e70-430e-aabc-f262f70b9226.jpg?1789127700",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Thalia, la survivante",
+   "text": "Lien de vie\nLes sorts non-créature que vos adversaires lancent coûtent {1} de plus à lancer.",
+   "image": "https://cards.scryfall.io/normal/front/b/3/b300fefa-8729-4d37-9622-7c2b46942b27.jpg?1790686709"
   }
  },
  {
@@ -4449,6 +5495,11 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/7/c/7ca95235-6e54-4ff8-bc2e-6a3d483ff007.jpg?1789729766",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Tomik, mageloi d'Orzhov",
+   "text": "Vol\nLes planeswalkers que vous contrôlez ont « Pas plus d'une créature ne peut attaquer ce planeswalker à chaque combat. »\n{T} : Une créature ciblée avec un marqueur +1/+1 sur elle acquiert le vol jusqu'à la fin du tour.",
+   "image": "https://cards.scryfall.io/normal/front/e/7/e79c716f-037e-4cea-bbeb-f5e9766f7d67.jpg?1790686740"
   }
  },
  {
@@ -4469,6 +5520,11 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/5/0/50326a2a-7e10-464b-a97e-e880bda0558c.jpg?1789729503",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Voie de la guérisseuse",
+   "text": "Quand la Voie de la guérisseuse arrive, renforcez Jace 5. (Mettez cinq marqueurs « loyauté » sur un jeton Jace que vous contrôlez. Si vous n'en contrôlez pas, créez d'abord un jeton de planeswalker bleu Jace avec « [-1] : Surveillez 1 » et « [-3] : Piochez une carte. »)\nLes planeswalkers que vous contrôlez ont « [-2] : Créez un jeton de créature 2/2 incolore Sorcier et Soldat appelé Cadet. Surveillez 1. »",
+   "image": "https://cards.scryfall.io/normal/front/4/b/4b17c230-686f-4fd3-8595-06c7c5475454.jpg?1790686763"
   }
  },
  {
@@ -4489,6 +5545,11 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/1/a/1a59d5b1-12d6-486b-bd29-ca371359addd.jpg?1789729554",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Voie du mentor",
+   "text": "Quand la Voie du mentor arrive, renforcez Jace 5. (Mettez cinq marqueurs « loyauté » sur un jeton Jace que vous contrôlez. Si vous n'en contrôlez pas, créez d'abord un jeton de planeswalker bleu Jace avec « [-1] : Surveillez 1 » et « [-3] : Piochez une carte. »)\nÀ chaque fois que vous gagnez des points de vie, mettez un marqueur « loyauté » sur chaque planeswalker que vous contrôlez.",
+   "image": "https://cards.scryfall.io/normal/front/e/8/e89f68e5-dff2-4178-849a-92ddae1576df.jpg?1790686789"
   }
  },
  {
@@ -4509,6 +5570,11 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/3/8/384f3b7d-8d7f-41bf-bebd-64e8babe7fca.jpg?1789470881",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Yoshimaru, compagnon apprécié",
+   "text": "Si au moins un marqueur +1/+1 devait être mis sur une créature que vous contrôlez, autant de marqueurs +1/+1 plus un sont mis sur elle à la place.\n{6} : Mettez un marqueur +1/+1 sur une créature légendaire ciblée.",
+   "image": "https://cards.scryfall.io/normal/front/3/9/39c583f8-f055-4a5d-9a4c-d7db4b015216.jpg?1790686814"
   }
  },
  {
@@ -4529,6 +5595,11 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/c/c/ccbe92a5-42bc-4228-9d5a-212df2f5dc15.jpg?1789128047",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Yuriko, lame des puissants",
+   "text": "Pendant le combat, les joueurs ne peuvent pas lancer de sorts ou activer de capacités qui ne sont pas des capacités de mana.\nÀ chaque fois qu'une créature que vous contrôlez attaque un joueur seule, elle acquiert la double initiative jusqu'à la fin du tour.",
+   "image": "https://cards.scryfall.io/normal/front/a/9/a9840543-3134-4a7f-a483-3f5e4a431ba2.jpg?1790686851"
   }
  },
  {
@@ -4549,6 +5620,11 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/8/e/8e3a2239-9348-4639-9318-e9e35b2cf86b.jpg?1789568409",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Arni, modeste scribe",
+   "text": "À chaque fois qu'une autre créature non-jeton que vous contrôlez arrive, dégagez Arni.\n{T} : Piochez une carte, puis défaussez-vous d'une carte.",
+   "image": "https://cards.scryfall.io/normal/front/5/f/5fb888d7-989d-458d-8925-a9dad9e9cacc.jpg?1790686889"
   }
  },
  {
@@ -4573,6 +5649,11 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/2/4/240f58ab-944c-4f4c-9df9-5f40b132bf3e.jpg?1788329242",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Chandra, frisson de la déférence",
+   "text": "+1: Surveillez 1. Si vous avez mis une carte non-créature, non-terrain dans votre cimetière de cette manière, mettez cette carte dans votre main.\n+1: Ajoutez {U}. Ne dépensez ce mana que pour lancer un sort non-créature.\n-X: Engagez une cible, artefact ou créature. Mettez X marqueurs « étourdissement » sur elle.\n-6: Vous gagnez un emblème avec « À chaque fois que vous lancez un sort, piochez une carte. »",
+   "image": "https://cards.scryfall.io/normal/front/4/5/45b50819-8278-4f21-91f5-0ff7e6e7cfbd.jpg?1790686932"
   }
  },
  {
@@ -4593,6 +5674,11 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/a/3/a3a2edbb-d144-4670-acad-17316cea98d2.jpg?1789127697",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Fblthp, impossiblement égaré",
+   "text": "Quand au moins un de vos adversaires subit des blessures de combat pendant votre tour, piochez deux cartes. Si votre bibliothèque ne contient aucune carte, vous gagnez la partie. Le propriétaire de Fblthp le mélange dans sa bibliothèque. (Si vous piochez dans une bibliothèque vide de cette manière, vous gagnez quand même la partie.)",
+   "image": "https://cards.scryfall.io/normal/front/e/0/e051ffd1-0a4d-4802-8287-95950c20a8be.jpg?1790686959"
   }
  },
  {
@@ -4615,6 +5701,11 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/9/c/9c334530-0880-46b5-a358-9603eee3cecf.jpg?1789128026",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Geist de Sainte Thalia",
+   "text": "Vol\nLes sorts non-créature que vous lancez coûtent {1} de moins à lancer.",
+   "image": "https://cards.scryfall.io/normal/front/f/7/f76727a0-62d3-41c5-8981-a55392bfef9b.jpg?1790686986"
   }
  },
  {
@@ -4635,6 +5726,11 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/8/5/85faaa9d-4656-4365-871d-7cba53ed0996.jpg?1789387113",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Hapatra, le givre du désert",
+   "text": "Quand Hapatra arrive, pour chaque adversaire, engagez jusqu'à une créature ciblée que ce joueur contrôle. Mettez un marqueur « étourdissement » sur chacune de ces créatures. (Si un permanent avec un marqueur « étourdissement » devait devenir dégagé, retirez-lui-en un à la place.)\n{2}{U} : Dégagez une créature ciblée.",
+   "image": "https://cards.scryfall.io/normal/front/d/a/dafe6bfa-28cd-4863-8c98-9125883b9672.jpg?1790687018"
   }
  },
  {
@@ -4654,6 +5750,11 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/7/4/74087795-0b38-4fd2-9841-147583baca41.jpg?1790075861",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Jace, sculpteur de réalité",
+   "text": "+1: Renforcez Jace X, X étant le nombre d'îles que vous contrôlez.\n-3: Jusqu'à votre prochain tour, à chaque fois qu'une créature vous attaque ou attaque un planeswalker que vous contrôlez, elle gagne -5/-0 jusqu'à la fin du tour.\n0: Exilez toutes les cartes de la bibliothèque de chaque adversaire à l'exception de la carte du dessous. N'activez que s'il y a au moins vingt-cinq marqueurs « loyauté » parmi les Jace que vous contrôlez.",
+   "image": "https://cards.scryfall.io/normal/front/c/5/c599f47c-f4c1-4edd-8dc2-5bd9ad5afe99.jpg?1790687042"
   }
  },
  {
@@ -4676,6 +5777,11 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/a/5/a5183681-447b-4023-91f7-00e9338f4417.jpg?1789128032",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Lyra, archange tolariane",
+   "text": "Vol\nAu début de chaque étape de fin, si vous avez pioché au moins trois cartes ce tour-ci, créez un jeton de créature 3/3 bleue Ange avec le vol.\n{3}{U}{U} : Jusqu'à la fin du tour, à chaque fois que Lyra inflige des blessures de combat à un joueur, piochez deux cartes.",
+   "image": "https://cards.scryfall.io/normal/front/8/0/80ead5c5-2f94-476e-8f51-ad5b11cd59a0.jpg?1790687075"
   }
  },
  {
@@ -4696,6 +5802,11 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/b/8/b8466593-40fe-4557-89b2-760c1c92087b.jpg?1789127178",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Proft, détective consultant",
+   "text": "À chaque fois que vous appliquez le regard ou que vous surveillez, vous pouvez payer {2}. Si vous faites ainsi, mettez un marqueur +1/+1 sur Proft et piochez une carte. (Piochez après avoir appliqué le regard ou surveillé.)",
+   "image": "https://cards.scryfall.io/normal/front/3/d/3df1af22-2a29-4a4e-8101-3218c2f42cde.jpg?1790687100"
   }
  },
  {
@@ -4719,6 +5830,11 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/0/0/00af4e87-5576-4a43-9422-4c35b2b66775.jpg?1789127229",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Ruric Thar, biomage",
+   "text": "Vol\nProuesse, prouesse (À chaque fois que vous lancez un sort non-créature, cette créature gagne +1/+1 jusqu'à la fin du tour deux fois.)\nÀ chaque fois que Ruric Thar devient la cible d'un sort ou d'une capacité qu'un adversaire contrôle, piochez une carte.",
+   "image": "https://cards.scryfall.io/normal/front/9/0/90f9aa84-3b38-4ace-8b4d-db29a2a2d4eb.jpg?1790687132"
   }
  },
  {
@@ -4739,6 +5855,11 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/6/d/6d7d8fa7-ce69-4a8c-9af0-55571393a244.jpg?1789729644",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Samut, tyran de Naktamon",
+   "text": "Les sorts d'éphémère et de rituel que vous contrôlez ont la fraction de seconde. (Tant qu'un sort avec la fraction de seconde est sur la pile, les joueurs ne peuvent pas lancer de sorts ou activer de capacités qui ne sont pas des capacités de mana.)",
+   "image": "https://cards.scryfall.io/normal/front/6/9/69d10836-3df2-43b5-97c7-3aff595866eb.jpg?1790687154"
   }
  },
  {
@@ -4759,6 +5880,11 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/3/9/3983d71e-3c23-4b36-b331-08e0707d8245.jpg?1789127702",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Tetsuko Umezawa, fugitive",
+   "text": "Les créatures que vous contrôlez de force ou d'endurance inférieure ou égale à 1 ne peuvent pas être bloquées.",
+   "image": "https://cards.scryfall.io/normal/front/3/4/34ec9317-ae72-49dd-9bc5-9a63978617d0.jpg?1790687186"
   }
  },
  {
@@ -4783,6 +5909,11 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/a/3/a349800f-b634-4e74-a9d9-185df37ad909.jpg?1789568451",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Traxos, gardien de l'académie",
+   "text": "Ce sort coûte {2} de moins à lancer si vous avez lancé un sort non-créature ce tour-ci.\nVol, vigilance\nProuesse (À chaque fois que vous lancez un sort non-créature, cette créature gagne +1/+1 jusqu'à la fin du tour.)",
+   "image": "https://cards.scryfall.io/normal/front/1/4/1489817c-fe09-465b-a38d-97b2c4e12610.jpg?1790687212"
   }
  },
  {
@@ -4803,6 +5934,11 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/8/3/838b0efb-7398-4df9-8fdf-b8af43b47938.jpg?1789014637",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Voie de la cryomancienne",
+   "text": "Quand la Voie de la cryomancienne arrive, renforcez Jace 5. (Mettez cinq marqueurs « loyauté » sur un jeton Jace que vous contrôlez. Si vous n'en contrôlez pas, créez d'abord un jeton de planeswalker bleu Jace avec « [-1] : Surveillez 1 » et « [-3] : Piochez une carte. »)\nLes planeswalkers que vous contrôlez ont « [-3] : Quand vous lancez pour la prochaine fois ce tour-ci un sort d'éphémère ou de rituel, copiez ce sort. Vous pouvez choisir de nouvelles cibles pour cette copie. »",
+   "image": "https://cards.scryfall.io/normal/front/5/f/5ff832c6-1f92-4158-acee-b401beada988.jpg?1790687240"
   }
  },
  {
@@ -4823,6 +5959,11 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/5/8/5838af68-66c3-4fe8-ab89-0a1721b0cfeb.jpg?1789729565",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Voie du sculpteur d'esprit",
+   "text": "Quand la Voie du sculpteur d'esprit arrive, renforcez Jace 5. (Mettez cinq marqueurs « loyauté » sur un jeton Jace que vous contrôlez. Si vous n'en contrôlez pas, créez d'abord un jeton de planeswalker bleu Jace avec « [-1] : Surveillez 1 » et « [-3] : Piochez une carte. »)\nÀ chaque fois que vous activez une capacité de loyauté, si vous avez retiré au moins deux marqueurs « loyauté » pour l'activer, piochez une carte.",
+   "image": "https://cards.scryfall.io/normal/front/0/7/07c25d2a-7098-43ba-8219-3d32561af69f.jpg?1790687268"
   }
  },
  {
@@ -4843,6 +5984,10 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/f/4/f45ba926-6496-4bd4-96eb-663946d56bbf.jpg?1789128043",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Yargle, goliath d'Otaria",
+   "image": "https://cards.scryfall.io/normal/front/4/5/45937a07-601d-4974-b85e-b343e3a47eb1.jpg?1790687294"
   }
  },
  {
@@ -4866,6 +6011,11 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/4/5/45e81487-8b8c-480b-922a-eaa9edc7201d.jpg?1789127717",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Yuriko, espoir des ombres",
+   "text": "Flash\nQuand Yuriko arrive, choisissez l'un -\n* Une créature ciblée gagne -X/-0 jusqu'à la fin du tour, X étant le nombre de cartes dans votre cimetière.\n* Surveillez 2. (Regardez les deux cartes du dessus de votre bibliothèque, puis mettez n'importe quel nombre d'entre elles dans votre cimetière et le reste au-dessus de votre bibliothèque dans n'importe quel ordre.)",
+   "image": "https://cards.scryfall.io/normal/front/8/4/845161e5-a74f-4fbd-993f-cbef2cba0933.jpg?1790687328"
   }
  },
  {
@@ -4888,6 +6038,11 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/6/4/6489814b-3d10-423e-988c-324740d36748.jpg?1789127194",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Danitha, lance d'angoisse",
+   "text": "Initiative\nÀ chaque fois que vous lancez un sort qui cible un adversaire ou une créature qu'un adversaire contrôle, mettez un marqueur +1/+1 sur Danitha.",
+   "image": "https://cards.scryfall.io/normal/front/8/a/8a45a431-af62-4bc5-8fb9-dcbc245a506e.jpg?1790687353"
   }
  },
  {
@@ -4910,6 +6065,11 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/4/9/498fa810-8522-4020-b773-52ad404c9f65.jpg?1789385697",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Galléa, hôtesse tragique",
+   "text": "Menace (Cette créature ne peut pas être bloquée excepté par deux créatures ou plus.)\n{4}{B}, exilez une autre carte de créature depuis votre cimetière : Renvoyez sur le champ de bataille, depuis votre cimetière, cette carte, engagée, avec un marqueur +1/+1 sur elle.",
+   "image": "https://cards.scryfall.io/normal/front/4/2/425a016f-a0fc-47dc-828c-f9d810aed9b8.jpg?1790687383"
   }
  },
  {
@@ -4929,6 +6089,11 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/d/4/d48bfb8a-d135-45f3-be99-4694b4b9ab93.jpg?1788329269",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Garruk, boucher voilé",
+   "text": "Si une créature qu'un adversaire contrôle devait mourir, exilez-la à la place.\n+2: Jusqu'à une créature ciblée gagne -4/-1 jusqu'à votre prochain tour.\n-2: Chaque joueur sacrifie une créature de son choix. Si vous avez sacrifié une créature de cette manière, créez un jeton de créature 4/4 verte Bête avec le piétinement.\n-3: Chaque adversaire se défausse de deux cartes. Pour chaque adversaire qui ne s'est pas défaussé de deux cartes non-terrain de cette manière, vous piochez une carte.",
+   "image": "https://cards.scryfall.io/normal/front/9/a/9a4cf8b8-f7f5-4419-94e8-6dd64b9a12ad.jpg?1790687418"
   }
  },
  {
@@ -4951,6 +6116,11 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/c/9/c985b0d1-25bd-4069-aab7-a566ff27a8f6.jpg?1789127990",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Gideon l'insermenté",
+   "text": "Parade - Défaussez-vous d'une carte.\nÀ chaque fois qu'une créature qu'un adversaire contrôle arrive, Gideon inflige 1 blessure à ce joueur.\nÀ chaque fois qu'un adversaire active une capacité de loyauté, Gideon inflige 1 blessure à ce joueur.",
+   "image": "https://cards.scryfall.io/normal/front/f/3/f349f8a6-d035-430e-87ca-a7e658bb31f4.jpg?1790687448"
   }
  },
  {
@@ -4974,6 +6144,11 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/1/e/1eb25a6c-d6b4-465d-990e-f1ab86b26b69.jpg?1788329273",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Liliana la repentante",
+   "text": "À chaque fois qu'une autre créature ou qu'un autre planeswalker que vous contrôlez arrive, meulez deux cartes.\nÉpuisement - {5}{B} : Renvoyez sur le champ de bataille une carte de créature ou de planeswalker ciblée depuis votre cimetière. Mettez un marqueur +1/+1 sur Liliana. N'activez que lorsque vous pourriez lancer un rituel. (N'activez chaque capacité d'épuisement qu'une seule fois.)",
+   "image": "https://cards.scryfall.io/normal/front/0/3/035da017-4a32-448f-a5c9-c117dfffd9c3.jpg?1790687484"
   }
  },
  {
@@ -4996,6 +6171,11 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/4/f/4f6fd2fa-8bc8-4743-bbc8-b56475d64eff.jpg?1789568430",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Rapine, l'anomalie",
+   "text": "Si la force de Rapine est négative, il attribue les blessures de combat comme si sa force était positive.\nSeuil - Sacrifiez une autre créature ou un autre planeswalker : Rapine gagne -2/-0 jusqu'à la fin du tour. N'activez que s'il y a au moins sept cartes dans votre cimetière.",
+   "image": "https://cards.scryfall.io/normal/front/c/1/c12d1086-f2c0-4579-8dd5-dc2ce8ccc763.jpg?1790687517"
   }
  },
  {
@@ -5018,6 +6198,11 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/b/2/b2a412b0-2ae4-4552-bc5e-70654b6b9b4e.jpg?1789385677",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Mabel, recluse amère",
+   "text": "Contact mortel\nQuand Mabel arrive, retirez jusqu'à trois marqueurs d'une autre cible, créature ou planeswalker.",
+   "image": "https://cards.scryfall.io/normal/front/3/5/3540e809-17fb-44f8-a717-505b290d59b9.jpg?1790687543"
   }
  },
  {
@@ -5038,6 +6223,11 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/9/0/9028d31f-9c41-47e3-885b-6a869bca8178.jpg?1789644882",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "La Massacreuse, recherchée",
+   "text": "À chaque fois qu'une autre créature ou qu'un autre planeswalker que vous contrôlez meurt, La Massacreuse inflige 1 blessure à un adversaire ciblé et vous gagnez 1 point de vie.\nÀ chaque fois qu'un adversaire subit des blessures non-combat, mettez un marqueur +1/+1 sur La Massacreuse.",
+   "image": "https://cards.scryfall.io/normal/front/f/8/f822f6d8-66f2-46d3-8c85-43bbf48f7593.jpg?1790687570"
   }
  },
  {
@@ -5061,6 +6251,11 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/d/3/d36b0e06-cb82-4c48-bf35-e76f109116f6.jpg?1789127196",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Proft, sinistre cerveau",
+   "text": "Seuil - Vous ne pouvez pas lancer ce sort à moins qu'il n'y ait au moins sept cartes dans votre cimetière.\nMenace\n{B}, défaussez-vous de cette carte : Une créature ciblée gagne -3/-1 jusqu'à la fin du tour.",
+   "image": "https://cards.scryfall.io/normal/front/9/5/953687df-f89e-4018-8f1f-63eff0875b33.jpg?1790687600"
   }
  },
  {
@@ -5083,6 +6278,11 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/1/0/100c3b67-0c92-4224-b5ed-67789c612df7.jpg?1789470892",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Teyo, mage lamediamant",
+   "text": "Flash\nQuand Teyo arrive, un permanent ciblé que vous contrôlez acquiert le contact mortel jusqu'à la fin du tour. Mettez un marqueur +1/+1 sur lui si c'est une créature. Mettez un marqueur « loyauté » sur lui si c'est un planeswalker.",
+   "image": "https://cards.scryfall.io/normal/front/9/8/98f23464-a482-4a9a-b0be-05f2a23fcf84.jpg?1790687625"
   }
  },
  {
@@ -5103,6 +6303,11 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/2/f/2f47ddf7-35b6-4205-8045-f057914c5f64.jpg?1788329294",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Titos, importun de poche",
+   "text": "Quand Titos arrive, chaque adversaire se défausse d'une carte.\nÀ chaque fois qu'un joueur se défausse d'au moins une carte, Titos inflige 1 blessure à chaque adversaire.",
+   "image": "https://cards.scryfall.io/normal/front/d/c/dc0d94f6-eae1-452f-8b36-9e6d5d812644.jpg?1790687653"
   }
  },
  {
@@ -5123,6 +6328,11 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/1/2/12dd46b2-e892-4660-b120-55766fd4d878.jpg?1789729576",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Voie du portemort",
+   "text": "Quand la Voie du portemort arrive, renforcez Jace 5. (Mettez cinq marqueurs « loyauté » sur un jeton Jace que vous contrôlez. Si vous n'en contrôlez pas, créez d'abord un jeton de planeswalker bleu Jace avec « [-1] : Surveillez 1 » et « [-3] : Piochez une carte. »)\nLes planeswalkers que vous contrôlez ont « [-2] : Vous pouvez sacrifier une créature. Si vous faites ainsi, créez un jeton de créature 4/4 verte Bête avec le piétinement. »",
+   "image": "https://cards.scryfall.io/normal/front/f/3/f309f07f-4428-4c87-b630-7575f570c10c.jpg?1790687678"
   }
  },
  {
@@ -5143,6 +6353,11 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/a/0/a0ff9689-ea49-4fff-b37c-4abbaeb0f73d.jpg?1789729526",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Voie de la nécromancienne",
+   "text": "Quand la Voie de la nécromancienne arrive, renforcez Jace 2. (Mettez deux marqueurs « loyauté » sur un jeton Jace que vous contrôlez. Si vous n'en contrôlez pas, créez d'abord un jeton de planeswalker bleu Jace avec « [-1] : Surveillez 1 » et « [-3] : Piochez une carte. »)\nÀ chaque fois qu'une créature que vous contrôlez meurt, mettez un marqueur « loyauté » sur chaque planeswalker que vous contrôlez.",
+   "image": "https://cards.scryfall.io/normal/front/b/6/b626daf2-dc6b-48cd-81f4-c3d6145896ca.jpg?1790687710"
   }
  },
  {
@@ -5163,6 +6378,11 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/9/6/9670f754-f41f-45ac-8e8b-025ad2c0f66b.jpg?1789127724",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Frimas, solitaire tourmenté",
+   "text": "Quand Frimas arrive, vous pouvez sacrifier une créature ou un planeswalker. Quand vous faites ainsi, chaque adversaire sacrifie une créature de son choix.\nFrimas gagne +1/+0 pour chaque carte de créature et de planeswalker dans votre cimetière.",
+   "image": "https://cards.scryfall.io/normal/front/e/1/e1a7d714-616f-4a68-97de-e3f80cbce84d.jpg?1790687734"
   }
  },
  {
@@ -5183,6 +6403,10 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/0/4/04c816fb-5951-4db1-8834-ed3f0b36bfe1.jpg?1789127722",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Yargle, glouton d'Urborg",
+   "image": "https://cards.scryfall.io/normal/front/9/9/99144ddc-cacf-47ba-96b3-9065dd8e04dd.jpg?1790687762"
   }
  },
  {
@@ -5202,6 +6426,11 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/b/c/bc3c096f-7f6c-474c-a2c8-75d3e6ddd6f5.jpg?1788329317",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Ajani implacable",
+   "text": "À chaque fois que vous activez une capacité de loyauté, créez un jeton de créature 2/2 incolore Sorcier et Soldat appelé Cadet.\n+1: Les créatures que vous contrôlez gagnent +1/+0 et acquièrent la célérité jusqu'à la fin du tour.\n-2: Défaussez-vous de votre main, puis piochez une carte pour chaque créature que vous contrôlez.\n-3: Ajani inflige 4 blessures à chaque créature, excepté les jetons que vous contrôlez.",
+   "image": "https://cards.scryfall.io/normal/front/4/0/409cc309-ba63-47cc-8a60-c225a659a289.jpg?1790687790"
   }
  },
  {
@@ -5224,6 +6453,11 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/b/d/bd8db649-1dba-457d-8327-e1f1da1aab36.jpg?1789557035",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Arni, champion de renom",
+   "text": "Piétinement\nÀ chaque fois qu'une autre créature que vous contrôlez arrive, Arni gagne +X/+0 jusqu'à la fin du tour, X étant la force de cette créature.",
+   "image": "https://cards.scryfall.io/normal/front/8/5/85e1c2e1-eb12-4a6c-a33a-52b8d7502877.jpg?1790687813"
   }
  },
  {
@@ -5246,6 +6480,11 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/4/0/40cb22c8-cb03-45c9-bb0e-b8cabdcc43cd.jpg?1788329325",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Chandra, torche de la défiance",
+   "text": "+1 : Exilez la carte du dessus de votre bibliothèque. Vous pouvez lancer cette carte. Si vous ne le faites pas, Chandra inflige 2 blessures à chaque adversaire.\n+1: Ajoutez {R}{R}.\n-3: Chandra inflige 4 blessures à une créature ciblée.\n-7: Vous gagnez un emblème avec « À chaque fois que vous lancez un sort, cet emblème inflige 5 blessures à n'importe quelle cible. »",
+   "image": "https://cards.scryfall.io/normal/front/b/9/b91ef670-a2d9-4905-bca9-3a949b7f6897.jpg?1790687844"
   }
  },
  {
@@ -5268,6 +6507,11 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/f/2/f27d50f0-d76e-4ce1-a8d9-d997af6a5b41.jpg?1789385716",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Galléa, la fêtarde",
+   "text": "Célérité\nChaque autre créature que vous contrôlez avec un marqueur +1/+1 sur elle a la célérité.\n{1}{R}, {T} : Mettez un marqueur +1/+1 sur une créature ciblée qui est arrivée ce tour-ci.",
+   "image": "https://cards.scryfall.io/normal/front/5/7/57126864-0989-41f0-8a9f-0928a315490f.jpg?1790687865"
   }
  },
  {
@@ -5290,6 +6534,11 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/e/8/e8c1ce21-b77d-40bf-9ed1-478604e71f5f.jpg?1789014416",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Jiang Yanggu, seul",
+   "text": "Menace (Cette créature ne peut pas être bloquée excepté par deux créatures ou plus.)\nÀ chaque fois qu'une créature que vous contrôlez attaque un joueur seule, défaussez-vous d'une carte, puis piochez une carte. Puis mettez un marqueur +1/+1 sur cette créature pour chaque carte dont vous vous êtes défaussé ce tour-ci.",
+   "image": "https://cards.scryfall.io/normal/front/b/4/b46d3085-c77c-4ead-be17-c8aaafe0aaea.jpg?1790687895"
   }
  },
  {
@@ -5310,6 +6559,11 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/0/8/08657053-86f9-4c52-abf0-d9cdd443ae3b.jpg?1789127995",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Kiora de feu et de cendres",
+   "text": "Quand Kiora arrive, créez un jeton de créature 5/5 rouge Dragon avec le vol.\n{8} : Créez un jeton de créature 5/5 rouge Dragon avec le vol.",
+   "image": "https://cards.scryfall.io/normal/front/8/3/83fdd23d-6d73-4154-9524-d483b91ff1f2.jpg?1790687919"
   }
  },
  {
@@ -5336,6 +6590,11 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/5/4/54f64e95-5a97-4d7c-9939-7f33a3165562.jpg?1789470892",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Koth, le géomancien",
+   "text": "Portée\nToucheterre - À chaque fois qu'un terrain que vous contrôlez arrive, Koth inflige 1 blessure à chaque adversaire. Si ce terrain est une montagne, ajoutez {R}.",
+   "image": "https://cards.scryfall.io/normal/front/c/1/c1b5e329-c880-4305-9626-bfc1e42be022.jpg?1790687945"
   }
  },
  {
@@ -5356,6 +6615,11 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/f/9/f93da73c-ca8b-438e-8387-6109dac3fc1a.jpg?1789644549",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Marwyn, la coupeclaire",
+   "text": "{2}, {T}, sacrifiez un artefact ou un terrain : Piochez une carte.",
+   "image": "https://cards.scryfall.io/normal/front/8/8/88bc3b39-bada-4cab-aa68-561a84118004.jpg?1790687978"
   }
  },
  {
@@ -5376,6 +6640,11 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/d/d/dd3faaf4-45ca-4714-8dbe-37102ec131cf.jpg?1789385851",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Pia, reconstructrice déterminée",
+   "text": "Quand Pia arrive, créez un jeton de créature-artefact 1/1 incolore Mécanoptère avec le vol.\n{5}{R} : Une créature ciblée gagne +X/+0 jusqu'à la fin du tour, X étant le nombre d'artefacts que vous contrôlez.",
+   "image": "https://cards.scryfall.io/normal/front/9/8/98566534-e420-482b-a7ac-3fac214a472f.jpg?1790687998"
   }
  },
  {
@@ -5396,6 +6665,11 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/b/a/ba920f23-f05c-410e-8516-c93abedf1d4d.jpg?1789729662",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Samut, championne d'Hazoret",
+   "text": "Les créatures que vous contrôlez ont la célérité.",
+   "image": "https://cards.scryfall.io/normal/front/b/b/bb98a1bf-7c0a-4a5f-bc46-e5d376bffa85.jpg?1790688027"
   }
  },
  {
@@ -5419,6 +6693,11 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/d/f/df818900-ce5e-4b0d-a927-c975cbef7eda.jpg?1789128002",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Tetsuko Umezawa, poursuivante",
+   "text": "Double initiative\nProuesse (À chaque fois que vous lancez un sort non-créature, cette créature gagne +1/+1 jusqu'à la fin du tour.)\nÀ chaque fois qu'une créature qu'un adversaire contrôle avec une force ou une endurance inférieure ou égale à 1 bloque, Tetsuko Umezawa inflige 1 blessure au contrôleur de cette créature.",
+   "image": "https://cards.scryfall.io/normal/front/b/9/b9f9722e-0772-4269-9776-89b7104d8b0c.jpg?1790688062"
   }
  },
  {
@@ -5441,6 +6720,11 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/5/c/5c5afd5f-6f37-4c3e-83f0-68fdcea98810.jpg?1789729773",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Tomik, étincemage d'Izzet",
+   "text": "Prouesse (À chaque fois que vous lancez un sort non-créature, cette créature gagne +1/+1 jusqu'à la fin du tour.)\nSi une source que vous contrôlez devait infliger des blessures non-combat à un adversaire ou à un permanent qu'un adversaire contrôle, elle inflige autant de blessures plus 1 à la place.",
+   "image": "https://cards.scryfall.io/normal/front/6/1/6140163b-7dc3-49d0-9109-f670b0aadb65.jpg?1790688101"
   }
  },
  {
@@ -5464,6 +6748,11 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/c/1/c1a00020-7c14-4503-a057-5763704bb83e.jpg?1788878311",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Voie de la pyromancienne",
+   "text": "Quand la Voie de la pyromancienne arrive, renforcez Jace 2. (Mettez deux marqueurs « loyauté » sur un jeton Jace que vous contrôlez. Si vous n'en contrôlez pas, créez d'abord un jeton de planeswalker bleu Jace avec « [-1] : Surveillez 1 » et « [-3] : Piochez une carte. »)\nLes planeswalkers que vous contrôlez ont « [+1] : Ajoutez {R}. ».",
+   "image": "https://cards.scryfall.io/normal/front/8/e/8e2f782b-c2a6-49c1-a0cc-2f73999848d5.jpg?1790688125"
   }
  },
  {
@@ -5484,6 +6773,11 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/6/d/6d86e410-20c4-4248-96bf-5780ece6274a.jpg?1789729585",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Voie du seigneur de guerre",
+   "text": "Quand la Voie du seigneur de guerre arrive, renforcez Jace 5. (Mettez cinq marqueurs « loyauté » sur un jeton Jace que vous contrôlez. Si vous n'en contrôlez pas, créez d'abord un jeton de planeswalker bleu Jace avec « [-1] : Surveillez 1 » et « [-3] : Piochez une carte. »)\nLes planeswalkers que vous contrôlez ont « [-4] : Ce planeswalker inflige 2 blessures à jusqu'à une cible, créature ou planeswalker, et 2 blessures à un joueur ciblé. »",
+   "image": "https://cards.scryfall.io/normal/front/d/e/deb5677b-308c-435c-8990-3f7565176047.jpg?1790688152"
   }
  },
  {
@@ -5506,6 +6800,11 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/d/f/df8713cd-3f4b-43ef-adbd-e37c2617c617.jpg?1789128020",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Frimas, esprit d'équipe",
+   "text": "Convocation (Vos créatures peuvent aider à lancer ce sort. Chaque créature que vous engagez en lançant ce sort paie {1} ou un mana de la couleur de cette créature.)\nÀ chaque fois que vous lancez un sort non-créature, les créatures que vous contrôlez gagnent +1/+0 jusqu'à la fin du tour.",
+   "image": "https://cards.scryfall.io/normal/front/3/b/3b83fe03-8f61-4522-b1a8-f18be84177c7.jpg?1790688181"
   }
  },
  {
@@ -5528,6 +6827,11 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/d/a/dad6afc9-8505-4cdd-bf79-e9ba4670f2bb.jpg?1789127966",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Edgar, souverain au clair de lune",
+   "text": "Flash\nAu début de votre étape de fin, si vous n'avez pas lancé de sort ce tour-ci, mettez deux marqueurs +1/+1 sur Edgar.\n{4}{G} : Mettez un marqueur +1/+1 sur chaque créature que vous contrôlez avec un marqueur +1/+1 sur elle.",
+   "image": "https://cards.scryfall.io/normal/front/a/e/aee2eeb2-6d03-465b-ad2e-43b2458576a1.jpg?1790688203"
   }
  },
  {
@@ -5550,6 +6854,11 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/2/8/28fbb55a-5c9d-45ee-bf42-a84b1048f5d2.jpg?1789127976",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Fblthp, connaît le chemin",
+   "text": "Domaine - La force de Fblthp est égale au nombre de types de terrain de base parmi les terrains que vous contrôlez.\nQuand Fblthp arrive, cherchez dans votre bibliothèque jusqu'à X cartes de terrain de base avec des noms différents, révélez-les, mettez-les dans votre main, puis mélangez.",
+   "image": "https://cards.scryfall.io/normal/front/8/6/86262d54-501e-4270-a915-02ae84135d29.jpg?1790688235"
   }
  },
  {
@@ -5569,6 +6878,11 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/9/0/90ca5812-ceb5-46bd-b049-aed7ff10e6af.jpg?1788329370",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Garruk, briseur de malédictions",
+   "text": "À chaque fois qu'une créature avec une force supérieure ou égale à 4 que vous contrôlez arrive, piochez une carte.\n+2: Dégagez jusqu'à deux terrains ciblés.\n-3: Créez un jeton de créature 4/4 verte Bête avec le piétinement.\n-4: Jusqu'à votre prochain tour, à chaque fois qu'au moins une créature attaque un de vos adversaires, ces créatures gagnent +2/+2 et acquièrent le piétinement jusqu'à la fin du tour.",
+   "image": "https://cards.scryfall.io/normal/front/8/3/8363c43a-3109-4261-98ea-8bc53712ed56.jpg?1790688258"
   }
  },
  {
@@ -5591,6 +6905,11 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/1/d/1d535b5f-c916-4f16-89a7-9477578826d2.jpg?1788878290",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Ghalta l'invincible",
+   "text": "Ce sort coûte {X} de moins à lancer, X étant la force la plus élevée parmi les créatures que vous contrôlez.\nPiétinement\nLes autres créatures que vous contrôlez ont le piétinement.",
+   "image": "https://cards.scryfall.io/normal/front/3/a/3abc54b1-4eba-4f0c-9f7b-53438fcef0d8.jpg?1790688288"
   }
  },
  {
@@ -5611,6 +6930,11 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/f/5/f5a0bb3e-8119-4739-8684-e61d1d607dcb.jpg?1789014406",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Jiang Yanggu, jamais seul",
+   "text": "Quand Jiang Yanggu arrive, créez Mowu, un jeton de créature légendaire 3/3 verte Chien.\nAu début de votre étape de fin, dégagez tous les jetons que vous contrôlez.",
+   "image": "https://cards.scryfall.io/normal/front/6/f/6f746d83-cbcb-4161-8aed-8e658b72c4a7.jpg?1790688310"
   }
  },
  {
@@ -5638,6 +6962,11 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/3/c/3cfa4fc6-4d90-4576-a83f-6496c7f21104.jpg?1789614764",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Rapine, le nexus",
+   "text": "{T} : Choisissez une couleur. Ajoutez un mana de cette couleur pour chaque force différente parmi les créatures que vous contrôlez.",
+   "image": "https://cards.scryfall.io/normal/front/c/4/c4c974d7-96bb-4c45-98bd-9af52fa117ab.jpg?1790688340"
   }
  },
  {
@@ -5658,6 +6987,11 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/9/0/90f33f99-7bc5-42e1-815e-bfb4c2b74107.jpg?1789644564",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Marwyn, la préservatrice",
+   "text": "Les terrains que vous contrôlez ont la défense talismanique. (Ils ne peuvent pas être les cibles de sorts ou de capacités que vos adversaires contrôlent.)\n{2} : Renvoyez une carte de terrain ciblée depuis votre cimetière dans votre main.",
+   "image": "https://cards.scryfall.io/normal/front/7/e/7e6bbad0-fc86-4f81-a866-bc983d3ed4e7.jpg?1790688367"
   }
  },
  {
@@ -5678,6 +7012,11 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/f/f/ff0bc30f-9d20-458e-808f-bdc2825905a5.jpg?1789387120",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Pia, ascète d'Éther",
+   "text": "Quand Pia arrive, vous pouvez vous défausser d'une carte. Si vous faites ainsi, cherchez dans votre bibliothèque une carte d'enchantement, révélez-la, mettez-la dans votre main, puis mélangez.",
+   "image": "https://cards.scryfall.io/normal/front/2/0/20516212-65bb-4210-b79f-90d48b990d39.jpg?1790688390"
   }
  },
  {
@@ -5702,6 +7041,11 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/e/e/eed83302-dc2c-45f4-a4bd-af9da51edef5.jpg?1789358701",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Ruric Thar, écrabouilleur de mages",
+   "text": "Ce sort ne peut pas être contrecarré.\nPortée, vigilance, piétinement\nRuric Thar a la défense talismanique tant qu'il n'a pas encore infligé de blessures de combat. (Il ne peut pas être la cible de sorts ou de capacités que vos adversaires contrôlent.)",
+   "image": "https://cards.scryfall.io/normal/front/5/9/59c5cc83-122f-4e8e-a3e7-deda9b8f1346.jpg?1790688422"
   }
  },
  {
@@ -5724,6 +7068,11 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/e/d/edea6f70-a5a7-475d-b7f2-97933d0f32cf.jpg?1788329375",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Titanos, cœur imposant",
+   "text": "Portée\nÀ chaque fois que vous gagnez des points de vie, mettez deux marqueurs +1/+1 sur Titanos.\nQuand vous vous défaussez de cette carte, vous gagnez 3 points de vie.",
+   "image": "https://cards.scryfall.io/normal/front/0/2/02a757eb-d23b-45d3-bff6-db8a6df545eb.jpg?1790688445"
   }
  },
  {
@@ -5744,6 +7093,11 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/9/8/98dc5470-507a-4364-8480-42607255e56c.jpg?1789729606",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Voie du paradoxe",
+   "text": "Quand la Voie du paradoxe arrive, renforcez Jace 5. (Mettez cinq marqueurs « loyauté » sur un jeton Jace que vous contrôlez. Si vous n'en contrôlez pas, créez d'abord un jeton de planeswalker bleu Jace avec « [-1] : Surveillez 1 » et « [-3] : Piochez une carte. »)\nÀ chaque fois que vous activez une capacité de loyauté, vous gagnez 1 point de vie. Vous pouvez jouer un terrain supplémentaire ce tour-ci.",
+   "image": "https://cards.scryfall.io/normal/front/c/6/c6e749e0-c5a8-4d24-90fd-66d63cb89175.jpg?1790688469"
   }
  },
  {
@@ -5764,6 +7118,11 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/a/2/a252cb01-537b-4afe-9abc-81a98c4a1439.jpg?1789729602",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Voie du languebestion",
+   "text": "Quand la Voie du languebestion arrive, renforcez Jace 7. (Mettez sept marqueurs « loyauté » sur un jeton Jace que vous contrôlez. Si vous n'en contrôlez pas, créez d'abord un jeton de planeswalker bleu Jace avec « [-1] : Surveillez 1 » et « [-3] : Piochez une carte. »)\nLes planeswalkers que vous contrôlez ont « [-4] : Créez un jeton de créature 4/4 verte Bête avec le piétinement. »",
+   "image": "https://cards.scryfall.io/normal/front/9/5/95d782b0-645e-4036-8051-3e037a28c1d7.jpg?1790688500"
   }
  },
  {
@@ -5786,6 +7145,11 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/b/8/b8dfd087-2434-42c6-ac4c-1decbcdde2db.jpg?1789470909",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Yoshimaru, bagarreur errant",
+   "text": "Quand Yoshimaru arrive, une autre créature ciblée que vous contrôlez se bat contre jusqu'à une créature ciblée qu'un adversaire contrôle. (Chacune inflige un nombre de blessures égal à sa force à l'autre.)\n{6} : Mettez un marqueur +1/+1 sur une créature non-légendaire ciblée.",
+   "image": "https://cards.scryfall.io/normal/front/d/9/d9ec3671-2f49-42a6-add3-47621db7fda9.jpg?1790688523"
   }
  },
  {
@@ -5807,6 +7171,11 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/7/c/7c619fed-2394-4efc-8cdc-6df5f51c1f57.jpg?1789127743",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Edgar, seigneur de sang ancestral",
+   "text": "À chaque fois qu'une autre créature ou qu'un autre planeswalker que vous contrôlez meurt, vous gagnez 1 point de vie.\n{2}, sacrifiez une autre créature ou un autre planeswalker : Mettez un marqueur +1/+1 sur Edgar. Il acquiert la menace jusqu'à la fin du tour. (Il ne peut pas être bloqué excepté par deux créatures ou plus.)",
+   "image": "https://cards.scryfall.io/normal/front/0/2/02eff0d6-3170-4b5a-bb00-a3372ad62d6a.jpg?1790688553"
   }
  },
  {
@@ -5828,6 +7197,11 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/c/f/cf7c1534-af41-4991-b3c3-f0a34ae330b5.jpg?1789385991",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Hapatra, le croc du désert",
+   "text": "Quand Hapatra arrive, pour chaque adversaire, mettez X marqueurs -1/-1 sur jusqu'à une créature ciblée que ce joueur contrôle, X étant la valeur de mana la plus élevée parmi les cartes dans votre cimetière.",
+   "image": "https://cards.scryfall.io/normal/front/9/3/9319fe4e-6b57-442f-aa5f-74de25010f4c.jpg?1790688576"
   }
  },
  {
@@ -5855,6 +7229,11 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/3/a/3abcae65-5b21-4c98-adad-34b8bc76ea3a.jpg?1789014541",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Karn, gardien d'or",
+   "text": "Vigilance, piétinement\nQuand Karn arrive, piochez une carte pour chaque couleur parmi les autres artefacts que vous contrôlez.",
+   "image": "https://cards.scryfall.io/normal/front/7/f/7fde98cf-6f37-44a3-982a-ddbb38d9bb10.jpg?1790688605"
   }
  },
  {
@@ -5876,6 +7255,11 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/8/1/8151f5f5-e9f6-4fbe-b543-f456ebf22aa5.jpg?1789127745",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Kiora de sel et de sable",
+   "text": "À chaque fois que vous attaquez, si vous avez activé une capacité de loyauté ce tour-ci, dégagez une créature attaquante ciblée. Elle ne peut pas être bloquée ce tour-ci.\nLes planeswalkers que vous contrôlez ont « [-8] : Créez un jeton de créature 8/8 bleue Léviathan avec la défense talismanique. »",
+   "image": "https://cards.scryfall.io/normal/front/0/d/0df9d363-b40a-4925-b76f-fab701191526.jpg?1790688630"
   }
  },
  {
@@ -5897,6 +7281,11 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/4/7/47abea4b-9848-48aa-bc1b-f04f4799e920.jpg?1790135467",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Mabel, héroïne de Vallée",
+   "text": "À chaque fois que Mabel ou qu'une autre créature que vous contrôlez arrive, mettez un marqueur +1/+1 sur une créature ciblée qui est arrivée ce tour-ci.",
+   "image": "https://cards.scryfall.io/normal/front/a/7/a7ed7f17-24aa-4eb7-953c-2f25124b5ff5.jpg?1790688670"
   }
  },
  {
@@ -5918,6 +7307,11 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/2/8/28d84ef6-e190-46d4-882d-1cea5e111e2a.jpg?1789644883",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Saheeli, joyau d'Avishkar",
+   "text": "Les mécanoptères que vous contrôlez ont la célérité.\nÀ chaque fois que vous lancez un sort non-créature, créez un jeton de créature-artefact 1/1 incolore Mécanoptère avec le vol.",
+   "image": "https://cards.scryfall.io/normal/front/1/2/122a3cb6-9a78-4b1e-828a-f029a2807b27.jpg?1790688694"
   }
  },
  {
@@ -5941,6 +7335,11 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/6/5/6529d399-677e-45a6-ac3e-12a0b10f6c37.jpg?1789644886",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Tam, la possibilité",
+   "text": "Les sorts de planeswalker que vous lancez coûtent {1} de moins à lancer.\n{W}{U}{B}{R}{G}, {T} : Proliférez X fois, X étant le nombre de types de planeswalker parmi les planeswalkers que vous contrôlez. (Pour proliférer, choisissez n'importe quel nombre de permanents et/ou de joueurs, puis donnez-leur à chacun un autre marqueur de chaque sorte déjà présente.)",
+   "image": "https://cards.scryfall.io/normal/front/f/1/f1938c63-61b5-4ff8-a597-f9e9f7bda109.jpg?1790688724"
   }
  },
  {
@@ -5972,6 +7371,11 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/f/3/f3869752-eade-4e7a-8dd1-68cafb9e10be.jpg?1789128008",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Vraska, l'âme de pierre",
+   "text": "Les créatures-artefacts que vous contrôlez ont la vigilance.\nÀ chaque fois que vous lancez un sort non-créature, créez un jeton de créature-artefact 1/1 incolore Sculpture et Trésor avec « {T}, sacrifiez ce jeton : Ajoutez un mana de la couleur de votre choix. »",
+   "image": "https://cards.scryfall.io/normal/front/a/b/abd7ed1c-22dc-493d-8782-c1f98fe01968.jpg?1790688747"
   }
  },
  {
@@ -6003,6 +7407,11 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/5/c/5c28b012-5efb-488f-a1c1-09e2dddfd6ee.jpg?1789127776",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Vraska, le regard tranchant",
+   "text": "Contact mortel\nQuand Vraska arrive, si vous contrôlez au moins six terrains, détruisez un permanent ciblé qu'un adversaire contrôle. Il crée un jeton Trésor. (C'est un artefact avec « {T}, sacrifiez ce jeton : Ajoutez un mana de la couleur de votre choix. »)",
+   "image": "https://cards.scryfall.io/normal/front/7/d/7df947b4-c969-41e6-a04f-91cbce499a33.jpg?1790688774"
   }
  },
  {
@@ -6021,6 +7430,11 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/1/e/1ebbbddb-2dc3-4194-b72b-13bcebe2ab89.jpg?1788878301",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Karn, défenseur d'argent",
+   "text": "Les artefacts et les créatures qui arrivent sur le champ de bataille ne provoquent pas le déclenchement des capacités.",
+   "image": "https://cards.scryfall.io/normal/front/1/f/1feecc5d-ee9e-4c88-a12e-29eaf0c4c184.jpg?1790688804"
   }
  },
  {
@@ -6041,6 +7455,11 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/0/5/05102c46-96f8-44a0-a1e6-e388fa5e0841.jpg?1789557046",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Traxos, fléau éternel",
+   "text": "Piétinement\nTraxos ne se dégage pas pendant votre étape de dégagement.\nÀ chaque fois que vous lancez un sort d'artefact ou de créature, dégagez Traxos.",
+   "image": "https://cards.scryfall.io/normal/front/7/9/79dade1c-2f3d-4019-a5a6-4bd2bddcc33d.jpg?1790688828"
   }
  },
  {
@@ -6060,6 +7479,10 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/a/4/a4eaecb8-066a-4c72-aa5d-5ed0614ba537.jpg?1789599702",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Plaine",
+   "image": "https://cards.scryfall.io/normal/front/c/3/c3b39142-5b14-4389-8dff-6e14ebfe37f0.jpg?1790688857"
   }
  },
  {
@@ -6079,6 +7502,10 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/d/8/d8184e92-54e6-4ddc-86e8-67f5c5eb079d.jpg?1789599732",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Île",
+   "image": "https://cards.scryfall.io/normal/front/b/0/b023b819-d2ba-47e8-b821-074dc06ae6b7.jpg?1790688911"
   }
  },
  {
@@ -6098,6 +7525,10 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/3/0/30693b85-550d-4c98-8c5b-4fd4e91c9f28.jpg?1789599699",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Marais",
+   "image": "https://cards.scryfall.io/normal/front/8/1/81c41311-4f5a-4827-95cb-ca1a6edf48d0.jpg?1790688966"
   }
  },
  {
@@ -6117,6 +7548,10 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/1/6/16671d98-6f00-477b-a010-d2905c94eb65.jpg?1789599693",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Montagne",
+   "image": "https://cards.scryfall.io/normal/front/6/5/651890c6-de1b-407c-90be-c7f95ec5e79f.jpg?1790689019"
   }
  },
  {
@@ -6136,6 +7571,10 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/6/1/613bc075-2fe4-421f-bfec-3786a5e37797.jpg?1789729776",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Forêt",
+   "image": "https://cards.scryfall.io/normal/front/f/5/f522fe8b-155d-4eff-8593-8920d6a35f0c.jpg?1790689073"
   }
  }
 ]

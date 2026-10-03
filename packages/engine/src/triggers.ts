@@ -621,6 +621,14 @@ function matchTrigger(s: GameState, ev: RulesEvent, t: TriggerSpec, src: Source)
       return { objectId: ev.attacker, player: ev.defender };
     }
     case "attackWith": {
+      if (t.defending === "you") {
+        if (ev.e !== "attackWith" || !opponentsOf(s, me).includes(ev.player)) return null;
+        // Attaquants de cet adversaire qui vous attaquent, vous ou un planeswalker que vous contrôlez.
+        const count = (s.combat?.attackers ?? []).filter(
+          (a) => s.objects[a.id]?.controller === ev.player && (a.defender === me || s.objects[a.defender]?.controller === me),
+        ).length;
+        return count >= (t.min ?? 1) ? { player: ev.player, amount: count } : null;
+      }
       if (ev.e !== "attackWith" || (!t.anyPlayer && ev.player !== me)) return null;
       // « Chaque fois que vous attaquez avec un ou plusieurs [Rats] » : seulement les attaquants correspondants.
       const f = t.filter;

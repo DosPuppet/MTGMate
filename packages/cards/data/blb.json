@@ -7109,6 +7109,11 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/3/6/3663ff0c-d02f-49ac-bb88-6f0dbd684337.jpg?1783910781",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Plaine",
+   "typeLine": "Terrain de base — plaine",
+   "image": "https://cards.scryfall.io/normal/front/8/d/8d205755-f6e7-4893-b92d-2ee601f40c57.jpg?1782788524"
   }
  },
  {
@@ -7128,6 +7133,11 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/1/0/106a5332-0104-4ec9-9e1f-806381ae4cad.jpg?1783910780",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Île",
+   "typeLine": "Terrain de base — île",
+   "image": "https://cards.scryfall.io/normal/front/2/b/2ba78f72-485b-4063-af70-e74b8763f559.jpg?1782788515"
   }
  },
  {
@@ -7147,6 +7157,11 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/f/a/faa54bef-c90e-4e9b-b94b-942ea829e0d2.jpg?1783910779",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Marais",
+   "typeLine": "Terrain de base — marais",
+   "image": "https://cards.scryfall.io/normal/front/a/0/a056183b-eb82-4ad8-b787-032fc9dc75b3.jpg?1782788504"
   }
  },
  {
@@ -7166,6 +7181,11 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/c/1/c1bba8fb-d763-4efa-8db1-e5e81994b5f9.jpg?1783910778",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Montagne",
+   "typeLine": "Terrain de base — montagne",
+   "image": "https://cards.scryfall.io/normal/front/9/8/9858a1cc-025b-42f6-8bdd-0ef39c4502fb.jpg?1782788495"
   }
  },
  {
@@ -7185,6 +7205,11 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/f/7/f791876a-f3fb-45b8-90a9-af846d8b8f74.jpg?1783910776",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Forêt",
+   "typeLine": "Terrain de base — forêt",
+   "image": "https://cards.scryfall.io/normal/front/6/1/6122e32a-7cce-438f-9b84-f2d65926f05f.jpg?1782788483"
   }
  },
  {

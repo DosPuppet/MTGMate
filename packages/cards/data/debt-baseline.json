@@ -242,7 +242,7 @@
     "Effect": 176,
     "Effect (champs)": 650,
     "TriggerSpec": 62,
-    "TriggerSpec (champs)": 155,
+    "TriggerSpec (champs)": 156,
     "Condition": 80,
     "Condition (champs)": 136,
     "Amount": 77,
@@ -256,6 +256,7 @@
     "PLAN-C C12 : déclencheurs « une ou plusieurs » par lot d'événements simultanés (GameState.eventBatch, 603.2c) : GameState 38 → 39",
     "C13 : attach.store, nombre d'objets réellement attachés (701.3b, Thorin, Mountain-king) : Effect (champs) 649 → 650",
     "C14 : drapeaux de Cloud et de The Masamune remplacés par triggerMod (onDies, emblems) : CardDef 96 → 94",
-    "C14 : attackedTurn et dealtDamageTurn remplacés par le journal du tour (attackedThisTurn, dealtDamageThisTurn) : GameObject 73 → 71"
+    "C14 : attackedTurn et dealtDamageTurn remplacés par le journal du tour (attackedThisTurn, dealtDamageThisTurn) : GameObject 73 → 71",
+    "C19 : attackWith.defending (« un adversaire vous attaque avec N créatures », Tomik, Wielder of Law) : TriggerSpec (champs) 155 → 156"
   ]
 }

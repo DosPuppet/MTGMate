@@ -9,28 +9,11 @@
 import { writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
+import { SET_INFO } from "../packages/cards/src/setRegistry";
 
-/** Extensions Standard importées par « all » (FDN et FRA, déjà importées et retouchées, s'importent à part). */
-const STANDARD = [
-  "eoe",
-  "dft",
-  "otj",
-  "big",
-  "blb",
-  "tdm",
-  "woe",
-  "sos",
-  "ecl",
-  "tla",
-  "spm",
-  "msh",
-  "tmt",
-  "hob",
-  "mkm",
-  "dsk",
-  "lci",
-  "fin",
-];
+/** Extensions Standard importées par « all » : le registre (`cards/src/setRegistry.ts`), sauf FDN et FRA, déjà importées
+ * et retouchées, qui s'importent à part. */
+const STANDARD = SET_INFO.map((x) => x.code.toLowerCase()).filter((c) => c !== "fdn" && c !== "fra");
 const ARG = (process.argv[2] ?? "fdn").toLowerCase();
 const DATA_DIR = join(dirname(fileURLToPath(import.meta.url)), "..", "packages", "cards", "data");
 const HEADERS = { "User-Agent": "MTGX/0.1 (projet non commercial)", Accept: "application/json" };
@@ -112,24 +95,30 @@ async function importSet(SET: string): Promise<void> {
   const en = await search(`set:${SET} lang:en`);
   const fr = await search(`set:${SET} lang:fr`);
   const frByNumber = new Map(fr.map((c) => [c.collector_number, c]));
+  // Numérotation française différente (réimpressions, promotions) : rapprochement par le nom anglais.
+  const frByName = new Map(fr.map((c) => [c.name, c]));
+  const frOf = (c: ScryfallCard) => frByNumber.get(c.collector_number) ?? frByName.get(c.name);
 
   // Une seule entrée par nom : la première impression « normale » (numéro le plus bas).
   const byName = new Map<string, Record<string, unknown>>();
   const sorted = [...en].sort((a, b) => Number.parseInt(a.collector_number, 10) - Number.parseInt(b.collector_number, 10));
+  // Une impression promotionnelle ne compte que pour une carte qui n'en a pas d'autre dans le set (Melek, Reforged
+  // Researcher, Tomik, Wielder of Law et Voja, Jaws of the Conclave : promotions de MKM seulement, légales en Standard).
+  const regular = new Set(sorted.filter((c) => !c.promo).map((c) => c.name));
   for (const c of sorted) {
-    if (c.promo || !(SINGLE.has(c.layout) || MULTI.has(c.layout))) continue;
+    if ((c.promo && regular.has(c.name)) || !(SINGLE.has(c.layout) || MULTI.has(c.layout))) continue;
     const image = c.image_uris ?? c.card_faces?.[0]?.image_uris;
     if (!image) continue;
     if (MULTI.has(c.layout)) {
       if (byName.has(c.name)) continue;
-      byName.set(c.name, multiFace(c, frByNumber.get(c.collector_number), image));
+      byName.set(c.name, multiFace(c, frOf(c), image));
       continue;
     }
     // Carte à préparer : la face 0 (la créature) donne la carte, la face 1 est le sort qu'elle prépare.
     const [main, spell] = c.layout === "prepare" ? (c.card_faces ?? []) : [];
     const name = main?.name ?? c.name;
     if (byName.has(name)) continue;
-    const f = frByNumber.get(c.collector_number);
+    const f = frOf(c);
     const [frMain, frSpell] = f?.card_faces ?? [];
     byName.set(name, {
       name,

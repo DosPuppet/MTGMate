@@ -1,7 +1,14 @@
 import type { CardDef } from "@mtgx/engine";
+import legalityOverrides from "../data/legality-overrides.json";
 import { DECKS, type DeckList } from "./decks";
 import { toCardDef } from "./scryfall";
 import { SETS } from "./sets";
+
+interface LegalityOverride {
+  legalities: Record<string, string>;
+  since?: string;
+  source?: string;
+}
 
 export {
   CardIndex,
@@ -30,6 +37,13 @@ export { TOKEN_SPECS } from "./tokens";
 export const CARDS: Record<string, CardDef> = {};
 for (const set of SETS) {
   for (const raw of set.data) CARDS[raw.name] ??= toCardDef(raw, set.scripts[raw.name], set.code, set.scripts);
+}
+// Dérogations aux légalités importées (PLAN-C, C19) : un bannissement annoncé, en vigueur avant le prochain réimport.
+// Format : { "<nom anglais>": { "legalities": { "standard": "banned" }, "since": "AAAA-MM-JJ", "source": "<annonce>" } }.
+for (const [name, o] of Object.entries(legalityOverrides as Record<string, LegalityOverride>)) {
+  const c = CARDS[name];
+  if (!c) throw new Error(`legality-overrides.json : carte inconnue « ${name} »`);
+  c.legalities = { ...c.legalities, ...o.legalities };
 }
 // Assemblage : chaque partie embarque la définition de la carte assemblée (enregistrée avec elle dans la partie).
 for (const c of Object.values(CARDS)) {

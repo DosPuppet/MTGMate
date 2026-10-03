@@ -9402,6 +9402,10 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/0/6/066d73fa-369b-44a3-b1a9-d22176ac3566.jpg?1783908943",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Destinée angélique",
+   "text": "Enchanter : créature\nLa créature enchantée gagne +4/+4, a le vol et l'initiative, et est un ange en plus de ses autres types.\nQuand la créature enchantée meurt, renvoyez cette carte dans la main de son propriétaire."
   }
  },
  {
@@ -9424,6 +9428,11 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/2/c/2c3ff489-bdd7-4aeb-8130-3c234d0dd3dd.jpg?1783908942",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Ange de l'arche",
+   "typeLine": "Créature : ange",
+   "text": "Vol\nQuand l'Ange de l'arche arrive sur le champ de bataille, vous gagnez 2 points de vie pour chaque porte que vous contrôlez."
   }
  },
  {
@@ -9444,6 +9453,11 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/b/1/b18a7daa-a112-4728-9123-594366694915.jpg?1783908942",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Banneret de Sacrejonc",
+   "typeLine": "Créature : sangami et soldat",
+   "text": "Les sorts de sangami et les sorts de soldat que vous jouez coûtent {1} de moins à jouer."
   }
  },
  {
@@ -9466,6 +9480,11 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/a/a/aa7b47e1-7e32-4f2f-aecf-bac7ca197081.jpg?1783908943",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Prince charmant",
+   "typeLine": "Créature — humain et noble",
+   "text": "Quand le Prince charmant arrive sur le champ de bataille, choisissez l'un —\n• Regard 2.\n• Vous gagnez 3 points de vie.\n• Exilez une autre créature ciblée que vous possédez. Renvoyez-la sur le champ de bataille sous votre contrôle au début de la prochaine étape de fin."
   }
  },
  {
@@ -9486,6 +9505,11 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/0/0/009029c2-26b9-498f-8765-e91c2e1f3aee.jpg?1783908942",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Croisée d'Odric",
+   "typeLine": "Créature : humain et soldat",
+   "text": "La force et l'endurance de la Croisée d'Odric sont chacune égales au nombre de créatures que vous contrôlez."
   }
  },
  {
@@ -9508,6 +9532,11 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/8/0/807db84f-addb-4ef0-b9ba-32b3e1bced3d.jpg?1783908942",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Maréchale Aile-du-levant",
+   "typeLine": "Créature — chat et soldat",
+   "text": "Vol\n{4}{W} : Les créatures que vous contrôlez gagnent +1/+1 jusqu'à la fin du tour."
   }
  },
  {
@@ -9528,6 +9557,11 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/d/1/d174cb01-b1cf-444c-a893-cc61ddf88b8c.jpg?1783908941",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Décret fervent",
+   "typeLine": "Rituel",
+   "text": "Exilez une cible, créature ou planeswalker, noire ou rouge. Regard 1. (Regardez la carte du dessus de votre bibliothèque. Vous pouvez la mettre au-dessous de votre bibliothèque.)"
   }
  },
  {
@@ -9546,6 +9580,11 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/7/a/7ac43e16-8b14-46f2-877a-600ea918766b.jpg?1783908940",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Désenchantement",
+   "typeLine": "Éphémère",
+   "text": "Détruisez une cible, artefact ou enchantement."
   }
  },
  {
@@ -9566,6 +9605,11 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/0/d/0d61d50b-7ab6-45a9-b207-31d87aa2e555.jpg?1783908941",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Jeune félidar",
+   "typeLine": "Créature : chat et bête",
+   "text": "Sacrifiez le Jeune félidar : Détruisez un enchantement ciblé."
   }
  },
  {
@@ -9586,6 +9630,11 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/8/9/89e3cc09-5057-4c05-88fc-d6cda809fc74.jpg?1783908940",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Refuge félidar",
+   "typeLine": "Enchantement",
+   "text": "Toucheterre — À chaque fois qu'un terrain arrive sur le champ de bataille sous votre contrôle, choisissez l'un —\n• Créez un jeton de créature 2/2 blanche Chat et Bête.\n• Mettez un marqueur +1/+1 sur chaque créature que vous contrôlez. Ces créatures acquièrent la vigilance jusqu'à la fin du tour."
   }
  },
  {
@@ -9604,6 +9653,10 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/e/2/e2c1e655-1883-428f-abe8-69c011cfbd4b.jpg?1783908941",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Fumigation",
+   "text": "Destroy all creatures. You gain 1 life for each creature destroyed this way."
   }
  },
  {
@@ -9628,6 +9681,11 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/4/e/4efb8633-0a70-4ddc-80af-42508ec75cff.jpg?1783908938",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Chevalière de la grâce",
+   "typeLine": "Créature : humain et chevalier",
+   "text": "Initiative\nDéfense talismanique contre le noir (Cette créature ne peut pas être la cible de sorts noirs ou de capacités noires que vos adversaires contrôlent.)\nLa Chevalière de la grâce gagne +1/+0 tant qu'un joueur contrôle un permanent noir."
   }
  },
  {
@@ -9650,6 +9708,11 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/0/d/0dcd0898-db3d-44ec-9d56-a1b558da90f4.jpg?1783908942",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Linden, reine implacable",
+   "typeLine": "Créature légendaire — humain et noble",
+   "text": "Vigilance\nÀ chaque fois qu'une créature blanche que vous contrôlez attaque, vous gagnez 1 point de vie."
   }
  },
  {
@@ -9670,6 +9733,10 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/6/0/60790977-efd4-470a-823a-6929f84016e7.jpg?1783908939",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Mentor des humbles",
+   "text": "À chaque fois qu'une autre créature de force inférieure ou égale à 2 que vous contrôlez arrive, vous pouvez payer {1}. Si vous faites ainsi, piochez une carte."
   }
  },
  {
@@ -9690,6 +9757,11 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/b/6/b6310a82-73db-40cb-ae64-6f07f869024c.jpg?1783908938",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Caracal royal",
+   "typeLine": "Créature : chat",
+   "text": "Les autres chats que vous contrôlez gagnent +1/+1 et ont le lien de vie.\nQuand le Caracal royal arrive sur le champ de bataille, créez deux jetons de créature 1/1 blanche Chat avec le lien de vie."
   }
  },
  {
@@ -9708,6 +9780,11 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/0/7/07f10906-4fd5-44e8-99c7-3f9dcc988c48.jpg?1783908938",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Lâcher les chiens",
+   "typeLine": "Rituel",
+   "text": "Créez quatre jetons de créature 1/1 blanche Chien."
   }
  },
  {
@@ -9728,6 +9805,11 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/c/e/ce41e348-44c2-47f8-8e7d-da2e4d16d648.jpg?1783908938",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Collet de stase",
+   "typeLine": "Enchantement",
+   "text": "Flash (Vous pouvez lancer ce sort à tout moment où vous pourriez lancer un éphémère.)Quand le Collet de stase arrive sur le champ de bataille, exilez une créature ciblée qu'un adversaire contrôle jusqu'à ce que le Collet de stase quitte le champ de bataille. (Cette créature revient sous le contrôle de son propriétaire.)"
   }
  },
  {
@@ -9750,6 +9832,11 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/5/d/5d42be5f-a6a7-4699-abf7-9632de6daede.jpg?1783908939",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Syr Alin, la Griffe du Lion",
+   "typeLine": "Créature légendaire : humain et chevalier",
+   "text": "Initiative\nÀ chaque fois que Syr Alin, la Griffe du Lion attaque, les autres créatures que vous contrôlez gagnent +1/+1 jusqu'à la fin du tour."
   }
  },
  {
@@ -9768,6 +9855,10 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/b/c/bc4c47e3-04b6-4760-9a80-b6acef1e4524.jpg?1783908937",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Posture valeureuse",
+   "text": "Choisissez l'un -\n* Une créature ciblée acquiert l'indestructible jusqu'à la fin du tour. (Les blessures et les effets qui disent « détruisez » ne la détruisent pas.)\n* Détruisez une créature ciblée d'endurance supérieure ou égale à 4."
   }
  },
  {
@@ -9794,6 +9885,11 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/6/9/694df80e-77d1-4455-b6f1-58d212267d76.jpg?1783908937",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Zetalpa, Aube primordiale",
+   "typeLine": "Créature légendaire — ancêtre et dinosaure",
+   "text": "Vol, double initiative, vigilance, piétinement, indestructible"
   }
  },
  {
@@ -9814,6 +9910,11 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/a/6/a6fee90a-7cb3-4fad-91a7-1b1edbde0133.jpg?1783908935",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Arcanis l'omnipotent",
+   "typeLine": "Créature légendaire : sorcier",
+   "text": "{T} : Piochez trois cartes.\n{2}{U}{U} : Renvoyez Arcanis l'omnipotent dans la main de son propriétaire."
   }
  },
  {
@@ -9832,6 +9933,11 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/7/5/7599d459-fe71-48f4-8c65-0f519bb63a68.jpg?1783908936",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Tracer un cap",
+   "typeLine": "Rituel",
+   "text": "Piochez deux cartes. Ensuite, défaussez-vous d'une carte à moins que vous n'ayez attaqué ce tour-ci."
   }
  },
  {
@@ -9852,6 +9958,11 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/b/5/b5e4087b-e692-4eb2-bb59-ff2a001d6dd4.jpg?1783908937",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Précepte de Kruphix",
+   "typeLine": "Enchantement",
+   "text": "Flash\nAu début de l'étape de pioche de chaque joueur, ce joueur pioche une carte supplémentaire."
   }
  },
  {
@@ -9870,6 +9981,11 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/6/5/65d5cff9-a3ec-432d-9ce5-68949e524279.jpg?1783908935",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Plongée",
+   "typeLine": "Éphémère",
+   "text": "La créature ciblée que vous contrôlez gagne +0/+3 et acquiert la défense talismanique jusqu'à la fin du tour. (Elle ne peut pas être la cible de sorts ou de capacités que vos adversaires contrôlent.)"
   }
  },
  {
@@ -9888,6 +10004,11 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/0/a/0a77e063-e8f6-4cb2-954e-74cf41ce73da.jpg?1783908936",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Summum de la révélation",
+   "typeLine": "Rituel",
+   "text": "Piochez X cartes. Si X est supérieur ou égal à 10, à la place mélangez votre cimetière dans votre bibliothèque, piochez X cartes, dégagez jusqu'à cinq terrains, et vous n'avez pas de taille de main maximale pour le restant de la partie.\nExilez le Summum de la révélation."
   }
  },
  {
@@ -9906,6 +10027,11 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/9/1/91e37a7e-6093-4ef5-b6e4-4aa800ddfc1b.jpg?1783908935",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Gel immédiat",
+   "typeLine": "Éphémère",
+   "text": "Contrecarrez le sort rouge ou vert ciblé."
   }
  },
  {
@@ -9929,6 +10055,11 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/1/8/18748b1d-4161-482c-a726-8762b4c1819c.jpg?1783908934",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Banc de brouillard",
+   "typeLine": "Créature — mur",
+   "text": "Défenseur, vol\nPrévenez toutes les blessures de combat qui devraient être infligées à et par le Banc de brouillard."
   }
  },
  {
@@ -9949,6 +10080,11 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/3/8/3834176f-29c5-4511-87d6-75d0c348a770.jpg?1783908933",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Moucharde des portails",
+   "typeLine": "Créature : vedalken et gredin",
+   "text": "À chaque fois qu'une porte arrive sur le champ de bataille sous votre contrôle, la Moucharde des portails ne peut pas être bloquée ce tour-ci.\nÀ chaque fois que la Moucharde des portails inflige des blessures de combat à un joueur, piochez une carte."
   }
  },
  {
@@ -9969,6 +10105,11 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/9/c/9ca4f70d-ec17-49a4-8968-598ecdbe8243.jpg?1783908933",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Annonciateur des marées",
+   "typeLine": "Créature : ondin et sorcier",
+   "text": "Vous pouvez lancer l'Annonciateur des marées comme s'il avait le flash si vous payez {2} supplémentaires pour le lancer.\nQuand l'Annonciateur des marées arrive sur le champ de bataille, vous pouvez renvoyer une créature engagée ciblée qu'un adversaire contrôle dans la main de son propriétaire."
   }
  },
  {
@@ -9989,6 +10130,11 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/3/f/3f88eacf-5c7b-4a35-86f0-af3b0516d4c2.jpg?1783908933",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Enseignements mystiques",
+   "typeLine": "Éphémère",
+   "text": "Cherchez dans votre bibliothèque une carte d'éphémère ou une carte avec le flash, révélez-la, mettez-la dans votre main et mélangez ensuite votre bibliothèque.\nFlashback {5}{B} (Vous pouvez lancer cette carte depuis votre cimetière pour son coût de flashback. Exilez-la ensuite.)"
   }
  },
  {
@@ -10007,6 +10153,11 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/3/2/32ae984e-5d1e-4497-9a71-7406f78c09f3.jpg?1783908932",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Blâme du fleuve",
+   "typeLine": "Rituel",
+   "text": "Renvoyez tous les permanents non-terrain qu'un joueur ciblé contrôle dans la main de leur propriétaire."
   }
  },
  {
@@ -10029,6 +10180,11 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/1/f/1f20fe3d-792a-4030-a25c-e81b48b2bcb4.jpg?1783908932",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Sourcier des épaves",
+   "typeLine": "Créature — ondin et sorcier",
+   "text": "Prouesse (À chaque fois que vous lancez un sort non-créature, cette créature gagne +1/+1 jusqu'à la fin du tour.)\nQuand le Sourcier des épaves arrive, renvoyez une carte d'éphémère ou de rituel ciblée depuis votre cimetière dans votre main."
   }
  },
  {
@@ -10052,6 +10208,11 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/a/2/a2cf2366-40d0-4f94-84a5-8aa42308e223.jpg?1783908933",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Sphinx du dernier mot",
+   "typeLine": "Créature : sphinx",
+   "text": "Le Sphinx du dernier mot ne peut pas être contrecarré.\nVol, défense talismanique\nLes sorts d'éphémère et de rituel que vous contrôlez ne peuvent pas être contrecarrés par des sorts ou des capacités."
   }
  },
  {
@@ -10074,6 +10235,11 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/7/7/7766506c-bc18-4ac3-9034-e8f7e54c4039.jpg?1783908932",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Djinn des tempêtes",
+   "typeLine": "Créature : djinn",
+   "text": "Vol\nLe Djinn des tempêtes gagne +1/+0 pour chaque île de base que vous contrôlez."
   }
  },
  {
@@ -10092,6 +10258,10 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/b/3/b378d319-ab98-422a-8f72-121a9d26f5c6.jpg?1783908931",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Désinvocation",
+   "text": "Renvoyez une créature ciblée dans la main de son propriétaire."
   }
  },
  {
@@ -10114,6 +10284,11 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/c/2/c27b40dd-9b2a-4a99-a984-ee9cfdb091a1.jpg?1783908931",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Grand requin vorace",
+   "typeLine": "Créature — requin",
+   "text": "Flash (Vous pouvez lancer ce sort à tout moment où vous pourriez lancer un éphémère.)\nQuand le Grand requin vorace arrive, contrecarrez un sort d'artefact ou de créature ciblé."
   }
  },
  {
@@ -10132,6 +10307,11 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/4/2/42592d75-593e-4719-b13b-bca374017e79.jpg?1783908931",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Mortemarque",
+   "typeLine": "Rituel",
+   "text": "Détruisez la créature verte ou blanche ciblée."
   }
  },
  {
@@ -10150,6 +10330,11 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/5/b/5b0b7242-df91-48cf-bf4e-b68306c9965f.jpg?1783908933",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Pacte démoniaque",
+   "typeLine": "Enchantement",
+   "text": "Au début de votre entretien, choisissez l'un qui n'a pas été choisi —• Le Pacte démoniaque inflige 4 blessures à une cible, créature ou joueur, et vous gagnez 4 points de vie.• L'adversaire ciblé se défausse de deux cartes.• Piochez deux cartes.• Vous perdez la partie."
   }
  },
  {
@@ -10172,6 +10357,11 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/5/2/52bf6460-0df6-4dd3-8af8-df728683bcaa.jpg?1783908930",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Démon de profanation",
+   "typeLine": "Créature : démon",
+   "text": "Vol\nAu début de chaque combat, n'importe quel adversaire peut sacrifier une créature. Si un joueur fait ainsi, engagez le Démon de profanation et mettez un marqueur +1/+1 sur lui."
   }
  },
  {
@@ -10192,6 +10382,11 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/d/f/dfb5dd33-6e5b-4d78-92fa-678c9f01c606.jpg?1783908931",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Recrutement effroyable",
+   "typeLine": "Rituel",
+   "text": "Chaque joueur meule X cartes. Pour chaque carte de créature mise dans un cimetière de cette manière, vous créez, engagé, un jeton de créature 2/2 noire Zombie."
   }
  },
  {
@@ -10212,6 +10407,11 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/4/4/4443696a-0b9a-4081-91aa-800b5c4065d2.jpg?1783908930",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Cocher des morts",
+   "typeLine": "Créature : vampire",
+   "text": "Quand le Cocher des morts meurt, renvoyez sur le champ de bataille une carte de créature avec un coût converti de mana inférieur ou égal à 2 ciblée depuis votre cimetière."
   }
  },
  {
@@ -10230,6 +10430,11 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/3/4/34c3a894-ee75-4db9-a69f-711bb3cc150a.jpg?1783908930",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Contrainte",
+   "typeLine": "Rituel",
+   "text": "Un adversaire ciblé révèle sa main. Vous y choisissez une carte non-créature non-terrain. Ce joueur se défausse de cette carte."
   }
  },
  {
@@ -10250,6 +10455,11 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/1/a/1a52f6ef-7759-4be3-8b80-a57e9d6ae386.jpg?1783908928",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Patricienne des Kalastria",
+   "typeLine": "Créature : vampire et shamane",
+   "text": "À chaque fois que la Patricienne des Kalastria ou qu'un autre vampire que vous contrôlez est mis dans un cimetière depuis le champ de bataille, vous pouvez payer {B}. Si vous faites ainsi, le joueur ciblé perd 2 points de vie et vous gagnez 2 points de vie."
   }
  },
  {
@@ -10274,6 +10484,11 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/b/b/bb678e10-e5a4-4143-8e49-7b523118674e.jpg?1783908928",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Chevalière de la malice",
+   "typeLine": "Créature : humain et chevalier",
+   "text": "Initiative\nDéfense talismanique contre le blanc (Cette créature ne peut pas être la cible de sorts blancs ou de capacités blanches que vos adversaires contrôlent.)\nLa Chevalière de la malice gagne +1/+0 tant qu'un joueur contrôle un permanent blanc."
   }
  },
  {
@@ -10294,6 +10509,11 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/f/2/f229b0e6-1ffd-410e-b04b-a0afc179c58c.jpg?1783908929",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Faucheur de minuit",
+   "typeLine": "Créature — zombie et chevalier",
+   "text": "À chaque fois qu'une créature non-jeton que vous contrôlez meurt, cette créature vous inflige 1 blessure et vous piochez une carte."
   }
  },
  {
@@ -10314,6 +10534,11 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/7/3/73bc5505-7fa0-4ebf-a691-b4ca5f52b019.jpg?1783908928",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Myojin des Confins de la nuit",
+   "typeLine": "Créature légendaire : esprit",
+   "text": "La Myojin des Confins de la nuit arrive en jeu avec sur elle un marqueur « divinité » si vous l'avez jouée depuis votre main.\nLa Myojin des Confins de la nuit est indestructible tant qu'elle a sur elle un marqueur « divinité ».\nRetirez un marqueur « divinité » de la Myojin des Confins de la nuit : Chaque adversaire se défausse de sa main."
   }
  },
  {
@@ -10338,6 +10563,11 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/b/2/b2c7613c-38fc-49c3-93ee-1df93136455a.jpg?1783908928",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Prêtresse des inféconds de l'oubli",
+   "typeLine": "Créature — vampire et clerc",
+   "text": "Kick {3}{B} (Vous pouvez payer {3}{B} supplémentaires au moment où vous lancez ce sort.)\nLien de vie\nMenace (Cette créature ne peut pas être bloquée excepté par deux créatures ou plus.)\nQuand la Prêtresse des inféconds de l'oubli arrive, si elle a été kickée, renvoyez sur le champ de bataille une carte de créature ciblée depuis votre cimetière."
   }
  },
  {
@@ -10358,6 +10588,11 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/f/d/fdcbbe4d-5c93-4b14-8123-cd835452870f.jpg?1783908927",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Traqueur de pouls",
+   "typeLine": "Créature : vampire et gredin",
+   "text": "À chaque fois que le Traqueur de pouls attaque, chaque adversaire perd 1 point de vie."
   }
  },
  {
@@ -10376,6 +10611,11 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/0/3/03a26ca7-b26f-4b86-a060-712f15f4bf7f.jpg?1783908926",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Assouvissement sanguin",
+   "typeLine": "Rituel",
+   "text": "Ce sort coûte {3} de moins à lancer si vous avez gagné au moins 3 points de vie ce tour-ci.\nRenvoyez jusqu'à deux cartes de créature ciblées depuis votre cimetière dans votre main."
   }
  },
  {
@@ -10394,6 +10634,11 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/1/1/11f1b897-bb7d-4217-97a7-c89f2453c8fa.jpg?1783908926",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Hommage à la faim",
+   "typeLine": "Éphémère",
+   "text": "L'adversaire ciblé sacrifie une créature. Vous gagnez un nombre de points de vie égal à l'endurance de cette créature."
   }
  },
  {
@@ -10412,6 +10657,11 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/9/a/9ae0b1e0-a481-4a98-b67b-0cf8bac53fdd.jpg?1783908926",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Sacres vampiriques",
+   "typeLine": "Enchantement",
+   "text": "{1}{B}, sacrifiez une créature : Vous gagnez 1 point de vie et vous piochez une carte."
   }
  },
  {
@@ -10434,6 +10684,11 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/8/3/833b5a32-5d77-4e46-a524-25bada29ef59.jpg?1783908925",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Fossoyeur abject",
+   "typeLine": "Créature : zombie et psychagogue",
+   "text": "Contact mortel\nQuand le Fossoyeur abject arrive sur le champ de bataille, cherchez une carte dans votre bibliothèque, mettez cette carte dans votre cimetière, puis mélangez."
   }
  },
  {
@@ -10452,6 +10707,11 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/6/9/69d0f5bd-ccea-49b2-bd79-ad5e4d850cf5.jpg?1783908926",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Talisman griffe de souhait",
+   "typeLine": "Artefact",
+   "text": "Le Talisman griffe de souhait arrive sur le champ de bataille avec, sur lui, trois marqueurs « souhait ».\n{1}, {T}, retirez un marqueur « souhait » du Talisman griffe de souhait : Cherchez une carte dans votre bibliothèque, mettez-la dans votre main et mélangez ensuite votre bibliothèque. Un adversaire acquiert le contrôle du Talisman griffe de souhait. N'activez cette capacité que pendant votre tour."
   }
  },
  {
@@ -10475,6 +10735,11 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/5/f/5f27dbf0-6818-40ea-832d-10686b4c2900.jpg?1783908925",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Boule fulgurante",
+   "typeLine": "Créature : élémental",
+   "text": "Piétinement (Si cette créature inflige suffisamment de blessures de combat à ses bloqueurs pour les détruire, vous pouvez faire qu'elle inflige le reste de ses blessures au joueur ou au planeswalker défenseur.)Célérité\n (Cette créature peut attaquer et {T} dès le tour où elle arrive sous votre contrôle.)\nAu début de l'étape de fin, sacrifiez la Boule fulgurante."
   }
  },
  {
@@ -10493,6 +10758,10 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/c/f/cf01af2c-68e5-4bb5-81de-f3a1b860fb2e.jpg?1783908925",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Ploiement d'éclair",
+   "text": "Ce sort coûte {3} de moins à lancer si vous contrôlez une créature de force supérieure ou égale à 4.\nCiblez un sort ou une capacité ayant une cible unique. Remplacez cette cible."
   }
  },
  {
@@ -10511,6 +10780,11 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/9/e/9eb16918-6363-4849-8d74-e26822a0ddf7.jpg?1783908924",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Passer à travers",
+   "typeLine": "Rituel",
+   "text": "Les créatures que vous contrôlez acquièrent le piétinement jusqu'à la fin du tour. (Une créature avec le piétinement peut infliger son surplus de blessures de combat au joueur ou au planeswalker qu'elle attaque.)\nPiochez une carte."
   }
  },
  {
@@ -10533,6 +10807,11 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/5/5/5525cfde-a92b-4fb5-8f15-a05efebecd3d.jpg?1783908925",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Dragon mage",
+   "typeLine": "Créature : dragon et sorcier",
+   "text": "Vol\nÀ chaque fois que le Dragon mage inflige des blessures de combat à un joueur, chaque joueur se défausse de sa main et pioche sept cartes."
   }
  },
  {
@@ -10553,6 +10832,11 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/b/7/b720f3a8-f38f-4460-86a3-dad541e7add7.jpg?1783908923",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Proscrite maître-dragon",
+   "typeLine": "Créature — humain et shamane",
+   "text": "Au début de votre entretien, si vous contrôlez au moins six terrains, créez un jeton de créature 5/5 rouge Dragon avec le vol."
   }
  },
  {
@@ -10573,6 +10857,11 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/8/9/8940d76d-c09f-4d72-a037-439c70ee8d9d.jpg?1783908923",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Coureur des laves guitûk",
+   "typeLine": "Créature : humain et sorcier",
+   "text": "Tant qu'il y a au moins deux cartes d'éphémère et/ou de rituel dans votre cimetière, le Coureur des laves guitûk gagne +1/+0 et a la célérité."
   }
  },
  {
@@ -10595,6 +10884,11 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/d/6/d65f5298-0e57-49cf-aaf5-2bb16f3e636c.jpg?1783908923",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Scoriegueule géante",
+   "typeLine": "Créature : dinosaure et bête",
+   "text": "Piétinement\nLes joueurs ne peuvent pas gagner de points de vie."
   }
  },
  {
@@ -10613,6 +10907,11 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/4/7/47082081-bf52-4914-bac2-ace398beff56.jpg?1783908922",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Offrande inoffensive",
+   "typeLine": "Rituel",
+   "text": "L'adversaire ciblé acquiert le contrôle d'un permanent ciblé que vous contrôlez."
   }
  },
  {
@@ -10635,6 +10934,11 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/c/3/c3a35b3b-0c92-4b40-8210-86a5b5f275eb.jpg?1783908925",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Dragon entasseur",
+   "typeLine": "Créature : dragon",
+   "text": "Vol\nQuand le Dragon entasseur arrive sur le champ de bataille, vous pouvez chercher dans votre bibliothèque une carte d'artefact, l'exiler et mélanger ensuite votre bibliothèque.\nQuand le Dragon entasseur meurt, vous pouvez mettre la carte exilée dans la main de son propriétaire."
   }
  },
  {
@@ -10657,6 +10961,11 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/4/0/409acb8f-cf03-4a56-a8c0-e4c97a01ee10.jpg?1783908922",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Lathliss, reine des dragons",
+   "typeLine": "Créature légendaire — dragon",
+   "text": "Vol\nÀ chaque fois qu'un autre dragon non-jeton que vous contrôlez arrive, créez un jeton de créature 5/5 rouge Dragon avec le vol.\n{1}{R} : Les dragons que vous contrôlez gagnent +1/+0 jusqu'à la fin du tour."
   }
  },
  {
@@ -10679,6 +10988,11 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/4/c/4c8b3e58-be07-451e-a5c7-61c70cc3a5a2.jpg?1783908922",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Foudroyeur cérébral",
+   "typeLine": "Créature : élémental",
+   "text": "Initiative (Cette créature inflige des blessures de combat avant les créatures sans l'initiative.)À chaque fois qu'un adversaire lance un sort d'éphémère ou de rituel blanc ou bleu, le Foudroyeur cérébral inflige 2 blessures à ce joueur."
   }
  },
  {
@@ -10697,6 +11011,11 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/d/5/d59e836b-1c7b-43ac-889b-5f94e1638c42.jpg?1783908921",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Éclair oblitérant",
+   "typeLine": "Rituel",
+   "text": "L'Éclair oblitérant inflige 4 blessures à une cible, créature ou planeswalker. Si cette créature ou ce planeswalker devait mourir ce tour-ci, exilez-le à la place."
   }
  },
  {
@@ -10717,6 +11036,11 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/0/5/050b70c4-9086-4db4-8e65-f9bb5f67cf1b.jpg?1783908920",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Géant vorace",
+   "typeLine": "Créature : géant",
+   "text": "Au début de votre entretien, le Géant vorace vous inflige 1 blessure."
   }
  },
  {
@@ -10739,6 +11063,11 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/c/6/c6c7f55a-bcc7-4ca3-853d-fc6e260d9429.jpg?1783908920",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Égoutier bonnet-rouge",
+   "typeLine": "Créature — gobelin et guerrier",
+   "text": "Menace\nQuand l'Égoutier bonnet-rouge arrive sur le champ de bataille, créez deux jetons de créature 1/1 noire Rat avec « Cette créature ne peut pas bloquer. »\nAu début de votre entretien, vous pouvez sacrifier une autre créature. Si vous faites ainsi, mettez un marqueur +1/+1 sur l'Égoutier bonnet-rouge et exilez la carte du dessus de votre bibliothèque. Vous pouvez jouer cette carte ce tour-ci."
   }
  },
  {
@@ -10759,6 +11088,11 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/0/f/0f306c7e-cacc-4c26-a3f1-fad4f3ff7cf3.jpg?1783908921",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Noble de Stromkirk",
+   "typeLine": "Créature : vampire",
+   "text": "Le Noble de Stromkirk ne peut pas être bloqué par les humains.\nÀ chaque fois que le Noble de Stromkirk inflige des blessures de combat à un joueur, mettez un marqueur +1/+1 sur lui."
   }
  },
  {
@@ -10781,6 +11115,11 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/f/c/fca7caa5-d920-4f06-90bd-214aa4e85cb3.jpg?1783908920",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Meurtrisseur du taureau",
+   "typeLine": "Créature — changeforme",
+   "text": "Changelin (Cette carte a tous les types de créature.)\nÀ chaque fois qu'un adversaire lance un sort, vous pouvez mettre un marqueur +1/+1 sur cette créature."
   }
  },
  {
@@ -10801,6 +11140,11 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/9/f/9f52ada2-cabc-46a3-99df-271833a86909.jpg?1783908920",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Pyromancien viashino",
+   "typeLine": "Créature : viashino et sorcier",
+   "text": "Quand le Pyromancien viashino arrive sur le champ de bataille, il inflige 2 blessures à une cible, joueur ou planeswalker."
   }
  },
  {
@@ -10819,6 +11163,11 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/a/8/a806dec2-d4f9-4f8d-a1dd-170777941131.jpg?1783908920",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Chemin sinueux",
+   "typeLine": "Rituel",
+   "text": "Cherchez dans votre bibliothèque jusqu'à deux cartes de terrain de base et/ou de porte, mettez-les sur le champ de bataille engagées et mélangez votre bibliothèque."
   }
  },
  {
@@ -10839,6 +11188,11 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/2/8/28a1dd7f-2e42-4062-a941-b489b98a49fc.jpg?1783908918",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Empathe farouche",
+   "typeLine": "Créature : elfe",
+   "text": "Quand l'Empathe farouche arrive sur le champ de bataille, vous pouvez chercher dans votre bibliothèque une carte de créature ayant un coût converti de mana supérieur ou égal à 6, la révéler, la mettre dans votre main et mélanger ensuite votre bibliothèque."
   }
  },
  {
@@ -10861,6 +11215,11 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/6/9/699efb9e-2649-432b-8b2d-10775114c314.jpg?1783908919",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Fynn, le porteur de croc",
+   "typeLine": "Créature légendaire : humain et guerrier",
+   "text": "Contact mortel\nÀ chaque fois qu'une créature avec le contact mortel que vous contrôlez inflige des blessures de combat à un joueur, ce joueur gagne deux marqueurs « poison ». (Un joueur qui a au moins dix marqueurs « poison » perd la partie.)"
   }
  },
  {
@@ -10883,6 +11242,11 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/6/b/6b638f3d-7eb6-4675-9538-4a87a7f75c43.jpg?1786400321",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Rhinocéros au dos noueux",
+   "typeLine": "Créature : rhinocéros",
+   "text": "Piétinement\nÀ chaque fois que vous lancez un sort qui cible le Rhinocéros au dos noueux, piochez une carte."
   }
  },
  {
@@ -10903,6 +11267,11 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/7/f/7f83195c-5150-4763-a2e1-5b109d185d55.jpg?1783908917",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Fléau des héros",
+   "typeLine": "Créature : hydre",
+   "text": "Le Fléau des héros arrive sur le champ de bataille avec quatre marqueurs +1/+1 sur lui.\n{2}{G}{G} : Mettez X marqueurs +1/+1 sur le Fléau des héros, X étant sa force."
   }
  },
  {
@@ -10923,6 +11292,11 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/4/8/48d665cd-a2c6-4b81-8032-379e476b5ea5.jpg?1783908917",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Vipère de moisissure",
+   "typeLine": "Créature : fongus et serpent",
+   "text": "À chaque fois qu'un adversaire lance un sort bleu ou noir, vous pouvez mettre un marqueur +1/+1 sur la Vipère de moisissure."
   }
  },
  {
@@ -10943,6 +11317,11 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/1/a/1a70424d-86a7-44a3-acda-4463d7ac503b.jpg?1783908917",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Épreuve de Nyléa",
+   "typeLine": "Enchantement : aura",
+   "text": "Enchanter : créature\nÀ chaque fois que la créature enchantée attaque, mettez un marqueur +1/+1 sur elle. Ensuite, si elle a au moins trois marqueurs +1/+1 sur elle, sacrifiez l'Épreuve de Nyléa.\nQuand vous sacrifiez l'Épreuve de Nyléa, cherchez dans votre bibliothèque jusqu'à deux cartes de terrain de base, mettez-les sur le champ de bataille engagées, puis mélangez."
   }
  },
  {
@@ -10965,6 +11344,11 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/3/3/333b3cca-ebbf-4ceb-a6a5-3d49cb2e143a.jpg?1783908916",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Limon prédateur",
+   "typeLine": "Créature : limon",
+   "text": "Indestructible\nÀ chaque fois que le Limon prédateur attaque, mettez un marqueur +1/+1 sur lui.\nÀ chaque fois qu'une créature blessée par le Limon prédateur ce tour-ci meurt, mettez un marqueur +1/+1 sur le Limon prédateur."
   }
  },
  {
@@ -10985,6 +11369,10 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/9/a/9ae57d6b-15e8-4f2a-97c2-76d801a1a42a.jpg?1783908916",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Puissance primordiale",
+   "text": "Une créature ciblée que vous contrôlez gagne +X/+X jusqu'à la fin du tour. Ensuite, elle se bat contre jusqu'à une créature ciblée que vous ne contrôlez pas."
   }
  },
  {
@@ -11005,6 +11393,11 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/3/3/332c9742-dc3b-48e5-8736-7724fae1b4c4.jpg?1783908916",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Don primitif",
+   "typeLine": "Enchantement",
+   "text": "À chaque fois que vous lancez un sort de créature, créez un jeton de créature 3/3 verte Bête.\nÀ chaque fois que vous lancez un sort non-créature, mettez trois marqueurs +1/+1 sur une créature ciblée que vous contrôlez.\nToucheterre — À chaque fois qu'un terrain que vous contrôlez arrive, vous gagnez 3 points de vie."
   }
  },
  {
@@ -11028,6 +11421,10 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/c/2/c25ee47b-d099-4788-9c2b-73d151bf56fb.jpg?1783908915",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Baloths déchaînés",
+   "text": "Trample\nLandfall - Whenever a land you control enters, create a 4/4 green Beast creature token."
   }
  },
  {
@@ -11048,6 +11445,10 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/f/a/fa87cb5f-4dc9-49a4-9ae6-ebc7fedac018.jpg?1783908915",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Druide du printemps",
+   "text": "When this creature enters, you may sacrifice a land. If you do, search your library for up to two basic land cards, put them onto the battlefield tapped, then shuffle."
   }
  },
  {
@@ -11070,6 +11471,11 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/d/6/d6a8759d-0dc8-4218-93ac-b1a35088f776.jpg?1783908915",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Surrak, le Grand veneur",
+   "typeLine": "Créature légendaire : humain et guerrier",
+   "text": "Redoutable — Au début du combat pendant votre tour, si les créatures que vous contrôlez ont une force totale supérieure ou égale à 8, la créature ciblée que vous contrôlez acquiert la célérité jusqu'à la fin du tour."
   }
  },
  {
@@ -11092,6 +11498,11 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/9/0/90f8d876-3697-4359-9f2b-6053682b556c.jpg?1783908915",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Connaisseuse de venins",
+   "typeLine": "Créature : humain et druide",
+   "text": "Alliance — À chaque fois qu'une autre créature arrive sur le champ de bataille sous votre contrôle, la Connaisseuse de venins acquiert le contact mortel jusqu'à la fin du tour. Si c'est la deuxième fois que cette capacité s'est résolue ce tour-ci, toutes les créatures que vous contrôlez acquièrent le contact mortel jusqu'à la fin du tour."
   }
  },
  {
@@ -11112,6 +11523,11 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/3/0/3010ec33-c3f6-42ce-ad5a-e149e5c9a805.jpg?1783908914",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Vizir de la ménagerie",
+   "typeLine": "Créature : naga et clerc",
+   "text": "Vous pouvez regarder la carte du dessus de votre bibliothèque. (Vous pouvez faire ceci à tout moment.)\nVous pouvez lancer la carte du dessus de votre bibliothèque si c'est une carte de créature.\nVous pouvez dépenser du mana comme si c'était du mana de n'importe quel type pour lancer des sorts de créature."
   }
  },
  {
@@ -11135,6 +11551,11 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/8/a/8a249d1c-a5fe-48e5-bd9b-e50d8eea391b.jpg?1783908914",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Préservateur né des friches",
+   "typeLine": "Créature : elfe et archer",
+   "text": "Flash\nPortée\nÀ chaque fois qu'une autre créature non-Humain arrive sur le champ de bataille sous votre contrôle, vous pouvez payer {X}. Quand vous faites ainsi, mettez X marqueurs +1/+1 sur le Préservateur né des friches."
   }
  },
  {
@@ -11160,6 +11581,11 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/b/c/bc6ffc1c-575b-4116-83c9-d13b29886c35.jpg?1783908915",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Aurélia, la Meneuse de guerre",
+   "typeLine": "Créature légendaire : ange",
+   "text": "Vol, vigilance, célérité\nÀ chaque fois qu'Aurélia, la Meneuse de guerre attaque pour la première fois à chaque tour, dégagez toutes les créatures que vous contrôlez. Cette phase est suivie d'une phase de combat supplémentaire."
   }
  },
  {
@@ -11183,6 +11609,11 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/0/6/06969031-2c13-4b5a-bb4e-86eed025e614.jpg?1783908914",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Ayli, pèlerine éternelle",
+   "typeLine": "Créature légendaire : kor et clerc",
+   "text": "Contact mortel\n{1}, sacrifiez une autre créature : Vous gagnez un nombre de points de vie égal à l'endurance de la créature sacrifiée.\n{1}{W}{B}, sacrifiez une autre créature : Exilez le permanent non-terrain ciblé. N'activez cette capacité que si vous avez au moins 10 points de vie de plus que votre total de points de vie de départ."
   }
  },
  {
@@ -11206,6 +11637,11 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/a/9/a9c966ab-0d92-4fa7-8a91-1f77089d8fc7.jpg?1783908913",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Défricheuse des nuages",
+   "typeLine": "Créature — humain et éclaireur",
+   "text": "Vol\nQuand la Défricheuse des nuages arrive, vous gagnez 2 points de vie et vous piochez deux cartes."
   }
  },
  {
@@ -11225,6 +11661,11 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/4/c/4cd4d5a4-4342-49fb-b1e4-7d08e6cf5376.jpg?1783908912",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Décoction mortelle",
+   "typeLine": "Rituel",
+   "text": "Chaque joueur sacrifie une créature ou un planeswalker. Si vous avez sacrifié un permanent de cette manière, vous pouvez renvoyer une autre carte de permanent dans votre main depuis votre cimetière."
   }
  },
  {
@@ -11250,6 +11691,11 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/c/0/c0a4450c-8dfd-4d05-adb9-e84ec6066c7d.jpg?1783908917",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Pillard du drogskol",
+   "typeLine": "Créature : esprit",
+   "text": "Vol, double initiative, lien de vie\nÀ chaque fois que vous gagnez des points de vie, piochez une carte."
   }
  },
  {
@@ -11271,6 +11717,11 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/8/f/8fb36712-26e9-4ec7-8946-626bb7094c15.jpg?1783908911",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Militante dryade",
+   "typeLine": "Créature : dryade et soldat",
+   "text": "Si une carte d'éphémère ou de rituel devait être mise dans un cimetière d'où qu'elle vienne, exilez-la à la place."
   }
  },
  {
@@ -11294,6 +11745,11 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/1/3/13ce1338-5a46-4d96-a991-d5fa8d4330ae.jpg?1783908911",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Drakôn du logogriphe",
+   "typeLine": "Créature : drakôn",
+   "text": "Vol\nLa force du Drakôn du logogriphe est égale au nombre de cartes d'éphémère et de rituel dans votre cimetière."
   }
  },
  {
@@ -11315,6 +11771,11 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/5/d/5d7fcd03-fffe-467a-88a5-e583e32afd7a.jpg?1783908912",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Garna, poing-de-sang de Keld",
+   "typeLine": "Créature légendaire : humain et berserker",
+   "text": "À chaque fois qu'une autre créature que vous contrôlez meurt, piochez une carte si elle attaquait. Sinon, Garna, poing-de-sang de Keld inflige 1 blessure à chaque adversaire."
   }
  },
  {
@@ -11339,6 +11800,11 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/b/6/b649f459-c9dc-495d-8703-b685996bb80c.jpg?1783908911",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Halana et Alena, partenaires",
+   "typeLine": "Créature légendaire — humain et ranger",
+   "text": "Initiative, portée\nAu début du combat pendant votre tour, mettez X marqueurs +1/+1 sur une autre créature ciblée que vous contrôlez, X étant la force d'Halana et Alena. Cette créature acquiert la célérité jusqu'à la fin du tour."
   }
  },
  {
@@ -11362,6 +11828,11 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/5/2/52dfc234-e87a-4594-8dcf-0a2f95eedc97.jpg?1783908910",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Prédateur de l'Immersturm",
+   "typeLine": "Créature — vampire et dragon",
+   "text": "Vol\nÀ chaque fois que le Prédateur de l'Immersturm devient engagé, exilez jusqu'à une carte ciblée depuis un cimetière et mettez un marqueur +1/+1 sur le Prédateur de l'Immersturm.\nSacrifiez une autre créature : Le Prédateur de l'Immersturm acquiert l'indestructible jusqu'à la fin du tour. Engagez-le."
   }
  },
  {
@@ -11381,6 +11852,11 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/0/1/019e8d47-a086-4e9f-8130-8c3b2dc50179.jpg?1783908910",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Pulsation du Maelstrom",
+   "typeLine": "Rituel",
+   "text": "Détruisez un permanent non-terrain ciblé et tous les autres permanents ayant le même nom que ce permanent."
   }
  },
  {
@@ -11400,6 +11876,10 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/8/8/88e85619-3a7d-48c2-b9b0-20718c913696.jpg?1783908910",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Mortification",
+   "text": "Détruisez une cible, créature ou enchantement."
   }
  },
  {
@@ -11424,6 +11904,11 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/5/4/54819d7a-eec6-49e6-a0bb-d9d07d42b4a6.jpg?1783908910",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Ovika, goliath énigmatique",
+   "typeLine": "Créature légendaire : phyrexian et cauchemar",
+   "text": "Vol\nParade — {3}, payez 3 points de vie.\nÀ chaque fois que vous lancez un sort non-créature, créez X jetons de créature 1/1 rouge Phyrexian et Gobelin, X étant la valeur de mana de ce sort. Ils acquièrent la célérité jusqu'à la fin du tour."
   }
  },
  {
@@ -11445,6 +11930,11 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/d/2/d2f007b0-b578-44f8-be65-cd9e2ac56e09.jpg?1783908909",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Première oratrice Zegana",
+   "typeLine": "Créature légendaire — ondin et sorcier",
+   "text": "La Première oratrice Zegana arrive sur le champ de bataille avec, sur elle, X marqueurs +1/+1, X étant la force la plus élevée parmi les autres créatures que vous contrôlez.\nQuand la Première oratrice Zegana arrive sur le champ de bataille, piochez un nombre de cartes égal à sa force."
   }
  },
  {
@@ -11472,6 +11962,11 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/5/0/50027d69-8bb0-444c-8e9b-4c9afd91cbda.jpg?1783908909",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Ventegueule sauvage",
+   "typeLine": "Créature : dragon",
+   "text": "Vol\nÀ chaque fois que le Ventegueule sauvage attaque, ajoutez {R}{R}{R}{G}{G}{G}. Jusqu'à la fin du tour, vous ne perdez pas ce mana au moment où les étapes et les phases se terminent."
   }
  },
  {
@@ -11491,6 +11986,11 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/5/1/516baae5-f7bf-4a90-a80d-192ff19dbae5.jpg?1783908908",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Donner l'exemple",
+   "typeLine": "Éphémère",
+   "text": "Quand vous lancez votre prochain sort d'éphémère ou de rituel ce tour-ci, copiez ce sort. Vous pouvez choisir de nouvelles cibles pour cette copie."
   }
  },
  {
@@ -11514,6 +12014,11 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/c/d/cdb88a22-8086-4bf7-89e8-cce929440dd8.jpg?1783908909",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Clavelade prédatrice",
+   "typeLine": "Créature — bête",
+   "text": "Vol\nÀ chaque fois que la Clavelade prédatrice inflige des blessures de combat à un joueur, vous pouvez détruire une cible, artefact ou enchantement, que ce joueur contrôle."
   }
  },
  {
@@ -11535,6 +12040,11 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/4/d/4d383bbf-6bb1-4c2c-899b-65d8df9d0889.jpg?1783908908",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Noble féale de Feuilleterne",
+   "typeLine": "Créature : elfe et chevalier",
+   "text": "Les autres créatures vertes que vous contrôlez gagnent +1/+1.\nLes autres créatures blanches que vous contrôlez gagnent +1/+1.\nSi un sort ou une capacité qu'un adversaire contrôle vous contraint à vous défausser de la Noble féale de Feuilleterne, mettez-la sur le champ de bataille à la place de la mettre dans votre cimetière."
   }
  },
  {
@@ -11553,6 +12063,11 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/7/b/7b36fba7-71f7-4b7f-bde5-b3a9752ad21c.jpg?1783908907",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Collier de basilic",
+   "typeLine": "Artefact — équipement",
+   "text": "La créature équipée a le contact mortel et le lien de vie.\nÉquipement {2}"
   }
  },
  {
@@ -11580,6 +12095,11 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/2/4/249aa94c-85ab-4606-aa2c-c902bd83ac21.jpg?1783908909",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Caravane de cultivateur",
+   "typeLine": "Artefact — véhicule",
+   "text": "{T} : Ajoutez un mana de la couleur de votre choix.\nPilotage 3 (Engagez n'importe quel nombre de créatures que vous contrôlez dont la force totale est supérieure ou égale à 3 : Ce véhicule devient une créature-artefact jusqu'à la fin du tour.)"
   }
  },
  {
@@ -11601,6 +12121,11 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/7/0/70197723-c61b-4600-b61d-41380c8f3067.jpg?1783908906",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Colosse de sombracier",
+   "typeLine": "Créature-artefact : golem",
+   "text": "Piétinement\nLe Colosse de sombracier est indestructible.\nSi le Colosse de sombracier devait être mis dans un cimetière d'où qu'il vienne, révélez le Colosse de sombracier et mélangez-le dans la bibliothèque de son propriétaire à la place."
   }
  },
  {
@@ -11619,6 +12144,11 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/7/2/721463ad-9531-487f-bd82-5e638c4fc35f.jpg?1783908906",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Jument du diamant",
+   "typeLine": "Créature-artefact : cheval",
+   "text": "Au moment où la Jument du diamant arrive sur le champ de bataille, choisissez une couleur.\nÀ chaque fois que vous lancez un sort de la couleur choisie, vous gagnez 1 point de vie."
   }
  },
  {
@@ -11635,6 +12165,11 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/0/2/026f55c3-8e65-4520-b26d-6208344f73b2.jpg?1783908906",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Canne de Feldonn",
+   "typeLine": "Artefact",
+   "text": "{T}, retirez la Canne de Feldonn de la partie : Mélangez votre cimetière dans votre bibliothèque."
   }
  },
  {
@@ -11653,6 +12188,11 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/4/8/484fbce6-71bd-40eb-a71b-86958a094708.jpg?1783908906",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Hurlefeu",
+   "typeLine": "Artefact — équipement",
+   "text": "La créature équipée a la double initiative. (Elle inflige des blessures de combat d'initiative et des blessures de combat normales.)\nÉquipement {2} ({2} : Attachez à une créature ciblée que vous contrôlez. N'attachez l'équipement que lorsque vous pourriez lancer un rituel.)"
   }
  },
  {
@@ -11673,6 +12213,11 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/b/c/bc49d9cb-8c7a-4a8f-96ea-bbe6ade8ae00.jpg?1783908905",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Colosse de la Porte",
+   "typeLine": "Créature-artefact — construction",
+   "text": "Ce sort coûte {1} de moins à lancer pour chaque porte que vous contrôlez.\nLe Colosse de la Porte ne peut pas être bloqué par les créatures de force inférieure ou égale à 2.\nÀ chaque fois qu'une porte arrive sur le champ de bataille sous votre contrôle, vous pouvez mettre le Colosse de la Porte depuis votre cimetière au-dessus de votre bibliothèque."
   }
  },
  {
@@ -11691,6 +12236,11 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/f/4/f45072cd-e3f2-4090-b984-50ec8d360bf2.jpg?1783908904",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Grimoire du dédale de l'esprit",
+   "typeLine": "Artefact",
+   "text": "{T}, mettez un marqueur « page » sur le Grimoire du dédale de l'esprit : Regard 1.\n{2},{T}, mettez un marqueur « page » sur le Grimoire du dédale de l'esprit : Piochez une carte.\nQuand il y a au moins quatre marqueurs « page » sur le Grimoire du dédale de l'esprit, exilez-le. Si vous faites ainsi, vous gagnez 4 points de vie."
   }
  },
  {
@@ -11710,6 +12260,11 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/f/3/f340d8a4-196a-4433-807c-b7124e96e44f.jpg?1783908905",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Lunettes du pyromancien",
+   "typeLine": "Artefact légendaire",
+   "text": "{T} : Ajoutez {R}. Quand ce mana est dépensé pour lancer un sort d'éphémère ou de rituel rouge, copiez ce sort et vous pouvez choisir de nouvelles cibles pour la copie."
   }
  },
  {
@@ -11737,6 +12292,11 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/8/f/8f95f753-bbaa-4282-9cd9-f1737136fc9e.jpg?1783908904",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Ramos, dragon-machine",
+   "typeLine": "Créature-artefact légendaire : dragon",
+   "text": "Vol\nÀ chaque fois que vous lancez un sort, mettez un marqueur +1/+1 sur Ramos, dragon-machine pour chaque couleur de ce sort.\nRetirez cinq marqueurs +1/+1 de Ramos : Ajoutez {W}{W}{U}{U}{B}{B}{R}{R}{G}{G}. N'activez qu'une seule fois par tour."
   }
  },
  {
@@ -11753,6 +12313,11 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/0/f/0f99356b-eed0-4d92-818b-80754bcb75f3.jpg?1783908903",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Longue-vue ensorceleuse",
+   "typeLine": "Artefact",
+   "text": "Au moment où la Longue-vue ensorceleuse arrive sur le champ de bataille, regardez la main d'un adversaire, puis choisissez n'importe quel nom de carte.\nLes capacités activées des sources du nom choisi ne peuvent pas être activées à moins qu'elles ne soient des capacités de mana."
   }
  },
  {
@@ -11769,6 +12334,10 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/6/d/6d3ff537-86f0-405e-b96b-1250720af031.jpg?1783908903",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Lanterne guide-âmes",
+   "text": "When this artifact enters, exile target card from a graveyard.\n{T}, Sacrifice this artifact: Exile each opponent's graveyard.\n{1}, {T}, Sacrifice this artifact: Draw a card."
   }
  },
  {
@@ -11789,6 +12358,11 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/9/3/931ad21b-a6bb-4a89-8d6f-80adfcf126c7.jpg?1783908904",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Escouflenfer d'acier",
+   "typeLine": "Créature-artefact — dragon",
+   "text": "Vol\n{2} : Cette créature gagne +1/+0 jusqu'à la fin du tour.\n{X} : Détruisez chaque permanent non-terrain avec une valeur de mana de X dont le contrôleur a subi des blessures de combat par cette créature ce tour-ci. N'activez qu'une seule fois par tour."
   }
  },
  {
@@ -11816,6 +12390,11 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/4/0/40b8bf3a-1cb5-4ce2-ac25-9410f17130de.jpg?1783908902",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Mascotte des Trois arbres",
+   "typeLine": "Créature-artefact — changeforme",
+   "text": "Changelin (Cette carte a tous les types de créature.)\n{1} : Ajoutez un mana de la couleur de votre choix. N'activez qu'une seule fois par tour."
   }
  },
  {
@@ -11836,6 +12415,11 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/f/9/f98a7264-0a83-42c8-a94d-05ad4c234242.jpg?1783908907",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Porte de la guilde d'Azorius",
+   "typeLine": "Terrain — porte",
+   "text": "La Porte de la guilde d'Azorius arrive sur le champ de bataille engagée.\n{T} : Ajoutez {W} ou {U}."
   }
  },
  {
@@ -11856,6 +12440,11 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/3/e/3e3c74ea-40e9-4ad9-a491-c208403b68ad.jpg?1783908903",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Porte de la guilde de Boros",
+   "typeLine": "Terrain — porte",
+   "text": "La Porte de la guilde de Boros arrive sur le champ de bataille engagée.\n{T} : Ajoutez {R} ou {W}."
   }
  },
  {
@@ -11875,6 +12464,11 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/a/c/ac2aff0e-1319-4d3b-903c-fa1ce3db7602.jpg?1783908903",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Landes rampantes",
+   "typeLine": "Terrain",
+   "text": "{T} : Ajoutez {C}.\n{4} : Mettez deux marqueurs +1/+1 sur les Landes rampantes. Puis vous pouvez faire qu'elles deviennent une créature 0/0 Élémental jusqu'à la fin du tour. C'est toujours un terrain."
   }
  },
  {
@@ -11894,6 +12488,11 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/a/7/a7976098-b560-458a-ad3c-18f7873add21.jpg?1783908902",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Cavernes cryptiques",
+   "typeLine": "Terrain",
+   "text": "{T} : Ajoutez {C}.\n{1}, {T}, sacrifiez les Cavernes cryptiques : Piochez une carte. N'activez cette capacité que si vous contrôlez au moins cinq terrains."
   }
  },
  {
@@ -11913,6 +12512,10 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/0/c/0c7e51b6-4898-4632-b39c-3ce438caa882.jpg?1783908902",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Champ de démolition",
+   "text": "{T} : Ajoutez {C}.\n{2}, {T}, sacrifiez ce terrain : Détruisez un terrain non-base ciblé qu'un adversaire contrôle. Le contrôleur de ce terrain peut chercher dans sa bibliothèque une carte de terrain de base, la mettre sur le champ de bataille, puis mélanger. Vous pouvez chercher dans votre bibliothèque une carte de terrain de base, la mettre sur le champ de bataille, puis mélanger."
   }
  },
  {
@@ -11933,6 +12536,11 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/f/9/f9b8a159-5e58-4432-8ecd-62f39afa96da.jpg?1783908901",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Porte de la guilde de Dimir",
+   "typeLine": "Terrain — porte",
+   "text": "La Porte de la guilde de Dimir arrive sur le champ de bataille engagée.\n{T} : Ajoutez {U} ou {B}."
   }
  },
  {
@@ -11953,6 +12561,11 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/9/2/92d4646c-a375-4835-aa58-8bb77d1a5abf.jpg?1783908900",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Porte de la guilde de Golgari",
+   "typeLine": "Terrain — porte",
+   "text": "La Porte de la guilde de Golgari arrive sur le champ de bataille engagée.\n{T} : Ajoutez {B} ou {G}."
   }
  },
  {
@@ -11973,6 +12586,11 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/3/a/3ab6c240-c97d-4a5c-bc39-860c2d9901c2.jpg?1783908900",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Porte de la guilde de Gruul",
+   "typeLine": "Terrain — porte",
+   "text": "La Porte de la guilde de Gruul arrive sur le champ de bataille engagée.\n{T} : Ajoutez {R} ou {G}."
   }
  },
  {
@@ -11993,6 +12611,11 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/d/b/db9e6fc9-813d-4a71-8a68-8e0f83fa945d.jpg?1783908899",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Porte de la guilde d'Izzet",
+   "typeLine": "Terrain — porte",
+   "text": "La Porte de la guilde d'Izzet arrive sur le champ de bataille engagée.\n{T} : Ajoutez {U} ou {R}."
   }
  },
  {
@@ -12013,6 +12636,11 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/a/9/a917be03-0c17-4454-b044-c4375e5c8085.jpg?1783908900",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Porte de la guilde d'Orzhov",
+   "typeLine": "Terrain — porte",
+   "text": "La Porte de la guilde d'Orzhov arrive sur le champ de bataille engagée.\n{T} : Ajoutez {W} ou {B}."
   }
  },
  {
@@ -12033,6 +12661,11 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/e/1/e1f01964-c610-4d0f-a2b4-f52e46dc50d2.jpg?1783908899",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Porte de la guilde de Rakdos",
+   "typeLine": "Terrain — porte",
+   "text": "La Porte de la guilde de Rakdos arrive sur le champ de bataille engagée.\n{T} : Ajoutez {B} ou {R}."
   }
  },
  {
@@ -12053,6 +12686,11 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/6/7/6718d4e7-768e-473f-8064-a68422e977f6.jpg?1783908899",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Porte de la guilde de Selesnya",
+   "typeLine": "Terrain — porte",
+   "text": "La Porte de la guilde de Selesnya arrive sur le champ de bataille engagée.\n{T} : Ajoutez {G} ou {W}."
   }
  },
  {
@@ -12073,6 +12711,11 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/9/6/96590855-1ee5-4d69-9070-776e23f71976.jpg?1783908898",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Porte de la guilde de Simic",
+   "typeLine": "Terrain — porte",
+   "text": "La Porte de la guilde de Simic arrive sur le champ de bataille engagée.\n{T} : Ajoutez {G} ou {U}."
   }
  },
  {
@@ -12095,6 +12738,11 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/8/a/8a990a92-8d0f-489f-ae97-68c90fc5ccf1.jpg?1783908898",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Temple de l'abandon",
+   "typeLine": "Terrain",
+   "text": "Ce terrain arrive engagé.\nQuand ce terrain arrive, regard 1.\n{T} : Ajoutez {R} ou {G}."
   }
  },
  {
@@ -12117,6 +12765,11 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/e/1/e18748ce-e52e-4cd1-89d4-cd2578a0d574.jpg?1783908897",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Temple de la tromperie",
+   "typeLine": "Terrain",
+   "text": "Ce terrain arrive engagé.\nQuand ce terrain arrive, regard 1.\n{T} : Ajoutez {U} ou {B}."
   }
  },
  {
@@ -12139,6 +12792,10 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/0/1/01f23c1a-a0fe-4520-88ed-045aa4044567.jpg?1783908898",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Temple de l'illumination",
+   "text": "This land enters tapped.\nWhen this land enters, scry 1.\n{T}: Add {W} or {U}."
   }
  },
  {
@@ -12161,6 +12818,10 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/2/2/224e8255-7bc6-44a2-86af-14f8446f4f77.jpg?1783908897",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Temple de la révélation",
+   "text": "This land enters tapped.\nWhen this land enters, scry 1.\n{T}: Add {U} or {R}."
   }
  },
  {
@@ -12183,6 +12844,11 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/1/0/10e7d0d5-2329-42a6-b6ff-a5197ba5f1d0.jpg?1783908897",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Temple de la maladie",
+   "typeLine": "Terrain",
+   "text": "Ce terrain arrive engagé.\nQuand ce terrain arrive, regard 1.\n{T} : Ajoutez {B} ou {G}."
   }
  },
  {
@@ -12205,6 +12871,11 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/d/7/d78eccc4-1500-43f1-94f5-b39c160b6381.jpg?1783908896",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Temple de la malice",
+   "typeLine": "Terrain",
+   "text": "Le Temple de la malice arrive engagé.\nQuand le Temple de la malice arrive, regard 1.\n{T} : Ajoutez {B} ou {R}."
   }
  },
  {
@@ -12227,6 +12898,10 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/b/d/bd581f1d-d8ba-47f9-b10b-b7b6d46239ce.jpg?1783908896",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Temple du mystère",
+   "text": "Ce terrain arrive engagé.\nQuand ce terrain arrive, regard 1.\n{T} : Ajoutez {G} ou {U}."
   }
  },
  {
@@ -12249,6 +12924,10 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/6/9/69762774-c8e1-42de-90b3-5a4d50f5d84d.jpg?1783908895",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Temple de la profusion",
+   "text": "Ce terrain arrive engagé.\nQuand ce terrain arrive, regard 1.\n{T} : Ajoutez {G} ou {W}."
   }
  },
  {
@@ -12271,6 +12950,11 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/4/0/408ad759-052a-4949-9adf-7541cb2ef77e.jpg?1783908895",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Temple du silence",
+   "typeLine": "Terrain",
+   "text": "Ce terrain arrive engagé.\nQuand ce terrain arrive, regard 1.\n{T} : Ajoutez {W} ou {B}."
   }
  },
  {
@@ -12293,6 +12977,10 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/d/2/d2f58450-838d-4404-a68f-159e82b0e58d.jpg?1783908895",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Temple du triomphe",
+   "text": "This land enters tapped.\nWhen this land enters, scry 1.\n{T}: Add {R} or {W}."
   }
  },
  {
@@ -12315,6 +13003,11 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/c/2/c279947e-168f-4af5-902b-aba724f52b8a.jpg?1783908897",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Ange de la vitalité",
+   "typeLine": "Créature — ange",
+   "text": "Vol\nSi vous deviez gagner des points de vie, vous gagnez ce nombre de points de vie plus 1 à la place.\nL'Ange de la vitalité gagne +2/+2 tant que vous avez au moins 25 points de vie."
   }
  },
  {
@@ -12339,6 +13032,11 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/b/2/b2abce4d-ef21-4028-8a86-b7d1387bc937.jpg?1783908894",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Lyra Aubevenant",
+   "typeLine": "Créature légendaire : ange",
+   "text": "Vol, initiative, lien de vie\nLes autres anges que vous contrôlez gagnent +1/+1 et ont le lien de vie."
   }
  },
  {
@@ -12357,6 +13055,11 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/9/c/9c26415d-9e98-480b-9e30-b3aed00d5f3d.jpg?1783908893",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Prise de position",
+   "typeLine": "Éphémère",
+   "text": "Les créatures que vous contrôlez gagnent +1/+0 et acquièrent l'indestructible jusqu'à la fin du tour. (Les blessures et les effets qui disent « détruisez » ne les détruisent pas.)"
   }
  },
  {
@@ -12377,6 +13080,11 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/a/9/a98a1553-e5f3-4c9c-833d-579e82e1708f.jpg?1783908894",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Confiscation",
+   "typeLine": "Enchantement : aura",
+   "text": "Enchanter : permanent\nVous contrôlez le permanent enchanté."
   }
  },
  {
@@ -12395,6 +13103,10 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/f/f/ff3b0dba-0207-4249-bdab-e807c76ce39e.jpg?1783908893",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Négation",
+   "text": "Contrecarrez un sort non-créature ciblé."
   }
  },
  {
@@ -12415,6 +13127,10 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/f/e/fe98958d-30ee-4a47-aacc-064e02d109b3.jpg?1783908893",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Rite de duplication",
+   "text": "Kick {5} (Vous pouvez payer {5} supplémentaires au moment où vous lancez ce sort.)\nCréez un jeton qui est une copie d'une créature ciblée. Si ce sort a été kické, créez cinq de ces jetons à la place."
   }
  },
  {
@@ -12433,6 +13149,10 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/e/6/e66d4541-160c-4137-98e7-0eaa692c7d7a.jpg?1783908893",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Nourrir l'essaim",
+   "text": "Détruisez une cible, créature ou enchantement, qu'un adversaire contrôle. Vous perdez un nombre de points de vie égal à la valeur de mana de ce permanent."
   }
  },
  {
@@ -12455,6 +13175,11 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/2/c/2cd61c12-f5e2-4698-9080-097679754f16.jpg?1783908892",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Gardien de la porte de Malakir",
+   "typeLine": "Créature : vampire et guerrier",
+   "text": "Kick {B} (Vous pouvez payer {B} supplémentaire au moment où vous lancez ce sort.)\nQuand le Gardien de la porte de Malakir arrive sur le champ de bataille, s'il a été kické, le joueur ciblé sacrifie une créature."
   }
  },
  {
@@ -12475,6 +13200,11 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/3/9/39be2675-986c-4812-9448-99737e797671.jpg?1783908892",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Guivre du massacre",
+   "typeLine": "Créature — phyrexian et guivre",
+   "text": "Quand la Guivre du massacre arrive, les créatures que vos adversaires contrôlent gagnent -2/-2 jusqu'à la fin du tour.\nÀ chaque fois qu'une créature qu'un adversaire contrôle meurt, ce joueur perd 2 points de vie."
   }
  },
  {
@@ -12495,6 +13225,11 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/e/8/e89024c5-eef5-468c-92b4-e53dd212909c.jpg?1783908891",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Violence gratuite",
+   "typeLine": "Enchantement",
+   "text": "Si une créature que vous contrôlez devait infliger des blessures à un permanent ou à un joueur, elle inflige à la place le double de ces blessures à ce permanent ou à ce joueur."
   }
  },
  {
@@ -12515,6 +13250,10 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/d/d/dde674d6-f4e7-410b-acf0-34021290576d.jpg?1783908892",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Gobelin des rues",
+   "text": "À chaque fois que vous lancez un sort d'éphémère ou de rituel, cette créature inflige 2 blessures à chaque adversaire."
   }
  },
  {
@@ -12533,6 +13272,11 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/d/0/d0b7cecf-b51b-4d30-b7e9-cd7976271e07.jpg?1783908891",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Secousses d'impact",
+   "typeLine": "Enchantement",
+   "text": "À chaque fois qu'une créature arrive sur le champ de bataille sous votre contrôle, les Secousses d'impact infligent 1 blessure à chaque adversaire."
   }
  },
  {
@@ -12553,6 +13297,10 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/b/c/bc1c518a-dcb4-407c-85be-ed5935a24198.jpg?1783908891",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Giganotosaurus",
+   "typeLine": "Créature : dinosaure"
   }
  },
  {
@@ -12573,6 +13321,11 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/8/3/83b4a09f-ea53-42b4-a41a-4299192a6fd3.jpg?1783908890",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Parfaite impérieuse",
+   "typeLine": "Créature : elfe et guerrier",
+   "text": "Les autres elfes que vous contrôlez gagnent +1/+1.\n{G}, {T} : Créez un jeton de créature 1/1 verte Elfe et Guerrier."
   }
  },
  {
@@ -12595,6 +13348,11 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/f/a/fa150070-80b6-453d-b00f-4462175cac79.jpg?1783908890",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Guivre de Pelakka",
+   "typeLine": "Créature : guivre",
+   "text": "Piétinement\nQuand la Guivre de Pelakka arrive sur le champ de bataille, vous gagnez 7 points de vie.\nQuand la Guivre de Pelakka meurt, piochez une carte."
   }
  },
  {
@@ -12614,6 +13372,11 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/e/0/e0d8c9f6-cbbd-4694-b100-01cfb81036cc.jpg?1783908890",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Charme de Boros",
+   "typeLine": "Éphémère",
+   "text": "Choisissez l'un —\n• Le Charme de Boros inflige 4 blessures à une cible, joueur ou planeswalker.\n• Les permanents que vous contrôlez acquièrent l'indestructible jusqu'à la fin du tour.\n• Une créature ciblée acquiert la double initiative jusqu'à la fin du tour."
   }
  },
  {
@@ -12635,6 +13398,11 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/a/1/a1201875-b3d8-4f95-801e-bf18ee77919b.jpg?1783908888",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Courage inébranlable",
+   "typeLine": "Enchantement : aura",
+   "text": "Enchanter : créature\nLa créature enchantée gagne +2/+2 et a le piétinement et le lien de vie."
   }
  },
  {
@@ -12653,6 +13421,11 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/e/3/e35e614c-51a9-4d5c-b7fa-1a0a87108785.jpg?1783908889",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Automate évolutif",
+   "typeLine": "Créature-artefact : construction",
+   "text": "Au moment où l'Automate évolutif arrive sur le champ de bataille, choisissez un type de créature.\nL'Automate évolutif a le type choisi en plus de ses autres types.\nLes autres créatures du type choisi que vous contrôlez gagnent +1/+1."
   }
  },
  {
@@ -12669,6 +13442,11 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/0/8/08e66835-c228-48fa-bcaa-eb96edbd4f5a.jpg?1783908888",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Carte d'expédition",
+   "typeLine": "Artefact",
+   "text": "{2}, {T}, sacrifiez la Carte d'expédition : Cherchez dans votre bibliothèque une carte de terrain, révélez-la, mettez-la dans votre main, puis mélangez."
   }
  },
  {
@@ -12692,6 +13470,10 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/a/a/aa5e88f1-0ddf-45d7-bbd0-baa88d121867.jpg?1783908890",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Lotus doré",
+   "text": "{T} : Ajoutez trois manas d'une seule couleur de votre choix."
   }
  },
  {
@@ -12711,6 +13493,11 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/5/3/535b9ac6-dba2-4162-86ed-df3e9fad0306.jpg?1783908888",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Archive hèdron",
+   "typeLine": "Artefact",
+   "text": "{T} : Ajoutez {C}{C}.\n{2}, {T}, sacrifiez l'Archive hèdron : Piochez deux cartes."
   }
  },
  {
@@ -12730,6 +13517,11 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/e/a/ea9a4d1a-79dd-4b15-8e3b-f111f16d6bfc.jpg?1783908887",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Fin du labyrinthe",
+   "typeLine": "Terrain",
+   "text": "La Fin du labyrinthe arrive sur le champ de bataille engagée.\n{T} : Ajoutez {1} à votre réserve.\n{3}, {T}, renvoyez la Fin du labyrinthe dans la main de son propriétaire : Cherchez dans votre bibliothèque une carte de porte, mettez-la sur le champ de bataille, puis mélangez votre bibliothèque. Si vous contrôlez au moins dix cartes de porte ayant des noms différents, vous gagnez la partie."
   }
  },
  {

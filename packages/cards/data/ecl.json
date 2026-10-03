@@ -7170,6 +7170,10 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/8/c/8c632984-5176-4c37-91df-6577cc294b85.jpg?1783904395",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Étendues sauvages en évolution",
+   "text": "{T}, sacrifiez ce terrain : Cherchez dans votre bibliothèque une carte de terrain de base, mettez-la sur le champ de bataille engagée, puis mélangez."
   }
  },
  {
@@ -7190,6 +7194,11 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/e/0/e056b55f-82ed-4fe0-ab0c-bb20fa4a218a.jpg?1783904394",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Fontaine sacrée",
+   "typeLine": "Terrain — plaine et île",
+   "text": "({T} : Ajoutez {W} ou {U}.)\nAu moment où la Fontaine sacrée arrive sur le champ de bataille, vous pouvez payer 2 points de vie. Si vous ne le faites pas, elle arrive sur le champ de bataille engagée."
   }
  },
  {
@@ -7210,6 +7219,11 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/4/5/45b92924-baa1-4c9b-9932-9a5eda8f3446.jpg?1783904394",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Tombeau luxuriant",
+   "typeLine": "Terrain — marais et forêt",
+   "text": "({T} : Ajoutez {B} or {G}.)\nAu moment où le Tombeau luxuriant arrive sur le champ de bataille, vous pouvez payer 2 points de vie. Si vous ne le faites pas, il arrive sur le champ de bataille engagé."
   }
  },
  {
@@ -7230,6 +7244,11 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/b/6/b66daa94-d367-4812-9f18-f35378c1febb.jpg?1783904394",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Conduits de vapeur",
+   "typeLine": "Terrain — île et montagne",
+   "text": "({T} : Ajoutez {U} ou {R}.)\nAu moment où les Conduits de vapeur arrivent sur le champ de bataille, vous pouvez payer 2 points de vie. Si vous ne le faites pas, ils arrivent sur le champ de bataille engagés."
   }
  },
  {
@@ -7250,6 +7269,11 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/6/c/6cdd2a74-63b3-4ff2-9c5a-a85dee63c3c9.jpg?1783904394",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Jardin du temple",
+   "typeLine": "Terrain — forêt et plaine",
+   "text": "({T} : Ajoutez {G} ou {W}.)\nAu moment où le Jardin du temple arrive sur le champ de bataille, vous pouvez payer 2 points de vie. Si vous ne le faites pas, il arrive sur le champ de bataille engagé."
   }
  },
  {
@@ -7269,6 +7293,9 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/3/a/3a438199-54f8-4702-81cf-a9d42e7cd9f1.jpg?1783904393",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Plaine"
   }
  },
  {
@@ -7288,6 +7315,9 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/b/0/b0da67fb-1cb2-4105-ab5c-b7c680b8116c.jpg?1783904392",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Île"
   }
  },
  {
@@ -7307,6 +7337,9 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/1/d/1dd4d605-02a2-4183-b191-0bca8dfbf962.jpg?1783904394",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Marais"
   }
  },
  {
@@ -7326,6 +7359,9 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/2/9/295b92bc-d66f-45d8-9bbe-5f5f13e39fd4.jpg?1783904393",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Montagne"
   }
  },
  {
@@ -7345,6 +7381,9 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/b/4/b460f5f7-c7c9-400c-8419-23d614f45bf9.jpg?1783904393",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Forêt"
   }
  }
 ]

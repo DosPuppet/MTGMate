@@ -73,6 +73,12 @@ Plan établi le 02/10/2026 (branche `dev`) : il sert de feuille de route aux pro
   - **accessibilité :** formes en plus des couleurs (épée, bouclier, contours pointillé ou plein) ; règles de Biome `noNoninteractiveElementInteractions` et `useKeyWithClickEvents` réactivées (équivalents clavier : Échap, focus) ;
   - **non fait :** choix des terrains au paiement et de l'hybride (l'engagement manuel des terrains avant de lancer, C5, permet déjà de choisir) ; regard et surveillance par glisser ; `Card` mémoïsé (les vues sont recréées à chaque mise à jour : une comparaison sur mesure, à mesurer) ; tailles en `rem` ; `noStaticElementInteractions` (12 cas) ;
   - **vérification :** test du journal (perte de PV, cartes citées) ; script Playwright ponctuel avec captures (aperçu étroit, noms du journal, « Jusqu'à mon tour », pastille d'attaque) ; `verify --set META --ui` vert (dont `tutorial-smoke`).
+- **03/10/2026 : C19 fait** (sans changement de règles) :
+  - **registre unique des extensions** (`cards/src/setRegistry.ts`, sans données) : `sets.ts` y joint données et scripts ; `tools/import-scryfall.ts` en tire la liste « all » ; `tools/import-tokens.ts` vérifie que son ordre de préférence couvre tout le registre ;
+  - **légalités :** dérogations (`cards/data/legality-overrides.json`, vide) appliquées au chargement ; `tools/check-legality.ts` compare à Scryfall (bannies, légales absentes, rotation), chaque semaine en CI (`.github/workflows/legality.yml`) ; la liste des bannies du README est vérifiée par `cards/test/legality.test.ts` ;
+  - **trois cartes légales manquaient** (le « 100 % » ne comptait que les cartes importées) : Melek, Reforged Researcher, Tomik, Wielder of Law et Voja, Jaws of the Conclave, promotions de MKM seulement, que l'import écartait. Import corrigé (une promotion compte si c'est la seule impression de la carte dans le set), scripts et 3 tests de règles ; déclencheur `attackWith` étendu (`defending: "you"`, plafond `TriggerSpec` relevé et noté). **5 164 / 5 164** ;
+  - **noms français :** l'import rapproche aussi par le nom anglais quand le numéro diffère ; `tools/import-french.ts` complète les données françaises sans réimporter (FDN : 163 réimpressions, depuis d'autres extensions ; FRA : 285, Scryfall les a maintenant ; ECL : 10 terrains) ; restent 5 cartes que Scryfall n'a pas en français ;
+  - **réimport à blanc** de toutes les extensions (hors FDN et FRA) : identique, à part ces ajouts.
 
 ## Décisions et ordre
 
@@ -107,7 +113,7 @@ Plan établi le 02/10/2026 (branche `dev`) : il sert de feuille de route aux pro
 | 17 | C16 : serveur et exploitation | § 7 | C3 | M | ✅ |
 | 18 | C17 : IA | § 8 | C8, C9 | M | ✅ |
 | 19 | C18 : interface | § 9 | C7 | M/L | ✅ en partie |
-| 20 | C19 : données | § 7 | — | S | |
+| 20 | C19 : données | § 7 | — | S | ✅ |
 | 21 | C20 (facultatif) : découpage de `stack.ts` | § 5.2 | C7 à C12 | M | |
 
 **Ordre recommandé :**

@@ -7196,6 +7196,12 @@
   "artCrop": "https://cards.scryfall.io/art_crop/front/7/2/72c6d541-e2cb-4d6e-acac-90a8f53b7006.jpg?1783912824",
   "legalities": {
    "standard": "legal"
+  },
+  "fr": {
+   "name": "Petit salon élégant",
+   "typeLine": "Terrain — montagne et plaine",
+   "text": "Le Petit salon élégant arrive sur le champ de bataille engagé.\nQuand le Petit salon élégant arrive sur le champ de bataille, surveillez 1.",
+   "image": "https://cards.scryfall.io/normal/front/3/2/321a4989-5bdd-4b14-896d-fc2f8a63cb89.jpg?1782801301"
   }
  },
  {
@@ -7621,6 +7627,96 @@
    "name": "Forêt",
    "typeLine": "Terrain de base — forêt",
    "image": "https://cards.scryfall.io/normal/front/0/3/03fa4acc-a425-436e-9ae0-d46afd7c7994.jpg?1782801566"
+  }
+ },
+ {
+  "name": "Melek, Reforged Researcher",
+  "number": "430",
+  "rarity": "mythic",
+  "manaCost": "{3}{U}{R}",
+  "cmc": 5,
+  "typeLine": "Legendary Creature — Weird Detective",
+  "oracleText": "Melek's power and toughness are each equal to twice the number of instant and sorcery cards in your graveyard.\nThe first instant or sorcery spell you cast each turn costs {3} less to cast.",
+  "power": "*",
+  "toughness": "*",
+  "colors": [
+   "R",
+   "U"
+  ],
+  "keywords": [],
+  "image": "https://cards.scryfall.io/normal/front/0/1/01c5ede0-a098-4f21-8b7e-795a83e75aae.jpg?1783912764",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/0/1/01c5ede0-a098-4f21-8b7e-795a83e75aae.jpg?1783912764",
+  "legalities": {
+   "standard": "legal"
+  },
+  "fr": {
+   "name": "Melek, chercheur reforgé",
+   "typeLine": "Créature légendaire — anomalie et détective",
+   "text": "La force et l'endurance de Melek, chercheur reforgé sont chacune égales au double du nombre de cartes d'éphémère et de rituel dans votre cimetière.\nLe premier sort d'éphémère ou de rituel que vous lancez à chaque tour coûte {3} de moins à lancer.",
+   "image": "https://cards.scryfall.io/normal/front/2/3/239ebbc9-b716-457a-ad79-7634d566b936.jpg?1782800858"
+  }
+ },
+ {
+  "name": "Tomik, Wielder of Law",
+  "number": "431",
+  "rarity": "mythic",
+  "manaCost": "{1}{W}{B}",
+  "cmc": 3,
+  "typeLine": "Legendary Creature — Human Advisor",
+  "oracleText": "Affinity for planeswalkers (This spell costs {1} less to cast for each planeswalker you control.)\nFlying, vigilance\nWhenever an opponent attacks with creatures, if two or more of those creatures are attacking you and/or planeswalkers you control, that opponent loses 3 life and you draw a card.",
+  "power": "2",
+  "toughness": "4",
+  "colors": [
+   "B",
+   "W"
+  ],
+  "keywords": [
+   "Flying",
+   "Affinity",
+   "Vigilance"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/2/c/2c5a7550-fe1a-4797-9583-70ab56cfac0d.jpg?1783912763",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/2/c/2c5a7550-fe1a-4797-9583-70ab56cfac0d.jpg?1783912763",
+  "legalities": {
+   "standard": "legal"
+  },
+  "fr": {
+   "name": "Tomik, porteur de loi",
+   "typeLine": "Créature légendaire — humain et conseiller",
+   "text": "Affinité pour les planeswalkers (Ce sort coûte {1} de moins à lancer pour chaque planeswalker que vous contrôlez.)\nVol, vigilance\nÀ chaque fois qu'un adversaire attaque avec des créatures, si au moins deux de ces créatures vous attaquent et/ou attaquent des planeswalkers que vous contrôlez, cet adversaire perd 3 points de vie et vous piochez une carte.",
+   "image": "https://cards.scryfall.io/normal/front/3/7/3722ce79-67c1-4b63-ab82-b9c25e93bb5a.jpg?1782800853"
+  }
+ },
+ {
+  "name": "Voja, Jaws of the Conclave",
+  "number": "432",
+  "rarity": "mythic",
+  "manaCost": "{2}{R}{G}{W}",
+  "cmc": 5,
+  "typeLine": "Legendary Creature — Wolf",
+  "oracleText": "Vigilance, trample, ward {3}\nWhenever Voja attacks, put X +1/+1 counters on each creature you control, where X is the number of Elves you control. Draw a card for each Wolf you control.",
+  "power": "5",
+  "toughness": "5",
+  "colors": [
+   "G",
+   "R",
+   "W"
+  ],
+  "keywords": [
+   "Vigilance",
+   "Trample",
+   "Ward"
+  ],
+  "image": "https://cards.scryfall.io/normal/front/b/f/bfa1bd2f-25bd-4fbd-877b-cef00ab7f92f.jpg?1783912763",
+  "artCrop": "https://cards.scryfall.io/art_crop/front/b/f/bfa1bd2f-25bd-4fbd-877b-cef00ab7f92f.jpg?1783912763",
+  "legalities": {
+   "standard": "legal"
+  },
+  "fr": {
+   "name": "Voja, mâchoires du Conclave",
+   "typeLine": "Créature légendaire — loup",
+   "text": "Vigilance, piétinement, parade {3}\nÀ chaque fois que Voja, mâchoires du Conclave attaque, mettez X marqueurs +1/+1 sur chaque créature que vous contrôlez, X étant le nombre d'elfes que vous contrôlez. Piochez une carte pour chaque loup que vous contrôlez.",
+   "image": "https://cards.scryfall.io/normal/front/4/3/439332e9-a10b-4503-822a-a5aa2f00d7af.jpg?1782800846"
   }
  }
 ]

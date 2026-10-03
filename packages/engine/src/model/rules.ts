@@ -314,7 +314,11 @@ export type TriggerSpec =
   | { on: "loseLife"; whose: "you" | "opponent" | "any" }
   /** « Chaque fois que vous attaquez [avec au moins N créatures] » */
   /** `anyPlayer` : « chaque fois qu'un joueur attaque avec N créatures ou plus » (Aurelia, the Law Above). */
-  | { on: "attackWith"; min?: number; filter?: ObjectFilter; anyPlayer?: boolean }
+  /**
+   * `defending: "you"` : un adversaire attaque, et seuls comptent ses attaquants qui vous attaquent, vous ou vos
+   * planeswalkers (Tomik, Wielder of Law) ; le joueur de l'événement est alors l'attaquant.
+   */
+  | { on: "attackWith"; min?: number; filter?: ObjectFilter; anyPlayer?: boolean; defending?: "you" }
   /** « Chaque fois que des marqueurs sont placés sur … » */
   /** `firstThisTurn` : « si c'est la première fois ce tour-ci que des marqueurs sont mis sur elle » (Stalwart Successor). */
   | { on: "countersPut"; who: "self" | ObjectFilter; kind?: string; firstThisTurn?: boolean }

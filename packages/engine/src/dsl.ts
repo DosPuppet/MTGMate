@@ -1726,6 +1726,8 @@ export const when = {
     filter,
     ...(anyPlayer ? { anyPlayer } : {}),
   }),
+  /** « Chaque fois qu'un adversaire attaque avec des créatures, si N ou plus vous attaquent, vous ou vos planeswalkers ». */
+  opponentAttacksYouWith: (min = 1): TriggerSpec => ({ on: "attackWith", min, defending: "you" }),
   countersPut: (who: "self" | ObjectFilter, kind?: string, firstThisTurn?: boolean): TriggerSpec => ({
     on: "countersPut",
     who,

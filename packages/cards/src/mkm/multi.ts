@@ -7,6 +7,7 @@ import {
   BASIC_LAND,
   type CardScript,
   cond,
+  costReducer,
   DETECTIVE,
   DOG,
   entersWith,
@@ -924,6 +925,38 @@ export const MULTI: Record<string, CardScript> = {
         modify: { add: 1 },
         label: "Le terrain enchanté engagé pour du mana : un mana de plus",
       }),
+    ],
+  },
+  // --- Promotions de MKM légales en Standard (importées au lot C19 du PLAN-C) ---------------------------------------
+  "Melek, Reforged Researcher": {
+    // F/E : deux fois le nombre de cartes d'éphémère et de rituel de votre cimetière.
+    cdaPT: amount.plus(amount.countIn("graveyard", INSTANT_SORCERY), amount.countIn("graveyard", INSTANT_SORCERY)),
+    abilities: [
+      costReducer(INSTANT_SORCERY, 3, "Le premier éphémère ou rituel du tour coûte {3} de moins", {
+        condition: cond.not(cond.amountAtLeast(amount.instantSorceryCast, 1)),
+      }),
+    ],
+  },
+  "Tomik, Wielder of Law": {
+    // Affinité pour les planeswalkers : {1} de moins par planeswalker que vous contrôlez. Vol, vigilance : lus dans le texte.
+    costReduction: { generic: amount.count({ types: ["Planeswalker"], controller: "you" }) },
+    abilities: [
+      triggered(when.opponentAttacksYouWith(2), [fx.loseLife(3, ref.eventPlayer), fx.draw(1)], {
+        label: "L'adversaire perd 3 PV, vous piochez",
+      }),
+    ],
+  },
+  "Voja, Jaws of the Conclave": {
+    // Vigilance, piétinement, garde {3} : lus dans le texte.
+    abilities: [
+      triggered(
+        when.attacksSelf,
+        [
+          fx.addCountersAll(CREATURES_YOU, amount.count({ subtype: "Elf", controller: "you" }), "+1/+1"),
+          fx.draw(amount.count({ subtype: "Wolf", controller: "you" })),
+        ],
+        { label: "Marqueurs par Elfe ; une carte par Loup" },
+      ),
     ],
   },
 };

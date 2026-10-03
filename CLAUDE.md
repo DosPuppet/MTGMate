@@ -10,7 +10,7 @@ Ce fichier sert au suivi du projet entre les sessions : état présent, règles 
 
 ## État (02/10/2026)
 
-- **Tout le Standard est jouable :** 5 161 / 5 161 cartes, 19 extensions (5 174 cartes importées, dont 13 bannies). Détail par extension : `docs/extensions/<ext>.md` ; jalons et chronologie : `docs/historique.md`.
+- **Tout le Standard est jouable :** 5 164 / 5 164 cartes, 19 extensions (5 177 cartes importées, dont 13 bannies ; légalités comparées chaque semaine à Scryfall, `tools/check-legality.ts`). Détail par extension : `docs/extensions/<ext>.md` ; jalons et chronologie : `docs/historique.md`.
 - **Plateforme :** IA à trois niveaux, duel en ligne (BO3, corde, reconnexion, reprise après redémarrage), tutoriel en 9 leçons, replays, reprise d'une partie à la réouverture de la page, tablette et téléphone, déploiement pm2 + nginx.
 - **Plan en cours : `docs/plans/PLAN-C.md`** (consolidation après l'audit du 02/10/2026, lots C0 à C20). Son tableau « Décisions et ordre » et son « Suivi » disent où on en est.
 - **Branche `dev`** pour le travail courant (`master` = version stable). Les lots se font à la demande de l'utilisateur, un commit par lot ou sous-lot.
@@ -48,7 +48,7 @@ Ce fichier sert au suivi du projet entre les sessions : état présent, règles 
   - tout nouvel événement ou champ de vue qui peut citer une carte cachée est filtré ; `ai/test/hidden-info.test.ts` le vérifie ;
   - le protocole est dans `server/src/protocol.ts`, que le client importe en `import type` (sauf la constante `PROTOCOL_VERSION`) ;
   - poignée de main : création, arrivée et reprise d'un salon portent `{ protocol: PROTOCOL_VERSION, rules: RULES_VERSION }` ; un client d'une autre version reçoit l'erreur `version` et recharge la page. Faire avancer `PROTOCOL_VERSION` à tout changement incompatible des messages.
-- **Données :** `packages/cards/data/fdn.json` est indenté avec **1 espace** (le réécrire à l'identique) ; réimport : `npm run import-cards -- <set>|all` (`all` exclut FDN et FRA, retouchés à la main).
+- **Données :** `packages/cards/data/fdn.json` est indenté avec **1 espace** (le réécrire à l'identique) ; réimport : `npm run import-cards -- <set>|all` (`all` exclut FDN et FRA, retouchés à la main ; leurs données françaises manquantes : `npx tsx tools/import-french.ts <set>`). Liste des extensions : `cards/src/setRegistry.ts` (seule source, lue par les outils d'import). Bannissement annoncé avant un réimport : `cards/data/legality-overrides.json` ; la liste des bannies du README est vérifiée par `cards/test/legality.test.ts`.
 - **Commits :** uniquement quand l'utilisateur le demande ; message en anglais, terminé par `Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>` ; remote `origin` (github.com/DosPuppet/MTGMate) : c'est l'utilisateur qui pousse.
 
 ## Vérifications avant de rendre un lot

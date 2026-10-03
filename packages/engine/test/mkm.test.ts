@@ -23,6 +23,7 @@ import {
   act,
   advanceUntil,
   castTargets as cast,
+  castable,
   castNowOf,
   customCard,
   idOf,
@@ -5269,5 +5270,72 @@ describe("Murders at Karlov Manor, lot C3 : cartes uniques", () => {
     expect(s.players.p1?.manaPool.G).toBe(2);
     destroy(s, idOf(s, "p1", "battlefield", "Buried in the Garden"));
     expect(idsOf(s, "p2", "battlefield", "Bear Cub")).toHaveLength(1);
+  });
+});
+
+describe("Murders at Karlov Manor : promotions légales en Standard (PLAN-C, lot C19)", () => {
+  it("Melek, Reforged Researcher : F/E égales à deux fois les éphémères et rituels du cimetière ; le premier du tour coûte {3} de moins", () => {
+    let s = scenario({
+      p1: {
+        battlefield: ["Melek, Reforged Researcher", "Island"],
+        graveyard: ["Opt", "Lightning Strike", "Bear Cub"],
+        hand: ["Quick Study", "Quick Study"],
+        library: ["Opt", "Opt", "Opt", "Opt"],
+      },
+    });
+    const melek = idOf(s, "p1", "battlefield", "Melek, Reforged Researcher");
+    expect([chars(s, melek).power, chars(s, melek).toughness]).toEqual([4, 4]);
+    // Quick Study ({2}{U}) : {3} de moins (le générique seulement), il coûte {U}.
+    const [first, second] = idsOf(s, "p1", "hand", "Quick Study") as [string, string];
+    expect(castable(s, "p1", first)).toBe(true);
+    s = settle(cast(s, "p1", "Quick Study"));
+    expect([chars(s, melek).power, chars(s, melek).toughness]).toEqual([6, 6]);
+    // Le deuxième du tour paie son coût entier : impossible sans autre terrain.
+    expect(castable(s, "p1", second)).toBe(false);
+  });
+
+  it("Tomik, Wielder of Law : affinité pour les planeswalkers ; un adversaire qui vous attaque avec deux créatures perd 3 PV et vous piochez", () => {
+    let s = scenario({
+      p1: { battlefield: ["Chandra, Flameshaper", "Plains", "Swamp"], hand: ["Tomik, Wielder of Law"], library: ["Opt"] },
+    });
+    expect(castable(s, "p1", idOf(s, "p1", "hand", "Tomik, Wielder of Law"))).toBe(true);
+    s = settle(cast(s, "p1", "Tomik, Wielder of Law"));
+    const tomik = idOf(s, "p1", "battlefield", "Tomik, Wielder of Law");
+    expect(chars(s, tomik).keywords).toEqual(expect.arrayContaining(["flying", "vigilance"]));
+
+    const attack = (attackers: string[]) => {
+      let t = scenario({
+        active: "p2",
+        p1: { battlefield: ["Tomik, Wielder of Law"], library: ["Opt", "Opt"] },
+        p2: { battlefield: attackers },
+      });
+      t = advanceUntil(t, (x) => x.pending?.kind === "declareAttackers" && x.turn.active === "p2");
+      t = act(t, "p2", {
+        type: "declareAttackers",
+        attackers: idsOf(t, "p2", "battlefield", attackers[0] as string).map((id) => ({ id, defender: "p1" })),
+      });
+      return settle(t);
+    };
+    const two = attack(["Bear Cub", "Bear Cub"]);
+    expect(two.players.p2?.life).toBe(17);
+    expect(two.players.p1?.hand).toHaveLength(1);
+    const one = attack(["Bear Cub"]);
+    expect(one.players.p2?.life).toBe(20);
+    expect(one.players.p1?.hand).toHaveLength(0);
+  });
+
+  it("Voja, Jaws of the Conclave : en attaquant, autant de marqueurs +1/+1 que d'Elfes sur chacune de vos créatures, une carte par Loup", () => {
+    let s = scenario({
+      p1: { battlefield: ["Voja, Jaws of the Conclave", "Llanowar Elves", "Llanowar Elves"], library: ["Opt", "Opt", "Opt"] },
+    });
+    const voja = idOf(s, "p1", "battlefield", "Voja, Jaws of the Conclave");
+    expect(chars(s, voja).keywords).toEqual(expect.arrayContaining(["vigilance", "trample", "ward"]));
+    s = advanceUntil(s, (x) => x.pending?.kind === "declareAttackers");
+    s = act(s, "p1", { type: "declareAttackers", attackers: [{ id: voja, defender: "p2" }] });
+    s = settle(s);
+    expect(s.objects[voja]?.counters["+1/+1"]).toBe(2);
+    for (const elf of idsOf(s, "p1", "battlefield", "Llanowar Elves")) expect(s.objects[elf]?.counters["+1/+1"]).toBe(2);
+    // Voja est le seul Loup : une carte.
+    expect(s.players.p1?.hand).toHaveLength(1);
   });
 });

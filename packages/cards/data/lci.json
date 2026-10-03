@@ -6042,7 +6042,13 @@
     "colors": [
      "G"
     ],
-    "image": "https://cards.scryfall.io/normal/front/5/7/57df2563-18d4-4526-a8bc-0c114e6fd4d9.jpg?1783913751"
+    "image": "https://cards.scryfall.io/normal/front/5/7/57df2563-18d4-4526-a8bc-0c114e6fd4d9.jpg?1783913751",
+    "fr": {
+     "name": "Huatli, poétesse de l'unité",
+     "typeLine": "Créature légendaire — humain et guerrier et barde",
+     "text": "Quand Huatli, poétesse de l'unité arrive sur le champ de bataille, cherchez dans votre bibliothèque une carte de terrain de base, révélez-la, mettez-la dans votre main, puis mélangez.\n{3}{R/W}{R/W} : Exilez Huatli, puis renvoyez-la sur le champ de bataille transformée, sous le contrôle de son propriétaire. N'activez que lorsque vous pourriez lancer un rituel.",
+     "image": "https://cards.scryfall.io/normal/front/1/0/10953e49-8898-43bd-aa40-55daf76a9dad.jpg?1782807336"
+    }
    },
    {
     "name": "Roar of the Fifth People",
@@ -6054,9 +6060,21 @@
      "R",
      "W"
     ],
-    "image": "https://cards.scryfall.io/normal/back/5/7/57df2563-18d4-4526-a8bc-0c114e6fd4d9.jpg?1783913751"
+    "image": "https://cards.scryfall.io/normal/back/5/7/57df2563-18d4-4526-a8bc-0c114e6fd4d9.jpg?1783913751",
+    "fr": {
+     "name": "Rugissement du Cinquième peuple",
+     "typeLine": "Enchantement — saga",
+     "text": "(Au moment où cette saga arrive sur le champ de bataille et après votre étape de pioche, ajoutez un marqueur « sapience ». Sacrifiez après IV.)\nI — Créez deux jetons de créature 3/3 verte Dinosaure.\nII — Le Rugissement du Cinquième peuple acquiert « Les créatures que vous contrôlez ont '{T} : Ajoutez {R}, {G} ou {W}.' »\nIII — Cherchez dans votre bibliothèque une carte de dinosaure, révélez-la, mettez-la dans votre main, puis mélangez.\nIV — Les dinosaures que vous contrôlez acquièrent la double initiative et le piétinement jusqu'à la fin du tour.",
+     "image": "https://cards.scryfall.io/normal/back/1/0/10953e49-8898-43bd-aa40-55daf76a9dad.jpg?1782807336"
+    }
    }
-  ]
+  ],
+  "fr": {
+   "name": "Huatli, poétesse de l'unité",
+   "typeLine": "Créature légendaire — humain et guerrier et barde",
+   "text": "Quand Huatli, poétesse de l'unité arrive sur le champ de bataille, cherchez dans votre bibliothèque une carte de terrain de base, révélez-la, mettez-la dans votre main, puis mélangez.\n{3}{R/W}{R/W} : Exilez Huatli, puis renvoyez-la sur le champ de bataille transformée, sous le contrôle de son propriétaire. N'activez que lorsque vous pourriez lancer un rituel.",
+   "image": "https://cards.scryfall.io/normal/front/1/0/10953e49-8898-43bd-aa40-55daf76a9dad.jpg?1782807336"
+  }
  },
  {
   "name": "Huatli's Final Strike",
@@ -8464,7 +8482,13 @@
     "typeLine": "Legendary Artifact",
     "oracleText": "{T}: Mill two cards.\nCraft with a Dinosaur, a Merfolk, a Pirate, and a Vampire {4} ({4}, Exile this artifact, Exile the four from among permanents you control and/or cards in your graveyard: Return this card transformed under its owner's control. Craft only as a sorcery.)",
     "colors": [],
-    "image": "https://cards.scryfall.io/normal/front/c/1/c13e8e3d-2a6b-4782-a3c9-71af7336a881.jpg?1783913724"
+    "image": "https://cards.scryfall.io/normal/front/c/1/c13e8e3d-2a6b-4782-a3c9-71af7336a881.jpg?1783913724",
+    "fr": {
+     "name": "Trône de la Capitaine sinistre",
+     "typeLine": "Artefact légendaire",
+     "text": "{T} : Meulez deux cartes.\nFaçonnez avec un dinosaure, un ondin, un pirate et un vampire {4}",
+     "image": "https://cards.scryfall.io/normal/front/a/0/a0c36ca8-085f-47e0-b7be-6df3bec5f1bd.jpg?1782807228"
+    }
    },
    {
     "name": "The Grim Captain",
@@ -8476,9 +8500,21 @@
     "colors": [
      "B"
     ],
-    "image": "https://cards.scryfall.io/normal/back/c/1/c13e8e3d-2a6b-4782-a3c9-71af7336a881.jpg?1783913724"
+    "image": "https://cards.scryfall.io/normal/back/c/1/c13e8e3d-2a6b-4782-a3c9-71af7336a881.jpg?1783913724",
+    "fr": {
+     "name": "La Capitaine sinistre",
+     "typeLine": "Créature légendaire — squelette et esprit et pirate",
+     "text": "Menace, piétinement, lien de vie, défense talismanique\nÀ chaque fois que la Capitaine sinistre attaque, chaque adversaire sacrifie un permanent non-terrain. Puis vous pouvez mettre une carte de créature exilée utilisée pour façonner La Capitaine sinistre sur le champ de bataille, sous votre contrôle, engagée et attaquante.",
+     "image": "https://cards.scryfall.io/normal/back/a/0/a0c36ca8-085f-47e0-b7be-6df3bec5f1bd.jpg?1782807228"
+    }
    }
-  ]
+  ],
+  "fr": {
+   "name": "Trône de la Capitaine sinistre",
+   "typeLine": "Artefact légendaire",
+   "text": "{T} : Meulez deux cartes.\nFaçonnez avec un dinosaure, un ondin, un pirate et un vampire {4}",
+   "image": "https://cards.scryfall.io/normal/front/a/0/a0c36ca8-085f-47e0-b7be-6df3bec5f1bd.jpg?1782807228"
+  }
  },
  {
   "name": "Treasure Map // Treasure Cove",

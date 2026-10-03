@@ -38,6 +38,7 @@ import { MKM_SCRIPTS } from "./mkm/index";
 import { MSH_SCRIPTS } from "./msh/index";
 import { OTJ_SCRIPTS } from "./otj/index";
 import type { RawCard } from "./scryfall";
+import { SET_INFO, type SetInfo } from "./setRegistry";
 import { SOS_SCRIPTS } from "./sos/index";
 import { SPM_SCRIPTS } from "./spm/index";
 import { TDM_SCRIPTS } from "./tdm/index";
@@ -45,137 +46,62 @@ import { TLA_SCRIPTS } from "./tla/index";
 import { TMT_SCRIPTS } from "./tmt/index";
 import { WOE_SCRIPTS } from "./woe/index";
 
-export interface CardSet {
-  code: string;
-  name: string;
-  nameFr: string;
-  /** Dernier numéro de collection du set principal (au-delà : réimpressions, cartes spéciales). */
-  mainMax: number;
+export interface CardSet extends SetInfo {
   data: RawCard[];
   scripts: Record<string, CardScript>;
 }
 
-export const SETS: CardSet[] = [
-  { code: "FDN", name: "Foundations", nameFr: "Fondations", mainMax: 281, data: fdnData as RawCard[], scripts: FDN_SCRIPTS },
-  {
-    code: "FRA",
-    name: "Reality Fracture",
-    nameFr: "Réalité fracturée",
-    mainMax: 289,
-    data: fraData as RawCard[],
-    scripts: FRA_SCRIPTS,
-  },
-  // Branche Standard : extensions importées (lot 0.2), scripts ajoutés set par set (phase 1).
-  {
-    code: "EOE",
-    name: "Edge of Eternities",
-    nameFr: "Aux confins de l'éternité",
-    mainMax: 276,
-    data: eoeData as RawCard[],
-    scripts: EOE_SCRIPTS,
-  },
-  { code: "DFT", name: "Aetherdrift", nameFr: "Aetherdrift", mainMax: 291, data: dftData as RawCard[], scripts: DFT_SCRIPTS },
-  {
-    code: "OTJ",
-    name: "Outlaws of Thunder Junction",
-    nameFr: "Les hors-la-loi de Croisetonnerre",
-    mainMax: 286,
-    data: otjData as RawCard[],
-    scripts: OTJ_SCRIPTS,
-  },
-  { code: "BIG", name: "The Big Score", nameFr: "Le gros coup", mainMax: 30, data: bigData as RawCard[], scripts: BIG_SCRIPTS },
-  { code: "BLB", name: "Bloomburrow", nameFr: "Bloomburrow", mainMax: 281, data: blbData as RawCard[], scripts: BLB_SCRIPTS },
-  {
-    code: "TDM",
-    name: "Tarkir: Dragonstorm",
-    nameFr: "Tarkir : Tempête draconique",
-    mainMax: 291,
-    data: tdmData as RawCard[],
-    scripts: TDM_SCRIPTS,
-  },
-  {
-    code: "WOE",
-    name: "Wilds of Eldraine",
-    nameFr: "Les friches d'Eldraine",
-    mainMax: 276,
-    data: woeData as RawCard[],
-    scripts: WOE_SCRIPTS,
-  },
-  {
-    code: "SOS",
-    name: "Secrets of Strixhaven",
-    nameFr: "Secrets de Strixhaven",
-    mainMax: 362,
-    data: sosData as RawCard[],
-    scripts: SOS_SCRIPTS,
-  },
-  {
-    code: "ECL",
-    name: "Lorwyn Eclipsed",
-    nameFr: "Lorwyn éclipsé",
-    mainMax: 401,
-    data: eclData as RawCard[],
-    scripts: ECL_SCRIPTS,
-  },
-  {
-    code: "TLA",
-    name: "Avatar: The Last Airbender",
-    nameFr: "Avatar : le dernier maître de l'air",
-    mainMax: 286,
-    data: tlaData as RawCard[],
-    scripts: TLA_SCRIPTS,
-  },
-  {
-    code: "SPM",
-    name: "Marvel's Spider-Man",
-    nameFr: "Marvel's Spider-Man",
-    mainMax: 198,
-    data: spmData as RawCard[],
-    scripts: SPM_SCRIPTS,
-  },
-  {
-    code: "MSH",
-    name: "Marvel Super Heroes",
-    nameFr: "Marvel Super Heroes",
-    mainMax: 429,
-    data: mshData as RawCard[],
-    scripts: MSH_SCRIPTS,
-  },
-  {
-    code: "TMT",
-    name: "Teenage Mutant Ninja Turtles",
-    nameFr: "Les Tortues Ninja",
-    mainMax: 319,
-    data: tmtData as RawCard[],
-    scripts: TMT_SCRIPTS,
-  },
-  { code: "HOB", name: "The Hobbit", nameFr: "Le Hobbit", mainMax: 320, data: hobData as RawCard[], scripts: HOB_SCRIPTS },
-  {
-    code: "MKM",
-    name: "Murders at Karlov Manor",
-    nameFr: "Meurtres au manoir Karlov",
-    mainMax: 286,
-    data: mkmData as RawCard[],
-    scripts: MKM_SCRIPTS,
-  },
-  {
-    code: "DSK",
-    name: "Duskmourn: House of Horror",
-    nameFr: "Mornebrune : la Maison de l'horreur",
-    mainMax: 301,
-    data: dskData as RawCard[],
-    scripts: DSK_SCRIPTS,
-  },
-  {
-    code: "LCI",
-    name: "The Lost Caverns of Ixalan",
-    nameFr: "Les cavernes oubliées d'Ixalan",
-    mainMax: 291,
-    data: lciData as RawCard[],
-    scripts: LCI_SCRIPTS,
-  },
-  { code: "FIN", name: "Final Fantasy", nameFr: "Final Fantasy", mainMax: 309, data: finData as RawCard[], scripts: FIN_SCRIPTS },
-];
+const DATA: Record<string, unknown> = {
+  FDN: fdnData,
+  FRA: fraData,
+  EOE: eoeData,
+  DFT: dftData,
+  OTJ: otjData,
+  BIG: bigData,
+  BLB: blbData,
+  TDM: tdmData,
+  WOE: woeData,
+  SOS: sosData,
+  ECL: eclData,
+  TLA: tlaData,
+  SPM: spmData,
+  MSH: mshData,
+  TMT: tmtData,
+  HOB: hobData,
+  MKM: mkmData,
+  DSK: dskData,
+  LCI: lciData,
+  FIN: finData,
+};
+
+const SCRIPTS: Record<string, Record<string, CardScript>> = {
+  FDN: FDN_SCRIPTS,
+  FRA: FRA_SCRIPTS,
+  EOE: EOE_SCRIPTS,
+  DFT: DFT_SCRIPTS,
+  OTJ: OTJ_SCRIPTS,
+  BIG: BIG_SCRIPTS,
+  BLB: BLB_SCRIPTS,
+  TDM: TDM_SCRIPTS,
+  WOE: WOE_SCRIPTS,
+  SOS: SOS_SCRIPTS,
+  ECL: ECL_SCRIPTS,
+  TLA: TLA_SCRIPTS,
+  SPM: SPM_SCRIPTS,
+  MSH: MSH_SCRIPTS,
+  TMT: TMT_SCRIPTS,
+  HOB: HOB_SCRIPTS,
+  MKM: MKM_SCRIPTS,
+  DSK: DSK_SCRIPTS,
+  LCI: LCI_SCRIPTS,
+  FIN: FIN_SCRIPTS,
+};
+
+export const SETS: CardSet[] = SET_INFO.map((info) => ({
+  ...info,
+  data: DATA[info.code] as RawCard[],
+  scripts: SCRIPTS[info.code] as Record<string, CardScript>,
+}));
 
 export const SET_BY_CODE: Record<string, CardSet> = Object.fromEntries(SETS.map((s) => [s.code, s]));
 
