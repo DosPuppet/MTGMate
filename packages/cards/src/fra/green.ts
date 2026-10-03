@@ -25,7 +25,6 @@ import {
   target,
   targetObj,
   triggered,
-  triggeredModal,
   walkersHave,
   when,
 } from "./common";
@@ -76,10 +75,17 @@ export const GREEN: Record<string, CardScript> = {
         {
           power: 2,
           addAbilities: [
-            triggeredModal(when.attacksSelf, [
-              mode("Piétinement", [], [fx.modify(ref.self, { addKeywords: ["trample"] })]),
-              mode("Contact mortel", [], [fx.modify(ref.self, { addKeywords: ["deathtouch"] })]),
-            ]),
+            // « Au choix, piétinement ou contact mortel » : une question oui/non (une capacité accordée n'a pas de modes).
+            triggered(
+              when.attacksSelf,
+              [
+                ...fx.mayForStore(ref.you, "Piétinement (sinon contact mortel) ?", "trample", [
+                  fx.modify(ref.self, { addKeywords: ["trample"] }),
+                ]),
+                ...fx.when(cond.not(cond.v("trample")), fx.modify(ref.self, { addKeywords: ["deathtouch"] })),
+              ],
+              { label: "Piétinement ou contact mortel" },
+            ),
           ],
         },
         { label: "+2/+0, piétinement ou contact mortel en attaquant" },
@@ -218,7 +224,7 @@ export const GREEN: Record<string, CardScript> = {
   "Fblthp, Knows the Way": {
     cdaPower: amount.basicLandTypes,
     abilities: [
-      triggered(when.entersSelf, [{ ...fx.search(BASIC_LAND, { to: "hand" }, amount.x), distinctNames: true } as Effect], {
+      triggered(when.entersSelf, [{ ...fx.search(BASIC_LAND, { to: "hand" }, amount.sourceX), distinctNames: true } as Effect], {
         label: "jusqu'à X terrains de base de noms différents",
       }),
     ],

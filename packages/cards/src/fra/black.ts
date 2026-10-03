@@ -79,7 +79,7 @@ export const BLACK: Record<string, CardScript> = {
   "Tinybones, Pocket Nuisance": {
     abilities: [
       triggered(when.entersSelf, [fx.discard(1, ref.eachOpponent)], { label: "chaque adversaire défausse" }),
-      triggered(when.discard("any"), [fx.damage(1, ref.eachOpponent)], { label: "défausse : 1 blessure" }),
+      triggered(when.discardBatch("any"), [fx.damage(1, ref.eachOpponent)], { label: "défausse : 1 blessure" }),
     ],
   },
   "Apex Witchstalker": {

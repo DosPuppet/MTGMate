@@ -118,7 +118,11 @@ export const HANDLERS: OpHandlers = {
     if (e.filter) {
       const f = e.filter;
       for (const id of s.battlefield.filter(
-        (x) => x !== from && isCreature(s, x) && matchesObjectFilter(s, ctx.controller, x, f, ctx.sourceId),
+        // Les créatures, et les planeswalkers et batailles quand le filtre les nomme (« chaque créature et planeswalker »).
+        (x) =>
+          x !== from &&
+          (isCreature(s, x) || !!f.types?.some((t) => t === "Planeswalker" || t === "Battle")) &&
+          matchesObjectFilter(s, ctx.controller, x, f, ctx.sourceId),
       )) {
         dealDamage(s, src, id, amount, false);
       }

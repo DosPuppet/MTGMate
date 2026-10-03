@@ -19,6 +19,7 @@ import {
   canActivate,
   castable,
   castNowOf,
+  customCard,
   exiled,
   idOf,
   idsOf,
@@ -2206,7 +2207,7 @@ describe("Lost Caverns of Ixalan, lot K8 : cartes mythiques, rares et peu commun
         },
         p2: { battlefield: ["Serra Angel", "Bear Cub"] },
       });
-      s = resolve(castCard(s, "p1", "Calamitous Cave-In"));
+      s = cast(s, "Calamitous Cave-In");
       expect(idsOf(s, "p2", "graveyard", "Bear Cub")).toHaveLength(1);
       expect(s.objects[idOf(s, "p2", "battlefield", "Serra Angel")]?.damage).toBe(2);
     });
@@ -3210,5 +3211,26 @@ describe("Sunfire Torch (lot K8)", () => {
     expect(idsOf(s, "p1", "graveyard", "Sunfire Torch")).toHaveLength(1);
     // 2 blessures de la capacité réflexive, puis 2 de combat (la Torche partie, l'Ours n'a plus +1/+0).
     expect(s.players.p2?.life).toBe(16);
+  });
+});
+
+describe("Blessures à chaque créature et chaque planeswalker (lot K8)", () => {
+  it("Calamitous Cave-In : X blessures (Cavernes) à chaque créature et à chaque planeswalker", () => {
+    const walker = customCard({
+      name: "Arpenteur d'essai",
+      typeLine: "Legendary Planeswalker — Test",
+      types: ["Planeswalker"],
+      supertypes: ["Legendary"],
+      loyalty: 5,
+    });
+    let s = scenario({
+      p1: { battlefield: [...lands("Mountain", 4), "Captivating Cave", "Cavernous Maw"], hand: ["Calamitous Cave-In"] },
+      p2: { battlefield: ["Serra Angel", walker] },
+    });
+    const wId = idOf(s, "p2", "battlefield", walker.name);
+    s = cast(s, "Calamitous Cave-In");
+    // Deux Cavernes : 2 blessures ; le planeswalker perd 2 marqueurs de loyauté.
+    expect(s.objects[wId]?.counters.loyalty).toBe(3);
+    expect(s.objects[idOf(s, "p2", "battlefield", "Serra Angel")]?.damage).toBe(2);
   });
 });

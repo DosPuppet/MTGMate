@@ -238,8 +238,12 @@ export const RECORD_VERSION = 1;
  *   Ignis Scientia, Qutrub Forayer et Magic Pot (exil depuis le cimetière), Rydia (X vérifié à la résolution).
  * - 83 : Outlaws of Thunder Junction (lot K8) : Final Showdown, Pillage the Bog, Marchesa, Oko, Rakdos, Geralf, Calamity,
  *   Lazav, Lilah, Bucolic Ranch, Demonic Ruckus, Reach for the Sky.
+ * - 84 : « N blessures à chaque créature et chaque planeswalker » blesse aussi les planeswalkers (Calamitous Cave-In,
+ *   Splatter Technique, Dragonback Assault, Fulminous Forte) ; Reality Fracture (lot K8) : Ajani's Anguish et Fblthp (le
+ *   X de la carte lancée), Hunter's Axe (piétinement ou contact mortel, au choix), Tinybones, Pocket Nuisance (une fois
+ *   par défausse groupée).
  */
-export const RULES_VERSION = 83;
+export const RULES_VERSION = 84;
 
 /** Un point de contrôle toutes les N décisions (plus la dernière de la partie). */
 export const CHECKPOINT_EVERY = 25;

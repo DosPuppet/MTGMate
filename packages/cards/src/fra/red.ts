@@ -27,7 +27,7 @@ import {
 export const RED: Record<string, CardScript> = {
   "Ajani's Anguish": {
     abilities: [
-      triggered(when.entersSelf, [fx.damage(amount.x, ref.target())], { targets: [target.any()], label: "X blessures" }),
+      triggered(when.entersSelf, [fx.damage(amount.sourceX, ref.target())], { targets: [target.any()], label: "X blessures" }),
       staticAbility(CREATURE_YOU_CONTROL, { addKeywords: ["trample"] }, { label: "Piétinement" }),
     ],
   },
@@ -234,7 +234,8 @@ export const RED: Record<string, CardScript> = {
       mode(
         "1 blessure à chaque créature et planeswalker adverse",
         [],
-        [fx.damageAll(1, { ...{ anyOf: [{ types: ["Creature"] }, { types: ["Planeswalker"] }] }, controller: "opponent" })],
+        // `damageAll` ne touche que les créatures : les planeswalkers adverses sont désignés par une référence.
+        [fx.damage(1, ref.permanentsOf(ref.eachOpponent, { types: ["Creature", "Planeswalker"] }))],
       ),
       mode("5 blessures à une créature ou un planeswalker", [target.creatureOrPlaneswalker("t")], [fx.damage(5, ref.target())]),
     ),
