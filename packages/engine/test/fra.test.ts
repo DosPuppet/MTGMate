@@ -509,3 +509,28 @@ describe("Reality Fracture, lot K6 : Renforcez Jace avec plusieurs jetons Jace",
     expect(s.battlefield.filter((id) => s.objects[id]?.isToken)).toHaveLength(2);
   });
 });
+
+describe("Jetons décrits engagés (lot K8)", () => {
+  it("Tenured Tethermage : en sacrifiant un terrain, deux jetons Heartwood engagés", () => {
+    let s = scenario({ p1: { battlefield: ["Mountain", "Forest", "Island", "Plains"], hand: ["Tenured Tethermage"] } });
+    s = act(s, "p1", { type: "cast", card: idOf(s, "p1", "hand", "Tenured Tethermage") });
+    for (let i = 0; i < 30 && !(s.stack.length === 0 && s.pending?.kind === "priority"); i++) {
+      const p = s.pending;
+      if (p?.kind === "priority") s = act(s, p.player, { type: "pass" });
+      else if (p?.kind === "choice")
+        s = act(s, p.player, {
+          type: "choose",
+          values:
+            p.request.type === "yesNo"
+              ? [1]
+              : p.request.type === "pick"
+                ? p.request.options.slice(0, Math.max(1, p.request.min))
+                : p.request.suggested,
+        });
+      else break;
+    }
+    const tokens = s.battlefield.filter((id) => s.objects[id]?.isToken);
+    expect(tokens).toHaveLength(2);
+    expect(tokens.every((id) => s.objects[id]?.tapped)).toBe(true);
+  });
+});

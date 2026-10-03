@@ -649,8 +649,9 @@ export function createTokens(
   for (let i = 0; i < n; i++) {
     const o = createObject(s, defId, controller, "battlefield", { isToken: true });
     o.timestamp = nextTimestamp(s);
-    // Remplacements d'arrivée des autres permanents (« chaque créature que vous contrôlez arrive avec… »).
-    applyEntersReplacements(s, o, enters);
+    // Remplacements d'arrivée des autres permanents (« chaque créature que vous contrôlez arrive avec… ») ; un jeton
+    // décrit engagé (`TokenSpec.tapped`) arrive engagé.
+    applyEntersReplacements(s, o, t.tapped ? { ...enters, tapped: true } : enters);
     emit({ type: "token", objectId: o.id, defId, controller });
     rulesEvent(s, { e: "zone", oldId: null, newId: o.id, from: null, to: "battlefield", lki: null });
     logTokenArrival(s, o);

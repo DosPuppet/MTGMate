@@ -220,8 +220,10 @@ export const RECORD_VERSION = 1;
  * - 77 : durées : « jusqu'à votre prochaine étape de fin » pour les cartes jouables (Shadow Urchin, Seek the Beast, Haste
  *   Magic, Opera Love Song), « tant que vous contrôlez [la source] » (Ty Lee, Spider-Woman), « tant qu'il reste engagé »
  *   (Braided Net), emblème « jusqu'à la fin de votre prochain tour » (Season of the Bold) (lot K7).
+ * - 78 : un jeton décrit engagé (`TokenSpec.tapped`) arrive engagé (Tenured Tethermage) ; Dread Summons et Revenge of the
+ *   Rats créent des jetons engagés ; Biogenic Upgrade demande une à trois cibles (lot K8, FDN).
  */
-export const RULES_VERSION = 77;
+export const RULES_VERSION = 78;
 
 /** Un point de contrôle toutes les N décisions (plus la dernière de la partie). */
 export const CHECKPOINT_EVERY = 25;

@@ -370,7 +370,10 @@ export const GREEN: Record<string, CardScript> = {
 
   // --- Réimpressions ---
   "Biogenic Upgrade": {
-    spell: spell([target.upTo(3, target.creature())], [fx.countersDivided(3, ref.target()), fx.doubleCounters(ref.target())]),
+    spell: spell(
+      [target.between(1, 3, target.creature())],
+      [fx.countersDivided(3, ref.target()), fx.doubleCounters(ref.target())],
+    ),
   },
   "Circuitous Route": {
     spell: spell([], [fx.search({ anyOf: [BASIC_LAND, { subtype: "Gate" }] }, { to: "battlefield", tapped: true }, 2)]),

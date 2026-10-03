@@ -110,7 +110,7 @@ export const BLACK: Record<string, CardScript> = {
   },
   "Revenge of the Rats": {
     flashback: "{2}{B}{B}",
-    spell: spell([], [fx.createTokens({ ...RAT, tapped: true }, amount.countIn("graveyard", { types: ["Creature"] }))]),
+    spell: spell([], [fx.createTappedTokens(RAT, amount.countIn("graveyard", { types: ["Creature"] }))]),
   },
   "Sanguine Syphoner": { abilities: [triggered(when.attacksSelf, fx.drain(1), { label: "draine 1" })] },
   "Seeker's Folly": {
@@ -430,7 +430,7 @@ export const BLACK: Record<string, CardScript> = {
       [],
       [
         fx.mill(amount.x, ref.eachPlayer, { name: "c", filter: { types: ["Creature"] } }),
-        fx.createTokens({ ...ZOMBIE, tapped: true }, amount.v("c")),
+        fx.createTappedTokens(ZOMBIE, amount.v("c")),
       ],
     ),
   },
