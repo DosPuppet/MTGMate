@@ -2,11 +2,25 @@
 import { describe, expect, it } from "vitest";
 import { dealDamage, sacrifice, sourceFromObject } from "../src/actions";
 import { moveObject } from "../src/state";
+import { matchesObjectFilter } from "../src/targets";
 import { countTurnEvents } from "../src/turnlog";
 import type { TurnLogQuery } from "../src/types";
 import { act, advanceUntil, idOf, scenario } from "./helpers";
 
 describe("journal du tour", () => {
+  it("filtre : un champ propre à l'objet dans `not` ou `anyOf` est évalué (« une créature qui n'a pas attaqué ce tour-ci »)", () => {
+    const s = scenario({ p1: { battlefield: ["Bear Cub", "Savannah Lions"] } });
+    const cub = idOf(s, "p1", "battlefield", "Bear Cub");
+    const lions = idOf(s, "p1", "battlefield", "Savannah Lions");
+    s.turnLog.push({ e: "attack", player: "p1", defender: "p2", types: ["Creature"], subtypes: ["Bear"], id: cub });
+    const notAttacked = { types: ["Creature" as const], not: { attackedThisTurn: true } };
+    expect(matchesObjectFilter(s, "p1", cub, notAttacked)).toBe(false);
+    expect(matchesObjectFilter(s, "p1", lions, notAttacked)).toBe(true);
+    const attackedOrLions = { anyOf: [{ attackedThisTurn: true }, { subtype: "Cat" }] };
+    expect(matchesObjectFilter(s, "p1", cub, attackedOrLions)).toBe(true);
+    expect(matchesObjectFilter(s, "p1", lions, attackedOrLions)).toBe(true);
+  });
+
   it("créatures adverses exilées depuis le champ de bataille (Vren)", () => {
     const s = scenario({ p1: { battlefield: ["Bear Cub"] }, p2: { battlefield: ["Bear Cub", "Forest"] } });
     moveObject(s, idOf(s, "p2", "battlefield", "Bear Cub"), "exile");

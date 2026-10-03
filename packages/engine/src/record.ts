@@ -289,8 +289,10 @@ export const RECORD_VERSION = 1;
  * - 101 : familles d'effets (PLAN-S, lots S6d et S6e) : `extra`, `spellFate`, `gainControl` (durées, joueur `to`),
  *   `grantPlay{flashback}`, exil de distorsion par `moveTo` (`moveWithSpec`), référence `sameName` (Maelstrom Pulse),
  *   durée des emblèmes.
+ * - 102 : filtres (PLAN-S, lot S8b) : les sous-filtres `anyOf` et `not` sont évalués comme le filtre lui-même (champs
+ *   propres à l'objet, valeurs choisies) au lieu d'être lus seulement sur la vue (un champ inconnu y était ignoré).
  */
-export const RULES_VERSION = 101;
+export const RULES_VERSION = 102;
 
 /** Un point de contrôle toutes les N décisions (plus la dernière de la partie). */
 export const CHECKPOINT_EVERY = 25;

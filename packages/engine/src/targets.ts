@@ -263,8 +263,11 @@ export function matchesCard(s: GameState, controller: PlayerId, id: ObjectId, f:
   // « carte de créature sans capacité » : pas de texte de règles.
   if (f.noAbilities && (s.defs[o.defId]?.text ?? "").trim()) return false;
   if (f.adventure !== undefined && (s.defs[o.defId]?.layout === "adventure") !== f.adventure) return false;
+  // Sous-filtres : évalués comme le filtre lui-même (champs propres à l'objet, valeurs choisies), pas seulement sur la vue.
+  if (f.anyOf && !f.anyOf.some((g) => matchesCard(s, controller, id, g, sourceId))) return false;
+  if (f.not && matchesCard(s, controller, id, f.not, sourceId)) return false;
   return (
-    matchesView(snapshot(s, id), { ...f, controller: undefined }, controller, sourceId) &&
+    matchesView(snapshot(s, id), { ...f, controller: undefined, anyOf: undefined, not: undefined }, controller, sourceId) &&
     (f.controller === undefined || (f.controller === "you" ? o.owner === controller : o.owner !== controller))
   );
 }
@@ -310,7 +313,15 @@ export function matchesObjectFilter(
     )
       return false;
   }
-  return matchesView(snapshot(s, id), resolveFilter(s, f, sourceId), controller, sourceId);
+  // Sous-filtres : évalués comme le filtre lui-même (champs propres à l'objet, valeurs choisies), pas seulement sur la vue.
+  if (f.anyOf && !f.anyOf.some((g) => matchesObjectFilter(s, controller, id, g, sourceId))) return false;
+  if (f.not && matchesObjectFilter(s, controller, id, f.not, sourceId)) return false;
+  return matchesView(
+    snapshot(s, id),
+    resolveFilter(s, { ...f, anyOf: undefined, not: undefined }, sourceId),
+    controller,
+    sourceId,
+  );
 }
 
 export function isLegalTarget(s: GameState, controller: PlayerId, spec: TargetSpec, id: string, sourceId?: ObjectId): boolean {
