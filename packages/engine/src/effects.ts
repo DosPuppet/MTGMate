@@ -19,6 +19,7 @@ import { spellView } from "./stack";
 import {
   alivePlayers,
   bump,
+  castInfoOf,
   changeCounters,
   chars,
   emit,
@@ -303,7 +304,7 @@ export function resolveRef(s: GameState, ctx: EffectContext, ref: Ref): string[]
       return (s.players[ctx.controller]?.graveyard ?? []).filter((id) => names.has(s.defs[s.objects[id]?.defId ?? ""]?.name));
     }
     case "costBounced":
-      return [...(ctx.costBounced ?? (ctx.sourceId ? s.objects[ctx.sourceId]?.costBounced : undefined) ?? [])];
+      return [...(ctx.costBounced ?? (ctx.sourceId ? s.objects[ctx.sourceId]?.cast?.costBounced : undefined) ?? [])];
     case "targetsOfEventObject": {
       // Le sort lancé (l'objet de l'événement) : ses cibles, d'après son élément de pile.
       const id = ctx.event?.objectId;
@@ -627,19 +628,19 @@ function aggregate(s: GameState, ctx: EffectContext, a: Extract<Amount, { kind: 
  * Ce qui a été dépensé pour lancer l'objet : le sort sur la pile (ou qui se résout), sinon le permanent qu'il est devenu.
  */
 function spentOn(s: GameState, id: ObjectId, what: "x" | "mana" | "colors" | "cave"): number {
-  const item = s.resolving?.item.id === id ? s.resolving.item : s.stack.find((x) => x.id === id);
-  const o = s.objects[id];
   switch (what) {
-    case "x":
-      return item?.x ?? o?.castX ?? 0;
+    case "x": {
+      const item = s.resolving?.item.id === id ? s.resolving.item : s.stack.find((x) => x.id === id);
+      return item?.x ?? s.objects[id]?.x ?? 0;
+    }
     case "mana":
-      return o?.manaSpent ?? item?.manaSpent ?? 0;
+      return castInfoOf(s, id, true)?.manaSpent ?? 0;
     case "colors": {
-      const spent = item?.spentColors ?? o?.spentColors ?? {};
+      const spent = castInfoOf(s, id)?.spentColors ?? {};
       return (["W", "U", "B", "R", "G"] as const).filter((c) => (spent[c] ?? 0) > 0).length;
     }
     case "cave":
-      return o?.caveMana ?? 0;
+      return castInfoOf(s, id, true)?.caveMana ?? 0;
   }
 }
 
@@ -705,7 +706,7 @@ export function contextOf(r: Resolution): EffectContext {
     discarded: r.item.discarded,
     tappedForCost: r.item.tappedForCost,
     costExiled: r.item.costExiled,
-    costBounced: r.item.costBounced,
+    costBounced: r.item.cast?.costBounced,
   };
 }
 

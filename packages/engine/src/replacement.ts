@@ -19,41 +19,41 @@ import { controlledAbilitiesWithSource, playerStatic } from "./statics";
 import { matchesCard, matchesObjectFilter, protectedFrom, sourceView, withChosen } from "./targets";
 import { checkCondition, pushInline } from "./triggers";
 import { countTurnEvents } from "./turnlog";
-import type { Amount, Color, Condition, GameObject, GameState, LayerMods, ObjectId, PlayerId, TokenSpec, Zone } from "./types";
+import type {
+  Amount,
+  CastInfo,
+  Color,
+  Condition,
+  GameObject,
+  GameState,
+  LayerMods,
+  ObjectId,
+  PlayerId,
+  TokenSpec,
+  Zone,
+} from "./types";
 import { BASIC_LAND_TYPES } from "./types";
 
 /** Contexte d'arrivée sur le champ de bataille (valeur de X, kicker du sort qui arrive). */
 export interface EntersContext {
   x?: number;
   kicked?: boolean;
-  /** Arrive depuis la résolution d'un sort (« si vous l'avez lancé »). */
-  cast?: boolean;
+  /** Arrive depuis la résolution d'un sort : comment il a été lancé (X, kicker, mana dépensé…), noté sur le permanent. */
+  cast?: CastInfo;
   /** Aura : l'objet auquel elle arrive attachée. */
   attachTo?: string;
-  /** Lancé depuis la main (Myojin). */
-  castFromHand?: boolean;
-  castFromGraveyard?: boolean;
-  castFromExile?: boolean;
   /** Choix fait pendant la résolution (« en arrivant, choisissez… »). */
   chosen?: GameObject["chosen"];
   /** Terrain choc : les points de vie ont été payés (sinon il arrive engagé). */
   shockPaid?: boolean;
-  /** Mana dépensé pour le lancer (Dyadrine). */
-  manaSpent?: number;
   /** Dévorer : nombre de permanents sacrifiés en arrivant. */
   devoured?: number;
   /** Waxen Shapethief : définition copiée en arrivant (couche 1). */
   copyOf?: string;
   /** 707.9b : exceptions copiables du modèle (`copiableExceptions`), reprises par la copie. */
   copyMods?: LayerMods;
-  /** Mana dépensé par type et évocation : lus par les conditions des capacités d'arrivée (Deceit). */
-  spentColors?: GameObject["spentColors"];
-  evoked?: boolean;
   /** Émeute (702.136) : le choix fait en résolvant le sort (sinon le choix par défaut, `defaultRiot`). */
   riot?: "counter" | "haste";
-  /** Lancé par Web-slinging ou pour son coût de chaos ; créature renvoyée pour le Web-slinging. */
-  castVia?: GameObject["castVia"];
-  costBounced?: ObjectId[];
   /**
    * Modifications d'arrivée imposées par l'effet qui le met sur le champ de bataille (614.1c, 614.12) : elles sont en
    * place avant l'événement d'arrivée, que les déclencheurs voient donc (« chaque fois qu'un Zombie arrive »).
@@ -113,13 +113,13 @@ function amountAtEntry(s: GameState, a: Amount, o: GameObject, ctx: EntersContex
   if (typeof a === "number") return a;
   if (a.kind === "x") return ctx.x ?? 0;
   if (a.kind === "kicked") return ctx.kicked ? a.yes : a.no;
-  if (a.kind === "spent" && !a.of && a.what === "mana") return ctx.manaSpent ?? 0;
+  if (a.kind === "spent" && !a.of && a.what === "mana") return ctx.cast?.manaSpent ?? 0;
   // Scarlet Spider, Ben Reilly : « X étant la valeur de mana de la créature renvoyée » (Web-slinging).
   if (a.kind === "manaValueOf" && a.ref.kind === "costBounced")
-    return manaValue(s.defs[s.objects[ctx.costBounced?.[0] ?? ""]?.defId ?? ""]?.manaCost);
+    return manaValue(s.defs[s.objects[ctx.cast?.costBounced?.[0] ?? ""]?.defId ?? ""]?.manaCost);
   // Convergence : « un marqueur pour chaque couleur de mana dépensée pour le lancer ».
   if (a.kind === "spent" && !a.of && a.what === "colors")
-    return (["W", "U", "B", "R", "G"] as const).filter((c) => (ctx.spentColors?.[c] ?? 0) > 0).length;
+    return (["W", "U", "B", "R", "G"] as const).filter((c) => (ctx.cast?.spentColors?.[c] ?? 0) > 0).length;
   // Arithmétique (Slumbering Trudge : « 3 moins X »).
   if (a.kind === "sum") return a.of.reduce<number>((n, x) => n + amountAtEntry(s, x, o, ctx, entering), 0);
   if (a.kind === "neg") return -amountAtEntry(s, a.of, o, ctx, entering);
@@ -291,16 +291,8 @@ export function replaceGraveyard(s: GameState, o: GameObject): GraveyardOutcome 
 /** 614.1c–d : effets qui modifient la façon dont un permanent arrive sur le champ de bataille. */
 export function applyEntersReplacements(s: GameState, o: GameObject, ctx: EntersContext): void {
   if (ctx.kicked) o.kicked = true;
-  if (ctx.cast) o.cast = true;
-  if (ctx.castFromHand) o.castFromHand = true;
-  if (ctx.castFromGraveyard) o.castFromGraveyard = true;
-  if (ctx.castFromExile) o.castFromExile = true;
-  // Mana dépensé, connu dès l'arrivée (« si aucun mana n'a été dépensé pour la lancer »).
-  if (ctx.manaSpent !== undefined) o.manaSpent = ctx.manaSpent;
-  if (ctx.spentColors) o.spentColors = ctx.spentColors;
-  if (ctx.evoked) o.evoked = true;
-  if (ctx.castVia) o.castVia = ctx.castVia;
-  if (ctx.costBounced) o.costBounced = ctx.costBounced;
+  // Comment il a été lancé, connu dès l'arrivée (« si aucun mana n'a été dépensé pour la lancer », kicker, X).
+  if (ctx.cast) o.cast = { ...ctx.cast };
   const own = s.defs[o.defId];
   // 303.4f : une Aura qui arrive sans être lancée enchante un objet choisi par celui qui la contrôle (automatiquement ici :
   // le premier possible ; les opérations de déplacement le demandent pendant une résolution).
@@ -314,7 +306,6 @@ export function applyEntersReplacements(s: GameState, o: GameObject, ctx: Enters
   // Modifications imposées par l'effet qui le met sur le champ de bataille, avant les autres remplacements (qui peuvent
   // dépendre des types ajoutés) et avant l'événement d'arrivée.
   if (ctx.tapped) o.tapped = true;
-  if (ctx.impending) o.impending = true;
   if (ctx.mods && Object.values(ctx.mods).some((v) => v !== undefined)) {
     s.effects.push({
       id: newId(s, "e"),

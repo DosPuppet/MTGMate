@@ -472,15 +472,16 @@ export type Condition =
   /** Votre total de vie dépasse votre total de départ d'au moins `by`. */
   | { kind: "lifeAboveStart"; by: number }
   | { kind: "not"; cond: Condition }
+  /**
+   * La source a été lancée (le sort qui se résout, ou le permanent qu'il est devenu) : depuis cette zone, ou pour ce coût
+   * alternatif (Web-slinging, chaos, faufilement, évocation…).
+   */
+  | { kind: "cast"; from?: Zone; via?: CastVia }
   /** Valeur mémorisée pendant la résolution (« si vous le faites », « si une carte de créature a été exilée »). */
   | { kind: "var"; name: string; atLeast?: number }
   | { kind: "all"; of: Condition[] }
   /** Le joueur désigné a exactement N points de vie (évalué pendant la résolution). */
   | { kind: "refLife"; ref: Ref; equals: number }
-  /** Le permanent source est arrivé depuis un sort kické / lancé. */
-  | { kind: "wasCast" }
-  /** … depuis un sort lancé depuis la main (Myojin). */
-  | { kind: "castFromHand" }
   /** Au moins N permanents correspondant au filtre sur tout le champ de bataille (Blasphemous Edict). */
   | { kind: "battlefieldCount"; filter: ObjectFilter; atLeast: number }
   /** La source correspond au filtre (« si Kellan est un Éclaireur »). */
@@ -521,13 +522,9 @@ export type Condition =
   | { kind: "enduringStory" }
   /** La source a été exploitée (Harness) : ses capacités ∞ sont actives. */
   | { kind: "harnessed" }
-  /** La source a été lancée pour son coût d'évocation. */
-  | { kind: "evoked" }
   /** L'objet de l'événement (parti du champ de bataille) avait la plus grande force parmi les créatures de son contrôleur,
    * en comptant celles parties en même temps (Kraven the Hunter). */
   | { kind: "eventObjectGreatestPower" }
-  /** Le sort qui se résout, ou le permanent source, a été lancé ainsi (Web-slinging, chaos). */
-  | { kind: "castVia"; via: CastVia }
   /** Contempler (701.63) : vous contrôlez un permanent correspondant, ou vous révélez une carte correspondante de votre main. */
   | { kind: "behold"; filter: ObjectFilter }
   /** Le sort a été lancé en contemplant (coût additionnel `behold`). */
@@ -538,9 +535,6 @@ export type Condition =
   | { kind: "attackingAlone" }
   /** Un adversaire a subi des blessures non de combat au tour précédent (Command the Stage). */
   | { kind: "opponentDealtNoncombatDamageLastTurn" }
-  /** Le sort qui se résout a été lancé depuis la main / en flashback. */
-  | { kind: "spellCastFromHand" }
-  | { kind: "spellCastFromGraveyard" }
   /** La source a déjà infligé des blessures de combat (Ruric Thar, Magecrusher). */
   | { kind: "sourceDealtCombatDamage" }
   /** Sièges : la source a choisi ce mode en arrivant. */
@@ -562,8 +556,6 @@ export type Condition =
   | { kind: "evenCounters" }
   /** C'est au moins votre N-ième tour (Jace Reawakened : « pas pendant vos trois premiers tours »). */
   | { kind: "turnsTakenAtLeast"; n: number }
-  /** Le permanent source a été lancé depuis le cimetière (Undead Sprinter). */
-  | { kind: "castFromGraveyard" }
   /** C'est cette étape (Smoky Lounge : « votre première phase principale »). */
   | { kind: "step"; step: Step }
   /** Le montant est un nombre premier (Zimone, All-Questioning). */

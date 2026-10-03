@@ -281,8 +281,11 @@ export const RECORD_VERSION = 1;
  * - 98 : familles de montants (PLAN-S, lot S3) : `aggregate` (valeur de mana calculée sur le champ de bataille : une copie
  *   a celle de ce qu'elle copie, 707.2 ; force totale à l'arrivée sans l'objet qui arrive), `spent`, `manaSymbols`,
  *   référence `playersWhere`.
+ * - 99 : comment un sort a été lancé (PLAN-S, lot S4) : `CastInfo` sur l'élément de pile puis sur le permanent ;
+ *   évocation, distorsion et imminence sont des coûts alternatifs (`via`) ; « si ce sort a été lancé depuis un cimetière »
+ *   lit la zone de lancement (et non plus la marque du flashback).
  */
-export const RULES_VERSION = 98;
+export const RULES_VERSION = 99;
 
 /** Un point de contrôle toutes les N décisions (plus la dernière de la partie). */
 export const CHECKPOINT_EVERY = 25;

@@ -1999,8 +1999,9 @@ export const cond = {
   xAtLeast: (n: number): Condition => ({ kind: "xAtLeast", n }),
   /** « tant que vous avez N mana non dépensé ou plus » (la réserve change : `bump` à chaque changement). */
   manaPoolAtLeast: (n: number): Condition => ({ kind: "manaPoolAtLeast", n }),
-  castFromHand: { kind: "castFromHand" } as Condition,
-  wasCast: { kind: "wasCast" } as Condition,
+  castFromHand: { kind: "cast", from: "hand" } as Condition,
+  /** La source a été lancée (le sort, ou le permanent arrivé depuis un sort lancé). */
+  wasCast: { kind: "cast" } as Condition,
   /** « si vous avez regardé ou surveillé ce tour-ci » */
   scried: turnAtLeast({ event: "scry", who: "you" }),
   firstEndStep: { kind: "firstEndStep" } as Condition,
@@ -2041,17 +2042,17 @@ export const cond = {
   metWhenCast: { kind: "metWhenCast" } as Condition,
   /** « Si {U}{U} a été dépensé pour le lancer » : `cond.spent("U", 2)`. */
   spent: (color: ManaType, n: number): Condition => ({ kind: "spentColor", color, n }),
-  evoked: { kind: "evoked" } as Condition,
+  evoked: { kind: "cast", via: "evoke" } as Condition,
   /** « … avec la plus grande force parmi les créatures que ce joueur contrôle » (l'objet de l'événement, parti). */
   eventObjectGreatestPower: { kind: "eventObjectGreatestPower" } as Condition,
   /** « S'il a été lancé par Web-slinging », « si le coût de chaos a été payé ». */
-  castVia: (via: CastVia): Condition => ({ kind: "castVia", via }),
+  castVia: (via: CastVia): Condition => ({ kind: "cast", via }),
   /** Capacité ∞ : la source a été exploitée. */
   harnessed: { kind: "harnessed" } as Condition,
   /** Storied : « tant que vous avez un récit durable ». */
   enduringStory: { kind: "enduringStory" } as Condition,
   /** « Si le coût de faufilement de ce sort a été payé ». */
-  sneaked: { kind: "castVia", via: "sneak" } as Condition,
+  sneaked: { kind: "cast", via: "sneak" } as Condition,
   sneakWindow: { kind: "sneakWindow" } as Condition,
   activatedLoyalty: turnAtLeast({ event: "activate", who: "you", loyalty: true }),
   /** La source est préparée. */
@@ -2083,8 +2084,9 @@ export const cond = {
   handSpellThisTurn: turnAtLeast({ event: "cast", who: "you", fromZone: "hand" }),
   turnsTakenAtLeast: (n: number): Condition => ({ kind: "turnsTakenAtLeast", n }),
   opponentDealtNoncombatDamageLastTurn: { kind: "opponentDealtNoncombatDamageLastTurn" } as Condition,
-  spellCastFromHand: { kind: "spellCastFromHand" } as Condition,
-  spellCastFromGraveyard: { kind: "spellCastFromGraveyard" } as Condition,
+  spellCastFromHand: { kind: "cast", from: "hand" } as Condition,
+  /** Ce sort a été lancé depuis un cimetière. */
+  spellCastFromGraveyard: { kind: "cast", from: "graveyard" } as Condition,
   sourceDealtCombatDamage: { kind: "sourceDealtCombatDamage" } as Condition,
   /** La source a déjà infligé des blessures, de combat ou non. */
   sourceDealtDamage: { kind: "sourceDealtDamage" } as Condition,
@@ -2093,7 +2095,7 @@ export const cond = {
   /** Une créature correspondant au filtre (sous-type) est morte ce tour-ci (Undead Sprinter : non-Zombie). */
   creatureDiedMatching: (filter: ObjectFilter): Condition =>
     turnAtLeast({ ...DIED, subtype: filter.subtype, notSubtype: filter.notSubtype }),
-  castFromGraveyard: { kind: "castFromGraveyard" } as Condition,
+  castFromGraveyard: { kind: "cast", from: "graveyard" } as Condition,
   /** Un permanent est arrivé face cachée sous votre contrôle, ou vous en avez retourné un face visible, ce tour-ci. */
   faceDownOrUp: {
     kind: "any",

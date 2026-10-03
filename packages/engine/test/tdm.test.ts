@@ -3842,7 +3842,7 @@ describe("Contempler (PLAN-D, D2)", () => {
     const shock = s.stack[0]?.id as string;
     s = act(s, "p2", { type: "pass" });
     s = act(s, "p1", { type: "cast", card: idOf(s, "p1", "hand", "Dispelling Exhale"), targets: { t: [shock] } });
-    expect(s.stack.at(-1)?.beheld).toBe(true);
+    expect(s.stack.at(-1)?.cast?.beheld).toBe(true);
     // Le Dragon quitte le champ de bataille avant la résolution : le sort a quand même été lancé en contemplant.
     destroy(s, idOf(s, "p1", "battlefield", "Shivan Dragon"));
     let asked = "";

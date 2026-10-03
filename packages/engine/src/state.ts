@@ -4,6 +4,7 @@
  */
 import type {
   CardDef,
+  CastInfo,
   ContinuousEffect,
   GameObject,
   GameState,
@@ -176,6 +177,18 @@ export function cloneState(s: GameState): GameState {
   const copy = deepClone(rest) as GameState;
   copy.defs = { ...defs };
   return copy;
+}
+
+/**
+ * Comment la source a été lancée : le sort sur la pile (ou qui se résout), sinon le permanent qu'il est devenu. `permanentFirst` :
+ * le permanent d'abord (mana dépensé connu à l'arrivée).
+ */
+export function castInfoOf(s: GameState, sourceId: ObjectId | undefined, permanentFirst = false): CastInfo | undefined {
+  if (!sourceId) return undefined;
+  const o = s.objects[sourceId]?.cast;
+  if (permanentFirst && o) return o;
+  const item = s.resolving?.item.id === sourceId ? s.resolving.item : s.stack.find((x) => x.id === sourceId);
+  return item?.cast ?? o;
 }
 
 // ---------------------------------------------------------------------------

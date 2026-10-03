@@ -15,6 +15,7 @@ import { boardAmount, concreteSpec, evalAmount, resolveRef, staticContext } from
 import { RulesError, rethrowAsRules } from "./errors";
 import {
   apnapOrder,
+  castInfoOf,
   chars,
   emit,
   isCreature,
@@ -246,8 +247,10 @@ export function checkCondition(
   switch (c.kind) {
     case "step":
       return s.turn.step === c.step;
-    case "castFromGraveyard":
-      return !!(sourceId && s.objects[sourceId]?.castFromGraveyard);
+    case "cast": {
+      const info = castInfoOf(s, sourceId);
+      return !!info && (!c.from || info.from === c.from) && (!c.via || info.via === c.via);
+    }
     case "prime": {
       const n = checkAmount(s, c.amount, controller, sourceId);
       if (n < 2) return false;
@@ -279,10 +282,6 @@ export function checkCondition(
     }
     case "opponentDealtNoncombatDamageLastTurn":
       return opponentsOf(s, controller).some((q) => (s.players[q]?.noncombatDamageLastTurn ?? 0) > 0);
-    case "spellCastFromHand":
-      return !!s.resolving?.item.fromHand;
-    case "spellCastFromGraveyard":
-      return !!s.resolving?.item.flashback;
     case "classLevel":
       return (s.objects[sourceId ?? ""]?.classLevel ?? 1) === c.level;
     case "saddled":
@@ -308,11 +307,10 @@ export function checkCondition(
     case "metWhenCast": {
       // Le sort qui se résout (ou sur la pile) : ce qui a été retenu au lancement.
       const item = s.resolving && s.resolving.item.id === sourceId ? s.resolving.item : s.stack.find((x) => x.id === sourceId);
-      return c.kind === "beheld" ? !!item?.beheld : !!item?.metWhenCast;
+      return c.kind === "beheld" ? !!item?.cast?.beheld : !!item?.cast?.metWhenCast;
     }
     case "spentColor": {
-      const item = s.resolving && s.resolving.item.id === sourceId ? s.resolving.item : s.stack.find((x) => x.id === sourceId);
-      const spent = (sourceId && (s.objects[sourceId]?.spentColors ?? item?.spentColors)) || {};
+      const spent = castInfoOf(s, sourceId, true)?.spentColors ?? {};
       return (spent[c.color] ?? 0) >= c.n;
     }
     case "sneakWindow":
@@ -326,8 +324,6 @@ export function checkCondition(
       return playerStatic(s, controller, "enduringStory");
     case "harnessed":
       return !!sourceId && !!s.objects[sourceId]?.harnessed;
-    case "evoked":
-      return !!sourceId && !!s.objects[sourceId]?.evoked;
     case "eventObjectGreatestPower": {
       const id = eventObject;
       const v = id ? (s.lki[id] ?? (s.objects[id]?.zone === "battlefield" ? snapshot(s, id) : undefined)) : undefined;
@@ -343,10 +339,6 @@ export function checkCondition(
           .map((l) => l?.power ?? 0),
       ];
       return others.every((p) => v.power >= p);
-    }
-    case "castVia": {
-      const item = s.resolving && s.resolving.item.id === sourceId ? s.resolving.item : s.stack.find((x) => x.id === sourceId);
-      return (item?.castVia ?? (sourceId ? s.objects[sourceId]?.castVia : undefined)) === c.via;
     }
     case "prepared": {
       const src = sourceId ? s.objects[sourceId] : undefined;
@@ -378,10 +370,6 @@ export function checkCondition(
       return !checkCondition(s, c.cond, controller, sourceId, eventObject, event);
     case "all":
       return c.of.every((x) => checkCondition(s, x, controller, sourceId, eventObject, event));
-    case "wasCast":
-      return !!(sourceId && s.objects[sourceId]?.cast);
-    case "castFromHand":
-      return !!(sourceId && s.objects[sourceId]?.castFromHand);
     case "battlefieldCount":
       return s.battlefield.filter((id) => matchesView(snapshot(s, id), c.filter, controller, sourceId)).length >= c.atLeast;
     case "sourceMatches": {
@@ -499,8 +487,9 @@ function matchTrigger(s: GameState, ev: RulesEvent, t: TriggerSpec, src: Source)
         return null;
       if (t.fromZone) {
         const arrived = ev.newId ? s.objects[ev.newId] : undefined;
-        const cast = t.fromZone === "graveyard" ? arrived?.castFromGraveyard : arrived?.castFromExile;
-        if (ev.from !== t.fromZone && !cast) return null;
+        // Lancé depuis le cimetière ou l'exil : le sort est passé par la pile.
+        const castFrom = t.fromZone === "graveyard" || t.fromZone === "exile" ? arrived?.cast?.from : undefined;
+        if (ev.from !== t.fromZone && castFrom !== t.fromZone) return null;
       }
       return v && matchWho(t.who, v, src) ? { objectId: v.id, player: v.controller } : null;
     }
@@ -642,9 +631,10 @@ function matchTrigger(s: GameState, ev: RulesEvent, t: TriggerSpec, src: Source)
         const d = s.defs[s.objects[ev.stackId]?.defId ?? ""];
         if ((d?.spell?.modes?.length ?? 0) < 2) return null;
       }
-      if (t.notFromHand && s.stack.find((x) => x.id === ev.stackId)?.fromHand) return null;
-      if (t.fromExile && !s.stack.find((x) => x.id === ev.stackId)?.fromExile) return null;
-      if (t.fromHand && !s.stack.find((x) => x.id === ev.stackId)?.fromHand) return null;
+      const from = s.stack.find((x) => x.id === ev.stackId)?.cast?.from;
+      if (t.notFromHand && from === "hand") return null;
+      if (t.fromExile && from !== "exile") return null;
+      if (t.fromHand && from !== "hand") return null;
       if (t.usingManaFromSelf && !s.stack.find((x) => x.id === ev.stackId)?.manaSources?.includes(src.id)) return null;
       if (t.usingManaFrom) {
         const f = t.usingManaFrom;
@@ -655,7 +645,7 @@ function matchTrigger(s: GameState, ev: RulesEvent, t: TriggerSpec, src: Source)
         });
         if (!ok) return null;
       }
-      if (t.minManaSpent !== undefined && (s.stack.find((x) => x.id === ev.stackId)?.manaSpent ?? 0) < t.minManaSpent)
+      if (t.minManaSpent !== undefined && (s.stack.find((x) => x.id === ev.stackId)?.cast?.manaSpent ?? 0) < t.minManaSpent)
         return null;
       if (t.notOwned && s.objects[ev.stackId]?.owner === ev.player) return null;
       // Alania : le premier éphémère, le premier rituel ou le premier sort de Loutre (autre qu'elle) de ce tour.

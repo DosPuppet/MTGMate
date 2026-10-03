@@ -3,7 +3,7 @@
  */
 import { RulesError } from "./errors";
 import { chars, hasKeyword, snapshot } from "./layers";
-import { obj } from "./state";
+import { castInfoOf, obj } from "./state";
 import { playerStatic } from "./statics";
 import { attackedThisTurn, dealtDamageThisTurn } from "./turnlog";
 import type { CardType, Color, GameState, LkiSnapshot, ObjectFilter, ObjectId, PlayerId, TargetSpec } from "./types";
@@ -223,20 +223,21 @@ export function resolveFilter(s: GameState, f: ObjectFilter, sourceId?: ObjectId
   if (f.powerAboveSource) f = { ...f, powerAboveSource: undefined, minPower: sourcePower(s, sourceId) + 1 };
   if (f.manaValueSourcePower) f = { ...f, manaValueSourcePower: undefined, manaValue: sourcePower(s, sourceId) };
   if (f.maxManaValueColorsSpent) {
-    const item = s.resolving?.item.id === sourceId ? s.resolving?.item : s.stack.find((x) => x.id === sourceId);
-    const spent = item?.spentColors ?? (sourceId ? s.objects[sourceId]?.spentColors : undefined) ?? {};
+    const spent = castInfoOf(s, sourceId)?.spentColors ?? {};
     const n = (["W", "U", "B", "R", "G"] as const).filter((c) => (spent[c] ?? 0) > 0).length;
     f = { ...f, maxManaValueColorsSpent: undefined, maxManaValue: n };
   }
   if (f.maxManaValueX) {
-    const x = (sourceId && s.objects[sourceId]?.castX) || 0;
+    const x = (sourceId && s.objects[sourceId]?.x) || 0;
     return { ...f, maxManaValueX: undefined, maxManaValue: x };
   }
   if (f.maxManaValueManaSpent) {
     // Sort de permanent en cours de résolution (Mockingbird) : le mana dépensé est sur l'élément de pile.
     const spent =
       (sourceId &&
-        (s.objects[sourceId]?.manaSpent ?? s.lki[sourceId]?.manaSpent ?? s.stack.find((x) => x.id === sourceId)?.manaSpent)) ||
+        (s.objects[sourceId]?.cast?.manaSpent ??
+          s.lki[sourceId]?.manaSpent ??
+          s.stack.find((x) => x.id === sourceId)?.cast?.manaSpent)) ||
       0;
     return { ...f, maxManaValueManaSpent: undefined, maxManaValue: spent };
   }

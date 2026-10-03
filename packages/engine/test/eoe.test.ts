@@ -47,7 +47,7 @@ describe("distorsion (702.185)", () => {
     s = cast(s, "p1", "Red Tiger Mechan", { warp: true });
     s = passBoth(s);
     const tiger = idOf(s, "p1", "battlefield", "Red Tiger Mechan");
-    expect(s.objects[tiger]?.warped).toBe(true);
+    expect(s.objects[tiger]?.cast?.via).toBe("warp");
     expect(s.players.p1?.manaPool.R).toBe(0);
     expect(s.objects[idsOf(s, "p1", "battlefield", "Mountain")[1] as string]?.tapped).toBe(true); // {1}{R}
     // Étape de fin : exilée ; pas relançable ce tour-ci.
@@ -1994,7 +1994,7 @@ describe("Edge of Eternities, lot K8 : peu communes (1)", () => {
     s = settle(cast(s, "p1", "Bygone Colossus", { warp: true }));
     const c = idOf(s, "p1", "battlefield", "Bygone Colossus");
     expect([chars(s, c).power, chars(s, c).toughness]).toEqual([9, 9]);
-    expect(s.objects[c]?.warped).toBe(true);
+    expect(s.objects[c]?.cast?.via).toBe("warp");
   });
 
   it("Cerebral Download : surveillance X (vos artefacts), puis piochez trois cartes", () => {

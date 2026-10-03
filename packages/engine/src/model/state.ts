@@ -86,9 +86,12 @@ export interface GameObject {
   isToken: boolean;
   /** Capacités « une seule fois » déjà activées (indices). */
   used?: number[];
-  /** Permanent arrivé depuis un sort kické / depuis un sort lancé. */
+  /** Permanent arrivé depuis un sort kické (ou la copie d'un sort kické, 707.10). */
   kicked?: boolean;
-  cast?: boolean;
+  /** X payé pour le mettre sur le champ de bataille (sort lancé, Dune Drifter) ou pour le retourner face visible. */
+  x?: number;
+  /** Comment le sort qui l'a mis sur le champ de bataille a été lancé (absent : arrivé sans être lancé). */
+  cast?: CastInfo;
   /** Aura ou Équipement : le permanent auquel il est attaché (301.5, 303.4). */
   attachedTo?: ObjectId;
   /** Tour de la dernière activation d'une capacité de loyauté (606.3 : une par tour). */
@@ -105,12 +108,6 @@ export interface GameObject {
     /** Choix secret (A Killer Among Us) : caché aux adversaires jusqu'à ce qu'il soit révélé. */
     secret?: boolean;
   };
-  /** Arrivé depuis un sort lancé depuis la main (Myojin). */
-  castFromHand?: boolean;
-  /** Lancé depuis le cimetière (Undead Sprinter : « si vous le faites, elle arrive avec un marqueur +1/+1 »). */
-  castFromGraveyard?: boolean;
-  /** Lancé depuis l'exil (Extraordinary Journey). */
-  castFromExile?: boolean;
   /** Préparé (Reality Fracture) : identifiant de la copie de son sort, en exil. */
   preparedCopy?: ObjectId;
   /** Copie d'un sort préparé (en exil puis sur la pile) : le permanent qui l'a préparée. Cesse d'exister hors de ces zones. */
@@ -122,29 +119,14 @@ export interface GameObject {
    * la garde {2} (déguisement, cape) et les coûts pour la retourner face visible sont gardés ici.
    */
   faceDown?: { card: string; ward: boolean; upCosts: ManaCost[] };
-  /** Distorsion : le permanent a été lancé pour son coût de distorsion ; carte exilée par la distorsion (tour de l'exil). */
-  warped?: boolean;
-  /** Imminence (702.176) : lancé pour son coût d'imminence ; ce n'est pas une créature tant qu'il a un marqueur de temps. */
-  impending?: boolean;
+  /** Carte exilée par la distorsion : tour de l'exil. */
   /** Tour où la carte a été défaussée (Chaos / Mayhem : « si vous l'avez défaussée ce tour-ci »). */
   discardedTurn?: number;
   /** Zone d'où l'objet est venu dans sa zone actuelle (Supper for Spiders : « depuis le champ de bataille »). */
   arrivedFrom?: Zone;
   /** Exploité (Harness, Marvel Super Heroes) : ses capacités ∞ sont actives. */
   harnessed?: boolean;
-  /** Lancé par Web-slinging ou pour son coût de chaos (« s'il a été lancé par Web-slinging », Spiders-Man). */
-  castVia?: CastVia;
-  /** Créature renvoyée en main pour le coût du sort qui l'a mis sur le champ de bataille (Web-slinging). */
-  costBounced?: ObjectId[];
-  /** Évocation (702.74) : lancé pour son coût d'évocation (sacrifié en arrivant). */
-  evoked?: boolean;
-  /** Mana dépensé pour le lancer, par type (« si {U}{U} a été dépensé pour le lancer », Deceit). */
-  spentColors?: Partial<Record<ManaType, number>>;
   warpExiledTurn?: number;
-  /** Mana dépensé pour lancer ce sort ou ce permanent (Astelli Reclaimer, Unravel). */
-  manaSpent?: number;
-  /** Mana produit par des Cavernes dépensé pour le lancer (Bat Colony). */
-  caveMana?: number;
   /** Monture (702.171) : tour pendant lequel elle a été montée (« sellée »). */
   saddledTurn?: number;
   /** Épuisé : ne se dégage pas lors de la prochaine étape de dégagement de son contrôleur. */
@@ -181,8 +163,6 @@ export interface GameObject {
   dealtDamage?: boolean;
   /** Cartes liées (exilées par cette carte, Hoarding Dragon). */
   linked?: ObjectId[];
-  /** X du sort qui a mis ce permanent sur le champ de bataille (Dune Drifter). */
-  castX?: number;
   /** Engagements de ce tour (`tapTurn` : le tour du décompte), pour « la première fois qu'elle devient engagée ce tour-ci ». */
   tapTurn?: number;
   tapsThisTurn?: number;
@@ -291,10 +271,8 @@ export interface StackItem {
   targets: Record<string, string[]>;
   x: number;
   kicked: boolean;
-  /** Contempler en coût additionnel : fait au lancement (`cond.beheld`). */
-  beheld?: boolean;
-  /** `CardDef.whenCast` remplie au lancement (« si vous contrôliez une Fée en lançant ce sort »). */
-  metWhenCast?: boolean;
+  /** Sort lancé (absent pour une capacité ou une copie) : comment il l'a été. */
+  cast?: CastInfo;
   /** Informations de dernière connaissance de la source (capacités). */
   sourceSnapshot: { keywords: Keyword[]; power: number; controller: PlayerId };
   /** Capacité déclenchée : ce qui l'a déclenchée. */
@@ -305,34 +283,12 @@ export interface StackItem {
   bottomInstead?: boolean;
   /** Aventure lancée : exilée « en aventure » après sa résolution. */
   adventure?: boolean;
-  /** Lancé pour son coût de distorsion : le permanent sera exilé à la prochaine étape de fin. */
-  warped?: boolean;
   /** Cartes défaussées pour payer un coût additionnel (Grab the Prize). */
   discarded?: ObjectId[];
   /** Cartes exilées pour payer un coût additionnel (Fear of Abduction : liées au permanent). */
   costExiled?: ObjectId[];
-  /** Lancé pour son coût d'imminence : le permanent arrive avec N marqueurs de temps. */
-  impending?: boolean;
-  /** Mana dépensé pour le lancer. */
-  manaSpent?: number;
-  /** Lancé pour son coût d'évocation. */
-  evoked?: boolean;
-  /** Lancé pour son coût de faufilement (Sneak) ; `sneakDefender` : ce qu'attaquait la créature renvoyée (le permanent
-   * arrive engagé et attaquant ce joueur ou ce planeswalker). */
-  sneaked?: boolean;
-  sneakDefender?: string;
-  /** Lancé par Web-slinging ou pour son coût de chaos (Spider-Man). */
-  castVia?: CastVia;
-  /** Créature renvoyée en main pour le Web-slinging (Scarlet Spider, Ben Reilly). */
-  costBounced?: ObjectId[];
-  /** Mana dépensé pour le lancer, par type. */
-  spentColors?: Partial<Record<ManaType, number>>;
-  /** Dont le mana produit par des Cavernes (Bat Colony). */
-  caveMana?: number;
   /** Sources dont le mana a servi à le lancer (« en utilisant du mana produit par [cette source] »). */
   manaSources?: ObjectId[];
-  /** Lancé depuis l'exil (Quintorius Kand). */
-  fromExile?: boolean;
   /** Rebond (702.88, accordé par Ojer Pakpatiq). */
   rebound?: boolean;
   /** Exilé en se résolvant au lieu d'aller au cimetière, avec ce marqueur s'il est nommé (Goliath Daydreamer : « rêve »). */
@@ -361,10 +317,6 @@ export interface StackItem {
   tappedForCost?: ObjectId[];
   /** Effets de mana dépensé (Carnelian Orb, Pyromancer's Goggles). */
   riders?: ("haste" | "copy" | "uncounterable")[];
-  /** Sort lancé depuis la main. */
-  fromHand?: boolean;
-  /** Lancé depuis le cimetière (Undead Sprinter). */
-  fromGraveyard?: boolean;
 }
 
 /** Choix d'un élément de pile qui reste à faire (voir `StackItem.pendingChoices`). */
@@ -428,8 +380,33 @@ export interface TurnStats {
   manaSpentOnSpells?: number;
 }
 
-/** Façon de lancer un sort que des capacités lisent : Web-slinging, coût de chaos (Mayhem), faufilement (Sneak). */
-export type CastVia = "webSlinging" | "mayhem" | "sneak";
+/**
+ * Coût alternatif payé pour lancer un sort (601.2b, un seul par lancement), que des règles ou des capacités lisent :
+ * Web-slinging, chaos (Mayhem), faufilement (Sneak), évocation (702.74), distorsion (Warp), imminence (702.176).
+ */
+export type CastVia = "webSlinging" | "mayhem" | "sneak" | "evoke" | "warp" | "impending";
+
+/**
+ * Comment un sort a été lancé : noté sur la pile (`StackItem.cast`), puis sur le permanent qu'il devient
+ * (`GameObject.cast`), que lisent les conditions « s'il a été lancé… » et les règles (distorsion, imminence, évocation).
+ */
+export interface CastInfo {
+  /** Zone d'où il a été lancé. */
+  from: Zone;
+  via?: CastVia;
+  /** Mana dépensé pour le lancer, en tout et par type ; dont le mana des Cavernes (Bat Colony). */
+  manaSpent?: number;
+  spentColors?: Partial<Record<ManaType, number>>;
+  caveMana?: number;
+  /** Créature renvoyée en main pour le Web-slinging (Scarlet Spider, Ben Reilly). */
+  costBounced?: ObjectId[];
+  /** Faufilement : ce qu'attaquait la créature renvoyée (le permanent arrive engagé et attaquant). */
+  sneakDefender?: string;
+  /** Contempler en coût additionnel (`cond.beheld`). */
+  beheld?: boolean;
+  /** `CardDef.whenCast` remplie au lancement (« si vous contrôliez une Fée en lançant ce sort »). */
+  metWhenCast?: boolean;
+}
 
 /** Événement du tour (`turnlog.ts`) : déplacement, sort lancé, sacrifice, blessures. */
 export type TurnLogEntry =

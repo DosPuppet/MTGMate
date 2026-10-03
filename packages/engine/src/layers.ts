@@ -345,7 +345,7 @@ function base(s: GameState, o: GameObject, defId = o.defId): Characteristics {
   const cdaToughness = d.cdaToughness === undefined ? undefined : cdaValue(s, o, d.cdaToughness);
   const station = stationTraits(o, d);
   // Imminence (702.176a) : ce n'est pas une créature tant qu'il a un marqueur de temps (ni ses types de créature).
-  const impending = !!o.impending && o.zone === "battlefield" && (o.counters.time ?? 0) > 0;
+  const impending = o.cast?.via === "impending" && o.zone === "battlefield" && (o.counters.time ?? 0) > 0;
   return {
     name: d.name,
     types: impending
@@ -600,12 +600,12 @@ function view(s: GameState, id: ObjectId, c: Characteristics, o: GameObject, att
     counters: o.counters,
     preparedSpell: !!o.preparedFor || undefined,
     prepared: !!o.preparedCopy || undefined,
-    warped: o.warped || undefined,
+    warped: o.cast?.via === "warp" || undefined,
     faceDown: !!o.faceDown || undefined,
     // Sort sur la pile : le mana dépensé est porté par l'élément de pile (Unravel).
-    manaSpent: o.manaSpent ?? (o.zone === "stack" ? s.stack.find((x) => x.id === id)?.manaSpent : undefined),
+    manaSpent: o.cast?.manaSpent ?? (o.zone === "stack" ? s.stack.find((x) => x.id === id)?.cast?.manaSpent : undefined),
     lastAttachedTo: o.lastAttachedTo,
-    cast: o.cast || undefined,
+    cast: !!o.cast || undefined,
     crewedByThisTurn: o.crewedBy?.turn === s.turn.number ? o.crewedBy.ids : undefined,
     equipped: scan
       ? (o.zone === "battlefield" && scan.equipped.has(id)) || undefined

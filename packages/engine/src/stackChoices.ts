@@ -76,7 +76,7 @@ export function copyStackItem(s: GameState, item: StackItem, controller: PlayerI
     // Les modifications d'arrivée accordées au sort (marqueurs, célérité) ne sont pas copiables (707.2).
     arrival: undefined,
     manaSources: undefined,
-    caveMana: undefined,
+    cast: item.cast ? { ...item.cast, caveMana: undefined } : undefined,
     targets: { ...item.targets },
     pendingChoices: pending.length ? pending : undefined,
   };

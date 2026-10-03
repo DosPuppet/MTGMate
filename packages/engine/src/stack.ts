@@ -72,6 +72,7 @@ import type {
   CardDef,
   CastChoices,
   CastLimit,
+  CastVia,
   ChoiceValue,
   Color,
   CostPick,
@@ -1927,6 +1928,20 @@ export function castSpell(s: GameState, player: PlayerId, card: ObjectId, choice
   // Le prochain sort : incontrecarrable (Theorist's Proxy), marqueurs ou célérité (Summon: Fenrir), copié (plus bas).
   const next = consumeNextSpells(s, player, d);
   const uncounterable = next.some((n) => n.uncounterable);
+  // Coût alternatif payé (601.2b : un seul), lu par les règles et les conditions « s'il a été lancé ainsi ».
+  const castVia: CastVia | undefined = webSlinging
+    ? "webSlinging"
+    : terms.mayhem
+      ? "mayhem"
+      : sneaked
+        ? "sneak"
+        : warp
+          ? "warp"
+          : alternative && cardDef.impending
+            ? "impending"
+            : alternative && cardDef.evoke
+              ? "evoke"
+              : undefined;
   const item: StackItem = {
     id: stackId,
     kind: "spell",
@@ -1944,23 +1959,19 @@ export function castSpell(s: GameState, player: PlayerId, card: ObjectId, choice
     ...(terms.bottomAfter ? { bottomInstead: true } : {}),
     arrival: arrivalFor(terms, next),
     adventure: adventure || undefined,
-    warped: warp ? true : undefined,
-    impending: alternative && cardDef.impending ? true : undefined,
-    evoked: alternative && cardDef.evoke ? true : undefined,
-    sneaked: sneaked || undefined,
-    sneakDefender,
-    castVia: webSlinging ? "webSlinging" : terms.mayhem ? "mayhem" : sneaked ? "sneak" : undefined,
-    costBounced: bounced.length ? bounced : undefined,
-    manaSpent: free ? 0 : manaValue(cost),
-    fromHand: terms.source === "hand" || undefined,
-    fromGraveyard: terms.source === "graveyard" || terms.source === "flashback" || undefined,
-    fromExile: terms.source === "exile" || undefined,
+    cast: {
+      from: terms.source === "flashback" ? "graveyard" : terms.source,
+      via: castVia,
+      ...(sneaked ? { sneakDefender } : {}),
+      costBounced: bounced.length ? bounced : undefined,
+      manaSpent: free ? 0 : manaValue(cost),
+      beheld: beheldId ? true : undefined,
+      metWhenCast: metWhenCast || undefined,
+    },
     // Permanents sacrifiés comme coût additionnel (« si le permanent sacrifié était un Véhicule »).
     sacrificed: sacrifice.length ? [...sacrifice] : undefined,
     costExiled: costExiled.length ? costExiled : undefined,
     uncounterable: uncounterable || undefined,
-    beheld: beheldId ? true : undefined,
-    metWhenCast: metWhenCast || undefined,
   };
   s.stack.push(item);
   // Contempler une carte de la main : elle est révélée.
@@ -1987,7 +1998,7 @@ export function castSpell(s: GameState, player: PlayerId, card: ObjectId, choice
       taps,
       spent,
     );
-    if (Object.keys(spent).length) item.spentColors = spent;
+    if (Object.keys(spent).length && item.cast) item.cast.spentColors = spent;
     // Un coût de maîtrise de l'eau a été payé (« chaque fois que vous maîtrisez l'eau »).
     if (
       d.waterbend !== undefined ||
@@ -2002,7 +2013,7 @@ export function castSpell(s: GameState, player: PlayerId, card: ObjectId, choice
       // Une source sacrifiée pour son mana (Trésor) est connue par ses dernières informations.
       const subtypes = (id: ObjectId) => (s.objects[id] ? chars(s, id).subtypes : (s.lki[id]?.subtypes ?? []));
       const caves = taps.filter((t) => subtypes(t.id).includes("Cave")).reduce((n, t) => n + t.amount, 0);
-      if (caves) item.caveMana = caves;
+      if (caves && item.cast) item.cast.caveMana = caves;
     }
     // Effets associés au mana dépensé, si ce sort correspond (Carnelian Orb, Pyromancer's Goggles ; Cavern of Souls :
     // « du type choisi » se lit sur la source).
@@ -2087,7 +2098,7 @@ export function castSpell(s: GameState, player: PlayerId, card: ObjectId, choice
   }
   rulesEvent(s, { e: "cast", player, stackId, instantSorceryBefore: instantOrSorcery ? before : undefined });
   // Dépense N (Bloomburrow) : le N-ième mana total dépensé pour lancer des sorts ce tour-ci.
-  const spent = item.manaSpent ?? 0;
+  const spent = item.cast?.manaSpent ?? 0;
   if (caster && spent > 0) {
     const was = caster.turnStats.manaSpentOnSpells ?? 0;
     caster.turnStats.manaSpentOnSpells = was + spent;
@@ -2995,7 +3006,7 @@ export function activateAbility(s: GameState, player: PlayerId, source: ObjectId
       if (e.op === "unlockDoor") unlockDoor(s, source, e.door);
       if (e.op === "turnFaceUp") {
         // « jusqu'à X cibles » au retournement : le X payé (`amount.sourceX`).
-        if (ab.cost.mana?.x) o.castX = x;
+        if (ab.cost.mana?.x) o.x = x;
         turnFaceUp(s, source);
       }
       if (e.op === "plot") plotCard(s, source);
@@ -3483,35 +3494,25 @@ function finishResolution(
         enters: {
           x: item.x,
           kicked: item.kicked,
-          cast: true,
-          castFromHand: item.fromHand,
-          castFromGraveyard: item.fromGraveyard,
-          castFromExile: item.fromExile,
+          cast: item.cast,
           attachTo: d.enchant ? targets[ENCHANT_SPEC]?.[0] : undefined,
           chosen: chosenFrom(vars),
           riot: vars.$riot?.[0] === "haste" ? "haste" : vars.$riot?.[0] === "counter" ? "counter" : undefined,
-          manaSpent: item.manaSpent,
           devoured: Number(vars.$devoured?.[0] ?? 0),
           copyOf: vars.$copyOf?.[0] !== undefined ? String(vars.$copyOf[0]) : undefined,
           copyMods: copiableExceptions(s, vars.$copyOf?.[1] !== undefined ? String(vars.$copyOf[1]) : undefined),
           copyChosen: vars.$copyOf !== undefined,
-          spentColors: item.spentColors,
-          evoked: item.evoked,
-          castVia: item.castVia,
-          costBounced: item.costBounced,
           // Faufilement : il arrive engagé et attaquant ce qu'attaquait la créature renvoyée.
-          ...(item.sneaked && item.sneakDefender ? { tapped: true, attacking: item.sneakDefender } : {}),
+          ...(item.cast?.sneakDefender ? { tapped: true, attacking: item.cast.sneakDefender } : {}),
           // Marqueurs, célérité et sous-types d'arrivée (Torgal, Summon: Fenrir, Noctis), Imminence : avant l'événement.
           counters: item.arrival?.counters,
           haste: item.arrival?.haste,
           mods: item.arrival?.subtypes ? { addSubtypes: item.arrival.subtypes } : undefined,
-          impending: item.impending ? (d.impending ?? 0) : undefined,
+          impending: item.cast?.via === "impending" ? (d.impending ?? 0) : undefined,
         },
       });
       const arrived = enteredId ? s.objects[enteredId] : undefined;
-      if (arrived && item.manaSpent !== undefined) arrived.manaSpent = item.manaSpent;
-      if (arrived && item.caveMana) arrived.caveMana = item.caveMana;
-      if (arrived && item.x) arrived.castX = item.x;
+      if (arrived && item.x) arrived.x = item.x;
       // Mimeoplasm : les cartes exilées en arrivant sont liées au permanent.
       if (arrived && vars["$ids:devoured"]?.length)
         arrived.linked = [...(arrived.linked ?? []), ...vars["$ids:devoured"].map(String)];
@@ -3527,8 +3528,7 @@ function finishResolution(
           label: "Exilez la carte copiée",
         });
       // Distorsion : exilé au début de la prochaine étape de fin.
-      if (item.warped && arrived) {
-        arrived.warped = true;
+      if (item.cast?.via === "warp" && arrived) {
         createDelayed(s, item.controller, arrived.id, arrived.defId, {
           targets: [],
           effects: [{ op: "warpExile", what: { kind: "target", id: "w" } }],
@@ -3635,7 +3635,7 @@ function resolvedSpellAway(s: GameState, item: StackItem, d: CardDef | undefined
   }
   // Rebond (702.88) : un sort lancé depuis la main est exilé ; au début de votre prochain entretien, vous pouvez le lancer
   // depuis l'exil sans payer son coût de mana (pendant la résolution de la capacité retardée, 608.2g).
-  if (item.rebound && item.fromHand && !item.flashback && !item.copy) {
+  if (item.rebound && item.cast?.from === "hand" && !item.flashback && !item.copy) {
     const exiled = moveObject(s, item.sourceId, "exile");
     if (exiled) {
       const grant: Effect = { op: "castNow", what: { kind: "target", id: "rb" }, free: true };
