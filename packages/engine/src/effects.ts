@@ -4,7 +4,7 @@
  */
 
 import { type DamageSource, payLife, removeFromCombat, sourceFromObject } from "./actions";
-import { copiedDefId, linkedColors, linkedTotalPower } from "./layers";
+import { copiedDefId } from "./layers";
 import { manaValue } from "./mana";
 import { HANDLERS as COUNTERS_HANDLERS } from "./ops/counters";
 import { HANDLERS as DAMAGE_HANDLERS } from "./ops/damage";
@@ -38,6 +38,7 @@ import { matchesCard, matchesObjectFilter, matchesView, protectedFrom, resolveFi
 import { checkCondition, mostLife } from "./triggers";
 import { countTurnEvents } from "./turnlog";
 import type {
+  AggregateProperty,
   Amount,
   ChoiceRequest,
   ChoiceValue,
@@ -58,7 +59,7 @@ import type {
   TriggerEventData,
   Zone,
 } from "./types";
-import { BASIC_LAND_TYPES } from "./types";
+import { BASIC_LAND_TYPES, PERMANENT_TYPES } from "./types";
 
 export interface EffectContext {
   controller: PlayerId;
@@ -333,12 +334,12 @@ export function resolveRef(s: GameState, ctx: EffectContext, ref: Ref): string[]
       return s.playerOrder.flatMap((p) => s.players[p]?.graveyard ?? []);
     case "graveyardOf":
       return resolveRef(s, ctx, ref.who).flatMap((p) => s.players[p]?.graveyard ?? []);
+    case "playersWhere":
+      return resolveRef(s, ctx, ref.of).filter((p) => isPlayer(s, p) && evalCondition(s, { ...ctx, controller: p }, ref.where));
     case "crewedBy": {
       const c = s.objects[ctx.sourceId]?.crewedBy;
       return c && c.turn === s.turn.number ? c.ids.filter((id) => onBattlefield(s, id)) : [];
     }
-    case "playersWithoutMaxSpeed":
-      return s.playerOrder.filter((p) => !s.players[p]?.lost && (s.players[p]?.speed ?? 0) < 4);
     case "exiledWith":
       return s.linkedExile
         .filter((l) => l.sourceId === ctx.sourceId)
@@ -411,6 +412,10 @@ export function evalAmount(s: GameState, ctx: EffectContext, a: Amount): number 
     }
     case "eventAmount":
       return ctx.event?.amount ?? 0;
+    case "aggregate":
+      return aggregate(s, ctx, a);
+    case "spent":
+      return (a.of ? resolveRef(s, ctx, a.of) : [ctx.sourceId]).reduce((n, id) => n + spentOn(s, id, a.what), 0);
     case "count":
       if (a.zone && a.zone !== "battlefield") {
         const players =
@@ -424,18 +429,6 @@ export function evalAmount(s: GameState, ctx: EffectContext, a: Amount): number 
           .filter((id) => matchesCard(s, ctx.controller, id, { ...a.filter, controller: undefined }, ctx.sourceId)).length;
       }
       return boardAmount(s, a, ctx.controller, ctx.sourceId);
-    case "totalPower":
-      return boardAmount(s, a, ctx.controller, ctx.sourceId);
-    case "totalToughness":
-      return s.battlefield
-        .filter((id) => matchesObjectFilter(s, ctx.controller, id, a.filter, ctx.sourceId))
-        .reduce((n, id) => n + Math.max(0, chars(s, id).toughness), 0);
-    case "counterKindsAmong": {
-      const kinds = new Set<string>();
-      for (const id of s.battlefield.filter((x) => matchesObjectFilter(s, ctx.controller, x, a.filter, ctx.sourceId)))
-        for (const [k, n] of Object.entries(s.objects[id]?.counters ?? {})) if (n > 0) kinds.add(k);
-      return kinds.size;
-    }
     case "countersOn": {
       // L'objet de l'événement qui a quitté le champ de bataille (« quand une créature avec des marqueurs meurt ») : ses
       // marqueurs au moment de partir (dernières informations connues), pas ceux de la carte qu'il est devenu.
@@ -446,23 +439,6 @@ export function evalAmount(s: GameState, ctx: EffectContext, a: Amount): number 
       // « le nombre de marqueurs sur … » (Warden of the Grove) : tous types confondus.
       if (a.counter === "any") return Object.values(counters).reduce((n, k) => n + Math.max(0, k), 0);
       return counters[a.counter] ?? 0;
-    }
-    case "colorsAmong": {
-      const colors = new Set<string>();
-      for (const id of s.battlefield) {
-        if (matchesObjectFilter(s, ctx.controller, id, a.filter, ctx.sourceId))
-          for (const c of chars(s, id).colors) colors.add(c);
-      }
-      return colors.size;
-    }
-    case "differentManaValues": {
-      const values = new Set<number>();
-      for (const id of s.battlefield) {
-        const o = s.objects[id];
-        if (o?.controller !== ctx.controller || chars(s, id).types.includes("Land")) continue;
-        values.add(manaValue(s.defs[o.defId]?.manaCost));
-      }
-      return values.size;
     }
     case "sum":
       return a.of.reduce<number>((n, x) => n + evalAmount(s, ctx, x), 0);
@@ -489,139 +465,31 @@ export function evalAmount(s: GameState, ctx: EffectContext, a: Amount): number 
       const id = resolveRef(s, ctx, a.ref)[0];
       return id ? Math.max(0, viewOf(s, id)?.toughness ?? 0) : 0;
     }
-    case "colorsOf": {
-      const id = resolveRef(s, ctx, a.ref)[0];
-      return id ? (viewOf(s, id)?.colors.length ?? 0) : 0;
-    }
-    case "maxPower":
-      if (a.zone === "graveyard")
-        return Math.max(
-          0,
-          ...(s.players[ctx.controller]?.graveyard ?? [])
-            .filter((id) => matchesCard(s, ctx.controller, id, a.filter, ctx.sourceId))
-            .map((id) => s.defs[s.objects[id]?.defId ?? ""]?.power ?? 0),
-        );
-      return Math.max(
-        0,
-        ...s.battlefield
-          .filter((id) => matchesObjectFilter(s, ctx.controller, id, a.filter, ctx.sourceId))
-          .map((id) => chars(s, id).power),
-      );
     case "halfLife": {
       const p = resolveRef(s, ctx, a.who).find((x) => isPlayer(s, x));
       return p ? Math.ceil(Math.max(0, s.players[p]?.life ?? 0) / 2) : 0;
     }
-    case "manaSpent": {
-      // Un éphémère ou un rituel qui se résout : le mana dépensé est sur l'élément de pile (Molten Note).
-      const item = s.resolving?.item.id === ctx.sourceId ? s.resolving.item : s.stack.find((x) => x.id === ctx.sourceId);
-      return s.objects[ctx.sourceId]?.manaSpent ?? item?.manaSpent ?? 0;
-    }
     case "speed":
       return s.players[ctx.controller]?.speed ?? 0;
-    case "totalManaValue":
-      if (a.zone === "exile")
-        return (
-          s.exile
-            .filter((id) => s.objects[id]?.owner === ctx.controller)
-            .filter((id) => matchesCard(s, ctx.controller, id, { ...a.filter, controller: undefined }, ctx.sourceId))
-            // 708.2 : une carte exilée face cachée a une valeur de mana de 0.
-            .reduce((n, id) => n + (s.objects[id]?.faceDown ? 0 : manaValue(s.defs[s.objects[id]?.defId ?? ""]?.manaCost)), 0)
-        );
-      return s.battlefield
-        .filter((id) => matchesObjectFilter(s, ctx.controller, id, a.filter, ctx.sourceId))
-        .reduce((n, id) => n + (snapshot(s, id).manaValue ?? 0), 0);
-    case "devotion": {
-      let n = 0;
-      for (const id of s.battlefield) {
-        if (s.objects[id]?.controller !== ctx.controller) continue;
-        const cost = s.defs[copiedDefId(s, id)]?.manaCost;
-        n += cost?.colored[a.color] ?? 0;
-        n += (cost?.hybrid ?? []).filter((h) => h.includes(a.color)).length;
-        n += (cost?.twoHybrid ?? []).filter((c) => c === a.color).length;
-      }
-      return n;
-    }
-    case "cardTypesOf": {
-      const types = new Set(resolveRef(s, ctx, a.ref).flatMap((id) => s.defs[s.objects[id]?.defId ?? ""]?.types ?? []));
-      return types.size;
-    }
-    case "eventColorsSpent": {
-      const id = ctx.event?.objectId;
-      const spent = (id ? s.stack.find((x) => x.id === id)?.spentColors : undefined) ?? {};
-      return (["W", "U", "B", "R", "G"] as const).filter((c) => (spent[c] ?? 0) > 0).length;
-    }
-    case "manaSpentOf":
-      return resolveRef(s, ctx, a.ref).reduce((n, id) => n + (s.stack.find((x) => x.id === id)?.manaSpent ?? 0), 0);
-    case "eventX": {
-      const id = ctx.event?.objectId;
-      return (id ? s.stack.find((x) => x.id === id)?.x : undefined) ?? 0;
-    }
-    case "eventManaSpent": {
-      const id = ctx.event?.objectId;
-      return (id ? s.stack.find((x) => x.id === id)?.manaSpent : undefined) ?? 0;
-    }
-    case "distinctPowers": {
-      const ids = s.battlefield.filter((id) => matchesObjectFilter(s, ctx.controller, id, a.filter, ctx.sourceId));
-      return new Set(ids.map((id) => chars(s, id).power)).size;
-    }
-    case "cardTypesAmong": {
-      const ids = s.battlefield.filter((id) => matchesObjectFilter(s, ctx.controller, id, a.filter, ctx.sourceId));
-      return new Set(ids.flatMap((id) => chars(s, id).types)).size;
-    }
     case "refCount":
       return resolveRef(s, ctx, a.ref).length;
-    case "maxManaValue":
-      return Math.max(
-        0,
-        ...s.battlefield
-          .filter((id) => matchesObjectFilter(s, ctx.controller, id, a.filter, ctx.sourceId))
-          .map((id) => manaValue(s.defs[s.objects[id]?.defId ?? ""]?.manaCost)),
-      );
-    case "manaSymbolsOf": {
-      // Namor the Sub-Mariner : « autant que de symboles de mana bleu dans son coût de mana » (le sort de l'événement).
-      const id = resolveRef(s, ctx, a.ref)[0];
-      const cost = id ? s.defs[s.objects[id]?.defId ?? s.lki[id]?.defId ?? ""]?.manaCost : undefined;
-      if (!cost) return 0;
-      return (
-        (cost.colored[a.color] ?? 0) +
-        (cost.hybrid ?? []).filter((h) => h.includes(a.color)).length +
-        (cost.twoHybrid ?? []).filter((m) => m === a.color).length
-      );
-    }
-    case "maxSharingCreatureType": {
-      const ids = s.battlefield.filter((id) => matchesObjectFilter(s, ctx.controller, id, a.filter, ctx.sourceId));
-      const changelings = ids.filter((id) => chars(s, id).keywords.includes("changeling")).length;
-      const per = new Map<string, number>();
-      for (const id of ids) {
-        const c = chars(s, id);
-        if (c.keywords.includes("changeling")) continue;
-        for (const t of new Set(c.subtypes)) per.set(t, (per.get(t) ?? 0) + 1);
-      }
-      return changelings + Math.max(0, ...per.values());
-    }
-    case "countersAmong":
-      return s.battlefield
-        .filter((id) => matchesObjectFilter(s, ctx.controller, id, a.filter, ctx.sourceId))
-        .reduce((n, id) => n + Math.max(0, s.objects[id]?.counters[a.counter] ?? 0), 0);
-    case "cardTypesInGraveyards": {
-      const types = new Set<string>();
-      for (const p of s.playerOrder)
-        for (const id of s.players[p]?.graveyard ?? [])
-          for (const t of s.defs[s.objects[id]?.defId ?? ""]?.types ?? []) types.add(t);
-      return types.size;
+    case "manaSymbols": {
+      // Dévotion : vos permanents (coût de ce qu'ils copient) ; sinon les objets désignés (dernières informations connues).
+      const ids = a.of ? resolveRef(s, ctx, a.of) : s.battlefield.filter((id) => s.objects[id]?.controller === ctx.controller);
+      return ids.reduce((n, id) => {
+        const defId = onBattlefield(s, id) ? copiedDefId(s, id) : (s.objects[id]?.defId ?? s.lki[id]?.defId ?? "");
+        const cost = s.defs[defId]?.manaCost;
+        if (!cost) return n;
+        return (
+          n +
+          (cost.colored[a.color] ?? 0) +
+          (cost.hybrid ?? []).filter((h) => h.includes(a.color)).length +
+          (cost.twoHybrid ?? []).filter((m) => m === a.color).length
+        );
+      }, 0);
     }
     case "max":
       return Math.max(0, ...a.of.map((x) => evalAmount(s, ctx, x)));
-    case "maxPowerInHand":
-      return Math.max(
-        0,
-        ...(s.players[ctx.controller]?.hand ?? []).map((id) => {
-          const d = s.defs[s.objects[id]?.defId ?? ""];
-          return d?.types.includes("Creature") ? (d.power ?? 0) : 0;
-        }),
-      );
-    case "sourceX":
-      return s.objects[ctx.sourceId]?.castX ?? 0;
     case "unlockedDoorNames": {
       const names = new Set<string>();
       for (const id of s.battlefield) {
@@ -637,48 +505,6 @@ export function evalAmount(s: GameState, ctx: EffectContext, a: Amount): number 
         (n, id) => n + (s.objects[id]?.controller === ctx.controller ? (s.objects[id]?.unlocked?.length ?? 0) : 0),
         0,
       );
-    case "cardTypesInGraveyard": {
-      const types = new Set<string>();
-      for (const id of s.players[ctx.controller]?.graveyard ?? [])
-        for (const t of s.defs[s.objects[id]?.defId ?? ""]?.types ?? []) types.add(t);
-      return types.size;
-    }
-    case "maxToughness":
-      return Math.max(
-        0,
-        ...s.battlefield
-          .filter((id) => matchesObjectFilter(s, ctx.controller, id, a.filter, ctx.sourceId))
-          .map((id) => chars(s, id).toughness),
-      );
-    case "maxManaValueInGraveyard":
-      return Math.max(
-        0,
-        ...(s.players[ctx.controller]?.graveyard ?? []).map((id) => manaValue(s.defs[s.objects[id]?.defId ?? ""]?.manaCost)),
-      );
-    case "distinctSubtypes":
-      return new Set(
-        s.battlefield
-          .filter((id) => matchesObjectFilter(s, ctx.controller, id, a.filter, ctx.sourceId))
-          .flatMap((id) => chars(s, id).subtypes),
-      ).size;
-    case "basicLandTypes": {
-      const basics = BASIC_LAND_TYPES;
-      const lands = s.battlefield.filter(
-        (id) => s.objects[id]?.controller === ctx.controller && chars(s, id).types.includes("Land"),
-      );
-      return basics.filter((t) => lands.some((id) => chars(s, id).subtypes.includes(t))).length;
-    }
-    case "distinctNames":
-      return new Set(
-        s.battlefield
-          .filter((id) => matchesObjectFilter(s, ctx.controller, id, a.filter, ctx.sourceId))
-          .map((id) => chars(s, id).name),
-      ).size;
-    case "colorsSpent": {
-      const item = s.resolving?.item.id === ctx.sourceId ? s.resolving.item : s.stack.find((x) => x.id === ctx.sourceId);
-      const spent = item?.spentColors ?? s.objects[ctx.sourceId]?.spentColors ?? {};
-      return (["W", "U", "B", "R", "G"] as const).filter((c) => (spent[c] ?? 0) > 0).length;
-    }
     case "lkiDamage":
       return s.objects[ctx.sourceId]?.damage ?? s.lki[ctx.sourceId]?.damage ?? 0;
     case "cardsIn":
@@ -689,24 +515,6 @@ export function evalAmount(s: GameState, ctx: EffectContext, a: Amount): number 
       const mine = s.players[ctx.controller]?.hand.length ?? 0;
       return opponentsOf(s, ctx.controller).filter((p) => (s.players[p]?.hand.length ?? 0) > mine).length;
     }
-    case "totalPowerOf":
-      return resolveRef(s, ctx, a.ref).reduce(
-        (n, id) => n + Math.max(0, s.objects[id]?.zone === "battlefield" ? chars(s, id).power : (s.lki[id]?.power ?? 0)),
-        0,
-      );
-    case "greatestManaValueOf":
-      return Math.max(0, ...resolveRef(s, ctx, a.ref).map((id) => manaValue(s.defs[s.objects[id]?.defId ?? ""]?.manaCost)));
-    case "colorPairsAmong": {
-      const pairs = new Set<string>();
-      for (const id of s.battlefield) {
-        if (!matchesObjectFilter(s, ctx.controller, id, a.filter, ctx.sourceId)) continue;
-        const colors = chars(s, id).colors;
-        if (colors.length === 2) pairs.add([...colors].sort().join(""));
-      }
-      return pairs.size;
-    }
-    case "opponentsWithHandAtMost":
-      return opponentsOf(s, ctx.controller).filter((p) => (s.players[p]?.hand.length ?? 0) <= a.n).length;
     case "turnEvents":
       if (!a.of) return countTurnEvents(s, a.query, ctx.controller);
       return resolveRef(s, ctx, a.of)
@@ -714,34 +522,125 @@ export function evalAmount(s: GameState, ctx: EffectContext, a: Amount): number 
         .reduce((n, p) => n + countTurnEvents(s, a.query, ctx.controller, p), 0);
     case "lkiPower":
       return Math.max(0, ctx.sourceSnapshot.power);
-    case "caveManaSpent":
-      return s.objects[ctx.sourceId]?.caveMana ?? 0;
-    case "linkedTotalPower":
-      return linkedTotalPower(s, s.objects[ctx.sourceId]?.linked);
-    case "linkedColors":
-      return linkedColors(s, s.objects[ctx.sourceId]?.linked).length;
     case "untappedInUntapStep":
       return s.players[ctx.controller]?.turnStats.untappedInUntapStep ?? 0;
-    case "permanentTypesInGraveyard": {
-      const types = new Set<string>();
-      const PERMANENT = ["Artifact", "Battle", "Creature", "Enchantment", "Land", "Planeswalker"];
-      for (const id of s.players[ctx.controller]?.graveyard ?? [])
-        for (const t of s.defs[s.objects[id]?.defId ?? ""]?.types ?? []) if (PERMANENT.includes(t)) types.add(t);
-      return types.size;
-    }
   }
 }
 
-/** Quantités qui ne dépendent que du plateau (comptes, force totale), vues d'un joueur. */
+/** Nombre de permanents correspondant au filtre, vus d'un joueur. */
 export function boardAmount(
   s: GameState,
-  a: Extract<Amount, { kind: "count" | "totalPower" }>,
+  a: Extract<Amount, { kind: "count" }>,
   controller: PlayerId,
   sourceId?: ObjectId,
 ): number {
-  const ids = s.battlefield.filter((id) => matchesObjectFilter(s, controller, id, a.filter, sourceId));
-  if (a.kind === "count") return ids.length;
-  return ids.reduce((n, id) => n + Math.max(0, chars(s, id).power), 0);
+  return s.battlefield.filter((id) => matchesObjectFilter(s, controller, id, a.filter, sourceId)).length;
+}
+
+const PERMANENT = new Set<string>(PERMANENT_TYPES);
+
+/** Valeurs d'une propriété d'un objet (une seule pour un nombre, plusieurs pour des couleurs, des types…). */
+function propertyValues(s: GameState, id: ObjectId, property: AggregateProperty, counter?: string): (number | string)[] {
+  const o = s.objects[id];
+  // Sur le champ de bataille : les caractéristiques calculées ; un objet parti : ses dernières informations connues ;
+  // ailleurs : la carte imprimée (708.2 : face cachée, valeur de mana 0).
+  const here = o?.zone === "battlefield";
+  const v: Pick<LkiSnapshot, "power" | "toughness" | "colors" | "types" | "subtypes" | "name"> | undefined = here
+    ? chars(s, id)
+    : o
+      ? undefined
+      : s.lki[id];
+  const d = o && !v ? s.defs[o.defId] : undefined;
+  const counters = (here ? o.counters : o ? o.counters : s.lki[id]?.counters) ?? {};
+  switch (property) {
+    case "power":
+      return [v ? v.power : (d?.power ?? 0)];
+    case "toughness":
+      return [v ? v.toughness : (d?.toughness ?? 0)];
+    case "manaValue":
+      return [
+        here ? (snapshot(s, id).manaValue ?? 0) : !o ? (s.lki[id]?.manaValue ?? 0) : o.faceDown ? 0 : manaValue(d?.manaCost),
+      ];
+    case "color":
+      return v ? v.colors : (d?.colors ?? []);
+    case "colorPair": {
+      const colors = v ? v.colors : (d?.colors ?? []);
+      return colors.length === 2 ? [[...colors].sort().join("")] : [];
+    }
+    case "cardType":
+      return v ? v.types : (d?.types ?? []);
+    case "permanentType":
+      return (v ? v.types : (d?.types ?? [])).filter((t) => PERMANENT.has(t));
+    case "subtype":
+      return v ? v.subtypes : (d?.subtypes ?? []);
+    case "basicLandType":
+      return (v ? v.subtypes : (d?.subtypes ?? [])).filter((t) => (BASIC_LAND_TYPES as readonly string[]).includes(t));
+    case "name":
+      return [v ? (v.name ?? "") : (d?.name ?? "")];
+    case "counterKind":
+      return Object.entries(counters)
+        .filter(([, n]) => n > 0)
+        .map(([k]) => k);
+    case "counters":
+      return [Math.max(0, counters[counter ?? ""] ?? 0)];
+  }
+}
+
+/** Objets d'un agrégat : désignés (`of`), d'une zone (`zone`, `whose`), ou du filtre sur le champ de bataille. */
+function aggregateObjects(s: GameState, ctx: EffectContext, a: Extract<Amount, { kind: "aggregate" }>): ObjectId[] {
+  if (a.of) {
+    const ids = resolveRef(s, ctx, a.of);
+    return a.filter ? ids.filter((id) => matchesCard(s, ctx.controller, id, a.filter as ObjectFilter, ctx.sourceId)) : ids;
+  }
+  const filter = a.filter ?? {};
+  if (!a.zone) return s.battlefield.filter((id) => matchesObjectFilter(s, ctx.controller, id, filter, ctx.sourceId));
+  const zone = a.zone;
+  const players =
+    a.whose === "all" ? alivePlayers(s) : a.whose === "opponents" ? opponentsOf(s, ctx.controller) : [ctx.controller];
+  return players
+    .flatMap((p) => (zone === "exile" ? s.exile.filter((id) => s.objects[id]?.owner === p) : (s.players[p]?.[zone] ?? [])))
+    .filter((id) => matchesCard(s, ctx.controller, id, { ...filter, controller: undefined }, ctx.sourceId));
+}
+
+/** `Amount` `aggregate` : somme, plus grande valeur, valeurs différentes ou type de créature le plus partagé. */
+function aggregate(s: GameState, ctx: EffectContext, a: Extract<Amount, { kind: "aggregate" }>): number {
+  const ids = aggregateObjects(s, ctx, a);
+  if (a.fn === "mostShared") {
+    // Le plus grand nombre d'objets qui ont un type de créature en commun ; un changelin les a tous.
+    const views = ids.map((id) => viewOf(s, id)).filter((v): v is LkiSnapshot => !!v);
+    const changelings = views.filter((v) => v.keywords.includes("changeling")).length;
+    const per = new Map<string, number>();
+    for (const v of views) {
+      if (v.keywords.includes("changeling")) continue;
+      for (const t of new Set(v.subtypes)) per.set(t, (per.get(t) ?? 0) + 1);
+    }
+    return changelings + Math.max(0, ...per.values());
+  }
+  const values = ids.flatMap((id) => propertyValues(s, id, a.property, a.counter));
+  if (a.fn === "distinct") return new Set(values).size;
+  const numbers = values.map(Number);
+  if (a.fn === "max") return Math.max(0, ...numbers);
+  return numbers.reduce((n, x) => n + Math.max(0, x), 0);
+}
+
+/**
+ * Ce qui a été dépensé pour lancer l'objet : le sort sur la pile (ou qui se résout), sinon le permanent qu'il est devenu.
+ */
+function spentOn(s: GameState, id: ObjectId, what: "x" | "mana" | "colors" | "cave"): number {
+  const item = s.resolving?.item.id === id ? s.resolving.item : s.stack.find((x) => x.id === id);
+  const o = s.objects[id];
+  switch (what) {
+    case "x":
+      return item?.x ?? o?.castX ?? 0;
+    case "mana":
+      return o?.manaSpent ?? item?.manaSpent ?? 0;
+    case "colors": {
+      const spent = item?.spentColors ?? o?.spentColors ?? {};
+      return (["W", "U", "B", "R", "G"] as const).filter((c) => (spent[c] ?? 0) > 0).length;
+    }
+    case "cave":
+      return o?.caveMana ?? 0;
+  }
 }
 
 export function damageSource(s: GameState, ctx: EffectContext, ref?: Ref): DamageSource | null {

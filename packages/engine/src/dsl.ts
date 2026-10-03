@@ -8,6 +8,7 @@ import type {
   AbilityDef,
   ActivatedAbilityDef,
   AdditionalCost,
+  AggregateProperty,
   Amount,
   BlockRule,
   CardDef,
@@ -239,7 +240,13 @@ export const ref = {
   targetsOfEventObject: { kind: "targetsOfEventObject" } as Ref,
   /** Les capacités sur la pile dont la source est l'objet de l'événement, la plus récente d'abord. */
   abilitiesFromEventObject: { kind: "abilitiesFromEventObject" } as Ref,
-  playersWithoutMaxSpeed: { kind: "playersWithoutMaxSpeed" } as Ref,
+  /** Les joueurs désignés pour qui la condition est vraie, de leur point de vue. */
+  playersWhere: (of: Ref, where: Condition): Ref => ({ kind: "playersWhere", of, where }),
+  playersWithoutMaxSpeed: {
+    kind: "playersWhere",
+    of: { kind: "eachPlayer" },
+    where: { kind: "not", cond: { kind: "maxSpeed" } },
+  } as Ref,
   libraryTop: (who: Ref): Ref => ({ kind: "libraryTop", who }),
   stackItemsOf: (who: Ref): Ref => ({ kind: "stackItemsOf", who }),
   exiledCardsOf: (who: Ref): Ref => ({ kind: "exiledCardsOf", who }),
@@ -280,8 +287,26 @@ function turnAtLeast(query: TurnLogQuery, n = 1): Condition {
   return { kind: "amountAtLeast", amount: turnEvents(query), n };
 }
 
+/** Au moins un des joueurs désignés remplit la condition (de son point de vue). */
+function someone(of: Ref, where: Condition): Condition {
+  return { kind: "amountAtLeast", amount: { kind: "refCount", ref: { kind: "playersWhere", of, where } }, n: 1 };
+}
+
 /** Créatures mortes ce tour-ci (champ de bataille → cimetière), sous n'importe quel contrôleur. */
 const DIED: TurnLogQuery = { event: "zone", from: "battlefield", to: "graveyard", types: ["Creature"] };
+
+type Aggregate = Extract<Amount, { kind: "aggregate" }>;
+/** Agrégat (`Amount` `aggregate`) : somme, plus grande valeur ou valeurs différentes d'une propriété. */
+function agg(fn: Aggregate["fn"], property: AggregateProperty, rest: Omit<Aggregate, "kind" | "fn" | "property"> = {}): Amount {
+  return { kind: "aggregate", fn, property, ...rest };
+}
+/** Ce qui a été dépensé pour lancer la source, ou l'objet désigné. */
+const spent = (what: Extract<Amount, { kind: "spent" }>["what"], of?: Ref): Amount => ({
+  kind: "spent",
+  what,
+  ...(of ? { of } : {}),
+});
+const EVENT_OBJECT: Ref = { kind: "eventObject" };
 
 export const amount = {
   x: { kind: "x" } as Amount,
@@ -289,10 +314,10 @@ export const amount = {
   powerOf: (r: Ref): Amount => ({ kind: "powerOf", ref: r }),
   eventAmount: { kind: "eventAmount" } as Amount,
   count: (filter: ObjectFilter): Amount => ({ kind: "count", filter }),
-  totalPower: (filter: ObjectFilter): Amount => ({ kind: "totalPower", filter }),
-  totalToughness: (filter: ObjectFilter): Amount => ({ kind: "totalToughness", filter }),
+  totalPower: (filter: ObjectFilter): Amount => agg("sum", "power", { filter }),
+  totalToughness: (filter: ObjectFilter): Amount => agg("sum", "toughness", { filter }),
   /** Sortes de marqueurs différentes parmi les permanents correspondants. */
-  counterKindsAmong: (filter: ObjectFilter): Amount => ({ kind: "counterKindsAmong", filter }),
+  counterKindsAmong: (filter: ObjectFilter): Amount => agg("distinct", "counterKind", { filter }),
   /** Nombre de cartes correspondant au filtre dans une zone (« cartes de créature dans votre cimetière »). */
   countIn: (zone: "graveyard" | "hand", filter: ObjectFilter = {}, whose: "you" | "opponents" | "all" = "you"): Amount => ({
     kind: "count",
@@ -303,65 +328,72 @@ export const amount = {
   lifeGainedThisTurn: turnEvents({ event: "lifeGain", who: "you", sum: true }),
   /** Marqueurs d'un type sur l'objet ; `"any"` : tous les marqueurs. */
   countersOn: (r: Ref, counter = "+1/+1"): Amount => ({ kind: "countersOn", ref: r, counter }),
-  differentManaValues: { kind: "differentManaValues" } as Amount,
+  /** Valeurs de mana différentes parmi vos permanents non-terrains. */
+  differentManaValues: agg("distinct", "manaValue", { filter: { controller: "you", nonland: true } }),
   /** Vivid (ECL) : nombre de couleurs parmi les permanents que vous contrôlez (ou correspondant au filtre). */
-  colorsAmong: (filter: ObjectFilter = { permanent: true, controller: "you" }): Amount => ({ kind: "colorsAmong", filter }),
+  colorsAmong: (filter: ObjectFilter = { permanent: true, controller: "you" }): Amount => agg("distinct", "color", { filter }),
   lifeTotal: { kind: "lifeTotal" } as Amount,
   /** Marqueurs sur la source d'après ses dernières informations connues (capacité « quand elle meurt »). */
   /** Marqueurs d'un type sur la source, ou d'après ses dernières informations connues (« si elle avait un marqueur… »). */
   lkiCounters: (counter: string): Amount => ({ kind: "countersOn", ref: { kind: "self" }, counter }),
   lkiDamage: { kind: "lkiDamage" } as Amount,
   /** Convergence : couleurs de mana dépensées pour lancer ce sort. */
-  colorsSpent: { kind: "colorsSpent" } as Amount,
+  colorsSpent: spent("colors"),
   plus: (...of: Amount[]): Amount => ({ kind: "sum", of }),
   neg: (of: Amount): Amount => ({ kind: "neg", of }),
   /** Division entière : « pour chaque tranche de N ». */
   per: (of: Amount, by: number): Amount => ({ kind: "div", of, by }),
   pow: (base: number, of: Amount): Amount => ({ kind: "pow", base, of }),
-  eventX: { kind: "eventX" } as Amount,
-  manaSpentOf: (r: Ref): Amount => ({ kind: "manaSpentOf", ref: r }),
-  eventColorsSpent: { kind: "eventColorsSpent" } as Amount,
+  /** X du sort de l'événement. */
+  eventX: spent("x", EVENT_OBJECT),
+  manaSpentOf: (r: Ref): Amount => spent("mana", r),
+  eventColorsSpent: spent("colors", EVENT_OBJECT),
   manaValueOf: (r: Ref): Amount => ({ kind: "manaValueOf", ref: r }),
   /** « pour chaque cimetière qui contient N cartes ou plus » */
   graveyardsWithAtLeast: (n: number): Amount => ({ kind: "graveyardsWithAtLeast", n }),
   toughnessOf: (r: Ref): Amount => ({ kind: "toughnessOf", ref: r }),
-  colorsOf: (r: Ref): Amount => ({ kind: "colorsOf", ref: r }),
-  maxPower: (filter: ObjectFilter, zone?: "graveyard"): Amount => ({ kind: "maxPower", filter, ...(zone ? { zone } : {}) }),
-  distinctNames: (filter: ObjectFilter): Amount => ({ kind: "distinctNames", filter }),
+  colorsOf: (r: Ref): Amount => agg("distinct", "color", { of: r }),
+  maxPower: (filter: ObjectFilter, zone?: "graveyard"): Amount => agg("max", "power", { filter, ...(zone ? { zone } : {}) }),
+  distinctNames: (filter: ObjectFilter): Amount => agg("distinct", "name", { filter }),
   cardsIn: (zone: "hand" | "graveyard" | "library"): Amount => ({ kind: "cardsIn", zone }),
   lifeLostThisTurn: turnEvents({ event: "lifeLoss", who: "you", sum: true }),
   /** Domaine : nombre de types de terrains de base parmi vos terrains. */
-  basicLandTypes: { kind: "basicLandTypes" } as Amount,
-  distinctSubtypes: (filter: ObjectFilter): Amount => ({ kind: "distinctSubtypes", filter }),
+  basicLandTypes: agg("distinct", "basicLandType", { filter: { types: ["Land"], controller: "you" } }),
+  distinctSubtypes: (filter: ObjectFilter): Amount => agg("distinct", "subtype", { filter }),
   v: (name: string): Amount => ({ kind: "var", name }),
-  cardTypesInGraveyards: { kind: "cardTypesInGraveyards" } as Amount,
+  /** Types de cartes parmi les cartes de tous les cimetières (Tarmogoyf). */
+  cardTypesInGraveyards: agg("distinct", "cardType", { zone: "graveyard", whose: "all" }),
   unlockedDoorNames: { kind: "unlockedDoorNames" } as Amount,
-  sourceX: { kind: "sourceX" } as Amount,
+  /** X du sort qui a mis la source en jeu. */
+  sourceX: spent("x"),
   max: (...of: Amount[]): Amount => ({ kind: "max", of }),
-  maxPowerInHand: { kind: "maxPowerInHand" } as Amount,
+  /** Plus grande force parmi les cartes de créature de votre main. */
+  maxPowerInHand: agg("max", "power", { zone: "hand", filter: { types: ["Creature"] } }),
   opponentsLostLife: turnEvents({ event: "lifeLoss", who: "opponent", distinct: "player" }),
   sacrificedThisTurn: turnEvents({ event: "sacrifice", who: "you" }),
   /** Portes déverrouillées parmi les Salles que vous contrôlez. */
   unlockedDoors: { kind: "unlockedDoors" } as Amount,
   /** Types de cartes parmi les cartes de votre cimetière (délire). */
-  cardTypesInGraveyard: { kind: "cardTypesInGraveyard" } as Amount,
+  cardTypesInGraveyard: agg("distinct", "cardType", { zone: "graveyard" }),
+  /** Types de permanent parmi les cartes de votre cimetière (Matzalantli). */
+  permanentTypesInGraveyard: agg("distinct", "permanentType", { zone: "graveyard" }),
   milledThisTurn: (who: Ref): Amount => ({
     kind: "turnEvents",
     query: { event: "zone", from: "library", to: "graveyard", byOwner: true },
     of: who,
   }),
   cardsDiscardedThisTurn: turnEvents({ event: "discard", who: "you", sum: true }),
-  maxToughness: (filter: ObjectFilter): Amount => ({ kind: "maxToughness", filter }),
-  maxManaValueInGraveyard: { kind: "maxManaValueInGraveyard" } as Amount,
-  distinctColors: (filter: ObjectFilter): Amount => ({ kind: "colorsAmong", filter }),
-  countersAmong: (filter: ObjectFilter, counter: string): Amount => ({ kind: "countersAmong", filter, counter }),
+  maxToughness: (filter: ObjectFilter): Amount => agg("max", "toughness", { filter }),
+  maxManaValueInGraveyard: agg("max", "manaValue", { zone: "graveyard" }),
+  distinctColors: (filter: ObjectFilter): Amount => agg("distinct", "color", { filter }),
+  countersAmong: (filter: ObjectFilter, counter: string): Amount => agg("sum", "counters", { filter, counter }),
   /** Symboles de mana de cette couleur dans le coût de l'objet désigné (Namor : le sort de l'événement). */
-  manaSymbolsOf: (r: Ref, color: ManaType): Amount => ({ kind: "manaSymbolsOf", ref: r, color }),
+  manaSymbolsOf: (r: Ref, color: ManaType): Amount => ({ kind: "manaSymbols", color, of: r }),
   /** Plus grand nombre de permanents du filtre qui ont un type de créature en commun (White Lotus Tile). */
-  maxSharingCreatureType: (filter: ObjectFilter): Amount => ({ kind: "maxSharingCreatureType", filter }),
+  maxSharingCreatureType: (filter: ObjectFilter): Amount => agg("mostShared", "subtype", { filter }),
   halfLife: (who: Ref): Amount => ({ kind: "halfLife", who }),
   landsEnteredThisTurn: turnEvents({ event: "zone", to: "battlefield", types: ["Land"], who: "you" }),
-  manaSpent: { kind: "manaSpent" } as Amount,
+  manaSpent: spent("mana"),
   /** Votre vitesse. */
   speed: { kind: "speed" } as Amount,
   spellsCastThisTurn: turnEvents({ event: "cast", who: "you" }),
@@ -369,15 +401,16 @@ export const amount = {
   creaturesDiedThisTurn: turnEvents(DIED),
   /** Créatures avec lesquelles vous avez attaqué ce tour-ci. */
   attackersThisTurn: turnEvents({ event: "attack", who: "you" }),
-  totalManaValue: (filter: ObjectFilter, zone?: "exile"): Amount => ({ kind: "totalManaValue", filter, zone }),
-  eventManaSpent: { kind: "eventManaSpent" } as Amount,
-  cardTypesOf: (r: Ref): Amount => ({ kind: "cardTypesOf", ref: r }),
-  devotion: (color: Color): Amount => ({ kind: "devotion", color }),
+  totalManaValue: (filter: ObjectFilter, zone?: "exile"): Amount =>
+    agg("sum", "manaValue", { filter, ...(zone ? { zone } : {}) }),
+  eventManaSpent: spent("mana", EVENT_OBJECT),
+  cardTypesOf: (r: Ref): Amount => agg("distinct", "cardType", { of: r }),
+  devotion: (color: Color): Amount => ({ kind: "manaSymbols", color }),
   noncreatureCastBy: (who: Ref): Amount => ({ kind: "turnEvents", query: { event: "cast", notTypes: ["Creature"] }, of: who }),
   refCount: (r: Ref): Amount => ({ kind: "refCount", ref: r }),
-  distinctPowers: (filter: ObjectFilter): Amount => ({ kind: "distinctPowers", filter }),
-  cardTypesAmong: (filter: ObjectFilter): Amount => ({ kind: "cardTypesAmong", filter }),
-  maxManaValue: (filter: ObjectFilter): Amount => ({ kind: "maxManaValue", filter }),
+  distinctPowers: (filter: ObjectFilter): Amount => agg("distinct", "power", { filter }),
+  cardTypesAmong: (filter: ObjectFilter): Amount => agg("distinct", "cardType", { filter }),
+  maxManaValue: (filter: ObjectFilter): Amount => agg("max", "manaValue", { filter }),
   /** Cartes que vous possédez en exil correspondant au filtre. */
   countExiled: (filter: ObjectFilter = {}): Amount => ({ kind: "count", filter, zone: "exile", whose: "you" }),
   inExile: (r: Ref): Amount => ({ kind: "inExile", ref: r }),
@@ -390,11 +423,14 @@ export const amount = {
     types: ["Creature"],
     who: "opponent",
   }),
-  opponentsWithHandAtMost: (n: number): Amount => ({ kind: "opponentsWithHandAtMost", n }),
+  opponentsWithHandAtMost: (n: number): Amount => ({
+    kind: "refCount",
+    ref: { kind: "playersWhere", of: { kind: "eachOpponent" }, where: { kind: "handAtMost", ref: { kind: "you" }, n } },
+  }),
   opponentsWithMoreInHand: { kind: "opponentsWithMoreInHand" } as Amount,
-  greatestManaValueOf: (r: Ref): Amount => ({ kind: "greatestManaValueOf", ref: r }),
-  totalPowerOf: (r: Ref): Amount => ({ kind: "totalPowerOf", ref: r }),
-  colorPairsAmong: (filter: ObjectFilter): Amount => ({ kind: "colorPairsAmong", filter }),
+  greatestManaValueOf: (r: Ref): Amount => agg("max", "manaValue", { of: r }),
+  totalPowerOf: (r: Ref): Amount => agg("sum", "power", { of: r }),
+  colorPairsAmong: (filter: ObjectFilter): Amount => agg("distinct", "colorPair", { filter }),
   lkiPower: { kind: "lkiPower" } as Amount,
   instantSorceryCast: turnEvents({ event: "cast", who: "you", types: ["Instant", "Sorcery"] }),
   cardsLeftGraveyardThisTurn: turnEvents({ event: "zone", from: "graveyard", who: "you" }),
@@ -403,11 +439,11 @@ export const amount = {
   /** Nombre de fois où vous êtes descendu ce tour-ci (cartes de permanent mises dans votre cimetière). */
   descendedThisTurn: turnEvents(DESCENT),
   /** « pour chaque mana d'une Caverne dépensé pour la lancer » */
-  caveManaSpent: { kind: "caveManaSpent" } as Amount,
+  caveManaSpent: spent("cave"),
   /** Force totale des cartes exilées pour fabriquer la source. */
-  linkedTotalPower: { kind: "linkedTotalPower" } as Amount,
+  linkedTotalPower: agg("sum", "power", { of: { kind: "linked" } }),
   /** Couleurs parmi les cartes exilées pour fabriquer la source. */
-  linkedColors: { kind: "linkedColors" } as Amount,
+  linkedColors: agg("distinct", "color", { of: { kind: "linked" } }),
 };
 
 export const fx = {
@@ -2029,8 +2065,14 @@ export const cond = {
   saddled: { kind: "saddled" } as Condition,
   /** Une seule créature attaque, et elle attaque un joueur. */
   attackingAlone: { kind: "attackingAlone" } as Condition,
-  playerWithoutCreatures: { kind: "playerWithoutCreatures" } as Condition,
-  opponentLifeAtMost: (n: number): Condition => ({ kind: "opponentLifeAtMost", n }),
+  /** Un joueur (encore en partie) ne contrôle aucune créature (Sothera, the Supervoid). */
+  playerWithoutCreatures: someone(
+    { kind: "eachPlayer" },
+    { kind: "not", cond: { kind: "controls", filter: { types: ["Creature"] } } },
+  ),
+  /** Un adversaire a N points de vie ou moins (Bloodghast). */
+  opponentLifeAtMost: (n: number): Condition =>
+    someone({ kind: "eachOpponent" }, { kind: "not", cond: { kind: "amountAtLeast", amount: { kind: "lifeTotal" }, n: n + 1 } }),
   /** « Max speed » : vous avez la vitesse maximale (4). */
   maxSpeed: { kind: "maxSpeed" } as Condition,
   exileAtLeast: (n: number): Condition => ({ kind: "exileAtLeast", n }),
@@ -2090,7 +2132,7 @@ export const cond = {
     ],
   } as Condition,
   /** Délire : au moins quatre types de cartes parmi les cartes de votre cimetière. */
-  delirium: { kind: "amountAtLeast", amount: { kind: "cardTypesInGraveyard" }, n: 4 } as Condition,
+  delirium: { kind: "amountAtLeast", amount: amount.cardTypesInGraveyard, n: 4 } as Condition,
   /** Sièges : la source a choisi ce mode en arrivant (« • Abzan — … »). */
   chosenMode: (mode: string): Condition => ({ kind: "chosenMode", mode }),
   /** « si vous êtes descendu ce tour-ci » (une carte de permanent a été mise dans votre cimetière). */

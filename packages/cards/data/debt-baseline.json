@@ -248,12 +248,12 @@
     "Effect (champs)": 668,
     "TriggerSpec": 62,
     "TriggerSpec (champs)": 156,
-    "Condition": 60,
-    "Condition (champs)": 104,
-    "Amount": 67,
-    "Amount (champs)": 119,
+    "Condition": 58,
+    "Condition (champs)": 101,
+    "Amount": 31,
+    "Amount (champs)": 67,
     "Ref": 35,
-    "Ref (champs)": 55
+    "Ref (champs)": 57
   },
   "importCycleMax": 21,
   "ceilingNotes": [
@@ -275,6 +275,7 @@
     "PLAN-D D7 : moveTo.attachTo (« revient attaché à », One Last Job) et chooseAmong.optional (« jusqu'à un », Light of Judgment, Unexpected Request) : Effect (champs) 666 → 668, Ref 34 → 35, Ref (champs) 53 → 55",
     "PLAN-D D8 : reflexive.vars (valeurs figées à la création, Ill-Timed Explosion) et modify.whileHasCounter (Ultima) : Effect (champs) 668 → 670",
     "PLAN-S S1 : code mort (fullyUnlocked, bend.kinds, search.optional, mayPay.waterbend, CardDef.caseToSolve, ObjectFilter.modal) et alias exacts réécrits par les aides du DSL (seuil, morbide, PV au moins, cible choisie, fourrager, faufilement ; couleurs distinctes, marqueurs LKI, sorts lancés, morts et attaquants du tour) : CardDef 95 → 94, ObjectFilter 91 → 90, Effect (champs) 670 → 668, TriggerSpec (champs) 157 → 156, Condition 82 → 73, Condition (champs) 138 → 124, Amount 77 → 72, Amount (champs) 131 → 124",
-    "PLAN-S S2 : le journal du tour remplace les compteurs du tour (vie gagnée et perdue, pioches, défausses, regards, crimes, loyauté, face cachée ou retournée, blessures non de combat) et les conditions et quantités qui les lisaient : Condition 73 → 60, Condition (champs) 124 → 104, Amount 72 → 67, Amount (champs) 124 → 119"
+    "PLAN-S S2 : le journal du tour remplace les compteurs du tour (vie gagnée et perdue, pioches, défausses, regards, crimes, loyauté, face cachée ou retournée, blessures non de combat) et les conditions et quantités qui les lisaient : Condition 73 → 60, Condition (champs) 124 → 104, Amount 72 → 67, Amount (champs) 124 → 119",
+    "PLAN-S S3 : familles de montants aggregate, spent, manaSymbols et référence playersWhere (Ref +2 champs : playersWhere absorbe une référence, un montant et deux conditions) : Condition 60 → 58, Condition (champs) 104 → 101, Amount 67 → 31, Amount (champs) 119 → 67, Ref (champs) 55 → 57"
   ]
 }

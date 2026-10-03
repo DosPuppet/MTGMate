@@ -23,7 +23,7 @@ Côté performance, les caches des couches et des statiques sont des `WeakMap` i
 | S0 | Plan, recensement (`tools/dsl-census.ts`), empreinte du fuzz (`empreinte :` dans le bilan de `tools/fuzz.ts`, indépendante de `--jobs`), mesures de départ. Le fuzz de départ a trouvé un bug corrigé à part (règles 96 : Cryptex exilait en preuve un matériau de fabrication) | ✅ |
 | S1 | Code mort et alias exacts : Condition 82 → 73 variantes, Amount 77 → 72 ; `exileAtLeast` et `allGraveyards` gardés (pas équivalents : cartes face cachée, joueurs sortis) ; empreintes identiques | ✅ |
 | S2 [règles 97] | Journal du tour : seule source de « ce tour-ci » pour les joueurs (vie, pioches, défausses, regards, crimes, loyauté, retournements, blessures non de combat) ; `distinct` remplace trois booléens ; « un adversaire » = encore en partie (800.4a, trouvé par l'empreinte : Stromkirk Bloodthief en partie à quatre) ; Condition 73 → 60, Amount 72 → 67. Les champs « ce tour-ci » de `GameObject` vont avec S8 | ✅ |
-| S3 | Familles de quantités (`aggregate`, `spent`, `manaSymbols`, `playersWhere`) | |
+| S3 [règles 98] | Familles de quantités : `aggregate` (28 sortes), `spent` (8), `manaSymbols` (2), référence `playersWhere` (une Ref, une Amount, deux Conditions) ; Amount 67 → 31 variantes, 119 → 71 champs, Condition 60 → 58 ; Ref +2 champs. Écart corrigé : une copie a la valeur de mana de ce qu'elle copie (Lunar Insight, Omni-Changeling) ; `graveyardsWithAtLeast` gardé (calculé pendant les couches) | ✅ |
 | S4 | Sorts lancés : `castInfo` commun, `cond.cast` | |
 | S5 | Références : `cost`, `zone` | |
 | S6 | Familles d'effets (S6a à S6e) | |

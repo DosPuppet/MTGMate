@@ -264,12 +264,6 @@ export function checkCondition(
     }
     case "maxSpeed":
       return (s.players[controller]?.speed ?? 0) >= 4;
-    case "opponentLifeAtMost":
-      return opponentsOf(s, controller).some((p) => (s.players[p]?.life ?? 0) <= c.n);
-    case "playerWithoutCreatures":
-      return s.playerOrder.some(
-        (p) => !s.players[p]?.lost && !s.battlefield.some((id) => s.objects[id]?.controller === p && isCreature(s, id)),
-      );
     case "firstEndStep":
       return (s.turn.endSteps ?? 0) <= 1;
     case "firstCombat":
@@ -431,7 +425,7 @@ export function checkCondition(
           .filter((id) => matchesView(snapshot(s, id), { ...a.filter, controller: undefined }, controller, sourceId)).length;
         return n >= c.n;
       }
-      if (a.kind === "count" || a.kind === "totalPower") return boardAmount(s, a, controller, sourceId) >= c.n;
+      if (a.kind === "count") return boardAmount(s, a, controller, sourceId) >= c.n;
       return checkAmount(s, a, controller, sourceId, eventObject, event) >= c.n;
     }
     case "any":

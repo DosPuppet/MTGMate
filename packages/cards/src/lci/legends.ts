@@ -600,7 +600,7 @@ export const LEGENDS: Record<string, CardScript> = {
       activated({
         mana: "{4}",
         tap: true,
-        activationCondition: cond.amountAtLeast({ kind: "permanentTypesInGraveyard" }, 4),
+        activationCondition: cond.amountAtLeast(amount.permanentTypesInGraveyard, 4),
         effects: [fx.transform()],
         label: "Transformation (quatre types de permanent au cimetière)",
       }),

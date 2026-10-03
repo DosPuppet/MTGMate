@@ -113,29 +113,29 @@ function amountAtEntry(s: GameState, a: Amount, o: GameObject, ctx: EntersContex
   if (typeof a === "number") return a;
   if (a.kind === "x") return ctx.x ?? 0;
   if (a.kind === "kicked") return ctx.kicked ? a.yes : a.no;
-  if (a.kind === "manaSpent") return ctx.manaSpent ?? 0;
+  if (a.kind === "spent" && !a.of && a.what === "mana") return ctx.manaSpent ?? 0;
   // Scarlet Spider, Ben Reilly : « X étant la valeur de mana de la créature renvoyée » (Web-slinging).
   if (a.kind === "manaValueOf" && a.ref.kind === "costBounced")
     return manaValue(s.defs[s.objects[ctx.costBounced?.[0] ?? ""]?.defId ?? ""]?.manaCost);
   // Convergence : « un marqueur pour chaque couleur de mana dépensée pour le lancer ».
-  if (a.kind === "colorsSpent") return (["W", "U", "B", "R", "G"] as const).filter((c) => (ctx.spentColors?.[c] ?? 0) > 0).length;
+  if (a.kind === "spent" && !a.of && a.what === "colors")
+    return (["W", "U", "B", "R", "G"] as const).filter((c) => (ctx.spentColors?.[c] ?? 0) > 0).length;
   // Arithmétique (Slumbering Trudge : « 3 moins X »).
   if (a.kind === "sum") return a.of.reduce<number>((n, x) => n + amountAtEntry(s, x, o, ctx, entering), 0);
   if (a.kind === "neg") return -amountAtEntry(s, a.of, o, ctx, entering);
   if (a.kind === "max") return Math.max(...a.of.map((x) => amountAtEntry(s, x, o, ctx, entering)));
   // Bioengineered Future : terrains arrivés ce tour-ci sous le contrôle de la source.
   if (a.kind === "turnEvents") return countTurnEvents(s, a.query, o.controller);
-  if (a.kind === "maxPower") {
-    // « la plus grande force parmi les autres créatures que vous contrôlez » (Prime Speaker Zegana)
-    const f = withChosen(a.filter, o);
-    return Math.max(
-      0,
-      ...s.battlefield
-        .filter((id) => id !== (entering ?? o).id && matchesObjectFilter(s, o.controller, id, f, o.id))
-        .map((id) => chars(s, id).power),
-    );
+  // Force sur le champ de bataille (« la plus grande force parmi les autres créatures que vous contrôlez », Prime Speaker
+  // Zegana ; force totale), sans l'objet qui arrive.
+  if (a.kind === "aggregate" && a.property === "power" && (a.fn === "max" || a.fn === "sum") && !a.zone && !a.of) {
+    const f = withChosen(a.filter ?? {}, o);
+    const powers = s.battlefield
+      .filter((id) => id !== (entering ?? o).id && matchesObjectFilter(s, o.controller, id, f, o.id))
+      .map((id) => chars(s, id).power);
+    return a.fn === "max" ? Math.max(0, ...powers) : powers.reduce((n, x) => n + Math.max(0, x), 0);
   }
-  if (a.kind === "count" || a.kind === "totalPower") {
+  if (a.kind === "count") {
     const f = withChosen(a.filter, o);
     const n = boardAmount(s, { ...a, filter: f }, o.controller, o.id);
     return entering && matchesObjectFilter(s, o.controller, entering.id, f, o.id) ? n - 1 : n;

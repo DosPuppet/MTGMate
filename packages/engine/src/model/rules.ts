@@ -554,10 +554,6 @@ export type Condition =
   /** Monture : la source a été montée ce tour-ci. */
   | { kind: "saddled" }
   | { kind: "solved" }
-  /** Un joueur (encore en partie) ne contrôle aucune créature (Sothera, the Supervoid). */
-  | { kind: "playerWithoutCreatures" }
-  /** Un adversaire a N points de vie ou moins (Bloodghast). */
-  | { kind: "opponentLifeAtMost"; n: number }
   /** Vitesse maximale (4) ; `not` pour « un joueur qui n'a pas la vitesse maximale ». */
   | { kind: "maxSpeed" }
   /** Au moins N cartes en exil (Ketramose). */
@@ -580,6 +576,24 @@ export type Condition =
   | { kind: "handAtMost"; ref: Ref; n: number }
   /** Le joueur désigné (vous par défaut) a le plus de points de vie, ou est à égalité (Preacher of the Schism). */
   | { kind: "mostLife"; ref?: Ref };
+/** Propriété lue par un agrégat (`Amount` `aggregate`). */
+export type AggregateProperty =
+  | "power"
+  | "toughness"
+  | "manaValue"
+  | "color"
+  /** Paire de couleurs d'un objet qui a exactement deux couleurs (Niv-Mizzet, Guildpact). */
+  | "colorPair"
+  | "cardType"
+  | "permanentType"
+  | "subtype"
+  | "basicLandType"
+  | "name"
+  /** Sortes de marqueurs présents (Hundred-Battle Veteran). */
+  | "counterKind"
+  /** Nombre de marqueurs de la sorte `counter`. */
+  | "counters";
+
 /** Référence à un joueur ou à un objet, résolue au moment de l'effet. */
 export type Ref =
   | { kind: "target"; id: string }
@@ -609,8 +623,6 @@ export type Ref =
   | { kind: "targetsOfEventObject" }
   /** La capacité la plus récente sur la pile dont la source est l'objet de l'événement (Firebender Ascension). */
   | { kind: "abilitiesFromEventObject" }
-  /** Les joueurs (encore en partie) qui n'ont pas la vitesse maximale (Outpace Oblivion). */
-  | { kind: "playersWithoutMaxSpeed" }
   /** Carte du dessus de la bibliothèque de chaque joueur désigné. */
   | { kind: "libraryTop"; who: Ref }
   /** Cartes exilées face visible appartenant aux joueurs désignés (Binding Negotiation). */
@@ -645,11 +657,44 @@ export type Ref =
   | { kind: "handOf"; player: Ref; filter: ObjectFilter; maxManaValue?: Amount }
   /** Le joueur défenseur de la source attaquante (celui qui contrôle le planeswalker attaqué). */
   | { kind: "defendingPlayer" }
+  /**
+   * Les joueurs désignés pour qui la condition est vraie, évaluée de leur point de vue (« chaque adversaire qui a au plus
+   * une carte en main », « les joueurs qui n'ont pas la vitesse maximale »).
+   */
+  | { kind: "playersWhere"; of: Ref; where: Condition }
   /** Réunion de références, sans doublon (Call the Spirit Dragons : les Dragons choisis pour chaque couleur). */
   | { kind: "union"; of: Ref[] };
 
 export type Amount =
   | number
+  /**
+   * Agrégat sur des objets : ceux du filtre sur le champ de bataille (vus du contrôleur), ceux d'une autre zone (`zone`,
+   * des joueurs `whose`, vous par défaut), ou les objets désignés (`of`). Sur le champ de bataille, les caractéristiques
+   * calculées ; ailleurs, imprimées (dernières informations connues pour un objet parti). `fn` : somme (chaque valeur
+   * bornée à 0), plus grande valeur (0 sans objet), nombre de valeurs différentes, ou `mostShared` : le plus grand nombre
+   * d'objets qui ont un type de créature en commun (changelins compris).
+   */
+  | {
+      kind: "aggregate";
+      fn: "sum" | "max" | "distinct" | "mostShared";
+      property: AggregateProperty;
+      filter?: ObjectFilter;
+      zone?: "graveyard" | "hand" | "exile";
+      whose?: "you" | "opponents" | "all";
+      of?: Ref;
+      /** Sorte de marqueur (`property: "counters"`). */
+      counter?: string;
+    }
+  /**
+   * Ce qui a été dépensé pour lancer la source (le sort qui se résout, ou le permanent qu'il est devenu), ou les objets
+   * désignés (`of` : le sort de l'événement…) : X, mana, nombre de couleurs de mana, mana des Cavernes.
+   */
+  | { kind: "spent"; what: "x" | "mana" | "colors" | "cave"; of?: Ref }
+  /**
+   * Symboles de mana de cette couleur, hybrides compris, dans les coûts de mana des objets désignés (Namor : le sort de
+   * l'événement) ; sans `of`, de vos permanents (dévotion, 700.5).
+   */
+  | { kind: "manaSymbols"; color: ManaType; of?: Ref }
   | { kind: "x" }
   | { kind: "kicked"; yes: number; no: number }
   | { kind: "powerOf"; ref: Ref }
@@ -664,123 +709,43 @@ export type Amount =
     }
   /** Marqueurs d'un type sur un objet. */
   | { kind: "countersOn"; ref: Ref; counter: string }
-  /** Nombre de valeurs de mana différentes parmi les permanents non-terrains du contrôleur. */
-  | { kind: "differentManaValues" }
-  /** Vivid (ECL) : nombre de couleurs parmi les permanents correspondants (vus du contrôleur). */
-  | { kind: "colorsAmong"; filter: ObjectFilter }
   | { kind: "sum"; of: Amount[] }
   /** Opposé (« -X/-0 ») et division entière (« pour chaque tranche de sept cartes »). */
   | { kind: "neg"; of: Amount }
   | { kind: "div"; of: Amount; by: number }
   /** Puissance : `base` à la puissance `of` (Mathemagics : « 2^X cartes »), bornée à 2^20. */
   | { kind: "pow"; base: number; of: Amount }
-  /** X du sort de l'événement (« regardez les X cartes du dessus », Geometer's Arthropod). */
-  | { kind: "eventX" }
-  /** Mana dépensé pour lancer le sort désigné, sur la pile (Mana Sculpt). */
-  | { kind: "manaSpentOf"; ref: Ref }
-  /** Couleurs de mana dépensées pour le sort de l'événement (Magmablood Archaic, Wildgrowth Archaic). */
-  | { kind: "eventColorsSpent" }
-  /** Force totale des permanents correspondant au filtre, vus du contrôleur. */
-  | { kind: "totalPower"; filter: ObjectFilter }
   /** Valeur mémorisée pendant la résolution (vie perdue de cette façon, blessures en excès…). */
   | { kind: "var"; name: string }
   | { kind: "lifeTotal" }
   /** Blessures marquées sur la source (dernières informations connues : Tangled Colony, « les blessures subies ce tour-ci »). */
   | { kind: "lkiDamage" }
   | { kind: "manaValueOf"; ref: Ref }
-  /** Convergence : nombre de couleurs de mana dépensées pour lancer la source (le sort qui se résout). */
-  | { kind: "colorsSpent" }
   | { kind: "toughnessOf"; ref: Ref }
-  /** Nombre de couleurs de l'objet (Ramos). */
-  | { kind: "colorsOf"; ref: Ref }
-  /** Plus grande force parmi les permanents correspondants. */
-  /** `zone: "graveyard"` : parmi les cartes du cimetière du contrôleur (Kraven's Last Hunt). */
-  | { kind: "maxPower"; filter: ObjectFilter; zone?: "graveyard" }
-  /** Nombre de noms différents parmi les permanents correspondants (Maze's End). */
-  | { kind: "distinctNames"; filter: ObjectFilter }
   /** Nombre de cartes dans une zone du contrôleur. */
   | { kind: "cardsIn"; zone: "hand" | "graveyard" | "library" }
-  /** Domaine : types de terrains de base parmi les terrains du contrôleur. */
-  | { kind: "basicLandTypes" }
-  /** Marqueurs d'un type parmi les permanents correspondants (« marqueurs de loyauté parmi les Jace »). */
-  | { kind: "countersAmong"; filter: ObjectFilter; counter: string }
-  /** Symboles de mana de cette couleur dans le coût de mana de l'objet désigné, hybrides compris (Namor). */
-  | { kind: "manaSymbolsOf"; ref: Ref; color: ManaType }
-  /** Plus grand nombre de permanents du filtre qui ont un type de créature en commun (White Lotus Tile ; changelins). */
-  | { kind: "maxSharingCreatureType"; filter: ObjectFilter }
   /** La moitié des points de vie du joueur désigné, arrondie à l'unité supérieure (Alpharael). */
   | { kind: "halfLife"; who: Ref }
-  /** Mana dépensé pour lancer la source (Astelli Reclaimer, Dyadrine). */
-  | { kind: "manaSpent" }
   /** Votre vitesse (0 si vous n'en avez pas). */
   | { kind: "speed" }
-  /** Somme des valeurs de mana des permanents correspondants (Summon: Bahamut). */
-  /** `zone: "exile"` : les cartes que vous possédez en exil (Ashiok, Wicked Manipulator). */
-  | { kind: "totalManaValue"; filter: ObjectFilter; zone?: "exile" }
-  /** Mana dépensé pour lancer le sort de l'événement (Shantotto, Tellah). */
-  | { kind: "eventManaSpent" }
-  /** Types de carte différents parmi les objets désignés (Kefka : « parmi les cartes défaussées »). */
-  | { kind: "cardTypesOf"; ref: Ref }
-  /** Dévotion à une couleur (700.5) : symboles de cette couleur dans les coûts de mana de vos permanents. */
-  | { kind: "devotion"; color: Color }
   /** Nombre d'objets désignés (Luxurious Locomotive : les créatures qui l'ont équipé). */
   | { kind: "refCount"; ref: Ref }
-  /** Forces différentes parmi les créatures correspondantes (Collector's Cage). */
-  | { kind: "distinctPowers"; filter: ObjectFilter }
-  /** Types de carte différents parmi les permanents correspondants (Loot, the Key to Everything). */
-  | { kind: "cardTypesAmong"; filter: ObjectFilter }
-  /** Plus grande valeur de mana parmi les permanents correspondants (Emissary Escort). */
-  | { kind: "maxManaValue"; filter: ObjectFilter }
-  /** Tarmogoyf : types de cartes parmi les cartes de tous les cimetières. */
-  | { kind: "cardTypesInGraveyards" }
   /** Portes déverrouillées parmi les Salles que contrôle le contrôleur (Duskmourn). */
   | { kind: "unlockedDoors" }
   /** Le plus grand des montants. */
   | { kind: "max"; of: Amount[] }
-  /** Plus grande force parmi les cartes de créature de votre main (Monstrous Emergence). */
-  | { kind: "maxPowerInHand" }
   /** Nombre de cimetières qui contiennent au moins N cartes (Master's Councillors, The Master of Lake-town). */
   | { kind: "graveyardsWithAtLeast"; n: number }
-  /** X du sort qui a mis la source en jeu (Meathook Massacre II). */
-  | { kind: "sourceX" }
   /** Noms différents parmi les portes déverrouillées de ses Salles (Promising Stairs). */
   | { kind: "unlockedDoorNames" }
-  /** Délire : types de cartes parmi les cartes du cimetière du contrôleur. */
-  | { kind: "cardTypesInGraveyard" }
-  /** Plus grande endurance parmi les permanents correspondants (Ghalta the Immovable). */
-  | { kind: "maxToughness"; filter: ObjectFilter }
-  /** Plus grande valeur de mana parmi les cartes de votre cimetière (Hapatra). */
-  | { kind: "maxManaValueInGraveyard" }
-  /** Nombre de sous-types différents parmi les permanents correspondants (« types de planeswalker », Tam). */
-  | { kind: "distinctSubtypes"; filter: ObjectFilter }
   /** Objets désignés encore en exil (Dragonhawk : « celles de ces cartes encore exilées »). */
   | { kind: "inExile"; ref: Ref }
-  /** Adversaires qui ont au plus N cartes en main (Bandit's Talent). */
-  | { kind: "opponentsWithHandAtMost"; n: number }
   /** Adversaires qui ont plus de cartes en main que vous (Wojek Investigator). */
   | { kind: "opponentsWithMoreInHand" }
-  /** Force totale des objets désignés (dernières informations connues : Kylox, Visionary Inventor). */
-  | { kind: "totalPowerOf"; ref: Ref }
-  /** Plus grande valeur de mana parmi les objets désignés (Ill-Timed Explosion : les cartes défaussées). */
-  | { kind: "greatestManaValueOf"; ref: Ref }
-  /** Paires de couleurs différentes parmi les permanents correspondants qui ont exactement deux couleurs (Niv-Mizzet, Guildpact). */
-  | { kind: "colorPairsAmong"; filter: ObjectFilter }
   /** Force de la source quand la capacité s'est déclenchée (« quand cette créature meurt, … égales à sa force »). */
   | { kind: "lkiPower" }
-  /** Mana produit par des Cavernes dépensé pour lancer la source (Bat Colony). */
-  | { kind: "caveManaSpent" }
-  /** Force totale des cartes liées à la source (matériaux d'une fabrication : Mastercraft Raptor). */
-  | { kind: "linkedTotalPower" }
-  /** Nombre de couleurs parmi les cartes liées à la source (Sunbird Effigy). */
-  | { kind: "linkedColors" }
-  /** Types de permanent parmi les cartes de votre cimetière (Matzalantli). */
-  | { kind: "permanentTypesInGraveyard" }
   /** Journal du tour (`turnlog.ts`) : entrées correspondantes, vues du contrôleur de la capacité. */
   /** `of` : compter pour ces joueurs (« les cartes meulées par le joueur ciblé ») plutôt que pour le contrôleur. */
   | { kind: "turnEvents"; query: TurnLogQuery; of?: Ref }
   /** Permanents dégagés pendant votre étape de dégagement de ce tour (The Millennium Calendar). */
-  | { kind: "untappedInUntapStep" }
-  /** Sortes de marqueurs différentes parmi les permanents correspondants (Hundred-Battle Veteran). */
-  | { kind: "counterKindsAmong"; filter: ObjectFilter }
-  /** Endurance totale des permanents correspondants (Betor, Kin to All). */
-  | { kind: "totalToughness"; filter: ObjectFilter };
+  | { kind: "untappedInUntapStep" };

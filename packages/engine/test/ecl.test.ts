@@ -1215,6 +1215,21 @@ describe("Lorwyn Eclipsed, lot A — bleu", () => {
     expect(chars(s, copy as string).keywords).toEqual(expect.arrayContaining(["flying", "vigilance", "changeling"]));
   });
 
+  it("une copie a la valeur de mana de ce qu'elle copie (707.2) : Lunar Insight ne compte qu'une valeur", () => {
+    let s = scenario({
+      p1: {
+        battlefield: [...lands("Island", 8), "Shivan Dragon"],
+        hand: ["Omni-Changeling", "Lunar Insight"],
+        library: lands("Island", 3),
+      },
+    });
+    s = chooseWanted(cast(s, "Omni-Changeling"), [idOf(s, "p1", "battlefield", "Shivan Dragon")]);
+    const before = s.players.p1?.hand.length ?? 0;
+    s = settle(cast(s, "Lunar Insight"));
+    // Le Dragon et sa copie : une seule valeur de mana (6), une carte (la main a perdu Lunar Insight).
+    expect(s.players.p1?.hand.length).toBe(before);
+  });
+
   describe("Ondins", () => {
     it("Silvergill Mentor : {2} de plus sans Ondin à contempler (la carte elle-même ne compte pas) ; crée un Ondin 1/1", () => {
       const noMerfolk = scenario({ p1: { battlefield: lands("Island", 2), hand: ["Silvergill Mentor"] } });

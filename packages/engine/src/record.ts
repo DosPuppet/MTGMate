@@ -278,8 +278,11 @@ export const RECORD_VERSION = 1;
  * - 97 : le journal du tour devient la seule source de « ce tour-ci » (PLAN-S, lot S2) : vie gagnée et perdue, pioches,
  *   défausses, regards, crimes, activations de loyauté, retournements ; « un adversaire » y est un adversaire encore en
  *   partie (800.4a) ; « arrivé face cachée » compte toute arrivée face cachée (Oblivious Bookworm).
+ * - 98 : familles de montants (PLAN-S, lot S3) : `aggregate` (valeur de mana calculée sur le champ de bataille : une copie
+ *   a celle de ce qu'elle copie, 707.2 ; force totale à l'arrivée sans l'objet qui arrive), `spent`, `manaSymbols`,
+ *   référence `playersWhere`.
  */
-export const RULES_VERSION = 97;
+export const RULES_VERSION = 98;
 
 /** Un point de contrôle toutes les N décisions (plus la dernière de la partie). */
 export const CHECKPOINT_EVERY = 25;

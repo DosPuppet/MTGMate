@@ -116,8 +116,7 @@ function printedMatch(d: Pick<CardDef, "types" | "subtypes"> | undefined, f: Obj
 function readsBattlefield(a: Amount): boolean {
   if (typeof a === "number") return false;
   if (a.kind === "sum") return a.of.some(readsBattlefield);
-  if (a.kind === "basicLandTypes" || a.kind === "maxManaValue" || a.kind === "colorsAmong" || a.kind === "countersAmong")
-    return true;
+  if (a.kind === "aggregate") return !a.of && !a.zone;
   return a.kind === "count" && (!a.zone || a.zone === "battlefield");
 }
 
@@ -127,89 +126,87 @@ function typesOf(s: GameState, id: ObjectId): { types: CardType[]; subtypes: str
 }
 
 /**
- * Sortes de montants que `cdaValue` sait calculer pendant le calcul des couches (F/E définies par une capacité, bonus
- * « pour chaque »). Toute autre sorte vaudrait 0 : `cards/test/cda.test.ts` vérifie qu'aucune carte n'en utilise
- * (PLAN-C, lot C10).
+ * Montants que `cdaValue` sait calculer pendant le calcul des couches (F/E définies par une capacité, bonus « pour
+ * chaque »), par clé (`cdaKey` : la sorte, ou pour un agrégat sa fonction, sa propriété et ses objets). Tout autre montant
+ * vaudrait 0 : `cards/test/cda.test.ts` vérifie qu'aucune carte n'en utilise (PLAN-C, lot C10).
  */
 export const CDA_AMOUNT_KINDS: ReadonlySet<string> = new Set([
-  "linkedTotalPower",
-  "linkedColors",
   "sum",
   "graveyardsWithAtLeast",
-  "cardTypesInGraveyards",
-  "basicLandTypes",
-  "colorsAmong",
-  "countersAmong",
   "turnEvents",
-  "maxManaValue",
   "count",
+  // Fabrication : cartes exilées pour fabriquer ce permanent (Mastercraft Raptor, Sunbird Effigy).
+  "aggregate:sum:power:linked",
+  "aggregate:distinct:color:linked",
+  // Tarmogoyf : types de cartes parmi les cartes de tous les cimetières.
+  "aggregate:distinct:cardType:graveyard:all",
+  // Domaine ; Vivid (Squawkroaster) ; Toph, the Blind Bandit ; Emissary Escort.
+  "aggregate:distinct:basicLandType",
+  "aggregate:distinct:color",
+  "aggregate:sum:counters",
+  "aggregate:max:manaValue",
 ]);
+
+/** Clé d'un montant pour `CDA_AMOUNT_KINDS`. */
+export function cdaKey(a: Exclude<Amount, number>): string {
+  if (a.kind !== "aggregate") return a.kind;
+  const objects = a.of ? [a.of.kind] : a.zone ? [a.zone, a.whose ?? "you"] : [];
+  return ["aggregate", a.fn, a.property, ...objects].join(":");
+}
+
+/** Agrégats calculables pendant le calcul des couches : caractéristiques imprimées, ou de la passe précédente (613.8). */
+function cdaAggregate(s: GameState, o: GameObject, a: Extract<Amount, { kind: "aggregate" }>): number {
+  const filter = a.filter ?? {};
+  // Permanents du filtre, vus du contrôleur de `o` (types de la passe précédente, sinon imprimés).
+  const permanents = () =>
+    s.battlefield.filter((id) => {
+      const x = obj(s, id);
+      if (filter.other && id === o.id) return false;
+      if (filter.controller === "you" && x.controller !== o.controller) return false;
+      return printedMatch(typesOf(s, id), filter);
+    });
+  switch (cdaKey(a)) {
+    case "aggregate:sum:power:linked":
+      return linkedTotalPower(s, o.linked);
+    case "aggregate:distinct:color:linked":
+      return linkedColors(s, o.linked).length;
+    case "aggregate:distinct:cardType:graveyard:all": {
+      const types = new Set<string>();
+      for (const p of s.playerOrder)
+        for (const id of s.players[p]?.graveyard ?? []) for (const t of s.defs[obj(s, id).defId]?.types ?? []) types.add(t);
+      return types.size;
+    }
+    case "aggregate:distinct:basicLandType": {
+      // Domaine : sous-types des terrains du contrôleur (passe précédente, sinon imprimés).
+      const subtypes = new Set(permanents().flatMap((id) => typesOf(s, id)?.subtypes ?? []));
+      return BASIC_LAND_TYPES.filter((t) => subtypes.has(t)).length;
+    }
+    case "aggregate:distinct:color": {
+      // Couleurs imprimées (les couleurs modifiées des autres permanents ne sont pas encore connues).
+      const colors = new Set<string>();
+      for (const id of permanents()) {
+        const x = obj(s, id);
+        for (const c of s.defs[x.faceDefId ?? x.defId]?.colors ?? []) colors.add(c);
+      }
+      return colors.size;
+    }
+    case "aggregate:sum:counters":
+      return permanents().reduce((n, id) => n + Math.max(0, obj(s, id).counters[a.counter ?? ""] ?? 0), 0);
+    case "aggregate:max:manaValue":
+      return Math.max(0, ...permanents().map((id) => manaValue(s.defs[obj(s, id).defId]?.manaCost)));
+  }
+  return 0;
+}
 
 function cdaValue(s: GameState, o: GameObject, a: Amount): number {
   if (typeof a === "number") return a;
-  // Fabrication : cartes exilées pour fabriquer ce permanent (Mastercraft Raptor, Sunbird Effigy).
-  if (a.kind === "linkedTotalPower") return linkedTotalPower(s, o.linked);
-  if (a.kind === "linkedColors") return linkedColors(s, o.linked).length;
   if (a.kind === "sum") return a.of.reduce<number>((n, x) => n + cdaValue(s, o, x), 0);
   // Master's Councillors : cimetières de N cartes ou plus.
   if (a.kind === "graveyardsWithAtLeast")
     return s.playerOrder.filter((p) => !s.players[p]?.lost && (s.players[p]?.graveyard.length ?? 0) >= a.n).length;
-  if (a.kind === "cardTypesInGraveyards") {
-    const types = new Set<string>();
-    for (const p of s.playerOrder)
-      for (const id of s.players[p]?.graveyard ?? []) for (const t of s.defs[obj(s, id).defId]?.types ?? []) types.add(t);
-    return types.size;
-  }
-  if (a.kind === "basicLandTypes") {
-    // Domaine : sous-types des terrains du contrôleur (passe précédente, sinon imprimés).
-    const subtypes = new Set(
-      s.battlefield.flatMap((id) => {
-        const x = obj(s, id);
-        const d = typesOf(s, id);
-        return x.controller === o.controller && d?.types.includes("Land") ? d.subtypes : [];
-      }),
-    );
-    return BASIC_LAND_TYPES.filter((t) => subtypes.has(t)).length;
-  }
-  if (a.kind === "colorsAmong") {
-    // Vivid (Squawkroaster) : couleurs parmi les permanents du contrôleur, couleurs imprimées (pendant le calcul des
-    // couches, les couleurs modifiées des autres permanents ne sont pas encore connues).
-    const colors = new Set<string>();
-    for (const id of s.battlefield) {
-      const x = obj(s, id);
-      if (a.filter.controller === "you" && x.controller !== o.controller) continue;
-      // Earthen Ally : « parmi les Alliés que vous contrôlez » (types de la passe précédente, sinon imprimés).
-      if (!printedMatch(typesOf(s, id), a.filter)) continue;
-      for (const c of s.defs[x.faceDefId ?? x.defId]?.colors ?? []) colors.add(c);
-    }
-    return colors.size;
-  }
-  // Toph, the Blind Bandit : marqueurs +1/+1 sur les terrains que vous contrôlez.
-  if (a.kind === "countersAmong") {
-    return s.battlefield.reduce((n, id) => {
-      const x = obj(s, id);
-      if (a.filter.controller === "you" && x.controller !== o.controller) return n;
-      if (!printedMatch(typesOf(s, id), a.filter)) return n;
-      return n + Math.max(0, x.counters[a.counter] ?? 0);
-    }, 0);
-  }
   // Journal du tour (Duelist of the Mind : cartes piochées ce tour-ci), vu du contrôleur.
   if (a.kind === "turnEvents" && !a.of) return countTurnEvents(s, a.query, o.controller);
-  if (a.kind === "maxManaValue") {
-    // Emissary Escort : plus grande valeur de mana parmi vos autres artefacts (types imprimés).
-    return Math.max(
-      0,
-      ...s.battlefield
-        .filter((id) => {
-          const x = obj(s, id);
-          const d = typesOf(s, id);
-          if (a.filter.other && id === o.id) return false;
-          if (a.filter.controller === "you" && x.controller !== o.controller) return false;
-          return !a.filter.types || a.filter.types.some((t) => d?.types.includes(t));
-        })
-        .map((id) => manaValue(s.defs[obj(s, id).defId]?.manaCost)),
-    );
-  }
+  if (a.kind === "aggregate") return cdaAggregate(s, o, a);
   // Sorte non prise en charge (`CDA_AMOUNT_KINDS`) : aucune carte n'en utilise (cards/test/cda.test.ts).
   if (a.kind !== "count") return 0;
   if (a.zone === "exile") {
