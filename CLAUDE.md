@@ -12,7 +12,7 @@ Ce fichier sert au suivi du projet entre les sessions : état présent, règles 
 
 - **Tout le Standard est jouable :** 5 164 / 5 164 cartes, 19 extensions (5 177 cartes importées, dont 13 bannies ; légalités comparées chaque semaine à Scryfall, `tools/check-legality.ts`). Détail par extension : `docs/extensions/<ext>.md` ; jalons et chronologie : `docs/historique.md`.
 - **Plateforme :** IA à trois niveaux, duel en ligne (BO3, corde, reconnexion, reprise après redémarrage), tutoriel en 9 leçons, replays, reprise d'une partie à la réouverture de la page, tablette et téléphone, déploiement pm2 + nginx.
-- **Plan en cours : `docs/plans/PLAN-C.md`** (consolidation après l'audit du 02/10/2026, lots C0 à C20). Son tableau « Décisions et ordre » et son « Suivi » disent où on en est.
+- **Plan : `docs/plans/PLAN-C.md`** (consolidation après l'audit du 02/10/2026) : lots C0 à C19 faits le 03/10/2026, C20 écarté après mesure. Restent : C13 en continu (extensions d'avant R7 et TDM à 50 % de cartes testées, `npm run coverage -- --set all --tests`), les parties non faites de C12 et C18 (listées dans le « Suivi »).
 - **Branche `dev`** pour le travail courant (`master` = version stable). Les lots se font à la demande de l'utilisateur, un commit par lot ou sous-lot.
 - Découpage d'une extension (à la prochaine rotation) : lot A (cartes faisables avec le moteur, jetons, terrains), lot B (mécaniques phares), lots C et suivants (cartes uniques) ; un commit par lot ; `npm run verify -- --set <EXT>`.
 

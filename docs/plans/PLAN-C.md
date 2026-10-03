@@ -60,7 +60,7 @@ Plan établi le 02/10/2026 (branche `dev`) : il sert de feuille de route aux pro
   - **mesure :** tournois A/B à graines appariées (1 400 parties en duel, 400 à quatre, 1 600 pour les couleurs) : neutres, sans régression (ces choix changent rarement la réponse) ; `ai-arena --players N` ; résultats dans `docs/ia.md` ;
   - **tests :** 2 (répartition des blessures de combat, mulligan sur la courbe) ;
   - **remarque :** des décisions de priorité du niveau moyen prennent 1,5 à 4 s sur des plateaux de 50 à 90 permanents (parties à quatre), déjà avant C17 (`docs/ia.md`, « Pièges ») ;
-  - **tournoi de référence** (élevé contre moyen, tout le pool et méta) : en cours, consigné dans `docs/ia.md` au lot suivant.
+  - **tournoi de référence** (élevé contre moyen, 600 parties chacun, après le correctif du mana des Trésors) : tout le pool 62,2 % ± 3,9 ; méta 66,2 % ± 3,8 (65,0 % le 30/09) ; consigné dans `docs/ia.md`.
 - **03/10/2026 : correctif hors lot** (`RULES_VERSION` = 71) : le tournoi de référence a trouvé une erreur interne (« Paiement incohérent ») : un Trésor sacrifié pour son mana produisait sans les remplacements de mana (Roxanne, Starfall Savant), que le solveur avait comptés. Quantité et remplacements lus d'après la dernière information connue ; test tiré des décisions officielles ; `ai-arena --first N` et partie fautive signalée.
 - **03/10/2026 : C18 fait en partie** (sans changement de règles) :
   - **journal :** perte de PV hors blessures (sans répéter celle des blessures) ; noms de cartes survolables (aperçu gardé comme pour les cartes du plateau ; au toucher, en surimpression ; au clavier, focus) ;
@@ -79,6 +79,7 @@ Plan établi le 02/10/2026 (branche `dev`) : il sert de feuille de route aux pro
   - **trois cartes légales manquaient** (le « 100 % » ne comptait que les cartes importées) : Melek, Reforged Researcher, Tomik, Wielder of Law et Voja, Jaws of the Conclave, promotions de MKM seulement, que l'import écartait. Import corrigé (une promotion compte si c'est la seule impression de la carte dans le set), scripts et 3 tests de règles ; déclencheur `attackWith` étendu (`defending: "you"`, plafond `TriggerSpec` relevé et noté). **5 164 / 5 164** ;
   - **noms français :** l'import rapproche aussi par le nom anglais quand le numéro diffère ; `tools/import-french.ts` complète les données françaises sans réimporter (FDN : 163 réimpressions, depuis d'autres extensions ; FRA : 285, Scryfall les a maintenant ; ECL : 10 terrains) ; restent 5 cartes que Scryfall n'a pas en français ;
   - **réimport à blanc** de toutes les extensions (hors FDN et FRA) : identique, à part ces ajouts.
+- **03/10/2026 : C20 écarté, après mesure.** `stack.ts` fait 3 373 lignes, mais il est dans le plus grand cycle d'imports (21 fichiers) parce que `layers.ts` (mots-clés accordés aux sorts), `mana.ts`, `effects.ts`, `turn.ts`, `stackChoices.ts` et plusieurs `ops/` l'importent. Découpé comme prévu, au moins trois des nouveaux fichiers (permissions et coûts, lancer, résoudre) resteraient dans le cycle, qui passerait à environ 23 fichiers, à l'inverse du critère du lot. Préalable, si on y revient : sortir de `stack.ts` ce que lisent les couches et les effets (`grantedSpellKeywords`, `spellView`, coûts des capacités), puis découper.
 
 ## Décisions et ordre
 
@@ -114,7 +115,7 @@ Plan établi le 02/10/2026 (branche `dev`) : il sert de feuille de route aux pro
 | 18 | C17 : IA | § 8 | C8, C9 | M | ✅ |
 | 19 | C18 : interface | § 9 | C7 | M/L | ✅ en partie |
 | 20 | C19 : données | § 7 | — | S | ✅ |
-| 21 | C20 (facultatif) : découpage de `stack.ts` | § 5.2 | C7 à C12 | M | |
+| 21 | C20 (facultatif) : découpage de `stack.ts` | § 5.2 | C7 à C12 | M | écarté (mesuré) |
 
 **Ordre recommandé :**
 1. C0 à C3 : fondations, sans changement de règles. Ils peuvent se faire ensemble.

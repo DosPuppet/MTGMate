@@ -113,6 +113,15 @@ Sur les decks du méta Standard (`--pool meta`, ISMCTS à 100 itérations), le 3
 |---|---|---|---|
 | Élevé contre Moyen | 600 | 66,8 % ± 3,8 | 65,0 % ± 3,8 |
 
+**Référence du 03/10/2026** (après PLAN-C C17, ISMCTS à 100 itérations, tout le Standard jouable) :
+
+| Paire | Pool | Parties | Taux de victoire de la première |
+|---|---|---|---|
+| Élevé contre Moyen | tout le pool (decks aléatoires bicolores) | 600 | 62,2 % ± 3,9 |
+| Élevé contre Moyen | méta Standard | 600 | 66,2 % ± 3,8 |
+
+Temps de décision de l'élevé pendant ces tournois (machine chargée) : 78 à 96 ms en moyenne, 570 à 740 ms au 95ᵉ centile ; le maximum (10 à 20 s) vient de décisions sur de grands plateaux, bornées dans l'interface par le budget en temps. Le premier passage de ce tournoi a trouvé une erreur interne du moteur (mana d'un Trésor avec un doubleur), corrigée avant la mesure (`RULES_VERSION` 71).
+
 Le P3 (déterminisation par les cartes vues, choix « vous pouvez » et petits choix essayés par simulation, mulligan selon les couleurs) touche les deux niveaux ; l'écart n'est pas significatif. L'IA élevée garde son avance sans connaître la liste du deck adverse.
 
 Temps de décision de l'élevé à 100 itérations : environ 30 ms en moyenne (la plupart des décisions sont triviales), 300 ms au 95ᵉ centile ; dans l'interface, le budget en temps borne la réflexion.
