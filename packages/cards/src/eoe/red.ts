@@ -141,7 +141,13 @@ export const RED: Record<string, CardScript> = {
     enchant: { filter: { types: ["Creature"], controller: "you" }, label: "créature que vous contrôlez" },
     abilities: [
       triggered(when.entersSelf, [fx.damage(amount.powerOf(ref.attached), ref.target(), ref.attached)], {
-        targets: [target.any()],
+        // « N'importe quelle autre cible » : pas la créature enchantée.
+        targets: [
+          {
+            ...target.any(),
+            filter: { players: "any", objects: { types: ["Creature", "Planeswalker", "Battle"], notAttachedToSource: true } },
+          },
+        ],
         label: "Blessures égales à sa force",
       }),
       triggered(when.attachedIsDealtDamage, [fx.damage(amount.eventAmount, ref.eachOpponent, ref.attached)], {

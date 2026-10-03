@@ -110,8 +110,9 @@ function computeLiveSources(s: GameState): Source[] {
     // Filtre rapide sur les capacités imprimées, sauf si un effet accorde des capacités déclenchées.
     const o = obj(s, id);
     const d = s.defs[o.faceDefId ?? o.defId];
-    // Salle : les capacités déclenchées sont portées par ses portes.
-    const levels = !!d?.classLevels || !!d?.caseSolved;
+    // Salle : les capacités déclenchées sont portées par ses portes ; Classe, Affaire, paliers de station : par leurs
+    // niveaux.
+    const levels = !!d?.classLevels || !!d?.caseSolved || !!d?.station;
     if (
       !granted &&
       !levels &&

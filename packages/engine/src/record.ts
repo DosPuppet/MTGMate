@@ -242,8 +242,11 @@ export const RECORD_VERSION = 1;
  *   Splatter Technique, Dragonback Assault, Fulminous Forte) ; Reality Fracture (lot K8) : Ajani's Anguish et Fblthp (le
  *   X de la carte lancée), Hunter's Axe (piétinement ou contact mortel, au choix), Tinybones, Pocket Nuisance (une fois
  *   par défausse groupée).
+ * - 85 : une capacité déclenchée de palier (station) se déclenche même sans capacité déclenchée imprimée (Dawnsire,
+ *   Entropic Battlecruiser, Sledge-Class Seedship, Synthesizer Labship) ; Edge of Eternities (lot K8) : Archenemy's
+ *   Charm (une ou deux cibles), Pain for All (« une autre cible »), Broodguard Elite (tous ses marqueurs).
  */
-export const RULES_VERSION = 84;
+export const RULES_VERSION = 85;
 
 /** Un point de contrôle toutes les N décisions (plus la dernière de la partie). */
 export const CHECKPOINT_EVERY = 25;

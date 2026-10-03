@@ -28,7 +28,7 @@ export const BLACK: Record<string, CardScript> = {
       mode("Exilez une créature ou un planeswalker", [target.creatureOrPlaneswalker("t")], [fx.exile(ref.target())]),
       mode(
         "Reprenez une ou deux cartes de créature ou de planeswalker",
-        [target.upTo(2, target.cardInGraveyard("t", { types: [...CREATURE_OR_WALKER] }))],
+        [target.between(1, 2, target.cardInGraveyard("t", { types: [...CREATURE_OR_WALKER] }))],
         [fx.toHand(ref.target())],
       ),
       mode(

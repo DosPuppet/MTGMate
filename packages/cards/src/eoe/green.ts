@@ -41,7 +41,7 @@ export const GREEN: Record<string, CardScript> = {
   "Broodguard Elite": {
     abilities: [
       entersWith({ counters: amount.x }),
-      triggered(when.leavesSelf, [fx.addCounters(ref.target(), amount.lkiCounters("+1/+1"))], {
+      triggered(when.leavesSelf, [fx.lkiCountersTo(ref.target())], {
         targets: [target.creature("t", { controller: "you" })],
         label: "Ses marqueurs sur une créature",
       }),
