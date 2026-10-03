@@ -18,6 +18,7 @@ import {
   canActivate,
   cast,
   castNowOf,
+  counterFrom,
   customCard,
   idOf,
   idsOf,
@@ -3964,5 +3965,20 @@ describe("The Hobbit : cartes du méta (PLAN-C, lot C13)", () => {
       s = settle(act(s, "p1", { type: "cast", card, face: 1, targets: { t: [sword] } }));
       expect(chars(s, sword).keywords).toEqual(expect.arrayContaining(["hexproof", "indestructible"]));
     });
+  });
+});
+
+describe("« Vous mettez des marqueurs » (lot K2)", () => {
+  it("The Great Goblin : seuls les marqueurs que vous mettez sur vos Gobelins le déclenchent", () => {
+    const setup = (active: PlayerId) =>
+      scenario({
+        active,
+        p1: { battlefield: ["Plains", "Bear Cub", "The Great Goblin"], hand: ["Fleeting Flight"] },
+        p2: { battlefield: ["Plains", "Bear Cub"], hand: ["Fleeting Flight"] },
+      });
+    const a = setup("p2");
+    expect(counterFrom(a, "p2", idOf(a, "p1", "battlefield", "The Great Goblin")).triggered).toEqual([]);
+    const b = setup("p1");
+    expect(counterFrom(b, "p1", idOf(b, "p1", "battlefield", "The Great Goblin")).triggered).toEqual(["The Great Goblin"]);
   });
 });

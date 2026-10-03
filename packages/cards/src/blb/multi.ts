@@ -300,8 +300,7 @@ export const MULTI: Record<string, CardScript> = {
   },
   "Muerra, Trash Tactician": {
     abilities: [
-      // Approximation : le mana est d'une seule couleur, au choix.
-      triggered(when.step("main1", "you"), [fx.addManaChoice(amount.count(kin(["Raccoon"])))], {
+      triggered(when.step("main1", "you"), [fx.addManaCombination(amount.count(kin(["Raccoon"])), ["R", "G"])], {
         label: "{R} ou {G} par Raton laveur",
       }),
       expend(4, [fx.gainLife(3)], { label: "+3 PV" }),

@@ -135,10 +135,7 @@ export const MULTI: Record<string, CardScript> = {
         ),
         { label: "Payez {1} : un marqueur +1/+1 sur une créature" },
       ),
-      // « Chaque fois que vous mettez un marqueur +1/+1 sur une créature » : sur une créature que vous contrôlez, et vous
-      // avez mis des marqueurs sur une de vos créatures ce tour-ci (voir docs/approximations.md).
-      triggered(when.countersPut(YOUR_CREATURES, "+1/+1"), [fx.createTokens(INSECT_G)], {
-        condition: cond.controls({ types: ["Creature"], countersPutByYouThisTurn: true }),
+      triggered(when.youPutCounters({ types: ["Creature"] }, "+1/+1"), [fx.createTokens(INSECT_G)], {
         oncePerTurn: true,
         label: "Un Insecte 1/1 (une fois par tour)",
       }),

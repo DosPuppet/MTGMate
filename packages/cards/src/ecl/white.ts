@@ -280,7 +280,7 @@ export const WHITE: Record<string, CardScript> = {
         label: "Vivid — un Kithkin 1/1 par couleur parmi vos permanents",
       }),
       activated({
-        tapOthers: { filter: { types: ["Creature"] }, count: 3 },
+        tapOthers: { filter: { types: ["Creature"] }, count: 3, includeSelf: true },
         effects: [fx.pump(ref.self, 3, 0, ["flying"])],
         label: "+3/+0 et le vol",
       }),

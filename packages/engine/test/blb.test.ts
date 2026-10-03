@@ -9,7 +9,7 @@ import { createTokens, destroy } from "../src/actions";
 import { RulesError } from "../src/errors";
 import { legalActions } from "../src/legal";
 import { chars } from "../src/state";
-import type { GameState, TokenSpec } from "../src/types";
+import type { GameState, PlayerId, TokenSpec } from "../src/types";
 import {
   type Answer,
   act,
@@ -18,6 +18,7 @@ import {
   canActivate,
   cast,
   castNowOf,
+  counterFrom,
   idOf,
   idsOf,
   namesIn,
@@ -780,5 +781,33 @@ describe("Bloomburrow : cartes des decks du méta (PLAN-C, lot C13)", () => {
     s = resolve(activate(s, "p1", curator, "Exile", { targets: { t: [idOf(s, "p2", "graveyard", "Hop to It")] } }));
     expect(pt(s, curator)).toEqual([7, 7]);
     expect(chars(s, curator).keywords).toContain("trample");
+  });
+});
+
+describe("« Vous mettez des marqueurs » (lot K2)", () => {
+  it("Stocking the Pantry : seuls les marqueurs +1/+1 que vous mettez sur vos créatures la déclenchent", () => {
+    const setup = (active: PlayerId) =>
+      scenario({
+        active,
+        p1: { battlefield: ["Plains", "Bear Cub", "Stocking the Pantry"], hand: ["Fleeting Flight"] },
+        p2: { battlefield: ["Plains", "Bear Cub"], hand: ["Fleeting Flight"] },
+      });
+    const a = setup("p2");
+    expect(counterFrom(a, "p2", idOf(a, "p1", "battlefield", "Bear Cub")).triggered).toEqual([]);
+    const b = setup("p1");
+    expect(counterFrom(b, "p1", idOf(b, "p1", "battlefield", "Bear Cub")).triggered).toEqual(["Stocking the Pantry"]);
+    expect(counterFrom(b, "p1", idOf(b, "p2", "battlefield", "Bear Cub")).triggered).toEqual([]);
+  });
+});
+
+describe("Mana en n'importe quelle combinaison (lot K2)", () => {
+  it("Muerra, Trash Tactician : {R} ou {G} pour chaque Raton laveur, répartis par le joueur", () => {
+    let s = scenario({ step: "draw", p1: { battlefield: ["Muerra, Trash Tactician", "Teapot Slinger"] } });
+    s = passAccepting(s, (x) => x.pending?.kind === "choice");
+    const p = s.pending;
+    expect(p?.kind === "choice" && p.request.type === "divide" && p.request.among).toEqual(["R", "G"]);
+    s = act(s, "p1", { type: "choose", values: [1, 1] });
+    expect(s.players.p1?.manaPool.R).toBe(1);
+    expect(s.players.p1?.manaPool.G).toBe(1);
   });
 });

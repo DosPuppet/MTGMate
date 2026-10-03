@@ -364,7 +364,7 @@ export const GREEN: Record<string, CardScript> = {
   },
   "Stocking the Pantry": {
     abilities: [
-      triggered(when.countersPut(CREATURE_YOU_CONTROL, "+1/+1"), [fx.counters(ref.self, "supply", 1)], {
+      triggered(when.youPutCounters(CREATURE_YOU_CONTROL, "+1/+1"), [fx.counters(ref.self, "supply", 1)], {
         batched: true,
         label: "Marqueur de provision",
       }),
@@ -388,7 +388,7 @@ export const GREEN: Record<string, CardScript> = {
   "Thornvault Forager": {
     abilities: [
       manaAbility("G"),
-      activated({ tap: true, forage: true, effects: [fx.addManaChoice(2)], label: "Fourrager : deux mana" }),
+      activated({ tap: true, forage: true, effects: [fx.addManaCombination(2)], label: "Fourrager : deux mana" }),
       activated({
         mana: "{3}{G}",
         tap: true,

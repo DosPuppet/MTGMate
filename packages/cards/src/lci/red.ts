@@ -153,7 +153,7 @@ export const RED: Record<string, CardScript> = {
   "Goldfury Strider": {
     abilities: [
       activated({
-        tapOthers: { filter: ARTIFACT_OR_CREATURE_YOURS, count: 2 },
+        tapOthers: { filter: ARTIFACT_OR_CREATURE_YOURS, count: 2, includeSelf: true },
         sorcerySpeed: true,
         targets: [target.creature()],
         effects: [fx.pump(ref.target(), 2, 0)],
@@ -252,7 +252,7 @@ export const RED: Record<string, CardScript> = {
   "Sunshot Militia": {
     abilities: [
       activated({
-        tapOthers: { filter: ARTIFACT_OR_CREATURE_YOURS, count: 2 },
+        tapOthers: { filter: ARTIFACT_OR_CREATURE_YOURS, count: 2, includeSelf: true },
         sorcerySpeed: true,
         effects: [fx.damage(1, ref.eachOpponent)],
         label: "1 blessure à chaque adversaire",

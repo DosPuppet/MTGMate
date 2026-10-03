@@ -682,6 +682,14 @@ export const fx = {
     restriction,
     ...(keep ? { keep } : {}),
   }),
+  /** « Ajoutez N mana en n'importe quelle combinaison de couleurs » ; `colors` : « {R} ou {G} pour chaque … ». */
+  addManaCombination: (n: Amount, colors?: ManaType[], restriction?: ManaRestriction): Effect => ({
+    op: "addManaChoice",
+    n,
+    colors,
+    restriction,
+    combination: true,
+  }),
   revealUntilN: (filter: ObjectFilter, n: Amount, to?: MoveSpec, store?: string): Effect => ({
     op: "revealUntilN",
     filter,
@@ -1424,6 +1432,8 @@ export function manaAbility(
     linkedColors?: boolean;
     /** Autant de mana que de cartes de votre cimetière correspondant au filtre (The Core). */
     perGraveyard?: ObjectFilter;
+    /** « … en n'importe quelle combinaison de couleurs » : chaque mana a son propre type. */
+    combination?: boolean;
   } = {},
 ): ManaAbilityDef {
   return {
@@ -1435,6 +1445,7 @@ export function manaAbility(
     amountGraveyard: opts.perGraveyard,
     oncePerTurn: opts.oncePerTurn,
     produce: Array.isArray(produce) ? produce : [produce],
+    ...(opts.combination ? { combination: true } : {}),
     amount: amountProduced,
     amountPer: opts.per,
     restriction: opts.restriction,
@@ -1465,7 +1476,7 @@ export function activated(opts: {
   /** Sacrifier d'autres permanents (« Sacrifiez une autre créature »). */
   sacrificeOther?: { filter: ObjectFilter; count?: number; includeSelf?: boolean };
   removeCounters?: { kind: string; n: number };
-  tapOthers?: { filter: ObjectFilter; count: number };
+  tapOthers?: { filter: ObjectFilter; count: number; includeSelf?: boolean };
   /** Engager la créature équipée (« {T} » de la créature, pour une capacité portée par l'Équipement). */
   tapAttached?: boolean;
   /** Épuiser la source (« Exert »). */
@@ -1735,6 +1746,8 @@ export const when = {
     kind,
     firstThisTurn,
   }),
+  /** « Chaque fois que vous mettez un ou plusieurs marqueurs (de cette sorte) sur … ». */
+  youPutCounters: (who: ObjectFilter, kind?: string): TriggerSpec => ({ on: "countersPut", who, kind, by: "you" }),
   dealsDamage: (
     who: "self" | ObjectFilter,
     opts: { noncombatOnly?: boolean; toOpponent?: boolean; anySourceYouControl?: boolean } = {},

@@ -732,6 +732,12 @@ describe("Lorwyn Eclipsed, lot A — blanc", () => {
     expect(s.objects[idOf(s, "p1", "battlefield", "Bear Cub")]?.tapped).toBe(true);
     expect(idsOf(s, "p1", "battlefield", "Kithkin").every((id) => s.objects[id]?.tapped)).toBe(true);
     expect(s.objects[keeper]?.tapped).toBe(false);
+    // Avec deux autres créatures seulement, Kithkeeper (mal d'invocation compris, 302.6) est la troisième.
+    let t = scenario({ p1: { battlefield: [{ name: "Kithkeeper", sick: true }, "Bear Cub", "Llanowar Elves"] } });
+    const k2 = idOf(t, "p1", "battlefield", "Kithkeeper");
+    t = settle(activate(t, k2));
+    expect(t.objects[k2]?.tapped).toBe(true);
+    expect(chars(t, k2).keywords).toContain("flying");
   });
 
   it("Liminal Hold : exile un permanent adverse tant qu'il reste en jeu ; vous gagnez 2 PV", () => {
@@ -2930,25 +2936,25 @@ describe("Lorwyn Eclipsed, lot A — multicolores", () => {
       expect(idsOf(s, "p2", "graveyard", "Bear Cub")).toHaveLength(1);
     });
 
-    it("High Perfect Morcant : engager trois Elfes (Morcant compris) prolifère", () => {
-      const run = (elves: number, label: string) => {
+    it("High Perfect Morcant : engager trois Elfes (Morcant compris, même avec le mal d'invocation, 302.6) prolifère", () => {
+      const run = (elves: number) => {
         let s = scenario({
-          p1: { battlefield: ["High Perfect Morcant", ...lands("Llanowar Elves", elves)] },
+          p1: { battlefield: [{ name: "High Perfect Morcant", sick: true }, ...lands("Llanowar Elves", elves)] },
           p2: { battlefield: ["Serra Angel"] },
         });
         const angel = idOf(s, "p2", "battlefield", "Serra Angel");
         setCounters(s, angel, "-1/-1", 1);
-        s = chooseWanted(activate(s, idOf(s, "p1", "battlefield", "High Perfect Morcant"), label), [angel]);
+        s = chooseWanted(activate(s, idOf(s, "p1", "battlefield", "High Perfect Morcant"), "trois Elfes"), [angel]);
         return { s, angel };
       };
-      const three = run(3, "trois autres");
+      // Le paiement automatique engage d'abord les autres Elfes.
+      const three = run(3);
       expect(minus(three.s, three.angel)).toBe(2);
       expect(three.s.objects[idOf(three.s, "p1", "battlefield", "High Perfect Morcant")]?.tapped).toBe(false);
-      const two = run(2, "Morcant et deux");
+      const two = run(2);
       expect(minus(two.s, two.angel)).toBe(2);
       expect(two.s.objects[idOf(two.s, "p1", "battlefield", "High Perfect Morcant")]?.tapped).toBe(true);
-      // Avec seulement deux Elfes en plus, la forme « trois autres Elfes » n'est pas activable.
-      expect(() => run(2, "trois autres")).toThrow();
+      expect(() => run(1)).toThrow();
     });
 
     it("Hovel Hurler : arrive 4/5 ; retirer un marqueur donne +1/+0 et le vol à une autre créature", () => {

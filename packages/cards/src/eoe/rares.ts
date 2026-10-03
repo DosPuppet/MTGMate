@@ -351,7 +351,7 @@ export const RARES: Record<string, CardScript> = {
   Terrasymbiosis: {
     abilities: [
       triggered(
-        when.countersPut(CREATURE_YOU_CONTROL, "+1/+1"),
+        when.youPutCounters(CREATURE_YOU_CONTROL, "+1/+1"),
         fx.may("Piocher autant de cartes ?", fx.draw(amount.eventAmount)),
         { oncePerTurn: true, label: "Piochez autant de cartes" },
       ),

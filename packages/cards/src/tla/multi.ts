@@ -251,8 +251,10 @@ export const MULTI: Record<string, CardScript> = {
     ],
   },
   "Hermitic Herbalist": {
-    // Approximation : les deux mana sont d'une même couleur (et non « en toute combinaison de couleurs »).
-    abilities: [manaAbility(ANY_COLOR), manaAbility(ANY_COLOR, 2, { restriction: { spell: { subtype: "Lesson" } } })],
+    abilities: [
+      manaAbility(ANY_COLOR),
+      manaAbility(ANY_COLOR, 2, { restriction: { spell: { subtype: "Lesson" } }, combination: true }),
+    ],
   },
   "Iroh, Tea Master": {
     abilities: [

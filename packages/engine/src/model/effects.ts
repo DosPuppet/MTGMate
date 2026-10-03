@@ -686,7 +686,8 @@ export type Effect =
   /** Ajoute N mana d'une couleur choisie par le contrôleur (`colors` : parmi ces couleurs seulement, Devotees de TDM). */
   /** `restriction` : mana restreint, gardé à part dans la réserve (Ashling, Rimebound). */
   /** `keep` : le mana ne se vide pas entre les étapes et phases de ce tour (Branch of Vitu-Ghazi). */
-  | { op: "addManaChoice"; n: Amount; colors?: ManaType[]; restriction?: ManaRestriction; keep?: boolean }
+  /** `combination` : « N mana en n'importe quelle combinaison de ces couleurs » (répartis par le joueur). */
+  | { op: "addManaChoice"; n: Amount; colors?: ManaType[]; restriction?: ManaRestriction; keep?: boolean; combination?: boolean }
   /** Exile les N cartes du dessus ; le contrôleur en choisit une qu'il peut jouer ce tour-ci. */
   | { op: "impulse"; n: number; until?: "thisTurn" | "yourNextTurn" }
   /** Blessures réparties comme le contrôleur le désire entre les cibles (au moins 1 chacune). */

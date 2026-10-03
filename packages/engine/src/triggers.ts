@@ -996,6 +996,7 @@ function matchTrigger(s: GameState, ev: RulesEvent, t: TriggerSpec, src: Source)
     }
     case "countersPut": {
       if (ev.e !== "counters" || (t.kind && ev.kind !== t.kind) || (t.firstThisTurn && !ev.first)) return null;
+      if (t.by === "you" && ev.by !== me) return null;
       const v = liveView(s, ev.objectId);
       return v && matchWho(t.who, v, src) ? { objectId: ev.objectId, amount: ev.amount, player: v.controller } : null;
     }

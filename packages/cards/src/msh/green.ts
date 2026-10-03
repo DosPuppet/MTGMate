@@ -278,10 +278,8 @@ export const GREEN: Record<string, CardScript> = {
     ],
   },
   "Knight of Wundagore": {
-    // Approximation : « vous mettez un marqueur +1/+1 sur une autre créature » est lu comme « un marqueur +1/+1 est mis
-    // sur une autre créature que vous contrôlez ».
     abilities: [
-      triggered(when.countersPut({ ...CREATURES_YOU_CONTROL, other: true }, "+1/+1"), [fx.addCounters(ref.self, 1)], {
+      triggered(when.youPutCounters({ types: ["Creature"], other: true }, "+1/+1"), [fx.addCounters(ref.self, 1)], {
         oncePerTurn: true,
         label: "Un marqueur +1/+1 sur une autre créature : un sur celle-ci (une fois par tour)",
       }),

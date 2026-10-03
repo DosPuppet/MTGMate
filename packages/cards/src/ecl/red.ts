@@ -244,10 +244,10 @@ export const RED: Record<string, CardScript> = {
     abilities: [activated({ mana: "{1}{R}", effects: [fx.pump(ref.self, 1, 0, ["menace"])], label: "+1/+0 et la menace" })],
   },
   Flamebraider: {
-    // Approximation : deux mana d'une même couleur (et non « en toute combinaison de couleurs »).
     abilities: [
       manaAbility(["W", "U", "B", "R", "G"], 2, {
         restriction: { spell: ELEMENTAL, abilityOfSource: ELEMENTAL },
+        combination: true,
       }),
     ],
   },

@@ -12,7 +12,7 @@ import { legalActions } from "../src/legal";
 import { manaAbilitiesOf } from "../src/mana";
 import { chars, decider } from "../src/state";
 import { canBlock } from "../src/turn";
-import type { CardDef, ChoiceRequest, ChoiceValue, GameState, ManaType } from "../src/types";
+import type { CardDef, ChoiceRequest, ChoiceValue, GameState, ManaType, PlayerId } from "../src/types";
 import {
   type Answer,
   act,
@@ -21,6 +21,7 @@ import {
   cast,
   castable,
   castNowOf,
+  counterFrom,
   customCard,
   exiled,
   idOf,
@@ -1597,7 +1598,7 @@ describe("lot A, noir", () => {
       const rioter = idOf(s, "p1", "battlefield", "Boiling Rock Rioter");
       const ally = idOf(s, "p1", "battlefield", "Merchant of Many Hats");
       const card = idOf(s, "p1", "graveyard", "Merchant of Many Hats");
-      s = settle(activate(s, "p1", rioter, "autre Allié", { targets: { t: [card] } }));
+      s = settle(activate(s, "p1", rioter, "un Allié", { targets: { t: [card] } }));
       expect(s.objects[ally]?.tapped).toBe(true);
       expect(s.objects[rioter]?.tapped).toBe(false);
       const exiledCard = exiled(s, "Merchant of Many Hats")[0] as string;
@@ -1608,6 +1609,17 @@ describe("lot A, noir", () => {
       expect(idsOf(s, "p1", "battlefield", "Merchant of Many Hats")).toHaveLength(2);
     });
 
+    it("Boiling Rock Rioter : seul Allié, il s'engage lui-même pour le coût, même avec le mal d'invocation (302.6)", () => {
+      let s = scenario({
+        p1: { battlefield: [{ name: "Boiling Rock Rioter", sick: true }] },
+        p2: { graveyard: ["Bear Cub"] },
+      });
+      const rioter = idOf(s, "p1", "battlefield", "Boiling Rock Rioter");
+      s = settle(activate(s, "p1", rioter, "un Allié", { targets: { t: [idOf(s, "p2", "graveyard", "Bear Cub")] } }));
+      expect(s.objects[rioter]?.tapped).toBe(true);
+      expect(exiled(s, "Bear Cub")).toHaveLength(1);
+    });
+
     it("Boiling Rock Rioter : une carte exilée qui n'est pas un Allié, ou qui ne vous appartient pas, ne peut pas être lancée", () => {
       let s = scenario({
         p1: { battlefield: ["Boiling Rock Rioter", "Merchant of Many Hats", ...lands("Swamp", 2)] },
@@ -1615,7 +1627,7 @@ describe("lot A, noir", () => {
       });
       const rioter = idOf(s, "p1", "battlefield", "Boiling Rock Rioter");
       const theirs = s.players.p2?.graveyard[0] as string;
-      s = settle(activate(s, "p1", rioter, "autre Allié", { targets: { t: [theirs] } }));
+      s = settle(activate(s, "p1", rioter, "un Allié", { targets: { t: [theirs] } }));
       expect(exiled(s, "Merchant of Many Hats")).toHaveLength(1);
       s = settle(attack(s, [rioter]));
       expect(castNowOf(s)).toBeUndefined();
@@ -4917,5 +4929,20 @@ describe("Avatar: The Last Airbender : cartes du méta (PLAN-C, lot C13)", () =>
       s = settle(cast(s, "p1", "Iroh's Demonstration", { mode: 1, targets: { t: [angel] } }));
       expect(idsOf(s, "p1", "graveyard", "Serra Angel")).toHaveLength(1);
     });
+  });
+});
+
+describe("« Vous mettez des marqueurs » (lot K2)", () => {
+  it("Earth Kingdom General : « vous mettez des marqueurs sur une créature » : même celle d'un adversaire, jamais ceux d'un adversaire", () => {
+    const setup = (active: PlayerId) =>
+      scenario({
+        active,
+        p1: { battlefield: ["Plains", "Bear Cub", "Earth Kingdom General"], hand: ["Fleeting Flight"] },
+        p2: { battlefield: ["Plains", "Bear Cub"], hand: ["Fleeting Flight"] },
+      });
+    const a = setup("p2");
+    expect(counterFrom(a, "p2", idOf(a, "p1", "battlefield", "Bear Cub")).triggered).toEqual([]);
+    const b = setup("p1");
+    expect(counterFrom(b, "p1", idOf(b, "p2", "battlefield", "Bear Cub")).triggered).toEqual(["Earth Kingdom General"]);
   });
 });

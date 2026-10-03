@@ -121,6 +121,8 @@ export interface ManaSource {
   improvise?: boolean;
   /** Permanent sacrifié en coût additionnel, qui réduit le coût de {1} (Rottenmouth Viper) : ne paie que du générique. */
   sacrificeToPay?: boolean;
+  /** « … en n'importe quelle combinaison » : chaque mana produit prend l'un des types de `colors`. */
+  combination?: boolean;
   /**
    * Sources exclusives : deux capacités qui engagent ou sacrifient le même permanent (Forêt qui a aussi « {T} : un mana
    * de n'importe quelle couleur ») ont la même clé, et une seule peut servir.
@@ -339,6 +341,7 @@ export function manaSources(
         ability: i,
         colors: ab.produce,
         amount: manaAmount(s, id, ab),
+        ...(ab.combination && ab.produce.length > 1 ? { combination: true } : {}),
         isCreature: defOf(s, id).types.includes("Creature"),
         sacrifice: !!ab.cost.sacrificeSelf,
         key: ab.cost.tap || ab.cost.sacrificeSelf ? id : `${id}#${i}`,
@@ -458,13 +461,17 @@ export function manaSources(
   return out.sort((a, b) => rank(a) - rank(b) || a.colors.length - b.colors.length);
 }
 
-/** `forPayment` : le paiement automatique d'un coût, dont le solveur a vérifié la restriction (mana versé dans la réserve). */
+/**
+ * `forPayment` : le paiement automatique d'un coût, dont le solveur a vérifié la restriction (mana versé dans la réserve).
+ * `color` : le type produit ; une liste pour une source « en n'importe quelle combinaison » (le type de chaque mana, le
+ * premier pour ceux qui restent).
+ */
 export function activateManaAbility(
   s: GameState,
   player: PlayerId,
   id: ObjectId,
   ability: number,
-  color?: ManaType,
+  color?: ManaType | ManaType[],
   forPayment = false,
   keep: readonly ObjectId[] = [],
 ): void {
@@ -472,8 +479,12 @@ export function activateManaAbility(
   if (!o || o.controller !== player) throw new RulesError("Vous ne contrôlez pas cette source");
   const ab = manaAbilitiesOf(s, id)[ability];
   if (!ab || !canActivateMana(s, id, ab)) throw new RulesError("Capacité de mana indisponible");
-  const c = color ?? ab.produce[0];
-  if (!c || !ab.produce.includes(c)) throw new RulesError("Couleur de mana invalide");
+  const types = Array.isArray(color) ? color : color ? [color] : [];
+  if (types.length > 1 && !ab.combination) throw new RulesError("Cette source produit un seul type de mana");
+  const c = types[0] ?? ab.produce[0];
+  if (!c || types.concat(c).some((m) => !ab.produce.includes(m))) throw new RulesError("Couleur de mana invalide");
+  // Type de chaque mana produit : ceux demandés, puis le premier pour le reste.
+  const unitTypes = (n: number): ManaType[] => Array.from({ length: Math.max(0, n) }, (_, k) => types[k] ?? c);
   // Annulable seulement si {T} est le seul coût, sans autre effet ni déclenchement (façon Arena).
   const simple =
     !!ab.cost.tap &&
@@ -508,16 +519,14 @@ export function activateManaAbility(
   // peut pas être contrecarré ») engagé à la main : il va dans la réserve marquée avec sa source et son choix, pour que la
   // restriction et l'effet s'appliquent quand il sera dépensé.
   if (!forPayment && (ab.restriction || ab.rider) && pl) {
-    const n = amountNow();
-    const tag: TaggedMana = {
-      type: c,
+    const tag: Omit<TaggedMana, "type"> = {
       ...(ab.restriction ? { restriction: ab.restriction } : {}),
       source: id,
       ...(o.chosen ? { chosen: o.chosen } : {}),
       ...(ab.rider ? { rider: ab.rider } : {}),
     };
-    pl.restrictedMana = [...(pl.restrictedMana ?? []), ...Array.from({ length: n }, () => ({ ...tag }))];
-  } else if (pool) pool[c] += amountNow();
+    pl.restrictedMana = [...(pl.restrictedMana ?? []), ...unitTypes(amountNow()).map((type) => ({ ...tag, type }))];
+  } else if (pool) for (const m of unitTypes(amountNow())) pool[m] += 1;
   // Mana en plus d'un autre type (Shimmerwilds Growth : la couleur choisie) ou seulement pour ce type (Ultima : {C}).
   let otherBonus = false;
   for (const a of before?.reps ?? manaReplacements(s, id, ab)) {
@@ -538,7 +547,7 @@ export function activateManaAbility(
     if (type !== c) otherBonus = true;
   }
   const amount = (pool?.[c] ?? 0) - poolBefore;
-  if (simple && !otherBonus && s.triggers.length === triggersBefore && amount > 0)
+  if (simple && !otherBonus && types.length <= 1 && s.triggers.length === triggersBefore && amount > 0)
     s.manaUndo = [...(s.manaUndo ?? []), { player, source: id, color: c, amount }];
   // La réserve a changé : une capacité statique peut en dépendre (Ozai, the Phoenix King).
   bumpFor(s, "mana");
@@ -561,8 +570,8 @@ export function undoMana(s: GameState, player: PlayerId, source: ObjectId): void
 // ---------------------------------------------------------------------------
 
 export interface PaymentPlan {
-  /** Capacités de mana à activer. */
-  taps: { id: ObjectId; ability: number; color: ManaType }[];
+  /** Capacités de mana à activer. `colors` : le type de chaque mana d'une source « en n'importe quelle combinaison ». */
+  taps: { id: ObjectId; ability: number; color: ManaType; colors?: ManaType[] }[];
   /** Mana dépensé de la réserve, par type, une fois les capacités activées. */
   spend: Record<ManaType, number>;
 }
@@ -646,6 +655,8 @@ function solvePaymentOnce(
   const taps: PaymentPlan["taps"] = [];
   const extra = zero();
   const spend = zero();
+  // Surplus des sources « en n'importe quelle combinaison » : chaque mana restant prend l'un des types de la source.
+  const wild: { colors: ManaType[]; n: number; tap: PaymentPlan["taps"][number] }[] = [];
 
   const assign = (i: number): boolean => {
     if (i === pips.length) return true;
@@ -661,6 +672,19 @@ function solvePaymentOnce(
         spend[m] -= 1;
       }
     }
+    for (const w of wild) {
+      if (w.n <= 0) continue;
+      for (const m of allowed) {
+        if (!w.colors.includes(m)) continue;
+        w.n -= 1;
+        w.tap.colors?.push(m);
+        spend[m] += 1;
+        if (assign(i + 1)) return true;
+        spend[m] -= 1;
+        w.tap.colors?.pop();
+        w.n += 1;
+      }
+    }
     // 2. Une source non utilisée.
     for (let k = 0; k < sources.length; k++) {
       const src = sources[k] as ManaSource;
@@ -668,12 +692,15 @@ function solvePaymentOnce(
       for (const m of allowed) {
         if (!src.colors.includes(m)) continue;
         used.add(src.key);
-        taps.push({ id: src.id, ability: src.ability, color: m });
-        extra[m] += src.amount - 1;
+        const tap = { id: src.id, ability: src.ability, color: m, ...(src.combination ? { colors: [m] } : {}) };
+        taps.push(tap);
+        if (src.combination) wild.push({ colors: src.colors, n: src.amount - 1, tap });
+        else extra[m] += src.amount - 1;
         spend[m] += 1;
         if (assign(i + 1)) return true;
         spend[m] -= 1;
-        extra[m] -= src.amount - 1;
+        if (src.combination) wild.pop();
+        else extra[m] -= src.amount - 1;
         taps.pop();
         used.delete(src.key);
       }
@@ -691,6 +718,14 @@ function solvePaymentOnce(
       spend[m] += n;
       generic -= n;
     }
+  }
+  for (const w of wild) {
+    const m = w.colors[0] as ManaType;
+    const n = Math.min(generic, w.n);
+    for (let k = 0; k < n; k++) w.tap.colors?.push(m);
+    w.n -= n;
+    spend[m] += n;
+    generic -= n;
   }
   // Maîtrise de l'eau : au plus `purpose.waterbend` artefacts et créatures engagés.
   let waterbent = 0;
@@ -807,7 +842,7 @@ export function payMana(
       emit({ type: "moved", owner: o.owner, objectId: t.id, defId: o.defId, from: "graveyard", to: "exile" });
       moveObject(s, t.id, "exile");
       pool.C += 1;
-    } else activateManaAbility(s, player, t.id, t.ability, t.color, true, kept(purpose));
+    } else activateManaAbility(s, player, t.id, t.ability, t.colors ?? t.color, true, kept(purpose));
   }
   const pl = s.players[player];
   if (pl?.restrictedMana && usedRestricted.size) {

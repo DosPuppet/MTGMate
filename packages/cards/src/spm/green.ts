@@ -261,9 +261,8 @@ export const GREEN: Record<string, CardScript> = {
   },
   "Supportive Parents": {
     abilities: [
-      // Approximation : elle ne peut pas s'engager elle-même pour ce coût (deux autres créatures).
       activated({
-        tapOthers: { filter: { types: ["Creature"] }, count: 2 },
+        tapOthers: { filter: { types: ["Creature"] }, count: 2, includeSelf: true },
         effects: [fx.addManaChoice(1)],
         label: "Engagez deux créatures : un mana de n'importe quelle couleur",
       }),

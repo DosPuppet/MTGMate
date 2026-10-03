@@ -2383,6 +2383,17 @@ describe("lot A, vert", () => {
       expect(pool.reduce((a, b) => a + b, 0)).toBe(1);
     });
 
+    it("Supportive Parents : elle peut être une des deux créatures, même avec le mal d'invocation (302.6)", () => {
+      let s = scenario({ p1: { battlefield: [{ name: "Supportive Parents", sick: true }, "Bear Cub"] } });
+      const parents = idOf(s, "p1", "battlefield", "Supportive Parents");
+      s = activate(s, "p1", parents);
+      s = runUntil(s, (x) => x.pending?.kind === "priority");
+      expect(s.objects[parents]?.tapped).toBe(true);
+      expect(s.objects[idOf(s, "p1", "battlefield", "Bear Cub")]?.tapped).toBe(true);
+      const pool: number[] = Object.values(s.players.p1?.manaPool ?? {});
+      expect(pool.reduce((a, b) => a + b, 0)).toBe(1);
+    });
+
     describe("Terrific Team-Up", () => {
       it("coûte {2} de moins avec un permanent de VM 4 ou plus ; chaque créature gagne +1/+0 et blesse la cible", () => {
         let s = scenario({

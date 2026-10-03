@@ -246,7 +246,7 @@ export const GREEN: Record<string, CardScript> = {
   "Arcane Amphisbaena": { abilities: [triggered(when.entersSelf, [empower(2)], { label: "Renforcez Jace 2" })] },
   "Inspired Tethermage": {
     abilities: [
-      triggered(when.countersPut({ types: ["Planeswalker"], controller: "you" }, "loyalty"), [fx.addCounters(ref.self, 1)], {
+      triggered(when.youPutCounters({ types: ["Planeswalker"] }, "loyalty"), [fx.addCounters(ref.self, 1)], {
         label: "marqueur +1/+1",
       }),
       activated({ mana: "{6}", effects: [empower(2)], label: "Renforcez Jace 2" }),

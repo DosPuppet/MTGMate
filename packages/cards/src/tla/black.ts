@@ -82,14 +82,11 @@ export const BLACK: Record<string, CardScript> = {
   },
   "Boiling Rock Rioter": {
     abilities: [
-      // « Engagez un Allié dégagé que vous contrôlez » : un autre Allié, ou le Rioter lui-même (sans mal d'invocation,
-      // approximation : le moteur le traite comme un {T}).
       activated({
-        tapOthers: { filter: { subtype: "Ally" }, count: 1 },
+        tapOthers: { filter: { subtype: "Ally" }, count: 1, includeSelf: true },
         ...rioterExile,
-        label: "Engagez un autre Allié : exilez une carte d'un cimetière",
+        label: "Engagez un Allié : exilez une carte d'un cimetière",
       }),
-      activated({ tap: true, ...rioterExile, label: "Engagez-le : exilez une carte d'un cimetière" }),
       triggered(when.attacksSelf, [fx.castNow(ref.filtered(ref.linked, { subtype: "Ally", controller: "you" }))], {
         label: "Vous pouvez lancer un sort d'Allié exilé avec lui",
       }),

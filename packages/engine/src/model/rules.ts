@@ -321,7 +321,9 @@ export type TriggerSpec =
   | { on: "attackWith"; min?: number; filter?: ObjectFilter; anyPlayer?: boolean; defending?: "you" }
   /** « Chaque fois que des marqueurs sont placés sur … » */
   /** `firstThisTurn` : « si c'est la première fois ce tour-ci que des marqueurs sont mis sur elle » (Stalwart Successor). */
-  | { on: "countersPut"; who: "self" | ObjectFilter; kind?: string; firstThisTurn?: boolean }
+  /** `by: "you"` : « chaque fois que vous mettez des marqueurs » (celui qui les met : contrôleur de ce qui se résout, sinon
+   * du permanent). */
+  | { on: "countersPut"; who: "self" | ObjectFilter; kind?: string; firstThisTurn?: boolean; by?: "you" }
   /** Blessures infligées par une source (non de combat seulement si demandé), éventuellement à un adversaire. */
   /** `anySourceYouControl` : toute source (sort compris) contrôlée par le contrôleur de la capacité (Niv-Mizzet). */
   | {

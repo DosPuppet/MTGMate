@@ -279,3 +279,14 @@ export function attack(s: GameState, attackers: string[]): GameState {
   const cur = advanceUntil(s, (x) => x.pending?.kind === "declareAttackers");
   return act(cur, "p1", { type: "declareAttackers", attackers: attackers.map((id) => ({ id, defender: "p2" })) });
 }
+
+/**
+ * « Vous mettez des marqueurs » : `player` lance Fleeting Flight (de sa main, avec une Plaine) sur `target` et laisse le
+ * sort se résoudre ; renvoie l'état et les noms des sources des capacités déclenchées qui attendent sur la pile.
+ */
+export function counterFrom(s: GameState, player: PlayerId, target: string): { s: GameState; triggered: string[] } {
+  let cur = act(s, player, { type: "cast", card: idOf(s, player, "hand", "Fleeting Flight"), targets: { t: [target] } });
+  cur = passUntil(cur, (x) => !x.stack.some((i) => i.kind === "spell"));
+  const triggered = cur.stack.filter((i) => i.kind === "ability").map((i) => cur.defs[i.sourceDefId]?.name ?? "");
+  return { s: cur, triggered };
+}

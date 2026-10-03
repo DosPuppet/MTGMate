@@ -9,13 +9,14 @@ import { GameHost } from "../src/host";
 import { legalActions } from "../src/legal";
 import { changeCounters, chars, decider } from "../src/state";
 import { canBlock, declareBlockers } from "../src/turn";
-import type { GameState, TokenSpec } from "../src/types";
+import type { GameState, PlayerId, TokenSpec } from "../src/types";
 import { projectView } from "../src/view";
 import {
   act,
   advanceUntil,
   attack,
   castable,
+  counterFrom,
   exiled,
   idOf,
   idsOf,
@@ -840,5 +841,21 @@ describe("Edge of Eternities, cartes du méta (PLAN-C, lot C13)", () => {
     expect(s.objects[bear]?.damage).toBe(1);
     expect(chars(s, bear).toughness).toBe(4);
     expect(chars(s, bear).blockRules.some((r) => r.maxBlockers === 1)).toBe(true);
+  });
+});
+
+describe("« Vous mettez des marqueurs » (lot K2)", () => {
+  it("Terrasymbiosis : seuls les marqueurs +1/+1 que vous mettez sur vos créatures la déclenchent", () => {
+    const setup = (active: PlayerId) =>
+      scenario({
+        active,
+        p1: { battlefield: ["Plains", "Bear Cub", "Terrasymbiosis"], hand: ["Fleeting Flight"] },
+        p2: { battlefield: ["Plains", "Bear Cub"], hand: ["Fleeting Flight"] },
+      });
+    const a = setup("p2");
+    expect(counterFrom(a, "p2", idOf(a, "p1", "battlefield", "Bear Cub")).triggered).toEqual([]);
+    const b = setup("p1");
+    expect(counterFrom(b, "p1", idOf(b, "p1", "battlefield", "Bear Cub")).triggered).toEqual(["Terrasymbiosis"]);
+    expect(counterFrom(b, "p1", idOf(b, "p2", "battlefield", "Bear Cub")).triggered).toEqual([]);
   });
 });

@@ -727,3 +727,27 @@ describe("The Lost Caverns of Ixalan : cartes des decks du méta (PLAN-C, lot C1
     expect(idsOf(s, "p2", "battlefield", "Bear Cub")).toHaveLength(1);
   });
 });
+
+describe("« Engagez N artefacts et/ou créatures dégagés », la source comprise (302.6, lot K2)", () => {
+  it("Adaptive Gemguard : elle et un artefact, même avec le mal d'invocation ; seule, non", () => {
+    let s = scenario({ p1: { battlefield: [{ name: "Adaptive Gemguard", sick: true }, "Nutrient Block"] } });
+    const gem = idOf(s, "p1", "battlefield", "Adaptive Gemguard");
+    s = activate(s, gem);
+    expect(s.objects[gem]?.tapped).toBe(true);
+    expect(s.objects[gem]?.counters["+1/+1"]).toBe(1);
+    const alone = scenario({ p1: { battlefield: ["Adaptive Gemguard"] } });
+    expect(legalActions(alone, "p1").some((a) => a.type === "activate")).toBe(false);
+  });
+
+  it("Sunshot Militia, Warden of the Inner Sky, Goldfury Strider : la source compte parmi les permanents engagés", () => {
+    let s = scenario({ p1: { battlefield: ["Sunshot Militia", "Bear Cub"] } });
+    s = activate(s, idOf(s, "p1", "battlefield", "Sunshot Militia"));
+    expect(s.players.p2?.life).toBe(19);
+    let w = scenario({ p1: { battlefield: ["Warden of the Inner Sky", "Bear Cub", "Nutrient Block"] } });
+    const warden = idOf(w, "p1", "battlefield", "Warden of the Inner Sky");
+    w = activate(w, warden);
+    expect(w.objects[warden]?.counters["+1/+1"]).toBe(1);
+    const g = scenario({ p1: { battlefield: ["Goldfury Strider", "Bear Cub"] } });
+    expect(legalActions(g, "p1").some((a) => a.type === "activate")).toBe(true);
+  });
+});

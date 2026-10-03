@@ -601,3 +601,18 @@ describe("Final Fantasy, cartes du méta (PLAN-C, lot C13)", () => {
     expect(idsOf(t, "p1", "battlefield", "Bear Cub")).toHaveLength(1);
   });
 });
+
+describe("Mana en n'importe quelle combinaison (lot K2)", () => {
+  it("Vivi Ornitier : X mana en toute combinaison de {U} et {R} ; force 3, il paie seul {1}{U}{R}", () => {
+    let s = scenario({
+      p1: { battlefield: [{ name: "Vivi Ornitier", counters: { "+1/+1": 3 } }], hand: ["Broadside Barrage"] },
+      p2: { battlefield: ["Bear Cub"] },
+    });
+    const bear = idOf(s, "p2", "battlefield", "Bear Cub");
+    const barrage = idOf(s, "p1", "hand", "Broadside Barrage");
+    expect(legalActions(s, "p1").some((a) => a.type === "cast" && a.card === barrage)).toBe(true);
+    s = act(s, "p1", { type: "cast", card: barrage, targets: { t: [bear] } });
+    s = passAccepting(s, (x) => x.stack.length === 0 && x.pending?.kind === "priority");
+    expect(idsOf(s, "p2", "graveyard", "Bear Cub")).toHaveLength(1);
+  });
+});

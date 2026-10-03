@@ -203,8 +203,11 @@ export const RECORD_VERSION = 1;
  * - 72 : coût additionnel « sacrifiez un nombre quelconque de permanents », chacun réduisant le coût de {1} (Rottenmouth
  *   Viper) ; permission de lancer depuis le cimetière limitée à l'Aventure (Mosswood Dreadknight) ; sort lancé avec un
  *   mot-clé dans le journal du tour (Momo, Friendly Flier) ; couleur du mana hybride choisie au lancer (Deceit) (lot K1).
+ * - 73 : mana « en n'importe quelle combinaison de couleurs » réparti par le solveur ou par le joueur (Vivi Ornitier,
+ *   Muerra…) ; « chaque fois que vous mettez des marqueurs » ne compte que ceux que vous mettez, sur toute créature si le
+ *   texte le dit ; « engagez N créatures dégagées » peut engager la source (302.6) (lot K2).
  */
-export const RULES_VERSION = 72;
+export const RULES_VERSION = 73;
 
 /** Un point de contrôle toutes les N décisions (plus la dernière de la partie). */
 export const CHECKPOINT_EVERY = 25;

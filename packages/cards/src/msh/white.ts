@@ -155,8 +155,7 @@ export const WHITE: Record<string, CardScript> = {
   "Invisible Woman, Sue Storm": {
     abilities: [
       triggered(
-        // « vous mettez » : approché par « vous avez mis un marqueur sur lui ce tour-ci ».
-        when.countersPut({ ...OTHER_HEROES_YOU_CONTROL, countersPutByYouThisTurn: true }, "+1/+1"),
+        when.youPutCounters(OTHER_HEROES_YOU_CONTROL, "+1/+1"),
         fx.may("Créer un Mur 0/4 avec le défenseur ?", fx.createTokens(WALL_C)),
         { batched: true, label: "Un Mur 0/4 avec le défenseur" },
       ),

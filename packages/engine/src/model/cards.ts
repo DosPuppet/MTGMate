@@ -354,6 +354,8 @@ export interface ManaAbilityDef {
   cost: CostDef;
   /** Le joueur choisit l'un de ces types. */
   produce: ManaType[];
+  /** « N mana en n'importe quelle combinaison de [ces types] » : chaque mana a son propre type (Vivi Ornitier). */
+  combination?: boolean;
   /** Produit la couleur choisie en arrivant (Heraldic Banner). */
   produceChosen?: boolean;
   /** Mana dépensable seulement pour un sort (ou une capacité d'une créature source) correspondant au filtre. */
@@ -475,8 +477,9 @@ export interface CostDef {
   exileGraveyardSymbols?: { color: ManaType; n: number };
   /** « Retirez un nombre quelconque de marqueurs [sorte] de cette créature » : X marqueurs (The Astonishing Ant-Man). */
   removeCountersX?: string;
-  /** Engager d'autres permanents dégagés que vous contrôlez (choisis automatiquement). */
-  tapOthers?: { filter: ObjectFilter; count: number };
+  /** Engager d'autres permanents dégagés que vous contrôlez (choisis automatiquement). `includeSelf` : « engagez N
+   * créatures dégagées que vous contrôlez », la source peut en être une, même avec le mal d'invocation (302.6). */
+  tapOthers?: { filter: ObjectFilter; count: number; includeSelf?: boolean };
   /** Engager la créature à laquelle la source est attachée (elle doit pouvoir utiliser {T}). */
   tapAttached?: boolean;
   /** Épuiser la source (701.43) : elle ne se dégagera pas lors de la prochaine étape de dégagement de son contrôleur. */

@@ -17,6 +17,27 @@ export const HANDLERS: OpHandlers = {
   addManaChoice(s, r, e, ctx, key) {
     const answer = r.vars[key("color")];
     const options = e.colors ?? ["W", "U", "B", "R", "G"];
+    const n = evalAmount(s, ctx, e.n);
+    // « En n'importe quelle combinaison » : le joueur répartit les N mana entre les couleurs.
+    const split = !!e.combination && n > 1 && options.length > 1;
+    const suggestedColor = options.includes("G") ? "G" : (options[0] as string);
+    if (!answer && split) {
+      return {
+        ask: {
+          player: ctx.controller,
+          key: key("color"),
+          request: {
+            type: "divide",
+            intent: "manaColor",
+            prompt: `Répartissez les ${n} mana entre les couleurs`,
+            among: options,
+            total: n,
+            labels: { W: "Blanc", U: "Bleu", B: "Noir", R: "Rouge", G: "Vert" },
+            suggested: options.map((o) => (o === suggestedColor ? n : 0)),
+          },
+        },
+      };
+    }
     if (!answer) {
       return {
         ask: {
@@ -36,20 +57,21 @@ export const HANDLERS: OpHandlers = {
       };
     }
     const pl = s.players[ctx.controller];
-    const type = String(answer[0]) as ManaType;
-    const n = evalAmount(s, ctx, e.n);
+    // Type de chaque mana : la répartition, sinon la couleur choisie pour tous.
+    const units: ManaType[] = split
+      ? options.flatMap((o, i) => Array.from({ length: Math.max(0, Number(answer[i] ?? 0)) }, () => o))
+      : Array.from({ length: Math.max(0, n) }, () => String(answer[0]) as ManaType);
     const restriction = e.restriction;
     if (pl && restriction) {
-      pl.restrictedMana = [
-        ...(pl.restrictedMana ?? []),
-        ...Array.from({ length: Math.max(0, n) }, () => ({ type, restriction })),
-      ];
+      pl.restrictedMana = [...(pl.restrictedMana ?? []), ...units.map((type) => ({ type, restriction }))];
     } else if (pl) {
-      pl.manaPool[type] += n;
-      // « Jusqu'à la fin du tour, vous ne perdez pas ce mana entre les étapes et phases » (Branch of Vitu-Ghazi).
-      if (e.keep) {
-        pl.manaKeep ??= {};
-        pl.manaKeep[type] = (pl.manaKeep[type] ?? 0) + n;
+      for (const type of units) {
+        pl.manaPool[type] += 1;
+        // « Jusqu'à la fin du tour, vous ne perdez pas ce mana entre les étapes et phases » (Branch of Vitu-Ghazi).
+        if (e.keep) {
+          pl.manaKeep ??= {};
+          pl.manaKeep[type] = (pl.manaKeep[type] ?? 0) + 1;
+        }
       }
     }
     bump(s);

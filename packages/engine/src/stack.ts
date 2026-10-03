@@ -2087,9 +2087,13 @@ export function tapXCandidates(s: GameState, player: PlayerId, source: ObjectId,
 export function tapOthersOptions(s: GameState, player: PlayerId, source: ObjectId, ab: ActivatedAbilityDef): ObjectId[] {
   const f = ab.cost.tapOthers?.filter;
   if (!f) return [];
+  const self = !!ab.cost.tapOthers?.includeSelf;
   return s.battlefield.filter(
     (id) =>
-      id !== source && obj(s, id).controller === player && !obj(s, id).tapped && matchesObjectFilter(s, player, id, f, source),
+      (id !== source || self) &&
+      obj(s, id).controller === player &&
+      !obj(s, id).tapped &&
+      matchesObjectFilter(s, player, id, f, source),
   );
 }
 
@@ -2825,7 +2829,10 @@ export function activateAbility(s: GameState, player: PlayerId, source: ObjectId
   const tapOthers = ab.cost.tapOthers
     ? choices.tap?.length
       ? choices.tap
-      : [...tapOptions].sort((a, b) => chars(s, b).power - chars(s, a).power).slice(0, ab.cost.tapOthers.count)
+      : [...tapOptions]
+          // La source (« engagez N créatures », elle comprise) en dernier recours.
+          .sort((a, b) => Number(a === source) - Number(b === source) || chars(s, b).power - chars(s, a).power)
+          .slice(0, ab.cost.tapOthers.count)
     : [];
   if (
     ab.cost.tapOthers &&

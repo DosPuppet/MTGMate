@@ -11,7 +11,7 @@ import { fx, manaAbility, ref, spell, target } from "../src/dsl";
 import { legalActions } from "../src/legal";
 import { manaAbilitiesOf } from "../src/mana";
 import { changeCounters, chars } from "../src/state";
-import type { ActionOption, ChoiceValue, GameState } from "../src/types";
+import type { ActionOption, ChoiceValue, GameState, PlayerId } from "../src/types";
 import {
   type Answer,
   act,
@@ -19,6 +19,7 @@ import {
   cast,
   castable,
   castNowOf,
+  counterFrom,
   customCard,
   idOf,
   idsOf,
@@ -4556,5 +4557,49 @@ describe("Marvel Super Heroes : cartes du méta Standard", () => {
       const b2 = idOf(withBasic, "p1", "battlefield", "Gleaming Bastion");
       expect(tap(withBasic, b2, colored(withBasic, b2), "U").players.p1?.manaPool.U).toBe(1);
     });
+  });
+});
+
+describe("« Vous mettez des marqueurs » (lot K2)", () => {
+  it("Invisible Woman : seuls les marqueurs que vous mettez sur vos autres Héros la déclenchent", () => {
+    const setup = (active: PlayerId) =>
+      scenario({
+        active,
+        p1: {
+          battlefield: ["Plains", "Bear Cub", "Invisible Woman, Sue Storm", "Luke Cage, Power Man"],
+          hand: ["Fleeting Flight"],
+        },
+        p2: { battlefield: ["Plains", "Bear Cub"], hand: ["Fleeting Flight"] },
+      });
+    const a = setup("p2");
+    expect(counterFrom(a, "p2", idOf(a, "p1", "battlefield", "Luke Cage, Power Man")).triggered).toEqual([]);
+    const b = setup("p1");
+    expect(counterFrom(b, "p1", idOf(b, "p1", "battlefield", "Luke Cage, Power Man")).triggered).toEqual([
+      "Invisible Woman, Sue Storm",
+    ]);
+  });
+  it("Knight of Wundagore : un marqueur que vous mettez sur une autre créature, même adverse ; pas ceux d'un adversaire", () => {
+    const setup = (active: PlayerId) =>
+      scenario({
+        active,
+        p1: { battlefield: ["Plains", "Bear Cub", "Knight of Wundagore"], hand: ["Fleeting Flight"] },
+        p2: { battlefield: ["Plains", "Bear Cub"], hand: ["Fleeting Flight"] },
+      });
+    const a = setup("p2");
+    expect(counterFrom(a, "p2", idOf(a, "p1", "battlefield", "Bear Cub")).triggered).toEqual([]);
+    const b = setup("p1");
+    expect(counterFrom(b, "p1", idOf(b, "p2", "battlefield", "Bear Cub")).triggered).toEqual(["Knight of Wundagore"]);
+  });
+  it("Ant-Man, Colony Commander : un marqueur que vous mettez sur une créature, même adverse ; pas ceux d'un adversaire", () => {
+    const setup = (active: PlayerId) =>
+      scenario({
+        active,
+        p1: { battlefield: ["Plains", "Bear Cub", "Ant-Man, Colony Commander"], hand: ["Fleeting Flight"] },
+        p2: { battlefield: ["Plains", "Bear Cub"], hand: ["Fleeting Flight"] },
+      });
+    const a = setup("p2");
+    expect(counterFrom(a, "p2", idOf(a, "p1", "battlefield", "Bear Cub")).triggered).toEqual([]);
+    const b = setup("p1");
+    expect(counterFrom(b, "p1", idOf(b, "p2", "battlefield", "Bear Cub")).triggered).toEqual(["Ant-Man, Colony Commander"]);
   });
 });

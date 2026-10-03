@@ -282,11 +282,8 @@ export const MULTI: Record<string, CardScript> = {
     abilities: [triggered(when.entersSelf, [fx.createTokens(ROBOT_1)], { label: "Un Robot 1/1" })],
   },
   "Mikey & Leo, Chaos & Order": {
-    // « Chaque fois que vous mettez un marqueur sur une créature que vous contrôlez » : sur une de vos créatures, et vous
-    // avez mis des marqueurs sur une de vos créatures ce tour-ci (même approximation qu'Ant-Man, Colony Commander).
     abilities: [
-      triggered(when.countersPut(YOUR_CREATURES), [fx.draw(1)], {
-        condition: cond.controls({ types: ["Creature"], countersPutByYouThisTurn: true }),
+      triggered(when.youPutCounters(YOUR_CREATURES), [fx.draw(1)], {
         oncePerTurn: true,
         label: "Piochez une carte (une fois par tour)",
       }),

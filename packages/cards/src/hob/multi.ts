@@ -166,9 +166,8 @@ export const MULTI: Record<string, CardScript> = {
     ],
   },
   "The Great Goblin": {
-    // Approximation : les marqueurs mis par un adversaire sur vos Gobelins, Orques et Armées déclenchent aussi.
     abilities: [
-      triggered(when.countersPut(GOBLIN_ORC_ARMY), [fx.damage(2, ref.target())], {
+      triggered(when.youPutCounters(GOBLIN_ORC_ARMY), [fx.damage(2, ref.target())], {
         targets: [target.player("t", "opponent")],
         label: "Marqueurs sur un Gobelin, un Orque ou une Armée : 2 blessures à un adversaire",
       }),

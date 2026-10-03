@@ -110,8 +110,13 @@ export const LEGENDS3: Record<string, CardScript> = {
   },
   "Vivi Ornitier": {
     abilities: [
-      // Approximation : le mana est d'une seule couleur ({U} ou {R}) au lieu d'une combinaison.
-      manaAbility(["U", "R"], 1, { selfPower: true, noTap: true, oncePerTurn: true, condition: cond.yourTurn }),
+      manaAbility(["U", "R"], 1, {
+        selfPower: true,
+        noTap: true,
+        oncePerTurn: true,
+        condition: cond.yourTurn,
+        combination: true,
+      }),
       triggered(
         when.castSpell("you", { notTypes: ["Creature"] }),
         [fx.addCounters(ref.self, 1), fx.damage(1, ref.eachOpponent)],

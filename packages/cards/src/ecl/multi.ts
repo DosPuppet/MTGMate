@@ -376,19 +376,11 @@ export const MULTI: Record<string, CardScript> = {
       triggered(when.enters({ subtype: "Elf", controller: "you" }), [fx.blight(1, ref.eachOpponent)], {
         label: "Chaque adversaire flétrit 1",
       }),
-      // « Engagez trois Elfes dégagés que vous contrôlez » : Morcant peut en être un (seconde forme).
       activated({
-        tapOthers: { filter: { subtype: "Elf" }, count: 3 },
+        tapOthers: { filter: { subtype: "Elf" }, count: 3, includeSelf: true },
         sorcerySpeed: true,
         effects: [fx.proliferate()],
-        label: "Engagez trois autres Elfes : proliférez",
-      }),
-      activated({
-        tap: true,
-        tapOthers: { filter: { subtype: "Elf" }, count: 2 },
-        sorcerySpeed: true,
-        effects: [fx.proliferate()],
-        label: "Engagez Morcant et deux autres Elfes : proliférez",
+        label: "Engagez trois Elfes : proliférez",
       }),
     ],
   },
@@ -502,10 +494,10 @@ export const MULTI: Record<string, CardScript> = {
   },
   "Kirol, Attentive First-Year": {
     abilities: [
-      // Approximation : Kirol ne peut pas s'engager lui-même pour ce coût, et la cible n'est pas limitée aux capacités
-      // que vous contrôlez (le moteur ne filtre pas les éléments de pile par contrôleur).
+      // Approximation : la cible n'est pas limitée aux capacités que vous contrôlez (le moteur ne filtre pas les éléments
+      // de pile par contrôleur).
       activated({
-        tapOthers: { filter: { types: ["Creature"] }, count: 2 },
+        tapOthers: { filter: { types: ["Creature"] }, count: 2, includeSelf: true },
         oncePerTurn: true,
         targets: [
           {

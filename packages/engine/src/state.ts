@@ -67,7 +67,7 @@ export type RulesEvent =
   /** `nth` : rang de cette carte parmi celles piochées par ce joueur ce tour-ci. */
   | { e: "draw"; player: PlayerId; nth: number; objectId?: ObjectId }
   | { e: "attackWith"; player: PlayerId; count: number }
-  | { e: "counters"; objectId: ObjectId; kind: string; amount: number; first: boolean }
+  | { e: "counters"; objectId: ObjectId; kind: string; amount: number; first: boolean; by: PlayerId }
   /** Un sort ou une capacité vient d'être mis sur la pile avec ces cibles (identifiant d'élément de pile). */
   | { e: "targeted"; stackId: string; controller: PlayerId; targets: string[] }
   | { e: "untap"; objectId: ObjectId }
@@ -385,7 +385,7 @@ export function changeCounters(s: GameState, o: GameObject, kind: string, n: num
     const by = s.resolving?.controller ?? o.controller;
     o.countersPutBy = first ? [by] : [...new Set([...(o.countersPutBy ?? []), by])];
     o.countersPutKinds = [...new Set([...(first ? [] : (o.countersPutKinds ?? [])), `${by}|${kind}`])];
-    rulesEvent(s, { e: "counters", objectId: o.id, kind, amount: after - before, first });
+    rulesEvent(s, { e: "counters", objectId: o.id, kind, amount: after - before, first, by });
     // Journal du tour (Lasting Tarfire : « si vous avez mis un marqueur sur une créature ce tour-ci ») : celui qui les
     // met est le contrôleur de ce qui se résout, sinon (coût, action) le contrôleur du permanent.
     const c = chars(s, o.id);

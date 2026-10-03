@@ -8,7 +8,7 @@ import { describe, expect, it } from "vitest";
 import { destroy } from "../src/actions";
 import { legalActions } from "../src/legal";
 import { chars } from "../src/state";
-import type { ActionOption, ChoiceRequest, ChoiceValue, GameState, ManaType } from "../src/types";
+import type { ActionOption, ChoiceRequest, ChoiceValue, GameState, ManaType, PlayerId } from "../src/types";
 import {
   type Answer,
   act,
@@ -17,6 +17,7 @@ import {
   canActivate,
   cast,
   castNowOf,
+  counterFrom,
   customCard,
   idOf,
   idsOf,
@@ -4147,5 +4148,21 @@ describe("lot C1, cartes uniques", () => {
     });
     s = settleAll(castCard(s, "Kitsune's Technique", { targets: { t: ["p2"] } }));
     expect(s.players.p2?.graveyard).toHaveLength(3);
+  });
+});
+
+describe("« Vous mettez des marqueurs » (lot K2)", () => {
+  it("Mikey & Leo : seuls les marqueurs que vous mettez sur vos créatures le déclenchent", () => {
+    const setup = (active: PlayerId) =>
+      scenario({
+        active,
+        p1: { battlefield: ["Plains", "Bear Cub", "Mikey & Leo, Chaos & Order"], hand: ["Fleeting Flight"] },
+        p2: { battlefield: ["Plains", "Bear Cub"], hand: ["Fleeting Flight"] },
+      });
+    const a = setup("p2");
+    expect(counterFrom(a, "p2", idOf(a, "p1", "battlefield", "Bear Cub")).triggered).toEqual([]);
+    const b = setup("p1");
+    expect(counterFrom(b, "p1", idOf(b, "p1", "battlefield", "Bear Cub")).triggered).toEqual(["Mikey & Leo, Chaos & Order"]);
+    expect(counterFrom(b, "p1", idOf(b, "p2", "battlefield", "Bear Cub")).triggered).toEqual([]);
   });
 });

@@ -54,7 +54,7 @@ export const WHITE: Record<string, CardScript> = {
   "Adaptive Gemguard": {
     abilities: [
       activated({
-        tapOthers: { filter: ARTIFACT_OR_CREATURE, count: 2 },
+        tapOthers: { filter: ARTIFACT_OR_CREATURE, count: 2, includeSelf: true },
         sorcerySpeed: true,
         effects: [fx.addCounters(ref.self, 1)],
         label: "Marqueur +1/+1",
@@ -246,7 +246,7 @@ export const WHITE: Record<string, CardScript> = {
         { condition: cond.counterAtLeast("+1/+1", 3), label: "Vol et vigilance (trois marqueurs)" },
       ),
       activated({
-        tapOthers: { filter: ARTIFACT_OR_CREATURE_YOURS, count: 3 },
+        tapOthers: { filter: ARTIFACT_OR_CREATURE_YOURS, count: 3, includeSelf: true },
         sorcerySpeed: true,
         effects: [fx.addCounters(ref.self, 1), fx.scry(1)],
         label: "Marqueur +1/+1, regard 1",
