@@ -32,7 +32,5 @@
  "Cruel Alliance | target | 2 « target » dans le texte, 1 dans le script": "cible remplacée (« instead ») : un seul mot cible, dont le nombre ou le filtre dépend du coût payé (kicker, cadeau, travail d'équipe)",
  "Too Evil to Stay Dead | target | 2 « target » dans le texte, 1 dans le script": "cible remplacée (« instead ») : un seul mot cible, dont le nombre ou le filtre dépend du coût payé (kicker, cadeau, travail d'équipe)",
  "The Eagles Are Coming! | target | 2 « target » dans le texte, 1 dans le script": "cible remplacée (« instead ») : un seul mot cible, dont le nombre ou le filtre dépend du coût payé (kicker, cadeau, travail d'équipe)",
- "Officious Interrogation | target | 2 « target » dans le texte, 1 dans le script": "« for each target beyond the first » : mention du nombre de cibles, pas une cible",
- "Light of Judgment | target | 1 « target » dans le texte, 2 dans le script": "l'Équipement est ciblé, et non choisi à la résolution (approximation documentée)",
- "Unexpected Request | target | 1 « target » dans le texte, 2 dans le script": "l'Équipement est ciblé au lancement, et non choisi à la résolution (approximation documentée)"
+ "Officious Interrogation | target | 2 « target » dans le texte, 1 dans le script": "« for each target beyond the first » : mention du nombre de cibles, pas une cible"
 }

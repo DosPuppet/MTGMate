@@ -231,7 +231,8 @@ export type Effect =
   /** Sacrifier un objet précis (jeton temporaire, « sacrifiez-la »). */
   | { op: "sacrificeIt"; what: Ref }
   /** Déplace un objet (retour en main, exil, retour du cimetière sur le champ de bataille…). */
-  | { op: "moveTo"; what: Ref; spec: MoveSpec; store?: { name: string; filter?: ObjectFilter } }
+  /** `attachTo` : une Aura ou un Équipement qui arrive attaché à l'objet désigné, s'il peut l'être (One Last Job). */
+  | { op: "moveTo"; what: Ref; spec: MoveSpec; store?: { name: string; filter?: ObjectFilter }; attachTo?: Ref }
   /** Double les marqueurs de chaque type (ou d'un type donné). */
   | { op: "doubleAllCounters"; what: Ref }
   /** Déplace tous les objets d'une zone correspondant au filtre. */
@@ -685,7 +686,17 @@ export type Effect =
   /** « Ce joueur choisit l'un d'eux » : `store` le choisi, `${store}Rest` les autres (Trial of Agony). */
   /** `anyNumber` : un nombre quelconque (Expose the Culprit) ; `anyZone` : aussi des cartes hors du champ de bataille (Lazav). */
   /** `prompt` : le texte de la question (« Choisissez le terrain à renvoyer ») ; par défaut, « ces créatures ». */
-  | { op: "chooseAmong"; what: Ref; chooser: Ref; store: string; anyNumber?: boolean; anyZone?: boolean; prompt?: string }
+  /** `optional` : « jusqu'à un » (Light of Judgment) ou « vous pouvez » (Unexpected Request) : aucun choix possible. */
+  | {
+      op: "chooseAmong";
+      what: Ref;
+      chooser: Ref;
+      store: string;
+      anyNumber?: boolean;
+      anyZone?: boolean;
+      prompt?: string;
+      optional?: boolean;
+    }
   /** Attache une Aura ou un Équipement à un permanent (701.3). */
   /** `store` : nombre d'objets réellement attachés (701.3b : un objet déjà attaché ne « devient » pas attaché ; Thorin). */
   | { op: "attach"; what: Ref; to: Ref; store?: string }

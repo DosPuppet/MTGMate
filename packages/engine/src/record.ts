@@ -262,8 +262,12 @@ export const RECORD_VERSION = 1;
  * - 92 : « jusqu'à X cibles » d'une capacité déclenchée choisies au déclenchement (Prismabasher, Heroic Feast, Rollercrusher
  *   Ride…) ; modes d'une capacité réflexive (Hylda) et d'une capacité modale accordée ; Ghostly Dancers choisit à la
  *   résolution (PLAN-D, lot D6).
+ * - 93 : sorte de marqueur retirée en coût choisie par le joueur (`counterKind`) ; copies facultatives de Moonlit
+ *   Meditation et Mirrormind Crown ; Équipement ou hôte choisi à la résolution (Light of Judgment, Unexpected Request,
+ *   One Last Job : `chooseAmong.optional`, `moveTo.attachTo`) ; coût « engagez quatre permanents » qui garde le mana
+ *   nécessaire (Guardian of the Great Door) (PLAN-D, lot D7).
  */
-export const RULES_VERSION = 92;
+export const RULES_VERSION = 93;
 
 /** Un point de contrôle toutes les N décisions (plus la dernière de la partie). */
 export const CHECKPOINT_EVERY = 25;

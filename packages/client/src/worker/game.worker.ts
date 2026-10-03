@@ -99,6 +99,15 @@ function applySandbox(s: GameState, sandbox: Sandbox): void {
       }
     }
   }
+  // Marqueurs posés à la main (plusieurs sortes sur un même permanent).
+  for (const [player, side] of Object.entries(sandbox)) {
+    for (const [name, kind, n] of side.counters ?? []) {
+      const o = Object.values(s.objects).find(
+        (x) => x.zone === "battlefield" && x.controller === player && s.defs[x.defId]?.name === name,
+      );
+      if (o) o.counters[kind] = (o.counters[kind] ?? 0) + n;
+    }
+  }
   // Attachements ensuite : l'hôte peut appartenir à un autre joueur (Aura sur une créature adverse).
   for (const [player, side] of Object.entries(sandbox)) {
     for (const [name, hostName, hostPlayer] of side.attach ?? []) {

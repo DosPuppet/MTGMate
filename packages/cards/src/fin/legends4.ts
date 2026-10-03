@@ -153,15 +153,19 @@ export const LEGENDS4: Record<string, CardScript> = {
     abilities: [triggered(when.yourUpkeep, [fx.tripleTriad], { label: "Triple Triad" })],
   },
   "Unexpected Request": {
-    // Approximation : l'Équipement est ciblé au lancement (et non choisi à la résolution).
+    // « Vous pouvez attacher un Équipement que vous contrôlez » : choisi à la résolution, pas ciblé.
     spell: spell(
-      [target.creature("t"), target.upTo(1, targetObj("e", EQUIPMENT_YOU, "Équipement que vous contrôlez"))],
+      [target.creature("t")],
       [
         fx.gainControl(ref.target("t")),
         fx.untap(ref.target("t")),
         fx.pump(ref.target("t"), 0, 0, ["haste"]),
-        fx.attach(ref.target("t"), ref.target("e")),
-        fx.delayed([fx.unattach(ref.target("e"))], { e: ref.target("e") }),
+        fx.chooseAmong(ref.permanentsOf(ref.you, EQUIPMENT_YOU), ref.you, "e", {
+          optional: true,
+          prompt: "Unexpected Request : vous pouvez attacher un Équipement que vous contrôlez à la créature",
+        }),
+        fx.attach(ref.target("t"), ref.stored("e")),
+        fx.delayed([fx.unattach(ref.target("e"))], { e: ref.stored("e") }),
       ],
     ),
   },

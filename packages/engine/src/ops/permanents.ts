@@ -1,6 +1,6 @@
 /** Effets du moteur : modifications de permanents, contrôle, copies et jetons. Chaque clé est un `op` d'`Effect` (voir `runEffect`, effects.ts). */
 
-import { createTokenCopy, createTokens, tokenCopyCount } from "../actions";
+import { createTokenCopy, createTokens, tokenCopyCount, tokenCopyReplacement } from "../actions";
 import { addControlEffect } from "../control";
 import type { OpHandlers } from "../effects";
 import {
@@ -349,17 +349,39 @@ export const HANDLERS: OpHandlers = {
       attacking = answer ? String(answer[0]) : suggested;
     }
     const enters = { tapped: !!(e.tapped || e.attacking), attacking };
+    const creators = e.attachTo || !e.for ? [ctx.controller] : resolveRef(s, ctx, e.for).filter((x) => isPlayer(s, x));
+    // Moonlit Meditation, Mirrormind Crown : « vous pouvez à la place créer des copies » — demandé avant toute création.
+    const declined = new Set<string>();
+    for (const p of creators) {
+      const rep = n > 0 ? tokenCopyReplacement(s, p, token) : undefined;
+      if (!rep?.may) continue;
+      const answer = r.vars[key(`copies:${p}`)];
+      if (!answer) {
+        return {
+          ask: {
+            player: rep.controller,
+            key: key(`copies:${p}`),
+            request: {
+              type: "yesNo",
+              intent: "may",
+              prompt: `${nameOf(s, rep.sourceId)} : créer à la place ${n > 1 ? "des copies" : "une copie"} de ${nameOf(s, rep.host)} ?`,
+              suggested: [1],
+            },
+          },
+        };
+      }
+      if (answer[0] !== 1) declined.add(p);
+    }
     if (e.attachTo) {
       for (const host of resolveRef(s, ctx, e.attachTo).filter((x) => onBattlefield(s, x))) {
-        const made = createTokens(s, ctx.controller, token, n, true, enters);
+        const made = createTokens(s, ctx.controller, token, n, true, enters, declined.has(ctx.controller));
         for (const id of made) attach(s, id, host);
         created.push(...made);
       }
       if (e.store) r.vars[`$ids:${e.store}`] = created;
       return;
     }
-    for (const p of e.for ? resolveRef(s, ctx, e.for).filter((x) => isPlayer(s, x)) : [ctx.controller])
-      created.push(...createTokens(s, p, token, n, true, enters));
+    for (const p of creators) created.push(...createTokens(s, p, token, n, true, enters, declined.has(p)));
     if (e.store) r.vars[`$ids:${e.store}`] = created;
     return;
   },

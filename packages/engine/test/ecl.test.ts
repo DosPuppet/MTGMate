@@ -7,6 +7,7 @@ import { describe, expect, it } from "vitest";
 import { dealDamage, destroy, sourceFromObject } from "../src/actions";
 import * as dsl from "../src/dsl";
 import { runEffect } from "../src/effects";
+import { RulesError } from "../src/errors";
 import { legalActions } from "../src/legal";
 import { manaAbilitiesOf, manaValue } from "../src/mana";
 import { spellCost } from "../src/stack";
@@ -4357,16 +4358,54 @@ describe("Lorwyn Eclipsed, lot D (remplacements des familles H et I, R1)", () =>
     expect(s.players.p1?.manaPool.R).toBe(1);
   });
 
-  it("Mirrormind Crown : la première création de jetons du tour donne des copies de la créature équipée", () => {
+  it("« Retirez un marqueur de cette créature » : la sorte est choisie par le joueur (PLAN-D, D7)", () => {
+    const s = scenario({ p1: { battlefield: ["Moonlit Lamenter", "Plains", "Plains"], library: lands("Plains", 2) } });
+    const lamenter = idOf(s, "p1", "battlefield", "Moonlit Lamenter");
+    const o = s.objects[lamenter];
+    if (o) o.counters = { "-1/-1": 1, oil: 1 };
+    const opt = legalActions(s, "p1").find((a) => a.type === "activate" && a.source === lamenter);
+    const pick = opt?.type === "activate" ? opt.picks?.find((p) => p.slot === "counterKind") : undefined;
+    expect([...(pick?.options ?? [])].sort()).toEqual(["-1/-1", "oil"]);
+    expect(pick?.suggested).toEqual(["-1/-1"]);
+    expect(pick?.labels?.oil).toBe("Marqueur Huile (1)");
+    if (opt?.type !== "activate") throw new Error("capacité non proposée");
+    expect(() =>
+      act(s, "p1", { type: "activate", source: lamenter, ability: opt.ability, picks: { counterKind: ["stun"] } }),
+    ).toThrow(RulesError);
+    const t = act(s, "p1", { type: "activate", source: lamenter, ability: opt.ability, picks: { counterKind: ["oil"] } });
+    expect(t.objects[lamenter]?.counters["-1/-1"]).toBe(1);
+    expect(t.objects[lamenter]?.counters.oil ?? 0).toBe(0);
+    // Sans choix : les −1/−1 d'abord.
+    const u = act(s, "p1", { type: "activate", source: lamenter, ability: opt.ability });
+    expect(u.objects[lamenter]?.counters["-1/-1"] ?? 0).toBe(0);
+    expect(u.objects[lamenter]?.counters.oil).toBe(1);
+  });
+
+  it("Mirrormind Crown : la première création de jetons du tour peut donner des copies de la créature équipée", () => {
     const s = scenario({ p1: { battlefield: ["Mirrormind Crown", "Pelakka Wurm"] } });
     const crown = idOf(s, "p1", "battlefield", "Mirrormind Crown");
     const wurm = idOf(s, "p1", "battlefield", "Pelakka Wurm");
     const c = s.objects[crown];
     if (c) c.attachedTo = wurm;
-    runEffect(s, resolutionOf(s, "p1", crown), dsl.fx.createTokens(ELF_TOKEN, 2));
+    // « Vous pouvez » (PLAN-D, D7) : la question est posée avant toute création.
+    const two = dsl.fx.createTokens(ELF_TOKEN, 2);
+    const r1 = resolutionOf(s, "p1", crown);
+    const asked = runEffect(s, r1, two);
+    expect(asked && "ask" in asked ? asked.ask.request.type : undefined).toBe("yesNo");
+    expect(s.battlefield.filter((id) => chars(s, id).name === "Elfe")).toHaveLength(0);
+    r1.vars[`${r1.pc}:copies:p1`] = [1];
+    runEffect(s, r1, two);
     expect(s.battlefield.filter((id) => chars(s, id).name === "Pelakka Wurm")).toHaveLength(3);
     runEffect(s, resolutionOf(s, "p1", crown), dsl.fx.createTokens(ELF_TOKEN, 1));
     expect(s.battlefield.filter((id) => chars(s, id).name === "Elfe")).toHaveLength(1);
+    // Un autre tour : refusées, des Elfes ; la première fois du tour est tout de même passée.
+    s.turn.onceFired = [];
+    const r2 = resolutionOf(s, "p1", crown);
+    r2.vars[`${r2.pc}:copies:p1`] = [0];
+    runEffect(s, r2, two);
+    expect(s.battlefield.filter((id) => chars(s, id).name === "Elfe")).toHaveLength(3);
+    expect(runEffect(s, resolutionOf(s, "p1", crown), dsl.fx.createTokens(ELF_TOKEN, 1))).toBeUndefined();
+    expect(s.battlefield.filter((id) => chars(s, id).name === "Pelakka Wurm")).toHaveLength(3);
   });
 });
 

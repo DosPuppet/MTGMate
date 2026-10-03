@@ -213,6 +213,8 @@ export const ref = {
   eachPlayer: { kind: "eachPlayer" } as Ref,
   /** Le permanent auquel la source est attachée (« la créature équipée / enchantée »). */
   attached: { kind: "attached" } as Ref,
+  /** Les permanents attachés à l'objet désigné (filtrer avec `ref.filtered`). */
+  attachmentsOf: (r: Ref): Ref => ({ kind: "attachmentsOf", ref: r }),
   controllerOf: (r: Ref): Ref => ({ kind: "controllerOf", ref: r }),
   /** « cette carte », où qu'elle soit (Angelic Destiny). */
   selfCard: { kind: "selfCard" } as Ref,
@@ -1038,7 +1040,7 @@ export const fx = {
     what: Ref,
     chooser: Ref,
     store: string,
-    opts: { anyNumber?: boolean; anyZone?: boolean; prompt?: string } = {},
+    opts: { anyNumber?: boolean; anyZone?: boolean; prompt?: string; optional?: boolean } = {},
   ): Effect => ({
     op: "chooseAmong",
     what,
@@ -1126,11 +1128,12 @@ export const fx = {
     duration,
   }),
   sacrificeIt: (what: Ref): Effect => ({ op: "sacrificeIt", what }),
-  moveTo: (what: Ref, spec: MoveSpec, store?: { name: string; filter?: ObjectFilter }): Effect => ({
+  moveTo: (what: Ref, spec: MoveSpec, store?: { name: string; filter?: ObjectFilter }, attachTo?: Ref): Effect => ({
     op: "moveTo",
     what,
     spec,
     store,
+    ...(attachTo ? { attachTo } : {}),
   }),
   /** Renvoie en main (depuis n'importe quelle zone). */
   toHand: (what: Ref): Effect => ({ op: "moveTo", what, spec: { to: "hand" } }),

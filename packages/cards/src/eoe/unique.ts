@@ -81,7 +81,7 @@ export const UNIQUE: Record<string, CardScript> = {
       eventReplacement({
         event: "tokens",
         to: "you",
-        instead: { copyOfAttached: true, firstEachTurn: true },
+        instead: { copyOfAttached: true, firstEachTurn: true, may: true },
         modify: {},
         label: "Premiers jetons du tour : copies",
       }),

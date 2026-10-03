@@ -380,6 +380,10 @@ export function resolveRef(s: GameState, ctx: EffectContext, ref: Ref): string[]
       const pw = s.objects[atk.defender];
       return pw ? [pw.controller] : [];
     }
+    case "attachmentsOf": {
+      const hosts = new Set(resolveRef(s, ctx, ref.ref));
+      return s.battlefield.filter((id) => hosts.has(s.objects[id]?.attachedTo ?? ""));
+    }
     case "attached": {
       const host = s.objects[ctx.sourceId]?.attachedTo ?? s.lki[ctx.sourceId]?.attachedTo;
       // Aura de joueur (Grievous Wound) : le joueur enchanté.

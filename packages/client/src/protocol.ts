@@ -18,6 +18,8 @@ export type Sandbox = Record<
     tokens?: [number, string][];
     /** Aura ou Équipement de ce joueur, attaché à une créature (nom) de `hostPlayer` (ce joueur par défaut). */
     attach?: [card: string, host: string, hostPlayer?: string][];
+    /** Marqueurs posés sur un permanent (nom) de ce joueur, après la mise en jeu. */
+    counters?: [card: string, kind: string, n: number][];
   }
 >;
 

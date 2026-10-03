@@ -145,6 +145,34 @@ export const HANDLERS: OpHandlers = {
       r.vars[`$ids:${e.store}Rest`] = ids.filter((x) => !chosen.includes(x));
       return;
     }
+    // « Jusqu'à un » : la question est posée même pour un seul objet, et peut rester sans réponse.
+    if (e.optional) {
+      const answer = r.vars[key("among")];
+      if (!answer) {
+        return {
+          ask: {
+            player: chooser,
+            key: key("among"),
+            request: {
+              type: "pick",
+              intent: "pickCards",
+              prompt: e.prompt ?? "Choisissez jusqu'à une de ces créatures",
+              options: ids,
+              min: 0,
+              max: 1,
+              suggested: ids.slice(0, 1),
+            },
+          },
+        };
+      }
+      const chosen = answer
+        .map(String)
+        .filter((id) => ids.includes(id))
+        .slice(0, 1);
+      r.vars[`$ids:${e.store}`] = chosen;
+      r.vars[`$ids:${e.store}Rest`] = ids.filter((x) => !chosen.includes(x));
+      return;
+    }
     let picked = ids.length === 1 ? ids[0] : r.vars[key("among")]?.map(String)[0];
     if (picked === undefined) {
       // Suggestion : celle qui a la plus grande endurance.
@@ -1032,11 +1060,22 @@ export const HANDLERS: OpHandlers = {
       Pick<EntersContext, "copyOf" | "copyMods" | "copyChosen" | "attachTo" | "chosen" | "shockPaid">
     > = {};
     if (e.spec.to === "battlefield") {
+      const host = e.attachTo ? resolveRef(s, ctx, e.attachTo).find((x) => onBattlefield(s, x)) : undefined;
       for (const id of ids) {
         const o = s.objects[id];
         const d = s.defs[o?.defId ?? ""];
         if (!o || !d) continue;
         const who = e.spec.underYourControl ? ctx.controller : o.owner;
+        // « … attachée à [une créature] » : l'Aura ou l'Équipement arrive attaché, s'il peut l'être.
+        if (
+          host &&
+          (d.enchant
+            ? !d.enchant.player && auraHosts(s, who, id).includes(host)
+            : d.subtypes.includes("Equipment") && isCreature(s, host))
+        ) {
+          choices[id] = { attachTo: host };
+          continue;
+        }
         if (d.entersAsCopyOf) {
           const options = copyCandidates(s, who, id);
           const k = key(`copy-${id}`);

@@ -2644,6 +2644,15 @@ describe("Lost Caverns of Ixalan, lot K8 : cartes mythiques, rares et peu commun
       );
       expect(s.battlefield.filter((id) => s.objects[id]?.tapped)).toHaveLength(6);
       expect(chars(s, idOf(s, "p1", "battlefield", "Guardian of the Great Door")).keywords).toContain("flying");
+      // Sans choix explicite (PLAN-D, D7) : les permanents engagés par défaut gardent de quoi payer {W}{W}, quel que soit
+      // l'ordre des terrains.
+      let t = scenario({
+        p1: { battlefield: [...lands("Plains", 2), ...lands("Forest", 4)], hand: ["Guardian of the Great Door"] },
+      });
+      const guardian = idOf(t, "p1", "hand", "Guardian of the Great Door");
+      expect(castable(t, "p1", guardian)).toBe(true);
+      t = resolve(castCard(t, "p1", "Guardian of the Great Door"));
+      expect(idsOf(t, "p1", "battlefield", "Guardian of the Great Door")).toHaveLength(1);
     });
 
     it("Helping Hand : une carte de créature de VM 3 ou moins revient engagée", () => {

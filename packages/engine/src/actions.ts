@@ -583,6 +583,46 @@ function tokenRoom(s: GameState, n: number): number {
   return room;
 }
 
+/** Remplacements des jetons (R1, famille H), vus de celui qui les crée et du jeton créé. */
+function tokenReplacements(s: GameState, controller: PlayerId, v: LkiSnapshot) {
+  return eventReplacements(s, "tokens").filter(
+    (a) =>
+      playerSide(s, a, controller) &&
+      (!a.r.toFilter || matchesView(v, a.r.toFilter, a.controller, a.sourceId)) &&
+      (!a.r.instead?.firstEachTurn || !s.turn.onceFired.includes(`tokens:${a.sourceId}`)),
+  );
+}
+
+/** Draconic Visitor : d'autres jetons à la place (les jetons d'artefact deviennent des Dragons 5/5 volants). */
+function swappedToken(s: GameState, controller: PlayerId, t: TokenSpec): TokenSpec {
+  return tokenReplacements(s, controller, tokenView(t, controller)).find((a) => !!a.r.instead?.token)?.r.instead?.token ?? t;
+}
+
+/**
+ * Moonlit Meditation, Mirrormind Crown : le remplacement qui crée, à la place, des copies du permanent auquel sa source
+ * est attachée (la première fois de chaque tour). `may` : « vous pouvez » — la question est posée avant la création par
+ * l'effet qui crée les jetons (`copyDeclined` de `createTokens`).
+ */
+export function tokenCopyReplacement(
+  s: GameState,
+  controller: PlayerId,
+  t: TokenSpec,
+): { sourceId: ObjectId; controller: PlayerId; host: ObjectId; may: boolean; firstEachTurn: boolean } | undefined {
+  const t2 = swappedToken(s, controller, t);
+  for (const a of tokenReplacements(s, controller, tokenView(t2, controller))) {
+    const host = a.sourceId ? s.objects[s.objects[a.sourceId]?.attachedTo ?? ""] : undefined;
+    if (a.sourceId && a.r.instead?.copyOfAttached && host?.zone === "battlefield")
+      return {
+        sourceId: a.sourceId,
+        controller: a.controller,
+        host: host.id,
+        may: !!a.r.instead.may,
+        firstEachTurn: !!a.r.instead.firstEachTurn,
+      };
+  }
+  return undefined;
+}
+
 export function createTokens(
   s: GameState,
   controller: PlayerId,
@@ -590,27 +630,17 @@ export function createTokens(
   count: number,
   extras = true,
   enters: EntersContext = {},
+  /** Le contrôleur de Moonlit Meditation a refusé les copies (« vous pouvez »). */
+  copyDeclined = false,
 ): ObjectId[] {
-  // Remplacements des jetons (R1, famille H), vus de celui qui les crée et du jeton créé.
-  const tokenReps = (v: LkiSnapshot) =>
-    eventReplacements(s, "tokens").filter(
-      (a) =>
-        playerSide(s, a, controller) &&
-        (!a.r.toFilter || matchesView(v, a.r.toFilter, a.controller, a.sourceId)) &&
-        (!a.r.instead?.firstEachTurn || !s.turn.onceFired.includes(`tokens:${a.sourceId}`)),
-    );
-  // Draconic Visitor : d'autres jetons à la place (les jetons d'artefact deviennent des Dragons 5/5 volants).
-  const swap = tokenReps(tokenView(t, controller)).find((a) => !!a.r.instead?.token);
-  if (swap?.r.instead?.token) t = swap.r.instead.token;
+  const tokenReps = (v: LkiSnapshot) => tokenReplacements(s, controller, v);
+  t = swappedToken(s, controller, t);
   // Moonlit Meditation, Mirrormind Crown : la première fois de chaque tour, des copies du permanent auquel la source est
-  // attachée, à la place.
-  const copies = tokenReps(tokenView(t, controller)).find((a) => {
-    const host = a.sourceId ? s.objects[s.objects[a.sourceId]?.attachedTo ?? ""] : undefined;
-    return !!a.r.instead?.copyOfAttached && host?.zone === "battlefield";
-  });
-  if (copies?.sourceId && count > 0) {
-    if (copies.r.instead?.firstEachTurn) s.turn.onceFired.push(`tokens:${copies.sourceId}`);
-    const model = s.objects[s.objects[copies.sourceId]?.attachedTo ?? ""];
+  // attachée, à la place. Refusées, la première fois est tout de même passée.
+  const copies = count > 0 ? tokenCopyReplacement(s, controller, t) : undefined;
+  if (copies) {
+    if (copies.firstEachTurn) s.turn.onceFired.push(`tokens:${copies.sourceId}`);
+    const model = copyDeclined ? undefined : s.objects[copies.host];
     if (model) {
       const out: ObjectId[] = [];
       const n = tokenRoom(s, chooseReplacementOrder(count, tokenModifiers(tokenReps(snapshot(s, model.id))), "max"));

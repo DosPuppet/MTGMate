@@ -151,6 +151,8 @@ export interface CastChoices {
 export type CostSlot =
   | "blight"
   | "counterFrom"
+  /** « Retirez un marqueur de cette créature » : les sortes de marqueurs retirées (options : des sortes, pas des objets). */
+  | "counterKind"
   | "graveyardExile"
   | "graveyardExileX"
   | "evidence"
@@ -182,6 +184,8 @@ export interface CostPick {
   suggested: ObjectId[];
   /** Retirer des marqueurs : un même objet peut revenir, au plus autant de fois que ses marqueurs. */
   repeat?: Record<ObjectId, number>;
+  /** Options qui ne sont pas des objets (sortes de marqueurs, `counterKind`) : leur libellé. */
+  labels?: Record<string, string>;
   /** Réunir des preuves N : des cartes de valeur de mana totale N ou plus (`count` ignoré). */
   minTotal?: { n: number; values: Record<ObjectId, number> };
   /** Sort : seulement s'il est kické (ou marchandé…), ou lancé pour son coût alternatif. */

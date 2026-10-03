@@ -13,6 +13,7 @@ import {
   sacrifice as sacrificePermanent,
 } from "./actions";
 import { ask } from "./choices";
+import { counterLabel } from "./counterLabels";
 import {
   announceDiscard,
   announceDiscardBatch,
@@ -25,7 +26,7 @@ import {
 } from "./effects";
 import { RulesError, rethrowAsRules } from "./errors";
 import { copiableExceptions, copiedDefId, effectivePower, hasKeyword } from "./layers";
-import { costToText, type ManaPurpose, manaAbilitiesOf, manaValue, payMana, totalCost } from "./mana";
+import { canPay, costToText, type ManaPurpose, manaAbilitiesOf, manaValue, payMana, totalCost } from "./mana";
 import { enterChoiceRequest } from "./ops/permanents";
 import { copyStackItem } from "./stackChoices";
 import {
@@ -1514,8 +1515,25 @@ export function autoAdditional(
     out.bounce = c;
   }
   if (add.tap) {
-    const c = pick(mine({ ...add.tap.filter, tapped: false }), add.tap.count, (id) => (isLand(id) ? 100 : chars(s, id).power));
+    const options = mine({ ...add.tap.filter, tapped: false });
+    const score = (id: ObjectId) => (isLand(id) ? 100 : chars(s, id).power);
+    let c = pick(options, add.tap.count, score);
     if (!c) return null;
+    // Guardian of the Great Door : si les permanents engagés par défaut ne laissent pas de quoi payer le mana du sort, on
+    // les choisit un par un en gardant les sources nécessaires (quand c'est possible).
+    const cost = spellCost(s, player, d, { flashback, card });
+    const others = [...used].filter((id) => !c?.includes(id));
+    if (!canPay(s, player, cost, new Set(used))) {
+      for (const id of c) used.delete(id);
+      const chosen: ObjectId[] = [];
+      for (let i = 0; i < add.tap.count; i++) {
+        const rest = [...options].filter((id) => !chosen.includes(id)).sort((a, b) => score(a) - score(b));
+        const keep = rest.find((id) => canPay(s, player, cost, new Set([...others, ...chosen, id]))) ?? rest[0];
+        if (keep) chosen.push(keep);
+      }
+      for (const id of chosen) used.add(id);
+      c = chosen;
+    }
     out.tap = c;
   }
   if (add.exileGraveyard) {
@@ -2447,17 +2465,14 @@ function countersFor(o: GameObject, kind: string): number {
   return kind === "any" ? Object.values(o.counters).reduce<number>((n, k) => n + (k ?? 0), 0) : (o.counters[kind] ?? 0);
 }
 
-/** Retire N marqueurs de n'importe quelle sorte : les −1/−1 d'abord, les +1/+1 en dernier. */
-function removeAnyCounters(s: GameState, o: GameObject, n: number): void {
+/** N marqueurs de n'importe quelle sorte, choix par défaut : les −1/−1 d'abord, les +1/+1 en dernier (une sorte par marqueur). */
+function anyCountersDefault(o: GameObject, n: number): string[] {
   const kinds = Object.keys(o.counters).sort(
     (a, b) => Number(b === "-1/-1") - Number(a === "-1/-1") || Number(a === "+1/+1") - Number(b === "+1/+1"),
   );
-  let left = n;
-  for (const k of kinds) {
-    const take = Math.min(left, o.counters[k] ?? 0);
-    if (take > 0) changeCounters(s, o, k, -take);
-    left -= take;
-  }
+  const out: string[] = [];
+  for (const k of kinds) for (let i = 0; i < (o.counters[k] ?? 0) && out.length < n; i++) out.push(k);
+  return out;
 }
 
 /** Plus grande endurance parmi les créatures d'un joueur (0 s'il n'en a pas). */
@@ -2579,6 +2594,21 @@ export function activationPicks(
         count: 1,
         options: [best, ...options.filter((id) => id !== best)],
         suggested: [best],
+      });
+  }
+  // « Retirez un marqueur de cette créature » : la sorte, quand la source en porte plusieurs.
+  const self = s.objects[source];
+  if (c.removeCounters?.kind === "any" && self) {
+    const kinds = Object.keys(self.counters).filter((k) => (self.counters[k] ?? 0) > 0);
+    if (kinds.length > 1)
+      out.push({
+        slot: "counterKind",
+        label: `Retirez ${c.removeCounters.n} marqueur(s) de cette créature`,
+        count: c.removeCounters.n,
+        options: kinds,
+        labels: Object.fromEntries(kinds.map((k) => [k, `Marqueur ${counterLabel(k)} (${self.counters[k]})`])),
+        suggested: anyCountersDefault(self, c.removeCounters.n),
+        repeat: Object.fromEntries(kinds.map((k) => [k, self.counters[k] ?? 0])),
       });
   }
   if (c.removeCounterFrom) {
@@ -3061,8 +3091,14 @@ export function activateAbility(s: GameState, player: PlayerId, source: ObjectId
     rulesEvent(s, { e: "crewed", vehicle: source, crew: [...crew] });
   }
   if (ab.cost.exertSelf) o.exerted = true;
-  if (ab.cost.removeCounters?.kind === "any") removeAnyCounters(s, o, ab.cost.removeCounters.n);
-  else if (ab.cost.removeCounters) changeCounters(s, o, ab.cost.removeCounters.kind, -ab.cost.removeCounters.n);
+  // « Retirez un marqueur de cette créature » : les sortes choisies (`counterKind`), sinon le choix par défaut.
+  if (ab.cost.removeCounters?.kind === "any") {
+    const n = ab.cost.removeCounters.n;
+    const kinds = pickNow(s, player, source, ab, x, "counterKind", choices);
+    const byKind = new Map<string, number>();
+    for (const k of kinds.length ? kinds : anyCountersDefault(o, n)) byKind.set(k, (byKind.get(k) ?? 0) + 1);
+    for (const [k, m] of byKind) changeCounters(s, o, k, -m);
+  } else if (ab.cost.removeCounters) changeCounters(s, o, ab.cost.removeCounters.kind, -ab.cost.removeCounters.n);
   if (ab.cost.payLife) payLife_(s, player, ab.cost.payLife);
   if (ab.cost.payLifeX && x > 0) payLife_(s, player, x);
   for (const id of tapOthers) tapObject(s, obj(s, id));

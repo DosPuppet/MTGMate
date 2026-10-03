@@ -114,6 +114,7 @@
     "absolute": "Loot, the Anomaly — propriété d'une seule carte (audit du 02/10/2026, § 5.1) : à rattacher à une famille dès qu'une autre carte en a besoin",
     "addChosenLandType": "Multiversal Passage — propriété d'une seule carte (audit du 02/10/2026, § 5.1) : à rattacher à une famille dès qu'une autre carte en a besoin",
     "addSourceCounters": "Fated Firepower — propriété d'une seule carte (audit du 02/10/2026, § 5.1) : à rattacher à une famille dès qu'une autre carte en a besoin",
+    "attachedToTarget": "Fiery Annihilation — cible restreinte par une autre cible (« jusqu'à un Équipement ciblé attaché à cette créature ») ; Light of Judgment, qui l'utilisait aussi, choisit son Équipement à la résolution (non ciblé, PLAN-D D7) : à réutiliser pour toute cible « attachée à [la cible] »",
     "addSourcePower": "Hawkeye, Young Avenger — propriété d'une seule carte (audit du 02/10/2026, § 5.1) : à rattacher à une famille dès qu'une autre carte en a besoin",
     "adventureOnly": "Mosswood Dreadknight — permission de lancer depuis le cimetière limitée à la face Aventure (lot K1) : famille des permissions de jeu (`grantPlay`), à réutiliser pour toute permission limitée à une face",
     "amountCounters": "The Eternity Elevator — propriété d'une seule carte (audit du 02/10/2026, § 5.1) : à rattacher à une famille dès qu'une autre carte en a besoin",
@@ -247,15 +248,15 @@
     "PlayFromZone": 16,
     "LayerMods": 31,
     "Effect": 178,
-    "Effect (champs)": 666,
+    "Effect (champs)": 668,
     "TriggerSpec": 62,
     "TriggerSpec (champs)": 157,
     "Condition": 82,
     "Condition (champs)": 138,
     "Amount": 77,
     "Amount (champs)": 131,
-    "Ref": 34,
-    "Ref (champs)": 53
+    "Ref": 35,
+    "Ref (champs)": 55
   },
   "importCycleMax": 21,
   "ceilingNotes": [
@@ -273,6 +274,7 @@
     "PLAN-D D1 : opération chooseOption (« au choix », 608.2d), générique : Effect 176 → 177, Effect (champs) 658 → 662",
     "PLAN-D D2 : contempler (additionalCost.behold, StackItem.beheld, cond.beheld, opération behold), une quinzaine de cartes : StackItem 44 → 45, Effect 177 → 178, Effect (champs) 662 → 665, Condition 80 → 81, Condition (champs) 136 → 137",
     "PLAN-D D5 : whenCast (condition retenue au lancement, 2 cartes), triggerCondition (Social Snub) : CardDef 94 → 95, StackItem 45 → 46, Condition 81 → 82, Condition (champs) 137 → 138",
-    "PLAN-D D6 : modes d'une capacité réflexive (reflexive.modes, Hylda) : Effect (champs) 665 → 666"
+    "PLAN-D D6 : modes d'une capacité réflexive (reflexive.modes, Hylda) : Effect (champs) 665 → 666",
+    "PLAN-D D7 : moveTo.attachTo (« revient attaché à », One Last Job) et chooseAmong.optional (« jusqu'à un », Light of Judgment, Unexpected Request) : Effect (champs) 666 → 668, Ref 34 → 35, Ref (champs) 53 → 55"
   ]
 }

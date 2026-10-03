@@ -45,7 +45,7 @@ Dans l'ordre où elles ont été ajoutées, extension par extension.
   - **Coûts retirés automatiquement :**
     - `choix auto` Quilled Greatwurm : les six marqueurs sont retirés d'abord des créatures qui en ont le plus ;
   - `règle` Soulstone Sanctuary (« tous les types de créature ») : tout sous-type sauf ceux de terrain, d'artefact et d'enchantement connus ;
-  - `choix auto` Moonlit Meditation, Mirrormind Crown : les copies sont toujours créées (pas de choix « vous pouvez »).
+  - `choix auto` Moonlit Meditation, Mirrormind Crown : « vous pouvez » est demandé pour les jetons créés par un effet de création de jetons ; ceux d'amasser, d'endurer ou d'un cadeau sont toujours remplacés par des copies.
 - **Foundations (`docs/extensions/fdn.md`) :**
   - `règle` Fishing Pole : la capacité accordée à la créature équipée est portée par l'Équipement (coût « engager la créature équipée ») ;
   - `choix auto` Muldrotha : une carte à plusieurs types de permanent utilise automatiquement le premier type encore libre ;
@@ -54,7 +54,6 @@ Dans l'ordre où elles ont été ajoutées, extension par extension.
   - `règle` Tinybones : seuls les sorts avec un marqueur de butin sont jouables, pas les terrains ;
   - `timing` Bolt Bend : la nouvelle cible est choisie à la résolution.
 - **Final Fantasy (`docs/extensions/fin.md`) :**
-  - `règle` Light of Judgment : l'Équipement à détruire est ciblé au lancement (attaché à la créature ciblée), et non choisi à la résolution ;
   - `règle` Demon Wall : « a un marqueur » est lu comme « a un marqueur +1/+1 » ;
   - `règle` Freya Crescent : son mana sert à toute capacité d'un Équipement, pas seulement à Équiper ;
   - `règle` Sorceress's Schemes : seulement une carte d'éphémère ou de rituel du cimetière (pas une carte exilée avec flashback) ;
@@ -66,7 +65,7 @@ Dans l'ordre où elles ont été ajoutées, extension par extension.
   - `règle` Memories Returning : vous choisissez les trois cartes gardées (l'adversaire ne choisit pas celles du dessous) ;
   - `règle` Sin, Spira's Punishment : six copies au plus par déclenchement ;
   - `règle` Zack Fair : tous les Équipements qui lui étaient attachés sont déplacés (et non un seul) ;
-  - `règle` Stolen Uniform, Unexpected Request : l'Équipement est détaché à l'étape de fin ; pour Unexpected Request, il est ciblé au lancement ;
+  - `règle` Stolen Uniform : l'Équipement est détaché à l'étape de fin ;
   - `règle` Ultima, Origin of Oblivion : l'effet sur les terrains avec un marqueur de fléau cesse si Ultima quitte le champ de bataille ;
   - `règle` Zenos, Shinryu : la créature choisie est une cible ; l'adversaire choisi est le premier qui perd la partie ;
   - `règle` Rydia, Summoner of Mist : toute carte de Saga de votre cimetière peut être ciblée ; elle ne revient que si sa valeur de mana vaut X ;
@@ -88,7 +87,6 @@ Dans l'ordre où elles ont été ajoutées, extension par extension.
   - `règle` Giant Beaver, Rambling Possum : seules les créatures de la dernière activation de Monture du tour comptent comme l'ayant montée ;
   - `règle` Fortune, The Gitrog : toutes les créatures qui ont monté la Monture sont concernées (et non une au plus, au choix) ;
   - `règle` Tinybones, the Pickpocket : une carte de permanent sans le flash du cimetière adverse ne peut pas être lancée pendant la résolution (la permission « lancer maintenant » ne lève pas le moment de lancement pour le cimetière) ;
-  - `règle` One Last Job : la créature à laquelle l'Aura ou l'Équipement revient attaché est ciblée au lancement (et non choisie à la résolution ; la créature renvoyée par le premier mode ne peut pas être choisie) ;
   - `règle` Fblthp, Lost on the Range : comploter la carte du dessus passe par une capacité (sur la pile) qui paie son coût de mana ;
   - `règle` Kellan, the Kid : le permanent est mis sur le champ de bataille au lieu d'être lancé ;
   - `règle` Obeka : les étapes d'entretien supplémentaires ne font que déclencher les capacités « au début de votre entretien » ;
@@ -152,7 +150,6 @@ Dans l'ordre où elles ont été ajoutées, extension par extension.
   - `choix auto` Kastral (premier mode) : un Oiseau de votre main, sinon de votre cimetière ;
   - `règle` Thought-Stalker Warlock : « si il a perdu des points de vie ce tour-ci » est vérifié pour l'adversaire ciblé.
 - **The Lost Caverns of Ixalan (`docs/extensions/lci.md`) :**
-  - `règle` Guardian of the Great Door : n'est proposé que si les quatre permanents engagés par défaut (choisis sans tenir compte du paiement) laissent de quoi payer {W}{W} ; un choix explicite est accepté ;
   - `règle` mana des Cavernes (Bat Colony) et « en utilisant du mana produit par [source] » (Tecutlan, The Myriad Pools) : seulement le mana engagé par le paiement automatique ;
   - `règle` Warden of the Inner Sky : seuls les marqueurs +1/+1 comptent (« trois marqueurs ou plus ») ;
   - `règle` Glowcap Lantern : on peut regarder la carte du dessus tant qu'on contrôle l'Équipement, même non attaché ;
@@ -196,7 +193,7 @@ Dans l'ordre où elles ont été ajoutées, extension par extension.
   - `choix auto` Kíli the Resourceful : la première capacité d'équipement du tour coûte {0} d'office ;
   - `règle` Interdimensional Web Watch : les deux mana servent à tout sort lancé ailleurs que depuis la main (et non seulement depuis l'exil).
 - **Lorwyn Eclipsed (`docs/extensions/ecl.md`) :**
-  - `choix auto` « Retirez un marqueur de cette créature » : les marqueurs retirés sont choisis par le moteur (−1/−1 d'abord, +1/+1 en dernier) ; Rhys, the Evermore retire tous les marqueurs −1/−1 de la cible ;
+  - `choix auto` Rhys, the Evermore retire tous les marqueurs −1/−1 de la cible ;
   - `timing` Kindle the Inner Flame (flashback « contemplez trois Élémentaux ») : condition de lancement ;
   - `règle` Isilu, Carrier of Twilight, Rhys, the Evermore : la persistance accordée est une capacité déclenchée nommée « Persistance » (sans badge de mot-clé) ;
   - `règle` Kirol, Attentive First-Year : la capacité ciblée n'est pas limitée à celles que vous contrôlez ;

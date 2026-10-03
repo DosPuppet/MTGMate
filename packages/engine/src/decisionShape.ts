@@ -45,7 +45,9 @@ function castChoices(s: GameState, d: Rec): void {
   opt(d, "targets", (v) => !!v && typeof v === "object" && !Array.isArray(v) && Object.values(v).every(isStrArray));
   // Objets payés en coût, par emplacement : des listes d'identifiants d'objets existants (répétés pour les marqueurs).
   opt(d, "picks", (v) => !!v && typeof v === "object" && !Array.isArray(v) && Object.values(v).every(isStrArray));
-  for (const ids of Object.values((d.picks as Record<string, string[]> | undefined) ?? {})) objectRefs(s, ids);
+  // Sortes de marqueurs (`counterKind`) : ce ne sont pas des objets ; vérifiées par le paiement du coût.
+  for (const [slot, ids] of Object.entries((d.picks as Record<string, string[]> | undefined) ?? {}))
+    if (slot !== "counterKind") objectRefs(s, ids);
 }
 
 function pairs(v: unknown, a: string, b: string): boolean {

@@ -1877,7 +1877,7 @@ describe("Outlaws of Thunder Junction, lot K8 : rares (2)", () => {
     expect(s.players.p1?.life).toBe(22);
   });
 
-  it("One Last Job : les trois modes, une Aura ou un Équipement revient attaché à votre créature", () => {
+  it("One Last Job : les trois modes, une Aura ou un Équipement revient attaché à une créature choisie à la résolution", () => {
     let s = scenario({
       p1: {
         battlefield: ["Swab Goblin", ...lands("Plains", 7)],
@@ -1900,13 +1900,22 @@ describe("Outlaws of Thunder Junction, lot K8 : rares (2)", () => {
       type: "cast",
       card: job,
       mode: modeOf(s, "One Last Job", label),
-      targets: { c: [cub], m: [felidar], a: [boots], h: [goblin] },
+      targets: { c: [cub], m: [felidar], a: [boots] },
     });
-    s = settle(s);
+    // La créature qui reçoit l'Équipement est choisie à la résolution (PLAN-D, D7) : celle que renvoie le premier mode
+    // peut l'être.
+    const offered: string[] = [];
+    s = settle(s, (req, _p, cur) => {
+      if (req.type !== "pick" || !req.prompt.startsWith("One Last Job")) return undefined;
+      offered.push(...req.options.map((id) => nameOf(cur, id) ?? id));
+      return req.options.filter((id) => nameOf(cur, id) === "Bear Cub");
+    });
+    expect(offered.sort()).toEqual(["Bear Cub", "Bounding Felidar", "Swab Goblin"]);
     expect(idsOf(s, "p1", "battlefield", "Bear Cub")).toHaveLength(1);
     expect(idsOf(s, "p1", "battlefield", "Bounding Felidar")).toHaveLength(1);
     const onField = idOf(s, "p1", "battlefield", "Lavaspur Boots");
-    expect(s.objects[onField]?.attachedTo).toBe(goblin);
+    expect(s.objects[onField]?.attachedTo).toBe(idOf(s, "p1", "battlefield", "Bear Cub"));
+    expect(s.objects[onField]?.attachedTo).not.toBe(goblin);
     expect(namesIn(s, s.players.p1?.graveyard)).toEqual(["One Last Job"]);
   });
 

@@ -39,7 +39,7 @@ export const ARTIFACTS: Record<string, CardScript> = {
       eventReplacement({
         event: "tokens",
         to: "you",
-        instead: { copyOfAttached: true, firstEachTurn: true },
+        instead: { copyOfAttached: true, firstEachTurn: true, may: true },
         modify: {},
         label: "Les premiers jetons de chaque tour : des copies de la créature équipée",
       }),

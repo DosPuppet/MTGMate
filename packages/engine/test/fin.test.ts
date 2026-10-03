@@ -4019,12 +4019,74 @@ describe("Final Fantasy, lot K8 : cartes mythiques, rares et peu communes", () =
         p2: { battlefield: [{ name: "Serra Angel", tapped: true }] },
       });
       const angel = idOf(s, "p2", "battlefield", "Serra Angel");
-      s = resolve(cast(s, "p1", "Unexpected Request", { targets: { t: [angel], e: [] } }));
+      s = resolve(cast(s, "p1", "Unexpected Request", { targets: { t: [angel] } }));
       expect(s.objects[angel]?.controller).toBe("p1");
       expect(s.objects[angel]?.tapped).toBe(false);
       expect(chars(s, angel).keywords).toContain("haste");
       s = advanceUntil(s, (x) => x.turn.active === "p2");
       expect(s.objects[angel]?.controller).toBe("p2");
+    });
+
+    it("Unexpected Request : l'Équipement est choisi à la résolution (« vous pouvez »), détaché à l'étape de fin (PLAN-D, D7)", () => {
+      const start = () =>
+        scenario({
+          p1: { battlefield: ["Buster Sword", ...lands("Mountain", 3)], hand: ["Unexpected Request"] },
+          p2: { battlefield: ["Serra Angel"] },
+        });
+      let s = start();
+      const angel = idOf(s, "p2", "battlefield", "Serra Angel");
+      const sword = idOf(s, "p1", "battlefield", "Buster Sword");
+      // Le sort ne cible que la créature.
+      const opt = legalActions(s, "p1").find((a) => a.type === "cast" && a.card === idOf(s, "p1", "hand", "Unexpected Request"));
+      expect(opt?.type === "cast" ? opt.modes[0]?.targets.map((t) => t.id) : []).toEqual(["t"]);
+      const asked: string[] = [];
+      s = resolve(cast(s, "p1", "Unexpected Request", { targets: { t: [angel] } }), (req) => {
+        if (req.type === "pick" && req.options.includes(sword)) asked.push(...req.options);
+        return undefined;
+      });
+      expect(asked).toEqual([sword]);
+      expect(s.objects[sword]?.attachedTo).toBe(angel);
+      s = advanceUntil(s, (x) => x.turn.step === "cleanup" || x.turn.active === "p2");
+      expect(s.objects[sword]?.attachedTo).toBeUndefined();
+      // Refusé : rien n'est attaché.
+      let t = start();
+      t = resolve(cast(t, "p1", "Unexpected Request", { targets: { t: [angel] } }), (req) =>
+        req.type === "pick" && req.options.includes(sword) ? [] : undefined,
+      );
+      expect(t.objects[sword]?.attachedTo).toBeUndefined();
+    });
+
+    it("Light of Judgment : 6 blessures ; jusqu'à un Équipement attaché à la créature, choisi à la résolution, est détruit (PLAN-D, D7)", () => {
+      const start = () => {
+        const s = scenario({
+          p1: { battlefield: lands("Mountain", 6), hand: ["Light of Judgment"] },
+          p2: { battlefield: ["Serra Angel", "Buster Sword", "Buster Sword"] },
+        });
+        const [a, b] = idsOf(s, "p2", "battlefield", "Buster Sword");
+        s.objects[a as string]!.attachedTo = idOf(s, "p2", "battlefield", "Serra Angel");
+        bump(s);
+        return { s, attached: a as string, loose: b as string };
+      };
+      const { s: s0, attached, loose } = start();
+      const angel = idOf(s0, "p2", "battlefield", "Serra Angel");
+      const opt = legalActions(s0, "p1").find((a) => a.type === "cast" && a.card === idOf(s0, "p1", "hand", "Light of Judgment"));
+      expect(opt?.type === "cast" ? opt.modes[0]?.targets.map((t) => t.id) : []).toEqual(["c"]);
+      const offered: string[] = [];
+      const s = resolve(cast(s0, "p1", "Light of Judgment", { targets: { c: [angel] } }), (req) => {
+        if (req.type === "pick" && req.options.includes(attached)) offered.push(...req.options);
+        return undefined;
+      });
+      expect(offered).toEqual([attached]);
+      expect(s.battlefield).not.toContain(attached);
+      expect(namesIn(s, s.players.p2?.graveyard).sort()).toEqual(["Buster Sword", "Serra Angel"]);
+      expect(s.battlefield).toContain(loose);
+      expect(s.battlefield).not.toContain(angel);
+      // « Jusqu'à un » : on peut n'en détruire aucun.
+      const again = start();
+      const t = resolve(cast(again.s, "p1", "Light of Judgment", { targets: { c: [angel] } }), (req) =>
+        req.type === "pick" && req.options.includes(again.attached) ? [] : undefined,
+      );
+      expect(t.battlefield).toContain(again.attached);
     });
 
     it("Valkyrie Aerial Unit : affinité pour les artefacts ; vol ; surveillance 2 à l'arrivée", () => {

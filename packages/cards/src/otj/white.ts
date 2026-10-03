@@ -209,9 +209,14 @@ export const WHITE: Record<string, CardScript> = {
             "you",
             "carte d'Aura ou d'Équipement",
           ),
-          target.creature("h", { controller: "you" }),
         ],
-        effects: [fx.moveTo(ref.target("a"), { to: "battlefield" }, { name: "x" }), fx.attach(ref.target("h"), ref.stored("x"))],
+        // La créature est choisie à la résolution (pas ciblée) : celle que renvoie le premier mode peut l'être.
+        effects: [
+          fx.chooseAmong(ref.permanentsOf(ref.you, { types: ["Creature"] }), ref.you, "h", {
+            prompt: "One Last Job : la créature à laquelle l'attacher",
+          }),
+          fx.moveTo(ref.target("a"), { to: "battlefield" }, undefined, ref.stored("h")),
+        ],
       },
     ),
   },

@@ -632,6 +632,8 @@ export type Ref =
   | { kind: "eventObject" }
   /** Le permanent auquel la source est attachée (« la créature équipée / enchantée »). */
   | { kind: "attached" }
+  /** Les permanents attachés à l'objet désigné (« un Équipement attaché à cette créature », Light of Judgment). */
+  | { kind: "attachmentsOf"; ref: Ref }
   /** « Cette carte », où qu'elle soit maintenant (suit l'identité physique : Angelic Destiny). */
   | { kind: "selfCard" }
   /** Cartes liées à la source (Hoarding Dragon). */

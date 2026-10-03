@@ -241,6 +241,17 @@ function CostPickPicker({ pick }: { pick: CostPick }) {
     <Modal title={`Coût : ${pick.label}`} wide>
       <div className="hand-picker">
         {pick.options.map((id) => {
+          // Options qui ne sont pas des objets (sortes de marqueurs) : un bouton par option.
+          const label = pick.labels?.[id];
+          if (label)
+            return (
+              <div key={id} className="pick-slot">
+                <button type="button" className={`btn choice${picked.includes(id) ? " primary" : ""}`} onClick={() => toggle(id)}>
+                  {label}
+                </button>
+                {pick.repeat && times(id) > 0 && <span className="pick-count">×{times(id)}</span>}
+              </div>
+            );
           const o = all.find((x) => x.id === id);
           return o ? (
             <div key={id} className="pick-slot">

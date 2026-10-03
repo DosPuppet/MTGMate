@@ -69,12 +69,17 @@ export const RED: Record<string, CardScript> = {
   },
   "Laughing Mad": { additionalCost: { discard: 1 }, flashback: "{3}{R}", spell: spell([], [fx.draw(2)]) },
   "Light of Judgment": {
+    // « Détruisez jusqu'à un Équipement attaché à cette créature » : choisi à la résolution, pas ciblé.
     spell: spell(
+      [target.creature("c")],
       [
-        target.creature("c"),
-        { ...target.upTo(1, targetObj("e", { subtype: "Equipment" }, "Équipement attaché")), attachedToTarget: "c" },
+        fx.damage(6, ref.target("c")),
+        fx.chooseAmong(ref.filtered(ref.attachmentsOf(ref.target("c")), { subtype: "Equipment" }), ref.you, "e", {
+          optional: true,
+          prompt: "Light of Judgment : détruisez jusqu'à un Équipement attaché à la créature",
+        }),
+        fx.destroy(ref.stored("e")),
       ],
-      [fx.damage(6, ref.target("c")), fx.destroy(ref.target("e"))],
     ),
   },
   "Mysidian Elder": { abilities: [triggered(when.entersSelf, [wizard()], { label: "Sorcier 0/1" })] },
