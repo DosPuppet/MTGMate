@@ -1629,3 +1629,25 @@ describe("Tarkir: Dragonstorm : cartes du méta (PLAN-C, lot C13)", () => {
     });
   });
 });
+
+describe("« Défaussez votre main » en coût (lot K3)", () => {
+  it("Reverberating Summons : la main est défaussée en activant (avant toute réponse), même vide ; puis piochez deux cartes", () => {
+    const run = (hand: string[]) => {
+      let s = scenario({
+        p1: { battlefield: ["Reverberating Summons", ...lands("Mountain", 2)], hand, library: lands("Island", 5) },
+      });
+      const summons = idOf(s, "p1", "battlefield", "Reverberating Summons");
+      const opt = legalActions(s, "p1").find((a) => a.type === "activate" && a.source === summons);
+      expect(opt).toBeDefined();
+      s = act(s, "p1", { type: "activate", source: summons, ability: opt?.type === "activate" ? opt.ability : -1 });
+      // La capacité est sur la pile : la main est déjà au cimetière.
+      expect(s.stack).toHaveLength(1);
+      expect(s.players.p1?.hand).toHaveLength(0);
+      expect(namesIn(s, s.players.p1?.graveyard)).toEqual(expect.arrayContaining(hand));
+      s = settle(s);
+      return s;
+    };
+    expect(run(["Bear Cub", "Shock"]).players.p1?.hand).toHaveLength(2);
+    expect(run([]).players.p1?.hand).toHaveLength(2);
+  });
+});

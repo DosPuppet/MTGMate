@@ -2977,6 +2977,15 @@ export function activateAbility(s: GameState, player: PlayerId, source: ObjectId
     for (const id of chosen) announceDiscard(s, player, moveObject(s, id, "graveyard"));
     announceDiscardBatch(s, player, chosen.length);
   }
+  // « Défaussez votre main » : toute la main, en payant le coût (601.2h).
+  if (ab.cost.discardHand) {
+    const hand = [...(s.players[player]?.hand ?? [])];
+    if (hand.length) {
+      emit({ type: "discard", player, defIds: hand.map((id) => obj(s, id).defId) });
+      for (const id of hand) announceDiscard(s, player, moveObject(s, id, "graveyard"));
+      announceDiscardBatch(s, player, hand.length);
+    }
+  }
   // Fabrication : les matériaux sont exilés (et liés au verso à la résolution), puis la source.
   if (materials.length) {
     s.turn.crafting = true;
@@ -3081,8 +3090,14 @@ export function specsAndEffects(s: GameState, item: StackItem): { specs: TargetS
     }
     return { specs: mode?.targets ?? [], effects };
   }
-  // Capacité retardée, réflexive ou accordée : ses effets voyagent avec elle.
-  if (item.inline) return { specs: item.inline.targets, effects: item.inline.effects };
+  // Capacité retardée, réflexive ou accordée : ses effets voyagent avec elle ; la condition d'une capacité accordée « si… »
+  // aussi (603.4).
+  if (item.inline) {
+    const c = item.inline.condition;
+    if (c && !checkCondition(s, c, item.controller, item.sourceId, item.event?.objectId, item.event))
+      return { specs: [], effects: [] };
+    return { specs: item.inline.targets, effects: item.inline.effects };
+  }
   const ab = d.abilities[item.abilityIndex];
   if (ab?.kind === "triggered") {
     // 603.4 : la condition d'une capacité « si… » est vérifiée à nouveau à la résolution.

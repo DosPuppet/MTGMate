@@ -1523,6 +1523,8 @@ export function activated(opts: {
   sacrificeX?: ObjectFilter;
   /** « Défaussez N cartes » (`discardFilter` : seulement des cartes correspondantes). */
   discard?: number;
+  /** « Défaussez votre main ». */
+  discardHand?: boolean;
   discardFilter?: ObjectFilter;
   /** Ninjutsu : « renvoyez en main un attaquant non bloqué que vous contrôlez ». */
   returnUnblockedAttacker?: boolean;
@@ -1576,6 +1578,7 @@ export function activated(opts: {
       sacrificeX: opts.sacrificeX,
       removeCountersX: opts.removeCountersX,
       discard: opts.discard,
+      ...(opts.discardHand ? { discardHand: true } : {}),
       discardFilter: opts.discardFilter,
       returnUnblockedAttacker: opts.returnUnblockedAttacker,
       bounceOther: opts.bounceOther,

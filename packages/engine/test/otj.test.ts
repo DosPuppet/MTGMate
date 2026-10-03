@@ -519,3 +519,34 @@ describe("Outlaws of Thunder Junction : cartes du méta confrontées à leur tex
     expect(chars(t, dragon).keywords).toEqual(expect.arrayContaining(["flying", "haste"]));
   });
 });
+
+describe("« Au choix » choisi à la résolution (lot K3)", () => {
+  it("Rattleback Apothecary : la créature ciblée gagne au choix la menace OU le lien de vie, pas les deux", () => {
+    const run = (menace: 0 | 1) => {
+      let s = scenario({
+        p1: { battlefield: ["Rattleback Apothecary", ...lands("Mountain", 2)], hand: ["Scorching Shot"] },
+        p2: { battlefield: ["Bear Cub"] },
+      });
+      const rattle = idOf(s, "p1", "battlefield", "Rattleback Apothecary");
+      s = act(s, "p1", {
+        type: "cast",
+        card: idOf(s, "p1", "hand", "Scorching Shot"),
+        targets: { t: [idOf(s, "p2", "battlefield", "Bear Cub")] },
+      });
+      for (let i = 0; i < 30 && !(s.stack.length === 0 && s.pending?.kind === "priority"); i++) {
+        const p = s.pending;
+        if (p?.kind === "priority") s = act(s, p.player, { type: "pass" });
+        else if (p?.kind === "choice")
+          s = act(s, p.player, { type: "choose", values: p.request.type === "yesNo" ? [menace] : p.request.suggested });
+        else break;
+      }
+      return chars(s, rattle).keywords;
+    };
+    const a = run(1);
+    expect(a).toContain("menace");
+    expect(a).not.toContain("lifelink");
+    const b = run(0);
+    expect(b).toContain("lifelink");
+    expect(b).not.toContain("menace");
+  });
+});

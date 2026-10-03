@@ -100,11 +100,11 @@ export const RED: Record<string, CardScript> = {
         [fx.exileTop(ref.you, 1, "x", "nobody"), fx.link(ref.stored("x"))],
         { label: "Exilez la carte du dessus de votre bibliothèque" },
       ),
-      // Approximation : la main est défaussée à la résolution (et non en payant le coût).
       activated({
         mana: "{1}{R}",
         sacrifice: true,
-        effects: [fx.discard(amount.cardsIn("hand")), fx.toHand(ref.linked)],
+        discardHand: true,
+        effects: [fx.toHand(ref.linked)],
         label: "Défaussez votre main : les cartes exilées avec cet enchantement vont dans la main de leur propriétaire",
       }),
     ],

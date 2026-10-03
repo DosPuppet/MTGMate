@@ -170,10 +170,20 @@ export const BLACK: Record<string, CardScript> = {
   },
   "Rattleback Apothecary": {
     abilities: [
-      triggered(when.crime, [fx.pump(ref.target(), 0, 0, ["menace", "lifelink"])], {
-        targets: [target.creature("t", { controller: "you" })],
-        label: "Menace et lien de vie",
-      }),
+      // « Au choix » n'est pas un mode : le mot-clé est choisi pendant la résolution (608.2d).
+      triggered(
+        when.crime,
+        [
+          ...fx.mayForStore(
+            ref.you,
+            "La créature gagne la menace ? (sinon, le lien de vie)",
+            "m",
+            fx.pump(ref.target(), 0, 0, ["menace"]),
+          ),
+          ...fx.when(cond.not(cond.v("m")), fx.pump(ref.target(), 0, 0, ["lifelink"])),
+        ],
+        { targets: [target.creature("t", { controller: "you" })], label: "La menace ou le lien de vie, au choix" },
+      ),
     ],
   },
   "Raven of Fell Omens": {

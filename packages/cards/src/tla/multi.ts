@@ -196,11 +196,14 @@ export const MULTI: Record<string, CardScript> = {
     ],
   },
   "Fire Lord Azula": {
+    // « tant que Fire Lord Azula attaque » fait partie de l'événement déclencheur, et non une condition « si… » (603.4) :
+    // elle n'a la capacité qu'en attaquant ; une fois déclenchée, la capacité se résout même si Azula n'attaque plus.
     abilities: [
-      triggered(when.castSpell("you"), [fx.copySpell(ref.eventObject, 1)], {
-        condition: cond.sourceMatches({ attacking: true }),
-        label: "Copiez le sort (Azula attaque)",
-      }),
+      staticAbility(
+        "self",
+        { addAbilities: [triggered(when.castSpell("you"), [fx.copySpell(ref.eventObject, 1)], { label: "Copiez le sort" })] },
+        { condition: cond.sourceMatches({ attacking: true }), label: "En attaquant : copiez chaque sort que vous lancez" },
+      ),
     ],
   },
   "Fire Lord Zuko": {

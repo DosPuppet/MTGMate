@@ -3644,9 +3644,38 @@ describe("Murders at Karlov Manor, lot A — multicolores", () => {
       s = settle(cast(s, "p1", "Ezrim, Agency Chief"));
       expect(clues(s)).toHaveLength(2);
       const ezrim = idOf(s, "p1", "battlefield", "Ezrim, Agency Chief");
-      s = settle(activate(s, "p1", ezrim, "lien de vie", { sacrifice: [clues(s)[0] as string] }));
+      // Vigilance ? non ; lien de vie ? oui.
+      s = settle(activate(s, "p1", ezrim, "lien de vie", { sacrifice: [clues(s)[0] as string] }), (req) =>
+        req.intent === "may" ? [req.prompt.includes("lien de vie") ? 1 : 0] : undefined,
+      );
       expect(clues(s)).toHaveLength(1);
       expect(chars(s, ezrim).keywords).toContain("lifelink");
+      expect(chars(s, ezrim).keywords).not.toContain("hexproof");
+      expect(chars(s, ezrim).keywords).not.toContain("vigilance");
+    });
+
+    it("« au choix » : une seule capacité, le mot-clé est choisi pendant la résolution (608.2d)", () => {
+      let s = scenario({ p1: { battlefield: ["Ezrim, Agency Chief", "Island"] } });
+      createTokens(s, "p1", CLUE, 1);
+      const ezrim = idOf(s, "p1", "battlefield", "Ezrim, Agency Chief");
+      const boosts = legalActions(s, "p1").filter((x) => x.type === "activate" && x.source === ezrim);
+      expect(boosts).toHaveLength(1);
+      s = activate(s, "p1", ezrim, "au choix", { sacrifice: clues(s) });
+      // Aucune question à l'activation : la capacité est sur la pile, sans choix fait.
+      expect(s.stack).toHaveLength(1);
+      expect(s.pending?.kind).toBe("priority");
+      const prompts: string[] = [];
+      s = settle(s, (req) => {
+        if (req.intent !== "may") return undefined;
+        prompts.push(req.prompt);
+        return [0];
+      });
+      // Ni vigilance ni lien de vie : la défense talismanique.
+      expect(prompts).toHaveLength(2);
+      expect(chars(s, ezrim).keywords).toContain("hexproof");
+      expect(chars(s, ezrim).keywords).not.toContain("vigilance");
+      expect(chars(s, ezrim).keywords).not.toContain("lifelink");
+      s = advanceUntil(s, (x) => x.turn.number === 2 && x.pending?.kind === "priority");
       expect(chars(s, ezrim).keywords).not.toContain("hexproof");
     });
   });
@@ -3698,10 +3727,7 @@ describe("Murders at Karlov Manor, lot A — multicolores", () => {
 
   describe("Granite Witness", () => {
     it("retournée face visible : engage ou dégage la créature ciblée, au choix", () => {
-      for (const [mode, tappedBefore] of [
-        ["0", false],
-        ["1", true],
-      ] as const) {
+      for (const tappedBefore of [false, true]) {
         let s = scenario({
           p1: { battlefield: [...lands("Plains", 3), ...lands("Island", 2)], hand: ["Granite Witness"] },
           p2: { battlefield: [{ name: "Fire Elemental", tapped: tappedBefore }] },
@@ -3710,14 +3736,59 @@ describe("Murders at Karlov Manor, lot A — multicolores", () => {
         [s, id] = castFaceDown(s, "Granite Witness");
         const elemental = idOf(s, "p2", "battlefield", "Fire Elemental");
         s = settle(activate(s, "p1", id, "Retourner"), (req) =>
-          req.intent === "triggerMode"
-            ? [mode]
-            : req.type === "pick" && req.options.includes(elemental)
-              ? [elemental]
-              : undefined,
+          req.type === "pick" && req.options.includes(elemental) ? [elemental] : undefined,
         );
         expect(s.objects[elemental]?.tapped).toBe(!tappedBefore);
       }
+    });
+
+    it("la cible est choisie au déclenchement, engager ou dégager pendant la résolution (608.2d) ; on peut ne rien faire", () => {
+      const setup = () => {
+        let s = scenario({
+          p1: { battlefield: [...lands("Plains", 3), ...lands("Island", 2)], hand: ["Granite Witness"] },
+          p2: { battlefield: ["Fire Elemental"] },
+        });
+        let id = "";
+        [s, id] = castFaceDown(s, "Granite Witness");
+        return { s, id, elemental: idOf(s, "p2", "battlefield", "Fire Elemental") };
+      };
+      let { s, id, elemental } = setup();
+      let asked: ChoiceRequest[] = [];
+      s = activate(s, "p1", id, "Retourner");
+      // Mise sur la pile : seule la cible est demandée (pas de mode).
+      for (let i = 0; i < 20 && !s.stack.some((it) => it.kind === "ability"); i++) {
+        const p = s.pending;
+        if (p?.kind === "priority") s = act(s, p.player, { type: "pass" });
+        else if (p?.kind === "choice") {
+          const req = p.request;
+          asked.push(req);
+          s = act(s, p.player, {
+            type: "choose",
+            values: req.type === "pick" && req.options.includes(elemental) ? [elemental] : req.suggested,
+          });
+        } else break;
+      }
+      expect(asked.map((r) => r.intent)).not.toContain("triggerMode");
+      expect(s.stack.find((it) => it.kind === "ability")?.targets.t).toEqual([elemental]);
+      // La créature est engagée en réponse : l'action proposée à la résolution est de la dégager.
+      const fire = s.objects[elemental];
+      if (fire) fire.tapped = true;
+      bump(s);
+      asked = [];
+      s = settle(s, (req) => {
+        asked.push(req);
+        return undefined;
+      });
+      expect(asked.map((r) => r.prompt).filter((p) => p.includes("Dégager"))).toHaveLength(1);
+      expect(asked.map((r) => r.prompt).filter((p) => p.includes("Engager"))).toHaveLength(0);
+      expect(s.objects[elemental]?.tapped).toBe(false);
+
+      // « Vous pouvez » : refuser ne fait rien.
+      ({ s, id, elemental } = setup());
+      s = settle(activate(s, "p1", id, "Retourner"), (req) =>
+        req.intent === "may" ? [0] : req.type === "pick" && req.options.includes(elemental) ? [elemental] : undefined,
+      );
+      expect(s.objects[elemental]?.tapped).toBe(false);
     });
   });
 
@@ -4985,6 +5056,49 @@ describe("Murders at Karlov Manor, lot C2 : montants et coûts", () => {
     // Shivan Dragon (VM 6) défaussé : 6 blessures, l'Ange (4/4) et l'Ours meurent.
     expect(idsOf(s, "p2", "graveyard", "Bear Cub")).toHaveLength(1);
     expect(idsOf(s, "p1", "graveyard", "Serra Angel")).toHaveLength(1);
+  });
+
+  it("Ill-Timed Explosion : « quand vous le faites » est une capacité réflexive ; deux cartes ou aucune", () => {
+    const base = () =>
+      scenario({
+        p1: {
+          battlefield: [...lands("Island", 2), ...lands("Mountain", 2)],
+          hand: ["Ill-Timed Explosion", "Opt"],
+          library: ["Shivan Dragon", "Forest"],
+        },
+        p2: { battlefield: ["Bear Cub"] },
+      });
+    // La défausse se fait pendant la résolution du sort ; les blessures, par une capacité réflexive mise ensuite sur la
+    // pile (on peut y répondre), sans cible.
+    let s = base();
+    let discardAsked: ChoiceRequest | undefined;
+    s = cast(s, "p1", "Ill-Timed Explosion");
+    for (let i = 0; i < 20 && !(s.stack.length === 1 && s.stack[0]?.kind === "ability"); i++) {
+      const p = s.pending;
+      if (p?.kind === "priority") s = act(s, p.player, { type: "pass" });
+      else if (p?.kind === "choice") {
+        const req = p.request;
+        if (req.type === "pick" && req.intent === "discard") {
+          discardAsked = req;
+          const dragon = req.options.find((id) => nameOf(s, String(id)) === "Shivan Dragon");
+          const forest = req.options.find((id) => nameOf(s, String(id)) === "Forest");
+          s = act(s, p.player, { type: "choose", values: [dragon ?? "", forest ?? ""] });
+        } else s = act(s, p.player, { type: "choose", values: req.suggested });
+      } else break;
+    }
+    // Deux cartes exactement, sans possibilité d'en défausser une seule.
+    expect(discardAsked?.type === "pick" && [discardAsked.min, discardAsked.max]).toEqual([2, 2]);
+    expect(s.stack).toHaveLength(1);
+    expect(s.stack[0]?.kind).toBe("ability");
+    expect(idsOf(s, "p2", "battlefield", "Bear Cub")).toHaveLength(1);
+    s = settle(s);
+    // Shivan Dragon (VM 6) parmi les cartes défaussées : 6 blessures à chaque créature.
+    expect(idsOf(s, "p2", "graveyard", "Bear Cub")).toHaveLength(1);
+
+    // Refuser : rien n'est défaussé, aucune blessure.
+    s = settle(cast(base(), "p1", "Ill-Timed Explosion"), (req) => (req.intent === "may" ? [0] : undefined));
+    expect(s.players.p1?.hand).toHaveLength(3);
+    expect(idsOf(s, "p2", "battlefield", "Bear Cub")).toHaveLength(1);
   });
 
   it("Officious Interrogation : {W}{U} de plus par cible au-delà de la première ; un Indice par créature des joueurs ciblés", () => {

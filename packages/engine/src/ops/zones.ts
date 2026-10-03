@@ -50,9 +50,58 @@ import {
 } from "../state";
 import { addPlayerEffect, playerStatic, quantityMods, recipientMatches } from "../statics";
 import { matchesCard, matchesObjectFilter, shareCreatureType } from "../targets";
-import type { CardType, Effect, GameState, ObjectFilter, ObjectId, Resolution } from "../types";
+import type { CardType, Effect, GameState, MoveSpec, ObjectFilter, ObjectId, PlayerId, Resolution } from "../types";
 import { PERMANENT_TYPES } from "../types";
 import { enterChoiceRequest } from "./permanents";
+
+/**
+ * Terrains choc mis sur le champ de bataille par un effet (« en arrivant, vous pouvez payer 2 points de vie ; sinon, il
+ * arrive engagé ») : demandé au joueur qui le contrôlera, avant tout déplacement (l'opération est rejouée avec la
+ * réponse). Renvoie la question à poser, sinon les terrains dont les points de vie seront payés.
+ */
+/** Le joueur qui contrôlera l'objet mis sur le champ de bataille : vous, ou son propriétaire. */
+const ownerOr =
+  (s: GameState, spec: MoveSpec, you: PlayerId) =>
+  (id: ObjectId): PlayerId =>
+    spec.underYourControl ? you : (s.objects[id]?.owner ?? you);
+
+function shockLandChoices(
+  s: GameState,
+  r: Resolution,
+  ids: readonly ObjectId[],
+  spec: MoveSpec,
+  controllerOf: (id: ObjectId) => PlayerId,
+  key: (k: string) => string,
+): Extract<OpResult, { ask: unknown }> | Set<ObjectId> {
+  const paid = new Set<ObjectId>();
+  if (spec.to !== "battlefield" || spec.tapped || spec.cloak) return paid;
+  for (const id of ids) {
+    const d = s.defs[s.objects[id]?.defId ?? ""];
+    const n = d?.shockLand;
+    if (!d || !n) continue;
+    const who = controllerOf(id);
+    const life = s.players[who]?.life ?? 0;
+    if (life < n) continue;
+    const k = key(`shock-${id}`);
+    const answer = r.vars[k];
+    if (!answer) {
+      return {
+        ask: {
+          player: who,
+          key: k,
+          request: {
+            type: "yesNo",
+            intent: "may",
+            prompt: `${cardRef(d.id)} : payer ${n} points de vie pour qu'il arrive dégagé ?`,
+            suggested: [life > 2 * n + 4 ? 1 : 0],
+          },
+        },
+      };
+    }
+    if (answer[0] === 1) paid.add(id);
+  }
+  return paid;
+}
 
 export const HANDLERS: OpHandlers = {
   destroy(s, r, e, ctx) {
@@ -515,7 +564,12 @@ export const HANDLERS: OpHandlers = {
       picked = answer.map(String);
     }
     if (allowed && !distinctColors(picked.map(colorsOf))) throw new RulesError("Une carte au plus par couleur");
-    const moved = picked.map((id) => moveWithSpec(s, ctx.controller, id, e.to)).filter((x): x is string => !!x);
+    // Un tirage au hasard n'est pas rejoué : pas de question après lui.
+    const shock = e.random ? new Set<ObjectId>() : shockLandChoices(s, r, picked, e.to, ownerOr(s, e.to, ctx.controller), key);
+    if (!(shock instanceof Set)) return shock;
+    const moved = picked
+      .map((id) => moveWithSpec(s, ctx.controller, id, e.to, shock.has(id) ? { shockPaid: true } : undefined))
+      .filter((x): x is string => !!x);
     if (e.store) r.vars[`$ids:${e.store}`] = moved;
     store(r, e.store, moved.length);
     return;
@@ -560,14 +614,16 @@ export const HANDLERS: OpHandlers = {
     }
     return;
   },
-  revealUntil(s, _r, e, ctx) {
+  revealUntil(s, r, e, ctx, key) {
     const player = s.players[ctx.controller];
     if (!player) return;
     const i = player.library.findIndex((id) => matchesCard(s, ctx.controller, id, { ...e.filter, controller: undefined }));
     const revealed = i < 0 ? [...player.library] : player.library.slice(0, i + 1);
     const found = i < 0 ? null : (player.library[i] as string);
     const rest = revealed.filter((id) => id !== found);
-    if (found) moveWithSpec(s, ctx.controller, found, e.to);
+    const shock = shockLandChoices(s, r, found ? [found] : [], e.to, ownerOr(s, e.to, ctx.controller), key);
+    if (!(shock instanceof Set)) return shock;
+    if (found) moveWithSpec(s, ctx.controller, found, e.to, shock.has(found) ? { shockPaid: true } : undefined);
     const lib = player.library.filter((id) => !rest.includes(id));
     shuffle(s, rest);
     player.library = [...lib, ...rest];
@@ -965,7 +1021,10 @@ export const HANDLERS: OpHandlers = {
       );
     // Choix d'arrivée d'un permanent qui n'est pas lancé, demandés avant tout déplacement (la résolution reprend l'effet
     // depuis le début une fois la réponse donnée) : ce que copie un Clone (707.5), ce qu'enchante une Aura (303.4f).
-    const choices: Record<string, Pick<EntersContext, "copyOf" | "copyMods" | "copyChosen" | "attachTo" | "chosen">> = {};
+    const choices: Record<
+      string,
+      Pick<EntersContext, "copyOf" | "copyMods" | "copyChosen" | "attachTo" | "chosen" | "shockPaid">
+    > = {};
     if (e.spec.to === "battlefield") {
       for (const id of ids) {
         const o = s.objects[id];
@@ -1034,6 +1093,16 @@ export const HANDLERS: OpHandlers = {
         }
       }
     }
+    const shock = shockLandChoices(
+      s,
+      r,
+      ids,
+      e.spec,
+      (id) => (e.spec.underYourControl ? ctx.controller : (s.objects[id]?.owner ?? ctx.controller)),
+      key,
+    );
+    if (!(shock instanceof Set)) return shock;
+    for (const id of shock) choices[id] = { ...choices[id], shockPaid: true };
     const moved: string[] = [];
     for (const id of ids) {
       const n = moveWithSpec(s, ctx.controller, id, e.spec, choices[id]);
@@ -1105,7 +1174,7 @@ export const HANDLERS: OpHandlers = {
     }
     return;
   },
-  moveAll(s, r, e, ctx) {
+  moveAll(s, r, e, ctx, key) {
     const players = resolveRef(s, ctx, e.whose).filter((p) => isPlayer(s, p));
     // « de valeur de mana X » (Fix What's Broken) : le X du sort ou de la capacité.
     const filter = e.filter.manaValueX ? { ...e.filter, manaValueX: undefined, manaValue: ctx.x } : e.filter;
@@ -1119,7 +1188,11 @@ export const HANDLERS: OpHandlers = {
         : zoneCards(s, players, e.from).filter((id) =>
             matchesCard(s, ctx.controller, id, { ...filter, controller: undefined }, ctx.sourceId),
           );
-    const moved = ids.map((id) => moveWithSpec(s, ctx.controller, id, e.spec)).filter((x): x is string => !!x);
+    const shock = shockLandChoices(s, r, ids, e.spec, ownerOr(s, e.spec, ctx.controller), key);
+    if (!(shock instanceof Set)) return shock;
+    const moved = ids
+      .map((id) => moveWithSpec(s, ctx.controller, id, e.spec, shock.has(id) ? { shockPaid: true } : undefined))
+      .filter((x): x is string => !!x);
     if (e.store) r.vars[`$ids:${e.store}`] = moved;
     return;
   },
@@ -1185,8 +1258,12 @@ export const HANDLERS: OpHandlers = {
       }
     }
     const rest = top.filter((id) => !picked.includes(id));
+    const shock = e.random ? new Set<ObjectId>() : shockLandChoices(s, r, picked, e.to, ownerOr(s, e.to, ctx.controller), key);
+    if (!(shock instanceof Set)) return shock;
     store(r, e.store, picked.length);
-    const taken = picked.map((id) => moveWithSpec(s, ctx.controller, id, e.to)).filter((x): x is string => !!x);
+    const taken = picked
+      .map((id) => moveWithSpec(s, ctx.controller, id, e.to, shock.has(id) ? { shockPaid: true } : undefined))
+      .filter((x): x is string => !!x);
     if (e.store) r.vars[`$ids:${e.store}`] = taken;
     if (e.rest === "graveyard") for (const id of rest) moveWithSpec(s, ctx.controller, id, { to: "graveyard" });
     else if (e.rest === "hand") for (const id of rest) moveWithSpec(s, ctx.controller, id, { to: "hand" });
@@ -1244,13 +1321,15 @@ export const HANDLERS: OpHandlers = {
           });
         }
       }
+      const shock = shockLandChoices(s, r, picked, e.to, ownerOr(s, e.to, p), (x) => key(`${p}-${x}`));
+      if (!(shock instanceof Set)) return shock;
       r.vars[key(`sdone-${p}`)] = [1];
       rulesEvent(s, { e: "search", player: p });
       // 701.23 : on mélange après la recherche ; « sur le dessus » s'applique après le mélange.
       const toTop = e.to.to === "libraryTop";
       for (const id of picked) {
         if (toTop) continue;
-        const moved = moveWithSpec(s, p, id, e.to);
+        const moved = moveWithSpec(s, p, id, e.to, shock.has(id) ? { shockPaid: true } : undefined);
         if (e.store && moved) r.vars[`$ids:${e.store}`] = [...(r.vars[`$ids:${e.store}`] ?? []), moved];
       }
       shuffle(s, player.library);
@@ -1347,7 +1426,7 @@ export const HANDLERS: OpHandlers = {
     r.vars.$devoured = [chosen.length];
     return;
   },
-  revealUntilN(s, r, e, ctx) {
+  revealUntilN(s, r, e, ctx, key) {
     const player = s.players[ctx.controller];
     if (!player) return;
     const found: string[] = [];
@@ -1358,13 +1437,15 @@ export const HANDLERS: OpHandlers = {
       if (matchesCard(s, ctx.controller, id, { ...e.filter, controller: undefined })) found.push(id);
     }
     const revealed = player.library.slice(0, i);
+    const shock = e.to ? shockLandChoices(s, r, found, e.to, ownerOr(s, e.to, ctx.controller), key) : new Set<ObjectId>();
+    if (!(shock instanceof Set)) return shock;
     emit({ type: "reveal", player: ctx.controller, defIds: revealed.map((id) => s.objects[id]?.defId ?? "") });
     if (!e.to) {
       if (e.store) r.vars[`$ids:${e.store}`] = found;
       return;
     }
     const rest = revealed.filter((id) => !found.includes(id));
-    for (const id of found) moveWithSpec(s, ctx.controller, id, e.to);
+    for (const id of found) moveWithSpec(s, ctx.controller, id, e.to, shock.has(id) ? { shockPaid: true } : undefined);
     const lib = player.library.filter((id) => !rest.includes(id));
     shuffle(s, rest);
     player.library = [...lib, ...rest];

@@ -1072,7 +1072,7 @@ export function detectTriggers(s: GameState, ev: RulesEvent, only?: (src: Source
 }
 
 function inlineOf(ab: TriggeredAbilityDef): InlineAbility {
-  return { targets: ab.targets, effects: ab.effects, label: ab.label };
+  return { targets: ab.targets, effects: ab.effects, label: ab.label, ...(ab.condition ? { condition: ab.condition } : {}) };
 }
 
 // ---------------------------------------------------------------------------

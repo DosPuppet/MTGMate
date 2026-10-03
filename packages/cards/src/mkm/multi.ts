@@ -73,14 +73,18 @@ const agrusKos = (trigger: TriggerSpec) =>
     { targets: [target.upTo(1, target.creature())], label: "Exilez la créature suspecte, sinon suspectez-la" },
   );
 
-/** Ezrim : « [effets] {1}, sacrifiez un artefact : Ezrim gagne au choix … » (une capacité par choix). */
-const ezrimBoost = (kw: "vigilance" | "lifelink" | "hexproof", label: string) =>
-  activated({
-    mana: "{1}",
-    sacrificeOther: { filter: { types: ["Artifact"], controller: "you" } },
-    effects: [fx.modify(ref.self, { addKeywords: [kw] })],
-    label: `Ezrim gagne ${label} jusqu'à la fin du tour`,
-  });
+/**
+ * Ezrim : « {1}, sacrifiez un artefact : Ezrim gagne au choix la vigilance, le lien de vie ou la défense talismanique » ;
+ * « au choix » n'est pas un mode : le mot-clé est choisi pendant la résolution (608.2d), par deux questions.
+ */
+const EZRIM_CHOICE = [
+  ...fx.mayForStore(ref.you, "Ezrim gagne la vigilance ?", "v", fx.modify(ref.self, { addKeywords: ["vigilance"] })),
+  ...fx.when(
+    cond.not(cond.v("v")),
+    fx.mayForStore(ref.you, "Ezrim gagne le lien de vie ?", "l", fx.modify(ref.self, { addKeywords: ["lifelink"] })),
+  ),
+  ...fx.when(cond.not(cond.any(cond.v("v"), cond.v("l"))), fx.modify(ref.self, { addKeywords: ["hexproof"] })),
+];
 
 /** Trostani : « [coût] : la créature ciblée gagne [mot-clé] jusqu'à la fin du tour ». */
 const trostaniGrant = (mana: string, kw: "deathtouch" | "vigilance" | "doubleStrike", label: string) =>
@@ -131,25 +135,35 @@ export const MULTI: Record<string, CardScript> = {
   },
   // Vol lu dans le texte.
   "Ezrim, Agency Chief": {
-    // « Au choix » : une capacité par mot-clé (le choix se fait à l'activation, comme Hungering Puppetbeast).
     abilities: [
       triggered(when.entersSelf, [investigate(2)], { label: "Enquêtez deux fois" }),
-      ezrimBoost("vigilance", "la vigilance"),
-      ezrimBoost("lifelink", "le lien de vie"),
-      ezrimBoost("hexproof", "la défense talismanique"),
+      activated({
+        mana: "{1}",
+        sacrificeOther: { filter: { types: ["Artifact"], controller: "you" } },
+        effects: EZRIM_CHOICE,
+        label: "Ezrim gagne au choix la vigilance, le lien de vie ou la défense talismanique jusqu'à la fin du tour",
+      }),
     ],
   },
   // Vol, vigilance et déguisement lus dans le texte.
   "Granite Witness": {
     abilities: [
-      triggeredModal(
+      // « Vous pouvez engager ou dégager la créature ciblée » : la cible est choisie au déclenchement, l'action pendant la
+      // résolution (608.2d). Engager une créature déjà engagée (ou l'inverse) ne fait rien : seule l'action utile est
+      // proposée.
+      triggered(
         when.turnedFaceUp,
         [
-          mode("Engagez la créature ciblée", [target.creature()], [fx.tap(ref.target())]),
-          mode("Dégagez la créature ciblée", [target.creature()], [fx.untap(ref.target())]),
-          mode("Ne rien faire", [], []),
+          ...fx.when(
+            cond.refMatches(ref.target(), { tapped: false }),
+            fx.mayForStore(ref.you, "Engager la créature ciblée ?", "e", fx.tap(ref.target())),
+          ),
+          ...fx.when(
+            cond.all(cond.not(cond.v("e")), cond.refMatches(ref.target(), { tapped: true })),
+            fx.may("Dégager la créature ciblée ?", fx.untap(ref.target())),
+          ),
         ],
-        { label: "Retournée face visible : engagez ou dégagez une créature" },
+        { targets: [target.creature()], label: "Retournée face visible : engagez ou dégagez une créature" },
       ),
     ],
   },
@@ -752,13 +766,23 @@ export const MULTI: Record<string, CardScript> = {
       ],
     ),
   },
+  // « Vous pouvez défausser deux cartes » : deux ou aucune (impossible avec moins de deux cartes en main). « Quand vous le
+  // faites » : capacité réflexive, X lu sur les cartes défaussées.
   "Ill-Timed Explosion": {
     spell: spell(
       [],
       [
         fx.draw(2),
-        fx.discard(2, ref.you, { optional: true, store: "d" }),
-        ...fx.when(cond.v("d", 2), fx.damageAll(amount.greatestManaValueOf(ref.stored("d")), { types: ["Creature"] })),
+        ...fx.when(
+          cond.amountAtLeast(amount.cardsIn("hand"), 2),
+          fx.may(
+            "Défausser deux cartes ?",
+            fx.discard(2, ref.you, { store: "d" }),
+            fx.reflexive([], [fx.damageAll(amount.greatestManaValueOf(ref.target("d")), { types: ["Creature"] })], {
+              d: ref.stored("d"),
+            }),
+          ),
+        ),
       ],
     ),
   },

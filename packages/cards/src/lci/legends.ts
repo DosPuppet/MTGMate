@@ -411,7 +411,8 @@ export const LEGENDS: Record<string, CardScript> = {
       activated({
         mana: "{2}",
         tap: true,
-        effects: [fx.discard(60, ref.you), fx.transform()],
+        discardHand: true,
+        effects: [fx.transform()],
         label: "Défaussez votre main : transformation",
       }),
     ],

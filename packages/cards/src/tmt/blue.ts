@@ -10,13 +10,11 @@ import {
   cond,
   fx,
   MUTAGEN,
-  mode,
   ref,
   spell,
   staticAbility,
   target,
   triggered,
-  triggeredModal,
   when,
 } from "./common";
 
@@ -39,11 +37,19 @@ const roboticize = (what: Ref): Effect[] => [
   ),
 ];
 
-/** « Vous pouvez engager ou dégager la créature ciblée » : deux modes et un mode vide (Granite Witness). */
+/**
+ * « Vous pouvez engager ou dégager la créature ciblée » : la cible est choisie au déclenchement, l'action pendant la
+ * résolution (608.2d) ; seule l'action utile est proposée (comme Granite Witness).
+ */
 const tapOrUntapCreature = [
-  mode("Engagez la créature ciblée", [target.creature()], [fx.tap(ref.target())]),
-  mode("Dégagez la créature ciblée", [target.creature()], [fx.untap(ref.target())]),
-  mode("Ne rien faire", [], []),
+  ...fx.when(
+    cond.refMatches(ref.target(), { tapped: false }),
+    fx.mayForStore(ref.you, "Engager la créature ciblée ?", "e", fx.tap(ref.target())),
+  ),
+  ...fx.when(
+    cond.all(cond.not(cond.v("e")), cond.refMatches(ref.target(), { tapped: true })),
+    fx.may("Dégager la créature ciblée ?", fx.untap(ref.target())),
+  ),
 ];
 
 /**
@@ -250,8 +256,14 @@ export const BLUE: Record<string, CardScript> = {
   },
   "Sewer-veillance Cam": {
     abilities: [
-      triggeredModal(when.entersSelf, tapOrUntapCreature, { label: "Vous pouvez engager ou dégager une créature" }),
-      triggeredModal(when.leavesSelf, tapOrUntapCreature, { label: "Vous pouvez engager ou dégager une créature" }),
+      triggered(when.entersSelf, tapOrUntapCreature, {
+        targets: [target.creature()],
+        label: "Vous pouvez engager ou dégager une créature",
+      }),
+      triggered(when.leavesSelf, tapOrUntapCreature, {
+        targets: [target.creature()],
+        label: "Vous pouvez engager ou dégager une créature",
+      }),
       activated({ mana: "{3}{U}", sacrifice: true, effects: [fx.draw(2)], label: "Piochez deux cartes" }),
     ],
   },

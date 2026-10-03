@@ -74,6 +74,28 @@ describe("The Hobbit", () => {
       expect(chars(s, army).subtypes).toContain("Goblin");
     });
 
+    it("la pioche suit la destruction : un remplacement de pioche porté par la créature détruite ne s'applique plus", () => {
+      /** Créature de test : « Si vous deviez piocher une carte, piochez-en deux à la place. » */
+      const scribe = customCard({
+        name: "Test Scribe",
+        power: 1,
+        toughness: 1,
+        abilities: [{ kind: "eventReplacement", event: "draw", to: "you", modify: { times: 2 }, label: "Pioche doublée" }],
+      });
+      let s = scenario({
+        p1: { battlefield: [...lands("Swamp", 3), scribe], hand: ["Azog, Moria's Ruin"], library: lands("Island", 3) },
+      });
+      const target = idOf(s, "p1", "battlefield", "Test Scribe");
+      s = settle(cast(s, "p1", "Azog, Moria's Ruin"), (req) =>
+        req.type === "pick" && req.options.includes(target) ? [target] : undefined,
+      );
+      expect(idsOf(s, "p1", "graveyard", "Test Scribe")).toHaveLength(1);
+      // Vous contrôliez la créature (dernières informations connues) : une seule carte, piochée après la destruction.
+      expect(namesIn(s, s.players.p1?.hand)).toEqual(["Island"]);
+      const army = s.battlefield.find((id) => chars(s, id).subtypes.includes("Army")) as string;
+      expect(s.objects[army]?.counters["+1/+1"]).toBe(1);
+    });
+
     it("« jusqu'à une » : sans cible, rien n'est détruit ni amassé, et vous ne piochez pas", () => {
       let s = scenario({
         p1: { battlefield: lands("Swamp", 3), hand: ["Azog, Moria's Ruin"] },

@@ -61,11 +61,17 @@ export const CARDS: Record<string, CardScript> = {
         when.landfall,
         [
           fx.counters(ref.self, "quest"),
+          // « Quand vous le faites, s'il a quatre marqueurs de quête ou plus » : condition « si… » de la capacité réflexive,
+          // vérifiée quand elle se déclenche et de nouveau à sa résolution (603.4).
           ...fx.when(
             cond.counterAtLeast("quest", 4),
             fx.reflexive(
               [target.creature("t", { controller: "you" })],
-              [fx.addCounters(ref.target(), 1), fx.modify(ref.target(), { addKeywords: ["trample"] })],
+              fx.when(
+                cond.counterAtLeast("quest", 4),
+                fx.addCounters(ref.target(), 1),
+                fx.modify(ref.target(), { addKeywords: ["trample"] }),
+              ),
             ),
           ),
         ],

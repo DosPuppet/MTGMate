@@ -10,25 +10,23 @@ import {
   eventReplacement,
   fx,
   manaAbility,
-  mode,
   ref,
   SHAPESHIFTER,
   staticAbility,
   target,
   triggered,
-  triggeredModal,
   when,
 } from "./common";
 
 const ANY = ["W", "U", "B", "R", "G"] as const;
 
-/** Les couleurs, avec leur nom au féminin (« cette créature devient blanche ») et au masculin (« cet artefact devient blanc »). */
-const COLORS: { color: Color; feminine: string; masculine: string }[] = [
-  { color: "W", feminine: "blanche", masculine: "blanc" },
-  { color: "U", feminine: "bleue", masculine: "bleu" },
-  { color: "B", feminine: "noire", masculine: "noir" },
-  { color: "R", feminine: "rouge", masculine: "rouge" },
-  { color: "G", feminine: "verte", masculine: "vert" },
+/** Les couleurs, avec leur nom au féminin (« cette créature devient blanche »). */
+const COLORS: { color: Color; feminine: string }[] = [
+  { color: "W", feminine: "blanche" },
+  { color: "U", feminine: "bleue" },
+  { color: "B", feminine: "noire" },
+  { color: "R", feminine: "rouge" },
+  { color: "G", feminine: "verte" },
 ];
 
 /** « Choisissez Elemental, Elf, Faerie, Giant, Goblin, Kithkin, Merfolk ou Treefolk » : les huit tribus de Lorwyn. */
@@ -144,16 +142,10 @@ export const ARTIFACTS: Record<string, CardScript> = {
   },
   "Puca's Eye": {
     abilities: [
-      // La couleur est choisie quand la capacité est mise sur la pile (un mode par couleur), et non après la pioche.
-      triggeredModal(
+      // La couleur est choisie pendant la résolution, après la pioche (Mondo Gecko : couleur figée dans l'effet).
+      triggered(
         when.entersSelf,
-        COLORS.map(({ color, masculine }) =>
-          mode(
-            `Piochez une carte ; cet artefact devient ${masculine}`,
-            [],
-            [fx.draw(1), fx.modify(ref.self, { setColors: [color] }, "permanent")],
-          ),
-        ),
+        [fx.draw(1), fx.chooseForSelf("color"), fx.modify(ref.self, { setColorsChosen: true }, "permanent")],
         { label: "Piochez une carte, puis choisissez une couleur : cet artefact devient de cette couleur" },
       ),
       activated({

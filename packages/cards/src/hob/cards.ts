@@ -51,9 +51,10 @@ export const CARDS: Record<string, CardScript> = {
       triggered(
         when.entersSelf,
         [
-          ...fx.when(cond.targetMatches("t", { controller: "you" }), fx.draw(1)),
           fx.destroy(ref.target()),
           fx.amass(ref.controllerOf(ref.target()), "Goblin", amount.powerOf(ref.target())),
+          // « Si vous contrôliez cette créature » : ses dernières informations connues si elle a été détruite.
+          ...fx.when(cond.targetMatches("t", { controller: "you" }), fx.draw(1)),
         ],
         {
           targets: [target.upTo(1, target.creature("t", { other: true }))],

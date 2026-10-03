@@ -1,6 +1,7 @@
 import { CARDS } from "@mtgx/cards";
 import { describe, expect, it } from "vitest";
-import { cond, fx, ref, spell, staticAbility, target } from "../src/dsl";
+import { destroy } from "../src/actions";
+import { cond, fx, ref, spell, staticAbility, target, triggered, when } from "../src/dsl";
 import { chars, obj, tapObject, untapObject } from "../src/state";
 import type { LayerMods } from "../src/types";
 import { act, customCard, idOf, idsOf, passBoth, passUntil, scenario } from "./helpers";
@@ -277,6 +278,22 @@ describe("couches : interactions synthétiques", () => {
     expect(chars(s, bear).keywords).not.toContain("vigilance");
     s = withEffect(s, [idOf(s, "p1", "battlefield", "Rouage")], { addAbilities: [grant] });
     expect(chars(s, bear).keywords).toContain("vigilance");
+  });
+
+  it("603.4 : une capacité déclenchée accordée « si… » revérifie sa condition à la résolution", () => {
+    const run = (removeInResponse: boolean) => {
+      let s = scenario({ p1: { battlefield: ["Bear Cub", ARTIFACT, "Island"], hand: ["Opt"] } });
+      const grant = triggered(when.castSpell("you"), [fx.gainLife(3)], { condition: cond.controls({ types: ["Artifact"] }) });
+      s = withEffect(s, [idOf(s, "p1", "battlefield", "Bear Cub")], { addAbilities: [grant] });
+      s = act(s, "p1", { type: "cast", card: idOf(s, "p1", "hand", "Opt") });
+      s = passUntil(s, (x) => x.stack.length === 2);
+      expect(s.stack.length).toBe(2);
+      if (removeInResponse) destroy(s, idOf(s, "p1", "battlefield", "Rouage"));
+      s = passUntil(s, (x) => x.stack.length === 1);
+      return s.players.p1?.life;
+    };
+    expect(run(false)).toBe(23);
+    expect(run(true)).toBe(20);
   });
 
   it("613.8 : la condition d'une statique voit les types ajoutés par un effet", () => {

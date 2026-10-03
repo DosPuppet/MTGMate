@@ -373,6 +373,8 @@ export interface InlineAbility {
   bound?: Record<string, string[]>;
   /** Valeurs figées à la création (ex. nombre de marqueurs de la créature morte). */
   vars?: Record<string, ChoiceValue[]>;
+  /** Capacité déclenchée accordée « si… » : la condition, revérifiée à la résolution (603.4). */
+  condition?: Condition;
 
   label?: string;
 }

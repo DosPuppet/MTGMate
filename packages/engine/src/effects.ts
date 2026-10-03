@@ -3,7 +3,7 @@
  * et une résolution pourra être suspendue sur un choix du joueur puis reprise.
  */
 
-import { type DamageSource, removeFromCombat, sourceFromObject } from "./actions";
+import { type DamageSource, payLife, removeFromCombat, sourceFromObject } from "./actions";
 import { copiedDefId, linkedColors, linkedTotalPower } from "./layers";
 import { manaValue } from "./mana";
 import { HANDLERS as COUNTERS_HANDLERS } from "./ops/counters";
@@ -818,13 +818,14 @@ export function addEffect(s: GameState, ids: ObjectId[], mods: LayerMods, durati
 }
 
 /** Déplace un objet selon une destination d'effet ; renvoie son nouvel identifiant. */
-/** `choices` : choix d'arrivée faits pendant la résolution (ce que copie un Clone, ce qu'enchante une Aura). */
+/** `choices` : choix d'arrivée faits pendant la résolution (ce que copie un Clone, ce qu'enchante une Aura, les points de */
+/** vie payés pour un terrain choc). */
 export function moveWithSpec(
   s: GameState,
   controller: PlayerId,
   id: ObjectId,
   spec: MoveSpec,
-  choices?: Pick<EntersContext, "copyOf" | "copyMods" | "copyChosen" | "attachTo" | "chosen">,
+  choices?: Pick<EntersContext, "copyOf" | "copyMods" | "copyChosen" | "attachTo" | "chosen" | "shockPaid">,
 ): ObjectId | null {
   const o = s.objects[id];
   if (!o) return null;
@@ -851,6 +852,9 @@ export function moveWithSpec(
   });
   if (o.zone === "battlefield") removeFromCombat(s, id);
   const newController = spec.to === "battlefield" ? (spec.underYourControl ? controller : o.owner) : undefined;
+  // Terrain choc : les points de vie sont payés en arrivant, par le joueur qui le contrôlera.
+  const shock = s.defs[o.defId]?.shockLand;
+  if (choices?.shockPaid && shock && newController) payLife(s, newController, shock);
   const mods = { addTypes: spec.addTypes, addSubtypes: spec.addSubtypes, addKeywords: spec.addKeywords };
   const newId_ = moveObject(s, id, zone, {
     controller: newController,

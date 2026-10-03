@@ -3581,12 +3581,22 @@ describe("Lorwyn Eclipsed, lot A — incolores", () => {
   });
 
   describe("Puca's Eye", () => {
-    it("en arrivant : piochez une carte, et l'artefact devient de la couleur choisie", () => {
+    it("en arrivant : piochez une carte, puis choisissez une couleur (pendant la résolution) : l'artefact la prend", () => {
       let s = scenario({ p1: { battlefield: lands("Forest", 2), hand: ["Puca's Eye"], library: ["Opt", "Forest"] } });
-      // Modes : 0 blanc, 1 bleu, 2 noir, 3 rouge, 4 vert.
-      s = cast(s, "Puca's Eye", ["2"]);
-      const eye = idOf(s, "p1", "battlefield", "Puca's Eye");
+      s = act(s, "p1", { type: "cast", card: idOf(s, "p1", "hand", "Puca's Eye") });
+      s = passAccepting(s, (x) => x.pending?.kind === "choice" || (x.stack.length === 0 && x.pending?.kind === "priority"));
+      // Aucun choix de couleur quand la capacité est mise sur la pile : la question vient après la pioche.
+      const p = s.pending;
+      expect(p?.kind).toBe("choice");
+      if (p?.kind !== "choice") return;
+      expect(p.request.type === "pick" && p.request.options).toEqual(["W", "U", "B", "R", "G"]);
+      expect(s.resolving).toBeTruthy();
       expect(idsOf(s, "p1", "hand", "Opt")).toHaveLength(1);
+      s = settle(act(s, p.player, { type: "choose", values: ["B"] }));
+      const eye = idOf(s, "p1", "battlefield", "Puca's Eye");
+      expect(chars(s, eye).colors).toEqual(["B"]);
+      // La couleur reste (effet sans fin) au tour suivant.
+      s = advanceUntil(s, (x) => x.turn.number === 2 && x.pending?.kind === "priority");
       expect(chars(s, eye).colors).toEqual(["B"]);
     });
 
@@ -4383,5 +4393,56 @@ describe("Lorwyn Eclipsed : terrains choc du méta Standard", () => {
     const s = scenario({ p1: { life: 1, hand: ["Blood Crypt"] } });
     const land = idOf(s, "p1", "hand", "Blood Crypt");
     expect(legalActions(s, "p1").some((a) => a.type === "playLand" && a.card === land && a.payLife)).toBe(false);
+  });
+});
+
+describe("Terrains choc mis sur le champ de bataille par un effet (lot K3)", () => {
+  const fetch = (tapped: boolean) =>
+    customCard({
+      name: tapped ? "Recherche engagée" : "Recherche",
+      typeLine: "Sorcery",
+      types: ["Sorcery"],
+      spell: dsl.spell([], [dsl.fx.search({ types: ["Land"] }, { to: "battlefield", tapped })]),
+    });
+  const run = (answer: 0 | 1 | null, tapped = false) => {
+    const card = fetch(tapped);
+    let s = scenario({ p1: { hand: [card], library: ["Blood Crypt", "Island"] } });
+    s = act(s, "p1", { type: "cast", card: idOf(s, "p1", "hand", card.name) });
+    const asked: string[] = [];
+    for (let i = 0; i < 20 && !(s.stack.length === 0 && s.pending?.kind === "priority"); i++) {
+      const p = s.pending;
+      if (p?.kind === "priority") s = act(s, p.player, { type: "pass" });
+      else if (p?.kind === "choice") {
+        asked.push(p.request.type);
+        const r = p.request;
+        const values =
+          r.type === "yesNo"
+            ? [answer ?? 0]
+            : r.type === "pick"
+              ? r.options.filter((o) => nameOfId(s, o) === "Blood Crypt")
+              : r.suggested;
+        s = act(s, p.player, { type: "choose", values });
+      } else break;
+    }
+    const crypt = s.battlefield.find((id) => nameOfId(s, id) === "Blood Crypt");
+    return { s, crypt, asked };
+  };
+  const nameOfId = (s: GameState, id: string) => s.defs[s.objects[id]?.defId ?? ""]?.name;
+
+  it("le joueur peut payer 2 points de vie pour qu'il arrive dégagé", () => {
+    const yes = run(1);
+    expect(yes.asked).toContain("yesNo");
+    expect(yes.crypt && yes.s.objects[yes.crypt]?.tapped).toBe(false);
+    expect(yes.s.players.p1?.life).toBe(18);
+    const no = run(0);
+    expect(no.crypt && no.s.objects[no.crypt]?.tapped).toBe(true);
+    expect(no.s.players.p1?.life).toBe(20);
+  });
+
+  it("mis sur le champ de bataille engagé : aucune question, aucun point de vie payé", () => {
+    const t = run(null, true);
+    expect(t.asked).not.toContain("yesNo");
+    expect(t.crypt && t.s.objects[t.crypt]?.tapped).toBe(true);
+    expect(t.s.players.p1?.life).toBe(20);
   });
 });

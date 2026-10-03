@@ -1404,10 +1404,19 @@ describe("lot A, bleu", () => {
         p2: { battlefield: ["Serra Angel"] },
       });
       const angel = idOf(s, "p2", "battlefield", "Serra Angel");
-      s = settle(cast(s, "p1", "Sewer-veillance Cam"), (req) => (req.intent === "triggerMode" ? ["0"] : pickIds(req, [angel])));
+      // Pas de mode : la cible au déclenchement, puis « engager ? » (ou « dégager ? ») pendant la résolution (608.2d).
+      const asked: string[] = [];
+      const answer = (req: ChoiceRequest) => {
+        asked.push(req.type === "yesNo" ? req.prompt : req.intent);
+        return req.type === "yesNo" ? [1] : pickIds(req, [angel]);
+      };
+      s = settle(cast(s, "p1", "Sewer-veillance Cam"), answer);
       expect(s.objects[angel]?.tapped).toBe(true);
+      expect(asked).not.toContain("triggerMode");
+      expect(asked.some((p) => p.includes("Engager la créature ciblée ?"))).toBe(true);
       const cam = idOf(s, "p1", "battlefield", "Sewer-veillance Cam");
-      s = settle(activate(s, "p1", cam), (req) => (req.intent === "triggerMode" ? ["1"] : pickIds(req, [angel])));
+      s = settle(activate(s, "p1", cam), answer);
+      expect(asked.some((p) => p.includes("Dégager la créature ciblée ?"))).toBe(true);
       expect(idsOf(s, "p1", "graveyard", "Sewer-veillance Cam")).toHaveLength(1);
       expect(namesIn(s, s.players.p1?.hand)).toEqual(["Swamp", "Swamp"]);
       expect(s.objects[angel]?.tapped).toBe(false);

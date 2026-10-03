@@ -111,8 +111,8 @@ export const RED: Record<string, CardScript> = {
       activated({
         mana: "{1}{R}",
         sacrifice: true,
-        // « Défaussez votre main » est un coût : la main est défaussée à la résolution (approximation).
-        effects: [fx.discard(amount.cardsIn("hand")), fx.draw(2)],
+        discardHand: true,
+        effects: [fx.draw(2)],
         label: "Défaussez votre main, sacrifiez-le : piochez deux cartes",
       }),
     ],

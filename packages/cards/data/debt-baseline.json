@@ -236,7 +236,7 @@
     "PlayerState": 21,
     "GameState": 39,
     "ObjectFilter": 90,
-    "CostDef": 36,
+    "CostDef": 37,
     "ActivatedAbilityDef": 19,
     "CastPermissionAbilityDef": 21,
     "PlayFromZone": 16,
@@ -261,6 +261,7 @@
     "C14 : attackedTurn et dealtDamageTurn remplacés par le journal du tour (attackedThisTurn, dealtDamageThisTurn) : GameObject 73 → 71",
     "C19 : attackWith.defending (« un adversaire vous attaque avec N créatures », Tomik, Wielder of Law) : TriggerSpec (champs) 155 → 156",
     "lot K1 : adventureOnly sur grantPlay (Mosswood Dreadknight) : Effect (champs) 650 → 651",
-    "lot K2 : combination sur addManaChoice (mana en n'importe quelle combinaison, 6 cartes) ; by sur le déclencheur countersPut (« vous mettez des marqueurs », 9 cartes) : Effect (champs) 651 → 652, TriggerSpec (champs) 156 → 157"
+    "lot K2 : combination sur addManaChoice (mana en n'importe quelle combinaison, 6 cartes) ; by sur le déclencheur countersPut (« vous mettez des marqueurs », 9 cartes) : Effect (champs) 651 → 652, TriggerSpec (champs) 156 → 157",
+    "lot K3 : discardHand sur CostDef (« défaussez votre main » en coût, 3 cartes) : CostDef 36 → 37"
   ]
 }

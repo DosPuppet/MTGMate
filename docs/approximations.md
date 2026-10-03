@@ -25,7 +25,7 @@ Chaque entrée porte sa nature :
 - `choix auto` **Dégager jusqu'à N terrains :** les terrains sont choisis automatiquement.
 - `choix auto` **Capacités de mana à coût (605.1a) :** elles se résolvent sans la pile, mais seulement activées à la main : le paiement automatique ne s'en sert pas (Ramos, Capital City, Loot, the Pathfinder…).
 - `règle` **« Au début de l'étape de fin, sacrifiez ce jeton » :** modélisé par une capacité retardée plutôt que par une capacité du jeton.
-- `règle` **Terrains choc mis en jeu par un effet** (et non joués) : ils arrivent engagés, sans proposer de payer 2 points de vie.
+- `règle` **Terrains choc mis en jeu au hasard par un effet** (une carte prise au hasard) : ils arrivent engagés, sans proposer de payer 2 points de vie ; mis en jeu par les autres effets (recherche, retour du cimetière, cartes regardées ou révélées), la question est posée au joueur qui les contrôlera.
 - `timing` **Vitesse :** l'augmentation (« quand un adversaire perd des PV pendant votre tour ») est immédiate, sans passer par la pile.
 - `règle` **Déclencheurs « une ou plusieurs … » (Ketramose, Dredger's Insight) :** un déclenchement par lot d'événements simultanés (un effet d'une résolution, une étape de blessures de combat, une passe d'actions basées sur l'état) ; les événements hors d'un lot (coûts payés en lançant un sort ou en activant une capacité) comptent comme un seul lot.
 - `règle` **Marqueurs de capacité :** ils s'appliquent après les autres effets de couche 6.
@@ -163,7 +163,7 @@ Dans l'ordre où elles ont été ajoutées, extension par extension.
   - Zoyowa's Justice : le propriétaire découvre après avoir mélangé la carte ; The Myriad Pools : le permanent devient une copie du sort sur la pile ;
   - Braided Net : les capacités activées du permanent engagé sont bloquées jusqu'à la fin du tour (et non tant qu'il reste engagé) ; Iceberg Titan : engager ou dégager est un mode choisi au déclenchement ;
   - Thousand Moons Infantry : se dégage au début de l'entretien de chaque adversaire (et non pendant son étape de dégagement) ; The Millennium Calendar : ses marqueurs de temps sont posés au début de votre entretien ;
-  - Thousand Moons Smithy : on choisit librement les permanents engagés (elle ne se transforme qu'avec cinq) ; Tarrian's Journal : la main est défaussée à la résolution ;
+  - Thousand Moons Smithy : on choisit librement les permanents engagés (elle ne se transforme qu'avec cinq) ;
   - Unstable Glyphbridge : le choix des créatures épargnées se fait à la résolution ; Sandswirl Wanderglyph : « pendant son tour » est vérifié comme « pendant le tour d'un adversaire » ;
   - Kitesail Larcenist : jusqu'à deux cibles contrôlées par des joueurs différents ; Tishana's Tidebinder : la capacité à contrecarrer est ciblée à l'arrivée ;
   - Locus of Enlightenment : les capacités gagnées ne sont pas limitées à une activation par tour ;
@@ -176,9 +176,7 @@ Dans l'ordre où elles ont été ajoutées, extension par extension.
   - `choix auto` Leatherhead, Swamp Stalker : le marqueur retiré est choisi par le moteur (+1/+1 d'abord, puis les autres) ; l'artefact ou l'enchantement détruit est celui d'un adversaire quelconque (« ce joueur ») ;
   - `choix auto` Elven Passage : on contemple un Elfe automatiquement dès qu'on en contrôle un ou qu'on en a un en main, sans montrer la carte révélée ;
   - `règle` Torch the Tower : la cible est exilée si elle meurt ce tour-ci, même si ses blessures ont été prévenues ;
-  - `timing` Earthbender Ascension : « s'il a quatre marqueurs de quête ou plus » est vérifié à la résolution de la capacité de landfall, et non comme condition de la capacité réflexive.
   - `règle` Travail d'équipe : la force des créatures engagées est comptée comme pour l'équipage (un pilote compte 2 de plus) ;
-  - `timing` Azog, Moria's Ruin : « si vous contrôliez cette créature, piochez une carte » est fait avant la destruction.
   - `choix auto` Réunir des preuves « X, X étant la valeur de mana totale des permanents ciblés » (Urgent Necropsy) : les cartes exilées sont choisies par le moteur (la moins chère qui suffit, sinon la plus chère) ; ailleurs, le joueur les choisit ;
   - `timing` Superior Spider-Man : la carte copiée est exilée en arrivant, et non par une capacité réflexive.
   - `timing` Dispelling Exhale : contempler un Dragon est vérifié à la résolution (vous en contrôlez un ou en avez un en main) ;
@@ -188,7 +186,6 @@ Dans l'ordre où elles ont été ajoutées, extension par extension.
   - `timing` Head of the Hunt : le Loup est créé en même temps que l'exil, et non par une capacité réflexive.
 - **Tarkir: Dragonstorm (`docs/extensions/tdm.md`) :**
   - `timing` Osseous Exhale, Piercing Exhale : contempler un Dragon est vérifié à la résolution, comme Dispelling Exhale ; Caustic Exhale : « contemplez un Dragon ou payez {1} » est vérifié au lancement, sans montrer la carte révélée ;
-  - `timing` Reverberating Summons : la main est défaussée à la résolution, et non en coût ;
   - `règle` Rite of Renewal : les cartes mélangées viennent d'un même cimetière, et vont dans la bibliothèque de leur propriétaire, que ce soit ou non le joueur ciblé ;
   - `choix auto` Severance Priest : une carte non-terrain est toujours exilée s'il y en a une (« vous pouvez choisir ») ;
   - `règle` Sonic Shrieker : un joueur ciblé défausse une carte même si ses blessures ont été prévenues ;
@@ -212,7 +209,6 @@ Dans l'ordre où elles ont été ajoutées, extension par extension.
   - `choix auto` Graveshifter : la carte est ciblée d'office, son retour est facultatif ;
   - `règle` Eclipsed Realms : le type choisi est pris parmi tous les types de créature ; un terrain joué prend le choix par défaut (le type le plus présent chez vous) ;
   - `règle` Foraging Wickermaw : cinq capacités (une par couleur), activables seulement tant qu'elle est incolore ;
-  - `timing` Puca's Eye : la couleur est choisie quand la capacité est mise sur la pile, et non après la pioche ;
   - `règle` Dawn-Blessed Pennant : le type (une des huit tribus) est choisi comme un mode en arrivant ;
   - `choix auto` End-Blaze Epiphany : la carte jouable est choisie en la jouant, et non à l'exil ;
   - `règle` Aurora Awakener : toutes les cartes de permanent révélées vont sur le champ de bataille (et non « un nombre quelconque ») ;
@@ -271,26 +267,23 @@ Dans l'ordre où elles ont été ajoutées, extension par extension.
   - `règle` cascade (Quandrix, the Proof) : la carte non lancée va au-dessous après les autres cartes exilées (et non dans un ordre aléatoire avec elles) ;
   - `règle` Lorehold, the Historian : le miracle accordé est une capacité déclenchée à la première pioche du tour (la carte n'est pas révélée), qui propose de la lancer pour {2}.
 - **Murders at Karlov Manor (`docs/extensions/mkm.md`) :**
+  - `règle` Ill-Timed Explosion : une carte défaussée qui quitte le cimetière avant la résolution de la capacité réflexive ne compte plus pour X ;
   - `règle` suspect (701.60) : la menace et « ne peut pas bloquer » s'ajoutent après les effets de couche 6 ; un effet « perd toutes ses capacités » ne les retire pas ;
   - `timing` Bubble Smuggler : « en étant retournée face visible, quatre marqueurs +1/+1 » est une capacité déclenchée (on peut y répondre) ;
   - `règle` Coveted Falcon : « un permanent que vous possédez mais ne contrôlez pas » est « contrôlé par un adversaire et non possédé par lui » (exact en duel) ;
   - `règle` Living Conundrum : « si votre bibliothèque est vide » est jugé une fois pour toute une pioche de plusieurs cartes ;
   - `choix auto` Agency Outfitter : chaque nom est cherché dans le cimetière, puis la main, puis la bibliothèque (ordre fixe) ;
   - `règle` Illicit Masquerade : « une autre carte de créature ciblée » n'exclut pas la créature morte (la cibler ne ramène rien) ;
-  - `règle` Connecting the Dots : « défaussez votre main » se fait à la résolution, et non en payant le coût ;
   - `règle` Krenko's Buzzcrusher : les terrains non-base sont ciblés (au plus un par joueur) ; celui qui cherche est le propriétaire du terrain détruit ;
   - `règle` Expedited Inheritance : « son contrôleur » d'une créature morte est son propriétaire ;
   - `règle` Anzrag's Rampage : « les artefacts que vous ne contrôlez pas » sont ceux de vos adversaires ;
   - `timing` Archdruid's Charm, Flourishing Bloom-Kin : les cartes cherchées passent par la main avant que le terrain arrive engagé ; le mélange a lieu avant ;
-  - `timing` Ezrim, Agency Chief : « au choix » est trois capacités (une par mot-clé), le choix se fait à l'activation ;
   - `timing` Crowd-Control Warden : retournée face visible, les marqueurs viennent d'une capacité déclenchée (à l'arrivée, c'est un remplacement) ;
-  - `timing` Granite Witness : engager ou dégager est un mode choisi quand la capacité est mise sur la pile ;
   - `règle` Break Out : la créature révélée repasse sur le dessus de la bibliothèque avant d'aller sur le champ de bataille ou en main ;
   - `choix auto` Worldsoul's Rage : les terrains sont pris dans la main, puis dans le cimetière ;
   - `règle` Rune-Brand Juggler : « sacrifiez une créature suspecte » ne peut pas sacrifier le Juggler lui-même ;
   - `règle` Rakdos, Patron of Chaos : un adversaire qui accepte sacrifie ce qu'il peut, et vous piochez quand même ;
   - `règle` Expose the Culprit : les cartes exilées ne sont pas mélangées en une pile face cachée avant d'être enveloppées d'une cape (vous connaissez chacune de vos cartes face cachée) ;
-  - `timing` Ill-Timed Explosion : les blessures suivent la défausse pendant la résolution (pas de capacité réflexive) ; défausser une seule carte ne fait rien ;
   - `timing` Tin Street Gossip : {R}{G} vient d'une capacité activée qui utilise la pile (comme Troyan, Gutsy Explorer) ; le mana sert aussi aux capacités des créatures face cachée ;
   - `règle` Officious Interrogation : au plus huit joueurs ciblés.
   - `choix auto` Hedge Whisperer : elle reste engagée pendant votre étape de dégagement tant que son effet (le terrain 5/5) dure, et se dégage sinon ;
@@ -314,7 +307,6 @@ Dans l'ordre où elles ont été ajoutées, extension par extension.
   - `règle` Bumi, Unleashed : « seules les créatures-terrains peuvent attaquer pendant ce combat » interdit d'attaquer, jusqu'à la fin du tour, aux créatures non-terrains présentes à la résolution ;
   - `règle` Iroh, Tea Master : « les permanents que vous possédez et que vos adversaires contrôlent » sont ceux qu'un adversaire contrôle sans les posséder (exact en duel) ;
   - `règle` Zuko, Conflicted (quatrième chapitre) : Zuko revient sous votre contrôle, puis passe sous celui du premier adversaire ;
-  - `timing` Fire Lord Azula : « tant qu'elle attaque » est revérifié à la résolution ;
   - `timing` Bender's Waterskin : il se dégage au début de l'entretien de chaque autre joueur (capacité déclenchée), et non pendant son étape de dégagement ;
   - `règle` Trusty Boomerang : la capacité « {1}, {T} : engagez une créature ciblée, renvoyez le Boomerang » est portée par l'Équipement (elle reste si la créature équipée perd ses capacités) ;
   - `règle` Aang's Journey (kické) : deux recherches, donc deux mélanges.

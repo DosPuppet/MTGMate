@@ -514,6 +514,8 @@ export interface CostDef {
   payLifeX?: boolean;
   /** Défausser N cartes (choisies par le joueur ; par défaut les premières de la main). */
   discard?: number;
+  /** « Défaussez votre main » (payable même main vide). */
+  discardHand?: boolean;
   /** … seulement des cartes correspondantes (Lluwen : « défaussez une carte de terrain »). */
   discardFilter?: ObjectFilter;
   /** Ninjutsu : renvoyer en main un attaquant non bloqué que vous contrôlez (choisi automatiquement : le plus faible). */

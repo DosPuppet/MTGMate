@@ -30,6 +30,7 @@ import {
   nameOf,
   namesIn,
   passAccepting,
+  passBoth,
   picking,
   scenario,
   settle,
@@ -3312,6 +3313,36 @@ describe("lot A, multicolores", () => {
       expect(s.players.p2?.life).toBe(17);
     });
 
+    it("Fire Lord Azula : « tant qu'elle attaque » n'est vérifié qu'au déclenchement ; retirée du combat ensuite, la copie est faite", () => {
+      /** Éphémère de test à {0} : « Acquérez le contrôle de la créature ciblée jusqu'à la fin du tour. » */
+      const threaten = customCard({
+        name: "Test Threaten",
+        types: ["Instant"],
+        typeLine: "Instant",
+        spell: dsl.spell([dsl.target.creature()], [dsl.fx.gainControl(dsl.ref.target())]),
+      });
+      let s = scenario({
+        p1: { battlefield: ["Fire Lord Azula", "Mountain"], hand: ["Lightning Strike"] },
+        p2: { hand: [threaten] },
+      });
+      const azula = idOf(s, "p1", "battlefield", "Fire Lord Azula");
+      s = attack(s, [azula]);
+      s = advanceUntil(s, (x) => x.pending?.kind === "priority" && x.pending.player === "p1" && x.stack.length === 0);
+      s = cast(s, "p1", "Lightning Strike", { targets: { t: ["p2"] } });
+      // La capacité d'Azula se déclenche (elle attaque) et va sur la pile au-dessus de l'Éclair.
+      expect(s.stack).toHaveLength(2);
+      s = act(s, "p1", { type: "pass" });
+      expect(s.pending?.kind === "priority" && s.pending.player).toBe("p2");
+      // En réponse, l'adversaire en prend le contrôle : elle est retirée du combat (506.4).
+      s = passBoth(cast(s, "p2", "Test Threaten", { targets: { t: [azula] } }));
+      expect(s.objects[azula]?.controller).toBe("p2");
+      expect(s.combat?.attackers.some((a) => a.id === azula)).toBe(false);
+      expect(s.stack).toHaveLength(2);
+      // La capacité se résout quand même : l'Éclair est copié.
+      s = settle(s);
+      expect(s.players.p2?.life).toBe(14);
+    });
+
     describe("Fire Lord Zuko", () => {
       /** Éphémère de test : « Exilez la créature ciblée, puis renvoyez-la sur le champ de bataille. » */
       const flicker = customCard({
@@ -4795,6 +4826,54 @@ describe("Avatar: The Last Airbender : cartes du méta (PLAN-C, lot C13)", () =>
       expect(chars(s, idOf(s, "p2", "battlefield", "Forest")).keywords).not.toContain("vigilance");
       s = act(s, "p1", { type: "declareAttackers", attackers: [{ id: forest, defender: "p2" }] });
       expect(s.objects[forest]?.tapped).toBe(false);
+    });
+  });
+
+  describe("Earthbender Ascension", () => {
+    /** Éphémère de test à {0} : « Retirez un marqueur de quête de l'enchantement ciblé. » */
+    const unquest = customCard({
+      name: "Test Unquest",
+      types: ["Instant"],
+      typeLine: "Instant",
+      spell: dsl.spell([dsl.target.permanent("t", ["Enchantment"])], [dsl.fx.removeCounters(dsl.ref.target(), 1, "quest")]),
+    });
+    /** Joue une Forêt avec l'Ascension à `quest` marqueurs, jusqu'à la priorité suivant la résolution du landfall. */
+    const landfall = (quest: number) => {
+      let s = scenario({
+        p1: { battlefield: [{ name: "Earthbender Ascension", counters: { quest } }, "Bear Cub"], hand: ["Forest", unquest] },
+      });
+      const asc = idOf(s, "p1", "battlefield", "Earthbender Ascension");
+      const bear = idOf(s, "p1", "battlefield", "Bear Cub");
+      s = act(s, "p1", { type: "playLand", card: idOf(s, "p1", "hand", "Forest") });
+      expect(s.stack).toHaveLength(1);
+      // Le landfall se résout : un marqueur de quête.
+      s = passAccepting(s, (x) => x.pending?.kind === "priority" && x.stack.every((i) => i.kind === "ability" && !!i.inline));
+      return { s, asc, bear };
+    };
+
+    it("au quatrième marqueur, la capacité réflexive va sur la pile à part, puis +1/+1 et piétinement", () => {
+      const r = landfall(3);
+      expect(r.s.objects[r.asc]?.counters.quest).toBe(4);
+      expect(r.s.stack).toHaveLength(1);
+      expect(r.s.stack[0]?.targets.t).toEqual([r.bear]);
+      const s = settle(r.s);
+      expect(s.objects[r.bear]?.counters["+1/+1"]).toBe(1);
+      expect(chars(s, r.bear).keywords).toContain("trample");
+    });
+
+    it("la condition est revérifiée à la résolution de la capacité réflexive (603.4) : un marqueur retiré en réponse, rien", () => {
+      const r = landfall(3);
+      expect(r.s.stack).toHaveLength(1);
+      const s = settle(cast(r.s, "p1", "Test Unquest", { targets: { t: [r.asc] } }));
+      expect(s.objects[r.asc]?.counters.quest).toBe(3);
+      expect(s.objects[r.bear]?.counters["+1/+1"] ?? 0).toBe(0);
+      expect(chars(s, r.bear).keywords).not.toContain("trample");
+    });
+
+    it("au troisième marqueur, la capacité réflexive ne se déclenche pas", () => {
+      const r = landfall(2);
+      expect(r.s.objects[r.asc]?.counters.quest).toBe(3);
+      expect(r.s.stack).toHaveLength(0);
     });
   });
 

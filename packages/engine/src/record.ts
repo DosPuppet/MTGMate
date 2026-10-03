@@ -206,8 +206,13 @@ export const RECORD_VERSION = 1;
  * - 73 : mana « en n'importe quelle combinaison de couleurs » réparti par le solveur ou par le joueur (Vivi Ornitier,
  *   Muerra…) ; « chaque fois que vous mettez des marqueurs » ne compte que ceux que vous mettez, sur toute créature si le
  *   texte le dit ; « engagez N créatures dégagées » peut engager la source (302.6) (lot K2).
+ * - 74 : terrain choc mis sur le champ de bataille par un effet : son futur contrôleur peut payer les points de vie pour
+ *   qu'il arrive dégagé ; « défaussez votre main » est un coût (Reverberating Summons, Connecting the Dots, Tarrian's
+ *   Journal) ; une capacité déclenchée accordée « si… » revérifie sa condition à la résolution (603.4) ; moments corrigés
+ *   par script (Earthbender Ascension, Fire Lord Azula, Azog, Puca's Eye, Ill-Timed Explosion, Granite Witness, Ezrim,
+ *   Sewer-veillance Cam, Rattleback Apothecary) (lot K3).
  */
-export const RULES_VERSION = 73;
+export const RULES_VERSION = 74;
 
 /** Un point de contrôle toutes les N décisions (plus la dernière de la partie). */
 export const CHECKPOINT_EVERY = 25;
