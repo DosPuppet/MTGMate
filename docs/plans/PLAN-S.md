@@ -36,7 +36,8 @@ Côté performance, les caches des couches et des statiques sont des `WeakMap` i
 | S10 | Rangement de `dsl.ts` et des `common.ts`, GameState | |
 | P1 | Les caches (couches, statiques de joueur, sources des déclencheurs) suivent la copie de l'état (`cloneState`), toujours validés par leur clé : bench aléatoire 2 j. 4 801 → 5 375 déc/s, 4 j. 3 419 → 4 226, IA heuristique 2 j. 2 379 → 2 734 (mesures avant et après, même session) ; les cibles du bench sont atteintes ; empreintes identiques | ✅ |
 | P2 | Une entrée du journal du tour n'invalide le cache des couches que s'il lit le journal (dépendance `turnLog` : `turnEvents`, `perTurnEvents`, filtres « a attaqué / infligé des blessures ce tour-ci ») ; fonction d'invalidation installée par `layers.ts` (`onTurnLogged`) pour ne pas allonger le cycle d'imports : IA heuristique 4 j. 715 → 823 déc/s ; empreintes identiques, 1 800 parties de fuzz de plus sans écart de cache | ✅ |
-| P3 à P5 | Performance (filtres compilés, index des déclencheurs, définitions partagées) | |
+| P5 (écarté) | Geler les définitions et partager les morceaux gelés dans `deepClone` : mesuré plus lent (aléatoire 2 j. 5 575 → 5 162 déc/s, IA heuristique 4 j. 736 → 669, mesures consécutives) ; abandonné. Partager les dernières informations connues et les entrées du journal (écrites une fois) au lieu de les recopier : gain dans le bruit de mesure (+0 à +2 %), abandonné aussi | ✗ |
+| P3, P4 | Performance (filtres compilés, index des déclencheurs) | |
 
 ## Principes (valent pour tous les lots)
 
