@@ -409,33 +409,21 @@ export interface DelayedTrigger {
   ability: InlineAbility;
 }
 
-/** Statistiques du tour en cours, par joueur (conditions et déclencheurs « pour la première fois »). */
+/**
+ * Compteurs du tour en cours, par joueur, propres à une règle (ordre des sorts, première pièce…). Ce qui s'est passé
+ * pendant le tour et que les cartes interrogent (vie gagnée ou perdue, pioches, défausses, crimes…) est dans le journal
+ * du tour (`s.turnLog`, `turnlog.ts`).
+ */
 export interface TurnStats {
-  lifeGained: number;
-  lifeGainEvents: number;
-  lifeLost: number;
-  cardsDrawn: number;
   spellsCast: number;
-  /** Regards (scry) et surveillances effectués ce tour-ci. */
-  scried: number;
-  /** Blessures non de combat subies ce tour-ci. */
-  noncombatDamageTaken: number;
-  /** Capacités de loyauté activées ce tour-ci. */
-  loyaltyActivations: number;
-  /** Cartes défaussées ce tour-ci (Jiang Yanggu, Alone). */
-  cardsDiscarded: number;
   /** Lancers de pièce de ce joueur ce tour-ci (Edgar). */
   coinFlips?: number;
   /** Capacités d'exhaust activées ce tour-ci (Elvish Refueler). */
   exhaustActivated?: number;
-  /** Crimes commis ce tour-ci (700.13). */
-  crimes?: number;
   /** Permanents dégagés pendant l'étape de dégagement de ce joueur (The Millennium Calendar). */
   untappedInUntapStep?: number;
   /** Warped Space : un sort lancé depuis l'exil sans payer son coût de mana ce tour-ci. */
   freeFromExile?: number;
-  /** Un permanent est arrivé face cachée sous son contrôle, ou il en a retourné un face visible (Oblivious Bookworm). */
-  faceDownOrUp?: number;
   /** Mana total dépensé pour lancer des sorts ce tour-ci (Dépense, Bloomburrow). */
   manaSpentOnSpells?: number;
 }
@@ -483,8 +471,14 @@ export type TurnLogEntry =
   | { e: "sacrifice"; player: PlayerId; types: CardType[]; subtypes: string[]; supertypes?: string[]; token?: boolean }
   /** Marqueurs mis sur un permanent ; `player` : celui qui les met (contrôleur de ce qui se résout). */
   | { e: "counters"; player: PlayerId; kind: string; n: number; types: CardType[]; subtypes: string[] }
-  /** Capacité activée (hors mana) ; `equip` : une capacité d'équipement (Kíli the Resourceful). */
-  | { e: "activate"; player: PlayerId; equip?: boolean; types?: CardType[]; subtypes?: string[] }
+  /** Capacité activée (hors mana) ; `equip` : une capacité d'équipement (Kíli the Resourceful) ; `loyalty` : de loyauté. */
+  | { e: "activate"; player: PlayerId; equip?: boolean; loyalty?: boolean; types?: CardType[]; subtypes?: string[] }
+  /** Vie gagnée ou perdue par `player` (un événement par gain ou perte). */
+  | { e: "lifeGain" | "lifeLoss"; player: PlayerId; amount: number; types?: CardType[]; subtypes?: string[] }
+  /** Une carte piochée ; des cartes défaussées (`amount`) ; un regard ou une surveillance ; un crime (700.13) ; un permanent
+   * retourné face visible. */
+  | { e: "draw" | "scry" | "crime" | "turnFaceUp"; player: PlayerId; types?: CardType[]; subtypes?: string[] }
+  | { e: "discard"; player: PlayerId; amount: number; types?: CardType[]; subtypes?: string[] }
   /** Maîtrise des éléments (Avatar). */
   | { e: "bend"; player: PlayerId; kind: "water" | "earth" | "fire" | "air"; types?: CardType[]; subtypes?: string[] }
   | {
@@ -545,15 +539,19 @@ export interface TurnLogQuery {
   sourceColors?: Color[];
   sourceTypes?: CardType[];
   sourceSupertype?: string;
+  /** La somme des quantités (blessures, vie, cartes défaussées) plutôt que le nombre d'entrées. */
   sum?: boolean;
   perPlayer?: boolean;
-  /** Blessures : le nombre de sources différentes (Case of the Burning Masks). */
-  distinctSources?: boolean;
-  /** Maîtrise des éléments : seulement cette sorte ; `distinctKinds` : le nombre de sortes différentes (Avatar Aang). */
+  /** Capacité activée : seulement les capacités de loyauté. */
+  loyalty?: boolean;
+  /** Maîtrise des éléments : seulement cette sorte. */
   bendKind?: "water" | "earth" | "fire" | "air";
-  distinctKinds?: boolean;
-  /** Le nombre de types de carte différents parmi les entrées (April O'Neil : « chaque type parmi les sorts lancés »). */
-  distinctTypes?: boolean;
+  /**
+   * Le nombre de valeurs différentes parmi les entrées : sources des blessures (Case of the Burning Masks), sortes de
+   * maîtrise (Avatar Aang), types de carte (April O'Neil : « chaque type parmi les sorts lancés »), joueurs concernés
+   * (Kaito : « adversaires qui ont perdu des points de vie »).
+   */
+  distinct?: "source" | "kind" | "type" | "player";
 }
 
 export interface CombatState {

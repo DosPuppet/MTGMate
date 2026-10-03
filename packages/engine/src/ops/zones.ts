@@ -50,6 +50,7 @@ import {
 } from "../state";
 import { addPlayerEffect, playerStatic, quantityMods, recipientMatches } from "../statics";
 import { matchesCard, matchesObjectFilter, shareCreatureType } from "../targets";
+import { logTurnEvent } from "../turnlog";
 import type { CardType, Effect, GameState, MoveSpec, ObjectFilter, ObjectId, PlayerId, Resolution } from "../types";
 import { PERMANENT_TYPES } from "../types";
 import { enterChoiceRequest } from "./permanents";
@@ -2058,8 +2059,7 @@ function scryOrSurveil(
   if (!player) return;
   const rest = player.library.slice(top.length);
   // « Chaque fois que vous regardez ou surveillez » (Reality Fracture).
-  player.turnStats.scried += 1;
-  bump(s); // des capacités statiques en dépendent (Surveillance Phantasm)
+  logTurnEvent(s, { e: "scry", player: ctx.controller });
   rulesEvent(s, { e: "scry", player: ctx.controller });
   if (scry) {
     player.library = [...order, ...rest, ...picked.map(String)];

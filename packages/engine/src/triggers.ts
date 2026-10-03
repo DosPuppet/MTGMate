@@ -37,7 +37,7 @@ import {
   validateTargets,
   withChosen,
 } from "./targets";
-import { countTurnEvents } from "./turnlog";
+import { countTurnEvents, logTurnEvent } from "./turnlog";
 import type {
   AbilityDef,
   Amount,
@@ -248,8 +248,6 @@ export function checkCondition(
       return s.turn.step === c.step;
     case "castFromGraveyard":
       return !!(sourceId && s.objects[sourceId]?.castFromGraveyard);
-    case "faceDownOrUpThisTurn":
-      return (s.players[controller]?.turnStats.faceDownOrUp ?? 0) > 0;
     case "prime": {
       const n = checkAmount(s, c.amount, controller, sourceId);
       if (n < 2) return false;
@@ -258,8 +256,6 @@ export function checkCondition(
     }
     case "turnsTakenAtLeast":
       return (s.players[controller]?.turnsTaken ?? 0) >= c.n;
-    case "crimeThisTurn":
-      return (s.players[controller]?.turnStats.crimes ?? 0) > 0;
     case "exileAtLeast":
       return s.exile.length >= c.n;
     case "evenCounters": {
@@ -274,10 +270,6 @@ export function checkCondition(
       return s.playerOrder.some(
         (p) => !s.players[p]?.lost && !s.battlefield.some((id) => s.objects[id]?.controller === p && isCreature(s, id)),
       );
-    case "attackedThisTurn":
-      return (
-        s.turn.active === controller && countTurnEvents(s, { event: "attack", who: "you", subtype: c.subtype }, controller) > 0
-      );
     case "firstEndStep":
       return (s.turn.endSteps ?? 0) <= 1;
     case "firstCombat":
@@ -286,20 +278,6 @@ export function checkCondition(
       const creatures = s.battlefield.filter((id) => isCreature(s, id));
       const best = Math.max(-Infinity, ...creatures.map((id) => chars(s, id).power));
       return creatures.some((id) => s.objects[id]?.controller === controller && chars(s, id).power === best);
-    }
-    case "scriedThisTurn":
-      return (s.players[controller]?.turnStats.scried ?? 0) > 0;
-    case "opponentDealtNoncombatDamage":
-      return opponentsOf(s, controller).some((q) => (s.players[q]?.turnStats.noncombatDamageTaken ?? 0) > 0);
-    case "drewAtLeast":
-      return (s.players[controller]?.turnStats.cardsDrawn ?? 0) >= c.n;
-    case "castThisTurn": {
-      const st = s.players[controller]?.turnStats;
-      const n =
-        (c.noncreature
-          ? countTurnEvents(s, { event: "cast", who: "you", notTypes: ["Creature"] }, controller)
-          : st?.spellsCast) ?? 0;
-      return c.exactly ? n === c.n : n >= c.n;
     }
     case "attackingAlone": {
       const atk = s.combat?.attackers ?? [];
@@ -315,12 +293,6 @@ export function checkCondition(
       return (s.objects[sourceId ?? ""]?.classLevel ?? 1) === c.level;
     case "saddled":
       return s.objects[sourceId ?? ""]?.saddledTurn === s.turn.number;
-    case "void":
-      // Vide : un permanent non-terrain a quitté le champ de bataille, ou un sort a été lancé avec la distorsion.
-      return (
-        countTurnEvents(s, { event: "zone", from: "battlefield", notTypes: ["Land"] }, controller) > 0 ||
-        countTurnEvents(s, { event: "cast", warped: true }, controller) > 0
-      );
     case "solved":
       return !!s.objects[sourceId ?? ""]?.solved;
     case "doorLocked":
@@ -331,8 +303,6 @@ export function checkCondition(
       return !!sourceId && s.objects[sourceId]?.chosen?.mode === c.mode;
     case "sourceDealtDamage":
       return !!(sourceId && s.objects[sourceId]?.dealtDamage);
-    case "activatedLoyaltyThisTurn":
-      return (s.players[controller]?.turnStats.loyaltyActivations ?? 0) > 0;
     case "behold": {
       const f = { ...c.filter, controller: "you" as const };
       const here = s.battlefield.some((id) => matchesObjectFilter(s, controller, id, f, sourceId));
@@ -410,8 +380,6 @@ export function checkCondition(
       const p = s.players[controller];
       return !!p && p.life >= p.startingLife + c.by;
     }
-    case "opponentLostLifeThisTurn":
-      return opponentsOf(s, controller).some((q) => (s.players[q]?.turnStats.lifeLost ?? 0) > 0);
     case "not":
       return !checkCondition(s, c.cond, controller, sourceId, eventObject, event);
     case "all":
@@ -446,8 +414,6 @@ export function checkCondition(
     case "xAtLeast":
     case "amountGreater":
       return false; // évalués au lancement (stack.ts) ou pendant la résolution (effects.ts)
-    case "lifeGainedAtLeast":
-      return (s.players[controller]?.turnStats.lifeGained ?? 0) >= c.n;
     case "manaPoolAtLeast": {
       const pool = s.players[controller]?.manaPool;
       const n = pool ? (Object.values(pool) as number[]).reduce((a, b) => a + b, 0) : 0;
@@ -480,8 +446,6 @@ export function checkCondition(
       const mine = measure(controller);
       return opponentsOf(s, controller).some((p) => measure(p) > mine);
     }
-    case "lostLifeThisTurn":
-      return (s.players[controller]?.turnStats.lifeLost ?? 0) > 0;
     case "mostLife": {
       // Avec une référence (le joueur défenseur…) : évaluée pendant la résolution (effects.ts).
       if (c.ref) return false;
@@ -494,7 +458,6 @@ export function checkCondition(
     }
     case "var":
     case "refLife":
-    case "refLostLife":
       return false; // évalué pendant la résolution (effects.ts)
   }
 }
@@ -1485,8 +1448,7 @@ export function checkCrime(s: GameState, player: PlayerId, targets: string[]): v
     return opponent(item?.controller);
   });
   if (!crime) return;
-  const stats = s.players[player]?.turnStats;
-  if (stats) stats.crimes = (stats.crimes ?? 0) + 1;
-  s.version += 1; // conditions « si vous avez commis un crime ce tour-ci »
+  // Journal du tour : conditions « si vous avez commis un crime ce tour-ci ».
+  logTurnEvent(s, { e: "crime", player });
   rulesEvent(s, { e: "crime", player });
 }

@@ -61,7 +61,7 @@ import {
 } from "./statics";
 import { matchesObjectFilter, matchesView, protectedFrom, resolveFilter, sourceView } from "./targets";
 import { checkCondition, processTriggers, pushInline, releaseDelayedTriggers, simultaneously } from "./triggers";
-import { logTurnEvent } from "./turnlog";
+import { countTurnEvents, logTurnEvent } from "./turnlog";
 import type { Effect, GameState, ManaType, ObjectFilter, ObjectId, PlayerId, StackItem, Step } from "./types";
 import { STEPS } from "./types";
 
@@ -591,7 +591,7 @@ export function startTurnOf(s: GameState, p: PlayerId): void {
   for (const q of s.playerOrder) {
     const pl = s.players[q];
     if (!pl) continue;
-    pl.noncombatDamageLastTurn = pl.turnStats.noncombatDamageTaken;
+    pl.noncombatDamageLastTurn = countTurnEvents(s, { event: "damage", combat: false, toPlayer: true, sum: true }, q, q);
     pl.turnStats = emptyTurnStats();
   }
   s.turnLog = [];

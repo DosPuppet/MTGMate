@@ -576,7 +576,7 @@ export const MULTI: Record<string, CardScript> = {
         [
           fx.draw(1),
           ...fx.when(
-            cond.amountAtLeast(amount.turnEvents({ event: "bend", who: "you", distinctKinds: true }), 4),
+            cond.amountAtLeast(amount.turnEvents({ event: "bend", who: "you", distinct: "kind" }), 4),
             fx.transform(ref.self),
           ),
         ],

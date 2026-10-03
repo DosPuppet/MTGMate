@@ -414,7 +414,7 @@ export const RED: Record<string, CardScript> = {
         label: "3 blessures à une créature adverse",
       }),
     ],
-    caseToSolve: cond.amountAtLeast(amount.turnEvents({ event: "damage", sourceYours: true, distinctSources: true }), 3),
+    caseToSolve: cond.amountAtLeast(amount.turnEvents({ event: "damage", sourceYours: true, distinct: "source" }), 3),
     caseSolved: [
       activated({
         sacrifice: true,

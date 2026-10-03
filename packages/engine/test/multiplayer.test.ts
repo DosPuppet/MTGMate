@@ -1,6 +1,8 @@
 import { buildDeck, deckById } from "@mtgx/cards";
 import { describe, expect, it } from "vitest";
+import { cond } from "../src/dsl";
 import { createGame } from "../src/game";
+import { checkCondition } from "../src/triggers";
 import { act, idOf, passUntil, scenario } from "./helpers";
 
 describe("multijoueur", () => {
@@ -60,6 +62,22 @@ describe("multijoueur", () => {
     s = passUntil(s, (x) => x.pending?.kind === "declareAttackers");
     const bear = idOf(s, "p1", "battlefield", "Bear Cub");
     expect(() => act(s, "p1", { type: "declareAttackers", attackers: [{ id: bear, defender: "p1" }] })).toThrow();
+  });
+
+  it("journal du tour : un joueur éliminé n'est plus un adversaire (800.4a) ; « un adversaire a perdu des PV » l'ignore", () => {
+    let s = scenario({
+      players: 3,
+      p1: { battlefield: ["Mountain", "Mountain"], hand: ["Lightning Strike"] },
+      p2: { life: 3 },
+      p3: { life: 10 },
+    });
+    s = act(s, "p1", { type: "cast", card: idOf(s, "p1", "hand", "Lightning Strike"), targets: { t: ["p2"] } });
+    s = passUntil(s, (x) => x.stack.length === 0);
+    expect(s.players.p2?.lost).toBe(true);
+    // p2 a perdu des PV ce tour-ci, mais a quitté la partie : aucun adversaire en partie n'en a perdu.
+    expect(checkCondition(s, cond.opponentLostLife, "p1")).toBe(false);
+    s.turnLog.push({ e: "lifeLoss", player: "p3", amount: 1 });
+    expect(checkCondition(s, cond.opponentLostLife, "p1")).toBe(true);
   });
 
   it("un joueur éliminé quitte la partie avec ses cartes, les autres continuent", () => {

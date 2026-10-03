@@ -147,10 +147,7 @@ export function rulesEvent(s: GameState, ev: RulesEvent): void {
     s.leftBatch ??= [];
     s.leftBatch.push(ev.lki.id);
   }
-  if (ev.e === "discard") {
-    const pl = s.players[ev.player];
-    if (pl) pl.turnStats.cardsDiscarded += ev.cards.length;
-  }
+  if (ev.e === "discard") logTurnEvent(s, { e: "discard", player: ev.player, amount: ev.cards.length });
   detectTriggers(s, ev);
 }
 
@@ -217,15 +214,7 @@ export function shuffle<T>(s: GameState, items: T[]): void {
 
 export function emptyTurnStats(): TurnStats {
   return {
-    lifeGained: 0,
-    lifeGainEvents: 0,
-    lifeLost: 0,
-    cardsDrawn: 0,
     spellsCast: 0,
-    scried: 0,
-    noncombatDamageTaken: 0,
-    loyaltyActivations: 0,
-    cardsDiscarded: 0,
   };
 }
 
@@ -667,8 +656,7 @@ export function turnFaceUp(s: GameState, id: ObjectId): void {
   if (o?.zone !== "battlefield" || !o.faceDown) return;
   o.defId = o.faceDown.card;
   delete o.faceDown;
-  const stats = s.players[o.controller]?.turnStats;
-  if (stats) stats.faceDownOrUp = (stats.faceDownOrUp ?? 0) + 1;
+  logTurnEvent(s, { e: "turnFaceUp", player: o.controller });
   bump(s);
   emit({ type: "turnedFaceUp", objectId: id, defId: o.defId });
   rulesEvent(s, { e: "turnedFaceUp", objectId: id });

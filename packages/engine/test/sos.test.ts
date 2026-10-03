@@ -521,8 +521,7 @@ describe("Secrets of Strixhaven, socle : Increment, Repartee, Opus, Infusion", (
   it("Infusion : vrai seulement si vous avez gagné des points de vie ce tour-ci", () => {
     const s = scenario({});
     expect(checkCondition(s, INFUSION, "p1")).toBe(false);
-    const pl = s.players.p1;
-    if (pl) pl.turnStats.lifeGained = 1;
+    s.turnLog.push({ e: "lifeGain", player: "p1", amount: 1 });
     expect(checkCondition(s, INFUSION, "p1")).toBe(true);
   });
 });

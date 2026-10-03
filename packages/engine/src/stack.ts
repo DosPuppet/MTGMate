@@ -3077,8 +3077,6 @@ export function activateAbility(s: GameState, player: PlayerId, source: ObjectId
     o.loyaltyTurn = s.turn.number;
     const cost = ab.cost.loyaltyX ? -x : ab.cost.loyalty;
     if (cost !== 0) changeCounters(s, o, "loyalty", cost, true);
-    const pl = s.players[player];
-    if (pl) pl.turnStats.loyaltyActivations += 1;
     rulesEvent(s, { e: "loyalty", player, sourceId: source, cost });
   }
   // Une entrée par activation : Wonder Man permet une activation de plus des montées en puissance.
@@ -3213,7 +3211,12 @@ export function activateAbility(s: GameState, player: PlayerId, source: ObjectId
   if (ab.cost.bounceSelf) moveObject(s, source, "hand");
   s.priority.passes = 0;
   emit({ type: "activate", player, stackId: item.id, defId: o.defId, targets: flatTargets(targets) });
-  logTurnEvent(s, { e: "activate", player, equip: ab.equip || undefined });
+  logTurnEvent(s, {
+    e: "activate",
+    player,
+    equip: ab.equip || undefined,
+    loyalty: ab.cost.loyalty !== undefined || undefined,
+  });
   rulesEvent(s, { e: "activated", player, stackId: item.id });
   announceTargets(s, item.id, player, targets);
   // 605.1a / 605.3b : une capacité de mana ne va pas sur la pile ; elle se résout aussitôt.

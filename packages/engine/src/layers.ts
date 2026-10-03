@@ -140,7 +140,7 @@ export const CDA_AMOUNT_KINDS: ReadonlySet<string> = new Set([
   "basicLandTypes",
   "colorsAmong",
   "countersAmong",
-  "cardsDrawnThisTurn",
+  "turnEvents",
   "maxManaValue",
   "count",
 ]);
@@ -193,8 +193,8 @@ function cdaValue(s: GameState, o: GameObject, a: Amount): number {
       return n + Math.max(0, x.counters[a.counter] ?? 0);
     }, 0);
   }
-  // Duelist of the Mind : cartes piochées ce tour-ci.
-  if (a.kind === "cardsDrawnThisTurn") return s.players[o.controller]?.turnStats.cardsDrawn ?? 0;
+  // Journal du tour (Duelist of the Mind : cartes piochées ce tour-ci), vu du contrôleur.
+  if (a.kind === "turnEvents" && !a.of) return countTurnEvents(s, a.query, o.controller);
   if (a.kind === "maxManaValue") {
     // Emissary Escort : plus grande valeur de mana parmi vos autres artefacts (types imprimés).
     return Math.max(

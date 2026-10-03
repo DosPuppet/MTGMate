@@ -135,9 +135,6 @@
     "discardedThisTurn": "Norman Osborn // Green Goblin — propriété d'une seule carte (audit du 02/10/2026, § 5.1) : à rattacher à une famille dès qu'une autre carte en a besoin",
     "discardOrLife": "Bitter Triumph — propriété d'une seule carte (audit du 02/10/2026, § 5.1) : à rattacher à une famille dès qu'une autre carte en a besoin",
     "distinctColors": "Sunbird Standard // Sunbird Effigy — propriété d'une seule carte (audit du 02/10/2026, § 5.1) : à rattacher à une famille dès qu'une autre carte en a besoin",
-    "distinctKinds": "Avatar Aang // Aang, Master of Elements — propriété d'une seule carte (audit du 02/10/2026, § 5.1) : à rattacher à une famille dès qu'une autre carte en a besoin",
-    "distinctSources": "Case of the Burning Masks — propriété d'une seule carte (audit du 02/10/2026, § 5.1) : à rattacher à une famille dès qu'une autre carte en a besoin",
-    "distinctTypes": "April O'Neil, Hacktivist — propriété d'une seule carte (audit du 02/10/2026, § 5.1) : à rattacher à une famille dès qu'une autre carte en a besoin",
     "each": "Throne of the Grim Captain // The Grim Captain — propriété d'une seule carte (audit du 02/10/2026, § 5.1) : à rattacher à une famille dès qu'une autre carte en a besoin",
     "effectOnly": "Doubling Season — propriété d'une seule carte (audit du 02/10/2026, § 5.1) : à rattacher à une famille dès qu'une autre carte en a besoin",
     "equipDiscount": "Firion, Wild Rose Warrior — propriété d'une seule carte (audit du 02/10/2026, § 5.1) : à rattacher à une famille dès qu'une autre carte en a besoin",
@@ -213,7 +210,6 @@
     "typeChosen": "Arachne, Psionic Weaver — propriété d'une seule carte (audit du 02/10/2026, § 5.1) : à rattacher à une famille dès qu'une autre carte en a besoin",
     "untilLeavesExile": "Emrakul, the Exigent Doom — propriété d'une seule carte (audit du 02/10/2026, § 5.1) : à rattacher à une famille dès qu'une autre carte en a besoin",
     "usingManaFrom": "Smaug, Wicked Worm — propriété d'une seule carte (audit du 02/10/2026, § 5.1) : à rattacher à une famille dès qu'une autre carte en a besoin",
-    "warped": "Full Bore — propriété d'une seule carte (audit du 02/10/2026, § 5.1) : à rattacher à une famille dès qu'une autre carte en a besoin",
     "wasAttachedToSource": "Zack Fair — propriété d'une seule carte (audit du 02/10/2026, § 5.1) : à rattacher à une famille dès qu'une autre carte en a besoin",
     "whileSourceTapped": "Hedge Whisperer — propriété d'une seule carte (audit du 02/10/2026, § 5.1) : à rattacher à une famille dès qu'une autre carte en a besoin",
     "whileTapped": "Braided Net — « tant qu'il reste engagé » : l'effet cesse pour chaque objet touché qui se dégage (lot K7, descripteur de durée) : famille des durées d'effet (whileSource, whileSourceTapped, whileYouControlSource), à réutiliser pour toute carte « tant qu'il reste engagé »",
@@ -252,10 +248,10 @@
     "Effect (champs)": 668,
     "TriggerSpec": 62,
     "TriggerSpec (champs)": 156,
-    "Condition": 73,
-    "Condition (champs)": 124,
-    "Amount": 72,
-    "Amount (champs)": 124,
+    "Condition": 60,
+    "Condition (champs)": 104,
+    "Amount": 67,
+    "Amount (champs)": 119,
     "Ref": 35,
     "Ref (champs)": 55
   },
@@ -278,6 +274,7 @@
     "PLAN-D D6 : modes d'une capacité réflexive (reflexive.modes, Hylda) : Effect (champs) 665 → 666",
     "PLAN-D D7 : moveTo.attachTo (« revient attaché à », One Last Job) et chooseAmong.optional (« jusqu'à un », Light of Judgment, Unexpected Request) : Effect (champs) 666 → 668, Ref 34 → 35, Ref (champs) 53 → 55",
     "PLAN-D D8 : reflexive.vars (valeurs figées à la création, Ill-Timed Explosion) et modify.whileHasCounter (Ultima) : Effect (champs) 668 → 670",
-    "PLAN-S S1 : code mort (fullyUnlocked, bend.kinds, search.optional, mayPay.waterbend, CardDef.caseToSolve, ObjectFilter.modal) et alias exacts réécrits par les aides du DSL (seuil, morbide, PV au moins, cible choisie, fourrager, faufilement ; couleurs distinctes, marqueurs LKI, sorts lancés, morts et attaquants du tour) : CardDef 95 → 94, ObjectFilter 91 → 90, Effect (champs) 670 → 668, TriggerSpec (champs) 157 → 156, Condition 82 → 73, Condition (champs) 138 → 124, Amount 77 → 72, Amount (champs) 131 → 124"
+    "PLAN-S S1 : code mort (fullyUnlocked, bend.kinds, search.optional, mayPay.waterbend, CardDef.caseToSolve, ObjectFilter.modal) et alias exacts réécrits par les aides du DSL (seuil, morbide, PV au moins, cible choisie, fourrager, faufilement ; couleurs distinctes, marqueurs LKI, sorts lancés, morts et attaquants du tour) : CardDef 95 → 94, ObjectFilter 91 → 90, Effect (champs) 670 → 668, TriggerSpec (champs) 157 → 156, Condition 82 → 73, Condition (champs) 138 → 124, Amount 77 → 72, Amount (champs) 131 → 124",
+    "PLAN-S S2 : le journal du tour remplace les compteurs du tour (vie gagnée et perdue, pioches, défausses, regards, crimes, loyauté, face cachée ou retournée, blessures non de combat) et les conditions et quantités qui les lisaient : Condition 73 → 60, Condition (champs) 124 → 104, Amount 72 → 67, Amount (champs) 124 → 119"
   ]
 }

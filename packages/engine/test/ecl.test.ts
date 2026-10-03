@@ -3286,7 +3286,7 @@ describe("Lorwyn Eclipsed, lot A — multicolores", () => {
     it("Bre of Clan Stoutarm : PV gagnés ce tour-ci → la carte non-terrain exilée se lance gratuitement si sa VM le permet", () => {
       const setup = (gained: number, library: string[]) => {
         const s = scenario({ p1: { battlefield: ["Bre of Clan Stoutarm"], library } });
-        (s.players.p1 as { turnStats: { lifeGained: number } }).turnStats.lifeGained = gained;
+        if (gained) s.turnLog.push({ e: "lifeGain", player: "p1", amount: gained });
         s.version += 1;
         return s;
       };

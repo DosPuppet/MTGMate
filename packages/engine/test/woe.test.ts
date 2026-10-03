@@ -4466,8 +4466,7 @@ describe("Wilds of Eldraine, lot C1 : furtivité, X marqueurs répartis, Auras a
   it("Rowan, Scion of War : vos sorts noirs et/ou rouges coûtent {X} de moins, X étant les PV perdus ce tour-ci", () => {
     let s = scenario({ p1: { battlefield: ["Rowan, Scion of War"], hand: ["Lightning Strike"] } });
     const rowan = idOf(s, "p1", "battlefield", "Rowan, Scion of War");
-    const pl = s.players.p1;
-    if (pl) pl.turnStats.lifeLost = 1;
+    s.turnLog.push({ e: "lifeLoss", player: "p1", amount: 1 });
     s = settleAll(act(s, "p1", { type: "activate", source: rowan, ability: 0 }));
     const strike = idOf(s, "p1", "hand", "Lightning Strike");
     // {1}{R} moins {1} : {R}, impayable sans terrain mais coût affiché d'une valeur de mana 1.

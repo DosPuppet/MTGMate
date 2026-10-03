@@ -41,6 +41,8 @@ type S = GameState;
 const abilityIndex = (s: S, id: string, label: string) =>
   (s.defs[s.objects[id]?.defId ?? ""]?.abilities ?? []).findIndex((a) => a.kind === "activated" && a.label?.startsWith(label));
 
+/** Crimes commis par p1 ce tour-ci (journal du tour). */
+const crimesOf = (s: GameState) => s.turnLog.filter((e) => e.e === "crime" && e.player === "p1").length;
 describe("Outlaws of Thunder Junction", () => {
   it("plot : action spéciale depuis la main, puis lancement gratuit à un tour ultérieur, au moment d'un rituel", () => {
     let s = scenario({ p1: { battlefield: lands("Island", 4), hand: ["Djinn of Fool's Fall"] } });
@@ -93,14 +95,14 @@ describe("Outlaws of Thunder Junction", () => {
       card: idOf(s, "p1", "hand", "Scorching Shot"),
       targets: { t: [idOf(s, "p2", "battlefield", "Bear Cub")] },
     });
-    expect(s.players.p1?.turnStats.crimes).toBe(1);
+    expect(crimesOf(s)).toBe(1);
     s = passAccepting(s, (x) => x.stack.length === 0 && x.pending?.kind === "priority");
     expect(s.objects[hustler]?.counters["+1/+1"]).toBe(1);
     // Cibler sa propre créature n'est pas un crime.
     let t = scenario({ p1: { battlefield: ["Omenport Vigilante", ...lands("Mountain", 2)], hand: ["Scorching Shot"] } });
     const vig = idOf(t, "p1", "battlefield", "Omenport Vigilante");
     t = act(t, "p1", { type: "cast", card: idOf(t, "p1", "hand", "Scorching Shot"), targets: { t: [vig] } });
-    expect(t.players.p1?.turnStats.crimes ?? 0).toBe(0);
+    expect(crimesOf(t)).toBe(0);
     expect(chars(t, vig).keywords).not.toContain("doubleStrike");
   });
 
@@ -1078,7 +1080,7 @@ describe("Outlaws of Thunder Junction, lot K8 : mythiques", () => {
     expect(offered).toEqual(expect.arrayContaining([commando, cub]));
     expect(offered).not.toContain(forest);
     // Cibler une carte du cimetière adverse est un crime.
-    expect(s.players.p1?.turnStats.crimes).toBeGreaterThan(0);
+    expect(crimesOf(s)).toBeGreaterThan(0);
     // Deux Îles paient {1}{W} : n'importe quel type de mana.
     expect(namesIn(s, castNowOf(s)?.cards)).toEqual(["Cathar Commando"]);
     s = act(s, "p1", { type: "cast", card: castNowOf(s)?.cards[0] as string });
@@ -2319,7 +2321,7 @@ describe("Outlaws of Thunder Junction, lot K8 : rares (3)", () => {
     expect(s.objects[vadmir]?.counters["+1/+1"]).toBe(1);
     s = cast(s, "p1", "Shock", { targets: { t: ["p2"] } });
     s = settle(s);
-    expect(s.players.p1?.turnStats.crimes).toBe(2);
+    expect(crimesOf(s)).toBe(2);
     expect(s.objects[vadmir]?.counters["+1/+1"]).toBe(1);
     expect(chars(s, vadmir).keywords).not.toContain("menace");
     const kw = (n: number) => {
@@ -3415,7 +3417,7 @@ describe("Outlaws of Thunder Junction, lot K8 : peu communes (3)", () => {
     const cub = idOf(s, "p2", "battlefield", "Bear Cub");
     const intents: string[] = [];
     s = settleLogging(cast(s, "p1", "Neutralize the Guards", { targets: { t: ["p2"] } }), intents, () => undefined);
-    expect(s.players.p1?.turnStats.crimes).toBe(1);
+    expect(crimesOf(s)).toBe(1);
     expect(idsOf(s, "p2", "graveyard", "Llanowar Elves")).toHaveLength(1);
     expect([chars(s, cub).power, chars(s, cub).toughness]).toEqual([1, 1]);
     expect(chars(s, idOf(s, "p1", "battlefield", "Swab Goblin")).power).toBe(2);
@@ -3766,7 +3768,7 @@ describe("Outlaws of Thunder Junction, lot K8 : peu communes (4)", () => {
     const servant = idOf(s, "p1", "battlefield", "Servant of the Stinger");
     expect(chars(s, servant).keywords).toContain("deathtouch");
     s = settle(cast(s, "p1", "Shock", { targets: { t: ["p2"] } }));
-    expect(s.players.p1?.turnStats.crimes).toBe(1);
+    expect(crimesOf(s)).toBe(1);
     s = attack(s, [servant]);
     s = throughCombat(s, (req, _p, st) =>
       req.intent === "search" ? pickNamed(st, req, "Serra Angel") : picking([servant])(req),

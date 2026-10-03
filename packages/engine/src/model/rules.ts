@@ -462,7 +462,6 @@ export type TriggerSpec =
 
 /** Conditions (« if intermédiaire » 603.4, « tant que »…). */
 export type Condition =
-  | { kind: "attackedThisTurn"; subtype?: string }
   | { kind: "controls"; filter: ObjectFilter; atLeast?: number }
   /** Le sort qui met l'objet en jeu a été kické. */
   | { kind: "kicked" }
@@ -472,7 +471,6 @@ export type Condition =
   | { kind: "counterAtLeast"; counter: string; n: number }
   /** Votre total de vie dépasse votre total de départ d'au moins `by`. */
   | { kind: "lifeAboveStart"; by: number }
-  | { kind: "opponentLostLifeThisTurn" }
   | { kind: "not"; cond: Condition }
   /** Valeur mémorisée pendant la résolution (« si vous le faites », « si une carte de créature a été exilée »). */
   | { kind: "var"; name: string; atLeast?: number }
@@ -498,7 +496,6 @@ export type Condition =
   | { kind: "beholdSharingType"; ref: Ref; count: number }
   /** L'objet de l'événement (dernières informations connues) correspond au filtre (« s'il attaquait »). */
   | { kind: "eventObjectMatches"; filter: ObjectFilter }
-  | { kind: "lifeGainedAtLeast"; n: number }
   /** Un montant évalué du point de vue du contrôleur atteint N (« force totale 8 ou plus »). */
   | { kind: "amountAtLeast"; amount: Amount; n: number }
   /** Un montant strictement plus grand qu'un autre, évalués à la résolution (Evil's Thrall). */
@@ -507,20 +504,12 @@ export type Condition =
   | { kind: "xAtLeast"; n: number }
   /** « tant que vous avez N mana non dépensé ou plus » (Ozai, the Phoenix King). */
   | { kind: "manaPoolAtLeast"; n: number }
-  /** Le contrôleur a regardé (scry) ou surveillé ce tour-ci. */
-  | { kind: "scriedThisTurn" }
   /** C'est la première étape de fin de ce tour (Y'shtola Rhul). */
   | { kind: "firstEndStep" }
   /** C'est la première phase de combat du tour (Genji Glove). */
   | { kind: "firstCombat" }
   /** Vous contrôlez une créature de force la plus grande ou à égalité (Summon: Fenrir). */
   | { kind: "controlsGreatestPower" }
-  /** Un adversaire a subi des blessures non de combat ce tour-ci. */
-  | { kind: "opponentDealtNoncombatDamage" }
-  /** Le contrôleur a pioché au moins N cartes ce tour-ci. */
-  | { kind: "drewAtLeast"; n: number }
-  /** Le contrôleur a lancé au moins N sorts [non-créature] ce tour-ci. */
-  | { kind: "castThisTurn"; n: number; noncreature?: boolean; exactly?: boolean }
   /** La source est préparée. */
   | { kind: "prepared" }
   /** « Contempler un Jace » : vous contrôlez un Jace ou vous avez une carte de Jace en main. */
@@ -545,8 +534,6 @@ export type Condition =
   | { kind: "beheld" }
   /** La condition `whenCast` de la carte était remplie quand le sort a été lancé. */
   | { kind: "metWhenCast" }
-  /** Le contrôleur a activé une capacité de loyauté ce tour-ci. */
-  | { kind: "activatedLoyaltyThisTurn" }
   /** Une seule créature attaque, et elle attaque un joueur (« attaque seule un joueur »). */
   | { kind: "attackingAlone" }
   /** Un adversaire a subi des blessures non de combat au tour précédent (Command the Stage). */
@@ -566,8 +553,6 @@ export type Condition =
   | { kind: "classLevel"; level: number }
   /** Monture : la source a été montée ce tour-ci. */
   | { kind: "saddled" }
-  /** Vide : un permanent non-terrain a quitté le champ de bataille ou un sort a été lancé avec la distorsion ce tour-ci. */
-  | { kind: "void" }
   | { kind: "solved" }
   /** Un joueur (encore en partie) ne contrôle aucune créature (Sothera, the Supervoid). */
   | { kind: "playerWithoutCreatures" }
@@ -579,8 +564,6 @@ export type Condition =
   | { kind: "exileAtLeast"; n: number }
   /** Nombre total de marqueurs sur la source pair (Sab-Sunen). */
   | { kind: "evenCounters" }
-  /** Vous avez commis un crime ce tour-ci. */
-  | { kind: "crimeThisTurn" }
   /** C'est au moins votre N-ième tour (Jace Reawakened : « pas pendant vos trois premiers tours »). */
   | { kind: "turnsTakenAtLeast"; n: number }
   /** Le permanent source a été lancé depuis le cimetière (Undead Sprinter). */
@@ -589,16 +572,10 @@ export type Condition =
   | { kind: "step"; step: Step }
   /** Le montant est un nombre premier (Zimone, All-Questioning). */
   | { kind: "prime"; amount: Amount }
-  /** Un permanent est arrivé face cachée sous votre contrôle ou vous avez retourné un permanent face visible ce tour-ci. */
-  | { kind: "faceDownOrUpThisTurn" }
   /** Au moins une des conditions. */
   | { kind: "any"; of: Condition[] }
   /** Un adversaire a plus de terrains, de points de vie, de créatures ou de cartes en main que vous (Beza). */
   | { kind: "opponentHasMore"; what: "lands" | "life" | "creatures" | "hand" }
-  /** Vous avez perdu des points de vie ce tour-ci. */
-  | { kind: "lostLifeThisTurn" }
-  /** Le joueur désigné a perdu des points de vie ce tour-ci (évalué pendant la résolution). */
-  | { kind: "refLostLife"; ref: Ref }
   /** Le joueur désigné a au plus N cartes en main (évalué pendant la résolution). */
   | { kind: "handAtMost"; ref: Ref; n: number }
   /** Le joueur désigné (vous par défaut) a le plus de points de vie, ou est à égalité (Preacher of the Schism). */
@@ -685,8 +662,6 @@ export type Amount =
       zone?: "battlefield" | "graveyard" | "hand" | "exile";
       whose?: "you" | "opponents" | "all";
     }
-  /** Vie gagnée par le contrôleur ce tour-ci. */
-  | { kind: "lifeGainedThisTurn" }
   /** Marqueurs d'un type sur un objet. */
   | { kind: "countersOn"; ref: Ref; counter: string }
   /** Nombre de valeurs de mana différentes parmi les permanents non-terrains du contrôleur. */
@@ -725,8 +700,6 @@ export type Amount =
   | { kind: "distinctNames"; filter: ObjectFilter }
   /** Nombre de cartes dans une zone du contrôleur. */
   | { kind: "cardsIn"; zone: "hand" | "graveyard" | "library" }
-  /** Points de vie perdus ce tour-ci par le contrôleur (Rowan, Scion of War). */
-  | { kind: "lifeLostThisTurn" }
   /** Domaine : types de terrains de base parmi les terrains du contrôleur. */
   | { kind: "basicLandTypes" }
   /** Marqueurs d'un type parmi les permanents correspondants (« marqueurs de loyauté parmi les Jace »). */
@@ -741,8 +714,6 @@ export type Amount =
   | { kind: "manaSpent" }
   /** Votre vitesse (0 si vous n'en avez pas). */
   | { kind: "speed" }
-  /** Cartes que vous avez piochées ce tour-ci (Duelist of the Mind). */
-  | { kind: "cardsDrawnThisTurn" }
   /** Somme des valeurs de mana des permanents correspondants (Summon: Bahamut). */
   /** `zone: "exile"` : les cartes que vous possédez en exil (Ashiok, Wicked Manipulator). */
   | { kind: "totalManaValue"; filter: ObjectFilter; zone?: "exile" }
@@ -770,15 +741,12 @@ export type Amount =
   | { kind: "maxPowerInHand" }
   /** Nombre de cimetières qui contiennent au moins N cartes (Master's Councillors, The Master of Lake-town). */
   | { kind: "graveyardsWithAtLeast"; n: number }
-  /** Adversaires qui ont perdu des points de vie ce tour-ci (Kaito). */
-  | { kind: "opponentsLostLife" }
   /** X du sort qui a mis la source en jeu (Meathook Massacre II). */
   | { kind: "sourceX" }
   /** Noms différents parmi les portes déverrouillées de ses Salles (Promising Stairs). */
   | { kind: "unlockedDoorNames" }
   /** Délire : types de cartes parmi les cartes du cimetière du contrôleur. */
   | { kind: "cardTypesInGraveyard" }
-  | { kind: "cardsDiscardedThisTurn" }
   /** Plus grande endurance parmi les permanents correspondants (Ghalta the Immovable). */
   | { kind: "maxToughness"; filter: ObjectFilter }
   /** Plus grande valeur de mana parmi les cartes de votre cimetière (Hapatra). */

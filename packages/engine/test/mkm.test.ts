@@ -2462,8 +2462,7 @@ describe("Murders at Karlov Manor, lot A — rouge", () => {
           p1: { battlefield: lands("Mountain", 2), hand: ["Galvanize"] },
           p2: { battlefield: ["Fire Elemental"] },
         });
-        const p1 = s.players.p1;
-        if (p1) p1.turnStats.cardsDrawn = drawn;
+        for (let i = 0; i < drawn; i++) s.turnLog.push({ e: "draw", player: "p1" });
         const el = idOf(s, "p2", "battlefield", "Fire Elemental");
         s = settle(cast(s, "p1", "Galvanize", { t: [el] }));
         return s.objects[el]?.zone === "battlefield" ? s.objects[el]?.damage : "mort";

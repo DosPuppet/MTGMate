@@ -34,7 +34,7 @@ import {
 } from "./statics";
 import { matchesObjectFilter, matchesView, protectedFrom, sourceView, withChosen } from "./targets";
 import { pushInline, queueLifelink } from "./triggers";
-import { logTurnEvent, zoneEntry } from "./turnlog";
+import { countTurnEvents, logTurnEvent, zoneEntry } from "./turnlog";
 import type {
   CardDef,
   CardType,
@@ -72,9 +72,10 @@ export function drawCard(s: GameState, p: PlayerId): void {
   }
   const id = moveObject(s, top, "hand");
   emit({ type: "draw", player: p, objectId: id ?? undefined, defId: s.objects[id ?? ""]?.defId });
-  player.turnStats.cardsDrawn += 1;
-  bump(s); // Duelist of the Mind : force égale aux cartes piochées ce tour-ci
-  rulesEvent(s, { e: "draw", player: p, nth: player.turnStats.cardsDrawn, objectId: id ?? undefined });
+  // Journal du tour (Duelist of the Mind : force égale aux cartes piochées ce tour-ci).
+  logTurnEvent(s, { e: "draw", player: p });
+  const nth = countTurnEvents(s, { event: "draw" }, p, p);
+  rulesEvent(s, { e: "draw", player: p, nth, objectId: id ?? undefined });
 }
 
 /**
@@ -119,9 +120,8 @@ export function gainLife(s: GameState, p: PlayerId, amount: number): void {
   player.life += amount;
   bump(s); // des caractéristiques peuvent dépendre des points de vie (Elenda)
   emit({ type: "life", player: p, delta: amount, life: player.life });
-  player.turnStats.lifeGained += amount;
-  player.turnStats.lifeGainEvents += 1;
-  rulesEvent(s, { e: "lifeGain", player: p, amount, first: player.turnStats.lifeGainEvents === 1 });
+  logTurnEvent(s, { e: "lifeGain", player: p, amount });
+  rulesEvent(s, { e: "lifeGain", player: p, amount, first: countTurnEvents(s, { event: "lifeGain" }, p, p) === 1 });
 }
 
 /** Fourrager (701.61) : peut-on exiler trois cartes de son cimetière ou sacrifier une Nourriture ? */
@@ -198,7 +198,7 @@ export function loseLife(s: GameState, p: PlayerId, amount: number): void {
   player.life -= amount;
   bump(s);
   emit({ type: "life", player: p, delta: -amount, life: player.life });
-  player.turnStats.lifeLost += amount;
+  logTurnEvent(s, { e: "lifeLoss", player: p, amount });
   rulesEvent(s, { e: "lifeLoss", player: p, amount });
   // 702.179 : une fois par tour, quand un adversaire perd des points de vie pendant votre tour, votre vitesse augmente.
   const active = s.players[s.turn.active];
@@ -455,8 +455,6 @@ export function dealDamage(s: GameState, source: DamageSource, target: string, a
       src.combatDamagedPlayers = [...(src.combatDamagedPlayers ?? []), target];
     }
     emit({ type: "damage", sourceDefId: source.defId, target, amount, combat });
-    const hurt = s.players[target];
-    if (hurt && !combat && amount > 0) hurt.turnStats.noncombatDamageTaken += amount;
     logDamage(s, source, target, target, true, amount, combat);
     loseLife(s, target, amount);
   } else {

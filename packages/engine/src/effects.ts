@@ -226,8 +226,6 @@ export function evalCondition(s: GameState, ctx: EffectContext, c: Condition): b
       return evalAmount(s, ctx, c.amount) >= c.n;
     case "any":
       return c.of.some((x) => evalCondition(s, ctx, x));
-    case "refLostLife":
-      return resolveRef(s, ctx, c.ref).some((p) => (s.players[p]?.turnStats.lifeLost ?? 0) > 0);
     case "handAtMost":
       return resolveRef(s, ctx, c.ref).some((p) => !!s.players[p] && (s.players[p]?.hand.length ?? 0) <= c.n);
     default:
@@ -438,8 +436,6 @@ export function evalAmount(s: GameState, ctx: EffectContext, a: Amount): number 
         for (const [k, n] of Object.entries(s.objects[id]?.counters ?? {})) if (n > 0) kinds.add(k);
       return kinds.size;
     }
-    case "lifeGainedThisTurn":
-      return s.players[ctx.controller]?.turnStats.lifeGained ?? 0;
     case "countersOn": {
       // L'objet de l'événement qui a quitté le champ de bataille (« quand une créature avec des marqueurs meurt ») : ses
       // marqueurs au moment de partir (dernières informations connues), pas ceux de la carte qu'il est devenu.
@@ -522,8 +518,6 @@ export function evalAmount(s: GameState, ctx: EffectContext, a: Amount): number 
     }
     case "speed":
       return s.players[ctx.controller]?.speed ?? 0;
-    case "cardsDrawnThisTurn":
-      return s.players[ctx.controller]?.turnStats.cardsDrawn ?? 0;
     case "totalManaValue":
       if (a.zone === "exile")
         return (
@@ -626,8 +620,6 @@ export function evalAmount(s: GameState, ctx: EffectContext, a: Amount): number 
           return d?.types.includes("Creature") ? (d.power ?? 0) : 0;
         }),
       );
-    case "opponentsLostLife":
-      return opponentsOf(s, ctx.controller).filter((p) => (s.players[p]?.turnStats.lifeLost ?? 0) > 0).length;
     case "sourceX":
       return s.objects[ctx.sourceId]?.castX ?? 0;
     case "unlockedDoorNames": {
@@ -651,8 +643,6 @@ export function evalAmount(s: GameState, ctx: EffectContext, a: Amount): number 
         for (const t of s.defs[s.objects[id]?.defId ?? ""]?.types ?? []) types.add(t);
       return types.size;
     }
-    case "cardsDiscardedThisTurn":
-      return s.players[ctx.controller]?.turnStats.cardsDiscarded ?? 0;
     case "maxToughness":
       return Math.max(
         0,
@@ -691,8 +681,6 @@ export function evalAmount(s: GameState, ctx: EffectContext, a: Amount): number 
     }
     case "lkiDamage":
       return s.objects[ctx.sourceId]?.damage ?? s.lki[ctx.sourceId]?.damage ?? 0;
-    case "lifeLostThisTurn":
-      return s.players[ctx.controller]?.turnStats.lifeLost ?? 0;
     case "cardsIn":
       return s.players[ctx.controller]?.[a.zone].length ?? 0;
     case "inExile":
@@ -1038,8 +1026,6 @@ export function putFaceDown(s: GameState, controller: PlayerId, id: ObjectId, wa
   const d = s.defs[o.defId];
   const upCosts = [...(d?.disguise ? [d.disguise] : []), ...(d?.types.includes("Creature") && d.manaCost ? [d.manaCost] : [])];
   emit({ type: "moved", owner: o.owner, from: o.zone, to: "battlefield" });
-  const stats = s.players[controller]?.turnStats;
-  if (stats) stats.faceDownOrUp = (stats.faceDownOrUp ?? 0) + 1;
   return moveObject(s, id, "battlefield", { controller, faceDown: { ward, upCosts } });
 }
 

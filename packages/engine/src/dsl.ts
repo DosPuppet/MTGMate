@@ -300,7 +300,7 @@ export const amount = {
     zone,
     whose,
   }),
-  lifeGainedThisTurn: { kind: "lifeGainedThisTurn" } as Amount,
+  lifeGainedThisTurn: turnEvents({ event: "lifeGain", who: "you", sum: true }),
   /** Marqueurs d'un type sur l'objet ; `"any"` : tous les marqueurs. */
   countersOn: (r: Ref, counter = "+1/+1"): Amount => ({ kind: "countersOn", ref: r, counter }),
   differentManaValues: { kind: "differentManaValues" } as Amount,
@@ -329,7 +329,7 @@ export const amount = {
   maxPower: (filter: ObjectFilter, zone?: "graveyard"): Amount => ({ kind: "maxPower", filter, ...(zone ? { zone } : {}) }),
   distinctNames: (filter: ObjectFilter): Amount => ({ kind: "distinctNames", filter }),
   cardsIn: (zone: "hand" | "graveyard" | "library"): Amount => ({ kind: "cardsIn", zone }),
-  lifeLostThisTurn: { kind: "lifeLostThisTurn" } as Amount,
+  lifeLostThisTurn: turnEvents({ event: "lifeLoss", who: "you", sum: true }),
   /** Domaine : nombre de types de terrains de base parmi vos terrains. */
   basicLandTypes: { kind: "basicLandTypes" } as Amount,
   distinctSubtypes: (filter: ObjectFilter): Amount => ({ kind: "distinctSubtypes", filter }),
@@ -339,7 +339,7 @@ export const amount = {
   sourceX: { kind: "sourceX" } as Amount,
   max: (...of: Amount[]): Amount => ({ kind: "max", of }),
   maxPowerInHand: { kind: "maxPowerInHand" } as Amount,
-  opponentsLostLife: { kind: "opponentsLostLife" } as Amount,
+  opponentsLostLife: turnEvents({ event: "lifeLoss", who: "opponent", distinct: "player" }),
   sacrificedThisTurn: turnEvents({ event: "sacrifice", who: "you" }),
   /** Portes déverrouillées parmi les Salles que vous contrôlez. */
   unlockedDoors: { kind: "unlockedDoors" } as Amount,
@@ -350,7 +350,7 @@ export const amount = {
     query: { event: "zone", from: "library", to: "graveyard", byOwner: true },
     of: who,
   }),
-  cardsDiscardedThisTurn: { kind: "cardsDiscardedThisTurn" } as Amount,
+  cardsDiscardedThisTurn: turnEvents({ event: "discard", who: "you", sum: true }),
   maxToughness: (filter: ObjectFilter): Amount => ({ kind: "maxToughness", filter }),
   maxManaValueInGraveyard: { kind: "maxManaValueInGraveyard" } as Amount,
   distinctColors: (filter: ObjectFilter): Amount => ({ kind: "colorsAmong", filter }),
@@ -365,7 +365,7 @@ export const amount = {
   /** Votre vitesse. */
   speed: { kind: "speed" } as Amount,
   spellsCastThisTurn: turnEvents({ event: "cast", who: "you" }),
-  cardsDrawnThisTurn: { kind: "cardsDrawnThisTurn" } as Amount,
+  cardsDrawnThisTurn: turnEvents({ event: "draw", who: "you" }),
   creaturesDiedThisTurn: turnEvents(DIED),
   /** Créatures avec lesquelles vous avez attaqué ce tour-ci. */
   attackersThisTurn: turnEvents({ event: "attack", who: "you" }),
@@ -1931,8 +1931,8 @@ export const when = {
 
 /** Conditions courantes (raid, morbide…). */
 export const cond = {
-  raid: { kind: "attackedThisTurn" } as Condition,
-  attackedWith: (subtype: string): Condition => ({ kind: "attackedThisTurn", subtype }),
+  raid: turnAtLeast({ event: "attack", who: "you" }),
+  attackedWith: (subtype: string): Condition => turnAtLeast({ event: "attack", who: "you", subtype }),
   morbid: turnAtLeast(DIED),
   kicked: { kind: "kicked" } as Condition,
   controls: (filter: ObjectFilter, atLeast = 1): Condition => ({ kind: "controls", filter, atLeast }),
@@ -1942,7 +1942,7 @@ export const cond = {
   threshold: { kind: "amountAtLeast", amount: { kind: "cardsIn", zone: "graveyard" }, n: 7 } as Condition,
   yourTurn: { kind: "yourTurn" } as Condition,
   opponentsTurn: { kind: "opponentsTurn" } as Condition,
-  opponentLostLife: { kind: "opponentLostLifeThisTurn" } as Condition,
+  opponentLostLife: turnAtLeast({ event: "lifeLoss", who: "opponent" }),
   lifeAboveStart: (by: number): Condition => ({ kind: "lifeAboveStart", by }),
   counterAtLeast: (counter: string, n: number): Condition => ({ kind: "counterAtLeast", counter, n }),
   lifeAtLeast: (n: number): Condition => ({ kind: "amountAtLeast", amount: { kind: "lifeTotal" }, n }),
@@ -1956,7 +1956,7 @@ export const cond = {
   refMatches: (r: Ref, filter: ObjectFilter): Condition => ({ kind: "refMatches", ref: r, filter }),
   beholdSharingType: (r: Ref, count: number): Condition => ({ kind: "beholdSharingType", ref: r, count }),
   eventObjectMatches: (filter: ObjectFilter): Condition => ({ kind: "eventObjectMatches", filter }),
-  lifeGainedAtLeast: (n: number): Condition => ({ kind: "lifeGainedAtLeast", n }),
+  lifeGainedAtLeast: (n: number): Condition => turnAtLeast({ event: "lifeGain", who: "you", sum: true }, n),
   amountAtLeast: (a: Amount, n: number): Condition => ({ kind: "amountAtLeast", amount: a, n }),
   /** « a > b », évalués à la résolution (Evil's Thrall : un Méchant de valeur de mana supérieure). */
   amountGreater: (a: Amount, b: Amount): Condition => ({ kind: "amountGreater", a, b }),
@@ -1966,7 +1966,7 @@ export const cond = {
   castFromHand: { kind: "castFromHand" } as Condition,
   wasCast: { kind: "wasCast" } as Condition,
   /** « si vous avez regardé ou surveillé ce tour-ci » */
-  scried: { kind: "scriedThisTurn" } as Condition,
+  scried: turnAtLeast({ event: "scry", who: "you" }),
   firstEndStep: { kind: "firstEndStep" } as Condition,
   firstCombat: { kind: "firstCombat" } as Condition,
   /** Un adversaire a subi ce tour-ci des blessures de combat d'une créature légendaire. */
@@ -1988,14 +1988,13 @@ export const cond = {
   controlsGreatestPower: { kind: "controlsGreatestPower" } as Condition,
   creaturesDied: (n: number, underOpponent?: boolean): Condition =>
     turnAtLeast(underOpponent ? { ...DIED, who: "opponent" } : DIED, n),
-  opponentDealtNoncombatDamage: { kind: "opponentDealtNoncombatDamage" } as Condition,
-  drewAtLeast: (n: number): Condition => ({ kind: "drewAtLeast", n }),
-  castThisTurn: (n: number, noncreature = false, exactly = false): Condition => ({
-    kind: "castThisTurn",
-    n,
-    noncreature,
-    exactly,
-  }),
+  opponentDealtNoncombatDamage: turnAtLeast({ event: "damage", combat: false, toPlayer: true, who: "opponent" }),
+  drewAtLeast: (n: number): Condition => turnAtLeast({ event: "draw", who: "you" }, n),
+  /** Au moins (ou exactement) N sorts [non-créature] lancés ce tour-ci. */
+  castThisTurn: (n: number, noncreature = false, exactly = false): Condition => {
+    const q: TurnLogQuery = { event: "cast", who: "you", ...(noncreature ? { notTypes: ["Creature"] } : {}) };
+    return exactly ? { kind: "all", of: [turnAtLeast(q, n), { kind: "not", cond: turnAtLeast(q, n + 1) }] } : turnAtLeast(q, n);
+  },
   /** « si vous contemplez un Jace » : vous contrôlez un Jace ou vous avez une carte de Jace en main. */
   /** Contempler (701.63) : « vous pouvez contempler un Elfe » (choisir un Elfe que vous contrôlez ou révéler une carte d'Elfe de votre main). */
   behold: (filter: ObjectFilter): Condition => ({ kind: "behold", filter }),
@@ -2018,11 +2017,14 @@ export const cond = {
   /** « Si le coût de faufilement de ce sort a été payé ». */
   sneaked: { kind: "castVia", via: "sneak" } as Condition,
   sneakWindow: { kind: "sneakWindow" } as Condition,
-  activatedLoyalty: { kind: "activatedLoyaltyThisTurn" } as Condition,
+  activatedLoyalty: turnAtLeast({ event: "activate", who: "you", loyalty: true }),
   /** La source est préparée. */
   prepared: { kind: "prepared" } as Condition,
   /** Vide (Edge of Eternities) : un permanent non-terrain a quitté le champ de bataille ou un sort a été lancé avec la distorsion ce tour-ci. */
-  void: { kind: "void" } as Condition,
+  void: {
+    kind: "any",
+    of: [turnAtLeast({ event: "zone", from: "battlefield", notTypes: ["Land"] }), turnAtLeast({ event: "cast", warped: true })],
+  } as Condition,
   /** Monture : montée ce tour-ci. */
   saddled: { kind: "saddled" } as Condition,
   /** Une seule créature attaque, et elle attaque un joueur. */
@@ -2034,7 +2036,7 @@ export const cond = {
   exileAtLeast: (n: number): Condition => ({ kind: "exileAtLeast", n }),
   evenCounters: { kind: "evenCounters" } as Condition,
   /** « si vous avez commis un crime ce tour-ci » */
-  crime: { kind: "crimeThisTurn" } as Condition,
+  crime: turnAtLeast({ event: "crime", who: "you" }),
   /** « si vous avez lancé un sort depuis votre main ce tour-ci » */
   handSpellThisTurn: turnAtLeast({ event: "cast", who: "you", fromZone: "hand" }),
   turnsTakenAtLeast: (n: number): Condition => ({ kind: "turnsTakenAtLeast", n }),
@@ -2050,15 +2052,27 @@ export const cond = {
   creatureDiedMatching: (filter: ObjectFilter): Condition =>
     turnAtLeast({ ...DIED, subtype: filter.subtype, notSubtype: filter.notSubtype }),
   castFromGraveyard: { kind: "castFromGraveyard" } as Condition,
-  faceDownOrUp: { kind: "faceDownOrUpThisTurn" } as Condition,
+  /** Un permanent est arrivé face cachée sous votre contrôle, ou vous en avez retourné un face visible, ce tour-ci. */
+  faceDownOrUp: {
+    kind: "any",
+    of: [
+      turnAtLeast({ event: "zone", to: "battlefield", faceDown: true, who: "you" }),
+      turnAtLeast({ event: "turnFaceUp", who: "you" }),
+    ],
+  } as Condition,
   sacrificedThisTurn: turnAtLeast({ event: "sacrifice", who: "you" }),
   /** « Si le cadeau a été promis » (702.174 : comme un kicker). */
   gift: { kind: "kicked" } as Condition,
   any: (...of: Condition[]): Condition => ({ kind: "any", of }),
   opponentHasMore: (what: "lands" | "life" | "creatures" | "hand"): Condition => ({ kind: "opponentHasMore", what }),
   /** « si vous avez perdu des points de vie ce tour-ci » */
-  lostLife: { kind: "lostLifeThisTurn" } as Condition,
-  refLostLife: (r: Ref): Condition => ({ kind: "refLostLife", ref: r }),
+  lostLife: turnAtLeast({ event: "lifeLoss", who: "you" }),
+  /** Le joueur désigné a perdu des points de vie ce tour-ci (évalué pendant la résolution). */
+  refLostLife: (r: Ref): Condition => ({
+    kind: "amountAtLeast",
+    amount: { kind: "turnEvents", query: { event: "lifeLoss" }, of: r },
+    n: 1,
+  }),
   handAtMost: (r: Ref, n: number): Condition => ({ kind: "handAtMost", ref: r, n }),
   /** Une cible a été choisie pour ce mot « cible » (« jusqu'à une … »). */
   targetChosen: (spec: string): Condition => ({

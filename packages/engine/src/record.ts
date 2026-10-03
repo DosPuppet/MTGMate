@@ -275,8 +275,11 @@ export const RECORD_VERSION = 1;
  *   Collector… ; PLAN-D, lot D9).
  * - 96 : une source de mana qui réunit des preuves (Cryptex) ne prend pas un objet réservé par le reste du coût
  *   (matériau de fabrication) ; trouvé par le fuzz de départ du PLAN-S.
+ * - 97 : le journal du tour devient la seule source de « ce tour-ci » (PLAN-S, lot S2) : vie gagnée et perdue, pioches,
+ *   défausses, regards, crimes, activations de loyauté, retournements ; « un adversaire » y est un adversaire encore en
+ *   partie (800.4a) ; « arrivé face cachée » compte toute arrivée face cachée (Oblivious Bookworm).
  */
-export const RULES_VERSION = 96;
+export const RULES_VERSION = 97;
 
 /** Un point de contrôle toutes les N décisions (plus la dernière de la partie). */
 export const CHECKPOINT_EVERY = 25;

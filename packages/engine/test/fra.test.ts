@@ -66,7 +66,7 @@ describe("Reality Fracture, lot A", () => {
     // Condition d'activation : avoir regardé ou surveillé ce tour-ci.
     const proctor = idOf(s, "p1", "graveyard", "Proctor of Potential");
     expect(legalActions(s, "p1").some((a) => a.type === "activate" && a.source === proctor)).toBe(false);
-    s = { ...s, players: { ...s.players, p1: { ...s.players.p1!, turnStats: { ...s.players.p1!.turnStats, scried: 1 } } } };
+    s = { ...s, turnLog: [...s.turnLog, { e: "scry", player: "p1" }] };
     s = act(s, "p1", { type: "activate", source: proctor, ability: 1 });
     s = passBoth(s);
     const onField = idOf(s, "p1", "battlefield", "Proctor of Potential");
@@ -396,7 +396,7 @@ describe("Reality Fracture, lot E : planeswalkers", () => {
     const ajani = idOf(s, "p1", "battlefield", "Ajani Unrelenting");
     const plus = legalActions(s, "p1").find((a) => a.type === "activate" && a.source === ajani && a.label?.startsWith("+1"));
     s = act(s, "p1", { type: "activate", source: ajani, ability: (plus as { ability: number }).ability });
-    expect(s.players.p1?.turnStats.loyaltyActivations).toBe(1);
+    expect(s.turnLog.filter((e) => e.e === "activate" && e.loyalty && e.player === "p1")).toHaveLength(1);
     for (let i = 0; i < 4 && s.stack.length; i++) s = passBoth(s);
     expect(s.battlefield.some((id) => s.defs[s.objects[id]?.defId ?? ""]?.name === "Cadet")).toBe(true);
   });

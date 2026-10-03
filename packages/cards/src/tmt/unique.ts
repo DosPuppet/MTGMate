@@ -22,7 +22,7 @@ const DISAPPEAR = cond.amountAtLeast(amount.turnEvents({ event: "zone", from: "b
 export const UNIQUE: Record<string, CardScript> = {
   "April O'Neil, Hacktivist": {
     abilities: [
-      triggered(when.yourEndStep, [fx.draw(amount.turnEvents({ event: "cast", who: "you", distinctTypes: true }))], {
+      triggered(when.yourEndStep, [fx.draw(amount.turnEvents({ event: "cast", who: "you", distinct: "type" }))], {
         label: "Piochez une carte par type de carte parmi les sorts que vous avez lancés ce tour-ci",
       }),
     ],
