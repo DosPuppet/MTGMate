@@ -38,6 +38,11 @@ export interface TargetSpec {
   /** Valeur de mana exacte évaluée quand la capacité réflexive est mise sur la pile (Wishing Well). */
   manaValueAmount?: Amount;
   /**
+   * Valeur de mana maximale évaluée au ciblage, puis de nouveau à la résolution (608.2b) : « une carte de créature de
+   * valeur de mana X ou moins, X étant les points de vie gagnés ce tour-ci » (Moseo).
+   */
+  maxManaValueAmount?: Amount;
+  /**
    * Exactement X cibles, X étant choisi pour le sort ou la capacité (Rot-Curse Rakshasa : « X créatures ciblées ») ;
    * `"upTo"` : jusqu'à X cibles (Divergent Equation).
    */

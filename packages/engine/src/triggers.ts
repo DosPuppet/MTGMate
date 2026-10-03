@@ -11,7 +11,7 @@
 
 import { canForage, gainLife } from "./actions";
 import { ask, cardRef } from "./choices";
-import { boardAmount, evalAmount, resolveRef, staticContext } from "./effects";
+import { boardAmount, concreteSpec, evalAmount, resolveRef, staticContext } from "./effects";
 import { RulesError, rethrowAsRules } from "./errors";
 import {
   apnapOrder,
@@ -1202,13 +1202,22 @@ export function triggeredAbility(s: GameState, t: { sourceDefId: string; ability
 /** Cibles d'un déclenchement : celles de la capacité retardée/réflexive, du mode choisi, ou de la capacité. */
 export function triggerTargetSpecs(
   s: GameState,
-  t: { sourceDefId: string; abilityIndex: number; mode?: number; inline?: InlineAbility },
+  t: {
+    sourceDefId: string;
+    abilityIndex: number;
+    mode?: number;
+    inline?: InlineAbility;
+    controller?: PlayerId;
+    sourceId?: ObjectId;
+    event?: TriggerEventData;
+  },
 ): TargetSpec[] {
-  if (t.inline) return t.inline.targets;
-  const ab = triggeredAbility(s, t);
-  if (!ab) return [];
-  if (ab.modes) return ab.modes[t.mode ?? 0]?.targets ?? [];
-  return ab.targets;
+  const ab = t.inline ? undefined : triggeredAbility(s, t);
+  const specs = t.inline ? t.inline.targets : !ab ? [] : ab.modes ? (ab.modes[t.mode ?? 0]?.targets ?? []) : ab.targets;
+  // Valeurs évaluées au ciblage (Moseo : « valeur de mana X ou moins, X étant les PV gagnés ce tour-ci »).
+  if (!t.controller || !specs.some((x) => x.maxManaValueAmount !== undefined || x.manaValueAmount !== undefined)) return specs;
+  const ctx = staticContext(s, t.controller, t.sourceId ?? "", { sourceDefId: t.sourceDefId, event: t.event });
+  return specs.map((x) => concreteSpec(s, ctx, x));
 }
 
 /** Carte et capacité d'un déclenchement en attente (interface : rappel de l'effet pendant le choix de ses cibles). */

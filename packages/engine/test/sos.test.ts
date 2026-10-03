@@ -155,6 +155,33 @@ describe("Secrets of Strixhaven", () => {
     });
   });
 
+  describe("Moseo : valeur de mana vérifiée au ciblage (PLAN-D, D4)", () => {
+    it("1 PV gagné : seule une carte de valeur de mana 1 ou moins peut être ciblée", () => {
+      let s = scenario({
+        p1: {
+          battlefield: ["Moseo, Vein's New Dean", "Swamp", "Forest"],
+          hand: ["Dissection Practice"],
+          graveyard: ["Serra Angel", "Llanowar Elves"],
+        },
+      });
+      s = settle(cast(s, "p1", "Dissection Practice", { p: ["p2"], a: [], b: [] }));
+      let options: string[] = [];
+      s = advanceUntil(
+        s,
+        (x) => {
+          const p = x.pending;
+          if (p?.kind === "choice" && p.request.type === "pick" && p.request.intent === "triggerTarget")
+            options = p.request.options.map((id) => nameOf(x, id) ?? id);
+          return x.turn.active === "p2";
+        },
+        200,
+      );
+      expect(options).toEqual(["Llanowar Elves"]);
+      expect(idsOf(s, "p1", "battlefield", "Llanowar Elves")).toHaveLength(1);
+      expect(idsOf(s, "p1", "graveyard", "Serra Angel")).toHaveLength(1);
+    });
+  });
+
   describe("Hardened Academic", () => {
     it("vol et célérité ; défaussez une carte : lien de vie jusqu'à la fin du tour", () => {
       let s = scenario({ p1: { battlefield: ["Hardened Academic"], hand: ["Opt"] } });

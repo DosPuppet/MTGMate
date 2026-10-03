@@ -1,13 +1,13 @@
 /** Effets du moteur : contrôle du déroulement (si, peut, réflexif, retardé). Chaque clé est un `op` d'`Effect` (voir `runEffect`, effects.ts). */
 import { canForage, forage, payLife } from "../actions";
 import type { OpHandlers } from "../effects";
-import { evalAmount, evalCondition, nameOf, resolveRef, store } from "../effects";
+import { concreteSpec, evalAmount, evalCondition, nameOf, resolveRef, store } from "../effects";
 import { RulesError } from "../errors";
 import { canPay, manaValue, payMana } from "../mana";
 import { beholdOptions, collectEvidence, pickEvidence } from "../stack";
 import { bent, emit, isPlayer } from "../state";
 import { createDelayed, pushInline } from "../triggers";
-import type { ChoiceValue, ObjectFilter } from "../types";
+import type { ChoiceValue } from "../types";
 
 export const HANDLERS: OpHandlers = {
   mayPay(s, r, e, ctx, key) {
@@ -117,33 +117,9 @@ export const HANDLERS: OpHandlers = {
     return;
   },
   reflexive(s, r, e, ctx) {
-    // « jusqu'à X cibles » : le nombre de cibles est évalué maintenant (Miasma Demon, The Rollercrusher Ride).
-    const targets = e.targets
-      .map((t) =>
-        t.countAmount === undefined ? t : { ...t, count: Math.max(0, evalAmount(s, ctx, t.countAmount)), countAmount: undefined },
-      )
-      // Wishing Well : « de valeur de mana égale au nombre de marqueurs de pièce » (évaluée maintenant).
-      .map((t) => {
-        if (t.manaValueAmount === undefined) return t;
-        const mv = evalAmount(s, ctx, t.manaValueAmount);
-        const f = t.filter;
-        const withMv = (o?: ObjectFilter) => (o ? { ...o, manaValue: mv } : o);
-        return {
-          ...t,
-          manaValueAmount: undefined,
-          filter: {
-            ...f,
-            objects: withMv(f.objects),
-            cards: f.cards ? { ...f.cards, filter: { ...f.cards.filter, manaValue: mv } } : undefined,
-          },
-        };
-      });
-    // Fire Lord Sozin : « de valeur de mana totale X ou moins » (évaluée maintenant).
-    const targets2 = targets.map((t) =>
-      t.maxTotalManaValueAmount === undefined
-        ? t
-        : { ...t, maxTotalManaValue: evalAmount(s, ctx, t.maxTotalManaValueAmount), maxTotalManaValueAmount: undefined },
-    );
+    // Valeurs évaluées maintenant : « jusqu'à X cibles » (Miasma Demon), « de valeur de mana égale au nombre de marqueurs
+    // de pièce » (Wishing Well), « de valeur de mana totale X ou moins » (Fire Lord Sozin).
+    const targets2 = e.targets.map((t) => concreteSpec(s, ctx, t));
     // Aucune cible possible (X = 0) : rien ne se passe.
     if (targets2.some((t) => t.count === 0)) return;
     const bound: Record<string, string[]> = {};

@@ -255,8 +255,10 @@ export const RECORD_VERSION = 1;
  * - 89 : contempler en coût additionnel (`additionalCost.behold`) : choisi au lancement, la carte de la main révélée,
  *   retenu par le sort (`cond.beheld`), « ou payez {N} » ; contempler pendant une résolution (`fx.mayBehold`) : les
  *   Exhales, Countersculpt, les cinq « contemplez ou payez {2} » d'ECL, Sarkhan, Elven Passage (PLAN-D, lot D2).
+ * - 90 : une valeur de mana de cible calculée (`maxManaValueAmount`) est évaluée au ciblage d'une capacité déclenchée,
+ *   puis à la résolution (Moseo, Vein's New Dean) (PLAN-D, lot D4).
  */
-export const RULES_VERSION = 89;
+export const RULES_VERSION = 90;
 
 /** Un point de contrôle toutes les N décisions (plus la dernière de la partie). */
 export const CHECKPOINT_EVERY = 25;

@@ -49,10 +49,12 @@ import type {
   LkiSnapshot,
   ManaCost,
   MoveSpec,
+  ObjectFilter,
   ObjectId,
   PlayerId,
   Ref,
   Resolution,
+  TargetSpec,
   TriggerEventData,
   Zone,
 } from "./types";
@@ -101,6 +103,40 @@ export function readVar(ctx: EffectContext, name: string): number {
 }
 
 /** Condition évaluée pendant la résolution (elle peut dépendre du kicker ou des valeurs mémorisées). */
+/**
+ * Une spécification de cible dont des valeurs dépendent de la partie, rendue concrète dans ce contexte : nombre de cibles
+ * (`countAmount`), valeur de mana exacte (`manaValueAmount`) ou maximale (`maxManaValueAmount`), valeur de mana totale
+ * (`maxTotalManaValueAmount`). Évaluée au ciblage et à la résolution.
+ */
+export function concreteSpec(s: GameState, ctx: EffectContext, t: TargetSpec): TargetSpec {
+  if (
+    t.countAmount === undefined &&
+    t.manaValueAmount === undefined &&
+    t.maxManaValueAmount === undefined &&
+    t.maxTotalManaValueAmount === undefined
+  )
+    return t;
+  const out: TargetSpec = { ...t, countAmount: undefined, manaValueAmount: undefined, maxManaValueAmount: undefined };
+  if (t.countAmount !== undefined) out.count = Math.max(0, evalAmount(s, ctx, t.countAmount));
+  if (t.maxTotalManaValueAmount !== undefined) {
+    out.maxTotalManaValue = evalAmount(s, ctx, t.maxTotalManaValueAmount);
+    out.maxTotalManaValueAmount = undefined;
+  }
+  const extra: ObjectFilter = {
+    ...(t.manaValueAmount !== undefined ? { manaValue: evalAmount(s, ctx, t.manaValueAmount) } : {}),
+    ...(t.maxManaValueAmount !== undefined ? { maxManaValue: evalAmount(s, ctx, t.maxManaValueAmount) } : {}),
+  };
+  if (Object.keys(extra).length) {
+    const f = t.filter;
+    out.filter = {
+      ...f,
+      objects: f.objects ? { ...f.objects, ...extra } : f.objects,
+      cards: f.cards ? { ...f.cards, filter: { ...f.cards.filter, ...extra } } : undefined,
+    };
+  }
+  return out;
+}
+
 /**
  * Contexte d'évaluation hors résolution (statiques, coûts, conditions de déclenchement, taille de main…) : ni cibles, ni
  * X, ni valeurs mémorisées. Le seul constructeur de ce contexte (PLAN-C, lot C10) ; `kicked` : celui de la source.

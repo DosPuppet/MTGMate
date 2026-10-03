@@ -206,20 +206,19 @@ export const CARDS: Record<string, CardScript> = {
   "Moseo, Vein's New Dean": {
     abilities: [
       triggered(when.entersSelf, [fx.createTokens(PEST)], { label: "Un Nuisible 1/1" }),
-      triggered(
-        when.yourEndStep,
-        fx.when(
-          cond.amountAtLeast(amount.plus(amount.lifeGainedThisTurn, amount.neg(amount.manaValueOf(ref.target()))), 0),
-          fx.toBattlefield(ref.target()),
-        ),
-        {
-          condition: cond.lifeGainedAtLeast(1),
-          targets: [
-            target.optional(target.cardInGraveyard("t", { types: ["Creature"] }, "you", "carte de créature de votre cimetière")),
-          ],
-          label: "Infusion : renvoie une créature de VM X ou moins (PV gagnés)",
-        },
-      ),
+      triggered(when.yourEndStep, [fx.toBattlefield(ref.target())], {
+        condition: cond.lifeGainedAtLeast(1),
+        targets: [
+          {
+            ...target.optional(
+              target.cardInGraveyard("t", { types: ["Creature"] }, "you", "carte de créature de valeur de mana X ou moins"),
+            ),
+            // X : les points de vie gagnés ce tour-ci, au ciblage puis à la résolution.
+            maxManaValueAmount: amount.lifeGainedThisTurn,
+          },
+        ],
+        label: "Infusion : renvoie une créature de VM X ou moins (PV gagnés)",
+      }),
     ],
   },
   "Practiced Offense": {

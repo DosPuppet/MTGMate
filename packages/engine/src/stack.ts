@@ -16,6 +16,7 @@ import { ask } from "./choices";
 import {
   announceDiscard,
   announceDiscardBatch,
+  concreteSpec,
   evalAmount,
   moveWithSpec,
   permissionActive,
@@ -3276,7 +3277,20 @@ export function resolveTop(s: GameState): boolean {
   // L'objet reste sur la pile pendant toute sa résolution (608.2) ; il n'en sort qu'à la fin.
   const item = s.stack[s.stack.length - 1];
   if (!item) return true;
-  const { specs, effects } = specsAndEffects(s, item);
+  const { specs: specs0, effects } = specsAndEffects(s, item);
+  // Valeurs de cible évaluées de nouveau à la résolution (Moseo : les PV gagnés ce tour-ci).
+  const specs = specs0.some((x) => x.maxManaValueAmount !== undefined)
+    ? specs0.map((x) =>
+        concreteSpec(
+          s,
+          {
+            ...staticContext(s, item.controller, item.sourceId, { sourceDefId: item.sourceDefId, event: item.event }),
+            x: item.x,
+          },
+          x,
+        ),
+      )
+    : specs0;
 
   // 608.2b : on revérifie les cibles. Si toutes sont devenues illégales, le sort ne se résout pas.
   // Références figées d'une capacité retardée (`bind`) : conservées telles quelles, ce ne sont pas des cibles.
