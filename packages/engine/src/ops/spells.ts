@@ -43,7 +43,7 @@ import {
   shuffle,
 } from "../state";
 import { legalTargets, matchesObjectFilter } from "../targets";
-import type { ChoiceValue, GameState, ManaCost, ObjectId, PlayerId, Resolution } from "../types";
+import type { ChoiceValue, GameState, ManaCost, ObjectId, PlayerId, Resolution, StackItem } from "../types";
 
 export const HANDLERS: OpHandlers = {
   discover(s, r, e, ctx, key) {
@@ -174,13 +174,6 @@ export const HANDLERS: OpHandlers = {
         loseAllAbilities: true,
       });
       bump(s);
-    }
-    return;
-  },
-  grantRebound(s, _r, e, ctx) {
-    for (const id of resolveRef(s, ctx, e.what)) {
-      const item = s.stack.find((x) => x.id === id && x.kind === "spell");
-      if (item) item.rebound = true;
     }
     return;
   },
@@ -436,17 +429,6 @@ export const HANDLERS: OpHandlers = {
     store(r, e.store, 1);
     return;
   },
-  grantFlashback(s, _r, e, ctx) {
-    // Flashback accordé jusqu'à la fin du tour (et {0} pour Archmage's Newt) : une permission marquée `flashback`.
-    const ids = resolveRef(s, ctx, e.what).filter((id) => s.objects[id]?.zone === "graveyard");
-    grantPlay(s, ctx.controller, ids, "thisTurn", {
-      source: ctx.sourceId,
-      flashback: true,
-      free: e.free || undefined,
-      harmonize: e.harmonize || undefined,
-    });
-    return;
-  },
   plot(s, _r, e, ctx) {
     for (const id of resolveRef(s, ctx, e.what)) plotCard(s, id);
     return;
@@ -469,28 +451,6 @@ export const HANDLERS: OpHandlers = {
           };
       }
     }
-    return;
-  },
-  plotOnResolve(s, _r, e, ctx) {
-    for (const id of resolveRef(s, ctx, e.what)) {
-      const item = s.stack.find((x) => x.id === id && x.kind === "spell");
-      if (item) item.plotOnResolve = true;
-    }
-    return;
-  },
-  exileOnResolve(s, r, e, ctx) {
-    if (!e.what) {
-      r.item.flashback = true;
-      return;
-    }
-    for (const id of resolveRef(s, ctx, e.what)) {
-      const item = s.stack.find((x) => x.id === id && x.kind === "spell");
-      if (item) item.exileWithCounter = e.counter ?? "";
-    }
-    return;
-  },
-  resolveToBattlefieldTransformed(_s, r) {
-    r.item.toBattlefieldTransformed = true;
     return;
   },
   payX(s, r, e, ctx, key) {
@@ -583,6 +543,22 @@ export const HANDLERS: OpHandlers = {
     store(r, e.store, s.turn.resolutionCounts[k] ?? 0);
     return;
   },
+  spellFate(s, r, e, ctx) {
+    // Sans `what` : le sort qui se résout.
+    const items = e.what
+      ? resolveRef(s, ctx, e.what)
+          .map((id) => s.stack.find((x) => x.id === id && x.kind === "spell"))
+          .filter((x): x is StackItem => !!x)
+      : [r.item];
+    for (const item of items) {
+      if (e.fate === "plot") item.plotOnResolve = true;
+      else if (e.fate === "rebound") item.rebound = true;
+      else if (e.fate === "battlefieldTransformed") item.toBattlefieldTransformed = true;
+      else if (e.what) item.exileWithCounter = e.counter ?? "";
+      else item.flashback = true;
+    }
+    return;
+  },
   grantPlay(s, _r, e, ctx) {
     const ids = resolveRef(s, ctx, e.what).filter(
       (id) => s.objects[id]?.zone === "exile" || s.objects[id]?.zone === "graveyard" || s.objects[id]?.zone === "hand",
@@ -618,6 +594,7 @@ export const HANDLERS: OpHandlers = {
     grantPlay(s, ctx.controller, ids, until, {
       free: e.free,
       anyTime: e.anyTime,
+      ...(e.flashback ? { flashback: true, harmonize: e.flashback === "harmonize" || undefined } : {}),
       anyMana: e.anyMana,
       condition: e.condition,
       source: ctx.sourceId,

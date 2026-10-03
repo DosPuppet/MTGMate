@@ -29,7 +29,7 @@ Côté performance, les caches des couches et des statiques sont des `WeakMap` i
 | S6a | Équivalences exactes : effets de joueur, `grantPlay`, `tap{untap}`, `revealUntilN`, `doubleCounters{all}`, `setLife{exchange}` ; Effect 178 → 169 | ✅ |
 | S6b | `playerEffect` (pour toute la partie, « ne peut pas vous attaquer ») ; `objectReplacement` ; Effect 169 → 166. `shield` et `noncombatBonusThisTurn` gardés (choix de la source ; quantité dans un remplacement) | ✅ |
 | S6c [règles 100] | `pumpAll`, `addCountersAll`, `modifyAll`, `destroyAll` deviennent leur jumelle sur une référence de zone (`allMatching`), X du sort lu par la référence (`withX`) ; `exileTop{allBut}` ; Effect 166 → 161. `setBasePTAll` et `millUntil` gardés (force seule ; déplacement différent) | ✅ |
-| S6d, S6e | Familles d'effets suivantes | |
+| S6d, S6e [règles 101] | `extra{kind, amount}` (entretien, combat, étape de fin, tour), `spellFate` (exil, complot, rebond, transformé), `gainControl{to, duration}` (absorbe `gainControlWhileSource` et `giveControl`), `grantPlay{flashback}`, `moveTo{warp}`, référence `sameName` (Maelstrom Pulse), durée des emblèmes (`duration`) ; Effect 161 → 150 variantes, 632 → 611 champs. Gardés, faute de forme générique qui simplifie vraiment : les quatre « gardez … » (questions de forme différente), `destroyAllButChosenType`, `exileNamesakes`, `chooseCardName`, `becomeCopyKeepAbilities`, `millUntil`, la paire de « roues », `chooseRiot`, `shield`, `noncombatBonusThisTurn` | ✅ |
 | S7 | Déclencheurs : `life`, `leaves`, dégâts au joueur attaché | |
 | S8 | ObjectFilter : un seul évaluateur, comparaisons, négations, choix, relations | |
 | S9 | CostDef, `activated()`, `manaAbility()`, permissions liées | |

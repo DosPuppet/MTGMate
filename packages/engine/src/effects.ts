@@ -333,8 +333,11 @@ export function resolveRef(s: GameState, ctx: EffectContext, ref: Ref): string[]
       );
     case "libraryTop":
       return resolveRef(s, ctx, ref.who).flatMap((p) => (s.players[p]?.library[0] ? [s.players[p]?.library[0] as string] : []));
-    case "sameNameInGraveyard": {
-      const names = new Set(resolveRef(s, ctx, ref.ref).map((id) => s.defs[s.objects[id]?.defId ?? ""]?.name));
+    case "sameName": {
+      // Les noms sont lus maintenant, avant ce que fait l'effet (sur le champ de bataille : le nom calculé).
+      const nameOf_ = (id: string) => (onBattlefield(s, id) ? chars(s, id).name : s.defs[s.objects[id]?.defId ?? ""]?.name);
+      const names = new Set(resolveRef(s, ctx, ref.ref).map(nameOf_));
+      if (ref.zone === "battlefield") return s.battlefield.filter((id) => names.has(chars(s, id).name));
       return (s.players[ctx.controller]?.graveyard ?? []).filter((id) => names.has(s.defs[s.objects[id]?.defId ?? ""]?.name));
     }
     case "targetsOfEventObject": {
@@ -807,6 +810,8 @@ export function moveWithSpec(
   // Marqueurs sur une carte exilée (« exilez-la avec un marqueur de butin », Tinybones).
   if (moved && zone === "exile" && spec.counters) changeCounters(s, moved, spec.counters.kind, spec.counters.n);
   if (moved && zone === "exile" && viewers) moved.exiledFaceDown = viewers;
+  // Distorsion : lançable depuis l'exil à partir du tour suivant.
+  if (moved && zone === "exile" && spec.warp) moved.warpExiledTurn = s.turn.number;
   // Le verso (712.14), l'état engagé, les marqueurs, les types et l'attaque sont posés par `moveObject` avant l'événement
   // d'arrivée (voir `EntersContext`).
   return newId_;

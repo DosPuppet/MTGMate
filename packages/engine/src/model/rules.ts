@@ -605,8 +605,6 @@ export type Ref =
   | { kind: "linked" }
   /** Cartes exilées « jusqu'à ce que » la source quitte le champ de bataille (Pinnacle Starcage). */
   | { kind: "exiledWith" }
-  /** Les cartes de votre cimetière du même nom que la carte désignée, elle comprise (Rat King, Verminister). */
-  | { kind: "sameNameInGraveyard"; ref: Ref }
   /** Les cibles du sort ou de la capacité de l'événement (Storm, Windrider : « ces créatures »). */
   | { kind: "targetsOfEventObject" }
   /** La capacité la plus récente sur la pile dont la source est l'objet de l'événement (Firebender Ascension). */
@@ -651,6 +649,11 @@ export type Ref =
       filter?: ObjectFilter;
       maxManaValue?: Amount;
     }
+  /**
+   * Les objets du même nom que les objets désignés (eux compris) : sur le champ de bataille (Maelstrom Pulse), ou dans
+   * votre cimetière (Rat King, Verminister).
+   */
+  | { kind: "sameName"; ref: Ref; zone: "battlefield" | "graveyard" }
   /** Réunion de références, sans doublon (Call the Spirit Dragons : les Dragons choisis pour chaque couleur). */
   | { kind: "union"; of: Ref[] };
 

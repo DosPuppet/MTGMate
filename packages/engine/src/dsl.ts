@@ -235,7 +235,9 @@ export const ref = {
   /** Les cartes exilées pour payer le coût (« copiez ces cartes exilées »). */
   costExiled: { kind: "cost", paid: "exiled" } as Ref,
   /** Les cartes de votre cimetière du même nom que la carte désignée, elle comprise (Rat King, Verminister). */
-  sameNameInGraveyard: (r: Ref): Ref => ({ kind: "sameNameInGraveyard", ref: r }),
+  sameNameInGraveyard: (r: Ref): Ref => ({ kind: "sameName", ref: r, zone: "graveyard" }),
+  /** Les permanents du même nom que les objets désignés, eux compris. */
+  sameNameOnBattlefield: (r: Ref): Ref => ({ kind: "sameName", ref: r, zone: "battlefield" }),
   /** La créature renvoyée en main pour le Web-slinging (Scarlet Spider, Ben Reilly). */
   costBounced: { kind: "cost", paid: "bounced" } as Ref,
   /** Les cibles du sort ou de la capacité de l'événement (« ces créatures »). */
@@ -811,11 +813,15 @@ export const fx = {
     until,
   }),
   piles: (n: number, opts: { revealed?: boolean; storeGraveyard?: string } = {}): Effect => ({ op: "piles", n, ...opts }),
-  grantFlashback: (what: Ref): Effect => ({ op: "grantFlashback", what }),
+  grantFlashback: (what: Ref): Effect => ({ op: "grantPlay", what, flashback: true }),
   /** « [Cette carte] gagne l'harmonie jusqu'à la fin du tour ; son coût d'harmonie est son coût de mana » (702.180). */
-  grantHarmonize: (what: Ref): Effect => ({ op: "grantFlashback", what, harmonize: true }),
+  grantHarmonize: (what: Ref): Effect => ({ op: "grantPlay", what, flashback: "harmonize" }),
   endTurn: { op: "endTurn" } as Effect,
-  gainControl: (what: Ref, opts: { untilEndOfYourNextTurn?: boolean } = {}): Effect => ({ op: "gainControl", what, ...opts }),
+  gainControl: (what: Ref, opts: { untilEndOfYourNextTurn?: boolean } = {}): Effect => ({
+    op: "gainControl",
+    what,
+    ...(opts.untilEndOfYourNextTurn ? { duration: "endOfYourNextTurn" } : {}),
+  }),
   /** `haste`, `sacrificeAtEnd` : la copie d'un sort de créature (un jeton) a la célérité, est sacrifiée en fin de tour. */
   copySpell: (
     what: Ref,
@@ -920,12 +926,26 @@ export const fx = {
   addManaColorsAmong: (filter: ObjectFilter): Effect => ({ op: "addManaColorsAmong", filter }),
   mayShuffleHandGraveyardDraw: (n = 7): Effect => ({ op: "mayShuffleHandGraveyardDraw", n }),
   coinFlip: (store: string): Effect => ({ op: "coinFlip", store }),
-  extraUpkeeps: (amount: Amount): Effect => ({ op: "extraUpkeeps", amount }),
-  plotOnResolve: (what: Ref): Effect => ({ op: "plotOnResolve", what }),
+  extraUpkeeps: (amount: Amount): Effect => ({ op: "extra", kind: "upkeep", amount }),
+  plotOnResolve: (what: Ref): Effect => ({ op: "spellFate", fate: "plot", what }),
   noncombatBonusThisTurn: (amount: Amount): Effect => ({ op: "noncombatBonusThisTurn", amount }),
   flickerChosen: (filter: ObjectFilter, times: Amount): Effect => ({ op: "flickerChosen", filter, times }),
   exchangeControl: (a: Ref, b: Ref): Effect => ({ op: "exchangeControl", a, b }),
-  gainControlWhileSource: (what: Ref, restrict = false): Effect => ({ op: "gainControlWhileSource", what, restrict }),
+  /** Gagne le contrôle tant que vous contrôlez la source ; `restrict` : il ne peut ni attaquer ni bloquer (Possession Engine). */
+  gainControlWhileSource: (what: Ref, restrict = false): Effect[] => [
+    { op: "gainControl", what, duration: "whileYouControlSource" },
+    ...(restrict
+      ? [
+          {
+            op: "modify",
+            what,
+            mods: { addKeywords: ["cantAttack", "cantBlock"] },
+            duration: "permanent",
+            whileSource: true,
+          } as Effect,
+        ]
+      : []),
+  ],
   /** « La F/E de base de … devient N » ; `powerOnly` : seulement la force de base (PuPu UFO). */
   setBasePTAll: (filter: ObjectFilter, amount: Amount, powerOnly?: boolean): Effect => ({
     op: "setBasePTAll",
@@ -1003,8 +1023,8 @@ export const fx = {
   /** Tishana's Tidebinder : contrecarre la capacité ; son permanent perd ses capacités tant que la source reste. */
   counterAbilitySilence: (what: Ref): Effect => ({ op: "counterAbilitySilence", what }),
   /** « [Ce sort] gagne le rebond » (Ojer Pakpatiq). */
-  grantRebound: (what: Ref): Effect => ({ op: "grantRebound", what }),
-  exileOnResolveWith: (what: Ref, counter: string): Effect => ({ op: "exileOnResolve", what, counter }),
+  grantRebound: (what: Ref): Effect => ({ op: "spellFate", fate: "rebound", what }),
+  exileOnResolveWith: (what: Ref, counter: string): Effect => ({ op: "spellFate", fate: "exile", what, counter }),
   /** Sovereign Okinec Ahau : des marqueurs +1/+1 égaux à l'écart entre force et force de base. */
   countersAboveBase: (filter: ObjectFilter): Effect => ({ op: "countersAboveBase", filter }),
   /** Découverte N (701.57) ; `who` : « ce joueur découvre N » ; `store` : la carte découverte. */
@@ -1046,11 +1066,12 @@ export const fx = {
     duration: "permanent",
     untilLeavesExile: card,
   }),
-  giveControl: (what: Ref, to: Ref): Effect => ({ op: "giveControl", what, to }),
+  giveControl: (what: Ref, to: Ref): Effect => ({ op: "gainControl", what, to, duration: "permanent" }),
   untapUpTo: (filter: ObjectFilter, n: number): Effect => ({ op: "untapUpTo", filter, n }),
-  exileOnResolve: { op: "exileOnResolve" } as Effect,
+  exileOnResolve: { op: "spellFate", fate: "exile" } as Effect,
   poison: (who: Ref, n: Amount): Effect => ({ op: "poison", who, n }),
-  destroySameName: (what: Ref): Effect => ({ op: "destroySameName", what }),
+  /** Détruit l'objet et tous les autres permanents du même nom (Maelstrom Pulse). */
+  destroySameName: (what: Ref): Effect => ({ op: "destroy", what: { kind: "sameName", ref: what, zone: "battlefield" } }),
   countersDivided: (total: Amount, to: Ref, opts: { counter?: string; anyNumber?: boolean } = {}): Effect => ({
     op: "countersDivided",
     total,
@@ -1059,13 +1080,13 @@ export const fx = {
   }),
   payX: (prompt: string, store: string): Effect => ({ op: "payX", prompt, store }),
   changeTarget: (what: Ref): Effect => ({ op: "changeTarget", what }),
-  extraCombat: { op: "extraCombat" } as Effect,
+  extraCombat: { op: "extra", kind: "combat" } as Effect,
   /** « Une phase de combat supplémentaire après cette phase principale, suivie d'une phase principale supplémentaire. » */
-  extraCombatAfterMain: { op: "extraCombat", afterMain: true } as Effect,
-  extraTurn: { op: "extraTurn" } as Effect,
+  extraCombatAfterMain: { op: "extra", kind: "combatAfterMain" } as Effect,
+  extraTurn: { op: "extra", kind: "turn" } as Effect,
   tripleTriad: { op: "tripleTriad" } as Effect,
   unattach: (what: Ref, ifAttachedTo?: Ref): Effect => ({ op: "unattach", what, ifAttachedTo }),
-  resolveToBattlefieldTransformed: { op: "resolveToBattlefieldTransformed" } as Effect,
+  resolveToBattlefieldTransformed: { op: "spellFate", fate: "battlefieldTransformed" } as Effect,
   nextCreatureSpell: (opts: { counters?: number; haste?: boolean }): Effect => ({
     op: "playerEffect",
     ability: { nextSpell: { filter: { types: ["Creature"] }, ...opts } },
@@ -1086,7 +1107,7 @@ export const fx = {
   } as Effect,
   /** Bouclier (615.7) : « la prochaine fois que [une source de votre choix] devrait… ce tour-ci, … » (New Way Forward). */
   shield: (replacement: EventReplacement, chooseSource = false): Effect => ({ op: "shield", replacement, chooseSource }),
-  extraEndStep: { op: "extraEndStep" } as Effect,
+  extraEndStep: { op: "extra", kind: "endStep" } as Effect,
   /** `amount` : chacune inflige ce nombre de blessures (sinon sa force). */
   eachDealsDamage: (filter: ObjectFilter, to: Ref, amount?: Amount): Effect => ({
     op: "eachDealsDamage",
@@ -1150,10 +1171,14 @@ export const fx = {
     name,
     text,
     abilities,
-    untilYourNextTurn,
-    thisTurn,
     store,
-    ...(untilEndOfYourNextTurn ? { untilEndOfYourNextTurn } : {}),
+    ...(untilYourNextTurn
+      ? { duration: "untilYourNextTurn" }
+      : thisTurn
+        ? { duration: "endOfTurn" }
+        : untilEndOfYourNextTurn
+          ? { duration: "endOfYourNextTurn" }
+          : {}),
   }),
   addManaTimes: (times: Amount, ...mana: ManaType[]): Effect => ({ op: "addMana", mana, times }),
   mayWheel: { op: "mayWheel" } as Effect,

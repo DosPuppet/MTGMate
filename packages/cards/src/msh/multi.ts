@@ -451,7 +451,7 @@ export const MULTI: Record<string, CardScript> = {
   },
   "The Super Hero Civil War": {
     abilities: [
-      chapter([1], [fx.gainControlWhileSource(ref.target())], {
+      chapter([1], fx.gainControlWhileSource(ref.target()), {
         targets: [{ ...target.upTo(2, target.creature()), maxTotalManaValue: 6 }],
         label: "Chapitre I — Contrôle de jusqu'à deux créatures de valeur de mana totale 6 ou moins",
       }),

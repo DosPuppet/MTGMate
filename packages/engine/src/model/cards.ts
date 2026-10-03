@@ -1174,6 +1174,8 @@ export interface TokenSpec {
 /** Destination d'un déplacement d'objet. */
 export interface MoveSpec {
   to: "hand" | "battlefield" | "graveyard" | "exile" | "libraryTop" | "libraryBottom";
+  /** Exilé par la distorsion : lançable depuis l'exil un tour suivant (`warpExiledTurn`). */
+  warp?: boolean;
   tapped?: boolean;
   /** Sur le champ de bataille : sous le contrôle du contrôleur de l'effet (sinon du propriétaire). */
   underYourControl?: boolean;

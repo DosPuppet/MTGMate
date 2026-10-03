@@ -65,7 +65,7 @@ const METEORITE: TokenSpec = {
   text: "When this token enters, it deals 2 damage to any target. {T}: Add one mana of any color.",
 };
 
-const freeFlashback = (what: ReturnType<typeof ref.target>): Effect => ({ op: "grantFlashback", what, free: true });
+const freeFlashback = (what: ReturnType<typeof ref.target>): Effect => ({ op: "grantPlay", what, flashback: true, free: true });
 
 export const UNIQUE: Record<string, CardScript> = {
   // --- Blanc -----------------------------------------------------------------

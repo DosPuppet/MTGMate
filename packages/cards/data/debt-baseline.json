@@ -74,12 +74,8 @@
     "destroyAllButChosenType": "Kindred Judgment — « gardez les permanents choisis » (R4.6)",
     "destroyAllButOnePerPlayer": "Unstable Glyphbridge // Sandswirl Wanderglyph — « gardez les permanents choisis » (R4.6)",
     "doneOncePerTurn": "Spider-Verse — « faites ceci une seule fois par tour » (avec oncePerTurn: \"ifDone\"), générique, une seule carte pour l'instant",
-    "destroySameName": "Maelstrom Pulse — mécanique générique, une seule carte pour l'instant",
     "exileForManaValue": "Fabrication Foundry — opération propre à une carte (R4.6)",
-    "extraEndStep": "Y'shtola Rhul — mécanique générique, une seule carte pour l'instant",
-    "extraUpkeeps": "Obeka, Splitter of Seconds — opération propre à une carte (R4.6)",
     "flickerChosen": "Another Round — opération propre à une carte (R4.6)",
-    "grantRebound": "Ojer Pakpatiq, Deepest Epoch // Temple of Cyclical Time — mécanique générique, une seule carte pour l'instant",
     "hellkite": "Steel Hellkite — destroyAll + filtre « blessé par la source » (R4.6)",
     "keepOnePerType": "Liliana, Dreadhorde General — « gardez les permanents choisis » (R4.6)",
     "keepSharingCreatureType": "Winnowing (ECL) — choix d'une créature par joueur puis sacrifice de celles sans type en commun ; famille cible : « gardez les permanents choisis » avec keepOnePerType",
@@ -87,11 +83,9 @@
     "millUntil": "Consuming Aberration — mécanique générique, une seule carte pour l'instant",
     "millWhileShared": "The Tale of Tamiyo — opération propre à une carte (R4.6)",
     "noncombatBonusThisTurn": "Taii Wakeen, Perfect Shot — effet de joueur à montant (R4.6)",
-    "plotOnResolve": "Lilah, Undefeated Slickshot — opération propre à une carte (R4.6)",
     "portent": "Portent of Calamity — opération propre à une carte (R4.6)",
     "reduceSpeed": "Spikeshell Harrier — mécanique générique, une seule carte pour l'instant",
     "removeCounterFromEach": "Dyadrine, Synthesis Amalgam — mécanique générique, une seule carte pour l'instant",
-    "resolveToBattlefieldTransformed": "Esper Origins // Summon: Esper Maduin — opération propre à une carte (R4.6)",
     "revealFaceDown": "Hauntwoods Shrieker — opération propre à une carte (R4.6)",
     "sacrificeElseDiscard": "Momentum Breaker — opération propre à une carte (R4.6)",
     "shield": "New Way Forward : boucliers « la prochaine fois que » (615.7), sur le cadre générique des remplacements (R1) ; une seule carte pour l'instant",
@@ -236,8 +230,8 @@
     "CastPermissionAbilityDef": 21,
     "PlayFromZone": 16,
     "LayerMods": 31,
-    "Effect": 161,
-    "Effect (champs)": 632,
+    "Effect": 150,
+    "Effect (champs)": 611,
     "TriggerSpec": 62,
     "TriggerSpec (champs)": 156,
     "Condition": 52,
@@ -245,7 +239,7 @@
     "Amount": 31,
     "Amount (champs)": 67,
     "Ref": 27,
-    "Ref (champs)": 46
+    "Ref (champs)": 47
   },
   "importCycleMax": 21,
   "ceilingNotes": [
@@ -273,6 +267,7 @@
     "PLAN-S S5 : références cost et zone, objets payés regroupés (CostPaid) : StackItem 32 → 29, Ref 35 → 27, Ref (champs) 57 → 46",
     "PLAN-S S6a : équivalences exactes (effets de joueur, permission de jeu, dégager, révéler jusqu'à, doubler les marqueurs, échanger les PV) : Effect 178 → 169, Effect (champs) 668 → 654",
     "PLAN-S S6b : effets de joueur (pour toute la partie, « ne peut pas vous attaquer ») et remplacements d'objets regroupés (objectReplacement) : Effect 169 → 166, Effect (champs) 654 → 650",
-    "PLAN-S S6c : les effets « toutes les … » agissent sur une référence de zone ; exileTop{allBut} : Effect 166 → 161, Effect (champs) 650 → 632"
+    "PLAN-S S6c : les effets « toutes les … » agissent sur une référence de zone ; exileTop{allBut} : Effect 166 → 161, Effect (champs) 650 → 632",
+    "PLAN-S S6d-e : extra, spellFate, gainControl, grantPlay{flashback}, moveTo{warp}, référence sameName (Ref +1 champ : zone), durée des emblèmes : Effect 161 → 150, Effect (champs) 632 → 611, Ref (champs) 46 → 47"
   ]
 }

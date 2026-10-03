@@ -271,11 +271,6 @@ export const HANDLERS: OpHandlers = {
     store(r, e.store, won ? 1 : 0);
     return;
   },
-  extraUpkeeps(s, _r, e, ctx) {
-    const n = evalAmount(s, ctx, e.amount);
-    for (let i = 0; i < n; i++) rulesEvent(s, { e: "step", step: "upkeep", active: s.turn.active });
-    return;
-  },
   noncombatBonusThisTurn(s, _r, e, ctx) {
     // Taii Wakeen : « ce tour-ci, les blessures non de combat de vos sources sont augmentées de X » (X figé maintenant).
     const add = evalAmount(s, ctx, e.amount);
@@ -293,19 +288,6 @@ export const HANDLERS: OpHandlers = {
     }
     return;
   },
-  extraCombat(s, _r, e) {
-    if (e.afterMain) s.turn.extraCombatsAfterMain = (s.turn.extraCombatsAfterMain ?? 0) + 1;
-    else s.turn.extraCombats = (s.turn.extraCombats ?? 0) + 1;
-    return;
-  },
-  extraTurn(s, _r, _e, ctx) {
-    s.extraTurns = [...(s.extraTurns ?? []), ctx.controller];
-    return;
-  },
-  extraEndStep(s) {
-    s.turn.extraEndSteps = (s.turn.extraEndSteps ?? 0) + 1;
-    return;
-  },
   winGame(s, _r, _e, ctx) {
     // Herald of Eternal Dawn (`cantLose`) : « vous ne pouvez pas perdre et vos adversaires ne peuvent pas gagner ».
     const opponents = opponentsOf(s, ctx.controller);
@@ -319,6 +301,30 @@ export const HANDLERS: OpHandlers = {
       s,
       who.filter((p) => !playerStatic(s, p, "cantLose")),
     );
+    return;
+  },
+  extra(s, _r, e, ctx) {
+    const n = e.amount !== undefined ? evalAmount(s, ctx, e.amount) : 1;
+    for (let i = 0; i < n; i++) {
+      switch (e.kind) {
+        case "upkeep":
+          // Approximation : seuls les déclencheurs « au début de votre entretien » (docs/approximations.md).
+          rulesEvent(s, { e: "step", step: "upkeep", active: s.turn.active });
+          break;
+        case "combat":
+          s.turn.extraCombats = (s.turn.extraCombats ?? 0) + 1;
+          break;
+        case "combatAfterMain":
+          s.turn.extraCombatsAfterMain = (s.turn.extraCombatsAfterMain ?? 0) + 1;
+          break;
+        case "endStep":
+          s.turn.extraEndSteps = (s.turn.extraEndSteps ?? 0) + 1;
+          break;
+        case "turn":
+          s.extraTurns = [...(s.extraTurns ?? []), ctx.controller];
+          break;
+      }
+    }
     return;
   },
   setLife(s, r, e, ctx) {

@@ -283,8 +283,6 @@ export type Effect =
   | { op: "shuffle"; who: Ref }
   /** Échange le contrôle de deux permanents (Trade the Helm). */
   | { op: "exchangeControl"; a: Ref; b: Ref }
-  /** Gagne le contrôle tant que vous contrôlez la source ; `restrict` : il ne peut ni attaquer ni bloquer (Possession Engine). */
-  | { op: "gainControlWhileSource"; what: Ref; restrict?: boolean }
   /** Base de F/E de chaque permanent correspondant égale au montant, jusqu'à la fin du tour (Sita Varma). */
   | { op: "setBasePTAll"; filter: ObjectFilter; amount: Amount; powerOnly?: boolean }
   /** La carte (ou le sort) est exilée et devient complotée (702.170). */
@@ -295,10 +293,6 @@ export type Effect =
   | { op: "mayShuffleHandGraveyardDraw"; n: number }
   /** 705 : pile ou face ; `store` vaut 1 si le contrôleur gagne. */
   | { op: "coinFlip"; store: string }
-  /** Obeka : N étapes d'entretien supplémentaires (approximation : les déclencheurs « au début de votre entretien »). */
-  | { op: "extraUpkeeps"; amount: Amount }
-  /** Lilah : le sort (sur la pile) sera exilé et comploté au lieu d'aller au cimetière. */
-  | { op: "plotOnResolve"; what: Ref }
   /** Taii Wakeen : ce tour-ci, vos blessures non de combat sont augmentées de N. */
   | { op: "noncombatBonusThisTurn"; amount: Amount }
   /** Another Round : choisir des permanents que vous contrôlez, les exiler et les renvoyer, N fois. */
@@ -423,15 +417,32 @@ export type Effect =
   /** Le contrôleur sépare les N cartes du dessus en deux piles, un adversaire en choisit une (en main), l'autre au cimetière. */
   /** `revealed` : deux piles révélées (Intrude on the Mind) ; `storeGraveyard` : nombre de cartes mises au cimetière. */
   | { op: "piles"; n: number; revealed?: boolean; storeGraveyard?: string }
-  /** Carte de cimetière qui gagne le flashback jusqu'à la fin du tour (coût : son coût de mana). */
-  /** `free` : flashback {0} (Archmage's Newt montée). */
-  /** `harmonize` : l'harmonie à la place (702.180 : une créature engagée réduit le coût ; Songcrafter Mage). */
-  | { op: "grantFlashback"; what: Ref; free?: boolean; harmonize?: boolean }
   /** « Terminez le tour » (723). */
   | { op: "endTurn" }
   /** Le contrôleur de l'effet prend le contrôle de l'objet jusqu'à la fin du tour. */
   /** `untilEndOfYourNextTurn` : jusqu'à la fin de votre prochain tour (Evil's Thrall), sinon jusqu'à la fin du tour. */
-  | { op: "gainControl"; what: Ref; untilEndOfYourNextTurn?: boolean }
+  /**
+   * Le contrôleur de l'effet (ou le joueur `to`) prend le contrôle des objets : jusqu'à la fin du tour (par défaut), de
+   * votre prochain tour (Evil's Thrall), tant que vous contrôlez la source (Possession Engine) ou sans limite (Harmless
+   * Offering).
+   */
+  | {
+      op: "gainControl";
+      what: Ref;
+      to?: Ref;
+      duration?: "endOfTurn" | "endOfYourNextTurn" | "whileYouControlSource" | "permanent";
+    }
+  /**
+   * Phase, étape ou tour supplémentaire (`amount` fois) : entretien (approximation : les déclencheurs « au début de votre
+   * entretien », Obeka), combat après celui-ci (Aurelia) ou après cette phase principale, étape de fin, tour.
+   */
+  | { op: "extra"; kind: "upkeep" | "combat" | "combatAfterMain" | "endStep" | "turn"; amount?: Amount }
+  /**
+   * Ce que devient le sort désigné (sur la pile), ou celui qui se résout, après sa résolution : exilé (avec un marqueur
+   * `counter`, Goliath Daydreamer), comploté (Lilah), avec le rebond (702.88), ou mis sur le champ de bataille transformé
+   * avec un marqueur de finalité (Esper Origins).
+   */
+  | { op: "spellFate"; fate: "exile" | "plot" | "rebound" | "battlefieldTransformed"; what?: Ref; counter?: string }
   /** Copies d'un sort sur la pile (mêmes cibles). */
   /** `haste`, `sacrificeAtEnd` : la copie d'un sort de créature a la célérité et est sacrifiée en fin de tour. */
   | { op: "copySpell"; what: Ref; count: Amount; haste?: boolean; sacrificeAtEnd?: boolean; nonlegendary?: boolean }
@@ -473,6 +484,8 @@ export type Effect =
       /** Une seule des cartes désignées peut être lancée (Buster Sword). */
       oneOf?: boolean;
       /** Seulement en Aventure (Mosswood Dreadknight : « vous pouvez la lancer depuis votre cimetière en Aventure »). */
+      /** Flashback accordé (ou l'harmonie, 702.180) : la carte est exilée en quittant la pile. */
+      flashback?: true | "harmonize";
       adventureOnly?: boolean;
     }
   /** Exile les cartes du dessus jusqu'à une carte correspondante (mémorisée) : Territorial Bruntar. */
@@ -561,8 +574,6 @@ export type Effect =
    * d'abord) ; `store` vaut 1 si c'est fait.
    */
   | { op: "exileForManaValue"; filter: ObjectFilter; atLeast: Amount; store: string }
-  /** « [Ce sort] gagne le rebond » (702.88). */
-  | { op: "grantRebound"; what: Ref }
   /** Sovereign Okinec Ahau : autant de marqueurs +1/+1 que l'écart entre sa force et sa force de base. */
   | { op: "countersAboveBase"; filter: ObjectFilter }
   /** Les créatures désignées ont la connivence (701.50) : leur contrôleur pioche, défausse ; non-terrain : marqueur +1/+1. */
@@ -579,8 +590,6 @@ export type Effect =
   /** Retourne face visible les permanents désignés (sans payer de coût). */
   /** `orExileCast` : « si vous ne pouvez pas, exilez-la, puis vous pouvez lancer la carte exilée sans payer » (Etrata). */
   | { op: "turnFaceUp"; what: Ref; orExileCast?: boolean; store?: string }
-  /** Distorsion : exile le permanent à la prochaine étape de fin (il pourra être lancé depuis l'exil un tour suivant). */
-  | { op: "warpExile"; what: Ref }
   /** Station (702.184a) : des marqueurs de charge égaux à la force de la créature engagée pour le coût. */
   | { op: "station" }
   /** La Classe source passe au niveau N (716.2a). */
@@ -611,8 +620,6 @@ export type Effect =
       /** Exceptions de copie (707.9b) : nom, types, surtypes, F/E, mots-clés. */
       except?: LayerMods;
     }
-  /** Donne le contrôle de l'objet à un joueur, sans limite de durée (Harmless Offering). */
-  | { op: "giveControl"; what: Ref; to: Ref }
   /** Dégage jusqu'à N permanents engagés du contrôleur correspondant au filtre (choisis automatiquement). */
   | { op: "untapUpTo"; filter: ObjectFilter; n: number }
   /** Le sort qui se résout est exilé au lieu d'aller au cimetière (« Exilez Finale of Revelation »). */
@@ -620,11 +627,8 @@ export type Effect =
    * Le sort qui se résout est exilé au lieu d'aller au cimetière ; avec `what` et `counter`, les sorts désignés le seront
    * avec ce marqueur (Goliath Daydreamer : « exilez cette carte avec un marqueur de rêve »).
    */
-  | { op: "exileOnResolve"; what?: Ref; counter?: string }
   /** Marqueurs poison (122.1f) ; 10 ou plus : le joueur perd. */
   | { op: "poison"; who: Ref; n: Amount }
-  /** Détruit l'objet et tous les autres permanents du même nom (Maelstrom Pulse). */
-  | { op: "destroySameName"; what: Ref }
   /** Marqueurs +1/+1 répartis entre les cibles (au moins 1 chacune). */
   /**
    * Répartir des marqueurs (+1/+1 par défaut, `counter`) entre les cibles, ou à la résolution entre les objets désignés ;
@@ -635,8 +639,6 @@ export type Effect =
   | { op: "payX"; prompt: string; store: string }
   /** Change la cible d'un sort ou d'une capacité à cible unique (Bolt Bend). */
   | { op: "changeTarget"; what: Ref }
-  /** Combat supplémentaire après celui-ci (Aurelia) ; `afterMain` : après cette phase principale, suivi d'une phase principale. */
-  | { op: "extraCombat"; afterMain?: boolean }
   /**
    * Le mana ajouté ne se vide pas avant la fin du tour (Savage Ventmaw), ou avant la fin du combat (`untilEndOfCombat` :
    * maîtrise du feu). `times` : la liste est ajoutée autant de fois (« maîtrise du feu X »).
@@ -645,14 +647,10 @@ export type Effect =
   /** Le contrôleur gagne la partie (Maze's End). */
   | { op: "winGame" }
   | { op: "loseGame"; who?: Ref }
-  /** « Faites un tour supplémentaire après celui-ci » (Ultimecia, Omnipotent). */
-  | { op: "extraTurn" }
   /** Triple Triad : chaque joueur exile sa carte du dessus ; la vôtre et celles de valeur de mana inférieure sont jouables gratuitement ce tour-ci. */
   | { op: "tripleTriad" }
   /** « Détachez-le » (Stolen Uniform, Unexpected Request) ; `ifAttachedTo` : seulement s'il est attaché à ce permanent. */
   | { op: "unattach"; what: Ref; ifAttachedTo?: Ref }
-  /** « Exilez-le, puis mettez-le sur le champ de bataille transformé avec un marqueur de finalité » (Esper Origins). */
-  | { op: "resolveToBattlefieldTransformed" }
   /** Le sort désigné (sur la pile) arrive avec N marqueurs +1/+1 de plus (Torgal). */
   | { op: "spellArrivalCounters"; what: Ref; amount: Amount }
   /**
@@ -660,8 +658,6 @@ export type Effect =
    * fin du tour ; `chooseSource` : « une source de votre choix », choisie à la résolution (New Way Forward).
    */
   | { op: "shield"; replacement: EventReplacement; chooseSource?: boolean }
-  /** « Il y a une étape de fin supplémentaire après celle-ci » (Y'shtola Rhul). */
-  | { op: "extraEndStep" }
   /** « Chaque [créature] inflige des blessures égales à sa force à [cible] » (Bartz and Boko). */
   /** `from` : les créatures désignées à la place du filtre (Coordinated Clobbering). */
   /** `amount` : chacune inflige ce nombre de blessures (Case of the Gateway Express : 1), sinon sa force. */
@@ -731,10 +727,11 @@ export type Effect =
       name: string;
       abilities: AbilityDef[];
       text: string;
-      untilYourNextTurn?: boolean;
-      thisTurn?: boolean;
-      /** « Jusqu'à la fin de votre prochain tour » (Season of the Bold). */
-      untilEndOfYourNextTurn?: boolean;
+      /**
+       * Emblème temporaire : jusqu'à votre prochain tour, la fin de ce tour, ou la fin de votre prochain tour (Season of the
+       * Bold).
+       */
+      duration?: "untilYourNextTurn" | "endOfTurn" | "endOfYourNextTurn";
       /** Mémorise l'emblème (pour y lier des objets). */
       store?: string;
     }

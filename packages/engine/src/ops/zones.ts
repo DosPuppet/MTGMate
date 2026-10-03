@@ -1578,15 +1578,6 @@ export const HANDLERS: OpHandlers = {
     }
     return;
   },
-  destroySameName(s, _r, e, ctx) {
-    for (const id of resolveRef(s, ctx, e.what)) {
-      if (!onBattlefield(s, id)) continue;
-      const name = chars(s, id).name;
-      const all = s.battlefield.filter((x) => chars(s, x).name === name);
-      for (const x of all) destroy(s, x);
-    }
-    return;
-  },
   exileUntil(s, r, e, ctx) {
     if (e.untilTotalManaValue !== undefined) {
       const all: string[] = [];
@@ -1921,15 +1912,6 @@ export const HANDLERS: OpHandlers = {
         continue;
       }
       turnFaceUp(s, id);
-    }
-    return;
-  },
-  warpExile(s, _r, e, ctx) {
-    for (const id of resolveRef(s, ctx, e.what)) {
-      if (!onBattlefield(s, id)) continue;
-      const exiled = moveWithSpec(s, ctx.controller, id, { to: "exile" });
-      const o = exiled ? s.objects[exiled] : undefined;
-      if (o) o.warpExiledTurn = s.turn.number;
     }
     return;
   },

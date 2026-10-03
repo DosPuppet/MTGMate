@@ -286,8 +286,11 @@ export const RECORD_VERSION = 1;
  *   lit la zone de lancement (et non plus la marque du flashback).
  * - 100 : les effets « toutes les … » agissent sur une référence de zone (PLAN-S, lot S6c) : le X du sort dans un filtre
  *   est lu par la référence (`withX`) ; `destroy` mémorise aussi le nombre de permanents détruits.
+ * - 101 : familles d'effets (PLAN-S, lots S6d et S6e) : `extra`, `spellFate`, `gainControl` (durées, joueur `to`),
+ *   `grantPlay{flashback}`, exil de distorsion par `moveTo` (`moveWithSpec`), référence `sameName` (Maelstrom Pulse),
+ *   durée des emblèmes.
  */
-export const RULES_VERSION = 100;
+export const RULES_VERSION = 101;
 
 /** Un point de contrôle toutes les N décisions (plus la dernière de la partie). */
 export const CHECKPOINT_EVERY = 25;

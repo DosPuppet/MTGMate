@@ -47,7 +47,7 @@ export const UNIQUE: Record<string, CardScript> = {
   // --- Bleu ------------------------------------------------------------------
   "Possession Engine": {
     abilities: [
-      triggered(when.entersSelf, [fx.gainControlWhileSource(ref.target(), true)], {
+      triggered(when.entersSelf, fx.gainControlWhileSource(ref.target(), true), {
         targets: [target.creature("t", { controller: "opponent" })],
         label: "Prenez le contrôle d'une créature (tant que vous contrôlez ce Véhicule)",
       }),

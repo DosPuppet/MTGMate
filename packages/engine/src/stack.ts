@@ -3536,7 +3536,7 @@ function finishResolution(
       if (item.cast?.via === "warp" && arrived) {
         createDelayed(s, item.controller, arrived.id, arrived.defId, {
           targets: [],
-          effects: [{ op: "warpExile", what: { kind: "target", id: "w" } }],
+          effects: [{ op: "moveTo", what: { kind: "target", id: "w" }, spec: { to: "exile", warp: true } }],
           bound: { w: [arrived.id] },
           label: "Distorsion : exilez-le",
         });

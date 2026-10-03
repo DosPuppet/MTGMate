@@ -295,9 +295,9 @@ export const HANDLERS: OpHandlers = {
       isToken: true,
     };
     const emblem = createObject(s, defId, ctx.controller, "command", { isToken: true });
-    if (e.untilYourNextTurn) emblem.expiresAtTurnOf = ctx.controller;
-    if (e.thisTurn) emblem.expiresEndOfTurn = s.turn.number;
-    if (e.untilEndOfYourNextTurn) emblem.expiresEndOfTurn = nextTurnOf(s, ctx.controller);
+    if (e.duration === "untilYourNextTurn") emblem.expiresAtTurnOf = ctx.controller;
+    if (e.duration === "endOfTurn") emblem.expiresEndOfTurn = s.turn.number;
+    if (e.duration === "endOfYourNextTurn") emblem.expiresEndOfTurn = nextTurnOf(s, ctx.controller);
     // Oko, Shadowmoor Scion : « choisissez un type de créature ; vous obtenez un emblème avec "les créatures du type
     // choisi…" » : l'emblème garde le choix fait par l'effet.
     const chosen = r.vars.$chosen;
@@ -610,29 +610,6 @@ export const HANDLERS: OpHandlers = {
     addControlEffect(s, [ob.id], ca, "permanent");
     return;
   },
-  gainControlWhileSource(s, _r, e, ctx) {
-    if (!onBattlefield(s, ctx.sourceId)) return;
-    for (const id of resolveRef(s, ctx, e.what)) {
-      const o = s.objects[id];
-      if (o?.zone !== "battlefield" || o.controller === ctx.controller) continue;
-      addControlEffect(s, [id], ctx.controller, "permanent", {
-        whileSource: ctx.sourceId,
-        whileControlledBy: ctx.controller,
-      });
-      if (e.restrict) {
-        s.effects.push({
-          id: newId(s, "e"),
-          timestamp: nextTimestamp(s),
-          affected: [id],
-          duration: "permanent",
-          addKeywords: ["cantAttack", "cantBlock"],
-          whileSource: ctx.sourceId,
-        });
-      }
-      bump(s);
-    }
-    return;
-  },
   setBasePTAll(s, _r, e, ctx) {
     const n = evalAmount(s, ctx, e.amount);
     const ids = s.battlefield.filter((x) => matchesObjectFilter(s, ctx.controller, x, e.filter, ctx.sourceId));
@@ -640,24 +617,21 @@ export const HANDLERS: OpHandlers = {
     return;
   },
   gainControl(s, _r, e, ctx) {
-    for (const id of resolveRef(s, ctx, e.what)) {
-      const o = s.objects[id];
-      if (o?.zone !== "battlefield" || o.controller === ctx.controller) continue;
-      // Vol « jusqu'à la fin du tour » (Involuntary Employment) : l'effet prend fin au nettoyage (couche 2) ; Evil's
-      // Thrall : au nettoyage de votre prochain tour.
-      if (e.untilEndOfYourNextTurn)
-        addControlEffect(s, [id], ctx.controller, "endOfYourNextTurn", { until: ctx.controller, sinceTurn: s.turn.number });
-      else addControlEffect(s, [id], ctx.controller, "endOfTurn");
-    }
-    return;
-  },
-  giveControl(s, _r, e, ctx) {
-    const to = resolveRef(s, ctx, e.to).find((x) => isPlayer(s, x));
+    const to = e.to ? resolveRef(s, ctx, e.to).find((x) => isPlayer(s, x)) : ctx.controller;
     if (!to) return;
+    // 611.2b : « tant que vous contrôlez [la source] » ne fait rien si elle est déjà partie.
+    if (e.duration === "whileYouControlSource" && !onBattlefield(s, ctx.sourceId)) return;
     for (const id of resolveRef(s, ctx, e.what)) {
       const o = s.objects[id];
       if (o?.zone !== "battlefield" || o.controller === to) continue;
-      addControlEffect(s, [id], to, "permanent");
+      // Vol « jusqu'à la fin du tour » (Involuntary Employment) : l'effet prend fin au nettoyage (couche 2) ; Evil's
+      // Thrall : au nettoyage de votre prochain tour.
+      if (e.duration === "endOfYourNextTurn")
+        addControlEffect(s, [id], to, "endOfYourNextTurn", { until: ctx.controller, sinceTurn: s.turn.number });
+      else if (e.duration === "whileYouControlSource") {
+        addControlEffect(s, [id], to, "permanent", { whileSource: ctx.sourceId, whileControlledBy: ctx.controller });
+        bump(s);
+      } else addControlEffect(s, [id], to, e.duration === "permanent" ? "permanent" : "endOfTurn");
     }
     return;
   },
