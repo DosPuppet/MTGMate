@@ -82,10 +82,24 @@ export interface EffectContext {
   paid?: CostPaid & { bounced?: ObjectId[] };
 }
 
+/** « … X ou moins » dans un filtre : le X de ce qui se résout (Day of Black Sun, Doppelgang). */
+export function withX(f: ObjectFilter, x: number): ObjectFilter {
+  if (!f.maxToughnessX && !f.manaValueX && !f.maxManaValueX) return f;
+  return {
+    ...f,
+    maxToughnessX: undefined,
+    manaValueX: undefined,
+    maxManaValueX: undefined,
+    ...(f.maxToughnessX ? { maxToughness: x } : {}),
+    ...(f.manaValueX ? { manaValue: x } : {}),
+    ...(f.maxManaValueX ? { maxManaValue: x } : {}),
+  };
+}
+
 /** La référence `zone` : les objets d'une zone des joueurs désignés, correspondant au filtre. */
 function zoneObjects(s: GameState, ctx: EffectContext, ref: Extract<Ref, { kind: "zone" }>): string[] {
   const players = resolveRef(s, ctx, ref.who);
-  const f = ref.filter ? { ...ref.filter, controller: undefined } : undefined;
+  const f = ref.filter ? { ...withX(ref.filter, ctx.x), controller: undefined } : undefined;
   const card = (id: ObjectId) => !f || matchesCard(s, ctx.controller, id, f, ctx.sourceId);
   switch (ref.zone) {
     case "battlefield":

@@ -242,7 +242,7 @@ export function priorityOptions(
     // Renfort global en rituel (Overrun…) : seulement pour une attaque potentiellement létale.
     if (a.type === "cast") {
       const d = s.defs[s.objects[a.card]?.defId ?? ""];
-      if (d?.spell?.modes[0]?.effects.some((e) => e.op === "pumpAll")) {
+      if (d?.spell?.modes[0]?.effects.some((e) => e.op === "pump" && e.what.kind === "zone")) {
         if (step === "main1" && overrunIsLethal(s, me)) return { baseline, options, forced: { type: "cast", card: a.card } };
         continue;
       }

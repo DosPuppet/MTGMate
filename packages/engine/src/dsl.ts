@@ -302,6 +302,27 @@ function someone(of: Ref, where: Condition): Condition {
   return { kind: "amountAtLeast", amount: { kind: "refCount", ref: { kind: "playersWhere", of, where } }, n: 1 };
 }
 
+/**
+ * Les permanents du filtre, comme référence (`zone`) : chez vous, chez vos adversaires ou chez tous les joueurs selon son
+ * `controller` (« chaque créature que vous contrôlez », « toutes les créatures »).
+ */
+function allMatching(filter: ObjectFilter): Ref {
+  const who: Ref =
+    filter.controller === "you"
+      ? { kind: "you" }
+      : filter.controller === "opponent"
+        ? { kind: "eachOpponent" }
+        : { kind: "eachPlayer" };
+  return { kind: "zone", zone: "battlefield", who, filter };
+}
+
+/** Le filtre restreint aux créatures (« les créatures que vous contrôlez gagnent… »). */
+function creaturesOnly(filter: ObjectFilter): ObjectFilter {
+  if (!filter.types) return { ...filter, types: ["Creature"] };
+  if (filter.types.every((t) => t === "Creature")) return filter;
+  return { types: ["Creature"], ...(filter.controller ? { controller: filter.controller } : {}), anyOf: [filter] };
+}
+
 /** Créatures mortes ce tour-ci (champ de bataille → cimetière), sous n'importe quel contrôleur. */
 const DIED: TurnLogQuery = { event: "zone", from: "battlefield", to: "graveyard", types: ["Creature"] };
 
@@ -468,9 +489,10 @@ export const fx = {
   }),
   /** « Doublez la force et l'endurance de [ces créatures] jusqu'à la fin du tour » (chacune selon les siennes). */
   doublePT: (what: Ref, keywords?: Keyword[]): Effect => ({ op: "pump", what, power: 0, toughness: 0, keywords, double: true }),
+  /** Les créatures correspondantes gagnent +X/+Y (et des mots-clés) jusqu'à la fin du tour. */
   pumpAll: (filter: ObjectFilter, power: Amount, toughness: Amount, keywords?: Keyword[]): Effect => ({
-    op: "pumpAll",
-    filter,
+    op: "pump",
+    what: allMatching(creaturesOnly(filter)),
     power,
     toughness,
     keywords,
@@ -1144,7 +1166,8 @@ export const fx = {
     reveal,
     ...(optional ? { optional } : {}),
   }),
-  exileLibraryButBottom: (who: Ref, keep?: number): Effect => ({ op: "exileLibraryButBottom", who, keep }),
+  /** Exile face cachée (personne ne les regarde) toute la bibliothèque sauf les `keep` cartes du dessous. */
+  exileLibraryButBottom: (who: Ref, keep = 1): Effect => ({ op: "exileTop", who, allBut: keep, faceDown: "nobody" }),
   /** Attache une Aura ou un Équipement (par défaut la source) au permanent désigné. */
   attach: (to: Ref, what: Ref = ref.self, store?: string): Effect => ({ op: "attach", what, to, store }),
   /** « … devient préparé » / « … devient dé-préparé » (Reality Fracture). */
@@ -1171,16 +1194,16 @@ export const fx = {
     players,
     source,
   }),
-  destroyAll: (filter: ObjectFilter, store?: string): Effect => ({ op: "destroyAll", filter, store }),
+  destroyAll: (filter: ObjectFilter, store?: string): Effect => ({ op: "destroy", what: allMatching(filter), store }),
   addCountersAll: (filter: ObjectFilter, n: Amount = 1, kind?: string): Effect => ({
-    op: "addCountersAll",
-    filter,
+    op: "addCounters",
+    what: allMatching(filter),
     amount: n,
     kind,
   }),
-  modifyAll: (filter: ObjectFilter, mods: LayerMods, duration?: "endOfTurn" | "untilYourNextTurn"): Effect => ({
-    op: "modifyAll",
-    filter,
+  modifyAll: (filter: ObjectFilter, mods: LayerMods, duration: "endOfTurn" | "untilYourNextTurn" = "endOfTurn"): Effect => ({
+    op: "modify",
+    what: allMatching(filter),
     mods,
     duration,
   }),

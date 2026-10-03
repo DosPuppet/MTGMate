@@ -284,8 +284,10 @@ export const RECORD_VERSION = 1;
  * - 99 : comment un sort a été lancé (PLAN-S, lot S4) : `CastInfo` sur l'élément de pile puis sur le permanent ;
  *   évocation, distorsion et imminence sont des coûts alternatifs (`via`) ; « si ce sort a été lancé depuis un cimetière »
  *   lit la zone de lancement (et non plus la marque du flashback).
+ * - 100 : les effets « toutes les … » agissent sur une référence de zone (PLAN-S, lot S6c) : le X du sort dans un filtre
+ *   est lu par la référence (`withX`) ; `destroy` mémorise aussi le nombre de permanents détruits.
  */
-export const RULES_VERSION = 99;
+export const RULES_VERSION = 100;
 
 /** Un point de contrôle toutes les N décisions (plus la dernière de la partie). */
 export const CHECKPOINT_EVERY = 25;

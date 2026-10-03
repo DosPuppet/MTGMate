@@ -251,14 +251,6 @@ export const HANDLERS: OpHandlers = {
     store(r, e.store, done ? 1 : 0);
     return;
   },
-  addCountersAll(s, _r, e, ctx) {
-    const n = evalAmount(s, ctx, e.amount);
-    for (const id of s.battlefield.filter((x) => matchesObjectFilter(s, ctx.controller, x, e.filter, ctx.sourceId))) {
-      const o = s.objects[id];
-      if (o) changeCounters(s, o, e.kind ?? P1P1, n);
-    }
-    return;
-  },
   blight(s, r, e, ctx, key) {
     // Flétrir N (ECL) : chaque joueur désigné choisit une créature qu'il contrôle et y met N marqueurs −1/−1. Tous les
     // choix sont faits avant les marqueurs (une question en attente reprend l'effet depuis le début). `store` : 1 si

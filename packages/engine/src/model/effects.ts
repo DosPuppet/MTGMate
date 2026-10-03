@@ -84,7 +84,6 @@ export type Effect =
   | { op: "fight"; a: Ref; b: Ref; storeExcess?: string }
   /** `double` : chaque objet gagne +X/+Y, X et Y étant sa force et son endurance (« doublez la force et l'endurance »). */
   | { op: "pump"; what: Ref; power: Amount; toughness: Amount; keywords?: Keyword[]; double?: boolean }
-  | { op: "pumpAll"; filter: ObjectFilter; power: Amount; toughness: Amount; keywords?: Keyword[] }
   /** Effet continu quelconque sur des objets (couches 4 à 7) : « devient 0/1 et perd toutes ses capacités »… */
   /** `untilLeavesExile` : l'effet cesse quand cette carte quitte l'exil (Emrakul). */
   | {
@@ -106,7 +105,10 @@ export type Effect =
       /** F/E de base fixées à ce montant, évalué à la résolution (couche 7b). */
       basePT?: Amount;
     }
-  /** `store` : les cartes mises au cimetière ainsi (« si une carte de créature est mise dans un cimetière de cette façon »). */
+  /**
+   * `store` : le nombre de permanents détruits, et les cartes mises au cimetière ainsi (« si une carte de créature est mise
+   * dans un cimetière de cette façon », « pour chaque créature détruite de cette façon »).
+   */
   | { op: "destroy"; what: Ref; store?: string }
   /** « Engagez un nombre quelconque de [permanents] dégagés que vous contrôlez » : `store` mémorise leur nombre. */
   /**
@@ -223,12 +225,8 @@ export type Effect =
   | { op: "tap"; what: Ref; untap?: boolean }
   /** Blessures à chaque créature correspondant au filtre (et éventuellement à des joueurs). */
   | { op: "damageAll"; amount: Amount; filter?: ObjectFilter; players?: Ref; source?: Ref }
-  | { op: "destroyAll"; filter: ObjectFilter; store?: string }
-  | { op: "addCountersAll"; filter: ObjectFilter; amount: Amount; kind?: string }
   /** Flétrir N (ECL) : chaque joueur désigné met N marqueurs −1/−1 sur une créature qu'il contrôle, qu'il choisit ; `store` : 1 si c'est fait. */
   | { op: "blight"; who: Ref; amount: Amount; store?: string }
-  /** Effet continu « jusqu'à la fin du tour » sur tous les permanents correspondant au filtre. */
-  | { op: "modifyAll"; filter: ObjectFilter; mods: LayerMods; duration?: "endOfTurn" | "untilYourNextTurn" }
   /** Sacrifier un objet précis (jeton temporaire, « sacrifiez-la »). */
   | { op: "sacrificeIt"; what: Ref }
   /** Déplace un objet (retour en main, exil, retour du cimetière sur le champ de bataille…). */
@@ -440,7 +438,8 @@ export type Effect =
   /** Chaque joueur désigné révèle des cartes jusqu'à une carte correspondant au filtre, puis les met toutes au cimetière. */
   | { op: "millUntil"; who: Ref; filter: ObjectFilter }
   /** Exile les N cartes du dessus de la bibliothèque de chaque joueur désigné (mémorisées sous `store`). */
-  | { op: "exileTop"; who: Ref; n: Amount; store: string; faceDown?: MoveSpec["faceDown"] }
+  /** `allBut` : toutes les cartes sauf les N du dessous (Doomsday Excruciator, Jace, Reality Sculptor). */
+  | { op: "exileTop"; who: Ref; n?: Amount; allBut?: Amount; store?: string; faceDown?: MoveSpec["faceDown"] }
   /** Permet au contrôleur de jouer ces cartes exilées ce tour-ci. `spellsOnly` : lancer seulement, sans timing, gratuitement. */
   /**
    * `forever` : « tant qu'elle reste exilée » (Emrakul) ; `condition` : seulement tant qu'elle est remplie ;
@@ -705,9 +704,6 @@ export type Effect =
   /** `reveal` : le joueur ne révèle que ce nombre de cartes de sa main, qu'il choisit (Taster of Wares). */
   /** `optional` : « vous pouvez choisir une carte » (Severance Priest). */
   | { op: "exileFromHandLinked"; who: Ref; filter: ObjectFilter; untilLeaves?: boolean; reveal?: Amount; optional?: boolean }
-  /** « Exilez toutes les cartes de la bibliothèque de chaque adversaire, sauf celle du dessous. » */
-  /** `keep` : cartes laissées au-dessous (1 par défaut ; Doomsday Excruciator : 6). */
-  | { op: "exileLibraryButBottom"; who: Ref; keep?: number }
   /** Ajoute N mana d'une couleur choisie par le contrôleur (`colors` : parmi ces couleurs seulement, Devotees de TDM). */
   /** `restriction` : mana restreint, gardé à part dans la réserve (Ashling, Rimebound). */
   /** `keep` : le mana ne se vide pas entre les étapes et phases de ce tour (Branch of Vitu-Ghazi). */

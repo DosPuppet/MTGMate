@@ -22,7 +22,6 @@ import {
   chars,
   createObject,
   hasKeyword,
-  isCreature,
   isPlayer,
   newId,
   nextTimestamp,
@@ -192,13 +191,6 @@ export const HANDLERS: OpHandlers = {
       for (const [id, p, t] of pt) addPump(s, [id], p, t, e.keywords);
       return;
     }
-    addPump(s, ids, evalAmount(s, ctx, e.power), evalAmount(s, ctx, e.toughness), e.keywords);
-    return;
-  },
-  pumpAll(s, _r, e, ctx) {
-    const ids = s.battlefield.filter(
-      (id) => isCreature(s, id) && matchesObjectFilter(s, ctx.controller, id, e.filter, ctx.sourceId),
-    );
     addPump(s, ids, evalAmount(s, ctx, e.power), evalAmount(s, ctx, e.toughness), e.keywords);
     return;
   },
@@ -384,24 +376,6 @@ export const HANDLERS: OpHandlers = {
     }
     for (const p of creators) created.push(...createTokens(s, p, token, n, true, enters, declined.has(p)));
     if (e.store) r.vars[`$ids:${e.store}`] = created;
-    return;
-  },
-  modifyAll(s, _r, e, ctx) {
-    // « valeur de mana X ou moins » : le X du sort (Day of Black Sun).
-    const f = e.filter.maxManaValueX ? { ...e.filter, maxManaValueX: undefined, maxManaValue: ctx.x } : e.filter;
-    const ids = s.battlefield.filter((x) => matchesObjectFilter(s, ctx.controller, x, f, ctx.sourceId));
-    if (ids.length === 0) return;
-    bump(s);
-    // « … jusqu'à votre prochain tour » (For the Common Good).
-    const until = e.duration === "untilYourNextTurn";
-    s.effects.push({
-      id: newId(s, "e"),
-      timestamp: nextTimestamp(s),
-      affected: ids,
-      duration: until ? "untilYourNextTurn" : "endOfTurn",
-      ...(until ? { until: ctx.controller } : {}),
-      ...e.mods,
-    });
     return;
   },
   chooseCardName(s, r, _e, ctx, key) {

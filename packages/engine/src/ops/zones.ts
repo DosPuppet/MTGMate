@@ -17,6 +17,7 @@ import {
   resolveRef,
   store,
   viewOf,
+  withX,
   zoneCards,
 } from "../effects";
 import { RulesError } from "../errors";
@@ -107,13 +108,15 @@ function shockLandChoices(
 export const HANDLERS: OpHandlers = {
   destroy(s, r, e, ctx) {
     const stored: string[] = [];
+    let destroyed = 0;
     for (const id of resolveRef(s, ctx, e.what)) {
       const o = s.objects[id];
-      destroy(s, id);
-      // Come Back Wrong : la carte mise au cimetière de cette façon.
+      if (destroy(s, id)) destroyed++;
+      // Come Back Wrong, Zero Point Ballad : les cartes mises au cimetière de cette façon.
       const card = o && (s.players[o.owner]?.graveyard ?? []).find((x) => s.objects[x]?.uid === o.uid);
       if (card) stored.push(card);
     }
+    store(r, e.store, destroyed);
     if (e.store) r.vars[`$ids:${e.store}`] = stored;
     return;
   },
@@ -365,18 +368,6 @@ export const HANDLERS: OpHandlers = {
     const moved = moveObject(s, id, "exile");
     const src = s.objects[ctx.sourceId];
     if (moved && src) src.linked = [...(src.linked ?? []), moved];
-    return;
-  },
-  exileLibraryButBottom(s, _r, e, ctx) {
-    for (const p of resolveRef(s, ctx, e.who)) {
-      const lib = s.players[p]?.library ?? [];
-      // Face cachée : personne ne les regarde (Doomsday Excruciator).
-      for (const id of lib.slice(0, Math.max(0, lib.length - (e.keep ?? 1)))) {
-        const moved = moveObject(s, id, "exile");
-        const o = moved ? s.objects[moved] : undefined;
-        if (o) o.exiledFaceDown = [];
-      }
-    }
     return;
   },
   keepOnePerType(s, r, e, ctx, key) {
@@ -982,32 +973,6 @@ export const HANDLERS: OpHandlers = {
     for (const id of s.battlefield.filter((x) => isCreature(s, x) && !keep.includes(x))) destroy(s, id);
     return;
   },
-  destroyAll(s, r, e, ctx) {
-    let destroyed = 0;
-    const f = e.filter.maxToughnessX
-      ? { ...e.filter, maxToughnessX: undefined, maxToughness: ctx.x }
-      : e.filter.manaValueX
-        ? { ...e.filter, manaValueX: undefined, manaValue: ctx.x }
-        : e.filter.maxManaValueX
-          ? { ...e.filter, maxManaValueX: undefined, maxManaValue: ctx.x }
-          : e.filter;
-    const uids = new Set<string>();
-    for (const id of s.battlefield.filter((x) => matchesObjectFilter(s, ctx.controller, x, f, ctx.sourceId))) {
-      const uid = s.objects[id]?.uid;
-      if (destroy(s, id)) {
-        destroyed++;
-        if (uid !== undefined) uids.add(uid);
-      }
-    }
-    store(r, e.store, destroyed);
-    // Les cartes « mises au cimetière de cette façon » (Zero Point Ballad).
-    if (e.store) {
-      r.vars[`$ids:${e.store}`] = s.playerOrder.flatMap((p) =>
-        (s.players[p]?.graveyard ?? []).filter((id) => uids.has(s.objects[id]?.uid ?? "")),
-      );
-    }
-    return;
-  },
   sacrificeIt(s, _r, e, ctx) {
     for (const id of resolveRef(s, ctx, e.what)) if (onBattlefield(s, id)) sacrifice(s, id);
     return;
@@ -1190,7 +1155,7 @@ export const HANDLERS: OpHandlers = {
   moveAll(s, r, e, ctx, key) {
     const players = resolveRef(s, ctx, e.whose).filter((p) => isPlayer(s, p));
     // « de valeur de mana X » (Fix What's Broken) : le X du sort ou de la capacité.
-    const filter = e.filter.manaValueX ? { ...e.filter, manaValueX: undefined, manaValue: ctx.x } : e.filter;
+    const filter = withX(e.filter, ctx.x);
     const ids =
       e.from === "battlefield"
         ? s.battlefield.filter(
@@ -1298,7 +1263,7 @@ export const HANDLERS: OpHandlers = {
       const count = evalAmount(s, ctx, e.count);
       const exactMv = e.manaValue !== undefined ? evalAmount(s, ctx, e.manaValue) : undefined;
       // « valeur de mana X ou moins » : le X du sort qui se résout (Nature's Rhythm).
-      const base = e.filter.maxManaValueX ? { ...e.filter, maxManaValueX: undefined, maxManaValue: ctx.x } : e.filter;
+      const base = withX(e.filter, ctx.x);
       const options = player.library.filter((id) =>
         matchesCard(s, p, id, exactMv === undefined ? base : { ...base, manaValue: exactMv }, ctx.sourceId),
       );
@@ -1590,13 +1555,14 @@ export const HANDLERS: OpHandlers = {
   exileTop(s, r, e, ctx) {
     const exiled: string[] = [];
     for (const p of resolveRef(s, ctx, e.who)) {
-      const n = evalAmount(s, ctx, e.n);
-      for (const id of (s.players[p]?.library ?? []).slice(0, n)) {
+      const lib = s.players[p]?.library ?? [];
+      const n = e.allBut !== undefined ? lib.length - evalAmount(s, ctx, e.allBut) : evalAmount(s, ctx, e.n ?? 0);
+      for (const id of lib.slice(0, Math.max(0, n))) {
         const n = moveWithSpec(s, ctx.controller, id, { to: "exile", ...(e.faceDown ? { faceDown: e.faceDown } : {}) });
         if (n) exiled.push(n);
       }
     }
-    r.vars[`$ids:${e.store}`] = exiled;
+    if (e.store) r.vars[`$ids:${e.store}`] = exiled;
     return;
   },
   untapUpTo(s, _r, e, ctx) {

@@ -236,8 +236,8 @@
     "CastPermissionAbilityDef": 21,
     "PlayFromZone": 16,
     "LayerMods": 31,
-    "Effect": 166,
-    "Effect (champs)": 650,
+    "Effect": 161,
+    "Effect (champs)": 632,
     "TriggerSpec": 62,
     "TriggerSpec (champs)": 156,
     "Condition": 52,
@@ -272,6 +272,7 @@
     "PLAN-S S4 : CastInfo commun à la pile, à l'arrivée et au permanent ; cond.cast : GameObject 71 → 60, StackItem 46 → 32, Condition 58 → 52, Condition (champs) 101 → 96",
     "PLAN-S S5 : références cost et zone, objets payés regroupés (CostPaid) : StackItem 32 → 29, Ref 35 → 27, Ref (champs) 57 → 46",
     "PLAN-S S6a : équivalences exactes (effets de joueur, permission de jeu, dégager, révéler jusqu'à, doubler les marqueurs, échanger les PV) : Effect 178 → 169, Effect (champs) 668 → 654",
-    "PLAN-S S6b : effets de joueur (pour toute la partie, « ne peut pas vous attaquer ») et remplacements d'objets regroupés (objectReplacement) : Effect 169 → 166, Effect (champs) 654 → 650"
+    "PLAN-S S6b : effets de joueur (pour toute la partie, « ne peut pas vous attaquer ») et remplacements d'objets regroupés (objectReplacement) : Effect 169 → 166, Effect (champs) 654 → 650",
+    "PLAN-S S6c : les effets « toutes les … » agissent sur une référence de zone ; exileTop{allBut} : Effect 166 → 161, Effect (champs) 650 → 632"
   ]
 }

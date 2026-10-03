@@ -26,7 +26,10 @@ Côté performance, les caches des couches et des statiques sont des `WeakMap` i
 | S3 [règles 98] | Familles de quantités : `aggregate` (28 sortes), `spent` (8), `manaSymbols` (2), référence `playersWhere` (une Ref, une Amount, deux Conditions) ; Amount 67 → 31 variantes, 119 → 71 champs, Condition 60 → 58 ; Ref +2 champs. Écart corrigé : une copie a la valeur de mana de ce qu'elle copie (Lunar Insight, Omni-Changeling) ; `graveyardsWithAtLeast` gardé (calculé pendant les couches) | ✅ |
 | S4 [règles 99] | Sorts lancés : `CastInfo` (zone, coût alternatif `via` dont évocation, distorsion et imminence, mana et couleurs dépensés, Cavernes, créature renvoyée, contempler, `whenCast`) sur la pile, le contexte d'arrivée et le permanent ; `cond.cast({ from, via })` remplace sept conditions ; GameObject 71 → 60, StackItem 46 → 32, Condition 58 → 52. `kicked` et `x` restent sur l'objet (copie d'un sort kické, 707.10 ; X payé pour retourner face visible) | ✅ |
 | S5 | Références : `cost` (sacrifiés, défaussées, exilées, renvoyée) et `zone` (champ de bataille, cimetière, main, exil, pile des joueurs désignés) remplacent dix références ; les objets payés pour un coût sont regroupés (`CostPaid`, `StackItem.paid`) ; Ref 35 → 27 variantes, 57 → 46 champs, StackItem 32 → 29 ; empreintes identiques | ✅ |
-| S6 | Familles d'effets (S6a à S6e) | |
+| S6a | Équivalences exactes : effets de joueur, `grantPlay`, `tap{untap}`, `revealUntilN`, `doubleCounters{all}`, `setLife{exchange}` ; Effect 178 → 169 | ✅ |
+| S6b | `playerEffect` (pour toute la partie, « ne peut pas vous attaquer ») ; `objectReplacement` ; Effect 169 → 166. `shield` et `noncombatBonusThisTurn` gardés (choix de la source ; quantité dans un remplacement) | ✅ |
+| S6c [règles 100] | `pumpAll`, `addCountersAll`, `modifyAll`, `destroyAll` deviennent leur jumelle sur une référence de zone (`allMatching`), X du sort lu par la référence (`withX`) ; `exileTop{allBut}` ; Effect 166 → 161. `setBasePTAll` et `millUntil` gardés (force seule ; déplacement différent) | ✅ |
+| S6d, S6e | Familles d'effets suivantes | |
 | S7 | Déclencheurs : `life`, `leaves`, dégâts au joueur attaché | |
 | S8 | ObjectFilter : un seul évaluateur, comparaisons, négations, choix, relations | |
 | S9 | CostDef, `activated()`, `manaAbility()`, permissions liées | |
