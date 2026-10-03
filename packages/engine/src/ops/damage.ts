@@ -46,19 +46,10 @@ export const HANDLERS: OpHandlers = {
     dealDamage(s, sb, a, pb, false);
     return;
   },
-  exileIfDies(s, _r, e, ctx) {
+  objectReplacement(s, _r, e, ctx) {
     addReplacement(
       s,
-      e.op,
-      resolveRef(s, ctx, e.what).filter((id) => onBattlefield(s, id)),
-      newId(s, "r"),
-    );
-    return;
-  },
-  preventCombatDamage(s, _r, e, ctx) {
-    addReplacement(
-      s,
-      e.op,
+      e.kind,
       resolveRef(s, ctx, e.what).filter((id) => onBattlefield(s, id)),
       newId(s, "r"),
     );

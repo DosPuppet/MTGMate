@@ -223,7 +223,7 @@ export const LEGENDS: Record<string, CardScript> = {
   },
   "Sandswirl Wanderglyph": {
     abilities: [
-      triggered(when.castSpell("opponent"), [{ op: "cantAttackYouThisTurn", who: ref.eventPlayer }], {
+      triggered(when.castSpell("opponent"), [fx.thisTurn({ cantAttackPlayer: "you" }, ref.eventPlayer)], {
         condition: cond.opponentsTurn,
         label: "Il ne peut pas vous attaquer ce tour-ci",
       }),

@@ -984,7 +984,10 @@ export interface PlayerStaticAbilityDef {
   cantGainLife?: boolean;
   /** Pit Automaton : votre prochaine capacité d'exhaust est copiée (usage unique). */
   copyNextExhaust?: boolean;
-  /** Sandswirl Wanderglyph : vous ne pouvez pas attaquer ce joueur (ni ses planeswalkers). */
+  /**
+   * Sandswirl Wanderglyph : vous ne pouvez pas attaquer ce joueur (ni ses planeswalkers) ; dans un effet (`fx.thisTurn`),
+   * `"you"` désigne le contrôleur de l'effet, fixé à la résolution.
+   */
   cantAttackPlayer?: PlayerId;
   /** « Vous avez la défense talismanique. » */
   hexproof?: boolean;

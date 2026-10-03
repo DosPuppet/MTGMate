@@ -68,8 +68,6 @@
   },
   "op": {
     "becomeCopyKeepAbilities": "Mimeoplasm, Revered One — opération propre à une carte (R4.6)",
-    "cantAttackYouThisTurn": "Unstable Glyphbridge // Sandswirl Wanderglyph — effet de joueur (R4.6)",
-    "cantGainLife": "Screaming Nemesis — effet de joueur « toute la partie » (R4.6)",
     "counterAbilitySilence": "Tishana's Tidebinder — opération propre à une carte (R4.6)",
     "countersAboveBase": "Sovereign Okinec Ahau — opération propre à une carte (R4.6)",
     "damageEachPlayerPer": "Sunspine Lynx — montant par destinataire (R4.6)",
@@ -91,7 +89,6 @@
     "noncombatBonusThisTurn": "Taii Wakeen, Perfect Shot — effet de joueur à montant (R4.6)",
     "plotOnResolve": "Lilah, Undefeated Slickshot — opération propre à une carte (R4.6)",
     "portent": "Portent of Calamity — opération propre à une carte (R4.6)",
-    "preventCombatDamage": "Fleeting Flight — mécanique générique, une seule carte pour l'instant",
     "reduceSpeed": "Spikeshell Harrier — mécanique générique, une seule carte pour l'instant",
     "removeCounterFromEach": "Dyadrine, Synthesis Amalgam — mécanique générique, une seule carte pour l'instant",
     "resolveToBattlefieldTransformed": "Esper Origins // Summon: Esper Maduin — opération propre à une carte (R4.6)",
@@ -239,8 +236,8 @@
     "CastPermissionAbilityDef": 21,
     "PlayFromZone": 16,
     "LayerMods": 31,
-    "Effect": 169,
-    "Effect (champs)": 654,
+    "Effect": 166,
+    "Effect (champs)": 650,
     "TriggerSpec": 62,
     "TriggerSpec (champs)": 156,
     "Condition": 52,
@@ -274,6 +271,7 @@
     "PLAN-S S3 : familles de montants aggregate, spent, manaSymbols et référence playersWhere (Ref +2 champs : playersWhere absorbe une référence, un montant et deux conditions) : Condition 60 → 58, Condition (champs) 104 → 101, Amount 67 → 31, Amount (champs) 119 → 67, Ref (champs) 55 → 57",
     "PLAN-S S4 : CastInfo commun à la pile, à l'arrivée et au permanent ; cond.cast : GameObject 71 → 60, StackItem 46 → 32, Condition 58 → 52, Condition (champs) 101 → 96",
     "PLAN-S S5 : références cost et zone, objets payés regroupés (CostPaid) : StackItem 32 → 29, Ref 35 → 27, Ref (champs) 57 → 46",
-    "PLAN-S S6a : équivalences exactes (effets de joueur, permission de jeu, dégager, révéler jusqu'à, doubler les marqueurs, échanger les PV) : Effect 178 → 169, Effect (champs) 668 → 654"
+    "PLAN-S S6a : équivalences exactes (effets de joueur, permission de jeu, dégager, révéler jusqu'à, doubler les marqueurs, échanger les PV) : Effect 178 → 169, Effect (champs) 668 → 654",
+    "PLAN-S S6b : effets de joueur (pour toute la partie, « ne peut pas vous attaquer ») et remplacements d'objets regroupés (objectReplacement) : Effect 169 → 166, Effect (champs) 654 → 650"
   ]
 }

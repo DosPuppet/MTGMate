@@ -483,7 +483,8 @@ export const fx = {
     ...opts,
   }),
   lkiCountersTo: (to: Ref): Effect => ({ op: "lkiCountersTo", to }),
-  cantGainLife: (who: Ref): Effect => ({ op: "cantGainLife", who }),
+  /** « Il ne peut plus gagner de points de vie de la partie » (Screaming Nemesis). */
+  cantGainLife: (who: Ref): Effect => ({ op: "playerEffect", ability: { cantGainLife: true }, who, forever: true }),
   millWhileShared: { op: "millWhileShared" } as Effect,
   /** `basePT` : F/E de base fixées à ce montant, évalué à la résolution (Fractalize : « X+1/X+1 »). */
   modify: (
@@ -678,8 +679,8 @@ export const fx = {
     ...opts,
   }),
   damageStoringExcess: (n: Amount, to: Ref, store: string): Effect => ({ op: "damage", amount: n, to, storeExcess: store }),
-  exileIfDies: (what: Ref): Effect => ({ op: "exileIfDies", what }),
-  preventCombatDamage: (what: Ref): Effect => ({ op: "preventCombatDamage", what }),
+  exileIfDies: (what: Ref): Effect => ({ op: "objectReplacement", kind: "exileIfDies", what }),
+  preventCombatDamage: (what: Ref): Effect => ({ op: "objectReplacement", kind: "preventCombatDamage", what }),
   doubleCounters: (what: Ref): Effect => ({ op: "doubleCounters", what }),
   /** « Vous pouvez … » : renvoie une liste à étaler dans les effets. */
   may: (prompt: string, ...effects: Effects): Effect[] => {

@@ -47,6 +47,8 @@ export type Effect =
       times?: Amount;
       /** À usage unique, jusqu'à la fin du tour (« le prochain sort que vous lancez ce tour-ci »). */
       once?: boolean;
+      /** Pour le reste de la partie (« il ne peut plus gagner de points de vie de la partie », Screaming Nemesis). */
+      forever?: boolean;
     }
   /** Proliférer N fois (701.34), choix automatique : vos permanents qui ont des marqueurs, et chez les adversaires marqueurs -1/-1, d'étourdissement et de poison. */
   /** `what` : seulement les objets ou joueurs désignés, sans choix (Powerful Broker). */
@@ -114,8 +116,6 @@ export type Effect =
   | { op: "tapChosen"; filter: ObjectFilter; store: string; exactly?: number; sharesColorWith?: Ref }
   /** « Mettez ces marqueurs sur [cible] » : les marqueurs qu'avait l'objet de l'événement (dernières informations connues). */
   | { op: "lkiCountersTo"; to: Ref }
-  /** « Il ne peut plus gagner de points de vie de la partie » (Screaming Nemesis). */
-  | { op: "cantGainLife"; who: Ref }
   /** The Tale of Tamiyo : « meulez deux cartes ; si elles partagent un type de carte, piochez et recommencez ». */
   | { op: "millWhileShared" }
   | { op: "draw"; who: Ref; amount: Amount }
@@ -212,10 +212,11 @@ export type Effect =
   | { op: "behold"; filter: ObjectFilter; skip: number }
   /** « Au choix » (608.2d) : le joueur choisit une option pendant la résolution ; `store` reçoit son rang (1, 2…). */
   | { op: "chooseOption"; prompt: string; labels: string[]; store: string }
-  /** « Si cette créature devait mourir ce tour-ci, exilez-la à la place. » */
-  | { op: "exileIfDies"; what: Ref }
-  /** « Prévenez toutes les blessures de combat qui devraient être infligées à … ce tour-ci. » */
-  | { op: "preventCombatDamage"; what: Ref }
+  /**
+   * Remplacement sur des objets jusqu'à la fin du tour : « si cette créature devait mourir ce tour-ci, exilez-la à la
+   * place » ; « prévenez toutes les blessures de combat qui devraient lui être infligées ce tour-ci ».
+   */
+  | { op: "objectReplacement"; kind: "exileIfDies" | "preventCombatDamage"; what: Ref }
   /** Double le nombre de marqueurs +1/+1. */
   /** Double les marqueurs +1/+1 (ou, `all`, chaque sorte de marqueur) sur les permanents désignés. */
   | { op: "doubleCounters"; what: Ref; all?: boolean }
@@ -554,8 +555,6 @@ export type Effect =
    * ce permanent perd toutes ses capacités tant que la source de l'effet reste sur le champ de bataille.
    */
   | { op: "counterAbilitySilence"; what: Ref }
-  /** Sandswirl Wanderglyph : « [ce joueur] ne peut pas vous attaquer, ni vos planeswalkers, ce tour-ci ». */
-  | { op: "cantAttackYouThisTurn"; who: Ref }
   /** Unstable Glyphbridge : pour chaque joueur, choisissez une créature correspondante ; détruisez toutes les autres. */
   | { op: "destroyAllButOnePerPlayer"; keep: ObjectFilter }
   /**

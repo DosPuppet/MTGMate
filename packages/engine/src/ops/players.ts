@@ -44,21 +44,18 @@ export const HANDLERS: OpHandlers = {
             },
           }
         : e0;
-    const who = e.who ? resolveRef(s, ctx, e.who).filter((p) => isPlayer(s, p)) : [ctx.controller];
+    // « Ne peut pas vous attaquer » (Sandswirl Wanderglyph) : « vous » est le contrôleur de l'effet.
+    const ability = e.ability.cantAttackPlayer === "you" ? { ...e.ability, cantAttackPlayer: ctx.controller } : e.ability;
+    const who = (e.who ? resolveRef(s, ctx, e.who).filter((p) => isPlayer(s, p)) : [ctx.controller]).filter(
+      (p) => p !== ability.cantAttackPlayer,
+    );
     const until = e.untilYourNextTurn
       ? nextTurnOf(s, ctx.controller) - 1
-      : e.times !== undefined && !e.once
+      : e.forever || (e.times !== undefined && !e.once)
         ? null
         : s.turn.number;
     const times = e.times !== undefined ? evalAmount(s, ctx, e.times) : 1;
-    for (const p of who)
-      for (let i = 0; i < times; i++) addPlayerEffect(s, p, e.ability, until, e.times !== undefined || !!e.once);
-    return;
-  },
-  cantAttackYouThisTurn(s, _r, e, ctx) {
-    for (const p of resolveRef(s, ctx, e.who)) {
-      if (isPlayer(s, p) && p !== ctx.controller) addPlayerEffect(s, p, { cantAttackPlayer: ctx.controller }, s.turn.number);
-    }
+    for (const p of who) for (let i = 0; i < times; i++) addPlayerEffect(s, p, ability, until, e.times !== undefined || !!e.once);
     return;
   },
   gift(s, _r, e, ctx) {
@@ -87,10 +84,6 @@ export const HANDLERS: OpHandlers = {
       ).length;
       dealDamage(s, src, p, n, false);
     }
-    return;
-  },
-  cantGainLife(s, _r, e, ctx) {
-    for (const p of resolveRef(s, ctx, e.who)) if (s.players[p]) addPlayerEffect(s, p, { cantGainLife: true }, null);
     return;
   },
   mayWheel(s, r, _e, ctx, key) {
