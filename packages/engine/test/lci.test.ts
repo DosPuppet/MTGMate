@@ -8,6 +8,7 @@ import { describe, expect, it } from "vitest";
 import { destroy, drawCards, gainLife } from "../src/actions";
 import { amount } from "../src/dsl";
 import { moveWithSpec } from "../src/effects";
+import { RulesError } from "../src/errors";
 import { legalActions } from "../src/legal";
 import { bump, chars, untapObject } from "../src/state";
 import { playerStatic } from "../src/statics";
@@ -253,6 +254,23 @@ describe("The Lost Caverns of Ixalan", () => {
       const gnomes = idsOf(s, "p1", "battlefield", "Gnome");
       expect(gnomes).toHaveLength(2);
       expect(chars(s, gnomes[0] as string).power).toBe(2);
+    });
+
+    it("Cryptex qui paie la fabrication ne prend pas un matériau choisi comme preuve", () => {
+      const visage = "Visage of Dread // Dread Osseosaur";
+      const setup = (graveyard: string[]) =>
+        scenario({ p1: { battlefield: [...lands("Swamp", 5), "Cryptex", visage, "Bear Cub"], graveyard } });
+      // Le Dragon est un matériau (cimetière d'abord) et la seule preuve possible : la fabrication n'est pas payable.
+      const t = setup(["Shivan Dragon"]);
+      const source = idOf(t, "p1", "battlefield", visage);
+      expect(craftOption(t, source)).toBeUndefined();
+      expect(() => act(t, "p1", { type: "activate", source, ability: 1 })).toThrow(RulesError);
+      // Avec une autre preuve, Cryptex l'exile et les deux matériaux sont liés au verso.
+      let s = setup(["Shivan Dragon", "Day of Judgment"]);
+      s = doCraft(s, idOf(s, "p1", "battlefield", visage));
+      expect(byName(s, "Dread Osseosaur")).toBeDefined();
+      const exiled = s.exile.map((id) => nameOf(s, id));
+      expect(exiled).toEqual(expect.arrayContaining(["Shivan Dragon", "Bear Cub", "Day of Judgment"]));
     });
 
     it("sans matériau, ou hors du rituel, la fabrication n'est pas proposée", () => {

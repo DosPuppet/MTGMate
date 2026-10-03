@@ -273,8 +273,10 @@ export const RECORD_VERSION = 1;
  *   Sunstar Expansionist, Singularity Rupture.
  * - 95 : « réunir des preuves » par un effet : le joueur choisit les cartes exilées (Izoni, Evidence Examiner, Sample
  *   Collector… ; PLAN-D, lot D9).
+ * - 96 : une source de mana qui réunit des preuves (Cryptex) ne prend pas un objet réservé par le reste du coût
+ *   (matériau de fabrication) ; trouvé par le fuzz de départ du PLAN-S.
  */
-export const RULES_VERSION = 95;
+export const RULES_VERSION = 96;
 
 /** Un point de contrôle toutes les N décisions (plus la dernière de la partie). */
 export const CHECKPOINT_EVERY = 25;

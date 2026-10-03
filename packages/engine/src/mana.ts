@@ -265,9 +265,12 @@ export interface ManaPurpose {
   only?: Partial<Record<"convoke" | "improvise" | "waterbend" | "delve" | "sacrificeToPay", ObjectId[]>>;
 }
 
-/** Cartes que le paiement ne consomme pas : celles de `keep`, et la source de la capacité payée (qui peut s'exiler). */
-function kept(purpose?: ManaPurpose): ObjectId[] {
-  return [...(purpose?.keep ?? []), ...(purpose?.abilitySource ? [purpose.abilitySource] : [])];
+/**
+ * Cartes que le paiement ne consomme pas : celles de `keep`, la source de la capacité payée (qui peut s'exiler) et les
+ * objets réservés par le reste du coût (`exclude` : matériaux de fabrication que Cryptex ne doit pas exiler en preuves).
+ */
+function kept(purpose?: ManaPurpose, exclude?: ReadonlySet<ObjectId>): ObjectId[] {
+  return [...(purpose?.keep ?? []), ...(purpose?.abilitySource ? [purpose.abilitySource] : []), ...(exclude ?? [])];
 }
 
 /** Pseudo-capacité de mana d'une créature engagée pour la convocation. */
@@ -333,7 +336,7 @@ export function manaSources(
       if (!restrictionAllows(s, id, ab, player, purpose)) return;
       if (ab.tapAnother && !otherToTap(s, id, true)) return;
       if (ab.cost.sacrificeSelf && purpose?.sacrificedForCost?.has(id)) return;
-      if (ab.cost.collectEvidence && !evidenceCards(s, o.controller, id, ab.cost.collectEvidence, kept(purpose))) return;
+      if (ab.cost.collectEvidence && !evidenceCards(s, o.controller, id, ab.cost.collectEvidence, kept(purpose, exclude))) return;
       // Aucune couleur possible (Pit of Offerings sans carte exilée colorée) : la capacité ne produit rien (106.7).
       if (ab.produce.length === 0) return;
       out.push({
@@ -842,7 +845,7 @@ export function payMana(
       emit({ type: "moved", owner: o.owner, objectId: t.id, defId: o.defId, from: "graveyard", to: "exile" });
       moveObject(s, t.id, "exile");
       pool.C += 1;
-    } else activateManaAbility(s, player, t.id, t.ability, t.colors ?? t.color, true, kept(purpose));
+    } else activateManaAbility(s, player, t.id, t.ability, t.colors ?? t.color, true, kept(purpose, exclude));
   }
   const pl = s.players[player];
   if (pl?.restrictedMana && usedRestricted.size) {
