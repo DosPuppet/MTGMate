@@ -109,6 +109,25 @@ describe("Marvel's Spider-Man", () => {
       expect(s.exile.map((id) => nameOf(s, id))).toContain("Doctor Doom");
     });
 
+    it("Mind Swap : « quand vous le faites, exilez cette carte » est une capacité réflexive, à laquelle on peut répondre (PLAN-D, D3)", () => {
+      let s = scenario({
+        p1: {
+          battlefield: [...lands("Island", 2), ...lands("Swamp", 2)],
+          hand: ["Superior Spider-Man"],
+          graveyard: ["Bear Cub"],
+        },
+      });
+      const cub = idOf(s, "p1", "graveyard", "Bear Cub");
+      s = act(s, "p1", { type: "cast", card: idOf(s, "p1", "hand", "Superior Spider-Man") });
+      // Le sort se résout (copie choisie) ; la capacité réflexive attend sur la pile, la carte est encore au cimetière.
+      s = passAccepting(s, (x) => x.stack.length === 1 && x.stack[0]?.kind === "ability" && x.pending?.kind === "priority");
+      expect(s.stack[0]?.kind).toBe("ability");
+      expect(s.players.p1?.graveyard).toContain(cub);
+      s = settle(s);
+      expect(s.players.p1?.graveyard).not.toContain(cub);
+      expect(s.exile.map((id) => nameOf(s, id))).toContain("Bear Cub");
+    });
+
     it("sans carte de créature dans les cimetières, il arrive comme une 4/4 sans capacité", () => {
       let s = scenario({ p1: { battlefield: [...lands("Island", 2), ...lands("Swamp", 2)], hand: ["Superior Spider-Man"] } });
       s = settle(cast(s, "p1", "Superior Spider-Man"));

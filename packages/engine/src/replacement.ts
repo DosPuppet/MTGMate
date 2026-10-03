@@ -10,14 +10,14 @@
  * Limite : pour les autres événements (blessures, pioche, PV), plusieurs remplacements s'appliquent dans l'ordre du code.
  */
 
-import { createTokens, gainLife } from "./actions";
+import { gainLife } from "./actions";
 import { boardAmount, evalAmount, staticContext } from "./effects";
 import { copiableExceptions, copiedDefId, mergeMods } from "./layers";
 import { manaValue } from "./mana";
 import { changeCounters, chars, moveObject, newId, nextTimestamp, P1P1, setPrepared } from "./state";
 import { controlledAbilitiesWithSource, playerStatic } from "./statics";
 import { matchesCard, matchesObjectFilter, protectedFrom, sourceView, withChosen } from "./targets";
-import { checkCondition } from "./triggers";
+import { checkCondition, pushInline } from "./triggers";
 import { countTurnEvents } from "./turnlog";
 import type { Amount, Color, Condition, GameObject, GameState, LayerMods, ObjectId, PlayerId, TokenSpec, Zone } from "./types";
 import { BASIC_LAND_TYPES } from "./types";
@@ -277,8 +277,14 @@ export function replaceGraveyard(s: GameState, o: GameObject): GraveyardOutcome 
     if (src) src.linkedUids = [...(src.linkedUids ?? []), o.uid];
   }
   if (chosen.gainLife && chosen.controller) gainLife(s, chosen.controller, chosen.gainLife);
-  // Head of the Hunt : « quand vous le faites, créez un Loup 2/2 ».
-  if (chosen.createToken && chosen.controller) createTokens(s, chosen.controller, chosen.createToken, 1);
+  // Head of the Hunt : « quand vous le faites, créez un Loup 2/2 » : une capacité réflexive (603.12), à laquelle on peut
+  // répondre.
+  if (chosen.createToken && chosen.controller && chosen.sourceId)
+    pushInline(s, chosen.controller, chosen.sourceId, s.objects[chosen.sourceId]?.defId ?? "", {
+      targets: [],
+      effects: [{ op: "createTokens", token: chosen.createToken, count: 1 }],
+      label: `Un jeton ${chosen.createToken.name}`,
+    });
   return { to: "exile", linkTo: chosen.link === "object" ? chosen.sourceId : undefined };
 }
 

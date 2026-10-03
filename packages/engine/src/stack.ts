@@ -3395,10 +3395,15 @@ function finishResolution(
         arrived.linked = [...(arrived.linked ?? []), ...vars["$ids:devoured"].map(String)];
       // Fear of Abduction : les cartes exilées pour payer le coût additionnel sont liées au permanent.
       if (arrived && item.costExiled?.length) arrived.linked = [...(arrived.linked ?? []), ...item.costExiled];
-      // Superior Spider-Man : « quand vous le faites, exilez cette carte ».
+      // Superior Spider-Man : « quand vous le faites, exilez cette carte » : une capacité réflexive (603.12).
       const copied = vars.$copyCard?.[0];
       if (arrived && copied !== undefined && s.objects[String(copied)]?.zone === "graveyard")
-        moveObject(s, String(copied), "exile");
+        pushInline(s, item.controller, arrived.id, arrived.defId, {
+          targets: [],
+          effects: [{ op: "moveTo", what: { kind: "target", id: "c" }, spec: { to: "exile" } }],
+          bound: { c: [String(copied)] },
+          label: "Exilez la carte copiée",
+        });
       // Distorsion : exilé au début de la prochaine étape de fin.
       if (item.warped && arrived) {
         arrived.warped = true;

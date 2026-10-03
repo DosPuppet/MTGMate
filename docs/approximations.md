@@ -196,12 +196,10 @@ Dans l'ordre où elles ont été ajoutées, extension par extension.
   - `règle` Torch the Tower : la cible est exilée si elle meurt ce tour-ci, même si ses blessures ont été prévenues ;
   - `règle` Travail d'équipe : la force des créatures engagées est comptée comme pour l'équipage (un pilote compte 2 de plus) ;
   - `choix auto` Réunir des preuves « X, X étant la valeur de mana totale des permanents ciblés » (Urgent Necropsy) : les cartes exilées sont choisies par le moteur (la moins chère qui suffit, sinon la plus chère) ; ailleurs, le joueur les choisit ;
-  - `timing` Superior Spider-Man : la carte copiée est exilée en arrivant, et non par une capacité réflexive ;
   - `timing` Dispelling Exhale : contempler un Dragon est vérifié à la résolution (vous en contrôlez un ou en avez un en main) ;
   - `timing` Moseo, Vein's New Dean : la carte ciblée est une carte de créature quelconque ; sa valeur de mana (au plus les PV gagnés) est vérifiée à la résolution ;
   - `choix auto` Kíli the Resourceful : la première capacité d'équipement du tour coûte {0} d'office ;
-  - `règle` Interdimensional Web Watch : les deux mana servent à tout sort lancé ailleurs que depuis la main (et non seulement depuis l'exil) ;
-  - `timing` Head of the Hunt : le Loup est créé en même temps que l'exil, et non par une capacité réflexive.
+  - `règle` Interdimensional Web Watch : les deux mana servent à tout sort lancé ailleurs que depuis la main (et non seulement depuis l'exil).
 - **Lorwyn Eclipsed (`docs/extensions/ecl.md`) :**
   - `choix auto` « Retirez un marqueur de cette créature » : les marqueurs retirés sont choisis par le moteur (−1/−1 d'abord, +1/+1 en dernier) ; Rhys, the Evermore retire tous les marqueurs −1/−1 de la cible ;
   - `timing` « Contemplez un [type] ou payez {N} » (Kinsbaile Aspirant, Silvergill Mentor, Lys Alana Dignitary, Mudbutton Cursetosser, Soulbright Seeker) : vérifié au lancement, sans révéler la carte ; Kindle the Inner Flame (flashback « contemplez trois Élémentaux ») : condition de lancement ;

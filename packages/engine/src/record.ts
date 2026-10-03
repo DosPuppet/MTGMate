@@ -250,8 +250,10 @@ export const RECORD_VERSION = 1;
  *   prochaine étape de fin), Kitnap (pas de marqueurs d'étourdissement si le cadeau est promis), Gev (vos créatures).
  * - 87 : « au choix » choisi à la résolution (608.2d, `fx.yourChoice`) et non comme un mode : Practiced Offense, Wingnut,
  *   Manifold Mouse ; Iceberg Titan engage ou dégage à la résolution (PLAN-D, lot D1).
+ * - 88 : « quand vous le faites » après un remplacement ou une arrivée : capacité réflexive mise sur la pile (Head of the
+ *   Hunt : le Loup ; Superior Spider-Man : l'exil de la carte copiée) (PLAN-D, lot D3).
  */
-export const RULES_VERSION = 87;
+export const RULES_VERSION = 88;
 
 /** Un point de contrôle toutes les N décisions (plus la dernière de la partie). */
 export const CHECKPOINT_EVERY = 25;

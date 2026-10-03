@@ -25,6 +25,7 @@ import {
   lands,
   nameOf,
   namesIn,
+  passAccepting,
   pickNamed,
   scenario,
   settleNoBlocks as settle,
@@ -4002,5 +4003,23 @@ describe("« Vous mettez des marqueurs » (lot K2)", () => {
     expect(counterFrom(a, "p2", idOf(a, "p1", "battlefield", "The Great Goblin")).triggered).toEqual([]);
     const b = setup("p1");
     expect(counterFrom(b, "p1", idOf(b, "p1", "battlefield", "The Great Goblin")).triggered).toEqual(["The Great Goblin"]);
+  });
+});
+
+describe("Head of the Hunt (PLAN-D, D3)", () => {
+  it("une créature adverse qui devrait mourir est exilée ; le Loup vient d'une capacité réflexive, à laquelle on peut répondre", () => {
+    let s = scenario({
+      p1: { battlefield: ["Head of the Hunt", "Mountain"], hand: ["Shock"] },
+      p2: { battlefield: ["Bear Cub"] },
+    });
+    const cub = idOf(s, "p2", "battlefield", "Bear Cub");
+    s = act(s, "p1", { type: "cast", card: idOf(s, "p1", "hand", "Shock"), targets: { t: [cub] } });
+    s = passAccepting(s, (x) => x.stack.length === 1 && x.stack[0]?.kind === "ability" && x.pending?.kind === "priority");
+    expect(s.players.p2?.graveyard).toHaveLength(0);
+    expect(s.exile.some((id) => s.defs[s.objects[id]?.defId ?? ""]?.name === "Bear Cub")).toBe(true);
+    // Le Loup n'existe pas encore : la capacité attend sur la pile.
+    expect(idsOf(s, "p1", "battlefield", "Wolf")).toHaveLength(0);
+    s = passAccepting(s, (x) => x.stack.length === 0 && x.pending?.kind === "priority");
+    expect(idsOf(s, "p1", "battlefield", "Wolf")).toHaveLength(1);
   });
 });
