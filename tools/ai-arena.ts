@@ -7,6 +7,7 @@
  * IA : random, beginner, medium, expert ; « expert:200 » donne un budget propre
  * à cette IA (« expert:0 » : sans ISMCTS).
  * --players 4 : parties à quatre, sièges A, B, A, B tournant d'une partie à l'autre ; compte les victoires de A et de B.
+ * --first N : commence à la partie N (avec --games 1 : rejouer la partie qu'un tournoi signale en erreur).
  * Les parties vont par paires : même graine et mêmes decks, places et decks échangés (l'avantage du premier joueur
  * et des decks s'annule). --budget : itérations de l'ISMCTS (un budget en itérations rend le tournoi reproductible).
  * --pool decks : decks préconstruits ; all : decks aléatoires bicolores ; mix : moitié-moitié ; meta : les decks du
@@ -117,12 +118,19 @@ function run(first: number, count: number): Tally {
     // Partie paire : A joue le premier deck en p1 ; partie impaire : B joue ce deck en p1, A l'autre en p2.
     const agentA = timed(agent(A, seed * 2 + 1), t.time.a);
     const agentB = timed(agent(B, seed * 2 + 2), t.time.b);
-    const r = playGame({
-      seed,
-      decks: [d1, d2],
-      agents: swap ? [agentB, agentA] : [agentA, agentB],
-      maxDecisions: 8000,
-    });
+    let r: ReturnType<typeof playGame>;
+    try {
+      r = playGame({
+        seed,
+        decks: [d1, d2],
+        agents: swap ? [agentB, agentA] : [agentA, agentB],
+        maxDecisions: 8000,
+      });
+    } catch (e) {
+      // Partie à rejouer pour reproduire l'erreur : son numéro (--first N --games 1) et sa graine.
+      console.error(`Partie ${g} (paire ${pair}, graine ${seed}) en erreur`);
+      throw e;
+    }
     t.turns += r.turns;
     if (!r.state.over) t.unfinished++;
     else if (!r.state.winner) t.draws++;
@@ -198,4 +206,4 @@ if (worker) {
     total.time.b.push(...r.time.b);
   }
   report(total, performance.now() - t0);
-} else report(run(0, games), performance.now() - t0);
+} else report(run(Number(arg("first", "0")), games), performance.now() - t0);

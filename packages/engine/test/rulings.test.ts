@@ -690,3 +690,16 @@ describe("approximations levées (PLAN-C, lot C12)", () => {
     expect(run(oneEffect, (_s, gy) => ({ t: [...gy] }))).toBe(21);
   });
 });
+
+describe("mana d'une source sacrifiée pour son coût (dernière information connue)", () => {
+  it("Roxanne, Starfall Savant et un Trésor : le jeton engagé puis sacrifié produit un mana de plus (2)", async () => {
+    const { TOKEN_SPECS } = await import("@mtgx/cards");
+    let s = scenario({ p1: { battlefield: ["Roxanne, Starfall Savant"] } });
+    s = structuredClone(s);
+    createTokens(s, "p1", TOKEN_SPECS.Treasure as NonNullable<(typeof TOKEN_SPECS)["Treasure"]>, 1);
+    const treasure = idOf(s, "p1", "battlefield", "Treasure");
+    s = act(s, "p1", { type: "tapForMana", source: treasure, ability: 0, color: "R" });
+    expect(s.players.p1?.manaPool.R).toBe(2);
+    expect(idsOf(s, "p1", "battlefield", "Treasure")).toHaveLength(0);
+  });
+});

@@ -453,6 +453,11 @@ export function activateManaAbility(
     !ab.rider;
   const triggersBefore = s.triggers.length;
   const poolBefore = s.players[player]?.manaPool[c] ?? 0;
+  // Source sacrifiée pour son coût (Trésor) : la quantité et les remplacements de mana se lisent d'après sa dernière
+  // information connue, avant le sacrifice (Roxanne, Starfall Savant et un Trésor : deux mana), comme le solveur les a
+  // comptés.
+  const before = ab.cost.sacrificeSelf ? { amount: manaAmount(s, id, ab), reps: manaReplacements(s, id, ab) } : null;
+  const amountNow = () => before?.amount ?? manaAmount(s, id, ab);
   if (ab.cost.tap) tapObject(s, o);
   if (ab.oncePerTurn) s.turn.onceFired.push(`mana:${id}`);
   if (ab.tapAnother) tapObject(s, obj(s, otherToTap(s, id) as ObjectId));
@@ -469,7 +474,7 @@ export function activateManaAbility(
   // peut pas être contrecarré ») engagé à la main : il va dans la réserve marquée avec sa source et son choix, pour que la
   // restriction et l'effet s'appliquent quand il sera dépensé.
   if (!forPayment && (ab.restriction || ab.rider) && pl) {
-    const n = manaAmount(s, id, ab);
+    const n = amountNow();
     const tag: TaggedMana = {
       type: c,
       ...(ab.restriction ? { restriction: ab.restriction } : {}),
@@ -478,10 +483,10 @@ export function activateManaAbility(
       ...(ab.rider ? { rider: ab.rider } : {}),
     };
     pl.restrictedMana = [...(pl.restrictedMana ?? []), ...Array.from({ length: n }, () => ({ ...tag }))];
-  } else if (pool) pool[c] += manaAmount(s, id, ab);
+  } else if (pool) pool[c] += amountNow();
   // Mana en plus d'un autre type (Shimmerwilds Growth : la couleur choisie) ou seulement pour ce type (Ultima : {C}).
   let otherBonus = false;
-  for (const a of manaReplacements(s, id, ab)) {
+  for (const a of before?.reps ?? manaReplacements(s, id, ab)) {
     const same = (a.r.extraMana ?? "same") === "same";
     if ((same && !a.r.manaProduced) || (a.r.manaProduced && a.r.manaProduced !== c) || !pool) continue;
     const type: ManaType | undefined =

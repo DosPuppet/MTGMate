@@ -198,8 +198,10 @@ export const RECORD_VERSION = 1;
  * - 70 : Cloud, Midgar Mercenary et The Masamune passent par `triggerMod` ; The Masamune double aussi les déclencheurs de
  *   vos emblèmes quand il n'est attaché à rien (Oracle) ; « a attaqué / a infligé des blessures ce tour-ci » lus dans le
  *   journal du tour (PLAN-C, lot C14).
+ * - 71 : une source sacrifiée pour son coût de mana (Trésor) produit d'après sa dernière information connue : les
+ *   remplacements de mana s'appliquent (Roxanne, Starfall Savant), comme le solveur les comptait (« Paiement incohérent »).
  */
-export const RULES_VERSION = 70;
+export const RULES_VERSION = 71;
 
 /** Un point de contrôle toutes les N décisions (plus la dernière de la partie). */
 export const CHECKPOINT_EVERY = 25;
