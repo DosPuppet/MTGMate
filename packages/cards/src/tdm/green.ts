@@ -115,13 +115,11 @@ export const GREEN: Record<string, CardScript> = {
     spell: spell([], [fx.search({ types: ["Creature"], maxManaValueX: true }, { to: "battlefield" })]),
   },
   "Piercing Exhale": {
-    // « Vous pouvez contempler un Dragon » en coût additionnel : vérifié à la résolution.
+    // « En coût additionnel, vous pouvez contempler un Dragon » : fait au lancement, retenu par le sort.
+    additionalCost: { behold: { filter: DRAGON_CARD } },
     spell: spell(
       [target.creature("a", { controller: "you" }), target.creatureOrPlaneswalker("b")],
-      [
-        fx.damage(amount.powerOf(ref.target("a")), ref.target("b"), ref.target("a")),
-        ...fx.when(cond.behold(DRAGON_CARD), fx.surveil(2)),
-      ],
+      [fx.damage(amount.powerOf(ref.target("a")), ref.target("b"), ref.target("a")), ...fx.when(cond.beheld, fx.surveil(2))],
     ),
   },
   "Rainveil Rejuvenator": {

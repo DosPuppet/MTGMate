@@ -290,6 +290,8 @@ export interface StackItem {
   targets: Record<string, string[]>;
   x: number;
   kicked: boolean;
+  /** Contempler en coût additionnel : fait au lancement (`cond.beheld`). */
+  beheld?: boolean;
   /** Informations de dernière connaissance de la source (capacités). */
   sourceSnapshot: { keywords: Keyword[]; power: number; controller: PlayerId };
   /** Capacité déclenchée : ce qui l'a déclenchée. */

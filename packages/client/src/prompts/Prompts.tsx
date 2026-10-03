@@ -222,7 +222,12 @@ function CostPickPicker({ pick }: { pick: CostPick }) {
   if (!view) return null;
   const all = [...view.hand, ...view.battlefield, ...Object.values(view.players).flatMap((p) => p.graveyard), ...view.exile];
   const total = pick.minTotal ? picked.reduce((n, id) => n + (pick.minTotal?.values[id] ?? 0), 0) : 0;
-  const ready = pick.atMost ? true : pick.minTotal ? total >= pick.minTotal.n : picked.length === pick.count;
+  const ready =
+    pick.atMost || (pick.optional && picked.length === 0)
+      ? true
+      : pick.minTotal
+        ? total >= pick.minTotal.n
+        : picked.length === pick.count;
   const times = (id: string) => picked.filter((x) => x === id).length;
   const toggle = (id: string) =>
     setPicked((cur) => {
@@ -271,7 +276,9 @@ function CostPickPicker({ pick }: { pick: CostPick }) {
               : "Paiement automatique"
             : pick.minTotal
               ? `Valider (valeur ${total}/${pick.minTotal.n})`
-              : `Valider (${picked.length}/${pick.count})`}
+              : pick.optional && picked.length === 0
+                ? "Ne rien choisir"
+                : `Valider (${picked.length}/${pick.count})`}
         </button>
       </div>
     </Modal>

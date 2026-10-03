@@ -38,7 +38,7 @@ export const CARDS: Record<string, CardScript> = {
         effects: [
           fx.search(BASIC_LAND, { to: "battlefield", tapped: true }, 1, undefined, "land"),
           // « Vous pouvez contempler un Elfe. Si vous le faites, dégagez ce terrain. »
-          ...fx.when(cond.behold({ subtype: "Elf" }), fx.untap(ref.stored("land"))),
+          ...fx.mayBehold({ subtype: "Elf" }, fx.untap(ref.stored("land"))),
         ],
         label: "Chercher un terrain de base (dégagé en contemplant un Elfe)",
       }),

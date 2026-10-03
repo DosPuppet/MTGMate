@@ -66,8 +66,8 @@ export const BLACK: Record<string, CardScript> = {
     ],
   },
   "Caustic Exhale": {
-    // « Contemplez un Dragon ou payez {1} » : {1} de plus sans Dragon à contempler.
-    costReduction: { generic: -1, condition: cond.not(cond.behold(DRAGON_CARD)) },
+    // « En coût additionnel, contemplez un Dragon ou payez {1} ».
+    additionalCost: { behold: { filter: DRAGON_CARD, orPay: { generic: 1, colored: {}, x: 0 } } },
     spell: spell([target.creature()], [fx.pump(ref.target(), -3, -3)]),
   },
   "Corroding Dragonstorm": {

@@ -4,8 +4,8 @@ import type { OpHandlers } from "../effects";
 import { evalAmount, evalCondition, nameOf, resolveRef, store } from "../effects";
 import { RulesError } from "../errors";
 import { canPay, manaValue, payMana } from "../mana";
-import { collectEvidence, pickEvidence } from "../stack";
-import { bent, isPlayer } from "../state";
+import { beholdOptions, collectEvidence, pickEvidence } from "../stack";
+import { bent, emit, isPlayer } from "../state";
 import { createDelayed, pushInline } from "../triggers";
 import type { ChoiceValue, ObjectFilter } from "../types";
 
@@ -155,6 +155,33 @@ export const HANDLERS: OpHandlers = {
       bound,
       ...(vars ? { vars } : {}),
     });
+    return;
+  },
+  behold(s, r, e, ctx, key) {
+    const options = beholdOptions(s, ctx.controller, ctx.sourceId, e.filter);
+    if (options.length === 0) return { skip: e.skip };
+    const answer = r.vars[key("behold")];
+    if (!answer) {
+      return {
+        ask: {
+          player: ctx.controller,
+          key: key("behold"),
+          request: {
+            type: "pick",
+            intent: "pickCards",
+            prompt: `${nameOf(s, ctx.sourceId)} : vous pouvez contempler (un permanent, ou une carte de votre main révélée)`,
+            options,
+            min: 0,
+            max: 1,
+            suggested: options.slice(0, 1),
+          },
+        },
+      };
+    }
+    const chosen = answer.map(String).find((id) => options.includes(id));
+    if (!chosen) return { skip: e.skip };
+    if (s.objects[chosen]?.zone === "hand")
+      emit({ type: "reveal", player: ctx.controller, defIds: [s.objects[chosen]?.defId ?? ""] });
     return;
   },
   chooseOption(s, r, e, ctx, key) {

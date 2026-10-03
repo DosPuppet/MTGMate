@@ -79,16 +79,14 @@ export const CARDS: Record<string, CardScript> = {
 
   // --- Lot M4 -----------------------------------------------------------------
   "Dispelling Exhale": {
-    // « Vous pouvez contempler un Dragon » en coût additionnel : vérifié à la résolution.
+    // « En coût additionnel, vous pouvez contempler un Dragon » : fait au lancement, retenu par le sort.
+    additionalCost: { behold: { filter: { subtype: "Dragon" } } },
     spell: spell(
       [target.spell()],
       [
+        ...fx.when(cond.beheld, fx.unlessPays(ref.controllerOf(ref.target()), { mana: "{4}" }, fx.counter(ref.target()))),
         ...fx.when(
-          cond.behold({ subtype: "Dragon" }),
-          fx.unlessPays(ref.controllerOf(ref.target()), { mana: "{4}" }, fx.counter(ref.target())),
-        ),
-        ...fx.when(
-          cond.not(cond.behold({ subtype: "Dragon" })),
+          cond.not(cond.beheld),
           fx.unlessPays(ref.controllerOf(ref.target()), { mana: "{2}" }, fx.counter(ref.target())),
         ),
       ],
@@ -122,7 +120,7 @@ export const CARDS: Record<string, CardScript> = {
   },
   "Sarkhan, Dragon Ascendant": {
     abilities: [
-      triggered(when.entersSelf, fx.when(cond.behold({ subtype: "Dragon" }), fx.createTokens(TREASURE)), {
+      triggered(when.entersSelf, fx.mayBehold({ subtype: "Dragon" }, fx.createTokens(TREASURE)), {
         label: "En contemplant un Dragon : un Trésor",
       }),
       triggered(

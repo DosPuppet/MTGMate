@@ -690,6 +690,8 @@ export function spellCost(
     fromZone?: CastTerms["source"];
     /** La carte lancée (conditions de réduction qui l'excluent : contempler). */
     card?: ObjectId;
+    /** Contemplation faite (coût additionnel `behold`) ; absente : faite si possible. */
+    beheld?: boolean;
   },
 ): ManaCost {
   const empty: ManaCost = { generic: 0, colored: {}, x: 0 };
@@ -727,7 +729,11 @@ export function spellCost(
   // Feed the Cycle : « fourragez ou payez {B} » — le mana s'ajoute sauf si l'on fourrage (coût alternatif).
   const cost1 = d.forageOrPay && !alt?.forage ? totalCost(cost0, 0, d.forageOrPay) : cost0;
   // Wild Unraveling : « flétrissez 2 ou payez {1} » — le mana s'ajoute sauf si l'on flétrit (kicker).
-  const cost2 = d.kickerOrPay && !opts.kicked ? totalCost(cost1, 0, d.kickerOrPay) : cost1;
+  const cost1b = d.kickerOrPay && !opts.kicked ? totalCost(cost1, 0, d.kickerOrPay) : cost1;
+  // « Contemplez un Dragon ou payez {1} » : le mana s'ajoute sans contemplation (par défaut : contempler si possible).
+  const behold = d.additionalCost?.behold;
+  const beheld = opts.beheld ?? (!!behold && beholdOptions(s, player, opts.card ?? "", behold.filter).length > 0);
+  const cost2 = behold?.orPay && !beheld ? totalCost(cost1b, 0, behold.orPay) : cost1b;
   // Aang, Master of Elements : « {W}{U}{B}{R}{G} de moins » ; un symbole sans pendant dans le coût réduit le générique.
   const symbols = playerStatics(s, player, "spellCost").filter(
     ({ ab }) => ab.spellCost?.reduceSymbols && matchesView(spellView(d, player), ab.spellCost.filter, player),
@@ -1524,6 +1530,32 @@ export function autoAdditional(
   return out;
 }
 
+/**
+ * Contempler (701.65) : les permanents correspondants que vous contrôlez, puis les cartes correspondantes de votre main
+ * (autres que la carte lancée). Un permanent d'abord : il n'y a rien à révéler.
+ */
+export function beholdOptions(s: GameState, player: PlayerId, card: ObjectId, filter: ObjectFilter): ObjectId[] {
+  const mine = s.battlefield.filter(
+    (id) => obj(s, id).controller === player && matchesObjectFilter(s, player, id, { ...filter, controller: "you" }, card),
+  );
+  const hand = (s.players[player]?.hand ?? []).filter((id) => id !== card && matchesCard(s, player, id, filter, card));
+  return [...mine, ...hand];
+}
+
+/** Le permanent ou la carte contemplé au lancement : celui choisi (vérifié ; liste vide : aucun), sinon le premier possible. */
+function beholdChoice(s: GameState, player: PlayerId, card: ObjectId, d: CardDef, chosen: ObjectId[] | undefined) {
+  const behold = d.additionalCost?.behold;
+  if (!behold) {
+    if (chosen?.length) throw new RulesError("Ce sort ne demande pas de contempler");
+    return null;
+  }
+  const options = beholdOptions(s, player, card, behold.filter);
+  if (chosen === undefined) return options[0] ?? null;
+  if (chosen.length === 0) return null;
+  if (chosen.length > 1 || !options.includes(chosen[0] as ObjectId)) throw new RulesError("Contemplation invalide");
+  return chosen[0] as ObjectId;
+}
+
 /** Emplacement de chaque coût additionnel choisi par le joueur. */
 const ADDITIONAL_SLOTS = { exile: "costExile", bounce: "costBounce", tap: "costTap", graveyard: "costGraveyard" } as const;
 
@@ -1745,7 +1777,12 @@ export function castSpell(s: GameState, player: PlayerId, card: ObjectId, choice
   const autoPaid = autoAdditional(s, player, card, d, flashback);
   if (!autoPaid) throw new RulesError("Impossible de payer le coût additionnel");
   const auto = chosenAdditional(s, player, card, d, flashback, autoPaid, choices.picks);
+  const beheldId = beholdChoice(s, player, card, d, choices.picks?.behold);
+  // Molten Exhale : « comme s'il avait le flash si vous contemplez » : lancé ainsi, il faut contempler.
+  if (d.additionalCost?.behold && d.flashIf && !beheldId && !canCastTiming(s, player, { ...d, flashIf: undefined }))
+    throw new RulesError("Sans contempler, ce sort ne se lance qu'au moment d'un rituel");
   let cost = spellCost(s, player, d, {
+    beheld: !!beheldId,
     x,
     kicked,
     flashback,
@@ -1893,8 +1930,12 @@ export function castSpell(s: GameState, player: PlayerId, card: ObjectId, choice
     sacrificed: sacrifice.length ? [...sacrifice] : undefined,
     costExiled: costExiled.length ? costExiled : undefined,
     uncounterable: uncounterable || undefined,
+    beheld: beheldId ? true : undefined,
   };
   s.stack.push(item);
+  // Contempler une carte de la main : elle est révélée.
+  if (beheldId && s.objects[beheldId]?.zone === "hand")
+    emit({ type: "reveal", player, defIds: [s.objects[beheldId]?.defId ?? ""] });
   try {
     const taps: { id: ObjectId; ab?: ManaAbilityDef; amount: number; chosen?: GameObject["chosen"] }[] = [];
     const spent: Partial<Record<ManaType, number>> = {};
@@ -2637,6 +2678,22 @@ export function spellPicks(
   flashback = false,
 ): CostPick[] {
   const out: CostPick[] = additionalPicks(s, player, card, d, flashback);
+  // Contempler : un permanent ou une carte de la main, ou rien (« vous pouvez », ou payer le supplément).
+  const behold = d.additionalCost?.behold;
+  if (behold) {
+    const options = beholdOptions(s, player, card, behold.filter);
+    if (options.length)
+      out.push({
+        slot: "behold",
+        label: behold.orPay
+          ? "Contemplez (ou ne choisissez rien et payez le supplément)"
+          : "Vous pouvez contempler (un permanent ou une carte de votre main, révélée)",
+        count: 1,
+        options,
+        suggested: options.slice(0, 1),
+        optional: true,
+      });
+  }
   const graveyard = (s.players[player]?.graveyard ?? []).filter((id) => id !== card);
   const evidencePick = (n: number, when: CostPick["when"]): CostPick | null => {
     const suggested = evidenceCards(s, player, card, n);

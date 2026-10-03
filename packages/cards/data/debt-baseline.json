@@ -235,7 +235,7 @@
   "ceilings": {
     "CardDef": 94,
     "GameObject": 71,
-    "StackItem": 44,
+    "StackItem": 45,
     "PlayerState": 21,
     "GameState": 39,
     "ObjectFilter": 91,
@@ -244,12 +244,12 @@
     "CastPermissionAbilityDef": 21,
     "PlayFromZone": 16,
     "LayerMods": 31,
-    "Effect": 177,
-    "Effect (champs)": 662,
+    "Effect": 178,
+    "Effect (champs)": 665,
     "TriggerSpec": 62,
     "TriggerSpec (champs)": 157,
-    "Condition": 80,
-    "Condition (champs)": 136,
+    "Condition": 81,
+    "Condition (champs)": 137,
     "Amount": 77,
     "Amount (champs)": 131,
     "Ref": 34,
@@ -268,6 +268,7 @@
     "lot K3 : discardHand sur CostDef (« défaussez votre main » en coût, 3 cartes) : CostDef 36 → 37",
     "lot K6 : crewedSource (Giant Beaver), prompt de chooseAmong, optional d'exileFromHandLinked (Severance Priest) : ObjectFilter 90 → 91, Effect (champs) 652 → 654",
     "lot K7 : durées d'effet (untilYourNextEndStep sur grantPlay, untilEndOfYourNextTurn sur emblem, whileYouControlSource et whileTapped sur modify) : Effect (champs) 654 → 658",
-    "PLAN-D D1 : opération chooseOption (« au choix », 608.2d), générique : Effect 176 → 177, Effect (champs) 658 → 662"
+    "PLAN-D D1 : opération chooseOption (« au choix », 608.2d), générique : Effect 176 → 177, Effect (champs) 658 → 662",
+    "PLAN-D D2 : contempler (additionalCost.behold, StackItem.beheld, cond.beheld, opération behold), une quinzaine de cartes : StackItem 44 → 45, Effect 177 → 178, Effect (champs) 662 → 665, Condition 80 → 81, Condition (champs) 136 → 137"
   ]
 }

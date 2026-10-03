@@ -650,6 +650,11 @@ export const fx = {
       return [{ op: "if", cond: c, skip: flat.length } as Effect, ...flat];
     }),
   ],
+  /** « Vous pouvez contempler [filtre]. Si vous le faites, … » (pendant la résolution ; la carte de la main est révélée). */
+  mayBehold: (filter: ObjectFilter, ...effects: Effects): Effect[] => {
+    const flat = effects.flat();
+    return [{ op: "behold", filter, skip: flat.length }, ...flat];
+  },
   /** « Si [condition], … » : les effets ne s'appliquent que si la condition est vraie à la résolution. */
   when: (c: Condition, ...effects: Effects): Effect[] => {
     const flat = effects.flat();
@@ -1970,6 +1975,8 @@ export const cond = {
   /** Contempler (701.63) : « vous pouvez contempler un Elfe » (choisir un Elfe que vous contrôlez ou révéler une carte d'Elfe de votre main). */
   behold: (filter: ObjectFilter): Condition => ({ kind: "behold", filter }),
   beholdJace: { kind: "behold", filter: { subtype: "Jace" } } as Condition,
+  /** Le sort a été lancé en contemplant (coût additionnel `behold`). */
+  beheld: { kind: "beheld" } as Condition,
   /** « Si {U}{U} a été dépensé pour le lancer » : `cond.spent("U", 2)`. */
   spent: (color: ManaType, n: number): Condition => ({ kind: "spentColor", color, n }),
   evoked: { kind: "evoked" } as Condition,

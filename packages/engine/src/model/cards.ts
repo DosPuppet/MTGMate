@@ -299,6 +299,12 @@ export interface AdditionalCost {
   discardOrLife?: number;
   /** « Défaussez une carte ou payez [mana] » (Titania) : sans défausse, ce mana s'ajoute au coût. */
   discardOrPay?: ManaCost;
+  /**
+   * Contempler (701.65) : choisir un permanent correspondant que vous contrôlez ou révéler une telle carte de votre main.
+   * « Vous pouvez contempler » (les Exhales) ; avec `orPay` : « contemplez … ou payez [mana] » (ce mana s'ajoute sans
+   * contemplation). Le sort retient qu'on a contemplé (`cond.beheld`).
+   */
+  behold?: { filter: ObjectFilter; orPay?: ManaCost };
   /** « Défaussez une carte ou sacrifiez un permanent » (Souls of the Lost) : un permanent choisi est sacrifié. */
   /** « … ou sacrifiez un permanent » ; un filtre : « … ou sacrifiez un artefact » (Demand Answers). */
   discardOrSacrifice?: boolean | ObjectFilter;

@@ -100,10 +100,11 @@ export const WHITE: Record<string, CardScript> = {
     abilities: [triggered(when.entersSelf, [fx.scry(2)], { label: "Regard 2" }), devotee(["R", "W", "B"])],
   },
   "Osseous Exhale": {
-    // « Vous pouvez contempler un Dragon » en coût additionnel : vérifié à la résolution.
+    // « En coût additionnel, vous pouvez contempler un Dragon » : fait au lancement, retenu par le sort.
+    additionalCost: { behold: { filter: DRAGON_CARD } },
     spell: spell(
       [target.creature("t", { inCombat: true })],
-      [fx.damage(5, ref.target()), ...fx.when(cond.behold(DRAGON_CARD), fx.gainLife(2))],
+      [fx.damage(5, ref.target()), ...fx.when(cond.beheld, fx.gainLife(2))],
     ),
   },
   "Rally the Monastery": {

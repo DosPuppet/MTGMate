@@ -362,6 +362,11 @@ export function checkCondition(
         here || (s.players[controller]?.hand ?? []).some((id) => id !== sourceId && matchesCard(s, controller, id, f, sourceId))
       );
     }
+    case "beheld": {
+      // Le sort qui se résout (ou sur la pile) a été lancé en contemplant.
+      const item = s.resolving && s.resolving.item.id === sourceId ? s.resolving.item : s.stack.find((x) => x.id === sourceId);
+      return !!item?.beheld;
+    }
     case "spentColor": {
       const item = s.resolving && s.resolving.item.id === sourceId ? s.resolving.item : s.stack.find((x) => x.id === sourceId);
       const spent = (sourceId && (s.objects[sourceId]?.spentColors ?? item?.spentColors)) || {};

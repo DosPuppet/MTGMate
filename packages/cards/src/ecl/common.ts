@@ -3,7 +3,7 @@
  * (via lci/common.ts).
  */
 import type { AbilityDef, CardScript, TokenSpec } from "@mtgx/engine";
-import { activated, cond, fx, manaAbility, ref, triggered, when } from "../lci/common";
+import { activated, fx, manaAbility, ref, triggered, when } from "../lci/common";
 
 export * from "../lci/common";
 
@@ -67,10 +67,9 @@ export function champion(subtype: string, abilities: AbilityDef[]): CardScript {
 }
 
 /**
- * « En coût additionnel, contemplez un [type] ou payez {N} » : {N} de plus sans [type] à contempler (un permanent que
- * vous contrôlez ou une autre carte de votre main), vérifié au lancement sans révéler la carte.
+ * « En coût additionnel, contemplez un [type] ou payez {N} » : un permanent que vous contrôlez ou une autre carte de votre
+ * main (révélée), sinon {N} de plus.
  */
-export const beholdOrPay = (subtype: string, n: number): CardScript["costReduction"] => ({
-  generic: -n,
-  condition: cond.not(cond.behold({ subtype })),
+export const beholdOrPay = (subtype: string, n: number): CardScript["additionalCost"] => ({
+  behold: { filter: { subtype }, orPay: { generic: n, colored: {}, x: 0 } },
 });

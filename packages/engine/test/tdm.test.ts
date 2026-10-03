@@ -6,6 +6,7 @@
  */
 import { describe, expect, it } from "vitest";
 import { dealDamage, destroy, sourceFromObject } from "../src/actions";
+import { RulesError } from "../src/errors";
 import { legalActions } from "../src/legal";
 import { chars } from "../src/state";
 import type { ChoiceRequest, ChoiceValue, GameState, PlayerId } from "../src/types";
@@ -3793,5 +3794,100 @@ describe("Tarkir: Dragonstorm, lot K8 : « votre cimetière »", () => {
     expect(handSize(s, "p1")).toBe(1);
     expect(tokensOf(s, "p1", "Treasure")).toHaveLength(0);
     expect(s.objects[idOf(s, "p1", "battlefield", "Attuned Hunter")]?.counters["+1/+1"] ?? 0).toBe(0);
+  });
+});
+
+describe("Contempler (PLAN-D, D2)", () => {
+  const castWith = (s: GameState, name: string, extra: Record<string, unknown>) =>
+    act(s, "p1", { type: "cast", card: idOf(s, "p1", "hand", name), ...extra });
+  const beholdPick = (s: GameState, name: string) => {
+    const opt = legalActions(s, "p1").find((a) => a.type === "cast" && a.card === idOf(s, "p1", "hand", name));
+    return opt?.type === "cast" ? opt.picks?.find((p) => p.slot === "behold") : undefined;
+  };
+
+  it("Caustic Exhale : contempler un Dragon de la main (révélé) ou payer {1} ; sans Dragon, {1} de plus", () => {
+    // Un Dragon en main : proposé, révélé ; le sort coûte {B}.
+    let s = scenario({
+      p1: { battlefield: ["Swamp"], hand: ["Caustic Exhale", "Shivan Dragon"] },
+      p2: { battlefield: ["Bear Cub"] },
+    });
+    const pick = beholdPick(s, "Caustic Exhale");
+    expect(pick?.optional).toBe(true);
+    expect(pick?.options).toEqual([idOf(s, "p1", "hand", "Shivan Dragon")]);
+    const bear = idOf(s, "p2", "battlefield", "Bear Cub");
+    s = settle(castWith(s, "Caustic Exhale", { targets: { t: [bear] } }));
+    expect(idsOf(s, "p2", "graveyard", "Bear Cub")).toHaveLength(1);
+    // Refuser de contempler : {1} de plus, impossible avec un seul Marais.
+    const t = scenario({
+      p1: { battlefield: ["Swamp"], hand: ["Caustic Exhale", "Shivan Dragon"] },
+      p2: { battlefield: ["Bear Cub"] },
+    });
+    expect(() =>
+      castWith(t, "Caustic Exhale", { targets: { t: [idOf(t, "p2", "battlefield", "Bear Cub")] }, picks: { behold: [] } }),
+    ).toThrow(RulesError);
+    // Sans Dragon : pas proposé, {1}{B}.
+    const u = scenario({ p1: { battlefield: ["Swamp"], hand: ["Caustic Exhale"] }, p2: { battlefield: ["Bear Cub"] } });
+    expect(legalActions(u, "p1").some((a) => a.type === "cast" && a.card === idOf(u, "p1", "hand", "Caustic Exhale"))).toBe(
+      false,
+    );
+  });
+
+  it("Dispelling Exhale : contempler se fait au lancement ; le Dragon parti ensuite, le sort reste « contemplé » ({4})", () => {
+    let s = scenario({
+      active: "p2",
+      p1: { battlefield: [...lands("Island", 2), "Shivan Dragon"], hand: ["Dispelling Exhale"] },
+      p2: { battlefield: lands("Mountain", 6), hand: ["Shock"] },
+    });
+    s = act(s, "p2", { type: "cast", card: idOf(s, "p2", "hand", "Shock"), targets: { t: ["p1"] } });
+    const shock = s.stack[0]?.id as string;
+    s = act(s, "p2", { type: "pass" });
+    s = act(s, "p1", { type: "cast", card: idOf(s, "p1", "hand", "Dispelling Exhale"), targets: { t: [shock] } });
+    expect(s.stack.at(-1)?.beheld).toBe(true);
+    // Le Dragon quitte le champ de bataille avant la résolution : le sort a quand même été lancé en contemplant.
+    destroy(s, idOf(s, "p1", "battlefield", "Shivan Dragon"));
+    let asked = "";
+    for (let i = 0; i < 20 && s.stack.length > 0; i++) {
+      const p = s.pending;
+      if (p?.kind === "priority") s = act(s, p.player, { type: "pass" });
+      else if (p?.kind === "choice") {
+        asked = p.request.prompt;
+        s = act(s, p.player, { type: "choose", values: p.request.type === "yesNo" ? [0] : p.request.suggested });
+      } else break;
+    }
+    expect(asked).toContain("{4}");
+    expect(s.players.p1?.life).toBe(20);
+  });
+
+  it("Molten Exhale : comme s'il avait le flash seulement en contemplant un Dragon", () => {
+    const setup = () =>
+      scenario({
+        active: "p2",
+        p1: { battlefield: lands("Mountain", 2), hand: ["Molten Exhale", "Shivan Dragon"] },
+        p2: { battlefield: ["Bear Cub"] },
+      });
+    let s = act(setup(), "p2", { type: "pass" });
+    const bear = idOf(s, "p2", "battlefield", "Bear Cub");
+    expect(() => castWith(s, "Molten Exhale", { targets: { t: [bear] }, picks: { behold: [] } })).toThrow(RulesError);
+    s = settle(castWith(s, "Molten Exhale", { targets: { t: [bear] } }));
+    expect(idsOf(s, "p2", "graveyard", "Bear Cub")).toHaveLength(1);
+  });
+
+  it("Sarkhan, Dragon Ascendant : en arrivant, vous pouvez contempler un Dragon ; si vous le faites, un Trésor", () => {
+    const run = (yes: boolean) => {
+      let s = scenario({ p1: { battlefield: lands("Mountain", 2), hand: ["Sarkhan, Dragon Ascendant", "Shivan Dragon"] } });
+      s = castWith(s, "Sarkhan, Dragon Ascendant", {});
+      let asked = false;
+      for (let i = 0; i < 20 && !(s.stack.length === 0 && s.pending?.kind === "priority"); i++) {
+        const p = s.pending;
+        if (p?.kind === "priority") s = act(s, p.player, { type: "pass" });
+        else if (p?.kind === "choice" && p.request.type === "pick") {
+          asked = true;
+          s = act(s, p.player, { type: "choose", values: yes ? p.request.suggested : [] });
+        } else break;
+      }
+      return { asked, treasures: idsOf(s, "p1", "battlefield", "Treasure").length };
+    };
+    expect(run(true)).toEqual({ asked: true, treasures: 1 });
+    expect(run(false)).toEqual({ asked: true, treasures: 0 });
   });
 });

@@ -340,7 +340,7 @@ export const BLUE: Record<string, CardScript> = {
     ],
   },
   "Silvergill Mentor": {
-    costReduction: beholdOrPay("Merfolk", 2),
+    additionalCost: beholdOrPay("Merfolk", 2),
     abilities: [triggered(when.entersSelf, [fx.createTokens(MERFOLK_WU)], { label: "Jeton Ondin 1/1" })],
   },
   "Silvergill Peddler": {

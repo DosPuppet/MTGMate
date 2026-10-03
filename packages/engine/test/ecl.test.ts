@@ -4460,3 +4460,20 @@ describe("Terrains choc mis sur le champ de bataille par un effet (lot K3)", () 
     expect(t.s.players.p1?.life).toBe(20);
   });
 });
+
+describe("Contempler ou payer (PLAN-D, D2)", () => {
+  it("Kinsbaile Aspirant : contempler un Kithkin que vous contrôlez ({W}), sinon {2} de plus", () => {
+    const castable = (battlefield: string[]) => {
+      const s = scenario({ p1: { battlefield, hand: ["Kinsbaile Aspirant"] } });
+      return legalActions(s, "p1").some((a) => a.type === "cast" && a.card === idOf(s, "p1", "hand", "Kinsbaile Aspirant"));
+    };
+    expect(castable(["Plains", "Goldmeadow Nomad"])).toBe(true);
+    expect(castable(["Plains", "Bear Cub"])).toBe(false);
+    expect(castable(["Plains", "Plains", "Plains", "Bear Cub"])).toBe(true);
+    // Refuser de contempler avec un seul terrain : {2} de plus, refusé.
+    const s = scenario({ p1: { battlefield: ["Plains", "Goldmeadow Nomad"], hand: ["Kinsbaile Aspirant"] } });
+    expect(() =>
+      act(s, "p1", { type: "cast", card: idOf(s, "p1", "hand", "Kinsbaile Aspirant"), picks: { behold: [] } }),
+    ).toThrow();
+  });
+});

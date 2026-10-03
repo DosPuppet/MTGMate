@@ -192,7 +192,7 @@ export const BLUE: Record<string, CardScript> = {
   },
   Countersculpt: {
     // « Coût additionnel : contemplez un Jace ou payez {1}. »
-    costReduction: { generic: -1, condition: cond.not(cond.beholdJace) },
+    additionalCost: { behold: { filter: { subtype: "Jace" }, orPay: { generic: 1, colored: {}, x: 0 } } },
     spell: spell([target.spell("t")], [fx.counter(ref.target()), empower(1)]),
   },
   "Jace's Machinations": { spell: spell([], [fx.instantJaceLoyalty, empower(8)]) },

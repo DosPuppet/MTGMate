@@ -109,7 +109,6 @@ Dans l'ordre où elles ont été ajoutées, extension par extension.
   - `règle` Chorale of the Void : la carte vient du cimetière d'un adversaire quelconque (pas forcément du joueur défenseur en multijoueur) ;
   - `choix auto` Dyadrine, Synthesis Amalgam : les deux créatures dont on retire un marqueur sont choisies automatiquement (celles qui en ont le plus).
 - **Tarkir: Dragonstorm (`docs/extensions/tdm.md`) :**
-  - `timing` Osseous Exhale, Piercing Exhale : contempler un Dragon est vérifié à la résolution, comme Dispelling Exhale ; Caustic Exhale : « contemplez un Dragon ou payez {1} » est vérifié au lancement, sans montrer la carte révélée ;
   - `règle` Rite of Renewal : les cartes mélangées viennent d'un même cimetière, et vont dans la bibliothèque de leur propriétaire, que ce soit ou non le joueur ciblé ;
   - `règle` Sonic Shrieker : un joueur ciblé défausse une carte même si ses blessures ont été prévenues ;
   - `choix auto` Rediscover the Way : les cartes non prises vont au-dessous dans un ordre aléatoire ;
@@ -178,7 +177,7 @@ Dans l'ordre où elles ont été ajoutées, extension par extension.
   - `règle` Deep-Cavern Bat : la main adverse est montrée dans la fenêtre de choix.
 - **Reality Fracture (`docs/extensions/fra.md`) :**
   - `règle` Massacre Girl, Most Wanted : blessures non de combat de vos seules sources (comme Master of Barbs) ;
-  - `choix auto` Contempler un Jace : toujours fait quand c'est possible (Countersculpt, Theorist's Sanctum), sans révéler la carte ;
+  - `choix auto` Theorist's Sanctum : on contemple un Jace en arrivant dès que c'est possible, sans révéler la carte ;
   - `règle` Master of Barbs : seules les blessures non de combat infligées par vos sources (sorts compris) comptent, pas celles d'une source adverse ;
   - `règle` Something Worth Saving : les quatre cartes sont regardées puis mises au cimetière, ce qui n'est pas une meule au sens strict (pas de déclencheur de meule) ;
   - `règle` Extrapolate the Impossible : ne fait rien, comme sur Arena en BO1 (pas de cartes « hors du jeu ») ;
@@ -192,17 +191,15 @@ Dans l'ordre où elles ont été ajoutées, extension par extension.
   - `règle` Emrakul, the Exigent Doom : la capacité accordée au terrain cesse dès que la carte quitte l'exil, de quelque façon que ce soit (et pas seulement quand elle est lancée) ; lancée, elle dure jusqu'à ce que le sort soit lancé (601.2i) et peut servir à le payer.
 - **Méta Standard (plan P4, `docs/extensions/meta.md`) :**
   - `règle` Leatherhead, Swamp Stalker : l'artefact ou l'enchantement détruit est celui d'un adversaire quelconque (« ce joueur ») ;
-  - `choix auto` Elven Passage : on contemple un Elfe automatiquement dès qu'on en contrôle un ou qu'on en a un en main, sans montrer la carte révélée ;
   - `règle` Torch the Tower : la cible est exilée si elle meurt ce tour-ci, même si ses blessures ont été prévenues ;
   - `règle` Travail d'équipe : la force des créatures engagées est comptée comme pour l'équipage (un pilote compte 2 de plus) ;
   - `choix auto` Réunir des preuves « X, X étant la valeur de mana totale des permanents ciblés » (Urgent Necropsy) : les cartes exilées sont choisies par le moteur (la moins chère qui suffit, sinon la plus chère) ; ailleurs, le joueur les choisit ;
-  - `timing` Dispelling Exhale : contempler un Dragon est vérifié à la résolution (vous en contrôlez un ou en avez un en main) ;
   - `timing` Moseo, Vein's New Dean : la carte ciblée est une carte de créature quelconque ; sa valeur de mana (au plus les PV gagnés) est vérifiée à la résolution ;
   - `choix auto` Kíli the Resourceful : la première capacité d'équipement du tour coûte {0} d'office ;
   - `règle` Interdimensional Web Watch : les deux mana servent à tout sort lancé ailleurs que depuis la main (et non seulement depuis l'exil).
 - **Lorwyn Eclipsed (`docs/extensions/ecl.md`) :**
   - `choix auto` « Retirez un marqueur de cette créature » : les marqueurs retirés sont choisis par le moteur (−1/−1 d'abord, +1/+1 en dernier) ; Rhys, the Evermore retire tous les marqueurs −1/−1 de la cible ;
-  - `timing` « Contemplez un [type] ou payez {N} » (Kinsbaile Aspirant, Silvergill Mentor, Lys Alana Dignitary, Mudbutton Cursetosser, Soulbright Seeker) : vérifié au lancement, sans révéler la carte ; Kindle the Inner Flame (flashback « contemplez trois Élémentaux ») : condition de lancement ;
+  - `timing` Kindle the Inner Flame (flashback « contemplez trois Élémentaux ») : condition de lancement ;
   - `règle` Isilu, Carrier of Twilight, Rhys, the Evermore : la persistance accordée est une capacité déclenchée nommée « Persistance » (sans badge de mot-clé) ;
   - `règle` Kirol, Attentive First-Year : la capacité ciblée n'est pas limitée à celles que vous contrôlez ;
   - `règle` Nameless Inversion : « perd tous ses types de créature » retire tous les sous-types et le changelin jusqu'à la fin du tour ;

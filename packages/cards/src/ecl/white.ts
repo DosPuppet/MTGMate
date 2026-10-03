@@ -246,7 +246,7 @@ export const WHITE: Record<string, CardScript> = {
     ),
   },
   "Kinsbaile Aspirant": {
-    costReduction: beholdOrPay("Kithkin", 2),
+    additionalCost: beholdOrPay("Kithkin", 2),
     abilities: [
       triggered(when.enters({ ...YOUR_CREATURES, other: true }), [fx.pump(ref.self, 1, 1)], {
         label: "Une autre créature arrive : +1/+1",

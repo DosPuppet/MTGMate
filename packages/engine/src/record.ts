@@ -252,8 +252,11 @@ export const RECORD_VERSION = 1;
  *   Manifold Mouse ; Iceberg Titan engage ou dégage à la résolution (PLAN-D, lot D1).
  * - 88 : « quand vous le faites » après un remplacement ou une arrivée : capacité réflexive mise sur la pile (Head of the
  *   Hunt : le Loup ; Superior Spider-Man : l'exil de la carte copiée) (PLAN-D, lot D3).
+ * - 89 : contempler en coût additionnel (`additionalCost.behold`) : choisi au lancement, la carte de la main révélée,
+ *   retenu par le sort (`cond.beheld`), « ou payez {N} » ; contempler pendant une résolution (`fx.mayBehold`) : les
+ *   Exhales, Countersculpt, les cinq « contemplez ou payez {2} » d'ECL, Sarkhan, Elven Passage (PLAN-D, lot D2).
  */
-export const RULES_VERSION = 88;
+export const RULES_VERSION = 89;
 
 /** Un point de contrôle toutes les N décisions (plus la dernière de la partie). */
 export const CHECKPOINT_EVERY = 25;

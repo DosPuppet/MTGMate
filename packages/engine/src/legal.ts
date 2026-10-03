@@ -579,7 +579,7 @@ export function legalActions(s: GameState, player: PlayerId): ActionOption[] {
           (p) =>
             (p.when !== "kicked" || kickerAffordable) &&
             (p.when !== "alternative" || altAvailable) &&
-            (p.atMost || p.minTotal || p.options.length > p.count),
+            (p.atMost || p.minTotal || p.optional || p.options.length > p.count),
         );
         return picks.length ? { picks } : {};
       })(),

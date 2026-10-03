@@ -356,7 +356,7 @@ export const RED: Record<string, CardScript> = {
     ],
   },
   "Soulbright Seeker": {
-    costReduction: beholdOrPay("Elemental", 2),
+    additionalCost: beholdOrPay("Elemental", 2),
     abilities: [
       activated({
         mana: "{R}",

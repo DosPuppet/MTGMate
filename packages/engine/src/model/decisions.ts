@@ -166,7 +166,9 @@ export type CostSlot =
   | "costExile"
   | "costBounce"
   | "costTap"
-  | "costGraveyard";
+  | "costGraveyard"
+  /** Contempler : le permanent ou la carte de la main contemplé (aucun : ne pas contempler). */
+  | "behold";
 
 /** Un coût payé avec des objets, tel que proposé au joueur (`legalActions`) et vérifié au paiement. */
 export interface CostPick {
@@ -189,6 +191,8 @@ export interface CostPick {
    * le paiement automatique décide (`suggested` vide).
    */
   atMost?: boolean;
+  /** Le joueur peut ne rien choisir (« vous pouvez contempler ») : une liste vide est une réponse. */
+  optional?: boolean;
 }
 
 export type Decision =

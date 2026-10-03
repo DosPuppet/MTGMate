@@ -71,8 +71,9 @@ export const RED: Record<string, CardScript> = {
     abilities: [triggered(when.entersSelf, [fx.createTokens(TREASURE)], { label: "Un Trésor" })],
   },
   "Molten Exhale": {
-    // « Comme s'il avait le flash si vous contemplez un Dragon en coût additionnel. »
+    // « Comme s'il avait le flash si vous contemplez un Dragon en coût additionnel » : lancé ainsi, il faut contempler.
     flashIf: cond.behold(DRAGON_CARD),
+    additionalCost: { behold: { filter: DRAGON_CARD } },
     spell: spell([target.creatureOrPlaneswalker()], [fx.damage(4, ref.target())]),
   },
   "Narset's Rebuke": {

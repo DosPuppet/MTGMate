@@ -323,7 +323,7 @@ export const BLACK: Record<string, CardScript> = {
     abilities: [triggered(when.attacksSelf, [fx.draw(1), fx.loseLife(1)], { label: "Piochez une carte, perdez 1 PV" })],
   },
   "Mudbutton Cursetosser": {
-    costReduction: beholdOrPay("Goblin", 2),
+    additionalCost: beholdOrPay("Goblin", 2),
     keywords: ["cantBlock"],
     abilities: [
       triggered(when.diesSelf, [fx.destroy(ref.target())], {

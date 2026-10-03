@@ -217,7 +217,7 @@ export const GREEN: Record<string, CardScript> = {
     abilities: [triggered(when.entersSelf, [fx.gainLife(VIVID)], { label: "Éclatant — gagnez X points de vie" })],
   },
   "Lys Alana Dignitary": {
-    costReduction: beholdOrPay("Elf", 2),
+    additionalCost: beholdOrPay("Elf", 2),
     abilities: [manaAbility("G", 2, { condition: ELF_IN_GRAVEYARD })],
   },
   "Lys Alana Informant": {

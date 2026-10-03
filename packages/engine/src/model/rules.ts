@@ -546,6 +546,8 @@ export type Condition =
   | { kind: "castVia"; via: CastVia }
   /** Contempler (701.63) : vous contrôlez un permanent correspondant, ou vous révélez une carte correspondante de votre main. */
   | { kind: "behold"; filter: ObjectFilter }
+  /** Le sort a été lancé en contemplant (coût additionnel `behold`). */
+  | { kind: "beheld" }
   /** Le contrôleur a activé une capacité de loyauté ce tour-ci. */
   | { kind: "activatedLoyaltyThisTurn" }
   /** Une seule créature attaque, et elle attaque un joueur (« attaque seule un joueur »). */
