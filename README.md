@@ -224,4 +224,6 @@ Le suivi (état, conventions, pièges) est dans [CLAUDE.md](CLAUDE.md), l'histor
 
 ## Cadre légal
 
+Le code du projet est sous licence [MIT](LICENSE). Elle ne couvre pas ce qui appartient à Wizards of the Coast (noms, textes et illustrations des cartes, symboles de mana, marques) ni les données et images de Scryfall.
+
 Projet de fan gratuit et non commercial ([Fan Content Policy](https://company.wizards.com/fancontentpolicy) de Wizards of the Coast). Les images restent hébergées par Scryfall et ne sont pas copiées dans le dépôt. Le relais du serveur les transmet telles quelles, sans les stocker ailleurs que dans le cache de nginx. Les effets sonores sont des packs de [Kenney](https://www.kenney.nl) sous licence CC0 (`packages/client/public/sounds/LICENSE-kenney.txt`).
