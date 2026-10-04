@@ -7,7 +7,7 @@ import { forcedAttacks } from "./turn";
 import type { Decision, GameState, PlayerId, Step, TargetOption } from "./types";
 
 export interface AutopilotSettings {
-  /** Désactive toute automatisation : le joueur reçoit chaque priorité. */
+  /** Désactive toute automatisation : le joueur reçoit chaque priorité et chaque choix (dont l'ordre de ses déclencheurs). */
   fullControl: boolean;
   /** Étapes où l'on s'arrête (si l'on a quelque chose à faire), pendant son tour et celui de l'adversaire. */
   stops: { own: Step[]; opponent: Step[] };
@@ -18,7 +18,10 @@ export interface AutopilotSettings {
    * pour que l'interface le lui montre (elle passe seule après quelques secondes).
    */
   revealOpponentStack?: boolean;
-  /** Garder la priorité sur ses propres sorts et capacités (pour y répondre soi-même, façon Arena). */
+  /**
+   * Garder la priorité sur ses propres sorts et capacités (pour y répondre soi-même, façon Arena) ; l'ordre de ses
+   * déclencheurs est alors demandé au joueur quand il compte.
+   */
   holdPriority?: boolean;
   /**
    * « Fin du tour » : passe douce (par défaut), qui rend la main dès qu'un adversaire met quelque chose sur la pile ; passe
@@ -47,8 +50,13 @@ export function autopilotDecision(s: GameState, player: PlayerId, settings: Auto
     // Même en passant le tour, les créatures obligées d'attaquer attaquent.
     return { type: "declareAttackers", attackers: forcedAttacks(s, player) };
   }
-  if (p.kind === "choice")
-    return p.request.autoOk && !settings.fullControl ? { type: "choose", values: p.request.suggested } : null;
+  if (p.kind === "choice") {
+    if (!p.request.autoOk || settings.fullControl) return null;
+    // Ordre de ses déclencheurs : choisi par l'automatisme, sauf si l'on garde la priorité et que l'ordre compte
+    // (des capacités différentes ; la même capacité plusieurs fois, l'ordre est indifférent).
+    if (p.request.intent === "triggerOrder" && settings.holdPriority && triggerOrderMatters(s, p.request.suggested)) return null;
+    return { type: "choose", values: p.request.suggested };
+  }
   if (p.kind !== "priority") return null;
   // « Lancez-la » pendant une résolution : une vraie décision, jamais passée à la place du joueur.
   if (p.castNow) return null;
@@ -67,6 +75,11 @@ export function autopilotDecision(s: GameState, player: PlayerId, settings: Auto
   }
   const stops = s.turn.active === player ? settings.stops.own : settings.stops.opponent;
   return stops.includes(s.turn.step) ? null : { type: "pass" };
+}
+
+function triggerOrderMatters(s: GameState, ids: readonly unknown[]): boolean {
+  const mine = s.triggers.filter((t) => ids.includes(t.id));
+  return mine.some((t) => t.sourceDefId !== mine[0]?.sourceDefId || t.abilityIndex !== mine[0]?.abilityIndex);
 }
 
 /** Choix automatique des cibles quand il n'y a qu'une seule possibilité (et que la cible n'est pas optionnelle). */

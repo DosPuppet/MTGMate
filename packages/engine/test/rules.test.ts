@@ -5,7 +5,7 @@ import { createGame, submit } from "../src/game";
 import { legalActions } from "../src/legal";
 import { solvePayment } from "../src/mana";
 import { chars } from "../src/state";
-import { act, customCard, idOf, idsOf, passAccepting, passBoth, passUntil, scenario } from "./helpers";
+import { act, cast, customCard, idOf, idsOf, passAccepting, passBoth, passUntil, scenario } from "./helpers";
 
 const [green, red] = [deckById("bienvenue-vert"), deckById("bienvenue-rouge")];
 
@@ -441,6 +441,26 @@ describe("autopilot", () => {
     s = act(s, "p2", { type: "pass" });
     s = act(s, "p1", { type: "cast", card: idsOf(s, "p1", "hand", "Burst Lightning")[0] as string, targets: { t: ["p2"] } });
     expect(autopilotDecision(s, "p1", { ...DEFAULT_AUTOPILOT, holdPriority: true })).toBeNull();
+  });
+
+  it("ordre des déclencheurs : choisi par l'automatisme, sauf en contrôle total ou en gardant la priorité", () => {
+    const order = (battlefield: string[]) => {
+      let s = scenario({ p1: { battlefield: ["Forest", "Forest", ...battlefield], hand: ["Bear Cub"] } });
+      s = cast(s, "p1", "Bear Cub");
+      s = passBoth(s);
+      expect(s.pending?.kind === "choice" && s.pending.request.intent).toBe("triggerOrder");
+      return s;
+    };
+    // Des capacités différentes : l'ordre compte.
+    let s = order(["Impact Tremors", "Dazzling Angel"]);
+    const suggested = s.pending?.kind === "choice" ? s.pending.request.suggested : [];
+    expect(autopilotDecision(s, "p1", DEFAULT_AUTOPILOT)).toEqual({ type: "choose", values: suggested });
+    expect(autopilotDecision(s, "p1", { ...DEFAULT_AUTOPILOT, fullControl: true })).toBeNull();
+    expect(autopilotDecision(s, "p1", { ...DEFAULT_AUTOPILOT, holdPriority: true })).toBeNull();
+    // La même capacité deux fois : l'ordre est indifférent, choisi même en gardant la priorité.
+    s = order(["Impact Tremors", "Impact Tremors"]);
+    expect(autopilotDecision(s, "p1", { ...DEFAULT_AUTOPILOT, holdPriority: true })?.type).toBe("choose");
+    expect(autopilotDecision(s, "p1", { ...DEFAULT_AUTOPILOT, fullControl: true })).toBeNull();
   });
 
   it("« fin du tour » : ne déclare aucun attaquant et passe tout", () => {
