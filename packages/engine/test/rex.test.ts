@@ -1,8 +1,9 @@
 /** Jurassic World Collection (REX) : tests de règles des cartes (PLAN-G). */
 import { describe, expect, it } from "vitest";
 import { destroy } from "../src/actions";
+import { legalActions } from "../src/legal";
 import { canBlock } from "../src/turn";
-import { act, advanceUntil, attack, idOf, idsOf, lands, scenario, settle, throughCombat } from "./helpers";
+import { act, advanceUntil, attack, idOf, idsOf, lands, nameOf, scenario, settle, throughCombat } from "./helpers";
 
 type S = ReturnType<typeof scenario>;
 const castIt = (s: S, name: string, extra: object = {}) =>
@@ -81,5 +82,48 @@ describe("Jurassic World Collection", () => {
     s = settle(castIt(s, "Permission Denied", { targets: { t: [s.stack[0]?.id as string] } }));
     expect(s.players.p1?.life).toBe(20);
     expect(s.pending?.kind === "priority" && s.pending.player === "p2").toBe(true);
+  });
+
+  describe("G4e : sous-lot difficile", () => {
+    it("Grim Giganotosaurus : monstruosité 10, moins chère par créature adverse de force 4 ; détruit les autres artefacts et créatures", () => {
+      let s = scenario({
+        p1: { battlefield: ["Grim Giganotosaurus", ...lands("Swamp", 6), ...lands("Forest", 5), "Bear Cub"] },
+        p2: { battlefield: ["Shivan Dragon", "Mana Crypt"] },
+      });
+      const giga = idOf(s, "p1", "battlefield", "Grim Giganotosaurus");
+      const ab = legalActions(s, "p1").find((a) => a.type === "activate" && a.source === giga);
+      s = settle(act(s, "p1", { type: "activate", source: giga, ability: ab?.type === "activate" ? ab.ability : 0 }));
+      expect(s.objects[giga]?.counters["+1/+1"]).toBe(10);
+      expect(
+        s.battlefield.filter((id) => !s.defs[s.objects[id]?.defId ?? ""]?.types.includes("Land")).map((id) => nameOf(s, id)),
+      ).toEqual(["Grim Giganotosaurus"]);
+      expect(legalActions(s, "p1").some((a) => a.type === "activate" && a.source === giga)).toBe(false);
+    });
+
+    it("Indoraptor : soif de sang, autant de marqueurs que de blessures infligées aux adversaires ce tour-ci", () => {
+      let s = scenario({
+        p1: { battlefield: [...lands("Mountain", 3), "Swamp"], hand: ["Shock", "Indoraptor, the Perfect Hybrid"] },
+      });
+      s = settle(act(s, "p1", { type: "cast", card: idOf(s, "p1", "hand", "Shock"), targets: { t: ["p2"] } }));
+      s = settle(act(s, "p1", { type: "cast", card: idOf(s, "p1", "hand", "Indoraptor, the Perfect Hybrid") }));
+      expect(s.objects[idOf(s, "p1", "battlefield", "Indoraptor, the Perfect Hybrid")]?.counters["+1/+1"]).toBe(2);
+    });
+
+    it("Henry Wu : vos Humains exploitent ; exploiter une créature non-Humain fait piocher (et un Trésor si force 3)", () => {
+      let s = scenario({
+        p1: {
+          battlefield: ["Henry Wu, InGen Geneticist", "Shivan Dragon", ...lands("Plains", 2)],
+          hand: ["Soul Warden"],
+          library: lands("Plains", 5),
+        },
+      });
+      const dragon = idOf(s, "p1", "battlefield", "Shivan Dragon");
+      s = settle(act(s, "p1", { type: "cast", card: idOf(s, "p1", "hand", "Soul Warden") }), (req) =>
+        req.type === "pick" && req.options.includes(dragon) ? [dragon] : undefined,
+      );
+      expect(idsOf(s, "p1", "graveyard", "Shivan Dragon")).toHaveLength(1);
+      expect(idsOf(s, "p1", "battlefield", "Treasure")).toHaveLength(1);
+      expect(s.players.p1?.hand.length).toBeGreaterThanOrEqual(1);
+    });
   });
 });

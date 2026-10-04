@@ -379,3 +379,6 @@ Dans l'ordre où elles ont été ajoutées, extension par extension.
   - `règle` All Will Be One : seuls les marqueurs mis sur des permanents déclenchent la capacité.
 - **Mana phyrexian :** `choix auto` le mana disponible paie d'abord ; des PV ne sont payés que pour les symboles qu'il ne couvre pas.
   - `choix auto` Force of Will, Force of Vigor, Daze : la carte exilée de la main est la moins chère qui convient ; l'Île renvoyée, une engagée d'abord.
+  - `règle` Grim Giganotosaurus : « monstrueuse » est noté par un marqueur (visible) ;
+  - `règle` Indoraptor : l'adversaire « choisi au hasard » est chaque adversaire (exact en duel) ;
+  - `règle` Henry Wu : la pioche et le Trésor font partie de la capacité d'exploitation qu'il donne (ils n'ont lieu que s'il est sur le champ de bataille quand elle se résout).

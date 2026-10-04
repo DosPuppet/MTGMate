@@ -333,3 +333,4 @@ leur lot, avec une forme générique d'abord, selon la règle « pas de dette pr
   forme nouvelle ; fumée REX. Quinze cartes vont au sous-lot difficile.
 - **G4e, mana phyrexian (04/10/2026) :** Noxious Revival, Dismember, K'rrik. `RULES_VERSION` 113.
 - **G4e, coûts alternatifs (04/10/2026) :** Force of Will, Daze, Force of Vigor (`altCost.pay`). `RULES_VERSION` 114.
+- **G4e, mots-clés d'une carte (04/10/2026) :** Grim Giganotosaurus, Indoraptor, Henry Wu, sans forme nouvelle.

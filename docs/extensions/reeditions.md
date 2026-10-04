@@ -234,3 +234,7 @@ le deck peut choisir son illustration (51 cartes). Détail dans le suivi du plan
 - **Coûts alternatifs à payer autrement ✅ :** `altCost.pay` (PV, cartes de la main exilées, permanent renvoyé, choisis
   automatiquement : les cartes les moins chères, un permanent engagé d'abord). Cartes : Force of Will, Daze (SOA), Force
   of Vigor (OTP). Tests : `altcosts.test.ts` (4).
+- **Mots-clés d'une carte ✅ :** Grim Giganotosaurus (monstruosité notée par un marqueur « monstrous », déclencheur
+  `countersPut`), Indoraptor (soif de sang : `entersWith` des blessures infligées aux adversaires ce tour-ci ; l'adversaire
+  « au hasard » est le premier), Henry Wu (exploitation donnée aux Humains, la pioche et le Trésor dans la même capacité).
+  Tests : `rex.test.ts` (+3).
