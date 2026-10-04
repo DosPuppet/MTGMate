@@ -45,6 +45,11 @@ export function ManaCost({ cost, size = 16 }: { cost: string; size?: number }) {
   );
 }
 
+/** Texte de règles dont les symboles ("{T}", "{2}{R}") sont des pastilles, comme sur la carte imprimée. */
+export function RulesText({ text, size = 13 }: { text: string; size?: number }) {
+  return <>{text.split(/((?:\{[^}]+\})+)/).map((part, i) => (i % 2 ? <ManaCost key={i} cost={part} size={size} /> : part))}</>;
+}
+
 /** Cadre texte : sert de repli si l'image ne charge pas, et d'apparence pour les jetons. */
 function TextFrame({ face, obj }: { face: CardFace; obj?: ObjectView }) {
   const lang = useGame((s) => s.lang);

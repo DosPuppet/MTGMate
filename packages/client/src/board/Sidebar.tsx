@@ -6,7 +6,7 @@ import { faceImage, faceName, faceText, faceType, KEYWORD_LABEL, type LogLine } 
 import { imageUrl, useRelayActive } from "../images";
 import { PACES, useGame } from "../store";
 import { isTouch, justLongPressed } from "../touch";
-import { ManaCost } from "./Card";
+import { ManaCost, RulesText } from "./Card";
 
 export function Preview() {
   const hover = useGame((s) => s.hover);
@@ -57,7 +57,12 @@ export function Preview() {
           <ManaCost cost={face.manaCost} size={14} />
         </div>
         <div className="preview-type">{faceType(face, lang)}</div>
-        {!src && <div className="preview-text">{faceText(face, lang)}</div>}
+        {/* Texte Oracle toujours affiché : illustrations sans cadre, éditions étrangères, petits caractères. */}
+        {faceText(face, lang) && (
+          <div className="preview-text">
+            <RulesText text={faceText(face, lang)} />
+          </div>
+        )}
         {backImage && (
           <button type="button" className="btn small ghost preview-flip" onClick={() => setFlipped((x) => !x)}>
             {flipped ? "Voir le recto" : "Voir le verso"} (F)
@@ -73,7 +78,9 @@ export function Preview() {
                   {f.manaCost && <ManaCost cost={f.manaCost} size={14} />}
                 </div>
                 <div className="preview-type">{(lang === "fr" && f.fr?.typeLine) || f.typeLine}</div>
-                <div className="preview-text">{(lang === "fr" && f.fr?.text) || f.text}</div>
+                <div className="preview-text">
+                  <RulesText text={(lang === "fr" && f.fr?.text) || f.text} />
+                </div>
               </div>
             ),
         )}
@@ -88,7 +95,9 @@ export function Preview() {
               <ManaCost cost={face.prepareFace.manaCost} size={14} />
             </div>
             <div className="preview-type">{(lang === "fr" && face.prepareFace.fr?.typeLine) || face.prepareFace.typeLine}</div>
-            <div className="preview-text">{(lang === "fr" && face.prepareFace.fr?.text) || face.prepareFace.text}</div>
+            <div className="preview-text">
+              <RulesText text={(lang === "fr" && face.prepareFace.fr?.text) || face.prepareFace.text} />
+            </div>
           </div>
         )}
         {(obj?.classLevel || obj?.solved) && (
