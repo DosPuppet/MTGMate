@@ -2768,6 +2768,17 @@ button {
 .deck-line-btns .btn {
   padding: 0 8px;
 }
+/* Choix de l'illustration (impression d'une réédition) : code de l'ensemble. */
+.deck-line-art {
+  padding: 0 6px;
+  font-size: 10.5px;
+  letter-spacing: 0.04em;
+  opacity: 0.75;
+}
+.deck-line-art.on {
+  opacity: 1;
+  border-color: var(--gold);
+}
 .deck-validation {
   padding: 10px 14px;
   border-top: 1px solid var(--line);

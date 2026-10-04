@@ -264,3 +264,17 @@ leur lot, avec une forme générique d'abord, selon la règle « pas de dette pr
   couverture (ligne « dont rééditions »), tableau du README, ensembles groupés dans l'éditeur de decks. Décompte réel
   après import : 413 cartes nouvelles (SPG 132, EOS 43, WOT 55, OTP 61, FCA 50, SOA 37, PZA 15, REX 20), une carte déjà
   jouable. Bundle : chunk des cartes 5 785 → 6 211 Ko, dans le budget.
+- **G1 (04/10/2026) :** impressions. `CardDef.printings` (clé « SPG-11 », ensemble, numéro, illustrations anglaise et
+  française) rempli au chargement des cartes pour toute carte déjà connue qu'un ensemble de rééditions réimprime :
+  51 cartes (une carte peut en avoir plusieurs, Doubling Season : WOT et PZA). Deck : `[nombre, nom, impression ?]`,
+  une impression par nom (elle vaut pour tous les exemplaires, deck et réserve) ; import et export MTGA
+  (`4 Ghalta, Primal Hunger (SPG) 11`) ; validation et légalité inchangées. Moteur : `PlayerSetup.printings`,
+  `GameState.printings` (uid → clé, posé à la création, ignoré si la carte n'a pas cette impression) ; la vue
+  (`objectView`, sorts de la pile) montre l'illustration choisie, sauf pour une copie ou l'autre face ; les faces du
+  journal (`visibleFaces`) gardent l'illustration de la carte, la mise en avant d'un sort adverse prend celle de la pile.
+  Enregistrement des parties (`players[].printings`, replays, sauvegardes du serveur), worker et serveur
+  (`deckPrintings`) ; `PROTOCOL_VERSION` 2 (ligne de deck à trois éléments). Éditeur : bouton du code de l'ensemble sur
+  chaque ligne qui a des impressions (un clic passe à la suivante), aperçu et couverture du deck dans l'impression
+  choisie. Pas de `RULES_VERSION` : les règles ne changent pas et les parties dorées se rejouent à l'identique. Plafonds
+  CardDef 94 → 95 et GameState 38 → 39 (justifiés). Tests : `cards/test/printings.test.ts` (4), `server/test/format.test.ts`
+  (1) ; script Playwright ponctuel (éditeur, export, main en partie), captures dans `test-results/plan-g/`.

@@ -462,7 +462,9 @@ function playEffects(view: GameView, events: GameEvent[], faces: Record<string, 
         text: mine && !replaying ? "À vous de jouer" : `Tour de ${view.players[e.player]?.name ?? "l'adversaire"}`,
       };
     } else if ((e.type === "cast" || e.type === "activate" || e.type === "trigger") && e.player !== view.viewer) {
-      const face = faces[e.defId];
+      // Le sort sur la pile montre l'illustration choisie par le deck adverse (impression d'une réédition).
+      const onStack = e.type === "cast" ? view.stack.find((i) => i.defId === e.defId && i.controller === e.player) : undefined;
+      const face = onStack ?? faces[e.defId];
       if (face) spotlight = { id: ++fxId, face, who: view.players[e.player]?.name ?? "L'adversaire" };
     }
   }

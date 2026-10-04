@@ -15,6 +15,7 @@ export {
   DECK_RULES,
   DEFAULT_FORMAT,
   type DeckEntries,
+  type DeckEntry,
   type DeckIssue,
   type DeckValidation,
   deckColors,
@@ -39,7 +40,26 @@ export { TOKEN_SPECS } from "./tokens";
 /** Toutes les cartes connues, indexées par nom anglais (toutes extensions ; une réimpression garde la première). */
 export const CARDS: Record<string, CardDef> = {};
 for (const set of SETS) {
-  for (const raw of set.data) CARDS[raw.name] ??= toCardDef(raw, set.scripts[raw.name], set.code, set.scripts);
+  for (const raw of set.data) {
+    const known = CARDS[raw.name];
+    if (!known) CARDS[raw.name] = toCardDef(raw, set.scripts[raw.name], set.code, set.scripts);
+    // Réédition d'une carte déjà connue (PLAN-G) : une impression de plus, avec son illustration, que le deck peut choisir.
+    else if (set.reprint && raw.image !== known.image) {
+      const key = `${set.code}-${raw.number}`;
+      if (!known.printings?.some((p) => p.key === key))
+        known.printings = [
+          ...(known.printings ?? []),
+          {
+            key,
+            set: set.code,
+            number: raw.number,
+            image: raw.image,
+            artCrop: raw.artCrop,
+            ...(raw.fr?.image && raw.fr.image !== known.fr?.image ? { frImage: raw.fr.image } : {}),
+          },
+        ];
+    }
+  }
 }
 // Dérogations aux légalités importées (PLAN-C, C19) : un bannissement annoncé, en vigueur avant le prochain réimport.
 // Format : { "<nom anglais>": { "legalities": { "standard": "banned" }, "since": "AAAA-MM-JJ", "source": "<annonce>" } }.
@@ -67,6 +87,15 @@ export function buildDeck(list: Pick<DeckList, "main">): CardDef[] {
   const out: CardDef[] = [];
   for (const [n, name] of list.main) for (let i = 0; i < n; i++) out.push(card(name));
   return out;
+}
+
+/**
+ * Impression choisie pour chaque carte de `buildDeck` (même ordre), ou `undefined` si le deck n'en choisit aucune :
+ * à passer dans `PlayerSetup.printings` (le moteur ignore une impression que la carte n'a pas).
+ */
+export function deckPrintings(list: Pick<DeckList, "main">): (string | null)[] | undefined {
+  if (!list.main.some((e) => e[2])) return undefined;
+  return list.main.flatMap(([n, , key]) => Array.from({ length: n }, () => key ?? null));
 }
 
 export function deckById(id: string): DeckList {

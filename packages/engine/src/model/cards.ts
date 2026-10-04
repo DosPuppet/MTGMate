@@ -194,6 +194,11 @@ export interface CardDef {
   fr?: { name?: string; typeLine?: string; text?: string; image?: string };
   image?: string;
   artCrop?: string;
+  /**
+   * Autres impressions de la carte, avec leur illustration (PLAN-G : une réédition d'une carte déjà présente) ; un deck
+   * peut en choisir une (`DeckEntries`, `PlayerSetup.printings`).
+   */
+  printings?: CardPrinting[];
   /** Carte « à préparer » (Reality Fracture) : le sort attaché à la créature (seconde face). */
   prepareFace?: PrepareFace;
   /** Disposition à plusieurs faces (aventure, carte scindée, recto-verso transformable ou modal, assemblage). */
@@ -263,6 +268,18 @@ export interface PrepareFace {
   fr?: { name?: string; typeLine?: string; text?: string; image?: string };
   /** Image propre à cette face (verso d'une carte recto-verso). */
   image?: string;
+}
+
+/** Une impression d'une carte : son ensemble, son numéro et son illustration. */
+export interface CardPrinting {
+  /** « SPG-13 » : code de l'ensemble et numéro de collection. */
+  key: string;
+  set: string;
+  number: string;
+  image?: string;
+  artCrop?: string;
+  /** Image de l'impression française, si elle existe. */
+  frImage?: string;
 }
 
 /**

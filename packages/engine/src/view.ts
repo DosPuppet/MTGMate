@@ -267,6 +267,18 @@ function otherFaces(d: CardDef): NonNullable<CardFace["otherFaces"]> {
   }));
 }
 
+/**
+ * L'illustration de l'impression choisie par le deck (PLAN-G : une réédition), pour la face imprimée de la carte
+ * elle-même ; une copie ou un autre côté gardent la leur.
+ */
+function printedFace(s: GameState, uid: string, defId: string, d: CardDef): CardFace {
+  const face = cardFace(d);
+  const key = s.printings?.[uid];
+  const p = key && d.id === defId ? d.printings?.find((x) => x.key === key) : undefined;
+  if (!p?.image) return face;
+  return { ...face, image: p.image, ...(face.fr ? { fr: { ...face.fr, image: p.frImage ?? p.image } } : {}) };
+}
+
 export function objectView(s: GameState, id: ObjectId): ObjectView {
   const o = obj(s, id);
   // Une copie (couche 1) s'affiche avec la face de ce qu'elle copie.
@@ -276,7 +288,7 @@ export function objectView(s: GameState, id: ObjectId): ObjectView {
   const attacking = !!s.combat?.attackers.some((a) => a.id === id);
   const blocking = s.combat?.blockers.find((b) => b.id === id)?.attacker ?? null;
   return {
-    ...cardFace(d),
+    ...printedFace(s, o.uid, o.defId, d),
     id,
     uid: o.uid,
     owner: o.owner,
@@ -414,8 +426,9 @@ export function projectView(s: GameState, viewer: PlayerId): GameView {
 
   const stack: StackItemView[] = s.stack.map((item) => {
     const d = s.defs[item.sourceDefId] as CardDef;
+    const src = item.kind === "spell" ? s.objects[item.sourceId] : undefined;
     return {
-      ...cardFace(d),
+      ...(src ? printedFace(s, src.uid, src.defId, d) : cardFace(d)),
       id: item.id,
       uid: s.objects[item.sourceId]?.uid ?? item.id,
       kind: item.kind,

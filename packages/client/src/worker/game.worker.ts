@@ -61,6 +61,12 @@ function buildDeck(entries: DeckEntries): CardDef[] {
   return entries.flatMap(([n, name]) => Array.from({ length: n }, () => card(name)));
 }
 
+/** Impression choisie de chaque carte de `buildDeck` (même ordre) ; voir `deckPrintings` de @mtgx/cards. */
+function deckPrintings(entries: DeckEntries): (string | null)[] | undefined {
+  if (!entries.some((e) => e[2])) return undefined;
+  return entries.flatMap(([n, , key]) => Array.from({ length: n }, () => key ?? null));
+}
+
 const post = (msg: FromWorker) => (self as unknown as Worker).postMessage(msg);
 const sleep = (ms: number) => new Promise<void>((r) => setTimeout(r, ms));
 
@@ -166,11 +172,12 @@ async function handle(msg: ToWorker): Promise<void> {
         seed: msg.seed,
         startingPlayer: msg.startingPlayer,
         players: [
-          { id: HUMAN, name: msg.playerName, deck: buildDeck(msg.playerDeck) },
+          { id: HUMAN, name: msg.playerName, deck: buildDeck(msg.playerDeck), printings: deckPrintings(msg.playerDeck) },
           ...msg.aiDecks.map((deck, i) => ({
             id: `p${i + 2}`,
             name: msg.aiDecks.length > 1 ? `IA ${i + 1}` : "IA",
             deck: buildDeck(deck),
+            printings: deckPrintings(deck),
           })),
         ],
       });

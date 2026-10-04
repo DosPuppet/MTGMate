@@ -47,6 +47,8 @@ export interface PlayerSetup {
   id: PlayerId;
   name: string;
   deck: CardDef[];
+  /** Impression choisie pour chaque carte du deck (même ordre ; absente : l'illustration de la carte). */
+  printings?: (string | null | undefined)[];
 }
 
 export interface GameOptions {
@@ -133,10 +135,13 @@ export function createGame(opts: GameOptions): StepResult {
   const [state, events] = collectEvents(() => {
     const s = blankState(opts);
     for (const p of opts.players) {
-      for (const card of p.deck) {
+      p.deck.forEach((card, i) => {
         registerDef(s, card);
-        createObject(s, card.id, p.id, "library");
-      }
+        const o = createObject(s, card.id, p.id, "library");
+        // Illustration d'une autre impression (réédition) : notée par identité physique, suivie d'une zone à l'autre.
+        const key = p.printings?.[i];
+        if (key && card.printings?.some((x) => x.key === key)) s.printings = { ...s.printings, [o.uid]: key };
+      });
       shuffle(s, s.players[p.id]?.library ?? []);
     }
     const starting = opts.startingPlayer ?? (s.playerOrder[Math.floor(random(s) * s.playerOrder.length)] as PlayerId);

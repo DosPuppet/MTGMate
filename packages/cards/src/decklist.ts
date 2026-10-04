@@ -6,7 +6,12 @@
 import type { CardDef, Format } from "@mtgx/engine";
 import { preconFor } from "./decks";
 
-export type DeckEntries = [number, string][];
+/**
+ * Lignes d'un deck : [nombre, nom anglais, impression ?]. Une ligne par nom ; l'impression (« SPG-13 », PLAN-G) choisit
+ * l'illustration de tous ses exemplaires, sans rien changer aux règles ni à la légalité.
+ */
+export type DeckEntries = DeckEntry[];
+export type DeckEntry = [number, string, string?];
 
 export interface DeckIssue {
   /** Numéro de ligne (1 = première ligne). */
@@ -166,12 +171,16 @@ const HEADERS: Record<string, "main" | "side" | "ignore" | "about"> = {
 };
 
 const LINE = /^(?:(SB):\s*)?(\d+)\s*[xX]?\s+(.+?)\s*$/;
-const SET_SUFFIX = /\s+\(([A-Za-z0-9]{2,6})\)(?:\s+[\w-]+)?(?:\s+\*[A-Z]\*)?$/;
+const SET_SUFFIX = /\s+\(([A-Za-z0-9]{2,6})\)(?:\s+([\w-]+))?(?:\s+\*[A-Z]\*)?$/;
 
-function add(entries: DeckEntries, n: number, name: string): void {
+/** Ajoute des exemplaires ; la première impression citée pour un nom vaut pour tous ses exemplaires. */
+function add(entries: DeckEntries, n: number, name: string, printing?: string): void {
   const existing = entries.find((e) => e[1] === name);
-  if (existing) existing[0] += n;
-  else entries.push([n, name]);
+  if (!existing) entries.push(printing ? [n, name, printing] : [n, name]);
+  else {
+    existing[0] += n;
+    if (printing && !existing[2]) existing[2] = printing;
+  }
 }
 
 /**
@@ -213,6 +222,7 @@ export function parseDeckList(text: string, index: CardIndex): ParsedDeck {
     }
     if (section === "ignore") return;
     const count = Number(m[2]);
+    const suffix = SET_SUFFIX.exec(m[3] as string);
     const cardText = (m[3] as string).replace(SET_SUFFIX, "").trim();
     const name = index.find(cardText);
     if (!name) {
@@ -227,8 +237,11 @@ export function parseDeckList(text: string, index: CardIndex): ParsedDeck {
       return;
     }
     const toSide = m[1] === "SB" || section === "side" || (!sawHeader && sawBlankAfterCards);
-    add(toSide ? out.sideboard : out.main, count, name);
     const c = index.cards[name];
+    // « (SPG) 13 » : une impression de la carte (réédition), retenue pour son illustration.
+    const key = suffix?.[2] ? `${suffix[1]?.toUpperCase()}-${suffix[2]}` : undefined;
+    const printing = key && c?.printings?.some((p) => p.key === key) ? key : undefined;
+    add(toSide ? out.sideboard : out.main, count, name, printing);
     const illegal = c && legalityIssue(c);
     if (illegal) out.issues.push({ line: n, text: line, kind: "illegal", message: illegal });
     if (!c?.implemented) {
@@ -249,9 +262,11 @@ export function serializeDeckList(
   opts: { format?: "mtga" | "plain"; lang?: "en" | "fr" } = {},
 ): string {
   const format = opts.format ?? "mtga";
-  const line = ([n, name]: [number, string]) => {
+  const line = ([n, name, key]: DeckEntry) => {
     const c = cards[name];
-    if (format === "mtga") return `${n} ${exportName(c, name)}${c?.set && c.number ? ` (${c.set}) ${c.number}` : ""}`;
+    const p = key ? c?.printings?.find((x) => x.key === key) : undefined;
+    const set = p ? ` (${p.set}) ${p.number}` : c?.set && c.number ? ` (${c.set}) ${c.number}` : "";
+    if (format === "mtga") return `${n} ${exportName(c, name)}${set}`;
     return `${n} ${(opts.lang === "fr" && c?.fr?.name) || name}`;
   };
   const side = deck.sideboard ?? [];

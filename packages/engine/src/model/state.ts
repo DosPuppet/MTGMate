@@ -847,6 +847,8 @@ export interface GameState {
   turnLog: TurnLogEntry[];
   /** Effets sur les joueurs créés par des résolutions (`PlayerEffect`). */
   playerEffects: PlayerEffect[];
+  /** Impression choisie par le deck pour une carte, par identité physique (`uid` → `CardPrinting.key`, PLAN-G). */
+  printings?: Record<string, string>;
   winner: PlayerId | null;
   over: boolean;
 }

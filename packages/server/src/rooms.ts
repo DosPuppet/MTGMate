@@ -15,7 +15,17 @@ import {
   writeFileSync,
 } from "node:fs";
 import { join } from "node:path";
-import { buildDeck, CARDS, card, type DeckEntries, FORMAT_LABELS, isFormat, sideboardSwapError, validateDeck } from "@mtgx/cards";
+import {
+  buildDeck,
+  CARDS,
+  card,
+  type DeckEntries,
+  deckPrintings,
+  FORMAT_LABELS,
+  isFormat,
+  sideboardSwapError,
+  validateDeck,
+} from "@mtgx/cards";
 import {
   createRecordedGame,
   type Decision,
@@ -190,35 +200,28 @@ export function checkSide(main: DeckEntries, raw: unknown, format: Format = "sta
   return side;
 }
 
-/** Lignes de deck reçues : [nombre, nom], forme vérifiée. */
+/** Lignes de deck reçues : [nombre, nom, impression ?], forme vérifiée. */
 function checkEntries(raw: unknown): DeckEntries {
   if (!Array.isArray(raw) || raw.length > MAX_DECK_LINES) throw new ClientError("deck", "Deck invalide.");
   const out: DeckEntries = [];
   for (const line of raw) {
-    if (!Array.isArray(line) || line.length !== 2) throw new ClientError("deck", "Deck invalide.");
-    const [n, name] = line as [unknown, unknown];
+    if (!Array.isArray(line) || (line.length !== 2 && line.length !== 3)) throw new ClientError("deck", "Deck invalide.");
+    const [n, name, key] = line as [unknown, unknown, unknown];
     if (!Number.isInteger(n) || (n as number) < 1 || (n as number) > 60 || typeof name !== "string") {
       throw new ClientError("deck", "Deck invalide.");
     }
-    out.push([n as number, name]);
+    if (key !== undefined && key !== null && (typeof key !== "string" || key.length > 24)) {
+      throw new ClientError("deck", "Deck invalide.");
+    }
+    out.push(typeof key === "string" ? [n as number, name, key] : [n as number, name]);
   }
   return out;
 }
 
 /** Vérifie la forme et la légalité d'un deck reçu : légal dans le format du salon et entièrement jouable. */
 export function checkDeck(raw: unknown, format: Format = "standard"): DeckEntries {
-  if (!Array.isArray(raw) || raw.length === 0 || raw.length > MAX_DECK_LINES) {
-    throw new ClientError("deck", "Deck invalide.");
-  }
-  const deck: DeckEntries = [];
-  for (const line of raw) {
-    if (!Array.isArray(line) || line.length !== 2) throw new ClientError("deck", "Deck invalide.");
-    const [n, name] = line as [unknown, unknown];
-    if (!Number.isInteger(n) || (n as number) < 1 || (n as number) > 60 || typeof name !== "string") {
-      throw new ClientError("deck", "Deck invalide.");
-    }
-    deck.push([n as number, name]);
-  }
+  if (!Array.isArray(raw) || raw.length === 0) throw new ClientError("deck", "Deck invalide.");
+  const deck = checkEntries(raw);
   const v = validateDeck({ main: deck }, CARDS, format);
   if (!v.legal) throw new ClientError("deck", `Deck refusé : ${v.errors[0] ?? `illégal en ${FORMAT_LABELS[format]}`}.`);
   if (!v.playable) throw new ClientError("deck", "Deck refusé : il contient des cartes pas encore jouables.");
@@ -313,7 +316,12 @@ export class Room {
     const { state, events, record } = createRecordedGame({
       seed: randomInt(0, 2 ** 31),
       startingPlayer: starter,
-      players: this.seats.map((s) => ({ id: s.seat, name: s.name, deck: buildDeck({ main: s.deck }) })),
+      players: this.seats.map((s) => ({
+        id: s.seat,
+        name: s.name,
+        deck: buildDeck({ main: s.deck }),
+        printings: deckPrintings({ main: s.deck }),
+      })),
     });
     this.status = "playing";
     this.saveHeader(record);

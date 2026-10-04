@@ -6,9 +6,11 @@ import {
   CARDS,
   DEFAULT_FORMAT,
   type DeckEntries,
+  type DeckEntry,
   type DeckList,
   FORMAT_LABELS,
   legalityIssue,
+  SET_BY_CODE,
   SETS,
   validateDeck,
 } from "@mtgx/cards";
@@ -20,7 +22,7 @@ import { faceName } from "../i18n";
 import { useGame } from "../store";
 import { ExportModal, ImportModal } from "./ImportExport";
 import { searchFilter } from "./search";
-import { useAllDecks, useDecks } from "./store";
+import { printedFace, useAllDecks, useDecks } from "./store";
 
 const COLORS = ["W", "U", "B", "R", "G"] as const;
 const TYPES: [string, string][] = [
@@ -70,11 +72,29 @@ function legalityTag(c: CardDef): string | undefined {
 const count = (entries: DeckEntries) => entries.reduce((a, [n]) => a + n, 0);
 
 function withCount(entries: DeckEntries, name: string, delta: number): DeckEntries {
-  const out = entries.map((e) => [...e] as [number, string]);
+  const out = entries.map((e) => [...e] as DeckEntry);
   const e = out.find((x) => x[1] === name);
   if (e) e[0] += delta;
   else if (delta > 0) out.push([delta, name]);
   return out.filter(([n]) => n > 0);
+}
+
+/** Impression choisie pour `name` (absente : l'illustration de la carte), dans une liste. */
+function withPrinting(entries: DeckEntries, name: string, key: string | undefined): DeckEntries {
+  return entries.map(([n, x, p]): DeckEntry => (x !== name ? (p ? [n, x, p] : [n, x]) : key ? [n, x, key] : [n, x]));
+}
+
+/** L'impression suivante d'une carte : celle de la carte, puis celles des rééditions, dans l'ordre. */
+function nextPrinting(c: CardDef, key: string | undefined): string | undefined {
+  const keys = [undefined, ...(c.printings ?? []).map((p) => p.key)];
+  return keys[(keys.indexOf(key) + 1) % keys.length];
+}
+
+/** Nom de l'ensemble d'une impression (« Special Guests »), pour l'infobulle. */
+function printingLabel(c: CardDef, key: string | undefined): string {
+  const set = (key ? c.printings?.find((p) => p.key === key)?.set : undefined) ?? c.set ?? "";
+  const info = SET_BY_CODE[set];
+  return info ? `${info.nameFr ?? info.name} (${set})` : set;
 }
 
 // ---------------------------------------------------------------------------
@@ -278,10 +298,12 @@ const GROUPS: [string, (c: CardDef) => boolean][] = [
 function DeckLines({
   entries,
   onChange,
+  onPrinting,
   readOnly,
 }: {
   entries: DeckEntries;
   onChange: (name: string, d: number) => void;
+  onPrinting: (name: string, key: string | undefined) => void;
   readOnly: boolean;
 }) {
   const lang = useGame((s) => s.lang);
@@ -298,9 +320,9 @@ function DeckLines({
             <div className="deck-group-title">
               {label} <span>{count(lines)}</span>
             </div>
-            {lines.map(([n, name]) => {
+            {lines.map(([n, name, key]) => {
               const c = CARDS[name] as CardDef;
-              const face = cardFace(c);
+              const face = printedFace(cardFace(c), c, key);
               const illegal = legalityIssue(c);
               return (
                 <div
@@ -312,6 +334,22 @@ function DeckLines({
                   <span className="deck-line-n">{n}</span>
                   <span className="deck-line-name">{faceName(face, lang)}</span>
                   <ManaCost cost={face.manaCost} size={13} />
+                  {!!c.printings?.length && (
+                    <button
+                      type="button"
+                      className={`btn small deck-line-art ${key ? "on" : ""}`}
+                      disabled={readOnly}
+                      title={`Illustration : ${printingLabel(c, key)}${readOnly ? "" : " — cliquer pour changer"}`}
+                      aria-label={`Illustration de ${faceName(face, lang)} : ${printingLabel(c, key)}`}
+                      onClick={() => {
+                        const next = nextPrinting(c, key);
+                        onPrinting(name, next);
+                        setHover({ face: printedFace(cardFace(c), c, next) });
+                      }}
+                    >
+                      {(key ? c.printings?.find((p) => p.key === key)?.set : c.set) ?? "?"}
+                    </button>
+                  )}
                   {!readOnly && (
                     <span className="deck-line-btns">
                       <button type="button" className="btn small" onClick={() => onChange(name, -1)} aria-label="Retirer">
@@ -403,6 +441,11 @@ export function DeckBuilder() {
     }
     if (tab === "main") save({ ...deck, main: withCount(deck.main, name, delta) });
     else save({ ...deck, sideboard: withCount(deck.sideboard ?? [], name, delta) });
+  };
+  /** L'illustration d'une carte vaut pour le deck et la réserve. */
+  const choosePrinting = (name: string, key: string | undefined) => {
+    if (readOnly) return;
+    save({ ...deck, main: withPrinting(deck.main, name, key), sideboard: withPrinting(deck.sideboard ?? [], name, key) });
   };
   const opponent = decks.find((d) => d.id !== deck.id && validateDeck(d, CARDS).playable);
 
@@ -509,7 +552,12 @@ export function DeckBuilder() {
           </div>
           <Stats deck={deck} />
           <div className="deck-lines">
-            <DeckLines entries={tab === "main" ? deck.main : (deck.sideboard ?? [])} onChange={change} readOnly={readOnly} />
+            <DeckLines
+              entries={tab === "main" ? deck.main : (deck.sideboard ?? [])}
+              onChange={change}
+              onPrinting={choosePrinting}
+              readOnly={readOnly}
+            />
             {(tab === "main" ? deck.main : (deck.sideboard ?? [])).length === 0 && (
               <p className="hint">
                 Cliquez sur une carte de la collection pour l'ajouter{tab === "side" ? " à la réserve" : ""}.

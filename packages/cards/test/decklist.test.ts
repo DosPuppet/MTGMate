@@ -3,6 +3,7 @@ import {
   CARDS,
   CardIndex,
   DECKS,
+  type DeckEntries,
   EXCLUDED_REPRINTS,
   legalityIssue,
   parseDeckList,
@@ -110,7 +111,7 @@ describe("règles de construction", () => {
     const d = DECKS.find((x) => x.id === "bienvenue-rouge")!;
     // Même liste, dans un autre ordre et découpée autrement : reconnue.
     const [first, ...rest] = d.main;
-    const split: [number, string][] = [...rest.reverse(), [first![0] - 1, first![1]], [1, first![1]]];
+    const split: DeckEntries = [...rest.reverse(), [first![0] - 1, first![1]], [1, first![1]]];
     expect(validateDeck({ main: split }, CARDS)).toMatchObject({ legal: true, welcome: true, minMain: 40 });
     // Une carte changée : les 60 cartes minimum s'appliquent.
     const changed: [number, string][] = d.main.map(([n, name]) => [n, name === "Shivan Dragon" ? "Serra Angel" : name]);

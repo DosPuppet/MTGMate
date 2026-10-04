@@ -9,8 +9,9 @@ import type { AutopilotSettings, CardFace, Decision, Format, GameEvent, GameReco
  * Version du protocole : avec `RULES_VERSION`, envoyée par le client à la création, à l'arrivée et à la reprise d'un
  * salon. Un client d'une autre version (onglet resté ouvert, service worker périmé) est refusé et invité à recharger
  * la page. À faire avancer à tout changement incompatible des messages.
+ * - 2 : une ligne de deck peut citer une impression, `[nombre, nom, impression]` (PLAN-G, G1).
  */
-export const PROTOCOL_VERSION = 1;
+export const PROTOCOL_VERSION = 2;
 
 /** Versions du client (protocole et règles du moteur). */
 export interface ClientVersion {

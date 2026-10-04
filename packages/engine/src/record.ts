@@ -307,7 +307,8 @@ export interface GameRecord {
    */
   startingPlayer?: PlayerId;
   startingLife?: number;
-  players: { id: PlayerId; name: string; deck: string[] }[];
+  /** `printings` : impression choisie pour chaque carte du deck (même ordre ; absente si aucune). */
+  players: { id: PlayerId; name: string; deck: string[]; printings?: (string | null)[] }[];
   /** Décisions appliquées, dans l'ordre : [joueur qui a décidé, décision]. */
   decisions: [PlayerId, Decision][];
   /** Date de début (ISO), pour l'affichage. */
@@ -327,7 +328,12 @@ export function createRecordedGame(opts: GameOptions): StepResult & { record: Ga
     seed: opts.seed,
     startingPlayer: opts.startingPlayer,
     startingLife: opts.startingLife,
-    players: opts.players.map((p) => ({ id: p.id, name: p.name, deck: p.deck.map((c) => c.name) })),
+    players: opts.players.map((p) => ({
+      id: p.id,
+      name: p.name,
+      deck: p.deck.map((c) => c.name),
+      ...(p.printings?.some(Boolean) ? { printings: p.deck.map((_, i) => p.printings?.[i] ?? null) } : {}),
+    })),
     decisions: [],
     createdAt: new Date().toISOString(),
     rules: RULES_VERSION,
@@ -367,7 +373,14 @@ export function isGameRecord(x: unknown): x is GameRecord {
         r.checkpoints.every((c) => Array.isArray(c) && Number.isInteger(c[0]) && typeof c[1] === "string"))) &&
     (r.startingPlayer === undefined || typeof r.startingPlayer === "string") &&
     Array.isArray(r.players) &&
-    r.players.every((p) => typeof p?.id === "string" && typeof p.name === "string" && Array.isArray(p.deck)) &&
+    r.players.every(
+      (p) =>
+        typeof p?.id === "string" &&
+        typeof p.name === "string" &&
+        Array.isArray(p.deck) &&
+        (p.printings === undefined ||
+          (Array.isArray(p.printings) && p.printings.every((k) => k === null || typeof k === "string"))),
+    ) &&
     Array.isArray(r.decisions) &&
     r.decisions.every((d) => Array.isArray(d) && typeof d[0] === "string" && !!d[1] && typeof d[1] === "object")
   );
@@ -378,7 +391,7 @@ function initial(record: GameRecord, resolve: (name: string) => CardDef): StepRe
     seed: record.seed,
     startingPlayer: record.startingPlayer,
     startingLife: record.startingLife,
-    players: record.players.map((p) => ({ id: p.id, name: p.name, deck: p.deck.map(resolve) })),
+    players: record.players.map((p) => ({ id: p.id, name: p.name, deck: p.deck.map(resolve), printings: p.printings })),
   });
 }
 

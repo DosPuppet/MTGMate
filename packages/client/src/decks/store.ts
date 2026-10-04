@@ -2,6 +2,7 @@
  * Decks de l'utilisateur, conservés dans le navigateur (localStorage), plus les decks préconstruits.
  */
 import { CARDS, DECKS, type DeckList, deckColors } from "@mtgx/cards";
+import type { CardDef, CardFace } from "@mtgx/engine";
 import { create } from "zustand";
 import { createJSONStorage, persist, type StateStorage } from "zustand/middleware";
 import { imageUrl } from "../images";
@@ -75,9 +76,17 @@ export function useAllDecks(): DeckList[] {
   return [...DECKS, ...mine];
 }
 
-/** Illustration d'un deck : sa couverture, sinon la carte non-terrain la plus présente. */
+/** Illustration d'un deck : sa couverture, sinon la carte non-terrain la plus présente (dans l'impression choisie). */
 export function deckCover(deck: DeckList): string | undefined {
   if (deck.cover) return imageUrl(deck.cover);
   const best = [...deck.main].filter(([, name]) => !CARDS[name]?.types.includes("Land")).sort((a, b) => b[0] - a[0])[0];
-  return imageUrl(best ? CARDS[best[1]]?.artCrop : undefined);
+  const c = best ? CARDS[best[1]] : undefined;
+  return imageUrl(c?.printings?.find((p) => p.key === best?.[2])?.artCrop ?? c?.artCrop);
+}
+
+/** La face d'une carte dans l'impression choisie par le deck (PLAN-G : l'illustration d'une réédition). */
+export function printedFace(face: CardFace, c: CardDef, key: string | undefined): CardFace {
+  const p = key ? c.printings?.find((x) => x.key === key) : undefined;
+  if (!p?.image) return face;
+  return { ...face, image: p.image, ...(face.fr ? { fr: { ...face.fr, image: p.frImage ?? p.image } } : {}) };
 }

@@ -2,7 +2,7 @@
  * Réserve entre deux manches d'un BO3 : on déplace des exemplaires entre le deck et la réserve. Le nouveau deck doit
  * contenir les mêmes cartes qu'au début du match (deck et réserve réunis) et rester légal (`sideboardSwapError`).
  */
-import { CARDS, type DeckEntries, sideboardSwapError } from "@mtgx/cards";
+import { CARDS, type DeckEntries, type DeckEntry, sideboardSwapError } from "@mtgx/cards";
 import { useState } from "react";
 import { useGame } from "../store";
 
@@ -10,11 +10,13 @@ const total = (d: DeckEntries) => d.reduce((n, [k]) => n + k, 0);
 
 /** Retire un exemplaire de `name` de `from` et l'ajoute à `to`. */
 function moveOne(from: DeckEntries, to: DeckEntries, name: string): [DeckEntries, DeckEntries] {
-  const nextFrom = from.map(([n, x]) => [x === name ? n - 1 : n, x] as [number, string]).filter(([n]) => n > 0);
+  // L'impression choisie suit la carte d'une liste à l'autre.
+  const printing = from.find(([, x]) => x === name)?.[2];
+  const nextFrom = from.map(([n, x, p]): DeckEntry => [x === name ? n - 1 : n, x, p]).filter(([n]) => n > 0);
   const has = to.some(([, x]) => x === name);
   const nextTo = has
-    ? to.map(([n, x]) => [x === name ? n + 1 : n, x] as [number, string])
-    : [...to, [1, name] as [number, string]];
+    ? to.map(([n, x, p]): DeckEntry => [x === name ? n + 1 : n, x, p])
+    : [...to, (printing ? [1, name, printing] : [1, name]) as DeckEntry];
   return [nextFrom, nextTo];
 }
 
