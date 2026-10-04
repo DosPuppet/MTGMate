@@ -82,9 +82,10 @@ export const RED: Record<string, CardScript> = {
   "Fear of Missing Out": {
     abilities: [
       triggered(when.entersSelf, [fx.discard(1), fx.draw(1)], { label: "Défaussez une carte, puis piochez" }),
+      // « Attaque pour la première fois chaque tour » : la première attaque est notée même sans le délire.
       triggered(when.attacksSelf, [fx.untap(ref.target()), fx.extraCombat], {
         condition: cond.delirium,
-        oncePerTurn: true,
+        oncePerTurn: "firstEvent",
         targets: [target.creature()],
         label: "Délire — dégagez une créature, phase de combat supplémentaire",
       }),

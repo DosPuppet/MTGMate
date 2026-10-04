@@ -565,11 +565,11 @@ export const UNIQUE: Record<string, CardScript> = {
   },
   "Kambal, Profiteering Mayor": {
     abilities: [
-      triggered(
-        when.enters({ token: true, controller: "opponent" }),
-        [fx.copyToken(ref.permanentsOf(ref.eachOpponent, { token: true, enteredThisTurn: true }), { tapped: true })],
-        { oncePerTurn: true, batched: true, label: "Copies engagées des jetons adverses" },
-      ),
+      triggered(when.enters({ token: true, controller: "opponent" }), [fx.copyToken(ref.eventObjects, { tapped: true })], {
+        oncePerTurn: true,
+        batched: true,
+        label: "Copies engagées des jetons adverses",
+      }),
       triggered(when.enters({ token: true, controller: "you" }), fx.drain(1), { batched: true, label: "Drain 1" }),
     ],
   },

@@ -517,10 +517,11 @@ export const LEGENDS: Record<string, CardScript> = {
   "The Skullspore Nexus": {
     costReduction: { generic: amount.maxPower(CREATURE_YOU_CONTROL) },
     abilities: [
+      // « Une ou plusieurs … meurent » : un seul jeton, de la force totale de ces créatures (dernières informations).
       triggered(
         when.dies({ ...CREATURE_YOU_CONTROL, token: false }),
-        [fx.createXXToken(FUNGUS_DINOSAUR, amount.powerOf(ref.eventObject))],
-        { label: "Champignon Dinosaure" },
+        [fx.createXXToken(FUNGUS_DINOSAUR, amount.totalPowerOf(ref.eventObjects))],
+        { batched: true, label: "Champignon Dinosaure" },
       ),
       activated({
         mana: "{2}",

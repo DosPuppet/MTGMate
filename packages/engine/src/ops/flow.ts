@@ -147,7 +147,12 @@ export const HANDLERS: OpHandlers = {
     // Valeurs figées maintenant (« avec un marqueur de moins »), lues ensuite avec amount.v(nom).
     const vars: Record<string, ChoiceValue[]> = {};
     for (const [k, a] of Object.entries(e.vars ?? {})) vars[`$${k}`] = [evalAmount(s, ctx, a)];
-    createDelayed(s, ctx.controller, ctx.sourceId, ctx.sourceDefId, { targets: [], effects: e.effects, bound, vars }, e.at);
+    const ability = { targets: e.targets ?? [], effects: e.effects, bound, vars, ...(e.label ? { label: e.label } : {}) };
+    // « Quand [cet objet] … ce tour-ci » : les objets surveillés sont désignés maintenant.
+    const watch = e.watch ? resolveRef(s, ctx, e.watch) : undefined;
+    if (watch?.length === 0) return;
+    const event = e.on ? { on: e.on, ...(watch ? { watch } : {}) } : undefined;
+    createDelayed(s, ctx.controller, ctx.sourceId, ctx.sourceDefId, ability, e.at, event);
     return;
   },
   reflexive(s, r, e, ctx) {

@@ -537,6 +537,8 @@ function endStep(s: GameState): void {
     emit({ type: "step", step: next });
   } else {
     s.turn.number += 1;
+    // Capacités retardées « … ce tour-ci » : elles prennent fin avec le tour.
+    if (s.delayed.some((d) => d.at === "thisTurn")) s.delayed = s.delayed.filter((d) => d.at !== "thisTurn");
     // 500.7 : un tour supplémentaire (le dernier créé d'abord), sinon le joueur suivant.
     let extra = s.extraTurns?.pop();
     // Trouble in Pairs : un adversaire qui devrait commencer un tour supplémentaire le passe.

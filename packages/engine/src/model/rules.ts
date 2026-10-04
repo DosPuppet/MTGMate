@@ -223,8 +223,6 @@ export interface ObjectFilter {
   faceDown?: boolean;
   /** N'est pas le permanent auquel la source est attachée (« autre que la créature enchantée »). */
   notAttachedToSource?: boolean;
-  /** Objet lié à la source (Turn Inside Out : « quand elle meurt ce tour-ci »). */
-  linkedToSource?: boolean;
   /** Endurance supérieure à sa force (Fecund Greenshell). */
   toughnessAbovePower?: boolean;
   /** Force supérieure à sa force de base (Kutzil, Sovereign Okinec Ahau). */
@@ -276,13 +274,11 @@ export type TriggerSpec =
   /** `to` : seulement vers cette zone (« quand cet artefact est mis au cimetière depuis le champ de bataille »). */
   /** `whileCrafting` : exilé comme matériau d'une fabrication (Market Gnome). */
   /** `who` filtre : « chaque fois qu'une créature que vous contrôlez avec un marqueur +1/+1 quitte le champ de bataille ». */
-  /** `from` : une autre zone de départ que le champ de bataille (Kaya : des cartes de créature de votre cimetière exilées). */
   /** `withoutDying` : « quitte le champ de bataille sans mourir » (Dour Port-Mage, Three Tree Scribe). */
   | {
       on: "leaves";
       who: "self" | "linked" | ObjectFilter;
       to?: Zone;
-      from?: Zone;
       whileCrafting?: boolean;
       withoutDying?: boolean;
     }
@@ -632,6 +628,11 @@ export type Ref =
   | { kind: "eachPlayer" }
   /** L'objet de l'événement déclencheur (la créature qui arrive, meurt, attaque, le sort lancé…). */
   | { kind: "eventObject" }
+  /**
+   * « Une ou plusieurs … » : les objets de tous les événements du lot (« ces créatures », « l'une d'elles »), comme
+   * `eventObject` pour chacun ; dans un agrégat, un objet parti du champ de bataille est lu dans ses dernières informations.
+   */
+  | { kind: "eventObjects" }
   /** Le permanent auquel la source est attachée (« la créature équipée / enchantée »). */
   | { kind: "attached" }
   /** Les permanents attachés à l'objet désigné (« un Équipement attaché à cette créature », Light of Judgment). */

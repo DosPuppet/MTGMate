@@ -9,7 +9,7 @@ import * as dsl from "../src/dsl";
 import { RulesError } from "../src/errors";
 import { bump } from "../src/layers";
 import { legalActions } from "../src/legal";
-import { chars, moveObject } from "../src/state";
+import { chars, moveObject, rulesEvent } from "../src/state";
 import type { GameState } from "../src/types";
 import { projectView } from "../src/view";
 import {
@@ -245,6 +245,35 @@ describe("Duskmourn", () => {
     s = act(s, "p1", { type: "cast", card: idOf(s, "p1", "hand", "Pyroclasm") });
     s = settle(s);
     expect(s.battlefield.filter((id) => s.objects[id]?.faceDown && s.objects[id]?.controller === "p1")).toHaveLength(1);
+  });
+
+  it("Turn Inside Out : une capacité retardée (pas d'emblème) ; la créature adverse ciblée qui meurt ce tour-ci, pas au suivant", () => {
+    let s = scenario({
+      p1: { battlefield: lands("Mountain", 1), hand: ["Turn Inside Out"], library: lands("Forest", 4) },
+      p2: { battlefield: ["Llanowar Elves", "Bear Cub"] },
+    });
+    const elves = idOf(s, "p2", "battlefield", "Llanowar Elves");
+    const bear = idOf(s, "p2", "battlefield", "Bear Cub");
+    s = act(s, "p1", { type: "cast", card: idOf(s, "p1", "hand", "Turn Inside Out"), targets: { t: [elves] } });
+    s = settle(s);
+    expect(s.players.p1?.command).toHaveLength(0);
+    // Une autre créature qui meurt ne déclenche rien.
+    moveObject(s, bear, "graveyard");
+    expect(s.triggers).toHaveLength(0);
+    moveObject(s, elves, "graveyard");
+    expect(s.triggers.map((t) => t.controller)).toEqual(["p1"]);
+    s = settleAnswering(s);
+    expect(s.battlefield.filter((id) => s.objects[id]?.faceDown && s.objects[id]?.controller === "p1")).toHaveLength(1);
+    // Au tour suivant, la capacité a pris fin.
+    let t = scenario({
+      p1: { battlefield: lands("Mountain", 1), hand: ["Turn Inside Out"], library: lands("Forest", 4) },
+      p2: { battlefield: ["Llanowar Elves"] },
+    });
+    const elves2 = idOf(t, "p2", "battlefield", "Llanowar Elves");
+    t = settle(act(t, "p1", { type: "cast", card: idOf(t, "p1", "hand", "Turn Inside Out"), targets: { t: [elves2] } }));
+    t = advanceUntil(t, (x) => x.turn.active === "p2");
+    moveObject(t, elves2, "graveyard");
+    expect(t.triggers).toHaveLength(0);
   });
 
   it("Leyline of Mutation : {W}{U}{B}{R}{G} au lieu du coût de mana", () => {
@@ -1274,6 +1303,28 @@ describe("Duskmourn, lot K8 : rares (1)", () => {
     let u = scenario({ p1: { battlefield: ["Fear of Missing Out", { name: "Bear Cub", tapped: true }] } });
     u = attack(u, [idOf(u, "p1", "battlefield", "Fear of Missing Out")]);
     expect(u.stack).toHaveLength(0);
+  });
+
+  it("Fear of Missing Out : « pour la première fois chaque tour » — sans délire à la première attaque, une attaque plus tardive du tour ne déclenche plus rien", () => {
+    let s = scenario({
+      p1: {
+        battlefield: ["Fear of Missing Out", { name: "Bear Cub", tapped: true }],
+        hand: ["Pyroclasm"],
+        graveyard: DELIRIUM.slice(0, 3),
+      },
+    });
+    const fomo = idOf(s, "p1", "battlefield", "Fear of Missing Out");
+    s = attack(s, [fomo]);
+    expect(s.triggers).toHaveLength(0);
+    // Le délire arrive ensuite (un rituel au cimetière) ; une seconde attaque du même tour ne déclenche pas la capacité.
+    moveObject(s, idOf(s, "p1", "hand", "Pyroclasm"), "graveyard");
+    rulesEvent(s, { e: "attack", attacker: fomo, defender: "p2" });
+    expect(s.triggers).toHaveLength(0);
+    // Au tour suivant de son contrôleur, la première attaque se déclenche de nouveau.
+    s = advanceUntil(s, (x) => x.turn.active === "p2");
+    s = advanceUntil(s, (x) => x.turn.active === "p1");
+    s = attack(s, [fomo]);
+    expect(s.triggers.length + s.stack.length).toBeGreaterThan(0);
   });
 
   it("Ghostly Dancers : en arrivant, un enchantement du cimetière en main ou une porte déverrouillée ; sinistre, un Esprit 3/1 volant", () => {

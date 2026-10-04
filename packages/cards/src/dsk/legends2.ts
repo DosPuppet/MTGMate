@@ -119,15 +119,7 @@ export const LEGENDS2: Record<string, CardScript> = {
       [target.creature()],
       [
         fx.pump(ref.target(), 3, 0),
-        fx.emblem(
-          "Turn Inside Out",
-          "When that creature dies this turn, manifest dread.",
-          [triggered(when.dies({ linkedToSource: true }), [fx.manifestDread], { label: "Manifestation effroyable" })],
-          false,
-          true,
-          "e",
-        ),
-        fx.link(ref.target(), ref.stored("e")),
+        fx.whenThisTurn(when.dies({}), ref.target(), [fx.manifestDread], { label: "Manifestation effroyable" }),
       ],
     ),
   },

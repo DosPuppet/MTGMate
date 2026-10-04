@@ -1760,6 +1760,22 @@ describe("Outlaws of Thunder Junction, lot K8 : rares (2)", () => {
     expect(s.players.p1?.life).toBe(21);
   });
 
+  it("Kambal, Profiteering Mayor : seulement une copie de chacun des jetons du lot (pas des jetons arrivés plus tôt dans le tour)", () => {
+    let s = scenario({
+      active: "p2",
+      p1: { hand: ["Kambal, Profiteering Mayor"] },
+      p2: { battlefield: lands("Mountain", 2), hand: ["Dragon Fodder"] },
+    });
+    // Un Chat adverse arrivé ce tour-ci, avant Kambal.
+    createTokens(s, "p2", TOKEN_SPECS.Cat as TokenSpec, 1);
+    moveObject(s, idOf(s, "p1", "hand", "Kambal, Profiteering Mayor"), "battlefield");
+    expect(s.triggers).toHaveLength(0);
+    s = act(s, "p2", { type: "cast", card: idOf(s, "p2", "hand", "Dragon Fodder") });
+    s = settle(s);
+    expect(idsOf(s, "p1", "battlefield", "Goblin")).toHaveLength(2);
+    expect(idsOf(s, "p1", "battlefield", "Cat")).toHaveLength(0);
+  });
+
   it("Kellan Joins Up : complotez une carte non-terrain de VM 3 ou moins de votre main ; une créature légendaire qui arrive donne un marqueur à vos créatures", () => {
     let s = scenario({
       p1: {

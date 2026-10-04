@@ -143,20 +143,10 @@ export const BLACK: Record<string, CardScript> = {
     spell: spell(
       [target.creature()],
       [
-        fx.emblem(
-          "Fatal Fissure",
-          "When that creature dies this turn, you earthbend 4.",
-          [
-            triggered(when.dies({ linkedToSource: true }), fx.earthbend(ref.target(), 4), {
-              targets: [LAND_YOU_CONTROL],
-              label: "Maîtrise de la terre 4",
-            }),
-          ],
-          false,
-          true,
-          "e",
-        ),
-        fx.link(ref.target(), ref.stored("e")),
+        fx.whenThisTurn(when.dies({}), ref.target(), fx.earthbend(ref.target(), 4), {
+          targets: [LAND_YOU_CONTROL],
+          label: "Maîtrise de la terre 4",
+        }),
       ],
     ),
   },

@@ -209,6 +209,8 @@ export const ref = {
   target: (id = "t"): Ref => ({ kind: "target", id }),
   /** L'objet de l'événement déclencheur (« cette créature », « ce sort »…). */
   eventObject: { kind: "eventObject" } as Ref,
+  /** « Une ou plusieurs … » (déclenchement `batched`) : les objets de tous les événements du lot (« ces créatures »). */
+  eventObjects: { kind: "eventObjects" } as Ref,
   eventPlayer: { kind: "eventPlayer" } as Ref,
   self: { kind: "self" } as Ref,
   you: { kind: "you" } as Ref,
@@ -1469,6 +1471,25 @@ export const fx = {
     bind,
     ...(vars ? { vars } : {}),
   }),
+  /**
+   * Capacité retardée « quand [l'objet désigné] … ce tour-ci » (603.7c) : `trigger` sur un événement qui concerne l'un des
+   * objets de `watch` (figés maintenant), chaque fois jusqu'à la fin du tour ; `ref.eventObject` y est cet objet.
+   */
+  whenThisTurn: (
+    trigger: TriggerSpec,
+    watch: Ref,
+    effects: Effects,
+    opts: { targets?: TargetSpec[]; bind?: Record<string, Ref>; label?: string } = {},
+  ): Effect => ({
+    op: "delayed",
+    at: "thisTurn",
+    on: trigger,
+    watch,
+    effects: effects.flat(),
+    ...(opts.bind ? { bind: opts.bind } : {}),
+    ...(opts.targets ? { targets: opts.targets } : {}),
+    ...(opts.label ? { label: opts.label } : {}),
+  }),
   reflexive: (
     targets: TargetSpec[],
     effects: Effects,
@@ -2588,7 +2609,7 @@ export function triggered(
     /** Condition vérifiée au déclenchement seulement (« quand vous lancez ce sort en contrôlant une créature »). */
     triggerCondition?: Condition;
     label?: string;
-    oncePerTurn?: boolean | "ifDone";
+    oncePerTurn?: boolean | "ifDone" | "firstEvent";
     /** Se déclenche depuis le cimetière (Flamewake Phoenix). */
     fromGraveyard?: boolean;
     /** « une ou plusieurs … » : un seul déclenchement par lot d'événements. */

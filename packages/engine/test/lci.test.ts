@@ -7,7 +7,7 @@ import { card } from "@mtgx/cards";
 import { describe, expect, it } from "vitest";
 import { destroy, drawCards, gainLife } from "../src/actions";
 import { amount, fx, triggered, when } from "../src/dsl";
-import { moveWithSpec } from "../src/effects";
+import { addPump, moveWithSpec } from "../src/effects";
 import { RulesError } from "../src/errors";
 import { legalActions } from "../src/legal";
 import { bump, chars, untapObject } from "../src/state";
@@ -1152,6 +1152,22 @@ describe("Lost Caverns of Ixalan, lot K8 : cartes mythiques, rares et peu commun
         activateLabel(s, "p1", idOf(s, "p1", "battlefield", "The Skullspore Nexus"), "Doublez", { targets: { t: [bear] } }),
       );
       expect(pt(s, bear)).toEqual([4, 2]);
+    });
+
+    it("The Skullspore Nexus : plusieurs créatures non-jetons qui meurent ensemble donnent un seul jeton, de leur force totale (dernières informations)", () => {
+      let s = scenario({ p1: { battlefield: ["The Skullspore Nexus", "Hulking Raptor", "Bear Cub", "Llanowar Elves"] } });
+      const raptor = idOf(s, "p1", "battlefield", "Hulking Raptor");
+      const bear = idOf(s, "p1", "battlefield", "Bear Cub");
+      // La force au moment de mourir : Bear Cub a +2/+0.
+      addPump(s, [bear], 2, 0);
+      // Deux destructions du même lot d'événements.
+      destroy(s, raptor);
+      destroy(s, bear);
+      expect(s.triggers).toHaveLength(1);
+      s = resolve(s);
+      const fungus = tokens(s, "p1", "Fungus Dinosaur");
+      expect(fungus).toHaveLength(1);
+      expect(pt(s, fungus[0] as string)).toEqual([9, 9]);
     });
 
     it("Vito, Fanatic of Aclazotz : premier sacrifice +2 PV, deuxième −2 PV à chaque adversaire, troisième un Vampire Démon 4/3 volant (Bartolomé del Presidio)", () => {

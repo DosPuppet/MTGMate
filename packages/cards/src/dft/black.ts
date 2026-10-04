@@ -84,10 +84,8 @@ export const BLACK: Record<string, CardScript> = {
       triggered(
         when.attackWith(1),
         [
-          fx.modify(ref.target(), {
-            power: 1,
-            addAbilities: [triggered(when.diesSelf, [fx.surveil(1)], { label: "Surveillance 1" })],
-          }),
+          fx.modify(ref.target(), { power: 1 }),
+          fx.whenThisTurn(when.dies({}), ref.target(), [fx.surveil(1)], { label: "Surveillance 1" }),
         ],
         { targets: [target.creature("t", { attacking: true })], label: "+1/+0" },
       ),

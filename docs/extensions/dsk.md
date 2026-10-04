@@ -52,7 +52,7 @@ Les scripts sont dans `packages/cards/src/dsk/` : `white`, `blue`, `black`, `red
   - les capacités de mana qui coûtent des PV ou posent un marqueur (Haunted Screen, Twitching Doll) ;
   - Marvin (`gainActivatedFrom`) ;
   - `fx.chooseAmong` (« ce joueur choisit l'une d'elles », Trial of Agony) ;
-  - un emblème mémorisé, auquel on lie la cible (`fx.emblem(..., store)`, `fx.link(what, to)`, filtre `linkedToSource`), pour « quand elle meurt ce tour-ci » (Turn Inside Out) ;
+  - un emblème mémorisé, auquel on lie la cible, pour « quand elle meurt ce tour-ci » (Turn Inside Out) ; remplacé par la capacité retardée liée à un objet (`fx.whenThisTurn`, PLAN-A A4b) ;
   - `ref.filtered` (Ghost Vacuum), et les conditions `step`, `creatureDiedMatching` et `castFromGraveyard` (Undead Sprinter).
 
 Tests : `engine/test/dsk.test.ts` (18 tests) et le test de fumée `ai/test/smoke/dsk.test.ts`.

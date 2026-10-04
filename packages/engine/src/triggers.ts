@@ -45,6 +45,7 @@ import type {
   CardType,
   Condition,
   DelayedTiming,
+  DelayedTrigger,
   GameState,
   InlineAbility,
   LkiSnapshot,
@@ -459,8 +460,6 @@ function matchWho(who: "self" | ObjectFilter, v: LkiSnapshot, src: Source): bool
   if (who === "self") return v.id === src.id;
   // « la créature équipée / enchantée »
   if (who.attachedToSource && v.id !== src.view.attachedTo) return false;
-  // Turn Inside Out : l'objet lié à l'emblème.
-  if (who.linkedToSource && !src.view.linked?.includes(v.id)) return false;
   return matchesView(v, withChosen(who, src.view), src.view.controller, src.id);
 }
 
@@ -533,13 +532,6 @@ function matchTrigger(s: GameState, ev: RulesEvent, t: TriggerSpec, src: Source)
     case "controlChange":
       return ev.e === "controlChange" && ev.from === me && ev.to !== me ? { objectId: ev.objectId, player: ev.to } : null;
     case "leaves": {
-      // Depuis une autre zone (Kaya : cartes de votre cimetière exilées) : la carte arrivée, vue dans sa nouvelle zone.
-      if (t.from && t.from !== "battlefield") {
-        if (ev.e !== "zone" || ev.from !== t.from || (t.to && ev.to !== t.to) || !ev.newId || typeof t.who !== "object")
-          return null;
-        const v = liveView(s, ev.newId);
-        return v && matchWho(t.who, v, src) ? { objectId: ev.newId, player: v.controller } : null;
-      }
       if (ev.e !== "zone" || ev.from !== "battlefield" || !ev.lki) return null;
       if (t.to && ev.to !== t.to) return null;
       if (t.whileCrafting && !s.turn.crafting) return null;
@@ -854,7 +846,13 @@ function matchTrigger(s: GameState, ev: RulesEvent, t: TriggerSpec, src: Source)
       if (t.whose === "you" && owner !== me) return null;
       if (t.filter) {
         const d = s.defs[card?.defId ?? ev.lki?.defId ?? ""];
-        if (!d || (t.filter.types && !t.filter.types.some((x) => d.types.includes(x)))) return null;
+        // Depuis le champ de bataille : ses types et son contrôleur au moment de partir (Kaya, Spirits' Justice : « des
+        // créatures que vous contrôlez et/ou des cartes de créature de votre cimetière ») ; ailleurs : la carte et son
+        // propriétaire.
+        const types = ev.from === "battlefield" && ev.lki ? ev.lki.types : d?.types;
+        if (!d || !types || (t.filter.types && !t.filter.types.some((x) => types.includes(x)))) return null;
+        const controller = ev.from === "battlefield" && ev.lki ? ev.lki.controller : owner;
+        if (t.filter.controller && (controller === me) !== (t.filter.controller === "you")) return null;
         if (t.filter.permanent && !d.types.some((x) => PERMANENT_TYPES.includes(x))) return null;
         // « une ou plusieurs cartes de créature » (Robot Domination, Moonshadow) : un jeton n'est pas une carte.
         const token = card?.isToken ?? ev.lki?.isToken ?? false;
@@ -982,6 +980,12 @@ export function detectTriggers(s: GameState, ev: RulesEvent, only?: (src: Source
       if (!!ab.fromGraveyard !== (s.objects[src.id]?.zone === "graveyard")) return;
       const data = matchTrigger(s, ev, ab.trigger, src);
       if (!data) return;
+      // « … pour la première fois chaque tour » : le premier événement est noté avant la condition « si … » (603.4).
+      if (ab.oncePerTurn === "firstEvent") {
+        const key = onceKey(src.view.defId, src.id, index);
+        if (s.turn.onceFired.includes(key)) return;
+        s.turn.onceFired.push(key);
+      }
       // Nowhere to Run : la garde des créatures des adversaires de son contrôleur ne se déclenche pas.
       if (
         ab.ward &&
@@ -998,8 +1002,23 @@ export function detectTriggers(s: GameState, ev: RulesEvent, only?: (src: Source
       // de blessures de combat, une passe d'actions basées sur l'état) ; hors d'un lot (coûts payés en lançant), les
       // événements partagent le numéro courant.
       const batch = currentBatch ?? s.eventBatch ?? 0;
-      if (ab.batched && s.triggers.some((t) => t.sourceId === src.id && t.abilityIndex === index && t.batch === batch)) return;
-      if (ab.oncePerTurn) {
+      if (ab.batched) {
+        // Les objets des autres événements du lot rejoignent le déclenchement en attente (`ref.eventObjects`).
+        const same = s.triggers.filter((t) => t.sourceId === src.id && t.abilityIndex === index && t.batch === batch);
+        if (same.length > 0) {
+          if (data.objectId)
+            for (const t of same) {
+              const known = [t.event, ...(t.event.others ?? [])].some((x) => x.objectId === data.objectId);
+              if (!known)
+                t.event.others = [
+                  ...(t.event.others ?? []),
+                  { objectId: data.objectId, ...(data.newObjectId ? { newObjectId: data.newObjectId } : {}) },
+                ];
+            }
+          return;
+        }
+      }
+      if (ab.oncePerTurn && ab.oncePerTurn !== "firstEvent") {
         const key = onceKey(src.view.defId, src.id, index);
         if (s.turn.onceFired.includes(key)) return;
         // « Faites ceci une seule fois par tour » : noté quand l'effet est fait (`doneOncePerTurn`).
@@ -1026,6 +1045,43 @@ export function detectTriggers(s: GameState, ev: RulesEvent, only?: (src: Source
         detectTriggers(s, { e: "attackTriggered", player: src.view.controller, objectId: src.id });
     });
   }
+  if (!only) detectDelayedOnEvent(s, ev);
+}
+
+/**
+ * Capacités retardées sur un événement (603.7c : « quand cette créature meurt ce tour-ci », « quand vous perdez le
+ * contrôle de cet Équipement ce tour-ci ») : l'événement doit concerner un objet surveillé.
+ */
+function detectDelayedOnEvent(s: GameState, ev: RulesEvent): void {
+  for (const d of s.delayed) {
+    if (!d.on || (d.at === "thisTurn" && d.notBeforeTurn !== s.turn.number)) continue;
+    const src = delayedSource(s, d);
+    const data = matchTrigger(s, ev, d.on, src);
+    if (!data?.objectId || (d.watch && !d.watch.includes(data.objectId))) continue;
+    const c = d.ability.condition;
+    if (c && !checkCondition(s, c, d.controller, d.sourceId, data.objectId, data)) continue;
+    pushInline(s, d.controller, d.sourceId, d.sourceDefId, d.ability, data);
+  }
+}
+
+/** La source d'une capacité retardée, vue de son contrôleur (ses dernières informations, sinon un objet vide). */
+function delayedSource(s: GameState, d: DelayedTrigger): Source {
+  const v = liveView(s, d.sourceId) ?? s.lki[d.sourceId];
+  const base: LkiSnapshot = v ?? {
+    id: d.sourceId,
+    defId: d.sourceDefId,
+    owner: d.controller,
+    controller: d.controller,
+    types: [],
+    subtypes: [],
+    supertypes: [],
+    colors: [],
+    power: 0,
+    toughness: 0,
+    keywords: [],
+    isToken: false,
+  };
+  return { id: d.sourceId, view: { ...base, controller: d.controller } };
 }
 
 function inlineOf(ab: TriggeredAbilityDef): InlineAbility {
@@ -1050,7 +1106,13 @@ export function createDelayed(
   sourceDefId: string,
   ability: InlineAbility,
   at: DelayedTiming = "nextEndStep",
+  event?: { on: TriggerSpec; watch?: ObjectId[] },
 ): void {
+  // « … ce tour-ci » : sur un événement, jusqu'à la fin de ce tour.
+  if (event) {
+    s.delayed.push({ id: newId(s, "d"), controller, sourceId, sourceDefId, at, notBeforeTurn: s.turn.number, ability, ...event });
+    return;
+  }
   const lateInTurn = s.turn.step === "end" || s.turn.step === "cleanup";
   // « à votre prochaine étape de fin » : celle de ce tour si c'est le vôtre et qu'elle n'est pas passée.
   s.delayed.push({
@@ -1105,7 +1167,7 @@ function triggerDoublers(s: GameState, src: Source, ev: RulesEvent): number {
 /** Au début de l'étape de fin (ou à la fin du combat) : les capacités retardées dont c'est le moment se déclenchent. */
 export function releaseDelayedTriggers(s: GameState, moment: "end" | "endCombat" | "upkeep" | "main" = "end"): void {
   const due = s.delayed.filter((d) => {
-    if (d.notBeforeTurn > s.turn.number) return false;
+    if (d.on || d.notBeforeTurn > s.turn.number) return false;
     // Mana Sculpt : « au début de votre prochaine phase principale » (celle d'après combat comprise).
     if (moment === "main") return d.at === "yourNextMain" && s.turn.active === d.controller;
     if (d.at === "yourNextMain") return false;

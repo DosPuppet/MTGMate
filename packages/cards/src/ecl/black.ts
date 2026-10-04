@@ -52,11 +52,19 @@ export const BLACK: Record<string, CardScript> = {
   "Twilight Diviner": {
     abilities: [
       triggered(when.entersSelf, [fx.surveil(2)], { label: "Surveillance 2" }),
-      // « Une ou plusieurs autres créatures » : une seule fois par tour, une copie de l'une d'elles (la première).
+      // « Une ou plusieurs autres créatures » (celles arrivées ou lancées depuis un cimetière) : une seule fois par tour, une
+      // copie de l'une d'elles, au choix.
       triggered(
         { on: "enters", who: { types: ["Creature"], controller: "you", other: true }, fromZone: "graveyard" },
-        [fx.copyToken(ref.eventObject)],
-        { oncePerTurn: true, label: "Une créature revenue du cimetière : jeton copie (une fois par tour)" },
+        [
+          fx.chooseAmong(ref.eventObjects, ref.you, "c", { prompt: "Choisissez la créature à copier" }),
+          fx.copyToken(ref.stored("c")),
+        ],
+        {
+          oncePerTurn: true,
+          batched: true,
+          label: "Créatures revenues du cimetière : jeton copie de l'une d'elles (une fois par tour)",
+        },
       ),
     ],
   },
@@ -381,15 +389,7 @@ export const BLACK: Record<string, CardScript> = {
       [target.creature("t", { controller: "you" })],
       [
         fx.modify(ref.target(), { addKeywords: ["deathtouch", "lifelink"] }),
-        fx.emblem(
-          "Scarblade's Malice",
-          "When that creature dies this turn, create a 2/2 black and green Elf creature token.",
-          [triggered(when.dies({ linkedToSource: true }), [fx.createTokens(ELF_BG)], { label: "Jeton Elfe 2/2" })],
-          false,
-          true,
-          "e",
-        ),
-        fx.link(ref.target(), ref.stored("e")),
+        fx.whenThisTurn(when.dies({}), ref.target(), [fx.createTokens(ELF_BG)], { label: "Jeton Elfe 2/2" }),
       ],
     ),
   },

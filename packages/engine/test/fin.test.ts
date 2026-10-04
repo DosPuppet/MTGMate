@@ -3823,6 +3823,24 @@ describe("Final Fantasy, lot K8 : cartes mythiques, rares et peu communes", () =
       expect(s.objects[sword]?.controller).toBe("p2");
     });
 
+    it("Stolen Uniform : quand vous perdez le contrôle de l'Équipement (au nettoyage), il est détaché de votre créature, pas avant", () => {
+      let s = scenario({
+        p1: { battlefield: ["Bear Cub", "Island"], hand: ["Stolen Uniform"] },
+        p2: { battlefield: ["Buster Sword"] },
+      });
+      const sword = idOf(s, "p2", "battlefield", "Buster Sword");
+      const bear = idOf(s, "p1", "battlefield", "Bear Cub");
+      s = resolve(cast(s, "p1", "Stolen Uniform", { targets: { c: [bear], e: [sword] } }));
+      // À l'étape de fin, l'Équipement est encore à vous et attaché.
+      s = advanceUntil(s, (x) => x.turn.step === "end" && x.stack.length === 0 && x.triggers.length === 0);
+      expect(s.objects[sword]?.attachedTo).toBe(bear);
+      expect(s.objects[sword]?.controller).toBe("p1");
+      s = advanceUntil(s, (x) => x.turn.active === "p2");
+      expect(s.objects[sword]?.controller).toBe("p2");
+      expect(s.objects[sword]?.attachedTo).toBeUndefined();
+      expect(pt(s, bear)).toEqual([2, 2]);
+    });
+
     it("Summon: Anima : I à III, piochez et perdez 1 PV ; IV, chaque adversaire sacrifie une créature et perd 3 PV ; menace", () => {
       let s = scenario({ p1: { battlefield: lands("Swamp", 6), hand: ["Summon: Anima"] } });
       s = resolve(cast(s, "p1", "Summon: Anima"));

@@ -345,8 +345,11 @@ export const RECORD_VERSION = 1;
  * - 128 : familles génériques (A3a) : filtre de propriétaire et référence `ownerOf`, dernier contrôleur connu d'un objet
  *   parti du champ de bataille ce tour-ci (`controllerOf`), noms différents au choix et au sacrifice en coût,
  *   destinataire des blessures des déclencheurs (`to`).
+ * - 129 : familles moyennes (A4b) : objets d'un lot « un ou plusieurs » (`ref.eventObjects`), capacité retardée liée à
+ *   un objet pour le reste du tour (`fx.whenThisTurn`, 603.7c), « la première fois chaque tour » noté avant la
+ *   condition « si » (`oncePerTurn: "firstEvent"`).
  */
-export const RULES_VERSION = 128;
+export const RULES_VERSION = 129;
 
 /** Un point de contrôle toutes les N décisions (plus la dernière de la partie). */
 export const CHECKPOINT_EVERY = 25;

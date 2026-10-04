@@ -92,15 +92,7 @@ export const BLACK: Record<string, CardScript> = {
       [target.creature()],
       [
         fx.pump(ref.target(), 1, -1),
-        fx.emblem(
-          "Desperate Measures",
-          "When it dies under your control this turn, draw two cards.",
-          [triggered(when.dies({ linkedToSource: true, controller: "you" }), [fx.draw(2)], { label: "Piochez deux cartes" })],
-          false,
-          true,
-          "e",
-        ),
-        fx.link(ref.target(), ref.stored("e")),
+        fx.whenThisTurn(when.dies({ controller: "you" }), ref.target(), [fx.draw(2)], { label: "Piochez deux cartes" }),
       ],
     ),
   },

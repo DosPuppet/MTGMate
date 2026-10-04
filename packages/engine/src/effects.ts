@@ -322,6 +322,16 @@ export function evalCondition(s: GameState, ctx: EffectContext, c: Condition): b
   }
 }
 
+/** L'objet d'un événement tel qu'il est encore, sinon ce qu'il est devenu, sinon ses dernières informations connues. */
+function eventObjectNow(s: GameState, ev: { objectId?: ObjectId; newObjectId?: ObjectId }): ObjectId[] {
+  if (!ev.objectId) return [];
+  // L'objet tel qu'il est encore, sinon ce qu'il est devenu après son changement de zone.
+  if (s.objects[ev.objectId] || s.stack.some((x) => x.id === ev.objectId)) return [ev.objectId];
+  if (ev.newObjectId && s.objects[ev.newObjectId]) return [ev.newObjectId];
+  // Parti sans laisser d'objet (jeton, copie) : ses dernières informations connues (marqueurs, définition copiée).
+  return s.lki[ev.objectId] ? [ev.objectId] : [];
+}
+
 export function resolveRef(s: GameState, ctx: EffectContext, ref: Ref): string[] {
   switch (ref.kind) {
     case "target":
@@ -334,14 +344,12 @@ export function resolveRef(s: GameState, ctx: EffectContext, ref: Ref): string[]
       return opponentsOf(s, ctx.controller);
     case "eachPlayer":
       return alivePlayers(s);
-    case "eventObject": {
+    case "eventObject":
+      return ctx.event ? eventObjectNow(s, ctx.event) : [];
+    case "eventObjects": {
       const ev = ctx.event;
-      if (!ev?.objectId) return [];
-      // L'objet tel qu'il est encore, sinon ce qu'il est devenu après son changement de zone.
-      if (s.objects[ev.objectId] || s.stack.some((x) => x.id === ev.objectId)) return [ev.objectId];
-      if (ev.newObjectId && s.objects[ev.newObjectId]) return [ev.newObjectId];
-      // Parti sans laisser d'objet (jeton, copie) : ses dernières informations connues (marqueurs, définition copiée).
-      return s.lki[ev.objectId] ? [ev.objectId] : [];
+      if (!ev) return [];
+      return [...new Set([ev, ...(ev.others ?? [])].flatMap((x) => eventObjectNow(s, x)))];
     }
     case "eventPlayer":
       return ctx.event?.player ? [ctx.event.player] : [];
@@ -676,7 +684,19 @@ function propertyValues(s: GameState, id: ObjectId, property: AggregateProperty,
 /** Objets d'un agrégat : désignés (`of`), d'une zone (`zone`, `whose`), ou du filtre sur le champ de bataille. */
 function aggregateObjects(s: GameState, ctx: EffectContext, a: Extract<Amount, { kind: "aggregate" }>): ObjectId[] {
   if (a.of) {
-    const ids = resolveRef(s, ctx, a.of);
+    // Les objets du lot qui ont quitté le champ de bataille : leurs dernières informations connues (608.2h ; « la force
+    // totale de ces créatures », The Skullspore Nexus), pas les cartes qu'ils sont devenus.
+    const ev = ctx.event;
+    const ids =
+      a.of.kind === "eventObjects" && ev
+        ? [
+            ...new Set(
+              [ev, ...(ev.others ?? [])].flatMap((x) =>
+                x.objectId && !s.objects[x.objectId] && s.lki[x.objectId] ? [x.objectId] : eventObjectNow(s, x),
+              ),
+            ),
+          ]
+        : resolveRef(s, ctx, a.of);
     return a.filter ? ids.filter((id) => matchesCard(s, ctx.controller, id, a.filter as ObjectFilter, ctx.sourceId)) : ids;
   }
   const filter = a.filter ?? {};

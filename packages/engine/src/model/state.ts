@@ -17,6 +17,7 @@ import type {
   PendingDecision,
   PlayerStaticAbilityDef,
   TargetSpec,
+  TriggerSpec,
 } from "../types";
 
 export type PlayerId = string;
@@ -350,7 +351,12 @@ export type DelayedTiming =
   | "nextUpkeep"
   | "yourNextUpkeep"
   /** « au début de votre prochaine phase principale » (Mana Sculpt). */
-  | "yourNextMain";
+  | "yourNextMain"
+  /**
+   * « Quand [cet objet] … ce tour-ci » (603.7c) : la capacité retardée se déclenche sur un événement (`DelayedTrigger.on`),
+   * chaque fois qu'il se produit jusqu'à la fin du tour.
+   */
+  | "thisTurn";
 
 export interface DelayedTrigger {
   id: string;
@@ -359,8 +365,13 @@ export interface DelayedTrigger {
   sourceDefId: string;
   at: DelayedTiming;
   /** Créé pendant une étape de fin ou le nettoyage : ne se déclenche qu'à l'étape de fin du tour suivant. */
+  /** `thisTurn` : le tour de sa création (elle prend fin avec lui). */
   notBeforeTurn: number;
   ability: InlineAbility;
+  /** Capacité retardée sur un événement (« quand cette créature meurt ce tour-ci », Grim Javelineer) : le déclencheur. */
+  on?: TriggerSpec;
+  /** Objets surveillés (603.7c) : l'objet de l'événement doit en être un. */
+  watch?: ObjectId[];
 }
 
 /**
@@ -589,6 +600,11 @@ export interface TriggerEventData {
   newObjectId?: ObjectId;
   player?: PlayerId;
   amount?: number;
+  /**
+   * « Une ou plusieurs … » (déclenchement `batched`) : les objets des autres événements du lot, dans l'ordre (le premier
+   * est `objectId`) ; lus par `ref.eventObjects` (« ces créatures », « l'une d'elles »).
+   */
+  others?: { objectId?: ObjectId; newObjectId?: ObjectId }[];
 }
 
 /** Capacité déclenchée en attente d'être mise sur la pile (603.3). */

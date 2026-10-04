@@ -19,6 +19,7 @@ import type {
   Ref,
   TargetSpec,
   TokenSpec,
+  TriggerSpec,
 } from "../types";
 
 export type Effect =
@@ -357,12 +358,20 @@ export type Effect =
       for?: Ref;
     }
   /** Capacité déclenchée retardée : « au début de la prochaine étape de fin, … ». Les références sont figées maintenant. */
+  /**
+   * `on` et `watch` (avec `at: "thisTurn"`) : « quand [cet objet] … ce tour-ci » (603.7c), sur un événement qui concerne
+   * l'un des objets désignés maintenant ; `targets` : ses cibles, choisies quand elle se déclenche ; `label` : son libellé.
+   */
   | {
       op: "delayed";
       at: DelayedTiming;
       effects: Effect[];
       bind?: Record<string, Ref>;
       vars?: Record<string, Amount>;
+      on?: TriggerSpec;
+      watch?: Ref;
+      targets?: TargetSpec[];
+      label?: string;
     }
   /** Capacité déclenchée réflexive (« quand vous le faites, … ») : ses cibles sont choisies à sa mise sur la pile. */
   /** `bind` : objets figés maintenant, relus comme cibles par la capacité réflexive (« cette créature »). */

@@ -4249,6 +4249,40 @@ describe("Lorwyn Eclipsed, lot C", () => {
     expect(s.battlefield.filter((id) => chars(s, id).name === "Bear Cub")).toHaveLength(3);
   });
 
+  it("Twilight Diviner : plusieurs créatures revenues ensemble du cimetière : un seul déclenchement, copie de celle que vous choisissez", () => {
+    let s = scenario({
+      p1: {
+        battlefield: ["Twilight Diviner"],
+        hand: ["Llanowar Elves"],
+        graveyard: ["Bear Cub", "Shivan Dragon", "Healer's Hawk"],
+      },
+    });
+    const diviner = idOf(s, "p1", "battlefield", "Twilight Diviner");
+    const back = [idOf(s, "p1", "graveyard", "Bear Cub"), idOf(s, "p1", "graveyard", "Shivan Dragon")];
+    const elves = idOf(s, "p1", "hand", "Llanowar Elves");
+    // Un même effet : deux créatures du cimetière et une de la main.
+    runEffect(
+      s,
+      { ...resolutionOf(s, "p1", diviner), targets: { t: [...back, elves] } } as never,
+      dsl.fx.toBattlefield(dsl.ref.target()),
+    );
+    expect(s.triggers).toHaveLength(1);
+    s = passAccepting(s, (x) => x.pending?.kind === "choice");
+    const p = s.pending;
+    const req = p?.kind === "choice" ? p.request : undefined;
+    if (req?.type !== "pick") throw new Error("choix attendu");
+    expect((req.options as string[]).map((id) => chars(s, id).name).sort()).toEqual(["Bear Cub", "Shivan Dragon"]);
+    const cur = s;
+    s = act(s, "p1", { type: "choose", values: req.options.filter((id) => chars(cur, id as string).name === "Shivan Dragon") });
+    s = settleAll(s);
+    const dragons = s.battlefield.filter((id) => chars(s, id).name === "Shivan Dragon");
+    expect(dragons.filter((id) => s.objects[id]?.isToken)).toHaveLength(1);
+    // Une seule fois par tour : un autre retour du cimetière ne déclenche plus rien.
+    const hawk = idOf(s, "p1", "graveyard", "Healer's Hawk");
+    runEffect(s, { ...resolutionOf(s, "p1", diviner), targets: { t: [hawk] } } as never, dsl.fx.toBattlefield(dsl.ref.target()));
+    expect(s.triggers).toHaveLength(0);
+  });
+
   it("Ashling, Rimebound : deux mana restreints aux sorts de VM 4 ou plus", () => {
     let s = scenario({ p1: { battlefield: ["Ashling, Rekindled // Ashling, Rimebound"], hand: ["Shivan Dragon", "Bear Cub"] } });
     const ashling = idOf(s, "p1", "battlefield", "Ashling, Rekindled // Ashling, Rimebound");

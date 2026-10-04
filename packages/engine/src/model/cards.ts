@@ -1288,8 +1288,10 @@ export interface TriggeredAbilityDef {
   /** Capacité modale (« choisissez un — ») : le mode est choisi à la mise sur la pile. */
   modes?: ModeDef[];
   /** « Cette capacité ne se déclenche qu'une fois par tour. » ; `ifDone` : « faites ceci une seule fois par tour » (elle se
-   * déclenche tant que l'effet n'a pas été fait, `fx.doneOncePerTurn` le note ; Spider-Verse). */
-  oncePerTurn?: boolean | "ifDone";
+   * déclenche tant que l'effet n'a pas été fait, `fx.doneOncePerTurn` le note ; Spider-Verse) ; `firstEvent` : « … pour la
+   * première fois chaque tour » (noté au premier événement, même si la condition « si … » n'est pas remplie, 603.4 :
+   * Fear of Missing Out). */
+  oncePerTurn?: boolean | "ifDone" | "firstEvent";
   /** Se déclenche depuis le cimetière de son propriétaire (Flamewake Phoenix). */
   fromGraveyard?: boolean;
   /** « Choisissez un mode qui n'a pas déjà été choisi » (Demonic Pact) ; `turn` : ce tour-ci (Monument to Endurance). */

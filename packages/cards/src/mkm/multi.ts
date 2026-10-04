@@ -876,26 +876,23 @@ export const MULTI: Record<string, CardScript> = {
   },
   "Kaya, Spirits' Justice": {
     abilities: [
-      ...[
-        { on: "leaves" as const, who: { types: ["Creature" as const], controller: "you" as const }, to: "exile" as const },
+      // « Une ou plusieurs créatures que vous contrôlez et/ou cartes de créature de votre cimetière » : un déclenchement par
+      // lot ; vous pouvez choisir une carte de créature parmi elles.
+      triggered(
+        when.zoneChange(["battlefield", "graveyard"], { to: ["exile"], filter: { types: ["Creature"], controller: "you" } }),
+        [
+          fx.chooseAmong(ref.filtered(ref.eventObjects, { types: ["Creature"], token: false }), ref.you, "c", {
+            anyZone: true,
+            optional: true,
+            prompt: "Vous pouvez choisir une carte de créature exilée : un jeton en devient une copie, avec le vol",
+          }),
+          fx.becomeCopy(ref.target(), ref.stored("c"), "endOfTurn", { addKeywords: ["flying"] }),
+        ],
         {
-          on: "leaves" as const,
-          who: { types: ["Creature" as const], controller: "you" as const },
-          from: "graveyard" as const,
-          to: "exile" as const,
+          batched: true,
+          targets: [{ id: "t", label: "jeton que vous contrôlez", filter: { objects: { token: true, controller: "you" } } }],
+          label: "Des créatures exilées : un jeton devient une copie de l'une d'elles, avec le vol",
         },
-      ].map((w) =>
-        triggered(
-          w,
-          fx.may(
-            "Un jeton devient-il une copie de cette carte de créature (avec le vol) ?",
-            fx.becomeCopy(ref.target(), ref.eventObject, "endOfTurn", { addKeywords: ["flying"] }),
-          ),
-          {
-            targets: [{ id: "t", label: "jeton que vous contrôlez", filter: { objects: { token: true, controller: "you" } } }],
-            label: "Une créature exilée : un jeton devient une copie, avec le vol",
-          },
-        ),
       ),
       loyalty(2, {
         effects: [

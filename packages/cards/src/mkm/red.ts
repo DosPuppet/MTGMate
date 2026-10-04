@@ -160,15 +160,7 @@ export const RED: Record<string, CardScript> = {
       [target.creature("t", { controller: "you" })],
       [
         fx.pump(ref.target(), 2, 0, ["haste"]),
-        fx.emblem(
-          "Felonious Rage",
-          "When that creature dies this turn, create a 2/2 white and blue Detective creature token.",
-          [triggered(when.dies({ linkedToSource: true }), [fx.createTokens(DETECTIVE)], { label: "Détective 2/2" })],
-          false,
-          true,
-          "e",
-        ),
-        fx.link(ref.target(), ref.stored("e")),
+        fx.whenThisTurn(when.dies({}), ref.target(), [fx.createTokens(DETECTIVE)], { label: "Détective 2/2" }),
       ],
     ),
   },

@@ -196,29 +196,20 @@ export const RED: Record<string, CardScript> = {
     abilities: [triggered(when.entersSelf, [fx.createTokens(GOBLIN_BR)], { label: "Un jeton Gobelin 1/1" })],
   },
   "End-Blaze Epiphany": {
-    // « Quand cette créature meurt ce tour-ci » : emblème du tour lié à la cible (comme Turn Inside Out).
+    // « Quand cette créature meurt ce tour-ci » : capacité retardée sur sa mort (603.7c).
     spell: spell(
       [target.creature()],
       [
         fx.damage(amount.x, ref.target()),
-        fx.emblem(
-          "End-Blaze Epiphany",
-          "When that creature dies this turn, exile a number of cards from the top of your library equal to its power, then choose a card exiled this way. Until the end of your next turn, you may play that card.",
+        fx.whenThisTurn(
+          when.dies({}),
+          ref.target(),
           [
-            triggered(
-              when.dies({ linkedToSource: true }),
-              [
-                fx.exileTop(ref.you, amount.powerOf(ref.eventObject), "x"),
-                fx.grantPlay(ref.stored("x"), { untilYourNextTurn: true, oneOf: true }),
-              ],
-              { label: "Exilez autant de cartes que sa force ; vous pouvez jouer l'une d'elles" },
-            ),
+            fx.exileTop(ref.you, amount.powerOf(ref.eventObject), "x"),
+            fx.grantPlay(ref.stored("x"), { untilYourNextTurn: true, oneOf: true }),
           ],
-          false,
-          true,
-          "e",
+          { label: "Exilez autant de cartes que sa force ; vous pouvez jouer l'une d'elles" },
         ),
-        fx.link(ref.target(), ref.stored("e")),
       ],
     ),
   },

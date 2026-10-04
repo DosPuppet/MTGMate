@@ -31,6 +31,7 @@ import {
   lands,
   nameOf,
   passBoth,
+  pickNamed,
   scenario,
   settle,
   settleNoBlocks,
@@ -5412,6 +5413,36 @@ describe("Murders at Karlov Manor, lot C3 : cartes uniques", () => {
     s = settle(activateLabel(s, kaya, "Exilez une de vos créatures", { targets: { a: [bear], b: [] } }), yes);
     expect(chars(s, spirit).name).toBe("Bear Cub");
     expect(chars(s, spirit).keywords).toContain("flying");
+  });
+
+  it("Kaya, Spirits' Justice : une créature et une carte de créature du cimetière exilées ensemble : un seul déclenchement, vous choisissez la carte parmi elles", () => {
+    let s = scenario({ p1: { battlefield: ["Kaya, Spirits' Justice", "Bear Cub"], graveyard: ["Shivan Dragon", "Opt"] } });
+    createTokens(s, "p1", SPIRIT_WB, 1);
+    const spirit = idOf(s, "p1", "battlefield", "Spirit");
+    // Un même lot : la créature du champ de bataille, une carte de créature et un éphémère du cimetière.
+    moveObject(s, idOf(s, "p1", "battlefield", "Bear Cub"), "exile");
+    moveObject(s, idOf(s, "p1", "graveyard", "Shivan Dragon"), "exile");
+    moveObject(s, idOf(s, "p1", "graveyard", "Opt"), "exile");
+    expect(s.triggers).toHaveLength(1);
+    let options: string[] = [];
+    s = settle(s, (req, _p, cur) => {
+      if (req.type !== "pick" || !cur) return undefined;
+      options = (req.options as string[]).map((id) => nameOf(cur, id) ?? "").sort();
+      return pickNamed(cur, req, "Shivan Dragon");
+    });
+    expect(options).toEqual(["Bear Cub", "Shivan Dragon"]);
+    expect(chars(s, spirit).name).toBe("Shivan Dragon");
+    expect(chars(s, spirit).keywords).toContain("flying");
+    // « Vous pouvez » : sans choix, le jeton reste lui-même.
+    let t = scenario({ p1: { battlefield: ["Kaya, Spirits' Justice"], graveyard: ["Shivan Dragon"] } });
+    createTokens(t, "p1", SPIRIT_WB, 1);
+    moveObject(t, idOf(t, "p1", "graveyard", "Shivan Dragon"), "exile");
+    t = settle(t, (req) => (req.type === "pick" ? [] : undefined));
+    expect(chars(t, idOf(t, "p1", "battlefield", "Spirit")).name).toBe("Spirit");
+    // Une créature d'un adversaire exilée ne déclenche rien.
+    const u = scenario({ p1: { battlefield: ["Kaya, Spirits' Justice"] }, p2: { battlefield: ["Bear Cub"] } });
+    moveObject(u, idOf(u, "p2", "battlefield", "Bear Cub"), "exile");
+    expect(u.triggers).toHaveLength(0);
   });
 
   it("Kylox, Visionary Inventor : sacrifiez d'autres créatures, exilez X cartes (leur force totale), lancez-en les éphémères gratuitement", () => {

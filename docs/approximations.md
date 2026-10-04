@@ -61,12 +61,10 @@ Dans l'ordre où elles ont été ajoutées, extension par extension.
   - `règle` Choco, Seeker of Paradise : les cartes regardées sont meulées, puis une va en main et les terrains sur le champ de bataille ;
   - `règle` Memories Returning : vous choisissez les trois cartes gardées (l'adversaire ne choisit pas celles du dessous) ;
   - `règle` Sin, Spira's Punishment : six copies au plus par déclenchement ;
-  - `règle` Stolen Uniform : l'Équipement est détaché à l'étape de fin ;
   - `règle` Zenos, Shinryu : l'adversaire choisi est le premier qui perd la partie ;
   - `règle` Rydia, Summoner of Mist : toute carte de Saga de votre cimetière peut être ciblée ; elle ne revient que si sa valeur de mana vaut X.
 - **Aetherdrift (`docs/extensions/dft.md`) :**
   - `règle` Lifecraft Engine : tous vos Véhicules, même non-créatures, ont le type choisi (l'ensemble affecté en couche 4 ne suit pas la dépendance 613.8a envers l'équipage, plus récent) ;
-  - `règle` Grim Javelineer : « quand cette créature meurt ce tour-ci » est une capacité accordée jusqu'à la fin du tour ;
   - `règle` Cursecloth Wrappings : l'embaumement accordé est payé tout de suite (en rituel) et le jeton garde les couleurs de la carte ;
   - `règle` Radiant Lotus : c'est son contrôleur qui ajoute le mana (pas de joueur ciblé) ;
   - `règle` Full Throttle : deux combats supplémentaires après le combat normal (et non juste après la phase principale) ;
@@ -99,14 +97,12 @@ Dans l'ordre où elles ont été ajoutées, extension par extension.
   - `règle` Kaito (Monstrous Emergence) : en multijoueur, il attaque le joueur qu'attaque une de vos créatures ;
   - `règle` « le joueur défenseur », « ce joueur » : Fear of Falling et Fear of Burning Alive ciblent une créature adverse ;
   - `règle` Fear of Burning Alive : les blessures reportées sont infligées par Fear of Burning Alive, et non par la source qui a blessé l'adversaire (un sort n'a pas d'objet à désigner une fois résolu) ;
-  - `règle` Fear of Missing Out (« attaque pour la première fois chaque tour ») : une attaque plus tardive du même tour déclenche encore la capacité si le délire manquait à la première ;
   - `règle` conditions non vérifiées : l'attaque d'un joueur (Dollmaker's Shop : une créature non-Jouet qui attaque un planeswalker ou une bataille compte aussi), la Salle d'un nom différent (Central Elevator : une Salle a deux noms), les forces différentes (Rip, Spawn Hunter) ;
   - `règle` Unable to Scream : la créature face cachée peut encore être retournée ;
   - `règle` Leyline of Transformation : seulement les créatures sur le champ de bataille (pas les sorts ni les cartes) ;
   - `choix auto` Say Its Name : Altanak est cherché dans le cimetière, puis la main, puis la bibliothèque ;
   - `règle` Marvin, Murderous Mimic : seulement les capacités activées imprimées des autres créatures (pas celles accordées) ;
-  - `choix auto` Haunted Screen : le paiement automatique peut payer le point de vie de la capacité {G}/{U}/{R} ;
-  - `règle` Turn Inside Out : un emblème temporaire, lié à la créature, porte « quand elle meurt ce tour-ci ».
+  - `choix auto` Haunted Screen : le paiement automatique peut payer le point de vie de la capacité {G}/{U}/{R}.
 - **Bloomburrow (`docs/extensions/blb.md`) :**
   - `choix auto` Cadeau : il va à l'adversaire suivant dans l'ordre du tour (pas de choix de l'adversaire en multijoueur) ;
   - `choix auto` Fourrager : choix automatique, trois cartes du cimetière (terrains d'abord) s'il y en a au moins trois, sinon une Nourriture (un jeton de préférence) ;
@@ -128,7 +124,7 @@ Dans l'ordre où elles ont été ajoutées, extension par extension.
   - `règle` Unstable Glyphbridge : le choix des créatures épargnées se fait à la résolution ; Sandswirl Wanderglyph : « pendant son tour » est vérifié comme « pendant le tour d'un adversaire » ;
   - `règle` Kitesail Larcenist : jusqu'à deux cibles contrôlées par des joueurs différents ;
   - `règle` Locus of Enlightenment : les capacités gagnées ne sont pas limitées à une activation par tour ;
-  - `règle` The Skullspore Nexus : un jeton par créature mourante (et non un seul pour le lot) ; Ojer Kaslem : jusqu'à deux cartes parmi les créatures et terrains révélés ;
+  - `règle` Ojer Kaslem : jusqu'à deux cartes parmi les créatures et terrains révélés ;
   - `règle` Echoing Deeps : devient une copie du terrain (et s'engage) par une capacité déclenchée d'arrivée, et non en arrivant ;
   - `règle` Temple of the Dead : « un joueur a une carte ou moins en main » est vérifié pour vous et vos adversaires ;
   - `règle` Deep-Cavern Bat : la main adverse est montrée dans la fenêtre de choix.
@@ -164,7 +160,6 @@ Dans l'ordre où elles ont été ajoutées, extension par extension.
   - `règle` Grub, Notorious Auntie : le jeton copie est sacrifié par une capacité retardée, et non par une capacité qu'il porte ;
   - `règle` Swat Away : « si une créature vous attaque » est vrai dès qu'une créature adverse attaque (en multijoueur, même un autre joueur) ;
   - `règle` Dream Harvest : les terrains exilés peuvent aussi être joués (comme terrain du tour), pas seulement les sorts lancés ;
-  - `règle` Twilight Diviner : la capacité se déclenche pour une créature à la fois (la première revenue d'un cimetière dans le tour), et non pour un groupe ;
   - `timing` Raiding Schemes : la conspiration passe par une capacité déclenchée ; les deux créatures sont engagées à sa résolution, et non en lançant le sort ;
   - `timing` Celestial Reunion : le coût additionnel facultatif est vérifié à la résolution, pour un type de la carte trouvée (le joueur le paie toujours quand il le peut) ; la carte passe par la main avant le champ de bataille ;
   - `règle` Lasting Tarfire : « vous avez mis un marqueur » : le joueur qui met les marqueurs est le contrôleur de ce qui se résout, sinon (coût) le contrôleur du permanent ;
@@ -209,7 +204,6 @@ Dans l'ordre où elles ont été ajoutées, extension par extension.
   - `timing` Tin Street Gossip : {R}{G} vient d'une capacité activée qui utilise la pile (comme Troyan, Gutsy Explorer) ;
   - `règle` Officious Interrogation : au plus huit joueurs ciblés ;
   - `choix auto` Hedge Whisperer : elle reste engagée pendant votre étape de dégagement tant que son effet (le terrain 5/5) dure, et se dégage sinon ;
-  - `règle` Kaya, Spirits' Justice : une capacité par carte exilée (et non une pour « une ou plusieurs » cartes) ;
   - `règle` A Killer Among Us : le type choisi n'est pas révélé à part ; la capacité vérifie le type à la résolution ;
   - `règle` Kaya, Spirits' Justice (−2), Jetsam : « pour chaque autre joueur » et « les cimetières de vos adversaires » sont exacts en duel ; à plusieurs, une seule créature adverse est ciblée.
 - **Avatar: The Last Airbender (`docs/extensions/tla.md`) :**

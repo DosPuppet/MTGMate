@@ -25,7 +25,6 @@
  "Twin Bolt | target | 0 « target » dans le texte, 1 dans le script": "« divided as you choose among one or two targets » : une cible à répartition, sans le mot « target »",
  "Feral Encounter | target | 2 « target » dans le texte, 0 dans le script": "les cibles sont celles de l'emblème du tour (approximation documentée, `timing`)",
  "Become Brutes | target | 1 « target » dans le texte, 2 dans le script": "« one or two target creatures » : deux mots cible dans le script, le second facultatif",
- "Fatal Fissure | target | 2 « target » dans le texte, 1 dans le script": "maîtrise de la terre d'une capacité retardée : sa cible est choisie par l'effet",
  "Cruel Alliance | target | 2 « target » dans le texte, 1 dans le script": "cible remplacée (« instead ») : un seul mot cible, dont le nombre ou le filtre dépend du coût payé (kicker, cadeau, travail d'équipe)",
  "Too Evil to Stay Dead | target | 2 « target » dans le texte, 1 dans le script": "cible remplacée (« instead ») : un seul mot cible, dont le nombre ou le filtre dépend du coût payé (kicker, cadeau, travail d'équipe)",
  "The Eagles Are Coming! | target | 2 « target » dans le texte, 1 dans le script": "cible remplacée (« instead ») : un seul mot cible, dont le nombre ou le filtre dépend du coût payé (kicker, cadeau, travail d'équipe)",

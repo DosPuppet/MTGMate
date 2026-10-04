@@ -99,8 +99,14 @@ export const LEGENDS4: Record<string, CardScript> = {
       [
         fx.gainControl(ref.target("e")),
         fx.attach(ref.target("c"), ref.target("e")),
-        // Approximation : l'Équipement est détaché à l'étape de fin (le contrôle revient au nettoyage).
-        fx.delayed([fx.unattach(ref.target("e"), ref.target("c"))], { e: ref.target("e"), c: ref.target("c") }),
+        // « Quand vous perdez le contrôle de cet Équipement ce tour-ci, s'il est attaché à une créature que vous contrôlez,
+        // détachez-le » (au nettoyage, quand le contrôle revient).
+        fx.whenThisTurn(
+          when.opponentGainsControl,
+          ref.target("e"),
+          [fx.unattach(ref.target("e"), ref.permanentsOf(ref.you, { types: ["Creature"] }))],
+          { bind: { e: ref.target("e") }, label: "Détachez l'Équipement" },
+        ),
       ],
     ),
   },

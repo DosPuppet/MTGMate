@@ -7,7 +7,7 @@ import { describe, expect, it } from "vitest";
 import { createTokens, destroy } from "../src/actions";
 import { legalActions } from "../src/legal";
 import { manaValue } from "../src/mana";
-import { chars, moveObject } from "../src/state";
+import { bump, chars, moveObject } from "../src/state";
 import { playerStatic } from "../src/statics";
 import { stateBasedActions } from "../src/turn";
 import type { CardDef, ChoiceRequest, GameState, TokenSpec } from "../src/types";
@@ -4229,5 +4229,36 @@ describe("Aetherdrift : approximations levées (lot A1)", () => {
     changeCounters(s, cog, "+1/+1", 1);
     expect(vehicle.counters["+1/+1"]).toBe(2);
     expect(cog.counters["+1/+1"]).toBe(1);
+  });
+});
+
+describe("Aetherdrift : capacités retardées liées à un objet (PLAN-A, lot A4b)", () => {
+  it("Grim Javelineer : +1/+0 à un attaquant ; quand il meurt ce tour-ci, surveillance 1, même s'il a perdu ses capacités", () => {
+    let s = scenario({ p1: { battlefield: ["Grim Javelineer", "Bear Cub"], library: lands("Swamp", 3) } });
+    const javelineer = idOf(s, "p1", "battlefield", "Grim Javelineer");
+    const bear = idOf(s, "p1", "battlefield", "Bear Cub");
+    s = attack(s, [javelineer, bear]);
+    s = settleNoBlocks(s, picking([bear]));
+    expect(chars(s, bear).power).toBe(3);
+    // La capacité retardée n'est pas une capacité de la créature : elle perd toutes ses capacités, puis meurt.
+    s.effects.push({ id: "e-lose", timestamp: 999, affected: [bear], duration: "endOfTurn", loseAllAbilities: true });
+    bump(s);
+    expect(chars(s, bear).abilities).toHaveLength(0);
+    destroy(s, bear);
+    expect(s.triggers.map((t) => s.defs[t.sourceDefId]?.name)).toEqual(["Grim Javelineer"]);
+    expect(s.triggers[0]?.controller).toBe("p1");
+  });
+
+  it("Grim Javelineer : la créature qui meurt au tour suivant ne déclenche rien", () => {
+    let s = scenario({ p1: { battlefield: ["Grim Javelineer", "Bear Cub"], library: lands("Swamp", 3) } });
+    const javelineer = idOf(s, "p1", "battlefield", "Grim Javelineer");
+    const bear = idOf(s, "p1", "battlefield", "Bear Cub");
+    s = attack(s, [javelineer, bear]);
+    s = settleNoBlocks(s, picking([bear]));
+    expect(s.delayed).toHaveLength(1);
+    s = advanceUntil(s, (x) => x.turn.active === "p2");
+    expect(s.delayed).toHaveLength(0);
+    destroy(s, bear);
+    expect(s.triggers).toHaveLength(0);
   });
 });
