@@ -299,8 +299,10 @@ export const RECORD_VERSION = 1;
  * - 105 : déluge lu dans le texte (G2c) : les sorts lancés avant lui, par tous les joueurs, comptés au lancement (et non
  *   à la résolution ni seulement les vôtres : Stormscale Scion) ; surcharge et fendre proposées dans une option de
  *   lancement à part (sans gratuité) ; un sort qu'un joueur éliminé contrôle sans le posséder est exilé (800.4a).
+ * - 106 : terrains de Stellar Sights (G3a) : contrepartie d'une capacité de mana (`drawback` : blessures à vous, PV aux
+ *   adversaires).
  */
-export const RULES_VERSION = 105;
+export const RULES_VERSION = 106;
 
 /** Un point de contrôle toutes les N décisions (plus la dernière de la partie). */
 export const CHECKPOINT_EVERY = 25;

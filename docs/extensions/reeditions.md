@@ -55,3 +55,16 @@ le deck peut choisir son illustration (51 cartes). Détail dans le suivi du plan
   avant lui ce tour-ci, par tous les joueurs, est figé au lancement (`RulesEvent` `cast.spellsBefore`). Stormscale
   Scion (TDM) n'écrit plus le sien, qui comptait à la résolution et seulement vos sorts.
 - **Cartes :** Brain Freeze, Empty the Warrens, Flusterstorm (SOA). Tests : `soa.test.ts` (+2).
+
+## G3a — Stellar Sights, terrains faisables ✅ (35 / 43)
+
+- **Cartes (33) :** Ancient Tomb, Blinkmoth Nexus, Bonders' Enclave, Cascading Cataracts, Celestial Colonnade, Contested
+  War Zone, Creeping Tar Pit, Crystal Quarry, Deserted Temple, Dust Bowl, Eldrazi Temple, Endless Sands, Grove of the
+  Burnwillows, High Market, Hissing Quagmire, Inventors' Fair, Lavaclaw Reaches, Lotus Field, Lumbering Falls, Mana
+  Confluence, Mirrorpool, Mutavault, Mystifying Maze, Needle Spires, Petrified Field, Raging Ravine, Scavenger Grounds,
+  Shambling Vent, Stirring Wildwood, Strip Mine, Terrain Generator, Thespian's Stage, Wandering Fumarole.
+- **Formes :** aide `manland` (terrains-créatures Élémentaux de Worldwake et d'Oath of the Gatewatch) ; contrepartie
+  d'une capacité de mana (`drawback`, nouveau) ; Thespian's Stage garde sa capacité (`becomeCopy`, `keepAbilities`) ;
+  Wandering Fumarole est la première carte à échanger F/E (`switchPT`, 613.4d).
+- **Tests :** `eos.test.ts` (+12).
+- **Approximation :** Eldrazi Temple, le mana restreint vaut pour tout sort ou capacité d'Eldrazi (incolore ou non).

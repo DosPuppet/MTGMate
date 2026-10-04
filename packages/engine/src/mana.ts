@@ -1,7 +1,7 @@
 /**
  * Mana : lecture des coûts, sources disponibles et solveur de paiement automatique.
  */
-import { payLife, sacrifice } from "./actions";
+import { dealDamage, gainLife, payLife, sacrifice, sourceFromObject } from "./actions";
 import { RulesError } from "./errors";
 import { bumpFor, linkedColors } from "./layers";
 import { collectEvidence, evidenceCards } from "./stack";
@@ -14,6 +14,7 @@ import {
   isCreature,
   moveObject,
   obj,
+  opponentsOf,
   sickForActivation,
   snapshot,
   tapObject,
@@ -501,7 +502,8 @@ export function activateManaAbility(
     !ab.addCounter &&
     !ab.removeCounter &&
     !ab.restriction &&
-    !ab.rider;
+    !ab.rider &&
+    !ab.drawback;
   const triggersBefore = s.triggers.length;
   const poolBefore = s.players[player]?.manaPool[c] ?? 0;
   // Source sacrifiée pour son coût (Trésor) : la quantité et les remplacements de mana se lisent d'après sa dernière
@@ -553,6 +555,9 @@ export function activateManaAbility(
     if (type !== c) otherBonus = true;
   }
   const amount = (pool?.[c] ?? 0) - poolBefore;
+  // Contrepartie (605.3b) : blessures infligées par la source à son contrôleur, PV gagnés par chaque adversaire.
+  if (ab.drawback?.damageYou && s.objects[id]) dealDamage(s, sourceFromObject(s, id), player, ab.drawback.damageYou, false);
+  if (ab.drawback?.opponentsGainLife) for (const p of opponentsOf(s, player)) gainLife(s, p, ab.drawback.opponentsGainLife);
   if (simple && !otherBonus && types.length <= 1 && s.triggers.length === triggersBefore && amount > 0)
     s.manaUndo = [...(s.manaUndo ?? []), { player, source: id, color: c, amount }];
   // La réserve a changé : une capacité statique peut en dépendre (Ozai, the Phoenix King).

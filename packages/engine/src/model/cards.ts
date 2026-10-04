@@ -416,6 +416,11 @@ export interface ManaAbilityDef {
   removeCounter?: string;
   /** Pit of Offerings : un mana de l'une des couleurs des cartes liées à la source (exilées avec elle). */
   produceLinkedColors?: boolean;
+  /**
+   * Contrepartie de la capacité de mana, appliquée en la résolvant (605.3b) : la source inflige des blessures à son
+   * contrôleur (Ancient Tomb, terrains « douloureux »), chaque adversaire gagne des PV (Grove of the Burnwillows).
+   */
+  drawback?: { damageYou?: number; opponentsGainLife?: number };
   /** The Core : autant de mana que de cartes de votre cimetière correspondant au filtre. */
   amountGraveyard?: ObjectFilter;
   /** Effet si ce mana sert à lancer un sort correspondant (Carnelian Orb : célérité ; Pyromancer's Goggles : copie). */

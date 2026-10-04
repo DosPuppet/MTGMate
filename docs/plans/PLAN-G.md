@@ -300,3 +300,9 @@ leur lot, avec une forme générique d'abord, selon la règle « pas de dette pr
   ni coût alternatif (le fuzz strict proposait Cyclonic Rift surchargé et gratuit) ; un joueur éliminé pendant qu'il
   contrôle un sort qu'il ne possède pas laissait l'objet « sur la pile » hors de la pile : il est exilé (800.4a, test
   dans `multiplayer.test.ts`).
+- **G3a (04/10/2026) :** 33 terrains de Stellar Sights avec les formes existantes, plus une contrepartie de capacité de
+  mana (`drawback` : Ancient Tomb, Grove of the Burnwillows) ; `RULES_VERSION` 106. Restent pour G3b les 8 terrains qui
+  demandent du moteur : Blast Zone, Gemstone Caverns, Inkmoth Nexus (infection), Meteor Crater et Plaza of Heroes (mana
+  des couleurs de vos permanents), Nesting Grounds (déplacer un marqueur), Reflecting Pool, Swarmyard (régénération).
+  L'IA aléatoire n'active plus une capacité d'une source qui en a déjà une sur la pile (la capacité {0} de Wandering
+  Fumarole faisait grossir la pile sans fin dans le fuzz).

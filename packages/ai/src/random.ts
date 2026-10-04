@@ -68,7 +68,10 @@ export function randomAgent(seed: number, passChance = 0.4): Agent {
       case "choice":
         return { type: "choose", values: mulberryChoice(rand, p.request) };
       case "priority": {
-        const actions = legalActions(s, me).filter((a) => a.type !== "pass");
+        // Pas une deuxième activation d'une source dont une capacité attend déjà sur la pile : une capacité gratuite
+        // (Wandering Fumarole, {0}) ferait grossir la pile plus vite que les passes ne la vident.
+        const busy = new Set(s.stack.filter((i) => i.kind === "ability" && i.controller === me).map((i) => i.sourceId));
+        const actions = legalActions(s, me).filter((a) => a.type !== "pass" && !(a.type === "activate" && busy.has(a.source)));
         if (actions.length === 0 || rand() < passChance) return { type: "pass" };
         const a = pick(rand, actions);
         if (!a) return { type: "pass" };

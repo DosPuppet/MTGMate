@@ -1652,6 +1652,8 @@ export function manaAbility(
     perGraveyard?: ObjectFilter;
     /** « … en n'importe quelle combinaison de couleurs » : chaque mana a son propre type. */
     combination?: boolean;
+    /** Contrepartie : blessures à vous, PV pour chaque adversaire (Ancient Tomb, Grove of the Burnwillows). */
+    drawback?: ManaAbilityDef["drawback"];
   } = {},
 ): ManaAbilityDef {
   return {
@@ -1665,6 +1667,7 @@ export function manaAbility(
     addCounter: opts.addCounter,
     removeCounter: opts.removeCounter,
     produceLinkedColors: opts.linkedColors,
+    ...(opts.drawback ? { drawback: opts.drawback } : {}),
     amountGraveyard: opts.perGraveyard,
     oncePerTurn: opts.oncePerTurn,
     produce: Array.isArray(produce) ? produce : [produce],
