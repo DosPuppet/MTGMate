@@ -309,8 +309,9 @@ export const RECORD_VERSION = 1;
  * - 109 : Special Guests (G4b) : destruction sans régénération possible (`noRegenerate`, Damnation).
  * - 110 : Special Guests (G4c) : limite de sorts par types (`castLimit.spellTypes`), « un joueur joue un terrain »
  *   (`playLand.whose`).
+ * - 111 : Breaking News (G6) : la recherche dans sa bibliothèque est notée au journal du tour (Archive Trap).
  */
-export const RULES_VERSION = 110;
+export const RULES_VERSION = 111;
 
 /** Un point de contrôle toutes les N décisions (plus la dernière de la partie). */
 export const CHECKPOINT_EVERY = 25;

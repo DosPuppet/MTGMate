@@ -462,7 +462,8 @@ export type TurnLogEntry =
   | { e: "lifeGain" | "lifeLoss"; player: PlayerId; amount: number; types?: CardType[]; subtypes?: string[] }
   /** Une carte piochée ; des cartes défaussées (`amount`) ; un regard ou une surveillance ; un crime (700.13) ; un permanent
    * retourné face visible. */
-  | { e: "draw" | "scry" | "crime" | "turnFaceUp"; player: PlayerId; types?: CardType[]; subtypes?: string[] }
+  /** `search` : recherche dans sa bibliothèque (Archive Trap : « si un adversaire a cherché dans sa bibliothèque »). */
+  | { e: "draw" | "scry" | "crime" | "turnFaceUp" | "search"; player: PlayerId; types?: CardType[]; subtypes?: string[] }
   | { e: "discard"; player: PlayerId; amount: number; types?: CardType[]; subtypes?: string[] }
   /** Maîtrise des éléments (Avatar). */
   | { e: "bend"; player: PlayerId; kind: "water" | "earth" | "fire" | "air"; types?: CardType[]; subtypes?: string[] }

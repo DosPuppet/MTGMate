@@ -162,3 +162,24 @@ le deck peut choisir son illustration (51 cartes). Détail dans le suivi du plan
 - **Sous-lot difficile :** Karmic Justice (destruction par un adversaire), Phyrexian Unlife (défaite et infection à 0 PV),
   As Foretold (coût alternatif selon les marqueurs, une fois par tour), Necropotence (pioche sautée, exil face cachée),
   Ground Seal (cartes des cimetières non ciblables), Shared Animosity (créatures qui partagent un type).
+
+## G6 — Breaking News ✅ (47 cartes ; OTP 50 / 61)
+
+- **Cartes :** Journey to Nowhere, Leyline Binding, Pariah, Path to Exile, Archive Trap, Archmage's Charm, Essence
+  Capture, Mana Drain, Mindbreak Trap, Repulse, Heartless Pillage, Imp's Mischief, Overwhelming Forces, Reanimate,
+  Thoughtseize, Crackle with Power, Electrodominance, Fling, Skullcrack, Clear Shot, Pest Infestation, Primal Command,
+  Thornado, Abrupt Decay, Anguished Unmaking, Back for More, Bedevil, Crime // Punishment, Cruel Ultimatum, Decimate,
+  Decisive Denial, Detention Sphere, Endless Detour, Hindering Light, Humiliate, Hypothesizzle, Ionize, Oko, Thief of
+  Crowns, Savage Smash, Siphon Insight, Tyrant's Scorn, Vanishing Verse, Villainous Wealth, Void Rend, Voidslime,
+  Contagion Engine, Mindslaver.
+- **Le moteur gagne :** la recherche dans sa bibliothèque au journal du tour (`turnEvents` `search`, Archive Trap).
+- **Tests :** `otp.test.ts` (+20).
+- **Audit :** Journey to Nowhere et Detention Sphere (exil jusqu'au départ en une seule capacité), Crackle with Power
+  (« up to X targets ») : écarts voulus.
+- **Approximations :** Hindering Light (un sort qui ne cible que vous n'est pas reconnu) ; Mindbreak Trap (le sort lancé
+  par un adversaire est compté par joueur).
+- **Sous-lot difficile :** Fell the Mighty (force comparée à une cible), Commandeer (contrôle d'un sort), Surgical
+  Extraction (mana phyrexian), Indomitable Creativity (révéler pour chaque permanent détruit), Force of Vigor (coût
+  alternatif en exilant une carte de la main), Terminal Agony (folie), Grindstone (meule répétée), Outlaws' Merriment
+  (mode au hasard), Fractured Identity (copies pour les autres joueurs), Unlicensed Hearse (F/E égales aux cartes liées),
+  Ride Down (créatures bloquées par une créature).

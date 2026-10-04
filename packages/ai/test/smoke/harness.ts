@@ -77,15 +77,18 @@ const EXTRA_P1_GRAVEYARD: Record<string, string[]> = {
 /** Cartes supplémentaires dans la main du joueur 2 (contresorts qui visent un sort de VM 4 ou plus). */
 const EXTRA_P2_HAND: Record<string, string[]> = {
   "Disdainful Stroke": ["Serra Angel"],
+  "Hindering Light": ["Shock"],
 };
 /** Permanents supplémentaires du joueur 2 (de quoi lancer ces sorts). */
-const EXTRA_P2: Record<string, string[]> = {};
+const EXTRA_P2: Record<string, string[]> = { "Hindering Light": ["Mountain"] };
 /**
  * Contresorts exigeants (« VM 4 ou plus ») : la partie commence au tour du joueur 2, qui lance ce sort ; le joueur 1 a
  * la priorité pour y répondre.
  */
 const P2_CASTS_FIRST: Record<string, string> = {
   "Disdainful Stroke": "Serra Angel",
+  // « un sort qui cible un permanent que vous contrôlez » : Shock vise une créature du joueur 1.
+  "Hindering Light": "Shock",
 };
 
 function setup(c: CardDef): GameState {
@@ -140,7 +143,18 @@ function setup(c: CardDef): GameState {
   });
   if (!first) return s;
   const spell = s.players.p2?.hand.find((id) => s.defs[s.objects[id]?.defId ?? ""]?.name === first) as string;
-  const cast = submit(s, "p2", { type: "cast", card: spell }).state;
+  // Ses cibles, de préférence chez le joueur 1.
+  const opt = legalActions(s, "p2").find((a) => a.type === "cast" && a.card === spell);
+  const targets =
+    opt?.type === "cast"
+      ? Object.fromEntries(
+          (opt.modes[0]?.targets ?? []).map((t) => [
+            t.id,
+            [...t.legal.filter((id) => s.objects[id]?.controller === "p1"), ...t.legal].slice(0, 1),
+          ]),
+        )
+      : undefined;
+  const cast = submit(s, "p2", { type: "cast", card: spell, targets }).state;
   return submit(cast, "p2", { type: "pass" }).state;
 }
 

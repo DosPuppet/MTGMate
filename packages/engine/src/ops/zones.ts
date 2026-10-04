@@ -1304,6 +1304,7 @@ export const HANDLERS: OpHandlers = {
       if (!(shock instanceof Set)) return shock;
       r.vars[key(`sdone-${p}`)] = [1];
       rulesEvent(s, { e: "search", player: p });
+      logTurnEvent(s, { e: "search", player: p });
       // 701.23 : on mélange après la recherche ; « sur le dessus » s'applique après le mélange.
       const toTop = e.to.to === "libraryTop";
       for (const id of picked) {

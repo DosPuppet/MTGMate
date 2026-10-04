@@ -372,3 +372,4 @@ Dans l'ordre où elles ont été ajoutées, extension par extension.
   - `règle` Grasp of Fate : un seul permanent non-terrain adverse est exilé, même avec plusieurs adversaires ;
   - `règle` Fraying Sanity : le nombre de cartes compte celles mises dans le cimetière des adversaires du contrôleur de l'Aura (exact en duel) ;
   - `règle` Raid Bombardment : la blessure va au joueur défenseur, même si la créature attaque un planeswalker.
+  - `règle` Hindering Light : seuls les sorts qui ciblent un permanent que vous contrôlez sont reconnus, pas ceux qui ne ciblent que vous.

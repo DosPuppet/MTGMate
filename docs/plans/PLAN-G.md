@@ -323,3 +323,5 @@ leur lot, avec une forme générique d'abord, selon la règle « pas de dette pr
   restantes forment le sous-lot difficile G4e (liste dans `docs/extensions/reeditions.md`).
 - **G5 (04/10/2026) :** 48 cartes d'Enchanting Tales (WOT 49 / 55), sans forme nouvelle. Six cartes vont au sous-lot
   difficile : Karmic Justice, Phyrexian Unlife, As Foretold, Necropotence, Ground Seal, Shared Animosity.
+- **G6 (04/10/2026) :** 47 cartes de Breaking News (OTP 50 / 61) ; la recherche est notée au journal du tour.
+  `RULES_VERSION` 111. Onze cartes vont au sous-lot difficile (liste dans `docs/extensions/reeditions.md`).
