@@ -72,10 +72,12 @@ try {
   await page.goto("http://localhost:5173/");
   await page.evaluate(() => localStorage.clear());
   await page.reload();
-  check((await page.locator(".ai-level .seg button.on").innerText()) === "Moyen", "niveau Moyen par défaut");
-  await page.locator(".ai-level .seg button", { hasText: "Élevé" }).click();
+  // Le choix du format a la même présentation (`.ai-level`) : le bloc du niveau se reconnaît à son libellé.
+  const levels = page.locator(".ai-level", { hasText: "Niveau de l'IA" }).locator(".seg button");
+  check((await levels.and(page.locator(".on")).innerText()) === "Moyen", "niveau Moyen par défaut");
+  await levels.filter({ hasText: "Élevé" }).click();
   await page.reload();
-  check((await page.locator(".ai-level .seg button.on").innerText()) === "Élevé", "niveau retenu après rechargement");
+  check((await levels.and(page.locator(".on")).innerText()) === "Élevé", "niveau retenu après rechargement");
   await page.screenshot({ path: join(OUT, "lobby.png") });
 
   const median = (xs: number[]) => [...xs].sort((a, b) => a - b)[Math.floor(xs.length / 2)] ?? 0;
