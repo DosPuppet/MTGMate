@@ -1,8 +1,9 @@
 /** Source Material (PZA) : tests de règles des cartes (PLAN-G). */
 import { describe, expect, it } from "vitest";
 import { legalActions } from "../src/legal";
-import { chars } from "../src/state";
-import { act, customCard, idOf, idsOf, lands, scenario, settle } from "./helpers";
+import { changeCounters, chars } from "../src/state";
+import { playerStatic } from "../src/statics";
+import { act, advanceUntil, attack, customCard, idOf, idsOf, lands, scenario, settle, throughCombat } from "./helpers";
 
 const ARTIFACT = customCard({ name: "Test Trinket", types: ["Artifact"], typeLine: "Artifact" });
 const CONSTRUCT = customCard({
@@ -84,6 +85,69 @@ describe("Source Material", () => {
         }),
       );
       expect(s.objects[bear]?.controller).toBe("p1");
+    });
+  });
+
+  describe("G9 : Source Material", () => {
+    const equip = (s: ReturnType<typeof scenario>, eq: string, creature: string) => {
+      (s.objects[eq] as { attachedTo?: string }).attachedTo = creature;
+      s.version += 1;
+    };
+
+    it("Teleportation Circle : à votre étape de fin, un de vos artefacts ou créatures est exilé puis revient", () => {
+      let s = scenario({ p1: { battlefield: ["Teleportation Circle", { name: "Bear Cub", counters: { "+1/+1": 2 } }] } });
+      const cub = idOf(s, "p1", "battlefield", "Bear Cub");
+      s = advanceUntil(s, (x) => x.pending?.kind === "choice" || x.turn.active === "p2", 200);
+      s = settle(s, (req) => (req.type === "pick" && req.options.includes(cub) ? [cub] : undefined));
+      const back = idsOf(s, "p1", "battlefield", "Bear Cub");
+      expect(back).toHaveLength(1);
+      expect(s.objects[back[0] as string]?.counters["+1/+1"] ?? 0).toBe(0);
+    });
+
+    it("Rhythm of the Wild : vos sorts de créature ne peuvent pas être contrecarrés", () => {
+      const s = scenario({ p1: { battlefield: ["Rhythm of the Wild"] } });
+      expect(playerStatic(s, "p1", "uncounterable")).toBe(true);
+    });
+
+    it("Metallic Mimic : vos autres créatures du type choisi arrivent avec un marqueur +1/+1", () => {
+      let s = scenario({ p1: { battlefield: lands("Forest", 4), hand: ["Metallic Mimic", "Bear Cub"] } });
+      s = settle(act(s, "p1", { type: "cast", card: idOf(s, "p1", "hand", "Metallic Mimic") }), (req) =>
+        req.type === "pick" && req.options.includes("Bear") ? ["Bear"] : undefined,
+      );
+      s = settle(act(s, "p1", { type: "cast", card: idOf(s, "p1", "hand", "Bear Cub") }));
+      expect(s.objects[idOf(s, "p1", "battlefield", "Bear Cub")]?.counters["+1/+1"]).toBe(1);
+      expect(chars(s, idOf(s, "p1", "battlefield", "Metallic Mimic")).subtypes).toContain("Bear");
+    });
+
+    it("Umezawa's Jitte : deux marqueurs en blessant au combat ; un marqueur retiré donne 2 PV", () => {
+      let s = scenario({ p1: { battlefield: ["Bear Cub", "Umezawa's Jitte"] } });
+      const cub = idOf(s, "p1", "battlefield", "Bear Cub");
+      const jitte = idOf(s, "p1", "battlefield", "Umezawa's Jitte");
+      equip(s, jitte, cub);
+      s = throughCombat(attack(s, [cub]));
+      expect(s.objects[jitte]?.counters.charge).toBe(2);
+      const ab = legalActions(s, "p1").find((a) => a.type === "activate" && a.source === jitte && a.label?.includes("2 PV"));
+      s = settle(act(s, "p1", { type: "activate", source: jitte, ability: ab?.type === "activate" ? ab.ability : 0 }));
+      expect([s.players.p1?.life, s.objects[jitte]?.counters.charge]).toEqual([22, 1]);
+    });
+
+    it("Shadowspear : {1}, les permanents adverses perdent la défense talismanique et l'indestructible", () => {
+      let s = scenario({ p1: { battlefield: ["Shadowspear", "Plains"] }, p2: { battlefield: ["Carnage Tyrant"] } });
+      const spear = idOf(s, "p1", "battlefield", "Shadowspear");
+      const ab = legalActions(s, "p1").find(
+        (a) => a.type === "activate" && a.source === spear && !a.label?.startsWith("Équiper"),
+      );
+      s = settle(act(s, "p1", { type: "activate", source: spear, ability: ab?.type === "activate" ? ab.ability : 0 }));
+      expect(chars(s, idOf(s, "p2", "battlefield", "Carnage Tyrant")).keywords).not.toContain("hexproof");
+    });
+
+    it("All Will Be One : vous mettez des marqueurs, autant de blessures", () => {
+      let s = scenario({
+        p1: { battlefield: ["All Will Be One", "Bear Cub", ...lands("Forest", 2)], hand: ["Hardened Scales"] },
+      });
+      changeCounters(s, s.objects[idOf(s, "p1", "battlefield", "Bear Cub")] as never, "+1/+1", 3);
+      s = settle(s, (req) => (req.type === "pick" && req.options.includes("p2") ? ["p2"] : undefined));
+      expect(s.players.p2?.life).toBe(17);
     });
   });
 });

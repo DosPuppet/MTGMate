@@ -210,3 +210,17 @@ le deck peut choisir son illustration (51 cartes). Détail dans le suivi du plan
 - **Sous-lot difficile :** Angel's Grace (ne pas perdre, PV au moins 1), Daze et Force of Will (coûts alternatifs
   particuliers), Dismember (mana phyrexian), Ad Nauseam (répétition au choix), Veil of Summer (incontrecarrable,
   défense talismanique contre des couleurs), Deflecting Palm (bouclier qui renvoie les blessures).
+
+## G9 — Source Material et Jurassic World Collection ✅ (18 cartes ; PZA 12 / 15, REX 8 / 20)
+
+- **Source Material :** Teleportation Circle, Ashcoat of the Shadow Swarm, Silverclad Ferocidons, Rhythm of the Wild,
+  Conqueror's Flail, Metallic Mimic, Shadowspear, Sword of Sinew and Steel, Umezawa's Jitte (les trois modes en trois
+  capacités au même coût), All Will Be One.
+- **Jurassic World Collection :** Don't Move (emblème jusqu'à votre prochain tour), Spitting Dilophosaurus, Life Finds a
+  Way (peuplement), Savage Order, Compy Swarm, Ellie and Alan, Permission Denied, Ravenous Tyrannosaurus (dévorer 3).
+- **Tests :** `pza.test.ts` (+6), `rex.test.ts` (7) ; fumée REX.
+- **Approximation :** All Will Be One (les marqueurs mis sur un joueur ne comptent pas).
+- **Sous-lot difficile :** Trouble in Pairs, Plague of Vermin, Waves of Aggression (retour) ; Cresting Mosasaurus
+  (émergence), Hunting Velociraptor (rôder), Welcome to . . . // Jurassic Park, Blue, Loyal Raptor et Owen Grady
+  (partenaire avec, marqueurs de mots-clés), Grim Giganotosaurus (monstruosité), Henry Wu (exploitation), Ian Malcolm,
+  Indominus Rex, Indoraptor (soif de sang, adversaire au hasard), Swooping Pteranodon, Dino DNA.

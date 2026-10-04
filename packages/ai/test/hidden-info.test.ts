@@ -77,6 +77,9 @@ function auditGame(seed: number): string[] {
     for (const v of players) {
       const view = projectView(s, v);
       if (view.pending?.kind === "choice") for (const o of view.pending.objects ?? []) known[v]?.add(o.defId);
+      // 722 (Mindslaver) : le joueur qui contrôle le tour d'un autre voit tout ce que celui-ci peut voir, dont sa main.
+      if (s.turnControl?.by === v && s.turn.active === s.turnControl.player)
+        for (const id of s.players[s.turnControl.player]?.hand ?? []) known[v]?.add(s.objects[id]?.defId ?? "");
       const secret = new Set<string>();
       for (const o of Object.values(s.objects)) {
         if (o.owner === v || (o.zone !== "hand" && o.zone !== "library")) continue;

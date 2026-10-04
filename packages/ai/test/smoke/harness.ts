@@ -281,5 +281,6 @@ export const OWN_FILES = [
   "EOS",
   "PZA",
   "WOT",
+  "REX",
 ];
 export const OTHER_SETS = (): string[] => SETS.map((s) => s.code).filter((c) => !OWN_FILES.includes(c));

@@ -329,3 +329,5 @@ leur lot, avec une forme générique d'abord, selon la règle « pas de dette pr
   `RULES_VERSION` 112. Onze cartes vont au sous-lot difficile.
 - **G8 (04/10/2026) :** 25 cartes de Mystical Archive (SOA 30 / 37), sans forme nouvelle. Sept cartes vont au sous-lot
   difficile.
+- **G9 (04/10/2026) :** 10 cartes de Source Material (PZA 12 / 15) et 8 de Jurassic World Collection (REX 8 / 20), sans
+  forme nouvelle ; fumée REX. Quinze cartes vont au sous-lot difficile.
