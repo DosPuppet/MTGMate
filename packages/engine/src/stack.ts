@@ -857,6 +857,25 @@ export function plotCard(s: GameState, id: ObjectId): ObjectId | null {
   return card.id;
 }
 
+/** Suspendre (702.62) : la carte (en main, ou le sort sur la pile) est exilée avec N marqueurs de temps. */
+export function suspendCard(s: GameState, id: ObjectId, time: number): void {
+  const o = s.objects[id];
+  if (!o) return;
+  if (o.zone === "stack") {
+    // Le sort quitte la pile sans être contrecarré (une copie cesse simplement d'exister).
+    const i = s.stack.findIndex((x) => x.id === id && x.kind === "spell");
+    const item = s.stack[i];
+    if (!item || item.copy) return;
+    s.stack.splice(i, 1);
+  } else if (o.zone !== "hand") return;
+  emit({ type: "moved", owner: o.owner, objectId: id, defId: o.defId, from: o.zone, to: "exile" });
+  const exiled = moveObject(s, id, "exile");
+  const card = exiled ? s.objects[exiled] : undefined;
+  if (card?.zone !== "exile") return;
+  card.suspended = true;
+  changeCounters(s, card, "time", time);
+}
+
 /** Présage (702.143a) : la carte est exilée de la main ; son propriétaire peut la lancer à un tour ultérieur. */
 export function foretellCard(s: GameState, id: ObjectId): void {
   const o = s.objects[id];
@@ -3022,6 +3041,8 @@ export function activateAbility(s: GameState, player: PlayerId, source: ObjectId
       }
       if (e.op === "plot") plotCard(s, source);
       if (e.op === "foretell") foretellCard(s, source);
+      // Suspension (702.62a) : une action spéciale depuis la main.
+      if (e.op === "suspend") suspendCard(s, source, e.time);
     }
     s.priority.passes = 0;
     return;

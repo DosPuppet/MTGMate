@@ -409,6 +409,8 @@ export type TriggerSpec =
   /** Filtre : « chaque fois qu'une créature que vous contrôlez subit des blessures » (The Sensational She-Hulk). */
   /** `attached` : la créature enchantée ou équipée, ou le joueur enchanté (Aura de joueur, Grievous Wound). */
   | { on: "isDealtDamage"; who: "self" | "attached" | ObjectFilter }
+  /** « Chaque fois que vous copiez un sort [correspondant] » (Kalamax, the Stormsire) ; `ref.eventObject` : la copie. */
+  | { on: "copySpell"; filter?: ObjectFilter }
   /** « Chaque fois qu'une ou plusieurs [créatures] subissent des blessures en excès [non de combat] » (120.4a). */
   | { on: "excessDamage"; who: ObjectFilter; noncombatOnly?: boolean }
   /** « Chaque fois qu'une ou plusieurs [créatures] infligent des blessures de combat à un joueur » : une fois par étape et par joueur. */

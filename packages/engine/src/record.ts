@@ -303,8 +303,11 @@ export const RECORD_VERSION = 1;
  *   adversaires).
  * - 107 : terrains de Stellar Sights (G3b) : infection (702.90), régénération (701.19, boucliers retirés au nettoyage),
  *   déplacer un marqueur, mana des couleurs de vos permanents ou des types de vos terrains, leyline conditionnelle.
+ * - 108 : Special Guests (G4a) : traversée de terrain, « n'attaque pas deux fois le même joueur », statiques de joueur
+ *   qui touchent d'autres joueurs (`affects`), déclencheur « vous copiez un sort », suspension depuis la main (action
+ *   spéciale), carte contrecarrée mémorisée où qu'elle aille (`storeMoved`).
  */
-export const RULES_VERSION = 107;
+export const RULES_VERSION = 108;
 
 /** Un point de contrôle toutes les N décisions (plus la dernière de la partie). */
 export const CHECKPOINT_EVERY = 25;

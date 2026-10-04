@@ -817,6 +817,12 @@ function matchTrigger(s: GameState, ev: RulesEvent, t: TriggerSpec, src: Source)
     case "playLand":
       if (ev.e !== "playLand" || ev.player !== me || (t.from && !t.from.includes(ev.from))) return null;
       return { objectId: ev.objectId, player: me };
+    case "copySpell": {
+      if (ev.e !== "copySpell" || ev.player !== me) return null;
+      const v = liveView(s, ev.stackId);
+      if (t.filter && (!v || !matchesView(v, t.filter, me, src.id))) return null;
+      return { objectId: ev.stackId, player: me };
+    }
     case "castSelf":
       // `amount.eventAmount` : les sorts lancés avant lui ce tour-ci (déluge).
       return ev.e === "cast" && ev.stackId === src.id ? { objectId: src.id, player: me, amount: ev.spellsBefore } : null;

@@ -753,6 +753,12 @@ export function declareAttackers(s: GameState, player: PlayerId, attackers: { id
     const dp = defendingPlayer(s, a.defender);
     if (chars(s, a.id).blockRules.some((r) => r.cantAttackPlayer === dp))
       throw new RulesError(`${chars(s, a.id).name} ne peut pas attaquer ce joueur`);
+    // Port Razer : « ne peut pas attaquer un joueur qu'elle a déjà attaqué ce tour-ci ».
+    if (
+      chars(s, a.id).blockRules.some((r) => r.notDefendersAttackedThisTurn) &&
+      s.turnLog.some((e) => e.e === "attack" && e.id === a.id && e.defender === dp)
+    )
+      throw new RulesError(`${chars(s, a.id).name} a déjà attaqué ce joueur ce tour-ci`);
   }
   // Tomik, Orzhov Lawmage : au plus une créature attaque chacun des planeswalkers de son contrôleur.
   for (const w of new Set(attackers.map((a) => a.defender))) {
@@ -812,6 +818,18 @@ export function canBlock(s: GameState, blocker: ObjectId, attacker: ObjectId): b
   // Règles de blocage (R4.1) : « ne peut bloquer que [filtre] » (Drone), « ne peut pas être bloquée par [filtre] ».
   const own = chars(s, blocker).blockRules;
   if (own.some((r) => r.canBlockOnly && !matchesView(snapshot(s, attacker), r.canBlockOnly, b.controller, blocker))) return false;
+  // Traversée de terrain (702.14) : imblocable si le défenseur contrôle un permanent correspondant.
+  const walks = chars(s, attacker).blockRules.filter((r) => r.unblockableIfDefenderControls);
+  if (
+    walks.some((r) =>
+      s.battlefield.some(
+        (id) =>
+          obj(s, id).controller === b.controller &&
+          matchesObjectFilter(s, b.controller, id, r.unblockableIfDefenderControls as ObjectFilter, attacker),
+      ),
+    )
+  )
+    return false;
   const rules = chars(s, attacker).blockRules.filter((r) => r.cantBeBlockedBy);
   if (rules.length) {
     const v = snapshot(s, blocker);

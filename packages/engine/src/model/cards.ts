@@ -427,8 +427,8 @@ export interface ManaAbilityDef {
   drawback?: { damageYou?: number; opponentsGainLife?: number };
   /** Un mana d'une des couleurs des permanents que vous contrôlez correspondant au filtre (Meteor Crater, Plaza of Heroes). */
   produceColorsOf?: ObjectFilter;
-  /** Un mana d'un type qu'un terrain que vous contrôlez pourrait produire (Reflecting Pool). */
-  produceLikeLands?: boolean;
+  /** Un mana d'un type qu'un terrain correspondant que vous contrôlez pourrait produire (Reflecting Pool ; Star Compass : de base). */
+  produceLikeLands?: ObjectFilter;
   /** The Core : autant de mana que de cartes de votre cimetière correspondant au filtre. */
   amountGraveyard?: ObjectFilter;
   /** Effet si ce mana sert à lancer un sort correspondant (Carnelian Orb : célérité ; Pyromancer's Goggles : copie). */
@@ -599,6 +599,10 @@ export interface BlockRule {
    */
   cantAttackPlayer?: PlayerId;
   cantAttackSourceController?: boolean;
+  /** Traversée de terrain (702.14) : imblocable tant que le joueur défenseur contrôle un permanent correspondant. */
+  unblockableIfDefenderControls?: ObjectFilter;
+  /** « Ne peut pas attaquer un joueur qu'elle a déjà attaqué ce tour-ci » (Port Razer). */
+  notDefendersAttackedThisTurn?: boolean;
   /**
    * Exigence de blocage (509.1c) : elle bloque ce tour-ci si possible (Culvert Ambusher, Hustle), ou bloque cet attaquant
    * si possible (Tolsimir : `mustBlockEventObject` dans un script, remplacé à la résolution par l'objet de l'événement).
@@ -1066,6 +1070,8 @@ export interface PlayerStaticAbilityDef {
   walkersMaxOneAttacker?: boolean;
   /** « Max speed — … » : la capacité ne s'applique que si la condition est remplie. */
   condition?: Condition;
+  /** Joueurs concernés : son contrôleur (par défaut), ses adversaires, ou chaque joueur (« les joueurs ne peuvent pas… »). */
+  affects?: "opponents" | "each";
   /** Fblthp, Lost on the Range : vous pouvez regarder la carte du dessus de votre bibliothèque à tout moment. */
   lookAtTopCard?: boolean;
   /** Archangel of Tithes : les créatures ne peuvent vous attaquer que si leur contrôleur paie {1} pour chacune. */

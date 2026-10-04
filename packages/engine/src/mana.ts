@@ -160,6 +160,7 @@ export function manaAbilitiesOf(s: GameState, id: ObjectId): ManaAbilityDef[] {
       const types = new Set<ManaType>();
       for (const pid of s.battlefield) {
         if (pid === id || obj(s, pid).controller !== o.controller || !chars(s, pid).types.includes("Land")) continue;
+        if (!matchesObjectFilter(s, o.controller, pid, a.produceLikeLands, id)) continue;
         for (const m of manaAbilitiesOf(s, pid)) if (!m.produceLikeLands) for (const t of m.produce) types.add(t);
       }
       list.push({ ...a, produce: MANA_TYPES.filter((m) => types.has(m)) });

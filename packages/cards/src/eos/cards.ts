@@ -433,7 +433,7 @@ export const CARDS: Record<string, CardScript> = {
       }),
     ],
   },
-  "Reflecting Pool": { abilities: [manaAbility([...ANY, "C"], 1, { likeLands: true })] },
+  "Reflecting Pool": { abilities: [manaAbility([...ANY, "C"], 1, { likeLands: {} })] },
   Swarmyard: {
     abilities: [
       manaAbility("C"),

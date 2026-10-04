@@ -47,7 +47,8 @@
     "spellKeywords": "mots-clés donnés aux sorts du joueur (Lo and Li, Twin Tutors : « vos sorts de Leçon ont le lien de vie »), lus au moment des blessures ; famille générique (filtre de sorts), une seule carte pour l'instant",
     "keepUnspentMana": "mana non dépensé gardé (500.4) : par type (The Last Agni Kai, posé par fx.thisTurn) ou converti (Ozai, the Phoenix King) ; une seule capacité imprimée pour l'instant",
     "powerUpExtraUses": "Wonder Man, Hollywood Hero : chaque montée en puissance peut être activée une fois de plus (compte d'usages des capacités « once ») ; une seule carte pour l'instant",
-    "activateAsThoughHaste": "Shang-Chi, Master of Kung Fu : activer les capacités des créatures du filtre comme si elles avaient la célérité (mal d'invocation levé pour {T}, pas pour attaquer) ; famille paramétrée par un filtre, une seule carte pour l'instant"
+    "activateAsThoughHaste": "Shang-Chi, Master of Kung Fu : activer les capacités des créatures du filtre comme si elles avaient la célérité (mal d'invocation levé pour {T}, pas pour attaquer) ; famille paramétrée par un filtre, une seule carte pour l'instant",
+    "affects": "portée générique d'une statique de joueur (contrôleur, adversaires, chaque joueur) : Rampaging Ferocidon « les joueurs ne peuvent pas gagner de PV » ; à réutiliser pour toute statique qui touche d'autres joueurs"
   },
   "keyword": {
     "absorbsDamage": "remplacement de redirection des blessures (R1.2)",
@@ -89,7 +90,6 @@
     "revealFaceDown": "Hauntwoods Shrieker — opération propre à une carte (R4.6)",
     "sacrificeElseDiscard": "Momentum Breaker — opération propre à une carte (R4.6)",
     "shield": "New Way Forward : boucliers « la prochaine fois que » (615.7), sur le cadre générique des remplacements (R1) ; une seule carte pour l'instant",
-    "suspend": "Taigam, Master Opportunist : suspension (702.62), mécanique générique (marqueurs de temps retirés à l'entretien, `suspendUpkeep`) ; une seule carte pour l'instant",
     "tapOrSacrifice": "Command Bridge — opération propre à une carte (R4.6)",
     "tripleTriad": "Triple Triad — opération propre à une carte (R4.6)",
     "foretell": "présage (702.143, action spéciale lue dans le texte) : une seule carte de Standard (Sozin's Comet) pour l'instant",
@@ -205,7 +205,7 @@
     "whileCrafting": "Market Gnome — déclencheur « quitte le champ de bataille » limité à l'exil comme matériau d'une fabrication (702.167) : champ de la famille `leaves`, compté depuis que sa déclaration tient sur plusieurs lignes (PLAN-S, S7)",
     "switchPT": "Wandering Fumarole — échange de la force et de l'endurance (613.4d), règle générique du moteur qui n'avait encore aucune carte",
     "manaValueSourceCounters": "Blast Zone — filtre relatif à la source (famille manaValueSourcePower) : valeur de mana égale à ses marqueurs",
-    "produceLikeLands": "Reflecting Pool — capacité de mana « un type que vos terrains pourraient produire » : famille des mana à couleurs calculées (produceColorsOf, produceLinkedColors)"
+    "notDefendersAttackedThisTurn": "Port Razer — restriction d'attaque de la famille des règles de blocage (BlockRule, R4.1) : « ne peut pas attaquer un joueur déjà attaqué ce tour-ci »"
   },
   "turnFields": {
     "loyaltyTurn": "champ « ce tour-ci » d'un objet (audit du 02/10/2026, § 5.1) : à remplacer par le journal du tour (turnlog.ts) quand la requête existe (PLAN-C, lot C14)",
@@ -236,8 +236,8 @@
     "LayerMods": 31,
     "Effect": 152,
     "Effect (champs)": 616,
-    "TriggerSpec": 58,
-    "TriggerSpec (champs)": 153,
+    "TriggerSpec": 59,
+    "TriggerSpec (champs)": 155,
     "Condition": 52,
     "Condition (champs)": 96,
     "Amount": 31,
@@ -278,6 +278,7 @@
     "PLAN-S S10 : le compteur des objets rejoint idCounters : GameState 39 → 38",
     "PLAN-S S9 : coûts sur la source regroupés (CostDef.self) : CostDef 37 → 33",
     "PLAN-G G1 : impressions (illustration d'une réédition) : CardDef.printings et GameState.printings (uid → impression choisie par le deck), sans effet sur les règles : CardDef 94 → 95, GameState 38 → 39",
-    "PLAN-G G3b : régénération (GameObject.regenShields, effet regenerate), déplacer un marqueur (moveCounter), filtre manaValueSourceCounters (Blast Zone) : GameObject 60 → 61, ObjectFilter 84 → 85, Effect 150 → 152, Effect (champs) 611 → 616"
+    "PLAN-G G3b : régénération (GameObject.regenShields, effet regenerate), déplacer un marqueur (moveCounter), filtre manaValueSourceCounters (Blast Zone) : GameObject 60 → 61, ObjectFilter 84 → 85, Effect 150 → 152, Effect (champs) 611 → 616",
+    "PLAN-G G4a : traversée de terrain et restriction d'attaque (BlockRule), portée des statiques de joueur, déclencheur copySpell, suspension en action spéciale : TriggerSpec 58 → 59, TriggerSpec (champs) 153 → 155"
   ]
 }

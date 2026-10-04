@@ -367,8 +367,8 @@ export type Effect =
     }
   /** Contrecarre un sort ou une capacité sur la pile (701.5). */
   /** `store` : nombre de sorts et capacités contrecarrés. */
-  /** `exilePermanents` : un sort de permanent contrecarré est exilé, la carte mémorisée sous `storeMoved` (Thranduil's
-   * Decree). */
+  /** `exilePermanents` : un sort de permanent contrecarré est exilé (Thranduil's Decree) ; `storeMoved` : les cartes
+   * contrecarrées, là où elles sont allées (Desertion). */
   | { op: "counter"; what: Ref; exile?: boolean; store?: string; exilePermanents?: boolean; storeMoved?: string }
   /** « … à moins que [joueur] ne paie X » : s'il paie, les `skip` effets suivants sont ignorés. */
   | {

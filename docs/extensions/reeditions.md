@@ -84,3 +84,21 @@ le deck peut choisir son illustration (51 cartes). Détail dans le suivi du plan
 - **Tests :** `eos.test.ts` (+8).
 - **Approximations :** Gemstone Caverns exile automatiquement la carte non-terrain de plus petite valeur de mana ;
   Reflecting Pool ne voit pas ce que produiraient d'autres Reflecting Pools.
+
+## G4a — Special Guests de LCI, MKM et OTJ ✅ (31 cartes ; SPG 38 / 132)
+
+- **Cartes :** Lord of Atlantis, Bridge from Below, Mephidross Vampire, Pitiless Plunderer, Rampaging Ferocidon, Carnage
+  Tyrant, Polyraptor, Kalamax, the Stormsire, Lord Windgrace, Mana Crypt, Star Compass, Ghostly Prison, Fabricate, Show
+  and Tell, Tragic Slip, Victimize, Gamble, Crashing Footfalls, Tireless Tracker, Drown in the Loch, Field of the Dead,
+  Stoneforge Mystic, Brazen Borrower // Petty Theft, Desertion, Morbid Opportunist, Port Razer, Scapeshift, Mystic
+  Snake, Desert, Prismatic Vista.
+- **Le moteur gagne :** traversée de terrain (`BlockRule.unblockableIfDefenderControls`, `block.landwalk`) ;
+  `block.notSameDefenderTwice` (Port Razer, sans quoi ses combats supplémentaires ne finiraient pas) ; statiques de
+  joueur `affects` ; déclencheur `copySpell` ; suspension lue dans le texte (action spéciale) ; `counter` mémorise la
+  carte contrecarrée où qu'elle aille (Desertion) ; `likeLands` prend un filtre (Star Compass : terrains de base).
+- **Tests :** `spg.test.ts` (+19).
+- **Approximations :** Drown in the Loch (la condition est vérifiée à la résolution, non au ciblage) ; Mephidross Vampire
+  (« blesse une créature » : toute blessure qui n'est pas infligée à un joueur) ; Bridge from Below (le cimetière est lu
+  comme celui du dernier contrôleur de la créature).
+- **Reportées (sous-lot difficile) :** Underworld Breach (évasion), Mirri, Weatherlight Duelist (limites d'attaquants et
+  de bloqueurs), Notion Thief (pioche détournée).

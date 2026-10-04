@@ -363,3 +363,6 @@ Dans l'ordre où elles ont été ajoutées, extension par extension.
   - `règle` Eldrazi Temple : le mana restreint vaut pour les sorts et capacités d'Eldrazi, incolores ou non.
   - `choix auto` Gemstone Caverns : la carte exilée de la main est la carte non-terrain de plus petite valeur de mana (un terrain s'il n'y en a pas) ;
   - `règle` Reflecting Pool : les types que produiraient d'autres terrains du même genre (Reflecting Pool) ne comptent pas.
+  - `règle` Drown in the Loch : « valeur de mana inférieure ou égale au nombre de cartes du cimetière de son contrôleur » est vérifiée à la résolution, pas au ciblage ;
+  - `règle` Mephidross Vampire : « blesse une créature » se lit « inflige des blessures à autre chose qu'un joueur » (un planeswalker compte) ;
+  - `règle` Bridge from Below : « mise dans votre cimetière » et « dans le cimetière d'un adversaire » se lisent d'après le dernier contrôleur de la créature, pas son propriétaire.

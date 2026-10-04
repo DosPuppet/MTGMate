@@ -310,3 +310,7 @@ leur lot, avec une forme générique d'abord, selon la règle « pas de dette pr
   couleurs de vos permanents ou des types de vos terrains, filtre « valeur de mana égale aux marqueurs de la source »,
   déplacer un marqueur, leyline conditionnelle. `RULES_VERSION` 107 ; plafonds relevés (GameObject, ObjectFilter,
   Effect) et entrées justifiées dans `debt-baseline.json`.
+- **G4a (04/10/2026) :** 31 Special Guests de LCI, MKM et OTJ (SPG 38 / 132). Le moteur gagne la traversée de terrain,
+  « n'attaque pas deux fois le même joueur », la portée des statiques de joueur, le déclencheur « vous copiez un sort »,
+  la suspension depuis la main. `RULES_VERSION` 108. Trois cartes reportées à un sous-lot difficile : Underworld Breach,
+  Mirri, Weatherlight Duelist, Notion Thief.

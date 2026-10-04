@@ -759,7 +759,12 @@ export const fx = {
     return [{ op: "mayPay", cost: parseManaCost(cost), prompt, skip: flat.length }, ...flat];
   },
   /** Contrecarre le sort ou la capacité désigné. */
-  counter: (what: Ref, store?: string): Effect => ({ op: "counter", what, store }),
+  counter: (what: Ref, store?: string, storeMoved?: string): Effect => ({
+    op: "counter",
+    what,
+    store,
+    ...(storeMoved ? { storeMoved } : {}),
+  }),
   /** « Contrecarrez-le ; exilez-le au lieu de le mettre au cimetière » (Syncopate). */
   counterExile: (what: Ref): Effect => ({ op: "counter", what, exile: true }),
   /** « Contrecarrez-le à moins que son contrôleur ne paie X » : le paiement annule les effets qui suivent. */
@@ -1660,8 +1665,8 @@ export function manaAbility(
     drawback?: ManaAbilityDef["drawback"];
     /** Couleurs des permanents que vous contrôlez correspondant au filtre (Meteor Crater). */
     colorsOf?: ObjectFilter;
-    /** Ce que vos terrains pourraient produire (Reflecting Pool). */
-    likeLands?: boolean;
+    /** Ce que vos terrains correspondants pourraient produire (Reflecting Pool : {} ; Star Compass : de base). */
+    likeLands?: ObjectFilter;
   } = {},
 ): ManaAbilityDef {
   return {
@@ -1677,7 +1682,7 @@ export function manaAbility(
     produceLinkedColors: opts.linkedColors,
     ...(opts.drawback ? { drawback: opts.drawback } : {}),
     ...(opts.colorsOf ? { produceColorsOf: opts.colorsOf } : {}),
-    ...(opts.likeLands ? { produceLikeLands: true } : {}),
+    ...(opts.likeLands ? { produceLikeLands: opts.likeLands } : {}),
     amountGraveyard: opts.perGraveyard,
     oncePerTurn: opts.oncePerTurn,
     produce: Array.isArray(produce) ? produce : [produce],
@@ -2028,6 +2033,8 @@ export const when = {
   exhaustActivated: { on: "exhaustActivated" } as TriggerSpec,
   /** « Quand vous lancez ce sort » */
   castSelf: { on: "castSelf" } as TriggerSpec,
+  /** « Chaque fois que vous copiez un sort [correspondant] » */
+  copySpell: (filter?: ObjectFilter): TriggerSpec => ({ on: "copySpell", filter }),
   /** « Quand cette créature est retournée face visible » */
   turnedFaceUp: { on: "turnedFaceUp" } as TriggerSpec,
   /** « Chaque fois qu'un permanent [filtre] est retourné face visible » */
@@ -2375,6 +2382,16 @@ export function cost(text: string): ManaCost {
  */
 export const block = {
   notBy: (filter: ObjectFilter, label: string): BlockRule => ({ cantBeBlockedBy: filter, label }),
+  /** Traversée de terrain (702.14) : « islandwalk », « forestwalk »… */
+  landwalk: (landType: string, label: string): BlockRule => ({
+    unblockableIfDefenderControls: { types: ["Land"], subtype: landType },
+    label,
+  }),
+  /** « Ne peut pas attaquer un joueur qu'elle a déjà attaqué ce tour-ci. » */
+  notSameDefenderTwice: {
+    notDefendersAttackedThisTurn: true,
+    label: "N'attaque pas deux fois le même joueur dans un tour",
+  } as BlockRule,
   onlyBlocks: (filter: ObjectFilter, label: string): BlockRule => ({ canBlockOnly: filter, label }),
   atLeast: (n: number): BlockRule => ({ minBlockers: n, label: `Bloquée par ${n} créatures ou plus` }),
   atMost: (n: number): BlockRule => ({

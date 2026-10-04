@@ -82,6 +82,7 @@ export function copyStackItem(s: GameState, item: StackItem, controller: PlayerI
   };
   s.stack.push(copy);
   emit({ type: "copy", stackId: id, defId: item.sourceDefId, player: controller });
+  if (item.kind === "spell") rulesEvent(s, { e: "copySpell", player: controller, stackId: id });
   return id;
 }
 

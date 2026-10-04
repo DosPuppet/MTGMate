@@ -1,5 +1,5 @@
 import type { AmountMod } from "./modifiers";
-import { chars, newId, obj, opponentsOf } from "./state";
+import { alivePlayers, chars, newId, obj, opponentsOf } from "./state";
 import { matchesObjectFilter } from "./targets";
 import { checkCondition } from "./triggers";
 import type {
@@ -32,7 +32,7 @@ export function carryStaticsCache(from: GameState, to: GameState): void {
   const hit = cache.get(from);
   if (hit) cache.set(to, hit);
 }
-const NOT_KEYS = new Set(["kind", "label", "condition"]);
+const NOT_KEYS = new Set(["kind", "label", "condition", "affects"]);
 
 function current(s: GameState): Index {
   const key = `${s.version}|${s.turn.number}|${s.turn.active}|${s.turn.step}`;
@@ -55,15 +55,28 @@ function current(s: GameState): Index {
   }
   const statics = new Map<PlayerId, Map<string, Entry[]>>();
   const replacements = new Map<string, { p: PlayerId; e: Entry }[]>();
+  // Statiques de joueur : rangées pour chaque joueur qu'elles concernent (son contrôleur, ses adversaires, ou tous).
+  const keysOf = (p: PlayerId) => {
+    let m = statics.get(p);
+    if (!m) {
+      m = new Map();
+      statics.set(p, m);
+    }
+    return m;
+  };
   for (const [p, list] of byPlayer) {
-    const byKey = new Map<string, Entry[]>();
+    keysOf(p);
     for (const e of list) {
       if (e.ab.kind === "playerStatic") {
+        const affected = e.ab.affects === "each" ? alivePlayers(s) : e.ab.affects === "opponents" ? opponentsOf(s, p) : [p];
         for (const k of Object.keys(e.ab)) {
           if (NOT_KEYS.has(k) || !(e.ab as unknown as Record<string, unknown>)[k]) continue;
-          const l = byKey.get(k);
-          if (l) l.push(e);
-          else byKey.set(k, [e]);
+          for (const q of affected) {
+            const byKey = keysOf(q);
+            const l = byKey.get(k);
+            if (l) l.push(e);
+            else byKey.set(k, [e]);
+          }
         }
       } else if (e.ab.kind === "eventReplacement") {
         const l = replacements.get(e.ab.event);
@@ -71,7 +84,6 @@ function current(s: GameState): Index {
         else replacements.set(e.ab.event, [{ p, e }]);
       }
     }
-    statics.set(p, byKey);
   }
   const out = { key, byPlayer, statics, replacements };
   cache.set(s, out);

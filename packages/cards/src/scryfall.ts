@@ -815,6 +815,8 @@ function singleDef(raw: RawCard, script: CardScript | undefined, set: string): C
   const extort = /^Extort\b/m.test(raw.oracleText);
   // Déluge (702.40) : une copie pour chaque sort lancé avant lui ce tour-ci (compté au lancement, tous joueurs).
   const storm = /^Storm\b/m.test(raw.oracleText);
+  // Suspension (702.62) : action spéciale depuis la main, la carte exilée avec N marqueurs de temps.
+  const suspend = /^Suspend (\d+)—((?:\{[^}]+\})+)/m.exec(raw.oracleText);
   // Un terrain a le chaos sans coût (Oscorp Industries : « vous pouvez jouer cette carte depuis votre cimetière »).
   const mayhem =
     /^Mayhem ((?:\{[^}]+\})+)/m.exec(raw.oracleText)?.[1] ?? (/^Mayhem \(You may play/m.test(raw.oracleText) ? "{0}" : undefined);
@@ -909,6 +911,19 @@ function singleDef(raw: RawCard, script: CardScript | undefined, set: string): C
         { label: "Extorsion" },
       ),
     );
+  }
+  if (suspend) {
+    const n = Number(suspend[1]);
+    bloomburrowAbilities.push({
+      ...dsl.activated({
+        fromHand: true,
+        mana: suspend[2],
+        sorcerySpeed: !types.includes("Instant") && !raw.keywords.includes("Flash"),
+        effects: [dsl.fx.suspend(dsl.ref.self, n)],
+        label: `Suspension ${n} — ${suspend[2]}`,
+      }),
+      specialAction: true,
+    });
   }
   if (storm) {
     bloomburrowAbilities.push(

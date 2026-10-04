@@ -45,6 +45,8 @@ export type RulesEvent =
    * `spellsBefore` : sorts déjà lancés ce tour-ci par tous les joueurs (déluge, 702.40a).
    */
   | { e: "cast"; player: PlayerId; stackId: ObjectId; instantSorceryBefore?: number; spellsBefore: number }
+  /** Une copie de sort mise sur la pile par ce joueur (707.10). */
+  | { e: "copySpell"; player: PlayerId; stackId: ObjectId }
   /** Cartes défaussées (nouveaux identifiants, dans le cimetière). */
   | { e: "discard"; player: PlayerId; cards: ObjectId[] }
   | { e: "discardBatch"; player: PlayerId; count: number }

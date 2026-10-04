@@ -24,12 +24,12 @@ import {
   isPermanentCard,
   plotCard,
   stackItemSpecs,
+  suspendCard,
 } from "../stack";
 import { copyStackItem } from "../stackChoices";
 import {
   apnapOrder,
   bent,
-  changeCounters,
   chars,
   createObject,
   emit,
@@ -119,23 +119,7 @@ export const HANDLERS: OpHandlers = {
     return;
   },
   suspend(s, _r, e, ctx) {
-    for (const id of resolveRef(s, ctx, e.what)) {
-      const o = s.objects[id];
-      if (!o) continue;
-      if (o.zone === "stack") {
-        // Le sort quitte la pile sans être contrecarré (une copie cesse simplement d'exister).
-        const i = s.stack.findIndex((x) => x.id === id && x.kind === "spell");
-        const item = s.stack[i];
-        if (!item || item.copy) continue;
-        s.stack.splice(i, 1);
-      } else if (o.zone !== "hand") continue;
-      emit({ type: "moved", owner: o.owner, objectId: id, defId: o.defId, from: o.zone, to: "exile" });
-      const exiled = moveObject(s, id, "exile");
-      const card = exiled ? s.objects[exiled] : undefined;
-      if (card?.zone !== "exile") continue;
-      card.suspended = true;
-      changeCounters(s, card, "time", e.time);
-    }
+    for (const id of resolveRef(s, ctx, e.what)) suspendCard(s, id, e.time);
     return;
   },
   castNow(s, r, e, ctx, key) {
@@ -187,7 +171,11 @@ export const HANDLERS: OpHandlers = {
       const uid = item ? s.objects[item.sourceId]?.uid : undefined;
       if (!counterItem(s, id, ctx.sourceDefId, e.exile || perm)) continue;
       n++;
-      const card = perm && uid ? s.exile.find((x) => s.objects[x]?.uid === uid) : undefined;
+      // La carte contrecarrée, là où elle est allée (exil, cimetière) : Thranduil's Decree, Desertion.
+      const card =
+        (perm || e.storeMoved) && uid
+          ? Object.values(s.objects).find((o) => o.uid === uid && (o.zone === "exile" || o.zone === "graveyard"))?.id
+          : undefined;
       if (card) moved.push(card);
     }
     store(r, e.store, n);
