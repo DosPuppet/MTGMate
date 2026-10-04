@@ -183,7 +183,12 @@ export const BLACK: Record<string, CardScript> = {
         when.dies({ ...CREATURE_YOU_CONTROL, withCounter: "impostor" }),
         [fx.exileCard(ref.eventObject), fx.toBattlefield(ref.target())],
         {
-          targets: [target.upTo(1, target.cardInGraveyard("t", CREATURE, "you", "autre carte de créature de votre cimetière"))],
+          targets: [
+            target.upTo(1, {
+              ...target.cardInGraveyard("t", CREATURE, "you", "autre carte de créature de votre cimetière"),
+              notEventObject: true,
+            }),
+          ],
           label: "Exilez-la ; renvoyez une autre créature de votre cimetière sur le champ de bataille",
         },
       ),

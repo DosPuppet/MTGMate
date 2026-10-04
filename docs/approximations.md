@@ -120,19 +120,13 @@ Dans l'ordre où elles ont été ajoutées, extension par extension.
   - `choix auto` Fourrager : choix automatique, trois cartes du cimetière (terrains d'abord) s'il y en a au moins trois, sinon une Nourriture (un jeton de préférence) ;
   - `timing` The Infamous Cruelclaw : la carte est défaussée avant de lancer le sort (et non comme coût de remplacement pendant le lancement) ;
   - `choix auto` Portent of Calamity : les cartes exilées sont choisies automatiquement (une par type) ;
-  - `règle` Jackdaw Savior : la carte de valeur de mana inférieure est choisie à la résolution, sans cibler ; Clement : la créature ciblée n'est renvoyée que si sa valeur de mana est inférieure ;
-  - `règle` Whiskervale Forerunner : pendant votre tour, la créature révélée va toujours sur le champ de bataille ; Fecund Greenshell : un terrain refusé va en main ;
-  - `règle` Helga : son mana ne sert pas aux sorts de créature avec {X} de valeur de mana inférieure à 4 ; Heirloom Epic : les créatures ne peuvent pas aider à payer ;
+  - `règle` Whiskervale Forerunner : pendant votre tour, la créature révélée va toujours sur le champ de bataille ;
+  - `règle` Heirloom Epic : les créatures ne peuvent pas aider à payer ;
   - `règle` Rottenmouth Viper : on sacrifie au plus autant de permanents que le coût générique à payer (un sacrifice de plus ne réduirait rien, mais compterait pour « chaque fois que vous sacrifiez ») ;
-  - `règle` Eluge : l'Île ajoutée par le marqueur d'inondation dure toute la partie ; la réduction de coût est générique ;
-  - `règle` Alania : les sorts de Loutre (des créatures) ne sont pas copiés ; Ral (emblème) : la réplique compte vos seuls sorts.
+  - `règle` Eluge : la réduction de coût est générique ({1} et non {U}) ;
+  - `règle` Alania : un sort d'Alania lancé plus tôt dans le tour compte comme sort de Loutre (le sort de Loutre suivant n'est plus « le premier ») ; Ral (emblème) : la réplique est comptée à la résolution (un sort lancé en réponse au déclenchement compte).
 - **The Lost Caverns of Ixalan (`docs/extensions/lci.md`) :**
   - `règle` mana des Cavernes (Bat Colony) et « en utilisant du mana produit par [source] » (Tecutlan, The Myriad Pools) : seulement le mana engagé par le paiement automatique ;
-  - `règle` Warden of the Inner Sky : seuls les marqueurs +1/+1 comptent (« trois marqueurs ou plus ») ;
-  - `règle` In the Presence of Ages : jusqu'à deux cartes de créature et/ou de terrain (deux créatures possibles) ;
-  - `règle` Journey On : une Carte de plus si au moins un adversaire contrôle un artefact (pas une par adversaire) ;
-  - `règle` Kellan, Daring Traveler : une carte révélée qui ne va pas en main reste sur la bibliothèque ;
-  - `règle` Deepfathom Echo : la créature à copier est ciblée au déclenchement ; Subterranean Schooner : son équipage explore sans être ciblé ;
   - `règle` Dreadmaw's Ire : l'artefact détruit est celui d'un adversaire quelconque ;
   - `timing` Squirming Emergence : la valeur de mana n'est vérifiée qu'à la résolution ; Abuelo's Awakening : les marqueurs sont posés juste après l'arrivée ;
   - `règle` Brass's Tunnel-Grinder : « défaussez autant de cartes que voulu » est une défausse facultative ;
@@ -150,9 +144,7 @@ Dans l'ordre où elles ont été ajoutées, extension par extension.
 - **Reality Fracture (`docs/extensions/fra.md`) :**
   - `choix auto` Theorist's Sanctum : on contemple un Jace en arrivant dès que c'est possible, sans révéler la carte ;
   - `règle` Master of Barbs, Massacre Girl, Most Wanted : seules les blessures non de combat infligées par vos sources (sorts compris) comptent, pas celles d'une source adverse ;
-  - `règle` Something Worth Saving : les quatre cartes sont regardées puis mises au cimetière, ce qui n'est pas une meule au sens strict (pas de déclencheur de meule) ;
   - `règle` Extrapolate the Impossible : ne fait rien, comme sur Arena en BO1 (pas de cartes « hors du jeu ») ;
-  - `règle` Fblthp, Impossibly Lost : une seule fois par tour (et non une fois par étape de blessures de combat) ;
   - `règle` Garruk, Veiled Butcher −3 : pioche si le total de cartes non-terrain défaussées est inférieur à deux (exact à 2 joueurs, approché en multijoueur) ;
   - `règle` Garruk, Curse Breaker −4, Jace, Reality Sculptor −3 : emblèmes temporaires ; Garruk utilise « chaque fois que vous attaquez » ;
   - `règle` Hapatra, the Desert Fang : une seule cible adverse, même en multijoueur ;
@@ -171,7 +163,6 @@ Dans l'ordre où elles ont été ajoutées, extension par extension.
   - `choix auto` Rhys, the Evermore retire tous les marqueurs −1/−1 de la cible ;
   - `timing` Kindle the Inner Flame (flashback « contemplez trois Élémentaux ») : condition de lancement ;
   - `règle` Isilu, Carrier of Twilight, Rhys, the Evermore : la persistance accordée est une capacité déclenchée nommée « Persistance » (sans badge de mot-clé) ;
-  - `règle` Kirol, Attentive First-Year : la capacité ciblée n'est pas limitée à celles que vous contrôlez ;
   - `règle` Nameless Inversion : « perd tous ses types de créature » retire tous les sous-types et le changelin jusqu'à la fin du tour ;
   - `règle` Eclipsed Realms : le type choisi est pris parmi tous les types de créature ;
   - `règle` Foraging Wickermaw : cinq capacités (une par couleur), activables seulement tant qu'elle est incolore ;
@@ -194,8 +185,6 @@ Dans l'ordre où elles ont été ajoutées, extension par extension.
   - `timing` Expel the Interlopers : le nombre de 0 à 10 est choisi au lancement (un mode par nombre), et non à la résolution ;
   - `choix auto` Discerning Financier : « un autre joueur » est le premier adversaire ;
   - `règle` Virtue of Loyalty : toutes vos créatures sont dégagées, pas seulement celles qui ont reçu un marqueur ;
-  - `règle` Aquatic Alchemist : la capacité se déclenche à chaque éphémère ou rituel, et ne fait quelque chose qu'au premier du tour ;
-  - `règle` Vantress Visions : la capacité ciblée peut être celle d'un adversaire (le filtre de pile n'a pas de contrôleur) ; elle n'est alors pas copiée ;
   - `règle` Rowdy Research, Witchstalker Frenzy : une créature qui attaque lors de deux combats compte deux fois ;
   - `règle` Virtue of Strength : « trois fois plus de mana » est « deux mana de plus » (exact pour un terrain de base qui produit un mana) ;
   - `règle` Brave the Wilds : la cible « terrain que vous contrôlez » est proposée même sans Marchandage, sans effet alors ;
@@ -209,12 +198,10 @@ Dans l'ordre où elles ont été ajoutées, extension par extension.
   - `règle` Extraordinary Journey : une créature lancée depuis l'exil est reconnue à son arrivée (elle vient alors de la pile) ;
   - `choix auto` Talion, the Kindly Lord : le nombre proposé est la valeur de mana la plus fréquente parmi les cartes adverses vues.
 - **Secrets of Strixhaven (`docs/extensions/sos.md`) :**
-  - `règle` Echocasting Symposium : le jeton copie est créé par vous puis donné au joueur ciblé (il en est le contrôleur, pas le propriétaire) ;
   - `règle` Zimone's Experiment : les cartes de terrain révélées passent par la main avant d'arriver engagées sur le champ de bataille ;
   - `règle` Silverquill, the Disputant : la victime accordée est une capacité déclenchée au lancement (sacrifice d'une créature, puis copie), et non un coût : on peut y répondre ;
   - `timing` Prismari, the Inspiration : la tempête accordée compte les sorts lancés avant celui-ci à la résolution de la capacité (un sort lancé en réponse est compté) ;
   - `règle` Dina's Guidance : la carte cherchée va en main, puis vous pouvez la mettre au cimetière ;
-  - `règle` Scolding Administrator : la capacité va sur la pile même sans marqueur (elle ne fait alors rien) ;
   - `choix auto` Abstract Paintmage : {U}{R} est ajouté en deux choix d'une couleur (deux questions sans alternative) ;
   - `règle` Transcendent Archaic : « si vous piochez une ou plusieurs cartes de cette façon » est « si X vaut 1 ou plus » ;
   - `règle` Strixhaven Skycoach : la carte cherchée n'est pas révélée ;
@@ -226,14 +213,12 @@ Dans l'ordre où elles ont été ajoutées, extension par extension.
   - `règle` Coveted Falcon : « un permanent que vous possédez mais ne contrôlez pas » est « contrôlé par un adversaire et non possédé par lui » (exact en duel) ;
   - `règle` Living Conundrum : « si votre bibliothèque est vide » est jugé une fois pour toute une pioche de plusieurs cartes ;
   - `choix auto` Agency Outfitter : chaque nom est cherché dans le cimetière, puis la main, puis la bibliothèque (ordre fixe) ;
-  - `règle` Illicit Masquerade : « une autre carte de créature ciblée » n'exclut pas la créature morte (la cibler ne ramène rien) ;
   - `règle` Krenko's Buzzcrusher : les terrains non-base sont ciblés (au plus un par joueur) ; celui qui cherche est le propriétaire du terrain détruit ;
   - `règle` Expedited Inheritance : « son contrôleur » d'une créature morte est son propriétaire ;
   - `timing` Archdruid's Charm, Flourishing Bloom-Kin : les cartes cherchées passent par la main avant que le terrain arrive engagé ; le mélange a lieu avant ;
   - `timing` Crowd-Control Warden : retournée face visible, les marqueurs viennent d'une capacité déclenchée (à l'arrivée, c'est un remplacement) ;
   - `règle` Break Out : la créature révélée repasse sur le dessus de la bibliothèque avant d'aller sur le champ de bataille ou en main ;
   - `choix auto` Worldsoul's Rage : les terrains sont pris dans la main, puis dans le cimetière ;
-  - `règle` Rune-Brand Juggler : « sacrifiez une créature suspecte » ne peut pas sacrifier le Juggler lui-même ;
   - `règle` Rakdos, Patron of Chaos : un adversaire qui accepte sacrifie ce qu'il peut, et vous piochez quand même ;
   - `règle` Expose the Culprit : les cartes exilées ne sont pas mélangées en une pile face cachée avant d'être enveloppées d'une cape (vous connaissez chacune de vos cartes face cachée) ;
   - `timing` Tin Street Gossip : {R}{G} vient d'une capacité activée qui utilise la pile (comme Troyan, Gutsy Explorer) ; le mana sert aussi aux capacités des créatures face cachée ;
@@ -250,7 +235,6 @@ Dans l'ordre où elles ont été ajoutées, extension par extension.
   - `règle` Sold Out : « a subi des blessures ce tour-ci » se lit sur les blessures encore marquées ;
   - `timing` The Fire Nation Drill : s'il arrive déjà engagé, la question « vous pouvez l'engager » n'est pas posée ;
   - `règle` Zhao, the Moon Slayer : les terrains non de base prennent le seul sous-type Montagne (une créature-terrain perdrait aussi ses types de créature, alors que 305.7 ne remplace que les types de terrain) ; une capacité statique propre au terrain n'est pas retirée (la perte des capacités par une capacité statique n'atteint pas `staticSlots`) ;
-  - `règle` Earth Kingdom General : la limite d'une fois par tour est consommée même si vous refusez le gain de PV ;
   - `timing` Elemental Teachings : les cartes trouvées passent par votre main (révélées), puis l'adversaire en choisit deux ;
   - `règle` Raucous Audience : deux capacités de mana, chacune sous sa condition ;
   - `règle` Azula, Cunning Usurper : les cartes exilées se lancent pendant votre tour avec du mana de n'importe quel type, mais sans le flash ;
@@ -261,7 +245,6 @@ Dans l'ordre où elles ont été ajoutées, extension par extension.
   - `règle` Trusty Boomerang : la capacité « {1}, {T} : engagez une créature ciblée, renvoyez le Boomerang » est portée par l'Équipement (elle reste si la créature équipée perd ses capacités) ;
   - `règle` Aang's Journey (kické) : deux recherches, donc deux mélanges ;
   - `règle` Secret of Bloodbending : sans maîtrise de l'eau, vous contrôlez l'adversaire pendant la première phase de combat de son prochain tour (une phase de combat supplémentaire de ce tour lui revient) ;
-  - `règle` Planetarium of Wan Shi Tong : « une fois par tour » se lit « si vous n'avez lancé aucun sort depuis votre bibliothèque ce tour-ci » ;
   - `règle` Firebender Ascension : « cette capacité » est la plus récente capacité de la créature sur la pile ; si elle s'est déjà résolue, rien n'est copié ;
   - `règle` Fire Lord Sozin : les cartes ciblées sont celles d'un cimetière adverse (exact en duel ; à plusieurs, celui du joueur blessé) ;
   - `choix auto` Koh, the Face Stealer : une carte exilée et liée ne quitte pas le choix quand une autre carte de même nom est exilée (les capacités sont les mêmes).
@@ -269,17 +252,13 @@ Dans l'ordre où elles ont été ajoutées, extension par extension.
   - `règle` Raft Security Officer : « coûte {1} de moins si elle cible une créature de force 3 ou moins » est deux capacités ({1} avec une telle cible, {2} sinon) ; si la force de la cible dépasse 3 avant la résolution, la version à {1} perd sa cible ;
   - `règle` Nick Fury, Agent of S.H.I.E.L.D. : une carte recto-verso mise sur le champ de bataille ne peut pas être transformée ;
   - `règle` Crowd of True Believers : « attaque seule » demande que la créature attaque un joueur ;
-  - `règle` Echo, Perceptive Prodigy : une capacité adverse peut être ciblée mais n'est pas copiée (comme Vantress Visions) ;
   - `règle` Super Intelligence : « l'entretien de son contrôleur » se lit « votre entretien, ou celui d'un adversaire si la créature est chez un adversaire » (exact en duel) ;
   - `règle` Attuma, Atlantean Warlord : une attaque contre un planeswalker compte comme « attaquent un joueur » ;
-  - `règle` Baron Strucker, HYDRA Overlord : « une seule fois par tour » est consommé même si vous refusez la connivence ;
   - `règle` Ronin, Shadow Stalker : le mana restreint paie aussi les autres capacités d'un Équipement, pas seulement « Équiper » ;
   - `règle` Travail d'équipe (Widow's Bite, HULK SMASH!, Go Nuts!, Atlantis Attacks, Murdock's Crusade) : payé, il permet de choisir les deux modes, mais un seul mode reste permis (l'Oracle impose les deux) ;
-  - `règle` Construct a Cosmic Cube, Doom Reigns Supreme, Robot Domination : la suite « quand vous le faites » ne vérifie pas que le sacrifice a eu lieu ;
   - `timing` Hawkeye, Master Marksman : « payez {1} jusqu'à trois fois, puis choisissez autant de modes » est trois propositions successives (payer {1} pour chaque mode), chacune avec sa capacité réflexive ;
   - `règle` The Thing, Ben Grimm : « blessent un joueur » se lit « blessent un adversaire » ;
   - `règle` World War Hulk (chapitre I) : le sort gratuit vient seulement de la main, et un sort de créature payé normalement ne consomme pas la permission ;
-  - `règle` Beast, Erudite Aerialist : il vole si vous avez mis un marqueur de n'importe quelle sorte sur lui ce tour-ci ;
   - `règle` Bullseye, Death Dealer : « sacrifiez un artefact ou défaussez une carte non-terrain » est deux capacités ;
   - `règle` Cloak and Dagger, Entwined : la créature ciblée est adverse sans être forcément au joueur ciblé ; la main n'est montrée qu'à travers ses cartes non-terrain proposées ;
   - `règle` The Kingpin of Crime : l'extorsion est écrite dans le script ; « blesse selon son endurance » ne touche que les créatures présentes à la résolution ;
@@ -309,26 +288,21 @@ Dans l'ordre où elles ont été ajoutées, extension par extension.
   - `règle` Shark Shredder : la carte est ciblée dans le cimetière d'un adversaire, pas forcément celui du joueur blessé (exact en duel) ;
   - `règle` Shredder's Technique : « si un enchantement a été détruit » se lit « la cible était un enchantement et n'est plus sur le champ de bataille » ;
   - `règle` Party Dude : au niveau 3, « chaque fois qu'un ou plusieurs de vos adversaires sont attaqués » se lit « chaque fois que vous attaquez » (exact en duel, sauf une attaque contre un planeswalker seul) ;
-  - `règle` Turtle Van : la créature qui reçoit le marqueur est choisie parmi celles qui ont piloté le Véhicule ce tour-ci, sans être ciblée (défense talismanique et garde ignorées) ;
   - `règle` Northampton Farm, The Neutrinos : « une créature que vous possédez » se lit « que vous contrôlez et possédez, ou qu'un adversaire contrôle sans la posséder » (Northampton Farm, exact en duel) ou « que vous contrôlez et possédez » (The Neutrinos) ;
   - `règle` North Wind Avatar : le moteur n'a pas de zone « hors de la partie » (pas de réserve en cours de partie) : la capacité d'arrivée est sans effet ;
   - `choix auto` Ninja Teen : un sort de créature lancé du cimetière par le faufilement donné renvoie l'attaquant non bloqué le plus faible.
 - **The Hobbit (`docs/extensions/hob.md`) :**
   - `règle` The Eagles Are Coming! : « une créature que vous possédez » se lit « que vous possédez et contrôlez » ;
-  - `règle` The Queen of Dale : « leur premier sort non-créature de chaque tour » est une condition revérifiée à la résolution (comme Plan for All Outcomes) ; un deuxième sort lancé en réponse fait perdre le recrutement ;
   - `règle` Burglar's Plot : « deux permanents non-terrain ciblés qui partagent un type de carte » est un sort modal, un mode par type ;
   - `règle` Bilbo, Thief in the Night : la réduction vaut pour les sorts lancés depuis un cimetière ou l'exil, pas depuis le dessus de la bibliothèque ; un artefact lancé ainsi puis contrecarré serait exilé ;
   - `règle` Old Fat Spider Can't See Me : au chapitre II, la prévention est une capacité donnée à la créature, tant que la Saga reste ;
   - `règle` Galion, Elvenking's Butler : « ses F/E de base deviennent celles de Galion » donne des F/E de base X/X (la force de Galion), puis corrige l'endurance d'un bonus ; un effet ultérieur qui fixe les F/E de base garderait ce bonus ;
   - `règle` Bard, King of Dale : « la première carte que vous piochez pendant chacune de vos étapes de pioche » se lit « une pioche pendant votre étape de pioche, si vous n'avez encore pioché aucune carte ce tour-ci » ;
-  - `règle` Eagle's Rescue : l'Aura qui revient du cimetière est d'abord attachée comme toute Aura mise sur le champ de bataille, puis à la cible (une question de trop s'il y a plusieurs hôtes possibles) ;
   - `règle` Goblin Plate Mail : l'Équipement s'attache à votre première Armée.
 - **Rééditions, « Sans limite » (`docs/extensions/reeditions.md`) :**
   - `règle` Ragavan, Nimble Pilferer : « vous pouvez lancer cette carte » est une permission de jouer (un terrain exilé ainsi pourrait être joué) ;
   - `règle` Winds of Abandon : le joueur qui cherche les terrains de base est le propriétaire de chaque créature exilée (son contrôleur avant l'exil s'il diffère, en multijoueur avec une créature volée) ;
   - `règle` Cytoplast Manipulator : le contrôle dure tant que vous contrôlez le Manipulator (et non « tant qu'il reste sur le champ de bataille ») ;
-  - `règle` Power Depot : modulaire ne déclenche qu'à la mort d'une créature ; le terrain n'en est pas une ;
-  - `règle` Eldrazi Temple : le mana restreint vaut pour les sorts et capacités d'Eldrazi, incolores ou non ;
   - `choix auto` Gemstone Caverns : la carte exilée de la main est la carte non-terrain de plus petite valeur de mana (un terrain s'il n'y en a pas) ;
   - `règle` Reflecting Pool : les types que produiraient d'autres terrains du même genre (Reflecting Pool) ne comptent pas ;
   - `règle` Drown in the Loch : « valeur de mana inférieure ou égale au nombre de cartes du cimetière de son contrôleur » est vérifiée à la résolution, pas au ciblage ;
@@ -337,8 +311,6 @@ Dans l'ordre où elles ont été ajoutées, extension par extension.
   - `règle` Eerie Ultimatum : les cartes remises sur le champ de bataille n'ont pas à avoir des noms différents ;
   - `règle` Green Sun's Zenith : elle se mélange dans la bibliothèque chaque fois qu'elle devrait aller au cimetière, pas seulement en se résolvant ;
   - `règle` Magus of the Moon, Blood Moon : un terrain non-base devient une Montagne et perd aussi ses sous-types qui ne sont pas des types de terrain (Dryade, Saga ; comme Zhao, the Moon Slayer) ;
-  - `règle` Grasp of Fate : un seul permanent non-terrain adverse est exilé, même avec plusieurs adversaires ;
-  - `règle` Fraying Sanity : le nombre de cartes compte celles mises dans le cimetière des adversaires du contrôleur de l'Aura (exact en duel) ;
   - `règle` Hindering Light : seuls les sorts qui ciblent un permanent que vous contrôlez sont reconnus, pas ceux qui ne ciblent que vous ;
   - `règle` Adeline, Resplendent Cathar : les Humains créés attaquent tous le même défenseur (un par adversaire, en multijoueur) ;
   - `règle` Mangara, the Diplomat : « deux créatures ou plus vous attaquent » compte les attaques contre vous du tour entier ;
@@ -363,7 +335,6 @@ Dans l'ordre où elles ont été ajoutées, extension par extension.
   - `choix auto` Library of Leng : la carte défaussée par un effet va toujours au-dessus de la bibliothèque (sauf une carte avec la folie) ;
   - `règle` Notion Thief : la pioche du voleur n'est pas remplacée à son tour (deux Notion Thief adverses) ; les remplacements de la pioche du voleur ne s'appliquent pas ;
   - `règle` Necrodominance : la taille de main maximale la plus petite s'applique (et non la plus récente) ;
-  - `règle` Unlicensed Hearse : les deux cartes peuvent venir de cimetières différents ;
   - `règle` Indomitable Creativity : le joueur qui révèle est le propriétaire de chaque permanent détruit (son contrôleur s'il diffère, en multijoueur avec un permanent volé) ;
   - `règle` Gix, Yawgmoth Praetor : « payez 1 PV » est une perte de PV (possible à 0 PV ou moins) ; `choix auto` les cartes défaussées pour X, sans choix du joueur dans l'interface ;
   - `règle` Painter's Servant : seuls les permanents prennent la couleur choisie (pas les sorts ni les cartes des autres zones) ;
@@ -371,5 +342,4 @@ Dans l'ordre où elles ont été ajoutées, extension par extension.
   - `règle` Indominus Rex, Alpha : la défausse et les marqueurs viennent d'une capacité d'arrivée (pas « en arrivant ») ; seule une carte est piochée par marqueur de mot-clé ;
   - `règle` Expropriate : seul le premier adversaire vote (exact en duel) ; « un permanent possédé par le votant » est un permanent qu'il contrôle ;
   - `règle` Plague of Vermin : chaque joueur paie une seule fois (le processus ne se répète pas) ; seul le premier adversaire paie (exact en duel) ;
-  - `règle` Codie, Vociferous Codex : la carte trouvée est lancée tout de suite (et non « jusqu'à la fin du tour ») ;
-  - `règle` Welcome to . . . : un seul artefact ciblé (exact en duel, « pour chaque adversaire »).
+  - `règle` Codie, Vociferous Codex : la carte trouvée est lancée tout de suite (et non « jusqu'à la fin du tour »).

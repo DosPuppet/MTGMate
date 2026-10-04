@@ -128,7 +128,14 @@ export const GREEN: Record<string, CardScript> = {
       ),
       triggered(
         when.enters({ types: ["Creature"], controller: "you", toughnessAbovePower: true }),
-        [fx.lookAtTop(1, { filter: { types: ["Land"] }, to: { to: "battlefield", tapped: true }, rest: "hand" })],
+        [
+          // Un terrain refusé reste sur la bibliothèque ; une carte non-terrain va en main.
+          fx.lookAtTop(1, { filter: { types: ["Land"] }, to: { to: "battlefield", tapped: true }, rest: "top", store: "g" }),
+          ...fx.when(
+            cond.all(cond.not(cond.v("g")), cond.not(cond.refMatches(ref.libraryTop(ref.you), { types: ["Land"] }))),
+            fx.toHand(ref.libraryTop(ref.you)),
+          ),
+        ],
         { label: "Carte du dessus : terrain en jeu, sinon en main" },
       ),
     ],

@@ -505,6 +505,16 @@ describe("Breaking News", () => {
       expect(chars(s, hearse).toughness).toBe(2);
     });
 
+    it("Unlicensed Hearse : les deux cartes viennent d'un même cimetière", () => {
+      const s = scenario({
+        p1: { battlefield: ["Unlicensed Hearse"], graveyard: ["Opt"] },
+        p2: { graveyard: ["Shock"] },
+      });
+      const hearse = idOf(s, "p1", "battlefield", "Unlicensed Hearse");
+      const both = [...(s.players.p1?.graveyard ?? []), ...(s.players.p2?.graveyard ?? [])];
+      expect(() => act(s, "p1", { type: "activate", source: hearse, ability: 0, targets: { t: both } })).toThrow();
+    });
+
     it("Indomitable Creativity : détruit X artefacts ou créatures ; leur contrôleur révèle jusqu'à un artefact ou une créature et le met en jeu", () => {
       let s = scenario({
         p1: { battlefield: lands("Mountain", 4), hand: ["Indomitable Creativity"] },

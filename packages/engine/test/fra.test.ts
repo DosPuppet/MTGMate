@@ -6,6 +6,7 @@
 
 import { describe, expect, it } from "vitest";
 import { createTokens, dealDamage, destroy, drawCards, gainLife, sourceFromObject } from "../src/actions";
+import { eventReplacement } from "../src/dsl";
 import { RulesError } from "../src/errors";
 import { bump } from "../src/layers";
 import { legalActions } from "../src/legal";
@@ -19,6 +20,7 @@ import {
   advanceUntil,
   attack,
   castable,
+  customCard,
   idOf,
   idsOf,
   nameOf,
@@ -1893,6 +1895,66 @@ describe("Reality Fracture, lot K8 : cartes mythiques, rares et peu communes", (
       let w = scenario({ p1: { battlefield: ["Fblthp, Impossibly Lost", "Bear Cub"], library: ["Forest"] } });
       w = attackThrough(w, [idOf(w, "p1", "battlefield", "Bear Cub")]);
       expect(w.winner).toBe("p1");
+    });
+
+    it("Something Worth Saving : meule quatre cartes (une vraie meule), une carte de permanent meulée peut revenir en main, +1 PV", () => {
+      // « Si vous deviez meuler, meulez une carte de plus » : seule une vraie meule est modifiée.
+      const MILL_MORE = customCard({
+        name: "Test Mill More",
+        types: ["Enchantment"],
+        typeLine: "Enchantment",
+        abilities: [eventReplacement({ event: "mill", to: "you", modify: { add: 1 }, label: "Meule +1" })],
+      });
+      let s = scenario({
+        p1: {
+          battlefield: [MILL_MORE, ...lands("Forest", 2)],
+          hand: ["Something Worth Saving"],
+          library: ["Opt", "Shock", "Lightning Strike", "Opt", "Bear Cub", "Island"],
+        },
+      });
+      const cub = s.players.p1?.library[4] as string;
+      s = settle(cast(s, "p1", "Something Worth Saving"), (req) =>
+        req.type === "pick" && req.options.includes(cub) ? [cub] : undefined,
+      );
+      expect(namesIn(s, s.players.p1?.hand)).toEqual(["Bear Cub"]);
+      expect(namesIn(s, s.players.p1?.library)).toEqual(["Island"]);
+      expect(s.players.p1?.life).toBe(21);
+    });
+
+    it("Fblthp, Impossibly Lost : un déclenchement par étape de blessures de combat (pas une fois par tour), un seul pour plusieurs créatures", () => {
+      let s = scenario({
+        p1: {
+          battlefield: ["Fblthp, Impossibly Lost", "Brightblade Stoat", "Bear Cub", "Llanowar Elves"],
+          library: lands("Island", 8),
+        },
+      });
+      const fblthp = idOf(s, "p1", "battlefield", "Fblthp, Impossibly Lost");
+      const onStack = (x: S) => x.stack.filter((i) => i.sourceId === fblthp).length;
+      const [stoat, cub, elves] = ["Brightblade Stoat", "Bear Cub", "Llanowar Elves"].map((n) => idOf(s, "p1", "battlefield", n));
+      s = play(
+        attack(s, [stoat as string, cub as string, elves as string]),
+        () => undefined,
+        (x) => onStack(x) > 0,
+      );
+      expect(s.turn.step).toBe("firstStrikeDamage");
+      expect(onStack(s)).toBe(1);
+      // La capacité de l'étape d'initiative est retirée de la pile (contrecarrée) : Fblthp reste sur le champ de bataille.
+      s.stack = s.stack.filter((i) => i.sourceId !== fblthp);
+      s = play(
+        s,
+        () => undefined,
+        (x) => onStack(x) > 0 || x.turn.step === "main2",
+      );
+      expect(s.turn.step).toBe("combatDamage");
+      // Bear Cub et Llanowar Elves blessent l'adversaire en même temps : un seul déclenchement.
+      expect(onStack(s)).toBe(1);
+      s = play(
+        s,
+        () => undefined,
+        (x) => x.turn.step === "main2" && x.stack.length === 0 && x.pending?.kind === "priority",
+      );
+      expect(s.players.p1?.hand).toHaveLength(2);
+      expect(namesIn(s, s.players.p1?.library)).toContain("Fblthp, Impossibly Lost");
     });
   });
 

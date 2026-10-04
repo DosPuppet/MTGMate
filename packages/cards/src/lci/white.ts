@@ -243,7 +243,8 @@ export const WHITE: Record<string, CardScript> = {
       staticAbility(
         "self",
         { addKeywords: ["flying", "vigilance"] },
-        { condition: cond.counterAtLeast("+1/+1", 3), label: "Vol et vigilance (trois marqueurs)" },
+        // Trois marqueurs ou plus, de toutes sortes.
+        { condition: cond.amountAtLeast(amount.countersOn(ref.self, "any"), 3), label: "Vol et vigilance (trois marqueurs)" },
       ),
       activated({
         tapOthers: { filter: ARTIFACT_OR_CREATURE_YOURS, count: 3, includeSelf: true },

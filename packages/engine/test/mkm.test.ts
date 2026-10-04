@@ -1860,7 +1860,14 @@ describe("Murders at Karlov Manor, lot A — noir", () => {
     s = settle(cast(s, "p1", "Illicit Masquerade"));
     expect(s.objects[bear]?.counters.impostor).toBe(1);
     const angel = idOf(s, "p1", "graveyard", "Serra Angel");
-    s = settle(cast(s, "p1", "Murder", { t: [bear] }), pickIt(angel));
+    // « une autre carte de créature » : la carte de la créature morte n'est pas proposée.
+    const offered: string[] = [];
+    s = settle(cast(s, "p1", "Murder", { t: [bear] }), (req, p, cur) => {
+      if (req.type === "pick" && req.options.includes(angel))
+        offered.push(...req.options.map((id) => nameOf(cur, String(id)) ?? ""));
+      return pickIt(angel)(req, p, cur);
+    });
+    expect(offered).toEqual(["Serra Angel"]);
     expect(s.exile.some((id) => nameOf(s, id) === "Bear Cub")).toBe(true);
     expect(idsOf(s, "p1", "battlefield", "Serra Angel")).toHaveLength(1);
     // La Serra Angel revenue n'a pas de marqueur imposteur.
@@ -4012,6 +4019,20 @@ describe("Murders at Karlov Manor, lot A — multicolores", () => {
       const elemental = idOf(s, "p2", "battlefield", "Fire Elemental");
       s = settle(activate(s, "p1", juggler, "-5/-5", { targets: { t: [elemental] }, sacrifice: [bear] }));
       expect(idsOf(s, "p1", "graveyard", "Bear Cub")).toHaveLength(1);
+      expect(idsOf(s, "p2", "graveyard", "Fire Elemental")).toHaveLength(1);
+    });
+
+    it("suspect lui-même, le Juggler peut se sacrifier pour payer son coût", () => {
+      let s = scenario({
+        p1: { battlefield: [...lands("Swamp", 4), ...lands("Mountain", 3)], hand: ["Rune-Brand Juggler"] },
+        p2: { battlefield: ["Fire Elemental"] },
+      });
+      s = settle(cast(s, "p1", "Rune-Brand Juggler"));
+      const juggler = idOf(s, "p1", "battlefield", "Rune-Brand Juggler");
+      expect(s.objects[juggler]?.suspected).toBe(true);
+      const elemental = idOf(s, "p2", "battlefield", "Fire Elemental");
+      s = settle(activate(s, "p1", juggler, "-5/-5", { targets: { t: [elemental] }, sacrifice: [juggler] }));
+      expect(idsOf(s, "p1", "graveyard", "Rune-Brand Juggler")).toHaveLength(1);
       expect(idsOf(s, "p2", "graveyard", "Fire Elemental")).toHaveLength(1);
     });
   });

@@ -149,12 +149,11 @@ export const BLUE: Record<string, CardScript> = {
         targets: [
           {
             id: "t",
-            label: "capacité activée ou déclenchée que vous contrôlez",
-            filter: { stackItems: { abilitiesOnly: true } },
+            label: "capacité activée ou déclenchée que vous contrôlez d'une source créature",
+            filter: { stackItems: { abilitiesOnly: true, controller: "you", source: { types: ["Creature"] } } },
           },
         ],
-        // Approximation : la source n'est pas vérifiée (créature) ; la capacité d'un adversaire n'est pas copiée.
-        effects: [fx.copySpell(ref.except(ref.target(), ref.stackItemsOf(ref.eachOpponent)), 1)],
+        effects: [fx.copySpell(ref.target(), 1)],
         label: "Copiez une capacité que vous contrôlez",
       }),
     ],

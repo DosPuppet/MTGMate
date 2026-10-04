@@ -163,7 +163,8 @@ export const CARDS: Record<string, CardScript> = {
     abilities: [
       manaAbility("C"),
       manaAbility("C", 2, {
-        restriction: { spell: { subtype: "Eldrazi" }, abilityOfSource: { subtype: "Eldrazi" } },
+        // « Eldrazi incolores » : sorts et sources sans couleur.
+        restriction: { spell: { subtype: "Eldrazi", colorCount: 0 }, abilityOfSource: { subtype: "Eldrazi", colorCount: 0 } },
       }),
     ],
   },

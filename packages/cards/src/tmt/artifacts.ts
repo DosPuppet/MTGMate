@@ -125,18 +125,16 @@ export const ARTIFACTS: Record<string, CardScript> = {
   "Turtle Van": {
     // Équipage 1 : lu dans le texte.
     abilities: [
-      // Approximation : la créature est choisie parmi celles qui l'ont pilotée ce tour-ci, sans la cibler.
       triggered(
         when.attacksSelf,
         [
-          fx.chooseAmong(ref.crewedBy, ref.you, "c"),
-          fx.addCounters(ref.stored("c"), 1),
-          fx.when(
-            cond.refMatches(ref.stored("c"), { anySubtype: ["Mutant", "Ninja", "Turtle"] }),
-            fx.doubleCounters(ref.stored("c")),
-          ),
+          fx.addCounters(ref.target(), 1),
+          fx.when(cond.refMatches(ref.target(), { anySubtype: ["Mutant", "Ninja", "Turtle"] }), fx.doubleCounters(ref.target())),
         ],
-        { label: "Un marqueur +1/+1 sur une créature qui l'a pilotée (doublés si Mutant, Ninja ou Tortue)" },
+        {
+          targets: [{ ...target.creature("t", { crewedSource: true }), label: "créature qui l'a pilotée ce tour-ci" }],
+          label: "Un marqueur +1/+1 sur une créature qui l'a pilotée (doublés si Mutant, Ninja ou Tortue)",
+        },
       ),
     ],
   },

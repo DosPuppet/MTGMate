@@ -781,6 +781,16 @@ describe("« Engagez N artefacts et/ou créatures dégagés », la source compri
     const g = scenario({ p1: { battlefield: ["Goldfury Strider", "Bear Cub"] } });
     expect(legalActions(g, "p1").some((a) => a.type === "activate")).toBe(true);
   });
+
+  it("Warden of the Inner Sky : vol et vigilance avec trois marqueurs ou plus, de toutes sortes", () => {
+    const w = scenario({
+      p1: { battlefield: [{ name: "Warden of the Inner Sky", counters: { "+1/+1": 1, shield: 1, stun: 1 } }, "Bear Cub"] },
+    });
+    const warden = idOf(w, "p1", "battlefield", "Warden of the Inner Sky");
+    expect(chars(w, warden).keywords).toEqual(expect.arrayContaining(["flying", "vigilance"]));
+    const two = scenario({ p1: { battlefield: [{ name: "Warden of the Inner Sky", counters: { "+1/+1": 1, shield: 1 } }] } });
+    expect(chars(two, idOf(two, "p1", "battlefield", "Warden of the Inner Sky")).keywords).not.toContain("flying");
+  });
 });
 
 describe("Lost Caverns of Ixalan, lot K8 : cartes mythiques, rares et peu communes", () => {
@@ -1408,6 +1418,20 @@ describe("Lost Caverns of Ixalan, lot K8 : cartes mythiques, rares et peu commun
       expect(chars(s, echo).name).toBe("Deepfathom Echo");
     });
 
+    it("Deepfathom Echo : la créature à copier est choisie à la résolution, après l'exploration, sans cibler", () => {
+      let s = scenario({ p1: { battlefield: ["Deepfathom Echo", "Shivan Dragon", "Bear Cub"], library: ["Opt", "Forest"] } });
+      const echo = idOf(s, "p1", "battlefield", "Deepfathom Echo");
+      const dragon = idOf(s, "p1", "battlefield", "Shivan Dragon");
+      const cub = idOf(s, "p1", "battlefield", "Bear Cub");
+      s = advanceUntil(s, (x) => x.turn.step === "beginCombat" && x.stack.length > 0);
+      expect(s.stack.at(-1)?.targets.t).toBeUndefined();
+      // Le Dragon part avant la résolution : la capacité se résout quand même, et la copie porte sur Bear Cub.
+      destroy(s, dragon);
+      s = resolve(s, choosing([cub]));
+      expect(s.objects[echo]?.counters["+1/+1"]).toBe(1);
+      expect(chars(s, echo).name).toBe("Bear Cub");
+    });
+
     it("Deeproot Pilgrimage : des Ondins non-jetons que vous contrôlez s'engagent → un seul Ondin 1/1 avec la défense talismanique", () => {
       let s = scenario({ p1: { battlefield: ["Deeproot Pilgrimage", "Cenote Scout", "Merfolk Cave-Diver", "Bear Cub"] } });
       s = resolve(attack(s, [idOf(s, "p1", "battlefield", "Cenote Scout"), idOf(s, "p1", "battlefield", "Merfolk Cave-Diver")]));
@@ -1570,6 +1594,61 @@ describe("Lost Caverns of Ixalan, lot K8 : cartes mythiques, rares et peu commun
       };
       expect(tokens(journey(false), "p1", "Map")).toHaveLength(1);
       expect(tokens(journey(true), "p1", "Map")).toHaveLength(2);
+    });
+
+    it("Kellan, Daring Traveler : une carte révélée qui n'est pas une créature de VM 3 ou moins peut aller au cimetière, sinon elle reste", () => {
+      const run = (yes: boolean) => {
+        const s = scenario({
+          p1: { battlefield: ["Kellan, Daring Traveler // Journey On"], library: ["Shivan Dragon", "Forest"] },
+        });
+        return resolve(attack(s, [idOf(s, "p1", "battlefield", "Kellan, Daring Traveler // Journey On")]), choosing([], yes));
+      };
+      const binned = run(true);
+      expect(namesIn(binned, binned.players.p1?.graveyard)).toEqual(["Shivan Dragon"]);
+      expect(namesIn(binned, binned.players.p1?.library)).toEqual(["Forest"]);
+      const kept = run(false);
+      expect(namesIn(kept, kept.players.p1?.library)).toEqual(["Shivan Dragon", "Forest"]);
+      // Une créature de VM 3 ou moins va forcément en main (pas de refus possible).
+      let mins: number[] = [];
+      let s = scenario({ p1: { battlefield: ["Kellan, Daring Traveler // Journey On"], library: ["Bear Cub", "Forest"] } });
+      s = resolve(attack(s, [idOf(s, "p1", "battlefield", "Kellan, Daring Traveler // Journey On")]), (req) => {
+        if (req.type === "pick" && req.intent === "lookAtTop") mins = [...mins, req.min ?? 0];
+        return undefined;
+      });
+      expect(mins).toEqual([1]);
+      expect(namesIn(s, s.players.p1?.graveyard)).toEqual([]);
+    });
+
+    it("Journey On : une Carte, plus une par adversaire qui contrôle un artefact", () => {
+      let t = scenario({
+        players: 3,
+        p1: { battlefield: ["Forest"], hand: ["Kellan, Daring Traveler // Journey On"] },
+        p2: { battlefield: ["Nutrient Block"] },
+        p3: { battlefield: ["Nutrient Block"] },
+      });
+      t = resolve(castCard(t, "p1", "Kellan, Daring Traveler // Journey On", { face: 1 }));
+      expect(tokens(t, "p1", "Map")).toHaveLength(3);
+    });
+
+    it("In the Presence of Ages : une carte de créature et/ou une carte de terrain en main, pas deux créatures ; le reste au cimetière", () => {
+      const setup = () =>
+        scenario({
+          p1: {
+            battlefield: lands("Forest", 3),
+            hand: ["In the Presence of Ages"],
+            library: ["Bear Cub", "Llanowar Elves", "Forest", "Opt"],
+          },
+        });
+      let s = setup();
+      const cub = s.players.p1?.library[0] as string;
+      const elves = s.players.p1?.library[1] as string;
+      const forest = s.players.p1?.library[2] as string;
+      s = castCard(s, "p1", "In the Presence of Ages");
+      s = passAccepting(s, (x) => x.pending?.kind === "choice");
+      expect(() => act(s, "p1", { type: "choose", values: [cub, elves] })).toThrow(RulesError);
+      s = resolve(act(s, "p1", { type: "choose", values: [cub, forest] }));
+      expect(namesIn(s, s.players.p1?.hand).sort()).toEqual(["Bear Cub", "Forest"]);
+      expect(namesIn(s, s.players.p1?.graveyard).sort()).toEqual(["In the Presence of Ages", "Llanowar Elves", "Opt"]);
     });
 
     it("Kutzil's Flanker : un marqueur par créature partie ce tour-ci ; ou +2 PV et regard 2 ; ou exil du cimetière d'un joueur", () => {
@@ -1902,6 +1981,21 @@ describe("Lost Caverns of Ixalan, lot K8 : cartes mythiques, rares et peu commun
       s = resolve(activateLabel(s, "p1", boat, "Équipage", { tap: [bear] }));
       s = resolve(attack(s, [boat]));
       expect(s.objects[bear]?.counters["+1/+1"]).toBe(1);
+    });
+
+    it("Subterranean Schooner : la créature qui l'a piloté est ciblée ; partie avant la résolution, rien n'explore", () => {
+      let s = scenario({
+        p1: { battlefield: ["Subterranean Schooner", "Bear Cub", "Llanowar Elves"], library: ["Opt", "Forest"] },
+      });
+      const boat = idOf(s, "p1", "battlefield", "Subterranean Schooner");
+      const bear = idOf(s, "p1", "battlefield", "Bear Cub");
+      s = resolve(activateLabel(s, "p1", boat, "Équipage", { tap: [bear] }));
+      s = passAccepting(attack(s, [boat]), (x) => x.stack.length > 0);
+      expect(s.stack.at(-1)?.targets.t).toEqual([bear]);
+      destroy(s, bear);
+      s = resolve(s);
+      expect(namesIn(s, s.players.p1?.library)).toEqual(["Opt", "Forest"]);
+      expect(s.objects[idOf(s, "p1", "battlefield", "Llanowar Elves")]?.counters["+1/+1"]).toBeUndefined();
     });
 
     it("Sunken Citadel : arrive engagée, couleur choisie ; un mana de cette couleur, ou deux pour les seules capacités de terrains", () => {

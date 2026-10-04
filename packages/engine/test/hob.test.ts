@@ -633,6 +633,21 @@ describe("lot A, blanc", () => {
       expect(tokens(s, "p1", "Human Soldier")).toHaveLength(1);
     });
 
+    it("The Queen of Dale : « leur premier sort non-créature » se vérifie au déclenchement ; un deuxième sort en réponse ne l'annule pas", () => {
+      let s = scenario({
+        p1: { battlefield: ["The Queen of Dale"], library: ["Opt", "Opt", "Opt"] },
+        p2: { battlefield: lands("Island", 2), hand: ["Opt", "Opt"] },
+        active: "p2",
+      });
+      s = cast(s, "p2", "Opt");
+      expect(s.stack.filter((x) => x.kind === "ability")).toHaveLength(1);
+      // En réponse au déclenchement, l'adversaire lance un deuxième sort non-créature (qui ne déclenche rien).
+      s = cast(s, "p2", "Opt");
+      expect(s.stack.filter((x) => x.kind === "ability")).toHaveLength(1);
+      s = settle(s);
+      expect(tokens(s, "p1", "Human Soldier")).toHaveLength(1);
+    });
+
     it("Roads Go Ever, Ever On : I exile deux Plaines, +2 PV ; II et III les rendent en main ; IV renforce à l'attaque", () => {
       let s = scenario({
         p1: {
@@ -2983,7 +2998,13 @@ describe("lot A, multicolores", () => {
         const bear = idOf(s, "p1", "battlefield", "Bear Cub");
         const rescue = idOf(s, "p1", "graveyard", "Eagle's Rescue");
         expect(() => activate(s, "p1", rescue, { targets: { t: [bear] } })).toThrow();
-        s = settle(activate(s, "p1", rescue, { targets: { t: [elves] } }));
+        // Arrivée « attachée à la créature ciblée » : aucun autre hôte n'est demandé.
+        let asked = false;
+        s = settle(activate(s, "p1", rescue, { targets: { t: [elves] } }), () => {
+          asked = true;
+          return undefined;
+        });
+        expect(asked).toBe(false);
         const aura = idOf(s, "p1", "battlefield", "Eagle's Rescue");
         expect(s.objects[aura]?.attachedTo).toBe(elves);
         expect(pt(s, elves)).toEqual([3, 3]);

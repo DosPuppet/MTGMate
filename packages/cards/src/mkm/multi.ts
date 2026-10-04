@@ -278,7 +278,8 @@ export const MULTI: Record<string, CardScript> = {
       }),
       activated({
         mana: "{3}{B}{R}",
-        sacrificeOther: { filter: SUSPECTED },
+        // « une créature suspecte » : le Juggler lui-même s'il est suspect.
+        sacrificeOther: { filter: SUSPECTED, includeSelf: true },
         targets: [target.creature()],
         effects: [fx.pump(ref.target(), -5, -5)],
         label: "La créature ciblée gagne -5/-5",

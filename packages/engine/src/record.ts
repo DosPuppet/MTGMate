@@ -331,8 +331,10 @@ export const RECORD_VERSION = 1;
  *   pas est celui de l'attaquant (Raid Bombardment) ; retirer tous les marqueurs ne demande plus leur sorte.
  * - 123 : approximations levées par script (A1) : Kellan, the Kid lance le sort, Dyadrine fait choisir les créatures,
  *   capacités « quand elle se transforme » sur la face arrière (Ultimecia, Black Chocobo), Tellah en un déclenchement…
+ * - 124 : approximations levées par script (A2) ; « faites ceci une seule fois par tour » revérifié à la résolution (deux
+ *   déclenchements sur la pile) ; « une autre carte » exclut aussi la carte de la créature morte (nouvel identifiant).
  */
-export const RULES_VERSION = 123;
+export const RULES_VERSION = 124;
 
 /** Un point de contrôle toutes les N décisions (plus la dernière de la partie). */
 export const CHECKPOINT_EVERY = 25;

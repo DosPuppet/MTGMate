@@ -95,11 +95,11 @@ export const GREEN: Record<string, CardScript> = {
   "Earth Kingdom General": {
     abilities: [
       triggered(when.entersSelf, fx.earthbend(ref.target(), 2), { targets: [LAND_YOU_CONTROL], label: "Maîtrise de la terre 2" }),
-      // Approximation : « une seule fois par tour » consomme le déclenchement même si vous refusez.
+      // « Ne le faites qu'une fois par tour » : la limite n'est consommée que si vous gagnez les PV.
       triggered(
         when.youPutCounters({ types: ["Creature"] }, "+1/+1"),
-        [...fx.may("Gagner autant de points de vie ?", fx.gainLife(amount.eventAmount))],
-        { oncePerTurn: true, label: "Vous pouvez gagner autant de points de vie (une fois par tour)" },
+        fx.may("Gagner autant de points de vie ?", fx.gainLife(amount.eventAmount), fx.doneOncePerTurn),
+        { oncePerTurn: "ifDone", label: "Vous pouvez gagner autant de points de vie (une fois par tour)" },
       ),
     ],
   },

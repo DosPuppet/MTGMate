@@ -66,7 +66,7 @@ import {
   validateTargets,
   withChosen,
 } from "./targets";
-import { checkCondition, checkCrime, createDelayed, pushInline, simultaneously } from "./triggers";
+import { checkCondition, checkCrime, createDelayed, onceKey, pushInline, simultaneously } from "./triggers";
 import { countTurnEvents, logTurnEvent } from "./turnlog";
 import type {
   AbilityCostMod,
@@ -3486,6 +3486,9 @@ export function specsAndEffects(s: GameState, item: StackItem): { specs: TargetS
   if (ab?.kind === "triggered") {
     // 603.4 : la condition d'une capacité « si… » est vérifiée à nouveau à la résolution.
     if (ab.condition && !checkCondition(s, ab.condition, item.controller, item.sourceId, item.event?.objectId, item.event))
+      return { specs: [], effects: [] };
+    // « Faites ceci une seule fois par tour » : déjà fait par un autre déclenchement de la même capacité (deux sur la pile).
+    if (ab.oncePerTurn === "ifDone" && s.turn.onceFired.includes(onceKey(item.sourceDefId, item.sourceId, item.abilityIndex)))
       return { specs: [], effects: [] };
     if (ab.modes) {
       const mode = ab.modes[item.mode];

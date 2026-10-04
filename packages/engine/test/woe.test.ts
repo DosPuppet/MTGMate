@@ -1081,9 +1081,14 @@ describe("Wilds of Eldraine, lot A — bleu", () => {
     const ALCHEMIST = "Aquatic Alchemist // Bubble Up";
     let s = scenario({ p1: { battlefield: [ALCHEMIST, ...lands("Island", 2)], hand: ["Opt", "Opt"] } });
     const alch = idOf(s, "p1", "battlefield", ALCHEMIST);
-    s = settle(cast(s, "p1", "Opt"));
+    s = cast(s, "p1", "Opt");
+    expect(s.stack.filter((i) => i.kind === "ability")).toHaveLength(1);
+    s = settle(s);
     expect(pt(s, alch)).toEqual([3, 3]);
-    s = settle(cast(s, "p1", "Opt"));
+    // Le deuxième éphémère du tour ne déclenche rien (aucune capacité sur la pile).
+    s = cast(s, "p1", "Opt");
+    expect(s.stack.filter((i) => i.kind === "ability")).toHaveLength(0);
+    s = settle(s);
     expect(pt(s, alch)).toEqual([3, 3]);
 
     let t = scenario({ p1: { battlefield: lands("Island", 3), hand: [ALCHEMIST], graveyard: ["Opt", "Bear Cub"] } });
@@ -1502,6 +1507,18 @@ describe("Wilds of Eldraine, lot A — bleu", () => {
     const ability = t.stack[0]?.id as string;
     t = settle(castAdventure(t, "p1", VIRTUE, { t: [ability] }));
     expect(pt(t, smith)).toEqual([4, 1]);
+
+    // « que vous contrôlez » : la capacité d'un adversaire ne peut pas être ciblée.
+    let u = scenario({
+      active: "p2",
+      p1: { battlefield: lands("Island", 2), hand: [VIRTUE] },
+      p2: { battlefield: ["Merfolk Coralsmith", ...lands("Island", 1)] },
+    });
+    u = activate(u, "p2", idOf(u, "p2", "battlefield", "Merfolk Coralsmith"));
+    const theirs = u.stack[0]?.id as string;
+    u = act(u, "p2", { type: "pass" });
+    expect(u.pending?.kind === "priority" && u.pending.player).toBe("p1");
+    expect(() => castAdventure(u, "p1", VIRTUE, { t: [theirs] })).toThrow();
   });
 
   it("Water Wings : F/E de base 4/4, le vol et la défense talismanique jusqu'à la fin du tour", () => {

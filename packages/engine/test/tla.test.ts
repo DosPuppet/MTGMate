@@ -2689,6 +2689,23 @@ describe("lot A, vert", () => {
       expect(s.players.p1?.life).toBe(22);
     });
 
+    it("Earth Kingdom General : « ne le faites qu'une fois par tour » ; refuser le gain de PV ne consomme pas la limite", () => {
+      let s = scenario({ p1: { battlefield: lands("Forest", 6), hand: ["Earth Kingdom General", "Origin of Metalbending"] } });
+      const land = idsOf(s, "p1", "battlefield", "Forest")[0] as string;
+      s = settle(cast(s, "p1", "Earth Kingdom General"), (req) => (req.type === "yesNo" ? [0] : picking([land])(req)));
+      expect(s.objects[land]?.counters["+1/+1"]).toBe(2);
+      expect(s.players.p1?.life).toBe(20);
+      // Un autre marqueur le même tour : la capacité se déclenche encore, et cette fois les PV sont gagnés.
+      const general = idOf(s, "p1", "battlefield", "Earth Kingdom General");
+      let asked = 0;
+      s = settle(cast(s, "p1", "Origin of Metalbending", { mode: 1, targets: { u: [general] } }), (req) => {
+        if (req.type === "yesNo") asked += 1;
+        return req.type === "yesNo" ? [1] : undefined;
+      });
+      expect(asked).toBe(1);
+      expect(s.players.p1?.life).toBe(21);
+    });
+
     it("Earth Rumble : maîtrise de la terre 2, puis une de vos créatures se bat contre une créature adverse", () => {
       let s = scenario({
         p1: { battlefield: [...lands("Forest", 4), "Serra Angel"], hand: ["Earth Rumble"] },
@@ -4531,6 +4548,41 @@ describe("lot C2 : lancement et mana", () => {
     expect(now?.cards).toHaveLength(1);
     s = settle(act(s, "p1", { type: "cast", card: now?.cards[0] as string, targets: { t: ["p2"] } }));
     expect(s.players.p2?.life).toBe(17);
+  });
+
+  it("Planetarium of Wan Shi Tong : « ne le faites qu'une fois par tour » ne compte que la carte lancée par le Planetarium", () => {
+    // Un sort lancé depuis la bibliothèque par un autre effet ne consomme pas la limite.
+    const TOP = customCard({
+      name: "Sort du dessus",
+      typeLine: "Sorcery",
+      types: ["Sorcery"],
+      spell: dsl.spell([], [dsl.fx.castNow(dsl.ref.libraryTop(dsl.ref.you), { free: true })]),
+    });
+    let s = scenario({
+      p1: {
+        battlefield: ["Planetarium of Wan Shi Tong", "Island"],
+        hand: [TOP, "Opt"],
+        library: ["Opt", "Island", "Lightning Strike", "Island", "Island"],
+      },
+    });
+    s = untilCastNow(act(s, "p1", { type: "cast", card: idOf(s, "p1", "hand", "Sort du dessus") }));
+    s = act(s, "p1", { type: "cast", card: castNowOf(s)?.cards[0] as string });
+    // Opt (lancé depuis la bibliothèque) : regard 1, l'Île reste au-dessus et est piochée ; le Planetarium se déclenche.
+    for (let i = 0; i < 40 && !castNowOf(s); i++) {
+      const p = s.pending;
+      if (p?.kind === "choice")
+        s = act(s, p.player, { type: "choose", values: p.request.type === "pick" ? [] : p.request.suggested });
+      else if (p?.kind === "priority") s = act(s, p.player, { type: "pass" });
+    }
+    const now = castNowOf(s);
+    expect(namesIn(s, now?.cards)).toEqual(["Lightning Strike"]);
+    s = settle(act(s, "p1", { type: "cast", card: now?.cards[0] as string, targets: { t: ["p2"] } }));
+    expect(s.players.p2?.life).toBe(17);
+    // La carte a été lancée par le Planetarium : un autre regard ce tour-ci ne déclenche plus rien.
+    s = act(s, "p1", { type: "cast", card: idOf(s, "p1", "hand", "Opt") });
+    s = settle(s);
+    expect(castNowOf(s)).toBeUndefined();
+    expect(s.stack).toHaveLength(0);
   });
 });
 

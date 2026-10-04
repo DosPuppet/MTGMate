@@ -3851,6 +3851,34 @@ describe("lot A, incolores et terrains", () => {
         const after = crewAndAttack(s, turtle);
         expect(after.objects[turtle]?.counters["+1/+1"]).toBe(4);
       });
+
+      it("« créature ciblée qui l'a piloté » : la cible est choisie quand la capacité est mise sur la pile", () => {
+        let s = scenario({
+          p1: { battlefield: ["Turtle Van", "Bear Cub", "Llanowar Elves"] },
+          p2: { battlefield: ["Bear Cub"] },
+        });
+        const van = idOf(s, "p1", "battlefield", "Turtle Van");
+        const bear = idOf(s, "p1", "battlefield", "Bear Cub");
+        const elves = idOf(s, "p1", "battlefield", "Llanowar Elves");
+        s = settle(activate(s, "p1", van, "Équipage", { tap: [bear, elves] }));
+        s = attack(s, [van]);
+        let asked: ChoiceRequest | undefined;
+        for (let i = 0; i < 20 && !s.stack.some((x) => x.kind === "ability"); i++) {
+          const p = s.pending;
+          if (p?.kind === "choice") {
+            asked = p.request;
+            s = act(s, p.player, { type: "choose", values: [elves] });
+          } else if (p?.kind === "priority") s = act(s, p.player, { type: "pass" });
+          else break;
+        }
+        expect(asked?.type === "pick" && asked.intent).toBe("triggerTarget");
+        // Seules les créatures qui l'ont piloté ce tour-ci sont proposées.
+        expect(asked?.type === "pick" && [...asked.options].sort()).toEqual([bear, elves].sort());
+        expect(s.stack.find((x) => x.kind === "ability")?.targets.t).toEqual([elves]);
+        s = settle(s);
+        expect(s.objects[elves]?.counters["+1/+1"]).toBe(1);
+        expect(s.objects[bear]?.counters["+1/+1"] ?? 0).toBe(0);
+      });
     });
 
     describe("Weather Maker", () => {

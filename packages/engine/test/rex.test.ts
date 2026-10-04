@@ -269,5 +269,27 @@ describe("Jurassic World Collection", () => {
       const park = s.battlefield.find((id) => chars(s, id).name === "Jurassic Park");
       expect(park).toBeDefined();
     });
+
+    it("Welcome to . . . (chapitre I) : jusqu'à un artefact non-créature par adversaire, jamais deux du même", () => {
+      const base = () =>
+        scenario({
+          players: 3,
+          p1: { battlefield: lands("Forest", 3), hand: ["Welcome to . . . // Jurassic Park"] },
+          p2: { battlefield: ["Mana Crypt", "Mana Crypt"] },
+          p3: { battlefield: ["Mana Crypt"] },
+        });
+      let s = base();
+      const [a2, b2] = idsOf(s, "p2", "battlefield", "Mana Crypt") as [string, string];
+      const c3 = idOf(s, "p3", "battlefield", "Mana Crypt");
+      const saga = "Welcome to . . . // Jurassic Park";
+      let t = castIt(base(), saga);
+      for (let i = 0; i < 10 && t.pending?.kind === "priority"; i++) t = act(t, t.pending.player, { type: "pass" });
+      const p = t.pending;
+      expect(p?.kind === "choice" && p.request.type === "pick" && p.request.max).toBe(2);
+      expect(() => act(t, "p1", { type: "choose", values: [a2, b2] })).toThrow();
+      s = settle(castIt(s, saga), (req) => (req.type === "pick" && req.options.includes(c3) ? [a2, c3] : undefined));
+      for (const id of [a2, c3]) expect(chars(s, id)).toMatchObject({ power: 0, toughness: 4 });
+      expect(chars(s, b2).types).not.toContain("Creature");
+    });
   });
 });

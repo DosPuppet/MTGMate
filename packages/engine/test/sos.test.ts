@@ -1111,6 +1111,9 @@ describe("Secrets of Strixhaven, lot A — bleu", () => {
     let t = scenario({ p1: { battlefield: ["Serra Angel", ...lands("Island", 6)], hand: ["Echocasting Symposium"] } });
     t = settle(cast(t, "p1", "Echocasting Symposium", { p: ["p2"], c: [idOf(t, "p1", "battlefield", "Serra Angel")] }));
     expect(idsOf(t, "p2", "battlefield", "Serra Angel")).toHaveLength(1);
+    // Le joueur ciblé crée le jeton : il en est le propriétaire, pas seulement le contrôleur.
+    const token = t.objects[idOf(t, "p2", "battlefield", "Serra Angel")];
+    expect([token?.owner, token?.controller]).toEqual(["p2", "p2"]);
   });
 
   it("Encouraging Aviator : en attaquant, devient préparée ; Jump donne le vol à une créature jusqu'à la fin du tour", () => {
@@ -3129,6 +3132,18 @@ describe("Secrets of Strixhaven, lot A — multicolores", () => {
       s = settle(act(s, "p1", { type: "cast", card: b as string, targets: { t: [admin] } }), pickIds(angel));
       expect(idsOf(s, "p1", "graveyard", "Scolding Administrator")).toHaveLength(1);
       expect(counters(s, angel)).toBe(2);
+
+      // « si elle avait des marqueurs » : sans marqueur, la capacité ne se déclenche pas (aucune cible demandée).
+      let t = scenario({ p1: { battlefield: ["Scolding Administrator", "Bear Cub"] } });
+      destroy(t, idOf(t, "p1", "battlefield", "Scolding Administrator"));
+      expect(t.triggers).toHaveLength(0);
+      let asked = false;
+      t = settle(t, () => {
+        asked = true;
+        return undefined;
+      });
+      expect(asked).toBe(false);
+      expect(t.stack).toHaveLength(0);
     });
 
     it("Silverquill Charm : exile une créature de force 2 ou moins (pas 3) ; ou drain de 3", () => {

@@ -67,8 +67,18 @@ export const CARDS: Record<string, CardScript> = {
   "Grasp of Fate": {
     abilities: [
       triggered(when.entersSelf, [fx.exileUntilLeaves(ref.target())], {
-        targets: [target.optional(target.nonland("t", { controller: "opponent" }, "permanent non-terrain adverse"))],
-        label: "Exilez un permanent non-terrain adverse jusqu'à son départ",
+        // « Pour chaque adversaire, jusqu'à un permanent non-terrain ciblé que ce joueur contrôle. »
+        targets: [
+          {
+            ...target.upTo(
+              1,
+              target.nonland("t", { controller: "opponent" }, "permanent non-terrain adverse (un par adversaire)"),
+            ),
+            differentPlayers: true,
+            countAmount: amount.refCount(ref.eachOpponent),
+          },
+        ],
+        label: "Exilez jusqu'à un permanent non-terrain de chaque adversaire jusqu'à son départ",
       }),
     ],
   },
@@ -166,7 +176,13 @@ export const CARDS: Record<string, CardScript> = {
     abilities: [
       triggered(
         { on: "step", step: "end", whose: "any" },
-        [fx.mill(amount.turnEvents({ event: "zone", to: "graveyard", who: "opponent", byOwner: true }), ref.attached)],
+        // X : les cartes (pas les jetons) mises dans le cimetière du joueur enchanté ce tour-ci, d'où qu'elles viennent.
+        [
+          fx.mill(
+            { kind: "turnEvents", query: { event: "zone", to: "graveyard", byOwner: true, token: false }, of: ref.attached },
+            ref.attached,
+          ),
+        ],
         { label: "Le joueur enchanté meule autant de cartes qu'il en a mis dans son cimetière ce tour-ci" },
       ),
     ],

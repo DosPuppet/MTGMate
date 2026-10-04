@@ -1062,6 +1062,33 @@ describe("lot A, bleu", () => {
       expect(idsOf(s, "p1", "battlefield", "Soldier")).toHaveLength(2);
     });
 
+    it("Echo : ni la capacité d'un adversaire, ni celle d'une source non-créature ne peut être ciblée", () => {
+      // Capacité déclenchée d'un adversaire.
+      let s = scenario({
+        active: "p2",
+        p1: { battlefield: ["Echo, Perceptive Prodigy", ...lands("Island", 2)] },
+        p2: { battlefield: lands("Island", 3), hand: ["S.H.I.E.L.D. Deployment Drone"] },
+      });
+      const echo = idOf(s, "p1", "battlefield", "Echo, Perceptive Prodigy");
+      s = cast(s, "p2", "S.H.I.E.L.D. Deployment Drone");
+      s = passUntil(s, (x) => x.stack.some((i) => i.kind === "ability") && x.pending?.player === "p1");
+      const theirs = s.stack.find((i) => i.kind === "ability")?.id as string;
+      expect(() => act(s, "p1", { type: "activate", source: echo, ability: 0, targets: { t: [theirs] } })).toThrow();
+      // Capacité déclenchée que vous contrôlez, d'une source enchantement.
+      let t = scenario({
+        p1: {
+          battlefield: ["Echo, Perceptive Prodigy", "Doom Reigns Supreme", ...lands("Swamp", 3)],
+          hand: ["Agents of HYDRA"],
+        },
+      });
+      t = cast(t, "p1", "Agents of HYDRA");
+      t = passUntil(t, (x) => x.stack.some((i) => i.kind === "ability"));
+      const doom = t.stack.find((i) => i.kind === "ability")?.id as string;
+      expect(t.defs[t.stack.find((i) => i.id === doom)?.sourceDefId ?? ""]?.name).toBe("Doom Reigns Supreme");
+      const echo2 = idOf(t, "p1", "battlefield", "Echo, Perceptive Prodigy");
+      expect(() => act(t, "p1", { type: "activate", source: echo2, ability: 0, targets: { t: [doom] } })).toThrow();
+    });
+
     it("Falcon : crée Redwing, Oiseau Éclaireur légendaire bleu 1/1 volant qui surveille en attaquant", () => {
       let s = scenario({ p1: { battlefield: lands("Island", 5), hand: ["Falcon, Winged Wonder"] } });
       s = settle(cast(s, "p1", "Falcon, Winged Wonder"));
@@ -1459,6 +1486,32 @@ describe("lot A, noir", () => {
       expect(asked).toBe(1);
     });
 
+    it("Baron Strucker : une connivence refusée ne compte pas ; le Méchant suivant peut encore comploter", () => {
+      let s = scenario({
+        p1: {
+          battlefield: ["Baron Strucker, HYDRA Overlord", ...lands("Swamp", 3)],
+          hand: ["Agents of HYDRA", "Agents of HYDRA", "Agents of HYDRA"],
+          library: ["Opt", "Forest", "Forest", "Forest"],
+        },
+      });
+      let asked = 0;
+      // Refusée la première fois, acceptée la deuxième.
+      const answer: Answer = (req, p, cur) => {
+        if (req.type === "yesNo") return [asked++ === 0 ? 0 : 1];
+        return answering(["Opt"])(req, p, cur);
+      };
+      s = settle(cast(s, "p1", "Agents of HYDRA"), answer);
+      expect(asked).toBe(1);
+      expect(s.players.p1?.hand).toHaveLength(2);
+      s = settle(cast(s, "p1", "Agents of HYDRA"), answer);
+      expect(asked).toBe(2);
+      expect(idsOf(s, "p1", "graveyard", "Opt")).toHaveLength(1);
+      // La connivence a été faite : plus de proposition ce tour-ci.
+      s = settle(cast(s, "p1", "Agents of HYDRA"), answer);
+      expect(asked).toBe(2);
+      expect(idsOf(s, "p1", "battlefield", "Agents of HYDRA")).toHaveLength(3);
+    });
+
     it("Construct a Cosmic Cube : deuxième carte piochée, un Méchant et un marqueur de plan ; au septième, vous contrôlez un adversaire", () => {
       let s = scenario({
         p1: {
@@ -1477,6 +1530,22 @@ describe("lot A, noir", () => {
       s = settle(cast(s, "p1", "Visions of Villainy"));
       expect(idsOf(s, "p1", "graveyard", "Construct a Cosmic Cube")).toHaveLength(1);
       expect(s.turnControl).toMatchObject({ player: "p2", by: "p1" });
+    });
+
+    it("Construct a Cosmic Cube : s'il n'est plus là pour être sacrifié, « quand vous le faites » ne se déclenche pas", () => {
+      let s = scenario({
+        p1: { battlefield: ["Construct a Cosmic Cube", ...lands("Swamp", 3)], hand: ["Visions of Villainy"] },
+      });
+      const cube = idOf(s, "p1", "battlefield", "Construct a Cosmic Cube");
+      setCounters(s, cube, "plan", 6);
+      // Visions fait piocher la deuxième carte : la capacité du septième marqueur va sur la pile ; le Cube est détruit
+      // avant qu'elle se résolve.
+      s = cast(s, "p1", "Visions of Villainy");
+      s = passUntil(s, (x) => x.stack.some((i) => i.kind === "ability" && i.sourceId === cube && i.abilityIndex === 1));
+      destroy(s, cube);
+      s = settle(s);
+      expect(idsOf(s, "p1", "graveyard", "Construct a Cosmic Cube")).toHaveLength(1);
+      expect(s.turnControl).toBeUndefined();
     });
 
     it("Crossbones : un autre Méchant arrivé, un marqueur +1/+1 et 2 blessures à chaque adversaire, une fois par tour", () => {
@@ -1589,6 +1658,22 @@ describe("lot A, noir", () => {
         expect(idsOf(s, "p1", "battlefield", "Serra Angel")).toHaveLength(1);
         expect(exiled(s, "Opt")).toHaveLength(1);
         expect(s.players.p2?.library.map((id) => nameOf(s, id))).toEqual(["Plains"]);
+      });
+
+      it("au cinquième marqueur, si elle n'est plus là pour être sacrifiée, rien n'est exilé", () => {
+        let s = scenario({
+          p1: { battlefield: ["Doom Reigns Supreme", ...lands("Swamp", 2)], hand: ["Agents of HYDRA"] },
+          p2: { library: ["Bear Cub", "Forest", "Serra Angel", "Island", "Opt", "Plains"] },
+        });
+        const doom = idOf(s, "p1", "battlefield", "Doom Reigns Supreme");
+        setCounters(s, doom, "plan", 4);
+        s = cast(s, "p1", "Agents of HYDRA");
+        s = passUntil(s, (x) => x.stack.some((i) => i.kind === "ability" && i.sourceId === doom && i.abilityIndex === 1));
+        destroy(s, doom);
+        s = settle(s);
+        expect(idsOf(s, "p1", "graveyard", "Doom Reigns Supreme")).toHaveLength(1);
+        expect(castNowOf(s)).toBeUndefined();
+        expect(s.players.p2?.library).toHaveLength(6);
       });
     });
 
@@ -3240,6 +3325,20 @@ describe("lot A, multicolores", () => {
       expect(s.players.p1?.hand).toHaveLength(1);
       // Au tour suivant, plus de vol.
       s = advanceUntil(s, (x) => x.turn.active === "p2" && x.turn.step === "main1");
+      expect(chars(s, beast).keywords).not.toContain("flying");
+    });
+
+    it("Beast : un marqueur d'une autre sorte ne lui donne pas le vol", () => {
+      const oil = customCard({
+        name: "Test Oil",
+        typeLine: "Instant",
+        types: ["Instant"],
+        spell: spell([target.creature()], [fx.counters(ref.target(), "oil")]),
+      });
+      let s = scenario({ p1: { battlefield: ["Beast, Erudite Aerialist"], hand: [oil] } });
+      const beast = idOf(s, "p1", "battlefield", "Beast, Erudite Aerialist");
+      s = settle(cast(s, "p1", "Test Oil", { targets: { t: [beast] } }));
+      expect(s.objects[beast]?.counters.oil).toBe(1);
       expect(chars(s, beast).keywords).not.toContain("flying");
     });
 

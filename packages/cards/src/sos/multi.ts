@@ -141,8 +141,9 @@ export const MULTI: Record<string, CardScript> = {
   "Scolding Administrator": {
     abilities: [
       triggered(REPARTEE, [fx.addCounters(ref.self, 1)], { label: "Repartee : un marqueur +1/+1" }),
-      // Sans marqueur, la capacité ne fait rien (« si elle avait des marqueurs »).
+      // « si elle avait des marqueurs » (603.4) : ses marqueurs au moment de mourir (dernières informations connues).
       triggered(when.diesSelf, [fx.lkiCountersTo(ref.target())], {
+        condition: cond.amountAtLeast(amount.countersOn(ref.eventObject, "any"), 1),
         targets: [target.upTo(1, target.creature())],
         label: "Ses marqueurs sur une créature",
       }),

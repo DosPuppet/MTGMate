@@ -877,11 +877,12 @@ function singleDef(raw: RawCard, script: CardScript | undefined, set: string): C
       }),
     );
   }
-  // Modulaire N : arrive avec N marqueurs +1/+1 ; en mourant, ses marqueurs +1/+1 peuvent aller sur une créature-artefact.
+  // Modulaire N : arrive avec N marqueurs +1/+1 ; mis au cimetière depuis le champ de bataille (702.43a : « ce
+  // permanent », une créature ou non, comme Power Depot), ses marqueurs +1/+1 peuvent aller sur une créature-artefact.
   if (modular) {
     bloomburrowAbilities.push(
       dsl.entersWith({ counters: modular, label: `Modulaire ${modular}` }),
-      dsl.triggered(dsl.when.diesSelf, [dsl.fx.addCounters(dsl.ref.target(), dsl.amount.countersOn(dsl.ref.self))], {
+      dsl.triggered(dsl.when.putIntoGraveyardSelf, [dsl.fx.addCounters(dsl.ref.target(), dsl.amount.countersOn(dsl.ref.self))], {
         targets: [
           dsl.target.optional({
             id: "t",

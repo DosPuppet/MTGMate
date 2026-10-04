@@ -132,8 +132,6 @@ export const MULTI: Record<string, CardScript> = {
     ],
   },
   "Eagle's Rescue": {
-    // Approximation : l'Aura revient d'abord attachée à un hôte choisi comme pour toute Aura mise sur le champ de
-    // bataille (303.4f, une question de plus s'il y en a plusieurs), puis elle est attachée à la créature ciblée.
     enchant: { filter: { types: ["Creature"] }, label: "créature" },
     abilities: [
       staticAbility("attached", { power: 2, toughness: 2, addKeywords: ["flying"] }, { label: "+2/+2 et le vol" }),
@@ -142,7 +140,8 @@ export const MULTI: Record<string, CardScript> = {
         fromGraveyard: true,
         sorcerySpeed: true,
         targets: [target.creature("t", { controller: "you", maxPower: 1 })],
-        effects: [fx.moveTo(ref.selfCard, { to: "battlefield" }, { name: "a" }), fx.attach(ref.target(), ref.stored("a"))],
+        // L'Aura arrive directement attachée à la créature ciblée (aucun autre hôte n'est demandé).
+        effects: [fx.moveTo(ref.selfCard, { to: "battlefield" }, undefined, ref.target())],
         label: "Revient du cimetière attachée à une de vos créatures de force 1 ou moins",
       }),
     ],

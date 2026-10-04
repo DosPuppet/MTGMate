@@ -134,10 +134,14 @@ export const BLUE: Record<string, CardScript> = {
     cdaPT: amount.count({ types: ["Land"], subtype: "Island", controller: "you" }),
     abilities: [
       ...[when.entersSelf, when.attacksSelf].map((w) =>
-        triggered(w, [fx.counters(ref.target(), "flood", 1), fx.modify(ref.target(), { addSubtypes: ["Island"] }, "permanent")], {
-          targets: [target.permanent("t", ["Land"], {}, "terrain")],
-          label: "Marqueur d'inondation (Île)",
-        }),
+        triggered(
+          w,
+          [fx.counters(ref.target(), "flood", 1), fx.modifyWhileCounter(ref.target(), { addSubtypes: ["Island"] }, "flood")],
+          {
+            targets: [target.permanent("t", ["Land"], {}, "terrain")],
+            label: "Marqueur d'inondation (Île)",
+          },
+        ),
       ),
       // Approximation : la réduction est générique.
       costReducer(INSTANT_SORCERY, 0, "Premier éphémère ou rituel moins cher", {

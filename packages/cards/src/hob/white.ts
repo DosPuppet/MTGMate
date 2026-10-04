@@ -196,9 +196,10 @@ export const WHITE: Record<string, CardScript> = {
   },
   "The Queen of Dale": {
     abilities: [
-      // « Leur premier sort non-créature de chaque tour » : le journal du tour n'en compte qu'un pour ce joueur.
+      // « Leur premier sort non-créature de chaque tour » : le journal du tour n'en compte qu'un pour ce joueur ; condition
+      // du déclencheur (vérifiée au lancement seulement), pas un « si » revérifié à la résolution.
       triggered(when.castSpell("opponent", { notTypes: ["Creature"] }), recruit(), {
-        condition: cond.not(cond.amountAtLeast(amount.noncreatureCastBy(ref.eventPlayer), 2)),
+        triggerCondition: cond.not(cond.amountAtLeast(amount.noncreatureCastBy(ref.eventPlayer), 2)),
         label: "Premier sort non-créature d'un adversaire ce tour-ci : recrutez",
       }),
     ],

@@ -194,7 +194,12 @@ export const BLUE: Record<string, CardScript> = {
     ],
   },
   "Subterranean Schooner": {
-    abilities: [triggered(when.attacksSelf, [fx.explore(ref.crewedBy)], { label: "Son équipage explore" })],
+    abilities: [
+      triggered(when.attacksSelf, [fx.explore(ref.target())], {
+        targets: [{ ...target.creature("t", { crewedSource: true }), label: "créature qui l'a piloté ce tour-ci" }],
+        label: "Son équipage explore",
+      }),
+    ],
   },
   "Unlucky Drop": {
     spell: spell([targetObj("t", ARTIFACT_OR_CREATURE, "artefact ou créature")], [fx.topOrBottom(ref.target())]),

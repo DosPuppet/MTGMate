@@ -117,6 +117,58 @@ describe("Enchanting Tales", () => {
       expect(s.players.p1?.hand).toHaveLength(3);
     });
 
+    it("Grasp of Fate : pour chaque adversaire, jusqu'à un permanent non-terrain qu'il contrôle, exilé jusqu'à son départ", () => {
+      const base = () =>
+        scenario({
+          players: 3,
+          p1: { battlefield: lands("Plains", 3), hand: ["Grasp of Fate"] },
+          p2: { battlefield: ["Bear Cub", "Serra Angel"] },
+          p3: { battlefield: ["Bear Cub", "Forest"] },
+        });
+      let s = base();
+      const cub2 = idOf(s, "p2", "battlefield", "Bear Cub");
+      const angel = idOf(s, "p2", "battlefield", "Serra Angel");
+      const cub3 = idOf(s, "p3", "battlefield", "Bear Cub");
+      // Deux permanents du même adversaire : refusé.
+      let t = castIt(base(), "Grasp of Fate");
+      for (let i = 0; i < 10 && t.pending?.kind === "priority"; i++) t = act(t, t.pending.player, { type: "pass" });
+      expect(t.pending?.kind).toBe("choice");
+      const p = t.pending;
+      if (p?.kind !== "choice") return;
+      expect(p.request.type === "pick" && p.request.max).toBe(2);
+      expect(() => act(t, "p1", { type: "choose", values: [cub2, angel] })).toThrow();
+      // Un par adversaire : les deux sont exilés, puis reviennent quand Grasp of Fate part.
+      s = settle(castIt(s, "Grasp of Fate"), (req) =>
+        req.type === "pick" && req.options.includes(cub3) ? [angel, cub3] : undefined,
+      );
+      expect(exiled(s, "Serra Angel")).toHaveLength(1);
+      expect(exiled(s, "Bear Cub")).toHaveLength(1);
+      expect(idsOf(s, "p2", "battlefield", "Bear Cub")).toHaveLength(1);
+      destroy(s, idOf(s, "p1", "battlefield", "Grasp of Fate"));
+      s = settle(s);
+      expect(idsOf(s, "p2", "battlefield", "Serra Angel")).toHaveLength(1);
+      expect(idsOf(s, "p3", "battlefield", "Bear Cub")).toHaveLength(1);
+    });
+
+    it("Fraying Sanity : le joueur enchanté meule autant de cartes qu'il en a été mis dans son cimetière ce tour-ci", () => {
+      let s = scenario({
+        players: 3,
+        p1: { battlefield: lands("Island", 3), hand: ["Fraying Sanity"] },
+        p2: { battlefield: ["Bear Cub", "Serra Angel"] },
+        p3: { battlefield: ["Bear Cub"] },
+      });
+      s = settle(castIt(s, "Fraying Sanity", { targets: { [enchantSpec(s, "Fraying Sanity")]: ["p2"] } }));
+      expect(s.objects[idOf(s, "p1", "battlefield", "Fraying Sanity")]?.attachedTo).toBe("p2");
+      // Deux cartes dans le cimetière de p2, une dans celui de p3 (un autre adversaire du contrôleur de l'Aura).
+      destroy(s, idOf(s, "p2", "battlefield", "Bear Cub"));
+      destroy(s, idOf(s, "p2", "battlefield", "Serra Angel"));
+      destroy(s, idOf(s, "p3", "battlefield", "Bear Cub"));
+      s = settle(s);
+      s = advanceUntil(s, (x) => x.turn.step === "cleanup" || x.turn.active !== "p1");
+      expect(s.players.p2?.graveyard).toHaveLength(4);
+      expect(s.players.p3?.graveyard).toHaveLength(1);
+    });
+
     it("Leyline of Anticipation : vos sorts comme s'ils avaient le flash", () => {
       let s = scenario({
         active: "p2",

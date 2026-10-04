@@ -181,8 +181,8 @@ export const MULTI: Record<string, CardScript> = {
         "self",
         { addKeywords: ["flying"] },
         {
-          condition: cond.sourceMatches({ countersPutByYouThisTurn: true }),
-          label: "Vole si vous avez mis des marqueurs sur lui ce tour-ci",
+          condition: cond.sourceMatches({ countersPutByYouThisTurn: "+1/+1" }),
+          label: "Vole si vous avez mis des marqueurs +1/+1 sur lui ce tour-ci",
         },
       ),
       triggered(when.combatDamageToPlayer, [fx.draw(1)], { label: "Piochez une carte" }),

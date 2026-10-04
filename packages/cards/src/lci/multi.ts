@@ -159,11 +159,16 @@ export const MULTI: Record<string, CardScript> = {
     abilities: [
       triggered(
         when.yourCombat,
-        [fx.explore(), ...fx.may("Devenir une copie de l'autre créature ?", fx.becomeCopy(ref.self, ref.target()))],
-        {
-          targets: [target.optional(target.creature("t", { controller: "you", other: true }))],
-          label: "Explore, puis copie",
-        },
+        [
+          fx.explore(),
+          // La créature à copier est choisie après l'exploration, sans cibler.
+          fx.chooseAmong(ref.permanentsOf(ref.you, { types: ["Creature"], other: true }), ref.you, "c", {
+            optional: true,
+            prompt: "Devenir jusqu'à la fin du tour une copie de l'une de vos autres créatures ?",
+          }),
+          fx.becomeCopy(ref.self, ref.stored("c")),
+        ],
+        { label: "Explore, puis copie" },
       ),
     ],
   },
@@ -205,7 +210,14 @@ export const MULTI: Record<string, CardScript> = {
     abilities: [
       triggered(
         when.attacksSelf,
-        [fx.lookAtTop(1, { filter: { types: ["Creature"], maxManaValue: 3 }, count: 1, rest: "top" })],
+        [
+          // Une carte de créature de VM 3 ou moins va en main ; sinon, elle peut aller au cimetière.
+          fx.lookAtTop(1, { filter: { types: ["Creature"], maxManaValue: 3 }, count: 1, exact: true, rest: "top", store: "k" }),
+          ...fx.when(
+            cond.all(cond.not(cond.v("k")), cond.amountAtLeast(amount.refCount(ref.libraryTop(ref.you)), 1)),
+            ...fx.may("Mettre la carte révélée dans votre cimetière ?", fx.moveTo(ref.libraryTop(ref.you), { to: "graveyard" })),
+          ),
+        ],
         { label: "Créature de VM 3 ou moins en main" },
       ),
     ],
@@ -213,9 +225,12 @@ export const MULTI: Record<string, CardScript> = {
   "Journey On": {
     spell: spell(
       [],
+      // X : un plus le nombre d'adversaires qui contrôlent un artefact.
       [
-        fx.createTokens(MAP),
-        ...fx.when(cond.battlefieldCount({ types: ["Artifact"], controller: "opponent" }, 1), fx.createTokens(MAP)),
+        fx.createTokens(
+          MAP,
+          amount.plus(amount.refCount(ref.playersWhere(ref.eachOpponent, cond.controls({ types: ["Artifact"] }))), 1),
+        ),
       ],
     ),
   },

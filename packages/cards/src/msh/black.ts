@@ -48,9 +48,9 @@ export const BLACK: Record<string, CardScript> = {
   "Baron Strucker, HYDRA Overlord": {
     abilities: [
       costReducer({ subtype: "Villain" }, 1, "Sorts de Méchant : {1} de moins"),
-      // Approximation : « une seule fois par tour » consomme le déclenchement même si vous refusez la connivence.
-      triggered(ANOTHER_VILLAIN_ENTERS, fx.may("Faire comploter ce Méchant ?", fx.connive(ref.eventObject)), {
-        oncePerTurn: true,
+      // « Faites ceci une seule fois par tour » : seule une connivence acceptée compte.
+      triggered(ANOTHER_VILLAIN_ENTERS, fx.may("Faire comploter ce Méchant ?", fx.doneOncePerTurn, fx.connive(ref.eventObject)), {
+        oncePerTurn: "ifDone",
         label: "Le Méchant arrivé peut comploter (une fois par tour)",
       }),
     ],
@@ -62,7 +62,10 @@ export const BLACK: Record<string, CardScript> = {
       }),
       triggered(
         when.countersPut("self", "plan"),
-        [fx.sacrificeIt(ref.self), fx.reflexive([target.player("o", "opponent")], [fx.controlNextTurn(ref.target("o"))])],
+        [
+          fx.sacrifice(ref.you, { self: true }, 1, { store: "s" }),
+          ...fx.when(cond.v("s"), fx.reflexive([target.player("o", "opponent")], [fx.controlNextTurn(ref.target("o"))])),
+        ],
         {
           condition: cond.counterAtLeast("plan", 7),
           label: "Septième marqueur : sacrifiez-le ; vous contrôlez un adversaire pendant son prochain tour",
@@ -117,15 +120,18 @@ export const BLACK: Record<string, CardScript> = {
       triggered(
         when.countersPut("self", "plan"),
         [
-          fx.sacrificeIt(ref.self),
-          fx.reflexive(
-            [target.player("o", "opponent")],
-            [
-              fx.exileTop(ref.target("o"), 5, "d"),
-              // « Jusqu'à deux sorts » : un premier, puis un second parmi les cartes restantes.
-              fx.castNow(ref.stored("d"), { free: true, storeRest: "r" }),
-              fx.castNow(ref.stored("r"), { free: true }),
-            ],
+          fx.sacrifice(ref.you, { self: true }, 1, { store: "s" }),
+          ...fx.when(
+            cond.v("s"),
+            fx.reflexive(
+              [target.player("o", "opponent")],
+              [
+                fx.exileTop(ref.target("o"), 5, "d"),
+                // « Jusqu'à deux sorts » : un premier, puis un second parmi les cartes restantes.
+                fx.castNow(ref.stored("d"), { free: true, storeRest: "r" }),
+                fx.castNow(ref.stored("r"), { free: true }),
+              ],
+            ),
           ),
         ],
         {

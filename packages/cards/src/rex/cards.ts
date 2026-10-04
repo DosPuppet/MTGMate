@@ -375,18 +375,24 @@ export const CARDS: Record<string, CardScript> = {
           }),
         ],
         {
+          // « Pour chaque adversaire, jusqu'à un artefact non-créature ciblé qu'il contrôle. »
           targets: [
-            target.upTo(
-              1,
-              target.permanent(
-                "t",
-                ["Artifact"],
-                { controller: "opponent", notTypes: ["Creature"] },
-                "artefact non-créature adverse",
+            {
+              ...target.upTo(
+                1,
+                target.permanent(
+                  "t",
+                  ["Artifact"],
+                  { controller: "opponent", notTypes: ["Creature"] },
+                  "artefact non-créature adverse (un par adversaire)",
+                ),
               ),
-            ),
+              differentPlayers: true,
+              countAmount: amount.refCount(ref.eachOpponent),
+            },
           ],
-          label: "I — Un artefact non-créature adverse devient un Mur 0/4 avec le défenseur, tant que vous contrôlez la Saga",
+          label:
+            "I — Jusqu'à un artefact non-créature de chaque adversaire devient un Mur 0/4 avec le défenseur, tant que vous contrôlez la Saga",
         },
       ),
       chapter([2], [fx.createTokens(DINOSAUR_TRAMPLE, 1, undefined, "d"), fx.pump(ref.stored("d"), 0, 0, ["haste"])], {

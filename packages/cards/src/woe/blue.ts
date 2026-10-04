@@ -99,12 +99,12 @@ export const BLUE: Record<string, CardScript> = {
   },
   "Aquatic Alchemist": {
     abilities: [
-      // Le premier éphémère ou rituel du tour (tous deux confondus) : le montant de l'événement compte ceux lancés avant.
-      triggered(
-        when.castSpell("you", INSTANT_SORCERY),
-        [...fx.when(cond.not(cond.amountAtLeast(amount.eventAmount, 1)), fx.pump(ref.self, 2, 0))],
-        { label: "Premier éphémère ou rituel du tour : +2/+0" },
-      ),
+      // Le premier éphémère ou rituel du tour (tous deux confondus) : le montant de l'événement compte ceux lancés avant ;
+      // condition du déclencheur (vérifiée au lancement seulement), les suivants ne déclenchent rien.
+      triggered(when.castSpell("you", INSTANT_SORCERY), [fx.pump(ref.self, 2, 0)], {
+        triggerCondition: cond.not(cond.amountAtLeast(amount.eventAmount, 1)),
+        label: "Premier éphémère ou rituel du tour : +2/+0",
+      }),
     ],
   },
   "Bubble Up": {
@@ -323,9 +323,14 @@ export const BLUE: Record<string, CardScript> = {
   },
   "Vantress Visions": {
     spell: spell(
-      [{ id: "t", label: "capacité activée ou déclenchée que vous contrôlez", filter: { stackItems: { abilitiesOnly: true } } }],
-      // La cible n'est pas limitée à vos capacités (filtre de pile sans contrôleur) : celle d'un adversaire n'est pas copiée.
-      [fx.copySpell(ref.except(ref.target(), ref.stackItemsOf(ref.eachOpponent)), 1)],
+      [
+        {
+          id: "t",
+          label: "capacité activée ou déclenchée que vous contrôlez",
+          filter: { stackItems: { abilitiesOnly: true, controller: "you" } },
+        },
+      ],
+      [fx.copySpell(ref.target(), 1)],
     ),
   },
   "Water Wings": {

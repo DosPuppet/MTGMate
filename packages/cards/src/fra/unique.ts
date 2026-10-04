@@ -275,15 +275,16 @@ export const UNIQUE: Record<string, CardScript> = {
   },
   "Fblthp, Impossibly Lost": {
     abilities: [
+      // « Un ou plusieurs de vos adversaires » : un déclenchement par étape de blessures de combat.
       triggered(
-        when.combatDamage({ controller: "you" }, true),
+        when.combatDamageToOpponent({}),
         [
           fx.draw(2),
           fx.when(cond.not(cond.amountAtLeast(amount.cardsIn("library"), 1)), fx.winGame),
           fx.moveTo(ref.self, { to: "libraryTop" }),
           fx.shuffle(),
         ],
-        { condition: cond.yourTurn, oncePerTurn: true, label: "Piochez deux cartes, mélangez Fblthp" },
+        { condition: cond.yourTurn, batched: true, label: "Piochez deux cartes, mélangez Fblthp" },
       ),
     ],
   },

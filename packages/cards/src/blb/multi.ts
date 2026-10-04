@@ -46,10 +46,10 @@ const blinkWithCounter = [
 
 export const MULTI: Record<string, CardScript> = {
   "Alania, Divergent Storm": {
-    // Approximation : les sorts de Loutre (des sorts de créature) ne sont pas copiés.
     abilities: [
       triggered(
-        { on: "castSpell", by: "you", firstOf: ["Instant", "Sorcery"] },
+        // La copie d'un sort de Loutre devient un jeton en se résolvant (707.10).
+        { on: "castSpell", by: "you", firstOf: ["Instant", "Sorcery", "Otter"] },
         fx.may(
           "Un adversaire pioche une carte pour copier ce sort ?",
           fx.draw(1, ref.target()),
@@ -99,17 +99,16 @@ export const MULTI: Record<string, CardScript> = {
   },
   "Clement, the Worrywort": {
     abilities: [
-      triggered(
-        when.enters(CREATURE_YOU_CONTROL),
-        fx.when(
-          cond.amountAtLeast(amount.plus(amount.manaValueOf(ref.eventObject), amount.neg(amount.manaValueOf(ref.target()))), 1),
-          fx.bounce(ref.target()),
-        ),
-        {
-          targets: [target.upTo(1, target.creature("t", { controller: "you" }))],
-          label: "Renvoie une créature de VM inférieure",
-        },
-      ),
+      triggered(when.enters(CREATURE_YOU_CONTROL), [fx.bounce(ref.target())], {
+        targets: [
+          {
+            ...target.upTo(1, target.creature("t", { controller: "you" })),
+            // « Inférieure » à celle de la créature arrivée, au ciblage puis à la résolution (608.2b).
+            maxManaValueAmount: amount.plus(amount.manaValueOf(ref.eventObject), -1),
+          },
+        ],
+        label: "Renvoie une créature de VM inférieure",
+      }),
       staticAbility(
         kin(["Frog"]),
         { addAbilities: [manaAbility(["G", "U"], 1, { restriction: { spell: { types: ["Creature"] } } })] },
@@ -189,10 +188,9 @@ export const MULTI: Record<string, CardScript> = {
         [fx.draw(1), fx.gainLife(1), fx.addCounters(ref.self, 1)],
         { label: "Piochez, +1 PV, marqueur +1/+1" },
       ),
-      // Approximation : pas pour les sorts de créature avec {X} de VM inférieure à 4.
       manaAbility(["W", "U", "B", "R", "G"], 1, {
         selfPower: true,
-        restriction: { spell: { types: ["Creature"], minManaValue: 4 } },
+        restriction: { spell: { types: ["Creature"], anyOf: [{ minManaValue: 4 }, { hasX: true }] } },
       }),
     ],
   },
@@ -329,7 +327,8 @@ export const MULTI: Record<string, CardScript> = {
           fx.emblem("Ral", "Les éphémères et les rituels que vous lancez ont la réplique.", [
             triggered(
               when.castSpell("you", INSTANT_SORCERY),
-              [fx.copySpell(ref.eventObject, amount.plus(amount.spellsCastThisTurn, -1))],
+              // Réplique : les sorts lancés ce tour-ci par tous les joueurs, moins celui-ci (comptés à la résolution).
+              [fx.copySpell(ref.eventObject, amount.plus(amount.turnEvents({ event: "cast" }), -1))],
               {
                 label: "Réplique",
               },

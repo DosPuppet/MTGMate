@@ -123,8 +123,19 @@ export const GREEN: Record<string, CardScript> = {
     ],
   },
   "Something Worth Saving": {
-    // Approximation : les cartes sont regardées puis mises au cimetière (pas un « meule » au sens strict).
-    spell: spell([], [fx.lookAtTop(4, { filter: { permanent: true }, count: 1, rest: "graveyard" }), fx.gainLife(1)]),
+    spell: spell(
+      [],
+      [
+        fx.mill(4, ref.you, { name: "m" }),
+        fx.pickFromZone(
+          "graveyard",
+          { permanent: true },
+          { to: "hand" },
+          { min: 0, pool: ref.stored("m"), prompt: "Vous pouvez reprendre une carte de permanent meulée" },
+        ),
+        fx.gainLife(1),
+      ],
+    ),
   },
   "Tethermage's Advantage": {
     spell: spell([target.creature("t")], [fx.pump(ref.target(), 2, 2, ["reach"]), fx.untap(ref.target())]),

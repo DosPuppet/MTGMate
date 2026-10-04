@@ -1,11 +1,12 @@
 /** Stellar Sights (EOS) : tests de règles des cartes (PLAN-G). */
 import { describe, expect, it } from "vitest";
 import { destroy } from "../src/actions";
+import { activated, fx } from "../src/dsl";
 import { legalActions } from "../src/legal";
 import { manaAbilitiesOf } from "../src/mana";
 import { chars } from "../src/state";
 import { answerLeylines } from "../src/turn";
-import { act, advanceUntil, attack, customCard, idOf, idsOf, lands, nameOf, scenario, settle } from "./helpers";
+import { act, advanceUntil, attack, castable, customCard, idOf, idsOf, lands, nameOf, scenario, settle } from "./helpers";
 
 type S = ReturnType<typeof scenario>;
 
@@ -36,6 +37,55 @@ describe("Stellar Sights", () => {
       const depot = idOf(s, "p1", "battlefield", "Power Depot");
       expect(s.objects[depot]?.tapped).toBe(true);
       expect(s.objects[depot]?.counters["+1/+1"]).toBe(1);
+    });
+
+    it("mis au cimetière depuis le champ de bataille (il n'est pas une créature), son marqueur peut aller sur une créature-artefact", () => {
+      const construct = customCard({
+        name: "Test Construct",
+        types: ["Artifact", "Creature"],
+        typeLine: "Artifact Creature — Construct",
+        power: 1,
+        toughness: 1,
+      });
+      let s = scenario({ p1: { battlefield: [{ name: "Power Depot", counters: { "+1/+1": 1 } }, construct] } });
+      const depot = idOf(s, "p1", "battlefield", "Power Depot");
+      const c = idOf(s, "p1", "battlefield", "Test Construct");
+      destroy(s, depot);
+      s = settle(s, (req) => (req.type === "pick" && req.options.includes(c) ? [c] : undefined));
+      expect(idsOf(s, "p1", "graveyard", "Power Depot")).toHaveLength(1);
+      expect(s.objects[c]?.counters["+1/+1"]).toBe(1);
+      expect(chars(s, c).power).toBe(2);
+    });
+  });
+
+  describe("Eldrazi Temple", () => {
+    const eldrazi = (name: string, manaCostText: string, generic: number, colored: Record<string, number>) =>
+      customCard({
+        name,
+        manaCost: { generic, colored, x: 0 },
+        manaCostText,
+        colors: Object.keys(colored) as never,
+        subtypes: ["Eldrazi"],
+        typeLine: "Creature — Eldrazi",
+        power: 3,
+        toughness: 3,
+        abilities: [activated({ mana: "{2}", effects: [fx.gainLife(1)], label: "Gagnez 1 PV" })],
+      });
+    const COLORLESS = eldrazi("Test Colorless Eldrazi", "{3}", 3, {});
+    const GREEN = eldrazi("Test Green Eldrazi", "{2}{G}", 2, { G: 1 });
+
+    it("{C}{C} pour un sort d'Eldrazi incolore ; pas pour un Eldrazi coloré", () => {
+      const s = scenario({ p1: { battlefield: ["Eldrazi Temple", "Forest"], hand: [COLORLESS, GREEN] } });
+      expect(castable(s, "p1", idOf(s, "p1", "hand", "Test Colorless Eldrazi"))).toBe(true);
+      expect(castable(s, "p1", idOf(s, "p1", "hand", "Test Green Eldrazi"))).toBe(false);
+    });
+
+    it("{C}{C} pour la capacité d'un Eldrazi incolore ; pas pour celle d'un Eldrazi coloré", () => {
+      const s = scenario({ p1: { battlefield: ["Eldrazi Temple", COLORLESS, GREEN] } });
+      const can = (name: string) =>
+        legalActions(s, "p1").some((a) => a.type === "activate" && a.source === idOf(s, "p1", "battlefield", name));
+      expect(can("Test Colorless Eldrazi")).toBe(true);
+      expect(can("Test Green Eldrazi")).toBe(false);
     });
   });
 

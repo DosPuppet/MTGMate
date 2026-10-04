@@ -193,23 +193,23 @@ export const WHITE: Record<string, CardScript> = {
     ],
   },
   "Jackdaw Savior": {
-    // Approximation : la carte est choisie à la résolution (sans cibler).
     abilities: [
-      triggered(
-        when.dies(FLYER_YOU),
-        [
-          fx.pickFromZone(
-            "graveyard",
-            { types: ["Creature"] },
-            { to: "battlefield" },
-            {
-              maxManaValue: amount.plus(amount.manaValueOf(ref.eventObject), -1),
-              prompt: "Carte de créature de valeur de mana inférieure",
-            },
-          ),
+      triggered(when.dies(FLYER_YOU), [fx.toBattlefield(ref.target())], {
+        targets: [
+          {
+            ...target.cardInGraveyard(
+              "t",
+              { types: ["Creature"] },
+              "you",
+              "autre carte de créature de valeur de mana inférieure",
+            ),
+            // « Inférieure » à celle de la créature morte (qui ne peut donc pas être choisie), au ciblage puis à la
+            // résolution (608.2b).
+            maxManaValueAmount: amount.plus(amount.manaValueOf(ref.eventObject), -1),
+          },
         ],
-        { label: "Renvoie une créature de VM inférieure" },
-      ),
+        label: "Renvoie une créature de VM inférieure",
+      }),
     ],
   },
   "Jolly Gerbils": {

@@ -23,6 +23,20 @@ const CLOCK = customCard({
   abilities: [triggered(when.eachEndStep, [fx.gainLife(1)])],
 });
 
+/** « Chaque fois qu'une autre créature que vous contrôlez meurt, vous pouvez gagner 1 PV. Faites ceci une seule fois par tour. » */
+const ONCE_WATCHER = customCard({
+  name: "Veilleur sobre",
+  power: 1,
+  toughness: 1,
+  abilities: [
+    triggered(
+      when.dies({ types: ["Creature"], controller: "you", other: true }),
+      [...fx.may("Gagner 1 PV ?", fx.gainLife(1), fx.doneOncePerTurn)],
+      { oncePerTurn: "ifDone" },
+    ),
+  ],
+});
+
 const cast = (s: ReturnType<typeof scenario>, p: string, name: string, targets?: Record<string, string[]>) =>
   act(s, p, { type: "cast", card: idOf(s, p, "hand", name), targets });
 
@@ -71,6 +85,16 @@ describe("capacités déclenchées", () => {
       },
     });
     s = passAccepting(s, (x) => x.stack.length === 0 && x.players.p1?.life !== 20);
+    expect(s.players.p1?.life).toBe(21);
+  });
+
+  it("« faites ceci une seule fois par tour » : deux déclenchements sur la pile, le second ne fait rien une fois l'effet fait", () => {
+    let s = scenario({
+      p1: {
+        battlefield: [ONCE_WATCHER, { name: "Bear Cub", damage: 2 }, { name: "Llanowar Elves", damage: 1 }],
+      },
+    });
+    s = passAccepting(s, (x) => x.stack.length === 0 && x.triggers.length === 0 && x.players.p1?.life !== 20);
     expect(s.players.p1?.life).toBe(21);
   });
 

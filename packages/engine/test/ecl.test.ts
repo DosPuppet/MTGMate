@@ -3335,6 +3335,20 @@ describe("Lorwyn Eclipsed, lot A — multicolores", () => {
       expect(idsOf(s, "p1", "battlefield", "Treasure")).toHaveLength(2);
       expect(s.objects[kirol]?.tapped).toBe(false);
       expect(s.battlefield.filter((id) => chars(s, id).types.includes("Creature") && s.objects[id]?.tapped)).toHaveLength(2);
+
+      // « que vous contrôlez » : la capacité déclenchée d'un adversaire ne peut pas être ciblée.
+      let t = scenario({
+        active: "p2",
+        p1: { battlefield: ["Kirol, Attentive First-Year", "Bear Cub", "Llanowar Elves"] },
+        p2: { battlefield: lands("Mountain", 3), hand: ["Noggle Robber"] },
+      });
+      t = act(t, "p2", { type: "cast", card: idOf(t, "p2", "hand", "Noggle Robber") });
+      t = passAccepting(t, (x) => x.stack.length === 1 && x.stack[0]?.kind === "ability" && x.pending?.kind === "priority");
+      const theirs = t.stack[0]?.id as string;
+      t = act(t, "p2", { type: "pass" });
+      expect(t.pending?.kind === "priority" && t.pending.player).toBe("p1");
+      const kirol2 = idOf(t, "p1", "battlefield", "Kirol, Attentive First-Year");
+      expect(() => activate(t, kirol2, "Copiez", { targets: { t: [theirs] } })).toThrow();
     });
   });
 });

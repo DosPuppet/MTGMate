@@ -492,8 +492,6 @@ export const MULTI: Record<string, CardScript> = {
   },
   "Kirol, Attentive First-Year": {
     abilities: [
-      // Approximation : la cible n'est pas limitée aux capacités que vous contrôlez (le moteur ne filtre pas les éléments
-      // de pile par contrôleur).
       activated({
         tapOthers: { filter: { types: ["Creature"] }, count: 2, includeSelf: true },
         oncePerTurn: true,
@@ -501,7 +499,7 @@ export const MULTI: Record<string, CardScript> = {
           {
             id: "t",
             label: "capacité déclenchée que vous contrôlez",
-            filter: { stackItems: { triggeredOnly: true } },
+            filter: { stackItems: { triggeredOnly: true, controller: "you" } },
           },
         ],
         effects: [fx.copySpell(ref.target(), 1)],

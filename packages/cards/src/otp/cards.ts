@@ -608,7 +608,9 @@ export const CARDS: Record<string, CardScript> = {
     abilities: [
       activated({
         tap: true,
-        targets: [target.upTo(2, target.cardInGraveyard("t", {}, "any"))],
+        targets: [
+          { ...target.upTo(2, target.cardInGraveyard("t", {}, "any")), samePlayer: true, label: "cartes d'un même cimetière" },
+        ],
         effects: [fx.exileCard(ref.target(), { name: "h" }), fx.link(ref.stored("h"))],
         label: "{T} : exilez jusqu'à deux cartes d'un cimetière (liées)",
       }),

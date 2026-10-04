@@ -64,10 +64,10 @@ export const BLUE: Record<string, CardScript> = {
     ),
   },
   "Echocasting Symposium": {
-    // Paradigme : lu dans le texte. Le jeton est créé par vous, puis donné au joueur ciblé (approximation).
+    // Paradigme : lu dans le texte. Le joueur ciblé crée le jeton (il en est le propriétaire et le contrôleur).
     spell: spell(
       [target.player("p"), target.creature("c", { controller: "you" })],
-      [fx.copyToken(ref.target("c"), { store: "copy" }), fx.giveControl(ref.stored("copy"), ref.target("p"))],
+      [fx.copyToken(ref.target("c"), { for: ref.target("p") })],
     ),
   },
   "Encouraging Aviator": {

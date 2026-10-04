@@ -1307,7 +1307,9 @@ function chooseTriggerTargets(s: GameState, t: PendingTrigger): boolean {
   for (const spec of triggerTargetSpecs(s, t)) {
     if (t.targets[spec.id] !== undefined) continue;
     const taken = new Set((spec.otherThan ?? []).flatMap((o) => t.targets[o] ?? []));
+    // « une autre carte » : la créature de l'événement, sous son ancien comme son nouvel identifiant (morte : sa carte).
     if (spec.notEventObject && t.event?.objectId) taken.add(t.event.objectId);
+    if (spec.notEventObject && t.event?.newObjectId) taken.add(t.event.newObjectId);
     const legal = legalTargets(s, t.controller, spec, t.sourceId).filter((id) => !taken.has(id));
     const count = spec.count ?? 1;
     // « jusqu'à X cibles » avec X = 0 : aucune cible.
@@ -1395,7 +1397,10 @@ export function answerTriggerTarget(s: GameState, triggerId: string, specId: str
   if (!t) throw new RulesError("Capacité déclenchée introuvable");
   const spec = triggerTargetSpecs(s, t).find((x) => x.id === specId);
   if (!spec) throw new RulesError("Cible inconnue");
-  if (spec.notEventObject && t.event?.objectId && values.includes(t.event.objectId))
+  if (
+    spec.notEventObject &&
+    ((t.event?.objectId && values.includes(t.event.objectId)) || (t.event?.newObjectId && values.includes(t.event.newObjectId)))
+  )
     throw new RulesError("Une autre cible que la créature de l'événement");
   try {
     t.targets[specId] =

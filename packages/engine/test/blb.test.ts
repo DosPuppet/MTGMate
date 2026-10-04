@@ -10,8 +10,8 @@ import { protection, protectionAbility } from "../src/dsl";
 import { permissionActive } from "../src/effects";
 import { RulesError } from "../src/errors";
 import { legalActions } from "../src/legal";
-import { chars, moveObject } from "../src/state";
-import type { GameState, PlayerId, TokenSpec } from "../src/types";
+import { changeCounters, chars, moveObject } from "../src/state";
+import type { GameObject, GameState, PlayerId, TokenSpec } from "../src/types";
 import {
   type Answer,
   act,
@@ -30,6 +30,7 @@ import {
   namesIn,
   passAccepting,
   passBoth,
+  passUntil,
   pickNamed,
   settle as resolve,
   scenario,
@@ -446,6 +447,22 @@ describe("Bloomburrow", () => {
     expect(s.players.p2?.hand).toHaveLength(1);
     s = settle(act(s, "p1", { type: "cast", card: shove(), targets: { t: ["p2"] } }));
     expect(s.players.p2?.life).toBe(17);
+  });
+
+  it("Alania : copie aussi le premier sort de Loutre du tour, la copie devient un jeton ; pas le deuxième", () => {
+    let s = scenario({
+      p1: { battlefield: [...lands("Island", 6), "Alania, Divergent Storm"], hand: ["Thieving Otter", "Thieving Otter"] },
+      p2: { library: ["Forest", "Island"] },
+    });
+    const yes: Answer = (req) => (req.type === "yesNo" ? [1] : undefined);
+    s = resolve(cast(s, "p1", "Thieving Otter"), yes);
+    const otters = idsOf(s, "p1", "battlefield", "Thieving Otter");
+    expect(otters).toHaveLength(2);
+    expect(otters.filter((id) => s.objects[id]?.isToken)).toHaveLength(1);
+    expect(s.players.p2?.hand).toHaveLength(1);
+    s = resolve(cast(s, "p1", "Thieving Otter"), yes);
+    expect(idsOf(s, "p1", "battlefield", "Thieving Otter")).toHaveLength(3);
+    expect(s.players.p2?.hand).toHaveLength(1);
   });
 });
 
@@ -1062,7 +1079,7 @@ describe("Bloomburrow, lot K8 : mythiques", () => {
     expect(playable(s, opt)).toBe(false);
   });
 
-  it("Eluge : F/E égales à vos Îles ; en arrivant, un marqueur d'inondation fait d'un terrain ciblé une Île", () => {
+  it("Eluge : F/E égales à vos Îles ; en arrivant, un marqueur d'inondation fait d'un terrain ciblé une Île tant qu'il a ce marqueur", () => {
     let s = scenario({ p1: { battlefield: [...lands("Island", 4), "Forest"], hand: ["Eluge, the Shoreless Sea"] } });
     const forest = idOf(s, "p1", "battlefield", "Forest");
     s = resolve(cast(s, "p1", "Eluge, the Shoreless Sea"), answer({ pick: [forest] }));
@@ -1070,6 +1087,11 @@ describe("Bloomburrow, lot K8 : mythiques", () => {
     expect(s.objects[forest]?.counters.flood).toBe(1);
     expect(chars(s, forest).subtypes).toEqual(expect.arrayContaining(["Forest", "Island"]));
     expect(ptOf(s, eluge)).toEqual([5, 5]);
+    // L'effet survit à Eluge, mais pas au marqueur d'inondation.
+    moveObject(s, eluge, "graveyard");
+    expect(chars(s, forest).subtypes).toContain("Island");
+    changeCounters(s, s.objects[forest] as GameObject, "flood", -1);
+    expect(chars(s, forest).subtypes).not.toContain("Island");
   });
 
   it("Eluge : le premier éphémère ou rituel de chaque tour coûte {1} de moins par terrain inondé, pas le deuxième", () => {
@@ -1141,6 +1163,19 @@ describe("Bloomburrow, lot K8 : mythiques", () => {
     });
     expect(castable(t, "p1", idOf(t, "p1", "hand", "Lightning Strike"))).toBe(false);
     expect(castable(t, "p1", idOf(t, "p1", "hand", "Goblin Smuggler"))).toBe(false);
+  });
+
+  it("Helga : son mana paie aussi un sort de créature avec {X} dans son coût, quelle que soit sa valeur de mana", () => {
+    let s = scenario({
+      p1: {
+        battlefield: [{ name: "Helga, Skittish Seer", counters: { "+1/+1": 3 } }],
+        hand: ["Wildwood Scourge", "Goblin Smuggler"],
+      },
+    });
+    // Wildwood Scourge ({X}{G}) avec X = 1 : valeur de mana 2, payée par le seul mana de Helga.
+    s = resolve(cast(s, "p1", "Wildwood Scourge", { x: 1 }));
+    expect(idsOf(s, "p1", "battlefield", "Wildwood Scourge")).toHaveLength(1);
+    expect(castable(s, "p1", idOf(s, "p1", "hand", "Goblin Smuggler"))).toBe(false);
   });
 
   it("Hugs : exile X cartes, jouables jusqu'à la fin de votre prochain tour ; un terrain supplémentaire à chacun de vos tours", () => {
@@ -1284,6 +1319,25 @@ describe("Bloomburrow, lot K8 : mythiques", () => {
     expect(s.players.p2?.life).toBe(18);
     s = resolve(cast(s, "p1", "Shock", { targets: { t: ["p2"] } }));
     expect(s.players.p2?.life).toBe(14);
+  });
+
+  it("Ral : l'emblème compte aussi les sorts lancés par les adversaires avant le vôtre ce tour-ci", () => {
+    let s = scenario({
+      p1: {
+        battlefield: [{ name: "Ral, Crackling Wit", counters: { loyalty: 10 } }, "Mountain"],
+        hand: ["Shock"],
+        library: lands("Plains", 4),
+      },
+      p2: { battlefield: ["Mountain"], hand: ["Shock"] },
+    });
+    s = resolve(activateK8(s, "p1", idOf(s, "p1", "battlefield", "Ral, Crackling Wit"), "emblème"));
+    s = act(s, "p1", { type: "pass" });
+    s = resolve(cast(s, "p2", "Shock", { targets: { t: ["p1"] } }));
+    expect(s.players.p1?.life).toBe(18);
+    expect(s.turn.active).toBe("p1");
+    // Un sort (de l'adversaire) lancé avant : une copie.
+    s = resolve(cast(s, "p1", "Shock", { targets: { t: ["p2"] } }));
+    expect(s.players.p2?.life).toBe(16);
   });
 
   it("Season of Loss : {P} chaque joueur sacrifie une créature, puis {P}{P} piochez par créature morte sous votre contrôle ce tour-ci", () => {
@@ -1501,6 +1555,25 @@ describe("Bloomburrow, lot K8 : rares (1)", () => {
     expect(idsOf(s, "p1", "battlefield", "Serra Angel")).toHaveLength(1);
   });
 
+  it("Clement : seules vos créatures de valeur de mana inférieure peuvent être ciblées, et la cible est choisie au déclenchement", () => {
+    let s = scenario({
+      p1: { battlefield: ["Clement, the Worrywort", "Bear Cub", "Serra Angel", ...lands("Plains", 5)], hand: ["Llanowar Elves"] },
+    });
+    s = passUntil(cast(s, "p1", "Llanowar Elves"), (x) => x.pending?.kind === "choice");
+    // Llanowar Elves (VM 1) : aucune créature de valeur de mana inférieure, rien n'est proposé.
+    expect(s.pending?.kind === "choice" && s.pending.request.intent === "triggerTarget").toBe(false);
+    s = resolve(s);
+    expect(handOf(s)).toEqual([]);
+    let t = scenario({
+      p1: { battlefield: ["Clement, the Worrywort", "Bear Cub", "Serra Angel", ...lands("Plains", 5)], hand: ["Serra Angel"] },
+    });
+    t = passUntil(cast(t, "p1", "Serra Angel"), (x) => x.pending?.kind === "choice");
+    const req = t.pending?.kind === "choice" ? t.pending.request : undefined;
+    expect(req?.intent).toBe("triggerTarget");
+    // Clement (VM 3) et Bear Cub (VM 2), pas l'autre Serra Angel (VM 5, pas inférieure).
+    expect(namesIn(t, req?.type === "pick" ? req.options : []).sort()).toEqual(["Bear Cub", "Clement, the Worrywort"]);
+  });
+
   it("Coiling Rebirth : une carte de créature revient du cimetière ; avec le cadeau, un jeton 1/1 copie en plus, sauf légendaire", () => {
     const setup = (creature: string) =>
       scenario({
@@ -1612,6 +1685,11 @@ describe("Bloomburrow, lot K8 : rares (1)", () => {
     t = resolve(cast(t, "p1", "Bear Cub"));
     expect(handOf(t)).toEqual(["Opt"]);
     expect(namesIn(t, t.players.p1?.library)).toEqual(["Island"]);
+    // Un terrain refusé reste sur la bibliothèque (pas en main), et la carte suivante n'est pas regardée.
+    let u = scenario({ p1: { battlefield: lands("Forest", 5), hand: ["Fecund Greenshell"], library: ["Island", "Opt"] } });
+    u = resolve(cast(u, "p1", "Fecund Greenshell"), (req) => (req.intent === "lookAtTop" ? [] : undefined));
+    expect(handOf(u)).toEqual([]);
+    expect(namesIn(u, u.players.p1?.library)).toEqual(["Island", "Opt"]);
   });
 
   it("Finneas : portée et vigilance ; en attaquant, un marqueur sur chaque autre créature jeton ou Lapin ; piochez si la force totale atteint 10", () => {
@@ -1766,6 +1844,23 @@ describe("Bloomburrow, lot K8 : rares (1)", () => {
     destroy(t, idOf(t, "p1", "battlefield", "Bear Cub"));
     t = resolve(t);
     expect(idsOf(t, "p1", "battlefield", "Llanowar Elves")).toHaveLength(0);
+  });
+
+  it("Jackdaw Savior : la carte de valeur de mana inférieure est ciblée au déclenchement ; partie du cimetière, rien ne revient", () => {
+    let s = scenario({ p1: { battlefield: ["Jackdaw Savior"], graveyard: ["Llanowar Elves", "Bear Cub", "Serra Angel"] } });
+    destroy(s, idOf(s, "p1", "battlefield", "Jackdaw Savior"));
+    s = passUntil(s, (x) => x.pending?.kind === "choice");
+    const req = s.pending?.kind === "choice" ? s.pending.request : undefined;
+    expect(req?.intent).toBe("triggerTarget");
+    // Ni Serra Angel (VM 5), ni Jackdaw Savior elle-même (VM 3, pas inférieure).
+    expect(namesIn(s, req?.type === "pick" ? req.options : []).sort()).toEqual(["Bear Cub", "Llanowar Elves"]);
+    const cub = idOf(s, "p1", "graveyard", "Bear Cub");
+    s = act(s, "p1", { type: "choose", values: [cub] });
+    expect(s.stack.at(-1)?.targets.t).toEqual([cub]);
+    moveObject(s, cub, "exile");
+    s = resolve(s);
+    expect(idsOf(s, "p1", "battlefield", "Llanowar Elves")).toHaveLength(0);
+    expect(graveOf(s)).toContain("Llanowar Elves");
   });
 
   it("Kastral : des Oiseaux infligent des blessures de combat — un marqueur sur chaque Oiseau, ou piochez une carte", () => {

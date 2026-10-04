@@ -231,7 +231,11 @@ export const GREEN: Record<string, CardScript> = {
     abilities: [triggered(when.step("main1"), [fx.addMana("G", "G")], { label: "Ajoutez {G}{G}" })],
   },
   "In the Presence of Ages": {
-    spell: spell([], [fx.lookAtTop(4, { filter: { anyOf: [CREATURE, { types: ["Land"] }] }, count: 2, rest: "graveyard" })]),
+    // « Une carte de créature et/ou une carte de terrain » : une de chaque type au plus.
+    spell: spell(
+      [],
+      [fx.lookAtTop(4, { filter: { anyOf: [CREATURE, { types: ["Land"] }] }, count: 2, onePerType: true, rest: "graveyard" })],
+    ),
   },
   "Ixalli's Lorekeeper": {
     abilities: [
