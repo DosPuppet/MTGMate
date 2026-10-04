@@ -175,4 +175,30 @@ describe("Jurassic World Collection", () => {
       expect(t.objects[d]?.counters).toMatchObject({ flying: 1, "+1/+1": 1 });
     });
   });
+  describe("G4e : lancer autrement", () => {
+    it("Cresting Mosasaurus : émerger (sacrifice, coût réduit de sa VM) ; lancée, renvoie les non-Dinosaures", () => {
+      let s = scenario({
+        p1: { battlefield: ["Shivan Dragon", "Island"], hand: ["Cresting Mosasaurus"] },
+        p2: { battlefield: ["Bear Cub"] },
+      });
+      s = settle(castIt(s, "Cresting Mosasaurus", { alternative: true }));
+      expect(idsOf(s, "p1", "graveyard", "Shivan Dragon")).toHaveLength(1);
+      expect(idsOf(s, "p1", "battlefield", "Cresting Mosasaurus")).toHaveLength(1);
+      expect(idsOf(s, "p2", "hand", "Bear Cub")).toHaveLength(1);
+    });
+
+    it("Hunting Velociraptor : maraude {2}{R} pour vos Dinosaures après des blessures de combat d'un Dinosaure", () => {
+      let s = scenario({
+        p1: { battlefield: ["Hunting Velociraptor", ...lands("Mountain", 3)], hand: ["Polyraptor"] },
+      });
+      const poly = idOf(s, "p1", "hand", "Polyraptor");
+      const alt = () => legalActions(s, "p1").find((a) => a.type === "cast" && a.card === poly);
+      expect(alt()).toBeUndefined();
+      s = throughCombat(attack(s, [idOf(s, "p1", "battlefield", "Hunting Velociraptor")]));
+      const o = alt();
+      expect(o?.type === "cast" && o.altAvailable).toBe(true);
+      s = settle(act(s, "p1", { type: "cast", card: poly, alternative: true }));
+      expect(idsOf(s, "p1", "battlefield", "Polyraptor")).toHaveLength(1);
+    });
+  });
 });

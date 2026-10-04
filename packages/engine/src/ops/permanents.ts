@@ -630,6 +630,14 @@ export const HANDLERS: OpHandlers = {
     if (e.duration === "whileYouControlSource" && !onBattlefield(s, ctx.sourceId)) return;
     for (const id of resolveRef(s, ctx, e.what)) {
       const o = s.objects[id];
+      // Commandeer : « gagnez le contrôle du sort ciblé » (un permanent qui en résulte arrive sous votre contrôle).
+      const item = s.stack.find((x) => x.id === id && x.kind === "spell");
+      if (item && o && item.controller !== to) {
+        item.controller = to;
+        o.controller = to;
+        bump(s);
+        continue;
+      }
       if (o?.zone !== "battlefield" || o.controller === to) continue;
       // Vol « jusqu'à la fin du tour » (Involuntary Employment) : l'effet prend fin au nettoyage (couche 2) ; Evil's
       // Thrall : au nettoyage de votre prochain tour.

@@ -5,8 +5,10 @@ import {
   amount,
   type CardScript,
   cond,
+  cost,
   entersWith,
   fx,
+  playerStatic,
   ref,
   spell,
   staticAbility,
@@ -247,6 +249,30 @@ export const CARDS: Record<string, CardScript> = {
         counterKind: "*",
         affects: { types: ["Creature"], subtype: "Dinosaur", controller: "you", other: true },
         label: "Vos autres Dinosaures arrivent avec un marqueur de chaque sorte présente sur Blue",
+      }),
+    ],
+  },
+  "Cresting Mosasaurus": {
+    abilities: [
+      triggered(
+        when.entersSelf,
+        [fx.bounce(ref.zone("battlefield", ref.eachPlayer, { types: ["Creature"], notSubtype: "Dinosaur" }))],
+        {
+          condition: cond.wasCast,
+          label: "Arrivée, si vous l'avez lancée : renvoyez chaque créature non-Dinosaure",
+        },
+      ),
+    ],
+  },
+  "Hunting Velociraptor": {
+    abilities: [
+      playerStatic({
+        altCostAll: { mana: cost("{2}{R}"), filter: { subtype: "Dinosaur" } },
+        condition: cond.amountAtLeast(
+          amount.turnEvents({ event: "damage", combat: true, toPlayer: true, sourceYours: true, sourceSubtype: "Dinosaur" }),
+          1,
+        ),
+        label: "Vos sorts de Dinosaure ont la maraude {2}{R}",
       }),
     ],
   },

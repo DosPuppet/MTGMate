@@ -388,3 +388,8 @@ Dans l'ordre où elles ont été ajoutées, extension par extension.
   - `règle` Mirri, Weatherlight Duelist : « ce combat » dure le tour (un combat supplémentaire reste limité) ;
   - `règle` Shared Animosity : un attaquant changelin partage un type avec toute autre créature attaquante ;
   - `règle` Outlaws' Merriment : le jeton « choisi au hasard » est tiré par un dé à trois faces (affiché au journal).
+  - `choix auto` Cresting Mosasaurus (émerger) : la créature sacrifiée est celle de plus grande valeur de mana ;
+  - `règle` As Foretold : seulement les sorts lancés depuis la main ;
+  - `règle` Flesh Duplicate : la disparition est donnée même si la créature copiée l'a déjà ; les trois marqueurs sont mis par une capacité d'arrivée ;
+  - `règle` Hunting Velociraptor : la maraude demande des blessures de combat d'un Dinosaure (pas de n'importe quel type commun au sort) ;
+  - `règle` Commandeer : « vous pouvez choisir de nouvelles cibles » seulement pour un sort à cible unique.

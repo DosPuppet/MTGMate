@@ -86,6 +86,7 @@ function matches(s: GameState, e: TurnLogEntry, q: TurnLogQuery, me: PlayerId, s
     if (!hasAny<Color>(e.sourceColors, q.sourceColors)) return false;
     if (!hasAny<CardType>(e.sourceTypes, q.sourceTypes)) return false;
     if (q.sourceSupertype && !e.sourceSupertypes?.includes(q.sourceSupertype)) return false;
+    if (q.sourceSubtype && !e.sourceSubtypes?.includes(q.sourceSubtype)) return false;
   }
   return true;
 }

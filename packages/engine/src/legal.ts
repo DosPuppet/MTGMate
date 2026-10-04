@@ -462,9 +462,12 @@ export function legalActions(s: GameState, player: PlayerId): ActionOption[] {
     // Kicker payable (« coûte {2} de moins s'il est marchandé » : Hamlet Glutton peut n'être payable que marchandé).
     // Travail d'équipe : les créatures engagées pour le kicker ne paient pas le mana.
     const kickerCrew = d.kickerCost?.tapPower !== undefined ? suggestedCrew(s, player, card, d.kickerCost.tapPower) : [];
+    // Réplique (702.56) : le coût se paie X fois (X choisi comme pour un sort à X), pas comme un kicker.
+    const replicate = d.kickerKind === "replicate";
     const kickerAffordable =
       !sneakOnly &&
       !!d.kicker &&
+      !replicate &&
       !flashback &&
       (!d.kickerCost ||
         (d.kickerCost.tapPower !== undefined
@@ -535,7 +538,8 @@ export function legalActions(s: GameState, player: PlayerId): ActionOption[] {
     if (sac?.orPay) {
       sac.orPayAffordable = canPay(s, player, totalCost(spellCost(s, player, d, base), 0, sac.orPay), undefined, purpose);
     }
-    const hasX = (!terms.free && !!(flashback ? (d.flashback ?? d.manaCost)?.x : d.manaCost?.x)) || d.xCost === "waterbend";
+    const hasX =
+      (!terms.free && !!(flashback ? (d.flashback ?? d.manaCost)?.x : d.manaCost?.x)) || d.xCost === "waterbend" || replicate;
     // Vicious Rivalry : X se paie en points de vie.
     // Soul Immolation : X flétri, au plus la plus grande endurance parmi vos créatures.
     const lifeX = !normal

@@ -319,7 +319,7 @@ export const BLUE: Record<string, CardScript> = {
     // Changelin et convocation lus dans le texte.
     entersAsCopyOf: { types: ["Creature"] },
     entersAsCopyAnyController: true,
-    entersAsCopyAddKeywords: ["changeling"],
+    entersAsCopyMods: { addKeywords: ["changeling"] },
   },
   "Pestered Wellguard": {
     abilities: [triggered(when.tapsSelf, [fx.createTokens(FAERIE_UB)], { label: "Engagée : jeton Faerie 1/1 avec le vol" })],

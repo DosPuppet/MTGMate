@@ -294,4 +294,22 @@ describe("Through the Ages", () => {
       expect(treasures).toBeLessThanOrEqual(20);
     });
   });
+  describe("G4e : lancer autrement", () => {
+    it("Teferi, Mage of Zhalfir : vos créatures ont le flash ; les adversaires ne lancent qu'au moment d'un rituel", () => {
+      let s = scenario({
+        active: "p2",
+        p1: { battlefield: ["Teferi, Mage of Zhalfir", ...lands("Forest", 2)], hand: ["Bear Cub"] },
+        p2: { battlefield: ["Mountain"], hand: ["Shock"] },
+      });
+      const shock = idOf(s, "p2", "hand", "Shock");
+      expect(legalActions(s, "p2").some((a) => a.type === "cast" && a.card === shock)).toBe(true);
+      s = act(s, "p2", { type: "pass" });
+      expect(legalActions(s, "p1").some((a) => a.type === "cast" && a.card === idOf(s, "p1", "hand", "Bear Cub"))).toBe(true);
+      s = settle(act(s, "p1", { type: "cast", card: idOf(s, "p1", "hand", "Bear Cub") }));
+      s = advanceUntil(s, (x) => x.turn.active === "p1" && x.turn.step === "main1");
+      s = act(s, "p1", { type: "pass" });
+      expect(s.pending?.kind === "priority" && s.pending.player).toBe("p2");
+      expect(legalActions(s, "p2").some((a) => a.type === "cast" && a.card === shock)).toBe(false);
+    });
+  });
 });

@@ -480,6 +480,8 @@ export type TurnLogEntry =
       sourceController: PlayerId;
       sourceColors: Color[];
       sourceTypes: CardType[];
+      /** Sous-types de la source (rôder, 702.76 : « une créature d'un de ses types de créature »). */
+      sourceSubtypes?: string[];
       sourceSupertypes: string[];
       /** Identité de la source (« trois sources ou plus ont infligé des blessures », Case of the Burning Masks). */
       sourceKey?: string;
@@ -530,6 +532,7 @@ export interface TurnLogQuery {
   sourceColors?: Color[];
   sourceTypes?: CardType[];
   sourceSupertype?: string;
+  sourceSubtype?: string;
   /** La somme des quantités (blessures, vie, cartes défaussées) plutôt que le nombre d'entrées. */
   sum?: boolean;
   perPlayer?: boolean;

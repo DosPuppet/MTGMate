@@ -168,13 +168,16 @@ export interface CardDef {
   whenCast?: Condition;
   /** « Exilez [ce sort] » à la résolution, au lieu du cimetière (Step Between Worlds). */
   exileOnResolve?: boolean;
-  /** Visage Bandit : sous-types ajoutés quand elle arrive comme copie. */
-  entersAsCopyAddSubtypes?: string[];
+  /**
+   * Exceptions d'une copie à l'arrivée (707.9b, copiables) : sous-types (Visage Bandit), mots-clés (Mockingbird), capacités
+   * (Phantasmal Image : « quand elle devient la cible… sacrifiez-la »).
+   */
+  entersAsCopyMods?: LayerMods;
   /** Copie à l'arrivée « sauf que son nom est [le sien] » (Chameleon, Master of Disguise). */
   entersAsCopyKeepName?: boolean;
   /**
    * Superior Spider-Man (Échange d'esprit) : peut arriver comme copie d'une carte de créature d'un cimetière, sauf son nom
-   * et ses F/E (`entersAsCopyAddSubtypes` pour les types en plus) ; la carte copiée est exilée.
+   * et ses F/E (`entersAsCopyMods` pour les types en plus) ; la carte copiée est exilée.
    */
   entersAsCopyOfGraveyard?: { filter: ObjectFilter; name?: string; power?: number; toughness?: number };
   /** Plot (702.170) : coût de l'action spéciale « complotez cette carte » (lu dans le texte). */
@@ -243,6 +246,8 @@ export interface CardDef {
   disguise?: ManaCost;
   /** Mue (702.37) : `disguise` porte le coût de mue ; la créature face cachée n'a pas la garde {2}. */
   morph?: true;
+  /** Folie (702.35) : défaussée, la carte va en exil et peut être lancée pour ce coût (lu dans le texte). */
+  madness?: ManaCost;
   /** « Ce coût est réduit de {1} pour chaque… » (Fugitive Codebreaker) : réduction du coût de déguisement. */
   disguiseReduction?: Amount;
   /** Saga (714) : numéro du dernier chapitre (lu dans le texte). */
@@ -254,14 +259,24 @@ export interface CardDef {
   /** Assemblage (701.42) : les deux parties et la carte assemblée, par nom. */
   meld?: { parts: string[]; result?: string };
   /** Libellé du kicker : Progéniture (702.175) ou Cadeau (702.174), lus dans le texte (Bloomburrow). */
-  kickerKind?: "offspring" | "gift" | "bargain" | "blight" | "teamwork" | "evidence" | "exileGraveyard" | "waterbend" | "life";
+  kickerKind?:
+    | "offspring"
+    | "gift"
+    | "bargain"
+    | "blight"
+    | "teamwork"
+    | "evidence"
+    | "exileGraveyard"
+    | "waterbend"
+    | "life"
+    /** Réplique (702.56) : le kicker est payé X fois (X du sort) ; le sort est copié X fois. */
+    | "replicate";
   /** Cadeau (702.174) : ce que reçoit l'adversaire choisi si le cadeau est promis. */
   gift?: GiftKind;
   /** « En coût additionnel, fourragez ou payez [mana] » (Feed the Cycle) : le coût alternatif « Fourrager » l'évite. */
   forageOrPay?: ManaCost;
-  /** Copie à l'arrivée : de n'importe quel contrôleur (Mockingbird), et mots-clés ajoutés. */
+  /** Copie à l'arrivée : de n'importe quel contrôleur (Mockingbird). */
   entersAsCopyAnyController?: boolean;
-  entersAsCopyAddKeywords?: Keyword[];
   /** Carte assemblée (verso commun de deux cartes) : elle ne se met pas dans un deck. */
   meldResult?: boolean;
   /** Définition de la carte assemblée, enregistrée dans la partie avec la carte (partie d'un assemblage). */
@@ -299,6 +314,11 @@ export interface AltCostPay {
   exileFromHand?: { filter: ObjectFilter; count: number };
   /** Un permanent correspondant que vous contrôlez, renvoyé dans la main de son propriétaire. */
   bounce?: ObjectFilter;
+  /**
+   * Émerger (702.119) : un permanent correspondant que vous contrôlez, sacrifié ; le coût est réduit de sa valeur de mana
+   * (choix automatique : la plus grande).
+   */
+  sacrificeReduce?: ObjectFilter;
 }
 
 /** Une impression d'une carte : son ensemble, son numéro et son illustration. */
@@ -933,6 +953,8 @@ export interface CastLimit {
   spellTypes?: { types?: CardType[]; notTypes?: CardType[] };
   /** Seulement les sorts lancés d'ailleurs que de la main (Avatar's Wrath). */
   exceptFromHand?: boolean;
+  /** Les sorts ne se lancent qu'au moment où l'on pourrait lancer un rituel (Teferi, Mage of Zhalfir). */
+  sorceryTiming?: boolean;
   /** Seulement retourner des permanents face visible (Karlov Watchdog) : ni les sorts ni les capacités ne sont bloqués. */
   faceUp?: boolean;
   /** Bloque aussi les capacités activées (hors mana) : toutes (Yuriko), ou d'artefacts, de créatures et d'enchantements (Grand Abolisher). */
@@ -1003,6 +1025,8 @@ export interface PlayFromZone {
   payLife?: number;
   /** Fourrager en plus (Osteomancer Adept). */
   forage?: boolean;
+  /** Évasion (702.138) donnée : exiler en plus N autres cartes de votre cimetière (Underworld Breach : 3). */
+  exileOthers?: number;
   /** Le permanent arrive avec un marqueur de finalité. */
   finality?: boolean;
   /** Du mana de n'importe quel type (Vizier of the Menagerie). */

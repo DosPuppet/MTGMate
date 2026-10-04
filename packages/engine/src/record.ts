@@ -317,8 +317,10 @@ export const RECORD_VERSION = 1;
  *   cimetières non ciblables), remplacement « trois fois autant » du mana, dé à N faces, mue (702.37).
  * - 116 : combat : un joueur bloque avec au plus N créatures, au plus une créature attaque un joueur ; destruction notée avec
  *   le joueur qui détruit (déclencheur `destroyed`) ; défense talismanique d'un joueur contre un filtre ; retrace (702.81).
+ * - 117 : folie (702.35), émerger (702.119), réplique (702.56), évasion donnée, rôder accordé, gagner le contrôle d'un sort,
+ *   lancer seulement au moment d'un rituel, exceptions de copie en `entersAsCopyMods`.
  */
-export const RULES_VERSION = 116;
+export const RULES_VERSION = 117;
 
 /** Un point de contrôle toutes les N décisions (plus la dernière de la partie). */
 export const CHECKPOINT_EVERY = 25;

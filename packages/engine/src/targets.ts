@@ -218,7 +218,10 @@ export function resolveFilter(s: GameState, f: ObjectFilter, sourceId?: ObjectId
   if (f.manaValueSourcePower) f = { ...f, manaValueSourcePower: undefined, manaValue: sourcePower(s, sourceId) };
   if (f.manaValueSourceCounters) {
     const src = sourceId ? (s.objects[sourceId] ?? s.lki[sourceId]) : undefined;
-    f = { ...f, manaValueSourceCounters: undefined, manaValue: src?.counters?.[f.manaValueSourceCounters] ?? 0 };
+    const m = f.manaValueSourceCounters;
+    // As Foretold : « de valeur de mana X ou moins, X étant le nombre de marqueurs de temps ».
+    const n = src?.counters?.[typeof m === "string" ? m : m.counter] ?? 0;
+    f = { ...f, manaValueSourceCounters: undefined, ...(typeof m === "string" ? { manaValue: n } : { maxManaValue: n }) };
   }
   if (f.maxManaValueColorsSpent) {
     const spent = castInfoOf(s, sourceId)?.spentColors ?? {};

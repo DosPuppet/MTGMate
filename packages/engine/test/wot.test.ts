@@ -309,6 +309,24 @@ describe("Enchanting Tales", () => {
       expect(idsOf(s, "p2", "graveyard", "Bear Cub")).toHaveLength(1);
     });
   });
+  describe("G4e : lancer autrement", () => {
+    it("As Foretold : une fois par tour, {0} pour un sort de VM au plus égale aux marqueurs de temps", () => {
+      let s = scenario({
+        p1: {
+          battlefield: [{ name: "As Foretold", counters: { time: 2 } }],
+          hand: ["Bear Cub", "Llanowar Elves", "Shivan Dragon"],
+        },
+      });
+      const opt = (name: string) =>
+        legalActions(s, "p1").find((a) => a.type === "cast" && a.card === idOf(s, "p1", "hand", name));
+      expect(opt("Shivan Dragon")).toBeUndefined();
+      const cub = opt("Bear Cub");
+      expect(cub?.type === "cast" && cub.freeAvailable).toBe(true);
+      s = settle(act(s, "p1", { type: "cast", card: idOf(s, "p1", "hand", "Bear Cub"), free: true }));
+      expect(idsOf(s, "p1", "battlefield", "Bear Cub")).toHaveLength(1);
+      expect(opt("Llanowar Elves")).toBeUndefined();
+    });
+  });
 });
 
 /** Identifiant de la cible d'enchantement d'une Aura. */

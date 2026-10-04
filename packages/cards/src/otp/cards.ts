@@ -571,4 +571,19 @@ export const CARDS: Record<string, CardScript> = {
       ),
     ],
   },
+  "Terminal Agony": {
+    spell: spell([target.creature()], [fx.destroy(ref.target())]),
+  },
+  Commandeer: {
+    altCost: {
+      mana: "{0}",
+      condition: cond.all(),
+      label: "Exiler deux cartes bleues de votre main",
+      pay: { exileFromHand: { filter: { colors: ["U"] }, count: 2 } },
+    },
+    spell: spell(
+      [{ id: "t", label: "sort non-créature", filter: { spells: { notTypes: ["Creature"] } } }],
+      [fx.gainControl(ref.target()), fx.changeTarget(ref.target())],
+    ),
+  },
 };

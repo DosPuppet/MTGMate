@@ -298,6 +298,12 @@ function impendingAbilities(text: string): CardDef["abilities"] {
   ];
 }
 
+/** Coût d'un mot-clé en début de ligne (« Madness {B}{R} »). */
+export function parseKeywordCost(text: string, keyword: string): ManaCost | undefined {
+  const m = new RegExp(`^${keyword} ((?:\\{[^}]+\\})+)`, "m").exec(stripReminder(text));
+  return m ? parseManaCost(m[1] as string) : undefined;
+}
+
 /** Déguisement (702.168) ou mue (702.37, Grim Haruspex) : le coût pour retourner la carte face visible. */
 export function parseDisguise(text: string): CardDef["disguise"] {
   const m = /^(?:Disguise|Morph) ((?:\{[^}]+\})+)/m.exec(stripReminder(text));
@@ -807,6 +813,8 @@ function singleDef(raw: RawCard, script: CardScript | undefined, set: string): C
   const sneak = /^Sneak ((?:\{[^}]+\})+)/m.exec(raw.oracleText)?.[1];
   // Ruée (702.109) et spectacle (702.137) : coûts alternatifs.
   const dash = /^Dash ((?:\{[^}]+\})+)/m.exec(raw.oracleText)?.[1];
+  // Émerger (702.119) : en sacrifiant une créature, coût réduit de sa valeur de mana.
+  const emerge = /^Emerge ((?:\{[^}]+\})+)/m.exec(raw.oracleText)?.[1];
   const spectacle = /^Spectacle ((?:\{[^}]+\})+)/m.exec(raw.oracleText)?.[1];
   // Exaltation (702.83), affinité pour les artefacts (702.41), modulaire (702.43), greffe (702.58), extorsion (702.101).
   const exalted = /^Exalted\b/m.test(raw.oracleText);
@@ -816,6 +824,8 @@ function singleDef(raw: RawCard, script: CardScript | undefined, set: string): C
   const extort = /^Extort\b/m.test(raw.oracleText);
   // Déluge (702.40) : une copie pour chaque sort lancé avant lui ce tour-ci (compté au lancement, tous joueurs).
   const storm = /^Storm\b/m.test(raw.oracleText);
+  // Réplique (702.56) : le coût de réplique est payé X fois (kicker de sorte « replicate ») ; le sort est copié X fois.
+  const replicate = /^Replicate ((?:\{[^}]+\})+)/m.exec(raw.oracleText)?.[1];
   // Suspension (702.62) : action spéciale depuis la main, la carte exilée avec N marqueurs de temps.
   const suspend = /^Suspend (\d+)—((?:\{[^}]+\})+)/m.exec(raw.oracleText);
   // Un terrain a le chaos sans coût (Oscorp Industries : « vous pouvez jouer cette carte depuis votre cimetière »).
@@ -926,6 +936,13 @@ function singleDef(raw: RawCard, script: CardScript | undefined, set: string): C
       specialAction: true,
     });
   }
+  if (replicate) {
+    bloomburrowAbilities.push(
+      dsl.triggered(dsl.when.castSelf, [dsl.fx.copySpell(dsl.ref.self, dsl.amount.sourceX)], {
+        label: "Réplique : copiez-le pour chaque coût de réplique payé",
+      }),
+    );
+  }
   if (storm) {
     bloomburrowAbilities.push(
       dsl.triggered(dsl.when.castSelf, [dsl.fx.copySpell(dsl.ref.self, dsl.amount.eventAmount)], { label: "Déluge" }),
@@ -1033,18 +1050,24 @@ function singleDef(raw: RawCard, script: CardScript | undefined, set: string): C
             ? { mana: parseManaCost(sneak), condition: dsl.cond.sneakWindow, label: `Faufilement — ${sneak}` }
             : dash
               ? { mana: parseManaCost(dash), condition: dsl.cond.all(), label: `Ruée — ${dash}`, via: "dash" as const }
-              : spectacle
-                ? { mana: parseManaCost(spectacle), condition: dsl.cond.opponentLostLife, label: `Spectacle — ${spectacle}` }
-                : webSlinging
-                  ? {
-                      mana: parseManaCost(webSlinging),
-                      condition: dsl.cond.controls({ types: ["Creature"], tapped: true }),
-                      label: `Web-slinging — ${webSlinging}`,
-                    }
-                  : impendingAltCost(raw.oracleText),
+              : emerge
+                ? {
+                    mana: parseManaCost(emerge),
+                    condition: dsl.cond.controls({ types: ["Creature"] }),
+                    label: `Émerger — ${emerge}`,
+                    pay: { sacrificeReduce: { types: ["Creature"] } },
+                  }
+                : spectacle
+                  ? { mana: parseManaCost(spectacle), condition: dsl.cond.opponentLostLife, label: `Spectacle — ${spectacle}` }
+                  : webSlinging
+                    ? {
+                        mana: parseManaCost(webSlinging),
+                        condition: dsl.cond.controls({ types: ["Creature"], tapped: true }),
+                        label: `Web-slinging — ${webSlinging}`,
+                      }
+                    : impendingAltCost(raw.oracleText),
     forageOrPay: script?.forageOrPay ? parseManaCost(script.forageOrPay) : undefined,
     entersAsCopyAnyController: script?.entersAsCopyAnyController,
-    entersAsCopyAddKeywords: script?.entersAsCopyAddKeywords,
     impending: parseImpending(raw.oracleText)?.n,
     cdaPT: script?.cdaPT,
     chooseOnEnter: script?.chooseOnEnter,
@@ -1057,7 +1080,7 @@ function singleDef(raw: RawCard, script: CardScript | undefined, set: string): C
       (/^Retrace\b/m.test(raw.oracleText) ? { discard: 1, discardFilter: { types: ["Land"] } } : undefined),
     flashIf: script?.flashIf,
     exileOnResolve: script?.exileOnResolve,
-    entersAsCopyAddSubtypes: script?.entersAsCopyAddSubtypes,
+    entersAsCopyMods: script?.entersAsCopyMods,
     entersAsCopyKeepName: script?.entersAsCopyKeepName,
     entersAsCopyOfGraveyard: script?.entersAsCopyOfGraveyard,
     chosenNameTax: script?.chosenNameTax,
@@ -1068,32 +1091,36 @@ function singleDef(raw: RawCard, script: CardScript | undefined, set: string): C
     spell,
     kicker: script?.kicker
       ? parseManaCost(script.kicker)
+      : replicate
+        ? parseManaCost(replicate)
+        : offspring
+          ? parseManaCost(offspring)
+          : waterbendKicker
+            ? parseManaCost(waterbendKicker)
+            : gift || bargain || lifeOrPay || blight || teamwork || evidence || exileGraveyard
+              ? parseManaCost("{0}")
+              : undefined,
+    kickerKind: replicate
+      ? "replicate"
       : offspring
-        ? parseManaCost(offspring)
+        ? "offspring"
         : waterbendKicker
-          ? parseManaCost(waterbendKicker)
-          : gift || bargain || lifeOrPay || blight || teamwork || evidence || exileGraveyard
-            ? parseManaCost("{0}")
-            : undefined,
-    kickerKind: offspring
-      ? "offspring"
-      : waterbendKicker
-        ? "waterbend"
-        : lifeOrPay
-          ? "life"
-          : gift
-            ? "gift"
-            : bargain
-              ? "bargain"
-              : blight
-                ? "blight"
-                : teamwork
-                  ? "teamwork"
-                  : evidence
-                    ? "evidence"
-                    : exileGraveyard
-                      ? "exileGraveyard"
-                      : undefined,
+          ? "waterbend"
+          : lifeOrPay
+            ? "life"
+            : gift
+              ? "gift"
+              : bargain
+                ? "bargain"
+                : blight
+                  ? "blight"
+                  : teamwork
+                    ? "teamwork"
+                    : evidence
+                      ? "evidence"
+                      : exileGraveyard
+                        ? "exileGraveyard"
+                        : undefined,
     gift,
     kickerCost:
       script?.kickerCost ??
@@ -1116,6 +1143,7 @@ function singleDef(raw: RawCard, script: CardScript | undefined, set: string): C
     flashbackCost: script?.flashbackCost,
     disguise: parseDisguise(raw.oracleText),
     morph: /^Morph \{/m.test(stripReminder(raw.oracleText)) ? true : undefined,
+    madness: parseKeywordCost(raw.oracleText, "Madness"),
     disguiseReduction: script?.disguiseReduction,
     warp: parseWarp(raw.oracleText),
     plot: parsePlot(raw.oracleText),

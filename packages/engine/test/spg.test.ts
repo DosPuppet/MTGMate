@@ -828,4 +828,72 @@ describe("Special Guests", () => {
       expect(() => act(t, "p2", { type: "declareAttackers", attackers: two.map((id) => ({ id, defender: "p1" })) })).toThrow();
     });
   });
+  describe("G4e : lancer autrement", () => {
+    it("Consign to Memory : réplique {1} (copiée X fois) ; contrecarre un sort incolore", () => {
+      let s = scenario({
+        active: "p2",
+        p1: { battlefield: lands("Island", 2), hand: ["Consign to Memory"] },
+        p2: { hand: ["Mana Crypt"] },
+      });
+      s = act(s, "p2", { type: "cast", card: idOf(s, "p2", "hand", "Mana Crypt") });
+      s = act(s, "p2", { type: "pass" });
+      const crypt = s.stack[0]?.id as string;
+      const consign = idOf(s, "p1", "hand", "Consign to Memory");
+      const opt = legalActions(s, "p1").find((a) => a.type === "cast" && a.card === consign);
+      expect(opt?.type === "cast" && opt.xMax).toBe(1);
+      s = act(s, "p1", { type: "cast", card: consign, x: 1, targets: { t: [crypt] } });
+      // La capacité de réplique copie le sort une fois.
+      s = act(s, "p1", { type: "pass" });
+      s = act(s, "p2", { type: "pass" });
+      expect(
+        s.stack.filter((x) => x.sourceDefId === s.objects[consign]?.defId || nameOf(s, x.sourceId) === "Consign to Memory"),
+      ).toHaveLength(2);
+      s = settle(s);
+      expect(idsOf(s, "p2", "graveyard", "Mana Crypt")).toHaveLength(1);
+    });
+
+    it("Underworld Breach : évasion (le coût et trois autres cartes du cimetière) ; sacrifié à l'étape de fin", () => {
+      let s = scenario({
+        p1: { battlefield: ["Underworld Breach", "Mountain"], graveyard: ["Shock", "Forest", "Plains", "Island"] },
+      });
+      const shock = idOf(s, "p1", "graveyard", "Shock");
+      s = settle(act(s, "p1", { type: "cast", card: shock, targets: { t: ["p2"] } }));
+      expect(s.players.p2?.life).toBe(18);
+      expect(s.players.p1?.graveyard.map((id) => nameOf(s, id))).toEqual(["Shock"]);
+      s = advanceUntil(s, (x) => x.turn.active === "p2");
+      expect(idsOf(s, "p1", "graveyard", "Underworld Breach")).toHaveLength(1);
+    });
+
+    it("Phantasmal Image : copie d'une créature, Illusion ; ciblée, elle est sacrifiée", () => {
+      let s = scenario({
+        p1: { battlefield: lands("Island", 2), hand: ["Phantasmal Image"] },
+        p2: { battlefield: ["Shivan Dragon", "Mountain"], hand: ["Shock"] },
+      });
+      const dragon = idOf(s, "p2", "battlefield", "Shivan Dragon");
+      s = settle(act(s, "p1", { type: "cast", card: idOf(s, "p1", "hand", "Phantasmal Image") }), (req) =>
+        req.type === "pick" && req.options.includes(dragon) ? [dragon] : undefined,
+      );
+      const image = idOf(s, "p1", "battlefield", "Phantasmal Image");
+      expect(chars(s, image).name).toBe("Shivan Dragon");
+      expect(chars(s, image).subtypes).toContain("Illusion");
+      expect(chars(s, image).power).toBe(5);
+      s = act(s, "p1", { type: "pass" });
+      s = settle(act(s, "p2", { type: "cast", card: idOf(s, "p2", "hand", "Shock"), targets: { t: [image] } }));
+      expect(s.objects[image]).toBeUndefined();
+      expect(idsOf(s, "p1", "graveyard", "Phantasmal Image")).toHaveLength(1);
+    });
+
+    it("Flesh Duplicate : copie avec la disparition 3", () => {
+      let s = scenario({
+        p1: { battlefield: lands("Island", 2), hand: ["Flesh Duplicate"] },
+        p2: { battlefield: ["Bear Cub"] },
+      });
+      s = settle(act(s, "p1", { type: "cast", card: idOf(s, "p1", "hand", "Flesh Duplicate") }));
+      const dup = idOf(s, "p1", "battlefield", "Flesh Duplicate");
+      expect(chars(s, dup).name).toBe("Bear Cub");
+      expect(s.objects[dup]?.counters.time).toBe(3);
+      s = advanceUntil(s, (x) => x.turn.active === "p1" && x.turn.step === "main1" && x.turn.number > 3);
+      expect(s.objects[dup]?.counters.time).toBe(2);
+    });
+  });
 });

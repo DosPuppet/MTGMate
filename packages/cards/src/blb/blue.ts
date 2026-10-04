@@ -275,8 +275,7 @@ export const BLUE: Record<string, CardScript> = {
   Mockingbird: {
     entersAsCopyOf: { types: ["Creature"], maxManaValueManaSpent: true },
     entersAsCopyAnyController: true,
-    entersAsCopyAddSubtypes: ["Bird"],
-    entersAsCopyAddKeywords: ["flying"],
+    entersAsCopyMods: { addSubtypes: ["Bird"], addKeywords: ["flying"] },
   },
   "Nightwhorl Hermit": {
     abilities: [

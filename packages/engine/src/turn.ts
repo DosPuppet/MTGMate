@@ -15,7 +15,7 @@ import {
 } from "./actions";
 import { ask, cardRef } from "./choices";
 import { syncControl } from "./control";
-import { announceDiscard, announceDiscardBatch, evalAmount, staticContext } from "./effects";
+import { announceDiscard, announceDiscardBatch, evalAmount, moveDiscarded, staticContext } from "./effects";
 import { rethrowAsRules } from "./errors";
 import { bumpFor, copiedDefId, effectivePower, snapshot } from "./layers";
 import { MAX_FLOW_STEPS, MAX_SBA_PASSES } from "./limits";
@@ -394,7 +394,7 @@ export function discardToHandSize(s: GameState, p: PlayerId, cards: ObjectId[], 
     throw new RulesError(`Défaussez exactement ${count} carte(s)`);
   }
   const defIds = cards.map((c) => obj(s, c).defId);
-  for (const c of cards) announceDiscard(s, p, moveObject(s, c, "graveyard"));
+  for (const c of cards) announceDiscard(s, p, moveDiscarded(s, p, c));
   announceDiscardBatch(s, p, cards.length);
   emit({ type: "discard", player: p, defIds });
   finishCleanup(s);

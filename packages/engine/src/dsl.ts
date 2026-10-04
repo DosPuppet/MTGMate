@@ -103,12 +103,13 @@ export interface CardScript {
   /** « … si vous contrôliez [X] en lançant ce sort » : évaluée au lancement (`cond.metWhenCast`). */
   whenCast?: Condition;
   exileOnResolve?: boolean;
-  entersAsCopyAddSubtypes?: string[];
+  /** Exceptions d'une copie à l'arrivée : sous-types, mots-clés, capacités en plus (707.9b). */
+  entersAsCopyMods?: LayerMods;
   /** Copie à l'arrivée « sauf que son nom est [le sien] » (Chameleon, Master of Disguise). */
   entersAsCopyKeepName?: boolean;
   /**
    * Superior Spider-Man (Échange d'esprit) : peut arriver comme copie d'une carte de créature d'un cimetière, sauf son nom
-   * et ses F/E (`entersAsCopyAddSubtypes` pour les types en plus) ; la carte copiée est exilée.
+   * et ses F/E (`entersAsCopyMods` pour les types en plus) ; la carte copiée est exilée.
    */
   entersAsCopyOfGraveyard?: { filter: ObjectFilter; name?: string; power?: number; toughness?: number };
   /** « Vous pouvez lancer cette carte depuis votre cimetière [si…] » */
@@ -138,9 +139,8 @@ export interface CardScript {
   caseSolved?: AbilityDef[];
   /** « En coût additionnel, fourragez ou payez [mana] » (Feed the Cycle). */
   forageOrPay?: string;
-  /** Copie à l'arrivée : de n'importe quel contrôleur, avec des mots-clés en plus (Mockingbird). */
+  /** Copie à l'arrivée : de n'importe quel contrôleur (Mockingbird). */
   entersAsCopyAnyController?: boolean;
-  entersAsCopyAddKeywords?: Keyword[];
 }
 
 export const target = {

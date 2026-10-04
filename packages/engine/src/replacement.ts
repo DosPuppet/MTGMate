@@ -346,11 +346,9 @@ export function applyEntersReplacements(s: GameState, o: GameObject, ctx: Enters
   if (ctx.copyOf) {
     const own = s.defs[o.defId];
     const graveyard = own?.entersAsCopyOfGraveyard;
-    const mods = mergeMods(ctx.copyMods, {
-      // Visage Bandit : « sauf que c'est un Métamorphe Voleur en plus de ses autres types ».
-      addSubtypes: own?.entersAsCopyAddSubtypes,
-      // Mockingbird : « … et elle a le vol ».
-      addKeywords: own?.entersAsCopyAddKeywords,
+    // Visage Bandit : « sauf que c'est un Métamorphe Voleur en plus de ses autres types » ; Mockingbird : « … et elle a le
+    // vol » ; Phantasmal Image : une capacité en plus.
+    const mods = mergeMods(ctx.copyMods, own?.entersAsCopyMods, {
       // Superior Spider-Man : « sauf que son nom est … et que c'est un 4/4 ».
       setName: graveyard?.name ?? (own?.entersAsCopyKeepName ? own.name : undefined),
       setPower: graveyard?.power,

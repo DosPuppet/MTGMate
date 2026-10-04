@@ -10,6 +10,7 @@ import {
   evalAmount,
   grantPlay,
   moveAndLog,
+  moveDiscarded,
   moveWithSpec,
   nameOf,
   putFaceDown,
@@ -822,7 +823,7 @@ export const HANDLERS: OpHandlers = {
       for (const id of chosen) {
         // Wilt-Leaf Liege : défaussée par un effet adverse, elle va sur le champ de bataille.
         const toField = p !== ctx.controller && !!s.defs[s.objects[id]?.defId ?? ""]?.opponentDiscardToBattlefield;
-        const moved = toField ? moveObject(s, id, "battlefield") : moveObject(s, id, "graveyard");
+        const moved = toField ? moveObject(s, id, "battlefield") : moveDiscarded(s, p, id);
         if (!toField) announceDiscard(s, p, moved);
         // Les cartes défaussées, pour `ref.stored` (Ninja's Blades : « la valeur de mana de la carte défaussée »).
         if (e.store && moved) r.vars[`$ids:${e.store}`] = [...(r.vars[`$ids:${e.store}`] ?? []), moved];
@@ -1363,7 +1364,7 @@ export const HANDLERS: OpHandlers = {
       if (candidates.length) sacrifice(s, id);
       else {
         emit({ type: "discard", player: p, defIds: [s.objects[id]?.defId ?? ""] });
-        announceDiscard(s, p, moveObject(s, id, "graveyard"));
+        announceDiscard(s, p, moveDiscarded(s, p, id));
         announceDiscardBatch(s, p, 1);
       }
     }
@@ -1820,7 +1821,7 @@ export const HANDLERS: OpHandlers = {
       if (!hand.includes(card)) continue;
       const nonland = !s.defs[s.objects[card]?.defId ?? ""]?.types.includes("Land");
       emit({ type: "discard", player: p, defIds: [s.objects[card]?.defId ?? ""] });
-      announceDiscard(s, p, moveObject(s, card, "graveyard"));
+      announceDiscard(s, p, moveDiscarded(s, p, card));
       announceDiscardBatch(s, p, 1);
       if (nonland && onBattlefield(s, id)) changeCounters(s, o, P1P1, 1);
     }

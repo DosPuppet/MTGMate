@@ -294,16 +294,20 @@ function preventByReplacement(s: GameState, a: ActiveReplacement, source: Damage
 
 /** La source des blessures est-elle rouge (Ojer Axonil) ? */
 /** Caractéristiques de la source des blessures (sur le champ de bataille, sinon dernières informations ou carte). */
-function sourceChars(s: GameState, source: DamageSource): { colors: Color[]; types: CardType[]; supertypes: string[] } {
+function sourceChars(
+  s: GameState,
+  source: DamageSource,
+): { colors: Color[]; types: CardType[]; subtypes: string[]; supertypes: string[] } {
   if (source.id && s.objects[source.id]?.zone === "battlefield") {
     const c = chars(s, source.id);
-    return { colors: c.colors, types: c.types, supertypes: c.supertypes };
+    return { colors: c.colors, types: c.types, subtypes: c.subtypes, supertypes: c.supertypes };
   }
   const lki = source.id ? s.lki[source.id] : undefined;
   const d = s.defs[source.defId];
   return {
     colors: lki?.colors ?? d?.colors ?? [],
     types: lki?.types ?? d?.types ?? [],
+    subtypes: lki?.subtypes ?? d?.subtypes ?? [],
     supertypes: lki?.supertypes ?? d?.supertypes ?? [],
   };
 }
@@ -330,6 +334,7 @@ function logDamage(
     sourceController: source.controller,
     sourceColors: src.colors,
     sourceTypes: src.types,
+    sourceSubtypes: src.subtypes,
     sourceSupertypes: src.supertypes,
     sourceKey:
       (source.id ? (s.objects[source.id]?.uid ?? s.lki[source.id]?.uid ?? source.id) : undefined) ??

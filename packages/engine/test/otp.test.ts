@@ -1,7 +1,7 @@
 /** Breaking News (OTP) : tests de règles des cartes (PLAN-G). */
 import { describe, expect, it } from "vitest";
 import { dealDamage, destroy, gainLife, loseLife } from "../src/actions";
-import { target } from "../src/dsl";
+import { fx, spell, target } from "../src/dsl";
 import { legalActions } from "../src/legal";
 import { chars, decider } from "../src/state";
 import { legalTargets } from "../src/targets";
@@ -11,6 +11,7 @@ import {
   advanceUntil,
   attack,
   castNowOf,
+  customCard,
   exiled,
   idOf,
   idsOf,
@@ -420,6 +421,46 @@ describe("Breaking News", () => {
       );
       expect(humans).toHaveLength(1);
       expect(chars(s, humans[0] as string).keywords).toContain("haste");
+    });
+  });
+  describe("G4e : lancer autrement", () => {
+    it("Terminal Agony : folie, défaussée elle va en exil et se lance pour son coût de folie", () => {
+      const discarder = customCard({
+        name: "Défausse de test",
+        types: ["Sorcery"],
+        typeLine: "Sorcery",
+        spell: spell([], [fx.discard(1)]),
+      });
+      let s = scenario({
+        p1: { battlefield: ["Swamp", "Mountain"], hand: [discarder, "Terminal Agony"] },
+        p2: { battlefield: ["Bear Cub"] },
+      });
+      s = untilCastNow(act(s, "p1", { type: "cast", card: idOf(s, "p1", "hand", "Défausse de test") }));
+      const agony = castNowOf(s)?.cards[0] as string;
+      expect(s.objects[agony]?.zone).toBe("exile");
+      const cub = idOf(s, "p2", "battlefield", "Bear Cub");
+      s = settle(act(s, "p1", { type: "cast", card: agony, targets: { t: [cub] } }));
+      expect(idsOf(s, "p2", "graveyard", "Bear Cub")).toHaveLength(1);
+      expect(idsOf(s, "p1", "graveyard", "Terminal Agony")).toHaveLength(1);
+    });
+
+    it("Commandeer : en exilant deux cartes bleues, gagnez le contrôle d'un sort non-créature et changez sa cible", () => {
+      const blue = (name: string) => customCard({ name, types: ["Instant"], typeLine: "Instant", colors: ["U"] });
+      let s = scenario({
+        active: "p2",
+        p1: { hand: ["Commandeer", blue("Bleu A"), blue("Bleu B")] },
+        p2: { battlefield: ["Mountain"], hand: ["Shock"] },
+      });
+      s = act(s, "p2", { type: "cast", card: idOf(s, "p2", "hand", "Shock"), targets: { t: ["p1"] } });
+      s = act(s, "p2", { type: "pass" });
+      const shock = s.stack[0]?.id as string;
+      s = settle(
+        act(s, "p1", { type: "cast", card: idOf(s, "p1", "hand", "Commandeer"), alternative: true, targets: { t: [shock] } }),
+        (req) => (req.type === "pick" && req.options.includes("p2") ? ["p2"] : undefined),
+      );
+      expect(s.players.p1?.life).toBe(20);
+      expect(s.players.p2?.life).toBe(18);
+      expect(s.players.p1?.hand).toHaveLength(0);
     });
   });
 });

@@ -174,7 +174,7 @@ export interface ObjectFilter {
   /** Valeur de mana égale à la force de la source (Jackal, Genius Geneticist). */
   manaValueSourcePower?: boolean;
   /** Valeur de mana égale au nombre de marqueurs de cette sorte sur la source, ou à sa dernière information (Blast Zone). */
-  manaValueSourceCounters?: string;
+  manaValueSourceCounters?: string | { counter: string; atMost: true };
   /** Valeur de mana au plus égale au mana dépensé pour lancer la source (Astelli Reclaimer). */
   maxManaValueManaSpent?: boolean;
   /** Légendaire (true) ou non légendaire (false). */

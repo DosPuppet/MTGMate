@@ -201,11 +201,15 @@
     "emblems": "The Masamune — champ générique de la famille triggerMod (R4.5) : capacités des emblèmes du joueur (PLAN-C, C14)",
     "whileCrafting": "Market Gnome — déclencheur « quitte le champ de bataille » limité à l'exil comme matériau d'une fabrication (702.167) : champ de la famille `leaves`, compté depuis que sa déclaration tient sur plusieurs lignes (PLAN-S, S7)",
     "switchPT": "Wandering Fumarole — échange de la force et de l'endurance (613.4d), règle générique du moteur qui n'avait encore aucune carte",
-    "manaValueSourceCounters": "Blast Zone — filtre relatif à la source (famille manaValueSourcePower) : valeur de mana égale à ses marqueurs",
     "notDefendersAttackedThisTurn": "Port Razer — restriction d'attaque de la famille des règles de blocage (BlockRule, R4.1) : « ne peut pas attaquer un joueur déjà attaqué ce tour-ci »",
     "againstYou": "Mangara, the Diplomat — requête du journal du tour (attaques contre vous) déjà employée par le moteur (castLimit attackedYou) : à réutiliser pour toute carte « créatures qui vous attaquent »",
     "powerAboveOf": "Fell the Mighty : relation à un objet désigné résolue par withX (« de force supérieure à celle de la créature ciblée »), famille des bornes dynamiques des filtres",
-    "sharesCreatureTypeWith": "Shared Animosity : relation à un objet désigné résolue par withX (« qui partage un type de créature avec elle »), famille des bornes dynamiques des filtres"
+    "sharesCreatureTypeWith": "Shared Animosity : relation à un objet désigné résolue par withX (« qui partage un type de créature avec elle »), famille des bornes dynamiques des filtres",
+    "exileOthers": "Underworld Breach : évasion donnée (702.138), coût en cartes du cimetière d'une permission playFrom (famille C)",
+    "atMost": "As Foretold : variante « au plus » de manaValueSourceCounters (bornes dynamiques des filtres)",
+    "sorceryTiming": "Teferi, Mage of Zhalfir : restriction de lancer au moment d'un rituel (famille D, castLimit)",
+    "sacrificeReduce": "Cresting Mosasaurus : émerger (702.119), coût alternatif payé par un sacrifice qui le réduit (altCost.pay)",
+    "sourceSubtype": "Hunting Velociraptor : rôder (702.76), sous-type de la source des blessures au journal du tour"
   },
   "turnFields": {
     "loyaltyTurn": "champ « ce tour-ci » d'un objet (audit du 02/10/2026, § 5.1) : à remplacer par le journal du tour (turnlog.ts) quand la requête existe (PLAN-C, lot C14)",
@@ -232,7 +236,7 @@
     "CostDef": 33,
     "ActivatedAbilityDef": 19,
     "CastPermissionAbilityDef": 21,
-    "PlayFromZone": 16,
+    "PlayFromZone": 17,
     "LayerMods": 31,
     "Effect": 152,
     "Effect (champs)": 619,
@@ -283,6 +287,7 @@
     "PLAN-G G4b : destruction sans régénération (Damnation, noRegenerate) : Effect (champs) 616 → 617",
     "PLAN-G G4c : déclencheur « joue un terrain » de n'importe quel joueur (whose) : TriggerSpec (champs) 155 → 156",
     "PLAN-G G4e : mue (CardDef.morph, 702.37) ; dé (coinFlip.sides) et Surgical Extraction (exileNamesakes.draw) : CardDef 95 → 96, Effect (champs) 617 → 619",
-    "PLAN-G G4e (combat) : filtres relatifs à un objet désigné (powerAboveOf, sharesCreatureTypeWith), référence combatPartners, déclencheur destroyed (Karmic Justice) : ObjectFilter 85 → 87, TriggerSpec 59 → 60, TriggerSpec (champs) 156 → 159, Ref 27 → 28, Ref (champs) 47 → 49"
+    "PLAN-G G4e (combat) : filtres relatifs à un objet désigné (powerAboveOf, sharesCreatureTypeWith), référence combatPartners, déclencheur destroyed (Karmic Justice) : ObjectFilter 85 → 87, TriggerSpec 59 → 60, TriggerSpec (champs) 156 → 159, Ref 27 → 28, Ref (champs) 47 → 49",
+    "PLAN-G G4e (lancer autrement) : évasion donnée (PlayFromZone.exileOthers) ; CardDef stable (folie ajoutée, entersAsCopyAddSubtypes et entersAsCopyAddKeywords réunis dans entersAsCopyMods) : PlayFromZone 16 → 17"
   ]
 }

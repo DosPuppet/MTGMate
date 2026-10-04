@@ -7,6 +7,7 @@ import {
   announceDiscardBatch,
   evalAmount,
   grantPlay,
+  moveDiscarded,
   moveWithSpec,
   nameOf,
   nextTurnOf,
@@ -301,7 +302,7 @@ export const HANDLERS: OpHandlers = {
       const id = String(card[0]);
       if (!hand.includes(id)) return;
       emit({ type: "discard", player: p, defIds: [s.objects[id]?.defId ?? ""] });
-      announceDiscard(s, p, moveObject(s, id, "graveyard"));
+      announceDiscard(s, p, moveDiscarded(s, p, id));
       announceDiscardBatch(s, p, 1);
     }
     // Garde « sacrifiez trois permanents » (Emrakul, the Exigent Doom).

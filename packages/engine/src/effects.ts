@@ -45,7 +45,7 @@ import {
   resolveFilter,
   sourceView,
 } from "./targets";
-import { checkCondition, mostLife } from "./triggers";
+import { checkCondition, mostLife, pushInline } from "./triggers";
 import { countTurnEvents } from "./turnlog";
 import type {
   AggregateProperty,
@@ -886,6 +886,29 @@ export function attach(s: GameState, what: ObjectId, to: ObjectId): boolean {
   bump(s);
   emit({ type: "attach", objectId: what, defId: a.defId, to, toDefId: s.objects[to]?.defId ?? "" });
   return true;
+}
+
+/**
+ * Met une carte défaussée à sa place (701.9) : au cimetière, ou en exil si elle a la folie (702.35a) ; dans ce cas, une
+ * capacité déclenchée « lancez-la pour son coût de folie, sinon mettez-la dans votre cimetière » est mise en attente.
+ */
+export function moveDiscarded(s: GameState, player: PlayerId, card: ObjectId): ObjectId | null {
+  const d = s.defs[s.objects[card]?.defId ?? ""];
+  if (!d?.madness) return moveObject(s, card, "graveyard");
+  const exiled = moveObject(s, card, "exile");
+  if (exiled) {
+    const c: Ref = { kind: "target", id: "c" };
+    pushInline(s, player, exiled, d.id, {
+      targets: [],
+      effects: [
+        { op: "castNow", what: c, cost: d.madness },
+        { op: "moveTo", what: c, spec: { to: "graveyard" } },
+      ],
+      bound: { c: [exiled] },
+      label: "Folie : lancez-la pour son coût de folie, sinon elle va au cimetière",
+    });
+  }
+  return exiled;
 }
 
 /** Signale une carte défaussée (déclencheurs « chaque fois qu'un adversaire défausse une carte »). */

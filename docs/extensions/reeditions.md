@@ -255,3 +255,13 @@ le deck peut choisir son illustration (51 cartes). Détail dans le suivi du plan
   Loyal Raptor) ; « partenaire avec » en capacité d'arrivée (aide `partnerWith`, `rex/cards.ts`) ; Outlaws' Merriment
   (jeton au hasard par un dé à trois faces), Swooping Pteranodon, Owen Grady, Deflecting Palm. Tests : `otp`, `wot`, `spg`,
   `pza`, `rex`, `soa` (+12, dont la fin du contrôle de Cytoplast Manipulator). `RULES_VERSION` 116.
+- **Lancer autrement ✅ :** folie (702.35, `CardDef.madness`, lue dans le texte : la carte défaussée va en exil par
+  `moveDiscarded`, qui met en attente « lancez-la pour son coût de folie, sinon au cimetière » ; Terminal Agony) ; émerger
+  (702.119, lu dans le texte : `altCost.pay.sacrificeReduce` ; Cresting Mosasaurus) ; réplique (702.56, lue dans le texte :
+  kicker de sorte `replicate` payé X fois, copies par une capacité « quand vous lancez » ; Consign to Memory) ; évasion
+  donnée (`playFrom.exileOthers`, Underworld Breach) ; rôder accordé (`altCostAll` sous condition du journal, sous-type de
+  la source des blessures ; Hunting Velociraptor) ; gagner le contrôle d'un sort (`fx.gainControl` sur la pile,
+  Commandeer) ; lancer seulement au moment d'un rituel (`castLimit.sorceryTiming`, Teferi, Mage of Zhalfir) ; exceptions de
+  copie réunies dans `entersAsCopyMods` (Phantasmal Image, Flesh Duplicate avec sa disparition écrite en capacités) ;
+  As Foretold (`manaValueSourceCounters: { counter, atMost }`). Tests : `otp`, `rex`, `spg`, `wot`, `fca` (+10).
+  `RULES_VERSION` 117.

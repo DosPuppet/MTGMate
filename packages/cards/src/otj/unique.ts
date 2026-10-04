@@ -213,7 +213,7 @@ export const UNIQUE: Record<string, CardScript> = {
   "Step Between Worlds": { exileOnResolve: true, spell: spell([], [fx.mayShuffleHandGraveyardDraw(7)]) },
   "Visage Bandit": {
     entersAsCopyOf: { types: ["Creature"], controller: "you" },
-    entersAsCopyAddSubtypes: ["Shapeshifter", "Rogue"],
+    entersAsCopyMods: { addSubtypes: ["Shapeshifter", "Rogue"] },
   },
   "Jace Reawakened": {
     castCondition: cond.turnsTakenAtLeast(4),

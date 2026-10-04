@@ -19,6 +19,7 @@ import {
   announceDiscardBatch,
   concreteSpec,
   evalAmount,
+  moveDiscarded,
   moveWithSpec,
   permissionActive,
   runEffect,
@@ -61,6 +62,7 @@ import {
   matchesCard,
   matchesObjectFilter,
   matchesView,
+  resolveFilter,
   validateTargets,
   withChosen,
 } from "./targets";
@@ -535,7 +537,11 @@ export function playFromRules(
   what: "lands" | "spells",
 ): PlayFromZone[] {
   const weight = (r: PlayFromZone) =>
-    (r.payLife ? 2 : 0) + (r.forage ? 2 : 0) + (r.finality ? 1 : 0) + (r.addSubtypes ? 1 : 0) - (r.anyMana ? 0.5 : 0);
+    (r.payLife ? 2 : 0) +
+    (r.forage || r.exileOthers ? 2 : 0) +
+    (r.finality ? 1 : 0) +
+    (r.addSubtypes ? 1 : 0) -
+    (r.anyMana ? 0.5 : 0);
   return playerStatics(s, player, "playFrom")
     .flatMap(({ id, ab }) => {
       const r = ab.playFrom;
@@ -543,6 +549,7 @@ export function playFromRules(
       if (r.filter && !matchesCard(s, player, card, { ...r.filter, controller: undefined }, id)) return [];
       if (r.payLife && (s.players[player]?.life ?? 0) < r.payLife) return [];
       if (r.forage && !canForage(s, player, card)) return [];
+      if (r.exileOthers && !graveyardToExile(s, player, card, r.exileOthers)) return [];
       // Faufilement donné : seulement pendant la fenêtre de faufilement, avec un attaquant à renvoyer.
       if (r.sneak && !(sneakOptions(s, player).length > 0 && checkCondition(s, { kind: "sneakWindow" }, player))) return [];
       // Johann : « une fois par tour » (la clé de cette permission, notée au lancement).
@@ -702,7 +709,7 @@ export function altCostPayment(
   player: PlayerId,
   card: ObjectId,
   pay: AltCostPay,
-): { exile: ObjectId[]; bounce?: ObjectId } | null {
+): { exile: ObjectId[]; bounce?: ObjectId; sacrifice?: ObjectId } | null {
   const pl = s.players[player];
   if (!pl || (pay.life !== undefined && pl.life < pay.life)) return null;
   let exile: ObjectId[] = [];
@@ -722,7 +729,24 @@ export function altCostPayment(
     if (options.length === 0) return null;
     bounce = options[0];
   }
-  return { exile, ...(bounce ? { bounce } : {}) };
+  const sacrifice = pay.sacrificeReduce ? emergeVictim(s, player, pay.sacrificeReduce) : undefined;
+  if (pay.sacrificeReduce && !sacrifice) return null;
+  return { exile, ...(bounce ? { bounce } : {}), ...(sacrifice ? { sacrifice } : {}) };
+}
+
+/** Émerger (702.119) : le permanent sacrifié, choisi automatiquement (la plus grande valeur de mana, donc la plus forte réduction). */
+function emergeVictim(s: GameState, player: PlayerId, f: ObjectFilter): ObjectId | undefined {
+  const mv = (id: ObjectId) => snapshot(s, id).manaValue ?? 0;
+  return s.battlefield
+    .filter((id) => obj(s, id).controller === player && matchesObjectFilter(s, player, id, f))
+    .sort((a, b) => mv(b) - mv(a))[0];
+}
+
+/** Un coût de mana payé N fois (réplique). */
+function timesCost(c: ManaCost, n: number): ManaCost {
+  const colored: ManaCost["colored"] = {};
+  for (const [k, v] of Object.entries(c.colored)) colored[k as ManaType] = (v ?? 0) * n;
+  return { ...c, generic: c.generic * n, colored, ...(c.hybrid ? { hybrid: Array(n).fill(c.hybrid).flat() } : {}) };
 }
 
 /** K'rrik, Son of Yawgmoth : « pour chaque {B} d'un coût, vous pouvez payer 2 PV à la place » (mana phyrexian). */
@@ -767,10 +791,14 @@ export function spellCost(
 ): ManaCost {
   const empty: ManaCost = { generic: 0, colored: {}, x: 0 };
   const alt = opts.alternative ? altCostFor(s, player, d) : undefined;
+  // Émerger : le coût alternatif est réduit de la valeur de mana du permanent sacrifié.
+  const victim = alt?.pay?.sacrificeReduce ? emergeVictim(s, player, alt.pay.sacrificeReduce) : undefined;
+  const altMana =
+    alt && victim ? { ...alt.mana, generic: Math.max(0, alt.mana.generic - (snapshot(s, victim).manaValue ?? 0)) } : alt?.mana;
   const base = opts.free
     ? empty
     : alt
-      ? alt.mana
+      ? (altMana as ManaCost)
       : opts.flashback
         ? (opts.costOverride ?? d.flashback ?? d.manaCost)
         : opts.mayhem
@@ -785,7 +813,10 @@ export function spellCost(
   // Maîtrise de l'eau en coût additionnel (Avatar) : {N} ou {X} de plus, à payer même sans payer le coût de mana.
   const bend = (d.waterbend ?? 0) + (d.xCost === "waterbend" ? Math.max(0, opts.x ?? 0) : 0);
   const bendCost: ManaCost | undefined = bend ? { generic: bend, colored: {}, x: 0 } : undefined;
-  const extra = opts.kicked && d.kicker ? (bendCost ? totalCost(d.kicker, 0, bendCost) : d.kicker) : bendCost;
+  // Réplique (702.56) : le coût de réplique payé X fois.
+  const replicated = d.kickerKind === "replicate" && d.kicker && (opts.x ?? 0) > 0 ? timesCost(d.kicker, opts.x ?? 0) : undefined;
+  const kick = replicated ?? (opts.kicked && d.kicker ? d.kicker : undefined);
+  const extra = kick ? (bendCost ? totalCost(kick, 0, bendCost) : kick) : bendCost;
   let cost0 = totalCost(
     base1,
     opts.free ? 0 : (opts.x ?? 0),
@@ -1248,6 +1279,10 @@ export function castTerms(s: GameState, player: PlayerId, card: ObjectId): CastT
   const fromHand = s.objects[card]?.zone === "hand";
   for (const l of castLimits(s, player)) {
     if (l.faceUp) continue;
+    if (l.sorceryTiming) {
+      if (!sorceryTiming(s, player)) return null;
+      continue;
+    }
     if (l.spellTypes) {
       const types = s.defs[s.objects[card]?.defId ?? ""]?.types ?? [];
       const { types: only, notTypes } = l.spellTypes;
@@ -1300,7 +1335,7 @@ function baseCastTerms(s: GameState, player: PlayerId, card: ObjectId): CastTerm
         ab.freeFromHand &&
         (!ab.freeMaxManaValueCreatures || manaValue(d.manaCost) <= creatures()) &&
         // Dracogenesis : seulement les sorts de Dragon.
-        (!ab.freeFilter || matchesView(spellView(d, player), ab.freeFilter, player)) &&
+        (!ab.freeFilter || matchesView(spellView(d, player), resolveFilter(s, ab.freeFilter, id), player)) &&
         (!ab.condition || checkCondition(s, ab.condition, player, id)) &&
         // Zaffai and the Tempests : une fois par tour (la permission est consommée par un sort lancé gratuitement).
         !(ab.freeOncePerTurn && s.turn.onceFired.includes(`freeHand:${id}`)),
@@ -1336,7 +1371,7 @@ function baseCastTerms(s: GameState, player: PlayerId, card: ObjectId): CastTerm
     // Permissions « jouer depuis le cimetière » (famille C) : Case of the Uneaten Feast, Hades, The Tomb of Aclazotz,
     // Noctis (PV et finalité), Festival of Embers (PV), Osteomancer Adept (fourrager et finalité)…
     const rules = playFromRules(s, player, card, "graveyard", "spells");
-    const free = rules.find((r) => !r.payLife && !r.forage && !r.finality && !r.addSubtypes);
+    const free = rules.find((r) => !r.payLife && !r.forage && !r.exileOthers && !r.finality && !r.addSubtypes);
     if (free) return playFromTerms(free, "graveyard");
     const t = graveyardTypeAvailable(s, player, card);
     if (t && t !== "Land") return { source: "graveyard", graveyardType: t };
@@ -1831,13 +1866,14 @@ export function castSpell(s: GameState, player: PlayerId, card: ObjectId, choice
     sourceId: card,
     x: choices.x,
   });
-  const hasX = (!free && !!(flashback ? (dc.flashback ?? dc.manaCost)?.x : dc.manaCost?.x)) || !!d.xCost;
+  const hasX =
+    (!free && !!(flashback ? (dc.flashback ?? dc.manaCost)?.x : dc.manaCost?.x)) || !!d.xCost || d.kickerKind === "replicate";
   const x = hasX ? Math.max(0, Math.floor(choices.x ?? 0)) : 0;
   // Vicious Rivalry : « en coût additionnel, payez X points de vie ».
   if (d.xCost === "life" && x > (s.players[player]?.life ?? 0)) throw new RulesError("Pas assez de points de vie");
   // Soul Immolation : « flétrissez X ; X ne peut pas dépasser la plus grande endurance parmi vos créatures ».
   if (d.xCost === "blight" && x > greatestToughness(s, player)) throw new RulesError("X dépasse la plus grande endurance");
-  const kicked = !!choices.kicked && !!d.kicker;
+  const kicked = !!choices.kicked && !!d.kicker && d.kickerKind !== "replicate";
   // Part du coût payable par la maîtrise de l'eau : coût additionnel, kicker, ou coût de remplacement (Hama).
   const bendPaid =
     waterbendAmount(d, kicked, x) +
@@ -1960,6 +1996,13 @@ export function castSpell(s: GameState, player: PlayerId, card: ObjectId, choice
   // Fourrager en coût (Osteomancer Adept, ou le coût alternatif de Feed the Cycle) : la carte a quitté le cimetière.
   if ((terms.forage || (alternative && altCostFor(s, player, d)?.forage)) && !forage(s, player))
     throw new RulesError("Impossible de fourrager");
+  // Évasion donnée (Underworld Breach) : N autres cartes du cimetière exilées en plus.
+  const escapeN = terms.playFrom?.exileOthers;
+  if (escapeN) {
+    const cards = graveyardToExile(s, player, stackId, escapeN);
+    if (!cards) throw new RulesError(`Il faut exiler ${escapeN} autres cartes de votre cimetière`);
+    for (const id of cards) moveObject(s, id, "exile");
+  }
   // Force of Will, Daze : PV, cartes de la main exilées, permanent renvoyé, payés avec le coût alternatif.
   const altPay = alternative ? altCostFor(s, player, d)?.pay : undefined;
   if (altPay) {
@@ -1968,6 +2011,7 @@ export function castSpell(s: GameState, player: PlayerId, card: ObjectId, choice
     if (altPay.life) payLife_(s, player, altPay.life);
     for (const id of paid.exile) moveObject(s, id, "exile");
     if (paid.bounce) moveObject(s, paid.bounce, "hand");
+    if (paid.sacrifice) sacrificePermanent(s, paid.sacrifice);
   }
   // Conspiracy Unraveler : « réunir des preuves 10 plutôt que payer le coût de mana ».
   const altEvidence = alternative ? altCostFor(s, player, d)?.collectEvidence : undefined;
@@ -2163,7 +2207,7 @@ export function castSpell(s: GameState, player: PlayerId, card: ObjectId, choice
   for (const id of sacrificedInstead) sacrificePermanent(s, id);
   if (handDiscard.length) {
     emit({ type: "discard", player, defIds: handDiscard.map((id) => obj(s, id).defId) });
-    const discarded = handDiscard.map((id) => moveObject(s, id, "graveyard"));
+    const discarded = handDiscard.map((id) => moveDiscarded(s, player, id));
     for (const id of discarded) announceDiscard(s, player, id);
     announceDiscardBatch(s, player, handDiscard.length);
     // Grab the Prize : « si la carte défaussée n'était pas une carte de terrain ».
@@ -3294,7 +3338,7 @@ export function activateAbility(s: GameState, player: PlayerId, source: ObjectId
     if (chosen.length !== ab.cost.discard || chosen.some((id) => !options.includes(id)))
       throw new RulesError("Défausse invalide");
     emit({ type: "discard", player, defIds: chosen.map((id) => obj(s, id).defId) });
-    for (const id of chosen) announceDiscard(s, player, moveObject(s, id, "graveyard"));
+    for (const id of chosen) announceDiscard(s, player, moveDiscarded(s, player, id));
     announceDiscardBatch(s, player, chosen.length);
   }
   // « Défaussez votre main » : toute la main, en payant le coût (601.2h).
@@ -3302,7 +3346,7 @@ export function activateAbility(s: GameState, player: PlayerId, source: ObjectId
     const hand = [...(s.players[player]?.hand ?? [])];
     if (hand.length) {
       emit({ type: "discard", player, defIds: hand.map((id) => obj(s, id).defId) });
-      for (const id of hand) announceDiscard(s, player, moveObject(s, id, "graveyard"));
+      for (const id of hand) announceDiscard(s, player, moveDiscarded(s, player, id));
       announceDiscardBatch(s, player, hand.length);
     }
   }
@@ -3321,7 +3365,7 @@ export function activateAbility(s: GameState, player: PlayerId, source: ObjectId
   }
   if (ab.cost.self === "exile") moveObject(s, source, "exile");
   if (ab.cost.self === "discard") {
-    const card = moveObject(s, source, "graveyard");
+    const card = moveDiscarded(s, player, source);
     announceDiscard(s, player, card);
     announceDiscardBatch(s, player, 1);
     if (ab.cycling && card) rulesEvent(s, { e: "cycled", player, card, x });

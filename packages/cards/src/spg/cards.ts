@@ -1176,4 +1176,56 @@ export const CARDS: Record<string, CardScript> = {
       }),
     ],
   },
+  "Consign to Memory": {
+    spell: spell(
+      [
+        {
+          id: "t",
+          label: "capacité déclenchée ou sort incolore",
+          filter: { stackItems: { triggeredOnly: true }, spells: { colorCount: 0 } },
+        },
+      ],
+      [fx.counter(ref.target())],
+    ),
+  },
+  "Underworld Breach": {
+    abilities: [
+      playerStatic({
+        playFrom: { zone: "graveyard", filter: { notTypes: ["Land"] }, what: "spells", exileOthers: 3 },
+        label: "Les cartes non-terrain de votre cimetière ont l'évasion (leur coût et trois autres cartes exilées)",
+      }),
+      triggered(when.step("end", "any"), [fx.sacrificeIt(ref.self)], {
+        label: "Au début de l'étape de fin : sacrifiez cet enchantement",
+      }),
+    ],
+  },
+  "Phantasmal Image": {
+    entersAsCopyOf: { types: ["Creature"] },
+    entersAsCopyAnyController: true,
+    entersAsCopyMods: {
+      addSubtypes: ["Illusion"],
+      addAbilities: [
+        triggered({ on: "becomesTarget", who: "self" }, [fx.sacrificeIt(ref.self)], {
+          label: "Devient la cible d'un sort ou d'une capacité : sacrifiez-la",
+        }),
+      ],
+    },
+  },
+  "Flesh Duplicate": {
+    entersAsCopyOf: { types: ["Creature"] },
+    entersAsCopyAnyController: true,
+    entersAsCopyMods: {
+      addAbilities: [
+        triggered(when.entersSelf, [fx.counters(ref.self, "time", 3)], { label: "Disparition 3 : trois marqueurs de temps" }),
+        triggered(
+          when.yourUpkeep,
+          [
+            fx.removeCounters(ref.self, 1, "time"),
+            ...fx.when(cond.not(cond.amountAtLeast(amount.countersOn(ref.self, "time"), 1)), fx.sacrificeIt(ref.self)),
+          ],
+          { label: "Disparition : retirez un marqueur de temps ; le dernier retiré, sacrifiez-la" },
+        ),
+      ],
+    },
+  },
 };

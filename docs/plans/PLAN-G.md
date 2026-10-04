@@ -340,3 +340,6 @@ leur lot, avec une forme générique d'abord, selon la règle « pas de dette pr
 - **G4e, combat (04/10/2026) :** Fell the Mighty, Ride Down, Outlaws' Merriment, Shared Animosity, Karmic Justice, Mirri,
   Waves of Aggression, Swooping Pteranodon, Owen Grady, Blue, Veil of Summer, Deflecting Palm. Correction : un effet de
   contrôle « tant que » retiré avec sa source rend aussitôt le permanent (fuzz). `RULES_VERSION` 116.
+- **G4e, lancer autrement (04/10/2026) :** Terminal Agony (folie), Cresting Mosasaurus (émerger), Consign to Memory
+  (réplique), Underworld Breach, Hunting Velociraptor, Commandeer, Teferi, Mage of Zhalfir, Phantasmal Image, Flesh
+  Duplicate, As Foretold. `RULES_VERSION` 117.

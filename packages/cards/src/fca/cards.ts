@@ -548,4 +548,16 @@ export const CARDS: Record<string, CardScript> = {
       }),
     ],
   },
+  "Teferi, Mage of Zhalfir": {
+    abilities: [
+      playerStatic({
+        spellKeywords: { filter: { types: ["Creature"] }, keywords: ["flash"] },
+        label: "Vos cartes de créature ont le flash",
+      }),
+      playerStatic({
+        castLimit: { who: "opponents", sorceryTiming: true },
+        label: "Vos adversaires ne lancent des sorts qu'au moment d'un rituel",
+      }),
+    ],
+  },
 };
