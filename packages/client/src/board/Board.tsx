@@ -158,11 +158,7 @@ function PlayerBar({ player, isMe }: { player: PlayerView; isMe: boolean }) {
               ☠ {player.poison}
             </span>
           )}
-          {player.speed !== undefined && (
-            <span className={`speed-chip ${player.speed >= 4 ? "max" : ""}`} title="Vitesse (4 : vitesse maximale)">
-              ⚡ {player.speed}
-            </span>
-          )}
+          {player.speed !== undefined && <SpeedGauge player={player.id} speed={player.speed} />}
           {player.emblems.map((e, i) => (
             <span key={`${e.name}-${i}`} className="emblem-chip" title={e.text}>
               ✦ {e.name}
@@ -172,6 +168,35 @@ function PlayerBar({ player, isMe }: { player: PlayerView; isMe: boolean }) {
       </div>
       <ManaPool pool={player.manaPool} restricted={player.restrictedMana} />
     </div>
+  );
+}
+
+/**
+ * Vitesse (702.179) : jauge de 1 à 4 ; à 4, les capacités « Vitesse maximale » du joueur sont actives.
+ * Remontée à chaque changement (clé), pour rejouer l'animation.
+ */
+function SpeedGauge({ player, speed }: { player: string; speed: number }) {
+  const max = speed >= 4;
+  const title = max
+    ? "Vitesse maximale (4/4) : les capacités « Vitesse maximale » sont actives"
+    : `Vitesse ${speed}/4 : les capacités « Vitesse maximale » ne sont pas encore actives`;
+  return (
+    <span
+      key={speed}
+      className={`speed-gauge ${max ? "max" : ""}`}
+      title={title}
+      role="img"
+      aria-label={title}
+      data-speed-of={player}
+    >
+      ⚡
+      <span className="speed-pips">
+        {[1, 2, 3, 4].map((n) => (
+          <span key={n} className={`speed-pip ${n <= speed ? "on" : ""}`} />
+        ))}
+      </span>
+      {max ? "MAX" : speed}
+    </span>
   );
 }
 

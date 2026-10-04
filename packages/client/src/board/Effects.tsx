@@ -75,6 +75,37 @@ function FloatingNumber({ fx, origin }: { fx: Fx; origin: { x: number; y: number
   );
 }
 
+/**
+ * Vitesse (702.179) : « ⚡2 » … « ⚡MAX » juste au-dessus de la jauge du joueur, mesurée une fois l'écran à jour
+ * (la jauge n'existe pas encore quand la vitesse démarre).
+ */
+function SpeedFloat({ fx, origin }: { fx: Fx; origin: { x: number; y: number } }) {
+  const [rect, setRect] = useState<Fx["rect"]>(null);
+  useLayoutEffect(() => {
+    const measure = () => {
+      const el = document.querySelector(`[data-speed-of="${fx.target}"]`);
+      const r = el?.getBoundingClientRect();
+      if (r) setRect({ x: r.left, y: r.top, w: r.width, h: r.height });
+      return !!r;
+    };
+    if (measure()) return;
+    const frame = requestAnimationFrame(measure);
+    return () => cancelAnimationFrame(frame);
+  }, [fx.target]);
+  if (!rect) return null;
+  return (
+    <motion.div
+      className="fx-number speed"
+      style={{ left: rect.x - origin.x + rect.w / 2, top: rect.y - origin.y - 22, x: "-50%" }}
+      initial={{ opacity: 0, y: 0, scale: 0.5 }}
+      animate={{ opacity: [0, 1, 1, 0], y: -10, scale: [0.5, 1.2, 1, 1] }}
+      transition={{ duration: 2, delay: fx.delay, times: [0, 0.12, 0.8, 1], ease: "easeOut" }}
+    >
+      ⚡{fx.amount >= 4 ? "MAX" : fx.amount}
+    </motion.div>
+  );
+}
+
 export function Effects() {
   const fx = useGame((s) => s.fx);
   const banner = useGame((s) => s.turnBanner);
@@ -99,9 +130,13 @@ export function Effects() {
   });
   return (
     <div className="fx-layer" ref={ref} aria-hidden="true">
-      {fx.map((f) => (
-        <FloatingNumber key={f.id} fx={f} origin={origin} />
-      ))}
+      {fx.map((f) =>
+        f.kind === "speed" ? (
+          <SpeedFloat key={f.id} fx={f} origin={origin} />
+        ) : (
+          <FloatingNumber key={f.id} fx={f} origin={origin} />
+        ),
+      )}
       <AnimatePresence>
         {banner && (
           <motion.div

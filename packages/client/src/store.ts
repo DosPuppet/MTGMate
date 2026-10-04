@@ -142,7 +142,7 @@ export interface Casting {
 /** Effet visuel éphémère : chiffre de dégâts/soin, silhouette d'une créature qui meurt. */
 export interface Fx {
   id: number;
-  kind: "damage" | "heal" | "death";
+  kind: "damage" | "heal" | "death" | "speed";
   /** Objet ou joueur visé (data-oid). */
   target: string;
   amount: number;
@@ -452,7 +452,18 @@ function playEffects(view: GameView, events: GameEvent[], faces: Record<string, 
     if (e.type === "damage" && e.targetDefId) push("damage", e.target, e.amount);
     else if (e.type === "life") push(e.delta < 0 ? "damage" : "heal", e.player, Math.abs(e.delta));
     else if (e.type === "dies") push("death", e.objectId, 0);
-    else if (e.type === "turnStart") {
+    else if (e.type === "speed") {
+      // 702.179 : vitesse démarrée, augmentée ou réduite ; montrée à tous les joueurs.
+      push("speed", e.player, e.speed);
+      if (e.speed >= 4) {
+        const mine = e.player === view.viewer;
+        banner = {
+          id: ++fxId,
+          mine,
+          text: `⚡ Vitesse maximale${mine ? "" : ` : ${view.players[e.player]?.name ?? "l'adversaire"}`}`,
+        };
+      }
+    } else if (e.type === "turnStart") {
       const mine = e.player === view.viewer;
       // Replay : pas de « À vous de jouer » (on ne joue pas), le nom du joueur actif.
       const replaying = !!store.getState().replay;
@@ -476,7 +487,8 @@ function playEffects(view: GameView, events: GameEvent[], faces: Record<string, 
   }));
   const ids = new Set(fresh.map((f) => f.id));
   const longest = fresh.reduce((m, f) => Math.max(m, f.delay), 0);
-  setTimeout(() => store.setState((s) => ({ fx: s.fx.filter((f) => !ids.has(f.id)) })), (longest + 1.8) * 1000);
+  // Le plus long des effets (vitesse) dure 2 s.
+  setTimeout(() => store.setState((s) => ({ fx: s.fx.filter((f) => !ids.has(f.id)) })), (longest + 2.4) * 1000);
   if (banner) {
     const id = banner.id;
     setTimeout(() => store.getState().turnBanner?.id === id && store.setState({ turnBanner: null }), 1400);

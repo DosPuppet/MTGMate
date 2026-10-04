@@ -761,17 +761,60 @@ button {
 }
 
 /* Actions */
-.speed-chip {
+/* Vitesse (702.179) : jauge de 4 crans, dorée à la vitesse maximale. */
+.speed-gauge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
   padding: 0 6px;
   border-radius: 8px;
   background: var(--panel-2);
   color: var(--gold);
   font-weight: 600;
+  animation: speed-bump 0.7s ease-out;
 }
-
-.speed-chip.max {
+.speed-pips {
+  display: inline-flex;
+  gap: 2px;
+}
+.speed-pip {
+  width: 6px;
+  height: 10px;
+  border-radius: 2px;
+  border: 1px solid var(--gold);
+  opacity: 0.5;
+}
+.speed-pip.on {
+  background: var(--gold);
+  opacity: 1;
+}
+.speed-gauge.max {
   background: var(--gold);
   color: #111;
+  box-shadow: 0 0 10px rgba(240, 184, 74, 0.7);
+}
+.speed-gauge.max .speed-pip {
+  border-color: #111;
+  background: #111;
+}
+@keyframes speed-bump {
+  0% {
+    transform: scale(1);
+    filter: brightness(1);
+  }
+  30% {
+    transform: scale(1.35);
+    filter: brightness(1.8);
+  }
+  100% {
+    transform: scale(1);
+    filter: brightness(1);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .speed-gauge {
+    animation: none;
+  }
 }
 
 .poison-chip {
@@ -1493,6 +1536,13 @@ button {
 }
 .preview-text {
   white-space: pre-line;
+}
+.preview-speed {
+  color: var(--dim);
+  font-weight: 600;
+}
+.preview-speed.on {
+  color: var(--gold);
 }
 .preview-kw {
   display: flex;
@@ -2376,6 +2426,14 @@ button {
   text-shadow:
     0 0 8px rgba(0, 0, 0, 0.9),
     0 0 18px rgba(60, 220, 120, 0.8);
+}
+.fx-number.speed {
+  font-size: 18px;
+  color: var(--gold);
+  -webkit-text-stroke: 1px rgba(20, 10, 0, 0.9);
+  text-shadow:
+    0 0 8px rgba(0, 0, 0, 0.9),
+    0 0 18px rgba(240, 184, 74, 0.8);
 }
 .fx-ghost {
   position: absolute;

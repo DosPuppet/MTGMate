@@ -8,8 +8,22 @@ import { PACES, useGame } from "../store";
 import { isTouch, justLongPressed } from "../touch";
 import { ManaCost, RulesText } from "./Card";
 
+/** Capacité « Vitesse maximale — » (702.179) dans le texte de la carte. */
+const MAX_SPEED = /Max speed —|Vitesse maximale —/;
+
+/** Aperçu d'une carte à « Vitesse maximale » : la capacité est-elle active pour son contrôleur ? */
+function MaxSpeedNote({ speed }: { speed: number | undefined }) {
+  const on = (speed ?? 0) >= 4;
+  return (
+    <div className={`preview-speed ${on ? "on" : ""}`}>
+      ⚡ Vitesse maximale : {on ? "active" : `inactive (${speed === undefined ? "pas de vitesse" : `vitesse ${speed}/4`})`}
+    </div>
+  );
+}
+
 export function Preview() {
   const hover = useGame((s) => s.hover);
+  const players = useGame((s) => s.view?.players);
   useRelayActive(); // nouvelle URL quand le relais des images s'active
   const lang = useGame((s) => s.lang);
   // Carte recto-verso : afficher le verso (touche F ou bouton).
@@ -57,6 +71,9 @@ export function Preview() {
           <ManaCost cost={face.manaCost} size={14} />
         </div>
         <div className="preview-type">{faceType(face, lang)}</div>
+        {obj && players && MAX_SPEED.test(`${face.text}\n${face.fr?.text ?? ""}`) && (
+          <MaxSpeedNote speed={players[obj.controller]?.speed} />
+        )}
         {/* Texte Oracle toujours affiché : illustrations sans cadre, éditions étrangères, petits caractères. */}
         {faceText(face, lang) && (
           <div className="preview-text">
