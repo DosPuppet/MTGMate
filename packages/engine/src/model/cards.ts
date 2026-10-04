@@ -1325,7 +1325,8 @@ export interface MoveSpec {
   tapped?: boolean;
   /** Sur le champ de bataille : sous le contrôle du contrôleur de l'effet (sinon du propriétaire). */
   underYourControl?: boolean;
-  counters?: { kind: string; n: number };
+  /** Marqueurs posés à l'arrivée (614.1c) ou sur la carte exilée ; « avec X marqueurs » : un montant. */
+  counters?: { kind: string; n: Amount };
   /** Types et sous-types ajoutés à l'objet (« c'est un Démon en plus de ses autres types »). */
   addTypes?: CardType[];
   addSubtypes?: string[];

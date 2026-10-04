@@ -5,12 +5,12 @@
 import {
   activated,
   amount,
+  bothIfKicked,
   type CardScript,
   cond,
   entersWith,
   fx,
   manaAbility,
-  modal,
   mode,
   ref,
   spell,
@@ -106,21 +106,14 @@ export const CARDS: Record<string, CardScript> = {
   // --- Lot M5 -----------------------------------------------------------------
   "Pyrrhic Strike": {
     // Flétrir 2 (coût additionnel facultatif) : lu dans le texte ; payé, on choisit les deux modes.
-    spell: modal(
+    spell: bothIfKicked(
       mode(
         "Détruit un artefact ou un enchantement",
         [target.permanent("a", ["Artifact", "Enchantment"])],
         [fx.destroy(ref.target("a"))],
       ),
       mode("Détruit une créature de VM 3 ou plus", [target.creature("c", { minManaValue: 3 })], [fx.destroy(ref.target("c"))]),
-      {
-        ...mode(
-          "Les deux (flétrir 2 payé)",
-          [target.permanent("a", ["Artifact", "Enchantment"]), target.creature("c", { minManaValue: 3 })],
-          [fx.destroy(ref.target("a")), fx.destroy(ref.target("c"))],
-        ),
-        condition: cond.kicked,
-      },
+      "Les deux (flétrir 2 payé)",
     ),
   },
   Emptiness: {

@@ -1530,6 +1530,23 @@ export function modal(...modes: ModeDef[]): SpellDef {
 }
 
 /**
+ * « Choisissez-en un. Si [le coût additionnel] a été payé, choisissez les deux à la place » (travail d'équipe, flétrir) :
+ * chaque mode seul exige qu'il ne l'ait pas été, le mode « les deux » (cibles et effets des deux, dans l'ordre) qu'il
+ * l'ait été. Les identifiants de cibles doivent être distincts d'un mode à l'autre.
+ */
+export function bothIfKicked(a: ModeDef, b: ModeDef, bothLabel: string): SpellDef {
+  const kicked: Condition = { kind: "kicked" };
+  const unkicked: Condition = { kind: "not", cond: kicked };
+  return {
+    modes: [
+      { ...a, condition: unkicked },
+      { ...b, condition: unkicked },
+      { label: bothLabel, targets: [...a.targets, ...b.targets], effects: [...a.effects, ...b.effects], condition: kicked },
+    ],
+  };
+}
+
+/**
  * Spree (702.172) : « choisissez un ou plusieurs modes, + [coût] chacun ». Toutes les combinaisons sont générées
  * (les identifiants de cibles doivent être distincts d'un mode à l'autre).
  */

@@ -2534,6 +2534,29 @@ describe("lot A, rouge", () => {
           "R",
         ]);
       });
+      it("avec un marqueur, une créature-terrain garde ses types de créature (305.7) et perd sa capacité statique", () => {
+        const grove = customCard({
+          name: "Test Dryad Grove",
+          typeLine: "Land Creature — Forest Dryad",
+          types: ["Land", "Creature"],
+          subtypes: ["Forest", "Dryad"],
+          power: 1,
+          toughness: 1,
+          abilities: [dsl.staticAbility({ types: ["Creature"], other: true }, { power: 1, toughness: 1 }, { label: "+1/+1" })],
+        });
+        let s = scenario({
+          p1: { battlefield: ["Zhao, the Moon Slayer", ...lands("Mountain", 7)] },
+          p2: { battlefield: [grove] },
+        });
+        const zhao = idOf(s, "p1", "battlefield", "Zhao, the Moon Slayer");
+        const base = chars(s, zhao).power;
+        s = settle(activate(s, "p1", zhao));
+        const land = idOf(s, "p2", "battlefield", "Test Dryad Grove");
+        expect(chars(s, land).subtypes.sort()).toEqual(["Dryad", "Mountain"]);
+        expect(chars(s, land).types).toContain("Creature");
+        // La statique de l'adversaire (« les autres créatures ont +1/+1 ») ne s'applique plus.
+        expect(chars(s, zhao).power).toBe(base - 1);
+      });
     });
 
     it("Zuko, Exiled Prince : {3} exile la carte du dessus, jouable ce tour-ci seulement", () => {

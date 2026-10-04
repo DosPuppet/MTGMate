@@ -7,7 +7,7 @@
 import { card } from "@mtgx/cards";
 import { describe, expect, it } from "vitest";
 import { destroy } from "../src/actions";
-import { fx, manaAbility, ref, spell, target } from "../src/dsl";
+import { fx, manaAbility, ref, spell, target, triggered, when } from "../src/dsl";
 import { legalActions } from "../src/legal";
 import { manaAbilitiesOf } from "../src/mana";
 import { changeCounters, chars } from "../src/state";
@@ -3918,6 +3918,13 @@ describe("lot A, incolores et terrains", () => {
         expect(s.players.p1?.hand).toHaveLength(10);
       });
 
+      it("votre taille de main maximale est de dix : avec douze cartes, défaussez jusqu'à dix au nettoyage", () => {
+        let s = scenario({ p1: { battlefield: ["The Ten Rings"], hand: lands("Island", 12), library: lands("Island", 5) } });
+        s = advanceUntil(s, (x) => x.turn.active === "p2");
+        expect(s.players.p1?.hand).toHaveLength(10);
+        expect(s.players.p1?.graveyard).toHaveLength(2);
+      });
+
       it("dix cartes ou plus en main : rien n'est pioché", () => {
         let s = scenario({ p1: { battlefield: ["The Ten Rings"], hand: lands("Island", 10), library: lands("Island", 5) } });
         s = advanceUntil(s, (x) => x.turn.active === "p2");
@@ -4184,16 +4191,18 @@ describe("lot B2 : marqueurs de bouclier ; B3 : engagements", () => {
         hand: ["Murdock's Crusade"],
         library: lands("Plains", 3),
       },
-      p2: { battlefield: ["Serra Angel"] },
+      p2: { battlefield: ["Serra Angel", "Omniscience"] },
     });
     const hill = idOf(s, "p1", "battlefield", "Agent Maria Hill");
     const angel = idOf(s, "p1", "battlefield", "Serra Angel");
     const hand = (s.players.p1?.hand.length ?? 0) - 1;
+    // Travail d'équipe payé : les deux modes.
     s = settle(
       cast(s, "p1", "Murdock's Crusade", {
+        mode: 2,
         kicked: true,
         tap: [hill, angel],
-        targets: { t: [idOf(s, "p2", "battlefield", "Serra Angel")] },
+        targets: { t: [idOf(s, "p2", "battlefield", "Serra Angel")], u: [idOf(s, "p2", "battlefield", "Omniscience")] },
       }),
     );
     expect(s.objects[hill]?.counters["+1/+1"]).toBe(1);
@@ -4765,4 +4774,75 @@ describe("Marvel Super Heroes, PLAN-D D9 : dernières cartes", () => {
   it("Training Compound : {C} ; {R} ou {G} seulement s'il est arrivé ce tour-ci ou si vous contrôlez un terrain de base", () => {
     checkFastLand("Training Compound", ["R", "G"]);
   });
+});
+
+describe("PLAN-A A3 : travail d'équipe, « choisissez-en un ; s'il a été payé, choisissez les deux à la place »", () => {
+  const CASES: [string, (ids: { angel: string; bow: string }) => Record<string, string[]>][] = [
+    ["Widow's Bite", ({ angel }) => ({ a: [angel] })],
+    ["HULK SMASH!", ({ bow }) => ({ a: [bow] })],
+    ["Go Nuts!", ({ angel }) => ({ t: [angel] })],
+    ["Atlantis Attacks", () => ({ p: ["p2"] })],
+    ["Murdock's Crusade", ({ angel }) => ({ t: [angel] })],
+  ];
+  const LANDS = ["Plains", "Island", "Swamp", "Mountain", "Forest"].flatMap((l) => lands(l, 3));
+  for (const [name, targetsOf] of CASES)
+    it(`${name} : travail d'équipe payé, un seul mode est refusé ; sans lui, « les deux » aussi`, () => {
+      const s = scenario({
+        p1: { battlefield: [...LANDS, "Shivan Dragon"], hand: [name] },
+        p2: { battlefield: ["Serra Angel", "Hawkeye's Bow", "Omniscience"] },
+      });
+      const ids = { angel: idOf(s, "p2", "battlefield", "Serra Angel"), bow: idOf(s, "p2", "battlefield", "Hawkeye's Bow") };
+      const card = idOf(s, "p1", "hand", name);
+      const tap = [idOf(s, "p1", "battlefield", "Shivan Dragon")];
+      const targets = targetsOf(ids);
+      expect(() => act(s, "p1", { type: "cast", card, mode: 0, targets, kicked: true, tap })).toThrow(/les deux modes/);
+      // Sans le travail d'équipe, le mode seul est permis.
+      expect(act(s, "p1", { type: "cast", card, mode: 0, targets }).stack).toHaveLength(1);
+      // Les options le disent : chaque mode seul exclut le coût additionnel, « les deux » l'exige.
+      const option = legalActions(s, "p1").find((a) => a.type === "cast" && a.card === card);
+      const modes = option?.type === "cast" ? option.modes : [];
+      expect(modes.map((m) => [m.index, !!m.requiresKicker, !!m.forbidsKicker])).toEqual([
+        [0, false, true],
+        [1, false, true],
+        [2, true, false],
+      ]);
+    });
+});
+
+describe("PLAN-A A3 : Vision Quest, « avec X marqueurs +1/+1 supplémentaires » posés à l'arrivée (614.1c)", () => {
+  /** Témoin : « chaque fois qu'un permanent arrive avec un marqueur +1/+1, vous gagnez 1 PV ». */
+  const WATCHER = customCard({
+    name: "Témoin des marqueurs",
+    typeLine: "Enchantment",
+    types: ["Enchantment"],
+    abilities: [triggered(when.enters({ withCounter: "+1/+1" }), [fx.gainLife(1)], { label: "Arrive avec un marqueur : 1 PV" })],
+  });
+  const ROBOT = customCard({
+    name: "Test Automaton",
+    typeLine: "Artifact Creature — Construct",
+    types: ["Artifact", "Creature"],
+    subtypes: ["Construct"],
+    power: 1,
+    toughness: 1,
+    manaCost: { generic: 2, colored: {}, x: 0 },
+    manaCostText: "{2}",
+  });
+
+  for (const from of ["graveyard", "library"] as const)
+    it(`depuis ${from === "graveyard" ? "le cimetière" : "la bibliothèque"}, la créature arrive avec ses X marqueurs`, () => {
+      let s = scenario({
+        p1: {
+          battlefield: [...lands("Island", 3), ...lands("Mountain", 2), WATCHER],
+          hand: ["Vision Quest"],
+          graveyard: from === "graveyard" ? [ROBOT] : [],
+          library: from === "library" ? [ROBOT, "Forest"] : ["Forest"],
+        },
+      });
+      s = settle(act(s, "p1", { type: "cast", card: idOf(s, "p1", "hand", "Vision Quest"), x: 3 }), (req, _p, cur) =>
+        req.type === "pick" ? req.options.filter((id) => nameOf(cur, id) === ROBOT.name).slice(0, 1) : undefined,
+      );
+      const robot = idOf(s, "p1", "battlefield", ROBOT.name);
+      expect(s.objects[robot]?.counters["+1/+1"]).toBe(3);
+      expect(s.players.p1?.life).toBe(21);
+    });
 });

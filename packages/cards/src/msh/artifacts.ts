@@ -145,8 +145,7 @@ export const ARTIFACTS: Record<string, CardScript> = {
   },
   "The Ten Rings": {
     abilities: [
-      // Approximation : pas de taille de main maximale (au lieu de dix).
-      playerStatic({ noMaxHandSize: true, label: "Taille de main maximale : dix (approximation : aucune)" }),
+      playerStatic({ maxHandSize: 10, label: "Taille de main maximale : dix" }),
       triggered(when.yourEndStep, [fx.draw(amount.plus(10, amount.neg(amount.cardsIn("hand"))))], {
         condition: cond.handAtMost(ref.you, 9),
         label: "Piochez jusqu'à dix cartes en main",

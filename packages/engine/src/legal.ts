@@ -37,6 +37,7 @@ import {
   isWebSlinging,
   kickerCostOptions,
   kickerCostPermanent,
+  modeConditionHolds,
   modesOf,
   sacrificeOptions,
   sneakOptions,
@@ -85,10 +86,10 @@ import { snapshot } from "./layers";
 import { enterChoiceRequest } from "./ops/permanents";
 import { obj } from "./state";
 import { legalTargets } from "./targets";
-import { checkCondition } from "./triggers";
 import type {
   ActionOption,
   CardDef,
+  Condition,
   GameState,
   ManaCost,
   ObjectFilter,
@@ -364,14 +365,24 @@ export function legalActions(s: GameState, player: PlayerId): ActionOption[] {
     if (!onTime && (!d.flashExtraCost || terms.sorceryTiming) && !sneakOnly) return;
     const timingExtra = onTime || sneakOnly ? undefined : d.flashExtraCost;
     const flashback = terms.source === "flashback";
+    // Condition d'un mode lue avec et sans le coût additionnel (« s'il a été payé, choisissez les deux à la place »).
+    const kickerNeeds = (c: Condition | undefined): { ok: boolean; requiresKicker?: true; forbidsKicker?: true } => {
+      if (!c) return { ok: true };
+      const withKicker = modeConditionHolds(s, player, card, c, true);
+      const without = modeConditionHolds(s, player, card, c, false);
+      return {
+        ok: withKicker || without,
+        requiresKicker: (withKicker && !without) || undefined,
+        forbidsKicker: (without && !withKicker) || undefined,
+      };
+    };
     const modes = modesOf(d)
       .map((m, index) => ({
         index,
         label: m.label,
         targets: targetOptions(s, player, m.targets, card),
         extra: m.extraCost,
-        ok: !m.condition || m.condition.kind === "kicked" || checkCondition(s, m.condition, player, card),
-        requiresKicker: m.condition?.kind === "kicked" || undefined,
+        ...kickerNeeds(m.condition),
       }))
       .filter((m) => m.ok)
       // Cadeau promis : les cibles propres au cadeau suffisent (Into the Flood Maw sans créature adverse).
@@ -511,6 +522,13 @@ export function legalActions(s: GameState, player: PlayerId): ActionOption[] {
     }
     if (modes.length === 0) return;
     if (!modeCost && !terms.free && !normal && !freeAvailable && !altAvailable && !kickerAffordable) return;
+    // Un mode qui exige le coût additionnel demande un kicker payable ; un mode qui l'exclut, une autre façon de payer.
+    const unkickedPayable = modeCost || !!terms.free || normal || freeAvailable || altAvailable;
+    for (let i = modes.length - 1; i >= 0; i--) {
+      const m = modes[i] as (typeof modes)[number];
+      if ((m.requiresKicker && !kickerAffordable) || (m.forbidsKicker && !unkickedPayable)) modes.splice(i, 1);
+    }
+    if (modes.length === 0) return;
     // Un mode qui n'a de cibles qu'avec le kicker ou le cadeau (Too Evil to Stay Dead) demande un kicker payable.
     if (!kickerAffordable)
       for (let i = modes.length - 1; i >= 0; i--)

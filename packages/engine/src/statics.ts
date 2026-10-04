@@ -1,5 +1,5 @@
 import type { AmountMod } from "./modifiers";
-import { alivePlayers, chars, newId, obj, opponentsOf } from "./state";
+import { alivePlayers, chars, newId, nextTimestamp, obj, opponentsOf } from "./state";
 import { matchesObjectFilter } from "./targets";
 import { checkCondition } from "./triggers";
 import type {
@@ -116,14 +116,14 @@ export function playerStatics(
   player: PlayerId,
   /** Seulement celles qui portent cette clé ; la condition des autres n'est pas évaluée (une condition peut lire une statique). */
   key: PlayerStaticKey,
-): { id?: ObjectId; ab: PlayerStaticAbilityDef }[] {
-  const out: { id?: ObjectId; ab: PlayerStaticAbilityDef }[] = [];
+): { id?: ObjectId; ab: PlayerStaticAbilityDef; timestamp?: number }[] {
+  const out: { id?: ObjectId; ab: PlayerStaticAbilityDef; timestamp?: number }[] = [];
   for (const { id, ab } of current(s).statics.get(player)?.get(key) ?? []) {
     // La condition se lit du point de vue du contrôleur de la source (`affects` : la statique touche d'autres joueurs).
     const controller = (id && s.objects[id]?.controller) || player;
     if (ab.kind === "playerStatic" && (!ab.condition || checkCondition(s, ab.condition, controller, id))) out.push({ id, ab });
   }
-  for (const e of liveEffects(s, player)) if (e.ability[key]) out.push({ ab: e.ability });
+  for (const e of liveEffects(s, player)) if (e.ability[key]) out.push({ ab: e.ability, timestamp: e.timestamp });
   return out;
 }
 
@@ -265,6 +265,7 @@ export function addPlayerEffect(
     ability: { kind: "playerStatic", ...ability },
     until,
     once: once || undefined,
+    timestamp: nextTimestamp(s),
   });
   s.version += 1; // des caractéristiques peuvent en dépendre
 }

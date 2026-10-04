@@ -80,6 +80,7 @@ import type {
   CastVia,
   ChoiceValue,
   Color,
+  Condition,
   CostPick,
   CostSlot,
   Effect,
@@ -176,6 +177,27 @@ export function hasConvoke(s: GameState, player: PlayerId, d: CardDef): boolean 
 
 export function isPermanentCard(d: CardDef): boolean {
   return !d.types.includes("Instant") && !d.types.includes("Sorcery");
+}
+
+/**
+ * Condition d'un mode à l'annonce du sort (601.2b) : « kické » (coût additionnel payé, travail d'équipe, flétrir…) se lit
+ * dans les choix du lancement, et non sur l'objet ; `not`, `all` et `any` le composent (« choisissez-en un ; si le coût
+ * additionnel a été payé, choisissez les deux à la place » : chaque mode seul exige qu'il ne l'ait pas été). Les autres
+ * sortes se lisent hors résolution (`checkCondition`). Commune à `legalActions` et à `castSpell`.
+ */
+export function modeConditionHolds(s: GameState, player: PlayerId, card: ObjectId, c: Condition, kicked: boolean): boolean {
+  switch (c.kind) {
+    case "kicked":
+      return kicked;
+    case "not":
+      return !modeConditionHolds(s, player, card, c.cond, kicked);
+    case "all":
+      return c.of.every((x) => modeConditionHolds(s, player, card, x, kicked));
+    case "any":
+      return c.of.some((x) => modeConditionHolds(s, player, card, x, kicked));
+    default:
+      return checkCondition(s, c, player, card);
+  }
 }
 
 /** Mot « cible » d'un sort d'Aura (303.4a). */
@@ -1914,11 +1936,15 @@ export function castSpell(s: GameState, player: PlayerId, card: ObjectId, choice
   // Surcharge, fendre : le mode se lance pour son propre coût, ni gratuitement ni avec un autre coût alternatif (118.9a).
   if (mode.cost && (free || alternative)) throw new RulesError("Ce mode se lance seulement pour son propre coût");
   const dc = mode.cost ? { ...d, manaCost: mode.cost } : d;
-  // « Si le coût additionnel a été payé, choisissez les deux » : le mode exige le kicker choisi avec la décision.
-  if (mode.condition?.kind === "kicked") {
-    if (!choices.kicked) throw new RulesError("Ce mode demande de payer le coût additionnel");
-  } else if (mode.condition && !checkCondition(s, mode.condition, player, card))
+  // « Si le coût additionnel a été payé, choisissez les deux à la place » : le mode exige (ou exclut) le kicker choisi
+  // avec la décision.
+  if (mode.condition && !modeConditionHolds(s, player, card, mode.condition, !!choices.kicked)) {
+    if (modeConditionHolds(s, player, card, mode.condition, !choices.kicked))
+      throw new RulesError(
+        choices.kicked ? "Coût additionnel payé : choisissez les deux modes" : "Ce mode demande de payer le coût additionnel",
+      );
     throw new RulesError("Ce mode n'est pas disponible");
+  }
   const targets = validateTargets(s, player, mode.targets, choices.targets, {
     kicked: !!choices.kicked,
     sourceId: card,
@@ -3322,7 +3348,9 @@ export function activateAbility(s: GameState, player: PlayerId, source: ObjectId
   if (ab.cost.addCounters) changeCounters(s, o, ab.cost.addCounters.kind, ab.cost.addCounters.n, true);
   for (const id of crew) tapObject(s, obj(s, id));
   if (crew.length) {
-    o.crewedBy = { turn: s.turn.number, ids: [...crew] };
+    // « Les créatures qui l'ont pilotée / montée ce tour-ci » (702.122, 702.171) : toutes celles des activations du tour.
+    const before = o.crewedBy?.turn === s.turn.number ? o.crewedBy.ids : [];
+    o.crewedBy = { turn: s.turn.number, ids: [...before, ...crew.filter((id) => !before.includes(id))] };
     rulesEvent(s, { e: "crewed", vehicle: source, crew: [...crew] });
   }
   if (ab.cost.self === "exert") o.exerted = true;

@@ -9,6 +9,7 @@ import {
   BASIC_LAND,
   block,
   blockAbility,
+  bothIfKicked,
   type CardScript,
   castPermission,
   chapter,
@@ -193,17 +194,10 @@ export const GREEN: Record<string, CardScript> = {
   },
   "Go Nuts!": {
     // Travail d'équipe 3 : lu dans le texte ; payé, on choisit les deux modes.
-    spell: modal(
+    spell: bothIfKicked(
       mode("Un marqueur +1/+1", [target.creature("t")], [fx.addCounters(ref.target("t"), 1)]),
       mode("Combat", [YOUR_CREATURE("a"), OPPONENT_CREATURE("b")], [fx.fight(ref.target("a"), ref.target("b"))]),
-      {
-        ...mode(
-          "Les deux (travail d'équipe payé)",
-          [target.creature("t"), YOUR_CREATURE("a"), OPPONENT_CREATURE("b")],
-          [fx.addCounters(ref.target("t"), 1), fx.fight(ref.target("a"), ref.target("b"))],
-        ),
-        condition: cond.kicked,
-      },
+      "Les deux (travail d'équipe payé)",
     ),
   },
   "Guerrilla Gorilla": {

@@ -3,6 +3,7 @@ import type { ObjectFilter, TokenSpec, TriggerSpec } from "@mtgx/engine";
 import {
   activated,
   amount,
+  bothIfKicked,
   type CardScript,
   CLUE,
   chapter,
@@ -11,7 +12,6 @@ import {
   fx,
   HERO,
   investigate,
-  modal,
   mode,
   playerStatic,
   ref,
@@ -197,7 +197,7 @@ export const WHITE: Record<string, CardScript> = {
   },
   "Murdock's Crusade": {
     // Travail d'équipe 4 : lu dans le texte ; « choisissez les deux » demande le travail d'équipe.
-    spell: modal(
+    spell: bothIfKicked(
       mode(
         "Justice de la rue — exile une créature d'endurance 4 ou plus",
         [target.creature("t", { minToughness: 4 })],
@@ -208,17 +208,7 @@ export const WHITE: Record<string, CardScript> = {
         [target.permanent("u", ["Enchantment"], { minManaValue: 4 }, "enchantement de valeur de mana 4 ou plus")],
         [fx.exile(ref.target("u"))],
       ),
-      {
-        ...mode(
-          "Les deux (travail d'équipe)",
-          [
-            target.creature("t", { minToughness: 4 }),
-            target.permanent("u", ["Enchantment"], { minManaValue: 4 }, "enchantement de valeur de mana 4 ou plus"),
-          ],
-          [fx.exile(ref.target()), fx.exile(ref.target("u"))],
-        ),
-        condition: cond.kicked,
-      },
+      "Les deux (travail d'équipe)",
     ),
   },
   "Nick Fury, Agent of S.H.I.E.L.D.": {

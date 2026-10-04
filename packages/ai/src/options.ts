@@ -102,9 +102,10 @@ export function buildCastDecision(
         (t) => !t.optional && !t.countX && t.legal.length === 0 && (t.kickedLegal?.length ?? 0) > 0,
       );
       const kicked =
-        !!mode.requiresKicker ||
-        needsKicker ||
-        (a.kickerAffordable && ((!a.normalAvailable && !a.freeAvailable && !a.altAvailable) || rand() < 0.5));
+        !mode.forbidsKicker &&
+        (!!mode.requiresKicker ||
+          needsKicker ||
+          (a.kickerAffordable && ((!a.normalAvailable && !a.freeAvailable && !a.altAvailable) || rand() < 0.5)));
       const targetOpts = kicked ? mode.targets.map((t) => (t.kickedLegal ? { ...t, legal: t.kickedLegal } : t)) : mode.targets;
       const pickN = (spec?: { count: number; options: string[] }) => {
         if (!spec) return undefined;
@@ -230,14 +231,14 @@ export function enumerateDecisions(a: ActionOption, limit = 40, rank?: (ids: str
             // Mode « les deux » : seulement avec le coût additionnel payé.
             // Payable seulement avec le kicker (Hamlet Glutton marchandé) : pas de lancement sans lui.
             if (!m.requiresKicker && (v !== base || a.normalAvailable || a.free)) out.push(v);
-            if (a.kickerAffordable && !m.targets.some((t) => t.kickedLegal)) out.push({ ...v, kicked: true });
+            if (a.kickerAffordable && !m.forbidsKicker && !m.targets.some((t) => t.kickedLegal)) out.push({ ...v, kicked: true });
           }
           // Mana hybride dont le résultat dépend (Deceit) : une variante par couleur, la simulation départage.
           if (a.normalAvailable) for (const c of a.hybridColors ?? []) out.push({ ...base, hybridAs: c });
           if (a.altAvailable) for (const c of a.hybridColors ?? []) out.push({ ...base, alternative: true, hybridAs: c });
         }
         // Cibles propres au cadeau promis : combinaisons calculées à part.
-        if (a.kickerAffordable && m.targets.some((t) => t.kickedLegal)) {
+        if (a.kickerAffordable && !m.forbidsKicker && m.targets.some((t) => t.kickedLegal)) {
           for (const targets of combos(m.targets, true)) {
             out.push({ type: "cast", card: a.card, face: a.face, mode: m.index, targets, x: a.xMax ?? undefined, kicked: true });
           }

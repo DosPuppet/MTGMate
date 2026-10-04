@@ -73,8 +73,6 @@ Dans l'ordre où elles ont été ajoutées, extension par extension.
   - `règle` Oviya : le piétinement vaut pour vos créatures attaquantes (quel que soit le joueur attaqué).
 - **Outlaws of Thunder Junction (`docs/extensions/otj-big.md`) :**
   - `règle` Hollow Marauder : une carte piochée si au moins un adversaire ciblé n'a pas défaussé de carte de VM 4 ou plus ;
-  - `règle` Giant Beaver, Rambling Possum : seules les créatures de la dernière activation de Monture du tour comptent comme l'ayant montée ;
-  - `règle` Fortune, The Gitrog : toutes les créatures qui ont monté la Monture sont concernées (et non une au plus, au choix) ;
   - `règle` Fblthp, Lost on the Range : comploter la carte du dessus passe par une capacité (sur la pile) qui paie son coût de mana ;
   - `règle` Obeka : les étapes d'entretien supplémentaires ne font que déclencher les capacités « au début de votre entretien » ;
   - `règle` Riku of Many Paths : un seul mode, quel que soit le nombre de modes du sort ;
@@ -124,7 +122,7 @@ Dans l'ordre où elles ont été ajoutées, extension par extension.
 - **The Lost Caverns of Ixalan (`docs/extensions/lci.md`) :**
   - `règle` mana des Cavernes (Bat Colony) et « en utilisant du mana produit par [source] » (Tecutlan, The Myriad Pools) : seulement le mana engagé par le paiement automatique ;
   - `règle` Dreadmaw's Ire : l'artefact détruit est celui d'un adversaire quelconque ;
-  - `timing` Squirming Emergence : la valeur de mana n'est vérifiée qu'à la résolution ; Abuelo's Awakening : les marqueurs sont posés juste après l'arrivée ;
+  - `timing` Squirming Emergence : la valeur de mana n'est vérifiée qu'à la résolution ; Abuelo's Awakening : la carte devient un Esprit 1/1 volant juste après son arrivée (et non en arrivant) ;
   - `règle` Brass's Tunnel-Grinder : « défaussez autant de cartes que voulu » est une défausse facultative ;
   - `règle` Zoyowa's Justice : le propriétaire découvre après avoir mélangé la carte ; The Myriad Pools : le permanent devient une copie du sort sur la pile ;
   - `timing` Thousand Moons Infantry : se dégage au début de l'entretien de chaque adversaire (et non pendant son étape de dégagement) ; The Millennium Calendar : ses marqueurs de temps sont posés au début de votre entretien ;
@@ -227,7 +225,6 @@ Dans l'ordre où elles ont été ajoutées, extension par extension.
   - `règle` Honest Work : la créature enchantée prend le seul sous-type Citoyen (une créature-artefact perdrait aussi ses sous-types d'artefact) ;
   - `règle` Sold Out : « a subi des blessures ce tour-ci » se lit sur les blessures encore marquées ;
   - `timing` The Fire Nation Drill : s'il arrive déjà engagé, la question « vous pouvez l'engager » n'est pas posée ;
-  - `règle` Zhao, the Moon Slayer : les terrains non de base prennent le seul sous-type Montagne (une créature-terrain perdrait aussi ses types de créature, alors que 305.7 ne remplace que les types de terrain) ; une capacité statique propre au terrain n'est pas retirée (la perte des capacités par une capacité statique n'atteint pas `staticSlots`) ;
   - `timing` Elemental Teachings : les cartes trouvées passent par votre main (révélées), puis l'adversaire en choisit deux ;
   - `règle` Raucous Audience : deux capacités de mana, chacune sous sa condition ;
   - `règle` Azula, Cunning Usurper : les cartes exilées se lancent pendant votre tour avec du mana de n'importe quel type, mais sans le flash ;
@@ -247,7 +244,6 @@ Dans l'ordre où elles ont été ajoutées, extension par extension.
   - `règle` Crowd of True Believers : « attaque seule » demande que la créature attaque un joueur ;
   - `règle` Super Intelligence : « l'entretien de son contrôleur » se lit « votre entretien, ou celui d'un adversaire si la créature est chez un adversaire » (exact en duel) ;
   - `règle` Attuma, Atlantean Warlord : une attaque contre un planeswalker compte comme « attaquent un joueur » ;
-  - `règle` Travail d'équipe (Widow's Bite, HULK SMASH!, Go Nuts!, Atlantis Attacks, Murdock's Crusade) : payé, il permet de choisir les deux modes, mais un seul mode reste permis (l'Oracle impose les deux) ;
   - `timing` Hawkeye, Master Marksman : « payez {1} jusqu'à trois fois, puis choisissez autant de modes » est trois propositions successives (payer {1} pour chaque mode), chacune avec sa capacité réflexive ;
   - `règle` The Thing, Ben Grimm : « blessent un joueur » se lit « blessent un adversaire » ;
   - `règle` World War Hulk (chapitre I) : le sort gratuit vient seulement de la main, et un sort de créature payé normalement ne consomme pas la permission ;
@@ -255,8 +251,7 @@ Dans l'ordre où elles ont été ajoutées, extension par extension.
   - `règle` Cloak and Dagger, Entwined : la créature ciblée est adverse sans être forcément au joueur ciblé ; la main n'est montrée qu'à travers ses cartes non-terrain proposées ;
   - `règle` The Kingpin of Crime : l'extorsion est écrite dans le script ; « blesse selon son endurance » ne touche que les créatures présentes à la résolution ;
   - `règle` Speedball, New Warrior : seule la cible d'un sort à une seule cible peut être changée ;
-  - `timing` Vision Quest : le cimetière est proposé avant la bibliothèque ; les X marqueurs sont mis juste après l'arrivée ;
-  - `règle` The Ten Rings : « taille de main maximale de dix » devient « pas de taille de main maximale » ;
+  - `timing` Vision Quest : le cimetière est proposé avant la bibliothèque ;
   - `règle` Cosmic Cube : la carte choisie parmi les six passe par l'exil le temps d'être lancée (visible de tous), puis va au-dessous si vous renoncez ;
   - `règle` Captain America's Shield : la créature ciblée est une créature adverse (pas forcément au joueur défenseur) ;
   - `règle` Kang the Conqueror : « pendant ce tour, les montées en puissance ne peuvent pas être activées » n'est pas appliqué au tour supplémentaire ;
@@ -269,7 +264,6 @@ Dans l'ordre où elles ont été ajoutées, extension par extension.
   - `règle` The Death of Gwen Stacy : au chapitre II, chaque joueur choisit puis agit à son tour (pas de choix en APNAP suivis d'actions simultanées) ; au chapitre III, « n'importe quel nombre de joueurs ciblés » s'écrit « jusqu'à quatre » ;
   - `règle` Maximum Carnage : au chapitre I, l'obligation d'attaquer ne vise que les créatures adverses présentes à la résolution, et « un joueur autre que vous si possible » n'est pas imposé (exact en duel, sauf pour attaquer vos planeswalkers) ;
   - `règle` Spinneret and Spiderling : le seuil de 4 blessures se lit par blessure infligée ; des blessures de combat réparties entre plusieurs bloqueurs (2 + 2) ne le déclenchent pas ;
-  - `règle` Doctor Octopus, Master Planner : « votre taille de main maximale est de huit » se lit « vous n'avez pas de taille de main maximale » (comme The Ten Rings) ;
   - `règle` Spider-Slayer, Hatred Honed : « chaque fois qu'il inflige des blessures à une Araignée » se lit « chaque fois qu'une Araignée blessée par lui ce tour-ci reçoit des blessures » ; une Araignée indestructible déjà blessée par lui ferait déclencher la capacité si une autre source la blesse ;
   - `règle` Arachne, Psionic Weaver : la main de l'adversaire n'est pas montrée avant le choix du type ; le type est choisi comme un mode d'arrivée.
 - **Teenage Mutant Ninja Turtles (`docs/extensions/tmt.md`) :**
@@ -302,7 +296,6 @@ Dans l'ordre où elles ont été ajoutées, extension par extension.
   - `règle` Bridge from Below : « mise dans votre cimetière » et « dans le cimetière d'un adversaire » se lisent d'après le dernier contrôleur de la créature, pas son propriétaire ;
   - `règle` Eerie Ultimatum : les cartes remises sur le champ de bataille n'ont pas à avoir des noms différents ;
   - `règle` Green Sun's Zenith : elle se mélange dans la bibliothèque chaque fois qu'elle devrait aller au cimetière, pas seulement en se résolvant ;
-  - `règle` Magus of the Moon, Blood Moon : un terrain non-base devient une Montagne et perd aussi ses sous-types qui ne sont pas des types de terrain (Dryade, Saga ; comme Zhao, the Moon Slayer) ;
   - `règle` Hindering Light : seuls les sorts qui ciblent un permanent que vous contrôlez sont reconnus, pas ceux qui ne ciblent que vous ;
   - `règle` Adeline, Resplendent Cathar : les Humains créés attaquent tous le même défenseur (un par adversaire, en multijoueur) ;
   - `règle` Mangara, the Diplomat : « deux créatures ou plus vous attaquent » compte les attaques contre vous du tour entier ;
@@ -326,7 +319,6 @@ Dans l'ordre où elles ont été ajoutées, extension par extension.
   - `règle` Carpet of Flowers : seulement au début de votre première phase principale ;
   - `choix auto` Library of Leng : la carte défaussée par un effet va toujours au-dessus de la bibliothèque (sauf une carte avec la folie) ;
   - `règle` Notion Thief : la pioche du voleur n'est pas remplacée à son tour (deux Notion Thief adverses) ; les remplacements de la pioche du voleur ne s'appliquent pas ;
-  - `règle` Necrodominance : la taille de main maximale la plus petite s'applique (et non la plus récente) ;
   - `règle` Indomitable Creativity : le joueur qui révèle est le propriétaire de chaque permanent détruit (son contrôleur s'il diffère, en multijoueur avec un permanent volé) ;
   - `règle` Gix, Yawgmoth Praetor : « payez 1 PV » est une perte de PV (possible à 0 PV ou moins) ; `choix auto` les cartes défaussées pour X, sans choix du joueur dans l'interface ;
   - `règle` Painter's Servant : seuls les permanents prennent la couleur choisie (pas les sorts ni les cartes des autres zones) ;

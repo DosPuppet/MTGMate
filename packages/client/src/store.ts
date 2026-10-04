@@ -805,8 +805,11 @@ export const useGame = create<Store>((set, get) => {
     }
     if (c.option.type === "cast" && c.kicked === null) {
       const o = c.option;
+      const m = o.modes.find((x) => x.index === c.mode);
+      // Mode qui exige ou exclut le coût additionnel (« s'il a été payé, choisissez les deux à la place ») : pas de question.
+      if (m?.requiresKicker || m?.forbidsKicker) c.kicked = !!m.requiresKicker;
       // Payable seulement avec le kicker (« coûte {2} de moins s'il est marchandé ») : pas de question.
-      if (o.kickerAffordable && !o.normalAvailable && !o.freeAvailable && !o.altAvailable && !o.free) c.kicked = true;
+      else if (o.kickerAffordable && !o.normalAvailable && !o.freeAvailable && !o.altAvailable && !o.free) c.kicked = true;
       else if (o.kickerAffordable) return set({ casting: { ...c, stage: "kicker" } });
       else c.kicked = false;
     }
@@ -1636,9 +1639,11 @@ export const useGame = create<Store>((set, get) => {
     chooseMode(index) {
       const c = get().casting;
       if (!c) return;
-      // « Si le coût additionnel a été payé, choisissez les deux » : ce mode impose de le payer.
-      const needs = c.option.type === "cast" && c.option.modes.find((m) => m.index === index)?.requiresKicker;
-      continueCasting({ ...c, mode: index, ...(needs ? { kicked: true } : {}) });
+      // « Si le coût additionnel a été payé, choisissez les deux à la place » : le mode « les deux » impose de le payer,
+      // chaque mode seul de ne pas le payer.
+      const m = c.option.type === "cast" ? c.option.modes.find((x) => x.index === index) : undefined;
+      const kicked = m?.requiresKicker ? true : m?.forbidsKicker ? false : undefined;
+      continueCasting({ ...c, mode: index, ...(kicked !== undefined ? { kicked } : {}) });
     },
 
     choosePayMode(payMode) {

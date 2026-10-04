@@ -39,7 +39,7 @@ import type {
   PowerRule,
   ProtectionRule,
 } from "./types";
-import { BASIC_LAND_TYPES, PERMANENT_TYPES } from "./types";
+import { BASIC_LAND_TYPES, LAND_TYPES, PERMANENT_TYPES } from "./types";
 
 export interface Characteristics {
   name: string;
@@ -779,6 +779,18 @@ function staticSlots(s: GameState, defOfId: (id: ObjectId) => string): StaticSlo
       if (ab.kind === "static" && ab.affects === "attached" && ab.mods.loseAllAbilities) lost.add(o.attachedTo);
     }
   }
+  // Statique qui retire les capacités des permanents d'un filtre (« les terrains non-base sont des Montagnes », 305.7) :
+  // les permanents touchés d'après leurs caractéristiques de base, sans la source elle-même (même approximation).
+  for (const id of s.battlefield) {
+    if (lost.has(id)) continue;
+    const o = obj(s, id);
+    for (const ab of s.defs[defOfId(id)]?.abilities ?? []) {
+      if (ab.kind !== "static" || typeof ab.affects === "string" || !ab.mods.loseAllAbilities) continue;
+      if (ab.condition && !checkCondition(s, ab.condition, o.controller, id)) continue;
+      const f = withChosen(ab.affects, o);
+      for (const x of s.battlefield) if (x !== id && matchesView(snapshotBase(s, x), f, o.controller, id)) lost.add(x);
+    }
+  }
   const slots: StaticSlot[] = [];
   const emblems = s.playerOrder.flatMap((p) => s.players[p]?.command ?? []);
   for (const id of [...s.battlefield, ...emblems]) {
@@ -935,6 +947,17 @@ function evalStatic(s: GameState, slot: StaticSlot, sig: (string | number)[]): {
   };
 }
 
+/**
+ * Sous-types remplacés sans changement de type (couche 4). De nouveaux types de terrain remplacent seulement les types de
+ * terrain (205.1a, 305.7 : « les terrains non-base sont des Montagnes » laisse à une créature-terrain ses types de
+ * créature, à un terrain-Saga son type d'enchantement) ; sinon, tous les sous-types.
+ */
+function replacedSubtypes(old: string[], set: string[]): string[] {
+  if (set.length > 0 && set.every((t) => LAND_TYPES.has(t)))
+    return [...old.filter((t) => !LAND_TYPES.has(t) && !set.includes(t)), ...set];
+  return [...set];
+}
+
 /** Applique les couches 1 et 4 à 7 aux objets du champ de bataille. */
 function applyLayers(s: GameState, applied: Applied[], defOfId: (id: ObjectId) => string): Map<ObjectId, Characteristics> {
   const out = new Map<ObjectId, Characteristics>();
@@ -988,7 +1011,7 @@ function applyLayers(s: GameState, applied: Applied[], defOfId: (id: ObjectId) =
       if (m.setTypes) {
         c.types = [...m.setTypes];
         c.subtypes = [...(m.setSubtypes ?? [])];
-      } else if (m.setSubtypes) c.subtypes = [...m.setSubtypes];
+      } else if (m.setSubtypes) c.subtypes = replacedSubtypes(c.subtypes, m.setSubtypes);
       if (m.setName) c.name = m.setName;
       for (const t of m.addSupertypes ?? []) if (!c.supertypes.includes(t)) c.supertypes.push(t);
       if (m.removeSupertypes?.length) c.supertypes = c.supertypes.filter((t) => !m.removeSupertypes?.includes(t));

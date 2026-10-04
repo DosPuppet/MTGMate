@@ -4800,3 +4800,23 @@ describe("Lorwyn Eclipsed, PLAN-D D9 : dernières rares et peu communes", () => 
     expect(idsOf(t, "p2", "battlefield", "Serra Angel")).toHaveLength(1);
   });
 });
+
+describe("PLAN-A A3 : Pyrrhic Strike, « si le coût additionnel a été payé, choisissez les deux à la place »", () => {
+  it("flétrir 2 payé : un seul mode est refusé", () => {
+    const s = scenario({
+      p1: { battlefield: ["Plains", "Plains", "Plains", "Fire Elemental"], hand: ["Pyrrhic Strike"] },
+      p2: { battlefield: ["Fishing Pole", "Shivan Dragon"] },
+    });
+    const card = idOf(s, "p1", "hand", "Pyrrhic Strike");
+    const targets = { a: [idOf(s, "p2", "battlefield", "Fishing Pole")] };
+    expect(() => act(s, "p1", { type: "cast", card, mode: 0, targets, kicked: true })).toThrow(RulesError);
+    const t = act(s, "p1", { type: "cast", card, mode: 0, targets });
+    expect(t.objects[idOf(t, "p1", "battlefield", "Fire Elemental")]?.counters["-1/-1"] ?? 0).toBe(0);
+    const option = legalActions(s, "p1").find((a) => a.type === "cast" && a.card === card);
+    expect(option?.type === "cast" && option.modes.map((m) => [m.index, !!m.requiresKicker, !!m.forbidsKicker])).toEqual([
+      [0, false, true],
+      [1, false, true],
+      [2, true, false],
+    ]);
+  });
+});

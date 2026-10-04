@@ -6,6 +6,7 @@ import type { TokenSpec } from "@mtgx/engine";
 import {
   activated,
   amount,
+  bothIfKicked,
   type CardScript,
   cond,
   cost,
@@ -14,7 +15,6 @@ import {
   fx,
   MERFOLK_BLUE,
   manaAbility,
-  modal,
   mode,
   playerStatic,
   ref,
@@ -82,21 +82,14 @@ export const BLUE: Record<string, CardScript> = {
   },
   "Atlantis Attacks": {
     // Travail d'équipe 4 : lu dans le texte. Payé, les deux modes sont choisis (le mode « les deux » l'exige).
-    spell: modal(
+    spell: bothIfKicked(
       mode("Le joueur ciblé crée un Léviathan 6/5", [target.player("p")], [fx.createTokens(LEVIATHAN, 1, ref.target("p"))]),
       mode(
         "Renvoie un ou deux permanents non-terrains",
         [target.between(1, 2, target.nonland("b"))],
         [fx.bounce(ref.target("b"))],
       ),
-      {
-        ...mode(
-          "Les deux (travail d'équipe)",
-          [target.player("p"), target.between(1, 2, target.nonland("b"))],
-          [fx.createTokens(LEVIATHAN, 1, ref.target("p")), fx.bounce(ref.target("b"))],
-        ),
-        condition: cond.kicked,
-      },
+      "Les deux (travail d'équipe)",
     ),
   },
   "Attuma, Atlantean Warlord": {

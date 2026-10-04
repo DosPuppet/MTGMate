@@ -8,6 +8,7 @@ import {
   announceDiscardBatch,
   damageSource,
   evalAmount,
+  evalMoveSpec,
   grantPlay,
   moveAndLog,
   moveDiscarded,
@@ -628,7 +629,9 @@ export const HANDLERS: OpHandlers = {
     const shock = e.random ? new Set<ObjectId>() : shockLandChoices(s, r, picked, e.to, ownerOr(s, e.to, ctx.controller), key);
     if (!(shock instanceof Set)) return shock;
     const moved = picked
-      .map((id) => moveWithSpec(s, ctx.controller, id, e.to, shock.has(id) ? { shockPaid: true } : undefined))
+      .map((id) =>
+        moveWithSpec(s, ctx.controller, id, evalMoveSpec(s, ctx, e.to), shock.has(id) ? { shockPaid: true } : undefined),
+      )
       .filter((x): x is string => !!x);
     if (e.store) r.vars[`$ids:${e.store}`] = moved;
     store(r, e.store, moved.length);
@@ -1116,7 +1119,7 @@ export const HANDLERS: OpHandlers = {
     for (const id of shock) choices[id] = { ...choices[id], shockPaid: true };
     const moved: string[] = [];
     for (const id of ids) {
-      const n = moveWithSpec(s, ctx.controller, id, e.spec, choices[id]);
+      const n = moveWithSpec(s, ctx.controller, id, evalMoveSpec(s, ctx, e.spec), choices[id]);
       if (n) moved.push(n);
     }
     if (e.store) r.vars[`$ids:${e.store.name}`] = moved;
@@ -1205,7 +1208,9 @@ export const HANDLERS: OpHandlers = {
     const shock = shockLandChoices(s, r, ids, e.spec, ownerOr(s, e.spec, ctx.controller), key);
     if (!(shock instanceof Set)) return shock;
     const moved = ids
-      .map((id) => moveWithSpec(s, ctx.controller, id, e.spec, shock.has(id) ? { shockPaid: true } : undefined))
+      .map((id) =>
+        moveWithSpec(s, ctx.controller, id, evalMoveSpec(s, ctx, e.spec), shock.has(id) ? { shockPaid: true } : undefined),
+      )
       .filter((x): x is string => !!x);
     if (e.store) r.vars[`$ids:${e.store}`] = moved;
     return;
@@ -1279,7 +1284,9 @@ export const HANDLERS: OpHandlers = {
     if (!(shock instanceof Set)) return shock;
     store(r, e.store, picked.length);
     const taken = picked
-      .map((id) => moveWithSpec(s, ctx.controller, id, e.to, shock.has(id) ? { shockPaid: true } : undefined))
+      .map((id) =>
+        moveWithSpec(s, ctx.controller, id, evalMoveSpec(s, ctx, e.to), shock.has(id) ? { shockPaid: true } : undefined),
+      )
       .filter((x): x is string => !!x);
     if (e.store) r.vars[`$ids:${e.store}`] = taken;
     if (e.rest === "graveyard") for (const id of rest) moveWithSpec(s, ctx.controller, id, { to: "graveyard" });
@@ -1348,7 +1355,7 @@ export const HANDLERS: OpHandlers = {
       const toTop = e.to.to === "libraryTop";
       for (const id of picked) {
         if (toTop) continue;
-        const moved = moveWithSpec(s, p, id, e.to, shock.has(id) ? { shockPaid: true } : undefined);
+        const moved = moveWithSpec(s, p, id, evalMoveSpec(s, ctx, e.to), shock.has(id) ? { shockPaid: true } : undefined);
         if (e.store && moved) r.vars[`$ids:${e.store}`] = [...(r.vars[`$ids:${e.store}`] ?? []), moved];
       }
       shuffle(s, player.library);
@@ -1464,7 +1471,8 @@ export const HANDLERS: OpHandlers = {
       return;
     }
     const rest = revealed.filter((id) => !found.includes(id));
-    for (const id of found) moveWithSpec(s, ctx.controller, id, e.to, shock.has(id) ? { shockPaid: true } : undefined);
+    for (const id of found)
+      moveWithSpec(s, ctx.controller, id, evalMoveSpec(s, ctx, e.to), shock.has(id) ? { shockPaid: true } : undefined);
     const lib = player.library.filter((id) => !rest.includes(id));
     shuffle(s, rest);
     player.library = [...lib, ...rest];

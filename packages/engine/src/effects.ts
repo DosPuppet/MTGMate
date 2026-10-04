@@ -784,6 +784,16 @@ export function addEffect(s: GameState, ids: ObjectId[], mods: LayerMods, durati
   s.effects.push({ id: newId(s, "e"), timestamp: nextTimestamp(s), affected: ids, duration, ...mods });
 }
 
+/** Destination dont le nombre de marqueurs est évalué (`evalMoveSpec`) : ce que reçoit `moveWithSpec`. */
+export type EvaluatedMoveSpec = Omit<MoveSpec, "counters"> & { counters?: { kind: string; n: number } };
+
+/** Évalue le nombre de marqueurs d'une destination d'effet (« avec X marqueurs +1/+1 supplémentaires »). */
+export function evalMoveSpec(s: GameState, ctx: EffectContext, spec: MoveSpec): EvaluatedMoveSpec {
+  const c = spec.counters;
+  if (!c || typeof c.n === "number") return spec as EvaluatedMoveSpec;
+  return { ...spec, counters: { kind: c.kind, n: Math.max(0, evalAmount(s, ctx, c.n)) } };
+}
+
 /** Déplace un objet selon une destination d'effet ; renvoie son nouvel identifiant. */
 /** `choices` : choix d'arrivée faits pendant la résolution (ce que copie un Clone, ce qu'enchante une Aura, les points de */
 /** vie payés pour un terrain choc). */
@@ -791,7 +801,7 @@ export function moveWithSpec(
   s: GameState,
   controller: PlayerId,
   id: ObjectId,
-  spec: MoveSpec,
+  spec: EvaluatedMoveSpec,
   choices?: Pick<EntersContext, "copyOf" | "copyMods" | "copyChosen" | "attachTo" | "chosen" | "shockPaid">,
 ): ObjectId | null {
   const o = s.objects[id];

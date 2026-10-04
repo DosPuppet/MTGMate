@@ -339,8 +339,11 @@ export const RECORD_VERSION = 1;
  * - 126 : familles génériques (A3c) : attaquants distincts au journal du tour, mana restreint à une sorte de capacité
  *   (équiper, déverrouiller, retourner…), objet contemplé lisible après le coût, « vous / un adversaire subit des
  *   blessures » de toute source.
+ * - 127 : familles génériques (A3b) : taille de main maximale dans l'ordre d'horodatage, « choisissez les deux » si le
+ *   coût additionnel est payé (un seul mode refusé), un nouveau type de terrain ne remplace que les types de terrain
+ *   (205.1a, 305.7), montures et équipages cumulés sur le tour, marqueurs d'arrivée en montant.
  */
-export const RULES_VERSION = 126;
+export const RULES_VERSION = 127;
 
 /** Un point de contrôle toutes les N décisions (plus la dernière de la partie). */
 export const CHECKPOINT_EVERY = 25;

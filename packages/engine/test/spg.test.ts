@@ -1,13 +1,14 @@
 /** Special Guests (SPG) : tests de règles des cartes (PLAN-G). */
 import { describe, expect, it } from "vitest";
 import { dealDamage, destroy, drawCards, gainLife, sourceFromObject } from "../src/actions";
-import { fx, spell } from "../src/dsl";
+import { fx, spell, staticAbility } from "../src/dsl";
 import { announceDiscard } from "../src/effects";
 import { legalActions } from "../src/legal";
 import { manaAbilitiesOf } from "../src/mana";
 import { spellCost } from "../src/stack";
 import { chars, moveObject } from "../src/state";
 import { attackTaxFor, canBlock } from "../src/turn";
+import type { GameState } from "../src/types";
 import {
   act,
   advanceUntil,
@@ -598,6 +599,23 @@ describe("Special Guests", () => {
       expect(chars(s, idOf(s, "p1", "battlefield", "Forest")).subtypes).toEqual(["Forest"]);
     });
 
+    it("Magus of the Moon : seuls les types de terrain sont remplacés (305.7), et le terrain perd ses statiques", () => {
+      const grove = customCard({
+        name: "Test Dryad Grove",
+        typeLine: "Land Creature — Forest Dryad",
+        types: ["Land", "Creature"],
+        subtypes: ["Forest", "Dryad"],
+        power: 1,
+        toughness: 1,
+        abilities: [staticAbility({ types: ["Creature"], other: true }, { power: 1, toughness: 1 }, { label: "+1/+1" })],
+      });
+      const s = scenario({ p1: { battlefield: ["Magus of the Moon", grove, "Scene of the Crime"] } });
+      expect(chars(s, idOf(s, "p1", "battlefield", "Test Dryad Grove")).subtypes.sort()).toEqual(["Dryad", "Mountain"]);
+      expect(chars(s, idOf(s, "p1", "battlefield", "Scene of the Crime")).subtypes.sort()).toEqual(["Clue", "Mountain"]);
+      // La statique du terrain ne s'applique plus : Magus of the Moon reste 2/2.
+      expect(chars(s, idOf(s, "p1", "battlefield", "Magus of the Moon")).power).toBe(2);
+    });
+
     it("Burgeoning : un adversaire joue un terrain, vous pouvez mettre un terrain de votre main", () => {
       let s = scenario({ active: "p2", p1: { battlefield: ["Burgeoning"], hand: ["Forest"] }, p2: { hand: ["Island"] } });
       s = settle(act(s, "p2", { type: "playLand", card: idOf(s, "p2", "hand", "Island") }), (req) =>
@@ -914,6 +932,24 @@ describe("Special Guests", () => {
       expect(s.players.p1?.hand).toHaveLength(5);
       expect(s.players.p1?.graveyard).toHaveLength(0);
       expect(s.exile.length).toBeGreaterThanOrEqual(3);
+    });
+
+    it("taille de main maximale fixée par plusieurs effets : le plus récent l'emporte (613.11)", () => {
+      // Jusqu'au tour suivant ; Necrodominance : aucun PV payé à l'étape de fin.
+      const toNextTurn = (s: GameState) => {
+        let cur = advanceUntil(s, (x) => x.turn.active === "p2" || x.pending?.kind === "choice", 200);
+        if (cur.pending?.kind === "choice") cur = act(cur, "p1", { type: "choose", values: [0] });
+        return advanceUntil(cur, (x) => x.turn.active === "p2", 200);
+      };
+      // Library of Leng, puis Necrodominance (plus récente) : cinq.
+      let s = toNextTurn(scenario({ p1: { battlefield: ["Library of Leng", "Necrodominance"], hand: lands("Swamp", 9) } }));
+      expect(s.players.p1?.hand).toHaveLength(5);
+      // Necrodominance, puis Library of Leng (plus récente) : pas de taille de main maximale.
+      s = toNextTurn(scenario({ p1: { battlefield: ["Necrodominance", "Library of Leng"], hand: lands("Swamp", 9) } }));
+      expect(s.players.p1?.hand).toHaveLength(9);
+      // Necrodominance, puis The Ten Rings (plus récent) : dix, et non la plus petite.
+      s = toNextTurn(scenario({ p1: { battlefield: ["Necrodominance", "The Ten Rings"], hand: lands("Swamp", 12) } }));
+      expect(s.players.p1?.hand).toHaveLength(10);
     });
 
     it("Sphinx's Tutelage : vous piochez, l'adversaire meule deux cartes, et recommence si deux non-terrain partagent une couleur", () => {

@@ -372,10 +372,9 @@ function beginStep(s: GameState): void {
       startCombatDamage(s, false);
       return;
     case "cleanup": {
-      // 402.2 : taille de main maximale (sauf « vous n'avez pas de taille de main maximale »).
-      const excess = playerStatic(s, active, "noMaxHandSize")
-        ? 0
-        : (s.players[active]?.hand.length ?? 0) - maxHandSize(s, active);
+      // 402.2 : taille de main maximale (`null` : « vous n'avez pas de taille de main maximale »).
+      const max = maxHandSize(s, active);
+      const excess = max === null ? 0 : (s.players[active]?.hand.length ?? 0) - max;
       if (excess > 0) {
         s.pending = { kind: "discard", player: active, count: excess };
         s.flow = "tba";
@@ -756,15 +755,28 @@ export function attackableDefenders(s: GameState, player: PlayerId): string[] {
   return [...opps, ...walkers];
 }
 
-/** 402.2 : taille de main maximale (7), réduite par Necrodominance ou par Winter, Misanthropic Guide d'un adversaire. */
-function maxHandSize(s: GameState, player: PlayerId): number {
-  let max = MAX_HAND_SIZE;
-  for (const { id, ab } of playerStatics(s, player, "maxHandSize")) {
-    if (ab.maxHandSize === undefined) continue;
+/**
+ * 402.2 : taille de main maximale (7, `null` : aucune). Les effets qui la fixent (« votre taille de main maximale est de
+ * cinq », « vous n'avez pas de taille de main maximale », éventuellement pour les adversaires) sont des effets sur les
+ * règles du jeu, appliqués dans l'ordre de leurs horodatages (613.11) : le plus récent l'emporte. L'horodatage d'une
+ * statique est celui de sa source (permanent, emblème) ; celui d'un effet sur le joueur, celui de sa création.
+ */
+function maxHandSize(s: GameState, player: PlayerId): number | null {
+  const set: { ts: number; value: () => number | null }[] = [];
+  const tsOf = (id: ObjectId | undefined, timestamp: number | undefined) =>
+    timestamp ?? (id ? (s.objects[id]?.timestamp ?? 0) : 0);
+  for (const { id, timestamp } of playerStatics(s, player, "noMaxHandSize"))
+    set.push({ ts: tsOf(id, timestamp), value: () => null });
+  for (const { id, ab, timestamp } of playerStatics(s, player, "maxHandSize")) {
+    const amount = ab.maxHandSize;
+    if (amount === undefined) continue;
     const ctx = staticContext(s, (id && s.objects[id]?.controller) || player, id, { sourceDefId: "" });
-    max = Math.min(max, Math.max(0, evalAmount(s, ctx, ab.maxHandSize)));
+    set.push({ ts: tsOf(id, timestamp), value: () => Math.max(0, evalAmount(s, ctx, amount)) });
   }
-  return max;
+  if (!set.length) return MAX_HAND_SIZE;
+  let last = set[0] as (typeof set)[number];
+  for (const e of set) if (e.ts >= last.ts) last = e;
+  return last.value();
 }
 
 export function declareAttackers(s: GameState, player: PlayerId, attackers: { id: ObjectId; defender: string }[]): void {

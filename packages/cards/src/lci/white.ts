@@ -38,13 +38,13 @@ export const WHITE: Record<string, CardScript> = {
         ),
       ],
       [
-        fx.moveTo(ref.target(), { to: "battlefield" }, { name: "back" }),
+        // Les X marqueurs sont posés à l'arrivée (614.1c).
+        fx.moveTo(ref.target(), { to: "battlefield", counters: { kind: "+1/+1", n: amount.x } }, { name: "back" }),
         fx.modify(
           ref.stored("back"),
           { addTypes: ["Creature"], addSubtypes: ["Spirit"], setPower: 1, setToughness: 1, addKeywords: ["flying"] },
           "permanent",
         ),
-        fx.addCounters(ref.stored("back"), amount.x),
       ],
     ),
   },

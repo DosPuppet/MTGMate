@@ -10,6 +10,7 @@ export const {
   amount,
   spell,
   modal,
+  bothIfKicked,
   mode,
   manaAbility,
   activated,

@@ -253,6 +253,8 @@ export interface ModeOption {
   targets: TargetOption[];
   /** Mode possible seulement en payant le coût additionnel (« si vous l'avez payé, choisissez les deux »). */
   requiresKicker?: boolean;
+  /** Mode possible seulement sans payer le coût additionnel (un seul mode : « s'il a été payé, choisissez les deux »). */
+  forbidsKicker?: boolean;
 }
 
 export type ActionOption =

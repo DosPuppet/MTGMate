@@ -484,14 +484,14 @@ export const MULTI: Record<string, CardScript> = {
     ],
   },
   "Vision Quest": {
-    // Cimetière d'abord, sinon bibliothèque (une seule carte en tout) ; les marqueurs sont mis dès l'arrivée.
+    // Cimetière d'abord, sinon bibliothèque (une seule carte en tout) ; les X marqueurs sont posés à l'arrivée (614.1c).
     spell: spell(
       [],
       [
         fx.pickFromZone(
           "graveyard",
           ARTIFACT_CREATURE,
-          { to: "battlefield" },
+          { to: "battlefield", counters: { kind: "+1/+1", n: amount.x } },
           {
             min: 0,
             maxManaValue: amount.x,
@@ -501,9 +501,14 @@ export const MULTI: Record<string, CardScript> = {
         ),
         ...fx.when(
           cond.not(cond.v("v")),
-          fx.search({ ...ARTIFACT_CREATURE, maxManaValueX: true }, { to: "battlefield" }, 1, undefined, "v"),
+          fx.search(
+            { ...ARTIFACT_CREATURE, maxManaValueX: true },
+            { to: "battlefield", counters: { kind: "+1/+1", n: amount.x } },
+            1,
+            undefined,
+            "v",
+          ),
         ),
-        fx.addCounters(ref.stored("v"), amount.x),
         ...fx.when(cond.xAtLeast(4), fx.modify(ref.stored("v"), { addKeywords: ["haste"] })),
       ],
     ),

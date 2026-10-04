@@ -97,21 +97,24 @@ export const UNIQUE: Record<string, CardScript> = {
   "Fortune, Loyal Steed": {
     abilities: [
       triggered(when.entersSelf, [fx.scry(2)], { label: "Regard 2" }),
-      // Approximation : toutes les créatures qui l'ont montée (et non une au plus).
       whileSaddled(
         [
           fx.delayedAt(
             "endOfCombat",
             [
+              fx.chooseAmong(ref.target("c"), ref.you, "c1", {
+                optional: true,
+                prompt: "Exilez aussi jusqu'à une créature qui l'a montée ce tour-ci",
+              }),
               fx.exileCard(ref.target("f"), { name: "x" }),
-              fx.exileCard(ref.target("c"), { name: "y" }),
+              fx.exileCard(ref.stored("c1"), { name: "y" }),
               fx.toBattlefield(ref.stored("x")),
               fx.toBattlefield(ref.stored("y")),
             ],
             { f: ref.self, c: ref.crewedBy },
           ),
         ],
-        { label: "Fin du combat : exilez-la avec qui l'a montée, puis renvoyez-les" },
+        { label: "Fin du combat : exilez-la avec jusqu'à une créature qui l'a montée, puis renvoyez-les" },
       ),
     ],
   },
@@ -538,20 +541,24 @@ export const UNIQUE: Record<string, CardScript> = {
   },
   "The Gitrog, Ravenous Ride": {
     abilities: [
-      // Approximation : les créatures qui l'ont montée sont sacrifiées ensemble ; X est leur force totale.
+      // « Vous pouvez sacrifier une créature qui l'a montée ce tour-ci. Si vous le faites, piochez X cartes » : X est la
+      // force de la créature sacrifiée (dernières informations connues).
       triggered(
         when.combatDamage("self", true),
-        fx.may(
-          "Sacrifier une créature qui l'a montée ?",
-          fx.draw(amount.powerOf(ref.crewedBy)),
+        [
+          fx.chooseAmong(ref.crewedBy, ref.you, "g", {
+            optional: true,
+            prompt: "Vous pouvez sacrifier une créature qui l'a montée ce tour-ci",
+          }),
+          fx.sacrificeIt(ref.stored("g")),
+          fx.draw(amount.powerOf(ref.stored("g"))),
           fx.pickFromZone(
             "hand",
             { types: ["Land"] },
             { to: "battlefield", tapped: true },
-            { count: amount.powerOf(ref.crewedBy), min: 0 },
+            { count: amount.powerOf(ref.stored("g")), min: 0 },
           ),
-          fx.sacrificeIt(ref.crewedBy),
-        ),
+        ],
         { condition: cond.amountAtLeast(amount.refCount(ref.crewedBy), 1), label: "Sacrifiez : piochez, terrains" },
       ),
     ],

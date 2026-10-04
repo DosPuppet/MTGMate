@@ -32,6 +32,27 @@ export type CardType = "Land" | "Creature" | "Artifact" | "Enchantment" | "Insta
 export const PERMANENT_TYPES: readonly CardType[] = ["Artifact", "Creature", "Enchantment", "Land", "Planeswalker", "Battle"];
 /** Types de terrain de base (305.6). */
 export const BASIC_LAND_TYPES: readonly string[] = ["Plains", "Island", "Swamp", "Mountain", "Forest"];
+/** Types de terrain (205.3i) : de nouveaux types de terrain ne remplacent que ceux-là (205.1a, 305.7). */
+export const LAND_TYPES: ReadonlySet<string> = new Set([
+  "Cave",
+  "Cloud",
+  "Desert",
+  "Forest",
+  "Gate",
+  "Island",
+  "Lair",
+  "Locus",
+  "Mine",
+  "Mountain",
+  "Plains",
+  "Planet",
+  "Power-Plant",
+  "Sphere",
+  "Swamp",
+  "Tower",
+  "Town",
+  "Urza's",
+]);
 
 export type Keyword =
   | "flying"

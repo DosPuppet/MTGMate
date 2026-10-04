@@ -6,7 +6,7 @@
 import { card } from "@mtgx/cards";
 import { describe, expect, it } from "vitest";
 import { destroy, drawCards, gainLife } from "../src/actions";
-import { amount } from "../src/dsl";
+import { amount, fx, triggered, when } from "../src/dsl";
 import { moveWithSpec } from "../src/effects";
 import { RulesError } from "../src/errors";
 import { legalActions } from "../src/legal";
@@ -3403,5 +3403,32 @@ describe("Iceberg Titan (lot D1)", () => {
     };
     expect(run(true)).toEqual({ tapped: true, modes: 0 });
     expect(run(false).tapped).toBe(false);
+  });
+});
+
+describe("PLAN-A A3 : « avec X marqueurs +1/+1 supplémentaires » posés à l'arrivée (614.1c)", () => {
+  /** Témoin : « chaque fois qu'un permanent arrive avec un marqueur +1/+1, vous gagnez 1 PV ». */
+  const WATCHER = customCard({
+    name: "Témoin des marqueurs",
+    typeLine: "Enchantment",
+    types: ["Enchantment"],
+    abilities: [triggered(when.enters({ withCounter: "+1/+1" }), [fx.gainLife(1)], { label: "Arrive avec un marqueur : 1 PV" })],
+  });
+
+  it("Abuelo's Awakening : le permanent arrive avec ses X marqueurs (déclenche « arrive avec un marqueur »)", () => {
+    let s = scenario({
+      p1: { battlefield: [...lands("Plains", 6), WATCHER], hand: ["Abuelo's Awakening"], graveyard: ["Nutrient Block"] },
+    });
+    s = resolve(
+      act(s, "p1", {
+        type: "cast",
+        card: idOf(s, "p1", "hand", "Abuelo's Awakening"),
+        x: 2,
+        targets: { t: [idOf(s, "p1", "graveyard", "Nutrient Block")] },
+      }),
+    );
+    const block = idOf(s, "p1", "battlefield", "Nutrient Block");
+    expect(s.objects[block]?.counters["+1/+1"]).toBe(2);
+    expect(s.players.p1?.life).toBe(21);
   });
 });

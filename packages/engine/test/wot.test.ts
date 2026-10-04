@@ -1,7 +1,7 @@
 /** Enchanting Tales (WOT) : tests de règles des cartes (PLAN-G). */
 import { describe, expect, it } from "vitest";
 import { dealDamage, destroy, drawCards, gainLife } from "../src/actions";
-import { fx, ref, spell, target } from "../src/dsl";
+import { fx, ref, spell, staticAbility, target } from "../src/dsl";
 import { announceDiscard, moveDiscarded } from "../src/effects";
 import { legalActions } from "../src/legal";
 import { manaAbilitiesOf } from "../src/mana";
@@ -420,3 +420,33 @@ function enchantSpec(s: ReturnType<typeof scenario>, name: string): string {
   const opt = legalActions(s, "p1").find((a) => a.type === "cast" && a.card === idOf(s, "p1", "hand", name));
   return opt?.type === "cast" ? (opt.modes[0]?.targets[0]?.id as string) : "";
 }
+
+describe("PLAN-A A3 : « les terrains non-base sont des Montagnes » (305.7)", () => {
+  /** Créature-terrain non-base (Forêt Dryade) avec une capacité statique propre : « les autres créatures ont +1/+1 ». */
+  const DRYAD = customCard({
+    name: "Test Dryad Grove",
+    typeLine: "Land Creature — Forest Dryad",
+    types: ["Land", "Creature"],
+    subtypes: ["Forest", "Dryad"],
+    power: 1,
+    toughness: 1,
+    abilities: [staticAbility({ types: ["Creature"], other: true }, { power: 1, toughness: 1 }, { label: "+1/+1" })],
+  });
+
+  it("Blood Moon : seuls les types de terrain sont remplacés (créature-terrain, terrain-artefact Indice)", () => {
+    const s = scenario({ p1: { battlefield: ["Blood Moon", DRYAD, "Scene of the Crime"] } });
+    const dryad = idOf(s, "p1", "battlefield", "Test Dryad Grove");
+    expect(chars(s, dryad).types).toEqual(expect.arrayContaining(["Land", "Creature"]));
+    expect(chars(s, dryad).subtypes.sort()).toEqual(["Dryad", "Mountain"]);
+    expect(manaAbilitiesOf(s, dryad).flatMap((a) => a.produce)).toEqual(["R"]);
+    expect(chars(s, idOf(s, "p1", "battlefield", "Scene of the Crime")).subtypes.sort()).toEqual(["Clue", "Mountain"]);
+  });
+
+  it("Blood Moon : le terrain perd aussi ses capacités statiques", () => {
+    const s = scenario({ p1: { battlefield: ["Blood Moon", DRYAD, "Bear Cub"] } });
+    expect(chars(s, idOf(s, "p1", "battlefield", "Bear Cub")).power).toBe(2);
+    // Sans Blood Moon, la statique s'applique.
+    const t = scenario({ p1: { battlefield: [DRYAD, "Bear Cub"] } });
+    expect(chars(t, idOf(t, "p1", "battlefield", "Bear Cub")).power).toBe(3);
+  });
+});

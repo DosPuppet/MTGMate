@@ -1035,6 +1035,7 @@ describe("Outlaws of Thunder Junction, lot K8 : mythiques", () => {
     s = attack(s, [gitrog]);
     s = throughCombat(s, (req, _p, cur) => {
       if (req.type === "yesNo") return [1];
+      if (req.type === "pick" && req.options.includes(cub)) return [cub];
       if (req.type === "pick")
         return req.options.filter((id) => ["Plains", "Island", "Swamp"].includes(nameOf(cur, id) ?? "")).slice(0, 2);
       return undefined;
@@ -4266,5 +4267,96 @@ describe("Outlaws of Thunder Junction, lot K8 : peu communes (4)", () => {
       (x) => x.turn.active === "p1",
     );
     expect(idsOf(other, "p1", "battlefield", "Spirit")).toHaveLength(0);
+  });
+});
+
+describe("PLAN-A A3 : « les créatures qui l'ont montée ce tour-ci » cumulent les activations de Monture du tour", () => {
+  /** Monte la Monture une fois par groupe de créatures engagées. */
+  const saddleWith = (s0: GameState, mount: string, ...groups: string[][]) => {
+    let s = s0;
+    for (const tap of groups) {
+      const a = legalActions(s, "p1").find((x) => x.type === "activate" && x.source === mount);
+      s = act(s, "p1", { type: "activate", source: mount, ability: a?.type === "activate" ? a.ability : -1, tap });
+      s = passBoth(s);
+    }
+    return s;
+  };
+
+  it("Giant Beaver : montée deux fois, les deux créatures peuvent recevoir le marqueur", () => {
+    let s = scenario({ p1: { battlefield: ["Giant Beaver", "Serra Angel", "Shivan Dragon"] } });
+    const beaver = idOf(s, "p1", "battlefield", "Giant Beaver");
+    const angel = idOf(s, "p1", "battlefield", "Serra Angel");
+    const dragon = idOf(s, "p1", "battlefield", "Shivan Dragon");
+    s = saddleWith(s, beaver, [angel], [dragon]);
+    expect(s.objects[beaver]?.crewedBy?.ids.sort()).toEqual([angel, dragon].sort());
+    s = attack(s, [beaver]);
+    let options: string[] = [];
+    s = settle(s, (req) => {
+      if (req.type !== "pick") return undefined;
+      options = req.options;
+      return [angel];
+    });
+    expect(options.sort()).toEqual([angel, dragon].sort());
+    expect(s.objects[angel]?.counters["+1/+1"]).toBe(1);
+  });
+
+  it("Rambling Possum : montée deux fois, les deux créatures peuvent retourner en main", () => {
+    let s = scenario({ p1: { battlefield: ["Rambling Possum", "Bear Cub", "Llanowar Elves"] } });
+    const possum = idOf(s, "p1", "battlefield", "Rambling Possum");
+    s = saddleWith(s, possum, [idOf(s, "p1", "battlefield", "Bear Cub")], [idOf(s, "p1", "battlefield", "Llanowar Elves")]);
+    s = attack(s, [possum]);
+    s = settle(s, (req) => (req.type === "pick" ? req.options : undefined));
+    expect(namesIn(s, s.players.p1?.hand).sort()).toEqual(["Bear Cub", "Llanowar Elves"]);
+  });
+
+  it("Fortune, Loyal Steed : à la fin du combat, elle et jusqu'à une créature qui l'a montée sont exilées puis renvoyées", () => {
+    let s = scenario({ p1: { battlefield: ["Fortune, Loyal Steed", "Bear Cub", "Llanowar Elves"] } });
+    const fortune = idOf(s, "p1", "battlefield", "Fortune, Loyal Steed");
+    const bear = idOf(s, "p1", "battlefield", "Bear Cub");
+    const elves = idOf(s, "p1", "battlefield", "Llanowar Elves");
+    s = saddleWith(s, fortune, [bear], [elves]);
+    s = attack(s, [fortune]);
+    let asked: { options: string[]; max?: number } | undefined;
+    s = throughCombat(s, (req) => {
+      // Fortune revient : regard 2 (réponse suggérée).
+      if (req.type !== "pick" || !req.options.includes(bear)) return undefined;
+      asked = { options: req.options, max: req.max };
+      return [bear];
+    });
+    expect(asked?.options.sort()).toEqual([bear, elves].sort());
+    expect(asked?.max).toBe(1);
+    // L'Ours revient (nouvel objet, dégagé) ; les Elfes, non choisis, restent engagés.
+    expect(idsOf(s, "p1", "battlefield", "Bear Cub")).not.toContain(bear);
+    expect(idsOf(s, "p1", "battlefield", "Llanowar Elves")).toEqual([elves]);
+    expect(s.objects[elves]?.tapped).toBe(true);
+  });
+
+  it("The Gitrog, Ravenous Ride : sacrifiez une seule créature qui l'a montée ; X est sa force", () => {
+    let s = scenario({
+      p1: {
+        battlefield: ["The Gitrog, Ravenous Ride", "Bear Cub", "Serra Angel"],
+        hand: [],
+        library: lands("Swamp", 10),
+      },
+    });
+    const gitrog = idOf(s, "p1", "battlefield", "The Gitrog, Ravenous Ride");
+    const bear = idOf(s, "p1", "battlefield", "Bear Cub");
+    const angel = idOf(s, "p1", "battlefield", "Serra Angel");
+    s = saddleWith(s, gitrog, [bear], [angel]);
+    s = attack(s, [gitrog]);
+    let options: string[] = [];
+    s = throughCombat(s, (req) => {
+      if (req.type !== "pick") return undefined;
+      if (req.options.includes(angel)) {
+        options = req.options;
+        return [angel];
+      }
+      return [];
+    });
+    expect(options.sort()).toEqual([bear, angel].sort());
+    expect(namesIn(s, s.players.p1?.graveyard)).toEqual(["Serra Angel"]);
+    expect(idsOf(s, "p1", "battlefield", "Bear Cub")).toEqual([bear]);
+    // Force de l'Ange : 4 cartes piochées (aucun terrain mis en jeu).
+    expect(s.players.p1?.hand).toHaveLength(4);
   });
 });

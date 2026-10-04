@@ -87,8 +87,7 @@ export const MULTI: Record<string, CardScript> = {
   "Doctor Octopus, Master Planner": {
     abilities: [
       staticAbility(OTHER_VILLAINS, { power: 2, toughness: 2 }, { label: "Vos autres Méchants gagnent +2/+2" }),
-      // Approximation (docs/approximations.md) : « taille de main maximale de huit » devient « pas de taille maximale ».
-      playerStatic({ noMaxHandSize: true, label: "Taille de main maximale : huit (approximation : aucune)" }),
+      playerStatic({ maxHandSize: 8, label: "Taille de main maximale : huit" }),
       triggered(when.yourEndStep, [fx.draw(amount.plus(8, amount.neg(amount.cardsIn("hand"))))], {
         condition: cond.handAtMost(ref.you, 7),
         label: "Piochez jusqu'à avoir huit cartes en main",

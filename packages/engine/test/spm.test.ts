@@ -2617,6 +2617,13 @@ describe("lot A, multicolores", () => {
       expect(hand(s)).toHaveLength(8);
     });
 
+    it("Doctor Octopus : votre taille de main maximale est de huit (dix cartes en main : deux défaussées)", () => {
+      let s = scenario({ p1: { battlefield: ["Doctor Octopus, Master Planner"], hand: lands("Island", 10) } });
+      s = advanceUntil(s, (x) => x.turn.active === "p2");
+      expect(hand(s)).toHaveLength(8);
+      expect(s.players.p1?.graveyard).toHaveLength(2);
+    });
+
     it("Gallant Citizen : en arrivant, piochez une carte", () => {
       let s = scenario({ p1: { battlefield: lands("Forest", 2), hand: ["Gallant Citizen"] } });
       s = settle(cast(s, "p1", "Gallant Citizen"));

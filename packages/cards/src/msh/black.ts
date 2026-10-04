@@ -5,6 +5,7 @@
 import {
   activated,
   amount,
+  bothIfKicked,
   type CardScript,
   cond,
   costReducer,
@@ -399,18 +400,11 @@ export const BLACK: Record<string, CardScript> = {
     ],
   },
   "Widow's Bite": {
-    // Travail d'équipe 3 payé : les deux modes. Approximation : avec le travail d'équipe, un seul mode reste permis.
-    spell: modal(
+    // Travail d'équipe 3 (lu dans le texte) : payé, les deux modes ; sinon, un seul.
+    spell: bothIfKicked(
       mode("Contact mortel", [target.creature("a")], [fx.pump(ref.target("a"), 0, 0, ["deathtouch"])]),
       mode("−2/−2", [target.creature("b")], [fx.pump(ref.target("b"), -2, -2)]),
-      {
-        ...mode(
-          "Les deux (travail d'équipe)",
-          [target.creature("a"), target.creature("b")],
-          [fx.pump(ref.target("a"), 0, 0, ["deathtouch"]), fx.pump(ref.target("b"), -2, -2)],
-        ),
-        condition: cond.kicked,
-      },
+      "Les deux (travail d'équipe)",
     ),
   },
   "Yellowjacket, Heartless Marauder": {

@@ -17,7 +17,7 @@ import type {
   PlayerId,
   TargetSpec,
 } from "./types";
-import { PERMANENT_TYPES } from "./types";
+import { LAND_TYPES, PERMANENT_TYPES } from "./types";
 
 /**
  * Vue d'une source (sort, source d'une capacité ou de blessures) : l'objet, ses dernières informations connues, sinon
@@ -143,20 +143,7 @@ export function matchesView(v: LkiSnapshot, f: ObjectFilter, perspective: Player
 export const ALL_CREATURE_TYPES = "*";
 
 /** Sous-types qui ne sont pas des types de créature (terrains, artefacts, enchantements). */
-export const NON_CREATURE_SUBTYPES = new Set([
-  "Plains",
-  "Island",
-  "Swamp",
-  "Mountain",
-  "Forest",
-  "Equipment",
-  "Aura",
-  "Treasure",
-  "Food",
-  "Clue",
-  "Saga",
-  "Vehicle",
-]);
+export const NON_CREATURE_SUBTYPES = new Set([...LAND_TYPES, "Equipment", "Aura", "Treasure", "Food", "Clue", "Saga", "Vehicle"]);
 
 function hasSubtype(v: LkiSnapshot, t: string): boolean {
   if (v.subtypes.includes(t)) return true;

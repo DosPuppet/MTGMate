@@ -250,6 +250,8 @@ export interface PlayerEffect {
   ability: PlayerStaticAbilityDef;
   until: number | null;
   once?: boolean;
+  /** Horodatage de l'effet (613.11 : effets sur les règles du jeu, comme la taille de main maximale). */
+  timestamp: number;
 }
 
 export interface StackItem {

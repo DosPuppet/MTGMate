@@ -3,12 +3,12 @@ import {
   activated,
   amount,
   block,
+  bothIfKicked,
   type CardScript,
   cond,
   costReducer,
   eventReplacement,
   fx,
-  modal,
   mode,
   playerStatic,
   ref,
@@ -129,7 +129,7 @@ export const RED: Record<string, CardScript> = {
   },
   // Travail d'équipe 4 : lu dans le texte (`cond.kicked`).
   "HULK SMASH!": {
-    spell: modal(
+    spell: bothIfKicked(
       mode(
         "Détruit un artefact non-créature",
         [target.permanent("a", ["Artifact"], { notTypes: ["Creature"] })],
@@ -140,18 +140,7 @@ export const RED: Record<string, CardScript> = {
         [target.creature("c", { controller: "you" }), target.creature("o", { controller: "opponent" })],
         [fx.damage(amount.powerOf(ref.target("c")), ref.target("o"), ref.target("c"))],
       ),
-      {
-        ...mode(
-          "Les deux (travail d'équipe)",
-          [
-            target.permanent("a", ["Artifact"], { notTypes: ["Creature"] }),
-            target.creature("c", { controller: "you" }),
-            target.creature("o", { controller: "opponent" }),
-          ],
-          [fx.destroy(ref.target("a")), fx.damage(amount.powerOf(ref.target("c")), ref.target("o"), ref.target("c"))],
-        ),
-        condition: cond.kicked,
-      },
+      "Les deux (travail d'équipe)",
     ),
   },
   "Human Torch, Johnny Storm": {
