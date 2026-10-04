@@ -199,8 +199,7 @@ export const UNIQUE: Record<string, CardScript> = {
     spell: spell(
       [],
       [
-        fx.extraCombat,
-        fx.extraCombat,
+        fx.extraCombatsAfterMain(2),
         fx.emblem(
           "Full Throttle",
           "At the beginning of each combat this turn, untap all creatures that attacked this turn.",

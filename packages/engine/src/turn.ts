@@ -299,6 +299,9 @@ export function bottomCards(s: GameState, p: PlayerId, cards: ObjectId[], count:
 
 function beginStep(s: GameState): void {
   const active = s.turn.active;
+  // 505.1a : rang de la phase principale, avant ses déclencheurs (seule la première précède le combat).
+  if (s.turn.step === "main1") s.turn.mainPhase = 1;
+  else if (s.turn.step === "main2") s.turn.mainPhase = (s.turn.mainPhase ?? 1) + 1;
   if (s.turn.step !== "untap" && s.turn.step !== "cleanup") stepEvent(s);
   switch (s.turn.step) {
     case "untap":
@@ -458,6 +461,53 @@ function nextStep(s: GameState): Step | null {
   return STEPS[STEPS.indexOf(step) + 1] ?? null;
 }
 
+/** Dernière étape de sa phase : les phases ajoutées « après cette phase » viennent ensuite (500.8). */
+function endsPhase(s: GameState, next: Step | null): boolean {
+  switch (s.turn.step) {
+    // Une phase de début sans pioche (Necropotence) ou réduite à son entretien (Obeka) finit avec l'entretien.
+    case "upkeep":
+      return !!s.turn.upkeepOnly || next !== "draw";
+    case "draw":
+    case "main1":
+    case "main2":
+    case "endCombat":
+      return true;
+    default:
+      return false;
+  }
+}
+
+/**
+ * L'étape suivante compte tenu des étapes et des phases ajoutées : d'abord une étape ajoutée après celle-ci (500.10) ;
+ * à la fin d'une phase, la première phase ajoutée (500.8), le tour reprenant ensuite là où il allait.
+ */
+function addedNext(s: GameState, next: Step | null): Step | null {
+  const t = s.turn;
+  const step = t.addedSteps?.shift();
+  if (!t.addedSteps?.length) delete t.addedSteps;
+  if (step) return step;
+  if (!endsPhase(s, next)) return next;
+  delete t.upkeepOnly;
+  const phase = t.addedPhases?.shift();
+  if (!t.addedPhases?.length) delete t.addedPhases;
+  if (phase) {
+    if (t.resumeAt === undefined && next) t.resumeAt = next;
+    if (phase === "upkeep") t.upkeepOnly = true;
+    return phase;
+  }
+  const resume = t.resumeAt;
+  delete t.resumeAt;
+  return resume ?? next;
+}
+
+/** Les étapes et phases ajoutées prennent fin avec le tour (ou quand le tour est terminé, 723). */
+function clearAdded(s: GameState): void {
+  delete s.turn.addedPhases;
+  delete s.turn.addedSteps;
+  delete s.turn.resumeAt;
+  delete s.turn.upkeepOnly;
+}
+
 function endStep(s: GameState): void {
   // 500.4 : les réserves de mana se vident à la fin de chaque étape et phase.
   for (const p of s.playerOrder) {
@@ -511,26 +561,8 @@ function endStep(s: GameState): void {
   let next = nextStep(s);
   // 500.11 : une étape passée n'a pas lieu (Necropotence : « passez votre étape de pioche »).
   if (next === "draw" && playerStatic(s, s.turn.active, "skipDrawStep")) next = "main1";
-  // Aurelia : « après cette phase, il y a une phase de combat supplémentaire ».
-  if (s.turn.step === "endCombat" && (s.turn.extraCombats ?? 0) > 0) {
-    s.turn.extraCombats = (s.turn.extraCombats ?? 1) - 1;
-    next = "beginCombat";
-  } else if (s.turn.step === "endCombat" && s.turn.extraMainAfter) {
-    // All-Out Assault : la phase principale supplémentaire qui suit le combat supplémentaire.
-    next = s.turn.extraMainAfter;
-    delete s.turn.extraMainAfter;
-  }
-  // All-Out Assault : « une phase de combat supplémentaire après cette phase principale, suivie d'une phase principale ».
-  if ((s.turn.step === "main1" || s.turn.step === "main2") && (s.turn.extraCombatsAfterMain ?? 0) > 0) {
-    s.turn.extraCombatsAfterMain = (s.turn.extraCombatsAfterMain ?? 1) - 1;
-    s.turn.extraMainAfter = s.turn.step;
-    next = "beginCombat";
-  }
-  // Y'shtola Rhul : « il y a une étape de fin supplémentaire après celle-ci ».
-  if (s.turn.step === "end" && (s.turn.extraEndSteps ?? 0) > 0) {
-    s.turn.extraEndSteps = (s.turn.extraEndSteps ?? 1) - 1;
-    next = "end";
-  }
+  // 500.8, 500.10 : étapes ajoutées après celle-ci, puis phases ajoutées après la phase qui finit.
+  next = addedNext(s, next);
   if (next) {
     s.turn.step = next;
     if (next === "end") s.turn.endSteps = (s.turn.endSteps ?? 0) + 1;
@@ -548,9 +580,8 @@ function endStep(s: GameState): void {
     for (let guard = 0; guard < s.playerOrder.length && consumePlayerEffect(s, s.turn.active, "skipTurn"); guard++)
       s.turn.active = nextPlayer(s, s.turn.active);
     s.turn.endSteps = 0;
-    s.turn.extraEndSteps = 0;
-    delete s.turn.extraCombatsAfterMain;
-    delete s.turn.extraMainAfter;
+    clearAdded(s);
+    delete s.turn.mainPhase;
     s.turn.combats = 0;
     s.turn.step = "untap";
     startTurnOf(s, s.turn.active);
@@ -570,6 +601,7 @@ export function afterResolution(s: GameState): void {
   if (s.endTurnRequested) {
     // 723.1 : le tour passe directement à l'étape de nettoyage.
     s.endTurnRequested = false;
+    clearAdded(s);
     s.turn.step = "cleanup";
     emit({ type: "step", step: "cleanup" });
     s.flow = "stepStart";

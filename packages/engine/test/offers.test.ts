@@ -248,6 +248,29 @@ describe("options proposées, décisions acceptées", () => {
     expect(idsOf(s, "p1", "battlefield", "Lavaleaper")).toHaveLength(1);
   });
 
+  it("web-slinging : la créature renvoyée avant le mana ne triple plus le mana (Spider-Man, Brooklyn Visionary, Nyxbloom Ancient)", () => {
+    const spider = (s: GameState) => castOption(s, "p1", idOf(s, "p1", "hand", "Spider-Man, Brooklyn Visionary"));
+    // {2}{G} : Chromatic Lantern en produit trois avec Nyxbloom Ancient, mais Nyxbloom est la seule créature engagée.
+    let s = scenario({
+      p1: {
+        battlefield: [{ name: "Nyxbloom Ancient", tapped: true }, "Chromatic Lantern"],
+        hand: ["Spider-Man, Brooklyn Visionary"],
+      },
+    });
+    expect(spider(s)).toBeUndefined();
+    // Une autre créature engagée, moins chère, est renvoyée par défaut : Nyxbloom reste.
+    s = scenario({
+      p1: {
+        battlefield: [{ name: "Nyxbloom Ancient", tapped: true }, { name: "Llanowar Elves", tapped: true }, "Chromatic Lantern"],
+        hand: ["Spider-Man, Brooklyn Visionary"],
+      },
+    });
+    expect(spider(s)?.altAvailable).toBe(true);
+    s = act(s, "p1", { type: "cast", card: idOf(s, "p1", "hand", "Spider-Man, Brooklyn Visionary"), alternative: true });
+    expect(s.stack).toHaveLength(1);
+    expect(idsOf(s, "p1", "hand", "Llanowar Elves")).toHaveLength(1);
+  });
+
   it("« attaque à chaque combat si possible » sans défenseur permis : pas obligée d'attaquer (508.1d, The Void et Storm, Windrider)", () => {
     // The Void (jeton de The Sentry) : vol, attaque à chaque combat ; Storm : les créatures volantes ne peuvent pas vous attaquer.
     const voidToken = customCard({ name: "Vide de test", power: 5, toughness: 5, keywords: ["flying", "mustAttack"] });

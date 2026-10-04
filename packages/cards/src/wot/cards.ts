@@ -573,7 +573,7 @@ export const CARDS: Record<string, CardScript> = {
       triggered(when.yourUpkeep, [fx.counters(ref.self, "time", 1)], { label: "Entretien : un marqueur de temps" }),
       {
         kind: "castPermission",
-        freeFromHand: true,
+        freeFrom: "any",
         freeOncePerTurn: true,
         freeFilter: { manaValueSourceCounters: { counter: "time", atMost: true } },
         label: "Une fois par tour : {0} au lieu du coût d'un sort de VM au plus égale aux marqueurs de temps",

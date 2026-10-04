@@ -845,7 +845,7 @@ export const CARDS: Record<string, CardScript> = {
   "Paradox Haze": {
     enchant: { filter: {}, label: "joueur", player: true },
     abilities: [
-      triggered({ on: "step", step: "upkeep", whose: "any" }, [fx.extraUpkeeps(1)], {
+      triggered({ on: "step", step: "upkeep", whose: "any" }, [fx.extraUpkeeps(1, true)], {
         condition: cond.not(cond.amountAtLeast(amount.refCount(ref.except(ref.eventPlayer, ref.attached)), 1)),
         oncePerTurn: true,
         label: "Première étape d'entretien du joueur enchanté : une étape d'entretien supplémentaire",

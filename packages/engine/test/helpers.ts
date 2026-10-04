@@ -63,6 +63,8 @@ export function scenario(opts: ScenarioOptions): GameState {
       onceFired: [],
       startingPlayer: "p1",
     };
+    // Rang de la phase principale de départ (505.1a) : la seconde phase principale d'un tour sans combat ajouté.
+    if (s.turn.step === "main1" || s.turn.step === "main2") s.turn.mainPhase = s.turn.step === "main1" ? 1 : 2;
     for (const p of ids) {
       const side = (opts as Record<string, Side | undefined>)[p] ?? {};
       const player = s.players[p];
@@ -202,6 +204,28 @@ export function advanceUntil(s: GameState, until: (s: GameState) => boolean, max
     else break;
   }
   return cur;
+}
+
+/**
+ * Comme `advanceUntil` (sans attaquer ni bloquer), en relevant les étapes commencées (événements `step`, une entrée par
+ * étape, les étapes ajoutées comprises ; l'étape de dégagement d'un nouveau tour n'en émet pas).
+ */
+export function stepTrail(s: GameState, until: (s: GameState) => boolean, max = 600): { s: GameState; steps: Step[] } {
+  let cur = s;
+  const steps: Step[] = [];
+  for (let i = 0; i < max && !until(cur); i++) {
+    const p = cur.pending;
+    let d: Decision;
+    if (p?.kind === "priority") d = { type: "pass" };
+    else if (p?.kind === "declareAttackers") d = { type: "declareAttackers", attackers: [] };
+    else if (p?.kind === "declareBlockers") d = { type: "declareBlockers", blocks: [] };
+    else if (p?.kind === "choice") d = { type: "choose", values: p.request.suggested };
+    else break;
+    const r = submit(cur, p.player, d);
+    for (const e of r.events) if (e.type === "step") steps.push(e.step);
+    cur = r.state;
+  }
+  return { s: cur, steps };
 }
 
 // ---------------------------------------------------------------------------

@@ -354,7 +354,11 @@ export type TriggerSpec =
       /** Lancé depuis la main (Ojer Pakpatiq). */
       fromHand?: boolean;
     }
-  | { on: "step"; step: Step; whose: "you" | "opponent" | "any" }
+  /**
+   * « Au début de [l'étape] » ; `main` : chaque phase principale (Carpet of Flowers) ; `nth` : seulement la N-ième
+   * phase principale du tour (Survie : la deuxième, 505.1a).
+   */
+  | { on: "step"; step: Step | "main"; whose: "you" | "opponent" | "any"; nth?: number }
   | { on: "landfall" }
   /** « Chaque fois que vous piochez [votre deuxième carte ce tour] » ; `whose` relatif au contrôleur. */
   | { on: "draw"; whose: "you" | "opponent" | "any"; nth?: number }

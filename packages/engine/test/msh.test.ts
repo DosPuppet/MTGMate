@@ -3134,6 +3134,25 @@ describe("lot A, vert", () => {
         expect(idsOf(s, "p1", "battlefield", "Shivan Dragon")).toHaveLength(1);
       });
 
+      it("I : un sort de créature rouge ou vert payé normalement consomme l'effet ; de toute zone (cimetière)", () => {
+        let s = scenario({ p1: { battlefield: lands("Forest", 6), hand: ["World War Hulk", "Llanowar Elves", "Bear Cub"] } });
+        s = settle(cast(s, "p1", "World War Hulk"));
+        s = settle(cast(s, "p1", "Llanowar Elves"));
+        // Plus aucun terrain dégagé : Bear Cub n'est plus gratuit.
+        expect(castable(s, "p1", idOf(s, "p1", "hand", "Bear Cub"))).toBe(false);
+        let t = scenario({
+          p1: {
+            battlefield: [...lands("Forest", 5), { name: "Bear Cub", counters: { "+1/+1": 6 } }],
+            hand: ["World War Hulk"],
+            graveyard: ["Quilled Greatwurm"],
+          },
+        });
+        t = settle(cast(t, "p1", "World War Hulk"));
+        const wurm = idOf(t, "p1", "graveyard", "Quilled Greatwurm");
+        t = settle(act(t, "p1", { type: "cast", card: wurm, free: true }));
+        expect(idsOf(t, "p1", "battlefield", "Quilled Greatwurm")).toHaveLength(1);
+      });
+
       it("II : trois marqueurs +1/+1 ; III : force et endurance doublées et le piétinement", () => {
         let s = scenario({ p1: { battlefield: [{ name: "World War Hulk", counters: { lore: 1 } }, "Bear Cub"] } });
         const bear = idOf(s, "p1", "battlefield", "Bear Cub");

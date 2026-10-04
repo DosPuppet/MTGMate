@@ -1593,7 +1593,7 @@ describe("Wilds of Eldraine, lot A — bleu", () => {
     const twoCombats = (battlefield: string[], hand: string[]) => {
       let s = scenario({ p1: { battlefield: ["Serra Angel", ...battlefield], hand } });
       const angel = idOf(s, "p1", "battlefield", "Serra Angel");
-      s.turn.extraCombats = 1;
+      s.turn.addedPhases = ["beginCombat"];
       s = throughCombat(attackWith(s, "p1", angel));
       expect(s.pending?.kind).toBe("declareAttackers");
       s = throughCombat(attackWith(s, "p1", angel));

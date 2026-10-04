@@ -175,7 +175,7 @@ export const LEGENDS: Record<string, CardScript> = {
   Dracogenesis: {
     abilities: [
       castPermission({
-        freeFromHand: true,
+        freeFrom: "any",
         freeFilter: { subtype: "Dragon" },
         label: "Sorts de Dragon sans payer leur coût de mana",
       }),

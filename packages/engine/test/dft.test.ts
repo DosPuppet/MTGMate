@@ -33,6 +33,7 @@ import {
   scenario,
   settle,
   settleNoBlocks,
+  stepTrail,
   throughCombat,
 } from "./helpers";
 
@@ -1526,8 +1527,8 @@ describe("Aetherdrift, lot K8 : rares (2)", () => {
     });
     s = settle(cast(s, "p1", "Full Throttle"));
     const cub = idOf(s, "p1", "battlefield", "Bear Cub");
-    // L'ordre des phases (combats supplémentaires après le combat normal) est une approximation documentée :
-    // seuls le nombre de combats et le dégagement sont vérifiés.
+    // Les deux combats ajoutés suivent la phase principale, puis vient le combat normal : trois combats d'affilée.
+    expect(s.turn.addedPhases).toEqual(["beginCombat", "beginCombat"]);
     for (let i = 0; i < 3; i++) {
       s = attack(s, [cub]);
       s = settleNoBlocks(s);
@@ -1537,6 +1538,22 @@ describe("Aetherdrift, lot K8 : rares (2)", () => {
     expect(s.players.p2?.life).toBe(14);
     // Les Elfes n'ont pas attaqué : ils restent engagés.
     expect(s.objects[idOf(s, "p1", "battlefield", "Llanowar Elves")]?.tapped).toBe(true);
+  });
+
+  it("Full Throttle : lancé en seconde phase principale, deux combats juste après elle, sans phase principale entre eux", () => {
+    let s = scenario({
+      step: "main2",
+      p1: { battlefield: [...lands("Mountain", 6), "Bear Cub"], hand: ["Full Throttle"] },
+    });
+    s = settle(cast(s, "p1", "Full Throttle"));
+    const cub = idOf(s, "p1", "battlefield", "Bear Cub");
+    s = attack(s, [cub]);
+    // Le second combat ajouté suit le premier ; après lui, le tour passe directement à l'étape de fin.
+    const first = stepTrail(s, (x) => x.pending?.kind === "declareAttackers");
+    expect(first.steps).toEqual(["declareBlockers", "combatDamage", "endCombat", "beginCombat", "declareAttackers"]);
+    const { s: end, steps } = stepTrail(attack(first.s, [cub]), (x) => x.turn.step === "end");
+    expect(steps).toEqual(["declareBlockers", "combatDamage", "endCombat", "end"]);
+    expect(end.players.p2?.life).toBe(16);
   });
 
   it("Gas Guzzler : arrive engagée ; à vitesse max, {B} et une autre créature ou un Véhicule sacrifié : piochez", () => {

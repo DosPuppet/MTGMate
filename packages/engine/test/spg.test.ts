@@ -1,7 +1,7 @@
 /** Special Guests (SPG) : tests de règles des cartes (PLAN-G). */
 import { describe, expect, it } from "vitest";
 import { dealDamage, destroy, drawCards, gainLife, sourceFromObject } from "../src/actions";
-import { activated, fx, ref, spell, staticAbility, target } from "../src/dsl";
+import { activated, fx, ref, spell, staticAbility, target, triggered, when } from "../src/dsl";
 import { announceDiscard } from "../src/effects";
 import { RulesError } from "../src/errors";
 import { legalActions } from "../src/legal";
@@ -26,6 +26,7 @@ import {
   scenario,
   settle,
   steal,
+  stepTrail,
   throughCombat,
   untilCastNow,
 } from "./helpers";
@@ -638,6 +639,28 @@ describe("Special Guests", () => {
       expect(s.players.p1?.library.some((id) => nameOf(s, id) === "Nexus of Fate")).toBe(true);
       s = advanceUntil(s, (x) => x.turn.step === "upkeep" && x.turn.number > 3);
       expect(s.turn.active).toBe("p1");
+    });
+
+    it("Paradox Haze : au premier entretien du joueur enchanté, une vraie étape d'entretien de plus après celle-ci", () => {
+      const clock = customCard({
+        name: "Horloge d'entretien",
+        types: ["Artifact"],
+        typeLine: "Artifact",
+        abilities: [triggered(when.step("upkeep"), [fx.gainLife(1)], { label: "1 PV" })],
+      });
+      let s = scenario({
+        p1: { battlefield: [clock, ...lands("Island", 3)], hand: ["Paradox Haze"], library: ["Forest", "Island", "Swamp"] },
+      });
+      const haze = idOf(s, "p1", "hand", "Paradox Haze");
+      const opt = legalActions(s, "p1").find((a) => a.type === "cast" && a.card === haze);
+      const spec = opt?.type === "cast" ? (opt.modes[0]?.targets[0]?.id as string) : "";
+      s = settle(act(s, "p1", { type: "cast", card: haze, targets: { [spec]: ["p1"] } }));
+      expect(s.objects[idOf(s, "p1", "battlefield", "Paradox Haze")]?.attachedTo).toBe("p1");
+      const { s: after, steps } = stepTrail(s, (x) => x.turn.active === "p1" && x.turn.number === 5 && x.turn.step === "main1");
+      // Deux étapes d'entretien, une seule pioche ; la seconde n'en ajoute pas d'autre (premier entretien du tour).
+      expect(steps.slice(-4)).toEqual(["upkeep", "upkeep", "draw", "main1"]);
+      expect(after.players.p1?.hand).toHaveLength(1);
+      expect(after.players.p1?.life).toBe(22);
     });
 
     it("Magus of the Moon : les terrains non-base sont des Montagnes, sans leurs autres capacités", () => {

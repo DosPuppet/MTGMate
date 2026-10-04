@@ -780,16 +780,23 @@ export interface GameState {
     cleanupAgain?: boolean;
     /** Muldrotha : types de permanents déjà joués depuis le cimetière ce tour-ci. */
     graveyardTypesUsed?: string[];
-    /** Combats supplémentaires à venir ce tour-ci (Aurelia). */
-    extraCombats?: number;
-    /** All-Out Assault : « une phase de combat supplémentaire après cette phase principale, suivie d'une phase principale supplémentaire ». */
-    extraCombatsAfterMain?: number;
-    /** Phase principale supplémentaire à jouer après le combat supplémentaire en cours (la même étape, rejouée). */
-    extraMainAfter?: Step;
+    /**
+     * 500.8 : phases ajoutées « après cette phase », par leur première étape (`beginCombat` : un combat, Aurelia ;
+     * `main2` : une phase principale, All-Out Assault ; `upkeep` : une phase de début réduite à son entretien, Obeka).
+     * Elles commencent à la fin de la phase en cours ; la plus récemment créée a lieu d'abord (en tête de file).
+     */
+    addedPhases?: Step[];
+    /** 500.10 : étapes ajoutées « après cette étape » (Paradox Haze, Y'shtola Rhul), en tête de file. */
+    addedSteps?: Step[];
+    /** L'étape où reprend le tour une fois les phases ajoutées jouées (celle qui suivait la phase d'origine). */
+    resumeAt?: Step;
+    /** Phase de début ajoutée (Obeka) : elle finit avec son étape d'entretien (ni dégagement ni pioche). */
+    upkeepOnly?: boolean;
+    /** Rang de la phase principale en cours ou passée (505.1 : la première, la deuxième… ; Survie, Carpet of Flowers). */
+    mainPhase?: number;
     /** Phases de combat commencées ce tour-ci (Genji Glove : « si c'est la première phase de combat du tour »). */
     combats?: number;
-    /** Étapes de fin supplémentaires à venir (Y'shtola Rhul) et étapes de fin déjà commencées ce tour-ci. */
-    extraEndSteps?: number;
+    /** Étapes de fin déjà commencées ce tour-ci (Y'shtola Rhul : « si c'est la première étape de fin du tour »). */
     endSteps?: number;
     /** Nombre de résolutions par capacité ce tour-ci (Venom Connoisseur). */
     resolutionCounts?: Record<string, number>;

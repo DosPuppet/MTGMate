@@ -50,13 +50,12 @@ Dans l'ordre où elles ont été ajoutées, extension par extension.
   - `règle` Soulstone Sanctuary (« tous les types de créature ») : tout sous-type sauf ceux de terrain, d'artefact et d'enchantement connus ;
   - `choix auto` Moonlit Meditation, Mirrormind Crown : « vous pouvez » est demandé pour les jetons créés par un effet de création de jetons ; ceux d'amasser, d'endurer ou d'un cadeau sont toujours remplacés par des copies.
 - **Foundations (`docs/extensions/fdn.md`) :**
-  - `choix auto` Quilled Greatwurm : les six marqueurs du coût sont retirés d'abord des créatures qui en ont le plus ;
+  - `choix auto` Quilled Greatwurm (et Dawnhand Dissident) : vous répartissez les marqueurs retirés entre vos créatures, mais la sorte des marqueurs retirés d'une même créature est choisie pour vous (les −1/−1 d'abord, les +1/+1 en dernier) ;
   - `choix auto` Muldrotha : une carte à plusieurs types de permanent utilise automatiquement le premier type encore libre ;
   - `choix auto` Curator of Destinies : en multijoueur, c'est l'adversaire suivant qui choisit la pile.
 - **Final Fantasy (`docs/extensions/fin.md`) :**
   - `règle` Sorceress's Schemes : seulement une carte d'éphémère ou de rituel du cimetière (pas une carte exilée avec flashback) ;
   - `règle` Quina, Qu Gourmet : pas de Grenouille pour les jetons copies ;
-  - `règle` Garnet, Princess of Alexandria : un marqueur de savoir de chacune de vos Sagas, ou d'aucune ;
   - `règle` Choco, Seeker of Paradise : les cartes regardées sont meulées, puis une va en main et les terrains sur le champ de bataille ;
   - `règle` Memories Returning : vous choisissez les trois cartes gardées (l'adversaire ne choisit pas celles du dessous) ;
   - `règle` Sin, Spira's Punishment : six copies au plus par déclenchement ;
@@ -66,12 +65,10 @@ Dans l'ordre où elles ont été ajoutées, extension par extension.
   - `règle` Lifecraft Engine : tous vos Véhicules, même non-créatures, ont le type choisi (l'ensemble affecté en couche 4 ne suit pas la dépendance 613.8a envers l'équipage, plus récent) ;
   - `règle` Cursecloth Wrappings : l'embaumement accordé est payé tout de suite (en rituel) et le jeton garde les couleurs de la carte ;
   - `règle` Radiant Lotus : c'est son contrôleur qui ajoute le mana (pas de joueur ciblé) ;
-  - `règle` Full Throttle : deux combats supplémentaires après le combat normal (et non juste après la phase principale) ;
   - `règle` Oviya : le piétinement vaut pour vos créatures attaquantes (quel que soit le joueur attaqué).
 - **Outlaws of Thunder Junction (`docs/extensions/otj-big.md`) :**
   - `règle` Hollow Marauder : une carte piochée si au moins un adversaire ciblé n'a pas défaussé de carte de VM 4 ou plus ;
   - `règle` Fblthp, Lost on the Range : comploter la carte du dessus passe par une capacité (sur la pile) qui paie son coût de mana ;
-  - `règle` Obeka : les étapes d'entretien supplémentaires ne font que déclencher les capacités « au début de votre entretien » ;
   - `règle` Riku of Many Paths : un seul mode, quel que soit le nombre de modes du sort ;
   - `règle` Great Train Heist : les Trésors viennent des blessures infligées à n'importe quel adversaire.
 - **The Big Score (`docs/extensions/otj-big.md`) :**
@@ -88,7 +85,6 @@ Dans l'ordre où elles ont été ajoutées, extension par extension.
   - `règle` New Way Forward : un sort choisi comme source est reconnu par sa carte et son contrôleur (une autre copie de la même carte serait aussi concernée) ; les blessures sont toutes prévenues, après les modifications (doublements) qui s'y appliquent ;
   - `règle` Neriv, Heart of the Storm : une créature qui n'est plus sur le champ de bataille n'est pas « arrivée ce tour-ci ».
 - **Duskmourn (`docs/extensions/dsk.md`) :**
-  - `règle` Survie : se déclenche au début de chaque phase principale d'après-combat (combats supplémentaires compris), pas seulement la seconde ;
   - `règle` Acrobatic Cheerleader (« ne se déclenche qu'une fois ») : tant qu'elle n'a pas de marqueur de vol ;
   - `règle` Kaito (Monstrous Emergence) : en multijoueur, il attaque le joueur qu'attaque une de vos créatures ;
   - `règle` Fear of Burning Alive : les blessures reportées sont infligées par Fear of Burning Alive, et non par la source qui a blessé l'adversaire (un sort n'a pas d'objet à désigner une fois résolu) ;
@@ -222,7 +218,6 @@ Dans l'ordre où elles ont été ajoutées, extension par extension.
   - `règle` Super Intelligence : « l'entretien de son contrôleur » se lit « votre entretien, ou celui d'un adversaire si la créature est chez un adversaire » (exact en duel) ;
   - `règle` Attuma, Atlantean Warlord : une attaque contre un planeswalker compte comme « attaquent un joueur » ;
   - `timing` Hawkeye, Master Marksman : « payez {1} jusqu'à trois fois, puis choisissez autant de modes » est trois propositions successives (payer {1} pour chaque mode), chacune avec sa capacité réflexive ;
-  - `règle` World War Hulk (chapitre I) : le sort gratuit vient seulement de la main, et un sort de créature payé normalement ne consomme pas la permission ;
   - `règle` Bullseye, Death Dealer : « sacrifiez un artefact ou défaussez une carte non-terrain » est deux capacités ;
   - `règle` Cloak and Dagger, Entwined : la créature ciblée est adverse sans être forcément au joueur ciblé ; la main n'est montrée qu'à travers ses cartes non-terrain proposées ;
   - `règle` The Kingpin of Crime : l'extorsion est écrite dans le script ; « blesse selon son endurance » ne touche que les créatures présentes à la résolution ;
@@ -278,11 +273,9 @@ Dans l'ordre où elles ont été ajoutées, extension par extension.
   - `règle` Shared Animosity : un attaquant changelin partage un type avec toute autre créature attaquante ;
   - `règle` Outlaws' Merriment : le jeton « choisi au hasard » est tiré par un dé à trois faces (affiché au journal) ;
   - `choix auto` Cresting Mosasaurus (émerger) : la créature sacrifiée est celle de plus grande valeur de mana ;
-  - `règle` As Foretold : seulement les sorts lancés depuis la main ;
   - `règle` Flesh Duplicate : la disparition est donnée même si la créature copiée l'a déjà ; les trois marqueurs sont mis par une capacité d'arrivée ;
   - `règle` Hunting Velociraptor : la maraude demande des blessures de combat d'un Dinosaure (pas de n'importe quel type commun au sort) ;
   - `règle` Ad Nauseam : le processus se répète au plus trente fois ;
-  - `règle` Carpet of Flowers : seulement au début de votre première phase principale ;
   - `choix auto` Library of Leng : la carte défaussée par un effet va toujours au-dessus de la bibliothèque (sauf une carte avec la folie) ;
   - `règle` Notion Thief : la pioche du voleur n'est pas remplacée à son tour (deux Notion Thief adverses) ; les remplacements de la pioche du voleur ne s'appliquent pas ;
   - `règle` Gix, Yawgmoth Praetor : « payez 1 PV » est une perte de PV (possible à 0 PV ou moins) ; `choix auto` les cartes défaussées pour X, sans choix du joueur dans l'interface ;

@@ -472,7 +472,9 @@ export function legalActions(s: GameState, player: PlayerId): ActionOption[] {
     const alt = terms.free ? undefined : altCostFor(s, player, d);
     // Les permanents renvoyés ou sacrifiés par le coût alternatif (Daze, émerger) ne produisent plus de mana.
     const altPaid = alt?.pay ? altCostPayment(s, player, card, alt.pay) : undefined;
-    const altGone = [altPaid?.bounce, altPaid?.sacrifice].filter((x): x is string => !!x);
+    // Web-slinging : la créature engagée renvoyée par défaut (Nyxbloom Ancient ne triple plus le mana).
+    const webBounce = alt && isWebSlinging(s, player, d) ? webSlingingOptions(s, player)[0] : undefined;
+    const altGone = [altPaid?.bounce, altPaid?.sacrifice, webBounce].filter((x): x is string => !!x);
     const altAvailable =
       !!alt &&
       (!alt.collectEvidence || !!evidenceCards(s, player, card, alt.collectEvidence)) &&
@@ -627,11 +629,11 @@ export function legalActions(s: GameState, player: PlayerId): ActionOption[] {
       kickerTap: d.kickerCost?.tapPower ? crewSpec(s, player, card, d.kickerCost.tapPower) : undefined,
       // Objets payés en coût (preuves, exil du cimetière, flétrir X), quand le joueur a un choix à faire.
       ...(() => {
-        const picks = spellPicks(s, player, card, d, undefined, flashback).filter(
+        const picks = spellPicks(s, player, card, d, undefined, flashback, terms.removeCounters).filter(
           (p) =>
             (p.when !== "kicked" || kickerAffordable) &&
             (p.when !== "alternative" || altAvailable) &&
-            (p.atMost || p.minTotal || p.optional || p.options.length > p.count),
+            (p.atMost || p.minTotal || p.optional || p.options.length > p.count || (p.repeat && p.options.length > 1)),
         );
         return picks.length ? { picks } : {};
       })(),

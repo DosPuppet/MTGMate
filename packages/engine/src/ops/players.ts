@@ -17,7 +17,7 @@ import { apnapOrder, chars, emit, isPlayer, moveObject, onBattlefield, opponents
 import { addPlayerEffect, playerStatic } from "../statics";
 import { matchesObjectFilter } from "../targets";
 import { eliminate, endTheTurn } from "../turn";
-import type { EventReplacement } from "../types";
+import type { EventReplacement, Step } from "../types";
 
 export const HANDLERS: OpHandlers = {
   playerEffect(s, _r, e0, ctx) {
@@ -312,20 +312,32 @@ export const HANDLERS: OpHandlers = {
   },
   extra(s, _r, e, ctx) {
     const n = e.amount !== undefined ? evalAmount(s, ctx, e.amount) : 1;
+    const t = s.turn;
+    const inMain = t.step === "main1" || t.step === "main2";
+    // 500.8 : la phase ajoutée le plus récemment a lieu d'abord (en tête de file) ; de même pour les étapes (500.10).
+    const addPhases = (...steps: Step[]) => {
+      t.addedPhases = [...steps, ...(t.addedPhases ?? [])];
+    };
+    const addStep = (step: Step) => {
+      t.addedSteps = [step, ...(t.addedSteps ?? [])];
+    };
     for (let i = 0; i < n; i++) {
       switch (e.kind) {
         case "upkeep":
-          // Approximation : seuls les déclencheurs « au début de votre entretien » (docs/approximations.md).
-          rulesEvent(s, { e: "step", step: "upkeep", active: s.turn.active });
+          // Obeka : une phase de début de plus après cette phase, sans dégagement ni pioche ; Paradox Haze : après cette étape.
+          if (e.after === "step") addStep("upkeep");
+          else addPhases("upkeep");
           break;
         case "combat":
-          s.turn.extraCombats = (s.turn.extraCombats ?? 0) + 1;
+          // « Après cette phase principale » (Full Throttle) : rien hors d'une phase principale.
+          if (e.after !== "main" || inMain) addPhases("beginCombat");
           break;
         case "combatAfterMain":
-          s.turn.extraCombatsAfterMain = (s.turn.extraCombatsAfterMain ?? 0) + 1;
+          // Relentless Assault : seulement s'il se résout pendant une phase principale.
+          if (inMain) addPhases("beginCombat", "main2");
           break;
         case "endStep":
-          s.turn.extraEndSteps = (s.turn.extraEndSteps ?? 0) + 1;
+          addStep("end");
           break;
         case "turn":
           s.extraTurns = [...(s.extraTurns ?? []), ctx.controller];

@@ -3472,7 +3472,7 @@ describe("Murders at Karlov Manor, lot A — multicolores", () => {
       c = settle(c);
       expect(c.objects[anzrag]?.tapped).toBe(false);
       expect(c.objects[bear]?.tapped).toBe(false);
-      expect(c.turn.extraCombats).toBe(1);
+      expect(c.turn.addedPhases).toEqual(["beginCombat"]);
     });
 
     it("{3}{R}{R}{G}{G} : doit être bloquée ce tour-ci", () => {

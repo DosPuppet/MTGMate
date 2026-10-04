@@ -900,8 +900,11 @@ export interface CastPermissionAbilityDef {
   kind: "castPermission";
   /** « Vous pouvez lancer des sorts comme s'ils avaient le flash. » */
   flash?: true;
-  /** Omniscience : sorts de votre main sans payer leur coût de mana. */
-  freeFromHand?: true;
+  /**
+   * Sorts sans payer leur coût de mana : `hand`, ceux de votre main (Omniscience) ; `any`, de toute zone d'où vous pouvez
+   * les lancer (Dracogenesis, As Foretold).
+   */
+  freeFrom?: "hand" | "any";
   /** Seulement les sorts correspondants (Dracogenesis : « vous pouvez lancer des sorts de Dragon sans payer »). */
   freeFilter?: ObjectFilter;
   /** Une fois par tour (Zaffai and the Tempests) ; `condition` : seulement quand elle est remplie (pendant votre tour). */
@@ -953,6 +956,8 @@ export interface NextSpell {
   /** Réduction du coût générique de ce sort (Don & Raph : l'affinité pour les artefacts, `amount.count(…)`). */
   reduce?: Amount;
   uncounterable?: boolean;
+  /** « … peut être lancé sans payer son coût de mana », de toute zone (World War Hulk) ; consommé même s'il est payé. */
+  free?: boolean;
   counters?: number;
   haste?: boolean;
   /** Capacité déclenchée « quand vous lancez [ce sort] » (Codie, Vociferous Codex) ; le sort est `ref.target("s")`. */

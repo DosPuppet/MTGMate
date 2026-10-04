@@ -339,6 +339,25 @@ describe("Through the Ages", () => {
       const pool = s.players.p1?.manaPool;
       expect(Object.values(pool ?? {}).reduce((a, b) => a + b, 0)).toBe(3);
     });
+
+    it("Carpet of Flowers : à chacune de vos phases principales, tant que vous n'avez pas ajouté de mana avec elle ce tour-ci", () => {
+      const total = (x: ReturnType<typeof scenario>) => Object.values(x.players.p1?.manaPool ?? {}).reduce((a, b) => a + b, 0);
+      const atMain2 = (x: ReturnType<typeof scenario>) =>
+        x.turn.step === "main2" && x.stack.length === 0 && x.triggers.length === 0 && x.pending?.kind === "priority";
+      const start = () =>
+        scenario({ active: "p2", p1: { battlefield: ["Carpet of Flowers"] }, p2: { battlefield: lands("Island", 3) } });
+      // Refusé en première phase principale : la capacité se déclenche encore en seconde phase principale.
+      let s = advanceUntil(start(), (x) => x.turn.active === "p1" && x.pending?.kind === "choice");
+      expect(s.turn.step).toBe("main1");
+      s = act(s, "p1", { type: "choose", values: [0] });
+      s = advanceUntil(s, atMain2);
+      expect(total(s)).toBe(3);
+      // Accepté en première phase principale : plus rien en seconde phase principale.
+      let t = advanceUntil(start(), (x) => x.turn.active === "p1" && x.pending?.kind === "choice");
+      t = advanceUntil(t, (x) => (x.turn.step === "main2" && x.pending?.kind !== "priority") || atMain2(x));
+      expect(t.pending?.kind).toBe("priority");
+      expect(total(t)).toBe(0);
+    });
   });
   describe("G4e : exil et copies", () => {
     it("Winota : une créature non-Humain attaque, un Humain des six cartes du dessus arrive engagé, attaquant et indestructible", () => {

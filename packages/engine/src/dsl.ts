@@ -955,7 +955,13 @@ export const fx = {
   coinFlip: (store: string): Effect => ({ op: "coinFlip", store }),
   /** « Lancez un dé à N faces » (706) : le résultat est stocké (Ancient Copper Dragon : un d20). */
   rollDie: (sides: number, store: string): Effect => ({ op: "coinFlip", store, sides }),
-  extraUpkeeps: (amount: Amount): Effect => ({ op: "extra", kind: "upkeep", amount }),
+  /** « … étapes d'entretien supplémentaires après cette phase » (Obeka) ; `afterStep` : « après cette étape » (Paradox Haze). */
+  extraUpkeeps: (amount: Amount, afterStep = false): Effect => ({
+    op: "extra",
+    kind: "upkeep",
+    amount,
+    ...(afterStep ? { after: "step" as const } : {}),
+  }),
   plotOnResolve: (what: Ref): Effect => ({ op: "spellFate", fate: "plot", what }),
   noncombatBonusThisTurn: (amount: Amount): Effect => ({ op: "noncombatBonusThisTurn", amount }),
   flickerChosen: (filter: ObjectFilter, times: Amount): Effect => ({ op: "flickerChosen", filter, times }),
@@ -1125,16 +1131,23 @@ export const fx = {
     once: true,
   }),
   changeTarget: (what: Ref): Effect => ({ op: "changeTarget", what }),
+  /** « Après cette phase, il y a une phase de combat supplémentaire. » */
   extraCombat: { op: "extra", kind: "combat" } as Effect,
+  /** « Après cette phase principale, il y a N phases de combat supplémentaires » (sans phase principale entre elles). */
+  extraCombatsAfterMain: (n: number): Effect => ({ op: "extra", kind: "combat", amount: n, after: "main" }),
   /** « Une phase de combat supplémentaire après cette phase principale, suivie d'une phase principale supplémentaire. » */
   extraCombatAfterMain: { op: "extra", kind: "combatAfterMain" } as Effect,
   extraTurn: { op: "extra", kind: "turn" } as Effect,
   tripleTriad: { op: "tripleTriad" } as Effect,
   unattach: (what: Ref, ifAttachedTo?: Ref): Effect => ({ op: "unattach", what, ifAttachedTo }),
   resolveToBattlefieldTransformed: { op: "spellFate", fate: "battlefieldTransformed" } as Effect,
-  nextCreatureSpell: (opts: { counters?: number; haste?: boolean }): Effect => ({
+  /** « Le prochain sort de créature [du filtre] que vous lancez ce tour-ci » : marqueurs, célérité, gratuit (`free`). */
+  nextCreatureSpell: (
+    opts: { counters?: number; haste?: boolean; free?: boolean },
+    filter: ObjectFilter = { types: ["Creature"] },
+  ): Effect => ({
     op: "playerEffect",
-    ability: { nextSpell: { filter: { types: ["Creature"] }, ...opts } },
+    ability: { nextSpell: { filter, ...opts } },
     once: true,
   }),
   spellArrivalCounters: (what: Ref, amount: Amount): Effect => ({ op: "spellArrivalCounters", what, amount }),
@@ -2177,7 +2190,9 @@ export const when = {
   /** Sinistre : « chaque fois qu'un enchantement que vous contrôlez arrive et chaque fois que vous déverrouillez entièrement une Salle ». */
   eerie: { on: "eerie" } as TriggerSpec,
   /** « Au début de votre seconde phase principale » (Survie, avec la condition « si cette créature est engagée »). */
-  secondMain: { on: "step", step: "main2", whose: "you" } as TriggerSpec,
+  secondMain: { on: "step", step: "main", whose: "you", nth: 2 } as TriggerSpec,
+  /** « Au début de chacune de vos phases principales » (Carpet of Flowers). */
+  eachMain: { on: "step", step: "main", whose: "you" } as TriggerSpec,
   /** « Chaque fois que vous activez une capacité de loyauté [en retirant au moins N marqueurs] » */
   /** Vaillance : « chaque fois que cette créature devient la cible d'un sort ou d'une capacité que vous contrôlez ». */
   valiant: { on: "becomesTarget", who: "self", byYou: true } as TriggerSpec,

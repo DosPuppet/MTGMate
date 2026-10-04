@@ -392,6 +392,24 @@ describe("Enchanting Tales", () => {
       expect(idsOf(s, "p1", "battlefield", "Bear Cub")).toHaveLength(1);
       expect(opt("Llanowar Elves")).toBeUndefined();
     });
+
+    it("As Foretold : un sort lancé d'une autre zone que la main (Quilled Greatwurm depuis le cimetière)", () => {
+      let s = scenario({
+        p1: {
+          battlefield: [
+            { name: "As Foretold", counters: { time: 6 } },
+            { name: "Bear Cub", counters: { "+1/+1": 6 } },
+          ],
+          graveyard: ["Quilled Greatwurm"],
+        },
+      });
+      const wurm = idOf(s, "p1", "graveyard", "Quilled Greatwurm");
+      const opt = legalActions(s, "p1").find((a) => a.type === "cast" && a.card === wurm);
+      expect(opt?.type === "cast" && opt.freeAvailable).toBe(true);
+      s = settle(act(s, "p1", { type: "cast", card: wurm, free: true }));
+      expect(idsOf(s, "p1", "battlefield", "Quilled Greatwurm")).toHaveLength(1);
+      expect(s.objects[idOf(s, "p1", "battlefield", "Bear Cub")]?.counters["+1/+1"] ?? 0).toBe(0);
+    });
   });
   describe("G4e : bibliothèque et pioche", () => {
     const discardFrom = (s: ReturnType<typeof scenario>, p: string, id: string) =>

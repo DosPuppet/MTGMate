@@ -6,6 +6,7 @@ import { describe, expect, it } from "vitest";
 import { dealDamage, destroy, sourceFromObject } from "../src/actions";
 import { fx, triggered, when } from "../src/dsl";
 import { grantPlay } from "../src/effects";
+import { RulesError } from "../src/errors";
 import { legalActions } from "../src/legal";
 import { canPay, manaAbilitiesOf } from "../src/mana";
 import { chars, onBattlefield } from "../src/state";
@@ -300,6 +301,41 @@ describe("Lot F : jouer depuis d'autres zones", () => {
     expect(castOption(s, "p1", wurm)).toBeDefined();
     s = act(s, "p1", { type: "cast", card: wurm });
     expect(counters(s, elf)["+1/+1"] ?? 0).toBe(0);
+  });
+
+  it("Quilled Greatwurm : le joueur répartit les six marqueurs retirés entre ses créatures", () => {
+    const start = () => {
+      const s = scenario({
+        p1: {
+          battlefield: [
+            ...lands("Forest", 6),
+            { name: "Llanowar Elves", counters: { "+1/+1": 4 } },
+            { name: "Bear Cub", counters: { "+1/+1": 3 } },
+          ],
+          graveyard: ["Quilled Greatwurm"],
+        },
+      });
+      return { s, wurm: idOf(s, "p1", "graveyard", "Quilled Greatwurm") };
+    };
+    const { s, wurm } = start();
+    const elf = idOf(s, "p1", "battlefield", "Llanowar Elves");
+    const cub = idOf(s, "p1", "battlefield", "Bear Cub");
+    const opt = castOption(s, "p1", wurm);
+    const pick = opt?.type === "cast" ? opt.picks?.find((p) => p.slot === "counterFrom") : undefined;
+    expect(pick?.count).toBe(6);
+    expect(pick?.options.sort()).toEqual([elf, cub].sort());
+    expect(pick?.repeat).toEqual({ [elf]: 4, [cub]: 3 });
+    // Trois de chaque : l'Elfe garde un marqueur (le moteur les aurait pris d'abord sur l'Elfe).
+    const t = act(s, "p1", { type: "cast", card: wurm, picks: { counterFrom: [cub, cub, cub, elf, elf, elf] } });
+    expect(counters(t, elf)["+1/+1"]).toBe(1);
+    expect(counters(t, cub)["+1/+1"] ?? 0).toBe(0);
+    // Plus de marqueurs qu'une créature n'en a, ou un autre nombre que six : refusé.
+    expect(() => act(s, "p1", { type: "cast", card: wurm, picks: { counterFrom: [cub, cub, cub, cub, elf, elf] } })).toThrow(
+      RulesError,
+    );
+    expect(() => act(s, "p1", { type: "cast", card: wurm, picks: { counterFrom: [elf, elf, elf, elf, cub] } })).toThrow(
+      RulesError,
+    );
   });
 
   it("Flamewake Phoenix : revient du cimetière au début du combat (férocité, {R})", () => {

@@ -126,15 +126,16 @@ export const LEGENDS3: Record<string, CardScript> = {
   },
   "Garnet, Princess of Alexandria": {
     abilities: [
-      // Approximation : un marqueur de savoir retiré de chacune de vos Sagas, ou d'aucune.
+      // « De chacune d'un nombre quelconque de Sagas » : les Sagas sont choisies (aucune possible).
       triggered(
         when.attacksSelf,
         [
-          fx.may(
-            "Retirer un marqueur de savoir de chacune de vos Sagas ?",
-            fx.removeCounters(ref.permanentsOf(ref.you, { subtype: "Saga" }), 1, "lore", "g"),
-            fx.addCounters(ref.self, amount.v("g")),
-          ),
+          fx.chooseAmong(ref.permanentsOf(ref.you, { subtype: "Saga", withCounter: "lore" }), ref.you, "sagas", {
+            anyNumber: true,
+            prompt: "Retirez un marqueur de savoir de chacune de ces Sagas",
+          }),
+          fx.removeCounters(ref.stored("sagas"), 1, "lore", "g"),
+          fx.addCounters(ref.self, amount.v("g")),
         ],
         { label: "Marqueurs de savoir → marqueurs +1/+1" },
       ),

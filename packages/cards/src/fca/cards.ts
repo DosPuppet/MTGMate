@@ -569,15 +569,19 @@ export const CARDS: Record<string, CardScript> = {
   },
   "Carpet of Flowers": {
     abilities: [
+      // « Si vous n'avez pas ajouté de mana avec cette capacité ce tour-ci » : un refus ne compte pas.
       triggered(
-        when.step("main1"),
+        when.eachMain,
         fx.may(
           "Ajouter du mana (autant que d'Îles de l'adversaire) ?",
           fx.addManaChoice(amount.refCount(ref.permanentsOf(ref.target(), { subtype: "Island" }))),
+          fx.doneOncePerTurn,
         ),
         {
           targets: [target.player("t", "opponent")],
-          label: "Début de votre phase principale : X mana d'une couleur, X étant le nombre d'Îles de l'adversaire ciblé",
+          oncePerTurn: "ifDone",
+          label:
+            "Début de chacune de vos phases principales : X mana d'une couleur, X étant le nombre d'Îles de l'adversaire ciblé",
         },
       ),
     ],

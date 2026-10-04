@@ -216,7 +216,7 @@ export const BLUE: Record<string, CardScript> = {
       }),
     ],
   },
-  Omniscience: { abilities: [castPermission({ freeFromHand: true, label: "Sorts de votre main sans payer leur coût" })] },
+  Omniscience: { abilities: [castPermission({ freeFrom: "hand", label: "Sorts de votre main sans payer leur coût" })] },
   "Time Stop": { spell: spell([], [fx.endTurn]) },
 
   // --- Réimpressions ---

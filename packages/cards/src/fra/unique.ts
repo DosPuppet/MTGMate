@@ -535,7 +535,7 @@ export const UNIQUE: Record<string, CardScript> = {
   Omnipresence: {
     abilities: [
       castPermission({
-        freeFromHand: true,
+        freeFrom: "hand",
         freeMaxManaValueCreatures: true,
         label: "Sorts de valeur de mana ≤ vos créatures : sans payer leur coût",
       }),

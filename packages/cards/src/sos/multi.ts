@@ -750,7 +750,7 @@ export const MULTI: Record<string, CardScript> = {
   "Zaffai and the Tempests": {
     abilities: [
       castPermission({
-        freeFromHand: true,
+        freeFrom: "hand",
         freeFilter: INSTANT_SORCERY,
         freeOncePerTurn: true,
         condition: cond.yourTurn,

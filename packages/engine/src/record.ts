@@ -351,8 +351,11 @@ export const RECORD_VERSION = 1;
  * - 130 : familles moyennes (A4a) : cible détenue par un joueur désigné (`TargetSpec.of` : joueur de l'événement,
  *   joueur défenseur, joueur d'une autre cible), nouvelles cibles d'un sort à plusieurs cibles, capacité accordée qui
  *   connaît le permanent qui l'accorde (`ref.grantor`, `CostDef.grantor`).
+ * - 131 : familles moyennes (A4c) : sort gratuit depuis toute zone (`castPermission.freeFrom`), phases et étapes
+ *   ajoutées à leur place (files `turn.addedPhases`/`addedSteps`, rang de la phase principale), marqueurs retirés parmi
+ *   plusieurs créatures choisis par le joueur ; le renvoi d'une créature par web-slinging est compté avant le mana.
  */
-export const RULES_VERSION = 130;
+export const RULES_VERSION = 131;
 
 /** Un point de contrôle toutes les N décisions (plus la dernière de la partie). */
 export const CHECKPOINT_EVERY = 25;

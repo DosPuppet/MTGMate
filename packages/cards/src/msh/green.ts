@@ -11,7 +11,6 @@ import {
   blockAbility,
   bothIfKicked,
   type CardScript,
-  castPermission,
   chapter,
   cond,
   cost,
@@ -480,28 +479,10 @@ export const GREEN: Record<string, CardScript> = {
   },
   "World War Hulk": {
     abilities: [
-      // Approximation : seulement depuis la main, et un sort rouge ou vert de créature payé normalement ne consomme pas
-      // la permission.
-      chapter(
-        [1],
-        [
-          fx.emblem(
-            "World War Hulk",
-            "The next red or green creature spell you cast this turn can be cast without paying its mana cost.",
-            [
-              castPermission({
-                freeFromHand: true,
-                freeFilter: { types: ["Creature"], colors: ["R", "G"] },
-                freeOncePerTurn: true,
-                label: "Votre prochain sort de créature rouge ou vert ce tour-ci sans payer son coût de mana",
-              }),
-            ],
-            false,
-            true,
-          ),
-        ],
-        { label: "Le prochain sort de créature rouge ou vert sans payer son coût" },
-      ),
+      // De toute zone ; le prochain sort de créature rouge ou vert consomme l'effet, qu'il soit payé ou non.
+      chapter([1], [fx.nextCreatureSpell({ free: true }, { types: ["Creature"], colors: ["R", "G"] })], {
+        label: "Le prochain sort de créature rouge ou vert sans payer son coût",
+      }),
       chapter([2], [fx.addCounters(ref.target(), 3)], {
         targets: [YOUR_CREATURE()],
         label: "Trois marqueurs +1/+1 sur une de vos créatures",

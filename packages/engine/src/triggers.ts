@@ -882,8 +882,12 @@ function matchTrigger(s: GameState, ev: RulesEvent, t: TriggerSpec, src: Source)
       return ev.e === "cycled" && ev.card === src.id ? { objectId: src.id, player: ev.player, amount: ev.x } : null;
     case "discardSelf":
       return ev.e === "discard" && ev.cards.includes(src.id) ? { objectId: src.id, player: ev.player } : null;
-    case "step":
-      return ev.e === "step" && ev.step === t.step && whose(t.whose, ev.active, me) ? { player: ev.active } : null;
+    case "step": {
+      if (ev.e !== "step" || !whose(t.whose, ev.active, me)) return null;
+      const main = ev.step === "main1" || ev.step === "main2";
+      if (t.step === "main" ? !main : ev.step !== t.step) return null;
+      return t.nth === undefined || (main && (s.turn.mainPhase ?? 1) === t.nth) ? { player: ev.active } : null;
+    }
     case "landfall": {
       if (ev.e !== "zone" || ev.to !== "battlefield") return null;
       const v = liveView(s, ev.newId);

@@ -460,10 +460,18 @@ export type Effect =
       duration?: "endOfTurn" | "endOfYourNextTurn" | "whileYouControlSource" | "permanent";
     }
   /**
-   * Phase, étape ou tour supplémentaire (`amount` fois) : entretien (approximation : les déclencheurs « au début de votre
-   * entretien », Obeka), combat après celui-ci (Aurelia) ou après cette phase principale, étape de fin, tour.
+   * Phase, étape ou tour supplémentaire (`amount` fois, 500.8 à 500.10) : `upkeep`, une phase de début réduite à son
+   * entretien après cette phase (Obeka), ou une étape d'entretien après celle-ci (`after: "step"`, Paradox Haze) ;
+   * `combat`, une phase de combat après cette phase (Aurelia), seulement pendant une phase principale avec
+   * `after: "main"` (Full Throttle) ; `combatAfterMain`, un combat suivi d'une phase principale après cette phase
+   * principale ; `endStep`, une étape de fin après celle-ci ; `turn`.
    */
-  | { op: "extra"; kind: "upkeep" | "combat" | "combatAfterMain" | "endStep" | "turn"; amount?: Amount }
+  | {
+      op: "extra";
+      kind: "upkeep" | "combat" | "combatAfterMain" | "endStep" | "turn";
+      amount?: Amount;
+      after?: "step" | "main";
+    }
   /**
    * Ce que devient le sort désigné (sur la pile), ou celui qui se résout, après sa résolution : exilé (avec un marqueur
    * `counter`, Goliath Daydreamer), comploté (Lilah), avec le rebond (702.88), ou mis sur le champ de bataille transformé

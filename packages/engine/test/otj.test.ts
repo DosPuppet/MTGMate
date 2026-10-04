@@ -35,6 +35,7 @@ import {
   scenario,
   settle,
   settleNoBlocks,
+  stepTrail,
   throughCombat,
   untilCastNow,
 } from "./helpers";
@@ -1612,7 +1613,7 @@ describe("Outlaws of Thunder Junction, lot K8 : rares (2)", () => {
     const mode = modeOf(s, "Great Train Heist", "Dégagez vos créatures, combat supplémentaire");
     s = settle(act(s, "p1", { type: "cast", card: idOf(s, "p1", "hand", "Great Train Heist"), mode }));
     expect(s.objects[cub]?.tapped).toBe(false);
-    expect(s.turn.extraCombats ?? 0).toBe(0);
+    expect(s.turn.addedPhases).toBeUndefined();
     // Une seule phase de combat ce tour-ci.
     s = attack(s, [cub]);
     s = throughCombat(s);
@@ -1917,12 +1918,16 @@ describe("Outlaws of Thunder Junction, lot K8 : rares (2)", () => {
       typeLine: "Artifact",
       abilities: [triggered(when.step("upkeep"), [fx.gainLife(1)], { label: "1 PV" })],
     });
-    let s = scenario({ p1: { battlefield: ["Obeka, Splitter of Seconds", UPKEEP] } });
+    let s = scenario({ p1: { battlefield: ["Obeka, Splitter of Seconds", UPKEEP], library: ["Forest", "Island"] } });
     const obeka = idOf(s, "p1", "battlefield", "Obeka, Splitter of Seconds");
     expect(chars(s, obeka).keywords).toContain("menace");
-    s = throughCombat(attack(s, [obeka]));
+    const { s: after, steps } = stepTrail(attack(s, [obeka]), (x) => x.turn.step === "main2");
+    s = after;
     expect(s.players.p2?.life).toBe(18);
-    // Deux étapes d'entretien supplémentaires : la capacité « au début de votre entretien » se déclenche deux fois.
+    // Deux vraies étapes d'entretien après la phase de combat (ni dégagement ni pioche), puis la phase principale.
+    expect(steps.slice(-4)).toEqual(["endCombat", "upkeep", "upkeep", "main2"]);
+    expect(s.players.p1?.hand).toHaveLength(0);
+    // La capacité « au début de votre entretien » se déclenche à chacune.
     expect(s.players.p1?.life).toBe(22);
   });
 

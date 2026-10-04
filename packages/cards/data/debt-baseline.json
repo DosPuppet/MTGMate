@@ -236,9 +236,9 @@
     "PlayFromZone": 17,
     "LayerMods": 31,
     "Effect": 152,
-    "Effect (champs)": 633,
+    "Effect (champs)": 634,
     "TriggerSpec": 60,
-    "TriggerSpec (champs)": 158,
+    "TriggerSpec (champs)": 159,
     "Condition": 52,
     "Condition (champs)": 96,
     "Amount": 31,
@@ -296,6 +296,8 @@
     "PLAN-A A3 (intégration de A3a et A3c) : isDealtDamage.combat ajouté, toPlayer et toOpponent remplacés par to : TriggerSpec (champs) 160 → 159",
     "PLAN-A A4b : objets d'un lot « un ou plusieurs » (Ref eventObjects) ; capacité retardée sur un événement liée à un objet (delayed : on, watch, targets, label) ; ObjectFilter.linkedToSource et leaves.from retirés (emblèmes du tour remplacés ; Kaya passe par zoneChange) : ObjectFilter 87 → 86, Effect (champs) 629 → 633, TriggerSpec (champs) 159 → 158, Ref 29 → 30, Ref (champs) 51 → 52",
     "PLAN-A A4a : référence ref.grantor (le permanent qui accorde une capacité activée : Fishing Pole, Trusty Boomerang ; coût CostDef.grantor, qui remplace tapAttached : Fishing Pole, The Dominion Bracelet, Deconstruction Hammer) : Ref 29 → 30, Ref (champs) 51 → 52",
-    "PLAN-A A4 (intégration de A4a et A4b) : ref.grantor et ref.eventObjects ensemble : Ref 30 → 31, Ref (champs) 52 → 53"
+    "PLAN-A A4 (intégration de A4a et A4b) : ref.grantor et ref.eventObjects ensemble : Ref 30 → 31, Ref (champs) 52 → 53",
+    "PLAN-A A4c : phases et étapes ajoutées à leur place (extra.after \"step\" | \"main\" : Paradox Haze, Full Throttle ; file turn.addedPhases / addedSteps), rang de la phase principale (step \"main\" et nth : Survie, Carpet of Flowers) : Effect (champs) 629 → 630, TriggerSpec (champs) 159 → 160",
+    "PLAN-A A4 (intégration de A4c après A4a et A4b) : Effect (champs) 633 → 634, TriggerSpec (champs) 158 → 159"
   ]
 }

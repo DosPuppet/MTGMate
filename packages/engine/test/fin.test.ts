@@ -3099,6 +3099,30 @@ describe("Final Fantasy, lot K8 : cartes mythiques, rares et peu communes", () =
       expect(s.objects[idOf(s, "p1", "battlefield", "Summon: Shiva")]?.counters.lore).toBe(1);
     });
 
+    it("Garnet : les Sagas sont choisies une à une (« de chacune d'un nombre quelconque »)", () => {
+      let s = scenario({
+        p1: {
+          battlefield: [
+            "Garnet, Princess of Alexandria",
+            { name: "Summon: Shiva", counters: { lore: 2 } },
+            { name: "Summon: Shiva", counters: { lore: 1 } },
+          ],
+        },
+      });
+      const garnet = idOf(s, "p1", "battlefield", "Garnet, Princess of Alexandria");
+      const [a, b] = idsOf(s, "p1", "battlefield", "Summon: Shiva") as [string, string];
+      let options: string[] = [];
+      s = resolve(attack(s, [garnet]), (req) => {
+        if (req.type !== "pick") return undefined;
+        options = req.options.map(String);
+        return [a];
+      });
+      expect(options.sort()).toEqual([a, b].sort());
+      expect(counters(s, garnet)).toBe(1);
+      expect(s.objects[a]?.counters.lore).toBe(1);
+      expect(s.objects[b]?.counters.lore).toBe(1);
+    });
+
     it("Giott, King of the Dwarves : double initiative ; un Nain ou un Équipement arrive : vous pouvez défausser pour piocher", () => {
       let s = scenario({
         p1: { battlefield: ["Giott, King of the Dwarves", "Mountain"], hand: ["Coral Sword", "Forest"], library: ["Opt"] },

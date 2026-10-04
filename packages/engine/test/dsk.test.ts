@@ -18,6 +18,7 @@ import {
   attack,
   attackPlayer,
   canActivate,
+  cast,
   castable,
   castNowOf,
   combatTargetsOffered,
@@ -63,6 +64,27 @@ describe("Duskmourn", () => {
     let s = scenario({ p1: { battlefield: [{ name: "Cautious Survivor", tapped: true }, "Cautious Survivor"] } });
     s = advanceUntil(s, (x) => x.turn.step === "main2" && x.stack.length === 0 && x.pending?.kind === "priority");
     expect(s.players.p1?.life).toBe(22);
+  });
+
+  it("Survie : seulement la deuxième phase principale du tour, qu'elle soit ajoutée ou non (Waves of Aggression)", () => {
+    const side = {
+      battlefield: [{ name: "Cautious Survivor", tapped: true }, ...lands("Mountain", 5)],
+      hand: ["Waves of Aggression"],
+    };
+    // Lancé en première phase principale : la phase principale ajoutée après le combat ajouté est la deuxième du tour.
+    let s = scenario({ p1: side });
+    s = settle(cast(s, "p1", "Waves of Aggression"));
+    s = advanceUntil(s, (x) => (x.turn.combats ?? 0) === 2);
+    expect(s.players.p1?.life).toBe(22);
+    // La phase principale normale, troisième du tour, ne le déclenche plus.
+    s = advanceUntil(s, (x) => x.turn.step === "end");
+    expect(s.players.p1?.life).toBe(22);
+    // Lancé en seconde phase principale : la phase principale ajoutée est la troisième.
+    let t = scenario({ step: "main2", p1: side });
+    t = settle(cast(t, "p1", "Waves of Aggression"));
+    t = advanceUntil(t, (x) => x.turn.step === "end");
+    expect(t.turn.mainPhase).toBe(3);
+    expect(t.players.p1?.life).toBe(20);
   });
 
   it("Délire : quatre types de cartes dans votre cimetière", () => {

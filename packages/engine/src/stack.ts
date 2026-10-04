@@ -1339,7 +1339,8 @@ export function castTerms(s: GameState, player: PlayerId, card: ObjectId): CastT
     }
     if (l.maxSpells !== undefined ? spells >= l.maxSpells : !l.exceptFromHand || !fromHand) return null;
   }
-  const terms = baseCastTerms(s, player, card);
+  const base = baseCastTerms(s, player, card);
+  const terms = base && freeCastTerms(s, player, card, base);
   // Weftwalking : « le premier sort que chaque joueur lance pendant chacun de ses tours peut être lancé sans payer ».
   if (
     terms &&
@@ -1363,6 +1364,43 @@ export function castTerms(s: GameState, player: PlayerId, card: ObjectId): CastT
   return terms;
 }
 
+/**
+ * « Vous pouvez lancer des sorts sans payer leur coût de mana » : permissions `freeFrom` (de la main : Omniscience ; de
+ * toute zone : Dracogenesis, As Foretold), et « le prochain sort … peut être lancé sans payer son coût de mana »
+ * (`NextSpell.free` : World War Hulk). Une permission « une fois par tour » n'est consommée que si elle sert
+ * (`freeOnceKey`) ; le prochain sort, lui, consomme l'effet qu'il soit payé ou non. Jamais avec un autre coût alternatif
+ * (118.9a : flashback, chaos, distorsion seule, coût de remplacement).
+ */
+function freeCastTerms(s: GameState, player: PlayerId, card: ObjectId, terms: CastTerms): CastTerms {
+  if (terms.free || terms.freeOptional || terms.source === "flashback" || terms.mayhem || terms.warpOnly || terms.costOverride)
+    return terms;
+  const d = s.defs[s.objects[card]?.defId ?? ""];
+  if (!d) return terms;
+  const view = spellView(d, player);
+  const next = s.playerEffects.some((e) => {
+    const n = e.player === player && e.once ? e.ability.nextSpell : undefined;
+    return !!n?.free && (!n.filter || matchesView(view, n.filter, player));
+  });
+  if (next) return { ...terms, freeOptional: true };
+  // Omnipresence : seulement si la valeur de mana ne dépasse pas le nombre de créatures que vous contrôlez.
+  const creatures = () => s.battlefield.filter((id) => obj(s, id).controller === player && isCreature(s, id)).length;
+  const perms = controlledAbilitiesWithSource(s, player).filter(
+    ({ id, ab }) =>
+      ab.kind === "castPermission" &&
+      (ab.freeFrom === "any" || (ab.freeFrom === "hand" && terms.source === "hand")) &&
+      (!ab.freeMaxManaValueCreatures || manaValue(d.manaCost) <= creatures()) &&
+      // Dracogenesis : seulement les sorts de Dragon.
+      (!ab.freeFilter || matchesView(view, resolveFilter(s, ab.freeFilter, id), player)) &&
+      (!ab.condition || checkCondition(s, ab.condition, player, id)) &&
+      // Zaffai and the Tempests : une fois par tour (la permission est consommée par un sort lancé gratuitement).
+      !(ab.freeOncePerTurn && s.turn.onceFired.includes(`freeCast:${id}`)),
+  );
+  if (perms.length === 0) return terms;
+  const unlimited = perms.some(({ ab }) => ab.kind === "castPermission" && !ab.freeOncePerTurn);
+  const once = unlimited ? undefined : perms[0];
+  return { ...terms, freeOptional: true, ...(once ? { freeOnceKey: `freeCast:${once.id}` } : {}) };
+}
+
 function baseCastTerms(s: GameState, player: PlayerId, card: ObjectId): CastTerms | null {
   const o = s.objects[card];
   if (!o) return null;
@@ -1374,26 +1412,7 @@ function baseCastTerms(s: GameState, player: PlayerId, card: ObjectId): CastTerm
     // Buster Sword : un sort de votre main sans payer son coût de mana, ce tour-ci.
     const handPerm = exilePermission(s, player, card);
     if (handPerm) return { source: "hand", free: handPerm.free, anyTime: handPerm.anyTime, costOverride: handPerm.cost };
-    // Omnipresence : seulement si la valeur de mana ne dépasse pas le nombre de créatures que vous contrôlez.
-    const creatures = () => s.battlefield.filter((id) => obj(s, id).controller === player && isCreature(s, id)).length;
-    const perms = controlledAbilitiesWithSource(s, player).filter(
-      ({ id, ab }) =>
-        ab.kind === "castPermission" &&
-        ab.freeFromHand &&
-        (!ab.freeMaxManaValueCreatures || manaValue(d.manaCost) <= creatures()) &&
-        // Dracogenesis : seulement les sorts de Dragon.
-        (!ab.freeFilter || matchesView(spellView(d, player), resolveFilter(s, ab.freeFilter, id), player)) &&
-        (!ab.condition || checkCondition(s, ab.condition, player, id)) &&
-        // Zaffai and the Tempests : une fois par tour (la permission est consommée par un sort lancé gratuitement).
-        !(ab.freeOncePerTurn && s.turn.onceFired.includes(`freeHand:${id}`)),
-    );
-    const unlimited = perms.find(({ ab }) => ab.kind === "castPermission" && !ab.freeOncePerTurn);
-    const once = unlimited ? undefined : perms[0];
-    return {
-      source: "hand",
-      freeOptional: perms.length > 0 || undefined,
-      ...(once ? { freeOnceKey: `freeHand:${once.id}` } : {}),
-    };
+    return { source: "hand" };
   }
   if (o.zone === "graveyard") {
     // Tinybones, the Pickpocket : une carte d'un autre cimetière, lançable avec du mana de n'importe quel type.
@@ -1557,22 +1576,32 @@ function countersAmongCreatures(s: GameState, player: PlayerId): number {
     .reduce((n, id) => n + Object.values(obj(s, id).counters).reduce((a, b) => a + Math.max(0, b), 0), 0);
 }
 
-/** Retire N marqueurs parmi les créatures du joueur (les plus chargées d'abord ; approximation : sans choix). */
-function removeCountersAmongCreatures(s: GameState, player: PlayerId, n: number): void {
-  let left = n;
-  const ids = s.battlefield
-    .filter((id) => obj(s, id).controller === player && isCreature(s, id))
+/**
+ * « Retirez N marqueurs parmi les créatures que vous contrôlez » (Quilled Greatwurm, Dawnhand Dissident) : le joueur
+ * répartit les retraits entre ses créatures, un objet par marqueur (`repeat`) ; suggestion : les plus chargées d'abord.
+ */
+function countersAmongPick(s: GameState, player: PlayerId, n: number): CostPick {
+  const options = s.battlefield
+    .filter((id) => obj(s, id).controller === player && isCreature(s, id) && countersOf(s, id) > 0)
     .sort((a, b) => countersOf(s, b) - countersOf(s, a));
-  for (const id of ids) {
+  return {
+    slot: "counterFrom",
+    label: `Retirez ${n} marqueur(s) parmi les créatures que vous contrôlez`,
+    count: n,
+    options,
+    suggested: options.flatMap((id) => Array<ObjectId>(countersOf(s, id)).fill(id)).slice(0, n),
+    repeat: Object.fromEntries(options.map((id) => [id, countersOf(s, id)])),
+  };
+}
+
+/** Retire un marqueur par occurrence de chaque créature choisie ; sa sorte : les −1/−1 d'abord, les +1/+1 en dernier. */
+function removeCountersFromEach(s: GameState, from: ObjectId[]): void {
+  const times = new Map<ObjectId, number>();
+  for (const id of from) times.set(id, (times.get(id) ?? 0) + 1);
+  for (const [id, n] of times) {
     const o = obj(s, id);
-    for (const [kind, k] of Object.entries(o.counters)) {
-      if (left <= 0) return;
-      const take = Math.min(k, left);
-      if (take > 0) {
-        changeCounters(s, o, kind, -take);
-        left -= take;
-      }
-    }
+    const kinds = anyCountersDefault(o, n);
+    for (const kind of new Set(kinds)) changeCounters(s, o, kind, -kinds.filter((k) => k === kind).length);
   }
 }
 
@@ -2061,12 +2090,16 @@ export function castSpell(s: GameState, player: PlayerId, card: ObjectId, choice
     cost = hybridPaidAs(cost, choices.hybridAs);
   }
 
+  // Marqueurs retirés parmi vos créatures : répartis par le joueur (`counterFrom`), sinon la suggestion.
+  const countersFrom = terms.removeCounters
+    ? resolvePick(s, countersAmongPick(s, player, terms.removeCounters), choices.picks?.counterFrom)
+    : undefined;
   // 601.2a : le sort passe sur la pile (nouvel objet), puis on paie les coûts (601.2g–h).
   if (terms.graveyardType) s.turn.graveyardTypesUsed = [...(s.turn.graveyardTypesUsed ?? []), terms.graveyardType];
   // The Tomb of Aclazotz : la permission à usage unique est consommée.
   const once = terms.playFrom && s.playerEffects.find((e) => e.once && e.ability.playFrom === terms.playFrom);
   if (once) s.playerEffects = s.playerEffects.filter((e) => e !== once);
-  if (terms.removeCounters) removeCountersAmongCreatures(s, player, terms.removeCounters);
+  if (countersFrom) removeCountersFromEach(s, countersFrom);
   if (terms.onceKey) s.turn.onceFired.push(terms.onceKey);
   if (free && terms.freeOnceKey) s.turn.onceFired.push(terms.freeOnceKey);
   const view = spellView(d, player);
@@ -2987,8 +3020,11 @@ export function spellPicks(
   d: CardDef,
   x?: number,
   flashback = false,
+  /** Marqueurs à retirer parmi vos créatures pour la lancer d'ici (`CastTerms.removeCounters`). */
+  removeCounters?: number,
 ): CostPick[] {
   const out: CostPick[] = additionalPicks(s, player, card, d, flashback);
+  if (removeCounters) out.push(countersAmongPick(s, player, removeCounters));
   // Contempler : un permanent ou une carte de la main, ou rien (« vous pouvez », ou payer le supplément).
   const behold = d.additionalCost?.behold;
   if (behold) {
