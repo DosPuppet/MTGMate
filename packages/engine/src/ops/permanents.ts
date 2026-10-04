@@ -1,6 +1,6 @@
 /** Effets du moteur : modifications de permanents, contrôle, copies et jetons. Chaque clé est un `op` d'`Effect` (voir `runEffect`, effects.ts). */
 
-import { createTokenCopy, createTokens, tokenCopyCount, tokenCopyReplacement } from "../actions";
+import { createTokenCopy, createTokens, phaseOut, tokenCopyCount, tokenCopyReplacement } from "../actions";
 import { addControlEffect } from "../control";
 import type { OpHandlers } from "../effects";
 import {
@@ -183,6 +183,10 @@ export function enterChoiceRequest(
 }
 
 export const HANDLERS: OpHandlers = {
+  phaseOut(s, _r, e, ctx) {
+    for (const id of resolveRef(s, ctx, e.what)) phaseOut(s, id);
+    return;
+  },
   regenerate(s, _r, e, ctx) {
     for (const id of resolveRef(s, ctx, e.what)) {
       const o = s.objects[id];

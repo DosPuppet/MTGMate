@@ -248,4 +248,26 @@ describe("Jurassic World Collection", () => {
       expect(s.players.p1?.hand.map((id) => nameOf(s, id)).sort()).toEqual(["Forest", "Llanowar Elves"]);
     });
   });
+  describe("G4e : dernières cartes (2)", () => {
+    it("Welcome to . . . // Jurassic Park : Mur 0/4, Dinosaure 3/3, puis les Murs sont détruits et la Saga revient en terrain", () => {
+      let s = scenario({
+        p1: { battlefield: [...lands("Forest", 3)], hand: ["Welcome to . . . // Jurassic Park"], library: lands("Forest", 5) },
+        p2: { battlefield: ["Mana Crypt"] },
+      });
+      const crypt = idOf(s, "p2", "battlefield", "Mana Crypt");
+      s = settle(act(s, "p1", { type: "cast", card: idOf(s, "p1", "hand", "Welcome to . . . // Jurassic Park") }), (req) =>
+        req.type === "pick" && req.options.includes(crypt) ? [crypt] : undefined,
+      );
+      expect(chars(s, crypt)).toMatchObject({ power: 0, toughness: 4 });
+      expect(chars(s, crypt).subtypes).toContain("Wall");
+      s = advanceUntil(s, (x) => x.turn.active === "p1" && x.turn.step === "main1" && x.turn.number === 5);
+      s = settle(s);
+      expect(idsOf(s, "p1", "battlefield", "Dinosaur")).toHaveLength(1);
+      s = advanceUntil(s, (x) => x.turn.active === "p1" && x.turn.step === "main1" && x.turn.number === 7);
+      s = settle(s);
+      expect(idsOf(s, "p2", "graveyard", "Mana Crypt")).toHaveLength(1);
+      const park = s.battlefield.find((id) => chars(s, id).name === "Jurassic Park");
+      expect(park).toBeDefined();
+    });
+  });
 });

@@ -119,6 +119,7 @@ export function blankState(opts: {
       hand: [],
       graveyard: [],
       command: [],
+      phasedOut: [],
       manaPool: emptyPool(),
       drewFromEmptyLibrary: false,
       lost: false,

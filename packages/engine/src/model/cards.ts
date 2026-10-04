@@ -940,6 +940,8 @@ export interface NextSpell {
   uncounterable?: boolean;
   counters?: number;
   haste?: boolean;
+  /** Capacité déclenchée « quand vous lancez [ce sort] » (Codie, Vociferous Codex) ; le sort est `ref.target("s")`. */
+  trigger?: Effect[];
 }
 
 /**

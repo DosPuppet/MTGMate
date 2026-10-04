@@ -405,3 +405,8 @@ Dans l'ordre où elles ont été ajoutées, extension par extension.
   - `règle` Sylvan Library : les deux cartes remises peuvent être n'importe quelles cartes de la main (pas seulement celles piochées ce tour-ci) ;
   - `règle` Indominus Rex, Alpha : la défausse et les marqueurs viennent d'une capacité d'arrivée (pas « en arrivant ») ; seule une carte est piochée par marqueur de mot-clé ;
   - `règle` Maddening Hex : l'adversaire « choisi au hasard » est tiré parmi les autres adversaires du contrôleur.
+  - `règle` Expropriate : seul le premier adversaire vote (exact en duel) ; « un permanent possédé par le votant » est un permanent qu'il contrôle ;
+  - `règle` Plague of Vermin : chaque joueur paie une seule fois (le processus ne se répète pas) ; seul le premier adversaire paie (exact en duel) ;
+  - `règle` Codie, Vociferous Codex : la carte trouvée est lancée tout de suite (et non « jusqu'à la fin du tour ») ;
+  - `règle` Welcome to . . . : un seul artefact ciblé (exact en duel, « pour chaque adversaire ») ;
+  - `règle` Phasing (Robe of Stars) : les permanents hors phase ne sont pas affichés.

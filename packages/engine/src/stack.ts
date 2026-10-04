@@ -2244,6 +2244,10 @@ export function castSpell(s: GameState, player: PlayerId, card: ObjectId, choice
     bump(s); // des capacités statiques en dépendent (« si vous avez lancé deux sorts ce tour-ci »)
   }
   rulesEvent(s, { e: "cast", player, stackId, instantSorceryBefore: instantOrSorcery ? before : undefined, spellsBefore });
+  // Codie, Vociferous Codex : « quand vous lancerez votre prochain sort ce tour-ci, … » (le sort : `ref.target("s")`).
+  for (const n of next)
+    if (n.trigger)
+      pushInline(s, player, stackId, d.id, { targets: [], effects: n.trigger, bound: { s: [stackId] }, label: "Prochain sort" });
   // Dépense N (Bloomburrow) : le N-ième mana total dépensé pour lancer des sorts ce tour-ci.
   const spent = item.cast?.manaSpent ?? 0;
   if (caster && spent > 0) {

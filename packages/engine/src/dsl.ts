@@ -654,6 +654,8 @@ export const fx = {
   exile: (what: Ref): Effect => ({ op: "exile", what }),
   /** « Régénérez [ce permanent] » (701.19). */
   regenerate: (what: Ref): Effect => ({ op: "regenerate", what }),
+  /** « [Ce permanent] sort de phase » (702.26). */
+  phaseOut: (what: Ref): Effect => ({ op: "phaseOut", what }),
   mill: (n: Amount, who: Ref = ref.you, store?: { name: string; filter?: ObjectFilter }): Effect => ({
     op: "mill",
     who,
@@ -739,8 +741,8 @@ export const fx = {
    * « Au choix » (608.2d) : le joueur choisit une branche pendant la résolution (« gagne au choix la double initiative
    * ou le lien de vie ») ; `store` : le nom de la variable qui retient le rang choisi.
    */
-  yourChoice: (prompt: string, store: string, branches: { label: string; effects: Effects }[]): Effect[] => [
-    { op: "chooseOption", prompt, labels: branches.map((b) => b.label), store },
+  yourChoice: (prompt: string, store: string, branches: { label: string; effects: Effects }[], who?: Ref): Effect[] => [
+    { op: "chooseOption", prompt, labels: branches.map((b) => b.label), store, ...(who ? { who } : {}) },
     ...branches.flatMap((b, i) => {
       const flat = b.effects.flat();
       const c: Condition = {
@@ -1105,7 +1107,19 @@ export const fx = {
   }),
   payX: (prompt: string, store: string): Effect => ({ op: "payX", prompt, store }),
   /** « Payez autant de points de vie que vous voulez » : X mémorisé sous `store`. */
-  payLifeX: (prompt: string, store: string): Effect => ({ op: "payX", prompt, store, life: true }),
+  payLifeX: (prompt: string, store: string, who?: Ref): Effect => ({
+    op: "payX",
+    prompt,
+    store,
+    life: true,
+    ...(who ? { who } : {}),
+  }),
+  /** « Quand vous lancerez votre prochain sort ce tour-ci, … » : le sort est `ref.target("s")` (Codie). */
+  whenNextSpellThisTurn: (effects: Effects): Effect => ({
+    op: "playerEffect",
+    ability: { nextSpell: { trigger: effects.flat() } },
+    once: true,
+  }),
   changeTarget: (what: Ref): Effect => ({ op: "changeTarget", what }),
   extraCombat: { op: "extra", kind: "combat" } as Effect,
   /** « Une phase de combat supplémentaire après cette phase principale, suivie d'une phase principale supplémentaire. » */

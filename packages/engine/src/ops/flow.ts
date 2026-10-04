@@ -203,10 +203,13 @@ export const HANDLERS: OpHandlers = {
   chooseOption(s, r, e, ctx, key) {
     const answer = r.vars[key("option")];
     const options = e.labels.map((_, i) => String(i));
+    // Expropriate : un autre joueur choisit (vote) ; sans joueur désigné en partie, rien n'est choisi.
+    const chooser = e.who ? resolveRef(s, ctx, e.who).find((x) => isPlayer(s, x) && !s.players[x]?.lost) : ctx.controller;
+    if (!chooser) return;
     if (!answer) {
       return {
         ask: {
-          player: ctx.controller,
+          player: chooser,
           key: key("option"),
           request: {
             type: "pick",

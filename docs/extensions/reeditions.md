@@ -285,3 +285,9 @@ le deck peut choisir son illustration (51 cartes). Détail dans le suivi du plan
   Sylvan Library (deux fois « payez 4 PV ou remettez une carte ») ; Indominus Rex (marqueurs de mot-clé par une capacité
   d'arrivée). Le coût alternatif ne compte plus le mana des permanents qu'il renvoie ou sacrifie (fuzz strict, émerger).
   Tests : `fca`, `spg`, `rex` (+6), `offers` (+1). `RULES_VERSION` 120.
+- **Dernières cartes (2) ✅ :** phasing (702.26 : zone `phasedOut`, `PlayerState.phasedOut`, `phaseOut` avec ce qui est
+  attaché, retour en phase au début de l'étape de dégagement du contrôleur, `fx.phaseOut` ; Robe of Stars) ; un autre
+  joueur choisit ou paie (`chooseOption.who`, `payX.who` : Expropriate, Plague of Vermin) ; « quand vous lancerez votre
+  prochain sort ce tour-ci » (`NextSpell.trigger`, `fx.whenNextSpellThisTurn` ; Codie, capacité de mana) ; Welcome to . . .
+  // Jurassic Park (Saga transformée en terrain, évasion donnée aux Dinosaures). Tests : `spg`, `pza`, `rex` (+5).
+  `RULES_VERSION` 121. **Toutes les cartes du plan G sont gérées.**

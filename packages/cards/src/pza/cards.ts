@@ -8,6 +8,7 @@ import {
   fx,
   playerStatic,
   protection,
+  RAT,
   ref,
   spell,
   staticAbility,
@@ -215,5 +216,16 @@ export const CARDS: Record<string, CardScript> = {
         label: "Un adversaire lance son deuxième sort du tour : piochez",
       }),
     ],
+  },
+  "Plague of Vermin": {
+    spell: spell(
+      [],
+      [
+        fx.payLifeX("payez autant de PV que vous voulez (un Rat par PV)", "a"),
+        fx.payLifeX("payez autant de PV que vous voulez (un Rat par PV)", "b", ref.eachOpponent),
+        fx.createTokens(RAT, amount.v("a")),
+        fx.createTokens(RAT, amount.v("b"), ref.eachOpponent),
+      ],
+    ),
   },
 };

@@ -13,7 +13,9 @@ import {
   advanceUntil,
   attack,
   castable,
+  castNowOf,
   customCard,
+  exiled,
   idOf,
   idsOf,
   lands,
@@ -22,6 +24,7 @@ import {
   scenario,
   settle,
   throughCombat,
+  untilCastNow,
 } from "./helpers";
 
 /** Attache l'Équipement à la créature (mise en scène). */
@@ -995,6 +998,59 @@ describe("Special Guests", () => {
       expect(s.players.p1?.hand).toHaveLength(2);
       expect(s.players.p1?.life).toBe(16);
       expect(s.players.p1?.library).toHaveLength(2);
+    });
+  });
+  describe("G4e : dernières cartes (2)", () => {
+    it("Codie, Vociferous Codex : pas de sorts de permanent ; {4}, {T} : WUBRG, le prochain sort cascade vers un éphémère ou un rituel", () => {
+      let s = scenario({
+        p1: {
+          battlefield: ["Codie, Vociferous Codex", ...lands("Mountain", 4)],
+          hand: ["Bear Cub", "Lightning Strike"],
+          library: ["Bear Cub", "Shock", "Forest"],
+        },
+      });
+      expect(castable(s, "p1", idOf(s, "p1", "hand", "Bear Cub"))).toBe(false);
+      // Capacité de mana (605.1a) : résolue tout de suite, sans la pile.
+      s = act(s, "p1", { type: "activate", source: idOf(s, "p1", "battlefield", "Codie, Vociferous Codex"), ability: 1 });
+      expect(Object.values(s.players.p1?.manaPool ?? {}).reduce((a, b) => a + b, 0)).toBe(5);
+      s = untilCastNow(act(s, "p1", { type: "cast", card: idOf(s, "p1", "hand", "Lightning Strike"), targets: { t: ["p2"] } }));
+      const hit = castNowOf(s)?.cards[0] as string;
+      expect(nameOf(s, hit)).toBe("Shock");
+      s = settle(act(s, "p1", { type: "cast", card: hit, free: true, targets: { t: ["p2"] } }));
+      expect(s.players.p2?.life).toBe(15);
+    });
+
+    it("Expropriate : chaque joueur vote ; le temps donne un tour supplémentaire, l'argent un permanent du votant", () => {
+      let s = scenario({
+        p1: { battlefield: lands("Island", 9), hand: ["Expropriate"] },
+        p2: { battlefield: ["Bear Cub"] },
+      });
+      const cub = idOf(s, "p2", "battlefield", "Bear Cub");
+      s = settle(act(s, "p1", { type: "cast", card: idOf(s, "p1", "hand", "Expropriate") }), (req, player) => {
+        if (req.type !== "pick") return undefined;
+        if (req.options.includes(cub)) return [cub];
+        return player === "p1" ? ["0"] : ["1"];
+      });
+      expect(s.objects[cub]?.controller).toBe("p1");
+      expect(s.extraTurns).toEqual(["p1"]);
+      expect(exiled(s, "Expropriate")).toHaveLength(1);
+    });
+
+    it("Robe of Stars : +0/+3 ; {1}{W} : la créature équipée sort de phase jusqu'à votre prochaine étape de dégagement", () => {
+      let s = scenario({ p1: { battlefield: ["Bear Cub", "Robe of Stars", "Plains", "Mountain"] } });
+      const cub = idOf(s, "p1", "battlefield", "Bear Cub");
+      const robe = idOf(s, "p1", "battlefield", "Robe of Stars");
+      (s.objects[robe] as { attachedTo?: string }).attachedTo = cub;
+      s.version += 1;
+      expect(chars(s, cub).toughness).toBe(5);
+      s = settle(act(s, "p1", { type: "activate", source: robe, ability: 1 }));
+      expect(s.battlefield).not.toContain(cub);
+      expect(s.battlefield).not.toContain(robe);
+      expect(s.objects[cub]?.zone).toBe("phasedOut");
+      s = advanceUntil(s, (x) => x.turn.active === "p1" && x.turn.step === "main1" && x.turn.number > 3);
+      expect(s.battlefield).toContain(cub);
+      expect(s.objects[robe]?.attachedTo).toBe(cub);
+      expect(chars(s, cub).toughness).toBe(5);
     });
   });
 });

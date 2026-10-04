@@ -603,6 +603,46 @@ export function sacrifice(s: GameState, id: ObjectId): void {
   putIntoGraveyard(s, id);
 }
 
+/**
+ * Phasing (702.26) : le permanent et ce qui lui est attaché (indirectement, 702.26g) sortent de phase ; ils sont traités
+ * comme s'ils n'existaient pas, sans changer de zone (ni départ ni arrivée), jusqu'à l'étape de dégagement de leur
+ * contrôleur (`phaseIn`).
+ */
+export function phaseOut(s: GameState, id: ObjectId): void {
+  const all = [id];
+  for (let i = 0; i < all.length; i++)
+    for (const x of s.battlefield) if (s.objects[x]?.attachedTo === all[i] && !all.includes(x)) all.push(x);
+  for (const x of all) {
+    const o = s.objects[x];
+    const pl = o ? s.players[o.owner] : undefined;
+    if (o?.zone !== "battlefield" || !pl) continue;
+    removeFromCombat(s, x);
+    s.battlefield = s.battlefield.filter((y) => y !== x);
+    o.zone = "phasedOut";
+    pl.phasedOut = [...(pl.phasedOut ?? []), x];
+    emit({ type: "moved", owner: o.owner, objectId: x, defId: o.defId, from: "battlefield", to: "phasedOut" });
+  }
+  bump(s);
+}
+
+/** 502.1 : au début de l'étape de dégagement, les permanents hors phase de ce joueur reviennent en phase. */
+export function phaseIn(s: GameState, player: PlayerId): void {
+  let changed = false;
+  for (const p of s.playerOrder) {
+    const pl = s.players[p];
+    for (const x of [...(pl?.phasedOut ?? [])]) {
+      const o = s.objects[x];
+      if (!o || !pl || o.controller !== player) continue;
+      pl.phasedOut = pl.phasedOut.filter((y) => y !== x);
+      o.zone = "battlefield";
+      s.battlefield.push(x);
+      emit({ type: "moved", owner: o.owner, objectId: x, defId: o.defId, from: "phasedOut", to: "battlefield" });
+      changed = true;
+    }
+  }
+  if (changed) bump(s);
+}
+
 export function removeFromCombat(s: GameState, id: ObjectId): void {
   if (!s.combat) return;
   bump(s);

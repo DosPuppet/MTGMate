@@ -155,6 +155,8 @@ export type Effect =
   | { op: "exile"; what: Ref }
   /** Régénérer (701.19) : un bouclier de régénération pour chaque permanent désigné, jusqu'à la fin du tour. */
   | { op: "regenerate"; what: Ref }
+  /** Phasing (702.26) : les permanents désignés sortent de phase jusqu'à l'étape de dégagement de leur contrôleur. */
+  | { op: "phaseOut"; what: Ref }
   /**
    * `halfLibrary` : chaque joueur meule la moitié de sa bibliothèque, arrondie à l'inférieur (Singularity Rupture) ;
    * `graveyardSize` : autant de cartes qu'il y en a dans son cimetière (Riverchurn Monument).
@@ -223,7 +225,8 @@ export type Effect =
   /** « Vous pouvez contempler [filtre]. Si vous le faites, … » pendant la résolution : sinon, les `skip` effets sont sautés. */
   | { op: "behold"; filter: ObjectFilter; skip: number }
   /** « Au choix » (608.2d) : le joueur choisit une option pendant la résolution ; `store` reçoit son rang (1, 2…). */
-  | { op: "chooseOption"; prompt: string; labels: string[]; store: string }
+  /** `who` : ce joueur choisit (Expropriate : chaque joueur vote), le contrôleur par défaut. */
+  | { op: "chooseOption"; prompt: string; labels: string[]; store: string; who?: Ref }
   /**
    * Remplacement sur des objets jusqu'à la fin du tour : « si cette créature devait mourir ce tour-ci, exilez-la à la
    * place » ; « prévenez toutes les blessures de combat qui devraient lui être infligées ce tour-ci ».
@@ -655,7 +658,8 @@ export type Effect =
    */
   | { op: "countersDivided"; total: Amount; to: Ref; counter?: string; anyNumber?: boolean }
   /** Choisir X, puis payer {X} (ou X points de vie : `life`, Necrodominance) ; mémorisé sous `store` (Wildborn Preserver). */
-  | { op: "payX"; prompt: string; store: string; life?: boolean }
+  /** `who` : ce joueur paie (Plague of Vermin), le contrôleur par défaut. */
+  | { op: "payX"; prompt: string; store: string; life?: boolean; who?: Ref }
   /** Change la cible d'un sort ou d'une capacité à cible unique (Bolt Bend). */
   | { op: "changeTarget"; what: Ref }
   /**

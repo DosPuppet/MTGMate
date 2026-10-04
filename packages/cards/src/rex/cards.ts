@@ -1,13 +1,15 @@
 /** Jurassic World Collection (REX) : scripts des cartes (PLAN-G). */
-import type { Effect, Keyword } from "@mtgx/engine";
+import type { Effect, Keyword, TokenSpec } from "@mtgx/engine";
 import {
   activated,
   amount,
   type CardScript,
+  chapter,
   cond,
   cost,
   entersWith,
   fx,
+  manaAbility,
   playerStatic,
   ref,
   spell,
@@ -41,6 +43,17 @@ const INDOMINUS_KEYWORDS: Keyword[] = [
   "trample",
   "vigilance",
 ];
+
+/** Welcome to . . . : un Dinosaure 3/3 vert avec le piétinement. */
+const DINOSAUR_TRAMPLE: TokenSpec = {
+  name: "Dinosaur",
+  colors: ["G"],
+  types: ["Creature"],
+  subtypes: ["Dinosaur"],
+  power: 3,
+  toughness: 3,
+  keywords: ["trample"],
+};
 
 export const CARDS: Record<string, CardScript> = {
   "Don't Move": {
@@ -346,6 +359,57 @@ export const CARDS: Record<string, CardScript> = {
         ],
         { label: "Arrivée : défaussez des cartes de créature ; un marqueur par capacité trouvée, et piochez pour chacun" },
       ),
+    ],
+  },
+  "Welcome to . . .": {
+    abilities: [
+      chapter(
+        [1],
+        [
+          fx.modifyWhileYouControl(ref.target(), {
+            addTypes: ["Creature"],
+            addSubtypes: ["Wall"],
+            setPower: 0,
+            setToughness: 4,
+            addKeywords: ["defender"],
+          }),
+        ],
+        {
+          targets: [
+            target.upTo(
+              1,
+              target.permanent(
+                "t",
+                ["Artifact"],
+                { controller: "opponent", notTypes: ["Creature"] },
+                "artefact non-créature adverse",
+              ),
+            ),
+          ],
+          label: "I — Un artefact non-créature adverse devient un Mur 0/4 avec le défenseur, tant que vous contrôlez la Saga",
+        },
+      ),
+      chapter([2], [fx.createTokens(DINOSAUR_TRAMPLE, 1, undefined, "d"), fx.pump(ref.stored("d"), 0, 0, ["haste"])], {
+        label: "II — Un Dinosaure 3/3 vert avec le piétinement, qui a la célérité ce tour-ci",
+      }),
+      chapter(
+        [3],
+        [
+          fx.destroyAll({ subtype: "Wall" }),
+          fx.exileCard(ref.self, { name: "flip" }),
+          fx.toBattlefield(ref.stored("flip"), { transformed: true, underYourControl: true }),
+        ],
+        { label: "III — Détruisez tous les Murs ; la Saga revient transformée" },
+      ),
+    ],
+  },
+  "Jurassic Park": {
+    abilities: [
+      playerStatic({
+        playFrom: { zone: "graveyard", filter: { subtype: "Dinosaur" }, what: "spells", exileOthers: 3 },
+        label: "Les cartes de Dinosaure de votre cimetière ont l'évasion",
+      }),
+      manaAbility("G", 1, { per: { types: ["Creature"], subtype: "Dinosaur", controller: "you" } }),
     ],
   },
 };

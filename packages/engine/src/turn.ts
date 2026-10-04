@@ -8,6 +8,7 @@ import {
   destroy,
   drawCard,
   drawCards,
+  phaseIn,
   putIntoGraveyard,
   removeFromCombat,
   setSpeed,
@@ -301,6 +302,8 @@ function beginStep(s: GameState): void {
   if (s.turn.step !== "untap" && s.turn.step !== "cleanup") stepEvent(s);
   switch (s.turn.step) {
     case "untap":
+      // 502.1 : le retour en phase précède le dégagement.
+      phaseIn(s, active);
       for (const id of s.battlefield) {
         const o = obj(s, id);
         // Prop Room : les créatures de ce joueur se dégagent aussi pendant l'étape de dégagement des autres joueurs.
@@ -1360,6 +1363,8 @@ function removePlayerObjects(s: GameState, p: PlayerId): void {
   // 800.4a : les effets qui lui donnent le contrôle d'objets prennent fin (couche 2 : `syncControl` ignore les effets et
   // les Auras d'un joueur qui a quitté la partie), puis ce qu'il contrôle encore est exilé.
   syncControl(s);
+  // Ses permanents hors phase reviennent en phase avant de quitter la partie (ils ne reviendraient jamais sinon).
+  phaseIn(s, p);
   for (const o of Object.values(s.objects)) {
     if (o.owner !== p && o.controller === p && o.zone === "battlefield") moveObject(s, o.id, "exile");
     // Contrôlé par un autre effet : à la fin de celui-ci, il revient à son propriétaire.
@@ -1376,6 +1381,7 @@ function removePlayerObjects(s: GameState, p: PlayerId): void {
   player.hand = [];
   player.graveyard = [];
   player.command = [];
+  player.phasedOut = [];
   s.battlefield = s.battlefield.filter((id) => !gone.has(id));
   s.exile = s.exile.filter((id) => !gone.has(id));
   // 800.4a : un sort qu'il contrôle sans le posséder (carte adverse lancée depuis l'exil) est exilé ; une copie cesse

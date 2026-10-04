@@ -325,8 +325,10 @@ export const RECORD_VERSION = 1;
  * - 119 : jetons copies créés par d'autres joueurs, cascade filtrée, F/E égales aux cartes liées.
  * - 120 : défausser X cartes en coût, permission de jouer pour les autres joueurs, Aura attachée à un joueur au hasard,
  *   couleur choisie ajoutée.
+ * - 121 : phasing (702.26), vote et paiement par un autre joueur, déclencheur du prochain sort lancé, Saga transformée en
+ *   terrain avec l'évasion donnée.
  */
-export const RULES_VERSION = 120;
+export const RULES_VERSION = 121;
 
 /** Un point de contrôle toutes les N décisions (plus la dernière de la partie). */
 export const CHECKPOINT_EVERY = 25;

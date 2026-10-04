@@ -451,14 +451,20 @@ export const HANDLERS: OpHandlers = {
   },
   payX(s, r, e, ctx, key) {
     if (r.vars[`$${e.store}`]) return;
-    // « Payez autant de points de vie que vous voulez » (Necrodominance) : au plus ses PV (119.4).
-    const life = s.players[ctx.controller]?.life ?? 0;
-    const max = e.life ? Math.max(0, life) : availableMana(s, ctx.controller);
+    // « Payez autant de points de vie que vous voulez » (Necrodominance) : au plus ses PV (119.4). Plague of Vermin : un
+    // autre joueur paie.
+    const payer = e.who ? resolveRef(s, ctx, e.who).find((x) => isPlayer(s, x) && !s.players[x]?.lost) : ctx.controller;
+    if (!payer) {
+      store(r, e.store, 0);
+      return;
+    }
+    const life = s.players[payer]?.life ?? 0;
+    const max = e.life ? Math.max(0, life) : availableMana(s, payer);
     const answer = r.vars[key("payx")];
     if (!answer) {
       return {
         ask: {
-          player: ctx.controller,
+          player: payer,
           key: key("payx"),
           request: {
             type: "number",
@@ -473,12 +479,12 @@ export const HANDLERS: OpHandlers = {
     }
     const x = Math.min(Number(answer[0]), max);
     if (e.life) {
-      if (x > 0) payLife(s, ctx.controller, x);
+      if (x > 0) payLife(s, payer, x);
       store(r, e.store, Math.max(0, x));
       return;
     }
-    if (x > 0 && canPay(s, ctx.controller, { generic: x, colored: {}, x: 0 })) {
-      payMana(s, ctx.controller, { generic: x, colored: {}, x: 0 });
+    if (x > 0 && canPay(s, payer, { generic: x, colored: {}, x: 0 })) {
+      payMana(s, payer, { generic: x, colored: {}, x: 0 });
       store(r, e.store, x);
     } else store(r, e.store, 0);
     return;

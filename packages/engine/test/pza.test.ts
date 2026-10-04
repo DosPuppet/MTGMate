@@ -194,4 +194,16 @@ describe("Source Material", () => {
       expect(s.turn.active).toBe("p1");
     });
   });
+  describe("G4e : dernières cartes (2)", () => {
+    it("Plague of Vermin : chaque joueur paie des PV et crée autant de Rats", () => {
+      let s = scenario({ p1: { battlefield: lands("Swamp", 7), hand: ["Plague of Vermin"] } });
+      s = settle(act(s, "p1", { type: "cast", card: idOf(s, "p1", "hand", "Plague of Vermin") }), (req, player) =>
+        req.type === "number" ? [player === "p1" ? 3 : 2] : undefined,
+      );
+      expect(s.players.p1?.life).toBe(17);
+      expect(s.players.p2?.life).toBe(18);
+      expect(idsOf(s, "p1", "battlefield", "Rat")).toHaveLength(3);
+      expect(idsOf(s, "p2", "battlefield", "Rat")).toHaveLength(2);
+    });
+  });
 });

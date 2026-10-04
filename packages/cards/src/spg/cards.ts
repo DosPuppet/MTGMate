@@ -1321,4 +1321,65 @@ export const CARDS: Record<string, CardScript> = {
       ),
     ],
   },
+  "Codie, Vociferous Codex": {
+    abilities: [
+      playerStatic({
+        castLimit: {
+          who: "you",
+          spellTypes: { types: ["Artifact", "Creature", "Enchantment", "Planeswalker", "Battle"] },
+          maxSpells: 0,
+        },
+        label: "Vous ne pouvez pas lancer de sorts de permanent",
+      }),
+      activated({
+        mana: "{4}",
+        tap: true,
+        effects: [
+          fx.addMana("W", "U", "B", "R", "G"),
+          fx.whenNextSpellThisTurn([fx.cascade(amount.manaValueOf(ref.target("s")), { types: ["Instant", "Sorcery"] })]),
+        ],
+        label: "{4}, {T} : {W}{U}{B}{R}{G} ; votre prochain sort ce tour-ci cascade vers un éphémère ou un rituel",
+      }),
+    ],
+  },
+  Expropriate: {
+    exileOnResolve: true,
+    spell: spell(
+      [],
+      [
+        ...fx.yourChoice("Votez : le temps ou l'argent", "v1", [
+          { label: "Le temps (un tour supplémentaire)", effects: [fx.extraTurn] },
+          {
+            label: "L'argent (un de vos permanents)",
+            effects: [fx.chooseAmong(ref.permanentsOf(ref.you, {}), ref.you, "m1"), fx.giveControl(ref.stored("m1"), ref.you)],
+          },
+        ]),
+        ...fx.yourChoice(
+          "Votez : le temps ou l'argent",
+          "v2",
+          [
+            { label: "Le temps (un tour supplémentaire pour son lanceur)", effects: [fx.extraTurn] },
+            {
+              label: "L'argent (il prend un de vos permanents)",
+              effects: [
+                fx.chooseAmong(ref.permanentsOf(ref.eachOpponent, {}), ref.you, "m2"),
+                fx.giveControl(ref.stored("m2"), ref.you),
+              ],
+            },
+          ],
+          ref.eachOpponent,
+        ),
+      ],
+    ),
+  },
+  "Robe of Stars": {
+    abilities: [
+      staticAbility("attached", { toughness: 3 }, { label: "La créature équipée a +0/+3" }),
+      activated({
+        mana: "{1}{W}",
+        effects: [fx.phaseOut(ref.attached)],
+        label: "Projection astrale — {1}{W} : la créature équipée sort de phase",
+      }),
+    ],
+  },
 };

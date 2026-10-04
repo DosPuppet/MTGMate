@@ -23,7 +23,8 @@ export type PlayerId = string;
 export type ObjectId = string;
 
 /** "command" : zone de commandement (Commander, emblèmes). */
-export type Zone = "library" | "hand" | "battlefield" | "graveyard" | "stack" | "exile" | "command";
+/** `phasedOut` : un permanent hors phase (702.26), traité comme s'il n'existait pas jusqu'à son retour en phase. */
+export type Zone = "library" | "hand" | "battlefield" | "graveyard" | "stack" | "exile" | "command" | "phasedOut";
 
 export type Step =
   | "untap"
@@ -207,6 +208,8 @@ export interface PlayerState {
   hand: ObjectId[];
   graveyard: ObjectId[];
   command: ObjectId[];
+  /** Permanents de ce joueur (propriétaire) hors phase (702.26). */
+  phasedOut: ObjectId[];
   manaPool: Record<ManaType, number>;
   /**
    * Mana marqué de la réserve, une entrée par mana : restreint (Ashling, Rimebound : « seulement pour des sorts de VM 4 ou

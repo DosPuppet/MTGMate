@@ -349,3 +349,5 @@ leur lot, avec une forme générique d'abord, selon la règle « pas de dette pr
   Jodah, Bolas's Citadel. `RULES_VERSION` 119.
 - **G4e, dernières cartes (1) (04/10/2026) :** Gix, Ian Malcolm, Maddening Hex, Painter's Servant, Sylvan Library,
   Indominus Rex. `RULES_VERSION` 120.
+- **G4e, dernières cartes (2) (04/10/2026) :** Robe of Stars (phasing), Expropriate, Plague of Vermin, Codie, Welcome to . . .
+  // Jurassic Park. `RULES_VERSION` 121. Le sous-lot difficile est terminé : toutes les rééditions du plan sont gérées.

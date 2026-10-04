@@ -298,6 +298,11 @@ export function describeEvents(
         add(`${who(e.player)} ${e.player === me ? "perdez" : "perd"}${LOSS_REASON[e.reason]}.`, kind(e.player));
         break;
       case "moved": {
+        // 702.26 : la sortie de phase et le retour en phase ne sont pas des changements de zone.
+        if (e.to === "phasedOut" || e.from === "phasedOut") {
+          add(`${name(e.defId)} ${e.to === "phasedOut" ? "sort de phase" : "revient en phase"}.`, "info");
+          break;
+        }
         const where: Record<string, string> = {
           hand: "retourne dans la main de son propriétaire",
           exile: "est exilé",
