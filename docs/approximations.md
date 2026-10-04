@@ -384,3 +384,7 @@ Dans l'ordre où elles ont été ajoutées, extension par extension.
   - `règle` Henry Wu : la pioche et le Trésor font partie de la capacité d'exploitation qu'il donne (ils n'ont lieu que s'il est sur le champ de bataille quand elle se résout).
   - `règle` Laboratory Maniac : la victoire qui remplace la pioche est constatée avec les actions basées sur l'état qui suivent (comme la défaite qu'elle remplace) ;
   - `règle` Nyxbloom Ancient : le mana « en plus » d'un autre type (Utopia Sprawl, Shimmerwilds Growth) n'est pas triplé.
+  - `règle` Karmic Justice : le permanent ciblé est celui de n'importe quel adversaire (exact en duel) ;
+  - `règle` Mirri, Weatherlight Duelist : « ce combat » dure le tour (un combat supplémentaire reste limité) ;
+  - `règle` Shared Animosity : un attaquant changelin partage un type avec toute autre créature attaquante ;
+  - `règle` Outlaws' Merriment : le jeton « choisi au hasard » est tiré par un dé à trois faces (affiché au journal).

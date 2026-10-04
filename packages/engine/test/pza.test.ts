@@ -1,7 +1,7 @@
 /** Source Material (PZA) : tests de règles des cartes (PLAN-G). */
 import { describe, expect, it } from "vitest";
 import { legalActions } from "../src/legal";
-import { changeCounters, chars } from "../src/state";
+import { changeCounters, chars, moveObject } from "../src/state";
 import { playerStatic } from "../src/statics";
 import { act, advanceUntil, attack, customCard, idOf, idsOf, lands, scenario, settle, throughCombat } from "./helpers";
 
@@ -85,6 +85,10 @@ describe("Source Material", () => {
         }),
       );
       expect(s.objects[bear]?.controller).toBe("p1");
+      // Le Manipulator quitte le champ de bataille : la créature revient aussitôt à son propriétaire (seul effet de
+      // contrôle en jeu, retiré avec la source).
+      moveObject(s, cyto, "exile");
+      expect(s.objects[bear]?.controller).toBe("p2");
     });
   });
 
@@ -148,6 +152,26 @@ describe("Source Material", () => {
       changeCounters(s, s.objects[idOf(s, "p1", "battlefield", "Bear Cub")] as never, "+1/+1", 3);
       s = settle(s, (req) => (req.type === "pick" && req.options.includes("p2") ? ["p2"] : undefined));
       expect(s.players.p2?.life).toBe(17);
+    });
+  });
+  describe("G4e : combat", () => {
+    it("Waves of Aggression : dégage les attaquants, un combat et une phase principale de plus ; retrace", () => {
+      let s = scenario({ p1: { battlefield: ["Bear Cub", ...lands("Mountain", 5)], hand: ["Waves of Aggression"] } });
+      const cub = idOf(s, "p1", "battlefield", "Bear Cub");
+      s = throughCombat(attack(s, [cub]));
+      expect(s.players.p2?.life).toBe(18);
+      s = settle(act(s, "p1", { type: "cast", card: idOf(s, "p1", "hand", "Waves of Aggression") }));
+      expect(s.objects[cub]?.tapped).toBe(false);
+      s = throughCombat(attack(s, [cub]));
+      expect(s.players.p2?.life).toBe(16);
+      expect(s.turn.active).toBe("p1");
+      // Retrace : depuis le cimetière en défaussant une carte de terrain.
+      const r = scenario({ p1: { battlefield: lands("Mountain", 5), graveyard: ["Waves of Aggression"], hand: ["Bear Cub"] } });
+      const waves = idOf(r, "p1", "graveyard", "Waves of Aggression");
+      expect(legalActions(r, "p1").some((a) => a.type === "cast" && a.card === waves)).toBe(false);
+      const q = scenario({ p1: { battlefield: lands("Mountain", 5), graveyard: ["Waves of Aggression"], hand: ["Forest"] } });
+      const w2 = idOf(q, "p1", "graveyard", "Waves of Aggression");
+      expect(legalActions(q, "p1").some((a) => a.type === "cast" && a.card === w2)).toBe(true);
     });
   });
 });

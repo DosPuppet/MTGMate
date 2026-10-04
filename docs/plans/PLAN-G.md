@@ -337,3 +337,6 @@ leur lot, avec une forme générique d'abord, selon la règle « pas de dette pr
 - **G4e, règles de joueur (04/10/2026) :** Laboratory Maniac, Angel's Grace, Phyrexian Unlife, Ground Seal,
   Thousand-Year Elixir, Nyxbloom Ancient, Ancient Copper Dragon, Grim Haruspex, Surgical Extraction (quatre statiques de
   joueur, mana « trois fois autant », dé, mue). `RULES_VERSION` 115.
+- **G4e, combat (04/10/2026) :** Fell the Mighty, Ride Down, Outlaws' Merriment, Shared Animosity, Karmic Justice, Mirri,
+  Waves of Aggression, Swooping Pteranodon, Owen Grady, Blue, Veil of Summer, Deflecting Palm. Correction : un effet de
+  contrôle « tant que » retiré avec sa source rend aussitôt le permanent (fuzz). `RULES_VERSION` 116.

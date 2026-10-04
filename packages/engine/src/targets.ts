@@ -4,7 +4,7 @@
 import { RulesError } from "./errors";
 import { chars, hasKeyword, snapshot } from "./layers";
 import { castInfoOf, obj } from "./state";
-import { playerStatic } from "./statics";
+import { playerStatic, playerStatics } from "./statics";
 import { attackedThisTurn, dealtDamageThisTurn } from "./turnlog";
 import type { CardType, Color, GameState, LkiSnapshot, ObjectFilter, ObjectId, PlayerId, TargetSpec } from "./types";
 import { PERMANENT_TYPES } from "./types";
@@ -328,12 +328,24 @@ export function matchesObjectFilter(
   );
 }
 
+/** La source correspond-elle au filtre de la défense talismanique « contre [filtre] » d'un joueur ? */
+function hexproofFromSource(s: GameState, f: ObjectFilter, player: PlayerId, sourceId?: ObjectId): boolean {
+  const v = sourceId ? sourceView(s, sourceId) : undefined;
+  return !!v && matchesView(v, f, player);
+}
+
 export function isLegalTarget(s: GameState, controller: PlayerId, spec: TargetSpec, id: string, sourceId?: ObjectId): boolean {
   const player = s.players[id];
   if (player) {
     if (player.lost || !spec.filter.players) return false;
     // « Vous avez la défense talismanique » (Crystal Barricade).
-    if (id !== controller && playerStatic(s, id, "hexproof")) return false;
+    if (
+      id !== controller &&
+      playerStatics(s, id, "hexproof").some(
+        ({ ab }) => ab.hexproof === true || (typeof ab.hexproof === "object" && hexproofFromSource(s, ab.hexproof, id, sourceId)),
+      )
+    )
+      return false;
     if (id !== controller && playerStatic(s, id, "protectionFromOpponents")) return false;
     if (spec.filter.players === "you") return id === controller;
     if (spec.filter.players === "opponent") return id !== controller;

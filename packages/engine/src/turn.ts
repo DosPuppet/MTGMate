@@ -760,12 +760,15 @@ export function declareAttackers(s: GameState, player: PlayerId, attackers: { id
     )
       throw new RulesError(`${chars(s, a.id).name} a déjà attaqué ce joueur ce tour-ci`);
   }
-  // Tomik, Orzhov Lawmage : au plus une créature attaque chacun des planeswalkers de son contrôleur.
+  // Tomik, Orzhov Lawmage : au plus une créature attaque chacun des planeswalkers de son contrôleur ; Mirri, Weatherlight
+  // Duelist : au plus une créature attaque son contrôleur.
   for (const w of new Set(attackers.map((a) => a.defender))) {
     const walker = s.objects[w];
-    if (!walker || !playerStatic(s, walker.controller, "walkersMaxOneAttacker")) continue;
-    if (attackers.filter((a) => a.defender === w).length > 1) {
-      throw new RulesError(`Une seule créature peut attaquer ${chars(s, w).name}`);
+    const limited = walker
+      ? playerStatics(s, walker.controller, "maxOneAttacker").some(({ ab }) => ab.maxOneAttacker === "walkers")
+      : playerStatics(s, w, "maxOneAttacker").some(({ ab }) => ab.maxOneAttacker === "you");
+    if (limited && attackers.filter((a) => a.defender === w).length > 1) {
+      throw new RulesError(`Une seule créature peut attaquer ${walker ? chars(s, w).name : "ce joueur"}`);
     }
   }
   // 508.1d : les créatures qui « attaquent à chaque combat si possible » doivent être déclarées (sauf si attaquer
@@ -906,8 +909,20 @@ function obeyedRequirements(reqs: BlockRequirement[], blocks: Block[]): BlockReq
   });
 }
 
-/** La déclaration respecte-t-elle le nombre de bloqueurs de chaque attaquant (menace, « pas plus d'une ») et « pas seule » ? */
-function blockShapeLegal(s: GameState, blocks: Block[]): boolean {
+/** Nombre de créatures avec lesquelles ce joueur peut bloquer (Mirri, Weatherlight Duelist : une seule). */
+function maxBlockingCreatures(s: GameState, player: PlayerId): number {
+  return Math.min(
+    Number.POSITIVE_INFINITY,
+    ...playerStatics(s, player, "maxBlockingCreatures").map(({ ab }) => ab.maxBlockingCreatures ?? Number.POSITIVE_INFINITY),
+  );
+}
+
+/**
+ * La déclaration respecte-t-elle le nombre de bloqueurs de chaque attaquant (menace, « pas plus d'une »), le nombre de
+ * créatures qui bloquent et « pas seule » ?
+ */
+function blockShapeLegal(s: GameState, player: PlayerId, blocks: Block[]): boolean {
+  if (new Set(blocks.map((b) => b.blocker)).size > maxBlockingCreatures(s, player)) return false;
   const per = new Map<ObjectId, number>();
   for (const b of blocks) per.set(b.attacker, (per.get(b.attacker) ?? 0) + 1);
   for (const [a, n] of per) if (n < minBlockers(s, a) || n > maxBlockers(s, a)) return false;
@@ -951,7 +966,7 @@ function bestRequiredBlocks(
   const visit = (i: number): void => {
     if (++nodes > BLOCK_SEARCH_NODES || max === reqs.length) return;
     if (i === relevant.length) {
-      if (!blockShapeLegal(s, current)) return;
+      if (!blockShapeLegal(s, player, current)) return;
       const n = obeyedRequirements(reqs, current).length;
       if (n > max) {
         max = n;
@@ -999,7 +1014,7 @@ export function repairBlocks(s: GameState, player: PlayerId, blocks: Block[]): B
   const required = reqs.flatMap((r) => (r.kind === "attacker" ? [r.attacker] : []));
   const relevant = (id: ObjectId) => own.has(id) || required.some((a) => canBlock(s, id, a));
   const merged = [...blocks.filter((b) => !fixed.has(b.blocker) && !relevant(b.blocker)), ...best];
-  return blockShapeLegal(s, merged) ? merged : best;
+  return blockShapeLegal(s, player, merged) ? merged : best;
 }
 
 export function declareBlockers(s: GameState, player: PlayerId, blocks: { blocker: ObjectId; attacker: ObjectId }[]): void {
@@ -1030,6 +1045,11 @@ export function declareBlockers(s: GameState, player: PlayerId, blocks: { blocke
       rethrowAsRules(e, `Il faut payer {${tax}} pour bloquer`);
     }
   }
+  const cap = maxBlockingCreatures(s, player);
+  if (new Set(blocks.map((b) => b.blocker)).size > cap)
+    throw new RulesError(
+      cap === 1 ? "Vous ne pouvez bloquer qu'avec une seule créature" : `Vous ne pouvez bloquer qu'avec ${cap} créatures`,
+    );
   for (const a of c.attackers) {
     const n = blocks.filter((b) => b.attacker === a.id).length;
     const min = minBlockers(s, a.id);

@@ -9,6 +9,7 @@ import {
   playerStatic,
   protection,
   ref,
+  spell,
   staticAbility,
   target,
   triggered,
@@ -191,5 +192,14 @@ export const CARDS: Record<string, CardScript> = {
         label: "Vous mettez des marqueurs : autant de blessures",
       }),
     ],
+  },
+  "Waves of Aggression": {
+    spell: spell(
+      [],
+      [
+        fx.untap(ref.zone("battlefield", ref.eachPlayer, { types: ["Creature"], attackedThisTurn: true })),
+        fx.extraCombatAfterMain,
+      ],
+    ),
   },
 };

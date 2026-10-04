@@ -508,6 +508,10 @@ function matchTrigger(s: GameState, ev: RulesEvent, t: TriggerSpec, src: Source)
         ? { objectId: ev.lki.id, newObjectId: ev.newId ?? undefined, player: ev.lki.controller }
         : null;
     }
+    case "destroyed":
+      return ev.e === "destroyed" && (!t.byOpponent || opponentsOf(s, me).includes(ev.by)) && matchWho(t.who, ev.lki, src)
+        ? { objectId: ev.lki.id, player: ev.by }
+        : null;
     case "playerLoses":
       return ev.e === "playerLost" &&
         ev.player !== me &&

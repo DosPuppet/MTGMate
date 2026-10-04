@@ -315,8 +315,10 @@ export const RECORD_VERSION = 1;
  * - 114 : coûts alternatifs qui font payer des PV, exiler des cartes de la main ou renvoyer un permanent (`altCost.pay`).
  * - 115 : règles de joueur (victoire sur pioche impossible, plancher de PV, blessures comme l'infection à 0 PV, cartes des
  *   cimetières non ciblables), remplacement « trois fois autant » du mana, dé à N faces, mue (702.37).
+ * - 116 : combat : un joueur bloque avec au plus N créatures, au plus une créature attaque un joueur ; destruction notée avec
+ *   le joueur qui détruit (déclencheur `destroyed`) ; défense talismanique d'un joueur contre un filtre ; retrace (702.81).
  */
-export const RULES_VERSION = 115;
+export const RULES_VERSION = 116;
 
 /** Un point de contrôle toutes les N décisions (plus la dernière de la partie). */
 export const CHECKPOINT_EVERY = 25;

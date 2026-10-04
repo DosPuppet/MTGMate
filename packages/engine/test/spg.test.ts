@@ -794,4 +794,38 @@ describe("Special Guests", () => {
       expect(u.players.p1?.hand).toHaveLength(1);
     });
   });
+  describe("G4e : combat", () => {
+    it("Mirri : en attaquant, chaque adversaire bloque avec une seule créature ; engagée, une seule créature vous attaque", () => {
+      let s = scenario({
+        p1: { battlefield: ["Mirri, Weatherlight Duelist", "Bear Cub"] },
+        p2: { battlefield: ["Llanowar Elves", "Shivan Dragon"] },
+      });
+      const mirri = idOf(s, "p1", "battlefield", "Mirri, Weatherlight Duelist");
+      const cub = idOf(s, "p1", "battlefield", "Bear Cub");
+      s = attack(s, [mirri, cub]);
+      s = advanceUntil(s, (x) => x.pending?.kind === "declareBlockers");
+      const elves = idOf(s, "p2", "battlefield", "Llanowar Elves");
+      const dragon = idOf(s, "p2", "battlefield", "Shivan Dragon");
+      expect(() =>
+        act(s, "p2", {
+          type: "declareBlockers",
+          blocks: [
+            { blocker: elves, attacker: cub },
+            { blocker: dragon, attacker: mirri },
+          ],
+        }),
+      ).toThrow();
+      s = act(s, "p2", { type: "declareBlockers", blocks: [{ blocker: dragon, attacker: cub }] });
+      expect(s.combat?.blockers).toHaveLength(1);
+
+      let t = scenario({
+        active: "p2",
+        p1: { battlefield: [{ name: "Mirri, Weatherlight Duelist", tapped: true }] },
+        p2: { battlefield: ["Bear Cub", "Llanowar Elves"] },
+      });
+      t = advanceUntil(t, (x) => x.pending?.kind === "declareAttackers");
+      const two = [idOf(t, "p2", "battlefield", "Bear Cub"), idOf(t, "p2", "battlefield", "Llanowar Elves")];
+      expect(() => act(t, "p2", { type: "declareAttackers", attackers: two.map((id) => ({ id, defender: "p1" })) })).toThrow();
+    });
+  });
 });

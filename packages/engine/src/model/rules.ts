@@ -97,6 +97,13 @@ export interface ObjectFilter {
   attachedToSelf?: boolean;
   /** De force supérieure à celle de la source (furtivité : « ne peut pas être bloquée par des créatures de force supérieure »). */
   powerAboveSource?: boolean;
+  /**
+   * Relations à un objet désigné, évaluées à la résolution par `withX` (références de zone, `moveAll`, recherche) : de force
+   * supérieure à la sienne (Fell the Mighty : la créature ciblée), qui partage un type de créature avec lui (Shared
+   * Animosity : l'objet de l'événement).
+   */
+  powerAboveOf?: Ref;
+  sharesCreatureTypeWith?: Ref;
   /** Créature équipée (au moins un Équipement attaché). */
   equipped?: boolean;
   /** Modifié (700.9) : porte un marqueur, est équipé, ou enchanté par une Aura que son contrôleur contrôle. */
@@ -249,6 +256,8 @@ export type TriggerSpec =
    */
   | { on: "enters"; who: "self" | ObjectFilter; fromZone?: "graveyard" | "exile" }
   | { on: "dies"; who: "self" | ObjectFilter }
+  /** Un permanent correspondant est détruit par un sort ou une capacité (d'un adversaire : `byOpponent`) ; joueur de l'événement : celui qui détruit. */
+  | { on: "destroyed"; who: ObjectFilter; byOpponent?: boolean }
   /** `to` : seulement vers cette zone (« quand cet artefact est mis au cimetière depuis le champ de bataille »). */
   /** `whileCrafting` : exilé comme matériau d'une fabrication (Market Gnome). */
   /** `who` filtre : « chaque fois qu'une créature que vous contrôlez avec un marqueur +1/+1 quitte le champ de bataille ». */
@@ -657,7 +666,9 @@ export type Ref =
    */
   | { kind: "sameName"; ref: Ref; zone: "battlefield" | "graveyard" }
   /** Réunion de références, sans doublon (Call the Spirit Dragons : les Dragons choisis pour chaque couleur). */
-  | { kind: "union"; of: Ref[] };
+  | { kind: "union"; of: Ref[] }
+  /** Les créatures qui bloquent les objets désignés ou sont bloquées par eux pendant ce combat (Ride Down). */
+  | { kind: "combatPartners"; ref: Ref };
 
 export type Amount =
   | number

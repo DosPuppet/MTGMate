@@ -10,6 +10,7 @@ import {
   GOBLIN,
   modal,
   mode,
+  protection,
   ref,
   spell,
   TREASURE,
@@ -271,5 +272,33 @@ export const CARDS: Record<string, CardScript> = {
   },
   "Angel's Grace": {
     spell: spell([], [fx.thisTurn({ cantLose: true, damageLifeFloor: 1 })]),
+  },
+  "Veil of Summer": {
+    spell: spell(
+      [],
+      [
+        ...fx.when(cond.amountAtLeast(amount.turnEvents({ event: "cast", who: "opponent", colors: ["U", "B"] }), 1), fx.draw(1)),
+        fx.thisTurn({ uncounterable: {}, hexproof: { colors: ["U", "B"] } }),
+        fx.modify(ref.permanentsOf(ref.you, {}), {
+          addProtections: [protection.hexproofFrom({ colors: ["U", "B"] }, "Défense talismanique contre le bleu et le noir")],
+        }),
+      ],
+    ),
+  },
+  "Deflecting Palm": {
+    spell: spell(
+      [],
+      [
+        fx.shield(
+          {
+            event: "damage",
+            to: "you",
+            modify: { prevent: true },
+            onPrevent: { reflexive: [fx.damage(amount.eventAmount, ref.eventPlayer)] },
+          },
+          true,
+        ),
+      ],
+    ),
   },
 };

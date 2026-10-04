@@ -1,16 +1,20 @@
 /** Mystical Archive (SOA) : tests de règles des cartes (PLAN-G). */
 import { describe, expect, it } from "vitest";
 import { dealDamage, loseLife } from "../src/actions";
+import { fx, ref, spell, target } from "../src/dsl";
 import { legalActions } from "../src/legal";
 import { manaAbilitiesOf } from "../src/mana";
 import { suspendCard } from "../src/stack";
 import { chars } from "../src/state";
+import { isLegalTarget } from "../src/targets";
 import { stateBasedActions } from "../src/turn";
+import { logTurnEvent } from "../src/turnlog";
 import {
   act,
   advanceUntil,
   attack,
   castNowOf,
+  customCard,
   idOf,
   idsOf,
   lands,
@@ -266,6 +270,51 @@ describe("Mystical Archive", () => {
       stateBasedActions(s);
       expect(s.players.p1?.life).toBe(-4);
       expect(s.players.p1?.lost).toBe(false);
+    });
+  });
+  describe("G4e : combat", () => {
+    it("Veil of Summer : pioche si un adversaire a lancé un sort bleu ou noir ; défense contre le bleu et le noir", () => {
+      const drain = customCard({
+        name: "Drain de test",
+        types: ["Instant"],
+        typeLine: "Instant",
+        colors: ["B"],
+        spell: spell([target.player()], [fx.loseLife(1, ref.target())]),
+      });
+      let s = scenario({
+        p1: { battlefield: ["Forest"], hand: ["Veil of Summer"], library: lands("Forest", 3) },
+        p2: { hand: [drain] },
+      });
+      logTurnEvent(s, {
+        e: "cast",
+        player: "p2",
+        types: ["Instant"],
+        subtypes: [],
+        supertypes: [],
+        fromZone: "hand",
+        colors: ["U"],
+      });
+      s = settle(act(s, "p1", { type: "cast", card: idOf(s, "p1", "hand", "Veil of Summer") }));
+      expect(s.players.p1?.hand).toHaveLength(1);
+      const src = idOf(s, "p2", "hand", "Drain de test");
+      expect(isLegalTarget(s, "p2", target.player(), "p1", src)).toBe(false);
+      expect(isLegalTarget(s, "p2", target.player(), "p2", src)).toBe(true);
+    });
+
+    it("Deflecting Palm : prévient les blessures de la source choisie et les inflige à son contrôleur", () => {
+      let s = scenario({
+        active: "p2",
+        p1: { battlefield: ["Mountain", "Plains"], hand: ["Deflecting Palm"] },
+        p2: { battlefield: ["Mountain"], hand: ["Shock"] },
+      });
+      s = act(s, "p2", { type: "cast", card: idOf(s, "p2", "hand", "Shock"), targets: { t: ["p1"] } });
+      s = act(s, "p2", { type: "pass" });
+      const shock = s.stack[0]?.id as string;
+      s = settle(act(s, "p1", { type: "cast", card: idOf(s, "p1", "hand", "Deflecting Palm") }), (req) =>
+        req.type === "pick" && req.options.includes(shock) ? [shock] : undefined,
+      );
+      expect(s.players.p1?.life).toBe(20);
+      expect(s.players.p2?.life).toBe(18);
     });
   });
 });

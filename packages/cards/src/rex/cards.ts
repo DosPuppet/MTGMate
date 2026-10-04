@@ -16,6 +16,14 @@ import {
   when,
 } from "../tdm/common";
 
+/** Partenaire avec (702.124j) : à l'arrivée, le joueur ciblé peut chercher le partenaire dans sa bibliothèque. */
+const partnerWith = (name: string) =>
+  triggered(
+    when.entersSelf,
+    fx.mayFor(ref.target("p"), `Chercher ${name} ?`, fx.search({ name }, { to: "hand" }, 1, ref.target("p"))),
+    { targets: [target.player("p")], label: `Partenaire avec ${name}` },
+  );
+
 export const CARDS: Record<string, CardScript> = {
   "Don't Move": {
     spell: spell(
@@ -188,6 +196,58 @@ export const CARDS: Record<string, CardScript> = {
         },
         { label: "Henry Wu et vos autres Humains ont l'exploitation" },
       ),
+    ],
+  },
+  "Swooping Pteranodon": {
+    abilities: [
+      triggered(
+        when.enters({ types: ["Creature"], subtype: "Dinosaur", controller: "you", keyword: "flying" }),
+        [
+          fx.gainControl(ref.target()),
+          fx.untap(ref.target()),
+          fx.pump(ref.target(), 0, 0, ["flying", "haste"]),
+          fx.delayed(
+            [
+              fx.reflexive([target.permanent("l", ["Land"], {}, "terrain")], [fx.damage(3, ref.target("c"), ref.target("l"))], {
+                c: ref.target("c"),
+              }),
+            ],
+            { c: ref.target() },
+          ),
+        ],
+        {
+          targets: [target.creature("t", { controller: "opponent" })],
+          label:
+            "Un Dinosaure volant arrive : prenez le contrôle d'une créature adverse ; à l'étape de fin, un terrain lui inflige 3 blessures",
+        },
+      ),
+    ],
+  },
+  "Owen Grady, Raptor Trainer": {
+    abilities: [
+      partnerWith("Blue, Loyal Raptor"),
+      activated({
+        tap: true,
+        sorcerySpeed: true,
+        targets: [target.creature("t", { subtype: "Dinosaur" })],
+        effects: fx.yourChoice(
+          "Quel marqueur ?",
+          "k",
+          ["reach", "menace", "trample", "haste"].map((k) => ({ label: k, effects: [fx.counters(ref.target(), k)] })),
+        ),
+        label: "{T} : un marqueur portée, menace, piétinement ou célérité sur un Dinosaure (rituel)",
+      }),
+    ],
+  },
+  "Blue, Loyal Raptor": {
+    abilities: [
+      partnerWith("Owen Grady, Raptor Trainer"),
+      entersWith({
+        counters: 1,
+        counterKind: "*",
+        affects: { types: ["Creature"], subtype: "Dinosaur", controller: "you", other: true },
+        label: "Vos autres Dinosaures arrivent avec un marqueur de chaque sorte présente sur Blue",
+      }),
     ],
   },
 };

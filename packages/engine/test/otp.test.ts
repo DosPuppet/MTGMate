@@ -9,6 +9,7 @@ import { logTurnEvent } from "../src/turnlog";
 import {
   act,
   advanceUntil,
+  attack,
   castNowOf,
   exiled,
   idOf,
@@ -19,6 +20,7 @@ import {
   pickNamed,
   scenario,
   settle,
+  throughCombat,
   untilCastNow,
 } from "./helpers";
 
@@ -378,6 +380,46 @@ describe("Breaking News", () => {
       expect(s.players.p1?.life).toBe(18);
       expect(exiled(s, "Shock")).toHaveLength(3);
       expect(s.players.p2?.hand).toHaveLength(0);
+    });
+  });
+  describe("G4e : combat", () => {
+    it("Fell the Mighty : détruit les créatures de force supérieure à celle de la cible", () => {
+      let s = scenario({
+        p1: { battlefield: [...lands("Plains", 5), "Llanowar Elves"], hand: ["Fell the Mighty"] },
+        p2: { battlefield: ["Bear Cub", "Shivan Dragon"] },
+      });
+      const elves = idOf(s, "p1", "battlefield", "Llanowar Elves");
+      s = settle(act(s, "p1", { type: "cast", card: idOf(s, "p1", "hand", "Fell the Mighty"), targets: { t: [elves] } }));
+      expect(s.objects[elves]?.zone).toBe("battlefield");
+      expect(idsOf(s, "p2", "graveyard", "Bear Cub")).toHaveLength(1);
+      expect(idsOf(s, "p2", "graveyard", "Shivan Dragon")).toHaveLength(1);
+    });
+
+    it("Ride Down : détruit le bloqueur ; les créatures qu'il bloquait gagnent le piétinement", () => {
+      let s = scenario({
+        p1: { battlefield: ["Bear Cub", "Mountain", "Plains"], hand: ["Ride Down"] },
+        p2: { battlefield: ["Llanowar Elves"] },
+      });
+      const cub = idOf(s, "p1", "battlefield", "Bear Cub");
+      const elves = idOf(s, "p2", "battlefield", "Llanowar Elves");
+      s = attack(s, [cub]);
+      s = advanceUntil(s, (x) => x.pending?.kind === "declareBlockers");
+      s = act(s, "p2", { type: "declareBlockers", blocks: [{ blocker: elves, attacker: cub }] });
+      s = settle(act(s, "p1", { type: "cast", card: idOf(s, "p1", "hand", "Ride Down"), targets: { t: [elves] } }));
+      expect(idsOf(s, "p2", "graveyard", "Llanowar Elves")).toHaveLength(1);
+      expect(chars(s, cub).keywords).toContain("trample");
+      s = throughCombat(s);
+      expect(s.players.p2?.life).toBe(18);
+    });
+
+    it("Outlaws' Merriment : à votre entretien, un des trois jetons Humain, au hasard", () => {
+      let s = scenario({ active: "p2", p1: { battlefield: ["Outlaws' Merriment"] } });
+      s = advanceUntil(s, (x) => x.turn.active === "p1" && x.turn.step === "main1");
+      const humans = s.battlefield.filter((id) =>
+        ["Human Warrior", "Human Cleric", "Human Rogue"].includes(nameOf(s, id) as string),
+      );
+      expect(humans).toHaveLength(1);
+      expect(chars(s, humans[0] as string).keywords).toContain("haste");
     });
   });
 });

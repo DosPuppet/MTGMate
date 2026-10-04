@@ -1051,7 +1051,10 @@ function singleDef(raw: RawCard, script: CardScript | undefined, set: string): C
     enterModes: script?.enterModes,
     shuffleIntoLibrary: script?.shuffleIntoLibrary,
     graveyardCastRemoveCounters: script?.graveyardCastRemoveCounters,
-    castFromGraveyard: script?.castFromGraveyard,
+    // Retrace (702.81) : depuis le cimetière, en défaussant une carte de terrain en plus.
+    castFromGraveyard:
+      script?.castFromGraveyard ??
+      (/^Retrace\b/m.test(raw.oracleText) ? { discard: 1, discardFilter: { types: ["Land"] } } : undefined),
     flashIf: script?.flashIf,
     exileOnResolve: script?.exileOnResolve,
     entersAsCopyAddSubtypes: script?.entersAsCopyAddSubtypes,

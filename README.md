@@ -52,14 +52,14 @@ Au total, **5 164 cartes jouables** sur 5 164 cartes légales en Standard (100 %
 
 | Ensemble | Cartes gérées |
 |---|---|
-| Special Guests (SPG) | 117 / 132 |
+| Special Guests (SPG) | 118 / 132 |
 | Stellar Sights (EOS) | 43 / 43 |
-| Enchanting Tales (WOT) | 51 / 55 |
-| Breaking News (OTP) | 52 / 61 |
+| Enchanting Tales (WOT) | 53 / 55 |
+| Breaking News (OTP) | 55 / 61 |
 | Through the Ages (FCA) | 43 / 50 |
-| Mystical Archive (SOA) | 34 / 37 |
-| Source Material (PZA) | 12 / 15 |
-| Jurassic World Collection (REX) | 11 / 20 |
+| Mystical Archive (SOA) | 36 / 37 |
+| Source Material (PZA) | 13 / 15 |
+| Jurassic World Collection (REX) | 14 / 20 |
 
 **Decks du méta (plan P4, phase 1 terminée) :** avant de finir les dernières extensions une à une, on écrit les cartes des decks Standard les plus joués (relevé MTGGoldfish du 29/09/2026, `docs/meta/`). Les **vingt archétypes relevés** (88,1 % du méta) sont jouables, réserve comprise ; les cinq premiers sont proposés comme decks préconstruits (Izzet Spellementals, Mono-Green Landfall, Dimir Midrange, Jund Sacrifice, 4c Control). Quelques réimpressions d'extensions plus anciennes sont aussi légales parce qu'elles figurent dans ces sets.
 

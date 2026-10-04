@@ -73,6 +73,7 @@ function matches(s: GameState, e: TurnLogEntry, q: TurnLogQuery, me: PlayerId, s
   }
   if ((e.e === "cast" || e.e === "playLand") && q.fromZone && e.fromZone !== q.fromZone) return false;
   if (e.e === "cast" && q.warped && !e.warped) return false;
+  if (e.e === "cast" && !hasAny<Color>(e.colors, q.colors)) return false;
   if (e.e === "cast" && q.minManaValue !== undefined && (e.manaValue ?? 0) < q.minManaValue) return false;
   if (e.e === "activate" && q.equip && !e.equip) return false;
   if (e.e === "activate" && q.loyalty && !e.loyalty) return false;

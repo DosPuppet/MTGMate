@@ -396,7 +396,10 @@ export function applyEntersReplacements(s: GameState, o: GameObject, ctx: Enters
       if (!matchesObjectFilter(s, src.controller, o.id, ab.affects, id)) continue;
       if (ab.entersTapped) o.tapped = true;
       if (ab.entersWithCounters !== undefined) {
-        changeCounters(s, o, ab.counterKind ?? P1P1, amountAtEntry(s, ab.entersWithCounters, src, ctx, o));
+        const n = amountAtEntry(s, ab.entersWithCounters, src, ctx, o);
+        // Blue, Loyal Raptor : autant de marqueurs de chaque sorte présente sur la source.
+        if (ab.counterKind === "*") for (const [k, c] of Object.entries(src.counters)) c > 0 && changeCounters(s, o, k, n);
+        else changeCounters(s, o, ab.counterKind ?? P1P1, n);
       }
     }
   }

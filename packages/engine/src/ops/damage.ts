@@ -180,7 +180,7 @@ export const HANDLERS: OpHandlers = {
         !!o && victims.includes(o.controller) && !chars(s, x).types.includes("Land") && (viewOf(s, x)?.manaValue ?? 0) === ctx.x
       );
     })) {
-      destroy(s, id);
+      destroy(s, id, false, ctx.controller);
     }
     return;
   },

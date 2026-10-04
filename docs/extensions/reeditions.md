@@ -245,3 +245,13 @@ le deck peut choisir son illustration (51 cartes). Détail dans le suivi du plan
   (`fx.rollDie`, Ancient Copper Dragon) ; mue (702.37, `CardDef.morph` : face cachée comme le déguisement, sans garde ;
   Grim Haruspex) ; Surgical Extraction (homonymes d'une carte de cimetière chez son propriétaire, `fx.exileCardAndNamesakes`) ;
   Thousand-Year Elixir sur `activateAsThoughHaste`. Tests : `fca`, `soa`, `wot`, `spg`, `otp` (+9). `RULES_VERSION` 115.
+- **Combat ✅ :** filtres relatifs à un objet désigné, résolus par `withX` : `powerAboveOf` (Fell the Mighty),
+  `sharesCreatureTypeWith` (Shared Animosity) ; référence `combatPartners` (Ride Down : les créatures que bloquait la
+  cible) ; déclencheur `destroyed` avec le joueur qui détruit (`when.destroyedByOpponent`, Karmic Justice) ; statiques de
+  joueur `maxBlockingCreatures` et `maxOneAttacker` (Mirri, Weatherlight Duelist ; `maxOneAttacker: "walkers"` remplace
+  `walkersMaxOneAttacker` de Tomik) ; retrace (702.81, lu dans le texte : `castFromGraveyard.discardFilter`, Waves of
+  Aggression) ; défense talismanique d'un joueur contre un filtre (`hexproof: { colors }`, Veil of Summer) ; couleurs des
+  sorts au journal du tour (`turnEvents({ event: "cast", colors })`) ; `entersWith({ counterKind: "*", affects })` (Blue,
+  Loyal Raptor) ; « partenaire avec » en capacité d'arrivée (aide `partnerWith`, `rex/cards.ts`) ; Outlaws' Merriment
+  (jeton au hasard par un dé à trois faces), Swooping Pteranodon, Owen Grady, Deflecting Palm. Tests : `otp`, `wot`, `spg`,
+  `pza`, `rex`, `soa` (+12, dont la fin du contrôle de Cytoplast Manipulator). `RULES_VERSION` 116.

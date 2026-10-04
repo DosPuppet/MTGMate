@@ -229,6 +229,8 @@ export const ref = {
   filtered: (r: Ref, filter: ObjectFilter): Ref => ({ kind: "filtered", ref: r, filter }),
   /** Réunion de références, sans doublon. */
   union: (...of: Ref[]): Ref => ({ kind: "union", of }),
+  /** « Les créatures bloquées par [elle] / qui [la] bloquent » pendant ce combat. */
+  combatPartners: (r: Ref): Ref => ({ kind: "combatPartners", ref: r }),
   /** Les objets de `r` sauf ceux de `exclude` (« toutes les autres créatures »). */
   except: (r: Ref, exclude: Ref): Ref => ({ kind: "except", ref: r, exclude }),
   /** Cartes exilées par la source « jusqu'à ce qu'elle quitte le champ de bataille ». */
@@ -1912,6 +1914,8 @@ export const when = {
   enters: (filter: ObjectFilter): TriggerSpec => ({ on: "enters", who: filter }),
   diesSelf: { on: "dies", who: "self" } as TriggerSpec,
   dies: (filter: ObjectFilter): TriggerSpec => ({ on: "dies", who: filter }),
+  /** « Chaque fois qu'un sort ou une capacité qu'un adversaire contrôle détruit [filtre] » (Karmic Justice). */
+  destroyedByOpponent: (filter: ObjectFilter): TriggerSpec => ({ on: "destroyed", who: filter, byOpponent: true }),
   leavesSelf: { on: "leaves", who: "self" } as TriggerSpec,
   /** « Quand l'objet lié (choisi) quitte le champ de bataille » */
   linkedLeaves: { on: "leaves", who: "linked" } as TriggerSpec,

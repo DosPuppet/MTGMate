@@ -516,4 +516,40 @@ export const CARDS: Record<string, CardScript> = {
       }),
     ],
   },
+  "Shared Animosity": {
+    abilities: [
+      triggered(
+        when.attacks({ types: ["Creature"], controller: "you" }),
+        [
+          fx.pump(
+            ref.eventObject,
+            amount.refCount(
+              ref.except(
+                ref.zone("battlefield", ref.eachPlayer, {
+                  types: ["Creature"],
+                  attacking: true,
+                  sharesCreatureTypeWith: ref.eventObject,
+                }),
+                ref.eventObject,
+              ),
+            ),
+            0,
+          ),
+        ],
+        { label: "Une de vos créatures attaque : +1/+0 par autre attaquant qui partage un type de créature avec elle" },
+      ),
+    ],
+  },
+  "Karmic Justice": {
+    abilities: [
+      triggered(
+        when.destroyedByOpponent({ notTypes: ["Creature"], controller: "you" }),
+        fx.may("Détruire un permanent de cet adversaire ?", fx.destroy(ref.target())),
+        {
+          targets: [{ id: "t", label: "permanent adverse", filter: { objects: { controller: "opponent" } } }],
+          label: "Un adversaire détruit un de vos permanents non-créature : vous pouvez détruire un de ses permanents",
+        },
+      ),
+    ],
+  },
 };

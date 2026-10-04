@@ -2,8 +2,9 @@
 import { describe, expect, it } from "vitest";
 import { destroy } from "../src/actions";
 import { legalActions } from "../src/legal";
+import { chars } from "../src/state";
 import { canBlock } from "../src/turn";
-import { act, advanceUntil, attack, idOf, idsOf, lands, nameOf, scenario, settle, throughCombat } from "./helpers";
+import { act, advanceUntil, attack, customCard, idOf, idsOf, lands, nameOf, scenario, settle, throughCombat } from "./helpers";
 
 type S = ReturnType<typeof scenario>;
 const castIt = (s: S, name: string, extra: object = {}) =>
@@ -124,6 +125,54 @@ describe("Jurassic World Collection", () => {
       expect(idsOf(s, "p1", "graveyard", "Shivan Dragon")).toHaveLength(1);
       expect(idsOf(s, "p1", "battlefield", "Treasure")).toHaveLength(1);
       expect(s.players.p1?.hand.length).toBeGreaterThanOrEqual(1);
+    });
+  });
+  describe("G4e : combat", () => {
+    it("Swooping Pteranodon : prend une créature adverse jusqu'à la fin du tour ; à l'étape de fin, un terrain lui inflige 3", () => {
+      let s = scenario({
+        p1: { battlefield: [...lands("Mountain", 3), ...lands("Plains", 2)], hand: ["Swooping Pteranodon"] },
+        p2: { battlefield: [{ name: "Bear Cub", tapped: true }] },
+      });
+      const cub = idOf(s, "p2", "battlefield", "Bear Cub");
+      s = settle(castIt(s, "Swooping Pteranodon"), (req) =>
+        req.type === "pick" && req.options.includes(cub) ? [cub] : undefined,
+      );
+      expect(s.objects[cub]?.controller).toBe("p1");
+      expect(s.objects[cub]?.tapped).toBe(false);
+      expect(chars(s, cub).keywords).toEqual(expect.arrayContaining(["flying", "haste"]));
+      s = advanceUntil(s, (x) => x.turn.active === "p2");
+      expect(idsOf(s, "p2", "graveyard", "Bear Cub")).toHaveLength(1);
+    });
+
+    it("Owen Grady et Blue : partenaires ; marqueur au choix sur un Dinosaure ; vos Dinosaures arrivent avec les marqueurs de Blue", () => {
+      let s = scenario({
+        p1: {
+          battlefield: [...lands("Mountain", 2), "Forest", "Polyraptor"],
+          hand: ["Owen Grady, Raptor Trainer"],
+          library: ["Blue, Loyal Raptor", "Forest"],
+        },
+      });
+      s = settle(castIt(s, "Owen Grady, Raptor Trainer"), (req) =>
+        req.type === "pick" && req.options.includes("p1") ? ["p1"] : undefined,
+      );
+      expect(idsOf(s, "p1", "hand", "Blue, Loyal Raptor")).toHaveLength(1);
+      const raptor = idOf(s, "p1", "battlefield", "Polyraptor");
+      const owen = idOf(s, "p1", "battlefield", "Owen Grady, Raptor Trainer");
+      // Owen vient d'arriver : comme s'il était là depuis le début du tour ({T} sans mal d'invocation).
+      (s.objects[owen] as { controlledSince: number }).controlledSince = 0;
+      s = settle(act(s, "p1", { type: "activate", source: owen, ability: 1, targets: { t: [raptor] } }), (req) =>
+        req.type === "pick" && req.options.includes("2") ? ["2"] : undefined,
+      );
+      expect(s.objects[raptor]?.counters.trample).toBe(1);
+      expect(chars(s, raptor).keywords).toContain("trample");
+
+      const dino = customCard({ name: "Dino de test", types: ["Creature"], subtypes: ["Dinosaur"], power: 1, toughness: 1 });
+      let t = scenario({
+        p1: { battlefield: [{ name: "Blue, Loyal Raptor", counters: { flying: 1, "+1/+1": 2 } }], hand: [dino] },
+      });
+      t = settle(act(t, "p1", { type: "cast", card: idOf(t, "p1", "hand", "Dino de test") }));
+      const d = idOf(t, "p1", "battlefield", "Dino de test");
+      expect(t.objects[d]?.counters).toMatchObject({ flying: 1, "+1/+1": 1 });
     });
   });
 });

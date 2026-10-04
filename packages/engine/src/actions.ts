@@ -527,7 +527,8 @@ export function sourceFromObject(s: GameState, id: ObjectId): DamageSource {
 }
 
 /** Détruit un permanent (sauf indestructible). Renvoie true s'il a quitté le champ de bataille. */
-export function destroy(s: GameState, id: ObjectId, noRegenerate = false): boolean {
+/** `by` : le contrôleur du sort ou de la capacité qui détruit (« un sort ou une capacité qu'un adversaire contrôle détruit », Karmic Justice). */
+export function destroy(s: GameState, id: ObjectId, noRegenerate = false, by?: PlayerId): boolean {
   const o = s.objects[id];
   if (o?.zone !== "battlefield") return false;
   if (hasKeyword(s, id, "indestructible")) return false;
@@ -549,6 +550,7 @@ export function destroy(s: GameState, id: ObjectId, noRegenerate = false): boole
     return false;
   }
   emit({ type: "destroy", objectId: id, defId: o.defId });
+  if (by) rulesEvent(s, { e: "destroyed", lki: snapshot(s, id), by });
   putIntoGraveyard(s, id);
   return true;
 }

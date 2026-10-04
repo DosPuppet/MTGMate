@@ -42,6 +42,43 @@ function chooseTwo(...choices: { label: string; targets?: TargetSpec[]; effects:
   );
 }
 
+/** Outlaws' Merriment : les trois jetons Humain rouges et blancs, avec la célérité. */
+const MERRIMENT: TokenSpec[] = [
+  {
+    name: "Human Warrior",
+    colors: ["R", "W"],
+    types: ["Creature"],
+    subtypes: ["Human", "Warrior"],
+    power: 3,
+    toughness: 1,
+    keywords: ["trample", "haste"],
+  },
+  {
+    name: "Human Cleric",
+    colors: ["R", "W"],
+    types: ["Creature"],
+    subtypes: ["Human", "Cleric"],
+    power: 2,
+    toughness: 1,
+    keywords: ["lifelink", "haste"],
+  },
+  {
+    name: "Human Rogue",
+    colors: ["R", "W"],
+    types: ["Creature"],
+    subtypes: ["Human", "Rogue"],
+    power: 1,
+    toughness: 2,
+    keywords: ["haste"],
+    abilities: [
+      triggered(when.entersSelf, [fx.damage(1, ref.target())], {
+        targets: [target.any()],
+        label: "Arrivée : 1 blessure à n'importe quelle cible",
+      }),
+    ],
+  },
+];
+
 export const CARDS: Record<string, CardScript> = {
   "Collective Defiance": {
     spell: escalate(
@@ -510,5 +547,28 @@ export const CARDS: Record<string, CardScript> = {
       [target.cardInGraveyard("t", { basic: false }, "any", "carte d'un cimetière (sauf terrain de base)")],
       [fx.exileCardAndNamesakes(ref.target("t"))],
     ),
+  },
+  "Fell the Mighty": {
+    spell: spell([target.creature()], [fx.destroyAll({ types: ["Creature"], powerAboveOf: ref.target() })]),
+  },
+  "Ride Down": {
+    spell: spell(
+      [target.creature("t", { blocking: true })],
+      [fx.pump(ref.combatPartners(ref.target()), 0, 0, ["trample"]), fx.destroy(ref.target())],
+    ),
+  },
+  "Outlaws' Merriment": {
+    abilities: [
+      triggered(
+        when.yourUpkeep,
+        [
+          fx.rollDie(3, "m"),
+          ...MERRIMENT.flatMap((token, i) =>
+            fx.when(cond.all(cond.v("m", i + 1), cond.not(cond.v("m", i + 2))), fx.createTokens(token)),
+          ),
+        ],
+        { label: "Entretien : un jeton Humain rouge et blanc choisi au hasard" },
+      ),
+    ],
   },
 };

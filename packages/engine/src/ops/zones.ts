@@ -111,7 +111,7 @@ export const HANDLERS: OpHandlers = {
     let destroyed = 0;
     for (const id of resolveRef(s, ctx, e.what)) {
       const o = s.objects[id];
-      if (destroy(s, id, e.noRegenerate)) destroyed++;
+      if (destroy(s, id, e.noRegenerate, ctx.controller)) destroyed++;
       // Come Back Wrong, Zero Point Ballad : les cartes mises au cimetière de cette façon.
       const card = o && (s.players[o.owner]?.graveyard ?? []).find((x) => s.objects[x]?.uid === o.uid);
       if (card) stored.push(card);
@@ -295,7 +295,7 @@ export const HANDLERS: OpHandlers = {
     }
     const kept = chosen;
     const doomed = creatures.filter((id) => !kept || !matchesObjectFilter(s, ctx.controller, id, { subtype: kept }));
-    for (const id of doomed) destroy(s, id);
+    for (const id of doomed) destroy(s, id, false, ctx.controller);
     return;
   },
   exileFromHandLinked(s, r, e, ctx, key) {
@@ -970,7 +970,7 @@ export const HANDLERS: OpHandlers = {
       const chosen = String(answer[0]);
       if (options.includes(chosen)) keep.push(chosen);
     }
-    for (const id of s.battlefield.filter((x) => isCreature(s, x) && !keep.includes(x))) destroy(s, id);
+    for (const id of s.battlefield.filter((x) => isCreature(s, x) && !keep.includes(x))) destroy(s, id, false, ctx.controller);
     return;
   },
   sacrificeIt(s, _r, e, ctx) {
@@ -1158,7 +1158,7 @@ export const HANDLERS: OpHandlers = {
   moveAll(s, r, e, ctx, key) {
     const players = resolveRef(s, ctx, e.whose).filter((p) => isPlayer(s, p));
     // « de valeur de mana X » (Fix What's Broken) : le X du sort ou de la capacité.
-    const filter = withX(e.filter, ctx.x);
+    const filter = withX(s, e.filter, ctx);
     const ids =
       e.from === "battlefield"
         ? s.battlefield.filter(
@@ -1267,7 +1267,7 @@ export const HANDLERS: OpHandlers = {
       const count = evalAmount(s, e.who ? { ...ctx, controller: p } : ctx, e.count);
       const exactMv = e.manaValue !== undefined ? evalAmount(s, ctx, e.manaValue) : undefined;
       // « valeur de mana X ou moins » : le X du sort qui se résout (Nature's Rhythm).
-      const base = withX(e.filter, ctx.x);
+      const base = withX(s, e.filter, ctx);
       const options = player.library.filter((id) =>
         matchesCard(s, p, id, exactMv === undefined ? base : { ...base, manaValue: exactMv }, ctx.sourceId),
       );

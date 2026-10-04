@@ -41,7 +41,7 @@
     "targetLifeTax": "statique d'objet, pas de joueur (R4.4)",
     "triggerMod": "famille G générique (R4.5) : déclenchements doublés ou supprimés (arrivées, sources)",
     "untapCreaturesOnOthersUntap": "cas isolé, sans famille (à revoir en R4)",
-    "walkersMaxOneAttacker": "famille M, taxes de combat (R0.2)",
+    "maxOneAttacker": "famille M, restrictions de combat (R0.2) : au plus une créature attaque vos planeswalkers (Tomik) ou vous (Mirri, Weatherlight Duelist)",
     "walkersSurviveZeroLoyalty": "famille J, exceptions aux règles (R4.5)",
     "winFirstCoinFlips": "cas isolé, sans famille (à revoir en R4)",
     "spellKeywords": "mots-clés donnés aux sorts du joueur (Lo and Li, Twin Tutors : « vos sorts de Leçon ont le lien de vie »), lus au moment des blessures ; famille générique (filtre de sorts), une seule carte pour l'instant",
@@ -53,7 +53,8 @@
     "infectDamageAtZeroLife": "Phyrexian Unlife : à 0 PV ou moins, les blessures infligées au joueur le sont comme par l'infection (famille J, exceptions aux règles, avec noLoseForLife)",
     "damageLifeFloor": "Angel's Grace : plancher de PV pour les blessures (famille E, blessures aux joueurs ; un remplacement chiffré ne voit pas les PV restants)",
     "winOnEmptyDraw": "Laboratory Maniac : la pioche dans une bibliothèque vide remplacée par une victoire (famille J, exceptions aux règles, 704.5b)",
-    "cantTargetGraveyardCards": "Ground Seal (affects: each) : règle de ciblage des cartes des cimetières (famille K, protection)"
+    "cantTargetGraveyardCards": "Ground Seal (affects: each) : règle de ciblage des cartes des cimetières (famille K, protection)",
+    "maxBlockingCreatures": "Mirri, Weatherlight Duelist (posé par fx.thisTurn) : le joueur bloque avec au plus N créatures (famille M, restrictions de combat)"
   },
   "keyword": {
     "absorbsDamage": "remplacement de redirection des blessures (R1.2)",
@@ -94,7 +95,6 @@
     "removeCounterFromEach": "Dyadrine, Synthesis Amalgam — mécanique générique, une seule carte pour l'instant",
     "revealFaceDown": "Hauntwoods Shrieker — opération propre à une carte (R4.6)",
     "sacrificeElseDiscard": "Momentum Breaker — opération propre à une carte (R4.6)",
-    "shield": "New Way Forward : boucliers « la prochaine fois que » (615.7), sur le cadre générique des remplacements (R1) ; une seule carte pour l'instant",
     "tapOrSacrifice": "Command Bridge — opération propre à une carte (R4.6)",
     "tripleTriad": "Triple Triad — opération propre à une carte (R4.6)",
     "foretell": "présage (702.143, action spéciale lue dans le texte) : une seule carte de Standard (Sozin's Comet) pour l'instant",
@@ -203,7 +203,9 @@
     "switchPT": "Wandering Fumarole — échange de la force et de l'endurance (613.4d), règle générique du moteur qui n'avait encore aucune carte",
     "manaValueSourceCounters": "Blast Zone — filtre relatif à la source (famille manaValueSourcePower) : valeur de mana égale à ses marqueurs",
     "notDefendersAttackedThisTurn": "Port Razer — restriction d'attaque de la famille des règles de blocage (BlockRule, R4.1) : « ne peut pas attaquer un joueur déjà attaqué ce tour-ci »",
-    "againstYou": "Mangara, the Diplomat — requête du journal du tour (attaques contre vous) déjà employée par le moteur (castLimit attackedYou) : à réutiliser pour toute carte « créatures qui vous attaquent »"
+    "againstYou": "Mangara, the Diplomat — requête du journal du tour (attaques contre vous) déjà employée par le moteur (castLimit attackedYou) : à réutiliser pour toute carte « créatures qui vous attaquent »",
+    "powerAboveOf": "Fell the Mighty : relation à un objet désigné résolue par withX (« de force supérieure à celle de la créature ciblée »), famille des bornes dynamiques des filtres",
+    "sharesCreatureTypeWith": "Shared Animosity : relation à un objet désigné résolue par withX (« qui partage un type de créature avec elle »), famille des bornes dynamiques des filtres"
   },
   "turnFields": {
     "loyaltyTurn": "champ « ce tour-ci » d'un objet (audit du 02/10/2026, § 5.1) : à remplacer par le journal du tour (turnlog.ts) quand la requête existe (PLAN-C, lot C14)",
@@ -226,7 +228,7 @@
     "StackItem": 29,
     "PlayerState": 21,
     "GameState": 39,
-    "ObjectFilter": 85,
+    "ObjectFilter": 87,
     "CostDef": 33,
     "ActivatedAbilityDef": 19,
     "CastPermissionAbilityDef": 21,
@@ -234,14 +236,14 @@
     "LayerMods": 31,
     "Effect": 152,
     "Effect (champs)": 619,
-    "TriggerSpec": 59,
-    "TriggerSpec (champs)": 156,
+    "TriggerSpec": 60,
+    "TriggerSpec (champs)": 159,
     "Condition": 52,
     "Condition (champs)": 96,
     "Amount": 31,
     "Amount (champs)": 67,
-    "Ref": 27,
-    "Ref (champs)": 47
+    "Ref": 28,
+    "Ref (champs)": 49
   },
   "importCycleMax": 21,
   "ceilingNotes": [
@@ -280,6 +282,7 @@
     "PLAN-G G4a : traversée de terrain et restriction d'attaque (BlockRule), portée des statiques de joueur, déclencheur copySpell, suspension en action spéciale : TriggerSpec 58 → 59, TriggerSpec (champs) 153 → 155",
     "PLAN-G G4b : destruction sans régénération (Damnation, noRegenerate) : Effect (champs) 616 → 617",
     "PLAN-G G4c : déclencheur « joue un terrain » de n'importe quel joueur (whose) : TriggerSpec (champs) 155 → 156",
-    "PLAN-G G4e : mue (CardDef.morph, 702.37) ; dé (coinFlip.sides) et Surgical Extraction (exileNamesakes.draw) : CardDef 95 → 96, Effect (champs) 617 → 619"
+    "PLAN-G G4e : mue (CardDef.morph, 702.37) ; dé (coinFlip.sides) et Surgical Extraction (exileNamesakes.draw) : CardDef 95 → 96, Effect (champs) 617 → 619",
+    "PLAN-G G4e (combat) : filtres relatifs à un objet désigné (powerAboveOf, sharesCreatureTypeWith), référence combatPartners, déclencheur destroyed (Karmic Justice) : ObjectFilter 85 → 87, TriggerSpec 59 → 60, TriggerSpec (champs) 156 → 159, Ref 27 → 28, Ref (champs) 47 → 49"
   ]
 }

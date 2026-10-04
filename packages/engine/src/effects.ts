@@ -35,7 +35,16 @@ import {
   snapshot,
 } from "./state";
 import { playerStatics } from "./statics";
-import { matchesCard, matchesObjectFilter, matchesView, protectedFrom, resolveFilter, sourceView } from "./targets";
+import {
+  ALL_CREATURE_TYPES,
+  matchesCard,
+  matchesObjectFilter,
+  matchesView,
+  NON_CREATURE_SUBTYPES,
+  protectedFrom,
+  resolveFilter,
+  sourceView,
+} from "./targets";
 import { checkCondition, mostLife } from "./triggers";
 import { countTurnEvents } from "./turnlog";
 import type {
@@ -82,8 +91,28 @@ export interface EffectContext {
   paid?: CostPaid & { bounced?: ObjectId[] };
 }
 
-/** « … X ou moins » dans un filtre : le X de ce qui se résout (Day of Black Sun, Doppelgang). */
-export function withX(f: ObjectFilter, x: number): ObjectFilter {
+/**
+ * Bornes du filtre qui dépendent de ce qui se résout : « … X ou moins », le X (Day of Black Sun, Doppelgang) ; « de force
+ * supérieure à celle de la créature ciblée » (Fell the Mighty) ; « qui partage un type de créature avec elle » (Shared
+ * Animosity : l'objet de l'événement).
+ */
+export function withX(s: GameState, f: ObjectFilter, ctx: EffectContext): ObjectFilter {
+  if (f.powerAboveOf) {
+    const id = resolveRef(s, ctx, f.powerAboveOf).find((x) => s.objects[x]?.zone === "battlefield");
+    // Sans objet désigné encore sur le champ de bataille, rien ne correspond.
+    f = { ...f, powerAboveOf: undefined, minPower: id ? chars(s, id).power + 1 : Number.POSITIVE_INFINITY };
+  }
+  if (f.sharesCreatureTypeWith) {
+    const id = resolveRef(s, ctx, f.sharesCreatureTypeWith).find((x) => s.objects[x]);
+    const v = id ? snapshot(s, id) : undefined;
+    const all = !!v && (v.keywords.includes("changeling") || v.subtypes.includes(ALL_CREATURE_TYPES));
+    const types = v ? v.subtypes.filter((st) => !NON_CREATURE_SUBTYPES.has(st)) : [];
+    // Un changelin partage chacun de ses types avec toute créature (approché : toute créature).
+    f = all
+      ? { ...f, sharesCreatureTypeWith: undefined, types: [...(f.types ?? []), "Creature"] }
+      : { ...f, sharesCreatureTypeWith: undefined, anySubtype: types };
+  }
+  const x = ctx.x;
   if (!f.maxToughnessX && !f.manaValueX && !f.maxManaValueX) return f;
   return {
     ...f,
@@ -99,7 +128,7 @@ export function withX(f: ObjectFilter, x: number): ObjectFilter {
 /** La référence `zone` : les objets d'une zone des joueurs désignés, correspondant au filtre. */
 function zoneObjects(s: GameState, ctx: EffectContext, ref: Extract<Ref, { kind: "zone" }>): string[] {
   const players = resolveRef(s, ctx, ref.who);
-  const f = ref.filter ? { ...withX(ref.filter, ctx.x), controller: undefined } : undefined;
+  const f = ref.filter ? { ...withX(s, ref.filter, ctx), controller: undefined } : undefined;
   const card = (id: ObjectId) => !f || matchesCard(s, ctx.controller, id, f, ctx.sourceId);
   switch (ref.zone) {
     case "battlefield":
@@ -323,6 +352,15 @@ export function resolveRef(s: GameState, ctx: EffectContext, ref: Ref): string[]
     }
     case "union":
       return [...new Set(ref.of.flatMap((r) => resolveRef(s, ctx, r)))];
+    case "combatPartners": {
+      const of = new Set(resolveRef(s, ctx, ref.ref));
+      const out = new Set<ObjectId>();
+      for (const a of s.combat?.attackers ?? []) {
+        if (of.has(a.id)) for (const b of a.blockers) out.add(b);
+        if (a.blockers.some((b) => of.has(b))) out.add(a.id);
+      }
+      return [...out].filter((id) => s.objects[id]?.zone === "battlefield");
+    }
     case "except": {
       const out = new Set(resolveRef(s, ctx, ref.exclude));
       return resolveRef(s, ctx, ref.ref).filter((id) => !out.has(id));

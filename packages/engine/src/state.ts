@@ -47,6 +47,8 @@ export type RulesEvent =
   | { e: "cast"; player: PlayerId; stackId: ObjectId; instantSorceryBefore?: number; spellsBefore: number }
   /** Une copie de sort mise sur la pile par ce joueur (707.10). */
   | { e: "copySpell"; player: PlayerId; stackId: ObjectId }
+  /** Un permanent détruit par un sort ou une capacité que ce joueur contrôle (701.8). */
+  | { e: "destroyed"; lki: LkiSnapshot; by: PlayerId }
   /** Cartes défaussées (nouveaux identifiants, dans le cimetière). */
   | { e: "discard"; player: PlayerId; cards: ObjectId[] }
   | { e: "discardBatch"; player: PlayerId; count: number }
@@ -582,6 +584,8 @@ export function moveObject(
     if (from0 === "battlefield") releaseLinkedExile(s, id);
     return parts[0]?.id ?? null;
   }
+  // Effets de contrôle en vigueur avant le départ (un effet « tant que » retiré ci-dessous en est peut-être un).
+  const controlEffects = from0 === "battlefield" && s.effects.some((e) => e.controller);
   // Possession Engine : les effets qui durent « tant que vous contrôlez [la source] » cessent.
   if (from0 === "battlefield" && s.effects.some((e) => e.whileSource === id || e.whileSourceTapped === id)) {
     s.effects = s.effects.filter((e) => e.whileSource !== id && e.whileSourceTapped !== id);
@@ -589,7 +593,7 @@ export function moveObject(
   }
   // 613.1b, 611.2 : un changement de contrôle lié à ce permanent (Aura qui donne le contrôle, effet « tant que ») prend
   // fin dès qu'il part, sans attendre les actions basées sur l'état (une résolution peut encore demander un choix).
-  if (from0 === "battlefield" && (o.attachedTo || s.effects.some((e) => e.controller))) syncControl(s);
+  if (from0 === "battlefield" && (o.attachedTo || controlEffects)) syncControl(s);
   // Emrakul : les effets « jusqu'à ce que cette carte soit lancée depuis l'exil » cessent. Lancée, la carte passe sur la
   // pile avant le paiement (601.2a) : l'effet dure jusqu'à ce que le sort soit lancé (601.2i, `castSpell`).
   if (from0 === "exile" && to !== "stack" && s.effects.some((e) => e.untilExiledUid === o.uid)) {

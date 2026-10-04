@@ -155,7 +155,7 @@ export const UNIQUE: Record<string, CardScript> = {
   },
   "Tomik, Orzhov Lawmage": {
     abilities: [
-      playerStatic({ walkersMaxOneAttacker: true, label: "Une seule créature peut attaquer chacun de vos planeswalkers" }),
+      playerStatic({ maxOneAttacker: "walkers", label: "Une seule créature peut attaquer chacun de vos planeswalkers" }),
       activated({
         tap: true,
         targets: [target.creature("t", { withCounter: "+1/+1" })],

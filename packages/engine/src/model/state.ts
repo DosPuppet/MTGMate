@@ -448,6 +448,8 @@ export type TurnLogEntry =
       warped?: boolean;
       /** Mots-clés du sort lancé (Momo, Friendly Flier : « sort de créature avec le vol »). */
       keywords?: Keyword[];
+      /** Couleurs du sort lancé (Veil of Summer : « un sort bleu ou noir »). */
+      colors?: Color[];
     }
   /** Terrain joué (305.1), avec sa zone de départ (« joué un terrain depuis ailleurs que votre main », Spider-Man 2099). */
   | { e: "playLand"; player: PlayerId; fromZone: Zone; types: CardType[]; subtypes: string[] }
@@ -506,6 +508,8 @@ export interface TurnLogQuery {
   supertype?: string;
   /** Un sort lancé qui a ce mot-clé (« sort de créature avec le vol »). */
   keyword?: Keyword;
+  /** Un sort lancé d'au moins une de ces couleurs (« un sort bleu ou noir »). */
+  colors?: Color[];
   token?: boolean;
   /** Déplacement : arrivé face cachée (ou non). */
   faceDown?: boolean;

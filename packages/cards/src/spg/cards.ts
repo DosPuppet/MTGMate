@@ -1164,4 +1164,16 @@ export const CARDS: Record<string, CardScript> = {
       }),
     ],
   },
+  "Mirri, Weatherlight Duelist": {
+    abilities: [
+      triggered(when.attacksSelf, [fx.thisTurn({ maxBlockingCreatures: 1 }, ref.eachOpponent)], {
+        label: "Attaque : chaque adversaire bloque avec une seule créature au plus ce combat",
+      }),
+      playerStatic({
+        maxOneAttacker: "you",
+        condition: cond.sourceMatches({ tapped: true }),
+        label: "Engagée : une seule créature peut vous attaquer à chaque combat",
+      }),
+    ],
+  },
 };

@@ -184,8 +184,18 @@ export interface CardDef {
   /** Skyseer's Chariot : les capacités activées des sources du nom choisi coûtent {N} de plus (au lieu d'être interdites). */
   chosenNameTax?: number;
   /** « Vous pouvez lancer cette carte depuis votre cimetière [si…] » (Lightwheel Enhancements : vitesse maximale). */
-  /** Lançable depuis le cimetière ; `discard` : en défaussant autant de cartes en plus (Alien Symbiosis). */
-  castFromGraveyard?: { condition?: Condition; payLife?: number; sacrifice?: ObjectFilter; discard?: number; finality?: boolean };
+  /**
+   * Lançable depuis le cimetière ; `discard` : en défaussant autant de cartes en plus (Alien Symbiosis), correspondant à
+   * `discardFilter` (retrace, 702.81 : une carte de terrain, lu dans le texte).
+   */
+  castFromGraveyard?: {
+    condition?: Condition;
+    payLife?: number;
+    sacrifice?: ObjectFilter;
+    discard?: number;
+    discardFilter?: ObjectFilter;
+    finality?: boolean;
+  };
   /** « Vous ne pouvez pas lancer ce sort à moins que… » (Proft, Sinister Mastermind : seuil). */
   castCondition?: Condition;
   /** Seule l'endurance est définie par une capacité (Tarmogoyf, avec `cdaPower`). */
@@ -348,6 +358,8 @@ export type AbilityDef =
 
 export interface AdditionalCost {
   discard?: number;
+  /** Seulement des cartes correspondantes (retrace, 702.81 : une carte de terrain). */
+  discardFilter?: ObjectFilter;
   /** « Défaussez une carte ou payez N points de vie » (Bitter Triumph) : sans défausse, le joueur paie ces PV. */
   discardOrLife?: number;
   /** « Défaussez une carte ou payez [mana] » (Titania) : sans défausse, ce mana s'ajoute au coût. */
@@ -728,7 +740,10 @@ export interface ReplacementAbilityDef {
   entersWithCounters?: Amount;
   /** Condition (raid, kicker…) évaluée au moment de l'arrivée. */
   condition?: Condition;
-  /** Type des marqueurs (+1/+1 par défaut) : « revival », « fellowship »… */
+  /**
+   * Type des marqueurs (+1/+1 par défaut) : « revival », « fellowship »… ; `*` (avec `affects`) : chaque sorte présente sur
+   * la source (Blue, Loyal Raptor).
+   */
   counterKind?: string;
   /** S'applique aux autres permanents correspondant au filtre (vus du contrôleur de la source), pas à la source. */
   affects?: ObjectFilter;
@@ -1052,8 +1067,8 @@ export interface PlayerStaticAbilityDef {
    * `"you"` désigne le contrôleur de l'effet, fixé à la résolution.
    */
   cantAttackPlayer?: PlayerId;
-  /** « Vous avez la défense talismanique. » */
-  hexproof?: boolean;
+  /** « Vous avez la défense talismanique » ; un filtre : seulement contre ces sources (Veil of Summer : bleues et noires). */
+  hexproof?: boolean | ObjectFilter;
   /** « Vous ne pouvez pas perdre la partie et vos adversaires ne peuvent pas la gagner. » */
   cantLose?: boolean;
   /** « Vous n'avez pas de taille de main maximale. » */
@@ -1085,8 +1100,13 @@ export interface PlayerStaticAbilityDef {
   combatDamageUnpreventable?: boolean;
   /** Tannuk, Steadfast Second : les cartes de votre main correspondant au filtre ont la distorsion à ce coût. */
   grantWarp?: { filter: ObjectFilter; cost: ManaCost };
-  /** Tomik, Orzhov Lawmage : au plus une créature peut attaquer chacun de vos planeswalkers à chaque combat. */
-  walkersMaxOneAttacker?: boolean;
+  /**
+   * Au plus une créature peut attaquer à chaque combat : chacun de vos planeswalkers (`walkers`, Tomik, Orzhov Lawmage) ou
+   * vous (`you`, Mirri, Weatherlight Duelist, tant qu'elle est engagée).
+   */
+  maxOneAttacker?: "walkers" | "you";
+  /** Mirri, Weatherlight Duelist (posé par `fx.thisTurn` sur les adversaires) : ce joueur bloque avec au plus N créatures. */
+  maxBlockingCreatures?: number;
   /** « Max speed — … » : la capacité ne s'applique que si la condition est remplie. */
   condition?: Condition;
   /** Joueurs concernés : son contrôleur (par défaut), ses adversaires, ou chaque joueur (« les joueurs ne peuvent pas… »). */

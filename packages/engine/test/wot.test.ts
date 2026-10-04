@@ -1,13 +1,13 @@
 /** Enchanting Tales (WOT) : tests de règles des cartes (PLAN-G). */
 import { describe, expect, it } from "vitest";
 import { dealDamage, destroy, drawCards, gainLife } from "../src/actions";
-import { target } from "../src/dsl";
+import { fx, ref, spell, target } from "../src/dsl";
 import { legalActions } from "../src/legal";
 import { manaAbilitiesOf } from "../src/mana";
 import { changeCounters, chars } from "../src/state";
 import { legalTargets } from "../src/targets";
 import { stateBasedActions } from "../src/turn";
-import { act, advanceUntil, castable, idOf, idsOf, lands, scenario, settle } from "./helpers";
+import { act, advanceUntil, attack, castable, customCard, idOf, idsOf, lands, scenario, settle } from "./helpers";
 
 describe("Enchanting Tales", () => {
   describe("Blind Obedience", () => {
@@ -270,6 +270,43 @@ describe("Enchanting Tales", () => {
       const spec = target.cardInGraveyard("t", {}, "any");
       expect(legalTargets(s, "p1", spec)).toEqual([]);
       expect(legalTargets(s, "p2", spec)).toEqual([]);
+    });
+  });
+  describe("G4e : combat", () => {
+    const goblin = (name: string) => customCard({ name, types: ["Creature"], subtypes: ["Goblin"], power: 1, toughness: 1 });
+    it("Shared Animosity : +1/+0 par autre attaquant qui partage un type de créature", () => {
+      let s = scenario({
+        p1: { battlefield: ["Shared Animosity", goblin("Gobelin A"), goblin("Gobelin B"), "Bear Cub"] },
+      });
+      const a = idOf(s, "p1", "battlefield", "Gobelin A");
+      const cub = idOf(s, "p1", "battlefield", "Bear Cub");
+      s = attack(s, [a, idOf(s, "p1", "battlefield", "Gobelin B"), cub]);
+      s = settle(s);
+      expect(chars(s, a).power).toBe(2);
+      expect(chars(s, cub).power).toBe(2);
+    });
+
+    it("Karmic Justice : un sort adverse détruit un de vos permanents non-créature ; détruisez un de ses permanents", () => {
+      const shatter = customCard({
+        name: "Bris de test",
+        types: ["Instant"],
+        typeLine: "Instant",
+        spell: spell([{ id: "t", label: "permanent", filter: { objects: {} } }], [fx.destroy(ref.target())]),
+      });
+      let s = scenario({
+        active: "p2",
+        p1: { battlefield: ["Karmic Justice", "Mana Crypt"] },
+        p2: { battlefield: ["Bear Cub"], hand: [shatter] },
+      });
+      const cub = idOf(s, "p2", "battlefield", "Bear Cub");
+      s = act(s, "p2", {
+        type: "cast",
+        card: idOf(s, "p2", "hand", "Bris de test"),
+        targets: { t: [idOf(s, "p1", "battlefield", "Mana Crypt")] },
+      });
+      s = settle(s, (req) => (req.type === "pick" && req.options.includes(cub) ? [cub] : undefined));
+      expect(idsOf(s, "p1", "graveyard", "Mana Crypt")).toHaveLength(1);
+      expect(idsOf(s, "p2", "graveyard", "Bear Cub")).toHaveLength(1);
     });
   });
 });

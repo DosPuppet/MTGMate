@@ -1521,11 +1521,14 @@ export function additionalOptions(
   const gy = s.objects[card]?.zone === "graveyard" ? d.castFromGraveyard : undefined;
   if (gy?.sacrifice) add = { ...add, sacrifice: { filter: gy.sacrifice, count: 1 } };
   // Alien Symbiosis : « en défaussant une carte en plus de ses autres coûts ».
-  if (gy?.discard) add = { ...add, discard: gy.discard };
+  if (gy?.discard) add = { ...add, discard: gy.discard, ...(gy.discardFilter ? { discardFilter: gy.discardFilter } : {}) };
   if (!add) return {};
   const out: ReturnType<typeof additionalOptions> = {};
   if (add.discard) {
-    const hand = (s.players[player]?.hand ?? []).filter((id) => id !== card);
+    const df = add.discardFilter;
+    const hand = (s.players[player]?.hand ?? []).filter(
+      (id) => id !== card && (!df || matchesCard(s, player, id, { ...df, controller: undefined })),
+    );
     // Souls of the Lost : « … ou sacrifiez un permanent ».
     const sf = typeof add.discardOrSacrifice === "object" ? add.discardOrSacrifice : undefined;
     const perms = add.discardOrSacrifice
@@ -2192,6 +2195,7 @@ export function castSpell(s: GameState, player: PlayerId, card: ObjectId, choice
       manaValue: manaValue(d.manaCost) + (x && d.manaCost?.x ? x * d.manaCost.x : 0),
       warped: warp ? true : undefined,
       keywords: chars(s, stackId).keywords,
+      colors: chars(s, stackId).colors,
     });
     bump(s); // des capacités statiques en dépendent (« si vous avez lancé deux sorts ce tour-ci »)
   }
