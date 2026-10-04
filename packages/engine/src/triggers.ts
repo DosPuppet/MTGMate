@@ -818,7 +818,8 @@ function matchTrigger(s: GameState, ev: RulesEvent, t: TriggerSpec, src: Source)
       if (ev.e !== "playLand" || ev.player !== me || (t.from && !t.from.includes(ev.from))) return null;
       return { objectId: ev.objectId, player: me };
     case "castSelf":
-      return ev.e === "cast" && ev.stackId === src.id ? { objectId: src.id, player: me } : null;
+      // `amount.eventAmount` : les sorts lancés avant lui ce tour-ci (déluge).
+      return ev.e === "cast" && ev.stackId === src.id ? { objectId: src.id, player: me, amount: ev.spellsBefore } : null;
     case "zoneChange": {
       if (ev.e !== "zone" || !ev.from || !t.from.includes(ev.from) || (t.to && !t.to.includes(ev.to))) return null;
       const card = (ev.newId && s.objects[ev.newId]) || undefined;

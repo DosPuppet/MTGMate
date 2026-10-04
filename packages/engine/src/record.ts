@@ -293,8 +293,14 @@ export const RECORD_VERSION = 1;
  *   propres à l'objet, valeurs choisies) au lieu d'être lus seulement sur la vue (un champ inconnu y était ignoré).
  * - 103 : rééditions (PLAN-G, lot G2a) : mode lancé pour son propre coût (surcharge, fendre), escalade, ruée et
  *   spectacle ; le nombre de cartes d'une recherche faite par d'autres joueurs se lit du point de vue de chacun.
+ * - 104 : rééditions (PLAN-G, lot G2b) : défense totale ; exaltation, affinité pour les artefacts, modulaire, greffe et
+ *   extorsion lues dans le texte (l'extorsion de The Kingpin of Crime n'est plus écrite à la main) ; une source qui
+ *   produit 0 mana (Vivi Ornitier de force 0) ne paie plus rien ; une capacité au seul coût {X} est proposée à partir de 1.
+ * - 105 : déluge lu dans le texte (G2c) : les sorts lancés avant lui, par tous les joueurs, comptés au lancement (et non
+ *   à la résolution ni seulement les vôtres : Stormscale Scion) ; surcharge et fendre proposées dans une option de
+ *   lancement à part (sans gratuité) ; un sort qu'un joueur éliminé contrôle sans le posséder est exilé (800.4a).
  */
-export const RULES_VERSION = 103;
+export const RULES_VERSION = 105;
 
 /** Un point de contrôle toutes les N décisions (plus la dernière de la partie). */
 export const CHECKPOINT_EVERY = 25;

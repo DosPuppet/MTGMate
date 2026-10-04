@@ -79,6 +79,7 @@ const KEYWORD_NAMES: Record<string, Keyword> = {
   ward: "ward",
   flash: "flash",
   hexproof: "hexproof",
+  shroud: "shroud",
   indestructible: "indestructible",
   convoke: "convoke",
   improvise: "improvise",
@@ -805,6 +806,14 @@ function singleDef(raw: RawCard, script: CardScript | undefined, set: string): C
   // Ruée (702.109) et spectacle (702.137) : coûts alternatifs.
   const dash = /^Dash ((?:\{[^}]+\})+)/m.exec(raw.oracleText)?.[1];
   const spectacle = /^Spectacle ((?:\{[^}]+\})+)/m.exec(raw.oracleText)?.[1];
+  // Exaltation (702.83), affinité pour les artefacts (702.41), modulaire (702.43), greffe (702.58), extorsion (702.101).
+  const exalted = /^Exalted\b/m.test(raw.oracleText);
+  const affinityArtifacts = /^Affinity for artifacts\b/m.test(raw.oracleText);
+  const modular = Number(/^Modular (\d+)/m.exec(raw.oracleText)?.[1] ?? 0);
+  const graft = Number(/^Graft (\d+)/m.exec(raw.oracleText)?.[1] ?? 0);
+  const extort = /^Extort\b/m.test(raw.oracleText);
+  // Déluge (702.40) : une copie pour chaque sort lancé avant lui ce tour-ci (compté au lancement, tous joueurs).
+  const storm = /^Storm\b/m.test(raw.oracleText);
   // Un terrain a le chaos sans coût (Oscorp Industries : « vous pouvez jouer cette carte depuis votre cimetière »).
   const mayhem =
     /^Mayhem ((?:\{[^}]+\})+)/m.exec(raw.oracleText)?.[1] ?? (/^Mayhem \(You may play/m.test(raw.oracleText) ? "{0}" : undefined);
@@ -846,6 +855,64 @@ function singleDef(raw: RawCard, script: CardScript | undefined, set: string): C
   }
   if (firebending) {
     bloomburrowAbilities.push(dsl.firebending(firebending));
+  }
+  if (exalted) {
+    bloomburrowAbilities.push(
+      dsl.triggered(dsl.when.attacksAlone({ types: ["Creature"], controller: "you" }), [dsl.fx.pump(dsl.ref.eventObject, 1, 1)], {
+        label: "Exaltation : la créature qui attaque seule gagne +1/+1",
+      }),
+    );
+  }
+  // Modulaire N : arrive avec N marqueurs +1/+1 ; en mourant, ses marqueurs +1/+1 peuvent aller sur une créature-artefact.
+  if (modular) {
+    bloomburrowAbilities.push(
+      dsl.entersWith({ counters: modular, label: `Modulaire ${modular}` }),
+      dsl.triggered(dsl.when.diesSelf, [dsl.fx.addCounters(dsl.ref.target(), dsl.amount.countersOn(dsl.ref.self))], {
+        targets: [
+          dsl.target.optional({
+            id: "t",
+            label: "créature-artefact",
+            filter: { objects: { types: ["Artifact"], anyOf: [{ types: ["Creature"] }] } },
+          }),
+        ],
+        label: "Modulaire : ses marqueurs +1/+1 sur une créature-artefact",
+      }),
+    );
+  }
+  // Greffe N : arrive avec N marqueurs +1/+1 ; quand une autre créature arrive, un marqueur peut y être déplacé.
+  if (graft) {
+    bloomburrowAbilities.push(
+      dsl.entersWith({ counters: graft, label: `Greffe ${graft}` }),
+      dsl.triggered(
+        dsl.when.enters({ types: ["Creature"], other: true }),
+        dsl.fx.may(
+          "déplacer un marqueur +1/+1 sur la créature qui arrive",
+          dsl.fx.removeCounters(dsl.ref.self, 1, "+1/+1", "g"),
+          dsl.fx.addCounters(dsl.ref.eventObject, dsl.amount.v("g")),
+        ),
+        { condition: dsl.cond.amountAtLeast(dsl.amount.countersOn(dsl.ref.self), 1), label: "Greffe" },
+      ),
+    );
+  }
+  // Extorsion : à chaque sort lancé, payer {W/B} : chaque adversaire perd 1 PV et vous gagnez autant.
+  if (extort) {
+    bloomburrowAbilities.push(
+      dsl.triggered(
+        dsl.when.castSpell("you"),
+        dsl.fx.mayPay(
+          "{W/B}",
+          "payer {W/B} (extorsion)",
+          dsl.fx.loseLife(1, dsl.ref.eachOpponent, "e"),
+          dsl.fx.gainLife(dsl.amount.v("e")),
+        ),
+        { label: "Extorsion" },
+      ),
+    );
+  }
+  if (storm) {
+    bloomburrowAbilities.push(
+      dsl.triggered(dsl.when.castSelf, [dsl.fx.copySpell(dsl.ref.self, dsl.amount.eventAmount)], { label: "Déluge" }),
+    );
   }
   // Ruée : la créature a la célérité et revient dans la main de son propriétaire au début de la prochaine étape de fin.
   if (dash) {
@@ -1049,7 +1116,9 @@ function singleDef(raw: RawCard, script: CardScript | undefined, set: string): C
       ? Number(/you may pay (\d+) life/.exec(raw.oracleText)?.[1])
       : undefined,
     additionalCost: script?.additionalCost,
-    costReduction: script?.costReduction,
+    costReduction:
+      script?.costReduction ??
+      (affinityArtifacts ? { generic: dsl.amount.count({ types: ["Artifact"], controller: "you" }) } : undefined),
     text: raw.oracleText,
     fr: raw.fr,
     image: raw.image,

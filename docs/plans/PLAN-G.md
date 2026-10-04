@@ -284,3 +284,19 @@ leur lot, avec une forme générique d'abord, selon la règle « pas de dette pr
   réplique et retour n'ont qu'une carte chacune : faits dans le lot de leur carte. `RULES_VERSION` 103, parties dorées
   identiques. Tests : 16 (`soa`, `fca`, `otp`) ; fumée par ensemble (SPG, SOA, FCA, OTP) ; détail dans
   `docs/extensions/reeditions.md`.
+- **G2b (04/10/2026) :** défense totale (mot-clé), exaltation, affinité pour les artefacts, modulaire, greffe et extorsion
+  lues dans le texte, champion (aide de script) ; cartes : Cathedral of War, Power Depot (EOS), Frogmite, Thoughtcast,
+  Galvanic Blast, Chrome Mox, Helix Pinnacle, Mistbind Clique, Wanderwine Prophets (SPG), Arcbound Ravager, Cytoplast
+  Manipulator (PZA), Blind Obedience (WOT) : 12. The Kingpin of Crime (MSH) prend l'extorsion du texte. Monstruosité, soif
+  de sang, régénération, vantardise, peuplement et dilemme du conseil (une carte chacun) vont dans le lot de leur carte.
+  `RULES_VERSION` 104, parties dorées identiques. Tests : 16 ; fumée EOS, PZA, WOT.
+  La vérification de G2b a trouvé deux défauts, corrigés dans le lot : une source qui produit 0 mana (Vivi Ornitier de
+  force 0) était comptée par le solveur (« Paiement incohérent ») ; une capacité au seul coût {X} (Helix Pinnacle) était
+  proposée à X = 0 et l'IA aléatoire l'activait sans fin (elle est proposée à partir de 1).
+- **G2c (04/10/2026) :** déluge lu dans le texte, compté au lancement pour tous les joueurs (`RulesEvent`
+  `cast.spellsBefore`) ; Brain Freeze, Empty the Warrens, Flusterstorm (SOA) ; Stormscale Scion (TDM) prend le déluge du
+  texte. `RULES_VERSION` 105. G2 est terminé ; les mécaniques d'une seule carte sont faites dans le lot de leur carte.
+  Corrigés en route : les modes à coût propre (surcharge, fendre) forment une option de lancement à part, sans gratuité
+  ni coût alternatif (le fuzz strict proposait Cyclonic Rift surchargé et gratuit) ; un joueur éliminé pendant qu'il
+  contrôle un sort qu'il ne possède pas laissait l'objet « sur la pile » hors de la pile : il est exilé (800.4a, test
+  dans `multiplayer.test.ts`).

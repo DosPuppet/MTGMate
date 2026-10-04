@@ -1,15 +1,24 @@
 /** Mystical Archive (SOA) : scripts des cartes (PLAN-G). */
-import { altCostMode, BASIC_LAND, type CardScript, fx, ref, target } from "../tdm/common";
+import { altCostMode, BASIC_LAND, type CardScript, fx, GOBLIN, ref, spell, target } from "../tdm/common";
 
 const NOT_YOURS_NONLAND = target.nonland("t", { controller: "opponent" }, "permanent non-terrain que vous ne contrôlez pas");
 
 export const CARDS: Record<string, CardScript> = {
+  // Déluge : lu dans le texte (Brain Freeze, Empty the Warrens, Flusterstorm).
+  "Brain Freeze": { spell: spell([target.player()], [fx.mill(3, ref.target())]) },
   "Cyclonic Rift": {
     spell: altCostMode(
       "Surcharge",
       "{6}{U}",
       { targets: [NOT_YOURS_NONLAND], effects: [fx.bounce(ref.target())] },
       { effects: [fx.bounce(ref.permanentsOf(ref.eachOpponent, { notTypes: ["Land"] }))] },
+    ),
+  },
+  "Empty the Warrens": { spell: spell([], [fx.createTokens(GOBLIN, 2)]) },
+  Flusterstorm: {
+    spell: spell(
+      [target.spell("t", { types: ["Instant", "Sorcery"] }, "sort d'éphémère ou de rituel")],
+      [fx.unlessPays(ref.controllerOf(ref.target()), { mana: "{1}" }, fx.counter(ref.target()))],
     ),
   },
   "Winds of Abandon": {

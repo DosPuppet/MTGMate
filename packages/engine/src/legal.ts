@@ -337,7 +337,8 @@ export function legalActions(s: GameState, player: PlayerId): ActionOption[] {
     if (!terms.warpOnly)
       for (const [face, faceDef] of castableFaces(s, card, d))
         if (!terms.adventureOnly || (face === 1 && faceDef.subtypes.includes("Adventure")))
-          castOption(card, face, faceDef, terms);
+          for (const v of modesOf(faceDef).some((m) => m.cost) ? [undefined, "modeCost" as const] : [undefined])
+            castOption(card, face, faceDef, terms, v);
     if (d.disguise) castOption(card, undefined, FACE_DOWN_SPELL, terms, "faceDown");
     // Distorsion (702.185) : depuis la main, ou le cimetière si la carte le permet.
     const warp = warpOf(s, player, card, d);
@@ -352,7 +353,7 @@ export function legalActions(s: GameState, player: PlayerId): ActionOption[] {
     face: number | undefined,
     d: CardDef,
     terms: NonNullable<ReturnType<typeof castTerms>>,
-    variant?: "faceDown" | "warp",
+    variant?: "faceDown" | "warp" | "modeCost",
   ) {
     // Timing : normal, ignoré (Etali), ou flash moyennant un surcoût (Harbinger of the Tides).
     const onTime = terms.anyTime || (terms.sorceryTiming ? sorceryTiming(s, player) : canCastTiming(s, player, d));
@@ -480,19 +481,19 @@ export function legalActions(s: GameState, player: PlayerId): ActionOption[] {
         kickerCrew.length ? new Set([...(exclude ?? []), ...kickerCrew]) : undefined,
         purposeFor(true, 0),
       );
-    // Surcharge, fendre : un mode à son propre coût n'est proposé que s'il est payable (jamais gratuitement) ; les autres
-    // modes demandent le coût normal ou un autre moyen de payer.
+    // Surcharge, fendre : les modes à leur propre coût forment une option à part (`variant` « modeCost »), payable,
+    // sans gratuité ni autre coût alternatif (118.9a) ; l'option ordinaire n'a que les autres modes.
     const allModes = modesOf(d);
-    const otherwise = normal || freeAvailable || altAvailable || kickerAffordable;
+    const modeCost = variant === "modeCost";
     for (let i = modes.length - 1; i >= 0; i--) {
       const own = allModes[(modes[i] as (typeof modes)[number]).index]?.cost;
-      const ok = own
-        ? !terms.free && payableWith(withExtra(spellCost(s, player, { ...d, manaCost: own }, base)))
-        : terms.free || otherwise;
+      const ok = modeCost
+        ? !!own && !terms.free && payableWith(withExtra(spellCost(s, player, { ...d, manaCost: own }, base)))
+        : !own;
       if (!ok) modes.splice(i, 1);
     }
     if (modes.length === 0) return;
-    if (!terms.free && !otherwise && !modes.some((m) => allModes[m.index]?.cost)) return;
+    if (!modeCost && !terms.free && !normal && !freeAvailable && !altAvailable && !kickerAffordable) return;
     // Un mode qui n'a de cibles qu'avec le kicker ou le cadeau (Too Evil to Stay Dead) demande un kicker payable.
     if (!kickerAffordable)
       for (let i = modes.length - 1; i >= 0; i--)
@@ -559,17 +560,17 @@ export function legalActions(s: GameState, player: PlayerId): ActionOption[] {
               (x) => purposeFor(false, x),
             )
           : null),
-      kickerAffordable,
+      kickerAffordable: !modeCost && kickerAffordable,
       kickerPrompt: d.kicker ? kickerPrompt(d) : undefined,
       ...(hybridColors(d).length ? { hybridColors: hybridColors(d) } : {}),
       fromGraveyard: terms.source === "graveyard" || terms.source === "flashback" ? true : undefined,
       fromExile: terms.source === "exile" ? true : undefined,
-      free: terms.free || undefined,
-      freeAvailable: freeAvailable || undefined,
-      altAvailable: altAvailable || undefined,
-      altLabel: altAvailable ? alt?.label : undefined,
+      free: (!modeCost && terms.free) || undefined,
+      freeAvailable: (!modeCost && freeAvailable) || undefined,
+      altAvailable: (!modeCost && altAvailable) || undefined,
+      altLabel: !modeCost && altAvailable ? alt?.label : undefined,
       // Un mode à son propre coût (surcharge) se paie comme le coût normal.
-      normalAvailable: normal || modes.some((m) => allModes[m.index]?.cost) || undefined,
+      normalAvailable: normal || modeCost || undefined,
       additional:
         additional.discard || additional.sacrifice || harmony?.options.length
           ? { ...additional, ...(harmony?.options.length ? { tap: { count: 1, ...harmony, optional: true as const } } : {}) }
@@ -663,7 +664,14 @@ export function legalActions(s: GameState, player: PlayerId): ActionOption[] {
       const xMax = ab.cost.payLifeX && xMax0 !== null ? Math.min(xMax0, Math.max(0, s.players[player]?.life ?? 0)) : xMax0;
       // « X ne peut pas être 0 » (et « sacrifiez X permanents », Radiant Lotus) : proposée seulement si X peut atteindre son
       // minimum.
-      const minX = ab.cost.minX ?? (ab.cost.sacrificeX ? 1 : undefined);
+      // Seul coût {X} (Helix Pinnacle) : à X = 0, l'activation est gratuite et sans effet ; elle n'est pas proposée (le
+      // moteur l'accepte toujours), ce qui évite qu'une IA l'active sans fin.
+      const onlyX =
+        !!ab.cost.mana?.x &&
+        !ab.cost.mana.generic &&
+        !Object.values(ab.cost.mana.colored).some(Boolean) &&
+        Object.keys(ab.cost).every((k) => k === "mana" || (ab.cost as Record<string, unknown>)[k] === undefined);
+      const minX = ab.cost.minX ?? (ab.cost.sacrificeX || onlyX ? 1 : undefined);
       if (minX !== undefined && (xMax ?? 0) < minX) return;
       out.push({
         type: "activate",

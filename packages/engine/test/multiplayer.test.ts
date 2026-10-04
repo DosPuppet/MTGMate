@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import { cond } from "../src/dsl";
 import { createGame } from "../src/game";
 import { checkCondition } from "../src/triggers";
+import { eliminate } from "../src/turn";
 import { act, idOf, passUntil, scenario } from "./helpers";
 
 describe("multijoueur", () => {
@@ -133,5 +134,17 @@ describe("multijoueur", () => {
     for (const p of ["p1", "p2", "p3"]) s = act(s, p, { type: "keep" });
     s = passUntil(s, (x) => x.turn.step === "main1");
     expect(s.players.p1?.hand).toHaveLength(8);
+  });
+
+  it("800.4a : un sort qu'un joueur éliminé contrôle sans le posséder est exilé (pas laissé sur la pile)", () => {
+    let s = scenario({ players: 3, active: "p3", p3: { battlefield: ["Mountain"], hand: ["Shock"] } });
+    s = act(s, "p3", { type: "cast", card: idOf(s, "p3", "hand", "Shock"), targets: { t: ["p2"] } });
+    // La carte appartient à p1 (lancée depuis l'exil, par exemple) ; p3 quitte la partie.
+    const spell = s.stack[0]?.sourceId as string;
+    (s.objects[spell] as { owner: string }).owner = "p1";
+    eliminate(s, ["p3"]);
+    expect(s.stack).toHaveLength(0);
+    expect(s.objects[spell]).toBeUndefined();
+    expect(s.exile.map((id) => [s.objects[id]?.owner, s.defs[s.objects[id]?.defId ?? ""]?.name])).toEqual([["p1", "Shock"]]);
   });
 });

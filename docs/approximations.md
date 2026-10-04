@@ -358,3 +358,5 @@ Dans l'ordre où elles ont été ajoutées, extension par extension.
 - **Rééditions, « Sans limite » (`docs/extensions/reeditions.md`) :**
   - `règle` Ragavan, Nimble Pilferer : « vous pouvez lancer cette carte » est une permission de jouer (un terrain exilé ainsi pourrait être joué) ;
   - `règle` Winds of Abandon : le joueur qui cherche les terrains de base est le propriétaire de chaque créature exilée (son contrôleur avant l'exil s'il diffère, en multijoueur avec une créature volée).
+  - `règle` Cytoplast Manipulator : le contrôle dure tant que vous contrôlez le Manipulator (et non « tant qu'il reste sur le champ de bataille ») ;
+  - `règle` Power Depot : modulaire ne déclenche qu'à la mort d'une créature ; le terrain n'en est pas une.

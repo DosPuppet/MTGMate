@@ -66,6 +66,7 @@ export const KEYWORD_LABEL: Record<Keyword, string> = {
   defender: "Défenseur",
   flash: "Flash",
   hexproof: "Défense talismanique",
+  shroud: "Défense totale",
   indestructible: "Indestructible",
   prowess: "Prouesse",
   ward: "Garde",

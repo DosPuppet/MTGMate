@@ -145,8 +145,7 @@ export const RED: Record<string, CardScript> = {
         { power: 1, toughness: 1 },
         { label: "Vos autres Dragons : +1/+1" },
       ),
-      // Déluge (702.40) : une copie pour chaque sort lancé avant lui ce tour-ci.
-      triggered(when.castSelf, [fx.copySpell(ref.self, amount.plus(amount.spellsCastThisTurn, -1))], { label: "Déluge" }),
+      // Déluge (702.40) : lu dans le texte.
     ],
   },
   "Summit Intimidator": {

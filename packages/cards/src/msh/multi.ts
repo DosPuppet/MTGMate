@@ -342,13 +342,8 @@ export const MULTI: Record<string, CardScript> = {
     ],
   },
   "The Kingpin of Crime": {
+    // Extorsion (702.101) : lue dans le texte.
     abilities: [
-      // Extorsion (702.101).
-      triggered(
-        when.castSpell("you"),
-        fx.mayPay("{W/B}", "Extorsion : payer {W/B} ?", fx.loseLife(1, ref.eachOpponent, "l"), fx.gainLife(amount.v("l"))),
-        { label: "Extorsion" },
-      ),
       // Les créatures arrivées après la résolution ne sont pas concernées (voir docs/approximations.md).
       triggered(
         when.attackWith(),

@@ -610,6 +610,8 @@ function AbilityMenu() {
               <button key={i} type="button" className="btn choice" onClick={() => beginCasting(o, menu.sourceId)}>
                 Lancer {faceLabel(source, o.faceName, lang)}
                 {o.warp ? " (distorsion)" : ""}
+                {/* Surcharge, fendre : le mode (et son coût) distingue les deux façons de lancer. */}
+                {o.modes.length === 1 && o.modes[0]?.label ? ` — ${o.modes[0].label}` : ""}
               </button>
             );
           }

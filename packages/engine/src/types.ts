@@ -45,6 +45,8 @@ export type Keyword =
   | "defender"
   | "flash"
   | "hexproof"
+  /** Défense totale (702.18) : ne peut être la cible d'aucun sort ni capacité. */
+  | "shroud"
   | "indestructible"
   | "prowess"
   /** Garde (702.21) : la capacité déclenchée est générée à partir du coût lu dans le texte. */
@@ -125,6 +127,7 @@ export const KEYWORDS: readonly Keyword[] = [
   "defender",
   "flash",
   "hexproof",
+  "shroud",
   "indestructible",
   "decayed",
 ];

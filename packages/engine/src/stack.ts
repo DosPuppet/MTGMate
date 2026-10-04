@@ -2089,6 +2089,8 @@ export function castSpell(s: GameState, player: PlayerId, card: ObjectId, choice
   const instantOrSorcery = d.types.includes("Instant") || d.types.includes("Sorcery");
   // Thousand-Year Storm : éphémères et rituels lancés avant celui-ci ce tour-ci (lu avant d'inscrire ce sort au journal).
   const before = countTurnEvents(s, { event: "cast", who: "you", types: ["Instant", "Sorcery"] }, player);
+  // Déluge (702.40a) : sorts lancés avant celui-ci ce tour-ci, par tous les joueurs.
+  const spellsBefore = countTurnEvents(s, { event: "cast" }, player);
   if (caster) {
     caster.turnStats.spellsCast += 1;
     // Journal du tour : « sort de créature légendaire lancé ce tour-ci », « sort lancé depuis votre main ».
@@ -2105,7 +2107,7 @@ export function castSpell(s: GameState, player: PlayerId, card: ObjectId, choice
     });
     bump(s); // des capacités statiques en dépendent (« si vous avez lancé deux sorts ce tour-ci »)
   }
-  rulesEvent(s, { e: "cast", player, stackId, instantSorceryBefore: instantOrSorcery ? before : undefined });
+  rulesEvent(s, { e: "cast", player, stackId, instantSorceryBefore: instantOrSorcery ? before : undefined, spellsBefore });
   // Dépense N (Bloomburrow) : le N-ième mana total dépensé pour lancer des sorts ce tour-ci.
   const spent = item.cast?.manaSpent ?? 0;
   if (caster && spent > 0) {

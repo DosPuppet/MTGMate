@@ -339,11 +339,14 @@ export function manaSources(
       if (ab.cost.collectEvidence && !evidenceCards(s, o.controller, id, ab.cost.collectEvidence, kept(purpose, exclude))) return;
       // Aucune couleur possible (Pit of Offerings sans carte exilée colorée) : la capacité ne produit rien (106.7).
       if (ab.produce.length === 0) return;
+      // Aucun mana produit (Vivi Ornitier de force 0) : la source ne paie rien.
+      const amount = manaAmount(s, id, ab);
+      if (amount <= 0) return;
       out.push({
         id,
         ability: i,
         colors: ab.produce,
-        amount: manaAmount(s, id, ab),
+        amount,
         ...(ab.combination && ab.produce.length > 1 ? { combination: true } : {}),
         isCreature: defOf(s, id).types.includes("Creature"),
         sacrifice: ab.cost.self === "sacrifice",

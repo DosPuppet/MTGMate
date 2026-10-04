@@ -1312,6 +1312,11 @@ function removePlayerObjects(s: GameState, p: PlayerId): void {
   player.command = [];
   s.battlefield = s.battlefield.filter((id) => !gone.has(id));
   s.exile = s.exile.filter((id) => !gone.has(id));
+  // 800.4a : un sort qu'il contrôle sans le posséder (carte adverse lancée depuis l'exil) est exilé ; une copie cesse
+  // d'exister (`moveObject`).
+  for (const item of s.stack)
+    if (item.kind === "spell" && item.controller === p && !gone.has(item.sourceId) && s.objects[item.sourceId])
+      moveObject(s, item.sourceId, "exile");
   s.stack = s.stack.filter((item) => item.controller !== p && (item.kind === "ability" || !gone.has(item.sourceId)));
   // 800.4a : ses capacités déclenchées en attente et retardées cessent d'exister.
   s.triggers = s.triggers.filter((t) => t.controller !== p);

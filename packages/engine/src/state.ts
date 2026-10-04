@@ -40,8 +40,11 @@ export type RulesEvent =
       /** Caractéristiques au moment du départ du champ de bataille. */
       lki: LkiSnapshot | null;
     }
-  /** `instantSorceryBefore` : éphémères et rituels déjà lancés ce tour-ci par ce joueur (pour un éphémère ou un rituel). */
-  | { e: "cast"; player: PlayerId; stackId: ObjectId; instantSorceryBefore?: number }
+  /**
+   * `instantSorceryBefore` : éphémères et rituels déjà lancés ce tour-ci par ce joueur (pour un éphémère ou un rituel) ;
+   * `spellsBefore` : sorts déjà lancés ce tour-ci par tous les joueurs (déluge, 702.40a).
+   */
+  | { e: "cast"; player: PlayerId; stackId: ObjectId; instantSorceryBefore?: number; spellsBefore: number }
   /** Cartes défaussées (nouveaux identifiants, dans le cimetière). */
   | { e: "discard"; player: PlayerId; cards: ObjectId[] }
   | { e: "discardBatch"; player: PlayerId; count: number }

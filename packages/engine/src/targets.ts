@@ -397,6 +397,8 @@ export function isLegalTarget(s: GameState, controller: PlayerId, spec: TargetSp
     !(chars(s, id).types.includes("Creature") && playerStatic(s, controller, "ignoreOpponentsHexproofWard"))
   )
     return false;
+  // Défense totale (702.18) : ne peut être la cible d'aucun sort ni capacité, même de son contrôleur.
+  if (hasKeyword(s, id, "shroud")) return false;
   // Protection contre [filtre] (702.16b), défense talismanique contre [filtre] si la source est adverse.
   if (protectedFrom(s, id, sourceId ? sourceView(s, sourceId) : undefined, obj(s, id).controller !== controller)) return false;
   return true;

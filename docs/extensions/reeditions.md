@@ -29,3 +29,29 @@ le deck peut choisir son illustration (51 cartes). Détail dans le suivi du plan
   Winds of Abandon (le propriétaire cherche).
 - **Reportés à leur lot :** émergence (Cresting Mosasaurus, REX), folie (Terminal Agony, OTP), réplique (Consign to
   Memory, SPG), retour (Waves of Aggression, PZA) : une seule carte chacune.
+
+## G2b — mots-clés de permanent ✅
+
+| Mécanique | Forme | Cartes |
+|---|---|---|
+| Exaltation (702.83) | lue dans le texte : `attacksAlone`, +1/+1 | Cathedral of War (EOS) |
+| Affinité pour les artefacts (702.41) | lue dans le texte : `costReduction` | Frogmite, Thoughtcast (SPG) |
+| Métallurgie | script : deux `fx.when` à la résolution | Galvanic Blast (SPG) |
+| Modulaire (702.43) | lu dans le texte : `entersWith` et marqueurs (dernières informations connues) sur une créature-artefact ciblée | Arcbound Ravager (PZA), Power Depot (EOS) |
+| Greffe (702.58) | lue dans le texte : `entersWith`, déplacement facultatif d'un marqueur | Cytoplast Manipulator (PZA) |
+| Empreinte | `exileFromHandLinked` et mana des couleurs liées | Chrome Mox (SPG) |
+| Extorsion (702.101) | lue dans le texte : `castSpell` et `mayPay("{W/B}")` | Blind Obedience (WOT) ; The Kingpin of Crime (MSH) n'écrit plus la sienne |
+| Défense totale (702.18) | mot-clé `shroud` | Helix Pinnacle (SPG) |
+| Champion (702.72) | aide `champion` (`spg/cards.ts`) : `chooseAmong`, `exileUntilLeaves`, sacrifice sinon | Mistbind Clique, Wanderwine Prophets (SPG) |
+
+- **Tests :** `spg.test.ts` (8), `eos.test.ts` (3), `pza.test.ts` (3), `wot.test.ts` (2) ; fumée EOS, PZA, WOT.
+- **Audit :** Mistbind Clique, « quand une Fée est championnée » lu comme une statique (écart voulu, `audit-baseline.json`).
+- **Reportés à leur lot (une carte chacun) :** monstruosité et soif de sang (REX), régénération (Swarmyard, G3), vantardise
+  (Varragoth, FCA), peuplement (Life Finds a Way, REX), dilemme du conseil (Expropriate, SPG), Dino DNA (REX).
+
+## G2c — déluge ✅
+
+- **Déluge (702.40)** lu dans le texte : `castSelf` puis `copySpell(self, amount.eventAmount)`. Le nombre de sorts lancés
+  avant lui ce tour-ci, par tous les joueurs, est figé au lancement (`RulesEvent` `cast.spellsBefore`). Stormscale
+  Scion (TDM) n'écrit plus le sien, qui comptait à la résolution et seulement vos sorts.
+- **Cartes :** Brain Freeze, Empty the Warrens, Flusterstorm (SOA). Tests : `soa.test.ts` (+2).

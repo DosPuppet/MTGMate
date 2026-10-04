@@ -262,5 +262,8 @@ export const OWN_FILES = [
   "SOA",
   "FCA",
   "OTP",
+  "EOS",
+  "PZA",
+  "WOT",
 ];
 export const OTHER_SETS = (): string[] => SETS.map((s) => s.code).filter((c) => !OWN_FILES.includes(c));
