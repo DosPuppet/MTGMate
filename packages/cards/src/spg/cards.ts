@@ -9,6 +9,8 @@ import {
   type CardScript,
   cond,
   entersWith,
+  escalate,
+  eventReplacement,
   fx,
   investigate,
   loyalty,
@@ -96,6 +98,32 @@ const fetchland = (a: string, b: string): CardScript => ({
       sacrifice: true,
       effects: [fx.search({ types: ["Land"], anySubtype: [a, b] }, { to: "battlefield" })],
       label: `Cherchez une carte de ${a} ou de ${b}`,
+    }),
+  ],
+});
+const BIRD_ILLUSION: TokenSpec = {
+  name: "Bird Illusion",
+  colors: ["U"],
+  types: ["Creature"],
+  subtypes: ["Bird", "Illusion"],
+  power: 1,
+  toughness: 1,
+  keywords: ["flying"],
+};
+const INSTANT_OR_SORCERY = { types: ["Instant" as const, "Sorcery" as const] };
+/** « N'activez que si vous avez exactement sept cartes en main » (Library of Alexandria). */
+const SEVEN_IN_HAND = cond.all(
+  cond.amountAtLeast(amount.countIn("hand", {}), 7),
+  cond.not(cond.amountAtLeast(amount.countIn("hand", {}), 8)),
+);
+const sevenCardsDraw = (): CardScript => ({
+  abilities: [
+    manaAbility("C"),
+    activated({
+      tap: true,
+      activationCondition: SEVEN_IN_HAND,
+      effects: [fx.draw(1)],
+      label: "Piochez (exactement sept cartes en main)",
     }),
   ],
 });
@@ -958,6 +986,153 @@ export const CARDS: Record<string, CardScript> = {
         [fx.lookAtTop(1, { filter: { types: ["Land"] }, count: 1, to: { to: "battlefield", tapped: true }, rest: "hand" })],
         { label: "Un Élémental arrive : la carte du dessus, terrain sur le champ de bataille engagé, sinon en main" },
       ),
+    ],
+  },
+  // — G4d : Special Guests de SOS et FRA —
+  "Dolmen Gate": {
+    abilities: [
+      eventReplacement({
+        event: "damage",
+        combat: true,
+        toFilter: { types: ["Creature"], attacking: true, controller: "you" },
+        modify: { prevent: true },
+        label: "Prévenez les blessures de combat infligées à vos créatures attaquantes",
+      }),
+    ],
+  },
+  "Door of Destinies": {
+    chooseOnEnter: "creatureType",
+    abilities: [
+      triggered(when.castSpell("you", { subtypeChosen: true }), [fx.counters(ref.self, "charge")], {
+        label: "Sort du type choisi : un marqueur de charge",
+      }),
+      staticAbility(
+        { types: ["Creature"], controller: "you", subtypeChosen: true },
+        { power: 1, toughness: 1 },
+        {
+          perCounter: "charge",
+          label: "Vos créatures du type choisi : +1/+1 par marqueur de charge",
+        },
+      ),
+    ],
+  },
+  Archaeomancer: {
+    abilities: [
+      triggered(when.entersSelf, [fx.toHand(ref.target())], {
+        targets: [target.cardInGraveyard("t", INSTANT_OR_SORCERY, "you", "carte d'éphémère ou de rituel de votre cimetière")],
+        label: "Renvoyez un éphémère ou un rituel de votre cimetière",
+      }),
+    ],
+  },
+  "Archmage Emeritus": {
+    abilities: [
+      triggered(when.castSpell("you", INSTANT_OR_SORCERY), [fx.draw(1)], { label: "Magecraft : piochez" }),
+      triggered(when.copySpell(INSTANT_OR_SORCERY), [fx.draw(1)], { label: "Magecraft : piochez" }),
+    ],
+  },
+  "Murmuring Mystic": {
+    abilities: [
+      triggered(when.castSpell("you", INSTANT_OR_SORCERY), [fx.createTokens(BIRD_ILLUSION)], {
+        label: "Éphémère ou rituel : un Oiseau Illusion 1/1 volant",
+      }),
+    ],
+  },
+  // Flash : lu dans le texte.
+  "Dualcaster Mage": {
+    abilities: [
+      triggered(when.entersSelf, [fx.copySpell(ref.target(), 1)], {
+        targets: [target.spell("t", INSTANT_OR_SORCERY, "sort d'éphémère ou de rituel")],
+        label: "Copiez le sort d'éphémère ou de rituel ciblé",
+      }),
+    ],
+  },
+  "Magus of the Library": sevenCardsDraw(),
+  "Library of Alexandria": sevenCardsDraw(),
+  // Garde {2} : lue dans le texte.
+  "Adrix and Nev, Twincasters": {
+    abilities: [eventReplacement({ event: "tokens", to: "you", modify: { times: 2 }, label: "Vos jetons sont créés en double" })],
+  },
+  "Eye of Ugin": {
+    abilities: [
+      playerStatic({
+        spellCost: { filter: { subtype: "Eldrazi", colorCount: 0 }, reduce: 2 },
+        label: "Vos sorts d'Eldrazi incolores coûtent {2} de moins",
+      }),
+      activated({
+        mana: "{7}",
+        tap: true,
+        effects: [fx.search({ types: ["Creature"], colorCount: 0 }, { to: "hand" })],
+        label: "Cherchez une carte de créature incolore",
+      }),
+    ],
+  },
+  "Austere Command": {
+    spell: modal(
+      ...(() => {
+        const choices = [
+          { label: "Détruisez les artefacts", effects: [fx.destroyAll({ types: ["Artifact"] })] },
+          { label: "Détruisez les enchantements", effects: [fx.destroyAll({ types: ["Enchantment"] })] },
+          {
+            label: "Détruisez les créatures de VM 3 ou moins",
+            effects: [fx.destroyAll({ types: ["Creature"], maxManaValue: 3 })],
+          },
+          {
+            label: "Détruisez les créatures de VM 4 ou plus",
+            effects: [fx.destroyAll({ types: ["Creature"], minManaValue: 4 })],
+          },
+        ];
+        // « Choisissez deux — » : chaque paire, les destructions de la paire en même temps.
+        return choices.flatMap((a, i) =>
+          choices.slice(i + 1).map((b) => mode(`${a.label} ; ${b.label}`, [], [...a.effects, ...b.effects])),
+        );
+      })(),
+    ),
+  },
+  "Sublime Epiphany": {
+    spell: escalate(
+      "{0}",
+      { label: "Contrecarrez le sort ciblé", targets: [target.spell("s")], effects: [fx.counter(ref.target("s"))] },
+      {
+        label: "Contrecarrez la capacité activée ou déclenchée ciblée",
+        targets: [{ id: "a", label: "capacité activée ou déclenchée", filter: { stackItems: { abilitiesOnly: true } } }],
+        effects: [fx.counter(ref.target("a"))],
+      },
+      { label: "Renvoyez un permanent non-terrain", targets: [target.nonland("n")], effects: [fx.bounce(ref.target("n"))] },
+      {
+        label: "Un jeton copie de votre créature ciblée",
+        targets: [target.creature("c", { controller: "you" })],
+        effects: [fx.copyToken(ref.target("c"))],
+      },
+      { label: "Le joueur ciblé pioche", targets: [target.player("p")], effects: [fx.draw(1, ref.target("p"))] },
+    ),
+  },
+  Consider: { spell: spell([], [fx.surveil(1), fx.draw(1)]) },
+  "Mind Twist": { spell: spell([target.player()], [fx.discard(amount.x, ref.target(), { random: true })]) },
+  "Splinter Twin": {
+    enchant: { filter: { types: ["Creature"] }, label: "créature" },
+    abilities: [
+      staticAbility(
+        "attached",
+        {
+          addAbilities: [
+            activated({
+              tap: true,
+              effects: [fx.copyToken(ref.self, { addKeywords: ["haste"], exileAtEndStep: true })],
+              label: "Un jeton copie avec la célérité, exilé à l'étape de fin",
+            }),
+          ],
+        },
+        { label: "La créature enchantée peut se copier" },
+      ),
+    ],
+  },
+  "Root Maze": {
+    abilities: [
+      entersWith({
+        tapped: true,
+        affects: { anyOf: [{ types: ["Artifact"] }, { types: ["Land"] }] },
+        label: "Les artefacts et les terrains arrivent engagés",
+      }),
     ],
   },
 };

@@ -129,3 +129,17 @@ le deck peut choisir son illustration (51 cartes). Détail dans le suivi du plan
   bibliothèque comme une carte qui ne peut aller au cimetière) ; Magus of the Moon (les terrains non-base perdent tous
   leurs sous-types).
 - **Reportée :** Robe of Stars (phasing).
+
+## G4d — Special Guests de SOS et FRA ✅ (16 cartes ; SPG 114 / 132)
+
+- **Cartes :** Dolmen Gate, Door of Destinies, Archaeomancer, Archmage Emeritus, Murmuring Mystic, Dualcaster Mage, Magus
+  of the Library, Library of Alexandria, Adrix and Nev, Eye of Ugin, Austere Command, Sublime Epiphany, Consider, Mind
+  Twist, Splinter Twin, Root Maze. Aucune forme nouvelle : prévention par remplacement, doublement de jetons, modes
+  combinés (« choisissez deux », escalade à {0}), déclencheur `copySpell` (magecraft).
+- **Tests :** `spg.test.ts` (+9).
+- **Sous-lot difficile (18 cartes SPG) :** Underworld Breach (évasion), Mirri (limites d'attaque et de blocage), Notion
+  Thief (pioche détournée), Expropriate (vote), Maddening Hex (dé, hôte changeant), Noxious Revival (mana phyrexian),
+  Sphinx's Tutelage (meule répétée), Phantasmal Image et Flesh Duplicate (copie à l'arrivée avec capacité ou disparition),
+  Robe of Stars (phasing), Painter's Servant (couleur de toutes les cartes), Thousand-Year Elixir (capacités comme avec la
+  célérité), Grim Haruspex (mue), Sylvan Library (cartes piochées ce tour-ci), Codie (exil jusqu'à un sort), Library of
+  Leng (défausse remplacée), Consign to Memory (réplique), Necrodominance (pioche sautée, vie payée).

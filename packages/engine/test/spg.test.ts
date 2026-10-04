@@ -650,4 +650,117 @@ describe("Special Guests", () => {
       expect(s.players.p2?.life).toBe(20);
     });
   });
+
+  describe("G4d : Special Guests de SOS et FRA", () => {
+    const castIt = (s: ReturnType<typeof scenario>, name: string, extra: object = {}) =>
+      act(s, "p1", { type: "cast", card: idOf(s, "p1", "hand", name), ...extra });
+    const castOpt = (s: ReturnType<typeof scenario>, name: string) =>
+      legalActions(s, "p1").find((a) => a.type === "cast" && a.card === idOf(s, "p1", "hand", name));
+
+    it("Door of Destinies : un marqueur par sort du type choisi ; vos créatures de ce type gagnent +1/+1 par marqueur", () => {
+      let s = scenario({ p1: { battlefield: [...lands("Forest", 6), "Bear Cub"], hand: ["Door of Destinies", "Bear Cub"] } });
+      s = settle(castIt(s, "Door of Destinies"), (req) =>
+        req.type === "pick" && req.options.includes("Bear") ? ["Bear"] : undefined,
+      );
+      s = settle(castIt(s, "Bear Cub"));
+      const cubs = idsOf(s, "p1", "battlefield", "Bear Cub");
+      expect(cubs.map((id) => chars(s, id).power)).toEqual([3, 3]);
+    });
+
+    it("Archmage Emeritus : piochez en lançant ou en copiant un éphémère ou un rituel", () => {
+      let s = scenario({
+        p1: { battlefield: ["Archmage Emeritus", ...lands("Mountain", 4)], hand: ["Shock", "Dualcaster Mage"] },
+      });
+      const hand = s.players.p1?.hand.length ?? 0;
+      s = act(s, "p1", { type: "cast", card: idOf(s, "p1", "hand", "Shock"), targets: { t: ["p2"] } });
+      s = settle(castIt(s, "Dualcaster Mage"), (req) =>
+        req.type === "pick" && req.options.length ? req.options.slice(0, 1) : undefined,
+      );
+      // Deux cartes jouées, deux piochées (lancement et copie).
+      expect(s.players.p1?.hand.length).toBe(hand);
+      expect(s.players.p2?.life).toBe(16);
+    });
+
+    it("Library of Alexandria : piochez seulement avec exactement sept cartes en main", () => {
+      const s = scenario({ p1: { battlefield: ["Library of Alexandria"], hand: Array(7).fill("Forest") } });
+      const lib = idOf(s, "p1", "battlefield", "Library of Alexandria");
+      expect(legalActions(s, "p1").some((a) => a.type === "activate" && a.source === lib)).toBe(true);
+      const t = scenario({ p1: { battlefield: ["Library of Alexandria"], hand: Array(6).fill("Forest") } });
+      expect(
+        legalActions(t, "p1").some(
+          (a) => a.type === "activate" && a.source === idOf(t, "p1", "battlefield", "Library of Alexandria"),
+        ),
+      ).toBe(false);
+    });
+
+    it("Adrix and Nev : vos jetons sont créés en double", () => {
+      let s = scenario({ p1: { battlefield: ["Adrix and Nev, Twincasters", ...lands("Mountain", 2)], hand: ["Dragon Fodder"] } });
+      s = settle(castIt(s, "Dragon Fodder"));
+      expect(idsOf(s, "p1", "battlefield", "Goblin")).toHaveLength(4);
+    });
+
+    it("Austere Command : six paires de modes", () => {
+      const s = scenario({ p1: { battlefield: lands("Plains", 6), hand: ["Austere Command"] } });
+      const all = castOpt(s, "Austere Command");
+      expect(all?.type === "cast" && all.modes.length).toBe(6);
+      let t = scenario({
+        p1: { battlefield: [...lands("Plains", 4), ...lands("Island", 2)], hand: ["Austere Command"] },
+        p2: { battlefield: ["Bear Cub", "Shivan Dragon", "Ghostly Prison"] },
+      });
+      const opt = castOpt(t, "Austere Command");
+      const pair =
+        opt?.type === "cast"
+          ? opt.modes.find((m) => m.label?.includes("VM 3 ou moins") && m.label.includes("enchantements"))
+          : undefined;
+      t = settle(castIt(t, "Austere Command", { mode: pair?.index }));
+      expect(t.battlefield.filter((id) => t.objects[id]?.controller === "p2").map((id) => nameOf(t, id))).toEqual([
+        "Shivan Dragon",
+      ]);
+    });
+
+    it("Mind Twist : le joueur ciblé défausse X cartes au hasard", () => {
+      let s = scenario({
+        p1: { battlefield: lands("Swamp", 4), hand: ["Mind Twist"] },
+        p2: { hand: ["Forest", "Forest", "Shock", "Opt"] },
+      });
+      s = settle(castIt(s, "Mind Twist", { x: 3, targets: { t: ["p2"] } }));
+      expect([s.players.p2?.hand.length, s.players.p2?.graveyard.length]).toEqual([1, 3]);
+    });
+
+    it("Splinter Twin : la créature enchantée crée une copie d'elle-même avec la célérité", () => {
+      let s = scenario({ p1: { battlefield: [...lands("Mountain", 4), "Bear Cub"], hand: ["Splinter Twin"] } });
+      const cub = idOf(s, "p1", "battlefield", "Bear Cub");
+      s = settle(
+        castIt(s, "Splinter Twin", {
+          targets: { [Object.keys(castOpt(s, "Splinter Twin")?.type === "cast" ? {} : {})[0] ?? "enchant"]: [cub] },
+        }),
+        (req) => (req.type === "pick" && req.options.includes(cub) ? [cub] : undefined),
+      );
+      const ab = legalActions(s, "p1").find((a) => a.type === "activate" && a.source === cub);
+      expect(ab).toBeDefined();
+      s = settle(act(s, "p1", { type: "activate", source: cub, ability: ab?.type === "activate" ? ab.ability : 0 }));
+      const copies = idsOf(s, "p1", "battlefield", "Bear Cub").filter((id) => s.objects[id]?.isToken);
+      expect(copies).toHaveLength(1);
+      expect(chars(s, copies[0] as string).keywords).toContain("haste");
+    });
+
+    it("Root Maze : les artefacts et les terrains arrivent engagés, de chaque joueur", () => {
+      let s = scenario({ p1: { battlefield: ["Root Maze"], hand: ["Forest"] } });
+      s = act(s, "p1", { type: "playLand", card: idOf(s, "p1", "hand", "Forest") });
+      expect(s.objects[s.battlefield.find((id) => nameOf(s, id) === "Forest") as string]?.tapped).toBe(true);
+    });
+
+    it("Dolmen Gate : aucune blessure de combat à vos créatures attaquantes", () => {
+      let s = scenario({ p1: { battlefield: ["Dolmen Gate", "Bear Cub"] }, p2: { battlefield: ["Shivan Dragon"] } });
+      const cub = idOf(s, "p1", "battlefield", "Bear Cub");
+      s = attack(s, [cub]);
+      s = advanceUntil(s, (x) => x.pending?.kind === "declareBlockers");
+      s = act(s, "p2", {
+        type: "declareBlockers",
+        blocks: [{ blocker: idOf(s, "p2", "battlefield", "Shivan Dragon"), attacker: cub }],
+      });
+      s = advanceUntil(s, (x) => x.turn.step === "main2");
+      expect(idsOf(s, "p1", "battlefield", "Bear Cub")).toHaveLength(1);
+    });
+  });
 });

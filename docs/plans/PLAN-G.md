@@ -319,3 +319,5 @@ leur lot, avec une forme générique d'abord, selon la règle « pas de dette pr
   Phantasmal Image.
 - **G4c (04/10/2026) :** 31 Special Guests de TDM, EOE et ECL (SPG 98 / 132) ; limite de sorts par types,
   « un adversaire joue un terrain ». `RULES_VERSION` 110. Robe of Stars (phasing) reportée au sous-lot difficile.
+- **G4d (04/10/2026) :** 16 Special Guests de SOS et FRA (SPG 114 / 132), sans forme nouvelle. Les 18 cartes SPG
+  restantes forment le sous-lot difficile G4e (liste dans `docs/extensions/reeditions.md`).
