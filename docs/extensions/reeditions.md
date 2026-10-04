@@ -231,3 +231,6 @@ le deck peut choisir son illustration (51 cartes). Détail dans le suivi du plan
   Φ dans l'interface. Cartes : Noxious Revival (SPG), Dismember (SOA), K'rrik, Son of Yawgmoth (FCA, statique
   `phyrexianMana`). Tests : `phyrexian.test.ts` (5). Approximation : le joueur ne peut pas choisir de payer des PV quand
   le mana suffit. Surgical Extraction reste à faire (homonymes dans la main et la bibliothèque d'un joueur).
+- **Coûts alternatifs à payer autrement ✅ :** `altCost.pay` (PV, cartes de la main exilées, permanent renvoyé, choisis
+  automatiquement : les cartes les moins chères, un permanent engagé d'abord). Cartes : Force of Will, Daze (SOA), Force
+  of Vigor (OTP). Tests : `altcosts.test.ts` (4).

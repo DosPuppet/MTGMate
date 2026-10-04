@@ -251,4 +251,22 @@ export const CARDS: Record<string, CardScript> = {
   },
   // — G4e : sous-lot difficile —
   Dismember: { spell: spell([target.creature()], [fx.pump(ref.target(), -5, -5)]) },
+  "Force of Will": {
+    altCost: {
+      mana: "{0}",
+      condition: cond.all(),
+      label: "Force of Will — 1 PV et une carte bleue de votre main exilée",
+      pay: { life: 1, exileFromHand: { filter: { colors: ["U"] }, count: 1 } },
+    },
+    spell: spell([target.spell()], [fx.counter(ref.target())]),
+  },
+  Daze: {
+    altCost: {
+      mana: "{0}",
+      condition: cond.all(),
+      label: "Daze — renvoyez une Île que vous contrôlez",
+      pay: { bounce: { types: ["Land"], subtype: "Island" } },
+    },
+    spell: spell([target.spell()], [fx.unlessPays(ref.controllerOf(ref.target()), { mana: "{1}" }, fx.counter(ref.target()))]),
+  },
 };

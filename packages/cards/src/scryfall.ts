@@ -1018,7 +1018,12 @@ function singleDef(raw: RawCard, script: CardScript | undefined, set: string): C
     loyalty: raw.loyalty ? Number(raw.loyalty) : undefined,
     leyline: script?.leyline,
     altCost: script?.altCost
-      ? { mana: parseManaCost(script.altCost.mana), condition: script.altCost.condition, label: script.altCost.label }
+      ? {
+          mana: parseManaCost(script.altCost.mana),
+          condition: script.altCost.condition,
+          label: script.altCost.label,
+          ...(script.altCost.pay ? { pay: script.altCost.pay } : {}),
+        }
       : script?.forageOrPay && manaCost
         ? { mana: manaCost, condition: dsl.cond.canForage, label: `Fourrager — ${raw.manaCost}`, forage: true }
         : evoke

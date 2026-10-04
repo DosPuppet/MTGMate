@@ -492,4 +492,17 @@ export const CARDS: Record<string, CardScript> = {
       }),
     ],
   },
+  // — G4e : sous-lot difficile —
+  "Force of Vigor": {
+    altCost: {
+      mana: "{0}",
+      condition: cond.not(cond.yourTurn),
+      label: "Force of Vigor — exilez une carte verte de votre main",
+      pay: { exileFromHand: { filter: { colors: ["G"] }, count: 1 } },
+    },
+    spell: spell(
+      [target.upTo(2, target.permanent("t", ["Artifact", "Enchantment"], {}, "artefact ou enchantement"))],
+      [fx.destroy(ref.target())],
+    ),
+  },
 };

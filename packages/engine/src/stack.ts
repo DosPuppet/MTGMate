@@ -69,6 +69,7 @@ import { countTurnEvents, logTurnEvent } from "./turnlog";
 import type {
   AbilityCostMod,
   ActivatedAbilityDef,
+  AltCostPay,
   CardDef,
   CastChoices,
   CastLimit,
@@ -104,7 +105,15 @@ export function altCostFor(
   player: PlayerId,
   d: CardDef,
 ):
-  | { mana: ManaCost; label: string; forage?: boolean; collectEvidence?: number; webSlinging?: boolean; via?: CastVia }
+  | {
+      mana: ManaCost;
+      label: string;
+      forage?: boolean;
+      collectEvidence?: number;
+      webSlinging?: boolean;
+      via?: CastVia;
+      pay?: AltCostPay;
+    }
   | undefined {
   if (d.altCost && checkCondition(s, d.altCost.condition, player)) return d.altCost;
   for (const { id, ab } of playerStatics(s, player, "altCostAll")) {
@@ -684,6 +693,38 @@ export function harmonizeOptions(
 }
 
 /** Coût total d'un sort : coût de base, de flashback ou alternatif (ou rien), X, kicker, réductions. */
+/**
+ * Ce que paie en plus un coût alternatif (Force of Will, Daze) : les cartes de la main exilées (les moins chères d'abord)
+ * et le permanent renvoyé (un engagé d'abord), choisis automatiquement ; `null` si c'est impossible.
+ */
+export function altCostPayment(
+  s: GameState,
+  player: PlayerId,
+  card: ObjectId,
+  pay: AltCostPay,
+): { exile: ObjectId[]; bounce?: ObjectId } | null {
+  const pl = s.players[player];
+  if (!pl || (pay.life !== undefined && pl.life < pay.life)) return null;
+  let exile: ObjectId[] = [];
+  if (pay.exileFromHand) {
+    const f = pay.exileFromHand;
+    const cards = pl.hand
+      .filter((id) => id !== card && matchesCard(s, player, id, f.filter))
+      .sort((a, b) => manaValue(s.defs[obj(s, a).defId]?.manaCost) - manaValue(s.defs[obj(s, b).defId]?.manaCost));
+    if (cards.length < f.count) return null;
+    exile = cards.slice(0, f.count);
+  }
+  let bounce: ObjectId | undefined;
+  if (pay.bounce) {
+    const options = s.battlefield
+      .filter((id) => obj(s, id).controller === player && matchesObjectFilter(s, player, id, pay.bounce as ObjectFilter))
+      .sort((a, b) => Number(obj(s, b).tapped) - Number(obj(s, a).tapped));
+    if (options.length === 0) return null;
+    bounce = options[0];
+  }
+  return { exile, ...(bounce ? { bounce } : {}) };
+}
+
 /** K'rrik, Son of Yawgmoth : « pour chaque {B} d'un coût, vous pouvez payer 2 PV à la place » (mana phyrexian). */
 function asPhyrexian(s: GameState, player: PlayerId, cost: ManaCost): ManaCost {
   let out = cost;
@@ -1916,6 +1957,15 @@ export function castSpell(s: GameState, player: PlayerId, card: ObjectId, choice
   // Fourrager en coût (Osteomancer Adept, ou le coût alternatif de Feed the Cycle) : la carte a quitté le cimetière.
   if ((terms.forage || (alternative && altCostFor(s, player, d)?.forage)) && !forage(s, player))
     throw new RulesError("Impossible de fourrager");
+  // Force of Will, Daze : PV, cartes de la main exilées, permanent renvoyé, payés avec le coût alternatif.
+  const altPay = alternative ? altCostFor(s, player, d)?.pay : undefined;
+  if (altPay) {
+    const paid = altCostPayment(s, player, stackId, altPay);
+    if (!paid) throw new RulesError("Impossible de payer ce coût alternatif");
+    if (altPay.life) payLife_(s, player, altPay.life);
+    for (const id of paid.exile) moveObject(s, id, "exile");
+    if (paid.bounce) moveObject(s, paid.bounce, "hand");
+  }
   // Conspiracy Unraveler : « réunir des preuves 10 plutôt que payer le coût de mana ».
   const altEvidence = alternative ? altCostFor(s, player, d)?.collectEvidence : undefined;
   if (altEvidence) {

@@ -135,7 +135,11 @@ export interface CardDef {
   costReduction?: { generic: Amount; colored?: ManaCost["colored"]; condition?: Condition };
   /** Coût alternatif (« vous pouvez payer {B} plutôt que le coût de mana de ce sort si… »). */
   /** `via` : nom du coût, noté au lancement (`CastInfo.via`) et lu par `cond.castVia` (ruée). */
-  altCost?: { mana: ManaCost; condition: Condition; label: string; forage?: boolean; via?: CastVia };
+  /**
+   * `pay` : d'autres choses payées avec le mana alternatif (Force of Will : 1 PV et une carte bleue de la main exilée ;
+   * Daze : une Île que vous contrôlez renvoyée en main) ; les objets sont choisis automatiquement.
+   */
+  altCost?: { mana: ManaCost; condition: Condition; label: string; forage?: boolean; via?: CastVia; pay?: AltCostPay };
   /** F/E définies par une capacité (604.3, couche 7a), ex. cartes dans les cimetières adverses. */
   cdaPT?: Amount;
   /** « En arrivant, choisissez un type de créature / une couleur » (614.12). */
@@ -274,6 +278,15 @@ export interface PrepareFace {
   fr?: { name?: string; typeLine?: string; text?: string; image?: string };
   /** Image propre à cette face (verso d'une carte recto-verso). */
   image?: string;
+}
+
+/** Ce qu'un coût alternatif fait payer en plus de son mana (Force of Will, Force of Vigor, Daze). */
+export interface AltCostPay {
+  life?: number;
+  /** Cartes de votre main (autres que le sort) correspondant au filtre, exilées. */
+  exileFromHand?: { filter: ObjectFilter; count: number };
+  /** Un permanent correspondant que vous contrôlez, renvoyé dans la main de son propriétaire. */
+  bounce?: ObjectFilter;
 }
 
 /** Une impression d'une carte : son ensemble, son numéro et son illustration. */

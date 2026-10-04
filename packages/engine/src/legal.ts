@@ -12,6 +12,7 @@ import {
   activationPicks,
   additionalOptions,
   altCostFor,
+  altCostPayment,
   autoAdditional,
   canCastTiming,
   canPayNonManaCost,
@@ -456,6 +457,7 @@ export function legalActions(s: GameState, player: PlayerId): ActionOption[] {
     const altAvailable =
       !!alt &&
       (!alt.collectEvidence || !!evidenceCards(s, player, card, alt.collectEvidence)) &&
+      (!alt.pay || !!altCostPayment(s, player, card, alt.pay)) &&
       canPay(s, player, withExtra(spellCost(s, player, d, { ...base, alternative: true })), exclude, purpose);
     // Kicker payable (« coûte {2} de moins s'il est marchandé » : Hamlet Glutton peut n'être payable que marchandé).
     // Travail d'équipe : les créatures engagées pour le kicker ne paient pas le mana.

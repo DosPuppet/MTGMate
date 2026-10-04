@@ -9,6 +9,7 @@ import type {
   ActivatedAbilityDef,
   AdditionalCost,
   AggregateProperty,
+  AltCostPay,
   Amount,
   BlockRule,
   CardDef,
@@ -82,7 +83,7 @@ export interface CardScript {
   /** Peut commencer la partie sur le champ de bataille (Leyline). */
   leyline?: CardDef["leyline"];
   /** Coût alternatif : « vous pouvez payer {B} plutôt que… si [condition] ». */
-  altCost?: { mana: string; condition: Condition; label: string };
+  altCost?: { mana: string; condition: Condition; label: string; pay?: AltCostPay };
   /** F/E définies par une capacité (F/E étoilées sur la carte). */
   cdaPT?: Amount;
   chooseOnEnter?: "creatureType" | "color" | "cardName" | "landName" | "landType" | "parity" | "mode" | "number";
