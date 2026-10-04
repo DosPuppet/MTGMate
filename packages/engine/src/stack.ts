@@ -684,6 +684,18 @@ export function harmonizeOptions(
 }
 
 /** Coût total d'un sort : coût de base, de flashback ou alternatif (ou rien), X, kicker, réductions. */
+/** K'rrik, Son of Yawgmoth : « pour chaque {B} d'un coût, vous pouvez payer 2 PV à la place » (mana phyrexian). */
+function asPhyrexian(s: GameState, player: PlayerId, cost: ManaCost): ManaCost {
+  let out = cost;
+  for (const { ab } of playerStatics(s, player, "phyrexianMana")) {
+    const m = ab.phyrexianMana;
+    const n = m ? (out.colored[m] ?? 0) : 0;
+    if (!m || !n) continue;
+    out = { ...out, colored: { ...out.colored, [m]: 0 }, phyrexian: [...(out.phyrexian ?? []), ...Array<ManaType>(n).fill(m)] };
+  }
+  return out;
+}
+
 export function spellCost(
   s: GameState,
   player: PlayerId,
@@ -773,7 +785,7 @@ export function spellCost(
     playerStatics(s, player, "spellCost").some(
       ({ ab }) => ab.spellCost?.anyMana && matchesView(spellView(d, player), ab.spellCost.filter, player),
     );
-  if (!anyMana) return cost;
+  if (!anyMana) return asPhyrexian(s, player, cost);
   const colored =
     Object.values(cost.colored).reduce<number>((n, k) => n + (k ?? 0), 0) +
     (cost.hybrid?.length ?? 0) +
@@ -1039,7 +1051,7 @@ export function abilityManaCost(
   // Une action spéciale (retourner face visible, comploter, déverrouiller) n'est pas une capacité activée : Agatha's Soul
   // Cauldron (« pour activer des capacités ») ne s'y applique pas.
   const mana = ab.specialAction ? ab.cost.mana : abilityMana(s, source, ab);
-  return totalCost(mana, x, undefined, byTarget + abilityReduction(s, player, source, ab));
+  return asPhyrexian(s, player, totalCost(mana, x, undefined, byTarget + abilityReduction(s, player, source, ab)));
 }
 
 export function abilityReduction(s: GameState, player: PlayerId, source: ObjectId, ab: ActivatedAbilityDef): number {

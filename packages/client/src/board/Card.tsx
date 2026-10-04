@@ -29,6 +29,11 @@ export function ManaCost({ cost, size = 16 }: { cost: string; size?: number }) {
       {symbols.map((s, i) =>
         /^[WUBRG]\/[WUBRG]$/.test(s) ? (
           <span key={i} className={`mana-sym hybrid mana-${s[0]}-${s[2]}`} title={`{${s}}`} />
+        ) : /^[WUBRG]\/P$/.test(s) ? (
+          // Mana phyrexian : la couleur, ou 2 points de vie.
+          <span key={i} className={`mana-sym mana-${s[0]}`} title={`{${s}} : {${s[0]}} ou 2 points de vie`}>
+            Φ
+          </span>
         ) : (
           // Lettre dans la pastille : le noir et l'incolore ne se distinguent pas qu'à la couleur (accessibilité).
           <span key={i} className={`mana-sym mana-${/^[WUBRGC]$/.test(s) ? s : "N"}`} title={`{${s}}`}>

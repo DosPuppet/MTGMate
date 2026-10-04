@@ -1028,6 +1028,8 @@ export interface PlayerStaticAbilityDef {
   jaceLoyaltyInstant?: boolean;
   /** Screaming Nemesis : vous ne pouvez pas gagner de points de vie. */
   cantGainLife?: boolean;
+  /** K'rrik : chaque symbole de cette couleur de vos coûts se paie aussi avec 2 PV (mana phyrexian, 107.4f). */
+  phyrexianMana?: ManaType;
   /** Pit Automaton : votre prochaine capacité d'exhaust est copiée (usage unique). */
   copyNextExhaust?: boolean;
   /**

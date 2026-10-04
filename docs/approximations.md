@@ -377,3 +377,4 @@ Dans l'ordre où elles ont été ajoutées, extension par extension.
   - `règle` Mangara, the Diplomat : « deux créatures ou plus vous attaquent » compte les attaques contre vous du tour entier.
   - `règle` Prismatic Ending : la valeur de mana de la cible est comparée aux couleurs dépensées à la résolution.
   - `règle` All Will Be One : seuls les marqueurs mis sur des permanents déclenchent la capacité.
+- **Mana phyrexian :** `choix auto` le mana disponible paie d'abord ; des PV ne sont payés que pour les symboles qu'il ne couvre pas.

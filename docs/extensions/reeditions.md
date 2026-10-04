@@ -224,3 +224,10 @@ le deck peut choisir son illustration (51 cartes). Détail dans le suivi du plan
   (émergence), Hunting Velociraptor (rôder), Welcome to . . . // Jurassic Park, Blue, Loyal Raptor et Owen Grady
   (partenaire avec, marqueurs de mots-clés), Grim Giganotosaurus (monstruosité), Henry Wu (exploitation), Ian Malcolm,
   Indominus Rex, Indoraptor (soif de sang, adversaire au hasard), Swooping Pteranodon, Dino DNA.
+
+## G4e — sous-lot difficile
+
+- **Mana phyrexian ✅ :** `ManaCost.phyrexian`, payé avec le mana disponible d'abord, sinon 2 PV par symbole ; symbole
+  Φ dans l'interface. Cartes : Noxious Revival (SPG), Dismember (SOA), K'rrik, Son of Yawgmoth (FCA, statique
+  `phyrexianMana`). Tests : `phyrexian.test.ts` (5). Approximation : le joueur ne peut pas choisir de payer des PV quand
+  le mana suffit. Surgical Extraction reste à faire (homonymes dans la main et la bibliothèque d'un joueur).

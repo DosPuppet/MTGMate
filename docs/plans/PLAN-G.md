@@ -331,3 +331,4 @@ leur lot, avec une forme générique d'abord, selon la règle « pas de dette pr
   difficile.
 - **G9 (04/10/2026) :** 10 cartes de Source Material (PZA 12 / 15) et 8 de Jurassic World Collection (REX 8 / 20), sans
   forme nouvelle ; fumée REX. Quinze cartes vont au sous-lot difficile.
+- **G4e, mana phyrexian (04/10/2026) :** Noxious Revival, Dismember, K'rrik. `RULES_VERSION` 113.

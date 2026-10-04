@@ -49,6 +49,8 @@ export function parseManaCost(text: string): ManaCost {
     else if (SYMBOLS.has(sym)) {
       const t = sym as ManaType;
       cost.colored[t] = (cost.colored[t] ?? 0) + 1;
+    } else if (/^[WUBRG]\/P$/.test(sym)) {
+      cost.phyrexian = [...(cost.phyrexian ?? []), sym[0] as ManaType];
     } else if (/^2\/[WUBRG]$/.test(sym)) {
       cost.twoHybrid = [...(cost.twoHybrid ?? []), sym[2] as ManaType];
     } else if (/^[WUBRG]\/[WUBRG]$/.test(sym)) {
@@ -64,6 +66,7 @@ export function manaValue(cost: ManaCost | null | undefined): number {
     cost.generic +
     Object.values(cost.colored).reduce((a, b) => a + (b ?? 0), 0) +
     (cost.hybrid?.length ?? 0) +
+    (cost.phyrexian?.length ?? 0) +
     2 * (cost.twoHybrid?.length ?? 0)
   );
 }
@@ -74,6 +77,7 @@ export function costToText(cost: ManaCost | null): string {
   if (cost.generic > 0 || (manaValue(cost) === 0 && cost.x === 0)) t += `{${cost.generic}}`;
   for (const [a, b] of cost.hybrid ?? []) t += `{${a}/${b}}`;
   for (const m of cost.twoHybrid ?? []) t += `{2/${m}}`;
+  for (const m of cost.phyrexian ?? []) t += `{${m}/P}`;
   for (const m of MANA_TYPES) t += `{${m}}`.repeat(cost.colored[m] ?? 0);
   return t;
 }
@@ -85,6 +89,9 @@ export function totalCost(base: ManaCost | null | undefined, x: number, extra?: 
     colored: { ...(base?.colored ?? {}) },
     hybrid: [...(base?.hybrid ?? [])],
     twoHybrid: [...(base?.twoHybrid ?? []), ...(extra?.twoHybrid ?? [])],
+    ...(base?.phyrexian?.length || extra?.phyrexian?.length
+      ? { phyrexian: [...(base?.phyrexian ?? []), ...(extra?.phyrexian ?? [])] }
+      : {}),
     x: 0,
   };
   if (extra) {
@@ -806,7 +813,31 @@ export function canPay(
   exclude?: ReadonlySet<ObjectId>,
   purpose?: ManaPurpose,
 ): boolean {
+  if (cost.phyrexian?.length) return phyrexianSplit(s, player, cost, exclude, purpose) !== null;
   return solvePayment(s, player, cost, exclude, purpose) !== null;
+}
+
+/**
+ * Mana phyrexian (107.4f) : chaque {G/P} se paie avec {G} ou 2 points de vie. Choix automatique : le mana d'abord, des
+ * points de vie pour les symboles que le mana disponible ne couvre pas. Renvoie le coût en mana et les PV à payer.
+ */
+function phyrexianSplit(
+  s: GameState,
+  player: PlayerId,
+  cost: ManaCost,
+  exclude?: ReadonlySet<ObjectId>,
+  purpose?: ManaPurpose,
+): { cost: ManaCost; life: number } | null {
+  const phy = cost.phyrexian ?? [];
+  const life = s.players[player]?.life ?? 0;
+  for (let k = 0; k <= phy.length; k++) {
+    if (k > 0 && life < 2 * k) break;
+    const colored = { ...cost.colored };
+    for (const m of phy.slice(0, phy.length - k)) colored[m] = (colored[m] ?? 0) + 1;
+    const mana: ManaCost = { ...cost, colored, phyrexian: undefined };
+    if (solvePayment(s, player, mana, exclude, purpose)) return { cost: mana, life: 2 * k };
+  }
+  return null;
 }
 
 /** Active les sources nécessaires puis retire le coût de la réserve. Lève une erreur si impossible. */
@@ -821,6 +852,12 @@ export function payMana(
   /** Reçoit le mana dépensé, par type (« si {U}{U} a été dépensé pour le lancer »). */
   spent?: Partial<Record<ManaType, number>>,
 ): ManaAbilityDef[] {
+  if (cost.phyrexian?.length) {
+    const split = phyrexianSplit(s, player, cost, exclude, purpose);
+    if (!split) throw new RulesError("Mana insuffisant");
+    if (split.life) payLife(s, player, split.life);
+    cost = split.cost;
+  }
   const plan = solvePayment(s, player, cost, exclude, purpose);
   if (!plan) throw new RulesError("Mana insuffisant");
   // Les objets choisis par le joueur pour la convocation (ou l'improvisation, la maîtrise de l'eau, la cave) servent tous.

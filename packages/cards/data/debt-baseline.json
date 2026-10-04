@@ -48,7 +48,8 @@
     "keepUnspentMana": "mana non dépensé gardé (500.4) : par type (The Last Agni Kai, posé par fx.thisTurn) ou converti (Ozai, the Phoenix King) ; une seule capacité imprimée pour l'instant",
     "powerUpExtraUses": "Wonder Man, Hollywood Hero : chaque montée en puissance peut être activée une fois de plus (compte d'usages des capacités « once ») ; une seule carte pour l'instant",
     "activateAsThoughHaste": "Shang-Chi, Master of Kung Fu : activer les capacités des créatures du filtre comme si elles avaient la célérité (mal d'invocation levé pour {T}, pas pour attaquer) ; famille paramétrée par un filtre, une seule carte pour l'instant",
-    "affects": "portée générique d'une statique de joueur (contrôleur, adversaires, chaque joueur) : Rampaging Ferocidon « les joueurs ne peuvent pas gagner de PV » ; à réutiliser pour toute statique qui touche d'autres joueurs"
+    "affects": "portée générique d'une statique de joueur (contrôleur, adversaires, chaque joueur) : Rampaging Ferocidon « les joueurs ne peuvent pas gagner de PV » ; à réutiliser pour toute statique qui touche d'autres joueurs",
+    "phyrexianMana": "K'rrik, Son of Yawgmoth — les symboles d'une couleur de vos coûts deviennent phyrexians (107.4f), sur la forme générique ManaCost.phyrexian"
   },
   "keyword": {
     "absorbsDamage": "remplacement de redirection des blessures (R1.2)",

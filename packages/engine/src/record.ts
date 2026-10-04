@@ -311,8 +311,9 @@ export const RECORD_VERSION = 1;
  *   (`playLand.whose`).
  * - 111 : Breaking News (G6) : la recherche dans sa bibliothèque est notée au journal du tour (Archive Trap).
  * - 112 : Through the Ages (G7) : une capacité de mana peut engager un artefact (`tapAnother: "artifact"`, Urza).
+ * - 113 : mana phyrexian (107.4f, G4e) : chaque {C/P} se paie avec du mana, sinon 2 PV ; K'rrik (`phyrexianMana`).
  */
-export const RULES_VERSION = 112;
+export const RULES_VERSION = 113;
 
 /** Un point de contrôle toutes les N décisions (plus la dernière de la partie). */
 export const CHECKPOINT_EVERY = 25;

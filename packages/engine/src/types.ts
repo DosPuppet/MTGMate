@@ -22,6 +22,8 @@ export interface ManaCost {
   hybrid?: [ManaType, ManaType][];
   /** Hybrides monocolores {2/W} : un mana de cette couleur ou deux mana génériques. */
   twoHybrid?: ManaType[];
+  /** Mana phyrexian {G/P} (107.4f) : un mana de cette couleur ou 2 points de vie. */
+  phyrexian?: ManaType[];
 }
 
 export type CardType = "Land" | "Creature" | "Artifact" | "Enchantment" | "Instant" | "Sorcery" | "Planeswalker" | "Battle";

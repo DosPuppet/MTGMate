@@ -513,4 +513,14 @@ export const CARDS: Record<string, CardScript> = {
       ),
     ],
   },
+  // — G4e : sous-lot difficile —
+  // Lien de vie : lu dans le texte.
+  "K'rrik, Son of Yawgmoth": {
+    abilities: [
+      playerStatic({ phyrexianMana: "B", label: "Chaque {B} de vos coûts peut se payer avec 2 PV" }),
+      triggered(when.castSpell("you", { colors: ["B"] }), [fx.addCounters(ref.self, 1)], {
+        label: "Sort noir : un marqueur +1/+1",
+      }),
+    ],
+  },
 };

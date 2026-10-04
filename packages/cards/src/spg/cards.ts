@@ -1135,4 +1135,11 @@ export const CARDS: Record<string, CardScript> = {
       }),
     ],
   },
+  // — G4e : sous-lot difficile —
+  "Noxious Revival": {
+    spell: spell(
+      [target.cardInGraveyard("t", {}, "any", "carte d'un cimetière")],
+      [fx.moveTo(ref.target(), { to: "libraryTop" })],
+    ),
+  },
 };

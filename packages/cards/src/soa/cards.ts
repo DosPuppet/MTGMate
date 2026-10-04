@@ -249,4 +249,6 @@ export const CARDS: Record<string, CardScript> = {
       [fx.destroy(ref.target())],
     ),
   },
+  // — G4e : sous-lot difficile —
+  Dismember: { spell: spell([target.creature()], [fx.pump(ref.target(), -5, -5)]) },
 };
