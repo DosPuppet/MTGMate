@@ -691,14 +691,38 @@ export function canAttack(s: GameState, id: ObjectId): boolean {
  * si chaque défenseur possible exige une taxe d'attaque (Archangel of Tithes), elles ne sont pas obligées d'attaquer.
  */
 export function forcedAttackers(s: GameState, player: PlayerId): ObjectId[] {
-  if (untaxedDefenders(s, player).length === 0) return [];
-  return attackCandidates(s, player).filter((id) => hasKeyword(s, id, "mustAttack"));
+  const defenders = untaxedDefenders(s, player);
+  if (defenders.length === 0) return [];
+  // Une créature qui ne peut attaquer aucun de ces défenseurs (« ne peut pas vous attaquer ») n'est pas obligée.
+  return attackCandidates(s, player).filter(
+    (id) => hasKeyword(s, id, "mustAttack") && defenders.some((d) => !attackRestriction(s, id, d)),
+  );
 }
 
-/** Les attaques obligées, chacune vers un défenseur sans taxe d'attaque (automatisme : « Fin du tour »). */
+/** Les attaques obligées, chacune vers un défenseur sans taxe d'attaque qu'elle peut attaquer (automatisme : « Fin du tour »). */
 export function forcedAttacks(s: GameState, player: PlayerId): { id: ObjectId; defender: string }[] {
-  const defender = untaxedDefenders(s, player).find((d) => !!s.players[d]) ?? untaxedDefenders(s, player)[0];
-  return defender ? forcedAttackers(s, player).map((id) => ({ id, defender })) : [];
+  const defenders = untaxedDefenders(s, player);
+  return forcedAttackers(s, player).map((id) => {
+    const allowed = defenders.filter((d) => !attackRestriction(s, id, d));
+    return { id, defender: (allowed.find((d) => !!s.players[d]) ?? allowed[0]) as string };
+  });
+}
+
+/**
+ * Pourquoi cette créature ne peut pas attaquer ce défenseur (joueur ou planeswalker), sinon null : « ne peut pas vous
+ * attaquer, ni vos planeswalkers » (Eriette of the Charmed Apple), « ne peut pas attaquer un joueur qu'elle a déjà attaqué
+ * ce tour-ci » (Port Razer).
+ */
+function attackRestriction(s: GameState, id: ObjectId, defender: string): string | null {
+  const dp = defendingPlayer(s, defender);
+  const rules = chars(s, id).blockRules;
+  if (rules.some((r) => r.cantAttackPlayer === dp)) return `${chars(s, id).name} ne peut pas attaquer ce joueur`;
+  if (
+    rules.some((r) => r.notDefendersAttackedThisTurn) &&
+    s.turnLog.some((e) => e.e === "attack" && e.id === id && e.defender === dp)
+  )
+    return `${chars(s, id).name} a déjà attaqué ce joueur ce tour-ci`;
+  return null;
 }
 
 /** Taxe d'attaque (Archangel of Tithes) pour attaquer ce défenseur ou ses planeswalkers : {N} par créature. */
@@ -751,16 +775,8 @@ export function declareAttackers(s: GameState, player: PlayerId, attackers: { id
     seen.add(a.id);
     if (!canAttack(s, a.id) || obj(s, a.id).controller !== player) throw new RulesError("Cette créature ne peut pas attaquer");
     if (!defenders.includes(a.defender)) throw new RulesError("Joueur ou planeswalker défenseur invalide");
-    // Eriette of the Charmed Apple : « ne peut pas vous attaquer, ni vos planeswalkers ».
-    const dp = defendingPlayer(s, a.defender);
-    if (chars(s, a.id).blockRules.some((r) => r.cantAttackPlayer === dp))
-      throw new RulesError(`${chars(s, a.id).name} ne peut pas attaquer ce joueur`);
-    // Port Razer : « ne peut pas attaquer un joueur qu'elle a déjà attaqué ce tour-ci ».
-    if (
-      chars(s, a.id).blockRules.some((r) => r.notDefendersAttackedThisTurn) &&
-      s.turnLog.some((e) => e.e === "attack" && e.id === a.id && e.defender === dp)
-    )
-      throw new RulesError(`${chars(s, a.id).name} a déjà attaqué ce joueur ce tour-ci`);
+    const restriction = attackRestriction(s, a.id, a.defender);
+    if (restriction) throw new RulesError(restriction);
   }
   // Tomik, Orzhov Lawmage : au plus une créature attaque chacun des planeswalkers de son contrôleur ; Mirri, Weatherlight
   // Duelist : au plus une créature attaque son contrôleur.

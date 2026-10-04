@@ -6,10 +6,12 @@ import { card } from "@mtgx/cards";
 import { describe, expect, it } from "vitest";
 import { activated, fx, manaAbility, ref, target } from "../src/dsl";
 import { RulesError } from "../src/errors";
+import { fallbackDecision } from "../src/host";
 import { legalActions } from "../src/legal";
 import { chars } from "../src/state";
+import { forcedAttackers } from "../src/turn";
 import type { ActionOption, GameState } from "../src/types";
-import { act, customCard, idOf, idsOf, lands, scenario, settle } from "./helpers";
+import { act, advanceUntil, customCard, exiled, idOf, idsOf, lands, scenario, settle } from "./helpers";
 
 /** Artefact « {T} : ajoutez {C} » (sans se sacrifier). */
 const stone = (name: string) => customCard({ name, types: ["Artifact"], typeLine: "Artifact", abilities: [manaAbility("C")] });
@@ -224,5 +226,40 @@ describe("options proposées, décisions acceptées", () => {
     expect(alt(s)).toBe(true);
     s = act(s, "p1", { type: "cast", card: idOf(s, "p1", "hand", "Cresting Mosasaurus"), alternative: true });
     expect(s.stack).toHaveLength(1);
+  });
+
+  it("contempler et exiler : le permanent exilé avant le mana n'en ajoute plus (Champion of the Path, Lavaleaper)", () => {
+    const champion = (s: GameState) => castOption(s, "p1", idOf(s, "p1", "hand", "Champion of the Path"));
+    // {3}{R} : deux Montagnes en produisent quatre avec Lavaleaper, mais Lavaleaper est le seul Élémental à exiler.
+    let s = scenario({ p1: { battlefield: ["Lavaleaper", ...lands("Mountain", 3)], hand: ["Champion of the Path"] } });
+    expect(champion(s)).toBeUndefined();
+    s = scenario({ p1: { battlefield: ["Lavaleaper", ...lands("Mountain", 4)], hand: ["Champion of the Path"] } });
+    expect(champion(s)?.normalAvailable).toBe(true);
+    s = act(s, "p1", { type: "cast", card: idOf(s, "p1", "hand", "Champion of the Path") });
+    expect(s.stack).toHaveLength(1);
+    expect(exiled(s, "Lavaleaper")).toHaveLength(1);
+    // Un Élémental de la main est contemplé à sa place : Lavaleaper reste, les deux Montagnes suffisent.
+    s = scenario({
+      p1: { battlefield: ["Lavaleaper", ...lands("Mountain", 2)], hand: ["Champion of the Path", "Lavaleaper"] },
+    });
+    expect(champion(s)?.normalAvailable).toBe(true);
+    s = act(s, "p1", { type: "cast", card: idOf(s, "p1", "hand", "Champion of the Path") });
+    expect(s.stack).toHaveLength(1);
+    expect(idsOf(s, "p1", "battlefield", "Lavaleaper")).toHaveLength(1);
+  });
+
+  it("« attaque à chaque combat si possible » sans défenseur permis : pas obligée d'attaquer (508.1d, The Void et Storm, Windrider)", () => {
+    // The Void (jeton de The Sentry) : vol, attaque à chaque combat ; Storm : les créatures volantes ne peuvent pas vous attaquer.
+    const voidToken = customCard({ name: "Vide de test", power: 5, toughness: 5, keywords: ["flying", "mustAttack"] });
+    let s = scenario({ p1: { battlefield: [voidToken] }, p2: { battlefield: ["Storm, Windrider"] } });
+    const v = idOf(s, "p1", "battlefield", "Vide de test");
+    s = advanceUntil(s, (x) => x.pending?.kind === "declareAttackers");
+    expect(forcedAttackers(s, "p1")).toEqual([]);
+    expect(() => act(s, "p1", { type: "declareAttackers", attackers: [{ id: v, defender: "p2" }] })).toThrow(RulesError);
+    const p = s.pending;
+    if (p?.kind !== "declareAttackers") throw new Error("déclaration des attaquants attendue");
+    expect(fallbackDecision(s, p)).toEqual({ type: "declareAttackers", attackers: [] });
+    s = act(s, "p1", fallbackDecision(s, p));
+    expect(s.combat?.attackers ?? []).toHaveLength(0);
   });
 });

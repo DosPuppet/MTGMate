@@ -333,8 +333,11 @@ export const RECORD_VERSION = 1;
  *   capacités « quand elle se transforme » sur la face arrière (Ultimecia, Black Chocobo), Tellah en un déclenchement…
  * - 124 : approximations levées par script (A2) ; « faites ceci une seule fois par tour » revérifié à la résolution (deux
  *   déclenchements sur la pile) ; « une autre carte » exclut aussi la carte de la créature morte (nouvel identifiant).
+ * - 125 : un permanent exilé ou renvoyé en coût additionnel n'ajoute plus son remplacement de mana au paiement proposé
+ *   (Champion of the Path, Lavaleaper) ; une créature qui doit attaquer mais ne peut attaquer aucun défenseur n'y est
+ *   plus obligée (The Void, Storm, Windrider).
  */
-export const RULES_VERSION = 124;
+export const RULES_VERSION = 125;
 
 /** Un point de contrôle toutes les N décisions (plus la dernière de la partie). */
 export const CHECKPOINT_EVERY = 25;

@@ -29,6 +29,7 @@ Chaque entrée porte sa nature :
 - `timing` **Vitesse :** l'augmentation (« quand un adversaire perd des PV pendant votre tour ») est immédiate, sans passer par la pile.
 - `règle` **Déclencheurs « une ou plusieurs … » (Ketramose, Dredger's Insight) :** un déclenchement par lot d'événements simultanés (un effet d'une résolution, une étape de blessures de combat, une passe d'actions basées sur l'état) ; les événements hors d'un lot (coûts payés en lançant un sort ou en activant une capacité) comptent comme un seul lot.
 - `règle` **Marqueurs de capacité :** ils s'appliquent après les autres effets de couche 6.
+- `timing` **Coûts payés avant le mana :** un permanent exilé, renvoyé ou sacrifié pour un coût additionnel ou alternatif quitte le champ de bataille avant le paiement du mana : ses capacités de mana et ses remplacements de mana (Lavaleaper) ne servent plus à payer ce sort (601.2g-h permettrait d'engager du mana avant).
 - `choix auto` **Mana phyrexian :** le mana disponible paie d'abord ; des PV ne sont payés que pour les symboles qu'il ne couvre pas.
 - `choix auto` **« Le reste au-dessous de votre bibliothèque dans l'ordre de votre choix » :** dans un ordre aléatoire (Rediscover the Way, Commune with Nature, Avengers Tower) ; « remises au-dessus dans l'ordre de votre choix » : l'ordre n'est pas choisi (Rowan's Grim Search).
 - `règle` **Suspension (702.62) :** la célérité est donnée au prochain sort de créature lancé ce tour-ci, même si ce n'est pas la carte suspendue (aussi Taigam, Master Opportunist).

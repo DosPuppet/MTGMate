@@ -214,11 +214,14 @@ function otherToTap(s: GameState, id: ObjectId, strict = false): ObjectId | unde
  * « Chaque fois que [ce permanent] est engagé pour du mana, ajoutez un mana de plus » (R1, famille I) : les remplacements
  * de mana qui s'appliquent à cette source engagée, vus du joueur qui l'engage (Lavaleaper, Shimmerwilds Growth…).
  */
-function manaReplacements(s: GameState, id: ObjectId, ab: ManaAbilityDef): ActiveReplacement[] {
+function manaReplacements(s: GameState, id: ObjectId, ab: ManaAbilityDef, gone?: ReadonlySet<ObjectId>): ActiveReplacement[] {
   const o = s.objects[id];
   if (!o || !ab.cost.tap) return [];
   return eventReplacements(s, "mana").filter(
-    (a) => playerSide(s, a, o.controller) && (!a.r.source || matchesObjectFilter(s, a.controller, id, a.r.source, a.sourceId)),
+    (a) =>
+      !(a.sourceId && gone?.has(a.sourceId)) &&
+      playerSide(s, a, o.controller) &&
+      (!a.r.source || matchesObjectFilter(s, a.controller, id, a.r.source, a.sourceId)),
   );
 }
 
@@ -235,11 +238,11 @@ const sameTypeMods = (reps: ActiveReplacement[]): AmountMod[] =>
     ]);
 
 /** Quantité produite (« {G} pour chaque Elfe que vous contrôlez »), remplacements compris. */
-function manaAmount(s: GameState, id: ObjectId, ab: ManaAbilityDef): number {
+function manaAmount(s: GameState, id: ObjectId, ab: ManaAbilityDef, gone?: ReadonlySet<ObjectId>): number {
   // Source déjà sacrifiée pour payer le coût (Trésor) : quantité imprimée.
   const o = s.objects[id];
   if (!o) return ab.amount;
-  const mods = sameTypeMods(manaReplacements(s, id, ab));
+  const mods = sameTypeMods(manaReplacements(s, id, ab, gone));
   const base = baseManaAmount(s, id, o.controller, ab);
   return mods.length ? chooseReplacementOrder(base, mods, "max") : base;
 }
@@ -307,6 +310,12 @@ export interface ManaPurpose {
    * servent pour ce mode de paiement, en premier, et tous doivent servir.
    */
   only?: Partial<Record<"convoke" | "improvise" | "waterbend" | "delve" | "sacrificeToPay", ObjectId[]>>;
+  /**
+   * Permanents qui auront quitté le champ de bataille avant le paiement du mana (`legalActions` : exilés, renvoyés ou
+   * sacrifiés par un coût additionnel ou alternatif, payé avant le mana dans `castSpell`) : leurs remplacements de mana ne
+   * comptent plus (Lavaleaper exilé en contemplant pour Champion of the Path). Leur propre mana : `exclude`.
+   */
+  gone?: ReadonlySet<ObjectId>;
 }
 
 /**
@@ -384,7 +393,7 @@ export function manaSources(
       // Aucune couleur possible (Pit of Offerings sans carte exilée colorée) : la capacité ne produit rien (106.7).
       if (ab.produce.length === 0) return;
       // Aucun mana produit (Vivi Ornitier de force 0) : la source ne paie rien.
-      const amount = manaAmount(s, id, ab);
+      const amount = manaAmount(s, id, ab, purpose?.gone);
       if (amount <= 0) return;
       out.push({
         id,

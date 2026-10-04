@@ -403,7 +403,10 @@ export function legalActions(s: GameState, player: PlayerId): ActionOption[] {
     if (!auto) return;
     const spent = [...auto.tap, ...auto.exile, ...auto.bounce];
     const exclude = spent.length ? new Set(spent) : undefined;
+    // Les permanents exilés ou renvoyés par le coût (avant le mana) n'appliquent plus leurs remplacements de mana.
+    const gone = auto.exile.length || auto.bounce.length ? new Set([...auto.exile, ...auto.bounce]) : undefined;
     const purpose0: ManaPurpose = {
+      ...(gone ? { gone } : {}),
       spell: spellView(d, player),
       convoke: hasConvoke(s, player, d),
       improvise: hasImprovise(s, player, d) || undefined,
@@ -466,7 +469,7 @@ export function legalActions(s: GameState, player: PlayerId): ActionOption[] {
         player,
         withExtra(spellCost(s, player, d, { ...base, alternative: true })),
         altGone.length ? new Set([...(exclude ?? []), ...altGone]) : exclude,
-        purpose,
+        altGone.length ? { ...purpose, gone: new Set([...(gone ?? []), ...altGone]) } : purpose,
       );
     // Kicker payable (« coûte {2} de moins s'il est marchandé » : Hamlet Glutton peut n'être payable que marchandé).
     // Travail d'équipe : les créatures engagées pour le kicker ne paient pas le mana.
