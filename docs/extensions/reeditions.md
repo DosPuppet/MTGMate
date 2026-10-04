@@ -197,3 +197,16 @@ le deck peut choisir son illustration (51 cartes). Détail dans le suivi du plan
   comptées sur le tour) ; Purphoros (sans dévotion suffisante, c'est un enchantement sans autre type de carte).
 - **Sous-lot difficile :** Bolas's Citadel, Jodah, Winota, Nyxbloom Ancient, Laboratory Maniac, Teferi, Mage of Zhalfir,
   Gix, K'rrik (mana phyrexian), Atraxa, Carpet of Flowers, Ancient Copper Dragon (d20).
+
+## G8 — Mystical Archive ✅ (25 cartes ; SOA 30 / 37)
+
+- **Cartes :** Armageddon, Prismatic Ending, Reprieve, Return to the Ranks, Pongify, Preordain, Culling the Weak, Living
+  End, Sheoldred's Edict, Smallpox, Vampiric Tutor, Big Score, Brotherhood's End, Pyretic Ritual, Subterranean Tremors,
+  Awaken the Woods, Berserk, Crop Rotation, Glimpse of Nature (emblème du tour), Shamanic Revelation, Triumph of the
+  Hordes, Bring to Light, Culling Ritual, Expressive Iteration, Fracture. Aucune forme nouvelle.
+- **Tests :** `soa.test.ts` (+11).
+- **Approximations :** Expressive Iteration (la carte gardée en main est choisie d'abord, parmi les trois ; puis l'exilée
+  parmi les deux restantes) ; Prismatic Ending (la valeur de mana est comparée à la résolution, pas au ciblage).
+- **Sous-lot difficile :** Angel's Grace (ne pas perdre, PV au moins 1), Daze et Force of Will (coûts alternatifs
+  particuliers), Dismember (mana phyrexian), Ad Nauseam (répétition au choix), Veil of Summer (incontrecarrable,
+  défense talismanique contre des couleurs), Deflecting Palm (bouclier qui renvoie les blessures).

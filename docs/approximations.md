@@ -375,3 +375,4 @@ Dans l'ordre où elles ont été ajoutées, extension par extension.
   - `règle` Hindering Light : seuls les sorts qui ciblent un permanent que vous contrôlez sont reconnus, pas ceux qui ne ciblent que vous.
   - `règle` Adeline, Resplendent Cathar : les Humains créés attaquent tous le même défenseur (un par adversaire, en multijoueur) ;
   - `règle` Mangara, the Diplomat : « deux créatures ou plus vous attaquent » compte les attaques contre vous du tour entier.
+  - `règle` Prismatic Ending : la valeur de mana de la cible est comparée aux couleurs dépensées à la résolution.

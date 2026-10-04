@@ -327,3 +327,5 @@ leur lot, avec une forme générique d'abord, selon la règle « pas de dette pr
   `RULES_VERSION` 111. Onze cartes vont au sous-lot difficile (liste dans `docs/extensions/reeditions.md`).
 - **G7 (04/10/2026) :** 36 cartes de Through the Ages (FCA 39 / 50) ; une capacité de mana peut engager un artefact.
   `RULES_VERSION` 112. Onze cartes vont au sous-lot difficile.
+- **G8 (04/10/2026) :** 25 cartes de Mystical Archive (SOA 30 / 37), sans forme nouvelle. Sept cartes vont au sous-lot
+  difficile.

@@ -62,7 +62,9 @@ export function buildCastDecision(
   /** « X cibles » : X ne dépasse pas le nombre de cibles possibles, et les cibles sont ajustées à X. */
   const withCountX = <D extends { targets?: Record<string, string[]>; x?: number }>(d: D, opts: TargetOption[]): D => {
     const exact = opts.find((o) => o.countX);
-    if (!exact || d.x === undefined) return d;
+    if (!exact) return d;
+    // X inconnu (pas de maximum calculé) : « X cibles » vaut alors aucune cible.
+    if (d.x === undefined) return exact.countX === true ? { ...d, targets: { ...d.targets, [exact.id]: [] } } : d;
     const pool = [...exact.legal].sort(() => rand() - 0.5);
     const x = exact.countX === true ? Math.min(d.x, pool.length) : d.x;
     return { ...d, x, targets: { ...d.targets, [exact.id]: pool.slice(0, Math.min(x, pool.length)) } };
