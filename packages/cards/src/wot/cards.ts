@@ -497,4 +497,23 @@ export const CARDS: Record<string, CardScript> = {
       }),
     ],
   },
+  "Phyrexian Unlife": {
+    abilities: [
+      playerStatic({
+        noLoseForLife: true,
+        infectDamageAtZeroLife: true,
+        label: "Vous ne perdez pas pour 0 PV ou moins ; à 0 PV ou moins, les blessures vous sont infligées comme par l'infection",
+      }),
+    ],
+  },
+  "Ground Seal": {
+    abilities: [
+      triggered(when.entersSelf, [fx.draw(1)], { label: "Arrivée : piochez une carte" }),
+      playerStatic({
+        cantTargetGraveyardCards: true,
+        affects: "each",
+        label: "Les cartes des cimetières ne peuvent pas être ciblées",
+      }),
+    ],
+  },
 };

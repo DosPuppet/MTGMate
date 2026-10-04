@@ -49,7 +49,11 @@
     "powerUpExtraUses": "Wonder Man, Hollywood Hero : chaque montée en puissance peut être activée une fois de plus (compte d'usages des capacités « once ») ; une seule carte pour l'instant",
     "activateAsThoughHaste": "Shang-Chi, Master of Kung Fu : activer les capacités des créatures du filtre comme si elles avaient la célérité (mal d'invocation levé pour {T}, pas pour attaquer) ; famille paramétrée par un filtre, une seule carte pour l'instant",
     "affects": "portée générique d'une statique de joueur (contrôleur, adversaires, chaque joueur) : Rampaging Ferocidon « les joueurs ne peuvent pas gagner de PV » ; à réutiliser pour toute statique qui touche d'autres joueurs",
-    "phyrexianMana": "K'rrik, Son of Yawgmoth — les symboles d'une couleur de vos coûts deviennent phyrexians (107.4f), sur la forme générique ManaCost.phyrexian"
+    "phyrexianMana": "K'rrik, Son of Yawgmoth — les symboles d'une couleur de vos coûts deviennent phyrexians (107.4f), sur la forme générique ManaCost.phyrexian",
+    "infectDamageAtZeroLife": "Phyrexian Unlife : à 0 PV ou moins, les blessures infligées au joueur le sont comme par l'infection (famille J, exceptions aux règles, avec noLoseForLife)",
+    "damageLifeFloor": "Angel's Grace : plancher de PV pour les blessures (famille E, blessures aux joueurs ; un remplacement chiffré ne voit pas les PV restants)",
+    "winOnEmptyDraw": "Laboratory Maniac : la pioche dans une bibliothèque vide remplacée par une victoire (famille J, exceptions aux règles, 704.5b)",
+    "cantTargetGraveyardCards": "Ground Seal (affects: each) : règle de ciblage des cartes des cimetières (famille K, protection)"
   },
   "keyword": {
     "absorbsDamage": "remplacement de redirection des blessures (R1.2)",
@@ -217,7 +221,7 @@
   },
   "engineCardLiterals": {},
   "ceilings": {
-    "CardDef": 95,
+    "CardDef": 96,
     "GameObject": 61,
     "StackItem": 29,
     "PlayerState": 21,
@@ -229,7 +233,7 @@
     "PlayFromZone": 16,
     "LayerMods": 31,
     "Effect": 152,
-    "Effect (champs)": 617,
+    "Effect (champs)": 619,
     "TriggerSpec": 59,
     "TriggerSpec (champs)": 156,
     "Condition": 52,
@@ -275,6 +279,7 @@
     "PLAN-G G3b : régénération (GameObject.regenShields, effet regenerate), déplacer un marqueur (moveCounter), filtre manaValueSourceCounters (Blast Zone) : GameObject 60 → 61, ObjectFilter 84 → 85, Effect 150 → 152, Effect (champs) 611 → 616",
     "PLAN-G G4a : traversée de terrain et restriction d'attaque (BlockRule), portée des statiques de joueur, déclencheur copySpell, suspension en action spéciale : TriggerSpec 58 → 59, TriggerSpec (champs) 153 → 155",
     "PLAN-G G4b : destruction sans régénération (Damnation, noRegenerate) : Effect (champs) 616 → 617",
-    "PLAN-G G4c : déclencheur « joue un terrain » de n'importe quel joueur (whose) : TriggerSpec (champs) 155 → 156"
+    "PLAN-G G4c : déclencheur « joue un terrain » de n'importe quel joueur (whose) : TriggerSpec (champs) 155 → 156",
+    "PLAN-G G4e : mue (CardDef.morph, 702.37) ; dé (coinFlip.sides) et Surgical Extraction (exileNamesakes.draw) : CardDef 95 → 96, Effect (champs) 617 → 619"
   ]
 }

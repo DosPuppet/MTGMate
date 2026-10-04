@@ -523,4 +523,29 @@ export const CARDS: Record<string, CardScript> = {
       }),
     ],
   },
+  "Laboratory Maniac": {
+    abilities: [
+      playerStatic({
+        winOnEmptyDraw: true,
+        label: "Si vous deviez piocher dans une bibliothèque vide, vous gagnez la partie à la place",
+      }),
+    ],
+  },
+  "Nyxbloom Ancient": {
+    abilities: [
+      eventReplacement({
+        event: "mana",
+        to: "you",
+        modify: { times: 3 },
+        label: "Un permanent que vous engagez pour du mana en produit trois fois autant",
+      }),
+    ],
+  },
+  "Ancient Copper Dragon": {
+    abilities: [
+      triggered(when.combatDamageToPlayer, [fx.rollDie(20, "d20"), fx.createTokens(TREASURE, amount.v("d20"))], {
+        label: "Blessures de combat à un joueur : lancez un d20, autant de Trésors",
+      }),
+    ],
+  },
 };

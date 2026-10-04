@@ -36,7 +36,8 @@ export type Effect =
    * de sa main.
    */
   /** `of` : la cible (The End) plutôt qu'une carte choisie dans un cimetière adverse. */
-  | { op: "exileNamesakes"; of?: Ref }
+  /** `of` : un permanent (homonymes chez son contrôleur) ou une carte de cimetière (chez son propriétaire) ; `draw` : il pioche autant que de cartes exilées de sa main. */
+  | { op: "exileNamesakes"; of?: Ref; draw?: boolean }
   /** Effet de joueur jusqu'à la fin du tour (« les blessures ne peuvent pas être prévenues ce tour-ci »). */
   /** `untilYourNextTurn` : jusqu'au début du prochain tour du contrôleur ; `times` : autant d'effets à usage unique. */
   | {
@@ -298,7 +299,8 @@ export type Effect =
   /** Chaque joueur peut mélanger sa main et son cimetière dans sa bibliothèque, puis pioche N cartes (Step Between Worlds). */
   | { op: "mayShuffleHandGraveyardDraw"; n: number }
   /** 705 : pile ou face ; `store` vaut 1 si le contrôleur gagne. */
-  | { op: "coinFlip"; store: string }
+  /** Lance une pièce (1 si gagné, 0 sinon) ou, avec `sides`, un dé à N faces (706, résultat de 1 à N) ; stocké. */
+  | { op: "coinFlip"; store: string; sides?: number }
   /** Taii Wakeen : ce tour-ci, vos blessures non de combat sont augmentées de N. */
   | { op: "noncombatBonusThisTurn"; amount: Amount }
   /** Another Round : choisir des permanents que vous contrôlez, les exiler et les renvoyer, N fois. */

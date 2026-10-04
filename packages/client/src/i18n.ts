@@ -291,6 +291,9 @@ export function describeEvents(
           kind(e.player),
         );
         break;
+      case "dieRoll":
+        add(`${who(e.player)} ${e.player === me ? "obtenez" : "obtient"} ${e.result} au dé à ${e.sides} faces.`, kind(e.player));
+        break;
       case "lose":
         add(`${who(e.player)} ${e.player === me ? "perdez" : "perd"}${LOSS_REASON[e.reason]}.`, kind(e.player));
         break;

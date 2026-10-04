@@ -52,12 +52,12 @@ Au total, **5 164 cartes jouables** sur 5 164 cartes légales en Standard (100 %
 
 | Ensemble | Cartes gérées |
 |---|---|
-| Special Guests (SPG) | 115 / 132 |
+| Special Guests (SPG) | 117 / 132 |
 | Stellar Sights (EOS) | 43 / 43 |
-| Enchanting Tales (WOT) | 49 / 55 |
-| Breaking News (OTP) | 51 / 61 |
-| Through the Ages (FCA) | 40 / 50 |
-| Mystical Archive (SOA) | 33 / 37 |
+| Enchanting Tales (WOT) | 51 / 55 |
+| Breaking News (OTP) | 52 / 61 |
+| Through the Ages (FCA) | 43 / 50 |
+| Mystical Archive (SOA) | 34 / 37 |
 | Source Material (PZA) | 12 / 15 |
 | Jurassic World Collection (REX) | 11 / 20 |
 

@@ -1090,12 +1090,15 @@ export const HANDLERS: OpHandlers = {
     return;
   },
   exileNamesakes(s, r, e, ctx, key) {
-    // The End : le permanent ciblé, exilé, puis ses homonymes chez son contrôleur.
+    // The End : le permanent ciblé, exilé, puis ses homonymes chez son contrôleur (qui pioche autant que de cartes
+    // exilées de sa main). Surgical Extraction : la carte de cimetière ciblée et ses homonymes chez son propriétaire.
     if (e.of) {
-      const target = resolveRef(s, ctx, e.of).find((id) => onBattlefield(s, id));
+      const target = resolveRef(s, ctx, e.of).find((id) => onBattlefield(s, id) || s.objects[id]?.zone === "graveyard");
       if (!target) return;
-      const who = s.objects[target]?.controller as string;
-      const name = chars(s, target).name;
+      const o = s.objects[target];
+      if (!o) return;
+      const who = onBattlefield(s, target) ? o.controller : o.owner;
+      const name = onBattlefield(s, target) ? chars(s, target).name : s.defs[o.defId]?.name;
       moveAndLog(s, target, "exile");
       const pl = s.players[who];
       if (!pl) return;
@@ -1103,7 +1106,7 @@ export const HANDLERS: OpHandlers = {
       const fromHand = pl.hand.filter(same);
       for (const id of [...pl.graveyard.filter(same), ...fromHand, ...pl.library.filter(same)]) moveObject(s, id, "exile");
       shuffle(s, pl.library);
-      drawCards(s, who, fromHand.length);
+      if (e.draw) drawCards(s, who, fromHand.length);
       return;
     }
     const options = opponentsOf(s, ctx.controller).flatMap((p) => s.players[p]?.graveyard ?? []);

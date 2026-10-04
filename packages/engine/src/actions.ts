@@ -29,6 +29,7 @@ import {
   eventReplacements,
   playerSide,
   playerStatic,
+  playerStatics,
   preventions,
   quantityMods,
   recipientMatches,
@@ -67,7 +68,8 @@ export function drawCard(s: GameState, p: PlayerId): void {
   if (!player) return;
   const top = player.library[0];
   if (!top) {
-    player.drewFromEmptyLibrary = true;
+    // Laboratory Maniac : « vous gagnez la partie à la place » (remplacement, appliqué par les actions basées sur l'état).
+    if (player.drewFromEmptyLibrary !== "win") player.drewFromEmptyLibrary = playerStatic(s, p, "winOnEmptyDraw") ? "win" : true;
     emit({ type: "draw", player: p });
     return;
   }
@@ -185,7 +187,8 @@ export function payLife(s: GameState, p: PlayerId, amount: number): void {
   loseLife(s, p, amount);
 }
 
-export function loseLife(s: GameState, p: PlayerId, amount: number): void {
+/** `damage` : la perte vient de blessures (Angel's Grace : « les blessures qui réduiraient vos PV en dessous de 1 »). */
+export function loseLife(s: GameState, p: PlayerId, amount: number, damage = false): void {
   const player = s.players[p];
   if (!player || amount <= 0) return;
   // Remplacements de la perte de PV (Bloodletter of Aclazotz : pendant votre tour, un adversaire perd le double).
@@ -196,6 +199,11 @@ export function loseLife(s: GameState, p: PlayerId, amount: number): void {
     if (a.r.modify.times) mods.push({ times: a.r.modify.times });
   }
   amount = chooseReplacementOrder(amount, mods, "min");
+  if (damage) {
+    const floors = playerStatics(s, p, "damageLifeFloor").map(({ ab }) => ab.damageLifeFloor ?? 0);
+    if (floors.length) amount = Math.min(amount, Math.max(0, player.life - Math.max(...floors)));
+    if (amount <= 0) return;
+  }
   player.life -= amount;
   bump(s);
   emit({ type: "life", player: p, delta: -amount, life: player.life });
@@ -458,11 +466,12 @@ export function dealDamage(s: GameState, source: DamageSource, target: string, a
     emit({ type: "damage", sourceDefId: source.defId, target, amount, combat });
     logDamage(s, source, target, target, true, amount, combat);
     // Infection (702.90b) : des marqueurs poison au lieu d'une perte de points de vie.
+    // Phyrexian Unlife : à 0 PV ou moins, comme si la source avait l'infection.
     const pl = s.players[target];
-    if (source.keywords.includes("infect") && pl) {
+    if (pl && (source.keywords.includes("infect") || (pl.life <= 0 && playerStatic(s, target, "infectDamageAtZeroLife")))) {
       pl.poison = (pl.poison ?? 0) + amount;
       emit({ type: "poison", player: target, amount, total: pl.poison });
-    } else loseLife(s, target, amount);
+    } else loseLife(s, target, amount, true);
   } else {
     const o = s.objects[target];
     // 506.4 : un planeswalker attaqué qui a quitté le champ de bataille ne reçoit pas de blessures.

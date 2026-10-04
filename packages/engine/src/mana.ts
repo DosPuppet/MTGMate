@@ -4,6 +4,7 @@
 import { dealDamage, gainLife, payLife, sacrifice, sourceFromObject } from "./actions";
 import { RulesError } from "./errors";
 import { bumpFor, linkedColors } from "./layers";
+import { type AmountMod, chooseReplacementOrder } from "./modifiers";
 import { collectEvidence, evidenceCards } from "./stack";
 import {
   bump,
@@ -221,37 +222,49 @@ function manaReplacements(s: GameState, id: ObjectId, ab: ManaAbilityDef): Activ
   );
 }
 
-/** Mana du même type ajouté en plus, quel que soit le type produit (connu du solveur). */
-const sameTypeBonus = (reps: ActiveReplacement[]) =>
-  reps.filter((a) => !a.r.manaProduced && (a.r.extraMana ?? "same") === "same").reduce((n, a) => n + (a.r.modify.add ?? 0), 0);
+/**
+ * Remplacements du mana du même type, quel que soit le type produit (connus du solveur) : « un mana de plus » (Molten
+ * Tide, Lavaleaper, Roxanne), « trois fois autant » (Nyxbloom Ancient), dans l'ordre le plus favorable (616.1).
+ */
+const sameTypeMods = (reps: ActiveReplacement[]): AmountMod[] =>
+  reps
+    .filter((a) => !a.r.manaProduced && (a.r.extraMana ?? "same") === "same")
+    .flatMap((a) => [
+      ...(a.r.modify.add ? [{ add: a.r.modify.add }] : []),
+      ...(a.r.modify.times ? [{ times: a.r.modify.times }] : []),
+    ]);
 
-/** Quantité produite (« {G} pour chaque Elfe que vous contrôlez »). */
+/** Quantité produite (« {G} pour chaque Elfe que vous contrôlez »), remplacements compris. */
 function manaAmount(s: GameState, id: ObjectId, ab: ManaAbilityDef): number {
   // Source déjà sacrifiée pour payer le coût (Trésor) : quantité imprimée.
   const o = s.objects[id];
   if (!o) return ab.amount;
-  const controller = o.controller;
-  // Molten Tide, Lavaleaper, Roxanne : « chaque fois que [ce permanent] est engagé pour du mana, un mana de plus ».
-  const extra = sameTypeBonus(manaReplacements(s, id, ab));
+  const mods = sameTypeMods(manaReplacements(s, id, ab));
+  const base = baseManaAmount(s, id, o.controller, ab);
+  return mods.length ? chooseReplacementOrder(base, mods, "max") : base;
+}
+
+function baseManaAmount(s: GameState, id: ObjectId, controller: PlayerId, ab: ManaAbilityDef): number {
+  const o = obj(s, id);
   // The Eternity Elevator : autant de mana que de marqueurs de charge.
-  if (ab.amountCounters) return (o.counters[ab.amountCounters] ?? 0) + extra;
+  if (ab.amountCounters) return o.counters[ab.amountCounters] ?? 0;
   // The Core : « X mana, où X est le nombre de cartes de permanent de votre cimetière ».
   if (ab.amountGraveyard) {
     const f = ab.amountGraveyard;
     return (s.players[controller]?.graveyard ?? []).filter((x) => matchesCard(s, controller, x, { ...f, controller: undefined }))
       .length;
   }
-  if (ab.amountSelfPower) return Math.max(0, chars(s, id).power) + extra;
+  if (ab.amountSelfPower) return Math.max(0, chars(s, id).power);
   // Loot, the Nexus : un mana pour chaque force différente parmi vos créatures.
   if (ab.amountDistinctPowers) {
     const powers = s.battlefield
       .filter((x) => obj(s, x).controller === controller && isCreature(s, x))
       .map((x) => chars(s, x).power);
-    return new Set(powers).size + extra;
+    return new Set(powers).size;
   }
-  if (!ab.amountPer) return ab.amount + extra;
+  if (!ab.amountPer) return ab.amount;
   const f = ab.amountPer;
-  return s.battlefield.filter((x) => matchesObjectFilter(s, controller, x, f, id)).length + extra;
+  return s.battlefield.filter((x) => matchesObjectFilter(s, controller, x, f, id)).length;
 }
 
 /** À quoi le mana est destiné (mana restreint : « dépensez ce mana uniquement pour lancer un sort d'Ange »). */

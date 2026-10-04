@@ -238,3 +238,10 @@ le deck peut choisir son illustration (51 cartes). Détail dans le suivi du plan
   `countersPut`), Indoraptor (soif de sang : `entersWith` des blessures infligées aux adversaires ce tour-ci ; l'adversaire
   « au hasard » est le premier), Henry Wu (exploitation donnée aux Humains, la pioche et le Trésor dans la même capacité).
   Tests : `rex.test.ts` (+3).
+- **Règles de joueur ✅ :** statiques de joueur `winOnEmptyDraw` (Laboratory Maniac : la pioche impossible devient une
+  victoire), `damageLifeFloor` (Angel's Grace, avec `cantLose` posé par `fx.thisTurn`), `infectDamageAtZeroLife`
+  (Phyrexian Unlife, avec `noLoseForLife`), `cantTargetGraveyardCards` (Ground Seal, `affects: "each"`) ; remplacement
+  du mana `modify.times` (Nyxbloom Ancient : « trois fois autant », ordonné avec les « un de plus ») ; dé à N faces
+  (`fx.rollDie`, Ancient Copper Dragon) ; mue (702.37, `CardDef.morph` : face cachée comme le déguisement, sans garde ;
+  Grim Haruspex) ; Surgical Extraction (homonymes d'une carte de cimetière chez son propriétaire, `fx.exileCardAndNamesakes`) ;
+  Thousand-Year Elixir sur `activateAsThoughHaste`. Tests : `fca`, `soa`, `wot`, `spg`, `otp` (+9). `RULES_VERSION` 115.

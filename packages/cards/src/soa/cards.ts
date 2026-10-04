@@ -269,4 +269,7 @@ export const CARDS: Record<string, CardScript> = {
     },
     spell: spell([target.spell()], [fx.unlessPays(ref.controllerOf(ref.target()), { mana: "{1}" }, fx.counter(ref.target()))]),
   },
+  "Angel's Grace": {
+    spell: spell([], [fx.thisTurn({ cantLose: true, damageLifeFloor: 1 })]),
+  },
 };

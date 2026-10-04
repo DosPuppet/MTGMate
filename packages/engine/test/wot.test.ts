@@ -1,9 +1,12 @@
 /** Enchanting Tales (WOT) : tests de règles des cartes (PLAN-G). */
 import { describe, expect, it } from "vitest";
-import { destroy, drawCards, gainLife } from "../src/actions";
+import { dealDamage, destroy, drawCards, gainLife } from "../src/actions";
+import { target } from "../src/dsl";
 import { legalActions } from "../src/legal";
 import { manaAbilitiesOf } from "../src/mana";
 import { changeCounters, chars } from "../src/state";
+import { legalTargets } from "../src/targets";
+import { stateBasedActions } from "../src/turn";
 import { act, advanceUntil, castable, idOf, idsOf, lands, scenario, settle } from "./helpers";
 
 describe("Enchanting Tales", () => {
@@ -242,6 +245,31 @@ describe("Enchanting Tales", () => {
       (s.objects[forest] as { tapped: boolean }).tapped = false;
       s = act(s, "p1", { type: "tapForMana", source: forest, ability: 0 });
       expect([s.players.p1?.manaPool.G, s.players.p1?.manaPool.R]).toEqual([1, 1]);
+    });
+  });
+  describe("G4e : règles de joueur", () => {
+    it("Phyrexian Unlife : pas de défaite à 0 PV ; à 0 PV ou moins, les blessures donnent des marqueurs poison", () => {
+      const s = scenario({ p1: { life: 2, battlefield: ["Phyrexian Unlife"] } });
+      const src = { defId: "test", controller: "p2", keywords: [] };
+      dealDamage(s, src, "p1", 3, false);
+      stateBasedActions(s);
+      expect(s.players.p1?.life).toBe(-1);
+      expect(s.players.p1?.lost).toBe(false);
+      dealDamage(s, src, "p1", 4, false);
+      expect(s.players.p1?.life).toBe(-1);
+      expect(s.players.p1?.poison).toBe(4);
+    });
+
+    it("Ground Seal : arrivée, piochez ; les cartes des cimetières ne peuvent être ciblées par personne", () => {
+      let s = scenario({
+        p1: { battlefield: lands("Forest", 2), hand: ["Ground Seal"] },
+        p2: { graveyard: ["Bear Cub"] },
+      });
+      s = settle(act(s, "p1", { type: "cast", card: idOf(s, "p1", "hand", "Ground Seal") }));
+      expect(s.players.p1?.hand).toHaveLength(1);
+      const spec = target.cardInGraveyard("t", {}, "any");
+      expect(legalTargets(s, "p1", spec)).toEqual([]);
+      expect(legalTargets(s, "p2", spec)).toEqual([]);
     });
   });
 });

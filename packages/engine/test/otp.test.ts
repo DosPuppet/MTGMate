@@ -1,13 +1,16 @@
 /** Breaking News (OTP) : tests de règles des cartes (PLAN-G). */
 import { describe, expect, it } from "vitest";
 import { dealDamage, destroy, gainLife, loseLife } from "../src/actions";
+import { target } from "../src/dsl";
 import { legalActions } from "../src/legal";
 import { chars, decider } from "../src/state";
+import { legalTargets } from "../src/targets";
 import { logTurnEvent } from "../src/turnlog";
 import {
   act,
   advanceUntil,
   castNowOf,
+  exiled,
   idOf,
   idsOf,
   lands,
@@ -355,6 +358,26 @@ describe("Breaking News", () => {
       );
       s = advanceUntil(s, (x) => x.turn.active === "p2" && x.turn.step === "main1");
       expect(decider(s)).toBe("p1");
+    });
+  });
+  describe("G4e : règles de joueur", () => {
+    it("Surgical Extraction : une carte de cimetière (pas un terrain de base) et ses homonymes, exilées", () => {
+      let s = scenario({
+        p1: { hand: ["Surgical Extraction"] },
+        p2: { graveyard: ["Shock", "Forest"], hand: ["Shock"], library: ["Shock", "Mountain"] },
+      });
+      const forest = idOf(s, "p2", "graveyard", "Forest");
+      expect(legalTargets(s, "p1", target.cardInGraveyard("t", { basic: false }, "any"))).not.toContain(forest);
+      s = settle(
+        act(s, "p1", {
+          type: "cast",
+          card: idOf(s, "p1", "hand", "Surgical Extraction"),
+          targets: { t: [idOf(s, "p2", "graveyard", "Shock")] },
+        }),
+      );
+      expect(s.players.p1?.life).toBe(18);
+      expect(exiled(s, "Shock")).toHaveLength(3);
+      expect(s.players.p2?.hand).toHaveLength(0);
     });
   });
 });

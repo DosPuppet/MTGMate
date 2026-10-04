@@ -1,9 +1,10 @@
 /** Through the Ages (FCA) : tests de règles des cartes (PLAN-G). */
 import { describe, expect, it } from "vitest";
-import { destroy, loseLife } from "../src/actions";
+import { destroy, drawCards, loseLife } from "../src/actions";
 import { legalActions } from "../src/legal";
 import { manaAbilitiesOf } from "../src/mana";
 import { chars, moveObject } from "../src/state";
+import { stateBasedActions } from "../src/turn";
 import {
   act,
   advanceUntil,
@@ -261,6 +262,36 @@ describe("Through the Ages", () => {
       s = throughCombat(attack(s, [idOf(s, "p1", "battlefield", "Bear Cub")]));
       expect(s.over).toBe(true);
       expect(s.winner).toBe("p1");
+    });
+  });
+
+  describe("G4e : règles de joueur", () => {
+    it("Laboratory Maniac : piocher dans une bibliothèque vide fait gagner la partie à la place", () => {
+      const s = scenario({ p1: { battlefield: ["Laboratory Maniac"], library: [] } });
+      drawCards(s, "p1", 1);
+      stateBasedActions(s);
+      expect(s.winner).toBe("p1");
+      const t = scenario({ p1: { library: [] } });
+      drawCards(t, "p1", 1);
+      stateBasedActions(t);
+      expect(t.winner).toBe("p2");
+    });
+
+    it("Nyxbloom Ancient : un permanent engagé pour du mana en produit trois fois autant", () => {
+      let s = scenario({ p1: { battlefield: ["Nyxbloom Ancient", "Forest", "Llanowar Elves"] } });
+      s = act(s, "p1", { type: "tapForMana", source: idOf(s, "p1", "battlefield", "Forest"), ability: 0 });
+      expect(s.players.p1?.manaPool.G).toBe(3);
+      s = act(s, "p1", { type: "tapForMana", source: idOf(s, "p1", "battlefield", "Llanowar Elves"), ability: 0 });
+      expect(s.players.p1?.manaPool.G).toBe(6);
+    });
+
+    it("Ancient Copper Dragon : blessures de combat à un joueur, un d20 et autant de Trésors", () => {
+      let s = scenario({ p1: { battlefield: ["Ancient Copper Dragon"] } });
+      s = throughCombat(attack(s, [idOf(s, "p1", "battlefield", "Ancient Copper Dragon")]));
+      expect(s.players.p2?.life).toBe(14);
+      const treasures = idsOf(s, "p1", "battlefield", "Treasure").length;
+      expect(treasures).toBeGreaterThanOrEqual(1);
+      expect(treasures).toBeLessThanOrEqual(20);
     });
   });
 });

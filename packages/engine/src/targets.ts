@@ -387,7 +387,8 @@ export function isLegalTarget(s: GameState, controller: PlayerId, spec: TargetSp
   }
   if (o && o.zone === "graveyard") {
     const cards = spec.filter.cards;
-    if (!cards) return false;
+    // Ground Seal : « les cartes des cimetières ne peuvent pas être la cible de sorts ou de capacités ».
+    if (!cards || playerStatic(s, controller, "cantTargetGraveyardCards")) return false;
     if (cards.whose === "you" && o.owner !== controller) return false;
     if (cards.whose === "opponent" && o.owner === controller) return false;
     return matchesCard(s, controller, id, { ...cards.filter, controller: undefined }, sourceId);

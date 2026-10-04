@@ -231,6 +231,8 @@ export interface CardDef {
   impending?: number;
   /** Déguisement (702.168) : coût pour retourner face visible une carte lancée face cachée pour {3}. */
   disguise?: ManaCost;
+  /** Mue (702.37) : `disguise` porte le coût de mue ; la créature face cachée n'a pas la garde {2}. */
+  morph?: true;
   /** « Ce coût est réduit de {1} pour chaque… » (Fugitive Codebreaker) : réduction du coût de déguisement. */
   disguiseReduction?: Amount;
   /** Saga (714) : numéro du dernier chapitre (lu dans le texte). */
@@ -1134,6 +1136,14 @@ export interface PlayerStaticAbilityDef {
   seeFaceDown?: boolean;
   /** Marina Vendrell's Grimoire : vous ne perdez pas la partie pour avoir 0 point de vie ou moins. */
   noLoseForLife?: boolean;
+  /** Phyrexian Unlife : tant que vous avez 0 point de vie ou moins, les blessures vous sont infligées comme par l'infection. */
+  infectDamageAtZeroLife?: boolean;
+  /** Angel's Grace : les blessures qui réduiraient vos PV en dessous de N les réduisent à N à la place. */
+  damageLifeFloor?: number;
+  /** Laboratory Maniac : si vous deviez piocher dans une bibliothèque vide, vous gagnez la partie à la place. */
+  winOnEmptyDraw?: boolean;
+  /** Ground Seal (`affects: "each"`) : les cartes des cimetières ne peuvent pas être ciblées par vos sorts et capacités. */
+  cantTargetGraveyardCards?: boolean;
   /** Sunspine Lynx (tous) : les blessures ne peuvent pas être prévenues. */
   damageUnpreventable?: boolean;
   /** Twists and Turns : « si une créature que vous contrôlez devait explorer, regardez 1 d'abord ». */

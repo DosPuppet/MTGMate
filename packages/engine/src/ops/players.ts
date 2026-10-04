@@ -262,6 +262,12 @@ export const HANDLERS: OpHandlers = {
     return;
   },
   coinFlip(s, r, e, ctx) {
+    if (e.sides) {
+      const result = 1 + Math.floor(random(s) * e.sides);
+      emit({ type: "dieRoll", player: ctx.controller, sides: e.sides, result });
+      store(r, e.store, result);
+      return;
+    }
     const stats = s.players[ctx.controller]?.turnStats;
     // Edgar, King of Figaro : la première fois chaque tour, la pièce tombe sur pile et le lancer est gagné.
     const rigged = !stats?.coinFlips && playerStatic(s, ctx.controller, "winFirstCoinFlips");

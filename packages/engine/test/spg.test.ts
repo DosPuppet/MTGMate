@@ -763,4 +763,35 @@ describe("Special Guests", () => {
       expect(idsOf(s, "p1", "battlefield", "Bear Cub")).toHaveLength(1);
     });
   });
+  describe("G4e : règles de joueur", () => {
+    it("Thousand-Year Elixir : vos créatures activent comme si elles avaient la célérité ; {1}, {T} : dégagez", () => {
+      let s = scenario({
+        p1: { battlefield: ["Thousand-Year Elixir", "Forest", { name: "Llanowar Elves", sick: true }] },
+      });
+      const elves = idOf(s, "p1", "battlefield", "Llanowar Elves");
+      s = act(s, "p1", { type: "tapForMana", source: elves, ability: 0 });
+      s = act(s, "p1", { type: "tapForMana", source: idOf(s, "p1", "battlefield", "Forest"), ability: 0 });
+      s = settle(
+        act(s, "p1", {
+          type: "activate",
+          source: idOf(s, "p1", "battlefield", "Thousand-Year Elixir"),
+          ability: 1,
+          targets: { t: [elves] },
+        }),
+      );
+      expect(s.objects[elves]?.tapped).toBe(false);
+    });
+
+    it("Grim Haruspex : mue (face cachée pour {3}, sans garde) ; une autre créature non-jeton meurt, piochez", () => {
+      let s = scenario({ p1: { battlefield: [...lands("Swamp", 3)], hand: ["Grim Haruspex"] } });
+      s = settle(act(s, "p1", { type: "cast", card: idOf(s, "p1", "hand", "Grim Haruspex"), faceDown: true }));
+      const down = s.battlefield.find((id) => s.objects[id]?.faceDown);
+      expect(down).toBeDefined();
+      expect(chars(s, down as string).keywords).not.toContain("ward");
+      const t = scenario({ p1: { battlefield: ["Grim Haruspex", "Bear Cub"], library: lands("Swamp", 3) } });
+      destroy(t, idOf(t, "p1", "battlefield", "Bear Cub"));
+      const u = settle(t);
+      expect(u.players.p1?.hand).toHaveLength(1);
+    });
+  });
 });

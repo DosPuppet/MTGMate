@@ -334,3 +334,6 @@ leur lot, avec une forme générique d'abord, selon la règle « pas de dette pr
 - **G4e, mana phyrexian (04/10/2026) :** Noxious Revival, Dismember, K'rrik. `RULES_VERSION` 113.
 - **G4e, coûts alternatifs (04/10/2026) :** Force of Will, Daze, Force of Vigor (`altCost.pay`). `RULES_VERSION` 114.
 - **G4e, mots-clés d'une carte (04/10/2026) :** Grim Giganotosaurus, Indoraptor, Henry Wu, sans forme nouvelle.
+- **G4e, règles de joueur (04/10/2026) :** Laboratory Maniac, Angel's Grace, Phyrexian Unlife, Ground Seal,
+  Thousand-Year Elixir, Nyxbloom Ancient, Ancient Copper Dragon, Grim Haruspex, Surgical Extraction (quatre statiques de
+  joueur, mana « trois fois autant », dé, mue). `RULES_VERSION` 115.

@@ -505,4 +505,10 @@ export const CARDS: Record<string, CardScript> = {
       [fx.destroy(ref.target())],
     ),
   },
+  "Surgical Extraction": {
+    spell: spell(
+      [target.cardInGraveyard("t", { basic: false }, "any", "carte d'un cimetière (sauf terrain de base)")],
+      [fx.exileCardAndNamesakes(ref.target("t"))],
+    ),
+  },
 };

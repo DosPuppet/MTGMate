@@ -2015,7 +2015,7 @@ export function castSpell(s: GameState, player: PlayerId, card: ObjectId, choice
   if (choices.faceDown && cardDef.disguise) {
     const spellObj = obj(s, stackId);
     s.defs[FACE_DOWN_ID] ??= FACE_DOWN_DEF;
-    spellObj.faceDown = { card: spellObj.defId, ward: true, upCosts: [cardDef.disguise] };
+    spellObj.faceDown = { card: spellObj.defId, ward: !cardDef.morph, upCosts: [cardDef.disguise] };
     spellObj.defId = FACE_DOWN_ID;
   }
   // Le prochain sort : incontrecarrable (Theorist's Proxy), marqueurs ou célérité (Summon: Fenrir), copié (plus bas).

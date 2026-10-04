@@ -298,8 +298,9 @@ function impendingAbilities(text: string): CardDef["abilities"] {
   ];
 }
 
+/** Déguisement (702.168) ou mue (702.37, Grim Haruspex) : le coût pour retourner la carte face visible. */
 export function parseDisguise(text: string): CardDef["disguise"] {
-  const m = /^Disguise ((?:\{[^}]+\})+)/m.exec(stripReminder(text));
+  const m = /^(?:Disguise|Morph) ((?:\{[^}]+\})+)/m.exec(stripReminder(text));
   return m ? parseManaCost(m[1] as string) : undefined;
 }
 
@@ -1111,6 +1112,7 @@ function singleDef(raw: RawCard, script: CardScript | undefined, set: string): C
     harmonize: harmonize ? true : undefined,
     flashbackCost: script?.flashbackCost,
     disguise: parseDisguise(raw.oracleText),
+    morph: /^Morph \{/m.test(stripReminder(raw.oracleText)) ? true : undefined,
     disguiseReduction: script?.disguiseReduction,
     warp: parseWarp(raw.oracleText),
     plot: parsePlot(raw.oracleText),

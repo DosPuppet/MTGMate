@@ -1,9 +1,11 @@
 /** Mystical Archive (SOA) : tests de règles des cartes (PLAN-G). */
 import { describe, expect, it } from "vitest";
+import { dealDamage, loseLife } from "../src/actions";
 import { legalActions } from "../src/legal";
 import { manaAbilitiesOf } from "../src/mana";
 import { suspendCard } from "../src/stack";
 import { chars } from "../src/state";
+import { stateBasedActions } from "../src/turn";
 import {
   act,
   advanceUntil,
@@ -250,6 +252,20 @@ describe("Mystical Archive", () => {
       s = settle(castIt(s, "Expressive Iteration"));
       expect(s.players.p1?.hand).toHaveLength(1);
       expect(s.exile).toHaveLength(1);
+    });
+  });
+
+  describe("G4e : règles de joueur", () => {
+    it("Angel's Grace : vous ne perdez pas ce tour-ci ; les blessures ne descendent pas vos PV sous 1", () => {
+      let s = scenario({ p1: { life: 3, battlefield: ["Plains"], hand: ["Angel's Grace"] } });
+      s = settle(act(s, "p1", { type: "cast", card: idOf(s, "p1", "hand", "Angel's Grace") }));
+      dealDamage(s, { defId: "test", controller: "p2", keywords: [] }, "p1", 10, false);
+      expect(s.players.p1?.life).toBe(1);
+      // La perte de points de vie n'est pas limitée, mais le joueur ne perd pas la partie ce tour-ci.
+      loseLife(s, "p1", 5);
+      stateBasedActions(s);
+      expect(s.players.p1?.life).toBe(-4);
+      expect(s.players.p1?.lost).toBe(false);
     });
   });
 });

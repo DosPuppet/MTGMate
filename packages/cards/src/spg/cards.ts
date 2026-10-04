@@ -1142,4 +1142,26 @@ export const CARDS: Record<string, CardScript> = {
       [fx.moveTo(ref.target(), { to: "libraryTop" })],
     ),
   },
+  "Thousand-Year Elixir": {
+    abilities: [
+      playerStatic({
+        activateAsThoughHaste: { types: ["Creature"] },
+        label: "Les capacités de vos créatures s'activent comme si elles avaient la célérité",
+      }),
+      activated({
+        mana: "{1}",
+        tap: true,
+        targets: [target.creature()],
+        effects: [fx.untap(ref.target("t"))],
+        label: "{1}, {T} : dégagez la créature ciblée",
+      }),
+    ],
+  },
+  "Grim Haruspex": {
+    abilities: [
+      triggered(when.dies({ types: ["Creature"], controller: "you", token: false, other: true }), [fx.draw(1)], {
+        label: "Une autre créature non-jeton que vous contrôlez meurt : piochez une carte",
+      }),
+    ],
+  },
 };

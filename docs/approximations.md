@@ -382,3 +382,5 @@ Dans l'ordre où elles ont été ajoutées, extension par extension.
   - `règle` Grim Giganotosaurus : « monstrueuse » est noté par un marqueur (visible) ;
   - `règle` Indoraptor : l'adversaire « choisi au hasard » est chaque adversaire (exact en duel) ;
   - `règle` Henry Wu : la pioche et le Trésor font partie de la capacité d'exploitation qu'il donne (ils n'ont lieu que s'il est sur le champ de bataille quand elle se résout).
+  - `règle` Laboratory Maniac : la victoire qui remplace la pioche est constatée avec les actions basées sur l'état qui suivent (comme la défaite qu'elle remplace) ;
+  - `règle` Nyxbloom Ancient : le mana « en plus » d'un autre type (Utopia Sprawl, Shimmerwilds Growth) n'est pas triplé.

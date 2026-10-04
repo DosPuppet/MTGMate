@@ -395,6 +395,7 @@ export type GameEvent =
   | { type: "plotted"; player: PlayerId; defId: string }
   /** 705 : pile ou face. */
   | { type: "coinFlip"; player: PlayerId; won: boolean }
+  | { type: "dieRoll"; player: PlayerId; sides: number; result: number }
   /** Un plafond de sécurité a coupé un montant (`limits.ts`) : approximation signalée au journal. */
   | { type: "capReached"; cap: "tokens" | "amount" | "permutations" | "layers" }
   /** 702.179 : nouvelle vitesse du joueur. */

@@ -936,6 +936,8 @@ export const fx = {
   addManaColorsAmong: (filter: ObjectFilter): Effect => ({ op: "addManaColorsAmong", filter }),
   mayShuffleHandGraveyardDraw: (n = 7): Effect => ({ op: "mayShuffleHandGraveyardDraw", n }),
   coinFlip: (store: string): Effect => ({ op: "coinFlip", store }),
+  /** « Lancez un dé à N faces » (706) : le résultat est stocké (Ancient Copper Dragon : un d20). */
+  rollDie: (sides: number, store: string): Effect => ({ op: "coinFlip", store, sides }),
   extraUpkeeps: (amount: Amount): Effect => ({ op: "extra", kind: "upkeep", amount }),
   plotOnResolve: (what: Ref): Effect => ({ op: "spellFate", fate: "plot", what }),
   noncombatBonusThisTurn: (amount: Amount): Effect => ({ op: "noncombatBonusThisTurn", amount }),
@@ -969,7 +971,9 @@ export const fx = {
   /** Deadly Cover-Up : une carte d'un cimetière adverse, et toutes ses homonymes (cimetière, main, bibliothèque). */
   exileNamesakes: { op: "exileNamesakes" } as Effect,
   /** The End : exile le permanent désigné et ses homonymes (cimetière, main, bibliothèque de son contrôleur). */
-  exileWithNamesakes: (of: Ref): Effect => ({ op: "exileNamesakes", of }),
+  exileWithNamesakes: (of: Ref): Effect => ({ op: "exileNamesakes", of, draw: true }),
+  /** Surgical Extraction : la carte de cimetière désignée et ses homonymes (cimetière, main, bibliothèque de son propriétaire). */
+  exileCardAndNamesakes: (of: Ref): Effect => ({ op: "exileNamesakes", of }),
   /** « Quand ce permanent arrive, choisissez [un nom de carte de terrain…] » (capacité déclenchée). */
   chooseForSelf: (
     kind: "creatureType" | "color" | "cardName" | "landName",

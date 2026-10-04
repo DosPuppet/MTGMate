@@ -214,7 +214,8 @@ export interface PlayerState {
    * qui l'a produit et son choix (« du type choisi »), figés à la production.
    */
   restrictedMana?: TaggedMana[];
-  drewFromEmptyLibrary: boolean;
+  /** Pioche dans une bibliothèque vide depuis la dernière vérification (704.5b) ; `"win"` : remplacée par une victoire (Laboratory Maniac). */
+  drewFromEmptyLibrary: boolean | "win";
   lost: boolean;
   mulligans: number;
   /** Numéro du dernier tour commencé par ce joueur (0 s'il n'a pas encore joué). */

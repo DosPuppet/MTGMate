@@ -1268,6 +1268,13 @@ export function checkGameOver(s: GameState): void {
   for (const p of s.playerOrder) {
     const player = s.players[p];
     if (!player || player.lost) continue;
+    // Laboratory Maniac : la pioche impossible a été remplacée par une victoire (adversaires éliminés, sauf `cantLose`).
+    if (player.drewFromEmptyLibrary === "win") {
+      player.drewFromEmptyLibrary = false;
+      const opponents = opponentsOf(s, p);
+      if (!opponents.some((q) => playerStatic(s, q, "cantLose"))) losers.push(...opponents.filter((q) => !losers.includes(q)));
+      continue;
+    }
     // Herald of Eternal Dawn : « vous ne pouvez pas perdre la partie ». 704.5c : 10 marqueurs poison ou plus.
     // Marina Vendrell's Grimoire : « vous ne perdez pas la partie pour avoir 0 point de vie ou moins ».
     const lifeLoss = player.life <= 0 && !playerStatic(s, p, "noLoseForLife");
@@ -1280,7 +1287,7 @@ export function checkGameOver(s: GameState): void {
     // ne perd pas plus tard pour une pioche ancienne.
     player.drewFromEmptyLibrary = false;
   }
-  eliminate(s, losers);
+  eliminate(s, [...new Set(losers)]);
 }
 
 /**
